@@ -10,7 +10,21 @@ Create or activate your Python environment, then install dependencies:
 pip install -r requirements.txt
 ```
 
-The CLIP path needs OpenAI CLIP:
+The CLIP path also needs OpenAI CLIP. If the CLIP repository is placed next to this repository:
+
+```text
+2026OpticsMoE/
+  CLIP/
+  visual_prompting/
+```
+
+install it into the same environment with:
+
+```bash
+pip install -e ../CLIP
+```
+
+If you do not have a local CLIP checkout, install it from GitHub:
 
 ```bash
 pip install git+https://github.com/openai/CLIP.git
@@ -21,6 +35,7 @@ If you use conda on Windows, for example:
 ```powershell
 conda activate RFL
 pip install -r requirements.txt
+pip install -e ../CLIP
 ```
 
 ## Dataset Path Convention
@@ -74,6 +89,18 @@ CIFAR10:
 
 ```bash
 python main_clip.py --dataset cifar10 --root ./data
+```
+
+If the default `--batch_size 256` causes CUDA OOM, start with:
+
+```bash
+python main_clip.py --dataset cifar10 --root ./data --batch_size 64 --num_workers 0
+```
+
+or:
+
+```bash
+python main_clip.py --dataset cifar10 --root ./data --batch_size 32 --num_workers 0
 ```
 
 EuroSAT:

@@ -157,6 +157,23 @@ def verify_trainable_parameters(model, prompter):
         raise RuntimeError('Visual prompt has no trainable parameters.')
 
 
+def build_text_features(model, texts):
+    text_tokens = clip.tokenize(texts).to(device)
+
+    with torch.no_grad():
+        text_features = model.encode_text(text_tokens)
+        text_features = text_features / text_features.norm(dim=-1, keepdim=True)
+
+    return text_features
+
+
+def clip_logits_from_images(model, images, text_features):
+    image_features = model.encode_image(images)
+    image_features = image_features / image_features.norm(dim=-1, keepdim=True)
+    logit_scale = model.logit_scale.exp()
+    return logit_scale * image_features @ text_features.t()
+
+
 def main():
     global best_acc1, device
 
@@ -215,6 +232,7 @@ def main():
 
     class_names = refine_classname(class_names)
     texts = [template.format(label) for label in class_names]
+    text_features = build_text_features(model, texts)
 
     # define criterion and optimizer
     optimizer = torch.optim.SGD(prompter.parameters(),
@@ -245,7 +263,7 @@ def main():
         wandb.watch(prompter, criterion, log='all', log_freq=10)
 
     if args.evaluate:
-        acc1 = validate(val_loader, texts, model, prompter, criterion, args)
+        acc1 = validate(val_loader, text_features, model, prompter, criterion, args)
         return
 
     epochs_since_improvement = 0
@@ -254,11 +272,11 @@ def main():
 
         # train for one epoch
         train_loss, train_acc1 = train(
-            train_loader, texts, model, prompter, optimizer, scheduler,
+            train_loader, text_features, model, prompter, optimizer, scheduler,
             criterion, scaler, epoch, args)
 
         # evaluate on validation set
-        acc1 = validate(val_loader, texts, model, prompter, criterion, args)
+        acc1 = validate(val_loader, text_features, model, prompter, criterion, args)
 
         # remember best acc@1 and save checkpoint
         is_best = acc1 > best_acc1
@@ -292,7 +310,7 @@ def main():
         wandb.run.finish()
 
 
-def train(train_loader, texts, model, prompter, optimizer, scheduler, criterion, scaler, epoch, args):
+def train(train_loader, text_features, model, prompter, optimizer, scheduler, criterion, scaler, epoch, args):
     batch_time = AverageMeter('Time', ':6.3f')
     data_time = AverageMeter('Data', ':6.3f')
     losses = AverageMeter('Loss', ':.4e')
@@ -321,12 +339,11 @@ def train(train_loader, texts, model, prompter, optimizer, scheduler, criterion,
 
         images = images.to(device)
         target = target.to(device)
-        text_tokens = clip.tokenize(texts).to(device)
 
         # with automatic mixed precision
         with autocast():
             prompted_images = prompter(images)
-            output, _ = model(prompted_images, text_tokens)
+            output = clip_logits_from_images(model, prompted_images, text_features)
             loss = criterion(output, target)
             scaler.scale(loss).backward()
             scaler.step(optimizer)
@@ -364,7 +381,7 @@ def train(train_loader, texts, model, prompter, optimizer, scheduler, criterion,
     return losses.avg, top1.avg
 
 
-def validate(val_loader, texts, model, prompter, criterion, args):
+def validate(val_loader, text_features, model, prompter, criterion, args):
     batch_time = AverageMeter('Time', ':6.3f')
     losses = AverageMeter('Loss', ':.4e')
     top1_org = AverageMeter('Original Acc@1', ':6.2f')
@@ -383,12 +400,11 @@ def validate(val_loader, texts, model, prompter, criterion, args):
 
             images = images.to(device)
             target = target.to(device)
-            text_tokens = clip.tokenize(texts).to(device)
             prompted_images = prompter(images)
 
             # compute output
-            output_prompt, _ = model(prompted_images, text_tokens)
-            output_org, _ = model(images, text_tokens)
+            output_prompt = clip_logits_from_images(model, prompted_images, text_features)
+            output_org = clip_logits_from_images(model, images, text_features)
             loss = criterion(output_prompt, target)
 
             # measure accuracy and record loss
