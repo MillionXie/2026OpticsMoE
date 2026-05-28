@@ -4,3 +4,8 @@
 /figures
 /visual_prompting/data
 /visual_prompting/save
+/opticalmoe/data
+/opticalmoe/runs
+/opticalmoe/.pytest_cache
+__pycache__/
+*.pyc

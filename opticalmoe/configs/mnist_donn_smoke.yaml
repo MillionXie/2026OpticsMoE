@@ -1,0 +1,57 @@
+seed: 7
+device: auto
+
+dataset:
+  name: mnist
+  root: ./data
+  input_size: 200
+  val_split: 0.1
+  batch_size: 4
+  num_workers: 0
+  smoke_test: true
+  smoke_train_size: 24
+  smoke_test_size: 12
+
+optics:
+  wavelength_nm: 532.0
+  pixel_size_um: 8.0
+  input_size: 200
+  padding: 200
+  grid_size: 600
+  num_layers: 5
+  phase_param: unconstrained
+  phase_init: uniform
+  evanescent_mode: zero
+  distances_cm:
+    input_to_prompt: 5.0
+    prompt_to_first_layer: 5.0
+    inter_layer: 5.0
+    last_layer_to_detector: 5.0
+
+detector:
+  detector_size: 32
+  layout: grid
+
+readout:
+  type: optical_only
+  normalize_detector_energy: true
+  logit_scale: 10.0
+  hidden_dim: 64
+  activation: relu
+
+optimizer:
+  type: adam
+  lr: 0.01
+  weight_decay: 0.0
+
+training:
+  epochs: 1
+
+visualization:
+  enabled: true
+  save_interval_epochs: 1
+  num_samples: 2
+  save_png: true
+  save_npz: false
+  save_train_intermediates: true
+  save_eval_intermediates: true
