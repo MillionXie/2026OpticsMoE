@@ -2,40 +2,116 @@
 
 Initial PyTorch framework for a diffractive optical neural network classifier.
 
-This first version intentionally implements a single optical classifier only:
+This version implements a single optical classifier:
 
 - angular spectrum propagation with `torch.fft`
-- five trainable phase-only diffractive layers by default
+- trainable phase-only diffractive layers
 - a reserved physical prompt plane using `IdentityPrompt`
 - fixed detector arrays
 - configurable electronic readout
-- MNIST/FashionMNIST/KMNIST dataloaders
+- MNIST, FashionMNIST, and KMNIST dataloaders
 - CSV logging, checkpoints, and visualizations
 
-It does **not** implement MoE, expert banks, trainable optical routing, trainable prompts, or black-box optimization yet.
+It does not implement MoE, expert banks, trainable optical routing, trainable prompts, or black-box optimization yet.
 
-## Quick Start
+## Recommended Dataset Order
+
+Start with MNIST to verify the optical training pipeline.
+
+Use FashionMNIST next. It is still grayscale, small, and 10-class like MNIST, but the images are clothes and shoes rather than digits, so it is a better next step without making the task too hard.
+
+Use KMNIST after that if you want another 10-class grayscale dataset with different character shapes.
+
+## One-Line Commands
+
+Run MNIST:
 
 ```bash
-cd opticalmoe
-python scripts/train.py --config configs/mnist_donn.yaml --run_name smoke_mnist
+python scripts/train.py --config configs/mnist_donn.yaml --run_name mnist_001
 ```
 
-Run outputs are written to:
+Run FashionMNIST:
+
+```bash
+python scripts/train.py --config configs/fashionmnist_donn.yaml --run_name fashionmnist_001
+```
+
+Run the small smoke config:
+
+```bash
+python scripts/train.py --config configs/mnist_donn_smoke.yaml --run_name smoke_mnist
+```
+
+Resume training and change learning rate:
+
+```bash
+python scripts/train.py --config configs/mnist_donn.yaml --run_name mnist_001 --resume runs/mnist_001/last.pt --lr 0.001
+```
+
+Resume training with a fresh optimizer state:
+
+```bash
+python scripts/train.py --config configs/mnist_donn.yaml --run_name mnist_001 --resume runs/mnist_001/last.pt --lr 0.001 --reset_optimizer
+```
+
+Run tests:
+
+```bash
+python -m pytest -q
+```
+
+## Changing Epochs
+
+`training.epochs` means the total target epoch.
+
+If a run has already reached epoch 20 and you want it to continue to epoch 80, edit the config:
+
+```yaml
+training:
+  epochs: 80
+```
+
+Then resume:
+
+```bash
+python scripts/train.py --config configs/mnist_donn.yaml --run_name mnist_001 --resume runs/mnist_001/last.pt
+```
+
+## Changing Batch Size
+
+The simulation uses a 600 x 600 complex field and multiple FFT propagations, so memory use is much higher than a normal MNIST classifier.
+
+Suggested starting points:
 
 ```text
-runs/smoke_mnist/
+6 GB GPU: batch_size 2 or 4
+8 GB GPU: batch_size 4 or 8
+12 GB GPU: batch_size 8 or 16
+24 GB GPU: batch_size 16 or 32
+```
+
+If CUDA out of memory occurs, lower `dataset.batch_size` in the YAML config and resume from `last.pt`.
+
+## Run Outputs
+
+Each run writes to:
+
+```text
+runs/<run_name>/
   config.yaml
   metrics.csv
   summary.json
   best.pt
   last.pt
   detector_layout.png
+  detector_energy_bar.png
   confusion_matrix.png
   phases/
   light_fields/
   sample_outputs/
 ```
+
+`last.pt` is the most recent checkpoint. `best.pt` is the checkpoint with the best validation accuracy.
 
 ## Physical Defaults
 
@@ -45,7 +121,7 @@ runs/smoke_mnist/
 - padding: 200 pixels on each side
 - simulation grid: 600 x 600
 - phase layers: 5
-- propagation distance: 5 cm for every segment
+- default propagation distance: 5 cm for every segment
 
 For 5 phase layers, the optical path has 7 propagation segments:
 
@@ -61,4 +137,22 @@ phase layer 5 -> detector
 
 The prompt plane always exists. No-prompt experiments use `IdentityPrompt`.
 
-python scripts/train.py --config configs/mnist_donn.yaml --run_name mnist_001
+## Config Notes
+
+`readout.type` can be:
+
+```text
+optical_only
+linear
+mlp
+```
+
+`optical_only` is the most physically constrained readout. `linear` and `mlp` add electronic post-processing and are usually easier to optimize.
+
+`dataset.name` can be:
+
+```text
+mnist
+fashionmnist
+kmnist
+```
