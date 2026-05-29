@@ -12,7 +12,7 @@ if str(SRC_ROOT) not in sys.path:
 
 from opticalmoe.data import create_dataloaders
 from opticalmoe.optics import OpticalClassifier
-from opticalmoe.training import fit
+from opticalmoe.training import fit, load_checkpoint
 from opticalmoe.utils import cm_to_m, load_config, nm_to_m, save_json, set_seed, um_to_m
 from opticalmoe.utils.parameters import count_trainable_parameters
 from opticalmoe.utils.run import create_run_dir
@@ -63,6 +63,13 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Train an OpticalMoE optical classifier.")
     parser.add_argument("--config", required=True, help="Path to YAML config.")
     parser.add_argument("--run_name", required=True, help="Run directory name under runs/.")
+    parser.add_argument("--resume", default=None, help="Path to checkpoint, usually runs/<run>/last.pt.")
+    parser.add_argument("--lr", type=float, default=None, help="Override optimizer learning rate.")
+    parser.add_argument(
+        "--reset_optimizer",
+        action="store_true",
+        help="When resuming, load model weights but start with a fresh optimizer.",
+    )
     return parser.parse_args()
 
 
@@ -87,11 +94,36 @@ def main():
 
     model = build_model(config, num_classes=num_classes).to(device)
     optimizer_cfg = config.get("optimizer", {})
+    lr = float(optimizer_cfg.get("lr", 1e-3))
+    if args.lr is not None:
+        lr = float(args.lr)
+
     optimizer = torch.optim.Adam(
         model.parameters(),
-        lr=float(optimizer_cfg.get("lr", 1e-3)),
+        lr=lr,
         weight_decay=float(optimizer_cfg.get("weight_decay", 0.0)),
     )
+
+    start_epoch = 1
+    best_val_acc = -1.0
+    best_epoch = 0
+    if args.resume:
+        checkpoint = load_checkpoint(
+            args.resume,
+            model,
+            optimizer=None if args.reset_optimizer else optimizer,
+            map_location=str(device),
+        )
+        start_epoch = int(checkpoint["epoch"]) + 1
+        metrics = checkpoint.get("metrics", {})
+        best_val_acc = float(metrics.get("best_val_acc", metrics.get("val_acc", -1.0)))
+        best_epoch = int(metrics.get("best_epoch", checkpoint.get("epoch", 0)))
+        if args.lr is not None:
+            for param_group in optimizer.param_groups:
+                param_group["lr"] = lr
+        print(f"resumed checkpoint: {args.resume}")
+        print(f"continuing from epoch {start_epoch}")
+        print(f"optimizer lr: {optimizer.param_groups[0]['lr']:.3e}")
 
     print(f"device: {device}")
     print(f"num_classes: {num_classes}")
@@ -115,6 +147,9 @@ def main():
         num_classes=num_classes,
         visualization_cfg=config.get("visualization", {}),
         fixed_vis_batch=fixed_vis_batch,
+        start_epoch=start_epoch,
+        best_val_acc=best_val_acc,
+        best_epoch=best_epoch,
     )
 
     optics_cfg = config["optics"]

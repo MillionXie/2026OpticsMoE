@@ -2,14 +2,13 @@ seed: 7
 device: auto
 
 dataset:
-  name: mnist
+  name: fashionmnist
   root: ./data
   input_size: 200
   val_split: 0.1
-  batch_size: 64
+  batch_size: 32
   num_workers: 0
   smoke_test: false
-
 
 optics:
   wavelength_nm: 532.0
@@ -32,7 +31,7 @@ detector:
   layout: grid
 
 readout:
-  type: optical_only # linear/mlp/optical_only
+  type: optical_only
   normalize_detector_energy: true
   logit_scale: 10.0
   hidden_dim: 64
@@ -40,11 +39,11 @@ readout:
 
 optimizer:
   type: adam
-  lr: 0.01
+  lr: 0.003
   weight_decay: 0.0
 
 training:
-  epochs: 100
+  epochs: 80
 
 visualization:
   enabled: true

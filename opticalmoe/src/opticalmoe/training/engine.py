@@ -136,19 +136,20 @@ def fit(
     num_classes: int,
     visualization_cfg: Dict,
     fixed_vis_batch=None,
+    start_epoch: int = 1,
+    best_val_acc: float = -1.0,
+    best_epoch: int = 0,
 ) -> Dict:
     criterion = nn.CrossEntropyLoss()
     metrics_path = run_dir / "metrics.csv"
-    init_metrics_csv(str(metrics_path))
+    init_metrics_csv(str(metrics_path), append=start_epoch > 1)
 
-    best_val_acc = -1.0
-    best_epoch = 0
     last_test_acc = 0.0
     last_test_loss = 0.0
     last_targets = torch.empty(0, dtype=torch.long)
     last_preds = torch.empty(0, dtype=torch.long)
 
-    for epoch in range(1, num_epochs + 1):
+    for epoch in range(start_epoch, num_epochs + 1):
         train_loss, train_acc = train_one_epoch(model, train_loader, optimizer, device, criterion)
         val_loss, val_acc, _, _ = evaluate(model, val_loader, device, criterion)
         test_loss, test_acc, test_targets, test_preds = evaluate(model, test_loader, device, criterion)
@@ -174,11 +175,15 @@ def fit(
         )
 
         checkpoint_metrics = dict(row)
+        checkpoint_metrics["best_val_acc"] = best_val_acc
+        checkpoint_metrics["best_epoch"] = best_epoch
         save_checkpoint(str(run_dir / "last.pt"), model, optimizer, epoch, checkpoint_metrics)
 
         if val_acc > best_val_acc:
             best_val_acc = val_acc
             best_epoch = epoch
+            checkpoint_metrics["best_val_acc"] = best_val_acc
+            checkpoint_metrics["best_epoch"] = best_epoch
             save_checkpoint(str(run_dir / "best.pt"), model, optimizer, epoch, checkpoint_metrics)
 
         interval = int(visualization_cfg.get("save_interval_epochs", 5))

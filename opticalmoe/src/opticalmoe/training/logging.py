@@ -15,7 +15,9 @@ METRIC_FIELDS = [
 ]
 
 
-def init_metrics_csv(path: str) -> None:
+def init_metrics_csv(path: str, append: bool = False) -> None:
+    if append and Path(path).exists():
+        return
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=METRIC_FIELDS)
