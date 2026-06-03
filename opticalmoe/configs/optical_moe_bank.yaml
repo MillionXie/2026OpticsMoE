@@ -1,0 +1,117 @@
+# Base config for the large-canvas OpticalMoE bank.
+# You can run this file directly, but it is mainly a template shared by the
+# more specific configs below.
+
+seed: 7
+device: auto  # auto / cpu / cuda
+
+experiment:
+  # eval: no training, only evaluate checkpoints or random initialization.
+  # train_scratch: train expert phases directly in the large-canvas geometry.
+  # finetune: load a checkpoint, then train only selected parameters.
+  # prompt_train: reserved for future trainable prompt/router experiments.
+  mode: eval
+  run_name: optical_moe_bank_base
+  print_freq: 50
+  baseline_acc: null
+  strict_geometry_check: false
+  resume_optimizer: false
+
+checkpoints:
+  # Old single-expert checkpoints produced by scripts/train.py.
+  # These have keys such as phase_layers.0.raw_phase and are migrated into one side.
+  left_ckpt: null
+  left_config: null
+  right_ckpt: null
+  right_config: null
+
+  # Full OpticalMoE checkpoint produced by scripts/run_optical_moe.py.
+  # Use this when evaluating or continuing the same bank model.
+  moe_ckpt: null
+
+  # Side-specific OpticalMoE checkpoints produced by scripts/run_optical_moe.py.
+  # Use these when separately trained left/right bank experts need to be assembled.
+  left_moe_ckpt: null
+  right_moe_ckpt: null
+
+dataset:
+  # Supported: mnist, fashionmnist, kmnist, mixed_mnist_fashion.
+  name: mnist
+  root: ./data
+  input_size: 200
+  val_split: 0.1
+  batch_size: 2
+  num_workers: 0
+
+  # Keep smoke_test true while checking code paths. Set false for real training.
+  smoke_test: true
+  smoke_train_size: 256
+  smoke_test_size: 128
+
+layout:
+  # Large canvas validated by prompt_grating_alignment_test.py.
+  canvas_height: 800
+  canvas_width: 1600
+  expert_size: 600
+  gap_pixels: 200
+  margin_x: 100
+  margin_y: 100
+  input_size: 200
+
+optics:
+  wavelength_nm: 532.0
+  pixel_size_um: 8.0
+  num_layers: 5
+  phase_param: unconstrained
+  phase_init: uniform
+  evanescent_mode: zero
+  distances_cm:
+    input_to_prompt: 1.0
+    prompt_to_first_layer: 24.0
+    inter_layer: 5.0
+    last_layer_to_detector: 5.0
+
+detector:
+  detector_size: 32
+  layout: grid
+
+model:
+  # single_side uses only target_side. dual_expert_paired_sum keeps both sides.
+  mode: single_side
+  target_side: left
+
+  # fixed_grating steers the centered input to target_side.
+  # trainable_residual_on_grating keeps the fixed grating and learns a residual phase.
+  prompt_mode: fixed_grating
+  prompt_init: fixed_grating
+  prompt_slope_sign: 1
+  use_entrance_detilt: true
+  use_aperture_masks: true
+
+  # auto means left_only/right_only for single_side, paired_sum_global for dual mode.
+  readout_mode: auto
+  detector_normalization: local
+  logit_scale: 10.0
+
+optimizer:
+  type: adam
+  lr: 0.003
+  weight_decay: 0.0
+
+training:
+  epochs: 1
+  # auto means:
+  # eval -> frozen
+  # train_scratch -> all_side
+  # finetune -> compensation_only
+  freeze_policy: auto
+
+visualization:
+  enabled: true
+  num_samples: 1
+
+output_combiner:
+  enabled: false
+  mode: grating_recombine
+  distance_cm: 24.0
+  note: "Reserved for later physical recombination; paired detector summation is the default readout."

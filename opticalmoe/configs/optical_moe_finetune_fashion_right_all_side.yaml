@@ -1,0 +1,91 @@
+# Finetune the full right-side FashionMNIST expert in the large-canvas bank.
+# Loads the old 600x600 FashionMNIST single-expert checkpoint into the right
+# aperture, then trains all 5 phase layers of the right expert. The prompt
+# grating remains fixed.
+
+seed: 7
+device: auto
+
+experiment:
+  mode: finetune
+  run_name: fashion_right_bank_finetune_all_side
+  print_freq: 10
+  baseline_acc: 0.7189
+  strict_geometry_check: false
+  resume_optimizer: false
+
+checkpoints:
+  left_ckpt: null
+  left_config: null
+  right_ckpt: runs/fashionmnist_001/best.pt
+  right_config: runs/fashionmnist_001/config.yaml
+  moe_ckpt: null
+  left_moe_ckpt: null
+  right_moe_ckpt: null
+
+dataset:
+  name: fashionmnist
+  root: ./data
+  input_size: 200
+  val_split: 0.1
+  batch_size: 4
+  num_workers: 0
+  smoke_test: false
+  smoke_train_size: 512
+  smoke_test_size: 256
+
+layout:
+  canvas_height: 800
+  canvas_width: 1600
+  expert_size: 600
+  gap_pixels: 200
+  margin_x: 100
+  margin_y: 100
+  input_size: 200
+
+optics:
+  wavelength_nm: 532.0
+  pixel_size_um: 8.0
+  num_layers: 5
+  phase_param: unconstrained
+  phase_init: uniform
+  evanescent_mode: zero
+  distances_cm:
+    input_to_prompt: 1.0
+    prompt_to_first_layer: 24.0
+    inter_layer: 5.0
+    last_layer_to_detector: 5.0
+
+detector:
+  detector_size: 32
+  layout: grid
+
+model:
+  mode: single_side
+  target_side: right
+  prompt_mode: fixed_grating
+  prompt_init: fixed_grating
+  prompt_slope_sign: 1
+  use_entrance_detilt: true
+  use_aperture_masks: true
+  readout_mode: auto
+  detector_normalization: local
+  logit_scale: 10.0
+
+optimizer:
+  type: adam
+  lr: 0.01
+  weight_decay: 0.0
+
+training:
+  epochs: 10
+  freeze_policy: all_side
+
+visualization:
+  enabled: true
+  num_samples: 1
+
+output_combiner:
+  enabled: false
+  mode: grating_recombine
+  distance_cm: 24.0

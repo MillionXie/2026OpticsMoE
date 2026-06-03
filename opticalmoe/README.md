@@ -12,7 +12,9 @@ This version implements a single optical classifier:
 - MNIST, FashionMNIST, and KMNIST dataloaders
 - CSV logging, checkpoints, and visualizations
 
-It does not implement MoE, expert banks, trainable optical routing, trainable prompts, or black-box optimization yet.
+The original single-expert path is still available through `scripts/train.py`.
+The large-canvas OpticalMoE bank path is available through `scripts/run_optical_moe.py`.
+See `OPTICAL_MOE_USAGE.md` for the recommended YAML-driven workflow.
 
 ## Recommended Dataset Order
 
@@ -23,6 +25,20 @@ Use FashionMNIST next. It is still grayscale, small, and 10-class like MNIST, bu
 Use KMNIST after that if you want another 10-class grayscale dataset with different character shapes.
 
 ## One-Line Commands
+Run OpticalMoE YAML configs:
+```bash
+python scripts/run_optical_moe.py --config configs/optical_moe_eval_mnist_migrated.yaml
+python scripts/run_optical_moe.py --config configs/optical_moe_train_mnist_left_debug.yaml
+python scripts/run_optical_moe.py --config configs/optical_moe_finetune_mnist_left_comp.yaml
+python scripts/run_optical_moe.py --config configs/optical_moe_eval_mixed_assembled.yaml
+python scripts/run_optical_moe.py --config configs/optical_moe_eval_task_mnist_left.yaml
+python scripts/run_optical_moe.py --config configs/optical_moe_eval_task_fashion_right.yaml
+```
+
+Run grating_alignment_test:
+```bash
+python scripts/prompt_grating_alignment_test.py --run_name prompt_grating_alignment_v1 --output_dir runs/prompt_grating_alignment_v1
+```
 
 Run MNIST:
 
@@ -58,6 +74,50 @@ Run tests:
 
 ```bash
 python -m pytest -q
+```
+
+## Large-Canvas OpticalMoE Commands
+
+Run a smoke eval in the large 800 x 1600 bank geometry:
+
+```bash
+python scripts/run_optical_moe.py --config configs/optical_moe_bank.yaml
+```
+
+Train one side from scratch in the bank geometry:
+
+```bash
+python scripts/run_optical_moe.py --config configs/optical_moe_train_mnist_left_debug.yaml
+```
+
+Fine-tune only the entrance compensation prompt:
+
+```bash
+python scripts/run_optical_moe.py --config configs/optical_moe_finetune_mnist_left_comp.yaml
+```
+
+Evaluate paired 10-class left/right detector summation:
+
+```bash
+python scripts/run_optical_moe.py --config configs/optical_moe_eval_mixed_assembled.yaml
+```
+
+Evaluate a checkpoint already trained by `run_optical_moe.py`:
+
+```bash
+python scripts/run_optical_moe.py --config configs/optical_moe_bank.yaml --mode eval --dataset mnist --target_side left --moe_ckpt runs/mnist_left_bank_train/best.pt --run_name mnist_left_bank_eval_loaded
+```
+
+Assemble left/right experts that were trained separately by `run_optical_moe.py`:
+
+```bash
+python scripts/run_optical_moe.py --config configs/optical_moe_bank.yaml --mode eval --dataset mixed_mnist_fashion --readout_mode paired_sum_global --left_moe_ckpt runs/mnist_left_bank_train/best.pt --right_moe_ckpt runs/fashion_right_bank_train/best.pt --run_name optical_moe_assembled_eval
+```
+
+Run the grating alignment diagnostic:
+
+```bash
+python scripts/prompt_grating_alignment_test.py --run_name prompt_grating_alignment_v1 --output_dir runs/prompt_grating_alignment_v1
 ```
 
 ## Changing Epochs

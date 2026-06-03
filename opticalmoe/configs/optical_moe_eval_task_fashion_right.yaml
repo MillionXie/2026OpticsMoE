@@ -1,0 +1,96 @@
+# Manual task switching config: route all inputs to the FashionMNIST right expert.
+# Use this when the current task is known to be FashionMNIST.
+
+seed: 7
+device: auto
+
+experiment:
+  mode: eval
+  run_name: optical_moe_task_fashion_right_eval
+  print_freq: 50
+  baseline_acc: null
+  strict_geometry_check: false
+  resume_optimizer: false
+
+checkpoints:
+  left_ckpt: null
+  left_config: null
+  right_ckpt: null
+  right_config: null
+  moe_ckpt: null
+  left_moe_ckpt: runs/mnist_left_bank_finetune_all_side/best.pt
+  right_moe_ckpt: runs/fashion_right_bank_finetune_all_side/best.pt
+
+dataset:
+  name: fashionmnist
+  root: ./data
+  input_size: 200
+  val_split: 0.1
+  batch_size: 2
+  num_workers: 0
+  smoke_test: false
+  smoke_train_size: 256
+  smoke_test_size: 128
+
+layout:
+  canvas_height: 800
+  canvas_width: 1600
+  expert_size: 600
+  gap_pixels: 200
+  margin_x: 100
+  margin_y: 100
+  input_size: 200
+
+optics:
+  wavelength_nm: 532.0
+  pixel_size_um: 8.0
+  num_layers: 5
+  phase_param: unconstrained
+  phase_init: uniform
+  evanescent_mode: zero
+  distances_cm:
+    input_to_prompt: 1.0
+    prompt_to_first_layer: 24.0
+    inter_layer: 5.0
+    last_layer_to_detector: 5.0
+
+detector:
+  detector_size: 32
+  layout: grid
+
+model:
+  mode: dual_expert_paired_sum
+  target_side: right
+  prompt_mode: fixed_grating
+  prompt_init: fixed_grating
+  prompt_slope_sign: 1
+  use_entrance_detilt: true
+  use_aperture_masks: true
+  readout_mode: paired_sum_global
+  detector_normalization: local
+  logit_scale: 10.0
+
+optimizer:
+  type: adam
+  lr: 0.003
+  weight_decay: 0.0
+
+training:
+  epochs: 1
+  freeze_policy: auto
+
+evaluation:
+  routing_mode: fixed_task
+  current_task: fashionmnist
+  task_aware_routing: false
+
+visualization:
+  enabled: true
+  num_samples_per_class: 1
+  max_classes: 10
+  max_light_field_samples: 4
+
+output_combiner:
+  enabled: false
+  mode: grating_recombine
+  distance_cm: 24.0
