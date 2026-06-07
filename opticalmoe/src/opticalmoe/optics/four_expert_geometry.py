@@ -1,5 +1,5 @@
 from dataclasses import asdict, dataclass
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import torch
 
@@ -40,8 +40,14 @@ class FourExpertLayout:
     canvas_width: int = 700
     input_size: int = 200
     expert_size: int = 200
+    prompt_cell_size: Optional[int] = None
     gap_pixels: int = 100
     outer_margin: int = 100
+
+    def __post_init__(self) -> None:
+        # Preserve the original behavior unless an independent cell size is set.
+        if self.prompt_cell_size is None:
+            object.__setattr__(self, "prompt_cell_size", int(self.expert_size))
 
     @property
     def canvas_shape(self) -> Tuple[int, int]:
@@ -72,16 +78,28 @@ class FourExpertLayout:
 
     @property
     def prompt_cells(self) -> List[Aperture]:
-        return [
-            Aperture(f"C{index}", item.y0, item.y1, item.x0, item.x1)
-            for index, item in enumerate(self.experts)
-        ]
+        size = int(self.prompt_cell_size)
+        half = size // 2
+        cells = []
+        for index, expert in enumerate(self.experts):
+            center_y, center_x = expert.center
+            y0 = int(center_y) - half
+            x0 = int(center_x) - half
+            cells.append(Aperture(f"C{index}", y0, y0 + size, x0, x0 + size))
+        return cells
 
     def validate(self) -> None:
         if self.canvas_shape != (700, 700):
             raise ValueError("This verification layout is defined for a 700 x 700 canvas.")
         if self.input_aperture.center != self.canvas_center:
             raise ValueError("Input aperture must be centered on the canvas.")
+        if int(self.prompt_cell_size) <= 0:
+            raise ValueError("prompt_cell_size must be positive.")
+        if int(self.prompt_cell_size) % 2 != 0:
+            raise ValueError(
+                "prompt_cell_size must be even so every cell has an integer-pixel "
+                "boundary around the fixed expert center."
+            )
         expected_centers = [(200.0, 200.0), (200.0, 500.0), (500.0, 200.0), (500.0, 500.0)]
         actual_centers = [item.center for item in self.experts]
         if actual_centers != expected_centers:
@@ -89,13 +107,22 @@ class FourExpertLayout:
                 "Four-expert aperture centers do not match the required geometry: "
                 f"{actual_centers}"
             )
-        for aperture in [self.input_aperture] + self.experts:
+        for aperture in [self.input_aperture] + self.experts + self.prompt_cells:
             if aperture.height <= 0 or aperture.width <= 0:
                 raise ValueError(f"{aperture.name} has an invalid size.")
             if aperture.y0 < 0 or aperture.x0 < 0:
                 raise ValueError(f"{aperture.name} starts outside the canvas.")
             if aperture.y1 > self.canvas_height or aperture.x1 > self.canvas_width:
                 raise ValueError(f"{aperture.name} ends outside the canvas.")
+        cell_masks = self.prompt_cell_masks()
+        if torch.any(cell_masks.sum(dim=0) > 1.0):
+            raise ValueError(
+                "Prompt cells overlap. Reduce prompt_cell_size or change the "
+                "geometry before using spatially partitioned transmission."
+            )
+        prompt_centers = [item.center for item in self.prompt_cells]
+        if prompt_centers != actual_centers:
+            raise ValueError("Prompt cell centers must remain equal to expert centers.")
 
     def physical_grids(
         self,
@@ -149,6 +176,12 @@ class FourExpertLayout:
             "canvas_center": list(self.canvas_center),
             "input_size": self.input_size,
             "expert_size": self.expert_size,
+            "prompt_cell_size": int(self.prompt_cell_size),
+            "prompt_fill_factor": (
+                4.0
+                * float(self.prompt_cell_size) ** 2
+                / float(self.canvas_height * self.canvas_width)
+            ),
             "gap_pixels": self.gap_pixels,
             "outer_margin": self.outer_margin,
             "input_aperture": self.input_aperture.to_dict(),
