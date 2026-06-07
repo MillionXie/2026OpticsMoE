@@ -1,0 +1,76 @@
+# Parameter-matched control for the four-expert FashionMNIST experiment.
+# The optical architecture is identical to six_layer_control_mnist.yaml.
+
+seed: 7
+device: auto
+
+experiment:
+  type: six_layer_control
+  run_name: six_layer_control_fashionmnist
+
+dataset:
+  name: fashionmnist
+  root: ./data
+  input_size: 200
+  val_split: 0.2
+  batch_size: 2
+  num_workers: 0
+  download: true
+  smoke_test: false
+  smoke_train_size: 12
+  smoke_test_size: 8
+
+layout:
+  canvas_height: 700
+  canvas_width: 700
+  input_size: 200
+
+control:
+  num_masks: 6
+  parameter_grid_size: 464
+
+comparison:
+  target_moe_optical_parameters: 1290008
+
+optics:
+  wavelength_m: 5.32e-7
+  pixel_size_m: 8.0e-6
+  phase_param: unconstrained
+  phase_init: uniform_0_2pi
+  phase_init_std: 0.02
+  evanescent_mode: zero
+  distances_m:
+    input_to_identity_prompt: 0.20
+    identity_prompt_to_first_mask: 0.20
+    inter_mask: 0.05
+    last_mask_to_detector: 0.05
+
+detector:
+  detector_size: 32
+  layout: grid
+
+readout:
+  type: optical_only
+  normalize_detector_energy: true
+  logit_scale: 10.0
+  hidden_dim: 64
+  activation: relu
+
+optimizer:
+  type: adamw
+  lr: 0.003
+  weight_decay: 0.0
+
+training:
+  epochs: 25
+  print_freq: 100
+  progressive:
+    enabled: true
+    stage_epochs: [3, 3, 3, 3, 3, 10]
+  evaluation:
+    max_val_batches: null
+    max_test_batches: null
+
+visualization:
+  save_interval_epochs: 5
+

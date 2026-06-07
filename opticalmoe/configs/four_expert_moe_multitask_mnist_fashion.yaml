@@ -100,6 +100,16 @@ training:
     loss_reduction: mean
     batches_per_update: 1
     balanced_sampling: true
+    # A full batch_size=1 epoch would require about 54,000 paired updates.
+    # Use a fixed update budget so one research epoch finishes in reasonable
+    # time. Set null only when a literal full-dataset epoch is required.
+    steps_per_epoch: # 500
+    print_freq: 50
+  evaluation:
+    # Validation and final task-switching metrics report their sample counts.
+    # Set these to null for full-dataset evaluation.
+    max_val_batches: null #100
+    max_test_batches: null #500
   progressive:
     enabled: true
     order: backward

@@ -149,8 +149,31 @@ def test_multitask_training_loop_runs_one_tiny_epoch():
     )
     assert result["steps"] == 4
     assert result["total_loss"] > 0.0
+    assert result["joint_sample_loss"] > 0.0
+    assert 0.0 <= result["joint_accuracy"] <= 1.0
+    assert result["samples"] == 16
     assert "mnist_acc" in result
     assert "fashionmnist_acc" in result
+
+
+def test_multitask_training_loop_supports_fixed_step_budget():
+    model = _TinyMultitaskModel()
+    loaders = _tiny_loaders()
+    optimizer = torch.optim.AdamW(model.parameters(), lr=0.003)
+    result = train_multitask_one_epoch(
+        model=model,
+        train_loaders=loaders,
+        optimizer=optimizer,
+        device=torch.device("cpu"),
+        criterion=nn.CrossEntropyLoss(),
+        task_names=["mnist", "fashionmnist"],
+        steps_per_epoch=2,
+        print_freq=0,
+    )
+    assert result["steps"] == 2
+    assert result["available_steps"] == 4
+    assert result["mnist_samples"] == 4
+    assert result["fashionmnist_samples"] == 4
 
 
 def test_task_switching_results_can_be_written(tmp_path):

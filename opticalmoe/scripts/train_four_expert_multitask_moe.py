@@ -4,6 +4,7 @@ import json
 import math
 import shutil
 import sys
+import time
 from pathlib import Path
 from typing import Dict, List, Sequence
 
@@ -276,6 +277,54 @@ def log_image(field: torch.Tensor) -> np.ndarray:
     return np.log10(array / (array.max() + 1e-12) + 1e-8)
 
 
+def phase_image(phase: torch.Tensor) -> np.ndarray:
+    return torch.remainder(phase, 2.0 * math.pi).detach().cpu().numpy()
+
+
+def save_multitask_phase_visualizations(model, run_dir: Path, epoch: int):
+    epoch_name = f"epoch_{epoch:04d}"
+    phase_dir = run_dir / "phases" / epoch_name
+    phase_dir.mkdir(parents=True, exist_ok=True)
+
+    fig, axes = plt.subplots(
+        model.num_layers,
+        4,
+        figsize=(12, 2.6 * model.num_layers),
+        squeeze=False,
+    )
+    for layer_index, layer in enumerate(model.expert_layers):
+        phases = layer.get_phase_wrapped().detach().cpu().numpy()
+        for expert_index in range(4):
+            axes[layer_index, expert_index].imshow(
+                phases[expert_index],
+                cmap="twilight",
+                vmin=0.0,
+                vmax=2.0 * math.pi,
+            )
+            axes[layer_index, expert_index].set_title(
+                f"Layer {layer_index + 1}, E{expert_index}"
+            )
+            axes[layer_index, expert_index].axis("off")
+    fig.suptitle(f"Shared Expert Phase Masks, Epoch {epoch}")
+    fig.tight_layout()
+    fig.savefig(phase_dir / "shared_expert_phase_layers.png")
+    plt.close(fig)
+
+    fig, ax = plt.subplots(figsize=(7, 6))
+    im = ax.imshow(
+        phase_image(model.global_fc.get_phase_wrapped()),
+        cmap="twilight",
+        vmin=0.0,
+        vmax=2.0 * math.pi,
+    )
+    ax.set_title(f"Shared Global FC Phase, Epoch {epoch}")
+    ax.axis("off")
+    fig.colorbar(im, ax=ax, fraction=0.04, pad=0.02)
+    fig.tight_layout()
+    fig.savefig(phase_dir / "global_fc_phase.png")
+    plt.close(fig)
+
+
 def save_task_epoch_visualization(
     diagnostics: Dict,
     run_dir: Path,
@@ -283,27 +332,128 @@ def save_task_epoch_visualization(
     task_name: str,
 ):
     task_dir = run_dir / "light_fields" / f"epoch_{epoch:04d}" / task_name
+    prompt_dir = run_dir / "prompt" / f"epoch_{epoch:04d}" / task_name
+    sample_dir = run_dir / "sample_outputs" / f"epoch_{epoch:04d}" / task_name
     task_dir.mkdir(parents=True, exist_ok=True)
+    prompt_dir.mkdir(parents=True, exist_ok=True)
+    sample_dir.mkdir(parents=True, exist_ok=True)
     intermediates = diagnostics["intermediates"]
-    for name, field, title in [
+    fields = [
         (
-            "expert_entrance.png",
+            "00_input_amplitude.png",
+            intermediates["input_amplitude"],
+            f"{task_name}: Input Amplitude",
+        ),
+        (
+            "01_after_input_to_prompt.png",
+            intermediates["after_input_to_prompt"],
+            f"{task_name}: After Input-to-Prompt",
+        ),
+        (
+            "02_after_prompt.png",
+            intermediates["after_prompt"],
+            f"{task_name}: After Task Prompt",
+        ),
+        (
+            "03_expert_entrance.png",
             intermediates["expert_entrance_intensity"],
             f"{task_name}: Expert Entrance",
         ),
-        (
-            "detector_plane.png",
-            intermediates["detector_intensity"],
-            f"{task_name}: Detector Plane",
-        ),
-    ]:
+    ]
+    for layer_index, field in enumerate(intermediates["after_each_layer"], start=1):
+        fields.append(
+            (
+                f"{layer_index + 3:02d}_after_expert_layer_{layer_index}.png",
+                field,
+                f"{task_name}: After Expert Layer {layer_index}",
+            )
+        )
+    fields.extend(
+        [
+            (
+                "09_after_global_fc.png",
+                intermediates["after_global_fc"],
+                f"{task_name}: After Global FC",
+            ),
+            (
+                "10_detector_plane.png",
+                intermediates["detector_intensity"],
+                f"{task_name}: Detector Plane",
+            ),
+        ]
+    )
+    for name, field, title in fields:
         fig, ax = plt.subplots(figsize=(7, 6))
-        ax.imshow(log_image(field), cmap="inferno")
+        im = ax.imshow(log_image(field), cmap="inferno")
         ax.set_title(title)
         ax.axis("off")
+        fig.colorbar(im, ax=ax, fraction=0.04, pad=0.02)
         fig.tight_layout()
         fig.savefig(task_dir / name)
         plt.close(fig)
+
+    fig, axes = plt.subplots(
+        int(math.ceil(len(fields) / 4)),
+        4,
+        figsize=(15, 3.8 * int(math.ceil(len(fields) / 4))),
+    )
+    axes = np.asarray(axes).reshape(-1)
+    for ax, (_name, field, title) in zip(axes, fields):
+        ax.imshow(log_image(field), cmap="inferno")
+        ax.set_title(title)
+        ax.axis("off")
+    for ax in axes[len(fields) :]:
+        ax.axis("off")
+    fig.suptitle(f"{task_name}: Light Field Overview, Epoch {epoch}")
+    fig.tight_layout()
+    fig.savefig(task_dir / "overview.png")
+    plt.close(fig)
+
+    fig, ax = plt.subplots(figsize=(7, 6))
+    im = ax.imshow(
+        phase_image(intermediates["prompt_phase"]),
+        cmap="twilight",
+        vmin=0.0,
+        vmax=2.0 * math.pi,
+    )
+    ax.set_title(f"{task_name}: Prompt Phase, Epoch {epoch}")
+    ax.axis("off")
+    fig.colorbar(im, ax=ax, fraction=0.04, pad=0.02)
+    fig.tight_layout()
+    fig.savefig(prompt_dir / "prompt_phase.png")
+    plt.close(fig)
+
+    fig, ax = plt.subplots(figsize=(7, 6))
+    im = ax.imshow(
+        intermediates["prompt_amplitude_map"].detach().cpu().numpy(),
+        cmap="viridis",
+    )
+    ax.set_title(f"{task_name}: Prompt Amplitude Map, Epoch {epoch}")
+    ax.axis("off")
+    fig.colorbar(im, ax=ax, fraction=0.04, pad=0.02)
+    fig.tight_layout()
+    fig.savefig(prompt_dir / "prompt_amplitude_map.png")
+    plt.close(fig)
+
+    fig, axes = plt.subplots(1, 3, figsize=(14, 4))
+    axes[0].bar(np.arange(4), diagnostics["amplitudes"].numpy())
+    axes[0].set_xticks(np.arange(4))
+    axes[0].set_xticklabels([f"E{index}" for index in range(4)])
+    axes[0].set_ylabel("Amplitude")
+    axes[0].set_title("Prompt Amplitudes")
+    axes[1].bar(np.arange(4), diagnostics["expert_energy_ratios"].numpy())
+    axes[1].set_xticks(np.arange(4))
+    axes[1].set_xticklabels([f"E{index}" for index in range(4)])
+    axes[1].set_ylabel("Energy / total")
+    axes[1].set_title("Expert Energy")
+    axes[2].bar(np.arange(len(diagnostics["detector_energies"])), diagnostics["detector_energies"].numpy())
+    axes[2].set_xlabel("Class detector")
+    axes[2].set_ylabel("Energy")
+    axes[2].set_title("Detector Energies")
+    fig.suptitle(f"{task_name}: Prompt/Energy Diagnostics, Epoch {epoch}")
+    fig.tight_layout()
+    fig.savefig(sample_dir / "prompt_energy_detector_bars.png")
+    plt.close(fig)
 
     fig, ax = plt.subplots(figsize=(7, 4.5))
     ax.bar(np.arange(4), diagnostics["amplitudes"].numpy())
@@ -312,13 +462,47 @@ def save_task_epoch_visualization(
     ax.set_ylabel("Amplitude")
     ax.set_title(f"{task_name}: Prompt Amplitudes")
     fig.tight_layout()
-    fig.savefig(task_dir / "prompt_amplitude_bar.png")
+    fig.savefig(prompt_dir / "prompt_amplitude_bar.png")
     plt.close(fig)
-    with open(task_dir / "predictions.json", "w", encoding="utf-8") as handle:
+
+    images = intermediates["input_amplitude"].detach().cpu()
+    targets = diagnostics["targets"]
+    predictions = diagnostics["predictions"]
+    count = min(int(images.shape[0]), 8)
+    if count > 0:
+        fig, axes = plt.subplots(1, count, figsize=(2.4 * count, 2.8))
+        axes = np.asarray(axes).reshape(-1)
+        for idx in range(count):
+            axes[idx].imshow(images[idx].numpy(), cmap="gray")
+            axes[idx].set_title(
+                f"y={int(targets[idx])}, pred={int(predictions[idx])}"
+            )
+            axes[idx].axis("off")
+        fig.suptitle(f"{task_name}: Fixed Validation Samples, Epoch {epoch}")
+        fig.tight_layout()
+        fig.savefig(sample_dir / "sample_predictions.png")
+        plt.close(fig)
+    with open(sample_dir / "sample_predictions.json", "w", encoding="utf-8") as handle:
         json.dump(
             {
-                "targets": diagnostics["targets"].tolist(),
-                "predictions": diagnostics["predictions"].tolist(),
+                "task_name": task_name,
+                "targets": targets[:count].tolist(),
+                "predictions": predictions[:count].tolist(),
+            },
+            handle,
+            indent=2,
+        )
+
+    with open(task_dir / "diagnostics.json", "w", encoding="utf-8") as handle:
+        json.dump(
+            {
+                "task_name": task_name,
+                "prompt_amplitudes": diagnostics["amplitudes"].tolist(),
+                "prompt_powers": diagnostics["powers"].tolist(),
+                "normalized_prompt_powers": diagnostics["normalized_powers"].tolist(),
+                "expert_energy_ratios": diagnostics["expert_energy_ratios"].tolist(),
+                "outside_energy_ratio": diagnostics["outside_energy_ratio"],
+                "detector_energies": diagnostics["detector_energies"].tolist(),
             },
             handle,
             indent=2,
@@ -535,13 +719,38 @@ def main():
     write_rows(run_dir / "initial_diagnostics.csv", initial_rows)
 
     metrics_rows = []
-    val_rows = []
+    task_metric_rows = []
     stage_records = []
     best_val_mean = -1.0
     previous_stage = None
     multitask_cfg = config["training"]["multitask"]
+    evaluation_cfg = config["training"].get("evaluation", {})
+    steps_per_epoch = multitask_cfg.get("steps_per_epoch")
+    max_val_batches = evaluation_cfg.get("max_val_batches")
+    max_test_batches = evaluation_cfg.get("max_test_batches")
+    print_freq = int(
+        multitask_cfg.get(
+            "print_freq",
+            config.get("experiment", {}).get("print_freq", 100),
+        )
+    )
+    natural_steps = max(len(loader) for loader in train_loaders.values())
+    effective_steps = (
+        min(natural_steps, int(steps_per_epoch))
+        if steps_per_epoch is not None and int(steps_per_epoch) > 0
+        else natural_steps
+    )
+    print(
+        f"updates per epoch: {effective_steps} "
+        f"(natural full-dataset value: {natural_steps})"
+    )
+    print(
+        "Each update processes one batch from every task before one "
+        "backward/optimizer step."
+    )
 
     for epoch in range(1, num_epochs + 1):
+        epoch_start = time.perf_counter()
         stage_idx = schedule.stage_for_epoch(epoch) if schedule.enabled else 0
         stage_info = schedule.apply(model, stage_idx)
         if stage_idx != previous_stage:
@@ -566,11 +775,20 @@ def main():
             balanced_sampling=bool(
                 multitask_cfg.get("balanced_sampling", True)
             ),
+            steps_per_epoch=steps_per_epoch,
+            print_freq=print_freq,
         )
+        train_duration_seconds = time.perf_counter() - epoch_start
         row = {
             "epoch": epoch,
             "stage_idx": stage_idx,
             "total_loss": train_result["total_loss"],
+            "joint_train_loss": train_result["joint_sample_loss"],
+            "joint_train_acc": train_result["joint_accuracy"],
+            "train_samples": train_result["samples"],
+            "updates": train_result["steps"],
+            "natural_updates": train_result["available_steps"],
+            "train_duration_seconds": train_duration_seconds,
             "lr": optimizer.param_groups[0]["lr"],
             "active_layers": " ".join(
                 str(value) for value in stage_info["active_layers"]
@@ -579,6 +797,10 @@ def main():
         }
         current_diagnostics = {}
         val_accuracies = []
+        val_loss_weighted_sum = 0.0
+        val_correct_weighted_sum = 0.0
+        val_sample_count = 0
+        validation_start = time.perf_counter()
         for task_name in task_names:
             validation = evaluate_task(
                 model,
@@ -586,6 +808,7 @@ def main():
                 device,
                 criterion,
                 prompt_task=task_name,
+                max_batches=max_val_batches,
             )
             row[f"{task_name}_train_loss"] = train_result[
                 f"{task_name}_loss"
@@ -595,13 +818,23 @@ def main():
             ]
             row[f"{task_name}_val_loss"] = validation["loss"]
             row[f"{task_name}_val_acc"] = validation["accuracy"]
+            row[f"{task_name}_val_samples"] = validation["samples"]
             val_accuracies.append(validation["accuracy"])
-            val_rows.append(
+            val_loss_weighted_sum += validation["loss"] * validation["samples"]
+            val_correct_weighted_sum += (
+                validation["accuracy"] * validation["samples"]
+            )
+            val_sample_count += validation["samples"]
+            task_metric_rows.append(
                 {
                     "epoch": epoch,
                     "task_name": task_name,
+                    "train_loss": train_result[f"{task_name}_loss"],
+                    "train_acc": train_result[f"{task_name}_acc"],
+                    "train_samples": train_result[f"{task_name}_samples"],
                     "val_loss": validation["loss"],
                     "val_acc": validation["accuracy"],
+                    "val_samples": validation["samples"],
                 }
             )
             diagnostics = task_diagnostics(
@@ -632,10 +865,35 @@ def main():
                 "outside_energy_ratio"
             ]
             prompt_history.append(prompt_row)
+        row["joint_val_loss"] = val_loss_weighted_sum / max(
+            val_sample_count, 1
+        )
+        row["joint_val_acc"] = val_correct_weighted_sum / max(
+            val_sample_count, 1
+        )
+        row["macro_val_acc"] = float(np.mean(val_accuracies))
+        row["val_samples"] = val_sample_count
+        row["val_duration_seconds"] = (
+            time.perf_counter() - validation_start
+        )
+        row["epoch_duration_seconds"] = time.perf_counter() - epoch_start
         metrics_rows.append(row)
 
         write_rows(run_dir / "multitask_metrics.csv", metrics_rows)
-        write_rows(run_dir / "task_val_metrics.csv", val_rows)
+        write_rows(run_dir / "task_metrics.csv", task_metric_rows)
+        write_rows(
+            run_dir / "task_val_metrics.csv",
+            [
+                {
+                    "epoch": item["epoch"],
+                    "task_name": item["task_name"],
+                    "val_loss": item["val_loss"],
+                    "val_acc": item["val_acc"],
+                    "val_samples": item["val_samples"],
+                }
+                for item in task_metric_rows
+            ],
+        )
         write_rows(
             run_dir / "task_prompt_amplitude_history.csv",
             [
@@ -679,7 +937,8 @@ def main():
         )
 
         checkpoint_metrics = dict(row)
-        val_mean = float(np.mean(val_accuracies))
+        val_mean = row["joint_val_acc"]
+        checkpoint_metrics["joint_val_acc"] = val_mean
         checkpoint_metrics["mean_val_acc"] = val_mean
         save_checkpoint(
             str(run_dir / "last.pt"),
@@ -719,6 +978,7 @@ def main():
             and interval > 0
             and (epoch % interval == 0 or epoch == num_epochs)
         ):
+            save_multitask_phase_visualizations(model, run_dir, epoch)
             for task_name in task_names:
                 save_task_epoch_visualization(
                     current_diagnostics[task_name],
@@ -727,8 +987,12 @@ def main():
                     task_name,
                 )
         print(
-            f"epoch {epoch:03d} stage {stage_idx} | total "
-            f"{row['total_loss']:.4f} | "
+            f"epoch {epoch:03d} stage {stage_idx} | "
+            f"joint train loss={row['joint_train_loss']:.4f} "
+            f"acc={row['joint_train_acc']:.4f} | "
+            f"joint val loss={row['joint_val_loss']:.4f} "
+            f"acc={row['joint_val_acc']:.4f} | "
+            f"time={row['epoch_duration_seconds'] / 60.0:.1f} min | "
             + " | ".join(
                 f"{name} train={row[f'{name}_train_acc']:.4f} "
                 f"val={row[f'{name}_val_acc']:.4f}"
@@ -744,8 +1008,41 @@ def main():
         device,
         criterion,
         task_names,
+        max_batches=max_test_batches,
     )
     write_rows(run_dir / "task_switching_eval.csv", switching_rows)
+    correct_prompt_rows = [
+        item
+        for item in switching_rows
+        if item["eval_dataset"] == item["prompt_task"]
+    ]
+    test_samples = sum(item["samples"] for item in correct_prompt_rows)
+    joint_test_loss = sum(
+        item["loss"] * item["samples"] for item in correct_prompt_rows
+    ) / max(test_samples, 1)
+    joint_test_acc = sum(
+        item["accuracy"] * item["samples"] for item in correct_prompt_rows
+    ) / max(test_samples, 1)
+    task_test_rows = [
+        {
+            "task_name": item["eval_dataset"],
+            "test_loss": item["loss"],
+            "test_acc": item["accuracy"],
+            "test_samples": item["samples"],
+        }
+        for item in correct_prompt_rows
+    ]
+    write_rows(run_dir / "task_test_metrics.csv", task_test_rows)
+    write_rows(
+        run_dir / "joint_test_metrics.csv",
+        [
+            {
+                "joint_test_loss": joint_test_loss,
+                "joint_test_acc": joint_test_acc,
+                "test_samples": test_samples,
+            }
+        ],
+    )
     summary = {
         "run_name": run_name,
         "training_mode": "multitask",
@@ -757,7 +1054,11 @@ def main():
         ),
         "optimizer": optimizer_cfg,
         "architecture_report": report,
+        "best_joint_validation_accuracy": best_val_mean,
         "best_mean_validation_accuracy": best_val_mean,
+        "final_joint_test_loss": joint_test_loss,
+        "final_joint_test_accuracy": joint_test_acc,
+        "per_task_test_metrics": task_test_rows,
         "epochs": num_epochs,
         "task_switching_evaluation": switching_rows,
         "layout": model.layout.to_dict(),

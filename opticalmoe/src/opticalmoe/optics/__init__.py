@@ -12,6 +12,10 @@ from .optical_moe import ExpertBankPhaseLayer, OpticalMoEClassifier
 from .phase_layers import PhaseLayer
 from .prompts import IdentityPrompt, PromptModule
 from .readout import ElectronicReadout
+from .six_layer_control import (
+    ParameterMatchedFullCanvasPhaseMask,
+    SixLayerNoPromptControl,
+)
 from .translated_detectors import TranslatedDetectorArray
 
 __all__ = [
@@ -28,7 +32,9 @@ __all__ = [
     "OpticalClassifier",
     "OpticalMoEClassifier",
     "PhaseLayer",
+    "ParameterMatchedFullCanvasPhaseMask",
     "PromptModule",
+    "SixLayerNoPromptControl",
     "TranslatedDetectorArray",
     "TrainableMicrolensArrayPromptV2",
     "build_moe_layout",

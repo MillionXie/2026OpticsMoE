@@ -280,13 +280,15 @@ def evaluate(model, loader, device, criterion):
 
 @torch.no_grad()
 def epoch_diagnostics(model, fixed_batch, device) -> Dict:
-    images, _ = fixed_batch
+    images, targets = fixed_batch
     model.eval()
-    _, intermediates = model(
+    logits, intermediates = model(
         images.to(device),
         return_intermediates=True,
     )
     return {
+        "targets": targets.detach().cpu(),
+        "predictions": logits.argmax(dim=1).detach().cpu(),
         "amplitudes": intermediates["prompt_amplitudes"].detach().cpu(),
         "powers": intermediates["prompt_powers"].detach().cpu(),
         "normalized_powers": intermediates[
@@ -451,6 +453,12 @@ def phase_image(phase: torch.Tensor) -> np.ndarray:
 
 
 def save_phase_visualizations(model, run_dir: Path, epoch: int):
+    epoch_name = f"epoch_{epoch:04d}"
+    phase_dir = run_dir / "phases" / epoch_name
+    prompt_dir = run_dir / "prompt" / epoch_name
+    phase_dir.mkdir(parents=True, exist_ok=True)
+    prompt_dir.mkdir(parents=True, exist_ok=True)
+
     fig, axes = plt.subplots(
         model.num_layers,
         4,
@@ -473,6 +481,7 @@ def save_phase_visualizations(model, run_dir: Path, epoch: int):
     fig.suptitle(f"Four-Expert Phase Masks, Epoch {epoch}")
     fig.tight_layout()
     fig.savefig(run_dir / f"phase_expert_layers_epoch_{epoch}.png")
+    fig.savefig(phase_dir / "expert_phase_layers.png")
     plt.close(fig)
 
     fig, ax = plt.subplots(figsize=(7, 6))
@@ -487,6 +496,33 @@ def save_phase_visualizations(model, run_dir: Path, epoch: int):
     fig.colorbar(im, ax=ax, fraction=0.04, pad=0.02)
     fig.tight_layout()
     fig.savefig(run_dir / f"global_fc_phase_epoch_{epoch}.png")
+    fig.savefig(phase_dir / "global_fc_phase.png")
+    plt.close(fig)
+
+    fig, ax = plt.subplots(figsize=(7, 6))
+    im = ax.imshow(
+        phase_image(model.prompt.phase_map()),
+        cmap="twilight",
+        vmin=0.0,
+        vmax=2.0 * math.pi,
+    )
+    ax.set_title(f"Prompt Phase, Epoch {epoch}")
+    ax.axis("off")
+    fig.colorbar(im, ax=ax, fraction=0.04, pad=0.02)
+    fig.tight_layout()
+    fig.savefig(prompt_dir / "prompt_phase.png")
+    plt.close(fig)
+
+    fig, ax = plt.subplots(figsize=(7, 6))
+    im = ax.imshow(
+        model.prompt.amplitude_map().detach().cpu().numpy(),
+        cmap="viridis",
+    )
+    ax.set_title(f"Prompt Amplitude Map, Epoch {epoch}")
+    ax.axis("off")
+    fig.colorbar(im, ax=ax, fraction=0.04, pad=0.02)
+    fig.tight_layout()
+    fig.savefig(prompt_dir / "prompt_amplitude_map.png")
     plt.close(fig)
 
 
@@ -506,6 +542,11 @@ def save_light_field_visualizations(
     epoch: int,
 ):
     intermediates = diagnostics["intermediates"]
+    epoch_name = f"epoch_{epoch:04d}"
+    light_dir = run_dir / "light_fields" / epoch_name
+    sample_dir = run_dir / "sample_outputs" / epoch_name
+    light_dir.mkdir(parents=True, exist_ok=True)
+    sample_dir.mkdir(parents=True, exist_ok=True)
     fields = [
         ("Input amplitude", intermediates["input_amplitude"]),
         ("After input to prompt", intermediates["after_input_to_prompt"]),
@@ -533,7 +574,23 @@ def save_light_field_visualizations(
     fig.suptitle(f"Light Field Diagnostics, Epoch {epoch}")
     fig.tight_layout()
     fig.savefig(run_dir / f"sample_light_fields_epoch_{epoch}.png")
+    fig.savefig(light_dir / "overview.png")
     plt.close(fig)
+
+    for index, (title, field) in enumerate(fields):
+        fig, ax = plt.subplots(figsize=(7, 6))
+        im = ax.imshow(field_log_image(field), cmap="inferno")
+        ax.set_title(title)
+        ax.axis("off")
+        fig.colorbar(im, ax=ax, fraction=0.04, pad=0.02)
+        fig.tight_layout()
+        filename = (
+            f"{index:02d}_"
+            + title.lower().replace(" ", "_").replace("-", "_")
+            + ".png"
+        )
+        fig.savefig(light_dir / filename)
+        plt.close(fig)
 
     fig, ax = plt.subplots(figsize=(7, 6))
     ax.imshow(
@@ -544,6 +601,7 @@ def save_light_field_visualizations(
     ax.axis("off")
     fig.tight_layout()
     fig.savefig(run_dir / f"detector_plane_epoch_{epoch}.png")
+    fig.savefig(light_dir / "detector_plane.png")
     plt.close(fig)
 
     fig, axes = plt.subplots(1, 2, figsize=(10, 4))
@@ -562,7 +620,35 @@ def save_light_field_visualizations(
     axes[1].set_ylabel("Amplitude")
     fig.tight_layout()
     fig.savefig(run_dir / f"expert_prompt_bars_epoch_{epoch}.png")
+    fig.savefig(sample_dir / "expert_prompt_bars.png")
     plt.close(fig)
+
+    images = diagnostics["intermediates"]["input_amplitude"].detach().cpu()
+    targets = diagnostics.get("targets", torch.empty(0, dtype=torch.long))
+    predictions = diagnostics.get("predictions", torch.empty(0, dtype=torch.long))
+    count = min(int(images.shape[0]), 8)
+    if count > 0:
+        fig, axes = plt.subplots(1, count, figsize=(2.4 * count, 2.8))
+        axes = np.asarray(axes).reshape(-1)
+        for idx in range(count):
+            axes[idx].imshow(images[idx].numpy(), cmap="gray")
+            target = int(targets[idx]) if idx < len(targets) else -1
+            prediction = int(predictions[idx]) if idx < len(predictions) else -1
+            axes[idx].set_title(f"y={target}, pred={prediction}")
+            axes[idx].axis("off")
+        fig.suptitle(f"Fixed Validation Samples, Epoch {epoch}")
+        fig.tight_layout()
+        fig.savefig(sample_dir / "sample_predictions.png")
+        plt.close(fig)
+        with open(sample_dir / "sample_predictions.json", "w", encoding="utf-8") as handle:
+            json.dump(
+                {
+                    "targets": targets[:count].tolist(),
+                    "predictions": predictions[:count].tolist(),
+                },
+                handle,
+                indent=2,
+            )
 
 
 def save_confusion_matrix(targets, predictions, num_classes: int, path: Path):

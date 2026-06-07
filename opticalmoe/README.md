@@ -17,6 +17,8 @@ The large-canvas OpticalMoE bank path is available through `scripts/run_optical_
 See `OPTICAL_MOE_USAGE.md` for the recommended YAML-driven workflow.
 For Linux GPU server rental, environment installation, smoke tests, tmux
 training, and result download, see `LINUX_SERVER_SETUP.md`.
+For multitask runtime settings, joint/per-task metrics, and the independent
+parameter-matched six-layer control, see `MULTITASK_AND_CONTROL_EXPERIMENTS.md`.
 
 ## Recommended Dataset Order
 
