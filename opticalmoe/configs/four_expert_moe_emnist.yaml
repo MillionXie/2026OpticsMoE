@@ -13,7 +13,7 @@ dataset:
   batch_size: 1
   num_workers: 0
   download: true
-  smoke_test: true
+  smoke_test: false
   smoke_train_size: 16
   smoke_test_size: 8
 
@@ -61,11 +61,12 @@ readout:
   activation: relu
 
 optimizer:
-  type: adam
-  lr: 0.01
+  type: adamw
+  lr: 0.003
   weight_decay: 0.0
 
 training:
+  mode: single
   epochs: 25
   progressive:
     enabled: true

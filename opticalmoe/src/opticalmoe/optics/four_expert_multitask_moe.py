@@ -1,4 +1,3 @@
-import math
 from typing import Dict, Optional, Sequence, Tuple
 
 import torch
@@ -8,13 +7,93 @@ import torch.nn.functional as F
 from .angular_spectrum import AngularSpectrumPropagator
 from .detectors import DetectorArray
 from .four_expert_geometry import FourExpertLayout
+from .four_expert_moe_v2 import FourExpertPhaseLayer, GlobalFCPhaseMask
 from .microlens_prompt import MicrolensArrayPrompt
-from .phase_layers import PhaseLayer
 from .readout import ElectronicReadout
 
 
-class TrainableMicrolensArrayPromptV2(nn.Module):
-    """Verified four-cell microlens geometry with trainable scalar controls."""
+class TaskPromptBank(nn.Module):
+    """Independent prompt amplitudes and phase biases for each named task."""
+
+    def __init__(
+        self,
+        task_names: Sequence[str],
+        amplitude_init_logits: float = 2.0,
+        train_phase_biases: bool = True,
+    ) -> None:
+        super().__init__()
+        names = [str(name).lower() for name in task_names]
+        if not names or len(set(names)) != len(names):
+            raise ValueError("task_names must be non-empty and unique.")
+        self.task_names = names
+        self.amplitude_logits = nn.ParameterDict(
+            {
+                name: nn.Parameter(
+                    torch.full(
+                        (4,),
+                        float(amplitude_init_logits),
+                        dtype=torch.float32,
+                    )
+                )
+                for name in names
+            }
+        )
+        self.phase_biases = nn.ParameterDict(
+            {
+                name: nn.Parameter(
+                    torch.zeros(4, dtype=torch.float32),
+                    requires_grad=bool(train_phase_biases),
+                )
+                for name in names
+            }
+        )
+
+    def normalize_name(self, task_name: str) -> str:
+        name = str(task_name).lower()
+        if name not in self.amplitude_logits:
+            raise KeyError(
+                f"Unknown task '{task_name}'. Available tasks: {self.task_names}"
+            )
+        return name
+
+    def resolve_name(
+        self,
+        task_name: Optional[str] = None,
+        task_id: Optional[int] = None,
+    ) -> str:
+        if task_name is not None and task_id is not None:
+            raise ValueError("Provide task_name or task_id, not both.")
+        if task_name is not None:
+            return self.normalize_name(task_name)
+        if task_id is None:
+            raise ValueError(
+                "The multitask model requires task_name or task_id."
+            )
+        index = int(task_id)
+        if index < 0 or index >= len(self.task_names):
+            raise IndexError(
+                f"task_id {index} is outside [0, {len(self.task_names) - 1}]."
+            )
+        return self.task_names[index]
+
+    def controls(self, task_name: str) -> Tuple[torch.Tensor, torch.Tensor]:
+        name = self.normalize_name(task_name)
+        return self.amplitude_logits[name], self.phase_biases[name]
+
+    def amplitudes(self, task_name: str) -> torch.Tensor:
+        logits, _ = self.controls(task_name)
+        return torch.sigmoid(logits)
+
+    def powers(self, task_name: str) -> torch.Tensor:
+        return self.amplitudes(task_name).square()
+
+    def normalized_powers(self, task_name: str) -> torch.Tensor:
+        powers = self.powers(task_name)
+        return powers / (powers.sum() + 1e-8)
+
+
+class SharedMicrolensPromptGeometry(nn.Module):
+    """Fixed lens/grating geometry modulated by task-specific scalar controls."""
 
     def __init__(
         self,
@@ -23,8 +102,6 @@ class TrainableMicrolensArrayPromptV2(nn.Module):
         pixel_size_m: float,
         focal_length_m: float,
         input_to_prompt_m: float,
-        amplitude_init_logits: float = 2.0,
-        train_phase_biases: bool = True,
     ) -> None:
         super().__init__()
         fixed = MicrolensArrayPrompt(
@@ -34,16 +111,6 @@ class TrainableMicrolensArrayPromptV2(nn.Module):
             focal_length_m=focal_length_m,
             input_to_prompt_m=input_to_prompt_m,
         )
-        self.layout = layout
-        self.amplitude_logits = nn.Parameter(
-            torch.full((4,), float(amplitude_init_logits), dtype=torch.float32)
-        )
-        phase_biases = torch.zeros(4, dtype=torch.float32)
-        if train_phase_biases:
-            self.phase_biases = nn.Parameter(phase_biases)
-        else:
-            self.register_buffer("phase_biases", phase_biases)
-
         self.register_buffer(
             "cell_masks", fixed.cell_masks.detach().clone(), persistent=False
         )
@@ -54,124 +121,55 @@ class TrainableMicrolensArrayPromptV2(nn.Module):
             "grating_phases", fixed.grating_phases.detach().clone(), persistent=False
         )
 
-    def amplitudes(self) -> torch.Tensor:
-        return torch.sigmoid(self.amplitude_logits)
-
-    def powers(self) -> torch.Tensor:
-        return self.amplitudes().square()
-
-    def normalized_powers(self) -> torch.Tensor:
-        powers = self.powers()
-        return powers / (powers.sum() + 1e-8)
-
-    def amplitude_map(self) -> torch.Tensor:
+    def amplitude_map(self, amplitudes: torch.Tensor) -> torch.Tensor:
         return torch.sum(
-            self.cell_masks * self.amplitudes().view(4, 1, 1),
+            self.cell_masks * amplitudes.view(4, 1, 1),
             dim=0,
         )
 
-    def phase_map(self) -> torch.Tensor:
-        phase = self.lens_phases + self.grating_phases
-        phase = phase + self.cell_masks * self.phase_biases.view(4, 1, 1)
-        return phase.sum(dim=0)
-
-    def transmission(self) -> torch.Tensor:
+    def phase_map(self, phase_biases: torch.Tensor) -> torch.Tensor:
         phase = (
             self.lens_phases
             + self.grating_phases
-            + self.cell_masks * self.phase_biases.view(4, 1, 1)
+            + self.cell_masks * phase_biases.view(4, 1, 1)
+        )
+        return phase.sum(dim=0)
+
+    def transmission(
+        self,
+        amplitudes: torch.Tensor,
+        phase_biases: torch.Tensor,
+    ) -> torch.Tensor:
+        phase = (
+            self.lens_phases
+            + self.grating_phases
+            + self.cell_masks * phase_biases.view(4, 1, 1)
         )
         cells = (
             self.cell_masks
-            * self.amplitudes().view(4, 1, 1)
+            * amplitudes.view(4, 1, 1)
             * torch.exp(1j * phase).to(torch.complex64)
         )
-        # Outside the four cells the complex transmission stays zero.
+        # The region outside the four 300 x 300 cells remains blocked.
         return cells.sum(dim=0).to(torch.complex64)
 
-    def forward(self, field: torch.Tensor) -> torch.Tensor:
-        return field.to(torch.complex64) * self.transmission().unsqueeze(0)
+    def forward(
+        self,
+        field: torch.Tensor,
+        amplitudes: torch.Tensor,
+        phase_biases: torch.Tensor,
+    ) -> torch.Tensor:
+        return field.to(torch.complex64) * self.transmission(
+            amplitudes, phase_biases
+        ).unsqueeze(0)
 
 
-class FourExpertPhaseLayer(nn.Module):
-    """Four independent local phase masks embedded in fixed expert apertures."""
+class FourExpertMultitaskMoEClassifier(nn.Module):
+    """Shared optical MoE backbone with one prompt controller per task."""
 
     def __init__(
         self,
-        layout: FourExpertLayout,
-        phase_param: str = "unconstrained",
-        phase_init: str = "uniform_0_2pi",
-        init_std: float = 0.02,
-        aperture_mode: str = "hard",
-    ) -> None:
-        super().__init__()
-        if aperture_mode not in {"hard", "transparent"}:
-            raise ValueError("aperture_mode must be 'hard' or 'transparent'.")
-        self.layout = layout
-        self.aperture_mode = aperture_mode
-        self.local_phases = nn.ModuleList(
-            [
-                PhaseLayer(
-                    grid_size=layout.expert_size,
-                    parameterization=phase_param,
-                    init=phase_init,
-                    init_std=init_std,
-                )
-                for _ in range(4)
-            ]
-        )
-
-    def forward(self, field: torch.Tensor) -> torch.Tensor:
-        if field.ndim != 3:
-            raise ValueError(f"Expected [B,H,W], got {tuple(field.shape)}")
-        output = (
-            torch.zeros_like(field, dtype=torch.complex64)
-            if self.aperture_mode == "hard"
-            else field.to(torch.complex64).clone()
-        )
-        for aperture, phase_layer in zip(self.layout.experts, self.local_phases):
-            local = field[:, aperture.y0 : aperture.y1, aperture.x0 : aperture.x1]
-            output[:, aperture.y0 : aperture.y1, aperture.x0 : aperture.x1] = (
-                phase_layer(local)
-            )
-        return output
-
-    def get_phase_wrapped(self) -> torch.Tensor:
-        return torch.stack(
-            [layer.get_phase_wrapped() for layer in self.local_phases], dim=0
-        )
-
-
-class GlobalFCPhaseMask(nn.Module):
-    """One trainable phase-only mask spanning the full optical canvas."""
-
-    def __init__(
-        self,
-        canvas_shape: Tuple[int, int],
-        phase_param: str = "unconstrained",
-        phase_init: str = "identity",
-        init_std: float = 0.02,
-    ) -> None:
-        super().__init__()
-        self.phase = PhaseLayer(
-            grid_size=canvas_shape,
-            parameterization=phase_param,
-            init=phase_init,
-            init_std=init_std,
-        )
-
-    def forward(self, field: torch.Tensor) -> torch.Tensor:
-        return self.phase(field)
-
-    def get_phase_wrapped(self) -> torch.Tensor:
-        return self.phase.get_phase_wrapped()
-
-
-class FourExpertMoEClassifierV2(nn.Module):
-    """Trainable four-expert classifier using the verified microlens geometry."""
-
-    def __init__(
-        self,
+        task_names: Sequence[str],
         num_classes: int = 10,
         layout: Optional[FourExpertLayout] = None,
         wavelength_m: float = 532e-9,
@@ -201,8 +199,6 @@ class FourExpertMoEClassifierV2(nn.Module):
         self.num_classes = int(num_classes)
         self.input_size = int(input_size)
         self.num_layers = int(num_layers)
-        if self.num_layers <= 0:
-            raise ValueError("num_layers must be positive.")
         self.layout = (
             FourExpertLayout(prompt_cell_size=300) if layout is None else layout
         )
@@ -210,14 +206,14 @@ class FourExpertMoEClassifierV2(nn.Module):
         self.canvas_shape = self.layout.canvas_shape
         self.aperture_mode = aperture_mode
 
-        default_distances = {
+        defaults = {
             "input_to_prompt": 0.20,
             "prompt_to_expert": 0.20,
             "inter_layer": 0.05,
             "layer5_to_fc": 0.05,
             "fc_to_detector": 0.05,
         }
-        self.distances_m = dict(default_distances)
+        self.distances_m = dict(defaults)
         if distances_m:
             self.distances_m.update(
                 {key: float(value) for key, value in distances_m.items()}
@@ -230,12 +226,15 @@ class FourExpertMoEClassifierV2(nn.Module):
             distance_m=self.distances_m["input_to_prompt"],
             evanescent_mode=evanescent_mode,
         )
-        self.prompt = TrainableMicrolensArrayPromptV2(
+        self.prompt_geometry = SharedMicrolensPromptGeometry(
             layout=self.layout,
             wavelength_m=wavelength_m,
             pixel_size_m=pixel_size_m,
             focal_length_m=focal_length_m,
             input_to_prompt_m=self.distances_m["input_to_prompt"],
+        )
+        self.task_prompt_bank = TaskPromptBank(
+            task_names=task_names,
             amplitude_init_logits=prompt_amplitude_init_logits,
             train_phase_biases=train_prompt_phase_biases,
         )
@@ -311,17 +310,11 @@ class FourExpertMoEClassifierV2(nn.Module):
             "expert_union_mask", self.layout.expert_union_mask(), persistent=False
         )
 
-    @property
-    def num_propagation_segments(self) -> int:
-        return self.num_layers + 3
-
     def prepare_canvas_input(self, images: torch.Tensor) -> torch.Tensor:
         if images.ndim == 3:
             images = images.unsqueeze(1)
         if images.ndim != 4:
-            raise ValueError(
-                f"Expected images [B,C,H,W] or [B,H,W], got {tuple(images.shape)}"
-            )
+            raise ValueError(f"Expected [B,C,H,W], got {tuple(images.shape)}")
         images = images.float()
         if images.shape[1] != 1:
             images = images.mean(dim=1, keepdim=True)
@@ -332,7 +325,6 @@ class FourExpertMoEClassifierV2(nn.Module):
                 mode="bilinear",
                 align_corners=False,
             )
-        images = images.clamp(0.0, 1.0)
         canvas = torch.zeros(
             images.shape[0],
             self.canvas_shape[0],
@@ -341,34 +333,44 @@ class FourExpertMoEClassifierV2(nn.Module):
             device=images.device,
         )
         aperture = self.layout.input_aperture
-        canvas[:, aperture.y0 : aperture.y1, aperture.x0 : aperture.x1] = images[:, 0]
+        canvas[:, aperture.y0 : aperture.y1, aperture.x0 : aperture.x1] = (
+            images[:, 0].clamp(0.0, 1.0)
+        )
         return canvas.to(torch.complex64)
 
-    def _expert_energy_diagnostics(self, field: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def _expert_diagnostics(self, field: torch.Tensor) -> Dict[str, torch.Tensor]:
         intensity = torch.abs(field.to(torch.complex64)).square()
-        energies = torch.einsum(
-            "bhw,khw->bk", intensity, self.expert_masks
-        )
+        energies = torch.einsum("bhw,khw->bk", intensity, self.expert_masks)
         total = intensity.sum(dim=(-2, -1))
         outside = (total - energies.sum(dim=1)).clamp_min(0.0)
-        ratios = energies / (total.unsqueeze(1) + 1e-8)
         return {
             "intensity": intensity,
             "energy": energies,
-            "ratios": ratios,
+            "ratios": energies / (total.unsqueeze(1) + 1e-8),
             "outside_ratio": outside / (total + 1e-8),
         }
 
     def forward(
         self,
         images: torch.Tensor,
+        task_name: Optional[str] = None,
+        task_id: Optional[int] = None,
         return_intermediates: bool = False,
     ):
+        task_name = self.task_prompt_bank.resolve_name(
+            task_name=task_name,
+            task_id=task_id,
+        )
+        _, phase_biases = self.task_prompt_bank.controls(task_name)
+        amplitudes = self.task_prompt_bank.amplitudes(task_name)
+
         canvas_input = self.prepare_canvas_input(images)
         after_input_to_prompt = self.input_to_prompt(canvas_input)
-        after_prompt = self.prompt(after_input_to_prompt)
+        after_prompt = self.prompt_geometry(
+            after_input_to_prompt, amplitudes, phase_biases
+        )
         expert_entrance_raw = self.prompt_to_expert(after_prompt)
-        entrance_diag = self._expert_energy_diagnostics(expert_entrance_raw)
+        entrance_diag = self._expert_diagnostics(expert_entrance_raw)
         expert_entrance = expert_entrance_raw
         if self.aperture_mode == "hard":
             expert_entrance = (
@@ -391,13 +393,11 @@ class FourExpertMoEClassifierV2(nn.Module):
         detector_intensity = torch.abs(detector_field).square()
         detector_energies = self.detector(detector_field)
         logits = self.readout(detector_energies)
-
         if not return_intermediates:
             return logits
 
-        prompt_amplitudes = self.prompt.amplitudes()
-        prompt_powers = self.prompt.powers()
         intermediates = {
+            "task_name": task_name,
             "input_amplitude": canvas_input.real,
             "after_input_to_prompt": after_input_to_prompt,
             "after_prompt": after_prompt,
@@ -407,11 +407,13 @@ class FourExpertMoEClassifierV2(nn.Module):
             "expert_energy": entrance_diag["energy"],
             "expert_energy_ratios": entrance_diag["ratios"],
             "outside_energy_ratio": entrance_diag["outside_ratio"],
-            "prompt_amplitudes": prompt_amplitudes,
-            "prompt_powers": prompt_powers,
-            "normalized_prompt_powers": self.prompt.normalized_powers(),
-            "prompt_phase": self.prompt.phase_map(),
-            "prompt_amplitude_map": self.prompt.amplitude_map(),
+            "prompt_amplitudes": amplitudes,
+            "prompt_powers": self.task_prompt_bank.powers(task_name),
+            "normalized_prompt_powers": self.task_prompt_bank.normalized_powers(
+                task_name
+            ),
+            "prompt_phase": self.prompt_geometry.phase_map(phase_biases),
+            "prompt_amplitude_map": self.prompt_geometry.amplitude_map(amplitudes),
             "after_each_layer": layer_fields,
             "after_layer5_to_fc": after_layer5_to_fc,
             "after_global_fc": after_global_fc,
@@ -421,20 +423,21 @@ class FourExpertMoEClassifierV2(nn.Module):
             "detector_energies": detector_energies,
             "logits": logits,
         }
-        for index, layer_field in enumerate(layer_fields, start=1):
-            intermediates[f"after_expert_layer_{index}"] = layer_field
         return logits, intermediates
 
     def optical_parameter_count(self) -> int:
-        modules = [self.prompt, self.expert_layers, self.global_fc]
+        modules = [self.task_prompt_bank, self.expert_layers, self.global_fc]
         return sum(
             parameter.numel()
             for module in modules
             for parameter in module.parameters()
         )
 
+    def prompt_parameter_count(self) -> int:
+        return sum(
+            parameter.numel()
+            for parameter in self.task_prompt_bank.parameters()
+        )
+
     def electronic_parameter_count(self) -> int:
         return sum(parameter.numel() for parameter in self.readout.parameters())
-
-    def prompt_parameter_count(self) -> int:
-        return sum(parameter.numel() for parameter in self.prompt.parameters())

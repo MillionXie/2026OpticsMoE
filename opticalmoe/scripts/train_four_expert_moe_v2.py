@@ -25,6 +25,11 @@ from opticalmoe.data import create_dataloaders
 from opticalmoe.optics import FourExpertMoEClassifierV2
 from opticalmoe.optics.four_expert_geometry import FourExpertLayout
 from opticalmoe.training import ProgressiveUnfreezingSchedule, save_checkpoint
+from opticalmoe.training.four_expert_reporting import (
+    build_architecture_report,
+    save_architecture_report,
+    save_initial_state,
+)
 from opticalmoe.utils import load_config, save_json, set_seed
 from opticalmoe.utils.run import create_run_dir
 
@@ -577,9 +582,9 @@ def save_confusion_matrix(targets, predictions, num_classes: int, path: Path):
 
 def optimizer_from_config(model, config):
     cfg = config.get("optimizer", {})
-    name = cfg.get("type", "adam").lower()
+    name = cfg.get("type", "adamw").lower()
     kwargs = {
-        "lr": float(cfg.get("lr", 1e-3)),
+        "lr": float(cfg.get("lr", 0.003)),
         "weight_decay": float(cfg.get("weight_decay", 0.0)),
     }
     if name == "adam":
@@ -595,9 +600,41 @@ def optimizer_from_config(model, config):
     raise ValueError("optimizer.type must be adam, adamw, or sgd.")
 
 
+def optimizer_settings(config: Dict) -> Dict:
+    cfg = config.get("optimizer", {})
+    return {
+        "type": cfg.get("type", "adamw").lower(),
+        "lr": float(cfg.get("lr", 0.003)),
+        "weight_decay": float(cfg.get("weight_decay", 0.0)),
+        "momentum": (
+            float(cfg.get("momentum", 0.9))
+            if cfg.get("type", "adamw").lower() == "sgd"
+            else None
+        ),
+    }
+
+
+@torch.no_grad()
+def fixed_batch_loss_accuracy(model, fixed_batch, device, criterion):
+    images, targets = fixed_batch
+    model.eval()
+    images = images.to(device)
+    targets = targets.to(device)
+    logits = model(images)
+    return (
+        float(criterion(logits, targets).item()),
+        float((logits.argmax(dim=1) == targets).float().mean().item()),
+    )
+
+
 def main():
     args = parse_args()
     config = load_config(args.config)
+    if config.get("training", {}).get("mode", "single") != "single":
+        raise ValueError(
+            "Use train_four_expert_multitask_moe.py for multitask experiments. "
+            "This script is intentionally limited to one dataset."
+        )
     if args.smoke_test:
         config["dataset"]["smoke_test"] = True
     if args.disable_visualization:
@@ -619,6 +656,7 @@ def main():
     device = choose_device(device_name)
     model = build_model(config, num_classes).to(device)
     optimizer = optimizer_from_config(model, config)
+    optimizer_cfg = optimizer_settings(config)
     criterion = nn.CrossEntropyLoss()
 
     progressive_cfg = config.get("training", {}).get("progressive", {})
@@ -664,11 +702,91 @@ def main():
         f"progressive={schedule.enabled}, order={schedule.order}, "
         f"epochs={num_epochs}"
     )
+    print(
+        f"Optimizer: {optimizer.__class__.__name__}, "
+        f"lr={optimizer_cfg['lr']}, "
+        f"weight_decay={optimizer_cfg['weight_decay']}"
+    )
+
+    architecture_report = build_architecture_report(
+        model=model,
+        config=config,
+        optimizer_settings=optimizer_cfg,
+        training_mode="single",
+    )
+    save_architecture_report(architecture_report, run_dir)
+
+    initial_val_loss, initial_val_acc = fixed_batch_loss_accuracy(
+        model, fixed_batch, device, criterion
+    )
+    initial_diagnostics = epoch_diagnostics(model, fixed_batch, device)
+    initial_payload = save_initial_state(
+        model=model,
+        diagnostics=initial_diagnostics,
+        output_dir=run_dir / "initial_state",
+        val_loss=initial_val_loss,
+        val_acc=initial_val_acc,
+    )
+    write_rows(
+        run_dir / "initial_diagnostics.csv",
+        [initial_payload],
+    )
 
     metrics_rows = []
-    amplitude_rows = []
-    expert_rows = []
-    detector_rows = []
+    initial_metric_stub = {
+        "epoch": 0,
+        **{
+            f"amp_E{index}": initial_payload["prompt_amplitudes"][index]
+            for index in range(4)
+        },
+        **{
+            f"power_E{index}": initial_payload["prompt_powers"][index]
+            for index in range(4)
+        },
+        **{
+            f"norm_power_E{index}": initial_payload[
+                "normalized_prompt_powers"
+            ][index]
+            for index in range(4)
+        },
+        **{
+            f"expert_energy_ratio_E{index}": initial_payload[
+                "expert_energy_ratios"
+            ][index]
+            for index in range(4)
+        },
+        "outside_energy_ratio": initial_payload["outside_energy_ratio"],
+    }
+    amplitude_rows = [
+        {
+            key: value
+            for key, value in initial_metric_stub.items()
+            if key == "epoch"
+            or key.startswith("amp_")
+            or key.startswith("power_")
+            or key.startswith("norm_power_")
+        }
+    ]
+    expert_rows = [
+        {
+            key: value
+            for key, value in initial_metric_stub.items()
+            if key == "epoch"
+            or key.startswith("expert_energy_ratio_")
+            or key == "outside_energy_ratio"
+        }
+    ]
+    detector_rows = [
+        {
+            "epoch": 0,
+            **{
+                f"detector_{index}": value
+                for index, value in enumerate(
+                    initial_payload["detector_energies"]
+                )
+            },
+        }
+    ]
     stage_records = []
     best_val_acc = -1.0
     best_epoch = 0
@@ -816,6 +934,9 @@ def main():
         "readout_type": config.get("readout", {}).get(
             "type", "optical_only"
         ),
+        "optimizer": optimizer_cfg,
+        "architecture_report": architecture_report,
+        "initial_diagnostics": initial_payload,
         "loss": config.get("loss", {}),
     }
     save_json(summary, str(run_dir / "summary.json"))

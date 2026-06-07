@@ -15,6 +15,8 @@ This version implements a single optical classifier:
 The original single-expert path is still available through `scripts/train.py`.
 The large-canvas OpticalMoE bank path is available through `scripts/run_optical_moe.py`.
 See `OPTICAL_MOE_USAGE.md` for the recommended YAML-driven workflow.
+For Linux GPU server rental, environment installation, smoke tests, tmux
+training, and result download, see `LINUX_SERVER_SETUP.md`.
 
 ## Recommended Dataset Order
 

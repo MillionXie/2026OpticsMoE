@@ -61,11 +61,12 @@ readout:
   activation: relu
 
 optimizer:
-  type: adamW
+  type: adamw
   lr: 0.003
   weight_decay: 0.0
 
 training:
+  mode: single
   epochs: 25
   progressive:
     enabled: true
