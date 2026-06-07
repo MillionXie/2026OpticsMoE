@@ -9,13 +9,33 @@ DATASET_REGISTRY = {
     "mnist": datasets.MNIST,
     "fashionmnist": datasets.FashionMNIST,
     "kmnist": datasets.KMNIST,
+    "emnist": datasets.EMNIST,
+    "cifar10": datasets.CIFAR10,
 }
+
+EMNIST_NUM_CLASSES = {
+    "balanced": 47,
+    "digits": 10,
+    "letters": 26,
+    "byclass": 62,
+    "bymerge": 47,
+}
+
+
+class _SubtractOne:
+    """Pickle-safe target transform for EMNIST letters labels 1..26."""
+
+    def __call__(self, target):
+        return int(target) - 1
 
 
 def _dataset_class(name: str):
     key = name.lower()
     if key not in DATASET_REGISTRY:
-        raise ValueError(f"Unsupported dataset '{name}'. Use MNIST, FashionMNIST, or KMNIST.")
+        raise ValueError(
+            f"Unsupported dataset '{name}'. Use MNIST, FashionMNIST, KMNIST, "
+            "EMNIST, or CIFAR10."
+        )
     return DATASET_REGISTRY[key]
 
 
@@ -36,7 +56,7 @@ def _subset(dataset, size: int):
 
 
 def create_dataloaders(dataset_cfg: Dict, seed: int) -> Tuple[DataLoader, DataLoader, DataLoader, int]:
-    name = dataset_cfg.get("name", "mnist")
+    name = dataset_cfg.get("name", "mnist").lower()
     root = dataset_cfg.get("root", "./data")
     input_size = int(dataset_cfg.get("input_size", 200))
     val_split = float(dataset_cfg.get("val_split", 0.1))
@@ -47,8 +67,23 @@ def create_dataloaders(dataset_cfg: Dict, seed: int) -> Tuple[DataLoader, DataLo
     cls = _dataset_class(name)
     transform = _transform(input_size)
 
-    train_full = cls(root=root, train=True, transform=transform, download=True)
-    test_dataset = cls(root=root, train=False, transform=transform, download=True)
+    dataset_kwargs = {
+        "root": root,
+        "transform": transform,
+        "download": bool(dataset_cfg.get("download", True)),
+    }
+    if name == "emnist":
+        split = dataset_cfg.get("split", "balanced").lower()
+        if split not in EMNIST_NUM_CLASSES:
+            raise ValueError(
+                "EMNIST split must be balanced, digits, letters, byclass, or bymerge."
+            )
+        dataset_kwargs["split"] = split
+        if split == "letters":
+            dataset_kwargs["target_transform"] = _SubtractOne()
+
+    train_full = cls(train=True, **dataset_kwargs)
+    test_dataset = cls(train=False, **dataset_kwargs)
 
     if smoke_test:
         train_full = _subset(train_full, int(dataset_cfg.get("smoke_train_size", 256)))
@@ -83,5 +118,11 @@ def create_dataloaders(dataset_cfg: Dict, seed: int) -> Tuple[DataLoader, DataLo
         pin_memory=torch.cuda.is_available(),
     )
 
-    num_classes = len(train_full.dataset.classes) if isinstance(train_full, Subset) else len(train_full.classes)
+    if name == "emnist":
+        num_classes = EMNIST_NUM_CLASSES[dataset_cfg.get("split", "balanced").lower()]
+    elif name == "cifar10":
+        num_classes = 10
+    else:
+        base_dataset = train_full.dataset if isinstance(train_full, Subset) else train_full
+        num_classes = len(base_dataset.classes)
     return train_loader, val_loader, test_loader, num_classes

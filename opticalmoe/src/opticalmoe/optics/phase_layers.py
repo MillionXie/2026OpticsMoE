@@ -30,12 +30,16 @@ class PhaseLayer(nn.Module):
         self.reset_parameters(init=init, init_std=init_std)
 
     def reset_parameters(self, init: str, init_std: float) -> None:
-        if init == "zeros":
+        if init in {"zeros", "identity"}:
             nn.init.zeros_(self.raw_phase)
-        elif init == "uniform":
+        elif init in {"uniform", "uniform_0_2pi"}:
             nn.init.uniform_(self.raw_phase, 0.0, 2.0 * math.pi)
-        elif init == "normal":
+        elif init in {"normal", "small_normal"}:
             nn.init.normal_(self.raw_phase, mean=0.0, std=init_std)
+        elif init == "kaiming_phase":
+            # Experimental ablation only. Phase masks act through exp(i*phase),
+            # so this real-valued initialization has no default optical meaning.
+            nn.init.kaiming_uniform_(self.raw_phase, a=math.sqrt(5.0))
         else:
             raise ValueError(f"Unsupported phase init: {init}")
 

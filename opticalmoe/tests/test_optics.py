@@ -41,6 +41,19 @@ def test_phase_layer_parameterizations():
         assert wrapped.max() < 2.0 * torch.pi
 
 
+def test_phase_layer_initialization_aliases():
+    for init in [
+        "identity",
+        "uniform_0_2pi",
+        "small_normal",
+        "kaiming_phase",
+    ]:
+        layer = PhaseLayer(grid_size=16, init=init, init_std=0.01)
+        assert layer.raw_phase.shape == (16, 16)
+    identity = PhaseLayer(grid_size=8, init="identity")
+    assert torch.all(identity.raw_phase == 0.0)
+
+
 def test_detector_array_shape():
     detector = DetectorArray(num_classes=10, grid_size=32, detector_size=4, layout="grid")
     field = torch.ones(3, 32, 32, dtype=torch.complex64)
