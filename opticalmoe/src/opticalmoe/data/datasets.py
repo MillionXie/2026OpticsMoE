@@ -29,6 +29,24 @@ class _SubtractOne:
         return int(target) - 1
 
 
+class _PILToFloatTensorNoNumpy:
+    """Convert a PIL image to [1,H,W] float tensor without using NumPy.
+
+    Some server environments combine a PyTorch build compiled against one
+    NumPy ABI with a different installed NumPy version. In that case
+    torchvision.transforms.ToTensor can fail inside torch.from_numpy even
+    though the object is a numpy.ndarray. This converter avoids that path.
+    """
+
+    def __call__(self, image):
+        image = image.convert("L")
+        width, height = image.size
+        storage = torch.ByteStorage.from_buffer(image.tobytes())
+        tensor = torch.ByteTensor(storage)
+        tensor = tensor.view(height, width).unsqueeze(0)
+        return tensor.to(dtype=torch.float32).div_(255.0)
+
+
 def _dataset_class(name: str):
     key = name.lower()
     if key not in DATASET_REGISTRY:
@@ -44,7 +62,7 @@ def _transform(input_size: int):
         [
             transforms.Grayscale(num_output_channels=1),
             transforms.Resize((input_size, input_size)),
-            transforms.ToTensor(),
+            _PILToFloatTensorNoNumpy(),
         ]
     )
 

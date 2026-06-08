@@ -2,7 +2,9 @@ from typing import Dict, Tuple
 
 import torch
 from torch.utils.data import DataLoader, Dataset, Subset, random_split
-from torchvision import datasets, transforms
+from torchvision import datasets
+
+from .datasets import _transform
 
 
 class MixedMNISTFashion(Dataset):
@@ -13,13 +15,7 @@ class MixedMNISTFashion(Dataset):
     """
 
     def __init__(self, root: str, train: bool, input_size: int, download: bool = True) -> None:
-        transform = transforms.Compose(
-            [
-                transforms.Grayscale(num_output_channels=1),
-                transforms.Resize((input_size, input_size)),
-                transforms.ToTensor(),
-            ]
-        )
+        transform = _transform(input_size)
         self.mnist = datasets.MNIST(root=root, train=train, transform=transform, download=download)
         self.fashion = datasets.FashionMNIST(root=root, train=train, transform=transform, download=download)
 
