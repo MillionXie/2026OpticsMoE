@@ -1,6 +1,6 @@
 # Four-Expert OpticalMoE Training Notes
 
-Date: 2026-06-07
+Date: 2026-06-08
 
 ## 1. Two Independent Experiments
 
@@ -38,8 +38,12 @@ python scripts/train_four_expert_moe_v2.py --config configs/four_expert_moe_fash
 - Two-task config: `configs/four_expert_moe_multitask_mnist_fashion.yaml`
 - Three-task config:
   `configs/four_expert_moe_multitask_mnist_fashion_emnist.yaml`
-- All tasks share the same five expert layers, global FC phase, detector, and
-  optional electronic readout.
+- All tasks share the same five expert layers, global FC phase, propagation,
+  and final CCD intensity field.
+- Each task then applies its own fixed detector-region map and optional
+  electronic readout to that common CCD intensity field. These task heads are
+  post-detection interpretations of the same optical output plane, not
+  separate optical backbones.
 - Each task owns an independent set of four prompt amplitude parameters and
   four optional scalar prompt phase biases.
 - One update uses one batch from each configured task, combines their losses,
@@ -52,15 +56,38 @@ Run:
 python scripts/train_four_expert_multitask_moe.py --config configs/four_expert_moe_multitask_mnist_fashion.yaml --run_name four_expert_multitask_mnist_fashion
 ```
 
-Three-task MNIST + FashionMNIST + EMNIST-digits run:
+Three-task MNIST + FashionMNIST + EMNIST-letters run:
 
 ```text
 python scripts/train_four_expert_multitask_moe.py --config configs/four_expert_moe_multitask_mnist_fashion_emnist.yaml --run_name four_expert_multitask_mnist_fashion_emnist
 ```
 
-EMNIST must use `split: digits` in this shared 10-class detector setup.
-Other EMNIST splits have different class counts and need a redesigned readout
-or a task-specific detector head.
+The three-task config uses EMNIST `split: letters`. MNIST and FashionMNIST use
+10-class heads, while EMNIST uses a separate 26-class detector/readout head.
+EMNIST's original labels `1..26` are remapped to `0..25` for cross entropy.
+The shared optical propagation, expert masks, global FC mask, and CCD plane
+are unchanged.
+
+### Paper-Style Small-Data Protocol
+
+The dataset blocks can enable:
+
+```yaml
+sampling_protocol:
+  enabled: true
+  total_size: 2000
+  train_test_ratio: [4, 1]
+```
+
+The current configs use `total_size: 2000` for MNIST and FashionMNIST, and
+`total_size: 5200` for EMNIST letters. Sampling is class-balanced and
+deterministic. The 4:1 ratio first creates a train pool and a held-out test
+set. The normal `val_split` is then carved from the train pool for checkpoint
+selection.
+
+For EMNIST letters, 5200 means 200 samples per letter class. The 4:1 split
+therefore gives 4160 train-pool samples and 1040 test samples before the
+validation split.
 
 For a quick pipeline check:
 
@@ -89,7 +116,14 @@ Both experiments use the verified four-expert geometry:
 
 Changing the task does not replace the optical backbone. In the multitask
 experiment, task switching selects a different prompt amplitude/phase-bias
-entry before the shared experts.
+before the shared experts. After the shared global FC mask and propagation,
+the model obtains one common CCD intensity image. The selected task then uses
+its own detector-region map and readout rule on that image.
+
+This division also leaves a clean extension point for future tasks. A
+classification task can sum task-specific detector regions, while an imaging
+or generation task can consume the full CCD intensity image and apply its own
+image-domain post-processing head.
 
 ## 3. Initial Optical State
 
@@ -106,6 +140,7 @@ multitask program writes one subdirectory per task:
 ```text
 runs/<run_name>/initial_state/mnist/
 runs/<run_name>/initial_state/fashionmnist/
+runs/<run_name>/initial_state/emnist/
 ```
 
 The saved state includes the input, prompt plane, expert entrance, five expert
@@ -176,12 +211,11 @@ Expert energy histories are saved in
 
 ## 7. Task-Switching Evaluation
 
-After multitask training, the model is evaluated in four combinations:
-
-- MNIST data with the MNIST prompt
-- MNIST data with the FashionMNIST prompt
-- FashionMNIST data with the FashionMNIST prompt
-- FashionMNIST data with the MNIST prompt
+After multitask training, every evaluation dataset is tested with every task
+prompt. The three-task experiment therefore produces nine combinations.
+During a mismatched-prompt evaluation, the evaluation dataset keeps its own
+detector/readout head. Only the optical prompt is changed. This is necessary
+because MNIST/FashionMNIST have 10 outputs while EMNIST letters has 26.
 
 The results are written to:
 
@@ -231,10 +265,8 @@ fields, and architecture reports.
 
 - CIFAR10 is supported through grayscale amplitude encoding, but it is harder
   than MNIST-like datasets because color information is discarded.
-- Multitask training currently requires every task to use the same number of
-  detector classes. MNIST, FashionMNIST, and EMNIST `digits` all use ten
-  detector indices, even though the meanings of labels can differ by task.
-- There is no task-specific electronic detector head.
+- Multitask training supports different class counts through task-specific
+  detector/readout heads. The current three-task config uses 10/10/26 outputs.
 - Task switching currently uses a known task name to select trainable prompt
   amplitudes and phase biases. It is not an input-dependent learned router.
 - The blocked prompt gap is intentional. Making it transparent would create an
@@ -247,8 +279,11 @@ fields, and architecture reports.
 - Added explicit optical/electronic architecture reports.
 - Standardized four-expert configs on AdamW with learning rate 0.003.
 - Kept the existing single-task model and script single-task only.
-- Added a separate multitask model with a task prompt bank.
+- Added a separate multitask model with a task prompt bank and task-specific
+  detector/readout heads.
 - Added a separate multitask progressive unfreezing schedule.
 - Added a separate multitask training/evaluation script.
-- Added MNIST + FashionMNIST joint-training configuration.
-- Added correct-prompt and mismatched-prompt evaluation.
+- Added MNIST + FashionMNIST and MNIST + FashionMNIST + EMNIST-letters
+  joint-training configurations.
+- Added correct-prompt and mismatched-prompt evaluation; mismatched evaluation
+  swaps only the prompt and keeps the evaluation dataset's own head.

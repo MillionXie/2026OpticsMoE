@@ -79,7 +79,10 @@ class MultitaskProgressiveUnfreezingSchedule:
                 model.global_fc,
                 bool(stage_idx == 0 or self.train_global_fc_always),
             )
-            self._set_module(model.readout, True)
+            if hasattr(model, "task_readouts"):
+                self._set_module(model.task_readouts, True)
+            else:
+                self._set_module(model.readout, True)
 
         names = [
             name

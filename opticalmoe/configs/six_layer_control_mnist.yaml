@@ -19,6 +19,10 @@ dataset:
   smoke_test: false
   smoke_train_size: 12
   smoke_test_size: 8
+  sampling_protocol:
+    enabled: true
+    total_size: 2000
+    train_test_ratio: [4, 1]
 
 layout:
   canvas_height: 700
@@ -78,4 +82,3 @@ training:
 
 visualization:
   save_interval_epochs: 5
-

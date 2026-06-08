@@ -170,7 +170,9 @@ class FourExpertMultitaskMoEClassifier(nn.Module):
     def __init__(
         self,
         task_names: Sequence[str],
-        num_classes: int = 10,
+        task_num_classes: Optional[Dict[str, int]] = None,
+        task_head_configs: Optional[Dict[str, Dict]] = None,
+        num_classes: Optional[int] = None,
         layout: Optional[FourExpertLayout] = None,
         wavelength_m: float = 532e-9,
         pixel_size_m: float = 8e-6,
@@ -196,7 +198,33 @@ class FourExpertMultitaskMoEClassifier(nn.Module):
         evanescent_mode: str = "zero",
     ) -> None:
         super().__init__()
-        self.num_classes = int(num_classes)
+        normalized_task_names = [str(name).lower() for name in task_names]
+        if task_num_classes is None:
+            shared_count = 10 if num_classes is None else int(num_classes)
+            task_num_classes = {
+                name: shared_count for name in normalized_task_names
+            }
+        normalized_counts = {
+            str(name).lower(): int(count)
+            for name, count in task_num_classes.items()
+        }
+        if set(normalized_counts) != set(normalized_task_names):
+            raise ValueError(
+                "task_num_classes keys must exactly match task_names. "
+                f"tasks={normalized_task_names}, counts={normalized_counts}"
+            )
+        if any(count <= 1 for count in normalized_counts.values()):
+            raise ValueError("Every task must have at least two output classes.")
+        self.task_names = normalized_task_names
+        self.task_num_classes = normalized_counts
+        task_head_configs = task_head_configs or {}
+        self.task_head_configs = {
+            str(name).lower(): dict(settings)
+            for name, settings in task_head_configs.items()
+        }
+        # Retained for generic reporting code. Multitask callers should use
+        # task_num_classes because different heads can have different sizes.
+        self.num_classes = max(normalized_counts.values())
         self.input_size = int(input_size)
         self.num_layers = int(num_layers)
         self.layout = (
@@ -234,7 +262,7 @@ class FourExpertMultitaskMoEClassifier(nn.Module):
             input_to_prompt_m=self.distances_m["input_to_prompt"],
         )
         self.task_prompt_bank = TaskPromptBank(
-            task_names=task_names,
+            task_names=self.task_names,
             amplitude_init_logits=prompt_amplitude_init_logits,
             train_phase_biases=train_prompt_phase_biases,
         )
@@ -289,20 +317,45 @@ class FourExpertMultitaskMoEClassifier(nn.Module):
             distance_m=self.distances_m["fc_to_detector"],
             evanescent_mode=evanescent_mode,
         )
-        self.detector = DetectorArray(
-            num_classes=self.num_classes,
-            grid_size=self.canvas_shape,
-            detector_size=detector_size,
-            layout=detector_layout,
-            normalize_total_energy=normalize_detector_energy,
-        )
-        self.readout = ElectronicReadout(
-            num_classes=self.num_classes,
-            readout_type=readout_type,
-            logit_scale=logit_scale,
-            hidden_dim=readout_hidden_dim,
-            activation=readout_activation,
-        )
+        detectors = {}
+        readouts = {}
+        resolved_head_configs = {}
+        for name, class_count in self.task_num_classes.items():
+            head = self.task_head_configs.get(name, {})
+            resolved = {
+                "detector_size": int(head.get("detector_size", detector_size)),
+                "detector_layout": head.get("detector_layout", detector_layout),
+                "normalize_detector_energy": bool(
+                    head.get(
+                        "normalize_detector_energy",
+                        normalize_detector_energy,
+                    )
+                ),
+                "readout_type": head.get("readout_type", readout_type),
+                "logit_scale": float(head.get("logit_scale", logit_scale)),
+                "hidden_dim": int(head.get("hidden_dim", readout_hidden_dim)),
+                "activation": head.get("activation", readout_activation),
+            }
+            detectors[name] = DetectorArray(
+                num_classes=class_count,
+                grid_size=self.canvas_shape,
+                detector_size=resolved["detector_size"],
+                layout=resolved["detector_layout"],
+                normalize_total_energy=resolved[
+                    "normalize_detector_energy"
+                ],
+            )
+            readouts[name] = ElectronicReadout(
+                num_classes=class_count,
+                readout_type=resolved["readout_type"],
+                logit_scale=resolved["logit_scale"],
+                hidden_dim=resolved["hidden_dim"],
+                activation=resolved["activation"],
+            )
+            resolved_head_configs[name] = resolved
+        self.task_head_configs = resolved_head_configs
+        self.task_detectors = nn.ModuleDict(detectors)
+        self.task_readouts = nn.ModuleDict(readouts)
         self.register_buffer(
             "expert_masks", self.layout.expert_masks(), persistent=False
         )
@@ -355,14 +408,26 @@ class FourExpertMultitaskMoEClassifier(nn.Module):
         images: torch.Tensor,
         task_name: Optional[str] = None,
         task_id: Optional[int] = None,
+        prompt_task_name: Optional[str] = None,
+        readout_task_name: Optional[str] = None,
         return_intermediates: bool = False,
     ):
-        task_name = self.task_prompt_bank.resolve_name(
+        selected_task_name = self.task_prompt_bank.resolve_name(
             task_name=task_name,
             task_id=task_id,
         )
-        _, phase_biases = self.task_prompt_bank.controls(task_name)
-        amplitudes = self.task_prompt_bank.amplitudes(task_name)
+        prompt_task_name = (
+            selected_task_name
+            if prompt_task_name is None
+            else self.task_prompt_bank.normalize_name(prompt_task_name)
+        )
+        readout_task_name = (
+            selected_task_name
+            if readout_task_name is None
+            else self.task_prompt_bank.normalize_name(readout_task_name)
+        )
+        _, phase_biases = self.task_prompt_bank.controls(prompt_task_name)
+        amplitudes = self.task_prompt_bank.amplitudes(prompt_task_name)
 
         canvas_input = self.prepare_canvas_input(images)
         after_input_to_prompt = self.input_to_prompt(canvas_input)
@@ -391,13 +456,16 @@ class FourExpertMultitaskMoEClassifier(nn.Module):
         after_global_fc = self.global_fc(after_layer5_to_fc)
         detector_field = self.fc_to_detector(after_global_fc)
         detector_intensity = torch.abs(detector_field).square()
-        detector_energies = self.detector(detector_field)
-        logits = self.readout(detector_energies)
+        detector_energies = self.task_detectors[readout_task_name](detector_field)
+        logits = self.task_readouts[readout_task_name](detector_energies)
         if not return_intermediates:
             return logits
 
         intermediates = {
-            "task_name": task_name,
+            "task_name": selected_task_name,
+            "prompt_task_name": prompt_task_name,
+            "readout_task_name": readout_task_name,
+            "task_num_classes": self.task_num_classes[readout_task_name],
             "input_amplitude": canvas_input.real,
             "after_input_to_prompt": after_input_to_prompt,
             "after_prompt": after_prompt,
@@ -408,9 +476,9 @@ class FourExpertMultitaskMoEClassifier(nn.Module):
             "expert_energy_ratios": entrance_diag["ratios"],
             "outside_energy_ratio": entrance_diag["outside_ratio"],
             "prompt_amplitudes": amplitudes,
-            "prompt_powers": self.task_prompt_bank.powers(task_name),
+            "prompt_powers": self.task_prompt_bank.powers(prompt_task_name),
             "normalized_prompt_powers": self.task_prompt_bank.normalized_powers(
-                task_name
+                prompt_task_name
             ),
             "prompt_phase": self.prompt_geometry.phase_map(phase_biases),
             "prompt_amplitude_map": self.prompt_geometry.amplitude_map(amplitudes),
@@ -440,4 +508,7 @@ class FourExpertMultitaskMoEClassifier(nn.Module):
         )
 
     def electronic_parameter_count(self) -> int:
-        return sum(parameter.numel() for parameter in self.readout.parameters())
+        return sum(
+            parameter.numel()
+            for parameter in self.task_readouts.parameters()
+        )

@@ -6,7 +6,10 @@ experiment:
 
 dataset:
   name: emnist
-  split: balanced
+  # EMNIST letters is the 26-class English-letter task. Labels are remapped
+  # from torchvision's 1..26 convention to 0..25 in the dataloader.
+  split: letters
+  fix_orientation: true
   root: ./data
   input_size: 200
   val_split: 0.2
@@ -16,6 +19,16 @@ dataset:
   smoke_test: false
   smoke_train_size: 16
   smoke_test_size: 8
+  # Paper-style small-data protocol: pick 5200 class-balanced EMNIST samples,
+  # split them into a 4:1 train-pool:test split, then carve validation from
+  # the train-pool using val_split.
+  #
+  # For letters, total_size=5200 means 200 selected samples per class; the
+  # 4:1 split creates a 4160-sample train pool and a 1040-sample test set.
+  sampling_protocol:
+    enabled: true
+    total_size: 5200
+    train_test_ratio: [4, 1]
 
 layout:
   canvas_height: 700

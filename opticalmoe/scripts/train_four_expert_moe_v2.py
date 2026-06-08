@@ -777,6 +777,12 @@ def main():
     print(f"device: {device}")
     print(f"dataset: {config['dataset']['name']}, classes: {num_classes}")
     print(
+        "data split: "
+        f"train={len(train_loader.dataset)} samples/{len(train_loader)} batches, "
+        f"val={len(val_loader.dataset)} samples/{len(val_loader)} batches, "
+        f"test={len(test_loader.dataset)} samples/{len(test_loader)} batches"
+    )
+    print(
         f"layout: canvas={model.canvas_shape}, expert={model.layout.expert_size}, "
         f"prompt_cell={model.layout.prompt_cell_size}"
     )

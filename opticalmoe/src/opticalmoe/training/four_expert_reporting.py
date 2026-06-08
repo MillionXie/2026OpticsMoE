@@ -234,15 +234,30 @@ def build_architecture_report(
 ) -> Dict:
     readout_cfg = config.get("readout", {})
     readout_type = readout_cfg.get("type", "optical_only")
-    activation = readout_cfg.get("activation") if readout_type == "mlp" else None
-    hidden_dim = readout_cfg.get("hidden_dim") if readout_type == "mlp" else None
-    nonlinear_activation = readout_type == "mlp"
-    if readout_type == "optical_only":
+    task_detector_class_counts = getattr(model, "task_num_classes", None)
+    task_head_configs = getattr(model, "task_head_configs", None)
+    task_readout_types = (
+        {
+            name: settings.get("readout_type", "optical_only")
+            for name, settings in task_head_configs.items()
+        }
+        if task_head_configs
+        else None
+    )
+    effective_readout_types = (
+        set(task_readout_types.values())
+        if task_readout_types
+        else {readout_type}
+    )
+    activation = readout_cfg.get("activation") if "mlp" in effective_readout_types else None
+    hidden_dim = readout_cfg.get("hidden_dim") if "mlp" in effective_readout_types else None
+    nonlinear_activation = "mlp" in effective_readout_types
+    if effective_readout_types == {"optical_only"}:
         statement = (
             "No electronic nonlinear activation is used. The only nonlinearity "
             "is optical intensity detection |U|^2 before detector energy readout."
         )
-    elif readout_type == "mlp":
+    elif "mlp" in effective_readout_types:
         statement = "Electronic nonlinear readout is enabled."
     else:
         statement = (
@@ -252,12 +267,21 @@ def build_architecture_report(
     return {
         "training_mode": training_mode,
         "task_names": list(task_names or []),
-        "shared_detector_class_count": model.num_classes,
+        "shared_detector_class_count": (
+            model.num_classes if task_detector_class_counts is None else None
+        ),
+        "task_detector_class_counts": task_detector_class_counts,
+        "task_head_configs": task_head_configs,
         "optical_propagation_is_linear": True,
         "phase_masks_are_phase_only": True,
         "intensity_detection_abs_u_squared": True,
-        "electronic_readout_exists": readout_type != "optical_only",
-        "readout_type": readout_type,
+        "electronic_readout_exists": effective_readout_types != {"optical_only"},
+        "readout_type": (
+            next(iter(effective_readout_types))
+            if len(effective_readout_types) == 1
+            else "task_specific"
+        ),
+        "task_readout_types": task_readout_types,
         "electronic_activation": activation,
         "electronic_hidden_dim": hidden_dim,
         "electronic_nonlinear_activation_exists": nonlinear_activation,
@@ -271,7 +295,7 @@ def build_architecture_report(
         "total_electronic_parameter_count": model.electronic_parameter_count(),
         "optimizer": optimizer_settings,
         "multitask_label_note": (
-            "Tasks share detector indices 0-9, but class semantics differ by task."
+            "Tasks share the optical backbone but use task-specific detector/readout heads."
             if training_mode == "multitask"
             else None
         ),
@@ -293,6 +317,10 @@ def save_architecture_report(report: Dict, run_dir: Path) -> None:
         f"- phase masks are phase-only: {report['phase_masks_are_phase_only']}",
         f"- intensity detection uses |U|^2: {report['intensity_detection_abs_u_squared']}",
         f"- readout type: {report['readout_type']}",
+        f"- task readout types: {report['task_readout_types']}",
+        f"- shared detector class count: {report['shared_detector_class_count']}",
+        f"- task detector class counts: {report['task_detector_class_counts']}",
+        f"- task head configs: {report['task_head_configs']}",
         f"- electronic nonlinear activation: {report['electronic_nonlinear_activation_exists']}",
         f"- electronic activation: {report['electronic_activation']}",
         f"- electronic hidden dimension: {report['electronic_hidden_dim']}",

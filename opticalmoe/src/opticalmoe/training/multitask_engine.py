@@ -114,6 +114,7 @@ def evaluate_task(
     device: torch.device,
     criterion,
     prompt_task: str,
+    readout_task: str = None,
     max_batches: int = None,
 ) -> Dict:
     model.eval()
@@ -128,7 +129,15 @@ def evaluate_task(
         images, targets = batch[:2]
         images = images.to(device, non_blocking=True)
         targets = targets.to(device, non_blocking=True)
-        logits = model(images, task_name=prompt_task)
+        if readout_task is None:
+            logits = model(images, task_name=prompt_task)
+        else:
+            logits = model(
+                images,
+                task_name=readout_task,
+                prompt_task_name=prompt_task,
+                readout_task_name=readout_task,
+            )
         loss = criterion(logits, targets)
         predicted = logits.argmax(dim=1)
         batch_size = targets.numel()
@@ -171,12 +180,14 @@ def task_switching_evaluation(
                 device,
                 criterion,
                 prompt_task=prompt_task,
+                readout_task=eval_dataset,
                 max_batches=max_batches,
             )
             rows.append(
                 {
                     "eval_dataset": eval_dataset,
                     "prompt_task": prompt_task,
+                    "readout_task": eval_dataset,
                     "loss": result["loss"],
                     "accuracy": result["accuracy"],
                     "samples": result["samples"],

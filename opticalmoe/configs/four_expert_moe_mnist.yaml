@@ -16,6 +16,13 @@ dataset:
   smoke_test: false
   smoke_train_size: 12
   smoke_test_size: 8
+  # Paper-style small-data protocol: pick 2000 class-balanced samples, split
+  # them into a 4:1 train-pool:test split, then carve validation from the
+  # train-pool using val_split.
+  sampling_protocol:
+    enabled: true
+    total_size: 2000
+    train_test_ratio: [4, 1]
 
 layout:
   canvas_height: 700

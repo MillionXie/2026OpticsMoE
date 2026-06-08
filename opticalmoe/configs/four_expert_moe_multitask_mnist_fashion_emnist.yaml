@@ -1,12 +1,11 @@
-# Separate three-task experiment: MNIST + FashionMNIST + EMNIST digits.
+# Separate three-task experiment: MNIST + FashionMNIST + EMNIST letters.
 #
 # Run with:
 # python scripts/train_four_expert_multitask_moe.py --config configs/four_expert_moe_multitask_mnist_fashion_emnist.yaml --run_name four_expert_multitask_mnist_fashion_emnist
 #
 # Important:
-# EMNIST must use split: digits here. The first multitask implementation uses
-# one shared detector/readout, so all tasks must have the same number of classes.
-# MNIST, FashionMNIST, and EMNIST digits are all 10-class tasks.
+# The optical backbone is shared, but each task has its own detector/readout
+# head. MNIST/FashionMNIST are 10-class tasks; EMNIST letters is 26-class.
 
 seed: 7
 device: auto
@@ -68,7 +67,7 @@ loss:
 
 training:
   mode: multitask
-  epochs: 35
+  epochs: 150
   multitask:
     tasks:
       - name: mnist
@@ -77,43 +76,77 @@ training:
           root: ./data
           input_size: 200
           val_split: 0.1
-          batch_size: 1
+          batch_size: 128
           num_workers: 0
           download: true
           smoke_test: false
           smoke_train_size: 12
           smoke_test_size: 8
+          sampling_protocol:
+            enabled: true
+            total_size: 2000
+            train_test_ratio: [4, 1]
+        head:
+          detector_size: 32
+          detector_layout: grid
+          readout_type: optical_only
+          normalize_detector_energy: true
+          logit_scale: 10.0
       - name: fashionmnist
         dataset:
           name: fashionmnist
           root: ./data
           input_size: 200
           val_split: 0.1
-          batch_size: 1
+          batch_size: 128
           num_workers: 0
           download: true
           smoke_test: false
           smoke_train_size: 12
           smoke_test_size: 8
+          sampling_protocol:
+            enabled: true
+            total_size: 2000
+            train_test_ratio: [4, 1]
+        head:
+          detector_size: 32
+          detector_layout: grid
+          readout_type: optical_only
+          normalize_detector_energy: true
+          logit_scale: 10.0
       - name: emnist
         dataset:
           name: emnist
-          split: digits
+          # 26-class English-letter task. The dataloader remaps labels 1..26
+          # to 0..25 for CrossEntropyLoss.
+          split: letters
+          fix_orientation: true
           root: ./data
           input_size: 200
           val_split: 0.1
-          batch_size: 1
+          batch_size: 128
           num_workers: 0
           download: true
           smoke_test: false
           smoke_train_size: 12
           smoke_test_size: 8
+          sampling_protocol:
+            enabled: true
+            total_size: 5200
+            train_test_ratio: [4, 1]
+        head:
+          detector_size: 32
+          detector_layout: grid
+          readout_type: optical_only
+          normalize_detector_energy: true
+          logit_scale: 10.0
     loss_reduction: mean
     batches_per_update: 1
     balanced_sampling: true
-    # Full-dataset three-task training can be very slow, especially because
-    # EMNIST digits is much larger than MNIST/FashionMNIST. Keep null for a
-    # literal full epoch; set a value such as 1000 or 2000 for research epochs.
+    # With the paper-style sampling protocol, the natural epoch is now based
+    # on the selected 2000/2000/5200 samples rather than the full datasets.
+    # Keep null for a literal selected-set epoch; set a value such as 500 or
+    # 1000 for a fixed update budget.
     steps_per_epoch: null
     print_freq: 50
   evaluation:
@@ -124,7 +157,7 @@ training:
   progressive:
     enabled: true
     order: backward
-    stage_epochs: [3, 3, 3, 3, 3, 20]
+    stage_epochs: [10, 10, 10, 10, 10, 100]
     train_task_prompts_always: true
     train_global_fc_always: true
 
@@ -134,4 +167,3 @@ visualization:
   num_samples: 2
   font_size: 12
   dpi: 150
-

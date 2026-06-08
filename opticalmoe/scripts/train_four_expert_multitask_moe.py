@@ -83,12 +83,16 @@ def configure_matplotlib(config: Dict) -> None:
     )
 
 
-def build_model(config: Dict, task_names: Sequence[str], num_classes: int):
+def build_model(config: Dict, task_names: Sequence[str], task_num_classes: Dict[str, int]):
     layout_cfg = config.get("layout", {})
     optics_cfg = config.get("optics", {})
     prompt_cfg = config.get("prompt", {})
     detector_cfg = config.get("detector", {})
     readout_cfg = config.get("readout", {})
+    task_head_configs = {
+        task["name"].lower(): dict(task.get("head", {}))
+        for task in config["training"]["multitask"]["tasks"]
+    }
     distances = optics_cfg.get("distances_m", {})
     layout = FourExpertLayout(
         canvas_height=int(layout_cfg.get("canvas_height", 700)),
@@ -101,7 +105,8 @@ def build_model(config: Dict, task_names: Sequence[str], num_classes: int):
     )
     return FourExpertMultitaskMoEClassifier(
         task_names=task_names,
-        num_classes=num_classes,
+        task_num_classes=task_num_classes,
+        task_head_configs=task_head_configs,
         layout=layout,
         wavelength_m=float(optics_cfg.get("wavelength_m", 532e-9)),
         pixel_size_m=float(optics_cfg.get("pixel_size_m", 8e-6)),
@@ -194,13 +199,6 @@ def create_task_loaders(config: Dict, seed: int, force_smoke: bool):
         val_loaders[name] = val
         test_loaders[name] = test
         class_counts[name] = classes
-    if len(set(class_counts.values())) != 1:
-        raise ValueError(
-            "First-version multitask training requires the same num_classes "
-            f"for all tasks, got {class_counts}. If you combine MNIST, "
-            "FashionMNIST, and EMNIST with the shared 10-class detector, set "
-            "the EMNIST dataset block to split: digits."
-        )
     return train_loaders, val_loaders, test_loaders, class_counts
 
 
@@ -620,9 +618,9 @@ def main():
         force_smoke=args.smoke_test,
     )
     task_names = list(train_loaders.keys())
-    num_classes = next(iter(class_counts.values()))
+    task_num_classes = dict(class_counts)
     device = choose_device(args.device or config.get("device", "auto"))
-    model = build_model(config, task_names, num_classes).to(device)
+    model = build_model(config, task_names, task_num_classes).to(device)
     optimizer = build_optimizer(model, config)
     optimizer_cfg = optimizer_settings(config)
     criterion = nn.CrossEntropyLoss()
@@ -663,7 +661,17 @@ def main():
     }
 
     print(f"device: {device}")
-    print(f"tasks: {task_names}, shared classes: {num_classes}")
+    print(f"tasks: {task_names}, task classes: {task_num_classes}")
+    for task_name in task_names:
+        print(
+            f"  {task_name} data: "
+            f"train={len(train_loaders[task_name].dataset)} samples/"
+            f"{len(train_loaders[task_name])} batches, "
+            f"val={len(val_loaders[task_name].dataset)} samples/"
+            f"{len(val_loaders[task_name])} batches, "
+            f"test={len(test_loaders[task_name].dataset)} samples/"
+            f"{len(test_loaders[task_name])} batches"
+        )
     print(
         f"Optimizer: {optimizer.__class__.__name__}, "
         f"lr={optimizer_cfg['lr']}, "
@@ -1080,11 +1088,12 @@ def main():
         "run_name": run_name,
         "training_mode": "multitask",
         "task_names": task_names,
-        "shared_num_classes": num_classes,
+        "task_num_classes": task_num_classes,
+        "task_head_configs": model.task_head_configs,
         "class_semantics_note": (
-            "All multitask datasets share the same detector indices. In the "
-            "MNIST/FashionMNIST/EMNIST-digits setup these are 0-9, but the "
-            "label semantics can differ by task."
+            "The optical backbone is shared, but each task has its own "
+            "detector/readout head. MNIST and FashionMNIST use 10 classes; "
+            "EMNIST letters uses 26 classes."
         ),
         "optimizer": optimizer_cfg,
         "architecture_report": report,

@@ -85,6 +85,10 @@ training:
           smoke_test: false
           smoke_train_size: 12
           smoke_test_size: 8
+          sampling_protocol:
+            enabled: true
+            total_size: 2000
+            train_test_ratio: [4, 1]
       - name: fashionmnist
         dataset:
           name: fashionmnist
@@ -97,6 +101,10 @@ training:
           smoke_test: false
           smoke_train_size: 12
           smoke_test_size: 8
+          sampling_protocol:
+            enabled: true
+            total_size: 2000
+            train_test_ratio: [4, 1]
     loss_reduction: mean
     batches_per_update: 1
     balanced_sampling: true

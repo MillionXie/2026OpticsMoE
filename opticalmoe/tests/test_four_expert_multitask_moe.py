@@ -75,18 +75,26 @@ class _TinyMultitaskModel(nn.Module):
 
     def __init__(self):
         super().__init__()
-        self.backbone = nn.Linear(4, 10)
-        self.task_bias = nn.ParameterDict(
+        self.backbone = nn.Linear(4, 16)
+        self.heads = nn.ModuleDict(
             {
-                "mnist": nn.Parameter(torch.zeros(10)),
-                "fashionmnist": nn.Parameter(torch.ones(10) * 0.01),
-                "emnist": nn.Parameter(torch.ones(10) * 0.02),
+                "mnist": nn.Linear(16, 10),
+                "fashionmnist": nn.Linear(16, 10),
+                "emnist": nn.Linear(16, 26),
             }
         )
 
-    def forward(self, images, task_name, return_intermediates=False):
-        logits = self.backbone(images.view(images.shape[0], -1))
-        logits = logits + self.task_bias[task_name]
+    def forward(
+        self,
+        images,
+        task_name,
+        prompt_task_name=None,
+        readout_task_name=None,
+        return_intermediates=False,
+    ):
+        readout_task_name = readout_task_name or task_name
+        features = torch.relu(self.backbone(images.view(images.shape[0], -1)))
+        logits = self.heads[readout_task_name](features)
         if return_intermediates:
             return logits, {"task_name": task_name}
         return logits
@@ -127,6 +135,7 @@ def test_task_prompt_bank_keeps_tasks_independent():
 def test_multitask_optical_forward_accepts_three_task_names():
     model = FourExpertMultitaskMoEClassifier(
         task_names=["mnist", "fashionmnist", "emnist"],
+        task_num_classes={"mnist": 10, "fashionmnist": 10, "emnist": 26},
         num_layers=1,
         expert_phase_init="identity",
         global_fc_phase_init="identity",
@@ -136,10 +145,17 @@ def test_multitask_optical_forward_accepts_three_task_names():
         mnist_logits = model(images, task_name="mnist")
         fashion_logits = model(images, task_name="fashionmnist")
         emnist_logits = model(images, task_name="emnist")
+        emnist_with_mnist_prompt = model(
+            images,
+            task_name="emnist",
+            prompt_task_name="mnist",
+            readout_task_name="emnist",
+        )
         task_id_logits = model(images, task_id=0)
     assert mnist_logits.shape == (1, 10)
     assert fashion_logits.shape == (1, 10)
-    assert emnist_logits.shape == (1, 10)
+    assert emnist_logits.shape == (1, 26)
+    assert emnist_with_mnist_prompt.shape == (1, 26)
     assert task_id_logits.shape == (1, 10)
 
 
@@ -228,6 +244,11 @@ def test_task_switching_results_can_be_written(tmp_path):
         "emnist",
     }
     assert {row["prompt_task"] for row in saved} == {
+        "mnist",
+        "fashionmnist",
+        "emnist",
+    }
+    assert {row["readout_task"] for row in saved} == {
         "mnist",
         "fashionmnist",
         "emnist",

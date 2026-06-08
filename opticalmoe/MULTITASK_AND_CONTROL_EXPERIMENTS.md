@@ -70,17 +70,19 @@ For the two-task MNIST + FashionMNIST config, the existing
 `task_switching_eval.csv` contains all four correct and mismatched
 dataset/prompt combinations.
 
-For the three-task MNIST + FashionMNIST + EMNIST-digits experiment, use:
+For the three-task MNIST + FashionMNIST + EMNIST-letters experiment, use:
 
 ```text
 python scripts/train_four_expert_multitask_moe.py --config configs/four_expert_moe_multitask_mnist_fashion_emnist.yaml --run_name four_expert_multitask_mnist_fashion_emnist
 ```
 
-This configuration uses `emnist` with `split: digits`, so all three tasks have
-10 detector classes. Do not use EMNIST `balanced`, `letters`, `byclass`, or
-`bymerge` in this shared-head setup unless you also redesign the readout for
-different class counts. With three tasks, `task_switching_eval.csv` contains
-9 combinations: each evaluation dataset is tested with each task prompt.
+This configuration uses `emnist` with `split: letters`, so EMNIST is a
+26-class English-letter task. MNIST and FashionMNIST keep 10-class heads.
+The propagation, expert masks, global FC mask, and final CCD intensity field
+are shared. Each task interprets that common CCD plane through its own
+detector-region map and optional electronic readout. With three tasks,
+`task_switching_eval.csv` contains 9 combinations: each evaluation dataset is
+tested with each task prompt while keeping that dataset's own readout head.
 
 ## Per-Epoch Visualization Outputs
 
