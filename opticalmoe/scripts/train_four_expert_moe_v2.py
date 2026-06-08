@@ -162,6 +162,10 @@ def build_model(config: Dict, num_classes: int) -> FourExpertMoEClassifierV2:
         logit_scale=float(readout_cfg.get("logit_scale", 10.0)),
         readout_hidden_dim=int(readout_cfg.get("hidden_dim", 64)),
         readout_activation=readout_cfg.get("activation", "relu"),
+        readout_input_norm=readout_cfg.get("input_norm", "none"),
+        readout_norm_affine=bool(readout_cfg.get("norm_affine", True)),
+        readout_hidden_layers=int(readout_cfg.get("hidden_layers", 1)),
+        readout_dropout=float(readout_cfg.get("dropout", 0.0)),
         evanescent_mode=optics_cfg.get("evanescent_mode", "zero"),
     )
 

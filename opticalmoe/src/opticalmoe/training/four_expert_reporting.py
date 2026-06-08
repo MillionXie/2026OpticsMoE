@@ -244,21 +244,108 @@ def build_architecture_report(
         if task_head_configs
         else None
     )
+    task_input_norms = (
+        {
+            name: settings.get("input_norm", "none")
+            for name, settings in task_head_configs.items()
+        }
+        if task_head_configs
+        else None
+    )
+    task_activations = (
+        {
+            name: settings.get("activation")
+            for name, settings in task_head_configs.items()
+        }
+        if task_head_configs
+        else None
+    )
+    task_hidden_dims = (
+        {
+            name: settings.get("hidden_dim")
+            for name, settings in task_head_configs.items()
+        }
+        if task_head_configs
+        else None
+    )
+    task_hidden_layers = (
+        {
+            name: settings.get("hidden_layers")
+            for name, settings in task_head_configs.items()
+        }
+        if task_head_configs
+        else None
+    )
+    task_dropouts = (
+        {
+            name: settings.get("dropout")
+            for name, settings in task_head_configs.items()
+        }
+        if task_head_configs
+        else None
+    )
     effective_readout_types = (
         set(task_readout_types.values())
         if task_readout_types
         else {readout_type}
     )
-    activation = readout_cfg.get("activation") if "mlp" in effective_readout_types else None
-    hidden_dim = readout_cfg.get("hidden_dim") if "mlp" in effective_readout_types else None
+    effective_input_norms = (
+        set(task_input_norms.values())
+        if task_input_norms
+        else {readout_cfg.get("input_norm", "none")}
+    )
+    activation = (
+        "task_specific"
+        if task_activations and len(set(task_activations.values())) > 1
+        else (
+            next(iter(task_activations.values()))
+            if task_activations
+            else readout_cfg.get("activation")
+        )
+    ) if "mlp" in effective_readout_types else None
+    hidden_dim = (
+        "task_specific"
+        if task_hidden_dims and len(set(task_hidden_dims.values())) > 1
+        else (
+            next(iter(task_hidden_dims.values()))
+            if task_hidden_dims
+            else readout_cfg.get("hidden_dim")
+        )
+    ) if "mlp" in effective_readout_types else None
+    hidden_layers = (
+        "task_specific"
+        if task_hidden_layers and len(set(task_hidden_layers.values())) > 1
+        else (
+            next(iter(task_hidden_layers.values()))
+            if task_hidden_layers
+            else readout_cfg.get("hidden_layers")
+        )
+    ) if "mlp" in effective_readout_types else None
+    dropout = (
+        "task_specific"
+        if task_dropouts and len(set(task_dropouts.values())) > 1
+        else (
+            next(iter(task_dropouts.values()))
+            if task_dropouts
+            else readout_cfg.get("dropout")
+        )
+    ) if "mlp" in effective_readout_types else None
     nonlinear_activation = "mlp" in effective_readout_types
-    if effective_readout_types == {"optical_only"}:
+    electronic_normalization = any(
+        norm not in {"none", None} for norm in effective_input_norms
+    )
+    if effective_readout_types == {"optical_only"} and not electronic_normalization:
         statement = (
             "No electronic nonlinear activation is used. The only nonlinearity "
             "is optical intensity detection |U|^2 before detector energy readout."
         )
     elif "mlp" in effective_readout_types:
         statement = "Electronic nonlinear readout is enabled."
+    elif electronic_normalization:
+        statement = (
+            "Electronic detector-energy normalization is enabled, without an "
+            "electronic nonlinear MLP activation."
+        )
     else:
         statement = (
             "A trainable electronic linear readout is enabled, without an "
@@ -275,15 +362,31 @@ def build_architecture_report(
         "optical_propagation_is_linear": True,
         "phase_masks_are_phase_only": True,
         "intensity_detection_abs_u_squared": True,
-        "electronic_readout_exists": effective_readout_types != {"optical_only"},
+        "electronic_readout_exists": (
+            effective_readout_types != {"optical_only"}
+            or electronic_normalization
+        ),
+        "electronic_normalization_exists": electronic_normalization,
+        "readout_input_norm": (
+            next(iter(effective_input_norms))
+            if len(effective_input_norms) == 1
+            else "task_specific"
+        ),
         "readout_type": (
             next(iter(effective_readout_types))
             if len(effective_readout_types) == 1
             else "task_specific"
         ),
         "task_readout_types": task_readout_types,
+        "task_input_norms": task_input_norms,
+        "task_activations": task_activations,
+        "task_hidden_dims": task_hidden_dims,
+        "task_hidden_layers": task_hidden_layers,
+        "task_dropouts": task_dropouts,
         "electronic_activation": activation,
         "electronic_hidden_dim": hidden_dim,
+        "electronic_hidden_layers": hidden_layers,
+        "electronic_dropout": dropout,
         "electronic_nonlinear_activation_exists": nonlinear_activation,
         "electronic_trainable_parameters_exist": (
             model.electronic_parameter_count() > 0
@@ -318,12 +421,21 @@ def save_architecture_report(report: Dict, run_dir: Path) -> None:
         f"- intensity detection uses |U|^2: {report['intensity_detection_abs_u_squared']}",
         f"- readout type: {report['readout_type']}",
         f"- task readout types: {report['task_readout_types']}",
+        f"- readout input normalization: {report['readout_input_norm']}",
+        f"- task input normalizations: {report['task_input_norms']}",
+        f"- task activations: {report['task_activations']}",
+        f"- task hidden dimensions: {report['task_hidden_dims']}",
+        f"- task hidden layers: {report['task_hidden_layers']}",
+        f"- task dropouts: {report['task_dropouts']}",
         f"- shared detector class count: {report['shared_detector_class_count']}",
         f"- task detector class counts: {report['task_detector_class_counts']}",
         f"- task head configs: {report['task_head_configs']}",
+        f"- electronic normalization: {report['electronic_normalization_exists']}",
         f"- electronic nonlinear activation: {report['electronic_nonlinear_activation_exists']}",
         f"- electronic activation: {report['electronic_activation']}",
         f"- electronic hidden dimension: {report['electronic_hidden_dim']}",
+        f"- electronic hidden layers: {report['electronic_hidden_layers']}",
+        f"- electronic dropout: {report['electronic_dropout']}",
         f"- optical parameters: {report['total_optical_parameter_count']}",
         "- optical parameter count includes the prompt parameters listed below",
         f"- prompt parameters: {report['total_prompt_parameter_count']}",

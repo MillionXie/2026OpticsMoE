@@ -67,11 +67,24 @@ detector:
   layout: grid
 
 readout:
-  type: optical_only
+  # EMNIST letters 是 26 类，纯 optical_only 可能较难优化。
+  #
+  # type:
+  #   optical_only = 纯 detector energy 读出，适合做纯光学 baseline
+  #   linear       = detector energy -> 线性层
+  #   mlp          = detector energy -> 非线性电子 MLP
+  #
+  # 如果要回到纯光学，把 type 改为 optical_only，并把 input_norm 改为 none。
+  type: mlp
   normalize_detector_energy: true
   logit_scale: 10.0
-  hidden_dim: 96
-  activation: relu
+  # LayerNorm 对 26 个 detector energy 做电子归一化，常用于稳定电子读出。
+  input_norm: layernorm
+  norm_affine: true
+  hidden_dim: 128
+  hidden_layers: 2
+  activation: gelu
+  dropout: 0.0
 
 optimizer:
   type: adamw

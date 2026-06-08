@@ -143,6 +143,10 @@ def build_model(config: Dict, task_names: Sequence[str], task_num_classes: Dict[
         logit_scale=float(readout_cfg.get("logit_scale", 10.0)),
         readout_hidden_dim=int(readout_cfg.get("hidden_dim", 64)),
         readout_activation=readout_cfg.get("activation", "relu"),
+        readout_input_norm=readout_cfg.get("input_norm", "none"),
+        readout_norm_affine=bool(readout_cfg.get("norm_affine", True)),
+        readout_hidden_layers=int(readout_cfg.get("hidden_layers", 1)),
+        readout_dropout=float(readout_cfg.get("dropout", 0.0)),
         evanescent_mode=optics_cfg.get("evanescent_mode", "zero"),
     )
 
@@ -178,6 +182,15 @@ def build_optimizer(model, config: Dict):
             **kwargs,
         )
     raise ValueError("optimizer.type must be adam, adamw, or sgd.")
+
+
+def multitask_loss_weights(config: Dict, task_names: Sequence[str]) -> Dict[str, float]:
+    multitask_cfg = config["training"]["multitask"]
+    raw_weights = multitask_cfg.get("loss_weights", {})
+    return {
+        name: float(raw_weights.get(name, 1.0))
+        for name in task_names
+    }
 
 
 def create_task_loaders(config: Dict, seed: int, force_smoke: bool):
@@ -745,6 +758,7 @@ def main():
     previous_stage = None
     multitask_cfg = config["training"]["multitask"]
     evaluation_cfg = config["training"].get("evaluation", {})
+    loss_weights = multitask_loss_weights(config, task_names)
     steps_per_epoch = multitask_cfg.get("steps_per_epoch")
     max_val_batches = evaluation_cfg.get("max_val_batches")
     max_test_batches = evaluation_cfg.get("max_test_batches")
@@ -768,6 +782,7 @@ def main():
         "Each update processes one batch from every task before one "
         "backward/optimizer step."
     )
+    print(f"task loss weights: {loss_weights}")
 
     for epoch in range(1, num_epochs + 1):
         epoch_start = time.perf_counter()
@@ -797,6 +812,7 @@ def main():
             ),
             steps_per_epoch=steps_per_epoch,
             print_freq=print_freq,
+            loss_weights=loss_weights,
         )
         train_duration_seconds = time.perf_counter() - epoch_start
         row = {
@@ -810,6 +826,7 @@ def main():
             "natural_updates": train_result["available_steps"],
             "train_duration_seconds": train_duration_seconds,
             "lr": optimizer.param_groups[0]["lr"],
+            "loss_weights": json.dumps(loss_weights, sort_keys=True),
             "active_layers": " ".join(
                 str(value) for value in stage_info["active_layers"]
             )
@@ -833,6 +850,9 @@ def main():
             row[f"{task_name}_train_loss"] = train_result[
                 f"{task_name}_loss"
             ]
+            row[f"{task_name}_loss_weight"] = train_result[
+                f"{task_name}_loss_weight"
+            ]
             row[f"{task_name}_train_acc"] = train_result[
                 f"{task_name}_acc"
             ]
@@ -851,6 +871,7 @@ def main():
                     "task_name": task_name,
                     "train_loss": train_result[f"{task_name}_loss"],
                     "train_acc": train_result[f"{task_name}_acc"],
+                    "loss_weight": train_result[f"{task_name}_loss_weight"],
                     "train_samples": train_result[f"{task_name}_samples"],
                     "val_loss": validation["loss"],
                     "val_acc": validation["accuracy"],
@@ -1015,6 +1036,7 @@ def main():
                 )
         print(
             f"epoch {epoch:03d} stage {stage_idx} | "
+            f"opt loss={row['total_loss']:.4f} | "
             f"joint train loss={row['joint_train_loss']:.4f} "
             f"acc={row['joint_train_acc']:.4f} | "
             f"joint val loss={row['joint_val_loss']:.4f} "
@@ -1096,6 +1118,7 @@ def main():
             "EMNIST letters uses 26 classes."
         ),
         "optimizer": optimizer_cfg,
+        "loss_weights": loss_weights,
         "architecture_report": report,
         "best_joint_validation_accuracy": best_val_mean,
         "best_mean_validation_accuracy": best_val_mean,

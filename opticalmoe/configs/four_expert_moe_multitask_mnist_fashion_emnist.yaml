@@ -51,11 +51,31 @@ detector:
   layout: grid
 
 readout:
-  type: optical_only
+  # 全局默认读出头配置。每个 task 的 head 可以覆盖这些值。
+  #
+  # type:
+  #   optical_only = 不加可训练电子层，直接把 detector energy 当 logits
+  #   linear       = detector energy -> 线性层 -> logits
+  #   mlp          = detector energy -> MLP 非线性电子读出 -> logits
+  type: mlp
+  # 是否先把 detector energy 除以 CCD 总能量。通常建议 true。
   normalize_detector_energy: true
+  # optical_only 模式下的 logits 放大系数。linear/mlp 模式主要由电子层自己学习尺度。
   logit_scale: 10.0
+  # input_norm:
+  #   none      = 不做电子归一化
+  #   layernorm = 对 detector energy 做 LayerNorm，有助于不同任务/类别数的尺度稳定
+  input_norm: layernorm
+  # LayerNorm 是否带可训练 affine 参数。true 会增加少量电子参数。
+  norm_affine: true
+  # MLP 隐藏层宽度，仅 type=mlp 时生效。
   hidden_dim: 64
+  # MLP 隐藏层数量，仅 type=mlp 时生效。
+  hidden_layers: 1
+  # 非线性激活：relu / gelu / tanh / silu。
   activation: relu
+  # MLP dropout，仅 type=mlp 时生效。光学小数据实验一般先用 0。
+  dropout: 0.0
 
 optimizer:
   type: adamw
@@ -67,7 +87,7 @@ loss:
 
 training:
   mode: multitask
-  epochs: 150
+  epochs: 500
   multitask:
     tasks:
       - name: mnist
@@ -89,9 +109,15 @@ training:
         head:
           detector_size: 32
           detector_layout: grid
+          # MNIST 当前较容易，先保留纯 detector energy 读出。
           readout_type: optical_only
           normalize_detector_energy: true
           logit_scale: 10.0
+          input_norm: none
+          hidden_dim: 64
+          hidden_layers: 1
+          activation: relu
+          dropout: 0.0
       - name: fashionmnist
         dataset:
           name: fashionmnist
@@ -111,9 +137,15 @@ training:
         head:
           detector_size: 32
           detector_layout: grid
+          # FashionMNIST 当前也能学习，先保留纯 detector energy 读出。
           readout_type: optical_only
           normalize_detector_energy: true
           logit_scale: 10.0
+          input_norm: none
+          hidden_dim: 64
+          hidden_layers: 1
+          activation: relu
+          dropout: 0.0
       - name: emnist
         dataset:
           name: emnist
@@ -137,10 +169,32 @@ training:
         head:
           detector_size: 32
           detector_layout: grid
-          readout_type: optical_only
+          # EMNIST letters 是 26 类，纯 optical_only 很容易卡在随机水平。
+          # 推荐先用 mlp + layernorm 作为“电子后处理增强版”。
+          #
+          # 如果你要做纯光学对照实验，把下面两项改为：
+          #   readout_type: optical_only
+          #   input_norm: none
+          readout_type: mlp
           normalize_detector_energy: true
           logit_scale: 10.0
+          input_norm: layernorm
+          norm_affine: true
+          hidden_dim: 128
+          hidden_layers: 2
+          activation: gelu
+          dropout: 0.0
     loss_reduction: mean
+    # 多任务 loss 权重。一次 update 会分别跑 MNIST/Fashion/EMNIST，
+    # 然后用这些权重合成一个总 loss 再反传一次：
+    #   total_loss = sum(weight_task * loss_task) / sum(weight_task)
+    #
+    # EMNIST letters 是 26 类，且当前明显学得更弱，所以这里默认给
+    # 更高权重。想回到完全等权，把 emnist 改成 1.0。
+    loss_weights:
+      mnist: 1.0
+      fashionmnist: 1.0
+      emnist: 3.0
     batches_per_update: 1
     balanced_sampling: true
     # With the paper-style sampling protocol, the natural epoch is now based
@@ -157,7 +211,7 @@ training:
   progressive:
     enabled: true
     order: backward
-    stage_epochs: [10, 10, 10, 10, 10, 100]
+    stage_epochs: [20, 20, 20, 20, 20, 400]
     train_task_prompts_always: true
     train_global_fc_always: true
 

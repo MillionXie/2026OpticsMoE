@@ -23,6 +23,7 @@ def train_multitask_one_epoch(
     balanced_sampling: bool = True,
     steps_per_epoch: int = None,
     print_freq: int = 100,
+    loss_weights: Dict[str, float] = None,
 ) -> Dict:
     """Train shared optics using one task-specific prompt per dataset batch."""
 
@@ -30,6 +31,12 @@ def train_multitask_one_epoch(
         raise ValueError("loss_reduction must be mean or sum.")
     model.train()
     task_names = list(task_names)
+    loss_weights = {
+        name: float((loss_weights or {}).get(name, 1.0))
+        for name in task_names
+    }
+    if any(weight <= 0.0 for weight in loss_weights.values()):
+        raise ValueError("All multitask loss weights must be positive.")
     available_steps = (
         max(len(train_loaders[name]) for name in task_names)
         if balanced_sampling
@@ -49,6 +56,7 @@ def train_multitask_one_epoch(
     for step_idx in range(steps):
         optimizer.zero_grad(set_to_none=True)
         update_losses = []
+        update_weight_sum = 0.0
         for task_name in task_names:
             for _batch_index in range(int(batches_per_update)):
                 batch = _next_batch(iterators, train_loaders, task_name)
@@ -57,7 +65,9 @@ def train_multitask_one_epoch(
                 targets = targets.to(device, non_blocking=True)
                 logits = model(images, task_name=task_name)
                 loss = criterion(logits, targets)
-                update_losses.append(loss)
+                weight = loss_weights[task_name]
+                update_losses.append(loss * weight)
+                update_weight_sum += weight
 
                 batch_size = targets.numel()
                 task_loss_sums[task_name] += float(loss.item()) * batch_size
@@ -67,7 +77,11 @@ def train_multitask_one_epoch(
                 task_seen[task_name] += batch_size
 
         stacked = torch.stack(update_losses)
-        total_loss = stacked.mean() if loss_reduction == "mean" else stacked.sum()
+        total_loss = (
+            stacked.sum() / max(update_weight_sum, 1e-8)
+            if loss_reduction == "mean"
+            else stacked.sum()
+        )
         total_loss.backward()
         optimizer.step()
         total_loss_sum += float(total_loss.item())
@@ -76,7 +90,8 @@ def train_multitask_one_epoch(
         ):
             task_status = " | ".join(
                 f"{name}: loss={task_loss_sums[name] / max(task_seen[name], 1):.4f}, "
-                f"acc={task_correct[name] / max(task_seen[name], 1):.4f}"
+                f"acc={task_correct[name] / max(task_seen[name], 1):.4f}, "
+                f"w={loss_weights[name]:.2f}"
                 for name in task_names
             )
             print(
@@ -97,6 +112,7 @@ def train_multitask_one_epoch(
         "available_steps": available_steps,
     }
     for task_name in task_names:
+        result[f"{task_name}_loss_weight"] = loss_weights[task_name]
         result[f"{task_name}_loss"] = task_loss_sums[task_name] / max(
             task_seen[task_name], 1
         )

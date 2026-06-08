@@ -50,6 +50,28 @@ python scripts/train_four_expert_moe_v2.py --config configs/four_expert_moe_fash
   backpropagates once, and updates the shared optical backbone plus every
   task-specific prompt.
 
+The multitask loss can be weighted from the YAML config:
+
+```yaml
+training:
+  multitask:
+    loss_reduction: mean
+    loss_weights:
+      mnist: 1.0
+      fashionmnist: 1.0
+      emnist: 3.0
+```
+
+With `loss_reduction: mean`, the optimization loss is:
+
+```text
+total_loss = sum(weight_task * loss_task) / sum(weight_task)
+```
+
+The per-task losses printed in the terminal remain the raw cross-entropy
+losses. The weights only change the gradient contribution to the shared optical
+backbone and task-specific prompt/readout heads.
+
 Run:
 
 ```text
@@ -162,11 +184,37 @@ Free-space propagation and phase-only modulation are linear in the complex
 field. The detector computes intensity `|U|^2`, which is the required optical
 detection nonlinearity.
 
-The default readout is `optical_only`. In this mode there is no electronic
-ReLU, GELU, or MLP; normalized detector energies are scaled and used as logits.
-If `readout.type` is explicitly changed to `linear` or `mlp`, the architecture
-report records the electronic parameter count and, for an MLP, its activation
-and hidden dimension.
+The default readout for pure optical baselines is `optical_only`. In this mode
+there is no electronic ReLU, GELU, or MLP; normalized detector energies are
+scaled and used as logits.
+
+The four-expert scripts also support optional electronic post-processing:
+
+```yaml
+readout:
+  type: optical_only | linear | mlp
+  input_norm: none | layernorm
+  norm_affine: true
+  hidden_dim: 128
+  hidden_layers: 2
+  activation: relu | gelu | tanh | silu
+  dropout: 0.0
+```
+
+For multitask runs, each task can override these values in its own `head`
+block. The current three-task config keeps MNIST/FashionMNIST as
+`optical_only`, but uses `mlp + layernorm` for EMNIST letters because the
+26-class letter task was otherwise staying near random accuracy. If a strict
+pure-optical comparison is required, set EMNIST back to:
+
+```yaml
+readout_type: optical_only
+input_norm: none
+```
+
+The architecture report records input normalization, MLP depth, activation,
+dropout, electronic parameter count, and whether an electronic nonlinear
+readout is enabled.
 
 ## 5. Optimizer
 

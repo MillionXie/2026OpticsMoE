@@ -195,6 +195,10 @@ class FourExpertMultitaskMoEClassifier(nn.Module):
         logit_scale: float = 10.0,
         readout_hidden_dim: int = 64,
         readout_activation: str = "relu",
+        readout_input_norm: str = "none",
+        readout_norm_affine: bool = True,
+        readout_hidden_layers: int = 1,
+        readout_dropout: float = 0.0,
         evanescent_mode: str = "zero",
     ) -> None:
         super().__init__()
@@ -335,6 +339,14 @@ class FourExpertMultitaskMoEClassifier(nn.Module):
                 "logit_scale": float(head.get("logit_scale", logit_scale)),
                 "hidden_dim": int(head.get("hidden_dim", readout_hidden_dim)),
                 "activation": head.get("activation", readout_activation),
+                "input_norm": head.get("input_norm", readout_input_norm),
+                "norm_affine": bool(
+                    head.get("norm_affine", readout_norm_affine)
+                ),
+                "hidden_layers": int(
+                    head.get("hidden_layers", readout_hidden_layers)
+                ),
+                "dropout": float(head.get("dropout", readout_dropout)),
             }
             detectors[name] = DetectorArray(
                 num_classes=class_count,
@@ -351,6 +363,10 @@ class FourExpertMultitaskMoEClassifier(nn.Module):
                 logit_scale=resolved["logit_scale"],
                 hidden_dim=resolved["hidden_dim"],
                 activation=resolved["activation"],
+                input_norm=resolved["input_norm"],
+                norm_affine=resolved["norm_affine"],
+                hidden_layers=resolved["hidden_layers"],
+                dropout=resolved["dropout"],
             )
             resolved_head_configs[name] = resolved
         self.task_head_configs = resolved_head_configs

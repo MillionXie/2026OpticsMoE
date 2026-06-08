@@ -195,6 +195,10 @@ class FourExpertMoEClassifierV2(nn.Module):
         logit_scale: float = 10.0,
         readout_hidden_dim: int = 64,
         readout_activation: str = "relu",
+        readout_input_norm: str = "none",
+        readout_norm_affine: bool = True,
+        readout_hidden_layers: int = 1,
+        readout_dropout: float = 0.0,
         evanescent_mode: str = "zero",
     ) -> None:
         super().__init__()
@@ -303,6 +307,10 @@ class FourExpertMoEClassifierV2(nn.Module):
             logit_scale=logit_scale,
             hidden_dim=readout_hidden_dim,
             activation=readout_activation,
+            input_norm=readout_input_norm,
+            norm_affine=readout_norm_affine,
+            hidden_layers=readout_hidden_layers,
+            dropout=readout_dropout,
         )
         self.register_buffer(
             "expert_masks", self.layout.expert_masks(), persistent=False

@@ -69,6 +69,20 @@ def test_electronic_readout_shapes():
         assert logits.shape == (4, 10)
 
 
+def test_electronic_readout_supports_layernorm_and_deeper_mlp():
+    energies = torch.rand(4, 26)
+    readout = ElectronicReadout(
+        num_classes=26,
+        readout_type="mlp",
+        input_norm="layernorm",
+        hidden_dim=32,
+        hidden_layers=2,
+        activation="gelu",
+    )
+    logits = readout(energies)
+    assert logits.shape == (4, 26)
+
+
 def _tiny_classifier(num_layers=2, readout_type="optical_only"):
     return OpticalClassifier(
         num_classes=10,

@@ -200,6 +200,27 @@ def test_multitask_training_loop_runs_three_task_epoch():
     assert result["fashionmnist_samples"] == 4
     assert result["emnist_samples"] == 4
     assert "emnist_acc" in result
+    assert result["emnist_loss_weight"] == 1.0
+
+
+def test_multitask_training_loop_records_loss_weights():
+    model = _TinyMultitaskModel()
+    loaders = _tiny_loaders()
+    optimizer = torch.optim.AdamW(model.parameters(), lr=0.003)
+    result = train_multitask_one_epoch(
+        model=model,
+        train_loaders=loaders,
+        optimizer=optimizer,
+        device=torch.device("cpu"),
+        criterion=nn.CrossEntropyLoss(),
+        task_names=["mnist", "fashionmnist", "emnist"],
+        steps_per_epoch=1,
+        print_freq=0,
+        loss_weights={"mnist": 1.0, "fashionmnist": 1.0, "emnist": 3.0},
+    )
+    assert result["mnist_loss_weight"] == 1.0
+    assert result["fashionmnist_loss_weight"] == 1.0
+    assert result["emnist_loss_weight"] == 3.0
 
 
 def test_multitask_training_loop_supports_fixed_step_budget():

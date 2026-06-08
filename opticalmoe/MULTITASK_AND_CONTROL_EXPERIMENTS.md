@@ -84,6 +84,22 @@ detector-region map and optional electronic readout. With three tasks,
 `task_switching_eval.csv` contains 9 combinations: each evaluation dataset is
 tested with each task prompt while keeping that dataset's own readout head.
 
+The three-task config now exposes task loss weights:
+
+```yaml
+training:
+  multitask:
+    loss_weights:
+      mnist: 1.0
+      fashionmnist: 1.0
+      emnist: 3.0
+```
+
+The terminal still prints raw per-task cross-entropy losses. The weight only
+changes the combined loss used for backpropagation. EMNIST also has a
+configurable electronic head; the default three-task config uses `mlp` with
+`layernorm` for EMNIST and keeps MNIST/FashionMNIST as `optical_only`.
+
 ## Per-Epoch Visualization Outputs
 
 The four-expert single-task and multitask scripts now save full process
