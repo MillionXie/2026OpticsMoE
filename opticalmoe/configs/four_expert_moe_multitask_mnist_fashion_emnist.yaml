@@ -1,0 +1,137 @@
+# Separate three-task experiment: MNIST + FashionMNIST + EMNIST digits.
+#
+# Run with:
+# python scripts/train_four_expert_multitask_moe.py --config configs/four_expert_moe_multitask_mnist_fashion_emnist.yaml --run_name four_expert_multitask_mnist_fashion_emnist
+#
+# Important:
+# EMNIST must use split: digits here. The first multitask implementation uses
+# one shared detector/readout, so all tasks must have the same number of classes.
+# MNIST, FashionMNIST, and EMNIST digits are all 10-class tasks.
+
+seed: 7
+device: auto
+
+experiment:
+  run_name: four_expert_multitask_mnist_fashion_emnist
+  print_freq: 50
+
+layout:
+  canvas_height: 700
+  canvas_width: 700
+  input_size: 200
+  expert_size: 200
+  prompt_cell_size: 300
+  gap_pixels: 100
+  outer_margin: 100
+
+optics:
+  wavelength_m: 5.32e-7
+  pixel_size_m: 8.0e-6
+  num_layers: 5
+  focal_length_m: 0.10
+  aperture_mode: hard
+  evanescent_mode: zero
+  phase_param: unconstrained
+  expert_phase_init: uniform_0_2pi
+  expert_init_std: 0.02
+  global_fc_phase_init: identity
+  global_fc_init_std: 0.02
+  distances_m:
+    input_to_prompt: 0.20
+    prompt_to_expert: 0.20
+    inter_layer: 0.05
+    layer5_to_fc: 0.05
+    fc_to_detector: 0.05
+
+prompt:
+  amplitude_init_logits: 2.0
+  train_phase_biases: true
+
+detector:
+  detector_size: 32
+  layout: grid
+
+readout:
+  type: optical_only
+  normalize_detector_energy: true
+  logit_scale: 10.0
+  hidden_dim: 64
+  activation: relu
+
+optimizer:
+  type: adamw
+  lr: 0.003
+  weight_decay: 0.0
+
+loss:
+  type: cross_entropy
+
+training:
+  mode: multitask
+  epochs: 35
+  multitask:
+    tasks:
+      - name: mnist
+        dataset:
+          name: mnist
+          root: ./data
+          input_size: 200
+          val_split: 0.1
+          batch_size: 1
+          num_workers: 0
+          download: true
+          smoke_test: false
+          smoke_train_size: 12
+          smoke_test_size: 8
+      - name: fashionmnist
+        dataset:
+          name: fashionmnist
+          root: ./data
+          input_size: 200
+          val_split: 0.1
+          batch_size: 1
+          num_workers: 0
+          download: true
+          smoke_test: false
+          smoke_train_size: 12
+          smoke_test_size: 8
+      - name: emnist
+        dataset:
+          name: emnist
+          split: digits
+          root: ./data
+          input_size: 200
+          val_split: 0.1
+          batch_size: 1
+          num_workers: 0
+          download: true
+          smoke_test: false
+          smoke_train_size: 12
+          smoke_test_size: 8
+    loss_reduction: mean
+    batches_per_update: 1
+    balanced_sampling: true
+    # Full-dataset three-task training can be very slow, especially because
+    # EMNIST digits is much larger than MNIST/FashionMNIST. Keep null for a
+    # literal full epoch; set a value such as 1000 or 2000 for research epochs.
+    steps_per_epoch: null
+    print_freq: 50
+  evaluation:
+    # Keep null for full validation/test metrics. For faster exploratory runs,
+    # use values such as 100 and 500.
+    max_val_batches: null
+    max_test_batches: null
+  progressive:
+    enabled: true
+    order: backward
+    stage_epochs: [3, 3, 3, 3, 3, 20]
+    train_task_prompts_always: true
+    train_global_fc_always: true
+
+visualization:
+  enabled: true
+  save_interval_epochs: 5
+  num_samples: 2
+  font_size: 12
+  dpi: 150
+

@@ -9,10 +9,10 @@ dataset:
   root: ./data
   input_size: 200
   val_split: 0.2
-  batch_size: 1
+  batch_size: 32
   num_workers: 0
   download: true
-  smoke_test: true
+  smoke_test: false
   smoke_train_size: 12
   smoke_test_size: 8
 
@@ -66,11 +66,11 @@ optimizer:
 
 training:
   mode: single
-  epochs: 25
+  epochs: 100
   progressive:
     enabled: true
     order: backward
-    stage_epochs: [3, 3, 3, 3, 3, 10]
+    stage_epochs: [5, 5, 5, 5, 10, 70]
     train_prompt_always: true
     train_global_fc_always: true
 

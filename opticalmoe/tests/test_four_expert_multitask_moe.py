@@ -80,6 +80,7 @@ class _TinyMultitaskModel(nn.Module):
             {
                 "mnist": nn.Parameter(torch.zeros(10)),
                 "fashionmnist": nn.Parameter(torch.ones(10) * 0.01),
+                "emnist": nn.Parameter(torch.ones(10) * 0.02),
             }
         )
 
@@ -99,13 +100,18 @@ def _tiny_loaders():
         TensorDataset(images.flip(0), labels.flip(0)),
         batch_size=2,
     )
-    return {"mnist": mnist, "fashionmnist": fashion}
+    emnist = DataLoader(
+        TensorDataset(torch.roll(images, shifts=1, dims=0), labels),
+        batch_size=2,
+    )
+    return {"mnist": mnist, "fashionmnist": fashion, "emnist": emnist}
 
 
 def test_task_prompt_bank_keeps_tasks_independent():
-    bank = TaskPromptBank(["mnist", "fashionmnist"])
+    bank = TaskPromptBank(["mnist", "fashionmnist", "emnist"])
     assert bank.amplitudes("mnist").shape == (4,)
     assert bank.amplitudes("fashionmnist").shape == (4,)
+    assert bank.amplitudes("emnist").shape == (4,)
     assert (
         bank.amplitude_logits["mnist"]
         is not bank.amplitude_logits["fashionmnist"]
@@ -118,9 +124,9 @@ def test_task_prompt_bank_keeps_tasks_independent():
     )
 
 
-def test_multitask_optical_forward_accepts_two_task_names():
+def test_multitask_optical_forward_accepts_three_task_names():
     model = FourExpertMultitaskMoEClassifier(
-        task_names=["mnist", "fashionmnist"],
+        task_names=["mnist", "fashionmnist", "emnist"],
         num_layers=1,
         expert_phase_init="identity",
         global_fc_phase_init="identity",
@@ -129,9 +135,11 @@ def test_multitask_optical_forward_accepts_two_task_names():
     with torch.no_grad():
         mnist_logits = model(images, task_name="mnist")
         fashion_logits = model(images, task_name="fashionmnist")
+        emnist_logits = model(images, task_name="emnist")
         task_id_logits = model(images, task_id=0)
     assert mnist_logits.shape == (1, 10)
     assert fashion_logits.shape == (1, 10)
+    assert emnist_logits.shape == (1, 10)
     assert task_id_logits.shape == (1, 10)
 
 
@@ -154,6 +162,28 @@ def test_multitask_training_loop_runs_one_tiny_epoch():
     assert result["samples"] == 16
     assert "mnist_acc" in result
     assert "fashionmnist_acc" in result
+
+
+def test_multitask_training_loop_runs_three_task_epoch():
+    model = _TinyMultitaskModel()
+    loaders = _tiny_loaders()
+    optimizer = torch.optim.AdamW(model.parameters(), lr=0.003)
+    result = train_multitask_one_epoch(
+        model=model,
+        train_loaders=loaders,
+        optimizer=optimizer,
+        device=torch.device("cpu"),
+        criterion=nn.CrossEntropyLoss(),
+        task_names=["mnist", "fashionmnist", "emnist"],
+        steps_per_epoch=2,
+        print_freq=0,
+    )
+    assert result["steps"] == 2
+    assert result["samples"] == 12
+    assert result["mnist_samples"] == 4
+    assert result["fashionmnist_samples"] == 4
+    assert result["emnist_samples"] == 4
+    assert "emnist_acc" in result
 
 
 def test_multitask_training_loop_supports_fixed_step_budget():
@@ -184,21 +214,23 @@ def test_task_switching_results_can_be_written(tmp_path):
         test_loaders=loaders,
         device=torch.device("cpu"),
         criterion=nn.CrossEntropyLoss(),
-        task_names=["mnist", "fashionmnist"],
+        task_names=["mnist", "fashionmnist", "emnist"],
     )
     output = tmp_path / "task_switching_eval.csv"
     multitask_script.write_rows(output, rows)
     with open(output, newline="", encoding="utf-8") as handle:
         saved = list(csv.DictReader(handle))
     assert output.exists()
-    assert len(saved) == 4
+    assert len(saved) == 9
     assert {row["eval_dataset"] for row in saved} == {
         "mnist",
         "fashionmnist",
+        "emnist",
     }
     assert {row["prompt_task"] for row in saved} == {
         "mnist",
         "fashionmnist",
+        "emnist",
     }
 
 

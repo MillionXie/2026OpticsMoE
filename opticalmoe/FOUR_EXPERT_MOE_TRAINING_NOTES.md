@@ -35,14 +35,16 @@ python scripts/train_four_expert_moe_v2.py --config configs/four_expert_moe_fash
 
 - Model: `FourExpertMultitaskMoEClassifier`
 - Script: `scripts/train_four_expert_multitask_moe.py`
-- Config: `configs/four_expert_moe_multitask_mnist_fashion.yaml`
-- MNIST and FashionMNIST share the same five expert layers, global FC phase,
-  detector, and optional electronic readout.
+- Two-task config: `configs/four_expert_moe_multitask_mnist_fashion.yaml`
+- Three-task config:
+  `configs/four_expert_moe_multitask_mnist_fashion_emnist.yaml`
+- All tasks share the same five expert layers, global FC phase, detector, and
+  optional electronic readout.
 - Each task owns an independent set of four prompt amplitude parameters and
   four optional scalar prompt phase biases.
-- One update uses one MNIST batch and one FashionMNIST batch, combines their
-  losses, backpropagates once, and updates the shared optical backbone and both
-  task prompts.
+- One update uses one batch from each configured task, combines their losses,
+  backpropagates once, and updates the shared optical backbone plus every
+  task-specific prompt.
 
 Run:
 
@@ -50,10 +52,20 @@ Run:
 python scripts/train_four_expert_multitask_moe.py --config configs/four_expert_moe_multitask_mnist_fashion.yaml --run_name four_expert_multitask_mnist_fashion
 ```
 
+Three-task MNIST + FashionMNIST + EMNIST-digits run:
+
+```text
+python scripts/train_four_expert_multitask_moe.py --config configs/four_expert_moe_multitask_mnist_fashion_emnist.yaml --run_name four_expert_multitask_mnist_fashion_emnist
+```
+
+EMNIST must use `split: digits` in this shared 10-class detector setup.
+Other EMNIST splits have different class counts and need a redesigned readout
+or a task-specific detector head.
+
 For a quick pipeline check:
 
 ```text
-python scripts/train_four_expert_multitask_moe.py --config configs/four_expert_moe_multitask_mnist_fashion.yaml --run_name four_expert_multitask_smoke --epochs 1 --smoke_test
+python scripts/train_four_expert_multitask_moe.py --config configs/four_expert_moe_multitask_mnist_fashion_emnist.yaml --run_name four_expert_multitask_three_task_smoke --epochs 1 --smoke_test
 ```
 
 The two scripts deliberately do not auto-detect each other's configuration.
@@ -220,8 +232,8 @@ fields, and architecture reports.
 - CIFAR10 is supported through grayscale amplitude encoding, but it is harder
   than MNIST-like datasets because color information is discarded.
 - Multitask training currently requires every task to use the same number of
-  detector classes. MNIST and FashionMNIST both use ten detector indices, even
-  though the meanings of their labels differ.
+  detector classes. MNIST, FashionMNIST, and EMNIST `digits` all use ten
+  detector indices, even though the meanings of labels can differ by task.
 - There is no task-specific electronic detector head.
 - Task switching currently uses a known task name to select trainable prompt
   amplitudes and phase biases. It is not an input-dependent learned router.
@@ -240,4 +252,3 @@ fields, and architecture reports.
 - Added a separate multitask training/evaluation script.
 - Added MNIST + FashionMNIST joint-training configuration.
 - Added correct-prompt and mismatched-prompt evaluation.
-

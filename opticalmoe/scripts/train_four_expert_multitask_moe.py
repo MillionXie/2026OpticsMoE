@@ -197,7 +197,9 @@ def create_task_loaders(config: Dict, seed: int, force_smoke: bool):
     if len(set(class_counts.values())) != 1:
         raise ValueError(
             "First-version multitask training requires the same num_classes "
-            f"for all tasks, got {class_counts}."
+            f"for all tasks, got {class_counts}. If you combine MNIST, "
+            "FashionMNIST, and EMNIST with the shared 10-class detector, set "
+            "the EMNIST dataset block to split: digits."
         )
     return train_loaders, val_loaders, test_loaders, class_counts
 
@@ -1049,8 +1051,9 @@ def main():
         "task_names": task_names,
         "shared_num_classes": num_classes,
         "class_semantics_note": (
-            "MNIST and FashionMNIST both use detector indices 0-9, but their "
-            "semantic labels differ by task."
+            "All multitask datasets share the same detector indices. In the "
+            "MNIST/FashionMNIST/EMNIST-digits setup these are 0-9, but the "
+            "label semantics can differ by task."
         ),
         "optimizer": optimizer_cfg,
         "architecture_report": report,
