@@ -681,6 +681,7 @@ def main():
 
     initial_rows = []
     prompt_history = []
+    visualization_enabled = bool(config.get("visualization", {}).get("enabled", True))
     for task_name in task_names:
         initial_val_loss, initial_val_acc = fixed_batch_loss_accuracy(
             model,
@@ -700,7 +701,16 @@ def main():
             val_loss=initial_val_loss,
             val_acc=initial_val_acc,
             task_name=task_name,
+            save_images=visualization_enabled,
         )
+        if payload.get("visualization_error"):
+            visualization_enabled = False
+            config.setdefault("visualization", {})["enabled"] = False
+            print(
+                "Initial visualization failed and later PNG visualizations "
+                "were disabled. Training will continue. Error: "
+                f"{payload['visualization_error']}"
+            )
         target_dir = run_dir / "light_fields" / "epoch_0000" / task_name
         if target_dir.exists():
             shutil.rmtree(target_dir)
@@ -980,13 +990,20 @@ def main():
             and interval > 0
             and (epoch % interval == 0 or epoch == num_epochs)
         ):
-            save_multitask_phase_visualizations(model, run_dir, epoch)
-            for task_name in task_names:
-                save_task_epoch_visualization(
-                    current_diagnostics[task_name],
-                    run_dir,
-                    epoch,
-                    task_name,
+            try:
+                save_multitask_phase_visualizations(model, run_dir, epoch)
+                for task_name in task_names:
+                    save_task_epoch_visualization(
+                        current_diagnostics[task_name],
+                        run_dir,
+                        epoch,
+                        task_name,
+                    )
+            except Exception as exc:  # pragma: no cover - environment-specific.
+                config.setdefault("visualization", {})["enabled"] = False
+                print(
+                    "Epoch visualization failed and later PNG visualizations "
+                    f"were disabled. Training will continue. Error: {repr(exc)}"
                 )
         print(
             f"epoch {epoch:03d} stage {stage_idx} | "
@@ -1002,8 +1019,22 @@ def main():
             )
         )
 
-    plot_history(prompt_history, task_names, run_dir)
-    plot_train_val(metrics_rows, task_names, run_dir)
+    if config.get("visualization", {}).get("enabled", True):
+        try:
+            plot_history(prompt_history, task_names, run_dir)
+            plot_train_val(metrics_rows, task_names, run_dir)
+        except Exception as exc:  # pragma: no cover - environment-specific.
+            config.setdefault("visualization", {})["enabled"] = False
+            (run_dir / "visualization_error.txt").write_text(
+                "Final history plot saving failed. Metrics CSV, checkpoints, "
+                "and summary files were still written.\n"
+                f"{repr(exc)}\n",
+                encoding="utf-8",
+            )
+            print(
+                "Final history plot saving failed. Continuing to evaluation "
+                f"and summary. Error: {repr(exc)}"
+            )
     switching_rows = task_switching_evaluation(
         model,
         test_loaders,

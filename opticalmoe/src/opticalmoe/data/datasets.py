@@ -41,8 +41,7 @@ class _PILToFloatTensorNoNumpy:
     def __call__(self, image):
         image = image.convert("L")
         width, height = image.size
-        storage = torch.ByteStorage.from_buffer(image.tobytes())
-        tensor = torch.ByteTensor(storage)
+        tensor = torch.frombuffer(bytearray(image.tobytes()), dtype=torch.uint8)
         tensor = tensor.view(height, width).unsqueeze(0)
         return tensor.to(dtype=torch.float32).div_(255.0)
 

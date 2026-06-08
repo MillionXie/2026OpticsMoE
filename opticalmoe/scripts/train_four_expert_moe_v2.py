@@ -812,7 +812,16 @@ def main():
         output_dir=run_dir / "initial_state",
         val_loss=initial_val_loss,
         val_acc=initial_val_acc,
+        save_images=bool(vis_cfg.get("enabled", True)),
     )
+    if initial_payload.get("visualization_error"):
+        vis_cfg["enabled"] = False
+        config.setdefault("visualization", {})["enabled"] = False
+        print(
+            "Initial visualization failed and later PNG visualizations were "
+            "disabled. Training will continue. Error: "
+            f"{initial_payload['visualization_error']}"
+        )
     write_rows(
         run_dir / "initial_diagnostics.csv",
         [initial_payload],
@@ -972,8 +981,16 @@ def main():
             and interval > 0
             and (epoch % interval == 0 or epoch == num_epochs)
         ):
-            save_phase_visualizations(model, run_dir, epoch)
-            save_light_field_visualizations(diagnostics, run_dir, epoch)
+            try:
+                save_phase_visualizations(model, run_dir, epoch)
+                save_light_field_visualizations(diagnostics, run_dir, epoch)
+            except Exception as exc:  # pragma: no cover - environment-specific.
+                vis_cfg["enabled"] = False
+                config.setdefault("visualization", {})["enabled"] = False
+                print(
+                    "Epoch visualization failed and later PNG visualizations "
+                    f"were disabled. Training will continue. Error: {repr(exc)}"
+                )
 
         final_targets = test_result[2]
         final_predictions = test_result[3]
@@ -985,13 +1002,27 @@ def main():
             f"amps {[round(value, 4) for value in diagnostics['amplitudes'].tolist()]}"
         )
 
-    save_history_plots(run_dir, metrics_rows, amplitude_rows, expert_rows)
-    save_confusion_matrix(
-        final_targets,
-        final_predictions,
-        num_classes,
-        run_dir / "confusion_matrix.png",
-    )
+    if vis_cfg.get("enabled", True):
+        try:
+            save_history_plots(run_dir, metrics_rows, amplitude_rows, expert_rows)
+            save_confusion_matrix(
+                final_targets,
+                final_predictions,
+                num_classes,
+                run_dir / "confusion_matrix.png",
+            )
+        except Exception as exc:  # pragma: no cover - environment-specific.
+            vis_cfg["enabled"] = False
+            (run_dir / "visualization_error.txt").write_text(
+                "Final visualization saving failed. Metrics CSV, checkpoints, "
+                "and summary files were still written.\n"
+                f"{repr(exc)}\n",
+                encoding="utf-8",
+            )
+            print(
+                "Final visualization saving failed. Continuing to summary. "
+                f"Error: {repr(exc)}"
+            )
     summary = {
         "run_name": run_name,
         "dataset": config["dataset"].get("name"),

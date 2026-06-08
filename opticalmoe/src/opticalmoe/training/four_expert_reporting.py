@@ -93,6 +93,7 @@ def save_initial_state(
     val_loss: Optional[float] = None,
     val_acc: Optional[float] = None,
     task_name: Optional[str] = None,
+    save_images: bool = True,
 ) -> Dict:
     """Save one pre-optimization optical state as separate Word-ready images."""
 
@@ -139,48 +140,60 @@ def save_initial_state(
             ),
         ]
     )
-    for file_stem, field, title in fields:
-        _save_field(
-            field,
-            output_dir / f"{file_stem}_{suffix}.png",
-            title,
-        )
+    visualization_error = None
+    if save_images:
+        try:
+            for file_stem, field, title in fields:
+                _save_field(
+                    field,
+                    output_dir / f"{file_stem}_{suffix}.png",
+                    title,
+                )
 
-    _save_bar(
-        diagnostics["amplitudes"],
-        output_dir / f"prompt_amplitude_bar_{suffix}.png",
-        "Initial Prompt Amplitudes",
-        "Amplitude",
-        "E",
-    )
-    _save_bar(
-        diagnostics["expert_energy_ratios"],
-        output_dir / f"expert_energy_bar_{suffix}.png",
-        "Initial Expert Entrance Energy Ratios",
-        "Energy / total",
-        "E",
-    )
-    _save_bar(
-        diagnostics["detector_energies"],
-        output_dir / f"detector_energy_bar_{suffix}.png",
-        "Initial Detector Energies",
-        "Detector energy",
-        "D",
-    )
-    _save_phase(
-        intermediates["prompt_phase"],
-        output_dir / f"prompt_phase_{suffix}.png",
-        "Initial Prompt Phase",
-    )
-    _save_phase(
-        intermediates["global_fc_phase"],
-        output_dir / f"global_fc_phase_{suffix}.png",
-        "Initial Global FC Phase",
-    )
-    _save_expert_phases(
-        model,
-        output_dir / f"expert_phase_layers_{suffix}.png",
-    )
+            _save_bar(
+                diagnostics["amplitudes"],
+                output_dir / f"prompt_amplitude_bar_{suffix}.png",
+                "Initial Prompt Amplitudes",
+                "Amplitude",
+                "E",
+            )
+            _save_bar(
+                diagnostics["expert_energy_ratios"],
+                output_dir / f"expert_energy_bar_{suffix}.png",
+                "Initial Expert Entrance Energy Ratios",
+                "Energy / total",
+                "E",
+            )
+            _save_bar(
+                diagnostics["detector_energies"],
+                output_dir / f"detector_energy_bar_{suffix}.png",
+                "Initial Detector Energies",
+                "Detector energy",
+                "D",
+            )
+            _save_phase(
+                intermediates["prompt_phase"],
+                output_dir / f"prompt_phase_{suffix}.png",
+                "Initial Prompt Phase",
+            )
+            _save_phase(
+                intermediates["global_fc_phase"],
+                output_dir / f"global_fc_phase_{suffix}.png",
+                "Initial Global FC Phase",
+            )
+            _save_expert_phases(
+                model,
+                output_dir / f"expert_phase_layers_{suffix}.png",
+            )
+        except Exception as exc:  # pragma: no cover - depends on server packages.
+            visualization_error = repr(exc)
+            (output_dir / "visualization_error.txt").write_text(
+                "Initial optical field image saving failed, so training can "
+                "continue without PNG visualizations.\n"
+                f"{visualization_error}\n",
+                encoding="utf-8",
+            )
+            plt.close("all")
 
     payload = {
         "epoch": 0,
@@ -200,6 +213,8 @@ def save_initial_state(
             diagnostics["detector_energies"].float().max().item()
         ),
         "detector_energies": diagnostics["detector_energies"].tolist(),
+        "visualization_saved": save_images and visualization_error is None,
+        "visualization_error": visualization_error,
     }
     with open(
         output_dir / "initial_diagnostics.json",
