@@ -6,6 +6,7 @@ import torch.nn as nn
 
 
 GridSize = Union[int, Tuple[int, int]]
+PHASE_DROPOUT_MODES = {"none", "phase_bypass", "block_phase_bypass"}
 
 
 class PhaseLayer(nn.Module):
@@ -17,6 +18,10 @@ class PhaseLayer(nn.Module):
         parameterization: str = "unconstrained",
         init: str = "uniform",
         init_std: float = 0.02,
+        phase_dropout_mode: str = "none",
+        phase_dropout_p: float = 0.0,
+        phase_dropout_block_size: int = 8,
+        phase_dropout_batch_shared: bool = True,
     ) -> None:
         super().__init__()
         if isinstance(grid_size, int):
@@ -24,8 +29,26 @@ class PhaseLayer(nn.Module):
         else:
             height, width = grid_size
 
+        if phase_dropout_mode not in PHASE_DROPOUT_MODES:
+            raise ValueError(
+                "phase_dropout_mode must be one of "
+                f"{sorted(PHASE_DROPOUT_MODES)}, got {phase_dropout_mode}."
+            )
+        if not 0.0 <= float(phase_dropout_p) < 1.0:
+            raise ValueError("phase_dropout_p must satisfy 0 <= p < 1.")
+        if int(phase_dropout_block_size) <= 0:
+            raise ValueError("phase_dropout_block_size must be positive.")
+
         self.grid_size = (int(height), int(width))
         self.parameterization = parameterization
+        self.phase_dropout_mode = phase_dropout_mode
+        self.phase_dropout_p = float(phase_dropout_p)
+        self.phase_dropout_block_size = int(phase_dropout_block_size)
+        self.phase_dropout_batch_shared = bool(phase_dropout_batch_shared)
+        self.phase_dropout_active = True
+        # Debug-only state for tests/inspection. This is not a parameter or
+        # buffer, so it is not saved in checkpoints.
+        self.last_phase_dropout_mask = None
         self.raw_phase = nn.Parameter(torch.empty(self.grid_size, dtype=torch.float32))
         self.reset_parameters(init=init, init_std=init_std)
 
@@ -55,9 +78,66 @@ class PhaseLayer(nn.Module):
     def get_phase_wrapped(self) -> torch.Tensor:
         return torch.remainder(self.get_phase(), 2.0 * math.pi)
 
+    def set_phase_dropout_active(self, active: bool) -> None:
+        self.phase_dropout_active = bool(active)
+
+    def _phase_dropout_enabled(self) -> bool:
+        return (
+            self.training
+            and self.phase_dropout_active
+            and self.phase_dropout_mode != "none"
+            and self.phase_dropout_p > 0.0
+        )
+
+    def _sample_phase_dropout_mask(
+        self,
+        batch_size: int,
+        height: int,
+        width: int,
+        device: torch.device,
+    ) -> torch.Tensor:
+        mask_batch = 1 if self.phase_dropout_batch_shared else int(batch_size)
+        keep_prob = 1.0 - self.phase_dropout_p
+
+        if self.phase_dropout_mode == "phase_bypass":
+            sample_shape = (mask_batch, height, width)
+            keep = torch.rand(sample_shape, device=device) < keep_prob
+            return keep.to(torch.float32)
+
+        if self.phase_dropout_mode == "block_phase_bypass":
+            block = self.phase_dropout_block_size
+            low_h = int(math.ceil(height / block))
+            low_w = int(math.ceil(width / block))
+            keep = torch.rand((mask_batch, low_h, low_w), device=device) < keep_prob
+            keep = keep.repeat_interleave(block, dim=-2).repeat_interleave(block, dim=-1)
+            keep = keep[:, :height, :width]
+            return keep.to(torch.float32)
+
+        raise RuntimeError(
+            f"Unexpected phase dropout mode: {self.phase_dropout_mode}"
+        )
+
     def forward(self, field: torch.Tensor) -> torch.Tensor:
         if field.ndim != 3:
             raise ValueError(f"Expected field shape [B, H, W], got {tuple(field.shape)}")
-        phase = self.get_phase().to(field.device)
+        field = field.to(torch.complex64)
+        phase = self.get_phase().to(device=field.device, dtype=torch.float32)
         modulation = torch.exp(1j * phase).to(torch.complex64)
-        return field.to(torch.complex64) * modulation
+        if not self._phase_dropout_enabled():
+            self.last_phase_dropout_mask = None
+            return field * modulation
+
+        keep = self._sample_phase_dropout_mask(
+            batch_size=field.shape[0],
+            height=phase.shape[-2],
+            width=phase.shape[-1],
+            device=field.device,
+        )
+        self.last_phase_dropout_mask = keep.detach()
+        keep_complex = keep.to(torch.complex64)
+        identity = torch.ones_like(keep_complex)
+        modulation = (
+            keep_complex * modulation.unsqueeze(0)
+            + (identity - keep_complex)
+        )
+        return field * modulation

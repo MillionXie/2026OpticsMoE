@@ -7,11 +7,6 @@ import sys
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
 
-import matplotlib
-
-matplotlib.use("Agg")
-
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
@@ -32,6 +27,21 @@ from opticalmoe.training.four_expert_reporting import (
 )
 from opticalmoe.utils import load_config, save_json, set_seed
 from opticalmoe.utils.run import create_run_dir
+
+
+plt = None
+
+
+def ensure_matplotlib():
+    global plt
+    if plt is None:
+        import matplotlib
+
+        matplotlib.use("Agg", force=True)
+        import matplotlib.pyplot as loaded_plt
+
+        plt = loaded_plt
+    return plt
 
 
 METRIC_FIELDS = [
@@ -62,10 +72,17 @@ METRIC_FIELDS = [
     "expert_energy_ratio_E2",
     "expert_energy_ratio_E3",
     "outside_energy_ratio",
+    "phase_dropout_active",
+    "phase_dropout_mode",
+    "expert_phase_dropout_p",
+    "global_fc_phase_dropout_p",
+    "phase_dropout_block_size",
+    "updates_per_epoch",
 ]
 
 
 def configure_matplotlib(vis_cfg: Dict) -> None:
+    plt = ensure_matplotlib()
     font_size = int(vis_cfg.get("font_size", 12))
     dpi = int(vis_cfg.get("dpi", 150))
     plt.rcParams.update(
@@ -107,12 +124,54 @@ def choose_device(name: str) -> torch.device:
     return torch.device(name)
 
 
+def phase_dropout_settings(config: Dict) -> Dict:
+    cfg = config.get("regularization", {}).get("phase_dropout", {})
+    enabled = bool(cfg.get("enabled", False))
+    apply_to_experts = bool(cfg.get("apply_to_experts", True))
+    apply_to_global_fc = bool(cfg.get("apply_to_global_fc", False))
+    mode = cfg.get("mode", "none") if enabled else "none"
+    return {
+        "enabled": enabled,
+        "mode": mode,
+        "expert_mode": mode if enabled and apply_to_experts else "none",
+        "global_fc_mode": mode if enabled and apply_to_global_fc else "none",
+        "expert_p": (
+            float(cfg.get("expert_p", 0.0))
+            if enabled and apply_to_experts
+            else 0.0
+        ),
+        "global_fc_p": (
+            float(cfg.get("global_fc_p", 0.0))
+            if enabled and apply_to_global_fc
+            else 0.0
+        ),
+        "block_size": int(cfg.get("block_size", 8)),
+        "batch_shared": bool(cfg.get("batch_shared", True)),
+        "apply_to_experts": apply_to_experts,
+        "apply_to_global_fc": apply_to_global_fc,
+        "start_epoch": int(cfg.get("start_epoch", 0)),
+    }
+
+
+def phase_dropout_active_for_epoch(settings: Dict, epoch: int) -> bool:
+    has_nonzero_target = (
+        settings["mode"] != "none"
+        and (settings["expert_p"] > 0.0 or settings["global_fc_p"] > 0.0)
+    )
+    return bool(
+        settings["enabled"]
+        and has_nonzero_target
+        and int(epoch) >= int(settings["start_epoch"])
+    )
+
+
 def build_model(config: Dict, num_classes: int) -> FourExpertMoEClassifierV2:
     layout_cfg = config.get("layout", {})
     optics_cfg = config.get("optics", {})
     prompt_cfg = config.get("prompt", {})
     detector_cfg = config.get("detector", {})
     readout_cfg = config.get("readout", {})
+    phase_dropout = phase_dropout_settings(config)
     distances = optics_cfg.get("distances_m", {})
 
     layout = FourExpertLayout(
@@ -166,6 +225,12 @@ def build_model(config: Dict, num_classes: int) -> FourExpertMoEClassifierV2:
         readout_norm_affine=bool(readout_cfg.get("norm_affine", True)),
         readout_hidden_layers=int(readout_cfg.get("hidden_layers", 1)),
         readout_dropout=float(readout_cfg.get("dropout", 0.0)),
+        expert_phase_dropout_mode=phase_dropout["expert_mode"],
+        expert_phase_dropout_p=phase_dropout["expert_p"],
+        global_fc_phase_dropout_mode=phase_dropout["global_fc_mode"],
+        global_fc_phase_dropout_p=phase_dropout["global_fc_p"],
+        phase_dropout_block_size=phase_dropout["block_size"],
+        phase_dropout_batch_shared=phase_dropout["batch_shared"],
         evanescent_mode=optics_cfg.get("evanescent_mode", "zero"),
     )
 
@@ -336,6 +401,9 @@ def metric_row(
     test_result,
     lr: float,
     diagnostics: Dict,
+    phase_dropout_settings_dict: Dict,
+    phase_dropout_active: bool,
+    updates_per_epoch: int,
 ) -> Dict:
     amplitudes = diagnostics["amplitudes"].tolist()
     powers = diagnostics["powers"].tolist()
@@ -356,6 +424,12 @@ def metric_row(
         )
         or "none",
         "outside_energy_ratio": diagnostics["outside_energy_ratio"],
+        "phase_dropout_active": phase_dropout_active,
+        "phase_dropout_mode": phase_dropout_settings_dict["mode"],
+        "expert_phase_dropout_p": phase_dropout_settings_dict["expert_p"],
+        "global_fc_phase_dropout_p": phase_dropout_settings_dict["global_fc_p"],
+        "phase_dropout_block_size": phase_dropout_settings_dict["block_size"],
+        "updates_per_epoch": updates_per_epoch,
     }
     for index in range(4):
         row[f"amp_E{index}"] = amplitudes[index]
@@ -731,7 +805,8 @@ def main():
         config.setdefault("visualization", {})["enabled"] = False
     seed = int(config.get("seed", 7))
     set_seed(seed)
-    configure_matplotlib(config.get("visualization", {}))
+    if config.get("visualization", {}).get("enabled", True):
+        configure_matplotlib(config.get("visualization", {}))
 
     run_name = args.run_name or config.get("experiment", {}).get(
         "run_name", "four_expert_moe_v2"
@@ -745,6 +820,8 @@ def main():
     device_name = args.device or config.get("device", "auto")
     device = choose_device(device_name)
     model = build_model(config, num_classes).to(device)
+    phase_dropout = phase_dropout_settings(config)
+    model.set_phase_dropout_active(False)
     optimizer = optimizer_from_config(model, config)
     optimizer_cfg = optimizer_settings(config)
     criterion = nn.CrossEntropyLoss()
@@ -803,6 +880,14 @@ def main():
         f"lr={optimizer_cfg['lr']}, "
         f"weight_decay={optimizer_cfg['weight_decay']}"
     )
+    print(
+        "Phase dropout: "
+        f"enabled={phase_dropout['enabled']}, mode={phase_dropout['mode']}, "
+        f"expert_p={phase_dropout['expert_p']}, "
+        f"global_fc_p={phase_dropout['global_fc_p']}, "
+        f"start_epoch={phase_dropout['start_epoch']}"
+    )
+    save_json(phase_dropout, str(run_dir / "phase_dropout_summary.json"))
 
     architecture_report = build_architecture_report(
         model=model,
@@ -832,6 +917,11 @@ def main():
             "disabled. Training will continue. Error: "
             f"{initial_payload['visualization_error']}"
         )
+    initial_payload["phase_dropout_active"] = False
+    initial_payload["phase_dropout_mode"] = phase_dropout["mode"]
+    initial_payload["expert_phase_dropout_p"] = phase_dropout["expert_p"]
+    initial_payload["global_fc_phase_dropout_p"] = phase_dropout["global_fc_p"]
+    initial_payload["phase_dropout_block_size"] = phase_dropout["block_size"]
     write_rows(
         run_dir / "initial_diagnostics.csv",
         [initial_payload],
@@ -900,6 +990,8 @@ def main():
     final_predictions = torch.empty(0, dtype=torch.long)
 
     for epoch in range(1, num_epochs + 1):
+        phase_dropout_active = phase_dropout_active_for_epoch(phase_dropout, epoch)
+        model.set_phase_dropout_active(phase_dropout_active)
         stage_idx = schedule.stage_for_epoch(epoch) if schedule.enabled else 0
         stage_info = schedule.apply(model, stage_idx)
         if stage_idx != previous_stage:
@@ -930,6 +1022,9 @@ def main():
             test_result,
             optimizer.param_groups[0]["lr"],
             diagnostics,
+            phase_dropout,
+            phase_dropout_active,
+            len(train_loader),
         )
         metrics_rows.append(row)
         amplitude_row, expert_row, detector_row = history_rows(
@@ -1009,6 +1104,7 @@ def main():
             f"train {train_result[0]:.4f}/{train_result[1]:.4f} | "
             f"val {val_result[0]:.4f}/{val_result[1]:.4f} | "
             f"test {test_result[0]:.4f}/{test_result[1]:.4f} | "
+            f"phase_dropout={'on' if phase_dropout_active else 'off'} | "
             f"amps {[round(value, 4) for value in diagnostics['amplitudes'].tolist()]}"
         )
 
@@ -1062,6 +1158,7 @@ def main():
             "type", "optical_only"
         ),
         "optimizer": optimizer_cfg,
+        "phase_dropout": phase_dropout,
         "architecture_report": architecture_report,
         "initial_diagnostics": initial_payload,
         "loss": config.get("loss", {}),

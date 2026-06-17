@@ -54,6 +54,103 @@ def test_phase_layer_initialization_aliases():
     assert torch.all(identity.raw_phase == 0.0)
 
 
+def test_phase_dropout_none_or_zero_matches_plain_phase_layer():
+    field = torch.ones(2, 12, 12, dtype=torch.complex64)
+    plain = PhaseLayer(grid_size=12, init="identity")
+    dropped = PhaseLayer(
+        grid_size=12,
+        init="identity",
+        phase_dropout_mode="phase_bypass",
+        phase_dropout_p=0.0,
+    )
+    with torch.no_grad():
+        plain.raw_phase.fill_(0.7)
+        dropped.raw_phase.copy_(plain.raw_phase)
+    plain.train()
+    dropped.train()
+    assert torch.allclose(plain(field), dropped(field))
+
+
+def test_phase_bypass_dropout_changes_training_forward():
+    layer = PhaseLayer(
+        grid_size=24,
+        init="identity",
+        phase_dropout_mode="phase_bypass",
+        phase_dropout_p=0.5,
+    )
+    with torch.no_grad():
+        layer.raw_phase.fill_(1.2)
+    layer.train()
+    field = torch.ones(2, 24, 24, dtype=torch.complex64)
+    out1 = layer(field)
+    out2 = layer(field)
+    assert not torch.allclose(out1, out2)
+
+
+def test_block_phase_bypass_dropout_changes_training_forward():
+    layer = PhaseLayer(
+        grid_size=24,
+        init="identity",
+        phase_dropout_mode="block_phase_bypass",
+        phase_dropout_p=0.5,
+        phase_dropout_block_size=8,
+    )
+    with torch.no_grad():
+        layer.raw_phase.fill_(1.2)
+    layer.train()
+    field = torch.ones(2, 24, 24, dtype=torch.complex64)
+    out1 = layer(field)
+    out2 = layer(field)
+    assert not torch.allclose(out1, out2)
+
+
+def test_phase_bypass_dropout_eval_is_deterministic():
+    layer = PhaseLayer(
+        grid_size=16,
+        init="identity",
+        phase_dropout_mode="block_phase_bypass",
+        phase_dropout_p=0.5,
+        phase_dropout_block_size=8,
+    )
+    with torch.no_grad():
+        layer.raw_phase.fill_(1.2)
+    layer.eval()
+    field = torch.ones(2, 16, 16, dtype=torch.complex64)
+    assert torch.allclose(layer(field), layer(field))
+
+
+def test_block_phase_bypass_supports_non_divisible_shape():
+    layer = PhaseLayer(
+        grid_size=(17, 19),
+        init="identity",
+        phase_dropout_mode="block_phase_bypass",
+        phase_dropout_p=0.5,
+        phase_dropout_block_size=8,
+    )
+    layer.train()
+    field = torch.ones(2, 17, 19, dtype=torch.complex64)
+    out = layer(field)
+    assert out.shape == field.shape
+    assert layer.last_phase_dropout_mask.shape == (1, 17, 19)
+
+
+def test_phase_dropout_batch_shared_uses_one_mask_for_batch():
+    layer = PhaseLayer(
+        grid_size=16,
+        init="identity",
+        phase_dropout_mode="phase_bypass",
+        phase_dropout_p=0.5,
+        phase_dropout_batch_shared=True,
+    )
+    with torch.no_grad():
+        layer.raw_phase.fill_(1.2)
+    layer.train()
+    field = torch.ones(3, 16, 16, dtype=torch.complex64)
+    out = layer(field)
+    assert layer.last_phase_dropout_mask.shape == (1, 16, 16)
+    assert torch.allclose(out[0], out[1])
+
+
 def test_detector_array_shape():
     detector = DetectorArray(num_classes=10, grid_size=32, detector_size=4, layout="grid")
     field = torch.ones(3, 32, 32, dtype=torch.complex64)

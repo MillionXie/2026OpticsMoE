@@ -103,6 +103,10 @@ class FourExpertPhaseLayer(nn.Module):
         phase_init: str = "uniform_0_2pi",
         init_std: float = 0.02,
         aperture_mode: str = "hard",
+        phase_dropout_mode: str = "none",
+        phase_dropout_p: float = 0.0,
+        phase_dropout_block_size: int = 8,
+        phase_dropout_batch_shared: bool = True,
     ) -> None:
         super().__init__()
         if aperture_mode not in {"hard", "transparent"}:
@@ -116,6 +120,10 @@ class FourExpertPhaseLayer(nn.Module):
                     parameterization=phase_param,
                     init=phase_init,
                     init_std=init_std,
+                    phase_dropout_mode=phase_dropout_mode,
+                    phase_dropout_p=phase_dropout_p,
+                    phase_dropout_block_size=phase_dropout_block_size,
+                    phase_dropout_batch_shared=phase_dropout_batch_shared,
                 )
                 for _ in range(4)
             ]
@@ -141,6 +149,10 @@ class FourExpertPhaseLayer(nn.Module):
             [layer.get_phase_wrapped() for layer in self.local_phases], dim=0
         )
 
+    def set_phase_dropout_active(self, active: bool) -> None:
+        for layer in self.local_phases:
+            layer.set_phase_dropout_active(active)
+
 
 class GlobalFCPhaseMask(nn.Module):
     """One trainable phase-only mask spanning the full optical canvas."""
@@ -151,6 +163,10 @@ class GlobalFCPhaseMask(nn.Module):
         phase_param: str = "unconstrained",
         phase_init: str = "identity",
         init_std: float = 0.02,
+        phase_dropout_mode: str = "none",
+        phase_dropout_p: float = 0.0,
+        phase_dropout_block_size: int = 8,
+        phase_dropout_batch_shared: bool = True,
     ) -> None:
         super().__init__()
         self.phase = PhaseLayer(
@@ -158,6 +174,10 @@ class GlobalFCPhaseMask(nn.Module):
             parameterization=phase_param,
             init=phase_init,
             init_std=init_std,
+            phase_dropout_mode=phase_dropout_mode,
+            phase_dropout_p=phase_dropout_p,
+            phase_dropout_block_size=phase_dropout_block_size,
+            phase_dropout_batch_shared=phase_dropout_batch_shared,
         )
 
     def forward(self, field: torch.Tensor) -> torch.Tensor:
@@ -165,6 +185,9 @@ class GlobalFCPhaseMask(nn.Module):
 
     def get_phase_wrapped(self) -> torch.Tensor:
         return self.phase.get_phase_wrapped()
+
+    def set_phase_dropout_active(self, active: bool) -> None:
+        self.phase.set_phase_dropout_active(active)
 
 
 class FourExpertMoEClassifierV2(nn.Module):
@@ -199,6 +222,12 @@ class FourExpertMoEClassifierV2(nn.Module):
         readout_norm_affine: bool = True,
         readout_hidden_layers: int = 1,
         readout_dropout: float = 0.0,
+        expert_phase_dropout_mode: str = "none",
+        expert_phase_dropout_p: float = 0.0,
+        global_fc_phase_dropout_mode: str = "none",
+        global_fc_phase_dropout_p: float = 0.0,
+        phase_dropout_block_size: int = 8,
+        phase_dropout_batch_shared: bool = True,
         evanescent_mode: str = "zero",
     ) -> None:
         super().__init__()
@@ -258,6 +287,10 @@ class FourExpertMoEClassifierV2(nn.Module):
                     phase_init=expert_phase_init,
                     init_std=expert_init_std,
                     aperture_mode=aperture_mode,
+                    phase_dropout_mode=expert_phase_dropout_mode,
+                    phase_dropout_p=expert_phase_dropout_p,
+                    phase_dropout_block_size=phase_dropout_block_size,
+                    phase_dropout_batch_shared=phase_dropout_batch_shared,
                 )
                 for _ in range(self.num_layers)
             ]
@@ -286,6 +319,10 @@ class FourExpertMoEClassifierV2(nn.Module):
             phase_param=phase_param,
             phase_init=global_fc_phase_init,
             init_std=global_fc_init_std,
+            phase_dropout_mode=global_fc_phase_dropout_mode,
+            phase_dropout_p=global_fc_phase_dropout_p,
+            phase_dropout_block_size=phase_dropout_block_size,
+            phase_dropout_batch_shared=phase_dropout_batch_shared,
         )
         self.fc_to_detector = AngularSpectrumPropagator(
             wavelength_m=wavelength_m,
@@ -446,3 +483,8 @@ class FourExpertMoEClassifierV2(nn.Module):
 
     def prompt_parameter_count(self) -> int:
         return sum(parameter.numel() for parameter in self.prompt.parameters())
+
+    def set_phase_dropout_active(self, active: bool) -> None:
+        for layer in self.expert_layers:
+            layer.set_phase_dropout_active(active)
+        self.global_fc.set_phase_dropout_active(active)

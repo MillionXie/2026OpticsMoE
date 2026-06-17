@@ -79,7 +79,7 @@ readout:
 
 optimizer:
   type: adamw
-  lr: 0.003
+  lr: 0.001
   weight_decay: 0.0
 
 loss:
@@ -87,7 +87,7 @@ loss:
 
 training:
   mode: multitask
-  epochs: 500
+  epochs: 300
   multitask:
     tasks:
       - name: mnist
@@ -104,20 +104,20 @@ training:
           smoke_test_size: 8
           sampling_protocol:
             enabled: true
-            total_size: 2000
+            total_size: 5000
             train_test_ratio: [4, 1]
         head:
           detector_size: 32
           detector_layout: grid
           # MNIST 当前较容易，先保留纯 detector energy 读出。
-          readout_type: optical_only
+          readout_type: mlp #optical_only
           normalize_detector_energy: true
           logit_scale: 10.0
-          input_norm: none
-          hidden_dim: 64
+          input_norm: layernorm #none
+          hidden_dim: 32 #64
           hidden_layers: 1
           activation: relu
-          dropout: 0.0
+          dropout: 0.2
       - name: fashionmnist
         dataset:
           name: fashionmnist
@@ -132,20 +132,20 @@ training:
           smoke_test_size: 8
           sampling_protocol:
             enabled: true
-            total_size: 2000
+            total_size: 5000
             train_test_ratio: [4, 1]
         head:
           detector_size: 32
           detector_layout: grid
           # FashionMNIST 当前也能学习，先保留纯 detector energy 读出。
-          readout_type: optical_only
+          readout_type: mlp #optical_only
           normalize_detector_energy: true
           logit_scale: 10.0
-          input_norm: none
-          hidden_dim: 64
+          input_norm: layernorm #none
+          hidden_dim: 32 #64
           hidden_layers: 1
           activation: relu
-          dropout: 0.0
+          dropout: 0.2
       - name: emnist
         dataset:
           name: emnist
@@ -164,7 +164,7 @@ training:
           smoke_test_size: 8
           sampling_protocol:
             enabled: true
-            total_size: 5200
+            total_size: 13000
             train_test_ratio: [4, 1]
         head:
           detector_size: 32
@@ -180,10 +180,10 @@ training:
           logit_scale: 10.0
           input_norm: layernorm
           norm_affine: true
-          hidden_dim: 128
-          hidden_layers: 2
+          hidden_dim: 64 #128
+          hidden_layers: 1 #2
           activation: gelu
-          dropout: 0.0
+          dropout: 0.2
     loss_reduction: mean
     # 多任务 loss 权重。一次 update 会分别跑 MNIST/Fashion/EMNIST，
     # 然后用这些权重合成一个总 loss 再反传一次：
@@ -194,7 +194,7 @@ training:
     loss_weights:
       mnist: 1.0
       fashionmnist: 1.0
-      emnist: 3.0
+      emnist: 5.0
     batches_per_update: 1
     balanced_sampling: true
     # With the paper-style sampling protocol, the natural epoch is now based
@@ -211,7 +211,7 @@ training:
   progressive:
     enabled: true
     order: backward
-    stage_epochs: [20, 20, 20, 20, 20, 400]
+    stage_epochs: [20, 20, 20, 20, 20, 200]
     train_task_prompts_always: true
     train_global_fc_always: true
 

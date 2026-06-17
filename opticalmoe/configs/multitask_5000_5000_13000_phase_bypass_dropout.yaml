@@ -1,0 +1,213 @@
+# 三任务四专家 OpticalMoE + phase bypass dropout 示例配置。
+#
+# 目标：
+# - MNIST / FashionMNIST / EMNIST letters 三任务联合训练；
+# - 使用 task-specific prompt amplitude 切换任务；
+# - 共享同一个四专家光学 backbone；
+# - 训练期只对专家相位层启用 block phase bypass dropout。
+#
+# 注意：
+# 当前 dataloader 支持 sampling_protocol.total_size，而不是直接支持
+# subset_train_size / subset_test_size。这里的 total_size 先按 4:1 切成
+# train-pool:test，再从 train-pool 中按 val_split 切出 validation。
+
+seed: 7
+device: auto
+
+experiment:
+  run_name: multitask_5000_5000_13000_phase_bypass_dropout
+  print_freq: 50
+
+layout:
+  canvas_height: 700
+  canvas_width: 700
+  input_size: 200
+  expert_size: 200
+  prompt_cell_size: 300
+  gap_pixels: 100
+  outer_margin: 100
+
+optics:
+  wavelength_m: 5.32e-7
+  pixel_size_m: 8.0e-6
+  num_layers: 5
+  aperture_mode: hard
+  phase_param: unconstrained
+  expert_phase_init: uniform_0_2pi
+  expert_init_std: 0.02
+  global_fc_phase_init: identity
+  global_fc_init_std: 0.02
+  evanescent_mode: zero
+  distances_m:
+    input_to_prompt: 0.20
+    prompt_to_expert: 0.20
+    inter_layer: 0.05
+    layer5_to_fc: 0.05
+    fc_to_detector: 0.05
+  focal_length_m: 0.10
+
+prompt:
+  amplitude_init_logits: 2.0
+  train_phase_biases: true
+
+detector:
+  detector_size: 32
+  layout: grid
+
+readout:
+  # 全局默认读出头配置。每个 task 的 head 可以覆盖这些值。
+  type: mlp
+  normalize_detector_energy: true
+  logit_scale: 10.0
+  input_norm: layernorm
+  norm_affine: true
+  hidden_dim: 64
+  hidden_layers: 1
+  activation: gelu
+  dropout: 0.1
+
+optimizer:
+  type: adamw
+  lr: 0.001
+  weight_decay: 0.0005
+
+# 这些字段是推荐实验设置，但当前 train_four_expert_multitask_moe.py
+# 还没有实现对应逻辑，因此先保留为注释，避免误以为已经生效。
+# scheduler:
+#   type: cosine
+#   eta_min: 0.00003
+# gradient_clipping:
+#   max_norm: 1.0
+# loss:
+#   label_smoothing: 0.05
+
+regularization:
+  phase_dropout:
+    enabled: true
+    mode: block_phase_bypass
+    expert_p: 0.05
+    global_fc_p: 0.0
+    block_size: 8
+    batch_shared: true
+    apply_to_experts: true
+    apply_to_global_fc: false
+    start_epoch: 10
+
+training:
+  mode: multitask
+  progressive:
+    enabled: true
+    order: backward
+    stage_epochs: [20, 20, 20, 20, 20, 100]
+    train_task_prompts_always: true
+    train_global_fc_always: true
+  evaluation:
+    # 服务器显存/时间足够时可以改成 null 或删掉，表示扫完整验证/测试集。
+    max_val_batches: null #100
+    max_test_batches: null #500
+  multitask:
+    loss_reduction: mean
+    batches_per_update: 1
+    balanced_sampling: true
+    # 留空表示一个 epoch 的联合更新数等于最长任务 train loader steps。
+    # 如果想固定每 epoch 更新次数，可以设置 steps_per_epoch: 500。
+    steps_per_epoch: null
+    print_freq: 50
+    loss_weights:
+      mnist: 1.0
+      fashionmnist: 1.0
+      emnist: 3.0
+    tasks:
+      - name: mnist
+        dataset:
+          name: mnist
+          root: ./data
+          input_size: 200
+          val_split: 0.1
+          batch_size: 32
+          # Windows/OneDrive 环境下建议先用 0，避免 DataLoader worker
+          # spawn 重复 import 训练脚本导致卡在 matplotlib/子进程初始化。
+          # Linux 服务器上可以改成 2、4 或 8。
+          num_workers: 0
+          smoke_test: false
+          download: true
+          sampling_protocol:
+            enabled: true
+            # 6250 按 4:1 得到约 5000 个 train-pool 和 1250 个 test。
+            # val_split=0.1 后，实际 train 约 4500，val 约 500。
+            total_size: 6250
+            train_test_ratio: [4, 1]
+        head:
+          detector_size: 32
+          detector_layout: grid
+          readout_type: mlp
+          normalize_detector_energy: true
+          input_norm: layernorm
+          norm_affine: true
+          hidden_dim: 64
+          hidden_layers: 1
+          activation: gelu
+          dropout: 0.1
+      - name: fashionmnist
+        dataset:
+          name: fashionmnist
+          root: ./data
+          input_size: 200
+          val_split: 0.1
+          batch_size: 32
+          # Windows/OneDrive 环境下建议先用 0；Linux 服务器可调大。
+          num_workers: 0
+          smoke_test: false
+          download: true
+          sampling_protocol:
+            enabled: true
+            total_size: 6250
+            train_test_ratio: [4, 1]
+        head:
+          detector_size: 32
+          detector_layout: grid
+          readout_type: mlp
+          normalize_detector_energy: true
+          input_norm: layernorm
+          norm_affine: true
+          hidden_dim: 64
+          hidden_layers: 1
+          activation: gelu
+          dropout: 0.1
+      - name: emnist
+        dataset:
+          name: emnist
+          split: letters
+          fix_orientation: true
+          root: ./data
+          input_size: 200
+          val_split: 0.1
+          batch_size: 84
+          # Windows/OneDrive 环境下建议先用 0；Linux 服务器可调大。
+          num_workers: 0
+          smoke_test: false
+          download: true
+          sampling_protocol:
+            enabled: true
+            # 16250 按 4:1 得到约 13000 个 train-pool 和 3250 个 test。
+            # val_split=0.1 后，实际 train 约 11700，val 约 1300。
+            total_size: 16250
+            train_test_ratio: [4, 1]
+        head:
+          detector_size: 24
+          detector_layout: grid
+          readout_type: mlp
+          normalize_detector_energy: true
+          input_norm: layernorm
+          norm_affine: true
+          hidden_dim: 128
+          hidden_layers: 2
+          activation: gelu
+          dropout: 0.1
+
+visualization:
+  enabled: true
+  save_interval_epochs: 5
+  num_samples: 4
+  font_size: 12
+  dpi: 150

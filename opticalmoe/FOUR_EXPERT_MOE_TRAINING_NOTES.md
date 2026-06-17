@@ -335,3 +335,47 @@ fields, and architecture reports.
   joint-training configurations.
 - Added correct-prompt and mismatched-prompt evaluation; mismatched evaluation
   swaps only the prompt and keeps the evaluation dataset's own head.
+- Added phase bypass dropout for train-time phase-layer regularization.
+
+## 12. Phase Bypass Dropout
+
+Phase bypass dropout is a train-time regularizer for optical phase masks. It
+does not drop activations and does not rescale amplitudes. Instead, during
+training only, selected phase pixels or phase blocks temporarily use identity
+modulation:
+
+```text
+keep * exp(i * phase) + (1 - keep) * 1
+```
+
+The stored trainable phase parameters are never modified. During validation,
+testing, and `model.eval()`, the phase layer always uses the normal
+`exp(i * phase)` modulation.
+
+YAML block:
+
+```yaml
+regularization:
+  phase_dropout:
+    enabled: true
+    mode: block_phase_bypass
+    expert_p: 0.05
+    global_fc_p: 0.0
+    block_size: 8
+    batch_shared: true
+    apply_to_experts: true
+    apply_to_global_fc: false
+    start_epoch: 10
+```
+
+Recommended first comparison:
+
+```text
+python scripts/train_four_expert_multitask_moe.py --config configs/four_expert_moe_multitask_mnist_fashion_emnist.yaml --run_name baseline_no_phase_dropout
+python scripts/train_four_expert_multitask_moe.py --config configs/multitask_5000_5000_13000_phase_bypass_dropout.yaml --run_name phase_bypass_dropout_005
+```
+
+Each run writes `phase_dropout_summary.json`. The multitask run also writes
+`multitask_loader_summary.json`, which records per-task sample counts, batch
+sizes, loader steps, effective updates per epoch, repeat factors, and reset
+counts.

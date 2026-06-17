@@ -8,11 +8,6 @@ import time
 from pathlib import Path
 from typing import Dict, List, Sequence
 
-import matplotlib
-
-matplotlib.use("Agg")
-
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
@@ -45,6 +40,21 @@ from opticalmoe.utils import load_config, save_json, set_seed
 from opticalmoe.utils.run import create_run_dir
 
 
+plt = None
+
+
+def ensure_matplotlib():
+    global plt
+    if plt is None:
+        import matplotlib
+
+        matplotlib.use("Agg", force=True)
+        import matplotlib.pyplot as loaded_plt
+
+        plt = loaded_plt
+    return plt
+
+
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Train the separate multitask four-expert OpticalMoE experiment."
@@ -66,7 +76,87 @@ def choose_device(name: str) -> torch.device:
     return torch.device(name)
 
 
+def phase_dropout_settings(config: Dict) -> Dict:
+    cfg = config.get("regularization", {}).get("phase_dropout", {})
+    enabled = bool(cfg.get("enabled", False))
+    apply_to_experts = bool(cfg.get("apply_to_experts", True))
+    apply_to_global_fc = bool(cfg.get("apply_to_global_fc", False))
+    mode = cfg.get("mode", "none") if enabled else "none"
+    return {
+        "enabled": enabled,
+        "mode": mode,
+        "expert_mode": mode if enabled and apply_to_experts else "none",
+        "global_fc_mode": mode if enabled and apply_to_global_fc else "none",
+        "expert_p": (
+            float(cfg.get("expert_p", 0.0))
+            if enabled and apply_to_experts
+            else 0.0
+        ),
+        "global_fc_p": (
+            float(cfg.get("global_fc_p", 0.0))
+            if enabled and apply_to_global_fc
+            else 0.0
+        ),
+        "block_size": int(cfg.get("block_size", 8)),
+        "batch_shared": bool(cfg.get("batch_shared", True)),
+        "apply_to_experts": apply_to_experts,
+        "apply_to_global_fc": apply_to_global_fc,
+        "start_epoch": int(cfg.get("start_epoch", 0)),
+    }
+
+
+def phase_dropout_active_for_epoch(settings: Dict, epoch: int) -> bool:
+    has_nonzero_target = (
+        settings["mode"] != "none"
+        and (settings["expert_p"] > 0.0 or settings["global_fc_p"] > 0.0)
+    )
+    return bool(
+        settings["enabled"]
+        and has_nonzero_target
+        and int(epoch) >= int(settings["start_epoch"])
+    )
+
+
+def loader_reset_count(effective_steps: int, loader_steps: int) -> int:
+    if loader_steps <= 0:
+        return 0
+    return max(0, int(math.ceil(effective_steps / loader_steps)) - 1)
+
+
+def multitask_loader_summary(
+    train_loaders: Dict,
+    val_loaders: Dict,
+    test_loaders: Dict,
+    task_names: Sequence[str],
+    effective_steps: int,
+    natural_steps: int,
+    balanced_sampling: bool,
+) -> Dict:
+    tasks = {}
+    for task_name in task_names:
+        train_loader = train_loaders[task_name]
+        train_steps = len(train_loader)
+        tasks[task_name] = {
+            "train_samples": len(train_loader.dataset),
+            "val_samples": len(val_loaders[task_name].dataset),
+            "test_samples": len(test_loaders[task_name].dataset),
+            "batch_size": train_loader.batch_size,
+            "train_loader_steps": train_steps,
+            "repeat_factor": (
+                float(effective_steps) / max(float(train_steps), 1.0)
+            ),
+            "reset_count": loader_reset_count(effective_steps, train_steps),
+        }
+    return {
+        "balanced_sampling": bool(balanced_sampling),
+        "natural_updates_per_epoch": int(natural_steps),
+        "effective_updates_per_epoch": int(effective_steps),
+        "tasks": tasks,
+    }
+
+
 def configure_matplotlib(config: Dict) -> None:
+    plt = ensure_matplotlib()
     font_size = int(config.get("font_size", 12))
     dpi = int(config.get("dpi", 150))
     plt.rcParams.update(
@@ -89,6 +179,7 @@ def build_model(config: Dict, task_names: Sequence[str], task_num_classes: Dict[
     prompt_cfg = config.get("prompt", {})
     detector_cfg = config.get("detector", {})
     readout_cfg = config.get("readout", {})
+    phase_dropout = phase_dropout_settings(config)
     task_head_configs = {
         task["name"].lower(): dict(task.get("head", {}))
         for task in config["training"]["multitask"]["tasks"]
@@ -147,6 +238,12 @@ def build_model(config: Dict, task_names: Sequence[str], task_num_classes: Dict[
         readout_norm_affine=bool(readout_cfg.get("norm_affine", True)),
         readout_hidden_layers=int(readout_cfg.get("hidden_layers", 1)),
         readout_dropout=float(readout_cfg.get("dropout", 0.0)),
+        expert_phase_dropout_mode=phase_dropout["expert_mode"],
+        expert_phase_dropout_p=phase_dropout["expert_p"],
+        global_fc_phase_dropout_mode=phase_dropout["global_fc_mode"],
+        global_fc_phase_dropout_p=phase_dropout["global_fc_p"],
+        phase_dropout_block_size=phase_dropout["block_size"],
+        phase_dropout_batch_shared=phase_dropout["batch_shared"],
         evanescent_mode=optics_cfg.get("evanescent_mode", "zero"),
     )
 
@@ -618,7 +715,8 @@ def main():
         )
     seed = int(config.get("seed", 7))
     set_seed(seed)
-    configure_matplotlib(config.get("visualization", {}))
+    if config.get("visualization", {}).get("enabled", True):
+        configure_matplotlib(config.get("visualization", {}))
     run_name = args.run_name or config.get("experiment", {}).get(
         "run_name", "four_expert_multitask"
     )
@@ -634,6 +732,8 @@ def main():
     task_num_classes = dict(class_counts)
     device = choose_device(args.device or config.get("device", "auto"))
     model = build_model(config, task_names, task_num_classes).to(device)
+    phase_dropout = phase_dropout_settings(config)
+    model.set_phase_dropout_active(False)
     optimizer = build_optimizer(model, config)
     optimizer_cfg = optimizer_settings(config)
     criterion = nn.CrossEntropyLoss()
@@ -690,6 +790,14 @@ def main():
         f"lr={optimizer_cfg['lr']}, "
         f"weight_decay={optimizer_cfg['weight_decay']}"
     )
+    print(
+        "Phase dropout: "
+        f"enabled={phase_dropout['enabled']}, mode={phase_dropout['mode']}, "
+        f"expert_p={phase_dropout['expert_p']}, "
+        f"global_fc_p={phase_dropout['global_fc_p']}, "
+        f"start_epoch={phase_dropout['start_epoch']}"
+    )
+    save_json(phase_dropout, str(run_dir / "phase_dropout_summary.json"))
 
     report = build_architecture_report(
         model,
@@ -732,6 +840,11 @@ def main():
                 "were disabled. Training will continue. Error: "
                 f"{payload['visualization_error']}"
             )
+        payload["phase_dropout_active"] = False
+        payload["phase_dropout_mode"] = phase_dropout["mode"]
+        payload["expert_phase_dropout_p"] = phase_dropout["expert_p"]
+        payload["global_fc_phase_dropout_p"] = phase_dropout["global_fc_p"]
+        payload["phase_dropout_block_size"] = phase_dropout["block_size"]
         target_dir = run_dir / "light_fields" / "epoch_0000" / task_name
         if target_dir.exists():
             shutil.rmtree(target_dir)
@@ -774,10 +887,32 @@ def main():
         if steps_per_epoch is not None and int(steps_per_epoch) > 0
         else natural_steps
     )
+    loader_summary = multitask_loader_summary(
+        train_loaders=train_loaders,
+        val_loaders=val_loaders,
+        test_loaders=test_loaders,
+        task_names=task_names,
+        effective_steps=effective_steps,
+        natural_steps=natural_steps,
+        balanced_sampling=bool(multitask_cfg.get("balanced_sampling", True)),
+    )
+    save_json(loader_summary, str(run_dir / "multitask_loader_summary.json"))
     print(
         f"updates per epoch: {effective_steps} "
         f"(natural full-dataset value: {natural_steps})"
     )
+    print(
+        f"balanced_sampling={loader_summary['balanced_sampling']}, "
+        f"effective updates={loader_summary['effective_updates_per_epoch']}"
+    )
+    for task_name in task_names:
+        task_summary = loader_summary["tasks"][task_name]
+        print(
+            f"  {task_name} loader: batch_size={task_summary['batch_size']}, "
+            f"train_steps={task_summary['train_loader_steps']}, "
+            f"repeat_factor={task_summary['repeat_factor']:.2f}, "
+            f"reset_count={task_summary['reset_count']}"
+        )
     print(
         "Each update processes one batch from every task before one "
         "backward/optimizer step."
@@ -786,6 +921,8 @@ def main():
 
     for epoch in range(1, num_epochs + 1):
         epoch_start = time.perf_counter()
+        phase_dropout_active = phase_dropout_active_for_epoch(phase_dropout, epoch)
+        model.set_phase_dropout_active(phase_dropout_active)
         stage_idx = schedule.stage_for_epoch(epoch) if schedule.enabled else 0
         stage_info = schedule.apply(model, stage_idx)
         if stage_idx != previous_stage:
@@ -827,11 +964,25 @@ def main():
             "train_duration_seconds": train_duration_seconds,
             "lr": optimizer.param_groups[0]["lr"],
             "loss_weights": json.dumps(loss_weights, sort_keys=True),
+            "phase_dropout_active": phase_dropout_active,
+            "phase_dropout_mode": phase_dropout["mode"],
+            "expert_phase_dropout_p": phase_dropout["expert_p"],
+            "global_fc_phase_dropout_p": phase_dropout["global_fc_p"],
+            "phase_dropout_block_size": phase_dropout["block_size"],
+            "updates_per_epoch": effective_steps,
+            "balanced_sampling": loader_summary["balanced_sampling"],
             "active_layers": " ".join(
                 str(value) for value in stage_info["active_layers"]
             )
             or "none",
         }
+        for task_name in task_names:
+            task_summary = loader_summary["tasks"][task_name]
+            row[f"{task_name}_train_loader_steps"] = task_summary[
+                "train_loader_steps"
+            ]
+            row[f"{task_name}_repeat_factor"] = task_summary["repeat_factor"]
+            row[f"{task_name}_reset_count"] = task_summary["reset_count"]
         current_diagnostics = {}
         val_accuracies = []
         val_loss_weighted_sum = 0.0
@@ -876,6 +1027,17 @@ def main():
                     "val_loss": validation["loss"],
                     "val_acc": validation["accuracy"],
                     "val_samples": validation["samples"],
+                    "phase_dropout_active": phase_dropout_active,
+                    "updates_per_epoch": effective_steps,
+                    "train_loader_steps": loader_summary["tasks"][task_name][
+                        "train_loader_steps"
+                    ],
+                    "repeat_factor": loader_summary["tasks"][task_name][
+                        "repeat_factor"
+                    ],
+                    "reset_count": loader_summary["tasks"][task_name][
+                        "reset_count"
+                    ],
                 }
             )
             diagnostics = task_diagnostics(
@@ -1041,6 +1203,7 @@ def main():
             f"acc={row['joint_train_acc']:.4f} | "
             f"joint val loss={row['joint_val_loss']:.4f} "
             f"acc={row['joint_val_acc']:.4f} | "
+            f"phase_dropout={'on' if phase_dropout_active else 'off'} | "
             f"time={row['epoch_duration_seconds'] / 60.0:.1f} min | "
             + " | ".join(
                 f"{name} train={row[f'{name}_train_acc']:.4f} "
@@ -1118,6 +1281,8 @@ def main():
             "EMNIST letters uses 26 classes."
         ),
         "optimizer": optimizer_cfg,
+        "phase_dropout": phase_dropout,
+        "multitask_loader_summary": loader_summary,
         "loss_weights": loss_weights,
         "architecture_report": report,
         "best_joint_validation_accuracy": best_val_mean,

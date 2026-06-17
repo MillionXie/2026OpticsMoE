@@ -100,6 +100,16 @@ class _TinyMultitaskModel(nn.Module):
         return logits
 
 
+class _CountingSGD(torch.optim.SGD):
+    def __init__(self, params, **kwargs):
+        super().__init__(params, **kwargs)
+        self.step_calls = 0
+
+    def step(self, closure=None):
+        self.step_calls += 1
+        return super().step(closure=closure)
+
+
 def _tiny_loaders():
     images = torch.arange(32, dtype=torch.float32).view(8, 1, 2, 2) / 32.0
     labels = torch.arange(8, dtype=torch.long) % 10
@@ -241,6 +251,24 @@ def test_multitask_training_loop_supports_fixed_step_budget():
     assert result["available_steps"] == 4
     assert result["mnist_samples"] == 4
     assert result["fashionmnist_samples"] == 4
+
+
+def test_multitask_training_loop_steps_optimizer_once_per_update():
+    model = _TinyMultitaskModel()
+    loaders = _tiny_loaders()
+    optimizer = _CountingSGD(model.parameters(), lr=0.01)
+    result = train_multitask_one_epoch(
+        model=model,
+        train_loaders=loaders,
+        optimizer=optimizer,
+        device=torch.device("cpu"),
+        criterion=nn.CrossEntropyLoss(),
+        task_names=["mnist", "fashionmnist", "emnist"],
+        steps_per_epoch=3,
+        print_freq=0,
+    )
+    assert result["steps"] == 3
+    assert optimizer.step_calls == 3
 
 
 def test_task_switching_results_can_be_written(tmp_path):

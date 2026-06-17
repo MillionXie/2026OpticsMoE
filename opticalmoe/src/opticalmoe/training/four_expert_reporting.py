@@ -3,9 +3,17 @@ import math
 from pathlib import Path
 from typing import Dict, Optional
 
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
+
+
+def _matplotlib_pyplot():
+    import matplotlib
+
+    matplotlib.use("Agg", force=True)
+    import matplotlib.pyplot as plt
+
+    return plt
 
 
 def _field_image(field: torch.Tensor, sample_index: int = 0) -> np.ndarray:
@@ -19,6 +27,7 @@ def _field_image(field: torch.Tensor, sample_index: int = 0) -> np.ndarray:
 
 
 def _save_field(field: torch.Tensor, path: Path, title: str) -> None:
+    plt = _matplotlib_pyplot()
     fig, ax = plt.subplots(figsize=(7, 6))
     im = ax.imshow(_field_image(field), cmap="inferno")
     ax.set_title(title)
@@ -30,6 +39,7 @@ def _save_field(field: torch.Tensor, path: Path, title: str) -> None:
 
 
 def _save_phase(phase: torch.Tensor, path: Path, title: str) -> None:
+    plt = _matplotlib_pyplot()
     wrapped = torch.remainder(phase, 2.0 * math.pi).detach().cpu().numpy()
     fig, ax = plt.subplots(figsize=(7, 6))
     im = ax.imshow(
@@ -47,6 +57,7 @@ def _save_phase(phase: torch.Tensor, path: Path, title: str) -> None:
 
 
 def _save_bar(values, path: Path, title: str, ylabel: str, prefix: str) -> None:
+    plt = _matplotlib_pyplot()
     values = torch.as_tensor(values).detach().cpu().float().numpy()
     fig, ax = plt.subplots(figsize=(7, 4.5))
     ax.bar(np.arange(len(values)), values)
@@ -61,6 +72,7 @@ def _save_bar(values, path: Path, title: str, ylabel: str, prefix: str) -> None:
 
 
 def _save_expert_phases(model, path: Path) -> None:
+    plt = _matplotlib_pyplot()
     fig, axes = plt.subplots(
         model.num_layers,
         4,
@@ -193,7 +205,10 @@ def save_initial_state(
                 f"{visualization_error}\n",
                 encoding="utf-8",
             )
-            plt.close("all")
+            try:
+                _matplotlib_pyplot().close("all")
+            except Exception:
+                pass
 
     payload = {
         "epoch": 0,
