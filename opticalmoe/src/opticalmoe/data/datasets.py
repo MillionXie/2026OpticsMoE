@@ -104,6 +104,14 @@ def _labels_for_dataset(dataset) -> torch.Tensor:
     return torch.as_tensor(labels, dtype=torch.long)
 
 
+def _base_dataset(dataset):
+    """Unwrap nested Subset objects to the underlying torchvision dataset."""
+
+    while isinstance(dataset, Subset):
+        dataset = dataset.dataset
+    return dataset
+
+
 def _class_balanced_indices(dataset, size: int, seed: int) -> list:
     """Pick a deterministic, approximately equal number of samples per class."""
 
@@ -279,6 +287,6 @@ def create_dataloaders(dataset_cfg: Dict, seed: int) -> Tuple[DataLoader, DataLo
     elif name == "cifar10":
         num_classes = 10
     else:
-        base_dataset = train_full.dataset if isinstance(train_full, Subset) else train_full
+        base_dataset = _base_dataset(train_full)
         num_classes = len(base_dataset.classes)
     return train_loader, val_loader, test_loader, num_classes

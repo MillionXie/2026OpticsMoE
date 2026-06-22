@@ -1,0 +1,182 @@
+seed: 7
+device: auto
+
+experiment:
+  run_name: nine_expert_as_global_router_fair134_1000_multitask_mnist_fashion_emnist
+  print_freq: 50
+
+layout:
+  canvas_height: 1000
+  canvas_width: 1000
+  input_size: 134
+  expert_size: 134
+  expert_pitch: 200
+  padding: 200
+  prompt_aperture_size: 600
+  prompt_aperture_mode: center_600
+
+optics:
+  wavelength_m: 0.000000532
+  pixel_size_m: 0.000008
+  num_layers: 5
+  focal_length_m: 0.10
+  aperture_mode: hard
+  evanescent_mode: zero
+  phase_param: unconstrained
+  expert_phase_init: identity
+  expert_init_std: 0.02
+  global_fc_phase_init: identity
+  global_fc_init_std: 0.02
+  distances_m:
+    input_to_prompt: 0.20
+    prompt_to_expert: 0.20
+    inter_layer: 0.05
+    layer5_to_fc: 0.05
+    fc_to_detector: 0.05
+
+prompt:
+  mode: complex_order_router
+  amplitude_init_logits: 2.0
+  train_phase_biases: true
+  grating_scale: 1.0
+  grating_sign_x: 1.0
+  grating_sign_y: 1.0
+  normalize: sum_amplitude
+
+detector:
+  detector_size: 32
+  layout: grid
+
+readout:
+  type: mlp
+  normalize_detector_energy: true
+  logit_scale: 10.0
+  input_norm: layernorm
+  norm_affine: true
+  hidden_dim: 64
+  hidden_layers: 1
+  activation: relu
+  dropout: 0.1
+
+optimizer:
+  type: adamw
+  lr: 0.001
+  weight_decay: 0.0
+
+loss:
+  type: cross_entropy
+
+training:
+  mode: multitask
+  epochs: 300
+  multitask:
+    sequential_backward: true
+    balanced_sampling: true
+    batches_per_update: 1
+    loss_reduction: mean
+    loss_weights:
+      mnist: 1.0
+      fashionmnist: 1.0
+      emnist: 5.0
+    steps_per_epoch: null
+    print_freq: 50
+    tasks:
+      - name: mnist
+        dataset:
+          name: mnist
+          root: ./data
+          input_size: 134
+          val_split: 0.1
+          batch_size: 64
+          num_workers: 0
+          download: true
+          smoke_test: false
+          smoke_train_size: 12
+          smoke_test_size: 8
+          sampling_protocol:
+            enabled: true
+            total_size: 5000
+            train_test_ratio: [4, 1]
+        head:
+          detector_size: 32
+          detector_layout: grid
+          readout_type: mlp
+          normalize_detector_energy: true
+          logit_scale: 10.0
+          input_norm: layernorm
+          norm_affine: true
+          hidden_dim: 32
+          hidden_layers: 1
+          activation: relu
+          dropout: 0.2
+
+      - name: fashionmnist
+        dataset:
+          name: fashionmnist
+          root: ./data
+          input_size: 134
+          val_split: 0.1
+          batch_size: 64
+          num_workers: 0
+          download: true
+          smoke_test: false
+          smoke_train_size: 12
+          smoke_test_size: 8
+          sampling_protocol:
+            enabled: true
+            total_size: 5000
+            train_test_ratio: [4, 1]
+        head:
+          detector_size: 32
+          detector_layout: grid
+          readout_type: mlp
+          normalize_detector_energy: true
+          logit_scale: 10.0
+          input_norm: layernorm
+          norm_affine: true
+          hidden_dim: 32
+          hidden_layers: 1
+          activation: relu
+          dropout: 0.2
+
+      - name: emnist
+        dataset:
+          name: emnist
+          split: letters
+          fix_orientation: true
+          root: ./data
+          input_size: 134
+          val_split: 0.1
+          batch_size: 64
+          num_workers: 0
+          download: true
+          smoke_test: false
+          smoke_train_size: 12
+          smoke_test_size: 8
+          sampling_protocol:
+            enabled: true
+            total_size: 13000
+            train_test_ratio: [4, 1]
+        head:
+          detector_size: 32
+          detector_layout: grid
+          readout_type: mlp
+          normalize_detector_energy: true
+          logit_scale: 10.0
+          input_norm: layernorm
+          norm_affine: true
+          hidden_dim: 64
+          hidden_layers: 1
+          activation: gelu
+          dropout: 0.2
+
+  evaluation:
+    max_val_batches: null
+    max_test_batches: null
+
+visualization:
+  enabled: true
+  save_interval_epochs: 5
+  num_samples: 2
+  font_size: 12
+  dpi: 150
