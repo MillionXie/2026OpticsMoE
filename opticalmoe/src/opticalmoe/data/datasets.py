@@ -5,6 +5,8 @@ from torch.utils.data import DataLoader, Subset, random_split
 from torchvision import datasets, transforms
 from torchvision.transforms import functional as TF
 
+from .dsprites import create_dsprites_dataloaders
+
 
 DATASET_REGISTRY = {
     "mnist": datasets.MNIST,
@@ -203,6 +205,9 @@ def _apply_sampling_protocol(train_full, test_dataset, dataset_cfg: Dict, seed: 
 
 def create_dataloaders(dataset_cfg: Dict, seed: int) -> Tuple[DataLoader, DataLoader, DataLoader, int]:
     name = dataset_cfg.get("name", "mnist").lower()
+    if name == "dsprites":
+        return create_dsprites_dataloaders(dataset_cfg, seed)
+
     root = dataset_cfg.get("root", "./data")
     input_size = int(dataset_cfg.get("input_size", 200))
     val_split = float(dataset_cfg.get("val_split", 0.1))
