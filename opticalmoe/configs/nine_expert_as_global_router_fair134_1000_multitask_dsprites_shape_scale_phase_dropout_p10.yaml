@@ -2,7 +2,7 @@ seed: 7
 device: auto
 
 experiment:
-  run_name: nine_expert_dsprites_shape_scale_fair134_1000
+  run_name: nine_expert_dsprites_shape_scale_fair134_1000_phase_dropout_p10
   print_freq: 50
 
 layout:
@@ -65,13 +65,13 @@ regularization:
     # during training only; it is separate from readout.dropout / head.dropout.
     enabled: true
     mode: block_phase_bypass
-    expert_p: 0.1
+    expert_p: 0.10
     global_fc_p: 0.0
     block_size: 8
     batch_shared: true
     apply_to_experts: true
     apply_to_global_fc: false
-    start_epoch: 10
+    start_epoch: 5
 
 optimizer:
   type: adamw
@@ -104,7 +104,7 @@ training:
           seed: 7
           val_split: 0.1
           test_split: 0.1
-          batch_size: 128
+          batch_size: 32
           num_workers: 0
           download: true
           smoke_test: false
@@ -138,7 +138,7 @@ training:
           seed: 7
           val_split: 0.1
           test_split: 0.1
-          batch_size: 128
+          batch_size: 32
           num_workers: 0
           download: true
           smoke_test: false

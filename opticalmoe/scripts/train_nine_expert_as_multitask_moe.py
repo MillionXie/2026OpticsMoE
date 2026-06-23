@@ -82,12 +82,51 @@ def configure_matplotlib(config: Dict) -> None:
     )
 
 
+def phase_dropout_settings(config: Dict) -> Dict:
+    cfg = config.get("regularization", {}).get("phase_dropout", {})
+    enabled = bool(cfg.get("enabled", False))
+    apply_to_experts = bool(cfg.get("apply_to_experts", True))
+    apply_to_global_fc = bool(cfg.get("apply_to_global_fc", False))
+    mode = cfg.get("mode", "none") if enabled else "none"
+    return {
+        "enabled": enabled,
+        "mode": mode,
+        "expert_mode": mode if enabled and apply_to_experts else "none",
+        "global_fc_mode": mode if enabled and apply_to_global_fc else "none",
+        "expert_p": (
+            float(cfg.get("expert_p", 0.0))
+            if enabled and apply_to_experts
+            else 0.0
+        ),
+        "global_fc_p": (
+            float(cfg.get("global_fc_p", 0.0))
+            if enabled and apply_to_global_fc
+            else 0.0
+        ),
+        "block_size": int(cfg.get("block_size", 8)),
+        "batch_shared": bool(cfg.get("batch_shared", True)),
+        "apply_to_experts": apply_to_experts,
+        "apply_to_global_fc": apply_to_global_fc,
+        "start_epoch": int(cfg.get("start_epoch", 0)),
+    }
+
+
+def phase_dropout_active_for_epoch(settings: Dict, epoch: int) -> bool:
+    return bool(
+        settings["enabled"]
+        and settings["mode"] != "none"
+        and (settings["expert_p"] > 0.0 or settings["global_fc_p"] > 0.0)
+        and int(epoch) >= int(settings["start_epoch"])
+    )
+
+
 def build_model(config: Dict, task_names: Sequence[str], task_num_classes: Dict[str, int]):
     layout_cfg = config.get("layout", {})
     optics_cfg = config.get("optics", {})
     prompt_cfg = config.get("prompt", {})
     detector_cfg = config.get("detector", {})
     readout_cfg = config.get("readout", {})
+    phase_dropout = phase_dropout_settings(config)
     distances = optics_cfg.get("distances_m", {})
     layout = NineExpertFair134Layout(
         canvas_height=int(layout_cfg.get("canvas_height", 1000)),
@@ -143,6 +182,12 @@ def build_model(config: Dict, task_names: Sequence[str], task_num_classes: Dict[
         readout_norm_affine=bool(readout_cfg.get("norm_affine", True)),
         readout_hidden_layers=int(readout_cfg.get("hidden_layers", 1)),
         readout_dropout=float(readout_cfg.get("dropout", 0.0)),
+        expert_phase_dropout_mode=phase_dropout["expert_mode"],
+        expert_phase_dropout_p=phase_dropout["expert_p"],
+        global_fc_phase_dropout_mode=phase_dropout["global_fc_mode"],
+        global_fc_phase_dropout_p=phase_dropout["global_fc_p"],
+        phase_dropout_block_size=phase_dropout["block_size"],
+        phase_dropout_batch_shared=phase_dropout["batch_shared"],
         evanescent_mode=optics_cfg.get("evanescent_mode", "zero"),
     )
 
@@ -581,6 +626,7 @@ def main():
     task_names = list(train_loaders.keys())
     device = choose_device(args.device or config.get("device", "auto"))
     model = build_model(config, task_names, class_counts).to(device)
+    phase_dropout = phase_dropout_settings(config)
     model.set_phase_dropout_active(False)
     optimizer = build_optimizer(model, config)
     optimizer_cfg = optimizer_settings(config)
@@ -617,6 +663,17 @@ def main():
         f"Optimizer: {optimizer.__class__.__name__}, lr={optimizer_cfg['lr']}, weight_decay={optimizer_cfg['weight_decay']}"
     )
     print(f"sequential_backward={bool(multitask_cfg.get('sequential_backward', True))}")
+    print(
+        "Phase dropout: "
+        f"enabled={phase_dropout['enabled']}, "
+        f"mode={phase_dropout['mode']}, "
+        f"expert_p={phase_dropout['expert_p']}, "
+        f"global_fc_p={phase_dropout['global_fc_p']}, "
+        f"block_size={phase_dropout['block_size']}, "
+        f"batch_shared={phase_dropout['batch_shared']}, "
+        f"start_epoch={phase_dropout['start_epoch']}"
+    )
+    save_json(phase_dropout, str(run_dir / "phase_dropout_summary.json"))
     print(f"updates per epoch: {effective_steps} (natural full-dataset value: {natural_steps})")
     for task_name in task_names:
         s = summary["tasks"][task_name]
@@ -645,6 +702,8 @@ def main():
     print_freq = int(multitask_cfg.get("print_freq", config.get("experiment", {}).get("print_freq", 50)))
     for epoch in range(1, num_epochs + 1):
         start = time.perf_counter()
+        phase_dropout_active = phase_dropout_active_for_epoch(phase_dropout, epoch)
+        model.set_phase_dropout_active(phase_dropout_active)
         train_result = train_one_epoch_sequential(
             model=model,
             train_loaders=train_loaders,
@@ -666,6 +725,12 @@ def main():
             "lr": optimizer.param_groups[0]["lr"],
             "sequential_backward": True,
             "loss_weights": json.dumps(loss_weights, sort_keys=True),
+            "phase_dropout_active": phase_dropout_active,
+            "phase_dropout_mode": phase_dropout["mode"],
+            "expert_phase_dropout_p": phase_dropout["expert_p"],
+            "global_fc_phase_dropout_p": phase_dropout["global_fc_p"],
+            "phase_dropout_block_size": phase_dropout["block_size"],
+            "phase_dropout_batch_shared": phase_dropout["batch_shared"],
         }
         val_accs = []
         val_loss_sum, val_correct_sum, val_seen = 0.0, 0.0, 0
@@ -739,6 +804,7 @@ def main():
         print(
             f"epoch {epoch:03d} | train={row['joint_train_acc']:.4f} val={row['joint_val_acc']:.4f} | "
             + " | ".join(f"{name} train={row[f'{name}_train_acc']:.4f} val={row[f'{name}_val_acc']:.4f}" for name in task_names)
+            + f" | phase_dropout={'on' if phase_dropout_active else 'off'}"
             + f" | time={row['epoch_duration_seconds'] / 60.0:.1f} min"
         )
 
@@ -773,6 +839,7 @@ def main():
             "layout": model.layout.to_dict(),
             "distances_m": model.distances_m,
             "loss_weights": loss_weights,
+            "phase_dropout": phase_dropout,
             "best_joint_validation_accuracy": best_val_acc,
             "final_test_metrics": final_metrics,
             "task_switching_evaluation": switching_rows,

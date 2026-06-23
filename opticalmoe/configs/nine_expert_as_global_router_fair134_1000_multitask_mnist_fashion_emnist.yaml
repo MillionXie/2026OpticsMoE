@@ -56,7 +56,22 @@ readout:
   hidden_dim: 64
   hidden_layers: 1
   activation: relu
+  # Electronic readout dropout only. This is not optical phase dropout.
   dropout: 0.1
+
+regularization:
+  phase_dropout:
+    # Optical phase-layer dropout. This randomly bypasses expert phase pixels/blocks
+    # during training only; it is separate from readout.dropout / head.dropout.
+    enabled: true
+    mode: block_phase_bypass
+    expert_p: 0.05
+    global_fc_p: 0.0
+    block_size: 8
+    batch_shared: true
+    apply_to_experts: true
+    apply_to_global_fc: false
+    start_epoch: 10
 
 optimizer:
   type: adamw
@@ -108,6 +123,8 @@ training:
           hidden_dim: 32
           hidden_layers: 1
           activation: relu
+          # Electronic readout dropout only; optical phase dropout is under
+          # regularization.phase_dropout.
           dropout: 0.2
 
       - name: fashionmnist
@@ -137,6 +154,8 @@ training:
           hidden_dim: 32
           hidden_layers: 1
           activation: relu
+          # Electronic readout dropout only; optical phase dropout is under
+          # regularization.phase_dropout.
           dropout: 0.2
 
       - name: emnist
@@ -168,6 +187,8 @@ training:
           hidden_dim: 64
           hidden_layers: 1
           activation: gelu
+          # Electronic readout dropout only; optical phase dropout is under
+          # regularization.phase_dropout.
           dropout: 0.2
 
   evaluation:
