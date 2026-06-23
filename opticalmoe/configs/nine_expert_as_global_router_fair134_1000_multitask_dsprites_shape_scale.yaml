@@ -65,7 +65,7 @@ regularization:
     # during training only; it is separate from readout.dropout / head.dropout.
     enabled: true
     mode: block_phase_bypass
-    expert_p: 0.1
+    expert_p: 0.05
     global_fc_p: 0.0
     block_size: 8
     batch_shared: true
@@ -112,7 +112,7 @@ training:
           smoke_test_size: 16
           sampling_protocol:
             enabled: true
-            total_size: 12000
+            total_size: 32000
             train_test_ratio: [4, 1]
         head:
           detector_size: 32
@@ -146,7 +146,7 @@ training:
           smoke_test_size: 16
           sampling_protocol:
             enabled: true
-            total_size: 12000
+            total_size: 32000
             train_test_ratio: [4, 1]
         head:
           detector_size: 32
