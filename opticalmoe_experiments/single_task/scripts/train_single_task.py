@@ -14,6 +14,7 @@ if str(Path(__file__).resolve().parents[1]) not in sys.path:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from common.data.datasets import create_dataloaders
+from common.reporting.aggregate_results import rebuild_master_tables
 from common.reporting.metrics_writer import write_rows
 from common.reporting.run_manifest import architecture_report, save_run_manifest
 from common.training.checkpointing import save_checkpoint
@@ -162,7 +163,10 @@ def main():
     viz_enabled = bool(viz_cfg.get("enabled", True))
     save_interval = int(viz_cfg.get("save_interval_epochs", config.get("training", {}).get("save_interval_epochs", 10)))
     fixed = fixed_batch(bundle.val_loader, device, int(viz_cfg.get("num_samples", 4)))
+    run_start_time = time.perf_counter()
+    initial_artifact_start = time.perf_counter()
     save_epoch_artifacts(model, fixed, run_dir, "epoch_0000", bundle.class_names, enabled=viz_enabled)
+    initial_artifact_time_sec = time.perf_counter() - initial_artifact_start
 
     metrics_rows = []
     usage_rows = []
@@ -174,10 +178,16 @@ def main():
         eval_max_batches = int(eval_max_batches)
 
     for epoch in range(1, epochs + 1):
+        epoch_start = time.perf_counter()
         active = phase_dropout_active_for_epoch(phase_dropout, epoch)
         model.set_phase_dropout_active(active)
+        train_start = time.perf_counter()
         train_metrics = train_one_epoch(model, bundle.train_loader, criterion, optimizer, device, print_freq=print_freq)
+        epoch_train_time_sec = time.perf_counter() - train_start
+        val_start = time.perf_counter()
         val_metrics = evaluate(model, bundle.val_loader, criterion, device, max_batches=eval_max_batches)
+        epoch_val_time_sec = time.perf_counter() - val_start
+        epoch_artifact_time_sec = 0.0
         row = {
             "run_id": run_name,
             "epoch": epoch,
@@ -191,7 +201,11 @@ def main():
             "expert_phase_dropout_p": phase_dropout["expert_p"],
             "global_fc_phase_dropout_p": phase_dropout["global_fc_p"],
             "phase_dropout_block_size": phase_dropout["block_size"],
-            "epoch_time_sec": train_metrics["time_sec"],
+            "epoch_train_time_sec": epoch_train_time_sec,
+            "epoch_val_time_sec": epoch_val_time_sec,
+            "epoch_artifact_time_sec": 0.0,
+            "epoch_total_time_sec": 0.0,
+            "epoch_time_sec": 0.0,
             "outside_energy_ratio": "",
             "mean_expert_entropy": "",
             "max_expert_energy_ratio": "",
@@ -202,19 +216,65 @@ def main():
         if val_metrics["acc"] > best["val_acc"]:
             best = {"epoch": epoch, "val_acc": val_metrics["acc"], "row": row}
             save_checkpoint(run_dir / "checkpoints" / "best.pt", model, optimizer, epoch, row, config)
+            artifact_start = time.perf_counter()
             save_epoch_artifacts(model, fixed, run_dir, "best_epoch", bundle.class_names, enabled=viz_enabled)
+            epoch_artifact_time_sec += time.perf_counter() - artifact_start
         save_checkpoint(run_dir / "checkpoints" / "last.pt", model, optimizer, epoch, row, config)
         if save_interval > 0 and epoch % save_interval == 0:
+            artifact_start = time.perf_counter()
             save_epoch_artifacts(model, fixed, run_dir, f"epoch_{epoch:04d}", bundle.class_names, enabled=viz_enabled)
+            epoch_artifact_time_sec += time.perf_counter() - artifact_start
+        epoch_total_time_sec = time.perf_counter() - epoch_start
+        row["epoch_artifact_time_sec"] = epoch_artifact_time_sec
+        row["epoch_total_time_sec"] = epoch_total_time_sec
+        row["epoch_time_sec"] = epoch_total_time_sec
         write_rows(run_dir / "metrics" / "epoch_metrics.csv", metrics_rows)
         print(f"epoch {epoch:03d} train={row['train_acc']:.4f} val={row['val_acc']:.4f} phase_dropout={'on' if active else 'off'}")
 
+    test_start = time.perf_counter()
     test_metrics = evaluate(model, bundle.test_loader, criterion, device)
+    test_time_sec = time.perf_counter() - test_start
     preds, targets = predict_all(model, bundle.test_loader, device)
     conf = save_confusion_matrix(preds, targets, bundle.class_names, run_dir / "figures" / "confusion_matrix.png")
     write_rows(run_dir / "metrics" / "confusion_matrix.csv", [{"row": i, **{str(j): int(conf[i, j]) for j in range(conf.shape[1])}} for i in range(conf.shape[0])])
     save_training_curves(metrics_rows, run_dir / "figures" / "training_curves.png")
+    final_artifact_start = time.perf_counter()
     save_epoch_artifacts(model, fixed, run_dir, "final_epoch", bundle.class_names, enabled=viz_enabled)
+    final_artifact_time_sec = time.perf_counter() - final_artifact_start
+    run_end_time = time.perf_counter()
+
+    total_wall_time_sec = run_end_time - run_start_time
+    total_epoch_time_sec = sum(float(row.get("epoch_total_time_sec", row.get("epoch_time_sec", 0.0)) or 0.0) for row in metrics_rows)
+    total_train_time_sec = sum(float(row.get("epoch_train_time_sec", 0.0) or 0.0) for row in metrics_rows)
+    total_val_time_sec = sum(float(row.get("epoch_val_time_sec", 0.0) or 0.0) for row in metrics_rows)
+    total_artifact_time_sec = (
+        initial_artifact_time_sec
+        + final_artifact_time_sec
+        + sum(float(row.get("epoch_artifact_time_sec", 0.0) or 0.0) for row in metrics_rows)
+    )
+    avg_epoch_time_sec = total_epoch_time_sec / max(1, len(metrics_rows))
+    avg_train_time_per_epoch_sec = total_train_time_sec / max(1, len(metrics_rows))
+    time_to_best_epoch_sec = sum(
+        float(row.get("epoch_total_time_sec", row.get("epoch_time_sec", 0.0)) or 0.0)
+        for row in metrics_rows
+        if int(row.get("epoch", 0)) <= int(best.get("epoch", 0))
+    )
+    completed_at = time.strftime("%Y-%m-%dT%H:%M:%S%z")
+    time_metrics = {
+        "total_wall_time_sec": total_wall_time_sec,
+        "total_epoch_time_sec": total_epoch_time_sec,
+        "total_train_time_sec": total_train_time_sec,
+        "total_val_time_sec": total_val_time_sec,
+        "total_artifact_time_sec": total_artifact_time_sec,
+        "avg_epoch_time_sec": avg_epoch_time_sec,
+        "avg_train_time_per_epoch_sec": avg_train_time_per_epoch_sec,
+        "time_to_best_epoch_sec": time_to_best_epoch_sec,
+        "test_time_sec": test_time_sec,
+        "initial_artifact_time_sec": initial_artifact_time_sec,
+        "final_artifact_time_sec": final_artifact_time_sec,
+        "completed_at": completed_at,
+        "status": "completed",
+    }
 
     final_metrics = {
         "run_id": run_name,
@@ -225,6 +285,7 @@ def main():
         "best_val_loss": best.get("row", {}).get("val_loss", ""),
         "train_acc_at_best": best.get("row", {}).get("train_acc", ""),
         "generalization_gap": (best.get("row", {}).get("train_acc", 0.0) - best["val_acc"]) if best["epoch"] else "",
+        **time_metrics,
     }
     save_json(final_metrics, run_dir / "metrics" / "final_metrics.json")
 
@@ -268,18 +329,25 @@ def main():
         **final_metrics,
         **model_params,
         "run_dir": str(run_dir),
+        "status": time_metrics["status"],
+        "completed_at": time_metrics["completed_at"],
     }
     save_json(run_row, run_dir / "summary_for_master" / "runs_rows.json")
     save_json(metrics_rows, run_dir / "summary_for_master" / "epoch_metrics_rows.json")
     save_json([run_row], run_dir / "summary_for_master" / "final_metrics_rows.json")
     save_json(usage_rows, run_dir / "summary_for_master" / "expert_usage_rows.json")
     save_json([model_params], run_dir / "summary_for_master" / "model_params_rows.json")
-    write_rows(EXPERIMENT_ROOT / "single_task" / "results" / "master_epoch_metrics.csv", metrics_rows)
-    write_rows(EXPERIMENT_ROOT / "single_task" / "results" / "master_expert_usage.csv", usage_rows)
-    write_rows(EXPERIMENT_ROOT / "single_task" / "results" / "master_final_metrics.csv", [run_row])
+    if bool(config.get("reporting", {}).get("rebuild_master_tables_after_run", True)):
+        rebuild_master_tables(
+            EXPERIMENT_ROOT / "single_task" / "runs",
+            EXPERIMENT_ROOT / "single_task" / "results",
+        )
+    else:
+        write_rows(EXPERIMENT_ROOT / "single_task" / "results" / "master_epoch_metrics.csv", metrics_rows)
+        write_rows(EXPERIMENT_ROOT / "single_task" / "results" / "master_expert_usage.csv", usage_rows)
+        write_rows(EXPERIMENT_ROOT / "single_task" / "results" / "master_final_metrics.csv", [run_row])
     print(f"saved run outputs to: {run_dir}")
 
 
 if __name__ == "__main__":
     main()
-

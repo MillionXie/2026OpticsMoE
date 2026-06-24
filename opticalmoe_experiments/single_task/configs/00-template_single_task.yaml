@@ -194,6 +194,13 @@ training:
   # 可以设成 50/100 来加快每个 epoch，但验证精度会更粗糙。
   max_val_batches: null
 
+reporting:
+  # true = 每个 run 结束后扫描 single_task/runs 下所有 run，并重建 master tables。
+  # 如果你同时并行跑很多实验，为避免多个进程同时写总表，可以改成 false；
+  # 之后手动运行：
+  # python single_task/scripts/build_single_task_tables.py --runs_dir single_task/runs --out_dir single_task/results
+  rebuild_master_tables_after_run: true
+
 visualization:
   enabled: true
   save_interval_epochs: 10

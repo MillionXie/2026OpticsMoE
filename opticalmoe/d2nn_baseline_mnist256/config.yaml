@@ -1,0 +1,70 @@
+seed: 7
+device: auto
+
+experiment:
+  run_name: d2nn_mnist256_canvas400_5layer_seed7
+  print_freq: 50
+
+dataset:
+  name: mnist
+  root: ./data
+  input_size: 256
+  batch_size: 128
+  num_workers: 0
+  download: true
+  use_full_dataset: true
+
+optics:
+  wavelength_m: 5.32e-7
+  pixel_size_m: 8.0e-6
+  canvas_size: 400
+  input_size: 256
+  num_layers: 5
+  phase_param: unconstrained
+  phase_init: uniform_0_2pi
+  init_std: 0.02
+  evanescent_mode: zero
+  inter_layer_distance_m: 0.05
+  detector_distance_m: 0.05
+
+detector:
+  detector_size: 32
+  layout: grid
+  normalize_detector_energy: true
+
+readout:
+  type: optical_only
+  input_norm: layernorm
+  norm_affine: true
+  hidden_dim: 64
+  hidden_layers: 1
+  activation: gelu
+  dropout: 0.1
+  logit_scale: 10.0
+
+regularization:
+  phase_dropout:
+    enabled: false
+    mode: block_phase_bypass
+    p: 0.05
+    block_size: 8
+    batch_shared: true
+    start_epoch: 10
+
+optimizer:
+  type: adamw
+  lr: 0.003
+  weight_decay: 0.0005
+
+training:
+  epochs: 300
+  print_freq: 50
+  eval_interval_epochs: 1
+  save_interval_epochs: 50
+
+visualization:
+  enabled: true
+  save_interval_epochs: 10
+  num_samples: 4
+  dpi: 150
+

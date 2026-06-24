@@ -123,12 +123,60 @@ python single_task/scripts/build_single_task_tables.py --runs_dir single_task/ru
 - `general_d2nn` has no prompt and no expert routing.
 - `lenet5` is an electronic baseline and does not save optical light-field propagation figures.
 
+## Multi-GPU Notes
 
-## MultiGPU
-
-```
-CUDA_VISIBLE_DEVICES=0
-CUDA_VISIBLE_DEVICES=1
-
+```bash
 watch -n 1 nvidia-smi
+conda activate xml
+cd xml_code/2026OpticsMoE/opticalmoe_experiments/
+```
+
+Run one experiment on GPU 0:
+
+```bash
+CUDA_VISIBLE_DEVICES=0 python single_task/scripts/train_single_task.py --config single_task/configs/mnist_learnable_moe_E9_complex.yaml --run_name mnist_moe_gpu0
+```
+
+Run another experiment on GPU 1:
+
+```bash
+CUDA_VISIBLE_DEVICES=1 python single_task/scripts/train_single_task.py --config single_task/configs/fashionmnist_learnable_moe_E9_complex.yaml --run_name fashion_moe_gpu1
+```
+
+## Visualization Commands
+
+Rebuild master tables:
+
+```powershell
+python single_task/scripts/build_single_task_tables.py --runs_dir single_task/runs --out_dir single_task/results
+```
+
+Compare MNIST baseline training curves:
+
+```powershell
+python single_task/visualization/plot_training_curves.py --run_dirs single_task/runs/mnist_learnable_moe_E9_complex_seed7 single_task/runs/mnist_fixed_moe_E9_complex_seed7 single_task/runs/mnist_d2nn_matched_seed7 single_task/runs/mnist_lenet5_seed7 --metrics acc loss --show train val --mode overlay --out_dir single_task/figures/mnist_baselines --name mnist_baseline_training
+```
+
+Plot final accuracy from master tables:
+
+```powershell
+python single_task/visualization/plot_final_comparison.py --master_dir single_task/results --dataset mnist --x model_type --metric final_test_acc --out_dir single_task/figures/mnist_baselines --name mnist_final_accuracy
+```
+
+Plot training time:
+
+```powershell
+python single_task/visualization/plot_time_comparison.py --master_dir single_task/results --dataset mnist --unit min --out_dir single_task/figures/mnist_baselines --name mnist_training_time
+```
+
+Plot expert usage heatmap:
+
+```powershell
+python single_task/visualization/plot_expert_usage.py --master_dir single_task/results --dataset mnist --model_type learnable_route_moe --value normalized_prompt_power --out_dir single_task/figures/mnist_learnable_moe --name mnist_expert_usage
+```
+
+Generate a compact report:
+
+```powershell
+python single_task/visualization/make_single_task_report.py --master_dir single_task/results --dataset mnist --out_dir single_task/figures/reports/mnist_baselines --name mnist_baselines
 ```
