@@ -21,8 +21,8 @@ dataset:
   smoke_train_size: 64
   smoke_test_size: 32
   sampling_protocol:
-    enabled: false
-    total_size: null
+    enabled: true
+    total_size: 10000
     train_test_ratio:
     - 4
     - 1

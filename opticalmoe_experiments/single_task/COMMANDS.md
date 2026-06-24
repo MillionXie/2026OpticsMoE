@@ -122,3 +122,13 @@ python single_task/scripts/build_single_task_tables.py --runs_dir single_task/ru
 - `learnable_route_moe` trains prompt amplitude logits and phase biases.
 - `general_d2nn` has no prompt and no expert routing.
 - `lenet5` is an electronic baseline and does not save optical light-field propagation figures.
+
+
+## MultiGPU
+
+```
+CUDA_VISIBLE_DEVICES=0
+CUDA_VISIBLE_DEVICES=1
+
+watch -n 1 nvidia-smi
+```
