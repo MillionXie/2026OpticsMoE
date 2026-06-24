@@ -95,13 +95,173 @@ def save_epoch_artifacts(model, batch, run_dir: Path, epoch_name: str, class_nam
     save_json(rows, samples_dir / "sample_predictions.json")
 
 
-def expert_usage_row(run_id, epoch, dataset_name, model_type, model):
+def _field_total_energy(field: torch.Tensor) -> torch.Tensor:
+    if field.ndim == 4 and field.shape[1] == 1:
+        field = field[:, 0]
+    if torch.is_complex(field):
+        intensity = torch.abs(field).square()
+    else:
+        intensity = field.float().square()
+    if intensity.ndim == 2:
+        intensity = intensity.unsqueeze(0)
+    return intensity.sum(dim=(-2, -1))
+
+
+def _expert_energy_stats(field: torch.Tensor, model):
+    if not hasattr(model, "expert_masks"):
+        return None
+    if field.ndim == 4 and field.shape[1] == 1:
+        field = field[:, 0]
+    if torch.is_complex(field):
+        intensity = torch.abs(field).square()
+    else:
+        intensity = field.float().square()
+    if intensity.ndim == 2:
+        intensity = intensity.unsqueeze(0)
+    masks = model.expert_masks.to(device=intensity.device, dtype=intensity.dtype)
+    energies = torch.einsum("bhw,khw->bk", intensity, masks)
+    total = intensity.sum(dim=(-2, -1)).clamp_min(1e-12)
+    ratios = energies / total.unsqueeze(1)
+    inside = energies.sum(dim=1)
+    outside_ratio = (total - inside).clamp_min(0.0) / total
+    ratio_mean = ratios.mean(dim=0)
+    normalized_inside = energies / energies.sum(dim=1, keepdim=True).clamp_min(1e-12)
+    entropy = -(normalized_inside * normalized_inside.clamp_min(1e-12).log()).sum(dim=1)
+    return {
+        "energies": energies,
+        "ratios": ratios,
+        "ratio_mean": ratio_mean,
+        "outside_ratio": outside_ratio,
+        "outside_ratio_mean": outside_ratio.mean(),
+        "inside_energy_mean": inside.mean(),
+        "total_energy_mean": total.mean(),
+        "active_expert_count": int((ratio_mean > 0.02).sum().item()),
+        "max_expert_energy_ratio": ratio_mean.max(),
+        "energy_entropy": entropy.mean(),
+    }
+
+
+def _mean_entropy(values: torch.Tensor) -> float:
+    if values is None:
+        return ""
+    values = values.detach().float()
+    if values.ndim == 1:
+        values = values.unsqueeze(0)
+    probs = values / values.sum(dim=1, keepdim=True).clamp_min(1e-12)
+    entropy = -(probs * probs.clamp_min(1e-12).log()).sum(dim=1)
+    return float(entropy.mean().item())
+
+
+@torch.no_grad()
+def collect_optical_diagnostics(model, batch, device):
+    diagnostics = {"intermediates": {}}
+    if not hasattr(model, "forward"):
+        return diagnostics
+    model.eval()
+    images, _targets = batch
+    output = model(images.to(device), return_intermediates=True)
+    if isinstance(output, tuple):
+        _logits, intermediates = output
+    else:
+        intermediates = {}
+    diagnostics["intermediates"] = intermediates
+
+    if "expert_energy_ratios" in intermediates:
+        diagnostics["mean_expert_entrance_energy_ratio"] = intermediates["expert_energy_ratios"].detach().mean(dim=0).cpu()
+    if "outside_energy_ratio" in intermediates:
+        diagnostics["outside_energy_ratio"] = float(intermediates["outside_energy_ratio"].detach().mean().item())
+    if "detector_energies" in intermediates:
+        diagnostics["detector_entropy"] = _mean_entropy(intermediates["detector_energies"])
+
+    last_expert_field = None
+    if intermediates.get("after_each_layer"):
+        last_expert_field = intermediates["after_each_layer"][-1]
+    elif "after_expert_layer_last" in intermediates:
+        last_expert_field = intermediates["after_expert_layer_last"]
+    if last_expert_field is not None:
+        stats = _expert_energy_stats(last_expert_field, model)
+        if stats is not None:
+            diagnostics["mean_expert_output_energy_ratio"] = stats["ratio_mean"].detach().cpu()
+
+    entrance_ratios = diagnostics.get("mean_expert_entrance_energy_ratio")
+    if entrance_ratios is not None and len(entrance_ratios) > 0:
+        probs = entrance_ratios / entrance_ratios.sum().clamp_min(1e-12)
+        diagnostics["mean_expert_entropy"] = float((-(probs * probs.clamp_min(1e-12).log()).sum()).item())
+        diagnostics["max_expert_energy_ratio"] = float(entrance_ratios.max().item())
+    return diagnostics
+
+
+def _intermediate_stage_fields(intermediates):
+    stages = []
+    candidates = [
+        ("input", "input_amplitude"),
+        ("after_input_to_prompt", "after_input_to_prompt"),
+        ("after_prompt", "after_prompt"),
+        ("expert_entrance_before_aperture", "expert_entrance_before_aperture"),
+        ("expert_entrance_after_aperture", "expert_entrance_after_aperture"),
+        ("after_expert_layer_1", "after_expert_layer_1"),
+    ]
+    for stage, key in candidates:
+        if key in intermediates:
+            stages.append((stage, intermediates[key]))
+    if intermediates.get("after_each_layer"):
+        layers = intermediates["after_each_layer"]
+        if layers:
+            stages.append(("after_expert_layer_last", layers[-1]))
+    elif "after_expert_layer_last" in intermediates:
+        stages.append(("after_expert_layer_last", intermediates["after_expert_layer_last"]))
+    for stage, key in [("after_global_fc", "after_global_fc"), ("detector_plane", "detector_field")]:
+        if key in intermediates:
+            stages.append((stage, intermediates[key]))
+    return stages
+
+
+def optical_energy_rows_from_intermediates(run_id, epoch, intermediates, model=None):
+    if not intermediates:
+        return []
+    if model is not None and not (hasattr(model, "prompt") or hasattr(model, "global_fc")):
+        return []
+    rows = []
+    has_experts = model is not None and hasattr(model, "expert_masks")
+    for stage, field in _intermediate_stage_fields(intermediates):
+        total_energy = _field_total_energy(field).mean()
+        row = {
+            "run_id": run_id,
+            "epoch": epoch,
+            "stage": stage,
+            "total_energy": float(total_energy.item()),
+            "inside_expert_energy": "",
+            "outside_expert_ratio": "",
+            "active_expert_count": "",
+            "max_expert_energy_ratio": "",
+            "energy_entropy": "",
+        }
+        if has_experts:
+            stats = _expert_energy_stats(field, model)
+            if stats is not None:
+                row.update(
+                    {
+                        "inside_expert_energy": float(stats["inside_energy_mean"].item()),
+                        "outside_expert_ratio": float(stats["outside_ratio_mean"].item()),
+                        "active_expert_count": stats["active_expert_count"],
+                        "max_expert_energy_ratio": float(stats["max_expert_energy_ratio"].item()),
+                        "energy_entropy": float(stats["energy_entropy"].item()),
+                    }
+                )
+        rows.append(row)
+    return rows
+
+
+def expert_usage_row(run_id, epoch, dataset_name, model_type, model, diagnostics=None):
     rows = []
     if not hasattr(model, "prompt"):
         return rows
     amps = model.prompt.amplitudes().detach().cpu()
     powers = model.prompt.normalized_powers().detach().cpu()
     labels = [ap.name for ap in model.layout.expert_apertures]
+    diagnostics = diagnostics or {}
+    entrance = diagnostics.get("mean_expert_entrance_energy_ratio")
+    output = diagnostics.get("mean_expert_output_energy_ratio")
     for idx, label in enumerate(labels):
         rows.append(
             {
@@ -112,8 +272,8 @@ def expert_usage_row(run_id, epoch, dataset_name, model_type, model):
                 "expert_id": label,
                 "prompt_amplitude": float(amps[idx]),
                 "normalized_prompt_power": float(powers[idx]),
-                "expert_entrance_energy_ratio": "",
-                "expert_output_energy_ratio": "",
+                "expert_entrance_energy_ratio": float(entrance[idx].item()) if entrance is not None and idx < len(entrance) else "",
+                "expert_output_energy_ratio": float(output[idx].item()) if output is not None and idx < len(output) else "",
             }
         )
     return rows
@@ -170,6 +330,7 @@ def main():
 
     metrics_rows = []
     usage_rows = []
+    optical_energy_rows = []
     best = {"epoch": 0, "val_acc": -1.0}
     epochs = int(config.get("training", {}).get("epochs", 200))
     print_freq = int(config.get("training", {}).get("print_freq", 50))
@@ -187,6 +348,8 @@ def main():
         val_start = time.perf_counter()
         val_metrics = evaluate(model, bundle.val_loader, criterion, device, max_batches=eval_max_batches)
         epoch_val_time_sec = time.perf_counter() - val_start
+        diagnostics = collect_optical_diagnostics(model, fixed, device)
+        optical_energy_rows.extend(optical_energy_rows_from_intermediates(run_name, epoch, diagnostics.get("intermediates", {}), model))
         epoch_artifact_time_sec = 0.0
         row = {
             "run_id": run_name,
@@ -206,13 +369,13 @@ def main():
             "epoch_artifact_time_sec": 0.0,
             "epoch_total_time_sec": 0.0,
             "epoch_time_sec": 0.0,
-            "outside_energy_ratio": "",
-            "mean_expert_entropy": "",
-            "max_expert_energy_ratio": "",
-            "detector_entropy": "",
+            "outside_energy_ratio": diagnostics.get("outside_energy_ratio", ""),
+            "mean_expert_entropy": diagnostics.get("mean_expert_entropy", ""),
+            "max_expert_energy_ratio": diagnostics.get("max_expert_energy_ratio", ""),
+            "detector_entropy": diagnostics.get("detector_entropy", ""),
         }
         metrics_rows.append(row)
-        usage_rows.extend(expert_usage_row(run_name, epoch, config.get("dataset", {}).get("name"), config.get("model", {}).get("type"), model))
+        usage_rows.extend(expert_usage_row(run_name, epoch, config.get("dataset", {}).get("name"), config.get("model", {}).get("type"), model, diagnostics))
         if val_metrics["acc"] > best["val_acc"]:
             best = {"epoch": epoch, "val_acc": val_metrics["acc"], "row": row}
             save_checkpoint(run_dir / "checkpoints" / "best.pt", model, optimizer, epoch, row, config)
@@ -336,6 +499,7 @@ def main():
     save_json(metrics_rows, run_dir / "summary_for_master" / "epoch_metrics_rows.json")
     save_json([run_row], run_dir / "summary_for_master" / "final_metrics_rows.json")
     save_json(usage_rows, run_dir / "summary_for_master" / "expert_usage_rows.json")
+    save_json(optical_energy_rows, run_dir / "summary_for_master" / "optical_energy_rows.json")
     save_json([model_params], run_dir / "summary_for_master" / "model_params_rows.json")
     if bool(config.get("reporting", {}).get("rebuild_master_tables_after_run", True)):
         rebuild_master_tables(
@@ -345,6 +509,7 @@ def main():
     else:
         write_rows(EXPERIMENT_ROOT / "single_task" / "results" / "master_epoch_metrics.csv", metrics_rows)
         write_rows(EXPERIMENT_ROOT / "single_task" / "results" / "master_expert_usage.csv", usage_rows)
+        write_rows(EXPERIMENT_ROOT / "single_task" / "results" / "master_optical_energy.csv", optical_energy_rows)
         write_rows(EXPERIMENT_ROOT / "single_task" / "results" / "master_final_metrics.csv", [run_row])
     print(f"saved run outputs to: {run_dir}")
 

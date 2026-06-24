@@ -410,7 +410,13 @@ class GeneralD2NNClassifier(nn.Module):
         }
 
     def optical_parameter_count(self) -> int:
-        return sum(p.numel() for module in [self.layers, self.global_fc] for p in module.parameters())
+        return self.d2nn_local_phase_parameter_count() + self.d2nn_global_fc_parameter_count()
+
+    def d2nn_local_phase_parameter_count(self) -> int:
+        return int(self.num_layers) * int(self.d2nn_phase_grid_size) * int(self.d2nn_phase_grid_size)
+
+    def d2nn_global_fc_parameter_count(self) -> int:
+        return int(self.canvas_shape[0]) * int(self.canvas_shape[1])
 
     def prompt_parameter_count(self) -> int:
         return 0

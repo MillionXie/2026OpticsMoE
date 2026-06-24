@@ -77,6 +77,32 @@ The default 9-expert setup is fair134:
 
 The MoE code also supports `num_experts=4` with a 2x2 global-router layout.
 
+## General D2NN Accounting
+
+The `general_d2nn` baseline is defined as:
+
+```text
+input
+-> first AngularSpectrumPropagator
+-> 5 center-window D2NN phase masks
+-> layer5_to_fc propagation
+-> one full-canvas global FC phase mask
+-> fc_to_detector propagation
+-> detector/readout
+```
+
+The `target_local_phase_param_count` field in D2NN configs refers only to the
+5 local center-window phase masks. The actual optical parameter count also
+includes the full-canvas `global_fc` phase mask. For the default D2NN config:
+
+- local D2NN phase params: `5 * 402 * 402 = 808020`
+- full-canvas global FC params: `1000 * 1000 = 1000000`
+- total optical params: `1808020`
+
+D2NN phase masks are saved under `figures/phase_masks/<epoch>/` as
+`d2nn_phase_layer_*.png`, `d2nn_all_phase_layers.png`, and
+`global_fc_phase.png`.
+
 ## Saved Outputs
 
 Each run is saved under:
@@ -100,6 +126,11 @@ Important outputs:
   and sample predictions
 - `summary_for_master/` rows for rebuilding master tables
 
+`summary_for_master/expert_usage_rows.json` stores prompt amplitudes,
+normalized prompt powers, and fixed-validation-batch expert energy ratios for
+MoE runs. `summary_for_master/optical_energy_rows.json` stores per-stage optical
+energy diagnostics and is used to rebuild `master_optical_energy.csv`.
+
 ## Dropout Clarification
 
 `readout.dropout` is electronic dropout inside the detector readout head.
@@ -107,6 +138,10 @@ Important outputs:
 `regularization.phase_dropout` is optical phase-layer dropout. It randomly
 bypasses phase pixels or phase blocks during training and is automatically
 disabled during evaluation.
+
+LeNet-5 is an electronic baseline. It does not save optical phase masks or
+optical energy rows, and it now adapts to the configured dataset input size
+instead of assuming `134 x 134`.
 
 ## Recommended Run Order
 

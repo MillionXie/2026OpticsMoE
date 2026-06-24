@@ -31,7 +31,8 @@ def build_model(config: Dict, num_classes: int):
     model_type = str(model_cfg.get("type", "learnable_route_moe")).lower()
 
     if model_type == "lenet5":
-        return LeNet5Classifier(num_classes=num_classes)
+        input_size = int(config.get("dataset", {}).get("input_size", model_cfg.get("input_size", 134)))
+        return LeNet5Classifier(num_classes=num_classes, input_size=input_size)
 
     if model_type == "general_d2nn":
         return GeneralD2NNClassifier(
@@ -121,4 +122,3 @@ def build_optimizer(model: torch.nn.Module, config: Dict):
     if opt_type == "sgd":
         return torch.optim.SGD(model.parameters(), lr=lr, weight_decay=weight_decay, momentum=float(cfg.get("momentum", 0.9)))
     raise ValueError(f"Unsupported optimizer.type: {opt_type}")
-

@@ -35,7 +35,13 @@ model:
   num_layers: 5
   d2nn_phase_grid_size: 402
   d2nn_num_layers: 5
+  # target_param_count is kept for backward compatibility and refers only to
+  # the 5 local D2NN center-window phase masks, not the full-canvas global FC.
   target_param_count: 808020
+  target_local_phase_param_count: 808020
+  include_global_fc: true
+  expected_global_fc_param_count: 1000000
+  expected_total_optical_param_count: 1808020
 optics:
   wavelength_m: 5.32e-07
   pixel_size_m: 8.0e-06

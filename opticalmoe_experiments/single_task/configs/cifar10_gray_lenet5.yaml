@@ -14,15 +14,15 @@ dataset:
   input_size: 134
   grayscale: true
   val_split: 0.1
-  batch_size: 64
+  batch_size: 256
   num_workers: 0
   download: true
   smoke_test: false
   smoke_train_size: 64
   smoke_test_size: 32
   sampling_protocol:
-    enabled: false
-    total_size: null
+    enabled: true
+    total_size: 20000
     train_test_ratio:
     - 4
     - 1
@@ -46,7 +46,7 @@ regularization:
     start_epoch: 0
 optimizer:
   type: adamw
-  lr: 0.001
+  lr: 0.003
   weight_decay: 0.0005
 training:
   epochs: 100
