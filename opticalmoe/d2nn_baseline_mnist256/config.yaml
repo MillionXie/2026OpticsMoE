@@ -35,7 +35,7 @@ detector:
 readout:
   type: optical_only
   input_norm: layernorm
-  norm_affine: true
+  norm_affine: false #true
   hidden_dim: 64
   hidden_layers: 1
   activation: gelu

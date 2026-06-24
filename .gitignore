@@ -13,5 +13,7 @@ runs
 results
 figures
 
+/opticalmoe/d2nn_baseline_mnist256/data
+
 __pycache__/
 *.pyc
