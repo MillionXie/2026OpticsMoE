@@ -1,0 +1,90 @@
+# Single-task OpticalMoE experiment config.
+# All nested fields are expanded intentionally so training parameters are easy to edit.
+# readout.dropout is electronic dropout. regularization.phase_dropout is optical phase-layer dropout.
+seed: 7
+device: auto
+experiment:
+  family: single_task
+  dataset: fashionmnist
+  model_type: general_d2nn
+  run_name: fashionmnist_d2nn_matched_params
+dataset:
+  name: fashionmnist
+  root: ./data
+  input_size: 134
+  grayscale: true
+  val_split: 0.1
+  batch_size: 64
+  num_workers: 0
+  download: true
+  smoke_test: false
+  smoke_train_size: 64
+  smoke_test_size: 32
+  sampling_protocol:
+    enabled: false
+    total_size: null
+    train_test_ratio:
+    - 4
+    - 1
+model:
+  type: general_d2nn
+  input_size: 134
+  canvas_size: 1000
+  num_layers: 5
+  d2nn_phase_grid_size: 402
+  d2nn_num_layers: 5
+  target_param_count: 808020
+optics:
+  wavelength_m: 5.32e-07
+  pixel_size_m: 8.0e-06
+  evanescent_mode: zero
+  phase_param: unconstrained
+  expert_phase_init: identity
+  expert_init_std: 0.02
+  distances_m:
+    input_to_prompt: 0.2
+    inter_layer: 0.05
+    layer5_to_fc: 0.05
+    fc_to_detector: 0.05
+detector:
+  detector_size: 32
+  layout: grid
+readout:
+  type: mlp
+  normalize_detector_energy: true
+  logit_scale: 10.0
+  input_norm: layernorm
+  norm_affine: true
+  hidden_dim: 64
+  hidden_layers: 1
+  activation: gelu
+  dropout: 0.1
+regularization:
+  phase_dropout:
+    enabled: true
+    mode: block_phase_bypass
+    expert_p: 0.05
+    global_fc_p: 0.0
+    block_size: 8
+    batch_shared: true
+    apply_to_experts: true
+    apply_to_global_fc: false
+    start_epoch: 10
+optimizer:
+  type: adamw
+  lr: 0.001
+  weight_decay: 0.0005
+training:
+  epochs: 200
+  print_freq: 50
+  save_interval_epochs: 10
+  eval_interval_epochs: 1
+  max_val_batches: null
+visualization:
+  enabled: true
+  save_interval_epochs: 10
+  num_samples: 4
+  save_light_fields: true
+  save_prompt_maps: true
+  save_phase_masks: true
+  save_detector_outputs: true

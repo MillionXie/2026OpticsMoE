@@ -7,5 +7,11 @@
 /opticalmoe/data
 /opticalmoe/runs
 /opticalmoe/.pytest_cache
+
+/opticalmoe_experiments/data
+runs
+results
+figures
+
 __pycache__/
 *.pyc
