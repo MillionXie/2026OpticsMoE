@@ -9,7 +9,7 @@ dataset:
   name: mnist
   root: ./data
   input_size: 256
-  batch_size: 128
+  batch_size: 2500
   num_workers: 0
   download: true
   use_full_dataset: true
@@ -21,7 +21,7 @@ optics:
   input_size: 256
   phase_mask_size: 256
   phase_mask_mode: centered_local
-  num_layers: 5
+  num_layers: 1
   phase_param: unconstrained
   phase_init: uniform_0_2pi
   init_std: 0.02
@@ -47,7 +47,7 @@ readout:
 
 regularization:
   phase_dropout:
-    enabled: true
+    enabled: false
     mode: block_phase_bypass
     p: 0.05
     block_size: 8
