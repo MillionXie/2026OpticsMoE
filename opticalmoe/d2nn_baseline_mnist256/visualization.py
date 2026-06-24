@@ -71,6 +71,21 @@ def save_phase_masks(model, out_dir, dpi=150):
     fig.tight_layout()
     fig.savefig(out_dir / "all_phase_layers.png", dpi=dpi)
     plt.close(fig)
+    save_phase_region_diagram(model, out_dir / "centered_phase_mask_region.png", dpi=dpi)
+
+
+def save_phase_region_diagram(model, path, dpi=150):
+    canvas = torch.zeros(model.canvas_size, model.canvas_size)
+    y0, y1, x0, x1 = model.phase_mask_region()
+    canvas[y0:y1, x0:x1] = 1.0
+    fig, ax = plt.subplots(figsize=(4, 4))
+    ax.imshow(canvas, cmap="gray", vmin=0.0, vmax=1.0)
+    ax.set_title(f"trainable phase region y[{y0}:{y1}], x[{x0}:{x1}]")
+    ax.axis("off")
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
+    fig.tight_layout()
+    fig.savefig(path, dpi=dpi)
+    plt.close(fig)
 
 
 @torch.no_grad()
@@ -86,9 +101,25 @@ def save_epoch_artifacts(model, batch, run_dir, epoch_name, class_names, enabled
     light_dir = Path(run_dir) / "figures" / "light_fields" / epoch_name / "sample_000"
     save_intensity(intermediates["input_256"], light_dir / "00_input_256.png", "input 256", dpi=dpi)
     save_intensity(intermediates["canvas_input_400"], light_dir / "01_canvas_input_400.png", "canvas input 400", dpi=dpi)
+    save_intensity(intermediates["after_input_to_layer"], light_dir / "02_after_input_to_layer.png", "after input-to-layer propagation", dpi=dpi)
+    file_index = 3
     for idx in range(1, model.num_layers + 1):
-        save_intensity(intermediates[f"after_phase_layer_{idx}"], light_dir / f"{idx + 1:02d}_after_phase_layer_{idx}.png", f"after layer {idx}", dpi=dpi)
-    save_intensity(intermediates["detector_field"], light_dir / "07_detector_plane.png", "detector plane", dpi=dpi)
+        save_intensity(
+            intermediates[f"after_phase_modulation_{idx}"],
+            light_dir / f"{file_index:02d}_after_phase_modulation_{idx}.png",
+            f"after phase modulation {idx}",
+            dpi=dpi,
+        )
+        file_index += 1
+        if idx < model.num_layers:
+            save_intensity(
+                intermediates[f"after_propagation_{idx}"],
+                light_dir / f"{file_index:02d}_after_propagation_{idx}.png",
+                f"after propagation {idx}",
+                dpi=dpi,
+            )
+            file_index += 1
+    save_intensity(intermediates["detector_field"], light_dir / f"{file_index:02d}_detector_plane.png", "detector plane", dpi=dpi)
     save_overview(intermediates, light_dir / "overview.png", model.num_layers, dpi=dpi)
 
     save_phase_masks(model, Path(run_dir) / "figures" / "phase_masks" / epoch_name, dpi=dpi)
@@ -116,7 +147,12 @@ def save_epoch_artifacts(model, batch, run_dir, epoch_name, class_names, enabled
 
 
 def save_overview(intermediates, path, num_layers, dpi=150):
-    keys = ["input_256", "canvas_input_400"] + [f"after_phase_layer_{idx}" for idx in range(1, num_layers + 1)] + ["detector_field"]
+    keys = ["input_256", "canvas_input_400", "after_input_to_layer"]
+    for idx in range(1, num_layers + 1):
+        keys.append(f"after_phase_modulation_{idx}")
+        if idx < num_layers:
+            keys.append(f"after_propagation_{idx}")
+    keys.append("detector_field")
     cols = 4
     rows = int(math.ceil(len(keys) / cols))
     fig, axes = plt.subplots(rows, cols, figsize=(3.0 * cols, 3.0 * rows))
@@ -215,4 +251,3 @@ def save_confusion_csv(matrix, path):
             row[str(j)] = int(matrix[i, j].item())
         rows.append(row)
     write_rows(path, rows)
-

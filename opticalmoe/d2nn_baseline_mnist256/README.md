@@ -11,8 +11,11 @@ It is intentionally separate from the current OpticalMoE, `opticalmoe_experiment
 - Test split: full official MNIST test split
 - Input image: resized to `256 x 256`
 - Optical canvas: centered padding to `400 x 400`
-- Optical layers: 5 full-canvas phase-only masks
-- Phase mask size: `400 x 400`
+- Input-to-layer free-space propagation: `5 cm`
+- Optical layers: 5 centered local phase-only masks
+- Phase mask size: `256 x 256`
+- Trainable phase region: center `y[72:328], x[72:328]` on the `400 x 400` canvas
+- Transparent padding: outside the centered phase mask, the field passes through unchanged
 - Pixel size: `8 um`
 - Wavelength: `532 nm`
 - Propagation: Angular Spectrum propagation
@@ -66,3 +69,29 @@ runs/<run_name>/
 
 Every saved visualization epoch includes light-field snapshots, phase masks, detector outputs, and sample predictions.
 
+## Important Geometry Note
+
+`canvas_size=400` is the propagation computation window. It is not the trainable phase-mask size.
+
+The trainable optical parameters are:
+
+```text
+phase_mask_size = 256
+num_layers = 5
+trainable phase params = 5 * 256 * 256 = 327680
+padding_is_trainable = false
+```
+
+The forward optical path is:
+
+```text
+256x256 input
+-> centered zero-padding into 400x400 canvas
+-> angular spectrum propagation to layer 1
+-> centered 256x256 phase mask 1, transparent outside
+-> inter-layer propagation
+-> centered 256x256 phase mask 2
+-> ...
+-> centered 256x256 phase mask 5
+-> detector propagation on 400x400 canvas
+```

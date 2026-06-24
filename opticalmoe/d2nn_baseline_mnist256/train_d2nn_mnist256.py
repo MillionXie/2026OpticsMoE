@@ -140,9 +140,16 @@ def architecture_report(model, config):
         "dataset": "MNIST",
         "input_size": int(optics.get("input_size", 256)),
         "canvas_size": int(optics.get("canvas_size", 400)),
+        "phase_mask_size": int(optics.get("phase_mask_size", optics.get("input_size", 256))),
+        "phase_mask_mode": optics.get("phase_mask_mode", "centered_local"),
+        "phase_mask_region": model.phase_mask_region(),
+        "trainable_phase_params_per_layer": int(model.phase_layers[0].raw_phase.numel()),
+        "trainable_phase_params_total": int(model.optical_parameter_count()),
+        "padding_is_trainable": model.phase_mask_mode == "full_canvas",
         "num_layers": int(optics.get("num_layers", 5)),
         "pixel_size_m": float(optics.get("pixel_size_m", 8.0e-6)),
         "wavelength_m": float(optics.get("wavelength_m", 5.32e-7)),
+        "input_to_layer_distance_m": float(optics.get("input_to_layer_distance_m", 0.05)),
         "inter_layer_distance_m": float(optics.get("inter_layer_distance_m", 0.05)),
         "detector_distance_m": float(optics.get("detector_distance_m", 0.05)),
         "detector_size": int(detector.get("detector_size", 32)),
@@ -197,6 +204,24 @@ def main():
 
     print(f"device: {device}")
     print(f"MNIST train samples={len(train_loader.dataset)} test samples={len(test_loader.dataset)} batch_size={train_loader.batch_size}")
+    optics_cfg = config.get("optics", {})
+    y0, y1, x0, x1 = model.phase_mask_region()
+    print(
+        "D2NN geometry: "
+        f"input_size={model.input_size}, canvas_size={model.canvas_size}, phase_mask_size={model.phase_mask_size}, "
+        f"phase_mask_region=y[{y0}:{y1}], x[{x0}:{x1}]"
+    )
+    print(
+        "Trainable phase params: "
+        f"per_layer={model.phase_layers[0].raw_phase.numel()}, total={model.optical_parameter_count()}, "
+        f"padding_is_trainable={model.phase_mask_mode == 'full_canvas'}"
+    )
+    print(
+        "Distances: "
+        f"input_to_layer={float(optics_cfg.get('input_to_layer_distance_m', 0.05))} m, "
+        f"inter_layer={float(optics_cfg.get('inter_layer_distance_m', 0.05))} m, "
+        f"detector={float(optics_cfg.get('detector_distance_m', 0.05))} m"
+    )
     print(
         "Phase dropout: "
         f"enabled={phase_dropout['enabled']} mode={phase_dropout['mode']} p={phase_dropout['p']} "

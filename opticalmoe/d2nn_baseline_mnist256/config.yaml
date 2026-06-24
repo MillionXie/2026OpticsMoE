@@ -19,11 +19,14 @@ optics:
   pixel_size_m: 8.0e-6
   canvas_size: 400
   input_size: 256
+  phase_mask_size: 256
+  phase_mask_mode: centered_local
   num_layers: 5
   phase_param: unconstrained
   phase_init: uniform_0_2pi
   init_std: 0.02
   evanescent_mode: zero
+  input_to_layer_distance_m: 0.05
   inter_layer_distance_m: 0.05
   detector_distance_m: 0.05
 
@@ -34,17 +37,17 @@ detector:
 
 readout:
   type: optical_only
-  input_norm: layernorm
+  input_norm: none #layernorm
   norm_affine: false #true
   hidden_dim: 64
   hidden_layers: 1
   activation: gelu
-  dropout: 0.1
+  dropout: 0.0
   logit_scale: 10.0
 
 regularization:
   phase_dropout:
-    enabled: false
+    enabled: true
     mode: block_phase_bypass
     p: 0.05
     block_size: 8
@@ -67,4 +70,3 @@ visualization:
   save_interval_epochs: 10
   num_samples: 4
   dpi: 150
-
