@@ -10,7 +10,7 @@ PathLike = Union[str, Path]
 
 
 def load_yaml(path: PathLike) -> Dict[str, Any]:
-    with open(path, "r", encoding="utf-8") as handle:
+    with open(path, "r", encoding="utf-8-sig") as handle:
         return yaml.safe_load(handle) or {}
 
 

@@ -1,4 +1,4 @@
-# Single-task OpticalMoE experiment config.
+﻿# Single-task OpticalMoE experiment config.
 # All nested fields are expanded intentionally so training parameters are easy to edit.
 # readout.dropout is electronic dropout. regularization.phase_dropout is optical phase-layer dropout.
 seed: 7
@@ -29,6 +29,8 @@ dataset:
 model:
   type: lenet5
   input_size: 134
+# LeNet-5 是纯电子神经网络 baseline。
+# 这里的 readout 只用于标记实验类型，不参与光学读出设置。
 readout:
   type: electronic
 regularization:
