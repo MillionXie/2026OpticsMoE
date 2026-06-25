@@ -1,0 +1,86 @@
+seed: 7
+device: auto
+experiment:
+  family: dataset_switching
+  run_name: mnist_fashion_emnist_letters_shared_d2nn_seed7
+  print_freq: 50
+model:
+  type: shared_d2nn
+  input_size: 134
+  canvas_size: 1000
+  d2nn_phase_grid_size: 402
+  d2nn_num_layers: 5
+  prompt_type: none
+  routing_type: none
+layout:
+  canvas_height: 1000
+  input_size: 134
+optics:
+  wavelength_m: 5.32e-7
+  pixel_size_m: 8.0e-6
+  num_layers: 5
+  evanescent_mode: zero
+  phase_param: unconstrained
+  expert_phase_init: identity
+  expert_init_std: 0.02
+  distances_m:
+    input_to_prompt: 0.20
+    inter_layer: 0.05
+    layer5_to_fc: 0.05
+    fc_to_detector: 0.05
+detector:
+  detector_size: 32
+  layout: grid
+readout:
+  type: mlp
+  normalize_detector_energy: true
+  logit_scale: 10.0
+  input_norm: layernorm
+  norm_affine: true
+  hidden_dim: 64
+  hidden_layers: 1
+  activation: gelu
+  dropout: 0.1
+regularization:
+  phase_dropout:
+    enabled: true
+    mode: block_phase_bypass
+    expert_p: 0.05
+    global_fc_p: 0.0
+    block_size: 8
+    batch_shared: true
+    apply_to_experts: true
+    apply_to_global_fc: false
+    start_epoch: 10
+optimizer:
+  type: adamw
+  lr: 0.001
+  weight_decay: 0.0005
+training:
+  mode: dataset_switching
+  epochs: 200
+  multitask:
+    sequential_backward: true
+    balanced_sampling: true
+    batches_per_update: 1
+    loss_reduction: mean
+    steps_per_epoch: null
+    print_freq: 50
+    loss_weights: {mnist: 1.0, fashionmnist: 1.0, emnist_letters: 1.0}
+    tasks:
+      - name: mnist
+        dataset: {name: mnist, root: ./data, input_size: 134, grayscale: true, val_split: 0.1, batch_size: 64, num_workers: 16, download: true, smoke_train_size: 16, smoke_test_size: 8, sampling_protocol: {enabled: false}}
+      - name: fashionmnist
+        dataset: {name: fashionmnist, root: ./data, input_size: 134, grayscale: true, val_split: 0.1, batch_size: 64, num_workers: 16, download: true, smoke_train_size: 16, smoke_test_size: 8, sampling_protocol: {enabled: false}}
+      - name: emnist_letters
+        dataset: {name: emnist, split: letters, root: ./data, input_size: 134, grayscale: true, fix_orientation: true, val_split: 0.1, batch_size: 64, num_workers: 16, download: true, smoke_train_size: 16, smoke_test_size: 8, sampling_protocol: {enabled: false}}
+  evaluation:
+    max_val_batches: null
+    max_test_batches: null
+visualization:
+  enabled: true
+  save_interval_epochs: 10
+  num_samples: 4
+  dpi: 150
+reporting:
+  rebuild_master_tables_after_run: true

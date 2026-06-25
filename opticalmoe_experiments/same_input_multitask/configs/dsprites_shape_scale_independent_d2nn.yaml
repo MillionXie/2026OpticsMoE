@@ -1,0 +1,33 @@
+seed: 7
+device: auto
+experiment:
+  family: same_input_multitask
+  run_name: dsprites_shape_scale_independent_d2nn_seed7
+  print_freq: 50
+model:
+  type: independent_d2nn
+  note: "Supplemental baseline: one ordinary D2NN per task, not an upper bound."
+  input_size: 134
+  canvas_size: 1000
+  d2nn_phase_grid_size: 256
+  d2nn_num_layers: 5
+training:
+  mode: independent_same_input_baseline
+  epochs: 200
+  tasks:
+    - shape
+    - scale
+dataset:
+  name: dsprites
+  root: ./data
+  input_size: 134
+  batch_size: 64
+  num_workers: 16
+  download: true
+  val_split: 0.1
+  test_split: 0.1
+  seed: 7
+  sampling_protocol:
+    enabled: true
+    total_size: 12000
+    train_test_ratio: [4, 1]
