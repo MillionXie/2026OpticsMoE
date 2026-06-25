@@ -135,6 +135,8 @@ python single_task/scripts/build_single_task_tables.py --runs_dir single_task/ru
 
 ```bash
 watch -n 1 nvidia-smi
+htop #cpu
+nproc
 conda activate xml
 cd xml_code/2026OpticsMoE/opticalmoe_experiments/
 ```
