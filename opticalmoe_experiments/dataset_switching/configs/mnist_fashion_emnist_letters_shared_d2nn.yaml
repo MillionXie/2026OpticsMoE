@@ -84,13 +84,35 @@ training:
         batch_size: 64
         num_workers: 16
         download: true
-        smoke_train_size: 16
-        smoke_test_size: 8
+        smoke_train_size: 64
+        smoke_test_size: 32
         sampling_protocol:
           enabled: false
+          total_size: null
+          class_balanced: true
+          train_test_ratio:
+          - 4
+          - 1
+          seed_offset: 0
         pin_memory: auto
         persistent_workers: true
         prefetch_factor: 4
+        smoke_test: false
+        max_train_samples: null
+        max_val_samples: null
+        max_test_samples: null
+      head:
+        detector_size: 32
+        detector_layout: grid
+        readout_type: mlp
+        normalize_detector_energy: true
+        logit_scale: 10.0
+        input_norm: layernorm
+        norm_affine: true
+        hidden_dim: 64
+        hidden_layers: 1
+        activation: gelu
+        dropout: 0.1
     - name: fashionmnist
       dataset:
         name: fashionmnist
@@ -101,13 +123,35 @@ training:
         batch_size: 64
         num_workers: 16
         download: true
-        smoke_train_size: 16
-        smoke_test_size: 8
+        smoke_train_size: 64
+        smoke_test_size: 32
         sampling_protocol:
           enabled: false
+          total_size: null
+          class_balanced: true
+          train_test_ratio:
+          - 4
+          - 1
+          seed_offset: 0
         pin_memory: auto
         persistent_workers: true
         prefetch_factor: 4
+        smoke_test: false
+        max_train_samples: null
+        max_val_samples: null
+        max_test_samples: null
+      head:
+        detector_size: 32
+        detector_layout: grid
+        readout_type: mlp
+        normalize_detector_energy: true
+        logit_scale: 10.0
+        input_norm: layernorm
+        norm_affine: true
+        hidden_dim: 64
+        hidden_layers: 1
+        activation: gelu
+        dropout: 0.1
     - name: emnist_letters
       dataset:
         name: emnist
@@ -120,13 +164,35 @@ training:
         batch_size: 64
         num_workers: 16
         download: true
-        smoke_train_size: 16
-        smoke_test_size: 8
+        smoke_train_size: 64
+        smoke_test_size: 32
         sampling_protocol:
           enabled: false
+          total_size: null
+          class_balanced: true
+          train_test_ratio:
+          - 4
+          - 1
+          seed_offset: 0
         pin_memory: auto
         persistent_workers: true
         prefetch_factor: 4
+        smoke_test: false
+        max_train_samples: null
+        max_val_samples: null
+        max_test_samples: null
+      head:
+        detector_size: 32
+        detector_layout: grid
+        readout_type: mlp
+        normalize_detector_energy: true
+        logit_scale: 10.0
+        input_norm: layernorm
+        norm_affine: true
+        hidden_dim: 64
+        hidden_layers: 1
+        activation: gelu
+        dropout: 0.1
   evaluation:
     max_val_batches: null
     max_test_batches: null

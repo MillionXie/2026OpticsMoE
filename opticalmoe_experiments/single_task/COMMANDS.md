@@ -114,6 +114,45 @@ python single_task/scripts/train_single_task.py --config single_task/configs/cif
 python single_task/scripts/build_single_task_tables.py --runs_dir single_task/runs --out_dir single_task/results
 ```
 
+## Audit Dataset Config Fields
+
+After editing YAML files, run:
+
+```powershell
+python scripts/audit_dataset_config_fields.py
+```
+
+## Dataset Size Quick Edits
+
+Run full official data:
+
+```yaml
+sampling_protocol:
+  enabled: false
+  total_size: null
+```
+
+Run an approximate 10k-sample experiment:
+
+```yaml
+val_split: 0.1
+sampling_protocol:
+  enabled: true
+  total_size: 10000
+  train_test_ratio: [4, 1]
+  class_balanced: true
+```
+
+This gives about `train=7200`, `val=800`, `test=2000`.
+
+Directly cap split sizes:
+
+```yaml
+max_train_samples: 5000
+max_val_samples: 1000
+max_test_samples: 1000
+```
+
 ## Notes
 
 - `readout.dropout` is electronic readout dropout.
@@ -130,6 +169,9 @@ python single_task/scripts/build_single_task_tables.py --runs_dir single_task/ru
 - `lenet5` adapts to the configured dataset `input_size` and does not save optical phase masks or optical energy rows.
 - Linux servers should start with `num_workers=16`, `pin_memory=auto`, `persistent_workers=true`, `prefetch_factor=4`; reduce to `8` or `4` if CPU/RAM is saturated.
 - On Windows or when debugging, use `num_workers=0`. All `--smoke_test` runs force `num_workers=0`, `persistent_workers=false`, and `prefetch_factor=null`.
+- `sampling_protocol.enabled=false` means full official split; `enabled=true` means `total_size` is train+val+test for this run.
+- `pin_memory=auto` enables pinned memory only when CUDA is available.
+- MNIST/Fashion/KMNIST/EMNIST are already grayscale; setting `grayscale=false` does not reduce optical compute because the transform still emits `[1,H,W]`.
 
 ## Multi-GPU Notes
 

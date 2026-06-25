@@ -23,9 +23,14 @@ dataset:
     train_test_ratio:
     - 4
     - 1
+    class_balanced: true
+    seed_offset: 0
   pin_memory: auto
   persistent_workers: true
   prefetch_factor: 4
+  max_train_samples: null
+  max_val_samples: null
+  max_test_samples: null
 model:
   type: lenet5
   input_size: 134

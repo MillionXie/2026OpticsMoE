@@ -15,12 +15,13 @@ if str(EXPERIMENT_ROOT) not in sys.path:
     sys.path.insert(0, str(EXPERIMENT_ROOT))
 
 from common.data.dsprites_multitask import create_same_input_multitask_dataloaders
-from common.data.loader_utils import apply_smoke_loader_overrides
+from common.data.loader_utils import apply_smoke_loader_overrides, loader_summary_from_loaders, print_loader_summary
 from common.optics.expert_layout import ExpertLayout
 from common.optics.task_prompt_moe import SameInputSharedD2NNClassifier, SameInputTaskPromptMoEClassifier
 from common.reporting.metrics_writer import write_rows
 from common.training.checkpointing import load_checkpoint, save_checkpoint
 from common.training.phase_dropout import phase_dropout_active_for_epoch, phase_dropout_settings
+from common.training.task_heads import resolve_same_input_task_heads
 from common.utils.config import load_yaml, save_json, save_yaml
 from common.utils.filesystem import make_run_dir, write_text
 from common.utils.git_info import collect_environment, collect_git_info
@@ -55,6 +56,10 @@ def _layout(config):
     )
 
 
+def task_head_configs(config: Dict, task_names: Sequence[str]) -> Dict[str, Dict]:
+    return resolve_same_input_task_heads(config, task_names)
+
+
 def build_model(config: Dict, task_names: Sequence[str], task_num_classes: Dict[str, int]):
     model_cfg = config.get("model", {})
     optics = config.get("optics", {})
@@ -69,6 +74,7 @@ def build_model(config: Dict, task_names: Sequence[str], task_num_classes: Dict[
         return SameInputTaskPromptMoEClassifier(
             task_names=task_names,
             task_num_classes=task_num_classes,
+            task_head_configs=task_head_configs(config, task_names),
             layout=_layout(config),
             wavelength_m=float(optics.get("wavelength_m", 532e-9)),
             pixel_size_m=float(optics.get("pixel_size_m", 8e-6)),
@@ -115,6 +121,7 @@ def build_model(config: Dict, task_names: Sequence[str], task_num_classes: Dict[
         return SameInputSharedD2NNClassifier(
             task_names=task_names,
             task_num_classes=task_num_classes,
+            task_head_configs=task_head_configs(config, task_names),
             canvas_size=int(model_cfg.get("canvas_size", config.get("layout", {}).get("canvas_height", 1000))),
             input_size=int(model_cfg.get("input_size", config.get("layout", {}).get("input_size", 134))),
             d2nn_phase_grid_size=int(model_cfg.get("d2nn_phase_grid_size", 402)),
@@ -598,6 +605,12 @@ def save_architecture_report(model, config, run_dir: Path):
         "task_num_classes": model.task_num_classes,
         "same_input_paired_training": True,
         "shared_optical_backbone": True,
+        "task_specific_detector_readout": True,
+        "task_head_configs": getattr(model, "task_head_configs", {}),
+        "task_detector_configs": model.task_detector_configs() if hasattr(model, "task_detector_configs") else {},
+        "task_readout_parameter_counts": model.task_readout_parameter_counts() if hasattr(model, "task_readout_parameter_counts") else {},
+        "task_readout_shared": False,
+        "task_readout_modules_are_independent": True,
         "optical_parameter_count": int(model.optical_parameter_count()),
         "prompt_parameter_count": int(model.prompt_parameter_count()),
         "electronic_parameter_count": int(model.electronic_parameter_count()),
@@ -631,7 +644,11 @@ def save_architecture_report(model, config, run_dir: Path):
         "- paired same-input training: true",
         "- shared 9-expert AS global-router backbone for MoE configs",
         "- task switching changes prompt and readout head only",
+        "- task-specific detector/readout heads: true",
+        "- task readout modules are independent: true",
         f"- tasks: {', '.join(model.task_names)}",
+        f"- task head configs: {report['task_head_configs']}",
+        f"- task readout parameter counts: {report['task_readout_parameter_counts']}",
         f"- optical_parameter_count: {report['optical_parameter_count']}",
         f"- prompt_parameter_count: {report['prompt_parameter_count']}",
         f"- electronic_parameter_count: {report['electronic_parameter_count']}",
@@ -657,6 +674,7 @@ def run_training(config, args):
     set_seed(seed)
     device = choose_device(args.device or config.get("device", "auto"))
     train_loader, val_loader, test_loader, task_num_classes, task_names = create_same_input_multitask_dataloaders(config, seed)
+    loader_summary = loader_summary_from_loaders(train_loader, val_loader, test_loader, config.get("dataset", {}))
     model = build_model(config, task_names, task_num_classes).to(device)
     optimizer = build_optimizer(model, config)
     criterion = nn.CrossEntropyLoss()
@@ -665,7 +683,9 @@ def run_training(config, args):
     run_name = config.get("experiment", {}).get("run_name", f"same_input_{int(time.time())}")
     run_dir = make_run_dir(EXPERIMENT_ROOT, "same_input_multitask", run_name)
     save_yaml(config, run_dir / "config.yaml")
+    config.setdefault("resolved", {})["task_head_configs"] = getattr(model, "task_head_configs", {})
     save_json(config, run_dir / "config_resolved.json")
+    save_json(loader_summary, run_dir / "loader_summary.json")
     save_json(collect_git_info(REPO_ROOT), run_dir / "git_info.json")
     save_json(collect_environment(), run_dir / "environment.json")
     write_text(run_dir / "command.txt", " ".join(sys.argv))
@@ -673,6 +693,7 @@ def run_training(config, args):
     print(f"device: {device}")
     print(f"tasks: {task_names}, classes={task_num_classes}")
     print(f"paired same-input batches: train={len(train_loader)} val={len(val_loader)} test={len(test_loader)}")
+    print_loader_summary(loader_summary, prefix="loader")
 
     fixed = fixed_batch(val_loader, device, int(config.get("visualization", {}).get("num_samples", 4)))
     diagnostics = collect_diagnostics(model, fixed, task_names, device)
@@ -711,7 +732,24 @@ def run_training(config, args):
         for task in task_names:
             row[f"{task}_val_loss"] = val[f"{task}_loss"]
             row[f"{task}_val_acc"] = val[f"{task}_acc"]
-            task_rows.append({"run_id": run_name, "epoch": epoch, "task_name": task, "train_loss": train[f"{task}_train_loss"], "train_acc": train[f"{task}_train_acc"], "val_loss": val[f"{task}_loss"], "val_acc": val[f"{task}_acc"]})
+            head = model.task_head_configs[task]
+            task_rows.append(
+                {
+                    "run_id": run_name,
+                    "epoch": epoch,
+                    "task_name": task,
+                    "train_loss": train[f"{task}_train_loss"],
+                    "train_acc": train[f"{task}_train_acc"],
+                    "val_loss": val[f"{task}_loss"],
+                    "val_acc": val[f"{task}_acc"],
+                    "val_samples": val.get(f"{task}_samples", ""),
+                    "readout_type": head["readout_type"],
+                    "hidden_dim": head["hidden_dim"],
+                    "hidden_layers": head["hidden_layers"],
+                    "activation": head["activation"],
+                    "dropout": head["dropout"],
+                }
+            )
         row["epoch_time_sec"] = time.perf_counter() - epoch_start
         metrics_rows.append(row)
         diagnostics = collect_diagnostics(model, fixed, task_names, device)
@@ -728,7 +766,21 @@ def run_training(config, args):
         write_rows(run_dir / "diagnostics" / "task_prompt_amplitude_history.csv", usage_rows)
         write_rows(run_dir / "diagnostics" / "task_expert_energy_history.csv", usage_rows)
         write_rows(run_dir / "diagnostics" / "prompt_similarity.csv", prompt_sim_rows)
-        print(f"epoch {epoch:03d} macro_train={row['macro_train_acc']:.4f} macro_val={row['macro_val_acc']:.4f} phase_dropout={'on' if active else 'off'}")
+        limit_note = f" | val_limited=max_val_batches={max_val_batches}" if max_val_batches is not None else ""
+        print(
+            f"epoch {epoch:03d} | macro_train={row['macro_train_acc']:.4f} "
+            f"macro_val={row['macro_val_acc']:.4f} | joint_val={row['joint_val_acc']:.4f} "
+            f"| phase_dropout={'on' if active else 'off'} | time={row['epoch_time_sec']:.1f}s{limit_note}"
+        )
+        task_width = max(len(name) for name in task_names)
+        for task in task_names:
+            print(
+                f"  {task:<{task_width}} "
+                f"train_loss={row[f'{task}_train_loss']:.4f} "
+                f"train_acc={row[f'{task}_train_acc']:.4f} "
+                f"val_loss={row[f'{task}_val_loss']:.4f} "
+                f"val_acc={row[f'{task}_val_acc']:.4f}"
+            )
 
     test = evaluate(model, test_loader, task_names, criterion, device, max_batches=max_test_batches)
     fixed_test = fixed_batch(test_loader, device, int(config.get("visualization", {}).get("num_samples", 4)))
@@ -804,7 +856,17 @@ def run_training(config, args):
         "optical_parameter_count": int(model.optical_parameter_count()),
         "total_parameter_count": int(sum(p.numel() for p in model.parameters())),
     }
-    model_params = {"run_id": run_name, "optical_parameter_count": int(model.optical_parameter_count()), "prompt_parameter_count": int(model.prompt_parameter_count()), "electronic_parameter_count": int(model.electronic_parameter_count()), "total_parameter_count": int(sum(p.numel() for p in model.parameters())), **fc_summary}
+    model_params = {
+        "run_id": run_name,
+        "optical_parameter_count": int(model.optical_parameter_count()),
+        "prompt_parameter_count": int(model.prompt_parameter_count()),
+        "electronic_parameter_count": int(model.electronic_parameter_count()),
+        "total_parameter_count": int(sum(p.numel() for p in model.parameters())),
+        "task_readout_parameter_counts": model.task_readout_parameter_counts() if hasattr(model, "task_readout_parameter_counts") else {},
+        "task_readout_shared": False,
+        "task_readout_modules_are_independent": True,
+        **fc_summary,
+    }
     final_metrics = {
         "run_id": run_name,
         "best_epoch": best["epoch"],
@@ -816,9 +878,24 @@ def run_training(config, args):
         "total_train_time_sec": total_train_time_sec,
     }
     save_json(final_metrics, run_dir / "metrics" / "final_metrics.json")
-    summary = {"run_id": run_name, "task_names": task_names, "task_num_classes": task_num_classes, "architecture": arch, "best": best, "final_metrics": final_metrics, "same_input_task_switching": same_payload, "prompt_swap_summary": swap_summary}
+    summary = {
+        "run_id": run_name,
+        "task_names": task_names,
+        "task_num_classes": task_num_classes,
+        "architecture": arch,
+        "best": best,
+        "final_metrics": final_metrics,
+        "same_input_task_switching": same_payload,
+        "prompt_swap_summary": swap_summary,
+        "loader_summary": loader_summary,
+        "task_head_configs": getattr(model, "task_head_configs", {}),
+        "task_detector_configs": model.task_detector_configs() if hasattr(model, "task_detector_configs") else {},
+        "task_readout_parameter_counts": model.task_readout_parameter_counts() if hasattr(model, "task_readout_parameter_counts") else {},
+        "task_readout_shared": False,
+        "task_readout_modules_are_independent": True,
+    }
     save_json(summary, run_dir / "summary.json")
-    save_json({"run_id": run_name, "model_type": config.get("model", {}).get("type"), "stage": len(task_names), "num_tasks": len(task_names), "total_wall_time_sec": total_wall_time_sec, "total_train_time_sec": total_train_time_sec, "run_dir": str(run_dir)}, run_dir / "summary_for_master" / "runs_rows.json")
+    save_json({"run_id": run_name, "model_type": config.get("model", {}).get("type"), "stage": len(task_names), "num_tasks": len(task_names), "total_wall_time_sec": total_wall_time_sec, "total_train_time_sec": total_train_time_sec, "run_dir": str(run_dir), "loader_summary": loader_summary}, run_dir / "summary_for_master" / "runs_rows.json")
     save_json(metrics_rows, run_dir / "summary_for_master" / "epoch_metrics_rows.json")
     save_json(task_rows, run_dir / "summary_for_master" / "task_metrics_rows.json")
     save_json(final_rows, run_dir / "summary_for_master" / "final_metrics_rows.json")

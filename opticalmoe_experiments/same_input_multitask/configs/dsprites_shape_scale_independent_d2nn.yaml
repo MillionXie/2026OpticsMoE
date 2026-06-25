@@ -17,6 +17,31 @@ training:
   tasks:
   - shape
   - scale
+  task_heads:
+    shape:
+      detector_size: 32
+      detector_layout: grid
+      readout_type: mlp
+      normalize_detector_energy: true
+      logit_scale: 10.0
+      input_norm: layernorm
+      norm_affine: true
+      hidden_dim: 64
+      hidden_layers: 1
+      activation: gelu
+      dropout: 0.1
+    scale:
+      detector_size: 32
+      detector_layout: grid
+      readout_type: mlp
+      normalize_detector_energy: true
+      logit_scale: 10.0
+      input_norm: layernorm
+      norm_affine: true
+      hidden_dim: 64
+      hidden_layers: 1
+      activation: gelu
+      dropout: 0.1
 dataset:
   name: dsprites
   root: ./data
@@ -33,6 +58,14 @@ dataset:
     train_test_ratio:
     - 4
     - 1
+    class_balanced: false
+    seed_offset: 0
   pin_memory: auto
   persistent_workers: true
   prefetch_factor: 4
+  smoke_test: false
+  smoke_train_size: 64
+  smoke_test_size: 32
+  max_train_samples: null
+  max_val_samples: null
+  max_test_samples: null

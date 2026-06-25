@@ -16,7 +16,7 @@ if str(EXPERIMENT_ROOT) not in sys.path:
     sys.path.insert(0, str(EXPERIMENT_ROOT))
 
 from common.data.datasets import create_dataloaders
-from common.data.loader_utils import apply_smoke_loader_overrides
+from common.data.loader_utils import apply_smoke_loader_overrides, loader_summary_from_loaders, print_loader_summary
 from common.optics.dataset_switching_moe import (
     DatasetSwitchingASGlobalRouterMoEClassifier,
     DatasetSwitchingSharedD2NNClassifier,
@@ -25,6 +25,7 @@ from common.optics.expert_layout import ExpertLayout
 from common.reporting.metrics_writer import write_rows
 from common.training.checkpointing import load_checkpoint, save_checkpoint
 from common.training.phase_dropout import phase_dropout_active_for_epoch, phase_dropout_settings
+from common.training.task_heads import resolve_dataset_switching_task_heads
 from common.utils.config import load_yaml, save_json, save_yaml
 from common.utils.filesystem import make_run_dir, write_text
 from common.utils.git_info import collect_environment, collect_git_info
@@ -57,6 +58,7 @@ def task_configs(config: Dict) -> List[Dict]:
 def create_task_loaders(config: Dict, seed: int, smoke_test: bool):
     train_loaders, val_loaders, test_loaders = {}, {}, {}
     task_num_classes, class_names = {}, {}
+    loader_summaries = {}
     for index, task in enumerate(task_configs(config)):
         name = _task_name(task)
         dataset_cfg = dict(task.get("dataset", {}))
@@ -71,7 +73,8 @@ def create_task_loaders(config: Dict, seed: int, smoke_test: bool):
         test_loaders[name] = bundle.test_loader
         task_num_classes[name] = int(bundle.num_classes)
         class_names[name] = bundle.class_names
-    return train_loaders, val_loaders, test_loaders, task_num_classes, class_names
+        loader_summaries[name] = loader_summary_from_loaders(bundle.train_loader, bundle.val_loader, bundle.test_loader, dataset_cfg)
+    return train_loaders, val_loaders, test_loaders, task_num_classes, class_names, loader_summaries
 
 
 def _layout_from_config(config: Dict) -> ExpertLayout:
@@ -87,8 +90,8 @@ def _layout_from_config(config: Dict) -> ExpertLayout:
     )
 
 
-def _task_head_configs(config: Dict) -> Dict[str, Dict]:
-    return {_task_name(task): dict(task.get("head", {})) for task in task_configs(config)}
+def task_head_configs(config: Dict, task_names: Sequence[str]) -> Dict[str, Dict]:
+    return resolve_dataset_switching_task_heads(config, task_names)
 
 
 def build_model(config: Dict, task_names: Sequence[str], task_num_classes: Dict[str, int]):
@@ -106,7 +109,7 @@ def build_model(config: Dict, task_names: Sequence[str], task_num_classes: Dict[
         return DatasetSwitchingASGlobalRouterMoEClassifier(
             task_names=task_names,
             task_num_classes=task_num_classes,
-            task_head_configs=_task_head_configs(config),
+            task_head_configs=task_head_configs(config, task_names),
             layout=layout,
             wavelength_m=float(optics_cfg.get("wavelength_m", 532e-9)),
             pixel_size_m=float(optics_cfg.get("pixel_size_m", 8e-6)),
@@ -153,7 +156,7 @@ def build_model(config: Dict, task_names: Sequence[str], task_num_classes: Dict[
         return DatasetSwitchingSharedD2NNClassifier(
             task_names=task_names,
             task_num_classes=task_num_classes,
-            task_head_configs=_task_head_configs(config),
+            task_head_configs=task_head_configs(config, task_names),
             canvas_size=int(model_cfg.get("canvas_size", config.get("layout", {}).get("canvas_height", 1000))),
             input_size=int(model_cfg.get("input_size", config.get("layout", {}).get("input_size", 134))),
             d2nn_phase_grid_size=int(model_cfg.get("d2nn_phase_grid_size", 402)),
@@ -248,10 +251,13 @@ def train_epoch(model, loaders, task_names, loss_weights, criterion, optimizer, 
     result = {"joint_train_loss": total_loss / max(steps, 1)}
     total_seen = sum(seen.values())
     result["joint_train_acc"] = sum(correct.values()) / max(total_seen, 1)
+    task_accs = []
     for name in task_names:
         result[f"{name}_train_loss"] = loss_sum[name] / max(seen[name], 1)
         result[f"{name}_train_acc"] = correct[name] / max(seen[name], 1)
         result[f"{name}_train_samples"] = seen[name]
+        task_accs.append(result[f"{name}_train_acc"])
+    result["macro_train_acc"] = sum(task_accs) / max(len(task_accs), 1)
     return result
 
 
@@ -586,6 +592,11 @@ def save_architecture_report(model, config, run_dir: Path):
         "shared_backbone": True,
         "task_specific_prompt": hasattr(model, "prompt_bank"),
         "task_specific_detector_readout": True,
+        "task_head_configs": getattr(model, "task_head_configs", {}),
+        "task_detector_configs": model.task_detector_configs() if hasattr(model, "task_detector_configs") else {},
+        "task_readout_parameter_counts": model.task_readout_parameter_counts() if hasattr(model, "task_readout_parameter_counts") else {},
+        "task_readout_shared": False,
+        "task_readout_modules_are_independent": True,
         "optical_parameter_count": int(model.optical_parameter_count()),
         "prompt_parameter_count": int(model.prompt_parameter_count()),
         "electronic_parameter_count": int(model.electronic_parameter_count()),
@@ -623,6 +634,9 @@ def save_architecture_report(model, config, run_dir: Path):
         "- shared optical expert bank / propagation backbone / global FC phase: true",
         f"- task-specific optical prompt: {str(hasattr(model, 'prompt_bank')).lower()}",
         "- task-specific detector/readout heads: true",
+        "- task readout modules are independent: true",
+        f"- task head configs: {report['task_head_configs']}",
+        f"- task readout parameter counts: {report['task_readout_parameter_counts']}",
         "- expert entrance is produced by AngularSpectrumPropagator(prompt_to_expert), not FFT convolution.",
         f"- optical_parameter_count: {report['optical_parameter_count']}",
         f"- prompt_parameter_count: {report['prompt_parameter_count']}",
@@ -684,7 +698,16 @@ def run_training(config, args):
     save_json(collect_environment(), run_dir / "environment.json")
     write_text(run_dir / "command.txt", " ".join(sys.argv))
 
-    train_loaders, val_loaders, test_loaders, task_num_classes, class_names = create_task_loaders(config, seed, args.smoke_test)
+    loader_result = create_task_loaders(config, seed, args.smoke_test)
+    if len(loader_result) == 6:
+        train_loaders, val_loaders, test_loaders, task_num_classes, class_names, loader_summaries = loader_result
+    else:
+        train_loaders, val_loaders, test_loaders, task_num_classes, class_names = loader_result
+        loader_summaries = {
+            name: loader_summary_from_loaders(train_loaders[name], val_loaders[name], test_loaders[name], {})
+            for name in train_loaders
+        }
+    save_json(loader_summaries, run_dir / "loader_summary.json")
     task_names = list(train_loaders)
     model = build_model(config, task_names, task_num_classes).to(device)
     optimizer = build_optimizer(model, config)
@@ -692,10 +715,14 @@ def run_training(config, args):
     phase_dropout = phase_dropout_settings(config)
     model.set_phase_dropout_active(False)
     arch = save_architecture_report(model, config, run_dir)
+    config.setdefault("resolved", {})["task_head_configs"] = getattr(model, "task_head_configs", {})
+    save_json(config, run_dir / "config_resolved.json")
     print(f"device: {device}")
     print(f"tasks: {task_names}, task classes: {task_num_classes}")
     print(f"model: {config.get('model', {}).get('type')}")
     print(f"Optimizer: {optimizer.__class__.__name__}, lr={optimizer.param_groups[0]['lr']}, weight_decay={optimizer.param_groups[0].get('weight_decay', 0.0)}")
+    for name in task_names:
+        print_loader_summary(loader_summaries[name], prefix=f"loader/{name}")
 
     multitask_cfg = config.get("training", {}).get("multitask", {})
     natural_steps = max(len(loader) for loader in train_loaders.values())
@@ -757,6 +784,7 @@ def run_training(config, args):
             joint_correct += val["acc"] * val["samples"]
             joint_loss += val["loss"] * val["samples"]
             joint_seen += val["samples"]
+            head = model.task_head_configs[task_name]
             task_rows.append(
                 {
                     "run_id": run_name,
@@ -767,10 +795,17 @@ def run_training(config, args):
                     "val_loss": val["loss"],
                     "val_acc": val["acc"],
                     "val_samples": val["samples"],
+                    "readout_type": head["readout_type"],
+                    "hidden_dim": head["hidden_dim"],
+                    "hidden_layers": head["hidden_layers"],
+                    "activation": head["activation"],
+                    "dropout": head["dropout"],
                 }
             )
         row["joint_val_acc"] = joint_correct / max(joint_seen, 1)
         row["joint_val_loss"] = joint_loss / max(joint_seen, 1)
+        row["macro_val_acc"] = sum(row[f"{task}_val_acc"] for task in task_names) / max(len(task_names), 1)
+        row["macro_val_loss"] = sum(row[f"{task}_val_loss"] for task in task_names) / max(len(task_names), 1)
         row["epoch_time_sec"] = time.perf_counter() - epoch_start
         metrics_rows.append(row)
         diagnostics = {name: collect_task_diagnostics(model, fixed[name], device, name) for name in task_names}
@@ -792,7 +827,21 @@ def run_training(config, args):
         write_rows(run_dir / "diagnostics" / "task_expert_energy_history.csv", usage_rows)
         write_rows(run_dir / "diagnostics" / "prompt_similarity.csv", prompt_sim_rows)
         write_rows(run_dir / "diagnostics" / "optical_energy_by_stage.csv", opt_rows)
-        print(f"epoch {epoch:03d} train={row['joint_train_acc']:.4f} val={row['joint_val_acc']:.4f} phase_dropout={'on' if active else 'off'}")
+        limit_note = f" | val_limited=max_val_batches={max_val_batches}" if max_val_batches is not None else ""
+        print(
+            f"epoch {epoch:03d} | joint_train={row['joint_train_acc']:.4f} "
+            f"joint_val={row['joint_val_acc']:.4f} | macro_val={row['macro_val_acc']:.4f} "
+            f"| phase_dropout={'on' if active else 'off'} | time={row['epoch_time_sec']:.1f}s{limit_note}"
+        )
+        task_width = max(len(name) for name in task_names)
+        for task_name in task_names:
+            print(
+                f"  {task_name:<{task_width}} "
+                f"train_loss={row[f'{task_name}_train_loss']:.4f} "
+                f"train_acc={row[f'{task_name}_train_acc']:.4f} "
+                f"val_loss={row[f'{task_name}_val_loss']:.4f} "
+                f"val_acc={row[f'{task_name}_val_acc']:.4f}"
+            )
 
     final_diag = save_epoch_artifacts(model, fixed, run_dir, "final_epoch", task_names, device, class_names, enabled=viz_enabled)
     swap_rows = prompt_swap_evaluation(model, test_loaders, task_names, task_num_classes, device, criterion, max_batches=max_test_batches)
@@ -859,6 +908,7 @@ def run_training(config, args):
         "best_epoch": best["epoch"],
         "best_joint_val_acc": best["joint_val_acc"],
         "total_wall_time_sec": time.perf_counter() - run_start,
+        "loader_summary": loader_summaries,
     }
     model_params = {
         "run_id": run_name,
@@ -866,6 +916,9 @@ def run_training(config, args):
         "prompt_parameter_count": int(model.prompt_parameter_count()),
         "electronic_parameter_count": int(model.electronic_parameter_count()),
         "total_parameter_count": int(sum(p.numel() for p in model.parameters())),
+        "task_readout_parameter_counts": model.task_readout_parameter_counts() if hasattr(model, "task_readout_parameter_counts") else {},
+        "task_readout_shared": False,
+        "task_readout_modules_are_independent": True,
         **fc_summary,
     }
     summary = {
@@ -877,6 +930,12 @@ def run_training(config, args):
         "best": best,
         "prompt_swap_summary": swap_summary,
         "final_test_metrics": final_task_rows,
+        "loader_summary": loader_summaries,
+        "task_head_configs": getattr(model, "task_head_configs", {}),
+        "task_detector_configs": model.task_detector_configs() if hasattr(model, "task_detector_configs") else {},
+        "task_readout_parameter_counts": model.task_readout_parameter_counts() if hasattr(model, "task_readout_parameter_counts") else {},
+        "task_readout_shared": False,
+        "task_readout_modules_are_independent": True,
     }
     save_json(summary, run_dir / "summary.json")
     save_json(run_row, run_dir / "summary_for_master" / "runs_rows.json")

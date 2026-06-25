@@ -38,6 +38,38 @@ Supported datasets:
 All optical configs default to `input_size=134`. CIFAR10 is converted to
 single-channel grayscale before optical propagation.
 
+## Dataset Size Controls
+
+Every single-task YAML has the same controls under `dataset`:
+
+```yaml
+sampling_protocol:
+  enabled: false
+  total_size: null
+  train_test_ratio: [4, 1]
+  class_balanced: true
+  seed_offset: 0
+max_train_samples: null
+max_val_samples: null
+max_test_samples: null
+```
+
+`enabled: false` uses the official dataset split. The official train split is
+then split into train/validation using `val_split`; the official test split is
+kept as test.
+
+`enabled: true` makes `total_size` mean train+val+test for this run. Example:
+`total_size=10000`, `train_test_ratio=[4,1]`, `val_split=0.1` gives roughly
+`train=7200`, `val=800`, `test=2000`. `class_balanced=true` tries to keep class
+counts even; if a class does not have enough samples, the loader raises a clear
+error.
+
+Use `max_train_samples`, `max_val_samples`, and `max_test_samples` when you want
+exact per-split caps. Smoke tests override these with the smoke split sizes.
+
+Each run saves the effective split sizes and loader settings to
+`loader_summary.json`, `summary.json`, and `summary_for_master/runs_rows.json`.
+
 ## Config Matrix
 
 The `configs/` folder contains a complete single-task matrix:
@@ -159,6 +191,12 @@ All configs expose `num_workers`, `pin_memory`, `persistent_workers`, and
 RAM pressure is high, try `num_workers=8` or `4`. On Windows or during
 debugging, use `num_workers=0`. The `--smoke_test` flag automatically forces
 `num_workers=0`, `persistent_workers=false`, and `prefetch_factor=null`.
+
+For MNIST/Fashion-MNIST/KMNIST/EMNIST, keep `grayscale: true`. These datasets
+are already grayscale, and setting it to `false` does not save GPU time because
+the final transform still emits a single-channel tensor. For CIFAR10, the
+current optical pipeline is also single-channel, so CIFAR10 configs should stay
+grayscale unless an explicit RGB optical pipeline is added later.
 
 ## Recommended Run Order
 

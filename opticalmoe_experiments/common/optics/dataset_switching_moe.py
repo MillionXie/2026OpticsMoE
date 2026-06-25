@@ -223,6 +223,9 @@ class DatasetSwitchingASGlobalRouterMoEClassifier(nn.Module):
         )
         self.fc_to_detector = AngularSpectrumPropagator(distance_m=self.distances_m["fc_to_detector"], **prop_args)
         task_head_configs = task_head_configs or {}
+        unknown_heads = sorted(set(task_head_configs) - set(self.task_names))
+        if unknown_heads:
+            raise ValueError(f"task_head_configs contains unknown tasks: {unknown_heads}; valid tasks: {self.task_names}")
         detectors = {}
         readouts = {}
         resolved = {}
@@ -376,6 +379,19 @@ class DatasetSwitchingASGlobalRouterMoEClassifier(nn.Module):
     def electronic_parameter_count(self) -> int:
         return sum(p.numel() for p in self.task_readouts.parameters())
 
+    def task_readout_parameter_counts(self) -> Dict[str, int]:
+        return {name: sum(p.numel() for p in self.task_readouts[name].parameters()) for name in self.task_names}
+
+    def task_detector_configs(self) -> Dict[str, Dict]:
+        return {
+            name: {
+                "detector_size": self.task_head_configs[name]["detector_size"],
+                "detector_layout": self.task_head_configs[name]["detector_layout"],
+                "normalize_detector_energy": self.task_head_configs[name]["normalize_detector_energy"],
+            }
+            for name in self.task_names
+        }
+
     def set_phase_dropout_active(self, active: bool) -> None:
         for layer in self.expert_layers:
             layer.set_phase_dropout_active(active)
@@ -477,6 +493,9 @@ class DatasetSwitchingSharedD2NNClassifier(nn.Module):
         )
         self.fc_to_detector = AngularSpectrumPropagator(distance_m=self.distances_m["fc_to_detector"], **prop_args)
         task_head_configs = task_head_configs or {}
+        unknown_heads = sorted(set(task_head_configs) - set(self.task_names))
+        if unknown_heads:
+            raise ValueError(f"task_head_configs contains unknown tasks: {unknown_heads}; valid tasks: {self.task_names}")
         self.task_detectors = nn.ModuleDict()
         self.task_readouts = nn.ModuleDict()
         self.task_head_configs = {}
@@ -576,6 +595,19 @@ class DatasetSwitchingSharedD2NNClassifier(nn.Module):
 
     def electronic_parameter_count(self) -> int:
         return sum(p.numel() for p in self.task_readouts.parameters())
+
+    def task_readout_parameter_counts(self) -> Dict[str, int]:
+        return {name: sum(p.numel() for p in self.task_readouts[name].parameters()) for name in self.task_names}
+
+    def task_detector_configs(self) -> Dict[str, Dict]:
+        return {
+            name: {
+                "detector_size": self.task_head_configs[name]["detector_size"],
+                "detector_layout": self.task_head_configs[name]["detector_layout"],
+                "normalize_detector_energy": self.task_head_configs[name]["normalize_detector_energy"],
+            }
+            for name in self.task_names
+        }
 
     def set_phase_dropout_active(self, active: bool) -> None:
         for layer in self.layers:

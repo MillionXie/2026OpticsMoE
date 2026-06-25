@@ -9,6 +9,24 @@ Run these commands from `opticalmoe_experiments/`.
 - On Windows or while debugging, set `num_workers=0`.
 - `--smoke_test` automatically forces `num_workers=0`, `persistent_workers=false`, and `prefetch_factor=null`.
 - The optical canvas is `1000 x 1000`, but the default trainable global FC phase window is center `600 x 600`; the padding is transparent and not trainable.
+- `sampling_protocol.enabled=false` runs each official dataset split. `enabled=true` makes `total_size` mean train+val+test for each task dataset.
+- For example, `total_size=10000`, `train_test_ratio=[4,1]`, `val_split=0.1` gives about `train=7200`, `val=800`, `test=2000`.
+- Use `max_train_samples`, `max_val_samples`, and `max_test_samples` when you want exact split caps.
+- `sequential_backward=true` means one update forwards/backwards each task sequentially, then runs one shared optimizer step. This saves GPU memory.
+- `balanced_sampling=true` keeps task sampling balanced when datasets have different sizes.
+- `loss_reduction=mean` averages task losses after weighting.
+
+## Audit Dataset Config Fields
+
+```powershell
+python scripts/audit_dataset_config_fields.py
+```
+
+Audit task-specific head fields:
+
+```powershell
+python scripts/audit_head_config_fields.py
+```
 
 ## Three-Task Learnable MoE Smoke
 

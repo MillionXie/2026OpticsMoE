@@ -1,4 +1,5 @@
 import argparse
+import json
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -92,9 +93,19 @@ BASE_SHARED_D2NN_CONFIG = {
         "val_split": 0.1,
         "test_split": 0.1,
         "seed": 7,
-        "smoke_train_size": 16,
-        "smoke_test_size": 8,
-        "sampling_protocol": {"enabled": True, "total_size": 12000, "train_test_ratio": [4, 1]},
+        "smoke_test": False,
+        "smoke_train_size": 64,
+        "smoke_test_size": 32,
+        "max_train_samples": None,
+        "max_val_samples": None,
+        "max_test_samples": None,
+        "sampling_protocol": {
+            "enabled": True,
+            "total_size": 12000,
+            "train_test_ratio": [4, 1],
+            "class_balanced": False,
+            "seed_offset": 0,
+        },
     },
     "visualization": {"enabled": True, "save_interval_epochs": 10, "num_samples": 4, "dpi": 150},
     "reporting": {"rebuild_master_tables_after_run": False},
@@ -116,6 +127,7 @@ def main():
     parent_dir = make_run_dir(EXPERIMENT_ROOT, "same_input_multitask", args.run_name)
     write_text(parent_dir / "README.txt", "Independent D2NN baseline: one D2NN per task. This is not an upper bound.\n")
     child_summaries = []
+    loader_summaries = {}
     for task in tasks:
         child_config = deep_update(BASE_SHARED_D2NN_CONFIG, config)
         child_config["model"]["type"] = "shared_d2nn"
@@ -131,16 +143,29 @@ def main():
             disable_visualization=args.disable_visualization,
         )
         run_dir = run_training(child_config, child_args)
-        child_summaries.append({"task_name": task, "independent_run_dir": str(run_dir)})
+        loader_path = Path(run_dir) / "loader_summary.json"
+        loader_summary = json.loads(loader_path.read_text(encoding="utf-8")) if loader_path.exists() else {}
+        loader_summaries[task] = loader_summary
+        child_summaries.append({"task_name": task, "independent_run_dir": str(run_dir), "loader_summary": loader_summary})
+    parent_summary = {
+        "run_id": args.run_name,
+        "baseline_type": "independent_d2nn",
+        "not_upper_bound": True,
+        "tasks": tasks,
+        "children": child_summaries,
+        "loader_summary": loader_summaries,
+    }
+    save_json(parent_summary, parent_dir / "summary.json")
+    save_json(loader_summaries, parent_dir / "loader_summary.json")
     save_json(
         {
             "run_id": args.run_name,
-            "baseline_type": "independent_d2nn",
-            "not_upper_bound": True,
-            "tasks": tasks,
-            "children": child_summaries,
+            "model_type": "independent_d2nn",
+            "tasks": ",".join(tasks),
+            "loader_summary": loader_summaries,
+            "run_dir": str(parent_dir),
         },
-        parent_dir / "summary.json",
+        parent_dir / "summary_for_master" / "runs_rows.json",
     )
     print(f"saved independent baseline summary to {parent_dir}")
 

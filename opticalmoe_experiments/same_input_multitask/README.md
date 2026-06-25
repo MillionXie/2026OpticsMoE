@@ -15,6 +15,26 @@ same images
 weighted mean loss -> backward -> optimizer.step
 ```
 
+Each task has its own detector/readout head module. For example, `shape`,
+`scale`, `x_position_4bin`, and `y_position_4bin` use separate `nn.Module`
+instances and do not share electronic readout parameters. The global `readout:`
+section is only the default architecture. Per-task overrides live in
+`training.task_heads`:
+
+```yaml
+training:
+  task_heads:
+    shape:
+      hidden_dim: 32
+    scale:
+      hidden_dim: 64
+```
+
+If a task is omitted from `task_heads`, it still gets an independent readout
+head using the global defaults. Unknown task names in `task_heads` raise an
+error. Resolved head configs and readout parameter counts are saved in
+`config_resolved.json`, `architecture_report.json`, and `summary.json`.
+
 ## Stages
 
 Stage 1:
@@ -100,6 +120,55 @@ same_input_multitask/results/
 Prompt swap is the main evidence that the optical prompt affects task behavior:
 for each readout task, the evaluation keeps the readout fixed and swaps the
 prompt task.
+
+Epoch logs now show each task's train/validation loss and accuracy in addition
+to macro/joint metrics. Full per-task history is saved in
+`metrics/task_metrics.csv`.
+
+## Dataset Size Controls
+
+same-input multitask has one top-level `dataset` block because every task uses
+the same dSprites image batch.
+
+```yaml
+sampling_protocol:
+  enabled: true
+  total_size: 12000
+  train_test_ratio: [4, 1]
+  class_balanced: false
+  seed_offset: 0
+max_train_samples: null
+max_val_samples: null
+max_test_samples: null
+```
+
+For dSprites, `enabled: true` now means: shuffle all official dSprites indices,
+take `total_size`, split that selected pool into train_pool/test by
+`train_test_ratio`, then split validation from train_pool by `val_split`.
+
+With the default `total_size=12000`, `[4,1]`, and `val_split=0.1`, the split is:
+
+```text
+train = 8640
+val = 960
+test = 2400
+```
+
+The train/val/test indices are deterministic and non-overlapping. Multi-label
+class balancing is not forced for dSprites because simultaneously balancing
+shape, scale, x bin, and y bin is a different sampling problem; the configs
+therefore set `class_balanced: false`.
+
+Use `max_train_samples`, `max_val_samples`, and `max_test_samples` for direct
+per-split caps. Each run prints and saves `loader_summary.json`.
+
+## Paired Batch Field
+
+`batch_mode: paired_same_input` means each update uses the same dSprites image
+batch for every task. The model runs that same `images` tensor through
+`prompt_shape`, `prompt_scale`, and optional x/y prompts, computes each task
+loss, averages the weighted losses, then performs one optimizer step. This
+experiment does not use independent per-task loaders.
 
 ## DataLoader Workers
 

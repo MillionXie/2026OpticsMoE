@@ -17,7 +17,7 @@ from common.data.datasets import create_dataloaders
 from common.reporting.aggregate_results import rebuild_master_tables
 from common.reporting.metrics_writer import write_rows
 from common.reporting.run_manifest import architecture_report, save_run_manifest
-from common.data.loader_utils import apply_smoke_loader_overrides
+from common.data.loader_utils import apply_smoke_loader_overrides, loader_summary_from_loaders, print_loader_summary
 from common.training.checkpointing import save_checkpoint
 from common.training.eval_loop import evaluate, predict_all
 from common.training.phase_dropout import phase_dropout_active_for_epoch, phase_dropout_settings
@@ -305,6 +305,8 @@ def main():
     save_run_manifest(run_dir, config, command, REPO_ROOT)
 
     bundle = create_dataloaders(config.get("dataset", {}), seed=seed)
+    loader_summary = loader_summary_from_loaders(bundle.train_loader, bundle.val_loader, bundle.test_loader, config.get("dataset", {}))
+    save_json(loader_summary, run_dir / "loader_summary.json")
     model = build_model(config, bundle.num_classes).to(device)
     optimizer = build_optimizer(model, config)
     criterion = torch.nn.CrossEntropyLoss()
@@ -314,6 +316,7 @@ def main():
     print(f"device: {device}")
     print(f"dataset: {config.get('dataset', {}).get('name')} classes={bundle.num_classes}")
     print(f"model: {config.get('model', {}).get('type')}")
+    print_loader_summary(loader_summary, prefix="loader")
     print(
         "Phase dropout: "
         f"enabled={phase_dropout['enabled']}, mode={phase_dropout['mode']}, "
@@ -481,6 +484,7 @@ def main():
         "num_classes": bundle.num_classes,
         "class_names": bundle.class_names,
         "phase_dropout": phase_dropout,
+        "loader_summary": loader_summary,
         **final_metrics,
         **model_params,
     }
@@ -509,6 +513,7 @@ def main():
         "run_dir": str(run_dir),
         "status": time_metrics["status"],
         "completed_at": time_metrics["completed_at"],
+        "loader_summary": loader_summary,
     }
     save_json(run_row, run_dir / "summary_for_master" / "runs_rows.json")
     save_json(metrics_rows, run_dir / "summary_for_master" / "epoch_metrics_rows.json")

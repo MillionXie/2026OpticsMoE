@@ -92,24 +92,45 @@ def _class_balanced_indices(dataset, size: int, seed: int) -> List[int]:
     return selected_tensor.tolist()
 
 
+def _random_indices(dataset, size: int, seed: int) -> List[int]:
+    size = int(size)
+    if size <= 0 or size > len(dataset):
+        raise ValueError(f"Invalid requested sample size {size} for dataset of length {len(dataset)}.")
+    generator = torch.Generator().manual_seed(int(seed))
+    return torch.randperm(len(dataset), generator=generator)[:size].tolist()
+
+
 def _subset(dataset, size: Optional[int]):
     if size is None:
         return dataset
     return Subset(dataset, list(range(min(int(size), len(dataset)))))
 
 
+def _max_samples(dataset_cfg: Dict, split: str) -> Optional[int]:
+    value = dataset_cfg.get(f"max_{split}_samples")
+    if value is None:
+        return None
+    return int(value)
+
+
 def _apply_sampling_protocol(train_full, test_dataset, dataset_cfg: Dict, seed: int):
     protocol = dataset_cfg.get("sampling_protocol", {}) or {}
     if not bool(protocol.get("enabled", False)):
         return train_full, test_dataset
+    if protocol.get("total_size") is None:
+        raise ValueError("sampling_protocol.enabled=true requires total_size for torchvision datasets.")
     total_size = int(protocol["total_size"])
     ratio = protocol.get("train_test_ratio", [4, 1])
     train_parts, test_parts = int(ratio[0]), int(ratio[1])
+    if train_parts <= 0 or test_parts <= 0:
+        raise ValueError("sampling_protocol.train_test_ratio must contain positive values.")
     train_pool_size = total_size * train_parts // (train_parts + test_parts)
     test_size = total_size - train_pool_size
     offset = int(protocol.get("seed_offset", 0))
-    train_indices = _class_balanced_indices(train_full, train_pool_size, seed + offset)
-    test_indices = _class_balanced_indices(test_dataset, test_size, seed + offset + 100_000)
+    balanced = bool(protocol.get("class_balanced", True))
+    index_fn = _class_balanced_indices if balanced else _random_indices
+    train_indices = index_fn(train_full, train_pool_size, seed + offset)
+    test_indices = index_fn(test_dataset, test_size, seed + offset + 100_000)
     return Subset(train_full, train_indices), Subset(test_dataset, test_indices)
 
 
@@ -164,6 +185,9 @@ def create_dataloaders(dataset_cfg: Dict, seed: int = 7) -> DataBundle:
         test_dataset = _subset(test_dataset, int(dataset_cfg.get("smoke_test_size", 64)))
 
     train_dataset, val_dataset = _split_train_val(train_full, val_split, seed + 200_000)
+    train_dataset = _subset(train_dataset, _max_samples(dataset_cfg, "train"))
+    val_dataset = _subset(val_dataset, _max_samples(dataset_cfg, "val"))
+    test_dataset = _subset(test_dataset, _max_samples(dataset_cfg, "test"))
     train_loader = DataLoader(train_dataset, **dataloader_kwargs(dataset_cfg, shuffle=True, seed=seed + 300_000))
     val_loader = DataLoader(val_dataset, **dataloader_kwargs(dataset_cfg, shuffle=False))
     test_loader = DataLoader(test_dataset, **dataloader_kwargs(dataset_cfg, shuffle=False))

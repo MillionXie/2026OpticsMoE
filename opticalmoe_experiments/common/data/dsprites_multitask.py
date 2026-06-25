@@ -67,24 +67,59 @@ def shuffled_split_indices(total_count: int, val_split: float, test_split: float
     return {"train": train_indices, "val": val_indices, "test": test_indices}
 
 
+def split_indices_from_config(total_count: int, dataset_cfg: Dict, val_split: float, test_split: float, seed: int):
+    protocol = dataset_cfg.get("sampling_protocol", {}) or {}
+    if not bool(protocol.get("enabled", False)):
+        return shuffled_split_indices(total_count, val_split=val_split, test_split=test_split, seed=seed)
+    total_requested = protocol.get("total_size")
+    total_size = int(total_count) if total_requested is None else int(total_requested)
+    if total_size <= 0 or total_size > int(total_count):
+        raise ValueError(f"Invalid dSprites sampling total_size={total_size} for dataset length {total_count}.")
+    ratio = protocol.get("train_test_ratio", [4, 1])
+    train_parts, test_parts = int(ratio[0]), int(ratio[1])
+    if train_parts <= 0 or test_parts <= 0:
+        raise ValueError("sampling_protocol.train_test_ratio must contain positive values.")
+    rng = np.random.default_rng(int(seed) + int(protocol.get("seed_offset", 0)))
+    indices = np.arange(int(total_count), dtype=np.int64)
+    rng.shuffle(indices)
+    selected = indices[:total_size]
+    train_pool_size = total_size * train_parts // (train_parts + test_parts)
+    test_size = total_size - train_pool_size
+    train_pool = selected[:train_pool_size]
+    test_indices = selected[train_pool_size:train_pool_size + test_size]
+    val_size = int(round(float(val_split) * len(train_pool)))
+    val_indices = train_pool[:val_size]
+    train_indices = train_pool[val_size:]
+    return {"train": train_indices, "val": val_indices, "test": test_indices}
+
+
 def apply_sampling_protocol(split_indices, dataset_cfg: Dict, seed: int):
+    """Backward-compatible wrapper for older callers.
+
+    New code should call split_indices_from_config so sampling_protocol.total_size
+    is interpreted as train + val + test, not just train/test after a full split.
+    """
+
     protocol = dataset_cfg.get("sampling_protocol", {}) or {}
     if not bool(protocol.get("enabled", False)):
         return split_indices
-    total_size = min(int(protocol.get("total_size", len(split_indices["train"]) + len(split_indices["test"]))), len(split_indices["train"]) + len(split_indices["test"]))
-    ratio = protocol.get("train_test_ratio", [4, 1])
-    train_parts, test_parts = int(ratio[0]), int(ratio[1])
-    train_size = total_size * train_parts // max(train_parts + test_parts, 1)
-    test_size = total_size - train_size
-    rng = np.random.default_rng(int(seed) + int(protocol.get("seed_offset", 0)))
-    train_pool = np.array(split_indices["train"], copy=True)
-    test_pool = np.array(split_indices["test"], copy=True)
-    rng.shuffle(train_pool)
-    rng.shuffle(test_pool)
-    split_indices = dict(split_indices)
-    split_indices["train"] = train_pool[:train_size]
-    split_indices["test"] = test_pool[:test_size]
-    return split_indices
+    total_available = sum(len(split_indices[key]) for key in ("train", "val", "test"))
+    return split_indices_from_config(
+        total_available,
+        dataset_cfg,
+        val_split=len(split_indices["val"]) / max(total_available, 1),
+        test_split=len(split_indices["test"]) / max(total_available, 1),
+        seed=seed,
+    )
+
+
+def apply_max_split_samples(split_indices, dataset_cfg: Dict):
+    result = dict(split_indices)
+    for split in ("train", "val", "test"):
+        value = dataset_cfg.get(f"max_{split}_samples")
+        if value is not None:
+            result[split] = result[split][: int(value)]
+    return result
 
 
 class DSpritesSameInputMultiTaskDataset(Dataset):
@@ -115,8 +150,13 @@ class DSpritesSameInputMultiTaskDataset(Dataset):
         self.imgs = self._npz["imgs"]
         self.latents_classes = self._npz["latents_classes"]
         if indices is None:
-            splits = shuffled_split_indices(len(self.imgs), val_split=val_split, test_split=test_split, seed=seed)
-            splits = apply_sampling_protocol(splits, {"sampling_protocol": sampling_protocol or {}}, seed)
+            splits = split_indices_from_config(
+                len(self.imgs),
+                {"sampling_protocol": sampling_protocol or {}},
+                val_split=val_split,
+                test_split=test_split,
+                seed=seed,
+            )
             indices = splits[split]
         self.indices = np.asarray(indices, dtype=np.int64)
         if max_samples is not None:
@@ -155,12 +195,12 @@ def create_same_input_multitask_dataloaders(config: Dict, seed: int = 7):
     path = ensure_dsprites_file(root, download=download, npz_path=npz_path)
     with np.load(str(path), allow_pickle=False) as npz:
         total_count = int(npz["imgs"].shape[0])
-    splits = shuffled_split_indices(total_count, val_split=val_split, test_split=test_split, seed=ds_seed)
-    splits = apply_sampling_protocol(splits, dataset_cfg, ds_seed)
+    splits = split_indices_from_config(total_count, dataset_cfg, val_split=val_split, test_split=test_split, seed=ds_seed)
     if bool(dataset_cfg.get("smoke_test", False)):
         splits["train"] = splits["train"][: int(dataset_cfg.get("smoke_train_size", 64))]
         splits["val"] = splits["val"][: int(dataset_cfg.get("smoke_test_size", 32))]
         splits["test"] = splits["test"][: int(dataset_cfg.get("smoke_test_size", 32))]
+    splits = apply_max_split_samples(splits, dataset_cfg)
     common = {
         "root": root,
         "tasks": task_names,

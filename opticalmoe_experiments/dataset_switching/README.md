@@ -22,6 +22,28 @@ Fashion input -> prompt_fashionmnist -> shared optical backbone -> Fashion reado
 EMNIST letters input -> prompt_emnist_letters -> shared optical backbone -> EMNIST readout
 ```
 
+Each dataset has its own detector/readout head module. These modules are
+separate `nn.Module` instances and do not share parameters. The global
+`detector:` and `readout:` sections in the YAML files are defaults; each
+`training.multitask.tasks[*].head` can override them. If a task does not define
+`head`, it still receives an independent head using the global defaults.
+
+EMNIST-letters has 26 output classes and may benefit from a larger
+`hidden_dim` than MNIST/Fashion-MNIST. To tune only EMNIST:
+
+```yaml
+training:
+  multitask:
+    tasks:
+      - name: emnist_letters
+        head:
+          hidden_dim: 96
+          activation: gelu
+```
+
+The resolved per-task head configs are saved in `config_resolved.json`,
+`architecture_report.json`, and `summary.json`.
+
 The shared backbone is the successful 9-expert fair134 Angular-Spectrum global
 router:
 
@@ -63,6 +85,46 @@ not gate amplitudes at the expert entrance plane.
 - Prompt similarity is saved to `diagnostics/prompt_similarity.csv` and
   `summary_for_master/prompt_similarity_rows.json`.
 - Master tables are rebuilt under `dataset_switching/results/`.
+- Epoch logs now print every task's train/validation loss and accuracy in
+  addition to joint/macro metrics. Full per-task history is saved in
+  `metrics/task_metrics.csv`.
+
+## Dataset Size Controls
+
+Each task has its own `training.multitask.tasks[*].dataset` block, and every
+task dataset exposes:
+
+```yaml
+sampling_protocol:
+  enabled: false
+  total_size: null
+  train_test_ratio: [4, 1]
+  class_balanced: true
+  seed_offset: 0
+max_train_samples: null
+max_val_samples: null
+max_test_samples: null
+```
+
+`enabled: false` uses the official full train/test split for that dataset, then
+uses `val_split` to carve validation out of the train split. `enabled: true`
+makes `total_size` mean train+val+test for that task. For example, with
+`total_size=10000`, `[4,1]`, and `val_split=0.1`, the effective split is about
+`train=7200`, `val=800`, `test=2000`.
+
+Use `max_train_samples`, `max_val_samples`, and `max_test_samples` for direct
+per-split caps. The training script prints the effective split sizes for every
+task and writes them to `loader_summary.json`.
+
+## Multitask Training Fields
+
+- `sequential_backward: true`: each update loops through tasks and performs
+  task-by-task forward/backward before one shared `optimizer.step()`. This is
+  the memory-safe mode for the shared optical backbone.
+- `balanced_sampling: true`: task loaders are cycled so MNIST/Fashion/EMNIST
+  get balanced update opportunities even if their dataset sizes differ.
+- `loss_reduction: mean`: task losses are averaged after applying weights, so
+  the joint loss scale does not grow just because more tasks are added.
 
 ## Output Layout
 

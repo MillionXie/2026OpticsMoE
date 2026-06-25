@@ -10,7 +10,7 @@ if str(EXPERIMENT_ROOT) not in sys.path:
     sys.path.insert(0, str(EXPERIMENT_ROOT))
 
 from common.data.datasets import create_dataloaders
-from common.data.loader_utils import apply_smoke_loader_overrides
+from common.data.loader_utils import apply_smoke_loader_overrides, loader_summary_from_loaders, print_loader_summary
 from common.optics.optical_models import GeneralD2NNClassifier
 from common.reporting.metrics_writer import write_rows
 from common.training.checkpointing import save_checkpoint
@@ -45,6 +45,7 @@ def main():
     detector = config.get("detector", {})
     readout = config.get("readout", {})
     task_rows = []
+    loader_summaries = {}
     total_optical = total_electronic = total_params = 0
     epochs = int(args.epochs or config.get("training", {}).get("epochs", 1))
     if args.smoke_test:
@@ -58,6 +59,8 @@ def main():
             dataset_cfg.setdefault("smoke_test_size", 8)
             apply_smoke_loader_overrides(dataset_cfg)
         bundle = create_dataloaders(dataset_cfg, seed + idx)
+        loader_summaries[task_name] = loader_summary_from_loaders(bundle.train_loader, bundle.val_loader, bundle.test_loader, dataset_cfg)
+        print_loader_summary(loader_summaries[task_name], prefix=f"loader/{task_name}")
         model = GeneralD2NNClassifier(
             num_classes=bundle.num_classes,
             canvas_size=int(model_cfg.get("canvas_size", 1000)),
@@ -125,8 +128,18 @@ def main():
         row["moe_reference_optical_params"] = reference
         row["param_ratio_to_moe"] = float(total_optical) / float(reference) if reference not in {"", None, 0} else ""
     write_rows(run_dir / "metrics" / "independent_baseline.csv", task_rows)
+    save_json(loader_summaries, run_dir / "loader_summary.json")
     save_json(task_rows, run_dir / "summary_for_master" / "independent_baseline_rows.json")
-    save_json({"run_id": run_name, "independent_baseline_is_upper_bound": False, "rows": task_rows}, run_dir / "summary.json")
+    runs_row = {
+        "run_id": run_name,
+        "model_type": "independent_d2nn",
+        "independent_baseline_is_upper_bound": False,
+        "tasks": ",".join(row["task_name"] for row in task_rows),
+        "loader_summary": loader_summaries,
+        "run_dir": str(run_dir),
+    }
+    save_json({"run_id": run_name, "independent_baseline_is_upper_bound": False, "rows": task_rows, "loader_summary": loader_summaries}, run_dir / "summary.json")
+    save_json(runs_row, run_dir / "summary_for_master" / "runs_rows.json")
     if bool(config.get("reporting", {}).get("rebuild_master_tables_after_run", True)):
         rebuild_dataset_switching_tables(EXPERIMENT_ROOT / "dataset_switching" / "runs", EXPERIMENT_ROOT / "dataset_switching" / "results")
     print(f"saved independent baseline to {run_dir}")

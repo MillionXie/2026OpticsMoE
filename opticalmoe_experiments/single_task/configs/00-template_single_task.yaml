@@ -1,56 +1,56 @@
-# Single-task 通用配置模板。
-# 复制这个文件后，只改 dataset/model/训练轮数等字段即可。
-
+# 单任务配置模板：
+# - dataset.sampling_protocol.enabled=false 表示使用官方完整 train/test split；
+#   官方 train 再按 val_split 切出 validation。
+# - dataset.sampling_protocol.enabled=true 时，total_size 是本次实验的
+#   train + val + test 总样本数。例如 total_size=10000、[4,1]、
+#   val_split=0.1 约等于 train=7200、val=800、test=2000。
+# - max_train_samples / max_val_samples / max_test_samples 可以直接截断
+#   每个 split，适合精确指定 train=5000、val=1000、test=1000。
+# - num_workers 是 DataLoader 多进程数；Linux 服务器可先用 16，
+#   Windows 或调试建议 0。smoke_test 会自动强制 num_workers=0。
+# - pin_memory=auto 表示 CUDA 可用时自动启用 pinned memory。
+# - persistent_workers=true 表示 worker 在 epoch 间保持活跃。
+# - prefetch_factor=4 表示每个 worker 预取 4 个 batch。
+# - readout.dropout 是电子读出层 dropout；regularization.phase_dropout
+#   是 optical phase layer dropout，两者不是同一个东西。
 seed: 7
-device: auto  # auto 会优先使用 CUDA；也可以手动写 cuda 或 cpu。
-
+device: auto
 experiment:
   family: single_task
   dataset: mnist
   model_type: learnable_route_moe
   run_name: mnist_learnable_moe_E9_complex
-
 dataset:
-  name: mnist          # mnist / fashionmnist / kmnist / emnist / cifar10
+  name: mnist
   root: ./data
-  input_size: 134     # 光学输入尺寸，最终会 resize 成 input_size x input_size。
-  grayscale: true     # CIFAR10 默认也转灰度，光学网络使用单通道振幅。
-  val_split: 0.1      # 从官方 train split 中切出多少比例做 validation。
+  input_size: 134
+  grayscale: true
+  val_split: 0.1
   batch_size: 64
-
-  # DataLoader 性能参数。
-  # Linux 服务器建议先用 16；CPU/RAM 压力大时改成 8 或 4。
-  # Windows 或调试时建议改成 0。--smoke_test 会自动强制 num_workers=0。
   num_workers: 16
   pin_memory: auto
   persistent_workers: true
   prefetch_factor: 4
-
   download: true
   smoke_test: false
   smoke_train_size: 64
   smoke_test_size: 32
-
-  # 小样本公平抽样。enabled=false 表示使用官方完整 train/test split。
-  # enabled=true 时，total_size 会按 train_test_ratio 先分成 train_pool/test，
-  # train_pool 再按 val_split 切 train/val。
   sampling_protocol:
     enabled: false
     total_size: null
-    train_test_ratio: [4, 1]
-
+    train_test_ratio:
+    - 4
+    - 1
+    class_balanced: true
+    seed_offset: 0
+  max_train_samples: null
+  max_val_samples: null
+  max_test_samples: null
 model:
-  # type:
-  #   learnable_route_moe: 可学习路由 OpticalMoE
-  #   fixed_route_moe: 固定 uniform prompt 的 MoE
-  #   general_d2nn: 非 MoE 光学 D2NN baseline
-  #   lenet5: 电子 baseline
   type: learnable_route_moe
   num_experts: 9
   prompt_type: complex_amplitude
   routing_type: learnable
-
-  # fair134 geometry。canvas_size 是传播计算窗口，不等于全区域都可训练。
   input_size: 134
   canvas_size: 1000
   expert_size: 134
@@ -58,8 +58,6 @@ model:
   padding: 200
   prompt_aperture_size: 600
   num_layers: 5
-
-  # 仅 general_d2nn 使用。target_param_count 为兼容旧字段，指 local masks。
   d2nn_phase_grid_size: 402
   d2nn_num_layers: 5
   target_local_phase_param_count: 808020
@@ -67,11 +65,10 @@ model:
   include_global_fc: true
   expected_global_fc_param_count: 360000
   expected_total_optical_param_count: 1168020
-
 optics:
-  wavelength_m: 5.32e-7
-  pixel_size_m: 8.0e-6
-  focal_length_m: 0.10
+  wavelength_m: 5.32e-07
+  pixel_size_m: 8.0e-06
+  focal_length_m: 0.1
   aperture_mode: hard
   evanescent_mode: zero
   phase_param: unconstrained
@@ -79,25 +76,16 @@ optics:
   expert_init_std: 0.02
   global_fc_phase_init: identity
   global_fc_init_std: 0.02
-
-  # 传播距离，单位 m。
   distances_m:
-    input_to_prompt: 0.20
-    prompt_to_expert: 0.20
+    input_to_prompt: 0.2
+    prompt_to_expert: 0.2
     inter_layer: 0.05
     layer5_to_fc: 0.05
     fc_to_detector: 0.05
-
-  # global FC 默认只在中心 600x600 active optical window 内可训练。
-  # 1000x1000 canvas 的外围只是 propagation padding，保持 transparent。
   global_fc_phase_mode: center_window
   global_fc_phase_size: 600
   global_fc_padding_mode: transparent
-
 prompt:
-  # complex_order_router 是当前成功的 AS global-router prompt。
-  # prompt 的可训练参数是 9 个 amplitude logits 和 9 个 phase biases；
-  # lens/grating 是固定 buffer，不是 1000x1000 pixel-wise prompt。
   mode: complex_order_router
   amplitude_init_logits: 2.0
   train_amplitudes: true
@@ -106,13 +94,10 @@ prompt:
   grating_sign_x: 1.0
   grating_sign_y: 1.0
   normalize: sum_amplitude
-
 detector:
   detector_size: 32
   layout: grid
-
 readout:
-  # mlp 是电子读出层；如果要尽量去掉电子后处理，可改成 optical_only。
   type: mlp
   normalize_detector_energy: true
   logit_scale: 10.0
@@ -122,9 +107,7 @@ readout:
   hidden_layers: 1
   activation: gelu
   dropout: 0.1
-
 regularization:
-  # optical phase dropout，和 readout.dropout 不是一回事。
   phase_dropout:
     enabled: true
     mode: block_phase_bypass
@@ -135,22 +118,18 @@ regularization:
     apply_to_experts: true
     apply_to_global_fc: false
     start_epoch: 10
-
 optimizer:
   type: adamw
   lr: 0.001
   weight_decay: 0.0005
-
 training:
   epochs: 200
   print_freq: 50
   save_interval_epochs: 10
   eval_interval_epochs: 1
   max_val_batches: null
-
 reporting:
   rebuild_master_tables_after_run: true
-
 visualization:
   enabled: true
   save_interval_epochs: 10

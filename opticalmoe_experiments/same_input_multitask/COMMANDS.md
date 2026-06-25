@@ -9,6 +9,22 @@ Run commands from `opticalmoe_experiments/`.
 - On Windows or while debugging, set `num_workers=0`.
 - `--smoke_test` automatically forces `num_workers=0`, `persistent_workers=false`, and `prefetch_factor=null`.
 - The optical canvas is `1000 x 1000`, but the default trainable global FC phase window is center `600 x 600`; the padding is transparent and not trainable.
+- dSprites configs default to `sampling_protocol.enabled=true` and `total_size=12000`.
+- With `train_test_ratio=[4,1]` and `val_split=0.1`, this gives `train=8640`, `val=960`, `test=2400`.
+- Use `max_train_samples`, `max_val_samples`, and `max_test_samples` for exact split caps.
+- `batch_mode=paired_same_input` means the same image batch is reused for all tasks in one optimizer update.
+
+## Audit Dataset Config Fields
+
+```bash
+python scripts/audit_dataset_config_fields.py
+```
+
+Audit task-specific head fields:
+
+```bash
+python scripts/audit_head_config_fields.py
+```
 
 ## Stage 1: Shape + Scale
 
