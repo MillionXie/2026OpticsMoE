@@ -75,6 +75,13 @@ The default 9-expert setup is fair134:
 - `prompt_aperture_size=600`
 - expert centers: `[300, 500, 700] x [300, 500, 700]`
 
+`canvas_size=1000` is the propagation window. The trainable active optical
+window is the center `600 x 600` region, matching the prompt aperture
+`y=200:800, x=200:800`. For fair134, the 9 expert apertures occupy an expert
+union size of `534 x 534`, so the center `600 x 600` window covers the expert
+bank while leaving propagation padding outside. The padding region is
+transparent and is not trainable in the global FC phase mask.
+
 The MoE code also supports `num_experts=4` with a 2x2 global-router layout.
 
 ## General D2NN Accounting
@@ -86,22 +93,23 @@ input
 -> first AngularSpectrumPropagator
 -> 5 center-window D2NN phase masks
 -> layer5_to_fc propagation
--> one full-canvas global FC phase mask
+-> one center-window global FC phase mask
 -> fc_to_detector propagation
 -> detector/readout
 ```
 
 The `target_local_phase_param_count` field in D2NN configs refers only to the
 5 local center-window phase masks. The actual optical parameter count also
-includes the full-canvas `global_fc` phase mask. For the default D2NN config:
+includes the center-window `global_fc` phase mask. For the default D2NN config:
 
 - local D2NN phase params: `5 * 402 * 402 = 808020`
-- full-canvas global FC params: `1000 * 1000 = 1000000`
-- total optical params: `1808020`
+- center-window global FC params: `600 * 600 = 360000`
+- total optical params: `1168020`
 
 D2NN phase masks are saved under `figures/phase_masks/<epoch>/` as
 `d2nn_phase_layer_*.png`, `d2nn_all_phase_layers.png`, and
-`global_fc_phase.png`.
+`global_fc_phase_window.png`, `global_fc_phase_region_on_canvas.png`, and the
+compatibility file `global_fc_phase.png`.
 
 ## Saved Outputs
 
@@ -142,6 +150,15 @@ disabled during evaluation.
 LeNet-5 is an electronic baseline. It does not save optical phase masks or
 optical energy rows, and it now adapts to the configured dataset input size
 instead of assuming `134 x 134`.
+
+## DataLoader Workers
+
+All configs expose `num_workers`, `pin_memory`, `persistent_workers`, and
+`prefetch_factor`. Linux servers should usually start with `num_workers=16`,
+`pin_memory=auto`, `persistent_workers=true`, and `prefetch_factor=4`. If CPU or
+RAM pressure is high, try `num_workers=8` or `4`. On Windows or during
+debugging, use `num_workers=0`. The `--smoke_test` flag automatically forces
+`num_workers=0`, `persistent_workers=false`, and `prefetch_factor=null`.
 
 ## Recommended Run Order
 

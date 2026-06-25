@@ -33,6 +33,13 @@ router:
 - `prompt_aperture_size=600`
 - expert centers `[300, 500, 700] x [300, 500, 700]`
 
+The `1000 x 1000` canvas is the propagation window. The active trainable
+optical window is the center `600 x 600` region (`y=200:800, x=200:800`), used
+by the prompt aperture and the default global FC phase mask. The 9 fair134
+expert apertures have an expert union size of `534 x 534`, so this active
+window covers the expert bank. The surrounding padding is transparent and not
+trainable in the global FC phase mask.
+
 The expert entrance field is produced by AngularSpectrumPropagator from the
 prompt plane. The implementation does not use FFT convolution to synthesize the
 expert entrance field, does not use the old spatial partition prompt, and does
@@ -76,3 +83,12 @@ Important files:
 - `diagnostics/prompt_similarity.csv`
 - `diagnostics/optical_energy_by_stage.csv`
 - `summary_for_master/*.json`
+
+## DataLoader Workers
+
+Each task dataset config exposes `num_workers`, `pin_memory`,
+`persistent_workers`, and `prefetch_factor`. On Linux servers, start with
+`num_workers=16`, `pin_memory=auto`, `persistent_workers=true`,
+`prefetch_factor=4`. If CPU or memory pressure is high, use `8` or `4`. On
+Windows or during debugging, use `num_workers=0`. Smoke tests force
+`num_workers=0`, disable persistent workers, and omit prefetching.

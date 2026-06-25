@@ -5,6 +5,7 @@ import torch
 from torch.utils.data import DataLoader, Subset, random_split
 from torchvision import datasets
 
+from .loader_utils import dataloader_kwargs
 from .transforms import build_image_transform
 
 
@@ -136,8 +137,6 @@ def create_dataloaders(dataset_cfg: Dict, seed: int = 7) -> DataBundle:
     input_size = int(dataset_cfg.get("input_size", 134))
     grayscale = bool(dataset_cfg.get("grayscale", True))
     val_split = float(dataset_cfg.get("val_split", 0.1))
-    batch_size = int(dataset_cfg.get("batch_size", 64))
-    num_workers = int(dataset_cfg.get("num_workers", 0))
     smoke_test = bool(dataset_cfg.get("smoke_test", False))
     download = bool(dataset_cfg.get("download", True))
 
@@ -165,10 +164,9 @@ def create_dataloaders(dataset_cfg: Dict, seed: int = 7) -> DataBundle:
         test_dataset = _subset(test_dataset, int(dataset_cfg.get("smoke_test_size", 64)))
 
     train_dataset, val_dataset = _split_train_val(train_full, val_split, seed + 200_000)
-    pin_memory = torch.cuda.is_available()
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, pin_memory=pin_memory)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=pin_memory)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=pin_memory)
+    train_loader = DataLoader(train_dataset, **dataloader_kwargs(dataset_cfg, shuffle=True, seed=seed + 300_000))
+    val_loader = DataLoader(val_dataset, **dataloader_kwargs(dataset_cfg, shuffle=False))
+    test_loader = DataLoader(test_dataset, **dataloader_kwargs(dataset_cfg, shuffle=False))
 
     if name == "emnist":
         num_classes = EMNIST_NUM_CLASSES[split]

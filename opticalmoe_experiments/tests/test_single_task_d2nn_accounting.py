@@ -20,8 +20,8 @@ def test_general_d2nn_accounting_includes_global_fc():
         readout_type="optical_only",
     )
     assert model.d2nn_local_phase_parameter_count() == 5 * 402 * 402
-    assert model.d2nn_global_fc_parameter_count() == 1000 * 1000
-    assert model.optical_parameter_count() == 5 * 402 * 402 + 1000 * 1000
+    assert model.d2nn_global_fc_parameter_count() == 600 * 600
+    assert model.optical_parameter_count() == 5 * 402 * 402 + 600 * 600
     assert model.prompt_parameter_count() == 0
 
 
@@ -43,4 +43,4 @@ def test_general_d2nn_architecture_report_records_accounting(tmp_path):
     assert report["d2nn_local_phase_params"] == 2 * 16 * 16
     assert report["d2nn_global_fc_params"] == 64 * 64
     assert report["optical_parameter_count"] == 2 * 16 * 16 + 64 * 64
-    assert report["global_fc_is_full_canvas"] is True
+    assert report["global_fc_is_full_canvas"] is False

@@ -16,18 +16,21 @@ layout:
   canvas_height: 1000
   input_size: 134
 optics:
-  wavelength_m: 5.32e-7
-  pixel_size_m: 8.0e-6
+  wavelength_m: 5.32e-07
+  pixel_size_m: 8.0e-06
   num_layers: 5
   evanescent_mode: zero
   phase_param: unconstrained
   expert_phase_init: identity
   expert_init_std: 0.02
   distances_m:
-    input_to_prompt: 0.20
+    input_to_prompt: 0.2
     inter_layer: 0.05
     layer5_to_fc: 0.05
     fc_to_detector: 0.05
+  global_fc_phase_mode: center_window
+  global_fc_phase_size: 600
+  global_fc_padding_mode: transparent
 detector:
   detector_size: 32
   layout: grid
@@ -62,8 +65,8 @@ training:
   epochs: 200
   print_freq: 50
   tasks:
-    - shape
-    - scale
+  - shape
+  - scale
   loss_weights:
     shape: 1.0
     scale: 1.0
@@ -85,7 +88,12 @@ dataset:
   sampling_protocol:
     enabled: true
     total_size: 12000
-    train_test_ratio: [4, 1]
+    train_test_ratio:
+    - 4
+    - 1
+  pin_memory: auto
+  persistent_workers: true
+  prefetch_factor: 4
 visualization:
   enabled: true
   save_interval_epochs: 10

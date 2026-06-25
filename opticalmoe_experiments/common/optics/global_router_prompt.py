@@ -115,6 +115,8 @@ class GlobalRouterPrompt(nn.Module):
             "prompt_router_phase": torch.remainder(torch.angle(router), 2.0 * math.pi),
             "prompt_total_amplitude": total.abs(),
             "prompt_total_phase": torch.remainder(torch.angle(total), 2.0 * math.pi),
+            "prompt_aperture_mask": self.prompt_mask,
+            "prompt_aperture_region": self.layout.prompt_aperture.to_dict(),
         }
 
     def channel_table(self) -> List[Dict[str, float]]:
@@ -139,4 +141,3 @@ class GlobalRouterPrompt(nn.Module):
                 }
             )
         return rows
-

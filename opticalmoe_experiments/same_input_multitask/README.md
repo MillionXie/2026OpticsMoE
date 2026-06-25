@@ -61,6 +61,13 @@ The default MoE reuses the successful fair134 AS global-router geometry:
 - prompt aperture: center `600 x 600`
 - propagation: Angular Spectrum only
 
+The `1000 x 1000` canvas is only the propagation window. The active trainable
+optical window is the center `600 x 600` region (`y=200:800, x=200:800`). The
+global FC phase mask is trainable only in that window; outside it, propagation
+padding is transparent and not trainable. The prompt is also aperture-limited
+to the center `600 x 600` and its trainable parameters are channel amplitudes
+and phase biases, not a pixel-wise `1000 x 1000` prompt.
+
 The expert entrance field is produced by
 `AngularSpectrumPropagator(prompt_to_expert)`. The code does not use FFT
 convolution to synthesize the expert plane, does not split the input into
@@ -93,3 +100,12 @@ same_input_multitask/results/
 Prompt swap is the main evidence that the optical prompt affects task behavior:
 for each readout task, the evaluation keeps the readout fixed and swaps the
 prompt task.
+
+## DataLoader Workers
+
+The dSprites dataset config exposes `num_workers`, `pin_memory`,
+`persistent_workers`, and `prefetch_factor`. On Linux servers, start with
+`num_workers=16`, `pin_memory=auto`, `persistent_workers=true`,
+`prefetch_factor=4`. If CPU or memory pressure is high, reduce workers to `8`
+or `4`. On Windows or while debugging, set `num_workers=0`. Smoke tests force
+`num_workers=0`, disable persistent workers, and omit prefetching.

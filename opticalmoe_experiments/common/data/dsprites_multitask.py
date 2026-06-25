@@ -7,6 +7,8 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
 
+from .loader_utils import dataloader_kwargs
+
 
 DSPRITES_FILENAME = "dsprites_ndarray_co1sh3sc6or40x32y32_64x64.npz"
 DSPRITES_URL = "https://github.com/deepmind/dsprites-dataset/raw/master/dsprites_ndarray_co1sh3sc6or40x32y32_64x64.npz"
@@ -173,15 +175,10 @@ def create_same_input_multitask_dataloaders(config: Dict, seed: int = 7):
     train = DSpritesSameInputMultiTaskDataset(split="train", indices=splits["train"], **common)
     val = DSpritesSameInputMultiTaskDataset(split="val", indices=splits["val"], **common)
     test = DSpritesSameInputMultiTaskDataset(split="test", indices=splits["test"], **common)
-    kwargs = {
-        "batch_size": int(dataset_cfg.get("batch_size", 64)),
-        "num_workers": int(dataset_cfg.get("num_workers", 0)),
-        "pin_memory": torch.cuda.is_available(),
-    }
     return (
-        DataLoader(train, shuffle=True, **kwargs),
-        DataLoader(val, shuffle=False, **kwargs),
-        DataLoader(test, shuffle=False, **kwargs),
+        DataLoader(train, **dataloader_kwargs(dataset_cfg, shuffle=True, seed=ds_seed + 300_000)),
+        DataLoader(val, **dataloader_kwargs(dataset_cfg, shuffle=False)),
+        DataLoader(test, **dataloader_kwargs(dataset_cfg, shuffle=False)),
         {task: TASK_NUM_CLASSES[task] for task in task_names},
         task_names,
     )

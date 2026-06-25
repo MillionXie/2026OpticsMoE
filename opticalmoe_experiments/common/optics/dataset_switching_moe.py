@@ -113,6 +113,9 @@ class DatasetSwitchingASGlobalRouterMoEClassifier(nn.Module):
         expert_init_std: float = 0.02,
         global_fc_phase_init: str = "identity",
         global_fc_init_std: float = 0.02,
+        global_fc_phase_mode: str = "center_window",
+        global_fc_phase_size: Optional[int] = None,
+        global_fc_padding_mode: str = "transparent",
         prompt_mode: str = "complex_order_router",
         prompt_amplitude_init_logits: float = 2.0,
         train_prompt_amplitudes: bool = True,
@@ -207,6 +210,9 @@ class DatasetSwitchingASGlobalRouterMoEClassifier(nn.Module):
         self.layer5_to_fc = AngularSpectrumPropagator(distance_m=self.distances_m["layer5_to_fc"], **prop_args)
         self.global_fc = GlobalFCPhaseMask(
             self.canvas_shape,
+            phase_size=global_fc_phase_size or self.layout.active_window_size,
+            phase_mode=global_fc_phase_mode,
+            padding_mode=global_fc_padding_mode,
             phase_param=phase_param,
             phase_init=global_fc_phase_init,
             init_std=global_fc_init_std,
@@ -344,6 +350,7 @@ class DatasetSwitchingASGlobalRouterMoEClassifier(nn.Module):
             "after_layer5_to_fc": after_layer5_to_fc,
             "after_global_fc": after_global_fc,
             "global_fc_phase": self.global_fc.get_phase_wrapped(),
+            "global_fc_phase_region": self.global_fc.phase_region(),
             "detector_field": detector_field,
             "detector_intensity": torch.abs(detector_field).square(),
             "detector_energies": detector_energies,
@@ -355,8 +362,13 @@ class DatasetSwitchingASGlobalRouterMoEClassifier(nn.Module):
         return logits, intermediates
 
     def optical_parameter_count(self) -> int:
-        modules = [self.prompt_bank, self.expert_layers, self.global_fc]
-        return sum(p.numel() for module in modules for p in module.parameters())
+        return self.expert_phase_parameter_count() + self.global_fc_parameter_count()
+
+    def expert_phase_parameter_count(self) -> int:
+        return sum(p.numel() for p in self.expert_layers.parameters())
+
+    def global_fc_parameter_count(self) -> int:
+        return int(self.global_fc.trainable_parameter_count())
 
     def prompt_parameter_count(self) -> int:
         return sum(p.numel() for p in self.prompt_bank.parameters())
@@ -388,6 +400,9 @@ class DatasetSwitchingSharedD2NNClassifier(nn.Module):
         phase_param: str = "unconstrained",
         phase_init: str = "identity",
         init_std: float = 0.02,
+        global_fc_phase_mode: str = "center_window",
+        global_fc_phase_size: Optional[int] = None,
+        global_fc_padding_mode: str = "transparent",
         detector_size: int = 32,
         detector_layout: str = "grid",
         normalize_detector_energy: bool = True,
@@ -401,6 +416,8 @@ class DatasetSwitchingSharedD2NNClassifier(nn.Module):
         readout_dropout: float = 0.1,
         phase_dropout_mode: str = "none",
         phase_dropout_p: float = 0.0,
+        global_fc_phase_dropout_mode: str = "none",
+        global_fc_phase_dropout_p: float = 0.0,
         phase_dropout_block_size: int = 8,
         phase_dropout_batch_shared: bool = True,
         evanescent_mode: str = "zero",
@@ -412,6 +429,8 @@ class DatasetSwitchingSharedD2NNClassifier(nn.Module):
         self.input_size = int(input_size)
         self.num_layers = int(num_layers)
         self.d2nn_phase_grid_size = int(d2nn_phase_grid_size)
+        self.global_fc_phase_mode = str(global_fc_phase_mode)
+        self.global_fc_phase_size = int(global_fc_phase_size or min(min(self.canvas_shape), 600))
         defaults = {"input_to_prompt": 0.20, "inter_layer": 0.05, "layer5_to_fc": 0.05, "fc_to_detector": 0.05}
         self.distances_m = dict(defaults)
         if distances_m:
@@ -443,7 +462,19 @@ class DatasetSwitchingSharedD2NNClassifier(nn.Module):
             [AngularSpectrumPropagator(distance_m=self.distances_m["inter_layer"], **prop_args) for _ in range(max(0, self.num_layers - 1))]
         )
         self.layer5_to_fc = AngularSpectrumPropagator(distance_m=self.distances_m["layer5_to_fc"], **prop_args)
-        self.global_fc = GlobalFCPhaseMask(self.canvas_shape, phase_param=phase_param, phase_init=phase_init, init_std=init_std)
+        self.global_fc = GlobalFCPhaseMask(
+            self.canvas_shape,
+            phase_size=self.global_fc_phase_size,
+            phase_mode=self.global_fc_phase_mode,
+            padding_mode=global_fc_padding_mode,
+            phase_param=phase_param,
+            phase_init=phase_init,
+            init_std=init_std,
+            phase_dropout_mode=global_fc_phase_dropout_mode,
+            phase_dropout_p=global_fc_phase_dropout_p,
+            phase_dropout_block_size=phase_dropout_block_size,
+            phase_dropout_batch_shared=phase_dropout_batch_shared,
+        )
         self.fc_to_detector = AngularSpectrumPropagator(distance_m=self.distances_m["fc_to_detector"], **prop_args)
         task_head_configs = task_head_configs or {}
         self.task_detectors = nn.ModuleDict()
@@ -529,6 +560,7 @@ class DatasetSwitchingSharedD2NNClassifier(nn.Module):
             "after_layer5_to_fc": after_layer5_to_fc,
             "after_global_fc": after_global_fc,
             "global_fc_phase": self.global_fc.get_phase_wrapped(),
+            "global_fc_phase_region": self.global_fc.phase_region(),
             "detector_field": detector_field,
             "detector_intensity": torch.abs(detector_field).square(),
             "detector_energies": detector_energies,
@@ -537,7 +569,7 @@ class DatasetSwitchingSharedD2NNClassifier(nn.Module):
         return logits, intermediates
 
     def optical_parameter_count(self) -> int:
-        return int(self.num_layers) * int(self.d2nn_phase_grid_size) * int(self.d2nn_phase_grid_size) + int(self.canvas_shape[0]) * int(self.canvas_shape[1])
+        return int(self.num_layers) * int(self.d2nn_phase_grid_size) * int(self.d2nn_phase_grid_size) + int(self.global_fc.trainable_parameter_count())
 
     def prompt_parameter_count(self) -> int:
         return 0

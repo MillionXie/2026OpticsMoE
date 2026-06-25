@@ -2,6 +2,14 @@
 
 Run commands from `opticalmoe_experiments/`.
 
+## Runtime Notes
+
+- Formal configs default to `num_workers=16`, `pin_memory=auto`, `persistent_workers=true`, and `prefetch_factor=4`.
+- On Linux servers this is the recommended starting point. If CPU or RAM is saturated, reduce `num_workers` to `8` or `4`.
+- On Windows or while debugging, set `num_workers=0`.
+- `--smoke_test` automatically forces `num_workers=0`, `persistent_workers=false`, and `prefetch_factor=null`.
+- The optical canvas is `1000 x 1000`, but the default trainable global FC phase window is center `600 x 600`; the padding is transparent and not trainable.
+
 ## Stage 1: Shape + Scale
 
 Smoke test:

@@ -1,6 +1,3 @@
-﻿# Single-task OpticalMoE experiment config.
-# All nested fields are expanded intentionally so training parameters are easy to edit.
-# readout.dropout is electronic dropout. regularization.phase_dropout is optical phase-layer dropout.
 seed: 7
 device: auto
 experiment:
@@ -17,7 +14,7 @@ dataset:
   grayscale: true
   val_split: 0.1
   batch_size: 64
-  num_workers: 0
+  num_workers: 16
   download: true
   smoke_test: false
   smoke_train_size: 64
@@ -28,6 +25,9 @@ dataset:
     train_test_ratio:
     - 4
     - 1
+  pin_memory: auto
+  persistent_workers: true
+  prefetch_factor: 4
 model:
   type: general_d2nn
   input_size: 134
@@ -35,13 +35,11 @@ model:
   num_layers: 5
   d2nn_phase_grid_size: 402
   d2nn_num_layers: 5
-  # target_param_count is kept for backward compatibility and refers only to
-  # the 5 local D2NN center-window phase masks, not the full-canvas global FC.
   target_param_count: 808020
   target_local_phase_param_count: 808020
   include_global_fc: true
-  expected_global_fc_param_count: 1000000
-  expected_total_optical_param_count: 1808020
+  expected_global_fc_param_count: 360000
+  expected_total_optical_param_count: 1168020
 optics:
   wavelength_m: 5.32e-07
   pixel_size_m: 8.0e-06
@@ -54,18 +52,13 @@ optics:
     inter_layer: 0.05
     layer5_to_fc: 0.05
     fc_to_detector: 0.05
+  global_fc_phase_mode: center_window
+  global_fc_phase_size: 600
+  global_fc_padding_mode: transparent
 detector:
   detector_size: 32
   layout: grid
-# 读出头设置：这里控制探测器能量之后是否接电子层。
-# 如果想尽量“去掉电”，把下面改为：
-#   type: optical_only
-#   input_norm: none
-#   dropout: 0.0
-# optical_only 不含可训练电子层；hidden_dim/hidden_layers/activation 会被忽略。
-# 注意 detector energy 的求和和 logit_scale 仍然属于读出定义，不是 MLP 非线性。
 readout:
-  # 可选：mlp / linear / optical_only。
   type: mlp
   normalize_detector_energy: true
   logit_scale: 10.0

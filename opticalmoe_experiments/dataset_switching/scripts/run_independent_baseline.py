@@ -10,6 +10,7 @@ if str(EXPERIMENT_ROOT) not in sys.path:
     sys.path.insert(0, str(EXPERIMENT_ROOT))
 
 from common.data.datasets import create_dataloaders
+from common.data.loader_utils import apply_smoke_loader_overrides
 from common.optics.optical_models import GeneralD2NNClassifier
 from common.reporting.metrics_writer import write_rows
 from common.training.checkpointing import save_checkpoint
@@ -55,7 +56,7 @@ def main():
             dataset_cfg["smoke_test"] = True
             dataset_cfg.setdefault("smoke_train_size", 16)
             dataset_cfg.setdefault("smoke_test_size", 8)
-            dataset_cfg["num_workers"] = 0
+            apply_smoke_loader_overrides(dataset_cfg)
         bundle = create_dataloaders(dataset_cfg, seed + idx)
         model = GeneralD2NNClassifier(
             num_classes=bundle.num_classes,
@@ -69,6 +70,11 @@ def main():
             phase_param=optics.get("phase_param", "unconstrained"),
             phase_init=optics.get("expert_phase_init", "identity"),
             init_std=float(optics.get("expert_init_std", 0.02)),
+            global_fc_phase_mode=optics.get("global_fc_phase_mode", "center_window"),
+            global_fc_phase_size=optics.get("global_fc_phase_size"),
+            global_fc_padding_mode=optics.get("global_fc_padding_mode", "transparent"),
+            global_fc_phase_dropout_mode="none",
+            global_fc_phase_dropout_p=0.0,
             detector_size=int(detector.get("detector_size", 32)),
             detector_layout=detector.get("layout", "grid"),
             normalize_detector_energy=bool(readout.get("normalize_detector_energy", True)),

@@ -121,12 +121,15 @@ python single_task/scripts/build_single_task_tables.py --runs_dir single_task/ru
 - `fixed_route_moe` freezes prompt amplitude and prompt phase-bias parameters.
 - `learnable_route_moe` trains prompt amplitude logits and phase biases.
 - `general_d2nn` has no prompt and no expert routing.
-- `general_d2nn` is 5 center-window D2NN phase masks plus one full-canvas global FC phase mask.
-- In D2NN configs, `target_local_phase_param_count` counts only the local D2NN masks; `expected_total_optical_param_count` also includes the global FC mask.
-- D2NN phase masks are saved under `figures/phase_masks/<epoch>/` as `d2nn_phase_layer_*.png`, `d2nn_all_phase_layers.png`, and `global_fc_phase.png`.
+- `general_d2nn` is 5 center-window D2NN phase masks plus one center-window global FC phase mask.
+- `canvas_size=1000` is the propagation canvas; the default active trainable optical window is center `600 x 600`, with transparent non-trainable padding outside.
+- In D2NN configs, `target_local_phase_param_count` counts only the local D2NN masks; `expected_total_optical_param_count` also includes the `600 x 600` global FC mask.
+- D2NN phase masks are saved under `figures/phase_masks/<epoch>/` as `d2nn_phase_layer_*.png`, `d2nn_all_phase_layers.png`, `global_fc_phase_window.png`, `global_fc_phase_region_on_canvas.png`, and `global_fc_phase.png`.
 - MoE expert usage rows include fixed-validation-batch `expert_entrance_energy_ratio` and `expert_output_energy_ratio`.
 - `lenet5` is an electronic baseline and does not save optical light-field propagation figures.
 - `lenet5` adapts to the configured dataset `input_size` and does not save optical phase masks or optical energy rows.
+- Linux servers should start with `num_workers=16`, `pin_memory=auto`, `persistent_workers=true`, `prefetch_factor=4`; reduce to `8` or `4` if CPU/RAM is saturated.
+- On Windows or when debugging, use `num_workers=0`. All `--smoke_test` runs force `num_workers=0`, `persistent_workers=false`, and `prefetch_factor=null`.
 
 ## Multi-GPU Notes
 

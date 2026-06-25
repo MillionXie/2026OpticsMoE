@@ -23,6 +23,8 @@ def save_prompt_maps(intermediates: dict, out_dir: PathLike, expert_labels=None)
         save_image(intermediates["prompt_total_amplitude"], out / "prompt_total_amplitude.png", "total amplitude", cmap="viridis", log_intensity=False)
     if "prompt_total_phase" in intermediates:
         save_image(intermediates["prompt_total_phase"], out / "prompt_total_phase.png", "total phase", cmap="hsv", log_intensity=False)
+    if "prompt_aperture_mask" in intermediates:
+        save_image(intermediates["prompt_aperture_mask"], out / "prompt_aperture_region_on_canvas.png", "prompt aperture on canvas", cmap="gray", log_intensity=False)
     if "prompt_amplitudes" in intermediates:
         labels = expert_labels or [f"E{i}" for i in range(len(intermediates["prompt_amplitudes"]))]
         _bar(intermediates["prompt_amplitudes"], labels, out / "prompt_amplitude_bar.png", "prompt amplitudes")

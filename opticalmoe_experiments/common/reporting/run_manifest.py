@@ -32,6 +32,18 @@ def architecture_report(model, config: Dict, run_dir: Path) -> Dict:
         "electronic_parameter_count": int(model.electronic_parameter_count()),
         "total_parameter_count": int(sum(p.numel() for p in model.parameters())),
     }
+    global_fc = getattr(model, "global_fc", None)
+    if global_fc is not None:
+        report.update(
+            {
+                "global_fc_phase_mode": getattr(global_fc, "phase_mode", ""),
+                "global_fc_phase_size": list(getattr(global_fc, "phase_size", [])),
+                "global_fc_phase_region": global_fc.phase_region() if hasattr(global_fc, "phase_region") else "",
+                "global_fc_padding_mode": getattr(global_fc, "padding_mode", ""),
+                "global_fc_padding_is_trainable": bool(getattr(global_fc, "phase_mode", "") == "full_canvas"),
+                "global_fc_parameter_count": int(global_fc.trainable_parameter_count()) if hasattr(global_fc, "trainable_parameter_count") else "",
+            }
+        )
 
     if model_type in {"learnable_route_moe", "fixed_route_moe"}:
         layout = getattr(model, "layout", None)
@@ -43,6 +55,14 @@ def architecture_report(model, config: Dict, run_dir: Path) -> Dict:
                 "canvas_size": getattr(layout, "canvas_size", model_cfg.get("canvas_size")),
                 "input_size": getattr(layout, "input_size", model_cfg.get("input_size")),
                 "prompt_aperture_size": getattr(layout, "prompt_aperture_size", model_cfg.get("prompt_aperture_size")),
+                "expert_union_bounds": getattr(layout, "expert_union_bounds", ""),
+                "expert_union_size": getattr(layout, "expert_union_size", ""),
+                "active_window_size": getattr(layout, "active_window_size", ""),
+                "active_window_region": getattr(layout, "active_window_aperture", None).to_dict() if getattr(layout, "active_window_aperture", None) else "",
+                "prompt_aperture_region": getattr(layout, "prompt_aperture", None).to_dict() if getattr(layout, "prompt_aperture", None) else "",
+                "prompt_trainable_type": "channel_amplitude_and_phase_bias",
+                "prompt_trainable_pixelwise": False,
+                "prompt_fixed_lens_grating_buffers_are_not_counted_as_parameters": True,
                 "prompt_type": model_cfg.get("prompt_type"),
                 "routing_type": model_cfg.get("routing_type"),
                 "prompt_train_amplitudes": bool(config.get("prompt", {}).get("train_amplitudes", model_type == "learnable_route_moe")),
@@ -62,8 +82,8 @@ def architecture_report(model, config: Dict, run_dir: Path) -> Dict:
                 "d2nn_local_phase_params": int(model.d2nn_local_phase_parameter_count()),
                 "d2nn_global_fc_params": int(model.d2nn_global_fc_parameter_count()),
                 "global_fc_is_used": True,
-                "global_fc_is_full_canvas": True,
-                "d2nn_baseline_definition": f"{d2nn_layers} local D2NN phase masks + one full-canvas global phase mask",
+                "global_fc_is_full_canvas": bool(getattr(global_fc, "phase_mode", "") == "full_canvas"),
+                "d2nn_baseline_definition": f"{d2nn_layers} local D2NN phase masks + one windowed global phase mask",
                 "target_param_count_note": "target_param_count is kept for backward compatibility and refers to local D2NN phase masks only.",
             }
         )
@@ -90,6 +110,9 @@ def architecture_report(model, config: Dict, run_dir: Path) -> Dict:
         f"- optical_parameter_count: {report['optical_parameter_count']}",
         f"- prompt_parameter_count: {report['prompt_parameter_count']}",
         f"- electronic_parameter_count: {report['electronic_parameter_count']}",
+        f"- global_fc_phase_mode: {report.get('global_fc_phase_mode', '')}",
+        f"- global_fc_parameter_count: {report.get('global_fc_parameter_count', '')}",
+        f"- global_fc_padding_is_trainable: {report.get('global_fc_padding_is_trainable', '')}",
     ]
     if model_type in {"learnable_route_moe", "fixed_route_moe"}:
         lines.extend(
@@ -98,6 +121,9 @@ def architecture_report(model, config: Dict, run_dir: Path) -> Dict:
                 f"- expert_size: {report.get('expert_size')}",
                 f"- expert_pitch: {report.get('expert_pitch')}",
                 f"- canvas_size: {report.get('canvas_size')}",
+                f"- expert_union_size: {report.get('expert_union_size')}",
+                f"- active_window_size: {report.get('active_window_size')}",
+                "- prompt trainable parameters are channel amplitude logits and phase biases, not pixel-wise prompt maps.",
             ]
         )
     elif model_type == "general_d2nn":
@@ -106,9 +132,9 @@ def architecture_report(model, config: Dict, run_dir: Path) -> Dict:
                 "",
                 "## General D2NN Accounting",
                 "",
-                f"- General D2NN baseline includes {report['d2nn_num_layers']} parameter-matched center-window phase masks and one full-canvas global phase mask.",
+                f"- General D2NN baseline includes {report['d2nn_num_layers']} parameter-matched center-window phase masks and one center-window global phase mask.",
                 "- The configured target_param_count refers only to the 5 local D2NN phase masks unless otherwise specified.",
-                "- The actual optical parameter count also includes the full-canvas global mask.",
+                "- The actual optical parameter count also includes the windowed global FC mask.",
                 f"- d2nn_phase_grid_size: {report['d2nn_phase_grid_size']}",
                 f"- d2nn_num_layers: {report['d2nn_num_layers']}",
                 f"- d2nn_local_phase_params: {report['d2nn_local_phase_params']}",

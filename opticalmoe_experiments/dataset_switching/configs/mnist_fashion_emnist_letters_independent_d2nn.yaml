@@ -11,17 +11,20 @@ model:
   d2nn_num_layers: 5
   moe_reference_optical_params: null
 optics:
-  wavelength_m: 5.32e-7
-  pixel_size_m: 8.0e-6
+  wavelength_m: 5.32e-07
+  pixel_size_m: 8.0e-06
   evanescent_mode: zero
   phase_param: unconstrained
   expert_phase_init: identity
   expert_init_std: 0.02
   distances_m:
-    input_to_prompt: 0.20
+    input_to_prompt: 0.2
     inter_layer: 0.05
     layer5_to_fc: 0.05
     fc_to_detector: 0.05
+  global_fc_phase_mode: center_window
+  global_fc_phase_size: 600
+  global_fc_padding_mode: transparent
 detector:
   detector_size: 32
   layout: grid
@@ -39,11 +42,58 @@ optimizer:
 training:
   epochs: 50
   tasks:
-    - name: mnist
-      dataset: {name: mnist, root: ./data, input_size: 134, grayscale: true, val_split: 0.1, batch_size: 64, num_workers: 16, download: true, smoke_train_size: 16, smoke_test_size: 8, sampling_protocol: {enabled: false}}
-    - name: fashionmnist
-      dataset: {name: fashionmnist, root: ./data, input_size: 134, grayscale: true, val_split: 0.1, batch_size: 64, num_workers: 16, download: true, smoke_train_size: 16, smoke_test_size: 8, sampling_protocol: {enabled: false}}
-    - name: emnist_letters
-      dataset: {name: emnist, split: letters, root: ./data, input_size: 134, grayscale: true, fix_orientation: true, val_split: 0.1, batch_size: 64, num_workers: 16, download: true, smoke_train_size: 16, smoke_test_size: 8, sampling_protocol: {enabled: false}}
+  - name: mnist
+    dataset:
+      name: mnist
+      root: ./data
+      input_size: 134
+      grayscale: true
+      val_split: 0.1
+      batch_size: 64
+      num_workers: 16
+      download: true
+      smoke_train_size: 16
+      smoke_test_size: 8
+      sampling_protocol:
+        enabled: false
+      pin_memory: auto
+      persistent_workers: true
+      prefetch_factor: 4
+  - name: fashionmnist
+    dataset:
+      name: fashionmnist
+      root: ./data
+      input_size: 134
+      grayscale: true
+      val_split: 0.1
+      batch_size: 64
+      num_workers: 16
+      download: true
+      smoke_train_size: 16
+      smoke_test_size: 8
+      sampling_protocol:
+        enabled: false
+      pin_memory: auto
+      persistent_workers: true
+      prefetch_factor: 4
+  - name: emnist_letters
+    dataset:
+      name: emnist
+      split: letters
+      root: ./data
+      input_size: 134
+      grayscale: true
+      fix_orientation: true
+      val_split: 0.1
+      batch_size: 64
+      num_workers: 16
+      download: true
+      smoke_train_size: 16
+      smoke_test_size: 8
+      sampling_protocol:
+        enabled: false
+      pin_memory: auto
+      persistent_workers: true
+      prefetch_factor: 4
 reporting:
   rebuild_master_tables_after_run: true

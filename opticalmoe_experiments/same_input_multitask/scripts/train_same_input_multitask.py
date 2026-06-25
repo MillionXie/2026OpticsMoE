@@ -15,6 +15,7 @@ if str(EXPERIMENT_ROOT) not in sys.path:
     sys.path.insert(0, str(EXPERIMENT_ROOT))
 
 from common.data.dsprites_multitask import create_same_input_multitask_dataloaders
+from common.data.loader_utils import apply_smoke_loader_overrides
 from common.optics.expert_layout import ExpertLayout
 from common.optics.task_prompt_moe import SameInputSharedD2NNClassifier, SameInputTaskPromptMoEClassifier
 from common.reporting.metrics_writer import write_rows
@@ -80,6 +81,9 @@ def build_model(config: Dict, task_names: Sequence[str], task_num_classes: Dict[
             expert_init_std=float(optics.get("expert_init_std", 0.02)),
             global_fc_phase_init=optics.get("global_fc_phase_init", "identity"),
             global_fc_init_std=float(optics.get("global_fc_init_std", 0.02)),
+            global_fc_phase_mode=optics.get("global_fc_phase_mode", "center_window"),
+            global_fc_phase_size=optics.get("global_fc_phase_size", _layout(config).active_window_size),
+            global_fc_padding_mode=optics.get("global_fc_padding_mode", "transparent"),
             prompt_mode=prompt.get("mode", "complex_order_router"),
             prompt_amplitude_init_logits=float(prompt.get("amplitude_init_logits", 2.0)),
             train_prompt_amplitudes=bool(prompt.get("train_amplitudes", not fixed)) and not fixed,
@@ -121,6 +125,9 @@ def build_model(config: Dict, task_names: Sequence[str], task_num_classes: Dict[
             phase_param=optics.get("phase_param", "unconstrained"),
             phase_init=optics.get("expert_phase_init", "identity"),
             init_std=float(optics.get("expert_init_std", 0.02)),
+            global_fc_phase_mode=optics.get("global_fc_phase_mode", "center_window"),
+            global_fc_phase_size=optics.get("global_fc_phase_size"),
+            global_fc_padding_mode=optics.get("global_fc_padding_mode", "transparent"),
             detector_size=int(detector.get("detector_size", 32)),
             detector_layout=detector.get("layout", "grid"),
             normalize_detector_energy=bool(readout.get("normalize_detector_energy", True)),
@@ -134,6 +141,8 @@ def build_model(config: Dict, task_names: Sequence[str], task_num_classes: Dict[
             readout_dropout=float(readout.get("dropout", 0.1)),
             phase_dropout_mode=dropout["expert_mode"],
             phase_dropout_p=dropout["expert_p"],
+            global_fc_phase_dropout_mode=dropout["global_fc_mode"],
+            global_fc_phase_dropout_p=dropout["global_fc_p"],
             phase_dropout_block_size=dropout["block_size"],
             phase_dropout_batch_shared=dropout["batch_shared"],
             evanescent_mode=optics.get("evanescent_mode", "zero"),
@@ -582,6 +591,7 @@ def rebuild_same_input_tables(runs_dir: Path, out_dir: Path):
 
 
 def save_architecture_report(model, config, run_dir: Path):
+    global_fc = getattr(model, "global_fc", None)
     report = {
         "model_type": config.get("model", {}).get("type"),
         "task_names": list(model.task_names),
@@ -594,8 +604,26 @@ def save_architecture_report(model, config, run_dir: Path):
         "total_parameter_count": int(sum(p.numel() for p in model.parameters())),
         "phase_dropout_config": config.get("regularization", {}).get("phase_dropout", {}),
     }
+    if global_fc is not None:
+        report.update(
+            {
+                "global_fc_phase_mode": getattr(global_fc, "phase_mode", ""),
+                "global_fc_phase_size": list(getattr(global_fc, "phase_size", [])),
+                "global_fc_phase_region": global_fc.phase_region() if hasattr(global_fc, "phase_region") else "",
+                "global_fc_padding_mode": getattr(global_fc, "padding_mode", ""),
+                "global_fc_padding_is_trainable": bool(getattr(global_fc, "phase_mode", "") == "full_canvas"),
+                "global_fc_parameter_count": int(global_fc.trainable_parameter_count()) if hasattr(global_fc, "trainable_parameter_count") else "",
+            }
+        )
     if hasattr(model, "layout"):
         report["layout"] = model.layout.to_dict()
+        report["expert_union_size"] = model.layout.expert_union_size
+        report["active_window_size"] = model.layout.active_window_size
+        report["active_window_region"] = model.layout.active_window_aperture.to_dict()
+        report["prompt_aperture_region"] = model.layout.prompt_aperture.to_dict()
+        report["prompt_trainable_type"] = "channel_amplitude_and_phase_bias"
+        report["prompt_trainable_pixelwise"] = False
+        report["prompt_fixed_lens_grating_buffers_are_not_counted_as_parameters"] = True
     save_json(report, run_dir / "architecture_report.json")
     lines = [
         "# Same-Input Multitask Architecture",
@@ -607,6 +635,9 @@ def save_architecture_report(model, config, run_dir: Path):
         f"- optical_parameter_count: {report['optical_parameter_count']}",
         f"- prompt_parameter_count: {report['prompt_parameter_count']}",
         f"- electronic_parameter_count: {report['electronic_parameter_count']}",
+        f"- global_fc_phase_mode: {report.get('global_fc_phase_mode', '')}",
+        f"- global_fc_parameter_count: {report.get('global_fc_parameter_count', '')}",
+        f"- active_window_size: {report.get('active_window_size', '')}",
     ]
     write_text(run_dir / "architecture_report.md", "\n".join(lines) + "\n")
     return report
@@ -621,7 +652,7 @@ def run_training(config, args):
         config.setdefault("visualization", {})["enabled"] = False
     if args.smoke_test:
         config.setdefault("dataset", {})["smoke_test"] = True
-        config["dataset"]["num_workers"] = 0
+        apply_smoke_loader_overrides(config["dataset"])
     seed = int(config.get("seed", 7))
     set_seed(seed)
     device = choose_device(args.device or config.get("device", "auto"))
@@ -721,6 +752,17 @@ def run_training(config, args):
         save_training_curves(curve_rows, run_dir / "figures" / "training_curves.png")
     total_wall_time_sec = time.perf_counter() - run_start
     total_train_time_sec = sum(float(r.get("epoch_time_sec", 0.0)) for r in metrics_rows)
+    global_fc = getattr(model, "global_fc", None)
+    layout = getattr(model, "layout", None)
+    fc_summary = {
+        "global_fc_phase_size": getattr(global_fc, "phase_size", ""),
+        "global_fc_parameter_count": int(global_fc.trainable_parameter_count()) if global_fc is not None and hasattr(global_fc, "trainable_parameter_count") else "",
+        "global_fc_phase_mode": getattr(global_fc, "phase_mode", ""),
+        "global_fc_padding_is_trainable": bool(getattr(global_fc, "phase_mode", "") == "full_canvas") if global_fc is not None else "",
+        "active_window_size": getattr(layout, "active_window_size", ""),
+        "active_window_region": getattr(layout, "active_window_aperture", None).to_dict() if getattr(layout, "active_window_aperture", None) else "",
+        "expert_union_size": getattr(layout, "expert_union_size", ""),
+    }
     final_rows = []
     for task in task_names:
         gap = swap_summary["prompt_swap_gap_per_task"].get(task, "")
@@ -741,6 +783,7 @@ def run_training(config, args):
                 "prompt_parameter_count": int(model.prompt_parameter_count()),
                 "electronic_parameter_count": int(model.electronic_parameter_count()),
                 "total_parameter_count": int(sum(p.numel() for p in model.parameters())),
+                **fc_summary,
                 "total_wall_time_sec": total_wall_time_sec,
                 "total_train_time_sec": total_train_time_sec,
                 "run_dir": str(run_dir),
@@ -761,7 +804,7 @@ def run_training(config, args):
         "optical_parameter_count": int(model.optical_parameter_count()),
         "total_parameter_count": int(sum(p.numel() for p in model.parameters())),
     }
-    model_params = {"run_id": run_name, "optical_parameter_count": int(model.optical_parameter_count()), "prompt_parameter_count": int(model.prompt_parameter_count()), "electronic_parameter_count": int(model.electronic_parameter_count()), "total_parameter_count": int(sum(p.numel() for p in model.parameters()))}
+    model_params = {"run_id": run_name, "optical_parameter_count": int(model.optical_parameter_count()), "prompt_parameter_count": int(model.prompt_parameter_count()), "electronic_parameter_count": int(model.electronic_parameter_count()), "total_parameter_count": int(sum(p.numel() for p in model.parameters())), **fc_summary}
     final_metrics = {
         "run_id": run_name,
         "best_epoch": best["epoch"],

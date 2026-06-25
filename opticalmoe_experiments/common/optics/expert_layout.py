@@ -88,6 +88,31 @@ class ExpertLayout:
         return apertures
 
     @property
+    def expert_union_bounds(self) -> List[int]:
+        apertures = self.expert_apertures
+        return [
+            min(ap.y0 for ap in apertures),
+            max(ap.y1 for ap in apertures),
+            min(ap.x0 for ap in apertures),
+            max(ap.x1 for ap in apertures),
+        ]
+
+    @property
+    def expert_union_size(self) -> int:
+        y0, y1, x0, x1 = self.expert_union_bounds
+        return int(max(y1 - y0, x1 - x0))
+
+    @property
+    def active_window_size(self) -> int:
+        return int(self.prompt_aperture_size)
+
+    @property
+    def active_window_aperture(self) -> Aperture:
+        cy, cx = self.canvas_center
+        half = self.active_window_size // 2
+        return Aperture("active_window", cy - half, cy - half + self.active_window_size, cx - half, cx - half + self.active_window_size)
+
+    @property
     def gap_px(self) -> int:
         return int(self.expert_pitch - self.expert_size)
 
@@ -100,6 +125,11 @@ class ExpertLayout:
         masks = self.expert_masks()
         if torch.any(masks.sum(dim=0) > 1.0):
             raise ValueError("Expert apertures overlap.")
+        active = self.active_window_aperture
+        if active.y0 < 0 or active.x0 < 0 or active.y1 > self.canvas_size or active.x1 > self.canvas_size:
+            raise ValueError("Active optical window is outside the canvas.")
+        if self.active_window_size < self.expert_union_size:
+            raise ValueError("Active optical window must cover the expert union bounds.")
 
     def aperture_mask(self, aperture: Aperture, device=None) -> torch.Tensor:
         mask = torch.zeros(self.canvas_shape, dtype=torch.float32, device=device)
@@ -114,6 +144,9 @@ class ExpertLayout:
 
     def prompt_aperture_mask(self, device=None) -> torch.Tensor:
         return self.aperture_mask(self.prompt_aperture, device=device)
+
+    def active_window_mask(self, device=None) -> torch.Tensor:
+        return self.aperture_mask(self.active_window_aperture, device=device)
 
     def physical_grids(self, pixel_size_m: float, device=None) -> Tuple[torch.Tensor, torch.Tensor]:
         cy, cx = self.canvas_center
@@ -134,11 +167,14 @@ class ExpertLayout:
             "gap_px": int(self.gap_px),
             "padding": int(self.padding),
             "prompt_aperture_size": int(self.prompt_aperture_size),
+            "expert_union_bounds": [int(v) for v in self.expert_union_bounds],
+            "expert_union_size": int(self.expert_union_size),
+            "active_window_size": int(self.active_window_size),
             "input_aperture": self.input_aperture.to_dict(),
             "prompt_aperture": self.prompt_aperture.to_dict(),
+            "active_window_aperture": self.active_window_aperture.to_dict(),
             "expert_centers": [list(center) for center in self.expert_centers],
             "expert_apertures": [ap.to_dict() for ap in self.expert_apertures],
             "expert_phase_params_per_layer": phase_params,
             "baseline_4expert_200_phase_params_per_layer": 4 * 200 * 200,
         }
-

@@ -129,16 +129,22 @@ sampling_protocol:
 
 ## num_workers 怎么设置
 
+正式配置默认：
+
 ```yaml
-num_workers: 0
+num_workers: 16
+pin_memory: auto
+persistent_workers: true
+prefetch_factor: 4
 ```
 
-含义是 DataLoader 不开额外进程，最稳定，适合 Windows 和调试。
+这适合 Linux 服务器作为起点。你已经观察到 `num_workers` 从 0 调到 16
+后速度明显变快，所以后续正式训练建议先用 16。
 
-Linux 服务器可以尝试：
+如果 CPU 或内存压力太大，可以改成：
 
 ```yaml
-num_workers: 2
+num_workers: 8
 ```
 
 或：
@@ -147,7 +153,25 @@ num_workers: 2
 num_workers: 4
 ```
 
-但光学模型主要瓶颈通常是 1000x1000 complex FFT，不一定是数据加载。
+Windows、本地调试、排查 dataloader 问题时建议：
+
+```yaml
+num_workers: 0
+persistent_workers: false
+prefetch_factor: null
+```
+
+含义是 DataLoader 不开额外进程，最稳定，但通常更慢。
+
+所有 `--smoke_test` 会自动强制：
+
+```yaml
+num_workers: 0
+persistent_workers: false
+prefetch_factor: null
+```
+
+避免 Windows/CI/快速检查时多进程 DataLoader 干扰定位。
 
 ## 如何去掉电子读出层
 

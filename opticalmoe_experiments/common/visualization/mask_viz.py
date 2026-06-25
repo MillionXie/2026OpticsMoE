@@ -29,7 +29,23 @@ def _save_global_fc(model, out: Path) -> None:
     if not hasattr(model, "global_fc"):
         return
     phase = model.global_fc.get_phase_wrapped().detach().cpu()
-    _save_phase_image(phase, out / "global_fc_phase.png", "global FC phase")
+    _save_phase_image(phase, out / "global_fc_phase_window.png", "global FC phase window")
+    _save_phase_image(phase, out / "global_fc_phase.png", "global FC phase window")
+    if hasattr(model.global_fc, "get_phase_canvas_wrapped"):
+        canvas = model.global_fc.get_phase_canvas_wrapped().detach().cpu()
+        _save_phase_image(canvas, out / "global_fc_phase_canvas.png", "global FC phase on canvas: only center window is trainable")
+    if hasattr(model.global_fc, "phase_region"):
+        region = model.global_fc.phase_region()
+        mask = torch.zeros(getattr(model.global_fc, "canvas_shape", phase.shape), dtype=torch.float32)
+        mask[region[0]:region[1], region[2]:region[3]] = 1.0
+        path = out / "global_fc_phase_region_on_canvas.png"
+        fig, ax = plt.subplots(figsize=(5, 5))
+        ax.imshow(mask, cmap="gray")
+        ax.set_title(f"global FC trainable region y[{region[0]}:{region[1]}], x[{region[2]}:{region[3]}]")
+        ax.axis("off")
+        fig.tight_layout()
+        fig.savefig(path, dpi=140)
+        plt.close(fig)
 
 
 def save_expert_phase_layers(model, out_dir: PathLike) -> None:

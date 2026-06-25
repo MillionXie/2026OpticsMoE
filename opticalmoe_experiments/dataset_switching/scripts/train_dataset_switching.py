@@ -16,6 +16,7 @@ if str(EXPERIMENT_ROOT) not in sys.path:
     sys.path.insert(0, str(EXPERIMENT_ROOT))
 
 from common.data.datasets import create_dataloaders
+from common.data.loader_utils import apply_smoke_loader_overrides
 from common.optics.dataset_switching_moe import (
     DatasetSwitchingASGlobalRouterMoEClassifier,
     DatasetSwitchingSharedD2NNClassifier,
@@ -63,7 +64,7 @@ def create_task_loaders(config: Dict, seed: int, smoke_test: bool):
             dataset_cfg["smoke_test"] = True
             dataset_cfg.setdefault("smoke_train_size", 16)
             dataset_cfg.setdefault("smoke_test_size", 8)
-            dataset_cfg["num_workers"] = 0
+            apply_smoke_loader_overrides(dataset_cfg)
         bundle = create_dataloaders(dataset_cfg, seed=seed + index)
         train_loaders[name] = bundle.train_loader
         val_loaders[name] = bundle.val_loader
@@ -118,6 +119,9 @@ def build_model(config: Dict, task_names: Sequence[str], task_num_classes: Dict[
             expert_init_std=float(optics_cfg.get("expert_init_std", 0.02)),
             global_fc_phase_init=optics_cfg.get("global_fc_phase_init", "identity"),
             global_fc_init_std=float(optics_cfg.get("global_fc_init_std", 0.02)),
+            global_fc_phase_mode=optics_cfg.get("global_fc_phase_mode", "center_window"),
+            global_fc_phase_size=optics_cfg.get("global_fc_phase_size", layout.active_window_size),
+            global_fc_padding_mode=optics_cfg.get("global_fc_padding_mode", "transparent"),
             prompt_mode=prompt_cfg.get("mode", "complex_order_router"),
             prompt_amplitude_init_logits=float(prompt_cfg.get("amplitude_init_logits", 2.0)),
             train_prompt_amplitudes=bool(prompt_cfg.get("train_amplitudes", not fixed)) and not fixed,
@@ -160,6 +164,9 @@ def build_model(config: Dict, task_names: Sequence[str], task_num_classes: Dict[
             phase_param=optics_cfg.get("phase_param", "unconstrained"),
             phase_init=optics_cfg.get("expert_phase_init", "identity"),
             init_std=float(optics_cfg.get("expert_init_std", 0.02)),
+            global_fc_phase_mode=optics_cfg.get("global_fc_phase_mode", "center_window"),
+            global_fc_phase_size=optics_cfg.get("global_fc_phase_size"),
+            global_fc_padding_mode=optics_cfg.get("global_fc_padding_mode", "transparent"),
             detector_size=int(detector_cfg.get("detector_size", 32)),
             detector_layout=detector_cfg.get("layout", "grid"),
             normalize_detector_energy=bool(readout_cfg.get("normalize_detector_energy", True)),
@@ -173,6 +180,8 @@ def build_model(config: Dict, task_names: Sequence[str], task_num_classes: Dict[
             readout_dropout=float(readout_cfg.get("dropout", 0.1)),
             phase_dropout_mode=dropout["expert_mode"],
             phase_dropout_p=dropout["expert_p"],
+            global_fc_phase_dropout_mode=dropout["global_fc_mode"],
+            global_fc_phase_dropout_p=dropout["global_fc_p"],
             phase_dropout_block_size=dropout["block_size"],
             phase_dropout_batch_shared=dropout["batch_shared"],
             evanescent_mode=optics_cfg.get("evanescent_mode", "zero"),
@@ -569,6 +578,7 @@ def optical_energy_rows(run_id, epoch, diagnostics: Dict):
 
 def save_architecture_report(model, config, run_dir: Path):
     model_type = config.get("model", {}).get("type")
+    global_fc = getattr(model, "global_fc", None)
     report = {
         "model_type": model_type,
         "task_names": list(model.task_names),
@@ -582,8 +592,26 @@ def save_architecture_report(model, config, run_dir: Path):
         "total_parameter_count": int(sum(p.numel() for p in model.parameters())),
         "phase_dropout_config": config.get("regularization", {}).get("phase_dropout", {}),
     }
+    if global_fc is not None:
+        report.update(
+            {
+                "global_fc_phase_mode": getattr(global_fc, "phase_mode", ""),
+                "global_fc_phase_size": list(getattr(global_fc, "phase_size", [])),
+                "global_fc_phase_region": global_fc.phase_region() if hasattr(global_fc, "phase_region") else "",
+                "global_fc_padding_mode": getattr(global_fc, "padding_mode", ""),
+                "global_fc_padding_is_trainable": bool(getattr(global_fc, "phase_mode", "") == "full_canvas"),
+                "global_fc_parameter_count": int(global_fc.trainable_parameter_count()) if hasattr(global_fc, "trainable_parameter_count") else "",
+            }
+        )
     if hasattr(model, "layout"):
         report["layout"] = model.layout.to_dict()
+        report["expert_union_size"] = model.layout.expert_union_size
+        report["active_window_size"] = model.layout.active_window_size
+        report["active_window_region"] = model.layout.active_window_aperture.to_dict()
+        report["prompt_aperture_region"] = model.layout.prompt_aperture.to_dict()
+        report["prompt_trainable_type"] = "channel_amplitude_and_phase_bias"
+        report["prompt_trainable_pixelwise"] = False
+        report["prompt_fixed_lens_grating_buffers_are_not_counted_as_parameters"] = True
         report["prompt_channel_table"] = model.prompt_bank.channel_table()
     save_json(report, run_dir / "architecture_report.json")
     lines = [
@@ -599,6 +627,10 @@ def save_architecture_report(model, config, run_dir: Path):
         f"- optical_parameter_count: {report['optical_parameter_count']}",
         f"- prompt_parameter_count: {report['prompt_parameter_count']}",
         f"- electronic_parameter_count: {report['electronic_parameter_count']}",
+        f"- global_fc_phase_mode: {report.get('global_fc_phase_mode', '')}",
+        f"- global_fc_parameter_count: {report.get('global_fc_parameter_count', '')}",
+        f"- global_fc_padding_is_trainable: {report.get('global_fc_padding_is_trainable', '')}",
+        f"- active_window_size: {report.get('active_window_size', '')}",
     ]
     write_text(run_dir / "architecture_report.md", "\n".join(lines) + "\n")
     return report
@@ -772,6 +804,17 @@ def run_training(config, args):
     save_json(swap_summary, run_dir / "metrics" / "prompt_swap_summary.json")
     save_prompt_swap_plot(swap_rows, run_dir / "figures" / "prompt_swap_matrix.png")
     save_expert_usage_heatmap(usage_rows, run_dir / "figures" / "task_expert_usage_heatmap.png")
+    global_fc = getattr(model, "global_fc", None)
+    layout = getattr(model, "layout", None)
+    fc_summary = {
+        "global_fc_phase_size": getattr(global_fc, "phase_size", ""),
+        "global_fc_parameter_count": int(global_fc.trainable_parameter_count()) if global_fc is not None and hasattr(global_fc, "trainable_parameter_count") else "",
+        "global_fc_phase_mode": getattr(global_fc, "phase_mode", ""),
+        "global_fc_padding_is_trainable": bool(getattr(global_fc, "phase_mode", "") == "full_canvas") if global_fc is not None else "",
+        "active_window_size": getattr(layout, "active_window_size", ""),
+        "active_window_region": getattr(layout, "active_window_aperture", None).to_dict() if getattr(layout, "active_window_aperture", None) else "",
+        "expert_union_size": getattr(layout, "expert_union_size", ""),
+    }
     final_task_rows = []
     for task_name in task_names:
         test = evaluate_task(model, test_loaders[task_name], device, criterion, task_name, max_batches=max_test_batches)
@@ -797,6 +840,7 @@ def run_training(config, args):
                 "optical_parameter_count": int(model.optical_parameter_count()),
                 "electronic_parameter_count": int(model.electronic_parameter_count()),
                 "total_parameter_count": int(sum(p.numel() for p in model.parameters())),
+                **fc_summary,
                 "run_dir": str(run_dir),
             }
         )
@@ -822,6 +866,7 @@ def run_training(config, args):
         "prompt_parameter_count": int(model.prompt_parameter_count()),
         "electronic_parameter_count": int(model.electronic_parameter_count()),
         "total_parameter_count": int(sum(p.numel() for p in model.parameters())),
+        **fc_summary,
     }
     summary = {
         "run_id": run_name,

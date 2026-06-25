@@ -17,6 +17,7 @@ from common.data.datasets import create_dataloaders
 from common.reporting.aggregate_results import rebuild_master_tables
 from common.reporting.metrics_writer import write_rows
 from common.reporting.run_manifest import architecture_report, save_run_manifest
+from common.data.loader_utils import apply_smoke_loader_overrides
 from common.training.checkpointing import save_checkpoint
 from common.training.eval_loop import evaluate, predict_all
 from common.training.phase_dropout import phase_dropout_active_for_epoch, phase_dropout_settings
@@ -290,6 +291,7 @@ def main():
         config.setdefault("dataset", {})["smoke_test"] = True
         config["dataset"].setdefault("smoke_train_size", 64)
         config["dataset"].setdefault("smoke_test_size", 32)
+        apply_smoke_loader_overrides(config["dataset"])
         config.setdefault("training", {})["epochs"] = min(int(config["training"].get("epochs", 1)), 1)
     if args.disable_visualization:
         config.setdefault("visualization", {})["enabled"] = False
@@ -452,12 +454,25 @@ def main():
     }
     save_json(final_metrics, run_dir / "metrics" / "final_metrics.json")
 
+    global_fc = getattr(model, "global_fc", None)
+    layout = getattr(model, "layout", None)
     model_params = {
         "run_id": run_name,
         "optical_param_count": int(model.optical_parameter_count()),
+        "optical_parameter_count": int(model.optical_parameter_count()),
         "prompt_param_count": int(model.prompt_parameter_count()),
+        "prompt_parameter_count": int(model.prompt_parameter_count()),
         "electronic_param_count": int(model.electronic_parameter_count()),
+        "electronic_parameter_count": int(model.electronic_parameter_count()),
         "total_param_count": int(sum(p.numel() for p in model.parameters())),
+        "total_parameter_count": int(sum(p.numel() for p in model.parameters())),
+        "global_fc_phase_size": getattr(global_fc, "phase_size", ""),
+        "global_fc_parameter_count": int(global_fc.trainable_parameter_count()) if global_fc is not None and hasattr(global_fc, "trainable_parameter_count") else "",
+        "global_fc_phase_mode": getattr(global_fc, "phase_mode", ""),
+        "global_fc_padding_is_trainable": bool(getattr(global_fc, "phase_mode", "") == "full_canvas") if global_fc is not None else "",
+        "active_window_size": getattr(layout, "active_window_size", ""),
+        "active_window_region": getattr(layout, "active_window_aperture", None).to_dict() if getattr(layout, "active_window_aperture", None) else "",
+        "expert_union_size": getattr(layout, "expert_union_size", ""),
     }
     summary = {
         "run_id": run_name,
