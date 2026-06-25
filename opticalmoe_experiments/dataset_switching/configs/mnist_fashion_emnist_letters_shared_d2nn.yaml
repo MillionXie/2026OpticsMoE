@@ -49,7 +49,7 @@ regularization:
     enabled: true
     mode: block_phase_bypass
     expert_p: 0.05
-    global_fc_p: 0.0
+    global_fc_p: 0.05
     block_size: 8
     batch_shared: true
     apply_to_experts: true
@@ -57,7 +57,7 @@ regularization:
     start_epoch: 10
 optimizer:
   type: adamw
-  lr: 0.001
+  lr: 0.003
   weight_decay: 0.0005
 training:
   mode: dataset_switching
@@ -81,14 +81,14 @@ training:
         input_size: 134
         grayscale: true
         val_split: 0.1
-        batch_size: 64
+        batch_size: 200
         num_workers: 16
         download: true
         smoke_train_size: 64
         smoke_test_size: 32
         sampling_protocol:
-          enabled: false
-          total_size: null
+          enabled: true
+          total_size: 10000
           class_balanced: true
           train_test_ratio:
           - 4
@@ -120,14 +120,14 @@ training:
         input_size: 134
         grayscale: true
         val_split: 0.1
-        batch_size: 64
+        batch_size: 200
         num_workers: 16
         download: true
         smoke_train_size: 64
         smoke_test_size: 32
         sampling_protocol:
-          enabled: false
-          total_size: null
+          enabled: true
+          total_size: 10000
           class_balanced: true
           train_test_ratio:
           - 4
@@ -161,14 +161,14 @@ training:
         grayscale: true
         fix_orientation: true
         val_split: 0.1
-        batch_size: 64
+        batch_size: 200
         num_workers: 16
         download: true
         smoke_train_size: 64
         smoke_test_size: 32
         sampling_protocol:
-          enabled: false
-          total_size: null
+          enabled: true
+          total_size: 26000
           class_balanced: true
           train_test_ratio:
           - 4
