@@ -35,11 +35,11 @@ detector:
   detector_size: 32
   layout: grid
 readout:
-  type: mlp
+  type: optical_only #mlp
   normalize_detector_energy: true
   logit_scale: 10.0
   input_norm: layernorm
-  norm_affine: true
+  norm_affine: false
   hidden_dim: 64
   hidden_layers: 1
   activation: gelu
@@ -61,7 +61,7 @@ optimizer:
   weight_decay: 0.0005
 training:
   mode: dataset_switching
-  epochs: 200
+  epochs: 100
   multitask:
     sequential_backward: true
     balanced_sampling: true
@@ -105,11 +105,11 @@ training:
       head:
         detector_size: 32
         detector_layout: grid
-        readout_type: mlp
+        readout_type: optical_only #mlp
         normalize_detector_energy: true
         logit_scale: 10.0
         input_norm: layernorm
-        norm_affine: true
+        norm_affine: false
         hidden_dim: 64
         hidden_layers: 1
         activation: gelu
@@ -144,11 +144,11 @@ training:
       head:
         detector_size: 32
         detector_layout: grid
-        readout_type: mlp
+        readout_type: optical_only #mlp
         normalize_detector_energy: true
         logit_scale: 10.0
         input_norm: layernorm
-        norm_affine: true
+        norm_affine: false
         hidden_dim: 64
         hidden_layers: 1
         activation: gelu
@@ -185,11 +185,11 @@ training:
       head:
         detector_size: 32
         detector_layout: grid
-        readout_type: mlp
+        readout_type: optical_only #mlp
         normalize_detector_energy: true
         logit_scale: 10.0
         input_norm: layernorm
-        norm_affine: true
+        norm_affine: false
         hidden_dim: 64
         hidden_layers: 1
         activation: gelu
@@ -224,11 +224,11 @@ training:
       head:
         detector_size: 32
         detector_layout: grid
-        readout_type: mlp
+        readout_type: optical_only #mlp
         normalize_detector_energy: true
         logit_scale: 10.0
         input_norm: layernorm
-        norm_affine: true
+        norm_affine: false
         hidden_dim: 64
         hidden_layers: 1
         activation: gelu
