@@ -13,6 +13,7 @@ DATASET_REGISTRY = {
     "mnist": datasets.MNIST,
     "fashionmnist": datasets.FashionMNIST,
     "kmnist": datasets.KMNIST,
+    "usps": datasets.USPS,
     "emnist": datasets.EMNIST,
     "cifar10": datasets.CIFAR10,
 }
@@ -46,7 +47,7 @@ def dataset_key(name: str) -> str:
     key = str(name).lower().replace("-", "")
     if key not in DATASET_REGISTRY:
         raise ValueError(
-            f"Unsupported dataset {name!r}. Use MNIST, FashionMNIST, KMNIST, EMNIST, or CIFAR10."
+            f"Unsupported dataset {name!r}. Use MNIST, FashionMNIST, KMNIST, USPS, EMNIST, or CIFAR10."
         )
     return key
 
@@ -194,7 +195,7 @@ def create_dataloaders(dataset_cfg: Dict, seed: int = 7) -> DataBundle:
 
     if name == "emnist":
         num_classes = EMNIST_NUM_CLASSES[split]
-    elif name == "cifar10":
+    elif name in {"cifar10", "usps"}:
         num_classes = 10
     else:
         num_classes = len(getattr(_base_dataset(train_full), "classes", list(range(10))))

@@ -1,0 +1,2 @@
+Place source_best.pt, source_config.yaml, and optionally source_architecture_report.json in this directory.
+
