@@ -51,11 +51,11 @@ detector:
   detector_size: 32
   layout: grid
 readout:
-  type: mlp
+  type: optical_only #mlp
   normalize_detector_energy: true
   logit_scale: 10.0
   input_norm: layernorm
-  norm_affine: true
+  norm_affine: false #true
   hidden_dim: 64
   hidden_layers: 1
   activation: gelu
@@ -69,11 +69,11 @@ regularization:
     block_size: 8
     batch_shared: true
     apply_to_experts: true
-    apply_to_global_fc: false
+    apply_to_global_fc: true
     start_epoch: 10
 optimizer:
   type: adamw
-  lr: 0.001
+  lr: 0.003
   weight_decay: 0.0005
 training:
   mode: same_input_multitask
@@ -95,11 +95,11 @@ training:
     shape:
       detector_size: 32
       detector_layout: grid
-      readout_type: mlp
+      readout_type: optical_only #mlp
       normalize_detector_energy: true
       logit_scale: 10.0
       input_norm: layernorm
-      norm_affine: true
+      norm_affine: false #true
       hidden_dim: 64
       hidden_layers: 1
       activation: gelu
@@ -107,11 +107,11 @@ training:
     scale:
       detector_size: 32
       detector_layout: grid
-      readout_type: mlp
+      readout_type: optical_only #mlp
       normalize_detector_energy: true
       logit_scale: 10.0
       input_norm: layernorm
-      norm_affine: true
+      norm_affine: false #true
       hidden_dim: 64
       hidden_layers: 1
       activation: gelu
@@ -119,11 +119,11 @@ training:
     x_position_4bin:
       detector_size: 32
       detector_layout: grid
-      readout_type: mlp
+      readout_type: optical_only #mlp
       normalize_detector_energy: true
       logit_scale: 10.0
       input_norm: layernorm
-      norm_affine: true
+      norm_affine: false #true
       hidden_dim: 64
       hidden_layers: 1
       activation: gelu
@@ -133,7 +133,7 @@ dataset:
   root: ./data
   input_size: 134
   batch_size: 64
-  num_workers: 16
+  num_workers: 6
   download: true
   val_split: 0.1
   test_split: 0.1
