@@ -29,6 +29,7 @@ from common.training.task_heads import normalize_head_config
 from common.utils.config import load_yaml, save_json, save_yaml
 from common.utils.filesystem import write_text
 from common.visualization.curve_viz import save_training_curves
+from common.visualization.prompt_viz import save_task_expert_weights_from_model
 from dataset_switching.scripts import train_dataset_switching as ds_train
 
 
@@ -828,7 +829,16 @@ def save_transfer_architecture_report(model, source_config: Mapping, transfer_co
 def save_epoch_visual_artifacts(model, fixed_batches: Mapping[str, Tuple[torch.Tensor, torch.Tensor]], run_dir: Path, epoch_name: str, task_names: Sequence[str], device, class_names: Mapping, enabled: bool = True) -> Dict:
     if not enabled:
         return {}
-    return ds_train.save_epoch_artifacts(model, fixed_batches, run_dir, epoch_name, task_names, device, class_names, enabled=True)
+    diagnostics = ds_train.save_epoch_artifacts(model, fixed_batches, run_dir, epoch_name, task_names, device, class_names, enabled=True)
+    all_tasks = list(getattr(model, "task_names", task_names))
+    grouped_path = run_dir / "figures" / "prompt" / epoch_name / "task_expert_weights_grouped.png"
+    if save_task_expert_weights_from_model(model, grouped_path, task_names=all_tasks) and epoch_name == "final_epoch":
+        save_task_expert_weights_from_model(
+            model,
+            run_dir / "figures" / "task_expert_weights_grouped.png",
+            task_names=all_tasks,
+        )
+    return diagnostics
 
 
 def save_checkpoint_file(path: Path, model, optimizer, epoch: int, metrics: Mapping, config: Mapping) -> None:

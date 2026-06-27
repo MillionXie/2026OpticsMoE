@@ -29,7 +29,7 @@ from common.utils.seed import choose_device, set_seed
 from common.visualization.curve_viz import save_training_curves
 from common.visualization.lightfield_viz import save_image, save_light_fields
 from common.visualization.mask_viz import save_expert_phase_layers
-from common.visualization.prompt_viz import save_prompt_maps
+from common.visualization.prompt_viz import save_prompt_maps, save_task_expert_weights_from_model
 
 
 def parse_args():
@@ -310,6 +310,13 @@ def save_epoch_artifacts(model, diagnostics, run_dir: Path, epoch_name: str, tas
         (phase_dir / "expert_phase_layers.png").replace(phase_dir / "shared_expert_phase_layers.png")
     if (phase_dir / "global_fc_phase.png").exists():
         (phase_dir / "global_fc_phase.png").replace(phase_dir / "shared_global_fc_phase.png")
+    grouped_path = run_dir / "figures" / "prompt" / epoch_name / "task_expert_weights_grouped.png"
+    if save_task_expert_weights_from_model(model, grouped_path, task_names=task_names) and epoch_name == "final_epoch":
+        save_task_expert_weights_from_model(
+            model,
+            run_dir / "figures" / "task_expert_weights_grouped.png",
+            task_names=task_names,
+        )
 
 
 def expert_usage_rows(run_id, epoch, diagnostics):
@@ -782,6 +789,8 @@ def run_training(config, args):
                 f"val_acc={row[f'{task}_val_acc']:.4f}"
             )
 
+    final_diagnostics = collect_diagnostics(model, fixed, task_names, device)
+    save_epoch_artifacts(model, final_diagnostics, run_dir, "final_epoch", task_names, enabled=viz_enabled)
     test = evaluate(model, test_loader, task_names, criterion, device, max_batches=max_test_batches)
     fixed_test = fixed_batch(test_loader, device, int(config.get("visualization", {}).get("num_samples", 4)))
     same_rows, same_payload = same_input_task_switching(model, fixed_test, task_names, device, run_name)

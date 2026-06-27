@@ -112,8 +112,8 @@ def test_transfer_prompt_only_training_smoke(monkeypatch, tmp_path):
     assert (run_dir / "metrics" / "source_retention.csv").exists()
     assert (run_dir / "diagnostics" / "prompt_similarity.csv").exists()
     assert (run_dir / "diagnostics" / "expert_usage.csv").exists()
+    assert (run_dir / "figures" / "training_curves.png").exists()
     assert (run_dir / "parameter_freeze" / "trainable_parameter_names.txt").exists()
     freeze_text = (run_dir / "parameter_freeze" / "trainable_parameter_names.txt").read_text(encoding="utf-8")
     assert "prompt_bank.prompts.usps.amplitude_logits" in freeze_text
     assert (tmp_path / "transfer_adaptation" / "results" / "master_transfer_final_metrics.csv").exists()
-

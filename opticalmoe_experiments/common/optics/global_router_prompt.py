@@ -110,13 +110,20 @@ class GlobalRouterPrompt(nn.Module):
     def prompt_maps(self) -> Dict[str, torch.Tensor]:
         router = self.router()
         total = self.transmission()
+        mask = self.prompt_mask.to(device=router.device, dtype=router.real.dtype)
+        router_amplitude = router.abs() * mask
+        router_phase = torch.remainder(torch.angle(router), 2.0 * math.pi) * mask
+        total_amplitude = total.abs() * mask
+        total_phase = torch.remainder(torch.angle(total), 2.0 * math.pi) * mask
+        aperture = self.layout.prompt_aperture
         return {
-            "prompt_router_amplitude": router.abs(),
-            "prompt_router_phase": torch.remainder(torch.angle(router), 2.0 * math.pi),
-            "prompt_total_amplitude": total.abs(),
-            "prompt_total_phase": torch.remainder(torch.angle(total), 2.0 * math.pi),
+            "prompt_router_amplitude": router_amplitude,
+            "prompt_router_phase": router_phase,
+            "prompt_total_amplitude": total_amplitude,
+            "prompt_total_phase": total_phase,
             "prompt_aperture_mask": self.prompt_mask,
-            "prompt_aperture_region": self.layout.prompt_aperture.to_dict(),
+            "prompt_aperture_region": aperture.to_dict(),
+            "prompt_aperture_bounds": [aperture.y0, aperture.y1, aperture.x0, aperture.x1],
         }
 
     def channel_table(self) -> List[Dict[str, float]]:

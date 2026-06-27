@@ -33,7 +33,7 @@ from common.utils.seed import choose_device, set_seed
 from common.visualization.curve_viz import save_training_curves
 from common.visualization.lightfield_viz import save_image, save_light_fields
 from common.visualization.mask_viz import save_expert_phase_layers
-from common.visualization.prompt_viz import save_prompt_maps
+from common.visualization.prompt_viz import save_prompt_maps, save_task_expert_weights_from_model
 
 
 def parse_args():
@@ -407,6 +407,13 @@ def save_epoch_artifacts(model, fixed_batches, run_dir: Path, epoch_name: str, t
         (phase_dir / "expert_phase_layers.png").replace(phase_dir / "shared_expert_phase_layers.png")
     if (phase_dir / "global_fc_phase.png").exists():
         (phase_dir / "global_fc_phase.png").replace(phase_dir / "shared_global_fc_phase.png")
+    grouped_path = run_dir / "figures" / "prompt" / epoch_name / "task_expert_weights_grouped.png"
+    if save_task_expert_weights_from_model(model, grouped_path, task_names=task_names) and epoch_name == "final_epoch":
+        save_task_expert_weights_from_model(
+            model,
+            run_dir / "figures" / "task_expert_weights_grouped.png",
+            task_names=task_names,
+        )
     return diagnostics
 
 

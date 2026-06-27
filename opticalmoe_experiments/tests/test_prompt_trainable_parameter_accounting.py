@@ -60,9 +60,19 @@ def test_prompt_transmission_is_masked_to_prompt_aperture():
         focal_length_m=0.10,
     )
     maps = prompt.prompt_maps()
+    transmission = prompt.transmission()
     total_amp = maps["prompt_total_amplitude"]
     mask = maps["prompt_aperture_mask"].bool()
     assert maps["prompt_aperture_region"]["y0"] == 200
     assert maps["prompt_aperture_region"]["y1"] == 800
+    assert maps["prompt_aperture_bounds"] == [200, 800, 200, 800]
+    assert torch.count_nonzero(transmission[~mask]) == 0
     assert torch.count_nonzero(total_amp[~mask]) == 0
     assert torch.count_nonzero(total_amp[mask]) > 0
+    assert torch.count_nonzero(maps["prompt_router_amplitude"][~mask]) == 0
+    assert torch.count_nonzero(maps["prompt_router_phase"][~mask]) == 0
+    assert torch.count_nonzero(maps["prompt_total_phase"][~mask]) == 0
+
+    field = torch.ones(1, *layout.canvas_shape, dtype=torch.complex64)
+    after_prompt = prompt(field)
+    assert torch.count_nonzero(after_prompt[:, ~mask]) == 0

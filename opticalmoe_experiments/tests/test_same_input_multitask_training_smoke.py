@@ -70,3 +70,4 @@ def test_same_input_training_smoke(monkeypatch, tmp_path):
     assert (run_dir / "metrics" / "prompt_swap_matrix.csv").exists()
     assert (run_dir / "summary.json").exists()
     assert (run_dir / "summary_for_master" / "scaling_results_rows.json").exists()
+    assert (run_dir / "figures" / "training_curves.png").exists()

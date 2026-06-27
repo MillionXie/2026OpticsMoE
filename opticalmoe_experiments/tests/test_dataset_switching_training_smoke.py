@@ -17,7 +17,7 @@ class Args:
     epochs = 1
     device = "cpu"
     smoke_test = True
-    disable_visualization = True
+    disable_visualization = False
 
 
 def _fake_loaders(config, seed, smoke_test):
@@ -38,7 +38,7 @@ def test_dataset_switching_training_smoke(monkeypatch, tmp_path):
     cfg["training"]["epochs"] = 1
     cfg["training"]["multitask"].update({"steps_per_epoch": 1, "loss_weights": {"mnist": 1.0, "fashionmnist": 1.0, "emnist_letters": 1.0}})
     cfg["training"]["evaluation"] = {"max_val_batches": 1, "max_test_batches": 1}
-    cfg["visualization"] = {"enabled": False}
+    cfg["visualization"] = {"enabled": True, "num_samples": 1, "save_interval_epochs": 10}
     cfg["optimizer"] = {"type": "adamw", "lr": 0.001, "weight_decay": 0.0}
     monkeypatch.setattr(train_script, "EXPERIMENT_ROOT", tmp_path)
     monkeypatch.setattr(train_script, "REPO_ROOT", tmp_path)
@@ -49,3 +49,11 @@ def test_dataset_switching_training_smoke(monkeypatch, tmp_path):
     assert (run_dir / "metrics" / "prompt_swap_matrix.csv").exists()
     assert (run_dir / "summary.json").exists()
     assert (run_dir / "summary_for_master" / "prompt_swap_rows.json").exists()
+    expected_figures = [
+        run_dir / "figures" / "training_curves.png",
+        run_dir / "figures" / "prompt" / "final_epoch" / "task_expert_weights_grouped.png",
+        run_dir / "figures" / "prompt" / "final_epoch" / "mnist" / "prompt_total_phase.png",
+        run_dir / "figures" / "light_fields" / "final_epoch" / "mnist" / "overview.png",
+    ]
+    for path in expected_figures:
+        assert path.exists() and path.stat().st_size > 0
