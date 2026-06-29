@@ -58,6 +58,45 @@ python dataset_switching/scripts/train_dataset_switching.py --config dataset_swi
 python dataset_switching/scripts/run_independent_baseline.py --config dataset_switching/configs/mnist_fashion_emnist_letters_independent_d2nn.yaml --run_name independent_d2nn_mnist_fashion_emnist_letters_seed7 --device cuda
 ```
 
+The combined command trains three separate D2NN models sequentially. It does
+not share optical or electronic parameters across datasets.
+
+## Independent D2NN, One Dataset Per Process
+
+MNIST:
+
+```powershell
+python dataset_switching/scripts/run_independent_baseline.py --config dataset_switching/configs/mnist_independent_d2nn_canvas400_grid220.yaml --device cuda
+```
+
+Fashion-MNIST:
+
+```powershell
+python dataset_switching/scripts/run_independent_baseline.py --config dataset_switching/configs/fashionmnist_independent_d2nn_canvas400_grid220.yaml --device cuda
+```
+
+EMNIST-letters:
+
+```powershell
+python dataset_switching/scripts/run_independent_baseline.py --config dataset_switching/configs/emnist_letters_independent_d2nn_canvas400_grid220.yaml --device cuda
+```
+
+The same combined config can also be filtered:
+
+```powershell
+python dataset_switching/scripts/run_independent_baseline.py --config dataset_switching/configs/mnist_fashion_emnist_letters_independent_d2nn.yaml --task mnist --run_name independent_mnist_grid220_seed7 --device cuda
+```
+
+On a two-GPU Linux server, launch two independent processes:
+
+```bash
+CUDA_VISIBLE_DEVICES=0 python dataset_switching/scripts/run_independent_baseline.py --config dataset_switching/configs/mnist_independent_d2nn_canvas400_grid220.yaml --device cuda
+CUDA_VISIBLE_DEVICES=1 python dataset_switching/scripts/run_independent_baseline.py --config dataset_switching/configs/fashionmnist_independent_d2nn_canvas400_grid220.yaml --device cuda
+```
+
+Run EMNIST after either GPU becomes available. When multiple runs finish
+concurrently, rebuild the master tables once at the end.
+
 ## Prompt Swap Evaluation
 
 ```powershell

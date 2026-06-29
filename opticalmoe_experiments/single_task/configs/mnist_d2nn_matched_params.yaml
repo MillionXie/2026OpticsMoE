@@ -1,4 +1,4 @@
-seed: 7
+﻿seed: 7
 device: auto
 experiment:
   family: single_task
@@ -76,7 +76,7 @@ regularization:
     enabled: true
     mode: block_phase_bypass
     expert_p: 0.05
-    global_fc_p: 0.0
+    global_fc_p: 0.05
     block_size: 8
     batch_shared: true
     apply_to_experts: true
@@ -84,7 +84,7 @@ regularization:
     start_epoch: 10
 optimizer:
   type: adamw
-  lr: 0.001
+  lr: 0.003
   weight_decay: 0.0005
 training:
   epochs: 100

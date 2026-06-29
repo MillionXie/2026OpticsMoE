@@ -332,9 +332,12 @@ class GeneralD2NNClassifier(nn.Module):
         detector_layout: str = "grid",
         normalize_detector_energy: bool = True,
         readout_type: str = "mlp",
+        logit_scale: float = 10.0,
         readout_hidden_dim: int = 64,
         readout_activation: str = "gelu",
         readout_input_norm: str = "layernorm",
+        readout_norm_affine: bool = True,
+        readout_hidden_layers: int = 1,
         readout_dropout: float = 0.1,
         phase_dropout_mode: str = "none",
         phase_dropout_p: float = 0.0,
@@ -396,7 +399,17 @@ class GeneralD2NNClassifier(nn.Module):
         )
         self.fc_to_detector = AngularSpectrumPropagator(distance_m=self.distances_m["fc_to_detector"], **prop_args)
         self.detector = DetectorArray(num_classes, self.canvas_shape, detector_size, detector_layout, normalize_detector_energy)
-        self.readout = ElectronicReadout(num_classes, readout_type=readout_type, hidden_dim=readout_hidden_dim, activation=readout_activation, input_norm=readout_input_norm, dropout=readout_dropout)
+        self.readout = ElectronicReadout(
+            num_classes,
+            readout_type=readout_type,
+            logit_scale=logit_scale,
+            hidden_dim=readout_hidden_dim,
+            activation=readout_activation,
+            input_norm=readout_input_norm,
+            norm_affine=readout_norm_affine,
+            hidden_layers=readout_hidden_layers,
+            dropout=readout_dropout,
+        )
 
     def prepare_canvas_input(self, images: torch.Tensor) -> torch.Tensor:
         if images.ndim == 3:

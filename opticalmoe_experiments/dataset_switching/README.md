@@ -76,6 +76,50 @@ not gate amplitudes at the expert entrance plane.
 - `independent_d2nn`: one separate D2NN per dataset. This is not an upper bound;
   it is a parameter/accounting baseline for separate networks.
 
+### Independent D2NN parameter budget
+
+The independent baseline is compared as a **group of separate networks**:
+
+```text
+MNIST D2NN + Fashion-MNIST D2NN + EMNIST-letters D2NN
+```
+
+The relevant parameter comparison is therefore the sum of the three
+independent optical networks versus one shared three-task MoE. The default
+small independent geometry is:
+
+```text
+propagation canvas: 400 x 400
+five local phase windows: 220 x 220
+one global-FC phase window: 220 x 220
+optical parameters per task: 5 * 220^2 + 220^2 = 290400
+planned three-task total: 871200
+MoE reference optical parameters: 1168020
+planned ratio: 0.746
+```
+
+This is an approximate, compute-conscious comparison rather than an exact
+parameter match. A phase window near `255 x 255` would give about `390150`
+parameters per task and would match one third of the MoE more closely, but it
+is not the default because the `220` configuration is cheaper.
+
+The `400 x 400` canvas is only the Angular-Spectrum propagation window. Both
+the five local masks and the global-FC mask are trainable only in their center
+`220 x 220` windows; outside those windows is transparent propagation padding.
+
+Three standalone configs are provided so the networks can be trained
+independently or in parallel:
+
+- `mnist_independent_d2nn_canvas400_grid220.yaml`
+- `fashionmnist_independent_d2nn_canvas400_grid220.yaml`
+- `emnist_letters_independent_d2nn_canvas400_grid220.yaml`
+
+The combined `mnist_fashion_emnist_letters_independent_d2nn.yaml` remains
+available. It runs three fully separate models sequentially, and `--task`
+can select one task from that combined file. The script reports both the
+parameters actually executed in the current run and the planned three-network
+parameter total.
+
 ## Core Diagnostics
 
 - Prompt swap evaluation is the central evidence for dataset-specific optical
