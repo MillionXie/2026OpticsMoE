@@ -235,7 +235,8 @@ class ASGlobalRouterMoEClassifier(nn.Module):
             "outside_ratio": outside / (total + 1e-8),
         }
 
-    def forward(self, images: torch.Tensor, return_intermediates: bool = False):
+    def forward_to_detector(self, images: torch.Tensor, return_intermediates: bool = False):
+        """Propagate input amplitudes through the optical backbone to the detector plane."""
         canvas_input = self.prepare_canvas_input(images)
         after_input_to_prompt = self.input_to_prompt(canvas_input)
         after_prompt = self.prompt(after_input_to_prompt)
@@ -255,10 +256,8 @@ class ASGlobalRouterMoEClassifier(nn.Module):
         after_layer5_to_fc = self.layer5_to_fc(field)
         after_global_fc = self.global_fc(after_layer5_to_fc)
         detector_field = self.fc_to_detector(after_global_fc)
-        detector_energies = self.detector(detector_field)
-        logits = self.readout(detector_energies)
         if not return_intermediates:
-            return logits
+            return detector_field
         maps = self.prompt.prompt_maps()
         intermediates = {
             "input_amplitude": canvas_input.real,
@@ -280,12 +279,24 @@ class ASGlobalRouterMoEClassifier(nn.Module):
             "global_fc_phase_region": self.global_fc.phase_region(),
             "detector_field": detector_field,
             "detector_intensity": torch.abs(detector_field).square(),
-            "detector_energies": detector_energies,
-            "logits": logits,
         }
         intermediates.update(maps)
         for layer_index, value in enumerate(layer_fields, start=1):
             intermediates[f"after_expert_layer_{layer_index}"] = value
+        return detector_field, intermediates
+
+    def forward(self, images: torch.Tensor, return_intermediates: bool = False):
+        optical_output = self.forward_to_detector(images, return_intermediates=return_intermediates)
+        if return_intermediates:
+            detector_field, intermediates = optical_output
+        else:
+            detector_field = optical_output
+        detector_energies = self.detector(detector_field)
+        logits = self.readout(detector_energies)
+        if not return_intermediates:
+            return logits
+        intermediates["detector_energies"] = detector_energies
+        intermediates["logits"] = logits
         return logits, intermediates
 
     def optical_parameter_count(self) -> int:

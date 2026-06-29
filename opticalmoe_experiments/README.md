@@ -21,11 +21,12 @@ convolution shortcut for expert entrance generation.
 Implemented first:
 
 - `single_task/`: single-dataset classification baselines and MoE variants.
+- `dataset_switching/`: shared-backbone switching across image datasets.
+- `same_input_multitask/`: paired same-image task switching on dSprites.
+- `foundation_distillation/`: frozen CLIP image-feature distillation into detector-plane OpticalMoE features.
 
 Placeholders for future work:
 
-- `dataset_switching/`
-- `same_input_multitask/`
 - `expert_task_ablation/`
 - `prompt_ablation/`
 

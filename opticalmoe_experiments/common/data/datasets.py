@@ -1,4 +1,7 @@
+import tarfile
+import urllib.request
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import torch
@@ -16,6 +19,7 @@ DATASET_REGISTRY = {
     "usps": datasets.USPS,
     "emnist": datasets.EMNIST,
     "cifar10": datasets.CIFAR10,
+    "imagenette": datasets.ImageFolder,
 }
 
 EMNIST_NUM_CLASSES = {
@@ -47,7 +51,7 @@ def dataset_key(name: str) -> str:
     key = str(name).lower().replace("-", "")
     if key not in DATASET_REGISTRY:
         raise ValueError(
-            f"Unsupported dataset {name!r}. Use MNIST, FashionMNIST, KMNIST, USPS, EMNIST, or CIFAR10."
+            f"Unsupported dataset {name!r}. Use MNIST, FashionMNIST, KMNIST, USPS, EMNIST, CIFAR10, or Imagenette."
         )
     return key
 
@@ -153,6 +157,38 @@ def _class_names(name: str, split: str, base_dataset, num_classes: int) -> List[
     return [str(index) for index in range(num_classes)]
 
 
+IMAGENETTE_URL = "https://s3.amazonaws.com/fast-ai-imageclas/imagenette2-160.tgz"
+
+
+def _imagenette_root(root: str, download: bool) -> Path:
+    requested = Path(root).expanduser()
+    candidates = [requested, requested / "imagenette2-160"]
+    for candidate in candidates:
+        if (candidate / "train").is_dir() and (candidate / "val").is_dir():
+            return candidate
+    if not download:
+        raise FileNotFoundError(
+            f"Imagenette was not found under {requested}. Expected train/ and val/ class folders. "
+            "Download imagenette2-160 manually or set dataset.download=true."
+        )
+    download_parent = requested.parent if requested.name == "imagenette2-160" else requested
+    download_parent.mkdir(parents=True, exist_ok=True)
+    archive = download_parent / "imagenette2-160.tgz"
+    if not archive.exists():
+        urllib.request.urlretrieve(IMAGENETTE_URL, archive)
+    resolved_root = download_parent.resolve()
+    with tarfile.open(archive, "r:gz") as handle:
+        for member in handle.getmembers():
+            target = (download_parent / member.name).resolve()
+            if resolved_root not in target.parents and target != resolved_root:
+                raise RuntimeError(f"Unsafe path in Imagenette archive: {member.name}")
+        handle.extractall(download_parent)
+    extracted = download_parent / "imagenette2-160"
+    if not (extracted / "train").is_dir() or not (extracted / "val").is_dir():
+        raise RuntimeError(f"Imagenette extraction did not create the expected folders under {extracted}.")
+    return extracted
+
+
 def create_dataloaders(dataset_cfg: Dict, seed: int = 7) -> DataBundle:
     name = dataset_key(dataset_cfg.get("name", "mnist"))
     root = dataset_cfg.get("root", "./data")
@@ -177,8 +213,13 @@ def create_dataloaders(dataset_cfg: Dict, seed: int = 7) -> DataBundle:
         if split == "letters":
             kwargs["target_transform"] = SubtractOne()
 
-    train_full = cls(train=True, **kwargs)
-    test_dataset = cls(train=False, **kwargs)
+    if name == "imagenette":
+        imagenette_root = _imagenette_root(root, download)
+        train_full = datasets.ImageFolder(imagenette_root / "train", transform=transform)
+        test_dataset = datasets.ImageFolder(imagenette_root / "val", transform=transform)
+    else:
+        train_full = cls(train=True, **kwargs)
+        test_dataset = cls(train=False, **kwargs)
     train_full, test_dataset = _apply_sampling_protocol(train_full, test_dataset, dataset_cfg, seed)
 
     if smoke_test:
@@ -195,7 +236,7 @@ def create_dataloaders(dataset_cfg: Dict, seed: int = 7) -> DataBundle:
 
     if name == "emnist":
         num_classes = EMNIST_NUM_CLASSES[split]
-    elif name in {"cifar10", "usps"}:
+    elif name in {"cifar10", "usps", "imagenette"}:
         num_classes = 10
     else:
         num_classes = len(getattr(_base_dataset(train_full), "classes", list(range(10))))

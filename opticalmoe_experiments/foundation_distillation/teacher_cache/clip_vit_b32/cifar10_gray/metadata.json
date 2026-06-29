@@ -1,0 +1,26 @@
+{
+  "teacher_type": "clip_image_encoder",
+  "teacher_model_name": "ViT-B/32",
+  "teacher_backend": "clip",
+  "dataset_name": "cifar10",
+  "input_mode": "grayscale_replicated_rgb",
+  "teacher_feature_dim": 512,
+  "num_train": 7200,
+  "num_val": 800,
+  "num_test": 2000,
+  "config_hash_or_summary": "dd67e88122f80d58f9184c62eec7d9d2630015961dcd0d91af98346d55606866",
+  "class_names": [
+    "airplane",
+    "automobile",
+    "bird",
+    "cat",
+    "deer",
+    "dog",
+    "frog",
+    "horse",
+    "ship",
+    "truck"
+  ],
+  "teacher_text_encoder_used": false,
+  "features_are_l2_normalized": true
+}
