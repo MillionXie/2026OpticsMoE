@@ -82,7 +82,7 @@ training:
         input_size: 134
         grayscale: true
         val_split: 0.1
-        batch_size: 150
+        batch_size: 128
         num_workers: 10
         pin_memory: auto
         persistent_workers: true
@@ -95,7 +95,7 @@ training:
         max_val_samples: null
         max_test_samples: null
         sampling_protocol:
-          enabled: true
+          enabled: false
           total_size: 5000
           train_test_ratio: [4, 1]
           class_balanced: true
