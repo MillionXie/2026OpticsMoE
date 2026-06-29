@@ -57,3 +57,52 @@ python foundation_distillation/scripts/build_distillation_tables.py \
 ```
 
 `--smoke_test` limits training and evaluation to one batch without changing the cached split definition. It also uses `dataset.smoke_batch_size` (default 1) and forces `num_workers=0`.
+
+## End-to-end MoE baseline
+
+CIFAR10 smoke test (no teacher cache required):
+
+```bash
+python foundation_distillation/scripts/train_end_to_end_moe.py \
+  --config foundation_distillation/configs/cifar10_gray_end_to_end_moe.yaml \
+  --run_name cifar10_gray_end_to_end_moe_smoke \
+  --epochs 1 \
+  --smoke_test \
+  --device cuda
+```
+
+CIFAR10 formal baseline:
+
+```bash
+python foundation_distillation/scripts/train_end_to_end_moe.py \
+  --config foundation_distillation/configs/cifar10_gray_end_to_end_moe.yaml \
+  --run_name cifar10_gray_end_to_end_moe_seed7 \
+  --device cuda
+```
+
+Imagenette formal baseline:
+
+```bash
+python foundation_distillation/scripts/train_end_to_end_moe.py \
+  --config foundation_distillation/configs/imagenette_gray_end_to_end_moe.yaml \
+  --run_name imagenette_gray_end_to_end_moe_seed7 \
+  --device cuda
+```
+
+Evaluate a baseline checkpoint:
+
+```bash
+python foundation_distillation/scripts/evaluate_end_to_end_moe.py \
+  --run_dir foundation_distillation/runs/cifar10_gray_end_to_end_moe_seed7 \
+  --checkpoint best.pt \
+  --device cuda
+```
+
+Plot CIFAR10 distilled-versus-baseline accuracy after rebuilding the master tables:
+
+```bash
+python foundation_distillation/visualization/plot_distillation_vs_baseline.py \
+  --master_csv foundation_distillation/results/master_distillation_final_metrics.csv \
+  --dataset cifar10 \
+  --out foundation_distillation/figures/cifar10_distillation_vs_baseline.png
+```

@@ -12,7 +12,7 @@ for path in (EXPERIMENTS_ROOT, REPO_ROOT):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
-from common.data.foundation_distillation import create_cached_distillation_loaders
+from common.data.datasets import create_dataloaders
 from common.data.loader_utils import apply_smoke_loader_overrides, loader_summary_from_loaders, print_loader_summary
 from common.reporting.metrics_writer import write_rows
 from common.reporting.run_manifest import save_run_manifest
@@ -21,26 +21,23 @@ from common.training.phase_dropout import phase_dropout_active_for_epoch, phase_
 from common.utils.config import load_yaml, save_json
 from common.utils.filesystem import make_run_dir
 from common.utils.seed import choose_device, set_seed
-from common.visualization.curve_viz import save_confusion_matrix
+from common.visualization.curve_viz import save_confusion_matrix, save_training_curves
 from common.visualization.lightfield_viz import save_light_fields
 from common.visualization.mask_viz import save_phase_masks
 from common.visualization.prompt_viz import save_prompt_maps
 from foundation_distillation.runtime import (
-    architecture_payload,
+    build_end_to_end_student,
     build_optimizer,
-    build_student,
-    predict_distillation,
-    resolve_cache_dir,
-    run_distillation_epoch,
+    end_to_end_architecture_payload,
+    predict_supervised,
+    run_supervised_epoch,
 )
 from foundation_distillation.scripts.build_distillation_tables import rebuild_distillation_tables
-from foundation_distillation.visualization.plot_distillation_curves import save_distillation_curves
 from foundation_distillation.visualization.plot_expert_usage import save_expert_usage
-from foundation_distillation.visualization.plot_feature_similarity import save_feature_similarity
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Train detector-feature-distilled OpticalMoE.")
+    parser = argparse.ArgumentParser(description="Train the CE-only detector-feature OpticalMoE baseline.")
     parser.add_argument("--config", required=True)
     parser.add_argument("--run_name", default=None)
     parser.add_argument("--epochs", type=int, default=None)
@@ -51,21 +48,21 @@ def parse_args():
 
 
 def _fixed_batch(loader, device, count=4):
-    images, labels, teacher, indices = next(iter(loader))
-    return images[:count].to(device), labels[:count].to(device), teacher[:count].to(device), indices[:count]
+    images, labels = next(iter(loader))
+    return images[:count].to(device), labels[:count].to(device)
 
 
 @torch.no_grad()
 def _diagnostics(model, images, epoch, run_id):
     model.eval()
-    _logits, _feature, _projected, intermediates = model(images, return_intermediates=True)
+    _logits, _feature, intermediates = model(images, return_intermediates=True)
     powers = intermediates["normalized_prompt_powers"].detach().cpu()
     amplitudes = intermediates["prompt_amplitudes"].detach().cpu()
     entrance = intermediates["expert_energy_ratios"].detach().mean(dim=0).cpu()
     labels = [aperture.name for aperture in model.layout.expert_apertures]
-    rows = []
+    usage_rows = []
     for index, label in enumerate(labels):
-        rows.append(
+        usage_rows.append(
             {
                 "run_id": run_id,
                 "epoch": int(epoch),
@@ -77,7 +74,8 @@ def _diagnostics(model, images, epoch, run_id):
                 "outside_energy_ratio": float(intermediates["outside_energy_ratio"].mean().item()),
             }
         )
-    stage_map = [
+    energy_rows = []
+    for stage, key in (
         ("input", "input_amplitude"),
         ("after_input_to_prompt", "after_input_to_prompt"),
         ("after_prompt", "after_prompt"),
@@ -85,9 +83,7 @@ def _diagnostics(model, images, epoch, run_id):
         ("expert_entrance_after_aperture", "expert_entrance_after_aperture"),
         ("after_global_fc", "after_global_fc"),
         ("detector_plane", "detector_field"),
-    ]
-    energy_rows = []
-    for stage, key in stage_map:
+    ):
         value = intermediates.get(key)
         if value is None:
             continue
@@ -95,16 +91,23 @@ def _diagnostics(model, images, epoch, run_id):
         intensity = tensor.abs().square() if torch.is_complex(tensor) else tensor.float().square()
         if intensity.ndim == 2:
             intensity = intensity.unsqueeze(0)
-        energy_rows.append({"run_id": run_id, "epoch": int(epoch), "stage": stage, "total_energy": float(intensity.sum((-2, -1)).mean().item())})
-    return intermediates, rows, energy_rows
+        energy_rows.append(
+            {
+                "run_id": run_id,
+                "epoch": int(epoch),
+                "stage": stage,
+                "total_energy": float(intensity.sum((-2, -1)).mean().item()),
+            }
+        )
+    return intermediates, usage_rows, energy_rows
 
 
 @torch.no_grad()
 def _save_artifacts(model, fixed_batch, run_dir, epoch_name, enabled=True):
     if not enabled:
         return
-    images, _labels, _teacher, _indices = fixed_batch
-    _logits, _feature, _projected, intermediates = model(images, return_intermediates=True)
+    images, _labels = fixed_batch
+    _logits, _feature, intermediates = model(images, return_intermediates=True)
     save_light_fields(intermediates, run_dir / "figures" / "light_fields" / epoch_name / "sample_000")
     labels = [aperture.name for aperture in model.layout.expert_apertures]
     save_prompt_maps(intermediates, run_dir / "figures" / "prompt" / epoch_name, expert_labels=labels)
@@ -115,7 +118,7 @@ def _confusion_rows(matrix, class_names):
     rows = []
     for index, class_name in enumerate(class_names):
         row = {"true_class": class_name}
-        row.update({name: int(matrix[index, col].item()) for col, name in enumerate(class_names)})
+        row.update({name: int(matrix[index, column].item()) for column, name in enumerate(class_names)})
         rows.append(row)
     return rows
 
@@ -133,50 +136,41 @@ def main():
         config.setdefault("training", {})["max_train_batches"] = 1
         config.setdefault("training", {}).setdefault("evaluation", {})["max_val_batches"] = 1
         config["training"]["evaluation"]["max_test_batches"] = 1
-    run_name = config.get("experiment", {}).get("run_name", "feature_distilled_moe")
+
+    run_name = config.get("experiment", {}).get("run_name", "end_to_end_optical_moe")
     seed = int(config.get("seed", 7))
     set_seed(seed)
     device = choose_device(args.device or config.get("device", "auto"))
-    cache_dir = resolve_cache_dir(config["teacher_cache"]["cache_dir"], EXPERIMENTS_ROOT)
-    config["teacher_cache"]["cache_dir"] = str(cache_dir)
-    if not (cache_dir / "metadata.json").exists():
-        if bool(config["teacher_cache"].get("build_if_missing", False)):
-            from foundation_distillation.scripts.build_teacher_feature_cache import build_cache
-
-            build_cache(config, device, overwrite=False)
-        else:
-            raise FileNotFoundError(
-                f"Teacher feature cache not found at {cache_dir}. Run build_teacher_feature_cache.py first."
-            )
-    bundle = create_cached_distillation_loaders(
-        config["dataset"], config["teacher"], config["teacher_cache"], seed=seed
+    bundle = create_dataloaders(config["dataset"], seed=seed)
+    loader_summary = loader_summary_from_loaders(
+        bundle.train_loader, bundle.val_loader, bundle.test_loader, config["dataset"]
     )
-    loader_summary = loader_summary_from_loaders(bundle.train_loader, bundle.val_loader, bundle.test_loader, config["dataset"])
     print(f"device: {device}")
     print_loader_summary(loader_summary, prefix=str(config["dataset"].get("name")))
-    model = build_student(config, bundle.num_classes, bundle.teacher_feature_dim).to(device)
+    model = build_end_to_end_student(config, bundle.num_classes).to(device)
     optimizer = build_optimizer(model, config)
     dropout = phase_dropout_settings(config)
     run_dir = make_run_dir(EXPERIMENTS_ROOT, "foundation_distillation", run_name)
     save_run_manifest(run_dir, config, " ".join(sys.argv), REPO_ROOT)
     save_json(loader_summary, run_dir / "loader_summary.json")
-    architecture = architecture_payload(model, config, config["dataset"].get("name"), config["teacher"])
+    architecture = end_to_end_architecture_payload(model, config, config["dataset"].get("name"))
     save_json(architecture, run_dir / "architecture_report.json")
     print(
-        f"model: feature_distilled_optical_moe optical={model.optical_parameter_count()} "
-        f"classifier={model.classifier_parameter_count()} projector={model.projector_parameter_count()}"
+        f"model: end_to_end_optical_moe optical={model.optical_parameter_count()} "
+        f"classifier={model.classifier_parameter_count()} projector=0"
     )
 
     visualization_enabled = bool(config.get("visualization", {}).get("enabled", True)) and not args.disable_visualization
-    fixed_batch = _fixed_batch(bundle.val_loader, device, int(config.get("visualization", {}).get("num_samples", 4)))
+    fixed_batch = _fixed_batch(
+        bundle.val_loader, device, int(config.get("visualization", {}).get("num_samples", 4))
+    )
     _save_artifacts(model, fixed_batch, run_dir, "epoch_0000", visualization_enabled)
-    loss_cfg = config.get("loss", {})
     training_cfg = config.get("training", {})
     evaluation_cfg = training_cfg.get("evaluation", {})
     epochs = int(training_cfg.get("epochs", 200))
     print_freq = int(training_cfg.get("print_freq", config.get("experiment", {}).get("print_freq", 50)))
     save_interval = int(config.get("visualization", {}).get("save_interval_epochs", 10))
-    epoch_rows, expert_rows, optical_energy_rows = [], [], []
+    epoch_rows, curve_rows, expert_rows, optical_energy_rows = [], [], [], []
     best_epoch, best_val_acc, best_val_loss = 0, -math.inf, math.inf
     run_start = time.perf_counter()
 
@@ -184,56 +178,60 @@ def main():
         epoch_start = time.perf_counter()
         dropout_active = phase_dropout_active_for_epoch(dropout, epoch)
         model.set_phase_dropout_active(dropout_active)
-        train_metrics = run_distillation_epoch(
+        train_metrics = run_supervised_epoch(
             model,
             bundle.train_loader,
             device,
-            loss_cfg,
             optimizer=optimizer,
             print_freq=print_freq,
             max_batches=training_cfg.get("max_train_batches"),
         )
         model.set_phase_dropout_active(False)
-        val_metrics = run_distillation_epoch(
+        val_metrics = run_supervised_epoch(
             model,
             bundle.val_loader,
             device,
-            loss_cfg,
             max_batches=evaluation_cfg.get("max_val_batches"),
         )
         epoch_time = time.perf_counter() - epoch_start
         row = {
             "run_id": run_name,
+            "experiment_variant": "end_to_end_ce_baseline",
             "epoch": epoch,
-            "train_total_loss": train_metrics["total_loss"],
-            "train_ce_loss": train_metrics["ce_loss"],
-            "train_feature_loss": train_metrics["feature_loss"],
-            "train_feature_cosine": train_metrics["feature_cosine"],
+            "train_total_loss": train_metrics["loss"],
+            "train_ce_loss": train_metrics["loss"],
+            "train_feature_loss": 0.0,
             "train_acc": train_metrics["acc"],
-            "val_total_loss": val_metrics["total_loss"],
-            "val_ce_loss": val_metrics["ce_loss"],
-            "val_feature_loss": val_metrics["feature_loss"],
-            "val_feature_cosine": val_metrics["feature_cosine"],
+            "val_total_loss": val_metrics["loss"],
+            "val_ce_loss": val_metrics["loss"],
+            "val_feature_loss": 0.0,
             "val_acc": val_metrics["acc"],
             "phase_dropout_active": dropout_active,
             "lr": optimizer.param_groups[0]["lr"],
             "epoch_time_sec": epoch_time,
         }
         epoch_rows.append(row)
-        intermediates, usage, energy = _diagnostics(model, fixed_batch[0], epoch, run_name)
+        curve_rows.append(
+            {
+                "epoch": epoch,
+                "train_loss": train_metrics["loss"],
+                "val_loss": val_metrics["loss"],
+                "train_acc": train_metrics["acc"],
+                "val_acc": val_metrics["acc"],
+            }
+        )
+        _intermediates, usage, energy = _diagnostics(model, fixed_batch[0], epoch, run_name)
         expert_rows.extend(usage)
         optical_energy_rows.extend(energy)
-        is_best = val_metrics["acc"] > best_val_acc
-        if is_best:
-            best_epoch, best_val_acc, best_val_loss = epoch, val_metrics["acc"], val_metrics["total_loss"]
+        if val_metrics["acc"] > best_val_acc:
+            best_epoch, best_val_acc, best_val_loss = epoch, val_metrics["acc"], val_metrics["loss"]
             save_checkpoint(run_dir / "checkpoints" / "best.pt", model, optimizer, epoch, row, config)
         save_checkpoint(run_dir / "checkpoints" / "last.pt", model, optimizer, epoch, row, config)
         if visualization_enabled and epoch % save_interval == 0:
             _save_artifacts(model, fixed_batch, run_dir, f"epoch_{epoch:04d}", True)
         print(
             f"epoch {epoch:03d} | train_acc={train_metrics['acc']:.4f} val_acc={val_metrics['acc']:.4f} | "
-            f"ce={train_metrics['ce_loss']:.4f} feat={train_metrics['feature_loss']:.4f} "
-            f"cos={train_metrics['feature_cosine']:.4f} | phase_dropout={'on' if dropout_active else 'off'} | time={epoch_time:.1f}s"
+            f"ce={train_metrics['loss']:.4f} | phase_dropout={'on' if dropout_active else 'off'} | time={epoch_time:.1f}s"
         )
         write_rows(run_dir / "metrics" / "epoch_metrics.csv", epoch_rows)
         write_rows(run_dir / "diagnostics" / "expert_usage.csv", expert_rows)
@@ -241,62 +239,69 @@ def main():
         write_rows(run_dir / "diagnostics" / "optical_energy_by_stage.csv", optical_energy_rows)
 
     model.set_phase_dropout_active(False)
-    test_metrics = run_distillation_epoch(
-        model, bundle.test_loader, device, loss_cfg, max_batches=evaluation_cfg.get("max_test_batches")
+    test_metrics = run_supervised_epoch(
+        model,
+        bundle.test_loader,
+        device,
+        max_batches=evaluation_cfg.get("max_test_batches"),
     )
-    predictions, targets, similarities = predict_distillation(
-        model, bundle.test_loader, device, max_batches=evaluation_cfg.get("max_test_batches")
+    predictions, targets = predict_supervised(
+        model,
+        bundle.test_loader,
+        device,
+        max_batches=evaluation_cfg.get("max_test_batches"),
     )
     total_wall = time.perf_counter() - run_start
     final_metrics = {
         "run_id": run_name,
         "dataset_name": config["dataset"].get("name"),
-        "experiment_variant": "feature_distillation",
-        "teacher_type": config["teacher"].get("type"),
-        "teacher_model_name": config["teacher"].get("model_name"),
-        "teacher_input_mode": config["teacher"].get("input_mode"),
+        "experiment_variant": "end_to_end_ce_baseline",
+        "teacher_type": "none",
+        "teacher_model_name": "",
+        "teacher_input_mode": "",
         "student_model_type": config.get("student", {}).get("model_type"),
         "feature_detector_type": config.get("feature_detector", {}).get("type"),
         "feature_dim": model.optical_feature_dim,
-        "teacher_feature_dim": model.teacher_feature_dim,
-        "ce_weight": float(loss_cfg.get("ce_weight", 1.0)),
-        "feature_distill_weight": float(loss_cfg.get("feature_distill_weight", 0.5)),
+        "teacher_feature_dim": 0,
+        "ce_weight": 1.0,
+        "feature_distill_weight": 0.0,
         "best_epoch": best_epoch,
         "best_val_acc": best_val_acc,
         "best_val_loss": best_val_loss,
         "final_test_acc": test_metrics["acc"],
-        "final_test_loss": test_metrics["total_loss"],
-        "final_feature_cosine": test_metrics["feature_cosine"],
+        "final_test_loss": test_metrics["loss"],
+        "final_feature_cosine": "",
         "optical_parameter_count": model.optical_parameter_count(),
         "prompt_parameter_count": model.prompt_parameter_count(),
         "electronic_parameter_count": model.electronic_parameter_count(),
-        "projector_parameter_count": model.projector_parameter_count(),
-        "inference_parameter_count": model.total_parameter_count() - model.projector_parameter_count(),
+        "projector_parameter_count": 0,
+        "inference_parameter_count": model.total_parameter_count(),
         "training_parameter_count": model.total_parameter_count(),
         "total_parameter_count": model.total_parameter_count(),
         "total_wall_time_sec": total_wall,
         "run_dir": str(run_dir),
     }
     save_json(final_metrics, run_dir / "metrics" / "final_metrics.json")
-    matrix = save_confusion_matrix(predictions, targets, bundle.class_names, run_dir / "figures" / "confusion_matrix.png")
+    matrix = save_confusion_matrix(
+        predictions, targets, bundle.class_names, run_dir / "figures" / "confusion_matrix.png"
+    )
     write_rows(run_dir / "metrics" / "confusion_matrix.csv", _confusion_rows(matrix, bundle.class_names))
-    similarity_rows = [
-        {"run_id": run_name, "epoch": row["epoch"], "train_feature_cosine": row["train_feature_cosine"], "val_feature_cosine": row["val_feature_cosine"]}
-        for row in epoch_rows
-    ]
-    write_rows(run_dir / "diagnostics" / "feature_similarity.csv", similarity_rows)
-    save_distillation_curves(epoch_rows, run_dir / "figures" / "training_curves.png")
-    save_feature_similarity(epoch_rows, run_dir / "figures" / "feature_similarity_curve.png")
+    save_training_curves(curve_rows, run_dir / "figures" / "training_curves.png")
     save_expert_usage(expert_rows, run_dir / "figures" / "expert_usage_heatmap.png")
     save_expert_usage(expert_rows, run_dir / "figures" / "prompt_weights.png")
     _save_artifacts(model, fixed_batch, run_dir, "final_epoch", visualization_enabled)
-    summary = {**final_metrics, "loader_summary": loader_summary, "architecture": architecture, "phase_dropout": dropout}
+    summary = {
+        **final_metrics,
+        "loader_summary": loader_summary,
+        "architecture": architecture,
+        "phase_dropout": dropout,
+    }
     save_json(summary, run_dir / "summary.json")
     save_json([summary], run_dir / "summary_for_master" / "runs_rows.json")
     save_json(epoch_rows, run_dir / "summary_for_master" / "epoch_metrics_rows.json")
     save_json([final_metrics], run_dir / "summary_for_master" / "final_metrics_rows.json")
     save_json([architecture], run_dir / "summary_for_master" / "model_params_rows.json")
-    save_json(similarity_rows, run_dir / "summary_for_master" / "feature_similarity_rows.json")
+    save_json([], run_dir / "summary_for_master" / "feature_similarity_rows.json")
     save_json(expert_rows, run_dir / "summary_for_master" / "expert_usage_rows.json")
     if bool(config.get("reporting", {}).get("rebuild_master_tables_after_run", True)):
         rebuild_distillation_tables(

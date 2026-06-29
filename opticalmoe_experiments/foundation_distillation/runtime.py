@@ -4,7 +4,10 @@ from typing import Dict, Optional, Tuple
 
 import torch
 
-from common.optics.distilled_moe import FeatureDistilledASGlobalRouterMoEClassifier
+from common.optics.distilled_moe import (
+    DetectorFeatureASGlobalRouterMoEClassifier,
+    FeatureDistilledASGlobalRouterMoEClassifier,
+)
 from common.optics.expert_layout import ExpertLayout
 from common.training.phase_dropout import phase_dropout_settings
 
@@ -21,7 +24,7 @@ def resolve_cache_dir(value: str, experiments_root: Path) -> Path:
     return experiments_root / path
 
 
-def build_student(config: Dict, num_classes: int, teacher_feature_dim: int):
+def _layout_and_optical_kwargs(config: Dict):
     layout_cfg = config.get("layout", {})
     canvas_height = int(layout_cfg.get("canvas_height", 1000))
     canvas_width = int(layout_cfg.get("canvas_width", canvas_height))
@@ -39,13 +42,7 @@ def build_student(config: Dict, num_classes: int, teacher_feature_dim: int):
     optics = config.get("optics", {})
     prompt = config.get("prompt", {})
     dropout = phase_dropout_settings(config)
-    model = FeatureDistilledASGlobalRouterMoEClassifier(
-        num_classes=num_classes,
-        teacher_feature_dim=teacher_feature_dim,
-        layout=layout,
-        feature_detector_config=config.get("feature_detector", {}),
-        classifier_config=config.get("classifier", {}),
-        projector_config=config.get("projector", {}),
+    kwargs = dict(
         wavelength_m=float(optics.get("wavelength_m", 5.32e-7)),
         pixel_size_m=float(optics.get("pixel_size_m", 8.0e-6)),
         num_layers=int(optics.get("num_layers", 5)),
@@ -75,6 +72,33 @@ def build_student(config: Dict, num_classes: int, teacher_feature_dim: int):
         phase_dropout_block_size=dropout["block_size"],
         phase_dropout_batch_shared=dropout["batch_shared"],
         evanescent_mode=str(optics.get("evanescent_mode", "zero")),
+    )
+    return layout, kwargs
+
+
+def build_student(config: Dict, num_classes: int, teacher_feature_dim: int):
+    layout, optical_kwargs = _layout_and_optical_kwargs(config)
+    model = FeatureDistilledASGlobalRouterMoEClassifier(
+        num_classes=num_classes,
+        teacher_feature_dim=teacher_feature_dim,
+        layout=layout,
+        feature_detector_config=config.get("feature_detector", {}),
+        classifier_config=config.get("classifier", {}),
+        projector_config=config.get("projector", {}),
+        **optical_kwargs,
+    )
+    model.set_phase_dropout_active(False)
+    return model
+
+
+def build_end_to_end_student(config: Dict, num_classes: int):
+    layout, optical_kwargs = _layout_and_optical_kwargs(config)
+    model = DetectorFeatureASGlobalRouterMoEClassifier(
+        num_classes=num_classes,
+        layout=layout,
+        feature_detector_config=config.get("feature_detector", {}),
+        classifier_config=config.get("classifier", {}),
+        **optical_kwargs,
     )
     model.set_phase_dropout_active(False)
     return model
@@ -147,6 +171,44 @@ def run_distillation_epoch(
     }
 
 
+def run_supervised_epoch(
+    model,
+    loader,
+    device,
+    optimizer=None,
+    print_freq: int = 0,
+    max_batches: Optional[int] = None,
+) -> Dict[str, float]:
+    training = optimizer is not None
+    model.train(training)
+    loss_total, correct, samples = 0.0, 0, 0
+    context = torch.enable_grad() if training else torch.no_grad()
+    with context:
+        for batch_index, (images, labels) in enumerate(loader, start=1):
+            if max_batches is not None and batch_index > int(max_batches):
+                break
+            images = images.to(device, non_blocking=True)
+            labels = labels.to(device, non_blocking=True)
+            if training:
+                optimizer.zero_grad(set_to_none=True)
+            logits, _optical_feature = model(images)
+            loss = torch.nn.functional.cross_entropy(logits, labels)
+            if training:
+                loss.backward()
+                optimizer.step()
+            batch_size = int(labels.numel())
+            loss_total += float(loss.detach().item()) * batch_size
+            correct += int((logits.argmax(dim=1) == labels).sum().item())
+            samples += batch_size
+            if training and print_freq > 0 and batch_index % int(print_freq) == 0:
+                print(
+                    f"  update {batch_index:03d}/{len(loader):03d} | ce={loss.item():.4f} "
+                    f"acc={(logits.argmax(1) == labels).float().mean().item():.4f}"
+                )
+    denominator = max(samples, 1)
+    return {"loss": loss_total / denominator, "acc": correct / denominator, "samples": samples}
+
+
 @torch.no_grad()
 def predict_distillation(model, loader, device, max_batches: Optional[int] = None):
     model.eval()
@@ -162,11 +224,25 @@ def predict_distillation(model, loader, device, max_batches: Optional[int] = Non
     return torch.cat(predictions), torch.cat(targets), torch.cat(similarities)
 
 
+@torch.no_grad()
+def predict_supervised(model, loader, device, max_batches: Optional[int] = None):
+    model.eval()
+    predictions, targets = [], []
+    for batch_index, (images, labels) in enumerate(loader, start=1):
+        if max_batches is not None and batch_index > int(max_batches):
+            break
+        logits, _optical_feature = model(images.to(device, non_blocking=True))
+        predictions.append(logits.argmax(dim=1).cpu())
+        targets.append(labels.cpu())
+    return torch.cat(predictions), torch.cat(targets)
+
+
 def architecture_payload(model, config: Dict, dataset_name: str, teacher_cfg: Dict) -> Dict:
     layout = model.layout
     global_fc_shape = list(model.global_fc.phase_size)
     return {
         "model": "FeatureDistilledASGlobalRouterMoEClassifier",
+        "experiment_variant": "feature_distillation",
         "dataset_name": dataset_name,
         "teacher_type": teacher_cfg.get("type"),
         "teacher_model_name": teacher_cfg.get("model_name"),
@@ -193,6 +269,45 @@ def architecture_payload(model, config: Dict, dataset_name: str, teacher_cfg: Di
         "prompt_parameter_count": model.prompt_parameter_count(),
         "electronic_parameter_count": model.electronic_parameter_count(),
         "projector_parameter_count": model.projector_parameter_count(),
+        "inference_parameter_count": model.total_parameter_count() - model.projector_parameter_count(),
+        "training_parameter_count": model.total_parameter_count(),
+        "total_parameter_count": model.total_parameter_count(),
+        "phase_dropout_config": config.get("regularization", {}).get("phase_dropout", {}),
+    }
+
+
+def end_to_end_architecture_payload(model, config: Dict, dataset_name: str) -> Dict:
+    layout = model.layout
+    global_fc_shape = list(model.global_fc.phase_size)
+    return {
+        "model": "DetectorFeatureASGlobalRouterMoEClassifier",
+        "experiment_variant": "end_to_end_ce_baseline",
+        "dataset_name": dataset_name,
+        "teacher_type": "none",
+        "teacher_used": False,
+        "feature_distillation_used": False,
+        "canvas_size": layout.canvas_size,
+        "input_size": layout.input_size,
+        "num_experts": layout.num_experts,
+        "expert_size": layout.expert_size,
+        "expert_pitch": layout.expert_pitch,
+        "prompt_aperture_size": layout.prompt_aperture_size,
+        "prompt_trainable_type": "channel_amplitude_and_phase_bias",
+        "prompt_trainable_pixelwise": False,
+        "global_fc_phase_size": global_fc_shape[0] if global_fc_shape[0] == global_fc_shape[1] else global_fc_shape,
+        "global_fc_phase_shape": global_fc_shape,
+        "global_fc_phase_region": model.global_fc.phase_region(),
+        "global_fc_padding_is_trainable": False,
+        "feature_detector": model.feature_detector_config,
+        "feature_source": "detector_plane_intensity",
+        "classifier": config.get("classifier", {}),
+        "projector": None,
+        "optical_parameter_count": model.optical_parameter_count(),
+        "prompt_parameter_count": model.prompt_parameter_count(),
+        "electronic_parameter_count": model.electronic_parameter_count(),
+        "projector_parameter_count": 0,
+        "inference_parameter_count": model.total_parameter_count(),
+        "training_parameter_count": model.total_parameter_count(),
         "total_parameter_count": model.total_parameter_count(),
         "phase_dropout_config": config.get("regularization", {}).get("phase_dropout", {}),
     }

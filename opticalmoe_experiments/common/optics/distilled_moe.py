@@ -86,25 +86,21 @@ def _mlp(input_dim: int, output_dim: int, cfg: Dict) -> nn.Module:
     return nn.Sequential(*layers)
 
 
-class FeatureDistilledASGlobalRouterMoEClassifier(nn.Module):
-    """AS global-router OpticalMoE with detector-plane feature distillation heads."""
+class DetectorFeatureASGlobalRouterMoEClassifier(nn.Module):
+    """AS global-router OpticalMoE with a detector-intensity feature classifier."""
 
     def __init__(
         self,
         num_classes: int,
-        teacher_feature_dim: int,
         layout: ExpertLayout,
         feature_detector_config: Optional[Dict] = None,
         classifier_config: Optional[Dict] = None,
-        projector_config: Optional[Dict] = None,
         **optical_backbone_kwargs,
     ) -> None:
         super().__init__()
         feature_cfg = dict(feature_detector_config or {})
         classifier_cfg = dict(classifier_config or {})
-        projector_cfg = dict(projector_config or {})
         self.num_classes = int(num_classes)
-        self.teacher_feature_dim = int(teacher_feature_dim)
         self.layout = layout
         self.optical_backbone = ASGlobalRouterMoEClassifier(
             num_classes=self.num_classes,
@@ -129,7 +125,6 @@ class FeatureDistilledASGlobalRouterMoEClassifier(nn.Module):
             )
         self.optical_feature_dim = configured_dim
         self.classifier = _mlp(self.optical_feature_dim, self.num_classes, classifier_cfg)
-        self.projector = _mlp(self.optical_feature_dim, self.teacher_feature_dim, projector_cfg)
         self.feature_detector_config = {
             "type": "grid_pool",
             "grid_size": self.feature_detector.grid_size,
@@ -154,7 +149,7 @@ class FeatureDistilledASGlobalRouterMoEClassifier(nn.Module):
     def expert_masks(self):
         return self.optical_backbone.expert_masks
 
-    def forward(self, images: torch.Tensor, return_intermediates: bool = False):
+    def _forward_features(self, images: torch.Tensor, return_intermediates: bool = False):
         optical_output = self.optical_backbone.forward_to_detector(images, return_intermediates=return_intermediates)
         if return_intermediates:
             detector_field, intermediates = optical_output
@@ -164,15 +159,16 @@ class FeatureDistilledASGlobalRouterMoEClassifier(nn.Module):
         detector_intensity = torch.abs(detector_field).square()
         optical_feature = self.feature_detector(detector_intensity)
         logits = self.classifier(optical_feature)
-        projected_feature = F.normalize(self.projector(optical_feature), dim=-1)
         if not return_intermediates:
-            return logits, optical_feature, projected_feature
+            return logits, optical_feature
         intermediates["detector_intensity"] = detector_intensity
         intermediates["optical_feature"] = optical_feature
-        intermediates["projected_feature"] = projected_feature
         intermediates["prompt_weights"] = intermediates.get("normalized_prompt_powers")
         intermediates["logits"] = logits
-        return logits, optical_feature, projected_feature, intermediates
+        return logits, optical_feature, intermediates
+
+    def forward(self, images: torch.Tensor, return_intermediates: bool = False):
+        return self._forward_features(images, return_intermediates=return_intermediates)
 
     def optical_parameter_count(self) -> int:
         return int(self.optical_backbone.optical_parameter_count())
@@ -183,19 +179,53 @@ class FeatureDistilledASGlobalRouterMoEClassifier(nn.Module):
     def classifier_parameter_count(self) -> int:
         return sum(parameter.numel() for parameter in self.classifier.parameters())
 
-    def projector_parameter_count(self) -> int:
-        return sum(parameter.numel() for parameter in self.projector.parameters())
-
     def electronic_parameter_count(self) -> int:
         return int(self.classifier_parameter_count())
 
     def total_parameter_count(self) -> int:
-        return int(
-            self.optical_parameter_count()
-            + self.prompt_parameter_count()
-            + self.classifier_parameter_count()
-            + self.projector_parameter_count()
-        )
+        return int(self.optical_parameter_count() + self.prompt_parameter_count() + self.classifier_parameter_count())
 
     def set_phase_dropout_active(self, active: bool) -> None:
         self.optical_backbone.set_phase_dropout_active(active)
+
+
+class FeatureDistilledASGlobalRouterMoEClassifier(DetectorFeatureASGlobalRouterMoEClassifier):
+    """Detector-feature OpticalMoE with a training-time teacher projector."""
+
+    def __init__(
+        self,
+        num_classes: int,
+        teacher_feature_dim: int,
+        layout: ExpertLayout,
+        feature_detector_config: Optional[Dict] = None,
+        classifier_config: Optional[Dict] = None,
+        projector_config: Optional[Dict] = None,
+        **optical_backbone_kwargs,
+    ) -> None:
+        super().__init__(
+            num_classes=num_classes,
+            layout=layout,
+            feature_detector_config=feature_detector_config,
+            classifier_config=classifier_config,
+            **optical_backbone_kwargs,
+        )
+        self.teacher_feature_dim = int(teacher_feature_dim)
+        self.projector = _mlp(self.optical_feature_dim, self.teacher_feature_dim, dict(projector_config or {}))
+
+    def forward(self, images: torch.Tensor, return_intermediates: bool = False):
+        feature_output = self._forward_features(images, return_intermediates=return_intermediates)
+        if return_intermediates:
+            logits, optical_feature, intermediates = feature_output
+        else:
+            logits, optical_feature = feature_output
+        projected_feature = F.normalize(self.projector(optical_feature), dim=-1)
+        if not return_intermediates:
+            return logits, optical_feature, projected_feature
+        intermediates["projected_feature"] = projected_feature
+        return logits, optical_feature, projected_feature, intermediates
+
+    def projector_parameter_count(self) -> int:
+        return sum(parameter.numel() for parameter in self.projector.parameters())
+
+    def total_parameter_count(self) -> int:
+        return int(super().total_parameter_count() + self.projector_parameter_count())

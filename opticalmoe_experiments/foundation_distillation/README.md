@@ -11,6 +11,21 @@ This experiment trains a 9-expert fair134 AS global-router OpticalMoE against a 
 - Distillation target: a 256-dimensional feature pooled from detector-plane intensity, never an intermediate complex field.
 - The electronic classifier is a small MLP. A separate training-only projector maps the 256-dimensional optical feature to the CLIP image-feature dimension.
 
+## End-to-end MoE baseline
+
+The folder also contains a controlled CE-only baseline for CIFAR10-gray and Imagenette-gray. It uses the same:
+
+- 9-expert fair134 AS global-router optical backbone;
+- trainable prompt amplitudes and phase biases;
+- five expert phase layers and 600x600 global FC phase;
+- detector-plane 16x16 grid feature;
+- 256-to-128-to-class MLP classifier;
+- dataset split, optimizer, phase dropout, seed, and training schedule.
+
+The baseline removes the CLIP teacher cache, feature projector, and cosine feature loss. Its only objective is label cross-entropy. This makes `end_to_end_optical_moe` the direct control for `feature_distilled_optical_moe`.
+
+The projector is training-only in the distilled model. Reports therefore include both `training_parameter_count` and `inference_parameter_count`; the distilled and baseline models have the same inference architecture.
+
 ## Optical Student
 
 The student uses the existing fair134 path:
@@ -56,3 +71,4 @@ pip install open_clip_torch
 
 Runs are written to `foundation_distillation/runs/<run_id>/`. Key files include checkpoints, epoch/final metrics, confusion matrix, feature similarity, expert usage, prompt weights, optical-energy diagnostics, light fields, prompt maps, and phase masks. Aggregate CSV files are rebuilt under `foundation_distillation/results/`.
 
+The end-to-end baseline does not require a teacher cache. Its runs are written into the same results tables with `experiment_variant=end_to_end_ce_baseline`, `teacher_type=none`, and `feature_distill_weight=0`.
