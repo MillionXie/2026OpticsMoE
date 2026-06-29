@@ -19,3 +19,5 @@ __pycache__/
 *.pyc
 
 *.pt
+*.zip
+_offline_packages

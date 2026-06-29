@@ -56,4 +56,4 @@ python foundation_distillation/scripts/build_distillation_tables.py \
   --out_dir foundation_distillation/results
 ```
 
-`--smoke_test` limits training and evaluation to one batch without changing the cached split definition. It also forces `num_workers=0`.
+`--smoke_test` limits training and evaluation to one batch without changing the cached split definition. It also uses `dataset.smoke_batch_size` (default 1) and forces `num_workers=0`.

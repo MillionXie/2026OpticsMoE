@@ -128,6 +128,7 @@ def main():
     if args.epochs is not None:
         config.setdefault("training", {})["epochs"] = int(args.epochs)
     if args.smoke_test:
+        config["dataset"]["batch_size"] = int(config["dataset"].get("smoke_batch_size", 1))
         apply_smoke_loader_overrides(config["dataset"])
         config.setdefault("training", {})["max_train_batches"] = 1
         config.setdefault("training", {}).setdefault("evaluation", {})["max_val_batches"] = 1

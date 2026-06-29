@@ -19,6 +19,7 @@ dataset:
   prefetch_factor: 4
   download: false
   smoke_test: false
+  smoke_batch_size: 1
   smoke_train_size: 64
   smoke_test_size: 32
   sampling_protocol:
@@ -146,4 +147,3 @@ visualization:
 
 reporting:
   rebuild_master_tables_after_run: true
-
