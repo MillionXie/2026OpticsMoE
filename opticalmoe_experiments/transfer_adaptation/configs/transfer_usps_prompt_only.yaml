@@ -24,8 +24,8 @@ target:
     input_size: 134
     grayscale: true
     val_split: 0.1
-    batch_size: 64
-    num_workers: 16
+    batch_size: 128
+    num_workers: 10
     pin_memory: auto
     persistent_workers: true
     prefetch_factor: 4
@@ -60,12 +60,12 @@ target_head:
   readout_type: optical_only
   normalize_detector_energy: true
   logit_scale: 10.0
-  input_norm: none
+  input_norm: layernorm #none
   norm_affine: false
   hidden_dim: 64
   hidden_layers: 0
   activation: relu
-  dropout: 0.0
+  dropout: 0.1
 
 optimizer:
   type: adamw
@@ -87,4 +87,3 @@ visualization:
 
 reporting:
   rebuild_master_tables_after_run: true
-

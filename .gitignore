@@ -17,3 +17,5 @@ figures
 
 __pycache__/
 *.pyc
+
+*.pt

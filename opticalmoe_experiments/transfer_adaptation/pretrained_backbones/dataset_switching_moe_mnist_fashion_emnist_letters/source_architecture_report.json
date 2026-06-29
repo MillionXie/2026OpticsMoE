@@ -1,0 +1,447 @@
+{
+  "model_type": "learnable_route_moe",
+  "task_names": [
+    "mnist",
+    "fashionmnist",
+    "emnist_letters"
+  ],
+  "task_num_classes": {
+    "mnist": 10,
+    "fashionmnist": 10,
+    "emnist_letters": 26
+  },
+  "shared_backbone": true,
+  "task_specific_prompt": true,
+  "task_specific_detector_readout": true,
+  "task_head_configs": {
+    "mnist": {
+      "detector_size": 32,
+      "detector_layout": "grid",
+      "normalize_detector_energy": true,
+      "readout_type": "optical_only",
+      "logit_scale": 10.0,
+      "hidden_dim": 64,
+      "activation": "gelu",
+      "input_norm": "layernorm",
+      "norm_affine": false,
+      "hidden_layers": 1,
+      "dropout": 0.1
+    },
+    "fashionmnist": {
+      "detector_size": 32,
+      "detector_layout": "grid",
+      "normalize_detector_energy": true,
+      "readout_type": "optical_only",
+      "logit_scale": 10.0,
+      "hidden_dim": 64,
+      "activation": "gelu",
+      "input_norm": "layernorm",
+      "norm_affine": false,
+      "hidden_layers": 1,
+      "dropout": 0.1
+    },
+    "emnist_letters": {
+      "detector_size": 32,
+      "detector_layout": "grid",
+      "normalize_detector_energy": true,
+      "readout_type": "optical_only",
+      "logit_scale": 10.0,
+      "hidden_dim": 64,
+      "activation": "gelu",
+      "input_norm": "layernorm",
+      "norm_affine": false,
+      "hidden_layers": 1,
+      "dropout": 0.1
+    }
+  },
+  "task_detector_configs": {
+    "mnist": {
+      "detector_size": 32,
+      "detector_layout": "grid",
+      "normalize_detector_energy": true
+    },
+    "fashionmnist": {
+      "detector_size": 32,
+      "detector_layout": "grid",
+      "normalize_detector_energy": true
+    },
+    "emnist_letters": {
+      "detector_size": 32,
+      "detector_layout": "grid",
+      "normalize_detector_energy": true
+    }
+  },
+  "task_readout_parameter_counts": {
+    "mnist": 0,
+    "fashionmnist": 0,
+    "emnist_letters": 0
+  },
+  "task_readout_shared": false,
+  "task_readout_modules_are_independent": true,
+  "optical_parameter_count": 1168020,
+  "prompt_parameter_count": 54,
+  "electronic_parameter_count": 0,
+  "total_parameter_count": 1168074,
+  "phase_dropout_config": {
+    "enabled": true,
+    "mode": "block_phase_bypass",
+    "expert_p": 0.05,
+    "global_fc_p": 0.05,
+    "block_size": 8,
+    "batch_shared": true,
+    "apply_to_experts": true,
+    "apply_to_global_fc": false,
+    "start_epoch": 10
+  },
+  "global_fc_phase_mode": "center_window",
+  "global_fc_phase_size": [
+    600,
+    600
+  ],
+  "global_fc_phase_region": [
+    200,
+    800,
+    200,
+    800
+  ],
+  "global_fc_padding_mode": "transparent",
+  "global_fc_padding_is_trainable": false,
+  "global_fc_parameter_count": 360000,
+  "layout": {
+    "num_experts": 9,
+    "grid_dim": 3,
+    "canvas_shape": [
+      1000,
+      1000
+    ],
+    "canvas_center": [
+      500,
+      500
+    ],
+    "input_size": 134,
+    "expert_size": 134,
+    "expert_pitch": 200,
+    "gap_px": 66,
+    "padding": 200,
+    "prompt_aperture_size": 600,
+    "expert_union_bounds": [
+      233,
+      767,
+      233,
+      767
+    ],
+    "expert_union_size": 534,
+    "active_window_size": 600,
+    "input_aperture": {
+      "name": "input",
+      "y0": 433,
+      "y1": 567,
+      "x0": 433,
+      "x1": 567,
+      "center": [
+        500,
+        500
+      ]
+    },
+    "prompt_aperture": {
+      "name": "prompt",
+      "y0": 200,
+      "y1": 800,
+      "x0": 200,
+      "x1": 800,
+      "center": [
+        500,
+        500
+      ]
+    },
+    "active_window_aperture": {
+      "name": "active_window",
+      "y0": 200,
+      "y1": 800,
+      "x0": 200,
+      "x1": 800,
+      "center": [
+        500,
+        500
+      ]
+    },
+    "expert_centers": [
+      [
+        300,
+        300
+      ],
+      [
+        300,
+        500
+      ],
+      [
+        300,
+        700
+      ],
+      [
+        500,
+        300
+      ],
+      [
+        500,
+        500
+      ],
+      [
+        500,
+        700
+      ],
+      [
+        700,
+        300
+      ],
+      [
+        700,
+        500
+      ],
+      [
+        700,
+        700
+      ]
+    ],
+    "expert_apertures": [
+      {
+        "name": "E00",
+        "y0": 233,
+        "y1": 367,
+        "x0": 233,
+        "x1": 367,
+        "center": [
+          300,
+          300
+        ]
+      },
+      {
+        "name": "E01",
+        "y0": 233,
+        "y1": 367,
+        "x0": 433,
+        "x1": 567,
+        "center": [
+          300,
+          500
+        ]
+      },
+      {
+        "name": "E02",
+        "y0": 233,
+        "y1": 367,
+        "x0": 633,
+        "x1": 767,
+        "center": [
+          300,
+          700
+        ]
+      },
+      {
+        "name": "E10",
+        "y0": 433,
+        "y1": 567,
+        "x0": 233,
+        "x1": 367,
+        "center": [
+          500,
+          300
+        ]
+      },
+      {
+        "name": "E11",
+        "y0": 433,
+        "y1": 567,
+        "x0": 433,
+        "x1": 567,
+        "center": [
+          500,
+          500
+        ]
+      },
+      {
+        "name": "E12",
+        "y0": 433,
+        "y1": 567,
+        "x0": 633,
+        "x1": 767,
+        "center": [
+          500,
+          700
+        ]
+      },
+      {
+        "name": "E20",
+        "y0": 633,
+        "y1": 767,
+        "x0": 233,
+        "x1": 367,
+        "center": [
+          700,
+          300
+        ]
+      },
+      {
+        "name": "E21",
+        "y0": 633,
+        "y1": 767,
+        "x0": 433,
+        "x1": 567,
+        "center": [
+          700,
+          500
+        ]
+      },
+      {
+        "name": "E22",
+        "y0": 633,
+        "y1": 767,
+        "x0": 633,
+        "x1": 767,
+        "center": [
+          700,
+          700
+        ]
+      }
+    ],
+    "expert_phase_params_per_layer": 161604,
+    "baseline_4expert_200_phase_params_per_layer": 160000
+  },
+  "expert_union_size": 534,
+  "active_window_size": 600,
+  "active_window_region": {
+    "name": "active_window",
+    "y0": 200,
+    "y1": 800,
+    "x0": 200,
+    "x1": 800,
+    "center": [
+      500,
+      500
+    ]
+  },
+  "prompt_aperture_region": {
+    "name": "prompt",
+    "y0": 200,
+    "y1": 800,
+    "x0": 200,
+    "x1": 800,
+    "center": [
+      500,
+      500
+    ]
+  },
+  "prompt_trainable_type": "channel_amplitude_and_phase_bias",
+  "prompt_trainable_pixelwise": false,
+  "prompt_fixed_lens_grating_buffers_are_not_counted_as_parameters": true,
+  "prompt_channel_table": [
+    {
+      "index": 0,
+      "expert_id": "E00",
+      "dx_px": -200.0,
+      "dy_px": -200.0,
+      "fx_cycles_per_m": -15037.593984962403,
+      "fy_cycles_per_m": -15037.593984962403,
+      "grating_period_x_px": 8.312500000000002,
+      "grating_period_y_px": 8.312500000000002,
+      "predicted_shift_x_px": -200.0,
+      "predicted_shift_y_px": -200.0
+    },
+    {
+      "index": 1,
+      "expert_id": "E01",
+      "dx_px": 0.0,
+      "dy_px": -200.0,
+      "fx_cycles_per_m": 0.0,
+      "fy_cycles_per_m": -15037.593984962403,
+      "grating_period_x_px": Infinity,
+      "grating_period_y_px": 8.312500000000002,
+      "predicted_shift_x_px": 0.0,
+      "predicted_shift_y_px": -200.0
+    },
+    {
+      "index": 2,
+      "expert_id": "E02",
+      "dx_px": 200.0,
+      "dy_px": -200.0,
+      "fx_cycles_per_m": 15037.593984962403,
+      "fy_cycles_per_m": -15037.593984962403,
+      "grating_period_x_px": 8.312500000000002,
+      "grating_period_y_px": 8.312500000000002,
+      "predicted_shift_x_px": 200.0,
+      "predicted_shift_y_px": -200.0
+    },
+    {
+      "index": 3,
+      "expert_id": "E10",
+      "dx_px": -200.0,
+      "dy_px": 0.0,
+      "fx_cycles_per_m": -15037.593984962403,
+      "fy_cycles_per_m": 0.0,
+      "grating_period_x_px": 8.312500000000002,
+      "grating_period_y_px": Infinity,
+      "predicted_shift_x_px": -200.0,
+      "predicted_shift_y_px": 0.0
+    },
+    {
+      "index": 4,
+      "expert_id": "E11",
+      "dx_px": 0.0,
+      "dy_px": 0.0,
+      "fx_cycles_per_m": 0.0,
+      "fy_cycles_per_m": 0.0,
+      "grating_period_x_px": Infinity,
+      "grating_period_y_px": Infinity,
+      "predicted_shift_x_px": 0.0,
+      "predicted_shift_y_px": 0.0
+    },
+    {
+      "index": 5,
+      "expert_id": "E12",
+      "dx_px": 200.0,
+      "dy_px": 0.0,
+      "fx_cycles_per_m": 15037.593984962403,
+      "fy_cycles_per_m": 0.0,
+      "grating_period_x_px": 8.312500000000002,
+      "grating_period_y_px": Infinity,
+      "predicted_shift_x_px": 200.0,
+      "predicted_shift_y_px": 0.0
+    },
+    {
+      "index": 6,
+      "expert_id": "E20",
+      "dx_px": -200.0,
+      "dy_px": 200.0,
+      "fx_cycles_per_m": -15037.593984962403,
+      "fy_cycles_per_m": 15037.593984962403,
+      "grating_period_x_px": 8.312500000000002,
+      "grating_period_y_px": 8.312500000000002,
+      "predicted_shift_x_px": -200.0,
+      "predicted_shift_y_px": 200.0
+    },
+    {
+      "index": 7,
+      "expert_id": "E21",
+      "dx_px": 0.0,
+      "dy_px": 200.0,
+      "fx_cycles_per_m": 0.0,
+      "fy_cycles_per_m": 15037.593984962403,
+      "grating_period_x_px": Infinity,
+      "grating_period_y_px": 8.312500000000002,
+      "predicted_shift_x_px": 0.0,
+      "predicted_shift_y_px": 200.0
+    },
+    {
+      "index": 8,
+      "expert_id": "E22",
+      "dx_px": 200.0,
+      "dy_px": 200.0,
+      "fx_cycles_per_m": 15037.593984962403,
+      "fy_cycles_per_m": 15037.593984962403,
+      "grating_period_x_px": 8.312500000000002,
+      "grating_period_y_px": 8.312500000000002,
+      "predicted_shift_x_px": 200.0,
+      "predicted_shift_y_px": 200.0
+    }
+  ]
+}
