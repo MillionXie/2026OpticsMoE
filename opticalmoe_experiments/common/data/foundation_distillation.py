@@ -14,6 +14,8 @@ from .loader_utils import dataloader_kwargs
 
 CLIP_IMAGE_MEAN = (0.48145466, 0.4578275, 0.40821073)
 CLIP_IMAGE_STD = (0.26862954, 0.26130258, 0.27577711)
+DINOV2_IMAGE_MEAN = (0.485, 0.456, 0.406)
+DINOV2_IMAGE_STD = (0.229, 0.224, 0.225)
 
 
 class IndexedGrayDataset(Dataset):
@@ -95,6 +97,7 @@ class CachedDistillationBundle:
     num_classes: int
     class_names: List[str]
     teacher_feature_dim: int
+    teacher_metadata: Dict
 
 
 def create_distillation_datasets(dataset_cfg: Dict, seed: int = 7) -> DistillationDatasetBundle:
@@ -112,8 +115,26 @@ def create_distillation_datasets(dataset_cfg: Dict, seed: int = 7) -> Distillati
     )
 
 
-def teacher_input_from_student_gray(images: torch.Tensor, image_size: int = 224, normalize: bool = True) -> torch.Tensor:
-    """Build CLIP input from exactly the same grayscale information as the student."""
+def teacher_input_from_student_gray(
+    images: torch.Tensor,
+    teacher_cfg: Optional[Mapping] = None,
+    image_size: Optional[int] = None,
+    normalize: bool = True,
+) -> torch.Tensor:
+    """Build teacher input from exactly the same grayscale student information."""
+    if isinstance(teacher_cfg, (int, float)):
+        image_size = int(teacher_cfg)
+        teacher_cfg = None
+    cfg = dict(teacher_cfg or {})
+    teacher_type = str(cfg.get("type", cfg.get("teacher_type", "clip_image_encoder"))).lower()
+    if image_size is None:
+        image_size = int(cfg.get("teacher_image_size", 224))
+    if teacher_type == "dinov2_image_encoder":
+        default_mean, default_std = DINOV2_IMAGE_MEAN, DINOV2_IMAGE_STD
+    else:
+        default_mean, default_std = CLIP_IMAGE_MEAN, CLIP_IMAGE_STD
+    image_mean = cfg.get("teacher_image_mean", default_mean)
+    image_std = cfg.get("teacher_image_std", default_std)
     images = torch.as_tensor(images, dtype=torch.float32)
     if images.ndim == 3:
         images = images.unsqueeze(0)
@@ -122,8 +143,8 @@ def teacher_input_from_student_gray(images: torch.Tensor, image_size: int = 224,
     images = F.interpolate(images, size=(int(image_size), int(image_size)), mode="bicubic", align_corners=False)
     images = images.clamp(0.0, 1.0).repeat(1, 3, 1, 1)
     if normalize:
-        mean = images.new_tensor(CLIP_IMAGE_MEAN).view(1, 3, 1, 1)
-        std = images.new_tensor(CLIP_IMAGE_STD).view(1, 3, 1, 1)
+        mean = images.new_tensor(image_mean).view(1, 3, 1, 1)
+        std = images.new_tensor(image_std).view(1, 3, 1, 1)
         images = (images - mean) / std
     return images
 
@@ -153,6 +174,13 @@ def dataset_config_hash(dataset_cfg: Dict, teacher_cfg: Dict, seed: int) -> str:
         },
         "seed": int(seed),
     }
+    if teacher_cfg.get("type") == "dinov2_image_encoder":
+        relevant["teacher"].update(
+            {
+                "backend": teacher_cfg.get("backend", "transformers"),
+                "feature_type": teacher_cfg.get("feature_type", "cls"),
+            }
+        )
     encoded = json.dumps(relevant, sort_keys=True, separators=(",", ":"), default=str).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
 
@@ -228,4 +256,5 @@ def create_cached_distillation_loaders(
         num_classes=datasets.num_classes,
         class_names=datasets.class_names,
         teacher_feature_dim=int(metadata["teacher_feature_dim"]),
+        teacher_metadata=dict(metadata),
     )

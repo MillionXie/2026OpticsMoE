@@ -43,7 +43,7 @@ def test_all_new_training_configs_use_fast120_520():
             for dataset in _dataset_blocks(config):
                 assert dataset.get("input_size") == 120, path
             checked += 1
-    assert checked == 41
+    assert checked == 43
 
 
 def test_transfer_source_config_remains_legacy():

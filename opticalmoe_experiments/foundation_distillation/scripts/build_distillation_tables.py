@@ -19,6 +19,17 @@ TABLES = {
     "expert_usage": "master_distillation_expert_usage.csv",
 }
 
+TEACHER_FIELDS = (
+    "teacher_type",
+    "teacher_backend",
+    "teacher_model_name",
+    "feature_type",
+    "teacher_feature_dim",
+    "teacher_input_mode",
+    "final_feature_cosine",
+    "final_test_acc",
+)
+
 
 def rebuild_distillation_tables(runs_dir, out_dir):
     runs_dir, out_dir = Path(runs_dir), Path(out_dir)
@@ -28,7 +39,12 @@ def rebuild_distillation_tables(runs_dir, out_dir):
         rows = []
         for path in sorted(runs_dir.glob(f"*/summary_for_master/{key}_rows.json")):
             payload = json.loads(path.read_text(encoding="utf-8"))
-            rows.extend(payload if isinstance(payload, list) else [payload])
+            loaded_rows = payload if isinstance(payload, list) else [payload]
+            for row in loaded_rows:
+                if key in {"runs", "final_metrics", "model_params"}:
+                    for field in TEACHER_FIELDS:
+                        row.setdefault(field, "")
+            rows.extend(loaded_rows)
         write_rows(out_dir / filename, rows)
         counts[key] = len(rows)
     return counts

@@ -22,11 +22,11 @@ from common.data.loader_utils import apply_smoke_loader_overrides, dataloader_kw
 from common.utils.config import load_yaml, save_json
 from common.utils.seed import choose_device, set_seed
 from foundation_distillation.runtime import resolve_cache_dir
-from foundation_distillation.teacher import load_clip_image_encoder
+from foundation_distillation.teacher import load_frozen_image_teacher
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Build frozen CLIP image feature cache.")
+    parser = argparse.ArgumentParser(description="Build a frozen image-teacher feature cache.")
     parser.add_argument("--config", required=True)
     parser.add_argument("--device", default=None)
     parser.add_argument("--smoke_test", action="store_true")
@@ -35,13 +35,15 @@ def parse_args():
 
 
 @torch.no_grad()
-def encode_split(dataset, teacher, device, dataset_cfg):
+def encode_split(dataset, teacher, device, dataset_cfg, teacher_cfg=None, teacher_info=None):
     loader_cfg = dict(dataset_cfg)
     loader_cfg["batch_size"] = int(dataset_cfg.get("teacher_cache_batch_size", dataset_cfg.get("batch_size", 64)))
     loader = DataLoader(dataset, **dataloader_kwargs(loader_cfg, shuffle=False))
     features, labels, indices = [], [], []
     for images, batch_labels, batch_indices in loader:
-        teacher_images = teacher_input_from_student_gray(images).to(device, non_blocking=True)
+        input_cfg = dict(teacher_cfg or {})
+        input_cfg.update(dict(teacher_info or {}))
+        teacher_images = teacher_input_from_student_gray(images, input_cfg).to(device, non_blocking=True)
         encoded = teacher(teacher_images)
         features.append(F.normalize(encoded.float(), dim=-1).cpu())
         labels.append(torch.as_tensor(batch_labels, dtype=torch.long).cpu())
@@ -58,10 +60,13 @@ def build_cache(config, device, overwrite=False):
     set_seed(seed)
     dataset_cfg = config["dataset"]
     teacher_cfg = config["teacher"]
-    if teacher_cfg.get("type", "clip_image_encoder") != "clip_image_encoder":
-        raise NotImplementedError("Only teacher.type=clip_image_encoder is implemented in v1; DINOv2 is reserved for later.")
+    teacher_type = str(teacher_cfg.get("type", "clip_image_encoder"))
+    if teacher_type not in {"clip_image_encoder", "dinov2_image_encoder"}:
+        raise ValueError(
+            f"Unknown teacher.type={teacher_type!r}; expected clip_image_encoder or dinov2_image_encoder."
+        )
     if not bool(teacher_cfg.get("freeze", True)):
-        raise ValueError("The CLIP image encoder must remain frozen.")
+        raise ValueError("The image teacher must remain frozen.")
     if teacher_cfg.get("input_mode") != "grayscale_replicated_rgb":
         raise ValueError("First-version distillation requires teacher.input_mode=grayscale_replicated_rgb.")
     datasets = create_distillation_datasets(dataset_cfg, seed=seed)
@@ -70,7 +75,7 @@ def build_cache(config, device, overwrite=False):
     existing = [cache_dir / f"{split}_features.pt" for split in ("train", "val", "test")]
     if not overwrite and any(path.exists() for path in existing):
         raise FileExistsError(f"Teacher cache already exists under {cache_dir}; pass --overwrite to replace it.")
-    teacher, backend = load_clip_image_encoder(teacher_cfg.get("model_name", "ViT-B/32"), device)
+    teacher, teacher_info = load_frozen_image_teacher(teacher_cfg, device)
     payloads = {}
     for split, dataset in (
         ("train", datasets.train_dataset),
@@ -78,24 +83,32 @@ def build_cache(config, device, overwrite=False):
         ("test", datasets.test_dataset),
     ):
         print(f"encoding {split}: {len(dataset)} grayscale samples")
-        payload = encode_split(dataset, teacher, device, dataset_cfg)
+        payload = encode_split(
+            dataset,
+            teacher,
+            device,
+            dataset_cfg,
+            teacher_cfg=teacher_cfg,
+            teacher_info=teacher_info,
+        )
         payload["split"] = split
         torch.save(payload, cache_dir / f"{split}_features.pt")
         payloads[split] = payload
     teacher_dim = int(payloads["train"]["features"].shape[1])
     metadata = {
-        "teacher_type": teacher_cfg.get("type", "clip_image_encoder"),
-        "teacher_model_name": teacher_cfg.get("model_name", "ViT-B/32"),
-        "teacher_backend": backend,
+        "teacher_type": teacher_info["teacher_type"],
+        "teacher_model_name": teacher_info["teacher_model_name"],
+        "teacher_backend": teacher_info["teacher_backend"],
+        "feature_type": teacher_info["feature_type"],
         "dataset_name": dataset_cfg.get("name"),
-        "input_mode": "grayscale_replicated_rgb",
+        "input_mode": teacher_info["input_mode"],
         "teacher_feature_dim": teacher_dim,
         "num_train": len(datasets.train_dataset),
         "num_val": len(datasets.val_dataset),
         "num_test": len(datasets.test_dataset),
         "config_hash_or_summary": dataset_config_hash(dataset_cfg, teacher_cfg, seed),
         "class_names": datasets.class_names,
-        "teacher_text_encoder_used": False,
+        "teacher_text_encoder_used": teacher_info["teacher_text_encoder_used"],
         "features_are_l2_normalized": True,
     }
     save_json(metadata, cache_dir / "metadata.json")

@@ -1,15 +1,16 @@
 # Foundation Image-Feature Distillation
 
-This experiment trains a 9-expert `fast120_520` AS global-router OpticalMoE against a frozen CLIP image encoder. It is isolated from the legacy `opticalmoe/` code and reuses the validated propagation modules in `opticalmoe_experiments/common/`.
+This experiment trains a 9-expert `fast120_520` AS global-router OpticalMoE against a frozen image encoder. It supports CLIP and DINOv2 feature teachers and reuses the validated propagation modules in `opticalmoe_experiments/common/`.
 
 ## Scope
 
 - Datasets: CIFAR10 grayscale and Imagenette grayscale.
-- Teacher: frozen CLIP image encoder (`ViT-B/32`) only.
-- No CLIP text encoder, text features, zero-shot logits, or DINOv2 backend.
-- Both teacher and student receive the same grayscale information. The student sees one optical-amplitude channel at 120x120. The teacher sees that grayscale information resized by CLIP preprocessing to 224x224 and replicated to three channels.
+- Teachers: frozen CLIP image encoder (`ViT-B/32`) or frozen DINOv2 image encoder (`facebook/dinov2-small`).
+- No text encoder, text features, zero-shot logits, teacher classification head, or logits distillation.
+- DINOv2 defaults to its normalized CLS token; `patch_mean` is also supported.
+- Teacher and student receive the same grayscale information. The student sees one optical-amplitude channel at 120x120; teacher input replicates that grayscale image to three channels and applies backend-specific resize/normalization.
 - Distillation target: a 256-dimensional feature pooled from detector-plane intensity, never an intermediate complex field.
-- The electronic classifier is a small MLP. A separate training-only projector maps the 256-dimensional optical feature to the CLIP image-feature dimension.
+- The electronic classifier is a small MLP. A separate training-only projector maps the 256-dimensional optical feature to the cached teacher-feature dimension.
 
 ## End-to-end MoE baseline
 
@@ -46,8 +47,8 @@ input amplitude
 The feature detector optionally normalizes its pooled cells by total detector energy. The resulting 256 values feed both the classifier and the distillation projector. Teacher features are not used at inference time.
 
 The student propagation canvas is `520 x 520`, input/expert size is `120`,
-pitch is `150`, and prompt/global FC use `[35:485, 35:485]`. CLIP teacher
-preprocessing remains `224 x 224`; it is independent of student canvas size.
+pitch is `150`, and prompt/global FC use `[35:485, 35:485]`. Teacher
+preprocessing remains independent of student canvas size.
 Explicit `fair134_1000` configs remain loadable for legacy reproduction.
 
 ## Imagenette Layout
@@ -64,13 +65,23 @@ The default config uses `download: false`. Set it to `true` to download the offi
 
 ## Cache Contract
 
-Build the teacher cache before training. Each split file stores normalized features, labels, and deterministic split-local indices. `metadata.json` records dataset split sizes, teacher model, feature dimension, class names, grayscale input mode, and a configuration hash. Training rejects stale or misaligned caches by default.
+Build the teacher cache before training. Each split file stores L2-normalized features, labels, and deterministic split-local indices. `metadata.json` records dataset split sizes, teacher type/backend/model, feature type and dimension, class names, grayscale input mode, and a configuration hash. CLIP and DINOv2 use the same cache payload format, so the training script does not branch on teacher type. Training rejects stale or misaligned caches by default.
 
 The CLIP dependency is optional for the rest of the repository. Install `open_clip_torch` to build caches:
 
 ```text
 pip install open_clip_torch
 ```
+
+DINOv2 uses the optional Hugging Face transformers backend:
+
+```text
+pip install transformers
+```
+
+The default DINOv2 model is `facebook/dinov2-small` with
+`feature_type: cls`. The image encoder remains in `eval()` and all of its
+parameters have `requires_grad=False` while cache features are generated.
 
 ## Outputs
 

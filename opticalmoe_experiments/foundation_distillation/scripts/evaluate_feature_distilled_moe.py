@@ -57,6 +57,12 @@ def main():
     predictions, targets, similarities = predict_distillation(model, bundle.test_loader, device, max_batches=max_test_batches)
     payload = {
         "checkpoint": str(checkpoint),
+        "teacher_type": config["teacher"].get("type"),
+        "teacher_backend": config["teacher"].get("resolved_backend", config["teacher"].get("backend", "auto")),
+        "teacher_model_name": config["teacher"].get("model_name"),
+        "feature_type": config["teacher"].get("resolved_feature_type", config["teacher"].get("feature_type", "image_embedding")),
+        "teacher_input_mode": config["teacher"].get("input_mode"),
+        "teacher_feature_dim": int(bundle.teacher_feature_dim),
         "test_acc": metrics["acc"],
         "test_loss": metrics["total_loss"],
         "mean_feature_cosine": float(similarities.mean().item()),

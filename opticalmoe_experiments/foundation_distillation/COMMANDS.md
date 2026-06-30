@@ -3,7 +3,8 @@
 Run these commands from `opticalmoe_experiments/`.
 
 The student configs use `fast120_520` (`520` canvas, `120` input/expert,
-`450` prompt/global-FC window). CLIP teacher preprocessing remains `224 x 224`.
+`450` prompt/global-FC window). Teacher preprocessing is backend-specific and
+does not change student geometry.
 
 ## CIFAR10
 
@@ -71,6 +72,48 @@ python foundation_distillation/scripts/train_end_to_end_moe.py \
   --run_name cifar10_gray_end_to_end_moe_smoke \
   --epochs 1 \
   --smoke_test \
+  --device cuda
+```
+
+## DINOv2 Feature Distillation
+
+Install the optional backend:
+
+```bash
+pip install transformers
+```
+
+Build the CIFAR10 DINOv2 cache:
+
+```bash
+python foundation_distillation/scripts/build_teacher_feature_cache.py \
+  --config foundation_distillation/configs/cifar10_gray_dinov2_vits14_feature_distill_moe.yaml \
+  --device cuda
+```
+
+Train CIFAR10 with cached DINOv2 features:
+
+```bash
+python foundation_distillation/scripts/train_feature_distilled_moe.py \
+  --config foundation_distillation/configs/cifar10_gray_dinov2_vits14_feature_distill_moe.yaml \
+  --run_name cifar10_gray_dinov2_vits14_feature_distill_seed7 \
+  --device cuda
+```
+
+Build the Imagenette DINOv2 cache:
+
+```bash
+python foundation_distillation/scripts/build_teacher_feature_cache.py \
+  --config foundation_distillation/configs/imagenette_gray_dinov2_vits14_feature_distill_moe.yaml \
+  --device cuda
+```
+
+Train Imagenette with cached DINOv2 features:
+
+```bash
+python foundation_distillation/scripts/train_feature_distilled_moe.py \
+  --config foundation_distillation/configs/imagenette_gray_dinov2_vits14_feature_distill_moe.yaml \
+  --run_name imagenette_gray_dinov2_vits14_feature_distill_seed7 \
   --device cuda
 ```
 

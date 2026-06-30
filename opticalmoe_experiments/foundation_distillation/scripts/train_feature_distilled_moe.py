@@ -151,6 +151,15 @@ def main():
     bundle = create_cached_distillation_loaders(
         config["dataset"], config["teacher"], config["teacher_cache"], seed=seed
     )
+    teacher_metadata = dict(getattr(bundle, "teacher_metadata", {}) or {})
+    if teacher_metadata:
+        config["teacher"]["resolved_backend"] = teacher_metadata.get(
+            "teacher_backend", config["teacher"].get("backend", "auto")
+        )
+        config["teacher"]["resolved_feature_type"] = teacher_metadata.get(
+            "feature_type", config["teacher"].get("feature_type", "image_embedding")
+        )
+        config["teacher"]["teacher_feature_dim"] = int(bundle.teacher_feature_dim)
     loader_summary = loader_summary_from_loaders(bundle.train_loader, bundle.val_loader, bundle.test_loader, config["dataset"])
     print(f"device: {device}")
     print_loader_summary(loader_summary, prefix=str(config["dataset"].get("name")))
@@ -253,7 +262,9 @@ def main():
         "dataset_name": config["dataset"].get("name"),
         "experiment_variant": "feature_distillation",
         "teacher_type": config["teacher"].get("type"),
+        "teacher_backend": config["teacher"].get("resolved_backend", config["teacher"].get("backend", "auto")),
         "teacher_model_name": config["teacher"].get("model_name"),
+        "feature_type": config["teacher"].get("resolved_feature_type", config["teacher"].get("feature_type", "image_embedding")),
         "teacher_input_mode": config["teacher"].get("input_mode"),
         "student_model_type": config.get("student", {}).get("model_type"),
         "feature_detector_type": config.get("feature_detector", {}).get("type"),

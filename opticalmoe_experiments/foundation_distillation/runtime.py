@@ -237,8 +237,13 @@ def architecture_payload(model, config: Dict, dataset_name: str, teacher_cfg: Di
         "experiment_variant": "feature_distillation",
         "dataset_name": dataset_name,
         "teacher_type": teacher_cfg.get("type"),
+        "teacher_backend": teacher_cfg.get("resolved_backend", teacher_cfg.get("backend", "auto")),
         "teacher_model_name": teacher_cfg.get("model_name"),
         "teacher_input_mode": teacher_cfg.get("input_mode"),
+        "feature_type": teacher_cfg.get(
+            "resolved_feature_type",
+            teacher_cfg.get("feature_type", "image_embedding" if teacher_cfg.get("type") == "clip_image_encoder" else "cls"),
+        ),
         "teacher_text_encoder_used": False,
         "geometry_profile": layout.geometry_profile,
         "canvas_size": layout.canvas_size,

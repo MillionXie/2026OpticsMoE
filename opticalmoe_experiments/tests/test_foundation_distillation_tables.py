@@ -16,4 +16,16 @@ def test_distillation_master_tables_are_rebuilt(tmp_path):
     output = tmp_path / "results" / "master_distillation_final_metrics.csv"
     assert counts["final_metrics"] == 1
     assert output.is_file()
-    assert "run_a" in output.read_text(encoding="utf-8")
+    text = output.read_text(encoding="utf-8")
+    assert "run_a" in text
+    for field in (
+        "teacher_type",
+        "teacher_backend",
+        "teacher_model_name",
+        "feature_type",
+        "teacher_feature_dim",
+        "teacher_input_mode",
+        "final_feature_cosine",
+        "final_test_acc",
+    ):
+        assert field in text
