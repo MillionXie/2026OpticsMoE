@@ -19,7 +19,7 @@ dataset:
   smoke_test_size: 32
   sampling_protocol:
     enabled: true
-    total_size: 20000
+    total_size: 50000
     train_test_ratio:
     - 4
     - 1
@@ -52,7 +52,7 @@ optimizer:
   lr: 0.003
   weight_decay: 0.0005
 training:
-  epochs: 100
+  epochs: 200
   print_freq: 50
   save_interval_epochs: 10
   eval_interval_epochs: 1

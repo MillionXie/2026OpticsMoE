@@ -13,11 +13,11 @@ dataset:
   grayscale: true
   val_split: 0.1
   batch_size: 64
-  num_workers: 16
+  num_workers: 10
   pin_memory: auto
   persistent_workers: true
   prefetch_factor: 4
-  download: false
+  download: true
   smoke_test: false
   smoke_batch_size: 1
   smoke_train_size: 64
@@ -48,12 +48,12 @@ student:
   num_experts: 9
 
 layout:
-  canvas_height: 1000
-  canvas_width: 1000
+  canvas_height: 700
+  canvas_width: 700
   input_size: 134
   expert_size: 134
   expert_pitch: 200
-  padding: 200
+  padding: 50
   prompt_aperture_size: 600
 
 optics:
@@ -108,7 +108,7 @@ projector:
   hidden_dim: 256
   hidden_layers: 1
   activation: gelu
-  dropout: 0.0
+  dropout: 0.1
 
 loss:
   ce_weight: 1.0
@@ -117,19 +117,19 @@ loss:
 
 optimizer:
   type: adamw
-  lr: 0.001
+  lr: 0.003
   weight_decay: 0.0005
 
 regularization:
   phase_dropout:
     enabled: true
     mode: block_phase_bypass
-    expert_p: 0.05
-    global_fc_p: 0.0
+    expert_p: 0.1
+    global_fc_p: 0.1
     block_size: 8
     batch_shared: true
     apply_to_experts: true
-    apply_to_global_fc: false
+    apply_to_global_fc: true
     start_epoch: 10
 
 training:

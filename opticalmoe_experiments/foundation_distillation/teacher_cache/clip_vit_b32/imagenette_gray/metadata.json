@@ -1,0 +1,26 @@
+{
+  "teacher_type": "clip_image_encoder",
+  "teacher_model_name": "ViT-B/32",
+  "teacher_backend": "clip",
+  "dataset_name": "imagenette",
+  "input_mode": "grayscale_replicated_rgb",
+  "teacher_feature_dim": 512,
+  "num_train": 8523,
+  "num_val": 946,
+  "num_test": 3925,
+  "config_hash_or_summary": "5b720aa60d343e2122058dc78da545bc2b28ea8ec7d9d9cced833f8c3d797ae3",
+  "class_names": [
+    "n01440764",
+    "n02102040",
+    "n02979186",
+    "n03000684",
+    "n03028079",
+    "n03394916",
+    "n03417042",
+    "n03425413",
+    "n03445777",
+    "n03888257"
+  ],
+  "teacher_text_encoder_used": false,
+  "features_are_l2_normalized": true
+}
