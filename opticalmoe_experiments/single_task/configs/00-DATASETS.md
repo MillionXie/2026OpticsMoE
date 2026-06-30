@@ -6,24 +6,28 @@
 image -> grayscale -> resize to input_size x input_size -> tensor in [0,1]
 ```
 
-当前 fair134 光学 MoE 默认：
+当前新训练默认使用 `fast120_520`：
 
 ```text
-input_size = 134
-canvas_size = 1000
-expert_size = 134
-expert_pitch = 200
+input_size = 120
+canvas_size = 520
+expert_size = 120
+expert_pitch = 150
+prompt/global FC active window = 450
 ```
+
+旧 `fair134_1000`（canvas 1000、input/expert 134、pitch 200、active 600）
+只用于复现实验或加载旧 checkpoint。
 
 ## 数据集概览
 
 | 配置前缀 | torchvision 名称 | 原始尺寸 | 通道 | 类别数 | 官方 train/test | 当前默认处理 |
 | --- | --- | --- | --- | ---: | --- | --- |
-| `mnist` | MNIST | 28x28 | 灰度 | 10 | 60000 / 10000 | resize 到 134x134 |
-| `fashionmnist` | FashionMNIST | 28x28 | 灰度 | 10 | 60000 / 10000 | resize 到 134x134 |
-| `kmnist` | KMNIST | 28x28 | 灰度 | 10 | 60000 / 10000 | resize 到 134x134 |
-| `emnist_letters` | EMNIST split=letters | 28x28 | 灰度 | 26 | 124800 / 20800 | 修正方向，标签 1-26 转成 0-25，resize 到 134x134 |
-| `cifar10_gray` | CIFAR10 | 32x32 | RGB | 10 | 50000 / 10000 | 转灰度，再 resize 到 134x134 |
+| `mnist` | MNIST | 28x28 | 灰度 | 10 | 60000 / 10000 | resize 到 120x120 |
+| `fashionmnist` | FashionMNIST | 28x28 | 灰度 | 10 | 60000 / 10000 | resize 到 120x120 |
+| `kmnist` | KMNIST | 28x28 | 灰度 | 10 | 60000 / 10000 | resize 到 120x120 |
+| `emnist_letters` | EMNIST split=letters | 28x28 | 灰度 | 26 | 124800 / 20800 | 修正方向，标签 1-26 转成 0-25，resize 到 120x120 |
+| `cifar10_gray` | CIFAR10 | 32x32 | RGB | 10 | 50000 / 10000 | 转灰度，再 resize 到 120x120 |
 
 ## 难度建议
 

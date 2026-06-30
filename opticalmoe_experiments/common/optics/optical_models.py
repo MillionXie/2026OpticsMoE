@@ -326,9 +326,9 @@ class GeneralD2NNClassifier(nn.Module):
     def __init__(
         self,
         num_classes: int,
-        canvas_size: int = 1000,
-        input_size: int = 134,
-        d2nn_phase_grid_size: int = 402,
+        canvas_size: int = 520,
+        input_size: int = 120,
+        d2nn_phase_grid_size: int = 360,
         num_layers: int = 5,
         wavelength_m: float = 532e-9,
         pixel_size_m: float = 8e-6,
@@ -365,7 +365,7 @@ class GeneralD2NNClassifier(nn.Module):
         self.num_layers = int(num_layers)
         self.d2nn_phase_grid_size = int(d2nn_phase_grid_size)
         self.global_fc_phase_mode = str(global_fc_phase_mode)
-        self.global_fc_phase_size = int(global_fc_phase_size or min(min(self.canvas_shape), 600))
+        self.global_fc_phase_size = int(global_fc_phase_size or min(min(self.canvas_shape), 450))
         defaults = {"input_to_prompt": 0.20, "inter_layer": 0.05, "layer5_to_fc": 0.05, "fc_to_detector": 0.05}
         self.distances_m = dict(defaults)
         if distances_m:

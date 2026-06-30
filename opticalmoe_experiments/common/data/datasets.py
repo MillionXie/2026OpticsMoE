@@ -192,7 +192,7 @@ def _imagenette_root(root: str, download: bool) -> Path:
 def create_dataloaders(dataset_cfg: Dict, seed: int = 7) -> DataBundle:
     name = dataset_key(dataset_cfg.get("name", "mnist"))
     root = dataset_cfg.get("root", "./data")
-    input_size = int(dataset_cfg.get("input_size", 134))
+    input_size = int(dataset_cfg.get("input_size", 120))
     grayscale = bool(dataset_cfg.get("grayscale", True))
     val_split = float(dataset_cfg.get("val_split", 0.1))
     smoke_test = bool(dataset_cfg.get("smoke_test", False))

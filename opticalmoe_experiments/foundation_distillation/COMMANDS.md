@@ -2,6 +2,9 @@
 
 Run these commands from `opticalmoe_experiments/`.
 
+The student configs use `fast120_520` (`520` canvas, `120` input/expert,
+`450` prompt/global-FC window). CLIP teacher preprocessing remains `224 x 224`.
+
 ## CIFAR10
 
 ```bash

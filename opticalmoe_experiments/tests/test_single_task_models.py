@@ -23,7 +23,7 @@ def tiny_config(model_type="learnable_route_moe"):
             "canvas_size": 256,
             "expert_size": 24,
             "expert_pitch": 50,
-            "padding": 53,
+            "padding": 38,
             "prompt_aperture_size": 180,
             "num_layers": 1,
             "d2nn_phase_grid_size": 64,
@@ -85,4 +85,3 @@ def test_phase_dropout_config_and_schedule():
     settings = phase_dropout_settings(cfg)
     assert phase_dropout_active_for_epoch(settings, 1) is False
     assert phase_dropout_active_for_epoch(settings, 2) is True
-

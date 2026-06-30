@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Dict
 
+from ..config.layout_config import layout_from_config
 from ..utils.config import save_json, save_yaml
 from ..utils.filesystem import write_text
 from ..utils.git_info import collect_environment, collect_git_info
@@ -17,6 +18,79 @@ def save_run_manifest(run_dir: Path, config: Dict, command: str, repo_root: Path
     return {"git": git_info, "environment": env}
 
 
+def _region(aperture):
+    if aperture is None:
+        return ""
+    return [int(aperture.y0), int(aperture.y1), int(aperture.x0), int(aperture.x1)]
+
+
+def geometry_report_fields(model, config: Dict) -> Dict:
+    """Return consistent geometry and optical-phase accounting fields."""
+    layout = getattr(model, "layout", None)
+    if layout is None:
+        try:
+            layout = layout_from_config(config)
+        except (KeyError, TypeError, ValueError):
+            layout = None
+        canvas_shape = getattr(model, "canvas_shape", None)
+        model_input_size = getattr(model, "input_size", None)
+        if layout is not None and canvas_shape is not None:
+            if int(layout.canvas_size) != int(canvas_shape[0]) or (
+                model_input_size is not None and int(layout.input_size) != int(model_input_size)
+            ):
+                layout = None
+    global_fc = getattr(model, "global_fc", None)
+    global_fc_count = (
+        int(global_fc.trainable_parameter_count())
+        if global_fc is not None and hasattr(global_fc, "trainable_parameter_count")
+        else ""
+    )
+    expert_count = ""
+    if hasattr(model, "expert_phase_parameter_count"):
+        expert_count = int(model.expert_phase_parameter_count())
+    fields = {
+        "global_fc_phase_mode": getattr(global_fc, "phase_mode", ""),
+        "global_fc_phase_size": int(getattr(global_fc, "phase_size", (0,))[0]) if global_fc is not None else "",
+        "global_fc_phase_region": global_fc.phase_region() if global_fc is not None and hasattr(global_fc, "phase_region") else "",
+        "global_fc_padding_mode": getattr(global_fc, "padding_mode", ""),
+        "global_fc_padding_is_trainable": bool(getattr(global_fc, "phase_mode", "") == "full_canvas") if global_fc is not None else "",
+        "global_fc_parameter_count": global_fc_count,
+        "expert_phase_parameter_count": expert_count,
+    }
+    if layout is not None:
+        fields.update(
+            {
+                "geometry_profile": str(layout.geometry_profile),
+                "canvas_size": int(layout.canvas_size),
+                "input_size": int(layout.input_size),
+                "expert_size": int(layout.expert_size),
+                "expert_pitch": int(layout.expert_pitch),
+                "gap_px": int(layout.gap_px),
+                "expert_union_bounds": [int(value) for value in layout.expert_union_bounds],
+                "expert_union_size": int(layout.expert_union_size),
+                "active_window_size": int(layout.active_window_size),
+                "active_window_region": _region(layout.active_window_aperture),
+                "prompt_aperture_size": int(layout.prompt_aperture_size),
+                "prompt_aperture_region": _region(layout.prompt_aperture),
+            }
+        )
+    elif getattr(model, "canvas_shape", None) is not None:
+        canvas_size = int(model.canvas_shape[0])
+        input_size = int(getattr(model, "input_size", 0))
+        phase_size = fields.get("global_fc_phase_size", "")
+        profile = "fast120_520" if (canvas_size, input_size, phase_size) == (520, 120, 450) else "custom"
+        fields.update(
+            {
+                "geometry_profile": profile,
+                "canvas_size": canvas_size,
+                "input_size": input_size,
+                "active_window_size": phase_size,
+                "active_window_region": fields.get("global_fc_phase_region", ""),
+            }
+        )
+    return fields
+
+
 def architecture_report(model, config: Dict, run_dir: Path) -> Dict:
     model_cfg = config.get("model", {})
     readout_cfg = config.get("readout", {})
@@ -31,13 +105,14 @@ def architecture_report(model, config: Dict, run_dir: Path) -> Dict:
         "prompt_parameter_count": int(model.prompt_parameter_count()),
         "electronic_parameter_count": int(model.electronic_parameter_count()),
         "total_parameter_count": int(sum(p.numel() for p in model.parameters())),
+        **geometry_report_fields(model, config),
     }
     global_fc = getattr(model, "global_fc", None)
     if global_fc is not None:
         report.update(
             {
                 "global_fc_phase_mode": getattr(global_fc, "phase_mode", ""),
-                "global_fc_phase_size": list(getattr(global_fc, "phase_size", [])),
+                "global_fc_phase_size": int(getattr(global_fc, "phase_size", (0,))[0]),
                 "global_fc_phase_region": global_fc.phase_region() if hasattr(global_fc, "phase_region") else "",
                 "global_fc_padding_mode": getattr(global_fc, "padding_mode", ""),
                 "global_fc_padding_is_trainable": bool(getattr(global_fc, "phase_mode", "") == "full_canvas"),
@@ -58,8 +133,8 @@ def architecture_report(model, config: Dict, run_dir: Path) -> Dict:
                 "expert_union_bounds": getattr(layout, "expert_union_bounds", ""),
                 "expert_union_size": getattr(layout, "expert_union_size", ""),
                 "active_window_size": getattr(layout, "active_window_size", ""),
-                "active_window_region": getattr(layout, "active_window_aperture", None).to_dict() if getattr(layout, "active_window_aperture", None) else "",
-                "prompt_aperture_region": getattr(layout, "prompt_aperture", None).to_dict() if getattr(layout, "prompt_aperture", None) else "",
+                "active_window_region": _region(getattr(layout, "active_window_aperture", None)),
+                "prompt_aperture_region": _region(getattr(layout, "prompt_aperture", None)),
                 "prompt_trainable_type": "channel_amplitude_and_phase_bias",
                 "prompt_trainable_pixelwise": False,
                 "prompt_fixed_lens_grating_buffers_are_not_counted_as_parameters": True,
@@ -105,6 +180,7 @@ def architecture_report(model, config: Dict, run_dir: Path) -> Dict:
         "",
         f"- model_type: {report['model_type']}",
         f"- readout_type: {report['readout_type']}",
+        f"- geometry_profile: {report.get('geometry_profile', '')}",
         "- readout.dropout is electronic dropout only.",
         "- regularization.phase_dropout is optical phase-layer dropout.",
         f"- optical_parameter_count: {report['optical_parameter_count']}",
@@ -113,6 +189,9 @@ def architecture_report(model, config: Dict, run_dir: Path) -> Dict:
         f"- global_fc_phase_mode: {report.get('global_fc_phase_mode', '')}",
         f"- global_fc_parameter_count: {report.get('global_fc_parameter_count', '')}",
         f"- global_fc_padding_is_trainable: {report.get('global_fc_padding_is_trainable', '')}",
+        f"- expert_phase_parameter_count: {report.get('expert_phase_parameter_count', '')}",
+        f"- gap_px: {report.get('gap_px', '')}",
+        f"- active_window_region: {report.get('active_window_region', '')}",
     ]
     if model_type in {"learnable_route_moe", "fixed_route_moe"}:
         lines.extend(

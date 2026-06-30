@@ -290,7 +290,13 @@ def main():
     save_expert_usage(expert_rows, run_dir / "figures" / "expert_usage_heatmap.png")
     save_expert_usage(expert_rows, run_dir / "figures" / "prompt_weights.png")
     _save_artifacts(model, fixed_batch, run_dir, "final_epoch", visualization_enabled)
-    summary = {**final_metrics, "loader_summary": loader_summary, "architecture": architecture, "phase_dropout": dropout}
+    summary = {
+        **final_metrics,
+        **architecture,
+        "loader_summary": loader_summary,
+        "architecture": architecture,
+        "phase_dropout": dropout,
+    }
     save_json(summary, run_dir / "summary.json")
     save_json([summary], run_dir / "summary_for_master" / "runs_rows.json")
     save_json(epoch_rows, run_dir / "summary_for_master" / "epoch_metrics_rows.json")

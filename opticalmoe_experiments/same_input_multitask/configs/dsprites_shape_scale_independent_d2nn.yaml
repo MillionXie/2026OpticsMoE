@@ -7,10 +7,25 @@ experiment:
 model:
   type: independent_d2nn
   note: 'Supplemental baseline: one ordinary D2NN per task, not an upper bound.'
-  input_size: 134
-  canvas_size: 1000
-  d2nn_phase_grid_size: 256
+  input_size: 120
+  canvas_size: 520
+  d2nn_phase_grid_size: 360  # 360^2 = 129600, matching one fast120_520 MoE local-phase layer.
   d2nn_num_layers: 5
+layout:
+  geometry_profile: fast120_520
+  canvas_height: 520
+  canvas_width: 520
+  input_size: 120
+  expert_size: 120
+  expert_pitch: 150
+  padding: 35
+  prompt_aperture_size: 450
+
+optics:
+  global_fc_phase_mode: center_window
+  global_fc_phase_size: 450
+  global_fc_padding_mode: transparent
+
 training:
   mode: independent_same_input_baseline
   epochs: 200
@@ -45,7 +60,7 @@ training:
 dataset:
   name: dsprites
   root: ./data
-  input_size: 134
+  input_size: 120
   batch_size: 64
   num_workers: 16
   download: true

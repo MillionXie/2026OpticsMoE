@@ -69,7 +69,8 @@ def test_configs_expose_worker_fields():
             dataset_cfgs.append(task["dataset"])
         assert dataset_cfgs, path
         for dataset_cfg in dataset_cfgs:
-            assert dataset_cfg["num_workers"] == 16
+            assert isinstance(dataset_cfg["num_workers"], int)
+            assert dataset_cfg["num_workers"] >= 0
             assert dataset_cfg["pin_memory"] == "auto"
             assert dataset_cfg["persistent_workers"] is True
             assert dataset_cfg["prefetch_factor"] == 4

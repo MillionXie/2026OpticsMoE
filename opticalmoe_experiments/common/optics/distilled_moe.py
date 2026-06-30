@@ -173,6 +173,12 @@ class DetectorFeatureASGlobalRouterMoEClassifier(nn.Module):
     def optical_parameter_count(self) -> int:
         return int(self.optical_backbone.optical_parameter_count())
 
+    def expert_phase_parameter_count(self) -> int:
+        return int(self.optical_backbone.expert_phase_parameter_count())
+
+    def global_fc_parameter_count(self) -> int:
+        return int(self.optical_backbone.global_fc_parameter_count())
+
     def prompt_parameter_count(self) -> int:
         return int(self.optical_backbone.prompt_parameter_count())
 

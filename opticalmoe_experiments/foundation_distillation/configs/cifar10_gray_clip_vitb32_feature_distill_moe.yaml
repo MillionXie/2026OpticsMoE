@@ -9,7 +9,7 @@ experiment:
 dataset:
   name: cifar10
   root: ./data
-  input_size: 134
+  input_size: 120
   grayscale: true
   val_split: 0.1
   batch_size: 64
@@ -48,13 +48,14 @@ student:
   num_experts: 9
 
 layout:
-  canvas_height: 700
-  canvas_width: 700
-  input_size: 134
-  expert_size: 134
-  expert_pitch: 200
-  padding: 50
-  prompt_aperture_size: 600
+  geometry_profile: fast120_520
+  canvas_height: 520
+  canvas_width: 520
+  input_size: 120
+  expert_size: 120
+  expert_pitch: 150
+  padding: 35
+  prompt_aperture_size: 450
 
 optics:
   wavelength_m: 5.32e-7
@@ -69,7 +70,7 @@ optics:
   global_fc_phase_init: identity
   global_fc_init_std: 0.02
   global_fc_phase_mode: center_window
-  global_fc_phase_size: 600
+  global_fc_phase_size: 450
   global_fc_padding_mode: transparent
   distances_m:
     input_to_prompt: 0.20

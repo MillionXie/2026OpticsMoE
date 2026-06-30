@@ -2,6 +2,9 @@
 
 Run these from `opticalmoe_experiments/`.
 
+Transfer reconstructs the source model from the stored `source_config.yaml`.
+Do not replace a legacy `fair134_1000` source geometry with `fast120_520`.
+
 USPS smoke:
 
 ```bash
@@ -58,4 +61,3 @@ python transfer_adaptation/scripts/run_target_prompt_swap.py \
   --checkpoint best.pt \
   --device cuda
 ```
-

@@ -12,16 +12,16 @@ from common.reporting.run_manifest import architecture_report
 def test_general_d2nn_accounting_includes_global_fc():
     model = GeneralD2NNClassifier(
         num_classes=10,
-        canvas_size=1000,
-        input_size=134,
-        d2nn_phase_grid_size=402,
+        canvas_size=520,
+        input_size=120,
+        d2nn_phase_grid_size=360,
         num_layers=5,
         detector_size=8,
         readout_type="optical_only",
     )
-    assert model.d2nn_local_phase_parameter_count() == 5 * 402 * 402
-    assert model.d2nn_global_fc_parameter_count() == 600 * 600
-    assert model.optical_parameter_count() == 5 * 402 * 402 + 600 * 600
+    assert model.d2nn_local_phase_parameter_count() == 5 * 360 * 360
+    assert model.d2nn_global_fc_parameter_count() == 450 * 450
+    assert model.optical_parameter_count() == 5 * 360 * 360 + 450 * 450
     assert model.prompt_parameter_count() == 0
 
 

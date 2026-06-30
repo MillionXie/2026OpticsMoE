@@ -1,13 +1,13 @@
 # Foundation Image-Feature Distillation
 
-This experiment trains a 9-expert fair134 AS global-router OpticalMoE against a frozen CLIP image encoder. It is isolated from the legacy `opticalmoe/` code and reuses the validated propagation modules in `opticalmoe_experiments/common/`.
+This experiment trains a 9-expert `fast120_520` AS global-router OpticalMoE against a frozen CLIP image encoder. It is isolated from the legacy `opticalmoe/` code and reuses the validated propagation modules in `opticalmoe_experiments/common/`.
 
 ## Scope
 
 - Datasets: CIFAR10 grayscale and Imagenette grayscale.
 - Teacher: frozen CLIP image encoder (`ViT-B/32`) only.
 - No CLIP text encoder, text features, zero-shot logits, or DINOv2 backend.
-- Both teacher and student receive the same grayscale information. The student sees one optical-amplitude channel at 134x134. The teacher sees that exact grayscale tensor resized to 224x224 and replicated to three channels.
+- Both teacher and student receive the same grayscale information. The student sees one optical-amplitude channel at 120x120. The teacher sees that grayscale information resized by CLIP preprocessing to 224x224 and replicated to three channels.
 - Distillation target: a 256-dimensional feature pooled from detector-plane intensity, never an intermediate complex field.
 - The electronic classifier is a small MLP. A separate training-only projector maps the 256-dimensional optical feature to the CLIP image-feature dimension.
 
@@ -15,9 +15,9 @@ This experiment trains a 9-expert fair134 AS global-router OpticalMoE against a 
 
 The folder also contains a controlled CE-only baseline for CIFAR10-gray and Imagenette-gray. It uses the same:
 
-- 9-expert fair134 AS global-router optical backbone;
+- 9-expert `fast120_520` AS global-router optical backbone;
 - trainable prompt amplitudes and phase biases;
-- five expert phase layers and 600x600 global FC phase;
+- five expert phase layers and 450x450 global FC phase;
 - detector-plane 16x16 grid feature;
 - 256-to-128-to-class MLP classifier;
 - dataset split, optimizer, phase dropout, seed, and training schedule.
@@ -28,22 +28,27 @@ The projector is training-only in the distilled model. Reports therefore include
 
 ## Optical Student
 
-The student uses the existing fair134 path:
+The student uses the `fast120_520` path:
 
 ```text
 input amplitude
 -> AS input_to_prompt
--> complex-amplitude global router in the 600x600 prompt aperture
+-> complex-amplitude global router in the 450x450 prompt aperture
 -> AS prompt_to_expert
 -> hard 9-expert aperture
 -> five shared expert phase layers
--> windowed 600x600 global FC phase
+-> windowed 450x450 global FC phase
 -> AS detector propagation
 -> detector intensity
 -> 16x16 grid pooling
 ```
 
 The feature detector optionally normalizes its pooled cells by total detector energy. The resulting 256 values feed both the classifier and the distillation projector. Teacher features are not used at inference time.
+
+The student propagation canvas is `520 x 520`, input/expert size is `120`,
+pitch is `150`, and prompt/global FC use `[35:485, 35:485]`. CLIP teacher
+preprocessing remains `224 x 224`; it is independent of student canvas size.
+Explicit `fair134_1000` configs remain loadable for legacy reproduction.
 
 ## Imagenette Layout
 

@@ -35,7 +35,7 @@ Supported datasets:
 - EMNIST, default split `letters`
 - CIFAR10 grayscale
 
-All optical configs default to `input_size=134`. CIFAR10 is converted to
+All optical configs default to `input_size=120`. CIFAR10 is converted to
 single-channel grayscale before optical propagation.
 
 ## Dataset Size Controls
@@ -97,22 +97,16 @@ one-line maps. Commonly tuned parameters are visible under:
 
 ## Default MoE Geometry
 
-The default 9-expert setup is fair134:
+The default profile is `fast120_520`: canvas `520`, input/expert size `120`,
+expert pitch `150`, and outer padding `35`. Expert centers are
+`[110, 260, 410] x [110, 260, 410]`; their union is `[50:470, 50:470]` with
+size `420`. The prompt, active optical window, and trainable global FC phase
+all use `[35:485, 35:485]`, size `450`. Global-FC padding is transparent and
+not trainable.
 
-- `canvas_size=1000`
-- `input_size=134`
-- `expert_size=134`
-- `expert_pitch=200`
-- `padding=200`
-- `prompt_aperture_size=600`
-- expert centers: `[300, 500, 700] x [300, 500, 700]`
-
-`canvas_size=1000` is the propagation window. The trainable active optical
-window is the center `600 x 600` region, matching the prompt aperture
-`y=200:800, x=200:800`. For fair134, the 9 expert apertures occupy an expert
-union size of `534 x 534`, so the center `600 x 600` window covers the expert
-bank while leaving propagation padding outside. The padding region is
-transparent and is not trainable in the global FC phase mask.
+The explicit legacy profile `fair134_1000` remains supported for old
+checkpoints and reproduction. It uses canvas `1000`, input/expert `134`, pitch
+`200`, active window `600`, and padding `200`.
 
 The MoE code also supports `num_experts=4` with a 2x2 global-router layout.
 
@@ -134,9 +128,9 @@ The `target_local_phase_param_count` field in D2NN configs refers only to the
 5 local center-window phase masks. The actual optical parameter count also
 includes the center-window `global_fc` phase mask. For the default D2NN config:
 
-- local D2NN phase params: `5 * 402 * 402 = 808020`
-- center-window global FC params: `600 * 600 = 360000`
-- total optical params: `1168020`
+- local D2NN phase params: `5 * 360 * 360 = 648000`
+- center-window global FC params: `450 * 450 = 202500`
+- total optical params: `850500`
 
 D2NN phase masks are saved under `figures/phase_masks/<epoch>/` as
 `d2nn_phase_layer_*.png`, `d2nn_all_phase_layers.png`, and
@@ -181,7 +175,7 @@ disabled during evaluation.
 
 LeNet-5 is an electronic baseline. It does not save optical phase masks or
 optical energy rows, and it now adapts to the configured dataset input size
-instead of assuming `134 x 134`.
+instead of assuming a fixed input size.
 
 ## DataLoader Workers
 

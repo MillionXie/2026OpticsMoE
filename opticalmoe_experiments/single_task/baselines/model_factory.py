@@ -2,23 +2,14 @@ from typing import Dict
 
 import torch
 
+from common.config.layout_config import layout_from_config
 from common.optics.electronic_models import LeNet5Classifier
-from common.optics.expert_layout import ExpertLayout
 from common.optics.optical_models import ASGlobalRouterMoEClassifier, GeneralD2NNClassifier
 from common.training.phase_dropout import phase_dropout_settings
 
 
-def _layout_from_config(config: Dict) -> ExpertLayout:
-    model_cfg = config.get("model", {})
-    return ExpertLayout(
-        num_experts=int(model_cfg.get("num_experts", 9)),
-        canvas_size=int(model_cfg.get("canvas_size", 1000)),
-        input_size=int(model_cfg.get("input_size", 134)),
-        expert_size=int(model_cfg.get("expert_size", 134)),
-        expert_pitch=int(model_cfg.get("expert_pitch", 200)),
-        padding=int(model_cfg.get("padding", 200)),
-        prompt_aperture_size=int(model_cfg.get("prompt_aperture_size", 600)),
-    )
+def _layout_from_config(config: Dict):
+    return layout_from_config(config)
 
 
 def build_model(config: Dict, num_classes: int):
@@ -31,15 +22,16 @@ def build_model(config: Dict, num_classes: int):
     model_type = str(model_cfg.get("type", "learnable_route_moe")).lower()
 
     if model_type == "lenet5":
-        input_size = int(config.get("dataset", {}).get("input_size", model_cfg.get("input_size", 134)))
+        input_size = int(config.get("dataset", {}).get("input_size", model_cfg.get("input_size", 120)))
         return LeNet5Classifier(num_classes=num_classes, input_size=input_size)
 
     if model_type == "general_d2nn":
+        layout = _layout_from_config(config)
         return GeneralD2NNClassifier(
             num_classes=num_classes,
-            canvas_size=int(model_cfg.get("canvas_size", 1000)),
-            input_size=int(model_cfg.get("input_size", 134)),
-            d2nn_phase_grid_size=int(model_cfg.get("d2nn_phase_grid_size", 402)),
+            canvas_size=layout.canvas_size,
+            input_size=layout.input_size,
+            d2nn_phase_grid_size=int(model_cfg.get("d2nn_phase_grid_size", 360)),
             num_layers=int(model_cfg.get("d2nn_num_layers", model_cfg.get("num_layers", 5))),
             wavelength_m=float(optics_cfg.get("wavelength_m", 532e-9)),
             pixel_size_m=float(optics_cfg.get("pixel_size_m", 8e-6)),
@@ -48,7 +40,7 @@ def build_model(config: Dict, num_classes: int):
             phase_init=optics_cfg.get("expert_phase_init", "identity"),
             init_std=float(optics_cfg.get("expert_init_std", 0.02)),
             global_fc_phase_mode=optics_cfg.get("global_fc_phase_mode", "center_window"),
-            global_fc_phase_size=optics_cfg.get("global_fc_phase_size"),
+            global_fc_phase_size=optics_cfg.get("global_fc_phase_size", layout.active_window_size),
             global_fc_padding_mode=optics_cfg.get("global_fc_padding_mode", "transparent"),
             detector_size=int(detector_cfg.get("detector_size", 32)),
             detector_layout=detector_cfg.get("layout", "grid"),

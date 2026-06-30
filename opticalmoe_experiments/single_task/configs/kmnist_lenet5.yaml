@@ -8,7 +8,7 @@ experiment:
 dataset:
   name: kmnist
   root: ./data
-  input_size: 134
+  input_size: 120
   grayscale: true
   val_split: 0.1
   batch_size: 64
@@ -33,7 +33,7 @@ dataset:
   max_test_samples: null
 model:
   type: lenet5
-  input_size: 134
+  input_size: 120
 readout:
   type: electronic
 regularization:

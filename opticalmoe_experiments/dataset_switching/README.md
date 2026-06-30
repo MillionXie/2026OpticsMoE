@@ -44,23 +44,12 @@ training:
 The resolved per-task head configs are saved in `config_resolved.json`,
 `architecture_report.json`, and `summary.json`.
 
-The shared backbone is the successful 9-expert fair134 Angular-Spectrum global
-router:
-
-- `canvas_size=1000`
-- `input_size=134`
-- `expert_size=134`
-- `expert_pitch=200`
-- `padding=200`
-- `prompt_aperture_size=600`
-- expert centers `[300, 500, 700] x [300, 500, 700]`
-
-The `1000 x 1000` canvas is the propagation window. The active trainable
-optical window is the center `600 x 600` region (`y=200:800, x=200:800`), used
-by the prompt aperture and the default global FC phase mask. The 9 fair134
-expert apertures have an expert union size of `534 x 534`, so this active
-window covers the expert bank. The surrounding padding is transparent and not
-trainable in the global FC phase mask.
+The shared backbone now defaults to the `fast120_520` 9-expert
+Angular-Spectrum global router: canvas `520`, input/expert `120`, pitch `150`,
+centers `[110, 260, 410] x [110, 260, 410]`, and outer padding `35`. The expert
+union is `[50:470, 50:470]` (size `420`). Prompt and global FC use the center
+`[35:485, 35:485]` active window (size `450`), with transparent non-trainable
+padding outside. `fair134_1000` remains an explicit legacy profile.
 
 The expert entrance field is produced by AngularSpectrumPropagator from the
 prompt plane. The implementation does not use FFT convolution to synthesize the
@@ -85,27 +74,20 @@ MNIST D2NN + Fashion-MNIST D2NN + EMNIST-letters D2NN
 ```
 
 The relevant parameter comparison is therefore the sum of the three
-independent optical networks versus one shared three-task MoE. The default
-small independent geometry is:
+independent optical networks versus one shared three-task MoE. Current configs
+use:
 
 ```text
-propagation canvas: 400 x 400
-five local phase windows: 220 x 220
-one global-FC phase window: 220 x 220
-optical parameters per task: 5 * 220^2 + 220^2 = 290400
-planned three-task total: 871200
-MoE reference optical parameters: 1168020
-planned ratio: 0.746
+propagation canvas: 520 x 520
+five local phase windows: 360 x 360
+one global-FC phase window: 450 x 450
+optical parameters per task: 5 * 360^2 + 450^2 = 850500
 ```
 
-This is an approximate, compute-conscious comparison rather than an exact
-parameter match. A phase window near `255 x 255` would give about `390150`
-parameters per task and would match one third of the MoE more closely, but it
-is not the default because the `220` configuration is cheaper.
-
-The `400 x 400` canvas is only the Angular-Spectrum propagation window. Both
-the five local masks and the global-FC mask are trainable only in their center
-`220 x 220` windows; outside those windows is transparent propagation padding.
+The `360 x 360` local grid matches one complete MoE expert layer's local phase
+count (`9 * 120 * 120 = 129600`). Each independent network and the sum of all
+independent networks are reported from actual parameters; this is not claimed
+to be an exact group-level parameter match.
 
 Three standalone configs are provided so the networks can be trained
 independently or in parallel:
@@ -113,6 +95,9 @@ independently or in parallel:
 - `mnist_independent_d2nn_canvas400_grid220.yaml`
 - `fashionmnist_independent_d2nn_canvas400_grid220.yaml`
 - `emnist_letters_independent_d2nn_canvas400_grid220.yaml`
+
+These historical filenames are retained for command compatibility. Their
+resolved contents now use canvas `520`, local grid `360`, and global FC `450`.
 
 The combined `mnist_fashion_emnist_letters_independent_d2nn.yaml` remains
 available. It runs three fully separate models sequentially, and `--task`

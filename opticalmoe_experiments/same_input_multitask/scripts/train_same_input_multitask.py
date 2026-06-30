@@ -16,9 +16,10 @@ if str(EXPERIMENT_ROOT) not in sys.path:
 
 from common.data.dsprites_multitask import create_same_input_multitask_dataloaders
 from common.data.loader_utils import apply_smoke_loader_overrides, loader_summary_from_loaders, print_loader_summary
-from common.optics.expert_layout import ExpertLayout
+from common.config.layout_config import layout_from_config
 from common.optics.task_prompt_moe import SameInputSharedD2NNClassifier, SameInputTaskPromptMoEClassifier
 from common.reporting.metrics_writer import write_rows
+from common.reporting.run_manifest import geometry_report_fields
 from common.training.checkpointing import load_checkpoint, save_checkpoint
 from common.training.phase_dropout import phase_dropout_active_for_epoch, phase_dropout_settings
 from common.training.task_heads import resolve_same_input_task_heads
@@ -44,16 +45,7 @@ def parse_args():
 
 
 def _layout(config):
-    layout_cfg = config.get("layout", {})
-    return ExpertLayout(
-        num_experts=int(config.get("model", {}).get("num_experts", 9)),
-        canvas_size=int(layout_cfg.get("canvas_height", layout_cfg.get("canvas_size", 1000))),
-        input_size=int(layout_cfg.get("input_size", 134)),
-        expert_size=int(layout_cfg.get("expert_size", 134)),
-        expert_pitch=int(layout_cfg.get("expert_pitch", 200)),
-        padding=int(layout_cfg.get("padding", 200)),
-        prompt_aperture_size=int(layout_cfg.get("prompt_aperture_size", 600)),
-    )
+    return layout_from_config(config)
 
 
 def task_head_configs(config: Dict, task_names: Sequence[str]) -> Dict[str, Dict]:
@@ -118,13 +110,14 @@ def build_model(config: Dict, task_names: Sequence[str], task_num_classes: Dict[
             evanescent_mode=optics.get("evanescent_mode", "zero"),
         )
     if model_type == "shared_d2nn":
+        layout = _layout(config)
         return SameInputSharedD2NNClassifier(
             task_names=task_names,
             task_num_classes=task_num_classes,
             task_head_configs=task_head_configs(config, task_names),
-            canvas_size=int(model_cfg.get("canvas_size", config.get("layout", {}).get("canvas_height", 1000))),
-            input_size=int(model_cfg.get("input_size", config.get("layout", {}).get("input_size", 134))),
-            d2nn_phase_grid_size=int(model_cfg.get("d2nn_phase_grid_size", 402)),
+            canvas_size=layout.canvas_size,
+            input_size=layout.input_size,
+            d2nn_phase_grid_size=int(model_cfg.get("d2nn_phase_grid_size", 360)),
             num_layers=int(model_cfg.get("d2nn_num_layers", optics.get("num_layers", 5))),
             wavelength_m=float(optics.get("wavelength_m", 532e-9)),
             pixel_size_m=float(optics.get("pixel_size_m", 8e-6)),
@@ -133,7 +126,7 @@ def build_model(config: Dict, task_names: Sequence[str], task_num_classes: Dict[
             phase_init=optics.get("expert_phase_init", "identity"),
             init_std=float(optics.get("expert_init_std", 0.02)),
             global_fc_phase_mode=optics.get("global_fc_phase_mode", "center_window"),
-            global_fc_phase_size=optics.get("global_fc_phase_size"),
+            global_fc_phase_size=optics.get("global_fc_phase_size", layout.active_window_size),
             global_fc_padding_mode=optics.get("global_fc_padding_mode", "transparent"),
             detector_size=int(detector.get("detector_size", 32)),
             detector_layout=detector.get("layout", "grid"),
@@ -623,12 +616,13 @@ def save_architecture_report(model, config, run_dir: Path):
         "electronic_parameter_count": int(model.electronic_parameter_count()),
         "total_parameter_count": int(sum(p.numel() for p in model.parameters())),
         "phase_dropout_config": config.get("regularization", {}).get("phase_dropout", {}),
+        **geometry_report_fields(model, config),
     }
     if global_fc is not None:
         report.update(
             {
                 "global_fc_phase_mode": getattr(global_fc, "phase_mode", ""),
-                "global_fc_phase_size": list(getattr(global_fc, "phase_size", [])),
+                "global_fc_phase_size": int(getattr(global_fc, "phase_size", (0,))[0]),
                 "global_fc_phase_region": global_fc.phase_region() if hasattr(global_fc, "phase_region") else "",
                 "global_fc_padding_mode": getattr(global_fc, "padding_mode", ""),
                 "global_fc_padding_is_trainable": bool(getattr(global_fc, "phase_mode", "") == "full_canvas"),
@@ -639,8 +633,8 @@ def save_architecture_report(model, config, run_dir: Path):
         report["layout"] = model.layout.to_dict()
         report["expert_union_size"] = model.layout.expert_union_size
         report["active_window_size"] = model.layout.active_window_size
-        report["active_window_region"] = model.layout.active_window_aperture.to_dict()
-        report["prompt_aperture_region"] = model.layout.prompt_aperture.to_dict()
+        report["active_window_region"] = [model.layout.active_window_aperture.y0, model.layout.active_window_aperture.y1, model.layout.active_window_aperture.x0, model.layout.active_window_aperture.x1]
+        report["prompt_aperture_region"] = [model.layout.prompt_aperture.y0, model.layout.prompt_aperture.y1, model.layout.prompt_aperture.x0, model.layout.prompt_aperture.x1]
         report["prompt_trainable_type"] = "channel_amplitude_and_phase_bias"
         report["prompt_trainable_pixelwise"] = False
         report["prompt_fixed_lens_grating_buffers_are_not_counted_as_parameters"] = True
@@ -649,6 +643,7 @@ def save_architecture_report(model, config, run_dir: Path):
         "# Same-Input Multitask Architecture",
         "",
         "- paired same-input training: true",
+        f"- geometry_profile: {report.get('geometry_profile', '')}",
         "- shared 9-expert AS global-router backbone for MoE configs",
         "- task switching changes prompt and readout head only",
         "- task-specific detector/readout heads: true",
@@ -662,6 +657,8 @@ def save_architecture_report(model, config, run_dir: Path):
         f"- global_fc_phase_mode: {report.get('global_fc_phase_mode', '')}",
         f"- global_fc_parameter_count: {report.get('global_fc_parameter_count', '')}",
         f"- active_window_size: {report.get('active_window_size', '')}",
+        f"- active_window_region: {report.get('active_window_region', '')}",
+        f"- expert_phase_parameter_count: {report.get('expert_phase_parameter_count', '')}",
     ]
     write_text(run_dir / "architecture_report.md", "\n".join(lines) + "\n")
     return report
@@ -823,6 +820,7 @@ def run_training(config, args):
         "active_window_size": getattr(layout, "active_window_size", ""),
         "active_window_region": getattr(layout, "active_window_aperture", None).to_dict() if getattr(layout, "active_window_aperture", None) else "",
         "expert_union_size": getattr(layout, "expert_union_size", ""),
+        **geometry_report_fields(model, config),
     }
     final_rows = []
     for task in task_names:
@@ -902,6 +900,7 @@ def run_training(config, args):
         "task_readout_parameter_counts": model.task_readout_parameter_counts() if hasattr(model, "task_readout_parameter_counts") else {},
         "task_readout_shared": False,
         "task_readout_modules_are_independent": True,
+        **fc_summary,
     }
     save_json(summary, run_dir / "summary.json")
     save_json({"run_id": run_name, "model_type": config.get("model", {}).get("type"), "stage": len(task_names), "num_tasks": len(task_names), "total_wall_time_sec": total_wall_time_sec, "total_train_time_sec": total_train_time_sec, "run_dir": str(run_dir), "loader_summary": loader_summary}, run_dir / "summary_for_master" / "runs_rows.json")

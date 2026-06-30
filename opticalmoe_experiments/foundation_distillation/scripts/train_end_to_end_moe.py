@@ -292,6 +292,7 @@ def main():
     _save_artifacts(model, fixed_batch, run_dir, "final_epoch", visualization_enabled)
     summary = {
         **final_metrics,
+        **architecture,
         "loader_summary": loader_summary,
         "architecture": architecture,
         "phase_dropout": dropout,

@@ -8,7 +8,8 @@ Run these commands from `opticalmoe_experiments/`.
 - On Linux servers this is the recommended starting point. If CPU or RAM is saturated, reduce `num_workers` to `8` or `4`.
 - On Windows or while debugging, set `num_workers=0`.
 - `--smoke_test` automatically forces `num_workers=0`, `persistent_workers=false`, and `prefetch_factor=null`.
-- The optical canvas is `1000 x 1000`, but the default trainable global FC phase window is center `600 x 600`; the padding is transparent and not trainable.
+- New runs use `fast120_520`: canvas `520 x 520`, input/expert `120`, and center `450 x 450` prompt/global-FC window; padding is transparent and not trainable.
+- Explicit `fair134_1000` configs remain available for legacy reproduction.
 - `sampling_protocol.enabled=false` runs each official dataset split. `enabled=true` makes `total_size` mean train+val+test for each task dataset.
 - For example, `total_size=10000`, `train_test_ratio=[4,1]`, `val_split=0.1` gives about `train=7200`, `val=800`, `test=2000`.
 - Use `max_train_samples`, `max_val_samples`, and `max_test_samples` when you want exact split caps.

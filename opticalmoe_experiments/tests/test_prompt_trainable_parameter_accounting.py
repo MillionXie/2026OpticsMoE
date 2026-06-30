@@ -12,15 +12,7 @@ from common.optics.global_router_prompt import GlobalRouterPrompt
 
 
 def test_global_router_prompt_has_only_channel_trainable_parameters():
-    layout = ExpertLayout(
-        num_experts=9,
-        canvas_size=1000,
-        input_size=134,
-        expert_size=134,
-        expert_pitch=200,
-        padding=200,
-        prompt_aperture_size=600,
-    )
+    layout = ExpertLayout()
     prompt = GlobalRouterPrompt(
         layout=layout,
         wavelength_m=5.32e-7,
@@ -43,15 +35,7 @@ def test_global_router_prompt_has_only_channel_trainable_parameters():
 
 
 def test_prompt_transmission_is_masked_to_prompt_aperture():
-    layout = ExpertLayout(
-        num_experts=9,
-        canvas_size=1000,
-        input_size=134,
-        expert_size=134,
-        expert_pitch=200,
-        padding=200,
-        prompt_aperture_size=600,
-    )
+    layout = ExpertLayout()
     prompt = GlobalRouterPrompt(
         layout=layout,
         wavelength_m=5.32e-7,
@@ -63,9 +47,9 @@ def test_prompt_transmission_is_masked_to_prompt_aperture():
     transmission = prompt.transmission()
     total_amp = maps["prompt_total_amplitude"]
     mask = maps["prompt_aperture_mask"].bool()
-    assert maps["prompt_aperture_region"]["y0"] == 200
-    assert maps["prompt_aperture_region"]["y1"] == 800
-    assert maps["prompt_aperture_bounds"] == [200, 800, 200, 800]
+    assert maps["prompt_aperture_region"]["y0"] == 35
+    assert maps["prompt_aperture_region"]["y1"] == 485
+    assert maps["prompt_aperture_bounds"] == [35, 485, 35, 485]
     assert torch.count_nonzero(transmission[~mask]) == 0
     assert torch.count_nonzero(total_amp[~mask]) == 0
     assert torch.count_nonzero(total_amp[mask]) > 0

@@ -13,16 +13,16 @@ from common.optics.expert_phase_layer import GlobalFCPhaseMask
 
 def test_windowed_global_fc_uses_center_window_only():
     fc = GlobalFCPhaseMask(
-        canvas_shape=(1000, 1000),
-        phase_size=600,
+        canvas_shape=(520, 520),
+        phase_size=450,
         phase_mode="center_window",
         phase_init="identity",
     )
-    assert fc.phase.raw_phase.shape == (600, 600)
-    assert fc.phase_region() == [200, 800, 200, 800]
-    assert fc.trainable_parameter_count() == 600 * 600
-    assert fc.get_phase_wrapped().shape == (600, 600)
-    assert fc.get_phase_canvas_wrapped().shape == (1000, 1000)
+    assert fc.phase.raw_phase.shape == (450, 450)
+    assert fc.phase_region() == [35, 485, 35, 485]
+    assert fc.trainable_parameter_count() == 450 * 450
+    assert fc.get_phase_wrapped().shape == (450, 450)
+    assert fc.get_phase_canvas_wrapped().shape == (520, 520)
 
 
 def test_windowed_global_fc_forward_keeps_padding_transparent():

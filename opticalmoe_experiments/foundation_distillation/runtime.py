@@ -4,11 +4,11 @@ from typing import Dict, Optional, Tuple
 
 import torch
 
+from common.config.layout_config import layout_from_config
 from common.optics.distilled_moe import (
     DetectorFeatureASGlobalRouterMoEClassifier,
     FeatureDistilledASGlobalRouterMoEClassifier,
 )
-from common.optics.expert_layout import ExpertLayout
 from common.training.phase_dropout import phase_dropout_settings
 
 from foundation_distillation.scripts.distillation_losses import feature_distillation_loss
@@ -25,20 +25,11 @@ def resolve_cache_dir(value: str, experiments_root: Path) -> Path:
 
 
 def _layout_and_optical_kwargs(config: Dict):
-    layout_cfg = config.get("layout", {})
-    canvas_height = int(layout_cfg.get("canvas_height", 1000))
-    canvas_width = int(layout_cfg.get("canvas_width", canvas_height))
-    if canvas_height != canvas_width:
-        raise ValueError("The current ExpertLayout requires a square propagation canvas.")
-    layout = ExpertLayout(
-        num_experts=int(config.get("student", {}).get("num_experts", 9)),
-        canvas_size=canvas_height,
-        input_size=int(layout_cfg.get("input_size", 134)),
-        expert_size=int(layout_cfg.get("expert_size", 134)),
-        expert_pitch=int(layout_cfg.get("expert_pitch", 200)),
-        padding=int(layout_cfg.get("padding", 200)),
-        prompt_aperture_size=int(layout_cfg.get("prompt_aperture_size", 600)),
-    )
+    resolved_config = dict(config)
+    resolved_model = dict(config.get("model", {}) or {})
+    resolved_model.setdefault("num_experts", int(config.get("student", {}).get("num_experts", 9)))
+    resolved_config["model"] = resolved_model
+    layout = layout_from_config(resolved_config)
     optics = config.get("optics", {})
     prompt = config.get("prompt", {})
     dropout = phase_dropout_settings(config)
@@ -240,6 +231,7 @@ def predict_supervised(model, loader, device, max_batches: Optional[int] = None)
 def architecture_payload(model, config: Dict, dataset_name: str, teacher_cfg: Dict) -> Dict:
     layout = model.layout
     global_fc_shape = list(model.global_fc.phase_size)
+    active = layout.active_window_aperture
     return {
         "model": "FeatureDistilledASGlobalRouterMoEClassifier",
         "experiment_variant": "feature_distillation",
@@ -248,11 +240,17 @@ def architecture_payload(model, config: Dict, dataset_name: str, teacher_cfg: Di
         "teacher_model_name": teacher_cfg.get("model_name"),
         "teacher_input_mode": teacher_cfg.get("input_mode"),
         "teacher_text_encoder_used": False,
+        "geometry_profile": layout.geometry_profile,
         "canvas_size": layout.canvas_size,
         "input_size": layout.input_size,
         "num_experts": layout.num_experts,
         "expert_size": layout.expert_size,
         "expert_pitch": layout.expert_pitch,
+        "gap_px": layout.gap_px,
+        "expert_union_bounds": layout.expert_union_bounds,
+        "expert_union_size": layout.expert_union_size,
+        "active_window_size": layout.active_window_size,
+        "active_window_region": [active.y0, active.y1, active.x0, active.x1],
         "prompt_aperture_size": layout.prompt_aperture_size,
         "prompt_trainable_type": "channel_amplitude_and_phase_bias",
         "prompt_trainable_pixelwise": False,
@@ -260,6 +258,8 @@ def architecture_payload(model, config: Dict, dataset_name: str, teacher_cfg: Di
         "global_fc_phase_shape": global_fc_shape,
         "global_fc_phase_region": model.global_fc.phase_region(),
         "global_fc_padding_is_trainable": False,
+        "global_fc_parameter_count": model.global_fc.trainable_parameter_count(),
+        "expert_phase_parameter_count": model.optical_backbone.expert_phase_parameter_count(),
         "feature_detector": model.feature_detector_config,
         "feature_source": "detector_plane_intensity",
         "teacher_feature_dim": model.teacher_feature_dim,
@@ -279,6 +279,7 @@ def architecture_payload(model, config: Dict, dataset_name: str, teacher_cfg: Di
 def end_to_end_architecture_payload(model, config: Dict, dataset_name: str) -> Dict:
     layout = model.layout
     global_fc_shape = list(model.global_fc.phase_size)
+    active = layout.active_window_aperture
     return {
         "model": "DetectorFeatureASGlobalRouterMoEClassifier",
         "experiment_variant": "end_to_end_ce_baseline",
@@ -286,11 +287,17 @@ def end_to_end_architecture_payload(model, config: Dict, dataset_name: str) -> D
         "teacher_type": "none",
         "teacher_used": False,
         "feature_distillation_used": False,
+        "geometry_profile": layout.geometry_profile,
         "canvas_size": layout.canvas_size,
         "input_size": layout.input_size,
         "num_experts": layout.num_experts,
         "expert_size": layout.expert_size,
         "expert_pitch": layout.expert_pitch,
+        "gap_px": layout.gap_px,
+        "expert_union_bounds": layout.expert_union_bounds,
+        "expert_union_size": layout.expert_union_size,
+        "active_window_size": layout.active_window_size,
+        "active_window_region": [active.y0, active.y1, active.x0, active.x1],
         "prompt_aperture_size": layout.prompt_aperture_size,
         "prompt_trainable_type": "channel_amplitude_and_phase_bias",
         "prompt_trainable_pixelwise": False,
@@ -298,6 +305,8 @@ def end_to_end_architecture_payload(model, config: Dict, dataset_name: str) -> D
         "global_fc_phase_shape": global_fc_shape,
         "global_fc_phase_region": model.global_fc.phase_region(),
         "global_fc_padding_is_trainable": False,
+        "global_fc_parameter_count": model.global_fc.trainable_parameter_count(),
+        "expert_phase_parameter_count": model.optical_backbone.expert_phase_parameter_count(),
         "feature_detector": model.feature_detector_config,
         "feature_source": "detector_plane_intensity",
         "classifier": config.get("classifier", {}),

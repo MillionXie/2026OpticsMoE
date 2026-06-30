@@ -32,12 +32,33 @@ class ExpertLayout:
     """Global-router expert layout for 4- or 9-expert OpticalMoE."""
 
     num_experts: int = 9
-    canvas_size: int = 1000
-    input_size: int = 134
-    expert_size: int = 134
-    expert_pitch: int = 200
-    padding: int = 200
-    prompt_aperture_size: int = 600
+    canvas_size: int = 520
+    input_size: int = 120
+    expert_size: int = 120
+    expert_pitch: int = 150
+    padding: int = 35
+    prompt_aperture_size: int = 450
+    geometry_profile: str = "fast120_520"
+
+    def __post_init__(self) -> None:
+        values = (
+            int(self.canvas_size),
+            int(self.input_size),
+            int(self.expert_size),
+            int(self.expert_pitch),
+            int(self.padding),
+            int(self.prompt_aperture_size),
+        )
+        fast_values = (520, 120, 120, 150, 35, 450)
+        legacy_values = (1000, 134, 134, 200, 200, 600)
+        if self.geometry_profile == "fast120_520" and values != fast_values:
+            object.__setattr__(
+                self,
+                "geometry_profile",
+                "fair134_1000" if values == legacy_values else "custom",
+            )
+        elif self.geometry_profile == "fair134_1000" and values != legacy_values:
+            object.__setattr__(self, "geometry_profile", "custom")
 
     @property
     def canvas_shape(self) -> Tuple[int, int]:
@@ -69,14 +90,16 @@ class ExpertLayout:
     @property
     def input_aperture(self) -> Aperture:
         cy, cx = self.canvas_center
-        half = self.input_size // 2
-        return Aperture("input", cy - half, cy - half + self.input_size, cx - half, cx - half + self.input_size)
+        y0 = cy - self.input_size // 2
+        x0 = cx - self.input_size // 2
+        return Aperture("input", y0, y0 + self.input_size, x0, x0 + self.input_size)
 
     @property
     def prompt_aperture(self) -> Aperture:
         cy, cx = self.canvas_center
-        half = self.prompt_aperture_size // 2
-        return Aperture("prompt", cy - half, cy + half, cx - half, cx + half)
+        y0 = cy - self.prompt_aperture_size // 2
+        x0 = cx - self.prompt_aperture_size // 2
+        return Aperture("prompt", y0, y0 + self.prompt_aperture_size, x0, x0 + self.prompt_aperture_size)
 
     @property
     def expert_apertures(self) -> List[Aperture]:
@@ -109,8 +132,9 @@ class ExpertLayout:
     @property
     def active_window_aperture(self) -> Aperture:
         cy, cx = self.canvas_center
-        half = self.active_window_size // 2
-        return Aperture("active_window", cy - half, cy - half + self.active_window_size, cx - half, cx - half + self.active_window_size)
+        y0 = cy - self.active_window_size // 2
+        x0 = cx - self.active_window_size // 2
+        return Aperture("active_window", y0, y0 + self.active_window_size, x0, x0 + self.active_window_size)
 
     @property
     def gap_px(self) -> int:
@@ -119,6 +143,17 @@ class ExpertLayout:
     def validate(self) -> None:
         if self.num_experts not in {4, 9}:
             raise ValueError("num_experts must be 4 or 9.")
+        if self.expert_pitch < self.expert_size:
+            raise ValueError("expert_pitch must be greater than or equal to expert_size.")
+        if self.prompt_aperture_size != self.active_window_size:
+            raise ValueError("prompt_aperture_size must equal active_window_size.")
+        if self.prompt_aperture_size > self.canvas_size:
+            raise ValueError("prompt_aperture_size cannot exceed canvas_size.")
+        expected_padding = (self.canvas_size - self.prompt_aperture_size) // 2
+        if self.padding != expected_padding:
+            raise ValueError(
+                f"padding={self.padding} does not match centered active-window padding {expected_padding}."
+            )
         for aperture in [self.input_aperture, self.prompt_aperture] + self.expert_apertures:
             if aperture.y0 < 0 or aperture.x0 < 0 or aperture.y1 > self.canvas_size or aperture.x1 > self.canvas_size:
                 raise ValueError(f"Aperture {aperture.name} is outside the canvas.")
@@ -130,6 +165,19 @@ class ExpertLayout:
             raise ValueError("Active optical window is outside the canvas.")
         if self.active_window_size < self.expert_union_size:
             raise ValueError("Active optical window must cover the expert union bounds.")
+        if self.geometry_profile == "fast120_520" and self.num_experts == 9:
+            expected_centers = [(y, x) for y in (110, 260, 410) for x in (110, 260, 410)]
+            if self.expert_centers != expected_centers:
+                raise ValueError("fast120_520 expert centers must use coordinates 110/260/410.")
+            if self.expert_union_bounds != [50, 470, 50, 470]:
+                raise ValueError("fast120_520 expert union bounds must be [50,470,50,470].")
+            expected_window = [35, 485, 35, 485]
+            active = self.active_window_aperture
+            prompt = self.prompt_aperture
+            if [active.y0, active.y1, active.x0, active.x1] != expected_window:
+                raise ValueError("fast120_520 active window must be [35,485,35,485].")
+            if [prompt.y0, prompt.y1, prompt.x0, prompt.x1] != expected_window:
+                raise ValueError("fast120_520 prompt aperture must be [35,485,35,485].")
 
     def aperture_mask(self, aperture: Aperture, device=None) -> torch.Tensor:
         mask = torch.zeros(self.canvas_shape, dtype=torch.float32, device=device)
@@ -157,6 +205,7 @@ class ExpertLayout:
     def to_dict(self) -> Dict:
         phase_params = int(self.num_experts) * int(self.expert_size) * int(self.expert_size)
         return {
+            "geometry_profile": str(self.geometry_profile),
             "num_experts": int(self.num_experts),
             "grid_dim": int(self.grid_dim),
             "canvas_shape": list(self.canvas_shape),

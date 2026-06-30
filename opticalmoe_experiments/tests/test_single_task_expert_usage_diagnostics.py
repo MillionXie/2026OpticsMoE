@@ -23,7 +23,7 @@ def _tiny_moe_config():
             "canvas_size": 256,
             "expert_size": 24,
             "expert_pitch": 50,
-            "padding": 53,
+            "padding": 38,
             "prompt_aperture_size": 180,
             "num_layers": 1,
         },

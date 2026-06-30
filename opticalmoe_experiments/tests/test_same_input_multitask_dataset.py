@@ -25,13 +25,13 @@ def test_dsprites_same_input_labels_and_splits(tmp_path):
     npz_path = tmp_path / "dsprites.npz"
     _fake_npz(npz_path)
     tasks = ["shape", "scale", "x_position_4bin", "y_position_4bin"]
-    train = DSpritesSameInputMultiTaskDataset(tmp_path, tasks, input_size=134, split="train", download=False, npz_path=str(npz_path), seed=7)
-    val = DSpritesSameInputMultiTaskDataset(tmp_path, tasks, input_size=134, split="val", download=False, npz_path=str(npz_path), seed=7)
-    test = DSpritesSameInputMultiTaskDataset(tmp_path, tasks, input_size=134, split="test", download=False, npz_path=str(npz_path), seed=7)
+    train = DSpritesSameInputMultiTaskDataset(tmp_path, tasks, input_size=120, split="train", download=False, npz_path=str(npz_path), seed=7)
+    val = DSpritesSameInputMultiTaskDataset(tmp_path, tasks, input_size=120, split="val", download=False, npz_path=str(npz_path), seed=7)
+    test = DSpritesSameInputMultiTaskDataset(tmp_path, tasks, input_size=120, split="test", download=False, npz_path=str(npz_path), seed=7)
     assert set(train.indices).isdisjoint(set(val.indices))
     assert set(train.indices).isdisjoint(set(test.indices))
     image, labels = train[0]
-    assert tuple(image.shape) == (1, 134, 134)
+    assert tuple(image.shape) == (1, 120, 120)
     assert 0 <= int(labels["shape"]) <= 2
     assert 0 <= int(labels["scale"]) <= 5
     assert 0 <= int(labels["x_position_4bin"]) <= 3

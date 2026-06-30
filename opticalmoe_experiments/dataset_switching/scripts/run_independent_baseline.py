@@ -14,6 +14,7 @@ if str(EXPERIMENT_ROOT) not in sys.path:
 
 from common.data.datasets import create_dataloaders
 from common.data.loader_utils import apply_smoke_loader_overrides, loader_summary_from_loaders, print_loader_summary
+from common.config.layout_config import layout_from_config
 from common.optics.optical_models import GeneralD2NNClassifier
 from common.reporting.metrics_writer import write_rows
 from common.reporting.run_manifest import architecture_report, save_run_manifest
@@ -90,11 +91,12 @@ def build_independent_model(config, num_classes):
     detector = config.get("detector", {})
     readout = config.get("readout", {})
     dropout = phase_dropout_settings(config)
+    layout = layout_from_config(config)
     return GeneralD2NNClassifier(
         num_classes=num_classes,
-        canvas_size=int(model_cfg.get("canvas_size", 400)),
-        input_size=int(model_cfg.get("input_size", 134)),
-        d2nn_phase_grid_size=int(model_cfg.get("d2nn_phase_grid_size", 220)),
+        canvas_size=int(layout.canvas_size),
+        input_size=int(layout.input_size),
+        d2nn_phase_grid_size=int(model_cfg.get("d2nn_phase_grid_size", 360)),
         num_layers=int(model_cfg.get("d2nn_num_layers", 5)),
         wavelength_m=float(optics.get("wavelength_m", 532e-9)),
         pixel_size_m=float(optics.get("pixel_size_m", 8e-6)),
@@ -103,7 +105,7 @@ def build_independent_model(config, num_classes):
         phase_init=optics.get("expert_phase_init", "identity"),
         init_std=float(optics.get("expert_init_std", 0.02)),
         global_fc_phase_mode=optics.get("global_fc_phase_mode", "center_window"),
-        global_fc_phase_size=optics.get("global_fc_phase_size", 220),
+        global_fc_phase_size=optics.get("global_fc_phase_size", layout.active_window_size),
         global_fc_padding_mode=optics.get("global_fc_padding_mode", "transparent"),
         detector_size=int(detector.get("detector_size", 32)),
         detector_layout=detector.get("layout", "grid"),

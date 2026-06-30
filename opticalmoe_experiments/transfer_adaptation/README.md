@@ -12,7 +12,12 @@ Before training, place `source_best.pt` and `source_config.yaml` in:
 
 `source_architecture_report.json` is optional; if present, it is copied into each run directory.
 
+New from-scratch experiments default to `fast120_520`, but transfer source
+models are always reconstructed from their stored `source_config.yaml`. An
+existing `fair134_1000` source checkpoint therefore keeps canvas `1000`,
+input/expert `134`, pitch `200`, and active window `600`; the new default is
+never forced onto a pretrained source.
+
 The central evaluation is target prompt swap: target data and target readout are fixed while the prompt is swapped between the learned target prompt and each source prompt. Source retention re-evaluates MNIST, Fashion-MNIST, and EMNIST-letters after transfer to verify that adding the new prompt does not damage previous tasks.
 
 This directory does not include ordinary D2NN, from-scratch training, or patch-adapter baselines.
-

@@ -10,13 +10,15 @@ model:
   prompt_type: complex_amplitude
   routing_type: learnable
 layout:
-  canvas_height: 1000
-  canvas_width: 1000
-  input_size: 134
-  expert_size: 134
-  expert_pitch: 200
-  padding: 200
-  prompt_aperture_size: 600
+  geometry_profile: fast120_520
+  canvas_height: 520
+  canvas_width: 520
+  input_size: 120
+  expert_size: 120
+  expert_pitch: 150
+  padding: 35
+  prompt_aperture_size: 450
+
 optics:
   wavelength_m: 5.32e-07
   pixel_size_m: 8.0e-06
@@ -36,7 +38,7 @@ optics:
     layer5_to_fc: 0.05
     fc_to_detector: 0.05
   global_fc_phase_mode: center_window
-  global_fc_phase_size: 600
+  global_fc_phase_size: 450
   global_fc_padding_mode: transparent
 prompt:
   mode: complex_order_router
@@ -94,7 +96,7 @@ training:
       dataset:
         name: mnist
         root: ./data
-        input_size: 134
+        input_size: 120
         grayscale: true
         val_split: 0.1
         batch_size: 150
@@ -133,7 +135,7 @@ training:
       dataset:
         name: fashionmnist
         root: ./data
-        input_size: 134
+        input_size: 120
         grayscale: true
         val_split: 0.1
         batch_size: 150
@@ -173,7 +175,7 @@ training:
         name: emnist
         split: letters
         root: ./data
-        input_size: 134
+        input_size: 120
         grayscale: true
         fix_orientation: true
         val_split: 0.1

@@ -6,17 +6,27 @@ experiment:
   independent_group_id: independent_d2nn_canvas400_grid220_seed7
 model:
   type: independent_d2nn
-  input_size: 134
-  canvas_size: 400
-  d2nn_phase_grid_size: 220
+  input_size: 120
+  canvas_size: 520
+  d2nn_phase_grid_size: 360  # 360^2 = 129600, matching one fast120_520 MoE local-phase layer.
   d2nn_num_layers: 5
-  target_param_count: 242000
-  target_local_phase_param_count: 242000
+  target_param_count: 648000  # Backward-compatible name; local D2NN masks only.
+  target_local_phase_param_count: 648000
   include_global_fc: true
-  expected_global_fc_param_count: 48400
-  expected_total_optical_param_count: 290400
+  expected_global_fc_param_count: 202500
+  expected_total_optical_param_count: 850500
   reference_num_tasks: 3
-  moe_reference_optical_params: 1168020
+  moe_reference_optical_params: 850500
+layout:
+  geometry_profile: fast120_520
+  canvas_height: 520
+  canvas_width: 520
+  input_size: 120
+  expert_size: 120
+  expert_pitch: 150
+  padding: 35
+  prompt_aperture_size: 450
+
 optics:
   wavelength_m: 5.32e-07
   pixel_size_m: 8.0e-06
@@ -30,7 +40,7 @@ optics:
     layer5_to_fc: 0.05
     fc_to_detector: 0.05
   global_fc_phase_mode: center_window
-  global_fc_phase_size: 220
+  global_fc_phase_size: 450
   global_fc_padding_mode: transparent
 detector:
   detector_size: 32
@@ -70,7 +80,7 @@ training:
     dataset:
       name: mnist
       root: ./data
-      input_size: 134
+      input_size: 120
       grayscale: true
       val_split: 0.1
       batch_size: 150
@@ -109,7 +119,7 @@ training:
     dataset:
       name: fashionmnist
       root: ./data
-      input_size: 134
+      input_size: 120
       grayscale: true
       val_split: 0.1
       batch_size: 150
@@ -149,7 +159,7 @@ training:
       name: emnist
       split: letters
       root: ./data
-      input_size: 134
+      input_size: 120
       grayscale: true
       fix_orientation: true
       val_split: 0.1

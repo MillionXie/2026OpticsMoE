@@ -33,14 +33,14 @@ def test_independent_baseline_is_not_upper_bound_in_summary(tmp_path):
     assert "False" in text
 
 
-def test_independent_grid220_parameter_budget_and_task_filter():
+def test_independent_fast_geometry_parameter_budget_and_task_filter():
     config = load_yaml(ROOT / "dataset_switching" / "configs" / "mnist_fashion_emnist_letters_independent_d2nn.yaml")
     model = independent_script.build_independent_model(config, num_classes=10)
-    assert model.canvas_shape == (400, 400)
-    assert model.d2nn_phase_grid_size == 220
-    assert model.d2nn_local_phase_parameter_count() == 5 * 220 * 220
-    assert model.d2nn_global_fc_parameter_count() == 220 * 220
-    assert model.optical_parameter_count() == 290400
+    assert model.canvas_shape == (520, 520)
+    assert model.d2nn_phase_grid_size == 360
+    assert model.d2nn_local_phase_parameter_count() == 5 * 360 * 360
+    assert model.d2nn_global_fc_parameter_count() == 450 * 450
+    assert model.optical_parameter_count() == 850500
     assert model.electronic_parameter_count() == 0
     selected = independent_script._task_configs(config, "fashionmnist")
     assert [task["name"] for task in selected] == ["fashionmnist"]
@@ -76,6 +76,15 @@ def test_independent_single_task_smoke_writes_parameter_summary(monkeypatch, tmp
             "expected_total_optical_param_count": 512,
             "reference_num_tasks": 3,
             "moe_reference_optical_params": 1536,
+        },
+        "layout": {
+            "canvas_height": 64,
+            "canvas_width": 64,
+            "input_size": 16,
+            "expert_size": 8,
+            "expert_pitch": 16,
+            "padding": 8,
+            "prompt_aperture_size": 48,
         },
         "optics": {
             "wavelength_m": 5.32e-7,

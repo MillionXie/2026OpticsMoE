@@ -161,8 +161,9 @@ max_test_samples: 1000
 - `learnable_route_moe` trains prompt amplitude logits and phase biases.
 - `general_d2nn` has no prompt and no expert routing.
 - `general_d2nn` is 5 center-window D2NN phase masks plus one center-window global FC phase mask.
-- `canvas_size=1000` is the propagation canvas; the default active trainable optical window is center `600 x 600`, with transparent non-trainable padding outside.
-- In D2NN configs, `target_local_phase_param_count` counts only the local D2NN masks; `expected_total_optical_param_count` also includes the `600 x 600` global FC mask.
+- New runs use `fast120_520`: propagation canvas `520`, input/expert `120`, and center `450 x 450` active/global-FC window with transparent padding outside.
+- In D2NN configs, `target_local_phase_param_count` counts only the `5 x 360 x 360` local D2NN masks; `expected_total_optical_param_count` also includes the `450 x 450` global FC mask.
+- Use an explicit `fair134_1000` layout only to reproduce old runs or load old checkpoints.
 - D2NN phase masks are saved under `figures/phase_masks/<epoch>/` as `d2nn_phase_layer_*.png`, `d2nn_all_phase_layers.png`, `global_fc_phase_window.png`, `global_fc_phase_region_on_canvas.png`, and `global_fc_phase.png`.
 - MoE expert usage rows include fixed-validation-batch `expert_entrance_energy_ratio` and `expert_output_energy_ratio`.
 - `lenet5` is an electronic baseline and does not save optical light-field propagation figures.

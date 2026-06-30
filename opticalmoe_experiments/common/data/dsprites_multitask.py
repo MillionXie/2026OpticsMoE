@@ -129,7 +129,7 @@ class DSpritesSameInputMultiTaskDataset(Dataset):
         self,
         root: str,
         tasks: Sequence[str],
-        input_size: int = 134,
+        input_size: int = 120,
         split: str = "train",
         val_split: float = 0.1,
         test_split: float = 0.1,
@@ -186,7 +186,7 @@ def create_same_input_multitask_dataloaders(config: Dict, seed: int = 7):
     training_cfg = config.get("training", {})
     task_names = normalize_task_names(training_cfg.get("tasks", ["shape", "scale"]))
     root = dataset_cfg.get("root", "./data")
-    input_size = int(dataset_cfg.get("input_size", 134))
+    input_size = int(dataset_cfg.get("input_size", 120))
     val_split = float(dataset_cfg.get("val_split", 0.1))
     test_split = float(dataset_cfg.get("test_split", 0.1))
     ds_seed = int(dataset_cfg.get("seed", seed))

@@ -20,6 +20,7 @@ if str(EXPERIMENT_ROOT) not in sys.path:
 
 from common.data.datasets import EMNIST_NUM_CLASSES, create_dataloaders
 from common.data.loader_utils import apply_smoke_loader_overrides, loader_summary_from_loaders
+from common.config.layout_config import layout_from_config
 from common.optics.detector import DetectorArray
 from common.optics.global_router_prompt import GlobalRouterPrompt
 from common.optics.readout import ElectronicReadout
@@ -236,10 +237,13 @@ def robust_load_source_checkpoint(model, checkpoint_path: Path, source_tasks: Se
 def load_source_backbone(config: Mapping, device):
     paths = validate_source_artifacts(config)
     source_config = load_yaml(paths["config"])
+    source_layout = layout_from_config(source_config)
     expected = [str(task).lower() for task in config.get("source", {}).get("expected_source_tasks", SOURCE_TASKS)]
     task_names = validate_source_config(source_config, expected)
     task_num_classes = infer_task_num_classes(source_config, task_names)
     model = ds_train.build_model(source_config, task_names, task_num_classes).to(device)
+    if model.layout.to_dict() != source_layout.to_dict():
+        raise RuntimeError("Source model geometry does not match source_config.yaml.")
     load_info = robust_load_source_checkpoint(model, paths["checkpoint"], task_names, device)
     validate_source_model(model, expected)
     return model, source_config, task_names, task_num_classes, paths, load_info

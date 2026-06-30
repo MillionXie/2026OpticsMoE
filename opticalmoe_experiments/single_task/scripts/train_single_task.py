@@ -16,7 +16,7 @@ if str(Path(__file__).resolve().parents[1]) not in sys.path:
 from common.data.datasets import create_dataloaders
 from common.reporting.aggregate_results import rebuild_master_tables
 from common.reporting.metrics_writer import write_rows
-from common.reporting.run_manifest import architecture_report, save_run_manifest
+from common.reporting.run_manifest import architecture_report, geometry_report_fields, save_run_manifest
 from common.data.loader_utils import apply_smoke_loader_overrides, loader_summary_from_loaders, print_loader_summary
 from common.training.checkpointing import save_checkpoint
 from common.training.eval_loop import evaluate, predict_all
@@ -476,6 +476,7 @@ def main():
         "active_window_size": getattr(layout, "active_window_size", ""),
         "active_window_region": getattr(layout, "active_window_aperture", None).to_dict() if getattr(layout, "active_window_aperture", None) else "",
         "expert_union_size": getattr(layout, "expert_union_size", ""),
+        **geometry_report_fields(model, config),
     }
     summary = {
         "run_id": run_name,

@@ -18,6 +18,23 @@ input
 It intentionally does not use the older spatially partitioned prompt or FFT
 convolution shortcut for expert entrance generation.
 
+## Geometry Profiles
+
+New training configs use `geometry_profile: fast120_520`:
+
+- propagation canvas: `520 x 520`;
+- input and local expert phase masks: `120 x 120`;
+- 3x3 expert pitch: `150`, with centers at `110/260/410`;
+- expert union: `[50:470, 50:470]`, size `420`;
+- prompt, active optical window, and global FC window: `[35:485, 35:485]`, size `450`;
+- transparent outer propagation padding: `35` pixels per side.
+
+The legacy `fair134_1000` profile remains available for reproduction and old
+checkpoints: canvas `1000`, input/expert `134`, pitch `200`, active window
+`600`, and padding `200`. Explicit legacy config fields take precedence over
+the new default. The smaller profile reduces the dominant AS FFT grid from
+`1000 x 1000` to `520 x 520` while preserving the global-router topology.
+
 Implemented first:
 
 - `single_task/`: single-dataset classification baselines and MoE variants.

@@ -156,7 +156,10 @@ def _save_moe_phase_masks(model, out: Path) -> None:
             ax.axis("off")
     if image is not None:
         _add_phase_colorbar(fig, image, axes.ravel().tolist())
-    fig.subplots_adjust(left=0.015, right=0.93, bottom=0.02, top=0.94, wspace=0.06, hspace=0.22)
+    profile = getattr(getattr(model, "layout", None), "geometry_profile", "")
+    if profile:
+        fig.suptitle(f"Expert phase masks ({profile})", fontsize=10)
+    fig.subplots_adjust(left=0.015, right=0.93, bottom=0.02, top=0.90 if profile else 0.94, wspace=0.06, hspace=0.22)
     fig.savefig(out / "expert_phase_layers.png", dpi=160, bbox_inches="tight")
     plt.close(fig)
 

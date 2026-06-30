@@ -72,21 +72,13 @@ they are not generated pseudo-labels.
 
 ## Optical Model
 
-The default MoE reuses the successful fair134 AS global-router geometry:
-
-- canvas: `1000 x 1000`
-- input: `134 x 134`
-- experts: `9 x 134 x 134`
-- expert centers: `[300, 500, 700] x [300, 500, 700]`
-- prompt aperture: center `600 x 600`
-- propagation: Angular Spectrum only
-
-The `1000 x 1000` canvas is only the propagation window. The active trainable
-optical window is the center `600 x 600` region (`y=200:800, x=200:800`). The
-global FC phase mask is trainable only in that window; outside it, propagation
-padding is transparent and not trainable. The prompt is also aperture-limited
-to the center `600 x 600` and its trainable parameters are channel amplitudes
-and phase biases, not a pixel-wise `1000 x 1000` prompt.
+The default MoE uses `fast120_520`: canvas `520`, input/expert `120`, pitch
+`150`, expert centers `[110, 260, 410] x [110, 260, 410]`, and expert union
+`[50:470, 50:470]`. Prompt and global FC are restricted to the center
+`[35:485, 35:485]` active window, size `450`; outer padding is transparent.
+Prompt trainable parameters remain channel amplitudes and phase biases rather
+than a pixel-wise map. `fair134_1000` remains available as an explicit legacy
+profile. Propagation remains Angular Spectrum only.
 
 The expert entrance field is produced by
 `AngularSpectrumPropagator(prompt_to_expert)`. The code does not use FFT

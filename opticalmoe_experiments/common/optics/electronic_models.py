@@ -6,7 +6,7 @@ import torch.nn.functional as F
 class LeNet5Classifier(nn.Module):
     """Simple electronic LeNet-style baseline for grayscale inputs."""
 
-    def __init__(self, num_classes: int, input_channels: int = 1, input_size: int = 134) -> None:
+    def __init__(self, num_classes: int, input_channels: int = 1, input_size: int = 120) -> None:
         super().__init__()
         self.input_size = int(input_size)
         self.features = nn.Sequential(
