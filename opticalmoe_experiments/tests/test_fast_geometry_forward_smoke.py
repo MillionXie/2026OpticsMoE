@@ -23,9 +23,10 @@ def _config(model_type="learnable_route_moe"):
         "prompt": {"mode": "complex_order_router", "train_amplitudes": True, "train_phase_biases": True},
         "detector": {"detector_size": 4, "layout": "grid"},
         "readout": {"type": "optical_only", "normalize_detector_energy": True, "input_norm": "none", "norm_affine": False, "hidden_layers": 0, "dropout": 0.0},
-        "feature_detector": {"type": "grid_pool", "grid_size": 4, "feature_dim": 16, "pooling": "sum", "normalize_total_energy": True},
-        "classifier": {"hidden_dim": 8, "hidden_layers": 1, "activation": "gelu", "dropout": 0.0},
-        "projector": {"hidden_dim": 8, "hidden_layers": 1, "activation": "gelu", "dropout": 0.0},
+        "feature_detector": {"type": "grid_pool", "source_region": "camera_active_window", "grid_size": 30, "feature_dim": 900, "pooling": "sum"},
+        "feature_preprocess": {"norm": "layernorm", "norm_affine": True, "activation": "gelu"},
+        "classifier": {"input": "semantic_feature", "input_dim": "auto_teacher_dim", "hidden_dim": 8, "hidden_layers": 1, "activation": "gelu", "dropout": 0.0},
+        "projector": {"type": "mlp", "input_dim": "auto_feature_dim", "output_dim": "auto_teacher_dim", "hidden_dim": 8, "hidden_layers": 1, "activation": "gelu", "dropout": 0.0, "output_l2_normalize": True},
         "regularization": {"phase_dropout": {"enabled": False}},
     }
 
@@ -61,8 +62,12 @@ def test_fast_geometry_forwards_across_experiment_families():
         gc.collect()
 
         model = build_student(_config(), num_classes=10, teacher_feature_dim=32)
-        logits, optical, projected, intermediates = model(image, return_intermediates=True)
+        logits, raw, processed, semantic, semantic_normalized, intermediates = model(
+            image, return_intermediates=True
+        )
         assert logits.shape == (1, 10)
-        assert optical.shape == (1, 16)
-        assert projected.shape == (1, 32)
+        assert raw.shape == (1, 900)
+        assert processed.shape == (1, 900)
+        assert semantic.shape == (1, 32)
+        assert semantic_normalized.shape == (1, 32)
         _assert_detector(intermediates)

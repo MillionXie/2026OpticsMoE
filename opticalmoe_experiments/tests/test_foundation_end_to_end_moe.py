@@ -23,7 +23,8 @@ def test_end_to_end_moe_has_no_projector_and_returns_detector_feature():
     model = DetectorFeatureASGlobalRouterMoEClassifier(
         num_classes=10,
         layout=layout,
-        feature_detector_config={"grid_size": 4, "feature_dim": 16},
+        feature_detector_config={"grid_size": 30, "feature_dim": 900},
+        feature_preprocess_config={"norm": "layernorm", "activation": "gelu"},
         classifier_config={"hidden_dim": 8, "hidden_layers": 1},
         num_layers=1,
         global_fc_phase_size=90,
@@ -34,11 +35,14 @@ def test_end_to_end_moe_has_no_projector_and_returns_detector_feature():
     )
     logits, optical_feature, intermediates = model(torch.rand(2, 1, 16, 16), return_intermediates=True)
     assert logits.shape == (2, 10)
-    assert optical_feature.shape == (2, 16)
+    assert optical_feature.shape == (2, 900)
+    assert intermediates["camera_intensity"].shape == (2, 90, 90)
     assert "detector_intensity" in intermediates
     assert "after_global_fc" in intermediates
     assert not hasattr(model, "projector")
     assert model.total_parameter_count() == (
-        model.optical_parameter_count() + model.prompt_parameter_count() + model.classifier_parameter_count()
+        model.optical_parameter_count()
+        + model.prompt_parameter_count()
+        + model.feature_preprocess_parameter_count()
+        + model.classifier_parameter_count()
     )
-

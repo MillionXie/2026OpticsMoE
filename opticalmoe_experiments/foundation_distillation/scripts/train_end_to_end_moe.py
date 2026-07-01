@@ -5,6 +5,7 @@ import time
 from pathlib import Path
 
 import torch
+from PIL import Image
 
 EXPERIMENTS_ROOT = Path(__file__).resolve().parents[2]
 REPO_ROOT = EXPERIMENTS_ROOT.parent
@@ -102,13 +103,37 @@ def _diagnostics(model, images, epoch, run_id):
     return intermediates, usage_rows, energy_rows
 
 
+def _save_gray_png(image, path):
+    array = (torch.as_tensor(image).detach().cpu().float().clamp(0.0, 1.0) * 255.0).byte().numpy()
+    Image.fromarray(array, mode="L").save(path)
+
+
 @torch.no_grad()
-def _save_artifacts(model, fixed_batch, run_dir, epoch_name, enabled=True):
+def _save_artifacts(model, fixed_batch, run_dir, epoch_name, enabled=True, class_names=None, dataset_name=""):
     if not enabled:
         return
-    images, _labels = fixed_batch
-    _logits, _feature, intermediates = model(images, return_intermediates=True)
-    save_light_fields(intermediates, run_dir / "figures" / "light_fields" / epoch_name / "sample_000")
+    images, targets = fixed_batch
+    logits, _feature, intermediates = model(images, return_intermediates=True)
+    sample_dir = run_dir / "figures" / "light_fields" / epoch_name / "sample_000"
+    save_light_fields(intermediates, sample_dir)
+    sample_dir.mkdir(parents=True, exist_ok=True)
+    gray = images[0, 0]
+    _save_gray_png(gray, sample_dir / "input_student_gray.png")
+    _save_gray_png(gray, sample_dir / "input_amplitude.png")
+    target = int(targets[0].item())
+    prediction = int(logits[0].argmax().item())
+    target_name = class_names[target] if class_names and target < len(class_names) else str(target)
+    prediction_name = class_names[prediction] if class_names and prediction < len(class_names) else str(prediction)
+    (sample_dir / "label.txt").write_text(
+        f"true label: {target} ({target_name})\n"
+        f"predicted label: {prediction} ({prediction_name})\n"
+        "sample index: fixed visualization batch\n"
+        f"dataset name: {dataset_name}\n",
+        encoding="utf-8",
+    )
+    (sample_dir / "prediction.txt").write_text(
+        f"predicted label: {prediction} ({prediction_name})\n", encoding="utf-8"
+    )
     labels = [aperture.name for aperture in model.layout.expert_apertures]
     save_prompt_maps(intermediates, run_dir / "figures" / "prompt" / epoch_name, expert_labels=labels)
     save_phase_masks(model, run_dir / "figures" / "phase_masks" / epoch_name)
@@ -164,7 +189,10 @@ def main():
     fixed_batch = _fixed_batch(
         bundle.val_loader, device, int(config.get("visualization", {}).get("num_samples", 4))
     )
-    _save_artifacts(model, fixed_batch, run_dir, "epoch_0000", visualization_enabled)
+    _save_artifacts(
+        model, fixed_batch, run_dir, "epoch_0000", visualization_enabled,
+        bundle.class_names, config["dataset"].get("name", "")
+    )
     training_cfg = config.get("training", {})
     evaluation_cfg = training_cfg.get("evaluation", {})
     epochs = int(training_cfg.get("epochs", 200))
@@ -228,7 +256,10 @@ def main():
             save_checkpoint(run_dir / "checkpoints" / "best.pt", model, optimizer, epoch, row, config)
         save_checkpoint(run_dir / "checkpoints" / "last.pt", model, optimizer, epoch, row, config)
         if visualization_enabled and epoch % save_interval == 0:
-            _save_artifacts(model, fixed_batch, run_dir, f"epoch_{epoch:04d}", True)
+            _save_artifacts(
+                model, fixed_batch, run_dir, f"epoch_{epoch:04d}", True,
+                bundle.class_names, config["dataset"].get("name", "")
+            )
         print(
             f"epoch {epoch:03d} | train_acc={train_metrics['acc']:.4f} val_acc={val_metrics['acc']:.4f} | "
             f"ce={train_metrics['loss']:.4f} | phase_dropout={'on' if dropout_active else 'off'} | time={epoch_time:.1f}s"
@@ -289,7 +320,10 @@ def main():
     save_training_curves(curve_rows, run_dir / "figures" / "training_curves.png")
     save_expert_usage(expert_rows, run_dir / "figures" / "expert_usage_heatmap.png")
     save_expert_usage(expert_rows, run_dir / "figures" / "prompt_weights.png")
-    _save_artifacts(model, fixed_batch, run_dir, "final_epoch", visualization_enabled)
+    _save_artifacts(
+        model, fixed_batch, run_dir, "final_epoch", visualization_enabled,
+        bundle.class_names, config["dataset"].get("name", "")
+    )
     summary = {
         **final_metrics,
         **architecture,

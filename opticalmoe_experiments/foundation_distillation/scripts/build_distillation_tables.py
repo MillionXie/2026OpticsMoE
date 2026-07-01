@@ -19,6 +19,11 @@ TABLES = {
     "expert_usage": "master_distillation_expert_usage.csv",
 }
 
+PROBE_TABLES = {
+    "runs": "master_teacher_probe_runs.csv",
+    "final_metrics": "master_teacher_probe_final_metrics.csv",
+}
+
 TEACHER_FIELDS = (
     "teacher_type",
     "teacher_backend",
@@ -47,6 +52,14 @@ def rebuild_distillation_tables(runs_dir, out_dir):
             rows.extend(loaded_rows)
         write_rows(out_dir / filename, rows)
         counts[key] = len(rows)
+    probe_runs_dir = runs_dir.parent / "teacher_probe_runs"
+    for key, filename in PROBE_TABLES.items():
+        rows = []
+        for path in sorted(probe_runs_dir.glob(f"*/summary_for_master/{key}_rows.json")):
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            rows.extend(payload if isinstance(payload, list) else [payload])
+        write_rows(out_dir / filename, rows)
+        counts[f"teacher_probe_{key}"] = len(rows)
     return counts
 
 

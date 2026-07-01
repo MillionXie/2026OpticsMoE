@@ -1,14 +1,12 @@
 seed: 7
 device: auto
-
 experiment:
   family: foundation_distillation
-  run_name: imagenette_gray_dinov2_vits14_feature_distill_moe_seed7
+  run_name: cifar10_gray_clip_vitb32_feature_distill_moe_seed7
   print_freq: 50
-
 dataset:
-  name: imagenette
-  root: ./data/imagenette2-160
+  name: cifar10
+  root: ./data
   input_size: 120
   grayscale: true
   val_split: 0.1
@@ -17,38 +15,34 @@ dataset:
   pin_memory: auto
   persistent_workers: true
   prefetch_factor: 4
-  download: false
+  download: true
   smoke_test: false
   smoke_batch_size: 1
   smoke_train_size: 64
   smoke_test_size: 32
   sampling_protocol:
-    enabled: false
-    total_size: null
-    train_test_ratio: [4, 1]
+    enabled: true
+    total_size: 50000
+    train_test_ratio:
+    - 4
+    - 1
     class_balanced: true
     seed_offset: 0
   max_train_samples: null
   max_val_samples: null
   max_test_samples: null
-
 teacher:
-  type: dinov2_image_encoder
-  backend: transformers
-  model_name: facebook/dinov2-small
-  feature_type: cls
+  type: clip_image_encoder
+  model_name: ViT-B/32
   input_mode: grayscale_replicated_rgb
   freeze: true
-
 teacher_cache:
-  cache_dir: opticalmoe_experiments/foundation_distillation/teacher_cache/dinov2_small/imagenette_gray
+  cache_dir: foundation_distillation/teacher_cache/clip_vit_b32/cifar10_gray
   build_if_missing: false
   require_metadata_match: true
-
 student:
   model_type: feature_distilled_optical_moe
   num_experts: 9
-
 layout:
   geometry_profile: fast120_520
   canvas_height: 520
@@ -58,12 +52,11 @@ layout:
   expert_pitch: 150
   padding: 35
   prompt_aperture_size: 450
-
 optics:
-  wavelength_m: 5.32e-7
-  pixel_size_m: 8.0e-6
+  wavelength_m: 5.32e-07
+  pixel_size_m: 8.0e-06
   num_layers: 5
-  focal_length_m: 0.10
+  focal_length_m: 0.1
   aperture_mode: hard
   evanescent_mode: zero
   phase_param: unconstrained
@@ -75,12 +68,11 @@ optics:
   global_fc_phase_size: 450
   global_fc_padding_mode: transparent
   distances_m:
-    input_to_prompt: 0.20
-    prompt_to_expert: 0.20
+    input_to_prompt: 0.2
+    prompt_to_expert: 0.2
     inter_layer: 0.05
     layer5_to_fc: 0.05
     fc_to_detector: 0.05
-
 prompt:
   mode: complex_order_router
   amplitude_init_logits: 2.0
@@ -90,19 +82,16 @@ prompt:
   grating_sign_x: 1.0
   grating_sign_y: 1.0
   normalize: sum_amplitude
-
 feature_detector:
   type: grid_pool
   source_region: camera_active_window
   grid_size: 30
   pooling: sum
   feature_dim: 900
-
 feature_preprocess:
   norm: layernorm
   norm_affine: true
   activation: gelu
-
 classifier:
   input: semantic_feature
   input_dim: auto_teacher_dim
@@ -111,7 +100,6 @@ classifier:
   hidden_dim: 128
   activation: gelu
   dropout: 0.1
-
 projector:
   type: mlp
   input_dim: auto_feature_dim
@@ -122,19 +110,16 @@ projector:
   activation: gelu
   dropout: 0.1
   output_l2_normalize: true
-
 loss:
   ce_weight: 1.0
   feature_distill_weight: 0.5
   leak_loss_weight: 0.0
   feature_loss: cosine
   leak_loss: outside_camera_energy_ratio
-
 optimizer:
   type: adamw
   lr: 0.003
   weight_decay: 0.0005
-
 regularization:
   phase_dropout:
     enabled: true
@@ -146,19 +131,16 @@ regularization:
     apply_to_experts: true
     apply_to_global_fc: true
     start_epoch: 10
-
 training:
   epochs: 200
   print_freq: 50
   evaluation:
     max_val_batches: null
     max_test_batches: null
-
 visualization:
   enabled: true
   save_interval_epochs: 10
   num_samples: 4
   dpi: 150
-
 reporting:
   rebuild_master_tables_after_run: true

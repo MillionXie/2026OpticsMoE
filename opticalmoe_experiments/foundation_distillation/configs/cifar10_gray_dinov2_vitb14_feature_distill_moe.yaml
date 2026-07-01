@@ -3,12 +3,12 @@ device: auto
 
 experiment:
   family: foundation_distillation
-  run_name: imagenette_gray_dinov2_vits14_feature_distill_moe_seed7
+  run_name: cifar10_gray_dinov2_vitb14_feature_distill_moe_seed7
   print_freq: 50
 
 dataset:
-  name: imagenette
-  root: ./data/imagenette2-160
+  name: cifar10
+  root: ./data
   input_size: 120
   grayscale: true
   val_split: 0.1
@@ -17,14 +17,14 @@ dataset:
   pin_memory: auto
   persistent_workers: true
   prefetch_factor: 4
-  download: false
+  download: true
   smoke_test: false
   smoke_batch_size: 1
   smoke_train_size: 64
   smoke_test_size: 32
   sampling_protocol:
-    enabled: false
-    total_size: null
+    enabled: true
+    total_size: 50000
     train_test_ratio: [4, 1]
     class_balanced: true
     seed_offset: 0
@@ -35,13 +35,13 @@ dataset:
 teacher:
   type: dinov2_image_encoder
   backend: transformers
-  model_name: facebook/dinov2-small
+  model_name: facebook/dinov2-base
   feature_type: cls
   input_mode: grayscale_replicated_rgb
   freeze: true
 
 teacher_cache:
-  cache_dir: opticalmoe_experiments/foundation_distillation/teacher_cache/dinov2_small/imagenette_gray
+  cache_dir: opticalmoe_experiments/foundation_distillation/teacher_cache/dinov2_base/cifar10_gray
   build_if_missing: false
   require_metadata_match: true
 

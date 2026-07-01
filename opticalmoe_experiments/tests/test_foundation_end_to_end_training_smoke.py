@@ -22,7 +22,8 @@ def _config():
         "layout": {"canvas_height": 96, "canvas_width": 96, "input_size": 16, "expert_size": 10, "expert_pitch": 24, "padding": 12, "prompt_aperture_size": 72},
         "optics": {"num_layers": 1, "global_fc_phase_size": 72, "distances_m": {key: 0.01 for key in ("input_to_prompt", "prompt_to_expert", "inter_layer", "layer5_to_fc", "fc_to_detector")}},
         "prompt": {},
-        "feature_detector": {"grid_size": 4, "feature_dim": 16},
+        "feature_detector": {"source_region": "camera_active_window", "grid_size": 30, "feature_dim": 900, "pooling": "sum"},
+        "feature_preprocess": {"norm": "layernorm", "norm_affine": True, "activation": "gelu"},
         "classifier": {"hidden_dim": 8, "hidden_layers": 1},
         "loss": {"type": "cross_entropy"},
         "optimizer": {"type": "adamw", "lr": 0.001},
@@ -61,4 +62,3 @@ def test_end_to_end_smoke_saves_comparable_outputs(tmp_path, monkeypatch):
     architecture = (run_dir / "architecture_report.json").read_text(encoding="utf-8")
     assert '"projector_parameter_count": 0' in architecture
     assert '"feature_distillation_used": false' in architecture
-

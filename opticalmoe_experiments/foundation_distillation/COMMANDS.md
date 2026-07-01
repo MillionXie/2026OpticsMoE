@@ -17,15 +17,6 @@ python foundation_distillation/scripts/build_teacher_feature_cache.py \
 ```bash
 python foundation_distillation/scripts/train_feature_distilled_moe.py \
   --config foundation_distillation/configs/cifar10_gray_clip_vitb32_feature_distill_moe.yaml \
-  --run_name cifar10_gray_clip_feature_distill_smoke \
-  --epochs 1 \
-  --smoke_test \
-  --device cuda
-```
-
-```bash
-python foundation_distillation/scripts/train_feature_distilled_moe.py \
-  --config foundation_distillation/configs/cifar10_gray_clip_vitb32_feature_distill_moe.yaml \
   --run_name cifar10_gray_clip_vitb32_feature_distill_seed7 \
   --device cuda
 ```
@@ -114,6 +105,44 @@ Train Imagenette with cached DINOv2 features:
 python foundation_distillation/scripts/train_feature_distilled_moe.py \
   --config foundation_distillation/configs/imagenette_gray_dinov2_vits14_feature_distill_moe.yaml \
   --run_name imagenette_gray_dinov2_vits14_feature_distill_seed7 \
+  --device cuda
+```
+
+Build and train the DINOv2-base CIFAR10 variant:
+
+```bash
+python foundation_distillation/scripts/build_teacher_feature_cache.py \
+  --config foundation_distillation/configs/cifar10_gray_dinov2_vitb14_feature_distill_moe.yaml \
+  --device cuda
+
+python foundation_distillation/scripts/train_feature_distilled_moe.py \
+  --config foundation_distillation/configs/cifar10_gray_dinov2_vitb14_feature_distill_moe.yaml \
+  --run_name cifar10_gray_dinov2_vitb14_feature_distill_seed7 \
+  --device cuda
+```
+
+Build and train the DINOv2-base Imagenette variant:
+
+```bash
+python foundation_distillation/scripts/build_teacher_feature_cache.py \
+  --config foundation_distillation/configs/imagenette_gray_dinov2_vitb14_feature_distill_moe.yaml \
+  --device cuda
+
+python foundation_distillation/scripts/train_feature_distilled_moe.py \
+  --config foundation_distillation/configs/imagenette_gray_dinov2_vitb14_feature_distill_moe.yaml \
+  --run_name imagenette_gray_dinov2_vitb14_feature_distill_seed7 \
+  --device cuda
+```
+
+## Teacher Feature Probe
+
+The matched MLP probe reads the existing cache and does not load the teacher encoder:
+
+```bash
+python foundation_distillation/scripts/train_teacher_feature_probe.py \
+  --config foundation_distillation/configs/cifar10_gray_clip_vitb32_feature_distill_moe.yaml \
+  --probe_type matched_mlp \
+  --run_name cifar10_clip_vitb32_teacher_matched_mlp_probe \
   --device cuda
 ```
 

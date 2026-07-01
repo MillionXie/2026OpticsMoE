@@ -65,6 +65,9 @@ def main():
         "teacher_feature_dim": int(bundle.teacher_feature_dim),
         "test_acc": metrics["acc"],
         "test_loss": metrics["total_loss"],
+        "test_leak_loss": metrics["leak_loss"],
+        "test_outside_camera_energy_ratio": metrics["outside_camera_energy_ratio"],
+        "leak_loss_weight": float(config.get("loss", {}).get("leak_loss_weight", 0.0)),
         "mean_feature_cosine": float(similarities.mean().item()),
         "samples": metrics["samples"],
     }
@@ -79,7 +82,9 @@ def main():
     images, labels, _teacher, _indices = next(iter(bundle.test_loader))
     sample_count = min(8, len(images))
     with torch.no_grad():
-        logits, _optical, _projected = model(images[:sample_count].to(device))
+        logits, _camera_raw, _camera_processed, _semantic, _semantic_normalized = model(
+            images[:sample_count].to(device)
+        )
     sample_predictions = logits.argmax(dim=1).cpu()
     fig, axes = plt.subplots(2, 4, figsize=(9, 5), squeeze=False)
     for index, ax in enumerate(axes.ravel()):

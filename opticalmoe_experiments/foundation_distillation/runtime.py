@@ -74,6 +74,7 @@ def build_student(config: Dict, num_classes: int, teacher_feature_dim: int):
         teacher_feature_dim=teacher_feature_dim,
         layout=layout,
         feature_detector_config=config.get("feature_detector", {}),
+        feature_preprocess_config=config.get("feature_preprocess", {}),
         classifier_config=config.get("classifier", {}),
         projector_config=config.get("projector", {}),
         **optical_kwargs,
@@ -88,6 +89,7 @@ def build_end_to_end_student(config: Dict, num_classes: int):
         num_classes=num_classes,
         layout=layout,
         feature_detector_config=config.get("feature_detector", {}),
+        feature_preprocess_config=config.get("feature_preprocess", {}),
         classifier_config=config.get("classifier", {}),
         **optical_kwargs,
     )
@@ -117,7 +119,16 @@ def run_distillation_epoch(
 ) -> Dict[str, float]:
     training = optimizer is not None
     model.train(training)
-    totals = {"total_loss": 0.0, "ce_loss": 0.0, "feature_loss": 0.0, "feature_cosine": 0.0, "correct": 0, "samples": 0}
+    totals = {
+        "total_loss": 0.0,
+        "ce_loss": 0.0,
+        "feature_loss": 0.0,
+        "feature_cosine": 0.0,
+        "leak_loss": 0.0,
+        "outside_camera_energy_ratio": 0.0,
+        "correct": 0,
+        "samples": 0,
+    }
     context = torch.enable_grad() if training else torch.no_grad()
     with context:
         for batch_index, (images, labels, teacher_features, _indices) in enumerate(loader, start=1):
@@ -128,20 +139,29 @@ def run_distillation_epoch(
             teacher_features = teacher_features.to(device, non_blocking=True)
             if training:
                 optimizer.zero_grad(set_to_none=True)
-            logits, _optical_feature, projected_feature = model(images)
+            logits, _camera_raw, _camera_processed, _semantic, semantic_normalized, auxiliary = model.forward_with_aux(images)
             losses = feature_distillation_loss(
                 logits,
                 labels,
-                projected_feature,
+                semantic_normalized,
                 teacher_features,
+                outside_camera_energy_ratio=auxiliary["outside_camera_energy_ratio"],
                 ce_weight=float(loss_cfg.get("ce_weight", 1.0)),
                 feature_distill_weight=float(loss_cfg.get("feature_distill_weight", 0.5)),
+                leak_loss_weight=float(loss_cfg.get("leak_loss_weight", 0.0)),
             )
             if training:
                 losses["total_loss"].backward()
                 optimizer.step()
             batch_size = int(labels.numel())
-            for key in ("total_loss", "ce_loss", "feature_loss", "feature_cosine"):
+            for key in (
+                "total_loss",
+                "ce_loss",
+                "feature_loss",
+                "feature_cosine",
+                "leak_loss",
+                "outside_camera_energy_ratio",
+            ):
                 totals[key] += float(losses[key].detach().item()) * batch_size
             totals["correct"] += int((logits.argmax(dim=1) == labels).sum().item())
             totals["samples"] += batch_size
@@ -149,6 +169,7 @@ def run_distillation_epoch(
                 print(
                     f"  update {batch_index:03d}/{len(loader):03d} | total={losses['total_loss'].item():.4f} "
                     f"ce={losses['ce_loss'].item():.4f} feat={losses['feature_loss'].item():.4f} "
+                    f"leak={losses['leak_loss'].item():.4f} "
                     f"acc={(logits.argmax(1) == labels).float().mean().item():.4f} cos={losses['feature_cosine'].item():.4f}"
                 )
     samples = max(int(totals["samples"]), 1)
@@ -157,6 +178,8 @@ def run_distillation_epoch(
         "ce_loss": totals["ce_loss"] / samples,
         "feature_loss": totals["feature_loss"] / samples,
         "feature_cosine": totals["feature_cosine"] / samples,
+        "leak_loss": totals["leak_loss"] / samples,
+        "outside_camera_energy_ratio": totals["outside_camera_energy_ratio"] / samples,
         "acc": totals["correct"] / samples,
         "samples": int(totals["samples"]),
     }
@@ -207,9 +230,11 @@ def predict_distillation(model, loader, device, max_batches: Optional[int] = Non
     for batch_index, (images, labels, teacher_features, _indices) in enumerate(loader, start=1):
         if max_batches is not None and batch_index > int(max_batches):
             break
-        logits, _optical_feature, projected = model(images.to(device, non_blocking=True))
+        logits, _camera_raw, _camera_processed, _semantic, semantic_normalized = model(
+            images.to(device, non_blocking=True)
+        )
         teacher = torch.nn.functional.normalize(teacher_features.to(device).float(), dim=-1)
-        similarities.append(torch.nn.functional.cosine_similarity(projected, teacher, dim=-1).cpu())
+        similarities.append(torch.nn.functional.cosine_similarity(semantic_normalized, teacher, dim=-1).cpu())
         predictions.append(logits.argmax(dim=1).cpu())
         targets.append(labels.cpu())
     return torch.cat(predictions), torch.cat(targets), torch.cat(similarities)
@@ -247,6 +272,10 @@ def architecture_payload(model, config: Dict, dataset_name: str, teacher_cfg: Di
         "teacher_text_encoder_used": False,
         "geometry_profile": layout.geometry_profile,
         "canvas_size": layout.canvas_size,
+        "propagation_canvas_size": layout.canvas_size,
+        "physical_camera_size": layout.active_window_size,
+        "camera_region": list(model.camera_region),
+        "padding_used_for_feature": False,
         "input_size": layout.input_size,
         "num_experts": layout.num_experts,
         "expert_size": layout.expert_size,
@@ -266,15 +295,24 @@ def architecture_payload(model, config: Dict, dataset_name: str, teacher_cfg: Di
         "global_fc_parameter_count": model.global_fc.trainable_parameter_count(),
         "expert_phase_parameter_count": model.optical_backbone.expert_phase_parameter_count(),
         "feature_detector": model.feature_detector_config,
-        "feature_source": "detector_plane_intensity",
+        "feature_source": "camera_intensity",
+        "camera_feature_dim": model.camera_feature_dim,
+        "feature_preprocess": model.feature_preprocess_config,
         "teacher_feature_dim": model.teacher_feature_dim,
-        "classifier": config.get("classifier", {}),
-        "projector": config.get("projector", {}),
+        "classifier": model.classifier_config,
+        "projector": model.projector_config,
+        "projector_input_dim": model.projector_config["input_dim"],
+        "projector_output_dim": model.projector_config["output_dim"],
+        "projector_type": model.projector_config["type"],
+        "classifier_input": model.classifier_config["input"],
+        "leak_loss_weight": float(config.get("loss", {}).get("leak_loss_weight", 0.0)),
         "optical_parameter_count": model.optical_parameter_count(),
         "prompt_parameter_count": model.prompt_parameter_count(),
         "electronic_parameter_count": model.electronic_parameter_count(),
         "projector_parameter_count": model.projector_parameter_count(),
-        "inference_parameter_count": model.total_parameter_count() - model.projector_parameter_count(),
+        "classifier_parameter_count": model.classifier_parameter_count(),
+        "feature_preprocess_parameter_count": model.feature_preprocess_parameter_count(),
+        "inference_parameter_count": model.total_parameter_count(),
         "training_parameter_count": model.total_parameter_count(),
         "total_parameter_count": model.total_parameter_count(),
         "phase_dropout_config": config.get("regularization", {}).get("phase_dropout", {}),
@@ -294,6 +332,10 @@ def end_to_end_architecture_payload(model, config: Dict, dataset_name: str) -> D
         "feature_distillation_used": False,
         "geometry_profile": layout.geometry_profile,
         "canvas_size": layout.canvas_size,
+        "propagation_canvas_size": layout.canvas_size,
+        "physical_camera_size": layout.active_window_size,
+        "camera_region": list(model.camera_region),
+        "padding_used_for_feature": False,
         "input_size": layout.input_size,
         "num_experts": layout.num_experts,
         "expert_size": layout.expert_size,
@@ -313,12 +355,16 @@ def end_to_end_architecture_payload(model, config: Dict, dataset_name: str) -> D
         "global_fc_parameter_count": model.global_fc.trainable_parameter_count(),
         "expert_phase_parameter_count": model.optical_backbone.expert_phase_parameter_count(),
         "feature_detector": model.feature_detector_config,
-        "feature_source": "detector_plane_intensity",
+        "feature_source": "camera_intensity",
+        "camera_feature_dim": model.camera_feature_dim,
+        "feature_preprocess": model.feature_preprocess_config,
         "classifier": config.get("classifier", {}),
         "projector": None,
         "optical_parameter_count": model.optical_parameter_count(),
         "prompt_parameter_count": model.prompt_parameter_count(),
         "electronic_parameter_count": model.electronic_parameter_count(),
+        "classifier_parameter_count": model.classifier_parameter_count(),
+        "feature_preprocess_parameter_count": model.feature_preprocess_parameter_count(),
         "projector_parameter_count": 0,
         "inference_parameter_count": model.total_parameter_count(),
         "training_parameter_count": model.total_parameter_count(),

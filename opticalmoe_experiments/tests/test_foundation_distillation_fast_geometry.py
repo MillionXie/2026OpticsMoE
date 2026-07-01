@@ -17,14 +17,20 @@ def test_foundation_student_uses_fast_geometry_and_dynamic_detector_canvas():
     config["optics"]["num_layers"] = 1
     model = build_student(config, num_classes=10, teacher_feature_dim=32)
     with torch.inference_mode():
-        logits, optical, projected, intermediates = model(
+        logits, raw, processed, semantic, semantic_normalized, intermediates = model(
             torch.rand(1, 1, 120, 120), return_intermediates=True
         )
     assert logits.shape == (1, 10)
-    assert optical.shape == (1, 256)
-    assert projected.shape == (1, 32)
+    assert raw.shape == (1, 900)
+    assert processed.shape == (1, 900)
+    assert semantic.shape == (1, 32)
+    assert semantic_normalized.shape == (1, 32)
     assert intermediates["detector_intensity"].shape == (1, 520, 520)
+    assert intermediates["camera_intensity"].shape == (1, 450, 450)
+    assert intermediates["camera_region"] == [35, 485, 35, 485]
     report = architecture_payload(model, config, "cifar10", config["teacher"])
     assert report["geometry_profile"] == "fast120_520"
     assert report["global_fc_parameter_count"] == 202500
     assert report["active_window_region"] == [35, 485, 35, 485]
+    assert report["feature_source"] == "camera_intensity"
+    assert report["camera_feature_dim"] == 900

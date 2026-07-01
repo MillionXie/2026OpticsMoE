@@ -93,30 +93,42 @@ prompt:
 
 feature_detector:
   type: grid_pool
-  grid_size: 16
+  source_region: camera_active_window
+  grid_size: 30
   pooling: sum
-  normalize_total_energy: true
-  feature_dim: 256
+  feature_dim: 900
+
+feature_preprocess:
+  norm: layernorm
+  norm_affine: true
+  activation: gelu
 
 classifier:
+  input: semantic_feature
+  input_dim: auto_teacher_dim
   type: mlp
-  hidden_dim: 128
   hidden_layers: 1
+  hidden_dim: 128
   activation: gelu
   dropout: 0.1
 
 projector:
   type: mlp
+  input_dim: auto_feature_dim
   output_dim: auto_teacher_dim
-  hidden_dim: 256
   hidden_layers: 1
+  hidden_dim: 512
+  hidden_norm: none
   activation: gelu
   dropout: 0.1
+  output_l2_normalize: true
 
 loss:
   ce_weight: 1.0
   feature_distill_weight: 0.5
+  leak_loss_weight: 0.0
   feature_loss: cosine
+  leak_loss: outside_camera_energy_ratio
 
 optimizer:
   type: adamw

@@ -5,6 +5,7 @@ import time
 from pathlib import Path
 
 import torch
+from PIL import Image
 
 EXPERIMENTS_ROOT = Path(__file__).resolve().parents[2]
 REPO_ROOT = EXPERIMENTS_ROOT.parent
@@ -58,7 +59,9 @@ def _fixed_batch(loader, device, count=4):
 @torch.no_grad()
 def _diagnostics(model, images, epoch, run_id):
     model.eval()
-    _logits, _feature, _projected, intermediates = model(images, return_intermediates=True)
+    _logits, _raw, _processed, _semantic, _semantic_normalized, intermediates = model(
+        images, return_intermediates=True
+    )
     powers = intermediates["normalized_prompt_powers"].detach().cpu()
     amplitudes = intermediates["prompt_amplitudes"].detach().cpu()
     entrance = intermediates["expert_energy_ratios"].detach().mean(dim=0).cpu()
@@ -96,16 +99,70 @@ def _diagnostics(model, images, epoch, run_id):
         if intensity.ndim == 2:
             intensity = intensity.unsqueeze(0)
         energy_rows.append({"run_id": run_id, "epoch": int(epoch), "stage": stage, "total_energy": float(intensity.sum((-2, -1)).mean().item())})
-    return intermediates, rows, energy_rows
+    feature_stats = {
+        "run_id": run_id,
+        "epoch": int(epoch),
+        "camera_feature_mean": float(intermediates["camera_feature_mean"].mean().item()),
+        "camera_feature_std": float(intermediates["camera_feature_std"].mean().item()),
+        "camera_feature_min": float(intermediates["camera_feature_min"].mean().item()),
+        "camera_feature_max": float(intermediates["camera_feature_max"].mean().item()),
+        "camera_feature_sparsity": float(intermediates["camera_feature_sparsity"].mean().item()),
+    }
+    return intermediates, rows, energy_rows, feature_stats
+
+
+def _save_gray_png(image, path):
+    array = (torch.as_tensor(image).detach().cpu().float().clamp(0.0, 1.0) * 255.0).byte().numpy()
+    Image.fromarray(array, mode="L").save(path)
 
 
 @torch.no_grad()
-def _save_artifacts(model, fixed_batch, run_dir, epoch_name, enabled=True):
+def _save_artifacts(
+    model,
+    fixed_batch,
+    run_dir,
+    epoch_name,
+    enabled=True,
+    class_names=None,
+    dataset_name="",
+    original_rgb=None,
+):
     if not enabled:
         return
-    images, _labels, _teacher, _indices = fixed_batch
-    _logits, _feature, _projected, intermediates = model(images, return_intermediates=True)
-    save_light_fields(intermediates, run_dir / "figures" / "light_fields" / epoch_name / "sample_000")
+    images, labels, _teacher, indices = fixed_batch
+    logits, _raw, _processed, _semantic, _semantic_normalized, intermediates = model(
+        images, return_intermediates=True
+    )
+    sample_dir = run_dir / "figures" / "light_fields" / epoch_name / "sample_000"
+    save_light_fields(intermediates, sample_dir)
+    sample_dir.mkdir(parents=True, exist_ok=True)
+    gray = images[0, 0]
+    _save_gray_png(gray, sample_dir / "input_student_gray.png")
+    _save_gray_png(gray, sample_dir / "input_amplitude.png")
+    gray_rgb = (gray.detach().cpu().float().clamp(0.0, 1.0) * 255.0).byte().unsqueeze(-1).repeat(1, 1, 3).numpy()
+    Image.fromarray(gray_rgb, mode="RGB").save(sample_dir / "input_teacher_gray_rgb.png")
+    if original_rgb is not None:
+        rgb = torch.as_tensor(original_rgb[0]).detach().cpu().float()
+        if rgb.ndim == 3 and rgb.shape[0] == 3:
+            rgb = rgb.permute(1, 2, 0)
+        rgb = (rgb.clamp(0.0, 1.0) * 255.0).byte().numpy()
+        Image.fromarray(rgb, mode="RGB").save(sample_dir / "input_original_rgb.png")
+    target = int(labels[0].item())
+    prediction = int(logits[0].argmax().item())
+    sample_index = int(indices[0].item())
+    target_name = class_names[target] if class_names and target < len(class_names) else str(target)
+    prediction_name = class_names[prediction] if class_names and prediction < len(class_names) else str(prediction)
+    (sample_dir / "label.txt").write_text(
+        f"true label: {target} ({target_name})\n"
+        f"predicted label: {prediction} ({prediction_name})\n"
+        f"sample index: {sample_index}\n"
+        f"dataset name: {dataset_name}\n",
+        encoding="utf-8",
+    )
+    (sample_dir / "prediction.txt").write_text(
+        f"predicted label: {prediction} ({prediction_name})\n",
+        encoding="utf-8",
+    )
     labels = [aperture.name for aperture in model.layout.expert_apertures]
     save_prompt_maps(intermediates, run_dir / "figures" / "prompt" / epoch_name, expert_labels=labels)
     save_phase_masks(model, run_dir / "figures" / "phase_masks" / epoch_name)
@@ -178,14 +235,22 @@ def main():
 
     visualization_enabled = bool(config.get("visualization", {}).get("enabled", True)) and not args.disable_visualization
     fixed_batch = _fixed_batch(bundle.val_loader, device, int(config.get("visualization", {}).get("num_samples", 4)))
-    _save_artifacts(model, fixed_batch, run_dir, "epoch_0000", visualization_enabled)
+    _save_artifacts(
+        model,
+        fixed_batch,
+        run_dir,
+        "epoch_0000",
+        visualization_enabled,
+        bundle.class_names,
+        config["dataset"].get("name", ""),
+    )
     loss_cfg = config.get("loss", {})
     training_cfg = config.get("training", {})
     evaluation_cfg = training_cfg.get("evaluation", {})
     epochs = int(training_cfg.get("epochs", 200))
     print_freq = int(training_cfg.get("print_freq", config.get("experiment", {}).get("print_freq", 50)))
     save_interval = int(config.get("visualization", {}).get("save_interval_epochs", 10))
-    epoch_rows, expert_rows, optical_energy_rows = [], [], []
+    epoch_rows, expert_rows, optical_energy_rows, camera_feature_stats_rows = [], [], [], []
     best_epoch, best_val_acc, best_val_loss = 0, -math.inf, math.inf
     run_start = time.perf_counter()
 
@@ -218,36 +283,52 @@ def main():
             "train_ce_loss": train_metrics["ce_loss"],
             "train_feature_loss": train_metrics["feature_loss"],
             "train_feature_cosine": train_metrics["feature_cosine"],
+            "train_leak_loss": train_metrics["leak_loss"],
+            "train_outside_camera_energy_ratio": train_metrics["outside_camera_energy_ratio"],
             "train_acc": train_metrics["acc"],
             "val_total_loss": val_metrics["total_loss"],
             "val_ce_loss": val_metrics["ce_loss"],
             "val_feature_loss": val_metrics["feature_loss"],
             "val_feature_cosine": val_metrics["feature_cosine"],
+            "val_leak_loss": val_metrics["leak_loss"],
+            "val_outside_camera_energy_ratio": val_metrics["outside_camera_energy_ratio"],
             "val_acc": val_metrics["acc"],
             "phase_dropout_active": dropout_active,
             "lr": optimizer.param_groups[0]["lr"],
             "epoch_time_sec": epoch_time,
         }
         epoch_rows.append(row)
-        intermediates, usage, energy = _diagnostics(model, fixed_batch[0], epoch, run_name)
+        intermediates, usage, energy, feature_stats = _diagnostics(model, fixed_batch[0], epoch, run_name)
         expert_rows.extend(usage)
         optical_energy_rows.extend(energy)
+        camera_feature_stats_rows.append(feature_stats)
+        row.update({key: value for key, value in feature_stats.items() if key.startswith("camera_feature_")})
         is_best = val_metrics["acc"] > best_val_acc
         if is_best:
             best_epoch, best_val_acc, best_val_loss = epoch, val_metrics["acc"], val_metrics["total_loss"]
             save_checkpoint(run_dir / "checkpoints" / "best.pt", model, optimizer, epoch, row, config)
         save_checkpoint(run_dir / "checkpoints" / "last.pt", model, optimizer, epoch, row, config)
         if visualization_enabled and epoch % save_interval == 0:
-            _save_artifacts(model, fixed_batch, run_dir, f"epoch_{epoch:04d}", True)
+            _save_artifacts(
+                model,
+                fixed_batch,
+                run_dir,
+                f"epoch_{epoch:04d}",
+                True,
+                bundle.class_names,
+                config["dataset"].get("name", ""),
+            )
         print(
             f"epoch {epoch:03d} | train_acc={train_metrics['acc']:.4f} val_acc={val_metrics['acc']:.4f} | "
             f"ce={train_metrics['ce_loss']:.4f} feat={train_metrics['feature_loss']:.4f} "
-            f"cos={train_metrics['feature_cosine']:.4f} | phase_dropout={'on' if dropout_active else 'off'} | time={epoch_time:.1f}s"
+            f"cos={train_metrics['feature_cosine']:.4f} leak={train_metrics['leak_loss']:.4f} "
+            f"| phase_dropout={'on' if dropout_active else 'off'} | time={epoch_time:.1f}s"
         )
         write_rows(run_dir / "metrics" / "epoch_metrics.csv", epoch_rows)
         write_rows(run_dir / "diagnostics" / "expert_usage.csv", expert_rows)
         write_rows(run_dir / "diagnostics" / "prompt_weights.csv", expert_rows)
         write_rows(run_dir / "diagnostics" / "optical_energy_by_stage.csv", optical_energy_rows)
+        write_rows(run_dir / "diagnostics" / "camera_feature_stats.csv", camera_feature_stats_rows)
 
     model.set_phase_dropout_active(False)
     test_metrics = run_distillation_epoch(
@@ -278,11 +359,17 @@ def main():
         "final_test_acc": test_metrics["acc"],
         "final_test_loss": test_metrics["total_loss"],
         "final_feature_cosine": test_metrics["feature_cosine"],
+        "test_leak_loss": test_metrics["leak_loss"],
+        "test_outside_camera_energy_ratio": test_metrics["outside_camera_energy_ratio"],
+        "final_outside_camera_energy_ratio": test_metrics["outside_camera_energy_ratio"],
+        "leak_loss_weight": float(loss_cfg.get("leak_loss_weight", 0.0)),
         "optical_parameter_count": model.optical_parameter_count(),
         "prompt_parameter_count": model.prompt_parameter_count(),
         "electronic_parameter_count": model.electronic_parameter_count(),
         "projector_parameter_count": model.projector_parameter_count(),
-        "inference_parameter_count": model.total_parameter_count() - model.projector_parameter_count(),
+        "classifier_parameter_count": model.classifier_parameter_count(),
+        "feature_preprocess_parameter_count": model.feature_preprocess_parameter_count(),
+        "inference_parameter_count": model.total_parameter_count(),
         "training_parameter_count": model.total_parameter_count(),
         "total_parameter_count": model.total_parameter_count(),
         "total_wall_time_sec": total_wall,
@@ -300,7 +387,15 @@ def main():
     save_feature_similarity(epoch_rows, run_dir / "figures" / "feature_similarity_curve.png")
     save_expert_usage(expert_rows, run_dir / "figures" / "expert_usage_heatmap.png")
     save_expert_usage(expert_rows, run_dir / "figures" / "prompt_weights.png")
-    _save_artifacts(model, fixed_batch, run_dir, "final_epoch", visualization_enabled)
+    _save_artifacts(
+        model,
+        fixed_batch,
+        run_dir,
+        "final_epoch",
+        visualization_enabled,
+        bundle.class_names,
+        config["dataset"].get("name", ""),
+    )
     summary = {
         **final_metrics,
         **architecture,
