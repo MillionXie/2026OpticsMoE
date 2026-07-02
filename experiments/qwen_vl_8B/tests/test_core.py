@@ -11,6 +11,7 @@ from experiments.qwen_vl_8B.metrics import classification_metrics
 from experiments.qwen_vl_8B.modeling import MLPHead, parameter_report
 from experiments.qwen_vl_8B.settings import load_settings
 from experiments.qwen_vl_8B.timing import summarize_timings
+from experiments.qwen_vl_8B.run import build_parser
 
 
 class FakeVisionModel(nn.Module):
@@ -94,3 +95,8 @@ def test_parameter_report_includes_head() -> None:
     assert report["mlp_head"]["parameters"] == 51
     assert report["architecture"]["vision_hidden_size"] == 6
 
+
+def test_download_phase_cli() -> None:
+    args = build_parser().parse_args(["--config", "config.json", "--phase", "download"])
+    assert args.phase == "download"
+    assert args.download_workers == 2

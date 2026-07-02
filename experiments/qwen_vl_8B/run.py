@@ -10,6 +10,7 @@ import torch
 
 from .benchmark import benchmark_inference
 from .datasets import DatasetBundle, load_dataset, make_loader
+from .download import download_checkpoint
 from .features import extract_and_cache, load_feature_cache
 from .io_utils import resolve_device, resolve_dtype, runtime_metadata, set_seed, write_json
 from .modeling import MLPHead, LoadedBackbone, load_backbone, parameter_report
@@ -22,11 +23,18 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Qwen3-VL-8B frozen-feature MLP classifier")
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument(
-        "--phase", choices=("all", "extract", "train", "inference", "visualize"), default="all"
+        "--phase",
+        choices=("all", "download", "extract", "train", "inference", "visualize"),
+        default="all",
     )
     parser.add_argument("--output-dir", type=Path, default=None)
     parser.add_argument("--data-root", type=Path, default=None)
     parser.add_argument("--cache-dir", type=Path, default=None)
+    parser.add_argument("--device", default=None)
+    parser.add_argument(
+        "--local-files-only", action=argparse.BooleanOptionalAction, default=None
+    )
+    parser.add_argument("--download-workers", type=int, default=2)
     return parser
 
 
@@ -37,10 +45,28 @@ def main(argv: list[str] | None = None) -> int:
         value = getattr(args, name)
         if value is not None:
             setattr(settings, name, value.expanduser().resolve())
+    if args.device is not None:
+        settings.device = args.device
+    if args.local_files_only is not None:
+        settings.local_files_only = args.local_files_only
     settings.validate()
     output_dir = settings.output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
     write_json(output_dir / "config_resolved.json", settings.to_dict())
+    if args.phase == "download":
+        _log(f"checkpoint download started: {settings.model_id}")
+        snapshot = download_checkpoint(
+            settings.model_id,
+            settings.cache_dir,
+            max_workers=args.download_workers,
+            disable_xet=True,
+        )
+        write_json(
+            output_dir / "download.json",
+            {"model_id": settings.model_id, "snapshot": str(snapshot), "xet_disabled": True},
+        )
+        _log(f"checkpoint download finished: {snapshot}")
+        return 0
     if args.phase == "visualize":
         _log("visualization started")
         generate_figures(output_dir)

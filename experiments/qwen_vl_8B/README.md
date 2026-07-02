@@ -33,13 +33,30 @@ export HF_HOME=/root/autodl-tmp/hf_cache
 export HF_HUB_CACHE=/root/autodl-tmp/hf_cache/hub
 ```
 
+### 无卡模式只下载模型
+
+无卡实例不要执行完整实验。使用专门的下载阶段，它不会初始化数据集、构造模型或调用 CUDA，
+并默认禁用可能返回 CAS 401 的 Xet 下载客户端：
+
+```bash
+python -m experiments.qwen_vl_8B \
+  --config experiments/qwen_vl_8B/configs/cifar100.json \
+  --phase download \
+  --cache-dir /root/autodl-tmp/hf_cache \
+  --download-workers 2
+```
+
+如果仍提示访问限制，运行 `hf auth login` 并粘贴 Hugging Face read token。下载完成后，
+有卡模式使用 `--local-files-only` 可禁止程序再次访问网络。
+
 ## 运行
 
 先用小规模配置验证完整链路：
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen_vl_8B \
-  --config experiments/qwen_vl_8B/configs/cifar100_smoke.json
+  --config experiments/qwen_vl_8B/configs/cifar100_smoke.json \
+  --device cuda --local-files-only
 ```
 
 完整 CIFAR-100 实验：
