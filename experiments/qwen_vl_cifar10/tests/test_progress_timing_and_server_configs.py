@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from unittest.mock import call, patch
 
 import torch
 
@@ -15,6 +16,7 @@ from experiments.qwen_vl_cifar10.main import (
 from experiments.qwen_vl_cifar10.models import MLPHead, SUPPORTED_MODEL_IDS
 from experiments.qwen_vl_cifar10.progress import progress_iter
 from experiments.qwen_vl_cifar10.train import train_mlp_head
+from experiments.qwen_vl_cifar10.utils import reset_cuda_peak_memory
 from experiments.qwen_vl_cifar10.visualize_results import (
     write_comparison_figure,
     write_run_figure,
@@ -97,6 +99,18 @@ def test_benchmark_records_warmup_and_measurement_durations() -> None:
     assert result.measurement_time_sec > 0
     assert result.measured_images == 6
     assert result.total_time_sec >= result.measurement_time_sec
+
+
+def test_peak_memory_reset_initializes_visible_cuda_contexts_first() -> None:
+    with (
+        patch("torch.cuda.device_count", return_value=2),
+        patch("torch.cuda.synchronize") as synchronize,
+        patch("torch.cuda.reset_peak_memory_stats") as reset,
+    ):
+        reset_cuda_peak_memory(torch.device("cuda"))
+
+    assert synchronize.call_args_list == [call(0), call(1)]
+    assert reset.call_args_list == [call(0), call(1)]
 
 
 def test_run_and_comparison_figures_are_written(tmp_path: Path) -> None:

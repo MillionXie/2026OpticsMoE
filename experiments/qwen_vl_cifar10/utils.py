@@ -59,6 +59,10 @@ def cuda_synchronize(device: torch.device) -> None:
 
 def reset_cuda_peak_memory(device: torch.device) -> None:
     if device.type == "cuda":
+        # PyTorch 2.6 can reject reset_peak_memory_stats before the CUDA
+        # context for a visible device has been initialized. Synchronization
+        # initializes each context and establishes a clean timing boundary.
+        cuda_synchronize(device)
         for index in range(torch.cuda.device_count()):
             torch.cuda.reset_peak_memory_stats(index)
 
