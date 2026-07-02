@@ -1,0 +1,16 @@
+{
+  "mode": "generate",
+  "model_id": "Qwen/Qwen3-VL-2B-Instruct",
+  "data_root": "../data",
+  "output_dir": "../runs/generate_2b",
+  "image_size": 32,
+  "batch_size": 1,
+  "dtype": "bf16",
+  "device": "cuda",
+  "device_map": "none",
+  "generation_max_new_tokens": 8,
+  "warmup_batches": 2,
+  "benchmark_batches": 10,
+  "test_limit": 100,
+  "seed": 42
+}

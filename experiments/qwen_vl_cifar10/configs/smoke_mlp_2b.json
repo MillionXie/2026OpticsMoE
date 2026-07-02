@@ -1,0 +1,20 @@
+{
+  "mode": "mlp",
+  "model_id": "Qwen/Qwen3-VL-2B-Instruct",
+  "data_root": "../data",
+  "output_dir": "../runs/smoke_mlp_2b",
+  "image_size": 32,
+  "batch_size": 1,
+  "epochs": 1,
+  "feature_source": "visual_tokens_mean",
+  "cache_features": true,
+  "dtype": "bf16",
+  "device": "cuda",
+  "device_map": "none",
+  "train_limit": 32,
+  "test_limit": 32,
+  "warmup_batches": 1,
+  "benchmark_batches": 2,
+  "smoke_test": true,
+  "seed": 42
+}

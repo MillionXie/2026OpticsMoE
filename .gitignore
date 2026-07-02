@@ -21,3 +21,5 @@ __pycache__/
 *.pt
 *.zip
 _offline_packages
+
+/experiments/qwen_vl_cifar10/data

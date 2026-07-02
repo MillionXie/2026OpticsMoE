@@ -1,0 +1,22 @@
+{
+  "mode": "mlp",
+  "model_id": "Qwen/Qwen3-VL-2B-Instruct",
+  "data_root": "../data",
+  "output_dir": "../runs/mlp_2b",
+  "image_size": 32,
+  "batch_size": 2,
+  "epochs": 20,
+  "hidden_dim": 512,
+  "dropout": 0.1,
+  "learning_rate": 0.001,
+  "weight_decay": 0.01,
+  "feature_source": "visual_tokens_mean",
+  "cache_features": true,
+  "dtype": "bf16",
+  "device": "cuda",
+  "device_map": "none",
+  "num_workers": 0,
+  "warmup_batches": 10,
+  "benchmark_batches": 50,
+  "seed": 42
+}
