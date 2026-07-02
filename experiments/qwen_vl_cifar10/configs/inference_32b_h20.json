@@ -1,0 +1,22 @@
+{
+  "model_id": "Qwen/Qwen3-VL-32B-Instruct",
+  "data_root": "../data",
+  "output_dir": "../runs/inference_32b_h20",
+  "image_size": 32,
+  "resize_to": null,
+  "batch_size": 1,
+  "test_limit": null,
+  "num_workers": 0,
+  "dtype": "bf16",
+  "device": "cuda",
+  "device_map": "none",
+  "attn_implementation": "sdpa",
+  "generation_max_new_tokens": 8,
+  "warmup_batches": 3,
+  "min_gpu_memory_gib": 80.0,
+  "download": true,
+  "progress": true,
+  "audit_features": true,
+  "require_all_cuda": true,
+  "seed": 42
+}

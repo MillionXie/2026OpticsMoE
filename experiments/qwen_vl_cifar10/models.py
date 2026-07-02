@@ -48,6 +48,7 @@ def load_qwen(
     device: torch.device,
     device_map: str | None,
     trust_remote_code: bool,
+    attn_implementation: str | None = None,
 ) -> LoadedQwen:
     try:
         transformers = importlib.import_module("transformers")
@@ -77,6 +78,8 @@ def load_qwen(
                 "--device-map auto requires accelerate. Install it with `pip install accelerate`."
             ) from exc
         load_kwargs["device_map"] = device_map
+    if attn_implementation is not None:
+        load_kwargs["attn_implementation"] = attn_implementation
 
     try:
         processor = processor_cls.from_pretrained(
