@@ -9,6 +9,7 @@ import torch
 from PIL import Image
 from torch import nn
 
+from .progress import progress_iter, progress_total
 from .utils import cuda_synchronize
 
 
@@ -55,7 +56,8 @@ def generate_batch(
         return_tensors="pt",
     )
     inputs = {
-        key: value.to(device) if torch.is_tensor(value) else value for key, value in inputs.items()
+        key: value.to(device) if torch.is_tensor(value) else value
+        for key, value in inputs.items()
     }
     inputs.pop("token_type_ids", None)
     input_length = int(inputs["input_ids"].shape[1])
@@ -83,19 +85,28 @@ def run_generation(
     class_names: Sequence[str],
     device: torch.device,
     max_new_tokens: int,
+    show_progress: bool = True,
 ) -> GenerationResult:
     labels: list[int] = []
     predictions: list[int] = []
     outputs: list[str] = []
     cuda_synchronize(device)
     start = time.perf_counter()
-    for images, batch_labels in loader:
+    batches = progress_iter(
+        loader,
+        description="Qwen generation",
+        enabled=show_progress,
+        total=progress_total(loader),
+    )
+    for images, batch_labels in batches:
         batch_outputs = generate_batch(
             model, processor, images, class_names, device, max_new_tokens
         )
         outputs.extend(batch_outputs)
         labels.extend(batch_labels.tolist())
-        predictions.extend(parse_class_name(value, class_names) for value in batch_outputs)
+        predictions.extend(
+            parse_class_name(value, class_names) for value in batch_outputs
+        )
     cuda_synchronize(device)
     elapsed = time.perf_counter() - start
     return GenerationResult(labels, predictions, outputs, elapsed, len(labels))

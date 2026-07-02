@@ -13,6 +13,7 @@ SUPPORTED_MODEL_IDS = (
     "Qwen/Qwen3-VL-4B-Instruct",
     "Qwen/Qwen3-VL-8B-Instruct",
     "Qwen/Qwen3-VL-30B-A3B-Instruct",
+    "Qwen/Qwen3-VL-32B-Instruct",
     "Qwen/Qwen3-VL-235B-A22B-Instruct",
 )
 DEFAULT_MODEL_ID = SUPPORTED_MODEL_IDS[0]
@@ -25,7 +26,9 @@ class LoadedQwen:
 
 
 class MLPHead(nn.Module):
-    def __init__(self, feature_dim: int, hidden_dim: int = 512, dropout: float = 0.1) -> None:
+    def __init__(
+        self, feature_dim: int, hidden_dim: int = 512, dropout: float = 0.1
+    ) -> None:
         super().__init__()
         self.feature_dim = feature_dim
         self.network = nn.Sequential(
@@ -56,11 +59,13 @@ def load_qwen(
 
     processor_cls = getattr(transformers, "AutoProcessor", None)
     if processor_cls is None:
-        raise RuntimeError("The installed transformers package does not expose AutoProcessor.")
+        raise RuntimeError(
+            "The installed transformers package does not expose AutoProcessor."
+        )
 
     model_cls = _resolve_model_class(transformers, model_id)
     load_kwargs: dict[str, Any] = {
-        "torch_dtype": dtype,
+        "dtype": dtype,
         "trust_remote_code": trust_remote_code,
         "low_cpu_mem_usage": True,
     }
@@ -74,7 +79,9 @@ def load_qwen(
         load_kwargs["device_map"] = device_map
 
     try:
-        processor = processor_cls.from_pretrained(model_id, trust_remote_code=trust_remote_code)
+        processor = processor_cls.from_pretrained(
+            model_id, trust_remote_code=trust_remote_code
+        )
         model = model_cls.from_pretrained(model_id, **load_kwargs)
     except (KeyError, ValueError, AttributeError) as exc:
         version = getattr(transformers, "__version__", "unknown")
@@ -96,7 +103,9 @@ def _resolve_model_class(transformers: Any, model_id: str) -> Any:
 
     is_moe = "30B-A3B" in model_id or "235B-A22B" in model_id
     class_name = (
-        "Qwen3VLMoeForConditionalGeneration" if is_moe else "Qwen3VLForConditionalGeneration"
+        "Qwen3VLMoeForConditionalGeneration"
+        if is_moe
+        else "Qwen3VLForConditionalGeneration"
     )
     cls = getattr(transformers, class_name, None)
     if cls is None:
@@ -120,7 +129,11 @@ def apply_lora(
     dropout: float,
 ) -> nn.Module:
     forbidden = ("mm_mlp", "projector", "multi_modal_projector")
-    invalid = [name for name in target_modules if any(part in name.lower() for part in forbidden)]
+    invalid = [
+        name
+        for name in target_modules
+        if any(part in name.lower() for part in forbidden)
+    ]
     if invalid:
         raise ValueError(
             f"LoRA target modules {invalid} are forbidden. This experiment never tunes "
@@ -129,7 +142,9 @@ def apply_lora(
     try:
         from peft import LoraConfig, TaskType, get_peft_model
     except ImportError as exc:
-        raise RuntimeError("LoRA mode requires peft. Install it with `pip install peft`.") from exc
+        raise RuntimeError(
+            "LoRA mode requires peft. Install it with `pip install peft`."
+        ) from exc
 
     config = LoraConfig(
         task_type=TaskType.CAUSAL_LM,
@@ -146,7 +161,9 @@ def backbone_core(model: nn.Module) -> nn.Module:
     base = model.get_base_model() if hasattr(model, "get_base_model") else model
     core = getattr(base, "model", None)
     if core is None:
-        raise RuntimeError("Unable to locate the Qwen3-VL multimodal backbone (`model.model`).")
+        raise RuntimeError(
+            "Unable to locate the Qwen3-VL multimodal backbone (`model.model`)."
+        )
     return core
 
 

@@ -1,8 +1,8 @@
 {
   "mode": "mlp",
-  "model_id": "Qwen/Qwen3-VL-2B-Instruct",
+  "model_id": "Qwen/Qwen3-VL-4B-Instruct",
   "data_root": "../data",
-  "output_dir": "../runs/mlp_2b",
+  "output_dir": "../runs/mlp_4b_server_1x4090",
   "image_size": 32,
   "batch_size": 2,
   "feature_batch_size": 2,

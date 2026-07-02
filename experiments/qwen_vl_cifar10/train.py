@@ -12,6 +12,7 @@ from torch.utils.data import DataLoader, TensorDataset
 
 from .evaluate import EvaluationResult, classification_metrics, evaluate_head
 from .features import extract_feature_batch
+from .progress import log_event, progress_iter, progress_total
 from .utils import cuda_synchronize
 
 
@@ -20,6 +21,7 @@ class TrainingResult:
     train_loss: float
     evaluation: EvaluationResult
     elapsed_sec: float
+    evaluation_elapsed_sec: float
     images_per_second: float
     history: list[dict[str, float | int]]
     trainable_model_state: dict[str, torch.Tensor] | None = None
@@ -38,6 +40,7 @@ def train_mlp_head(
     learning_rate: float,
     weight_decay: float,
     seed: int,
+    show_progress: bool = True,
 ) -> TrainingResult:
     generator = torch.Generator().manual_seed(seed)
     train_loader = DataLoader(
@@ -47,7 +50,9 @@ def train_mlp_head(
         generator=generator,
     )
     head.to(device)
-    optimizer = torch.optim.AdamW(head.parameters(), lr=learning_rate, weight_decay=weight_decay)
+    optimizer = torch.optim.AdamW(
+        head.parameters(), lr=learning_rate, weight_decay=weight_decay
+    )
     criterion = nn.CrossEntropyLoss()
     best_accuracy = -1.0
     best_state: dict[str, torch.Tensor] | None = None
@@ -55,6 +60,7 @@ def train_mlp_head(
     best_train_loss = 0.0
     history: list[dict[str, float | int]] = []
     training_elapsed = 0.0
+    evaluation_elapsed = 0.0
 
     for epoch in range(1, epochs + 1):
         head.train()
@@ -62,7 +68,13 @@ def train_mlp_head(
         example_count = 0
         cuda_synchronize(device)
         epoch_start = time.perf_counter()
-        for features, labels in train_loader:
+        batches = progress_iter(
+            train_loader,
+            description=f"MLP train {epoch}/{epochs}",
+            enabled=show_progress,
+            total=len(train_loader),
+        )
+        for features, labels in batches:
             features = features.to(device)
             labels = labels.to(device)
             optimizer.zero_grad(set_to_none=True)
@@ -73,11 +85,17 @@ def train_mlp_head(
             loss_sum += float(loss.item()) * len(labels)
             example_count += len(labels)
         cuda_synchronize(device)
-        training_elapsed += time.perf_counter() - epoch_start
+        epoch_train_elapsed = time.perf_counter() - epoch_start
+        training_elapsed += epoch_train_elapsed
         train_loss = loss_sum / max(example_count, 1)
+        cuda_synchronize(device)
+        evaluation_start = time.perf_counter()
         evaluation = evaluate_head(
             head, test_features, test_labels, batch_size, device, class_names
         )
+        cuda_synchronize(device)
+        epoch_evaluation_elapsed = time.perf_counter() - evaluation_start
+        evaluation_elapsed += epoch_evaluation_elapsed
         history.append(
             {
                 "epoch": epoch,
@@ -85,8 +103,21 @@ def train_mlp_head(
                 "eval_loss": float(evaluation.loss or 0.0),
                 "accuracy": evaluation.accuracy,
                 "macro_f1": evaluation.macro_f1,
+                "train_time_sec": epoch_train_elapsed,
+                "evaluation_time_sec": epoch_evaluation_elapsed,
+                "epoch_wall_time_sec": epoch_train_elapsed + epoch_evaluation_elapsed,
             }
         )
+        if show_progress:
+            log_event(
+                "mlp_epoch",
+                f"completed epoch {epoch}/{epochs}",
+                train_loss=f"{train_loss:.6f}",
+                accuracy=f"{evaluation.accuracy:.6f}",
+                macro_f1=f"{evaluation.macro_f1:.6f}",
+                train_sec=f"{epoch_train_elapsed:.3f}",
+                eval_sec=f"{epoch_evaluation_elapsed:.3f}",
+            )
         if evaluation.accuracy > best_accuracy:
             best_accuracy = evaluation.accuracy
             best_state = copy.deepcopy(
@@ -103,6 +134,7 @@ def train_mlp_head(
         train_loss=best_train_loss,
         evaluation=best_evaluation,
         elapsed_sec=training_elapsed,
+        evaluation_elapsed_sec=evaluation_elapsed,
         images_per_second=processed / training_elapsed if training_elapsed > 0 else 0.0,
         history=history,
     )
@@ -121,8 +153,11 @@ def train_lora_classifier(
     learning_rate: float,
     weight_decay: float,
     train_sample_count: int,
+    show_progress: bool = True,
 ) -> TrainingResult:
-    trainable = [parameter for parameter in model.parameters() if parameter.requires_grad]
+    trainable = [
+        parameter for parameter in model.parameters() if parameter.requires_grad
+    ]
     if not trainable:
         raise RuntimeError("LoRA mode found no trainable adapter parameters.")
     head.to(device)
@@ -137,6 +172,7 @@ def train_lora_classifier(
     best_train_loss = 0.0
     history: list[dict[str, float | int]] = []
     training_elapsed = 0.0
+    evaluation_elapsed = 0.0
 
     for epoch in range(1, epochs + 1):
         model.train()
@@ -145,7 +181,13 @@ def train_lora_classifier(
         example_count = 0
         cuda_synchronize(device)
         epoch_start = time.perf_counter()
-        for images, labels in train_loader:
+        batches = progress_iter(
+            train_loader,
+            description=f"LoRA train {epoch}/{epochs}",
+            enabled=show_progress,
+            total=progress_total(train_loader),
+        )
+        for images, labels in batches:
             labels = labels.to(device)
             optimizer.zero_grad(set_to_none=True)
             features = extract_feature_batch(
@@ -158,11 +200,24 @@ def train_lora_classifier(
             loss_sum += float(loss.item()) * len(labels)
             example_count += len(labels)
         cuda_synchronize(device)
-        training_elapsed += time.perf_counter() - epoch_start
+        epoch_train_elapsed = time.perf_counter() - epoch_start
+        training_elapsed += epoch_train_elapsed
         train_loss = loss_sum / max(example_count, 1)
+        cuda_synchronize(device)
+        evaluation_start = time.perf_counter()
         evaluation = evaluate_image_classifier(
-            model, processor, head, test_loader, feature_source, class_names, device
+            model,
+            processor,
+            head,
+            test_loader,
+            feature_source,
+            class_names,
+            device,
+            show_progress=show_progress,
         )
+        cuda_synchronize(device)
+        epoch_evaluation_elapsed = time.perf_counter() - evaluation_start
+        evaluation_elapsed += epoch_evaluation_elapsed
         history.append(
             {
                 "epoch": epoch,
@@ -170,8 +225,21 @@ def train_lora_classifier(
                 "eval_loss": float(evaluation.loss or 0.0),
                 "accuracy": evaluation.accuracy,
                 "macro_f1": evaluation.macro_f1,
+                "train_time_sec": epoch_train_elapsed,
+                "evaluation_time_sec": epoch_evaluation_elapsed,
+                "epoch_wall_time_sec": epoch_train_elapsed + epoch_evaluation_elapsed,
             }
         )
+        if show_progress:
+            log_event(
+                "lora_epoch",
+                f"completed epoch {epoch}/{epochs}",
+                train_loss=f"{train_loss:.6f}",
+                accuracy=f"{evaluation.accuracy:.6f}",
+                macro_f1=f"{evaluation.macro_f1:.6f}",
+                train_sec=f"{epoch_train_elapsed:.3f}",
+                eval_sec=f"{epoch_evaluation_elapsed:.3f}",
+            )
         if evaluation.accuracy > best_accuracy:
             best_accuracy = evaluation.accuracy
             best_head_state = copy.deepcopy(
@@ -197,6 +265,7 @@ def train_lora_classifier(
         train_loss=best_train_loss,
         evaluation=best_evaluation,
         elapsed_sec=training_elapsed,
+        evaluation_elapsed_sec=evaluation_elapsed,
         images_per_second=processed / training_elapsed if training_elapsed > 0 else 0.0,
         history=history,
         trainable_model_state=best_model_state,
@@ -211,6 +280,7 @@ def evaluate_image_classifier(
     feature_source: str,
     class_names: Sequence[str],
     device: torch.device,
+    show_progress: bool = True,
 ) -> EvaluationResult:
     model.eval()
     head.eval()
@@ -219,9 +289,17 @@ def evaluate_image_classifier(
     predictions: list[int] = []
     loss_sum = 0.0
     with torch.inference_mode():
-        for images, labels in loader:
+        batches = progress_iter(
+            loader,
+            description="LoRA evaluation",
+            enabled=show_progress,
+            total=progress_total(loader),
+        )
+        for images, labels in batches:
             labels = labels.to(device)
-            features = extract_feature_batch(model, processor, images, feature_source, device)
+            features = extract_feature_batch(
+                model, processor, images, feature_source, device
+            )
             logits = head(features)
             loss_sum += float(criterion(logits, labels).item())
             labels_all.extend(labels.cpu().tolist())

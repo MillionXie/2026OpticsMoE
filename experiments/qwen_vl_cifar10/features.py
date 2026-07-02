@@ -11,6 +11,7 @@ from PIL import Image
 from torch import nn
 
 from .models import backbone_core
+from .progress import progress_iter, progress_total
 from .utils import cuda_synchronize
 
 
@@ -46,7 +47,9 @@ def extract_feature_batch(
     context = nullcontext() if requires_grad else torch.inference_mode()
     with context:
         if feature_source in {"visual_tokens_mean", "vision_pooler"}:
-            features = _extract_vision_features(model, processor, images, feature_source, device)
+            features = _extract_vision_features(
+                model, processor, images, feature_source, device
+            )
         elif feature_source in {"multimodal_image_tokens_mean", "last_hidden_mean"}:
             features = _extract_multimodal_features(
                 model, processor, images, feature_source, device
@@ -149,7 +152,9 @@ def _pool_packed_or_batched(
             f"{sum(length_list)} tokens from image_grid_thw, "
             f"received {hidden.shape[0]}. Try --feature-source multimodal_image_tokens_mean."
         )
-    return torch.stack([part.mean(dim=0) for part in torch.split(hidden, length_list)], dim=0)
+    return torch.stack(
+        [part.mean(dim=0) for part in torch.split(hidden, length_list)], dim=0
+    )
 
 
 def _spatial_merge_size(model: nn.Module) -> int:
@@ -242,7 +247,8 @@ def _masked_mean(hidden: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
 
 def _move_inputs(inputs: Mapping[str, Any], device: torch.device) -> dict[str, Any]:
     return {
-        key: value.to(device) if torch.is_tensor(value) else value for key, value in inputs.items()
+        key: value.to(device) if torch.is_tensor(value) else value
+        for key, value in inputs.items()
     }
 
 
@@ -252,14 +258,24 @@ def extract_dataset_features(
     loader: Iterable[tuple[list[Image.Image], torch.Tensor]],
     feature_source: str,
     device: torch.device,
+    description: str = "feature extraction",
+    show_progress: bool = True,
 ) -> FeatureExtractionResult:
     feature_parts: list[torch.Tensor] = []
     label_parts: list[torch.Tensor] = []
     image_count = 0
     cuda_synchronize(device)
     start = time.perf_counter()
-    for images, labels in loader:
-        batch_features = extract_feature_batch(model, processor, images, feature_source, device)
+    batches = progress_iter(
+        loader,
+        description=description,
+        enabled=show_progress,
+        total=progress_total(loader),
+    )
+    for images, labels in batches:
+        batch_features = extract_feature_batch(
+            model, processor, images, feature_source, device
+        )
         feature_parts.append(batch_features.detach().cpu())
         label_parts.append(labels.cpu())
         image_count += len(images)
@@ -307,7 +323,11 @@ def load_feature_cache(
         payload = torch.load(path, map_location="cpu", weights_only=False)
     except TypeError:  # torch < 2.0
         payload = torch.load(path, map_location="cpu")
-    if not isinstance(payload, dict) or "features" not in payload or "labels" not in payload:
+    if (
+        not isinstance(payload, dict)
+        or "features" not in payload
+        or "labels" not in payload
+    ):
         return None
     if any(payload.get(key) != value for key, value in expected.items()):
         return None
@@ -315,7 +335,10 @@ def load_feature_cache(
     labels = payload["labels"]
     if not torch.is_tensor(features) or not torch.is_tensor(labels):
         return None
-    if len(features) != expected["sample_count"] or len(labels) != expected["sample_count"]:
+    if (
+        len(features) != expected["sample_count"]
+        or len(labels) != expected["sample_count"]
+    ):
         return None
     return features.float(), labels.long()
 
@@ -334,7 +357,9 @@ def save_feature_cache(
             "feature_dim": int(result.features.shape[1]),
             "extraction_time_sec": result.elapsed_sec,
             "extraction_images_per_second": (
-                result.image_count / result.elapsed_sec if result.elapsed_sec > 0 else 0.0
+                result.image_count / result.elapsed_sec
+                if result.elapsed_sec > 0
+                else 0.0
             ),
         }
     )

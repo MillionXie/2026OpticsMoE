@@ -63,6 +63,18 @@ runs/mlp_2b/
 python main.py --config configs/mlp_2b.json --batch-size 4
 ```
 
+特征提取和分类头训练现在使用独立 batch size。服务器配置使用较小的
+`feature_batch_size` 控制 Qwen 显存，同时使用 `head_batch_size=512`，避免分类头产生几十万
+个低效小 batch。
+
+服务器 4090 的 4B、8B 和多卡 30B/32B 配置及显存依据见
+[`SERVER_MODELS.md`](SERVER_MODELS.md)。单张 4090 推荐的最大 BF16 模型是 8B：
+
+```bash
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=3 python main.py \
+  --config configs/mlp_8b_server_1x4090.json --smoke-test
+```
+
 ## 4. Generate 对照实验
 
 ```powershell
@@ -96,10 +108,15 @@ test_features.pt
 
 `generate` 模式不会生成 feature cache；`lora` 模式还会生成 `best_lora_adapter.pt`。
 
+运行还会保存 `timing.json`、`run_summary.png` 和 `run_summary.pdf`。多模型完成后生成论文汇总图和 CSV：
+
+```bash
+python -m experiments.qwen_vl_cifar10.visualize_results
+```
+
 ## 6. 路径规则
 
 - 不传 `--config` 时，默认路径仍然固定在本实验目录的 `data/` 和 `runs/qwen_vl_cifar10/`。
 - JSON 中的 `data_root`、`output_dir` 相对于该 JSON 文件解析。
 - 命令行显式传入的相对路径相对于当前 PowerShell 目录解析。
 - 命令行参数优先级高于 JSON，例如 `--batch-size 4` 会覆盖配置中的值。
-
