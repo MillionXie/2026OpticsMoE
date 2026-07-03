@@ -48,21 +48,23 @@ class OpticalGroup(nn.Module):
             self.field_size,
         ):
             raise ValueError("OpticalGroup input must be [batch, field_size, field_size]")
+        # torch.complex does not accept BF16 components. Keep propagation in
+        # FP32/complex64 even if the surrounding backbone uses BF16.
+        amplitude = amplitude.float()
         amplitude = self._normalize(F.relu(amplitude))
         field = torch.complex(amplitude, torch.zeros_like(amplitude))
         intensity = amplitude.square()
         for index, propagator in enumerate(self.propagators):
             field = propagator(field)
-            phase = torch.polar(
-                torch.ones_like(self.phase_masks[index]), self.phase_masks[index]
-            )
-            transmission = torch.sigmoid(self.amplitude_mask_logits[index])
+            phase_mask = self.phase_masks[index].float()
+            phase = torch.polar(torch.ones_like(phase_mask), phase_mask)
+            transmission = torch.sigmoid(self.amplitude_mask_logits[index].float())
             field = field * phase * transmission
             intensity = field.abs().square()
             intensity = intensity / intensity.mean(dim=(-2, -1), keepdim=True).clamp_min(
                 self.eps
             )
-            intensity = F.relu(intensity + self.detection_bias[index])
+            intensity = F.relu(intensity + self.detection_bias[index].float())
             amplitude = self._normalize(torch.sqrt(intensity + self.eps))
             field = torch.complex(amplitude, torch.zeros_like(amplitude))
         return intensity
@@ -70,4 +72,3 @@ class OpticalGroup(nn.Module):
     def _normalize(self, value: torch.Tensor) -> torch.Tensor:
         rms = value.square().mean(dim=(-2, -1), keepdim=True).sqrt()
         return value / rms.clamp_min(self.eps)
-

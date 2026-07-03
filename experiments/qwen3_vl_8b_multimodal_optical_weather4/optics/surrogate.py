@@ -48,8 +48,14 @@ class OpticalVisionBlockSurrogate(nn.Module):
         **_: Any,
     ) -> torch.Tensor:
         self.last_input = hidden_states
+        boundary_dtype = hidden_states.dtype
         original_shape = hidden_states.shape
         packed, lengths = _pack_hidden_states(hidden_states, cu_seqlens)
+        # FFT-based optical propagation requires complex64/complex128. PyTorch
+        # cannot construct a complex tensor from BF16, so the trainable optical
+        # surrogate deliberately forms an FP32 numerical island inside a BF16
+        # Qwen backbone and casts only its block output back at the boundary.
+        packed = packed.to(dtype=self.norm.weight.dtype)
         amplitude_tokens = F.relu(self.input_adapter(self.norm(packed)))
         token_groups = list(amplitude_tokens.split(lengths, dim=0))
         fields = torch.stack([_tokens_to_field(group, self.optical_group.field_size) for group in token_groups])
@@ -61,7 +67,7 @@ class OpticalVisionBlockSurrogate(nn.Module):
             ],
             dim=0,
         )
-        output = packed + self.output_adapter(optical_tokens)
+        output = (packed + self.output_adapter(optical_tokens)).to(boundary_dtype)
         if len(original_shape) == 3:
             output = output.reshape(original_shape)
         self.last_output = output
@@ -169,4 +175,3 @@ def _locate_visual_model(model: nn.Module) -> nn.Module:
     if visual is None or not hasattr(visual, "blocks"):
         raise RuntimeError("Unable to locate Qwen3-VL visual.blocks")
     return visual
-

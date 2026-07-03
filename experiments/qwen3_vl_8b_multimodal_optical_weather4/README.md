@@ -72,6 +72,11 @@ masks, square-law detection, normalization, a ReLU-like detector nonlinearity, a
 re-encoding. Token/optical channels are interpolated to the configured 2-D optical field and read
 back at the original token resolution.
 
+The optical simulator always computes in FP32/complex64 because PyTorch cannot construct complex
+tensors from BF16 components. When a BF16 backbone is selected, the surrogate casts its block
+input to FP32 internally and casts the block output back to the backbone dtype. This boundary is
+recorded in `model.json`.
+
 Only the surrogate (LayerNorm, adapters, optical masks) and student MLP are trainable. The patch
 embedding, all unreplaced vision blocks, merger, LLM, and teacher MLP remain frozen. A single Qwen
 backbone is shared in memory: the controller switches block 26 between the frozen electronic block
@@ -89,6 +94,11 @@ The default temperature is `T=2`. Teacher forward uses `torch.no_grad()`. Studen
 so CE and KD gradients pass through the frozen merger and LLM back to the optical block and MLP.
 The student MLP is initialized from `checkpoints/teacher_mlp.pt`; `student_train` fails clearly if
 that checkpoint is missing.
+
+Teacher feature caches use a strict versioned metadata fingerprint covering dataset path and class
+order, sample limits, prompt, image sizing, processor pixel bounds, model, dtype, and attention
+implementation. A mismatch is printed and forces re-extraction instead of silently reusing stale
+features.
 
 ## Conservative baseline
 

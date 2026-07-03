@@ -22,7 +22,10 @@ from experiments.qwen3_vl_8b_multimodal_optical_weather4.optics import (
     VisionBlockReplacement,
 )
 from experiments.qwen3_vl_8b_multimodal_optical_weather4.results import write_comparison
-from experiments.qwen3_vl_8b_multimodal_optical_weather4.run import build_parser
+from experiments.qwen3_vl_8b_multimodal_optical_weather4.run import (
+    _teacher_feature_metadata,
+    build_parser,
+)
 from experiments.qwen3_vl_8b_multimodal_optical_weather4.settings import load_settings
 from experiments.qwen3_vl_8b_multimodal_optical_weather4.modeling import MLPHead
 from experiments.qwen3_vl_8b_multimodal_optical_weather4.student_training import (
@@ -118,6 +121,16 @@ def test_optical_surrogate_preserves_packed_shape_and_gradients() -> None:
     assert module.input_adapter.weight.grad is not None
     assert module.optical_group.phase_masks.grad is not None
     assert module.output_adapter.weight.grad is not None
+
+
+def test_optical_surrogate_accepts_bfloat16_backbone_boundary() -> None:
+    module = _surrogate()
+    hidden = torch.randn(8, 6, dtype=torch.bfloat16, requires_grad=True)
+    output = module(hidden, cu_seqlens=torch.tensor([0, 4, 8], dtype=torch.int32))
+    assert output.dtype == torch.bfloat16
+    assert output.shape == hidden.shape
+    output.float().square().mean().backward()
+    assert module.optical_group.phase_masks.grad is not None
 
 
 def test_replacement_switches_teacher_and_student_and_captures_hidden() -> None:
@@ -255,6 +268,33 @@ def test_config_cli_and_comparison(tmp_path: Path) -> None:
     )
     assert comparison["accuracy_drop"]["top1"] < 0
     assert (metrics_dir / "comparison.json").is_file()
+
+
+def test_teacher_feature_metadata_covers_semantic_inputs(tmp_path: Path) -> None:
+    source = Path(
+        "experiments/qwen3_vl_8b_multimodal_optical_weather4/configs/"
+        "bdd100k_weather4_smoke.json"
+    )
+    settings = load_settings(source)
+    settings.data_root = tmp_path / "data"
+    data = type(
+        "Data",
+        (),
+        {"train": list(range(4)), "test": list(range(2)), "class_names": WEATHER4_CLASSES},
+    )()
+    metadata = _teacher_feature_metadata("train", data, settings)
+    expected = {
+        "cache_schema_version",
+        "num_classes",
+        "class_names",
+        "data_root",
+        "resize_to",
+        "processor_min_pixels",
+        "processor_max_pixels",
+        "dtype",
+        "attn_implementation",
+    }
+    assert expected <= metadata.keys()
 
 
 def test_prepare_weather_split_from_bdd_labels(tmp_path: Path) -> None:

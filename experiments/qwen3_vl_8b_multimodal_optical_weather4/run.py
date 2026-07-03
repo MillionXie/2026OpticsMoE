@@ -290,7 +290,7 @@ def _build_replacement(
         wavelength_nm=settings.wavelength_nm,
         pixel_pitch_um=settings.pixel_pitch_um,
         mask_distance_cm=settings.mask_distance_cm,
-    ).to(device=device, dtype=resolve_dtype(settings.dtype))
+    ).to(device=device)
     return VisionBlockReplacement(
         loaded.model, settings.replace_vision_block_start, surrogate
     )
@@ -349,18 +349,21 @@ def _teacher_features(
 ) -> tuple[torch.Tensor, torch.Tensor]:
     path = settings.output_dir / "features" / f"{split}.pt"
     dataset = data.train if split == "train" else data.test
-    metadata = {
-        "dataset": "bdd100k_weather4",
-        "split": split,
-        "samples": len(dataset),
-        "model_id": settings.model_id,
-        "classification_prompt": settings.classification_prompt,
-        "feature_source": "electronic_teacher_answer_position_hidden_state",
-    }
+    metadata = _teacher_feature_metadata(split, data, settings)
     if settings.cache_features and path.is_file():
         features, labels, cached = load_feature_cache(path)
         if cached == metadata:
+            _log(f"reusing validated teacher feature cache: split={split} path={path}")
             return features, labels
+        changed = sorted(
+            key
+            for key in set(cached) | set(metadata)
+            if cached.get(key) != metadata.get(key)
+        )
+        _log(
+            f"teacher feature cache invalidated: split={split} "
+            f"changed_fields={changed}"
+        )
     loader = make_loader(
         dataset,
         settings.feature_batch_size,
@@ -381,6 +384,36 @@ def _teacher_features(
         settings.classification_prompt,
     )
     return features, labels
+
+
+def _teacher_feature_metadata(
+    split: str, data: DatasetBundle, settings: Settings
+) -> dict[str, Any]:
+    dataset = data.train if split == "train" else data.test
+    return {
+        "cache_schema_version": 2,
+        "dataset": "bdd100k_weather4",
+        "split": split,
+        "samples": len(dataset),
+        "num_classes": len(data.class_names),
+        "class_names": list(data.class_names),
+        "data_root": str(settings.data_root),
+        "imagefolder_train": settings.imagefolder_train,
+        "imagefolder_test": settings.imagefolder_test,
+        "resize_to": settings.resize_to,
+        "processor_min_pixels": settings.processor_min_pixels,
+        "processor_max_pixels": settings.processor_max_pixels,
+        "train_limit": settings.train_limit,
+        "test_limit": settings.test_limit,
+        "train_limit_per_class": settings.train_limit_per_class,
+        "test_limit_per_class": settings.test_limit_per_class,
+        "dataset_seed": settings.seed,
+        "model_id": settings.model_id,
+        "classification_prompt": settings.classification_prompt,
+        "dtype": settings.dtype,
+        "attn_implementation": settings.attn_implementation,
+        "feature_source": "electronic_teacher_answer_position_hidden_state",
+    }
 
 
 def _load_named_head(
@@ -449,6 +482,11 @@ def _write_model_report(
             "student": f"optical_surrogate_vision_block_{replacement.block_index}",
             "replaced_vision_blocks": [replacement.block_index],
             "optical_trainable_parameters": optical_parameters,
+            "backbone_compute_dtype": settings.dtype,
+            "attention_implementation": settings.attn_implementation,
+            "optical_real_compute_dtype": "float32",
+            "optical_complex_compute_dtype": "complex64",
+            "optical_boundary_dtype": "matches_backbone_hidden_state",
         }
     )
     write_json(settings.output_dir / "model.json", report)
