@@ -8,6 +8,8 @@ import torch
 from PIL import Image
 from torch.utils.data import DataLoader, Dataset, Subset
 
+from .data_prepare import ensure_weather4_dataset
+
 
 WEATHER4_CLASSES = ["clear", "rainy", "snowy", "foggy"]
 
@@ -48,6 +50,7 @@ def load_weather4(
     imagefolder_train: str,
     imagefolder_test: str,
     seed: int,
+    download: bool = False,
 ) -> DatasetBundle:
     try:
         from torchvision.datasets import ImageFolder
@@ -56,11 +59,15 @@ def load_weather4(
 
     train_dir = root / imagefolder_train
     test_dir = root / imagefolder_test
+    preparation: dict[str, Any] | None = None
+    if download:
+        preparation = ensure_weather4_dataset(root, imagefolder_train, imagefolder_test)
     for path in (train_dir, test_dir):
         if not path.is_dir():
             raise FileNotFoundError(
                 f"BDD100K Weather-4 directory is missing: {path}. Expected class folders: "
-                f"{', '.join(WEATHER4_CLASSES)}"
+                f"{', '.join(WEATHER4_CLASSES)}. Set download=true to download and prepare "
+                "BDD100K automatically, or prepare the ImageFolder directories manually."
             )
     train_base = ImageFolder(str(train_dir))
     test_base = ImageFolder(str(test_dir))
@@ -102,6 +109,7 @@ def load_weather4(
             "resize_to": resize_to,
             "train_limit_per_class": train_limit_per_class,
             "test_limit_per_class": test_limit_per_class,
+            "automatic_preparation": preparation,
         },
     )
 

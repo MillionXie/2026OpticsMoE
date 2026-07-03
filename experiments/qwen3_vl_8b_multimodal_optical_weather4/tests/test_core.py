@@ -11,6 +11,9 @@ from experiments.qwen3_vl_8b_multimodal_optical_weather4.datasets import (
     WEATHER4_CLASSES,
     load_weather4,
 )
+from experiments.qwen3_vl_8b_multimodal_optical_weather4.data_prepare import (
+    prepare_weather_split,
+)
 from experiments.qwen3_vl_8b_multimodal_optical_weather4.io_utils import write_json
 from experiments.qwen3_vl_8b_multimodal_optical_weather4.optics import (
     OpticalVisionBlockSurrogate,
@@ -203,6 +206,7 @@ def test_weather4_imagefolder_order_and_balanced_limit(tmp_path: Path) -> None:
         imagefolder_train="train",
         imagefolder_test="test",
         seed=42,
+        download=True,
     )
     assert bundle.class_names == WEATHER4_CLASSES
     assert len(bundle.train) == len(bundle.test) == 4
@@ -220,6 +224,9 @@ def test_config_cli_and_comparison(tmp_path: Path) -> None:
     assert settings.attn_implementation == "eager"
     args = build_parser().parse_args(["--config", str(source), "--phase", "student_train"])
     assert args.phase == "student_train"
+    assert build_parser().parse_args(
+        ["--config", str(source), "--phase", "prepare_data"]
+    ).phase == "prepare_data"
 
     metrics_dir = tmp_path / "metrics"
     write_json(
@@ -246,3 +253,23 @@ def test_config_cli_and_comparison(tmp_path: Path) -> None:
     )
     assert comparison["accuracy_drop"]["top1"] < 0
     assert (metrics_dir / "comparison.json").is_file()
+
+
+def test_prepare_weather_split_from_bdd_labels(tmp_path: Path) -> None:
+    images = tmp_path / "raw" / "train"
+    images.mkdir(parents=True)
+    labels = []
+    for index, weather in enumerate([*WEATHER4_CLASSES, "overcast"]):
+        name = f"image-{index}.jpg"
+        Image.new("RGB", (8, 8)).save(images / name)
+        labels.append({"name": name, "attributes": {"weather": weather}})
+    labels_file = tmp_path / "det_train.json"
+    labels_file.write_text(json.dumps(labels), encoding="utf-8")
+
+    report = prepare_weather_split(images, labels_file, tmp_path / "prepared")
+
+    assert report["total"] == 4
+    assert report["ignored_non_weather4"] == 1
+    for weather in WEATHER4_CLASSES:
+        assert (tmp_path / "prepared" / weather).is_dir()
+        assert len(list((tmp_path / "prepared" / weather).iterdir())) == 1

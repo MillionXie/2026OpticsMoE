@@ -1,5 +1,16 @@
 # Qwen3-VL-8B Multimodal Optical Weather-4 Commands
 
+## Download and prepare BDD100K Weather-4 only (no GPU/model load)
+
+```bash
+python -m experiments.qwen3_vl_8b_multimodal_optical_weather4 \
+  --config experiments/qwen3_vl_8b_multimodal_optical_weather4/configs/bdd100k_weather4.json \
+  --phase prepare_data
+```
+
+With `download=true`, every training/inference phase also runs this preparation automatically when
+the configured ImageFolder dataset is missing. Interrupted archive downloads resume on the next run.
+
 ## Run all phases
 
 ```bash
@@ -63,4 +74,3 @@ CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_8b_multimodal_optical_weat
 ```
 
 All model phases also support `--cache-dir`, `--model-id`, and `--local-files-only`.
-

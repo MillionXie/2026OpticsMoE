@@ -14,7 +14,13 @@ Only four visually distinct BDD100K weather classes are used:
 clear, rainy, snowy, foggy
 ```
 
-Prepare the data as an ImageFolder dataset:
+With `"download": true` (the default), a missing dataset is downloaded from the public BDD100K
+archive, and the labelled BDD100K validation split is used as this experiment's test split. The
+archives support resuming through `.part` files. Images are linked into the four class folders to
+avoid storing a second copy. This downloads more than 4 GB, so ensure that `data_root` has enough
+space. You remain responsible for complying with the BDD100K dataset license.
+
+The automatically generated (or manually prepared) ImageFolder layout is:
 
 ```text
 data/bdd100k_weather4/
@@ -26,6 +32,9 @@ Other BDD100K labels such as overcast and undefined must not be placed in these 
 `train_limit_per_class` and `test_limit_per_class` optionally create deterministic balanced
 subsets. Labels are remapped to the explicit class order above rather than ImageFolder's
 alphabetical order.
+
+To prepare data without loading a model or requiring a GPU, run `--phase prepare_data`. Set
+`"download": false` only when the ImageFolder tree is already prepared manually.
 
 The full processor/chat-template prompt is:
 
@@ -107,4 +116,3 @@ checkpoints/optical_surrogate.pt
 ```
 
 No optical inference-time estimate is produced. See [RUN_COMMANDS.md](RUN_COMMANDS.md) for commands.
-

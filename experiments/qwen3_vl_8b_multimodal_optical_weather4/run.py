@@ -31,6 +31,7 @@ from .training import train_head
 
 PHASES = (
     "download",
+    "prepare_data",
     "teacher_train",
     "teacher_inference",
     "student_train",
@@ -100,6 +101,15 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.phase == "compare":
         _compare(settings, WEATHER4_CLASSES)
+        return 0
+
+    if args.phase == "prepare_data":
+        data = _load_data(settings)
+        write_json(settings.output_dir / "dataset.json", data.metadata)
+        _log(
+            f"dataset ready: train={len(data.train)} test={len(data.test)} "
+            f"classes={data.class_names}"
+        )
         return 0
 
     set_seed(settings.seed)
@@ -247,6 +257,7 @@ def _load_data(settings: Settings) -> DatasetBundle:
         settings.imagefolder_train,
         settings.imagefolder_test,
         settings.seed,
+        settings.download,
     )
     data.metadata["initialization_time_sec"] = time.perf_counter() - started
     return data
