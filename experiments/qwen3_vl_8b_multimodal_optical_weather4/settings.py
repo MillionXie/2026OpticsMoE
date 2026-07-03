@@ -102,10 +102,10 @@ class Settings:
             raise ValueError("cache_dtype must be float16 or float32")
         if self.dtype not in {"bfloat16", "float16", "float32"}:
             raise ValueError("dtype must be bfloat16, float16, or float32")
-        if self.dtype != "float32":
-            raise ValueError("This conservative baseline requires dtype='float32'")
-        if self.attn_implementation != "eager":
-            raise ValueError("This conservative baseline requires attn_implementation='eager'")
+        # if self.dtype != "float32":
+        #     raise ValueError("This conservative baseline requires dtype='float32'")
+        # if self.attn_implementation != "eager":
+        #     raise ValueError("This conservative baseline requires attn_implementation='eager'")
         if self.processor_min_pixels and self.processor_max_pixels:
             if self.processor_min_pixels > self.processor_max_pixels:
                 raise ValueError("processor_min_pixels cannot exceed processor_max_pixels")

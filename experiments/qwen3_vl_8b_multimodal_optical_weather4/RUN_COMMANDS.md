@@ -14,9 +14,9 @@ the configured ImageFolder dataset is missing. Interrupted archive downloads res
 ## Run all phases
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_8b_multimodal_optical_weather4 \
-  --config experiments/qwen3_vl_8b_multimodal_optical_weather4/configs/bdd100k_weather4.json \
-  --device cuda \
+CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_8b_multimodal_optical_weather4 
+  --config experiments/qwen3_vl_8b_multimodal_optical_weather4/configs/bdd100k_weather4.json 
+  --device cuda 
   --phase all
 ```
 
@@ -32,18 +32,18 @@ CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_8b_multimodal_optical_weat
 ## Evaluate the electronic teacher
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_8b_multimodal_optical_weather4 \
-  --config experiments/qwen3_vl_8b_multimodal_optical_weather4/configs/bdd100k_weather4.json \
-  --device cuda \
+CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_8b_multimodal_optical_weather4 
+  --config experiments/qwen3_vl_8b_multimodal_optical_weather4/configs/bdd100k_weather4.json 
+  --device cuda 
   --phase teacher_inference
 ```
 
 ## Run only student training if teacher checkpoint already exists
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_8b_multimodal_optical_weather4 \
-  --config experiments/qwen3_vl_8b_multimodal_optical_weather4/configs/bdd100k_weather4.json \
-  --device cuda \
+CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_8b_multimodal_optical_weather4 
+  --config experiments/qwen3_vl_8b_multimodal_optical_weather4/configs/bdd100k_weather4.json 
+  --device cuda 
   --phase student_train
 ```
 
