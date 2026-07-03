@@ -21,7 +21,10 @@ from experiments.qwen3_vl_8b_multimodal_mlp.run import (
     _restore_download_cache,
     build_parser,
 )
-from experiments.qwen3_vl_8b_multimodal_mlp.settings import load_settings
+from experiments.qwen3_vl_8b_multimodal_mlp.settings import (
+    load_settings,
+    normalize_hub_cache_dir,
+)
 from experiments.qwen3_vl_8b_multimodal_mlp.timing import summarize_timings
 
 
@@ -126,6 +129,15 @@ def test_settings_expand_environment_and_reject_unset(
     )
     with pytest.raises(ValueError, match="unset environment variable"):
         load_settings(config)
+
+
+def test_hf_home_root_resolves_to_nested_hub(tmp_path: Path) -> None:
+    hf_home = tmp_path / "huggingface"
+    repo = hf_home / "hub" / "models--Qwen--Qwen3-VL-8B-Instruct"
+    repo.mkdir(parents=True)
+    assert normalize_hub_cache_dir(
+        hf_home, "Qwen/Qwen3-VL-8B-Instruct"
+    ) == (hf_home / "hub").resolve()
 
 
 def test_metrics_timing_and_parameter_report() -> None:

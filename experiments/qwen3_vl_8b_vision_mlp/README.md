@@ -43,6 +43,9 @@ Cache selection is portable across servers:
 2. Set `HF_HOME=/path/to/cache` and omit `--cache-dir`.
 3. Pass `--cache-dir /path/to/cache` explicitly.
 
+If `--cache-dir` points to an `HF_HOME` root containing a `hub/` subdirectory, the experiment
+automatically selects that nested Hub cache.
+
 No server-specific absolute cache path is stored in the default configs.
 
 ## Timing and outputs
@@ -54,4 +57,3 @@ postprocessing, pipeline, and end-to-end latency.
 Each run writes resolved config, environment, dataset/model metadata, frozen features, the best
 MLP checkpoint, training history, predictions, metrics, per-batch timing, confusion matrix, and
 PNG/PDF figures beneath its configured output directory.
-

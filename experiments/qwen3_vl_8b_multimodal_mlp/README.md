@@ -45,7 +45,8 @@ and `cache_dir` accept `~`, `$NAME`, and `${NAME}`. An unset referenced environm
 reported as an error.
 
 Cache selection is portable across servers: use the Hugging Face default, set `HF_HOME`, or pass
-`--cache-dir`. No server-specific absolute cache path is stored in the configs.
+`--cache-dir`. If the explicit path is an `HF_HOME` root containing `hub/`, that nested Hub cache
+is selected automatically. No server-specific absolute cache path is stored in the configs.
 
 ## Timing and outputs
 
@@ -61,4 +62,3 @@ Warmup batches are excluded. CUDA is synchronized around GPU stages. The benchma
 Each run writes resolved config, environment, dataset/model metadata, frozen features, the best
 MLP checkpoint, training history, predictions, metrics, per-batch timing, confusion matrix, and
 PNG/PDF figures beneath its configured output directory.
-

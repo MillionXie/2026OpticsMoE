@@ -15,7 +15,13 @@ from .download import download_checkpoint
 from .features import extract_and_cache, load_feature_cache
 from .io_utils import resolve_device, resolve_dtype, runtime_metadata, set_seed, write_json
 from .modeling import MLPHead, LoadedBackbone, load_backbone, parameter_report
-from .settings import Settings, load_settings, resolve_model_id, resolve_path
+from .settings import (
+    Settings,
+    load_settings,
+    normalize_hub_cache_dir,
+    resolve_model_id,
+    resolve_path,
+)
 from .training import load_head, train_head
 from .visualize import generate_figures
 
@@ -52,6 +58,7 @@ def main(argv: list[str] | None = None) -> int:
             setattr(settings, name, resolve_path(value, Path.cwd(), name))
     if args.model_id is not None:
         settings.model_id = resolve_model_id(args.model_id, config_path.parent)
+    settings.cache_dir = normalize_hub_cache_dir(settings.cache_dir, settings.model_id)
     if args.device is not None:
         settings.device = args.device
     if args.local_files_only is not None:

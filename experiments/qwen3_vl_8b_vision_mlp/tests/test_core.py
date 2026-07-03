@@ -10,7 +10,11 @@ from torch import nn
 from experiments.qwen3_vl_8b_vision_mlp.features import image_token_features, pool_tokens
 from experiments.qwen3_vl_8b_vision_mlp.metrics import classification_metrics
 from experiments.qwen3_vl_8b_vision_mlp.modeling import MLPHead, parameter_report
-from experiments.qwen3_vl_8b_vision_mlp.settings import load_settings, resolve_model_id
+from experiments.qwen3_vl_8b_vision_mlp.settings import (
+    load_settings,
+    normalize_hub_cache_dir,
+    resolve_model_id,
+)
 from experiments.qwen3_vl_8b_vision_mlp.timing import summarize_timings
 from experiments.qwen3_vl_8b_vision_mlp.run import _restore_download_cache, build_parser
 
@@ -168,6 +172,15 @@ def test_environment_and_relative_local_model_paths(
     )
     with pytest.raises(ValueError, match="unset environment variable"):
         load_settings(config)
+
+
+def test_hf_home_root_resolves_to_nested_hub(tmp_path: Path) -> None:
+    hf_home = tmp_path / "huggingface"
+    repo = hf_home / "hub" / "models--Qwen--Qwen3-VL-8B-Instruct"
+    repo.mkdir(parents=True)
+    assert normalize_hub_cache_dir(
+        hf_home, "Qwen/Qwen3-VL-8B-Instruct"
+    ) == (hf_home / "hub").resolve()
 
 
 def test_restore_download_cache_from_legacy_record(tmp_path: Path) -> None:

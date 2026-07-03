@@ -133,3 +133,24 @@ def resolve_path(value: str | Path, base_dir: Path, field_name: str) -> Path:
     if not candidate.is_absolute():
         candidate = base_dir / candidate
     return candidate.resolve()
+
+
+def normalize_hub_cache_dir(cache_dir: Path | None, model_id: str) -> Path | None:
+    """Accept either a Transformers cache directory or an HF_HOME root."""
+
+    if cache_dir is None or Path(model_id).is_dir():
+        return cache_dir
+    repo_cache_name = "models--" + model_id.replace("/", "--")
+    direct_repo = cache_dir / repo_cache_name
+    nested_hub = cache_dir / "hub"
+    nested_repo = nested_hub / repo_cache_name
+    if direct_repo.is_dir():
+        return cache_dir
+    if nested_repo.is_dir():
+        return nested_hub.resolve()
+    hf_home = os.environ.get("HF_HOME")
+    if hf_home:
+        resolved_home = resolve_path(hf_home, Path.cwd(), "HF_HOME")
+        if cache_dir.resolve() == resolved_home:
+            return nested_hub.resolve()
+    return cache_dir
