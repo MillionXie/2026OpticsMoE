@@ -39,10 +39,13 @@ def run_and_save_inference(
     )
     report = {
         "model": (
-            f"qwen3_vl_with_optical_surrogate_vision_block_{replacement.block_index}"
+            f"qwen3_vl_with_{len(replacement.block_groups)}_single_mask_optical_"
+            f"conversions_for_vision_blocks_{replacement.block_groups[0][0]}_"
+            f"{replacement.block_groups[-1][1]}"
             if student
             else "full_electronic_qwen3_vl_multimodal_mlp"
         ),
+        "distillation_block_groups": [list(group) for group in replacement.block_groups],
         "classes": list(class_names),
         "prompt": prompt,
         "metrics": metrics,
@@ -119,4 +122,3 @@ def _print_comparison(comparison: dict[str, Any]) -> None:
     print(
         f"{'Drop':34s} {drop['top1'] * 100:+8.2f}% {drop['top5'] * 100:+8.2f}%"
     )
-

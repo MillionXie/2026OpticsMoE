@@ -45,7 +45,8 @@ def train_optical_student(
     model.requires_grad_(False)
     model.eval()
     teacher_head.requires_grad_(False).eval()
-    replacement.surrogate.requires_grad_(True).train()
+    replacement.set_surrogates_trainable(True)
+    replacement.train()
     student_head.requires_grad_(True).train()
     optimizer = torch.optim.AdamW(
         [*replacement.trainable_parameters(), *student_head.parameters()],
@@ -56,13 +57,22 @@ def train_optical_student(
     best_accuracy = -1.0
     best_epoch = 0
     best_head_state: dict[str, torch.Tensor] | None = None
-    best_optical_state: dict[str, torch.Tensor] | None = None
-    first_shapes: dict[str, list[int]] | None = None
+    best_optical_states: list[dict[str, torch.Tensor]] | None = None
+    first_shapes: dict[str, Any] | None = None
+    group_metric_names = [
+        f"hidden_group_{start}_{end}" for start, end in replacement.block_groups
+    ]
 
     for epoch in range(1, epochs + 1):
-        replacement.surrogate.train()
+        replacement.train()
         student_head.train()
-        totals = {"total": 0.0, "hidden": 0.0, "kd": 0.0, "ce": 0.0}
+        totals = {
+            "total": 0.0,
+            "hidden": 0.0,
+            "kd": 0.0,
+            "ce": 0.0,
+            **{name: 0.0 for name in group_metric_names},
+        }
         sample_count = 0
         synchronize(device)
         started = time.perf_counter()
@@ -79,16 +89,14 @@ def train_optical_student(
             inputs = move_inputs(preprocess_image_text(processor, images, prompt), device)
 
             replacement.use_teacher()
-            replacement.capture.clear()
+            replacement.clear_captures()
             with torch.no_grad():
                 teacher_hidden = multimodal_forward_features(model, inputs)
                 teacher_features, _ = pool_answer_hidden_state(
                     teacher_hidden, inputs["attention_mask"]
                 )
                 teacher_logits = teacher_head(teacher_features)
-                teacher_block_output = replacement.capture.output_hidden
-            if teacher_block_output is None:
-                raise RuntimeError("Teacher hook did not capture the replaced block output")
+                teacher_group_outputs = replacement.teacher_outputs()
 
             replacement.use_student()
             optimizer.zero_grad(set_to_none=True)
@@ -97,13 +105,15 @@ def train_optical_student(
                 student_hidden, inputs["attention_mask"]
             )
             student_logits = student_head(student_features)
-            student_block_output = replacement.surrogate.last_output
-            if student_block_output is None:
-                raise RuntimeError("Optical surrogate did not expose its block output")
+            student_group_outputs = replacement.student_outputs()
 
-            loss_hidden = normalized_hidden_mse(
-                student_block_output, teacher_block_output
-            )
+            group_hidden_losses = [
+                normalized_hidden_mse(student_output, teacher_output)
+                for student_output, teacher_output in zip(
+                    student_group_outputs, teacher_group_outputs
+                )
+            ]
+            loss_hidden = torch.stack(group_hidden_losses).mean()
             loss_kd = knowledge_distillation_loss(
                 student_logits, teacher_logits, temperature
             )
@@ -118,16 +128,29 @@ def train_optical_student(
             totals["hidden"] += float(loss_hidden.detach()) * batch_size
             totals["kd"] += float(loss_kd.detach()) * batch_size
             totals["ce"] += float(loss_ce.detach()) * batch_size
+            for name, group_loss in zip(group_metric_names, group_hidden_losses):
+                totals[name] += float(group_loss.detach()) * batch_size
             if first_shapes is None:
                 first_shapes = {
-                    "teacher_block_input": list(replacement.capture.input_hidden.shape)
-                    if replacement.capture.input_hidden is not None
-                    else [],
-                    "teacher_block_output": list(teacher_block_output.shape),
-                    "student_block_input": list(replacement.surrogate.last_input.shape)
-                    if replacement.surrogate.last_input is not None
-                    else [],
-                    "student_block_output": list(student_block_output.shape),
+                    "distillation_groups": [
+                        {
+                            "teacher_blocks": [capture.block_start, capture.block_end],
+                            "teacher_group_input": list(capture.input_hidden.shape)
+                            if capture.input_hidden is not None
+                            else [],
+                            "teacher_group_output": list(teacher_output.shape),
+                            "student_optical_input": list(surrogate.last_input.shape)
+                            if surrogate.last_input is not None
+                            else [],
+                            "student_optical_output": list(student_output.shape),
+                        }
+                        for capture, surrogate, teacher_output, student_output in zip(
+                            replacement.captures,
+                            replacement.surrogates,
+                            teacher_group_outputs,
+                            student_group_outputs,
+                        )
+                    ],
                     "teacher_logits": list(teacher_logits.shape),
                     "student_logits": list(student_logits.shape),
                 }
@@ -150,6 +173,10 @@ def train_optical_student(
             "loss_hidden": totals["hidden"] / max(sample_count, 1),
             "loss_kd": totals["kd"] / max(sample_count, 1),
             "loss_ce": totals["ce"] / max(sample_count, 1),
+            **{
+                f"loss_{name}": totals[name] / max(sample_count, 1)
+                for name in group_metric_names
+            },
             "validation_top1_accuracy": validation["top1_accuracy"],
             "validation_top5_accuracy": validation["top5_accuracy"],
             "train_time_sec": train_time,
@@ -159,12 +186,12 @@ def train_optical_student(
             best_accuracy = validation["top1_accuracy"]
             best_epoch = epoch
             best_head_state = _cpu_state(student_head)
-            best_optical_state = _cpu_state(replacement.surrogate)
+            best_optical_states = replacement.cpu_state_dicts()
 
-    if best_head_state is None or best_optical_state is None:
+    if best_head_state is None or best_optical_states is None:
         raise RuntimeError("Student training did not produce a checkpoint")
     student_head.load_state_dict(best_head_state)
-    replacement.surrogate.load_state_dict(best_optical_state)
+    replacement.load_state_dicts(best_optical_states)
     checkpoint_dir = output_dir / "checkpoints"
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
     torch.save(
@@ -180,8 +207,10 @@ def train_optical_student(
     )
     torch.save(
         {
-            "state_dict": best_optical_state,
-            "vision_block_index": replacement.block_index,
+            "state_dicts": best_optical_states,
+            "block_groups": [list(group) for group in replacement.block_groups],
+            "optical_conversions": len(replacement.surrogates),
+            "phase_masks_per_conversion": 1,
             "best_epoch": best_epoch,
         },
         checkpoint_dir / "optical_surrogate.pt",
@@ -201,6 +230,8 @@ def train_optical_student(
             "temperature": temperature,
         },
         "captured_shapes": first_shapes or {},
+        "distillation_block_groups": [list(group) for group in replacement.block_groups],
+        "hidden_group_reduction": "mean",
         "history": history,
     }
     write_json(output_dir / "metrics" / "student_training.json", report)
@@ -244,7 +275,7 @@ def evaluate_online(
 ) -> dict[str, Any]:
     replacement.use_student() if student else replacement.use_teacher()
     model.eval()
-    replacement.surrogate.eval()
+    replacement.eval()
     head.eval()
     labels_all: list[int] = []
     predictions_all: list[int] = []
@@ -270,4 +301,3 @@ def _cpu_state(module: nn.Module) -> dict[str, torch.Tensor]:
     return copy.deepcopy(
         {name: value.detach().cpu() for name, value in module.state_dict().items()}
     )
-

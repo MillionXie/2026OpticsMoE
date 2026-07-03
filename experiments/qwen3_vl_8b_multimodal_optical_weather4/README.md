@@ -2,8 +2,9 @@
 
 This experiment uses the full Qwen3-VL multimodal pipeline for BDD100K weather classification.
 The teacher is the original electronic Qwen3-VL + MLP classifier. The student keeps the original
-tokenizer, processor, LLM, and answer-position feature extraction, but replaces the last Qwen3-VL
-vision transformer block with a trainable optical surrogate. The optical surrogate and MLP are
+tokenizer, processor, LLM, and answer-position feature extraction, but replaces the last 20
+Qwen3-VL vision transformer blocks with five trainable optical conversions. Each conversion
+replaces four consecutive electronic blocks and contains exactly one phase mask. The optical surrogates and MLP are
 trained jointly using hidden-state distillation, logit KD, and hard-label CE.
 
 ## Task and data
@@ -51,10 +52,20 @@ image + prompt -> original Qwen3-VL vision blocks -> merger -> LLM
                -> answer-position hidden state -> teacher MLP
 
 Student:
-image + prompt -> original vision blocks[0:26] -> optical surrogate at block[26]
+image + prompt -> original vision blocks[0:7]
+               -> optical 1 replaces electronic blocks[7:11]
+               -> optical 2 replaces electronic blocks[11:15]
+               -> optical 3 replaces electronic blocks[15:19]
+               -> optical 4 replaces electronic blocks[19:23]
+               -> optical 5 replaces electronic blocks[23:27]
                -> original merger -> original LLM
                -> answer-position hidden state -> trainable student MLP
 ```
+
+The inclusive Python-indexed distillation groups are `[7,10]`, `[11,14]`, `[15,18]`,
+`[19,22]`, and `[23,26]`. In each group, the student bypasses the four electronic blocks and places
+one optical surrogate at the group's endpoint. Qwen's 27-entry block list is retained so
+index-dependent model control flow remains stable.
 
 Transformers packs visual tokens as `[total_tokens, 1152]`; for a fixed-resolution batch this is
 logically equivalent to `[batch, tokens_per_image, 1152]`. The surrogate uses `cu_seqlens` to
@@ -67,8 +78,8 @@ LayerNorm(1152) -> Linear(1152, 256) -> ReLU -> amplitude normalization
 -> differentiable OpticalGroup -> Linear(256, 1152) -> residual
 ```
 
-Each OpticalGroup layer contains angular-spectrum propagation, trainable phase and amplitude
-masks, square-law detection, normalization, a ReLU-like detector nonlinearity, and amplitude
+Each OpticalGroup contains exactly one angular-spectrum propagation, one trainable phase/amplitude
+mask, one square-law detection, normalization, a ReLU-like detector nonlinearity, and amplitude
 re-encoding. Token/optical channels are interpolated to the configured 2-D optical field and read
 back at the original token resolution.
 
@@ -77,15 +88,17 @@ tensors from BF16 components. When a BF16 backbone is selected, the surrogate ca
 input to FP32 internally and casts the block output back to the backbone dtype. This boundary is
 recorded in `model.json`.
 
-Only the surrogate (LayerNorm, adapters, optical masks) and student MLP are trainable. The patch
+Only the five surrogates (LayerNorm, adapters, and one optical mask each) and student MLP are trainable. The patch
 embedding, all unreplaced vision blocks, merger, LLM, and teacher MLP remain frozen. A single Qwen
-backbone is shared in memory: the controller switches block 26 between the frozen electronic block
-for teacher forward and the optical surrogate for student forward.
+backbone is shared in memory: the controller switches groups `[7,10]` through `[23,26]` between
+the frozen electronic teacher blocks and five optical student conversions.
 
 ## Joint distillation
 
 ```text
-L = 1.0 * MSE(LN(H_student), LN(H_teacher))
+L_hidden = mean over 5 groups of MSE(LN(H_student_group), LN(H_teacher_group))
+
+L = 1.0 * L_hidden
   + 0.5 * T^2 * KL(student_logits/T || teacher_logits/T)
   + 0.5 * CrossEntropy(student_logits, labels)
 ```
@@ -100,11 +113,12 @@ order, sample limits, prompt, image sizing, processor pixel bounds, model, dtype
 implementation. A mismatch is printed and forces re-extraction instead of silently reusing stale
 features.
 
-## Conservative baseline
+## Numerical configuration
 
-Defaults are `dtype=float32` and `attn_implementation=eager`. TF32, cuDNN TF32, autocast, SDPA,
-FlashAttention, `torch.compile`, quantization, ONNX, TensorRT, and optical latency estimates are not
-used. FP32 Qwen3-VL-8B generally requires more than a 24 GB RTX 4090.
+The server config uses `dtype=bfloat16` and `attn_implementation=sdpa` so Qwen3-VL-8B fits on a
+24 GB RTX 4090. Optical propagation remains FP32/complex64 for numerical compatibility. The code
+does not use `torch.compile`, FlashAttention, quantization, ONNX, TensorRT, or optical latency
+estimates.
 
 ## Outputs
 

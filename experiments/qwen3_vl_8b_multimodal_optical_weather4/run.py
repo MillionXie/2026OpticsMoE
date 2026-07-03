@@ -45,7 +45,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
             "Qwen3-VL-8B multimodal BDD100K Weather-4 teacher/student experiment "
-            "with one optical vision-block surrogate"
+            "with five single-mask optical conversions replacing 20 vision blocks"
         )
     )
     parser.add_argument("--config", type=Path, required=True)
@@ -281,19 +281,28 @@ def _build_replacement(
     loaded: LoadedBackbone, settings: Settings, device: torch.device
 ) -> VisionBlockReplacement:
     vision_config = loaded.model.config.vision_config
-    surrogate = OpticalVisionBlockSurrogate(
-        hidden_size=int(vision_config.hidden_size),
-        optical_dim=settings.optical_dim,
-        optical_layers=settings.optical_layers,
-        optical_field_size=settings.optical_field_size,
-        optical_padding_size=settings.optical_padding_size,
-        wavelength_nm=settings.wavelength_nm,
-        pixel_pitch_um=settings.pixel_pitch_um,
-        mask_distance_cm=settings.mask_distance_cm,
-    ).to(device=device)
-    return VisionBlockReplacement(
-        loaded.model, settings.replace_vision_block_start, surrogate
-    )
+    groups = []
+    for conversion in range(settings.optical_conversions):
+        start = (
+            settings.replace_vision_block_start
+            + conversion * settings.teacher_blocks_per_conversion
+        )
+        end = start + settings.teacher_blocks_per_conversion - 1
+        groups.append((start, end))
+    surrogates = [
+        OpticalVisionBlockSurrogate(
+            hidden_size=int(vision_config.hidden_size),
+            optical_dim=settings.optical_dim,
+            optical_layers=settings.optical_layers,
+            optical_field_size=settings.optical_field_size,
+            optical_padding_size=settings.optical_padding_size,
+            wavelength_nm=settings.wavelength_nm,
+            pixel_pitch_um=settings.pixel_pitch_um,
+            mask_distance_cm=settings.mask_distance_cm,
+        ).to(device=device)
+        for _ in groups
+    ]
+    return VisionBlockReplacement(loaded.model, groups, surrogates)
 
 
 def _train_teacher(
@@ -310,7 +319,7 @@ def _train_teacher(
     test_features, test_labels = _teacher_features(
         "test", data, loaded, settings, device
     )
-    replacement.capture.clear()
+    replacement.clear_captures()
     head = MLPHead(
         train_features.shape[-1],
         settings.hidden_dim,
@@ -441,9 +450,18 @@ def _load_optical_checkpoint(
             f"Optical surrogate checkpoint is missing: {path}. Run --phase student_train first."
         )
     checkpoint = torch.load(path, map_location=device, weights_only=True)
-    if int(checkpoint["vision_block_index"]) != replacement.block_index:
-        raise ValueError("Optical checkpoint vision block index does not match config")
-    replacement.surrogate.load_state_dict(checkpoint["state_dict"])
+    if "block_groups" not in checkpoint or "state_dicts" not in checkpoint:
+        raise ValueError(
+            "Optical checkpoint uses the obsolete single-block/multi-mask format. "
+            "Run --phase student_train to create a five-conversion single-mask checkpoint."
+        )
+    checkpoint_groups = [tuple(group) for group in checkpoint["block_groups"]]
+    if checkpoint_groups != replacement.block_groups:
+        raise ValueError(
+            f"Optical checkpoint block groups {checkpoint_groups} do not match "
+            f"config {replacement.block_groups}"
+        )
+    replacement.load_state_dicts(checkpoint["state_dicts"])
 
 
 def _split_train_dataset(data: DatasetBundle, settings: Settings) -> tuple[Any, Any]:
@@ -473,14 +491,19 @@ def _write_model_report(
 ) -> None:
     report = parameter_report(model)
     optical_parameters = sum(
-        parameter.numel() for parameter in replacement.surrogate.parameters()
+        parameter.numel()
+        for surrogate in replacement.surrogates
+        for parameter in surrogate.parameters()
     )
     report.update(
         {
             "model_id": settings.model_id,
             "teacher": "full_electronic_qwen3_vl_multimodal_mlp",
-            "student": f"optical_surrogate_vision_block_{replacement.block_index}",
-            "replaced_vision_blocks": [replacement.block_index],
+            "student": "five_single_mask_optical_conversions_for_20_vision_blocks",
+            "replaced_vision_blocks": replacement.replaced_block_indices,
+            "distillation_block_groups": [list(group) for group in replacement.block_groups],
+            "optical_conversions": len(replacement.surrogates),
+            "phase_masks_per_conversion": 1,
             "optical_trainable_parameters": optical_parameters,
             "backbone_compute_dtype": settings.dtype,
             "attention_implementation": settings.attn_implementation,
@@ -499,7 +522,25 @@ def _compare(settings: Settings, class_names: list[str]) -> None:
         class_names,
         settings.classification_prompt,
         {
-            "vision_blocks": [settings.replace_vision_block_start],
+            "vision_blocks": list(
+                range(
+                    settings.replace_vision_block_start,
+                    settings.replace_vision_block_end + 1,
+                )
+            ),
+            "distillation_block_groups": [
+                [
+                    settings.replace_vision_block_start
+                    + index * settings.teacher_blocks_per_conversion,
+                    settings.replace_vision_block_start
+                    + (index + 1) * settings.teacher_blocks_per_conversion
+                    - 1,
+                ]
+                for index in range(settings.optical_conversions)
+            ],
+            "optical_conversions": settings.optical_conversions,
+            "teacher_blocks_per_conversion": settings.teacher_blocks_per_conversion,
+            "phase_masks_per_conversion": 1,
             "optical_dim": settings.optical_dim,
             "optical_layers": settings.optical_layers,
             "optical_field_size": settings.optical_field_size,

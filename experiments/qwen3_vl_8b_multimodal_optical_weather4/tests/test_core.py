@@ -46,15 +46,17 @@ class FakeVisionBlock(nn.Module):
 
 
 class FakeVisual(nn.Module):
-    def __init__(self, hidden_size: int) -> None:
+    def __init__(self, hidden_size: int, block_count: int = 3) -> None:
         super().__init__()
-        self.blocks = nn.ModuleList([FakeVisionBlock(hidden_size) for _ in range(3)])
+        self.blocks = nn.ModuleList(
+            [FakeVisionBlock(hidden_size) for _ in range(block_count)]
+        )
 
 
 class FakeQwen(nn.Module):
-    def __init__(self, hidden_size: int) -> None:
+    def __init__(self, hidden_size: int, block_count: int = 3) -> None:
         super().__init__()
-        self.visual = FakeVisual(hidden_size)
+        self.visual = FakeVisual(hidden_size, block_count)
 
 
 class FakeFullQwen(FakeQwen):
@@ -102,7 +104,7 @@ def _surrogate(hidden_size: int = 6) -> OpticalVisionBlockSurrogate:
     return OpticalVisionBlockSurrogate(
         hidden_size=hidden_size,
         optical_dim=4,
-        optical_layers=2,
+        optical_layers=1,
         optical_field_size=8,
         optical_padding_size=12,
         wavelength_nm=532.0,
@@ -134,22 +136,32 @@ def test_optical_surrogate_accepts_bfloat16_backbone_boundary() -> None:
 
 
 def test_replacement_switches_teacher_and_student_and_captures_hidden() -> None:
-    model = FakeQwen(6)
-    replacement = VisionBlockReplacement(model, 2, _surrogate())
-    original = replacement.original_block
+    model = FakeQwen(6, block_count=9)
+    groups = [(1, 4), (5, 8)]
+    replacement = VisionBlockReplacement(model, groups, [_surrogate(), _surrogate()])
+    originals = list(model.visual.blocks)
     hidden = torch.randn(5, 6)
     boundaries = torch.tensor([0, 5], dtype=torch.int32)
     replacement.use_teacher()
-    teacher_output = model.visual.blocks[2](hidden, cu_seqlens=boundaries)
-    assert replacement.capture.input_hidden is not None
-    assert replacement.capture.output_hidden is not None
-    assert model.visual.blocks[2] is original
+    teacher_output = hidden
+    for block in model.visual.blocks:
+        teacher_output = block(teacher_output, cu_seqlens=boundaries)
+    assert all(capture.input_hidden is not None for capture in replacement.captures)
+    assert all(capture.output_hidden is not None for capture in replacement.captures)
+    assert list(model.visual.blocks) == originals
     replacement.use_student()
-    student_output = model.visual.blocks[2](hidden, cu_seqlens=boundaries)
+    student_output = hidden
+    for block in model.visual.blocks:
+        student_output = block(student_output, cu_seqlens=boundaries)
     assert student_output.shape == teacher_output.shape
-    assert model.visual.blocks[2] is replacement.surrogate
+    assert model.visual.blocks[4] is replacement.surrogates[0]
+    assert model.visual.blocks[8] is replacement.surrogates[1]
+    assert all(
+        model.visual.blocks[index].__class__.__name__ == "VisionBlockBypass"
+        for index in (1, 2, 3, 5, 6, 7)
+    )
     replacement.close()
-    assert model.visual.blocks[2] is original
+    assert list(model.visual.blocks) == originals
 
 
 def test_distillation_losses_are_differentiable() -> None:
@@ -195,7 +207,8 @@ def test_joint_student_training_keeps_gradient_path(tmp_path: Path) -> None:
         progress=False,
     )
     assert report["best_epoch"] == 1
-    assert report["captured_shapes"]["teacher_block_output"] == [8, 6]
+    groups = report["captured_shapes"]["distillation_groups"]
+    assert groups[0]["teacher_group_output"] == [8, 6]
     assert (tmp_path / "checkpoints" / "student_mlp.pt").is_file()
     assert (tmp_path / "checkpoints" / "optical_surrogate.pt").is_file()
     replacement.close()
@@ -234,7 +247,11 @@ def test_config_cli_and_comparison(tmp_path: Path) -> None:
         "bdd100k_weather4_smoke.json"
     )
     settings = load_settings(source)
-    assert settings.replace_vision_block_start == 26
+    assert settings.replace_vision_block_start == 7
+    assert settings.replace_vision_block_end == 26
+    assert settings.optical_conversions == 5
+    assert settings.teacher_blocks_per_conversion == 4
+    assert settings.optical_layers == 1
     assert settings.dtype == "float32"
     assert settings.attn_implementation == "eager"
     args = build_parser().parse_args(["--config", str(source), "--phase", "student_train"])

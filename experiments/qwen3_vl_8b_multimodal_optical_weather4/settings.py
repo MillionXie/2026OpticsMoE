@@ -57,10 +57,12 @@ class Settings:
         "clear, rainy, snowy, foggy. Answer:"
     )
     optical_enabled: bool = True
-    replace_vision_block_start: int = 26
+    replace_vision_block_start: int = 7
     replace_vision_block_end: int = 26
+    optical_conversions: int = 5
+    teacher_blocks_per_conversion: int = 4
     optical_dim: int = 256
-    optical_layers: int = 4
+    optical_layers: int = 1
     optical_field_size: int = 256
     optical_padding_size: int = 400
     wavelength_nm: float = 532.0
@@ -121,13 +123,32 @@ class Settings:
             )
         if not self.freeze_qwen_backbone_except_optical:
             raise ValueError("The Qwen backbone must remain frozen except for the optical surrogate")
-        if self.replace_vision_block_start != self.replace_vision_block_end:
-            raise ValueError("The first version supports replacement of exactly one vision block")
         if self.replace_vision_block_start < 0:
             raise ValueError("replace_vision_block_start must be non-negative")
-        for name in ("optical_dim", "optical_layers", "optical_field_size", "optical_padding_size"):
+        if self.replace_vision_block_end < self.replace_vision_block_start:
+            raise ValueError("replace_vision_block_end must be >= replace_vision_block_start")
+        for name in (
+            "optical_conversions",
+            "teacher_blocks_per_conversion",
+            "optical_dim",
+            "optical_layers",
+            "optical_field_size",
+            "optical_padding_size",
+        ):
             if int(getattr(self, name)) <= 0:
                 raise ValueError(f"{name} must be positive")
+        if self.optical_layers != 1:
+            raise ValueError(
+                "Hardware constraint: each optical conversion must contain exactly one phase mask; "
+                "set optical_layers=1"
+            )
+        replaced_blocks = self.replace_vision_block_end - self.replace_vision_block_start + 1
+        expected_blocks = self.optical_conversions * self.teacher_blocks_per_conversion
+        if replaced_blocks != expected_blocks:
+            raise ValueError(
+                "Replacement span must equal optical_conversions * "
+                f"teacher_blocks_per_conversion ({replaced_blocks} != {expected_blocks})"
+            )
         if self.optical_padding_size < self.optical_field_size:
             raise ValueError("optical_padding_size must be >= optical_field_size")
         for name in ("wavelength_nm", "pixel_pitch_um", "mask_distance_cm", "distill_temperature"):

@@ -113,6 +113,8 @@ def _field_to_tokens(field: torch.Tensor, token_count: int, optical_dim: int) ->
 
 @dataclass
 class TeacherBlockCapture:
+    block_start: int
+    block_end: int
     input_hidden: torch.Tensor | None = None
     output_hidden: torch.Tensor | None = None
 
@@ -121,49 +123,173 @@ class TeacherBlockCapture:
         self.output_hidden = None
 
 
+class VisionBlockBypass(nn.Module):
+    """Preserve Qwen's block-list indices while removing an electronic block."""
+
+    def forward(self, hidden_states: torch.Tensor, **_: Any) -> torch.Tensor:
+        return hidden_states
+
+
 class VisionBlockReplacement:
-    """Switch one loaded Qwen model between electronic teacher and optical student."""
+    """Switch grouped electronic teacher blocks to optical student conversions.
+
+    Each inclusive ``(start, end)`` group is represented by one optical
+    surrogate at the group's end index. Earlier indices in that group become
+    identity bypasses. Keeping the original block-list length preserves Qwen's
+    index-dependent visual/deep-stack control flow.
+    """
 
     def __init__(
         self,
         model: nn.Module,
-        block_index: int,
-        surrogate: OpticalVisionBlockSurrogate,
+        block_groups: int | list[tuple[int, int]],
+        surrogates: OpticalVisionBlockSurrogate | list[OpticalVisionBlockSurrogate],
     ) -> None:
         self.visual = _locate_visual_model(model)
         self.blocks = self.visual.blocks
-        if not 0 <= block_index < len(self.blocks):
-            raise IndexError(
-                f"Vision block index {block_index} is outside [0, {len(self.blocks) - 1}]"
+        if isinstance(block_groups, int):
+            block_groups = [(block_groups, block_groups)]
+        if isinstance(surrogates, OpticalVisionBlockSurrogate):
+            surrogates = [surrogates]
+        self.block_groups = [(int(start), int(end)) for start, end in block_groups]
+        self.surrogates = list(surrogates)
+        if len(self.block_groups) != len(self.surrogates):
+            raise ValueError("Every teacher block group requires one optical surrogate")
+        _validate_block_groups(self.block_groups, len(self.blocks))
+        replaced_indices = [
+            index
+            for start, end in self.block_groups
+            for index in range(start, end + 1)
+        ]
+        self.original_blocks = {index: self.blocks[index] for index in replaced_indices}
+        self.bypasses = {
+            index: VisionBlockBypass()
+            for start, end in self.block_groups
+            for index in range(start, end)
+        }
+        self.captures = [
+            TeacherBlockCapture(start, end) for start, end in self.block_groups
+        ]
+        self._handles: list[Any] = []
+        for capture in self.captures:
+            self._handles.append(
+                self.original_blocks[capture.block_start].register_forward_pre_hook(
+                    _capture_input_for(capture)
+                )
             )
-        self.block_index = int(block_index)
-        self.original_block = self.blocks[self.block_index]
-        self.surrogate = surrogate
-        self.capture = TeacherBlockCapture()
-        self._pre_handle = self.original_block.register_forward_pre_hook(self._capture_input)
-        self._post_handle = self.original_block.register_forward_hook(self._capture_output)
+            self._handles.append(
+                self.original_blocks[capture.block_end].register_forward_hook(
+                    _capture_output_for(capture)
+                )
+            )
+
+    @property
+    def replaced_block_indices(self) -> list[int]:
+        return [
+            index
+            for start, end in self.block_groups
+            for index in range(start, end + 1)
+        ]
 
     def use_teacher(self) -> None:
-        self.blocks[self.block_index] = self.original_block
+        for index, original in self.original_blocks.items():
+            self.blocks[index] = original
 
     def use_student(self) -> None:
-        self.blocks[self.block_index] = self.surrogate
+        for (start, end), surrogate in zip(self.block_groups, self.surrogates):
+            for index in range(start, end):
+                self.blocks[index] = self.bypasses[index]
+            self.blocks[end] = surrogate
 
     def trainable_parameters(self) -> Iterable[nn.Parameter]:
-        return self.surrogate.parameters()
+        for surrogate in self.surrogates:
+            yield from surrogate.parameters()
+
+    def clear_captures(self) -> None:
+        for capture in self.captures:
+            capture.clear()
+
+    def teacher_outputs(self) -> list[torch.Tensor]:
+        outputs = [capture.output_hidden for capture in self.captures]
+        if any(output is None for output in outputs):
+            missing = [
+                list(self.block_groups[index])
+                for index, output in enumerate(outputs)
+                if output is None
+            ]
+            raise RuntimeError(f"Teacher hooks did not capture block groups: {missing}")
+        return [output for output in outputs if output is not None]
+
+    def student_outputs(self) -> list[torch.Tensor]:
+        outputs = [surrogate.last_output for surrogate in self.surrogates]
+        if any(output is None for output in outputs):
+            missing = [
+                list(self.block_groups[index])
+                for index, output in enumerate(outputs)
+                if output is None
+            ]
+            raise RuntimeError(f"Optical surrogates did not expose group outputs: {missing}")
+        return [output for output in outputs if output is not None]
+
+    def set_surrogates_trainable(self, trainable: bool) -> None:
+        for surrogate in self.surrogates:
+            surrogate.requires_grad_(trainable)
+
+    def train(self, mode: bool = True) -> None:
+        for surrogate in self.surrogates:
+            surrogate.train(mode)
+
+    def eval(self) -> None:
+        self.train(False)
+
+    def cpu_state_dicts(self) -> list[dict[str, torch.Tensor]]:
+        return [
+            {key: value.detach().cpu().clone() for key, value in surrogate.state_dict().items()}
+            for surrogate in self.surrogates
+        ]
+
+    def load_state_dicts(self, states: list[dict[str, torch.Tensor]]) -> None:
+        if len(states) != len(self.surrogates):
+            raise ValueError(
+                f"Optical checkpoint has {len(states)} conversions; expected {len(self.surrogates)}"
+            )
+        for surrogate, state in zip(self.surrogates, states):
+            surrogate.load_state_dict(state)
 
     def close(self) -> None:
         self.use_teacher()
-        self._pre_handle.remove()
-        self._post_handle.remove()
+        for handle in self._handles:
+            handle.remove()
 
-    def _capture_input(self, _module: nn.Module, args: tuple[Any, ...]) -> None:
-        self.capture.input_hidden = args[0].detach()
 
-    def _capture_output(
-        self, _module: nn.Module, _args: tuple[Any, ...], output: torch.Tensor
+def _capture_input_for(capture: TeacherBlockCapture):
+    def hook(_module: nn.Module, args: tuple[Any, ...]) -> None:
+        capture.input_hidden = args[0].detach()
+
+    return hook
+
+
+def _capture_output_for(capture: TeacherBlockCapture):
+    def hook(
+        _module: nn.Module, _args: tuple[Any, ...], output: torch.Tensor
     ) -> None:
-        self.capture.output_hidden = output.detach()
+        capture.output_hidden = output.detach()
+
+    return hook
+
+
+def _validate_block_groups(groups: list[tuple[int, int]], block_count: int) -> None:
+    previous_end = -1
+    for start, end in groups:
+        if start > end:
+            raise ValueError(f"Invalid teacher block group: {(start, end)}")
+        if start <= previous_end:
+            raise ValueError("Teacher block groups must be ordered and non-overlapping")
+        if start < 0 or end >= block_count:
+            raise IndexError(
+                f"Teacher block group {(start, end)} is outside [0, {block_count - 1}]"
+            )
+        previous_end = end
 
 
 def _locate_visual_model(model: nn.Module) -> nn.Module:

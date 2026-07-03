@@ -1,5 +1,8 @@
 # Qwen3-VL-8B Multimodal Optical Weather-4 Commands
 
+The student uses five optical conversions for teacher block groups `[7,10]`, `[11,14]`,
+`[15,18]`, `[19,22]`, and `[23,26]`. Every conversion contains exactly one phase mask.
+
 ## Download and prepare BDD100K Weather-4 only (no GPU/model load)
 
 ```bash
@@ -14,9 +17,9 @@ the configured ImageFolder dataset is missing. Interrupted archive downloads res
 ## Run all phases
 
 ```bash
-CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_8b_multimodal_optical_weather4 
-  --config experiments/qwen3_vl_8b_multimodal_optical_weather4/configs/bdd100k_weather4.json 
-  --device cuda 
+CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_8b_multimodal_optical_weather4 \
+  --config experiments/qwen3_vl_8b_multimodal_optical_weather4/configs/bdd100k_weather4.json \
+  --device cuda \
   --phase all
 ```
 
@@ -32,18 +35,18 @@ CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_8b_multimodal_optical_weat
 ## Evaluate the electronic teacher
 
 ```bash
-CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_8b_multimodal_optical_weather4 
-  --config experiments/qwen3_vl_8b_multimodal_optical_weather4/configs/bdd100k_weather4.json 
-  --device cuda 
+CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_8b_multimodal_optical_weather4 \
+  --config experiments/qwen3_vl_8b_multimodal_optical_weather4/configs/bdd100k_weather4.json \
+  --device cuda \
   --phase teacher_inference
 ```
 
 ## Run only student training if teacher checkpoint already exists
 
 ```bash
-CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_8b_multimodal_optical_weather4 
-  --config experiments/qwen3_vl_8b_multimodal_optical_weather4/configs/bdd100k_weather4.json 
-  --device cuda 
+CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_8b_multimodal_optical_weather4 \
+  --config experiments/qwen3_vl_8b_multimodal_optical_weather4/configs/bdd100k_weather4.json \
+  --device cuda \
   --phase student_train
 ```
 

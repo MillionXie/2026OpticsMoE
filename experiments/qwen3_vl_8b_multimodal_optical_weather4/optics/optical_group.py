@@ -22,6 +22,10 @@ class OpticalGroup(nn.Module):
     ) -> None:
         super().__init__()
         self.layers = int(layers)
+        if self.layers != 1:
+            raise ValueError(
+                "One optical conversion supports exactly one propagation/mask/detection layer"
+            )
         self.field_size = int(field_size)
         self.eps = float(eps)
         self.propagators = nn.ModuleList(
