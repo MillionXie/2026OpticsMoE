@@ -17,6 +17,10 @@ The backbone is frozen with `model.requires_grad_(False)` and remains in evaluat
 MLP parameters are trained. This implementation does not manually concatenate visual and textual
 features.
 
+The default baseline uses FP32 weights and eager attention (`dtype=float32`,
+`attn_implementation=eager`) to avoid reduced-precision or fused/SDPA attention acceleration.
+An 8B checkpoint in FP32 normally does not fit in a single 24 GB RTX 4090.
+
 The default CIFAR-100 prompt is configured as:
 
 ```text

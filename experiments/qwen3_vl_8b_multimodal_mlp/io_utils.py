@@ -19,6 +19,12 @@ def set_seed(seed: int) -> None:
     torch.manual_seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
+    # Conservative FP32 baseline: prevent Ampere+ GPUs from silently using
+    # TF32 tensor-core math for nominal float32 operations.
+    torch.set_float32_matmul_precision("highest")
+    torch.backends.cuda.matmul.allow_tf32 = False
+    torch.backends.cudnn.allow_tf32 = False
+    torch.backends.cudnn.benchmark = False
 
 
 def write_json(path: Path, value: Mapping[str, Any]) -> None:
@@ -55,6 +61,10 @@ def runtime_metadata(device: torch.device) -> dict[str, Any]:
         "cuda_runtime": torch.version.cuda,
         "cudnn": torch.backends.cudnn.version() if torch.backends.cudnn.is_available() else None,
         "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
+        "float32_matmul_precision": torch.get_float32_matmul_precision(),
+        "cuda_matmul_allow_tf32": torch.backends.cuda.matmul.allow_tf32,
+        "cudnn_allow_tf32": torch.backends.cudnn.allow_tf32,
+        "cudnn_benchmark": torch.backends.cudnn.benchmark,
         "device": str(device),
         "gpus": gpus,
     }
@@ -88,4 +98,3 @@ def _json_default(value: Any) -> Any:
     if isinstance(value, torch.dtype):
         return str(value).removeprefix("torch.")
     raise TypeError(f"Cannot serialize {type(value).__name__}")
-

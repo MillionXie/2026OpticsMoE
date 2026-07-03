@@ -43,9 +43,9 @@ class Settings:
     validation_fraction: float = 0.1
     learning_rate: float = 1e-3
     weight_decay: float = 1e-2
-    dtype: str = "bfloat16"
+    dtype: str = "float32"
     device: str = "cuda"
-    attn_implementation: str = "sdpa"
+    attn_implementation: str = "eager"
     warmup_batches: int = 5
     benchmark_batches: int | None = None
     seed: int = 42

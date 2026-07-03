@@ -14,6 +14,10 @@ image
 The complete Qwen3-VL backbone is frozen. This baseline does not call the text tokenizer and does
 not execute the language decoder.
 
+The default baseline uses FP32 weights and eager attention (`dtype=float32`,
+`attn_implementation=eager`) to avoid reduced-precision or fused/SDPA attention acceleration.
+An 8B checkpoint in FP32 normally does not fit in a single 24 GB RTX 4090.
+
 ## Datasets
 
 Supported datasets are CIFAR-10, CIFAR-100, STL-10, SVHN, Fashion-MNIST, and a custom
