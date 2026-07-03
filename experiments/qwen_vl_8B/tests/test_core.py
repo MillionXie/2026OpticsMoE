@@ -36,6 +36,21 @@ class FakeVisionModel(nn.Module):
         return torch.arange(total * 8, dtype=torch.float32).reshape(total, 8), []
 
 
+class FakeTransformers5VisionModel(FakeVisionModel):
+    def get_image_features(self, pixel_values: torch.Tensor, image_grid_thw: torch.Tensor):
+        del pixel_values
+        batch_size = image_grid_thw.shape[0]
+        merged = tuple(torch.ones(4, 8) * index for index in range(batch_size))
+        return type(
+            "VisionOutput",
+            (),
+            {
+                "last_hidden_state": torch.zeros(batch_size * 16, 6),
+                "pooler_output": merged,
+            },
+        )()
+
+
 def test_settings_resolve_paths(tmp_path: Path) -> None:
     config = tmp_path / "configs" / "test.json"
     config.parent.mkdir()
@@ -66,6 +81,17 @@ def test_visual_token_split_and_pool() -> None:
     tokens = image_token_features(model, inputs)
     assert [list(value.shape) for value in tokens] == [[4, 8], [4, 8]]
     assert list(pool_tokens(tokens).shape) == [2, 8]
+
+
+def test_transformers5_prefers_merged_pooler_output() -> None:
+    model = FakeTransformers5VisionModel()
+    inputs = {
+        "pixel_values": torch.zeros(32, 3),
+        "image_grid_thw": torch.tensor([[1, 8, 2], [1, 4, 4]]),
+    }
+    tokens = image_token_features(model, inputs)
+    assert [list(value.shape) for value in tokens] == [[4, 8], [4, 8]]
+    assert torch.equal(tokens[1], torch.ones(4, 8))
 
 
 def test_metrics_and_timing() -> None:

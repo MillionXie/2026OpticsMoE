@@ -38,6 +38,14 @@ def image_token_features(
     primary = output
     if isinstance(output, tuple) and len(output) == 2 and isinstance(output[0], (tuple, list)):
         primary = output[0]
+    # Transformers 5.x returns BaseModelOutputWithDeepstackFeatures. Its
+    # last_hidden_state contains pre-merger ViT tokens (vision hidden size),
+    # while pooler_output contains the per-image, merged tokens projected to
+    # the language hidden size. The latter is the visual encoder output used
+    # by the frozen-backbone classifier.
+    pooler_output = getattr(primary, "pooler_output", None)
+    if pooler_output is not None:
+        primary = pooler_output
     if isinstance(primary, (tuple, list)) and all(torch.is_tensor(item) for item in primary):
         return list(primary)
     if hasattr(primary, "last_hidden_state"):
