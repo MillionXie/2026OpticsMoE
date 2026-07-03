@@ -24,11 +24,10 @@ python -m experiments.qwen3_vl_8b_multimodal_mlp \
 ## Extract frozen multimodal features
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_8b_multimodal_mlp \
-  --config experiments/qwen3_vl_8b_multimodal_mlp/configs/cifar100.json \
-  --device cuda \
-  --cache-dir "$HF_HOME" \
-  --local-files-only \
+CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_8b_multimodal_mlp 
+  --config experiments/qwen3_vl_8b_multimodal_mlp/configs/cifar100.json 
+  --device cuda 
+  --local-files-only 
   --phase extract
 ```
 
@@ -70,3 +69,7 @@ python -m experiments.qwen3_vl_8b_multimodal_mlp \
   --phase visualize
 ```
 
+## 100 right server
+```bash
+export HF_HOME=/DATA/DATA1/guest3/.cache/huggingface
+```
