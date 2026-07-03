@@ -14,10 +14,11 @@ Only four visually distinct BDD100K weather classes are used:
 clear, rainy, snowy, foggy
 ```
 
-With `"download": true` (the default), a missing dataset is downloaded from the public BDD100K
-archive, and the labelled BDD100K validation split is used as this experiment's test split. The
+With `"download": true` (the default), a missing dataset is downloaded from the public Kaggle
+BDD100K mirror `awsaf49/bdd100k-dataset`, and the labelled BDD100K validation split is used as this
+experiment's test split. The
 archives support resuming through `.part` files. Images are linked into the four class folders to
-avoid storing a second copy. This downloads more than 4 GB, so ensure that `data_root` has enough
+avoid storing a second copy. This downloads about 6.9 GB, so ensure that `data_root` has enough
 space. You remain responsible for complying with the BDD100K dataset license.
 
 The automatically generated (or manually prepared) ImageFolder layout is:

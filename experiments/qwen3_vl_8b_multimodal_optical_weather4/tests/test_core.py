@@ -12,6 +12,8 @@ from experiments.qwen3_vl_8b_multimodal_optical_weather4.datasets import (
     load_weather4,
 )
 from experiments.qwen3_vl_8b_multimodal_optical_weather4.data_prepare import (
+    _find_image_split,
+    _find_label_file,
     prepare_weather_split,
 )
 from experiments.qwen3_vl_8b_multimodal_optical_weather4.io_utils import write_json
@@ -273,3 +275,19 @@ def test_prepare_weather_split_from_bdd_labels(tmp_path: Path) -> None:
     for weather in WEATHER4_CLASSES:
         assert (tmp_path / "prepared" / weather).is_dir()
         assert len(list((tmp_path / "prepared" / weather).iterdir())) == 1
+
+
+def test_finds_kaggle_v2_label_names(tmp_path: Path) -> None:
+    labels = tmp_path / "labels" / "det_v2_train_release.json"
+    labels.parent.mkdir()
+    labels.write_text("[]", encoding="utf-8")
+    assert _find_label_file(tmp_path, "train") == labels
+
+
+def test_prefers_kaggle_100k_images_over_10k(tmp_path: Path) -> None:
+    base = tmp_path / "bdd100k" / "bdd100k" / "images"
+    for size in ("10k", "100k"):
+        directory = base / size / "train"
+        directory.mkdir(parents=True)
+        Image.new("RGB", (8, 8)).save(directory / f"{size}.jpg")
+    assert _find_image_split(tmp_path, "train") == base / "100k" / "train"

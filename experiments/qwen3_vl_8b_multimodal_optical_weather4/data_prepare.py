@@ -12,9 +12,10 @@ from typing import Any
 
 WEATHER4_CLASSES = ("clear", "rainy", "snowy", "foggy")
 BDD100K_ASSETS = {
-    "train_images": "https://dl.cv.ethz.ch/bdd100k/data/100k_images_train.zip",
-    "val_images": "https://dl.cv.ethz.ch/bdd100k/data/100k_images_val.zip",
-    "labels": "https://dl.cv.ethz.ch/bdd100k/data/bdd100k_det_20_labels_trainval.zip",
+    "kaggle_bdd100k": (
+        "https://www.kaggle.com/api/v1/datasets/download/"
+        "awsaf49/bdd100k-dataset?datasetVersionNumber=1"
+    ),
 }
 
 
@@ -40,7 +41,9 @@ def ensure_weather4_dataset(
     raw.mkdir(parents=True, exist_ok=True)
 
     for asset, url in BDD100K_ASSETS.items():
-        archive = downloads / Path(url).name
+        # Do not derive the filename from the URL: the Kaggle endpoint contains
+        # query parameters and redirects to a signed Google Storage URL.
+        archive = downloads / f"{asset}.zip"
         _download_with_resume(url, archive)
         _extract_once(archive, raw, raw / f".{asset}.extracted")
 
@@ -134,6 +137,11 @@ def _download_with_resume(url: str, destination: Path) -> None:
             partial.replace(destination)
             return
         raise RuntimeError(f"BDD100K download failed ({exc.code}): {url}") from exc
+    except urllib.error.URLError as exc:
+        raise RuntimeError(
+            f"BDD100K download connection failed for {url}: {exc.reason}. "
+            "Check server DNS/network access; rerunning resumes an existing .part file."
+        ) from exc
 
     append = offset > 0 and getattr(response, "status", None) == 206
     if offset and not append:
@@ -179,13 +187,19 @@ def _extract_once(archive: Path, destination: Path, marker: Path) -> None:
 
 
 def _find_image_split(raw: Path, split: str) -> Path:
-    preferred = raw / "bdd100k" / "images" / "100k" / split
-    if preferred.is_dir():
-        return preferred
+    preferred_paths = (
+        raw / "bdd100k" / "images" / "100k" / split,
+        raw / "bdd100k" / "bdd100k" / "images" / "100k" / split,
+    )
+    for preferred in preferred_paths:
+        if preferred.is_dir():
+            return preferred
     candidates = [
         path
         for path in raw.rglob(split)
-        if path.is_dir() and any(path.glob("*.jpg"))
+        if path.is_dir()
+        and path.parent.name == "100k"
+        and any(path.glob("*.jpg"))
     ]
     if len(candidates) != 1:
         raise FileNotFoundError(
@@ -199,6 +213,7 @@ def _find_label_file(raw: Path, split: str) -> Path:
     exact_names = (
         f"det_{split}.json",
         f"bdd100k_labels_images_{split}.json",
+        f"det_v2_{split}_release.json",
     )
     for name in exact_names:
         matches = list(raw.rglob(name))
