@@ -1,7 +1,7 @@
 {
   "dataset": "cifar10",
   "data_root": "../data",
-  "output_dir": "../runs/qwen3_vl_8b_cifar10",
+  "output_dir": "../runs/qwen3_vl_8b_vision_mlp_cifar10",
   "model_id": "Qwen/Qwen3-VL-8B-Instruct",
   "cache_dir": null,
   "local_files_only": false,
@@ -31,4 +31,3 @@
   "seed": 42,
   "progress": true
 }
-

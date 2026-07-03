@@ -4,14 +4,15 @@ import json
 from pathlib import Path
 
 import torch
+import pytest
 from torch import nn
 
-from experiments.qwen_vl_8B.features import image_token_features, pool_tokens
-from experiments.qwen_vl_8B.metrics import classification_metrics
-from experiments.qwen_vl_8B.modeling import MLPHead, parameter_report
-from experiments.qwen_vl_8B.settings import load_settings
-from experiments.qwen_vl_8B.timing import summarize_timings
-from experiments.qwen_vl_8B.run import _restore_download_cache, build_parser
+from experiments.qwen3_vl_8b_vision_mlp.features import image_token_features, pool_tokens
+from experiments.qwen3_vl_8b_vision_mlp.metrics import classification_metrics
+from experiments.qwen3_vl_8b_vision_mlp.modeling import MLPHead, parameter_report
+from experiments.qwen3_vl_8b_vision_mlp.settings import load_settings, resolve_model_id
+from experiments.qwen3_vl_8b_vision_mlp.timing import summarize_timings
+from experiments.qwen3_vl_8b_vision_mlp.run import _restore_download_cache, build_parser
 
 
 class FakeVisionModel(nn.Module):
@@ -123,9 +124,50 @@ def test_parameter_report_includes_head() -> None:
 
 
 def test_download_phase_cli() -> None:
-    args = build_parser().parse_args(["--config", "config.json", "--phase", "download"])
+    args = build_parser().parse_args(
+        [
+            "--config",
+            "config.json",
+            "--phase",
+            "download",
+            "--model-id",
+            "Qwen/Qwen3-VL-8B-Instruct",
+        ]
+    )
     assert args.phase == "download"
     assert args.download_workers == 2
+    assert args.model_id == "Qwen/Qwen3-VL-8B-Instruct"
+
+
+def test_environment_and_relative_local_model_paths(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_dir = tmp_path / "configs"
+    model_dir = config_dir / "local-model"
+    model_dir.mkdir(parents=True)
+    monkeypatch.setenv("VISION_CACHE", str(tmp_path / "cache"))
+    config = config_dir / "test.json"
+    config.write_text(
+        json.dumps(
+            {
+                "model_id": "local-model",
+                "cache_dir": "$VISION_CACHE",
+                "device": "cpu",
+                "dtype": "float32",
+            }
+        ),
+        encoding="utf-8",
+    )
+    settings = load_settings(config)
+    assert settings.model_id == str(model_dir.resolve())
+    assert settings.cache_dir == (tmp_path / "cache").resolve()
+    assert resolve_model_id("local-model", config_dir) == str(model_dir.resolve())
+    config.write_text(
+        json.dumps({"cache_dir": "${UNSET_VISION_CACHE_FOR_TEST}"}),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="unset environment variable"):
+        load_settings(config)
 
 
 def test_restore_download_cache_from_legacy_record(tmp_path: Path) -> None:

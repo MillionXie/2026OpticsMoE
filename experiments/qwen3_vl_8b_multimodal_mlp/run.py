@@ -15,13 +15,15 @@ from .download import download_checkpoint
 from .features import extract_and_cache, load_feature_cache
 from .io_utils import resolve_device, resolve_dtype, runtime_metadata, set_seed, write_json
 from .modeling import MLPHead, LoadedBackbone, load_backbone, parameter_report
-from .settings import Settings, load_settings
+from .settings import Settings, load_settings, resolve_model_id, resolve_path
 from .training import load_head, train_head
 from .visualize import generate_figures
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Qwen3-VL-8B frozen-feature MLP classifier")
+    parser = argparse.ArgumentParser(
+        description="Qwen3-VL-8B full multimodal frozen feature + MLP classifier"
+    )
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument(
         "--phase",
@@ -31,6 +33,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--output-dir", type=Path, default=None)
     parser.add_argument("--data-root", type=Path, default=None)
     parser.add_argument("--cache-dir", type=Path, default=None)
+    parser.add_argument("--model-id", default=None)
     parser.add_argument("--device", default=None)
     parser.add_argument(
         "--local-files-only", action=argparse.BooleanOptionalAction, default=None
@@ -42,10 +45,13 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     settings = load_settings(args.config)
+    config_path = resolve_path(args.config, Path.cwd(), "config")
     for name in ("output_dir", "data_root", "cache_dir"):
         value = getattr(args, name)
         if value is not None:
-            setattr(settings, name, value.expanduser().resolve())
+            setattr(settings, name, resolve_path(value, Path.cwd(), name))
+    if args.model_id is not None:
+        settings.model_id = resolve_model_id(args.model_id, config_path.parent)
     if args.device is not None:
         settings.device = args.device
     if args.local_files_only is not None:
@@ -107,6 +113,8 @@ def main(argv: list[str] | None = None) -> int:
         )
         model_record = parameter_report(loaded.model)
         model_record["model_id"] = settings.model_id
+        model_record["feature_path"] = "full_multimodal_answer_position_hidden_state"
+        model_record["classification_prompt"] = settings.classification_prompt
         model_record["load_time_sec"] = loaded.load_time_sec
         write_json(output_dir / "model.json", model_record)
         _log(f"model ready: load_time={loaded.load_time_sec:.3f}s device={device}")
@@ -154,6 +162,8 @@ def main(argv: list[str] | None = None) -> int:
         if loaded is not None:
             report = parameter_report(loaded.model, head)
             report["model_id"] = settings.model_id
+            report["feature_path"] = "full_multimodal_answer_position_hidden_state"
+            report["classification_prompt"] = settings.classification_prompt
             report["load_time_sec"] = loaded.load_time_sec
             write_json(output_dir / "model.json", report)
         if args.phase == "train":
@@ -166,6 +176,8 @@ def main(argv: list[str] | None = None) -> int:
         assert loaded is not None
         report = parameter_report(loaded.model, head)
         report["model_id"] = settings.model_id
+        report["feature_path"] = "full_multimodal_answer_position_hidden_state"
+        report["classification_prompt"] = settings.classification_prompt
         report["load_time_sec"] = loaded.load_time_sec
         write_json(output_dir / "model.json", report)
     if args.phase in {"all", "inference"}:
@@ -189,11 +201,16 @@ def main(argv: list[str] | None = None) -> int:
             settings.warmup_batches,
             settings.benchmark_batches,
             settings.progress,
+            settings.classification_prompt,
         )
         summary = {
             "dataset": settings.dataset,
             "model_id": settings.model_id,
-            "feature_dimension": inference_report["feature_shapes"].get("pooled_features", [None])[-1],
+            "feature_path": "full_multimodal_answer_position_hidden_state",
+            "classification_prompt": settings.classification_prompt,
+            "feature_dimension": inference_report["feature_shapes"].get(
+                "feature_dimension"
+            ),
             "metrics": inference_report["metrics"],
             "timing": inference_report["timing"],
             "training": {
@@ -243,7 +260,8 @@ def _features_for_split(
         "resize_to": settings.resize_to,
         "processor_min_pixels": settings.processor_min_pixels,
         "processor_max_pixels": settings.processor_max_pixels,
-        "pooling": "mean_over_merged_visual_tokens",
+        "classification_prompt": settings.classification_prompt,
+        "feature_source": "full_multimodal_answer_position_hidden_state",
     }
     if settings.cache_features and cache_path.is_file():
         features, labels, metadata = load_feature_cache(cache_path)
@@ -256,7 +274,7 @@ def _features_for_split(
     loader = make_loader(
         dataset, settings.feature_batch_size, settings.num_workers, False, settings.seed
     )
-    _log(f"extracting {split} visual features: samples={len(dataset)}")
+    _log(f"extracting {split} multimodal features: samples={len(dataset)}")
     features, labels, _ = extract_and_cache(
         loaded.model,
         loaded.processor,
@@ -267,6 +285,7 @@ def _features_for_split(
         expected,
         settings.cache_dtype,
         settings.progress,
+        settings.classification_prompt,
     )
     return features, labels
 

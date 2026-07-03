@@ -4,10 +4,10 @@ from pathlib import Path
 
 import torch
 
-from experiments.qwen_vl_8B.io_utils import write_json
-from experiments.qwen_vl_8B.modeling import MLPHead
-from experiments.qwen_vl_8B.training import train_head
-from experiments.qwen_vl_8B.visualize import generate_figures
+from experiments.qwen3_vl_8b_vision_mlp.io_utils import write_json
+from experiments.qwen3_vl_8b_vision_mlp.modeling import MLPHead
+from experiments.qwen3_vl_8b_vision_mlp.training import train_head
+from experiments.qwen3_vl_8b_vision_mlp.visualize import generate_figures
 
 
 def test_train_head_and_generate_figures(tmp_path: Path) -> None:

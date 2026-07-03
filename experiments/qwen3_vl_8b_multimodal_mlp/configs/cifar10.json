@@ -1,9 +1,9 @@
 {
-  "dataset": "cifar100",
+  "dataset": "cifar10",
   "data_root": "../data",
-  "output_dir": "../runs/qwen3_vl_8b_cifar100",
+  "output_dir": "../runs/qwen3_vl_8b_multimodal_mlp_cifar10",
   "model_id": "Qwen/Qwen3-VL-8B-Instruct",
-  "cache_dir": "/root/autodl-tmp/hf_cache",
+  "cache_dir": null,
   "local_files_only": false,
   "download": true,
   "resize_to": null,
@@ -14,7 +14,7 @@
   "feature_batch_size": 4,
   "inference_batch_size": 1,
   "head_batch_size": 512,
-  "num_workers": 6,
+  "num_workers": 4,
   "cache_features": true,
   "cache_dtype": "float16",
   "hidden_dim": 1024,
@@ -29,6 +29,6 @@
   "warmup_batches": 5,
   "benchmark_batches": null,
   "seed": 42,
-  "progress": true
+  "progress": true,
+  "classification_prompt": "Classify this image into one of the CIFAR-10 categories. Answer:"
 }
-

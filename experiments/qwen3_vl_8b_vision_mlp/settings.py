@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import os
+import re
 from dataclasses import asdict, dataclass, fields
 from pathlib import Path
 from typing import Any
@@ -10,13 +12,14 @@ from . import MODEL_ID
 
 PROJECT_DIR = Path(__file__).resolve().parent
 PATH_FIELDS = {"data_root", "output_dir", "cache_dir"}
+ENV_REFERENCE = re.compile(r"\$(?:\{([A-Za-z_][A-Za-z0-9_]*)\}|([A-Za-z_][A-Za-z0-9_]*))")
 
 
 @dataclass
 class Settings:
     dataset: str = "cifar100"
     data_root: Path = PROJECT_DIR / "data"
-    output_dir: Path = PROJECT_DIR / "runs" / "qwen3_vl_8b_cifar100"
+    output_dir: Path = PROJECT_DIR / "runs" / "qwen3_vl_8b_vision_mlp_cifar100"
     model_id: str = MODEL_ID
     cache_dir: Path | None = None
     local_files_only: bool = False
@@ -52,8 +55,8 @@ class Settings:
         supported = {"cifar10", "cifar100", "stl10", "svhn", "fashionmnist", "imagefolder"}
         if self.dataset not in supported:
             raise ValueError(f"dataset must be one of {sorted(supported)}, got {self.dataset!r}")
-        model_path = Path(self.model_id).expanduser()
-        if self.model_id != MODEL_ID and not model_path.exists():
+        model_path = Path(self.model_id)
+        if self.model_id != MODEL_ID and not model_path.is_dir():
             raise ValueError(
                 f"This project is fixed to {MODEL_ID}; model_id may only differ when it is an "
                 "existing local checkpoint directory."
@@ -80,7 +83,7 @@ class Settings:
 
 
 def load_settings(path: Path) -> Settings:
-    path = path.expanduser().resolve()
+    path = resolve_path(path, Path.cwd(), "config")
     with path.open("r", encoding="utf-8") as handle:
         raw = json.load(handle)
     if not isinstance(raw, dict):
@@ -91,23 +94,42 @@ def load_settings(path: Path) -> Settings:
         raise ValueError(f"Unknown config keys: {', '.join(unknown)}")
     values = dict(raw)
     model_value = values.get("model_id")
-    if model_value and model_value != MODEL_ID:
-        model_candidate = Path(model_value).expanduser()
-        if not model_candidate.is_absolute():
-            model_candidate = path.parent / model_candidate
-        values["model_id"] = str(model_candidate.resolve())
+    if model_value:
+        values["model_id"] = resolve_model_id(model_value, path.parent)
     for name in PATH_FIELDS:
         value = values.get(name)
         if value is None:
             continue
-        candidate = Path(value).expanduser()
-        if not candidate.is_absolute():
-            candidate = path.parent / candidate
-        values[name] = candidate.resolve()
+        values[name] = resolve_path(value, path.parent, name)
     settings = Settings(**values)
-    settings.data_root = Path(settings.data_root).expanduser().resolve()
-    settings.output_dir = Path(settings.output_dir).expanduser().resolve()
+    settings.data_root = resolve_path(settings.data_root, Path.cwd(), "data_root")
+    settings.output_dir = resolve_path(settings.output_dir, Path.cwd(), "output_dir")
     if settings.cache_dir is not None:
-        settings.cache_dir = Path(settings.cache_dir).expanduser().resolve()
+        settings.cache_dir = resolve_path(settings.cache_dir, Path.cwd(), "cache_dir")
     settings.validate()
     return settings
+
+
+def resolve_model_id(value: str | Path, base_dir: Path) -> str:
+    raw = str(value)
+    if raw == MODEL_ID:
+        return raw
+    candidate = resolve_path(raw, base_dir, "model_id")
+    if not candidate.is_dir():
+        raise ValueError(f"Local model_id directory does not exist: {candidate}")
+    return str(candidate)
+
+
+def resolve_path(value: str | Path, base_dir: Path, field_name: str) -> Path:
+    raw = str(value)
+    expanded = os.path.expandvars(os.path.expanduser(raw))
+    unresolved = sorted({left or right for left, right in ENV_REFERENCE.findall(expanded)})
+    if unresolved:
+        names = ", ".join(unresolved)
+        raise ValueError(
+            f"Config/CLI field '{field_name}' references unset environment variable(s): {names}"
+        )
+    candidate = Path(expanded)
+    if not candidate.is_absolute():
+        candidate = base_dir / candidate
+    return candidate.resolve()
