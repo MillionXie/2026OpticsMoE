@@ -11,7 +11,7 @@ from experiments.qwen_vl_8B.metrics import classification_metrics
 from experiments.qwen_vl_8B.modeling import MLPHead, parameter_report
 from experiments.qwen_vl_8B.settings import load_settings
 from experiments.qwen_vl_8B.timing import summarize_timings
-from experiments.qwen_vl_8B.run import build_parser
+from experiments.qwen_vl_8B.run import _restore_download_cache, build_parser
 
 
 class FakeVisionModel(nn.Module):
@@ -100,3 +100,29 @@ def test_download_phase_cli() -> None:
     args = build_parser().parse_args(["--config", "config.json", "--phase", "download"])
     assert args.phase == "download"
     assert args.download_workers == 2
+
+
+def test_restore_download_cache_from_legacy_record(tmp_path: Path) -> None:
+    cache_dir = tmp_path / "cache"
+    snapshot = cache_dir / "models--Qwen--Qwen3-VL-8B-Instruct" / "snapshots" / "revision"
+    snapshot.mkdir(parents=True)
+    output_dir = tmp_path / "run"
+    output_dir.mkdir()
+    (output_dir / "download.json").write_text(
+        json.dumps({"snapshot": str(snapshot)}), encoding="utf-8"
+    )
+    config = tmp_path / "config.json"
+    config.write_text(
+        json.dumps(
+            {
+                "dataset": "cifar100",
+                "data_root": str(tmp_path / "data"),
+                "output_dir": str(output_dir),
+                "local_files_only": True,
+            }
+        ),
+        encoding="utf-8",
+    )
+    settings = load_settings(config)
+    _restore_download_cache(settings, "all")
+    assert settings.cache_dir == cache_dir.resolve()

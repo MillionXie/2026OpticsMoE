@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -52,6 +53,7 @@ def main(argv: list[str] | None = None) -> int:
     settings.validate()
     output_dir = settings.output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
+    _restore_download_cache(settings, args.phase)
     write_json(output_dir / "config_resolved.json", settings.to_dict())
     if args.phase == "download":
         _log(f"checkpoint download started: {settings.model_id}")
@@ -63,7 +65,12 @@ def main(argv: list[str] | None = None) -> int:
         )
         write_json(
             output_dir / "download.json",
-            {"model_id": settings.model_id, "snapshot": str(snapshot), "xet_disabled": True},
+            {
+                "model_id": settings.model_id,
+                "snapshot": str(snapshot),
+                "cache_dir": str(settings.cache_dir) if settings.cache_dir else None,
+                "xet_disabled": True,
+            },
         )
         _log(f"checkpoint download finished: {snapshot}")
         return 0
@@ -267,6 +274,33 @@ def _features_for_split(
 def _log(message: str) -> None:
     timestamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
     print(f"[{timestamp}] {message}", flush=True)
+
+
+def _restore_download_cache(settings: Settings, phase: str) -> None:
+    """Reuse the cache selected by a previous download-only phase."""
+
+    if phase == "download" or not settings.local_files_only or settings.cache_dir is not None:
+        return
+    record_path = settings.output_dir / "download.json"
+    if not record_path.is_file():
+        return
+    with record_path.open("r", encoding="utf-8") as handle:
+        record = json.load(handle)
+    cache_dir = record.get("cache_dir")
+    if cache_dir:
+        candidate = Path(cache_dir)
+    else:
+        snapshot = record.get("snapshot")
+        if not snapshot:
+            return
+        snapshot_path = Path(snapshot)
+        # <cache>/models--org--repo/snapshots/<revision>
+        if len(snapshot_path.parents) < 3:
+            return
+        candidate = snapshot_path.parents[2]
+    if candidate.is_dir():
+        settings.cache_dir = candidate.resolve()
+        _log(f"reusing download cache directory: {settings.cache_dir}")
 
 
 if __name__ == "__main__":

@@ -47,7 +47,8 @@ python -m experiments.qwen_vl_8B \
 ```
 
 如果仍提示访问限制，运行 `hf auth login` 并粘贴 Hugging Face read token。下载完成后，
-有卡模式使用 `--local-files-only` 可禁止程序再次访问网络。
+有卡模式使用 `--local-files-only` 可禁止程序再次访问网络。若显式传入了 `--cache-dir`，
+下载和推理必须使用同一个值；程序也会通过运行目录中的 `download.json` 自动恢复该路径。
 
 ## 运行
 
@@ -56,7 +57,8 @@ python -m experiments.qwen_vl_8B \
 ```bash
 CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen_vl_8B \
   --config experiments/qwen_vl_8B/configs/cifar100_smoke.json \
-  --device cuda --local-files-only
+  --device cuda --local-files-only \
+  --cache-dir /root/autodl-tmp/hf_cache
 ```
 
 完整 CIFAR-100 实验：
