@@ -1,0 +1,73 @@
+from __future__ import annotations
+
+import csv
+import json
+from pathlib import Path
+from typing import Any
+
+import torch
+
+
+def classification_metrics(targets: list[int], predictions: list[int], class_names: list[str]) -> dict[str, Any]:
+    num_classes = len(class_names)
+    matrix = torch.zeros(num_classes, num_classes, dtype=torch.long)
+    for target, prediction in zip(targets, predictions):
+        matrix[int(target), int(prediction)] += 1
+    per_class: dict[str, dict[str, float | int]] = {}
+    recalls: list[float] = []
+    f1_values: list[float] = []
+    total_correct = int(matrix.diag().sum())
+    total = int(matrix.sum())
+    for index, name in enumerate(class_names):
+        tp = int(matrix[index, index])
+        support = int(matrix[index].sum())
+        predicted = int(matrix[:, index].sum())
+        precision = tp / predicted if predicted else 0.0
+        recall = tp / support if support else 0.0
+        f1 = 2.0 * precision * recall / (precision + recall) if precision + recall else 0.0
+        accuracy = recall
+        recalls.append(recall)
+        f1_values.append(f1)
+        per_class[name] = {
+            "support": support,
+            "accuracy": accuracy,
+            "precision": precision,
+            "recall": recall,
+            "f1": f1,
+        }
+    return {
+        "top1_accuracy": total_correct / total if total else 0.0,
+        "macro_f1": sum(f1_values) / num_classes,
+        "balanced_accuracy": sum(recalls) / num_classes,
+        "per_class_accuracy": {name: values["accuracy"] for name, values in per_class.items()},
+        "per_class_precision": {name: values["precision"] for name, values in per_class.items()},
+        "per_class_recall": {name: values["recall"] for name, values in per_class.items()},
+        "per_class_f1": {name: values["f1"] for name, values in per_class.items()},
+        "per_class": per_class,
+        "confusion_matrix": matrix.tolist(),
+        "samples": total,
+    }
+
+
+def write_json(path: Path, value: Any) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(value, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def write_history(path: Path, rows: list[dict[str, Any]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if not rows:
+        return
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def write_confusion_csv(path: Path, matrix: list[list[int]], class_names: list[str]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(["true\\predicted", *class_names])
+        for name, row in zip(class_names, matrix):
+            writer.writerow([name, *row])
