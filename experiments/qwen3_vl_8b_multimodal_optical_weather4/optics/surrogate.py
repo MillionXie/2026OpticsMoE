@@ -67,7 +67,7 @@ class OpticalVisionBlockSurrogate(nn.Module):
             ],
             dim=0,
         )
-        output = (packed + self.output_adapter(optical_tokens)).to(boundary_dtype)
+        output = self.output_adapter(optical_tokens).to(boundary_dtype)
         if len(original_shape) == 3:
             output = output.reshape(original_shape)
         self.last_output = output
