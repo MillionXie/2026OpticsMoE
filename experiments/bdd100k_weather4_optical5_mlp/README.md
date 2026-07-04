@@ -19,7 +19,7 @@ Each optical conversion applies a trainable phase mask and optional amplitude ma
 
 ## Dataset
 
-Prepare this ImageFolder layout at the configured `data_root` (by default `<repository>/data/bdd100k_weather4`):
+Prepare this ImageFolder layout at the configured `data_root` (by default `experiments/bdd100k_weather4_optical5_mlp/data/bdd100k_weather4`):
 
 ```text
 data/bdd100k_weather4/
@@ -30,6 +30,8 @@ data/bdd100k_weather4/
 The training directory is split per class into training and validation subsets. The test directory is never used during training. Because `foggy` is rare, the run records macro-F1, balanced accuracy, per-class metrics, and the confusion matrix in addition to overall top-1 accuracy.
 
 `--phase prepare_data` validates and summarizes an already organized ImageFolder dataset; it does not download BDD100K because redistribution and access depend on the dataset provider.
+
+If the configured repository-level path is absent, the runner also searches existing experiment-local `*/data/bdd100k_weather4` directories and reuses the first complete ImageFolder tree. Use `--data-root /absolute/path/to/bdd100k_weather4` to select a specific copy explicitly.
 
 ## Outputs
 

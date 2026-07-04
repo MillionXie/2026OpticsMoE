@@ -14,6 +14,37 @@ from torch.utils.data import DataLoader, Dataset, Subset
 WEATHER4_CLASSES = ["clear", "rainy", "snowy", "foggy"]
 
 
+def resolve_weather4_root(
+    configured_root: Path,
+    train_name: str = "train",
+    test_name: str = "test",
+) -> Path:
+    """Find an already prepared Weather-4 tree without copying image data."""
+    configured_root = configured_root.expanduser().resolve()
+    if _layout_complete(configured_root, train_name, test_name):
+        return configured_root
+
+    experiment_dir = Path(__file__).resolve().parent
+    experiments_dir = experiment_dir.parent
+    repository_dir = experiments_dir.parent
+    candidates = [
+        repository_dir / "data" / "bdd100k_weather4",
+        experiment_dir / "data" / "bdd100k_weather4",
+        experiments_dir / "qwen3_vl_8b_multimodal_optical_weather4" / "data" / "bdd100k_weather4",
+        experiments_dir / "qwen3_vl_2b_multimodal_optical_weather4" / "data" / "bdd100k_weather4",
+    ]
+    candidates.extend(sorted(experiments_dir.glob("*/data/bdd100k_weather4")))
+    seen = {configured_root}
+    for candidate in candidates:
+        candidate = candidate.resolve()
+        if candidate in seen:
+            continue
+        seen.add(candidate)
+        if _layout_complete(candidate, train_name, test_name):
+            return candidate
+    return configured_root
+
+
 class GrayscaleWeatherDataset(Dataset[tuple[torch.Tensor, int]]):
     def __init__(self, base: Dataset[Any], old_to_new: dict[int, int], input_size: int) -> None:
         self.base = base
@@ -113,6 +144,14 @@ def validate_dataset_layout(root: Path, train_name: str, test_name: str) -> dict
             + "\nExpected data_root/{train,test}/{clear,rainy,snowy,foggy}."
         )
     return {"root": str(root.resolve()), "status": "ready", "classes": list(WEATHER4_CLASSES)}
+
+
+def _layout_complete(root: Path, train_name: str, test_name: str) -> bool:
+    return all(
+        (root / split / name).is_dir()
+        for split in (train_name, test_name)
+        for name in WEATHER4_CLASSES
+    )
 
 
 def make_loader(dataset: Dataset[Any], batch_size: int, num_workers: int, shuffle: bool, seed: int) -> DataLoader[Any]:
