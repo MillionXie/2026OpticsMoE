@@ -2,23 +2,23 @@
 
 ```bash
 # Prepare BDD100K Weather-4
-python -m experiments.qwen3_vl_2b_multimodal_optical_weather4 \
-  --config experiments/qwen3_vl_2b_multimodal_optical_weather4/configs/bdd100k_weather4.json \
+python -m experiments.qwen3_vl_2b_multimodal_optical_weather4 
+  --config experiments/qwen3_vl_2b_multimodal_optical_weather4/configs/bdd100k_weather4.json 
   --phase prepare_data
 
 # Train electronic teacher MLP
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_multimodal_optical_weather4 \
-  --config experiments/qwen3_vl_2b_multimodal_optical_weather4/configs/bdd100k_weather4.json \
+CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_2b_multimodal_optical_weather4 
+  --config experiments/qwen3_vl_2b_multimodal_optical_weather4/configs/bdd100k_weather4.json 
   --device cuda --phase teacher_train
 
 # Cache teacher logits and five groups of input/output hidden states
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_multimodal_optical_weather4 \
-  --config experiments/qwen3_vl_2b_multimodal_optical_weather4/configs/bdd100k_weather4.json \
+CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_2b_multimodal_optical_weather4 
+  --config experiments/qwen3_vl_2b_multimodal_optical_weather4/configs/bdd100k_weather4.json 
   --device cuda --phase teacher_cache
 
 # Train student only from cached teacher targets
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_multimodal_optical_weather4 \
-  --config experiments/qwen3_vl_2b_multimodal_optical_weather4/configs/bdd100k_weather4.json \
+CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_2b_multimodal_optical_weather4 
+  --config experiments/qwen3_vl_2b_multimodal_optical_weather4/configs/bdd100k_weather4.json 
   --device cuda --phase student_train
 
 # Run every phase
