@@ -20,6 +20,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--device", help="Override device, for example cuda, cuda:0, or cpu")
     parser.add_argument("--epochs", type=int, help="Override training epochs")
     parser.add_argument("--output-dir", help="Override output directory")
+    parser.add_argument("--data-root", help="Override the prepared BDD100K Weather-4 ImageFolder root")
     parser.add_argument("--smoke-test", action="store_true", help="Use 64 train images, 32 test images, one epoch, batch size 8, and no workers")
     return parser
 
@@ -28,7 +29,7 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     import torch
 
-    from .data import load_weather4, make_loader
+    from .data import load_weather4, make_loader, resolve_weather4_root
     from .metrics import write_confusion_csv, write_json
     from .training import evaluate, load_best_checkpoint, train_model
     from .visualization import save_confusion_matrix
@@ -36,6 +37,18 @@ def main(argv: list[str] | None = None) -> int:
     settings, config_path = load_settings(args.config)
     _apply_overrides(settings, args)
     settings.validate()
+    configured_data_root = Path(settings.data_root)
+    resolved_data_root = resolve_weather4_root(
+        configured_data_root,
+        settings.imagefolder_train,
+        settings.imagefolder_test,
+    )
+    if resolved_data_root != configured_data_root.resolve():
+        print(
+            f"[dataset] configured data_root is unavailable; reusing prepared dataset: "
+            f"{resolved_data_root}"
+        )
+    settings.data_root = str(resolved_data_root)
     seed_everything(settings.seed)
     output_dir = Path(settings.output_dir)
     _create_output_tree(output_dir)
@@ -98,6 +111,8 @@ def _apply_overrides(settings: Settings, args: argparse.Namespace) -> None:
         settings.epochs = args.epochs
     if args.output_dir:
         settings.output_dir = str(Path(os.path.expandvars(os.path.expanduser(args.output_dir))).resolve())
+    if args.data_root:
+        settings.data_root = str(Path(os.path.expandvars(os.path.expanduser(args.data_root))).resolve())
     if args.smoke_test:
         settings.train_limit = 64
         settings.test_limit = 32

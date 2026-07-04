@@ -1,6 +1,6 @@
 {
   "dataset": "imagefolder",
-  "data_root": "../../../data/bdd100k_weather4",
+  "data_root": "../data/bdd100k_weather4",
   "imagefolder_train": "train",
   "imagefolder_test": "test",
   "output_dir": "../../../runs/bdd100k_weather4_optical5_mlp",

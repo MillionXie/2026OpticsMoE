@@ -12,6 +12,13 @@ python -m experiments.bdd100k_weather4_optical5_mlp \
   --phase all \
   --device cuda
 
+# Explicitly reuse an existing Weather-4 dataset location
+python -m experiments.bdd100k_weather4_optical5_mlp \
+  --config experiments/bdd100k_weather4_optical5_mlp/configs/bdd100k_weather4_smoke.json \
+  --data-root experiments/qwen3_vl_8b_multimodal_optical_weather4/data/bdd100k_weather4 \
+  --phase all \
+  --device cuda
+
 # Full training, 100 epochs
 python -m experiments.bdd100k_weather4_optical5_mlp \
   --config experiments/bdd100k_weather4_optical5_mlp/configs/bdd100k_weather4.json \
