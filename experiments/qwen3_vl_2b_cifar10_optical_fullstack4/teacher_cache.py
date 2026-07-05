@@ -115,7 +115,17 @@ class TeacherCacheStore:
                     self._loaded=torch.load(self.shards[number]["path"],map_location="cpu",weights_only=True); self._loaded_number=number
                 pos=index-start; p=self._loaded
                 if int(p["sample_indices"][pos])!=index: raise RuntimeError("Cache sample index ordering mismatch")
-                return {key:(value[pos] if key!="teacher_vision_stack_output" else value[pos]) for key,value in p.items()}
+                # Shards use plural names for batched tensors. Expose an explicit
+                # per-sample contract so callers cannot accidentally request a
+                # non-existent singular/plural variant.
+                return {
+                    "sample_index": p["sample_indices"][pos],
+                    "label": p["labels"][pos],
+                    "image_grid_thw": p["image_grid_thw"][pos],
+                    "visual_token_count": p["visual_token_counts"][pos],
+                    "teacher_answer_hidden": p["teacher_answer_hidden"][pos],
+                    "teacher_vision_stack_output": p["teacher_vision_stack_output"][pos],
+                }
         raise IndexError(index)
     def iter_shards(self) -> Iterator[dict[str,Any]]:
         for record in self.shards: yield torch.load(record["path"],map_location="cpu",weights_only=True)

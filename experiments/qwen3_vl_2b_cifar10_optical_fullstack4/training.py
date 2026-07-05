@@ -65,7 +65,7 @@ class CachedStudentDataset(Dataset[Any]):
     def __getitem__(self,index:int):
         image,label=self.images[index]; target=self.store.get(index)
         if int(target["label"])!=int(label): raise RuntimeError(f"Teacher cache label mismatch at sample {index}")
-        return image,int(label),index,target["image_grid_thw"],target["visual_token_counts"],target["teacher_vision_stack_output"],target["teacher_answer_hidden"],self.logits[index]
+        return image,int(label),index,target["image_grid_thw"],target["visual_token_count"],target["teacher_vision_stack_output"],target["teacher_answer_hidden"],self.logits[index]
 
 
 def cached_collate(batch: Sequence[Any]):

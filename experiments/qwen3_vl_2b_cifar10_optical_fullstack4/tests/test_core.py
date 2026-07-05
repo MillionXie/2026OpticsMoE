@@ -10,7 +10,7 @@ from experiments.qwen3_vl_2b_cifar10_optical_fullstack4.optics import (
     LanguageOpticalStackSurrogate, OpticalConversion, VisionOpticalStackSurrogate,
 )
 from experiments.qwen3_vl_2b_cifar10_optical_fullstack4.settings import load_settings
-from experiments.qwen3_vl_2b_cifar10_optical_fullstack4.teacher_cache import CACHED_TENSORS, expected_metadata
+from experiments.qwen3_vl_2b_cifar10_optical_fullstack4.teacher_cache import CACHED_TENSORS, TeacherCacheStore, expected_metadata
 from experiments.qwen3_vl_2b_cifar10_optical_fullstack4.training import save_student_inference
 
 
@@ -59,6 +59,21 @@ def test_teacher_cache_schema_stores_outputs_only() -> None:
         train_limit=None,test_limit=None,train_limit_per_class=None,test_limit_per_class=None,seed=42)
     metadata=expected_metadata("train",3,settings,model,[str(i) for i in range(10)])
     assert metadata["cached_tensors"]==CACHED_TENSORS
+
+
+def test_teacher_cache_store_exposes_per_sample_names(tmp_path: Path) -> None:
+    shard=tmp_path/"shard.pt"
+    torch.save({
+        "sample_indices":torch.tensor([0]), "labels":torch.tensor([3]),
+        "image_grid_thw":torch.tensor([[1,8,8]]), "visual_token_counts":torch.tensor([64]),
+        "teacher_answer_hidden":torch.randn(1,12),
+        "teacher_vision_stack_output":[torch.randn(64,8)],
+    },shard)
+    manifest=tmp_path/"train.pt"
+    torch.save({"metadata":{"sample_count":1},"shards":[{"path":str(shard),"count":1}]},manifest)
+    sample=TeacherCacheStore(manifest).get(0)
+    assert set(sample)=={"sample_index","label","image_grid_thw","visual_token_count","teacher_answer_hidden","teacher_vision_stack_output"}
+    assert int(sample["label"])==3 and int(sample["visual_token_count"])==64
 
 
 def test_student_inference_writes_predictions(tmp_path: Path) -> None:
