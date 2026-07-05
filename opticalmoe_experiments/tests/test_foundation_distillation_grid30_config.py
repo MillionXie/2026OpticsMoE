@@ -11,7 +11,7 @@ def test_all_foundation_training_configs_use_camera_grid30():
     assert configs
     for path in configs:
         config = yaml.safe_load(path.read_text(encoding="utf-8"))
-        if config.get("student", {}).get("model_type") == "feature_distilled_lenet":
+        if config.get("student", {}).get("model_type") in {"feature_distilled_lenet", "supervised_lenet"}:
             assert config["student"]["feature_dim"] == 900, path
             continue
         feature = config["feature_detector"]

@@ -119,6 +119,10 @@ grayscale image
 
 The classifier cannot bypass the projector: both classification and distillation use the same semantic feature. If this baseline generalizes well while OpticalMoE does not, the likely bottleneck is optical feature extraction. If both fail, the cache alignment, semantic projector/classifier, data split, or loss weighting should be investigated. LeNet has no camera padding or leak loss; reports use `optical_parameter_count=0` and record its CNN parameters as `lenet_parameter_count`.
 
+The LeNet backbone supports `conv_dropout2d` after its first two pooled convolution blocks and `feature_dropout` after the 900-dimensional projection. Both default to `0.0` for old configurations; the CIFAR10 diagnostic configs use `0.1` and `0.2` respectively. CLIP, DINOv2-small, and DINOv2-base LeNet distillation variants share this architecture.
+
+`SupervisedLeNetClassifier` is the CE-only control. It uses the same grayscale split, LeNet backbone, 900-dimensional feature, preprocess, and classifier, but has no teacher cache, projector, or feature loss. Comparing supervised LeNet against distilled LeNet isolates the benefit or harm of teacher feature alignment.
+
 ## Outputs
 
 Runs are written to `foundation_distillation/runs/<run_id>/`. Key files include checkpoints, epoch/final metrics, confusion matrix, feature similarity, expert usage, prompt weights, camera-feature statistics, optical-energy diagnostics, light fields, prompt maps, and phase masks. Light-field sample directories include `input_student_gray.png`, `input_amplitude.png`, `input_teacher_gray_rgb.png`, `label.txt`, and `prediction.txt`; `input_original_rgb.png` is additionally written when the dataset wrapper supplies it. Aggregate CSV files are rebuilt under `foundation_distillation/results/`.

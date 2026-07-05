@@ -4,7 +4,7 @@ device: auto
 experiment:
   family: foundation_distillation
   variant: lenet_feature_distillation
-  run_name: cifar10_gray_clip_vitb32_feature_distill_lenet_seed7
+  run_name: cifar10_gray_dinov2_vitb14_feature_distill_lenet_seed7
   print_freq: 50
 
 dataset:
@@ -34,13 +34,15 @@ dataset:
   max_test_samples: null
 
 teacher:
-  type: clip_image_encoder
-  model_name: ViT-B/32
+  type: dinov2_image_encoder
+  backend: transformers
+  model_name: facebook/dinov2-base
+  feature_type: cls
   input_mode: grayscale_replicated_rgb
   freeze: true
 
 teacher_cache:
-  cache_dir: foundation_distillation/teacher_cache/clip_vit_b32/cifar10_gray
+  cache_dir: foundation_distillation/teacher_cache/dinov2_base/cifar10_gray
   build_if_missing: false
   require_metadata_match: true
 
