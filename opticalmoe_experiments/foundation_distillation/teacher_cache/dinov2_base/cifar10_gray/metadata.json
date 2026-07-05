@@ -1,0 +1,27 @@
+{
+  "teacher_type": "dinov2_image_encoder",
+  "teacher_model_name": "facebook/dinov2-base",
+  "teacher_backend": "transformers",
+  "feature_type": "cls",
+  "dataset_name": "cifar10",
+  "input_mode": "grayscale_replicated_rgb",
+  "teacher_feature_dim": 768,
+  "num_train": 36000,
+  "num_val": 4000,
+  "num_test": 10000,
+  "config_hash_or_summary": "87ad3cbd4cf41ceaf619b37883cd298fee50148d4ad5d3d884eb23a8f5735461",
+  "class_names": [
+    "airplane",
+    "automobile",
+    "bird",
+    "cat",
+    "deer",
+    "dog",
+    "frog",
+    "horse",
+    "ship",
+    "truck"
+  ],
+  "teacher_text_encoder_used": false,
+  "features_are_l2_normalized": true
+}

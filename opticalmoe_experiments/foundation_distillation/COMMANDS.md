@@ -171,35 +171,35 @@ python foundation_distillation/scripts/train_lenet_feature_distilled.py \
 Supervised LeNet without a teacher cache:
 
 ```bash
-python foundation_distillation/scripts/train_lenet_supervised.py \
-  --config foundation_distillation/configs/cifar10_gray_lenet_supervised.yaml \
-  --run_name cifar10_gray_lenet_supervised_seed7 \
+python foundation_distillation/scripts/train_lenet_supervised.py 
+  --config foundation_distillation/configs/cifar10_gray_lenet_supervised.yaml 
+  --run_name cifar10_gray_lenet_supervised_seed7 
   --device cuda
 ```
 
 Build the DINOv2-small cache and train the matching LeNet distillation run:
 
 ```bash
-python foundation_distillation/scripts/build_teacher_feature_cache.py \
-  --config foundation_distillation/configs/cifar10_gray_dinov2_vits14_feature_distill_lenet.yaml \
+python foundation_distillation/scripts/build_teacher_feature_cache.py 
+  --config foundation_distillation/configs/cifar10_gray_dinov2_vits14_feature_distill_lenet.yaml 
   --device cuda
 
-python foundation_distillation/scripts/train_lenet_feature_distilled.py \
-  --config foundation_distillation/configs/cifar10_gray_dinov2_vits14_feature_distill_lenet.yaml \
-  --run_name cifar10_gray_dinov2_vits14_feature_distill_lenet_seed7 \
+python foundation_distillation/scripts/train_lenet_feature_distilled.py 
+  --config foundation_distillation/configs/cifar10_gray_dinov2_vits14_feature_distill_lenet.yaml 
+  --run_name cifar10_gray_dinov2_vits14_feature_distill_lenet_seed7 
   --device cuda
 ```
 
 Build the DINOv2-base cache and train the matching LeNet distillation run:
 
 ```bash
-python foundation_distillation/scripts/build_teacher_feature_cache.py \
-  --config foundation_distillation/configs/cifar10_gray_dinov2_vitb14_feature_distill_lenet.yaml \
+python foundation_distillation/scripts/build_teacher_feature_cache.py 
+  --config foundation_distillation/configs/cifar10_gray_dinov2_vitb14_feature_distill_lenet.yaml 
   --device cuda
 
-python foundation_distillation/scripts/train_lenet_feature_distilled.py \
-  --config foundation_distillation/configs/cifar10_gray_dinov2_vitb14_feature_distill_lenet.yaml \
-  --run_name cifar10_gray_dinov2_vitb14_feature_distill_lenet_seed7 \
+python foundation_distillation/scripts/train_lenet_feature_distilled.py 
+  --config foundation_distillation/configs/cifar10_gray_dinov2_vitb14_feature_distill_lenet.yaml 
+  --run_name cifar10_gray_dinov2_vitb14_feature_distill_lenet_seed7 
   --device cuda
 ```
 
