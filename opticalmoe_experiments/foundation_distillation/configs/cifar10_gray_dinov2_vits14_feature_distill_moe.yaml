@@ -110,7 +110,7 @@ classifier:
   hidden_layers: 1
   hidden_dim: 128
   activation: gelu
-  dropout: 0.1
+  dropout: 0.2
 
 projector:
   type: mlp
@@ -120,7 +120,7 @@ projector:
   hidden_dim: 512
   hidden_norm: none
   activation: gelu
-  dropout: 0.1
+  dropout: 0.2
   output_l2_normalize: true
 
 loss:
@@ -139,8 +139,8 @@ regularization:
   phase_dropout:
     enabled: true
     mode: block_phase_bypass
-    expert_p: 0.1
-    global_fc_p: 0.1
+    expert_p: 0.2
+    global_fc_p: 0.2
     block_size: 8
     batch_shared: true
     apply_to_experts: true
