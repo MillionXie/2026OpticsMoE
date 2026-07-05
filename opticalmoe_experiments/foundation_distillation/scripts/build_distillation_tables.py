@@ -33,6 +33,11 @@ TEACHER_FIELDS = (
     "teacher_input_mode",
     "final_feature_cosine",
     "final_test_acc",
+    "student_model_type",
+    "student_backbone_type",
+    "student_feature_dim",
+    "lenet_parameter_count",
+    "optical_parameter_count",
 )
 
 

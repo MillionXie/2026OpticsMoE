@@ -103,8 +103,24 @@ parameters have `requires_grad=False` while cache features are generated.
 
 `train_teacher_feature_probe.py` trains a classifier directly on cached frozen-teacher features. The default `matched_mlp` probe uses the same one-hidden-layer, 128-unit GELU classifier as the optical semantic classifier, providing a controlled estimate of how separable the grayscale teacher features are. A linear probe is available as a secondary reference. Probe runs are stored under `foundation_distillation/teacher_probe_runs/` and aggregated into `master_teacher_probe_*.csv`.
 
+## LeNet Distillation Diagnostic
+
+The `feature_distilled_lenet` baseline checks whether the cached-teacher, projector, classifier, and cosine-loss pipeline works without optical propagation. It uses the same grayscale dataset split and teacher cache as the CIFAR10 CLIP OpticalMoE experiment:
+
+```text
+grayscale image
+-> three-layer LeNet feature extractor
+-> 900-dimensional feature
+-> the same LayerNorm + GELU preprocess
+-> the same teacher-space projector
+-> the same semantic classifier
+-> CE + cosine feature distillation
+```
+
+The classifier cannot bypass the projector: both classification and distillation use the same semantic feature. If this baseline generalizes well while OpticalMoE does not, the likely bottleneck is optical feature extraction. If both fail, the cache alignment, semantic projector/classifier, data split, or loss weighting should be investigated. LeNet has no camera padding or leak loss; reports use `optical_parameter_count=0` and record its CNN parameters as `lenet_parameter_count`.
+
 ## Outputs
 
 Runs are written to `foundation_distillation/runs/<run_id>/`. Key files include checkpoints, epoch/final metrics, confusion matrix, feature similarity, expert usage, prompt weights, camera-feature statistics, optical-energy diagnostics, light fields, prompt maps, and phase masks. Light-field sample directories include `input_student_gray.png`, `input_amplitude.png`, `input_teacher_gray_rgb.png`, `label.txt`, and `prediction.txt`; `input_original_rgb.png` is additionally written when the dataset wrapper supplies it. Aggregate CSV files are rebuilt under `foundation_distillation/results/`.
 
-The end-to-end baseline does not require a teacher cache. Its runs are written into the same results tables with `experiment_variant=end_to_end_ce_baseline`, `teacher_type=none`, and `feature_distill_weight=0`.
+The end-to-end baseline does not require a teacher cache. Its runs are written into the same results tables with `experiment_variant=end_to_end_ce_baseline`, `teacher_type=none`, and `feature_distill_weight=0`. LeNet distillation runs use `experiment_variant=lenet_feature_distillation` and are included in the same master tables.

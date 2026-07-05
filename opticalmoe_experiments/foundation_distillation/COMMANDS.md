@@ -146,6 +146,28 @@ python foundation_distillation/scripts/train_teacher_feature_probe.py \
   --device cuda
 ```
 
+## LeNet Feature-Distillation Diagnostic
+
+This baseline reuses the existing CIFAR10-gray CLIP cache. Formal training:
+
+```bash
+python foundation_distillation/scripts/train_lenet_feature_distilled.py \
+  --config foundation_distillation/configs/cifar10_gray_clip_vitb32_feature_distill_lenet.yaml \
+  --run_name cifar10_gray_clip_vitb32_feature_distill_lenet_seed7 \
+  --device cuda
+```
+
+Smoke test:
+
+```bash
+python foundation_distillation/scripts/train_lenet_feature_distilled.py \
+  --config foundation_distillation/configs/cifar10_gray_clip_vitb32_feature_distill_lenet.yaml \
+  --run_name cifar10_gray_clip_vitb32_feature_distill_lenet_smoke \
+  --epochs 1 \
+  --smoke_test \
+  --device cuda
+```
+
 CIFAR10 formal baseline:
 
 ```bash
