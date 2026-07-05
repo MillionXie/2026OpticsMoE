@@ -151,9 +151,9 @@ python foundation_distillation/scripts/train_teacher_feature_probe.py
 This baseline reuses the existing CIFAR10-gray CLIP cache. Formal training:
 
 ```bash
-python foundation_distillation/scripts/train_lenet_feature_distilled.py \
-  --config foundation_distillation/configs/cifar10_gray_clip_vitb32_feature_distill_lenet.yaml \
-  --run_name cifar10_gray_clip_vitb32_feature_distill_lenet_seed7 \
+python foundation_distillation/scripts/train_lenet_feature_distilled.py 
+  --config foundation_distillation/configs/cifar10_gray_clip_vitb32_feature_distill_lenet.yaml 
+  --run_name cifar10_gray_clip_vitb32_feature_distill_lenet_seed7 
   --device cuda
 ```
 
