@@ -1,0 +1,22 @@
+{
+  "dataset": "cifar10", "data_root": "../data/cifar10", "download": true,
+  "output_dir": "../runs/qwen3_vl_2b_cifar10_optical_fullstack4_smoke",
+  "model_id": "Qwen/Qwen3-VL-2B-Instruct", "cache_dir": null, "local_files_only": false,
+  "processor_min_pixels": 50176, "processor_max_pixels": 50176,
+  "train_limit": 64, "test_limit": 32, "train_limit_per_class": null, "test_limit_per_class": null,
+  "feature_batch_size": 1, "inference_batch_size": 1, "student_batch_size": 1,
+  "head_batch_size": 32, "teacher_cache_shard_size": 8, "num_workers": 0,
+  "cache_dtype": "float16", "dtype": "bfloat16", "attn_implementation": "sdpa", "device": "cuda",
+  "epochs": 1, "validation_fraction": 0.1, "learning_rate": 0.0005, "weight_decay": 0.01,
+  "hidden_dim": 1024, "dropout": 0.1,
+  "classification_prompt": "Classify this image into one of the following CIFAR-10 classes: airplane, automobile, bird, cat, deer, dog, frog, horse, ship, truck. Answer:",
+  "replace_vision_stack": true, "replace_language_stack": true,
+  "optical_conversions_per_stack": 4, "optical_dim": 256, "optical_field_size": 256,
+  "optical_padding_size": 400, "wavelength_nm": 532.0, "pixel_pitch_um": 17.0,
+  "mask_distance_cm": 5.0, "amplitude_mask_enabled": true,
+  "loss_vision_weight": 1.0, "loss_answer_weight": 1.0, "loss_kd_weight": 0.5,
+  "loss_ce_weight": 0.5, "distill_temperature": 2.0,
+  "initialize_student_mlp_from_teacher": true, "freeze_qwen_backbone_except_optical": true,
+  "log_interval_batches": 5, "save_predictions_interval_epochs": 1,
+  "save_visualization_interval_epochs": 1, "benchmark_batches": 8, "seed": 42, "progress": true
+}
