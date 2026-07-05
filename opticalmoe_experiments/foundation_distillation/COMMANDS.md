@@ -9,8 +9,8 @@ does not change student geometry.
 ## CIFAR10
 
 ```bash
-python foundation_distillation/scripts/build_teacher_feature_cache.py \
-  --config foundation_distillation/configs/cifar10_gray_clip_vitb32_feature_distill_moe.yaml \
+python foundation_distillation/scripts/build_teacher_feature_cache.py 
+  --config foundation_distillation/configs/cifar10_gray_clip_vitb32_feature_distill_moe.yaml 
   --device cuda
 ```
 
@@ -77,17 +77,17 @@ pip install transformers
 Build the CIFAR10 DINOv2 cache:
 
 ```bash
-python foundation_distillation/scripts/build_teacher_feature_cache.py \
-  --config foundation_distillation/configs/cifar10_gray_dinov2_vits14_feature_distill_moe.yaml \
+python foundation_distillation/scripts/build_teacher_feature_cache.py 
+  --config foundation_distillation/configs/cifar10_gray_dinov2_vits14_feature_distill_moe.yaml 
   --device cuda
 ```
 
 Train CIFAR10 with cached DINOv2 features:
 
 ```bash
-python foundation_distillation/scripts/train_feature_distilled_moe.py \
-  --config foundation_distillation/configs/cifar10_gray_dinov2_vits14_feature_distill_moe.yaml \
-  --run_name cifar10_gray_dinov2_vits14_feature_distill_seed7 \
+python foundation_distillation/scripts/train_feature_distilled_moe.py 
+  --config foundation_distillation/configs/cifar10_gray_dinov2_vits14_feature_distill_moe.yaml 
+  --run_name cifar10_gray_dinov2_vits14_feature_distill_seed7 
   --device cuda
 ```
 
@@ -139,10 +139,10 @@ python foundation_distillation/scripts/train_feature_distilled_moe.py \
 The matched MLP probe reads the existing cache and does not load the teacher encoder:
 
 ```bash
-python foundation_distillation/scripts/train_teacher_feature_probe.py \
-  --config foundation_distillation/configs/cifar10_gray_clip_vitb32_feature_distill_moe.yaml \
-  --probe_type matched_mlp \
-  --run_name cifar10_clip_vitb32_teacher_matched_mlp_probe \
+python foundation_distillation/scripts/train_teacher_feature_probe.py 
+  --config foundation_distillation/configs/cifar10_gray_clip_vitb32_feature_distill_moe.yaml 
+  --probe_type matched_mlp 
+  --run_name cifar10_clip_vitb32_teacher_matched_mlp_probe 
   --device cuda
 ```
 
