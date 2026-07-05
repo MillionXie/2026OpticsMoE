@@ -22,7 +22,7 @@ def test_all_new_training_configs_use_fast120_520():
     for family in families:
         for path in (ROOT / family / "configs").glob("*.yaml"):
             config = yaml.safe_load(path.read_text(encoding="utf-8"))
-            if config.get("student", {}).get("model_type") == "feature_distilled_lenet":
+            if config.get("student", {}).get("model_type") in {"feature_distilled_lenet", "supervised_lenet"}:
                 assert config["dataset"]["input_size"] == 120
                 assert config["dataset"]["grayscale"] is True
                 continue

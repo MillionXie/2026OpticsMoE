@@ -25,6 +25,7 @@ PROBE_TABLES = {
 }
 
 TEACHER_FIELDS = (
+    "experiment_variant",
     "teacher_type",
     "teacher_backend",
     "teacher_model_name",
@@ -38,6 +39,7 @@ TEACHER_FIELDS = (
     "student_feature_dim",
     "lenet_parameter_count",
     "optical_parameter_count",
+    "feature_distill_weight",
 )
 
 

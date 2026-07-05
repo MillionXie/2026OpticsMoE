@@ -3,8 +3,8 @@ device: auto
 
 experiment:
   family: foundation_distillation
-  variant: lenet_feature_distillation
-  run_name: cifar10_gray_clip_vitb32_feature_distill_lenet_seed7
+  variant: lenet_supervised
+  run_name: cifar10_gray_lenet_supervised_seed7
   print_freq: 50
 
 dataset:
@@ -33,19 +33,8 @@ dataset:
   max_val_samples: null
   max_test_samples: null
 
-teacher:
-  type: clip_image_encoder
-  model_name: ViT-B/32
-  input_mode: grayscale_replicated_rgb
-  freeze: true
-
-teacher_cache:
-  cache_dir: foundation_distillation/teacher_cache/clip_vit_b32/cifar10_gray
-  build_if_missing: false
-  require_metadata_match: true
-
 student:
-  model_type: feature_distilled_lenet
+  model_type: supervised_lenet
   feature_dim: 900
 
 lenet:
@@ -63,32 +52,14 @@ feature_preprocess:
   norm_affine: true
   activation: gelu
 
-projector:
-  type: mlp
-  input_dim: 900
-  output_dim: auto_teacher_dim
-  hidden_layers: 1
-  hidden_dim: 512
-  hidden_norm: none
-  activation: gelu
-  dropout: 0.2
-  output_l2_normalize: true
-
 classifier:
-  input: semantic_feature
-  input_dim: auto_teacher_dim
+  input: lenet_feature
+  input_dim: 900
   type: mlp
   hidden_layers: 1
   hidden_dim: 128
   activation: gelu
   dropout: 0.2
-
-loss:
-  ce_weight: 1.0
-  feature_distill_weight: 0.5
-  feature_loss: cosine
-  leak_loss_weight: 0.0
-  leak_loss: disabled
 
 optimizer:
   type: adamw

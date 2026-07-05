@@ -205,7 +205,8 @@ def run_supervised_epoch(
             labels = labels.to(device, non_blocking=True)
             if training:
                 optimizer.zero_grad(set_to_none=True)
-            logits, _optical_feature = model(images)
+            model_outputs = model(images)
+            logits = model_outputs[0] if isinstance(model_outputs, (tuple, list)) else model_outputs
             loss = torch.nn.functional.cross_entropy(logits, labels)
             if training:
                 loss.backward()
@@ -247,7 +248,8 @@ def predict_supervised(model, loader, device, max_batches: Optional[int] = None)
     for batch_index, (images, labels) in enumerate(loader, start=1):
         if max_batches is not None and batch_index > int(max_batches):
             break
-        logits, _optical_feature = model(images.to(device, non_blocking=True))
+        model_outputs = model(images.to(device, non_blocking=True))
+        logits = model_outputs[0] if isinstance(model_outputs, (tuple, list)) else model_outputs
         predictions.append(logits.argmax(dim=1).cpu())
         targets.append(labels.cpu())
     return torch.cat(predictions), torch.cat(targets)
