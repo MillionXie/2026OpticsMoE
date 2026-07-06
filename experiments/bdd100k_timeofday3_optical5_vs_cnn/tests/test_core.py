@@ -9,7 +9,7 @@ from torch.utils.data import Dataset
 
 from experiments.bdd100k_timeofday3_optical5_vs_cnn.data import DataBundle
 from experiments.bdd100k_timeofday3_optical5_vs_cnn.data_prepare import normalize_timeofday_label
-from experiments.bdd100k_timeofday3_optical5_vs_cnn.metrics import classification_metrics
+from experiments.bdd100k_timeofday3_optical5_vs_cnn.metrics import classification_metrics,write_json
 from experiments.bdd100k_timeofday3_optical5_vs_cnn.models import ElectronicCNNTimeOfDayBaseline,Optical5EnhancedTimeOfDayClassifier
 from experiments.bdd100k_timeofday3_optical5_vs_cnn.optics import OpticalDetectionIntensityLayer
 from experiments.bdd100k_timeofday3_optical5_vs_cnn.training import train_model
@@ -44,6 +44,11 @@ def test_metrics()->None:
     assert 0<=result["macro_f1"]<=1 and 0<=result["balanced_accuracy"]<=1
 
 
+def test_json_writer_serializes_paths(tmp_path:Path)->None:
+    output=tmp_path/"config.json";write_json(output,{"data_root":tmp_path/"data"})
+    assert str(tmp_path/"data") in output.read_text(encoding="utf-8")
+
+
 class TinyDataset(Dataset):
     def __init__(self):self.labels=[0,1,2,0,1,2]
     def __len__(self):return len(self.labels)
@@ -62,4 +67,3 @@ def test_one_epoch_writes_live_outputs(tmp_path:Path)->None:
     train_model(TinyModel(),data,settings,torch.device("cpu"))
     for path in ("metrics/training_history.csv","metrics/training_latest.json","checkpoints/best.pt","checkpoints/last.pt"):
         assert (tmp_path/path).is_file()
-
