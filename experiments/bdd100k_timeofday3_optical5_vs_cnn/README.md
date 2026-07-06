@@ -2,7 +2,7 @@
 
 本实验是 BDD100K TimeOfDay-3 的端到端学习实验，不使用 Qwen、tokenizer、prompt、teacher/student、蒸馏或 MoE。它比较两个使用相同灰度输入和相同 train/validation/test 划分的模型：
 
-1. `Optical5EnhancedReadout`：五次可微光学传播与平方律探测，加增强 detector readout。
+1. `Optical5EnhancedReadout`：五次可微光学传播与平方律探测，加两层卷积、普通平均池化和轻量 MLP detector readout。
 2. `ElectronicCNNBaseline`：不使用预训练权重的中等强度纯电子 CNN。
 
 目标是判断五层光学传播模型在真实驾驶场景的 daytime/night/dawn_dusk 分类上是否具备可学习性，并与纯电子 CNN 做对照。
@@ -27,4 +27,3 @@ data/bdd100k_timeofday3/
 五层之间传递归一化后的非负 detected intensity。训练前向不会将探测强度执行平方根重新编码。相位和可选幅度 mask 位于传播之前，使相位参数能够影响探测平面并获得梯度。
 
 每个 epoch 都立即保存 history/latest、best/last checkpoint，并根据配置保存 validation predictions。Optical run 额外保存 phase masks、逐层 light fields 和 detector outputs。
-

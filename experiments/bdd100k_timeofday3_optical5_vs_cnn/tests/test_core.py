@@ -24,11 +24,12 @@ def test_timeofday_normalization()->None:
 def test_intensity_layer_has_no_detector_sqrt()->None:
     layer=OpticalDetectionIntensityLayer(8,10,532,17,5);output=layer(torch.rand(2,8,8))
     assert output.shape==(2,8,8) and torch.all(output>=0)
+    assert torch.allclose(output.mean(dim=(-2,-1)),torch.ones(2),atol=1e-4)
     assert "sqrt" not in inspect.getsource(OpticalDetectionIntensityLayer.forward)
 
 
 def test_optical_classifier_shape()->None:
-    model=Optical5EnhancedTimeOfDayClassifier(field_size=16,padding_size=20,readout_channels=[4,8,8],readout_pool_size=2,readout_hidden_dim=8)
+    model=Optical5EnhancedTimeOfDayClassifier(field_size=16,padding_size=20,readout_channels=[4,8],readout_pool_size=2,readout_hidden_dim=8)
     assert model(torch.rand(2,1,224,224)).shape==(2,3)
 
 

@@ -9,16 +9,20 @@ from .optics import OpticalDetectionIntensityLayer
 
 class EnhancedDetectorReadout(nn.Module):
     def __init__(self,channels:list[int],pool_size:int,hidden_dim:int,dropout:float,num_classes:int)->None:
-        super().__init__();c1,c2,c3=channels
-        self.stem=nn.Sequential(nn.Conv2d(1,c1,3,padding=1),_norm(c1),nn.GELU(),nn.Conv2d(c1,c2,3,stride=2,padding=1),_norm(c2),nn.GELU(),nn.Conv2d(c2,c3,3,stride=2,padding=1),_norm(c3),nn.GELU())
-        self.avg=nn.AdaptiveAvgPool2d((pool_size,pool_size));self.maximum=nn.AdaptiveMaxPool2d((pool_size,pool_size))
-        feature_dim=2*c3*pool_size*pool_size+4*c3
-        self.head=nn.Sequential(nn.LayerNorm(feature_dim),nn.Linear(feature_dim,hidden_dim),nn.GELU(),nn.Dropout(dropout),nn.Linear(hidden_dim,hidden_dim),nn.GELU(),nn.Dropout(dropout),nn.Linear(hidden_dim,num_classes))
+        super().__init__();c1,c2=channels
+        self.stem=nn.Sequential(
+            nn.Conv2d(1,c1,3,padding=1),_norm(c1),nn.GELU(),
+            nn.Conv2d(c1,c2,3,stride=2,padding=1),_norm(c2),nn.GELU(),
+        )
+        self.pool=nn.AdaptiveAvgPool2d((pool_size,pool_size))
+        feature_dim=c2*pool_size*pool_size
+        self.head=nn.Sequential(
+            nn.LayerNorm(feature_dim),nn.Linear(feature_dim,hidden_dim),nn.GELU(),
+            nn.Dropout(dropout),nn.Linear(hidden_dim,num_classes),
+        )
     def forward(self,intensity:torch.Tensor)->torch.Tensor:
         value=torch.log1p(intensity).unsqueeze(1);features=self.stem(value)
-        stats=torch.cat([features.mean((-2,-1)),features.std((-2,-1),unbiased=False),features.amax((-2,-1)),features.amin((-2,-1))],dim=1)
-        combined=torch.cat([self.avg(features).flatten(1),self.maximum(features).flatten(1),stats],dim=1)
-        return self.head(combined)
+        return self.head(self.pool(features).flatten(1))
 
 
 class Optical5EnhancedTimeOfDayClassifier(nn.Module):
@@ -29,7 +33,7 @@ class Optical5EnhancedTimeOfDayClassifier(nn.Module):
         super().__init__();
         if optical_layers!=5:raise ValueError("Exactly five optical layers are required")
         self.field_size=field_size;self.layers=nn.ModuleList([OpticalDetectionIntensityLayer(field_size,padding_size,wavelength_nm,pixel_pitch_um,distance_cm,phase_init,amplitude_mask_enabled) for _ in range(5)])
-        self.readout=EnhancedDetectorReadout(readout_channels or [16,32,64],readout_pool_size,readout_hidden_dim,readout_dropout,num_classes)
+        self.readout=EnhancedDetectorReadout(readout_channels or [16,32],readout_pool_size,readout_hidden_dim,readout_dropout,num_classes)
         self.last_diagnostics:dict|None=None
     def encode(self,grayscale:torch.Tensor)->torch.Tensor:
         if grayscale.ndim!=4 or grayscale.shape[1]!=1:raise ValueError("Expected [B,1,H,W] grayscale")
@@ -76,4 +80,3 @@ def _norm(channels:int)->nn.Module:
     groups=min(8,channels)
     while channels%groups:groups-=1
     return nn.GroupNorm(groups,channels)
-

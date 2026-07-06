@@ -60,7 +60,7 @@ class Settings:
 
     def __post_init__(self) -> None:
         if self.class_names is None: self.class_names=["daytime","night","dawn_dusk"]
-        if self.readout_channels is None: self.readout_channels=[16,32,64]
+        if self.readout_channels is None: self.readout_channels=[16,32]
         if self.cnn_channels is None: self.cnn_channels=[32,64,128,256]
 
     def validate(self) -> None:
@@ -77,6 +77,7 @@ class Settings:
         if self.model_type=="optical5_enhanced":
             if self.optical_layers!=5 or not self.intensity_forward: raise ValueError("Optical model requires five intensity-forward layers")
             if self.optical_padding_size<self.optical_field_size: raise ValueError("padding must be >= field size")
+            if len(self.readout_channels)!=2: raise ValueError("Simplified optical readout requires exactly two convolution channel values")
 
     def to_dict(self)->dict[str,Any]: return asdict(self)
 
@@ -94,4 +95,3 @@ def resolve_path(value:str|Path,base:Path,field_name:str)->Path:
     expanded=os.path.expandvars(os.path.expanduser(str(value))); unresolved={a or b for a,b in ENV_REFERENCE.findall(expanded)}
     if unresolved: raise ValueError(f"{field_name} has unset environment variables: {sorted(unresolved)}")
     path=Path(expanded); return (path if path.is_absolute() else base/path).resolve()
-
