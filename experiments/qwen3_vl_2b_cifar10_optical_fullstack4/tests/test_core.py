@@ -12,6 +12,7 @@ from experiments.qwen3_vl_2b_cifar10_optical_fullstack4.optics import (
 from experiments.qwen3_vl_2b_cifar10_optical_fullstack4.settings import load_settings
 from experiments.qwen3_vl_2b_cifar10_optical_fullstack4.teacher_cache import CACHED_TENSORS, TeacherCacheStore, expected_metadata
 from experiments.qwen3_vl_2b_cifar10_optical_fullstack4.training import save_student_inference
+from experiments.qwen3_vl_2b_cifar10_optical_fullstack4.features import multimodal_forward_features
 
 
 def stack(cls, hidden: int = 8):
@@ -92,3 +93,16 @@ def test_training_source_writes_history_inside_epoch_loop() -> None:
     source=inspect.getsource(training.train_student)
     assert "_write_student_epoch_outputs" in source
     assert "student_training_history.csv" in inspect.getsource(training._write_student_epoch_outputs)
+
+
+def test_hidden_state_fallback_preserves_gradients() -> None:
+    class Output:
+        hidden_states = None
+    class Model(torch.nn.Module):
+        def forward(self, input_ids, **kwargs):
+            del kwargs
+            hidden=input_ids.float().unsqueeze(-1).repeat(1,1,3).requires_grad_()
+            self._optical_fullstack_last_hidden=hidden
+            return Output()
+    model=Model(); hidden=multimodal_forward_features(model,{"input_ids":torch.ones(2,4,dtype=torch.long)})
+    assert hidden.shape==(2,4,3) and hidden.requires_grad

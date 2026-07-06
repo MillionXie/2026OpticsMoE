@@ -1,0 +1,6 @@
+{
+  "dataset":"bdd100k_timeofday3","data_root":"../data/bdd100k_timeofday3","download":true,"imagefolder_train":"train","imagefolder_test":"test","input_size":224,"num_classes":3,"class_names":["daytime","night","dawn_dusk"],
+  "validation_fraction":0.1,"epochs":1,"batch_size":8,"num_workers":0,"optimizer":"adamw","learning_rate":0.001,"weight_decay":0.0005,"scheduler":"cosine","seed":42,"device":"cuda","progress":true,"log_interval_batches":1,"save_interval_epochs":1,"save_predictions_interval_epochs":1,
+  "train_limit":64,"test_limit":32,"train_limit_per_class":null,"test_limit_per_class":null,
+  "model_type":"optical5_enhanced","output_dir":"../../../runs/bdd100k_timeofday3_optical5_enhanced_smoke","optical_layers":5,"optical_field_size":256,"optical_padding_size":400,"wavelength_nm":532.0,"pixel_pitch_um":17.0,"mask_distance_cm":5.0,"phase_init":"uniform","amplitude_mask_enabled":true,"intensity_forward":true,"readout_channels":[16,32,64],"readout_pool_size":8,"readout_hidden_dim":256,"readout_dropout":0.2
+}

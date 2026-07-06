@@ -57,6 +57,11 @@ def multimodal_forward_features(
 ) -> torch.Tensor:
     """Run the complete Qwen3-VL vision-language forward and return final hidden states."""
 
+    # Transformers' hidden-state capture machinery may only recognize native
+    # decoder-layer classes. Full-stack replacement uses a final-norm hook as a
+    # gradient-preserving fallback, so clear any previous batch before forward.
+    if hasattr(model, "_optical_fullstack_last_hidden"):
+        setattr(model, "_optical_fullstack_last_hidden", None)
     outputs = model(
         **inputs,
         output_hidden_states=True,
@@ -64,9 +69,15 @@ def multimodal_forward_features(
         use_cache=False,
     )
     hidden_states = getattr(outputs, "hidden_states", None)
-    if not hidden_states:
-        raise RuntimeError("Full Qwen3-VL forward did not return language hidden states")
-    hidden = hidden_states[-1]
+    if hidden_states:
+        hidden = hidden_states[-1]
+    else:
+        hidden = getattr(model, "_optical_fullstack_last_hidden", None)
+        if hidden is None:
+            raise RuntimeError(
+                "Full Qwen3-VL forward did not expose language hidden states, and the "
+                "final language norm hook did not capture an output"
+            )
     if hidden.ndim != 3:
         raise RuntimeError(f"Expected [batch, sequence, hidden] tensor, got {tuple(hidden.shape)}")
     return hidden
@@ -241,4 +252,3 @@ def _shape_record(
         "feature_dimension": int(features.shape[-1]),
         "prompt": prompt,
     }
-

@@ -41,9 +41,11 @@ class FullStackReplacement:
         self.language_bypasses = [LanguageBypass(tuple_mode) for _ in range(len(self.language_layers)-1)]
         self.teacher_vision_output: torch.Tensor | None = None
         self.teacher_cu_seqlens: torch.Tensor | None = None
+        self.last_language_hidden: torch.Tensor | None = None
         self._handles = [
             self.original_vision[0].register_forward_pre_hook(self._capture_vision_input, with_kwargs=True),
             self.original_vision[-1].register_forward_hook(self._capture_vision_output),
+            self.language_model.norm.register_forward_hook(self._capture_language_norm_output),
         ]
 
     def _capture_vision_input(self, _module: nn.Module, args: tuple[Any,...], kwargs: dict[str,Any]) -> None:
@@ -54,6 +56,15 @@ class FullStackReplacement:
     def _capture_vision_output(self, _module: nn.Module, _args: tuple[Any,...], output: Any) -> None:
         value = output[0] if isinstance(output, tuple) else output
         self.teacher_vision_output = value.detach()
+
+    def _capture_language_norm_output(self, _module: nn.Module, _args: tuple[Any,...], output: Any) -> None:
+        value = output[0] if isinstance(output, tuple) else output
+        if not torch.is_tensor(value):
+            raise RuntimeError("Qwen final language norm did not return a tensor")
+        # Do not detach: student CE/KD/answer losses must backpropagate through
+        # the frozen final norm into the language and vision optical stacks.
+        self.last_language_hidden = value
+        setattr(self.model, "_optical_fullstack_last_hidden", value)
 
     def use_teacher(self) -> None:
         for i, layer in enumerate(self.original_vision): self.vision_blocks[i] = layer
@@ -80,6 +91,8 @@ class FullStackReplacement:
     def close(self) -> None:
         self.use_teacher()
         for handle in self._handles: handle.remove()
+        if hasattr(self.model, "_optical_fullstack_last_hidden"):
+            delattr(self.model, "_optical_fullstack_last_hidden")
 
 
 def _decoder_returns_tuple(layer: nn.Module) -> bool:
