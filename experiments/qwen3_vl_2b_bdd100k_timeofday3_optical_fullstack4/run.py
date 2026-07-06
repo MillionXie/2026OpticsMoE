@@ -106,7 +106,7 @@ def _load_model(settings:Settings,device:torch.device)->LoadedBackbone:
 
 
 def _stack_kwargs(settings:Settings)->dict[str,Any]:
-    return {"optical_dim":settings.optical_dim,"conversions":settings.optical_conversions_per_stack,"field_size":settings.optical_field_size,"padding_size":settings.optical_padding_size,"wavelength_nm":settings.wavelength_nm,"pixel_pitch_um":settings.pixel_pitch_um,"distance_cm":settings.mask_distance_cm,"amplitude_mask_enabled":settings.amplitude_mask_enabled}
+    return {"optical_dim":settings.optical_dim,"conversions":settings.optical_conversions_per_stack,"field_size":settings.optical_field_size,"padding_size":settings.optical_padding_size,"wavelength_nm":settings.wavelength_nm,"pixel_pitch_um":settings.pixel_pitch_um,"distance_cm":settings.mask_distance_cm,"amplitude_mask_enabled":settings.amplitude_mask_enabled,"phase_init":settings.phase_init,"phase_init_std":settings.phase_init_std}
 
 
 def _build_replacement(loaded:LoadedBackbone,settings:Settings,device:torch.device)->FullStackReplacement:
@@ -134,7 +134,7 @@ def _resolve_architecture_from_cache(settings:Settings,store:TeacherCacheStore)-
 
 
 def _write_model_report(model:torch.nn.Module,replacement:FullStackReplacement,settings:Settings)->None:
-    report=parameter_report(model); report.update({"model_id":settings.model_id,"replacement_mode":"vision_and_language_fullstack4","vision_depth":settings.vision_depth,"vision_hidden_size":settings.vision_hidden_size,"text_depth":settings.text_depth,"text_hidden_size":settings.text_hidden_size,"vision_optical_conversions":4,"language_optical_conversions":4,"electronic_residual_bypass":False,"detected_intensity_reencoded_with_sqrt":False,"teacher_cache":"stack outputs only","vision_surrogate_parameters":sum(p.numel() for p in replacement.vision_surrogate.parameters()),"language_surrogate_parameters":sum(p.numel() for p in replacement.language_surrogate.parameters())})
+    report=parameter_report(model); report.update({"model_id":settings.model_id,"replacement_mode":"vision_and_language_fullstack4","vision_depth":settings.vision_depth,"vision_hidden_size":settings.vision_hidden_size,"text_depth":settings.text_depth,"text_hidden_size":settings.text_hidden_size,"vision_optical_conversions":4,"language_optical_conversions":4,"optical_field_size":settings.optical_field_size,"optical_padding_size":settings.optical_padding_size,"pixel_pitch_um":settings.pixel_pitch_um,"phase_init":settings.phase_init,"phase_init_std":settings.phase_init_std,"amplitude_mask_enabled":settings.amplitude_mask_enabled,"electronic_residual_bypass":False,"detected_intensity_reencoded_with_sqrt":False,"teacher_cache":"stack outputs only","vision_surrogate_parameters":sum(p.numel() for p in replacement.vision_surrogate.parameters()),"language_surrogate_parameters":sum(p.numel() for p in replacement.language_surrogate.parameters())})
     write_json(settings.output_dir/"model.json",report)
 
 

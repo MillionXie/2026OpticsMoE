@@ -58,11 +58,13 @@ class Settings:
     replace_language_stack: bool = True
     optical_conversions_per_stack: int = 4
     optical_dim: int = 256
-    optical_field_size: int = 256
-    optical_padding_size: int = 400
+    optical_field_size: int = 64
+    optical_padding_size: int = 128
     wavelength_nm: float = 532.0
-    pixel_pitch_um: float = 17.0
+    pixel_pitch_um: float = 8.0
     mask_distance_cm: float = 5.0
+    phase_init: str = "zeros"
+    phase_init_std: float = 0.02
     amplitude_mask_enabled: bool = True
     loss_vision_weight: float = 1.0
     loss_answer_weight: float = 1.0
@@ -95,6 +97,13 @@ class Settings:
             raise ValueError("fullstack4 requires optical_conversions_per_stack=4")
         if self.optical_padding_size < self.optical_field_size:
             raise ValueError("optical_padding_size must be >= optical_field_size")
+        if self.phase_init not in {"zeros", "identity", "uniform", "uniform_0_2pi", "normal", "small_normal"}:
+            raise ValueError(
+                "phase_init must be one of: zeros, identity, uniform, "
+                "uniform_0_2pi, normal, small_normal"
+            )
+        if self.phase_init_std <= 0:
+            raise ValueError("phase_init_std must be positive")
         if self.cache_dtype not in {"float16", "float32"}:
             raise ValueError("cache_dtype must be float16 or float32")
         if self.dtype not in {"bfloat16", "float16", "float32"}:

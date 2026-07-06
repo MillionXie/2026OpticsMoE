@@ -19,7 +19,8 @@ from experiments.qwen3_vl_2b_bdd100k_timeofday3_optical_fullstack4.sampling impo
 
 def stack(cls, hidden: int = 8):
     return cls(hidden_size=hidden,optical_dim=6,conversions=4,field_size=8,padding_size=10,
-               wavelength_nm=532,pixel_pitch_um=17,distance_cm=5,amplitude_mask_enabled=True)
+               wavelength_nm=532,pixel_pitch_um=8,distance_cm=5,amplitude_mask_enabled=True,
+               phase_init="zeros",phase_init_std=0.02)
 
 
 def test_config_parsing() -> None:
@@ -27,8 +28,20 @@ def test_config_parsing() -> None:
     assert settings.model_id=="Qwen/Qwen3-VL-2B-Instruct"
     assert settings.dataset=="bdd100k_timeofday3" and settings.train_limit_per_class is None
     assert settings.train_samples_per_class_per_epoch==5000
+    assert settings.teacher_cache_lru_shards==8
     assert settings.optical_conversions_per_stack==4
+    assert settings.optical_field_size==64 and settings.optical_padding_size==128
+    assert settings.pixel_pitch_um==8 and settings.phase_init=="zeros"
     assert settings.replace_vision_stack and settings.replace_language_stack
+
+
+def test_phase_initialization_is_configurable() -> None:
+    zeros=OpticalConversion(8,10,532,8,5,False,"zeros",0.02)
+    assert torch.count_nonzero(zeros.phase_mask)==0
+    uniform=OpticalConversion(8,10,532,8,5,False,"uniform_0_2pi",0.02)
+    assert torch.all(uniform.phase_mask>=0) and torch.all(uniform.phase_mask<=2*torch.pi)
+    normal=OpticalConversion(64,66,532,8,5,False,"normal",0.05)
+    assert 0.03<float(normal.phase_mask.std())<0.07
 
 
 def test_vision_stack_preserves_packed_boundaries() -> None:
@@ -36,6 +49,17 @@ def test_vision_stack_preserves_packed_boundaries() -> None:
     output=module(hidden,cu_seqlens=boundaries)
     assert output.shape==hidden.shape; assert module.last_token_counts==[4,5]
     assert all(field.shape==(2,8,8) for field in module.last_fields)
+
+
+def test_configured_64_field_uses_128_propagation_grid() -> None:
+    module=VisionOpticalStackSurrogate(
+        hidden_size=8,optical_dim=6,conversions=4,field_size=64,padding_size=128,
+        wavelength_nm=532,pixel_pitch_um=8,distance_cm=5,amplitude_mask_enabled=False,
+        phase_init="zeros",phase_init_std=0.02,
+    )
+    hidden=torch.randn(9,8);output=module(hidden,cu_seqlens=torch.tensor([0,4,9]))
+    assert output.shape==hidden.shape
+    assert all(field.shape==(2,64,64) for field in module.last_fields)
 
 
 def test_language_stack_preserves_shape_and_ignores_padding() -> None:
@@ -47,7 +71,7 @@ def test_language_stack_preserves_shape_and_ignores_padding() -> None:
 
 
 def test_conversion_is_nonnegative_and_does_not_sqrt_detected_intensity() -> None:
-    module=OpticalConversion(8,10,532,17,5,True); output=module(torch.rand(2,8,8))
+    module=OpticalConversion(8,10,532,8,5,True); output=module(torch.rand(2,8,8))
     assert output.shape==(2,8,8); assert torch.all(output>=0)
     source=inspect.getsource(OpticalConversion.forward)
     assert "sqrt" not in source

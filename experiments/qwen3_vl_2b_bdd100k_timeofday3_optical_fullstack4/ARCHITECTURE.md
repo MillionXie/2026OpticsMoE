@@ -97,10 +97,10 @@ Student 不保留原始 transformer block 的电子 residual bypass。光学 sur
 | 每图视觉 token 数 | `180` | `1 × 10 × 18`，进入 vision stack 前 |
 | vision packed hidden | `[720, 1024]` | 4 张图拼接的 vision hidden |
 | teacher vision target | 每张 `[180, 1024]` | 完整 24 层电子视觉栈的输出 |
-| vision optical field | 4 层均为 `[4, 256, 256]` | 每张图拥有独立光场 |
+| vision optical field | 4 层均为 `[4, 64, 64]` | 每张图拥有独立光场 |
 | teacher answer hidden | `[4, 2048]` | 缓存的 teacher 答案位置特征 |
 | student answer hidden | `[4, 2048]` | language optical4 后的答案位置特征 |
-| language optical field | 4 层均为 `[4, 256, 256]` | 每个文本/多模态序列拥有独立光场 |
+| language optical field | 4 层均为 `[4, 64, 64]` | 每个文本/多模态序列拥有独立光场 |
 | logits | `[4, 3]` | daytime/night/dawn_dusk 三分类 |
 
 `pixel_values` 的 1536 来自：
@@ -198,14 +198,14 @@ packed [sum(T_i), 1024]
   -> LayerNorm(1024)
   -> Linear(1024 -> 256)
   -> ReLU，得到非负编码 [T_i, 256]
-  -> bilinear tokens_to_field [T_i, 256] -> [256, 256]
+  -> bilinear tokens_to_field [T_i, 256] -> [64, 64]
   -> OpticalConversion × 4
-  -> bilinear field_to_tokens [256, 256] -> [T_i, 256]
+  -> bilinear field_to_tokens [64, 64] -> [T_i, 256]
   -> Linear(256 -> 1024)
   -> 拼回 packed [sum(T_i), 1024]
 ```
 
-关键约束：每张图片单独构造一个 `[256,256]` 光场。batch 只增加并行样本数，不会把多个样本拼进同一光场。
+关键约束：每张图片单独构造一个 `[64,64]` 光场。batch 只增加并行样本数，不会把多个样本拼进同一光场。
 
 ### 6.4 Vision merger：保留且冻结
 
@@ -304,9 +304,9 @@ hidden [B, S, 2048]
   -> LayerNorm(2048)
   -> Linear(2048 -> 256)
   -> ReLU，得到非负编码 [S_i, 256]
-  -> bilinear tokens_to_field [S_i, 256] -> [256, 256]
+  -> bilinear tokens_to_field [S_i, 256] -> [64, 64]
   -> OpticalConversion × 4
-  -> bilinear field_to_tokens [256, 256] -> [S_i, 256]
+  -> bilinear field_to_tokens [64, 64] -> [S_i, 256]
   -> Linear(256 -> 2048)
   -> 写回 [B, S, 2048]，padding 位置保持为 0
 ```
@@ -384,12 +384,23 @@ output adapter 256 -> 2048         526,336
 8 次 optical conversions 合计包含：
 
 ```text
-phase 参数       = 8 × 256 × 256 = 524,288
-amplitude 参数   = 8 × 256 × 256 = 524,288
+phase 参数       = 8 × 64 × 64 = 32,768
+amplitude 参数   = 8 × 64 × 64 = 32,768（仅启用 amplitude mask 时）
 detector bias    = 8
 ```
 
 ## 11. 训练损失
+
+`distill_temperature` 只作用于 teacher/student 分类 logits 的 KD 项。当前默认
+`T=2.0`，计算为 `T² * KL(log_softmax(student/T), softmax(teacher/T))`；它不改变
+hard-label CE、hidden-state MSE、teacher cache 或推理阶段。
+
+Teacher cache 的两个容量参数含义不同：
+
+- `teacher_cache_shard_size`：每个磁盘 `.pt` shard 保存的样本数；
+- `teacher_cache_lru_shards`：训练时最多在内存中保留多少个最近使用的 shard。
+
+后者只是在磁盘 I/O 和主机内存之间做权衡，不会限制训练样本数量。
 
 总损失为：
 
@@ -437,7 +448,7 @@ L_CE = CrossEntropy(student_logits, labels)
 2. Qwen patch embedding、vision merger、多模态 embedding 和 final norm。
 3. Vision optical stack 的 4 次传播。
 4. Language optical stack 的 4 次传播。
-5. 每次传播都在 pad 后的 400×400 complex field 上执行 FFT2 和 IFFT2。
+5. 每次传播都在 pad 后的 128×128 complex field 上执行 FFT2 和 IFFT2。
 6. 共 8 次 conversion，即 forward 至少 8 次 FFT2 + 8 次 IFFT2。
 7. 对 8 次光学传播、两个 adapter 和 MLP 做完整反向传播。
 8. 四项 loss 计算，并从 CPU teacher cache 读取目标。

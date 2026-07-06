@@ -31,7 +31,8 @@ def _lengths_from_cu(hidden: torch.Tensor, cu_seqlens: torch.Tensor | None) -> l
 class _OpticalStackBase(nn.Module):
     def __init__(self, hidden_size: int, optical_dim: int, conversions: int, field_size: int,
                  padding_size: int, wavelength_nm: float, pixel_pitch_um: float,
-                 distance_cm: float, amplitude_mask_enabled: bool) -> None:
+                 distance_cm: float, amplitude_mask_enabled: bool, phase_init: str = "zeros",
+                 phase_init_std: float = 0.02) -> None:
         super().__init__()
         if conversions != 4:
             raise ValueError("fullstack4 requires four optical conversions")
@@ -39,7 +40,10 @@ class _OpticalStackBase(nn.Module):
         self.norm = nn.LayerNorm(hidden_size)
         self.input_adapter = nn.Linear(hidden_size, optical_dim)
         self.conversions = nn.ModuleList([
-            OpticalConversion(field_size, padding_size, wavelength_nm, pixel_pitch_um, distance_cm, amplitude_mask_enabled)
+            OpticalConversion(
+                field_size, padding_size, wavelength_nm, pixel_pitch_um, distance_cm,
+                amplitude_mask_enabled, phase_init, phase_init_std,
+            )
             for _ in range(conversions)
         ])
         self.output_adapter = nn.Linear(optical_dim, hidden_size)
