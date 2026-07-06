@@ -29,5 +29,5 @@ CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_bdd100k_timeofday3_opti
 ## Student training
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_bdd100k_timeofday3_optical_fullstack4.run --config experiments/qwen3_vl_2b_bdd100k_timeofday3_optical_fullstack4/configs/bdd100k_timeofday3.json --phase student_train
+CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_2b_bdd100k_timeofday3_optical_fullstack4.run --config experiments/qwen3_vl_2b_bdd100k_timeofday3_optical_fullstack4/configs/bdd100k_timeofday3.json --phase student_train
 ```
