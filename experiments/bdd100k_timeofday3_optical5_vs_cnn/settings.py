@@ -83,7 +83,7 @@ class Settings:
     def validate(self) -> None:
         if self.dataset!="bdd100k_timeofday3": raise ValueError("dataset must be bdd100k_timeofday3")
         if self.class_names!=["daytime","night","dawn_dusk"] or self.num_classes!=3: raise ValueError("TimeOfDay-3 class order must be daytime, night, dawn_dusk")
-        if self.model_type not in {"optical5_enhanced","electronic_cnn"}: raise ValueError("Unsupported model_type")
+        if self.model_type not in {"optical5_enhanced","optical5_continuous","electronic_cnn"}: raise ValueError("Unsupported model_type")
         if self.optimizer!="adamw" or self.scheduler!="cosine": raise ValueError("Only AdamW + cosine are supported")
         if not 0<self.validation_fraction<1: raise ValueError("validation_fraction must be between 0 and 1")
         for name in ("epochs","batch_size","input_size","log_interval_batches","save_interval_epochs","save_predictions_interval_epochs"):
@@ -91,12 +91,14 @@ class Settings:
         for name in ("train_limit","test_limit","train_limit_per_class","test_limit_per_class"):
             value=getattr(self,name)
             if value is not None and value<=0: raise ValueError(f"{name} must be positive")
-        if self.model_type=="optical5_enhanced":
-            if self.optical_layers!=5 or not self.intensity_forward: raise ValueError("Optical model requires five intensity-forward layers")
+        if self.model_type in {"optical5_enhanced","optical5_continuous"}:
+            if self.optical_layers!=5: raise ValueError("Optical models require exactly five propagation layers")
+            if self.model_type=="optical5_enhanced" and not self.intensity_forward: raise ValueError("optical5_enhanced requires intensity_forward=true")
+            if self.model_type=="optical5_continuous" and self.intensity_forward: raise ValueError("optical5_continuous requires intensity_forward=false")
             if self.optical_padding_size<self.optical_field_size: raise ValueError("padding must be >= field size")
             if len(self.readout_channels)!=2: raise ValueError("Simplified optical readout requires exactly two convolution channel values")
             max_nonoverlap_size=self.optical_field_size//(self.num_classes+1)
-            if not 0<self.detector_region_size<=max_nonoverlap_size: raise ValueError(f"detector_region_size must be between 1 and {max_nonoverlap_size} for non-overlapping horizontal regions")
+            if not 0<self.detector_region_size<=max_nonoverlap_size: raise ValueError(f"detector_region_size must be between 1 and {max_nonoverlap_size}")
             if self.detector_region_temperature<=0: raise ValueError("detector_region_temperature must be positive")
             if self.detector_region_loss_weight<0 or self.detector_concentration_loss_weight<0: raise ValueError("detector loss weights must be nonnegative")
             dropout=self.phase_dropout

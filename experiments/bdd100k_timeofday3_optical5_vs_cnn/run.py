@@ -19,15 +19,16 @@ from .training import test_model,train_model
 
 
 def build_parser()->argparse.ArgumentParser:
-    parser=argparse.ArgumentParser(description="BDD100K TimeOfDay-3 optical5 enhanced readout versus electronic CNN")
-    parser.add_argument("--config",type=Path);parser.add_argument("--phase",choices=["prepare_data","train","test","compare","all"],default="all")
+    parser=argparse.ArgumentParser(description="BDD100K TimeOfDay-3 optical5 O-E-O, continuous optical, and electronic CNN")
+    parser.add_argument("--config",type=Path);parser.add_argument("--phase",choices=["prepare_data","train","test","compare","compare_optical","all"],default="all")
     parser.add_argument("--device");parser.add_argument("--epochs",type=int);parser.add_argument("--output-dir",type=Path)
-    parser.add_argument("--optical-output-dir",type=Path);parser.add_argument("--cnn-output-dir",type=Path);return parser
+    parser.add_argument("--optical-output-dir",type=Path);parser.add_argument("--continuous-output-dir",type=Path);parser.add_argument("--cnn-output-dir",type=Path);return parser
 
 
 def main(argv:list[str]|None=None)->int:
     args=build_parser().parse_args(argv)
     if args.phase=="compare":return _compare(args)
+    if args.phase=="compare_optical":return _compare_optical(args)
     if args.config is None:raise SystemExit("--config is required except for --phase compare")
     settings=load_settings(args.config)
     if args.device:settings.device=args.device
@@ -39,7 +40,7 @@ def main(argv:list[str]|None=None)->int:
     device=torch.device(settings.device)
     if device.type=="cuda" and not torch.cuda.is_available():raise RuntimeError("CUDA requested but unavailable")
     model=build_model(settings).to(device);report=parameter_report(model);report.update({"model_type":settings.model_type,"input_size":settings.input_size,"class_names":settings.class_names})
-    if settings.model_type=="optical5_enhanced":report.update({"optical_field_size":settings.optical_field_size,"optical_padding_size":settings.optical_padding_size,"wavelength_nm":settings.wavelength_nm,"pixel_pitch_um":settings.pixel_pitch_um,"mask_distance_cm":settings.mask_distance_cm,"phase_dropout":settings.regularization.get("phase_dropout",{}),"detector_region_objective":{"region_loss_weight":settings.detector_region_loss_weight,"concentration_loss_weight":settings.detector_concentration_loss_weight,"readout_uses_region_distribution":True}})
+    if settings.model_type in {"optical5_enhanced","optical5_continuous"}:report.update({"optical_field_size":settings.optical_field_size,"optical_padding_size":settings.optical_padding_size,"wavelength_nm":settings.wavelength_nm,"pixel_pitch_um":settings.pixel_pitch_um,"mask_distance_cm":settings.mask_distance_cm,"phase_dropout":settings.regularization.get("phase_dropout",{}),"detector_region_objective":{"region_loss_weight":settings.detector_region_loss_weight,"concentration_loss_weight":settings.detector_concentration_loss_weight,"readout_uses_region_distribution":True}})
     write_json(settings.output_dir/"model.json",report)
     if args.phase in {"train","all"}:train_model(model,data,settings,device)
     if args.phase in {"test","all"}:
@@ -53,6 +54,14 @@ def _compare(args:argparse.Namespace)->int:
     om=_read(optical/"metrics"/"test_metrics.json");cm=_read(cnn/"metrics"/"test_metrics.json");omodel=_read(optical/"model.json");cmodel=_read(cnn/"model.json")
     comparison={"optical":{"top1_accuracy":om["top1_accuracy"],"macro_f1":om["macro_f1"],"balanced_accuracy":om["balanced_accuracy"],"per_class":om["per_class"],"parameters":omodel["parameters"],"training_time_sec":_training_time(optical)},"cnn":{"top1_accuracy":cm["top1_accuracy"],"macro_f1":cm["macro_f1"],"balanced_accuracy":cm["balanced_accuracy"],"per_class":cm["per_class"],"parameters":cmodel["parameters"],"training_time_sec":_training_time(cnn)}}
     write_json(optical/"metrics"/"comparison.json",comparison);print(json.dumps(comparison,indent=2));return 0
+
+
+def _compare_optical(args:argparse.Namespace)->int:
+    if args.optical_output_dir is None or args.continuous_output_dir is None:raise SystemExit("compare_optical requires --optical-output-dir and --continuous-output-dir")
+    oeo=resolve_path(args.optical_output_dir,Path.cwd(),"optical_output_dir");continuous=resolve_path(args.continuous_output_dir,Path.cwd(),"continuous_output_dir");oeo_metrics=_read(oeo/"metrics"/"test_metrics.json");continuous_metrics=_read(continuous/"metrics"/"test_metrics.json");oeo_model=_read(oeo/"model.json");continuous_model=_read(continuous/"model.json")
+    keys=("top1_accuracy","macro_f1","balanced_accuracy","detector_region_accuracy","mean_detector_energy_fraction","mean_target_region_energy_fraction")
+    comparison={"oeo_optical5":{**{key:oeo_metrics.get(key) for key in keys},"parameters":oeo_model["parameters"],"training_time_sec":_training_time(oeo)},"continuous_optical5":{**{key:continuous_metrics.get(key) for key in keys},"parameters":continuous_model["parameters"],"training_time_sec":_training_time(continuous)},"continuous_minus_oeo":{key:continuous_metrics[key]-oeo_metrics[key] for key in keys if continuous_metrics.get(key) is not None and oeo_metrics.get(key) is not None}}
+    write_json(oeo/"metrics"/"continuous_optical_comparison.json",comparison);write_json(continuous/"metrics"/"oeo_optical_comparison.json",comparison);print(json.dumps(comparison,indent=2));return 0
 
 
 def _training_time(root:Path)->float|None:

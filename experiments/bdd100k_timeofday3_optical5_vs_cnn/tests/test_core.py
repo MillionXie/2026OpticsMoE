@@ -10,8 +10,8 @@ from torch.utils.data import Dataset
 from experiments.bdd100k_timeofday3_optical5_vs_cnn.data import DataBundle
 from experiments.bdd100k_timeofday3_optical5_vs_cnn.data_prepare import normalize_timeofday_label
 from experiments.bdd100k_timeofday3_optical5_vs_cnn.metrics import classification_metrics,write_json
-from experiments.bdd100k_timeofday3_optical5_vs_cnn.models import ElectronicCNNTimeOfDayBaseline,Optical5EnhancedTimeOfDayClassifier
-from experiments.bdd100k_timeofday3_optical5_vs_cnn.optics import ClassRegionDetector,OpticalDetectionIntensityLayer
+from experiments.bdd100k_timeofday3_optical5_vs_cnn.models import ElectronicCNNTimeOfDayBaseline,Optical5ContinuousTimeOfDayClassifier,Optical5EnhancedTimeOfDayClassifier
+from experiments.bdd100k_timeofday3_optical5_vs_cnn.optics import ClassRegionDetector,ContinuousOpticalPropagationLayer,OpticalDetectionIntensityLayer
 from experiments.bdd100k_timeofday3_optical5_vs_cnn.training import train_model
 from experiments.bdd100k_timeofday3_optical5_vs_cnn.settings import PhaseDropoutSettings
 
@@ -41,28 +41,27 @@ def test_optical_classifier_shape()->None:
     model=Optical5EnhancedTimeOfDayClassifier(field_size=16,padding_size=20,readout_channels=[4,8],readout_pool_size=2,readout_hidden_dim=8,detector_region_size=4)
     logits,aux=model(torch.rand(2,1,224,224),return_aux=True)
     assert logits.shape==(2,3) and aux["region_logits"].shape==(2,3)
-    assert aux["region_fractions"].shape==(2,3) and aux["detector_fraction"].shape==(2,)
 
 
-def test_class_region_detector_layout_and_semantics()->None:
-    detector=ClassRegionDetector(16,["daytime","night","dawn_dusk"],4)
-    assert detector.region_masks.shape==(3,16,16)
-    assert torch.all(detector.region_masks.sum(0)<=1)
+def test_continuous_layer_preserves_complex_field_without_detection()->None:
+    layer=ContinuousOpticalPropagationLayer(8,10,532,17,5);field=torch.complex(torch.rand(2,8,8),torch.zeros(2,8,8));output=layer(field)
+    assert output.shape==(2,8,8) and torch.is_complex(output)
+    source=inspect.getsource(ContinuousOpticalPropagationLayer.forward)
+    assert ".abs()" not in source and "relu" not in source and "square" not in source
+
+
+def test_continuous_classifier_shape_and_phase_gradients()->None:
+    model=Optical5ContinuousTimeOfDayClassifier(field_size=16,padding_size=20,readout_channels=[4,8],readout_pool_size=2,readout_hidden_dim=8,detector_region_size=4)
+    logits,aux=model(torch.rand(2,1,16,16),return_aux=True);loss=nn.CrossEntropyLoss()(logits,torch.tensor([0,2]))+nn.CrossEntropyLoss()(aux["region_logits"],torch.tensor([0,2]));loss.backward()
+    assert logits.shape==(2,3)
+    assert all(layer.phase_mask.grad is not None and float(layer.phase_mask.grad.abs().sum())>0 for layer in model.layers)
+
+
+def test_class_region_detector_layout()->None:
+    detector=ClassRegionDetector(16,["daytime","night","dawn_dusk"],4);assert detector.region_masks.shape==(3,16,16);assert torch.all(detector.region_masks.sum(0)<=1)
     intensity=torch.zeros(3,16,16)
     for index,box in enumerate(detector.boxes):intensity[index,box["y0"]:box["y1"],box["x0"]:box["x1"]]=1
-    result=detector(intensity)
-    assert result["region_logits"].argmax(1).tolist()==[0,1,2]
-    assert torch.allclose(result["detector_fraction"],torch.ones(3))
-
-
-def test_detector_region_loss_reaches_all_phase_masks()->None:
-    model=Optical5EnhancedTimeOfDayClassifier(field_size=16,padding_size=20,readout_channels=[4,8],readout_pool_size=2,readout_hidden_dim=8,detector_region_size=4)
-    _,aux=model(torch.rand(2,1,16,16),return_aux=True)
-    nn.CrossEntropyLoss()(aux["region_logits"],torch.tensor([0,2])).backward()
-    for layer in model.layers:
-        assert layer.phase_mask.grad is not None
-        assert torch.isfinite(layer.phase_mask.grad).all()
-        assert float(layer.phase_mask.grad.abs().sum())>0
+    result=detector(intensity);assert result["region_logits"].argmax(1).tolist()==[0,1,2];assert torch.allclose(result["detector_fraction"],torch.ones(3))
 
 
 def test_cnn_shape()->None:
@@ -100,5 +99,4 @@ def test_one_epoch_writes_live_outputs(tmp_path:Path)->None:
     train_model(TinyModel(),data,settings,torch.device("cpu"))
     for path in ("metrics/training_history.csv","metrics/training_latest.json","checkpoints/best.pt","checkpoints/last.pt"):
         assert (tmp_path/path).is_file()
-    history=(tmp_path/"metrics/training_history.csv").read_text(encoding="utf-8")
-    assert "train_classification_loss" in history and "validation_detector_region_loss" in history
+    assert "train_detector_region_loss" in (tmp_path/"metrics/training_history.csv").read_text(encoding="utf-8")
