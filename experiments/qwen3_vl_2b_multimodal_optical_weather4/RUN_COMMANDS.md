@@ -22,23 +22,23 @@ CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_2b_multimodal_optical_weat
   --device cuda --phase student_train
 
 # Run every phase
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_multimodal_optical_weather4 \
-  --config experiments/qwen3_vl_2b_multimodal_optical_weather4/configs/bdd100k_weather4.json \
+CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_multimodal_optical_weather4 
+  --config experiments/qwen3_vl_2b_multimodal_optical_weather4/configs/bdd100k_weather4.json 
   --device cuda --phase all
 
 # Balanced subset
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_multimodal_optical_weather4 \
-  --config experiments/qwen3_vl_2b_multimodal_optical_weather4/configs/bdd100k_weather4_balanced.json \
+CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_multimodal_optical_weather4 
+  --config experiments/qwen3_vl_2b_multimodal_optical_weather4/configs/bdd100k_weather4_balanced.json 
   --device cuda --phase all
 
 # Smoke test
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_multimodal_optical_weather4 \
-  --config experiments/qwen3_vl_2b_multimodal_optical_weather4/configs/bdd100k_weather4_smoke.json \
+CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_multimodal_optical_weather4 
+  --config experiments/qwen3_vl_2b_multimodal_optical_weather4/configs/bdd100k_weather4_smoke.json 
   --device cuda --phase all
 
 # Compare completed teacher/student metrics
-python -m experiments.qwen3_vl_2b_multimodal_optical_weather4 \
-  --config experiments/qwen3_vl_2b_multimodal_optical_weather4/configs/bdd100k_weather4.json \
+python -m experiments.qwen3_vl_2b_multimodal_optical_weather4 
+  --config experiments/qwen3_vl_2b_multimodal_optical_weather4/configs/bdd100k_weather4.json 
   --phase compare
 ```
 

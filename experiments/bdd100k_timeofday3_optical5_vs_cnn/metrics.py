@@ -51,7 +51,18 @@ def classification_metrics(targets: list[int], predictions: list[int], class_nam
 
 def write_json(path: Path, value: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(value, indent=2, ensure_ascii=False, default=_json_default) + "\n",
+        encoding="utf-8",
+    )
+
+
+def _json_default(value: Any) -> Any:
+    if isinstance(value, Path):
+        return str(value)
+    if isinstance(value, torch.dtype):
+        return str(value).removeprefix("torch.")
+    raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
 
 
 def write_history(path: Path, rows: list[dict[str, Any]]) -> None:
