@@ -46,14 +46,14 @@
   ],
   "readout_pool_size": 8,
   "readout_hidden_dim": 256,
-  "readout_dropout": 0.2,
+  "readout_dropout": 0.1,
   "detector_region_size": 48,
   "detector_region_temperature": 1.0,
   "detector_region_loss_weight": 1.0,
   "detector_concentration_loss_weight": 0.1,
   "regularization": {
     "phase_dropout": {
-      "enabled": true,
+      "enabled": false,
       "p": 0.05,
       "mode": "block_phase_bypass",
       "block_size": 8,
