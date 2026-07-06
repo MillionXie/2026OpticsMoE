@@ -27,3 +27,5 @@ data/bdd100k_timeofday3/
 五层之间传递归一化后的非负 detected intensity。训练前向不会将探测强度执行平方根重新编码。相位和可选幅度 mask 位于传播之前，使相位参数能够影响探测平面并获得梯度。
 
 每个 epoch 都立即保存 history/latest、best/last checkpoint，并根据配置保存 validation predictions。Optical run 额外保存 phase masks、逐层 light fields 和 detector outputs。
+
+光学配置支持训练期 `block_phase_bypass` dropout：默认从第 10 个 epoch 开始，以 8×8 block、`p=0.05` 将部分相位调制临时替换为透明旁路。该正则化只在 `train()` 生效，validation/test 自动关闭，并记录在 resolved config、model report 和 training history 中。

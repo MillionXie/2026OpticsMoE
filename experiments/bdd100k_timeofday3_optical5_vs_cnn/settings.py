@@ -3,13 +3,23 @@ from __future__ import annotations
 import json
 import os
 import re
-from dataclasses import asdict, dataclass, fields
+from dataclasses import asdict, dataclass, field, fields
 from pathlib import Path
 from typing import Any
 
 
 PROJECT_DIR = Path(__file__).resolve().parent
 ENV_REFERENCE = re.compile(r"\$(?:\{([A-Za-z_][A-Za-z0-9_]*)\}|([A-Za-z_][A-Za-z0-9_]*))")
+
+
+@dataclass
+class PhaseDropoutSettings:
+    enabled: bool = False
+    p: float = 0.05
+    mode: str = "block_phase_bypass"
+    block_size: int = 8
+    batch_shared: bool = True
+    start_epoch: int = 10
 
 
 @dataclass
@@ -57,6 +67,9 @@ class Settings:
     readout_dropout: float = 0.2
     cnn_channels: list[int] | None = None
     cnn_dropout: float = 0.2
+    regularization: dict[str, Any] = field(
+        default_factory=lambda: {"phase_dropout": asdict(PhaseDropoutSettings())}
+    )
 
     def __post_init__(self) -> None:
         if self.class_names is None: self.class_names=["daytime","night","dawn_dusk"]
@@ -78,8 +91,16 @@ class Settings:
             if self.optical_layers!=5 or not self.intensity_forward: raise ValueError("Optical model requires five intensity-forward layers")
             if self.optical_padding_size<self.optical_field_size: raise ValueError("padding must be >= field size")
             if len(self.readout_channels)!=2: raise ValueError("Simplified optical readout requires exactly two convolution channel values")
+            dropout=self.phase_dropout
+            if dropout.mode not in {"none","phase_bypass","block_phase_bypass"}: raise ValueError("Unsupported phase dropout mode")
+            if not 0<=dropout.p<1: raise ValueError("phase dropout p must satisfy 0 <= p < 1")
+            if dropout.block_size<=0 or dropout.start_epoch<=0: raise ValueError("phase dropout block_size and start_epoch must be positive")
 
     def to_dict(self)->dict[str,Any]: return asdict(self)
+
+    @property
+    def phase_dropout(self)->PhaseDropoutSettings:
+        return PhaseDropoutSettings(**(self.regularization.get("phase_dropout",{}) or {}))
 
 
 def load_settings(path:str|Path)->Settings:

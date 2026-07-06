@@ -29,10 +29,10 @@ class Optical5EnhancedTimeOfDayClassifier(nn.Module):
     def __init__(self,input_size:int=224,field_size:int=256,padding_size:int=400,wavelength_nm:float=532,
                  pixel_pitch_um:float=17,distance_cm:float=5,phase_init:str="uniform",amplitude_mask_enabled:bool=True,
                  readout_channels:list[int]|None=None,readout_pool_size:int=8,readout_hidden_dim:int=256,
-                 readout_dropout:float=.2,num_classes:int=3,optical_layers:int=5)->None:
+                 readout_dropout:float=.2,num_classes:int=3,optical_layers:int=5,phase_dropout:object|None=None)->None:
         super().__init__();
         if optical_layers!=5:raise ValueError("Exactly five optical layers are required")
-        self.field_size=field_size;self.layers=nn.ModuleList([OpticalDetectionIntensityLayer(field_size,padding_size,wavelength_nm,pixel_pitch_um,distance_cm,phase_init,amplitude_mask_enabled) for _ in range(5)])
+        self.field_size=field_size;self.layers=nn.ModuleList([OpticalDetectionIntensityLayer(field_size,padding_size,wavelength_nm,pixel_pitch_um,distance_cm,phase_init,amplitude_mask_enabled,phase_dropout) for _ in range(5)])
         self.readout=EnhancedDetectorReadout(readout_channels or [16,32],readout_pool_size,readout_hidden_dim,readout_dropout,num_classes)
         self.last_diagnostics:dict|None=None
     def encode(self,grayscale:torch.Tensor)->torch.Tensor:
@@ -47,6 +47,9 @@ class Optical5EnhancedTimeOfDayClassifier(nn.Module):
         logits=self.readout(value)
         if return_diagnostics:return logits,{"input_intensity":initial,"after_layers":intermediates,"detector_input":value}
         return logits
+    def set_epoch(self,epoch:int)->None:
+        cfg=self.layers[0].phase_dropout;active=bool(cfg is not None and cfg.enabled and epoch>=cfg.start_epoch)
+        for layer in self.layers:layer.set_phase_dropout_active(active)
 
 
 class ConvBlock(nn.Module):
@@ -65,7 +68,7 @@ class ElectronicCNNTimeOfDayBaseline(nn.Module):
 
 def build_model(settings:object)->nn.Module:
     if settings.model_type=="electronic_cnn":return ElectronicCNNTimeOfDayBaseline(settings.cnn_channels,settings.cnn_dropout,settings.num_classes)
-    return Optical5EnhancedTimeOfDayClassifier(settings.input_size,settings.optical_field_size,settings.optical_padding_size,settings.wavelength_nm,settings.pixel_pitch_um,settings.mask_distance_cm,settings.phase_init,settings.amplitude_mask_enabled,settings.readout_channels,settings.readout_pool_size,settings.readout_hidden_dim,settings.readout_dropout,settings.num_classes,settings.optical_layers)
+    return Optical5EnhancedTimeOfDayClassifier(settings.input_size,settings.optical_field_size,settings.optical_padding_size,settings.wavelength_nm,settings.pixel_pitch_um,settings.mask_distance_cm,settings.phase_init,settings.amplitude_mask_enabled,settings.readout_channels,settings.readout_pool_size,settings.readout_hidden_dim,settings.readout_dropout,settings.num_classes,settings.optical_layers,settings.phase_dropout)
 
 
 def parameter_report(model:nn.Module)->dict:
