@@ -65,6 +65,10 @@ class Settings:
     readout_pool_size: int = 8
     readout_hidden_dim: int = 256
     readout_dropout: float = 0.2
+    detector_region_size: int = 48
+    detector_region_temperature: float = 1.0
+    detector_region_loss_weight: float = 1.0
+    detector_concentration_loss_weight: float = 0.1
     cnn_channels: list[int] | None = None
     cnn_dropout: float = 0.2
     regularization: dict[str, Any] = field(
@@ -91,6 +95,10 @@ class Settings:
             if self.optical_layers!=5 or not self.intensity_forward: raise ValueError("Optical model requires five intensity-forward layers")
             if self.optical_padding_size<self.optical_field_size: raise ValueError("padding must be >= field size")
             if len(self.readout_channels)!=2: raise ValueError("Simplified optical readout requires exactly two convolution channel values")
+            max_nonoverlap_size=self.optical_field_size//(self.num_classes+1)
+            if not 0<self.detector_region_size<=max_nonoverlap_size: raise ValueError(f"detector_region_size must be between 1 and {max_nonoverlap_size} for non-overlapping horizontal regions")
+            if self.detector_region_temperature<=0: raise ValueError("detector_region_temperature must be positive")
+            if self.detector_region_loss_weight<0 or self.detector_concentration_loss_weight<0: raise ValueError("detector loss weights must be nonnegative")
             dropout=self.phase_dropout
             if dropout.mode not in {"none","phase_bypass","block_phase_bypass"}: raise ValueError("Unsupported phase dropout mode")
             if not 0<=dropout.p<1: raise ValueError("phase dropout p must satisfy 0 <= p < 1")

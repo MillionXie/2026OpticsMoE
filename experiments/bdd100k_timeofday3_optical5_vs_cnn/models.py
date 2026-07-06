@@ -4,48 +4,65 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from .optics import OpticalDetectionIntensityLayer
+from .optics import ClassRegionDetector, OpticalDetectionIntensityLayer
 
 
 class EnhancedDetectorReadout(nn.Module):
-    def __init__(self,channels:list[int],pool_size:int,hidden_dim:int,dropout:float,num_classes:int)->None:
+    def __init__(self,channels:list[int],pool_size:int,hidden_dim:int,dropout:float,num_classes:int,
+                 region_feature_dim:int=0)->None:
         super().__init__();c1,c2=channels
         self.stem=nn.Sequential(
             nn.Conv2d(1,c1,3,padding=1),_norm(c1),nn.GELU(),
             nn.Conv2d(c1,c2,3,stride=2,padding=1),_norm(c2),nn.GELU(),
         )
         self.pool=nn.AdaptiveAvgPool2d((pool_size,pool_size))
-        feature_dim=c2*pool_size*pool_size
+        self.region_feature_dim=int(region_feature_dim)
+        feature_dim=c2*pool_size*pool_size+self.region_feature_dim
         self.head=nn.Sequential(
             nn.LayerNorm(feature_dim),nn.Linear(feature_dim,hidden_dim),nn.GELU(),
             nn.Dropout(dropout),nn.Linear(hidden_dim,num_classes),
         )
-    def forward(self,intensity:torch.Tensor)->torch.Tensor:
+    def forward(self,intensity:torch.Tensor,region_features:torch.Tensor|None=None)->torch.Tensor:
         value=torch.log1p(intensity).unsqueeze(1);features=self.stem(value)
-        return self.head(self.pool(features).flatten(1))
+        features=self.pool(features).flatten(1)
+        if self.region_feature_dim:
+            if region_features is None or region_features.shape!=(len(intensity),self.region_feature_dim):
+                raise ValueError(f"Expected detector region features [B,{self.region_feature_dim}]")
+            features=torch.cat((features,region_features.float()),dim=1)
+        return self.head(features)
 
 
 class Optical5EnhancedTimeOfDayClassifier(nn.Module):
     def __init__(self,input_size:int=224,field_size:int=256,padding_size:int=400,wavelength_nm:float=532,
                  pixel_pitch_um:float=17,distance_cm:float=5,phase_init:str="uniform",amplitude_mask_enabled:bool=True,
                  readout_channels:list[int]|None=None,readout_pool_size:int=8,readout_hidden_dim:int=256,
-                 readout_dropout:float=.2,num_classes:int=3,optical_layers:int=5,phase_dropout:object|None=None)->None:
+                 readout_dropout:float=.2,num_classes:int=3,optical_layers:int=5,phase_dropout:object|None=None,
+                 class_names:list[str]|None=None,detector_region_size:int=48,detector_region_temperature:float=1.0,
+                 detector_region_loss_weight:float=1.0,detector_concentration_loss_weight:float=.1)->None:
         super().__init__();
         if optical_layers!=5:raise ValueError("Exactly five optical layers are required")
+        names=class_names or ["daytime","night","dawn_dusk"]
+        if len(names)!=num_classes:raise ValueError("class_names and num_classes must agree")
         self.field_size=field_size;self.layers=nn.ModuleList([OpticalDetectionIntensityLayer(field_size,padding_size,wavelength_nm,pixel_pitch_um,distance_cm,phase_init,amplitude_mask_enabled,phase_dropout) for _ in range(5)])
-        self.readout=EnhancedDetectorReadout(readout_channels or [16,32],readout_pool_size,readout_hidden_dim,readout_dropout,num_classes)
+        self.class_detector=ClassRegionDetector(field_size,names,detector_region_size,detector_region_temperature)
+        self.detector_region_loss_weight=float(detector_region_loss_weight)
+        self.detector_concentration_loss_weight=float(detector_concentration_loss_weight)
+        self.readout=EnhancedDetectorReadout(readout_channels or [16,32],readout_pool_size,readout_hidden_dim,readout_dropout,num_classes,num_classes)
         self.last_diagnostics:dict|None=None
     def encode(self,grayscale:torch.Tensor)->torch.Tensor:
         if grayscale.ndim!=4 or grayscale.shape[1]!=1:raise ValueError("Expected [B,1,H,W] grayscale")
         value=grayscale.float().clamp(0,1);rms=value.square().mean((-2,-1),keepdim=True).sqrt().clamp_min(1e-6);value=value/rms
         return F.interpolate(value,size=(self.field_size,self.field_size),mode="bilinear",align_corners=False)[:,0]
-    def forward(self,grayscale:torch.Tensor,return_diagnostics:bool=False):
+    def forward(self,grayscale:torch.Tensor,return_diagnostics:bool=False,return_aux:bool=False):
         value=self.encode(grayscale);initial=value;intermediates=[]
         for layer in self.layers:
             value=layer(value)
             if return_diagnostics:intermediates.append(value)
-        logits=self.readout(value)
-        if return_diagnostics:return logits,{"input_intensity":initial,"after_layers":intermediates,"detector_input":value}
+        detector=self.class_detector(value)
+        logits=self.readout(value,detector["region_distribution"])
+        if return_diagnostics:
+            return logits,{"input_intensity":initial,"after_layers":intermediates,"detector_input":value,**detector}
+        if return_aux:return logits,detector
         return logits
     def set_epoch(self,epoch:int)->None:
         cfg=self.layers[0].phase_dropout;active=bool(cfg is not None and cfg.enabled and epoch>=cfg.start_epoch)
@@ -68,14 +85,14 @@ class ElectronicCNNTimeOfDayBaseline(nn.Module):
 
 def build_model(settings:object)->nn.Module:
     if settings.model_type=="electronic_cnn":return ElectronicCNNTimeOfDayBaseline(settings.cnn_channels,settings.cnn_dropout,settings.num_classes)
-    return Optical5EnhancedTimeOfDayClassifier(settings.input_size,settings.optical_field_size,settings.optical_padding_size,settings.wavelength_nm,settings.pixel_pitch_um,settings.mask_distance_cm,settings.phase_init,settings.amplitude_mask_enabled,settings.readout_channels,settings.readout_pool_size,settings.readout_hidden_dim,settings.readout_dropout,settings.num_classes,settings.optical_layers,settings.phase_dropout)
+    return Optical5EnhancedTimeOfDayClassifier(settings.input_size,settings.optical_field_size,settings.optical_padding_size,settings.wavelength_nm,settings.pixel_pitch_um,settings.mask_distance_cm,settings.phase_init,settings.amplitude_mask_enabled,settings.readout_channels,settings.readout_pool_size,settings.readout_hidden_dim,settings.readout_dropout,settings.num_classes,settings.optical_layers,settings.phase_dropout,settings.class_names,settings.detector_region_size,settings.detector_region_temperature,settings.detector_region_loss_weight,settings.detector_concentration_loss_weight)
 
 
 def parameter_report(model:nn.Module)->dict:
     total=sum(p.numel() for p in model.parameters());trainable=sum(p.numel() for p in model.parameters() if p.requires_grad)
     report={"model_name":type(model).__name__,"parameters":total,"trainable_parameters":trainable}
     if isinstance(model,Optical5EnhancedTimeOfDayClassifier):
-        report.update({"optical_layers":5,"phase_mask_parameters":sum(layer.phase_mask.numel() for layer in model.layers),"amplitude_mask_parameters":sum(layer.amplitude_mask_logits.numel() for layer in model.layers if layer.amplitude_mask_logits is not None),"readout_parameters":sum(p.numel() for p in model.readout.parameters()),"intensity_forward":True})
+        report.update({"optical_layers":5,"phase_mask_parameters":sum(layer.phase_mask.numel() for layer in model.layers),"amplitude_mask_parameters":sum(layer.amplitude_mask_logits.numel() for layer in model.layers if layer.amplitude_mask_logits is not None),"readout_parameters":sum(p.numel() for p in model.readout.parameters()),"intensity_forward":True,"class_region_detector":model.class_detector.specification(),"detector_region_loss_weight":model.detector_region_loss_weight,"detector_concentration_loss_weight":model.detector_concentration_loss_weight})
     return report
 
 

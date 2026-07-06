@@ -8,6 +8,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+from matplotlib.patches import Rectangle
 
 
 def save_optical_diagnostics(model:Any,images:torch.Tensor,root:Path,epoch:int)->None:
@@ -21,10 +22,16 @@ def save_optical_diagnostics(model:Any,images:torch.Tensor,root:Path,epoch:int)-
     entries=[("input_intensity",diagnostics["input_intensity"][0])]+[(f"after_layer_{i}_intensity",value[0]) for i,value in enumerate(diagnostics["after_layers"],1)]+[("detector_readout_input",diagnostics["detector_input"][0])]
     sample=root/"light_fields"/epoch_name/"sample_000";sample.mkdir(parents=True,exist_ok=True)
     for index,(name,value) in enumerate(entries):_save_intensity(value,sample/f"{index:02d}_{name}.png",name.replace("_"," ").title())
-    values=diagnostics["detector_input"].detach().cpu();cols=min(4,len(values));rows=math.ceil(len(values)/cols);fig,axes=plt.subplots(rows,cols,figsize=(3*cols,3*rows),squeeze=False)
-    for i,(ax,value) in enumerate(zip(axes.ravel(),values)):ax.imshow(_log(value),cmap="inferno");ax.set_title(f"Sample {i}");ax.axis("off")
-    for ax in axes.ravel()[len(values):]:ax.axis("off")
-    path=root/"detector_outputs"/f"{epoch_name}.png";path.parent.mkdir(parents=True,exist_ok=True);fig.tight_layout();fig.savefig(path,dpi=150);plt.close(fig);model.train(was)
+    values=diagnostics["detector_input"].detach().cpu();distributions=diagnostics["region_distribution"].detach().cpu();detector_fractions=diagnostics["detector_fraction"].detach().cpu();sample_count=min(4,len(values));colors=["cyan","lime","magenta"]
+    fig,axes=plt.subplots(sample_count,2,figsize=(9,3.2*sample_count),squeeze=False)
+    for i in range(sample_count):
+        ax=axes[i,0];ax.imshow(_log(values[i]),cmap="inferno")
+        for color,box in zip(colors,model.class_detector.boxes):
+            ax.add_patch(Rectangle((box["x0"],box["y0"]),box["width"],box["height"],fill=False,edgecolor=color,linewidth=1.5));ax.text(box["x0"],max(0,box["y0"]-3),box["class_name"],color=color,fontsize=7)
+        ax.set_title(f"Sample {i}: detector energy={detector_fractions[i]:.3f}");ax.axis("off")
+        bar=axes[i,1];bar.bar(model.class_detector.class_names,distributions[i].numpy(),color=colors);bar.set_ylim(0,1);bar.set_ylabel("Energy share inside 3 regions");bar.set_title(f"Region prediction: {model.class_detector.class_names[int(distributions[i].argmax())]}")
+    path=root/"detector_outputs"/f"{epoch_name}.png";path.parent.mkdir(parents=True,exist_ok=True);fig.tight_layout();fig.savefig(path,dpi=150);plt.close(fig)
+    _save_region_layout(model,root/"detector_regions"/"layout.png",colors);model.train(was)
 
 
 def save_training_curves(history:list[dict[str,Any]],path:Path)->None:
@@ -49,3 +56,9 @@ def _log(value:torch.Tensor)->np.ndarray:
 def _save_intensity(value:torch.Tensor,path:Path,title:str)->None:
     fig,ax=plt.subplots(figsize=(4.5,4));image=ax.imshow(_log(value),cmap="inferno");ax.set_title(title);ax.axis("off");fig.colorbar(image,ax=ax);fig.tight_layout();fig.savefig(path,dpi=140);plt.close(fig)
 
+
+def _save_region_layout(model:Any,path:Path,colors:list[str])->None:
+    fig,ax=plt.subplots(figsize=(6,5));ax.imshow(np.zeros((model.field_size,model.field_size)),cmap="gray",vmin=0,vmax=1)
+    for color,box in zip(colors,model.class_detector.boxes):
+        ax.add_patch(Rectangle((box["x0"],box["y0"]),box["width"],box["height"],facecolor=color,edgecolor="white",alpha=.55,linewidth=1.5));ax.text((box["x0"]+box["x1"])/2,(box["y0"]+box["y1"])/2,box["class_name"],ha="center",va="center",fontsize=9,color="black",weight="bold")
+    ax.set_title("Fixed class-region detector layout");ax.set_xlim(0,model.field_size);ax.set_ylim(model.field_size,0);ax.set_xlabel("detector x");ax.set_ylabel("detector y");path.parent.mkdir(parents=True,exist_ok=True);fig.tight_layout();fig.savefig(path,dpi=160);plt.close(fig)

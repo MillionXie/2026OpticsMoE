@@ -39,7 +39,7 @@ def main(argv:list[str]|None=None)->int:
     device=torch.device(settings.device)
     if device.type=="cuda" and not torch.cuda.is_available():raise RuntimeError("CUDA requested but unavailable")
     model=build_model(settings).to(device);report=parameter_report(model);report.update({"model_type":settings.model_type,"input_size":settings.input_size,"class_names":settings.class_names})
-    if settings.model_type=="optical5_enhanced":report.update({"optical_field_size":settings.optical_field_size,"optical_padding_size":settings.optical_padding_size,"wavelength_nm":settings.wavelength_nm,"pixel_pitch_um":settings.pixel_pitch_um,"mask_distance_cm":settings.mask_distance_cm,"phase_dropout":settings.regularization.get("phase_dropout",{})})
+    if settings.model_type=="optical5_enhanced":report.update({"optical_field_size":settings.optical_field_size,"optical_padding_size":settings.optical_padding_size,"wavelength_nm":settings.wavelength_nm,"pixel_pitch_um":settings.pixel_pitch_um,"mask_distance_cm":settings.mask_distance_cm,"phase_dropout":settings.regularization.get("phase_dropout",{}),"detector_region_objective":{"region_loss_weight":settings.detector_region_loss_weight,"concentration_loss_weight":settings.detector_concentration_loss_weight,"readout_uses_region_distribution":True}})
     write_json(settings.output_dir/"model.json",report)
     if args.phase in {"train","all"}:train_model(model,data,settings,device)
     if args.phase in {"test","all"}:
@@ -64,7 +64,7 @@ def _read(path:Path)->dict[str,Any]:
     if not path.is_file():raise FileNotFoundError(path)
     return json.loads(path.read_text(encoding="utf-8"))
 def _dirs(root:Path)->None:
-    for name in ("metrics","checkpoints","figures/phase_masks","figures/light_fields","figures/detector_outputs"):(root/name).mkdir(parents=True,exist_ok=True)
+    for name in ("metrics","checkpoints","figures/phase_masks","figures/light_fields","figures/detector_outputs","figures/detector_regions"):(root/name).mkdir(parents=True,exist_ok=True)
 def _seed(seed:int)->None:
     random.seed(seed);np.random.seed(seed);torch.manual_seed(seed)
     if torch.cuda.is_available():torch.cuda.manual_seed_all(seed)

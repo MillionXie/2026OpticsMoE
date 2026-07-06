@@ -47,6 +47,10 @@
   "readout_pool_size": 8,
   "readout_hidden_dim": 256,
   "readout_dropout": 0.2,
+  "detector_region_size": 48,
+  "detector_region_temperature": 1.0,
+  "detector_region_loss_weight": 1.0,
+  "detector_concentration_loss_weight": 0.1,
   "regularization": {
     "phase_dropout": {
       "enabled": true,
@@ -57,8 +61,4 @@
       "start_epoch": 10
     }
   }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 8f5e20772995046f5f36ef32d42ea42d17dfaef4
