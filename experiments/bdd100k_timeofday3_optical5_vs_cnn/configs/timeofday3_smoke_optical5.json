@@ -46,5 +46,15 @@
   ],
   "readout_pool_size": 8,
   "readout_hidden_dim": 256,
-  "readout_dropout": 0.2
+  "readout_dropout": 0.2,
+  "regularization": {
+    "phase_dropout": {
+      "enabled": true,
+      "p": 0.05,
+      "mode": "block_phase_bypass",
+      "block_size": 8,
+      "batch_shared": true,
+      "start_epoch": 1
+    }
+  }
 }

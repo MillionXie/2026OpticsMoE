@@ -13,6 +13,7 @@ from experiments.bdd100k_timeofday3_optical5_vs_cnn.metrics import classificatio
 from experiments.bdd100k_timeofday3_optical5_vs_cnn.models import ElectronicCNNTimeOfDayBaseline,Optical5EnhancedTimeOfDayClassifier
 from experiments.bdd100k_timeofday3_optical5_vs_cnn.optics import OpticalDetectionIntensityLayer
 from experiments.bdd100k_timeofday3_optical5_vs_cnn.training import train_model
+from experiments.bdd100k_timeofday3_optical5_vs_cnn.settings import PhaseDropoutSettings
 
 
 def test_timeofday_normalization()->None:
@@ -26,6 +27,14 @@ def test_intensity_layer_has_no_detector_sqrt()->None:
     assert output.shape==(2,8,8) and torch.all(output>=0)
     assert torch.allclose(output.mean(dim=(-2,-1)),torch.ones(2),atol=1e-4)
     assert "sqrt" not in inspect.getsource(OpticalDetectionIntensityLayer.forward)
+
+
+def test_phase_dropout_is_training_only()->None:
+    cfg=PhaseDropoutSettings(enabled=True,p=0.5,block_size=2,batch_shared=True,start_epoch=1)
+    layer=OpticalDetectionIntensityLayer(8,10,532,17,5,phase_dropout=cfg)
+    layer.train();layer.set_phase_dropout_active(True);layer(torch.rand(2,8,8))
+    assert layer.last_phase_dropout_mask is not None and layer.last_phase_dropout_mask.shape==(1,8,8)
+    layer.eval();layer(torch.rand(2,8,8));assert layer.last_phase_dropout_mask is None
 
 
 def test_optical_classifier_shape()->None:

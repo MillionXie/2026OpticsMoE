@@ -39,7 +39,7 @@ def main(argv:list[str]|None=None)->int:
     device=torch.device(settings.device)
     if device.type=="cuda" and not torch.cuda.is_available():raise RuntimeError("CUDA requested but unavailable")
     model=build_model(settings).to(device);report=parameter_report(model);report.update({"model_type":settings.model_type,"input_size":settings.input_size,"class_names":settings.class_names})
-    if settings.model_type=="optical5_enhanced":report.update({"optical_field_size":settings.optical_field_size,"optical_padding_size":settings.optical_padding_size,"wavelength_nm":settings.wavelength_nm,"pixel_pitch_um":settings.pixel_pitch_um,"mask_distance_cm":settings.mask_distance_cm})
+    if settings.model_type=="optical5_enhanced":report.update({"optical_field_size":settings.optical_field_size,"optical_padding_size":settings.optical_padding_size,"wavelength_nm":settings.wavelength_nm,"pixel_pitch_um":settings.pixel_pitch_um,"mask_distance_cm":settings.mask_distance_cm,"phase_dropout":settings.regularization.get("phase_dropout",{})})
     write_json(settings.output_dir/"model.json",report)
     if args.phase in {"train","all"}:train_model(model,data,settings,device)
     if args.phase in {"test","all"}:
@@ -72,4 +72,3 @@ def _environment()->dict[str,Any]:return {"python":platform.python_version(),"pl
 
 
 if __name__=="__main__":raise SystemExit(main())
-

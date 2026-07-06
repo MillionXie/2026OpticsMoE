@@ -21,7 +21,9 @@ def train_model(model:nn.Module,data:DataBundle,settings:Any,device:torch.device
     scheduler=torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,T_max=settings.epochs);criterion=nn.CrossEntropyLoss();history=[];best_top1=-1.0;best_macro=-1.0
     diagnostic_images=next(iter(val_loader))[0][:8].to(device)
     for epoch in range(1,settings.epochs+1):
-        epoch_started=time.perf_counter();train_started=time.perf_counter();model.train();total_loss=0.0;targets=[];predictions=[];seen=0
+        epoch_started=time.perf_counter();train_started=time.perf_counter();model.train()
+        if hasattr(model,"set_epoch"):model.set_epoch(epoch)
+        total_loss=0.0;targets=[];predictions=[];seen=0
         for batch_index,(images,labels,indices,paths) in enumerate(train_loader,1):
             images=images.to(device,non_blocking=True);labels=labels.to(device,non_blocking=True);optimizer.zero_grad(set_to_none=True);logits=model(images);loss=criterion(logits,labels);loss.backward();optimizer.step()
             count=len(labels);seen+=count;total_loss+=float(loss.detach())*count;targets.extend(labels.detach().cpu().tolist());predictions.extend(logits.argmax(1).detach().cpu().tolist())
@@ -30,7 +32,7 @@ def train_model(model:nn.Module,data:DataBundle,settings:Any,device:torch.device
                 print(f"epoch {epoch}/{settings.epochs} batch {batch_index}/{len(train_loader)}\nloss={total_loss/seen:.6f}\nrunning_top1={running:.4f}\nlr={optimizer.param_groups[0]['lr']:.3e}",flush=True)
         train_time=time.perf_counter()-train_started;validation_started=time.perf_counter();validation=evaluate(model,val_loader,device,data.class_names);validation_time=time.perf_counter()-validation_started
         train_metrics=classification_metrics(targets,predictions,data.class_names)
-        row={"epoch":epoch,"learning_rate":optimizer.param_groups[0]["lr"],"train_loss":total_loss/seen,"train_top1_accuracy":train_metrics["top1_accuracy"],"train_macro_f1":train_metrics["macro_f1"],"validation_loss":validation["metrics"]["loss"],"validation_top1_accuracy":validation["metrics"]["top1_accuracy"],"validation_macro_f1":validation["metrics"]["macro_f1"],"validation_balanced_accuracy":validation["metrics"]["balanced_accuracy"],"epoch_time_sec":time.perf_counter()-epoch_started,"train_time_sec":train_time,"validation_time_sec":validation_time}
+        row={"epoch":epoch,"learning_rate":optimizer.param_groups[0]["lr"],"train_loss":total_loss/seen,"train_top1_accuracy":train_metrics["top1_accuracy"],"train_macro_f1":train_metrics["macro_f1"],"validation_loss":validation["metrics"]["loss"],"validation_top1_accuracy":validation["metrics"]["top1_accuracy"],"validation_macro_f1":validation["metrics"]["macro_f1"],"validation_balanced_accuracy":validation["metrics"]["balanced_accuracy"],"phase_dropout_active":bool(hasattr(model,"layers") and model.layers[0].phase_dropout is not None and model.layers[0].phase_dropout_active),"epoch_time_sec":time.perf_counter()-epoch_started,"train_time_sec":train_time,"validation_time_sec":validation_time}
         history.append(row);write_history(settings.output_dir/"metrics"/"training_history.csv",history);write_json(settings.output_dir/"metrics"/"training_latest.json",row)
         if epoch%settings.save_predictions_interval_epochs==0:_write_predictions(settings.output_dir/"metrics"/f"validation_predictions_epoch_{epoch:04d}.csv",validation,data.class_names)
         improved=row["validation_top1_accuracy"]>best_top1 or row["validation_macro_f1"]>best_macro
@@ -73,4 +75,3 @@ def _write_predictions(path:Path,result:dict[str,Any],names:Sequence[str])->None
 
 def _save_checkpoint(path:Path,model:nn.Module,optimizer:Any,scheduler:Any,epoch:int,row:dict[str,Any])->None:
     path.parent.mkdir(parents=True,exist_ok=True);torch.save({"epoch":epoch,"model_state_dict":model.state_dict(),"optimizer_state_dict":optimizer.state_dict(),"scheduler_state_dict":scheduler.state_dict(),"metrics":row},path)
-
