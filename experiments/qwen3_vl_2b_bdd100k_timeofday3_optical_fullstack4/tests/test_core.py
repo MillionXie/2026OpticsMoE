@@ -14,6 +14,7 @@ from experiments.qwen3_vl_2b_bdd100k_timeofday3_optical_fullstack4.teacher_cache
 from experiments.qwen3_vl_2b_bdd100k_timeofday3_optical_fullstack4.training import save_student_inference
 from experiments.qwen3_vl_2b_bdd100k_timeofday3_optical_fullstack4.features import multimodal_forward_features
 from experiments.qwen3_vl_2b_bdd100k_timeofday3_optical_fullstack4.data_prepare import normalize_timeofday_label
+from experiments.qwen3_vl_2b_bdd100k_timeofday3_optical_fullstack4.sampling import EpochClassMixedSampler
 
 
 def stack(cls, hidden: int = 8):
@@ -24,7 +25,8 @@ def stack(cls, hidden: int = 8):
 def test_config_parsing() -> None:
     path=Path(__file__).parents[1]/"configs"/"bdd100k_timeofday3.json"; settings=load_settings(path)
     assert settings.model_id=="Qwen/Qwen3-VL-2B-Instruct"
-    assert settings.dataset=="bdd100k_timeofday3" and settings.train_limit_per_class==5000
+    assert settings.dataset=="bdd100k_timeofday3" and settings.train_limit_per_class is None
+    assert settings.train_samples_per_class_per_epoch==5000
     assert settings.optical_conversions_per_stack==4
     assert settings.replace_vision_stack and settings.replace_language_stack
 
@@ -99,6 +101,14 @@ def test_training_source_writes_history_inside_epoch_loop() -> None:
     source=inspect.getsource(training.train_student)
     assert "_write_student_epoch_outputs" in source
     assert "student_training_history.csv" in inspect.getsource(training._write_student_epoch_outputs)
+
+
+def test_epoch_sampler_mixes_classes_and_rotates_coverage() -> None:
+    labels=[0]*8+[1]*8+[2]*8; sampler=EpochClassMixedSampler(range(24),labels,3,6,42,4,4)
+    sampler.set_epoch(1); first=list(sampler); sampler.set_epoch(2); second=list(sampler)
+    assert len(first)==len(second)==12
+    for start in range(0,12,6): assert {labels[index] for index in first[start:start+6]}=={0,1,2}
+    for cls in range(3): assert set(i for i in first if labels[i]==cls).isdisjoint(i for i in second if labels[i]==cls)
 
 
 def test_hidden_state_fallback_preserves_gradients() -> None:

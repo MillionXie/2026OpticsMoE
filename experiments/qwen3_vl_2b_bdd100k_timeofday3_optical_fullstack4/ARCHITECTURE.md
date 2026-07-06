@@ -8,7 +8,7 @@
 
 ## 1. 当前日志属于什么阶段
 
-以下日志是 **student_train 学生训练**，不是 teacher 训练：
+以下是旧版永久截断配置产生的 **student_train 学生训练** 日志。它仍可用于识别训练阶段，但其中 `3375` 已不代表新版 sampler：
 
 ```text
 epoch 1/30 batch 820/3375
@@ -34,18 +34,19 @@ BDD100K TimeOfDay-3 类别顺序为：
 2 = dawn_dusk
 ```
 
-主配置限制训练源数据每类最多 5000 张：
+新版主配置不再永久截断训练集：
 
 ```text
-限制后的 train source = 5000 × 3 = 15000
-validation_fraction     = 0.1
-student train           = 4500 × 3 = 13500
-validation              = 500 × 3  = 1500
-student_batch_size      = 4
-每个 epoch batch 数     = 13500 / 4 = 3375
+train_limit_per_class               = null
+teacher cache                       = 完整 BDD100K train source
+validation_fraction                 = 0.1，先从完整数据分层划分
+train_samples_per_class_per_epoch   = 5000
+student_batch_size                  = 4
+每个 epoch student samples          = 最多 5000 × 3 = 15000
+每个 epoch batch 数                 = 最多 15000 / 4 = 3750
 ```
 
-所以 `batch 820/3375` 与配置完全一致。每类 5000 不是每个 epoch 只有 5000 张，而是三个类别合计 15000 张，再从中划分训练集和验证集。
+服务器实际完整 source 为 69726 张；分层切出 validation 后，student train 为 `daytime=33055, night=25174, dawn_dusk=4524`。因此每个 epoch 实际抽取 `5000 + 5000 + 4524 = 14524` 张，即 batch size 4 时为 3631 个 batch。每类 epoch window 会随 epoch 轮换，并在 batch 中交错三个类别，所以多轮训练可以覆盖完整数据。旧日志的 `3375` 来自先永久截断到每类 5000、再切掉 10% validation 的旧逻辑；新版不再这样处理。
 
 ## 3. Teacher 与 Student 总览
 
@@ -424,7 +425,7 @@ L_CE = CrossEntropy(student_logits, labels)
 
 ## 12. 为什么一个 epoch 仍约 15 分钟
 
-15 分钟对应：
+旧配置的 15 分钟对应：
 
 ```text
 900 秒 / 3375 batch ≈ 0.267 秒/batch
@@ -441,12 +442,12 @@ L_CE = CrossEntropy(student_logits, labels)
 7. 对 8 次光学传播、两个 adapter 和 MLP 做完整反向传播。
 8. 四项 loss 计算，并从 CPU teacher cache 读取目标。
 
-因此这个循环虽然没有在线 teacher，但也不是一个轻量 MLP 训练。当前 student DataLoader 为了按 cache shard 读取而固定使用 `num_workers=0`，图像解码和 processor 也可能成为一部分瓶颈。
+因此这个循环虽然没有在线 teacher，但也不是一个轻量 MLP 训练。Student DataLoader 为了读取 cache 使用 `num_workers=0`；新版 sampler 采用类别交错和 shard 局部性，并配合多 shard LRU，避免同类连续 batch 和随机访问造成的重复 shard 加载。
 
 如果只想缩短实验时间，优先顺序是：
 
 1. 在显存允许时提高 `student_batch_size`，观察每 epoch 总时间而不是单 batch 时间。
-2. 将 `train_limit_per_class` 从 5000 降到 2000 或 1000 做方法验证。
+2. 将 `train_samples_per_class_per_epoch` 从 5000 降到 2000 或 1000；不要使用 `train_limit_per_class` 永久删除训练样本。
 3. 用 smoke/debug 配置先确认 loss 和验证指标趋势。
 4. 不建议为了 baseline 随意改变 optical field/padding，因为这会同时改变物理模型和实验结论。
 

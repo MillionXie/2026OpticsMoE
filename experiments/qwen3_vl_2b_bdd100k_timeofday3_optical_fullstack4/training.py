@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import csv
 import math
-import random
 import time
 from pathlib import Path
 from typing import Any, Iterator, Sequence
@@ -12,11 +11,12 @@ from torch import nn
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, Dataset, Sampler, Subset, TensorDataset
 
-from .datasets import indexed_collate, make_indexed_loader, stratified_split_indices
+from .datasets import indexed_collate, labels_of, make_indexed_loader, stratified_split_indices
 from .features import move_inputs, multimodal_forward_features, pool_answer_hidden_state, preprocess_image_text
 from .io_utils import write_csv, write_json
 from .metrics import metrics_from_logits
 from .modeling import MLPHead
+from .sampling import EpochClassMixedSampler
 from .teacher_cache import TeacherCacheStore, load_cached_tensor, load_teacher_logits, write_teacher_logits
 from .visualization import save_confusion, save_stack_diagnostics, save_training_curves
 
@@ -73,26 +73,13 @@ def cached_collate(batch: Sequence[Any]):
     return list(images),torch.tensor(labels),torch.tensor(indices),torch.stack(grids),torch.stack(counts).long(),list(vision),torch.stack(answer),torch.stack(logits)
 
 
-class ShardAwareSampler(Sampler[int]):
-    def __init__(self, indices: Sequence[int], shard_size: int, seed: int) -> None:
-        self.indices=list(indices); self.shard_size=shard_size; self.seed=seed; self.epoch=0
-    def __len__(self): return len(self.indices)
-    def set_epoch(self,epoch:int): self.epoch=epoch
-    def __iter__(self)->Iterator[int]:
-        rng=random.Random(self.seed+self.epoch); groups={}
-        for index in self.indices: groups.setdefault(index//self.shard_size,[]).append(index)
-        keys=list(groups); rng.shuffle(keys)
-        for key in keys:
-            values=groups[key]; rng.shuffle(values); yield from values
-
-
 def train_student(model: nn.Module, processor: Any, replacement: Any, head: MLPHead, train_dataset: Dataset[Any],
                   validation_dataset: Dataset[Any], train_store: TeacherCacheStore, settings: Any,
                   class_names: Sequence[str], device: torch.device) -> None:
     teacher_logits=load_teacher_logits(settings.output_dir/"teacher_cache"/"train_teacher_logits.pt")
     train_indices,validation_indices=stratified_split_indices(train_dataset,settings.validation_fraction,settings.seed)
     cached=CachedStudentDataset(train_dataset,train_store,teacher_logits)
-    sampler=ShardAwareSampler(train_indices,settings.teacher_cache_shard_size,settings.seed)
+    sampler=EpochClassMixedSampler(train_indices,labels_of(train_dataset),len(class_names),settings.student_batch_size,settings.seed,settings.train_samples_per_class_per_epoch,settings.teacher_cache_shard_size)
     loader=DataLoader(cached,batch_size=settings.student_batch_size,sampler=sampler,num_workers=0,collate_fn=cached_collate,pin_memory=True)
     val_loader=make_indexed_loader(Subset(train_dataset,validation_indices),settings.inference_batch_size,settings.num_workers,False,settings.seed)
     model.requires_grad_(False); model.eval(); replacement.use_student(); replacement.vision_surrogate.requires_grad_(True); replacement.language_surrogate.requires_grad_(True); head.requires_grad_(True)
@@ -100,7 +87,7 @@ def train_student(model: nn.Module, processor: Any, replacement: Any, head: MLPH
     scheduler=torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,T_max=settings.epochs)
     history=[]; best_top1=-1.0; best_macro=-1.0; first_shapes_written=False
     for epoch in range(1,settings.epochs+1):
-        epoch_started=time.perf_counter(); train_started=time.perf_counter(); sampler.set_epoch(epoch)
+        epoch_started=time.perf_counter(); train_started=time.perf_counter(); sampler.set_epoch(epoch); print(f"[sampling] epoch={epoch} samples={len(sampler)} per_class={sampler.epoch_class_counts()} shuffled=True",flush=True)
         replacement.vision_surrogate.train(); replacement.language_surrogate.train(); head.train()
         totals={key:0.0 for key in ("total","vision","answer","kd","ce")}; seen=0; logits_epoch=[]; labels_epoch=[]
         for batch_index,(images,labels,indices,cached_grids,cached_counts,teacher_vision,teacher_answer,teacher_batch_logits) in enumerate(loader,1):

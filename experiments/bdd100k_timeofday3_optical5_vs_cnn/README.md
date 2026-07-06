@@ -23,6 +23,20 @@ data/bdd100k_timeofday3/
 
 只有找不到已有原始数据时才执行下载。
 
+## 数据截断、epoch 采样与 batch 打乱
+
+`train_limit_per_class` 会永久截断数据集，主配置现已设为 `null`，因此 dataset、validation 和跨 epoch 训练能够覆盖完整 BDD100K train split。
+
+为了控制单个 epoch 的计算量，主配置使用：
+
+```json
+"train_samples_per_class_per_epoch": 5000
+```
+
+它不会删除其他图片。采样器为每个类别建立固定随机排列，每个 epoch 轮换到下一段 5000 张，并将三个类别交错后重新打乱。单个 batch 会尽量包含三个类别；多个 epoch 后会轮换覆盖完整数据。`batch_size` 只控制一次 forward 的样本数，与每个 epoch 读取多少样本是两个不同概念。
+
+所有配置的 `output_dir` 都相对于本实验 `configs` 目录解析到 `experiments/bdd100k_timeofday3_optical5_vs_cnn/runs/`，不会再写入仓库根目录的 `runs/`。
+
 ## 两种光学前向
 
 O-E-O 版本五层之间传递归一化后的非负 detected intensity。每层都有平方律探测和 ReLU，但不会将探测强度执行平方根重新编码。

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+from collections import OrderedDict
 from pathlib import Path
 from typing import Any, Iterator, Sequence
 
@@ -94,7 +95,7 @@ def _flush_shard(directory: Path, number: int, rows: list[dict[str,Any]]) -> dic
 
 
 class TeacherCacheStore:
-    def __init__(self, manifest_path: Path, expected: dict[str,Any] | None=None) -> None:
+    def __init__(self, manifest_path: Path, expected: dict[str,Any] | None=None, max_cached_shards: int=8) -> None:
         if not manifest_path.is_file():
             raise FileNotFoundError(f"Teacher cache manifest missing: {manifest_path}. Run --phase teacher_precompute first.")
         manifest=torch.load(manifest_path,map_location="cpu",weights_only=True)
@@ -104,16 +105,20 @@ class TeacherCacheStore:
         self.metadata=manifest["metadata"]; self.shards=manifest["shards"]
         missing=[record["path"] for record in self.shards if not Path(record["path"]).is_file()]
         if missing: raise RuntimeError(f"Teacher cache shards are missing: {missing[:3]}")
-        self._loaded_number=-1; self._loaded=None; self._ranges=[]
+        if max_cached_shards<=0: raise ValueError("max_cached_shards must be positive")
+        self.max_cached_shards=int(max_cached_shards); self._loaded_shards:OrderedDict[int,dict[str,Any]]=OrderedDict(); self._ranges=[]
         offset=0
         for number,record in enumerate(self.shards): self._ranges.append((offset,offset+record["count"],number)); offset+=record["count"]
     def __len__(self): return int(self.metadata["sample_count"])
     def get(self,index:int)->dict[str,Any]:
         for start,end,number in self._ranges:
             if start<=index<end:
-                if number!=self._loaded_number:
-                    self._loaded=torch.load(self.shards[number]["path"],map_location="cpu",weights_only=True); self._loaded_number=number
-                pos=index-start; p=self._loaded
+                if number in self._loaded_shards:
+                    p=self._loaded_shards.pop(number); self._loaded_shards[number]=p
+                else:
+                    p=torch.load(self.shards[number]["path"],map_location="cpu",weights_only=True); self._loaded_shards[number]=p
+                    while len(self._loaded_shards)>self.max_cached_shards:self._loaded_shards.popitem(last=False)
+                pos=index-start
                 if int(p["sample_indices"][pos])!=index: raise RuntimeError("Cache sample index ordering mismatch")
                 # Shards use plural names for batched tensors. Expose an explicit
                 # per-sample contract so callers cannot accidentally request a

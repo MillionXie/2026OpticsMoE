@@ -13,6 +13,7 @@ from experiments.qwen3_vl_2b_cifar10_optical_fullstack4.settings import load_set
 from experiments.qwen3_vl_2b_cifar10_optical_fullstack4.teacher_cache import CACHED_TENSORS, TeacherCacheStore, expected_metadata
 from experiments.qwen3_vl_2b_cifar10_optical_fullstack4.training import save_student_inference
 from experiments.qwen3_vl_2b_cifar10_optical_fullstack4.features import multimodal_forward_features
+from experiments.qwen3_vl_2b_cifar10_optical_fullstack4.sampling import EpochClassMixedSampler
 
 
 def stack(cls, hidden: int = 8):
@@ -93,6 +94,12 @@ def test_training_source_writes_history_inside_epoch_loop() -> None:
     source=inspect.getsource(training.train_student)
     assert "_write_student_epoch_outputs" in source
     assert "student_training_history.csv" in inspect.getsource(training._write_student_epoch_outputs)
+
+
+def test_epoch_sampler_mixes_cifar_classes() -> None:
+    labels=[class_index for class_index in range(10) for _ in range(4)];sampler=EpochClassMixedSampler(range(40),labels,10,20,42,None,8);sampler.set_epoch(1);indices=list(sampler)
+    assert len(indices)==40
+    for start in range(0,40,20):assert {labels[index] for index in indices[start:start+20]}==set(range(10))
 
 
 def test_hidden_state_fallback_preserves_gradients() -> None:

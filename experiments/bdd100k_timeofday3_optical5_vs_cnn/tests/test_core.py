@@ -14,6 +14,7 @@ from experiments.bdd100k_timeofday3_optical5_vs_cnn.models import ElectronicCNNT
 from experiments.bdd100k_timeofday3_optical5_vs_cnn.optics import ClassRegionDetector,ContinuousOpticalPropagationLayer,OpticalDetectionIntensityLayer
 from experiments.bdd100k_timeofday3_optical5_vs_cnn.training import train_model
 from experiments.bdd100k_timeofday3_optical5_vs_cnn.settings import PhaseDropoutSettings
+from experiments.bdd100k_timeofday3_optical5_vs_cnn.sampling import EpochClassMixedSampler
 
 
 def test_timeofday_normalization()->None:
@@ -74,6 +75,14 @@ def test_metrics()->None:
     assert result["top1_accuracy"]==.8
     assert len(result["confusion_matrix"])==3
     assert 0<=result["macro_f1"]<=1 and 0<=result["balanced_accuracy"]<=1
+
+
+def test_epoch_sampler_mixes_classes_and_rotates_coverage()->None:
+    labels=[0]*8+[1]*8+[2]*8;sampler=EpochClassMixedSampler(range(24),labels,3,6,42,4)
+    sampler.set_epoch(1);first=list(sampler);sampler.set_epoch(2);second=list(sampler)
+    assert len(first)==len(second)==12
+    for start in range(0,12,6):assert {labels[index] for index in first[start:start+6]}=={0,1,2}
+    for class_index in range(3):assert set(index for index in first if labels[index]==class_index).isdisjoint(index for index in second if labels[index]==class_index)
 
 
 def test_json_writer_serializes_paths(tmp_path:Path)->None:

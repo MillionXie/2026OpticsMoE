@@ -38,12 +38,13 @@ def load_timeofday3(settings:Any)->DatasetBundle:
     train=_per_class_limit(train,settings.train_limit_per_class,settings.seed);test=_per_class_limit(test,settings.test_limit_per_class,settings.seed+1)
     train=_total_limit(train,settings.train_limit,settings.seed+2);test=_total_limit(test,settings.test_limit,settings.seed+3)
     train_indices,val_indices=stratified_split_indices(train,settings.validation_fraction,settings.seed)
+    train_counts=class_counts(Subset(train,train_indices));epoch_counts={name:min(count,settings.train_samples_per_class_per_epoch) if settings.train_samples_per_class_per_epoch is not None else count for name,count in train_counts.items()}
     return DatasetBundle(train,test,list(TIMEOFDAY3_CLASS_NAMES),{
         "dataset":"bdd100k_timeofday3","root":str(settings.data_root),"class_names":list(TIMEOFDAY3_CLASS_NAMES),
         "full_train_samples":len(train),"train_samples":len(train_indices),"validation_samples":len(val_indices),"test_samples":len(test),
-        "per_class_full_train_counts":class_counts(train),"per_class_train_counts":class_counts(Subset(train,train_indices)),
+        "per_class_full_train_counts":class_counts(train),"per_class_train_counts":train_counts,"per_class_epoch_sample_counts":epoch_counts,"epoch_train_samples":sum(epoch_counts.values()),
         "per_class_validation_counts":class_counts(Subset(train,val_indices)),"per_class_test_counts":class_counts(test),
-        "train_limit":settings.train_limit,"test_limit":settings.test_limit,"train_limit_per_class":settings.train_limit_per_class,"test_limit_per_class":settings.test_limit_per_class,
+        "train_limit":settings.train_limit,"test_limit":settings.test_limit,"train_limit_per_class":settings.train_limit_per_class,"test_limit_per_class":settings.test_limit_per_class,"train_samples_per_class_per_epoch":settings.train_samples_per_class_per_epoch,
         "validation_fraction":settings.validation_fraction,"manifest":manifest,
     })
 
@@ -96,4 +97,3 @@ def _total_limit(dataset:Dataset[Any],limit:int|None,seed:int)->Dataset[Any]:
     for cls in range(3):
         indices=[i for i,value in enumerate(labels) if value==cls];order=torch.randperm(len(indices),generator=generator).tolist();selected.extend(indices[p] for p in order[:base+int(cls<remainder)])
     return Subset(dataset,sorted(selected))
-

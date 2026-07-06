@@ -50,6 +50,7 @@ class Settings:
     test_limit: int | None = None
     train_limit_per_class: int | None = None
     test_limit_per_class: int | None = None
+    train_samples_per_class_per_epoch: int | None = None
     model_type: str = "optical5_enhanced"
     output_dir: Path = PROJECT_DIR / "runs" / "optical5"
     optical_layers: int = 5
@@ -88,7 +89,7 @@ class Settings:
         if not 0<self.validation_fraction<1: raise ValueError("validation_fraction must be between 0 and 1")
         for name in ("epochs","batch_size","input_size","log_interval_batches","save_interval_epochs","save_predictions_interval_epochs"):
             if int(getattr(self,name))<=0: raise ValueError(f"{name} must be positive")
-        for name in ("train_limit","test_limit","train_limit_per_class","test_limit_per_class"):
+        for name in ("train_limit","test_limit","train_limit_per_class","test_limit_per_class","train_samples_per_class_per_epoch"):
             value=getattr(self,name)
             if value is not None and value<=0: raise ValueError(f"{name} must be positive")
         if self.model_type in {"optical5_enhanced","optical5_continuous"}:

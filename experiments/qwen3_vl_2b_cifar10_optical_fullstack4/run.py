@@ -122,11 +122,11 @@ def _precompute(loaded:LoadedBackbone,replacement:FullStackReplacement,data:Data
 
 
 def _load_stores(settings:Settings,model:torch.nn.Module,names:list[str],data:DatasetBundle)->dict[str,TeacherCacheStore]:
-    return {split:TeacherCacheStore(settings.output_dir/"teacher_cache"/f"{split}.pt",expected_metadata(split,len(dataset),settings,model,names)) for split,dataset in (("train",data.train),("test",data.test))}
+    return {split:TeacherCacheStore(settings.output_dir/"teacher_cache"/f"{split}.pt",expected_metadata(split,len(dataset),settings,model,names),settings.teacher_cache_lru_shards) for split,dataset in (("train",data.train),("test",data.test))}
 
 
 def _load_stores_without_model(settings:Settings)->dict[str,TeacherCacheStore]:
-    return {split:TeacherCacheStore(settings.output_dir/"teacher_cache"/f"{split}.pt") for split in ("train","test")}
+    return {split:TeacherCacheStore(settings.output_dir/"teacher_cache"/f"{split}.pt",max_cached_shards=settings.teacher_cache_lru_shards) for split in ("train","test")}
 
 
 def _resolve_architecture_from_cache(settings:Settings,store:TeacherCacheStore)->None:

@@ -29,8 +29,9 @@
   "test_limit": 32,
   "train_limit_per_class": null,
   "test_limit_per_class": null,
+  "train_samples_per_class_per_epoch": null,
   "model_type": "electronic_cnn",
-  "output_dir": "../../../runs/bdd100k_timeofday3_electronic_cnn_smoke",
+  "output_dir": "../runs/bdd100k_timeofday3_electronic_cnn_smoke",
   "cnn_channels": [
     32,
     64,

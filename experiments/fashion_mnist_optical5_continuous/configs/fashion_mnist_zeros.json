@@ -1,0 +1,64 @@
+{
+  "dataset": "fashion_mnist",
+  "data_root": "../data/fashion_mnist",
+  "download": true,
+  "output_dir": "../runs/fashion_mnist_optical5_continuous_zeros",
+  "input_size": 224,
+  "num_classes": 10,
+  "class_names": [
+    "t_shirt_top",
+    "trouser",
+    "pullover",
+    "dress",
+    "coat",
+    "sandal",
+    "shirt",
+    "sneaker",
+    "bag",
+    "ankle_boot"
+  ],
+  "validation_fraction": 0.1,
+  "epochs": 50,
+  "batch_size": 64,
+  "num_workers": 8,
+  "learning_rate": 0.001,
+  "weight_decay": 0.0005,
+  "seed": 42,
+  "device": "cuda",
+  "log_interval_batches": 100,
+  "save_interval_epochs": 5,
+  "train_limit": null,
+  "test_limit": null,
+  "train_samples_per_class_per_epoch": null,
+  "optical_layers": 5,
+  "optical_field_size": 256,
+  "optical_padding_size": 400,
+  "wavelength_nm": 532,
+  "pixel_pitch_um": 17,
+  "mask_distance_cm": 5,
+  "phase_init": "zeros",
+  "amplitude_mask_enabled": true,
+  "readout_channels": [
+    16,
+    32
+  ],
+  "readout_pool_size": 8,
+  "readout_hidden_dim": 256,
+  "readout_dropout": 0.2,
+  "detector_region_size": 28,
+  "detector_region_temperature": 1,
+  "detector_region_loss_weight": 1,
+  "detector_concentration_loss_weight": 0.1,
+  "phase_smoothness_weight": 0,
+  "regularization": {
+    "phase_dropout": {
+      "enabled": false,
+      "p": 0.05,
+      "mode": "block_phase_bypass",
+      "block_size": 8,
+      "batch_shared": true,
+      "start_epoch": 10
+    }
+  }
+}
+

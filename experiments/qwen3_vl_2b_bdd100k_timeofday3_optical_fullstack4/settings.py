@@ -30,13 +30,15 @@ class Settings:
     processor_max_pixels: int | None = 50176
     train_limit: int | None = None
     test_limit: int | None = None
-    train_limit_per_class: int | None = 5000
+    train_limit_per_class: int | None = None
     test_limit_per_class: int | None = None
+    train_samples_per_class_per_epoch: int | None = 5000
     feature_batch_size: int = 4
     inference_batch_size: int = 4
     student_batch_size: int = 4
     head_batch_size: int = 512
     teacher_cache_shard_size: int = 128
+    teacher_cache_lru_shards: int = 8
     num_workers: int = 8
     cache_dtype: str = "float16"
     dtype: str = "bfloat16"
@@ -101,14 +103,14 @@ class Settings:
             raise ValueError("validation_fraction must be between 0 and 1")
         positive = (
             "feature_batch_size", "inference_batch_size", "student_batch_size", "head_batch_size",
-            "teacher_cache_shard_size", "epochs", "optical_dim", "optical_field_size",
+            "teacher_cache_shard_size", "teacher_cache_lru_shards", "epochs", "optical_dim", "optical_field_size",
             "optical_padding_size", "log_interval_batches", "save_predictions_interval_epochs",
             "save_visualization_interval_epochs",
         )
         for name in positive:
             if int(getattr(self, name)) <= 0:
                 raise ValueError(f"{name} must be positive")
-        for name in ("train_limit", "test_limit", "train_limit_per_class", "test_limit_per_class", "benchmark_batches"):
+        for name in ("train_limit", "test_limit", "train_limit_per_class", "test_limit_per_class", "train_samples_per_class_per_epoch", "benchmark_batches"):
             value = getattr(self, name)
             if value is not None and int(value) <= 0:
                 raise ValueError(f"{name} must be positive when set")

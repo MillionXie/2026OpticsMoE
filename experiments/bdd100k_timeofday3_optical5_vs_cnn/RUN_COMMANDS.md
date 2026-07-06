@@ -47,7 +47,7 @@ python -m experiments.bdd100k_timeofday3_optical5_vs_cnn.run --config experiment
 ## Compare O-E-O optical5 and continuous optical5
 
 ```bash
-python -m experiments.bdd100k_timeofday3_optical5_vs_cnn.run --phase compare_optical --optical-output-dir runs/bdd100k_timeofday3_optical5_enhanced --continuous-output-dir runs/bdd100k_timeofday3_optical5_continuous
+python -m experiments.bdd100k_timeofday3_optical5_vs_cnn.run --phase compare_optical --optical-output-dir experiments/bdd100k_timeofday3_optical5_vs_cnn/runs/bdd100k_timeofday3_optical5_enhanced --continuous-output-dir experiments/bdd100k_timeofday3_optical5_vs_cnn/runs/bdd100k_timeofday3_optical5_continuous
 ```
 
 ## CNN full training
@@ -59,5 +59,5 @@ python -m experiments.bdd100k_timeofday3_optical5_vs_cnn.run --config experiment
 ## Compare
 
 ```bash
-python -m experiments.bdd100k_timeofday3_optical5_vs_cnn.run --phase compare --optical-output-dir runs/bdd100k_timeofday3_optical5_enhanced --cnn-output-dir runs/bdd100k_timeofday3_electronic_cnn
+python -m experiments.bdd100k_timeofday3_optical5_vs_cnn.run --phase compare --optical-output-dir experiments/bdd100k_timeofday3_optical5_vs_cnn/runs/bdd100k_timeofday3_optical5_enhanced --cnn-output-dir experiments/bdd100k_timeofday3_optical5_vs_cnn/runs/bdd100k_timeofday3_electronic_cnn
 ```

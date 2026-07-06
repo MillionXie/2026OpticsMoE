@@ -8,20 +8,22 @@ from typing import Any,Sequence
 import torch
 from torch import nn
 
-from .data import DataBundle,make_loader
+from .data import DataBundle,labels_of,make_loader
 from .metrics import classification_metrics,write_confusion_csv,write_history,write_json
 from .models import OpticalTimeOfDayClassifierBase
+from .sampling import EpochClassMixedSampler
 from .visualization import save_confusion_matrix,save_optical_diagnostics,save_training_curves
 
 
 def train_model(model:nn.Module,data:DataBundle,settings:Any,device:torch.device)->list[dict[str,Any]]:
-    train_loader=make_loader(data.train,settings.batch_size,settings.num_workers,True,settings.seed)
+    train_sampler=EpochClassMixedSampler(range(len(data.train)),labels_of(data.train),len(data.class_names),settings.batch_size,settings.seed,getattr(settings,"train_samples_per_class_per_epoch",None))
+    train_loader=make_loader(data.train,settings.batch_size,settings.num_workers,False,settings.seed,train_sampler)
     val_loader=make_loader(data.validation,settings.batch_size,settings.num_workers,False,settings.seed+1)
     optimizer=torch.optim.AdamW(model.parameters(),lr=settings.learning_rate,weight_decay=settings.weight_decay)
     scheduler=torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,T_max=settings.epochs);criterion=nn.CrossEntropyLoss();history=[];best_top1=-1.0;best_macro=-1.0
     diagnostic_images=next(iter(val_loader))[0][:8].to(device)
     for epoch in range(1,settings.epochs+1):
-        epoch_started=time.perf_counter();train_started=time.perf_counter();model.train()
+        epoch_started=time.perf_counter();train_started=time.perf_counter();model.train();train_sampler.set_epoch(epoch);print(f"[sampling] epoch={epoch} samples={len(train_sampler)} per_class={train_sampler.epoch_class_counts()} shuffled=True",flush=True)
         if hasattr(model,"set_epoch"):model.set_epoch(epoch)
         loss_totals={"total":0.0,"classification":0.0,"detector_region":0.0,"detector_concentration":0.0};targets=[];predictions=[];detector_predictions=[];seen=0
         for batch_index,(images,labels,indices,paths) in enumerate(train_loader,1):

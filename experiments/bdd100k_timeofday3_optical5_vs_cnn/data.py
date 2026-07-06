@@ -8,7 +8,7 @@ from typing import Any, Sequence
 import numpy as np
 import torch
 from PIL import Image, ImageOps
-from torch.utils.data import DataLoader, Dataset, Subset
+from torch.utils.data import DataLoader, Dataset, Sampler, Subset
 
 from .data_prepare import TIMEOFDAY3_CLASSES, ensure_timeofday3_dataset
 
@@ -47,18 +47,20 @@ def load_data(settings:Any)->DataBundle:
     train=_total_limit(train,settings.train_limit,settings.seed+2);test=_total_limit(test,settings.test_limit,settings.seed+3)
     train_indices,val_indices=stratified_split_indices(train,settings.validation_fraction,settings.seed+4)
     train_split=Subset(train,train_indices);validation=Subset(train,val_indices)
+    train_counts=class_counts(train_split);epoch_counts={name:min(count,settings.train_samples_per_class_per_epoch) if settings.train_samples_per_class_per_epoch is not None else count for name,count in train_counts.items()}
     return DataBundle(train_split,validation,test,list(CLASS_NAMES),{
         "dataset":"bdd100k_timeofday3","root":str(settings.data_root),"class_names":list(CLASS_NAMES),
         "train_samples":len(train_split),"validation_samples":len(validation),"test_samples":len(test),
-        "per_class_train_counts":class_counts(train_split),"per_class_validation_counts":class_counts(validation),"per_class_test_counts":class_counts(test),
+        "per_class_train_counts":train_counts,"per_class_epoch_sample_counts":epoch_counts,"epoch_train_samples":sum(epoch_counts.values()),"per_class_validation_counts":class_counts(validation),"per_class_test_counts":class_counts(test),
         "validation_fraction":settings.validation_fraction,"train_limit":settings.train_limit,"test_limit":settings.test_limit,
         "train_limit_per_class":settings.train_limit_per_class,"test_limit_per_class":settings.test_limit_per_class,
+        "train_samples_per_class_per_epoch":settings.train_samples_per_class_per_epoch,
         "manifest":manifest,
     })
 
 
-def make_loader(dataset:Dataset[Any],batch_size:int,workers:int,shuffle:bool,seed:int)->DataLoader[Any]:
-    return DataLoader(dataset,batch_size=batch_size,shuffle=shuffle,num_workers=workers,collate_fn=collate,
+def make_loader(dataset:Dataset[Any],batch_size:int,workers:int,shuffle:bool,seed:int,sampler:Sampler[int]|None=None)->DataLoader[Any]:
+    return DataLoader(dataset,batch_size=batch_size,shuffle=shuffle if sampler is None else False,sampler=sampler,num_workers=workers,collate_fn=collate,
                       pin_memory=torch.cuda.is_available(),persistent_workers=workers>0,generator=torch.Generator().manual_seed(seed))
 
 
@@ -107,4 +109,3 @@ def _total_limit(dataset:Dataset[Any],limit:int|None,seed:int)->Dataset[Any]:
     if len(selected)<limit:
         remaining=sorted(set(range(len(dataset)))-set(selected));selected.extend(remaining[:limit-len(selected)])
     return Subset(dataset,sorted(selected))
-
