@@ -6,7 +6,7 @@
   "metadata_csv": "dmos.csv",
   "image_dir": "images",
   "quality_label_mode": "score_tertile",
-  "quality_score_higher_is_better": null,
+  "quality_score_higher_is_better": true,
   "train_reference_fraction": 0.8,
   "test_reference_fraction": 0.2,
   "output_dir": "../runs/qwen3_vl_2b_kadid10k_quality3_optical_fullstack4_token64_residual",
