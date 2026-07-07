@@ -5,7 +5,7 @@ All commands are single-line commands.
 ## Prepare data
 
 ```bash
-python -m experiments.qwen3_vl_2b_bdd100k_timeofday3_optical_fullstack4_token64_residual.run --config experiments/qwen3_vl_2b_bdd100k_timeofday3_optical_fullstack4_token64_residual/configs/bdd100k_timeofday3_smoke.json --phase prepare_data
+python -m experiments.qwen3_vl_2b_bdd100k_timeofday3_optical_fullstack4_token64_residual.run --config experiments/qwen3_vl_2b_bdd100k_timeofday3_optical_fullstack4_token64_residual/configs/bdd100k_timeofday3.json --phase prepare_data
 ```
 
 ## Smoke phases
