@@ -16,6 +16,8 @@ The electronic tail is deliberately small: two convolutions with channels `[16,3
 
 The experiment imports the same KADID CSV parser, score-tertile labels, and reference-disjoint train/validation/test split as the Qwen experiment, so accuracy is directly comparable. Default optical geometry also matches the Qwen experiment: active field 64, padded field 128, pixel pitch 8 micrometres, zero phase initialization, and no amplitude masks.
 
+Both experiments point to the same Qwen-experiment `data/kadid10k` directory. With `download=true`, `prepare_data` automatically downloads the approximately 3.1 GB OSF KADID-10k ZIP, validates it, extracts it, and locates `dmos.csv` plus the image directory. Running prepare_data from either experiment prepares the data for both and does not download it twice.
+
 Loss:
 
 ```text

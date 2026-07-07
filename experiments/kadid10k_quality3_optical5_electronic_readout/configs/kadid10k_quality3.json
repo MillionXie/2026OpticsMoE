@@ -1,7 +1,8 @@
 {
   "dataset": "kadid10k_quality3",
   "data_root": "../../qwen3_vl_2b_kadid10k_quality3_optical_fullstack4_token64_residual/data/kadid10k",
-  "download": false,
+  "download": true,
+  "dataset_download_url": "https://files.osf.io/v1/resources/xkqjh/providers/osfstorage/5eafe5bf0ffc0500ec6f6c94/?zip=",
   "metadata_csv": "dmos.csv",
   "image_dir": "images",
   "quality_label_mode": "score_tertile",

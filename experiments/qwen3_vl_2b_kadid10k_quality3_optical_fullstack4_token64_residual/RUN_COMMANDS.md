@@ -2,7 +2,7 @@
 
 All commands are single-line commands.
 
-## Prepare and validate KADID metadata
+## Download, extract, and validate KADID-10k
 
 ```bash
 python -m experiments.qwen3_vl_2b_kadid10k_quality3_optical_fullstack4_token64_residual.run --config experiments/qwen3_vl_2b_kadid10k_quality3_optical_fullstack4_token64_residual/configs/kadid10k_quality3_smoke.json --phase prepare_data

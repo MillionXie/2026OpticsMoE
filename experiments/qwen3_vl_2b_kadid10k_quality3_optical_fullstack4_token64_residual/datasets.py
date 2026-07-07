@@ -11,6 +11,8 @@ import torch
 from PIL import Image
 from torch.utils.data import DataLoader, Dataset, Subset
 
+from .data_prepare import ensure_kadid10k_dataset
+
 
 QUALITY3_CLASS_NAMES=["high_quality","medium_quality","low_quality"]
 IMAGE_COLUMNS=("distorted_image","image","image_name","filename","file_name","img","dist_img")
@@ -67,6 +69,11 @@ class KADIDQualityDataset(Dataset[Any]):
 
 
 def load_kadid10k(settings:Any)->DatasetBundle:
+    preparation=None
+    if settings.download:
+        preparation=ensure_kadid10k_dataset(settings.data_root,settings.metadata_csv,settings.image_dir,getattr(settings,"dataset_download_url",None))
+        settings.metadata_csv=preparation["metadata_csv"]
+        settings.image_dir=preparation["image_dir"]
     csv_path=_metadata_path(settings.data_root,settings.metadata_csv)
     rows,columns=_read_csv(csv_path)
     image_column=_find_column(columns,IMAGE_COLUMNS,"distorted image")
@@ -132,6 +139,7 @@ def load_kadid10k(settings:Any)->DatasetBundle:
         "quality_score_higher_is_better":direction,"score_tertile_thresholds":thresholds,
         "metadata_csv":str(csv_path),"image_dir":settings.image_dir,
         "distortion_level_column":level_column,"distortion_type_column":type_column,
+        "preparation":preparation,
         "train_limit":settings.train_limit,"test_limit":settings.test_limit,
         "train_limit_per_class":settings.train_limit_per_class,
         "test_limit_per_class":settings.test_limit_per_class,
@@ -231,7 +239,7 @@ def make_indexed_loader(dataset:Dataset[Any],batch_size:int,workers:int,shuffle:
 
 def _metadata_path(root:Path,value:str)->Path:
     path=Path(value).expanduser();path=path if path.is_absolute() else root/path
-    if not path.is_file():raise FileNotFoundError(f"KADID metadata CSV not found: {path}")
+    if not path.is_file():raise FileNotFoundError(f"KADID metadata CSV not found: {path}. Set download=true and run --phase prepare_data, or configure data_root/metadata_csv manually.")
     return path.resolve()
 
 

@@ -22,7 +22,8 @@ class PhaseDropoutSettings:
 class Settings:
     dataset:str="kadid10k_quality3"
     data_root:Path=PROJECT_DIR.parent/QWEN_EXPERIMENT/"data"/"kadid10k"
-    download:bool=False
+    download:bool=True
+    dataset_download_url:str="https://files.osf.io/v1/resources/xkqjh/providers/osfstorage/5eafe5bf0ffc0500ec6f6c94/?zip="
     metadata_csv:str="dmos.csv"
     image_dir:str="images"
     quality_label_mode:str="score_tertile"
@@ -83,6 +84,7 @@ class Settings:
         if self.class_names!=["high_quality","medium_quality","low_quality"] or self.num_classes!=3:raise ValueError("Quality-3 class order is fixed")
         if self.quality_label_mode not in {"score_tertile","distortion_level_3class"}:raise ValueError("Unsupported quality_label_mode")
         if not self.metadata_csv.strip() or not self.image_dir.strip():raise ValueError("metadata_csv and image_dir must be non-empty")
+        if self.download and not self.dataset_download_url.strip():raise ValueError("dataset_download_url must be non-empty when download=true")
         if self.model_type!="optical5_electronic_readout":raise ValueError("This baseline only implements optical5_electronic_readout")
         if self.optical_layers!=5 or not self.intensity_forward:raise ValueError("The baseline requires five intensity-forward optical layers")
         if self.optical_padding_size<self.optical_field_size:raise ValueError("optical padding must be >= field size")

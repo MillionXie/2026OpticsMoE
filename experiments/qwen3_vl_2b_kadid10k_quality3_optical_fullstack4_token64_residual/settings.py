@@ -20,7 +20,11 @@ ENV_REFERENCE = re.compile(r"\$(?:\{([A-Za-z_][A-Za-z0-9_]*)\}|([A-Za-z_][A-Za-z
 class Settings:
     dataset: str = "kadid10k_quality3"
     data_root: Path = PROJECT_DIR / "data" / "kadid10k"
-    download: bool = False
+    download: bool = True
+    dataset_download_url: str = (
+        "https://files.osf.io/v1/resources/xkqjh/providers/osfstorage/"
+        "5eafe5bf0ffc0500ec6f6c94/?zip="
+    )
     metadata_csv: str = "dmos.csv"
     image_dir: str = "images"
     quality_label_mode: str = "score_tertile"
@@ -104,6 +108,8 @@ class Settings:
             raise ValueError("metadata_csv must be non-empty")
         if not self.image_dir.strip():
             raise ValueError("image_dir must be non-empty")
+        if self.download and not self.dataset_download_url.strip():
+            raise ValueError("dataset_download_url must be non-empty when download=true")
         if self.quality_score_higher_is_better is not None and not isinstance(self.quality_score_higher_is_better,bool):
             raise ValueError("quality_score_higher_is_better must be true, false, or null")
         if not 0.0 < self.train_reference_fraction < 1.0:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import inspect
+import zipfile
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -20,6 +21,7 @@ from experiments.qwen3_vl_2b_kadid10k_quality3_optical_fullstack4_token64_residu
     score_tertile_labels,
     stratified_split_indices,
 )
+from experiments.qwen3_vl_2b_kadid10k_quality3_optical_fullstack4_token64_residual.data_prepare import ensure_kadid10k_dataset
 from experiments.qwen3_vl_2b_kadid10k_quality3_optical_fullstack4_token64_residual.optics import (
     LanguageOpticalStackSurrogate,
     VisionOpticalStackSurrogate,
@@ -90,6 +92,20 @@ def test_kadid_metadata_parsing(tmp_path:Path)->None:
     assert bundle.class_names==["high_quality","medium_quality","low_quality"]
     assert bundle.metadata["quality_score_column"]=="dmos"
     assert bundle.metadata["quality_score_higher_is_better"] is False
+
+
+def test_prepare_data_downloads_and_locates_archive(tmp_path:Path)->None:
+    source=tmp_path/"source";images=source/"KADID-10k"/"images";images.mkdir(parents=True)
+    Image.new("RGB",(8,8)).save(images/"I01_01_01.png")
+    (source/"KADID-10k"/"dmos.csv").write_text("dist_img,ref_img,dmos\nI01_01_01.png,I01.png,1.0\n",encoding="utf-8")
+    archive=tmp_path/"source.zip"
+    with zipfile.ZipFile(archive,"w") as bundle:
+        for path in (source/"KADID-10k").rglob("*"):
+            if path.is_file():bundle.write(path,path.relative_to(source))
+    prepared=ensure_kadid10k_dataset(tmp_path/"target","dmos.csv","images",archive.as_uri())
+    assert Path(prepared["metadata_csv"]).name=="dmos.csv"
+    assert Path(prepared["image_dir"]).name=="images"
+    assert prepared["prepared"] is True
 
 
 def test_score_tertile_labels_both_directions()->None:

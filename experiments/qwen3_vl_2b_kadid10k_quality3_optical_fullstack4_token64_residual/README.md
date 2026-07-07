@@ -42,4 +42,4 @@ Rate image quality: high_quality, medium_quality, or low_quality. Answer:
 
 `alpha_v`, `beta_v`, `alpha_l`, and `beta_l` are recorded in model, epoch, checkpoint-metadata, and inference reports.
 
-KADID-10k is not downloaded automatically. Place the metadata CSV and images under the configured `data_root`, or change `metadata_csv` and `image_dir` in the JSON config.
+`prepare_data` now downloads KADID-10k automatically from the OSF alternative linked by the official database page. The approximately 3.1 GB archive is stored under `data_root/_downloads`, safely extracted under `data_root/_raw`, and its `dmos.csv` plus `image`/`images` directory are located automatically. Existing manually prepared data is detected first and is never downloaded again. Set `download=false` only when intentionally using a manually configured dataset.
