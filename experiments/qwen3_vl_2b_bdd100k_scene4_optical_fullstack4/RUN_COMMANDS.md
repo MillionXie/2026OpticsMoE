@@ -17,7 +17,7 @@ CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_bdd100k_scene4_optical_
 ## Full run
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_bdd100k_scene4_optical_fullstack4.run --config experiments/qwen3_vl_2b_bdd100k_scene4_optical_fullstack4/configs/bdd100k_scene4.json --phase all
+CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_2b_bdd100k_scene4_optical_fullstack4.run --config experiments/qwen3_vl_2b_bdd100k_scene4_optical_fullstack4/configs/bdd100k_scene4.json --phase all
 ```
 
 ## Teacher precompute
