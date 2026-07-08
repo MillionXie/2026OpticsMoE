@@ -16,7 +16,7 @@ from .data_prepare import ensure_kadid10k_dataset
 
 QUALITY3_CLASS_NAMES=["high_quality","medium_quality","low_quality"]
 IMAGE_COLUMNS=("distorted_image","image","image_name","filename","file_name","img","dist_img")
-REFERENCE_COLUMNS=("reference_image","ref_image","reference","ref","ref_id","reference_id")
+REFERENCE_COLUMNS=("reference_image","ref_image","ref_img","reference","ref","ref_id","reference_id")
 SCORE_COLUMNS=("dmos","dmos_mean","mos","mos_mean","score","quality_score")
 LEVEL_COLUMNS=("distortion_level","level","dist_level","severity")
 TYPE_COLUMNS=("distortion_type","dist_type","distortion")

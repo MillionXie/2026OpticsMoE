@@ -11,7 +11,7 @@ python -m experiments.qwen3_vl_2b_cifar10_optical_fullstack4_token64_residual.ru
 ## Smoke teacher cache
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_cifar10_optical_fullstack4_token64_residual.run --config experiments/qwen3_vl_2b_cifar10_optical_fullstack4_token64_residual/configs/cifar10_smoke.json --phase teacher_precompute --device cuda
+CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_2b_cifar10_optical_fullstack4_token64_residual.run --config experiments/qwen3_vl_2b_cifar10_optical_fullstack4_token64_residual/configs/cifar10_smoke.json --phase teacher_precompute --device cuda
 ```
 
 ## Run phases separately
