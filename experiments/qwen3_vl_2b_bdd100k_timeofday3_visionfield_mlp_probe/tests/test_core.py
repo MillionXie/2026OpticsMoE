@@ -6,7 +6,7 @@ from types import SimpleNamespace
 import pytest
 import torch
 
-from ..feature_probe import load_feature_cache
+from ..feature_probe import _verify_source_config, load_feature_cache
 from ..modeling import VisionFieldProbeHead
 from ..optics.stacks import VisionOpticalStackSurrogate
 from ..training import train_probe
@@ -50,6 +50,21 @@ def test_default_mlp_parameter_count():
     assert sum(parameter.numel() for parameter in head.parameters()) == 2_099_203
 
 
+def test_source_compatibility_does_not_depend_on_prompt(tmp_path):
+    source = tmp_path / "source"; source.mkdir()
+    (source / "config_resolved.json").write_text(json.dumps({
+        "processor_min_pixels": 16384, "processor_max_pixels": 16384,
+        "optical_dim": 64, "optical_field_size": 64, "vision_hidden_size": 1024,
+        "classification_prompt": "A different source prompt that is irrelevant to vision extraction",
+    }), encoding="utf-8")
+    settings = SimpleNamespace(
+        source_experiment_dir=source, processor_min_pixels=16384,
+        processor_max_pixels=16384, optical_dim=64, optical_field_size=64,
+        classification_prompt="Probe prompt is not executed",
+    )
+    _verify_source_config(settings, 1024)
+
+
 def test_feature_cache_round_trip(tmp_path):
     path = tmp_path / "cache.pt"
     payload = {
@@ -86,4 +101,3 @@ def test_one_epoch_fixed_feature_training_writes_outputs(tmp_path):
     assert (output / "checkpoints" / "probe_head_last.pt").is_file()
     report = json.loads((output / "metrics" / "probe_model.json").read_text(encoding="utf-8"))
     assert report["probe_total_trainable_parameters"] == 12_291
-
