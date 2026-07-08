@@ -13,12 +13,15 @@ from experiments.qwen3_vl_2b_bdd100k_timeofday3_optical_fullstack4_token64_resid
     VisionOpticalStackSurrogate,
 )
 from experiments.qwen3_vl_2b_bdd100k_timeofday3_optical_fullstack4_token64_residual.optics import stacks
+from experiments.qwen3_vl_2b_bdd100k_timeofday3_optical_fullstack4_token64_residual.modeling import build_head
 from experiments.qwen3_vl_2b_bdd100k_timeofday3_optical_fullstack4_token64_residual.settings import load_settings
 from experiments.qwen3_vl_2b_bdd100k_timeofday3_optical_fullstack4_token64_residual.teacher_cache import (
     CACHED_TENSORS,
     expected_metadata,
 )
 from experiments.qwen3_vl_2b_bdd100k_timeofday3_optical_fullstack4_token64_residual.training import (
+    _save_head,
+    load_head,
     save_student_inference,
 )
 
@@ -53,11 +56,12 @@ def test_config_parsing() -> None:
     assert settings.optical_dim==settings.optical_field_size==64
     assert settings.optical_padding_size==128 and settings.pixel_pitch_um==8
     assert settings.feature_batch_size==settings.inference_batch_size==settings.student_batch_size==1
-    assert settings.optical_residual_enabled
+    assert not settings.optical_residual_enabled
     assert settings.optical_identity_scale_init==1.0
     assert settings.optical_modulated_scale_init==0.1
     assert not settings.optical_identity_scale_trainable
     assert settings.optical_modulated_scale_trainable
+    assert settings.head_type=="bottleneck" and settings.head_bottleneck_dim==64
 
 
 def test_vision_token_count_at_most_field_size() -> None:
@@ -181,3 +185,26 @@ def test_training_records_scales_each_epoch() -> None:
     assert "_residual_scale_values(replacement)" in source
     assert "alpha_v=" in source and "beta_l=" in source
     assert "student_training_history.csv" in inspect.getsource(training._write_student_epoch_outputs)
+
+
+def _head_settings(head_type:str="mlp",hidden:int|None=None,bottleneck:int=128,layernorm:bool=False):
+    return SimpleNamespace(head_type=head_type,head_hidden_dim=hidden,hidden_dim=1024,
+        head_bottleneck_dim=bottleneck,head_use_layernorm=layernorm,dropout=0.1)
+
+
+@pytest.mark.parametrize("head_type",["mlp","linear","bottleneck","normalized_linear"])
+def test_head_forward_backward(head_type:str)->None:
+    head=build_head(_head_settings(head_type,bottleneck=64,layernorm=True),2048,3)
+    logits=head(torch.randn(4,2048));assert logits.shape==(4,3)
+    torch.nn.functional.cross_entropy(logits,torch.tensor([0,1,2,0])).backward()
+    assert all(p.grad is not None for p in head.parameters() if p.requires_grad)
+
+
+def test_head_parameter_ordering_legacy_and_checkpoint(tmp_path:Path)->None:
+    modules=[build_head(_head_settings("linear"),2048,3),build_head(_head_settings("bottleneck",bottleneck=64,layernorm=True),2048,3),build_head(_head_settings("bottleneck",bottleneck=128,layernorm=True),2048,3),build_head(_head_settings("mlp"),2048,3)]
+    counts=[sum(p.numel() for p in module.parameters()) for module in modules]
+    assert counts==sorted(counts) and len(set(counts))==4
+    legacy=build_head(SimpleNamespace(hidden_dim=1024,dropout=.1),2048,3);assert legacy.head_type=="mlp"
+    settings=_head_settings("bottleneck",bottleneck=64,layernorm=True);head=modules[1];path=tmp_path/"head.pt"
+    _save_head(head,path,settings,3);loaded=load_head(path,settings,torch.device("cpu"))
+    assert loaded.specification()==head.specification()

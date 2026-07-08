@@ -59,6 +59,10 @@ class Settings:
     weight_decay: float = 1e-2
     hidden_dim: int = 1024
     dropout: float = 0.1
+    head_type: str = "mlp"
+    head_hidden_dim: int | None = None
+    head_bottleneck_dim: int = 128
+    head_use_layernorm: bool = False
     classification_prompt: str = (
         "Rate image quality: high_quality, medium_quality, or low_quality. Answer:"
     )
@@ -102,6 +106,12 @@ class Settings:
     def validate(self) -> None:
         if self.dataset != "kadid10k_quality3":
             raise ValueError("This experiment requires dataset='kadid10k_quality3'")
+        if self.head_type not in {"mlp", "linear", "bottleneck", "normalized_linear"}:
+            raise ValueError("head_type must be mlp, linear, bottleneck, or normalized_linear")
+        if self.head_bottleneck_dim <= 0:
+            raise ValueError("head_bottleneck_dim must be positive")
+        if self.head_hidden_dim is not None and self.head_hidden_dim <= 0:
+            raise ValueError("head_hidden_dim must be positive when set")
         if self.quality_label_mode not in {"score_tertile", "distortion_level_3class"}:
             raise ValueError("quality_label_mode must be score_tertile or distortion_level_3class")
         if not self.metadata_csv.strip():

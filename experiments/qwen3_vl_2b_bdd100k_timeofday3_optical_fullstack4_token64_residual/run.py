@@ -13,7 +13,7 @@ from torch.utils.data import Subset
 from .datasets import DatasetBundle, load_timeofday3, make_indexed_loader, stratified_split_indices
 from .download import download_checkpoint
 from .io_utils import resolve_device, resolve_dtype, runtime_metadata, set_seed, write_csv, write_json
-from .modeling import MLPHead, LoadedBackbone, load_backbone, parameter_report
+from .modeling import LoadedBackbone, build_head, load_backbone, parameter_report
 from .optics import FullStackReplacement, LanguageOpticalStackSurrogate, VisionOpticalStackSurrogate
 from .settings import Settings, load_settings, resolve_path
 from .teacher_cache import TeacherCacheStore, build_teacher_cache, expected_metadata, load_teacher_logits
@@ -47,14 +47,14 @@ def main(argv:list[str]|None=None)->int:
         stores=_load_stores_without_model(settings,data)
         _resolve_architecture_from_cache(settings,stores["train"]); write_json(settings.output_dir/"config_resolved.json",settings.to_dict())
         if args.phase=="teacher_train": train_teacher_head(stores["train"],stores["test"],settings,data.class_names,device); return 0
-        head=load_head(settings.output_dir/"checkpoints"/"teacher_mlp.pt",settings.dropout,device)
+        head=load_head(settings.output_dir/"checkpoints"/"teacher_mlp.pt",settings,device)
         if args.phase=="teacher_logits": generate_teacher_logits(head,stores,settings,device); return 0
         if args.phase=="teacher_inference": teacher_inference(head,stores["test"],settings,data.class_names,device); return 0
         _compare(settings,data.class_names); return 0
 
     loaded=_load_model(settings,device); settings.resolve_architecture(loaded.model)
     replacement=_build_replacement(loaded,settings,device); write_json(settings.output_dir/"config_resolved.json",settings.to_dict())
-    _write_model_report(loaded.model,replacement,settings)
+    _write_model_report(loaded.model,replacement,settings,len(data.class_names))
     try:
         if args.phase in {"teacher_precompute","all"}:
             _precompute(loaded,replacement,data,settings,device)
@@ -70,16 +70,16 @@ def main(argv:list[str]|None=None)->int:
             generate_teacher_logits(teacher_head,stores,settings,device)
             teacher_inference(teacher_head,stores["test"],settings,data.class_names,device)
         elif args.phase=="student_train":
-            teacher_head=load_head(settings.output_dir/"checkpoints"/"teacher_mlp.pt",settings.dropout,device)
+            teacher_head=load_head(settings.output_dir/"checkpoints"/"teacher_mlp.pt",settings,device)
         if args.phase in {"student_train","all"}:
             assert stores is not None
-            student_head=MLPHead(settings.text_hidden_size,settings.hidden_dim,len(data.class_names),settings.dropout).to(device)
+            student_head=build_head(settings,settings.text_hidden_size,len(data.class_names)).to(device)
             student_head.load_state_dict(teacher_head.state_dict())
             train_indices,val_indices=stratified_split_indices(data.train,settings.validation_fraction,settings.seed)
             train_student(loaded.model,loaded.processor,replacement,student_head,data.train,Subset(data.train,val_indices),stores["train"],settings,data.class_names,device)
             if args.phase=="student_train": return 0
         if args.phase in {"student_inference","all"}:
-            student_head=MLPHead(settings.text_hidden_size,settings.hidden_dim,len(data.class_names),settings.dropout).to(device)
+            student_head=build_head(settings,settings.text_hidden_size,len(data.class_names)).to(device)
             load_student_parts(settings,replacement,student_head,device,"best")
             loader=make_indexed_loader(data.test,settings.inference_batch_size,settings.num_workers,False,settings.seed)
             result=evaluate_student(loaded.model,loaded.processor,replacement,student_head,loader,data.class_names,settings,device)
@@ -169,8 +169,15 @@ def _resolve_architecture_from_cache(settings:Settings,store:TeacherCacheStore)-
     for name in ("vision_depth","vision_hidden_size","text_depth","text_hidden_size"): setattr(settings,name,int(store.metadata[name]))
 
 
-def _write_model_report(model:torch.nn.Module,replacement:FullStackReplacement,settings:Settings)->None:
-    report=parameter_report(model); report.update({"model_id":settings.model_id,"replacement_mode":"vision_and_language_fullstack4_token64_residual","vision_depth":settings.vision_depth,"vision_hidden_size":settings.vision_hidden_size,"text_depth":settings.text_depth,"text_hidden_size":settings.text_hidden_size,"vision_optical_output_hidden_size":settings.vision_hidden_size,"vision_merger_output_hidden_size":settings.text_hidden_size,"language_optical_output_hidden_size":settings.text_hidden_size,"vision_optical_conversions":4,"language_optical_conversions":4,"optical_dim":settings.optical_dim,"optical_field_size":settings.optical_field_size,"optical_padding_size":settings.optical_padding_size,"pixel_pitch_um":settings.pixel_pitch_um,"phase_init":settings.phase_init,"phase_init_std":settings.phase_init_std,"amplitude_mask_enabled":settings.amplitude_mask_enabled,"token_field_mapping":"direct token rows plus strict zero padding","optical_residual_enabled":settings.optical_residual_enabled,"optical_identity_scale_init":settings.optical_identity_scale_init,"optical_modulated_scale_init":settings.optical_modulated_scale_init,"optical_identity_scale_trainable":settings.optical_identity_scale_trainable,"optical_modulated_scale_trainable":settings.optical_modulated_scale_trainable,**_scale_values(replacement),"detected_intensity_reencoded_with_sqrt":False,"teacher_cache":"stack outputs only; independent pixel-budget metadata","vision_surrogate_parameters":sum(p.numel() for p in replacement.vision_surrogate.parameters()),"language_surrogate_parameters":sum(p.numel() for p in replacement.language_surrogate.parameters())})
+def _write_model_report(model:torch.nn.Module,replacement:FullStackReplacement,settings:Settings,num_classes:int)->None:
+    head=build_head(settings,settings.text_hidden_size,num_classes)
+    vision=replacement.vision_surrogate; language=replacement.language_surrogate
+    vision_parameters=sum(p.numel() for p in vision.parameters() if p.requires_grad); language_parameters=sum(p.numel() for p in language.parameters() if p.requires_grad)
+    phase_parameters=sum(c.phase_mask.numel() for stack in (vision,language) for c in stack.conversions); amplitude_parameters=sum(c.amplitude_mask_logits.numel() for stack in (vision,language) for c in stack.conversions if c.amplitude_mask_logits is not None)
+    adapter_parameters=sum(p.numel() for stack in (vision,language) for module in (stack.input_adapter,stack.adapter_norm,stack.output_adapter) for p in module.parameters() if p.requires_grad)
+    residual_parameters=sum(p.numel() for stack in (vision,language) for name,p in stack.named_parameters() if name in {"identity_scale","modulated_scale"} and p.requires_grad); detector_parameters=sum(c.detector_bias.numel() for stack in (vision,language) for c in stack.conversions if c.detector_bias.requires_grad)
+    head_specification=head.specification(); total_trainable=vision_parameters+language_parameters+head_specification["trainable_parameters"]
+    report=parameter_report(model,head); report.update({"model_id":settings.model_id,"replacement_mode":"vision_and_language_fullstack4_token64_residual","vision_depth":settings.vision_depth,"vision_hidden_size":settings.vision_hidden_size,"text_depth":settings.text_depth,"text_hidden_size":settings.text_hidden_size,"vision_optical_output_hidden_size":settings.vision_hidden_size,"vision_merger_output_hidden_size":settings.text_hidden_size,"language_optical_output_hidden_size":settings.text_hidden_size,"vision_optical_conversions":4,"language_optical_conversions":4,"optical_dim":settings.optical_dim,"optical_field_size":settings.optical_field_size,"optical_padding_size":settings.optical_padding_size,"pixel_pitch_um":settings.pixel_pitch_um,"phase_init":settings.phase_init,"phase_init_std":settings.phase_init_std,"amplitude_mask_enabled":settings.amplitude_mask_enabled,"token_field_mapping":"direct token rows plus strict zero padding","optical_residual_enabled":settings.optical_residual_enabled,"optical_identity_scale_init":settings.optical_identity_scale_init,"optical_modulated_scale_init":settings.optical_modulated_scale_init,"optical_identity_scale_trainable":settings.optical_identity_scale_trainable,"optical_modulated_scale_trainable":settings.optical_modulated_scale_trainable,**_scale_values(replacement),"detected_intensity_reencoded_with_sqrt":False,"teacher_cache":"stack outputs only; independent pixel-budget metadata","head_type":head_specification["type"],"head_parameters":head_specification["parameters"],"head_trainable_parameters":head_specification["trainable_parameters"],"head":head_specification,"vision_optical_surrogate_parameters":vision_parameters,"language_optical_surrogate_parameters":language_parameters,"vision_surrogate_parameters":vision_parameters,"language_surrogate_parameters":language_parameters,"optical_phase_parameters":phase_parameters,"optical_amplitude_parameters":amplitude_parameters,"optical_adapter_parameters":adapter_parameters,"optical_detector_bias_parameters":detector_parameters,"residual_scale_parameters":residual_parameters,"total_trainable_parameters":total_trainable,"optical_mask_trainable_fraction":(phase_parameters+amplitude_parameters)/total_trainable})
     write_json(settings.output_dir/"model.json",report)
 
 

@@ -49,6 +49,10 @@ class Settings:
     weight_decay: float = 1e-2
     hidden_dim: int = 1024
     dropout: float = 0.1
+    head_type: str = "mlp"
+    head_hidden_dim: int | None = None
+    head_bottleneck_dim: int = 128
+    head_use_layernorm: bool = False
     classification_prompt: str = (
         "Classify: airplane, automobile, bird, cat, deer, dog, frog, horse, ship, truck. Answer:"
     )
@@ -91,6 +95,12 @@ class Settings:
     def validate(self) -> None:
         if self.dataset != "cifar10":
             raise ValueError("This experiment requires dataset='cifar10'")
+        if self.head_type not in {"mlp", "linear", "bottleneck", "normalized_linear"}:
+            raise ValueError("head_type must be mlp, linear, bottleneck, or normalized_linear")
+        if self.head_bottleneck_dim <= 0:
+            raise ValueError("head_bottleneck_dim must be positive")
+        if self.head_hidden_dim is not None and self.head_hidden_dim <= 0:
+            raise ValueError("head_hidden_dim must be positive when set")
         model_path = Path(self.model_id)
         if self.model_id != MODEL_ID and not model_path.is_dir():
             raise ValueError(f"model_id must be {MODEL_ID} or an existing local directory")

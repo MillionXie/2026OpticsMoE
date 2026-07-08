@@ -47,3 +47,7 @@ Y = beta * X + alpha * Delta
 By default `beta_v=beta_l=1.0` are fixed and `alpha_v=alpha_l=0.1` are trainable. These values are saved in `model.json`, epoch metrics, inference metrics, and checkpoint metadata.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for shapes and losses, and [RUN_COMMANDS.md](RUN_COMMANDS.md) for single-line commands.
+
+## Configurable classification head
+
+The original `2048 -> 1024 -> C` MLP has about 2.1 million trainable parameters. `head_type` now selects `mlp`, `linear`, `bottleneck`, or `normalized_linear`. `mlp` with `head_hidden_dim=null` preserves the original behavior. CIFAR-10 ablations cover MLP-256, MLP-128, bottleneck-128, bottleneck-64, linear, and normalized-linear heads. `model.json` reports head, optical mask, adapter, residual-scale, and total trainable parameter counts separately.

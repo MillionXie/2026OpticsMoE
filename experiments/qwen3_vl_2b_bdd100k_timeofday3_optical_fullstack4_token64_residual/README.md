@@ -28,3 +28,7 @@ The four values are written to `model.json`, every row of `metrics/student_train
 Teacher caches are stored under this experiment's independent output directory. Cache metadata includes both processor pixel budgets and both hidden sizes; incompatible caches cause a hard error.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the complete shape flow and [RUN_COMMANDS.md](RUN_COMMANDS.md) for commands.
+
+## Configurable classification head
+
+The head supports `mlp`, `linear`, `bottleneck`, and `normalized_linear`. The TimeOfDay-3 main configuration now uses `LayerNorm(2048) -> Linear(2048,64) -> GELU -> Dropout -> Linear(64,3)`, reducing the head from about 2.1 million parameters to about 135 thousand. Dedicated bottleneck-64 and linear configs provide isolated ablations. Head metadata and separate optical/electronic parameter counts are written to `model.json` and checkpoints.

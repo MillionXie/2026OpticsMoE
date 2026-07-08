@@ -47,3 +47,13 @@ CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_cifar10_optical_fullsta
 ```bash
 pytest experiments/qwen3_vl_2b_cifar10_optical_fullstack4_token64_residual/tests -q
 ```
+
+## Head ablations
+
+```bash
+CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_cifar10_optical_fullstack4_token64_residual.run --config experiments/qwen3_vl_2b_cifar10_optical_fullstack4_token64_residual/configs/cifar10_bottleneck64.json --phase all --device cuda
+```
+
+```bash
+CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_cifar10_optical_fullstack4_token64_residual.run --config experiments/qwen3_vl_2b_cifar10_optical_fullstack4_token64_residual/configs/cifar10_linear.json --phase all --device cuda
+```

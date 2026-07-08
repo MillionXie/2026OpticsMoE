@@ -15,17 +15,17 @@ from .datasets import indexed_collate, labels_of, make_indexed_loader, stratifie
 from .features import move_inputs, multimodal_forward_features, pool_answer_hidden_state, preprocess_image_text
 from .io_utils import write_csv, write_json
 from .metrics import metrics_from_logits
-from .modeling import MLPHead
+from .modeling import ClassificationHead, build_head
 from .sampling import EpochClassMixedSampler
 from .teacher_cache import TeacherCacheStore, load_cached_tensor, load_teacher_logits, write_teacher_logits
 from .visualization import save_confusion, save_stack_diagnostics, save_training_curves
 
 
 def train_teacher_head(train_store: TeacherCacheStore, test_store: TeacherCacheStore, settings: Any,
-                       class_names: Sequence[str], device: torch.device) -> MLPHead:
+                       class_names: Sequence[str], device: torch.device) -> ClassificationHead:
     features=load_cached_tensor(train_store,"teacher_answer_hidden").float(); labels=load_cached_tensor(train_store,"labels").long()
     train_idx,val_idx=_split_tensor_labels(labels,settings.validation_fraction,settings.seed)
-    head=MLPHead(features.shape[1],settings.hidden_dim,len(class_names),settings.dropout).to(device)
+    head=build_head(settings,features.shape[1],len(class_names)).to(device)
     optimizer=torch.optim.AdamW(head.parameters(),lr=settings.learning_rate,weight_decay=settings.weight_decay)
     history=[]; best=-1.0
     for epoch in range(1,settings.epochs+1):
@@ -38,7 +38,7 @@ def train_teacher_head(train_store: TeacherCacheStore, test_store: TeacherCacheS
         history.append(row); write_csv(settings.output_dir/"metrics"/"teacher_training_history.csv",history,list(row))
         if metrics["macro_f1"]>best:
             best=metrics["macro_f1"]; _save_head(head,settings.output_dir/"checkpoints"/"teacher_mlp.pt",settings,len(class_names))
-    head=load_head(settings.output_dir/"checkpoints"/"teacher_mlp.pt",settings.dropout,device)
+    head=load_head(settings.output_dir/"checkpoints"/"teacher_mlp.pt",settings,device)
     test_features=load_cached_tensor(test_store,"teacher_answer_hidden").float(); test_labels=load_cached_tensor(test_store,"labels").long()
     test_logits=_head_logits(head,test_features,settings.head_batch_size,device); report=metrics_from_logits(test_logits,test_labels,class_names)
     write_json(settings.output_dir/"metrics"/"teacher_inference.json",report)
@@ -73,7 +73,7 @@ def cached_collate(batch: Sequence[Any]):
     return list(images),torch.tensor(labels),torch.tensor(indices),torch.stack(grids),torch.stack(counts).long(),list(vision),torch.stack(answer),torch.stack(logits)
 
 
-def train_student(model: nn.Module, processor: Any, replacement: Any, head: MLPHead, train_dataset: Dataset[Any],
+def train_student(model: nn.Module, processor: Any, replacement: Any, head: ClassificationHead, train_dataset: Dataset[Any],
                   validation_dataset: Dataset[Any], train_store: TeacherCacheStore, settings: Any,
                   class_names: Sequence[str], device: torch.device) -> None:
     teacher_logits=load_teacher_logits(settings.output_dir/"teacher_cache"/"train_teacher_logits.pt")
@@ -184,6 +184,7 @@ def _save_student_parts(settings: Any,replacement:Any,head:nn.Module,suffix:str)
         "optical_residual_enabled":settings.optical_residual_enabled,
         "optical_identity_scale_trainable":settings.optical_identity_scale_trainable,
         "optical_modulated_scale_trainable":settings.optical_modulated_scale_trainable,
+        "head":head.specification(),
         **_residual_scale_values(replacement),
     })
 
@@ -193,13 +194,36 @@ def load_student_parts(settings: Any,replacement:Any,head:nn.Module,device:torch
     head.load_state_dict(torch.load(root/f"student_mlp_{suffix}.pt",map_location=device,weights_only=True)); replacement.vision_surrogate.load_state_dict(torch.load(root/f"vision_optical_stack_{suffix}.pt",map_location=device,weights_only=True)); replacement.language_surrogate.load_state_dict(torch.load(root/f"language_optical_stack_{suffix}.pt",map_location=device,weights_only=True))
 
 
-def _save_head(head:MLPHead,path:Path,settings:Any,num_classes:int)->None:
-    path.parent.mkdir(parents=True,exist_ok=True); torch.save({"state_dict":head.state_dict(),"feature_dim":head.feature_dim,"hidden_dim":settings.hidden_dim,"num_classes":num_classes},path)
+def _save_head(head:ClassificationHead,path:Path,settings:Any,num_classes:int)->None:
+    specification=head.specification()
+    payload={"state_dict":head.state_dict(),"feature_dim":head.feature_dim,
+             "hidden_dim":specification["hidden_dim"],"num_classes":num_classes,
+             "head_type":specification["type"],"head_hidden_dim":specification["hidden_dim"],
+             "head_bottleneck_dim":specification["bottleneck_dim"],
+             "head_use_layernorm":specification["use_layernorm"],
+             "head_trainable_parameters":specification["trainable_parameters"]}
+    path.parent.mkdir(parents=True,exist_ok=True); torch.save(payload,path)
 
 
-def load_head(path:Path,dropout:float,device:torch.device)->MLPHead:
+def load_head(path:Path,settings:Any,device:torch.device)->ClassificationHead:
     if not path.is_file(): raise FileNotFoundError(f"Teacher MLP missing: {path}. Run teacher_train first.")
-    p=torch.load(path,map_location="cpu",weights_only=True); head=MLPHead(p["feature_dim"],p["hidden_dim"],p["num_classes"],dropout); head.load_state_dict(p["state_dict"]); return head.to(device)
+    p=torch.load(path,map_location="cpu",weights_only=True)
+    head=build_head(settings,int(p["feature_dim"]),int(p["num_classes"]))
+    saved_type=str(p.get("head_type","mlp"))
+    saved_hidden=p.get("head_hidden_dim",p.get("hidden_dim"))
+    expected=head.specification()
+    mismatch=saved_type!=expected["type"]
+    if saved_type=="mlp": mismatch=mismatch or int(saved_hidden)!=int(expected["hidden_dim"])
+    if "head_type" in p and saved_type=="bottleneck":
+        mismatch=mismatch or int(p["head_bottleneck_dim"])!=expected["bottleneck_dim"] or bool(p["head_use_layernorm"])!=expected["use_layernorm"]
+    if "head_type" in p and saved_type=="normalized_linear":
+        mismatch=mismatch or not expected["use_layernorm"]
+    if mismatch:
+        raise RuntimeError(
+            f"Teacher checkpoint head configuration does not match current config: "
+            f"saved={saved_type}, current={expected['type']}. Use a separate output_dir or retrain teacher_train."
+        )
+    head.load_state_dict(p["state_dict"]); return head.to(device)
 
 
 @torch.no_grad()

@@ -75,3 +75,7 @@ L = 0.4 * L_vision + 0.4 * L_answer + 1.0 * L_KD + 1.0 * L_CE
 Each stack contains four conversions on a 64-by-64 active field with 128-by-128 padded angular-spectrum propagation. A conversion applies propagation, trainable phase modulation, optional amplitude modulation, square-law detection, and mean-intensity normalization. Detected intensity continues to the next conversion; the training path does not take `sqrt(intensity)`.
 
 The default pixel pitch is 8 micrometres, wavelength is 532 nm, phase initialization is zeros, and amplitude masks are disabled.
+
+## Classification head ablation
+
+`build_head()` supports the original MLP, a direct linear classifier, a configurable bottleneck MLP with optional input LayerNorm, and LayerNorm plus linear classification. Teacher and student always use the same resolved head configuration. Checkpoints record the resolved type and dimensions; incompatible head checkpoints fail explicitly. The model report separates head parameters from optical phases, optional amplitude masks, electronic adapters, and residual scales.

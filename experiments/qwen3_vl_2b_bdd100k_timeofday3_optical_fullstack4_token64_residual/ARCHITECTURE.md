@@ -73,3 +73,7 @@ optical_modulated_scale_trainable
 ```
 
 Vision and language modules own separate scale tensors. Non-trainable scales are registered buffers, so they move with the model and remain in checkpoints.
+
+## Classification head
+
+Teacher and student heads are built from the same config. Available structures are MLP, linear, bottleneck MLP with optional LayerNorm, and normalized linear. The default three-class head is bottleneck-64 with LayerNorm. Old configs without the new keys still resolve to the original `2048 -> hidden_dim -> 3` MLP.

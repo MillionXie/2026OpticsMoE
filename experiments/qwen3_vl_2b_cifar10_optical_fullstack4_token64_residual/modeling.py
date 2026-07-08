@@ -18,19 +18,80 @@ class LoadedBackbone:
     load_time_sec: float
 
 
-class MLPHead(nn.Module):
-    def __init__(self, feature_dim: int, hidden_dim: int, num_classes: int, dropout: float) -> None:
+HEAD_TYPES = {"mlp", "linear", "bottleneck", "normalized_linear"}
+
+
+class ClassificationHead(nn.Module):
+    def __init__(self, feature_dim: int, num_classes: int, dropout: float,
+                 head_type: str = "mlp", hidden_dim: int | None = None,
+                 bottleneck_dim: int = 128, use_layernorm: bool = False) -> None:
         super().__init__()
-        self.feature_dim = feature_dim
-        self.network = nn.Sequential(
-            nn.Linear(feature_dim, hidden_dim),
-            nn.GELU(),
-            nn.Dropout(dropout),
-            nn.Linear(hidden_dim, num_classes),
-        )
+        if head_type not in HEAD_TYPES:
+            raise ValueError(f"Unsupported head_type={head_type!r}; expected one of {sorted(HEAD_TYPES)}")
+        if hidden_dim is not None and hidden_dim <= 0:
+            raise ValueError("hidden_dim must be positive when set")
+        if bottleneck_dim <= 0:
+            raise ValueError("bottleneck_dim must be positive")
+        self.feature_dim = int(feature_dim)
+        self.num_classes = int(num_classes)
+        self.head_type = str(head_type)
+        self.hidden_dim = int(hidden_dim) if hidden_dim is not None else None
+        self.bottleneck_dim = int(bottleneck_dim)
+        self.use_layernorm = bool(use_layernorm or head_type == "normalized_linear")
+        if head_type == "mlp":
+            if self.hidden_dim is None:
+                raise ValueError("mlp head requires hidden_dim")
+            layers = [nn.Linear(feature_dim, self.hidden_dim), nn.GELU(), nn.Dropout(dropout),
+                      nn.Linear(self.hidden_dim, num_classes)]
+        elif head_type == "linear":
+            layers = [nn.Linear(feature_dim, num_classes)]
+        elif head_type == "bottleneck":
+            layers = []
+            if self.use_layernorm:
+                layers.append(nn.LayerNorm(feature_dim))
+            layers.extend([nn.Linear(feature_dim, bottleneck_dim), nn.GELU(), nn.Dropout(dropout),
+                           nn.Linear(bottleneck_dim, num_classes)])
+        else:
+            layers = [nn.LayerNorm(feature_dim), nn.Linear(feature_dim, num_classes)]
+        self.network = nn.Sequential(*layers)
 
     def forward(self, features: torch.Tensor) -> torch.Tensor:
         return self.network(features)
+
+    def specification(self) -> dict[str, Any]:
+        return {
+            "type": self.head_type,
+            "hidden_dim": self.hidden_dim,
+            "bottleneck_dim": self.bottleneck_dim,
+            "use_layernorm": self.use_layernorm,
+            "parameters": sum(parameter.numel() for parameter in self.parameters()),
+            "trainable_parameters": sum(
+                parameter.numel() for parameter in self.parameters() if parameter.requires_grad
+            ),
+        }
+
+
+class MLPHead(ClassificationHead):
+    """Backward-compatible wrapper for the original two-layer MLP head."""
+
+    def __init__(self, feature_dim: int, hidden_dim: int, num_classes: int, dropout: float) -> None:
+        super().__init__(feature_dim=feature_dim, num_classes=num_classes, dropout=dropout,
+                         head_type="mlp", hidden_dim=hidden_dim)
+
+
+def build_head(settings: Any, feature_dim: int, num_classes: int) -> ClassificationHead:
+    head_type = str(getattr(settings, "head_type", "mlp"))
+    configured_hidden = getattr(settings, "head_hidden_dim", None)
+    hidden_dim = configured_hidden if configured_hidden is not None else getattr(settings, "hidden_dim", 1024)
+    return ClassificationHead(
+        feature_dim=feature_dim,
+        num_classes=num_classes,
+        dropout=float(getattr(settings, "dropout", 0.1)),
+        head_type=head_type,
+        hidden_dim=int(hidden_dim) if head_type == "mlp" else None,
+        bottleneck_dim=int(getattr(settings, "head_bottleneck_dim", 128)),
+        use_layernorm=bool(getattr(settings, "head_use_layernorm", False)),
+    )
 
 
 def load_backbone(
@@ -114,4 +175,3 @@ def parameter_report(model: nn.Module, head: nn.Module | None = None) -> dict[st
             "text_layers": getattr(text_config, "num_hidden_layers", None),
         },
     }
-

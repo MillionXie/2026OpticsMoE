@@ -17,12 +17,15 @@ from experiments.qwen3_vl_2b_cifar10_optical_fullstack4_token64_residual.optics 
     VisionOpticalStackSurrogate,
 )
 from experiments.qwen3_vl_2b_cifar10_optical_fullstack4_token64_residual.optics import stacks
+from experiments.qwen3_vl_2b_cifar10_optical_fullstack4_token64_residual.modeling import build_head
 from experiments.qwen3_vl_2b_cifar10_optical_fullstack4_token64_residual.settings import load_settings
 from experiments.qwen3_vl_2b_cifar10_optical_fullstack4_token64_residual.teacher_cache import (
     CACHED_TENSORS,
     expected_metadata,
 )
 from experiments.qwen3_vl_2b_cifar10_optical_fullstack4_token64_residual.training import (
+    _save_head,
+    load_head,
     save_student_inference,
 )
 
@@ -65,6 +68,7 @@ def test_config_parsing() -> None:
     assert settings.optical_modulated_scale_init==0.1
     assert not settings.optical_identity_scale_trainable
     assert settings.optical_modulated_scale_trainable
+    assert settings.head_type=="mlp" and settings.head_hidden_dim is None
 
 
 def test_cifar10_classes_and_stratified_split() -> None:
@@ -204,3 +208,45 @@ def test_training_records_scales_each_epoch() -> None:
     assert "_residual_scale_values(replacement)" in source
     assert "alpha_v=" in source and "beta_l=" in source
     assert "student_training_history.csv" in inspect.getsource(training._write_student_epoch_outputs)
+
+
+def _head_settings(head_type:str="mlp",hidden:int|None=None,bottleneck:int=128,layernorm:bool=False):
+    return SimpleNamespace(head_type=head_type,head_hidden_dim=hidden,hidden_dim=1024,
+        head_bottleneck_dim=bottleneck,head_use_layernorm=layernorm,dropout=0.1)
+
+
+@pytest.mark.parametrize("head_type",["mlp","linear","bottleneck","normalized_linear"])
+def test_head_construction_forward_and_backward(head_type:str)->None:
+    settings=_head_settings(head_type,bottleneck=64,layernorm=True)
+    head=build_head(settings,2048,10);inputs=torch.randn(4,2048);labels=torch.arange(4)
+    logits=head(inputs);assert logits.shape==(4,10)
+    torch.nn.functional.cross_entropy(logits,labels).backward()
+    assert all(parameter.grad is not None for parameter in head.parameters() if parameter.requires_grad)
+
+
+def test_head_parameter_ordering_and_legacy_defaults()->None:
+    linear=build_head(_head_settings("linear"),2048,10)
+    bottleneck64=build_head(_head_settings("bottleneck",bottleneck=64,layernorm=True),2048,10)
+    bottleneck128=build_head(_head_settings("bottleneck",bottleneck=128,layernorm=True),2048,10)
+    mlp=build_head(_head_settings("mlp"),2048,10)
+    counts=[sum(p.numel() for p in module.parameters()) for module in (linear,bottleneck64,bottleneck128,mlp)]
+    assert counts==sorted(counts) and len(set(counts))==4
+    legacy=build_head(SimpleNamespace(hidden_dim=1024,dropout=0.1),2048,10)
+    assert legacy.head_type=="mlp" and legacy.hidden_dim==1024
+    assert sum(p.numel() for p in legacy.parameters())==2_108_426
+
+
+def test_head_checkpoint_roundtrip_and_metadata(tmp_path:Path)->None:
+    settings=_head_settings("bottleneck",bottleneck=64,layernorm=True)
+    head=build_head(settings,2048,10);path=tmp_path/"teacher_mlp.pt"
+    _save_head(head,path,settings,10);loaded=load_head(path,settings,torch.device("cpu"))
+    assert loaded.specification()==head.specification()
+    payload=torch.load(path,map_location="cpu",weights_only=True)
+    assert payload["head_type"]=="bottleneck" and payload["head_trainable_parameters"]==135_882
+
+
+def test_legacy_mlp_checkpoint_without_head_metadata_loads(tmp_path:Path)->None:
+    settings=_head_settings("mlp");head=build_head(settings,2048,10);path=tmp_path/"legacy.pt"
+    torch.save({"state_dict":head.state_dict(),"feature_dim":2048,"hidden_dim":1024,"num_classes":10},path)
+    loaded=load_head(path,settings,torch.device("cpu"))
+    assert loaded.head_type=="mlp" and loaded.hidden_dim==1024

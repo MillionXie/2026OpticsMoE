@@ -31,3 +31,13 @@ CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_2b_kadid10k_quality3_optic
 ```bash
 pytest experiments/qwen3_vl_2b_kadid10k_quality3_optical_fullstack4_token64_residual/tests -q
 ```
+
+## Head ablations
+
+```bash
+CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_kadid10k_quality3_optical_fullstack4_token64_residual.run --config experiments/qwen3_vl_2b_kadid10k_quality3_optical_fullstack4_token64_residual/configs/kadid10k_quality3_bottleneck64.json --phase all
+```
+
+```bash
+CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_kadid10k_quality3_optical_fullstack4_token64_residual.run --config experiments/qwen3_vl_2b_kadid10k_quality3_optical_fullstack4_token64_residual/configs/kadid10k_quality3_normalized_linear.json --phase all
+```

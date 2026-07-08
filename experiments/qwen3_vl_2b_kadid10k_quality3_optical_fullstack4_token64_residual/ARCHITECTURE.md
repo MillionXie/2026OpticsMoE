@@ -42,3 +42,7 @@ language: Y_l = beta_l X_l + alpha_l Delta_l
 ```
 
 The default beta values are fixed 1.0 buffers. The default alpha values are trainable parameters initialized to 0.1.
+
+## Classification head
+
+The default KADID three-class head is `LayerNorm(2048) -> Linear(2048,64) -> GELU -> Dropout -> Linear(64,3)`. The head type and dimensions are configurable, shared by teacher and student, recorded in checkpoints, and itemized in `model.json`. Legacy configs without head keys retain the original MLP behavior.
