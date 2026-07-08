@@ -24,10 +24,11 @@ from experiments.qwen3_vl_2b_kadid10k_quality3_optical_fullstack4_token64_residu
 from experiments.qwen3_vl_2b_kadid10k_quality3_optical_fullstack4_token64_residual.data_prepare import ensure_kadid10k_dataset
 from experiments.qwen3_vl_2b_kadid10k_quality3_optical_fullstack4_token64_residual.optics import (
     LanguageOpticalStackSurrogate,
+    OpticalConversion,
     VisionOpticalStackSurrogate,
 )
 from experiments.qwen3_vl_2b_kadid10k_quality3_optical_fullstack4_token64_residual.optics import stacks
-from experiments.qwen3_vl_2b_kadid10k_quality3_optical_fullstack4_token64_residual.modeling import build_head
+from experiments.qwen3_vl_2b_kadid10k_quality3_optical_fullstack4_token64_residual.modeling import build_head, student_parameter_breakdown
 from experiments.qwen3_vl_2b_kadid10k_quality3_optical_fullstack4_token64_residual.settings import (
     Settings,
     load_settings,
@@ -41,6 +42,7 @@ from experiments.qwen3_vl_2b_kadid10k_quality3_optical_fullstack4_token64_residu
     load_head,
     save_student_inference,
 )
+from experiments.qwen3_vl_2b_kadid10k_quality3_optical_fullstack4_token64_residual.visualization_debug import field_metrics, hidden_similarity_metrics, tensor_stats
 
 
 def make_stack(cls:type[nn.Module],hidden_size:int,residual_enabled:bool=True)->nn.Module:
@@ -240,3 +242,16 @@ def test_head_parameter_ordering_legacy_and_checkpoint(tmp_path:Path)->None:
     settings=_head_settings("bottleneck",bottleneck=64,layernorm=True);head=modules[1];path=tmp_path/"head.pt"
     _save_head(head,path,settings,3);loaded=load_head(path,settings,torch.device("cpu"))
     assert loaded.specification()==head.specification()
+
+
+def test_parameter_breakdown_detector_and_similarity()->None:
+    kwargs=dict(optical_dim=8,conversions=4,field_size=8,padding_size=12,wavelength_nm=532,pixel_pitch_um=8,distance_cm=5,amplitude_mask_enabled=False,phase_init="zeros")
+    vision=VisionOpticalStackSurrogate(hidden_size=16,**kwargs);language=LanguageOpticalStackSurrogate(hidden_size=32,**kwargs)
+    report=student_parameter_breakdown(vision,language,build_head(_head_settings("linear"),32,3))
+    assert report["vision_adapter_total_parameters"]==sum(p.numel() for module in (vision.input_adapter,vision.adapter_norm,vision.output_adapter) for p in module.parameters())
+    assert report["language_phase_mask_parameters"]==256 and report["language_amplitude_mask_parameters"]==0
+    intensity=OpticalConversion(8,12,532,8,5,False,"zeros")(torch.rand(1,8,8))
+    assert torch.all(intensity>=0) and field_metrics(intensity)["num_negative"]==0
+    hidden=torch.randn(4,16);metrics=hidden_similarity_metrics(hidden,hidden.clone())
+    assert metrics["mse"]==0 and metrics["cosine_mean_token"]==pytest.approx(1.0,abs=1e-6)
+    assert tensor_stats(torch.tensor([-1.0,2.0]))["num_negative"]==1

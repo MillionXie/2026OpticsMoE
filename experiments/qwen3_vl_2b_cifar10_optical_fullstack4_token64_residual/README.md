@@ -51,3 +51,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for shapes and losses, and [RUN_COMMANDS.
 ## Configurable classification head
 
 The original `2048 -> 1024 -> C` MLP has about 2.1 million trainable parameters. `head_type` now selects `mlp`, `linear`, `bottleneck`, or `normalized_linear`. `mlp` with `head_hidden_dim=null` preserves the original behavior. CIFAR-10 ablations cover MLP-256, MLP-128, bottleneck-128, bottleneck-64, linear, and normalized-linear heads. `model.json` reports head, optical mask, adapter, residual-scale, and total trainable parameter counts separately.
+
+## Debug visualizations and parameter accounting
+
+`model.json` now separates each vision/language input adapter, LayerNorm, hidden restore output adapter, phase mask, optional amplitude mask, detector bias, and residual scale, including trainable and non-trainable counts and their ratios in the student. Validation and student inference can save selected correct/incorrect examples under `figures/debug_examples/epoch_XXXX/sample_XXXXXX/`: original input, optical input fields, all four physical detector intensities, restored optical deltas, student/teacher vision hidden heatmaps, answer-hidden comparisons, raw tensors, logits, and similarity metrics. Detector intensity is the nonnegative output of `OpticalConversion`; the old negative colorbar came from plotting `log10(I/Imax)`, not from negative physical intensity. Signed hidden and delta tensors use explicit `hidden_`, `delta_`, or `diff_` names.

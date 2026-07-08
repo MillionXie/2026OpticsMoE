@@ -32,6 +32,9 @@ class RGBDataset(Dataset[tuple[Image.Image, int]]):
         image, label = self.base[index]
         return image.convert("RGB"), int(label)
 
+    def sample_metadata(self,index:int)->dict[str,Any]:
+        return {"cifar_index":int(index),"cifar_class_name":CIFAR10_CLASSES[self.labels[index]]}
+
 
 def load_cifar10(settings: Any) -> DatasetBundle:
     try:
@@ -70,6 +73,12 @@ def labels_of(dataset: Dataset[Any]) -> list[int]:
         parent = labels_of(dataset.dataset)
         return [parent[int(index)] for index in dataset.indices]
     raise TypeError("Dataset does not expose labels")
+
+
+def sample_metadata_of(dataset:Dataset[Any],index:int)->dict[str,Any]:
+    if isinstance(dataset,Subset):return sample_metadata_of(dataset.dataset,int(dataset.indices[index]))
+    if hasattr(dataset,"sample_metadata"):return dict(dataset.sample_metadata(index))
+    return {}
 
 
 def stratified_split_indices(dataset: Dataset[Any], fraction: float, seed: int) -> tuple[list[int], list[int]]:

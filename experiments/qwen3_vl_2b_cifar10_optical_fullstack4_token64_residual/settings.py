@@ -83,6 +83,14 @@ class Settings:
     log_interval_batches: int = 20
     save_predictions_interval_epochs: int = 1
     save_visualization_interval_epochs: int = 10
+    save_debug_visualizations: bool = True
+    debug_visualization_sample_count: int = 8
+    debug_visualization_interval_epochs: int = 1
+    debug_visualization_max_tokens: int = 64
+    debug_visualization_save_raw_tensors: bool = True
+    debug_visualization_percentile_clip: float = 99.0
+    debug_visualization_include_correct: bool = True
+    debug_visualization_include_incorrect: bool = True
     benchmark_batches: int | None = None
     seed: int = 42
     progress: bool = True
@@ -141,10 +149,14 @@ class Settings:
             "teacher_cache_shard_size", "teacher_cache_lru_shards", "epochs", "optical_dim", "optical_field_size",
             "optical_padding_size", "log_interval_batches", "save_predictions_interval_epochs",
             "save_visualization_interval_epochs",
+            "debug_visualization_sample_count", "debug_visualization_interval_epochs",
+            "debug_visualization_max_tokens",
         )
         for name in positive:
             if int(getattr(self, name)) <= 0:
                 raise ValueError(f"{name} must be positive")
+        if not 0.0 < self.debug_visualization_percentile_clip <= 100.0:
+            raise ValueError("debug_visualization_percentile_clip must be in (0, 100]")
         for name in ("train_limit", "test_limit", "train_limit_per_class", "test_limit_per_class", "train_samples_per_class_per_epoch", "benchmark_batches"):
             value = getattr(self, name)
             if value is not None and int(value) <= 0:

@@ -94,6 +94,81 @@ def build_head(settings: Any, feature_dim: int, num_classes: int) -> Classificat
     )
 
 
+def optical_surrogate_parameter_breakdown(surrogate: nn.Module, prefix: str) -> dict[str, int]:
+    def counts(module: nn.Module) -> tuple[int, int, int]:
+        parameters=list(module.parameters())
+        total=sum(parameter.numel() for parameter in parameters)
+        trainable=sum(parameter.numel() for parameter in parameters if parameter.requires_grad)
+        return total,trainable,total-trainable
+
+    result: dict[str,int]={}
+    adapter_total=adapter_trainable=adapter_non_trainable=0
+    for name in ("input_adapter","adapter_norm","output_adapter"):
+        total,trainable,non_trainable=counts(getattr(surrogate,name))
+        result[f"{prefix}_{name}_parameters"]=total
+        result[f"{prefix}_{name}_trainable_parameters"]=trainable
+        result[f"{prefix}_{name}_non_trainable_parameters"]=non_trainable
+        adapter_total+=total;adapter_trainable+=trainable;adapter_non_trainable+=non_trainable
+    result[f"{prefix}_adapter_total_parameters"]=adapter_total
+    result[f"{prefix}_adapter_trainable_parameters"]=adapter_trainable
+    result[f"{prefix}_adapter_non_trainable_parameters"]=adapter_non_trainable
+    for component,attribute in (("phase_mask","phase_mask"),("amplitude_mask","amplitude_mask_logits"),("detector_bias","detector_bias")):
+        tensors=[getattr(conversion,attribute) for conversion in surrogate.conversions if getattr(conversion,attribute,None) is not None]
+        total=sum(tensor.numel() for tensor in tensors)
+        trainable=sum(tensor.numel() for tensor in tensors if isinstance(tensor,nn.Parameter) and tensor.requires_grad)
+        result[f"{prefix}_{component}_parameters"]=total
+        result[f"{prefix}_{component}_trainable_parameters"]=trainable
+        result[f"{prefix}_{component}_non_trainable_parameters"]=total-trainable
+    scale_tensors=[surrogate.identity_scale,surrogate.modulated_scale]
+    scale_total=sum(tensor.numel() for tensor in scale_tensors)
+    scale_trainable=sum(tensor.numel() for tensor in scale_tensors if isinstance(tensor,nn.Parameter) and tensor.requires_grad)
+    result[f"{prefix}_residual_scale_parameters"]=scale_total
+    result[f"{prefix}_residual_scale_trainable_parameters"]=scale_trainable
+    result[f"{prefix}_residual_scale_non_trainable_parameters"]=scale_total-scale_trainable
+    physical_total=result[f"{prefix}_phase_mask_parameters"]+result[f"{prefix}_amplitude_mask_parameters"]
+    physical_trainable=result[f"{prefix}_phase_mask_trainable_parameters"]+result[f"{prefix}_amplitude_mask_trainable_parameters"]
+    result[f"{prefix}_optical_physical_parameters"]=physical_total
+    result[f"{prefix}_optical_physical_trainable_parameters"]=physical_trainable
+    result[f"{prefix}_optical_physical_non_trainable_parameters"]=physical_total-physical_trainable
+    pytorch_total,trainable,_=counts(surrogate)
+    component_total=adapter_total+physical_total+result[f"{prefix}_detector_bias_parameters"]+scale_total
+    result[f"{prefix}_surrogate_total_parameters"]=component_total
+    result[f"{prefix}_surrogate_trainable_parameters"]=trainable
+    result[f"{prefix}_surrogate_non_trainable_parameters"]=component_total-trainable
+    result[f"{prefix}_surrogate_pytorch_parameter_total"]=pytorch_total
+    return result
+
+
+def student_parameter_breakdown(vision: nn.Module, language: nn.Module, head: nn.Module) -> dict[str, Any]:
+    vision_report=optical_surrogate_parameter_breakdown(vision,"vision")
+    language_report=optical_surrogate_parameter_breakdown(language,"language")
+    head_total=sum(parameter.numel() for parameter in head.parameters())
+    head_trainable=sum(parameter.numel() for parameter in head.parameters() if parameter.requires_grad)
+    adapter_trainable=vision_report["vision_adapter_trainable_parameters"]+language_report["language_adapter_trainable_parameters"]
+    phase_trainable=vision_report["vision_phase_mask_trainable_parameters"]+language_report["language_phase_mask_trainable_parameters"]
+    amplitude_trainable=vision_report["vision_amplitude_mask_trainable_parameters"]+language_report["language_amplitude_mask_trainable_parameters"]
+    detector_trainable=vision_report["vision_detector_bias_trainable_parameters"]+language_report["language_detector_bias_trainable_parameters"]
+    residual_trainable=vision_report["vision_residual_scale_trainable_parameters"]+language_report["language_residual_scale_trainable_parameters"]
+    student_total=vision_report["vision_surrogate_trainable_parameters"]+language_report["language_surrogate_trainable_parameters"]+head_trainable
+    overall={
+        "vision_adapter_trainable":vision_report["vision_adapter_trainable_parameters"],
+        "language_adapter_trainable":language_report["language_adapter_trainable_parameters"],
+        "adapter_trainable_total":adapter_trainable,
+        "optical_phase_trainable":phase_trainable,
+        "optical_amplitude_trainable":amplitude_trainable,
+        "optical_physical_trainable_total":phase_trainable+amplitude_trainable,
+        "detector_bias_trainable":detector_trainable,
+        "residual_scale_trainable":residual_trainable,
+        "classification_head_trainable":head_trainable,
+        "student_total_trainable":student_total,
+        "adapter_ratio_in_student_trainable":adapter_trainable/student_total if student_total else 0.0,
+        "optical_physical_ratio_in_student_trainable":(phase_trainable+amplitude_trainable)/student_total if student_total else 0.0,
+        "classification_head_ratio_in_student_trainable":head_trainable/student_total if student_total else 0.0,
+    }
+    return {**vision_report,**language_report,"classification_head_parameters":head_total,
+            "classification_head_trainable_parameters":head_trainable,"parameter_breakdown":overall}
+
+
 def load_backbone(
     model_id: str,
     cache_dir: Path | None,

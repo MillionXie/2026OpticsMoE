@@ -6,6 +6,7 @@ from types import SimpleNamespace
 
 import pytest
 import torch
+from PIL import Image
 from torch import nn
 
 from experiments.qwen3_vl_2b_cifar10_optical_fullstack4_token64_residual.datasets import (
@@ -14,10 +15,11 @@ from experiments.qwen3_vl_2b_cifar10_optical_fullstack4_token64_residual.dataset
 )
 from experiments.qwen3_vl_2b_cifar10_optical_fullstack4_token64_residual.optics import (
     LanguageOpticalStackSurrogate,
+    OpticalConversion,
     VisionOpticalStackSurrogate,
 )
 from experiments.qwen3_vl_2b_cifar10_optical_fullstack4_token64_residual.optics import stacks
-from experiments.qwen3_vl_2b_cifar10_optical_fullstack4_token64_residual.modeling import build_head
+from experiments.qwen3_vl_2b_cifar10_optical_fullstack4_token64_residual.modeling import build_head, student_parameter_breakdown
 from experiments.qwen3_vl_2b_cifar10_optical_fullstack4_token64_residual.settings import load_settings
 from experiments.qwen3_vl_2b_cifar10_optical_fullstack4_token64_residual.teacher_cache import (
     CACHED_TENSORS,
@@ -27,6 +29,9 @@ from experiments.qwen3_vl_2b_cifar10_optical_fullstack4_token64_residual.trainin
     _save_head,
     load_head,
     save_student_inference,
+)
+from experiments.qwen3_vl_2b_cifar10_optical_fullstack4_token64_residual.visualization_debug import (
+    field_metrics, hidden_similarity_metrics, save_debug_example, save_tensor_heatmap, tensor_stats,
 )
 
 
@@ -250,3 +255,47 @@ def test_legacy_mlp_checkpoint_without_head_metadata_loads(tmp_path:Path)->None:
     torch.save({"state_dict":head.state_dict(),"feature_dim":2048,"hidden_dim":1024,"num_classes":10},path)
     loaded=load_head(path,settings,torch.device("cpu"))
     assert loaded.head_type=="mlp" and loaded.hidden_dim==1024
+
+
+def test_detailed_surrogate_parameter_breakdown()->None:
+    kwargs=dict(optical_dim=8,conversions=4,field_size=8,padding_size=12,wavelength_nm=532,
+        pixel_pitch_um=8,distance_cm=5,amplitude_mask_enabled=False,phase_init="zeros",
+        residual_enabled=True,identity_scale_trainable=False,modulated_scale_trainable=True)
+    vision=VisionOpticalStackSurrogate(hidden_size=16,**kwargs);language=LanguageOpticalStackSurrogate(hidden_size=32,**kwargs)
+    report=student_parameter_breakdown(vision,language,build_head(_head_settings("linear"),32,3))
+    expected_vision=sum(p.numel() for module in (vision.input_adapter,vision.adapter_norm,vision.output_adapter) for p in module.parameters())
+    assert report["vision_adapter_total_parameters"]==expected_vision
+    assert report["vision_phase_mask_parameters"]==4*8*8
+    assert report["vision_amplitude_mask_parameters"]==0
+    assert report["parameter_breakdown"]["adapter_trainable_total"]==report["vision_adapter_trainable_parameters"]+report["language_adapter_trainable_parameters"]
+
+
+def test_detector_intensity_is_nonnegative()->None:
+    conversion=OpticalConversion(8,12,532,8,5,False,"zeros")
+    output=conversion(torch.rand(2,8,8));assert torch.all(output>=0)
+    assert field_metrics(output)["num_negative"]==0
+
+
+def test_debug_stats_heatmap_similarity_and_writer(tmp_path:Path)->None:
+    hidden=torch.tensor([[-1.0,0.0,2.0],[3.0,-4.0,1.0]])
+    assert tensor_stats(hidden)["num_negative"]==2
+    save_tensor_heatmap(hidden,tmp_path/"hidden.png","hidden","hidden",99,True,8);assert (tmp_path/"hidden.png").is_file()
+    same=hidden_similarity_metrics(hidden,hidden.clone());assert same["mse"]==0 and same["relative_l2_error"]==0
+    assert same["cosine_mean_token"]==pytest.approx(1.0,abs=1e-6)
+    settings=SimpleNamespace(debug_visualization_percentile_clip=99.0,debug_visualization_max_tokens=8,
+        debug_visualization_save_raw_tensors=True,processor_max_pixels=64)
+    sample={"sample_index":7,"image":Image.new("RGB",(8,8),(20,30,40)),"metadata":{"sample_index":7,
+        "true_name":"cat","pred_name":"dog","teacher_pred_name":"cat","correct":False},
+        "vision_input_field":torch.rand(8,8),"language_input_field":torch.rand(8,8),
+        "vision_detector_fields":[torch.rand(8,8) for _ in range(4)],"language_detector_fields":[torch.rand(8,8) for _ in range(4)],
+        "student_vision_hidden":torch.randn(3,16),"teacher_vision_hidden":torch.randn(3,16),"vision_delta":torch.randn(3,16),
+        "student_answer_hidden":torch.randn(16),"teacher_answer_hidden":torch.randn(16),
+        "student_language_hidden_sequence":torch.randn(4,16),"language_delta":torch.randn(4,16),
+        "student_logits":torch.randn(3),"teacher_logits":torch.randn(3)}
+    row,summary=save_debug_example(sample,tmp_path/"debug",1,"test",settings)
+    directory=Path(row["debug_dir"])
+    for relative in ("input_original.png","vision_optical_input_field.png","vision_detector_intensity_layer_1.png",
+        "vision_hidden/student_vision_hidden.png","vision_hidden/teacher_vision_hidden.png","vision_hidden/vision_hidden_metrics.json",
+        "answer_hidden/student_answer_hidden.png","answer_hidden/teacher_answer_hidden.png","answer_hidden/answer_hidden_metrics.json","metadata.json"):
+        assert (directory/relative).is_file()
+    assert summary["vision_detector_negative_count"]==summary["language_detector_negative_count"]==0

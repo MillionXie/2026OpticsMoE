@@ -32,3 +32,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for the complete shape flow and [RUN_COMM
 ## Configurable classification head
 
 The head supports `mlp`, `linear`, `bottleneck`, and `normalized_linear`. The TimeOfDay-3 main configuration now uses `LayerNorm(2048) -> Linear(2048,64) -> GELU -> Dropout -> Linear(64,3)`, reducing the head from about 2.1 million parameters to about 135 thousand. Dedicated bottleneck-64 and linear configs provide isolated ablations. Head metadata and separate optical/electronic parameter counts are written to `model.json` and checkpoints.
+
+## Debug visualizations and parameter accounting
+
+The report now itemizes vision/language input adapters, adapter LayerNorm, hidden restore output adapters, phase/amplitude masks, detector biases, residual scales, and head ratios. Validation/inference debug examples include the BDD image path and time-of-day label, input image, nonnegative optical fields and detector intensities, restored delta, student/teacher hidden comparisons, raw tensors, logits, and per-sample similarity metrics. The former negative light-field colorbar was `log10` normalized intensity; current `detector_intensity_*` images display the nonnegative physical tensor directly.

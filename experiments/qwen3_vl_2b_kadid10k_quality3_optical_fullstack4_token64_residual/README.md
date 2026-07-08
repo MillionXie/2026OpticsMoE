@@ -47,3 +47,7 @@ Rate image quality: high_quality, medium_quality, or low_quality. Answer:
 ## Configurable classification head
 
 KADID Quality-3 now defaults to a LayerNorm bottleneck-64 head instead of the original `2048 -> 1024 -> 3` MLP. Supported alternatives are MLP-256, MLP-128, bottleneck-128, bottleneck-64, linear, and normalized-linear. Each ablation config has an independent output directory so teacher/student checkpoints cannot be mixed accidentally. `model.json` reports the head and optical parameter groups independently.
+
+## Debug visualizations and parameter accounting
+
+Per-surrogate reports now separate input projection, LayerNorm, hidden restore projection, physical masks, detector biases, and residual scales. Debug examples include KADID image/reference names, score, distortion metadata, original input, nonnegative optical fields and four detector planes, restored delta, teacher/student vision and answer hidden, raw tensors, logits, and similarity/error metrics. Negative values are valid only in explicitly named hidden, delta, and signed-difference plots. Physical `detector_intensity_*` tensors are verified as nonnegative.

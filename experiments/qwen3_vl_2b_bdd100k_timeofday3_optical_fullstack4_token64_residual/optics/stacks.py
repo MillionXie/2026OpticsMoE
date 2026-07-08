@@ -81,6 +81,9 @@ class _OpticalStackBase(nn.Module):
         self.last_input_fields: torch.Tensor | None = None
         self.last_fields: list[torch.Tensor] = []
         self.last_output: torch.Tensor | None = None
+        self.last_delta: torch.Tensor | None = None
+        self.last_projected_tokens: list[torch.Tensor] = []
+        self._last_delta_groups: list[torch.Tensor] = []
         self.last_token_counts: list[int] = []
 
     def _make_scale(self, name: str, init: float, trainable: bool) -> None:
@@ -113,10 +116,12 @@ class _OpticalStackBase(nn.Module):
 
     def _convert_groups(self, groups: list[torch.Tensor], boundary_dtype: torch.dtype) -> list[torch.Tensor]:
         fields: list[torch.Tensor] = []
+        self.last_projected_tokens = []
         for group in groups:
             self._check_token_count(len(group))
             projected = self.input_adapter(group.float())
             projected = self.nonnegative(self.adapter_norm(projected))
+            self.last_projected_tokens.append(projected)
             field = projected.new_zeros((self.field_size, self.field_size))
             field[: len(group), :] = projected
             fields.append(field)
@@ -127,9 +132,11 @@ class _OpticalStackBase(nn.Module):
             stacked_fields = conversion(stacked_fields)
             self.last_fields.append(stacked_fields)
         outputs: list[torch.Tensor] = []
+        self._last_delta_groups = []
         for field, group in zip(stacked_fields, groups):
             valid_rows = field[: len(group), :]
             delta = self.output_adapter(valid_rows).to(boundary_dtype)
+            self._last_delta_groups.append(delta)
             outputs.append(self._combine_residual(group, delta))
         return outputs
 
@@ -150,6 +157,7 @@ class VisionOpticalStackSurrogate(_OpticalStackBase):
         self.last_token_counts = lengths
         groups = list(hidden_states.split(lengths, dim=0))
         output = torch.cat(self._convert_groups(groups, hidden_states.dtype), dim=0)
+        self.last_delta = torch.cat(self._last_delta_groups, dim=0)
         self.last_output = output
         return output
 
@@ -189,8 +197,11 @@ class LanguageOpticalStackSurrogate(_OpticalStackBase):
         groups = [hidden_states[index, masks[index]] for index in range(batch)]
         converted = self._convert_groups(groups, hidden_states.dtype)
         output = hidden_states.new_zeros(hidden_states.shape)
+        delta_output = hidden_states.new_zeros(hidden_states.shape)
         for index, value in enumerate(converted):
             output[index, masks[index]] = value
+            delta_output[index, masks[index]] = self._last_delta_groups[index]
+        self.last_delta = delta_output
         self.last_output = output
         return (output,) if self.return_tuple else output
 

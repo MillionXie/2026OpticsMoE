@@ -28,8 +28,8 @@ def save_stack_diagnostics(surrogate: torch.nn.Module, phase_root: Path, field_r
     )
     sample_dir=field_root/f"epoch_{epoch:04d}"/"sample_000"; sample_dir.mkdir(parents=True,exist_ok=True)
     for index,field in enumerate(surrogate.last_fields,start=1):
-        value=field[0].detach().cpu().float(); display=torch.log10(value/value.max().clamp_min(1e-8)+1e-8).numpy()
-        fig,ax=plt.subplots(figsize=(4,4)); image=ax.imshow(display,cmap="inferno"); ax.set_title(f"Detected intensity {index}"); ax.axis("off"); fig.colorbar(image,ax=ax)
+        value=field[0].detach().cpu().float().clamp_min(0); display=value.numpy();vmax=float(torch.quantile(value.flatten(),.99).clamp_min(1e-8))
+        fig,ax=plt.subplots(figsize=(4,4)); image=ax.imshow(display,cmap="inferno",vmin=0,vmax=vmax); ax.set_title(f"Detector intensity {index} (nonnegative)"); ax.axis("off");colorbar=fig.colorbar(image,ax=ax);colorbar.set_label("detector intensity")
         fig.tight_layout(); fig.savefig(sample_dir/f"conversion_{index}.png",dpi=140); plt.close(fig)
 
 

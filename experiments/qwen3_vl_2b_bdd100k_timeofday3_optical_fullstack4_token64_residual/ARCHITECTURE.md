@@ -77,3 +77,5 @@ Vision and language modules own separate scale tensors. Non-trainable scales are
 ## Classification head
 
 Teacher and student heads are built from the same config. Available structures are MLP, linear, bottleneck MLP with optional LayerNorm, and normalized linear. The default three-class head is bottleneck-64 with LayerNorm. Old configs without the new keys still resolve to the original `2048 -> hidden_dim -> 3` MLP.
+
+Advanced debug output is generated only at the configured validation/inference interval under `torch.no_grad()`. Detector intensities are checked for nonnegative values and are kept distinct from signed optical deltas, residual hidden, and teacher-student differences.

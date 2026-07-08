@@ -25,6 +25,9 @@ class RGBImageFolder(Dataset[Any]):
     def __len__(self):return len(self.base)
     def __getitem__(self,index:int):
         image,label=self.base[index];return image.convert("RGB"),self.mapping[int(label)]
+    def sample_metadata(self,index:int)->dict[str,Any]:
+        path,_=self.base.samples[index]
+        return {"image_path":str(path),"timeofday_label":TIMEOFDAY3_CLASS_NAMES[self.labels[index]]}
 
 
 def load_timeofday3(settings:Any)->DatasetBundle:
@@ -54,6 +57,12 @@ def labels_of(dataset:Dataset[Any])->list[int]:
     if isinstance(dataset,Subset):
         parent=labels_of(dataset.dataset);return [parent[int(index)] for index in dataset.indices]
     raise TypeError("Dataset has no labels")
+
+
+def sample_metadata_of(dataset:Dataset[Any],index:int)->dict[str,Any]:
+    if isinstance(dataset,Subset):return sample_metadata_of(dataset.dataset,int(dataset.indices[index]))
+    if hasattr(dataset,"sample_metadata"):return dict(dataset.sample_metadata(index))
+    return {}
 
 
 def class_counts(dataset:Dataset[Any])->dict[str,int]:

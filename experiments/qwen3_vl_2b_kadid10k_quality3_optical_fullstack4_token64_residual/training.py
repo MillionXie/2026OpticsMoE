@@ -19,6 +19,7 @@ from .modeling import ClassificationHead, build_head
 from .sampling import EpochClassMixedSampler
 from .teacher_cache import TeacherCacheStore, load_cached_tensor, load_teacher_logits, write_teacher_logits
 from .visualization import save_confusion, save_stack_diagnostics, save_training_curves
+from .visualization_debug import append_debug_index, save_debug_example
 
 
 def train_teacher_head(train_store: TeacherCacheStore, test_store: TeacherCacheStore, settings: Any,
@@ -117,9 +118,12 @@ def train_student(model: nn.Module, processor: Any, replacement: Any, head: Clas
                 scales=_residual_scale_values(replacement)
                 print(f"epoch {epoch}/{settings.epochs} batch {batch_index}/{len(loader)}\nloss_total={totals['total']/seen:.5f} loss_vision={totals['vision']/seen:.5f} loss_answer={totals['answer']/seen:.5f} loss_kd={totals['kd']/seen:.5f} loss_ce={totals['ce']/seen:.5f} running_top1={running['top1_accuracy']:.4f} lr={optimizer.param_groups[0]['lr']:.3e} alpha_v={scales['alpha_v']:.6f} beta_v={scales['beta_v']:.6f} alpha_l={scales['alpha_l']:.6f} beta_l={scales['beta_l']:.6f}",flush=True)
         train_time=time.perf_counter()-train_started; validation_started=time.perf_counter()
-        validation=evaluate_student(model,processor,replacement,head,val_loader,class_names,settings,device)
+        debug_enabled=settings.save_debug_visualizations and epoch%settings.debug_visualization_interval_epochs==0
+        validation=evaluate_student(model,processor,replacement,head,val_loader,class_names,settings,device,
+            teacher_store=train_store,teacher_logits=teacher_logits,teacher_index_map=validation_indices,
+            debug_epoch=epoch,debug_phase="validation",save_debug=debug_enabled)
         validation_time=time.perf_counter()-validation_started; train_metrics=metrics_from_logits(torch.cat(logits_epoch),torch.cat(labels_epoch),class_names)
-        row={"epoch":epoch,"learning_rate":optimizer.param_groups[0]["lr"],"loss_total":totals["total"]/seen,"loss_vision":totals["vision"]/seen,"loss_answer":totals["answer"]/seen,"loss_kd":totals["kd"]/seen,"loss_ce":totals["ce"]/seen,"train_top1_accuracy":train_metrics["top1_accuracy"],"train_macro_f1":train_metrics["macro_f1"],"validation_top1_accuracy":validation["metrics"]["top1_accuracy"],"validation_top5_accuracy":validation["metrics"]["top5_accuracy"],"validation_macro_f1":validation["metrics"]["macro_f1"],"validation_balanced_accuracy":validation["metrics"]["balanced_accuracy"],"epoch_time_sec":time.perf_counter()-epoch_started,"train_time_sec":train_time,"validation_time_sec":validation_time,**_residual_scale_values(replacement)}
+        row={"epoch":epoch,"learning_rate":optimizer.param_groups[0]["lr"],"loss_total":totals["total"]/seen,"loss_vision":totals["vision"]/seen,"loss_answer":totals["answer"]/seen,"loss_kd":totals["kd"]/seen,"loss_ce":totals["ce"]/seen,"train_top1_accuracy":train_metrics["top1_accuracy"],"train_macro_f1":train_metrics["macro_f1"],"validation_top1_accuracy":validation["metrics"]["top1_accuracy"],"validation_top5_accuracy":validation["metrics"]["top5_accuracy"],"validation_macro_f1":validation["metrics"]["macro_f1"],"validation_balanced_accuracy":validation["metrics"]["balanced_accuracy"],"epoch_time_sec":time.perf_counter()-epoch_started,"train_time_sec":train_time,"validation_time_sec":validation_time,**validation.get("debug_summary",_empty_debug_summary()),**_residual_scale_values(replacement)}
         history.append(row); _write_student_epoch_outputs(settings,history,row,validation,epoch,class_names)
         improved=row["validation_top1_accuracy"]>best_top1 or row["validation_macro_f1"]>best_macro
         if improved:
@@ -135,18 +139,31 @@ def train_student(model: nn.Module, processor: Any, replacement: Any, head: Clas
 
 @torch.no_grad()
 def evaluate_student(model: nn.Module, processor: Any, replacement: Any, head: nn.Module, loader: Any,
-                     class_names: Sequence[str], settings: Any, device: torch.device) -> dict[str,Any]:
+                     class_names: Sequence[str], settings: Any, device: torch.device,
+                     teacher_store:TeacherCacheStore|None=None,teacher_logits:torch.Tensor|None=None,
+                     teacher_index_map:Sequence[int]|None=None,debug_epoch:int=0,
+                     debug_phase:str="student_inference",save_debug:bool=False) -> dict[str,Any]:
     replacement.use_student(); replacement.vision_surrogate.eval(); replacement.language_surrogate.eval(); head.eval()
-    logits_chunks=[]; labels_chunks=[]; indices_all=[]; sample_metadata=[]
+    logits_chunks=[]; labels_chunks=[]; indices_all=[]; sample_metadata=[];debug_by_key={};debug_fill=[]
     source_dataset=loader.dataset.dataset
     for batch_index,(images,labels,indices) in enumerate(loader):
         if settings.benchmark_batches is not None and batch_index>=settings.benchmark_batches: break
-        inputs=move_inputs(preprocess_image_text(processor,images,settings.classification_prompt),device)
+        inputs_cpu=preprocess_image_text(processor,images,settings.classification_prompt);inputs=move_inputs(inputs_cpu,device)
         replacement.prepare_student_batch(inputs["attention_mask"]); hidden=multimodal_forward_features(model,inputs); answer,_=pool_answer_hidden_state(hidden,inputs["attention_mask"])
-        logits_chunks.append(head(answer).cpu()); labels_chunks.append(labels); indices_all.extend(indices.tolist())
+        batch_logits=head(answer);logits_chunks.append(batch_logits.cpu()); labels_chunks.append(labels); indices_all.extend(indices.tolist())
         sample_metadata.extend(sample_metadata_of(source_dataset,int(index)) for index in indices.tolist())
+        if save_debug and teacher_store is not None and teacher_logits is not None:
+            _collect_debug_candidates(debug_by_key,debug_fill,images,labels,indices,batch_logits,answer,inputs_cpu,
+                replacement,teacher_store,teacher_logits,teacher_index_map,source_dataset,class_names,settings)
     logits=torch.cat(logits_chunks); labels=torch.cat(labels_chunks)
-    return {"metrics":metrics_from_logits(logits,labels,class_names),"logits":logits,"labels":labels,"indices":indices_all,"sample_metadata":sample_metadata}
+    result={"metrics":metrics_from_logits(logits,labels,class_names),"logits":logits,"labels":labels,"indices":indices_all,"sample_metadata":sample_metadata}
+    if save_debug:
+        candidates=_select_debug_candidates(debug_by_key,debug_fill,settings.debug_visualization_sample_count,len(class_names),settings.debug_visualization_include_correct,settings.debug_visualization_include_incorrect)
+        rows=[];summaries=[];root=settings.output_dir/"figures"/"debug_examples"
+        for candidate in candidates:
+            row,summary=save_debug_example(candidate,root,debug_epoch,debug_phase,settings);rows.append(row);summaries.append(summary)
+        append_debug_index(root/"index.csv",rows);result["debug_summary"]=_summarize_debug(rows,summaries,root/f"epoch_{debug_epoch:04d}")
+    return result
 
 
 def _write_student_epoch_outputs(settings: Any, history: list[dict], row: dict, validation: dict, epoch: int, names: Sequence[str]) -> None:
@@ -159,6 +176,7 @@ def _write_student_epoch_outputs(settings: Any, history: list[dict], row: dict, 
 
 def save_student_inference(result: dict[str,Any], settings: Any, names: Sequence[str], replacement: Any | None=None) -> list[dict]:
     report=dict(result["metrics"])
+    report.update(result.get("debug_summary",{}))
     if replacement is not None:
         report.update(_residual_scale_values(replacement))
     write_json(settings.output_dir/"metrics"/"student_inference.json",report)
@@ -254,3 +272,65 @@ def _residual_scale_values(replacement: Any) -> dict[str, float]:
         "alpha_l":language["modulated_scale"],
         "beta_l":language["identity_scale"],
     }
+
+
+def _collect_debug_candidates(by_key:dict,fill:list,images:list,labels:torch.Tensor,indices:torch.Tensor,
+        logits:torch.Tensor,answer:torch.Tensor,inputs_cpu:dict,replacement:Any,teacher_store:TeacherCacheStore,
+        teacher_logits:torch.Tensor,index_map:Sequence[int]|None,source_dataset:Dataset[Any],class_names:Sequence[str],settings:Any)->None:
+    counts=replacement.vision_surrogate.last_token_counts;offsets=[0]
+    for count in counts:offsets.append(offsets[-1]+count)
+    for local,index_value in enumerate(indices.tolist()):
+        cache_index=int(index_map[index_value]) if index_map is not None else int(index_value)
+        target=teacher_store.get(cache_index);truth=int(labels[local]);student_logit=logits[local].detach().cpu();teacher_logit=teacher_logits[cache_index].detach().float().cpu()
+        prediction=int(student_logit.argmax());teacher_prediction=int(teacher_logit.argmax());correct=prediction==truth;key=(truth,correct)
+        if key in by_key and len(fill)>=settings.debug_visualization_sample_count*4:continue
+        start,end=offsets[local],offsets[local+1];mask=inputs_cpu["attention_mask"][local].bool();extra=sample_metadata_of(source_dataset,int(index_value))
+        metadata={"sample_index":int(index_value),"cache_sample_index":cache_index,"true_label":truth,"true_name":class_names[truth],
+            "pred_label":prediction,"pred_name":class_names[prediction],"teacher_pred_label":teacher_prediction,
+            "teacher_pred_name":class_names[teacher_prediction],"correct":correct,
+            "image_grid_thw":inputs_cpu["image_grid_thw"][local].tolist(),"visual_token_count":counts[local],
+            "language_sequence_length":int(mask.sum()),"prompt":settings.classification_prompt,**extra}
+        snapshot={"sample_index":int(index_value),"image":images[local].copy(),"metadata":metadata,
+            "vision_input_field":replacement.vision_surrogate.last_input_fields[local].detach().cpu(),
+            "language_input_field":replacement.language_surrogate.last_input_fields[local].detach().cpu(),
+            "vision_detector_fields":[field[local].detach().cpu() for field in replacement.vision_surrogate.last_fields],
+            "language_detector_fields":[field[local].detach().cpu() for field in replacement.language_surrogate.last_fields],
+            "student_vision_hidden":replacement.vision_surrogate.last_output[start:end].detach().cpu(),
+            "teacher_vision_hidden":target["teacher_vision_stack_output"].detach().float().cpu(),
+            "vision_delta":replacement.vision_surrogate.last_delta[start:end].detach().cpu(),
+            "student_answer_hidden":answer[local].detach().cpu(),"teacher_answer_hidden":target["teacher_answer_hidden"].detach().float().cpu(),
+            "student_language_hidden_sequence":replacement.language_surrogate.last_output[local,mask].detach().cpu(),
+            "language_delta":replacement.language_surrogate.last_delta[local,mask].detach().cpu(),
+            "student_logits":student_logit,"teacher_logits":teacher_logit}
+        by_key.setdefault(key,snapshot)
+        if len(fill)<settings.debug_visualization_sample_count*4:fill.append(snapshot)
+
+
+def _select_debug_candidates(by_key:dict,fill:list,limit:int,num_classes:int,include_correct:bool,include_incorrect:bool)->list[dict]:
+    selected=[];seen=set();allowed={value for value,enabled in ((True,include_correct),(False,include_incorrect)) if enabled}
+    def add(candidate):
+        if candidate is not None and id(candidate) not in seen and len(selected)<limit:selected.append(candidate);seen.add(id(candidate))
+    for class_index in range(num_classes):
+        for correct in (True,False):
+            if correct in allowed and (class_index,correct) in by_key:add(by_key[(class_index,correct)]);break
+    for correct in (True,False):
+        if correct in allowed:
+            for (_,value),candidate in by_key.items():
+                if value==correct:add(candidate)
+    for candidate in fill:
+        if candidate["metadata"]["correct"] in allowed:add(candidate)
+    return selected
+
+
+def _empty_debug_summary()->dict[str,Any]:
+    return {"debug_examples_saved":0,"debug_examples_dir":"","vision_detector_negative_count":0,
+            "language_detector_negative_count":0,"mean_debug_vision_cosine":0.0,"mean_debug_answer_cosine":0.0}
+
+
+def _summarize_debug(rows:list[dict],summaries:list[dict],directory:Path)->dict[str,Any]:
+    if not summaries:return _empty_debug_summary()
+    return {"debug_examples_saved":len(rows),"debug_examples_dir":str(directory),
+        "vision_detector_negative_count":sum(item["vision_detector_negative_count"] for item in summaries),
+        "language_detector_negative_count":sum(item["language_detector_negative_count"] for item in summaries),
+        "mean_debug_vision_cosine":sum(item["vision_cosine"] for item in summaries)/len(summaries),
+        "mean_debug_answer_cosine":sum(item["answer_cosine"] for item in summaries)/len(summaries)}

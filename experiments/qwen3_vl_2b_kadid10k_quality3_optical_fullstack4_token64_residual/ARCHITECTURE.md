@@ -46,3 +46,5 @@ The default beta values are fixed 1.0 buffers. The default alpha values are trai
 ## Classification head
 
 The default KADID three-class head is `LayerNorm(2048) -> Linear(2048,64) -> GELU -> Dropout -> Linear(64,3)`. The head type and dimensions are configurable, shared by teacher and student, recorded in checkpoints, and itemized in `model.json`. Legacy configs without head keys retain the original MLP behavior.
+
+Validation and inference can write a bounded, read-only diagnostic set. It compares restored student hidden against cached teacher targets and records field/hidden statistics. Detector intensity comes directly from square-law detection, normalization, and ReLU, so a negative detector count is treated as a bug and emits a warning.

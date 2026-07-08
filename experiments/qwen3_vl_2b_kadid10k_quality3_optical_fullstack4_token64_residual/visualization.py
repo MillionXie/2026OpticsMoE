@@ -28,8 +28,8 @@ def save_stack_diagnostics(surrogate: torch.nn.Module, phase_root: Path, field_r
     )
     sample_dir=field_root/f"epoch_{epoch:04d}"/"sample_000"; sample_dir.mkdir(parents=True,exist_ok=True)
     for index,field in enumerate(surrogate.last_fields,start=1):
-        value=field[0].detach().cpu().float(); display=torch.log10(value/value.max().clamp_min(1e-8)+1e-8).numpy()
-        fig,ax=plt.subplots(figsize=(4,4)); image=ax.imshow(display,cmap="inferno"); ax.set_title(f"Detected intensity {index}"); ax.axis("off"); fig.colorbar(image,ax=ax)
+        value=field[0].detach().cpu().float().clamp_min(0); display=value.numpy();vmax=float(torch.quantile(value.flatten(),.99).clamp_min(1e-8))
+        fig,ax=plt.subplots(figsize=(4,4)); image=ax.imshow(display,cmap="inferno",vmin=0,vmax=vmax); ax.set_title(f"Detector intensity {index} (nonnegative)"); ax.axis("off");colorbar=fig.colorbar(image,ax=ax);colorbar.set_label("detector intensity")
         fig.tight_layout(); fig.savefig(sample_dir/f"conversion_{index}.png",dpi=140); plt.close(fig)
 
 
@@ -44,7 +44,7 @@ def _save_phase_overview(phases:list[np.ndarray],path:Path,cmap:str,vmin:float,v
 def save_confusion(matrix: list[list[int]], names: Sequence[str], path: Path) -> None:
     values=np.asarray(matrix); fig,ax=plt.subplots(figsize=(9,8)); image=ax.imshow(values,cmap="Blues"); fig.colorbar(image,ax=ax)
     ax.set_xticks(range(len(names)),names,rotation=45,ha="right"); ax.set_yticks(range(len(names)),names)
-    ax.set_xlabel("Predicted"); ax.set_ylabel("True"); ax.set_title("KADID-10k Quality-3 optical fullstack4 token64 residual")
+    ax.set_xlabel("Predicted"); ax.set_ylabel("True"); ax.set_title("KADID-10k Quality-3 optical fullstack4")
     fig.tight_layout(); path.parent.mkdir(parents=True,exist_ok=True); fig.savefig(path,dpi=160); plt.close(fig)
 
 

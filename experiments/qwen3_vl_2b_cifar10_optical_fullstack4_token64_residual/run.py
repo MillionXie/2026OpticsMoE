@@ -13,7 +13,7 @@ from torch.utils.data import Subset
 from .datasets import DatasetBundle, load_cifar10, make_indexed_loader, stratified_split_indices
 from .download import download_checkpoint
 from .io_utils import resolve_device, resolve_dtype, runtime_metadata, set_seed, write_csv, write_json
-from .modeling import LoadedBackbone, build_head, load_backbone, parameter_report
+from .modeling import LoadedBackbone, build_head, load_backbone, parameter_report, student_parameter_breakdown
 from .optics import FullStackReplacement, LanguageOpticalStackSurrogate, VisionOpticalStackSurrogate
 from .settings import Settings, load_settings, resolve_path
 from .teacher_cache import TeacherCacheStore, build_teacher_cache, expected_metadata, load_teacher_logits
@@ -61,7 +61,7 @@ def main(argv:list[str]|None=None)->int:
             if args.phase=="teacher_precompute": return 0
         stores = (
             _load_stores(settings, loaded.model, data.class_names, data)
-            if args.phase in {"student_train", "all"}
+            if args.phase in {"student_train", "all"} or (args.phase=="student_inference" and settings.save_debug_visualizations)
             else None
         )
         if args.phase=="all":
@@ -82,7 +82,10 @@ def main(argv:list[str]|None=None)->int:
             student_head=build_head(settings,settings.text_hidden_size,len(data.class_names)).to(device)
             load_student_parts(settings,replacement,student_head,device,"best")
             loader=make_indexed_loader(data.test,settings.inference_batch_size,settings.num_workers,False,settings.seed)
-            result=evaluate_student(loaded.model,loaded.processor,replacement,student_head,loader,data.class_names,settings,device)
+            test_teacher_logits=load_teacher_logits(settings.output_dir/"teacher_cache"/"test_teacher_logits.pt") if settings.save_debug_visualizations else None
+            result=evaluate_student(loaded.model,loaded.processor,replacement,student_head,loader,data.class_names,settings,device,
+                teacher_store=stores["test"] if stores is not None else None,teacher_logits=test_teacher_logits,debug_epoch=0,
+                debug_phase="student_inference",save_debug=settings.save_debug_visualizations)
             save_student_inference(result,settings,data.class_names,replacement)
             if args.phase=="student_inference": return 0
         if args.phase=="all": _compare(settings,data.class_names)
@@ -185,6 +188,7 @@ def _write_model_report(model:torch.nn.Module,replacement:FullStackReplacement,s
     detector_parameters=sum(c.detector_bias.numel() for stack in (vision,language) for c in stack.conversions if c.detector_bias.requires_grad)
     head_specification=head.specification(); total_trainable=vision_parameters+language_parameters+head_specification["trainable_parameters"]
     report=parameter_report(model,head); report.update({"model_id":settings.model_id,"replacement_mode":"vision_and_language_fullstack4_token64_residual","vision_depth":settings.vision_depth,"vision_hidden_size":settings.vision_hidden_size,"text_depth":settings.text_depth,"text_hidden_size":settings.text_hidden_size,"vision_optical_output_hidden_size":settings.vision_hidden_size,"vision_merger_output_hidden_size":settings.text_hidden_size,"language_optical_output_hidden_size":settings.text_hidden_size,"vision_optical_conversions":4,"language_optical_conversions":4,"optical_dim":settings.optical_dim,"optical_field_size":settings.optical_field_size,"optical_padding_size":settings.optical_padding_size,"pixel_pitch_um":settings.pixel_pitch_um,"phase_init":settings.phase_init,"phase_init_std":settings.phase_init_std,"amplitude_mask_enabled":settings.amplitude_mask_enabled,"token_field_mapping":"direct token rows plus strict zero padding","optical_residual_enabled":settings.optical_residual_enabled,"optical_identity_scale_init":settings.optical_identity_scale_init,"optical_modulated_scale_init":settings.optical_modulated_scale_init,"optical_identity_scale_trainable":settings.optical_identity_scale_trainable,"optical_modulated_scale_trainable":settings.optical_modulated_scale_trainable,**_scale_values(replacement),"detected_intensity_reencoded_with_sqrt":False,"teacher_cache":"stack outputs only; independent pixel-budget metadata","head_type":head_specification["type"],"head_parameters":head_specification["parameters"],"head_trainable_parameters":head_specification["trainable_parameters"],"head":head_specification,"vision_optical_surrogate_parameters":vision_parameters,"language_optical_surrogate_parameters":language_parameters,"vision_surrogate_parameters":vision_parameters,"language_surrogate_parameters":language_parameters,"optical_phase_parameters":phase_parameters,"optical_amplitude_parameters":amplitude_parameters,"optical_adapter_parameters":adapter_parameters,"optical_detector_bias_parameters":detector_parameters,"residual_scale_parameters":residual_parameters,"total_trainable_parameters":total_trainable,"optical_mask_trainable_fraction":(phase_parameters+amplitude_parameters)/total_trainable})
+    report.update(student_parameter_breakdown(vision,language,head))
     write_json(settings.output_dir/"model.json",report)
 
 

@@ -79,3 +79,5 @@ The default pixel pitch is 8 micrometres, wavelength is 532 nm, phase initializa
 ## Classification head ablation
 
 `build_head()` supports the original MLP, a direct linear classifier, a configurable bottleneck MLP with optional input LayerNorm, and LayerNorm plus linear classification. Teacher and student always use the same resolved head configuration. Checkpoints record the resolved type and dimensions; incompatible head checkpoints fail explicitly. The model report separates head parameters from optical phases, optional amplitude masks, electronic adapters, and residual scales.
+
+The debug path is read-only and runs under `torch.no_grad()`. It records `Linear -> LayerNorm -> Softplus` input fields, detector intensity after every conversion, output-adapter delta, residual-combined vision hidden, language sequence hidden, and answer hidden against teacher cache targets. Raw intensity must be nonnegative; any negative detector count triggers a warning. Hidden/delta/signed-difference plots may contain negative values and use centered diverging colormaps.
