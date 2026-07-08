@@ -33,7 +33,7 @@ pytest experiments/qwen3_vl_2b_bdd100k_timeofday3_optical_fullstack4_token64_res
 ## Head ablations
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_bdd100k_timeofday3_optical_fullstack4_token64_residual.run --config experiments/qwen3_vl_2b_bdd100k_timeofday3_optical_fullstack4_token64_residual/configs/bdd100k_timeofday3_bottleneck64.json --phase all
+CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_2b_bdd100k_timeofday3_optical_fullstack4_token64_residual.run --config experiments/qwen3_vl_2b_bdd100k_timeofday3_optical_fullstack4_token64_residual/configs/bdd100k_timeofday3_bottleneck64.json --phase all
 ```
 
 ```bash
