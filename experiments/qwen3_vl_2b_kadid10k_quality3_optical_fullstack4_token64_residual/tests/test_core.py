@@ -57,7 +57,7 @@ def make_kadid_root(tmp_path:Path,score_column:str="dmos")->Path:
         for local in range(3):
             number+=1;name=f"ref{ref_index:02d}_dist{local}.png"
             Image.new("RGB",(8,8),(number,number,number)).save(images/name)
-            rows.append({"distorted_image":name,"ref_image":f"ref{ref_index:02d}.png",
+            rows.append({"dist_img":name,"ref_img":f"ref{ref_index:02d}.png",
                          score_column:str(number),"distortion_level":str(local+1),
                          "distortion_type":"blur"})
     with (root/"dmos.csv").open("w",encoding="utf-8",newline="") as handle:
