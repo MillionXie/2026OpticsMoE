@@ -141,6 +141,13 @@ class Settings:
 
 def load_settings(path: str | Path) -> Settings:
     config_path = resolve_path(path, Path.cwd(), "config")
+    if not config_path.is_file():
+        raise FileNotFoundError(
+            f"Config file not found: {config_path}. "
+            "On Linux/macOS shells, use forward slashes in paths, for example "
+            "experiments/bdd100k_timeofday3_standard_baselines/configs/"
+            "bdd100k_timeofday3_standard_d2nn64.json."
+        )
     raw = json.loads(config_path.read_text(encoding="utf-8"))
     allowed = {item.name for item in fields(Settings)}
     unknown = sorted(set(raw) - allowed)
@@ -162,4 +169,3 @@ def resolve_path(value: str | Path, base: Path, field_name: str) -> Path:
         raise ValueError(f"{field_name} references unset environment variables: {', '.join(unresolved)}")
     path = Path(expanded)
     return (path if path.is_absolute() else base / path).resolve()
-

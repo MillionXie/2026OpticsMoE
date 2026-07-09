@@ -27,6 +27,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--phase", choices=PHASES, default="all")
     parser.add_argument("--device")
     parser.add_argument("--epochs", type=int)
+    parser.add_argument("--data-root", type=Path)
     parser.add_argument("--output-dir", type=Path)
     parser.add_argument("--baseline-output-dir", type=Path, action="append", default=[])
     return parser
@@ -83,6 +84,8 @@ def _overrides(settings: Settings, args: argparse.Namespace) -> None:
         settings.device = args.device
     if args.epochs:
         settings.epochs = args.epochs
+    if args.data_root:
+        settings.data_root = resolve_path(args.data_root, Path.cwd(), "data_root")
     if args.output_dir:
         settings.output_dir = resolve_path(args.output_dir, Path.cwd(), "output_dir")
     settings.validate()
@@ -175,4 +178,3 @@ def _log(message: str) -> None:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
