@@ -39,7 +39,7 @@
   "wavelength_nm": 532.0,
   "pixel_pitch_um": 8.0,
   "mask_distance_cm": 5.0,
-  "phase_init": "uniform",
+  "phase_init": "zeros",
   "phase_init_std": 0.02,
   "detector_region_size": 12,
   "detector_region_temperature": 1.0,
