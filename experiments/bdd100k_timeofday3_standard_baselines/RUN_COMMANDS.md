@@ -9,10 +9,10 @@ break the config path.
 
 ```bash
 CUDA_VISIBLE_DEVICES=3 python -m experiments.bdd100k_timeofday3_standard_baselines --config experiments/bdd100k_timeofday3_standard_baselines/configs/bdd100k_timeofday3_standard_d2nn64.json --phase all
-CUDA_VISIBLE_DEVICES=3 python -m experiments.bdd100k_timeofday3_standard_baselines --config experiments/bdd100k_timeofday3_standard_baselines/configs/bdd100k_timeofday3_lenet5.json --phase all
-CUDA_VISIBLE_DEVICES=3 python -m experiments.bdd100k_timeofday3_standard_baselines --config experiments/bdd100k_timeofday3_standard_baselines/configs/bdd100k_timeofday3_resnet18.json --phase all
-CUDA_VISIBLE_DEVICES=3 python -m experiments.bdd100k_timeofday3_standard_baselines --config experiments/bdd100k_timeofday3_standard_baselines/configs/bdd100k_timeofday3_vgg11_bn.json --phase all
-CUDA_VISIBLE_DEVICES=3 python -m experiments.bdd100k_timeofday3_standard_baselines --config experiments/bdd100k_timeofday3_standard_baselines/configs/bdd100k_timeofday3_mobilenet_v2.json --phase all
+CUDA_VISIBLE_DEVICES=4 python -m experiments.bdd100k_timeofday3_standard_baselines --config experiments/bdd100k_timeofday3_standard_baselines/configs/bdd100k_timeofday3_lenet5.json --phase all
+CUDA_VISIBLE_DEVICES=5 python -m experiments.bdd100k_timeofday3_standard_baselines --config experiments/bdd100k_timeofday3_standard_baselines/configs/bdd100k_timeofday3_resnet18.json --phase all
+CUDA_VISIBLE_DEVICES=6 python -m experiments.bdd100k_timeofday3_standard_baselines --config experiments/bdd100k_timeofday3_standard_baselines/configs/bdd100k_timeofday3_vgg11_bn.json --phase all
+CUDA_VISIBLE_DEVICES=2 python -m experiments.bdd100k_timeofday3_standard_baselines --config experiments/bdd100k_timeofday3_standard_baselines/configs/bdd100k_timeofday3_mobilenet_v2.json --phase all
 ```
 
 If the server stores BDD100K somewhere else, override the config without editing

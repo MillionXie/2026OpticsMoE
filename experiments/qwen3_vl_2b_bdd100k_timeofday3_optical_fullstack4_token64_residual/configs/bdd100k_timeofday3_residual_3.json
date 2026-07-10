@@ -2,7 +2,7 @@
   "dataset": "bdd100k_timeofday3",
   "data_root": "../data/bdd100k_timeofday3",
   "download": true,
-  "output_dir": "../runs/qwen3_vl_2b_bdd100k_timeofday3_optical_fullstack4_token64_residual",
+  "output_dir": "../runs/qwen3_vl_2b_bdd100k_timeofday3_optical_fullstack4_token64_residual_3",
   "model_id": "Qwen/Qwen3-VL-2B-Instruct",
   "cache_dir": null,
   "local_files_only": false,
