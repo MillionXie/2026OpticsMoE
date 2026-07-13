@@ -2,18 +2,23 @@ seed: 7
 device: auto
 
 experiment:
-  run_name: d2nn_mnist4_amp_1phase400_sigmoid_zero_seed7
+  run_name: d2nn_mnist4_amp_1phase400_kspace_theta1p0deg_zero_seed7
   print_freq: 50
 
 dataset:
   name: mnist4
   root: ./data
   input_size: 400
+  preprocess_mode: resize_then_pad
+  resize_size: 336
+  interpolation: bicubic
   class_digits: [0, 1, 2, 3]
-  batch_size: 512
+  train_samples_per_class: 3000
+  test_samples_per_class: 600
+  batch_size: 100
   num_workers: 8
   download: true
-  use_full_dataset: true
+  use_full_dataset: false
 
 optics:
   wavelength_m: 5.32e-7
@@ -27,7 +32,9 @@ optics:
   phase_init: zeros
   init_std: 0.02
   evanescent_mode: zero
-  input_to_layer_distance_m: 0.03
+  k_space_constraint_enabled: true
+  theta_max_deg: 1.0
+  input_to_layer_distance_m: 0.0
   inter_layer_distance_m: 0.03
   detector_distance_m: 0.20
 
@@ -44,14 +51,18 @@ detector:
 readout:
   type: detector_only
 
+loss:
+  type: detector_plane_mse
+  scale: 100.0
+
 regularization:
   phase_dropout:
     enabled: false
 
 optimizer:
-  type: adamw
-  lr: 0.003
-  weight_decay: 0.0005
+  type: adam
+  lr: 0.01
+  weight_decay: 0.0
 
 training:
   epochs: 300
@@ -63,4 +74,5 @@ visualization:
   enabled: true
   save_interval_epochs: 10
   num_samples: 4
+  final_num_samples: 12
   dpi: 150

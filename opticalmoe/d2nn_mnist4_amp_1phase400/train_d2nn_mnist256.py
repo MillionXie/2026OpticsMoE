@@ -5,6 +5,7 @@ import time
 from pathlib import Path
 
 import torch
+import torch.nn.functional as F
 
 from data import create_mnist_loaders
 from model import D2NNClassifier
@@ -33,7 +34,7 @@ from visualization import (
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Train a standalone MNIST-4 amplitude-input one-phase D2NN baseline.")
-    parser.add_argument("--config", default="config.yaml")
+    parser.add_argument("--config", default="configs/config.yaml")
     parser.add_argument("--run_name", default=None)
     parser.add_argument("--device", default=None)
     parser.add_argument("--epochs", type=int, default=None)
@@ -60,7 +61,21 @@ def accuracy(logits, targets):
     return (logits.argmax(dim=1) == targets).float().mean().item()
 
 
-def train_one_epoch(model, loader, criterion, optimizer, device, print_freq=50):
+def forward_and_loss(model, images, targets, loss_cfg):
+    loss_type = str(loss_cfg.get("type", "detector_plane_mse"))
+    scale = float(loss_cfg.get("scale", 100.0 if loss_type == "detector_plane_mse" else 1.0))
+    if loss_type == "detector_plane_mse":
+        logits, intermediates = model(images, return_intermediates=True)
+        target_intensity = model.detector.masks[targets].to(device=images.device, dtype=torch.float32)
+        loss = scale * F.mse_loss(intermediates["detector_intensity"], target_intensity, reduction="mean")
+        return logits, loss
+    if loss_type == "cross_entropy":
+        logits = model(images)
+        return logits, scale * F.cross_entropy(logits, targets)
+    raise ValueError(f"Unsupported loss.type: {loss_type}")
+
+
+def train_one_epoch(model, loader, loss_cfg, optimizer, device, print_freq=50):
     model.train()
     total_loss = 0.0
     total_correct = 0
@@ -69,8 +84,7 @@ def train_one_epoch(model, loader, criterion, optimizer, device, print_freq=50):
         images = images.to(device)
         targets = targets.to(device)
         optimizer.zero_grad(set_to_none=True)
-        logits = model(images)
-        loss = criterion(logits, targets)
+        logits, loss = forward_and_loss(model, images, targets, loss_cfg)
         loss.backward()
         optimizer.step()
         batch = targets.numel()
@@ -83,7 +97,7 @@ def train_one_epoch(model, loader, criterion, optimizer, device, print_freq=50):
 
 
 @torch.no_grad()
-def evaluate_model(model, loader, criterion, device):
+def evaluate_model(model, loader, loss_cfg, device):
     model.eval()
     total_loss = 0.0
     total_correct = 0
@@ -93,8 +107,7 @@ def evaluate_model(model, loader, criterion, device):
     for images, targets in loader:
         images = images.to(device)
         targets = targets.to(device)
-        logits = model(images)
-        loss = criterion(logits, targets)
+        logits, loss = forward_and_loss(model, images, targets, loss_cfg)
         preds = logits.argmax(dim=1)
         batch = targets.numel()
         total_loss += float(loss.item()) * batch
@@ -126,21 +139,44 @@ def save_checkpoint(path, model, optimizer, epoch, metrics, config):
 
 
 def fixed_batch(loader, device, max_items):
-    images, targets = next(iter(loader))
-    return images[:max_items].to(device), targets[:max_items].to(device)
+    image_parts = []
+    target_parts = []
+    collected = 0
+    for images, targets in loader:
+        take = min(len(images), int(max_items) - collected)
+        image_parts.append(images[:take])
+        target_parts.append(targets[:take])
+        collected += take
+        if collected >= int(max_items):
+            break
+    if not image_parts:
+        raise RuntimeError("Cannot create visualization batch from an empty loader.")
+    return torch.cat(image_parts, dim=0).to(device), torch.cat(target_parts, dim=0).to(device)
 
 
 def architecture_report(model, config, class_names=None):
+    dataset = config.get("dataset", {})
     optics = config.get("optics", {})
     detector = config.get("detector", {})
     readout = config.get("readout", {})
     phase_dropout = phase_dropout_settings(config)
+    loss_cfg = config.get("loss", {"type": "detector_plane_mse", "scale": 100.0})
     class_names = list(class_names or [str(index) for index in range(model.num_classes)])
     return {
         "model": "D2NNClassifier",
-        "dataset": config.get("dataset", {}).get("name", "mnist4"),
+        "dataset": dataset.get("name", "mnist4"),
         "class_names": class_names,
         "num_classes": int(model.num_classes),
+        "input_preprocessing": {
+            "mode": dataset.get("preprocess_mode", "resize_then_pad"),
+            "resize_size": int(dataset.get("resize_size", 336)),
+            "output_size": int(dataset.get("input_size", 400)),
+            "interpolation": dataset.get("interpolation", "bicubic"),
+            "train_samples_per_class": dataset.get("train_samples_per_class"),
+            "test_samples_per_class": dataset.get("test_samples_per_class"),
+            "use_full_dataset": bool(dataset.get("use_full_dataset", False)),
+            "input_encoding": "grayscale amplitude",
+        },
         "input_size": int(optics.get("input_size", 256)),
         "canvas_size": int(optics.get("canvas_size", 400)),
         "phase_mask_size": int(optics.get("phase_mask_size", optics.get("input_size", 256))),
@@ -155,6 +191,12 @@ def architecture_report(model, config, class_names=None):
         "input_to_layer_distance_m": float(optics.get("input_to_layer_distance_m", 0.05)),
         "inter_layer_distance_m": float(optics.get("inter_layer_distance_m", 0.05)),
         "detector_distance_m": float(optics.get("detector_distance_m", 0.05)),
+        "k_space_constraint": {
+            "enabled": bool(optics.get("k_space_constraint_enabled", False)),
+            "theta_max_deg": float(optics.get("theta_max_deg", 1.0)),
+            "max_sampled_angle_deg": float(model.detector_prop.max_sampled_angle_deg),
+            "pass_fraction": float(model.detector_prop.k_space_pass_fraction),
+        },
         "detector_size": int(detector.get("detector_size", 32)),
         "detector_layout": detector.get("layout", "grid"),
         "detector_start_pos_x": int(detector.get("start_pos_x", 75)),
@@ -165,6 +207,11 @@ def architecture_report(model, config, class_names=None):
         "readout_type": readout.get("type", "mlp"),
         "detector_output_is_final_logits": readout.get("type") == "detector_only",
         "phase_dropout": phase_dropout,
+        "loss": {
+            "type": loss_cfg.get("type", "detector_plane_mse"),
+            "scale": float(loss_cfg.get("scale", 100.0)),
+            "target": "full detector-plane class mask" if loss_cfg.get("type", "detector_plane_mse") == "detector_plane_mse" else "class label",
+        },
         "parameter_count": {
             "optical": model.optical_parameter_count(),
             "electronic": model.electronic_parameter_count(),
@@ -208,7 +255,7 @@ def main():
     train_loader, test_loader, class_names = create_mnist_loaders(config, seed=seed, smoke_test=args.smoke_test)
     model = D2NNClassifier(config, num_classes=len(class_names)).to(device)
     optimizer = build_optimizer(model, config)
-    criterion = torch.nn.CrossEntropyLoss()
+    loss_cfg = config.get("loss", {"type": "detector_plane_mse", "scale": 100.0})
     phase_dropout = phase_dropout_settings(config)
     save_json(architecture_report(model, config, class_names), run_dir / "architecture_report.json")
 
@@ -221,6 +268,7 @@ def main():
         f"input_size={model.input_size}, canvas_size={model.canvas_size}, phase_mask_size={model.phase_mask_size}, "
         f"phase_mask_region=y[{y0}:{y1}], x[{x0}:{x1}]"
     )
+    print(f"Loss: type={loss_cfg.get('type', 'detector_plane_mse')} scale={float(loss_cfg.get('scale', 100.0))}")
     print(
         "Trainable phase params: "
         f"per_layer={model.phase_layers[0].raw_phase.numel()}, total={model.optical_parameter_count()}, "
@@ -233,6 +281,13 @@ def main():
         f"detector={float(optics_cfg.get('detector_distance_m', 0.05))} m"
     )
     print(
+        "K-space constraint: "
+        f"enabled={model.detector_prop.k_space_constraint_enabled} "
+        f"theta_max_deg={model.detector_prop.theta_max_deg:.4f} "
+        f"max_sampled_angle_deg={model.detector_prop.max_sampled_angle_deg:.4f} "
+        f"pass_fraction={model.detector_prop.k_space_pass_fraction:.6f}"
+    )
+    print(
         "Phase dropout: "
         f"enabled={phase_dropout['enabled']} mode={phase_dropout['mode']} p={phase_dropout['p']} "
         f"block_size={phase_dropout['block_size']} start_epoch={phase_dropout['start_epoch']}"
@@ -242,6 +297,7 @@ def main():
     viz_enabled = bool(viz_cfg.get("enabled", True))
     viz_interval = int(viz_cfg.get("save_interval_epochs", config.get("training", {}).get("save_interval_epochs", 10)))
     fixed = fixed_batch(test_loader, device, int(viz_cfg.get("num_samples", 4)))
+    fixed_final = fixed_batch(test_loader, device, int(viz_cfg.get("final_num_samples", 12)))
     dpi = int(viz_cfg.get("dpi", 150))
     init_artifact_start = time.perf_counter()
     save_epoch_artifacts(model, fixed, run_dir, "epoch_0000", class_names, enabled=viz_enabled, dpi=dpi)
@@ -259,10 +315,10 @@ def main():
         active = phase_dropout_active_for_epoch(phase_dropout, epoch)
         model.set_phase_dropout_active(active)
         train_start = time.perf_counter()
-        train_metrics = train_one_epoch(model, train_loader, criterion, optimizer, device, print_freq=print_freq)
+        train_metrics = train_one_epoch(model, train_loader, loss_cfg, optimizer, device, print_freq=print_freq)
         train_time = time.perf_counter() - train_start
         eval_start = time.perf_counter()
-        test_metrics = evaluate_model(model, test_loader, criterion, device)
+        test_metrics = evaluate_model(model, test_loader, loss_cfg, device)
         eval_time = time.perf_counter() - eval_start
         artifact_time = 0.0
         row = {
@@ -299,13 +355,13 @@ def main():
         write_rows(run_dir / "metrics" / "epoch_metrics.csv", metrics_rows)
         print(f"epoch {epoch:03d} train_acc={row['train_acc']:.4f} test_acc={row['test_acc']:.4f} phase_dropout={'on' if active else 'off'}")
 
-    final_eval = evaluate_model(model, test_loader, criterion, device)
+    final_eval = evaluate_model(model, test_loader, loss_cfg, device)
     matrix = confusion_matrix(final_eval["preds"], final_eval["targets"], num_classes=len(class_names))
     save_confusion_matrix(matrix, run_dir / "figures" / "confusion_matrix.png", class_names)
     save_confusion_csv(matrix, run_dir / "metrics" / "confusion_matrix.csv")
     save_training_curves(metrics_rows, run_dir / "figures" / "training_curves.png")
     final_artifact_start = time.perf_counter()
-    save_epoch_artifacts(model, fixed, run_dir, "final_epoch", class_names, enabled=viz_enabled, dpi=dpi)
+    save_epoch_artifacts(model, fixed_final, run_dir, "final_epoch", class_names, enabled=viz_enabled, dpi=dpi)
     final_artifact_time = time.perf_counter() - final_artifact_start
     total_artifact_time += final_artifact_time
     total_wall_time = time.perf_counter() - run_start

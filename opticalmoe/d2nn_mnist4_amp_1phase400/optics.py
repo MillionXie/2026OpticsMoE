@@ -12,7 +12,16 @@ PHASE_DROPOUT_MODES = {"none", "phase_bypass", "block_phase_bypass"}
 class AngularSpectrumPropagator(nn.Module):
     """Fixed-distance angular spectrum free-space propagation."""
 
-    def __init__(self, wavelength_m: float, pixel_size_m: float, grid_size: GridSize, distance_m: float, evanescent_mode: str = "zero"):
+    def __init__(
+        self,
+        wavelength_m: float,
+        pixel_size_m: float,
+        grid_size: GridSize,
+        distance_m: float,
+        evanescent_mode: str = "zero",
+        k_space_constraint_enabled: bool = False,
+        theta_max_deg: float = 1.0,
+    ):
         super().__init__()
         if evanescent_mode != "zero":
             raise ValueError("Only evanescent_mode='zero' is supported.")
@@ -24,18 +33,43 @@ class AngularSpectrumPropagator(nn.Module):
         self.pixel_size_m = float(pixel_size_m)
         self.grid_size = (int(height), int(width))
         self.distance_m = float(distance_m)
-        self.register_buffer("transfer_function", self._build_transfer_function(), persistent=False)
+        self.k_space_constraint_enabled = bool(k_space_constraint_enabled)
+        self.theta_max_deg = float(theta_max_deg)
+        if self.k_space_constraint_enabled and not (0.0 < self.theta_max_deg <= 90.0):
+            raise ValueError("theta_max_deg must be in (0, 90] when k-space constraint is enabled.")
+        transfer_function, k_space_mask, max_angle_deg = self._build_transfer_function()
+        self.max_sampled_angle_deg = float(max_angle_deg)
+        self.k_space_pass_fraction = float(k_space_mask.to(torch.float64).mean().item())
+        self.register_buffer("transfer_function", transfer_function, persistent=False)
+        self.register_buffer("k_space_mask", k_space_mask, persistent=False)
 
-    def _build_transfer_function(self) -> torch.Tensor:
+    def _build_transfer_function(self):
         height, width = self.grid_size
-        fy = torch.fft.fftfreq(height, d=self.pixel_size_m, dtype=torch.float32)
-        fx = torch.fft.fftfreq(width, d=self.pixel_size_m, dtype=torch.float32)
+        # Match the notebook/NumPy kernel construction in float64.  Computing
+        # the multi-million-radian propagation phase in float32 introduces a
+        # visible phase error even though shifted and unshifted FFT forms are
+        # mathematically equivalent.
+        fy = torch.fft.fftfreq(height, d=self.pixel_size_m, dtype=torch.float64)
+        fx = torch.fft.fftfreq(width, d=self.pixel_size_m, dtype=torch.float64)
         fy_grid, fx_grid = torch.meshgrid(fy, fx, indexing="ij")
-        argument = 1.0 - (self.wavelength_m * fx_grid).square() - (self.wavelength_m * fy_grid).square()
+        argument = (2.0 * math.pi) ** 2 * (
+            (1.0 / self.wavelength_m) ** 2 - fx_grid.square() - fy_grid.square()
+        )
         propagating = argument >= 0.0
-        phase = (2.0 * math.pi / self.wavelength_m) * self.distance_m * torch.sqrt(argument.clamp_min(0.0))
+        radial_frequency = torch.sqrt(fx_grid.square() + fy_grid.square())
+        wave_number = 2.0 * math.pi / self.wavelength_m
+        radial_wave_number = 2.0 * math.pi * radial_frequency
+        angle = torch.asin((radial_wave_number / wave_number).clamp(0.0, 1.0))
+        max_angle_deg = float(torch.rad2deg(angle.max()).item())
+        if self.k_space_constraint_enabled:
+            cutoff = wave_number * math.sin(math.radians(self.theta_max_deg))
+            k_space_mask = radial_wave_number <= cutoff
+        else:
+            k_space_mask = torch.ones_like(propagating, dtype=torch.bool)
+        phase = self.distance_m * torch.sqrt(argument.clamp_min(0.0))
         transfer = torch.exp(1j * phase).to(torch.complex64)
-        return torch.where(propagating, transfer, torch.zeros_like(transfer))
+        pass_mask = propagating & k_space_mask
+        return torch.where(pass_mask, transfer, torch.zeros_like(transfer)), k_space_mask, max_angle_deg
 
     def forward(self, field: torch.Tensor) -> torch.Tensor:
         if field.ndim != 3:
@@ -43,6 +77,10 @@ class AngularSpectrumPropagator(nn.Module):
         if tuple(field.shape[-2:]) != self.grid_size:
             raise ValueError(f"Expected grid {self.grid_size}, got {tuple(field.shape[-2:])}")
         field = field.to(torch.complex64)
+        # The notebook applies the first mask directly to the input.  Returning
+        # here also avoids an unnecessary FFT/IFFT round trip at z=0.
+        if self.distance_m == 0.0:
+            return field
         spectrum = torch.fft.fft2(field, dim=(-2, -1))
         return torch.fft.ifft2(spectrum * self.transfer_function, dim=(-2, -1)).to(torch.complex64)
 
@@ -96,19 +134,19 @@ class PhaseLayer(nn.Module):
         return torch.log(value / (1.0 - value))
 
     def _reset_sigmoid_parameters(self, init: str, init_std: float) -> None:
-        eps = 1e-6
         if init in {"identity", "zeros", "zero"}:
-            # Effective phase is approximately zero after 2*pi*sigmoid(raw_phase).
-            self.raw_phase.data.fill_(float(math.log(eps / (1.0 - eps))))
+            # With phase = 2*pi*sigmoid(raw_phase), an exact effective phase of
+            # zero would require raw_phase -> -inf and would saturate sigmoid,
+            # killing gradients. raw_phase=0 gives a spatially constant pi
+            # phase, which is optically equivalent to an identity mask up to a
+            # global phase factor while keeping the sigmoid derivative maximal.
+            nn.init.zeros_(self.raw_phase)
             return
         if init in {"uniform", "uniform_0_2pi"}:
-            probability = torch.empty_like(self.raw_phase).uniform_(eps, 1.0 - eps)
-            self.raw_phase.data.copy_(self._logit(probability))
+            nn.init.uniform_(self.raw_phase, 0.0, 2.0 * math.pi)
             return
         if init in {"normal", "small_normal", "gaussian"}:
-            phase = torch.empty_like(self.raw_phase).normal_(math.pi, float(init_std))
-            probability = (phase / (2.0 * math.pi)).clamp(eps, 1.0 - eps)
-            self.raw_phase.data.copy_(self._logit(probability))
+            nn.init.normal_(self.raw_phase, 0.0, float(init_std))
             return
         raise ValueError(f"Unsupported phase init: {init}")
 
@@ -208,10 +246,12 @@ class DetectorArray(nn.Module):
         if self.layout == "fixed_2x2":
             positions = []
             for row_index, detectors_in_row in enumerate(self.n_det_sets):
-                y0 = self.start_pos_y + row_index * self.det_steps_y
-                step_x = self.det_steps_x[min(row_index, len(self.det_steps_x) - 1)]
+                # Match github_D2NN_mnist4.ipynb exactly: det_steps_x/y are
+                # clear gaps *between* detector squares, not top-left strides.
+                y0 = self.start_pos_y + row_index * (self.detector_size + self.det_steps_y)
+                gap_x = self.det_steps_x[min(row_index, len(self.det_steps_x) - 1)]
                 for col_index in range(int(detectors_in_row)):
-                    x0 = self.start_pos_x + col_index * int(step_x)
+                    x0 = self.start_pos_x + col_index * (self.detector_size + int(gap_x))
                     positions.append((int(y0), int(x0)))
             if len(positions) < self.num_classes:
                 raise ValueError(f"Detector layout supplies {len(positions)} regions for {self.num_classes} classes.")

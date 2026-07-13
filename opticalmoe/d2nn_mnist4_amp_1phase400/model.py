@@ -142,6 +142,8 @@ class D2NNClassifier(nn.Module):
             grid_size=self.canvas_size,
             distance_m=float(optics_cfg.get("input_to_layer_distance_m", 0.05)),
             evanescent_mode=optics_cfg.get("evanescent_mode", "zero"),
+            k_space_constraint_enabled=bool(optics_cfg.get("k_space_constraint_enabled", False)),
+            theta_max_deg=float(optics_cfg.get("theta_max_deg", 1.0)),
         )
         self.inter_prop = AngularSpectrumPropagator(
             wavelength_m=float(optics_cfg.get("wavelength_m", 5.32e-7)),
@@ -149,6 +151,8 @@ class D2NNClassifier(nn.Module):
             grid_size=self.canvas_size,
             distance_m=float(optics_cfg.get("inter_layer_distance_m", 0.05)),
             evanescent_mode=optics_cfg.get("evanescent_mode", "zero"),
+            k_space_constraint_enabled=bool(optics_cfg.get("k_space_constraint_enabled", False)),
+            theta_max_deg=float(optics_cfg.get("theta_max_deg", 1.0)),
         )
         self.detector_prop = AngularSpectrumPropagator(
             wavelength_m=float(optics_cfg.get("wavelength_m", 5.32e-7)),
@@ -156,6 +160,8 @@ class D2NNClassifier(nn.Module):
             grid_size=self.canvas_size,
             distance_m=float(optics_cfg.get("detector_distance_m", 0.05)),
             evanescent_mode=optics_cfg.get("evanescent_mode", "zero"),
+            k_space_constraint_enabled=bool(optics_cfg.get("k_space_constraint_enabled", False)),
+            theta_max_deg=float(optics_cfg.get("theta_max_deg", 1.0)),
         )
         self.detector = DetectorArray(
             num_classes=self.num_classes,
@@ -219,7 +225,7 @@ class D2NNClassifier(nn.Module):
     def forward(self, images: torch.Tensor, return_intermediates: bool = False):
         intermediates = {}
         if return_intermediates:
-            intermediates["input_256"] = images.detach()
+            intermediates["input_preprocessed_400"] = images.detach()
         field = self.prepare_canvas_input(images)
         if return_intermediates:
             intermediates["canvas_input_400"] = field.detach()
@@ -240,7 +246,9 @@ class D2NNClassifier(nn.Module):
         if not return_intermediates:
             return logits
         intermediates["detector_field"] = detector_field.detach()
-        intermediates["detector_intensity"] = torch.abs(detector_field.detach()).square()
+        # Keep this tensor attached: the notebook-compatible full detector-plane
+        # MSE loss must backpropagate from intensity to the phase parameters.
+        intermediates["detector_intensity"] = torch.abs(detector_field).square()
         intermediates["detector_energies"] = detector_energies.detach()
         intermediates["logits"] = logits.detach()
         return logits, intermediates

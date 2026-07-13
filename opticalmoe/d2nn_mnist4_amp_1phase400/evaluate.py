@@ -30,15 +30,15 @@ def main():
         ckpt_path = run_dir / "checkpoints" / ckpt_path
     payload = torch.load(ckpt_path, map_location=device)
     model.load_state_dict(payload["model_state_dict"])
-    criterion = torch.nn.CrossEntropyLoss()
-    metrics = evaluate_model(model, test_loader, criterion, device)
+    loss_cfg = config.get("loss", {"type": "detector_plane_mse", "scale": 100.0})
+    metrics = evaluate_model(model, test_loader, loss_cfg, device)
     matrix = confusion_matrix(metrics["preds"], metrics["targets"], num_classes=len(class_names))
     eval_dir = run_dir / "eval"
     eval_dir.mkdir(parents=True, exist_ok=True)
     save_json({"checkpoint": str(ckpt_path), "test_loss": metrics["loss"], "test_acc": metrics["acc"]}, eval_dir / "eval_metrics.json")
     save_confusion_matrix(matrix, eval_dir / "confusion_matrix.png", class_names)
     save_confusion_csv(matrix, eval_dir / "confusion_matrix.csv")
-    fixed = fixed_batch(test_loader, device, int(config.get("visualization", {}).get("num_samples", 4)))
+    fixed = fixed_batch(test_loader, device, int(config.get("visualization", {}).get("final_num_samples", 12)))
     save_epoch_artifacts(model, fixed, eval_dir, "eval_samples", class_names, enabled=True, dpi=int(config.get("visualization", {}).get("dpi", 150)))
     print(f"test_acc={metrics['acc']:.4f} test_loss={metrics['loss']:.4f}")
     print(f"saved eval outputs to: {eval_dir}")
