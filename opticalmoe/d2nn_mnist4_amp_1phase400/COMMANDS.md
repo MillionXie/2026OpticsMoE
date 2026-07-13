@@ -12,36 +12,10 @@ Smoke test:
 python train_d2nn_mnist256.py --config configs/config_phase_zero.yaml --smoke_test --epochs 1
 ```
 
-Zero phase initialization:
+Train:
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python train_d2nn_mnist256.py --config configs/config_phase_zero.yaml
-```
-
-Uniform phase initialization:
-
-```bash
-CUDA_VISIBLE_DEVICES=0 python train_d2nn_mnist256.py --config configs/config_phase_uniform.yaml
-```
-
-Gaussian phase initialization:
-
-```bash
-CUDA_VISIBLE_DEVICES=0 python train_d2nn_mnist256.py --config configs/config_phase_gaussian.yaml
-```
-
-K-space comparison with identical zero raw-phase initialization:
-
-```bash
-CUDA_VISIBLE_DEVICES=0 python train_d2nn_mnist256.py --config configs/config_kspace_off.yaml
-```
-
-```bash
-CUDA_VISIBLE_DEVICES=0 python train_d2nn_mnist256.py --config configs/config_kspace_theta0p5deg.yaml
-```
-
-```bash
-CUDA_VISIBLE_DEVICES=1 python train_d2nn_mnist256.py --config configs/config_kspace_theta1p0deg.yaml
+CUDA_VISIBLE_DEVICES=3 python train_d2nn_mnist256.py --config configs/config.yaml
 ```
 
 Evaluate a run:

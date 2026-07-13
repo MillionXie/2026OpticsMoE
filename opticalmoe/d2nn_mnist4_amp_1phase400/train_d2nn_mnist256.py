@@ -30,6 +30,7 @@ from visualization import (
     save_epoch_artifacts,
     save_training_curves,
 )
+from slm_export import export_best_checkpoint_slm_package
 
 
 def parse_args():
@@ -47,7 +48,10 @@ def build_optimizer(model, config):
     cfg = config.get("optimizer", {})
     opt_type = cfg.get("type", "adamw").lower()
     lr = float(cfg.get("lr", 0.001))
-    weight_decay = float(cfg.get("weight_decay", 0.0005))
+    # raw_phase is a physical control map, not an ordinary electronic weight.
+    # Defaulting to L2 decay can pin a zero-initialized sigmoid phase to a
+    # spatially constant plate, so the safe optical default is no decay.
+    weight_decay = float(cfg.get("weight_decay", 0.0))
     if opt_type == "adamw":
         return torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
     if opt_type == "adam":
@@ -77,6 +81,11 @@ def forward_and_loss(model, images, targets, loss_cfg):
 
 def train_one_epoch(model, loader, loss_cfg, optimizer, device, print_freq=50):
     model.train()
+    phase_parameters = [layer.raw_phase for layer in model.phase_layers]
+    phase_before = [value.detach().clone() for value in phase_parameters]
+    first_grad_abs_mean = 0.0
+    first_grad_abs_max = 0.0
+    first_grad_nonzero_ratio = 0.0
     total_loss = 0.0
     total_correct = 0
     total_count = 0
@@ -86,6 +95,13 @@ def train_one_epoch(model, loader, loss_cfg, optimizer, device, print_freq=50):
         optimizer.zero_grad(set_to_none=True)
         logits, loss = forward_and_loss(model, images, targets, loss_cfg)
         loss.backward()
+        if step == 1:
+            gradients = [value.grad.detach().reshape(-1) for value in phase_parameters if value.grad is not None]
+            if gradients:
+                gradient = torch.cat(gradients)
+                first_grad_abs_mean = float(gradient.abs().mean().item())
+                first_grad_abs_max = float(gradient.abs().max().item())
+                first_grad_nonzero_ratio = float((gradient != 0).float().mean().item())
         optimizer.step()
         batch = targets.numel()
         total_loss += float(loss.item()) * batch
@@ -93,7 +109,20 @@ def train_one_epoch(model, loader, loss_cfg, optimizer, device, print_freq=50):
         total_count += batch
         if print_freq > 0 and step % int(print_freq) == 0:
             print(f"  step {step}/{len(loader)} loss={total_loss / max(1, total_count):.4f} acc={total_correct / max(1, total_count):.4f}")
-    return {"loss": total_loss / max(1, total_count), "acc": total_correct / max(1, total_count)}
+    raw = torch.cat([value.detach().reshape(-1) for value in phase_parameters])
+    effective_phase = torch.cat([layer.get_phase().detach().reshape(-1) for layer in model.phase_layers])
+    delta = torch.cat([(value.detach() - before).reshape(-1) for value, before in zip(phase_parameters, phase_before)])
+    return {
+        "loss": total_loss / max(1, total_count),
+        "acc": total_correct / max(1, total_count),
+        "phase_first_grad_abs_mean": first_grad_abs_mean,
+        "phase_first_grad_abs_max": first_grad_abs_max,
+        "phase_first_grad_nonzero_ratio": first_grad_nonzero_ratio,
+        "raw_phase_std": float(raw.std().item()),
+        "effective_phase_std_rad": float(effective_phase.std().item()),
+        "phase_epoch_delta_abs_mean": float(delta.abs().mean().item()),
+        "phase_epoch_delta_abs_max": float(delta.abs().max().item()),
+    }
 
 
 @torch.no_grad()
@@ -337,6 +366,16 @@ def main():
             "eval_time_sec": eval_time,
             "artifact_time_sec": 0.0,
         }
+        for key in (
+            "phase_first_grad_abs_mean",
+            "phase_first_grad_abs_max",
+            "phase_first_grad_nonzero_ratio",
+            "raw_phase_std",
+            "effective_phase_std_rad",
+            "phase_epoch_delta_abs_mean",
+            "phase_epoch_delta_abs_max",
+        ):
+            row[key] = train_metrics[key]
         if test_metrics["acc"] > best["test_acc"]:
             best = {"epoch": epoch, "test_acc": test_metrics["acc"], "test_loss": test_metrics["loss"]}
             save_checkpoint(run_dir / "checkpoints" / "best.pt", model, optimizer, epoch, row, config)
@@ -353,7 +392,13 @@ def main():
         total_artifact_time += artifact_time
         metrics_rows.append(row)
         write_rows(run_dir / "metrics" / "epoch_metrics.csv", metrics_rows)
-        print(f"epoch {epoch:03d} train_acc={row['train_acc']:.4f} test_acc={row['test_acc']:.4f} phase_dropout={'on' if active else 'off'}")
+        print(
+            f"epoch {epoch:03d} train_acc={row['train_acc']:.4f} test_acc={row['test_acc']:.4f} "
+            f"phase_std={row['effective_phase_std_rad']:.6f}rad "
+            f"phase_delta_mean={row['phase_epoch_delta_abs_mean']:.3e} "
+            f"grad_mean={row['phase_first_grad_abs_mean']:.3e} "
+            f"phase_dropout={'on' if active else 'off'}"
+        )
 
     final_eval = evaluate_model(model, test_loader, loss_cfg, device)
     matrix = confusion_matrix(final_eval["preds"], final_eval["targets"], num_classes=len(class_names))
@@ -387,6 +432,15 @@ def main():
     }
     save_json(final_metrics, run_dir / "metrics" / "final_metrics.json")
     save_json({**final_metrics, "architecture": architecture_report(model, config, class_names)}, run_dir / "summary.json")
+    export_best_checkpoint_slm_package(
+        model,
+        test_loader,
+        run_dir / "checkpoints" / "best.pt",
+        run_dir / "slm_bmp_best",
+        config,
+        device,
+        class_names,
+    )
     print(f"saved run outputs to: {run_dir}")
 
 

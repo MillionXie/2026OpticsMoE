@@ -32,8 +32,9 @@ optics:
   phase_init: zeros
   init_std: 0.02
   evanescent_mode: zero
-  k_space_constraint_enabled: false
-  theta_max_deg: 1.0
+  # Baseline default: no additional angular cutoff. Use a kspace config only for that ablation.
+  k_space_constraint_enabled: true
+  theta_max_deg: 1.2
   input_to_layer_distance_m: 0.0
   inter_layer_distance_m: 0.03
   detector_distance_m: 0.20
@@ -62,6 +63,7 @@ regularization:
 optimizer:
   type: adam
   lr: 0.01
+  # Phase masks are physical control variables; do not decay raw_phase to zero.
   weight_decay: 0.0
 
 training:
@@ -76,3 +78,11 @@ visualization:
   num_samples: 4
   final_num_samples: 12
   dpi: 150
+
+slm_export:
+  enabled: true
+  slm_width: 1920
+  slm_height: 1200
+  source_pixel_size_um: 16.0
+  slm_pixel_size_um: 8.0
+  scale_factor: 2

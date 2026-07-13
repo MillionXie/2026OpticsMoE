@@ -1,0 +1,113 @@
+seed: 7
+device: auto
+
+experiment:
+  run_name: cifar10_4class_moe9x5_top3_globalfc_seed7
+
+dataset:
+  name: cifar10_4class
+  root: ../../opticalmoe_experiments/data
+  class_indices: [0, 1, 2, 3]
+  image_size: 100
+  input_size: 120
+  train_samples_per_class: null
+  test_samples_per_class: null
+  smoke_train_per_class: 4
+  smoke_test_per_class: 2
+  batch_size: 16
+  num_workers: 8
+  download: true
+
+model:
+  type: pure_optical_moe9
+  canvas_size: 480
+  active_size: 450
+  image_size: 100
+  input_size: 120
+  num_experts: 9
+  expert_size: 120
+  expert_pitch: 150
+  num_layers: 5
+
+optics:
+  wavelength_m: 5.32e-7
+  pixel_size_m: 16.0e-6
+  phase_param: sigmoid
+  phase_init: zeros
+  init_std: 0.02
+  evanescent_mode: zero
+  # Optional angular-spectrum cutoff: set enabled=true and choose theta_max_deg,
+  # for example 0.5 or 1.0. Default false keeps the full sampled k-space.
+  k_space_constraint_enabled: false
+  theta_max_deg: 1.0
+  prompt_focal_length_m: 0.15
+  distances_m:
+    input_to_prompt: 0.05
+    # 15 cm is required for a +/-150 pixel route at 16 um sampling without aliasing.
+    prompt_to_expert: 0.15
+    inter_layer: 0.05
+    last_expert_to_global_fc: 0.05
+    global_fc_to_detector: 0.10
+
+prompt:
+  type: complex_order_router
+  random_phase_enabled: false
+  train_phase_biases: false
+  routing_type: input_topk
+  top_k: 3
+  temperature: 1.0
+  router_pool_size: 10
+
+global_fc:
+  enabled: true
+  phase_size: 450
+
+detector:
+  detector_size: 50
+  layout: fixed_2x2
+  start_pos_x: 115
+  start_pos_y: 115
+  N_det_sets: [2, 2]
+  det_steps_x: [150, 150]
+  det_steps_y: 150
+  normalize_detector_energy: true
+
+readout:
+  type: detector_only
+
+loss:
+  type: detector_plane_mse
+  scale: 100.0
+  router_balance_weight: 0.01
+
+regularization:
+  phase_dropout:
+    enabled: false
+    mode: none
+    p: 0.0
+    block_size: 8
+    batch_shared: true
+    start_epoch: 0
+
+optimizer:
+  type: adam
+  lr: 0.01
+  # Nonzero weight decay can pin sigmoid raw_phase close to its constant zero initialization.
+  weight_decay: 0.0
+
+training:
+  epochs: 200
+  print_freq: 50
+
+visualization:
+  enabled: true
+  save_interval_epochs: 10
+  num_samples: 4
+
+slm_export:
+  enabled: true
+  slm_width: 1920
+  slm_height: 1200
+  source_pixel_size_um: 16.0
+  slm_pixel_size_um: 8.0
+  scale_factor: 2

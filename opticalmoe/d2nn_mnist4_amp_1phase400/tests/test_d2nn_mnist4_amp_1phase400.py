@@ -8,11 +8,16 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+OPTICALMOE_ROOT = ROOT.parent
+if str(OPTICALMOE_ROOT) not in sys.path:
+    sys.path.insert(0, str(OPTICALMOE_ROOT))
 
 from model import D2NNClassifier
 from data import RemappedDigitSubset, mnist_transform
 from optics import AngularSpectrumPropagator, PhaseLayer
 from train_d2nn_mnist256 import forward_and_loss
+from slm_bmp import export_plane_bmp
+from utils import load_yaml
 
 
 def base_config(phase_init="zeros"):
@@ -59,6 +64,12 @@ def test_model_is_one_full_canvas_phase_layer_and_detector_only():
     assert model.phase_mask_region() == [0, 400, 0, 400]
     assert model.optical_parameter_count() == 400 * 400
     assert model.electronic_parameter_count() == 0
+
+
+def test_zero_phase_baseline_disables_kspace_and_weight_decay():
+    config = load_yaml(ROOT / "configs" / "config_phase_zero.yaml")
+    assert config["optics"]["k_space_constraint_enabled"] is False
+    assert float(config["optimizer"]["weight_decay"]) == 0.0
 
 
 def test_forward_outputs_four_detector_energies_without_electronic_readout():
@@ -214,3 +225,10 @@ def test_nonzero_input_to_layer_distance_performs_real_propagation():
     field = torch.rand(1, 64, 64, dtype=torch.float32).to(torch.complex64)
     assert torch.equal(zero(field), field)
     assert not torch.allclose(nonzero(field), field)
+
+
+def test_baseline_slm_bmp_export_scales_400_to_800_and_centers(tmp_path):
+    from PIL import Image
+    info = export_plane_bmp(torch.ones(400, 400), tmp_path / "phase.bmp", "phase", 2, 1920, 1200)
+    assert Image.open(tmp_path / "phase.bmp").size == (1920, 1200)
+    assert info["scaled_shape"] == [800, 800]

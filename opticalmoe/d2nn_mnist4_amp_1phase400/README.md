@@ -145,6 +145,8 @@ class 3: y[275:325], x[275:325]
 
 ## 相位初始化
 
+相位参数使用 Adam 时默认 `weight_decay=0`。不要把普通电子网络常用的 L2 weight decay 直接施加到 `raw_phase`：它会持续把 sigmoid 参数拉回 0，使有效相位重新接近空间常数 `π`，表现为准确率和相位图长期不动。训练日志会逐 epoch 打印并保存 `phase_std`、`phase_delta_mean` 和首批次 `grad_mean`，可直接判断相位是否真正更新。
+
 三份配置中的初始化均指 `raw_phase`：
 
 | 配置 | raw_phase 初始化 |
@@ -168,3 +170,15 @@ figures/light_fields/final_epoch/sample_*/sample_summary.png
 ```
 
 每个最终测试样例都包含输入振幅、相位 overlay、探测面光强、方形 detector 边界以及四个区域能量柱状图。所有标量场图均有坐标轴和右侧 colorbar，并使用防裁切布局。
+
+## 1920×1200 SLM BMP 导出
+
+训练结束会加载准确率最高的 `best.pt`，保存：
+
+```text
+runs/<run_name>/slm_bmp_best/input_amplitude.bmp
+runs/<run_name>/slm_bmp_best/phase_layer_01.bmp
+runs/<run_name>/slm_bmp_best/manifest.json
+```
+
+当前 400×400、16 μm 平面以 nearest-neighbor 复制为 800×800、8 μm，再居中 zero pad 到宽 1920、高 1200 的灰度 BMP。相位按 `[0,2π)` 线性映射到 `[0,255]`，振幅按 `[0,1]` 映射到 `[0,255]`。
