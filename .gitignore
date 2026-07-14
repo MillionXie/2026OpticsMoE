@@ -7,6 +7,7 @@
 /opticalmoe/data
 /opticalmoe/runs
 /opticalmoe/.pytest_cache
+/opticalmoe/d2nn_cifar10_4class_moe9_5layer480/routing_validation*/
 
 /opticalmoe_experiments/data
 runs

@@ -1,0 +1,13 @@
+_base_: config_cifar10_10class.yaml
+
+experiment:
+  run_name: cifar10_10class_moe9x5_top3_f722_importance_adamw_seed7
+
+loss:
+  router_balance_weight: 0.1
+  router_importance_weight: 0.1
+
+optimizer:
+  type: adamw
+  lr: 0.005
+  weight_decay: 0.0

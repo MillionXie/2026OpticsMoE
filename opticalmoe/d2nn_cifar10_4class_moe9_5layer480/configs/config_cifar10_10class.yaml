@@ -1,0 +1,128 @@
+seed: 7
+device: auto
+
+experiment:
+  run_name: cifar10_10class_moe9x5_top3_globalfc_f722_seed7
+
+dataset:
+  name: cifar10_10class
+  root: ../../opticalmoe_experiments/data
+  class_indices: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+  image_size: 100
+  input_size: 120
+  resize_interpolation: bicubic
+  resize_antialias: true
+  # Keep all 5,000 train and 1,000 test images per CIFAR-10 class.
+  train_samples_per_class: null
+  test_samples_per_class: null
+  # Train on 1,000 images per class per epoch (10,000 total). The rotating
+  # sampler covers all 5,000/class in about five epochs, then reshuffles.
+  train_samples_per_class_per_epoch: 1000
+  smoke_train_per_class: 4
+  smoke_test_per_class: 2
+  batch_size: 16
+  num_workers: 8
+  persistent_workers: true
+  prefetch_factor: 2
+  download: true
+
+model:
+  type: pure_optical_moe9
+  canvas_size: 480
+  active_size: 450
+  image_size: 100
+  input_size: 120
+  num_experts: 9
+  expert_size: 120
+  expert_pitch: 150
+  num_layers: 5
+
+optics:
+  wavelength_m: 5.32e-7
+  pixel_size_m: 16.0e-6
+  phase_param: sigmoid
+  phase_init: zeros
+  init_std: 0.02
+  evanescent_mode: zero
+  # Optional angular cutoff: set enabled=true and choose theta_max_deg.
+  k_space_constraint_enabled: false
+  theta_max_deg: 1.0
+  prompt_focal_length_m: 0.0722
+  distances_m:
+    input_to_prompt: 0.1444
+    prompt_to_expert: 0.1444
+    inter_layer: 0.05
+    last_expert_to_global_fc: 0.05
+    global_fc_to_detector: 0.10
+
+prompt:
+  type: region_amplitude_global_lens
+  mode: region_amplitude_global_lens
+  random_phase_enabled: false
+  train_phase_biases: false
+  routing_type: input_topk
+  top_k: 3
+  temperature: 1.0
+  router_pool_size: 10
+  grating_sign_x: 1.0
+  grating_sign_y: 1.0
+  min_grating_period_pixels: 0.0
+  enforce_global_convolution_geometry: true
+  convolution_relative_tolerance: 0.02
+
+global_fc:
+  enabled: true
+  phase_size: 450
+
+detector:
+  # Three compact rows (3/3/4). Each row has its own x start so it is
+  # horizontally centered in the 480x480 detector plane.
+  detector_size: 40
+  layout: fixed_2x2
+  start_pos_x: 100
+  start_pos_x_per_row: [140, 140, 100]
+  start_pos_y: 140
+  N_det_sets: [3, 3, 4]
+  det_steps_x: [40, 40, 40]
+  det_steps_y: 40
+  normalize_detector_energy: true
+
+readout:
+  type: detector_only
+
+loss:
+  type: detector_plane_mse
+  scale: 100.0
+  router_balance_weight: 0.01
+
+regularization:
+  phase_dropout:
+    enabled: false
+    mode: none
+    p: 0.0
+    block_size: 8
+    batch_shared: true
+    start_epoch: 0
+
+optimizer:
+  type: adam
+  lr: 0.01
+  weight_decay: 0.0
+
+training:
+  epochs: 200
+  print_freq: 50
+  phase_diagnostics_enabled: false
+
+visualization:
+  enabled: true
+  save_interval_epochs: 10
+  num_samples: 10
+
+slm_export:
+  enabled: true
+  slm_width: 1920
+  slm_height: 1200
+  source_pixel_size_um: 16.0
+  slm_pixel_size_um: 8.0
+  scale_factor: 2

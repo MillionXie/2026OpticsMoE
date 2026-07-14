@@ -1,53 +1,40 @@
 # Commands
 
-Run these commands from:
+以下命令均从仓库根目录 `2026OpticsMoE` 直接运行，不需要进入子目录。
 
-```powershell
-cd opticalmoe/d2nn_baseline_mnist256
+Smoke test：
+
+```bash
+CUDA_VISIBLE_DEVICES=0 python opticalmoe/d2nn_baseline_mnist256/train_d2nn_mnist256.py --config config.yaml --run_name d2nn_mnist256_smoke --epochs 1 --smoke_test --device cuda
 ```
 
-## Smoke Test
+CPU smoke：
 
-```powershell
-python train_d2nn_mnist256.py --config config.yaml --run_name d2nn_mnist256_smoke --epochs 1 --smoke_test --device cuda
+```bash
+python opticalmoe/d2nn_baseline_mnist256/train_d2nn_mnist256.py --config config.yaml --run_name d2nn_mnist256_smoke_cpu --epochs 1 --smoke_test --device cpu
 ```
 
-Use CPU if CUDA is unavailable:
+正式训练：
 
-```powershell
-python train_d2nn_mnist256.py --config config.yaml --run_name d2nn_mnist256_smoke_cpu --epochs 1 --smoke_test --device cpu
+```bash
+CUDA_VISIBLE_DEVICES=0 python opticalmoe/d2nn_baseline_mnist256/train_d2nn_mnist256.py --config config.yaml --run_name d2nn_mnist256_canvas400_5layer_seed7 --device cuda
 ```
 
-## Formal Training
+200 epochs：
 
-```powershell
-python train_d2nn_mnist256.py --config config.yaml --run_name d2nn_mnist256_canvas400_5layer_seed7 --device cuda
+```bash
+CUDA_VISIBLE_DEVICES=0 python opticalmoe/d2nn_baseline_mnist256/train_d2nn_mnist256.py --config config.yaml --run_name d2nn_mnist256_canvas400_5layer_200epoch_seed7 --epochs 200 --device cuda
 ```
 
-## Formal Training With 200 Epochs
+关闭可视化：
 
-```powershell
-python train_d2nn_mnist256.py --config config.yaml --run_name d2nn_mnist256_canvas400_5layer_200epoch_seed7 --epochs 200 --device cuda
+```bash
+CUDA_VISIBLE_DEVICES=0 python opticalmoe/d2nn_baseline_mnist256/train_d2nn_mnist256.py --config config.yaml --run_name d2nn_mnist256_no_viz --device cuda --disable_visualization
 ```
 
-## Disable Visualization
+评估 best checkpoint：
 
-```powershell
-python train_d2nn_mnist256.py --config config.yaml --run_name d2nn_mnist256_no_viz --device cuda --disable_visualization
+```bash
+CUDA_VISIBLE_DEVICES=0 python opticalmoe/d2nn_baseline_mnist256/evaluate.py --run_dir opticalmoe/d2nn_baseline_mnist256/runs/d2nn_mnist256_canvas400_5layer_seed7 --checkpoint best.pt --device cuda
 ```
 
-## Evaluate Best Checkpoint
-
-```powershell
-python evaluate.py --run_dir runs/d2nn_mnist256_canvas400_5layer_seed7 --checkpoint best.pt --device cuda
-```
-
-## Notes
-
-- This is a plain D2NN baseline, not MoE.
-- It uses full MNIST train/test splits unless `--smoke_test` is passed.
-- Input images are resized to `256 x 256` and centered on a `400 x 400` propagation canvas.
-- The trainable phase masks are centered `256 x 256`, not full `400 x 400`.
-- The 400x400 padding region is transparent and not trainable.
-- `readout.dropout` is electronic readout dropout.
-- `regularization.phase_dropout` is optical phase-layer dropout.

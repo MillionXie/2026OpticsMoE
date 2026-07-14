@@ -1,0 +1,25 @@
+_base_: config_importance_adamw.yaml
+
+experiment:
+  run_name: cifar10_4class_moe9x5_top5_globalfc_f722_seed7_2
+
+optics:
+  distances_m:
+    # Keep the calibrated prompt fan-out geometry unchanged. The five expert
+    # phase planes and the global phase plane form the six-plane comparison.
+    input_to_prompt: 0.1444
+    prompt_to_expert: 0.1444
+    inter_layer: 0.20
+    last_expert_to_global_fc: 0.20
+    global_fc_to_detector: 0.20
+
+optoelectronic_interlayers:
+  enabled: true
+  detection: square_law
+  normalization: layer_norm
+  normalization_scope: spatial_per_sample
+  affine: false
+  nonlinearity: relu
+  reload_as: amplitude
+  eps: 1.0e-5
+

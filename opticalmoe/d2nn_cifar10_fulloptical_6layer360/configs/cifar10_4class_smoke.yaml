@@ -1,0 +1,18 @@
+_base_: cifar10_4class.yaml
+
+experiment:
+  run_name: cifar10_4class_fulloptical_6layer360_smoke
+
+dataset:
+  train_samples_per_class: 2
+  test_samples_per_class: 1
+  train_samples_per_class_per_epoch: 2
+  batch_size: 2
+  num_workers: 0
+
+training:
+  epochs: 1
+  print_freq: 1
+
+visualization:
+  save_interval_epochs: 1

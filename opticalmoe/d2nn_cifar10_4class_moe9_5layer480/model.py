@@ -20,6 +20,29 @@ from layout import MoELayout
 from prompt import GlobalRouterPrompt
 
 
+class SquareDetectionLayerNormReload(nn.Module):
+    """Non-trainable electronic detection/nonlinearity between phase planes.
+
+    A complex optical field is square-law detected, spatially normalized per
+    sample without affine parameters, passed through a nonnegative
+    nonlinearity, and loaded back as a real optical amplitude at the same
+    plane.  No sqrt(intensity) shortcut is used.
+    """
+
+    def __init__(self, eps=1e-5, nonlinearity="relu"):
+        super().__init__();self.eps=float(eps);self.nonlinearity=str(nonlinearity).lower()
+        if self.eps<=0:raise ValueError("optoelectronic_interlayers.eps must be positive")
+        if self.nonlinearity not in {"relu","softplus"}:raise ValueError("optoelectronic_interlayers.nonlinearity must be relu or softplus")
+
+    def forward(self,field,return_details=False):
+        intensity=field.to(torch.complex64).abs().square().float()
+        normalized=F.layer_norm(intensity,intensity.shape[-2:],weight=None,bias=None,eps=self.eps)
+        amplitude=F.relu(normalized) if self.nonlinearity=="relu" else F.softplus(normalized)
+        reloaded=torch.complex(amplitude,torch.zeros_like(amplitude))
+        if not return_details:return reloaded
+        return reloaded,{"detector_intensity":intensity,"layer_normalized":normalized,"reloaded_amplitude":amplitude}
+
+
 class ExpertPhasePlane(nn.Module):
     def __init__(self, layout, optics_cfg, dropout_cfg):
         super().__init__(); self.layout = layout
@@ -91,6 +114,16 @@ class OpticalMoEClassifier(nn.Module):
         ); self.layout.validate()
         self.num_layers = int(model_cfg.get("num_layers",5))
         if self.num_layers != 5: raise ValueError("This experiment requires five expert layers.")
+        conversion_cfg=config.get("optoelectronic_interlayers",{})
+        self.optoelectronic_enabled=bool(conversion_cfg.get("enabled",False))
+        if self.optoelectronic_enabled:
+            expected={"detection":"square_law","normalization":"layer_norm","normalization_scope":"spatial_per_sample","reload_as":"amplitude"}
+            for key,value in expected.items():
+                if str(conversion_cfg.get(key,value)).lower()!=value:raise ValueError(f"optoelectronic_interlayers.{key} must be {value!r}")
+            if bool(conversion_cfg.get("affine",False)):raise ValueError("optoelectronic_interlayers.affine must be false to avoid trainable electronic normalization parameters")
+        self.interlayer_conversion=SquareDetectionLayerNormReload(
+            eps=float(conversion_cfg.get("eps",1e-5)),nonlinearity=str(conversion_cfg.get("nonlinearity","relu")),
+        )
         wavelength = float(optics.get("wavelength_m",5.32e-7)); pixel = float(optics.get("pixel_size_m",16e-6))
         distances = optics.get("distances_m", {})
         prop_common = dict(
@@ -99,12 +132,25 @@ class OpticalMoEClassifier(nn.Module):
             k_space_constraint_enabled=bool(optics.get("k_space_constraint_enabled",False)),
             theta_max_deg=float(optics.get("theta_max_deg",1.0)),
         )
-        self.input_to_prompt = AngularSpectrumPropagator(distance_m=float(distances.get("input_to_prompt",0.05)),**prop_common)
-        prompt_to_expert_distance = float(distances.get("prompt_to_expert",0.05))
+        input_to_prompt_distance=float(distances.get("input_to_prompt",0.30))
+        self.input_to_prompt = AngularSpectrumPropagator(distance_m=input_to_prompt_distance,**prop_common)
+        prompt_to_expert_distance = float(distances.get("prompt_to_expert",0.30))
         prompt_cfg=config.get("prompt",{})
+        focal_length=float(optics.get("prompt_focal_length_m",prompt_to_expert_distance))
+        if bool(prompt_cfg.get("enforce_global_convolution_geometry",True)):
+            expected_distance=2.0*focal_length
+            tolerance=float(prompt_cfg.get("convolution_relative_tolerance",0.02))
+            if abs(prompt_to_expert_distance-expected_distance)/expected_distance>tolerance:
+                raise ValueError(
+                    f"prompt_to_expert={prompt_to_expert_distance:.6f} m is incompatible with the global fan-out "
+                    f"convolution geometry; expected 2*f={expected_distance:.6f} m."
+                )
         self.prompt = GlobalRouterPrompt(
-            self.layout,wavelength,pixel,prompt_to_expert_distance,float(optics.get("prompt_focal_length_m",prompt_to_expert_distance)),
+            self.layout,wavelength,pixel,input_to_prompt_distance,prompt_to_expert_distance,focal_length,
             top_k=int(prompt_cfg.get("top_k",3)),pool_size=int(prompt_cfg.get("router_pool_size",10)),temperature=float(prompt_cfg.get("temperature",1.0)),
+            grating_sign_x=float(prompt_cfg.get("grating_sign_x",1.0)),grating_sign_y=float(prompt_cfg.get("grating_sign_y",1.0)),
+            min_grating_period_pixels=float(prompt_cfg.get("min_grating_period_pixels",4.0)),
+            mode=str(prompt_cfg.get("mode",prompt_cfg.get("type","region_amplitude_global_lens"))),
         )
         self.prompt_to_expert = AngularSpectrumPropagator(distance_m=prompt_to_expert_distance,**prop_common)
         dropout = config.get("regularization",{}).get("phase_dropout",{})
@@ -118,15 +164,23 @@ class OpticalMoEClassifier(nn.Module):
             bool(detector.get("normalize_detector_energy",True)),start_pos_x=int(detector.get("start_pos_x",115)),
             start_pos_y=int(detector.get("start_pos_y",115)),n_det_sets=detector.get("N_det_sets",[2,2]),
             det_steps_x=detector.get("det_steps_x",[150,150]),det_steps_y=int(detector.get("det_steps_y",150)),
+            start_pos_x_per_row=detector.get("start_pos_x_per_row"),
         )
 
     def prepare_canvas_input(self, images):
         if images.ndim==3: images=images.unsqueeze(1)
         if images.shape[1]!=1: images=images.mean(1,keepdim=True)
         if tuple(images.shape[-2:])!=(self.layout.input_size,self.layout.input_size):
-            # Match the dataset path exactly: resize the image to 100x100 with
-            # nearest-neighbor, then add explicit zero padding to 120x120.
-            images=F.interpolate(images.float(),size=(self.layout.image_size,self.layout.image_size),mode="nearest")
+            # Match the dataset path: smooth resize to 100x100, clamp possible
+            # bicubic overshoot, then explicit zero padding to 120x120.
+            dataset_cfg=self.config.get("dataset",{})
+            resize_mode=str(dataset_cfg.get("resize_interpolation","bicubic")).lower()
+            if resize_mode not in {"nearest","bilinear","bicubic"}:
+                raise ValueError("dataset.resize_interpolation must be nearest, bilinear, or bicubic.")
+            kwargs={"mode":resize_mode}
+            if resize_mode in {"bilinear","bicubic"}:
+                kwargs.update({"align_corners":False,"antialias":bool(dataset_cfg.get("resize_antialias",True))})
+            images=F.interpolate(images.float(),size=(self.layout.image_size,self.layout.image_size),**kwargs).clamp_(0.0,1.0)
             pad=(self.layout.input_size-self.layout.image_size)//2
             images=F.pad(images,(pad,pad,pad,pad),mode="constant",value=0.0)
         aperture=self.layout.input_aperture
@@ -134,30 +188,71 @@ class OpticalMoEClassifier(nn.Module):
         canvas[:,aperture.y0:aperture.y1,aperture.x0:aperture.x1]=images[:,0].clamp(0,1)
         return canvas.to(torch.complex64)
 
-    def forward(self, images, return_intermediates=False):
+    def expert_energy_ratios(self,field):
+        intensity=field.to(torch.complex64).abs().square();energies=[]
+        for aperture in self.layout.expert_apertures:
+            energies.append(intensity[:,aperture.y0:aperture.y1,aperture.x0:aperture.x1].sum(dim=(-2,-1)))
+        energies=torch.stack(energies,dim=1);total=intensity.sum(dim=(-2,-1),keepdim=False)
+        return energies/(total[:,None]+1e-12)
+
+    @staticmethod
+    def global_fanout_convolution(field, prompt_transmission):
+        """4f-style convolution with the physical prompt kernel.
+
+        The prompt amplitude cells are kernel channels.  This is intentionally
+        not ``ASM -> pointwise prompt -> ASM``: that old path illuminates the
+        centre cell and cannot make the nine amplitude cells act as nine
+        independent routing channels.
+        """
+        field=field.to(torch.complex64)
+        prompt_transmission=prompt_transmission.to(torch.complex64)
+        flipped=torch.flip(field,dims=(-2,-1))
+        return torch.fft.fftshift(
+            torch.fft.ifft2(torch.fft.fft2(flipped)*torch.fft.fft2(prompt_transmission)),
+            dim=(-2,-1),
+        )
+
+    def forward(self, images, return_intermediates=False, capture_layer_fields=True):
         canvas=self.prepare_canvas_input(images)
-        at_prompt=self.input_to_prompt(canvas)
-        after_prompt,routing=self.prompt(at_prompt,images)
-        field=self.prompt_to_expert(after_prompt)
+        routing=self.prompt.routing(images)
+        # The global fan-out prompt is a 4f convolution kernel.  The two maps
+        # loaded on the prompt are exactly amplitude and phase; no hidden
+        # combined-amplitude map participates in the forward path.
+        prompt_transmission=routing["transmission"]
+        field=self.global_fanout_convolution(canvas,prompt_transmission)
         entrance=field
-        layer_fields=[]
+        entrance_energy_ratios=self.expert_energy_ratios(entrance)
+        layer_fields=[];interlayer_detector_intensities=[];interlayer_normalized=[];interlayer_reloaded_amplitudes=[]
         for index,layer in enumerate(self.expert_layers):
             field=layer(field)
-            if return_intermediates: layer_fields.append(field)
-            if index<4: field=self.inter_props[index](field)
-        at_global_fc=self.last_expert_to_global_fc(field)
+            propagation=self.inter_props[index] if index<4 else self.last_expert_to_global_fc
+            propagated=propagation(field)
+            if self.optoelectronic_enabled:
+                if return_intermediates and capture_layer_fields:
+                    field,conversion= self.interlayer_conversion(propagated,return_details=True)
+                    interlayer_detector_intensities.append(conversion["detector_intensity"])
+                    interlayer_normalized.append(conversion["layer_normalized"])
+                    interlayer_reloaded_amplitudes.append(conversion["reloaded_amplitude"])
+                else:field=self.interlayer_conversion(propagated)
+            else:field=propagated
+            if return_intermediates and capture_layer_fields:layer_fields.append(field)
+        at_global_fc=field
         after_global_fc=self.global_fc(at_global_fc)
         detector_field=self.to_detector(after_global_fc)
         intensity=torch.abs(detector_field).square()
         logits=self.detector(detector_field)
         if not return_intermediates:return logits
         return logits,{
-            "input_canvas":canvas,"at_prompt":at_prompt,"prompt_amplitude":routing["prompt_amplitude"],
+            "input_canvas":canvas,"at_prompt":canvas,"prompt_amplitude":routing["prompt_amplitude"],
             "prompt_phase":routing["prompt_phase"],"routing_logits":routing["logits"],"routing_probabilities":routing["probabilities"],
             "routing_weights":routing["weights"],"routing_selected_mask":routing["selected_mask"],"routing_selected_indices":routing["selected_indices"],
             "router_balance_loss":routing["balance_loss"],"router_importance":routing["importance"],"router_load":routing["load"],
-            "after_prompt":after_prompt,"expert_entrance":entrance,
+            "router_importance_loss":routing["importance_loss"],"router_normalized_entropy":routing["normalized_entropy"],
+            "after_prompt":prompt_transmission,"prompt_transmission":prompt_transmission,
+            "expert_entrance":entrance,"expert_entrance_energy_ratios":entrance_energy_ratios,
             "after_each_expert_layer":layer_fields,"detector_field":detector_field,"detector_intensity":intensity,
+            "optoelectronic_interlayers_enabled":self.optoelectronic_enabled,"interlayer_detector_intensities":interlayer_detector_intensities,
+            "interlayer_layer_normalized":interlayer_normalized,"interlayer_reloaded_amplitudes":interlayer_reloaded_amplitudes,
             "at_global_fc":at_global_fc,"after_global_fc":after_global_fc,"global_fc_phase":self.global_fc.get_phase(),"detector_energies":logits,
         }
 

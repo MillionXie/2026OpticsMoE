@@ -66,9 +66,8 @@ def test_model_is_one_full_canvas_phase_layer_and_detector_only():
     assert model.electronic_parameter_count() == 0
 
 
-def test_zero_phase_baseline_disables_kspace_and_weight_decay():
-    config = load_yaml(ROOT / "configs" / "config_phase_zero.yaml")
-    assert config["optics"]["k_space_constraint_enabled"] is False
+def test_zero_phase_baseline_disables_weight_decay():
+    config = load_yaml(ROOT / "configs" / "config.yaml")
     assert float(config["optimizer"]["weight_decay"]) == 0.0
 
 
@@ -120,6 +119,17 @@ def test_zero_sigmoid_initialization_has_nonzero_phase_gradient():
     loss.backward()
     assert layer.raw_phase.grad is not None
     assert float(layer.raw_phase.grad.abs().max().item()) > 0.0
+
+
+def test_phase_dropout_bypasses_post_sigmoid_modulation_not_raw_parameter():
+    layer = PhaseLayer(8, parameterization="sigmoid", init="gaussian", init_std=0.2, phase_dropout_mode="phase_bypass", phase_dropout_p=1.0)
+    field = torch.rand(2, 8, 8, dtype=torch.float32).to(torch.complex64)
+    raw_before = layer.raw_phase.detach().clone()
+    layer.train();output = layer(field)
+    assert torch.equal(output, field)
+    assert torch.equal(layer.raw_phase.detach(), raw_before)
+    layer.eval();eval_output = layer(field)
+    assert not torch.equal(eval_output, field)
 
 
 def test_notebook_style_input_is_bicubic_336_then_zero_padded_to_400():

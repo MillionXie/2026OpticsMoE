@@ -2,7 +2,9 @@ seed: 7
 device: auto
 
 experiment:
-  run_name: cifar10_4class_moe9x5_top3_globalfc_seed7
+  # Geometry changed from nominal f=7.5 cm to calibrated f=7.22 cm. Keep a
+  # separate run so checkpoints trained with different prompt phases never mix.
+  run_name: cifar10_4class_moe9x5_top5_globalfc_f722_seed7_2
 
 dataset:
   name: cifar10_4class
@@ -10,12 +12,25 @@ dataset:
   class_indices: [0, 1, 2, 3]
   image_size: 100
   input_size: 120
+  # Smooth CIFAR 32x32 -> 100x100 optical-input resize. Bicubic can overshoot,
+  # so both dataset and tensor fallback paths clamp the result to [0, 1].
+  resize_interpolation: bicubic
+  resize_antialias: true
+  # Dataset-wide per-class caps, NOT per-batch counts. null means keep every
+  # available image of the selected classes. DataLoader shuffle visits the
+  # complete selected training set once per epoch.
   train_samples_per_class: null
   test_samples_per_class: null
+  # Optional per-epoch rotating cap. null visits the full retained training set
+  # each epoch. Unlike train_samples_per_class, this does not delete samples.
+  train_samples_per_class_per_epoch: null
   smoke_train_per_class: 4
   smoke_test_per_class: 2
+  # Mini-batch size. Override without editing YAML via: --batch-size 32
   batch_size: 16
   num_workers: 8
+  persistent_workers: true
+  prefetch_factor: 2
   download: true
 
 model:
@@ -40,23 +55,34 @@ optics:
   # for example 0.5 or 1.0. Default false keeps the full sampled k-space.
   k_space_constraint_enabled: false
   theta_max_deg: 1.0
-  prompt_focal_length_m: 0.15
+  # Calibrated global fan-out geometry. On the discrete 480x480 / 16 um grid,
+  # f=7.22 cm removes the radial copy-position error of nominal f=7.5 cm.
+  # The matching global-convolution distance is 2f=14.44 cm.
+  prompt_focal_length_m: 0.0722
   distances_m:
-    input_to_prompt: 0.05
-    # 15 cm is required for a +/-150 pixel route at 16 um sampling without aliasing.
-    prompt_to_expert: 0.15
+    input_to_prompt: 0.1444
+    prompt_to_expert: 0.1444
     inter_layer: 0.05
     last_expert_to_global_fc: 0.05
     global_fc_to_detector: 0.10
 
 prompt:
-  type: complex_order_router
+  # Exactly two physical maps are loaded. Amplitude is nine uniform 150x150
+  # routing cells. Phase is one continuous global lens/carrier map; it is not
+  # rebuilt in nine local coordinate systems and therefore has no cell seams.
+  type: region_amplitude_global_lens
+  mode: region_amplitude_global_lens
   random_phase_enabled: false
   train_phase_biases: false
   routing_type: input_topk
-  top_k: 3
+  top_k: 5
   temperature: 1.0
   router_pool_size: 10
+  grating_sign_x: 1.0
+  grating_sign_y: 1.0
+  min_grating_period_pixels: 0.0
+  enforce_global_convolution_geometry: true
+  convolution_relative_tolerance: 0.02
 
 global_fc:
   enabled: true
@@ -78,7 +104,8 @@ readout:
 loss:
   type: detector_plane_mse
   scale: 100.0
-  router_balance_weight: 0.01
+  router_balance_weight: 0.1
+  router_importance_weight: 0.0
 
 regularization:
   phase_dropout:
@@ -90,14 +117,17 @@ regularization:
     start_epoch: 0
 
 optimizer:
-  type: adam
-  lr: 0.01
+  type: adamw
+  lr: 0.008
   # Nonzero weight decay can pin sigmoid raw_phase close to its constant zero initialization.
   weight_decay: 0.0
 
 training:
-  epochs: 200
-  print_freq: 50
+  epochs: 100
+  print_freq: 1000
+  # False skips phase snapshots, first-batch gradient concatenation, and all
+  # phase_std / phase_delta / grad_mean calculations during training.
+  phase_diagnostics_enabled: false
 
 visualization:
   enabled: true

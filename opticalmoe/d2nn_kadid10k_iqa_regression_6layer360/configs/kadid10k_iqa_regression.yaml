@@ -1,0 +1,88 @@
+seed: 42
+device: auto
+
+experiment:
+  run_name: kadid10k_iqa_regression_fulloptical_6layer360_seed42
+
+dataset:
+  name: kadid10k_iqa_regression
+  # Reuse the already prepared KADID-10k directory from the Qwen experiment.
+  data_root: ../../experiments/qwen3_vl_2b_kadid10k_quality3_optical_fullstack4_token64_residual/data/kadid10k
+  metadata_csv: dmos.csv
+  image_dir: images
+  download: true
+  dataset_download_url: null
+  image_column: null
+  reference_column: null
+  score_column: null
+  # KADID's provided dmos.csv in this repository is configured as higher score
+  # = better quality. Set false only for a metadata source with opposite sign.
+  quality_score_higher_is_better: true
+  test_reference_fraction: 0.2
+  validation_reference_fraction: 0.1
+  resize_size: 300
+  train_limit: null
+  validation_limit: null
+  test_limit: null
+  batch_size: 8
+  num_workers: 8
+  persistent_workers: true
+  prefetch_factor: 2
+
+optics:
+  input_size: 300
+  canvas_size: 360
+  num_layers: 6
+  wavelength_m: 5.32e-7
+  pixel_size_m: 16.0e-6
+  phase_param: sigmoid
+  phase_init: zeros
+  phase_init_std: 0.02
+  input_to_layer_distance_m: 0.0
+  inter_layer_distance_m: 0.05
+  detector_distance_m: 0.10
+  evanescent_mode: zero
+  k_space_constraint_enabled: false
+  theta_max_deg: 1.0
+
+detector:
+  quality_anchor_count: 10
+  detector_size: 30
+  layout: fixed_2x2
+  start_pos_x: 90
+  start_pos_x_per_row: [115, 115, 90]
+  start_pos_y: 105
+  N_det_sets: [3, 3, 4]
+  det_steps_x: [20, 20, 20]
+  det_steps_y: 30
+  normalize_detector_energy: true
+
+loss:
+  score_mse_weight: 1.0
+  detector_distribution_weight: 0.2
+  detector_concentration_weight: 0.05
+  target_distribution_sigma: 0.08
+
+regularization:
+  phase_dropout:
+    enabled: false
+    mode: none
+    p: 0.0
+    block_size: 8
+    batch_shared: true
+    start_epoch: 0
+
+optimizer:
+  type: adam
+  learning_rate: 0.01
+  weight_decay: 0.0
+
+training:
+  epochs: 100
+  print_freq: 50
+
+visualization:
+  enabled: true
+  save_interval_epochs: 10
+  num_samples: 6
+

@@ -1,0 +1,16 @@
+_base_: config.yaml
+
+experiment:
+  run_name: cifar10_4class_moe9x5_top3_f722_importance_adamw_seed7
+
+loss:
+  # Keep the original hard top-k load-balancing term and add a fully
+  # differentiable probability-importance constraint.
+  router_balance_weight: 0.1
+  router_importance_weight: 0.1
+
+optimizer:
+  type: adamw
+  lr: 0.005
+  # Optical raw phase should not be pulled toward zero by weight decay.
+  weight_decay: 0.0

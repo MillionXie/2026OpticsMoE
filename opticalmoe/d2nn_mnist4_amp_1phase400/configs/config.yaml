@@ -62,12 +62,12 @@ regularization:
 
 optimizer:
   type: adam
-  lr: 0.01
+  lr: 0.003
   # Phase masks are physical control variables; do not decay raw_phase to zero.
   weight_decay: 0.0
 
 training:
-  epochs: 300
+  epochs: 50
   print_freq: 50
   eval_interval_epochs: 1
   save_interval_epochs: 50

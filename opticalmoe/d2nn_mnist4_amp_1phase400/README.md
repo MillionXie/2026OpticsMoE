@@ -120,13 +120,7 @@ sqrt(kx² + ky²) <= k × sin(theta_max)
 
 超过截止角的频率分量在传播前被置零。配置为 `false` 时不施加该人工角度截止，只保留原有传播波/倏逝波判断。当前 `532 nm + 16 μm` 采样的对角最大离散传播角约为 `1.35°`，因此 5°、10° 等阈值不会产生实际滤波。
 
-三组直接对比配置为：
-
-```text
-configs/config_kspace_off.yaml
-configs/config_kspace_theta0p5deg.yaml
-configs/config_kspace_theta1p0deg.yaml
-```
+工程只保留 `configs/config.yaml`。K 空间约束默认关闭；需要对照时直接修改其中的 `k_space_constraint_enabled` 和 `theta_max_deg`，并使用不同 `--run_name` 保存结果。
 
 运行报告会保存 `theta_max_deg`、网格最大角、频率通过比例，并输出 `k_space_constraint_mask.png`。
 
@@ -147,13 +141,7 @@ class 3: y[275:325], x[275:325]
 
 相位参数使用 Adam 时默认 `weight_decay=0`。不要把普通电子网络常用的 L2 weight decay 直接施加到 `raw_phase`：它会持续把 sigmoid 参数拉回 0，使有效相位重新接近空间常数 `π`，表现为准确率和相位图长期不动。训练日志会逐 epoch 打印并保存 `phase_std`、`phase_delta_mean` 和首批次 `grad_mean`，可直接判断相位是否真正更新。
 
-三份配置中的初始化均指 `raw_phase`：
-
-| 配置 | raw_phase 初始化 |
-|---|---|
-| `configs/config_phase_zero.yaml` | 全 0 |
-| `configs/config_phase_uniform.yaml` | `Uniform(0, 2π)` |
-| `configs/config_phase_gaussian.yaml` | `Normal(0, init_std)` |
+唯一配置中的 `phase_init` 指 `raw_phase` 初始化。默认 `zeros`；如需对照，可手工改成 `uniform` 或 `gaussian` 并使用不同 `--run_name`。
 
 有效相位始终为 `2π × sigmoid(raw_phase)`。因此 raw zero 对应空间常数相位 π，不会造成 sigmoid 梯度消失。
 
