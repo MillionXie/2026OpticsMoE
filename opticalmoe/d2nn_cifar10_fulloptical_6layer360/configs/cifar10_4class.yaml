@@ -56,6 +56,8 @@ detector:
 loss:
   type: detector_plane_mse
   scale: 100.0
+  normalize_detector_plane_mse: true
+  detector_plane_mse_normalization_eps: 1.0e-8
 
 regularization:
   phase_dropout:

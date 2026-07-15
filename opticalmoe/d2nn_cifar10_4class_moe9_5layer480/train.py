@@ -14,6 +14,18 @@ from utils import BASE_DIR,choose_device,environment_info,git_info,load_yaml,sav
 from visualization import confusion_matrix,save_confusion,save_epoch_artifacts,save_training_curves
 
 
+def detector_plane_mse_loss(intensity,target_plane,scale,normalize,eps):
+    """Full-plane MSE with optional per-sample total-energy matching."""
+    eps=float(eps)
+    if eps<=0:raise ValueError("loss.detector_plane_mse_normalization_eps must be positive")
+    prediction=intensity
+    if bool(normalize):
+        prediction_energy=prediction.sum(dim=(-2,-1),keepdim=True)
+        target_energy=target_plane.sum(dim=(-2,-1),keepdim=True)
+        prediction=prediction*target_energy/(prediction_energy+eps)
+    return float(scale)*F.mse_loss(prediction,target_plane)
+
+
 def build_optimizer(model,config):
     cfg=config.get("optimizer",{});opt_type=str(cfg.get("type","adam")).strip().lower();lr=float(cfg.get("lr",cfg.get("learning_rate",0.01)));weight_decay=float(cfg.get("weight_decay",0.0))
     if opt_type=="adam":return torch.optim.Adam(model.parameters(),lr=lr,weight_decay=weight_decay)
@@ -23,7 +35,7 @@ def build_optimizer(model,config):
 
 def args_parser():
     parser=argparse.ArgumentParser(description="Train CIFAR-10 pure-optical 9-expert 5-layer D2NN MoE (4 or 10 classes).")
-    parser.add_argument("--config",default="configs/config.yaml");parser.add_argument("--device",default=None);parser.add_argument("--epochs",type=int,default=None);parser.add_argument("--batch-size",type=int,default=None);parser.add_argument("--train-samples-per-class-per-epoch",type=int,default=None);parser.add_argument("--run_name",default=None);parser.add_argument("--smoke_test",action="store_true");parser.add_argument("--disable_visualization",action="store_true")
+    parser.add_argument("--config",default="configs/config.yaml");parser.add_argument("--device",default=None);parser.add_argument("--epochs",type=int,default=None);parser.add_argument("--batch-size",type=int,default=None);parser.add_argument("--train-samples-per-class-per-epoch",type=int,default=None);parser.add_argument("--run-name","--run_name",dest="run_name",default=None);parser.add_argument("--smoke-test","--smoke_test",dest="smoke_test",action="store_true");parser.add_argument("--disable-visualization","--disable_visualization",dest="disable_visualization",action="store_true")
     return parser.parse_args()
 
 
@@ -33,7 +45,8 @@ def forward_loss(model,images,targets,loss_cfg):
     # complex 480x480 tensors and their autograd history in every train batch.
     logits,items=model(images,return_intermediates=True,capture_layer_fields=False)
     if loss_type=="detector_plane_mse":
-        target=model.detector.masks[targets].to(images.device);classification=scale*F.mse_loss(items["detector_intensity"],target)
+        target=model.detector.masks[targets].to(images.device)
+        classification=detector_plane_mse_loss(items["detector_intensity"],target,scale,loss_cfg.get("normalize_detector_plane_mse",False),loss_cfg.get("detector_plane_mse_normalization_eps",1.0e-8))
     elif loss_type=="cross_entropy":classification=scale*F.cross_entropy(logits,targets)
     else:raise ValueError(f"Unsupported loss.type: {loss_type}")
     balance=items["router_balance_loss"];balance_weight=float(loss_cfg.get("router_balance_weight",0.01))
@@ -87,23 +100,26 @@ def save_checkpoint(path,model,optimizer,epoch,metrics,config):
 
 def report(model,config,class_names,train_loader,test_loader):
     optics=config.get("optics",{});distances=optics.get("distances_m",{})
+    conversion_parameters=model.interlayer_conversion_parameter_count()
     return {
         "model":"OpticalMoEClassifier","task":f"CIFAR-10 {len(class_names)}-class pure optical MoE","class_names":class_names,
         "dataset":{"train_samples":len(train_loader.dataset),"test_samples":len(test_loader.dataset),"train_samples_per_class":config.get("dataset",{}).get("train_samples_per_class"),"test_samples_per_class":config.get("dataset",{}).get("test_samples_per_class"),"train_samples_per_class_per_epoch":config.get("dataset",{}).get("train_samples_per_class_per_epoch"),"train_samples_per_epoch":len(train_loader.sampler),"batch_size":train_loader.batch_size,"shuffle_train":True,"full_dataset_retained":config.get("dataset",{}).get("train_samples_per_class") is None},
         "layout":model.layout.to_dict(),"num_layers_per_expert":model.num_layers,"distances_m":distances,
-        "optoelectronic_interlayers":{**config.get("optoelectronic_interlayers",{}),"trainable_parameters":0,"conversion_count":5 if model.optoelectronic_enabled else 0,"sequence":"phase -> 20cm propagation -> square detection -> non-affine spatial LayerNorm -> nonlinearity -> amplitude reload" if model.optoelectronic_enabled else "disabled; continuous coherent propagation"},
+        "optoelectronic_interlayers":{**config.get("optoelectronic_interlayers",{}),"trainable_parameters":conversion_parameters,"conversion_count":5 if model.optoelectronic_enabled else 0,"sequence":"phase -> propagation -> square detection -> per-expert affine LayerNorm -> ReLU -> zero-phase amplitude reload" if model.optoelectronic_enabled else "disabled; continuous coherent propagation","routing_amplitude_reapplied":False},
         "wavelength_m":float(optics.get("wavelength_m",5.32e-7)),"pixel_size_m":float(optics.get("pixel_size_m",16e-6)),
         "k_space":{"enabled":model.to_detector.k_space_constraint_enabled,"theta_max_deg":model.to_detector.theta_max_deg,"max_sampled_angle_deg":model.to_detector.max_sampled_angle_deg,"pass_fraction":model.to_detector.k_space_pass_fraction},
         "detector_bounds":[[int(v) for v in [p.nonzero().min(0).values[0],p.nonzero().max(0).values[0]+1,p.nonzero().min(0).values[1],p.nonzero().max(0).values[1]+1]] for p in model.detector.masks.cpu()],
         "routing":{"type":"input_topk","top_k":int(config.get("prompt",{}).get("top_k",3)),"balance_loss_weight":float(config.get("loss",{}).get("router_balance_weight",0.01)),"importance_loss_weight":float(config.get("loss",{}).get("router_importance_weight",0.0)),"importance_loss":"num_experts * sum(mean_probability^2) - 1; 0 is uniform, num_experts-1 is one-expert collapse","inactive_grating_amplitude":0.0,"max_abs_grating_frequency":model.prompt.max_abs_grating_frequency,"nyquist_frequency":model.prompt.nyquist_frequency,"edge_grating_period_pixels":model.prompt.edge_grating_period_pixels,"minimum_grating_period_pixels":model.prompt.min_grating_period_pixels},
         "optimizer":{"type":str(config.get("optimizer",{}).get("type","adam")).lower(),"lr":float(config.get("optimizer",{}).get("lr",config.get("optimizer",{}).get("learning_rate",0.01))),"weight_decay":float(config.get("optimizer",{}).get("weight_decay",0.0))},
-        "parameters":{"expert_phase":model.expert_phase_parameter_count(),"global_fc_phase":model.global_fc_parameter_count(),"optical_total":model.optical_parameter_count(),"electronic_router":model.router_parameter_count(),"electronic_classifier":0,"trainable_total":sum(p.numel() for p in model.parameters() if p.requires_grad)},
+        "parameters":{"expert_phase":model.expert_phase_parameter_count(),"global_fc_phase":model.global_fc_parameter_count(),"optical_total":model.optical_parameter_count(),"electronic_router":model.router_parameter_count(),"interlayer_affine":conversion_parameters,"electronic_total":model.electronic_parameter_count(),"electronic_classifier":0,"trainable_total":sum(p.numel() for p in model.parameters() if p.requires_grad)},
         "slm_export":config.get("slm_export",{}),
     }
 
 
 def main():
-    args=args_parser();config_path=Path(args.config);config_path=config_path if config_path.is_absolute() else BASE_DIR/config_path;config=load_yaml(config_path)
+    args=args_parser();config_path=Path(args.config)
+    if not config_path.is_absolute():config_path=config_path.resolve() if config_path.is_file() else BASE_DIR/config_path
+    config=load_yaml(config_path)
     if args.epochs is not None:config.setdefault("training",{})["epochs"]=args.epochs
     if args.batch_size is not None:config.setdefault("dataset",{})["batch_size"]=args.batch_size
     if args.train_samples_per_class_per_epoch is not None:config.setdefault("dataset",{})["train_samples_per_class_per_epoch"]=args.train_samples_per_class_per_epoch
@@ -128,7 +144,7 @@ def main():
     optimizer=build_optimizer(model,config)
     loss_cfg=config.get("loss",{"type":"detector_plane_mse","scale":100.0});save_json(report(model,config,class_names,train_loader,test_loader),run_dir/"architecture_report.json")
     print(f"device={device} train={len(train_loader.dataset)} test={len(test_loader.dataset)} classes={class_names}")
-    print(f"experts=9 layers_per_expert=5 expert_phase_params={model.expert_phase_parameter_count()} global_fc_params={model.global_fc_parameter_count()} router_params={model.router_parameter_count()} electronic_classifier_params=0")
+    print(f"experts=9 layers_per_expert=5 expert_phase_params={model.expert_phase_parameter_count()} global_fc_params={model.global_fc_parameter_count()} router_params={model.router_parameter_count()} interlayer_affine_params={model.interlayer_conversion_parameter_count()} electronic_classifier_params=0")
     print(f"distances={config['optics']['distances_m']} detector_bounds={report(model,config,class_names,train_loader,test_loader)['detector_bounds']}")
     fixed=fixed_batch(test_loader,device,int(config.get("visualization",{}).get("num_samples",4)));viz=bool(config.get("visualization",{}).get("enabled",True));interval=int(config.get("visualization",{}).get("save_interval_epochs",10));save_epoch_artifacts(model,fixed,run_dir,"epoch_0000",class_names,viz)
     epochs=int(config.get("training",{}).get("epochs",200));print_freq=int(config.get("training",{}).get("print_freq",50));phase_diagnostics=bool(config.get("training",{}).get("phase_diagnostics_enabled",False));rows=[];best_acc=-1.0;best_epoch=0;start=time.perf_counter()

@@ -147,10 +147,14 @@ def save_epoch_artifacts(model, batch, run_dir, tag, class_names, enabled=True):
         selected_lookup = {expert_index: local_index for local_index, expert_index in enumerate(enabled_indices)}
         stage_record = {
             "stage": stage_number,
-            "normalization": "per_sample_stage_global_layernorm",
-            "normalization_input_mean": float(oeo["normalization_mean"][0].cpu()) if oeo["normalization_mean"] is not None else None,
-            "normalization_input_std": float(oeo["normalization_std"][0].cpu()) if oeo["normalization_std"] is not None else None,
-            "normalization_affine": False,
+            "normalization": f"per_sample_{oeo.get('normalization_scope', 'unknown')}_layernorm",
+            "normalization_input_mean": float(oeo["normalization_mean"][0].mean().cpu()) if oeo["normalization_mean"] is not None else None,
+            "normalization_input_std": float(oeo["normalization_std"][0].mean().cpu()) if oeo["normalization_std"] is not None else None,
+            "normalization_input_mean_per_enabled_expert": oeo["normalization_mean"][0].detach().cpu().flatten().tolist() if oeo["normalization_mean"] is not None else None,
+            "normalization_input_std_per_enabled_expert": oeo["normalization_std"][0].detach().cpu().flatten().tolist() if oeo["normalization_std"] is not None else None,
+            "normalization_affine": bool(oeo.get("elementwise_affine", False)),
+            "affine_sharing": oeo.get("affine_sharing"),
+            "routing_amplitude_reapplied": bool(oeo.get("routing_amplitude_reapplied", False)),
             "activation": "relu",
             "experts": [],
         }
@@ -174,7 +178,8 @@ def save_epoch_artifacts(model, batch, run_dir, tag, class_names, enabled=True):
                 normalized = oeo["normalized_intensity"][0, local_index]
                 activation = oeo["activation"][0, local_index]
                 amplitude = oeo["reencoded_amplitude"][0, local_index]
-                _save_map(normalized, stage_root / f"expert_{expert_index:02d}_{expert_type}_layernorm_intensity.png", f"Stage {stage_number} E{expert_index} stage-global LayerNorm intensity", "signed")
+                scope = oeo.get("normalization_scope", "unknown").replace("_", "-")
+                _save_map(normalized, stage_root / f"expert_{expert_index:02d}_{expert_type}_layernorm_intensity.png", f"Stage {stage_number} E{expert_index} {scope} LayerNorm intensity", "signed")
                 _save_map(activation, stage_root / f"expert_{expert_index:02d}_{expert_type}_relu_amplitude.png", f"Stage {stage_number} E{expert_index} LayerNorm + ReLU amplitude", "amplitude")
                 _save_map(amplitude, stage_root / f"expert_{expert_index:02d}_{expert_type}_reencoded_amplitude.png", f"Stage {stage_number} E{expert_index} next-stage zero-phase amplitude", "amplitude")
                 expert_record.update(

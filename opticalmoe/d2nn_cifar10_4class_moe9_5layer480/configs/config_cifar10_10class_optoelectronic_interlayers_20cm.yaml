@@ -1,0 +1,30 @@
+_base_: config_cifar10_10class.yaml
+
+experiment:
+  run_name: cifar10_10class_moe9x5_top3_globalfc_perexpert_affine_oeo_20cm_seed7
+
+optics:
+  distances_m:
+    input_to_prompt: 0.1444
+    prompt_to_expert: 0.1444
+    inter_layer: 0.20
+    last_expert_to_global_fc: 0.20
+    global_fc_to_detector: 0.20
+
+optoelectronic_interlayers:
+  enabled: true
+  detection: square_law
+  normalization: layer_norm
+  normalization_scope: per_expert
+  per_expert_enabled: true
+  elementwise_affine: false
+  affine_sharing: per_expert
+  nonlinearity: relu
+  reload_as: amplitude
+  reapply_routing_amplitude: false
+  eps: 1.0e-5
+
+optimizer:
+  type: adamw
+  lr: 0.008
+  weight_decay: 0.0

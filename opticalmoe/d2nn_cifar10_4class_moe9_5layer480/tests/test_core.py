@@ -15,7 +15,7 @@ from data import PerClassEpochSampler, RemappedCIFARSubset
 from utils import load_yaml
 from slm_bmp import export_plane_bmp, nearest_scale_uint8
 from prompt import InputTopKRouter
-from train import build_optimizer
+from train import build_optimizer, detector_plane_mse_loss
 
 
 def config():return load_yaml(ROOT/"configs"/"config.yaml")
@@ -33,7 +33,7 @@ def test_layout_matches_requested_480_450_3x3_geometry():
 def test_single_config_has_valid_phase_routing_and_regularization_defaults():
     value=load_yaml(ROOT/"configs"/"config.yaml")
     assert value["optics"]["phase_init"]=="zeros"
-    assert value["prompt"]["top_k"]==3
+    assert 1<=int(value["prompt"]["top_k"])<=int(value["model"]["num_experts"])
     assert value["prompt"]["mode"]=="region_amplitude_global_lens"
     assert value["optics"]["k_space_constraint_enabled"] is False
     assert float(value["optimizer"]["weight_decay"])==0.0
@@ -70,9 +70,17 @@ def test_optoelectronic_20cm_config_and_square_detection_reload():
     assert value["optics"]["distances_m"]["inter_layer"]==0.20
     assert value["optics"]["distances_m"]["last_expert_to_global_fc"]==0.20
     assert value["optics"]["distances_m"]["global_fc_to_detector"]==0.20
+    assert value["optoelectronic_interlayers"]["normalization_scope"]=="per_expert"
+    assert value["optoelectronic_interlayers"]["per_expert_enabled"] is True
+    assert value["optoelectronic_interlayers"]["elementwise_affine"] is True
+    assert value["optoelectronic_interlayers"]["affine_sharing"]=="per_expert"
+    assert value["optoelectronic_interlayers"]["reapply_routing_amplitude"] is False
     model=OpticalMoEClassifier(value,4)
     assert model.optoelectronic_enabled is True
-    assert sum(parameter.numel() for parameter in model.interlayer_conversion.parameters())==0
+    assert len(model.interlayer_conversions)==5
+    assert model.interlayer_conversion_parameter_count()==5*9*2*120*120
+    assert all(tuple(module.affine_weight.shape)==(9,120,120) for module in model.interlayer_conversions)
+    assert model.interlayer_conversions[0].affine_weight.data_ptr()!=model.interlayer_conversions[1].affine_weight.data_ptr()
     field=torch.randn(2,12,12,dtype=torch.complex64,requires_grad=True)
     reloaded,details=SquareDetectionLayerNormReload()(field,return_details=True)
     assert reloaded.shape==field.shape and torch.is_complex(reloaded)
@@ -82,6 +90,35 @@ def test_optoelectronic_20cm_config_and_square_detection_reload():
     assert torch.allclose(details["layer_normalized"].mean((-2,-1)),torch.zeros(2),atol=1e-5)
     reloaded.abs().square().mean().backward()
     assert field.grad is not None and torch.count_nonzero(field.grad)>0
+
+
+def test_legacy_spatial_oeo_config_is_reconstructed_without_new_affine_parameters():
+    value=load_yaml(ROOT/"configs"/"config_optoelectronic_interlayers_20cm.yaml")
+    value["optoelectronic_interlayers"]={
+        "enabled":True,"detection":"square_law","normalization":"layer_norm",
+        "normalization_scope":"spatial_per_sample","affine":False,
+        "nonlinearity":"relu","reload_as":"amplitude","eps":1e-5,
+    }
+    model=OpticalMoEClassifier(value,4)
+    assert all(not module.per_expert_enabled for module in model.interlayer_conversions)
+    assert model.interlayer_conversion_parameter_count()==0
+
+
+def test_per_expert_affine_layernorm_has_independent_outputs_and_gradients():
+    value=load_yaml(ROOT/"configs"/"config_optoelectronic_interlayers_20cm.yaml")
+    model=OpticalMoEClassifier(value,4);module=model.interlayer_conversions[0]
+    field=torch.randn(2,480,480,dtype=torch.complex64,requires_grad=True)
+    with torch.no_grad():
+        module.affine_bias[0].zero_();module.affine_bias[1].fill_(1.0)
+    output,details=module(field,return_details=True)
+    a0,a1=model.layout.expert_apertures[:2]
+    first=output[:,a0.y0:a0.y1,a0.x0:a0.x1].real.mean()
+    second=output[:,a1.y0:a1.y1,a1.x0:a1.x1].real.mean()
+    assert second>first
+    output.real.mean().backward()
+    assert module.affine_weight.grad is not None and module.affine_bias.grad is not None
+    assert details["normalization_scope"]=="per_expert"
+    assert details["routing_amplitude_reapplied"] is False
 
 
 def test_model_has_nine_experts_global_fc_and_only_electronic_router():
@@ -118,17 +155,37 @@ def test_ten_class_config_has_centered_ten_detector_readout():
     assert value["dataset"]["class_indices"]==list(range(10))
     assert value["dataset"]["train_samples_per_class"] is None
     assert model.detector.masks.shape==(10,480,480)
-    assert value["detector"]["N_det_sets"]==[3,3,4]
+    assert value["detector"]["detector_size"]==50
+    assert value["detector"]["N_det_sets"]==[3,4,3]
     bounds=[]
     for mask in model.detector.masks:
         points=mask.nonzero();bounds.append((int(points[:,0].min()),int(points[:,0].max()+1),int(points[:,1].min()),int(points[:,1].max()+1)))
-    assert bounds[:3]==[(140,180,140,180),(140,180,220,260),(140,180,300,340)]
-    assert bounds[3:6]==[(220,260,140,180),(220,260,220,260),(220,260,300,340)]
-    assert bounds[6:]==[(300,340,100,140),(300,340,180,220),(300,340,260,300),(300,340,340,380)]
+    assert bounds[:3]==[(115,165,115,165),(115,165,215,265),(115,165,315,365)]
+    assert bounds[3:7]==[(215,265,65,115),(215,265,165,215),(215,265,265,315),(215,265,365,415)]
+    assert bounds[7:]==[(315,365,115,165),(315,365,215,265),(315,365,315,365)]
     assert value["dataset"]["train_samples_per_class_per_epoch"]==1000
     importance=load_yaml(ROOT/"configs"/"config_cifar10_10class_importance_adamw.yaml")
     assert importance["optimizer"]["type"]=="adamw"
     assert importance["loss"]["router_importance_weight"]==0.1
+
+
+def test_ten_class_optoelectronic_config_uses_identical_expertwise_oeo():
+    value=load_yaml(ROOT/"configs"/"config_cifar10_10class_optoelectronic_interlayers_20cm.yaml")
+    model=OpticalMoEClassifier(value,10)
+    assert model.optoelectronic_enabled is True
+    assert value["optoelectronic_interlayers"]["normalization_scope"]=="per_expert"
+    assert value["optoelectronic_interlayers"]["affine_sharing"]=="per_expert"
+    assert model.interlayer_conversion_parameter_count()==1_296_000
+
+
+def test_detector_plane_mse_can_toggle_energy_normalization():
+    intensity=torch.rand(2,8,8);target=torch.zeros_like(intensity);target[:,2:5,3:6]=1
+    normalized=detector_plane_mse_loss(intensity,target,100.0,True,1.0e-8)
+    normalized_scaled=detector_plane_mse_loss(9*intensity,target,100.0,True,1.0e-8)
+    raw=detector_plane_mse_loss(intensity,target,100.0,False,1.0e-8)
+    raw_scaled=detector_plane_mse_loss(9*intensity,target,100.0,False,1.0e-8)
+    assert torch.allclose(normalized,normalized_scaled,rtol=1e-5,atol=1e-6)
+    assert not torch.allclose(raw,raw_scaled)
 
 
 def test_rotating_per_class_epoch_sampler_retains_and_covers_full_dataset():
@@ -175,8 +232,8 @@ def test_forward_is_pure_optical_four_class_output():
     assert tuple(items["detector_intensity"].shape)==(1,480,480)
     assert len(items["after_each_expert_layer"])==5
     assert tuple(items["global_fc_phase"].shape)==(450,450)
-    assert int(items["routing_selected_mask"][0].sum())==3
-    assert torch.count_nonzero(items["routing_weights"][0]).item()==3
+    assert int(items["routing_selected_mask"][0].sum())==int(config()["prompt"]["top_k"])
+    assert torch.count_nonzero(items["routing_weights"][0]).item()==int(config()["prompt"]["top_k"])
     assert torch.allclose(items["routing_weights"][0].sum(),torch.tensor(1.0),atol=1e-6)
     amplitude=items["prompt_amplitude"][0]
     for index,weight in enumerate(items["routing_weights"][0]):
@@ -233,6 +290,32 @@ def test_slm_bmp_is_1920_by_1200_and_centered(tmp_path):
     pixels=torch.frombuffer(bytearray(image.tobytes()),dtype=torch.uint8).view(1200,1920)
     assert torch.all(pixels[150:1050,510:1410]==255)
     assert int(torch.count_nonzero(pixels[:150]).item())==0
+
+
+def test_oneshot_amplitude_bmp_is_1920_by_1080_and_centered(tmp_path):
+    source=torch.ones(450,450)
+    info=export_plane_bmp(source,tmp_path/"amplitude.bmp","amplitude",2,1920,1080)
+    image=Image.open(tmp_path/"amplitude.bmp")
+    assert image.size==(1920,1080)
+    assert info["scaled_shape"]==[900,900]
+    pixels=torch.frombuffer(bytearray(image.tobytes()),dtype=torch.uint8).view(1080,1920)
+    assert torch.all(pixels[90:990,510:1410]==255)
+    assert int(torch.count_nonzero(pixels[:90]).item())==0
+
+
+def test_final_oeo_amplitude_and_global_phase_are_coplanar():
+    value=load_yaml(ROOT/"configs"/"config_optoelectronic_interlayers_20cm.yaml")
+    # Avoid allocating the large affine tensors in this data-flow test.
+    value["optoelectronic_interlayers"].update({
+        "normalization_scope":"spatial_per_sample","per_expert_enabled":False,
+        "elementwise_affine":False,
+    })
+    model=OpticalMoEClassifier(value,4).eval()
+    with torch.no_grad():_,items=model(torch.rand(1,1,120,120),return_intermediates=True)
+    assert torch.allclose(items["at_global_fc"].imag,torch.zeros_like(items["at_global_fc"].imag))
+    expected=model.global_fc(items["at_global_fc"])
+    assert torch.allclose(items["after_global_fc"],expected)
+    assert torch.allclose(items["at_global_fc"].real,items["interlayer_reloaded_amplitudes"][-1])
 
 
 def test_slm_scaling_is_exact_nearest_neighbor_replication():

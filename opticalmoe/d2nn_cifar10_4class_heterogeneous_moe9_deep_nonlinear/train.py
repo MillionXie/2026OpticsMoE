@@ -50,7 +50,7 @@ def build_optimizer(model, config):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Train CIFAR-10 deep heterogeneous staged-OEO optical MoE")
+    parser = argparse.ArgumentParser(description="Train CIFAR-10 4/10-class deep heterogeneous staged-OEO optical MoE")
     parser.add_argument("--config", default="configs/config.yaml")
     parser.add_argument("--device", default=None)
     parser.add_argument("--epochs", type=int, default=None)
@@ -316,9 +316,13 @@ def save_checkpoint(path, model, optimizer, epoch, metrics, config):
 
 def architecture_report(model, config, class_names, train_loader, test_loader):
     parameters = model.expert_parameter_report()
+    normalization_cfg = config.get("nonlinearity", {}).get("normalization", {})
+    per_expert_normalization = bool(normalization_cfg.get("per_expert_enabled", True))
+    affine_enabled = bool(normalization_cfg.get("elementwise_affine", True))
+    normalization_scope = "per_expert" if per_expert_normalization else "stage_global"
     return {
         "model": "DeepHeterogeneousOpticalMoENonlinearClassifier",
-        "task": "CIFAR-10 four-class deep heterogeneous staged-OEO optical MoE",
+        "task": f"CIFAR-10 {len(class_names)}-class deep heterogeneous staged-OEO optical MoE",
         "class_names": class_names,
         "layout": model.layout.to_dict(),
         "expert_type_map_row_major": model.expert_bank.expert_types,
@@ -326,9 +330,12 @@ def architecture_report(model, config, class_names, train_loader, test_loader):
         "stage_nonlinearity": {
             "complex_field_in_out": True,
             "intensity_detection_between_stages": True,
-            "normalization": "per_sample_stage_global_layernorm_over_enabled_expert_regions",
-            "per_expert_instantaneous_normalization": False,
-            "activation": "parameter_free_relu_after_stage_global_layernorm",
+            "normalization": f"per_sample_{normalization_scope}_layernorm",
+            "per_expert_instantaneous_normalization": per_expert_normalization,
+            "elementwise_affine": affine_enabled,
+            "affine_sharing": str(normalization_cfg.get("affine_sharing", "per_expert")),
+            "activation": f"relu_after_{normalization_scope}_layernorm",
+            "routing_amplitude_reapplied_after_normalization": False,
             "zero_phase_reencoding": True,
             "post_global_fc_oeo": False,
             "report": model.nonlinearity_parameter_report(),

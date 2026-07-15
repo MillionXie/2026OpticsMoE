@@ -97,26 +97,34 @@ class PaddedLocalPropagator(nn.Module):
 
 
 class StageGlobalOEO(nn.Module):
-    """Parameter-free stage-global intensity LayerNorm followed by ReLU.
+    """Configurable intensity LayerNorm + ReLU + zero-phase re-encoding.
 
-    Mean and standard deviation are recomputed for each sample and stage over
-    every OEO-enabled expert pixel. They are never learned and are not shared
-    across stages. Disabled regions retain their original complex field.
+    The default path computes statistics independently for every sample and
+    expert.  By default every expert also owns an independent elementwise
+    affine gamma/beta map at every stage.  Per-stage shared affine maps and the
+    legacy stage-global statistics path remain available as controlled
+    ablations.
+    Disabled expert regions retain their original complex field.
     """
 
-    def __init__(self, cfg: dict, stage_index: int) -> None:
+    def __init__(
+        self,
+        cfg: dict,
+        stage_index: int,
+        field_size: int | None = None,
+        num_experts: int | None = None,
+    ) -> None:
         super().__init__()
         self.stage_index = int(stage_index)
         normalization = cfg.get("normalization", {})
         reencoding = cfg.get("reencoding", {})
         if str(cfg.get("type", "intensity_layernorm_relu")) != "intensity_layernorm_relu":
             raise ValueError("nonlinearity.type must be intensity_layernorm_relu")
-        if str(normalization.get("type", "stage_global_layernorm")) != "stage_global_layernorm":
-            raise ValueError("nonlinearity.normalization.type must be stage_global_layernorm")
+        normalization_type = str(normalization.get("type", "layernorm"))
+        if normalization_type not in {"layernorm", "stage_global_layernorm"}:
+            raise ValueError("nonlinearity.normalization.type must be layernorm or stage_global_layernorm")
         if str(normalization.get("aperture", "nonlinear_enabled_expert_regions")) != "nonlinear_enabled_expert_regions":
             raise ValueError("normalization aperture must be nonlinear_enabled_expert_regions")
-        if bool(normalization.get("elementwise_affine", False)):
-            raise ValueError("Stage-global optical LayerNorm must use elementwise_affine=false")
         if str(cfg.get("activation", {}).get("type", "relu")) != "relu":
             raise ValueError("nonlinearity.activation.type must be relu")
         if not bool(reencoding.get("zero_phase", True)):
@@ -126,8 +134,76 @@ class StageGlobalOEO(nn.Module):
         self.eps = float(normalization.get("eps", 1.0e-6))
         if self.eps <= 0:
             raise ValueError("nonlinearity.normalization.eps must be positive")
+        self.per_expert_enabled = bool(normalization.get("per_expert_enabled", True))
+        self.elementwise_affine = bool(normalization.get("elementwise_affine", True))
+        self.affine_sharing = str(normalization.get("affine_sharing", "per_expert"))
+        if self.affine_sharing not in {"per_expert", "per_stage"}:
+            raise ValueError("nonlinearity.normalization.affine_sharing must be per_expert or per_stage")
+        self.reapply_routing_amplitude = bool(reencoding.get("reapply_routing_amplitude", False))
+        if self.reapply_routing_amplitude:
+            raise ValueError(
+                "reapply_routing_amplitude=true is not supported: the normalized OEO output must not be "
+                "multiplied by routing amplitude"
+            )
+        self.field_size = int(field_size) if field_size is not None else None
+        self.num_experts = int(num_experts) if num_experts is not None else None
+        if self.elementwise_affine:
+            if self.field_size is None or self.field_size <= 0:
+                raise ValueError("field_size must be a positive integer when elementwise_affine=true")
+            if self.affine_sharing == "per_expert" and (self.num_experts is None or self.num_experts <= 0):
+                raise ValueError("num_experts must be a positive integer for per_expert affine LayerNorm")
+            affine_count = self.num_experts if self.affine_sharing == "per_expert" else 1
+            # Shape [expert, H, W]. Gamma/beta are initialized as an identity
+            # transform. Enabled expert indices select their own maps.
+            self.affine_weight = nn.Parameter(
+                torch.ones(int(affine_count), self.field_size, self.field_size, dtype=torch.float32)
+            )
+            self.affine_bias = nn.Parameter(
+                torch.zeros(int(affine_count), self.field_size, self.field_size, dtype=torch.float32)
+            )
+        else:
+            self.register_parameter("affine_weight", None)
+            self.register_parameter("affine_bias", None)
+
+    @property
+    def normalization_scope(self) -> str:
+        return "per_expert" if self.per_expert_enabled else "stage_global"
+
+    def _apply_affine(self, normalized: torch.Tensor, enabled_indices: list[int]) -> torch.Tensor:
+        if self.affine_weight is None:
+            return normalized
+        if self.affine_sharing == "per_stage":
+            weight = self.affine_weight[0]
+            bias = self.affine_bias[0]
+        else:
+            index = torch.as_tensor(enabled_indices, device=normalized.device, dtype=torch.long)
+            weight = self.affine_weight.index_select(0, index)
+            bias = self.affine_bias.index_select(0, index)
+        return normalized * weight + bias
+
+    def _normalize(self, intensity: torch.Tensor, enabled_indices: list[int]):
+        if self.per_expert_enabled:
+            mean = intensity.mean(dim=(-2, -1))
+            variance = (intensity - mean[..., None, None]).square().mean(dim=(-2, -1))
+            std = torch.sqrt(variance + self.eps)
+            normalized = F.layer_norm(
+                intensity, intensity.shape[-2:], weight=None, bias=None, eps=self.eps
+            )
+            normalized = self._apply_affine(normalized, enabled_indices)
+            return normalized, mean, std
+
+        mean_keep = intensity.mean(dim=(1, 2, 3), keepdim=True)
+        variance_keep = (intensity - mean_keep).square().mean(dim=(1, 2, 3), keepdim=True)
+        std_keep = torch.sqrt(variance_keep + self.eps)
+        normalized = (intensity - mean_keep) / std_keep
+        normalized = self._apply_affine(normalized, enabled_indices)
+        return normalized, mean_keep[:, 0, 0, 0].unsqueeze(1), std_keep[:, 0, 0, 0].unsqueeze(1)
 
     def forward(self, fields: list[torch.Tensor], enabled: list[bool], capture_fields: bool = False):
+        if self.elementwise_affine and self.affine_sharing == "per_expert" and len(fields) != self.num_experts:
+            raise RuntimeError(
+                f"Expected {self.num_experts} expert fields for independent affine LayerNorm, got {len(fields)}"
+            )
         enabled_indices = [index for index, value in enumerate(enabled) if value]
         if not enabled_indices:
             return fields, {
@@ -142,13 +218,14 @@ class StageGlobalOEO(nn.Module):
                 "normalized_intensity": None,
                 "activation": None,
                 "reencoded_amplitude": None,
+                "normalization_scope": self.normalization_scope,
+                "elementwise_affine": self.elementwise_affine,
+                "affine_sharing": self.affine_sharing,
+                "routing_amplitude_reapplied": False,
             }
         selected = torch.stack([fields[index].to(torch.complex64) for index in enabled_indices], dim=1)
         intensity = selected.abs().square().float()
-        mean = intensity.mean(dim=(1, 2, 3), keepdim=True)
-        variance = (intensity - mean).square().mean(dim=(1, 2, 3), keepdim=True)
-        std = torch.sqrt(variance + self.eps)
-        normalized = (intensity - mean) / std
+        normalized, mean, std = self._normalize(intensity, enabled_indices)
         activated = torch.relu(normalized)
         amplitude = activated
         reencoded = torch.complex(amplitude, torch.zeros_like(amplitude))
@@ -169,8 +246,12 @@ class StageGlobalOEO(nn.Module):
         return outputs, {
             "enabled": list(enabled),
             "enabled_indices": enabled_indices,
-            "normalization_mean": mean[:, 0, 0, 0],
-            "normalization_std": std[:, 0, 0, 0],
+            "normalization_mean": mean,
+            "normalization_std": std,
+            "normalization_scope": self.normalization_scope,
+            "elementwise_affine": self.elementwise_affine,
+            "affine_sharing": self.affine_sharing,
+            "routing_amplitude_reapplied": False,
             "pre_power": pre_power,
             "normalized_power": normalized_power,
             "output_power": output_power,
@@ -596,9 +677,9 @@ class FiberArrayExpert(OpticalExpert):
 class HeterogeneousExpertBank(nn.Module):
     """Nine experts advanced synchronously through five stages.
 
-    The linear stage is expert-specific.  OEO is then performed once over all
-    enabled regions, which is what makes normalization stage-global instead of
-    independently normalizing away each routed expert's relative power.
+    The linear stage is expert-specific.  The default OEO path then normalizes
+    every enabled expert independently; a legacy stage-global statistics mode
+    remains configurable for ablation.
     """
 
     def __init__(self, layout, bank_cfg: dict, optics_cfg: dict, nonlinearity_cfg: dict) -> None:
@@ -625,7 +706,15 @@ class HeterogeneousExpertBank(nn.Module):
         self.num_stages = 5
         self.nonlinearity_enabled = bool(nonlinearity_cfg.get("enabled", True))
         self.stage_nonlinearities = nn.ModuleList(
-            [StageGlobalOEO(nonlinearity_cfg, stage_index) for stage_index in range(self.num_stages)]
+            [
+                StageGlobalOEO(
+                    nonlinearity_cfg,
+                    stage_index,
+                    layout.expert_size,
+                    layout.num_experts,
+                )
+                for stage_index in range(self.num_stages)
+            ]
         )
         self.max_fiber_modes = max((expert.num_modes for expert in experts if expert.expert_type == "fiber"), default=0)
 
@@ -719,8 +808,10 @@ class HeterogeneousExpertBank(nn.Module):
             per_stage.append(
                 {
                     "stage": index + 1,
-                    "normalization": "per_sample_stage_global_layernorm",
-                    "elementwise_affine": False,
+                    "normalization": f"per_sample_{module.normalization_scope}_layernorm",
+                    "elementwise_affine": module.elementwise_affine,
+                    "affine_sharing": module.affine_sharing,
+                    "routing_amplitude_reapplied": False,
                     "activation": "relu",
                     "reencoding": "relu_output_as_zero_phase_amplitude",
                     "parameters": int(sum(value.numel() for value in module.parameters())),
@@ -731,6 +822,10 @@ class HeterogeneousExpertBank(nn.Module):
             "enabled": self.nonlinearity_enabled,
             "learned_gain": False,
             "learned_threshold": False,
+            "normalization_scope": self.stage_nonlinearities[0].normalization_scope,
+            "elementwise_affine": self.stage_nonlinearities[0].elementwise_affine,
+            "affine_sharing": self.stage_nonlinearities[0].affine_sharing,
+            "routing_amplitude_reapplied": False,
             "per_stage": per_stage,
             "parameters": int(sum(value.numel() for value in self.stage_nonlinearities.parameters())),
             "trainable_parameters": int(sum(value.numel() for value in self.stage_nonlinearities.parameters() if value.requires_grad)),

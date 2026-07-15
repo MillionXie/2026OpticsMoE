@@ -14,6 +14,19 @@ from utils import BASE_DIR, choose_device, environment_info, git_info, load_yaml
 from visualization import confusion_matrix, save_confusion, save_epoch_artifacts, save_training_curves
 
 
+def detector_plane_mse_loss(intensity, target_plane, scale, normalize, eps):
+    """Full-plane MSE with optional per-sample total-energy matching."""
+    eps = float(eps)
+    if eps <= 0:
+        raise ValueError("loss.detector_plane_mse_normalization_eps must be positive")
+    prediction = intensity
+    if bool(normalize):
+        prediction_energy = prediction.sum(dim=(-2, -1), keepdim=True)
+        target_energy = target_plane.sum(dim=(-2, -1), keepdim=True)
+        prediction = prediction * target_energy / (prediction_energy + eps)
+    return float(scale) * F.mse_loss(prediction, target_plane)
+
+
 def build_optimizer(model, config):
     cfg = config.get("optimizer", {})
     optimizer_type = str(cfg.get("type", "adamw")).lower()
@@ -44,7 +57,11 @@ def forward_loss(model, images, targets, loss_cfg):
     scale = float(loss_cfg.get("scale", 100.0))
     if loss_type == "detector_plane_mse":
         target_plane = model.detector.masks[targets].to(images.device)
-        classification = scale * F.mse_loss(items["detector_intensity"], target_plane)
+        classification = detector_plane_mse_loss(
+            items["detector_intensity"], target_plane, scale,
+            loss_cfg.get("normalize_detector_plane_mse", False),
+            loss_cfg.get("detector_plane_mse_normalization_eps", 1.0e-8),
+        )
     elif loss_type == "cross_entropy":
         classification = F.cross_entropy(logits, targets)
     else:

@@ -1,0 +1,26 @@
+_base_: cifar10_10class.yaml
+
+experiment:
+  run_name: cifar10_10class_fulloptical_6layer360_affine_oeo_interlayers_20cm_seed7
+
+optics:
+  input_to_layer_distance_m: 0.0
+  inter_layer_distance_m: 0.20
+  detector_distance_m: 0.20
+
+optoelectronic_interlayers:
+  enabled: true
+  detection: square_law
+  normalization: layer_norm
+  normalization_scope: spatial_per_sample
+  elementwise_affine: false
+  affine_sharing: per_stage
+  nonlinearity: relu
+  reload_as: amplitude
+  reapply_routing_amplitude: false
+  eps: 1.0e-5
+
+optimizer:
+  type: adamw
+  lr: 0.008
+  weight_decay: 0.0

@@ -1,59 +1,39 @@
 # Commands
 
-以下命令均从仓库根目录 `2026OpticsMoE` 直接运行。
+以下命令均从仓库根目录 `2026OpticsMoE` 运行，不使用续行反斜杠。
 
-四分类 smoke：
+## 四分类连续光学 MoE
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python opticalmoe/d2nn_cifar10_4class_moe9_5layer480/train.py --config configs/config.yaml --smoke_test
+CUDA_VISIBLE_DEVICES=0 python opticalmoe/d2nn_cifar10_4class_moe9_5layer480/train.py --config opticalmoe/d2nn_cifar10_4class_moe9_5layer480/configs/config.yaml --device cuda
 ```
 
-路由物理验证：
+## 十分类连续光学 MoE
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python opticalmoe/d2nn_cifar10_4class_moe9_5layer480/validate_routing.py --config configs/config.yaml --device cuda --smoke-test
+CUDA_VISIBLE_DEVICES=0 python opticalmoe/d2nn_cifar10_4class_moe9_5layer480/train.py --config opticalmoe/d2nn_cifar10_4class_moe9_5layer480/configs/config_cifar10_10class.yaml --device cuda
 ```
 
-四分类完整训练：
+## 四分类：独立专家 affine LayerNorm + ReLU
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python opticalmoe/d2nn_cifar10_4class_moe9_5layer480/train.py --config configs/config.yaml
+CUDA_VISIBLE_DEVICES=0 python opticalmoe/d2nn_cifar10_4class_moe9_5layer480/train.py --config opticalmoe/d2nn_cifar10_4class_moe9_5layer480/configs/config_optoelectronic_interlayers_20cm.yaml --device cuda
 ```
 
-十分类训练：
+## 十分类：独立专家 affine LayerNorm + ReLU
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python opticalmoe/d2nn_cifar10_4class_moe9_5layer480/train.py --config configs/config_cifar10_10class.yaml
+CUDA_VISIBLE_DEVICES=1 python opticalmoe/d2nn_cifar10_4class_moe9_5layer480/train.py --config opticalmoe/d2nn_cifar10_4class_moe9_5layer480/configs/config_cifar10_10class_optoelectronic_interlayers_20cm.yaml --device cuda
 ```
 
-十分类并将 batch 临时改为 32：
+## 从已训练 run 导出 one-shot 实验 BMP
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python opticalmoe/d2nn_cifar10_4class_moe9_5layer480/train.py --config configs/config_cifar10_10class.yaml --batch-size 32
+CUDA_VISIBLE_DEVICES=0 python opticalmoe/d2nn_cifar10_4class_moe9_5layer480/export_oneshot_last_plane.py --run-dir opticalmoe/d2nn_cifar10_4class_moe9_5layer480/runs/cifar10_4class_moe9x5_optoelectronic_interlayers_20cm_seed7 --split test --samples-per-class 50 --batch-size 16 --num-workers 8 --device cuda
 ```
 
-每轮每类只取 500 张，但在多轮间轮转覆盖完整训练集：
+## 单元测试
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python opticalmoe/d2nn_cifar10_4class_moe9_5layer480/train.py --config configs/config_cifar10_10class.yaml --train-samples-per-class-per-epoch 500
-```
-
-`train_samples_per_class` 是底层数据集永久上限；`train_samples_per_class_per_epoch` 是轮转的单轮预算；`batch_size` 是一次 optimizer step 的样本数。
-
-四分类 AdamW + importance 均衡约束实验（独立 run，不覆盖原结果）：
-
-```bash
-CUDA_VISIBLE_DEVICES=0 python opticalmoe/d2nn_cifar10_4class_moe9_5layer480/train.py --config configs/config_importance_adamw.yaml
-```
-
-十分类 AdamW + importance 均衡约束实验：
-
-```bash
-CUDA_VISIBLE_DEVICES=0 python opticalmoe/d2nn_cifar10_4class_moe9_5layer480/train.py --config configs/config_cifar10_10class_importance_adamw.yaml
-```
-
-四分类、专家层间20 cm光电转换实验：
-
-```bash
-CUDA_VISIBLE_DEVICES=1 python opticalmoe/d2nn_cifar10_4class_moe9_5layer480/train.py --config configs/config_optoelectronic_interlayers_20cm.yaml
+python -m pytest opticalmoe/d2nn_cifar10_4class_moe9_5layer480/tests -q
 ```

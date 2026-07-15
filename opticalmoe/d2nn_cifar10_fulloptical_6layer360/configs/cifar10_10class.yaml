@@ -43,20 +43,23 @@ optics:
   theta_max_deg: 1.0
 
 detector:
-  # Three compact rows (3/3/4), each independently centered in 360x360.
-  detector_size: 30
+  # Centered 3/4/3 rows. Squares remain 40x40, matching the 4-class config.
+  # The 30-pixel horizontal and 40-pixel vertical gaps are deliberately moderate.
+  detector_size: 40
   layout: fixed_2x2
-  start_pos_x: 90
-  start_pos_x_per_row: [115, 115, 90]
-  start_pos_y: 105
-  N_det_sets: [3, 3, 4]
-  det_steps_x: [20, 20, 20]
-  det_steps_y: 30
+  start_pos_x: 55
+  start_pos_x_per_row: [90, 55, 90]
+  start_pos_y: 80
+  N_det_sets: [3, 4, 3]
+  det_steps_x: [30, 30, 30]
+  det_steps_y: 40
   normalize_detector_energy: true
 
 loss:
   type: detector_plane_mse
   scale: 100.0
+  normalize_detector_plane_mse: true
+  detector_plane_mse_normalization_eps: 1.0e-8
 
 regularization:
   phase_dropout:
@@ -74,7 +77,7 @@ optimizer:
 
 training:
   epochs: 200
-  print_freq: 50
+  print_freq: 5000
 
 visualization:
   enabled: true

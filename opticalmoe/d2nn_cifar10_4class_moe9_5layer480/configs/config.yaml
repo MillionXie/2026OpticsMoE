@@ -104,6 +104,10 @@ readout:
 loss:
   type: detector_plane_mse
   scale: 100.0
+  # true matches each predicted plane's total energy to its target mask before MSE.
+  # false uses the original raw detector-plane MSE.
+  normalize_detector_plane_mse: true
+  detector_plane_mse_normalization_eps: 1.0e-8
   router_balance_weight: 0.1
   router_importance_weight: 0.0
 

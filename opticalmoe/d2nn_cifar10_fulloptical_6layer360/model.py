@@ -17,20 +17,33 @@ PhaseLayer = _module.PhaseLayer
 
 
 class SquareDetectionLayerNormReload(nn.Module):
-    """Square-law detection -> non-affine spatial LayerNorm -> nonlinearity."""
+    """Square-law detection -> spatial LayerNorm -> nonlinearity."""
 
-    def __init__(self, eps=1e-5, nonlinearity="relu"):
+    def __init__(self, eps=1e-5, nonlinearity="relu", field_size=None, elementwise_affine=False):
         super().__init__(); self.eps=float(eps); self.nonlinearity=str(nonlinearity).lower()
         if self.eps<=0: raise ValueError("optoelectronic_interlayers.eps must be positive")
         if self.nonlinearity not in {"relu","softplus"}: raise ValueError("optoelectronic_interlayers.nonlinearity must be relu or softplus")
+        self.elementwise_affine=bool(elementwise_affine);self.field_size=int(field_size) if field_size is not None else None
+        if self.elementwise_affine:
+            if self.field_size is None or self.field_size<=0:raise ValueError("field_size is required when elementwise_affine=true")
+            self.affine_weight=nn.Parameter(torch.ones(self.field_size,self.field_size,dtype=torch.float32))
+            self.affine_bias=nn.Parameter(torch.zeros(self.field_size,self.field_size,dtype=torch.float32))
+        else:self.register_parameter("affine_weight",None);self.register_parameter("affine_bias",None)
 
     def forward(self, field, return_details=False):
         intensity=field.to(torch.complex64).abs().square().float()
         normalized=F.layer_norm(intensity,intensity.shape[-2:],weight=None,bias=None,eps=self.eps)
+        if self.affine_weight is not None:normalized=normalized*self.affine_weight+self.affine_bias
         amplitude=F.relu(normalized) if self.nonlinearity=="relu" else F.softplus(normalized)
         reloaded=torch.complex(amplitude,torch.zeros_like(amplitude))
         if not return_details:return reloaded
-        return reloaded,{"detector_intensity":intensity,"layer_normalized":normalized,"reloaded_amplitude":amplitude}
+        return reloaded,{
+            "detector_intensity":intensity,"layer_normalized":normalized,"reloaded_amplitude":amplitude,
+            "normalization_mean":intensity.mean((-2,-1)),
+            "normalization_std":torch.sqrt(intensity.var((-2,-1),unbiased=False)+self.eps),
+            "normalization_scope":"spatial_per_sample","elementwise_affine":self.elementwise_affine,
+            "affine_sharing":"per_stage","routing_amplitude_reapplied":False,
+        }
 
 
 class FullOpticalD2NNClassifier(nn.Module):
@@ -52,12 +65,18 @@ class FullOpticalD2NNClassifier(nn.Module):
             expected={"detection":"square_law","normalization":"layer_norm","normalization_scope":"spatial_per_sample","reload_as":"amplitude"}
             for key,value in expected.items():
                 if str(conversion.get(key,value)).lower()!=value:raise ValueError(f"optoelectronic_interlayers.{key} must be {value!r}")
-            if bool(conversion.get("affine",False)):raise ValueError("optoelectronic_interlayers.affine must be false to avoid trainable electronic normalization parameters")
-        self.interlayer_conversion=SquareDetectionLayerNormReload(float(conversion.get("eps",1e-5)),str(conversion.get("nonlinearity","relu")))
+            if bool(conversion.get("reapply_routing_amplitude",False)):raise ValueError("Full-optical model has no routing amplitude to reapply")
         if self.input_size > self.canvas_size or (self.canvas_size - self.input_size) % 2:
             raise ValueError("optics.canvas_size-input_size must be nonnegative and even")
         if self.num_layers != 6:
             raise ValueError("This baseline is defined as exactly six phase planes")
+        self.interlayer_conversions=nn.ModuleList([
+            SquareDetectionLayerNormReload(
+                float(conversion.get("eps",1e-5)),str(conversion.get("nonlinearity","relu")),
+                field_size=self.canvas_size,
+                elementwise_affine=bool(conversion.get("elementwise_affine",conversion.get("affine",True))),
+            ) for _ in range(self.num_layers-1)
+        ]) if self.optoelectronic_enabled else nn.ModuleList()
         enabled = bool(dropout.get("enabled", False))
         mode = str(dropout.get("mode", "none")) if enabled else "none"
         probability = float(dropout.get("p", 0.0)) if enabled else 0.0
@@ -131,12 +150,13 @@ class FullOpticalD2NNClassifier(nn.Module):
             if index < len(self.inter_props):
                 field = self.inter_props[index](field)
                 if self.optoelectronic_enabled:
+                    conversion_layer=self.interlayer_conversions[index]
                     if return_intermediates and capture_layer_fields:
-                        field,conversion=self.interlayer_conversion(field,return_details=True)
+                        field,conversion=conversion_layer(field,return_details=True)
                         interlayer_detector_intensities.append(conversion["detector_intensity"])
                         interlayer_normalized.append(conversion["layer_normalized"])
                         interlayer_reloaded_amplitudes.append(conversion["reloaded_amplitude"])
-                    else:field=self.interlayer_conversion(field)
+                    else:field=conversion_layer(field)
             if return_intermediates and capture_layer_fields:
                 fields.append(field)
         detector_field = self.detector_prop(field)
@@ -164,6 +184,8 @@ class FullOpticalD2NNClassifier(nn.Module):
     def optical_parameter_count(self):
         return sum(layer.raw_phase.numel() for layer in self.phase_layers)
 
-    @staticmethod
-    def electronic_parameter_count():
-        return 0
+    def interlayer_conversion_parameter_count(self):
+        return sum(parameter.numel() for parameter in self.interlayer_conversions.parameters() if parameter.requires_grad)
+
+    def electronic_parameter_count(self):
+        return self.interlayer_conversion_parameter_count()

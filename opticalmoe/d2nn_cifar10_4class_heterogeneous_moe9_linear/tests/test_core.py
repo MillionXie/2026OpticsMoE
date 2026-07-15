@@ -13,6 +13,7 @@ if str(ROOT) not in sys.path:
 from experts import D2NNExpert, FiberArrayExpert, FourierExpert, HeterogeneousExpertBank
 from layout import MoELayout
 from model import HeterogeneousOpticalMoEClassifier
+from train import detector_plane_mse_loss
 from utils import load_yaml
 
 
@@ -27,6 +28,21 @@ def optics(size=16):
         "k_space_constraint_enabled": False,
         "theta_max_deg": 1.0,
     }
+
+
+def test_detector_plane_mse_normalization_is_configurable():
+    config = load_yaml(ROOT / "configs" / "config.yaml")
+    assert config["loss"]["normalize_detector_plane_mse"] is True
+    intensity=torch.rand(2,8,8);target=torch.zeros_like(intensity);target[:,2:5,3:6]=1
+    assert torch.allclose(
+        detector_plane_mse_loss(intensity,target,100.0,True,1.0e-8),
+        detector_plane_mse_loss(5*intensity,target,100.0,True,1.0e-8),
+        rtol=1e-5,atol=1e-6,
+    )
+    assert not torch.allclose(
+        detector_plane_mse_loss(intensity,target,100.0,False,1.0e-8),
+        detector_plane_mse_loss(5*intensity,target,100.0,False,1.0e-8),
+    )
 
 
 def assert_complex_expert_backward(expert, size=16):

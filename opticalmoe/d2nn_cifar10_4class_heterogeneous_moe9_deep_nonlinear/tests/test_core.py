@@ -28,18 +28,24 @@ def optics():
     }
 
 
-def nonlinear():
+def nonlinear(per_expert_enabled=True, elementwise_affine=False, affine_sharing="per_expert"):
     return {
         "enabled": True,
         "type": "intensity_layernorm_relu",
         "normalization": {
-            "type": "stage_global_layernorm",
+            "type": "layernorm",
+            "per_expert_enabled": per_expert_enabled,
             "aperture": "nonlinear_enabled_expert_regions",
             "eps": 1.0e-6,
-            "elementwise_affine": False,
+            "elementwise_affine": elementwise_affine,
+            "affine_sharing": affine_sharing,
         },
         "activation": {"type": "relu"},
-        "reencoding": {"amplitude_source": "relu_output", "zero_phase": True},
+        "reencoding": {
+            "amplitude_source": "relu_output",
+            "zero_phase": True,
+            "reapply_routing_amplitude": False,
+        },
     }
 
 
@@ -71,9 +77,13 @@ def test_config_maps_required_schedules_and_simple_nonlinearity():
     assert config["expert_bank"]["fourier"]["nonlinear_schedule"] == [True] * 5
     assert config["expert_bank"]["fiber"]["nonlinear_schedule"] == [True, False, True, True, True]
     assert config["nonlinearity"]["type"] == "intensity_layernorm_relu"
-    assert config["nonlinearity"]["normalization"]["elementwise_affine"] is False
+    assert config["nonlinearity"]["normalization"]["per_expert_enabled"] is True
+    assert config["nonlinearity"]["normalization"]["elementwise_affine"] is True
+    assert config["nonlinearity"]["normalization"]["affine_sharing"] == "per_expert"
+    assert config["nonlinearity"]["reencoding"]["reapply_routing_amplitude"] is False
     assert config["nonlinearity"]["activation"] == {"type": "relu"}
     assert config["loss"]["detector_ce_weight"] == 0.0
+    assert config["loss"]["router_balance_weight"] == 0.2
     assert config["loss"]["router_importance_weight"] == 0.0
 
 
@@ -115,7 +125,7 @@ def test_fiber_has_no_extra_coupling_phase_parameter():
     assert expert.parameter_summary()["extra_fiber_coupling_phase_parameters"] == 0
 
 
-def test_stage_layernorm_statistics_are_dynamic_shared_and_not_trainable():
+def test_per_expert_layernorm_statistics_are_independent_and_bypass_is_preserved():
     module = StageGlobalOEO(nonlinear(), 0)
     assert sum(parameter.numel() for parameter in module.parameters()) == 0
     assert not hasattr(module, "gain") and not hasattr(module, "threshold")
@@ -123,15 +133,56 @@ def test_stage_layernorm_statistics_are_dynamic_shared_and_not_trainable():
     high = 2.0 * torch.ones_like(low)
     bypass = (1.0 + 2.0j) * torch.ones_like(low)
     outputs, details = module([low, high, bypass], [True, True, False], capture_fields=True)
-    # Intensities 1 and 4 share mu=2.5 and sigma=sqrt(2.25+eps).
-    assert torch.allclose(details["normalization_mean"], torch.tensor([2.5]), atol=1e-6)
-    assert torch.allclose(details["normalization_std"], torch.tensor([(2.25 + 1.0e-6) ** 0.5]), atol=1e-6)
-    assert torch.allclose(details["normalized_intensity"][0, 0], torch.full((4, 4), -1.0), atol=1e-5)
-    assert torch.allclose(details["normalized_intensity"][0, 1], torch.full((4, 4), 1.0), atol=1e-5)
+    assert details["normalization_scope"] == "per_expert"
+    assert details["routing_amplitude_reapplied"] is False
+    assert torch.allclose(details["normalization_mean"], torch.tensor([[1.0, 4.0]]), atol=1e-6)
+    assert torch.allclose(details["normalization_std"], torch.full((1, 2), 1.0e-3), atol=1e-6)
+    assert torch.count_nonzero(details["normalized_intensity"]) == 0
     assert torch.count_nonzero(outputs[0]) == 0
-    assert torch.allclose(outputs[1].real, torch.ones_like(outputs[1].real), atol=1e-5)
+    assert torch.count_nonzero(outputs[1]) == 0
     assert outputs[2] is bypass and torch.equal(outputs[2], bypass)
     assert torch.all(outputs[0].imag == 0) and torch.all(outputs[1].imag == 0)
+
+
+def test_stage_global_statistics_remain_available_as_ablation():
+    module = StageGlobalOEO(nonlinear(per_expert_enabled=False), 0)
+    low = torch.ones(1, 4, 4, dtype=torch.complex64)
+    high = 2.0 * torch.ones_like(low)
+    outputs, details = module([low, high], [True, True], capture_fields=True)
+    assert details["normalization_scope"] == "stage_global"
+    assert torch.allclose(details["normalization_mean"], torch.tensor([[2.5]]), atol=1e-6)
+    assert torch.count_nonzero(outputs[0]) == 0
+    assert torch.allclose(outputs[1].real, torch.ones_like(outputs[1].real), atol=1e-5)
+
+
+def test_affine_layernorm_is_independent_per_expert_trainable_and_identity_initialized():
+    module = StageGlobalOEO(nonlinear(elementwise_affine=True), 0, field_size=4, num_experts=3)
+    assert sum(parameter.numel() for parameter in module.parameters()) == 2 * 3 * 4 * 4
+    assert module.affine_weight.shape == (3, 4, 4)
+    assert module.affine_bias.shape == (3, 4, 4)
+    assert torch.all(module.affine_weight == 1)
+    assert torch.all(module.affine_bias == 0)
+    base = torch.randn(2, 4, 4, dtype=torch.complex64)
+    fields = [base.clone() for _ in range(3)]
+    with torch.no_grad():
+        module.affine_bias[0].fill_(0.0)
+        module.affine_bias[1].fill_(1.0)
+        module.affine_bias[2].fill_(2.0)
+    outputs, details = module(fields, [True, True, True])
+    assert outputs[0].real.mean() < outputs[1].real.mean() < outputs[2].real.mean()
+    sum(output.real.mean() for output in outputs).backward()
+    assert module.affine_weight.grad is not None
+    assert module.affine_bias.grad is not None
+    assert details["elementwise_affine"] is True
+    assert details["affine_sharing"] == "per_expert"
+
+
+def test_shared_stage_affine_remains_available_as_lower_parameter_ablation():
+    module = StageGlobalOEO(
+        nonlinear(elementwise_affine=True, affine_sharing="per_stage"), 0, field_size=4
+    )
+    assert module.affine_weight.shape == (1, 4, 4)
+    assert sum(parameter.numel() for parameter in module.parameters()) == 2 * 4 * 4
 
 
 def test_invalid_layernorm_configs_fail_clearly():
@@ -139,9 +190,19 @@ def test_invalid_layernorm_configs_fail_clearly():
     invalid["normalization"]["eps"] = 0.0
     with pytest.raises(ValueError, match="eps"):
         StageGlobalOEO(invalid, 0)
+    invalid = nonlinear(elementwise_affine=True)
+    with pytest.raises(ValueError, match="field_size"):
+        StageGlobalOEO(invalid, 0)
     invalid = nonlinear()
-    invalid["normalization"]["elementwise_affine"] = True
-    with pytest.raises(ValueError, match="elementwise_affine"):
+    invalid["normalization"]["affine_sharing"] = "global"
+    with pytest.raises(ValueError, match="affine_sharing"):
+        StageGlobalOEO(invalid, 0)
+    invalid = nonlinear(elementwise_affine=True)
+    with pytest.raises(ValueError, match="num_experts"):
+        StageGlobalOEO(invalid, 0, field_size=4)
+    invalid = nonlinear()
+    invalid["reencoding"]["reapply_routing_amplitude"] = True
+    with pytest.raises(ValueError, match="routing amplitude"):
         StageGlobalOEO(invalid, 0)
     invalid = nonlinear()
     invalid["activation"]["type"] = "gelu"
@@ -181,6 +242,27 @@ def test_detector_plane_mse_normalization_is_optional_and_scale_invariant():
     assert not torch.allclose(raw, raw_scaled)
 
 
+def test_ten_class_config_uses_centered_3_4_3_detector_with_4class_box_size():
+    config = load_yaml(ROOT / "configs" / "config_cifar10_10class.yaml")
+    model = DeepHeterogeneousOpticalMoENonlinearClassifier(config, 10)
+    assert config["dataset"]["class_indices"] == list(range(10))
+    assert config["detector"]["detector_size"] == 50
+    assert config["detector"]["N_det_sets"] == [3, 4, 3]
+    assert config["dataset"]["train_samples_per_class_per_epoch"] == 1000
+    assert config["loss"]["router_balance_weight"] == 0.2
+    assert config["loss"]["router_importance_weight"] == 0.0
+    assert config["nonlinearity"]["normalization"]["per_expert_enabled"] is True
+    assert config["nonlinearity"]["normalization"]["elementwise_affine"] is True
+    assert config["nonlinearity"]["normalization"]["affine_sharing"] == "per_expert"
+    bounds = []
+    for mask in model.detector.masks:
+        points = mask.nonzero()
+        bounds.append((int(points[:, 0].min()), int(points[:, 0].max() + 1), int(points[:, 1].min()), int(points[:, 1].max() + 1)))
+    assert bounds[:3] == [(115,165,115,165),(115,165,215,265),(115,165,315,365)]
+    assert bounds[3:7] == [(215,265,65,115),(215,265,165,215),(215,265,265,315),(215,265,365,415)]
+    assert bounds[7:] == [(315,365,115,165),(315,365,215,265),(315,365,315,365)]
+
+
 def test_fourier_stages_keep_explicit_finite_aperture_and_padding():
     source = (ROOT / "experts.py").read_text(encoding="utf-8")
     block = source.split("class FourierConvolutionBlock", 1)[1].split("class FourierExpert", 1)[0]
@@ -201,13 +283,18 @@ def test_model_source_has_no_post_global_oeo():
     assert '"post_global_oeo_applied": False' in forward
 
 
-def test_oeo_is_parameter_free_and_parameter_groups_are_reported():
+def test_oeo_affine_parameter_groups_are_reported():
     config = deepcopy(load_yaml(ROOT / "configs" / "config.yaml"))
     model = DeepHeterogeneousOpticalMoENonlinearClassifier(config, 4)
     report = model.nonlinearity_parameter_report()
-    assert report["trainable_parameters"] == 0
-    assert report["parameters"] == 0
+    assert report["normalization_scope"] == "per_expert"
+    assert report["elementwise_affine"] is True
+    assert report["routing_amplitude_reapplied"] is False
+    assert report["affine_sharing"] == "per_expert"
+    assert report["trainable_parameters"] == 5 * 9 * 2 * 120 * 120
+    assert report["parameters"] == 5 * 9 * 2 * 120 * 120
     assert len(report["per_stage"]) == 5
+    assert all(stage["trainable_parameters"] == 9 * 2 * 120 * 120 for stage in report["per_stage"])
     expert_report = model.expert_parameter_report()["by_type"]
     # Per expert: independent masks plus one enabled scalar phase bias. Output
     # amplitude gains are disabled and therefore are persistent buffers only.

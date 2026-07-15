@@ -13,6 +13,19 @@ from utils import BASE_DIR, choose_device, environment_info, git_info, load_yaml
 from visualization import confusion_matrix, save_confusion, save_epoch_artifacts, save_training_curves
 
 
+def detector_plane_mse_loss(intensity, target_plane, scale, normalize, eps):
+    """Full-plane MSE with optional per-sample total-energy matching."""
+    eps = float(eps)
+    if eps <= 0:
+        raise ValueError("loss.detector_plane_mse_normalization_eps must be positive")
+    prediction = intensity
+    if bool(normalize):
+        prediction_energy = prediction.sum(dim=(-2, -1), keepdim=True)
+        target_energy = target_plane.sum(dim=(-2, -1), keepdim=True)
+        prediction = prediction * target_energy / (prediction_energy + eps)
+    return float(scale) * F.mse_loss(prediction, target_plane)
+
+
 def build_optimizer(model, config):
     cfg = config.get("optimizer", {}); opt_type = str(cfg.get("type", "adam")).strip().lower()
     kwargs = {"lr": float(cfg.get("lr", cfg.get("learning_rate", 0.01))), "weight_decay": float(cfg.get("weight_decay", 0.0))}
@@ -42,7 +55,11 @@ def forward_loss(model, images, targets, loss_cfg):
     logits, items = model(images, return_intermediates=True, capture_layer_fields=False)
     if loss_type == "detector_plane_mse":
         target = model.detector.masks[targets].to(images.device)
-        loss = scale * F.mse_loss(items["detector_intensity"], target)
+        loss = detector_plane_mse_loss(
+            items["detector_intensity"], target, scale,
+            loss_cfg.get("normalize_detector_plane_mse", False),
+            loss_cfg.get("detector_plane_mse_normalization_eps", 1.0e-8),
+        )
     elif loss_type == "cross_entropy":
         loss = scale * F.cross_entropy(logits, targets)
     else:
@@ -91,7 +108,8 @@ def detector_bounds(detector):
 
 def main():
     args = parse_args(); config_path = Path(args.config)
-    if not config_path.is_absolute(): config_path = BASE_DIR / config_path
+    if not config_path.is_absolute():
+        config_path = config_path.resolve() if config_path.is_file() else BASE_DIR / config_path
     config = load_yaml(config_path)
     if args.epochs is not None: config.setdefault("training", {})["epochs"] = args.epochs
     if args.batch_size is not None: config.setdefault("dataset", {})["batch_size"] = args.batch_size
@@ -124,19 +142,20 @@ def main():
     model = FullOpticalD2NNClassifier(config, len(class_names)).to(device)
     optimizer = build_optimizer(model, config)
     optics = config["optics"]
+    conversion_parameters=model.interlayer_conversion_parameter_count()
     save_json({
         "model": "FullOpticalD2NNClassifier", "classes": class_names,
         "path": "grayscale amplitude -> zero pad -> 6 phase-only planes -> square-law detector regions",
         "input_size": model.input_size, "canvas_size": model.canvas_size, "num_phase_layers": model.num_layers,
         "wavelength_m": optics["wavelength_m"], "pixel_size_m": optics["pixel_size_m"],
         "input_to_layer_distance_m": optics["input_to_layer_distance_m"], "inter_layer_distance_m": optics["inter_layer_distance_m"], "detector_distance_m": optics["detector_distance_m"],
-        "optoelectronic_interlayers": {**config.get("optoelectronic_interlayers", {}), "trainable_parameters": 0, "conversion_count": 5 if model.optoelectronic_enabled else 0, "sequence": "phase -> 20cm propagation -> square detection -> non-affine spatial LayerNorm -> nonlinearity -> amplitude reload" if model.optoelectronic_enabled else "disabled; continuous coherent propagation"},
+        "optoelectronic_interlayers": {**config.get("optoelectronic_interlayers", {}), "trainable_parameters": conversion_parameters, "conversion_count": 5 if model.optoelectronic_enabled else 0, "sequence": "phase -> propagation -> square detection -> stage-independent affine spatial LayerNorm -> ReLU -> zero-phase amplitude reload" if model.optoelectronic_enabled else "disabled; continuous coherent propagation", "routing_amplitude_reapplied": False},
         "detector_bounds": detector_bounds(model.detector),
-        "parameters": {"optical_phase": model.optical_parameter_count(), "electronic": 0, "total_trainable": sum(p.numel() for p in model.parameters() if p.requires_grad)},
+        "parameters": {"optical_phase": model.optical_parameter_count(), "interlayer_affine": conversion_parameters, "electronic": model.electronic_parameter_count(), "total_trainable": sum(p.numel() for p in model.parameters() if p.requires_grad)},
         "optimizer": {"type": str(config.get("optimizer", {}).get("type", "adam")).lower(), "lr": optimizer.param_groups[0]["lr"], "weight_decay": float(config.get("optimizer", {}).get("weight_decay", 0.0))},
     }, run_dir / "model.json")
     print(f"device={device} classes={class_names} train={len(train_loader.dataset)} test={len(test_loader.dataset)} batch_size={train_loader.batch_size}")
-    print(f"pure optical: 6 x 360x360 phase masks = {model.optical_parameter_count()} trainable optical params; electronic params=0")
+    print(f"optical phase params={model.optical_parameter_count()}; interlayer affine electronic params={conversion_parameters}")
     fixed = fixed_batch(test_loader, device, config.get("visualization", {}).get("num_samples", 4))
     enabled = bool(config.get("visualization", {}).get("enabled", True)); interval = int(config.get("visualization", {}).get("save_interval_epochs", 10))
     save_epoch_artifacts(model, fixed, run_dir, "epoch_0000", class_names, enabled)

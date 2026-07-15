@@ -21,26 +21,71 @@ from prompt import GlobalRouterPrompt
 
 
 class SquareDetectionLayerNormReload(nn.Module):
-    """Non-trainable electronic detection/nonlinearity between phase planes.
+    """Square detection and configurable expert-wise LayerNorm/reload.
 
-    A complex optical field is square-law detected, spatially normalized per
-    sample without affine parameters, passed through a nonnegative
-    nonlinearity, and loaded back as a real optical amplitude at the same
-    plane.  No sqrt(intensity) shortcut is used.
+    In the default MoE path, each 120x120 expert region computes independent
+    per-sample statistics and owns independent gamma/beta parameters at every
+    stage. Routing amplitude is not multiplied back after normalization.
     """
 
-    def __init__(self, eps=1e-5, nonlinearity="relu"):
-        super().__init__();self.eps=float(eps);self.nonlinearity=str(nonlinearity).lower()
+    def __init__(
+        self, eps=1e-5, nonlinearity="relu", layout=None,
+        per_expert_enabled=False, elementwise_affine=False,
+        affine_sharing="per_expert", reapply_routing_amplitude=False,
+    ):
+        super().__init__();self.eps=float(eps);self.nonlinearity=str(nonlinearity).lower();self.layout=layout
         if self.eps<=0:raise ValueError("optoelectronic_interlayers.eps must be positive")
         if self.nonlinearity not in {"relu","softplus"}:raise ValueError("optoelectronic_interlayers.nonlinearity must be relu or softplus")
+        self.per_expert_enabled=bool(per_expert_enabled)
+        self.elementwise_affine=bool(elementwise_affine)
+        self.affine_sharing=str(affine_sharing)
+        if self.affine_sharing not in {"per_expert","per_stage"}:raise ValueError("affine_sharing must be per_expert or per_stage")
+        if bool(reapply_routing_amplitude):raise ValueError("routing amplitude must not be reapplied after LayerNorm/ReLU")
+        if self.per_expert_enabled and self.layout is None:raise ValueError("layout is required for per-expert LayerNorm")
+        if self.elementwise_affine:
+            size=self.layout.expert_size if self.per_expert_enabled else self.layout.canvas_size
+            count=self.layout.num_experts if self.per_expert_enabled and self.affine_sharing=="per_expert" else 1
+            self.affine_weight=nn.Parameter(torch.ones(count,size,size,dtype=torch.float32))
+            self.affine_bias=nn.Parameter(torch.zeros(count,size,size,dtype=torch.float32))
+        else:
+            self.register_parameter("affine_weight",None);self.register_parameter("affine_bias",None)
+
+    def _activate(self,normalized):
+        return F.relu(normalized) if self.nonlinearity=="relu" else F.softplus(normalized)
 
     def forward(self,field,return_details=False):
         intensity=field.to(torch.complex64).abs().square().float()
-        normalized=F.layer_norm(intensity,intensity.shape[-2:],weight=None,bias=None,eps=self.eps)
-        amplitude=F.relu(normalized) if self.nonlinearity=="relu" else F.softplus(normalized)
+        if self.per_expert_enabled:
+            crops=torch.stack([
+                intensity[:,aperture.y0:aperture.y1,aperture.x0:aperture.x1]
+                for aperture in self.layout.expert_apertures
+            ],dim=1)
+            means=crops.mean((-2,-1));variances=(crops-means[...,None,None]).square().mean((-2,-1))
+            normalized_crops=F.layer_norm(crops,crops.shape[-2:],weight=None,bias=None,eps=self.eps)
+            if self.affine_weight is not None:
+                weight=self.affine_weight if self.affine_sharing=="per_expert" else self.affine_weight[0]
+                bias=self.affine_bias if self.affine_sharing=="per_expert" else self.affine_bias[0]
+                normalized_crops=normalized_crops*weight+bias
+            amplitude_crops=self._activate(normalized_crops)
+            normalized=torch.zeros_like(intensity);amplitude=torch.zeros_like(intensity)
+            for index,aperture in enumerate(self.layout.expert_apertures):
+                normalized[:,aperture.y0:aperture.y1,aperture.x0:aperture.x1]=normalized_crops[:,index]
+                amplitude[:,aperture.y0:aperture.y1,aperture.x0:aperture.x1]=amplitude_crops[:,index]
+            normalization_mean=means;normalization_std=torch.sqrt(variances+self.eps)
+        else:
+            normalization_mean=intensity.mean((-2,-1));variance=(intensity-normalization_mean[...,None,None]).square().mean((-2,-1))
+            normalized=F.layer_norm(intensity,intensity.shape[-2:],weight=None,bias=None,eps=self.eps)
+            if self.affine_weight is not None:normalized=normalized*self.affine_weight[0]+self.affine_bias[0]
+            amplitude=self._activate(normalized);normalization_std=torch.sqrt(variance+self.eps)
         reloaded=torch.complex(amplitude,torch.zeros_like(amplitude))
         if not return_details:return reloaded
-        return reloaded,{"detector_intensity":intensity,"layer_normalized":normalized,"reloaded_amplitude":amplitude}
+        return reloaded,{
+            "detector_intensity":intensity,"layer_normalized":normalized,"reloaded_amplitude":amplitude,
+            "normalization_mean":normalization_mean,"normalization_std":normalization_std,
+            "normalization_scope":"per_expert" if self.per_expert_enabled else "spatial_per_sample",
+            "elementwise_affine":self.elementwise_affine,"affine_sharing":self.affine_sharing,
+            "routing_amplitude_reapplied":False,
+        }
 
 
 class ExpertPhasePlane(nn.Module):
@@ -117,13 +162,29 @@ class OpticalMoEClassifier(nn.Module):
         conversion_cfg=config.get("optoelectronic_interlayers",{})
         self.optoelectronic_enabled=bool(conversion_cfg.get("enabled",False))
         if self.optoelectronic_enabled:
-            expected={"detection":"square_law","normalization":"layer_norm","normalization_scope":"spatial_per_sample","reload_as":"amplitude"}
+            expected={"detection":"square_law","normalization":"layer_norm","reload_as":"amplitude"}
             for key,value in expected.items():
                 if str(conversion_cfg.get(key,value)).lower()!=value:raise ValueError(f"optoelectronic_interlayers.{key} must be {value!r}")
-            if bool(conversion_cfg.get("affine",False)):raise ValueError("optoelectronic_interlayers.affine must be false to avoid trainable electronic normalization parameters")
-        self.interlayer_conversion=SquareDetectionLayerNormReload(
-            eps=float(conversion_cfg.get("eps",1e-5)),nonlinearity=str(conversion_cfg.get("nonlinearity","relu")),
-        )
+        # Older completed runs predate ``per_expert_enabled`` and explicitly
+        # recorded ``normalization_scope: spatial_per_sample``.  Infer the
+        # implementation from that saved scope so those checkpoints can be
+        # reconstructed exactly; all current configs specify both fields.
+        normalization_scope=str(conversion_cfg.get("normalization_scope","spatial_per_sample"))
+        if "per_expert_enabled" in conversion_cfg:
+            per_expert_enabled=bool(conversion_cfg["per_expert_enabled"])
+        else:
+            per_expert_enabled=normalization_scope=="per_expert"
+        if self.optoelectronic_enabled and normalization_scope != ("per_expert" if per_expert_enabled else "spatial_per_sample"):
+            raise ValueError("normalization_scope must match per_expert_enabled")
+        self.interlayer_conversions=nn.ModuleList([
+            SquareDetectionLayerNormReload(
+                eps=float(conversion_cfg.get("eps",1e-5)),nonlinearity=str(conversion_cfg.get("nonlinearity","relu")),
+                layout=self.layout,per_expert_enabled=per_expert_enabled,
+                elementwise_affine=bool(conversion_cfg.get("elementwise_affine",conversion_cfg.get("affine",True))),
+                affine_sharing=str(conversion_cfg.get("affine_sharing","per_expert")),
+                reapply_routing_amplitude=bool(conversion_cfg.get("reapply_routing_amplitude",False)),
+            ) for _ in range(self.num_layers)
+        ]) if self.optoelectronic_enabled else nn.ModuleList()
         wavelength = float(optics.get("wavelength_m",5.32e-7)); pixel = float(optics.get("pixel_size_m",16e-6))
         distances = optics.get("distances_m", {})
         prop_common = dict(
@@ -228,12 +289,13 @@ class OpticalMoEClassifier(nn.Module):
             propagation=self.inter_props[index] if index<4 else self.last_expert_to_global_fc
             propagated=propagation(field)
             if self.optoelectronic_enabled:
+                conversion_layer=self.interlayer_conversions[index]
                 if return_intermediates and capture_layer_fields:
-                    field,conversion= self.interlayer_conversion(propagated,return_details=True)
+                    field,conversion=conversion_layer(propagated,return_details=True)
                     interlayer_detector_intensities.append(conversion["detector_intensity"])
                     interlayer_normalized.append(conversion["layer_normalized"])
                     interlayer_reloaded_amplitudes.append(conversion["reloaded_amplitude"])
-                else:field=self.interlayer_conversion(propagated)
+                else:field=conversion_layer(propagated)
             else:field=propagated
             if return_intermediates and capture_layer_fields:layer_fields.append(field)
         at_global_fc=field
@@ -269,4 +331,5 @@ class OpticalMoEClassifier(nn.Module):
     def router_parameter_count(self):return sum(p.numel() for p in self.prompt.router_network.parameters())
     def prompt_parameter_count(self): return 0
     def optical_parameter_count(self): return self.expert_phase_parameter_count()+self.global_fc_parameter_count()
-    def electronic_parameter_count(self): return self.router_parameter_count()
+    def interlayer_conversion_parameter_count(self):return sum(p.numel() for p in self.interlayer_conversions.parameters() if p.requires_grad)
+    def electronic_parameter_count(self): return self.router_parameter_count()+self.interlayer_conversion_parameter_count()

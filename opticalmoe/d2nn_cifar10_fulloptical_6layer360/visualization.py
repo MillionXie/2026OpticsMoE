@@ -83,7 +83,7 @@ def save_epoch_artifacts(model, batch, run_dir, tag, class_names, enabled=True):
         conversion_root=root/"optoelectronic_interlayers"
         for index,(detected,normalized,amplitude) in enumerate(zip(items["interlayer_detector_intensities"],items["interlayer_layer_normalized"],items["interlayer_reloaded_amplitudes"]),1):
             save_map(detected[0],conversion_root/f"layer_{index:02d}_square_detector_intensity.png",f"Plane {index}: intensity after 20 cm",colorbar_label="square-law intensity (a.u.)")
-            save_map(normalized[0],conversion_root/f"layer_{index:02d}_layernorm.png",f"Plane {index}: non-affine spatial LayerNorm",cmap="coolwarm",colorbar_label="normalized real value")
+            save_map(normalized[0],conversion_root/f"layer_{index:02d}_layernorm.png",f"Plane {index}: independent stage affine spatial LayerNorm",cmap="coolwarm",colorbar_label="normalized + affine real value")
             save_map(amplitude[0],conversion_root/f"layer_{index:02d}_relu_amplitude_reload.png",f"Plane {index}: ReLU amplitude reload",cmap="viridis",colorbar_label="reloaded amplitude")
     else:
         for index, field in enumerate(items["after_each_layer"], 1):
