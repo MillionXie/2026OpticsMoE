@@ -1,8 +1,8 @@
 {
   "config_version": 2,
   "experiment": {
-    "name": "qwen3_vl_2b_cifar10_vision_homogeneous_moe9",
-    "output_dir": "../runs/qwen3_vl_2b_cifar10_vision_homogeneous_moe9",
+    "name": "qwen3_vl_2b_cifar10_vision_homogeneous_moe9_batch_8",
+    "output_dir": "../runs/qwen3_vl_2b_cifar10_vision_homogeneous_moe9_batch_8",
     "seed": 42
   },
   "dataset": {
@@ -36,8 +36,8 @@
   },
   "batching": {
     "feature_batch_size": 1,
-    "student_batch_size": 256,
-    "inference_batch_size": 256,
+    "student_batch_size": 8,
+    "inference_batch_size": 8,
     "head_batch_size": 512,
     "num_workers": 8
   },
