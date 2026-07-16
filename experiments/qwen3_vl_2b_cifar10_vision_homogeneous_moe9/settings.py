@@ -81,6 +81,7 @@ class Settings:
     interlayer_enabled: bool = True
     interlayer_per_expert_enabled: bool = True
     interlayer_elementwise_affine: bool = False
+    interlayer_hard_route_mask: bool = True
     detector_pool_kernel: int = 4
     detector_layernorm_eps: float = 1e-5
     detector_layernorm_affine: bool = False
@@ -140,6 +141,8 @@ class Settings:
             raise ValueError("Post-detector LayerNorm must use elementwise_affine=False")
         if self.interlayer_nonlinearity not in {"relu", "softplus"} or self.detector_nonlinearity not in {"relu", "softplus"}:
             raise ValueError("nonlinearities must be relu or softplus")
+        if self.interlayer_hard_route_mask and not self.interlayer_per_expert_enabled:
+            raise ValueError("hard_route_mask requires per_expert_enabled=true")
         if self.optimizer_type not in {"adam", "adamw"}:
             raise ValueError("optimizer.type must be adam or adamw")
         if self.scheduler_type not in {"cosine", "none"}:
@@ -225,6 +228,7 @@ NESTED_FIELDS: dict[tuple[str, ...], str] = {
     ("moe", "optoelectronic_interlayers", "enabled"): "interlayer_enabled",
     ("moe", "optoelectronic_interlayers", "per_expert_enabled"): "interlayer_per_expert_enabled",
     ("moe", "optoelectronic_interlayers", "elementwise_affine"): "interlayer_elementwise_affine",
+    ("moe", "optoelectronic_interlayers", "hard_route_mask"): "interlayer_hard_route_mask",
     ("moe", "optoelectronic_interlayers", "layernorm_eps"): "interlayer_layernorm_eps",
     ("moe", "optoelectronic_interlayers", "nonlinearity"): "interlayer_nonlinearity",
     ("moe", "final_detector_readout", "pool_kernel"): "detector_pool_kernel",

@@ -106,8 +106,13 @@ class SquareDetectionLayerNormReload(nn.Module):
             self.register_parameter("affine_weight", None)
             self.register_parameter("affine_bias", None)
 
-    def forward(self, field: torch.Tensor) -> torch.Tensor:
+    def forward(self, field: torch.Tensor, selected_experts: torch.Tensor | None = None) -> torch.Tensor:
         intensity = field.to(torch.complex64).abs().square().float()
+        if selected_experts is not None:
+            expected = (field.shape[0], len(self.apertures))
+            if tuple(selected_experts.shape) != expected:
+                raise ValueError(f"selected_experts must have shape {expected}, got {tuple(selected_experts.shape)}")
+            selected_experts = selected_experts.to(device=field.device, dtype=torch.bool)
         if self.per_expert_enabled:
             output = torch.zeros_like(intensity)
             for index, aperture in enumerate(self.apertures):
@@ -116,8 +121,12 @@ class SquareDetectionLayerNormReload(nn.Module):
                 if self.affine_weight is not None:
                     normalized = normalized * self.affine_weight[index] + self.affine_bias[index]
                 activated = F.relu(normalized) if self.nonlinearity == "relu" else F.softplus(normalized)
+                if selected_experts is not None:
+                    activated = activated * selected_experts[:, index, None, None].to(activated.dtype)
                 output[:, aperture.y0:aperture.y1, aperture.x0:aperture.x1] = activated
         else:
+            if selected_experts is not None:
+                raise RuntimeError("Hard expert gating requires per-expert LayerNorm")
             normalized = F.layer_norm(intensity, intensity.shape[-2:], weight=None, bias=None, eps=self.eps)
             if self.affine_weight is not None:
                 normalized = normalized * self.affine_weight[0] + self.affine_bias[0]
