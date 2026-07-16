@@ -61,3 +61,4 @@ The configuration is grouped by experiment, dataset, Qwen runtime, batching, tea
 The student uses the complete retained CIFAR-10 training split. To match the legacy homogeneous optical-MoE experiment, the test split is evaluated after every epoch and selects `best`. This is convenient for direct experimental comparison, but `best_test` is selection-biased because the test split is no longer a strictly held-out final evaluation. Every visualization interval also saves random per-sample optical and hidden-state diagnostics under `figures/debug_examples/epoch_XXXX/`.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the exact optical data flow and parameter boundaries. See [CONFIGURATION.md](CONFIGURATION.md) for every configuration group and command-line override.
+

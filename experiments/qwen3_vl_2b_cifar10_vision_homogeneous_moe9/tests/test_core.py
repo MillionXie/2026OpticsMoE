@@ -222,3 +222,4 @@ def test_debug_example_writes_optical_routing_and_hidden_artifacts(tmp_path) -> 
                  "stage_01_before_oeo_intensity.png", "final_detector_intensity.png",
                  "hidden_comparison.png", "hidden_layernorm_comparison.png", "metadata.json"):
         assert (tmp_path / name).is_file()
+

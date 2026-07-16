@@ -308,3 +308,4 @@ def resolve_path(value: str | Path, base: Path, field_name: str) -> Path:
     expanded = os.path.expandvars(raw)
     path = Path(expanded)
     return (path if path.is_absolute() else base / path).resolve()
+

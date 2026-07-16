@@ -220,3 +220,4 @@ class VisionHomogeneousMoESurrogate(nn.Module):
                 "interlayer_conversion_parameters": conversion,
                 "detector_layernorm_parameters": sum(parameter.numel() for parameter in self.detector_readout.norm.parameters()),
                 "surrogate_total_parameters": total, "surrogate_trainable_parameters": sum(p.numel() for p in self.parameters() if p.requires_grad)}
+

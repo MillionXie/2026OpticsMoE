@@ -54,3 +54,4 @@ The following values can be changed without editing JSON:
 ```
 
 Legacy flat JSON keys remain accepted for backward compatibility, but all supplied configs and resolved outputs use the grouped schema.
+
