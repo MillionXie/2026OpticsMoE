@@ -36,7 +36,8 @@ def _encoder(hidden_size: int = 8) -> VisionHomogeneousMoESurrogate:
 def test_config_and_small_head() -> None:
     settings = load_settings(CONFIG)
     assert settings.detector_layernorm_affine is False
-    assert settings.router_balance_weight == pytest.approx(0.1)
+    assert settings.router_balance_weight == pytest.approx(0.2)
+    assert settings.router_learning_rate == pytest.approx(0.001)
     assert settings.log_interval_batches == 1
     assert settings.optimizer_type == "adamw"
     assert settings.interlayer_hard_route_mask is True

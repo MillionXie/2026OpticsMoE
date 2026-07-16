@@ -63,6 +63,7 @@ class Settings:
     top_k: int = 3
     router_pool_size: int = 10
     router_temperature: float = 1.0
+    router_learning_rate: float = 1e-3
     router_input_layernorm_enabled: bool = True
     router_input_layernorm_eps: float = 1e-5
     expert_layers: int = 5
@@ -138,6 +139,8 @@ class Settings:
             raise ValueError("The experiment requires five expert layers and a valid top_k")
         if self.router_input_layernorm_eps <= 0:
             raise ValueError("router.input_layernorm_eps must be positive")
+        if self.router_learning_rate <= 0:
+            raise ValueError("router.learning_rate must be positive")
         if abs(self.prompt_to_expert_distance_m - 2.0 * self.prompt_focal_length_m) > 1e-6:
             raise ValueError("The verified global fan-out prompt requires prompt_to_expert_distance_m = 2 * prompt_focal_length_m")
         if self.detector_pool_kernel != 4 or self.canvas_size // self.detector_pool_kernel != 120:
@@ -222,6 +225,7 @@ NESTED_FIELDS: dict[tuple[str, ...], str] = {
     ("moe", "geometry", "num_experts"): "num_experts", ("moe", "geometry", "layers_per_expert"): "expert_layers",
     ("moe", "router", "top_k"): "top_k", ("moe", "router", "pool_size"): "router_pool_size",
     ("moe", "router", "temperature"): "router_temperature",
+    ("moe", "router", "learning_rate"): "router_learning_rate",
     ("moe", "router", "input_layernorm_enabled"): "router_input_layernorm_enabled",
     ("moe", "router", "input_layernorm_eps"): "router_input_layernorm_eps",
     ("moe", "optics", "wavelength_nm"): "wavelength_nm", ("moe", "optics", "pixel_pitch_um"): "pixel_pitch_um",

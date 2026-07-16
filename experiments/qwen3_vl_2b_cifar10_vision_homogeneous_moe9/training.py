@@ -114,9 +114,21 @@ def train_student(model: nn.Module, processor: Any, replacement: Any, head: Norm
     replacement.use_student()
     replacement.surrogate.requires_grad_(True).train()
     head.requires_grad_(True).train()
-    parameters = [*replacement.surrogate.parameters(), *head.parameters()]
+    router_parameters = list(replacement.surrogate.prompt.router.parameters())
+    router_parameter_ids = {id(parameter) for parameter in router_parameters}
+    main_parameters = [
+        parameter
+        for parameter in [*replacement.surrogate.parameters(), *head.parameters()]
+        if id(parameter) not in router_parameter_ids
+    ]
     optimizer_class = torch.optim.AdamW if settings.optimizer_type == "adamw" else torch.optim.Adam
-    optimizer = optimizer_class(parameters, lr=settings.learning_rate, weight_decay=settings.weight_decay)
+    optimizer = optimizer_class(
+        [
+            {"params": main_parameters, "lr": settings.learning_rate, "group_name": "main"},
+            {"params": router_parameters, "lr": settings.router_learning_rate, "group_name": "router"},
+        ],
+        weight_decay=settings.weight_decay,
+    )
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=settings.epochs) if settings.scheduler_type == "cosine" else None
     history: list[dict[str, Any]] = []
     best_test_top1 = -1.0
@@ -207,6 +219,8 @@ def train_student(model: nn.Module, processor: Any, replacement: Any, head: Norm
                       f"loss={totals['total']/seen:.5f} hidden={totals['hidden']/seen:.5f} "
                       f"kd={totals['kd']/seen:.5f} ce={totals['ce']/seen:.5f} "
                       f"balance={totals['balance']/seen:.5f} top1={running_correct/seen:.4f} "
+                      f"lr={optimizer.param_groups[0]['lr']:.3e} "
+                      f"router_lr={optimizer.param_groups[1]['lr']:.3e} "
                       f"experts=[{expert_status}]", flush=True)
         train_report = metrics_from_logits(torch.cat(train_logits), torch.cat(train_labels), class_names)
         test_report = evaluate_student(model, processor, replacement, head, test_loader, class_names, device)
@@ -214,6 +228,7 @@ def train_student(model: nn.Module, processor: Any, replacement: Any, head: Norm
             scheduler.step()
         row: dict[str, Any] = {
             "epoch": epoch, "learning_rate": optimizer.param_groups[0]["lr"],
+            "router_learning_rate": optimizer.param_groups[1]["lr"],
             **{f"loss_{name}": value / seen for name, value in totals.items()},
             "train_top1_accuracy": train_report["top1_accuracy"], "train_macro_f1": train_report["macro_f1"],
             "test_top1_accuracy": test_report["top1_accuracy"], "test_top5_accuracy": test_report["top5_accuracy"],
@@ -341,7 +356,8 @@ def save_student_inference(report: dict[str, Any], settings: Any, replacement: A
     report = {**report, "model": "qwen3_vl_2b_vision_homogeneous_moe9x5", "language_model_used": False,
               "detector": "full 480x480 intensity plane; no class regions",
               "detector_readout": "AvgPool4 -> non-affine LayerNorm(120x120) -> ReLU -> first T rows",
-              "router_balance_weight": settings.router_balance_weight}
+              "router_balance_weight": settings.router_balance_weight,
+              "router_learning_rate": settings.router_learning_rate}
     write_json(settings.output_dir / "metrics" / "student_inference.json", report)
     matrix = report["confusion_matrix"]
     rows = [{"true_class": index, **{f"pred_{column}": value for column, value in enumerate(row)}} for index, row in enumerate(matrix)]

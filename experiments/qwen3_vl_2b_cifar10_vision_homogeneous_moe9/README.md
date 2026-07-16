@@ -44,6 +44,8 @@ The prompt still applies the sparse top-3 router weights before the first propag
 
 Before the router's trainable linear gate, its pooled 10x10 input is normalized with a non-affine LayerNorm. This prevents a shared positive DC level in the Softplus optical input fields from overwhelming the smaller image-dependent routing features. No random routing jitter is used.
 
+The router gate uses its own Adam/AdamW parameter group with `learning_rate=0.001`; the optical surrogate, adapters, and classification head keep the main `0.008` learning rate. This prevents the small `Linear(100,9)` softmax gate from saturating much faster than the optical system. The balance coefficient is `0.2`: in the observed collapsed run, raw `L_balance` was approximately 3.0, so the weighted term is about 0.6 versus about 3.04 for hidden/KD/CE supervision.
+
 The field has 120 rows, but `T` is measured rather than hard-coded. For square CIFAR-10 and the default 25,600-pixel budget, `T` is normally about 100, followed by 20 strict zero-padding rows.
 
 ## Training
@@ -51,7 +53,7 @@ The field has 120 rows, but `T` is measured rather than hard-coded. For square C
 The Qwen backbone remains frozen. Trainable components are the input/output adapters, top-k router, 45 expert phase masks, global phase mask, and student head. The student head starts from the teacher head checkpoint. The student never runs the teacher online; teacher stack outputs and logits are cached first.
 
 ```text
-L = 1.0 L_hidden + 0.5 L_KD + 0.5 L_CE + 0.1 L_router_balance
+L = 1.0 L_hidden + 0.5 L_KD + 0.5 L_CE + 0.2 L_router_balance
 ```
 
 `L_hidden` compares LayerNorm-normalized student and teacher token states. The default classification head has only 12,298 parameters for a 1024-dimensional Qwen vision hidden and 10 classes.
