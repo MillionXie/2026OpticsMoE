@@ -23,7 +23,7 @@ CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_cifar10_vision_homogene
 ```
 
 ```bash
-CUDA_VISIBLE_DEVICES=2 python -m experiments.qwen3_vl_2b_cifar10_vision_homogeneous_moe9 --config experiments/qwen3_vl_2b_cifar10_vision_homogeneous_moe9/configs/cifar10.json --phase student_train --device cuda
+CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_2b_cifar10_vision_homogeneous_moe9 --config experiments/qwen3_vl_2b_cifar10_vision_homogeneous_moe9/configs/cifar10.json --phase student_train --device cuda
 ```
 
 ```bash
@@ -31,7 +31,7 @@ CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_cifar10_vision_homogene
 ```
 
 ```bash
-CUDA_VISIBLE_DEVICES=2 python -m experiments.qwen3_vl_2b_cifar10_vision_homogeneous_moe9 --config experiments/qwen3_vl_2b_cifar10_vision_homogeneous_moe9/configs/cifar10.json --phase all --device cuda
+CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_2b_cifar10_vision_homogeneous_moe9 --config experiments/qwen3_vl_2b_cifar10_vision_homogeneous_moe9/configs/cifar10.json --phase all --device cuda
 ```
 
 Override the batch-only terminal refresh interval without editing JSON:
