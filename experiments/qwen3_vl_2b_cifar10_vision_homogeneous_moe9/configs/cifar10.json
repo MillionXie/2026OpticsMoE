@@ -36,8 +36,8 @@
   },
   "batching": {
     "feature_batch_size": 1,
-    "student_batch_size": 1,
-    "inference_batch_size": 1,
+    "student_batch_size": 128,
+    "inference_batch_size": 128,
     "head_batch_size": 512,
     "num_workers": 8
   },
@@ -128,12 +128,12 @@
   },
   "regularization": {
     "phase_dropout": {
-      "enabled": false,
-      "mode": "none",
-      "p": 0.0,
-      "block_size": 8,
+      "enabled": true,
+      "mode": "block_phase_bypass",
+      "p": 0.02,
+      "block_size": 4,
       "batch_shared": true,
-      "start_epoch": 0
+      "start_epoch": 10
     }
   },
   "visualization": {
