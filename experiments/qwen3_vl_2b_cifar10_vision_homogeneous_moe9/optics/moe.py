@@ -109,6 +109,7 @@ class VisionHomogeneousMoESurrogate(nn.Module):
         ])
         self.interlayer_enabled = bool(settings.interlayer_enabled)
         self.interlayer_hard_route_mask = bool(settings.interlayer_hard_route_mask)
+        self.interlayer_reapply_routing_weights = bool(settings.interlayer_reapply_routing_weights)
         self.interlayer_conversions = nn.ModuleList([
             SquareDetectionLayerNormReload(settings.canvas_size, self.geometry.expert_apertures,
                                            settings.interlayer_layernorm_eps, settings.interlayer_nonlinearity,
@@ -168,7 +169,12 @@ class VisionHomogeneousMoESurrogate(nn.Module):
             propagated = field
             if self.interlayer_enabled:
                 selected_experts = routing["selected_mask"] if self.interlayer_hard_route_mask else None
-                field = self.interlayer_conversions[index](field, selected_experts)
+                routing_weights = routing["weights"] if self.interlayer_reapply_routing_weights else None
+                field = self.interlayer_conversions[index](
+                    field,
+                    selected_experts=selected_experts,
+                    routing_weights=routing_weights,
+                )
             if self.debug_capture_enabled:
                 self.last_stage_fields.append({
                     "before_oeo": propagated.detach().cpu(),

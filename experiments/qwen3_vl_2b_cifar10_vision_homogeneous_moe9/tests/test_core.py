@@ -39,6 +39,7 @@ def test_config_and_small_head() -> None:
     assert settings.log_interval_batches == 1
     assert settings.optimizer_type == "adamw"
     assert settings.interlayer_hard_route_mask is True
+    assert settings.interlayer_reapply_routing_weights is True
     assert settings.to_dict()["training"]["logging"]["interval_batches"] == 1
     head = NormalizedLinearHead(1024, 10)
     assert head(torch.randn(3, 1024)).shape == (3, 10)
@@ -114,6 +115,28 @@ def test_hard_route_mask_keeps_unselected_expert_fields_exactly_zero() -> None:
                 assert torch.count_nonzero(crop.real) > 0
             else:
                 assert torch.count_nonzero(crop) == 0
+
+
+def test_routing_weights_are_restored_after_per_expert_normalization() -> None:
+    geometry = MoEGeometry()
+    conversion = SquareDetectionLayerNormReload(480, geometry.expert_apertures, 1e-5, "relu", True, False)
+    field = torch.zeros(1, 480, 480, dtype=torch.complex64)
+    source = torch.linspace(0.0, 1.0, 120 * 120).reshape(120, 120).to(torch.complex64)
+    for expert in (0, 1):
+        aperture = geometry.expert_apertures[expert]
+        field[:, aperture.y0:aperture.y1, aperture.x0:aperture.x1] = source
+    selected = torch.zeros(1, 9, dtype=torch.bool)
+    selected[0, :2] = True
+    weights = torch.zeros(1, 9)
+    weights[0, 0] = 0.25
+    weights[0, 1] = 0.75
+    output = conversion(field, selected_experts=selected, routing_weights=weights)
+    first, second = geometry.expert_apertures[:2]
+    first_crop = output[0, first.y0:first.y1, first.x0:first.x1].real
+    second_crop = output[0, second.y0:second.y1, second.x0:second.x1].real
+    assert torch.allclose(second_crop, 3.0 * first_crop, rtol=1e-5, atol=1e-6)
+    for aperture in geometry.expert_apertures[2:]:
+        assert torch.count_nonzero(output[0, aperture.y0:aperture.y1, aperture.x0:aperture.x1]) == 0
 
 
 def test_phase_dropout_is_configurable_and_training_only() -> None:

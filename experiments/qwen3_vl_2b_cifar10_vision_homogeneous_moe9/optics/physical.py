@@ -106,13 +106,22 @@ class SquareDetectionLayerNormReload(nn.Module):
             self.register_parameter("affine_weight", None)
             self.register_parameter("affine_bias", None)
 
-    def forward(self, field: torch.Tensor, selected_experts: torch.Tensor | None = None) -> torch.Tensor:
+    def forward(
+        self,
+        field: torch.Tensor,
+        selected_experts: torch.Tensor | None = None,
+        routing_weights: torch.Tensor | None = None,
+    ) -> torch.Tensor:
         intensity = field.to(torch.complex64).abs().square().float()
+        expected = (field.shape[0], len(self.apertures))
         if selected_experts is not None:
-            expected = (field.shape[0], len(self.apertures))
             if tuple(selected_experts.shape) != expected:
                 raise ValueError(f"selected_experts must have shape {expected}, got {tuple(selected_experts.shape)}")
             selected_experts = selected_experts.to(device=field.device, dtype=torch.bool)
+        if routing_weights is not None:
+            if tuple(routing_weights.shape) != expected:
+                raise ValueError(f"routing_weights must have shape {expected}, got {tuple(routing_weights.shape)}")
+            routing_weights = routing_weights.to(device=field.device, dtype=intensity.dtype)
         if self.per_expert_enabled:
             output = torch.zeros_like(intensity)
             for index, aperture in enumerate(self.apertures):
@@ -121,12 +130,16 @@ class SquareDetectionLayerNormReload(nn.Module):
                 if self.affine_weight is not None:
                     normalized = normalized * self.affine_weight[index] + self.affine_bias[index]
                 activated = F.relu(normalized) if self.nonlinearity == "relu" else F.softplus(normalized)
+                # Per-expert LayerNorm removes the incoming amplitude scale. Restore the
+                # sample-dependent router coefficient only after normalization/activation.
+                if routing_weights is not None:
+                    activated = activated * routing_weights[:, index, None, None]
                 if selected_experts is not None:
                     activated = activated * selected_experts[:, index, None, None].to(activated.dtype)
                 output[:, aperture.y0:aperture.y1, aperture.x0:aperture.x1] = activated
         else:
-            if selected_experts is not None:
-                raise RuntimeError("Hard expert gating requires per-expert LayerNorm")
+            if selected_experts is not None or routing_weights is not None:
+                raise RuntimeError("Hard expert gating and routing-weight restoration require per-expert LayerNorm")
             normalized = F.layer_norm(intensity, intensity.shape[-2:], weight=None, bias=None, eps=self.eps)
             if self.affine_weight is not None:
                 normalized = normalized * self.affine_weight[0] + self.affine_bias[0]

@@ -90,6 +90,7 @@
       "per_expert_enabled": true,
       "elementwise_affine": false,
       "hard_route_mask": true,
+      "reapply_routing_weights": true,
       "layernorm_eps": 0.00001,
       "nonlinearity": "relu"
     },

@@ -25,7 +25,9 @@ RGB image
 -> Linear(1024,120) + LayerNorm(120) + Softplus
 -> strict zero-row padding to [120,120]
 -> homogeneous top-3 optical MoE (9 experts, 5 phase planes)
--> after every OEO stage: independent LN for selected experts, strict zero for unselected experts
+-> after every OEO stage: independent LN + activation for selected experts
+-> restore each selected expert's router weight as a field-amplitude coefficient
+-> strict zero for unselected experts, then zero-phase optical reload
 -> global phase + 20 cm propagation
 -> full [480,480] square-law detector
 -> AvgPool2d(4,4) -> [120,120]
@@ -37,6 +39,8 @@ RGB image
 ```
 
 There are no ten class-specific detector regions and no detector auxiliary loss. The detector is a latent feature plane. If the processor produces more than 120 pre-merger visual tokens for any image, execution stops and asks for a lower `processor_max_pixels`; tokens are never cropped, resized, pooled, or mixed across images.
+
+The prompt still applies the sparse top-3 router weights before the first propagation, matching the all-optical routing input. Per-expert LayerNorm would otherwise erase those relative amplitude scales, so `reapply_routing_weights=true` restores the same weights after every interlayer normalization and activation. This is amplitude weighting (`field *= weight`), not square-root power weighting. The following LayerNorm prevents the coefficient from simply accumulating as `weight**5`.
 
 The field has 120 rows, but `T` is measured rather than hard-coded. For square CIFAR-10 and the default 25,600-pixel budget, `T` is normally about 100, followed by 20 strict zero-padding rows.
 
