@@ -1,8 +1,8 @@
 {
   "config_version": 2,
   "experiment": {
-    "name": "qwen3_vl_2b_cifar10_vision_homogeneous_moe9",
-    "output_dir": "../runs/qwen3_vl_2b_cifar10_vision_homogeneous_moe9",
+    "name": "qwen3_vl_2b_cifar10_vision_homogeneous_moe9_nodropout",
+    "output_dir": "../runs/qwen3_vl_2b_cifar10_vision_homogeneous_moe9_nodropout",
     "seed": 42
   },
   "dataset": {
@@ -89,8 +89,6 @@
       "enabled": true,
       "per_expert_enabled": true,
       "elementwise_affine": false,
-      "hard_route_mask": true,
-      "reapply_routing_weights": true,
       "layernorm_eps": 0.00001,
       "nonlinearity": "relu"
     },
@@ -130,7 +128,7 @@
   },
   "regularization": {
     "phase_dropout": {
-      "enabled": true,
+      "enabled": false,
       "mode": "block_phase_bypass",
       "p": 0.02,
       "block_size": 4,
