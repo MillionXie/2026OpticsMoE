@@ -38,6 +38,7 @@ def test_config_and_small_head() -> None:
     assert settings.router_balance_weight == pytest.approx(0.1)
     assert settings.log_interval_batches == 1
     assert settings.optimizer_type == "adamw"
+    assert settings.interlayer_hard_route_mask is True
     assert settings.to_dict()["training"]["logging"]["interval_batches"] == 1
     head = NormalizedLinearHead(1024, 10)
     assert head(torch.randn(3, 1024)).shape == (3, 10)
@@ -96,6 +97,23 @@ def test_interlayer_conversion_is_non_affine_and_keeps_shape() -> None:
     output = conversion(field)
     assert output.shape == field.shape and output.dtype == torch.complex64
     assert torch.all(output.real >= 0) and torch.count_nonzero(output.imag) == 0
+
+
+def test_hard_route_mask_keeps_unselected_expert_fields_exactly_zero() -> None:
+    geometry = MoEGeometry()
+    conversion = SquareDetectionLayerNormReload(480, geometry.expert_apertures, 1e-5, "relu", True, False)
+    selected = torch.zeros(2, 9, dtype=torch.bool)
+    selected[0, [0, 4, 8]] = True
+    selected[1, [1, 3, 5]] = True
+    field = torch.randn(2, 480, 480, dtype=torch.complex64)
+    output = conversion(field, selected)
+    for sample in range(2):
+        for expert, aperture in enumerate(geometry.expert_apertures):
+            crop = output[sample, aperture.y0:aperture.y1, aperture.x0:aperture.x1]
+            if selected[sample, expert]:
+                assert torch.count_nonzero(crop.real) > 0
+            else:
+                assert torch.count_nonzero(crop) == 0
 
 
 def test_phase_dropout_is_configurable_and_training_only() -> None:

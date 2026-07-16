@@ -23,7 +23,7 @@ The JSON files use a grouped schema instead of a flat list. `config_resolved.jso
 - `moe.geometry`: verified 480 canvas / 450 active area / 3x3 experts / 120 expert size / 150 pitch geometry.
 - `moe.router`: input-dependent top-k routing controls.
 - `moe.optics`: wavelength, pixel pitch, distances, phase initialization and optional k-space constraint.
-- `moe.optoelectronic_interlayers`: square-law detection, LayerNorm, nonlinearity and optical reload between phase stages. `per_expert_enabled=true` keeps expert normalizations independent.
+- `moe.optoelectronic_interlayers`: square-law detection, LayerNorm, nonlinearity and optical reload between phase stages. `per_expert_enabled=true` keeps expert normalizations independent. With `hard_route_mask=true`, the same sample-dependent top-k binary mask is applied after every OEO conversion: unselected expert regions are exactly zero, while selected experts receive their own LayerNorm and activation. Routing amplitudes are not multiplied back after normalization.
 - `moe.final_detector_readout`: full 480x480 detector readout. The default LayerNorm is deliberately non-affine.
 
 ## Optimization, logging and saving
