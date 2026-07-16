@@ -21,7 +21,7 @@ The JSON files use a grouped schema instead of a flat list. `config_resolved.jso
 
 - `vision_adapter`: token-channel projection and maximum visual token count.
 - `moe.geometry`: verified 480 canvas / 450 active area / 3x3 experts / 120 expert size / 150 pitch geometry.
-- `moe.router`: input-dependent top-k routing controls.
+- `moe.router`: input-dependent top-k routing controls. With `input_layernorm_enabled=true`, the pooled 10x10 router feature receives a non-affine per-sample LayerNorm before the linear gate. This removes shared DC/scale variation and exposes sample-dependent spatial differences without adding trainable normalization parameters or routing noise.
 - `moe.optics`: wavelength, pixel pitch, distances, phase initialization and optional k-space constraint.
 - `moe.optoelectronic_interlayers`: square-law detection, LayerNorm, nonlinearity and optical reload between phase stages. `per_expert_enabled=true` keeps expert normalizations independent. With `reapply_routing_weights=true`, each selected expert is multiplied by its sample-dependent sparse router coefficient after LayerNorm and activation, restoring the amplitude relationship that normalization removes. With `hard_route_mask=true`, unselected expert regions are then forced to exact zero before zero-phase reload. The complete order is `detection -> per-expert LN -> activation -> amplitude weight -> hard zero -> reload`.
 - `moe.final_detector_readout`: full 480x480 detector readout. The default LayerNorm is deliberately non-affine.

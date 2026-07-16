@@ -99,7 +99,9 @@ class VisionHomogeneousMoESurrogate(nn.Module):
         wavelength_m = settings.wavelength_nm * 1e-9
         pixel_m = settings.pixel_pitch_um * 1e-6
         self.prompt = GlobalRouterPrompt(self.geometry, wavelength_m, pixel_m, settings.prompt_focal_length_m,
-                                         settings.top_k, settings.router_pool_size, settings.router_temperature)
+                                         settings.top_k, settings.router_pool_size, settings.router_temperature,
+                                         settings.router_input_layernorm_enabled,
+                                         settings.router_input_layernorm_eps)
         prop_kwargs = {"wavelength_m": wavelength_m, "pixel_size_m": pixel_m, "grid_size": settings.canvas_size,
                        "k_space_constraint_enabled": settings.k_space_constraint_enabled, "theta_max_deg": settings.theta_max_deg}
         self.expert_layers = nn.ModuleList([ExpertPhasePlane(self.geometry, settings) for _ in range(settings.expert_layers)])

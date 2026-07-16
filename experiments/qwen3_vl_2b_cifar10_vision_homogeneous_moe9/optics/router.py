@@ -8,19 +8,24 @@ from torch.nn import functional as F
 
 
 class InputTopKRouter(nn.Module):
-    def __init__(self, num_experts: int, top_k: int, pool_size: int, temperature: float) -> None:
+    def __init__(self, num_experts: int, top_k: int, pool_size: int, temperature: float,
+                 input_layernorm_enabled: bool = True, input_layernorm_eps: float = 1e-5) -> None:
         super().__init__()
         self.num_experts = int(num_experts)
         self.top_k = int(top_k)
         self.pool_size = int(pool_size)
         self.temperature = float(temperature)
+        self.input_norm = (nn.LayerNorm(self.pool_size * self.pool_size, eps=float(input_layernorm_eps),
+                                        elementwise_affine=False)
+                           if input_layernorm_enabled else nn.Identity())
         self.gate = nn.Linear(self.pool_size * self.pool_size, self.num_experts)
         nn.init.normal_(self.gate.weight, 0.0, 0.01)
         nn.init.zeros_(self.gate.bias)
 
     def forward(self, fields: torch.Tensor) -> dict[str, torch.Tensor]:
         pooled = F.adaptive_avg_pool2d(fields.float().unsqueeze(1), (self.pool_size, self.pool_size)).flatten(1)
-        logits = self.gate(pooled)
+        router_input = self.input_norm(pooled)
+        logits = self.gate(router_input)
         probabilities = torch.softmax(logits / self.temperature, dim=-1)
         _, indices = torch.topk(probabilities, self.top_k, dim=-1)
         selected = torch.zeros_like(probabilities, dtype=torch.bool).scatter(1, indices, True)
@@ -40,10 +45,12 @@ class GlobalRouterPrompt(nn.Module):
     """Uniform per-cell routing amplitude and one continuous global quadratic phase."""
 
     def __init__(self, geometry, wavelength_m: float, pixel_size_m: float, focal_length_m: float,
-                 top_k: int, pool_size: int, temperature: float) -> None:
+                 top_k: int, pool_size: int, temperature: float, input_layernorm_enabled: bool = True,
+                 input_layernorm_eps: float = 1e-5) -> None:
         super().__init__()
         self.geometry = geometry
-        self.router = InputTopKRouter(geometry.num_experts, top_k, pool_size, temperature)
+        self.router = InputTopKRouter(geometry.num_experts, top_k, pool_size, temperature,
+                                      input_layernorm_enabled, input_layernorm_eps)
         cell_masks = []
         for row in range(3):
             for column in range(3):
@@ -65,4 +72,3 @@ class GlobalRouterPrompt(nn.Module):
         amplitude = torch.einsum("be,ehw->bhw", routing["weights"], self.cell_masks)
         transmission = amplitude.to(torch.complex64) * torch.exp(1j * self.global_lens_phase).to(torch.complex64)
         return {**routing, "prompt_amplitude": amplitude, "prompt_phase": self.global_lens_phase, "transmission": transmission}
-
