@@ -46,6 +46,12 @@ def load_cifar10(settings: Any) -> DatasetBundle:
     train = _total_limit(train, settings.train_limit, settings.seed + 2)
     test = _total_limit(test, settings.test_limit, settings.seed + 3)
     train_indices, validation_indices = stratified_split_indices(train, settings.validation_fraction, settings.seed)
+    train_counts = class_counts(Subset(train, train_indices))
+    per_epoch_counts = {
+        name: min(count, settings.train_samples_per_class_per_epoch)
+        if settings.train_samples_per_class_per_epoch is not None else count
+        for name, count in train_counts.items()
+    }
     metadata = {
         "dataset": "cifar10",
         "input_color_mode": "RGB",
@@ -55,7 +61,9 @@ def load_cifar10(settings: Any) -> DatasetBundle:
         "train_samples": len(train_indices),
         "validation_samples": len(validation_indices),
         "test_samples": len(test),
-        "per_class_train_counts": class_counts(Subset(train, train_indices)),
+        "per_class_train_counts": train_counts,
+        "per_class_epoch_sample_counts": per_epoch_counts,
+        "epoch_train_samples": sum(per_epoch_counts.values()),
         "per_class_validation_counts": class_counts(Subset(train, validation_indices)),
         "per_class_test_counts": class_counts(test),
         "validation_fraction": settings.validation_fraction,
@@ -63,6 +71,8 @@ def load_cifar10(settings: Any) -> DatasetBundle:
         "test_limit": settings.test_limit,
         "train_limit_per_class": settings.train_limit_per_class,
         "test_limit_per_class": settings.test_limit_per_class,
+        "train_samples_per_class_per_epoch": settings.train_samples_per_class_per_epoch,
+        "sampling_note": "The per-epoch limit rotates through retained samples; it does not shrink the stored dataset.",
     }
     return DatasetBundle(train, test, list(CIFAR10_CLASSES), metadata)
 
@@ -145,4 +155,3 @@ def _total_limit(dataset: Dataset[Any], limit: int | None, seed: int) -> Dataset
         order = torch.randperm(len(indices), generator=generator).tolist()
         selected.extend(indices[position] for position in order[: base + int(class_index < remainder)])
     return Subset(dataset, sorted(selected))
-

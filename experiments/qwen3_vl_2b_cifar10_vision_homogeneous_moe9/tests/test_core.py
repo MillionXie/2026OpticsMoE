@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from types import SimpleNamespace
 
 import pytest
@@ -11,7 +12,8 @@ from experiments.qwen3_vl_2b_cifar10_vision_homogeneous_moe9.datasets import RGB
 from experiments.qwen3_vl_2b_cifar10_vision_homogeneous_moe9.modeling import NormalizedLinearHead
 from experiments.qwen3_vl_2b_cifar10_vision_homogeneous_moe9.optics.geometry import MoEGeometry
 from experiments.qwen3_vl_2b_cifar10_vision_homogeneous_moe9.optics.moe import FullPlaneDetectorReadout, VisionHomogeneousMoESurrogate
-from experiments.qwen3_vl_2b_cifar10_vision_homogeneous_moe9.optics.physical import SquareDetectionLayerNormReload
+from experiments.qwen3_vl_2b_cifar10_vision_homogeneous_moe9.optics.physical import PhaseLayer, SquareDetectionLayerNormReload
+from experiments.qwen3_vl_2b_cifar10_vision_homogeneous_moe9.sampling import EpochClassMixedSampler
 from experiments.qwen3_vl_2b_cifar10_vision_homogeneous_moe9.settings import load_settings
 
 
@@ -33,9 +35,32 @@ def test_config_and_small_head() -> None:
     settings = load_settings(CONFIG)
     assert settings.detector_layernorm_affine is False
     assert settings.router_balance_weight == pytest.approx(0.1)
+    assert settings.log_interval_batches == 1
+    assert settings.log_interval_seconds == pytest.approx(10.0)
+    assert settings.optimizer_type == "adamw"
+    assert settings.to_dict()["training"]["logging"]["interval_batches"] == 1
     head = NormalizedLinearHead(1024, 10)
     assert head(torch.randn(3, 1024)).shape == (3, 10)
     assert sum(parameter.numel() for parameter in head.parameters()) == 12298
+
+
+def test_legacy_flat_config_remains_supported(tmp_path) -> None:
+    path = tmp_path / "legacy.json"
+    path.write_text(json.dumps({"dataset": "cifar10", "log_interval_batches": 7}), encoding="utf-8")
+    settings = load_settings(path)
+    assert settings.log_interval_batches == 7
+    assert settings.to_dict()["training"]["logging"]["interval_batches"] == 7
+
+
+def test_epoch_sampler_rotates_balanced_class_windows() -> None:
+    labels = [0] * 4 + [1] * 4 + [2] * 4
+    sampler = EpochClassMixedSampler(range(12), labels, 3, batch_size=3, seed=5, per_class_limit=2)
+    first = list(iter(sampler))
+    sampler.set_epoch(2)
+    second = list(iter(sampler))
+    assert len(first) == len(second) == 6
+    assert {class_index: sum(labels[index] == class_index for index in first) for class_index in range(3)} == {0: 2, 1: 2, 2: 2}
+    assert set(first) != set(second)
 
 
 def test_token_rows_zero_pad_without_resizing() -> None:
@@ -65,12 +90,22 @@ def test_full_detector_readout_is_non_affine_and_nonnegative() -> None:
 
 def test_interlayer_conversion_is_non_affine_and_keeps_shape() -> None:
     geometry = MoEGeometry()
-    conversion = SquareDetectionLayerNormReload(geometry.expert_apertures, 1e-5, "relu")
+    conversion = SquareDetectionLayerNormReload(480, geometry.expert_apertures, 1e-5, "relu", True, False)
     assert sum(parameter.numel() for parameter in conversion.parameters()) == 0
     field = torch.randn(1, 480, 480, dtype=torch.complex64)
     output = conversion(field)
     assert output.shape == field.shape and output.dtype == torch.complex64
     assert torch.all(output.real >= 0) and torch.count_nonzero(output.imag) == 0
+
+
+def test_phase_dropout_is_configurable_and_training_only() -> None:
+    layer = PhaseLayer(8, dropout_mode="block_phase_bypass", dropout_p=0.5, dropout_block_size=4)
+    field = torch.ones(2, 8, 8, dtype=torch.complex64)
+    layer.train(); layer.set_dropout_active(True)
+    output = layer(field)
+    assert output.shape == field.shape
+    layer.eval()
+    assert torch.allclose(layer(field), field * torch.exp(1j * layer.phase()).to(torch.complex64))
 
 
 def test_rgb_dataset_does_not_convert_to_grayscale() -> None:

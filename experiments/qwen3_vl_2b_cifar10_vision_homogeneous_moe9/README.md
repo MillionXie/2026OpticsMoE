@@ -49,4 +49,6 @@ L = 1.0 L_hidden + 0.5 L_KD + 0.5 L_CE + 0.1 L_router_balance
 
 `L_hidden` compares LayerNorm-normalized student and teacher token states. The default classification head has only 12,298 parameters for a 1024-dimensional Qwen vision hidden and 10 classes.
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for the exact optical data flow and parameter boundaries.
+The configuration is grouped by experiment, dataset, Qwen runtime, batching, teacher cache, vision adapter, optical MoE, loss, optimizer, training, regularization and visualization. Terminal status refresh has two independent limits: `training.logging.interval_batches` and `training.logging.interval_seconds`; whichever is reached first prints the next update. Per-epoch data reduction uses a rotating class-balanced window rather than permanently throwing away samples.
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the exact optical data flow and parameter boundaries. See [CONFIGURATION.md](CONFIGURATION.md) for every configuration group and command-line override.

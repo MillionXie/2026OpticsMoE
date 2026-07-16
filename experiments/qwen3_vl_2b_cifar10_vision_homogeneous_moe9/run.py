@@ -31,6 +31,18 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--model-id")
     parser.add_argument("--output-dir", type=Path)
     parser.add_argument("--local-files-only", action="store_true")
+    parser.add_argument("--epochs", type=int, help="Override training.epochs")
+    parser.add_argument("--batch-size", "--student-batch-size", dest="student_batch_size", type=int,
+                        help="Override batching.student_batch_size")
+    parser.add_argument("--train-samples-per-class-per-epoch", type=int,
+                        help="Override the rotating per-class sample count used in each student epoch")
+    parser.add_argument("--log-interval-batches", type=int,
+                        help="Refresh the training status after this many batches")
+    parser.add_argument("--log-interval-seconds", type=float,
+                        help="Refresh training status after this many seconds, whichever interval is reached first")
+    parser.add_argument("--checkpoint-interval-epochs", type=int)
+    parser.add_argument("--visualization-interval-epochs", type=int)
+    parser.add_argument("--disable-visualization", action="store_true")
     return parser
 
 
@@ -98,7 +110,8 @@ def main(argv: list[str] | None = None) -> int:
             load_student_parts(settings.output_dir, replacement, student_head, "best")
             loader = make_indexed_loader(data.test, settings.inference_batch_size, settings.num_workers, False, settings.seed)
             report = evaluate_student(loaded.model, loaded.processor, replacement, student_head, loader,
-                                      data.class_names, device, settings.output_dir / "metrics" / "student_predictions.csv")
+                                      data.class_names, device,
+                                      settings.output_dir / "metrics" / "student_predictions.csv" if settings.save_predictions else None)
             save_student_inference(report, settings, replacement)
             if args.phase == "student_inference":
                 return 0
@@ -120,6 +133,20 @@ def _apply_overrides(settings: Settings, args: argparse.Namespace) -> None:
         settings.model_id = args.model_id if args.model_id == "Qwen/Qwen3-VL-2B-Instruct" else str(resolve_path(args.model_id, Path.cwd(), "model_id"))
     if args.local_files_only:
         settings.local_files_only = True
+    for argument, attribute in (
+        ("epochs", "epochs"),
+        ("student_batch_size", "student_batch_size"),
+        ("train_samples_per_class_per_epoch", "train_samples_per_class_per_epoch"),
+        ("log_interval_batches", "log_interval_batches"),
+        ("log_interval_seconds", "log_interval_seconds"),
+        ("checkpoint_interval_epochs", "checkpoint_interval_epochs"),
+        ("visualization_interval_epochs", "visualization_interval_epochs"),
+    ):
+        value = getattr(args, argument)
+        if value is not None:
+            setattr(settings, attribute, value)
+    if args.disable_visualization:
+        settings.visualization_enabled = False
     settings.validate()
 
 
@@ -181,6 +208,21 @@ def _write_model_report(model: torch.nn.Module, replacement: VisionStackReplacem
                      "pooled_shape": [120, 120], "layernorm_affine": False,
                      "readout": "ReLU -> first T rows -> Linear(120,1024)"},
         "classification_head": head.specification(),
+        "optimizer": {"type": settings.optimizer_type, "learning_rate": settings.learning_rate,
+                      "weight_decay": settings.weight_decay, "scheduler": settings.scheduler_type},
+        "sampling": {"train_samples_per_class_per_epoch": settings.train_samples_per_class_per_epoch,
+                     "class_mixed_batches": True, "rotating_epoch_windows": True},
+        "logging": {"interval_batches": settings.log_interval_batches,
+                    "interval_seconds": settings.log_interval_seconds,
+                    "teacher_cache_interval_batches": settings.teacher_cache_log_interval_batches},
+        "phase_dropout": {"enabled": settings.phase_dropout_enabled, "mode": settings.phase_dropout_mode,
+                          "p": settings.phase_dropout_p, "block_size": settings.phase_dropout_block_size,
+                          "batch_shared": settings.phase_dropout_batch_shared,
+                          "start_epoch": settings.phase_dropout_start_epoch},
+        "optoelectronic_interlayers": {"enabled": settings.interlayer_enabled,
+                                       "per_expert_enabled": settings.interlayer_per_expert_enabled,
+                                       "elementwise_affine": settings.interlayer_elementwise_affine,
+                                       "normalization": "LayerNorm", "nonlinearity": settings.interlayer_nonlinearity},
         "losses": {"hidden": settings.loss_hidden_weight, "kd": settings.loss_kd_weight,
                    "ce": settings.loss_ce_weight, "router_balance": settings.router_balance_weight,
                    "router_importance": settings.router_importance_weight, "detector_auxiliary": 0.0},
@@ -222,4 +264,3 @@ def _log(message: str) -> None:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

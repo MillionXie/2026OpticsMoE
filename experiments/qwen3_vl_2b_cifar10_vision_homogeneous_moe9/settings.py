@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import os
 import re
-from dataclasses import asdict, dataclass, fields
+from dataclasses import dataclass, fields
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +17,8 @@ ENV_REFERENCE = re.compile(r"\$(?:\{([A-Za-z_][A-Za-z0-9_]*)\}|([A-Za-z_][A-Za-z
 
 @dataclass
 class Settings:
+    config_version: int = 2
+    experiment_name: str = "qwen3_vl_2b_cifar10_vision_homogeneous_moe9"
     dataset: str = "cifar10"
     data_root: Path = PROJECT_DIR.parent.parent / "opticalmoe_experiments" / "data"
     download: bool = True
@@ -30,12 +32,14 @@ class Settings:
     test_limit: int | None = None
     train_limit_per_class: int | None = None
     test_limit_per_class: int | None = None
+    train_samples_per_class_per_epoch: int | None = None
     feature_batch_size: int = 1
     student_batch_size: int = 1
     inference_batch_size: int = 1
     head_batch_size: int = 512
     teacher_cache_shard_size: int = 128
     teacher_cache_lru_shards: int = 8
+    teacher_cache_log_interval_batches: int = 100
     num_workers: int = 8
     cache_dtype: str = "float16"
     dtype: str = "bfloat16"
@@ -45,6 +49,8 @@ class Settings:
     validation_fraction: float = 0.1
     learning_rate: float = 5e-4
     weight_decay: float = 1e-2
+    optimizer_type: str = "adamw"
+    scheduler_type: str = "cosine"
     head_type: str = "normalized_linear"
     dropout: float = 0.0
     input_adapter_dim: int = 120
@@ -72,6 +78,9 @@ class Settings:
     theta_max_deg: float = 1.0
     interlayer_layernorm_eps: float = 1e-5
     interlayer_nonlinearity: str = "relu"
+    interlayer_enabled: bool = True
+    interlayer_per_expert_enabled: bool = True
+    interlayer_elementwise_affine: bool = False
     detector_pool_kernel: int = 4
     detector_layernorm_eps: float = 1e-5
     detector_layernorm_affine: bool = False
@@ -83,12 +92,28 @@ class Settings:
     router_importance_weight: float = 0.0
     distill_temperature: float = 2.0
     log_interval_batches: int = 100
+    log_interval_seconds: float = 60.0
+    checkpoint_interval_epochs: int = 1
+    phase_dropout_enabled: bool = False
+    phase_dropout_mode: str = "none"
+    phase_dropout_p: float = 0.0
+    phase_dropout_block_size: int = 8
+    phase_dropout_batch_shared: bool = True
+    phase_dropout_start_epoch: int = 0
+    visualization_enabled: bool = True
+    visualization_interval_epochs: int = 10
+    save_phase_masks: bool = True
+    save_training_curves: bool = True
+    save_confusion_matrix: bool = True
+    save_predictions: bool = True
     seed: int = 42
     progress: bool = True
     vision_depth: int | None = None
     vision_hidden_size: int | None = None
 
     def validate(self) -> None:
+        if self.config_version != 2:
+            raise ValueError("config_version must be 2 for the grouped configuration schema")
         if self.dataset != "cifar10":
             raise ValueError("This experiment requires dataset='cifar10'")
         if self.model_id != MODEL_ID and not Path(self.model_id).is_dir():
@@ -113,6 +138,16 @@ class Settings:
             raise ValueError("Post-detector LayerNorm must use elementwise_affine=False")
         if self.interlayer_nonlinearity not in {"relu", "softplus"} or self.detector_nonlinearity not in {"relu", "softplus"}:
             raise ValueError("nonlinearities must be relu or softplus")
+        if self.optimizer_type not in {"adam", "adamw"}:
+            raise ValueError("optimizer.type must be adam or adamw")
+        if self.scheduler_type not in {"cosine", "none"}:
+            raise ValueError("optimizer.scheduler must be cosine or none")
+        if self.phase_dropout_mode not in {"none", "phase_bypass", "block_phase_bypass"}:
+            raise ValueError("phase_dropout.mode must be none, phase_bypass, or block_phase_bypass")
+        if not 0.0 <= self.phase_dropout_p < 1.0:
+            raise ValueError("phase_dropout.p must be in [0,1)")
+        if self.phase_dropout_enabled and (self.phase_dropout_mode == "none" or self.phase_dropout_p <= 0.0):
+            raise ValueError("Enabled phase dropout requires a non-none mode and p > 0")
         if self.cache_dtype not in {"float16", "float32"} or self.dtype not in {"bfloat16", "float16", "float32"}:
             raise ValueError("Unsupported dtype/cache_dtype")
         if not 0.0 < self.validation_fraction < 1.0 or self.distill_temperature <= 0:
@@ -121,34 +156,121 @@ class Settings:
                      "expert_interlayer_distance_m", "last_expert_to_global_distance_m", "global_to_detector_distance_m"):
             if float(getattr(self, name)) <= 0:
                 raise ValueError(f"{name} must be positive")
-        positive = ("feature_batch_size", "student_batch_size", "inference_batch_size", "head_batch_size", "teacher_cache_shard_size", "teacher_cache_lru_shards", "num_workers", "epochs", "log_interval_batches")
+        positive = ("feature_batch_size", "student_batch_size", "inference_batch_size", "head_batch_size", "teacher_cache_shard_size", "teacher_cache_lru_shards", "teacher_cache_log_interval_batches", "num_workers", "epochs", "log_interval_batches", "checkpoint_interval_epochs", "visualization_interval_epochs", "phase_dropout_block_size")
         for name in positive:
             if int(getattr(self, name)) < (0 if name == "num_workers" else 1):
                 raise ValueError(f"{name} has an invalid value")
-        for name in ("train_limit", "test_limit", "train_limit_per_class", "test_limit_per_class"):
+        for name in ("train_limit", "test_limit", "train_limit_per_class", "test_limit_per_class", "train_samples_per_class_per_epoch"):
             value = getattr(self, name)
             if value is not None and value <= 0:
                 raise ValueError(f"{name} must be positive when set")
         for name in ("loss_hidden_weight", "loss_kd_weight", "loss_ce_weight", "router_balance_weight", "router_importance_weight"):
             if float(getattr(self, name)) < 0:
                 raise ValueError(f"{name} must be non-negative")
+        if self.log_interval_seconds <= 0:
+            raise ValueError("training.logging.interval_seconds must be positive")
+        if self.phase_dropout_start_epoch < 0:
+            raise ValueError("phase_dropout.start_epoch must be non-negative")
 
     def resolve_architecture(self, model: Any) -> None:
         self.vision_depth = int(model.config.vision_config.depth)
         self.vision_hidden_size = int(model.config.vision_config.hidden_size)
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        grouped: dict[str, Any] = {}
+        for path, attribute in NESTED_FIELDS.items():
+            cursor = grouped
+            for key in path[:-1]:
+                cursor = cursor.setdefault(key, {})
+            cursor[path[-1]] = getattr(self, attribute)
+        return grouped
+
+
+NESTED_FIELDS: dict[tuple[str, ...], str] = {
+    ("config_version",): "config_version",
+    ("experiment", "name"): "experiment_name", ("experiment", "output_dir"): "output_dir", ("experiment", "seed"): "seed",
+    ("dataset", "name"): "dataset", ("dataset", "data_root"): "data_root", ("dataset", "download"): "download",
+    ("dataset", "train_limit"): "train_limit", ("dataset", "test_limit"): "test_limit",
+    ("dataset", "train_limit_per_class"): "train_limit_per_class", ("dataset", "test_limit_per_class"): "test_limit_per_class",
+    ("dataset", "train_samples_per_class_per_epoch"): "train_samples_per_class_per_epoch",
+    ("dataset", "validation_fraction"): "validation_fraction",
+    ("qwen", "model_id"): "model_id", ("qwen", "cache_dir"): "cache_dir", ("qwen", "local_files_only"): "local_files_only",
+    ("qwen", "processor", "min_pixels"): "processor_min_pixels", ("qwen", "processor", "max_pixels"): "processor_max_pixels",
+    ("qwen", "runtime", "dtype"): "dtype", ("qwen", "runtime", "attn_implementation"): "attn_implementation",
+    ("qwen", "runtime", "device"): "device", ("qwen", "architecture", "vision_depth"): "vision_depth",
+    ("qwen", "architecture", "vision_hidden_size"): "vision_hidden_size",
+    ("batching", "feature_batch_size"): "feature_batch_size", ("batching", "student_batch_size"): "student_batch_size",
+    ("batching", "inference_batch_size"): "inference_batch_size", ("batching", "head_batch_size"): "head_batch_size",
+    ("batching", "num_workers"): "num_workers",
+    ("teacher_cache", "shard_size"): "teacher_cache_shard_size", ("teacher_cache", "lru_shards"): "teacher_cache_lru_shards",
+    ("teacher_cache", "dtype"): "cache_dtype", ("teacher_cache", "log_interval_batches"): "teacher_cache_log_interval_batches",
+    ("vision_adapter", "optical_channels"): "input_adapter_dim", ("vision_adapter", "max_visual_tokens"): "max_visual_tokens",
+    ("moe", "geometry", "canvas_size"): "canvas_size", ("moe", "geometry", "active_size"): "active_size",
+    ("moe", "geometry", "expert_size"): "expert_size", ("moe", "geometry", "expert_pitch"): "expert_pitch",
+    ("moe", "geometry", "num_experts"): "num_experts", ("moe", "geometry", "layers_per_expert"): "expert_layers",
+    ("moe", "router", "top_k"): "top_k", ("moe", "router", "pool_size"): "router_pool_size",
+    ("moe", "router", "temperature"): "router_temperature",
+    ("moe", "optics", "wavelength_nm"): "wavelength_nm", ("moe", "optics", "pixel_pitch_um"): "pixel_pitch_um",
+    ("moe", "optics", "prompt_focal_length_m"): "prompt_focal_length_m",
+    ("moe", "optics", "distances_m", "prompt_to_expert"): "prompt_to_expert_distance_m",
+    ("moe", "optics", "distances_m", "inter_layer"): "expert_interlayer_distance_m",
+    ("moe", "optics", "distances_m", "last_expert_to_global"): "last_expert_to_global_distance_m",
+    ("moe", "optics", "distances_m", "global_to_detector"): "global_to_detector_distance_m",
+    ("moe", "optics", "phase", "parameterization"): "phase_parameterization",
+    ("moe", "optics", "phase", "init"): "phase_init", ("moe", "optics", "phase", "init_std"): "phase_init_std",
+    ("moe", "optics", "k_space", "enabled"): "k_space_constraint_enabled",
+    ("moe", "optics", "k_space", "theta_max_deg"): "theta_max_deg",
+    ("moe", "optoelectronic_interlayers", "enabled"): "interlayer_enabled",
+    ("moe", "optoelectronic_interlayers", "per_expert_enabled"): "interlayer_per_expert_enabled",
+    ("moe", "optoelectronic_interlayers", "elementwise_affine"): "interlayer_elementwise_affine",
+    ("moe", "optoelectronic_interlayers", "layernorm_eps"): "interlayer_layernorm_eps",
+    ("moe", "optoelectronic_interlayers", "nonlinearity"): "interlayer_nonlinearity",
+    ("moe", "final_detector_readout", "pool_kernel"): "detector_pool_kernel",
+    ("moe", "final_detector_readout", "layernorm_eps"): "detector_layernorm_eps",
+    ("moe", "final_detector_readout", "layernorm_affine"): "detector_layernorm_affine",
+    ("moe", "final_detector_readout", "nonlinearity"): "detector_nonlinearity",
+    ("classification_head", "type"): "head_type", ("classification_head", "dropout"): "dropout",
+    ("loss", "hidden_weight"): "loss_hidden_weight", ("loss", "kd_weight"): "loss_kd_weight",
+    ("loss", "ce_weight"): "loss_ce_weight", ("loss", "router_balance_weight"): "router_balance_weight",
+    ("loss", "router_importance_weight"): "router_importance_weight", ("loss", "distill_temperature"): "distill_temperature",
+    ("optimizer", "type"): "optimizer_type", ("optimizer", "learning_rate"): "learning_rate",
+    ("optimizer", "weight_decay"): "weight_decay", ("optimizer", "scheduler"): "scheduler_type",
+    ("training", "epochs"): "epochs", ("training", "logging", "interval_batches"): "log_interval_batches",
+    ("training", "logging", "interval_seconds"): "log_interval_seconds", ("training", "progress"): "progress",
+    ("training", "checkpoint_interval_epochs"): "checkpoint_interval_epochs",
+    ("regularization", "phase_dropout", "enabled"): "phase_dropout_enabled",
+    ("regularization", "phase_dropout", "mode"): "phase_dropout_mode",
+    ("regularization", "phase_dropout", "p"): "phase_dropout_p",
+    ("regularization", "phase_dropout", "block_size"): "phase_dropout_block_size",
+    ("regularization", "phase_dropout", "batch_shared"): "phase_dropout_batch_shared",
+    ("regularization", "phase_dropout", "start_epoch"): "phase_dropout_start_epoch",
+    ("visualization", "enabled"): "visualization_enabled", ("visualization", "interval_epochs"): "visualization_interval_epochs",
+    ("visualization", "save_phase_masks"): "save_phase_masks", ("visualization", "save_training_curves"): "save_training_curves",
+    ("visualization", "save_confusion_matrix"): "save_confusion_matrix", ("visualization", "save_predictions"): "save_predictions",
+}
 
 
 def load_settings(path: str | Path) -> Settings:
     config_path = resolve_path(path, Path.cwd(), "config")
     raw = json.loads(config_path.read_text(encoding="utf-8"))
     allowed = {item.name for item in fields(Settings)}
-    unknown = sorted(set(raw) - allowed)
-    if unknown:
-        raise ValueError(f"Unknown config keys: {', '.join(unknown)}")
-    values = dict(raw)
+    values: dict[str, Any] = {}
+    reverse = {path: attribute for path, attribute in NESTED_FIELDS.items()}
+
+    def visit(value: Any, path_parts: tuple[str, ...]) -> None:
+        if isinstance(value, dict):
+            for key, nested in value.items():
+                visit(nested, (*path_parts, key))
+            return
+        if path_parts in reverse:
+            values[reverse[path_parts]] = value
+        elif len(path_parts) == 1 and path_parts[0] in allowed:
+            values[path_parts[0]] = value
+        else:
+            raise ValueError(f"Unknown config key: {'.'.join(path_parts)}")
+
+    for key, value in raw.items():
+        visit(value, (key,))
     if values.get("model_id") and values["model_id"] != MODEL_ID:
         values["model_id"] = str(resolve_path(values["model_id"], config_path.parent, "model_id"))
     for name in PATH_FIELDS:

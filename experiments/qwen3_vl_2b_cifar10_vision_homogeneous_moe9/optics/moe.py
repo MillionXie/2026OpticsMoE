@@ -28,7 +28,9 @@ class ExpertPhasePlane(nn.Module):
         super().__init__()
         self.geometry = geometry
         self.experts = nn.ModuleList([
-            PhaseLayer(geometry.expert_size, settings.phase_parameterization, settings.phase_init, settings.phase_init_std)
+            PhaseLayer(geometry.expert_size, settings.phase_parameterization, settings.phase_init, settings.phase_init_std,
+                       settings.phase_dropout_mode, settings.phase_dropout_p, settings.phase_dropout_block_size,
+                       settings.phase_dropout_batch_shared)
             for _ in range(geometry.num_experts)
         ])
 
@@ -39,12 +41,18 @@ class ExpertPhasePlane(nn.Module):
             output[:, aperture.y0:aperture.y1, aperture.x0:aperture.x1] = phase(crop)
         return output
 
+    def set_phase_dropout_active(self, active: bool) -> None:
+        for expert in self.experts:
+            expert.set_dropout_active(active)
+
 
 class GlobalPhasePlane(nn.Module):
     def __init__(self, geometry: MoEGeometry, settings: Any) -> None:
         super().__init__()
         self.geometry = geometry
-        self.phase = PhaseLayer(geometry.active_size, settings.phase_parameterization, settings.phase_init, settings.phase_init_std)
+        self.phase = PhaseLayer(geometry.active_size, settings.phase_parameterization, settings.phase_init, settings.phase_init_std,
+                                settings.phase_dropout_mode, settings.phase_dropout_p, settings.phase_dropout_block_size,
+                                settings.phase_dropout_batch_shared)
 
     def forward(self, field: torch.Tensor) -> torch.Tensor:
         output = field.to(torch.complex64).clone()
@@ -52,6 +60,9 @@ class GlobalPhasePlane(nn.Module):
         crop = field[:, aperture.y0:aperture.y1, aperture.x0:aperture.x1]
         output[:, aperture.y0:aperture.y1, aperture.x0:aperture.x1] = self.phase(crop)
         return output
+
+    def set_phase_dropout_active(self, active: bool) -> None:
+        self.phase.set_dropout_active(active)
 
 
 class FullPlaneDetectorReadout(nn.Module):
@@ -96,10 +107,13 @@ class VisionHomogeneousMoESurrogate(nn.Module):
             AngularSpectrumPropagator(distance_m=(settings.expert_interlayer_distance_m if index < settings.expert_layers - 1 else settings.last_expert_to_global_distance_m), **prop_kwargs)
             for index in range(settings.expert_layers)
         ])
+        self.interlayer_enabled = bool(settings.interlayer_enabled)
         self.interlayer_conversions = nn.ModuleList([
-            SquareDetectionLayerNormReload(self.geometry.expert_apertures, settings.interlayer_layernorm_eps, settings.interlayer_nonlinearity)
+            SquareDetectionLayerNormReload(settings.canvas_size, self.geometry.expert_apertures,
+                                           settings.interlayer_layernorm_eps, settings.interlayer_nonlinearity,
+                                           settings.interlayer_per_expert_enabled, settings.interlayer_elementwise_affine)
             for _ in range(settings.expert_layers)
-        ])
+        ]) if self.interlayer_enabled else nn.ModuleList()
         self.global_phase = GlobalPhasePlane(self.geometry, settings)
         self.to_detector = AngularSpectrumPropagator(distance_m=settings.global_to_detector_distance_m, **prop_kwargs)
         self.detector_readout = FullPlaneDetectorReadout(settings)
@@ -143,8 +157,10 @@ class VisionHomogeneousMoESurrogate(nn.Module):
         routing = self.prompt(input_fields)
         self.last_routing = routing
         field = self.global_fanout_convolution(canvas.to(torch.complex64), routing["transmission"])
-        for phase, propagation, conversion in zip(self.expert_layers, self.propagations, self.interlayer_conversions):
-            field = conversion(propagation(phase(field)))
+        for index, (phase, propagation) in enumerate(zip(self.expert_layers, self.propagations)):
+            field = propagation(phase(field))
+            if self.interlayer_enabled:
+                field = self.interlayer_conversions[index](field)
         detector_field = self.to_detector(self.global_phase(field))
         readout, intensity = self.detector_readout(detector_field)
         self.last_detector_intensity = intensity
@@ -157,17 +173,23 @@ class VisionHomogeneousMoESurrogate(nn.Module):
     def router_losses(self) -> tuple[torch.Tensor, torch.Tensor]:
         return self.last_routing["balance_loss"], self.last_routing["importance_loss"]
 
+    def set_phase_dropout_active(self, active: bool) -> None:
+        for layer in self.expert_layers:
+            layer.set_phase_dropout_active(active)
+        self.global_phase.set_phase_dropout_active(active)
+
     def parameter_breakdown(self) -> dict[str, int]:
         phase = sum(parameter.numel() for name, parameter in self.named_parameters() if "raw_phase" in name)
         router = sum(parameter.numel() for parameter in self.prompt.router.parameters())
         input_adapter = sum(parameter.numel() for parameter in self.input_adapter.parameters())
         input_norm = sum(parameter.numel() for parameter in self.input_norm.parameters())
         output_adapter = sum(parameter.numel() for parameter in self.output_adapter.parameters())
+        conversion = sum(parameter.numel() for parameter in self.interlayer_conversions.parameters())
         total = sum(parameter.numel() for parameter in self.parameters())
         return {"optical_phase_parameters": phase, "router_parameters": router,
                 "input_adapter_parameters": input_adapter, "input_adapter_norm_parameters": input_norm,
                 "output_adapter_parameters": output_adapter,
                 "adapter_parameters": input_adapter + input_norm + output_adapter,
+                "interlayer_conversion_parameters": conversion,
                 "detector_layernorm_parameters": sum(parameter.numel() for parameter in self.detector_readout.norm.parameters()),
                 "surrogate_total_parameters": total, "surrogate_trainable_parameters": sum(p.numel() for p in self.parameters() if p.requires_grad)}
-

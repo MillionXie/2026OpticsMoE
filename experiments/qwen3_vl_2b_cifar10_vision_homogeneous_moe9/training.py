@@ -9,11 +9,12 @@ from torch import nn
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, Dataset, Subset, TensorDataset
 
-from .datasets import indexed_collate, make_indexed_loader, stratified_split_indices
+from .datasets import indexed_collate, labels_of, make_indexed_loader, stratified_split_indices
 from .features import move_inputs, pool_token_groups, preprocess_images, run_visual
 from .io_utils import write_csv, write_json
 from .metrics import metrics_from_logits
 from .modeling import NormalizedLinearHead, build_head
+from .sampling import EpochClassMixedSampler
 from .teacher_cache import TeacherCacheStore, load_teacher_logits, pooled_teacher_features, write_teacher_logits
 from .visualization import save_confusion_matrix, save_phase_masks, save_training_curves
 
@@ -23,7 +24,9 @@ def train_teacher_head(train_store: TeacherCacheStore, test_store: TeacherCacheS
     features, labels = pooled_teacher_features(train_store)
     train_indices, validation_indices = _stratified_tensor_split(labels, settings.validation_fraction, settings.seed)
     head = build_head(settings, features.shape[1], len(class_names)).to(device)
-    optimizer = torch.optim.AdamW(head.parameters(), lr=settings.learning_rate, weight_decay=settings.weight_decay)
+    optimizer_class = torch.optim.AdamW if settings.optimizer_type == "adamw" else torch.optim.Adam
+    optimizer = optimizer_class(head.parameters(), lr=settings.learning_rate, weight_decay=settings.weight_decay)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=settings.epochs) if settings.scheduler_type == "cosine" else None
     history: list[dict[str, Any]] = []
     best = -1.0
     for epoch in range(1, settings.epochs + 1):
@@ -44,6 +47,8 @@ def train_teacher_head(train_store: TeacherCacheStore, test_store: TeacherCacheS
                "validation_macro_f1": metrics["macro_f1"], "validation_balanced_accuracy": metrics["balanced_accuracy"]}
         history.append(row)
         write_csv(settings.output_dir / "metrics" / "teacher_training_history.csv", history, list(row))
+        if scheduler is not None:
+            scheduler.step()
         if metrics["macro_f1"] > best:
             best = metrics["macro_f1"]
             save_head(head, settings.output_dir / "checkpoints" / "teacher_head.pt", settings, len(class_names))
@@ -97,23 +102,29 @@ def train_student(model: nn.Module, processor: Any, replacement: Any, head: Norm
     teacher_logits = load_teacher_logits(settings.output_dir / "teacher_cache" / "train_teacher_logits.pt")
     train_indices, validation_indices = stratified_split_indices(train_dataset, settings.validation_fraction, settings.seed)
     cached = CachedStudentDataset(train_dataset, train_store, teacher_logits)
-    loader = DataLoader(Subset(cached, train_indices), batch_size=settings.student_batch_size, shuffle=True,
-                        num_workers=0, collate_fn=cached_collate, pin_memory=torch.cuda.is_available(),
-                        generator=torch.Generator().manual_seed(settings.seed))
+    sampler = EpochClassMixedSampler(train_indices, labels_of(train_dataset), len(class_names), settings.student_batch_size,
+                                     settings.seed, settings.train_samples_per_class_per_epoch,
+                                     settings.teacher_cache_shard_size)
+    loader = DataLoader(cached, batch_size=settings.student_batch_size, sampler=sampler,
+                        num_workers=0, collate_fn=cached_collate, pin_memory=torch.cuda.is_available())
     validation_loader = make_indexed_loader(Subset(train_dataset, validation_indices), settings.inference_batch_size,
                                             settings.num_workers, False, settings.seed)
     model.requires_grad_(False).eval()
     replacement.use_student()
     replacement.surrogate.requires_grad_(True).train()
     head.requires_grad_(True).train()
-    optimizer = torch.optim.AdamW([*replacement.surrogate.parameters(), *head.parameters()],
-                                  lr=settings.learning_rate, weight_decay=settings.weight_decay)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=settings.epochs)
+    parameters = [*replacement.surrogate.parameters(), *head.parameters()]
+    optimizer_class = torch.optim.AdamW if settings.optimizer_type == "adamw" else torch.optim.Adam
+    optimizer = optimizer_class(parameters, lr=settings.learning_rate, weight_decay=settings.weight_decay)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=settings.epochs) if settings.scheduler_type == "cosine" else None
     history: list[dict[str, Any]] = []
     best_top1 = -1.0
     first_shapes_written = False
     for epoch in range(1, settings.epochs + 1):
         started = time.perf_counter()
+        sampler.set_epoch(epoch)
+        phase_dropout_active = settings.phase_dropout_enabled and epoch >= settings.phase_dropout_start_epoch
+        replacement.surrogate.set_phase_dropout_active(phase_dropout_active)
         replacement.surrogate.train()
         head.train()
         totals = {name: 0.0 for name in ("total", "hidden", "kd", "ce", "balance", "importance")}
@@ -122,6 +133,9 @@ def train_student(model: nn.Module, processor: Any, replacement: Any, head: Norm
         train_labels: list[torch.Tensor] = []
         selection = torch.zeros(settings.num_experts)
         weight_sum = torch.zeros(settings.num_experts)
+        last_log_time = time.perf_counter()
+        print(f"[sampling] epoch={epoch} samples={len(sampler)} per_class={sampler.epoch_class_counts()} "
+              f"phase_dropout={'on' if phase_dropout_active else 'off'}", flush=True)
         for batch_index, (images, labels, _indices, cached_grids, cached_counts, teacher_hidden, teacher_batch_logits) in enumerate(loader, start=1):
             cpu_inputs = preprocess_images(processor, images)
             if not torch.equal(cpu_inputs["image_grid_thw"].cpu(), cached_grids.cpu()):
@@ -176,15 +190,20 @@ def train_student(model: nn.Module, processor: Any, replacement: Any, head: Norm
             routing = replacement.surrogate.last_routing
             selection += routing["selected_mask"].detach().cpu().float().sum(0)
             weight_sum += routing["weights"].detach().cpu().sum(0)
-            if batch_index % settings.log_interval_batches == 0 or batch_index == len(loader):
+            now = time.perf_counter()
+            should_log = (batch_index % settings.log_interval_batches == 0 or batch_index == len(loader) or
+                          now - last_log_time >= settings.log_interval_seconds)
+            if should_log:
                 running = metrics_from_logits(torch.cat(train_logits), torch.cat(train_labels), class_names)
                 print(f"epoch {epoch}/{settings.epochs} batch {batch_index}/{len(loader)} "
                       f"loss={totals['total']/seen:.5f} hidden={totals['hidden']/seen:.5f} "
                       f"kd={totals['kd']/seen:.5f} ce={totals['ce']/seen:.5f} "
                       f"balance={totals['balance']/seen:.5f} top1={running['top1_accuracy']:.4f}", flush=True)
+                last_log_time = now
         train_report = metrics_from_logits(torch.cat(train_logits), torch.cat(train_labels), class_names)
         validation = evaluate_student(model, processor, replacement, head, validation_loader, class_names, device)
-        scheduler.step()
+        if scheduler is not None:
+            scheduler.step()
         row: dict[str, Any] = {
             "epoch": epoch, "learning_rate": optimizer.param_groups[0]["lr"],
             **{f"loss_{name}": value / seen for name, value in totals.items()},
@@ -192,6 +211,8 @@ def train_student(model: nn.Module, processor: Any, replacement: Any, head: Norm
             "validation_top1_accuracy": validation["top1_accuracy"], "validation_top5_accuracy": validation["top5_accuracy"],
             "validation_macro_f1": validation["macro_f1"], "validation_balanced_accuracy": validation["balanced_accuracy"],
             "epoch_time_sec": time.perf_counter() - started,
+            "phase_dropout_active": phase_dropout_active,
+            "samples_this_epoch": len(sampler),
         }
         for expert in range(settings.num_experts):
             row[f"expert_{expert}_selection_rate"] = float(selection[expert] / seen)
@@ -199,13 +220,20 @@ def train_student(model: nn.Module, processor: Any, replacement: Any, head: Norm
         history.append(row)
         write_csv(settings.output_dir / "metrics" / "student_training_history.csv", history, list(row))
         write_json(settings.output_dir / "metrics" / "student_training_latest.json", row)
-        save_training_curves(history, settings.output_dir / "figures" / "student_training_curves.png")
+        if settings.visualization_enabled and settings.save_training_curves:
+            save_training_curves(history, settings.output_dir / "figures" / "student_training_curves.png")
         save_student_parts(settings.output_dir, replacement, head, "last", epoch, row)
+        if epoch % settings.checkpoint_interval_epochs == 0:
+            save_student_parts(settings.output_dir, replacement, head, f"epoch_{epoch:04d}", epoch, row)
         if validation["top1_accuracy"] > best_top1:
             best_top1 = validation["top1_accuracy"]
             save_student_parts(settings.output_dir, replacement, head, "best", epoch, row)
             write_json(settings.output_dir / "metrics" / "best_validation.json", row)
-            save_phase_masks(replacement.surrogate, settings.output_dir / "figures" / "phase_masks_best.png", f"Best epoch {epoch}")
+            if settings.visualization_enabled and settings.save_phase_masks:
+                save_phase_masks(replacement.surrogate, settings.output_dir / "figures" / "phase_masks_best.png", f"Best epoch {epoch}")
+        if (settings.visualization_enabled and settings.save_phase_masks and
+                epoch % settings.visualization_interval_epochs == 0):
+            save_phase_masks(replacement.surrogate, settings.output_dir / "figures" / f"phase_masks_epoch_{epoch:04d}.png", f"Epoch {epoch}")
     write_json(settings.output_dir / "metrics" / "student_training.json", {"epochs": settings.epochs, "best_validation_top1": best_top1})
 
 
@@ -257,8 +285,9 @@ def save_student_inference(report: dict[str, Any], settings: Any, replacement: A
     matrix = report["confusion_matrix"]
     rows = [{"true_class": index, **{f"pred_{column}": value for column, value in enumerate(row)}} for index, row in enumerate(matrix)]
     write_csv(settings.output_dir / "metrics" / "student_confusion_matrix.csv", rows, list(rows[0]))
-    save_confusion_matrix(matrix, ["airplane", "automobile", "bird", "cat", "deer", "dog", "frog", "horse", "ship", "truck"],
-                          settings.output_dir / "figures" / "student_confusion_matrix.png")
+    if settings.visualization_enabled and settings.save_confusion_matrix:
+        save_confusion_matrix(matrix, ["airplane", "automobile", "bird", "cat", "deer", "dog", "frog", "horse", "ship", "truck"],
+                              settings.output_dir / "figures" / "student_confusion_matrix.png")
 
 
 def save_head(head: NormalizedLinearHead, path: Path, settings: Any, num_classes: int) -> None:

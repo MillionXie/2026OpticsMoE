@@ -87,7 +87,8 @@ def build_teacher_cache(split: str, model: nn.Module, processor: Any, replacemen
             if len(pending) >= settings.teacher_cache_shard_size:
                 shards.append(_flush_shard(shard_dir, len(shards), pending))
                 pending = []
-        print(f"[teacher_precompute] {split} batch={batch_index}/{len(loader)} cached={min(batch_index * settings.feature_batch_size, dataset_size)}/{dataset_size}", flush=True)
+        if batch_index % settings.teacher_cache_log_interval_batches == 0 or batch_index == len(loader):
+            print(f"[teacher_precompute] {split} batch={batch_index}/{len(loader)} cached={min(batch_index * settings.feature_batch_size, dataset_size)}/{dataset_size}", flush=True)
     if pending:
         shards.append(_flush_shard(shard_dir, len(shards), pending))
     metadata = {**expected, "shard_count": len(shards), "total_cache_bytes": sum(row["bytes"] for row in shards)}
