@@ -25,6 +25,7 @@ RGB image
 -> Linear(1024,120) + LayerNorm(120) + Softplus
 -> strict zero-row padding to [120,120]
 -> homogeneous top-3 optical MoE (9 experts, 5 phase planes)
+-> after every OEO stage: independent LN for selected experts, strict zero for unselected experts
 -> global phase + 20 cm propagation
 -> full [480,480] square-law detector
 -> AvgPool2d(4,4) -> [120,120]
