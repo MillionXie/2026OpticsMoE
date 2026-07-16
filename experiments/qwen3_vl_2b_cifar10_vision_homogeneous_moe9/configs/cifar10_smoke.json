@@ -121,8 +121,7 @@
     "epochs": 1,
     "progress": true,
     "logging": {
-      "interval_batches": 1,
-      "interval_seconds": 10.0
+      "interval_batches": 1
     },
     "checkpoint_interval_epochs": 1
   },

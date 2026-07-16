@@ -36,7 +36,6 @@ def test_config_and_small_head() -> None:
     assert settings.detector_layernorm_affine is False
     assert settings.router_balance_weight == pytest.approx(0.1)
     assert settings.log_interval_batches == 1
-    assert settings.log_interval_seconds == pytest.approx(10.0)
     assert settings.optimizer_type == "adamw"
     assert settings.to_dict()["training"]["logging"]["interval_batches"] == 1
     head = NormalizedLinearHead(1024, 10)
@@ -134,3 +133,16 @@ def test_complete_optical_moe_forward_and_backward() -> None:
     assert model.global_phase.phase.raw_phase.grad is not None
     assert model.output_adapter.weight.grad is not None
     assert model.prompt.router.gate.weight.grad is not None
+
+
+def test_packed_batch_is_split_into_independent_optical_fields() -> None:
+    settings = load_settings(CONFIG)
+    model = VisionHomogeneousMoESurrogate(8, settings)
+    hidden = torch.randn(7, 8)
+    output = model(hidden, cu_seqlens=torch.tensor([0, 3, 7], dtype=torch.int32))
+    assert output.shape == hidden.shape
+    assert model.last_token_counts == [3, 4]
+    assert model.last_input_fields.shape == (2, 120, 120)
+    assert model.last_detector_intensity.shape == (2, 480, 480)
+    assert model.last_routing["weights"].shape == (2, 9)
+    assert torch.allclose(model.last_routing["weights"].sum(dim=1), torch.ones(2), atol=1e-5)

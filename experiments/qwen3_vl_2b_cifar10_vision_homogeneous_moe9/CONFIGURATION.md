@@ -31,7 +31,7 @@ The JSON files use a grouped schema instead of a flat list. `config_resolved.jso
 - `optimizer.type`: `adam` or `adamw`.
 - `optimizer.scheduler`: `cosine` or `none`.
 - `training.logging.interval_batches`: print after this many student batches.
-- `training.logging.interval_seconds`: also print when this wall-clock interval is reached. The first of the batch/time limits triggers a refresh, so a slow batch cannot leave the terminal silent for too long.
+- Logging is batch-triggered only. Each update includes the cumulative selection rate and mean selected routing weight for all nine experts.
 - `training.checkpoint_interval_epochs`: save numbered epoch snapshots at this interval. `last` and a newly improved `best` are still saved immediately.
 - `visualization.interval_epochs`: phase-mask visualization interval.
 - `regularization.phase_dropout`: optional training-only phase bypass. It is disabled in the main config.
@@ -45,7 +45,6 @@ The following values can be changed without editing JSON:
 --batch-size / --student-batch-size
 --train-samples-per-class-per-epoch
 --log-interval-batches
---log-interval-seconds
 --checkpoint-interval-epochs
 --visualization-interval-epochs
 --disable-visualization

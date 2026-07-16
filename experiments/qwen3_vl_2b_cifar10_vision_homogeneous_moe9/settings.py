@@ -92,7 +92,6 @@ class Settings:
     router_importance_weight: float = 0.0
     distill_temperature: float = 2.0
     log_interval_batches: int = 100
-    log_interval_seconds: float = 60.0
     checkpoint_interval_epochs: int = 1
     phase_dropout_enabled: bool = False
     phase_dropout_mode: str = "none"
@@ -167,8 +166,6 @@ class Settings:
         for name in ("loss_hidden_weight", "loss_kd_weight", "loss_ce_weight", "router_balance_weight", "router_importance_weight"):
             if float(getattr(self, name)) < 0:
                 raise ValueError(f"{name} must be non-negative")
-        if self.log_interval_seconds <= 0:
-            raise ValueError("training.logging.interval_seconds must be positive")
         if self.phase_dropout_start_epoch < 0:
             raise ValueError("phase_dropout.start_epoch must be non-negative")
 
@@ -236,7 +233,7 @@ NESTED_FIELDS: dict[tuple[str, ...], str] = {
     ("optimizer", "type"): "optimizer_type", ("optimizer", "learning_rate"): "learning_rate",
     ("optimizer", "weight_decay"): "weight_decay", ("optimizer", "scheduler"): "scheduler_type",
     ("training", "epochs"): "epochs", ("training", "logging", "interval_batches"): "log_interval_batches",
-    ("training", "logging", "interval_seconds"): "log_interval_seconds", ("training", "progress"): "progress",
+    ("training", "progress"): "progress",
     ("training", "checkpoint_interval_epochs"): "checkpoint_interval_epochs",
     ("regularization", "phase_dropout", "enabled"): "phase_dropout_enabled",
     ("regularization", "phase_dropout", "mode"): "phase_dropout_mode",

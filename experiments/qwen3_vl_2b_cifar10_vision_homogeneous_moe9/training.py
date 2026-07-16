@@ -129,11 +129,11 @@ def train_student(model: nn.Module, processor: Any, replacement: Any, head: Norm
         head.train()
         totals = {name: 0.0 for name in ("total", "hidden", "kd", "ce", "balance", "importance")}
         seen = 0
+        running_correct = 0
         train_logits: list[torch.Tensor] = []
         train_labels: list[torch.Tensor] = []
         selection = torch.zeros(settings.num_experts)
         weight_sum = torch.zeros(settings.num_experts)
-        last_log_time = time.perf_counter()
         print(f"[sampling] epoch={epoch} samples={len(sampler)} per_class={sampler.epoch_class_counts()} "
               f"phase_dropout={'on' if phase_dropout_active else 'off'}", flush=True)
         for batch_index, (images, labels, _indices, cached_grids, cached_counts, teacher_hidden, teacher_batch_logits) in enumerate(loader, start=1):
@@ -187,19 +187,22 @@ def train_student(model: nn.Module, processor: Any, replacement: Any, head: Norm
                 totals[name] += float(value.detach()) * batch_size
             train_logits.append(logits.detach().cpu())
             train_labels.append(labels.detach().cpu())
+            running_correct += int((logits.detach().argmax(dim=1) == labels).sum().item())
             routing = replacement.surrogate.last_routing
             selection += routing["selected_mask"].detach().cpu().float().sum(0)
             weight_sum += routing["weights"].detach().cpu().sum(0)
-            now = time.perf_counter()
-            should_log = (batch_index % settings.log_interval_batches == 0 or batch_index == len(loader) or
-                          now - last_log_time >= settings.log_interval_seconds)
+            should_log = batch_index % settings.log_interval_batches == 0 or batch_index == len(loader)
             if should_log:
-                running = metrics_from_logits(torch.cat(train_logits), torch.cat(train_labels), class_names)
+                expert_status = " ".join(
+                    f"e{expert}:sel={float(selection[expert] / seen):.3f},"
+                    f"w|sel={float(weight_sum[expert] / selection[expert].clamp_min(1.0)):.3f}"
+                    for expert in range(settings.num_experts)
+                )
                 print(f"epoch {epoch}/{settings.epochs} batch {batch_index}/{len(loader)} "
                       f"loss={totals['total']/seen:.5f} hidden={totals['hidden']/seen:.5f} "
                       f"kd={totals['kd']/seen:.5f} ce={totals['ce']/seen:.5f} "
-                      f"balance={totals['balance']/seen:.5f} top1={running['top1_accuracy']:.4f}", flush=True)
-                last_log_time = now
+                      f"balance={totals['balance']/seen:.5f} top1={running_correct/seen:.4f} "
+                      f"experts=[{expert_status}]", flush=True)
         train_report = metrics_from_logits(torch.cat(train_logits), torch.cat(train_labels), class_names)
         validation = evaluate_student(model, processor, replacement, head, validation_loader, class_names, device)
         if scheduler is not None:
@@ -217,6 +220,9 @@ def train_student(model: nn.Module, processor: Any, replacement: Any, head: Norm
         for expert in range(settings.num_experts):
             row[f"expert_{expert}_selection_rate"] = float(selection[expert] / seen)
             row[f"expert_{expert}_mean_routing_weight"] = float(weight_sum[expert] / seen)
+            row[f"expert_{expert}_mean_selected_weight"] = float(
+                weight_sum[expert] / selection[expert].clamp_min(1.0)
+            )
         history.append(row)
         write_csv(settings.output_dir / "metrics" / "student_training_history.csv", history, list(row))
         write_json(settings.output_dir / "metrics" / "student_training_latest.json", row)

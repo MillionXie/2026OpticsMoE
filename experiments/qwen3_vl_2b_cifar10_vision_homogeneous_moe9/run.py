@@ -38,8 +38,6 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Override the rotating per-class sample count used in each student epoch")
     parser.add_argument("--log-interval-batches", type=int,
                         help="Refresh the training status after this many batches")
-    parser.add_argument("--log-interval-seconds", type=float,
-                        help="Refresh training status after this many seconds, whichever interval is reached first")
     parser.add_argument("--checkpoint-interval-epochs", type=int)
     parser.add_argument("--visualization-interval-epochs", type=int)
     parser.add_argument("--disable-visualization", action="store_true")
@@ -138,7 +136,6 @@ def _apply_overrides(settings: Settings, args: argparse.Namespace) -> None:
         ("student_batch_size", "student_batch_size"),
         ("train_samples_per_class_per_epoch", "train_samples_per_class_per_epoch"),
         ("log_interval_batches", "log_interval_batches"),
-        ("log_interval_seconds", "log_interval_seconds"),
         ("checkpoint_interval_epochs", "checkpoint_interval_epochs"),
         ("visualization_interval_epochs", "visualization_interval_epochs"),
     ):
@@ -212,9 +209,9 @@ def _write_model_report(model: torch.nn.Module, replacement: VisionStackReplacem
                       "weight_decay": settings.weight_decay, "scheduler": settings.scheduler_type},
         "sampling": {"train_samples_per_class_per_epoch": settings.train_samples_per_class_per_epoch,
                      "class_mixed_batches": True, "rotating_epoch_windows": True},
-        "logging": {"interval_batches": settings.log_interval_batches,
-                    "interval_seconds": settings.log_interval_seconds,
-                    "teacher_cache_interval_batches": settings.teacher_cache_log_interval_batches},
+        "logging": {"trigger": "batch_only", "interval_batches": settings.log_interval_batches,
+                    "teacher_cache_interval_batches": settings.teacher_cache_log_interval_batches,
+                    "expert_fields": ["selection_rate", "mean_selected_weight"]},
         "phase_dropout": {"enabled": settings.phase_dropout_enabled, "mode": settings.phase_dropout_mode,
                           "p": settings.phase_dropout_p, "block_size": settings.phase_dropout_block_size,
                           "batch_shared": settings.phase_dropout_batch_shared,
