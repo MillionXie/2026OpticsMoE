@@ -218,6 +218,11 @@ def _write_model_report(model: torch.nn.Module, replacement: VisionStackReplacem
         "logging": {"trigger": "batch_only", "interval_batches": settings.log_interval_batches,
                     "teacher_cache_interval_batches": settings.teacher_cache_log_interval_batches,
                     "expert_fields": ["selection_rate", "mean_selected_weight"]},
+        "router": {"top_k": settings.top_k, "pool_size": settings.router_pool_size,
+                   "temperature": settings.router_temperature,
+                   "input_layernorm_enabled": settings.router_input_layernorm_enabled,
+                   "input_layernorm_eps": settings.router_input_layernorm_eps,
+                   "training_jitter": False},
         "phase_dropout": {"enabled": settings.phase_dropout_enabled, "mode": settings.phase_dropout_mode,
                           "p": settings.phase_dropout_p, "block_size": settings.phase_dropout_block_size,
                           "batch_shared": settings.phase_dropout_batch_shared,
@@ -275,3 +280,4 @@ def _log(message: str) -> None:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

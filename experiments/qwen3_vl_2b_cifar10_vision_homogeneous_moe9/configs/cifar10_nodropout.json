@@ -63,7 +63,9 @@
     "router": {
       "top_k": 3,
       "pool_size": 10,
-      "temperature": 1.0
+      "temperature": 1.0,
+      "input_layernorm_enabled": true,
+      "input_layernorm_eps": 0.00001
     },
     "optics": {
       "wavelength_nm": 532.0,
@@ -149,3 +151,4 @@
     "save_predictions": true
   }
 }
+

@@ -13,6 +13,7 @@ from experiments.qwen3_vl_2b_cifar10_vision_homogeneous_moe9.modeling import Nor
 from experiments.qwen3_vl_2b_cifar10_vision_homogeneous_moe9.optics.geometry import MoEGeometry
 from experiments.qwen3_vl_2b_cifar10_vision_homogeneous_moe9.optics.moe import FullPlaneDetectorReadout, VisionHomogeneousMoESurrogate
 from experiments.qwen3_vl_2b_cifar10_vision_homogeneous_moe9.optics.physical import PhaseLayer, SquareDetectionLayerNormReload
+from experiments.qwen3_vl_2b_cifar10_vision_homogeneous_moe9.optics.router import InputTopKRouter
 from experiments.qwen3_vl_2b_cifar10_vision_homogeneous_moe9.sampling import EpochClassMixedSampler
 from experiments.qwen3_vl_2b_cifar10_vision_homogeneous_moe9.settings import load_settings
 from experiments.qwen3_vl_2b_cifar10_vision_homogeneous_moe9.visualization import save_debug_example
@@ -40,6 +41,7 @@ def test_config_and_small_head() -> None:
     assert settings.optimizer_type == "adamw"
     assert settings.interlayer_hard_route_mask is True
     assert settings.interlayer_reapply_routing_weights is True
+    assert settings.router_input_layernorm_enabled is True
     assert settings.to_dict()["training"]["logging"]["interval_batches"] == 1
     head = NormalizedLinearHead(1024, 10)
     assert head(torch.randn(3, 1024)).shape == (3, 10)
@@ -52,6 +54,19 @@ def test_legacy_flat_config_remains_supported(tmp_path) -> None:
     settings = load_settings(path)
     assert settings.log_interval_batches == 7
     assert settings.to_dict()["training"]["logging"]["interval_batches"] == 7
+
+
+def test_router_input_layernorm_removes_common_affine_scale() -> None:
+    router = InputTopKRouter(9, 3, 10, 1.0, input_layernorm_enabled=True, input_layernorm_eps=1e-12)
+    fields = torch.rand(2, 120, 120)
+    normalized = router.input_norm(torch.nn.functional.adaptive_avg_pool2d(
+        fields.unsqueeze(1), (10, 10)
+    ).flatten(1))
+    transformed = router.input_norm(torch.nn.functional.adaptive_avg_pool2d(
+        (fields * 4.0 + 7.0).unsqueeze(1), (10, 10)
+    ).flatten(1))
+    assert torch.allclose(normalized, transformed, rtol=1e-4, atol=1e-4)
+    assert sum(parameter.numel() for parameter in router.input_norm.parameters()) == 0
 
 
 def test_epoch_sampler_rotates_balanced_class_windows() -> None:
@@ -207,3 +222,4 @@ def test_debug_example_writes_optical_routing_and_hidden_artifacts(tmp_path) -> 
                  "stage_01_before_oeo_intensity.png", "final_detector_intensity.png",
                  "hidden_comparison.png", "hidden_layernorm_comparison.png", "metadata.json"):
         assert (tmp_path / name).is_file()
+

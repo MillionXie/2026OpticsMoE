@@ -42,6 +42,8 @@ There are no ten class-specific detector regions and no detector auxiliary loss.
 
 The prompt still applies the sparse top-3 router weights before the first propagation, matching the all-optical routing input. Per-expert LayerNorm would otherwise erase those relative amplitude scales, so `reapply_routing_weights=true` restores the same weights after every interlayer normalization and activation. This is amplitude weighting (`field *= weight`), not square-root power weighting. The following LayerNorm prevents the coefficient from simply accumulating as `weight**5`.
 
+Before the router's trainable linear gate, its pooled 10x10 input is normalized with a non-affine LayerNorm. This prevents a shared positive DC level in the Softplus optical input fields from overwhelming the smaller image-dependent routing features. No random routing jitter is used.
+
 The field has 120 rows, but `T` is measured rather than hard-coded. For square CIFAR-10 and the default 25,600-pixel budget, `T` is normally about 100, followed by 20 strict zero-padding rows.
 
 ## Training
@@ -59,3 +61,4 @@ The configuration is grouped by experiment, dataset, Qwen runtime, batching, tea
 The student uses the complete retained CIFAR-10 training split. To match the legacy homogeneous optical-MoE experiment, the test split is evaluated after every epoch and selects `best`. This is convenient for direct experimental comparison, but `best_test` is selection-biased because the test split is no longer a strictly held-out final evaluation. Every visualization interval also saves random per-sample optical and hidden-state diagnostics under `figures/debug_examples/epoch_XXXX/`.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the exact optical data flow and parameter boundaries. See [CONFIGURATION.md](CONFIGURATION.md) for every configuration group and command-line override.
+
