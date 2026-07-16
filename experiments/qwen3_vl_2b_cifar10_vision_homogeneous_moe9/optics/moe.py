@@ -124,6 +124,9 @@ class VisionHomogeneousMoESurrogate(nn.Module):
         self.last_detector_readout: torch.Tensor | None = None
         self.last_output: torch.Tensor | None = None
         self.last_routing: dict[str, torch.Tensor] = {}
+        self.debug_capture_enabled = False
+        self.last_fanout_field: torch.Tensor | None = None
+        self.last_stage_fields: list[dict[str, torch.Tensor]] = []
 
     def encode_groups(self, groups: list[torch.Tensor]) -> torch.Tensor:
         fields = []
@@ -157,10 +160,18 @@ class VisionHomogeneousMoESurrogate(nn.Module):
         routing = self.prompt(input_fields)
         self.last_routing = routing
         field = self.global_fanout_convolution(canvas.to(torch.complex64), routing["transmission"])
+        self.last_stage_fields = []
+        self.last_fanout_field = field.detach().cpu() if self.debug_capture_enabled else None
         for index, (phase, propagation) in enumerate(zip(self.expert_layers, self.propagations)):
             field = propagation(phase(field))
+            propagated = field
             if self.interlayer_enabled:
                 field = self.interlayer_conversions[index](field)
+            if self.debug_capture_enabled:
+                self.last_stage_fields.append({
+                    "before_oeo": propagated.detach().cpu(),
+                    "after_oeo": field.detach().cpu(),
+                })
         detector_field = self.to_detector(self.global_phase(field))
         readout, intensity = self.detector_readout(detector_field)
         self.last_detector_intensity = intensity
@@ -177,6 +188,12 @@ class VisionHomogeneousMoESurrogate(nn.Module):
         for layer in self.expert_layers:
             layer.set_phase_dropout_active(active)
         self.global_phase.set_phase_dropout_active(active)
+
+    def set_debug_capture(self, enabled: bool) -> None:
+        self.debug_capture_enabled = bool(enabled)
+        if not enabled:
+            self.last_fanout_field = None
+            self.last_stage_fields = []
 
     def parameter_breakdown(self) -> dict[str, int]:
         phase = sum(parameter.numel() for name, parameter in self.named_parameters() if "raw_phase" in name)

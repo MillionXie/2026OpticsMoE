@@ -51,4 +51,6 @@ L = 1.0 L_hidden + 0.5 L_KD + 0.5 L_CE + 0.1 L_router_balance
 
 The configuration is grouped by experiment, dataset, Qwen runtime, batching, teacher cache, vision adapter, optical MoE, loss, optimizer, training, regularization and visualization. Terminal status is refreshed only every `training.logging.interval_batches` batches. Each update reports all nine experts' cumulative selection rates and their mean weights when selected. Per-epoch data reduction uses a rotating class-balanced window rather than permanently throwing away samples.
 
+The student uses the complete retained CIFAR-10 training split. To match the legacy homogeneous optical-MoE experiment, the test split is evaluated after every epoch and selects `best`. This is convenient for direct experimental comparison, but `best_test` is selection-biased because the test split is no longer a strictly held-out final evaluation. Every visualization interval also saves random per-sample optical and hidden-state diagnostics under `figures/debug_examples/epoch_XXXX/`.
+
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the exact optical data flow and parameter boundaries. See [CONFIGURATION.md](CONFIGURATION.md) for every configuration group and command-line override.

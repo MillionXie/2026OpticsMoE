@@ -8,7 +8,7 @@ The JSON files use a grouped schema instead of a flat list. `config_resolved.jso
 - `dataset.train_limit` / `test_limit`: permanent whole-dataset limits, mainly for smoke tests.
 - `dataset.train_limit_per_class` / `test_limit_per_class`: permanent per-class subset limits.
 - `dataset.train_samples_per_class_per_epoch`: rotating per-class epoch window. It limits work in one student epoch without discarding the rest of the cached training set. Successive epochs move through each class, and batches are class-mixed.
-- `dataset.validation_fraction`: fraction of cached training features reserved for teacher-head validation.
+- `dataset.validation_fraction`: used only to select the frozen teacher classification head. Student optical training uses the complete retained CIFAR-10 training split.
 
 ## Qwen and batching
 
@@ -32,9 +32,12 @@ The JSON files use a grouped schema instead of a flat list. `config_resolved.jso
 - `optimizer.scheduler`: `cosine` or `none`.
 - `training.logging.interval_batches`: print after this many student batches.
 - Logging is batch-triggered only. Each update includes the cumulative selection rate and mean selected routing weight for all nine experts.
+- `training.student_selection_split`: fixed to `test`. The complete CIFAR-10 test split is evaluated after every student epoch and selects `best`; this intentionally matches the legacy homogeneous-MoE protocol but makes the reported best-test number selection-biased.
 - `training.checkpoint_interval_epochs`: save numbered epoch snapshots at this interval. `last` and a newly improved `best` are still saved immediately.
-- `visualization.interval_epochs`: phase-mask visualization interval.
-- `regularization.phase_dropout`: optional training-only phase bypass. It is disabled in the main config.
+- `visualization.interval_epochs`: phase-mask and debug-example visualization interval.
+- `visualization.sample_count`: random test examples saved at each visualization epoch.
+- `visualization.save_intermediate_fields`: saves RGB input, optical input, prompt expert amplitudes, routing weights, fan-out field, five stage fields, detector intensity, and teacher/student hidden comparisons.
+- `regularization.phase_dropout`: optional training-only phase bypass. It is disabled in the main config. Dropout is sampled again on every training forward/batch, not once per epoch. `phase_bypass` independently bypasses phase pixels; `block_phase_bypass` bypasses square blocks. A bypassed point uses unit complex modulation (zero added phase), not zero optical amplitude. `p` is the expected bypass fraction per phase plane. `batch_shared=true` uses the same spatial dropout mask for all samples in a mini-batch; `false` samples an independent mask per image. `start_epoch` delays activation. A mild starting point is `mode=block_phase_bypass`, `p=0.02`, `block_size=8`, `batch_shared=true`, `start_epoch=10`.
 
 ## Useful CLI overrides
 

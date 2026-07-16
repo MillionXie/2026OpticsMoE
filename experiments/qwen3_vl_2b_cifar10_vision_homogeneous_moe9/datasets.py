@@ -46,7 +46,7 @@ def load_cifar10(settings: Any) -> DatasetBundle:
     train = _total_limit(train, settings.train_limit, settings.seed + 2)
     test = _total_limit(test, settings.test_limit, settings.seed + 3)
     train_indices, validation_indices = stratified_split_indices(train, settings.validation_fraction, settings.seed)
-    train_counts = class_counts(Subset(train, train_indices))
+    train_counts = class_counts(train)
     per_epoch_counts = {
         name: min(count, settings.train_samples_per_class_per_epoch)
         if settings.train_samples_per_class_per_epoch is not None else count
@@ -58,13 +58,17 @@ def load_cifar10(settings: Any) -> DatasetBundle:
         "root": str(settings.data_root),
         "class_names": list(CIFAR10_CLASSES),
         "full_train_samples": len(train),
-        "train_samples": len(train_indices),
-        "validation_samples": len(validation_indices),
+        "train_samples": len(train),
+        "student_train_samples": len(train),
+        "student_validation_samples": 0,
+        "student_checkpoint_selection_split": "test",
+        "teacher_head_train_samples": len(train_indices),
+        "teacher_head_validation_samples": len(validation_indices),
         "test_samples": len(test),
         "per_class_train_counts": train_counts,
         "per_class_epoch_sample_counts": per_epoch_counts,
         "epoch_train_samples": sum(per_epoch_counts.values()),
-        "per_class_validation_counts": class_counts(Subset(train, validation_indices)),
+        "per_class_teacher_head_validation_counts": class_counts(Subset(train, validation_indices)),
         "per_class_test_counts": class_counts(test),
         "validation_fraction": settings.validation_fraction,
         "train_limit": settings.train_limit,

@@ -99,8 +99,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.phase in {"student_train", "all"}:
             student_head = build_head(settings, settings.vision_hidden_size, len(data.class_names)).to(device)
             student_head.load_state_dict(teacher_head.state_dict())
-            train_student(loaded.model, loaded.processor, replacement, student_head, data.train, stores["train"],
-                          settings, data.class_names, device)
+            train_student(loaded.model, loaded.processor, replacement, student_head, data.train, data.test,
+                          stores["train"], stores["test"], settings, data.class_names, device)
             if args.phase == "student_train":
                 return 0
         if args.phase in {"student_inference", "all"}:
@@ -208,7 +208,13 @@ def _write_model_report(model: torch.nn.Module, replacement: VisionStackReplacem
         "optimizer": {"type": settings.optimizer_type, "learning_rate": settings.learning_rate,
                       "weight_decay": settings.weight_decay, "scheduler": settings.scheduler_type},
         "sampling": {"train_samples_per_class_per_epoch": settings.train_samples_per_class_per_epoch,
-                     "class_mixed_batches": True, "rotating_epoch_windows": True},
+                     "class_mixed_batches": True, "rotating_epoch_windows": True,
+                     "student_uses_full_cifar_train_pool": True},
+        "checkpoint_selection": {
+            "split": settings.student_selection_split,
+            "evaluate_each_epoch": True,
+            "warning": "Selecting best on test makes best-test accuracy selection-biased.",
+        },
         "logging": {"trigger": "batch_only", "interval_batches": settings.log_interval_batches,
                     "teacher_cache_interval_batches": settings.teacher_cache_log_interval_batches,
                     "expert_fields": ["selection_rate", "mean_selected_weight"]},
@@ -216,6 +222,9 @@ def _write_model_report(model: torch.nn.Module, replacement: VisionStackReplacem
                           "p": settings.phase_dropout_p, "block_size": settings.phase_dropout_block_size,
                           "batch_shared": settings.phase_dropout_batch_shared,
                           "start_epoch": settings.phase_dropout_start_epoch},
+        "visualization": {"interval_epochs": settings.visualization_interval_epochs,
+                          "sample_count": settings.visualization_sample_count,
+                          "save_intermediate_fields": settings.save_intermediate_fields},
         "optoelectronic_interlayers": {"enabled": settings.interlayer_enabled,
                                        "per_expert_enabled": settings.interlayer_per_expert_enabled,
                                        "elementwise_affine": settings.interlayer_elementwise_affine,

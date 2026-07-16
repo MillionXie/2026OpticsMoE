@@ -15,6 +15,7 @@ from experiments.qwen3_vl_2b_cifar10_vision_homogeneous_moe9.optics.moe import F
 from experiments.qwen3_vl_2b_cifar10_vision_homogeneous_moe9.optics.physical import PhaseLayer, SquareDetectionLayerNormReload
 from experiments.qwen3_vl_2b_cifar10_vision_homogeneous_moe9.sampling import EpochClassMixedSampler
 from experiments.qwen3_vl_2b_cifar10_vision_homogeneous_moe9.settings import load_settings
+from experiments.qwen3_vl_2b_cifar10_vision_homogeneous_moe9.visualization import save_debug_example
 
 
 CONFIG = "experiments/qwen3_vl_2b_cifar10_vision_homogeneous_moe9/configs/cifar10_smoke.json"
@@ -146,3 +147,22 @@ def test_packed_batch_is_split_into_independent_optical_fields() -> None:
     assert model.last_detector_intensity.shape == (2, 480, 480)
     assert model.last_routing["weights"].shape == (2, 9)
     assert torch.allclose(model.last_routing["weights"].sum(dim=1), torch.ones(2), atol=1e-5)
+
+
+def test_debug_example_writes_optical_routing_and_hidden_artifacts(tmp_path) -> None:
+    weights = torch.tensor([[0.4, 0.0, 0.3, 0.0, 0.0, 0.3, 0.0, 0.0, 0.0]])
+    routing = {
+        "weights": weights,
+        "probabilities": torch.softmax(torch.arange(9).float().reshape(1, 9), dim=1),
+        "selected_mask": weights > 0,
+        "prompt_amplitude": torch.rand(1, 12, 12),
+    }
+    complex_field = torch.complex(torch.rand(1, 12, 12), torch.rand(1, 12, 12))
+    stages = [{"before_oeo": complex_field, "after_oeo": complex_field.real.to(torch.complex64)}]
+    save_debug_example(tmp_path, Image.new("RGB", (8, 8)), 2, 1, [str(i) for i in range(10)],
+                       torch.randn(10), torch.rand(4, 4), routing, complex_field, stages,
+                       torch.rand(12, 12), torch.randn(3, 8), torch.randn(3, 8), epoch=10)
+    for name in ("input_rgb.png", "prompt_expert_amplitude.png", "routing_weights.png",
+                 "stage_01_before_oeo_intensity.png", "final_detector_intensity.png",
+                 "hidden_comparison.png", "hidden_layernorm_comparison.png", "metadata.json"):
+        assert (tmp_path / name).is_file()

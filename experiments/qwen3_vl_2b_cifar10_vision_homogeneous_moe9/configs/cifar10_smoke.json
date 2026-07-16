@@ -123,7 +123,8 @@
     "logging": {
       "interval_batches": 1
     },
-    "checkpoint_interval_epochs": 1
+    "checkpoint_interval_epochs": 1,
+    "student_selection_split": "test"
   },
   "regularization": {
     "phase_dropout": {
@@ -138,6 +139,8 @@
   "visualization": {
     "enabled": true,
     "interval_epochs": 1,
+    "sample_count": 2,
+    "save_intermediate_fields": true,
     "save_phase_masks": true,
     "save_training_curves": true,
     "save_confusion_matrix": true,

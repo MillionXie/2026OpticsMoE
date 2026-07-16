@@ -93,6 +93,7 @@ class Settings:
     distill_temperature: float = 2.0
     log_interval_batches: int = 100
     checkpoint_interval_epochs: int = 1
+    student_selection_split: str = "test"
     phase_dropout_enabled: bool = False
     phase_dropout_mode: str = "none"
     phase_dropout_p: float = 0.0
@@ -101,6 +102,8 @@ class Settings:
     phase_dropout_start_epoch: int = 0
     visualization_enabled: bool = True
     visualization_interval_epochs: int = 10
+    visualization_sample_count: int = 4
+    save_intermediate_fields: bool = True
     save_phase_masks: bool = True
     save_training_curves: bool = True
     save_confusion_matrix: bool = True
@@ -141,6 +144,8 @@ class Settings:
             raise ValueError("optimizer.type must be adam or adamw")
         if self.scheduler_type not in {"cosine", "none"}:
             raise ValueError("optimizer.scheduler must be cosine or none")
+        if self.student_selection_split != "test":
+            raise ValueError("This configuration selects the student checkpoint on the test split")
         if self.phase_dropout_mode not in {"none", "phase_bypass", "block_phase_bypass"}:
             raise ValueError("phase_dropout.mode must be none, phase_bypass, or block_phase_bypass")
         if not 0.0 <= self.phase_dropout_p < 1.0:
@@ -155,7 +160,7 @@ class Settings:
                      "expert_interlayer_distance_m", "last_expert_to_global_distance_m", "global_to_detector_distance_m"):
             if float(getattr(self, name)) <= 0:
                 raise ValueError(f"{name} must be positive")
-        positive = ("feature_batch_size", "student_batch_size", "inference_batch_size", "head_batch_size", "teacher_cache_shard_size", "teacher_cache_lru_shards", "teacher_cache_log_interval_batches", "num_workers", "epochs", "log_interval_batches", "checkpoint_interval_epochs", "visualization_interval_epochs", "phase_dropout_block_size")
+        positive = ("feature_batch_size", "student_batch_size", "inference_batch_size", "head_batch_size", "teacher_cache_shard_size", "teacher_cache_lru_shards", "teacher_cache_log_interval_batches", "num_workers", "epochs", "log_interval_batches", "checkpoint_interval_epochs", "visualization_interval_epochs", "visualization_sample_count", "phase_dropout_block_size")
         for name in positive:
             if int(getattr(self, name)) < (0 if name == "num_workers" else 1):
                 raise ValueError(f"{name} has an invalid value")
@@ -235,6 +240,7 @@ NESTED_FIELDS: dict[tuple[str, ...], str] = {
     ("training", "epochs"): "epochs", ("training", "logging", "interval_batches"): "log_interval_batches",
     ("training", "progress"): "progress",
     ("training", "checkpoint_interval_epochs"): "checkpoint_interval_epochs",
+    ("training", "student_selection_split"): "student_selection_split",
     ("regularization", "phase_dropout", "enabled"): "phase_dropout_enabled",
     ("regularization", "phase_dropout", "mode"): "phase_dropout_mode",
     ("regularization", "phase_dropout", "p"): "phase_dropout_p",
@@ -242,6 +248,8 @@ NESTED_FIELDS: dict[tuple[str, ...], str] = {
     ("regularization", "phase_dropout", "batch_shared"): "phase_dropout_batch_shared",
     ("regularization", "phase_dropout", "start_epoch"): "phase_dropout_start_epoch",
     ("visualization", "enabled"): "visualization_enabled", ("visualization", "interval_epochs"): "visualization_interval_epochs",
+    ("visualization", "sample_count"): "visualization_sample_count",
+    ("visualization", "save_intermediate_fields"): "save_intermediate_fields",
     ("visualization", "save_phase_masks"): "save_phase_masks", ("visualization", "save_training_curves"): "save_training_curves",
     ("visualization", "save_confusion_matrix"): "save_confusion_matrix", ("visualization", "save_predictions"): "save_predictions",
 }

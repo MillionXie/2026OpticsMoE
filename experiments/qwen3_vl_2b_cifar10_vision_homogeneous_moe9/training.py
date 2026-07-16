@@ -16,7 +16,7 @@ from .metrics import metrics_from_logits
 from .modeling import NormalizedLinearHead, build_head
 from .sampling import EpochClassMixedSampler
 from .teacher_cache import TeacherCacheStore, load_teacher_logits, pooled_teacher_features, write_teacher_logits
-from .visualization import save_confusion_matrix, save_phase_masks, save_training_curves
+from .visualization import save_confusion_matrix, save_debug_example, save_phase_masks, save_training_curves
 
 
 def train_teacher_head(train_store: TeacherCacheStore, test_store: TeacherCacheStore, settings: Any,
@@ -97,18 +97,19 @@ def cached_collate(batch: Sequence[Any]):
 
 
 def train_student(model: nn.Module, processor: Any, replacement: Any, head: NormalizedLinearHead,
-                  train_dataset: Dataset[Any], train_store: TeacherCacheStore, settings: Any,
+                  train_dataset: Dataset[Any], test_dataset: Dataset[Any], train_store: TeacherCacheStore,
+                  test_store: TeacherCacheStore, settings: Any,
                   class_names: Sequence[str], device: torch.device) -> None:
     teacher_logits = load_teacher_logits(settings.output_dir / "teacher_cache" / "train_teacher_logits.pt")
-    train_indices, validation_indices = stratified_split_indices(train_dataset, settings.validation_fraction, settings.seed)
+    train_indices = list(range(len(train_dataset)))
     cached = CachedStudentDataset(train_dataset, train_store, teacher_logits)
     sampler = EpochClassMixedSampler(train_indices, labels_of(train_dataset), len(class_names), settings.student_batch_size,
                                      settings.seed, settings.train_samples_per_class_per_epoch,
                                      settings.teacher_cache_shard_size)
     loader = DataLoader(cached, batch_size=settings.student_batch_size, sampler=sampler,
                         num_workers=0, collate_fn=cached_collate, pin_memory=torch.cuda.is_available())
-    validation_loader = make_indexed_loader(Subset(train_dataset, validation_indices), settings.inference_batch_size,
-                                            settings.num_workers, False, settings.seed)
+    test_loader = make_indexed_loader(test_dataset, settings.inference_batch_size,
+                                      settings.num_workers, False, settings.seed)
     model.requires_grad_(False).eval()
     replacement.use_student()
     replacement.surrogate.requires_grad_(True).train()
@@ -118,7 +119,11 @@ def train_student(model: nn.Module, processor: Any, replacement: Any, head: Norm
     optimizer = optimizer_class(parameters, lr=settings.learning_rate, weight_decay=settings.weight_decay)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=settings.epochs) if settings.scheduler_type == "cosine" else None
     history: list[dict[str, Any]] = []
-    best_top1 = -1.0
+    best_test_top1 = -1.0
+    write_json(settings.output_dir / "metrics" / "student_selection_protocol.json", {
+        "selection_split": "test", "evaluate_test_every_epoch": True,
+        "warning": "The test split selects the best checkpoint, so best-test accuracy is selection-biased.",
+    })
     first_shapes_written = False
     for epoch in range(1, settings.epochs + 1):
         started = time.perf_counter()
@@ -204,18 +209,19 @@ def train_student(model: nn.Module, processor: Any, replacement: Any, head: Norm
                       f"balance={totals['balance']/seen:.5f} top1={running_correct/seen:.4f} "
                       f"experts=[{expert_status}]", flush=True)
         train_report = metrics_from_logits(torch.cat(train_logits), torch.cat(train_labels), class_names)
-        validation = evaluate_student(model, processor, replacement, head, validation_loader, class_names, device)
+        test_report = evaluate_student(model, processor, replacement, head, test_loader, class_names, device)
         if scheduler is not None:
             scheduler.step()
         row: dict[str, Any] = {
             "epoch": epoch, "learning_rate": optimizer.param_groups[0]["lr"],
             **{f"loss_{name}": value / seen for name, value in totals.items()},
             "train_top1_accuracy": train_report["top1_accuracy"], "train_macro_f1": train_report["macro_f1"],
-            "validation_top1_accuracy": validation["top1_accuracy"], "validation_top5_accuracy": validation["top5_accuracy"],
-            "validation_macro_f1": validation["macro_f1"], "validation_balanced_accuracy": validation["balanced_accuracy"],
+            "test_top1_accuracy": test_report["top1_accuracy"], "test_top5_accuracy": test_report["top5_accuracy"],
+            "test_macro_f1": test_report["macro_f1"], "test_balanced_accuracy": test_report["balanced_accuracy"],
             "epoch_time_sec": time.perf_counter() - started,
             "phase_dropout_active": phase_dropout_active,
             "samples_this_epoch": len(sampler),
+            "checkpoint_selection_split": "test",
         }
         for expert in range(settings.num_experts):
             row[f"expert_{expert}_selection_rate"] = float(selection[expert] / seen)
@@ -231,16 +237,65 @@ def train_student(model: nn.Module, processor: Any, replacement: Any, head: Norm
         save_student_parts(settings.output_dir, replacement, head, "last", epoch, row)
         if epoch % settings.checkpoint_interval_epochs == 0:
             save_student_parts(settings.output_dir, replacement, head, f"epoch_{epoch:04d}", epoch, row)
-        if validation["top1_accuracy"] > best_top1:
-            best_top1 = validation["top1_accuracy"]
+        if test_report["top1_accuracy"] > best_test_top1:
+            best_test_top1 = test_report["top1_accuracy"]
             save_student_parts(settings.output_dir, replacement, head, "best", epoch, row)
-            write_json(settings.output_dir / "metrics" / "best_validation.json", row)
+            write_json(settings.output_dir / "metrics" / "best_test.json", row)
             if settings.visualization_enabled and settings.save_phase_masks:
                 save_phase_masks(replacement.surrogate, settings.output_dir / "figures" / "phase_masks_best.png", f"Best epoch {epoch}")
         if (settings.visualization_enabled and settings.save_phase_masks and
                 epoch % settings.visualization_interval_epochs == 0):
             save_phase_masks(replacement.surrogate, settings.output_dir / "figures" / f"phase_masks_epoch_{epoch:04d}.png", f"Epoch {epoch}")
-    write_json(settings.output_dir / "metrics" / "student_training.json", {"epochs": settings.epochs, "best_validation_top1": best_top1})
+        debug_saved = 0
+        if (settings.visualization_enabled and settings.save_intermediate_fields and
+                epoch % settings.visualization_interval_epochs == 0):
+            debug_saved = save_epoch_debug_examples(model, processor, replacement, head, test_dataset, test_store,
+                                                      settings, class_names, device, epoch)
+        print(f"epoch {epoch:03d} complete train_top1={train_report['top1_accuracy']:.4f} "
+              f"test_top1={test_report['top1_accuracy']:.4f} test_macro_f1={test_report['macro_f1']:.4f} "
+              f"best_test_top1={best_test_top1:.4f} debug_examples={debug_saved}", flush=True)
+    write_json(settings.output_dir / "metrics" / "student_training.json", {
+        "epochs": settings.epochs, "best_test_top1": best_test_top1,
+        "checkpoint_selection_split": "test",
+        "test_selection_bias_warning": True,
+    })
+
+
+@torch.inference_mode()
+def save_epoch_debug_examples(model: nn.Module, processor: Any, replacement: Any, head: nn.Module,
+                              dataset: Dataset[Any], store: TeacherCacheStore, settings: Any,
+                              class_names: Sequence[str], device: torch.device, epoch: int) -> int:
+    count = min(settings.visualization_sample_count, len(dataset))
+    generator = torch.Generator().manual_seed(settings.seed + 1009 * epoch)
+    indices = torch.randperm(len(dataset), generator=generator)[:count].tolist()
+    replacement.use_student()
+    replacement.surrogate.eval()
+    replacement.surrogate.set_debug_capture(True)
+    head.eval()
+    saved = 0
+    try:
+        for sample_index in indices:
+            image, label = dataset[sample_index]
+            target = store.get(sample_index)
+            inputs = move_inputs(preprocess_images(processor, [image]), device)
+            if not torch.equal(inputs["image_grid_thw"].cpu(), target["image_grid_thw"].reshape(1, 3).cpu()):
+                raise RuntimeError("Debug sample image_grid_thw differs from teacher cache")
+            run_visual(model, inputs)
+            token_count = replacement.surrogate.last_token_counts[0]
+            student_hidden = replacement.surrogate.last_output[:token_count].detach().cpu()
+            teacher_hidden = target["teacher_vision_stack_output"].detach().cpu().float()
+            logits = head(student_hidden.float().to(device).mean(dim=0, keepdim=True)).squeeze(0).detach().cpu()
+            save_debug_example(
+                settings.output_dir / "figures" / "debug_examples" / f"epoch_{epoch:04d}" / f"sample_{sample_index:05d}",
+                image, sample_index, int(label), class_names, logits,
+                replacement.surrogate.last_input_fields[0].detach().cpu(), replacement.surrogate.last_routing,
+                replacement.surrogate.last_fanout_field, replacement.surrogate.last_stage_fields,
+                replacement.surrogate.last_detector_intensity[0].detach().cpu(), student_hidden, teacher_hidden, epoch,
+            )
+            saved += 1
+    finally:
+        replacement.surrogate.set_debug_capture(False)
+    return saved
 
 
 @torch.inference_mode()
