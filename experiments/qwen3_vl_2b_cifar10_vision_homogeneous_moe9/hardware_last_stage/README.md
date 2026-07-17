@@ -48,6 +48,12 @@ source config into `student_package/`. `manifest.csv` links every BMP to its
 input, label, token count, routing weights, simulated prediction, and quantized
 replay prediction.
 
+The exporter also handles historical checkpoint semantics. If an older source
+config predates router input LayerNorm, hard route masking, or routing-weight
+reapplication, missing fields are interpreted as `false`, matching the code
+that produced that checkpoint. They are not silently replaced by newer
+defaults.
+
 ## Physical CCD readout and fine-tuning
 
 After acquisition, copy `ccd_capture_manifest_template.csv` to
@@ -76,4 +82,3 @@ parameter remain absent/frozen.
 Camera registration can be configured with `ccd_crop_xywh`, quarter-turn
 rotation and horizontal/vertical flips. The default does not normalize each
 sample independently, so measured relative intensity is not silently erased.
-

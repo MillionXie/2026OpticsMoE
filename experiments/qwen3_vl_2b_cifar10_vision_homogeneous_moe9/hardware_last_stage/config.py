@@ -31,6 +31,7 @@ class HardwareSettings:
     hardware_pixel_pitch_um: float = 8.0
     copy_student_checkpoints: bool = True
     save_raw_tensors: bool = True
+    overwrite_output: bool = True
     ccd_manifest: Path | None = None
     ccd_output_dir: Path | None = None
     ccd_image_size: int = 480
@@ -103,4 +104,3 @@ def load_hardware_settings(path: str | Path) -> HardwareSettings:
 
 def to_jsonable(settings: HardwareSettings) -> dict[str, Any]:
     return {item.name: str(value) if isinstance(value, Path) else value for item in fields(settings) if (value := getattr(settings, item.name)) is not None}
-

@@ -21,6 +21,7 @@
   "hardware_pixel_pitch_um": 8.0,
   "copy_student_checkpoints": true,
   "save_raw_tensors": true,
+  "overwrite_output": true,
   "ccd_manifest": null,
   "ccd_output_dir": "../../runs/qwen3_vl_2b_cifar10_vision_homogeneous_moe9_batch_8/hardware_last_stage_oneshot/ccd_readout",
   "ccd_image_size": 480,
@@ -37,4 +38,3 @@
   "ccd_train_output_adapter": true,
   "ccd_train_head": true
 }
-

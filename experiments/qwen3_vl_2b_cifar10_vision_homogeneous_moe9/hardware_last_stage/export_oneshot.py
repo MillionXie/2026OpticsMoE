@@ -73,6 +73,20 @@ def _save_input_image(image: Image.Image, path: Path) -> None:
 
 def _load_student(settings: HardwareSettings):
     source = load_settings(settings.source_config)
+    raw_source = json.loads(settings.source_config.read_text(encoding="utf-8"))
+    raw_moe = raw_source.get("moe", {})
+    raw_oeo = raw_moe.get("optoelectronic_interlayers", {})
+    raw_router = raw_moe.get("router", {})
+    # These switches were introduced after the first batch-8 checkpoints were
+    # trained. A missing field must reproduce the historical False behavior,
+    # not the new Settings dataclass default. Otherwise old weights are run
+    # through a materially different router/OEO model and their accuracy drops.
+    if "hard_route_mask" not in raw_oeo:
+        source.interlayer_hard_route_mask = False
+    if "reapply_routing_weights" not in raw_oeo:
+        source.interlayer_reapply_routing_weights = False
+    if "input_layernorm_enabled" not in raw_router:
+        source.router_input_layernorm_enabled = False
     if settings.cache_dir is not None:
         source.cache_dir = settings.cache_dir
     if settings.local_files_only is not None:
@@ -267,6 +281,23 @@ def _export_sample(group: str, sequence: int, sample_index: int, image: Image.Im
 
 
 def export_package(settings: HardwareSettings) -> dict[str, Any]:
+    if settings.output_dir.exists() and settings.overwrite_output:
+        for name in ("samples", "student_package"):
+            target = settings.output_dir / name
+            if target.is_dir():
+                shutil.rmtree(target)
+        for name in (
+            "manifest.csv", "manifest.json", "ccd_capture_manifest_template.csv",
+            "00_shared_global_phase_active450_scale2_1920x1200.bmp",
+            "00_shared_global_phase_active450_raw.pt",
+        ):
+            target = settings.output_dir / name
+            if target.is_file():
+                target.unlink()
+    elif (settings.output_dir / "manifest.json").is_file():
+        raise FileExistsError(
+            f"Output package already exists: {settings.output_dir}. Set overwrite_output=true to replace it."
+        )
     settings.output_dir.mkdir(parents=True, exist_ok=True)
     set_seed(settings.seed)
     source, loaded, replacement, head, device = _load_student(settings)
@@ -334,6 +365,12 @@ def export_package(settings: HardwareSettings) -> dict[str, Any]:
             "checkpoint_tag": settings.checkpoint_tag, "copied_checkpoints": copied,
             "source_best_test_top1": _read_metric(settings.source_run_dir / "metrics" / "best_test.json", "test_top1_accuracy"),
             "source_best_test_epoch": _read_metric(settings.source_run_dir / "metrics" / "best_test.json", "epoch"),
+            "historical_config_compatibility": {
+                "router_input_layernorm_enabled": source.router_input_layernorm_enabled,
+                "interlayer_hard_route_mask": source.interlayer_hard_route_mask,
+                "interlayer_reapply_routing_weights": source.interlayer_reapply_routing_weights,
+                "rule": "Missing post-training fields are restored to their historical False behavior.",
+            },
             "plane_sequence": [
                 "expert layer 5 phase modulation", "20 cm propagation to global plane",
                 "square-law detection", "per-selected-expert non-affine LayerNorm", source.interlayer_nonlinearity,
