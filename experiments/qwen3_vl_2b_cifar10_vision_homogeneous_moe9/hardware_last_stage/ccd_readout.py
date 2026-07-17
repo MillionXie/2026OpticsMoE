@@ -45,9 +45,16 @@ class CCDReadoutModel(nn.Module):
 
 
 def build_ccd_model(settings: HardwareSettings, device: torch.device) -> tuple[CCDReadoutModel, Any]:
-    source = load_settings(settings.source_config)
+    source_config = settings.source_config
+    if not source_config.is_file():
+        source_config = settings.output_dir / "student_package" / "source_config_resolved.json"
+    source = load_settings(source_config)
     surrogate_path = settings.source_run_dir / "checkpoints" / f"vision_homogeneous_moe_{settings.checkpoint_tag}.pt"
     head_path = settings.source_run_dir / "checkpoints" / f"student_head_{settings.checkpoint_tag}.pt"
+    if not surrogate_path.is_file():
+        surrogate_path = settings.output_dir / "student_package" / "checkpoints" / surrogate_path.name
+    if not head_path.is_file():
+        head_path = settings.output_dir / "student_package" / "checkpoints" / head_path.name
     if not surrogate_path.is_file() or not head_path.is_file():
         raise FileNotFoundError("Source student surrogate/head checkpoints are required")
     surrogate_payload = torch.load(surrogate_path, map_location="cpu", weights_only=True)
@@ -295,4 +302,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

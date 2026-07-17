@@ -218,6 +218,7 @@ def _copy_student_package(settings: HardwareSettings) -> list[dict[str, Any]]:
             target = destination / name
             shutil.copy2(source, target)
     write_json(destination / "hardware_export_config_resolved.json", to_jsonable(settings))
+    shutil.copy2(Path(__file__).with_name("README.md"), settings.output_dir / "HARDWARE_INSTRUCTIONS.md")
     return copied
 
 
@@ -374,7 +375,16 @@ def export_package(settings: HardwareSettings) -> dict[str, Any]:
             "plane_sequence": [
                 "expert layer 5 phase modulation", "20 cm propagation to global plane",
                 "square-law detection", "per-selected-expert non-affine LayerNorm", source.interlayer_nonlinearity,
-                "routing weight reapplication and unselected-expert hard zero",
+                (
+                    "routing weight reapplication"
+                    if source.interlayer_reapply_routing_weights
+                    else "no post-normalization routing-weight reapplication (historical checkpoint behavior)"
+                ),
+                (
+                    "unselected-expert hard zero"
+                    if source.interlayer_hard_route_mask
+                    else "unselected diffracted expert fields retained (historical checkpoint behavior)"
+                ),
                 "zero-phase amplitude reload", "co-planar global phase modulation",
                 "20 cm propagation", "480x480 square-law CCD detector",
             ],
