@@ -21,6 +21,7 @@ class HardwareSettings:
     num_workers: int = 8
     correct_samples_per_class: int = 20
     correct_candidate_multiplier: int = 4
+    correct_source_split: str = "test"
     random_test_samples: int = 100
     random_exclude_selected_correct: bool = True
     seed: int = 42
@@ -60,6 +61,8 @@ class HardwareSettings:
                 raise ValueError(f"{name} must be positive")
         if self.num_workers < 0 or self.random_test_samples < 0:
             raise ValueError("num_workers and random_test_samples must be non-negative")
+        if self.correct_source_split not in {"train", "test"}:
+            raise ValueError("correct_source_split must be train or test")
         if self.hardware_pixel_pitch_um <= 0 or self.ccd_learning_rate <= 0 or self.ccd_weight_decay < 0:
             raise ValueError("Invalid hardware pixel pitch or CCD optimizer settings")
         if not 0.0 < self.ccd_validation_fraction < 1.0:

@@ -10,6 +10,12 @@ CUDA_VISIBLE_DEVICES=6 python -m experiments.qwen3_vl_2b_cifar10_vision_homogene
 CUDA_VISIBLE_DEVICES=6 python -m experiments.qwen3_vl_2b_cifar10_vision_homogeneous_moe9.hardware_last_stage.export_oneshot --config experiments/qwen3_vl_2b_cifar10_vision_homogeneous_moe9/hardware_last_stage/configs/oneshot_batch8_best.json --device cuda
 ```
 
+# Export train calibration patterns plus held-out random test patterns for later CCD fine-tuning
+
+```bash
+CUDA_VISIBLE_DEVICES=6 python -m experiments.qwen3_vl_2b_cifar10_vision_homogeneous_moe9.hardware_last_stage.export_oneshot --config experiments/qwen3_vl_2b_cifar10_vision_homogeneous_moe9/hardware_last_stage/configs/oneshot_main_ccd_calibration.json --device cuda
+```
+
 # Fine-tune the last electronic readout on captured CCD training frames
 
 ```bash

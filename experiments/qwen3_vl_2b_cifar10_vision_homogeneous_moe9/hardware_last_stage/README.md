@@ -9,6 +9,13 @@ Use `configs/oneshot_main_best.json` for the current, un-suffixed main run.
 `configs/oneshot_batch8_best.json` is retained only for the earlier batch-8
 comparison and must not be mistaken for the latest main experiment.
 
+For a later CCD electronic-tail fine-tuning experiment, use
+`configs/oneshot_main_ccd_calibration.json`. Its high-confidence patterns come
+from CIFAR-10 train and are marked `split=train`, while the random patterns
+remain from the official test split. The normal `oneshot_main_best.json`
+package uses test samples only and is intended for hardware validation, not
+for fitting electronic weights.
+
 ## Verified physical plane
 
 The exact final path in `VisionHomogeneousMoESurrogate.forward()` is:

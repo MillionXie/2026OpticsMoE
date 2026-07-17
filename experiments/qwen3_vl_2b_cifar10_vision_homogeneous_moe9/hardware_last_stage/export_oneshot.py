@@ -130,21 +130,21 @@ def _forward_student(model: torch.nn.Module, processor: Any, replacement: Vision
 
 
 @torch.inference_mode()
-def _rank_test_samples(model: torch.nn.Module, processor: Any, replacement: VisionStackReplacement,
-                       head: torch.nn.Module, dataset: Any, settings: HardwareSettings,
-                       device: torch.device) -> tuple[dict[int, list[dict[str, Any]]], list[int]]:
+def _rank_correct_samples(model: torch.nn.Module, processor: Any, replacement: VisionStackReplacement,
+                          head: torch.nn.Module, dataset: Any, settings: HardwareSettings,
+                          device: torch.device) -> dict[int, list[dict[str, Any]]]:
     loader = DataLoader(
         IndexedDataset(dataset), batch_size=settings.selection_batch_size, shuffle=False,
         num_workers=settings.num_workers, collate_fn=indexed_collate,
         pin_memory=device.type == "cuda", persistent_workers=settings.num_workers > 0,
     )
     correct: dict[int, list[dict[str, Any]]] = defaultdict(list)
-    all_indices: list[int] = []
+    seen = 0
     for batch_index, (images, labels, indices) in enumerate(loader, start=1):
         logits = _forward_student(model, processor, replacement, head, images, device).detach().float().cpu()
         predictions = logits.argmax(1)
         for label, index, prediction, values in zip(labels.tolist(), indices.tolist(), predictions.tolist(), logits):
-            all_indices.append(int(index))
+            seen += 1
             if prediction != label:
                 continue
             alternatives = torch.cat((values[:label], values[label + 1:]))
@@ -153,10 +153,10 @@ def _rank_test_samples(model: torch.nn.Module, processor: Any, replacement: Visi
                 "confidence": float(values.softmax(0)[label]), "float_logits": values.tolist(),
             })
         if batch_index % 250 == 0 or batch_index == len(loader):
-            print(f"[selection] batch={batch_index}/{len(loader)} samples={len(all_indices)}/{len(dataset)}", flush=True)
+            print(f"[selection:{settings.correct_source_split}] batch={batch_index}/{len(loader)} samples={seen}/{len(dataset)}", flush=True)
     for label in correct:
         correct[label].sort(key=lambda row: (row["margin"], row["confidence"]), reverse=True)
-    return correct, all_indices
+    return correct
 
 
 def _active_amplitude(replacement: VisionStackReplacement) -> tuple[torch.Tensor, float]:
@@ -223,7 +223,7 @@ def _copy_student_package(settings: HardwareSettings) -> list[dict[str, Any]]:
 
 
 @torch.inference_mode()
-def _export_sample(group: str, sequence: int, sample_index: int, image: Image.Image, label: int,
+def _export_sample(group: str, source_split: str, sequence: int, sample_index: int, image: Image.Image, label: int,
                    source_logits: list[float] | None, source_margin: float | None,
                    loaded: Any, replacement: VisionStackReplacement, head: torch.nn.Module,
                    phase: torch.Tensor, settings: HardwareSettings, device: torch.device) -> dict[str, Any]:
@@ -259,7 +259,7 @@ def _export_sample(group: str, sequence: int, sample_index: int, image: Image.Im
         torch.save(detector_intensity, directory / f"{stem}_simulated_detector_intensity480.pt")
     prediction, replay_prediction = int(logits.argmax()), int(replay_logits.argmax())
     row: dict[str, Any] = {
-        "sequence": sequence, "selection_group": group, "sample_index": sample_index,
+        "sequence": sequence, "selection_group": group, "source_split": source_split, "sample_index": sample_index,
         "true_label": label, "true_name": class_name,
         "student_pred_label": prediction, "student_pred_name": CIFAR10_CLASSES[prediction],
         "student_correct": prediction == label,
@@ -313,8 +313,9 @@ def export_package(settings: HardwareSettings) -> dict[str, Any]:
         torch.save(phase, settings.output_dir / "00_shared_global_phase_active450_raw.pt")
 
     try:
-        ranked, all_indices = _rank_test_samples(
-            loaded.model, loaded.processor, replacement, head, data.test, settings, device,
+        correct_dataset = data.train if settings.correct_source_split == "train" else data.test
+        ranked = _rank_correct_samples(
+            loaded.model, loaded.processor, replacement, head, correct_dataset, settings, device,
         )
         rows: list[dict[str, Any]] = []
         selected_correct: set[int] = set()
@@ -323,9 +324,10 @@ def export_package(settings: HardwareSettings) -> dict[str, Any]:
         for label in range(len(CIFAR10_CLASSES)):
             accepted = 0
             for candidate in ranked.get(label, [])[:required_candidates]:
-                image, truth = data.test[candidate["sample_index"]]
+                image, truth = correct_dataset[candidate["sample_index"]]
                 row = _export_sample(
-                    "correct_high_confidence", sequence, candidate["sample_index"], image, int(truth),
+                    "correct_high_confidence", settings.correct_source_split, sequence,
+                    candidate["sample_index"], image, int(truth),
                     candidate["float_logits"], candidate["margin"], loaded, replacement, head, phase, settings, device,
                 )
                 if not row["quantized_replay_correct"]:
@@ -340,12 +342,14 @@ def export_package(settings: HardwareSettings) -> dict[str, Any]:
             if accepted < settings.correct_samples_per_class:
                 print(f"WARNING: class {label} exported {accepted}/{settings.correct_samples_per_class} correct samples", flush=True)
 
-        random_pool = [index for index in all_indices if not settings.random_exclude_selected_correct or index not in selected_correct]
+        random_pool = list(range(len(data.test)))
+        if settings.correct_source_split == "test" and settings.random_exclude_selected_correct:
+            random_pool = [index for index in random_pool if index not in selected_correct]
         random.Random(settings.seed + 991).shuffle(random_pool)
         for sample_index in random_pool[:settings.random_test_samples]:
             image, truth = data.test[sample_index]
             rows.append(_export_sample(
-                "random_test", sequence, sample_index, image, int(truth), None, None,
+                "random_test", "test", sequence, sample_index, image, int(truth), None, None,
                 loaded, replacement, head, phase, settings, device,
             ))
             sequence += 1
@@ -353,7 +357,7 @@ def export_package(settings: HardwareSettings) -> dict[str, Any]:
         ccd_rows = [{
             "sample_index": row["sample_index"], "true_label": row["true_label"], "true_name": row["true_name"],
             "visual_token_count": row["visual_token_count"], "selection_group": row["selection_group"],
-            "split": "test", "ccd_path": "", "exposure_ms": "",
+            "split": row["source_split"], "ccd_path": "", "exposure_ms": "",
         } for row in rows]
         _write_csv(settings.output_dir / "ccd_capture_manifest_template.csv", ccd_rows)
         counts = {
