@@ -5,6 +5,10 @@ This tool exports the last optoelectronic reload plane of the trained
 bench test. It does not export the input to expert layer 5 and it does not
 export the detector intensity as an amplitude pattern.
 
+Use `configs/oneshot_main_best.json` for the current, un-suffixed main run.
+`configs/oneshot_batch8_best.json` is retained only for the earlier batch-8
+comparison and must not be mistaken for the latest main experiment.
+
 ## Verified physical plane
 
 The exact final path in `VisionHomogeneousMoESurrogate.forward()` is:
