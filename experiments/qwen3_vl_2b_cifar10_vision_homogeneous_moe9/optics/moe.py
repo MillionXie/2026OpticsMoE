@@ -77,10 +77,24 @@ class FullPlaneDetectorReadout(nn.Module):
 
     def forward(self, detector_field: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         intensity = detector_field.to(torch.complex64).abs().square().float()
+        return self.forward_intensity(intensity), intensity
+
+    def forward_intensity(self, intensity: torch.Tensor) -> torch.Tensor:
+        """Process an already square-law-detected CCD intensity image.
+
+        This is deliberately the same electronic path used by ``forward``
+        after ``abs(field) ** 2``.  It lets a physical CCD frame replace the
+        simulated detector without running any optical propagation again.
+        """
+        if intensity.ndim == 2:
+            intensity = intensity.unsqueeze(0)
+        if intensity.ndim != 3 or tuple(intensity.shape[-2:]) != (480, 480):
+            raise ValueError(f"Expected detector intensity [B,480,480], got {tuple(intensity.shape)}")
+        intensity = intensity.float().clamp_min(0.0)
         pooled = self.pool(intensity.unsqueeze(1)).squeeze(1)
         normalized = self.norm(pooled)
         readout = F.relu(normalized) if self.nonlinearity == "relu" else F.softplus(normalized)
-        return readout, intensity
+        return readout
 
 
 class VisionHomogeneousMoESurrogate(nn.Module):
