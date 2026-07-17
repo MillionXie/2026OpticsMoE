@@ -7,3 +7,5 @@ openpyxl
 xlrd
 matplotlib
 tqdm
+huggingface_hub
+gdown

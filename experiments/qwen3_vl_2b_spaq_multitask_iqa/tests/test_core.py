@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import csv
 import json
+import shutil
+import sys
+import tarfile
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -12,6 +15,7 @@ from PIL import Image
 
 from experiments.qwen3_vl_2b_spaq_multitask_iqa import TASK_NAMES
 from experiments.qwen3_vl_2b_spaq_multitask_iqa.datasets import load_spaq
+from experiments.qwen3_vl_2b_spaq_multitask_iqa.data_prepare import ensure_spaq_dataset
 from experiments.qwen3_vl_2b_spaq_multitask_iqa.features import (
     full_multimodal_features,
     load_feature_cache,
@@ -204,3 +208,26 @@ def test_prepare_data_cli_smoke(tmp_path: Path) -> None:
     assert (output_dir / "resolved_config.json").is_file()
     assert (output_dir / "data_split.json").is_file()
     assert (output_dir / "dataset.json").is_file()
+
+
+def test_automatic_download_extract_smoke(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    source = tmp_path / "source"
+    _make_spaq(source, count=3)
+    archive = tmp_path / "source_spaq.tgz"
+    with tarfile.open(archive, "w:gz") as handle:
+        handle.add(source, arcname="SPAQ")
+
+    def fake_download(**kwargs):
+        target = Path(kwargs["local_dir"]) / kwargs["filename"]
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(archive, target)
+        return str(target)
+
+    monkeypatch.setitem(sys.modules, "huggingface_hub", SimpleNamespace(hf_hub_download=fake_download))
+    settings = _settings(tmp_path, tmp_path / "downloaded_spaq")
+    settings.keep_download_archive = False
+    result = ensure_spaq_dataset(settings)
+    assert result["action"] == "download"
+    assert result["image_count"] == 3
+    assert result["has_annotations"] is True
+    assert not (settings.data_root / "_downloads").exists()

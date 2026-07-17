@@ -3,6 +3,13 @@
   "data_root": "../../../data/SPAQ",
   "annotations_file": null,
   "image_dir": null,
+  "download": true,
+  "download_source": "huggingface",
+  "download_repo_id": "chaofengc/IQA-PyTorch-Datasets",
+  "download_filename": "spaq.tgz",
+  "download_endpoint": "https://hf-mirror.com",
+  "download_url": null,
+  "keep_download_archive": false,
   "output_dir": "../runs/qwen3_vl_2b_spaq_multitask_iqa",
   "model_id": "Qwen/Qwen3-VL-2B-Instruct",
   "cache_dir": null,
@@ -20,7 +27,7 @@
   "expected_feature_dim": 2048,
   "head_hidden_dim": 64,
   "dropout": 0.1,
-  "epochs": 30,
+  "epochs": 100,
   "learning_rate": 0.001,
   "weight_decay": 0.01,
   "smooth_l1_beta": 0.1,
@@ -36,4 +43,3 @@
     "Contrast": "Predict the human-rated contrast of this image on a 0-100 scale. Score:"
   }
 }
-

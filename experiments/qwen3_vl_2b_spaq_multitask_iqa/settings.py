@@ -28,6 +28,13 @@ class Settings:
     data_root: Path = PROJECT_DIR / "data" / "SPAQ"
     annotations_file: Path | None = None
     image_dir: Path | None = None
+    download: bool = True
+    download_source: str = "huggingface"
+    download_repo_id: str = "chaofengc/IQA-PyTorch-Datasets"
+    download_filename: str = "spaq.tgz"
+    download_endpoint: str | None = "https://hf-mirror.com"
+    download_url: str | None = None
+    keep_download_archive: bool = False
     output_dir: Path = PROJECT_DIR / "runs" / "qwen3_vl_2b_spaq_multitask_iqa"
     model_id: str = MODEL_ID
     cache_dir: Path | None = None
@@ -63,6 +70,15 @@ class Settings:
     def validate(self) -> None:
         if self.dataset != "spaq":
             raise ValueError("dataset must be 'spaq'")
+        if self.download_source not in {"huggingface", "google_drive"}:
+            raise ValueError("download_source must be 'huggingface' or 'google_drive'")
+        if self.download and self.download_source == "huggingface":
+            if not self.download_repo_id.strip() or not self.download_filename.strip():
+                raise ValueError("download_repo_id and download_filename must be non-empty")
+            if self.download_endpoint is not None and not self.download_endpoint.startswith(("http://", "https://")):
+                raise ValueError("download_endpoint must be an HTTP(S) URL or null")
+        if self.download and self.download_source == "google_drive" and not self.download_url:
+            raise ValueError("download_url is required for google_drive downloads")
         if not 0.0 < self.train_fraction < 1.0:
             raise ValueError("train_fraction must be between 0 and 1")
         if self.seed != 42:

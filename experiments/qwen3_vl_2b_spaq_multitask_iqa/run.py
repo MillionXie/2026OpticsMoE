@@ -8,6 +8,7 @@ from typing import Any
 import torch
 
 from .datasets import DatasetBundle, load_spaq, make_loader
+from .data_prepare import ensure_spaq_dataset
 from .features import cache_metadata, extract_and_cache, load_feature_cache
 from .io_utils import resolve_device, resolve_dtype, runtime_metadata, set_seed, write_json
 from .modeling import MultitaskRegressionHead, load_backbone, model_report
@@ -16,7 +17,7 @@ from .training import evaluate_test, load_final_head, train_regression_head
 from .visualize import save_figures
 
 
-PHASES = ("prepare_data", "extract", "extract_features", "train", "test", "visualize", "all")
+PHASES = ("download", "prepare_data", "extract", "extract_features", "train", "test", "visualize", "all")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -46,6 +47,10 @@ def main(argv: list[str] | None = None) -> int:
     write_json(settings.output_dir / "resolved_config.json", settings.to_dict())
     requested_device = torch.device(settings.device)
     write_json(settings.output_dir / "environment.json", runtime_metadata(requested_device))
+    preparation = ensure_spaq_dataset(settings)
+    write_json(settings.output_dir / "data_preparation.json", preparation)
+    if args.phase == "download":
+        return 0
     data = load_spaq(settings, persist_split=True)
     write_json(settings.output_dir / "dataset.json", data.metadata)
     print(

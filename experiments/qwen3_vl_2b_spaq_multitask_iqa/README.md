@@ -18,6 +18,10 @@ Training always runs the configured fixed number of epochs. It does not inspect 
 
 ## SPAQ data layout and automatic discovery
 
+`download=true` is the default. If `data_root` does not already contain both annotations and images, `prepare_data`/`all` downloads the public `spaq.tgz` mirror from the configured Hugging Face dataset repository, resumes interrupted downloads, safely extracts it, and then validates the contents. The archive is about 34.8 GB, so the first run needs substantial disk space and time. `download_repo_id`, `download_filename`, and `download_endpoint` are configurable. The supplied config uses `https://hf-mirror.com` because the target server cannot resolve `huggingface.co`; set the endpoint to `null` to use the official Hub endpoint. A Google Drive file/folder can alternatively be selected with `download_source="google_drive"` and `download_url`.
+
+The authors' official repository currently documents Baidu and Google Drive distribution links. The default Hugging Face mirror is used because it provides a resumable non-interactive Linux download. Set `download=false` when you intentionally manage the dataset yourself.
+
 A common layout is:
 
 ```text
@@ -28,7 +32,7 @@ data/SPAQ/
     ...
 ```
 
-Other layouts are supported. The loader recursively inspects `.csv`, `.xlsx`, and `.xls` files and only accepts a table with one unambiguous image-name column plus all four exact score concepts. Common image directories such as `TestImage`, `images`, or nested folders are found through a recursive image index. You can set `annotations_file` and `image_dir` explicitly in the config when automatic discovery is ambiguous; relative values for these two fields are resolved under `data_root`.
+After download/extraction, the loader recursively inspects `.csv`, `.xlsx`, and `.xls` files and only accepts a table with one unambiguous image-name column plus all four exact score concepts. This recursive step only handles archive wrapper directories and common layouts such as `SPAQ/Annotations` plus `SPAQ/TestImage`; it is not a replacement for downloading the data. You can set `annotations_file` and `image_dir` explicitly when discovery is ambiguous. Relative values for these two fields are resolved under `data_root`.
 
 The accepted image column aliases are `image_name`, `image`, `filename`, `file_name`, `img`, `image_path`, and `dist_img`. Score columns must unambiguously match MOS, Brightness, Colorfulness, and Contrast. If discovery fails, the error lists the annotation files and columns it found; it never silently substitutes another label.
 
