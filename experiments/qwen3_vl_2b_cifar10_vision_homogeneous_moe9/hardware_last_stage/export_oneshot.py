@@ -77,9 +77,22 @@ def _load_student(settings: HardwareSettings):
         source.cache_dir = settings.cache_dir
     if settings.local_files_only is not None:
         source.local_files_only = settings.local_files_only
+    model_id = source.model_id
+    if source.local_files_only and not Path(model_id).is_dir():
+        # Some transformers tokenizer versions call model_info() even with
+        # local_files_only=True when given a repository id.  Resolve the
+        # already-cached snapshot first so every downstream loader sees a
+        # genuine local path and cannot make a network request.
+        from huggingface_hub import snapshot_download
+
+        model_id = snapshot_download(
+            repo_id=model_id,
+            cache_dir=str(source.cache_dir) if source.cache_dir else None,
+            local_files_only=True,
+        )
     device = resolve_device(settings.device)
     loaded = load_backbone(
-        source.model_id, source.cache_dir, source.local_files_only, resolve_dtype(source.dtype), device,
+        model_id, source.cache_dir, source.local_files_only, resolve_dtype(source.dtype), device,
         source.attn_implementation, source.processor_min_pixels, source.processor_max_pixels,
     )
     source.resolve_architecture(loaded.model)
@@ -366,4 +379,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
