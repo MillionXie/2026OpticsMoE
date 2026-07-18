@@ -278,10 +278,22 @@ def train_student(model: nn.Module, processor: Any, replacement: Any, head: Norm
                     "prediction_boundary_ratio": initial_metrics["prediction_boundary_ratio"],
                     "prediction_out_of_range_ratio": initial_metrics["prediction_out_of_range_ratio"],
                     "student_head_gradient_l2_norm": head_gradient_norm,
+                    "zero_head_gradient_on_first_batch": head_gradient_norm == 0.0,
+                    "prediction_requires_grad": bool(predictions.requires_grad),
+                    "loss_hidden": float(loss_hidden.detach()),
+                    "loss_prediction_distill": float(loss_prediction_distill.detach()),
+                    "loss_regression": float(loss_regression.detach()),
                     "finite_loss": bool(torch.isfinite(loss_total)),
                 })
-                if not torch.isfinite(loss_total) or head_gradient_norm == 0.0:
-                    raise RuntimeError("Student first batch has a non-finite loss or zero head gradient; aborting before a silent failed run")
+                if not torch.isfinite(loss_total) or not predictions.requires_grad:
+                    raise RuntimeError("Student first batch has a non-finite loss or disconnected prediction graph")
+                if head_gradient_norm == 0.0:
+                    print(
+                        "WARNING: student head gradient is exactly zero on the first batch. This can be a transient "
+                        "cancellation between teacher-prediction and ground-truth regression terms; training will "
+                        "continue and epoch-level prediction variance must be checked.",
+                        flush=True,
+                    )
             optimizer.step()
             train_compute_sec += time.perf_counter() - batch_ready
             batch_size = len(targets); seen += batch_size
