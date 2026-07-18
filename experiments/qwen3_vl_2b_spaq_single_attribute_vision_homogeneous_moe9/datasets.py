@@ -70,7 +70,7 @@ class SPAQSingleAttributeDataset(Dataset[tuple[Image.Image, float]]):
 
 def load_spaq(settings: Settings, persist_split: bool = True) -> DatasetBundle:
     annotation_path, frame, columns = discover_annotations(
-        settings.data_root, settings.annotations_file
+        settings.data_root, settings.annotations_file, settings.task_name
     )
     image_column = _required_column(columns, IMAGE_COLUMNS, "image filename")
     task_name = settings.task_name
@@ -144,7 +144,7 @@ def load_spaq(settings: Settings, persist_split: bool = True) -> DatasetBundle:
 
 
 def discover_annotations(
-    data_root: Path, configured_path: Path | None
+    data_root: Path, configured_path: Path | None, task_name: str
 ) -> tuple[Path, Any, list[str]]:
     if not data_root.is_dir():
         raise FileNotFoundError(f"SPAQ data_root does not exist: {data_root}")
@@ -163,13 +163,21 @@ def discover_annotations(
             inspections.append((path, [f"<read error: {exc}>"], None))
             continue
         inspections.append((path, columns, frame))
-        if _has_required_columns(columns):
+        if _has_required_columns(columns, task_name):
             valid.append((path, frame, columns))
     if configured_path is not None and inspections and not valid:
         raise RuntimeError(_annotation_error(data_root, inspections))
     if len(valid) == 1:
         return valid[0]
     if len(valid) > 1:
+        # SPAQ also ships EXIF_tags.xlsx with a camera-metadata column named
+        # Brightness. Prefer the subjective IQA table, identifiable by having
+        # more of the supported perceptual score columns.
+        quality_column_counts = [_quality_column_count(columns) for _, _, columns in valid]
+        best_count = max(quality_column_counts)
+        preferred = [entry for entry, count in zip(valid, quality_column_counts) if count == best_count]
+        if len(preferred) == 1:
+            return preferred[0]
         details = "\n".join(f"- {path}: {columns}" for path, _, columns in valid)
         raise RuntimeError(
             "Multiple SPAQ annotation files contain all required columns. Set annotations_file "
@@ -259,17 +267,21 @@ def _required_column(columns: Sequence[str], aliases: Sequence[str], purpose: st
     return matches[0]
 
 
-def _has_required_columns(columns: Sequence[str]) -> bool:
+def _has_required_columns(columns: Sequence[str], task_name: str) -> bool:
     try:
         _required_column(columns, IMAGE_COLUMNS, "image filename")
-        if not any(
-            _column_lookup(columns).get(_normalize_column(alias))
-            for aliases in TASK_COLUMN_ALIASES.values() for alias in aliases
-        ):
-            raise RuntimeError("no supported SPAQ attribute score column")
+        _required_column(columns, TASK_COLUMN_ALIASES[task_name], f"{task_name} score")
     except RuntimeError:
         return False
     return True
+
+
+def _quality_column_count(columns: Sequence[str]) -> int:
+    lookup = _column_lookup(columns)
+    return sum(
+        any(_normalize_column(alias) in lookup for alias in aliases)
+        for aliases in TASK_COLUMN_ALIASES.values()
+    )
 
 
 def _annotation_error(data_root: Path, inspections: Sequence[tuple[Path, list[str], Any]]) -> str:

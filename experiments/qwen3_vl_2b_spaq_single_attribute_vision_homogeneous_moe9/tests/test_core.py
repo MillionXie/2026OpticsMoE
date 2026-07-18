@@ -123,6 +123,30 @@ def test_spaq_attribute_loader_uses_selected_label_rgb_and_persistent_split(tmp_
     assert [record.image_name for record in bundle.test_records] == [record.image_name for record in again.test_records]
 
 
+def test_brightness_prefers_subjective_score_table_over_exif_metadata(tmp_path: Path) -> None:
+    root = tmp_path / "SPAQ"; images = root / "images"; images.mkdir(parents=True)
+    names = []
+    for index in range(4):
+        name = f"image_{index}.jpg"; names.append(name)
+        Image.new("RGB", (8, 8), (index * 20, 10, 5)).save(images / name)
+    (root / "EXIF_tags.csv").write_text(
+        "Image name,Brightness\n" + "\n".join(f"{name},1" for name in names), encoding="utf-8"
+    )
+    (root / "subjective_scores.csv").write_text(
+        "Image name,Brightness,Colorfulness,Contrast\n" +
+        "\n".join(f"{name},{60 + i},{40 + i},{50 + i}" for i, name in enumerate(names)),
+        encoding="utf-8",
+    )
+    config = tmp_path / "config.json"
+    config.write_text(json.dumps({
+        "dataset": "spaq_single_attribute", "task_name": "Brightness", "data_root": str(root),
+        "download": False, "output_dir": str(tmp_path / "run")
+    }), encoding="utf-8")
+    bundle = load_spaq(load_settings(config))
+    assert "subjective_scores.csv" in bundle.metadata["annotation_file"]
+    assert min(record.scores["Brightness"] for record in bundle.train_records + bundle.test_records) >= 60
+
+
 def test_regression_metrics_perfect_prediction() -> None:
     report = regression_metrics([10, 30, 80], [10, 30, 80])
     assert report["mae"] == 0.0 and report["rmse"] == 0.0
