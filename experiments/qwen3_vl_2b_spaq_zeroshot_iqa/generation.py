@@ -66,8 +66,15 @@ def preprocess_for_generation(
     processor: Any,
     images: Sequence[Image.Image],
     prompts: Sequence[str],
+    system_prompt: str,
 ) -> tuple[dict[str, torch.Tensor], list[str]]:
-    texts = [_chat_text(processor, image, prompt) for image, prompt in zip(images, prompts)]
+    tokenizer = getattr(processor, "tokenizer", None)
+    if tokenizer is not None:
+        tokenizer.padding_side = "left"
+    texts = [
+        _chat_text(processor, image, prompt, system_prompt)
+        for image, prompt in zip(images, prompts)
+    ]
     values = processor(
         text=texts,
         images=list(images),
@@ -147,7 +154,9 @@ def evaluate_zeroshot(
             continue
         images = [batch["images"][index] for index in pending]
         prompts = [batch["prompts"][index] for index in pending]
-        inputs, _ = preprocess_for_generation(processor, images, prompts)
+        inputs, _ = preprocess_for_generation(
+            processor, images, prompts, settings.system_prompt
+        )
         responses, grids, elapsed = generate_scores(
             model, processor, inputs, device, settings.max_new_tokens
         )
@@ -259,8 +268,14 @@ def zeroshot_metrics(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     }
 
 
-def _chat_text(processor: Any, image: Image.Image, prompt: str) -> str:
+def _chat_text(
+    processor: Any,
+    image: Image.Image,
+    prompt: str,
+    system_prompt: str,
+) -> str:
     messages = [
+        {"role": "system", "content": [{"type": "text", "text": system_prompt}]},
         {
             "role": "user",
             "content": [

@@ -82,7 +82,7 @@ def main(argv: list[str] | None = None) -> int:
         seed=settings.seed,
     )
     metadata = {
-        "cache_schema_version": 1,
+        "cache_schema_version": 2,
         "dataset": "spaq",
         "split_digest": data.cache_identity["split_digest"],
         "test_samples": len(data.test),
@@ -92,6 +92,7 @@ def main(argv: list[str] | None = None) -> int:
         "dtype": settings.dtype,
         "attn_implementation": settings.attn_implementation,
         "max_new_tokens": settings.max_new_tokens,
+        "system_prompt": settings.system_prompt,
         "task_prompts": dict(settings.task_prompts or {}),
         "generation_mode": "deterministic_zero_shot_numeric_score",
     }
@@ -167,4 +168,3 @@ def _fmt(value: Any) -> str:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

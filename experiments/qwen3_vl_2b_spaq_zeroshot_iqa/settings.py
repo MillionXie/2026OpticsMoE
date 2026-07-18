@@ -35,6 +35,10 @@ DEFAULT_PROMPTS = {
         "0 (lowest contrast) to 100 (highest contrast), with no explanation. Score:"
     ),
 }
+DEFAULT_SYSTEM_PROMPT = (
+    "You are a numeric image-rating API. Your entire response must contain exactly one number "
+    "and nothing else. Do not explain, describe, justify, or add units."
+)
 
 
 @dataclass
@@ -65,7 +69,8 @@ class Settings:
     test_image_limit: int | None = None
     generation_batch_size: int = 4
     num_workers: int = 4
-    max_new_tokens: int = 16
+    max_new_tokens: int = 32
+    system_prompt: str = DEFAULT_SYSTEM_PROMPT
     dtype: str = "bfloat16"
     device: str = "cuda"
     attn_implementation: str = "sdpa"
@@ -113,6 +118,8 @@ class Settings:
             raise ValueError(f"task_prompts must contain exactly {list(TASK_NAMES)}")
         if any(not str(prompt).strip() for prompt in (self.task_prompts or {}).values()):
             raise ValueError("task prompts must be non-empty")
+        if not self.system_prompt.strip():
+            raise ValueError("system_prompt must be non-empty")
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
