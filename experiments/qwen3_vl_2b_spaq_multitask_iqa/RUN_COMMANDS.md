@@ -28,6 +28,12 @@ CUDA_VISIBLE_DEVICES=2 python -m experiments.qwen3_vl_2b_spaq_multitask_iqa --co
 CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_spaq_multitask_iqa --config experiments/qwen3_vl_2b_spaq_multitask_iqa/configs/spaq_smoke.json --phase all
 ```
 
+## Bounded Sigmoid head comparison
+
+```bash
+CUDA_VISIBLE_DEVICES=2 python -m experiments.qwen3_vl_2b_spaq_multitask_iqa --config experiments/qwen3_vl_2b_spaq_multitask_iqa/configs/spaq_sigmoid.json --phase all
+```
+
 ## Run phases separately
 
 ```bash

@@ -26,6 +26,7 @@
   "cache_dtype": "float16",
   "expected_feature_dim": 2048,
   "head_hidden_dim": 64,
+  "head_output_activation": "none",
   "dropout": 0.1,
   "epochs": 100,
   "learning_rate": 0.0001,

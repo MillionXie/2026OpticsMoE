@@ -46,6 +46,7 @@ def train_regression_head(
         feature_dim=settings.expected_feature_dim,
         hidden_dim=settings.head_hidden_dim,
         dropout=settings.dropout,
+        output_activation=settings.head_output_activation,
     ).to(device)
     _update_model_head_report(settings.output_dir, head)
     optimizer = torch.optim.AdamW(
@@ -129,7 +130,7 @@ def train_regression_head(
             "loss": "SmoothL1Loss",
             "smooth_l1_beta": settings.smooth_l1_beta,
             "label_scale_during_training": [0.0, 1.0],
-            "prediction_postprocessing_during_training": "none",
+            "prediction_postprocessing_during_training": settings.head_output_activation,
             "prediction_postprocessing_during_evaluation": "clamp_to_0_1_then_multiply_100",
         },
     }
@@ -162,6 +163,7 @@ def load_final_head(settings: Settings, device: torch.device) -> MultitaskRegres
         "feature_dim": settings.expected_feature_dim,
         "hidden_dim": settings.head_hidden_dim,
         "dropout": settings.dropout,
+        "output_activation": settings.head_output_activation,
     }
     mismatches = {
         key: {"saved": metadata.get(key), "current": value}
@@ -171,7 +173,10 @@ def load_final_head(settings: Settings, device: torch.device) -> MultitaskRegres
     if mismatches:
         raise RuntimeError(f"Regression checkpoint configuration mismatch: {mismatches}")
     head = MultitaskRegressionHead(
-        settings.expected_feature_dim, settings.head_hidden_dim, settings.dropout
+        settings.expected_feature_dim,
+        settings.head_hidden_dim,
+        settings.dropout,
+        settings.head_output_activation,
     )
     head.load_state_dict(payload["state_dict"])
     return head.to(device)
@@ -251,8 +256,8 @@ def _update_model_head_report(output_dir: Path, head: MultitaskRegressionHead) -
     report["regression_head"] = head.specification()
     report["score_regression"] = {
         "training_label_scale": [0.0, 1.0],
-        "training_output_constraint": "none",
+        "training_output_constraint": head.output_activation,
         "evaluation_postprocessing": "clamp_to_0_1_then_multiply_100",
-        "reason": "avoid sigmoid saturation on high-magnitude frozen Qwen features",
+        "input_stabilization": "LayerNorm before the first trainable Linear",
     }
     write_json(path, report)

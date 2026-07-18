@@ -159,6 +159,24 @@ def test_shared_head_and_metrics() -> None:
     assert metrics["macro_average"]["plcc"] == pytest.approx(1.0)
 
 
+def test_sigmoid_head_is_bounded_and_trainable() -> None:
+    head = MultitaskRegressionHead(2048, 64, 0.1, output_activation="sigmoid")
+    features = torch.randn(8, 2048) * 30.0
+    output = head(features)
+    assert torch.all((output >= 0.0) & (output <= 1.0))
+    assert isinstance(head.network[0], torch.nn.LayerNorm)
+    assert isinstance(head.network[-1], torch.nn.Sigmoid)
+    output.mean().backward()
+    assert all(parameter.grad is not None for parameter in head.parameters())
+
+
+def test_output_activation_validation() -> None:
+    settings = Settings(head_output_activation="sigmoid")
+    settings.validate()
+    with pytest.raises(ValueError, match="head_output_activation"):
+        Settings(head_output_activation="tanh").validate()
+
+
 def test_synthetic_cache_train_and_test_outputs(tmp_path: Path) -> None:
     settings = _settings(tmp_path, tmp_path)
     settings.output_dir.mkdir(parents=True)

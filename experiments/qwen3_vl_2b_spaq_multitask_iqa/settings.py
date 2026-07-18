@@ -51,6 +51,7 @@ class Settings:
     cache_dtype: str = "float16"
     expected_feature_dim: int = 2048
     head_hidden_dim: int = 64
+    head_output_activation: str = "none"
     dropout: float = 0.1
     epochs: int = 30
     learning_rate: float = 1e-4
@@ -85,6 +86,8 @@ class Settings:
             raise ValueError("This experiment requires the fixed split seed 42")
         if self.expected_feature_dim != 2048:
             raise ValueError("Qwen3-VL-2B answer hidden dimension must be 2048")
+        if self.head_output_activation not in {"none", "sigmoid"}:
+            raise ValueError("head_output_activation must be 'none' or 'sigmoid'")
         for name in ("feature_batch_size", "head_batch_size", "epochs", "head_hidden_dim"):
             if int(getattr(self, name)) <= 0:
                 raise ValueError(f"{name} must be positive")

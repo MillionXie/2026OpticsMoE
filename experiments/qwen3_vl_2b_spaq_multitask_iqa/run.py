@@ -85,7 +85,10 @@ def main(argv: list[str] | None = None) -> int:
                 max_pixels=settings.processor_max_pixels,
             )
             report_head = MultitaskRegressionHead(
-                settings.expected_feature_dim, settings.head_hidden_dim, settings.dropout
+                settings.expected_feature_dim,
+                settings.head_hidden_dim,
+                settings.dropout,
+                settings.head_output_activation,
             )
             report = model_report(loaded.model, report_head, settings.expected_feature_dim)
             report.update(

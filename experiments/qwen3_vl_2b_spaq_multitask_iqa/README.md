@@ -8,6 +8,8 @@ The four tasks are `MOS`, `Brightness`, `Colorfulness`, and `Contrast`. Every or
 LayerNorm(2048) -> Linear(2048, 64) -> GELU -> Dropout(0.1) -> Linear(64, 1)
 ```
 
+`head_output_activation` selects the output constraint. The main `spaq.json` uses `none`; `spaq_sigmoid.json` appends a bounded Sigmoid after the final Linear. Both retain the input `LayerNorm`, identical split, cached features, optimizer, learning rate, epoch count, and evaluation protocol so the two heads form a controlled comparison.
+
 All targets are required to be finite scores in `[0,100]` and are divided by 100 during training. The loss is `SmoothL1Loss(beta=0.1)`. The final linear output remains unbounded during optimization; this avoids zero-gradient sigmoid saturation on large frozen-Qwen hidden features. During evaluation, the raw normalized prediction is clamped to `[0,1]` and multiplied by 100, so the reported score still follows the original 0–100 scale. All Qwen parameters are frozen and Qwen remains in eval mode. Each image-prompt feature is cached, so later head epochs do not rerun Qwen.
 
 ## Split and evaluation protocol

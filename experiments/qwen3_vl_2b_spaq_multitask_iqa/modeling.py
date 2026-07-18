@@ -29,18 +29,30 @@ class MultitaskRegressionHead(nn.Module):
 
     SCHEMA_VERSION = 2
 
-    def __init__(self, feature_dim: int = 2048, hidden_dim: int = 64, dropout: float = 0.1) -> None:
+    def __init__(
+        self,
+        feature_dim: int = 2048,
+        hidden_dim: int = 64,
+        dropout: float = 0.1,
+        output_activation: str = "none",
+    ) -> None:
         super().__init__()
         self.feature_dim = int(feature_dim)
         self.hidden_dim = int(hidden_dim)
         self.dropout = float(dropout)
-        self.network = nn.Sequential(
+        self.output_activation = str(output_activation)
+        if self.output_activation not in {"none", "sigmoid"}:
+            raise ValueError("output_activation must be 'none' or 'sigmoid'")
+        layers: list[nn.Module] = [
             nn.LayerNorm(self.feature_dim),
             nn.Linear(self.feature_dim, self.hidden_dim),
             nn.GELU(),
             nn.Dropout(self.dropout),
             nn.Linear(self.hidden_dim, 1),
-        )
+        ]
+        if self.output_activation == "sigmoid":
+            layers.append(nn.Sigmoid())
+        self.network = nn.Sequential(*layers)
 
     def forward(self, features: torch.Tensor) -> torch.Tensor:
         return self.network(features).squeeze(-1)
@@ -55,12 +67,12 @@ class MultitaskRegressionHead(nn.Module):
                 "GELU",
                 f"Dropout({self.dropout})",
                 f"Linear({self.hidden_dim},1)",
-            ],
+            ] + (["Sigmoid"] if self.output_activation == "sigmoid" else []),
             "feature_dim": self.feature_dim,
             "hidden_dim": self.hidden_dim,
             "dropout": self.dropout,
             "training_target_scale": [0.0, 1.0],
-            "output_activation": "none",
+            "output_activation": self.output_activation,
             "evaluation_postprocessing": "clamp raw prediction to [0,1], then multiply by 100",
             "parameters": sum(parameter.numel() for parameter in self.parameters()),
             "trainable_parameters": sum(
