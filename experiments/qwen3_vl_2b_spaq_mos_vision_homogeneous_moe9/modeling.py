@@ -22,7 +22,7 @@ class LoadedBackbone:
 class NormalizedLinearRegressionHead(nn.Module):
     """Identical teacher/student MOS head: LayerNorm(D) -> Linear(D,1) -> activation."""
 
-    def __init__(self, feature_dim: int, output_activation: str = "sigmoid") -> None:
+    def __init__(self, feature_dim: int, output_activation: str = "linear") -> None:
         super().__init__()
         self.norm = nn.LayerNorm(feature_dim)
         self.regressor = nn.Linear(feature_dim, 1)
@@ -37,11 +37,6 @@ class NormalizedLinearRegressionHead(nn.Module):
     def forward(self, features: torch.Tensor) -> torch.Tensor:
         return self.activate(self.forward_raw(features))
 
-    def zero_initialize_regressor(self) -> None:
-        """Start a student at score zero without disabling its LayerNorm features."""
-        nn.init.zeros_(self.regressor.weight)
-        nn.init.zeros_(self.regressor.bias)
-
     def specification(self) -> dict[str, Any]:
         return {
             "type": "normalized_linear_regression",
@@ -53,30 +48,10 @@ class NormalizedLinearRegressionHead(nn.Module):
         }
 
 
-def build_head(settings: Any, feature_dim: int, role: str = "teacher") -> NormalizedLinearRegressionHead:
+def build_head(settings: Any, feature_dim: int) -> NormalizedLinearRegressionHead:
     if settings.head_type != "normalized_linear_regression":
         raise ValueError("Only normalized_linear_regression is supported")
-    if role not in {"teacher", "student"}:
-        raise ValueError("role must be teacher or student")
-    activation = (settings.head_output_activation if role == "teacher"
-                  else settings.student_head_output_activation)
-    return NormalizedLinearRegressionHead(feature_dim, activation)
-
-
-def initialize_student_head(student: NormalizedLinearRegressionHead,
-                            teacher: NormalizedLinearRegressionHead,
-                            zero_initialize_regressor: bool = True) -> None:
-    """Copy compatible teacher normalization, then optionally neutralize the score layer.
-
-    The teacher's fitted regressor can emit very large logits for the initially
-    out-of-distribution optical hidden states.  Keeping that regressor behind a
-    sigmoid made the student output exactly one and removed the score-loss
-    gradient.  A zero score layer is trainable immediately; zeroing the whole
-    head would not be, because it would also erase the LayerNorm features.
-    """
-    student.load_state_dict(teacher.state_dict())
-    if zero_initialize_regressor:
-        student.zero_initialize_regressor()
+    return NormalizedLinearRegressionHead(feature_dim, settings.head_output_activation)
 
 
 def load_backbone(model_id: str, cache_dir: Path | None, local_files_only: bool, dtype: torch.dtype,

@@ -12,16 +12,18 @@ from experiments.qwen3_vl_2b_spaq_mos_vision_homogeneous_moe9.datasets import lo
 from experiments.qwen3_vl_2b_spaq_mos_vision_homogeneous_moe9.metrics import regression_metrics
 from experiments.qwen3_vl_2b_spaq_mos_vision_homogeneous_moe9.modeling import (NormalizedLinearRegressionHead,
                                                                               build_head,
-                                                                              initialize_student_head,
                                                                               resolve_cached_model_source)
 from experiments.qwen3_vl_2b_spaq_mos_vision_homogeneous_moe9.optics.geometry import MoEGeometry
 from experiments.qwen3_vl_2b_spaq_mos_vision_homogeneous_moe9.optics.moe import VisionHomogeneousMoESurrogate
 from experiments.qwen3_vl_2b_spaq_mos_vision_homogeneous_moe9.sampling import EpochRotatingSampler
 from experiments.qwen3_vl_2b_spaq_mos_vision_homogeneous_moe9.settings import load_settings
-from experiments.qwen3_vl_2b_spaq_mos_vision_homogeneous_moe9.teacher_cache import expected_metadata
+from experiments.qwen3_vl_2b_spaq_mos_vision_homogeneous_moe9.teacher_cache import (expected_metadata,
+                                                                                   load_teacher_predictions,
+                                                                                   write_teacher_predictions)
 
 
 CONFIG = "experiments/qwen3_vl_2b_spaq_mos_vision_homogeneous_moe9/configs/spaq_mos_smoke.json"
+MAIN_CONFIG = "experiments/qwen3_vl_2b_spaq_mos_vision_homogeneous_moe9/configs/spaq_mos.json"
 
 
 def _encoder(hidden_size: int = 8) -> VisionHomogeneousMoESurrogate:
@@ -38,45 +40,51 @@ def _encoder(hidden_size: int = 8) -> VisionHomogeneousMoESurrogate:
 def test_grouped_config_and_identical_small_regression_head() -> None:
     settings = load_settings(CONFIG)
     assert settings.dataset == "spaq_mos" and settings.task_name == "MOS"
-    assert settings.head_output_activation == "sigmoid"
-    assert settings.student_head_output_activation == "linear"
-    assert settings.student_head_zero_initialize_regressor is True
+    assert settings.head_output_activation == "linear"
     assert settings.student_head_learning_rate == pytest.approx(1e-3)
+    assert load_settings(MAIN_CONFIG).log_interval_batches == 1500
     assert settings.interlayer_hard_route_mask is True
     assert settings.train_image_limit == 24 and settings.epochs == 1
     head = build_head(settings, 1024)
     output = head(torch.randn(3, 1024))
     assert output.shape == (3,)
-    assert torch.all((0.0 <= output) & (output <= 1.0))
     assert sum(parameter.numel() for parameter in head.parameters()) == 3073
 
 
-def test_student_linear_head_zero_initialization_keeps_teacher_unchanged() -> None:
-    teacher = NormalizedLinearRegressionHead(8, "sigmoid")
-    teacher_before = {name: value.detach().clone() for name, value in teacher.state_dict().items()}
+def test_teacher_and_student_heads_are_fresh_and_independent() -> None:
+    teacher = NormalizedLinearRegressionHead(8, "linear")
     student = NormalizedLinearRegressionHead(8, "linear")
-    initialize_student_head(student, teacher, zero_initialize_regressor=True)
+    assert teacher.norm.weight.data_ptr() != student.norm.weight.data_ptr()
+    assert teacher.regressor.weight.data_ptr() != student.regressor.weight.data_ptr()
+    assert not torch.equal(teacher.regressor.weight, student.regressor.weight)
+    with torch.no_grad():
+        teacher.norm.weight.fill_(2.0)
+    assert torch.equal(student.norm.weight, torch.ones_like(student.norm.weight))
     values = torch.randn(4, 8)
-    assert torch.equal(student.norm.weight, teacher.norm.weight)
-    assert torch.equal(student.norm.bias, teacher.norm.bias)
-    assert torch.count_nonzero(student.regressor.weight) == 0
-    assert torch.count_nonzero(student.regressor.bias) == 0
-    assert torch.equal(student(values), torch.zeros(4))
     torch.nn.functional.smooth_l1_loss(student(values), torch.rand(4), beta=0.1).backward()
     assert student.regressor.weight.grad is not None
     assert torch.count_nonzero(student.regressor.weight.grad) > 0
-    for name, value in teacher.state_dict().items():
-        assert torch.equal(value, teacher_before[name])
 
 
 def test_head_teacher_student_state_is_compatible() -> None:
-    teacher = NormalizedLinearRegressionHead(8, "sigmoid")
-    student = NormalizedLinearRegressionHead(8, "sigmoid")
+    teacher = NormalizedLinearRegressionHead(8, "linear")
+    student = NormalizedLinearRegressionHead(8, "linear")
     student.load_state_dict(teacher.state_dict())
     values = torch.randn(4, 8)
     assert torch.allclose(teacher(values), student(values))
     torch.nn.functional.smooth_l1_loss(student(values), torch.rand(4), beta=0.1).backward()
     assert student.regressor.weight.grad is not None
+
+
+def test_teacher_prediction_cache_rejects_old_activation(tmp_path: Path) -> None:
+    output = tmp_path / "run"; (output / "teacher_cache").mkdir(parents=True)
+    predictions = torch.tensor([0.2, 0.8]); targets = torch.tensor([0.1, 0.9])
+    spec = NormalizedLinearRegressionHead(8, "linear").specification()
+    write_teacher_predictions(output, "train", predictions, targets, spec)
+    loaded = load_teacher_predictions(output / "teacher_cache" / "train_teacher_predictions.pt", "linear")
+    assert torch.allclose(loaded, predictions, atol=1e-3)
+    with pytest.raises(RuntimeError, match="Rerun --phase teacher_train"):
+        load_teacher_predictions(output / "teacher_cache" / "train_teacher_predictions.pt", "sigmoid")
 
 
 def test_cached_model_source_avoids_network_without_changing_model_id(tmp_path: Path,
@@ -142,7 +150,7 @@ def test_full_optical_moe_regression_backward_smoke() -> None:
     settings = load_settings(CONFIG)
     model = VisionHomogeneousMoESurrogate(8, settings)
     hidden = model(torch.randn(3, 8), cu_seqlens=torch.tensor([0, 3], dtype=torch.int32))
-    head = NormalizedLinearRegressionHead(8, "sigmoid")
+    head = NormalizedLinearRegressionHead(8, "linear")
     prediction = head(hidden.mean(0, keepdim=True))
     loss = torch.nn.functional.smooth_l1_loss(prediction, torch.tensor([0.7]), beta=0.1)
     loss.backward()

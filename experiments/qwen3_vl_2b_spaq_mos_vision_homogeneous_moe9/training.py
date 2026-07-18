@@ -87,7 +87,7 @@ def generate_teacher_predictions(head: nn.Module, stores: dict[str, TeacherCache
     for split, store in stores.items():
         features, targets = pooled_teacher_features(store)
         predictions = _head_predictions(head, features, settings.head_batch_size, device)
-        write_teacher_predictions(settings.output_dir, split, predictions, targets)
+        write_teacher_predictions(settings.output_dir, split, predictions, targets, head.specification())
 
 
 def teacher_inference(head: nn.Module, store: TeacherCacheStore, settings: Any,
@@ -132,7 +132,10 @@ def _is_better(metric: str, current: float, best: float) -> bool:
 def train_student(model: nn.Module, processor: Any, replacement: Any, head: NormalizedLinearRegressionHead,
                   train_dataset: Dataset[Any], test_dataset: Dataset[Any], train_store: TeacherCacheStore,
                   test_store: TeacherCacheStore, settings: Any, device: torch.device) -> None:
-    teacher_predictions = load_teacher_predictions(settings.output_dir / "teacher_cache" / "train_teacher_predictions.pt")
+    teacher_predictions = load_teacher_predictions(
+        settings.output_dir / "teacher_cache" / "train_teacher_predictions.pt",
+        settings.head_output_activation,
+    )
     cached = CachedStudentDataset(train_dataset, train_store, teacher_predictions)
     sampler = EpochRotatingSampler(len(train_dataset), settings.train_samples_per_epoch, settings.seed)
     loader = DataLoader(cached, batch_size=settings.student_batch_size, sampler=sampler, num_workers=0,
@@ -212,7 +215,7 @@ def train_student(model: nn.Module, processor: Any, replacement: Any, head: Norm
                                          for parameter in head.parameters() if parameter.grad is not None) ** 0.5
                 write_json(settings.output_dir / "metrics" / "student_first_batch_diagnostics.json", {
                     "student_output_activation": getattr(head, "output_activation", "unknown"),
-                    "student_regressor_zero_initialized": settings.student_head_zero_initialize_regressor,
+                    "student_head_fresh_initialization": True,
                     "prediction_min_normalized": initial_metrics["prediction_min_normalized"],
                     "prediction_max_normalized": initial_metrics["prediction_max_normalized"],
                     "prediction_std_normalized": initial_metrics["prediction_std_normalized"],
@@ -240,7 +243,10 @@ def train_student(model: nn.Module, processor: Any, replacement: Any, head: Norm
                 learning_rates = {group["group_name"]: group["lr"] for group in optimizer.param_groups}
                 print(f"epoch {epoch}/{settings.epochs} batch {batch_index}/{len(loader)} loss={totals['total']/seen:.5f} "
                       f"hidden={totals['hidden']/seen:.5f} distill={totals['prediction_distill']/seen:.5f} "
-                      f"mos={totals['regression']/seen:.5f} MAE={current['mae']:.3f} SRCC={current['srcc']:.4f} "
+                      f"mos={totals['regression']/seen:.5f} "
+                      f"balance={totals['balance']/seen:.5f} balance_term={settings.router_balance_weight * totals['balance']/seen:.5f} "
+                      f"importance={totals['importance']/seen:.5f} importance_term={settings.router_importance_weight * totals['importance']/seen:.5f} "
+                      f"MAE={current['mae']:.3f} SRCC={current['srcc']:.4f} "
                       f"pred=[{current['prediction_min_normalized']:.3f},{current['prediction_max_normalized']:.3f}] "
                       f"pred_std={current['prediction_std_normalized']:.4f} out_of_range={current['prediction_out_of_range_ratio']:.3f} "
                       f"lr={learning_rates['main']:.3e} head_lr={learning_rates['student_head']:.3e} "
@@ -354,7 +360,7 @@ def evaluate_student(model: nn.Module, processor: Any, replacement: Any, head: n
 
 def save_student_inference(report: dict[str, Any], settings: Any, replacement: Any,
                            predictions_path: Path | None = None) -> None:
-    report = {**report, "head_output_activation": settings.student_head_output_activation,
+    report = {**report, "head_output_activation": settings.head_output_activation,
               "predictions_clamped_for_metrics": False,
               "phase_dropout_disabled_for_inference": True,
               "parameter_breakdown": replacement.surrogate.parameter_breakdown()}

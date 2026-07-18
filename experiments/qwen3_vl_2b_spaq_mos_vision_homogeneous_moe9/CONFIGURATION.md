@@ -11,8 +11,8 @@ The three derivative configs use `base_config` so only intentional differences a
 
 `train_samples_per_epoch=null` traverses the full retained train set each epoch. Setting an integer uses deterministic rotating windows: the stored train set is not deleted, and later epochs rotate through it.
 
-`classification_head.output_activation` controls the teacher and remains `sigmoid` for compatibility with the trained teacher checkpoint.
+`classification_head.output_activation` is the single activation setting shared by the teacher and student structures; it defaults to `linear`. Teacher and student parameters are trained independently, and the student head is always freshly initialized. `optimizer.student_head_learning_rate` defaults to `0.001`, separate from the optical surrogate and router learning rates.
 
-`classification_head.student_output_activation` independently controls the student and defaults to `linear`. `classification_head.student_zero_initialize_regressor=true` copies the teacher LayerNorm but zeros only the student's final Linear weight and bias. It deliberately does not zero LayerNorm. `optimizer.student_head_learning_rate` defaults to `0.001`, separate from the optical surrogate and router learning rates.
+Changing an old Sigmoid run to linear does not require rebuilding the frozen Qwen teacher feature cache. It does require rerunning `teacher_train` and `teacher_predictions`. Prediction-cache metadata prevents silently reusing scores produced by an incompatible head.
 
-Changing only these student fields does not require rebuilding the teacher feature cache or retraining `teacher_head.pt`. Old Sigmoid student checkpoints are rejected rather than silently interpreted as linear checkpoints.
+`training.logging.interval_batches=1500` limits rolling console output. Each rolling line includes raw router balance/importance losses and their weighted contributions to the total loss.

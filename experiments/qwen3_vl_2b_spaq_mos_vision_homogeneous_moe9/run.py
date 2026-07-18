@@ -11,8 +11,7 @@ import torch
 from .data_prepare import ensure_spaq_dataset
 from .datasets import DatasetBundle, load_spaq, make_indexed_loader
 from .io_utils import resolve_device, resolve_dtype, runtime_metadata, set_seed, write_json
-from .modeling import (LoadedBackbone, build_head, initialize_student_head, load_backbone,
-                       module_parameters)
+from .modeling import LoadedBackbone, build_head, load_backbone, module_parameters
 from .optics.moe import VisionHomogeneousMoESurrogate
 from .optics.replacement import VisionStackReplacement
 from .settings import Settings, load_settings, resolve_path
@@ -88,16 +87,13 @@ def main(argv: list[str] | None = None) -> int:
             teacher_head = train_teacher_head(stores["train"], stores["test"], settings, device)
             generate_teacher_predictions(teacher_head, stores, settings, device)
             teacher_inference(teacher_head, stores["test"], settings, device)
-        elif args.phase == "student_train":
-            teacher_head = load_head(settings.output_dir / "checkpoints" / "teacher_head.pt", settings, device)
         if args.phase in {"student_train", "all"}:
-            student_head = build_head(settings, settings.vision_hidden_size, role="student").to(device)
-            initialize_student_head(student_head, teacher_head, settings.student_head_zero_initialize_regressor)
+            student_head = build_head(settings, settings.vision_hidden_size).to(device)
             train_student(loaded.model, loaded.processor, replacement, student_head, data.train, data.test,
                           stores["train"], stores["test"], settings, device)
             if args.phase == "student_train": return 0
         if args.phase in {"student_inference", "all"}:
-            student_head = build_head(settings, settings.vision_hidden_size, role="student").to(device)
+            student_head = build_head(settings, settings.vision_hidden_size).to(device)
             load_student_parts(settings.output_dir, replacement, student_head, "best")
             loader = make_indexed_loader(data.test, settings.inference_batch_size, settings.num_workers, False, settings.seed)
             predictions_path = settings.output_dir / "metrics" / "student_predictions.csv" if settings.save_predictions else None
@@ -169,9 +165,8 @@ def _resolve_architecture_from_cache(settings: Settings, store: TeacherCacheStor
 
 
 def _write_model_report(model: torch.nn.Module, replacement: VisionStackReplacement, settings: Settings) -> None:
-    teacher_head = build_head(settings, settings.vision_hidden_size, role="teacher")
-    student_head = build_head(settings, settings.vision_hidden_size, role="student")
-    breakdown = replacement.surrogate.parameter_breakdown(); head_parameters = module_parameters(student_head)
+    head = build_head(settings, settings.vision_hidden_size)
+    breakdown = replacement.surrogate.parameter_breakdown(); head_parameters = module_parameters(head)
     student_total = breakdown["surrogate_trainable_parameters"] + head_parameters
     write_json(settings.output_dir / "model.json", {
         "model_id": settings.model_id, "dataset": "SPAQ", "task": "MOS", "input_color_mode": "RGB",
@@ -183,10 +178,9 @@ def _write_model_report(model: torch.nn.Module, replacement: VisionStackReplacem
         "detector": {"plane_shape": [480, 480], "class_regions": False, "pool": "AvgPool2d(4,4)",
                      "pooled_shape": [120, 120], "layernorm_affine": False,
                      "readout": "ReLU -> first T rows -> Linear(120,1024)"},
-        "teacher_student_head_core_identical": True,
-        "teacher_regression_head": teacher_head.specification(),
-        "student_regression_head": student_head.specification(),
-        "student_regressor_zero_initialized": settings.student_head_zero_initialize_regressor,
+        "teacher_student_head_structure_identical": True,
+        "teacher_student_head_weights_shared": False,
+        "regression_head": head.specification(),
         "target": {"name": "MOS", "source_scale": [0.0, 100.0], "training_scale": [0.0, 1.0],
                    "loss": f"SmoothL1(beta={settings.smooth_l1_beta})"},
         "losses": {"hidden": settings.loss_hidden_weight,

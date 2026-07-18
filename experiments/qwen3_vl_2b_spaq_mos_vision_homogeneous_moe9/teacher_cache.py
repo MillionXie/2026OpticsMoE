@@ -176,16 +176,25 @@ def pooled_teacher_features(store: TeacherCacheStore) -> tuple[torch.Tensor, tor
     return torch.stack(features), torch.cat(targets)
 
 
-def write_teacher_predictions(output_dir: Path, split: str, predictions: torch.Tensor, targets: torch.Tensor) -> None:
+def write_teacher_predictions(output_dir: Path, split: str, predictions: torch.Tensor, targets: torch.Tensor,
+                              head_specification: dict[str, Any]) -> None:
     torch.save({"sample_indices": torch.arange(len(targets)), "targets": targets.float(),
-                "teacher_predictions": predictions.half()},
+                "teacher_predictions": predictions.half(), "head": head_specification},
                output_dir / "teacher_cache" / f"{split}_teacher_predictions.pt")
 
 
-def load_teacher_predictions(path: Path) -> torch.Tensor:
+def load_teacher_predictions(path: Path, expected_output_activation: str) -> torch.Tensor:
     if not path.is_file():
         raise FileNotFoundError(f"Teacher predictions missing: {path}. Run --phase teacher_predictions first.")
-    return torch.load(path, map_location="cpu", weights_only=True)["teacher_predictions"].float()
+    payload = torch.load(path, map_location="cpu", weights_only=True)
+    saved_activation = payload.get("head", {}).get("output_activation")
+    if saved_activation != expected_output_activation:
+        raise RuntimeError(
+            f"Cached teacher predictions use output_activation={saved_activation!r}, but the current head uses "
+            f"{expected_output_activation!r}. Rerun --phase teacher_train and --phase teacher_predictions. "
+            "The expensive teacher_precompute feature cache can be reused."
+        )
+    return payload["teacher_predictions"].float()
 
 
 def _sha256(path: Path) -> str:

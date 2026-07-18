@@ -14,8 +14,8 @@ RGB image
 -> frozen Qwen vision patch embedding
 -> complete frozen electronic Qwen vision transformer stack
 -> valid-token mean pooling
--> LayerNorm(1024) -> Linear(1024,1) -> Sigmoid
--> normalized MOS in [0,1]
+-> LayerNorm(1024) -> Linear(1024,1)
+-> linear normalized MOS prediction
 ```
 
 Student:
@@ -30,8 +30,8 @@ RGB image
 -> AvgPool 480->120 -> non-affine LayerNorm -> ReLU
 -> valid token rows -> Linear(120,1024)
 -> valid-token mean pooling
--> LayerNorm(1024) -> zero-initialized Linear(1024,1)
--> linear normalized MOS prediction (no student Sigmoid by default)
+-> a freshly initialized LayerNorm(1024) -> Linear(1024,1)
+-> linear normalized MOS prediction
 ```
 
 The source images remain RGB. No grayscale conversion is performed. Batch samples are split using Qwen `cu_seqlens`, so one image always maps to one independent optical field.
@@ -41,7 +41,7 @@ The source images remain RGB. No grayscale conversion is performed. Batch sample
 1. `teacher_precompute` caches the complete electronic vision-stack output for every retained train/test image.
 2. `teacher_train` trains only the small MOS regression head on cached electronic features.
 3. `teacher_predictions` caches the teacher MOS prediction used for score distillation.
-4. `student_train` copies the teacher LayerNorm state but zero-initializes the student's final regressor, then jointly trains the optical MoE, adapters, router, and student head.
+4. `student_train` creates a fresh student head and jointly trains it with the optical MoE, adapters, and router. No teacher head parameters are copied.
 5. `student_inference` evaluates the best optical student.
 
 For CLI compatibility with the CIFAR classification source, `--phase teacher_logits` is accepted as an alias of `teacher_predictions`; the cached value is a scalar MOS prediction, not categorical logits.
@@ -58,7 +58,7 @@ L = hidden_weight * LayerNorm-hidden MSE
 
 MOS labels are divided by 100 during training and restored to 0-100 for MAE/RMSE. Evaluation reports MAE, RMSE, SRCC, PLCC, and within-5/within-10 accuracy.
 
-The teacher keeps its existing Sigmoid checkpoint. The student output activation is configured independently and defaults to `linear`, so an initially mismatched optical hidden state cannot saturate a transferred Sigmoid and remove the score-loss gradient. Student predictions are not silently clamped during training or evaluation; SmoothL1 directly pulls the linear output toward the normalized targets. The student head uses its own lower learning rate.
+Teacher and student use the single `classification_head.output_activation` setting, which defaults to `linear`. Their structures are identical but their parameters are independently initialized and trained. Predictions are not silently clamped during training or evaluation; SmoothL1 directly pulls the linear output toward normalized targets. The student head uses its own lower learning rate. Switching an older Sigmoid run to this configuration requires rerunning only `teacher_train` and `teacher_predictions`; the expensive frozen Qwen feature cache remains reusable.
 
 ## Checkpoint selection warning
 
