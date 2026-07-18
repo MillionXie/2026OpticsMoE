@@ -22,6 +22,12 @@ CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_spaq_mos_vision_homogen
 
 ## Separate phases
 
+Build only the reusable Qwen processor array cache. This is the recommended next step for an existing run that already has `teacher_cache`:
+
+```bash
+CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_spaq_mos_vision_homogeneous_moe9 --config experiments/qwen3_vl_2b_spaq_mos_vision_homogeneous_moe9/configs/spaq_mos.json --phase input_precompute
+```
+
 ```bash
 CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_spaq_mos_vision_homogeneous_moe9 --config experiments/qwen3_vl_2b_spaq_mos_vision_homogeneous_moe9/configs/spaq_mos.json --phase teacher_precompute
 ```

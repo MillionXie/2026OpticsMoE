@@ -57,7 +57,6 @@ def build_head(settings: Any, feature_dim: int) -> NormalizedLinearRegressionHea
 def load_backbone(model_id: str, cache_dir: Path | None, local_files_only: bool, dtype: torch.dtype,
                   device: torch.device, attn_implementation: str, min_pixels: int, max_pixels: int) -> LoadedBackbone:
     transformers = importlib.import_module("transformers")
-    processor_cls = transformers.AutoProcessor
     model_cls = getattr(transformers, "AutoModelForImageTextToText", None) or getattr(transformers, "Qwen3VLForConditionalGeneration", None)
     if model_cls is None:
         raise RuntimeError("Installed transformers does not support Qwen3-VL")
@@ -65,15 +64,29 @@ def load_backbone(model_id: str, cache_dir: Path | None, local_files_only: bool,
     using_local_snapshot = source != model_id
     common = {"cache_dir": str(cache_dir) if cache_dir else None,
               "local_files_only": local_files_only or using_local_snapshot}
-    processor_kwargs = {key: value for key, value in common.items() if value is not None}
-    processor_kwargs.update({"min_pixels": min_pixels, "max_pixels": max_pixels})
     model_kwargs = {key: value for key, value in common.items() if value is not None}
     model_kwargs.update({"dtype": dtype, "low_cpu_mem_usage": True, "attn_implementation": attn_implementation})
     started = time.perf_counter()
-    processor = processor_cls.from_pretrained(source, **processor_kwargs)
+    processor = load_processor(model_id, cache_dir, local_files_only, min_pixels, max_pixels)
     model = model_cls.from_pretrained(source, **model_kwargs)
     model.to(device).requires_grad_(False).eval()
     return LoadedBackbone(model, processor, device, time.perf_counter() - started)
+
+
+def load_processor(model_id: str, cache_dir: Path | None, local_files_only: bool,
+                   min_pixels: int, max_pixels: int) -> Any:
+    transformers = importlib.import_module("transformers")
+    source = resolve_cached_model_source(model_id, cache_dir)
+    using_local_snapshot = source != model_id
+    kwargs = {
+        "cache_dir": str(cache_dir) if cache_dir else None,
+        "local_files_only": local_files_only or using_local_snapshot,
+        "min_pixels": min_pixels,
+        "max_pixels": max_pixels,
+    }
+    return transformers.AutoProcessor.from_pretrained(
+        source, **{key: value for key, value in kwargs.items() if value is not None}
+    )
 
 
 def resolve_cached_model_source(model_id: str, cache_dir: Path | None) -> str:

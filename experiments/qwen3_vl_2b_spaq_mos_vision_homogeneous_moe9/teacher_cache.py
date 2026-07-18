@@ -127,6 +127,8 @@ class TeacherCacheStore:
         self.max_cached_shards = int(max_cached_shards)
         self._cache: OrderedDict[int, dict[str, Any]] = OrderedDict()
         self._ranges: list[tuple[int, int, int]] = []
+        self.cache_hits = 0
+        self.cache_misses = 0
         offset = 0
         for number, record in enumerate(self.shards):
             self._ranges.append((offset, offset + int(record["count"]), number))
@@ -153,14 +155,28 @@ class TeacherCacheStore:
 
     def _load(self, number: int) -> dict[str, Any]:
         if number in self._cache:
+            self.cache_hits += 1
             payload = self._cache.pop(number)
             self._cache[number] = payload
             return payload
+        self.cache_misses += 1
         payload = torch.load(self.shards[number]["path"], map_location="cpu", weights_only=True)
         self._cache[number] = payload
         while len(self._cache) > self.max_cached_shards:
             self._cache.popitem(last=False)
         return payload
+
+    def reset_stats(self) -> None:
+        self.cache_hits = 0
+        self.cache_misses = 0
+
+    def stats(self) -> dict[str, int | float]:
+        requests = self.cache_hits + self.cache_misses
+        return {
+            "hits": self.cache_hits,
+            "misses": self.cache_misses,
+            "hit_rate": self.cache_hits / requests if requests else 0.0,
+        }
 
     def iter_shards(self) -> Iterator[dict[str, Any]]:
         for record in self.shards:

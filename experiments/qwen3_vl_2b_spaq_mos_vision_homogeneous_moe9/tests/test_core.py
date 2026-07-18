@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 import torch
@@ -15,6 +16,9 @@ from experiments.qwen3_vl_2b_spaq_mos_vision_homogeneous_moe9.modeling import (N
                                                                               resolve_cached_model_source)
 from experiments.qwen3_vl_2b_spaq_mos_vision_homogeneous_moe9.optics.geometry import MoEGeometry
 from experiments.qwen3_vl_2b_spaq_mos_vision_homogeneous_moe9.optics.moe import VisionHomogeneousMoESurrogate
+from experiments.qwen3_vl_2b_spaq_mos_vision_homogeneous_moe9.processor_cache import (ProcessorCacheStore,
+                                                                                     build_processor_cache,
+                                                                                     validate_processor_cache)
 from experiments.qwen3_vl_2b_spaq_mos_vision_homogeneous_moe9.sampling import EpochRotatingSampler
 from experiments.qwen3_vl_2b_spaq_mos_vision_homogeneous_moe9.settings import load_settings
 from experiments.qwen3_vl_2b_spaq_mos_vision_homogeneous_moe9.teacher_cache import (expected_metadata,
@@ -136,6 +140,49 @@ def test_rotating_sampler_eventually_changes_epoch_window() -> None:
     sampler = EpochRotatingSampler(20, 7, seed=42)
     first = list(sampler); sampler.set_epoch(2); second = list(sampler)
     assert len(first) == len(second) == 7 and set(first) != set(second)
+
+
+def test_rotating_sampler_keeps_cache_shards_locally_contiguous() -> None:
+    sampler = EpochRotatingSampler(40, None, seed=42, shard_size=8)
+    order = list(sampler)
+    shard_runs: list[int] = []
+    for index in order:
+        shard = index // 8
+        if not shard_runs or shard_runs[-1] != shard:
+            shard_runs.append(shard)
+    assert len(shard_runs) == 5
+    assert sorted(shard_runs) == list(range(5))
+
+
+def test_processor_cache_persists_qwen_arrays_and_validates_metadata(tmp_path: Path) -> None:
+    class FakeImageProcessor:
+        def __call__(self, images, return_tensors):
+            assert return_tensors == "pt"
+            rows = []
+            grids = []
+            for number, _image in enumerate(images, start=1):
+                rows.append(torch.full((2, 3), float(number)))
+                grids.append([1, 1, 2])
+            return {"pixel_values": torch.cat(rows), "image_grid_thw": torch.tensor(grids)}
+
+    processor = SimpleNamespace(image_processor=FakeImageProcessor())
+    settings = SimpleNamespace(
+        output_dir=tmp_path / "run", cache_dtype="float16", teacher_cache_shard_size=2,
+        teacher_cache_log_interval_batches=10, feature_batch_size=2, data_root=tmp_path / "SPAQ",
+        resolved_annotations_file="annotations.csv", split_digest="digest", model_id="fake-qwen",
+        processor_min_pixels=25600, processor_max_pixels=25600,
+    )
+    images = [Image.new("RGB", (4, 4)), Image.new("RGB", (4, 4))]
+    loader = [(images, torch.tensor([0.1, 0.2]), torch.tensor([0, 1]))]
+    manifest = build_processor_cache("train", processor, loader, 2, settings)
+    store = ProcessorCacheStore(manifest, max_cached_shards=1)
+    validate_processor_cache(store, "train", 2, settings)
+    first = store.get(0); second = store.get(1)
+    assert first["pixel_values"].shape == (2, 3)
+    assert first["pixel_values"].dtype == torch.float16
+    assert int(first["visual_token_count"]) == 2
+    assert torch.equal(second["image_grid_thw"], torch.tensor([1, 1, 2]))
+    assert store.stats()["misses"] == 1 and store.stats()["hits"] == 1
 
 
 def test_token_rows_are_nonnegative_zero_padded_without_resize() -> None:

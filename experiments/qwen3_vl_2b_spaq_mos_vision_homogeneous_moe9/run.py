@@ -11,16 +11,19 @@ import torch
 from .data_prepare import ensure_spaq_dataset
 from .datasets import DatasetBundle, load_spaq, make_indexed_loader
 from .io_utils import resolve_device, resolve_dtype, runtime_metadata, set_seed, write_json
-from .modeling import LoadedBackbone, build_head, load_backbone, module_parameters
+from .modeling import LoadedBackbone, build_head, load_backbone, load_processor, module_parameters
 from .optics.moe import VisionHomogeneousMoESurrogate
 from .optics.replacement import VisionStackReplacement
+from .processor_cache import (ProcessorCacheStore, build_processor_cache,
+                              validate_processor_cache)
 from .settings import Settings, load_settings, resolve_path
 from .teacher_cache import TeacherCacheStore, build_teacher_cache
 from .training import (evaluate_student, generate_teacher_predictions, load_head, load_student_parts,
-                       save_student_inference, teacher_inference, train_student, train_teacher_head)
+                       make_cached_evaluation_loader, save_student_inference, teacher_inference,
+                       train_student, train_teacher_head)
 
 
-PHASES = ("download", "prepare_data", "teacher_precompute", "teacher_train", "teacher_predictions", "teacher_logits",
+PHASES = ("download", "prepare_data", "input_precompute", "teacher_precompute", "teacher_train", "teacher_predictions", "teacher_logits",
           "teacher_inference", "student_train", "student_inference", "compare", "all")
 
 
@@ -59,6 +62,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.phase in {"download", "prepare_data"}:
         print(f"SPAQ MOS RGB ready: train={len(data.train)} test={len(data.test)} task=MOS", flush=True)
         return 0
+    if args.phase == "input_precompute":
+        processor = load_processor(settings.model_id, settings.cache_dir, settings.local_files_only,
+                                   settings.processor_min_pixels, settings.processor_max_pixels)
+        _precompute_inputs(processor, data, settings)
+        return 0
     device = resolve_device(settings.device)
     write_json(settings.output_dir / "environment.json", runtime_metadata(device))
     if args.phase in {"teacher_train", "teacher_predictions", "teacher_logits", "teacher_inference", "compare"}:
@@ -83,22 +91,27 @@ def main(argv: list[str] | None = None) -> int:
             _precompute(loaded, replacement, data, settings, device)
             if args.phase == "teacher_precompute": return 0
         stores = _load_stores(settings, data)
+        input_stores: dict[str, ProcessorCacheStore] | None = None
         if args.phase == "all":
             teacher_head = train_teacher_head(stores["train"], stores["test"], settings, device)
             generate_teacher_predictions(teacher_head, stores, settings, device)
             teacher_inference(teacher_head, stores["test"], settings, device)
         if args.phase in {"student_train", "all"}:
+            input_stores = _ensure_input_stores(loaded.processor, data, settings)
             student_head = build_head(settings, settings.vision_hidden_size).to(device)
             train_student(loaded.model, loaded.processor, replacement, student_head, data.train, data.test,
-                          stores["train"], stores["test"], settings, device)
+                          stores["train"], stores["test"], input_stores["train"], input_stores["test"],
+                          settings, device)
             if args.phase == "student_train": return 0
         if args.phase in {"student_inference", "all"}:
+            if input_stores is None:
+                input_stores = _ensure_input_stores(loaded.processor, data, settings)
             student_head = build_head(settings, settings.vision_hidden_size).to(device)
             load_student_parts(settings.output_dir, replacement, student_head, "best")
-            loader = make_indexed_loader(data.test, settings.inference_batch_size, settings.num_workers, False, settings.seed)
+            loader = make_cached_evaluation_loader(data.test, input_stores["test"], settings.inference_batch_size)
             predictions_path = settings.output_dir / "metrics" / "student_predictions.csv" if settings.save_predictions else None
             report = evaluate_student(loaded.model, loaded.processor, replacement, student_head, loader,
-                                      device, data.test, predictions_path)
+                                      device, data.test, predictions_path, inputs_are_cached=True)
             save_student_inference(report, settings, replacement, predictions_path)
             if args.phase == "student_inference": return 0
         if args.phase == "all": _compare(settings)
@@ -140,6 +153,29 @@ def _precompute(loaded: LoadedBackbone, replacement: VisionStackReplacement, dat
     for split, dataset in (("train", data.train), ("test", data.test)):
         loader = make_indexed_loader(dataset, settings.feature_batch_size, settings.num_workers, False, settings.seed)
         build_teacher_cache(split, loaded.model, loaded.processor, replacement, loader, len(dataset), settings, device)
+    _precompute_inputs(loaded.processor, data, settings)
+
+
+def _precompute_inputs(processor: Any, data: DatasetBundle, settings: Settings) -> None:
+    for split, dataset in (("train", data.train), ("test", data.test)):
+        loader = make_indexed_loader(dataset, settings.feature_batch_size, settings.num_workers, False, settings.seed)
+        build_processor_cache(split, processor, loader, len(dataset), settings)
+
+
+def _ensure_input_stores(processor: Any, data: DatasetBundle,
+                         settings: Settings) -> dict[str, ProcessorCacheStore]:
+    manifests = [settings.output_dir / "processor_cache" / f"{split}.pt" for split in ("train", "test")]
+    if not all(path.is_file() for path in manifests):
+        print("[processor_cache] missing cache detected; building it once before student execution", flush=True)
+        _precompute_inputs(processor, data, settings)
+    stores = {
+        split: ProcessorCacheStore(settings.output_dir / "processor_cache" / f"{split}.pt",
+                                   settings.teacher_cache_lru_shards)
+        for split in ("train", "test")
+    }
+    for split, dataset in (("train", data.train), ("test", data.test)):
+        validate_processor_cache(stores[split], split, len(dataset), settings)
+    return stores
 
 
 def _load_stores(settings: Settings, data: DatasetBundle) -> dict[str, TeacherCacheStore]:
@@ -193,7 +229,15 @@ def _write_model_report(model: torch.nn.Module, replacement: VisionStackReplacem
                       "router_learning_rate": settings.router_learning_rate,
                       "weight_decay": settings.weight_decay, "scheduler": settings.scheduler_type},
         "sampling": {"train_samples_per_epoch": settings.train_samples_per_epoch,
-                     "rotating_epoch_windows": True, "full_train_pool_retained": True},
+                     "rotating_epoch_windows": True, "full_train_pool_retained": True,
+                     "shard_local_shuffle": True, "shard_size": settings.teacher_cache_shard_size},
+        "student_input_pipeline": {
+            "source": "persistent Qwen image_processor tensor cache",
+            "cache_directory": str(settings.output_dir / "processor_cache"),
+            "storage_dtype": settings.cache_dtype,
+            "repeated_jpeg_decode_per_epoch": False,
+            "repeated_processor_resize_per_epoch": False,
+        },
         "checkpoint_selection": {"split": settings.student_selection_split,
                                  "metric": settings.student_selection_metric,
                                  "warning": "Best-on-test is selection-biased; last checkpoint is also retained."},
@@ -222,7 +266,7 @@ def _compare(settings: Settings) -> None:
 
 
 def _make_dirs(root: Path) -> None:
-    for relative in ("teacher_cache", "metrics", "checkpoints", "figures"):
+    for relative in ("teacher_cache", "processor_cache", "metrics", "checkpoints", "figures"):
         (root / relative).mkdir(parents=True, exist_ok=True)
 
 

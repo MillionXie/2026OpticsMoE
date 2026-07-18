@@ -14,6 +14,7 @@ from .features import move_inputs, pool_token_groups, preprocess_images, run_vis
 from .io_utils import write_csv, write_json
 from .metrics import regression_metrics
 from .modeling import NormalizedLinearRegressionHead, build_head
+from .processor_cache import ProcessorCacheStore
 from .sampling import EpochRotatingSampler
 from .teacher_cache import (TeacherCacheStore, load_teacher_predictions, pooled_teacher_features,
                             write_teacher_predictions)
@@ -104,25 +105,72 @@ def teacher_inference(head: nn.Module, store: TeacherCacheStore, settings: Any,
 
 
 class CachedStudentDataset(Dataset[Any]):
-    def __init__(self, images: Dataset[Any], store: TeacherCacheStore, predictions: torch.Tensor) -> None:
-        self.images = images; self.store = store; self.predictions = predictions
+    def __init__(self, images: Dataset[Any], store: TeacherCacheStore, input_store: ProcessorCacheStore,
+                 predictions: torch.Tensor) -> None:
+        self.images = images; self.store = store; self.input_store = input_store; self.predictions = predictions
 
     def __len__(self) -> int:
         return len(self.images)
 
     def __getitem__(self, index: int):
-        image, target = self.images[index]
+        target = _cached_target(self.images, index)
         cached = self.store.get(index)
+        processor_input = self.input_store.get(index)
         if abs(float(cached["target"]) - float(target)) > 1e-6:
             raise RuntimeError(f"Teacher cache MOS target mismatch at sample {index}")
-        return (image, float(target), index, cached["image_grid_thw"], cached["visual_token_count"],
+        if not torch.equal(cached["image_grid_thw"], processor_input["image_grid_thw"]):
+            raise RuntimeError(f"Processor and teacher cache image_grid_thw mismatch at sample {index}")
+        if int(cached["visual_token_count"]) != int(processor_input["visual_token_count"]):
+            raise RuntimeError(f"Processor and teacher cache token count mismatch at sample {index}")
+        return (processor_input["pixel_values"], float(target), index, cached["image_grid_thw"], cached["visual_token_count"],
                 cached["teacher_vision_stack_output"], self.predictions[index])
 
 
 def cached_collate(batch: Sequence[Any]):
-    images, targets, indices, grids, counts, hidden, predictions = zip(*batch)
-    return (list(images), torch.tensor(targets, dtype=torch.float32), torch.tensor(indices),
+    pixel_values, targets, indices, grids, counts, hidden, predictions = zip(*batch)
+    processor_inputs = {
+        "pixel_values": torch.cat(pixel_values, dim=0).float(),
+        "image_grid_thw": torch.stack(grids),
+    }
+    return (processor_inputs, torch.tensor(targets, dtype=torch.float32), torch.tensor(indices),
             torch.stack(grids), torch.stack(counts).long(), list(hidden), torch.stack(predictions).float())
+
+
+class CachedEvaluationDataset(Dataset[Any]):
+    def __init__(self, images: Dataset[Any], input_store: ProcessorCacheStore) -> None:
+        self.images = images
+        self.input_store = input_store
+
+    def __len__(self) -> int:
+        return len(self.images)
+
+    def __getitem__(self, index: int):
+        cached = self.input_store.get(index)
+        return cached["pixel_values"], _cached_target(self.images, index), index, cached["image_grid_thw"]
+
+
+def cached_evaluation_collate(batch: Sequence[Any]):
+    pixel_values, targets, indices, grids = zip(*batch)
+    return ({"pixel_values": torch.cat(pixel_values, dim=0).float(), "image_grid_thw": torch.stack(grids)},
+            torch.tensor(targets, dtype=torch.float32), torch.tensor(indices))
+
+
+def make_cached_evaluation_loader(dataset: Dataset[Any], input_store: ProcessorCacheStore,
+                                  batch_size: int) -> DataLoader[Any]:
+    # Sequential sample order is already shard-local for the test split.
+    return DataLoader(CachedEvaluationDataset(dataset, input_store), batch_size=batch_size, shuffle=False,
+                      num_workers=0, collate_fn=cached_evaluation_collate,
+                      pin_memory=torch.cuda.is_available())
+
+
+def _cached_target(dataset: Dataset[Any], index: int) -> float:
+    targets = getattr(dataset, "targets", None)
+    if targets is not None:
+        return float(targets[index])
+    # Compatibility fallback for a generic Dataset. SPAQMOSDataset takes the
+    # fast path above and therefore does not open a JPEG here.
+    _image, target = dataset[index]
+    return float(target)
 
 
 def _is_better(metric: str, current: float, best: float) -> bool:
@@ -131,16 +179,18 @@ def _is_better(metric: str, current: float, best: float) -> bool:
 
 def train_student(model: nn.Module, processor: Any, replacement: Any, head: NormalizedLinearRegressionHead,
                   train_dataset: Dataset[Any], test_dataset: Dataset[Any], train_store: TeacherCacheStore,
-                  test_store: TeacherCacheStore, settings: Any, device: torch.device) -> None:
+                  test_store: TeacherCacheStore, train_input_store: ProcessorCacheStore,
+                  test_input_store: ProcessorCacheStore, settings: Any, device: torch.device) -> None:
     teacher_predictions = load_teacher_predictions(
         settings.output_dir / "teacher_cache" / "train_teacher_predictions.pt",
         settings.head_output_activation,
     )
-    cached = CachedStudentDataset(train_dataset, train_store, teacher_predictions)
-    sampler = EpochRotatingSampler(len(train_dataset), settings.train_samples_per_epoch, settings.seed)
+    cached = CachedStudentDataset(train_dataset, train_store, train_input_store, teacher_predictions)
+    sampler = EpochRotatingSampler(len(train_dataset), settings.train_samples_per_epoch, settings.seed,
+                                   settings.teacher_cache_shard_size)
     loader = DataLoader(cached, batch_size=settings.student_batch_size, sampler=sampler, num_workers=0,
                         collate_fn=cached_collate, pin_memory=torch.cuda.is_available())
-    test_loader = make_indexed_loader(test_dataset, settings.inference_batch_size, settings.num_workers, False, settings.seed)
+    test_loader = make_cached_evaluation_loader(test_dataset, test_input_store, settings.inference_batch_size)
     model.requires_grad_(False).eval(); replacement.use_student()
     replacement.surrogate.requires_grad_(True).train(); head.requires_grad_(True).train()
     router_parameters = list(replacement.surrogate.prompt.router.parameters())
@@ -165,6 +215,7 @@ def train_student(model: nn.Module, processor: Any, replacement: Any, head: Norm
     first_shapes_written = False
     for epoch in range(1, settings.epochs + 1):
         started = time.perf_counter(); sampler.set_epoch(epoch)
+        train_store.reset_stats(); train_input_store.reset_stats(); test_input_store.reset_stats()
         dropout_active = settings.phase_dropout_enabled and epoch >= settings.phase_dropout_start_epoch
         replacement.surrogate.set_phase_dropout_active(dropout_active)
         replacement.surrogate.train(); head.train()
@@ -172,9 +223,10 @@ def train_student(model: nn.Module, processor: Any, replacement: Any, head: Norm
         seen = 0; train_predictions: list[torch.Tensor] = []; train_targets: list[torch.Tensor] = []
         selection = torch.zeros(settings.num_experts); weight_sum = torch.zeros(settings.num_experts)
         print(f"[sampling] epoch={epoch} samples={len(sampler)}/{len(train_dataset)} phase_dropout={'on' if dropout_active else 'off'}", flush=True)
-        for batch_index, (images, targets, _indices, cached_grids, cached_counts, teacher_hidden,
+        data_wait_sec = 0.0; train_compute_sec = 0.0; previous_batch_finished = time.perf_counter()
+        for batch_index, (cpu_inputs, targets, _indices, cached_grids, cached_counts, teacher_hidden,
                           teacher_batch_predictions) in enumerate(loader, start=1):
-            cpu_inputs = preprocess_images(processor, images)
+            batch_ready = time.perf_counter(); data_wait_sec += batch_ready - previous_batch_finished
             if not torch.equal(cpu_inputs["image_grid_thw"].cpu(), cached_grids.cpu()):
                 raise RuntimeError("Current image_grid_thw differs from teacher cache; regenerate it")
             inputs = move_inputs(cpu_inputs, device); targets = targets.to(device)
@@ -227,6 +279,7 @@ def train_student(model: nn.Module, processor: Any, replacement: Any, head: Norm
                 if not torch.isfinite(loss_total) or head_gradient_norm == 0.0:
                     raise RuntimeError("Student first batch has a non-finite loss or zero head gradient; aborting before a silent failed run")
             optimizer.step()
+            train_compute_sec += time.perf_counter() - batch_ready
             batch_size = len(targets); seen += batch_size
             for name, value in (("total", loss_total), ("hidden", loss_hidden),
                                 ("prediction_distill", loss_prediction_distill), ("regression", loss_regression),
@@ -252,8 +305,12 @@ def train_student(model: nn.Module, processor: Any, replacement: Any, head: Norm
                       f"lr={learning_rates['main']:.3e} head_lr={learning_rates['student_head']:.3e} "
                       f"router_lr={learning_rates['router']:.3e} "
                       f"experts=[{expert_status}]", flush=True)
+            previous_batch_finished = time.perf_counter()
         train_report = _score_metrics(torch.cat(train_predictions), torch.cat(train_targets))
-        test_report = evaluate_student(model, processor, replacement, head, test_loader, device, test_dataset)
+        test_started = time.perf_counter()
+        test_report = evaluate_student(model, processor, replacement, head, test_loader, device, test_dataset,
+                                       inputs_are_cached=True)
+        test_time_sec = time.perf_counter() - test_started
         if scheduler is not None: scheduler.step()
         learning_rates = {group["group_name"]: group["lr"] for group in optimizer.param_groups}
         row: dict[str, Any] = {
@@ -264,6 +321,14 @@ def train_student(model: nn.Module, processor: Any, replacement: Any, head: Norm
             **{f"train_{name}": value for name, value in train_report.items()},
             **{f"test_{name}": value for name, value in test_report.items() if isinstance(value, (int, float))},
             "epoch_time_sec": time.perf_counter() - started, "phase_dropout_active": dropout_active,
+            "train_data_wait_sec": data_wait_sec, "train_compute_sec": train_compute_sec,
+            "test_time_sec": test_time_sec,
+            "teacher_cache_hits": train_store.stats()["hits"],
+            "teacher_cache_misses": train_store.stats()["misses"],
+            "teacher_cache_hit_rate": train_store.stats()["hit_rate"],
+            "processor_cache_hits": train_input_store.stats()["hits"],
+            "processor_cache_misses": train_input_store.stats()["misses"],
+            "processor_cache_hit_rate": train_input_store.stats()["hit_rate"],
             "samples_this_epoch": len(sampler), "checkpoint_selection_split": settings.student_selection_split,
             "checkpoint_selection_metric": settings.student_selection_metric,
         }
@@ -296,7 +361,10 @@ def train_student(model: nn.Module, processor: Any, replacement: Any, head: Norm
               f"test_MAE={test_report['mae']:.3f} test_SRCC={test_report['srcc']:.4f} "
               f"test_pred=[{test_report['prediction_min_normalized']:.3f},{test_report['prediction_max_normalized']:.3f}] "
               f"test_pred_std={test_report['prediction_std_normalized']:.4f} "
-              f"best_{settings.student_selection_metric}={best_value:.4f} debug_examples={debug_saved}", flush=True)
+              f"best_{settings.student_selection_metric}={best_value:.4f} debug_examples={debug_saved} "
+              f"data_wait={data_wait_sec:.1f}s compute={train_compute_sec:.1f}s test={test_time_sec:.1f}s "
+              f"teacher_cache_hit={train_store.stats()['hit_rate']:.3f} "
+              f"processor_cache_hit={train_input_store.stats()['hit_rate']:.3f}", flush=True)
     write_json(settings.output_dir / "metrics" / "student_training.json", {
         "epochs": settings.epochs, "best_metric": settings.student_selection_metric, "best_value": best_value,
         "checkpoint_selection_split": settings.student_selection_split, "test_selection_bias_warning": True,
@@ -330,12 +398,13 @@ def save_epoch_debug_examples(model: nn.Module, processor: Any, replacement: Any
 @torch.inference_mode()
 def evaluate_student(model: nn.Module, processor: Any, replacement: Any, head: nn.Module, loader: Any,
                      device: torch.device, dataset: Dataset[Any] | None = None,
-                     predictions_path: Path | None = None) -> dict[str, Any]:
+                     predictions_path: Path | None = None, inputs_are_cached: bool = False) -> dict[str, Any]:
     replacement.use_student(); replacement.surrogate.eval(); replacement.surrogate.set_phase_dropout_active(False); head.eval()
     predictions_all: list[torch.Tensor] = []; targets_all: list[torch.Tensor] = []; indices_all: list[torch.Tensor] = []
     selection = torch.zeros(replacement.surrogate.geometry.num_experts); weight_sum = torch.zeros_like(selection); seen = 0
-    for images, targets, indices in loader:
-        run_visual(model, move_inputs(preprocess_images(processor, images), device))
+    for batch_inputs, targets, indices in loader:
+        cpu_inputs = batch_inputs if inputs_are_cached else preprocess_images(processor, batch_inputs)
+        run_visual(model, move_inputs(cpu_inputs, device))
         groups = list(replacement.surrogate.last_output.split(replacement.surrogate.last_token_counts, dim=0))
         predictions_all.append(head(pool_token_groups(groups)).cpu()); targets_all.append(targets.cpu()); indices_all.append(indices.cpu())
         routing = replacement.surrogate.last_routing; seen += len(targets)

@@ -1,5 +1,11 @@
 # Architecture
 
+## Student input cache
+
+The original RGB SPAQ image is decoded and resized by the frozen Qwen image processor once. Its `pixel_values` and `image_grid_thw` tensors are stored as float16/float32 processor-cache shards. Student epochs restore these arrays as float32 and feed them directly to the frozen Qwen visual stem. No JPEG decode or processor resize is repeated during an epoch.
+
+Teacher-hidden and processor-input cache shards use the same sample boundaries. Epoch sampling is random at the shard level and within each shard, rather than globally random at individual-sample granularity. This retains stochastic ordering while avoiding LRU shard thrashing.
+
 ## Preserved from the CIFAR-10 vision homogeneous MoE
 
 - 480x480 optical canvas and centered 450x450 active area.
