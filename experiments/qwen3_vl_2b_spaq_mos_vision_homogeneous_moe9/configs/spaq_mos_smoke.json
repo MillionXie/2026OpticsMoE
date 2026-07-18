@@ -11,8 +11,8 @@
   },
   "batching": {
     "feature_batch_size": 1,
-    "student_batch_size": 1,
-    "inference_batch_size": 1,
+    "student_batch_size": 8,
+    "inference_batch_size": 8,
     "num_workers": 0
   },
   "teacher_cache": {
