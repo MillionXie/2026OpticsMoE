@@ -21,8 +21,18 @@ from .visualization import save_debug_example, save_phase_masks, save_scatter, s
 
 
 def _score_metrics(predictions_normalized: torch.Tensor, targets_normalized: torch.Tensor) -> dict[str, float]:
-    return regression_metrics((targets_normalized.float() * 100.0).tolist(),
-                              (predictions_normalized.float() * 100.0).tolist())
+    predictions = predictions_normalized.float().reshape(-1)
+    report = regression_metrics((targets_normalized.float().reshape(-1) * 100.0).tolist(),
+                                (predictions * 100.0).tolist())
+    report.update({
+        "prediction_min_normalized": float(predictions.min()),
+        "prediction_max_normalized": float(predictions.max()),
+        "prediction_mean_normalized": float(predictions.mean()),
+        "prediction_std_normalized": float(predictions.std(unbiased=False)),
+        "prediction_out_of_range_ratio": float(((predictions < 0.0) | (predictions > 1.0)).float().mean()),
+        "prediction_boundary_ratio": float(((predictions <= 1e-6) | (predictions >= 1.0 - 1e-6)).float().mean()),
+    })
+    return report
 
 
 def _split_indices(samples: int, fraction: float, seed: int) -> tuple[torch.Tensor, torch.Tensor]:
@@ -132,11 +142,13 @@ def train_student(model: nn.Module, processor: Any, replacement: Any, head: Norm
     replacement.surrogate.requires_grad_(True).train(); head.requires_grad_(True).train()
     router_parameters = list(replacement.surrogate.prompt.router.parameters())
     router_ids = {id(parameter) for parameter in router_parameters}
-    main_parameters = [parameter for parameter in [*replacement.surrogate.parameters(), *head.parameters()]
+    main_parameters = [parameter for parameter in replacement.surrogate.parameters()
                        if id(parameter) not in router_ids]
+    head_parameters = list(head.parameters())
     optimizer_class = torch.optim.AdamW if settings.optimizer_type == "adamw" else torch.optim.Adam
     optimizer = optimizer_class([
         {"params": main_parameters, "lr": settings.learning_rate, "group_name": "main"},
+        {"params": head_parameters, "lr": settings.student_head_learning_rate, "group_name": "student_head"},
         {"params": router_parameters, "lr": settings.router_learning_rate, "group_name": "router"},
     ], weight_decay=settings.weight_decay)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=settings.epochs) if settings.scheduler_type == "cosine" else None
@@ -193,7 +205,25 @@ def train_student(model: nn.Module, processor: Any, replacement: Any, head: Norm
                           settings.loss_regression_weight * loss_regression +
                           settings.router_balance_weight * loss_balance +
                           settings.router_importance_weight * loss_importance)
-            loss_total.backward(); optimizer.step()
+            loss_total.backward()
+            if epoch == 1 and batch_index == 1:
+                initial_metrics = _score_metrics(predictions.detach(), targets.detach())
+                head_gradient_norm = sum(float(parameter.grad.detach().float().square().sum())
+                                         for parameter in head.parameters() if parameter.grad is not None) ** 0.5
+                write_json(settings.output_dir / "metrics" / "student_first_batch_diagnostics.json", {
+                    "student_output_activation": getattr(head, "output_activation", "unknown"),
+                    "student_regressor_zero_initialized": settings.student_head_zero_initialize_regressor,
+                    "prediction_min_normalized": initial_metrics["prediction_min_normalized"],
+                    "prediction_max_normalized": initial_metrics["prediction_max_normalized"],
+                    "prediction_std_normalized": initial_metrics["prediction_std_normalized"],
+                    "prediction_boundary_ratio": initial_metrics["prediction_boundary_ratio"],
+                    "prediction_out_of_range_ratio": initial_metrics["prediction_out_of_range_ratio"],
+                    "student_head_gradient_l2_norm": head_gradient_norm,
+                    "finite_loss": bool(torch.isfinite(loss_total)),
+                })
+                if not torch.isfinite(loss_total) or head_gradient_norm == 0.0:
+                    raise RuntimeError("Student first batch has a non-finite loss or zero head gradient; aborting before a silent failed run")
+            optimizer.step()
             batch_size = len(targets); seen += batch_size
             for name, value in (("total", loss_total), ("hidden", loss_hidden),
                                 ("prediction_distill", loss_prediction_distill), ("regression", loss_regression),
@@ -207,17 +237,23 @@ def train_student(model: nn.Module, processor: Any, replacement: Any, head: Norm
                 current = _score_metrics(torch.cat(train_predictions), torch.cat(train_targets))
                 expert_status = " ".join(f"e{i}:sel={float(selection[i]/seen):.3f},w|sel={float(weight_sum[i]/selection[i].clamp_min(1)):.3f}"
                                          for i in range(settings.num_experts))
+                learning_rates = {group["group_name"]: group["lr"] for group in optimizer.param_groups}
                 print(f"epoch {epoch}/{settings.epochs} batch {batch_index}/{len(loader)} loss={totals['total']/seen:.5f} "
                       f"hidden={totals['hidden']/seen:.5f} distill={totals['prediction_distill']/seen:.5f} "
                       f"mos={totals['regression']/seen:.5f} MAE={current['mae']:.3f} SRCC={current['srcc']:.4f} "
-                      f"lr={optimizer.param_groups[0]['lr']:.3e} router_lr={optimizer.param_groups[1]['lr']:.3e} "
+                      f"pred=[{current['prediction_min_normalized']:.3f},{current['prediction_max_normalized']:.3f}] "
+                      f"pred_std={current['prediction_std_normalized']:.4f} out_of_range={current['prediction_out_of_range_ratio']:.3f} "
+                      f"lr={learning_rates['main']:.3e} head_lr={learning_rates['student_head']:.3e} "
+                      f"router_lr={learning_rates['router']:.3e} "
                       f"experts=[{expert_status}]", flush=True)
         train_report = _score_metrics(torch.cat(train_predictions), torch.cat(train_targets))
         test_report = evaluate_student(model, processor, replacement, head, test_loader, device, test_dataset)
         if scheduler is not None: scheduler.step()
+        learning_rates = {group["group_name"]: group["lr"] for group in optimizer.param_groups}
         row: dict[str, Any] = {
-            "epoch": epoch, "learning_rate": optimizer.param_groups[0]["lr"],
-            "router_learning_rate": optimizer.param_groups[1]["lr"],
+            "epoch": epoch, "learning_rate": learning_rates["main"],
+            "student_head_learning_rate": learning_rates["student_head"],
+            "router_learning_rate": learning_rates["router"],
             **{f"loss_{name}": value / seen for name, value in totals.items()},
             **{f"train_{name}": value for name, value in train_report.items()},
             **{f"test_{name}": value for name, value in test_report.items() if isinstance(value, (int, float))},
@@ -252,6 +288,8 @@ def train_student(model: nn.Module, processor: Any, replacement: Any, head: Norm
                                                       settings, device, epoch)
         print(f"epoch {epoch:03d} complete train_MAE={train_report['mae']:.3f} train_SRCC={train_report['srcc']:.4f} "
               f"test_MAE={test_report['mae']:.3f} test_SRCC={test_report['srcc']:.4f} "
+              f"test_pred=[{test_report['prediction_min_normalized']:.3f},{test_report['prediction_max_normalized']:.3f}] "
+              f"test_pred_std={test_report['prediction_std_normalized']:.4f} "
               f"best_{settings.student_selection_metric}={best_value:.4f} debug_examples={debug_saved}", flush=True)
     write_json(settings.output_dir / "metrics" / "student_training.json", {
         "epochs": settings.epochs, "best_metric": settings.student_selection_metric, "best_value": best_value,
@@ -316,7 +354,8 @@ def evaluate_student(model: nn.Module, processor: Any, replacement: Any, head: n
 
 def save_student_inference(report: dict[str, Any], settings: Any, replacement: Any,
                            predictions_path: Path | None = None) -> None:
-    report = {**report, "head_output_activation": settings.head_output_activation,
+    report = {**report, "head_output_activation": settings.student_head_output_activation,
+              "predictions_clamped_for_metrics": False,
               "phase_dropout_disabled_for_inference": True,
               "parameter_breakdown": replacement.surrogate.parameter_breakdown()}
     write_json(settings.output_dir / "metrics" / "student_inference.json", report)
@@ -359,8 +398,18 @@ def load_student_parts(output_dir: Path, replacement: Any, head: nn.Module, tag:
     surrogate_path = checkpoint / f"vision_moe_{tag}.pt"; head_path = checkpoint / f"student_head_{tag}.pt"
     if not surrogate_path.is_file() or not head_path.is_file():
         raise FileNotFoundError(f"Student checkpoint '{tag}' is incomplete under {checkpoint}")
-    replacement.surrogate.load_state_dict(torch.load(surrogate_path, map_location="cpu", weights_only=True)["state_dict"])
-    head.load_state_dict(torch.load(head_path, map_location="cpu", weights_only=True)["state_dict"])
+    surrogate_payload = torch.load(surrogate_path, map_location="cpu", weights_only=True)
+    head_payload = torch.load(head_path, map_location="cpu", weights_only=True)
+    saved_head = head_payload.get("head", {})
+    current_head = head.specification() if hasattr(head, "specification") else {}
+    if saved_head and saved_head.get("output_activation") != current_head.get("output_activation"):
+        raise RuntimeError(
+            f"Student checkpoint '{tag}' uses output_activation={saved_head.get('output_activation')}, "
+            f"but current config requests {current_head.get('output_activation')}. Retrain student_train; "
+            "the electronic teacher cache and teacher_head.pt can still be reused."
+        )
+    replacement.surrogate.load_state_dict(surrogate_payload["state_dict"])
+    head.load_state_dict(head_payload["state_dict"])
 
 
 @torch.inference_mode()

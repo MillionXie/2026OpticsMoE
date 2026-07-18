@@ -10,7 +10,10 @@ from torch import nn
 
 from experiments.qwen3_vl_2b_spaq_mos_vision_homogeneous_moe9.datasets import load_spaq
 from experiments.qwen3_vl_2b_spaq_mos_vision_homogeneous_moe9.metrics import regression_metrics
-from experiments.qwen3_vl_2b_spaq_mos_vision_homogeneous_moe9.modeling import NormalizedLinearRegressionHead, build_head
+from experiments.qwen3_vl_2b_spaq_mos_vision_homogeneous_moe9.modeling import (NormalizedLinearRegressionHead,
+                                                                              build_head,
+                                                                              initialize_student_head,
+                                                                              resolve_cached_model_source)
 from experiments.qwen3_vl_2b_spaq_mos_vision_homogeneous_moe9.optics.geometry import MoEGeometry
 from experiments.qwen3_vl_2b_spaq_mos_vision_homogeneous_moe9.optics.moe import VisionHomogeneousMoESurrogate
 from experiments.qwen3_vl_2b_spaq_mos_vision_homogeneous_moe9.sampling import EpochRotatingSampler
@@ -36,6 +39,9 @@ def test_grouped_config_and_identical_small_regression_head() -> None:
     settings = load_settings(CONFIG)
     assert settings.dataset == "spaq_mos" and settings.task_name == "MOS"
     assert settings.head_output_activation == "sigmoid"
+    assert settings.student_head_output_activation == "linear"
+    assert settings.student_head_zero_initialize_regressor is True
+    assert settings.student_head_learning_rate == pytest.approx(1e-3)
     assert settings.interlayer_hard_route_mask is True
     assert settings.train_image_limit == 24 and settings.epochs == 1
     head = build_head(settings, 1024)
@@ -43,6 +49,24 @@ def test_grouped_config_and_identical_small_regression_head() -> None:
     assert output.shape == (3,)
     assert torch.all((0.0 <= output) & (output <= 1.0))
     assert sum(parameter.numel() for parameter in head.parameters()) == 3073
+
+
+def test_student_linear_head_zero_initialization_keeps_teacher_unchanged() -> None:
+    teacher = NormalizedLinearRegressionHead(8, "sigmoid")
+    teacher_before = {name: value.detach().clone() for name, value in teacher.state_dict().items()}
+    student = NormalizedLinearRegressionHead(8, "linear")
+    initialize_student_head(student, teacher, zero_initialize_regressor=True)
+    values = torch.randn(4, 8)
+    assert torch.equal(student.norm.weight, teacher.norm.weight)
+    assert torch.equal(student.norm.bias, teacher.norm.bias)
+    assert torch.count_nonzero(student.regressor.weight) == 0
+    assert torch.count_nonzero(student.regressor.bias) == 0
+    assert torch.equal(student(values), torch.zeros(4))
+    torch.nn.functional.smooth_l1_loss(student(values), torch.rand(4), beta=0.1).backward()
+    assert student.regressor.weight.grad is not None
+    assert torch.count_nonzero(student.regressor.weight.grad) > 0
+    for name, value in teacher.state_dict().items():
+        assert torch.equal(value, teacher_before[name])
 
 
 def test_head_teacher_student_state_is_compatible() -> None:
@@ -53,6 +77,17 @@ def test_head_teacher_student_state_is_compatible() -> None:
     assert torch.allclose(teacher(values), student(values))
     torch.nn.functional.smooth_l1_loss(student(values), torch.rand(4), beta=0.1).backward()
     assert student.regressor.weight.grad is not None
+
+
+def test_cached_model_source_avoids_network_without_changing_model_id(tmp_path: Path,
+                                                                      monkeypatch: pytest.MonkeyPatch) -> None:
+    hub = tmp_path / "hub"
+    snapshot = hub / "models--Qwen--Qwen3-VL-2B-Instruct" / "snapshots" / "abc123"
+    snapshot.mkdir(parents=True)
+    (snapshot / "config.json").write_text("{}", encoding="utf-8")
+    (snapshot / "preprocessor_config.json").write_text("{}", encoding="utf-8")
+    monkeypatch.setenv("HUGGINGFACE_HUB_CACHE", str(hub))
+    assert resolve_cached_model_source("Qwen/Qwen3-VL-2B-Instruct", None) == str(snapshot.resolve())
 
 
 def test_spaq_mos_loader_uses_rgb_and_persistent_image_split(tmp_path: Path) -> None:

@@ -115,6 +115,8 @@
   "classification_head": {
     "type": "normalized_linear_regression",
     "output_activation": "sigmoid",
+    "student_output_activation": "linear",
+    "student_zero_initialize_regressor": true,
     "dropout": 0.0
   },
   "loss": {
@@ -128,6 +130,7 @@
   "optimizer": {
     "type": "adamw",
     "learning_rate": 0.008,
+    "student_head_learning_rate": 0.001,
     "weight_decay": 0.0,
     "scheduler": "cosine"
   },

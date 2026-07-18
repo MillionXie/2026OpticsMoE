@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import os
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -27,9 +28,19 @@ class NormalizedLinearRegressionHead(nn.Module):
         self.regressor = nn.Linear(feature_dim, 1)
         self.output_activation = output_activation
 
-    def forward(self, features: torch.Tensor) -> torch.Tensor:
-        value = self.regressor(self.norm(features.float())).squeeze(-1)
+    def forward_raw(self, features: torch.Tensor) -> torch.Tensor:
+        return self.regressor(self.norm(features.float())).squeeze(-1)
+
+    def activate(self, value: torch.Tensor) -> torch.Tensor:
         return torch.sigmoid(value) if self.output_activation == "sigmoid" else value
+
+    def forward(self, features: torch.Tensor) -> torch.Tensor:
+        return self.activate(self.forward_raw(features))
+
+    def zero_initialize_regressor(self) -> None:
+        """Start a student at score zero without disabling its LayerNorm features."""
+        nn.init.zeros_(self.regressor.weight)
+        nn.init.zeros_(self.regressor.bias)
 
     def specification(self) -> dict[str, Any]:
         return {
@@ -42,10 +53,30 @@ class NormalizedLinearRegressionHead(nn.Module):
         }
 
 
-def build_head(settings: Any, feature_dim: int) -> NormalizedLinearRegressionHead:
+def build_head(settings: Any, feature_dim: int, role: str = "teacher") -> NormalizedLinearRegressionHead:
     if settings.head_type != "normalized_linear_regression":
         raise ValueError("Only normalized_linear_regression is supported")
-    return NormalizedLinearRegressionHead(feature_dim, settings.head_output_activation)
+    if role not in {"teacher", "student"}:
+        raise ValueError("role must be teacher or student")
+    activation = (settings.head_output_activation if role == "teacher"
+                  else settings.student_head_output_activation)
+    return NormalizedLinearRegressionHead(feature_dim, activation)
+
+
+def initialize_student_head(student: NormalizedLinearRegressionHead,
+                            teacher: NormalizedLinearRegressionHead,
+                            zero_initialize_regressor: bool = True) -> None:
+    """Copy compatible teacher normalization, then optionally neutralize the score layer.
+
+    The teacher's fitted regressor can emit very large logits for the initially
+    out-of-distribution optical hidden states.  Keeping that regressor behind a
+    sigmoid made the student output exactly one and removed the score-loss
+    gradient.  A zero score layer is trainable immediately; zeroing the whole
+    head would not be, because it would also erase the LayerNorm features.
+    """
+    student.load_state_dict(teacher.state_dict())
+    if zero_initialize_regressor:
+        student.zero_initialize_regressor()
 
 
 def load_backbone(model_id: str, cache_dir: Path | None, local_files_only: bool, dtype: torch.dtype,
@@ -55,16 +86,57 @@ def load_backbone(model_id: str, cache_dir: Path | None, local_files_only: bool,
     model_cls = getattr(transformers, "AutoModelForImageTextToText", None) or getattr(transformers, "Qwen3VLForConditionalGeneration", None)
     if model_cls is None:
         raise RuntimeError("Installed transformers does not support Qwen3-VL")
-    common = {"cache_dir": str(cache_dir) if cache_dir else None, "local_files_only": local_files_only}
+    source = resolve_cached_model_source(model_id, cache_dir)
+    using_local_snapshot = source != model_id
+    common = {"cache_dir": str(cache_dir) if cache_dir else None,
+              "local_files_only": local_files_only or using_local_snapshot}
     processor_kwargs = {key: value for key, value in common.items() if value is not None}
     processor_kwargs.update({"min_pixels": min_pixels, "max_pixels": max_pixels})
     model_kwargs = {key: value for key, value in common.items() if value is not None}
     model_kwargs.update({"dtype": dtype, "low_cpu_mem_usage": True, "attn_implementation": attn_implementation})
     started = time.perf_counter()
-    processor = processor_cls.from_pretrained(model_id, **processor_kwargs)
-    model = model_cls.from_pretrained(model_id, **model_kwargs)
+    processor = processor_cls.from_pretrained(source, **processor_kwargs)
+    model = model_cls.from_pretrained(source, **model_kwargs)
     model.to(device).requires_grad_(False).eval()
     return LoadedBackbone(model, processor, device, time.perf_counter() - started)
+
+
+def resolve_cached_model_source(model_id: str, cache_dir: Path | None) -> str:
+    """Prefer a complete local HF snapshot without changing cache metadata.
+
+    Passing a repository id to some tokenizer versions still performs network
+    metadata requests even when all weights are cached.  Loading the resolved
+    snapshot directory avoids those requests, while Settings.model_id remains
+    the portable repository id used by teacher-cache validation.
+    """
+    if Path(model_id).is_dir() or "/" not in model_id:
+        return model_id
+    roots: list[Path] = []
+    if cache_dir is not None:
+        roots.append(Path(cache_dir))
+    if os.environ.get("HUGGINGFACE_HUB_CACHE"):
+        roots.append(Path(os.environ["HUGGINGFACE_HUB_CACHE"]))
+    if os.environ.get("HF_HOME"):
+        roots.append(Path(os.environ["HF_HOME"]) / "hub")
+    roots.append(Path.home() / ".cache" / "huggingface" / "hub")
+    repository = "models--" + model_id.replace("/", "--")
+    for root in dict.fromkeys(path.resolve() for path in roots):
+        directory = root / repository
+        snapshots = directory / "snapshots"
+        if not snapshots.is_dir():
+            continue
+        preferred: list[Path] = []
+        main_ref = directory / "refs" / "main"
+        if main_ref.is_file():
+            revision = main_ref.read_text(encoding="utf-8").strip()
+            if revision:
+                preferred.append(snapshots / revision)
+        preferred.extend(sorted((path for path in snapshots.iterdir() if path.is_dir()),
+                                key=lambda path: path.stat().st_mtime, reverse=True))
+        for snapshot in preferred:
+            if (snapshot / "config.json").is_file() and (snapshot / "preprocessor_config.json").is_file():
+                return str(snapshot.resolve())
+    return model_id
 
 
 def module_parameters(module: nn.Module, trainable_only: bool = False) -> int:

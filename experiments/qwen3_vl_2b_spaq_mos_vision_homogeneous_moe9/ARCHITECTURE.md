@@ -14,7 +14,9 @@
 
 - Dataset is SPAQ and only `MOS` is used.
 - Output dimension changes from ten logits to one normalized score.
-- Teacher and student share `LayerNorm(1024) -> Linear(1024,1) -> Sigmoid`.
+- Teacher uses `LayerNorm(1024) -> Linear(1024,1) -> Sigmoid` and retains its existing checkpoint.
+- Student uses the same LayerNorm/Linear core but defaults to a linear output. Its final Linear is zero-initialized while the copied teacher LayerNorm remains active and trainable.
+- Teacher and student activations are independent config fields, so changing only the student does not invalidate the teacher cache or teacher checkpoint.
 - CE and categorical KD become ground-truth SmoothL1 and teacher-score SmoothL1.
 - Accuracy/F1/confusion matrix become MAE, RMSE, SRCC, PLCC, threshold accuracy, and MOS scatter plots.
 - Teacher cache stores floating-point normalized targets rather than class labels.

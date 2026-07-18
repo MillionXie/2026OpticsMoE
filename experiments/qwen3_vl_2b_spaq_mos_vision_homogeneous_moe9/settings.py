@@ -61,6 +61,9 @@ class Settings:
     scheduler_type: str = "cosine"
     head_type: str = "normalized_linear_regression"
     head_output_activation: str = "sigmoid"
+    student_head_output_activation: str = "linear"
+    student_head_zero_initialize_regressor: bool = True
+    student_head_learning_rate: float = 1e-3
     dropout: float = 0.0
     input_adapter_dim: int = 120
     max_visual_tokens: int = 120
@@ -141,6 +144,10 @@ class Settings:
             raise ValueError("Teacher and student must use normalized_linear_regression")
         if self.head_output_activation not in {"sigmoid", "linear"}:
             raise ValueError("classification_head.output_activation must be sigmoid or linear")
+        if self.student_head_output_activation not in {"sigmoid", "linear"}:
+            raise ValueError("classification_head.student_output_activation must be sigmoid or linear")
+        if self.student_head_learning_rate <= 0:
+            raise ValueError("optimizer.student_head_learning_rate must be positive")
         if self.download_source not in {"huggingface", "google_drive"}:
             raise ValueError("download_source must be huggingface or google_drive")
         if self.download and self.download_source == "huggingface" and (
@@ -284,6 +291,8 @@ NESTED_FIELDS: dict[tuple[str, ...], str] = {
     ("moe", "final_detector_readout", "nonlinearity"): "detector_nonlinearity",
     ("classification_head", "type"): "head_type",
     ("classification_head", "output_activation"): "head_output_activation",
+    ("classification_head", "student_output_activation"): "student_head_output_activation",
+    ("classification_head", "student_zero_initialize_regressor"): "student_head_zero_initialize_regressor",
     ("classification_head", "dropout"): "dropout",
     ("loss", "hidden_weight"): "loss_hidden_weight",
     ("loss", "prediction_distill_weight"): "loss_prediction_distill_weight",
@@ -292,6 +301,7 @@ NESTED_FIELDS: dict[tuple[str, ...], str] = {
     ("loss", "router_balance_weight"): "router_balance_weight",
     ("loss", "router_importance_weight"): "router_importance_weight",
     ("optimizer", "type"): "optimizer_type", ("optimizer", "learning_rate"): "learning_rate",
+    ("optimizer", "student_head_learning_rate"): "student_head_learning_rate",
     ("optimizer", "weight_decay"): "weight_decay", ("optimizer", "scheduler"): "scheduler_type",
     ("training", "epochs"): "epochs", ("training", "logging", "interval_batches"): "log_interval_batches",
     ("training", "progress"): "progress",

@@ -11,7 +11,8 @@ import torch
 from .data_prepare import ensure_spaq_dataset
 from .datasets import DatasetBundle, load_spaq, make_indexed_loader
 from .io_utils import resolve_device, resolve_dtype, runtime_metadata, set_seed, write_json
-from .modeling import LoadedBackbone, build_head, load_backbone, module_parameters
+from .modeling import (LoadedBackbone, build_head, initialize_student_head, load_backbone,
+                       module_parameters)
 from .optics.moe import VisionHomogeneousMoESurrogate
 from .optics.replacement import VisionStackReplacement
 from .settings import Settings, load_settings, resolve_path
@@ -90,13 +91,13 @@ def main(argv: list[str] | None = None) -> int:
         elif args.phase == "student_train":
             teacher_head = load_head(settings.output_dir / "checkpoints" / "teacher_head.pt", settings, device)
         if args.phase in {"student_train", "all"}:
-            student_head = build_head(settings, settings.vision_hidden_size).to(device)
-            student_head.load_state_dict(teacher_head.state_dict())
+            student_head = build_head(settings, settings.vision_hidden_size, role="student").to(device)
+            initialize_student_head(student_head, teacher_head, settings.student_head_zero_initialize_regressor)
             train_student(loaded.model, loaded.processor, replacement, student_head, data.train, data.test,
                           stores["train"], stores["test"], settings, device)
             if args.phase == "student_train": return 0
         if args.phase in {"student_inference", "all"}:
-            student_head = build_head(settings, settings.vision_hidden_size).to(device)
+            student_head = build_head(settings, settings.vision_hidden_size, role="student").to(device)
             load_student_parts(settings.output_dir, replacement, student_head, "best")
             loader = make_indexed_loader(data.test, settings.inference_batch_size, settings.num_workers, False, settings.seed)
             predictions_path = settings.output_dir / "metrics" / "student_predictions.csv" if settings.save_predictions else None
@@ -168,8 +169,9 @@ def _resolve_architecture_from_cache(settings: Settings, store: TeacherCacheStor
 
 
 def _write_model_report(model: torch.nn.Module, replacement: VisionStackReplacement, settings: Settings) -> None:
-    head = build_head(settings, settings.vision_hidden_size)
-    breakdown = replacement.surrogate.parameter_breakdown(); head_parameters = module_parameters(head)
+    teacher_head = build_head(settings, settings.vision_hidden_size, role="teacher")
+    student_head = build_head(settings, settings.vision_hidden_size, role="student")
+    breakdown = replacement.surrogate.parameter_breakdown(); head_parameters = module_parameters(student_head)
     student_total = breakdown["surrogate_trainable_parameters"] + head_parameters
     write_json(settings.output_dir / "model.json", {
         "model_id": settings.model_id, "dataset": "SPAQ", "task": "MOS", "input_color_mode": "RGB",
@@ -181,7 +183,10 @@ def _write_model_report(model: torch.nn.Module, replacement: VisionStackReplacem
         "detector": {"plane_shape": [480, 480], "class_regions": False, "pool": "AvgPool2d(4,4)",
                      "pooled_shape": [120, 120], "layernorm_affine": False,
                      "readout": "ReLU -> first T rows -> Linear(120,1024)"},
-        "teacher_student_head_identical": True, "regression_head": head.specification(),
+        "teacher_student_head_core_identical": True,
+        "teacher_regression_head": teacher_head.specification(),
+        "student_regression_head": student_head.specification(),
+        "student_regressor_zero_initialized": settings.student_head_zero_initialize_regressor,
         "target": {"name": "MOS", "source_scale": [0.0, 100.0], "training_scale": [0.0, 1.0],
                    "loss": f"SmoothL1(beta={settings.smooth_l1_beta})"},
         "losses": {"hidden": settings.loss_hidden_weight,
@@ -190,6 +195,7 @@ def _write_model_report(model: torch.nn.Module, replacement: VisionStackReplacem
                    "router_balance": settings.router_balance_weight,
                    "router_importance": settings.router_importance_weight},
         "optimizer": {"type": settings.optimizer_type, "learning_rate": settings.learning_rate,
+                      "student_head_learning_rate": settings.student_head_learning_rate,
                       "router_learning_rate": settings.router_learning_rate,
                       "weight_decay": settings.weight_decay, "scheduler": settings.scheduler_type},
         "sampling": {"train_samples_per_epoch": settings.train_samples_per_epoch,
