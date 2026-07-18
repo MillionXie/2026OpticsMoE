@@ -1,0 +1,18 @@
+{
+  "base_config": "spaq_brightness.json",
+  "experiment": {
+    "name": "qwen3_vl_2b_spaq_colorfulness_vision_homogeneous_moe9_smoke",
+    "output_dir": "../runs/qwen3_vl_2b_spaq_colorfulness_vision_homogeneous_moe9_smoke"
+  },
+  "dataset": {
+    "task_name": "Colorfulness",
+    "train_image_limit": 24,
+    "test_image_limit": 12,
+    "train_samples_per_epoch": 24
+  },
+  "batching": {"student_batch_size": 2, "inference_batch_size": 2, "num_workers": 0},
+  "teacher_cache": {"source_cache_run_dir": null, "shard_size": 8, "log_interval_batches": 1},
+  "training": {"epochs": 1, "logging": {"interval_batches": 1}, "checkpoint_interval_epochs": 1},
+  "regularization": {"phase_dropout": {"enabled": false, "mode": "none", "p": 0.0, "start_epoch": 0}},
+  "visualization": {"interval_epochs": 1, "sample_count": 1}
+}

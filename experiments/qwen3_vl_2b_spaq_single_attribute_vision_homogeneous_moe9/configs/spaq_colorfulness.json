@@ -1,0 +1,8 @@
+{
+  "base_config": "spaq_brightness.json",
+  "experiment": {
+    "name": "qwen3_vl_2b_spaq_colorfulness_vision_homogeneous_moe9",
+    "output_dir": "../runs/qwen3_vl_2b_spaq_colorfulness_vision_homogeneous_moe9"
+  },
+  "dataset": {"task_name": "Colorfulness"}
+}
