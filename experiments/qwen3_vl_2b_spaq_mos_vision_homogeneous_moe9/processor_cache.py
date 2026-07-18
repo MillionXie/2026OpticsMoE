@@ -51,6 +51,7 @@ def build_processor_cache(split: str, processor: Any, loader: Any, dataset_size:
     pending: list[dict[str, Any]] = []
     shards: list[dict[str, Any]] = []
     pixel_feature_dim: int | None = None
+    cached_count = 0
 
     for batch_index, (images, _targets, indices) in enumerate(loader, start=1):
         inputs = preprocess_images(processor, images)
@@ -74,9 +75,9 @@ def build_processor_cache(split: str, processor: Any, loader: Any, dataset_size:
             if len(pending) >= settings.teacher_cache_shard_size:
                 shards.append(_flush_shard(shard_dir, len(shards), pending))
                 pending = []
+        cached_count += len(images)
         if batch_index % settings.teacher_cache_log_interval_batches == 0 or batch_index == len(loader):
-            cached = min(batch_index * settings.feature_batch_size, dataset_size)
-            print(f"[processor_cache] {split} batch={batch_index}/{len(loader)} cached={cached}/{dataset_size}", flush=True)
+            print(f"[processor_cache] {split} batch={batch_index}/{len(loader)} cached={cached_count}/{dataset_size}", flush=True)
 
     if pending:
         shards.append(_flush_shard(shard_dir, len(shards), pending))

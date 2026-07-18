@@ -158,7 +158,10 @@ def _precompute(loaded: LoadedBackbone, replacement: VisionStackReplacement, dat
 
 def _precompute_inputs(processor: Any, data: DatasetBundle, settings: Settings) -> None:
     for split, dataset in (("train", data.train), ("test", data.test)):
-        loader = make_indexed_loader(dataset, settings.feature_batch_size, settings.num_workers, False, settings.seed)
+        # This phase has no Qwen model forward and is not constrained by teacher
+        # feature memory. Reuse the tested student batch size instead of the
+        # deliberately conservative feature_batch_size=1.
+        loader = make_indexed_loader(dataset, settings.student_batch_size, settings.num_workers, False, settings.seed)
         build_processor_cache(split, processor, loader, len(dataset), settings)
 
 
