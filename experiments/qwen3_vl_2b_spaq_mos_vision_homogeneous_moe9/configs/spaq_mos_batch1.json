@@ -1,0 +1,12 @@
+{
+  "base_config": "spaq_mos.json",
+  "experiment": {
+    "name": "qwen3_vl_2b_spaq_mos_vision_homogeneous_moe9_batch1",
+    "output_dir": "../runs/qwen3_vl_2b_spaq_mos_vision_homogeneous_moe9_batch1"
+  },
+  "batching": {
+    "feature_batch_size": 1,
+    "student_batch_size": 1,
+    "inference_batch_size": 1
+  }
+}
