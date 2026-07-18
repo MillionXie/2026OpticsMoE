@@ -140,9 +140,15 @@ def test_shared_head_and_metrics() -> None:
     head = MultitaskRegressionHead(2048, 64, 0.1)
     output = head(torch.randn(3, 2048))
     assert output.shape == (3,)
-    assert torch.all((output >= 0) & (output <= 1))
+    assert isinstance(head.network[0], torch.nn.LayerNorm)
+    assert not any(isinstance(module, torch.nn.Sigmoid) for module in head.modules())
     output.mean().backward()
     assert all(parameter.grad is not None for parameter in head.parameters())
+    with torch.no_grad():
+        for parameter in head.parameters():
+            parameter.zero_()
+        head.network[-1].bias.fill_(2.0)
+    assert torch.all(head(torch.randn(3, 2048)) > 1.0)
     rows = []
     for task in TASK_NAMES:
         for value in (10.0, 20.0, 30.0):
@@ -183,6 +189,29 @@ def test_synthetic_cache_train_and_test_outputs(tmp_path: Path) -> None:
     assert (settings.output_dir / "checkpoints" / "final_regression_head.pt").is_file()
     assert (settings.output_dir / "test_predictions.csv").is_file()
     assert (settings.output_dir / "test_metrics.json").is_file()
+    saved_metrics = json.loads((settings.output_dir / "test_metrics.json").read_text(encoding="utf-8"))
+    assert saved_metrics["prediction_postprocessing"].startswith("clamp raw")
+    assert "raw_normalized_prediction" in rows[0]
+
+
+def test_large_frozen_features_do_not_sigmoid_saturate() -> None:
+    torch.manual_seed(42)
+    head = MultitaskRegressionHead(2048, 64, 0.1)
+    features = torch.randn(16, 2048) * 30.0
+    targets = torch.linspace(0.1, 0.9, 16)
+    optimizer = torch.optim.AdamW(head.parameters(), lr=1e-3)
+    before = head(features).detach()
+    optimizer.zero_grad(set_to_none=True)
+    loss = torch.nn.functional.smooth_l1_loss(head(features), targets, beta=0.1)
+    loss.backward()
+    optimizer.step()
+    after = head(features).detach()
+    assert torch.isfinite(after).all()
+    assert not torch.equal(before, after)
+    assert any(
+        parameter.grad is not None and torch.any(parameter.grad != 0)
+        for parameter in head.parameters()
+    )
 
 
 def test_prepare_data_cli_smoke(tmp_path: Path) -> None:

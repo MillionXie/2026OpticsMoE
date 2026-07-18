@@ -53,7 +53,7 @@ class Settings:
     head_hidden_dim: int = 64
     dropout: float = 0.1
     epochs: int = 30
-    learning_rate: float = 1e-3
+    learning_rate: float = 1e-4
     weight_decay: float = 1e-2
     smooth_l1_beta: float = 0.1
     dtype: str = "bfloat16"

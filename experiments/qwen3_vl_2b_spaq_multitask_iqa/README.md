@@ -5,10 +5,10 @@ This experiment uses a frozen `Qwen/Qwen3-VL-2B-Instruct` backbone for text-cond
 The four tasks are `MOS`, `Brightness`, `Colorfulness`, and `Contrast`. Every original image is paired virtually with four fixed English prompts; image files are not copied. The shared head is:
 
 ```text
-Linear(2048, 64) -> GELU -> Dropout(0.1) -> Linear(64, 1) -> Sigmoid
+LayerNorm(2048) -> Linear(2048, 64) -> GELU -> Dropout(0.1) -> Linear(64, 1)
 ```
 
-All targets are required to be finite scores in `[0,100]` and are divided by 100 during training. The loss is `SmoothL1Loss(beta=0.1)`. All Qwen parameters are frozen and Qwen remains in eval mode. Each image-prompt feature is cached, so later head epochs do not rerun Qwen.
+All targets are required to be finite scores in `[0,100]` and are divided by 100 during training. The loss is `SmoothL1Loss(beta=0.1)`. The final linear output remains unbounded during optimization; this avoids zero-gradient sigmoid saturation on large frozen-Qwen hidden features. During evaluation, the raw normalized prediction is clamped to `[0,1]` and multiplied by 100, so the reported score still follows the original 0–100 scale. All Qwen parameters are frozen and Qwen remains in eval mode. Each image-prompt feature is cached, so later head epochs do not rerun Qwen.
 
 ## Split and evaluation protocol
 

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+import math
 import time
 from pathlib import Path
 from typing import Any, Mapping
@@ -14,7 +16,17 @@ from .modeling import MultitaskRegressionHead
 from .settings import Settings
 
 
-HISTORY_FIELDS = ["epoch", "learning_rate", "train_loss", "epoch_time_sec"]
+HISTORY_FIELDS = [
+    "epoch",
+    "learning_rate",
+    "train_loss",
+    "raw_prediction_min",
+    "raw_prediction_max",
+    "raw_prediction_mean",
+    "raw_prediction_std",
+    "raw_prediction_out_of_range_fraction",
+    "epoch_time_sec",
+]
 
 
 def train_regression_head(
@@ -35,6 +47,7 @@ def train_regression_head(
         hidden_dim=settings.head_hidden_dim,
         dropout=settings.dropout,
     ).to(device)
+    _update_model_head_report(settings.output_dir, head)
     optimizer = torch.optim.AdamW(
         head.parameters(), lr=settings.learning_rate, weight_decay=settings.weight_decay
     )
@@ -56,6 +69,11 @@ def train_regression_head(
         head.train()
         loss_sum = 0.0
         samples = 0
+        prediction_sum = 0.0
+        prediction_square_sum = 0.0
+        prediction_min = math.inf
+        prediction_max = -math.inf
+        prediction_out_of_range = 0
         for batch_features, batch_labels in loader:
             batch_features = batch_features.to(device, non_blocking=True)
             batch_labels = batch_labels.to(device, non_blocking=True)
@@ -65,18 +83,39 @@ def train_regression_head(
             loss.backward()
             optimizer.step()
             count = len(batch_labels)
+            detached_predictions = predictions.detach().float()
             loss_sum += float(loss.detach()) * count
             samples += count
+            prediction_sum += float(detached_predictions.sum())
+            prediction_square_sum += float(detached_predictions.square().sum())
+            prediction_min = min(prediction_min, float(detached_predictions.min()))
+            prediction_max = max(prediction_max, float(detached_predictions.max()))
+            prediction_out_of_range += int(
+                ((detached_predictions < 0.0) | (detached_predictions > 1.0)).sum()
+            )
+        prediction_mean = prediction_sum / max(samples, 1)
+        prediction_variance = max(
+            prediction_square_sum / max(samples, 1) - prediction_mean * prediction_mean,
+            0.0,
+        )
         row = {
             "epoch": epoch,
             "learning_rate": optimizer.param_groups[0]["lr"],
             "train_loss": loss_sum / max(samples, 1),
+            "raw_prediction_min": prediction_min,
+            "raw_prediction_max": prediction_max,
+            "raw_prediction_mean": prediction_mean,
+            "raw_prediction_std": math.sqrt(prediction_variance),
+            "raw_prediction_out_of_range_fraction": prediction_out_of_range / max(samples, 1),
             "epoch_time_sec": time.perf_counter() - started,
         }
         history.append(row)
         write_csv(history_path, history, HISTORY_FIELDS)
         print(
             f"epoch {epoch}/{settings.epochs} train_loss={row['train_loss']:.6f} "
+            f"pred_mean={row['raw_prediction_mean']:.4f} "
+            f"pred_range=[{row['raw_prediction_min']:.4f},{row['raw_prediction_max']:.4f}] "
+            f"out_of_range={row['raw_prediction_out_of_range_fraction']:.2%} "
             f"lr={row['learning_rate']:.3e}"
         )
     checkpoint = {
@@ -90,6 +129,8 @@ def train_regression_head(
             "loss": "SmoothL1Loss",
             "smooth_l1_beta": settings.smooth_l1_beta,
             "label_scale_during_training": [0.0, 1.0],
+            "prediction_postprocessing_during_training": "none",
+            "prediction_postprocessing_during_evaluation": "clamp_to_0_1_then_multiply_100",
         },
     }
     checkpoint_path = settings.output_dir / "checkpoints" / "final_regression_head.pt"
@@ -117,6 +158,7 @@ def load_final_head(settings: Settings, device: torch.device) -> MultitaskRegres
     payload = torch.load(path, map_location="cpu", weights_only=True)
     metadata = payload.get("metadata", {})
     expected = {
+        "schema_version": MultitaskRegressionHead.SCHEMA_VERSION,
         "feature_dim": settings.expected_feature_dim,
         "hidden_dim": settings.head_hidden_dim,
         "dropout": settings.dropout,
@@ -145,13 +187,14 @@ def evaluate_test(
     scores = test_cache["scores"].float()
     dataset = TensorDataset(features, torch.arange(len(features), dtype=torch.long))
     loader = DataLoader(dataset, batch_size=settings.head_batch_size, shuffle=False)
-    predictions = torch.empty(len(features), dtype=torch.float32)
+    raw_predictions = torch.empty(len(features), dtype=torch.float32)
     head.eval()
     with torch.inference_mode():
         for batch_features, indices in loader:
             output = head(batch_features.to(device, non_blocking=True)).cpu()
-            predictions[indices] = output
-    predicted_scores = (predictions.clamp(0.0, 1.0) * 100.0).tolist()
+            raw_predictions[indices] = output
+    clipped_predictions = raw_predictions.clamp(0.0, 1.0)
+    predicted_scores = (clipped_predictions * 100.0).tolist()
     rows = [
         {
             "sample_index": int(test_cache["sample_indices"][index]),
@@ -159,6 +202,8 @@ def evaluate_test(
             "image_path": test_cache["image_paths"][index],
             "task": test_cache["tasks"][index],
             "true_score": float(scores[index]),
+            "raw_normalized_prediction": float(raw_predictions[index]),
+            "clipped_normalized_prediction": float(clipped_predictions[index]),
             "predicted_score": float(predicted_scores[index]),
             "absolute_error": abs(float(predicted_scores[index]) - float(scores[index])),
         }
@@ -166,6 +211,7 @@ def evaluate_test(
     ]
     fields = [
         "sample_index", "image_name", "image_path", "task", "true_score",
+        "raw_normalized_prediction", "clipped_normalized_prediction",
         "predicted_score", "absolute_error",
     ]
     write_csv(settings.output_dir / "test_predictions.csv", rows, fields)
@@ -175,8 +221,38 @@ def evaluate_test(
             "checkpoint": str(settings.output_dir / "checkpoints" / "final_regression_head.pt"),
             "checkpoint_selection": "fixed_final_epoch",
             "test_used_for_epoch_selection": False,
+            "training_target_scale": [0.0, 1.0],
+            "prediction_postprocessing": "clamp raw normalized prediction to [0,1], then multiply by 100",
+            "raw_normalized_prediction_range": [
+                float(raw_predictions.min()),
+                float(raw_predictions.max()),
+            ],
+            "clipped_prediction_fraction": float(
+                ((raw_predictions < 0.0) | (raw_predictions > 1.0)).float().mean()
+            ),
         }
     )
     write_json(settings.output_dir / "test_metrics.json", metrics)
     return rows, metrics
 
+
+def _update_model_head_report(output_dir: Path, head: MultitaskRegressionHead) -> None:
+    """Keep model.json accurate when feature caches let us skip Qwen loading."""
+
+    path = output_dir / "model.json"
+    report: dict[str, Any] = {}
+    if path.is_file():
+        try:
+            loaded = json.loads(path.read_text(encoding="utf-8"))
+            if isinstance(loaded, dict):
+                report = loaded
+        except (OSError, json.JSONDecodeError):
+            report = {}
+    report["regression_head"] = head.specification()
+    report["score_regression"] = {
+        "training_label_scale": [0.0, 1.0],
+        "training_output_constraint": "none",
+        "evaluation_postprocessing": "clamp_to_0_1_then_multiply_100",
+        "reason": "avoid sigmoid saturation on high-magnitude frozen Qwen features",
+    }
+    write_json(path, report)

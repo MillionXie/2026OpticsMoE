@@ -18,7 +18,16 @@ class LoadedBackbone:
 
 
 class MultitaskRegressionHead(nn.Module):
-    """One shared bounded regressor for all four prompt-conditioned tasks."""
+    """One shared regressor for all four prompt-conditioned tasks.
+
+    Targets are trained on the 0--1 scale. The output intentionally remains
+    unbounded during optimization: bounding it with a sigmoid caused the large
+    Qwen hidden states to saturate the sigmoid and permanently zero the
+    gradients. Evaluation clips the raw prediction to 0--1 before converting
+    it back to the original 0--100 score scale.
+    """
+
+    SCHEMA_VERSION = 2
 
     def __init__(self, feature_dim: int = 2048, hidden_dim: int = 64, dropout: float = 0.1) -> None:
         super().__init__()
@@ -26,11 +35,11 @@ class MultitaskRegressionHead(nn.Module):
         self.hidden_dim = int(hidden_dim)
         self.dropout = float(dropout)
         self.network = nn.Sequential(
+            nn.LayerNorm(self.feature_dim),
             nn.Linear(self.feature_dim, self.hidden_dim),
             nn.GELU(),
             nn.Dropout(self.dropout),
             nn.Linear(self.hidden_dim, 1),
-            nn.Sigmoid(),
         )
 
     def forward(self, features: torch.Tensor) -> torch.Tensor:
@@ -39,16 +48,20 @@ class MultitaskRegressionHead(nn.Module):
     def specification(self) -> dict[str, Any]:
         return {
             "type": "shared_multitask_regression_head",
+            "schema_version": self.SCHEMA_VERSION,
             "architecture": [
+                f"LayerNorm({self.feature_dim})",
                 f"Linear({self.feature_dim},{self.hidden_dim})",
                 "GELU",
                 f"Dropout({self.dropout})",
                 f"Linear({self.hidden_dim},1)",
-                "Sigmoid",
             ],
             "feature_dim": self.feature_dim,
             "hidden_dim": self.hidden_dim,
             "dropout": self.dropout,
+            "training_target_scale": [0.0, 1.0],
+            "output_activation": "none",
+            "evaluation_postprocessing": "clamp raw prediction to [0,1], then multiply by 100",
             "parameters": sum(parameter.numel() for parameter in self.parameters()),
             "trainable_parameters": sum(
                 parameter.numel() for parameter in self.parameters() if parameter.requires_grad
@@ -129,4 +142,3 @@ def model_report(model: nn.Module, head: nn.Module, expected_feature_dim: int) -
         },
         "regression_head": head.specification() if hasattr(head, "specification") else {},
     }
-
