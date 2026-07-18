@@ -44,7 +44,7 @@ class VisionPatchBypass:
 
     def activate(self) -> None:
         self.blocks[0] = self.capture
-        for index, bypass in enumerate(self.bypasses, start=1):
+        for index in range(1, len(self.blocks)):
             self.blocks[index] = _IdentityVisionBlock()
 
     def close(self) -> None:
