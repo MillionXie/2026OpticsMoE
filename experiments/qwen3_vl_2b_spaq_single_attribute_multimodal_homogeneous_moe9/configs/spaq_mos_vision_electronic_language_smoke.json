@@ -1,0 +1,10 @@
+{
+  "base_config": "spaq_mos_vision_language_optical_smoke.json",
+  "experiment": {
+    "name": "qwen3_vl_2b_spaq_mos_vision_optical_electronic_language_smoke",
+    "output_dir": "../runs/qwen3_vl_2b_spaq_mos_vision_optical_electronic_language_smoke"
+  },
+  "student": {
+    "language_stack_mode": "electronic"
+  }
+}

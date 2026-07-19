@@ -1,0 +1,178 @@
+{
+  "config_version": 2,
+  "experiment": {
+    "name": "qwen3_vl_2b_spaq_mos_vision_language_homogeneous_moe9",
+    "output_dir": "../runs/qwen3_vl_2b_spaq_mos_vision_language_homogeneous_moe9",
+    "seed": 42
+  },
+  "dataset": {
+    "name": "spaq_single_attribute",
+    "task_name": "MOS",
+    "data_root": "../../../data/SPAQ",
+    "annotations_file": null,
+    "image_dir": null,
+    "download": true,
+    "download_source": "huggingface",
+    "download_repo_id": "chaofengc/IQA-PyTorch-Datasets",
+    "download_filename": "spaq.tgz",
+    "download_endpoint": "https://hf-mirror.com",
+    "download_url": null,
+    "keep_download_archive": false,
+    "train_fraction": 0.9,
+    "train_image_limit": null,
+    "test_image_limit": null,
+    "train_samples_per_epoch": null,
+    "validation_fraction": 0.1
+  },
+  "qwen": {
+    "model_id": "Qwen/Qwen3-VL-2B-Instruct",
+    "cache_dir": null,
+    "local_files_only": false,
+    "classification_prompt": "Predict the human-rated overall perceptual quality of this image on a 0-100 scale. Score:",
+    "processor": {
+      "min_pixels": 25600,
+      "max_pixels": 25600
+    },
+    "runtime": {
+      "dtype": "bfloat16",
+      "attn_implementation": "sdpa",
+      "device": "cuda"
+    },
+    "architecture": {
+      "vision_depth": null,
+      "vision_hidden_size": null,
+      "text_depth": null,
+      "text_hidden_size": null,
+      "deepstack_visual_indexes": null
+    }
+  },
+  "student": {
+    "language_stack_mode": "optical_moe"
+  },
+  "batching": {
+    "feature_batch_size": 1,
+    "student_batch_size": 1,
+    "inference_batch_size": 1,
+    "head_batch_size": 512,
+    "num_workers": 8
+  },
+  "teacher_cache": {
+    "dtype": "float16",
+    "shard_size": 128,
+    "lru_shards": 8,
+    "log_interval_batches": 100,
+    "source_cache_run_dir": null
+  },
+  "vision_adapter": {
+    "optical_channels": 120,
+    "max_visual_tokens": 120,
+    "tap_stages": [1, 3, 4]
+  },
+  "language_adapter": {
+    "max_language_tokens": 120
+  },
+  "moe": {
+    "geometry": {
+      "canvas_size": 480,
+      "active_size": 450,
+      "num_experts": 9,
+      "expert_size": 120,
+      "expert_pitch": 150,
+      "layers_per_expert": 5
+    },
+    "router": {
+      "top_k": 3,
+      "pool_size": 10,
+      "temperature": 1.0,
+      "learning_rate": 0.001,
+      "input_layernorm_enabled": true,
+      "input_layernorm_eps": 0.00001
+    },
+    "optics": {
+      "wavelength_nm": 532.0,
+      "pixel_pitch_um": 16.0,
+      "prompt_focal_length_m": 0.0722,
+      "distances_m": {
+        "prompt_to_expert": 0.1444,
+        "inter_layer": 0.2,
+        "last_expert_to_global": 0.2,
+        "global_to_detector": 0.2
+      },
+      "phase": {
+        "parameterization": "sigmoid",
+        "init": "zeros",
+        "init_std": 0.02
+      },
+      "k_space": {
+        "enabled": false,
+        "theta_max_deg": 1.0
+      }
+    },
+    "optoelectronic_interlayers": {
+      "enabled": true,
+      "per_expert_enabled": true,
+      "elementwise_affine": false,
+      "hard_route_mask": true,
+      "reapply_routing_weights": true,
+      "layernorm_eps": 0.00001,
+      "nonlinearity": "relu"
+    },
+    "final_detector_readout": {
+      "pool_kernel": 4,
+      "layernorm_eps": 0.00001,
+      "layernorm_affine": false,
+      "nonlinearity": "relu"
+    }
+  },
+  "classification_head": {
+    "type": "normalized_linear_regression",
+    "output_activation": "linear",
+    "dropout": 0.0
+  },
+  "loss": {
+    "vision_hidden_weight": 1.0,
+    "answer_hidden_weight": 1.0,
+    "prediction_distill_weight": 0.5,
+    "regression_weight": 1.0,
+    "smooth_l1_beta": 0.1,
+    "router_balance_weight": 0.03,
+    "router_importance_weight": 0.0
+  },
+  "optimizer": {
+    "type": "adamw",
+    "learning_rate": 0.0005,
+    "student_head_learning_rate": 0.001,
+    "weight_decay": 0.0,
+    "scheduler": "cosine"
+  },
+  "training": {
+    "epochs": 100,
+    "progress": true,
+    "logging": {
+      "interval_batches": 500
+    },
+    "checkpoint_interval_epochs": 10,
+    "student_selection_split": "test",
+    "student_selection_metric": "srcc"
+  },
+  "regularization": {
+    "phase_dropout": {
+      "enabled": true,
+      "mode": "block_phase_bypass",
+      "p": 0.02,
+      "block_size": 4,
+      "batch_shared": true,
+      "start_epoch": 5
+    }
+  },
+  "visualization": {
+    "enabled": true,
+    "interval_epochs": 10,
+    "sample_count": 4,
+    "save_intermediate_fields": true,
+    "save_phase_masks": true,
+    "save_training_curves": true,
+    "save_scatter_plot": true,
+    "save_predictions": true
+  }
+}
