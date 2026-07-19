@@ -98,9 +98,10 @@ class CachedStudentDataset(Dataset[Any]):
     def __init__(self, dataset: Dataset[Any], teacher: TeacherCacheStore, inputs: ProcessorCacheStore,
                  predictions: torch.Tensor) -> None:
         self.dataset = dataset; self.teacher = teacher; self.inputs = inputs; self.predictions = predictions
+        self.targets = targets_of(dataset)
     def __len__(self): return len(self.dataset)
     def __getitem__(self, index: int):
-        return self.inputs.get(index), float(targets_of(self.dataset)[index]), index, self.teacher.get(index), self.predictions[index]
+        return self.inputs.get(index), float(self.targets[index]), index, self.teacher.get(index), self.predictions[index]
 
 
 def _cached_target(dataset: Dataset[Any], index: int) -> float:
