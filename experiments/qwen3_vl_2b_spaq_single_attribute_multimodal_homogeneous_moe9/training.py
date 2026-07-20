@@ -159,14 +159,19 @@ def train_student(model: nn.Module, replacement: Any, head: nn.Module, train_dat
         started = time.perf_counter(); sampler.set_epoch(epoch); dropout = settings.phase_dropout_enabled and epoch >= settings.phase_dropout_start_epoch
         replacement.set_phase_dropout_active(dropout); replacement.vision_surrogate.train()
         if settings.student_language_mode == "optical_moe": replacement.language_surrogate.train()
-        head.train(); totals = {name: 0.0 for name in ("total", "vision", "answer", "distill", "regression",
-                                                       "vision_balance", "language_balance")}
-        predictions_all = []; targets_all = []; seen = 0
-        v_selection = torch.zeros(settings.num_experts); l_selection = torch.zeros(settings.num_experts)
+        head.train()
+        predictions_all = []; targets_all = []; seen = 0; train_report = None
+        loss_names = ("total", "vision", "answer", "distill", "regression", "vision_balance", "language_balance")
+        totals_tensor = torch.zeros(len(loss_names), device=device, dtype=torch.float64)
+        v_selection = torch.zeros(settings.num_experts, device=device)
+        l_selection = torch.zeros(settings.num_experts, device=device)
         print(f"[sampling] epoch={epoch} samples={len(sampler)}/{len(train_dataset)} mode={settings.student_language_mode}", flush=True)
         for batch_index, (cpu_inputs, targets, _indices, teachers, teacher_predictions_batch) in enumerate(loader, 1):
-            inputs = move_inputs(cpu_inputs, device); targets = targets.to(device); teacher_predictions_batch = teacher_predictions_batch.to(device)
-            replacement.prepare_student_batch(inputs["attention_mask"]); optimizer.zero_grad(set_to_none=True)
+            replacement.prepare_student_batch(cpu_inputs["attention_mask"])
+            inputs = move_inputs(cpu_inputs, device)
+            targets = targets.to(device, non_blocking=True)
+            teacher_predictions_batch = teacher_predictions_batch.to(device, non_blocking=True)
+            optimizer.zero_grad(set_to_none=True)
             hidden = multimodal_forward_features(model, inputs); answer, _ = pool_answer_hidden_state(hidden, inputs["attention_mask"])
             predictions = head(answer)
             student_taps = [*replacement.vision_surrogate.tap_outputs, replacement.vision_surrogate.last_output]
@@ -190,34 +195,41 @@ def train_student(model: nn.Module, replacement: Any, head: nn.Module, train_dat
                           settings.router_balance_weight * (router["vision_balance"] + router["language_balance"]) +
                           settings.router_importance_weight * (router["vision_importance"] + router["language_importance"]))
             loss_total.backward(); optimizer.step(); batch_size = len(targets); seen += batch_size
-            for name, value in (("total", loss_total), ("vision", loss_vision), ("answer", loss_answer),
-                                ("distill", loss_distill), ("regression", loss_regression),
-                                ("vision_balance", router["vision_balance"]), ("language_balance", router["language_balance"])):
-                totals[name] += float(value.detach()) * batch_size
-            predictions_all.append(predictions.detach().cpu()); targets_all.append(targets.detach().cpu())
-            v_selection += replacement.vision_surrogate.core.last_routing["selected_mask"].detach().cpu().float().sum(0)
+            loss_values = torch.stack((loss_total.detach().double(), loss_vision.detach().double(),
+                                       loss_answer.detach().double(), loss_distill.detach().double(),
+                                       loss_regression.detach().double(), router["vision_balance"].detach().double(),
+                                       router["language_balance"].detach().double()))
+            totals_tensor += loss_values * batch_size
+            predictions_all.append(predictions.detach()); targets_all.append(targets.detach())
+            v_selection += replacement.vision_surrogate.core.last_routing["selected_mask"].detach().float().sum(0)
             if settings.student_language_mode == "optical_moe":
-                l_selection += replacement.language_surrogate.core.last_routing["selected_mask"].detach().cpu().float().sum(0)
+                l_selection += replacement.language_surrogate.core.last_routing["selected_mask"].detach().float().sum(0)
             if batch_index % settings.log_interval_batches == 0 or batch_index == len(loader):
-                current = score_metrics(torch.cat(predictions_all), torch.cat(targets_all))
-                print(f"epoch {epoch}/{settings.epochs} batch {batch_index}/{len(loader)} total={totals['total']/seen:.5f} "
-                      f"vision={totals['vision']/seen:.5f} answer={totals['answer']/seen:.5f} "
-                      f"distill={totals['distill']/seen:.5f} gt={totals['regression']/seen:.5f} "
-                      f"v_balance={totals['vision_balance']/seen:.5f} l_balance={totals['language_balance']/seen:.5f} "
-                      f"MAE={current['mae']:.3f} SRCC={current['srcc']:.4f} "
-                      f"vision_sel={[round(float(x/seen),3) for x in v_selection]} "
-                      f"language_sel={[round(float(x/seen),3) for x in l_selection]}", flush=True)
-        train_report = score_metrics(torch.cat(predictions_all), torch.cat(targets_all))
+                train_report = score_metrics(torch.cat(predictions_all).cpu(), torch.cat(targets_all).cpu())
+                total_values = dict(zip(loss_names, (totals_tensor / seen).detach().cpu().tolist()))
+                vision_rates = (v_selection / seen).detach().cpu().tolist()
+                language_rates = (l_selection / seen).detach().cpu().tolist()
+                print(f"epoch {epoch}/{settings.epochs} batch {batch_index}/{len(loader)} total={total_values['total']:.5f} "
+                      f"vision={total_values['vision']:.5f} answer={total_values['answer']:.5f} "
+                      f"distill={total_values['distill']:.5f} gt={total_values['regression']:.5f} "
+                      f"v_balance={total_values['vision_balance']:.5f} l_balance={total_values['language_balance']:.5f} "
+                      f"MAE={train_report['mae']:.3f} SRCC={train_report['srcc']:.4f} "
+                      f"vision_sel={[round(x,3) for x in vision_rates]} "
+                      f"language_sel={[round(x,3) for x in language_rates]}", flush=True)
+        assert train_report is not None
+        total_values = dict(zip(loss_names, (totals_tensor / seen).detach().cpu().tolist()))
+        vision_rates = (v_selection / seen).detach().cpu().tolist()
+        language_rates = (l_selection / seen).detach().cpu().tolist()
         test_report = evaluate_student(model, replacement, head, test_loader, settings, device, test_dataset)
         if scheduler: scheduler.step()
-        row = {"epoch": epoch, **{f"loss_{key}": value / seen for key, value in totals.items()},
+        row = {"epoch": epoch, **{f"loss_{key}": value for key, value in total_values.items()},
                **{f"train_{key}": value for key, value in train_report.items()},
                **{f"test_{key}": value for key, value in test_report.items() if isinstance(value, (int, float))},
                "epoch_time_sec": time.perf_counter() - started, "samples_this_epoch": len(sampler),
                "student_language_mode": settings.student_language_mode, "phase_dropout_active": dropout}
         for expert in range(settings.num_experts):
-            row[f"vision_expert_{expert}_selection_rate"] = float(v_selection[expert] / seen)
-            row[f"language_expert_{expert}_selection_rate"] = float(l_selection[expert] / seen)
+            row[f"vision_expert_{expert}_selection_rate"] = vision_rates[expert]
+            row[f"language_expert_{expert}_selection_rate"] = language_rates[expert]
         history.append(row); write_csv(settings.output_dir / "metrics" / "student_training_history.csv", history, list(row))
         write_json(settings.output_dir / "metrics" / "student_training_latest.json", row)
         save_student_parts(settings.output_dir, replacement, head, "last", epoch, row)
@@ -244,10 +256,11 @@ def evaluate_student(model: nn.Module, replacement: Any, head: nn.Module, loader
     replacement.use_student(); replacement.set_phase_dropout_active(False); model.eval(); head.eval()
     predictions_all = []; targets_all = []; indices_all = []
     for cpu_inputs, targets, indices in loader:
-        inputs = move_inputs(cpu_inputs, device); replacement.prepare_student_batch(inputs["attention_mask"])
+        replacement.prepare_student_batch(cpu_inputs["attention_mask"])
+        inputs = move_inputs(cpu_inputs, device)
         hidden = multimodal_forward_features(model, inputs); answer, _ = pool_answer_hidden_state(hidden, inputs["attention_mask"])
-        predictions_all.append(head(answer).cpu()); targets_all.append(targets); indices_all.append(indices)
-    predictions = torch.cat(predictions_all); targets = torch.cat(targets_all); indices = torch.cat(indices_all)
+        predictions_all.append(head(answer)); targets_all.append(targets.to(device, non_blocking=True)); indices_all.append(indices)
+    predictions = torch.cat(predictions_all).cpu(); targets = torch.cat(targets_all).cpu(); indices = torch.cat(indices_all)
     report = {**score_metrics(predictions, targets), "dataset": "SPAQ", "task": settings.task_name,
               "model": f"vision_optical_moe_language_{settings.student_language_mode}",
               "language_model_used": True, "prompt": settings.classification_prompt}

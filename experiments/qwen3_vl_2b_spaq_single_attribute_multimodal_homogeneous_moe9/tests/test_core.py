@@ -16,6 +16,9 @@ from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_homogeneous_moe9.o
 from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_homogeneous_moe9.optics.moe import (
     HomogeneousMoEOpticalCore, LanguageDeepStackHomogeneousMoE, VisionDeepStackHomogeneousMoE,
 )
+from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_homogeneous_moe9.optics.physical import (
+    SquareDetectionLayerNormReload,
+)
 from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_homogeneous_moe9.optics.replacement import DeepStackMultimodalReplacement
 from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_homogeneous_moe9.processor_cache import collate_processor_samples
 from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_homogeneous_moe9.settings import load_settings
@@ -64,6 +67,41 @@ def test_strict_token_row_mapping_is_nonnegative_and_zero_padded() -> None:
         encoder.encode_groups([torch.randn(121, 8)])
 
 
+def test_batched_group_encoding_matches_per_sample_reference_and_backpropagates() -> None:
+    torch.manual_seed(7); encoder = _encoder(); groups = [torch.randn(17, 8), torch.randn(9, 8)]
+    references = []
+    for group in groups:
+        projected = encoder.nonnegative(encoder.input_norm(encoder.input_adapter(group.float())))
+        field = projected.new_zeros((120, 120)); field[:len(group)] = projected; references.append(field)
+    actual = encoder.encode_groups(groups)
+    # Batched GEMM may choose a different kernel than two small GEMMs, while
+    # remaining numerically equivalent at float32 precision.
+    assert torch.allclose(actual, torch.stack(references), atol=1e-6, rtol=1e-6)
+    actual.square().mean().backward()
+    assert encoder.input_adapter.weight.grad is not None
+
+
+class _FixedPrompt(nn.Module):
+    def forward(self, fields: torch.Tensor) -> dict[str, torch.Tensor]:
+        transmission = torch.ones(len(fields), 480, 480, device=fields.device, dtype=torch.complex64)
+        return {"transmission": transmission}
+
+
+def test_deepstack_fanout_reuses_prompt_spectrum(monkeypatch: pytest.MonkeyPatch) -> None:
+    encoder = _encoder(); encoder.prompt = _FixedPrompt()
+    original_fft2 = torch.fft.fft2; calls = 0
+
+    def counted_fft2(*args, **kwargs):
+        nonlocal calls; calls += 1
+        return original_fft2(*args, **kwargs)
+
+    monkeypatch.setattr(torch.fft, "fft2", counted_fft2)
+    fields = torch.rand(1, 120, 120)
+    first, routing = encoder.begin(fields); second = encoder.fanout(fields, routing)
+    assert calls == 3  # two canvas FFTs, one shared prompt FFT
+    assert torch.allclose(first, second, atol=0, rtol=0)
+
+
 def test_language_overflow_is_explicit() -> None:
     language = LanguageDeepStackHomogeneousMoE.__new__(LanguageDeepStackHomogeneousMoE); nn.Module.__init__(language)
     language.core = SimpleNamespace(max_tokens=120)
@@ -96,6 +134,7 @@ class FakeSurrogate(nn.Module):
     def __init__(self, stages=5):
         super().__init__(); self.core = SimpleNamespace(expert_layers=[None] * stages); self.weight = nn.Parameter(torch.ones(()))
     def set_attention_mask(self, mask): self.mask = mask
+    def set_deepstack_injection_count(self, count): self.deepstack_injection_count = count
 
 
 def test_replacement_maps_native_deepstack_taps_and_language_modes() -> None:
@@ -105,6 +144,7 @@ def test_replacement_maps_native_deepstack_taps_and_language_modes() -> None:
     model = nn.Module(); model.model = core
     vision = FakeSurrogate(); language_surrogate = FakeSurrogate()
     replacement = DeepStackMultimodalReplacement(model, vision, language_surrogate, "optical_moe")
+    assert language_surrogate.deepstack_injection_count == 3
     replacement.use_student()
     assert replacement.vision_blocks[0].__class__.__name__ == "VisionStartBlock"
     assert [replacement.vision_blocks[i].slot for i in (5, 11, 17, 23)] == [0, 1, 2, 3]
@@ -119,3 +159,24 @@ def test_small_text_regression_head_backward() -> None:
     prediction = head(torch.randn(4, 2048)); assert prediction.shape == (4,)
     torch.nn.functional.smooth_l1_loss(prediction, torch.rand(4), beta=0.1).backward()
     assert all(parameter.grad is not None for parameter in head.parameters())
+
+
+def test_vectorized_per_expert_detection_matches_reference() -> None:
+    geometry = MoEGeometry(); layer = SquareDetectionLayerNormReload(
+        geometry.canvas_size, geometry.expert_apertures, 1e-5, "relu",
+        per_expert_enabled=True, elementwise_affine=True,
+    )
+    torch.manual_seed(11)
+    real = torch.randn(2, 480, 480); imag = torch.randn(2, 480, 480)
+    field = torch.complex(real, imag)
+    selected = torch.tensor([[1, 0, 1, 0, 1, 0, 0, 0, 0], [0, 1, 0, 1, 0, 1, 0, 0, 0]], dtype=torch.bool)
+    weights = torch.rand(2, 9)
+    actual = layer(field, selected_experts=selected, routing_weights=weights).real
+    intensity = field.abs().square().float(); expected = torch.zeros_like(intensity)
+    for index, aperture in enumerate(geometry.expert_apertures):
+        crop = intensity[:, aperture.y0:aperture.y1, aperture.x0:aperture.x1]
+        value = torch.nn.functional.layer_norm(crop, crop.shape[-2:], eps=1e-5)
+        value = torch.relu(value * layer.affine_weight[index] + layer.affine_bias[index])
+        value = value * weights[:, index, None, None] * selected[:, index, None, None]
+        expected[:, aperture.y0:aperture.y1, aperture.x0:aperture.x1] = value
+    assert torch.allclose(actual, expected, atol=1e-6, rtol=1e-6)

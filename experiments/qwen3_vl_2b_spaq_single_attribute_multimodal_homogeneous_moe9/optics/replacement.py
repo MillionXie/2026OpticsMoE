@@ -60,6 +60,7 @@ class DeepStackMultimodalReplacement:
         self.vision_surrogate = vision; self.language_surrogate = language; self.language_mode = language_mode
         self.deepstack_indexes = tuple(int(value) for value in self.visual.deepstack_visual_indexes)
         if len(self.deepstack_indexes) != 3: raise RuntimeError(f"Expected 3 DeepStack indexes, got {self.deepstack_indexes}")
+        self.language_surrogate.set_deepstack_injection_count(len(self.deepstack_indexes))
         final_index = len(self.vision_blocks) - 1; provider_indexes = (*self.deepstack_indexes, final_index)
         if len(set(provider_indexes)) != 4: raise RuntimeError("DeepStack indexes overlap final vision block")
         self.student_vision_modules: list[nn.Module] = [VisionBypass() for _ in self.vision_blocks]

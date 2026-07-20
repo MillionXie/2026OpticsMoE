@@ -109,39 +109,51 @@ class HomogeneousMoEOpticalCore(nn.Module):
         self.last_detector_readout: torch.Tensor | None = None
 
     def encode_groups(self, groups: list[torch.Tensor], *, injection: bool = False) -> torch.Tensor:
-        fields = []
-        for group in groups:
-            count = len(group)
+        if not groups:
+            raise ValueError("At least one token group is required")
+        counts = [len(group) for group in groups]
+        for group, count in zip(groups, counts):
             if count > self.max_tokens:
                 kind = "language sequence length" if group.ndim == 2 and self.hidden_size > 1024 else "visual token count"
                 hint = "Shorten the prompt or lower processor_max_pixels" if kind.startswith("language") else "Lower processor_max_pixels"
                 raise RuntimeError(f"{kind} {count} exceeds optical field rows={self.max_tokens}. {hint}; no crop or resize is allowed.")
-            projected = self.input_adapter(group.float()); projected = self.input_norm(projected)
-            projected = self.nonnegative(projected)
-            if injection:
-                changed = group.float().abs().sum(-1, keepdim=True).gt(0)
-                projected = projected * changed
-            field = projected.new_zeros((self.geometry.expert_size, self.geometry.expert_size))
-            field[:count] = projected; fields.append(field)
-        return torch.stack(fields)
 
-    def begin(self, input_fields: torch.Tensor) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
-        self.last_input_fields = input_fields
+        # A single GEMM is substantially faster than one tiny adapter launch per
+        # sample.  The packed order is the same row-major order used below by
+        # masked_scatter, so this is mathematically identical to the former loop.
+        packed = torch.cat(groups, dim=0)
+        projected = self.nonnegative(self.input_norm(self.input_adapter(packed.float())))
+        if injection:
+            changed = packed.float().abs().sum(-1, keepdim=True).gt(0)
+            projected = projected * changed
+        count_tensor = torch.tensor(counts, device=projected.device)
+        valid_rows = torch.arange(self.geometry.expert_size, device=projected.device)[None, :] < count_tensor[:, None]
+        field_mask = valid_rows.unsqueeze(-1).expand(-1, -1, self.geometry.expert_size)
+        empty = projected.new_zeros((len(groups), self.geometry.expert_size, self.geometry.expert_size))
+        return empty.masked_scatter(field_mask, projected.reshape(-1))
+
+    def _fanout(self, input_fields: torch.Tensor, routing: dict[str, torch.Tensor]) -> torch.Tensor:
         canvas = input_fields.new_zeros((len(input_fields), self.geometry.canvas_size, self.geometry.canvas_size))
         aperture = self.geometry.input_aperture
         canvas[:, aperture.y0:aperture.y1, aperture.x0:aperture.x1] = input_fields
+        canvas_spectrum = torch.fft.fft2(torch.flip(canvas.to(torch.complex64), (-2, -1)))
+        # All DeepStack injections in one forward use the same sample-dependent
+        # routing prompt. Cache only within that forward/autograd graph.
+        transmission_spectrum = routing.get("_transmission_spectrum")
+        if transmission_spectrum is None:
+            transmission_spectrum = torch.fft.fft2(routing["transmission"].to(torch.complex64))
+            routing["_transmission_spectrum"] = transmission_spectrum
+        return torch.fft.fftshift(torch.fft.ifft2(canvas_spectrum * transmission_spectrum), (-2, -1))
+
+    def begin(self, input_fields: torch.Tensor) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
+        self.last_input_fields = input_fields
         routing = self.prompt(input_fields); self.last_routing = routing
-        field = torch.fft.fftshift(torch.fft.ifft2(torch.fft.fft2(torch.flip(canvas.to(torch.complex64), (-2, -1))) *
-                                                   torch.fft.fft2(routing["transmission"].to(torch.complex64))), (-2, -1))
+        field = self._fanout(input_fields, routing)
         self.last_stage_fields = []
         return field, routing
 
     def fanout(self, input_fields: torch.Tensor, routing: dict[str, torch.Tensor]) -> torch.Tensor:
-        canvas = input_fields.new_zeros((len(input_fields), self.geometry.canvas_size, self.geometry.canvas_size))
-        aperture = self.geometry.input_aperture
-        canvas[:, aperture.y0:aperture.y1, aperture.x0:aperture.x1] = input_fields
-        return torch.fft.fftshift(torch.fft.ifft2(torch.fft.fft2(torch.flip(canvas.to(torch.complex64), (-2, -1))) *
-                                                  torch.fft.fft2(routing["transmission"].to(torch.complex64))), (-2, -1))
+        return self._fanout(input_fields, routing)
 
     def run_stage(self, index: int, field: torch.Tensor, routing: dict[str, torch.Tensor]) -> torch.Tensor:
         field = self.propagations[index](self.expert_layers[index](field))
@@ -159,8 +171,8 @@ class HomogeneousMoEOpticalCore(nn.Module):
         readout, intensity = self.readout(field)
         if final:
             self.last_detector_intensity = intensity; self.last_detector_readout = readout
-        return torch.cat([self.output_adapter(readout[row, :length])
-                          for row, length in enumerate(lengths)], dim=0).to(boundary_dtype)
+        packed_readout = torch.cat([readout[row, :length] for row, length in enumerate(lengths)], dim=0)
+        return self.output_adapter(packed_readout).to(boundary_dtype)
 
     def router_losses(self) -> tuple[torch.Tensor, torch.Tensor]:
         return self.last_routing["balance_loss"], self.last_routing["importance_loss"]
@@ -215,6 +227,7 @@ class LanguageDeepStackHomogeneousMoE(nn.Module):
         self.valid_mask: torch.Tensor | None = None; self.field: torch.Tensor | None = None
         self.routing: dict[str, torch.Tensor] | None = None; self.lengths: list[int] = []; self.positions: list[torch.Tensor] = []
         self.last_hidden: torch.Tensor | None = None; self.last_output: torch.Tensor | None = None
+        self.deepstack_injection_count: int | None = None
 
     def set_attention_mask(self, mask: torch.Tensor) -> None:
         lengths = mask.long().sum(1).tolist()
@@ -222,17 +235,27 @@ class LanguageDeepStackHomogeneousMoE(nn.Module):
             raise RuntimeError(f"language sequence length {max(lengths)} exceeds optical field rows={self.core.max_tokens}. "
                                "Shorten the prompt or lower processor_max_pixels; no crop or resize is allowed.")
         self.valid_mask = mask.bool(); self.lengths = [int(value) for value in lengths]
-        self.positions = [torch.nonzero(row, as_tuple=False).flatten() for row in self.valid_mask]
+        self.positions = []
 
-    def _groups(self, hidden: torch.Tensor) -> list[torch.Tensor]:
+    def set_deepstack_injection_count(self, count: int) -> None:
+        if count < 0 or count >= len(self.core.expert_layers):
+            raise ValueError(f"DeepStack injection count must be in [0,{len(self.core.expert_layers) - 1}], got {count}")
+        self.deepstack_injection_count = int(count)
+
+    def _mask_on(self, hidden: torch.Tensor) -> torch.Tensor:
         if self.valid_mask is None or self.valid_mask.shape != hidden.shape[:2]:
             raise RuntimeError("Call prepare_student_batch with the original 2-D attention mask before forward")
-        return [hidden[row, positions] for row, positions in enumerate(self.positions)]
+        if self.valid_mask.device != hidden.device:
+            self.valid_mask = self.valid_mask.to(hidden.device, non_blocking=True)
+        return self.valid_mask
+
+    def _groups(self, hidden: torch.Tensor) -> list[torch.Tensor]:
+        packed = hidden[self._mask_on(hidden)]
+        return list(packed.split(self.lengths))
 
     def _scatter(self, packed: torch.Tensor, template: torch.Tensor) -> torch.Tensor:
-        output = torch.zeros_like(template); offset = 0
-        for row, (positions, length) in enumerate(zip(self.positions, self.lengths)):
-            output[row, positions] = packed[offset:offset + length]; offset += length
+        output = torch.zeros_like(template)
+        output[self._mask_on(template)] = packed
         return output
 
     def forward_stage(self, stage: int, hidden_states: torch.Tensor) -> torch.Tensor:
@@ -241,9 +264,16 @@ class LanguageDeepStackHomogeneousMoE(nn.Module):
         else:
             if self.field is None or self.routing is None or self.last_hidden is None:
                 raise RuntimeError("Language optical stages must execute in order")
-            delta = hidden_states - self.last_hidden
-            delta_fields = self.core.encode_groups(self._groups(delta), injection=True)
-            if torch.count_nonzero(delta_fields): self.field = self.field + self.core.fanout(delta_fields, self.routing)
+            # Native Qwen adds one DeepStack visual tensor after each of its
+            # first N language layers. Replacement records N explicitly, which
+            # avoids a count_nonzero GPU->CPU synchronization at every stage.
+            has_injection = (stage <= self.deepstack_injection_count
+                             if self.deepstack_injection_count is not None else None)
+            if has_injection is not False:
+                delta = hidden_states - self.last_hidden
+                delta_fields = self.core.encode_groups(self._groups(delta), injection=True)
+                if has_injection is True or torch.count_nonzero(delta_fields):
+                    self.field = self.field + self.core.fanout(delta_fields, self.routing)
         assert self.field is not None and self.routing is not None
         self.field = self.core.run_stage(stage, self.field, self.routing)
         packed = self.core.read_hidden(self.field, self.lengths, hidden_states.dtype,
