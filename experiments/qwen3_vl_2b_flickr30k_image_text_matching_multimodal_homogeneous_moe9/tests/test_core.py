@@ -153,6 +153,11 @@ def test_binary_metrics_perfect_and_balanced() -> None:
     assert report["positive_samples"] == report["negative_samples"] == 2
 
 
+def test_rolling_single_class_metrics_are_explicitly_undefined_not_fatal() -> None:
+    report = binary_classification_metrics([0], [-0.2])
+    assert np.isnan(report["auroc"]) and np.isnan(report["average_precision"])
+
+
 def test_teacher_logit_cache_is_raw_and_identity_checked(tmp_path: Path) -> None:
     settings = _settings(tmp_path); settings.pair_manifest_digests = {"train": "digest"}
     path = write_teacher_logits(settings.output_dir, "train", torch.tensor([-3.0, 2.5]), settings)

@@ -10,7 +10,7 @@ official Flickr30k image split
   -> immutable JSONL pair manifest + SHA256
 ```
 
-Default pair counts are 59,566 for train and 2,000 for test. The official 1,000-image validation split is only checked for leakage and intentionally unused. Train and test share neither image IDs nor pair manifests.
+For the requested 31,783-image profile, default pair counts are 59,566 for train and 2,000 for test. For the currently published `nlphuji/flickr30k` Karpathy profile, they are 58,000 and 2,000. The official validation images are only checked for leakage and intentionally unused. Train and test share neither image IDs nor pair manifests.
 
 ## Dynamic multimodal preprocessing
 

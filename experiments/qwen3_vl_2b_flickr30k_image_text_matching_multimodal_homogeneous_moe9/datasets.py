@@ -20,7 +20,8 @@ CAPTION_COLUMN_CANDIDATES = ("caption", "captions", "sentences")
 SPLIT_COLUMN_CANDIDATES = ("split", "image_split")
 ID_COLUMN_CANDIDATES = ("img_id", "image_id", "id")
 FILENAME_COLUMN_CANDIDATES = ("filename", "file_name", "image_name")
-STANDARD_IMAGE_COUNTS = {"train": 29_783, "validation": 1_000, "test": 1_000}
+REQUESTED_STANDARD_IMAGE_COUNTS = {"train": 29_783, "validation": 1_000, "test": 1_000}
+KNOWN_REPOSITORY_IMAGE_COUNTS = {"train": 29_000, "validation": 1_014, "test": 1_000}
 MANIFEST_SCHEMA_VERSION = 1
 
 
@@ -127,7 +128,7 @@ def load_flickr30k(settings: Any, persist_manifest: bool = True,
     loaded = raw_dataset if raw_dataset is not None else _load_huggingface(settings)
     sources = _source_mapping(loaded)
     records_by_split, image_columns, fingerprints = _scan_sources(sources)
-    _validate_image_splits(records_by_split, bool(settings.validate_standard_counts))
+    count_profile = _validate_image_splits(records_by_split, bool(settings.validate_standard_counts))
 
     # Flickr30k's official validation images are intentionally not used in this user-requested protocol.
     train_images = _limit_images(records_by_split["train"], settings.train_image_limit)
@@ -161,6 +162,9 @@ def load_flickr30k(settings: Any, persist_manifest: bool = True,
         "revision": settings.dataset_revision,
         "dataset_fingerprints": fingerprints,
         "standard_image_counts": {name: len(rows) for name, rows in records_by_split.items()},
+        "image_count_profile": count_profile,
+        "requested_standard_image_counts": REQUESTED_STANDARD_IMAGE_COUNTS,
+        "known_repository_image_counts": KNOWN_REPOSITORY_IMAGE_COUNTS,
         "train_images": len(train_images),
         "validation_images": len(records_by_split["validation"]),
         "test_images": len(test_images),
@@ -271,7 +275,14 @@ def _load_huggingface(settings: Any) -> Any:
             os.environ["HF_ENDPOINT"] = str(settings.hf_endpoint)
         if not settings.download or settings.local_files_only:
             os.environ["HF_DATASETS_OFFLINE"] = "1"
-        kwargs: dict[str, Any] = {"cache_dir": str(settings.data_root)}
+        kwargs: dict[str, Any] = {
+            "cache_dir": str(settings.data_root),
+            # nlphuji/flickr30k is currently distributed through its repository
+            # dataset script. datasets>=3 removed the legacy task_templates API
+            # used by that script, so this experiment pins datasets<3 and
+            # explicitly trusts this configured repository.
+            "trust_remote_code": True,
+        }
         if settings.dataset_revision:
             kwargs["revision"] = settings.dataset_revision
         return load_dataset(settings.dataset_repo_id, **kwargs)
@@ -288,7 +299,8 @@ def _load_huggingface(settings: Any) -> Any:
 
 
 def _source_mapping(loaded: Any) -> dict[str, Any]:
-    if hasattr(loaded, "keys") and not hasattr(loaded, "column_names"):
+    column_names = getattr(loaded, "column_names", None)
+    if isinstance(loaded, Mapping) or isinstance(column_names, Mapping):
         return {str(name): loaded[name] for name in loaded.keys()}
     return {"test": loaded}
 
@@ -326,15 +338,28 @@ def _scan_sources(sources: Mapping[str, Any]) -> tuple[dict[str, list[FlickrImag
     return records, image_columns, fingerprints
 
 
-def _validate_image_splits(records: Mapping[str, Sequence[FlickrImageRecord]], strict_counts: bool) -> None:
+def _validate_image_splits(records: Mapping[str, Sequence[FlickrImageRecord]], strict_counts: bool) -> str:
+    actual = {split: len(records.get(split, ())) for split in ("train", "validation", "test")}
     for split in ("train", "validation", "test"):
         if not records.get(split):
             raise RuntimeError(f"Flickr30k internal split '{split}' was not found or is empty")
-        if strict_counts and len(records[split]) != STANDARD_IMAGE_COUNTS[split]:
-            raise RuntimeError(
-                f"Unexpected Flickr30k {split} image count: {len(records[split])}; "
-                f"expected {STANDARD_IMAGE_COUNTS[split]}. Disable validate_standard_counts only for smoke fixtures."
-            )
+    if strict_counts and actual not in (REQUESTED_STANDARD_IMAGE_COUNTS, KNOWN_REPOSITORY_IMAGE_COUNTS):
+        raise RuntimeError(
+            f"Unexpected Flickr30k internal image counts: {actual}. Expected either the requested profile "
+            f"{REQUESTED_STANDARD_IMAGE_COUNTS} or the known nlphuji/flickr30k Karpathy profile "
+            f"{KNOWN_REPOSITORY_IMAGE_COUNTS}. Refusing an unknown dataset revision."
+        )
+    if actual == REQUESTED_STANDARD_IMAGE_COUNTS:
+        profile = "requested_31783"
+    elif actual == KNOWN_REPOSITORY_IMAGE_COUNTS:
+        profile = "nlphuji_current_karpathy_31014"
+        print(
+            "WARNING: nlphuji/flickr30k currently exposes 29,000 train, 1,014 validation, and 1,000 test "
+            "images (31,014 total), not the requested 29,783/1,000/1,000 profile. The exact repository "
+            "split is retained and this discrepancy is recorded in dataset.json.", flush=True,
+        )
+    else:
+        profile = "custom_counts_validation_disabled"
     for split, rows in records.items():
         invalid = [row.image_id for row in rows if len(row.captions) != 5]
         if strict_counts and invalid:
@@ -344,6 +369,7 @@ def _validate_image_splits(records: Mapping[str, Sequence[FlickrImageRecord]], s
         overlap = sets[left] & sets[right]
         if overlap:
             raise RuntimeError(f"Flickr30k image_id leakage between {left} and {right}: {sorted(overlap)[:5]}")
+    return profile
 
 
 def _persist_or_validate_manifest(root: Path, split: str, pairs: Sequence[PairRecord], settings: Any,

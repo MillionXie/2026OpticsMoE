@@ -52,7 +52,10 @@ def _auroc(y: np.ndarray, scores: np.ndarray) -> float:
     positive = y == 1; negative = ~positive
     n_pos, n_neg = int(positive.sum()), int(negative.sum())
     if n_pos == 0 or n_neg == 0:
-        raise ValueError("AUROC requires both positive and negative samples")
+        # A batch-level rolling window can contain one class even though every
+        # persisted Flickr split is balanced. Keep training alive and make the
+        # undefined statistic explicit; epoch/test metrics contain both classes.
+        return float("nan")
     ranks = _average_ranks(scores)
     return float((ranks[positive].sum() - n_pos * (n_pos + 1) / 2.0) / (n_pos * n_neg))
 
@@ -60,7 +63,7 @@ def _auroc(y: np.ndarray, scores: np.ndarray) -> float:
 def _average_precision(y: np.ndarray, scores: np.ndarray) -> float:
     positives = int(np.sum(y == 1))
     if positives == 0:
-        raise ValueError("Average precision requires positive samples")
+        return float("nan")
     order = np.argsort(-scores, kind="mergesort")
     sorted_y = y[order]
     precision = np.cumsum(sorted_y) / np.arange(1, len(y) + 1)

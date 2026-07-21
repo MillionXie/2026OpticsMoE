@@ -14,7 +14,7 @@ The Qwen chat template is applied with `add_generation_prompt=True`. Classificat
 
 ## Dataset and fixed pairing
 
-The loader uses `nlphuji/flickr30k` through Hugging Face Datasets and understands its common layout: the public repository can expose one top-level `test` split while every record has an internal `split` field. With `validate_standard_counts=true`, it checks 29,783 train images, 1,000 validation images, 1,000 test images, and five captions per image.
+The loader uses `nlphuji/flickr30k` through Hugging Face Datasets and understands its common layout: the public repository can expose one top-level `test` split while every record has an internal `split` field. With `validate_standard_counts=true`, it accepts only an explicitly known exact profile and checks five captions per image. The requested profile is 29,783/1,000/1,000. The repository revision validated on 2026-07-21 actually exposes the Karpathy profile 29,000/1,014/1,000 (31,014 total); that profile is accepted with a visible warning and recorded in `dataset.json`. Unknown count layouts are rejected. The loader never fabricates the 769 images absent from this repository's annotations.
 
 The protocol in this experiment intentionally follows the latest user instruction: **there is no validation evaluation**. Official train images train the models; official test images are evaluated after every epoch and test AUROC selects the best checkpoint. The official 1,000-image validation split is checked for image-ID isolation but left unused. This makes the reported final test result selection-biased and is recorded in every relevant metrics file.
 
@@ -55,7 +55,7 @@ Phase dropout is retained as a configuration feature but disabled by default.
 
 ## Automatic download and cache
 
-The default config downloads/caches `nlphuji/flickr30k` under the configurable `data_root`. `HF_ENDPOINT` can be supplied through the config, and an existing offline cache can be used with `download=false` or `local_files_only=true`. Dataset loading failures are explicit; this experiment never falls back to Flickr8k, synthetic data, or another dataset.
+The default config downloads/caches `nlphuji/flickr30k` under the configurable `data_root`. `HF_ENDPOINT` can be supplied through the config or environment, and an existing offline cache can be used with `download=false` or `local_files_only=true`. The repository currently uses a legacy Hugging Face dataset script, so `requirements.txt` pins `datasets>=2.18,<3` and the loader explicitly trusts this configured repository. Dataset loading failures are explicit; this experiment never falls back to Flickr8k, synthetic data, or another dataset.
 
 Teacher and processor cache identities include the dataset repository/revision/fingerprint, split, pair-manifest digest, prompt template, negative sampler/version, caption count, seed, model ID, and processor pixel budget. Sequences above 120 visual or language tokens raise an error—there is no hidden truncation or token-row remapping.
 
