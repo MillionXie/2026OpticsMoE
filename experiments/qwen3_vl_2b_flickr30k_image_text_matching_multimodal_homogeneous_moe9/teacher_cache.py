@@ -158,6 +158,7 @@ def cached_answer_features(store: TeacherCacheStore) -> tuple[torch.Tensor, torc
 
 def write_teacher_logits(output_dir: Path, split: str, logits: torch.Tensor, settings: Any) -> Path:
     path = output_dir / "teacher_cache" / f"{split}_teacher_logits.pt"
+    path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "cache_schema_version": TEACHER_LOGIT_SCHEMA_VERSION,
         "sample_indices": torch.arange(len(logits)),
