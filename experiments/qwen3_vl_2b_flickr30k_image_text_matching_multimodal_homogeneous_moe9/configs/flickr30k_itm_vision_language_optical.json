@@ -10,7 +10,7 @@
     "data_root": "../../../data/flickr30k",
     "repo_id": "nlphuji/flickr30k",
     "revision": null,
-    "hf_endpoint": null,
+    "hf_endpoint": "https://hf-mirror.com",
     "download": true,
     "validate_standard_counts": true,
     "captions_per_image": 1,

@@ -55,7 +55,7 @@ Phase dropout is retained as a configuration feature but disabled by default.
 
 ## Automatic download and cache
 
-The default config downloads/caches `nlphuji/flickr30k` under the configurable `data_root`. `HF_ENDPOINT` can be supplied through the config or environment, and an existing offline cache can be used with `download=false` or `local_files_only=true`. The repository currently uses a legacy Hugging Face dataset script, so `requirements.txt` pins `datasets>=2.18,<3` and the loader explicitly trusts this configured repository. Dataset loading failures are explicit; this experiment never falls back to Flickr8k, synthetic data, or another dataset.
+The default config downloads/caches `nlphuji/flickr30k` under the configurable `data_root` and uses `https://hf-mirror.com`, which is reachable from the validated server. Set `hf_endpoint` to `null` to use the official endpoint, or provide `HF_ENDPOINT` through the environment. An existing offline cache can be used with `download=false` or `local_files_only=true`. The repository currently uses a legacy Hugging Face dataset script, so `requirements.txt` pins `datasets>=2.18,<3` and the loader explicitly trusts this configured repository. Dataset loading failures are explicit; this experiment never falls back to Flickr8k, synthetic data, or another dataset.
 
 Teacher and processor cache identities include the dataset repository/revision/fingerprint, split, pair-manifest digest, prompt template, negative sampler/version, caption count, seed, model ID, and processor pixel budget. Sequences above 120 visual or language tokens raise an error—there is no hidden truncation or token-row remapping.
 
