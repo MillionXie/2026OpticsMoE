@@ -1,0 +1,8 @@
+torch
+transformers
+datasets
+pillow
+numpy
+matplotlib
+tqdm
+huggingface_hub

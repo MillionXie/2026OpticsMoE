@@ -1,0 +1,10 @@
+{
+  "base_config": "flickr30k_itm_vision_language_optical.json",
+  "experiment": {
+    "name": "qwen3_vl_2b_flickr30k_itm_vision_electronic_language_homogeneous_moe9",
+    "output_dir": "../runs/qwen3_vl_2b_flickr30k_itm_vision_electronic_language_homogeneous_moe9"
+  },
+  "student": {
+    "language_stack_mode": "electronic"
+  }
+}
