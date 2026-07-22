@@ -59,6 +59,8 @@ The default config downloads/caches `nlphuji/flickr30k` under the configurable `
 
 Teacher and processor cache identities include the dataset repository/revision/fingerprint, split, pair-manifest digest, prompt template, negative sampler/version, caption count, seed, model ID, and processor pixel budget. Sequences above 120 visual or language tokens raise an error—there is no hidden truncation or token-row remapping.
 
+The formal configs use a fixed processor budget of **20,480 pixels**, rather than 25,600. A complete scan of the persisted 58,000-train/2,000-test pair manifests found four training pairs above the 120-token language limit at 25,600 pixels (maximum 123). At 20,480 pixels there are no overflows (observed maximum 117), while retaining more visual tokens than the more conservative 18,432-pixel option. `all` and `teacher_precompute` build/validate the processor cache first, so a changed dataset, manifest, or prompt fails before any expensive teacher forward. Processor-cache metadata records the observed maximum sequence and visual-token counts plus their remaining margins.
+
 ## Main outputs
 
 - `config_resolved.json`, `environment.json`, `dataset.json`, `model.json`

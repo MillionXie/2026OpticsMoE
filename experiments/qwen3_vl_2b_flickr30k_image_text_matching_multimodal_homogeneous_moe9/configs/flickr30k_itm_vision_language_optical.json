@@ -28,8 +28,8 @@
     "local_files_only": false,
     "prompt_template": "Determine whether the caption accurately describes the image.\nCaption: {caption}\nMatch score:",
     "processor": {
-      "min_pixels": 25600,
-      "max_pixels": 25600
+      "min_pixels": 20480,
+      "max_pixels": 20480
     },
     "runtime": {
       "dtype": "bfloat16",

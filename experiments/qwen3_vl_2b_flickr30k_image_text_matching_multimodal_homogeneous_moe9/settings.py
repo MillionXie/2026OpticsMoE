@@ -36,8 +36,10 @@ class Settings:
     model_id: str = MODEL_ID
     cache_dir: Path | None = None
     local_files_only: bool = False
-    processor_min_pixels: int = 25600
-    processor_max_pixels: int = 25600
+    # Largest fixed budget verified against the default persisted Flickr30k
+    # pair manifest while keeping every multimodal sequence within 120 tokens.
+    processor_min_pixels: int = 20480
+    processor_max_pixels: int = 20480
     prompt_template: str = PROMPT_TEMPLATE
     feature_batch_size: int = 1
     student_batch_size: int = 1

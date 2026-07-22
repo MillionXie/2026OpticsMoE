@@ -68,6 +68,7 @@ def test_configs_select_two_language_modes_and_no_validation() -> None:
     assert electronic.student_language_mode == "electronic"
     assert optical.student_selection_split == "test" and optical.student_selection_metric == "auroc"
     assert optical.max_visual_tokens == optical.max_language_tokens == 120
+    assert optical.processor_min_pixels == optical.processor_max_pixels == 20480
     assert optical.prompt_template.count("{caption}") == 1
 
 

@@ -49,9 +49,12 @@ def build_processor_cache(split: str, processor: Any, loader: Any, dataset_size:
     shard_dir = root / f"{split}_shards"; shard_dir.mkdir(parents=True, exist_ok=True)
     stored_dtype = torch.float16 if settings.cache_dtype == "float16" else torch.float32
     pending: list[dict[str, Any]] = []; shards: list[dict[str, Any]] = []; cached_count = 0
+    max_sequence_length_observed = 0; max_visual_tokens_observed = 0
     padding_side = getattr(getattr(processor, "tokenizer", None), "padding_side", "left")
     pad_token_id = getattr(getattr(processor, "tokenizer", None), "pad_token_id", 0)
     if pad_token_id is None: pad_token_id = 0
+    merge_size = int(getattr(getattr(processor, "image_processor", None), "merge_size", 2))
+    if merge_size <= 0: raise RuntimeError(f"Invalid processor image merge_size={merge_size}")
     for batch_index, (images, prompts, _labels, indices) in enumerate(loader, start=1):
         inputs = preprocess_image_text(processor, images, prompts)
         grids = inputs["image_grid_thw"].cpu(); pixels = inputs["pixel_values"].cpu()
@@ -62,13 +65,32 @@ def build_processor_cache(split: str, processor: Any, loader: Any, dataset_size:
         for local, group in enumerate(pixel_groups):
             valid = inputs["attention_mask"][local].bool().cpu()
             length = int(valid.sum())
+            sample_index = int(indices[local])
             if length > settings.max_language_tokens:
                 raise RuntimeError(
-                    f"language sequence length {length} exceeds max_language_tokens={settings.max_language_tokens}. "
-                    "Shorten the caption/prompt; silent truncation is forbidden."
+                    f"{split} sample_index={sample_index} has language sequence length {length}, which exceeds "
+                    f"max_language_tokens={settings.max_language_tokens}. Lower processor_min_pixels and "
+                    "processor_max_pixels (20,480 is validated for the default Flickr30k manifest), or shorten "
+                    "the caption/prompt. Silent truncation is forbidden."
                 )
+            patch_count = patch_counts[local]
+            divisor = merge_size * merge_size
+            if patch_count % divisor:
+                raise RuntimeError(
+                    f"{split} sample_index={sample_index} has pre-merge patch count {patch_count}, which is not "
+                    f"divisible by merge_size^2={divisor}"
+                )
+            visual_tokens = patch_count // divisor
+            if visual_tokens > settings.max_visual_tokens:
+                raise RuntimeError(
+                    f"{split} sample_index={sample_index} has visual token count {visual_tokens}, which exceeds "
+                    f"max_visual_tokens={settings.max_visual_tokens}. Lower processor_max_pixels; no cropping or "
+                    "fallback token remapping is allowed."
+                )
+            max_sequence_length_observed = max(max_sequence_length_observed, length)
+            max_visual_tokens_observed = max(max_visual_tokens_observed, visual_tokens)
             ids = inputs["input_ids"][local].cpu()[valid].contiguous()
-            pending.append({"sample_index": int(indices[local]), "input_ids": ids,
+            pending.append({"sample_index": sample_index, "input_ids": ids,
                             "pixel_values": group.to(stored_dtype).contiguous(),
                             "image_grid_thw": grids[local], "sequence_length": length})
             if len(pending) >= settings.teacher_cache_shard_size:
@@ -79,7 +101,11 @@ def build_processor_cache(split: str, processor: Any, loader: Any, dataset_size:
     if pending: shards.append(_flush_shard(shard_dir, len(shards), pending))
     metadata = {**expected, "padding_side": padding_side, "pad_token_id": int(pad_token_id),
                 "shard_count": len(shards), "shard_size": settings.teacher_cache_shard_size,
-                "total_cache_bytes": sum(row["bytes"] for row in shards)}
+                "total_cache_bytes": sum(row["bytes"] for row in shards),
+                "max_sequence_length_observed": max_sequence_length_observed,
+                "max_visual_tokens_observed": max_visual_tokens_observed,
+                "language_token_margin": settings.max_language_tokens - max_sequence_length_observed,
+                "visual_token_margin": settings.max_visual_tokens - max_visual_tokens_observed}
     root.mkdir(parents=True, exist_ok=True)
     torch.save({"metadata": metadata, "shards": shards}, manifest_path)
     write_json(root / f"{split}_metadata.json", metadata)

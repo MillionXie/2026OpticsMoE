@@ -67,8 +67,10 @@ def main(argv: list[str] | None = None) -> int:
     write_json(settings.output_dir / "config_resolved.json", settings.to_dict()); _model_report(loaded.model, replacement, settings)
     try:
         if args.phase in {"teacher_precompute", "all"}:
-            _teacher_precompute(loaded, replacement, data, settings, device)
+            # Dynamic captions must pass the strict token-row budget before an
+            # expensive frozen-teacher forward is allowed to begin.
             _input_precompute(loaded.processor, data, settings)
+            _teacher_precompute(loaded, replacement, data, settings, device)
             if args.phase == "teacher_precompute": return 0
         stores = _stores(settings, data)
         if args.phase == "all":

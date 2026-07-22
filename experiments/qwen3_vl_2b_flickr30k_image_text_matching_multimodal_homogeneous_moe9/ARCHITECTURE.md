@@ -18,6 +18,8 @@ For the requested 31,783-image profile, default pair counts are 59,566 for train
 
 Qwen may internally pack visual tokens across a batch. Optical processing still recovers per-image token boundaries from `cu_seqlens`, constructs one 120-row field per sample, and then batches those independent fields. Batch size therefore changes parallelism, not the optical field of an individual pair.
 
+The fixed 20,480-pixel processor budget was selected by scanning every persisted pair. The default manifest has maximum combined sequence length 117 at this budget, versus 123 and four over-limit pairs at 25,600. The 120-row limit remains strict: there is no caption truncation, hidden cropping, or fallback remapping. Processor preprocessing is completed and validated before teacher feature extraction.
+
 ## Electronic teacher
 
 The full Qwen3-VL-2B backbone remains frozen and in evaluation mode. The last valid language hidden vector is passed to `NormalizedBinaryClassificationHead`:
