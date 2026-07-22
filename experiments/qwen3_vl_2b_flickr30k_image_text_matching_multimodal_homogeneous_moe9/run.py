@@ -62,14 +62,18 @@ def main(argv: list[str] | None = None) -> int:
         processor = load_processor(settings.model_id, settings.cache_dir, settings.local_files_only,
                                    settings.processor_min_pixels, settings.processor_max_pixels)
         _input_precompute(processor, data, settings); return 0
+    if args.phase in {"teacher_precompute", "all"}:
+        # Perform the cheap, strict dynamic-caption/token-row validation before
+        # allocating the 2B backbone or running any teacher GPU forward.
+        processor = load_processor(settings.model_id, settings.cache_dir, settings.local_files_only,
+                                   settings.processor_min_pixels, settings.processor_max_pixels)
+        _input_precompute(processor, data, settings)
+        del processor
     loaded = _load_model(settings, device); settings.resolve_architecture(loaded.model)
     replacement = _replacement(loaded, settings, device)
     write_json(settings.output_dir / "config_resolved.json", settings.to_dict()); _model_report(loaded.model, replacement, settings)
     try:
         if args.phase in {"teacher_precompute", "all"}:
-            # Dynamic captions must pass the strict token-row budget before an
-            # expensive frozen-teacher forward is allowed to begin.
-            _input_precompute(loaded.processor, data, settings)
             _teacher_precompute(loaded, replacement, data, settings, device)
             if args.phase == "teacher_precompute": return 0
         stores = _stores(settings, data)
