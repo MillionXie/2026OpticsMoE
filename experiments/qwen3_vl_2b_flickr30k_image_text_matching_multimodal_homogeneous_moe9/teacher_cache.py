@@ -82,13 +82,17 @@ def build_teacher_cache(split: str, model: nn.Module, replacement: Any,
             )
         missing = [index for index in tap_indexes if index not in replacement.teacher_vision_taps]
         if missing: raise RuntimeError(f"Teacher hooks missed vision blocks: {missing}")
-        tap_groups = {index: list(replacement.teacher_vision_taps[index].split(counts)) for index in tap_indexes}
+        # Transfer each packed target once. The old per-sample `.cpu()` calls
+        # introduced (1 + number_of_taps) * batch_size CUDA synchronizations.
+        answer_cpu, tap_groups = packed_teacher_targets_to_cpu(
+            answer, replacement.teacher_vision_taps, tap_indexes, counts, stored_dtype
+        )
         for local in range(len(indices)):
             pending.append({"sample_index": int(indices[local]), "label": float(batch_labels[local]),
                             "image_grid_thw": cpu_inputs["image_grid_thw"][local].cpu(),
                             "visual_token_count": counts[local], "sequence_length": sequence_lengths[local],
-                            "teacher_answer_hidden": answer[local].to(stored_dtype).cpu(),
-                            "teacher_vision_taps": [tap_groups[index][local].to(stored_dtype).cpu() for index in tap_indexes]})
+                            "teacher_answer_hidden": answer_cpu[local],
+                            "teacher_vision_taps": [tap_groups[index][local] for index in tap_indexes]})
             if len(pending) >= settings.teacher_cache_shard_size:
                 shards.append(_flush_shard(shard_dir, len(shards), pending)); pending = []
         if batch_index % settings.teacher_cache_log_interval_batches == 0 or batch_index == batches:
@@ -114,6 +118,15 @@ def iter_cached_input_batches(processor_inputs: ProcessorCacheStore, labels: Seq
         samples = [processor_inputs.get(index) for index in range(start, stop)]
         yield (collate_processor_samples(samples, processor_inputs.metadata),
                torch.tensor(labels[start:stop], dtype=torch.float32), indices)
+
+
+def packed_teacher_targets_to_cpu(answer: torch.Tensor, taps: dict[int, torch.Tensor],
+                                  tap_indexes: Sequence[int], counts: Sequence[int],
+                                  dtype: torch.dtype) -> tuple[torch.Tensor, dict[int, list[torch.Tensor]]]:
+    """Copy packed GPU targets in O(number of taps), then split on CPU."""
+    answer_cpu = answer.to(dtype).cpu()
+    groups = {index: list(taps[index].to(dtype).cpu().split(list(counts))) for index in tap_indexes}
+    return answer_cpu, groups
 
 
 def _flush_shard(directory: Path, number: int, rows: list[dict[str, Any]]) -> dict[str, Any]:

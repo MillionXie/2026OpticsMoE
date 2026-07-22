@@ -63,6 +63,8 @@ The formal configs use a fixed processor budget of **20,480 pixels**, rather tha
 
 Teacher feature extraction consumes those persisted processor tensors directly. It does not decode, resize, and tokenize all Flickr images a second time. The formal teacher feature batch is 32, selected by an on-server 4/8/16/32/64 benchmark: batch 32 reached about 119 samples/s at 5.3 GiB peak allocated GPU memory, while batch 64 provided no meaningful additional throughput. This changes only inference parallelism and leaves each sample's cached inputs, attention mask, token rows, and targets unchanged.
 
+Teacher answer and vision-tap targets are cast and copied back to CPU as packed batches before per-sample splitting. This preserves the tensors while avoiding hundreds of small synchronizing device-to-host copies per batch.
+
 ## Main outputs
 
 - `config_resolved.json`, `environment.json`, `dataset.json`, `model.json`

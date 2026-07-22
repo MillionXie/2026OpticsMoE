@@ -24,7 +24,7 @@ from experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneou
 )
 from experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneous_moe9.settings import Settings, load_settings
 from experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneous_moe9.teacher_cache import (
-    iter_cached_input_batches, load_teacher_logits, write_teacher_logits,
+    iter_cached_input_batches, load_teacher_logits, packed_teacher_targets_to_cpu, write_teacher_logits,
 )
 
 
@@ -216,3 +216,13 @@ def test_teacher_batches_reuse_exact_processor_cache() -> None:
     assert inputs["pixel_values"].shape == (8, 3)
     assert labels.tolist() == [0.0, 1.0] and indices.tolist() == [0, 1]
     assert batches[1][2].tolist() == [2]
+
+
+def test_teacher_targets_are_split_after_packed_transfer() -> None:
+    answer = torch.arange(8, dtype=torch.float32).reshape(2, 4)
+    packed = torch.arange(15, dtype=torch.float32).reshape(5, 3)
+    answer_cpu, groups = packed_teacher_targets_to_cpu(answer, {7: packed}, [7], [2, 3], torch.float16)
+    assert answer_cpu.device.type == "cpu" and answer_cpu.dtype == torch.float16
+    assert [tuple(group.shape) for group in groups[7]] == [(2, 3), (3, 3)]
+    assert torch.equal(groups[7][0].float(), packed[:2])
+    assert torch.equal(groups[7][1].float(), packed[2:])
