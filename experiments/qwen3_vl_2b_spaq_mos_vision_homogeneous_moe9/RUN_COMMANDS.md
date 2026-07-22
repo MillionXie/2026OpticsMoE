@@ -17,7 +17,7 @@ CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_spaq_mos_vision_homogen
 ## Full run
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_spaq_mos_vision_homogeneous_moe9 --config experiments/qwen3_vl_2b_spaq_mos_vision_homogeneous_moe9/configs/spaq_mos.json --phase all
+CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_2b_spaq_mos_vision_homogeneous_moe9 --config experiments/qwen3_vl_2b_spaq_mos_vision_homogeneous_moe9/configs/spaq_mos.json --phase all
 ```
 
 ## Separate phases

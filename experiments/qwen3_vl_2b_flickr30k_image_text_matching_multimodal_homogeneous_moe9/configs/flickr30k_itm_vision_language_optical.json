@@ -50,8 +50,8 @@
   },
   "batching": {
     "feature_batch_size": 1,
-    "student_batch_size": 1,
-    "inference_batch_size": 1,
+    "student_batch_size": 8,
+    "inference_batch_size": 8,
     "head_batch_size": 512,
     "num_workers": 8
   },
@@ -137,29 +137,29 @@
   },
   "optimizer": {
     "type": "adamw",
-    "learning_rate": 0.0005,
+    "learning_rate": 0.008,
     "student_head_learning_rate": 0.001,
-    "weight_decay": 0.01,
+    "weight_decay": 0.0,
     "scheduler": "cosine"
   },
   "training": {
-    "epochs": 30,
+    "epochs": 100,
     "progress": true,
     "logging": {
-      "interval_batches": 100
+      "interval_batches": 100000
     },
-    "checkpoint_interval_epochs": 1,
+    "checkpoint_interval_epochs": 10,
     "student_selection_split": "test",
     "student_selection_metric": "auroc"
   },
   "regularization": {
     "phase_dropout": {
-      "enabled": false,
-      "mode": "none",
-      "p": 0.0,
-      "block_size": 8,
+      "enabled": true,
+      "mode": "block_phase_bypass",
+      "p": 0.02,
+      "block_size": 4,
       "batch_shared": true,
-      "start_epoch": 0
+      "start_epoch": 5
     }
   },
   "visualization": {
