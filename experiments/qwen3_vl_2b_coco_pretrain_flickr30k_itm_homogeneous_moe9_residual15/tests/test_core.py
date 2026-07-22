@@ -1,0 +1,442 @@
+from __future__ import annotations
+
+from pathlib import Path
+from types import SimpleNamespace
+
+import numpy as np
+import pytest
+import torch
+from PIL import Image
+from torch import nn
+from torch.nn import functional as F
+
+from experiments.qwen3_vl_2b_coco_pretrain_flickr30k_itm_homogeneous_moe9_residual15.datasets import load_flickr30k
+from experiments.qwen3_vl_2b_coco_pretrain_flickr30k_itm_homogeneous_moe9_residual15.generic_datasets import load_generic_coco
+from experiments.qwen3_vl_2b_coco_pretrain_flickr30k_itm_homogeneous_moe9_residual15.features import (
+    pool_answer_hidden_state, preprocess_image_text,
+)
+from experiments.qwen3_vl_2b_coco_pretrain_flickr30k_itm_homogeneous_moe9_residual15.metrics import binary_classification_metrics
+from experiments.qwen3_vl_2b_coco_pretrain_flickr30k_itm_homogeneous_moe9_residual15.modeling import build_head
+from experiments.qwen3_vl_2b_coco_pretrain_flickr30k_itm_homogeneous_moe9_residual15.optics.geometry import MoEGeometry
+from experiments.qwen3_vl_2b_coco_pretrain_flickr30k_itm_homogeneous_moe9_residual15.optics.moe import (
+    FullPlaneReadout, HomogeneousMoEOpticalCore, LanguageDeepStackHomogeneousMoE,
+    VisionDeepStackHomogeneousMoE,
+)
+from experiments.qwen3_vl_2b_coco_pretrain_flickr30k_itm_homogeneous_moe9_residual15.optics.replacement import (
+    LanguageNativeAttentionPrelude, LanguageNativeNormPrelude, VisionNativeAttentionPrelude, VisionNativeNormPrelude,
+)
+from experiments.qwen3_vl_2b_coco_pretrain_flickr30k_itm_homogeneous_moe9_residual15.processor_cache import (
+    collate_processor_samples, expected_processor_metadata,
+)
+from experiments.qwen3_vl_2b_coco_pretrain_flickr30k_itm_homogeneous_moe9_residual15.sampling import (
+    BalancedEpochRotatingSampler,
+)
+from experiments.qwen3_vl_2b_coco_pretrain_flickr30k_itm_homogeneous_moe9_residual15.sam import SAMController
+from experiments.qwen3_vl_2b_coco_pretrain_flickr30k_itm_homogeneous_moe9_residual15.settings import Settings, load_settings
+from experiments.qwen3_vl_2b_coco_pretrain_flickr30k_itm_homogeneous_moe9_residual15.teacher_cache import (
+    _AsyncShardWriter, iter_cached_input_batches, load_teacher_logits, pack_teacher_rows,
+    packed_teacher_targets_to_cpu, write_teacher_logits,
+)
+from experiments.qwen3_vl_2b_coco_pretrain_flickr30k_itm_homogeneous_moe9_residual15.training import (
+    cached_student_collate, normalized_packed_group_mse,
+)
+
+
+ROOT = Path("experiments/qwen3_vl_2b_coco_pretrain_flickr30k_itm_homogeneous_moe9_residual15")
+OPTICAL = ROOT / "configs" / "coco_pretrain_flickr30k_smoke.json"
+FORMAL = ROOT / "configs" / "coco_pretrain_flickr30k.json"
+
+
+class FakeSplit:
+    def __init__(self, rows: list[dict], columns: list[str] | None = None) -> None:
+        self.rows = rows; self.column_names = columns or list(rows[0]); self._fingerprint = "fake-fingerprint"
+    def __len__(self): return len(self.rows)
+    def __getitem__(self, index): return {key: self.rows[index][key] for key in self.column_names}
+    def select_columns(self, columns): return FakeSplit(self.rows, list(columns))
+
+
+def _fake_flickr() -> dict[str, FakeSplit]:
+    rows = []
+    counts = {"train": 6, "val": 3, "test": 4}
+    number = 0
+    for split, count in counts.items():
+        for _ in range(count):
+            image_id = f"image-{number}"
+            rows.append({"image": Image.new("RGB", (8, 8), (number, 3, 4)),
+                         "caption": [f"unique caption {number} number {slot}" for slot in range(5)],
+                         "split": split, "img_id": image_id, "filename": f"{image_id}.jpg"})
+            number += 1
+    return {"test": FakeSplit(rows)}
+
+
+def _settings(tmp_path: Path) -> Settings:
+    settings = Settings(data_root=tmp_path / "cache", output_dir=tmp_path / "run",
+                        validate_standard_counts=False, num_workers=0, train_image_limit=None,
+                        test_image_limit=None)
+    settings.validate(); return settings
+
+
+def test_config_is_joint_residual15_without_attention() -> None:
+    optical = load_settings(OPTICAL)
+    assert optical.student_language_mode == "optical_moe"
+    assert optical.student_selection_split == "test" and optical.student_selection_metric == "auroc"
+    assert optical.max_visual_tokens == optical.max_language_tokens == 120
+    assert optical.processor_min_pixels == optical.processor_max_pixels == 20480
+    assert optical.prompt_template.count("{caption}") == 1
+    assert load_settings(FORMAL).feature_batch_size == 32
+    assert load_settings(FORMAL).train_samples_per_class_per_epoch == 2000
+    assert not optical.native_pre_attention_enabled and optical.native_pre_norm_enabled
+    assert optical.transformer_residual_enabled
+    assert optical.logical_optical_stages == 5
+    assert optical.physical_layers_per_logical_stage == 3 and optical.expert_layers == 15
+    assert not optical.native_pre_attention_trainable
+    assert optical.detector_layernorm_scope == "per_token"
+
+
+def test_detector_layernorm_is_independent_per_token_row() -> None:
+    settings = load_settings(OPTICAL); readout = FullPlaneReadout(settings)
+    assert readout.norm.normalized_shape == (120,)
+    pooled = torch.randn(2, 120, 120)
+    normalized = readout.norm(pooled)
+    assert torch.allclose(normalized.mean(-1), torch.zeros(2, 120), atol=1e-5)
+
+
+class _ScaleAttention(nn.Module):
+    def forward(self, hidden_states=None, *args, **kwargs):
+        del args, kwargs
+        return hidden_states * 2.0
+
+
+class _VisionSourceBlock(nn.Module):
+    def __init__(self) -> None:
+        super().__init__(); self.norm1 = nn.Identity(); self.attn = _ScaleAttention(); self.norm2 = nn.Identity()
+
+
+class _LanguageSourceLayer(nn.Module):
+    def __init__(self) -> None:
+        super().__init__(); self.input_layernorm = nn.Identity(); self.self_attn = _ScaleAttention()
+        self.post_attention_layernorm = nn.Identity()
+
+
+def test_native_attention_preludes_match_fixed_qwen_residual_equation() -> None:
+    vision = VisionNativeAttentionPrelude(_VisionSourceBlock())
+    packed = torch.randn(5, 8); base, optical_input = vision(packed, torch.tensor([0, 5]))
+    assert torch.allclose(base, 3.0 * packed) and torch.allclose(optical_input, base)
+
+    language = LanguageNativeAttentionPrelude(_LanguageSourceLayer())
+    sequence = torch.randn(2, 4, 8); base, optical_input = language(sequence, attention_mask=None)
+    assert torch.allclose(base, 3.0 * sequence) and torch.allclose(optical_input, base)
+    assert not any("scale" in name for name, _parameter in vision.named_parameters())
+
+
+def test_norm_only_preludes_have_no_attention_and_preserve_identity_residual() -> None:
+    vision = VisionNativeNormPrelude(_VisionSourceBlock()); packed = torch.randn(5, 8)
+    base, optical = vision(packed)
+    assert torch.equal(base, packed) and torch.equal(optical, packed)
+    language = LanguageNativeNormPrelude(_LanguageSourceLayer()); sequence = torch.randn(2, 4, 8)
+    base, optical = language(sequence)
+    assert torch.equal(base, sequence) and torch.equal(optical, sequence)
+    assert not any("attn" in name or "attention" in name for name, _ in vision.named_modules())
+
+
+class _TinyOpticalCore(nn.Module):
+    def __init__(self, stages: int = 1) -> None:
+        super().__init__(); self.expert_layers = nn.ModuleList([nn.Identity() for _ in range(stages)]); self.max_tokens = 120
+        self.logical_stages = stages; self.physical_layers_per_logical_stage = 1
+    def encode_groups(self, groups, **_kwargs): return torch.cat(groups)
+    def begin(self, fields): return fields, {}
+    def fanout(self, fields, _routing): return fields
+    def run_stage(self, _stage, field, _routing): return field
+    def run_logical_stage(self, stage, field, routing): return self.run_stage(stage, field, routing)
+    def read_hidden(self, _field, lengths, boundary_dtype, **_kwargs):
+        return torch.ones(sum(lengths), 4, dtype=boundary_dtype)
+
+
+def test_vision_optical_branch_uses_fixed_unweighted_residual() -> None:
+    vision = VisionDeepStackHomogeneousMoE.__new__(VisionDeepStackHomogeneousMoE); nn.Module.__init__(vision)
+    vision.core = _TinyOpticalCore(); vision.tap_stages = (1,); vision.last_token_counts = []
+    vision.tap_outputs = []; vision.last_output = None; vision.last_residual_base = None
+    optical_input = torch.randn(3, 4); residual = torch.full_like(optical_input, 2.0)
+    vision.compute(optical_input, torch.tensor([0, 3]), residual_base=residual)
+    assert torch.equal(vision.tap_outputs[0], residual + 1.0)
+    assert torch.equal(vision.last_output, residual + 1.0)
+
+
+def test_language_residual_tracks_native_deepstack_injections() -> None:
+    language = LanguageDeepStackHomogeneousMoE.__new__(LanguageDeepStackHomogeneousMoE); nn.Module.__init__(language)
+    language.core = _TinyOpticalCore(stages=2); language.valid_mask = None; language.field = None
+    language.routing = None; language.lengths = []; language.positions = []; language.last_hidden = None
+    language.last_output = None; language.residual_base = None; language.deepstack_injection_count = 1
+    language.set_attention_mask(torch.ones(1, 2))
+    hidden = torch.zeros(1, 2, 4); residual = torch.full_like(hidden, 2.0)
+    first = language.forward_stage(0, hidden, optical_input=hidden, residual_base=residual)
+    assert torch.equal(first, torch.full_like(first, 3.0))
+    second = language.forward_stage(1, first + 5.0)
+    assert torch.equal(second, torch.full_like(second, 8.0))
+
+
+def test_balanced_rotating_sampler_is_exact_and_covers_all_samples() -> None:
+    labels = [label for label in (0, 1) for _ in range(20)]
+    sampler = BalancedEpochRotatingSampler(labels, samples_per_class=5, seed=42, shard_size=4)
+    covered: set[int] = set()
+    for epoch in range(1, 5):
+        sampler.set_epoch(epoch); indices = list(sampler)
+        assert len(indices) == 10
+        assert sum(labels[index] == 0 for index in indices) == 5
+        assert sum(labels[index] == 1 for index in indices) == 5
+        covered.update(indices)
+    assert covered == set(range(40))
+
+
+def test_fixed_pair_manifest_is_balanced_deterministic_and_leak_free(tmp_path: Path) -> None:
+    settings = _settings(tmp_path); source = _fake_flickr()
+    first = load_flickr30k(settings, raw_dataset=source)
+    digest = first.metadata["pair_manifest_digests"]
+    second_settings = _settings(tmp_path); second = load_flickr30k(second_settings, raw_dataset=source)
+    assert second.metadata["pair_manifest_digests"] == digest
+    assert len(first.train) == 12 and len(first.test) == 8
+    train_images = {pair.image_id for pair in first.train.pairs}; test_images = {pair.image_id for pair in first.test.pairs}
+    assert train_images.isdisjoint(test_images)
+    for dataset in (first.train, first.test):
+        assert sum(pair.label == 1 for pair in dataset.pairs) == sum(pair.label == 0 for pair in dataset.pairs)
+        for pair in dataset.pairs:
+            if pair.label == 0:
+                assert pair.caption_source_image_id != pair.image_id
+                assert pair.caption not in dataset.images[pair.image_id].captions
+    assert (settings.output_dir / "pair_manifests" / "train.jsonl").is_file()
+
+
+def test_generic_coco_selects_one_deterministic_caption_per_image(tmp_path: Path) -> None:
+    rows = [
+        {"image": Image.new("RGB", (8, 8), (index, 2, 3)), "imgid": index,
+         "filename": f"{index}.jpg", "split": "train",
+         "sentences": [{"raw": f"image {index} caption {slot}"} for slot in range(5)]}
+        for index in range(6)
+    ]
+    settings = _settings(tmp_path); settings.generic_image_limit = None
+    first = load_generic_coco(settings, raw_dataset={"test": FakeSplit(rows)})
+    second = load_generic_coco(settings, raw_dataset={"test": FakeSplit(rows)})
+    assert len(first.train) == 6 and len({row.image_id for row in first.train.records}) == 6
+    assert first.manifest_digest == second.manifest_digest
+    image, prompt, target = first.train[0]
+    assert image.mode == "RGB" and "Caption:" in prompt and target == 0.0
+    assert (settings.output_dir / "generic_pretrain" / "manifests" / "train.jsonl").is_file()
+
+
+def test_logical_stage_runs_exactly_three_physical_layers() -> None:
+    core = HomogeneousMoEOpticalCore.__new__(HomogeneousMoEOpticalCore); nn.Module.__init__(core)
+    core.logical_stages = 5; core.physical_layers_per_logical_stage = 3
+    calls: list[int] = []
+    core.run_stage = lambda index, field, routing: calls.append(index) or field + 1
+    output = HomogeneousMoEOpticalCore.run_logical_stage(core, 2, torch.tensor(0), {})
+    assert calls == [6, 7, 8] and output.item() == 3
+
+
+def test_sam_controller_performs_two_step_update_and_restores_perturbation() -> None:
+    parameter = nn.Parameter(torch.tensor([1.0])); optimizer = torch.optim.SGD([parameter], lr=0.1)
+    sam = SAMController(optimizer, [parameter], rho=0.05)
+    (parameter.square().sum()).backward(); before_perturb = parameter.detach().clone()
+    sam.first_step(); assert not torch.equal(parameter.detach(), before_perturb)
+    (parameter.square().sum()).backward(); sam.second_step()
+    assert parameter.item() < before_perturb.item()
+
+
+def test_manifest_or_prompt_change_rejects_stale_pairing(tmp_path: Path) -> None:
+    source = _fake_flickr(); settings = _settings(tmp_path); load_flickr30k(settings, raw_dataset=source)
+    changed = _settings(tmp_path); changed.prompt_template = "Different prompt: {caption}"
+    with pytest.raises(RuntimeError, match="manifest mismatch"):
+        load_flickr30k(changed, raw_dataset=source)
+
+
+class FakeProcessor:
+    def __init__(self): self.texts = []
+    def apply_chat_template(self, messages, tokenize=False, add_generation_prompt=True):
+        assert not tokenize and add_generation_prompt
+        return messages[0]["content"][1]["text"]
+    def __call__(self, *, text, images, padding, return_tensors):
+        self.texts = list(text)
+        return {"input_ids": torch.ones(len(text), 3, dtype=torch.long),
+                "attention_mask": torch.ones(len(text), 3, dtype=torch.long),
+                "pixel_values": torch.ones(len(text), 4),
+                "image_grid_thw": torch.tensor([[1, 1, 1]] * len(text))}
+
+
+def test_preprocess_accepts_per_sample_prompts() -> None:
+    processor = FakeProcessor(); images = [Image.new("RGB", (4, 4)), Image.new("RGB", (4, 4))]
+    output = preprocess_image_text(processor, images, ["caption A", "caption B"])
+    assert processor.texts == ["caption A", "caption B"] and output["input_ids"].shape == (2, 3)
+    with pytest.raises(ValueError, match="length mismatch"):
+        preprocess_image_text(processor, images, ["only one"])
+
+
+def _encoder(hidden_size: int = 8, max_tokens: int = 120) -> HomogeneousMoEOpticalCore:
+    module = HomogeneousMoEOpticalCore.__new__(HomogeneousMoEOpticalCore); nn.Module.__init__(module)
+    module.hidden_size = hidden_size; module.max_tokens = max_tokens; module.geometry = MoEGeometry()
+    module.input_adapter = nn.Linear(hidden_size, 120); module.input_norm = nn.LayerNorm(120); module.nonnegative = nn.Softplus()
+    return module
+
+
+def test_optical_token_rows_are_nonnegative_zero_padded_and_strict() -> None:
+    encoder = _encoder(); field = encoder.encode_groups([torch.randn(60, 8)])
+    assert field.shape == (1, 120, 120) and torch.all(field >= 0) and torch.count_nonzero(field[:, 60:]) == 0
+    with pytest.raises(RuntimeError, match="visual token count 121"):
+        encoder.encode_groups([torch.randn(121, 8)])
+
+
+def test_language_overflow_is_explicit() -> None:
+    language = LanguageDeepStackHomogeneousMoE.__new__(LanguageDeepStackHomogeneousMoE); nn.Module.__init__(language)
+    language.core = SimpleNamespace(max_tokens=120)
+    with pytest.raises(RuntimeError, match="language sequence length 121"):
+        language.set_attention_mask(torch.ones(1, 121))
+
+
+def test_binary_head_outputs_raw_logits_and_backward() -> None:
+    settings = load_settings(OPTICAL); head = build_head(settings, 2048)
+    logits = head(torch.randn(4, 2048)); assert logits.shape == (4,)
+    loss = torch.nn.functional.binary_cross_entropy_with_logits(logits, torch.tensor([0., 1., 0., 1.]))
+    loss.backward(); assert all(parameter.grad is not None for parameter in head.parameters())
+    assert head.specification()["output"] == "raw_logit"
+
+
+def test_binary_metrics_perfect_and_balanced() -> None:
+    report = binary_classification_metrics([0, 1, 0, 1], [-5, 5, -2, 3])
+    assert report["accuracy"] == report["balanced_accuracy"] == report["auroc"] == 1.0
+    assert report["confusion_matrix"] == [[2, 0], [0, 2]]
+    assert report["positive_samples"] == report["negative_samples"] == 2
+
+
+def test_rolling_single_class_metrics_are_explicitly_undefined_not_fatal() -> None:
+    report = binary_classification_metrics([0], [-0.2])
+    assert np.isnan(report["auroc"]) and np.isnan(report["average_precision"])
+
+
+def test_teacher_logit_cache_is_raw_and_identity_checked(tmp_path: Path) -> None:
+    settings = _settings(tmp_path); settings.pair_manifest_digests = {"train": "digest"}
+    path = write_teacher_logits(settings.output_dir, "train", torch.tensor([-3.0, 2.5]), settings)
+    loaded = load_teacher_logits(path, settings, "train")
+    assert loaded.tolist() == [-3.0, 2.5]
+    settings.pair_manifest_digests["train"] = "different"
+    with pytest.raises(RuntimeError, match="logit cache mismatch"):
+        load_teacher_logits(path, settings, "train")
+
+
+def test_processor_cache_identity_contains_pair_manifest(tmp_path: Path) -> None:
+    settings = _settings(tmp_path); settings.pair_manifest_digests = {"train": "abc"}
+    metadata = expected_processor_metadata("train", 12, settings)
+    assert metadata["pair_manifest_digest"] == "abc"
+    assert metadata["prompt_template"] == settings.prompt_template
+    assert metadata["negative_sampling_algorithm"] == settings.negative_sampling_algorithm
+
+
+def test_answer_position_uses_last_non_padding_token() -> None:
+    hidden = torch.arange(2 * 4 * 3).reshape(2, 4, 3).float()
+    mask = torch.tensor([[0, 1, 1, 0], [1, 1, 1, 1]])
+    answer, positions = pool_answer_hidden_state(hidden, mask)
+    assert positions.tolist() == [2, 3] and torch.equal(answer[0], hidden[0, 2])
+
+
+def test_cached_multimodal_batch_padding_and_pixels() -> None:
+    rows = [{"input_ids": torch.tensor([1, 2]), "sequence_length": 2,
+             "pixel_values": torch.ones(3, 4), "image_grid_thw": torch.tensor([1, 1, 3])},
+            {"input_ids": torch.tensor([3, 4, 5]), "sequence_length": 3,
+             "pixel_values": torch.ones(2, 4), "image_grid_thw": torch.tensor([1, 1, 2])}]
+    batch = collate_processor_samples(rows, {"padding_side": "left", "pad_token_id": 0})
+    assert batch["input_ids"].tolist() == [[0, 1, 2], [3, 4, 5]]
+    assert batch["pixel_values"].shape == (5, 4)
+
+
+def test_teacher_batches_reuse_exact_processor_cache() -> None:
+    rows = [{"input_ids": torch.tensor([1, 2]), "sequence_length": 2,
+             "pixel_values": torch.ones(4, 3), "image_grid_thw": torch.tensor([1, 2, 2])},
+            {"input_ids": torch.tensor([3, 4, 5]), "sequence_length": 3,
+             "pixel_values": torch.full((4, 3), 2.0), "image_grid_thw": torch.tensor([1, 2, 2])},
+            {"input_ids": torch.tensor([6]), "sequence_length": 1,
+             "pixel_values": torch.full((4, 3), 3.0), "image_grid_thw": torch.tensor([1, 2, 2])}]
+
+    class Store:
+        metadata = {"padding_side": "left", "pad_token_id": 0}
+        def __len__(self): return len(rows)
+        def get(self, index): return rows[index]
+
+    batches = list(iter_cached_input_batches(Store(), [0.0, 1.0, 0.0], 2))
+    assert len(batches) == 2
+    inputs, labels, indices = batches[0]
+    assert inputs["input_ids"].tolist() == [[0, 1, 2], [3, 4, 5]]
+    assert inputs["pixel_values"].shape == (8, 3)
+    assert labels.tolist() == [0.0, 1.0] and indices.tolist() == [0, 1]
+    assert batches[1][2].tolist() == [2]
+
+
+def test_teacher_targets_are_split_after_packed_transfer() -> None:
+    answer = torch.arange(8, dtype=torch.float32).reshape(2, 4)
+    packed = torch.arange(15, dtype=torch.float32).reshape(5, 3)
+    answer_cpu, groups = packed_teacher_targets_to_cpu(answer, {7: packed}, [7], [2, 3], torch.float16)
+    assert answer_cpu.device.type == "cpu" and answer_cpu.dtype == torch.float16
+    assert [tuple(group.shape) for group in groups[7]] == [(2, 3), (3, 3)]
+    assert torch.equal(groups[7][0].float(), packed[:2])
+    assert torch.equal(groups[7][1].float(), packed[2:])
+
+
+def test_teacher_shard_packs_variable_token_taps_with_offsets() -> None:
+    rows = []
+    for index, count in enumerate((2, 3)):
+        rows.append({"sample_index": index, "label": float(index),
+                     "image_grid_thw": torch.tensor([1, 2, count]),
+                     "visual_token_count": count, "sequence_length": 4 + index,
+                     "teacher_answer_hidden": torch.full((4,), float(index)),
+                     "teacher_vision_taps": [torch.full((count, 3), float(index + tap)) for tap in range(4)]})
+    payload = pack_teacher_rows(rows)
+    assert payload["visual_token_offsets"].tolist() == [0, 2, 5]
+    assert len(payload["teacher_vision_taps"]) == 4
+    assert all(tuple(tap.shape) == (5, 3) for tap in payload["teacher_vision_taps"])
+    assert torch.equal(payload["teacher_vision_taps"][2][:2], rows[0]["teacher_vision_taps"][2])
+    assert torch.equal(payload["teacher_vision_taps"][2][2:5], rows[1]["teacher_vision_taps"][2])
+
+
+def test_teacher_shard_writer_is_bounded_and_does_not_reread_for_hash(tmp_path: Path) -> None:
+    rows = [{"sample_index": 0, "label": 1.0,
+             "image_grid_thw": torch.tensor([1, 2, 2]),
+             "visual_token_count": 2, "sequence_length": 4,
+             "teacher_answer_hidden": torch.ones(4),
+             "teacher_vision_taps": [torch.ones(2, 3) for _ in range(4)]}]
+    writer = _AsyncShardWriter(tmp_path, max_pending=2)
+    writer.submit(rows)
+    records = writer.finish()
+    assert len(records) == 1 and records[0]["count"] == 1
+    assert "sha256" not in records[0]
+    payload = torch.load(records[0]["path"], map_location="cpu", weights_only=True)
+    assert payload["visual_token_offsets"].tolist() == [0, 2]
+
+
+def test_student_collate_packs_targets_and_preserves_cached_pixel_dtype() -> None:
+    batch = []
+    for index, count in enumerate((2, 3)):
+        inputs = {"input_ids": torch.arange(index + 2), "sequence_length": index + 2,
+                  "pixel_values": torch.ones(count, 4, dtype=torch.float16),
+                  "image_grid_thw": torch.tensor([1, 1, count])}
+        teacher = {"visual_token_count": count,
+                   "teacher_answer_hidden": torch.full((4,), float(index), dtype=torch.float16),
+                   "teacher_vision_taps": [
+                       torch.full((count, 3), float(index + tap), dtype=torch.float16)
+                       for tap in range(4)
+                   ]}
+        batch.append((inputs, float(index), index, teacher, torch.tensor(float(index))))
+    inputs, _labels, _indices, targets, _logits = cached_student_collate(
+        batch, {"padding_side": "left", "pad_token_id": 0}
+    )
+    assert inputs["pixel_values"].dtype == torch.float16
+    assert targets["visual_token_counts"].tolist() == [2, 3]
+    assert [tuple(tap.shape) for tap in targets["vision_taps"]] == [(5, 3)] * 4
+    assert tuple(targets["answer_hidden"].shape) == (2, 4)
+
+
+def test_packed_group_mse_matches_original_per_sample_reduction() -> None:
+    counts = torch.tensor([2, 3])
+    student = torch.randn(5, 7)
+    teacher = torch.randn(5, 7)
+    expected = torch.stack([
+        F.mse_loss(F.layer_norm(left, (7,)), F.layer_norm(right, (7,)))
+        for left, right in zip(student.split(counts.tolist()), teacher.split(counts.tolist()))
+    ]).mean()
+    actual = normalized_packed_group_mse(student, teacher, counts)
+    assert torch.allclose(actual, expected, atol=1e-6, rtol=1e-6)

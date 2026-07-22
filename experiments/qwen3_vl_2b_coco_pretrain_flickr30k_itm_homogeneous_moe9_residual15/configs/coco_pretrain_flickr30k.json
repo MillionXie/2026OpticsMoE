@@ -1,0 +1,184 @@
+{
+  "config_version": 2,
+  "experiment": {
+    "name": "qwen3_vl_2b_coco_pretrain_flickr30k_itm_homogeneous_moe9_residual15",
+    "output_dir": "../runs/qwen3_vl_2b_coco_pretrain_flickr30k_itm_homogeneous_moe9_residual15",
+    "seed": 42
+  },
+  "dataset": {
+    "name": "flickr30k_image_text_matching",
+    "data_root": "../../../data/flickr30k",
+    "repo_id": "nlphuji/flickr30k",
+    "revision": null,
+    "hf_endpoint": "https://hf-mirror.com",
+    "download": true,
+    "validate_standard_counts": true,
+    "captions_per_image": 1,
+    "negatives_per_positive": 1,
+    "negative_sampling_algorithm": "stable_caption_sattolo_derangement_v1",
+    "train_image_limit": null,
+    "test_image_limit": null,
+    "train_samples_per_epoch": null,
+    "train_samples_per_class_per_epoch": 2000,
+    "resolved_fingerprints": null,
+    "pair_manifest_digests": null
+  },
+  "generic_pretrain": {
+    "enabled": true,
+    "dataset": {
+      "name": "coco_multimodal_hidden_distillation",
+      "source": "huggingface",
+      "repo_id": "HuggingFaceM4/COCO",
+      "revision": null,
+      "data_root": "../../../data/coco",
+      "annotations_file": "annotations/captions_train2017.json",
+      "images_dir": "train2017",
+      "split_values": ["train", "restval"],
+      "image_limit": null,
+      "samples_per_epoch": null
+    },
+    "prompt_template": "Represent the image and caption for general multimodal understanding.\nCaption: {caption}\nRepresentation:",
+    "epochs": 10,
+    "learning_rate": 0.0005,
+    "router_learning_rate": 0.001,
+    "loss": {
+      "vision_hidden_weight": 1.0,
+      "answer_hidden_weight": 1.0,
+      "router_balance_weight": 0.03,
+      "router_importance_weight": 0.0
+    },
+    "resolved_manifest_digest": null,
+    "resolved_dataset_fingerprint": null
+  },
+  "fine_tuning": {
+    "load_generic_pretrain_checkpoint": true
+  },
+  "qwen": {
+    "model_id": "Qwen/Qwen3-VL-2B-Instruct",
+    "cache_dir": null,
+    "local_files_only": false,
+    "prompt_template": "Determine whether the caption accurately describes the image.\nCaption: {caption}\nMatch score:",
+    "processor": {"min_pixels": 20480, "max_pixels": 20480},
+    "runtime": {"dtype": "bfloat16", "attn_implementation": "sdpa", "device": "cuda"},
+    "architecture": {
+      "vision_depth": null,
+      "vision_hidden_size": null,
+      "text_depth": null,
+      "text_hidden_size": null,
+      "deepstack_visual_indexes": null
+    }
+  },
+  "student": {
+    "language_stack_mode": "optical_moe",
+    "initialize_head_from_teacher": true,
+    "transformer_block_alignment": {
+      "native_pre_attention_enabled": false,
+      "native_pre_norm_enabled": true,
+      "native_pre_attention_trainable": false,
+      "residual_enabled": true,
+      "vision_attention_source_layer": 0,
+      "language_attention_source_layer": 0
+    }
+  },
+  "batching": {
+    "feature_batch_size": 32,
+    "student_batch_size": 8,
+    "inference_batch_size": 8,
+    "head_batch_size": 512,
+    "num_workers": 8
+  },
+  "teacher_cache": {"dtype": "float16", "shard_size": 128, "lru_shards": 8, "log_interval_batches": 100},
+  "vision_adapter": {"optical_channels": 120, "max_visual_tokens": 120, "tap_stages": [1, 3, 4]},
+  "language_adapter": {"max_language_tokens": 120},
+  "moe": {
+    "geometry": {"canvas_size": 480, "active_size": 450, "num_experts": 9, "expert_size": 120, "expert_pitch": 150},
+    "depth": {"logical_stages": 5, "physical_layers_per_logical_stage": 3, "total_physical_layers": 15},
+    "router": {
+      "top_k": 3,
+      "pool_size": 10,
+      "temperature": 1.0,
+      "learning_rate": 0.001,
+      "input_layernorm_enabled": true,
+      "input_layernorm_eps": 0.00001
+    },
+    "optics": {
+      "wavelength_nm": 532.0,
+      "pixel_pitch_um": 16.0,
+      "prompt_focal_length_m": 0.0722,
+      "distances_m": {
+        "prompt_to_expert": 0.1444,
+        "inter_layer": 0.2,
+        "last_expert_to_global": 0.2,
+        "global_to_detector": 0.2
+      },
+      "phase": {"parameterization": "sigmoid", "init": "zeros", "init_std": 0.02},
+      "k_space": {"enabled": false, "theta_max_deg": 1.0}
+    },
+    "optoelectronic_interlayers": {
+      "enabled": true,
+      "per_expert_enabled": true,
+      "elementwise_affine": false,
+      "hard_route_mask": true,
+      "reapply_routing_weights": true,
+      "layernorm_eps": 0.00001,
+      "nonlinearity": "relu"
+    },
+    "final_detector_readout": {
+      "pool_kernel": 4,
+      "layernorm_eps": 0.00001,
+      "layernorm_affine": false,
+      "layernorm_scope": "per_token",
+      "nonlinearity": "relu"
+    }
+  },
+  "classification_head": {"type": "normalized_binary_classification", "threshold": 0.5},
+  "loss": {
+    "vision_hidden_weight": 1.0,
+    "answer_hidden_weight": 1.0,
+    "logit_distill_weight": 0.5,
+    "classification_weight": 1.0,
+    "smooth_l1_beta": 0.1,
+    "router_balance_weight": 0.03,
+    "router_importance_weight": 0.0
+  },
+  "optimizer": {
+    "type": "adamw",
+    "learning_rate": 0.0005,
+    "student_head_learning_rate": 0.001,
+    "weight_decay": 0.01,
+    "scheduler": "cosine",
+    "sam": {
+      "enabled": false,
+      "apply_to_generic_pretrain": true,
+      "apply_to_flickr_finetune": true,
+      "rho": 0.05,
+      "adaptive": false
+    }
+  },
+  "training": {
+    "epochs": 30,
+    "progress": true,
+    "logging": {"interval_batches": 500},
+    "checkpoint_interval_epochs": 5,
+    "student_selection_split": "test",
+    "student_selection_metric": "auroc"
+  },
+  "regularization": {
+    "phase_dropout": {
+      "enabled": false,
+      "mode": "none",
+      "p": 0.0,
+      "block_size": 4,
+      "batch_shared": true,
+      "start_epoch": 0
+    }
+  },
+  "visualization": {
+    "enabled": true,
+    "interval_epochs": 5,
+    "save_phase_masks": true,
+    "save_training_curves": true,
+    "save_confusion_matrix": true,
+    "save_predictions": true
+  }
+}

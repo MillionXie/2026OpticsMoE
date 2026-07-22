@@ -1,0 +1,16 @@
+{
+  "base_config": "coco_pretrain_flickr30k.json",
+  "experiment": {
+    "name": "qwen3_vl_2b_coco_pretrain_flickr30k_itm_homogeneous_moe9_residual15_sam",
+    "output_dir": "../runs/qwen3_vl_2b_coco_pretrain_flickr30k_itm_homogeneous_moe9_residual15_sam"
+  },
+  "optimizer": {
+    "sam": {
+      "enabled": true,
+      "apply_to_generic_pretrain": true,
+      "apply_to_flickr_finetune": true,
+      "rho": 0.05,
+      "adaptive": false
+    }
+  }
+}

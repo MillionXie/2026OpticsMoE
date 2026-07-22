@@ -1,0 +1,26 @@
+{
+  "base_config": "coco_pretrain_flickr30k.json",
+  "dataset": {
+    "validate_standard_counts": false,
+    "train_image_limit": 8,
+    "test_image_limit": 4,
+    "train_samples_per_class_per_epoch": 4
+  },
+  "generic_pretrain": {
+    "dataset": {"image_limit": 8, "samples_per_epoch": 8},
+    "epochs": 1
+  },
+  "batching": {
+    "feature_batch_size": 1,
+    "student_batch_size": 1,
+    "inference_batch_size": 1,
+    "head_batch_size": 8,
+    "num_workers": 0
+  },
+  "training": {
+    "epochs": 1,
+    "logging": {"interval_batches": 1},
+    "checkpoint_interval_epochs": 1
+  },
+  "visualization": {"enabled": false}
+}
