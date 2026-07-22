@@ -11,7 +11,7 @@ CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_2b_flickr30k_image_text_ma
 ## Diagnostic vision optical + electronic language run
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneous_moe9 --config experiments/qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneous_moe9/configs/flickr30k_itm_vision_electronic_language.json --phase all
+CUDA_VISIBLE_DEVICES=5 python -m experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneous_moe9 --config experiments/qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneous_moe9/configs/flickr30k_itm_vision_electronic_language.json --phase all
 ```
 
 ## Smoke runs
