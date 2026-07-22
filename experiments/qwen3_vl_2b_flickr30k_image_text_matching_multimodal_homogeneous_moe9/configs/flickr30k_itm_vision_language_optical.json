@@ -47,7 +47,14 @@
   },
   "student": {
     "language_stack_mode": "optical_moe",
-    "initialize_head_from_teacher": true
+    "initialize_head_from_teacher": true,
+    "transformer_block_alignment": {
+      "native_pre_attention_enabled": true,
+      "native_pre_attention_trainable": false,
+      "residual_enabled": true,
+      "vision_attention_source_layer": 0,
+      "language_attention_source_layer": 0
+    }
   },
   "batching": {
     "feature_batch_size": 32,

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 from typing import Any, Iterable
 
 import torch
@@ -21,11 +22,89 @@ def locate_language(model: nn.Module) -> nn.Module:
     raise RuntimeError("Unable to locate Qwen3-VL language decoder layers")
 
 
+def _tensor_output(value: Any, module_name: str) -> torch.Tensor:
+    output = value[0] if isinstance(value, tuple) else value
+    if not torch.is_tensor(output):
+        raise RuntimeError(f"{module_name} did not return a hidden-state tensor")
+    return output
+
+
+class VisionNativeAttentionPrelude(nn.Module):
+    """One copied native Qwen vision attention sub-layer, without its electronic MLP."""
+
+    def __init__(self, source_block: nn.Module) -> None:
+        super().__init__()
+        for name in ("norm1", "attn", "norm2"):
+            if not hasattr(source_block, name):
+                raise RuntimeError(f"Qwen vision source block has no {name}; cannot build Transformer-aligned prelude")
+        self.norm1 = copy.deepcopy(source_block.norm1)
+        self.attn = copy.deepcopy(source_block.attn)
+        self.norm2 = copy.deepcopy(source_block.norm2)
+        self.last_attention_output: torch.Tensor | None = None
+        self.last_residual_base: torch.Tensor | None = None
+        self.last_optical_input: torch.Tensor | None = None
+
+    def forward(self, hidden_states: torch.Tensor, cu_seqlens: torch.Tensor | None = None,
+                **kwargs: Any) -> tuple[torch.Tensor, torch.Tensor]:
+        attention_kwargs = dict(kwargs)
+        if cu_seqlens is not None:
+            attention_kwargs["cu_seqlens"] = cu_seqlens
+        attention = _tensor_output(self.attn(self.norm1(hidden_states), **attention_kwargs), "vision attention")
+        residual_base = hidden_states + attention
+        optical_input = self.norm2(residual_base)
+        self.last_attention_output = attention
+        self.last_residual_base = residual_base
+        self.last_optical_input = optical_input
+        return residual_base, optical_input
+
+
+class LanguageNativeAttentionPrelude(nn.Module):
+    """One copied native Qwen decoder attention sub-layer, preserving masks and RoPE kwargs."""
+
+    def __init__(self, source_layer: nn.Module) -> None:
+        super().__init__()
+        for name in ("input_layernorm", "self_attn", "post_attention_layernorm"):
+            if not hasattr(source_layer, name):
+                raise RuntimeError(f"Qwen language source layer has no {name}; cannot build Transformer-aligned prelude")
+        self.input_layernorm = copy.deepcopy(source_layer.input_layernorm)
+        self.self_attn = copy.deepcopy(source_layer.self_attn)
+        self.post_attention_layernorm = copy.deepcopy(source_layer.post_attention_layernorm)
+        self.last_attention_output: torch.Tensor | None = None
+        self.last_residual_base: torch.Tensor | None = None
+        self.last_optical_input: torch.Tensor | None = None
+
+    def forward(self, hidden_states: torch.Tensor, **kwargs: Any) -> tuple[torch.Tensor, torch.Tensor]:
+        attention = _tensor_output(
+            self.self_attn(hidden_states=self.input_layernorm(hidden_states), **kwargs),
+            "language attention",
+        )
+        residual_base = hidden_states + attention
+        optical_input = self.post_attention_layernorm(residual_base)
+        self.last_attention_output = attention
+        self.last_residual_base = residual_base
+        self.last_optical_input = optical_input
+        return residual_base, optical_input
+
+
 class VisionStartBlock(nn.Module):
-    def __init__(self, surrogate: VisionDeepStackHomogeneousMoE) -> None:
-        super().__init__(); self.surrogate = surrogate
-    def forward(self, hidden_states: torch.Tensor, cu_seqlens: torch.Tensor | None = None, **_: Any) -> torch.Tensor:
-        self.surrogate.compute(hidden_states, cu_seqlens); return hidden_states
+    def __init__(self, surrogate: VisionDeepStackHomogeneousMoE,
+                 pre_attention: VisionNativeAttentionPrelude | None,
+                 residual_enabled: bool) -> None:
+        super().__init__(); self.surrogate = surrogate; self.pre_attention = pre_attention
+        self.residual_enabled = bool(residual_enabled)
+
+    def forward(self, hidden_states: torch.Tensor, cu_seqlens: torch.Tensor | None = None,
+                **kwargs: Any) -> torch.Tensor:
+        if self.pre_attention is None:
+            residual_base, optical_input = hidden_states, hidden_states
+        else:
+            residual_base, optical_input = self.pre_attention(hidden_states, cu_seqlens, **kwargs)
+        self.surrogate.compute(
+            optical_input,
+            cu_seqlens,
+            residual_base=residual_base if self.residual_enabled else None,
+        )
+        return hidden_states
 
 
 class VisionTapBlock(nn.Module):
@@ -39,10 +118,25 @@ class VisionBypass(nn.Module):
 
 
 class LanguageStageBlock(nn.Module):
-    def __init__(self, surrogate: LanguageDeepStackHomogeneousMoE, stage: int) -> None:
-        super().__init__(); self.surrogate = surrogate; self.stage = stage
-    def forward(self, hidden_states: torch.Tensor, **_: Any) -> torch.Tensor:
-        return self.surrogate.forward_stage(self.stage, hidden_states)
+    def __init__(self, surrogate: LanguageDeepStackHomogeneousMoE, stage: int,
+                 pre_attention: LanguageNativeAttentionPrelude | None = None,
+                 residual_enabled: bool = False) -> None:
+        super().__init__(); self.surrogate = surrogate; self.stage = stage; self.pre_attention = pre_attention
+        self.residual_enabled = bool(residual_enabled)
+
+    def forward(self, hidden_states: torch.Tensor, **kwargs: Any) -> torch.Tensor:
+        if self.stage != 0:
+            return self.surrogate.forward_stage(self.stage, hidden_states)
+        if self.pre_attention is None:
+            residual_base, optical_input = hidden_states, hidden_states
+        else:
+            residual_base, optical_input = self.pre_attention(hidden_states, **kwargs)
+        return self.surrogate.forward_stage(
+            self.stage,
+            hidden_states,
+            optical_input=optical_input,
+            residual_base=residual_base if self.residual_enabled else None,
+        )
 
 
 class LanguageBypass(nn.Module):
@@ -53,22 +147,47 @@ class DeepStackMultimodalReplacement:
     """Preserve native Qwen DeepStack merger/injection timing while replacing selected stacks."""
 
     def __init__(self, model: nn.Module, vision: VisionDeepStackHomogeneousMoE,
-                 language: LanguageDeepStackHomogeneousMoE, language_mode: str) -> None:
+                 language: LanguageDeepStackHomogeneousMoE, settings: Any) -> None:
         self.model = model; self.visual = locate_visual(model); self.language_model = locate_language(model)
         self.vision_blocks = self.visual.blocks; self.language_layers = self.language_model.layers
         self.original_vision = list(self.vision_blocks); self.original_language = list(self.language_layers)
-        self.vision_surrogate = vision; self.language_surrogate = language; self.language_mode = language_mode
+        self.vision_surrogate = vision; self.language_surrogate = language
+        self.language_mode = settings.student_language_mode
+        self.native_pre_attention_enabled = bool(settings.native_pre_attention_enabled)
+        self.native_pre_attention_trainable = bool(settings.native_pre_attention_trainable)
+        self.transformer_residual_enabled = bool(settings.transformer_residual_enabled)
+        self.vision_attention_source_layer = int(settings.vision_attention_source_layer)
+        self.language_attention_source_layer = int(settings.language_attention_source_layer)
+        self.vision_pre_attention = (
+            VisionNativeAttentionPrelude(self.original_vision[self.vision_attention_source_layer])
+            if self.native_pre_attention_enabled else None
+        )
+        self.language_pre_attention = (
+            LanguageNativeAttentionPrelude(self.original_language[self.language_attention_source_layer])
+            if self.native_pre_attention_enabled and self.language_mode == "optical_moe" else None
+        )
+        for module in (self.vision_pre_attention, self.language_pre_attention):
+            if module is not None:
+                module.requires_grad_(self.native_pre_attention_trainable)
+                module.train(self.native_pre_attention_trainable)
         self.deepstack_indexes = tuple(int(value) for value in self.visual.deepstack_visual_indexes)
         if len(self.deepstack_indexes) != 3: raise RuntimeError(f"Expected 3 DeepStack indexes, got {self.deepstack_indexes}")
         self.language_surrogate.set_deepstack_injection_count(len(self.deepstack_indexes))
         final_index = len(self.vision_blocks) - 1; provider_indexes = (*self.deepstack_indexes, final_index)
         if len(set(provider_indexes)) != 4: raise RuntimeError("DeepStack indexes overlap final vision block")
         self.student_vision_modules: list[nn.Module] = [VisionBypass() for _ in self.vision_blocks]
-        self.student_vision_modules[0] = VisionStartBlock(vision)
+        self.student_vision_modules[0] = VisionStartBlock(
+            vision, self.vision_pre_attention, self.transformer_residual_enabled
+        )
         for slot, index in enumerate(provider_indexes): self.student_vision_modules[index] = VisionTapBlock(vision, slot)
         self.student_language_modules: list[nn.Module] = [LanguageBypass() for _ in self.language_layers]
         for stage in range(len(language.core.expert_layers)):
-            self.student_language_modules[stage] = LanguageStageBlock(language, stage)
+            self.student_language_modules[stage] = LanguageStageBlock(
+                language,
+                stage,
+                self.language_pre_attention if stage == 0 else None,
+                self.transformer_residual_enabled,
+            )
         self.teacher_cu_seqlens: torch.Tensor | None = None; self.teacher_vision_taps: dict[int, torch.Tensor] = {}
         self.last_language_hidden: torch.Tensor | None = None
         self._handles = [self.original_vision[0].register_forward_pre_hook(self._capture_cu, with_kwargs=True),
@@ -112,6 +231,44 @@ class DeepStackMultimodalReplacement:
     def trainable_parameters(self) -> Iterable[nn.Parameter]:
         yield from self.vision_surrogate.parameters()
         if self.language_mode == "optical_moe": yield from self.language_surrogate.parameters()
+        if self.native_pre_attention_trainable:
+            if self.vision_pre_attention is not None: yield from self.vision_pre_attention.parameters()
+            if self.language_pre_attention is not None: yield from self.language_pre_attention.parameters()
+
+    def configure_student_trainability(self) -> None:
+        self.vision_surrogate.requires_grad_(True)
+        if self.language_mode == "optical_moe": self.language_surrogate.requires_grad_(True)
+        for module in (self.vision_pre_attention, self.language_pre_attention):
+            if module is not None: module.requires_grad_(self.native_pre_attention_trainable)
+
+    def set_student_train_mode(self) -> None:
+        self.vision_surrogate.train()
+        if self.language_mode == "optical_moe": self.language_surrogate.train()
+        for module in (self.vision_pre_attention, self.language_pre_attention):
+            if module is not None: module.train(self.native_pre_attention_trainable)
+
+    @staticmethod
+    def _module_parameters(module: nn.Module | None, trainable_only: bool = False) -> int:
+        if module is None: return 0
+        return sum(parameter.numel() for parameter in module.parameters()
+                   if not trainable_only or parameter.requires_grad)
+
+    def alignment_specification(self) -> dict[str, Any]:
+        return {
+            "native_pre_attention_enabled": self.native_pre_attention_enabled,
+            "native_pre_attention_trainable": self.native_pre_attention_trainable,
+            "transformer_residual_enabled": self.transformer_residual_enabled,
+            "residual_identity_scale": 1.0,
+            "residual_identity_scale_trainable": False,
+            "vision_attention_source_layer": self.vision_attention_source_layer,
+            "language_attention_source_layer": self.language_attention_source_layer,
+            "vision_attention_parameters": self._module_parameters(self.vision_pre_attention),
+            "vision_attention_trainable_parameters": self._module_parameters(self.vision_pre_attention, True),
+            "language_attention_parameters": self._module_parameters(self.language_pre_attention),
+            "language_attention_trainable_parameters": self._module_parameters(self.language_pre_attention, True),
+            "post_residual_activation": False,
+            "equation": "A = X + Attention(Norm1(X)); Y = A + OpticalMoE(Norm2(A))",
+        }
 
     def router_losses(self) -> dict[str, torch.Tensor]:
         vb, vi = self.vision_surrogate.router_losses()

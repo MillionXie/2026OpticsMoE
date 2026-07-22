@@ -18,7 +18,10 @@ from experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneou
 from experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneous_moe9.modeling import build_head
 from experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneous_moe9.optics.geometry import MoEGeometry
 from experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneous_moe9.optics.moe import (
-    HomogeneousMoEOpticalCore, LanguageDeepStackHomogeneousMoE,
+    HomogeneousMoEOpticalCore, LanguageDeepStackHomogeneousMoE, VisionDeepStackHomogeneousMoE,
+)
+from experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneous_moe9.optics.replacement import (
+    LanguageNativeAttentionPrelude, VisionNativeAttentionPrelude,
 )
 from experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneous_moe9.processor_cache import (
     collate_processor_samples, expected_processor_metadata,
@@ -81,6 +84,70 @@ def test_configs_select_two_language_modes_and_no_validation() -> None:
     assert optical.prompt_template.count("{caption}") == 1
     assert load_settings(FORMAL).feature_batch_size == 32
     assert load_settings(FORMAL).train_samples_per_class_per_epoch == 2000
+    assert optical.native_pre_attention_enabled and optical.transformer_residual_enabled
+    assert not optical.native_pre_attention_trainable
+
+
+class _ScaleAttention(nn.Module):
+    def forward(self, hidden_states=None, *args, **kwargs):
+        del args, kwargs
+        return hidden_states * 2.0
+
+
+class _VisionSourceBlock(nn.Module):
+    def __init__(self) -> None:
+        super().__init__(); self.norm1 = nn.Identity(); self.attn = _ScaleAttention(); self.norm2 = nn.Identity()
+
+
+class _LanguageSourceLayer(nn.Module):
+    def __init__(self) -> None:
+        super().__init__(); self.input_layernorm = nn.Identity(); self.self_attn = _ScaleAttention()
+        self.post_attention_layernorm = nn.Identity()
+
+
+def test_native_attention_preludes_match_fixed_qwen_residual_equation() -> None:
+    vision = VisionNativeAttentionPrelude(_VisionSourceBlock())
+    packed = torch.randn(5, 8); base, optical_input = vision(packed, torch.tensor([0, 5]))
+    assert torch.allclose(base, 3.0 * packed) and torch.allclose(optical_input, base)
+
+    language = LanguageNativeAttentionPrelude(_LanguageSourceLayer())
+    sequence = torch.randn(2, 4, 8); base, optical_input = language(sequence, attention_mask=None)
+    assert torch.allclose(base, 3.0 * sequence) and torch.allclose(optical_input, base)
+    assert not any("scale" in name for name, _parameter in vision.named_parameters())
+
+
+class _TinyOpticalCore(nn.Module):
+    def __init__(self, stages: int = 1) -> None:
+        super().__init__(); self.expert_layers = nn.ModuleList([nn.Identity() for _ in range(stages)]); self.max_tokens = 120
+    def encode_groups(self, groups, **_kwargs): return torch.cat(groups)
+    def begin(self, fields): return fields, {}
+    def fanout(self, fields, _routing): return fields
+    def run_stage(self, _stage, field, _routing): return field
+    def read_hidden(self, _field, lengths, boundary_dtype, **_kwargs):
+        return torch.ones(sum(lengths), 4, dtype=boundary_dtype)
+
+
+def test_vision_optical_branch_uses_fixed_unweighted_residual() -> None:
+    vision = VisionDeepStackHomogeneousMoE.__new__(VisionDeepStackHomogeneousMoE); nn.Module.__init__(vision)
+    vision.core = _TinyOpticalCore(); vision.tap_stages = (1,); vision.last_token_counts = []
+    vision.tap_outputs = []; vision.last_output = None; vision.last_residual_base = None
+    optical_input = torch.randn(3, 4); residual = torch.full_like(optical_input, 2.0)
+    vision.compute(optical_input, torch.tensor([0, 3]), residual_base=residual)
+    assert torch.equal(vision.tap_outputs[0], residual + 1.0)
+    assert torch.equal(vision.last_output, residual + 1.0)
+
+
+def test_language_residual_tracks_native_deepstack_injections() -> None:
+    language = LanguageDeepStackHomogeneousMoE.__new__(LanguageDeepStackHomogeneousMoE); nn.Module.__init__(language)
+    language.core = _TinyOpticalCore(stages=2); language.valid_mask = None; language.field = None
+    language.routing = None; language.lengths = []; language.positions = []; language.last_hidden = None
+    language.last_output = None; language.residual_base = None; language.deepstack_injection_count = 1
+    language.set_attention_mask(torch.ones(1, 2))
+    hidden = torch.zeros(1, 2, 4); residual = torch.full_like(hidden, 2.0)
+    first = language.forward_stage(0, hidden, optical_input=hidden, residual_base=residual)
+    assert torch.equal(first, torch.full_like(first, 3.0))
+    second = language.forward_stage(1, first + 5.0)
+    assert torch.equal(second, torch.full_like(second, 8.0))
 
 
 def test_balanced_rotating_sampler_is_exact_and_covers_all_samples() -> None:

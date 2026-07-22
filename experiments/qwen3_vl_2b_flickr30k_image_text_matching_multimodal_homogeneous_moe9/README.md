@@ -40,6 +40,15 @@ Only the binary head is trained. `BCEWithLogitsLoss` receives raw logits. Sigmoi
 
 The main optical student replaces both vision and language stacks with independent homogeneous MoE9 optical stacks. A diagnostic configuration replaces only vision while retaining the frozen electronic language stack. Both use exactly the same pair-manifest construction and binary head.
 
+Each replaced stack uses a Transformer-aligned wrapper:
+
+```text
+A = X + frozen native Qwen attention(norm1(X))
+Y = A + optical MoE(norm2(A))
+```
+
+Qwen3-VL's residual path does not have a learned residual weight, so this experiment also uses a fixed identity coefficient of 1.0 rather than trainable alpha/beta. There is no extra activation after `Y`; the optical MoE's detector/normalization/ReLU stages provide the branch-internal nonlinearity corresponding to the nonlinear part of a Transformer MLP. The attention modules are copied from configurable native source layers and frozen by default. `model.json` reports both their total and trainable parameter counts.
+
 Student loss:
 
 ```text

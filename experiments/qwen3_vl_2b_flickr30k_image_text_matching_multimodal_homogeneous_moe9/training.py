@@ -199,8 +199,7 @@ def train_student(model: nn.Module, replacement: Any, head: nn.Module, train_dat
     loader = DataLoader(cached, batch_size=settings.student_batch_size, sampler=sampler, num_workers=0,
                         collate_fn=lambda batch: cached_student_collate(batch, train_inputs.metadata), pin_memory=True)
     test_loader = make_evaluation_loader(test_dataset, test_inputs, settings.inference_batch_size)
-    replacement.use_student(); model.requires_grad_(False).eval(); replacement.vision_surrogate.requires_grad_(True)
-    if settings.student_language_mode == "optical_moe": replacement.language_surrogate.requires_grad_(True)
+    replacement.use_student(); model.requires_grad_(False).eval(); replacement.configure_student_trainability()
     head.requires_grad_(True)
     routers = list(replacement.vision_surrogate.core.prompt.router.parameters())
     if settings.student_language_mode == "optical_moe": routers += list(replacement.language_surrogate.core.prompt.router.parameters())
@@ -216,8 +215,7 @@ def train_student(model: nn.Module, replacement: Any, head: nn.Module, train_dat
     for epoch in range(1, settings.epochs + 1):
         started = time.perf_counter(); sampler.set_epoch(epoch)
         dropout_active = settings.phase_dropout_enabled and epoch >= settings.phase_dropout_start_epoch
-        replacement.set_phase_dropout_active(dropout_active); replacement.vision_surrogate.train()
-        if settings.student_language_mode == "optical_moe": replacement.language_surrogate.train()
+        replacement.set_phase_dropout_active(dropout_active); replacement.set_student_train_mode()
         head.train(); logits_all: list[torch.Tensor] = []; labels_all: list[torch.Tensor] = []; seen = 0
         names = ("total", "vision", "answer", "logit", "classification", "vision_balance", "language_balance",
                  "vision_importance", "language_importance")
@@ -360,22 +358,60 @@ def load_head(path: Path, settings: Any, device: torch.device) -> NormalizedBina
 def save_student_parts(output_dir: Path, replacement: Any, head: nn.Module, tag: str, epoch: int,
                        metrics: dict[str, Any]) -> None:
     root = output_dir / "checkpoints"; root.mkdir(parents=True, exist_ok=True)
-    metadata = {"epoch": epoch, "metrics": metrics, "language_mode": replacement.language_mode}
-    torch.save({"state_dict": replacement.vision_surrogate.state_dict(), **metadata}, root / f"vision_moe_{tag}.pt")
+    metadata = {"epoch": epoch, "metrics": metrics, "language_mode": replacement.language_mode,
+                "transformer_alignment": replacement.alignment_specification()}
+    vision_payload = {"state_dict": replacement.vision_surrogate.state_dict(), **metadata}
+    if replacement.native_pre_attention_trainable and replacement.vision_pre_attention is not None:
+        vision_payload["native_pre_attention_state_dict"] = replacement.vision_pre_attention.state_dict()
+    torch.save(vision_payload, root / f"vision_moe_{tag}.pt")
     if replacement.language_mode == "optical_moe":
-        torch.save({"state_dict": replacement.language_surrogate.state_dict(), **metadata}, root / f"language_moe_{tag}.pt")
+        language_payload = {"state_dict": replacement.language_surrogate.state_dict(), **metadata}
+        if replacement.native_pre_attention_trainable and replacement.language_pre_attention is not None:
+            language_payload["native_pre_attention_state_dict"] = replacement.language_pre_attention.state_dict()
+        torch.save(language_payload, root / f"language_moe_{tag}.pt")
     torch.save({"state_dict": head.state_dict(), "head": head.specification(), **metadata}, root / f"student_head_{tag}.pt")
 
 
 def load_student_parts(output_dir: Path, replacement: Any, head: nn.Module, tag: str) -> None:
     root = output_dir / "checkpoints"; vision = root / f"vision_moe_{tag}.pt"; head_path = root / f"student_head_{tag}.pt"
     if not vision.is_file() or not head_path.is_file(): raise FileNotFoundError(f"Incomplete student checkpoint {tag} in {root}")
-    replacement.vision_surrogate.load_state_dict(torch.load(vision, map_location="cpu", weights_only=True)["state_dict"])
+    vision_payload = torch.load(vision, map_location="cpu", weights_only=True)
+    _validate_alignment_checkpoint(vision_payload, replacement, vision)
+    replacement.vision_surrogate.load_state_dict(vision_payload["state_dict"])
+    if replacement.native_pre_attention_trainable and replacement.vision_pre_attention is not None:
+        state = vision_payload.get("native_pre_attention_state_dict")
+        if state is None: raise RuntimeError(f"Trainable vision pre-attention state is missing from {vision}")
+        replacement.vision_pre_attention.load_state_dict(state)
     if replacement.language_mode == "optical_moe":
         language = root / f"language_moe_{tag}.pt"
         if not language.is_file(): raise FileNotFoundError(f"Missing language MoE checkpoint: {language}")
-        replacement.language_surrogate.load_state_dict(torch.load(language, map_location="cpu", weights_only=True)["state_dict"])
+        language_payload = torch.load(language, map_location="cpu", weights_only=True)
+        _validate_alignment_checkpoint(language_payload, replacement, language)
+        replacement.language_surrogate.load_state_dict(language_payload["state_dict"])
+        if replacement.native_pre_attention_trainable and replacement.language_pre_attention is not None:
+            state = language_payload.get("native_pre_attention_state_dict")
+            if state is None: raise RuntimeError(f"Trainable language pre-attention state is missing from {language}")
+            replacement.language_pre_attention.load_state_dict(state)
     head.load_state_dict(torch.load(head_path, map_location="cpu", weights_only=True)["state_dict"])
+
+
+def _validate_alignment_checkpoint(payload: dict[str, Any], replacement: Any, path: Path) -> None:
+    saved = payload.get("transformer_alignment")
+    current = replacement.alignment_specification()
+    identity_keys = (
+        "native_pre_attention_enabled", "native_pre_attention_trainable", "transformer_residual_enabled",
+        "vision_attention_source_layer", "language_attention_source_layer",
+    )
+    if saved is None:
+        if current["native_pre_attention_enabled"] or current["transformer_residual_enabled"]:
+            raise RuntimeError(
+                f"Checkpoint {path} predates Transformer-aligned attention/residual metadata. "
+                "Train a new student checkpoint or disable both alignment features."
+            )
+        return
+    mismatched = [key for key in identity_keys if saved.get(key) != current.get(key)]
+    if mismatched:
+        raise RuntimeError(f"Student checkpoint Transformer-alignment mismatch in {path}: {mismatched}")
 
 
 def save_student_inference(report: dict[str, Any], settings: Any, replacement: Any,
@@ -383,6 +419,7 @@ def save_student_inference(report: dict[str, Any], settings: Any, replacement: A
     report["vision_parameter_breakdown"] = replacement.vision_surrogate.parameter_breakdown()
     report["language_parameter_breakdown"] = (replacement.language_surrogate.parameter_breakdown()
                                                 if replacement.language_mode == "optical_moe" else None)
+    report["transformer_block_alignment"] = replacement.alignment_specification()
     report["checkpoint_selection"] = "best test AUROC (user-requested; selection-biased)"
     write_json(settings.output_dir / "metrics" / "student_inference.json", report)
     if settings.visualization_enabled and settings.save_confusion_matrix:

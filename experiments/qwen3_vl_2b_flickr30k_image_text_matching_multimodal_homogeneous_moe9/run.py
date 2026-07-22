@@ -126,7 +126,7 @@ def _load_model(settings: Settings, device: torch.device) -> LoadedBackbone:
 def _replacement(loaded: LoadedBackbone, settings: Settings, device: torch.device) -> DeepStackMultimodalReplacement:
     vision = VisionDeepStackHomogeneousMoE(settings.vision_hidden_size, settings).to(device)
     language = LanguageDeepStackHomogeneousMoE(settings.text_hidden_size, settings).to(device)
-    return DeepStackMultimodalReplacement(loaded.model, vision, language, settings.student_language_mode)
+    return DeepStackMultimodalReplacement(loaded.model, vision, language, settings)
 
 
 def _teacher_precompute(loaded: LoadedBackbone, replacement: Any, data: DatasetBundle,
@@ -179,6 +179,9 @@ def _model_report(model: torch.nn.Module, replacement: Any, settings: Settings) 
     head = build_head(settings, settings.text_hidden_size); head_params = module_parameters(head)
     trainable = vision["trainable_parameters"] + head_params
     if settings.student_language_mode == "optical_moe": trainable += language["trainable_parameters"]
+    alignment = replacement.alignment_specification()
+    trainable += alignment["vision_attention_trainable_parameters"]
+    trainable += alignment["language_attention_trainable_parameters"]
     write_json(settings.output_dir / "model.json", {
         "model_id": settings.model_id, "task": "binary image-text matching",
         "student_language_mode": settings.student_language_mode,
@@ -187,6 +190,7 @@ def _model_report(model: torch.nn.Module, replacement: Any, settings: Settings) 
         "deepstack_visual_indexes": list(settings.deepstack_visual_indexes or []),
         "vision_tap_stages": list(settings.vision_tap_stages), "native_deepstack_preserved": True,
         "vision": vision, "language": language if settings.student_language_mode == "optical_moe" else {"frozen_electronic": True},
+        "transformer_block_alignment": alignment,
         "head": head.specification(), "student_trainable_parameters": trainable,
         "qwen_total_parameters": module_parameters(model), "qwen_original_trainable_parameters": 0,
     })

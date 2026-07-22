@@ -66,6 +66,11 @@ class Settings:
     max_visual_tokens: int = 120
     max_language_tokens: int = 120
     student_language_mode: str = "optical_moe"
+    native_pre_attention_enabled: bool = True
+    native_pre_attention_trainable: bool = False
+    transformer_residual_enabled: bool = True
+    vision_attention_source_layer: int = 0
+    language_attention_source_layer: int = 0
     vision_tap_stages: tuple[int, int, int] = (1, 3, 4)
     canvas_size: int = 480
     active_size: int = 450
@@ -157,6 +162,10 @@ class Settings:
             raise ValueError("Teacher and student must use normalized_binary_classification")
         if self.student_language_mode not in {"electronic", "optical_moe"}:
             raise ValueError("student.language_stack_mode must be electronic or optical_moe")
+        if self.native_pre_attention_trainable and not self.native_pre_attention_enabled:
+            raise ValueError("native pre-attention cannot be trainable when it is disabled")
+        if self.vision_attention_source_layer < 0 or self.language_attention_source_layer < 0:
+            raise ValueError("native attention source layer indexes must be non-negative")
         if self.processor_min_pixels <= 0 or self.processor_max_pixels <= 0:
             raise ValueError("processor pixel budgets must be positive")
         if self.processor_min_pixels > self.processor_max_pixels:
@@ -228,6 +237,14 @@ class Settings:
         self.deepstack_visual_indexes = tuple(int(value) for value in getattr(visual, "deepstack_visual_indexes", ()))
         if len(self.deepstack_visual_indexes) != 3:
             raise RuntimeError(f"Expected three native Qwen3-VL DeepStack taps, got {self.deepstack_visual_indexes}")
+        if self.vision_attention_source_layer >= self.vision_depth:
+            raise ValueError(
+                f"vision attention source layer {self.vision_attention_source_layer} is outside depth={self.vision_depth}"
+            )
+        if self.language_attention_source_layer >= self.text_depth:
+            raise ValueError(
+                f"language attention source layer {self.language_attention_source_layer} is outside depth={self.text_depth}"
+            )
 
     def to_dict(self) -> dict[str, Any]:
         grouped: dict[str, Any] = {}
@@ -264,6 +281,11 @@ NESTED_FIELDS: dict[tuple[str, ...], str] = {
     ("qwen", "architecture", "deepstack_visual_indexes"): "deepstack_visual_indexes",
     ("student", "language_stack_mode"): "student_language_mode",
     ("student", "initialize_head_from_teacher"): "initialize_student_head_from_teacher",
+    ("student", "transformer_block_alignment", "native_pre_attention_enabled"): "native_pre_attention_enabled",
+    ("student", "transformer_block_alignment", "native_pre_attention_trainable"): "native_pre_attention_trainable",
+    ("student", "transformer_block_alignment", "residual_enabled"): "transformer_residual_enabled",
+    ("student", "transformer_block_alignment", "vision_attention_source_layer"): "vision_attention_source_layer",
+    ("student", "transformer_block_alignment", "language_attention_source_layer"): "language_attention_source_layer",
     ("batching", "feature_batch_size"): "feature_batch_size", ("batching", "student_batch_size"): "student_batch_size",
     ("batching", "inference_batch_size"): "inference_batch_size", ("batching", "head_batch_size"): "head_batch_size",
     ("batching", "num_workers"): "num_workers",

@@ -197,19 +197,27 @@ class VisionDeepStackHomogeneousMoE(nn.Module):
         super().__init__(); self.core = HomogeneousMoEOpticalCore(hidden_size, settings.max_visual_tokens, settings)
         self.tap_stages = tuple(int(stage) for stage in settings.vision_tap_stages)
         self.last_token_counts: list[int] = []; self.tap_outputs: list[torch.Tensor] = []
-        self.last_output: torch.Tensor | None = None
+        self.last_output: torch.Tensor | None = None; self.last_residual_base: torch.Tensor | None = None
 
-    def compute(self, hidden_states: torch.Tensor, cu_seqlens: torch.Tensor | None) -> None:
+    def compute(self, hidden_states: torch.Tensor, cu_seqlens: torch.Tensor | None,
+                residual_base: torch.Tensor | None = None) -> None:
         lengths = lengths_from_cu(hidden_states, cu_seqlens); self.last_token_counts = lengths
+        if residual_base is not None and residual_base.shape != hidden_states.shape:
+            raise RuntimeError(
+                f"Vision residual shape {tuple(residual_base.shape)} does not match optical input {tuple(hidden_states.shape)}"
+            )
+        self.last_residual_base = residual_base
         inputs = self.core.encode_groups(list(hidden_states.split(lengths))); field, routing = self.core.begin(inputs)
         taps: dict[int, torch.Tensor] = {}
         for index in range(len(self.core.expert_layers)):
             field = self.core.run_stage(index, field, routing)
             stage = index + 1
             if stage in self.tap_stages:
-                taps[stage] = self.core.read_hidden(field, lengths, hidden_states.dtype)
+                delta = self.core.read_hidden(field, lengths, hidden_states.dtype)
+                taps[stage] = delta if residual_base is None else residual_base + delta
         self.tap_outputs = [taps[stage] for stage in self.tap_stages]
-        self.last_output = self.core.read_hidden(field, lengths, hidden_states.dtype, final=True)
+        delta = self.core.read_hidden(field, lengths, hidden_states.dtype, final=True)
+        self.last_output = delta if residual_base is None else residual_base + delta
 
     def output_for_slot(self, slot: int) -> torch.Tensor:
         if slot < len(self.tap_outputs): return self.tap_outputs[slot]
@@ -227,6 +235,7 @@ class LanguageDeepStackHomogeneousMoE(nn.Module):
         self.valid_mask: torch.Tensor | None = None; self.field: torch.Tensor | None = None
         self.routing: dict[str, torch.Tensor] | None = None; self.lengths: list[int] = []; self.positions: list[torch.Tensor] = []
         self.last_hidden: torch.Tensor | None = None; self.last_output: torch.Tensor | None = None
+        self.residual_base: torch.Tensor | None = None
         self.deepstack_injection_count: int | None = None
 
     def set_attention_mask(self, mask: torch.Tensor) -> None:
@@ -258,9 +267,21 @@ class LanguageDeepStackHomogeneousMoE(nn.Module):
         output[self._mask_on(template)] = packed
         return output
 
-    def forward_stage(self, stage: int, hidden_states: torch.Tensor) -> torch.Tensor:
+    def forward_stage(self, stage: int, hidden_states: torch.Tensor,
+                      optical_input: torch.Tensor | None = None,
+                      residual_base: torch.Tensor | None = None) -> torch.Tensor:
         if stage == 0:
-            fields = self.core.encode_groups(self._groups(hidden_states)); self.field, self.routing = self.core.begin(fields)
+            branch_input = hidden_states if optical_input is None else optical_input
+            if branch_input.shape != hidden_states.shape:
+                raise RuntimeError(
+                    f"Language optical input shape {tuple(branch_input.shape)} does not match hidden {tuple(hidden_states.shape)}"
+                )
+            if residual_base is not None and residual_base.shape != hidden_states.shape:
+                raise RuntimeError(
+                    f"Language residual shape {tuple(residual_base.shape)} does not match hidden {tuple(hidden_states.shape)}"
+                )
+            self.residual_base = residual_base
+            fields = self.core.encode_groups(self._groups(branch_input)); self.field, self.routing = self.core.begin(fields)
         else:
             if self.field is None or self.routing is None or self.last_hidden is None:
                 raise RuntimeError("Language optical stages must execute in order")
@@ -271,6 +292,8 @@ class LanguageDeepStackHomogeneousMoE(nn.Module):
                              if self.deepstack_injection_count is not None else None)
             if has_injection is not False:
                 delta = hidden_states - self.last_hidden
+                if self.residual_base is not None:
+                    self.residual_base = self.residual_base + delta
                 delta_fields = self.core.encode_groups(self._groups(delta), injection=True)
                 if has_injection is True or torch.count_nonzero(delta_fields):
                     self.field = self.field + self.core.fanout(delta_fields, self.routing)
@@ -278,7 +301,8 @@ class LanguageDeepStackHomogeneousMoE(nn.Module):
         self.field = self.core.run_stage(stage, self.field, self.routing)
         packed = self.core.read_hidden(self.field, self.lengths, hidden_states.dtype,
                                        final=stage == len(self.core.expert_layers) - 1)
-        output = self._scatter(packed, hidden_states)
+        optical_delta = self._scatter(packed, hidden_states)
+        output = optical_delta if self.residual_base is None else self.residual_base + optical_delta
         # Qwen's native _deepstack_process updates the returned tensor in-place.
         # Keep an explicit pre-injection copy so the next optical stage can
         # recover exactly the DeepStack delta that was added between layers.

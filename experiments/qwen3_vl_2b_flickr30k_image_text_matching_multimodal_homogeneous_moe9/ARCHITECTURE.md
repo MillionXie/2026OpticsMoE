@@ -46,6 +46,21 @@ Common physical structure:
 - global phase, propagation and full-plane detector readout
 - no crop or fallback resize when a token limit is exceeded
 
+### Transformer-aligned attention and residual
+
+The optical replacement follows Qwen's original pre-norm Transformer equation at stack level:
+
+```text
+A = X + NativeAttention(Norm1(X))
+Y = A + OpticalMoE(Norm2(A))
+```
+
+Vision copies `norm1`, attention, and `norm2` from the configured native vision source block. Language does the same with `input_layernorm`, self-attention, and `post_attention_layernorm`. Only one attention sub-layer precedes each complete optical stack; the electronic MLP is not copied. The copied attention defaults to frozen evaluation mode, so it preserves Qwen's learned RoPE-aware mixing without becoming a large trainable electronic substitute for the optical branch.
+
+The residual coefficient is exactly the fixed value `1.0`, matching Qwen3-VL. There is no learned alpha/beta gate and no activation after the residual addition. Optical square detection, per-expert LayerNorm, and ReLU already provide the branch's internal nonlinearity. On the language side, native DeepStack image injections are accumulated into the residual baseline before every later optical stage; they are not discarded or counted as optical output.
+
+These choices are configured under `student.transformer_block_alignment`. An old student checkpoint without matching alignment metadata is rejected, while teacher caches and the trained teacher head remain reusable because the electronic teacher path and cache targets are unchanged.
+
 ## Caches
 
 Teacher cache shards store labels, grid/token lengths, final answer hidden, and four vision targets. Teacher raw logits are generated later by the trained teacher head and stored separately. Processor cache shards store the exact per-pair chat-template/processor outputs used by student training.
