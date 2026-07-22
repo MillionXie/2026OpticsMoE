@@ -30,7 +30,11 @@ def preprocess_image_text(processor: Any, images: Sequence[Image.Image],
 
 
 def move_inputs(inputs: Mapping[str, torch.Tensor], device: torch.device) -> dict[str, torch.Tensor]:
-    return {key: value.to(device) for key, value in inputs.items()}
+    # Student DataLoaders pin cached batches.  Non-blocking copies let the CUDA
+    # stream overlap host-to-device transfer with work already queued on the GPU.
+    # For non-pinned tensors (for example teacher precompute) PyTorch safely
+    # falls back to the usual synchronous behavior.
+    return {key: value.to(device, non_blocking=True) for key, value in inputs.items()}
 
 
 def multimodal_forward_features(model: nn.Module, inputs: Mapping[str, torch.Tensor]) -> torch.Tensor:

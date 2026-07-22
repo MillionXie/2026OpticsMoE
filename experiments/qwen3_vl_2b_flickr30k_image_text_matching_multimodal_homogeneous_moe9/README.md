@@ -69,6 +69,8 @@ Within each teacher-cache shard, every vision tap is stored as one token-packed 
 
 Cache shards are written through one bounded background writer so disk output overlaps the next frozen-teacher forwards. At most two shard jobs are resident. Per-shard SHA256 rereads were removed because no cache loader consumed them; the pair-manifest SHA256 and all cache identity/metadata validation remain unchanged.
 
+Student batches are shuffled at shard granularity and collate each variable-length teacher tap into one packed target. The normalized hidden loss retains the original per-sample reduction, while replacing dozens of small CPU-to-GPU copies and CUDA kernels with one transfer and reduction per tap. Cached FP16 processor pixels remain FP16 during host-to-device transfer because Qwen casts them to the frozen visual dtype on the GPU.
+
 ## Main outputs
 
 - `config_resolved.json`, `environment.json`, `dataset.json`, `model.json`

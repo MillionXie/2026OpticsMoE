@@ -8,6 +8,7 @@ import pytest
 import torch
 from PIL import Image
 from torch import nn
+from torch.nn import functional as F
 
 from experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneous_moe9.datasets import load_flickr30k
 from experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneous_moe9.features import (
@@ -26,6 +27,9 @@ from experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneou
 from experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneous_moe9.teacher_cache import (
     _AsyncShardWriter, iter_cached_input_batches, load_teacher_logits, pack_teacher_rows,
     packed_teacher_targets_to_cpu, write_teacher_logits,
+)
+from experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneous_moe9.training import (
+    cached_student_collate, normalized_packed_group_mse,
 )
 
 
@@ -258,3 +262,37 @@ def test_teacher_shard_writer_is_bounded_and_does_not_reread_for_hash(tmp_path: 
     assert "sha256" not in records[0]
     payload = torch.load(records[0]["path"], map_location="cpu", weights_only=True)
     assert payload["visual_token_offsets"].tolist() == [0, 2]
+
+
+def test_student_collate_packs_targets_and_preserves_cached_pixel_dtype() -> None:
+    batch = []
+    for index, count in enumerate((2, 3)):
+        inputs = {"input_ids": torch.arange(index + 2), "sequence_length": index + 2,
+                  "pixel_values": torch.ones(count, 4, dtype=torch.float16),
+                  "image_grid_thw": torch.tensor([1, 1, count])}
+        teacher = {"visual_token_count": count,
+                   "teacher_answer_hidden": torch.full((4,), float(index), dtype=torch.float16),
+                   "teacher_vision_taps": [
+                       torch.full((count, 3), float(index + tap), dtype=torch.float16)
+                       for tap in range(4)
+                   ]}
+        batch.append((inputs, float(index), index, teacher, torch.tensor(float(index))))
+    inputs, _labels, _indices, targets, _logits = cached_student_collate(
+        batch, {"padding_side": "left", "pad_token_id": 0}
+    )
+    assert inputs["pixel_values"].dtype == torch.float16
+    assert targets["visual_token_counts"].tolist() == [2, 3]
+    assert [tuple(tap.shape) for tap in targets["vision_taps"]] == [(5, 3)] * 4
+    assert tuple(targets["answer_hidden"].shape) == (2, 4)
+
+
+def test_packed_group_mse_matches_original_per_sample_reduction() -> None:
+    counts = torch.tensor([2, 3])
+    student = torch.randn(5, 7)
+    teacher = torch.randn(5, 7)
+    expected = torch.stack([
+        F.mse_loss(F.layer_norm(left, (7,)), F.layer_norm(right, (7,)))
+        for left, right in zip(student.split(counts.tolist()), teacher.split(counts.tolist()))
+    ]).mean()
+    actual = normalized_packed_group_mse(student, teacher, counts)
+    assert torch.allclose(actual, expected, atol=1e-6, rtol=1e-6)

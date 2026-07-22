@@ -172,7 +172,10 @@ def collate_processor_samples(samples: Sequence[dict[str, Any]], metadata: dict[
         ids = sample["input_ids"].long(); length = len(ids); start = max_length - length if side == "left" else 0
         input_ids[row, start:start + length] = ids; attention_mask[row, start:start + length] = 1
     return {"input_ids": input_ids, "attention_mask": attention_mask,
-            "pixel_values": torch.cat([sample["pixel_values"] for sample in samples]).float(),
+            # Keep the persisted cache dtype for the H2D copy. Qwen explicitly
+            # casts pixel_values to visual.dtype on-device in get_image_features;
+            # converting float16 -> float32 on CPU only doubles transfer volume.
+            "pixel_values": torch.cat([sample["pixel_values"] for sample in samples]),
             "image_grid_thw": torch.stack([sample["image_grid_thw"] for sample in samples]).long()}
 
 

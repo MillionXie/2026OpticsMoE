@@ -120,8 +120,46 @@ class CachedStudentDataset(Dataset[Any]):
 
 def cached_student_collate(batch: Sequence[Any], metadata: dict[str, Any]):
     inputs, labels, indices, teachers, logits = zip(*batch)
+    tap_count = len(teachers[0]["teacher_vision_taps"])
+    if any(len(row["teacher_vision_taps"]) != tap_count for row in teachers):
+        raise RuntimeError("Teacher vision tap count changed within a student batch")
+    token_counts = torch.tensor([int(row["visual_token_count"]) for row in teachers], dtype=torch.long)
+    if any(count <= 0 for count in token_counts.tolist()):
+        raise RuntimeError("Teacher visual token counts must be positive")
+    if any(int(row["teacher_vision_taps"][tap].shape[0]) != int(token_counts[row_number])
+           for row_number, row in enumerate(teachers) for tap in range(tap_count)):
+        raise RuntimeError("Teacher vision tap rows do not match visual_token_count")
+    teacher_targets = {
+        "visual_token_counts": token_counts,
+        "vision_taps": [
+            torch.cat([row["teacher_vision_taps"][tap] for row in teachers], dim=0)
+            for tap in range(tap_count)
+        ],
+        "answer_hidden": torch.stack([row["teacher_answer_hidden"] for row in teachers]),
+    }
     return (collate_processor_samples(inputs, metadata), torch.tensor(labels, dtype=torch.float32),
-            torch.tensor(indices, dtype=torch.long), list(teachers), torch.stack(logits).float())
+            torch.tensor(indices, dtype=torch.long), teacher_targets, torch.stack(logits).float())
+
+
+def normalized_packed_group_mse(student: torch.Tensor, teacher: torch.Tensor,
+                                token_counts: torch.Tensor) -> torch.Tensor:
+    """Mean the normalized hidden MSE per sample without tiny per-sample kernels.
+
+    This is mathematically the same reduction as normalizing and computing MSE
+    for every variable-length token group, then averaging the sample losses.
+    """
+    if student.shape != teacher.shape or student.ndim != 2:
+        raise RuntimeError(f"Packed hidden target mismatch: {tuple(student.shape)} vs {tuple(teacher.shape)}")
+    counts = token_counts.to(device=student.device, dtype=torch.long)
+    if counts.ndim != 1 or counts.numel() == 0:
+        raise RuntimeError("visual_token_counts must be a non-empty vector")
+    student_ln = F.layer_norm(student.float(), (student.shape[-1],))
+    teacher_ln = F.layer_norm(teacher.float(), (teacher.shape[-1],))
+    per_token = (student_ln - teacher_ln).square().mean(dim=-1)
+    sample_ids = torch.repeat_interleave(torch.arange(len(counts), device=student.device), counts)
+    sums = torch.zeros(len(counts), device=student.device, dtype=per_token.dtype)
+    sums.scatter_add_(0, sample_ids, per_token)
+    return (sums / counts).mean()
 
 
 class CachedEvaluationDataset(Dataset[Any]):
@@ -179,22 +217,28 @@ def train_student(model: nn.Module, replacement: Any, head: nn.Module, train_dat
         v_selection = torch.zeros(settings.num_experts, device=device); l_selection = torch.zeros_like(v_selection)
         v_weights = torch.zeros_like(v_selection); l_weights = torch.zeros_like(v_selection)
         print(f"[sampling] epoch={epoch} pairs={len(sampler)}/{len(train_dataset)} mode={settings.student_language_mode}", flush=True)
-        for batch_index, (cpu_inputs, labels, _indices, teachers, teacher_batch_logits) in enumerate(loader, 1):
+        for batch_index, (cpu_inputs, labels, _indices, teacher_targets, teacher_batch_logits) in enumerate(loader, 1):
             replacement.prepare_student_batch(cpu_inputs["attention_mask"]); inputs = move_inputs(cpu_inputs, device)
             labels = labels.to(device, non_blocking=True); teacher_batch_logits = teacher_batch_logits.to(device, non_blocking=True)
             optimizer.zero_grad(set_to_none=True)
             hidden = multimodal_forward_features(model, inputs); answer, _ = pool_answer_hidden_state(hidden, inputs["attention_mask"])
             logits = head(answer)
             student_taps = [*replacement.vision_surrogate.tap_outputs, replacement.vision_surrogate.last_output]
-            vision_losses: list[torch.Tensor] = []
-            for tap_number, student_packed in enumerate(student_taps):
-                groups = student_packed.split(replacement.vision_surrogate.last_token_counts)
-                for group, teacher in zip(groups, teachers):
-                    target = teacher["teacher_vision_taps"][tap_number].float().to(device)
-                    vision_losses.append(F.mse_loss(F.layer_norm(group.float(), (group.shape[-1],)),
-                                                    F.layer_norm(target, (target.shape[-1],))))
+            if len(student_taps) != len(teacher_targets["vision_taps"]):
+                raise RuntimeError("Student/teacher vision tap count mismatch")
+            token_counts = teacher_targets["visual_token_counts"].to(device, non_blocking=True)
+            vision_losses = [
+                normalized_packed_group_mse(
+                    student_packed,
+                    target.to(device=device, dtype=torch.float32, non_blocking=True),
+                    token_counts,
+                )
+                for student_packed, target in zip(student_taps, teacher_targets["vision_taps"])
+            ]
             loss_vision = torch.stack(vision_losses).mean()
-            teacher_answer = torch.stack([row["teacher_answer_hidden"] for row in teachers]).float().to(device)
+            teacher_answer = teacher_targets["answer_hidden"].to(
+                device=device, dtype=torch.float32, non_blocking=True
+            )
             loss_answer = F.mse_loss(F.layer_norm(answer.float(), (answer.shape[-1],)),
                                      F.layer_norm(teacher_answer, (teacher_answer.shape[-1],)))
             loss_logit = F.smooth_l1_loss(logits, teacher_batch_logits, beta=settings.smooth_l1_beta)
