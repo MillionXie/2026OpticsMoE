@@ -5,7 +5,7 @@ Run commands from the repository root. They are intentionally one line each for 
 ## Main vision + language optical MoE9 run
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneous_moe9 --config experiments/qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneous_moe9/configs/flickr30k_itm_vision_language_optical.json --phase all
+CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneous_moe9 --config experiments/qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneous_moe9/configs/flickr30k_itm_vision_language_optical.json --phase all
 ```
 
 ## Diagnostic vision optical + electronic language run

@@ -147,7 +147,7 @@
     "epochs": 100,
     "progress": true,
     "logging": {
-      "interval_batches": 500
+      "interval_batches": 4000
     },
     "checkpoint_interval_epochs": 10,
     "student_selection_split": "test",
