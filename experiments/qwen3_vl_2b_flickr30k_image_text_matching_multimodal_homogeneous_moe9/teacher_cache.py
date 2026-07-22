@@ -13,7 +13,7 @@ from .io_utils import write_json
 from .processor_cache import ProcessorCacheStore, collate_processor_samples
 
 
-CACHE_SCHEMA_VERSION = 5
+CACHE_SCHEMA_VERSION = 6
 TEACHER_LOGIT_SCHEMA_VERSION = 1
 
 
@@ -131,15 +131,35 @@ def packed_teacher_targets_to_cpu(answer: torch.Tensor, taps: dict[int, torch.Te
 
 def _flush_shard(directory: Path, number: int, rows: list[dict[str, Any]]) -> dict[str, Any]:
     path = directory / f"shard_{number:06d}.pt"
-    payload = {"sample_indices": torch.tensor([row["sample_index"] for row in rows]),
-               "labels": torch.tensor([row["label"] for row in rows], dtype=torch.float32),
-               "image_grid_thw": torch.stack([row["image_grid_thw"] for row in rows]),
-               "visual_token_counts": torch.tensor([row["visual_token_count"] for row in rows]),
-               "sequence_lengths": torch.tensor([row["sequence_length"] for row in rows]),
-               "teacher_answer_hidden": torch.stack([row["teacher_answer_hidden"] for row in rows]),
-               "teacher_vision_taps": [row["teacher_vision_taps"] for row in rows]}
+    payload = pack_teacher_rows(rows)
     temporary = path.with_suffix(".tmp"); torch.save(payload, temporary); temporary.replace(path)
     return {"path": str(path), "count": len(rows), "bytes": path.stat().st_size, "sha256": _sha256(path)}
+
+
+def pack_teacher_rows(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
+    """Pack variable-token vision targets into four contiguous shard tensors."""
+    if not rows:
+        raise ValueError("Cannot pack an empty teacher-cache shard")
+    tap_count = len(rows[0]["teacher_vision_taps"])
+    if any(len(row["teacher_vision_taps"]) != tap_count for row in rows):
+        raise RuntimeError("Teacher tap count changed within a cache shard")
+    for row in rows:
+        expected_tokens = int(row["visual_token_count"])
+        if any(int(tap.shape[0]) != expected_tokens for tap in row["teacher_vision_taps"]):
+            raise RuntimeError("Teacher tap token count does not match visual_token_count")
+    counts = torch.tensor([row["visual_token_count"] for row in rows], dtype=torch.long)
+    offsets = torch.cat((torch.zeros(1, dtype=torch.long), counts.cumsum(0)))
+    return {"sample_indices": torch.tensor([row["sample_index"] for row in rows]),
+            "labels": torch.tensor([row["label"] for row in rows], dtype=torch.float32),
+            "image_grid_thw": torch.stack([row["image_grid_thw"] for row in rows]),
+            "visual_token_counts": counts,
+            "visual_token_offsets": offsets,
+            "sequence_lengths": torch.tensor([row["sequence_length"] for row in rows]),
+            "teacher_answer_hidden": torch.stack([row["teacher_answer_hidden"] for row in rows]),
+            "teacher_vision_taps": [
+                torch.cat([row["teacher_vision_taps"][tap] for row in rows], dim=0)
+                for tap in range(tap_count)
+            ]}
 
 
 class TeacherCacheStore:
@@ -159,12 +179,14 @@ class TeacherCacheStore:
             if start <= index < end:
                 payload = self._load(number); position = index - start
                 if int(payload["sample_indices"][position]) != index: raise RuntimeError("Teacher cache ordering mismatch")
+                start = int(payload["visual_token_offsets"][position])
+                stop = int(payload["visual_token_offsets"][position + 1])
                 return {"sample_index": payload["sample_indices"][position], "label": payload["labels"][position],
                         "image_grid_thw": payload["image_grid_thw"][position],
                         "visual_token_count": payload["visual_token_counts"][position],
                         "sequence_length": payload["sequence_lengths"][position],
                         "teacher_answer_hidden": payload["teacher_answer_hidden"][position],
-                        "teacher_vision_taps": payload["teacher_vision_taps"][position]}
+                        "teacher_vision_taps": [tap[start:stop] for tap in payload["teacher_vision_taps"]]}
         raise IndexError(index)
 
     def _load(self, number: int) -> dict[str, Any]:

@@ -65,6 +65,8 @@ Teacher feature extraction consumes those persisted processor tensors directly. 
 
 Teacher answer and vision-tap targets are cast and copied back to CPU as packed batches before per-sample splitting. This preserves the tensors while avoiding hundreds of small synchronizing device-to-host copies per batch.
 
+Within each teacher-cache shard, every vision tap is stored as one token-packed tensor plus sample offsets. Student reads reconstruct the original per-sample views from those offsets. This avoids serializing hundreds of small tensor objects per shard without changing any target value.
+
 ## Main outputs
 
 - `config_resolved.json`, `environment.json`, `dataset.json`, `model.json`

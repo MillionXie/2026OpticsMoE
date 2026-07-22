@@ -24,7 +24,8 @@ from experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneou
 )
 from experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneous_moe9.settings import Settings, load_settings
 from experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneous_moe9.teacher_cache import (
-    iter_cached_input_batches, load_teacher_logits, packed_teacher_targets_to_cpu, write_teacher_logits,
+    iter_cached_input_batches, load_teacher_logits, pack_teacher_rows,
+    packed_teacher_targets_to_cpu, write_teacher_logits,
 )
 
 
@@ -226,3 +227,19 @@ def test_teacher_targets_are_split_after_packed_transfer() -> None:
     assert [tuple(group.shape) for group in groups[7]] == [(2, 3), (3, 3)]
     assert torch.equal(groups[7][0].float(), packed[:2])
     assert torch.equal(groups[7][1].float(), packed[2:])
+
+
+def test_teacher_shard_packs_variable_token_taps_with_offsets() -> None:
+    rows = []
+    for index, count in enumerate((2, 3)):
+        rows.append({"sample_index": index, "label": float(index),
+                     "image_grid_thw": torch.tensor([1, 2, count]),
+                     "visual_token_count": count, "sequence_length": 4 + index,
+                     "teacher_answer_hidden": torch.full((4,), float(index)),
+                     "teacher_vision_taps": [torch.full((count, 3), float(index + tap)) for tap in range(4)]})
+    payload = pack_teacher_rows(rows)
+    assert payload["visual_token_offsets"].tolist() == [0, 2, 5]
+    assert len(payload["teacher_vision_taps"]) == 4
+    assert all(tuple(tap.shape) == (5, 3) for tap in payload["teacher_vision_taps"])
+    assert torch.equal(payload["teacher_vision_taps"][2][:2], rows[0]["teacher_vision_taps"][2])
+    assert torch.equal(payload["teacher_vision_taps"][2][2:5], rows[1]["teacher_vision_taps"][2])
