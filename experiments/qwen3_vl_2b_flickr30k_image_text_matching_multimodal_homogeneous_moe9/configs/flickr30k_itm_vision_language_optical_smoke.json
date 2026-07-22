@@ -7,7 +7,8 @@
   "dataset": {
     "train_image_limit": 8,
     "test_image_limit": 4,
-    "train_samples_per_epoch": 16
+    "train_samples_per_epoch": null,
+    "train_samples_per_class_per_epoch": 8
   },
   "batching": {
     "feature_batch_size": 1,

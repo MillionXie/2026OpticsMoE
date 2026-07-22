@@ -26,6 +26,12 @@ CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_flickr30k_image_text_ma
 
 ## Separate phases
 
+Override the rotating per-class epoch size without editing JSON:
+
+```bash
+CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneous_moe9 --config experiments/qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneous_moe9/configs/flickr30k_itm_vision_language_optical.json --phase student_train --train-samples-per-class-per-epoch 2000
+```
+
 ```bash
 python -m experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneous_moe9 --config experiments/qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneous_moe9/configs/flickr30k_itm_vision_language_optical.json --phase prepare_data
 ```

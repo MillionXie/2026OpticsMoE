@@ -32,6 +32,7 @@ class Settings:
     train_image_limit: int | None = None
     test_image_limit: int | None = None
     train_samples_per_epoch: int | None = None
+    train_samples_per_class_per_epoch: int | None = None
     output_dir: Path = PROJECT_DIR / "runs" / "qwen3_vl_2b_flickr30k_itm_vision_language_homogeneous_moe9"
     model_id: str = MODEL_ID
     cache_dir: Path | None = None
@@ -204,10 +205,13 @@ class Settings:
                 raise ValueError(f"{name} must be positive")
         if self.num_workers < 0:
             raise ValueError("num_workers must be non-negative")
-        for name in ("train_image_limit", "test_image_limit", "train_samples_per_epoch"):
+        for name in ("train_image_limit", "test_image_limit", "train_samples_per_epoch",
+                     "train_samples_per_class_per_epoch"):
             value = getattr(self, name)
             if value is not None and value <= 0:
                 raise ValueError(f"{name} must be positive when set")
+        if self.train_samples_per_epoch is not None and self.train_samples_per_class_per_epoch is not None:
+            raise ValueError("Set only one of train_samples_per_epoch and train_samples_per_class_per_epoch")
         for name in ("loss_hidden_weight", "loss_answer_weight", "loss_logit_weight", "loss_classification_weight",
                      "router_balance_weight", "router_importance_weight"):
             if float(getattr(self, name)) < 0:
@@ -247,6 +251,7 @@ NESTED_FIELDS: dict[tuple[str, ...], str] = {
     ("dataset", "negative_sampling_algorithm"): "negative_sampling_algorithm",
     ("dataset", "train_image_limit"): "train_image_limit", ("dataset", "test_image_limit"): "test_image_limit",
     ("dataset", "train_samples_per_epoch"): "train_samples_per_epoch",
+    ("dataset", "train_samples_per_class_per_epoch"): "train_samples_per_class_per_epoch",
     ("dataset", "resolved_fingerprints"): "resolved_dataset_fingerprints",
     ("dataset", "pair_manifest_digests"): "pair_manifest_digests",
     ("qwen", "model_id"): "model_id", ("qwen", "cache_dir"): "cache_dir",

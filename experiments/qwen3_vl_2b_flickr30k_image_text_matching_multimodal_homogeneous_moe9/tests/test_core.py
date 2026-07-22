@@ -23,6 +23,9 @@ from experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneou
 from experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneous_moe9.processor_cache import (
     collate_processor_samples, expected_processor_metadata,
 )
+from experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneous_moe9.sampling import (
+    BalancedEpochRotatingSampler,
+)
 from experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneous_moe9.settings import Settings, load_settings
 from experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneous_moe9.teacher_cache import (
     _AsyncShardWriter, iter_cached_input_batches, load_teacher_logits, pack_teacher_rows,
@@ -77,6 +80,20 @@ def test_configs_select_two_language_modes_and_no_validation() -> None:
     assert optical.processor_min_pixels == optical.processor_max_pixels == 20480
     assert optical.prompt_template.count("{caption}") == 1
     assert load_settings(FORMAL).feature_batch_size == 32
+    assert load_settings(FORMAL).train_samples_per_class_per_epoch == 2000
+
+
+def test_balanced_rotating_sampler_is_exact_and_covers_all_samples() -> None:
+    labels = [label for label in (0, 1) for _ in range(20)]
+    sampler = BalancedEpochRotatingSampler(labels, samples_per_class=5, seed=42, shard_size=4)
+    covered: set[int] = set()
+    for epoch in range(1, 5):
+        sampler.set_epoch(epoch); indices = list(sampler)
+        assert len(indices) == 10
+        assert sum(labels[index] == 0 for index in indices) == 5
+        assert sum(labels[index] == 1 for index in indices) == 5
+        covered.update(indices)
+    assert covered == set(range(40))
 
 
 def test_fixed_pair_manifest_is_balanced_deterministic_and_leak_free(tmp_path: Path) -> None:

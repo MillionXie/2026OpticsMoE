@@ -19,6 +19,7 @@
     "train_image_limit": null,
     "test_image_limit": null,
     "train_samples_per_epoch": null,
+    "train_samples_per_class_per_epoch": 2000,
     "resolved_fingerprints": null,
     "pair_manifest_digests": null
   },

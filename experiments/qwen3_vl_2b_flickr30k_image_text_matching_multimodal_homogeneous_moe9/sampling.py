@@ -47,3 +47,80 @@ class EpochRotatingSampler(Sampler[int]):
             order_in_shard = torch.randperm(len(group), generator=batch_generator).tolist()
             result.extend(group[position] for position in order_in_shard)
         return iter(result)
+
+
+class BalancedEpochRotatingSampler(Sampler[int]):
+    """Exact per-class epoch windows with deterministic full-dataset rotation.
+
+    Selected indices remain locally contiguous by cache shard. Shard order and
+    sample order inside every shard change deterministically each epoch.
+    """
+
+    def __init__(self, labels: list[int] | tuple[int, ...], samples_per_class: int,
+                 seed: int, shard_size: int | None = None) -> None:
+        if samples_per_class <= 0:
+            raise ValueError("samples_per_class must be positive")
+        self.labels = [int(label) for label in labels]
+        self.samples_per_class = int(samples_per_class)
+        self.seed = int(seed)
+        self.shard_size = int(shard_size) if shard_size else None
+        if self.shard_size is not None and self.shard_size <= 0:
+            raise ValueError("shard_size must be positive when set")
+        self.classes = sorted(set(self.labels))
+        if len(self.classes) < 2:
+            raise ValueError("Balanced sampling requires at least two classes")
+        self.by_class = {
+            label: [index for index, value in enumerate(self.labels) if value == label]
+            for label in self.classes
+        }
+        too_small = {label: len(indices) for label, indices in self.by_class.items()
+                     if len(indices) < self.samples_per_class}
+        if too_small:
+            raise ValueError(
+                f"samples_per_class={self.samples_per_class} exceeds available samples: {too_small}"
+            )
+        self.fixed_orders = {
+            label: self._fixed_order(label, indices) for label, indices in self.by_class.items()
+        }
+        self.epoch = 1
+
+    def _fixed_order(self, label: int, indices: list[int]) -> list[int]:
+        generator = torch.Generator().manual_seed(self.seed + 97_409 * (label + 1))
+        permutation = torch.randperm(len(indices), generator=generator).tolist()
+        return [indices[position] for position in permutation]
+
+    def set_epoch(self, epoch: int) -> None:
+        if epoch <= 0:
+            raise ValueError("epoch must be positive")
+        self.epoch = int(epoch)
+
+    def __len__(self) -> int:
+        return len(self.classes) * self.samples_per_class
+
+    def epoch_class_counts(self) -> dict[int, int]:
+        return {label: self.samples_per_class for label in self.classes}
+
+    def __iter__(self):
+        selected: list[int] = []
+        for label in self.classes:
+            source = self.fixed_orders[label]
+            start = ((self.epoch - 1) * self.samples_per_class) % len(source)
+            selected.extend(source[(start + offset) % len(source)]
+                            for offset in range(self.samples_per_class))
+
+        generator = torch.Generator().manual_seed(self.seed + 1_000_003 * self.epoch)
+        if self.shard_size is None:
+            order = torch.randperm(len(selected), generator=generator).tolist()
+            return iter(selected[position] for position in order)
+
+        groups: dict[int, list[int]] = {}
+        for index in selected:
+            groups.setdefault(index // self.shard_size, []).append(index)
+        shard_numbers = list(groups)
+        shard_order = torch.randperm(len(shard_numbers), generator=generator).tolist()
+        result: list[int] = []
+        for position in shard_order:
+            group = groups[shard_numbers[position]]
+            within = torch.randperm(len(group), generator=generator).tolist()
+            result.extend(group[index] for index in within)
+        return iter(result)

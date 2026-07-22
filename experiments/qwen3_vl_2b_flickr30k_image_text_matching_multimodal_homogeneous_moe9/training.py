@@ -16,7 +16,7 @@ from .io_utils import write_csv, write_json
 from .metrics import binary_classification_metrics, probabilities_from_logits
 from .modeling import NormalizedBinaryClassificationHead, build_head
 from .processor_cache import ProcessorCacheStore, collate_processor_samples
-from .sampling import EpochRotatingSampler
+from .sampling import BalancedEpochRotatingSampler, EpochRotatingSampler
 from .teacher_cache import (TeacherCacheStore, cached_answer_features, load_teacher_logits,
                             write_teacher_logits)
 from .visualization import save_confusion_matrix, save_phase_masks, save_training_curves
@@ -186,8 +186,16 @@ def train_student(model: nn.Module, replacement: Any, head: nn.Module, train_dat
         head.load_state_dict(teacher_head.state_dict())
     teacher_logits = load_teacher_logits(settings.output_dir / "teacher_cache" / "train_teacher_logits.pt", settings, "train")
     cached = CachedStudentDataset(train_dataset, train_store, train_inputs, teacher_logits)
-    sampler = EpochRotatingSampler(len(train_dataset), settings.train_samples_per_epoch, settings.seed,
-                                   settings.teacher_cache_shard_size)
+    if settings.train_samples_per_class_per_epoch is not None:
+        sampler = BalancedEpochRotatingSampler(
+            [int(label) for label in targets_of(train_dataset)],
+            settings.train_samples_per_class_per_epoch,
+            settings.seed,
+            settings.teacher_cache_shard_size,
+        )
+    else:
+        sampler = EpochRotatingSampler(len(train_dataset), settings.train_samples_per_epoch, settings.seed,
+                                       settings.teacher_cache_shard_size)
     loader = DataLoader(cached, batch_size=settings.student_batch_size, sampler=sampler, num_workers=0,
                         collate_fn=lambda batch: cached_student_collate(batch, train_inputs.metadata), pin_memory=True)
     test_loader = make_evaluation_loader(test_dataset, test_inputs, settings.inference_batch_size)
@@ -216,7 +224,10 @@ def train_student(model: nn.Module, replacement: Any, head: nn.Module, train_dat
         totals = torch.zeros(len(names), device=device, dtype=torch.float64)
         v_selection = torch.zeros(settings.num_experts, device=device); l_selection = torch.zeros_like(v_selection)
         v_weights = torch.zeros_like(v_selection); l_weights = torch.zeros_like(v_selection)
-        print(f"[sampling] epoch={epoch} pairs={len(sampler)}/{len(train_dataset)} mode={settings.student_language_mode}", flush=True)
+        class_counts = (sampler.epoch_class_counts()
+                        if isinstance(sampler, BalancedEpochRotatingSampler) else None)
+        print(f"[sampling] epoch={epoch} pairs={len(sampler)}/{len(train_dataset)} "
+              f"class_counts={class_counts} mode={settings.student_language_mode}", flush=True)
         for batch_index, (cpu_inputs, labels, _indices, teacher_targets, teacher_batch_logits) in enumerate(loader, 1):
             replacement.prepare_student_batch(cpu_inputs["attention_mask"]); inputs = move_inputs(cpu_inputs, device)
             labels = labels.to(device, non_blocking=True); teacher_batch_logits = teacher_batch_logits.to(device, non_blocking=True)
@@ -277,6 +288,7 @@ def train_student(model: nn.Module, replacement: Any, head: nn.Module, train_dat
                **{f"train_{key}": value for key, value in train_report.items() if isinstance(value, (int, float))},
                **{f"test_{key}": value for key, value in test_report.items() if isinstance(value, (int, float))},
                "epoch_time_sec": time.perf_counter() - started, "samples_this_epoch": len(sampler),
+               "samples_per_class_this_epoch": class_counts,
                "student_language_mode": settings.student_language_mode, "phase_dropout_active": dropout_active,
                "selection_split": "test", "selection_metric": "auroc"}
         for expert in range(settings.num_experts):

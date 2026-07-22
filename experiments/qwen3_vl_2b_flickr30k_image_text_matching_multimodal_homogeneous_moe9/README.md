@@ -71,6 +71,8 @@ Cache shards are written through one bounded background writer so disk output ov
 
 Student batches are shuffled at shard granularity and collate each variable-length teacher tap into one packed target. The normalized hidden loss retains the original per-sample reduction, while replacing dozens of small CPU-to-GPU copies and CUDA kernels with one transfer and reduction per tap. Cached FP16 processor pixels remain FP16 during host-to-device transfer because Qwen casts them to the frozen visual dtype on the GPU.
 
+The formal configs use `dataset.train_samples_per_class_per_epoch: 2000`. Every student epoch therefore contains exactly 2,000 matched and 2,000 mismatched pairs. Each class uses a deterministic rotating window over its complete 29,000-pair pool, so limiting one epoch does not permanently discard data; at this setting all retained pairs are covered within at most 15 epochs. Set the field to `null` to restore full-dataset epochs.
+
 ## Main outputs
 
 - `config_resolved.json`, `environment.json`, `dataset.json`, `model.json`
