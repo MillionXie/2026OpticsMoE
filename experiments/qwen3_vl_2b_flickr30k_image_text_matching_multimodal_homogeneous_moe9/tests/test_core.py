@@ -24,7 +24,7 @@ from experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneou
 )
 from experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneous_moe9.settings import Settings, load_settings
 from experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneous_moe9.teacher_cache import (
-    iter_cached_input_batches, load_teacher_logits, pack_teacher_rows,
+    _AsyncShardWriter, iter_cached_input_batches, load_teacher_logits, pack_teacher_rows,
     packed_teacher_targets_to_cpu, write_teacher_logits,
 )
 
@@ -243,3 +243,18 @@ def test_teacher_shard_packs_variable_token_taps_with_offsets() -> None:
     assert all(tuple(tap.shape) == (5, 3) for tap in payload["teacher_vision_taps"])
     assert torch.equal(payload["teacher_vision_taps"][2][:2], rows[0]["teacher_vision_taps"][2])
     assert torch.equal(payload["teacher_vision_taps"][2][2:5], rows[1]["teacher_vision_taps"][2])
+
+
+def test_teacher_shard_writer_is_bounded_and_does_not_reread_for_hash(tmp_path: Path) -> None:
+    rows = [{"sample_index": 0, "label": 1.0,
+             "image_grid_thw": torch.tensor([1, 2, 2]),
+             "visual_token_count": 2, "sequence_length": 4,
+             "teacher_answer_hidden": torch.ones(4),
+             "teacher_vision_taps": [torch.ones(2, 3) for _ in range(4)]}]
+    writer = _AsyncShardWriter(tmp_path, max_pending=2)
+    writer.submit(rows)
+    records = writer.finish()
+    assert len(records) == 1 and records[0]["count"] == 1
+    assert "sha256" not in records[0]
+    payload = torch.load(records[0]["path"], map_location="cpu", weights_only=True)
+    assert payload["visual_token_offsets"].tolist() == [0, 2]

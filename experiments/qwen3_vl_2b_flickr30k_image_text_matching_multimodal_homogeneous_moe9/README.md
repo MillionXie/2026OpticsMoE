@@ -67,6 +67,8 @@ Teacher answer and vision-tap targets are cast and copied back to CPU as packed 
 
 Within each teacher-cache shard, every vision tap is stored as one token-packed tensor plus sample offsets. Student reads reconstruct the original per-sample views from those offsets. This avoids serializing hundreds of small tensor objects per shard without changing any target value.
 
+Cache shards are written through one bounded background writer so disk output overlaps the next frozen-teacher forwards. At most two shard jobs are resident. Per-shard SHA256 rereads were removed because no cache loader consumed them; the pair-manifest SHA256 and all cache identity/metadata validation remain unchanged.
+
 ## Main outputs
 
 - `config_resolved.json`, `environment.json`, `dataset.json`, `model.json`

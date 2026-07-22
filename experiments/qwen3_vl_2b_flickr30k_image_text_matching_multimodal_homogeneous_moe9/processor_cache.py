@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 from collections import OrderedDict
 from pathlib import Path
 from typing import Any, Sequence
@@ -120,7 +119,7 @@ def _flush_shard(directory: Path, number: int, rows: list[dict[str, Any]]) -> di
                "image_grid_thw": torch.stack([row["image_grid_thw"] for row in rows]),
                "sequence_lengths": torch.tensor([row["sequence_length"] for row in rows])}
     temporary = path.with_suffix(".tmp"); torch.save(payload, temporary); temporary.replace(path)
-    return {"path": str(path), "count": len(rows), "bytes": path.stat().st_size, "sha256": _sha256(path)}
+    return {"path": str(path), "count": len(rows), "bytes": path.stat().st_size}
 
 
 class ProcessorCacheStore:
@@ -187,10 +186,3 @@ def _validate_manifest(path: Path, expected: dict[str, Any]) -> None:
     manifest = torch.load(path, map_location="cpu", weights_only=True)
     changed = [key for key, value in expected.items() if manifest["metadata"].get(key) != value]
     if changed: raise RuntimeError(f"Processor cache metadata mismatch: {changed}. Delete {path.parent} and rebuild.")
-
-
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""): digest.update(chunk)
-    return digest.hexdigest()

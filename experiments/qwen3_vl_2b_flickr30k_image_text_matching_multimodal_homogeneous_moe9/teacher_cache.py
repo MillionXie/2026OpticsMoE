@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import hashlib
 from collections import OrderedDict
+from concurrent.futures import Future, ThreadPoolExecutor
 from pathlib import Path
 from typing import Any, Iterator, Sequence
 
@@ -65,40 +65,46 @@ def build_teacher_cache(split: str, model: nn.Module, replacement: Any,
         print(f"[teacher_precompute] validated existing cache: {manifest_path}", flush=True); return manifest_path
     shard_dir = root / f"{split}_shards"; shard_dir.mkdir(parents=True, exist_ok=True)
     stored_dtype = torch.float16 if settings.cache_dtype == "float16" else torch.float32
-    pending: list[dict[str, Any]] = []; shards: list[dict[str, Any]] = []; replacement.use_teacher()
+    pending: list[dict[str, Any]] = []; replacement.use_teacher()
+    writer = _AsyncShardWriter(shard_dir, max_pending=2)
     tap_indexes = [*replacement.deepstack_indexes, len(replacement.vision_blocks) - 1]
     batches = (dataset_size + settings.feature_batch_size - 1) // settings.feature_batch_size
-    for batch_index, (cpu_inputs, batch_labels, indices) in enumerate(
-            iter_cached_input_batches(processor_inputs, labels, settings.feature_batch_size), start=1):
-        inputs = move_inputs(cpu_inputs, device); replacement.teacher_vision_taps.clear(); replacement.teacher_cu_seqlens = None
-        hidden = multimodal_forward_features(model, inputs); answer, _ = pool_answer_hidden_state(hidden, inputs["attention_mask"])
-        counts = replacement.teacher_token_counts(); sequence_lengths = cpu_inputs["attention_mask"].sum(1).long().tolist()
-        if max(counts) > settings.max_visual_tokens:
-            raise RuntimeError(f"visual token count {max(counts)} exceeds max_visual_tokens={settings.max_visual_tokens}")
-        if max(sequence_lengths) > settings.max_language_tokens:
-            raise RuntimeError(
-                f"language sequence length {max(sequence_lengths)} exceeds max_language_tokens={settings.max_language_tokens}; "
-                "shorten the caption/prompt. Silent truncation is forbidden."
+    try:
+        for batch_index, (cpu_inputs, batch_labels, indices) in enumerate(
+                iter_cached_input_batches(processor_inputs, labels, settings.feature_batch_size), start=1):
+            inputs = move_inputs(cpu_inputs, device); replacement.teacher_vision_taps.clear(); replacement.teacher_cu_seqlens = None
+            hidden = multimodal_forward_features(model, inputs); answer, _ = pool_answer_hidden_state(hidden, inputs["attention_mask"])
+            counts = replacement.teacher_token_counts(); sequence_lengths = cpu_inputs["attention_mask"].sum(1).long().tolist()
+            if max(counts) > settings.max_visual_tokens:
+                raise RuntimeError(f"visual token count {max(counts)} exceeds max_visual_tokens={settings.max_visual_tokens}")
+            if max(sequence_lengths) > settings.max_language_tokens:
+                raise RuntimeError(
+                    f"language sequence length {max(sequence_lengths)} exceeds max_language_tokens={settings.max_language_tokens}; "
+                    "shorten the caption/prompt. Silent truncation is forbidden."
+                )
+            missing = [index for index in tap_indexes if index not in replacement.teacher_vision_taps]
+            if missing: raise RuntimeError(f"Teacher hooks missed vision blocks: {missing}")
+            # Transfer each packed target once. The old per-sample `.cpu()` calls
+            # introduced (1 + number_of_taps) * batch_size CUDA synchronizations.
+            answer_cpu, tap_groups = packed_teacher_targets_to_cpu(
+                answer, replacement.teacher_vision_taps, tap_indexes, counts, stored_dtype
             )
-        missing = [index for index in tap_indexes if index not in replacement.teacher_vision_taps]
-        if missing: raise RuntimeError(f"Teacher hooks missed vision blocks: {missing}")
-        # Transfer each packed target once. The old per-sample `.cpu()` calls
-        # introduced (1 + number_of_taps) * batch_size CUDA synchronizations.
-        answer_cpu, tap_groups = packed_teacher_targets_to_cpu(
-            answer, replacement.teacher_vision_taps, tap_indexes, counts, stored_dtype
-        )
-        for local in range(len(indices)):
-            pending.append({"sample_index": int(indices[local]), "label": float(batch_labels[local]),
-                            "image_grid_thw": cpu_inputs["image_grid_thw"][local].cpu(),
-                            "visual_token_count": counts[local], "sequence_length": sequence_lengths[local],
-                            "teacher_answer_hidden": answer_cpu[local],
-                            "teacher_vision_taps": [tap_groups[index][local] for index in tap_indexes]})
-            if len(pending) >= settings.teacher_cache_shard_size:
-                shards.append(_flush_shard(shard_dir, len(shards), pending)); pending = []
-        if batch_index % settings.teacher_cache_log_interval_batches == 0 or batch_index == batches:
-            cached = int(indices[-1]) + 1
-            print(f"[teacher_precompute] {split} batch={batch_index}/{batches} cached={cached}/{dataset_size}", flush=True)
-    if pending: shards.append(_flush_shard(shard_dir, len(shards), pending))
+            for local in range(len(indices)):
+                pending.append({"sample_index": int(indices[local]), "label": float(batch_labels[local]),
+                                "image_grid_thw": cpu_inputs["image_grid_thw"][local].cpu(),
+                                "visual_token_count": counts[local], "sequence_length": sequence_lengths[local],
+                                "teacher_answer_hidden": answer_cpu[local],
+                                "teacher_vision_taps": [tap_groups[index][local] for index in tap_indexes]})
+                if len(pending) >= settings.teacher_cache_shard_size:
+                    writer.submit(pending); pending = []
+            if batch_index % settings.teacher_cache_log_interval_batches == 0 or batch_index == batches:
+                cached = int(indices[-1]) + 1
+                print(f"[teacher_precompute] {split} batch={batch_index}/{batches} cached={cached}/{dataset_size}", flush=True)
+        if pending: writer.submit(pending)
+        shards = writer.finish()
+    except BaseException:
+        writer.abort()
+        raise
     metadata = {**expected, "shard_count": len(shards), "total_cache_bytes": sum(row["bytes"] for row in shards)}
     root.mkdir(parents=True, exist_ok=True); torch.save({"metadata": metadata, "shards": shards}, manifest_path)
     write_json(root / f"{split}_metadata.json", metadata); return manifest_path
@@ -133,7 +139,38 @@ def _flush_shard(directory: Path, number: int, rows: list[dict[str, Any]]) -> di
     path = directory / f"shard_{number:06d}.pt"
     payload = pack_teacher_rows(rows)
     temporary = path.with_suffix(".tmp"); torch.save(payload, temporary); temporary.replace(path)
-    return {"path": str(path), "count": len(rows), "bytes": path.stat().st_size, "sha256": _sha256(path)}
+    return {"path": str(path), "count": len(rows), "bytes": path.stat().st_size}
+
+
+class _AsyncShardWriter:
+    """Overlap one bounded teacher-shard write with subsequent GPU forwards."""
+
+    def __init__(self, directory: Path, max_pending: int) -> None:
+        if max_pending <= 0:
+            raise ValueError("max_pending must be positive")
+        self.directory = directory; self.max_pending = int(max_pending)
+        self.executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="teacher-cache-writer")
+        self.futures: list[Future[dict[str, Any]]] = []; self.records: list[dict[str, Any]] = []
+        self.next_number = 0; self.closed = False
+
+    def submit(self, rows: list[dict[str, Any]]) -> None:
+        if self.closed:
+            raise RuntimeError("Cannot submit to a closed teacher-cache writer")
+        self.futures.append(self.executor.submit(_flush_shard, self.directory, self.next_number, rows))
+        self.next_number += 1
+        if len(self.futures) >= self.max_pending:
+            self.records.append(self.futures.pop(0).result())
+
+    def finish(self) -> list[dict[str, Any]]:
+        if not self.closed:
+            for future in self.futures:
+                self.records.append(future.result())
+            self.futures.clear(); self.executor.shutdown(wait=True); self.closed = True
+        return self.records
+
+    def abort(self) -> None:
+        if not self.closed:
+            self.executor.shutdown(wait=True, cancel_futures=True); self.closed = True
 
 
 def pack_teacher_rows(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
@@ -239,10 +276,3 @@ def load_teacher_logits(path: Path, settings: Any, split: str) -> torch.Tensor:
     logits = payload["teacher_logits"].float()
     if logits.ndim != 1: raise RuntimeError(f"Teacher raw logits must be rank-1, got {tuple(logits.shape)}")
     return logits
-
-
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""): digest.update(chunk)
-    return digest.hexdigest()
