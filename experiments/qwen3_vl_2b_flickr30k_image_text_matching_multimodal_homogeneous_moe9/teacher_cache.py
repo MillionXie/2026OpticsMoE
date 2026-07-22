@@ -3,16 +3,17 @@ from __future__ import annotations
 import hashlib
 from collections import OrderedDict
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any, Iterator, Sequence
 
 import torch
 from torch import nn
 
-from .features import move_inputs, multimodal_forward_features, pool_answer_hidden_state, preprocess_image_text
+from .features import move_inputs, multimodal_forward_features, pool_answer_hidden_state
 from .io_utils import write_json
+from .processor_cache import ProcessorCacheStore, collate_processor_samples
 
 
-CACHE_SCHEMA_VERSION = 4
+CACHE_SCHEMA_VERSION = 5
 TEACHER_LOGIT_SCHEMA_VERSION = 1
 
 
@@ -48,10 +49,15 @@ def expected_metadata(split: str, samples: int, settings: Any, model: nn.Module 
 
 
 @torch.inference_mode()
-def build_teacher_cache(split: str, model: nn.Module, processor: Any, replacement: Any, loader: Any,
+def build_teacher_cache(split: str, model: nn.Module, replacement: Any,
+                        processor_inputs: ProcessorCacheStore, labels: Sequence[float],
                         dataset_size: int, settings: Any, device: torch.device) -> Path:
     root = settings.output_dir / "teacher_cache"; manifest_path = root / f"{split}.pt"
-    expected = expected_metadata(split, dataset_size, settings, model)
+    expected = {
+        **expected_metadata(split, dataset_size, settings, model),
+        "teacher_input_source": "validated_processor_cache",
+        "processor_cache_schema_version": processor_inputs.metadata.get("cache_schema_version"),
+    }
     if manifest_path.is_file():
         manifest = torch.load(manifest_path, map_location="cpu", weights_only=True)
         changed = [key for key, value in expected.items() if manifest["metadata"].get(key) != value]
@@ -61,8 +67,9 @@ def build_teacher_cache(split: str, model: nn.Module, processor: Any, replacemen
     stored_dtype = torch.float16 if settings.cache_dtype == "float16" else torch.float32
     pending: list[dict[str, Any]] = []; shards: list[dict[str, Any]] = []; replacement.use_teacher()
     tap_indexes = [*replacement.deepstack_indexes, len(replacement.vision_blocks) - 1]
-    for batch_index, (images, prompts, labels, indices) in enumerate(loader, start=1):
-        cpu_inputs = preprocess_image_text(processor, images, prompts)
+    batches = (dataset_size + settings.feature_batch_size - 1) // settings.feature_batch_size
+    for batch_index, (cpu_inputs, batch_labels, indices) in enumerate(
+            iter_cached_input_batches(processor_inputs, labels, settings.feature_batch_size), start=1):
         inputs = move_inputs(cpu_inputs, device); replacement.teacher_vision_taps.clear(); replacement.teacher_cu_seqlens = None
         hidden = multimodal_forward_features(model, inputs); answer, _ = pool_answer_hidden_state(hidden, inputs["attention_mask"])
         counts = replacement.teacher_token_counts(); sequence_lengths = cpu_inputs["attention_mask"].sum(1).long().tolist()
@@ -76,21 +83,37 @@ def build_teacher_cache(split: str, model: nn.Module, processor: Any, replacemen
         missing = [index for index in tap_indexes if index not in replacement.teacher_vision_taps]
         if missing: raise RuntimeError(f"Teacher hooks missed vision blocks: {missing}")
         tap_groups = {index: list(replacement.teacher_vision_taps[index].split(counts)) for index in tap_indexes}
-        for local in range(len(images)):
-            pending.append({"sample_index": int(indices[local]), "label": float(labels[local]),
+        for local in range(len(indices)):
+            pending.append({"sample_index": int(indices[local]), "label": float(batch_labels[local]),
                             "image_grid_thw": cpu_inputs["image_grid_thw"][local].cpu(),
                             "visual_token_count": counts[local], "sequence_length": sequence_lengths[local],
                             "teacher_answer_hidden": answer[local].to(stored_dtype).cpu(),
                             "teacher_vision_taps": [tap_groups[index][local].to(stored_dtype).cpu() for index in tap_indexes]})
             if len(pending) >= settings.teacher_cache_shard_size:
                 shards.append(_flush_shard(shard_dir, len(shards), pending)); pending = []
-        if batch_index % settings.teacher_cache_log_interval_batches == 0 or batch_index == len(loader):
-            cached = min(batch_index * settings.feature_batch_size, dataset_size)
-            print(f"[teacher_precompute] {split} batch={batch_index}/{len(loader)} cached={cached}/{dataset_size}", flush=True)
+        if batch_index % settings.teacher_cache_log_interval_batches == 0 or batch_index == batches:
+            cached = int(indices[-1]) + 1
+            print(f"[teacher_precompute] {split} batch={batch_index}/{batches} cached={cached}/{dataset_size}", flush=True)
     if pending: shards.append(_flush_shard(shard_dir, len(shards), pending))
     metadata = {**expected, "shard_count": len(shards), "total_cache_bytes": sum(row["bytes"] for row in shards)}
     root.mkdir(parents=True, exist_ok=True); torch.save({"metadata": metadata, "shards": shards}, manifest_path)
     write_json(root / f"{split}_metadata.json", metadata); return manifest_path
+
+
+def iter_cached_input_batches(processor_inputs: ProcessorCacheStore, labels: Sequence[float],
+                              batch_size: int) -> Iterator[tuple[dict[str, torch.Tensor], torch.Tensor, torch.Tensor]]:
+    """Yield the exact persisted processor tensors without decoding images again."""
+    sample_count = len(processor_inputs)
+    if sample_count != len(labels):
+        raise RuntimeError(f"Processor cache/label length mismatch: {sample_count} != {len(labels)}")
+    if batch_size <= 0:
+        raise ValueError("feature_batch_size must be positive")
+    for start in range(0, sample_count, batch_size):
+        stop = min(start + batch_size, sample_count)
+        indices = torch.arange(start, stop, dtype=torch.long)
+        samples = [processor_inputs.get(index) for index in range(start, stop)]
+        yield (collate_processor_samples(samples, processor_inputs.metadata),
+               torch.tensor(labels[start:stop], dtype=torch.float32), indices)
 
 
 def _flush_shard(directory: Path, number: int, rows: list[dict[str, Any]]) -> dict[str, Any]:

@@ -50,6 +50,8 @@ Common physical structure:
 
 Teacher cache shards store labels, grid/token lengths, final answer hidden, and four vision targets. Teacher raw logits are generated later by the trained teacher head and stored separately. Processor cache shards store the exact per-pair chat-template/processor outputs used by student training.
 
+Teacher precompute reads the same processor-cache shards instead of repeating JPEG decoding and Qwen image/text preprocessing. This removes a duplicated CPU-heavy pass and permits safe batched frozen-teacher inference.
+
 All cache identities bind to the pair-manifest SHA256. This guarantees that teacher, electronic-language diagnostic, and vision+language optical runs cannot accidentally train against targets generated from different caption pairs.
 
 ## Metrics

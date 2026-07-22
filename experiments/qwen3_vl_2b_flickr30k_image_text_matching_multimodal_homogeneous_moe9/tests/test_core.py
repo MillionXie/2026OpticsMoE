@@ -24,13 +24,14 @@ from experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneou
 )
 from experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneous_moe9.settings import Settings, load_settings
 from experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneous_moe9.teacher_cache import (
-    load_teacher_logits, write_teacher_logits,
+    iter_cached_input_batches, load_teacher_logits, write_teacher_logits,
 )
 
 
 ROOT = Path("experiments/qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneous_moe9")
 OPTICAL = ROOT / "configs" / "flickr30k_itm_vision_language_optical_smoke.json"
 ELECTRONIC = ROOT / "configs" / "flickr30k_itm_vision_electronic_language_smoke.json"
+FORMAL = ROOT / "configs" / "flickr30k_itm_vision_language_optical.json"
 
 
 class FakeSplit:
@@ -70,6 +71,7 @@ def test_configs_select_two_language_modes_and_no_validation() -> None:
     assert optical.max_visual_tokens == optical.max_language_tokens == 120
     assert optical.processor_min_pixels == optical.processor_max_pixels == 20480
     assert optical.prompt_template.count("{caption}") == 1
+    assert load_settings(FORMAL).feature_batch_size == 4
 
 
 def test_fixed_pair_manifest_is_balanced_deterministic_and_leak_free(tmp_path: Path) -> None:
@@ -192,3 +194,25 @@ def test_cached_multimodal_batch_padding_and_pixels() -> None:
     batch = collate_processor_samples(rows, {"padding_side": "left", "pad_token_id": 0})
     assert batch["input_ids"].tolist() == [[0, 1, 2], [3, 4, 5]]
     assert batch["pixel_values"].shape == (5, 4)
+
+
+def test_teacher_batches_reuse_exact_processor_cache() -> None:
+    rows = [{"input_ids": torch.tensor([1, 2]), "sequence_length": 2,
+             "pixel_values": torch.ones(4, 3), "image_grid_thw": torch.tensor([1, 2, 2])},
+            {"input_ids": torch.tensor([3, 4, 5]), "sequence_length": 3,
+             "pixel_values": torch.full((4, 3), 2.0), "image_grid_thw": torch.tensor([1, 2, 2])},
+            {"input_ids": torch.tensor([6]), "sequence_length": 1,
+             "pixel_values": torch.full((4, 3), 3.0), "image_grid_thw": torch.tensor([1, 2, 2])}]
+
+    class Store:
+        metadata = {"padding_side": "left", "pad_token_id": 0}
+        def __len__(self): return len(rows)
+        def get(self, index): return rows[index]
+
+    batches = list(iter_cached_input_batches(Store(), [0.0, 1.0, 0.0], 2))
+    assert len(batches) == 2
+    inputs, labels, indices = batches[0]
+    assert inputs["input_ids"].tolist() == [[0, 1, 2], [3, 4, 5]]
+    assert inputs["pixel_values"].shape == (8, 3)
+    assert labels.tolist() == [0.0, 1.0] and indices.tolist() == [0, 1]
+    assert batches[1][2].tolist() == [2]

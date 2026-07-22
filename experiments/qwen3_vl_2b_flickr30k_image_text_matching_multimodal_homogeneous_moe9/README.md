@@ -61,6 +61,8 @@ Teacher and processor cache identities include the dataset repository/revision/f
 
 The formal configs use a fixed processor budget of **20,480 pixels**, rather than 25,600. A complete scan of the persisted 58,000-train/2,000-test pair manifests found four training pairs above the 120-token language limit at 25,600 pixels (maximum 123). At 20,480 pixels there are no overflows (observed maximum 117), while retaining more visual tokens than the more conservative 18,432-pixel option. `all` and `teacher_precompute` build/validate the processor cache first, so a changed dataset, manifest, or prompt fails before any expensive teacher forward. Processor-cache metadata records the observed maximum sequence and visual-token counts plus their remaining margins.
 
+Teacher feature extraction consumes those persisted processor tensors directly. It does not decode, resize, and tokenize all Flickr images a second time. The formal teacher feature batch is 4; this changes only inference parallelism and leaves each sample's cached inputs, attention mask, token rows, and targets unchanged.
+
 ## Main outputs
 
 - `config_resolved.json`, `environment.json`, `dataset.json`, `model.json`

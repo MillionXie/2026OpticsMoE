@@ -8,7 +8,7 @@ from typing import Any
 
 import torch
 
-from .datasets import DatasetBundle, load_flickr30k, make_indexed_loader
+from .datasets import DatasetBundle, load_flickr30k, make_indexed_loader, targets_of
 from .io_utils import resolve_device, resolve_dtype, runtime_metadata, set_seed, write_json
 from .modeling import LoadedBackbone, build_head, load_backbone, load_processor, module_parameters
 from .optics import DeepStackMultimodalReplacement, LanguageDeepStackHomogeneousMoE, VisionDeepStackHomogeneousMoE
@@ -126,9 +126,10 @@ def _replacement(loaded: LoadedBackbone, settings: Settings, device: torch.devic
 
 def _teacher_precompute(loaded: LoadedBackbone, replacement: Any, data: DatasetBundle,
                         settings: Settings, device: torch.device) -> None:
+    input_stores = _input_stores(settings, data)
     for split, dataset in (("train", data.train), ("test", data.test)):
-        loader = make_indexed_loader(dataset, settings.feature_batch_size, settings.num_workers, False, settings.seed)
-        build_teacher_cache(split, loaded.model, loaded.processor, replacement, loader, len(dataset), settings, device)
+        build_teacher_cache(split, loaded.model, replacement, input_stores[split], targets_of(dataset),
+                            len(dataset), settings, device)
 
 
 def _input_precompute(processor: Any, data: DatasetBundle, settings: Settings) -> None:
