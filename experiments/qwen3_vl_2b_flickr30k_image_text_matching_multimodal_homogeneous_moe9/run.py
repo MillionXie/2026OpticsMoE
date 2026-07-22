@@ -189,6 +189,7 @@ def _model_report(model: torch.nn.Module, replacement: Any, settings: Settings) 
         "text_depth": settings.text_depth, "text_hidden_size": settings.text_hidden_size,
         "deepstack_visual_indexes": list(settings.deepstack_visual_indexes or []),
         "vision_tap_stages": list(settings.vision_tap_stages), "native_deepstack_preserved": True,
+        "detector_layernorm_scope": settings.detector_layernorm_scope,
         "vision": vision, "language": language if settings.student_language_mode == "optical_moe" else {"frozen_electronic": True},
         "transformer_block_alignment": alignment,
         "head": head.specification(), "student_trainable_parameters": trainable,

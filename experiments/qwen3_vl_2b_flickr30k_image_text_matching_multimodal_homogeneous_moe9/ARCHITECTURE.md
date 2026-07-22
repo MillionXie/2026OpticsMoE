@@ -59,6 +59,8 @@ Vision copies `norm1`, attention, and `norm2` from the configured native vision 
 
 The residual coefficient is exactly the fixed value `1.0`, matching Qwen3-VL. There is no learned alpha/beta gate and no activation after the residual addition. Optical square detection, per-expert LayerNorm, and ReLU already provide the branch's internal nonlinearity. On the language side, native DeepStack image injections are accumulated into the residual baseline before every later optical stage; they are not discarded or counted as optical output.
 
+After the final 480-to-120 detector pooling, normalization is performed independently for each token row over its 120 feature channels (`layernorm_scope: per_token`). The former whole-field normalization could make every value in the answer-token row negative, after which ReLU killed that row and almost all language-optical gradients. `full_field` remains available only as an explicit ablation.
+
 These choices are configured under `student.transformer_block_alignment`. An old student checkpoint without matching alignment metadata is rejected, while teacher caches and the trained teacher head remain reusable because the electronic teacher path and cache targets are unchanged.
 
 ## Caches

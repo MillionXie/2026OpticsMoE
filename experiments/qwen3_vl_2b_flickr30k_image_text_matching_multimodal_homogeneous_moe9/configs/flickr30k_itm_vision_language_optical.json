@@ -127,6 +127,7 @@
       "pool_kernel": 4,
       "layernorm_eps": 0.00001,
       "layernorm_affine": false,
+      "layernorm_scope": "per_token",
       "nonlinearity": "relu"
     }
   },

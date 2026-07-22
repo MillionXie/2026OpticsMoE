@@ -18,7 +18,8 @@ from experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneou
 from experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneous_moe9.modeling import build_head
 from experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneous_moe9.optics.geometry import MoEGeometry
 from experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneous_moe9.optics.moe import (
-    HomogeneousMoEOpticalCore, LanguageDeepStackHomogeneousMoE, VisionDeepStackHomogeneousMoE,
+    FullPlaneReadout, HomogeneousMoEOpticalCore, LanguageDeepStackHomogeneousMoE,
+    VisionDeepStackHomogeneousMoE,
 )
 from experiments.qwen3_vl_2b_flickr30k_image_text_matching_multimodal_homogeneous_moe9.optics.replacement import (
     LanguageNativeAttentionPrelude, VisionNativeAttentionPrelude,
@@ -86,6 +87,15 @@ def test_configs_select_two_language_modes_and_no_validation() -> None:
     assert load_settings(FORMAL).train_samples_per_class_per_epoch == 2000
     assert optical.native_pre_attention_enabled and optical.transformer_residual_enabled
     assert not optical.native_pre_attention_trainable
+    assert optical.detector_layernorm_scope == "per_token"
+
+
+def test_detector_layernorm_is_independent_per_token_row() -> None:
+    settings = load_settings(OPTICAL); readout = FullPlaneReadout(settings)
+    assert readout.norm.normalized_shape == (120,)
+    pooled = torch.randn(2, 120, 120)
+    normalized = readout.norm(pooled)
+    assert torch.allclose(normalized.mean(-1), torch.zeros(2, 120), atol=1e-5)
 
 
 class _ScaleAttention(nn.Module):

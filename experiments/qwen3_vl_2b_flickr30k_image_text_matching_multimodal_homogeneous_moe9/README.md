@@ -49,6 +49,8 @@ Y = A + optical MoE(norm2(A))
 
 Qwen3-VL's residual path does not have a learned residual weight, so this experiment also uses a fixed identity coefficient of 1.0 rather than trainable alpha/beta. There is no extra activation after `Y`; the optical MoE's detector/normalization/ReLU stages provide the branch-internal nonlinearity corresponding to the nonlinear part of a Transformer MLP. The attention modules are copied from configurable native source layers and frozen by default. `model.json` reports both their total and trainable parameter counts.
 
+The final pooled detector tensor is normalized per token row over its 120 feature channels before the internal ReLU. This prevents whole-field statistics from making the complete answer-token row negative and cutting off gradients to the language optical core. The legacy whole-field scope remains configurable for ablation.
+
 Student loss:
 
 ```text

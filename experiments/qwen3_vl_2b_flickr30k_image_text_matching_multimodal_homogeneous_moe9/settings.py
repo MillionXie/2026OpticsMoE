@@ -106,6 +106,7 @@ class Settings:
     detector_pool_kernel: int = 4
     detector_layernorm_eps: float = 1e-5
     detector_layernorm_affine: bool = False
+    detector_layernorm_scope: str = "per_token"
     detector_nonlinearity: str = "relu"
     loss_hidden_weight: float = 1.0
     loss_answer_weight: float = 1.0
@@ -186,6 +187,8 @@ class Settings:
             raise ValueError("Detector pooling must map 480x480 to 120x120")
         if self.detector_layernorm_affine:
             raise ValueError("Post-detector LayerNorm must be non-affine")
+        if self.detector_layernorm_scope not in {"per_token", "full_field"}:
+            raise ValueError("detector layernorm scope must be per_token or full_field")
         if self.interlayer_hard_route_mask and not self.interlayer_per_expert_enabled:
             raise ValueError("hard routing requires per-expert normalization")
         if self.interlayer_reapply_routing_weights and not self.interlayer_per_expert_enabled:
@@ -321,6 +324,7 @@ NESTED_FIELDS: dict[tuple[str, ...], str] = {
     ("moe", "final_detector_readout", "pool_kernel"): "detector_pool_kernel",
     ("moe", "final_detector_readout", "layernorm_eps"): "detector_layernorm_eps",
     ("moe", "final_detector_readout", "layernorm_affine"): "detector_layernorm_affine",
+    ("moe", "final_detector_readout", "layernorm_scope"): "detector_layernorm_scope",
     ("moe", "final_detector_readout", "nonlinearity"): "detector_nonlinearity",
     ("classification_head", "type"): "head_type", ("classification_head", "threshold"): "classification_threshold",
     ("loss", "vision_hidden_weight"): "loss_hidden_weight", ("loss", "answer_hidden_weight"): "loss_answer_weight",

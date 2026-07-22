@@ -61,7 +61,9 @@ class FullPlaneReadout(nn.Module):
     def __init__(self, settings: Any) -> None:
         super().__init__(); size = settings.canvas_size // settings.detector_pool_kernel
         self.pool = nn.AvgPool2d(settings.detector_pool_kernel, settings.detector_pool_kernel)
-        self.norm = nn.LayerNorm((size, size), eps=settings.detector_layernorm_eps, elementwise_affine=False)
+        self.layernorm_scope = settings.detector_layernorm_scope
+        normalized_shape = size if self.layernorm_scope == "per_token" else (size, size)
+        self.norm = nn.LayerNorm(normalized_shape, eps=settings.detector_layernorm_eps, elementwise_affine=False)
         self.nonlinearity = settings.detector_nonlinearity
 
     def forward(self, field: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
