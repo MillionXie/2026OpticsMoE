@@ -1,0 +1,11 @@
+torch
+transformers
+pillow
+numpy
+pandas
+openpyxl
+xlrd
+matplotlib
+tqdm
+huggingface_hub
+gdown

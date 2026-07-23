@@ -1,0 +1,43 @@
+{
+  "base_config": "spaq_mos.json",
+  "experiment": {
+    "name": "qwen3_vl_2b_spaq_mos_multimodal_electronic_router_moe9_smoke",
+    "output_dir": "../runs/qwen3_vl_2b_spaq_mos_multimodal_electronic_router_moe9_smoke"
+  },
+  "dataset": {
+    "train_image_limit": 8,
+    "test_image_limit": 4,
+    "train_samples_per_epoch": 8
+  },
+  "batching": {
+    "feature_batch_size": 1,
+    "student_batch_size": 1,
+    "inference_batch_size": 1,
+    "head_batch_size": 4,
+    "num_workers": 0
+  },
+  "teacher_cache": {
+    "shard_size": 4,
+    "lru_shards": 2,
+    "log_interval_batches": 1
+  },
+  "training": {
+    "epochs": 1,
+    "logging": {
+      "interval_batches": 1
+    },
+    "checkpoint_interval_epochs": 1
+  },
+  "regularization": {
+    "phase_dropout": {
+      "enabled": false,
+      "mode": "none",
+      "p": 0.0,
+      "start_epoch": 0
+    }
+  },
+  "visualization": {
+    "interval_epochs": 1,
+    "sample_count": 1
+  }
+}

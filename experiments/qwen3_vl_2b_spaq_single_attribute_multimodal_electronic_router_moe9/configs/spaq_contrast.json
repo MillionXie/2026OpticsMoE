@@ -1,0 +1,13 @@
+{
+  "base_config": "spaq_mos.json",
+  "experiment": {
+    "name": "qwen3_vl_2b_spaq_contrast_multimodal_electronic_router_moe9",
+    "output_dir": "../runs/qwen3_vl_2b_spaq_contrast_multimodal_electronic_router_moe9"
+  },
+  "dataset": {
+    "task_name": "Contrast"
+  },
+  "qwen": {
+    "classification_prompt": "Predict the human-rated contrast of this image on a 0-100 scale. Score:"
+  }
+}

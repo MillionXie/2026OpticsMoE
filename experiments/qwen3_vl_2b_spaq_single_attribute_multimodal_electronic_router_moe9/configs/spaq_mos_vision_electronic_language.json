@@ -1,0 +1,10 @@
+{
+  "base_config": "spaq_mos.json",
+  "experiment": {
+    "name": "qwen3_vl_2b_spaq_mos_vision_moe_electronic_language",
+    "output_dir": "../runs/qwen3_vl_2b_spaq_mos_vision_moe_electronic_language"
+  },
+  "student": {
+    "language_stack_mode": "electronic"
+  }
+}
