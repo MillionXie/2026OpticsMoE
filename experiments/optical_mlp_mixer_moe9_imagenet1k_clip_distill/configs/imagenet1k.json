@@ -1,0 +1,152 @@
+{
+  "dataset": {
+    "name": "imagenet1k",
+    "root": "data/imagenet1k",
+    "train_split": "train",
+    "validation_split": "val",
+    "strict_standard_counts": true,
+    "expected_train_samples": 1281167,
+    "expected_validation_samples": 50000,
+    "train_limit": null,
+    "validation_limit": null,
+    "seed": 42
+  },
+  "model": {
+    "name": "OpticalMixerMoE9",
+    "image_size": 224,
+    "patch_size": 16,
+    "token_count": 196,
+    "hidden_size": 224,
+    "num_blocks": 7,
+    "token_stages_per_block": 2,
+    "channel_stages_per_block": 3,
+    "phase_layers_per_block": 5,
+    "clip_projection_dim": 512,
+    "num_classes": 1000,
+    "residual_scale": 1.0,
+    "residual_scale_trainable": false,
+    "final_layernorm_eps": 0.00001,
+    "detector_layernorm_eps": 0.00001
+  },
+  "geometry": {
+    "canvas_size": 792,
+    "active_size": 762,
+    "num_experts": 9,
+    "expert_size": 224,
+    "expert_pitch": 254,
+    "outer_padding_per_side": 15
+  },
+  "router": {
+    "top_k": 3,
+    "pool_size": 14,
+    "temperature": 1.0,
+    "input_layernorm_enabled": true,
+    "input_layernorm_eps": 0.00001,
+    "amplitude_weight_domain": "amplitude",
+    "amplitude_input_normalization": "none",
+    "balance_weight": 0.03,
+    "importance_weight": 0.0
+  },
+  "optics": {
+    "wavelength_nm": 532.0,
+    "pixel_pitch_um": 16.0,
+    "inter_layer_distance_m": 0.1,
+    "readout_to_global_distance_m": 0.1,
+    "global_to_detector_distance_m": 0.1,
+    "phase_parameterization": "sigmoid",
+    "phase_init": "zeros",
+    "phase_init_std": 0.02,
+    "amplitude_mask_enabled": false,
+    "k_space_constraint_enabled": false,
+    "theta_max_deg": 1.0
+  },
+  "oeo": {
+    "enabled": true,
+    "per_expert_enabled": true,
+    "elementwise_affine": false,
+    "hard_route_mask": true,
+    "reapply_routing_weights": true,
+    "layernorm_eps": 0.00001,
+    "nonlinearity": "relu"
+  },
+  "phase_dropout": {
+    "enabled": false,
+    "mode": "none",
+    "p": 0.0,
+    "block_size": 8,
+    "batch_shared": true,
+    "start_epoch": 0
+  },
+  "clip": {
+    "model_name": "ViT-B/16",
+    "cache_dir": null,
+    "local_clip_repository": "CLIP",
+    "views_per_train_image": 4,
+    "cache_dtype": "float16",
+    "cache_batch_size": 256,
+    "train_transform_version": "rrc_flip_randaugment_v1",
+    "random_resized_crop_scale": [0.08, 1.0],
+    "random_resized_crop_ratio": [0.75, 1.3333333333333333],
+    "horizontal_flip_probability": 0.5,
+    "randaugment_enabled": true,
+    "randaugment_num_ops": 2,
+    "randaugment_magnitude": 9,
+    "text_prompt_templates": [
+      "a photo of a {}.",
+      "a blurry photo of a {}.",
+      "a bright photo of a {}.",
+      "a dark photo of a {}.",
+      "a close-up photo of a {}.",
+      "a cropped photo of a {}.",
+      "a photo of the {}."
+    ],
+    "logit_temperature": 1.0
+  },
+  "loss": {
+    "feature_cosine_weight": 1.0,
+    "clip_logit_kd_weight": 1.0,
+    "supervised_ce_weight": 0.5,
+    "distill_temperature": 2.0
+  },
+  "optimizer": {
+    "name": "adamw",
+    "learning_rate": 0.0005,
+    "router_learning_rate": 0.0005,
+    "weight_decay": 0.0,
+    "betas": [0.9, 0.999],
+    "eps": 1e-8,
+    "gradient_clip_norm": 1.0,
+    "scheduler": "cosine",
+    "warmup_epochs": 10,
+    "minimum_learning_rate": 1e-6
+  },
+  "training": {
+    "output_dir": "runs/optical_mlp_mixer_moe9_imagenet1k_clip_distill",
+    "device": "cuda",
+    "epochs": 90,
+    "batch_size": 4,
+    "validation_batch_size": 4,
+    "num_workers": 8,
+    "persistent_workers": true,
+    "pin_memory": true,
+    "prefetch_factor": 2,
+    "log_interval_batches": 100,
+    "validation_interval_epochs": 1,
+    "checkpoint_interval_epochs": 5,
+    "resume_checkpoint": null,
+    "seed": 42,
+    "progress": true,
+    "amp_enabled": false
+  },
+  "visualization": {
+    "enabled": true,
+    "interval_epochs": 10,
+    "sample_count": 4,
+    "capture_block_indices": [0, 3, 6],
+    "save_raw_tensors": true,
+    "percentile_clip": 99.0,
+    "save_phase_overview": true,
+    "save_router_charts": true,
+    "save_training_curves": true
+  }
+}

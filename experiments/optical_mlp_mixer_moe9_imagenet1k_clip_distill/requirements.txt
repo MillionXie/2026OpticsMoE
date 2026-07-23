@@ -1,0 +1,9 @@
+numpy
+Pillow
+matplotlib
+torch
+torchvision
+tqdm
+
+# Install the repository-local official OpenAI CLIP package once:
+# pip install -e CLIP
