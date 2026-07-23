@@ -1,9 +1,14 @@
 {
   "dataset": {
     "name": "imagenet1k",
+    "source": "huggingface",
     "root": "data/imagenet1k",
     "train_split": "train",
-    "validation_split": "val",
+    "validation_split": "validation",
+    "download": true,
+    "hf_dataset_id": "ILSVRC/imagenet-1k",
+    "hf_revision": "main",
+    "hf_cache_dir": "data/imagenet1k/huggingface_cache",
     "strict_standard_counts": false,
     "expected_train_samples": 1281167,
     "expected_validation_samples": 50000,

@@ -3,7 +3,18 @@
 Run these commands from the repository root. Commands intentionally do not use
 line-continuation backslashes.
 
-## Check data
+## One-time ImageNet authorization
+
+Open `https://huggingface.co/datasets/ILSVRC/imagenet-1k`, accept its access
+conditions, create a read token, then authenticate the server account:
+
+```bash
+hf auth login
+```
+
+Do not put the token in a JSON config or Git.
+
+## Download/reuse and validate data
 
 ```bash
 python -m experiments.optical_mlp_mixer_moe9_imagenet1k_clip_distill --config experiments/optical_mlp_mixer_moe9_imagenet1k_clip_distill/configs/imagenet1k.json --phase prepare_data

@@ -4,6 +4,9 @@ matplotlib
 torch
 torchvision
 tqdm
+datasets
+huggingface_hub
+hf_xet
 
 # Install the repository-local official OpenAI CLIP package once:
 # pip install -e CLIP

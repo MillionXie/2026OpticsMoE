@@ -11,7 +11,7 @@ import torch
 from torch.utils.data import DataLoader, Dataset
 
 from .clip_teacher import FrozenClipTeacher, save_text_prototypes
-from .datasets import CLIP_MEAN, CLIP_STD, ImageNetBundle, ImageNetViewDataset
+from .datasets import CLIP_MEAN, CLIP_STD, ImageNetBundle
 from .settings import ExperimentSettings
 
 
@@ -24,7 +24,7 @@ def cache_directory(settings: ExperimentSettings) -> Path:
 
 def expected_cache_metadata(
     split: str,
-    dataset: ImageNetViewDataset,
+    dataset,
     bundle: ImageNetBundle,
     settings: ExperimentSettings,
 ) -> dict[str, Any]:
@@ -37,7 +37,19 @@ def expected_cache_metadata(
     return {
         "cache_schema_version": CACHE_SCHEMA_VERSION,
         "dataset": settings.dataset.name,
+        "dataset_source": settings.dataset.source,
         "data_root": str(settings.dataset.root),
+        "hf_dataset_id": (
+            settings.dataset.hf_dataset_id
+            if settings.dataset.source == "huggingface"
+            else None
+        ),
+        "hf_revision": (
+            settings.dataset.hf_revision
+            if settings.dataset.source == "huggingface"
+            else None
+        ),
+        "source_fingerprint": getattr(dataset, "fingerprint", None),
         "dataset_digest": bundle.digest,
         "split": split,
         "base_samples": dataset.base_sample_count,
@@ -202,7 +214,7 @@ def build_clip_cache(
 
 
 class _PendingCompositeDataset(Dataset):
-    def __init__(self, dataset: ImageNetViewDataset, indices: list[int]) -> None:
+    def __init__(self, dataset, indices: list[int]) -> None:
         self.dataset = dataset
         self.indices = indices
 
@@ -217,7 +229,7 @@ class ClipFeatureStore:
     def __init__(
         self,
         split: str,
-        dataset: ImageNetViewDataset,
+        dataset,
         bundle: ImageNetBundle,
         settings: ExperimentSettings,
     ) -> None:
@@ -247,7 +259,7 @@ class ClipFeatureStore:
 
 
 class DistillationViewDataset(Dataset):
-    def __init__(self, base: ImageNetViewDataset, store: ClipFeatureStore) -> None:
+    def __init__(self, base, store: ClipFeatureStore) -> None:
         self.base = base
         self.store = store
 

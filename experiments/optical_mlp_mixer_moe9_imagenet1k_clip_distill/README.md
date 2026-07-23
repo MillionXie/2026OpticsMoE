@@ -151,24 +151,41 @@ resume; the 90-epoch checkpoint is not an architectural limit.
 `weight_decay` is validated to be exactly zero to avoid applying AdamW decay to
 raw phase parameters.
 
-## ImageNet directory
+## ImageNet authorization and automatic preparation
 
-ImageNet-1K is license-gated and is not silently replaced or automatically
-downloaded. Prepare:
+ImageNet-1K is gated. The formal and smoke configs use the official
+`ILSVRC/imagenet-1k` Hugging Face dataset directly; they do not make a second
+ImageFolder copy. Complete these one-time authorization steps:
+
+1. Sign in at `https://huggingface.co/datasets/ILSVRC/imagenet-1k`.
+2. Review and accept the ImageNet access conditions.
+3. Create a read token in the same Hugging Face account.
+4. Run `hf auth login` as the server user and enter that token.
+
+After authorization, `--phase prepare_data` downloads/reuses the train and
+validation parquet shards automatically under:
 
 ```text
-data/imagenet1k/
-  train/
-    n01440764/
-    ...
-  val/
-    n01440764/
-    ...
+data/imagenet1k/huggingface_cache/
 ```
 
-The formal config requires 1,281,167 train images, 50,000 validation images,
-and 1,000 class folders. The smoke config still requires a valid ImageFolder
-layout but limits the number of loaded images.
+The token is read from the Hugging Face credential store; it is never written
+to `config_resolved.json`, cache metadata, checkpoints, or Git.
+
+The formal config validates 1,281,167 train images, 50,000 validation images,
+and 1,000 labels. The complete upstream repository is about 167 GB, and the
+cache plus temporary download state requires additional free space. On the
+laboratory server this cache belongs under `/DATA`, not the nearly full home
+filesystem.
+
+For an already extracted private ImageFolder copy, set
+`dataset.source="imagefolder"`, change `validation_split` to `val`, and point
+`dataset.root` at:
+
+```text
+root/train/<synset>/*.JPEG
+root/val/<synset>/*.JPEG
+```
 
 The OpenAI CLIP checkpoint may download automatically. Set `clip.cache_dir` to
 an existing cache for offline operation.
@@ -176,7 +193,7 @@ an existing cache for offline operation.
 ## Phases
 
 ```text
-prepare_data  Validate ImageNet and write dataset/config/environment reports
+prepare_data  Authorized download/reuse plus ImageNet validation and reports
 clip_cache    Cache exact-view frozen CLIP features and text prototypes
 train         Train all seven OpticalMixerMoE9 blocks
 evaluate      Load best.pt and evaluate ImageNet validation once

@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 import math
 import random
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterator
+from typing import Any, Iterator
 
 import torch
 from torch.utils.data import Dataset, Sampler
@@ -125,6 +126,9 @@ class ImageNetViewDataset(Dataset):
                 raise ValueError("Dataset limit must be positive")
             base_indices = _stratified_limit(folder.targets, min(limit, len(folder)), settings.dataset.seed)
         self.directory = directory
+        self.dataset_source = "imagefolder"
+        self.fingerprint: str | None = None
+        self.source_split = directory.name
         self.loader = folder.loader
         self.classes = list(folder.classes)
         self.class_to_idx = dict(folder.class_to_idx)
@@ -157,6 +161,118 @@ class ImageNetViewDataset(Dataset):
             "image": tensor,
             "label": int(label),
             "sample_index": sample_index,
+            "view_index": view_index,
+            "path": path,
+            "view_seed": seed,
+        }
+
+
+class HuggingFaceImageNetViewDataset(Dataset):
+    """Deterministic views backed directly by the gated HF ImageNet parquet data.
+
+    No second ImageFolder copy is materialized: the Hugging Face cache owns the
+    downloaded image bytes and records are decoded to PIL images on demand.
+    """
+
+    def __init__(
+        self,
+        raw_dataset: Any,
+        settings: ExperimentSettings,
+        *,
+        split: str,
+        train: bool,
+        limit: int | None,
+        expected_classes: list[str] | None = None,
+    ) -> None:
+        features = getattr(raw_dataset, "features", None)
+        label_feature = features.get("label") if features is not None else None
+        names = list(getattr(label_feature, "names", []) or [])
+        if len(names) != settings.model.num_classes:
+            raise RuntimeError(
+                "Hugging Face ImageNet label metadata is invalid: expected "
+                f"{settings.model.num_classes} ClassLabel names, found {len(names)}. "
+                "Refusing to guess the label order."
+            )
+        if expected_classes is not None and names != expected_classes:
+            raise RuntimeError("Hugging Face train/validation label order differs")
+        full_targets = [int(value) for value in raw_dataset["label"]]
+        base_indices = list(range(len(full_targets)))
+        if limit is not None:
+            if limit <= 0:
+                raise ValueError("Dataset limit must be positive")
+            selected = _stratified_limit(
+                full_targets,
+                min(limit, len(full_targets)),
+                settings.dataset.seed,
+            )
+            base_indices = selected
+        self.raw_dataset = raw_dataset
+        self.raw_sample_count = len(full_targets)
+        self.base_indices = base_indices
+        self.targets = [full_targets[index] for index in base_indices]
+        self.classes = names
+        self.class_to_idx = {name: index for index, name in enumerate(names)}
+        self.train = bool(train)
+        self.views = settings.clip.views_per_train_image if train else 1
+        self.base_seed = int(settings.dataset.seed)
+        self.transform = DeterministicImageTransform(settings, train=train)
+        self.dataset_source = "huggingface"
+        self.dataset_id = settings.dataset.hf_dataset_id
+        self.revision = settings.dataset.hf_revision
+        self.source_split = str(split)
+        self.directory = settings.dataset.root
+        self.fingerprint = str(getattr(raw_dataset, "_fingerprint", "unknown"))
+
+    @property
+    def base_sample_count(self) -> int:
+        return len(self.base_indices)
+
+    def __len__(self) -> int:
+        return self.base_sample_count * self.views
+
+    def decode_index(self, composite_index: int) -> tuple[int, int]:
+        if composite_index < 0 or composite_index >= len(self):
+            raise IndexError(composite_index)
+        return composite_index // self.views, composite_index % self.views
+
+    @staticmethod
+    def _decode_image(value: Any):
+        if hasattr(value, "convert"):
+            return value
+        if isinstance(value, dict):
+            try:
+                from PIL import Image
+            except Exception as error:
+                raise RuntimeError("Pillow is required to decode ImageNet images") from error
+            if value.get("bytes") is not None:
+                return Image.open(io.BytesIO(value["bytes"]))
+            if value.get("path"):
+                return Image.open(value["path"])
+        raise RuntimeError(
+            f"Unsupported Hugging Face ImageNet image value: {type(value).__name__}"
+        )
+
+    def __getitem__(self, composite_index: int) -> dict:
+        sample_index, view_index = self.decode_index(int(composite_index))
+        source_index = self.base_indices[sample_index]
+        record = self.raw_dataset[source_index]
+        label = int(record["label"])
+        if label != self.targets[sample_index]:
+            raise RuntimeError(
+                f"Hugging Face label changed at source sample {source_index}"
+            )
+        image = self._decode_image(record["image"])
+        filename = str(getattr(image, "filename", "") or "")
+        path = filename or (
+            f"hf://{self.dataset_id}/{self.source_split}/{source_index:08d}"
+        )
+        seed = view_seed(self.base_seed, sample_index, view_index)
+        tensor = self.transform(image, seed)
+        return {
+            "image": tensor,
+            "label": label,
+            "sample_index": sample_index,
+            "source_sample_index": source_index,
             "view_index": view_index,
             "path": path,
             "view_seed": seed,
@@ -217,8 +333,8 @@ class EpochViewSampler(Sampler[int]):
 
 @dataclass
 class ImageNetBundle:
-    train: ImageNetViewDataset
-    validation: ImageNetViewDataset
+    train: ImageNetViewDataset | HuggingFaceImageNetViewDataset
+    validation: ImageNetViewDataset | HuggingFaceImageNetViewDataset
     class_names: list[str]
     folder_classes: list[str]
     digest: str
@@ -226,19 +342,40 @@ class ImageNetBundle:
 
 def load_imagenet(settings: ExperimentSettings) -> ImageNetBundle:
     root = settings.dataset.root
-    train = ImageNetViewDataset(
-        root / settings.dataset.train_split,
-        settings,
-        train=True,
-        limit=settings.dataset.train_limit,
-    )
-    validation = ImageNetViewDataset(
-        root / settings.dataset.validation_split,
-        settings,
-        train=False,
-        limit=settings.dataset.validation_limit,
-        expected_classes=train.classes,
-    )
+    if settings.dataset.source == "huggingface":
+        raw_train = _load_huggingface_split(settings, settings.dataset.train_split)
+        train = HuggingFaceImageNetViewDataset(
+            raw_train,
+            settings,
+            split=settings.dataset.train_split,
+            train=True,
+            limit=settings.dataset.train_limit,
+        )
+        raw_validation = _load_huggingface_split(
+            settings, settings.dataset.validation_split
+        )
+        validation = HuggingFaceImageNetViewDataset(
+            raw_validation,
+            settings,
+            split=settings.dataset.validation_split,
+            train=False,
+            limit=settings.dataset.validation_limit,
+            expected_classes=train.classes,
+        )
+    else:
+        train = ImageNetViewDataset(
+            root / settings.dataset.train_split,
+            settings,
+            train=True,
+            limit=settings.dataset.train_limit,
+        )
+        validation = ImageNetViewDataset(
+            root / settings.dataset.validation_split,
+            settings,
+            train=False,
+            limit=settings.dataset.validation_limit,
+            expected_classes=train.classes,
+        )
     if settings.dataset.strict_standard_counts and settings.dataset.train_limit is None:
         if train.base_sample_count != settings.dataset.expected_train_samples:
             raise RuntimeError(
@@ -283,12 +420,27 @@ def dataset_digest(train: ImageNetViewDataset, validation: ImageNetViewDataset) 
     digest.update(b"imagenet1k-optical-mixer-dataset-v1\n")
     for split, dataset in (("train", train), ("validation", validation)):
         digest.update(f"{split}:{dataset.base_sample_count}:{dataset.views}\n".encode())
-        for path, target in dataset.samples:
-            try:
-                relative = Path(path).resolve().relative_to(dataset.directory.resolve())
-            except ValueError:
-                relative = Path(path).name
-            digest.update(f"{relative.as_posix()}:{target}\n".encode())
+        if dataset.dataset_source == "huggingface":
+            digest.update(
+                (
+                    f"{dataset.dataset_id}:{dataset.revision}:"
+                    f"{dataset.source_split}:{dataset.fingerprint}\n"
+                ).encode()
+            )
+            if dataset.base_sample_count != dataset.raw_sample_count:
+                for source_index, target in zip(
+                    dataset.base_indices, dataset.targets
+                ):
+                    digest.update(f"{source_index}:{target}\n".encode())
+        else:
+            for path, target in dataset.samples:
+                try:
+                    relative = Path(path).resolve().relative_to(
+                        dataset.directory.resolve()
+                    )
+                except ValueError:
+                    relative = Path(path).name
+                digest.update(f"{relative.as_posix()}:{target}\n".encode())
     return digest.hexdigest()
 
 
@@ -299,7 +451,28 @@ def dataset_report(bundle: ImageNetBundle, settings: ExperimentSettings) -> dict
 
     return {
         "dataset": "imagenet1k",
+        "source": settings.dataset.source,
         "data_root": str(settings.dataset.root),
+        "download": settings.dataset.download,
+        "hf_dataset_id": (
+            settings.dataset.hf_dataset_id
+            if settings.dataset.source == "huggingface"
+            else None
+        ),
+        "hf_revision": (
+            settings.dataset.hf_revision
+            if settings.dataset.source == "huggingface"
+            else None
+        ),
+        "hf_cache_dir": (
+            str(settings.dataset.hf_cache_dir)
+            if settings.dataset.source == "huggingface"
+            else None
+        ),
+        "train_source_fingerprint": getattr(bundle.train, "fingerprint", None),
+        "validation_source_fingerprint": getattr(
+            bundle.validation, "fingerprint", None
+        ),
         "dataset_digest": bundle.digest,
         "train_samples": bundle.train.base_sample_count,
         "validation_samples": bundle.validation.base_sample_count,
@@ -347,6 +520,49 @@ def _stratified_limit(targets: list[int], limit: int, seed: int) -> list[int]:
             result.extend(remaining[: limit - len(result)])
             break
     return sorted(result[:limit])
+
+
+def _load_huggingface_split(settings: ExperimentSettings, split: str):
+    try:
+        from datasets import DownloadConfig, load_dataset
+        from huggingface_hub import get_token
+    except Exception as error:
+        raise RuntimeError(
+            "The Hugging Face ImageNet backend requires `datasets`, "
+            "`huggingface_hub`, and `hf_xet`."
+        ) from error
+    token = get_token()
+    if not token:
+        raise RuntimeError(
+            "ImageNet-1K authorization is missing. First accept the terms at "
+            "https://huggingface.co/datasets/ILSVRC/imagenet-1k, then run "
+            "`hf auth login` in this server account. The token is read from the "
+            "Hugging Face credential store and is never written to experiment JSON."
+        )
+    cache_dir = settings.dataset.hf_cache_dir
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    download_config = DownloadConfig(
+        cache_dir=str(cache_dir / "downloads"),
+        local_files_only=not settings.dataset.download,
+    )
+    try:
+        return load_dataset(
+            settings.dataset.hf_dataset_id,
+            split=split,
+            revision=settings.dataset.hf_revision,
+            cache_dir=str(cache_dir),
+            token=token,
+            download_config=download_config,
+        )
+    except Exception as error:
+        mode = "download/reuse" if settings.dataset.download else "offline reuse"
+        raise RuntimeError(
+            f"Could not {mode} gated ImageNet split {split!r} from "
+            f"{settings.dataset.hf_dataset_id}@{settings.dataset.hf_revision}. "
+            "Confirm that the same Hugging Face account accepted the ImageNet "
+            "terms and that its read token is active. Cache directory: "
+            f"{cache_dir}. Original error: {type(error).__name__}: {error}"
+        ) from error
 
 
 def denormalize_clip_image(tensor: torch.Tensor) -> torch.Tensor:

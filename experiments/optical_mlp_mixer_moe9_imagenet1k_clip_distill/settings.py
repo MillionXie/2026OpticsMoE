@@ -19,9 +19,14 @@ def _path(value: str | Path | None) -> Path | None:
 @dataclass
 class DatasetSettings:
     name: str = "imagenet1k"
+    source: str = "huggingface"
     root: Path = PROJECT_DIR / "data" / "imagenet1k"
     train_split: str = "train"
-    validation_split: str = "val"
+    validation_split: str = "validation"
+    download: bool = True
+    hf_dataset_id: str = "ILSVRC/imagenet-1k"
+    hf_revision: str = "main"
+    hf_cache_dir: Path = PROJECT_DIR / "data" / "imagenet1k" / "huggingface_cache"
     strict_standard_counts: bool = True
     expected_train_samples: int = 1_281_167
     expected_validation_samples: int = 50_000
@@ -209,6 +214,13 @@ class ExperimentSettings:
     def validate(self) -> None:
         if self.dataset.name != "imagenet1k":
             raise ValueError("This experiment only supports dataset='imagenet1k'")
+        if self.dataset.source not in {"huggingface", "imagefolder"}:
+            raise ValueError("dataset.source must be 'huggingface' or 'imagefolder'")
+        if self.dataset.source == "huggingface":
+            if not self.dataset.hf_dataset_id.strip():
+                raise ValueError("dataset.hf_dataset_id cannot be empty")
+            if not self.dataset.hf_revision.strip():
+                raise ValueError("dataset.hf_revision cannot be empty")
         if self.model.name != "OpticalMixerMoE9":
             raise ValueError("Only OpticalMixerMoE9 is implemented in this experiment")
         if self.model.image_size % self.model.patch_size:
@@ -315,6 +327,8 @@ def load_settings(path: str | Path) -> ExperimentSettings:
     clip = dict(raw.get("clip", {}))
     if "root" in dataset:
         dataset["root"] = _path(dataset["root"])
+    if "hf_cache_dir" in dataset:
+        dataset["hf_cache_dir"] = _path(dataset["hf_cache_dir"])
     if "output_dir" in training:
         training["output_dir"] = _path(training["output_dir"])
     if training.get("resume_checkpoint") is not None:

@@ -6,9 +6,11 @@ from pathlib import Path
 
 import pytest
 import torch
+from PIL import Image
 
 from experiments.optical_mlp_mixer_moe9_imagenet1k_clip_distill.datasets import (
     EpochViewSampler,
+    HuggingFaceImageNetViewDataset,
     view_seed,
 )
 from experiments.optical_mlp_mixer_moe9_imagenet1k_clip_distill.optics.geometry import (
@@ -52,6 +54,10 @@ def tiny_settings() -> ExperimentSettings:
 def test_formal_config_and_parameter_formula() -> None:
     settings = load_settings(ROOT / "configs" / "imagenet1k.json")
     assert settings.model.name == "OpticalMixerMoE9"
+    assert settings.dataset.source == "huggingface"
+    assert settings.dataset.download is True
+    assert settings.dataset.hf_dataset_id == "ILSVRC/imagenet-1k"
+    assert settings.dataset.validation_split == "validation"
     assert settings.model.num_blocks == 7
     assert settings.training.epochs == 90
     assert settings.optimizer.name == "adamw"
@@ -158,6 +164,47 @@ def test_epoch_sampler_covers_every_base_image_and_cycles_views() -> None:
     assert all((b % 4) == ((a % 4) + 1) % 4 for a, b in zip(first, second))
     assert view_seed(42, 3, 1) == view_seed(42, 3, 1)
     assert view_seed(42, 3, 1) != view_seed(42, 3, 2)
+
+
+def test_huggingface_backend_preserves_labels_and_returns_deterministic_view() -> None:
+    class FakeLabelFeature:
+        names = ["zero", "one", "two", "three"]
+
+    class FakeDataset:
+        features = {"label": FakeLabelFeature()}
+        _fingerprint = "fake-imagenet-fingerprint"
+
+        def __init__(self) -> None:
+            self.records = [
+                {"image": Image.new("RGB", (8, 8), color=(index * 30, 10, 20)), "label": index}
+                for index in range(4)
+            ]
+
+        def __len__(self) -> int:
+            return len(self.records)
+
+        def __getitem__(self, index):
+            if index == "label":
+                return [item["label"] for item in self.records]
+            return self.records[index]
+
+    settings = tiny_settings()
+    settings.model.num_classes = 4
+    dataset = HuggingFaceImageNetViewDataset(
+        FakeDataset(),
+        settings,
+        split="validation",
+        train=False,
+        limit=None,
+    )
+    first = dataset[0]
+    second = dataset[0]
+    assert dataset.base_sample_count == 4
+    assert dataset.classes == ["zero", "one", "two", "three"]
+    assert first["image"].shape == (3, 4, 4)
+    assert first["label"] == 0
+    assert first["path"].startswith("hf://ILSVRC/imagenet-1k/validation/")
+    assert torch.equal(first["image"], second["image"])
 
 
 def test_config_json_is_pretty_and_only_requested_model_exists() -> None:
