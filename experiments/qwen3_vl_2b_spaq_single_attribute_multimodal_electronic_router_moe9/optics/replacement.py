@@ -363,6 +363,14 @@ class DeepStackMultimodalReplacement:
             if self.language_pre_attention is not None:
                 yield from self.language_pre_attention.parameters()
 
+    def attention_parameters(self) -> Iterable[nn.Parameter]:
+        if not self.native_pre_attention_trainable:
+            return
+        if self.vision_pre_attention is not None:
+            yield from self.vision_pre_attention.parameters()
+        if self.language_pre_attention is not None:
+            yield from self.language_pre_attention.parameters()
+
     def configure_student_trainability(self) -> None:
         self.vision_surrogate.requires_grad_(True)
         if self.language_mode == "optical_moe":

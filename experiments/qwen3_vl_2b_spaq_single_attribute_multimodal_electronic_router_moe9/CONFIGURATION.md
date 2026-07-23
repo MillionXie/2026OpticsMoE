@@ -23,6 +23,18 @@ Important switches:
 - `native_pre_attention_trainable=false`: freeze the prelude.
 - `residual_enabled=true`: fixed Transformer-style identity residual with coefficient 1.
 
+Trainable attention uses its own optimizer group:
+
+```json
+"optimizer": {
+  "learning_rate": 0.008,
+  "attention_learning_rate": 0.0001,
+  "student_head_learning_rate": 0.001
+}
+```
+
+The lower default avoids applying the comparatively aggressive optical-mask learning rate to newly initialized Qwen attention projections.
+
 Physical router:
 
 ```json

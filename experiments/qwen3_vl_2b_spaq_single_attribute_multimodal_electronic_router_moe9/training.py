@@ -147,12 +147,25 @@ def train_student(model: nn.Module, replacement: Any, head: nn.Module, train_dat
     if settings.student_language_mode == "optical_moe":
         routers += list(replacement.language_surrogate.core.router.parameters())
     router_ids = {id(parameter) for parameter in routers}
-    main = [parameter for parameter in replacement.trainable_parameters() if id(parameter) not in router_ids]
+    attention = list(replacement.attention_parameters())
+    attention_ids = {id(parameter) for parameter in attention}
+    main = [
+        parameter for parameter in replacement.trainable_parameters()
+        if id(parameter) not in router_ids and id(parameter) not in attention_ids
+    ]
     optimizer_cls = torch.optim.AdamW if settings.optimizer_type == "adamw" else torch.optim.Adam
-    optimizer = optimizer_cls([{"params": main, "lr": settings.learning_rate, "group_name": "optical"},
-                               {"params": head.parameters(), "lr": settings.student_head_learning_rate, "group_name": "head"},
-                               {"params": routers, "lr": settings.router_learning_rate, "group_name": "routers"}],
-                              weight_decay=settings.weight_decay)
+    parameter_groups = [
+        {"params": main, "lr": settings.learning_rate, "group_name": "optical"},
+        {"params": head.parameters(), "lr": settings.student_head_learning_rate, "group_name": "head"},
+        {"params": routers, "lr": settings.router_learning_rate, "group_name": "routers"},
+    ]
+    if attention:
+        parameter_groups.append({
+            "params": attention,
+            "lr": settings.attention_learning_rate,
+            "group_name": "attention",
+        })
+    optimizer = optimizer_cls(parameter_groups, weight_decay=settings.weight_decay)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=settings.epochs) if settings.scheduler_type == "cosine" else None
     history = []; best = float("-inf") if settings.student_selection_metric != "mae" else float("inf")
     for epoch in range(1, settings.epochs + 1):

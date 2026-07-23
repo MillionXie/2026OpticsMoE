@@ -85,6 +85,7 @@ class Settings:
     router_pool_size: int = 10
     router_temperature: float = 1.0
     router_learning_rate: float = 1e-3
+    attention_learning_rate: float = 1e-4
     router_input_layernorm_enabled: bool = True
     router_input_layernorm_eps: float = 1e-5
     router_implementation: str = "electronic_amplitude_topk"
@@ -201,6 +202,8 @@ class Settings:
             raise ValueError("router.input_layernorm_eps must be positive")
         if self.router_learning_rate <= 0:
             raise ValueError("router.learning_rate must be positive")
+        if self.attention_learning_rate <= 0:
+            raise ValueError("optimizer.attention_learning_rate must be positive")
         if self.router_implementation != "electronic_amplitude_topk":
             raise ValueError("This experiment requires router.implementation='electronic_amplitude_topk'")
         if self.amplitude_slm_weight_domain not in {"amplitude", "power"}:
@@ -368,6 +371,7 @@ NESTED_FIELDS: dict[tuple[str, ...], str] = {
     ("loss", "router_balance_weight"): "router_balance_weight",
     ("loss", "router_importance_weight"): "router_importance_weight",
     ("optimizer", "type"): "optimizer_type", ("optimizer", "learning_rate"): "learning_rate",
+    ("optimizer", "attention_learning_rate"): "attention_learning_rate",
     ("optimizer", "student_head_learning_rate"): "student_head_learning_rate",
     ("optimizer", "weight_decay"): "weight_decay", ("optimizer", "scheduler"): "scheduler_type",
     ("training", "epochs"): "epochs", ("training", "logging", "interval_batches"): "log_interval_batches",

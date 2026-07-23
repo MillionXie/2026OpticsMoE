@@ -72,6 +72,7 @@ def test_all_four_single_attribute_configs(filename: str, task: str) -> None:
     assert settings.native_pre_attention_enabled
     assert settings.native_pre_attention_trainable
     assert not settings.native_pre_attention_initialize_from_teacher
+    assert settings.attention_learning_rate == pytest.approx(1e-4)
     assert settings.transformer_residual_enabled
     assert settings.router_implementation == "electronic_amplitude_topk"
     assert settings.amplitude_phase_relay == "ideal_4f_identity"
