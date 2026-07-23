@@ -13,6 +13,30 @@ import numpy as np
 import torch
 
 
+def configure_cpu_runtime(cpu_threads: int, cpu_interop_threads: int) -> dict[str, int]:
+    """Bound PyTorch CPU pools used by cached-tensor collation and metrics.
+
+    Student training intentionally keeps its cache-backed DataLoader in the
+    main process: spawning workers would duplicate the multi-gigabyte shard
+    LRU.  Explicit thread limits prevent tiny CPU tensor operations from
+    waking every core on large servers.
+    """
+    torch.set_num_threads(int(cpu_threads))
+    requested_interop = int(cpu_interop_threads)
+    try:
+        torch.set_num_interop_threads(requested_interop)
+    except RuntimeError:
+        # PyTorch permits setting the inter-op pool only before parallel work
+        # starts. Repeated in-process test invocations are safe when the
+        # already configured value is identical.
+        if torch.get_num_interop_threads() != requested_interop:
+            raise
+    return {
+        "torch_cpu_threads": torch.get_num_threads(),
+        "torch_cpu_interop_threads": torch.get_num_interop_threads(),
+    }
+
+
 def set_seed(seed: int) -> None:
     random.seed(seed)
     np.random.seed(seed)
@@ -54,6 +78,8 @@ def runtime_metadata(device: torch.device) -> dict[str, Any]:
         "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
         "device": str(device),
         "gpu": torch.cuda.get_device_name(device) if device.type == "cuda" else None,
+        "torch_cpu_threads": torch.get_num_threads(),
+        "torch_cpu_interop_threads": torch.get_num_interop_threads(),
     }
 
 

@@ -10,7 +10,8 @@ import torch
 
 from .data_prepare import ensure_spaq_dataset
 from .datasets import DatasetBundle, load_spaq, make_indexed_loader
-from .io_utils import resolve_device, resolve_dtype, runtime_metadata, set_seed, write_json
+from .io_utils import (configure_cpu_runtime, resolve_device, resolve_dtype,
+                       runtime_metadata, set_seed, write_json)
 from .modeling import LoadedBackbone, build_head, load_backbone, load_processor, module_parameters
 from .optics import (DeepStackMultimodalReplacement, LanguageDeepStackHomogeneousMoE,
                      VisionDeepStackHomogeneousMoE)
@@ -42,7 +43,15 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = build_parser().parse_args(argv); settings = load_settings(args.config); _overrides(settings, args); set_seed(settings.seed)
+    args = build_parser().parse_args(argv); settings = load_settings(args.config); _overrides(settings, args)
+    cpu_runtime = configure_cpu_runtime(settings.cpu_threads, settings.cpu_interop_threads)
+    print(
+        f"[runtime] precompute_num_workers={settings.num_workers} "
+        f"student_cache_workers=0 cpu_threads={cpu_runtime['torch_cpu_threads']} "
+        f"cpu_interop_threads={cpu_runtime['torch_cpu_interop_threads']}",
+        flush=True,
+    )
+    set_seed(settings.seed)
     _dirs(settings.output_dir); preparation = ensure_spaq_dataset(settings); write_json(settings.output_dir / "data_preparation.json", preparation)
     data = load_spaq(settings, persist_split=True); settings.resolved_annotations_file = data.metadata["annotation_file"]
     settings.split_digest = data.metadata["split_digest"]; write_json(settings.output_dir / "dataset.json", data.metadata)

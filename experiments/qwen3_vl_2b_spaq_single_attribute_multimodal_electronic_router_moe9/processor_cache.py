@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+from bisect import bisect_right
 from collections import OrderedDict
 from pathlib import Path
 from typing import Any, Sequence
@@ -88,37 +89,58 @@ class ProcessorCacheStore:
         manifest = torch.load(manifest_path, map_location="cpu", weights_only=True)
         self.metadata = manifest["metadata"]; self.shards = manifest["shards"]
         self.max_cached_shards = int(max_cached_shards); self._cache: OrderedDict[int, dict[str, Any]] = OrderedDict()
-        self._ranges: list[tuple[int, int, int]] = []; self.cache_hits = 0; self.cache_misses = 0; offset = 0
+        self._ranges: list[tuple[int, int, int]] = []; self._ends: list[int] = []
+        self.cache_hits = 0; self.cache_misses = 0; self.shard_loads = 0; offset = 0
         for number, record in enumerate(self.shards):
-            self._ranges.append((offset, offset + int(record["count"]), number)); offset += int(record["count"])
+            end = offset + int(record["count"])
+            self._ranges.append((offset, end, number)); self._ends.append(end); offset = end
 
     def __len__(self) -> int: return int(self.metadata["sample_count"])
 
     def get(self, index: int) -> dict[str, Any]:
-        for start, end, number in self._ranges:
-            if start <= index < end:
-                payload = self._load(number); position = index - start
-                if int(payload["sample_indices"][position]) != index: raise RuntimeError("Processor cache ordering mismatch")
-                return {"sample_index": payload["sample_indices"][position],
-                        "input_ids": payload["input_ids"][position],
-                        "pixel_values": payload["pixel_values"][position],
-                        "image_grid_thw": payload["image_grid_thw"][position],
-                        "sequence_length": payload["sequence_lengths"][position]}
-        raise IndexError(index)
+        return self.get_many([index])[0]
 
-    def _load(self, number: int) -> dict[str, Any]:
+    def get_many(self, indices: Sequence[int]) -> list[dict[str, Any]]:
+        """Fetch a batch with one shard lookup/load per distinct shard."""
+        located: dict[int, list[tuple[int, int, int]]] = {}
+        for output_position, raw_index in enumerate(indices):
+            index = int(raw_index)
+            if index < 0 or index >= len(self):
+                raise IndexError(index)
+            number = bisect_right(self._ends, index)
+            start = 0 if number == 0 else self._ends[number - 1]
+            located.setdefault(number, []).append((output_position, index, index - start))
+        result: list[dict[str, Any] | None] = [None] * len(indices)
+        for number, rows in located.items():
+            payload = self._load(number, len(rows))
+            for output_position, index, position in rows:
+                if int(payload["sample_indices"][position]) != index:
+                    raise RuntimeError("Processor cache ordering mismatch")
+                result[output_position] = {
+                    "sample_index": payload["sample_indices"][position],
+                    "input_ids": payload["input_ids"][position],
+                    "pixel_values": payload["pixel_values"][position],
+                    "image_grid_thw": payload["image_grid_thw"][position],
+                    "sequence_length": payload["sequence_lengths"][position],
+                }
+        if any(row is None for row in result):
+            raise RuntimeError("Processor cache batch lookup left an unresolved sample")
+        return [row for row in result if row is not None]
+
+    def _load(self, number: int, requests: int = 1) -> dict[str, Any]:
         if number in self._cache:
-            self.cache_hits += 1; payload = self._cache.pop(number); self._cache[number] = payload; return payload
-        self.cache_misses += 1
+            self.cache_hits += int(requests); payload = self._cache.pop(number); self._cache[number] = payload; return payload
+        self.cache_misses += int(requests); self.shard_loads += 1
         payload = torch.load(self.shards[number]["path"], map_location="cpu", weights_only=True); self._cache[number] = payload
         while len(self._cache) > self.max_cached_shards: self._cache.popitem(last=False)
         return payload
 
-    def reset_stats(self) -> None: self.cache_hits = self.cache_misses = 0
+    def reset_stats(self) -> None: self.cache_hits = self.cache_misses = self.shard_loads = 0
     def stats(self) -> dict[str, int | float]:
         requests = self.cache_hits + self.cache_misses
         return {"hits": self.cache_hits, "misses": self.cache_misses,
-                "hit_rate": self.cache_hits / requests if requests else 0.0}
+                "hit_rate": self.cache_hits / requests if requests else 0.0,
+                "shard_loads": self.shard_loads, "resident_shards": len(self._cache)}
 
 
 def collate_processor_samples(samples: Sequence[dict[str, Any]], metadata: dict[str, Any]) -> dict[str, torch.Tensor]:
@@ -130,8 +152,11 @@ def collate_processor_samples(samples: Sequence[dict[str, Any]], metadata: dict[
     for row, sample in enumerate(samples):
         ids = sample["input_ids"].long(); length = len(ids); start = max_length - length if side == "left" else 0
         input_ids[row, start:start + length] = ids; attention_mask[row, start:start + length] = 1
+    # Preserve the cache dtype during CPU collation. Qwen casts pixel_values to
+    # visual.dtype on-device, so expanding fp16 cache rows to fp32 on the CPU
+    # only doubles PCIe traffic and wakes the large CPU thread pool.
     return {"input_ids": input_ids, "attention_mask": attention_mask,
-            "pixel_values": torch.cat([sample["pixel_values"] for sample in samples]).float(),
+            "pixel_values": torch.cat([sample["pixel_values"] for sample in samples]),
             "image_grid_thw": torch.stack([sample["image_grid_thw"] for sample in samples]).long()}
 
 

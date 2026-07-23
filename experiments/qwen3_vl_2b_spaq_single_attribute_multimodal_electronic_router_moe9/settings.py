@@ -51,6 +51,8 @@ class Settings:
     teacher_cache_lru_shards: int = 8
     teacher_cache_log_interval_batches: int = 100
     num_workers: int = 8
+    cpu_threads: int = 4
+    cpu_interop_threads: int = 1
     cache_dtype: str = "float16"
     dtype: str = "bfloat16"
     attn_implementation: str = "sdpa"
@@ -246,7 +248,7 @@ class Settings:
                      "last_expert_to_global_distance_m", "global_to_detector_distance_m"):
             if float(getattr(self, name)) <= 0:
                 raise ValueError(f"{name} must be positive")
-        positive = ("feature_batch_size", "student_batch_size", "inference_batch_size", "head_batch_size", "teacher_cache_shard_size", "teacher_cache_lru_shards", "teacher_cache_log_interval_batches", "num_workers", "epochs", "log_interval_batches", "checkpoint_interval_epochs", "visualization_interval_epochs", "visualization_sample_count", "phase_dropout_block_size")
+        positive = ("feature_batch_size", "student_batch_size", "inference_batch_size", "head_batch_size", "teacher_cache_shard_size", "teacher_cache_lru_shards", "teacher_cache_log_interval_batches", "num_workers", "cpu_threads", "cpu_interop_threads", "epochs", "log_interval_batches", "checkpoint_interval_epochs", "visualization_interval_epochs", "visualization_sample_count", "phase_dropout_block_size")
         for name in positive:
             if int(getattr(self, name)) < (0 if name == "num_workers" else 1):
                 raise ValueError(f"{name} has an invalid value")
@@ -315,6 +317,8 @@ NESTED_FIELDS: dict[tuple[str, ...], str] = {
     ("batching", "feature_batch_size"): "feature_batch_size", ("batching", "student_batch_size"): "student_batch_size",
     ("batching", "inference_batch_size"): "inference_batch_size", ("batching", "head_batch_size"): "head_batch_size",
     ("batching", "num_workers"): "num_workers",
+    ("batching", "cpu_threads"): "cpu_threads",
+    ("batching", "cpu_interop_threads"): "cpu_interop_threads",
     ("teacher_cache", "shard_size"): "teacher_cache_shard_size", ("teacher_cache", "lru_shards"): "teacher_cache_lru_shards",
     ("teacher_cache", "dtype"): "cache_dtype", ("teacher_cache", "log_interval_batches"): "teacher_cache_log_interval_batches",
     ("teacher_cache", "source_cache_run_dir"): "source_cache_run_dir",

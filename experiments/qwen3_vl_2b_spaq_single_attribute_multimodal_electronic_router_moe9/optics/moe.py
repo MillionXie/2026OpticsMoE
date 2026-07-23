@@ -7,7 +7,8 @@ from torch import nn
 from torch.nn import functional as F
 
 from .geometry import MoEGeometry
-from .physical import AngularSpectrumPropagator, PhaseLayer, SquareDetectionLayerNormReload
+from .physical import (AngularSpectrumPropagator, PhaseLayer,
+                       SquareDetectionLayerNormReload, aperture_linear_indices)
 from .router import ElectronicAmplitudeRouter
 
 
@@ -29,13 +30,30 @@ class ExpertPhasePlane(nn.Module):
                        settings.phase_init_std, settings.phase_dropout_mode, settings.phase_dropout_p,
                        settings.phase_dropout_block_size, settings.phase_dropout_batch_shared)
             for _ in range(geometry.num_experts)])
+        self.register_buffer(
+            "aperture_indices",
+            aperture_linear_indices(geometry.canvas_size, geometry.expert_apertures),
+            persistent=False,
+        )
 
     def forward(self, field: torch.Tensor) -> torch.Tensor:
-        output = torch.zeros_like(field, dtype=torch.complex64)
-        for aperture, phase in zip(self.geometry.expert_apertures, self.experts):
-            crop = field[:, aperture.y0:aperture.y1, aperture.x0:aperture.x1]
-            output[:, aperture.y0:aperture.y1, aperture.x0:aperture.x1] = phase(crop)
-        return output
+        batch = field.shape[0]; flat_indices = self.aperture_indices.reshape(-1)
+        crops = field.to(torch.complex64).flatten(1).index_select(1, flat_indices).reshape(
+            batch, self.geometry.num_experts, self.geometry.expert_size, self.geometry.expert_size
+        )
+        modulated = torch.stack(
+            [phase(crops[:, index]) for index, phase in enumerate(self.experts)],
+            dim=1,
+        )
+        return torch.zeros(
+            (batch, self.geometry.canvas_size * self.geometry.canvas_size),
+            dtype=torch.complex64,
+            device=field.device,
+        ).scatter(
+            1,
+            flat_indices.unsqueeze(0).expand(batch, -1),
+            modulated.reshape(batch, -1),
+        ).reshape(batch, self.geometry.canvas_size, self.geometry.canvas_size)
 
     def set_phase_dropout_active(self, active: bool) -> None:
         for expert in self.experts: expert.set_dropout_active(active)
@@ -97,6 +115,11 @@ class HomogeneousMoEOpticalCore(nn.Module):
         self.amplitude_slm_weight_domain = settings.amplitude_slm_weight_domain
         self.amplitude_slm_input_normalization = settings.amplitude_slm_input_normalization
         self.amplitude_phase_relay = settings.amplitude_phase_relay
+        self.register_buffer(
+            "expert_canvas_indices",
+            aperture_linear_indices(settings.canvas_size, self.geometry.expert_apertures),
+            persistent=False,
+        )
         prop_kwargs = {"wavelength_m": wavelength_m, "pixel_size_m": pixel_m, "grid_size": settings.canvas_size,
                        "k_space_constraint_enabled": settings.k_space_constraint_enabled,
                        "theta_max_deg": settings.theta_max_deg}
@@ -172,13 +195,14 @@ class HomogeneousMoEOpticalCore(nn.Module):
         """
         amplitude = self._normalize_amplitude_slm_input(input_fields.float())
         scales = self._amplitude_scales(routing)
-        canvas = amplitude.new_zeros(
-            (len(input_fields), self.geometry.canvas_size, self.geometry.canvas_size)
-        )
-        for expert, aperture in enumerate(self.geometry.expert_apertures):
-            canvas[:, aperture.y0:aperture.y1, aperture.x0:aperture.x1] = (
-                amplitude * scales[:, expert, None, None]
-            )
+        batch = len(input_fields)
+        values = (amplitude[:, None] * scales[:, :, None, None]).reshape(batch, -1)
+        flat_indices = self.expert_canvas_indices.reshape(-1)
+        canvas = amplitude.new_zeros((batch, self.geometry.canvas_size * self.geometry.canvas_size)).scatter(
+            1,
+            flat_indices.unsqueeze(0).expand(batch, -1),
+            values,
+        ).reshape(batch, self.geometry.canvas_size, self.geometry.canvas_size)
         routing["amplitude_scales"] = scales
         routing["amplitude_slm_canvas"] = canvas
         return torch.complex(canvas, torch.zeros_like(canvas))

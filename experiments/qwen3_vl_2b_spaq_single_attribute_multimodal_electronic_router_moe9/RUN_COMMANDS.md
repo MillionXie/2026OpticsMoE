@@ -5,7 +5,7 @@ All commands are intended to be run from the `2026OpticsMoE` repository root. Th
 ## MOS
 
 ```bash
-CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe9 --config experiments/qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe9/configs/spaq_mos.json --phase all
+CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe9 --config experiments/qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe9/configs/spaq_mos.json --phase all
 ```
 
 ## Brightness

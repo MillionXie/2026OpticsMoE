@@ -41,9 +41,15 @@ def multimodal_forward_features(model: nn.Module, inputs: Mapping[str, torch.Ten
     fallback_name = "_spaq_electronic_router_optical_last_hidden"
     if hasattr(model, fallback_name):
         setattr(model, fallback_name, None)
-    outputs = model(**inputs, output_hidden_states=True, return_dict=True, use_cache=False)
-    hidden_states = getattr(outputs, "hidden_states", None)
-    hidden = hidden_states[-1] if hidden_states else getattr(model, fallback_name, None)
+    # The replacement owns a final-norm hook, so asking Transformers to retain
+    # every decoder-layer hidden state is redundant. Disabling that output
+    # removes a large Python tuple and avoids keeping intermediate references
+    # alive while preserving the exact final hidden tensor used by the loss.
+    outputs = model(**inputs, output_hidden_states=False, return_dict=True, use_cache=False)
+    hidden = getattr(model, fallback_name, None)
+    if hidden is None:
+        hidden_states = getattr(outputs, "hidden_states", None)
+        hidden = hidden_states[-1] if hidden_states else None
     if hidden is None:
         raise RuntimeError("Full Qwen3-VL forward did not expose final language hidden states")
     if hidden.ndim != 3:

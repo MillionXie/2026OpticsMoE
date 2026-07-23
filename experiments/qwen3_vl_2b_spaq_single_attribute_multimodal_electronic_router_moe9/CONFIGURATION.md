@@ -61,3 +61,33 @@ All propagation distances are in metres:
 ```
 
 Keep `final_detector_readout.layernorm_scope="per_token"` unless deliberately reproducing the old full-field ablation.
+
+## CPU workers, thread pools, and cache residency
+
+```json
+"batching": {
+  "num_workers": 8,
+  "cpu_threads": 4,
+  "cpu_interop_threads": 1
+},
+"teacher_cache": {
+  "shard_size": 128,
+  "lru_shards": 128
+}
+```
+
+- `num_workers` is used while decoding source images for teacher and processor
+  precomputation. Student training consumes already-preprocessed cache tensors
+  and deliberately uses `student_cache_workers=0`; multiprocessing workers
+  would each duplicate the multi-gigabyte cache LRU.
+- `cpu_threads` and `cpu_interop_threads` bound PyTorch's process-local CPU
+  pools. They do not change the model, batches, sampling order, or losses.
+- Cached image patches and teacher targets remain fp16 on the CPU and are
+  promoted only after transfer to the GPU. Qwen already casts image patches to
+  its visual dtype on-device.
+- `lru_shards=128` is large enough for the current 10,013-image SPAQ caches.
+  It uses roughly the combined cache footprint (about 9.5 GB for MOS) but
+  avoids deserializing evicted shards again in later epochs. Reduce this value
+  on RAM-constrained hosts; doing so affects performance, not model results.
+- Epoch metrics record cache hit rates, shard loads, resident shard counts,
+  and separate train/test wall times.

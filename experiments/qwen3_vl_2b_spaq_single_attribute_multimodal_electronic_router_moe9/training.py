@@ -102,6 +102,16 @@ class CachedStudentDataset(Dataset[Any]):
     def __len__(self): return len(self.dataset)
     def __getitem__(self, index: int):
         return self.inputs.get(index), float(self.targets[index]), index, self.teacher.get(index), self.predictions[index]
+    def __getitems__(self, indices: list[int]) -> list[Any]:
+        # PyTorch's map-style DataLoader calls __getitems__ once per batch when
+        # available. Fetching both caches shard-wise avoids repeated Python
+        # range scans and repeated LRU operations for every individual sample.
+        input_rows = self.inputs.get_many(indices)
+        teacher_rows = self.teacher.get_many(indices)
+        return [
+            (input_row, float(self.targets[index]), index, teacher_row, self.predictions[index])
+            for index, input_row, teacher_row in zip(indices, input_rows, teacher_rows)
+        ]
 
 
 def _cached_target(dataset: Dataset[Any], index: int) -> float:
@@ -112,13 +122,30 @@ def _cached_target(dataset: Dataset[Any], index: int) -> float:
 
 def cached_student_collate(batch: Sequence[Any], metadata: dict[str, Any]):
     inputs, targets, indices, teachers, predictions = zip(*batch)
-    return collate_processor_samples(inputs, metadata), torch.tensor(targets), torch.tensor(indices), list(teachers), torch.stack(predictions)
+    tap_count = len(teachers[0]["teacher_vision_taps"])
+    if any(len(row["teacher_vision_taps"]) != tap_count for row in teachers):
+        raise RuntimeError("Teacher cache rows disagree on vision tap count")
+    teacher_batch = {
+        # Keep cache tensors in fp16 on the CPU. They are transferred in a few
+        # contiguous operations and promoted to fp32 on the GPU.
+        "answer_hidden": torch.stack([row["teacher_answer_hidden"] for row in teachers]),
+        "vision_taps": [
+            torch.cat([row["teacher_vision_taps"][tap] for row in teachers], dim=0)
+            for tap in range(tap_count)
+        ],
+        "visual_token_counts": [int(row["visual_token_count"]) for row in teachers],
+    }
+    return (collate_processor_samples(inputs, metadata), torch.tensor(targets), torch.tensor(indices),
+            teacher_batch, torch.stack(predictions))
 
 
 class CachedEvaluationDataset(Dataset[Any]):
     def __init__(self, dataset: Dataset[Any], inputs: ProcessorCacheStore): self.dataset = dataset; self.inputs = inputs
     def __len__(self): return len(self.dataset)
     def __getitem__(self, index): return self.inputs.get(index), _cached_target(self.dataset, index), index
+    def __getitems__(self, indices: list[int]) -> list[Any]:
+        rows = self.inputs.get_many(indices)
+        return [(row, _cached_target(self.dataset, index), index) for row, index in zip(rows, indices)]
 
 
 def make_evaluation_loader(dataset: Dataset[Any], inputs: ProcessorCacheStore, batch_size: int):
@@ -170,6 +197,7 @@ def train_student(model: nn.Module, replacement: Any, head: nn.Module, train_dat
     history = []; best = float("-inf") if settings.student_selection_metric != "mae" else float("inf")
     for epoch in range(1, settings.epochs + 1):
         started = time.perf_counter(); sampler.set_epoch(epoch); dropout = settings.phase_dropout_enabled and epoch >= settings.phase_dropout_start_epoch
+        train_store.reset_stats(); train_inputs.reset_stats(); test_inputs.reset_stats()
         replacement.set_phase_dropout_active(dropout); replacement.set_student_train_mode()
         head.train()
         predictions_all = []; targets_all = []; seen = 0; train_report = None
@@ -178,24 +206,31 @@ def train_student(model: nn.Module, replacement: Any, head: nn.Module, train_dat
         v_selection = torch.zeros(settings.num_experts, device=device)
         l_selection = torch.zeros(settings.num_experts, device=device)
         print(f"[sampling] epoch={epoch} samples={len(sampler)}/{len(train_dataset)} mode={settings.student_language_mode}", flush=True)
+        train_started = time.perf_counter()
         for batch_index, (cpu_inputs, targets, _indices, teachers, teacher_predictions_batch) in enumerate(loader, 1):
             replacement.prepare_student_batch(cpu_inputs["attention_mask"])
             inputs = move_inputs(cpu_inputs, device)
             targets = targets.to(device, non_blocking=True)
-            teacher_predictions_batch = teacher_predictions_batch.to(device, non_blocking=True)
+            teacher_predictions_batch = teacher_predictions_batch.to(device, non_blocking=True).float()
             optimizer.zero_grad(set_to_none=True)
             hidden = multimodal_forward_features(model, inputs); answer, _ = pool_answer_hidden_state(hidden, inputs["attention_mask"])
             predictions = head(answer)
             student_taps = [*replacement.vision_surrogate.tap_outputs, replacement.vision_surrogate.last_output]
             vision_losses = []
-            for tap_number, student_packed in enumerate(student_taps):
+            teacher_lengths = teachers["visual_token_counts"]
+            if len(student_taps) != len(teachers["vision_taps"]):
+                raise RuntimeError("Student and cached teacher vision tap counts do not match")
+            if teacher_lengths != replacement.vision_surrogate.last_token_counts:
+                raise RuntimeError("Student visual token boundaries do not match the teacher cache")
+            for student_packed, teacher_packed_cpu in zip(student_taps, teachers["vision_taps"]):
                 groups = student_packed.split(replacement.vision_surrogate.last_token_counts)
-                for group, teacher in zip(groups, teachers):
-                    target = teacher["teacher_vision_taps"][tap_number].float().to(device)
+                teacher_packed = teacher_packed_cpu.to(device, non_blocking=True).float()
+                targets_for_tap = teacher_packed.split(teacher_lengths)
+                for group, target in zip(groups, targets_for_tap):
                     vision_losses.append(F.mse_loss(F.layer_norm(group.float(), (group.shape[-1],)),
                                                     F.layer_norm(target, (target.shape[-1],))))
             loss_vision = torch.stack(vision_losses).mean()
-            teacher_answer = torch.stack([row["teacher_answer_hidden"] for row in teachers]).float().to(device)
+            teacher_answer = teachers["answer_hidden"].to(device, non_blocking=True).float()
             loss_answer = F.mse_loss(F.layer_norm(answer, (answer.shape[-1],)),
                                      F.layer_norm(teacher_answer, (teacher_answer.shape[-1],)))
             loss_distill = F.smooth_l1_loss(predictions, teacher_predictions_batch, beta=settings.smooth_l1_beta)
@@ -228,16 +263,32 @@ def train_student(model: nn.Module, replacement: Any, head: nn.Module, train_dat
                       f"MAE={train_report['mae']:.3f} SRCC={train_report['srcc']:.4f} "
                       f"vision_sel={[round(x,3) for x in vision_rates]} "
                       f"language_sel={[round(x,3) for x in language_rates]}", flush=True)
+        train_time_sec = time.perf_counter() - train_started
         assert train_report is not None
         total_values = dict(zip(loss_names, (totals_tensor / seen).detach().cpu().tolist()))
         vision_rates = (v_selection / seen).detach().cpu().tolist()
         language_rates = (l_selection / seen).detach().cpu().tolist()
+        test_started = time.perf_counter()
         test_report = evaluate_student(model, replacement, head, test_loader, settings, device, test_dataset)
+        test_time_sec = time.perf_counter() - test_started
+        teacher_cache_stats = train_store.stats()
+        train_input_cache_stats = train_inputs.stats()
+        test_input_cache_stats = test_inputs.stats()
         if scheduler: scheduler.step()
         row = {"epoch": epoch, **{f"loss_{key}": value for key, value in total_values.items()},
                **{f"train_{key}": value for key, value in train_report.items()},
                **{f"test_{key}": value for key, value in test_report.items() if isinstance(value, (int, float))},
-               "epoch_time_sec": time.perf_counter() - started, "samples_this_epoch": len(sampler),
+               "epoch_time_sec": time.perf_counter() - started, "train_time_sec": train_time_sec,
+               "test_time_sec": test_time_sec, "samples_this_epoch": len(sampler),
+               "teacher_cache_hit_rate": teacher_cache_stats["hit_rate"],
+               "teacher_cache_shard_loads": teacher_cache_stats["shard_loads"],
+               "teacher_cache_resident_shards": teacher_cache_stats["resident_shards"],
+               "train_input_cache_hit_rate": train_input_cache_stats["hit_rate"],
+               "train_input_cache_shard_loads": train_input_cache_stats["shard_loads"],
+               "train_input_cache_resident_shards": train_input_cache_stats["resident_shards"],
+               "test_input_cache_hit_rate": test_input_cache_stats["hit_rate"],
+               "test_input_cache_shard_loads": test_input_cache_stats["shard_loads"],
+               "test_input_cache_resident_shards": test_input_cache_stats["resident_shards"],
                "student_language_mode": settings.student_language_mode, "phase_dropout_active": dropout}
         for expert in range(settings.num_experts):
             row[f"vision_expert_{expert}_selection_rate"] = vision_rates[expert]

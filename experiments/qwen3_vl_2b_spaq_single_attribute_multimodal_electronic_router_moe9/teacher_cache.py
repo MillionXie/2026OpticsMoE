@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+from bisect import bisect_right
 from collections import OrderedDict
 from pathlib import Path
 from typing import Any, Iterator
@@ -94,36 +95,59 @@ class TeacherCacheStore:
         if not manifest_path.is_file(): raise FileNotFoundError(f"Teacher cache missing: {manifest_path}")
         manifest = torch.load(manifest_path, map_location="cpu", weights_only=True)
         self.metadata = manifest["metadata"]; self.shards = manifest["shards"]; self.max_cached_shards = max_cached_shards
-        self._cache: OrderedDict[int, dict[str, Any]] = OrderedDict(); self._ranges = []; self.cache_hits = self.cache_misses = 0; offset = 0
+        self._cache: OrderedDict[int, dict[str, Any]] = OrderedDict(); self._ranges = []; self._ends = []
+        self.cache_hits = self.cache_misses = self.shard_loads = 0; offset = 0
         for number, record in enumerate(self.shards):
-            self._ranges.append((offset, offset + int(record["count"]), number)); offset += int(record["count"])
+            end = offset + int(record["count"])
+            self._ranges.append((offset, end, number)); self._ends.append(end); offset = end
 
     def __len__(self): return int(self.metadata["sample_count"])
     def get(self, index: int) -> dict[str, Any]:
-        for start, end, number in self._ranges:
-            if start <= index < end:
-                payload = self._load(number); position = index - start
-                if int(payload["sample_indices"][position]) != index: raise RuntimeError("Teacher cache ordering mismatch")
-                return {"sample_index": payload["sample_indices"][position], "target": payload["targets"][position],
-                        "image_grid_thw": payload["image_grid_thw"][position],
-                        "visual_token_count": payload["visual_token_counts"][position],
-                        "sequence_length": payload["sequence_lengths"][position],
-                        "teacher_answer_hidden": payload["teacher_answer_hidden"][position],
-                        "teacher_vision_taps": payload["teacher_vision_taps"][position]}
-        raise IndexError(index)
+        return self.get_many([index])[0]
 
-    def _load(self, number: int):
+    def get_many(self, indices: list[int] | tuple[int, ...]) -> list[dict[str, Any]]:
+        located: dict[int, list[tuple[int, int, int]]] = {}
+        for output_position, raw_index in enumerate(indices):
+            index = int(raw_index)
+            if index < 0 or index >= len(self):
+                raise IndexError(index)
+            number = bisect_right(self._ends, index)
+            start = 0 if number == 0 else self._ends[number - 1]
+            located.setdefault(number, []).append((output_position, index, index - start))
+        result: list[dict[str, Any] | None] = [None] * len(indices)
+        for number, rows in located.items():
+            payload = self._load(number, len(rows))
+            for output_position, index, position in rows:
+                if int(payload["sample_indices"][position]) != index:
+                    raise RuntimeError("Teacher cache ordering mismatch")
+                result[output_position] = {
+                    "sample_index": payload["sample_indices"][position],
+                    "target": payload["targets"][position],
+                    "image_grid_thw": payload["image_grid_thw"][position],
+                    "visual_token_count": payload["visual_token_counts"][position],
+                    "sequence_length": payload["sequence_lengths"][position],
+                    "teacher_answer_hidden": payload["teacher_answer_hidden"][position],
+                    "teacher_vision_taps": payload["teacher_vision_taps"][position],
+                }
+        if any(row is None for row in result):
+            raise RuntimeError("Teacher cache batch lookup left an unresolved sample")
+        return [row for row in result if row is not None]
+
+    def _load(self, number: int, requests: int = 1):
         if number in self._cache:
-            self.cache_hits += 1; payload = self._cache.pop(number); self._cache[number] = payload; return payload
-        self.cache_misses += 1; payload = torch.load(self.shards[number]["path"], map_location="cpu", weights_only=True)
+            self.cache_hits += int(requests); payload = self._cache.pop(number); self._cache[number] = payload; return payload
+        self.cache_misses += int(requests); self.shard_loads += 1
+        payload = torch.load(self.shards[number]["path"], map_location="cpu", weights_only=True)
         self._cache[number] = payload
         while len(self._cache) > self.max_cached_shards: self._cache.popitem(last=False)
         return payload
 
-    def reset_stats(self): self.cache_hits = self.cache_misses = 0
+    def reset_stats(self): self.cache_hits = self.cache_misses = self.shard_loads = 0
     def stats(self):
         total = self.cache_hits + self.cache_misses
-        return {"hits": self.cache_hits, "misses": self.cache_misses, "hit_rate": self.cache_hits / total if total else 0.0}
+        return {"hits": self.cache_hits, "misses": self.cache_misses,
+                "hit_rate": self.cache_hits / total if total else 0.0,
+                "shard_loads": self.shard_loads, "resident_shards": len(self._cache)}
     def iter_shards(self) -> Iterator[dict[str, Any]]:
         for record in self.shards: yield torch.load(record["path"], map_location="cpu", weights_only=True)
 

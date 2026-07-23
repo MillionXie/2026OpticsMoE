@@ -7,6 +7,19 @@ from torch import nn
 from torch.nn import functional as F
 
 
+def aperture_linear_indices(canvas_size: int, apertures: list) -> torch.Tensor:
+    """Return unique flattened canvas indexes for ordered square apertures."""
+    groups = []
+    for aperture in apertures:
+        rows = torch.arange(aperture.y0, aperture.y1, dtype=torch.long)
+        columns = torch.arange(aperture.x0, aperture.x1, dtype=torch.long)
+        groups.append((rows[:, None] * int(canvas_size) + columns[None, :]).reshape(-1))
+    result = torch.stack(groups)
+    if result.unique().numel() != result.numel():
+        raise ValueError("Expert apertures must not overlap")
+    return result
+
+
 class AngularSpectrumPropagator(nn.Module):
     def __init__(self, wavelength_m: float, pixel_size_m: float, grid_size: int, distance_m: float,
                  k_space_constraint_enabled: bool = False, theta_max_deg: float = 1.0) -> None:
@@ -97,6 +110,13 @@ class SquareDetectionLayerNormReload(nn.Module):
         self.nonlinearity = str(nonlinearity)
         self.per_expert_enabled = bool(per_expert_enabled)
         self.elementwise_affine = bool(elementwise_affine)
+        self.canvas_size = int(canvas_size)
+        self.expert_size = apertures[0].y1 - apertures[0].y0
+        self.register_buffer(
+            "aperture_indices",
+            aperture_linear_indices(self.canvas_size, apertures),
+            persistent=False,
+        )
         if self.elementwise_affine:
             size = apertures[0].y1 - apertures[0].y0 if self.per_expert_enabled else int(canvas_size)
             count = len(apertures) if self.per_expert_enabled else 1
@@ -123,11 +143,11 @@ class SquareDetectionLayerNormReload(nn.Module):
                 raise ValueError(f"routing_weights must have shape {expected}, got {tuple(routing_weights.shape)}")
             routing_weights = routing_weights.to(device=field.device, dtype=intensity.dtype)
         if self.per_expert_enabled:
-            output = torch.zeros_like(intensity)
-            crops = torch.stack([
-                intensity[:, aperture.y0:aperture.y1, aperture.x0:aperture.x1]
-                for aperture in self.apertures
-            ], dim=1)
+            batch = intensity.shape[0]
+            flat_indices = self.aperture_indices.reshape(-1)
+            crops = intensity.flatten(1).index_select(1, flat_indices).reshape(
+                batch, len(self.apertures), self.expert_size, self.expert_size
+            )
             normalized = F.layer_norm(crops, crops.shape[-2:], weight=None, bias=None, eps=self.eps)
             if self.affine_weight is not None:
                 normalized = normalized * self.affine_weight.unsqueeze(0) + self.affine_bias.unsqueeze(0)
@@ -138,8 +158,11 @@ class SquareDetectionLayerNormReload(nn.Module):
                 activated = activated * routing_weights[:, :, None, None]
             if selected_experts is not None:
                 activated = activated * selected_experts[:, :, None, None].to(activated.dtype)
-            for index, aperture in enumerate(self.apertures):
-                output[:, aperture.y0:aperture.y1, aperture.x0:aperture.x1] = activated[:, index]
+            output = intensity.new_zeros((batch, self.canvas_size * self.canvas_size)).scatter(
+                1,
+                flat_indices.unsqueeze(0).expand(batch, -1),
+                activated.reshape(batch, -1),
+            ).reshape_as(intensity)
         else:
             if selected_experts is not None or routing_weights is not None:
                 raise RuntimeError("Hard expert gating and routing-weight restoration require per-expert LayerNorm")

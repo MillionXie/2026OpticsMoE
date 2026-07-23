@@ -16,6 +16,7 @@ from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_
     load_spaq,
 )
 from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe9.features import (
+    multimodal_forward_features,
     pool_answer_hidden_state,
 )
 from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe9.modeling import (
@@ -33,6 +34,7 @@ from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_
     AngularSpectrumPropagator,
     PhaseLayer,
     SquareDetectionLayerNormReload,
+    aperture_linear_indices,
 )
 from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe9.optics.replacement import (
     DeepStackMultimodalReplacement,
@@ -42,10 +44,14 @@ from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_
     ElectronicAmplitudeRouter,
 )
 from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe9.processor_cache import (
+    ProcessorCacheStore,
     collate_processor_samples,
 )
 from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe9.settings import (
     load_settings,
+)
+from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe9.teacher_cache import (
+    TeacherCacheStore,
 )
 
 
@@ -77,6 +83,9 @@ def test_all_four_single_attribute_configs(filename: str, task: str) -> None:
     assert settings.router_implementation == "electronic_amplitude_topk"
     assert settings.amplitude_phase_relay == "ideal_4f_identity"
     assert settings.detector_layernorm_scope == "per_token"
+    assert settings.cpu_threads == 4
+    assert settings.cpu_interop_threads == 1
+    assert settings.teacher_cache_lru_shards == 128
     assert (
         settings.expert_interlayer_distance_m,
         settings.last_expert_to_global_distance_m,
@@ -129,6 +138,11 @@ def _encoder(hidden_size: int = 8, max_tokens: int = 120) -> HomogeneousMoEOptic
     module.amplitude_slm_weight_domain = "amplitude"
     module.amplitude_slm_input_normalization = "none"
     module.amplitude_phase_relay = "ideal_4f_identity"
+    module.register_buffer(
+        "expert_canvas_indices",
+        aperture_linear_indices(module.geometry.canvas_size, module.geometry.expert_apertures),
+        persistent=False,
+    )
     module.last_input_fields = None
     module.last_routing = {}
     module.last_amplitude_slm_canvas = None
@@ -232,6 +246,77 @@ def test_cached_multimodal_batch_padding_and_pixel_concatenation() -> None:
     assert batch["input_ids"].tolist() == [[0, 1, 2], [3, 4, 5]]
     assert batch["attention_mask"].tolist() == [[0, 1, 1], [1, 1, 1]]
     assert batch["pixel_values"].shape == (5, 4)
+
+
+def test_cached_collate_preserves_storage_dtype() -> None:
+    rows = [
+        {"input_ids": torch.tensor([1]), "sequence_length": 1,
+         "pixel_values": torch.ones(2, 3, dtype=torch.float16),
+         "image_grid_thw": torch.tensor([1, 1, 2])},
+        {"input_ids": torch.tensor([2]), "sequence_length": 1,
+         "pixel_values": torch.ones(1, 3, dtype=torch.float16),
+         "image_grid_thw": torch.tensor([1, 1, 1])},
+    ]
+    batch = collate_processor_samples(rows, {"padding_side": "left", "pad_token_id": 0})
+    assert batch["pixel_values"].dtype == torch.float16
+
+
+def test_cache_batch_lookup_matches_single_lookup(tmp_path: Path) -> None:
+    processor_shards = []
+    teacher_shards = []
+    for shard_number, start in enumerate((0, 2)):
+        processor_path = tmp_path / f"processor_{shard_number}.pt"
+        teacher_path = tmp_path / f"teacher_{shard_number}.pt"
+        sample_indices = torch.arange(start, start + 2)
+        torch.save({
+            "sample_indices": sample_indices,
+            "input_ids": [torch.tensor([index + 1]) for index in sample_indices],
+            "pixel_values": [torch.full((1, 2), float(index), dtype=torch.float16) for index in sample_indices],
+            "image_grid_thw": torch.ones(2, 3, dtype=torch.long),
+            "sequence_lengths": torch.ones(2, dtype=torch.long),
+        }, processor_path)
+        torch.save({
+            "sample_indices": sample_indices,
+            "targets": sample_indices.float(),
+            "image_grid_thw": torch.ones(2, 3, dtype=torch.long),
+            "visual_token_counts": torch.ones(2, dtype=torch.long),
+            "sequence_lengths": torch.ones(2, dtype=torch.long),
+            "teacher_answer_hidden": sample_indices[:, None].half(),
+            "teacher_vision_taps": [
+                [torch.full((1, 2), float(index), dtype=torch.float16)]
+                for index in sample_indices
+            ],
+        }, teacher_path)
+        processor_shards.append({"path": str(processor_path), "count": 2})
+        teacher_shards.append({"path": str(teacher_path), "count": 2})
+    processor_manifest = tmp_path / "processor.pt"
+    teacher_manifest = tmp_path / "teacher.pt"
+    torch.save({"metadata": {"sample_count": 4}, "shards": processor_shards}, processor_manifest)
+    torch.save({"metadata": {"sample_count": 4}, "shards": teacher_shards}, teacher_manifest)
+    processor = ProcessorCacheStore(processor_manifest, max_cached_shards=4)
+    teacher = TeacherCacheStore(teacher_manifest, max_cached_shards=4)
+    order = [3, 0, 2, 1]
+    assert [int(row["sample_index"]) for row in processor.get_many(order)] == order
+    assert [int(row["sample_index"]) for row in teacher.get_many(order)] == order
+    assert processor.stats()["shard_loads"] == 2
+    assert teacher.stats()["shard_loads"] == 2
+    # Both shards are now resident; a second batch must not deserialize again.
+    processor.get_many(order); teacher.get_many(order)
+    assert processor.stats()["shard_loads"] == 2
+    assert teacher.stats()["shard_loads"] == 2
+
+
+def test_multimodal_forward_uses_final_hook_without_all_hidden_states() -> None:
+    class FakeModel(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self._spaq_electronic_router_optical_last_hidden = None
+        def forward(self, **kwargs):
+            assert kwargs["output_hidden_states"] is False
+            self._spaq_electronic_router_optical_last_hidden = torch.ones(2, 3, 4)
+            return SimpleNamespace(hidden_states=None)
+    hidden = multimodal_forward_features(FakeModel(), {})
+    assert hidden.shape == (2, 3, 4)
 
 
 def test_answer_position_uses_last_valid_token() -> None:
