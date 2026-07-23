@@ -38,6 +38,9 @@ from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_
     DeepStackMultimodalReplacement,
     VisionNativeAttentionPrelude,
 )
+from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe9.optics.router import (
+    ElectronicAmplitudeRouter,
+)
 from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe9.processor_cache import (
     collate_processor_samples,
 )
@@ -175,6 +178,18 @@ def test_electronic_router_directly_loads_weighted_amplitude_copies() -> None:
         assert torch.allclose(crop, source * weights[:, index, None, None])
     canvas.real.sum().backward()
     assert source.grad is not None and torch.count_nonzero(source.grad)
+
+
+def test_real_electronic_router_is_sparse_balanced_and_differentiable() -> None:
+    router = ElectronicAmplitudeRouter(MoEGeometry(), 3, 4, 1.0)
+    fields = torch.rand(2, 120, 120, requires_grad=True)
+    output = router(fields)
+    assert output["weights"].shape == (2, 9)
+    assert torch.equal((output["weights"] > 0).sum(1), torch.tensor([3, 3]))
+    assert torch.allclose(output["weights"].sum(1), torch.ones(2))
+    assert output["phase_prompt_used"] is False
+    (output["weights"].square().sum() + output["balance_loss"]).backward()
+    assert router.router.gate.weight.grad is not None
 
 
 def test_power_domain_uses_sqrt_amplitude_scale() -> None:
