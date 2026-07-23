@@ -47,10 +47,10 @@
   },
   "student": {
     "language_stack_mode": "optical_moe",
-    "initialize_head_from_teacher": true,
+    "initialize_head_from_teacher": false,
     "transformer_block_alignment": {
       "native_pre_attention_enabled": true,
-      "native_pre_attention_trainable": false,
+      "native_pre_attention_trainable": true,
       "residual_enabled": true,
       "vision_attention_source_layer": 0,
       "language_attention_source_layer": 0
