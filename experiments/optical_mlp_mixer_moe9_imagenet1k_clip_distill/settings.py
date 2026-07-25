@@ -7,6 +7,7 @@ from typing import Any
 
 
 PROJECT_DIR = Path(__file__).resolve().parents[2]
+EXPERIMENT_DIR = Path(__file__).resolve().parent
 
 
 def _path(value: str | Path | None) -> Path | None:
@@ -164,7 +165,11 @@ class OptimizerSettings:
 
 @dataclass
 class TrainingSettings:
-    output_dir: Path = PROJECT_DIR / "runs" / "optical_mlp_mixer_moe9_imagenet1k_clip_distill"
+    output_dir: Path = (
+        EXPERIMENT_DIR
+        / "runs"
+        / "optical_mlp_mixer_moe9_imagenet1k_clip_distill"
+    )
     device: str = "cuda"
     epochs: int = 90
     batch_size: int = 16

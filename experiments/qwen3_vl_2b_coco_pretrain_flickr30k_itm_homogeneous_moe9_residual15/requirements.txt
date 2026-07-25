@@ -1,8 +1,0 @@
-torch
-transformers
-datasets>=2.18,<3
-pillow
-numpy
-matplotlib
-tqdm
-huggingface_hub

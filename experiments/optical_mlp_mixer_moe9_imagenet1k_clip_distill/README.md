@@ -145,7 +145,8 @@ validation samples  50,000
 Ninety epochs are the selected first full pre-training budget. The best
 ImageNet validation top-1 checkpoint and the final checkpoint are both saved.
 If the losses and validation metrics are still improving at epoch 90, set
-`training.resume_checkpoint` to `checkpoints/last.pt`, increase `epochs`, and
+`training.resume_checkpoint` to the run's `checkpoints/last.pt` (or pass
+`--resume-checkpoint` on the command line), increase `epochs`, and
 resume; the 90-epoch checkpoint is not an architectural limit.
 
 `weight_decay` is validated to be exactly zero to avoid applying AdamW decay to

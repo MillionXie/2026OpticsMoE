@@ -36,6 +36,7 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--device", type=str)
     result.add_argument("--epochs", type=int)
     result.add_argument("--output-dir", type=Path)
+    result.add_argument("--resume-checkpoint", type=Path)
     return result
 
 
@@ -48,6 +49,10 @@ def main(argv: list[str] | None = None) -> int:
         settings.training.epochs = int(args.epochs)
     if args.output_dir is not None:
         settings.training.output_dir = args.output_dir.expanduser().resolve()
+    if args.resume_checkpoint is not None:
+        settings.training.resume_checkpoint = (
+            args.resume_checkpoint.expanduser().resolve()
+        )
     settings.validate()
     context = initialize_distributed(settings.training.device)
     seed_everything(settings.training.seed, context.rank)
@@ -103,6 +108,19 @@ def main(argv: list[str] | None = None) -> int:
             if args.phase == "clip_cache":
                 return 0
         if args.phase in {"train", "all"}:
+            last_checkpoint = (
+                settings.training.output_dir / "checkpoints" / "last.pt"
+            )
+            if (
+                last_checkpoint.is_file()
+                and settings.training.resume_checkpoint is None
+            ):
+                raise RuntimeError(
+                    "The output directory already contains a training checkpoint: "
+                    f"{last_checkpoint}. Refusing to overwrite an existing run. "
+                    "Pass --resume-checkpoint with last.pt (or a named pause "
+                    "checkpoint), or choose a new --output-dir."
+                )
             train(bundle, settings, context)
             barrier()
             gc.collect()

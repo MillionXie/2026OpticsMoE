@@ -59,7 +59,13 @@ def test_formal_config_and_parameter_formula() -> None:
     assert settings.dataset.hf_dataset_id == "ILSVRC/imagenet-1k"
     assert settings.dataset.validation_split == "validation"
     assert settings.model.num_blocks == 7
-    assert settings.training.epochs == 90
+    assert settings.training.epochs == 100
+    assert settings.training.batch_size == 8
+    assert settings.training.output_dir.parent.name == "runs"
+    assert (
+        settings.training.output_dir.parent.parent
+        == ROOT
+    )
     assert settings.optimizer.name == "adamw"
     assert settings.optimizer.weight_decay == 0.0
     assert settings.optical_parameter_formula == {

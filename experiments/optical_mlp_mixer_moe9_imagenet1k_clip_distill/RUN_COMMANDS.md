@@ -29,7 +29,7 @@ CUDA_VISIBLE_DEVICES=0 python -m experiments.optical_mlp_mixer_moe9_imagenet1k_c
 ## Formal single-GPU training
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.optical_mlp_mixer_moe9_imagenet1k_clip_distill --config experiments/optical_mlp_mixer_moe9_imagenet1k_clip_distill/configs/imagenet1k.json --phase train
+CUDA_VISIBLE_DEVICES=5 python -m experiments.optical_mlp_mixer_moe9_imagenet1k_clip_distill --config experiments/optical_mlp_mixer_moe9_imagenet1k_clip_distill/configs/imagenet1k.json --phase train
 ```
 
 ## Formal 8-GPU H200 training
@@ -58,20 +58,17 @@ CUDA_VISIBLE_DEVICES=0 python -m experiments.optical_mlp_mixer_moe9_imagenet1k_c
 CUDA_VISIBLE_DEVICES=0 python -m experiments.optical_mlp_mixer_moe9_imagenet1k_clip_distill --config experiments/optical_mlp_mixer_moe9_imagenet1k_clip_distill/configs/imagenet1k_smoke.json --phase all
 ```
 
-## Resume after epoch 90
+## Resume a paused run
 
-Set the following two fields in a copied config:
+The run directory is kept inside this experiment. Resume without editing the
+formal config:
 
-```json
-{
-  "training": {
-    "epochs": 150,
-    "resume_checkpoint": "runs/optical_mlp_mixer_moe9_imagenet1k_clip_distill/checkpoints/last.pt"
-  }
-}
+```bash
+CUDA_VISIBLE_DEVICES=0 python -m experiments.optical_mlp_mixer_moe9_imagenet1k_clip_distill --config experiments/optical_mlp_mixer_moe9_imagenet1k_clip_distill/configs/imagenet1k.json --phase train --resume-checkpoint experiments/optical_mlp_mixer_moe9_imagenet1k_clip_distill/runs/optical_mlp_mixer_moe9_imagenet1k_clip_distill/checkpoints/pause_after_epoch_0001.pt
 ```
 
-Then run the normal `--phase train` command.
+For DDP, append the same `--resume-checkpoint` argument to the `torchrun`
+training command. Only rank zero writes checkpoints; no weight merge is needed.
 
 ## Tests
 
@@ -82,3 +79,5 @@ python -m compileall experiments/optical_mlp_mixer_moe9_imagenet1k_clip_distill
 ```bash
 pytest experiments/optical_mlp_mixer_moe9_imagenet1k_clip_distill/tests -q
 ```
+
+CUDA_VISIBLE_DEVICES=0,1,2,3,5,6 torchrun --standalone --nproc_per_node=6 -m experiments.optical_mlp_mixer_moe9_imagenet1k_clip_distill --config experiments/optical_mlp_mixer_moe9_imagenet1k_clip_distill/configs/imagenet1k.json --phase train --resume-checkpoint experiments/optical_mlp_mixer_moe9_imagenet1k_clip_distill/runs/optical_mlp_mixer_moe9_imagenet1k_clip_distill/checkpoints/last.pt

@@ -118,7 +118,7 @@
     "minimum_learning_rate": 1e-6
   },
   "training": {
-    "output_dir": "runs/optical_mlp_mixer_moe9_imagenet1k_clip_distill_smoke",
+    "output_dir": "experiments/optical_mlp_mixer_moe9_imagenet1k_clip_distill/runs/optical_mlp_mixer_moe9_imagenet1k_clip_distill_smoke",
     "device": "cuda",
     "epochs": 1,
     "batch_size": 1,
