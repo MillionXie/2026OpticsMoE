@@ -41,15 +41,15 @@
 
 ## Attention 与 Transformer 残差
 
-默认启用一个 native-shaped Qwen attention prelude，并训练其参数：
+当前四个任务的默认配置均关闭 native-shaped Qwen attention prelude，仅保留固定恒等残差：
 
 ```text
-A = X + Attention(Norm1(X))
-Y = A + OpticalMoE(Norm2(A))
+Delta = OpticalMoE(X)
+Y = X + Delta
 ```
 
-残差恒等支路系数固定为 1，与标准 Transformer residual 一致；残差相加后不额外接激活。默认
-`initialize_attention_from_teacher=false`，因此只复制 Qwen attention 的结构和必要 norm，attention 投影权重独立随机初始化。设为 `true` 才复制指定 teacher block 的 attention 权重。`native_pre_attention_trainable=true` 控制 attention 是否训练。
+残差恒等支路系数固定为 1，与标准 Transformer residual 一致；残差相加后不额外接激活。attention 实现仍保留用于后续消融，但当
+`native_pre_attention_enabled=false` 时不会创建 vision/language attention prelude，不会加入 attention optimizer group，也不会产生 attention 前向计算。
 
 ## 防止 detector 梯度归零
 

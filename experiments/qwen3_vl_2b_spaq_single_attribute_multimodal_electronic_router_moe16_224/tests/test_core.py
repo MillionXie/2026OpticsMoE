@@ -9,54 +9,59 @@ import torch
 from PIL import Image
 from torch import nn
 
-from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe9 import (
+from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe16_224 import (
     TASK_PROMPTS,
 )
-from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe9.datasets import (
+from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe16_224.datasets import (
     load_spaq,
 )
-from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe9.features import (
+from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe16_224.features import (
     multimodal_forward_features,
     pool_answer_hidden_state,
 )
-from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe9.modeling import (
+from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe16_224.modeling import (
     build_head,
 )
-from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe9.optics.geometry import (
+from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe16_224.optics.geometry import (
+    Aperture,
     MoEGeometry,
 )
-from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe9.optics.moe import (
+from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe16_224.optics.moe import (
     FullPlaneReadout,
     HomogeneousMoEOpticalCore,
     LanguageDeepStackHomogeneousMoE,
 )
-from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe9.optics.physical import (
+from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe16_224.optics.physical import (
     AngularSpectrumPropagator,
     PhaseLayer,
     SquareDetectionLayerNormReload,
     aperture_linear_indices,
 )
-from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe9.optics.replacement import (
+from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe16_224.optics.replacement import (
     DeepStackMultimodalReplacement,
     VisionNativeAttentionPrelude,
 )
-from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe9.optics.router import (
+from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe16_224.optics.router import (
     ElectronicAmplitudeRouter,
 )
-from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe9.processor_cache import (
+from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe16_224.processor_cache import (
     ProcessorCacheStore,
     collate_processor_samples,
 )
-from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe9.settings import (
+from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe16_224.cache_paths import (
+    cache_identity_digest,
+    precompute_cache_root,
+)
+from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe16_224.settings import (
     load_settings,
 )
-from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe9.teacher_cache import (
+from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe16_224.teacher_cache import (
     TeacherCacheStore,
 )
 
 
 ROOT = Path(
-    "experiments/qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe9"
+    "experiments/qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe16_224"
 )
 CONFIGS = ROOT / "configs"
 
@@ -86,11 +91,82 @@ def test_all_four_single_attribute_configs(filename: str, task: str) -> None:
     assert settings.cpu_threads == 4
     assert settings.cpu_interop_threads == 1
     assert settings.teacher_cache_lru_shards == 128
+    assert settings.precompute_cache_dir == (ROOT / "cache").resolve()
+    assert settings.input_adapter_dim == 224
+    assert settings.max_visual_tokens == 224
+    assert settings.max_language_tokens == 224
+    assert settings.vision_tap_stages == (1, 2, 3)
+    assert (
+        settings.canvas_size,
+        settings.active_size,
+        settings.expert_size,
+        settings.expert_pitch,
+        settings.num_experts,
+        settings.expert_grid_rows,
+        settings.expert_grid_cols,
+        settings.expert_layers,
+        settings.top_k,
+    ) == (1026, 986, 224, 254, 16, 4, 4, 4, 4)
+    assert settings.detector_crop_to_active
+    assert settings.detector_output_size == 224
     assert (
         settings.expert_interlayer_distance_m,
         settings.last_expert_to_global_distance_m,
         settings.global_to_detector_distance_m,
     ) == (0.1, 0.1, 0.1)
+
+
+def test_moe16_geometry_exactly_aligns_experts_global_phase_and_ccd() -> None:
+    geometry = MoEGeometry()
+    geometry.validate()
+    assert geometry.outer_padding == 20
+    assert geometry.expert_gap == 30
+    assert geometry.active_aperture == Aperture(20, 1006, 20, 1006)
+    assert geometry.detector_aperture == geometry.active_aperture
+    apertures = geometry.expert_apertures
+    assert len(apertures) == 16
+    assert apertures[0] == Aperture(20, 244, 20, 244)
+    assert apertures[-1] == Aperture(782, 1006, 782, 1006)
+    assert apertures[1].x0 - apertures[0].x1 == 30
+    assert apertures[4].y0 - apertures[0].y1 == 30
+
+
+def test_parameter_budget_is_within_requested_vision_language_range() -> None:
+    settings = load_settings(CONFIGS / "spaq_mos.json")
+    vision = HomogeneousMoEOpticalCore(1024, 224, settings)
+    language = HomogeneousMoEOpticalCore(2048, 224, settings)
+    vision_report = vision.parameter_breakdown()
+    language_report = language.parameter_breakdown()
+    assert vision_report["expert_phase_parameters"] == 16 * 4 * 224 * 224
+    assert vision_report["global_phase_parameters"] == 986 * 986
+    assert vision_report["optical_phase_parameters"] == 4_183_460
+    assert vision_report["adapter_parameters"] == 460_448
+    assert language_report["adapter_parameters"] == 920_224
+    assert vision_report["router_parameters"] == language_report["router_parameters"] == 3_152
+    head_parameters = sum(parameter.numel() for parameter in build_head(settings, 2048).parameters())
+    total = (
+        vision_report["trainable_parameters"]
+        + language_report["trainable_parameters"]
+        + head_parameters
+    )
+    assert total == 9_760_041
+    assert 8_000_000 <= total <= 10_000_000
+
+
+def test_shared_precompute_cache_is_outside_runs_and_identity_guarded(tmp_path: Path) -> None:
+    settings = load_settings(CONFIGS / "spaq_mos_smoke.json")
+    settings.precompute_cache_dir = tmp_path / "cache"
+    settings.resolved_annotations_file = str(tmp_path / "scores.csv")
+    settings.split_digest = "fixed-split"
+    first = precompute_cache_root(settings)
+    first_digest = cache_identity_digest(settings)
+    settings.output_dir = tmp_path / "another_debug_run"
+    assert precompute_cache_root(settings) == first
+    assert cache_identity_digest(settings) == first_digest
+    assert not first.is_relative_to(settings.output_dir)
+    settings.classification_prompt += " changed"
+    assert cache_identity_digest(settings) != first_digest
+    assert precompute_cache_root(settings) != first
 
 
 @pytest.mark.parametrize("task", ["MOS", "Brightness", "Colorfulness", "Contrast"])
@@ -108,7 +184,7 @@ def test_dataset_supports_every_attribute_and_rgb(tmp_path: Path, task: str) -> 
     config.write_text(
         json.dumps(
             {
-                "config_version": 3,
+                "config_version": 4,
                 "dataset": "spaq_single_attribute",
                 "task_name": task,
                 "data_root": str(root),
@@ -126,14 +202,14 @@ def test_dataset_supports_every_attribute_and_rgb(tmp_path: Path, task: str) -> 
     assert bundle.metadata["task"] == task
 
 
-def _encoder(hidden_size: int = 8, max_tokens: int = 120) -> HomogeneousMoEOpticalCore:
+def _encoder(hidden_size: int = 8, max_tokens: int = 224) -> HomogeneousMoEOpticalCore:
     module = HomogeneousMoEOpticalCore.__new__(HomogeneousMoEOpticalCore)
     nn.Module.__init__(module)
     module.hidden_size = hidden_size
     module.max_tokens = max_tokens
     module.geometry = MoEGeometry()
-    module.input_adapter = nn.Linear(hidden_size, 120)
-    module.input_norm = nn.LayerNorm(120)
+    module.input_adapter = nn.Linear(hidden_size, 224)
+    module.input_norm = nn.LayerNorm(224)
     module.nonnegative = nn.Softplus()
     module.amplitude_slm_weight_domain = "amplitude"
     module.amplitude_slm_input_normalization = "none"
@@ -153,11 +229,11 @@ def _encoder(hidden_size: int = 8, max_tokens: int = 120) -> HomogeneousMoEOptic
 def test_token_row_mapping_is_nonnegative_and_zero_padded() -> None:
     encoder = _encoder()
     field = encoder.encode_groups([torch.randn(60, 8)])
-    assert field.shape == (1, 120, 120)
+    assert field.shape == (1, 224, 224)
     assert torch.all(field >= 0)
     assert torch.count_nonzero(field[:, 60:]) == 0
-    with pytest.raises(RuntimeError, match="visual token count 121"):
-        encoder.encode_groups([torch.randn(121, 8)])
+    with pytest.raises(RuntimeError, match="visual token count 225"):
+        encoder.encode_groups([torch.randn(225, 8)])
 
 
 class _FixedElectronicRouter(nn.Module):
@@ -181,9 +257,11 @@ class _FixedElectronicRouter(nn.Module):
 
 def test_electronic_router_directly_loads_weighted_amplitude_copies() -> None:
     encoder = _encoder()
-    weights = torch.tensor([[0.0, 0.2, 0.0, 0.3, 0.0, 0.0, 0.5, 0.0, 0.0]])
+    weights = torch.tensor(
+        [[0.0, 0.2, 0.0, 0.3, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
+    )
     encoder.router = _FixedElectronicRouter(weights)
-    source = torch.rand(1, 120, 120, requires_grad=True)
+    source = torch.rand(1, 224, 224, requires_grad=True)
     canvas, routing = encoder.begin(source)
     assert canvas.dtype == torch.complex64
     assert routing["phase_prompt_used"] is False
@@ -196,11 +274,11 @@ def test_electronic_router_directly_loads_weighted_amplitude_copies() -> None:
 
 
 def test_real_electronic_router_is_sparse_balanced_and_differentiable() -> None:
-    router = ElectronicAmplitudeRouter(MoEGeometry(), 3, 4, 1.0)
-    fields = torch.rand(2, 120, 120, requires_grad=True)
+    router = ElectronicAmplitudeRouter(MoEGeometry(), 4, 4, 1.0)
+    fields = torch.rand(2, 224, 224, requires_grad=True)
     output = router(fields)
-    assert output["weights"].shape == (2, 9)
-    assert torch.equal((output["weights"] > 0).sum(1), torch.tensor([3, 3]))
+    assert output["weights"].shape == (2, 16)
+    assert torch.equal((output["weights"] > 0).sum(1), torch.tensor([4, 4]))
     assert torch.allclose(output["weights"].sum(1), torch.ones(2))
     assert output["phase_prompt_used"] is False
     (output["weights"].square().sum() + output["balance_loss"]).backward()
@@ -210,7 +288,7 @@ def test_real_electronic_router_is_sparse_balanced_and_differentiable() -> None:
 def test_power_domain_uses_sqrt_amplitude_scale() -> None:
     encoder = _encoder()
     encoder.amplitude_slm_weight_domain = "power"
-    routing = {"weights": torch.tensor([[0.0, 0.25, 0.75] + [0.0] * 6])}
+    routing = {"weights": torch.tensor([[0.0, 0.25, 0.75] + [0.0] * 13])}
     assert torch.allclose(
         encoder._amplitude_scales(routing)[:, :3],
         torch.tensor([[0.0, 0.5, 0.75**0.5]]),
@@ -220,9 +298,9 @@ def test_power_domain_uses_sqrt_amplitude_scale() -> None:
 def test_language_overflow_is_explicit() -> None:
     language = LanguageDeepStackHomogeneousMoE.__new__(LanguageDeepStackHomogeneousMoE)
     nn.Module.__init__(language)
-    language.core = SimpleNamespace(max_tokens=120)
-    with pytest.raises(RuntimeError, match="language sequence length 121"):
-        language.set_attention_mask(torch.ones(1, 121))
+    language.core = SimpleNamespace(max_tokens=224)
+    with pytest.raises(RuntimeError, match="language sequence length 225"):
+        language.set_attention_mask(torch.ones(1, 225))
 
 
 def test_cached_multimodal_batch_padding_and_pixel_concatenation() -> None:
@@ -358,7 +436,7 @@ class _LanguageBlock(nn.Module):
 
 
 class _FakeSurrogate(nn.Module):
-    def __init__(self, stages: int = 5):
+    def __init__(self, stages: int = 4):
         super().__init__()
         self.core = SimpleNamespace(expert_layers=[None] * stages)
         self.weight = nn.Parameter(torch.ones(()))
@@ -426,7 +504,7 @@ def test_replacement_maps_native_deepstack_taps() -> None:
     )
     replacement.use_student()
     assert [replacement.vision_blocks[i].slot for i in (5, 11, 17, 23)] == [0, 1, 2, 3]
-    assert [replacement.language_layers[i].stage for i in range(5)] == list(range(5))
+    assert [replacement.language_layers[i].stage for i in range(4)] == list(range(4))
     replacement.close()
 
 
@@ -443,14 +521,14 @@ def test_small_text_regression_head_backward() -> None:
 
 def test_final_detector_per_token_normalization_preserves_gradient() -> None:
     settings = SimpleNamespace(
-        canvas_size=16,
-        detector_pool_kernel=2,
+        detector_output_size=8,
         detector_layernorm_scope="per_token",
         detector_layernorm_eps=1e-5,
         detector_layernorm_affine=False,
         detector_nonlinearity="relu",
     )
-    readout = FullPlaneReadout(settings)
+    geometry = SimpleNamespace(detector_aperture=Aperture(2, 14, 2, 14))
+    readout = FullPlaneReadout(geometry, settings)
     phase = PhaseLayer(16, parameterization="unconstrained", init="small_normal")
     propagation = AngularSpectrumPropagator(
         wavelength_m=532e-9,
@@ -460,8 +538,9 @@ def test_final_detector_per_token_normalization_preserves_gradient() -> None:
     )
     torch.manual_seed(9)
     amplitude = torch.rand(2, 16, 16)
-    values, _ = readout(propagation(phase(amplitude.to(torch.complex64))))
+    values, detector_roi = readout(propagation(phase(amplitude.to(torch.complex64))))
     assert values.shape == (2, 8, 8)
+    assert detector_roi.shape == (2, 12, 12)
     assert torch.count_nonzero(values) > 0
     weighted_loss = (values * torch.linspace(0.1, 1.0, 8)[None, None, :]).mean()
     weighted_loss.backward()
@@ -482,17 +561,13 @@ def test_vectorized_per_expert_detection_matches_reference() -> None:
     )
     torch.manual_seed(11)
     field = torch.complex(
-        torch.randn(2, 480, 480),
-        torch.randn(2, 480, 480),
+        torch.randn(2, geometry.canvas_size, geometry.canvas_size),
+        torch.randn(2, geometry.canvas_size, geometry.canvas_size),
     )
-    selected = torch.tensor(
-        [
-            [1, 0, 1, 0, 1, 0, 0, 0, 0],
-            [0, 1, 0, 1, 0, 1, 0, 0, 0],
-        ],
-        dtype=torch.bool,
-    )
-    weights = torch.rand(2, 9)
+    selected = torch.zeros(2, geometry.num_experts, dtype=torch.bool)
+    selected[0, [0, 2, 5, 11]] = True
+    selected[1, [1, 4, 9, 15]] = True
+    weights = torch.rand(2, geometry.num_experts)
     actual = layer(
         field, selected_experts=selected, routing_weights=weights
     ).real

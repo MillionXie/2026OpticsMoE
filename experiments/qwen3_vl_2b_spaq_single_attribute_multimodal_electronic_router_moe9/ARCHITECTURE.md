@@ -18,15 +18,17 @@ Teacher Qwen remains frozen. Only the small regression head trains.
 
 ## Student block alignment
 
-For each replaced stack, the default block-aligned form is:
+For each replaced stack, the current attention-free residual form is:
 
 ```text
-A = X + Attention(Norm1(X))
-Delta = OpticalMoE(Norm2(A))
-Y = A + Delta
+Delta = OpticalMoE(X)
+Y = X + Delta
 ```
 
-There is no learned residual scale and no post-residual activation. Vision and language attention modules are independent. By default their projection weights are randomly initialized and trainable; teacher initialization is an explicit configuration option.
+There is no learned residual scale and no post-residual activation. Both native
+attention preludes are disabled by default for all four SPAQ task configs.
+Their implementation remains available as an explicit ablation, but it has no
+parameters, optimizer group, or compute cost while disabled.
 
 Vision MoE exposes stage 1/3/4 and final outputs at Qwen's native DeepStack provider block indices. Language MoE consumes the three native DeepStack deltas at the same ordering points as Qwen.
 

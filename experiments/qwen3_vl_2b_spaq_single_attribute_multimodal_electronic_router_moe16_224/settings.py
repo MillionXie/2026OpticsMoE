@@ -11,14 +11,21 @@ from . import MODEL_ID, SUPPORTED_TASKS, TASK_PROMPTS
 
 
 PROJECT_DIR = Path(__file__).resolve().parent
-PATH_FIELDS = {"data_root", "annotations_file", "image_dir", "output_dir", "cache_dir", "source_cache_run_dir"}
+PATH_FIELDS = {
+    "data_root",
+    "annotations_file",
+    "image_dir",
+    "output_dir",
+    "cache_dir",
+    "precompute_cache_dir",
+}
 ENV_REFERENCE = re.compile(r"\$(?:\{([A-Za-z_][A-Za-z0-9_]*)\}|([A-Za-z_][A-Za-z0-9_]*))")
 
 
 @dataclass
 class Settings:
-    config_version: int = 3
-    experiment_name: str = "qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe9"
+    config_version: int = 4
+    experiment_name: str = "qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe16_224"
     dataset: str = "spaq_single_attribute"
     task_name: str = "MOS"
     data_root: Path = PROJECT_DIR.parent.parent / "data" / "SPAQ"
@@ -35,8 +42,8 @@ class Settings:
     train_image_limit: int | None = None
     test_image_limit: int | None = None
     train_samples_per_epoch: int | None = None
-    output_dir: Path = PROJECT_DIR / "runs" / "qwen3_vl_2b_spaq_mos_multimodal_electronic_router_moe9"
-    source_cache_run_dir: Path | None = None
+    output_dir: Path = PROJECT_DIR / "runs" / "qwen3_vl_2b_spaq_mos_multimodal_electronic_router_moe16_224"
+    precompute_cache_dir: Path = PROJECT_DIR / "cache"
     model_id: str = MODEL_ID
     cache_dir: Path | None = None
     local_files_only: bool = False
@@ -67,9 +74,9 @@ class Settings:
     head_output_activation: str = "linear"
     student_head_learning_rate: float = 1e-3
     dropout: float = 0.0
-    input_adapter_dim: int = 120
-    max_visual_tokens: int = 120
-    max_language_tokens: int = 120
+    input_adapter_dim: int = 224
+    max_visual_tokens: int = 224
+    max_language_tokens: int = 224
     student_language_mode: str = "optical_moe"
     native_pre_attention_enabled: bool = False
     native_pre_attention_initialize_from_teacher: bool = False
@@ -77,14 +84,16 @@ class Settings:
     transformer_residual_enabled: bool = True
     vision_attention_source_layer: int = 0
     language_attention_source_layer: int = 0
-    vision_tap_stages: tuple[int, int, int] = (1, 3, 4)
-    canvas_size: int = 480
-    active_size: int = 450
-    expert_size: int = 120
-    expert_pitch: int = 150
-    num_experts: int = 9
-    top_k: int = 3
-    router_pool_size: int = 10
+    vision_tap_stages: tuple[int, int, int] = (1, 2, 3)
+    canvas_size: int = 1026
+    active_size: int = 986
+    expert_size: int = 224
+    expert_pitch: int = 254
+    num_experts: int = 16
+    expert_grid_rows: int = 4
+    expert_grid_cols: int = 4
+    top_k: int = 4
+    router_pool_size: int = 14
     router_temperature: float = 1.0
     router_learning_rate: float = 1e-3
     attention_learning_rate: float = 1e-4
@@ -94,7 +103,7 @@ class Settings:
     amplitude_slm_weight_domain: str = "amplitude"
     amplitude_slm_input_normalization: str = "none"
     amplitude_phase_relay: str = "ideal_4f_identity"
-    expert_layers: int = 5
+    expert_layers: int = 4
     wavelength_nm: float = 532.0
     pixel_pitch_um: float = 16.0
     expert_interlayer_distance_m: float = 0.10
@@ -112,7 +121,9 @@ class Settings:
     interlayer_elementwise_affine: bool = False
     interlayer_hard_route_mask: bool = True
     interlayer_reapply_routing_weights: bool = True
-    detector_pool_kernel: int = 4
+    detector_pool_type: str = "adaptive_avg"
+    detector_output_size: int = 224
+    detector_crop_to_active: bool = True
     detector_layernorm_eps: float = 1e-5
     detector_layernorm_affine: bool = False
     detector_layernorm_scope: str = "per_token"
@@ -153,8 +164,8 @@ class Settings:
     split_digest: str | None = None
 
     def validate(self) -> None:
-        if self.config_version != 3:
-            raise ValueError("config_version must be 3 for the electronic-router grouped schema")
+        if self.config_version != 4:
+            raise ValueError("config_version must be 4 for the MoE16-224 electronic-router schema")
         if self.dataset != "spaq_single_attribute":
             raise ValueError("This experiment requires dataset='spaq_single_attribute'")
         if self.task_name not in SUPPORTED_TASKS:
@@ -163,10 +174,8 @@ class Settings:
             raise ValueError("classification_prompt must be non-empty")
         if self.student_language_mode not in {"electronic", "optical_moe"}:
             raise ValueError("student.language_stack_mode must be electronic or optical_moe")
-        if self.native_pre_attention_trainable and not self.native_pre_attention_enabled:
-            raise ValueError("Trainable native attention requires native_pre_attention_enabled=true")
-        if self.native_pre_attention_initialize_from_teacher and not self.native_pre_attention_enabled:
-            raise ValueError("Teacher attention initialization requires native_pre_attention_enabled=true")
+        if self.native_pre_attention_enabled or self.native_pre_attention_trainable or self.native_pre_attention_initialize_from_teacher:
+            raise ValueError("The MoE16-224 experiment intentionally disables the optional native attention prelude")
         if self.vision_attention_source_layer < 0 or self.language_attention_source_layer < 0:
             raise ValueError("Attention source-layer indexes must be non-negative")
         if self.model_id != MODEL_ID and not Path(self.model_id).is_dir():
@@ -190,16 +199,35 @@ class Settings:
             raise ValueError("processor pixel budgets must be positive")
         if self.processor_min_pixels > self.processor_max_pixels:
             raise ValueError("processor_min_pixels must be <= processor_max_pixels")
-        if (self.canvas_size, self.active_size, self.expert_size, self.expert_pitch, self.num_experts) != (480, 450, 120, 150, 9):
-            raise ValueError("The verified homogeneous MoE geometry is fixed at canvas480/active450/expert120/pitch150/9 experts")
-        if self.input_adapter_dim != 120 or self.max_visual_tokens != 120 or self.max_language_tokens != 120:
-            raise ValueError("Direct token-row mapping requires optical_channels=max_visual_tokens=max_language_tokens=120")
+        geometry = (
+            self.canvas_size,
+            self.active_size,
+            self.expert_size,
+            self.expert_pitch,
+            self.num_experts,
+            self.expert_grid_rows,
+            self.expert_grid_cols,
+        )
+        if geometry != (1026, 986, 224, 254, 16, 4, 4):
+            raise ValueError(
+                "MoE16-224 geometry is fixed at canvas1026/active986/expert224/"
+                "pitch254/16 experts/4x4"
+            )
+        if self.active_size != (
+            self.expert_grid_rows * self.expert_size
+            + (self.expert_grid_rows - 1) * (self.expert_pitch - self.expert_size)
+        ):
+            raise ValueError("The 4x4 expert footprint must exactly fill the 986x986 active area")
+        if self.canvas_size - self.active_size != 40:
+            raise ValueError("The propagation canvas must add 20 zero-padding pixels on each side")
+        if self.input_adapter_dim != 224 or self.max_visual_tokens != 224 or self.max_language_tokens != 224:
+            raise ValueError("Direct token-row mapping requires optical_channels=max token rows=224")
         if len(self.vision_tap_stages) != 3 or any(stage < 1 or stage > self.expert_layers for stage in self.vision_tap_stages):
-            raise ValueError("vision_adapter.tap_stages must contain three 1-based stages within the five-stage MoE")
+            raise ValueError("vision_adapter.tap_stages must contain three 1-based stages within the four-stage MoE")
         if tuple(sorted(self.vision_tap_stages)) != tuple(self.vision_tap_stages):
             raise ValueError("vision_adapter.tap_stages must be ordered")
-        if self.expert_layers != 5 or not 1 <= self.top_k <= self.num_experts:
-            raise ValueError("The experiment requires five expert layers and a valid top_k")
+        if self.expert_layers != 4 or self.top_k != 4:
+            raise ValueError("The experiment requires four expert stages and top_k=4")
         if self.router_input_layernorm_eps <= 0:
             raise ValueError("router.input_layernorm_eps must be positive")
         if self.router_learning_rate <= 0:
@@ -214,8 +242,10 @@ class Settings:
             raise ValueError("router.amplitude_slm.input_normalization must be none or per_sample_max")
         if self.amplitude_phase_relay != "ideal_4f_identity":
             raise ValueError("The amplitude-to-phase relay must be ideal_4f_identity")
-        if self.detector_pool_kernel != 4 or self.canvas_size // self.detector_pool_kernel != 120:
-            raise ValueError("The full detector must pool exactly from 480x480 to 120x120")
+        if self.detector_pool_type != "adaptive_avg" or self.detector_output_size != 224:
+            raise ValueError("The final CCD readout must use adaptive-average pooling to 224x224")
+        if not self.detector_crop_to_active:
+            raise ValueError("The final CCD must crop the 986x986 active ROI before electronic readout")
         if self.detector_layernorm_affine:
             raise ValueError("Post-detector LayerNorm must use elementwise_affine=False")
         if self.detector_layernorm_scope not in {"per_token", "full_field"}:
@@ -248,6 +278,13 @@ class Settings:
                      "last_expert_to_global_distance_m", "global_to_detector_distance_m"):
             if float(getattr(self, name)) <= 0:
                 raise ValueError(f"{name} must be positive")
+        distances = (
+            self.expert_interlayer_distance_m,
+            self.last_expert_to_global_distance_m,
+            self.global_to_detector_distance_m,
+        )
+        if any(abs(float(distance) - 0.1) > 1e-12 for distance in distances):
+            raise ValueError("All configured phase-to-CCD propagation distances must be 0.10 m")
         positive = ("feature_batch_size", "student_batch_size", "inference_batch_size", "head_batch_size", "teacher_cache_shard_size", "teacher_cache_lru_shards", "teacher_cache_log_interval_batches", "num_workers", "cpu_threads", "cpu_interop_threads", "epochs", "log_interval_batches", "checkpoint_interval_epochs", "visualization_interval_epochs", "visualization_sample_count", "phase_dropout_block_size")
         for name in positive:
             if int(getattr(self, name)) < (0 if name == "num_workers" else 1):
@@ -319,9 +356,9 @@ NESTED_FIELDS: dict[tuple[str, ...], str] = {
     ("batching", "num_workers"): "num_workers",
     ("batching", "cpu_threads"): "cpu_threads",
     ("batching", "cpu_interop_threads"): "cpu_interop_threads",
+    ("teacher_cache", "precompute_cache_dir"): "precompute_cache_dir",
     ("teacher_cache", "shard_size"): "teacher_cache_shard_size", ("teacher_cache", "lru_shards"): "teacher_cache_lru_shards",
     ("teacher_cache", "dtype"): "cache_dtype", ("teacher_cache", "log_interval_batches"): "teacher_cache_log_interval_batches",
-    ("teacher_cache", "source_cache_run_dir"): "source_cache_run_dir",
     ("vision_adapter", "optical_channels"): "input_adapter_dim", ("vision_adapter", "max_visual_tokens"): "max_visual_tokens",
     ("vision_adapter", "tap_stages"): "vision_tap_stages",
     ("language_adapter", "max_language_tokens"): "max_language_tokens",
@@ -335,6 +372,8 @@ NESTED_FIELDS: dict[tuple[str, ...], str] = {
     ("moe", "geometry", "canvas_size"): "canvas_size", ("moe", "geometry", "active_size"): "active_size",
     ("moe", "geometry", "expert_size"): "expert_size", ("moe", "geometry", "expert_pitch"): "expert_pitch",
     ("moe", "geometry", "num_experts"): "num_experts", ("moe", "geometry", "layers_per_expert"): "expert_layers",
+    ("moe", "geometry", "grid_rows"): "expert_grid_rows",
+    ("moe", "geometry", "grid_cols"): "expert_grid_cols",
     ("moe", "router", "top_k"): "top_k", ("moe", "router", "pool_size"): "router_pool_size",
     ("moe", "router", "temperature"): "router_temperature",
     ("moe", "router", "learning_rate"): "router_learning_rate",
@@ -359,7 +398,9 @@ NESTED_FIELDS: dict[tuple[str, ...], str] = {
     ("moe", "optoelectronic_interlayers", "reapply_routing_weights"): "interlayer_reapply_routing_weights",
     ("moe", "optoelectronic_interlayers", "layernorm_eps"): "interlayer_layernorm_eps",
     ("moe", "optoelectronic_interlayers", "nonlinearity"): "interlayer_nonlinearity",
-    ("moe", "final_detector_readout", "pool_kernel"): "detector_pool_kernel",
+    ("moe", "final_detector_readout", "pool_type"): "detector_pool_type",
+    ("moe", "final_detector_readout", "output_size"): "detector_output_size",
+    ("moe", "final_detector_readout", "crop_to_active"): "detector_crop_to_active",
     ("moe", "final_detector_readout", "layernorm_eps"): "detector_layernorm_eps",
     ("moe", "final_detector_readout", "layernorm_affine"): "detector_layernorm_affine",
     ("moe", "final_detector_readout", "layernorm_scope"): "detector_layernorm_scope",
@@ -430,6 +471,9 @@ def load_settings(path: str | Path) -> Settings:
     for name in PATH_FIELDS:
         if values.get(name) is not None:
             values[name] = resolve_path(values[name], config_path.parent, name)
+    for name in ("vision_tap_stages", "deepstack_visual_indexes"):
+        if isinstance(values.get(name), list):
+            values[name] = tuple(values[name])
     settings = Settings(**values)
     settings.validate()
     return settings
