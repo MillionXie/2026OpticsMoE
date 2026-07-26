@@ -1,0 +1,593 @@
+from __future__ import annotations
+
+import json
+import os
+import re
+from dataclasses import dataclass, fields
+from pathlib import Path
+from typing import Any
+
+from . import MODEL_ID, SUPPORTED_TASKS, TASK_PROMPTS
+
+
+PROJECT_DIR = Path(__file__).resolve().parent
+PATH_FIELDS = {
+    "data_root",
+    "annotations_file",
+    "image_dir",
+    "output_dir",
+    "cache_dir",
+    "precompute_cache_dir",
+    "teacher_artifact_source_run_dir",
+    "student_initialization_run_dir",
+}
+ENV_REFERENCE = re.compile(r"\$(?:\{([A-Za-z_][A-Za-z0-9_]*)\}|([A-Za-z_][A-Za-z0-9_]*))")
+
+
+@dataclass
+class Settings:
+    config_version: int = 4
+    experiment_name: str = "qwen3_vl_2b_kadid10k_mos_multimodal_electronic_router_moe16_224"
+    dataset: str = "kadid10k_mos"
+    task_name: str = "DMOS"
+    data_root: Path = PROJECT_DIR.parent.parent / "data" / "kadid10k"
+    annotations_file: Path | None = None
+    image_dir: Path | None = None
+    download: bool = True
+    download_source: str = "official_url"
+    download_repo_id: str = ""
+    download_filename: str = "kadid10k.zip"
+    download_endpoint: str | None = None
+    download_url: str | None = "https://datasets.vqa.mmsp-kn.de/archives/kadid10k.zip"
+    keep_download_archive: bool = False
+    require_official_counts: bool = True
+    official_reference_images: int = 81
+    official_distorted_images: int = 10125
+    quality_score_min: float = 1.0
+    quality_score_max: float = 5.0
+    train_fraction: float = 0.8
+    train_image_limit: int | None = None
+    test_image_limit: int | None = None
+    train_samples_per_epoch: int | None = None
+    train_epoch_partitions: int | None = None
+    output_dir: Path = PROJECT_DIR / "runs" / "qwen3_vl_2b_kadid10k_mos_multimodal_electronic_router_moe16_224"
+    precompute_cache_dir: Path = PROJECT_DIR / "cache"
+    model_id: str = MODEL_ID
+    cache_dir: Path | None = None
+    local_files_only: bool = False
+    processor_min_pixels: int = 37632
+    processor_max_pixels: int = 37632
+    classification_prompt: str = TASK_PROMPTS["DMOS"]
+    feature_batch_size: int = 1
+    student_batch_size: int = 1
+    inference_batch_size: int = 1
+    head_batch_size: int = 512
+    teacher_cache_shard_size: int = 128
+    teacher_cache_lru_shards: int = 8
+    teacher_cache_log_interval_batches: int = 100
+    num_workers: int = 8
+    cpu_threads: int = 4
+    cpu_interop_threads: int = 1
+    cache_dtype: str = "float16"
+    dtype: str = "bfloat16"
+    attn_implementation: str = "sdpa"
+    device: str = "cuda"
+    epochs: int = 30
+    validation_fraction: float = 0.1
+    learning_rate: float = 5e-4
+    adapter_learning_rate: float | None = None
+    weight_decay: float = 1e-2
+    phase_weight_decay: float = 0.0
+    optimizer_type: str = "adamw"
+    scheduler_type: str = "cosine"
+    sam_enabled: bool = False
+    sam_rho: float = 0.05
+    sam_adaptive: bool = False
+    head_type: str = "normalized_linear_regression"
+    head_output_activation: str = "linear"
+    student_head_learning_rate: float = 1e-3
+    dropout: float = 0.0
+    input_adapter_dim: int = 224
+    max_visual_tokens: int = 224
+    max_language_tokens: int = 224
+    student_language_mode: str = "optical_moe"
+    native_pre_attention_enabled: bool = False
+    native_pre_attention_initialize_from_teacher: bool = False
+    native_pre_attention_trainable: bool = False
+    transformer_residual_enabled: bool = True
+    vision_attention_source_layer: int = 0
+    language_attention_source_layer: int = 0
+    vision_tap_stages: tuple[int, int, int] = (1, 2, 3)
+    canvas_size: int = 1026
+    active_size: int = 986
+    expert_size: int = 224
+    expert_pitch: int = 254
+    num_experts: int = 16
+    expert_grid_rows: int = 4
+    expert_grid_cols: int = 4
+    top_k: int = 4
+    router_pool_size: int = 14
+    router_temperature: float = 1.0
+    router_learning_rate: float = 1e-3
+    attention_learning_rate: float = 1e-4
+    router_input_layernorm_enabled: bool = True
+    router_input_layernorm_eps: float = 1e-5
+    router_implementation: str = "electronic_amplitude_topk"
+    amplitude_slm_weight_domain: str = "amplitude"
+    amplitude_slm_input_normalization: str = "none"
+    amplitude_phase_relay: str = "ideal_4f_identity"
+    expert_layers: int = 4
+    wavelength_nm: float = 532.0
+    pixel_pitch_um: float = 16.0
+    expert_interlayer_distance_m: float = 0.10
+    last_expert_to_global_distance_m: float = 0.10
+    global_to_detector_distance_m: float = 0.10
+    phase_parameterization: str = "sigmoid"
+    phase_init: str = "zeros"
+    phase_init_std: float = 0.02
+    k_space_constraint_enabled: bool = False
+    theta_max_deg: float = 1.0
+    interlayer_layernorm_eps: float = 1e-5
+    interlayer_nonlinearity: str = "relu"
+    interlayer_enabled: bool = True
+    interlayer_per_expert_enabled: bool = True
+    interlayer_elementwise_affine: bool = False
+    interlayer_hard_route_mask: bool = True
+    interlayer_reapply_routing_weights: bool = True
+    detector_pool_type: str = "adaptive_avg"
+    detector_output_size: int = 224
+    detector_crop_to_active: bool = True
+    detector_layernorm_eps: float = 1e-5
+    detector_layernorm_affine: bool = False
+    detector_layernorm_scope: str = "per_token"
+    detector_nonlinearity: str = "relu"
+    loss_hidden_weight: float = 1.0
+    loss_answer_weight: float = 1.0
+    loss_prediction_distill_weight: float = 0.5
+    loss_regression_weight: float = 0.5
+    loss_ranking_weight: float = 0.0
+    ranking_margin: float = 0.02
+    ranking_temperature: float = 0.1
+    loss_norm_in_norm_weight: float = 0.0
+    norm_in_norm_p: float = 1.0
+    norm_in_norm_q: float = 2.0
+    norm_in_norm_eps: float = 1e-8
+    smooth_l1_beta: float = 0.1
+    router_balance_weight: float = 0.1
+    router_importance_weight: float = 0.0
+    log_interval_batches: int = 100
+    checkpoint_interval_epochs: int = 1
+    student_selection_split: str = "test"
+    student_selection_metric: str = "srcc"
+    teacher_artifact_source_run_dir: Path | None = None
+    student_initialization_run_dir: Path | None = None
+    student_initialization_tag: str | None = None
+    student_initialization_expected_epoch: int | None = None
+    student_initialization_require_epoch_match: bool = True
+    student_initialization_reset_optimizer: bool = True
+    phase_dropout_enabled: bool = False
+    phase_dropout_mode: str = "none"
+    phase_dropout_p: float = 0.0
+    phase_dropout_block_size: int = 8
+    phase_dropout_batch_shared: bool = True
+    phase_dropout_start_epoch: int = 0
+    visualization_enabled: bool = True
+    visualization_interval_epochs: int = 10
+    visualization_sample_count: int = 4
+    save_intermediate_fields: bool = True
+    save_phase_masks: bool = True
+    save_training_curves: bool = True
+    save_scatter_plot: bool = True
+    save_predictions: bool = True
+    seed: int = 42
+    progress: bool = True
+    vision_depth: int | None = None
+    vision_hidden_size: int | None = None
+    text_depth: int | None = None
+    text_hidden_size: int | None = None
+    deepstack_visual_indexes: tuple[int, ...] | None = None
+    resolved_annotations_file: str | None = None
+    split_digest: str | None = None
+
+    def validate(self) -> None:
+        if self.config_version != 4:
+            raise ValueError("config_version must be 4 for the MoE16-224 electronic-router schema")
+        if self.dataset != "kadid10k_mos":
+            raise ValueError("This experiment requires dataset='kadid10k_mos'")
+        if self.task_name not in SUPPORTED_TASKS:
+            raise ValueError(f"task_name must be one of {SUPPORTED_TASKS}, got {self.task_name!r}")
+        if not self.classification_prompt.strip():
+            raise ValueError("classification_prompt must be non-empty")
+        if self.student_language_mode not in {"electronic", "optical_moe"}:
+            raise ValueError("student.language_stack_mode must be electronic or optical_moe")
+        if self.native_pre_attention_enabled or self.native_pre_attention_trainable or self.native_pre_attention_initialize_from_teacher:
+            raise ValueError("The MoE16-224 experiment intentionally disables the optional native attention prelude")
+        if self.vision_attention_source_layer < 0 or self.language_attention_source_layer < 0:
+            raise ValueError("Attention source-layer indexes must be non-negative")
+        if self.model_id != MODEL_ID and not Path(self.model_id).is_dir():
+            raise ValueError(f"model_id must be {MODEL_ID} or an existing local directory")
+        if self.head_type != "normalized_linear_regression":
+            raise ValueError("Teacher and student must use normalized_linear_regression")
+        if self.head_output_activation not in {"sigmoid", "linear"}:
+            raise ValueError("classification_head.output_activation must be sigmoid or linear")
+        if self.student_head_learning_rate <= 0:
+            raise ValueError("optimizer.student_head_learning_rate must be positive")
+        if self.adapter_learning_rate is not None and self.adapter_learning_rate <= 0:
+            raise ValueError("optimizer.adapter_learning_rate must be positive when set")
+        if self.weight_decay < 0 or self.phase_weight_decay < 0:
+            raise ValueError("optimizer weight decay values must be non-negative")
+        if self.sam_enabled and self.sam_rho <= 0:
+            raise ValueError("optimizer.sam.rho must be positive when SAM is enabled")
+        if self.download_source != "official_url":
+            raise ValueError("KADID-10k download_source must be official_url")
+        if self.download and (not self.download_url or not self.download_filename.strip()):
+            raise ValueError("KADID-10k automatic download requires download_url and download_filename")
+        if self.official_reference_images <= 0 or self.official_distorted_images <= 0:
+            raise ValueError("Official KADID counts must be positive")
+        if not self.quality_score_min < self.quality_score_max:
+            raise ValueError("dataset quality_score_min must be below quality_score_max")
+        if not 0.0 < self.train_fraction < 1.0:
+            raise ValueError("dataset.train_fraction must be in (0,1)")
+        if self.processor_min_pixels <= 0 or self.processor_max_pixels <= 0:
+            raise ValueError("processor pixel budgets must be positive")
+        if self.processor_min_pixels > self.processor_max_pixels:
+            raise ValueError("processor_min_pixels must be <= processor_max_pixels")
+        geometry = (
+            self.canvas_size,
+            self.active_size,
+            self.expert_size,
+            self.expert_pitch,
+            self.num_experts,
+            self.expert_grid_rows,
+            self.expert_grid_cols,
+        )
+        if geometry != (1026, 986, 224, 254, 16, 4, 4):
+            raise ValueError(
+                "MoE16-224 geometry is fixed at canvas1026/active986/expert224/"
+                "pitch254/16 experts/4x4"
+            )
+        if self.active_size != (
+            self.expert_grid_rows * self.expert_size
+            + (self.expert_grid_rows - 1) * (self.expert_pitch - self.expert_size)
+        ):
+            raise ValueError("The 4x4 expert footprint must exactly fill the 986x986 active area")
+        if self.canvas_size - self.active_size != 40:
+            raise ValueError("The propagation canvas must add 20 zero-padding pixels on each side")
+        if self.input_adapter_dim != 224 or self.max_visual_tokens != 224 or self.max_language_tokens != 224:
+            raise ValueError("Direct token-row mapping requires optical_channels=max token rows=224")
+        if len(self.vision_tap_stages) != 3 or any(stage < 1 or stage > self.expert_layers for stage in self.vision_tap_stages):
+            raise ValueError("vision_adapter.tap_stages must contain three 1-based stages within the four-stage MoE")
+        if tuple(sorted(self.vision_tap_stages)) != tuple(self.vision_tap_stages):
+            raise ValueError("vision_adapter.tap_stages must be ordered")
+        if self.expert_layers != 4 or self.top_k != 4:
+            raise ValueError("The experiment requires four expert stages and top_k=4")
+        if self.router_input_layernorm_eps <= 0:
+            raise ValueError("router.input_layernorm_eps must be positive")
+        if self.router_learning_rate <= 0:
+            raise ValueError("router.learning_rate must be positive")
+        if self.attention_learning_rate <= 0:
+            raise ValueError("optimizer.attention_learning_rate must be positive")
+        if self.router_implementation != "electronic_amplitude_topk":
+            raise ValueError("This experiment requires router.implementation='electronic_amplitude_topk'")
+        if self.amplitude_slm_weight_domain not in {"amplitude", "power"}:
+            raise ValueError("router.amplitude_slm.weight_domain must be amplitude or power")
+        if self.amplitude_slm_input_normalization not in {"none", "per_sample_max"}:
+            raise ValueError("router.amplitude_slm.input_normalization must be none or per_sample_max")
+        if self.amplitude_phase_relay != "ideal_4f_identity":
+            raise ValueError("The amplitude-to-phase relay must be ideal_4f_identity")
+        if self.detector_pool_type != "adaptive_avg" or self.detector_output_size != 224:
+            raise ValueError("The final CCD readout must use adaptive-average pooling to 224x224")
+        if not self.detector_crop_to_active:
+            raise ValueError("The final CCD must crop the 986x986 active ROI before electronic readout")
+        if self.detector_layernorm_affine:
+            raise ValueError("Post-detector LayerNorm must use elementwise_affine=False")
+        if self.detector_layernorm_scope not in {"per_token", "full_field"}:
+            raise ValueError("final_detector_readout.layernorm_scope must be per_token or full_field")
+        if self.interlayer_nonlinearity not in {"relu", "softplus"} or self.detector_nonlinearity not in {"relu", "softplus"}:
+            raise ValueError("nonlinearities must be relu or softplus")
+        if self.interlayer_hard_route_mask and not self.interlayer_per_expert_enabled:
+            raise ValueError("hard_route_mask requires per_expert_enabled=true")
+        if self.interlayer_reapply_routing_weights and not self.interlayer_per_expert_enabled:
+            raise ValueError("reapply_routing_weights requires per_expert_enabled=true")
+        if self.optimizer_type not in {"adam", "adamw"}:
+            raise ValueError("optimizer.type must be adam or adamw")
+        if self.scheduler_type not in {"cosine", "none"}:
+            raise ValueError("optimizer.scheduler must be cosine or none")
+        if self.student_selection_split != "test":
+            raise ValueError("This configuration selects the student checkpoint on the test split")
+        if self.phase_dropout_mode not in {"none", "phase_bypass", "block_phase_bypass"}:
+            raise ValueError("phase_dropout.mode must be none, phase_bypass, or block_phase_bypass")
+        if not 0.0 <= self.phase_dropout_p < 1.0:
+            raise ValueError("phase_dropout.p must be in [0,1)")
+        if self.phase_dropout_enabled and (self.phase_dropout_mode == "none" or self.phase_dropout_p <= 0.0):
+            raise ValueError("Enabled phase dropout requires a non-none mode and p > 0")
+        if self.cache_dtype not in {"float16", "float32"} or self.dtype not in {"bfloat16", "float16", "float32"}:
+            raise ValueError("Unsupported dtype/cache_dtype")
+        if not 0.0 < self.validation_fraction < 1.0 or self.smooth_l1_beta <= 0:
+            raise ValueError("Invalid validation fraction or SmoothL1 beta")
+        if self.student_selection_metric not in {"mae", "srcc", "plcc"}:
+            raise ValueError("training.student_selection_metric must be mae, srcc, or plcc")
+        initialization_values = (
+            self.student_initialization_run_dir,
+            self.student_initialization_tag,
+            self.student_initialization_expected_epoch,
+        )
+        if any(value is not None for value in initialization_values):
+            if self.student_initialization_run_dir is None or not self.student_initialization_tag:
+                raise ValueError(
+                    "training.initialization requires both source_run_dir and checkpoint_tag"
+                )
+            if self.student_initialization_expected_epoch is not None and self.student_initialization_expected_epoch <= 0:
+                raise ValueError("training.initialization.expected_epoch must be positive")
+            if not self.student_initialization_reset_optimizer:
+                raise ValueError(
+                    "This fine-tuning implementation intentionally resets optimizer/scheduler state"
+                )
+        for name in ("wavelength_nm", "pixel_pitch_um", "expert_interlayer_distance_m",
+                     "last_expert_to_global_distance_m", "global_to_detector_distance_m"):
+            if float(getattr(self, name)) <= 0:
+                raise ValueError(f"{name} must be positive")
+        distances = (
+            self.expert_interlayer_distance_m,
+            self.last_expert_to_global_distance_m,
+            self.global_to_detector_distance_m,
+        )
+        if any(abs(float(distance) - 0.1) > 1e-12 for distance in distances):
+            raise ValueError("All configured phase-to-CCD propagation distances must be 0.10 m")
+        positive = ("feature_batch_size", "student_batch_size", "inference_batch_size", "head_batch_size", "teacher_cache_shard_size", "teacher_cache_lru_shards", "teacher_cache_log_interval_batches", "num_workers", "cpu_threads", "cpu_interop_threads", "epochs", "log_interval_batches", "checkpoint_interval_epochs", "visualization_interval_epochs", "visualization_sample_count", "phase_dropout_block_size")
+        for name in positive:
+            if int(getattr(self, name)) < (0 if name == "num_workers" else 1):
+                raise ValueError(f"{name} has an invalid value")
+        for name in ("train_image_limit", "test_image_limit", "train_samples_per_epoch", "train_epoch_partitions"):
+            value = getattr(self, name)
+            if value is not None and value <= 0:
+                raise ValueError(f"{name} must be positive when set")
+        if self.train_samples_per_epoch is not None and self.train_epoch_partitions is not None:
+            raise ValueError(
+                "dataset.train_samples_per_epoch and dataset.train_epoch_partitions are mutually exclusive"
+            )
+        for name in (
+            "loss_hidden_weight",
+            "loss_answer_weight",
+            "loss_prediction_distill_weight",
+            "loss_regression_weight",
+            "loss_ranking_weight",
+            "loss_norm_in_norm_weight",
+            "router_balance_weight",
+            "router_importance_weight",
+        ):
+            if float(getattr(self, name)) < 0:
+                raise ValueError(f"{name} must be non-negative")
+        if self.ranking_margin < 0:
+            raise ValueError("loss.ranking.margin must be non-negative")
+        if self.ranking_temperature <= 0:
+            raise ValueError("loss.ranking.temperature must be positive")
+        if self.norm_in_norm_p <= 0 or self.norm_in_norm_q <= 0:
+            raise ValueError("loss.norm_in_norm p and q must be positive")
+        if self.norm_in_norm_eps <= 0:
+            raise ValueError("loss.norm_in_norm.eps must be positive")
+        if self.phase_dropout_start_epoch < 0:
+            raise ValueError("phase_dropout.start_epoch must be non-negative")
+
+    def resolve_architecture(self, model: Any) -> None:
+        self.vision_depth = int(model.config.vision_config.depth)
+        self.vision_hidden_size = int(model.config.vision_config.hidden_size)
+        self.text_depth = int(model.config.text_config.num_hidden_layers)
+        self.text_hidden_size = int(model.config.text_config.hidden_size)
+        visual = getattr(getattr(model, "model", model), "visual", None)
+        indexes = getattr(visual, "deepstack_visual_indexes", ())
+        self.deepstack_visual_indexes = tuple(int(value) for value in indexes)
+        if len(self.deepstack_visual_indexes) != 3:
+            raise RuntimeError(
+                f"This implementation expects three Qwen3-VL DeepStack taps, got {self.deepstack_visual_indexes}"
+            )
+        if self.vision_attention_source_layer >= self.vision_depth:
+            raise ValueError("vision attention source layer is outside the Qwen vision stack")
+        if self.language_attention_source_layer >= self.text_depth:
+            raise ValueError("language attention source layer is outside the Qwen language stack")
+
+    def to_dict(self) -> dict[str, Any]:
+        grouped: dict[str, Any] = {}
+        for path, attribute in NESTED_FIELDS.items():
+            cursor = grouped
+            for key in path[:-1]:
+                cursor = cursor.setdefault(key, {})
+            cursor[path[-1]] = getattr(self, attribute)
+        return grouped
+
+
+NESTED_FIELDS: dict[tuple[str, ...], str] = {
+    ("config_version",): "config_version",
+    ("experiment", "name"): "experiment_name", ("experiment", "output_dir"): "output_dir", ("experiment", "seed"): "seed",
+    ("dataset", "name"): "dataset", ("dataset", "task_name"): "task_name",
+    ("dataset", "data_root"): "data_root", ("dataset", "annotations_file"): "annotations_file",
+    ("dataset", "image_dir"): "image_dir", ("dataset", "download"): "download",
+    ("dataset", "download_source"): "download_source", ("dataset", "download_repo_id"): "download_repo_id",
+    ("dataset", "download_filename"): "download_filename", ("dataset", "download_endpoint"): "download_endpoint",
+    ("dataset", "download_url"): "download_url", ("dataset", "keep_download_archive"): "keep_download_archive",
+    ("dataset", "require_official_counts"): "require_official_counts",
+    ("dataset", "official_reference_images"): "official_reference_images",
+    ("dataset", "official_distorted_images"): "official_distorted_images",
+    ("dataset", "quality_score_min"): "quality_score_min",
+    ("dataset", "quality_score_max"): "quality_score_max",
+    ("dataset", "train_fraction"): "train_fraction", ("dataset", "train_image_limit"): "train_image_limit",
+    ("dataset", "test_image_limit"): "test_image_limit",
+    ("dataset", "train_samples_per_epoch"): "train_samples_per_epoch",
+    ("dataset", "train_epoch_partitions"): "train_epoch_partitions",
+    ("dataset", "validation_fraction"): "validation_fraction",
+    ("qwen", "model_id"): "model_id", ("qwen", "cache_dir"): "cache_dir", ("qwen", "local_files_only"): "local_files_only",
+    ("qwen", "processor", "min_pixels"): "processor_min_pixels", ("qwen", "processor", "max_pixels"): "processor_max_pixels",
+    ("qwen", "classification_prompt"): "classification_prompt",
+    ("qwen", "runtime", "dtype"): "dtype", ("qwen", "runtime", "attn_implementation"): "attn_implementation",
+    ("qwen", "runtime", "device"): "device", ("qwen", "architecture", "vision_depth"): "vision_depth",
+    ("qwen", "architecture", "vision_hidden_size"): "vision_hidden_size",
+    ("qwen", "architecture", "text_depth"): "text_depth",
+    ("qwen", "architecture", "text_hidden_size"): "text_hidden_size",
+    ("qwen", "architecture", "deepstack_visual_indexes"): "deepstack_visual_indexes",
+    ("dataset", "resolved_annotations_file"): "resolved_annotations_file",
+    ("dataset", "split_digest"): "split_digest",
+    ("batching", "feature_batch_size"): "feature_batch_size", ("batching", "student_batch_size"): "student_batch_size",
+    ("batching", "inference_batch_size"): "inference_batch_size", ("batching", "head_batch_size"): "head_batch_size",
+    ("batching", "num_workers"): "num_workers",
+    ("batching", "cpu_threads"): "cpu_threads",
+    ("batching", "cpu_interop_threads"): "cpu_interop_threads",
+    ("teacher_cache", "precompute_cache_dir"): "precompute_cache_dir",
+    ("teacher_cache", "artifact_source_run_dir"): "teacher_artifact_source_run_dir",
+    ("teacher_cache", "shard_size"): "teacher_cache_shard_size", ("teacher_cache", "lru_shards"): "teacher_cache_lru_shards",
+    ("teacher_cache", "dtype"): "cache_dtype", ("teacher_cache", "log_interval_batches"): "teacher_cache_log_interval_batches",
+    ("vision_adapter", "optical_channels"): "input_adapter_dim", ("vision_adapter", "max_visual_tokens"): "max_visual_tokens",
+    ("vision_adapter", "tap_stages"): "vision_tap_stages",
+    ("language_adapter", "max_language_tokens"): "max_language_tokens",
+    ("student", "language_stack_mode"): "student_language_mode",
+    ("student", "transformer_block_alignment", "native_pre_attention_enabled"): "native_pre_attention_enabled",
+    ("student", "transformer_block_alignment", "initialize_attention_from_teacher"): "native_pre_attention_initialize_from_teacher",
+    ("student", "transformer_block_alignment", "native_pre_attention_trainable"): "native_pre_attention_trainable",
+    ("student", "transformer_block_alignment", "residual_enabled"): "transformer_residual_enabled",
+    ("student", "transformer_block_alignment", "vision_attention_source_layer"): "vision_attention_source_layer",
+    ("student", "transformer_block_alignment", "language_attention_source_layer"): "language_attention_source_layer",
+    ("moe", "geometry", "canvas_size"): "canvas_size", ("moe", "geometry", "active_size"): "active_size",
+    ("moe", "geometry", "expert_size"): "expert_size", ("moe", "geometry", "expert_pitch"): "expert_pitch",
+    ("moe", "geometry", "num_experts"): "num_experts", ("moe", "geometry", "layers_per_expert"): "expert_layers",
+    ("moe", "geometry", "grid_rows"): "expert_grid_rows",
+    ("moe", "geometry", "grid_cols"): "expert_grid_cols",
+    ("moe", "router", "top_k"): "top_k", ("moe", "router", "pool_size"): "router_pool_size",
+    ("moe", "router", "temperature"): "router_temperature",
+    ("moe", "router", "learning_rate"): "router_learning_rate",
+    ("moe", "router", "input_layernorm_enabled"): "router_input_layernorm_enabled",
+    ("moe", "router", "input_layernorm_eps"): "router_input_layernorm_eps",
+    ("moe", "router", "implementation"): "router_implementation",
+    ("moe", "router", "amplitude_slm", "weight_domain"): "amplitude_slm_weight_domain",
+    ("moe", "router", "amplitude_slm", "input_normalization"): "amplitude_slm_input_normalization",
+    ("moe", "router", "amplitude_slm", "relay"): "amplitude_phase_relay",
+    ("moe", "optics", "wavelength_nm"): "wavelength_nm", ("moe", "optics", "pixel_pitch_um"): "pixel_pitch_um",
+    ("moe", "optics", "distances_m", "inter_layer"): "expert_interlayer_distance_m",
+    ("moe", "optics", "distances_m", "last_expert_to_global"): "last_expert_to_global_distance_m",
+    ("moe", "optics", "distances_m", "global_to_detector"): "global_to_detector_distance_m",
+    ("moe", "optics", "phase", "parameterization"): "phase_parameterization",
+    ("moe", "optics", "phase", "init"): "phase_init", ("moe", "optics", "phase", "init_std"): "phase_init_std",
+    ("moe", "optics", "k_space", "enabled"): "k_space_constraint_enabled",
+    ("moe", "optics", "k_space", "theta_max_deg"): "theta_max_deg",
+    ("moe", "optoelectronic_interlayers", "enabled"): "interlayer_enabled",
+    ("moe", "optoelectronic_interlayers", "per_expert_enabled"): "interlayer_per_expert_enabled",
+    ("moe", "optoelectronic_interlayers", "elementwise_affine"): "interlayer_elementwise_affine",
+    ("moe", "optoelectronic_interlayers", "hard_route_mask"): "interlayer_hard_route_mask",
+    ("moe", "optoelectronic_interlayers", "reapply_routing_weights"): "interlayer_reapply_routing_weights",
+    ("moe", "optoelectronic_interlayers", "layernorm_eps"): "interlayer_layernorm_eps",
+    ("moe", "optoelectronic_interlayers", "nonlinearity"): "interlayer_nonlinearity",
+    ("moe", "final_detector_readout", "pool_type"): "detector_pool_type",
+    ("moe", "final_detector_readout", "output_size"): "detector_output_size",
+    ("moe", "final_detector_readout", "crop_to_active"): "detector_crop_to_active",
+    ("moe", "final_detector_readout", "layernorm_eps"): "detector_layernorm_eps",
+    ("moe", "final_detector_readout", "layernorm_affine"): "detector_layernorm_affine",
+    ("moe", "final_detector_readout", "layernorm_scope"): "detector_layernorm_scope",
+    ("moe", "final_detector_readout", "nonlinearity"): "detector_nonlinearity",
+    ("classification_head", "type"): "head_type",
+    ("classification_head", "output_activation"): "head_output_activation",
+    ("classification_head", "dropout"): "dropout",
+    ("loss", "vision_hidden_weight"): "loss_hidden_weight",
+    ("loss", "answer_hidden_weight"): "loss_answer_weight",
+    ("loss", "prediction_distill_weight"): "loss_prediction_distill_weight",
+    ("loss", "regression_weight"): "loss_regression_weight",
+    ("loss", "ranking_weight"): "loss_ranking_weight",
+    ("loss", "ranking", "margin"): "ranking_margin",
+    ("loss", "ranking", "temperature"): "ranking_temperature",
+    ("loss", "norm_in_norm_weight"): "loss_norm_in_norm_weight",
+    ("loss", "norm_in_norm", "p"): "norm_in_norm_p",
+    ("loss", "norm_in_norm", "q"): "norm_in_norm_q",
+    ("loss", "norm_in_norm", "eps"): "norm_in_norm_eps",
+    ("loss", "smooth_l1_beta"): "smooth_l1_beta",
+    ("loss", "router_balance_weight"): "router_balance_weight",
+    ("loss", "router_importance_weight"): "router_importance_weight",
+    ("optimizer", "type"): "optimizer_type", ("optimizer", "learning_rate"): "learning_rate",
+    ("optimizer", "adapter_learning_rate"): "adapter_learning_rate",
+    ("optimizer", "attention_learning_rate"): "attention_learning_rate",
+    ("optimizer", "student_head_learning_rate"): "student_head_learning_rate",
+    ("optimizer", "weight_decay"): "weight_decay",
+    ("optimizer", "phase_weight_decay"): "phase_weight_decay",
+    ("optimizer", "scheduler"): "scheduler_type",
+    ("optimizer", "sam", "enabled"): "sam_enabled",
+    ("optimizer", "sam", "rho"): "sam_rho",
+    ("optimizer", "sam", "adaptive"): "sam_adaptive",
+    ("training", "epochs"): "epochs", ("training", "logging", "interval_batches"): "log_interval_batches",
+    ("training", "progress"): "progress",
+    ("training", "checkpoint_interval_epochs"): "checkpoint_interval_epochs",
+    ("training", "student_selection_split"): "student_selection_split",
+    ("training", "student_selection_metric"): "student_selection_metric",
+    ("training", "initialization", "source_run_dir"): "student_initialization_run_dir",
+    ("training", "initialization", "checkpoint_tag"): "student_initialization_tag",
+    ("training", "initialization", "expected_epoch"): "student_initialization_expected_epoch",
+    ("training", "initialization", "require_epoch_match"): "student_initialization_require_epoch_match",
+    ("training", "initialization", "reset_optimizer"): "student_initialization_reset_optimizer",
+    ("regularization", "phase_dropout", "enabled"): "phase_dropout_enabled",
+    ("regularization", "phase_dropout", "mode"): "phase_dropout_mode",
+    ("regularization", "phase_dropout", "p"): "phase_dropout_p",
+    ("regularization", "phase_dropout", "block_size"): "phase_dropout_block_size",
+    ("regularization", "phase_dropout", "batch_shared"): "phase_dropout_batch_shared",
+    ("regularization", "phase_dropout", "start_epoch"): "phase_dropout_start_epoch",
+    ("visualization", "enabled"): "visualization_enabled", ("visualization", "interval_epochs"): "visualization_interval_epochs",
+    ("visualization", "sample_count"): "visualization_sample_count",
+    ("visualization", "save_intermediate_fields"): "save_intermediate_fields",
+    ("visualization", "save_phase_masks"): "save_phase_masks", ("visualization", "save_training_curves"): "save_training_curves",
+    ("visualization", "save_scatter_plot"): "save_scatter_plot",
+    ("visualization", "save_predictions"): "save_predictions",
+}
+
+
+def load_settings(path: str | Path) -> Settings:
+    config_path = resolve_path(path, Path.cwd(), "config")
+    raw = json.loads(config_path.read_text(encoding="utf-8"))
+    base_name = raw.pop("base_config", None)
+    if base_name is not None:
+        base_path = resolve_path(base_name, config_path.parent, "base_config")
+        base_raw = json.loads(base_path.read_text(encoding="utf-8"))
+        base_raw.pop("base_config", None)
+        raw = _deep_merge(base_raw, raw)
+    allowed = {item.name for item in fields(Settings)}
+    values: dict[str, Any] = {}
+    reverse = {path: attribute for path, attribute in NESTED_FIELDS.items()}
+
+    def visit(value: Any, path_parts: tuple[str, ...]) -> None:
+        if isinstance(value, dict):
+            for key, nested in value.items():
+                visit(nested, (*path_parts, key))
+            return
+        if path_parts in reverse:
+            values[reverse[path_parts]] = value
+        elif len(path_parts) == 1 and path_parts[0] in allowed:
+            values[path_parts[0]] = value
+        else:
+            raise ValueError(f"Unknown config key: {'.'.join(path_parts)}")
+
+    for key, value in raw.items():
+        visit(value, (key,))
+    if values.get("model_id") and values["model_id"] != MODEL_ID:
+        values["model_id"] = str(resolve_path(values["model_id"], config_path.parent, "model_id"))
+    for name in PATH_FIELDS:
+        if values.get(name) is not None:
+            values[name] = resolve_path(values[name], config_path.parent, name)
+    for name in ("vision_tap_stages", "deepstack_visual_indexes"):
+        if isinstance(values.get(name), list):
+            values[name] = tuple(values[name])
+    settings = Settings(**values)
+    settings.validate()
+    return settings
+
+
+def _deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
+    result = dict(base)
+    for key, value in override.items():
+        if isinstance(value, dict) and isinstance(result.get(key), dict):
+            result[key] = _deep_merge(result[key], value)
+        else:
+            result[key] = value
+    return result
+
+
+def resolve_path(value: str | Path, base: Path, field_name: str) -> Path:
+    raw = os.path.expanduser(str(value))
+    missing = sorted({a or b for a, b in ENV_REFERENCE.findall(raw) if not os.environ.get(a or b)})
+    if missing:
+        raise ValueError(f"{field_name} references unset environment variables: {', '.join(missing)}")
+    expanded = os.path.expandvars(raw)
+    path = Path(expanded)
+    return (path if path.is_absolute() else base / path).resolve()
