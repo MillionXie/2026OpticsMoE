@@ -67,6 +67,8 @@ from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_
 )
 from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe16_224.training import (
     _build_student_optimizer,
+    norm_in_norm_loss,
+    pairwise_ranking_loss,
 )
 
 
@@ -746,6 +748,77 @@ def test_epoch40_sam_three_way_batch8_config_is_explicit() -> None:
     assert settings.sam_enabled
     assert settings.visualization_interval_epochs == 5
     assert settings.save_intermediate_fields
+
+
+def test_aggressive_rank_nin_config_keeps_latest_batch_optimizations() -> None:
+    settings = load_settings(
+        CONFIGS / "spaq_mos_epoch90_aggressive_rank_nin_sam_3way_batch8.json"
+    )
+    assert settings.student_initialization_tag == "best"
+    assert settings.student_initialization_expected_epoch == 90
+    assert settings.student_initialization_run_dir.name.endswith(
+        "epoch77_regularized_finetune_sam"
+    )
+    assert settings.teacher_artifact_source_run_dir.name.endswith(
+        "multimodal_electronic_router_moe16_224"
+    )
+    assert settings.student_initialization_run_dir != settings.teacher_artifact_source_run_dir
+    assert settings.student_batch_size == 8
+    assert settings.inference_batch_size == 8
+    assert settings.train_samples_per_epoch is None
+    assert settings.train_epoch_partitions == 3
+    assert settings.epochs == 90
+    assert settings.sam_enabled
+    assert settings.loss_hidden_weight == 0.0
+    assert settings.loss_answer_weight == 0.0
+    assert settings.loss_prediction_distill_weight == pytest.approx(0.1)
+    assert settings.loss_regression_weight == pytest.approx(1.0)
+    assert settings.loss_ranking_weight == pytest.approx(0.1)
+    assert settings.ranking_margin == pytest.approx(0.02)
+    assert settings.ranking_temperature == pytest.approx(0.1)
+    assert settings.loss_norm_in_norm_weight == pytest.approx(1.0)
+    assert settings.norm_in_norm_p == pytest.approx(1.0)
+    assert settings.norm_in_norm_q == pytest.approx(2.0)
+    assert settings.router_balance_weight == pytest.approx(0.005)
+
+
+def test_pairwise_ranking_loss_prefers_correct_order_and_backpropagates() -> None:
+    targets = torch.tensor([0.05, 0.25, 0.70, 0.95])
+    correct = targets.clone().requires_grad_(True)
+    reversed_scores = (1.0 - targets).requires_grad_(True)
+    correct_loss = pairwise_ranking_loss(correct, targets, margin=0.02, temperature=0.1)
+    reversed_loss = pairwise_ranking_loss(
+        reversed_scores,
+        targets,
+        margin=0.02,
+        temperature=0.1,
+    )
+    assert correct_loss < reversed_loss
+    reversed_loss.backward()
+    assert reversed_scores.grad is not None
+    assert torch.isfinite(reversed_scores.grad).all()
+
+    singleton = torch.tensor([0.4], requires_grad=True)
+    singleton_loss = pairwise_ranking_loss(singleton, torch.tensor([0.5]))
+    singleton_loss.backward()
+    assert singleton_loss.item() == 0.0
+    assert singleton.grad is not None
+
+
+def test_norm_in_norm_is_affine_invariant_and_handles_singleton_batch() -> None:
+    targets = torch.tensor([0.05, 0.25, 0.45, 0.75, 0.95])
+    identical = norm_in_norm_loss(targets.clone(), targets, p=1.0, q=2.0)
+    affine = norm_in_norm_loss(2.5 * targets + 3.0, targets, p=1.0, q=2.0)
+    reversed_loss = norm_in_norm_loss(1.0 - targets, targets, p=1.0, q=2.0)
+    assert identical.item() == pytest.approx(0.0, abs=1e-7)
+    assert affine.item() == pytest.approx(0.0, abs=1e-6)
+    assert reversed_loss > affine
+
+    predictions = torch.tensor([0.4], requires_grad=True)
+    loss = norm_in_norm_loss(predictions, torch.tensor([0.5]))
+    loss.backward()
+    assert loss.item() == 0.0
+    assert predictions.grad is not None
 
 
 def test_sam_performs_two_step_update_and_restores_unperturbed_parameters() -> None:

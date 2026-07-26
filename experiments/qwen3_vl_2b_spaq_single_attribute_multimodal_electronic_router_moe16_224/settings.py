@@ -140,6 +140,13 @@ class Settings:
     loss_answer_weight: float = 1.0
     loss_prediction_distill_weight: float = 0.5
     loss_regression_weight: float = 0.5
+    loss_ranking_weight: float = 0.0
+    ranking_margin: float = 0.02
+    ranking_temperature: float = 0.1
+    loss_norm_in_norm_weight: float = 0.0
+    norm_in_norm_p: float = 1.0
+    norm_in_norm_q: float = 2.0
+    norm_in_norm_eps: float = 1e-8
     smooth_l1_beta: float = 0.1
     router_balance_weight: float = 0.1
     router_importance_weight: float = 0.0
@@ -333,10 +340,26 @@ class Settings:
             raise ValueError(
                 "dataset.train_samples_per_epoch and dataset.train_epoch_partitions are mutually exclusive"
             )
-        for name in ("loss_hidden_weight", "loss_answer_weight", "loss_prediction_distill_weight", "loss_regression_weight",
-                     "router_balance_weight", "router_importance_weight"):
+        for name in (
+            "loss_hidden_weight",
+            "loss_answer_weight",
+            "loss_prediction_distill_weight",
+            "loss_regression_weight",
+            "loss_ranking_weight",
+            "loss_norm_in_norm_weight",
+            "router_balance_weight",
+            "router_importance_weight",
+        ):
             if float(getattr(self, name)) < 0:
                 raise ValueError(f"{name} must be non-negative")
+        if self.ranking_margin < 0:
+            raise ValueError("loss.ranking.margin must be non-negative")
+        if self.ranking_temperature <= 0:
+            raise ValueError("loss.ranking.temperature must be positive")
+        if self.norm_in_norm_p <= 0 or self.norm_in_norm_q <= 0:
+            raise ValueError("loss.norm_in_norm p and q must be positive")
+        if self.norm_in_norm_eps <= 0:
+            raise ValueError("loss.norm_in_norm.eps must be positive")
         if self.phase_dropout_start_epoch < 0:
             raise ValueError("phase_dropout.start_epoch must be non-negative")
 
@@ -454,6 +477,13 @@ NESTED_FIELDS: dict[tuple[str, ...], str] = {
     ("loss", "answer_hidden_weight"): "loss_answer_weight",
     ("loss", "prediction_distill_weight"): "loss_prediction_distill_weight",
     ("loss", "regression_weight"): "loss_regression_weight",
+    ("loss", "ranking_weight"): "loss_ranking_weight",
+    ("loss", "ranking", "margin"): "ranking_margin",
+    ("loss", "ranking", "temperature"): "ranking_temperature",
+    ("loss", "norm_in_norm_weight"): "loss_norm_in_norm_weight",
+    ("loss", "norm_in_norm", "p"): "norm_in_norm_p",
+    ("loss", "norm_in_norm", "q"): "norm_in_norm_q",
+    ("loss", "norm_in_norm", "eps"): "norm_in_norm_eps",
     ("loss", "smooth_l1_beta"): "smooth_l1_beta",
     ("loss", "router_balance_weight"): "router_balance_weight",
     ("loss", "router_importance_weight"): "router_importance_weight",

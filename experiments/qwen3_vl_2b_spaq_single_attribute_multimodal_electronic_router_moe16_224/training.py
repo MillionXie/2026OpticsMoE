@@ -39,6 +39,82 @@ def score_metrics(predictions: torch.Tensor, targets: torch.Tensor) -> dict[str,
     return report
 
 
+def pairwise_ranking_loss(
+    predictions: torch.Tensor,
+    targets: torch.Tensor,
+    margin: float = 0.02,
+    temperature: float = 0.1,
+) -> torch.Tensor:
+    """RankNet-style loss over target pairs that differ by at least ``margin``.
+
+    Scores and targets are expected in the normalized 0--1 IQA range.  A
+    one-sample batch, or a batch without a sufficiently separated pair,
+    returns a differentiable zero so rotating partitions never produce NaNs.
+    """
+    predictions = predictions.float().reshape(-1)
+    targets = targets.float().reshape(-1)
+    if predictions.numel() != targets.numel():
+        raise ValueError("Ranking predictions and targets must contain the same number of values")
+    if predictions.numel() < 2:
+        return predictions.sum() * 0.0
+    if margin < 0:
+        raise ValueError("Ranking margin must be non-negative")
+    if temperature <= 0:
+        raise ValueError("Ranking temperature must be positive")
+    target_difference = targets[:, None] - targets[None, :]
+    pair_mask = torch.triu(target_difference.abs() >= margin, diagonal=1)
+    if not bool(pair_mask.any()):
+        return predictions.sum() * 0.0
+    prediction_difference = predictions[:, None] - predictions[None, :]
+    ordered_logits = (
+        target_difference[pair_mask].sign()
+        * prediction_difference[pair_mask]
+        / temperature
+    )
+    return F.softplus(-ordered_logits).mean()
+
+
+def norm_in_norm_loss(
+    predictions: torch.Tensor,
+    targets: torch.Tensor,
+    p: float = 1.0,
+    q: float = 2.0,
+    eps: float = 1e-8,
+) -> torch.Tensor:
+    """Canonical Norm-in-Norm loss (the paper's recommended p=1, q=2 form).
+
+    This follows the official LinearityIQA normalization and scale factor.
+    It is invariant to an additive offset and a positive scale, while the
+    accompanying SmoothL1 term retains absolute MOS calibration.
+    """
+    predictions = predictions.float().reshape(-1)
+    targets = targets.float().reshape(-1)
+    if predictions.numel() != targets.numel():
+        raise ValueError("Norm-in-Norm predictions and targets must contain the same number of values")
+    if p <= 0 or q <= 0 or eps <= 0:
+        raise ValueError("Norm-in-Norm p, q, and eps must be positive")
+    sample_count = predictions.numel()
+    if sample_count < 2:
+        return predictions.sum() * 0.0
+    prediction_centered = predictions - predictions.mean()
+    target_centered = targets - targets.mean()
+    prediction_normalized = prediction_centered / (
+        torch.norm(prediction_centered, p=q) + eps
+    )
+    target_normalized = target_centered / (
+        torch.norm(target_centered, p=q) + eps
+    )
+    scale = (
+        2.0 ** max(1.0, 1.0 / q)
+        * float(sample_count) ** max(0.0, 1.0 / p - 1.0 / q)
+    )
+    normalized_error = torch.norm(
+        prediction_normalized - target_normalized,
+        p=p,
+    ) / scale
+    return normalized_error.pow(p)
+
+
 def _split_indices(samples: int, fraction: float, seed: int):
     order = torch.randperm(samples, generator=torch.Generator().manual_seed(seed))
     count = min(max(round(samples * fraction), 1), samples - 1)
@@ -103,18 +179,24 @@ def teacher_inference(head: nn.Module, store: TeacherCacheStore, dataset: Datase
 
 class CachedStudentDataset(Dataset[Any]):
     def __init__(self, dataset: Dataset[Any], teacher: TeacherCacheStore, inputs: ProcessorCacheStore,
-                 predictions: torch.Tensor) -> None:
+                 predictions: torch.Tensor, include_teacher_features: bool = True) -> None:
         self.dataset = dataset; self.teacher = teacher; self.inputs = inputs; self.predictions = predictions
+        self.include_teacher_features = bool(include_teacher_features)
         self.targets = targets_of(dataset)
     def __len__(self): return len(self.dataset)
     def __getitem__(self, index: int):
-        return self.inputs.get(index), float(self.targets[index]), index, self.teacher.get(index), self.predictions[index]
+        teacher = self.teacher.get(index) if self.include_teacher_features else None
+        return self.inputs.get(index), float(self.targets[index]), index, teacher, self.predictions[index]
     def __getitems__(self, indices: list[int]) -> list[Any]:
         # PyTorch's map-style DataLoader calls __getitems__ once per batch when
         # available. Fetching both caches shard-wise avoids repeated Python
         # range scans and repeated LRU operations for every individual sample.
         input_rows = self.inputs.get_many(indices)
-        teacher_rows = self.teacher.get_many(indices)
+        teacher_rows = (
+            self.teacher.get_many(indices)
+            if self.include_teacher_features
+            else [None] * len(indices)
+        )
         return [
             (input_row, float(self.targets[index]), index, teacher_row, self.predictions[index])
             for index, input_row, teacher_row in zip(indices, input_rows, teacher_rows)
@@ -129,19 +211,24 @@ def _cached_target(dataset: Dataset[Any], index: int) -> float:
 
 def cached_student_collate(batch: Sequence[Any], metadata: dict[str, Any]):
     inputs, targets, indices, teachers, predictions = zip(*batch)
-    tap_count = len(teachers[0]["teacher_vision_taps"])
-    if any(len(row["teacher_vision_taps"]) != tap_count for row in teachers):
-        raise RuntimeError("Teacher cache rows disagree on vision tap count")
-    teacher_batch = {
-        # Keep cache tensors in fp16 on the CPU. They are transferred in a few
-        # contiguous operations and promoted to fp32 on the GPU.
-        "answer_hidden": torch.stack([row["teacher_answer_hidden"] for row in teachers]),
-        "vision_taps": [
-            torch.cat([row["teacher_vision_taps"][tap] for row in teachers], dim=0)
-            for tap in range(tap_count)
-        ],
-        "visual_token_counts": [int(row["visual_token_count"]) for row in teachers],
-    }
+    if all(row is None for row in teachers):
+        teacher_batch = None
+    elif any(row is None for row in teachers):
+        raise RuntimeError("A cached student batch mixes rows with and without teacher features")
+    else:
+        tap_count = len(teachers[0]["teacher_vision_taps"])
+        if any(len(row["teacher_vision_taps"]) != tap_count for row in teachers):
+            raise RuntimeError("Teacher cache rows disagree on vision tap count")
+        teacher_batch = {
+            # Keep cache tensors in fp16 on the CPU. They are transferred in a
+            # few contiguous operations and promoted to fp32 on the GPU.
+            "answer_hidden": torch.stack([row["teacher_answer_hidden"] for row in teachers]),
+            "vision_taps": [
+                torch.cat([row["teacher_vision_taps"][tap] for row in teachers], dim=0)
+                for tap in range(tap_count)
+            ],
+            "visual_token_counts": [int(row["visual_token_count"]) for row in teachers],
+        }
     return (collate_processor_samples(inputs, metadata), torch.tensor(targets), torch.tensor(indices),
             teacher_batch, torch.stack(predictions))
 
@@ -259,34 +346,48 @@ def _student_objective(
     cpu_attention_mask: torch.Tensor,
     targets: torch.Tensor,
     teacher_predictions: torch.Tensor,
-    teacher_answer: torch.Tensor,
-    teacher_vision_taps: list[torch.Tensor],
-    teacher_lengths: list[int],
+    teacher_answer: torch.Tensor | None,
+    teacher_vision_taps: list[torch.Tensor] | None,
+    teacher_lengths: list[int] | None,
     settings: Any,
 ) -> dict[str, Any]:
     replacement.prepare_student_batch(cpu_attention_mask)
     hidden = multimodal_forward_features(model, inputs)
     answer, _ = pool_answer_hidden_state(hidden, inputs["attention_mask"])
     predictions = head(answer)
-    student_taps = [*replacement.vision_surrogate.tap_outputs, replacement.vision_surrogate.last_output]
-    if len(student_taps) != len(teacher_vision_taps):
-        raise RuntimeError("Student and cached teacher vision tap counts do not match")
-    if teacher_lengths != replacement.vision_surrogate.last_token_counts:
-        raise RuntimeError("Student visual token boundaries do not match the teacher cache")
-    vision_losses = []
-    for student_packed, teacher_packed in zip(student_taps, teacher_vision_taps):
-        groups = student_packed.split(replacement.vision_surrogate.last_token_counts)
-        targets_for_tap = teacher_packed.split(teacher_lengths)
-        for group, target in zip(groups, targets_for_tap):
-            vision_losses.append(F.mse_loss(
-                F.layer_norm(group.float(), (group.shape[-1],)),
-                F.layer_norm(target, (target.shape[-1],)),
-            ))
-    loss_vision = torch.stack(vision_losses).mean()
-    loss_answer = F.mse_loss(
-        F.layer_norm(answer, (answer.shape[-1],)),
-        F.layer_norm(teacher_answer, (teacher_answer.shape[-1],)),
-    )
+    differentiable_zero = predictions.sum() * 0.0
+    if settings.loss_hidden_weight > 0:
+        if teacher_vision_taps is None or teacher_lengths is None:
+            raise RuntimeError("Vision hidden distillation is enabled but teacher vision taps are absent")
+        student_taps = [
+            *replacement.vision_surrogate.tap_outputs,
+            replacement.vision_surrogate.last_output,
+        ]
+        if len(student_taps) != len(teacher_vision_taps):
+            raise RuntimeError("Student and cached teacher vision tap counts do not match")
+        if teacher_lengths != replacement.vision_surrogate.last_token_counts:
+            raise RuntimeError("Student visual token boundaries do not match the teacher cache")
+        vision_losses = []
+        for student_packed, teacher_packed in zip(student_taps, teacher_vision_taps):
+            groups = student_packed.split(replacement.vision_surrogate.last_token_counts)
+            targets_for_tap = teacher_packed.split(teacher_lengths)
+            for group, target in zip(groups, targets_for_tap):
+                vision_losses.append(F.mse_loss(
+                    F.layer_norm(group.float(), (group.shape[-1],)),
+                    F.layer_norm(target, (target.shape[-1],)),
+                ))
+        loss_vision = torch.stack(vision_losses).mean()
+    else:
+        loss_vision = differentiable_zero
+    if settings.loss_answer_weight > 0:
+        if teacher_answer is None:
+            raise RuntimeError("Answer hidden distillation is enabled but teacher answer hidden is absent")
+        loss_answer = F.mse_loss(
+            F.layer_norm(answer, (answer.shape[-1],)),
+            F.layer_norm(teacher_answer, (teacher_answer.shape[-1],)),
+        )
+    else:
+        loss_answer = differentiable_zero
     loss_distill = F.smooth_l1_loss(
         predictions,
         teacher_predictions,
@@ -297,12 +398,27 @@ def _student_objective(
         targets,
         beta=settings.smooth_l1_beta,
     )
+    loss_ranking = pairwise_ranking_loss(
+        predictions,
+        targets,
+        margin=settings.ranking_margin,
+        temperature=settings.ranking_temperature,
+    )
+    loss_norm_in_norm = norm_in_norm_loss(
+        predictions,
+        targets,
+        p=settings.norm_in_norm_p,
+        q=settings.norm_in_norm_q,
+        eps=settings.norm_in_norm_eps,
+    )
     router = replacement.router_losses()
     loss_total = (
         settings.loss_hidden_weight * loss_vision
         + settings.loss_answer_weight * loss_answer
         + settings.loss_prediction_distill_weight * loss_distill
         + settings.loss_regression_weight * loss_regression
+        + settings.loss_ranking_weight * loss_ranking
+        + settings.loss_norm_in_norm_weight * loss_norm_in_norm
         + settings.router_balance_weight * (router["vision_balance"] + router["language_balance"])
         + settings.router_importance_weight * (router["vision_importance"] + router["language_importance"])
     )
@@ -321,6 +437,8 @@ def _student_objective(
         "answer": loss_answer,
         "distill": loss_distill,
         "regression": loss_regression,
+        "ranking": loss_ranking,
+        "norm_in_norm": loss_norm_in_norm,
         "vision_balance": router["vision_balance"],
         "language_balance": router["language_balance"],
         "predictions": predictions,
@@ -346,7 +464,17 @@ def train_student(model: nn.Module, replacement: Any, head: nn.Module, train_dat
         teacher_predictions_path,
         settings.head_output_activation,
     )
-    cached = CachedStudentDataset(train_dataset, train_store, train_inputs, teacher_predictions)
+    teacher_features_required = (
+        settings.loss_hidden_weight > 0
+        or settings.loss_answer_weight > 0
+    )
+    cached = CachedStudentDataset(
+        train_dataset,
+        train_store,
+        train_inputs,
+        teacher_predictions,
+        include_teacher_features=teacher_features_required,
+    )
     sampler = EpochRotatingSampler(
         len(train_dataset),
         settings.train_samples_per_epoch,
@@ -384,6 +512,21 @@ def train_student(model: nn.Module, replacement: Any, head: nn.Module, train_dat
             if sam is not None else {"enabled": False, "rho": settings.sam_rho, "adaptive": settings.sam_adaptive}
         ),
         "teacher_predictions_path": str(teacher_predictions_path),
+        "teacher_feature_cache_used_during_student_training": teacher_features_required,
+        "objective": {
+            "vision_hidden_weight": settings.loss_hidden_weight,
+            "answer_hidden_weight": settings.loss_answer_weight,
+            "prediction_distill_weight": settings.loss_prediction_distill_weight,
+            "regression_weight": settings.loss_regression_weight,
+            "ranking_weight": settings.loss_ranking_weight,
+            "ranking_margin": settings.ranking_margin,
+            "ranking_temperature": settings.ranking_temperature,
+            "norm_in_norm_weight": settings.loss_norm_in_norm_weight,
+            "norm_in_norm_p": settings.norm_in_norm_p,
+            "norm_in_norm_q": settings.norm_in_norm_q,
+            "router_balance_weight": settings.router_balance_weight,
+            "router_importance_weight": settings.router_importance_weight,
+        },
     }
     write_json(settings.output_dir / "metrics" / "student_optimizer.json", optimizer_report)
     initial_report = None
@@ -438,7 +581,17 @@ def train_student(model: nn.Module, replacement: Any, head: nn.Module, train_dat
         replacement.set_phase_dropout_active(dropout); replacement.set_student_train_mode()
         head.train()
         predictions_all = []; targets_all = []; seen = 0; train_report = None
-        loss_names = ("total", "vision", "answer", "distill", "regression", "vision_balance", "language_balance")
+        loss_names = (
+            "total",
+            "vision",
+            "answer",
+            "distill",
+            "regression",
+            "ranking",
+            "norm_in_norm",
+            "vision_balance",
+            "language_balance",
+        )
         totals_tensor = torch.zeros(len(loss_names), device=device, dtype=torch.float64)
         sam_perturbed_total = torch.zeros((), device=device, dtype=torch.float64)
         sam_grad_norm_total = torch.zeros((), device=device, dtype=torch.float64)
@@ -461,12 +614,29 @@ def train_student(model: nn.Module, replacement: Any, head: nn.Module, train_dat
             inputs = move_inputs(cpu_inputs, device)
             targets = targets.to(device, non_blocking=True)
             teacher_predictions_batch = teacher_predictions_batch.to(device, non_blocking=True).float()
-            teacher_answer = teachers["answer_hidden"].to(device, non_blocking=True).float()
-            teacher_vision_taps = [
-                packed.to(device, non_blocking=True).float()
-                for packed in teachers["vision_taps"]
-            ]
-            teacher_lengths = teachers["visual_token_counts"]
+            if teachers is None:
+                teacher_answer = None
+                teacher_vision_taps = None
+                teacher_lengths = None
+            else:
+                teacher_answer = (
+                    teachers["answer_hidden"].to(device, non_blocking=True).float()
+                    if settings.loss_answer_weight > 0
+                    else None
+                )
+                teacher_vision_taps = (
+                    [
+                        packed.to(device, non_blocking=True).float()
+                        for packed in teachers["vision_taps"]
+                    ]
+                    if settings.loss_hidden_weight > 0
+                    else None
+                )
+                teacher_lengths = (
+                    teachers["visual_token_counts"]
+                    if settings.loss_hidden_weight > 0
+                    else None
+                )
             optimizer.zero_grad(set_to_none=True)
             random_state = _capture_random_state(device) if sam is not None else None
             objective = _student_objective(
@@ -524,14 +694,9 @@ def train_student(model: nn.Module, replacement: Any, head: nn.Module, train_dat
                     sam.cancel_step(zero_grad=True)
                     raise
             batch_size = len(targets); seen += batch_size
-            loss_values = torch.stack((
-                clean_losses["total"].double(),
-                clean_losses["vision"].double(),
-                clean_losses["answer"].double(),
-                clean_losses["distill"].double(),
-                clean_losses["regression"].double(),
-                clean_losses["vision_balance"].double(),
-                clean_losses["language_balance"].double(),
+            loss_values = torch.stack(tuple(
+                clean_losses[name].double()
+                for name in loss_names
             ))
             totals_tensor += loss_values * batch_size
             sam_perturbed_total += perturbed_loss.double() * batch_size
@@ -548,6 +713,7 @@ def train_student(model: nn.Module, replacement: Any, head: nn.Module, train_dat
                 print(f"epoch {epoch}/{settings.epochs} batch {batch_index}/{len(loader)} total={total_values['total']:.5f} "
                       f"vision={total_values['vision']:.5f} answer={total_values['answer']:.5f} "
                       f"distill={total_values['distill']:.5f} gt={total_values['regression']:.5f} "
+                      f"rank={total_values['ranking']:.5f} nin={total_values['norm_in_norm']:.5f} "
                       f"v_balance={total_values['vision_balance']:.5f} l_balance={total_values['language_balance']:.5f} "
                       f"sam_perturbed={float(sam_perturbed_total / seen):.5f} "
                       f"sam_grad_norm={float(sam_grad_norm_total / seen):.5f} "
