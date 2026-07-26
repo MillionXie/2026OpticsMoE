@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from typing import Any
 
 import torch
@@ -41,10 +42,11 @@ class ExpertPhasePlane(nn.Module):
         crops = field.to(torch.complex64).flatten(1).index_select(1, flat_indices).reshape(
             batch, self.geometry.num_experts, self.geometry.expert_size, self.geometry.expert_size
         )
-        modulated = torch.stack(
-            [phase(crops[:, index]) for index, phase in enumerate(self.experts)],
-            dim=1,
-        )
+        # Preserve the checkpoint-compatible ModuleList of independent phase
+        # parameters, but evaluate all 16 masks in one batched tensor path.
+        # The former implementation launched sigmoid/exp/multiply once per
+        # expert at every optical stage.
+        modulated = crops * self._stacked_modulation(batch)
         return torch.zeros(
             (batch, self.geometry.canvas_size * self.geometry.canvas_size),
             dtype=torch.complex64,
@@ -54,6 +56,63 @@ class ExpertPhasePlane(nn.Module):
             flat_indices.unsqueeze(0).expand(batch, -1),
             modulated.reshape(batch, -1),
         ).reshape(batch, self.geometry.canvas_size, self.geometry.canvas_size)
+
+    def _stacked_modulation(self, batch_size: int) -> torch.Tensor:
+        reference = self.experts[0]
+        raw_phase = torch.stack([expert.raw_phase for expert in self.experts], dim=0)
+        if reference.parameterization == "sigmoid":
+            phase = 2.0 * math.pi * torch.sigmoid(raw_phase)
+        elif reference.parameterization == "unconstrained":
+            phase = raw_phase
+        else:
+            raise ValueError(f"Unsupported phase parameterization {reference.parameterization!r}")
+        modulation = torch.exp(1j * phase).to(torch.complex64)
+
+        dropout_active = (
+            self.training
+            and reference.dropout_active
+            and reference.dropout_mode != "none"
+            and reference.dropout_p > 0.0
+        )
+        if not dropout_active:
+            return modulation
+        if not all(
+            expert.dropout_active == reference.dropout_active
+            and expert.dropout_mode == reference.dropout_mode
+            and expert.dropout_p == reference.dropout_p
+            and expert.dropout_block_size == reference.dropout_block_size
+            and expert.dropout_batch_shared == reference.dropout_batch_shared
+            for expert in self.experts
+        ):
+            raise RuntimeError("All experts in one phase plane must share phase-dropout configuration")
+
+        dropout_batch = 1 if reference.dropout_batch_shared else int(batch_size)
+        if reference.dropout_mode == "phase_bypass":
+            # Expert-major random layout reproduces the former sequence of one
+            # random draw per expert while still applying modulation in one op.
+            keep = torch.rand(
+                len(self.experts),
+                dropout_batch,
+                reference.size,
+                reference.size,
+                device=raw_phase.device,
+            ) >= reference.dropout_p
+        elif reference.dropout_mode == "block_phase_bypass":
+            block = max(1, reference.dropout_block_size)
+            low = math.ceil(reference.size / block)
+            keep = torch.rand(
+                len(self.experts),
+                dropout_batch,
+                low,
+                low,
+                device=raw_phase.device,
+            ) >= reference.dropout_p
+            keep = keep.repeat_interleave(block, -2).repeat_interleave(block, -1)
+            keep = keep[..., :reference.size, :reference.size]
+        else:
+            raise RuntimeError(f"Unsupported active phase dropout mode {reference.dropout_mode!r}")
+        keep = keep.permute(1, 0, 2, 3).to(torch.complex64)
+        return keep * modulation.unsqueeze(0) + (1.0 - keep)
 
     def set_phase_dropout_active(self, active: bool) -> None:
         for expert in self.experts: expert.set_dropout_active(active)
@@ -176,6 +235,8 @@ class HomogeneousMoEOpticalCore(nn.Module):
         self.last_amplitude_slm_canvas: torch.Tensor | None = None
         self.last_stage_fields: list[torch.Tensor] = []; self.last_detector_intensity: torch.Tensor | None = None
         self.last_detector_readout: torch.Tensor | None = None
+        self.capture_intermediate_fields = False
+        self.capture_sample_count = 1
 
     def encode_groups(self, groups: list[torch.Tensor], *, injection: bool = False) -> torch.Tensor:
         if not groups:
@@ -239,11 +300,20 @@ class HomogeneousMoEOpticalCore(nn.Module):
         return torch.complex(canvas, torch.zeros_like(canvas))
 
     def begin(self, input_fields: torch.Tensor) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
-        self.last_input_fields = input_fields
+        capture_count = min(self.capture_sample_count, len(input_fields))
+        self.last_input_fields = (
+            input_fields[:capture_count].detach().cpu()
+            if self.capture_intermediate_fields else None
+        )
         routing = self.router(input_fields); self.last_routing = routing
         field = self._direct_amplitude_load(input_fields, routing)
-        self.last_amplitude_slm_canvas = field.real
+        self.last_amplitude_slm_canvas = (
+            field.real[:capture_count].detach().cpu()
+            if self.capture_intermediate_fields else None
+        )
         self.last_stage_fields = []
+        self.last_detector_intensity = None
+        self.last_detector_readout = None
         return field, routing
 
     def fanout(self, input_fields: torch.Tensor, routing: dict[str, torch.Tensor]) -> torch.Tensor:
@@ -256,7 +326,9 @@ class HomogeneousMoEOpticalCore(nn.Module):
                 field,
                 selected_experts=routing["selected_mask"] if self.interlayer_hard_route_mask else None,
                 routing_weights=routing["weights"] if self.interlayer_reapply_routing_weights else None)
-        self.last_stage_fields.append(field)
+        if self.capture_intermediate_fields:
+            capture_count = min(self.capture_sample_count, len(field))
+            self.last_stage_fields.append(field[:capture_count].detach().cpu())
         return field
 
     def read_hidden(self, field: torch.Tensor, lengths: list[int], boundary_dtype: torch.dtype,
@@ -264,9 +336,10 @@ class HomogeneousMoEOpticalCore(nn.Module):
         if final:
             field = self.propagator(self.global_phase(field))
         readout, intensity = self.readout(field)
-        if final:
-            self.last_detector_intensity = intensity
-            self.last_detector_readout = readout
+        if final and self.capture_intermediate_fields:
+            capture_count = min(self.capture_sample_count, len(field))
+            self.last_detector_intensity = intensity[:capture_count].detach().cpu()
+            self.last_detector_readout = readout[:capture_count].detach().cpu()
         packed_readout = torch.cat([readout[row, :length] for row, length in enumerate(lengths)], dim=0)
         return self.output_adapter(packed_readout).to(boundary_dtype)
 
@@ -276,6 +349,12 @@ class HomogeneousMoEOpticalCore(nn.Module):
     def set_phase_dropout_active(self, active: bool) -> None:
         for layer in self.expert_layers: layer.set_phase_dropout_active(active)
         self.global_phase.set_phase_dropout_active(active)
+
+    def set_intermediate_field_capture(self, enabled: bool, sample_count: int = 1) -> None:
+        if sample_count <= 0:
+            raise ValueError("Intermediate-field capture sample_count must be positive")
+        self.capture_intermediate_fields = bool(enabled)
+        self.capture_sample_count = int(sample_count)
 
     def parameter_breakdown(self) -> dict[str, Any]:
         expert_phase = sum(
@@ -345,6 +424,8 @@ class VisionDeepStackHomogeneousMoE(nn.Module):
 
     def router_losses(self): return self.core.router_losses()
     def set_phase_dropout_active(self, active: bool): self.core.set_phase_dropout_active(active)
+    def set_intermediate_field_capture(self, enabled: bool, sample_count: int = 1):
+        self.core.set_intermediate_field_capture(enabled, sample_count)
     def parameter_breakdown(self): return self.core.parameter_breakdown()
 
 
@@ -433,4 +514,6 @@ class LanguageDeepStackHomogeneousMoE(nn.Module):
 
     def router_losses(self): return self.core.router_losses()
     def set_phase_dropout_active(self, active: bool): self.core.set_phase_dropout_active(active)
+    def set_intermediate_field_capture(self, enabled: bool, sample_count: int = 1):
+        self.core.set_intermediate_field_capture(enabled, sample_count)
     def parameter_breakdown(self): return self.core.parameter_breakdown()

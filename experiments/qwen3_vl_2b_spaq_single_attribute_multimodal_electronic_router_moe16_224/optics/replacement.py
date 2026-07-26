@@ -479,6 +479,11 @@ class DeepStackMultimodalReplacement:
         if self.language_mode == "optical_moe":
             self.language_surrogate.set_phase_dropout_active(active)
 
+    def set_intermediate_field_capture(self, enabled: bool, sample_count: int = 1) -> None:
+        self.vision_surrogate.set_intermediate_field_capture(enabled, sample_count)
+        if self.language_mode == "optical_moe":
+            self.language_surrogate.set_intermediate_field_capture(enabled, sample_count)
+
     def close(self) -> None:
         self.use_teacher()
         for handle in self._handles:

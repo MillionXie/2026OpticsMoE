@@ -126,6 +126,7 @@ def load_spaq(settings: Settings, persist_split: bool = True) -> DatasetBundle:
         "score_statistics": _score_statistics(records),
         "train_image_limit": settings.train_image_limit, "test_image_limit": settings.test_image_limit,
         "train_samples_per_epoch": settings.train_samples_per_epoch,
+        "train_epoch_partitions": settings.train_epoch_partitions,
     }
     cache_identity = {
         "dataset": "spaq_single_attribute",

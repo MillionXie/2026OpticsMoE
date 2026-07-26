@@ -127,3 +127,22 @@ Fine-tuning writes:
 
 The frozen precompute cache remains under `cache/<task>/<identity>/`. Teacher
 prediction artifacts are read from the original source run.
+
+## Epoch-40 SAM fine-tuning with exact three-way coverage
+
+`spaq_mos_epoch40_regularized_finetune_sam_3way_batch8.json` is the longer
+anti-overfitting run. It loads the explicit `epoch_0040` checkpoint, resets
+AdamW/SAM and the cosine scheduler, trains for 100 fine-tuning epochs, and uses
+`student_batch_size=8`.
+
+The dataset is not independently resampled each epoch. A deterministic
+permutation is divided into three disjoint parts. For the 10,013-image SPAQ
+training split their sizes are `3338 / 3338 / 3337`; three consecutive epochs
+therefore cover every retained image exactly once. A new deterministic
+permutation is generated for the next three-epoch cycle.
+
+Expert phase application keeps the original checkpoint keys but stacks all 16
+raw phase masks and applies their modulation in one batched tensor operation.
+Intermediate complex fields and detector tensors are not retained during
+training. On visualization epochs, only the last evaluation batch is detached
+to CPU and saved as a compact stage-intensity overview.

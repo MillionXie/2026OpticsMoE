@@ -45,6 +45,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--device"); parser.add_argument("--cache-dir", type=Path); parser.add_argument("--output-dir", type=Path)
     parser.add_argument("--local-files-only", action="store_true"); parser.add_argument("--epochs", type=int)
     parser.add_argument("--student-batch-size", type=int); parser.add_argument("--train-samples-per-epoch", type=int)
+    parser.add_argument("--train-epoch-partitions", type=int)
     parser.add_argument("--log-interval-batches", type=int)
     return parser
 
@@ -137,7 +138,13 @@ def _overrides(settings: Settings, args: argparse.Namespace) -> None:
     if args.cache_dir: settings.cache_dir = resolve_path(args.cache_dir, Path.cwd(), "cache_dir")
     if args.output_dir: settings.output_dir = resolve_path(args.output_dir, Path.cwd(), "output_dir")
     if args.local_files_only: settings.local_files_only = True
-    for name in ("epochs", "student_batch_size", "train_samples_per_epoch", "log_interval_batches"):
+    for name in (
+        "epochs",
+        "student_batch_size",
+        "train_samples_per_epoch",
+        "train_epoch_partitions",
+        "log_interval_batches",
+    ):
         value = getattr(args, name)
         if value is not None: setattr(settings, name, value)
     settings.validate()

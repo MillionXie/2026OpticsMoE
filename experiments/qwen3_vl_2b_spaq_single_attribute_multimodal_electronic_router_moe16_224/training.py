@@ -20,7 +20,12 @@ from .sam import SharpnessAwareMinimizer
 from .sampling import EpochRotatingSampler
 from .teacher_cache import (TeacherCacheStore, cached_answer_features, load_teacher_predictions,
                             write_teacher_predictions)
-from .visualization import save_phase_masks, save_scatter, save_training_curves
+from .visualization import (
+    save_intermediate_field_overview,
+    save_phase_masks,
+    save_scatter,
+    save_training_curves,
+)
 
 
 def score_metrics(predictions: torch.Tensor, targets: torch.Tensor) -> dict[str, float]:
@@ -342,12 +347,18 @@ def train_student(model: nn.Module, replacement: Any, head: nn.Module, train_dat
         settings.head_output_activation,
     )
     cached = CachedStudentDataset(train_dataset, train_store, train_inputs, teacher_predictions)
-    sampler = EpochRotatingSampler(len(train_dataset), settings.train_samples_per_epoch, settings.seed,
-                                   settings.teacher_cache_shard_size)
+    sampler = EpochRotatingSampler(
+        len(train_dataset),
+        settings.train_samples_per_epoch,
+        settings.seed,
+        settings.teacher_cache_shard_size,
+        settings.train_epoch_partitions,
+    )
     loader = DataLoader(cached, batch_size=settings.student_batch_size, sampler=sampler, num_workers=0,
                         collate_fn=lambda batch: cached_student_collate(batch, train_inputs.metadata), pin_memory=True)
     test_loader = make_evaluation_loader(test_dataset, test_inputs, settings.inference_batch_size)
     replacement.use_student(); model.requires_grad_(False).eval()
+    replacement.set_intermediate_field_capture(False)
     replacement.configure_student_trainability()
     head.requires_grad_(True)
     optimizer, sam = _build_student_optimizer(replacement, head, settings)
@@ -433,7 +444,18 @@ def train_student(model: nn.Module, replacement: Any, head: nn.Module, train_dat
         sam_grad_norm_total = torch.zeros((), device=device, dtype=torch.float64)
         v_selection = torch.zeros(settings.num_experts, device=device)
         l_selection = torch.zeros(settings.num_experts, device=device)
-        print(f"[sampling] epoch={epoch} samples={len(sampler)}/{len(train_dataset)} mode={settings.student_language_mode}", flush=True)
+        sampling = sampler.sampling_metadata()
+        partition_text = (
+            f" partition={int(sampling['partition_index']) + 1}/{sampling['epoch_partitions']}"
+            f" cycle={int(sampling['cycle_index']) + 1}"
+            f" sizes={sampling['partition_sizes']}"
+            if sampling["epoch_partitions"] is not None else ""
+        )
+        print(
+            f"[sampling] epoch={epoch} samples={len(sampler)}/{len(train_dataset)} "
+            f"mode={settings.student_language_mode} sampling={sampling['mode']}{partition_text}",
+            flush=True,
+        )
         train_started = time.perf_counter()
         for batch_index, (cpu_inputs, targets, _indices, teachers, teacher_predictions_batch) in enumerate(loader, 1):
             inputs = move_inputs(cpu_inputs, device)
@@ -538,7 +560,21 @@ def train_student(model: nn.Module, replacement: Any, head: nn.Module, train_dat
         vision_rates = (v_selection / seen).detach().cpu().tolist()
         language_rates = (l_selection / seen).detach().cpu().tolist()
         test_started = time.perf_counter()
-        test_report = evaluate_student(model, replacement, head, test_loader, settings, device, test_dataset)
+        capture_intermediate = (
+            settings.visualization_enabled
+            and settings.save_intermediate_fields
+            and epoch % settings.visualization_interval_epochs == 0
+        )
+        test_report = evaluate_student(
+            model,
+            replacement,
+            head,
+            test_loader,
+            settings,
+            device,
+            test_dataset,
+            capture_intermediate_fields=capture_intermediate,
+        )
         test_time_sec = time.perf_counter() - test_started
         teacher_cache_stats = train_store.stats()
         train_input_cache_stats = train_inputs.stats()
@@ -556,6 +592,10 @@ def train_student(model: nn.Module, replacement: Any, head: nn.Module, train_dat
                **{f"test_{key}": value for key, value in test_report.items() if isinstance(value, (int, float))},
                "epoch_time_sec": time.perf_counter() - started, "train_time_sec": train_time_sec,
                "test_time_sec": test_time_sec, "samples_this_epoch": len(sampler),
+               "sampling_mode": sampling["mode"],
+               "sampling_epoch_partitions": sampling["epoch_partitions"],
+               "sampling_partition_index": sampling["partition_index"],
+               "sampling_cycle_index": sampling["cycle_index"],
                "teacher_cache_hit_rate": teacher_cache_stats["hit_rate"],
                "teacher_cache_shard_loads": teacher_cache_stats["shard_loads"],
                "teacher_cache_resident_shards": teacher_cache_stats["resident_shards"],
@@ -591,6 +631,19 @@ def train_student(model: nn.Module, replacement: Any, head: nn.Module, train_dat
             save_phase_masks(replacement.vision_surrogate.core, settings.output_dir / "figures" / f"vision_phase_masks_epoch_{epoch:04d}.png", f"Vision epoch {epoch}")
             if settings.student_language_mode == "optical_moe":
                 save_phase_masks(replacement.language_surrogate.core, settings.output_dir / "figures" / f"language_phase_masks_epoch_{epoch:04d}.png", f"Language epoch {epoch}")
+        if capture_intermediate:
+            field_root = settings.output_dir / "figures" / "intermediate_fields"
+            save_intermediate_field_overview(
+                replacement.vision_surrogate.core,
+                field_root / f"vision_epoch_{epoch:04d}.png",
+                f"Vision optical stage intensities, epoch {epoch}",
+            )
+            if settings.student_language_mode == "optical_moe":
+                save_intermediate_field_overview(
+                    replacement.language_surrogate.core,
+                    field_root / f"language_epoch_{epoch:04d}.png",
+                    f"Language optical stage intensities, epoch {epoch}",
+                )
         print(f"epoch {epoch:03d} complete train_MAE={train_report['mae']:.3f} train_SRCC={train_report['srcc']:.4f} "
               f"test_MAE={test_report['mae']:.3f} test_SRCC={test_report['srcc']:.4f} best={best:.4f}", flush=True)
     write_json(settings.output_dir / "metrics" / "student_training.json", {"epochs": settings.epochs,
@@ -602,14 +655,27 @@ def train_student(model: nn.Module, replacement: Any, head: nn.Module, train_dat
 
 @torch.inference_mode()
 def evaluate_student(model: nn.Module, replacement: Any, head: nn.Module, loader: Any, settings: Any,
-                     device: torch.device, dataset: Dataset[Any] | None = None, predictions_path: Path | None = None):
+                     device: torch.device, dataset: Dataset[Any] | None = None,
+                     predictions_path: Path | None = None,
+                     capture_intermediate_fields: bool = False):
     replacement.use_student(); replacement.set_phase_dropout_active(False); model.eval(); head.eval()
     predictions_all = []; targets_all = []; indices_all = []
-    for cpu_inputs, targets, indices in loader:
-        replacement.prepare_student_batch(cpu_inputs["attention_mask"])
-        inputs = move_inputs(cpu_inputs, device)
-        hidden = multimodal_forward_features(model, inputs); answer, _ = pool_answer_hidden_state(hidden, inputs["attention_mask"])
-        predictions_all.append(head(answer)); targets_all.append(targets.to(device, non_blocking=True)); indices_all.append(indices)
+    replacement.set_intermediate_field_capture(False)
+    try:
+        for batch_index, (cpu_inputs, targets, indices) in enumerate(loader, 1):
+            replacement.set_intermediate_field_capture(
+                capture_intermediate_fields and batch_index == len(loader),
+                settings.visualization_sample_count,
+            )
+            replacement.prepare_student_batch(cpu_inputs["attention_mask"])
+            inputs = move_inputs(cpu_inputs, device)
+            hidden = multimodal_forward_features(model, inputs); answer, _ = pool_answer_hidden_state(hidden, inputs["attention_mask"])
+            predictions_all.append(head(answer)); targets_all.append(targets.to(device, non_blocking=True)); indices_all.append(indices)
+    finally:
+        # Captured tensors are detached CPU copies. Disabling capture here keeps
+        # them available for the visualization writer without retaining future
+        # training graphs or GPU fields.
+        replacement.set_intermediate_field_capture(False)
     predictions = torch.cat(predictions_all).cpu(); targets = torch.cat(targets_all).cpu(); indices = torch.cat(indices_all)
     report = {**score_metrics(predictions, targets), "dataset": "SPAQ", "task": settings.task_name,
               "model": f"vision_optical_moe_language_{settings.student_language_mode}",

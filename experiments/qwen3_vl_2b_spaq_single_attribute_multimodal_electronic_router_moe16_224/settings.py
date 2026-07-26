@@ -44,6 +44,7 @@ class Settings:
     train_image_limit: int | None = None
     test_image_limit: int | None = None
     train_samples_per_epoch: int | None = None
+    train_epoch_partitions: int | None = None
     output_dir: Path = PROJECT_DIR / "runs" / "qwen3_vl_2b_spaq_mos_multimodal_electronic_router_moe16_224"
     precompute_cache_dir: Path = PROJECT_DIR / "cache"
     model_id: str = MODEL_ID
@@ -324,10 +325,14 @@ class Settings:
         for name in positive:
             if int(getattr(self, name)) < (0 if name == "num_workers" else 1):
                 raise ValueError(f"{name} has an invalid value")
-        for name in ("train_image_limit", "test_image_limit", "train_samples_per_epoch"):
+        for name in ("train_image_limit", "test_image_limit", "train_samples_per_epoch", "train_epoch_partitions"):
             value = getattr(self, name)
             if value is not None and value <= 0:
                 raise ValueError(f"{name} must be positive when set")
+        if self.train_samples_per_epoch is not None and self.train_epoch_partitions is not None:
+            raise ValueError(
+                "dataset.train_samples_per_epoch and dataset.train_epoch_partitions are mutually exclusive"
+            )
         for name in ("loss_hidden_weight", "loss_answer_weight", "loss_prediction_distill_weight", "loss_regression_weight",
                      "router_balance_weight", "router_importance_weight"):
             if float(getattr(self, name)) < 0:
@@ -374,6 +379,7 @@ NESTED_FIELDS: dict[tuple[str, ...], str] = {
     ("dataset", "train_fraction"): "train_fraction", ("dataset", "train_image_limit"): "train_image_limit",
     ("dataset", "test_image_limit"): "test_image_limit",
     ("dataset", "train_samples_per_epoch"): "train_samples_per_epoch",
+    ("dataset", "train_epoch_partitions"): "train_epoch_partitions",
     ("dataset", "validation_fraction"): "validation_fraction",
     ("qwen", "model_id"): "model_id", ("qwen", "cache_dir"): "cache_dir", ("qwen", "local_files_only"): "local_files_only",
     ("qwen", "processor", "min_pixels"): "processor_min_pixels", ("qwen", "processor", "max_pixels"): "processor_max_pixels",

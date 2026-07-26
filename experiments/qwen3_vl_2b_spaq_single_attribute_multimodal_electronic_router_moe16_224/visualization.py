@@ -79,6 +79,45 @@ def save_scatter(true_scores: Sequence[float], predicted_scores: Sequence[float]
     figure.tight_layout(); figure.savefig(path, dpi=170, bbox_inches="tight"); plt.close(figure)
 
 
+def save_intermediate_field_overview(core: Any, path: Path, title: str) -> None:
+    """Save captured stage intensities without retaining training autograd graphs."""
+    fields = list(core.last_stage_fields)
+    if not fields:
+        return
+    plt = _pyplot()
+    sample_count = min(field.shape[0] for field in fields)
+    figure, axes = plt.subplots(
+        sample_count,
+        len(fields),
+        figsize=(4.2 * len(fields), 3.8 * sample_count),
+        squeeze=False,
+    )
+    aperture = core.geometry.active_aperture
+    for sample_index in range(sample_count):
+        for stage_index, field in enumerate(fields):
+            intensity = field[
+                sample_index,
+                aperture.y0:aperture.y1,
+                aperture.x0:aperture.x1,
+            ].abs().square().float()
+            axis = axes[sample_index, stage_index]
+            image = axis.imshow(intensity.numpy(), cmap="magma", origin="upper")
+            axis.set_title(
+                f"sample {sample_index}, stage {stage_index + 1}\n"
+                f"min={float(intensity.min()):.3g} "
+                f"max={float(intensity.max()):.3g} "
+                f"mean={float(intensity.mean()):.3g}"
+            )
+            axis.set_xlabel("x (pixel)")
+            axis.set_ylabel("y (pixel)")
+            figure.colorbar(image, ax=axis, fraction=0.046, label="intensity")
+    figure.suptitle(title)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    figure.tight_layout()
+    figure.savefig(path, dpi=130, bbox_inches="tight")
+    plt.close(figure)
+
+
 def save_debug_example(directory: Path, image: Any, sample_index: int, true_score: float,
                        predicted_score: float, input_field: torch.Tensor, routing: dict[str, torch.Tensor],
                        detector_intensity: torch.Tensor, student_hidden: torch.Tensor,

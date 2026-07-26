@@ -27,6 +27,7 @@ from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_
     MoEGeometry,
 )
 from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe16_224.optics.moe import (
+    ExpertPhasePlane,
     FullPlaneReadout,
     HomogeneousMoEOpticalCore,
     LanguageDeepStackHomogeneousMoE,
@@ -57,6 +58,9 @@ from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_
 )
 from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe16_224.sam import (
     SharpnessAwareMinimizer,
+)
+from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe16_224.sampling import (
+    EpochRotatingSampler,
 )
 from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe16_224.teacher_cache import (
     TeacherCacheStore,
@@ -229,6 +233,10 @@ def _encoder(hidden_size: int = 8, max_tokens: int = 224) -> HomogeneousMoEOptic
     module.last_routing = {}
     module.last_amplitude_slm_canvas = None
     module.last_stage_fields = []
+    module.last_detector_intensity = None
+    module.last_detector_readout = None
+    module.capture_intermediate_fields = False
+    module.capture_sample_count = 1
     return module
 
 
@@ -555,6 +563,66 @@ def test_final_detector_per_token_normalization_preserves_gradient() -> None:
     assert torch.count_nonzero(phase.raw_phase.grad) > 0
 
 
+@pytest.mark.parametrize(
+    ("dropout_mode", "dropout_active"),
+    [
+        ("none", False),
+        ("phase_bypass", True),
+        ("block_phase_bypass", True),
+    ],
+)
+def test_vectorized_expert_phase_plane_matches_legacy_loop(
+    dropout_mode: str,
+    dropout_active: bool,
+) -> None:
+    geometry = SimpleNamespace(
+        canvas_size=6,
+        num_experts=4,
+        expert_size=2,
+        expert_apertures=[
+            Aperture(0, 2, 0, 2),
+            Aperture(0, 2, 3, 5),
+            Aperture(3, 5, 0, 2),
+            Aperture(3, 5, 3, 5),
+        ],
+    )
+    settings = SimpleNamespace(
+        phase_parameterization="sigmoid",
+        phase_init="small_normal",
+        phase_init_std=0.2,
+        phase_dropout_mode=dropout_mode,
+        phase_dropout_p=0.25 if dropout_active else 0.0,
+        phase_dropout_block_size=2,
+        phase_dropout_batch_shared=False,
+    )
+    layer = ExpertPhasePlane(geometry, settings).train()
+    layer.set_phase_dropout_active(dropout_active)
+    torch.manual_seed(17)
+    field = torch.complex(torch.randn(3, 6, 6), torch.randn(3, 6, 6))
+    flat_indices = layer.aperture_indices.reshape(-1)
+    crops = field.flatten(1).index_select(1, flat_indices).reshape(3, 4, 2, 2)
+
+    torch.manual_seed(23)
+    legacy = torch.stack(
+        [phase(crops[:, index]) for index, phase in enumerate(layer.experts)],
+        dim=1,
+    )
+    expected = torch.zeros(3, 36, dtype=torch.complex64).scatter(
+        1,
+        flat_indices.unsqueeze(0).expand(3, -1),
+        legacy.reshape(3, -1),
+    ).reshape(3, 6, 6)
+
+    torch.manual_seed(23)
+    actual = layer(field)
+    assert torch.allclose(actual, expected, atol=1e-6, rtol=1e-6)
+    actual.real.sum().backward()
+    assert all(expert.raw_phase.grad is not None for expert in layer.experts)
+    assert set(layer.state_dict()) == {
+        f"experts.{index}.raw_phase" for index in range(geometry.num_experts)
+    }
+
+
 def test_vectorized_per_expert_detection_matches_reference() -> None:
     geometry = MoEGeometry()
     layer = SquareDetectionLayerNormReload(
@@ -594,6 +662,35 @@ def test_vectorized_per_expert_detection_matches_reference() -> None:
     assert torch.allclose(actual, expected, atol=1e-6, rtol=1e-6)
 
 
+def test_exact_epoch_partitions_cover_dataset_once_per_cycle() -> None:
+    sampler = EpochRotatingSampler(
+        dataset_size=10013,
+        samples_per_epoch=None,
+        seed=42,
+        shard_size=128,
+        epoch_partitions=3,
+    )
+    first_cycle: list[set[int]] = []
+    for epoch, expected_size in enumerate((3338, 3338, 3337), 1):
+        sampler.set_epoch(epoch)
+        selected = list(sampler)
+        assert len(sampler) == expected_size
+        assert len(selected) == expected_size
+        assert len(set(selected)) == expected_size
+        first_cycle.append(set(selected))
+    assert not (first_cycle[0] & first_cycle[1])
+    assert not (first_cycle[0] & first_cycle[2])
+    assert not (first_cycle[1] & first_cycle[2])
+    assert set.union(*first_cycle) == set(range(10013))
+
+    second_cycle: list[set[int]] = []
+    for epoch in (4, 5, 6):
+        sampler.set_epoch(epoch)
+        second_cycle.append(set(sampler))
+    assert set.union(*second_cycle) == set(range(10013))
+    assert first_cycle != second_cycle
+
+
 @pytest.mark.parametrize(
     ("filename", "sam_enabled"),
     [
@@ -628,6 +725,24 @@ def test_epoch77_finetune_configs_are_explicit_and_reproducible(
     assert settings.sam_enabled is sam_enabled
     assert settings.sam_rho == pytest.approx(0.05)
     assert not settings.sam_adaptive
+
+
+def test_epoch40_sam_three_way_batch8_config_is_explicit() -> None:
+    settings = load_settings(
+        CONFIGS / "spaq_mos_epoch40_regularized_finetune_sam_3way_batch8.json"
+    )
+    assert settings.student_initialization_tag == "epoch_0040"
+    assert settings.student_initialization_expected_epoch == 40
+    assert settings.student_initialization_require_epoch_match
+    assert settings.student_initialization_reset_optimizer
+    assert settings.epochs == 100
+    assert settings.student_batch_size == 8
+    assert settings.inference_batch_size == 8
+    assert settings.train_samples_per_epoch is None
+    assert settings.train_epoch_partitions == 3
+    assert settings.sam_enabled
+    assert settings.visualization_interval_epochs == 5
+    assert settings.save_intermediate_fields
 
 
 def test_sam_performs_two_step_update_and_restores_unperturbed_parameters() -> None:
