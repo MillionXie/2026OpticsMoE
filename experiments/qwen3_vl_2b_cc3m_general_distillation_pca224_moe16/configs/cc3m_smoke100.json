@@ -1,0 +1,33 @@
+{
+  "base_config": "cc3m.json",
+  "experiment": {
+    "name": "qwen3_vl_2b_cc3m_general_distillation_pca224_moe16_smoke100",
+    "output_dir": "../runs/qwen3_vl_2b_cc3m_general_distillation_pca224_moe16_smoke100"
+  },
+  "dataset": {
+    "sample_limit": 100,
+    "validation_fraction": 0.2,
+    "calibration_sample_count": 80
+  },
+  "pca": {
+    "vision_calibration_tokens": 1024,
+    "language_calibration_tokens": 1024,
+    "oracle_samples": 4
+  },
+  "batching": {
+    "feature_batch_size": 1,
+    "student_batch_size": 1,
+    "validation_batch_size": 1,
+    "num_workers": 0
+  },
+  "cache": {
+    "shard_size": 8,
+    "lru_shards": 4,
+    "log_interval_batches": 1
+  },
+  "training": {
+    "vision_epochs": 1,
+    "language_epochs": 1,
+    "joint_epochs": 1
+  }
+}

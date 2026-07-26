@@ -1,0 +1,125 @@
+{
+  "config_version": 1,
+  "experiment": {
+    "name": "qwen3_vl_2b_cc3m_general_distillation_pca224_moe16",
+    "output_dir": "../runs/qwen3_vl_2b_cc3m_general_distillation_pca224_moe16",
+    "seed": 42
+  },
+  "dataset": {
+    "name": "cc3m_jsonl",
+    "manifest_path": "../../../data/cc3m/cc3m.jsonl",
+    "validation_manifest_path": null,
+    "validation_fraction": 0.01,
+    "sample_limit": null,
+    "calibration_sample_count": 4096,
+    "caption_prompt_template": "{caption}"
+  },
+  "qwen": {
+    "model_id": "Qwen/Qwen3-VL-2B-Instruct",
+    "cache_dir": null,
+    "local_files_only": false,
+    "processor": {
+      "min_pixels": 25600,
+      "max_pixels": 25600
+    },
+    "runtime": {
+      "dtype": "bfloat16",
+      "attn_implementation": "sdpa",
+      "device": "cuda"
+    },
+    "architecture": {
+      "vision_depth": null,
+      "vision_hidden_size": null,
+      "text_depth": null,
+      "text_hidden_size": null,
+      "deepstack_visual_indexes": null,
+      "language_tap_indexes": null
+    }
+  },
+  "pca": {
+    "latent_dim": 224,
+    "vision_calibration_tokens": 200000,
+    "language_calibration_tokens": 200000,
+    "eigenvalue_eps": 1e-08,
+    "oracle_samples": 16,
+    "oracle_warn_cosine_below": 0.9
+  },
+  "token_limits": {
+    "visual": 224,
+    "language": 224
+  },
+  "batching": {
+    "feature_batch_size": 1,
+    "student_batch_size": 1,
+    "validation_batch_size": 1,
+    "num_workers": 8,
+    "cpu_threads": 4,
+    "cpu_interop_threads": 1
+  },
+  "cache": {
+    "root": "../cache",
+    "dtype": "float16",
+    "shard_size": 128,
+    "lru_shards": 8,
+    "log_interval_batches": 100
+  },
+  "moe": {
+    "geometry": {
+      "canvas_size": 1026,
+      "active_size": 986,
+      "expert_size": 224,
+      "expert_pitch": 254,
+      "num_experts": 16,
+      "grid_rows": 4,
+      "grid_cols": 4,
+      "stages": 4
+    },
+    "router": {
+      "top_k": 4,
+      "pool_size": 14,
+      "temperature": 1.0,
+      "input_layernorm_enabled": true,
+      "input_layernorm_eps": 1e-05,
+      "amplitude_slm_weight_domain": "amplitude",
+      "amplitude_slm_input_normalization": "none",
+      "amplitude_phase_relay": "ideal_4f_identity"
+    },
+    "optics": {
+      "wavelength_nm": 532.0,
+      "pixel_pitch_um": 8.0,
+      "inter_layer_distance_m": 0.1,
+      "last_expert_to_global_distance_m": 0.1,
+      "global_to_detector_distance_m": 0.1,
+      "phase_parameterization": "sigmoid",
+      "phase_init": "zeros",
+      "phase_init_std": 0.02,
+      "phase_dropout_mode": "none",
+      "phase_dropout_p": 0.0,
+      "phase_dropout_block_size": 8,
+      "phase_dropout_batch_shared": true,
+      "k_space_constraint_enabled": false,
+      "theta_max_deg": 1.0
+    },
+    "detector": {
+      "output_size": 224,
+      "layernorm_eps": 1e-05,
+      "layernorm_affine": false,
+      "layernorm_scope": "per_token"
+    }
+  },
+  "training": {
+    "vision_epochs": 30,
+    "language_epochs": 30,
+    "joint_epochs": 30,
+    "learning_rate": 0.002,
+    "router_learning_rate": 0.001,
+    "weight_decay": 0.0,
+    "scheduler": "cosine",
+    "checkpoint_interval_epochs": 1,
+    "progress": true
+  },
+  "loss": {
+    "router_balance_weight": 0.03,
+    "router_importance_weight": 0.0
+  }
+}
