@@ -35,7 +35,7 @@ class EpochRotatingSampler(Sampler[int]):
     def __iter__(self):
         cycle = self.cycle_index if self.epoch_partitions is not None else 0
         generator = torch.Generator().manual_seed(self.seed + 104729 * cycle)
-        order = torch.randperm(self.dataset_size, generator=generator).tolist()
+        order = self._dataset_order(generator)
         if self.epoch_partitions is not None:
             sizes = self._partition_sizes()
             start = sum(sizes[:self.partition_index])
@@ -62,6 +62,28 @@ class EpochRotatingSampler(Sampler[int]):
             order_in_shard = torch.randperm(len(group), generator=batch_generator).tolist()
             result.extend(group[position] for position in order_in_shard)
         return iter(result)
+
+    def _dataset_order(self, generator: torch.Generator) -> list[int]:
+        if self.epoch_partitions is None or self.shard_size is None:
+            return torch.randperm(self.dataset_size, generator=generator).tolist()
+
+        # A fully random sample partition touches almost every multi-megabyte
+        # cache shard even when it contains only one third of the dataset.
+        # Shuffle shard order and every shard's contents instead, then split
+        # this equally random deterministic order into exact epoch partitions.
+        # This preserves three-epoch coverage while loading roughly one third
+        # of the teacher/processor shards per epoch.
+        shards = [
+            list(range(start, min(start + self.shard_size, self.dataset_size)))
+            for start in range(0, self.dataset_size, self.shard_size)
+        ]
+        shard_order = torch.randperm(len(shards), generator=generator).tolist()
+        order: list[int] = []
+        for shard_index in shard_order:
+            shard = shards[shard_index]
+            within = torch.randperm(len(shard), generator=generator).tolist()
+            order.extend(shard[index] for index in within)
+        return order
 
     @property
     def partition_index(self) -> int:

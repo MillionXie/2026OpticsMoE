@@ -682,6 +682,9 @@ def test_exact_epoch_partitions_cover_dataset_once_per_cycle() -> None:
     assert not (first_cycle[0] & first_cycle[2])
     assert not (first_cycle[1] & first_cycle[2])
     assert set.union(*first_cycle) == set(range(10013))
+    # Exact partitions are also cache-local: one third of the dataset should
+    # not force all 79 cache shards to be loaded during the first epoch.
+    assert len({index // 128 for index in first_cycle[0]}) <= 28
 
     second_cycle: list[set[int]] = []
     for epoch in (4, 5, 6):

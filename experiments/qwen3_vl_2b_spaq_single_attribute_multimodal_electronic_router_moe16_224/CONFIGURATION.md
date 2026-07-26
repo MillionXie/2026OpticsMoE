@@ -139,7 +139,10 @@ The dataset is not independently resampled each epoch. A deterministic
 permutation is divided into three disjoint parts. For the 10,013-image SPAQ
 training split their sizes are `3338 / 3338 / 3337`; three consecutive epochs
 therefore cover every retained image exactly once. A new deterministic
-permutation is generated for the next three-epoch cycle.
+permutation is generated for the next three-epoch cycle. The permutation is
+cache-shard aware: shard order and samples inside each shard are both shuffled,
+so each epoch reads roughly one third of the large teacher/processor cache
+shards instead of touching all shards for a sparse subset.
 
 Expert phase application keeps the original checkpoint keys but stacks all 16
 raw phase masks and applies their modulation in one batched tensor operation.
