@@ -293,6 +293,8 @@ class ProjectedTeacherCacheStore:
                         "teacher_language_stage_taps_pca",
                     )
                 }
+        if any(row is None for row in result):
+            raise RuntimeError("Teacher cache batch lookup left an unresolved sample")
         return [row for row in result if row is not None]
 
     def _load(self, shard: int) -> dict[str, Any]:

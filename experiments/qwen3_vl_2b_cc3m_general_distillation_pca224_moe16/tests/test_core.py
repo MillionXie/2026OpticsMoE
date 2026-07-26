@@ -22,6 +22,7 @@ from experiments.qwen3_vl_2b_cc3m_general_distillation_pca224_moe16.teacher_cach
     collate_cached_rows,
 )
 from experiments.qwen3_vl_2b_cc3m_general_distillation_pca224_moe16.training import (
+    compute_stage_losses,
     masked_tokenwise_normalized_mse,
 )
 
@@ -200,6 +201,25 @@ def test_vision_language_and_joint_minimal_forward_backward() -> None:
     joint.backward()
     assert any(parameter.grad is not None for parameter in vision.parameters() if parameter.requires_grad)
     assert any(parameter.grad is not None for parameter in language.parameters() if parameter.requires_grad)
+
+
+def test_separate_vision_loss_does_not_require_language_router_state() -> None:
+    settings = _settings()
+    vision = VisionPCAOpticalMoE(_projection(12), settings)
+    language = LanguagePCAOpticalMoE(_projection(16), settings)
+    vision.compute(torch.randn(6, 12), torch.tensor([0, 6], dtype=torch.int32))
+    replacement = SimpleNamespace(
+        vision_surrogate=vision,
+        language_surrogate=language,
+    )
+    batch = {
+        "vision_targets": [tap.detach().clone() for tap in vision.stage_latents],
+        "language_targets": [],
+        "language_mask": torch.empty(0, dtype=torch.bool),
+    }
+    losses = compute_stage_losses(replacement, batch, "vision")
+    assert float(losses["vision"]) == pytest.approx(0.0, abs=1e-7)
+    assert float(losses["language"]) == 0.0
 
 
 def test_synthetic_100_sample_pca_cache_and_train_step(tmp_path: Path) -> None:

@@ -74,15 +74,16 @@ def compute_stage_losses(
         ]
     vision = torch.stack(vision_losses).mean() if vision_losses else zero
     language = torch.stack(language_losses).mean() if language_losses else zero
-    router = replacement.router_losses()
     balances = []
     importances = []
     if mode in {"vision", "joint"}:
-        balances.append(router["vision_balance"])
-        importances.append(router["vision_importance"])
+        balance, importance = replacement.vision_surrogate.router_losses()
+        balances.append(balance)
+        importances.append(importance)
     if mode in {"language", "joint"}:
-        balances.append(router["language_balance"])
-        importances.append(router["language_importance"])
+        balance, importance = replacement.language_surrogate.router_losses()
+        balances.append(balance)
+        importances.append(importance)
     balance = torch.stack(balances).mean()
     importance = torch.stack(importances).mean()
     return {
