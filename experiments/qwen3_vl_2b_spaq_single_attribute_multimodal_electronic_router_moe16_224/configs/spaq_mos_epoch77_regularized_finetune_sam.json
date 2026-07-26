@@ -1,0 +1,69 @@
+{
+  "base_config": "spaq_mos.json",
+  "experiment": {
+    "name": "qwen3_vl_2b_spaq_mos_moe16_224_epoch77_regularized_finetune_sam",
+    "output_dir": "../runs/qwen3_vl_2b_spaq_mos_moe16_224_epoch77_regularized_finetune_sam"
+  },
+  "batching": {
+    "student_batch_size": 4,
+    "inference_batch_size": 4
+  },
+  "teacher_cache": {
+    "artifact_source_run_dir": "../runs/qwen3_vl_2b_spaq_mos_multimodal_electronic_router_moe16_224"
+  },
+  "moe": {
+    "router": {
+      "learning_rate": 0.0001
+    }
+  },
+  "loss": {
+    "vision_hidden_weight": 0.5,
+    "answer_hidden_weight": 1.0,
+    "prediction_distill_weight": 1.0,
+    "regression_weight": 0.5,
+    "router_balance_weight": 0.03,
+    "router_importance_weight": 0.0
+  },
+  "optimizer": {
+    "type": "adamw",
+    "learning_rate": 0.0005,
+    "adapter_learning_rate": 0.0002,
+    "attention_learning_rate": 0.0001,
+    "student_head_learning_rate": 0.0001,
+    "weight_decay": 0.0005,
+    "phase_weight_decay": 0.0,
+    "scheduler": "cosine",
+    "sam": {
+      "enabled": true,
+      "rho": 0.05,
+      "adaptive": false
+    }
+  },
+  "training": {
+    "epochs": 30,
+    "logging": {
+      "interval_batches": 500
+    },
+    "checkpoint_interval_epochs": 5,
+    "initialization": {
+      "source_run_dir": "../runs/qwen3_vl_2b_spaq_mos_multimodal_electronic_router_moe16_224",
+      "checkpoint_tag": "best",
+      "expected_epoch": 77,
+      "require_epoch_match": true,
+      "reset_optimizer": true
+    }
+  },
+  "regularization": {
+    "phase_dropout": {
+      "enabled": true,
+      "mode": "block_phase_bypass",
+      "p": 0.04,
+      "block_size": 8,
+      "batch_shared": true,
+      "start_epoch": 0
+    }
+  },
+  "visualization": {
+    "interval_epochs": 5
+  }
+}

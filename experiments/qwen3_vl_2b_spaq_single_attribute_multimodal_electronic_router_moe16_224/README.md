@@ -117,3 +117,21 @@ processor 后的张量。没有它们，每个学生 epoch 都要重复跑电子
 
 默认学生为 vision optical MoE + language optical MoE。另有 MOS 的
 vision optical MoE + frozen electronic language 诊断配置。
+
+## Epoch-77 后期正则化微调
+
+100 epoch MOS 实验的最佳 test SRCC 出现在 epoch 77。新增的两个配置从该
+`best` checkpoint 精确加载 Vision MoE、Language MoE 和 student head，并在
+新的输出目录继续训练：
+
+- `spaq_mos_epoch77_regularized_finetune.json`
+- `spaq_mos_epoch77_regularized_finetune_sam.json`
+
+两个配置都会重新初始化 optimizer 和 cosine scheduler，不继承旧 AdamW 动量。
+Phase mask 不施加 weight decay；weight decay 只作用于 adapter、router 和 head。
+二者使用相同的低学习率、蒸馏权重和 phase dropout，第二个配置额外开启标准
+SAM，因此可以单独判断 SAM 是否有效。
+
+这次微调继续复用冻结 Qwen 的 teacher cache、processor cache 和原运行生成的
+teacher predictions，不需要重新跑完整电子 Teacher。启动时会先评估加载的
+epoch-77 权重并保存结果，随后才进入微调。

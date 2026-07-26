@@ -18,6 +18,8 @@ PATH_FIELDS = {
     "output_dir",
     "cache_dir",
     "precompute_cache_dir",
+    "teacher_artifact_source_run_dir",
+    "student_initialization_run_dir",
 }
 ENV_REFERENCE = re.compile(r"\$(?:\{([A-Za-z_][A-Za-z0-9_]*)\}|([A-Za-z_][A-Za-z0-9_]*))")
 
@@ -67,9 +69,14 @@ class Settings:
     epochs: int = 30
     validation_fraction: float = 0.1
     learning_rate: float = 5e-4
+    adapter_learning_rate: float | None = None
     weight_decay: float = 1e-2
+    phase_weight_decay: float = 0.0
     optimizer_type: str = "adamw"
     scheduler_type: str = "cosine"
+    sam_enabled: bool = False
+    sam_rho: float = 0.05
+    sam_adaptive: bool = False
     head_type: str = "normalized_linear_regression"
     head_output_activation: str = "linear"
     student_head_learning_rate: float = 1e-3
@@ -139,6 +146,12 @@ class Settings:
     checkpoint_interval_epochs: int = 1
     student_selection_split: str = "test"
     student_selection_metric: str = "srcc"
+    teacher_artifact_source_run_dir: Path | None = None
+    student_initialization_run_dir: Path | None = None
+    student_initialization_tag: str | None = None
+    student_initialization_expected_epoch: int | None = None
+    student_initialization_require_epoch_match: bool = True
+    student_initialization_reset_optimizer: bool = True
     phase_dropout_enabled: bool = False
     phase_dropout_mode: str = "none"
     phase_dropout_p: float = 0.0
@@ -186,6 +199,12 @@ class Settings:
             raise ValueError("classification_head.output_activation must be sigmoid or linear")
         if self.student_head_learning_rate <= 0:
             raise ValueError("optimizer.student_head_learning_rate must be positive")
+        if self.adapter_learning_rate is not None and self.adapter_learning_rate <= 0:
+            raise ValueError("optimizer.adapter_learning_rate must be positive when set")
+        if self.weight_decay < 0 or self.phase_weight_decay < 0:
+            raise ValueError("optimizer weight decay values must be non-negative")
+        if self.sam_enabled and self.sam_rho <= 0:
+            raise ValueError("optimizer.sam.rho must be positive when SAM is enabled")
         if self.download_source not in {"huggingface", "google_drive"}:
             raise ValueError("download_source must be huggingface or google_drive")
         if self.download and self.download_source == "huggingface" and (
@@ -274,6 +293,22 @@ class Settings:
             raise ValueError("Invalid validation fraction or SmoothL1 beta")
         if self.student_selection_metric not in {"mae", "srcc", "plcc"}:
             raise ValueError("training.student_selection_metric must be mae, srcc, or plcc")
+        initialization_values = (
+            self.student_initialization_run_dir,
+            self.student_initialization_tag,
+            self.student_initialization_expected_epoch,
+        )
+        if any(value is not None for value in initialization_values):
+            if self.student_initialization_run_dir is None or not self.student_initialization_tag:
+                raise ValueError(
+                    "training.initialization requires both source_run_dir and checkpoint_tag"
+                )
+            if self.student_initialization_expected_epoch is not None and self.student_initialization_expected_epoch <= 0:
+                raise ValueError("training.initialization.expected_epoch must be positive")
+            if not self.student_initialization_reset_optimizer:
+                raise ValueError(
+                    "This fine-tuning implementation intentionally resets optimizer/scheduler state"
+                )
         for name in ("wavelength_nm", "pixel_pitch_um", "expert_interlayer_distance_m",
                      "last_expert_to_global_distance_m", "global_to_detector_distance_m"):
             if float(getattr(self, name)) <= 0:
@@ -357,6 +392,7 @@ NESTED_FIELDS: dict[tuple[str, ...], str] = {
     ("batching", "cpu_threads"): "cpu_threads",
     ("batching", "cpu_interop_threads"): "cpu_interop_threads",
     ("teacher_cache", "precompute_cache_dir"): "precompute_cache_dir",
+    ("teacher_cache", "artifact_source_run_dir"): "teacher_artifact_source_run_dir",
     ("teacher_cache", "shard_size"): "teacher_cache_shard_size", ("teacher_cache", "lru_shards"): "teacher_cache_lru_shards",
     ("teacher_cache", "dtype"): "cache_dtype", ("teacher_cache", "log_interval_batches"): "teacher_cache_log_interval_batches",
     ("vision_adapter", "optical_channels"): "input_adapter_dim", ("vision_adapter", "max_visual_tokens"): "max_visual_tokens",
@@ -416,14 +452,25 @@ NESTED_FIELDS: dict[tuple[str, ...], str] = {
     ("loss", "router_balance_weight"): "router_balance_weight",
     ("loss", "router_importance_weight"): "router_importance_weight",
     ("optimizer", "type"): "optimizer_type", ("optimizer", "learning_rate"): "learning_rate",
+    ("optimizer", "adapter_learning_rate"): "adapter_learning_rate",
     ("optimizer", "attention_learning_rate"): "attention_learning_rate",
     ("optimizer", "student_head_learning_rate"): "student_head_learning_rate",
-    ("optimizer", "weight_decay"): "weight_decay", ("optimizer", "scheduler"): "scheduler_type",
+    ("optimizer", "weight_decay"): "weight_decay",
+    ("optimizer", "phase_weight_decay"): "phase_weight_decay",
+    ("optimizer", "scheduler"): "scheduler_type",
+    ("optimizer", "sam", "enabled"): "sam_enabled",
+    ("optimizer", "sam", "rho"): "sam_rho",
+    ("optimizer", "sam", "adaptive"): "sam_adaptive",
     ("training", "epochs"): "epochs", ("training", "logging", "interval_batches"): "log_interval_batches",
     ("training", "progress"): "progress",
     ("training", "checkpoint_interval_epochs"): "checkpoint_interval_epochs",
     ("training", "student_selection_split"): "student_selection_split",
     ("training", "student_selection_metric"): "student_selection_metric",
+    ("training", "initialization", "source_run_dir"): "student_initialization_run_dir",
+    ("training", "initialization", "checkpoint_tag"): "student_initialization_tag",
+    ("training", "initialization", "expected_epoch"): "student_initialization_expected_epoch",
+    ("training", "initialization", "require_epoch_match"): "student_initialization_require_epoch_match",
+    ("training", "initialization", "reset_optimizer"): "student_initialization_reset_optimizer",
     ("regularization", "phase_dropout", "enabled"): "phase_dropout_enabled",
     ("regularization", "phase_dropout", "mode"): "phase_dropout_mode",
     ("regularization", "phase_dropout", "p"): "phase_dropout_p",

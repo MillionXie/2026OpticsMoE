@@ -102,8 +102,23 @@ def main(argv: list[str] | None = None) -> int:
         inputs = _input_stores(settings, data)
         if args.phase in {"student_train", "all"}:
             head = build_head(settings, settings.text_hidden_size).to(device)
+            initialization = None
+            if settings.student_initialization_run_dir is not None:
+                initialization = load_student_parts(
+                    settings.student_initialization_run_dir,
+                    replacement,
+                    head,
+                    settings.student_initialization_tag,
+                    expected_epoch=settings.student_initialization_expected_epoch,
+                    require_epoch_match=settings.student_initialization_require_epoch_match,
+                )
+                initialization["optimizer_reset_requested"] = settings.student_initialization_reset_optimizer
+                write_json(
+                    settings.output_dir / "metrics" / "student_initialization.json",
+                    initialization,
+                )
             train_student(loaded.model, replacement, head, data.train, data.test, stores["train"], stores["test"],
-                          inputs["train"], inputs["test"], settings, device)
+                          inputs["train"], inputs["test"], settings, device, initialization)
             if args.phase == "student_train": return 0
         if args.phase in {"student_inference", "all"}:
             head = build_head(settings, settings.text_hidden_size).to(device); load_student_parts(settings.output_dir, replacement, head, "best")
@@ -226,6 +241,34 @@ def _model_report(model: torch.nn.Module, replacement: Any, settings: Settings):
             "root": str(precompute_cache_root(settings)),
             "identity_digest": cache_identity_digest(settings),
             "stored_outside_run": True,
+        },
+        "fine_tuning": {
+            "source_run_dir": (
+                str(settings.student_initialization_run_dir)
+                if settings.student_initialization_run_dir is not None else None
+            ),
+            "checkpoint_tag": settings.student_initialization_tag,
+            "expected_source_epoch": settings.student_initialization_expected_epoch,
+            "optimizer_reset": settings.student_initialization_reset_optimizer,
+            "teacher_artifact_source_run_dir": (
+                str(settings.teacher_artifact_source_run_dir)
+                if settings.teacher_artifact_source_run_dir is not None else None
+            ),
+        },
+        "optimizer": {
+            "type": settings.optimizer_type,
+            "phase_learning_rate": settings.learning_rate,
+            "adapter_learning_rate": settings.adapter_learning_rate or settings.learning_rate,
+            "router_learning_rate": settings.router_learning_rate,
+            "head_learning_rate": settings.student_head_learning_rate,
+            "electronic_weight_decay": settings.weight_decay,
+            "phase_weight_decay": settings.phase_weight_decay,
+            "scheduler": settings.scheduler_type,
+            "sam": {
+                "enabled": settings.sam_enabled,
+                "rho": settings.sam_rho,
+                "adaptive": settings.sam_adaptive,
+            },
         },
         "final_detector_layernorm_scope": settings.detector_layernorm_scope,
         "head": head.specification(), "student_trainable_parameters": trainable,

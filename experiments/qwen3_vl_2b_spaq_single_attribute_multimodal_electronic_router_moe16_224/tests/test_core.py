@@ -55,8 +55,14 @@ from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_
 from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe16_224.settings import (
     load_settings,
 )
+from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe16_224.sam import (
+    SharpnessAwareMinimizer,
+)
 from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe16_224.teacher_cache import (
     TeacherCacheStore,
+)
+from experiments.qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe16_224.training import (
+    _build_student_optimizer,
 )
 
 
@@ -586,3 +592,94 @@ def test_vectorized_per_expert_detection_matches_reference() -> None:
         )
         expected[:, aperture.y0:aperture.y1, aperture.x0:aperture.x1] = value
     assert torch.allclose(actual, expected, atol=1e-6, rtol=1e-6)
+
+
+@pytest.mark.parametrize(
+    ("filename", "sam_enabled"),
+    [
+        ("spaq_mos_epoch77_regularized_finetune.json", False),
+        ("spaq_mos_epoch77_regularized_finetune_sam.json", True),
+    ],
+)
+def test_epoch77_finetune_configs_are_explicit_and_reproducible(
+    filename: str,
+    sam_enabled: bool,
+) -> None:
+    settings = load_settings(CONFIGS / filename)
+    assert settings.student_batch_size == 4
+    assert settings.inference_batch_size == 4
+    assert settings.student_initialization_tag == "best"
+    assert settings.student_initialization_expected_epoch == 77
+    assert settings.student_initialization_require_epoch_match
+    assert settings.student_initialization_reset_optimizer
+    assert settings.teacher_artifact_source_run_dir == settings.student_initialization_run_dir
+    assert settings.learning_rate == pytest.approx(5e-4)
+    assert settings.adapter_learning_rate == pytest.approx(2e-4)
+    assert settings.router_learning_rate == pytest.approx(1e-4)
+    assert settings.student_head_learning_rate == pytest.approx(1e-4)
+    assert settings.weight_decay == pytest.approx(5e-4)
+    assert settings.phase_weight_decay == 0.0
+    assert settings.phase_dropout_enabled
+    assert settings.phase_dropout_p == pytest.approx(0.04)
+    assert settings.phase_dropout_block_size == 8
+    assert settings.loss_hidden_weight == pytest.approx(0.5)
+    assert settings.loss_prediction_distill_weight == pytest.approx(1.0)
+    assert settings.loss_regression_weight == pytest.approx(0.5)
+    assert settings.sam_enabled is sam_enabled
+    assert settings.sam_rho == pytest.approx(0.05)
+    assert not settings.sam_adaptive
+
+
+def test_sam_performs_two_step_update_and_restores_unperturbed_parameters() -> None:
+    parameter = nn.Parameter(torch.tensor([1.0, -2.0]))
+    optimizer = torch.optim.SGD([parameter], lr=0.1)
+    sam = SharpnessAwareMinimizer(optimizer, rho=0.05)
+    original = parameter.detach().clone()
+    parameter.square().sum().backward()
+    grad_norm = sam.first_step()
+    assert grad_norm > 0
+    assert not torch.equal(parameter.detach(), original)
+    parameter.square().sum().backward()
+    sam.second_step()
+    assert not torch.equal(parameter.detach(), original)
+    assert not sam._perturbations
+
+
+class _TinyOpticalSurrogate(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.phase = PhaseLayer(2, parameterization="unconstrained", init="zeros")
+        self.adapter = nn.Linear(2, 2)
+        self.core = nn.Module()
+        self.core.router = nn.Linear(2, 2)
+
+
+class _TinyOptimizerReplacement:
+    def __init__(self) -> None:
+        self.vision_surrogate = _TinyOpticalSurrogate()
+        self.language_surrogate = _TinyOpticalSurrogate()
+        self.language_mode = "optical_moe"
+
+    def attention_parameters(self):
+        return []
+
+    def trainable_parameters(self):
+        return [
+            *self.vision_surrogate.parameters(),
+            *self.language_surrogate.parameters(),
+        ]
+
+
+def test_optimizer_separates_phase_weight_decay_from_electronics() -> None:
+    settings = load_settings(CONFIGS / "spaq_mos_epoch77_regularized_finetune_sam.json")
+    replacement = _TinyOptimizerReplacement()
+    head = nn.Linear(2, 1)
+    optimizer, sam = _build_student_optimizer(replacement, head, settings)
+    groups = {group["group_name"]: group for group in optimizer.param_groups}
+    assert groups["phase"]["lr"] == pytest.approx(5e-4)
+    assert groups["phase"]["weight_decay"] == 0.0
+    assert groups["optical_electronic"]["lr"] == pytest.approx(2e-4)
+    assert groups["optical_electronic"]["weight_decay"] == pytest.approx(5e-4)
+    assert groups["routers"]["lr"] == pytest.approx(1e-4)
+    assert groups["head"]["lr"] == pytest.approx(1e-4)
+    assert sam is not None

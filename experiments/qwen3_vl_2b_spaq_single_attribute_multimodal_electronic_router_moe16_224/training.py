@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import time
 from pathlib import Path
 from typing import Any, Sequence
@@ -15,6 +16,7 @@ from .io_utils import write_csv, write_json
 from .metrics import regression_metrics
 from .modeling import NormalizedLinearRegressionHead, build_head
 from .processor_cache import ProcessorCacheStore, collate_processor_samples
+from .sam import SharpnessAwareMinimizer
 from .sampling import EpochRotatingSampler
 from .teacher_cache import (TeacherCacheStore, cached_answer_features, load_teacher_predictions,
                             write_teacher_predictions)
@@ -155,12 +157,190 @@ def make_evaluation_loader(dataset: Dataset[Any], inputs: ProcessorCacheStore, b
                                                 torch.tensor([row[2] for row in batch])))
 
 
+def _phase_parameter_ids(replacement: Any) -> set[int]:
+    modules = [replacement.vision_surrogate]
+    if replacement.language_mode == "optical_moe":
+        modules.append(replacement.language_surrogate)
+    return {
+        id(parameter)
+        for module in modules
+        for name, parameter in module.named_parameters()
+        if name.endswith("raw_phase")
+    }
+
+
+def _build_student_optimizer(
+    replacement: Any,
+    head: nn.Module,
+    settings: Any,
+) -> tuple[torch.optim.Optimizer, SharpnessAwareMinimizer | None]:
+    routers = list(replacement.vision_surrogate.core.router.parameters())
+    if settings.student_language_mode == "optical_moe":
+        routers += list(replacement.language_surrogate.core.router.parameters())
+    router_ids = {id(parameter) for parameter in routers}
+    attention = list(replacement.attention_parameters())
+    attention_ids = {id(parameter) for parameter in attention}
+    phase_ids = _phase_parameter_ids(replacement)
+    main = [
+        parameter for parameter in replacement.trainable_parameters()
+        if id(parameter) not in router_ids and id(parameter) not in attention_ids
+    ]
+    phase = [parameter for parameter in main if id(parameter) in phase_ids]
+    adapters = [parameter for parameter in main if id(parameter) not in phase_ids]
+    if not phase:
+        raise RuntimeError("No trainable optical phase parameters were found")
+    parameter_groups: list[dict[str, Any]] = [
+        {
+            "params": phase,
+            "lr": settings.learning_rate,
+            "weight_decay": settings.phase_weight_decay,
+            "group_name": "phase",
+        },
+        {
+            "params": adapters,
+            "lr": settings.adapter_learning_rate or settings.learning_rate,
+            "weight_decay": settings.weight_decay,
+            "group_name": "optical_electronic",
+        },
+        {
+            "params": head.parameters(),
+            "lr": settings.student_head_learning_rate,
+            "weight_decay": settings.weight_decay,
+            "group_name": "head",
+        },
+        {
+            "params": routers,
+            "lr": settings.router_learning_rate,
+            "weight_decay": settings.weight_decay,
+            "group_name": "routers",
+        },
+    ]
+    if attention:
+        parameter_groups.append({
+            "params": attention,
+            "lr": settings.attention_learning_rate,
+            "weight_decay": settings.weight_decay,
+            "group_name": "attention",
+        })
+    optimizer_cls = torch.optim.AdamW if settings.optimizer_type == "adamw" else torch.optim.Adam
+    optimizer = optimizer_cls(parameter_groups)
+    sam = (
+        SharpnessAwareMinimizer(optimizer, rho=settings.sam_rho, adaptive=settings.sam_adaptive)
+        if settings.sam_enabled else None
+    )
+    return optimizer, sam
+
+
+def _capture_random_state(device: torch.device) -> tuple[torch.Tensor, torch.Tensor | None]:
+    cpu_state = torch.get_rng_state()
+    cuda_state = torch.cuda.get_rng_state(device) if device.type == "cuda" else None
+    return cpu_state, cuda_state
+
+
+def _restore_random_state(
+    state: tuple[torch.Tensor, torch.Tensor | None],
+    device: torch.device,
+) -> None:
+    torch.set_rng_state(state[0])
+    if state[1] is not None:
+        torch.cuda.set_rng_state(state[1], device)
+
+
+def _student_objective(
+    model: nn.Module,
+    replacement: Any,
+    head: nn.Module,
+    inputs: dict[str, torch.Tensor],
+    cpu_attention_mask: torch.Tensor,
+    targets: torch.Tensor,
+    teacher_predictions: torch.Tensor,
+    teacher_answer: torch.Tensor,
+    teacher_vision_taps: list[torch.Tensor],
+    teacher_lengths: list[int],
+    settings: Any,
+) -> dict[str, Any]:
+    replacement.prepare_student_batch(cpu_attention_mask)
+    hidden = multimodal_forward_features(model, inputs)
+    answer, _ = pool_answer_hidden_state(hidden, inputs["attention_mask"])
+    predictions = head(answer)
+    student_taps = [*replacement.vision_surrogate.tap_outputs, replacement.vision_surrogate.last_output]
+    if len(student_taps) != len(teacher_vision_taps):
+        raise RuntimeError("Student and cached teacher vision tap counts do not match")
+    if teacher_lengths != replacement.vision_surrogate.last_token_counts:
+        raise RuntimeError("Student visual token boundaries do not match the teacher cache")
+    vision_losses = []
+    for student_packed, teacher_packed in zip(student_taps, teacher_vision_taps):
+        groups = student_packed.split(replacement.vision_surrogate.last_token_counts)
+        targets_for_tap = teacher_packed.split(teacher_lengths)
+        for group, target in zip(groups, targets_for_tap):
+            vision_losses.append(F.mse_loss(
+                F.layer_norm(group.float(), (group.shape[-1],)),
+                F.layer_norm(target, (target.shape[-1],)),
+            ))
+    loss_vision = torch.stack(vision_losses).mean()
+    loss_answer = F.mse_loss(
+        F.layer_norm(answer, (answer.shape[-1],)),
+        F.layer_norm(teacher_answer, (teacher_answer.shape[-1],)),
+    )
+    loss_distill = F.smooth_l1_loss(
+        predictions,
+        teacher_predictions,
+        beta=settings.smooth_l1_beta,
+    )
+    loss_regression = F.smooth_l1_loss(
+        predictions,
+        targets,
+        beta=settings.smooth_l1_beta,
+    )
+    router = replacement.router_losses()
+    loss_total = (
+        settings.loss_hidden_weight * loss_vision
+        + settings.loss_answer_weight * loss_answer
+        + settings.loss_prediction_distill_weight * loss_distill
+        + settings.loss_regression_weight * loss_regression
+        + settings.router_balance_weight * (router["vision_balance"] + router["language_balance"])
+        + settings.router_importance_weight * (router["vision_importance"] + router["language_importance"])
+    )
+    vision_selected = (
+        replacement.vision_surrogate.core.last_routing["selected_mask"].detach().clone()
+    )
+    if settings.student_language_mode == "optical_moe":
+        language_selected = (
+            replacement.language_surrogate.core.last_routing["selected_mask"].detach().clone()
+        )
+    else:
+        language_selected = None
+    return {
+        "total": loss_total,
+        "vision": loss_vision,
+        "answer": loss_answer,
+        "distill": loss_distill,
+        "regression": loss_regression,
+        "vision_balance": router["vision_balance"],
+        "language_balance": router["language_balance"],
+        "predictions": predictions,
+        "vision_selected": vision_selected,
+        "language_selected": language_selected,
+    }
+
+
 def train_student(model: nn.Module, replacement: Any, head: nn.Module, train_dataset: Dataset[Any],
                   test_dataset: Dataset[Any], train_store: TeacherCacheStore, test_store: TeacherCacheStore,
                   train_inputs: ProcessorCacheStore, test_inputs: ProcessorCacheStore,
-                  settings: Any, device: torch.device) -> None:
-    teacher_predictions = load_teacher_predictions(settings.output_dir / "teacher_cache" / "train_teacher_predictions.pt",
-                                                     settings.head_output_activation)
+                  settings: Any, device: torch.device,
+                  initialization: dict[str, Any] | None = None) -> None:
+    teacher_artifact_root = (
+        settings.teacher_artifact_source_run_dir
+        or settings.student_initialization_run_dir
+        or settings.output_dir
+    )
+    teacher_predictions_path = (
+        teacher_artifact_root / "teacher_cache" / "train_teacher_predictions.pt"
+    )
+    teacher_predictions = load_teacher_predictions(
+        teacher_predictions_path,
+        settings.head_output_activation,
+    )
     cached = CachedStudentDataset(train_dataset, train_store, train_inputs, teacher_predictions)
     sampler = EpochRotatingSampler(len(train_dataset), settings.train_samples_per_epoch, settings.seed,
                                    settings.teacher_cache_shard_size)
@@ -170,31 +350,77 @@ def train_student(model: nn.Module, replacement: Any, head: nn.Module, train_dat
     replacement.use_student(); model.requires_grad_(False).eval()
     replacement.configure_student_trainability()
     head.requires_grad_(True)
-    routers = list(replacement.vision_surrogate.core.router.parameters())
-    if settings.student_language_mode == "optical_moe":
-        routers += list(replacement.language_surrogate.core.router.parameters())
-    router_ids = {id(parameter) for parameter in routers}
-    attention = list(replacement.attention_parameters())
-    attention_ids = {id(parameter) for parameter in attention}
-    main = [
-        parameter for parameter in replacement.trainable_parameters()
-        if id(parameter) not in router_ids and id(parameter) not in attention_ids
-    ]
-    optimizer_cls = torch.optim.AdamW if settings.optimizer_type == "adamw" else torch.optim.Adam
-    parameter_groups = [
-        {"params": main, "lr": settings.learning_rate, "group_name": "optical"},
-        {"params": head.parameters(), "lr": settings.student_head_learning_rate, "group_name": "head"},
-        {"params": routers, "lr": settings.router_learning_rate, "group_name": "routers"},
-    ]
-    if attention:
-        parameter_groups.append({
-            "params": attention,
-            "lr": settings.attention_learning_rate,
-            "group_name": "attention",
-        })
-    optimizer = optimizer_cls(parameter_groups, weight_decay=settings.weight_decay)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=settings.epochs) if settings.scheduler_type == "cosine" else None
-    history = []; best = float("-inf") if settings.student_selection_metric != "mae" else float("inf")
+    optimizer, sam = _build_student_optimizer(replacement, head, settings)
+    scheduler = (
+        torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=settings.epochs)
+        if settings.scheduler_type == "cosine" else None
+    )
+    optimizer_report = {
+        "optimizer": type(optimizer).__name__,
+        "optimizer_state_restored": False,
+        "scheduler_state_restored": False,
+        "parameter_groups": [
+            {
+                "name": group["group_name"],
+                "learning_rate": group["lr"],
+                "weight_decay": group["weight_decay"],
+                "parameters": sum(parameter.numel() for parameter in group["params"]),
+            }
+            for group in optimizer.param_groups
+        ],
+        "sam": (
+            sam.specification()
+            if sam is not None else {"enabled": False, "rho": settings.sam_rho, "adaptive": settings.sam_adaptive}
+        ),
+        "teacher_predictions_path": str(teacher_predictions_path),
+    }
+    write_json(settings.output_dir / "metrics" / "student_optimizer.json", optimizer_report)
+    initial_report = None
+    if initialization is not None:
+        initial_loader = make_evaluation_loader(
+            test_dataset,
+            test_inputs,
+            settings.inference_batch_size,
+        )
+        initial_report = evaluate_student(
+            model,
+            replacement,
+            head,
+            initial_loader,
+            settings,
+            device,
+            test_dataset,
+        )
+        write_json(
+            settings.output_dir / "metrics" / "fine_tune_initial_test.json",
+            {**initial_report, "initialization": initialization},
+        )
+    history = []
+    source_epoch = int(initialization["source_epoch"]) if initialization is not None else 0
+    if initial_report is not None:
+        best = float(initial_report[settings.student_selection_metric])
+        initial_row = {
+            "epoch": 0,
+            "global_epoch": source_epoch,
+            "fine_tune_source_epoch": source_epoch,
+            **{
+                f"test_{key}": value
+                for key, value in initial_report.items()
+                if isinstance(value, (int, float))
+            },
+            "checkpoint_origin": "source_initialization",
+        }
+        save_student_parts(
+            settings.output_dir,
+            replacement,
+            head,
+            "best",
+            source_epoch,
+            initial_row,
+        )
+        write_json(settings.output_dir / "metrics" / "best_test.json", initial_row)
+    else:
+        best = float("-inf") if settings.student_selection_metric != "mae" else float("inf")
     for epoch in range(1, settings.epochs + 1):
         started = time.perf_counter(); sampler.set_epoch(epoch); dropout = settings.phase_dropout_enabled and epoch >= settings.phase_dropout_start_epoch
         train_store.reset_stats(); train_inputs.reset_stats(); test_inputs.reset_stats()
@@ -203,54 +429,95 @@ def train_student(model: nn.Module, replacement: Any, head: nn.Module, train_dat
         predictions_all = []; targets_all = []; seen = 0; train_report = None
         loss_names = ("total", "vision", "answer", "distill", "regression", "vision_balance", "language_balance")
         totals_tensor = torch.zeros(len(loss_names), device=device, dtype=torch.float64)
+        sam_perturbed_total = torch.zeros((), device=device, dtype=torch.float64)
+        sam_grad_norm_total = torch.zeros((), device=device, dtype=torch.float64)
         v_selection = torch.zeros(settings.num_experts, device=device)
         l_selection = torch.zeros(settings.num_experts, device=device)
         print(f"[sampling] epoch={epoch} samples={len(sampler)}/{len(train_dataset)} mode={settings.student_language_mode}", flush=True)
         train_started = time.perf_counter()
         for batch_index, (cpu_inputs, targets, _indices, teachers, teacher_predictions_batch) in enumerate(loader, 1):
-            replacement.prepare_student_batch(cpu_inputs["attention_mask"])
             inputs = move_inputs(cpu_inputs, device)
             targets = targets.to(device, non_blocking=True)
             teacher_predictions_batch = teacher_predictions_batch.to(device, non_blocking=True).float()
-            optimizer.zero_grad(set_to_none=True)
-            hidden = multimodal_forward_features(model, inputs); answer, _ = pool_answer_hidden_state(hidden, inputs["attention_mask"])
-            predictions = head(answer)
-            student_taps = [*replacement.vision_surrogate.tap_outputs, replacement.vision_surrogate.last_output]
-            vision_losses = []
-            teacher_lengths = teachers["visual_token_counts"]
-            if len(student_taps) != len(teachers["vision_taps"]):
-                raise RuntimeError("Student and cached teacher vision tap counts do not match")
-            if teacher_lengths != replacement.vision_surrogate.last_token_counts:
-                raise RuntimeError("Student visual token boundaries do not match the teacher cache")
-            for student_packed, teacher_packed_cpu in zip(student_taps, teachers["vision_taps"]):
-                groups = student_packed.split(replacement.vision_surrogate.last_token_counts)
-                teacher_packed = teacher_packed_cpu.to(device, non_blocking=True).float()
-                targets_for_tap = teacher_packed.split(teacher_lengths)
-                for group, target in zip(groups, targets_for_tap):
-                    vision_losses.append(F.mse_loss(F.layer_norm(group.float(), (group.shape[-1],)),
-                                                    F.layer_norm(target, (target.shape[-1],))))
-            loss_vision = torch.stack(vision_losses).mean()
             teacher_answer = teachers["answer_hidden"].to(device, non_blocking=True).float()
-            loss_answer = F.mse_loss(F.layer_norm(answer, (answer.shape[-1],)),
-                                     F.layer_norm(teacher_answer, (teacher_answer.shape[-1],)))
-            loss_distill = F.smooth_l1_loss(predictions, teacher_predictions_batch, beta=settings.smooth_l1_beta)
-            loss_regression = F.smooth_l1_loss(predictions, targets, beta=settings.smooth_l1_beta)
-            router = replacement.router_losses()
-            loss_total = (settings.loss_hidden_weight * loss_vision + settings.loss_answer_weight * loss_answer +
-                          settings.loss_prediction_distill_weight * loss_distill +
-                          settings.loss_regression_weight * loss_regression +
-                          settings.router_balance_weight * (router["vision_balance"] + router["language_balance"]) +
-                          settings.router_importance_weight * (router["vision_importance"] + router["language_importance"]))
-            loss_total.backward(); optimizer.step(); batch_size = len(targets); seen += batch_size
-            loss_values = torch.stack((loss_total.detach().double(), loss_vision.detach().double(),
-                                       loss_answer.detach().double(), loss_distill.detach().double(),
-                                       loss_regression.detach().double(), router["vision_balance"].detach().double(),
-                                       router["language_balance"].detach().double()))
+            teacher_vision_taps = [
+                packed.to(device, non_blocking=True).float()
+                for packed in teachers["vision_taps"]
+            ]
+            teacher_lengths = teachers["visual_token_counts"]
+            optimizer.zero_grad(set_to_none=True)
+            random_state = _capture_random_state(device) if sam is not None else None
+            objective = _student_objective(
+                model,
+                replacement,
+                head,
+                inputs,
+                cpu_inputs["attention_mask"],
+                targets,
+                teacher_predictions_batch,
+                teacher_answer,
+                teacher_vision_taps,
+                teacher_lengths,
+                settings,
+            )
+            clean_losses = {
+                name: objective[name].detach()
+                for name in loss_names
+            }
+            clean_predictions = objective["predictions"].detach()
+            clean_vision_selected = objective["vision_selected"]
+            clean_language_selected = objective["language_selected"]
+            objective["total"].backward()
+            if sam is None:
+                optimizer.step()
+                perturbed_loss = clean_losses["total"]
+                sam_grad_norm = 0.0
+            else:
+                sam_grad_norm = sam.first_step(zero_grad=True)
+                del objective
+                assert random_state is not None
+                # The same phase-dropout pattern must be used for both SAM
+                # evaluations; otherwise the finite perturbation is confounded
+                # by an unrelated stochastic optical mask.
+                _restore_random_state(random_state, device)
+                try:
+                    perturbed = _student_objective(
+                        model,
+                        replacement,
+                        head,
+                        inputs,
+                        cpu_inputs["attention_mask"],
+                        targets,
+                        teacher_predictions_batch,
+                        teacher_answer,
+                        teacher_vision_taps,
+                        teacher_lengths,
+                        settings,
+                    )
+                    perturbed["total"].backward()
+                    perturbed_loss = perturbed["total"].detach()
+                    sam.second_step(zero_grad=True)
+                    del perturbed
+                except BaseException:
+                    sam.cancel_step(zero_grad=True)
+                    raise
+            batch_size = len(targets); seen += batch_size
+            loss_values = torch.stack((
+                clean_losses["total"].double(),
+                clean_losses["vision"].double(),
+                clean_losses["answer"].double(),
+                clean_losses["distill"].double(),
+                clean_losses["regression"].double(),
+                clean_losses["vision_balance"].double(),
+                clean_losses["language_balance"].double(),
+            ))
             totals_tensor += loss_values * batch_size
-            predictions_all.append(predictions.detach()); targets_all.append(targets.detach())
-            v_selection += replacement.vision_surrogate.core.last_routing["selected_mask"].detach().float().sum(0)
-            if settings.student_language_mode == "optical_moe":
-                l_selection += replacement.language_surrogate.core.last_routing["selected_mask"].detach().float().sum(0)
+            sam_perturbed_total += perturbed_loss.double() * batch_size
+            sam_grad_norm_total += float(sam_grad_norm) * batch_size
+            predictions_all.append(clean_predictions); targets_all.append(targets.detach())
+            v_selection += clean_vision_selected.float().sum(0)
+            if clean_language_selected is not None:
+                l_selection += clean_language_selected.float().sum(0)
             if batch_index % settings.log_interval_batches == 0 or batch_index == len(loader):
                 train_report = score_metrics(torch.cat(predictions_all).cpu(), torch.cat(targets_all).cpu())
                 total_values = dict(zip(loss_names, (totals_tensor / seen).detach().cpu().tolist()))
@@ -260,6 +527,8 @@ def train_student(model: nn.Module, replacement: Any, head: nn.Module, train_dat
                       f"vision={total_values['vision']:.5f} answer={total_values['answer']:.5f} "
                       f"distill={total_values['distill']:.5f} gt={total_values['regression']:.5f} "
                       f"v_balance={total_values['vision_balance']:.5f} l_balance={total_values['language_balance']:.5f} "
+                      f"sam_perturbed={float(sam_perturbed_total / seen):.5f} "
+                      f"sam_grad_norm={float(sam_grad_norm_total / seen):.5f} "
                       f"MAE={train_report['mae']:.3f} SRCC={train_report['srcc']:.4f} "
                       f"vision_sel={[round(x,3) for x in vision_rates]} "
                       f"language_sel={[round(x,3) for x in language_rates]}", flush=True)
@@ -276,6 +545,13 @@ def train_student(model: nn.Module, replacement: Any, head: nn.Module, train_dat
         test_input_cache_stats = test_inputs.stats()
         if scheduler: scheduler.step()
         row = {"epoch": epoch, **{f"loss_{key}": value for key, value in total_values.items()},
+               "fine_tune_source_epoch": source_epoch if initialization is not None else None,
+               "global_epoch": source_epoch + epoch,
+               "sam_enabled": sam is not None,
+               "sam_rho": settings.sam_rho if sam is not None else 0.0,
+               "sam_adaptive": settings.sam_adaptive if sam is not None else False,
+               "sam_perturbed_loss": float((sam_perturbed_total / seen).detach().cpu()),
+               "sam_gradient_norm": float((sam_grad_norm_total / seen).detach().cpu()),
                **{f"train_{key}": value for key, value in train_report.items()},
                **{f"test_{key}": value for key, value in test_report.items() if isinstance(value, (int, float))},
                "epoch_time_sec": time.perf_counter() - started, "train_time_sec": train_time_sec,
@@ -295,11 +571,20 @@ def train_student(model: nn.Module, replacement: Any, head: nn.Module, train_dat
             row[f"language_expert_{expert}_selection_rate"] = language_rates[expert]
         history.append(row); write_csv(settings.output_dir / "metrics" / "student_training_history.csv", history, list(row))
         write_json(settings.output_dir / "metrics" / "student_training_latest.json", row)
-        save_student_parts(settings.output_dir, replacement, head, "last", epoch, row)
-        if epoch % settings.checkpoint_interval_epochs == 0: save_student_parts(settings.output_dir, replacement, head, f"epoch_{epoch:04d}", epoch, row)
+        checkpoint_epoch = source_epoch + epoch
+        save_student_parts(settings.output_dir, replacement, head, "last", checkpoint_epoch, row)
+        if epoch % settings.checkpoint_interval_epochs == 0:
+            save_student_parts(
+                settings.output_dir,
+                replacement,
+                head,
+                f"epoch_{epoch:04d}",
+                checkpoint_epoch,
+                row,
+            )
         value = float(test_report[settings.student_selection_metric]); improved = value < best if settings.student_selection_metric == "mae" else value > best
         if improved:
-            best = value; save_student_parts(settings.output_dir, replacement, head, "best", epoch, row)
+            best = value; save_student_parts(settings.output_dir, replacement, head, "best", checkpoint_epoch, row)
             write_json(settings.output_dir / "metrics" / "best_test.json", row)
         if settings.visualization_enabled and settings.save_training_curves: save_training_curves(history, settings.output_dir / "figures" / "student_training_curves.png")
         if settings.visualization_enabled and settings.save_phase_masks and epoch % settings.visualization_interval_epochs == 0:
@@ -310,7 +595,9 @@ def train_student(model: nn.Module, replacement: Any, head: nn.Module, train_dat
               f"test_MAE={test_report['mae']:.3f} test_SRCC={test_report['srcc']:.4f} best={best:.4f}", flush=True)
     write_json(settings.output_dir / "metrics" / "student_training.json", {"epochs": settings.epochs,
                "best_metric": settings.student_selection_metric, "best_value": best,
-               "student_language_mode": settings.student_language_mode})
+               "student_language_mode": settings.student_language_mode,
+               "initialization": initialization,
+               "optimizer": optimizer_report})
 
 
 @torch.inference_mode()
@@ -362,17 +649,66 @@ def save_student_parts(output_dir: Path, replacement: Any, head: nn.Module, tag:
     torch.save({"state_dict": head.state_dict(), "head": head.specification(), **metadata}, root / f"student_head_{tag}.pt")
 
 
-def load_student_parts(output_dir: Path, replacement: Any, head: nn.Module, tag: str):
+def _file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def load_student_parts(
+    output_dir: Path,
+    replacement: Any,
+    head: nn.Module,
+    tag: str,
+    expected_epoch: int | None = None,
+    require_epoch_match: bool = True,
+) -> dict[str, Any]:
     root = output_dir / "checkpoints"; vision = root / f"vision_moe_{tag}.pt"; head_path = root / f"student_head_{tag}.pt"
     if not vision.is_file() or not head_path.is_file(): raise FileNotFoundError(f"Incomplete student checkpoint {tag}")
     vision_payload = torch.load(vision, map_location="cpu", weights_only=True)
     replacement.vision_surrogate.load_state_dict(vision_payload["state_dict"])
     replacement.load_prelude_state_dict(vision_payload.get("attention_prelude"))
+    epochs = {"vision": vision_payload.get("epoch")}
     if replacement.language_mode == "optical_moe":
         language = root / f"language_moe_{tag}.pt"
         if not language.is_file(): raise FileNotFoundError(f"Missing language MoE checkpoint: {language}")
-        replacement.language_surrogate.load_state_dict(torch.load(language, map_location="cpu", weights_only=True)["state_dict"])
-    head.load_state_dict(torch.load(head_path, map_location="cpu", weights_only=True)["state_dict"])
+        language_payload = torch.load(language, map_location="cpu", weights_only=True)
+        replacement.language_surrogate.load_state_dict(language_payload["state_dict"])
+        epochs["language"] = language_payload.get("epoch")
+    head_payload = torch.load(head_path, map_location="cpu", weights_only=True)
+    head.load_state_dict(head_payload["state_dict"])
+    epochs["head"] = head_payload.get("epoch")
+    resolved_epochs = {int(value) for value in epochs.values() if value is not None}
+    if len(resolved_epochs) != 1:
+        raise RuntimeError(f"Student checkpoint parts do not share one epoch: {epochs}")
+    source_epoch = next(iter(resolved_epochs))
+    if expected_epoch is not None and source_epoch != int(expected_epoch):
+        message = (
+            f"Student checkpoint tag {tag!r} is from epoch {source_epoch}, "
+            f"not expected epoch {expected_epoch}"
+        )
+        if require_epoch_match:
+            raise RuntimeError(message)
+        print(f"WARNING: {message}", flush=True)
+    component_paths = {"vision": vision, "head": head_path}
+    if replacement.language_mode == "optical_moe":
+        component_paths["language"] = root / f"language_moe_{tag}.pt"
+    return {
+        "source_run_dir": str(output_dir),
+        "checkpoint_tag": tag,
+        "source_epoch": source_epoch,
+        "component_epochs": epochs,
+        "component_paths": {
+            name: str(path) for name, path in component_paths.items()
+        },
+        "component_sha256": {
+            name: _file_sha256(path) for name, path in component_paths.items()
+        },
+        "optimizer_state_loaded": False,
+        "scheduler_state_loaded": False,
+    }
 
 
 def save_student_inference(report: dict[str, Any], settings: Any, replacement: Any, predictions_path: Path | None):

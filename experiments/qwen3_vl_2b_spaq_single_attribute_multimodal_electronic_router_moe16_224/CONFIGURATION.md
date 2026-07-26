@@ -91,3 +91,39 @@ precompute.
 OEO `elementwise_affine=false` is deliberate. A separate affine tensor for
 every pixel, expert and stage would add millions of electronic parameters and
 obscure the optical parameter budget.
+
+## Epoch-77 regularized fine-tuning
+
+The completed 100-epoch server run used `student_batch_size=4` and
+`inference_batch_size=4`, as recorded by that run's `config_resolved.json`.
+Both epoch-77 fine-tuning configs also set those values explicitly.
+
+Two configs isolate the contribution of SAM:
+
+- `spaq_mos_epoch77_regularized_finetune.json`
+- `spaq_mos_epoch77_regularized_finetune_sam.json`
+
+Both load `vision_moe_best.pt`, `language_moe_best.pt`, and
+`student_head_best.pt` from the original run and require all three files to
+report epoch 77. They never restore optimizer or scheduler state.
+
+The phase masks use learning rate `5e-4` and zero weight decay. Electronic
+adapters use learning rate `2e-4`; router and head use `1e-4`. Electronic
+parameters use AdamW weight decay `5e-4`. Phase dropout is structured
+8-by-8 bypass with `p=0.04`.
+
+The SAM config uses standard non-adaptive SAM with `rho=0.05`. Its two forward
+passes replay exactly the same random phase-dropout mask, so the sharpness
+perturbation is not confounded by different optical dropout samples. SAM
+doubles the student forward/backward work but does not rerun the electronic
+teacher.
+
+Fine-tuning writes:
+
+- `metrics/student_initialization.json`
+- `metrics/fine_tune_initial_test.json`
+- `metrics/student_optimizer.json`
+- per-epoch `sam_perturbed_loss` and `sam_gradient_norm`
+
+The frozen precompute cache remains under `cache/<task>/<identity>/`. Teacher
+prediction artifacts are read from the original source run.
