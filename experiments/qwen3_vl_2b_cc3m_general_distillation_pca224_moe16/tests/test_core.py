@@ -308,7 +308,7 @@ def test_cc3m_webdataset_shard_extraction_builds_jsonl(tmp_path: Path) -> None:
             member.size = len(payload)
             archive.addfile(member, io.BytesIO(payload))
     output_dir = tmp_path / "images" / "train" / archive_path.stem
-    shard_manifest = tmp_path / "state" / f"{archive_path.stem}.jsonl"
+    shard_manifest = tmp_path / f"{archive_path.stem}.jsonl"
     result = extract_webdataset_shard(
         archive_path,
         output_dir,
