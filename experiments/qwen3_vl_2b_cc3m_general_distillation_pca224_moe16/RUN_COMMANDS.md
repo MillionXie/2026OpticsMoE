@@ -45,3 +45,13 @@ python -m experiments.qwen3_vl_2b_cc3m_general_distillation_pca224_moe16 --confi
 ```bash
 pytest experiments/qwen3_vl_2b_cc3m_general_distillation_pca224_moe16/tests -q
 ```
+## Prepare the public CC3M snapshot
+
+```bash
+python -m experiments.qwen3_vl_2b_cc3m_general_distillation_pca224_moe16 --config experiments/qwen3_vl_2b_cc3m_general_distillation_pca224_moe16/configs/cc3m.json --phase prepare_data
+```
+
+This command is resumable. It downloads the pinned public
+`chaocq/cc3m-wds` training shards, extracts image-caption pairs, and writes
+`data/cc3m/cc3m.jsonl`. The formal `all` phase also invokes the same check
+automatically.

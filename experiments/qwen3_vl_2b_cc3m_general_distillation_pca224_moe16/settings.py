@@ -18,6 +18,8 @@ PATH_FIELDS = {
     "output_dir",
     "precompute_cache_dir",
     "cache_dir",
+    "dataset_archive_dir",
+    "dataset_image_dir",
 }
 
 
@@ -35,6 +37,16 @@ class Settings:
     sample_limit: int | None = None
     calibration_sample_count: int = 2048
     caption_prompt_template: str = "{caption}"
+    dataset_auto_prepare: bool = True
+    dataset_source_repo_id: str = "chaocq/cc3m-wds"
+    dataset_source_revision: str = "28cde01364d7e3b180681f8c448935edf47e2fd5"
+    dataset_source_endpoint: str | None = None
+    dataset_source_split: str = "train"
+    dataset_archive_dir: Path = PROJECT_DIR.parent.parent / "data" / "cc3m" / "webdataset"
+    dataset_image_dir: Path = PROJECT_DIR.parent.parent / "data" / "cc3m" / "images"
+    dataset_download_workers: int = 4
+    dataset_download_max_shards: int | None = None
+    dataset_keep_archives: bool = False
 
     model_id: str = MODEL_ID
     cache_dir: Path | None = None
@@ -137,6 +149,17 @@ class Settings:
             raise ValueError("sample_limit must be greater than one")
         if self.calibration_sample_count <= 0:
             raise ValueError("calibration_sample_count must be positive")
+        if not self.dataset_source_repo_id or not self.dataset_source_revision:
+            raise ValueError("CC3M source repo_id and revision must be non-empty")
+        if self.dataset_source_split not in {"train", "validation"}:
+            raise ValueError("dataset.prepare.source_split must be train or validation")
+        if self.dataset_download_workers <= 0:
+            raise ValueError("dataset.prepare.download_workers must be positive")
+        if (
+            self.dataset_download_max_shards is not None
+            and self.dataset_download_max_shards <= 0
+        ):
+            raise ValueError("dataset.prepare.max_shards must be positive or null")
         if self.model_id != MODEL_ID and not Path(self.model_id).is_dir():
             raise ValueError(f"model_id must be {MODEL_ID} or an existing local directory")
         if self.processor_min_pixels <= 0 or self.processor_max_pixels <= 0:
@@ -241,6 +264,16 @@ NESTED_FIELDS: dict[tuple[str, ...], str] = {
     ("dataset", "calibration_sample_count"): "calibration_sample_count",
     ("dataset", "caption_prompt_template"): "caption_prompt_template",
     ("dataset", "manifest_digest"): "manifest_digest",
+    ("dataset", "prepare", "auto_if_missing"): "dataset_auto_prepare",
+    ("dataset", "prepare", "source_repo_id"): "dataset_source_repo_id",
+    ("dataset", "prepare", "source_revision"): "dataset_source_revision",
+    ("dataset", "prepare", "endpoint"): "dataset_source_endpoint",
+    ("dataset", "prepare", "source_split"): "dataset_source_split",
+    ("dataset", "prepare", "archive_dir"): "dataset_archive_dir",
+    ("dataset", "prepare", "image_dir"): "dataset_image_dir",
+    ("dataset", "prepare", "download_workers"): "dataset_download_workers",
+    ("dataset", "prepare", "max_shards"): "dataset_download_max_shards",
+    ("dataset", "prepare", "keep_archives"): "dataset_keep_archives",
     ("qwen", "model_id"): "model_id",
     ("qwen", "cache_dir"): "cache_dir",
     ("qwen", "local_files_only"): "local_files_only",

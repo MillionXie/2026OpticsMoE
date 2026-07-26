@@ -1,12 +1,22 @@
 from __future__ import annotations
 
+import io
+import json
+import tarfile
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 import torch
+from PIL import Image
 from torch.nn import functional as F
 
+from experiments.qwen3_vl_2b_cc3m_general_distillation_pca224_moe16.data_prepare import (
+    extract_webdataset_shard,
+)
+from experiments.qwen3_vl_2b_cc3m_general_distillation_pca224_moe16.datasets import (
+    read_manifest,
+)
 from experiments.qwen3_vl_2b_cc3m_general_distillation_pca224_moe16.optics.moe import (
     LanguagePCAOpticalMoE,
     PCAHomogeneousMoEOpticalCore,
@@ -280,6 +290,39 @@ def test_synthetic_100_sample_pca_cache_and_train_step(tmp_path: Path) -> None:
     loss.backward()
     optimizer.step()
     assert math_is_finite(float(loss))
+
+
+def test_cc3m_webdataset_shard_extraction_builds_jsonl(tmp_path: Path) -> None:
+    archive_path = tmp_path / "cc3m-train-0000.tar"
+    image_bytes = io.BytesIO()
+    Image.new("RGB", (4, 3), (10, 20, 30)).save(image_bytes, format="JPEG")
+    caption = b"a small synthetic image"
+    metadata = json.dumps({"caption": caption.decode(), "status": "success"}).encode()
+    with tarfile.open(archive_path, "w") as archive:
+        for name, payload in (
+            ("000000001.jpg", image_bytes.getvalue()),
+            ("000000001.json", metadata),
+            ("000000001.txt", caption),
+        ):
+            member = tarfile.TarInfo(name)
+            member.size = len(payload)
+            archive.addfile(member, io.BytesIO(payload))
+    output_dir = tmp_path / "images" / "train" / archive_path.stem
+    shard_manifest = tmp_path / "state" / f"{archive_path.stem}.jsonl"
+    result = extract_webdataset_shard(
+        archive_path,
+        output_dir,
+        shard_manifest,
+        source_split="train",
+        manifest_root=tmp_path,
+    )
+    assert result["samples"] == 1
+    rows, digest = read_manifest(shard_manifest)
+    assert len(rows) == 1
+    assert rows[0].sample_id == "cc3m-train-0000:000000001"
+    assert rows[0].caption == caption.decode()
+    assert rows[0].image_path.is_file()
+    assert len(digest) == 64
 
 
 def math_is_finite(value: float) -> bool:

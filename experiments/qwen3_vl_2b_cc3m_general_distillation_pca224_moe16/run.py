@@ -9,6 +9,7 @@ import torch
 
 from .calibration import fit_shared_pca, run_pca_oracle_check
 from .cache_paths import teacher_cache_root
+from .data_prepare import ensure_cc3m_dataset
 from .datasets import DatasetBundle, load_jsonl_dataset
 from .io_utils import (
     configure_cpu_runtime,
@@ -31,6 +32,7 @@ from .training import train_phase
 
 
 PHASES = (
+    "prepare_data",
     "fit_pca",
     "pca_oracle_check",
     "precompute_teacher",
@@ -61,9 +63,19 @@ def main(argv: list[str] | None = None) -> int:
     cpu = configure_cpu_runtime(settings.cpu_threads, settings.cpu_interop_threads)
     set_seed(settings.seed)
     _make_directories(settings)
+    preparation = ensure_cc3m_dataset(settings)
+    print(
+        f"[prepare_data] status={preparation['status']}"
+        if "status" in preparation
+        else f"[prepare_data] samples={preparation.get('samples')} "
+        f"shards={preparation.get('prepared_shards')}",
+        flush=True,
+    )
     data = load_jsonl_dataset(settings, persist_split=True)
     write_json(settings.output_dir / "dataset.json", data.metadata)
     write_json(settings.output_dir / "config_resolved.json", settings.to_dict())
+    if args.phase == "prepare_data":
+        return 0
     print(
         f"[runtime] cpu_threads={cpu['torch_cpu_threads']} "
         f"cpu_interop_threads={cpu['torch_cpu_interop_threads']} "

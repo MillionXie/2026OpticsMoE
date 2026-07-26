@@ -1,5 +1,27 @@
 # Qwen3-VL-2B CC3M general distillation: PCA224 + Optical MoE16
 
+## Automatic CC3M preparation
+
+The formal configuration uses the public WebDataset snapshot
+`chaocq/cc3m-wds` pinned at revision
+`28cde01364d7e3b180681f8c448935edf47e2fd5`. It contains 576 training
+shards and 2,905,954 successfully recovered image-caption pairs from the
+original CC3M training URLs. The snapshot is public and does not require
+gated-dataset approval.
+
+`--phase prepare_data` downloads shards with resumable Hugging Face transfers,
+extracts only the paired images and captions, deletes each source TAR after a
+successful extraction by default, and creates `data/cc3m/cc3m.jsonl`. Per-shard
+markers and manifests live under `data/cc3m/.cc3m_prepare`, so rerunning after
+a network interruption continues from completed shards. The generated
+`cc3m.jsonl.metadata.json` records the source repository, pinned revision,
+shard/sample counts, byte size, and manifest SHA256.
+
+The server-oriented formal config uses `https://hf-mirror.com`; the endpoint,
+download worker count, archive retention, and optional smoke shard limit are
+all configurable under `dataset.prepare`. A manually created JSONL remains
+supported when `auto_if_missing` is disabled.
+
 这是一个独立的、无任务标签的通用蒸馏实验。冻结的
 `Qwen/Qwen3-VL-2B-Instruct` 读取图像和 caption，student 用彼此独立的
 Vision Optical MoE16 与 Language Optical MoE16 拟合教师的多阶段 hidden

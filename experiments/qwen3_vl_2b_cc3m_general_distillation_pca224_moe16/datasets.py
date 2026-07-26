@@ -42,9 +42,10 @@ class DatasetBundle:
 
 
 def load_jsonl_dataset(settings: Any, *, persist_split: bool = True) -> DatasetBundle:
-    rows, manifest_digest = read_manifest(settings.manifest_path)
-    if settings.sample_limit is not None:
-        rows = rows[: int(settings.sample_limit)]
+    rows, manifest_digest = read_manifest(
+        settings.manifest_path,
+        row_limit=settings.sample_limit,
+    )
     if len(rows) < 2:
         raise RuntimeError("The manifest must contain at least two valid image-caption rows")
     if settings.validation_manifest_path is not None:
@@ -103,41 +104,65 @@ def load_jsonl_dataset(settings: Any, *, persist_split: bool = True) -> DatasetB
     )
 
 
-def read_manifest(path: Path) -> tuple[list[ManifestRow], str]:
+def read_manifest(
+    path: Path,
+    row_limit: int | None = None,
+) -> tuple[list[ManifestRow], str]:
     if not path.is_file():
         raise FileNotFoundError(
             f"CC3M JSONL manifest does not exist: {path}. Each line must contain "
             "sample_id, image_path, and caption."
         )
-    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+    hasher = hashlib.sha256()
+    with path.open("rb") as source:
+        while True:
+            block = source.read(8 * 1024 * 1024)
+            if not block:
+                break
+            hasher.update(block)
+    digest = hasher.hexdigest()
     rows: list[ManifestRow] = []
     seen: set[str] = set()
     missing_images: list[str] = []
-    for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
-        if not line.strip():
-            continue
-        try:
-            value = json.loads(line)
-        except json.JSONDecodeError as error:
-            raise RuntimeError(f"Invalid JSON in {path} line {line_number}: {error}") from error
-        missing_fields = [name for name in ("sample_id", "image_path", "caption") if name not in value]
-        if missing_fields:
-            raise RuntimeError(f"{path} line {line_number} is missing fields: {missing_fields}")
-        sample_id = str(value["sample_id"]).strip()
-        caption = str(value["caption"]).strip()
-        if not sample_id or not caption:
-            raise RuntimeError(f"{path} line {line_number} has an empty sample_id or caption")
-        if sample_id in seen:
-            raise RuntimeError(f"Duplicate sample_id {sample_id!r} in {path} line {line_number}")
-        seen.add(sample_id)
-        image_path = Path(str(value["image_path"])).expanduser()
-        if not image_path.is_absolute():
-            image_path = (path.parent / image_path).resolve()
-        if not image_path.is_file():
-            missing_images.append(str(image_path))
-            if len(missing_images) >= 10:
+    with path.open("r", encoding="utf-8") as source:
+        for line_number, line in enumerate(source, start=1):
+            if not line.strip():
+                continue
+            try:
+                value = json.loads(line)
+            except json.JSONDecodeError as error:
+                raise RuntimeError(
+                    f"Invalid JSON in {path} line {line_number}: {error}"
+                ) from error
+            missing_fields = [
+                name for name in ("sample_id", "image_path", "caption")
+                if name not in value
+            ]
+            if missing_fields:
+                raise RuntimeError(
+                    f"{path} line {line_number} is missing fields: {missing_fields}"
+                )
+            sample_id = str(value["sample_id"]).strip()
+            caption = str(value["caption"]).strip()
+            if not sample_id or not caption:
+                raise RuntimeError(
+                    f"{path} line {line_number} has an empty sample_id or caption"
+                )
+            if sample_id in seen:
+                raise RuntimeError(
+                    f"Duplicate sample_id {sample_id!r} in {path} line {line_number}"
+                )
+            seen.add(sample_id)
+            image_path = Path(str(value["image_path"])).expanduser()
+            if not image_path.is_absolute():
+                image_path = (path.parent / image_path).resolve()
+            if not image_path.is_file():
+                missing_images.append(str(image_path))
+                if len(missing_images) >= 10:
+                    break
+            rows.append(ManifestRow(sample_id, image_path, caption, line_number))
+            if row_limit is not None and len(rows) >= int(row_limit):
                 break
-        rows.append(ManifestRow(sample_id, image_path, caption, line_number))
     if missing_images:
         raise FileNotFoundError(
             "Manifest image files are missing. First attempted paths:\n" + "\n".join(missing_images)

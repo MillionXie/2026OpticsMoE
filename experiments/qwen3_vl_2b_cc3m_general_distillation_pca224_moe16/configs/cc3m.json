@@ -12,7 +12,19 @@
     "validation_fraction": 0.01,
     "sample_limit": null,
     "calibration_sample_count": 4096,
-    "caption_prompt_template": "{caption}"
+    "caption_prompt_template": "{caption}",
+    "prepare": {
+      "auto_if_missing": true,
+      "source_repo_id": "chaocq/cc3m-wds",
+      "source_revision": "28cde01364d7e3b180681f8c448935edf47e2fd5",
+      "endpoint": "https://hf-mirror.com",
+      "source_split": "train",
+      "archive_dir": "../../../data/cc3m/webdataset",
+      "image_dir": "../../../data/cc3m/images",
+      "download_workers": 4,
+      "max_shards": null,
+      "keep_archives": false
+    }
   },
   "qwen": {
     "model_id": "Qwen/Qwen3-VL-2B-Instruct",

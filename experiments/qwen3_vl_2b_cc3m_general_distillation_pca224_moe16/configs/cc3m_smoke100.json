@@ -7,7 +7,10 @@
   "dataset": {
     "sample_limit": 100,
     "validation_fraction": 0.2,
-    "calibration_sample_count": 80
+    "calibration_sample_count": 80,
+    "prepare": {
+      "max_shards": 1
+    }
   },
   "pca": {
     "vision_calibration_tokens": 1024,
