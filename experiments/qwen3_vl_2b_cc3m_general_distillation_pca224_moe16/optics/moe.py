@@ -136,7 +136,7 @@ class GlobalPhasePlane(nn.Module):
         output = field.to(torch.complex64).clone()
         aperture = self.geometry.active_aperture
         output[:, aperture.y0:aperture.y1, aperture.x0:aperture.x1] = self.phase(
-            output[:, aperture.y0:aperture.y1, aperture.x0:aperture.x1]
+            field[:, aperture.y0:aperture.y1, aperture.x0:aperture.x1]
         )
         return output
 
