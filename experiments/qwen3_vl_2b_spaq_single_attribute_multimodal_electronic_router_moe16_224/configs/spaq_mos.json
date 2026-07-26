@@ -59,8 +59,8 @@
   },
   "batching": {
     "feature_batch_size": 4,
-    "student_batch_size": 1,
-    "inference_batch_size": 1,
+    "student_batch_size": 4,
+    "inference_batch_size": 4,
     "head_batch_size": 512,
     "num_workers": 8,
     "cpu_threads": 4,
@@ -108,7 +108,7 @@
     },
     "optics": {
       "wavelength_nm": 532.0,
-      "pixel_pitch_um": 16.0,
+      "pixel_pitch_um": 8.0,
       "distances_m": {
         "inter_layer": 0.1,
         "last_expert_to_global": 0.1,
