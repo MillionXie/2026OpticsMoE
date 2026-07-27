@@ -1,0 +1,226 @@
+from __future__ import annotations
+
+import csv
+from pathlib import Path
+from types import SimpleNamespace
+
+import pytest
+import torch
+import yaml
+from PIL import Image
+from torch import nn
+
+from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.modeling import (
+    OpticalRetrievalReadout,
+    official_mrl_embedding,
+)
+from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.optics.geometry import (
+    Aperture,
+)
+from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.optics.moe import (
+    FullPlaneReadout,
+    LanguageDeepStackHomogeneousMoE,
+)
+from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.prepare_grocery_retrieval_subset import (
+    GrocerySample,
+    prepare_grocery_subset,
+)
+from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.retrieval_metrics import (
+    evaluate_embeddings,
+)
+from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.settings import (
+    load_settings,
+)
+from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.train_optical_retrieval import (
+    PKBatchSampler,
+    embedding_distillation_loss,
+    supervised_contrastive_loss,
+)
+
+
+EXPERIMENT = Path(__file__).resolve().parents[1]
+
+
+def test_main_config_has_ten_packaged_skus() -> None:
+    settings = load_settings(EXPERIMENT / "configs" / "grocery10.yaml")
+    assert len(settings.selected_skus) == 10
+    assert settings.embedding_dim == 64
+    assert settings.gallery_aggregation == "mean_prototype"
+    assert settings.instruction == (
+        "Represent this product image for image-to-image product retrieval."
+    )
+
+
+def test_official_dataset_split_and_no_leakage(tmp_path: Path) -> None:
+    root = tmp_path / "GroceryStoreDataset"
+    dataset = root / "dataset"
+    dataset.mkdir(parents=True)
+    base_settings = load_settings(EXPERIMENT / "configs" / "grocery10.yaml")
+    headers = [
+        "Class Name (str)",
+        "Class ID (int)",
+        "Coarse Class Name (str)",
+        "Coarse Class ID (int)",
+        "Iconic Image Path (str)",
+        "Product Description Path (str)",
+    ]
+    rows = []
+    split_lines = {"train": [], "test": []}
+    for index, name in enumerate(base_settings.selected_skus):
+        iconic = f"iconic/{name}.jpg"
+        train = f"train/{name}/train.jpg"
+        test = f"test/{name}/test.jpg"
+        _image(dataset / iconic, color=(index * 20 % 255, 30, 60))
+        _image(dataset / train, color=(30, index * 20 % 255, 60))
+        _image(dataset / test, color=(30, 60, index * 20 % 255))
+        rows.append([name, index, "Package", 1, "/" + iconic, "unused.txt"])
+        split_lines["train"].append(f"{train}, {index}, 1\n")
+        split_lines["test"].append(f"{test}, {index}, 1\n")
+    with (dataset / "classes.csv").open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(headers)
+        writer.writerows(rows)
+    (dataset / "train.txt").write_text("".join(split_lines["train"]), encoding="utf-8")
+    (dataset / "val.txt").write_text("", encoding="utf-8")
+    (dataset / "test.txt").write_text("".join(split_lines["test"]), encoding="utf-8")
+    config = tmp_path / "config.yaml"
+    config.write_text(
+        yaml.safe_dump(
+            {
+                "base_config": str(EXPERIMENT / "configs" / "grocery10.yaml"),
+                "dataset": {"dataset_root": str(root), "download": False},
+                "output_dir": str(tmp_path / "run"),
+            }
+        ),
+        encoding="utf-8",
+    )
+    settings = load_settings(config)
+    bundle = prepare_grocery_subset(settings, persist=True)
+    assert len(bundle.train_samples) == 10
+    assert len(bundle.test_samples) == 10
+    assert len(bundle.gallery_samples) == 10
+    assert {
+        sample.image_path for sample in bundle.train_samples
+    }.isdisjoint(sample.image_path for sample in bundle.test_samples)
+    assert (settings.output_dir / "manifests" / "grocery10_subset.csv").is_file()
+
+
+def test_official_mrl_embedding_shape_and_normalization() -> None:
+    hidden = torch.randn(3, 7, 2048)
+    mask = torch.tensor(
+        [[1, 1, 1, 0, 0, 0, 0], [1, 1, 1, 1, 1, 0, 0], [1, 1, 1, 1, 1, 1, 1]]
+    )
+    output = official_mrl_embedding(hidden, mask, 64)
+    expected_rows = torch.stack([hidden[0, 2, :64], hidden[1, 4, :64], hidden[2, 6, :64]])
+    assert output.shape == (3, 64)
+    assert torch.allclose(output, torch.nn.functional.normalize(expected_rows, dim=-1))
+    assert torch.allclose(output.norm(dim=-1), torch.ones(3), atol=1e-6)
+
+
+def test_optical_readout_is_signed_linear_then_l2() -> None:
+    head = OpticalRetrievalReadout(224, 64)
+    output = head(torch.rand(4, 224))
+    assert output.shape == (4, 64)
+    assert torch.allclose(output.norm(dim=-1), torch.ones(4), atol=1e-5)
+    assert not any(
+        isinstance(module, (nn.ReLU, nn.GELU, nn.Sigmoid, nn.Softmax))
+        for module in head.modules()
+    )
+    output.square().mean().backward()
+    assert all(parameter.grad is not None for parameter in head.parameters())
+
+
+def test_final_detector_features_are_nonnegative_last_valid_rows() -> None:
+    language = LanguageDeepStackHomogeneousMoE.__new__(
+        LanguageDeepStackHomogeneousMoE
+    )
+    nn.Module.__init__(language)
+    detector = torch.rand(2, 224, 224)
+    language.core = SimpleNamespace(
+        current_detector_readout=detector,
+        readout=SimpleNamespace(output_size=224),
+    )
+    language.lengths = [3, 5]
+    output = language.retrieval_detector_features()
+    assert output.shape == (2, 224)
+    assert torch.equal(output[0], detector[0, 2])
+    assert torch.equal(output[1], detector[1, 4])
+    assert torch.all(output >= 0)
+
+
+def test_square_law_detector_readout_is_nonnegative() -> None:
+    geometry = SimpleNamespace(detector_aperture=Aperture(1, 7, 1, 7))
+    settings = SimpleNamespace(
+        detector_output_size=4,
+        detector_layernorm_scope="per_token",
+        detector_layernorm_eps=1e-5,
+        detector_layernorm_affine=False,
+        detector_nonlinearity="relu",
+    )
+    readout = FullPlaneReadout(geometry, settings)
+    field = torch.complex(torch.randn(2, 8, 8), torch.randn(2, 8, 8))
+    values, intensity = readout(field)
+    assert values.shape == (2, 4, 4)
+    assert intensity.shape == (2, 6, 6)
+    assert torch.all(values >= 0)
+    assert torch.all(intensity >= 0)
+
+
+def test_pk_sampler_and_supervised_contrastive_backward(tmp_path: Path) -> None:
+    samples = []
+    for sku in range(3):
+        for image_index in range(4):
+            samples.append(
+                GrocerySample(
+                    f"{sku}:{image_index}",
+                    tmp_path / f"{sku}_{image_index}.jpg",
+                    sku,
+                    f"sku{sku}",
+                    sku,
+                    "train",
+                    "train",
+                    False,
+                )
+            )
+    sampler = PKBatchSampler(samples, p=3, k=2, seed=42)
+    batch = next(iter(sampler))
+    labels = torch.tensor([samples[index].sku_index for index in batch])
+    assert len(batch) == 6
+    assert sorted(torch.bincount(labels).tolist()) == [2, 2, 2]
+    raw = torch.randn(6, 64, requires_grad=True)
+    embedding = torch.nn.functional.normalize(raw, dim=-1)
+    loss = supervised_contrastive_loss(embedding, labels, 0.07)
+    loss.backward()
+    assert torch.isfinite(loss)
+    assert raw.grad is not None and torch.isfinite(raw.grad).all()
+
+
+def test_kd_loss_zero_for_identical_embeddings() -> None:
+    values = torch.nn.functional.normalize(torch.randn(5, 64), dim=-1)
+    assert embedding_distillation_loss(values, values).abs() < 1e-6
+
+
+def test_retrieval_metrics_top1_top3_and_mrr(tmp_path: Path) -> None:
+    class_names = ("a", "b", "c")
+    gallery = torch.eye(3)
+    query = torch.eye(3)
+    galleries = [
+        GrocerySample(f"g{i}", tmp_path / f"g{i}.jpg", i, name, i, "gallery", "iconic", True)
+        for i, name in enumerate(class_names)
+    ]
+    queries = [
+        GrocerySample(f"q{i}", tmp_path / f"q{i}.jpg", i, name, i, "test", "test", False)
+        for i, name in enumerate(class_names)
+    ]
+    result = evaluate_embeddings(
+        query, queries, gallery, galleries, class_names, "mean_prototype", system_name="test"
+    )
+    assert result.metrics["top1_retrieval_accuracy"] == 1.0
+    assert result.metrics["top3_retrieval_accuracy"] == 1.0
+    assert result.metrics["mrr"] == 1.0
+    assert torch.equal(result.confusion, torch.eye(3, dtype=torch.long))
+
+
+def _image(path: Path, color: tuple[int, int, int]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    Image.new("RGB", (16, 16), color).save(path)

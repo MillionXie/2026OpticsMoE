@@ -1,0 +1,161 @@
+# Grocery-10 商品图像检索：Qwen3-VL-Embedding Teacher + Optical Student
+
+本实验验证一个小规模、部署形式明确的商品图库检索任务：
+
+```text
+自然环境商品图 → 64 维归一化向量 → 余弦相似度 → Top-1 / Top-3 SKU
+```
+
+它不是十分类实验。模型没有十分类 logits、CrossEntropy 分类头或 reranker；SKU
+标签只用于 supervised contrastive loss 和检索指标。
+
+## 数据与 10 个 SKU
+
+代码自动下载官方 Grocery Store Dataset，并严格使用其细粒度 SKU 和官方划分。
+默认配置选择以下 10 种包装商品：
+
+1. `Bravo-Apple-Juice`
+2. `God-Morgon-Orange-Juice`
+3. `Tropicana-Golden-Grapefruit`
+4. `Arla-Ecological-Medium-Fat-Milk`
+5. `Garant-Ecological-Standard-Milk`
+6. `Oatly-Natural-Oatghurt`
+7. `Oatly-Oat-Milk`
+8. `Alpro-Blueberry-Soyghurt`
+9. `Alpro-Shelf-Soy-Milk`
+10. `Yoggi-Strawberry-Yoghurt`
+
+水果、蔬菜和散装商品不进入实验。10 个名字仅存在于 YAML 配置中，训练脚本没有
+硬编码 SKU。
+
+划分方式：
+
+- train query：官方 `train + val`；
+- test query：官方 `test`；
+- gallery：每个 SKU 的官方 iconic 商品图（官方数据只有一张）；
+- 不创建 validation；
+- manifest 固定并保存 SHA256；
+- train、test、gallery 的图片绝对路径必须两两不相交。
+
+图片文件不会被复制到新的类别目录。`grocery10_subset.csv` 只记录路径和元数据。
+
+## Frozen Teacher
+
+Teacher 是完全冻结且始终处于 eval 模式的
+`Qwen/Qwen3-VL-Embedding-2B`。每张图只使用统一 instruction：
+
+```text
+Represent this product image for image-to-image product retrieval.
+```
+
+输入不含商品名、SKU、标题或描述。低维输出遵循 Qwen embedding 的 Matryoshka
+接口语义：
+
+```text
+最后有效 language token hidden
+→ 取前 64 个 Matryoshka 维度
+→ L2 Normalize
+```
+
+没有增加可训练的 `2048→64` MLP。gallery、train 和 test 的所有 Teacher
+embedding 会预先缓存；Student 训练期间不会再次运行 Teacher。
+
+## Optical Student
+
+Student 复用仓库中已经验证的 Qwen DeepStack + homogeneous optical MoE16
+replacement：
+
+- frozen Qwen tokenizer、token embedding、vision patch embedding、vision merger、
+  DeepStack injection 和 final RMSNorm；
+- Vision Optical MoE16：4 个 optical/OEO stages；
+- Language Optical MoE16：4 个 optical/OEO stages；
+- 每个 stage 为 16 个 `224×224` 专家、电子输入相关 Top-4 router；
+- `986×986` active footprint，四周各 20 像素传播 guard，FFT canvas `1026×1026`；
+- 专家/global/CCD 的配置传播距离均为 10 cm；
+- Transformer identity residual 保留；
+- native electronic attention 关闭；
+- phase dropout 关闭。
+
+Language optical 最终 CCD 读出为非负 `[B,224,224]`。读取最后一个有效 language
+token 对应的行，得到 detector feature `[B,224]`。检索读出只有：
+
+```text
+Detector feature [B,224]
+→ LayerNorm(224)
+→ Linear(224,64)
+→ L2 Normalize
+→ Student embedding [B,64]
+```
+
+Linear 后没有 ReLU、GELU、Sigmoid、Softmax，因此 64 维向量允许正负值。
+
+## Loss
+
+逻辑 batch 使用 `P` 个 SKU、每个 SKU `K` 张图。默认 `P=10, K=4`：
+
+```text
+L_kd  = mean(1 - cosine(student, frozen_teacher))
+L_ret = supervised contrastive / supervised InfoNCE
+L     = lambda_kd * L_kd + lambda_ret * L_ret
+```
+
+默认 `lambda_kd=1`、`lambda_ret=1`、temperature `0.07`。不使用分类 CE、
+teacher logits、生成 loss 或 test loss。
+
+每轮可输出 test 指标供观察，但 checkpoint 只按训练总损失保存：
+
+- `last_checkpoint.pt`：最后一轮；
+- `best_train_loss_checkpoint.pt`：训练总损失最低；
+- test 从不用于反向传播、调参或 checkpoint 选择。
+
+## 三组评测
+
+1. Frozen Teacher query vs Frozen Teacher gallery；
+2. Optical Student query vs Optical Student gallery（主要部署结果）；
+3. Optical Student query vs Frozen Teacher gallery（embedding 对齐诊断）。
+
+gallery 支持：
+
+- `mean_prototype`（默认）：同 SKU gallery 的归一化向量均值后再归一化；
+- `max_similarity`：对该 SKU 的所有 gallery 图取最大相似度。
+
+指标包括 Top-1、Top-3、MRR、每 SKU Top-1、10×10 confusion matrix、正确
+SKU 相似度、最大错误 SKU 相似度和每个 query 的 Top-3 结果。
+
+## 输出
+
+正式 run 至少写出：
+
+```text
+config.yaml
+environment.json
+dataset.json
+manifests/grocery10_subset.csv
+teacher_cache/teacher_embeddings.pt
+train_log.csv
+teacher_metrics.json
+student_metrics.json
+per_sku_metrics.csv
+retrieval_results.csv
+confusion_matrix.png
+teacher_retrieval_examples.png
+student_retrieval_examples.png
+student_failure_cases.png
+last_checkpoint.pt
+best_train_loss_checkpoint.pt
+model.json
+```
+
+`model.json` 会列出每个可训练 tensor 的名称、shape 和参数量。Teacher 原始参数
+保持冻结；可训练部分仅为两个 optical surrogate（含既有 adapters/router/OEO）
+和新的 detector retrieval readout。
+
+## 数据与模型要求
+
+- 首次运行需要联网下载 Grocery Store Dataset；
+- 首次运行需要可访问 `Qwen/Qwen3-VL-Embedding-2B`；
+- 运行 full optical MoE16 推荐 CUDA GPU；
+- 默认逻辑 batch 40 对显存要求较高，显存不足时同时减小 `P`、`K` 和
+  `batch_size`，并保持 `batch_size=P×K`、`K≥2`。
+
+数据或模型不可用时会明确报错，不会回退到合成数据、其他 Grocery 数据集或分类任务。
