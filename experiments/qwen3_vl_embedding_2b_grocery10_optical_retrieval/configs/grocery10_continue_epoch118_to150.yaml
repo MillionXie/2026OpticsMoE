@@ -1,0 +1,6 @@
+base_config: grocery10_continue_epoch60_fixed_gallery.yaml
+
+# The fixed-gallery run completed epoch 118 before an evaluation DataLoader
+# file-descriptor leak was fixed. Resume last_checkpoint.pt for 32 epochs.
+training:
+  epochs: 32

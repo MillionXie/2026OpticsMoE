@@ -157,6 +157,13 @@ gallery 仍在同一次 Student forward 中，并继续接受 Teacher KD：
 CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_continue_epoch60_fixed_gallery.yaml --phase train --resume-checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/qwen3_vl_embedding_2b_grocery10_optical_retrieval/best_continuation_from_epoch_0057.pt
 ```
 
+若该任务已完成 epoch 118，可在修复一次性 test DataLoader 的
+`persistent_workers` 文件描述符泄漏后继续到 epoch 150：
+
+```text
+CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_continue_epoch118_to150.yaml --phase train --resume-checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/qwen3_vl_embedding_2b_grocery10_optical_retrieval/last_checkpoint.pt
+```
+
 每轮可输出 test 指标供观察，但 checkpoint 只按训练总损失保存：
 
 - `last_checkpoint.pt`：最后一轮；

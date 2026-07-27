@@ -109,6 +109,15 @@ def test_fixed_gallery_continuation_ends_at_epoch150() -> None:
     assert settings.gallery_prototype_stop_gradient
 
 
+def test_epoch118_resume_ends_at_epoch150() -> None:
+    settings = load_settings(
+        EXPERIMENT / "configs" / "grocery10_continue_epoch118_to150.yaml"
+    )
+    assert settings.epochs == 32
+    assert 118 + settings.epochs == 150
+    assert settings.gallery_prototype_stop_gradient
+
+
 def test_student_has_one_expert_stage_plus_one_global_phase() -> None:
     settings = load_settings(EXPERIMENT / "configs" / "grocery10.yaml")
     vision = HomogeneousMoEOpticalCore(1024, 224, settings)

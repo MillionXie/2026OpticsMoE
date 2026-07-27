@@ -736,7 +736,11 @@ def encode_student_samples(
         shuffle=False,
         num_workers=settings.num_workers,
         pin_memory=loaded.device.type == "cuda",
-        persistent_workers=settings.num_workers > 0,
+        # This loader is created for one finite evaluation pass. Persistent
+        # workers would survive until delayed garbage collection; constructing
+        # query and gallery loaders every epoch would then leak processes/file
+        # descriptors and eventually fail with "Too many open files".
+        persistent_workers=False,
         collate_fn=collate_grocery,
     )
     loaded.model.eval()
