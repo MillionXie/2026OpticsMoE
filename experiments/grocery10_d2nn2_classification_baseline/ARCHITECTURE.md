@@ -17,17 +17,18 @@ field remains complex and phase coherent over the complete two-plane path.
 
 ## Loss
 
-Let `e_c` be the nonnegative energy in detector region `c`.
+Let `e_c` be the nonnegative energy returned directly by detector region `c`.
 
 ```text
-logit_c = log(e_c + eps)
-loss = CrossEntropy(logits, target_class)
+probability_c = e_c / sum_j(e_j)
+loss = -log(probability_target + eps)
 prediction = argmax_c e_c
 ```
 
-The logarithm and CrossEntropy are numerical training objectives, not
-trainable electronic layers. No cosine similarity, metric-learning embedding,
-teacher target, KD target, MSE hidden target or retrieval prototype is used.
+The logarithm exists only inside the scalar training loss, not in model
+`forward()` and not as an electronic readout layer. No cosine similarity,
+metric-learning embedding, teacher target, KD target, MSE hidden target or
+retrieval prototype is used.
 
 ## Detector geometry
 

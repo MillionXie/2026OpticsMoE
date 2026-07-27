@@ -123,7 +123,7 @@ def test_detector_regions_are_equal_area_centered_and_nonoverlapping() -> None:
 
 
 def test_detector_region_cross_entropy_is_not_similarity_learning() -> None:
-    logits = torch.randn(4, 10, requires_grad=True)
+    logits = torch.rand(4, 10, requires_grad=True)
     labels = torch.tensor([0, 1, 2, 3])
     loss = detector_region_cross_entropy(logits, labels)
     loss.backward()

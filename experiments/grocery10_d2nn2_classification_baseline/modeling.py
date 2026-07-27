@@ -142,12 +142,11 @@ class TwoPlaneD2NNClassifier(nn.Module):
         )
         detector_field = self.second_to_detector(after_second_phase)
         energies, detector_intensity, full_intensity = self.detector(detector_field)
-        logits = torch.log(energies.clamp_min(self.settings.loss_eps))
-        if not torch.isfinite(logits).all():
-            raise RuntimeError("D2NN detector logits contain NaN or Inf")
+        if not torch.isfinite(energies).all() or torch.any(energies < 0):
+            raise RuntimeError("D2NN detector energies must be finite and nonnegative")
         if not return_intermediates:
-            return logits
-        return logits, {
+            return energies
+        return energies, {
             "input_amplitude_canvas": input_field.real,
             "after_first_phase": after_first_phase,
             "before_second_phase": before_second_phase,

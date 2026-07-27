@@ -34,11 +34,19 @@ from .visualization import (
 
 
 def detector_region_cross_entropy(
-    logits: torch.Tensor, labels: torch.Tensor
+    region_energies: torch.Tensor, labels: torch.Tensor
 ) -> torch.Tensor:
-    if logits.ndim != 2 or logits.shape[1] != 10:
-        raise ValueError("D2NN logits must have shape [B,10]")
-    return F.cross_entropy(logits.float(), labels.long())
+    if region_energies.ndim != 2 or region_energies.shape[1] != 10:
+        raise ValueError("D2NN detector energies must have shape [B,10]")
+    if torch.any(region_energies < 0):
+        raise ValueError("D2NN detector energies cannot be negative")
+    probabilities = region_energies.float() / region_energies.float().sum(
+        1, keepdim=True
+    ).clamp_min(1e-12)
+    return F.nll_loss(
+        torch.log(probabilities.clamp_min(1e-12)),
+        labels.long(),
+    )
 
 
 def _labels(samples: Sequence[GrocerySample], device: torch.device) -> torch.Tensor:
@@ -161,7 +169,9 @@ def evaluate(
         labels = _labels(batch["samples"], device)
         logits = model(images)
         loss = detector_region_cross_entropy(logits, labels)
-        probabilities = torch.softmax(logits.float(), 1)
+        probabilities = logits.float() / logits.float().sum(1, keepdim=True).clamp_min(
+            1e-12
+        )
         predictions = logits.argmax(1)
         total_loss += float(loss) * len(labels)
         count += len(labels)

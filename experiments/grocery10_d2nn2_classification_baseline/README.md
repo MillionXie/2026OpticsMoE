@@ -28,8 +28,10 @@ RGB 商品图
 → CrossEntropy
 ```
 
-`CrossEntropy` 直接作用于十个探测区域的 log-energy。这里没有可训练的
-电子分类头；argmax 对应能量最大的物理探测区域。
+模型 `forward()` 直接返回十个非负探测能量。训练损失在外部将这些能量
+除以十个区域的能量和，再对真实类别计算 negative log-likelihood。log 只属于
+损失计算，不属于光路或模型 readout。这里没有可训练的电子分类头；argmax
+对应能量最大的物理探测区域。
 
 输入和第一相位 SLM 默认共面，因此
 `input_to_first_phase_distance_m=0.0`。传播使用与实验组一致的：
