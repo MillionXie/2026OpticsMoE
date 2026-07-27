@@ -1,0 +1,6 @@
+base_config: resnet18_smoke.yaml
+
+model:
+  name: efficientnet_b0
+
+output_dir: ../runs/efficientnet_b0_smoke

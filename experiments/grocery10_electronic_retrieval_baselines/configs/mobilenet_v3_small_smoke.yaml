@@ -1,0 +1,6 @@
+base_config: resnet18_smoke.yaml
+
+model:
+  name: mobilenet_v3_small
+
+output_dir: ../runs/mobilenet_v3_small_smoke
