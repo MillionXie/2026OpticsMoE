@@ -30,6 +30,13 @@ Smoke:
 CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery31_pretrain_smoke.yaml --phase all
 ```
 
+After the 31-SKU Teacher cache exists, screen two replacements on the official
+validation-source images only (never on test):
+
+```bash
+python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.select_replacement_skus --all-sku-config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery31_pretrain.yaml --target-config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10.yaml --drop-sku Garant-Ecological-Standard-Milk --drop-sku Bravo-Apple-Juice
+```
+
 ## Phases
 
 Prepare/download the official Grocery Store Dataset and write the fixed subset manifest:
