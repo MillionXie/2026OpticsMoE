@@ -291,16 +291,48 @@ def _build_optimizer(
     router_ids = {id(parameter) for parameter in router_parameters}
     if len(router_ids) != len(router_parameters):
         raise RuntimeError("Vision/language router parameter sets unexpectedly overlap")
+    phase_parameters = [
+        parameter
+        for surrogate in (
+            replacement.vision_surrogate,
+            replacement.language_surrogate,
+        )
+        for name, parameter in surrogate.named_parameters()
+        if "raw_phase" in name and parameter.requires_grad
+    ]
+    phase_ids = {id(parameter) for parameter in phase_parameters}
+    if len(phase_ids) != len(phase_parameters) or phase_ids & router_ids:
+        raise RuntimeError("Optical phase/router parameter groups unexpectedly overlap")
     base_parameters = [
-        parameter for parameter in parameters if id(parameter) not in router_ids
+        parameter
+        for parameter in parameters
+        if id(parameter) not in router_ids and id(parameter) not in phase_ids
     ]
     configured_router_lr = settings.router_learning_rate
-    if configured_router_lr is None or math.isclose(
-        configured_router_lr, settings.learning_rate
+    configured_phase_lr = settings.phase_learning_rate
+    if configured_phase_lr is None and (
+        configured_router_lr is None
+        or math.isclose(configured_router_lr, settings.learning_rate)
     ):
         optimizer = torch.optim.AdamW(
             parameters,
             lr=settings.learning_rate,
+            weight_decay=settings.weight_decay,
+        )
+    elif configured_phase_lr is None:
+        optimizer = torch.optim.AdamW(
+            [
+                {
+                    "params": base_parameters + phase_parameters,
+                    "lr": settings.learning_rate,
+                    "group_name": "student_base",
+                },
+                {
+                    "params": router_parameters,
+                    "lr": configured_router_lr,
+                    "group_name": "routers",
+                },
+            ],
             weight_decay=settings.weight_decay,
         )
     else:
@@ -312,8 +344,17 @@ def _build_optimizer(
                     "group_name": "student_base",
                 },
                 {
+                    "params": phase_parameters,
+                    "lr": configured_phase_lr,
+                    "group_name": "optical_phases",
+                },
+                {
                     "params": router_parameters,
-                    "lr": configured_router_lr,
+                    "lr": (
+                        configured_router_lr
+                        if configured_router_lr is not None
+                        else settings.learning_rate
+                    ),
                     "group_name": "routers",
                 },
             ],
@@ -367,6 +408,7 @@ def save_checkpoint(
             },
             "learning_rate": settings.learning_rate,
             "router_learning_rate": settings.router_learning_rate,
+            "phase_learning_rate": settings.phase_learning_rate,
         },
     }
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -469,11 +511,15 @@ def train_optical_retrieval(
         # Checkpoint optimizer state must never silently override that choice.
         for group in optimizer.param_groups:
             group_name = group.get("group_name", "student_base")
-            group["lr"] = (
-                settings.router_learning_rate
-                if group_name == "routers" and settings.router_learning_rate is not None
-                else settings.learning_rate
-            )
+            if group_name == "routers" and settings.router_learning_rate is not None:
+                group["lr"] = settings.router_learning_rate
+            elif (
+                group_name == "optical_phases"
+                and settings.phase_learning_rate is not None
+            ):
+                group["lr"] = settings.phase_learning_rate
+            else:
+                group["lr"] = settings.learning_rate
         _archive_pre_resume_outputs(
             settings.output_dir, resume_checkpoint, resumed_from_epoch
         )
@@ -494,6 +540,7 @@ def train_optical_retrieval(
         ),
         "base_learning_rate": settings.learning_rate,
         "router_learning_rate": settings.router_learning_rate,
+        "phase_learning_rate": settings.phase_learning_rate,
     }
     write_json(settings.output_dir / "model.json", report)
     loaded.model.eval()

@@ -37,6 +37,7 @@ from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.settings impo
 )
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.train_optical_retrieval import (
     PKBatchSampler,
+    _build_optimizer,
     embedding_distillation_loss,
     gallery_retrieval_logits,
     gallery_retrieval_loss,
@@ -117,6 +118,65 @@ def test_epoch141_generalization_continuation_config() -> None:
     assert settings.rotation_degrees == 7.0
     assert not settings.resume_optimizer_state
     assert settings.output_dir.name.endswith("epoch141_augmented_kd")
+
+
+def test_phase_slow_continuation_keeps_masks_trainable_at_lower_lr() -> None:
+    settings = load_settings(
+        EXPERIMENT
+        / "configs"
+        / "grocery10_replaced_continue_epoch141_augmented_kd_phase_slow.yaml"
+    )
+    assert settings.learning_rate == 1.0e-5
+    assert settings.router_learning_rate == 2.0e-5
+    assert settings.phase_learning_rate == 1.0e-6
+    assert settings.phase_learning_rate < settings.learning_rate
+    assert settings.output_dir.name.endswith("augmented_kd_phase_slow")
+
+
+def test_phase_learning_rate_gets_an_independent_optimizer_group() -> None:
+    class Core(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.raw_phase = nn.Parameter(torch.zeros(2, 2))
+            self.adapter = nn.Linear(2, 2)
+            self.router = nn.Linear(2, 2)
+
+    class Surrogate(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.core = Core()
+
+    class Replacement:
+        def __init__(self) -> None:
+            self.vision_surrogate = Surrogate()
+            self.language_surrogate = Surrogate()
+
+        def trainable_parameters(self):
+            return list(self.vision_surrogate.parameters()) + list(
+                self.language_surrogate.parameters()
+            )
+
+    replacement = Replacement()
+    readout = OpticalRetrievalReadout(2, 2)
+    settings = SimpleNamespace(
+        learning_rate=1.0e-5,
+        router_learning_rate=2.0e-5,
+        phase_learning_rate=1.0e-6,
+        weight_decay=0.0,
+    )
+    optimizer, _ = _build_optimizer(replacement, readout, settings)
+    groups = {
+        group["group_name"]: group
+        for group in optimizer.param_groups
+    }
+    assert groups["student_base"]["lr"] == 1.0e-5
+    assert groups["routers"]["lr"] == 2.0e-5
+    assert groups["optical_phases"]["lr"] == 1.0e-6
+    phase_ids = {
+        id(replacement.vision_surrogate.core.raw_phase),
+        id(replacement.language_surrogate.core.raw_phase),
+    }
+    assert {id(value) for value in groups["optical_phases"]["params"]} == phase_ids
 
 
 def test_gallery_coverage_selection_is_train_only_and_deterministic(

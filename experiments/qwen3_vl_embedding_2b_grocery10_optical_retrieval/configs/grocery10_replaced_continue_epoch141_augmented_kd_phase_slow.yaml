@@ -1,0 +1,9 @@
+base_config: grocery10_replaced_continue_epoch141_augmented_kd.yaml
+
+# Parallel generalization trial: the already-pretrained physical phase masks
+# remain trainable, but move at one tenth of the adapter/readout learning rate.
+# This targets small-data phase overfitting without changing inference.
+training:
+  phase_learning_rate: 0.000001
+
+output_dir: ../runs/qwen3_vl_embedding_2b_grocery10_replaced_continue_epoch141_augmented_kd_phase_slow
