@@ -176,7 +176,11 @@ def train(
     optimizer = _optimizer(model, settings)
     scheduler = _scheduler(optimizer, settings)
     use_amp = settings.amp_enabled and device.type == "cuda"
-    scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
+    amp_dtype = (
+        torch.bfloat16 if settings.amp_dtype == "bfloat16" else torch.float16
+    )
+    scaler_enabled = use_amp and amp_dtype == torch.float16
+    scaler = torch.amp.GradScaler("cuda", enabled=scaler_enabled)
     rows: list[dict[str, Any]] = []
     fieldnames = [
         "epoch",
@@ -233,7 +237,7 @@ def train(
             optimizer.zero_grad(set_to_none=True)
             with torch.autocast(
                 device_type=device.type,
-                dtype=torch.float16,
+                dtype=amp_dtype,
                 enabled=use_amp,
             ):
                 embeddings = model(images)
@@ -259,9 +263,13 @@ def train(
                 raise RuntimeError(
                     f"Non-finite loss at epoch={epoch} batch={batch_index}"
                 )
-            scaler.scale(total_loss).backward()
-            scaler.step(optimizer)
-            scaler.update()
+            if scaler_enabled:
+                scaler.scale(total_loss).backward()
+                scaler.step(optimizer)
+                scaler.update()
+            else:
+                total_loss.backward()
+                optimizer.step()
             count = query_count
             totals["total"] += float(total_loss.detach()) * count
             totals["retrieval"] += float(retrieval_loss.detach()) * count
@@ -392,11 +400,14 @@ def encode_samples(
     )
     model.eval()
     use_amp = settings.amp_enabled and device.type == "cuda"
+    amp_dtype = (
+        torch.bfloat16 if settings.amp_dtype == "bfloat16" else torch.float16
+    )
     chunks: list[torch.Tensor] = []
     for batch in loader:
         images = preprocess_pil_images(batch["images"], device)
         with torch.autocast(
-            device_type=device.type, dtype=torch.float16, enabled=use_amp
+            device_type=device.type, dtype=amp_dtype, enabled=use_amp
         ):
             values = model(images)
         chunks.append(values.detach().cpu())

@@ -96,6 +96,7 @@ class Settings:
     min_learning_rate: float
     random_seed: int
     amp_enabled: bool
+    amp_dtype: str
     evaluate_test_each_epoch: bool
     log_interval_batches: int
 
@@ -155,6 +156,8 @@ class Settings:
             raise ValueError("Loss weights must be nonnegative")
         if self.scheduler not in {"cosine", "none"}:
             raise ValueError("scheduler must be cosine or none")
+        if self.amp_dtype not in {"bfloat16", "float16"}:
+            raise ValueError("amp_dtype must be bfloat16 or float16")
         if self.gallery_aggregation not in {"mean_prototype", "max_similarity"}:
             raise ValueError("Unsupported gallery aggregation")
 
@@ -213,6 +216,7 @@ def load_settings(path: str | Path) -> Settings:
         min_learning_rate=float(d("training.min_learning_rate", 1e-6)),
         random_seed=int(d("training.random_seed", 42)),
         amp_enabled=bool(d("training.amp_enabled", True)),
+        amp_dtype=str(d("training.amp_dtype", "bfloat16")),
         evaluate_test_each_epoch=bool(
             d("training.evaluate_test_each_epoch", True)
         ),

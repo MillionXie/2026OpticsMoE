@@ -49,6 +49,7 @@ training:
   min_learning_rate: 0.000001
   random_seed: 42
   amp_enabled: true
+  amp_dtype: bfloat16
   evaluate_test_each_epoch: true
   log_interval_batches: 5
 
