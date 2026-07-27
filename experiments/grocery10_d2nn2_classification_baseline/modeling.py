@@ -163,8 +163,20 @@ class TwoPlaneD2NNClassifier(nn.Module):
         return output
 
     def forward(
-        self, images: torch.Tensor, *, return_intermediates: bool = False
-    ) -> torch.Tensor | tuple[torch.Tensor, dict[str, Any]]:
+        self,
+        images: torch.Tensor,
+        *,
+        return_intermediates: bool = False,
+        return_detector_intensity: bool = False,
+    ) -> (
+        torch.Tensor
+        | tuple[torch.Tensor, torch.Tensor]
+        | tuple[torch.Tensor, dict[str, Any]]
+    ):
+        if return_intermediates and return_detector_intensity:
+            raise ValueError(
+                "Choose return_intermediates or return_detector_intensity, not both"
+            )
         input_field = self.prepare_input(images)
         field = (
             self.input_propagator(input_field)
@@ -185,6 +197,11 @@ class TwoPlaneD2NNClassifier(nn.Module):
         energies, detector_intensity, full_intensity = self.detector(detector_field)
         if not torch.isfinite(energies).all() or torch.any(energies < 0):
             raise RuntimeError("D2NN detector energies must be finite and nonnegative")
+        if return_detector_intensity:
+            # The detector-plane MSE path deliberately returns only the real
+            # intensity needed by the loss. Keeping the five complex fields
+            # below would retain their autograd graphs and waste GPU memory.
+            return energies, detector_intensity
         if not return_intermediates:
             return energies
         return energies, {

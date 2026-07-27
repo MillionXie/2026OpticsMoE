@@ -12,6 +12,7 @@ from experiments.grocery10_d2nn2_classification_baseline.modeling import (
 )
 from experiments.grocery10_d2nn2_classification_baseline.settings import load_settings
 from experiments.grocery10_d2nn2_classification_baseline.training import (
+    detector_plane_mse_loss,
     detector_region_cross_entropy,
 )
 
@@ -43,6 +44,10 @@ def _tiny_settings() -> SimpleNamespace:
         detector_vertical_gap=4,
         detector_normalize_total_energy=True,
         detector_eps=1e-8,
+        loss_type="detector_region_cross_entropy",
+        detector_plane_mse_scale=100.0,
+        normalize_detector_plane_mse=True,
+        detector_plane_mse_normalization_eps=1e-8,
         loss_eps=1e-8,
     )
 
@@ -131,6 +136,42 @@ def test_detector_region_cross_entropy_is_not_similarity_learning() -> None:
     loss.backward()
     assert loss.ndim == 0
     assert logits.grad is not None
+
+
+def test_detector_plane_mse_is_energy_scale_invariant_and_has_gradients() -> None:
+    intensity = torch.rand(2, 56, 56, requires_grad=True)
+    target = torch.zeros_like(intensity)
+    target[0, 4:8, 7:11] = 1.0
+    target[1, 30:34, 35:39] = 1.0
+    loss = detector_plane_mse_loss(
+        intensity,
+        target,
+        scale=100.0,
+        normalize=True,
+        eps=1e-8,
+    )
+    scaled_loss = detector_plane_mse_loss(
+        intensity * 9.0,
+        target,
+        scale=100.0,
+        normalize=True,
+        eps=1e-8,
+    )
+    assert torch.allclose(loss, scaled_loss, rtol=1e-5, atol=1e-6)
+    loss.backward()
+    assert intensity.grad is not None
+    assert torch.isfinite(intensity.grad).all()
+
+
+def test_detector_intensity_only_path_avoids_intermediate_field_capture() -> None:
+    model = TwoPlaneD2NNClassifier(_tiny_settings())
+    energies, detector_intensity = model(
+        torch.rand(2, 1, 16, 16), return_detector_intensity=True
+    )
+    assert energies.shape == (2, 10)
+    assert detector_intensity.shape == (2, 56, 56)
+    assert detector_intensity.requires_grad
+    assert torch.all(detector_intensity >= 0)
 
 
 def test_rgb_quadrant_encoding_is_fixed_nonnegative_and_preserves_channels() -> None:

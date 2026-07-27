@@ -30,6 +30,12 @@ The logarithm exists only inside the scalar training loss, not in model
 metric-learning embedding, teacher target, KD target, MSE hidden target or
 retrieval prototype is used.
 
+An independent optimization config can instead apply normalized full-plane
+MSE. It matches the total prediction energy to a one-hot detector target and
+then computes `scale * MSE(prediction, target_plane)` over the active CCD.
+This changes only the scalar training objective: inference still returns the
+same ten physical region energies and chooses their `argmax`.
+
 ## Detector geometry
 
 Ten 120×120 regions are centered in three rows:

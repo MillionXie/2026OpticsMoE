@@ -83,3 +83,10 @@ query-to-gallery retrieval。因此二者的 Top-1 可以用于判断“纯 D2NN
 测试集可按 epoch 打印用于观察，但 checkpoint 只按最低训练
 cross-entropy 保存，测试结果不参与选权重。输出包括实时训练 CSV、最终测试
 指标、per-SKU 指标、混淆矩阵、两个 phase mask 以及多组中间光场。
+
+## Detector-plane MSE 消融
+
+`loss.type=detector_plane_mse` 可用完整有效 CCD 上的归一化 MSE 提供更密集
+的空间监督。它先让预测光强的总能量与目标方格模板一致，再计算整平面 MSE。
+这只改变训练损失，不增加电子层；推理时仍由十个物理探测区的能量最大值
+决定类别。配置见 `configs/grocery10_d2nn2_opt_rgb_detector_mse.yaml`。

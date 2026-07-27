@@ -91,6 +91,9 @@ class Settings:
     detector_eps: float
 
     loss_type: str
+    detector_plane_mse_scale: float
+    normalize_detector_plane_mse: bool
+    detector_plane_mse_normalization_eps: float
     loss_eps: float
     optimizer: str
     learning_rate: float
@@ -191,8 +194,19 @@ class Settings:
             3,
         ):
             raise ValueError("The Grocery-10 detector layout must be [3,4,3]")
-        if self.loss_type != "detector_region_cross_entropy":
-            raise ValueError("Only detector_region_cross_entropy is supported")
+        if self.loss_type not in {
+            "detector_region_cross_entropy",
+            "detector_plane_mse",
+        }:
+            raise ValueError(
+                "loss.type must be detector_region_cross_entropy or detector_plane_mse"
+            )
+        if self.detector_plane_mse_scale <= 0:
+            raise ValueError("loss.scale must be positive")
+        if self.detector_plane_mse_normalization_eps <= 0:
+            raise ValueError(
+                "loss.detector_plane_mse_normalization_eps must be positive"
+            )
         if self.optimizer not in {"adam", "adamw"}:
             raise ValueError("optimizer must be adam or adamw")
         if self.scheduler not in {"cosine", "none"}:
@@ -260,6 +274,13 @@ def load_settings(path: str | Path) -> Settings:
         ),
         detector_eps=float(d("detector.eps", 1e-8)),
         loss_type=str(d("loss.type", "detector_region_cross_entropy")),
+        detector_plane_mse_scale=float(d("loss.scale", 100.0)),
+        normalize_detector_plane_mse=bool(
+            d("loss.normalize_detector_plane_mse", True)
+        ),
+        detector_plane_mse_normalization_eps=float(
+            d("loss.detector_plane_mse_normalization_eps", 1e-8)
+        ),
         loss_eps=float(d("loss.eps", 1e-8)),
         optimizer=str(d("training.optimizer", "adam")),
         learning_rate=float(d("training.learning_rate", 0.01)),

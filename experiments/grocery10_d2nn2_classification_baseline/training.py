@@ -49,6 +49,60 @@ def detector_region_cross_entropy(
     )
 
 
+def detector_plane_mse_loss(
+    intensity: torch.Tensor,
+    target_plane: torch.Tensor,
+    *,
+    scale: float,
+    normalize: bool,
+    eps: float,
+) -> torch.Tensor:
+    """Full-plane MSE with optional per-sample total-energy matching."""
+
+    if intensity.shape != target_plane.shape or intensity.ndim != 3:
+        raise ValueError("Detector intensity and target plane must share [B,H,W]")
+    if float(scale) <= 0 or float(eps) <= 0:
+        raise ValueError("Detector-plane MSE scale and eps must be positive")
+    prediction = intensity.float()
+    target = target_plane.float()
+    if normalize:
+        prediction_energy = prediction.sum((-2, -1), keepdim=True)
+        target_energy = target.sum((-2, -1), keepdim=True)
+        prediction = prediction * target_energy / prediction_energy.clamp_min(eps)
+    return float(scale) * F.mse_loss(prediction, target)
+
+
+def _active_detector_targets(
+    model: TwoPlaneD2NNClassifier, labels: torch.Tensor
+) -> torch.Tensor:
+    masks = model.detector.masks[
+        labels.long(),
+        model.active_start : model.active_end,
+        model.active_start : model.active_end,
+    ]
+    return masks.to(device=labels.device, dtype=torch.float32)
+
+
+def _forward_loss(
+    model: TwoPlaneD2NNClassifier,
+    images: torch.Tensor,
+    labels: torch.Tensor,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    settings = model.settings
+    if settings.loss_type == "detector_plane_mse":
+        energies, intensity = model(images, return_detector_intensity=True)
+        loss = detector_plane_mse_loss(
+            intensity,
+            _active_detector_targets(model, labels),
+            scale=settings.detector_plane_mse_scale,
+            normalize=settings.normalize_detector_plane_mse,
+            eps=settings.detector_plane_mse_normalization_eps,
+        )
+        return energies, loss
+    energies = model(images)
+    return energies, detector_region_cross_entropy(energies, labels)
+
+
 def _labels(samples: Sequence[GrocerySample], device: torch.device) -> torch.Tensor:
     return torch.tensor(
         [int(sample.sku_index) for sample in samples],
@@ -167,8 +221,7 @@ def evaluate(
             batch["images"], model.settings.input_encoding
         ).to(device, non_blocking=True)
         labels = _labels(batch["samples"], device)
-        logits = model(images)
-        loss = detector_region_cross_entropy(logits, labels)
+        logits, loss = _forward_loss(model, images, labels)
         probabilities = logits.float() / logits.float().sum(1, keepdim=True).clamp_min(
             1e-12
         )
@@ -244,7 +297,10 @@ def save_checkpoint(
             **model.parameter_report(),
             "manifest_sha256": manifest_digest,
             "selected_skus": list(model.settings.selected_skus),
-            "selection_criterion": "minimum_training_cross_entropy",
+            "loss_type": model.settings.loss_type,
+            "selection_criterion": (
+                f"minimum_training_{model.settings.loss_type}"
+            ),
             "test_metrics_used_for_selection": False,
         },
     }
@@ -294,8 +350,7 @@ def train(
             ).to(device, non_blocking=True)
             labels = _labels(batch["samples"], device)
             optimizer.zero_grad(set_to_none=True)
-            logits = model(images)
-            loss = detector_region_cross_entropy(logits, labels)
+            logits, loss = _forward_loss(model, images, labels)
             if not torch.isfinite(loss):
                 raise RuntimeError(f"Non-finite D2NN loss at epoch={epoch}")
             loss.backward()
@@ -368,7 +423,7 @@ def train(
                 {
                     "epoch": epoch,
                     "train_loss": train_loss,
-                    "selection_criterion": "minimum_training_cross_entropy",
+                    "selection_criterion": f"minimum_training_{settings.loss_type}",
                     "test_metrics_used_for_selection": False,
                 },
             )
@@ -393,7 +448,7 @@ def train(
             "best_epoch": best_epoch,
             "best_train_loss": best_train_loss,
             "total_time_sec": time.perf_counter() - started,
-            "selection_criterion": "minimum_training_cross_entropy",
+            "selection_criterion": f"minimum_training_{settings.loss_type}",
             "natural_training_samples": len(bundle.train_samples),
             "gallery_training_samples_per_epoch": (
                 len(bundle.gallery_samples) * settings.gallery_repeat_factor
@@ -429,7 +484,7 @@ def evaluate_and_save(
             "manifest_sha256": bundle.manifest_digest,
             "checkpoint": str(checkpoint_path),
             "checkpoint_epoch": int(payload["epoch"]),
-            "selection_criterion": "minimum_training_cross_entropy",
+            "selection_criterion": f"minimum_training_{settings.loss_type}",
             "task_type": "closed_set_detector_region_classification",
             "retrieval_similarity_used": False,
             "teacher_or_distillation_used": False,

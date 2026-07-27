@@ -56,6 +56,10 @@ detector:
 
 loss:
   type: detector_region_cross_entropy
+  # Alternative: detector_plane_mse gives dense spatial supervision over CCD.
+  scale: 100.0
+  normalize_detector_plane_mse: true
+  detector_plane_mse_normalization_eps: 1.0e-8
   eps: 1.0e-8
 
 training:
