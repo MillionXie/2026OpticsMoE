@@ -37,6 +37,10 @@ CUDA_VISIBLE_DEVICES=0 python -m experiments.grocery10_d2nn2_classification_base
 CUDA_VISIBLE_DEVICES=0 python -m experiments.grocery10_d2nn2_classification_baseline --config experiments/grocery10_d2nn2_classification_baseline/configs/grocery10_d2nn2_opt_fullcoverage_strong.yaml --phase all
 ```
 
+```bash
+CUDA_VISIBLE_DEVICES=0 python -m experiments.grocery10_d2nn2_classification_baseline --config experiments/grocery10_d2nn2_classification_baseline/configs/grocery10_d2nn2_opt_rgb_quadrant.yaml --phase all
+```
+
 ## Unit tests
 
 ```bash

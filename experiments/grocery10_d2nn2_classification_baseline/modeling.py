@@ -5,6 +5,7 @@ from typing import Any, Sequence
 import torch
 from PIL import Image
 from torch import nn
+from torch.nn import functional as F
 from torchvision.transforms import functional as TF
 
 from .optics import (
@@ -15,19 +16,55 @@ from .optics import (
 from .settings import Settings
 
 
-def pil_images_to_grayscale_amplitude(images: Sequence[Image.Image]) -> torch.Tensor:
-    """Convert RGB PIL images into a one-shot scalar amplitude field."""
+def _encode_rgb_tensor(rgb: torch.Tensor, encoding: str) -> torch.Tensor:
+    if rgb.ndim != 3 or rgb.shape[0] != 3 or rgb.shape[-2] != rgb.shape[-1]:
+        raise ValueError("RGB tensor must have shape [3,H,H]")
+    if encoding == "grayscale_amplitude":
+        weights = rgb.new_tensor([0.2989, 0.5870, 0.1140]).view(3, 1, 1)
+        return (rgb * weights).sum(0, keepdim=True).clamp(0.0, 1.0)
+    if encoding == "rgb_quadrant_amplitude":
+        size = int(rgb.shape[-1])
+        if size % 2:
+            raise ValueError("rgb_quadrant_amplitude requires an even image size")
+        half = size // 2
+        reduced = F.interpolate(
+            rgb.unsqueeze(0),
+            size=(half, half),
+            mode="bicubic",
+            align_corners=False,
+            antialias=True,
+        )[0].clamp(0.0, 1.0)
+        luminance = (
+            reduced
+            * reduced.new_tensor([0.2989, 0.5870, 0.1140]).view(3, 1, 1)
+        ).sum(0)
+        amplitude = rgb.new_zeros(1, size, size)
+        amplitude[0, :half, :half] = reduced[0]
+        amplitude[0, :half, half:] = reduced[1]
+        amplitude[0, half:, :half] = reduced[2]
+        amplitude[0, half:, half:] = luminance
+        return amplitude
+    raise ValueError(f"Unsupported scalar-field input encoding {encoding!r}")
+
+
+def pil_images_to_amplitude(
+    images: Sequence[Image.Image], encoding: str
+) -> torch.Tensor:
+    """Encode RGB images as a fixed, one-shot nonnegative scalar amplitude."""
 
     tensors = []
-    weights = torch.tensor([0.2989, 0.5870, 0.1140], dtype=torch.float32).view(
-        3, 1, 1
-    )
     for image in images:
         rgb = TF.pil_to_tensor(image.convert("RGB")).float().div_(255.0)
-        tensors.append((rgb * weights).sum(0, keepdim=True).clamp_(0.0, 1.0))
+        tensors.append(_encode_rgb_tensor(rgb, encoding))
     if not tensors:
         raise ValueError("At least one input image is required")
     return torch.stack(tensors)
+
+
+def pil_images_to_grayscale_amplitude(images: Sequence[Image.Image]) -> torch.Tensor:
+    """Backward-compatible explicit grayscale helper."""
+
+    return pil_images_to_amplitude(images, "grayscale_amplitude")
 
 
 class TwoPlaneD2NNClassifier(nn.Module):
@@ -100,8 +137,12 @@ class TwoPlaneD2NNClassifier(nn.Module):
             )
         images = images.float()
         if images.shape[1] == 3:
-            weights = images.new_tensor([0.2989, 0.5870, 0.1140]).view(1, 3, 1, 1)
-            images = (images * weights).sum(1, keepdim=True)
+            images = torch.stack(
+                [
+                    _encode_rgb_tensor(image, self.settings.input_encoding)
+                    for image in images
+                ]
+            )
         amplitude = images[:, 0].clamp(0.0, 1.0)
         canvas = amplitude.new_zeros(
             amplitude.shape[0], self.canvas_size, self.canvas_size
@@ -177,6 +218,7 @@ class TwoPlaneD2NNClassifier(nn.Module):
             "total_parameters": total,
             "total_trainable_parameters": trainable,
             "input_shape": [None, 1, self.input_size, self.input_size],
+            "input_encoding": self.settings.input_encoding,
             "canvas_shape": [None, self.canvas_size, self.canvas_size],
             "first_phase_shape": [self.first_phase_size, self.first_phase_size],
             "second_phase_shape": [self.active_size, self.active_size],

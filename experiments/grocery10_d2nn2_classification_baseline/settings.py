@@ -132,8 +132,13 @@ class Settings:
             raise ValueError("This baseline requires exactly 10 unique selected_skus")
         if self.gallery_images_per_sku != 1:
             raise ValueError("Grocery Store supplies exactly one iconic gallery image per SKU")
-        if self.input_encoding != "grayscale_amplitude":
-            raise ValueError("input.encoding must be grayscale_amplitude for the one-shot scalar field")
+        if self.input_encoding not in {
+            "grayscale_amplitude",
+            "rgb_quadrant_amplitude",
+        }:
+            raise ValueError(
+                "input.encoding must be grayscale_amplitude or rgb_quadrant_amplitude"
+            )
         for name in (
             "image_size",
             "canvas_size",

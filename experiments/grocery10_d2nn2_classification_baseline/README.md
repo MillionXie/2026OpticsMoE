@@ -48,6 +48,12 @@ global phase → CCD = 10 cm
 传播 canvas 比有效口径每边多 20 pixel，用作 FFT guard band。CCD 只读取
 986×986 有效范围。
 
+正式 baseline 固定使用灰度振幅。优化消融另提供
+`rgb_quadrant_amplitude`：将缩小后的 R/G/B/luminance 固定排入
+224×224 振幅 SLM 的四个象限。这仍是单次、单个非负标量振幅输入，不增加
+可训练电子参数、光学传播次数或蒸馏，但应作为增强输入编码单独报告，不能与
+灰度 baseline 混为同一个模型。
+
 ## 参数量
 
 ```text

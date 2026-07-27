@@ -22,7 +22,7 @@ from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.prepare_groce
     collate_grocery,
 )
 
-from .modeling import TwoPlaneD2NNClassifier, pil_images_to_grayscale_amplitude
+from .modeling import TwoPlaneD2NNClassifier, pil_images_to_amplitude
 from .settings import Settings
 from .visualization import (
     save_confusion_matrix,
@@ -163,9 +163,9 @@ def evaluate(
     total_loss = 0.0
     count = 0
     for batch in loader:
-        images = pil_images_to_grayscale_amplitude(batch["images"]).to(
-            device, non_blocking=True
-        )
+        images = pil_images_to_amplitude(
+            batch["images"], model.settings.input_encoding
+        ).to(device, non_blocking=True)
         labels = _labels(batch["samples"], device)
         logits = model(images)
         loss = detector_region_cross_entropy(logits, labels)
@@ -285,9 +285,9 @@ def train(
         correct = 0
         sample_count = 0
         for batch_index, batch in enumerate(train_loader, 1):
-            images = pil_images_to_grayscale_amplitude(batch["images"]).to(
-                device, non_blocking=True
-            )
+            images = pil_images_to_amplitude(
+                batch["images"], settings.input_encoding
+            ).to(device, non_blocking=True)
             labels = _labels(batch["samples"], device)
             optimizer.zero_grad(set_to_none=True)
             logits = model(images)

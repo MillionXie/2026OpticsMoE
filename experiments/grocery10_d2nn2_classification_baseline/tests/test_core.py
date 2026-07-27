@@ -8,6 +8,7 @@ from torch import nn
 
 from experiments.grocery10_d2nn2_classification_baseline.modeling import (
     TwoPlaneD2NNClassifier,
+    _encode_rgb_tensor,
 )
 from experiments.grocery10_d2nn2_classification_baseline.settings import load_settings
 from experiments.grocery10_d2nn2_classification_baseline.training import (
@@ -21,6 +22,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def _tiny_settings() -> SimpleNamespace:
     return SimpleNamespace(
         selected_skus=tuple(f"sku_{index}" for index in range(10)),
+        input_encoding="grayscale_amplitude",
         canvas_size=64,
         active_size=56,
         image_size=16,
@@ -129,3 +131,16 @@ def test_detector_region_cross_entropy_is_not_similarity_learning() -> None:
     loss.backward()
     assert loss.ndim == 0
     assert logits.grad is not None
+
+
+def test_rgb_quadrant_encoding_is_fixed_nonnegative_and_preserves_channels() -> None:
+    rgb = torch.zeros(3, 16, 16)
+    rgb[0] = 0.2
+    rgb[1] = 0.5
+    rgb[2] = 0.8
+    amplitude = _encode_rgb_tensor(rgb, "rgb_quadrant_amplitude")
+    assert amplitude.shape == (1, 16, 16)
+    assert torch.all(amplitude >= 0)
+    assert torch.allclose(amplitude[0, :8, :8], torch.full((8, 8), 0.2))
+    assert torch.allclose(amplitude[0, :8, 8:], torch.full((8, 8), 0.5))
+    assert torch.allclose(amplitude[0, 8:, :8], torch.full((8, 8), 0.8))

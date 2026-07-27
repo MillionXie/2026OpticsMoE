@@ -16,7 +16,7 @@ from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.prepare_groce
     GroceryRetrievalDataset,
 )
 
-from .modeling import TwoPlaneD2NNClassifier, pil_images_to_grayscale_amplitude
+from .modeling import TwoPlaneD2NNClassifier, pil_images_to_amplitude
 
 
 def _heatmap(
@@ -171,7 +171,9 @@ def save_debug_examples(
         sample_dir = output_dir / f"sample_{dataset_index:04d}_{sample.sku_name}"
         sample_dir.mkdir(parents=True, exist_ok=True)
         image.save(sample_dir / "input_original.png")
-        amplitude = pil_images_to_grayscale_amplitude([image]).to(device)
+        amplitude = pil_images_to_amplitude(
+            [image], model.settings.input_encoding
+        ).to(device)
         logits, fields = model(amplitude, return_intermediates=True)
         prediction = int(logits.argmax(1).item())
         probabilities = torch.softmax(logits, 1)[0].detach().cpu()
@@ -201,8 +203,11 @@ def save_debug_examples(
         ]
         _heatmap(
             input_crop,
-            sample_dir / "01_input_grayscale_amplitude.png",
-            title="Input amplitude co-planar with phase plane 1",
+            sample_dir / "01_input_scalar_amplitude.png",
+            title=(
+                f"Input amplitude ({model.settings.input_encoding}) "
+                "co-planar with phase plane 1"
+            ),
             colorbar_label="amplitude",
         )
         _heatmap(
