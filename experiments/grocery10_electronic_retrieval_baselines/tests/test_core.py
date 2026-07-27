@@ -49,9 +49,12 @@ def test_electronic_backbones_return_signed_normalized_64d_embeddings() -> None:
         output = model(torch.randn(2, 3, 64, 64))
         assert output.shape == (2, 64)
         assert torch.allclose(output.norm(dim=-1), torch.ones(2), atol=1e-5)
+        retrieval_head_modules = list(model.feature_norm.modules()) + list(
+            model.projection.modules()
+        )
         assert not any(
-            isinstance(module, (nn.Sigmoid, nn.Softmax))
-            for module in model.modules()
+            isinstance(module, (nn.ReLU, nn.GELU, nn.Sigmoid, nn.Softmax))
+            for module in retrieval_head_modules
         )
 
 
