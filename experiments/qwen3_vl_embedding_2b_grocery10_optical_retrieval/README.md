@@ -15,6 +15,13 @@
 gallery 图，因此一次模型前向仍为 `30 query + 10 gallery = 40`，不会因
 总类别从 10 增到 31 而膨胀为 61。
 
+`grocery10_replaced_finetune.yaml` 删除原结果中最弱的
+`Garant-Ecological-Standard-Milk` 和 `Bravo-Apple-Juice`，并加入
+`God-Morgon-Apple-Juice` 与 `Tropicana-Mandarin-Morning`。替换组合由
+冻结 Teacher 在官方 train 来源图上筛选，官方 test 没有参与选类。
+微调从 31 类 `best_train_loss_checkpoint.pt` 加载 Student 权重，重置
+optimizer，并使用独立的 10 类 manifest、Teacher cache 和输出目录。
+
 本实验验证一个小规模、部署形式明确的商品图库检索任务：
 
 ```text

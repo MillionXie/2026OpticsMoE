@@ -1,0 +1,45 @@
+base_config: grocery31_pretrain.yaml
+
+# The two weakest original classes were removed:
+#   Garant-Ecological-Standard-Milk (previous Student Top-1 0%)
+#   Bravo-Apple-Juice (previous Student Top-1 8.70%)
+# Their replacements were selected with the frozen Teacher on official
+# source_split=train images only. The official test split was not consulted.
+dataset:
+  selected_skus:
+    - God-Morgon-Orange-Juice
+    - Tropicana-Golden-Grapefruit
+    - Arla-Ecological-Medium-Fat-Milk
+    - Oatly-Natural-Oatghurt
+    - Oatly-Oat-Milk
+    - Alpro-Blueberry-Soyghurt
+    - Alpro-Shelf-Soy-Milk
+    - Yoggi-Strawberry-Yoghurt
+    - God-Morgon-Apple-Juice
+    - Tropicana-Mandarin-Morning
+
+batching:
+  batch_size: 30
+  pk_skus_per_batch: 10
+  pk_images_per_sku: 3
+
+# Resume from the 31-SKU minimum-training-loss checkpoint with a fresh
+# optimizer. The optical architecture and retrieval readout are unchanged.
+training:
+  epochs: 50
+  learning_rate: 0.00002
+  router_learning_rate: 0.00005
+  weight_decay: 0.0
+  lambda_kd: 5.0
+  lambda_ret: 1.0
+  lambda_gallery: 0.25
+  lambda_router_balance: 0.02
+  lambda_router_importance: 0.005
+  temperature: 0.07
+  gallery_temperature: 0.15
+  gallery_prototype_stop_gradient: true
+  resume_optimizer_state: false
+  evaluate_test_each_epoch: true
+  log_interval_batches: 5
+
+output_dir: ../runs/qwen3_vl_embedding_2b_grocery10_replaced_finetune

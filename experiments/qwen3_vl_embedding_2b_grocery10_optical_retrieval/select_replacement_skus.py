@@ -152,7 +152,7 @@ def screen_replacements(
         if output_path is not None
         else all_settings.output_dir
         / "metrics"
-        / "replacement_screen_official_val.json"
+        / f"replacement_screen_official_{selection_source_split}.json"
     )
     write_json(destination, payload)
     print(

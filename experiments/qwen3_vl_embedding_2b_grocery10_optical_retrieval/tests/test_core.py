@@ -82,6 +82,20 @@ def test_grocery31_pretrain_config_is_valid_and_keeps_forward_batch_bounded() ->
     assert settings.subset_manifest_path.name == "grocery31_subset.csv"
 
 
+def test_replaced_ten_sku_finetune_config() -> None:
+    settings = load_settings(
+        EXPERIMENT / "configs" / "grocery10_replaced_finetune.yaml"
+    )
+    assert len(settings.selected_skus) == 10
+    assert "Garant-Ecological-Standard-Milk" not in settings.selected_skus
+    assert "Bravo-Apple-Juice" not in settings.selected_skus
+    assert "God-Morgon-Apple-Juice" in settings.selected_skus
+    assert "Tropicana-Mandarin-Morning" in settings.selected_skus
+    assert settings.epochs == 50
+    assert not settings.resume_optimizer_state
+    assert settings.dataset_variant == "grocery10"
+
+
 def test_continuation_config_adds_gallery_negatives_and_router_recovery() -> None:
     settings = load_settings(
         EXPERIMENT / "configs" / "grocery10_continue100.yaml"

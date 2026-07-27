@@ -802,16 +802,18 @@ def train_optical_retrieval(
         )
         if average_total < best_train_loss:
             best_train_loss = average_total
-            best_checkpoint_name = (
+            continuation_checkpoint_name = (
                 f"best_continuation_from_epoch_{resumed_from_epoch:04d}.pt"
                 if resumed_from_epoch is not None
-                else "best_train_loss_checkpoint.pt"
+                else None
             )
-            best_metrics_name = (
+            continuation_metrics_name = (
                 f"best_continuation_from_epoch_{resumed_from_epoch:04d}.json"
                 if resumed_from_epoch is not None
-                else "best_train_loss.json"
+                else None
             )
+            best_checkpoint_name = "best_train_loss_checkpoint.pt"
+            best_metrics_name = "best_train_loss.json"
             save_checkpoint(
                 settings.output_dir / best_checkpoint_name,
                 replacement,
@@ -832,6 +834,17 @@ def train_optical_retrieval(
                     "checkpoint": str(settings.output_dir / best_checkpoint_name),
                 },
             )
+            if continuation_checkpoint_name is not None:
+                shutil.copy2(
+                    settings.output_dir / best_checkpoint_name,
+                    settings.output_dir / continuation_checkpoint_name,
+                )
+                shutil.copy2(
+                    settings.output_dir / "metrics" / best_metrics_name,
+                    settings.output_dir
+                    / "metrics"
+                    / continuation_metrics_name,
+                )
         print(
             f"epoch {epoch:03d} complete train_loss={average_total:.5f} "
             f"train_top1="
