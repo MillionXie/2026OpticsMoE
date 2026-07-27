@@ -22,14 +22,9 @@ class LoadedBackbone:
 class NormalizedLinearRegressionHead(nn.Module):
     """Identical teacher/student attribute head: LayerNorm(D) -> Linear(D,1)."""
 
-    def __init__(
-        self,
-        feature_dim: int,
-        output_activation: str = "linear",
-        layernorm_affine: bool = True,
-    ) -> None:
+    def __init__(self, feature_dim: int, output_activation: str = "linear") -> None:
         super().__init__()
-        self.norm = nn.LayerNorm(feature_dim, elementwise_affine=layernorm_affine)
+        self.norm = nn.LayerNorm(feature_dim)
         self.regressor = nn.Linear(feature_dim, 1)
         self.output_activation = output_activation
 
@@ -48,7 +43,6 @@ class NormalizedLinearRegressionHead(nn.Module):
             "feature_dim": self.norm.normalized_shape[0],
             "output_dim": 1,
             "output_activation": self.output_activation,
-            "layernorm_affine": self.norm.elementwise_affine,
             "parameters": sum(parameter.numel() for parameter in self.parameters()),
             "trainable_parameters": sum(parameter.numel() for parameter in self.parameters() if parameter.requires_grad),
         }
@@ -57,11 +51,7 @@ class NormalizedLinearRegressionHead(nn.Module):
 def build_head(settings: Any, feature_dim: int) -> NormalizedLinearRegressionHead:
     if settings.head_type != "normalized_linear_regression":
         raise ValueError("Only normalized_linear_regression is supported")
-    head = NormalizedLinearRegressionHead(
-        feature_dim,
-        settings.head_output_activation,
-        settings.head_layernorm_affine,
-    )
+    head = NormalizedLinearRegressionHead(feature_dim, settings.head_output_activation)
     head.task_name = settings.task_name
     return head
 

@@ -27,43 +27,38 @@ ENV_REFERENCE = re.compile(r"\$(?:\{([A-Za-z_][A-Za-z0-9_]*)\}|([A-Za-z_][A-Za-z
 @dataclass
 class Settings:
     config_version: int = 4
-    experiment_name: str = "qwen3_vl_2b_kadid10k_mos_multimodal_electronic_router_moe16_224"
-    dataset: str = "kadid10k_mos"
-    task_name: str = "DMOS"
-    data_root: Path = PROJECT_DIR.parent.parent / "data" / "kadid10k"
+    experiment_name: str = "qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe16_224_1layer_baseline"
+    dataset: str = "spaq_single_attribute"
+    task_name: str = "MOS"
+    data_root: Path = PROJECT_DIR.parent.parent / "data" / "SPAQ"
     annotations_file: Path | None = None
     image_dir: Path | None = None
     download: bool = True
-    download_source: str = "official_url"
-    download_repo_id: str = ""
-    download_filename: str = "kadid10k.zip"
-    download_endpoint: str | None = None
-    download_url: str | None = "https://datasets.vqa.mmsp-kn.de/archives/kadid10k.zip"
+    download_source: str = "huggingface"
+    download_repo_id: str = "chaofengc/IQA-PyTorch-Datasets"
+    download_filename: str = "spaq.tgz"
+    download_endpoint: str | None = "https://hf-mirror.com"
+    download_url: str | None = None
     keep_download_archive: bool = False
-    require_official_counts: bool = True
-    official_reference_images: int = 81
-    official_distorted_images: int = 10125
-    quality_score_min: float = 1.0
-    quality_score_max: float = 5.0
-    train_fraction: float = 0.8
+    train_fraction: float = 0.9
     train_image_limit: int | None = None
     test_image_limit: int | None = None
     train_samples_per_epoch: int | None = None
     train_epoch_partitions: int | None = None
-    output_dir: Path = PROJECT_DIR / "runs" / "qwen3_vl_2b_kadid10k_mos_multimodal_electronic_router_moe16_224"
+    output_dir: Path = PROJECT_DIR / "runs" / "qwen3_vl_2b_spaq_mos_multimodal_electronic_router_moe16_224_1layer_baseline"
     precompute_cache_dir: Path = PROJECT_DIR / "cache"
     model_id: str = MODEL_ID
     cache_dir: Path | None = None
     local_files_only: bool = False
-    processor_min_pixels: int = 37632
-    processor_max_pixels: int = 37632
-    classification_prompt: str = TASK_PROMPTS["DMOS"]
-    feature_batch_size: int = 1
-    student_batch_size: int = 1
-    inference_batch_size: int = 1
+    processor_min_pixels: int = 25600
+    processor_max_pixels: int = 25600
+    classification_prompt: str = TASK_PROMPTS["MOS"]
+    feature_batch_size: int = 4
+    student_batch_size: int = 8
+    inference_batch_size: int = 8
     head_batch_size: int = 512
     teacher_cache_shard_size: int = 128
-    teacher_cache_lru_shards: int = 8
+    teacher_cache_lru_shards: int = 128
     teacher_cache_log_interval_batches: int = 100
     num_workers: int = 8
     cpu_threads: int = 4
@@ -72,11 +67,11 @@ class Settings:
     dtype: str = "bfloat16"
     attn_implementation: str = "sdpa"
     device: str = "cuda"
-    epochs: int = 30
+    epochs: int = 100
     validation_fraction: float = 0.1
-    learning_rate: float = 5e-4
+    learning_rate: float = 8e-3
     adapter_learning_rate: float | None = None
-    weight_decay: float = 1e-2
+    weight_decay: float = 0.0
     phase_weight_decay: float = 0.0
     optimizer_type: str = "adamw"
     scheduler_type: str = "cosine"
@@ -85,7 +80,6 @@ class Settings:
     sam_adaptive: bool = False
     head_type: str = "normalized_linear_regression"
     head_output_activation: str = "linear"
-    head_layernorm_affine: bool = True
     student_head_learning_rate: float = 1e-3
     dropout: float = 0.0
     input_adapter_dim: int = 224
@@ -98,7 +92,9 @@ class Settings:
     transformer_residual_enabled: bool = True
     vision_attention_source_layer: int = 0
     language_attention_source_layer: int = 0
-    vision_tap_stages: tuple[int, int, int] = (1, 2, 3)
+    # The single physical expert stage supplies exactly one auxiliary
+    # DeepStack feature; the post-global output remains the main vision output.
+    vision_tap_stages: tuple[int, ...] = (1,)
     canvas_size: int = 1026
     active_size: int = 986
     expert_size: int = 224
@@ -117,9 +113,9 @@ class Settings:
     amplitude_slm_weight_domain: str = "amplitude"
     amplitude_slm_input_normalization: str = "none"
     amplitude_phase_relay: str = "ideal_4f_identity"
-    expert_layers: int = 4
+    expert_layers: int = 1
     wavelength_nm: float = 532.0
-    pixel_pitch_um: float = 16.0
+    pixel_pitch_um: float = 8.0
     expert_interlayer_distance_m: float = 0.10
     last_expert_to_global_distance_m: float = 0.10
     global_to_detector_distance_m: float = 0.10
@@ -145,7 +141,7 @@ class Settings:
     loss_hidden_weight: float = 1.0
     loss_answer_weight: float = 1.0
     loss_prediction_distill_weight: float = 0.5
-    loss_regression_weight: float = 0.5
+    loss_regression_weight: float = 1.0
     loss_ranking_weight: float = 0.0
     ranking_margin: float = 0.02
     ranking_temperature: float = 0.1
@@ -154,10 +150,10 @@ class Settings:
     norm_in_norm_q: float = 2.0
     norm_in_norm_eps: float = 1e-8
     smooth_l1_beta: float = 0.1
-    router_balance_weight: float = 0.1
+    router_balance_weight: float = 0.03
     router_importance_weight: float = 0.0
-    log_interval_batches: int = 100
-    checkpoint_interval_epochs: int = 1
+    log_interval_batches: int = 4000
+    checkpoint_interval_epochs: int = 10
     student_selection_split: str = "test"
     student_selection_metric: str = "srcc"
     teacher_artifact_source_run_dir: Path | None = None
@@ -169,7 +165,7 @@ class Settings:
     phase_dropout_enabled: bool = False
     phase_dropout_mode: str = "none"
     phase_dropout_p: float = 0.0
-    phase_dropout_block_size: int = 8
+    phase_dropout_block_size: int = 4
     phase_dropout_batch_shared: bool = True
     phase_dropout_start_epoch: int = 0
     visualization_enabled: bool = True
@@ -193,8 +189,8 @@ class Settings:
     def validate(self) -> None:
         if self.config_version != 4:
             raise ValueError("config_version must be 4 for the MoE16-224 electronic-router schema")
-        if self.dataset != "kadid10k_mos":
-            raise ValueError("This experiment requires dataset='kadid10k_mos'")
+        if self.dataset != "spaq_single_attribute":
+            raise ValueError("This experiment requires dataset='spaq_single_attribute'")
         if self.task_name not in SUPPORTED_TASKS:
             raise ValueError(f"task_name must be one of {SUPPORTED_TASKS}, got {self.task_name!r}")
         if not self.classification_prompt.strip():
@@ -219,14 +215,19 @@ class Settings:
             raise ValueError("optimizer weight decay values must be non-negative")
         if self.sam_enabled and self.sam_rho <= 0:
             raise ValueError("optimizer.sam.rho must be positive when SAM is enabled")
-        if self.download_source != "official_url":
-            raise ValueError("KADID-10k download_source must be official_url")
-        if self.download and (not self.download_url or not self.download_filename.strip()):
-            raise ValueError("KADID-10k automatic download requires download_url and download_filename")
-        if self.official_reference_images <= 0 or self.official_distorted_images <= 0:
-            raise ValueError("Official KADID counts must be positive")
-        if not self.quality_score_min < self.quality_score_max:
-            raise ValueError("dataset quality_score_min must be below quality_score_max")
+        if self.sam_enabled:
+            raise ValueError("The shareable one-layer baseline fixes optimizer.sam.enabled=false")
+        if self.weight_decay != 0.0 or self.phase_weight_decay != 0.0:
+            raise ValueError("The shareable one-layer baseline fixes all weight decay to 0")
+        if not self.transformer_residual_enabled:
+            raise ValueError("The one-layer baseline retains the fixed Transformer-style residual")
+        if self.download_source not in {"huggingface", "google_drive"}:
+            raise ValueError("download_source must be huggingface or google_drive")
+        if self.download and self.download_source == "huggingface" and (
+                not self.download_repo_id.strip() or not self.download_filename.strip()):
+            raise ValueError("download_repo_id and download_filename must be non-empty")
+        if self.download and self.download_source == "google_drive" and not self.download_url:
+            raise ValueError("download_url is required for google_drive")
         if not 0.0 < self.train_fraction < 1.0:
             raise ValueError("dataset.train_fraction must be in (0,1)")
         if self.processor_min_pixels <= 0 or self.processor_max_pixels <= 0:
@@ -256,12 +257,13 @@ class Settings:
             raise ValueError("The propagation canvas must add 20 zero-padding pixels on each side")
         if self.input_adapter_dim != 224 or self.max_visual_tokens != 224 or self.max_language_tokens != 224:
             raise ValueError("Direct token-row mapping requires optical_channels=max token rows=224")
-        if len(self.vision_tap_stages) != 3 or any(stage < 1 or stage > self.expert_layers for stage in self.vision_tap_stages):
-            raise ValueError("vision_adapter.tap_stages must contain three 1-based stages within the four-stage MoE")
-        if tuple(sorted(self.vision_tap_stages)) != tuple(self.vision_tap_stages):
-            raise ValueError("vision_adapter.tap_stages must be ordered")
-        if self.expert_layers != 4 or self.top_k != 4:
-            raise ValueError("The experiment requires four expert stages and top_k=4")
+        if self.vision_tap_stages != (1,):
+            raise ValueError(
+                "The one-layer baseline requires exactly one auxiliary "
+                "DeepStack tap from expert stage 1"
+            )
+        if self.expert_layers != 1 or self.top_k != 4:
+            raise ValueError("The baseline requires one expert phase stage and top_k=4")
         if self.router_input_layernorm_eps <= 0:
             raise ValueError("router.input_layernorm_eps must be positive")
         if self.router_learning_rate <= 0:
@@ -302,6 +304,8 @@ class Settings:
             raise ValueError("phase_dropout.p must be in [0,1)")
         if self.phase_dropout_enabled and (self.phase_dropout_mode == "none" or self.phase_dropout_p <= 0.0):
             raise ValueError("Enabled phase dropout requires a non-none mode and p > 0")
+        if self.phase_dropout_enabled or self.phase_dropout_mode != "none" or self.phase_dropout_p != 0.0:
+            raise ValueError("The shareable one-layer baseline fixes phase dropout off")
         if self.cache_dtype not in {"float16", "float32"} or self.dtype not in {"bfloat16", "float16", "float32"}:
             raise ValueError("Unsupported dtype/cache_dtype")
         if not 0.0 < self.validation_fraction < 1.0 or self.smooth_l1_beta <= 0:
@@ -314,16 +318,10 @@ class Settings:
             self.student_initialization_expected_epoch,
         )
         if any(value is not None for value in initialization_values):
-            if self.student_initialization_run_dir is None or not self.student_initialization_tag:
-                raise ValueError(
-                    "training.initialization requires both source_run_dir and checkpoint_tag"
-                )
-            if self.student_initialization_expected_epoch is not None and self.student_initialization_expected_epoch <= 0:
-                raise ValueError("training.initialization.expected_epoch must be positive")
-            if not self.student_initialization_reset_optimizer:
-                raise ValueError(
-                    "This fine-tuning implementation intentionally resets optimizer/scheduler state"
-                )
+            raise ValueError(
+                "The shareable one-layer baseline starts from a fresh student; "
+                "historical student checkpoint initialization is disabled"
+            )
         for name in ("wavelength_nm", "pixel_pitch_um", "expert_interlayer_distance_m",
                      "last_expert_to_global_distance_m", "global_to_detector_distance_m"):
             if float(getattr(self, name)) <= 0:
@@ -359,6 +357,8 @@ class Settings:
         ):
             if float(getattr(self, name)) < 0:
                 raise ValueError(f"{name} must be non-negative")
+        if self.loss_ranking_weight != 0.0 or self.loss_norm_in_norm_weight != 0.0:
+            raise ValueError("The baseline disables ranking and Norm-in-Norm auxiliary losses")
         if self.ranking_margin < 0:
             raise ValueError("loss.ranking.margin must be non-negative")
         if self.ranking_temperature <= 0:
@@ -406,11 +406,6 @@ NESTED_FIELDS: dict[tuple[str, ...], str] = {
     ("dataset", "download_source"): "download_source", ("dataset", "download_repo_id"): "download_repo_id",
     ("dataset", "download_filename"): "download_filename", ("dataset", "download_endpoint"): "download_endpoint",
     ("dataset", "download_url"): "download_url", ("dataset", "keep_download_archive"): "keep_download_archive",
-    ("dataset", "require_official_counts"): "require_official_counts",
-    ("dataset", "official_reference_images"): "official_reference_images",
-    ("dataset", "official_distorted_images"): "official_distorted_images",
-    ("dataset", "quality_score_min"): "quality_score_min",
-    ("dataset", "quality_score_max"): "quality_score_max",
     ("dataset", "train_fraction"): "train_fraction", ("dataset", "train_image_limit"): "train_image_limit",
     ("dataset", "test_image_limit"): "test_image_limit",
     ("dataset", "train_samples_per_epoch"): "train_samples_per_epoch",
@@ -484,7 +479,6 @@ NESTED_FIELDS: dict[tuple[str, ...], str] = {
     ("moe", "final_detector_readout", "nonlinearity"): "detector_nonlinearity",
     ("classification_head", "type"): "head_type",
     ("classification_head", "output_activation"): "head_output_activation",
-    ("classification_head", "layernorm_affine"): "head_layernorm_affine",
     ("classification_head", "dropout"): "dropout",
     ("loss", "vision_hidden_weight"): "loss_hidden_weight",
     ("loss", "answer_hidden_weight"): "loss_answer_weight",

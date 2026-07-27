@@ -1,41 +1,37 @@
 {
   "config_version": 4,
   "experiment": {
-    "name": "qwen3_vl_2b_kadid10k_mos_multimodal_electronic_router_moe16_224",
-    "output_dir": "../runs/qwen3_vl_2b_kadid10k_mos_multimodal_electronic_router_moe16_224",
+    "name": "qwen3_vl_2b_spaq_mos_multimodal_electronic_router_moe16_224_1layer_baseline",
+    "output_dir": "../runs/qwen3_vl_2b_spaq_mos_multimodal_electronic_router_moe16_224_1layer_baseline",
     "seed": 42
   },
   "dataset": {
-    "name": "kadid10k_mos",
-    "task_name": "DMOS",
-    "data_root": "../../../data/kadid10k",
+    "name": "spaq_single_attribute",
+    "task_name": "MOS",
+    "data_root": "../../../data/SPAQ",
     "annotations_file": null,
     "image_dir": null,
     "download": true,
-    "download_source": "official_url",
-    "download_filename": "kadid10k.zip",
-    "download_url": "https://datasets.vqa.mmsp-kn.de/archives/kadid10k.zip",
+    "download_source": "huggingface",
+    "download_repo_id": "chaofengc/IQA-PyTorch-Datasets",
+    "download_filename": "spaq.tgz",
+    "download_endpoint": "https://hf-mirror.com",
+    "download_url": null,
     "keep_download_archive": false,
-    "require_official_counts": true,
-    "official_reference_images": 81,
-    "official_distorted_images": 10125,
-    "quality_score_min": 1.0,
-    "quality_score_max": 5.0,
-    "train_fraction": 0.8,
+    "train_fraction": 0.9,
     "train_image_limit": null,
     "test_image_limit": null,
     "train_samples_per_epoch": null,
-    "train_epoch_partitions": 3,
     "validation_fraction": 0.1
   },
   "qwen": {
     "model_id": "Qwen/Qwen3-VL-2B-Instruct",
     "cache_dir": null,
     "local_files_only": false,
-    "classification_prompt": "Predict the human-rated perceptual quality of this artificially distorted image on a 1-5 scale. Score:",
+    "classification_prompt": "Predict the human-rated overall perceptual quality of this image on a 0-100 scale. Score:",
     "processor": {
-      "min_pixels": 37632,
-      "max_pixels": 37632
+      "min_pixels": 25600,
+      "max_pixels": 25600
     },
     "runtime": {
       "dtype": "bfloat16",
@@ -80,7 +76,7 @@
   "vision_adapter": {
     "optical_channels": 224,
     "max_visual_tokens": 224,
-    "tap_stages": [1, 2, 3]
+    "tap_stages": [1]
   },
   "language_adapter": {
     "max_language_tokens": 224
@@ -94,14 +90,14 @@
       "expert_pitch": 254,
       "grid_rows": 4,
       "grid_cols": 4,
-      "layers_per_expert": 4
+      "layers_per_expert": 1
     },
     "router": {
       "implementation": "electronic_amplitude_topk",
       "top_k": 4,
       "pool_size": 14,
       "temperature": 1.0,
-      "learning_rate": 0.0002,
+      "learning_rate": 0.001,
       "input_layernorm_enabled": true,
       "input_layernorm_eps": 0.00001,
       "amplitude_slm": {
@@ -150,7 +146,6 @@
   "classification_head": {
     "type": "normalized_linear_regression",
     "output_activation": "linear",
-    "layernorm_affine": true,
     "dropout": 0.0
   },
   "loss": {
@@ -158,59 +153,47 @@
     "answer_hidden_weight": 1.0,
     "prediction_distill_weight": 0.5,
     "regression_weight": 1.0,
-    "ranking_weight": 0.1,
-    "ranking": {
-      "margin": 0.025,
-      "temperature": 0.1
-    },
-    "norm_in_norm_weight": 0.1,
-    "norm_in_norm": {
-      "p": 1.0,
-      "q": 2.0,
-      "eps": 1e-8
-    },
     "smooth_l1_beta": 0.1,
-    "router_balance_weight": 0.01,
+    "router_balance_weight": 0.03,
     "router_importance_weight": 0.0
   },
   "optimizer": {
     "type": "adamw",
-    "learning_rate": 0.002,
-    "adapter_learning_rate": 0.0005,
+    "learning_rate": 0.008,
     "attention_learning_rate": 0.0001,
     "student_head_learning_rate": 0.001,
-    "weight_decay": 0.0005,
+    "weight_decay": 0.0,
     "phase_weight_decay": 0.0,
-    "scheduler": "cosine",
     "sam": {
       "enabled": false,
       "rho": 0.05,
       "adaptive": false
-    }
+    },
+    "scheduler": "cosine"
   },
   "training": {
     "epochs": 100,
     "progress": true,
     "logging": {
-      "interval_batches": 200
+      "interval_batches": 4000
     },
-    "checkpoint_interval_epochs": 3,
+    "checkpoint_interval_epochs": 10,
     "student_selection_split": "test",
     "student_selection_metric": "srcc"
   },
   "regularization": {
     "phase_dropout": {
-      "enabled": true,
-      "mode": "block_phase_bypass",
-      "p": 0.02,
-      "block_size": 8,
+      "enabled": false,
+      "mode": "none",
+      "p": 0.0,
+      "block_size": 4,
       "batch_shared": true,
-      "start_epoch": 5
+      "start_epoch": 0
     }
   },
   "visualization": {
     "enabled": true,
-    "interval_epochs": 6,
+    "interval_epochs": 10,
     "sample_count": 4,
     "save_intermediate_fields": true,
     "save_phase_masks": true,

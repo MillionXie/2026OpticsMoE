@@ -442,3 +442,31 @@ def test_regression_head_shape_and_backward() -> None:
         beta=settings.smooth_l1_beta,
     ).backward()
     assert all(parameter.grad is not None for parameter in head.parameters())
+
+
+def test_task_driven_config_removes_regularizers_and_affine_head_scale() -> None:
+    settings = load_settings(CONFIGS / "kadid10k_mos_task_driven_no_sam_no_wd.json")
+    assert settings.optimizer_type == "adam"
+    assert settings.weight_decay == 0.0
+    assert settings.phase_weight_decay == 0.0
+    assert not settings.sam_enabled
+    assert not settings.phase_dropout_enabled
+    assert settings.loss_hidden_weight == 0.1
+    assert settings.loss_answer_weight == 0.1
+    assert settings.loss_prediction_distill_weight == 0.1
+    assert settings.loss_regression_weight == 1.0
+    assert settings.loss_ranking_weight == 0.25
+
+    head = build_head(settings, 2048)
+    assert not head.norm.elementwise_affine
+    assert head.norm.weight is None
+    assert head.norm.bias is None
+    assert sum(parameter.numel() for parameter in head.parameters()) == 2049
+    prediction = head(torch.randn(4, 2048))
+    torch.nn.functional.smooth_l1_loss(
+        prediction,
+        torch.rand(4),
+        beta=settings.smooth_l1_beta,
+    ).backward()
+    assert head.regressor.weight.grad is not None
+    assert head.regressor.bias.grad is not None
