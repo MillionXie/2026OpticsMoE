@@ -106,6 +106,7 @@ class Settings:
     gallery_prototype_stop_gradient: bool
     router_learning_rate: float | None
     phase_learning_rate: float | None
+    ema_decay: float | None
     resume_optimizer_state: bool
     random_seed: int
     amp_enabled: bool
@@ -303,6 +304,8 @@ class Settings:
             raise ValueError("router_learning_rate must be positive when configured")
         if self.phase_learning_rate is not None and self.phase_learning_rate <= 0:
             raise ValueError("phase_learning_rate must be positive when configured")
+        if self.ema_decay is not None and not 0.0 < self.ema_decay < 1.0:
+            raise ValueError("ema_decay must be strictly between 0 and 1 when configured")
         if self.gallery_aggregation == "mean_prototype" and self.gallery_images_per_sku < 1:
             raise ValueError("mean_prototype needs at least one gallery image")
 
@@ -367,6 +370,7 @@ class Settings:
                 ),
                 "router_learning_rate": self.router_learning_rate,
                 "phase_learning_rate": self.phase_learning_rate,
+                "ema_decay": self.ema_decay,
                 "resume_optimizer_state": self.resume_optimizer_state,
                 "random_seed": self.random_seed,
                 "amp_enabled": self.amp_enabled,
@@ -516,6 +520,11 @@ def load_settings(path: str | Path) -> Settings:
             None
             if d("training.phase_learning_rate") is None
             else float(d("training.phase_learning_rate"))
+        ),
+        ema_decay=(
+            None
+            if d("training.ema_decay") is None
+            else float(d("training.ema_decay"))
         ),
         resume_optimizer_state=bool(d("training.resume_optimizer_state", True)),
         random_seed=int(d("training.random_seed", 42)),

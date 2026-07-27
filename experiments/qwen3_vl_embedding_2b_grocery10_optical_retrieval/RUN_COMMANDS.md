@@ -80,6 +80,12 @@ Run the stronger packaging-safe augmentation continuation:
 CUDA_VISIBLE_DEVICES=5 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_replaced_continue_epoch141_stronger_augmentation.yaml --phase train --resume-checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/qwen3_vl_embedding_2b_grocery10_replaced_finetune/best_train_loss_checkpoint.pt
 ```
 
+Run stronger augmentation with an EMA copy of all Student weights:
+
+```bash
+CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_replaced_continue_epoch141_stronger_augmentation_ema.yaml --phase train --resume-checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/qwen3_vl_embedding_2b_grocery10_replaced_finetune/best_train_loss_checkpoint.pt
+```
+
 ## Phases
 
 Prepare/download the official Grocery Store Dataset and write the fixed subset manifest:

@@ -6,6 +6,7 @@ import math
 import shutil
 import time
 from collections import defaultdict
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Iterator, Sequence
 
@@ -393,6 +394,47 @@ def _build_optimizer(
     return optimizer, parameters
 
 
+@torch.no_grad()
+def initialize_parameter_ema(
+    parameters: Sequence[nn.Parameter],
+) -> list[torch.Tensor]:
+    return [parameter.detach().float().clone() for parameter in parameters]
+
+
+@torch.no_grad()
+def update_parameter_ema(
+    ema_parameters: Sequence[torch.Tensor],
+    parameters: Sequence[nn.Parameter],
+    decay: float,
+) -> None:
+    if len(ema_parameters) != len(parameters):
+        raise ValueError("EMA and live parameter lists have different lengths")
+    if not 0.0 < decay < 1.0:
+        raise ValueError("EMA decay must be strictly between 0 and 1")
+    for ema, parameter in zip(ema_parameters, parameters):
+        ema.mul_(decay).add_(parameter.detach().float(), alpha=1.0 - decay)
+
+
+@contextmanager
+def use_parameter_ema(
+    parameters: Sequence[nn.Parameter],
+    ema_parameters: Sequence[torch.Tensor],
+) -> Iterator[None]:
+    """Temporarily install EMA weights and restore live weights afterwards."""
+    if len(ema_parameters) != len(parameters):
+        raise ValueError("EMA and live parameter lists have different lengths")
+    backups = [parameter.detach().clone() for parameter in parameters]
+    try:
+        with torch.no_grad():
+            for parameter, ema in zip(parameters, ema_parameters):
+                parameter.copy_(ema.to(dtype=parameter.dtype))
+        yield
+    finally:
+        with torch.no_grad():
+            for parameter, backup in zip(parameters, backups):
+                parameter.copy_(backup)
+
+
 def save_checkpoint(
     path: Path,
     replacement: DeepStackMultimodalReplacement,
@@ -401,6 +443,8 @@ def save_checkpoint(
     epoch: int,
     train_loss: float,
     settings: Settings,
+    *,
+    weight_variant: str = "live",
 ) -> None:
     payload = {
         "checkpoint_version": 2,
@@ -424,6 +468,7 @@ def save_checkpoint(
             "optical_architecture": "one_expert_stage_plus_one_global_phase",
             "selection_criterion": "minimum_training_total_loss",
             "test_metrics_used_for_selection": False,
+            "weight_variant": weight_variant,
             "training_objective": {
                 "lambda_kd": settings.lambda_kd,
                 "lambda_relational_kd": settings.lambda_relational_kd,
@@ -441,6 +486,7 @@ def save_checkpoint(
             "learning_rate": settings.learning_rate,
             "router_learning_rate": settings.router_learning_rate,
             "phase_learning_rate": settings.phase_learning_rate,
+            "ema_decay": settings.ema_decay,
         },
     }
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -573,6 +619,7 @@ def train_optical_retrieval(
         "base_learning_rate": settings.learning_rate,
         "router_learning_rate": settings.router_learning_rate,
         "phase_learning_rate": settings.phase_learning_rate,
+        "ema_decay": settings.ema_decay,
     }
     write_json(settings.output_dir / "model.json", report)
     loaded.model.eval()
@@ -607,6 +654,9 @@ def train_optical_retrieval(
         "test_top1",
         "test_top3",
         "test_mrr",
+        "ema_test_top1",
+        "ema_test_top3",
+        "ema_test_mrr",
         "checkpoint_selected_by",
     ]
     rows: list[dict[str, Any]] = (
@@ -624,6 +674,11 @@ def train_optical_retrieval(
             )
     amp_dtype = torch.bfloat16 if settings.dtype == "bfloat16" else torch.float16
     use_amp = settings.amp_enabled and loaded.device.type == "cuda"
+    ema_parameters = (
+        initialize_parameter_ema(parameters)
+        if settings.ema_decay is not None
+        else None
+    )
     end_epoch = start_epoch + settings.epochs - 1
     for epoch in range(start_epoch, end_epoch + 1):
         sampler.set_epoch(epoch)
@@ -797,6 +852,10 @@ def train_optical_retrieval(
             if bad_gradients:
                 raise RuntimeError(f"Non-finite gradients in trainable tensors {bad_gradients}")
             optimizer.step()
+            if ema_parameters is not None:
+                update_parameter_ema(
+                    ema_parameters, parameters, float(settings.ema_decay)
+                )
             count = query_count
             totals["total"] += float(total.detach()) * count
             totals["kd"] += float(kd.detach()) * count
@@ -870,6 +929,18 @@ def train_optical_retrieval(
                 bundle.class_names,
                 settings,
             )
+        ema_test_metrics: dict[str, Any] = {}
+        if ema_parameters is not None and settings.evaluate_test_each_epoch:
+            with use_parameter_ema(parameters, ema_parameters):
+                ema_test_metrics = evaluate_student_split(
+                    loaded,
+                    replacement,
+                    readout,
+                    bundle.test_samples,
+                    bundle.gallery_samples,
+                    bundle.class_names,
+                    settings,
+                )
         row = {
             "epoch": epoch,
             "learning_rate": optimizer.param_groups[0]["lr"],
@@ -900,6 +971,9 @@ def train_optical_retrieval(
             "test_top1": test_metrics.get("top1_retrieval_accuracy"),
             "test_top3": test_metrics.get("top3_retrieval_accuracy"),
             "test_mrr": test_metrics.get("mrr"),
+            "ema_test_top1": ema_test_metrics.get("top1_retrieval_accuracy"),
+            "ema_test_top3": ema_test_metrics.get("top3_retrieval_accuracy"),
+            "ema_test_mrr": ema_test_metrics.get("mrr"),
             "checkpoint_selected_by": "training_total_loss",
         }
         rows.append(row)
@@ -914,6 +988,18 @@ def train_optical_retrieval(
             average_total,
             settings,
         )
+        if ema_parameters is not None:
+            with use_parameter_ema(parameters, ema_parameters):
+                save_checkpoint(
+                    settings.output_dir / "ema_last_checkpoint.pt",
+                    replacement,
+                    readout,
+                    optimizer,
+                    epoch,
+                    average_total,
+                    settings,
+                    weight_variant="ema",
+                )
         if average_total < best_train_loss:
             best_train_loss = average_total
             continuation_checkpoint_name = (
@@ -937,6 +1023,18 @@ def train_optical_retrieval(
                 average_total,
                 settings,
             )
+            if ema_parameters is not None:
+                with use_parameter_ema(parameters, ema_parameters):
+                    save_checkpoint(
+                        settings.output_dir / "ema_best_train_loss_checkpoint.pt",
+                        replacement,
+                        readout,
+                        optimizer,
+                        epoch,
+                        average_total,
+                        settings,
+                        weight_variant="ema",
+                    )
             write_json(
                 settings.output_dir / "metrics" / best_metrics_name,
                 {
@@ -964,6 +1062,8 @@ def train_optical_retrieval(
             f"train_top1="
             f"{train_top1 if train_top1 is not None else float('nan'):.4f} "
             f"test_top1={test_metrics.get('top1_retrieval_accuracy', float('nan')):.4f} "
+            f"ema_test_top1="
+            f"{ema_test_metrics.get('top1_retrieval_accuracy', float('nan')):.4f} "
             f"best_train_loss={best_train_loss:.5f}"
         )
     return {

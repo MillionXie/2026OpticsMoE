@@ -42,7 +42,10 @@ from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.train_optical
     embedding_distillation_loss,
     gallery_retrieval_logits,
     gallery_retrieval_loss,
+    initialize_parameter_ema,
     relational_embedding_distillation_loss,
+    update_parameter_ema,
+    use_parameter_ema,
     retrieval_ranking_sums,
     select_gallery_items_for_queries,
     supervised_contrastive_loss,
@@ -238,6 +241,30 @@ def test_stronger_augmentation_remains_packaging_safe() -> None:
     assert settings.contrast_jitter == 0.20
     assert settings.rotation_degrees == 10.0
     assert settings.phase_learning_rate == 1.0e-6
+
+
+def test_parameter_ema_updates_and_restores_live_weights() -> None:
+    parameter = nn.Parameter(torch.tensor([1.0, 3.0]))
+    ema = initialize_parameter_ema([parameter])
+    with torch.no_grad():
+        parameter.copy_(torch.tensor([3.0, 7.0]))
+    update_parameter_ema(ema, [parameter], decay=0.5)
+    assert torch.equal(ema[0], torch.tensor([2.0, 5.0]))
+    live = parameter.detach().clone()
+    with use_parameter_ema([parameter], ema):
+        assert torch.equal(parameter.detach(), torch.tensor([2.0, 5.0]))
+    assert torch.equal(parameter.detach(), live)
+
+
+def test_stronger_augmentation_ema_config() -> None:
+    settings = load_settings(
+        EXPERIMENT
+        / "configs"
+        / "grocery10_replaced_continue_epoch141_stronger_augmentation_ema.yaml"
+    )
+    assert settings.ema_decay == 0.99
+    assert settings.crop_scale_min == 0.75
+    assert settings.output_dir.name.endswith("stronger_augmentation_ema")
 
 
 def test_gallery_coverage_selection_is_train_only_and_deterministic(
