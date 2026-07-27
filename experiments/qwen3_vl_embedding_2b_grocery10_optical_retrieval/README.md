@@ -252,3 +252,7 @@ model.json
   `batch_size`，并保持 `batch_size=P×K`、`K≥2`。
 
 数据或模型不可用时会明确报错，不会回退到合成数据、其他 Grocery 数据集或分类任务。
+`grocery10_replaced_continue_epoch141_augmented_kd.yaml` 是独立的泛化续训：
+从替换后 10-SKU 的 epoch-141 最低训练损失权重出发，使用更低学习率、
+更高 Teacher KD 权重，以及仍然保留包装文字/颜色的中等强度裁剪、亮度、
+对比度和小角度旋转。它不使用水平翻转、MixUp、CutMix、强模糊或擦除。

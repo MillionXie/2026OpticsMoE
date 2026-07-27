@@ -96,6 +96,26 @@ def test_replaced_ten_sku_finetune_config() -> None:
     assert settings.dataset_variant == "grocery10"
 
 
+def test_epoch141_generalization_continuation_config() -> None:
+    settings = load_settings(
+        EXPERIMENT
+        / "configs"
+        / "grocery10_replaced_continue_epoch141_augmented_kd.yaml"
+    )
+    assert settings.epochs == 100
+    assert 141 + settings.epochs == 241
+    assert settings.learning_rate == 1.0e-5
+    assert settings.router_learning_rate == 2.0e-5
+    assert settings.lambda_kd == 8.0
+    assert settings.lambda_gallery == 0.25
+    assert settings.crop_scale_min == 0.85
+    assert settings.brightness_jitter == 0.15
+    assert settings.contrast_jitter == 0.15
+    assert settings.rotation_degrees == 7.0
+    assert not settings.resume_optimizer_state
+    assert settings.output_dir.name.endswith("epoch141_augmented_kd")
+
+
 def test_continuation_config_adds_gallery_negatives_and_router_recovery() -> None:
     settings = load_settings(
         EXPERIMENT / "configs" / "grocery10_continue100.yaml"
