@@ -96,7 +96,12 @@ class Settings:
     weight_decay: float
     lambda_kd: float
     lambda_ret: float
+    lambda_gallery: float
+    lambda_router_balance: float
+    lambda_router_importance: float
     temperature: float
+    router_learning_rate: float | None
+    resume_optimizer_state: bool
     random_seed: int
     amp_enabled: bool
     evaluate_test_each_epoch: bool
@@ -264,10 +269,23 @@ class Settings:
             )
         if self.phase_dropout_mode != "none" or self.phase_dropout_p != 0.0:
             raise ValueError("Phase dropout is disabled for the initial retrieval experiment")
-        if self.lambda_kd < 0 or self.lambda_ret < 0 or self.lambda_kd + self.lambda_ret <= 0:
-            raise ValueError("At least one non-negative retrieval loss weight must be positive")
+        loss_weights = (
+            self.lambda_kd,
+            self.lambda_ret,
+            self.lambda_gallery,
+            self.lambda_router_balance,
+            self.lambda_router_importance,
+        )
+        if any(value < 0 for value in loss_weights):
+            raise ValueError("All training loss weights must be non-negative")
+        if self.lambda_kd + self.lambda_ret + self.lambda_gallery <= 0:
+            raise ValueError(
+                "At least one of lambda_kd, lambda_ret, or lambda_gallery must be positive"
+            )
         if self.temperature <= 0:
             raise ValueError("temperature must be positive")
+        if self.router_learning_rate is not None and self.router_learning_rate <= 0:
+            raise ValueError("router_learning_rate must be positive when configured")
         if self.gallery_aggregation == "mean_prototype" and self.gallery_images_per_sku < 1:
             raise ValueError("mean_prototype needs at least one gallery image")
 
@@ -320,7 +338,12 @@ class Settings:
                 "weight_decay": self.weight_decay,
                 "lambda_kd": self.lambda_kd,
                 "lambda_ret": self.lambda_ret,
+                "lambda_gallery": self.lambda_gallery,
+                "lambda_router_balance": self.lambda_router_balance,
+                "lambda_router_importance": self.lambda_router_importance,
                 "temperature": self.temperature,
+                "router_learning_rate": self.router_learning_rate,
+                "resume_optimizer_state": self.resume_optimizer_state,
                 "random_seed": self.random_seed,
                 "amp_enabled": self.amp_enabled,
                 "evaluate_test_each_epoch": self.evaluate_test_each_epoch,
@@ -448,7 +471,16 @@ def load_settings(path: str | Path) -> Settings:
         weight_decay=float(d("training.weight_decay", 0.0)),
         lambda_kd=float(d("training.lambda_kd", 1.0)),
         lambda_ret=float(d("training.lambda_ret", 1.0)),
+        lambda_gallery=float(d("training.lambda_gallery", 0.0)),
+        lambda_router_balance=float(d("training.lambda_router_balance", 0.0)),
+        lambda_router_importance=float(d("training.lambda_router_importance", 0.0)),
         temperature=float(d("training.temperature", 0.07)),
+        router_learning_rate=(
+            None
+            if d("training.router_learning_rate") is None
+            else float(d("training.router_learning_rate"))
+        ),
+        resume_optimizer_state=bool(d("training.resume_optimizer_state", True)),
         random_seed=int(d("training.random_seed", 42)),
         amp_enabled=bool(d("training.amp_enabled", True)),
         evaluate_test_each_epoch=bool(d("training.evaluate_test_each_epoch", True)),

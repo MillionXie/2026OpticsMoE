@@ -111,6 +111,35 @@ L     = lambda_kd * L_kd + lambda_ret * L_ret
 默认 `lambda_kd=1`、`lambda_ret=1`、temperature `0.07`。不使用分类 CE、
 teacher logits、生成 loss 或 test loss。
 
+## Epoch 50 后的修复性续训
+
+首轮 50 epoch 使用普通 PK-batch supervised contrastive loss：每批
+`10 SKU × 4 images`，因此每个 anchor 有 3 个同 SKU 正例和 36 个异
+SKU 反例。它并非没有反例，但标准 gallery 图片只参与评测，没有进入
+Student 训练；同时未启用 router 均衡损失，容易出现专家塌缩。
+
+`configs/grocery10_continue100.yaml` 用于从已有 epoch-50 权重继续 100
+个 epoch，并针对这两个问题进行修复：
+
+- 每批为 30 张自然图（`10×3`）加 10 张固定标准 gallery，总前向仍是
+  40 张，不提高原训练的 batch 峰值；
+- supervised contrastive loss 使用自然图与 gallery 的联合 embedding；
+- 增加 query 对 10 个可微 Student gallery prototype 的交叉熵检索损失，
+  每个 query 显式面对 9 个错误商品反例；
+- 加入已有 router 的 balance/importance loss，记录 Vision/Language
+  路由熵、活跃专家数和最大 importance；
+- base learning rate 降为 `2e-4`，router 单独使用 `1e-3`，Teacher KD
+  权重提高到 3；
+- 只加载 Student 权重并重置 AdamW 状态。旧 epoch 1–50 checkpoint、
+  日志和指标会自动归档到
+  `checkpoints/pre_resume_epoch_0050/`。
+
+续训命令（从仓库根目录执行）：
+
+```text
+CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_continue100.yaml --phase train --resume-checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/qwen3_vl_embedding_2b_grocery10_optical_retrieval/last_checkpoint.pt
+```
+
 每轮可输出 test 指标供观察，但 checkpoint 只按训练总损失保存：
 
 - `last_checkpoint.pt`：最后一轮；

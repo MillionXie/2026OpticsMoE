@@ -35,6 +35,7 @@ from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.settings impo
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.train_optical_retrieval import (
     PKBatchSampler,
     embedding_distillation_loss,
+    gallery_retrieval_loss,
     supervised_contrastive_loss,
 )
 
@@ -64,6 +65,23 @@ def test_smoke_output_is_also_inside_experiment() -> None:
         / "runs"
         / "qwen3_vl_embedding_2b_grocery10_optical_retrieval_smoke"
     ).resolve()
+
+
+def test_continuation_config_adds_gallery_negatives_and_router_recovery() -> None:
+    settings = load_settings(
+        EXPERIMENT / "configs" / "grocery10_continue100.yaml"
+    )
+    assert settings.epochs == 100
+    assert settings.batch_size == 30
+    assert settings.pk_images_per_sku == 3
+    assert settings.lambda_kd == 3.0
+    assert settings.lambda_gallery == 0.5
+    assert settings.lambda_router_balance == 0.05
+    assert settings.lambda_router_importance == 0.01
+    assert settings.learning_rate == 0.0002
+    assert settings.router_learning_rate == 0.001
+    assert settings.router_temperature == 2.0
+    assert not settings.resume_optimizer_state
 
 
 def test_student_has_one_expert_stage_plus_one_global_phase() -> None:
@@ -240,6 +258,22 @@ def test_pk_sampler_and_supervised_contrastive_backward(tmp_path: Path) -> None:
 def test_kd_loss_zero_for_identical_embeddings() -> None:
     values = torch.nn.functional.normalize(torch.randn(5, 64), dim=-1)
     assert embedding_distillation_loss(values, values).abs() < 1e-6
+
+
+def test_gallery_retrieval_loss_uses_wrong_skus_as_negatives_and_backpropagates() -> None:
+    raw_gallery = torch.eye(3, requires_grad=True)
+    raw_query = (torch.eye(3) + 0.01 * torch.randn(3, 3)).requires_grad_()
+    labels = torch.arange(3)
+    good = gallery_retrieval_loss(
+        raw_query, labels, raw_gallery, labels, temperature=0.07
+    )
+    bad = gallery_retrieval_loss(
+        raw_query, labels, raw_gallery, labels.roll(1), temperature=0.07
+    )
+    assert good < bad
+    good.backward()
+    assert raw_query.grad is not None and torch.isfinite(raw_query.grad).all()
+    assert raw_gallery.grad is not None and torch.isfinite(raw_gallery.grad).all()
 
 
 def test_retrieval_metrics_top1_top3_and_mrr(tmp_path: Path) -> None:

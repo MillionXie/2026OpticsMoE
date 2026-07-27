@@ -35,6 +35,11 @@ def main() -> int:
     parser.add_argument("--config", required=True)
     parser.add_argument("--phase", choices=sorted(PHASES), default="all")
     parser.add_argument("--checkpoint", default=None)
+    parser.add_argument(
+        "--resume-checkpoint",
+        default=None,
+        help="For --phase train/all: load Student weights and continue for config epochs",
+    )
     parser.add_argument("--force-teacher-cache", action="store_true")
     args = parser.parse_args()
     settings = load_settings(args.config)
@@ -74,6 +79,11 @@ def main() -> int:
                 bundle,
                 teacher_store,
                 settings,
+                resume_checkpoint=(
+                    Path(args.resume_checkpoint).expanduser().resolve()
+                    if args.resume_checkpoint
+                    else None
+                ),
             )
             if args.phase == "train":
                 return 0

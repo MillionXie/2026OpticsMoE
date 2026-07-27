@@ -1,0 +1,28 @@
+base_config: grocery10.yaml
+
+# Continue from the completed epoch-50 checkpoint. The CLI --resume-checkpoint
+# supplies the checkpoint; epochs means 100 additional epochs, so the resulting
+# absolute epoch range is 51..150.
+batching:
+  batch_size: 30
+  pk_skus_per_batch: 10
+  pk_images_per_sku: 3
+
+training:
+  epochs: 100
+  learning_rate: 0.0002
+  router_learning_rate: 0.001
+  weight_decay: 0.0
+  lambda_kd: 3.0
+  lambda_ret: 1.0
+  lambda_gallery: 0.5
+  lambda_router_balance: 0.05
+  lambda_router_importance: 0.01
+  temperature: 0.07
+  resume_optimizer_state: false
+  evaluate_test_each_epoch: true
+  log_interval_batches: 5
+
+optical:
+  router:
+    temperature: 2.0
