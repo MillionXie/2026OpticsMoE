@@ -102,6 +102,8 @@ class Settings:
     inference_batch_size: int
     num_workers: int
     class_balanced_sampling: bool
+    include_gallery_in_training: bool
+    gallery_repeat_factor: int
     random_seed: int
     evaluate_test_each_epoch: bool
     log_interval_batches: int
@@ -197,6 +199,8 @@ class Settings:
             raise ValueError("scheduler must be cosine or none")
         if not 0.0 < self.crop_scale_min <= 1.0:
             raise ValueError("augmentation.crop_scale_min must be in (0,1]")
+        if self.gallery_repeat_factor <= 0:
+            raise ValueError("training.gallery_repeat_factor must be positive")
 
     def to_dict(self) -> dict[str, Any]:
         value = asdict(self)
@@ -267,6 +271,10 @@ def load_settings(path: str | Path) -> Settings:
         inference_batch_size=int(d("training.inference_batch_size", 4)),
         num_workers=int(d("training.num_workers", 4)),
         class_balanced_sampling=bool(d("training.class_balanced_sampling", True)),
+        include_gallery_in_training=bool(
+            d("training.include_gallery_in_training", False)
+        ),
+        gallery_repeat_factor=int(d("training.gallery_repeat_factor", 1)),
         random_seed=int(d("training.random_seed", 42)),
         evaluate_test_each_epoch=bool(d("training.evaluate_test_each_epoch", True)),
         log_interval_batches=int(d("training.log_interval_batches", 20)),

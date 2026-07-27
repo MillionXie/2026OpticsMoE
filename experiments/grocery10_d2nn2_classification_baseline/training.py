@@ -270,7 +270,11 @@ def train(
     settings: Settings,
     device: torch.device,
 ) -> dict[str, Any]:
-    train_loader = _loader(bundle.train_samples, settings, train=True)
+    training_samples = list(bundle.train_samples)
+    if settings.include_gallery_in_training:
+        for _ in range(settings.gallery_repeat_factor):
+            training_samples.extend(bundle.gallery_samples)
+    train_loader = _loader(training_samples, settings, train=True)
     test_loader = _loader(bundle.test_samples, settings, train=False)
     optimizer = _optimizer(model, settings)
     scheduler = _scheduler(optimizer, settings)
@@ -390,6 +394,12 @@ def train(
             "best_train_loss": best_train_loss,
             "total_time_sec": time.perf_counter() - started,
             "selection_criterion": "minimum_training_cross_entropy",
+            "natural_training_samples": len(bundle.train_samples),
+            "gallery_training_samples_per_epoch": (
+                len(bundle.gallery_samples) * settings.gallery_repeat_factor
+                if settings.include_gallery_in_training
+                else 0
+            ),
         },
     )
     save_training_curves(rows, settings.output_dir / "figures" / "training_curves.png")

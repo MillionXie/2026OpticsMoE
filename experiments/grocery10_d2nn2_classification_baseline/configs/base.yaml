@@ -69,6 +69,8 @@ training:
   inference_batch_size: 4
   num_workers: 4
   class_balanced_sampling: true
+  include_gallery_in_training: false
+  gallery_repeat_factor: 1
   random_seed: 42
   evaluate_test_each_epoch: true
   log_interval_batches: 20

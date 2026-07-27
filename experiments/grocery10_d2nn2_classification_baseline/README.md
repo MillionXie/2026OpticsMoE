@@ -54,6 +54,11 @@ global phase → CCD = 10 cm
 可训练电子参数、光学传播次数或蒸馏，但应作为增强输入编码单独报告，不能与
 灰度 baseline 混为同一个模型。
 
+另一个独立消融允许把十张部署 gallery iconic 图作为带标签的训练 anchor，并
+对其重复执行轻量随机增强。原检索学生训练时本来也会使用 gallery，因此这不
+是 test 泄漏；不过它改变了分类训练集组成，必须通过
+`include_gallery_in_training` 单独记录和报告。
+
 ## 参数量
 
 ```text
