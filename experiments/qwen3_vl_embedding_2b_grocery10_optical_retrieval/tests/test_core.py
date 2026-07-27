@@ -10,6 +10,9 @@ import yaml
 from PIL import Image
 from torch import nn
 
+from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.analyze_gallery_coverage import (
+    select_additional_gallery_samples,
+)
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.modeling import (
     OpticalRetrievalReadout,
     official_mrl_embedding,
@@ -114,6 +117,65 @@ def test_epoch141_generalization_continuation_config() -> None:
     assert settings.rotation_degrees == 7.0
     assert not settings.resume_optimizer_state
     assert settings.output_dir.name.endswith("epoch141_augmented_kd")
+
+
+def test_gallery_coverage_selection_is_train_only_and_deterministic(
+    tmp_path: Path,
+) -> None:
+    names = ("a", "b")
+    train = tuple(
+        GrocerySample(
+            f"train-{sku}-{index}",
+            tmp_path / f"train-{sku}-{index}.jpg",
+            sku,
+            names[sku],
+            sku,
+            "train",
+            "train",
+            False,
+        )
+        for sku in range(2)
+        for index in range(3)
+    )
+    galleries = tuple(
+        GrocerySample(
+            f"gallery-{sku}",
+            tmp_path / f"gallery-{sku}.jpg",
+            sku,
+            names[sku],
+            sku,
+            "gallery",
+            "iconic",
+            True,
+        )
+        for sku in range(2)
+    )
+    train_embeddings = torch.tensor(
+        [
+            [0.99, 0.01],
+            [0.80, 0.20],
+            [0.60, 0.40],
+            [0.01, 0.99],
+            [0.20, 0.80],
+            [0.40, 0.60],
+        ]
+    )
+    gallery_embeddings = torch.eye(2)
+    selected, rows = select_additional_gallery_samples(
+        train,
+        train_embeddings,
+        galleries,
+        gallery_embeddings,
+        per_sku=2,
+    )
+    assert [sample.sample_id for sample in selected] == [
+        "train-0-0",
+        "train-0-1",
+        "train-1-0",
+        "train-1-1",
+    ]
+    assert all(row["selection_source"] == "train_only" for row in rows)
+    assert all(row["test_used_for_selection"] is False for row in rows)
 
 
 def test_continuation_config_adds_gallery_negatives_and_router_recovery() -> None:

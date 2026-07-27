@@ -50,6 +50,12 @@ Generalization continuation from the replacement-10 epoch-141 checkpoint:
 CUDA_VISIBLE_DEVICES=5 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_replaced_continue_epoch141_augmented_kd.yaml --phase train --resume-checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/qwen3_vl_embedding_2b_grocery10_replaced_finetune/best_train_loss_checkpoint.pt
 ```
 
+Diagnose one-view versus three-view gallery coverage without changing weights:
+
+```bash
+CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.analyze_gallery_coverage --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_replaced_finetune.yaml --checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/qwen3_vl_embedding_2b_grocery10_replaced_finetune/best_train_loss_checkpoint.pt --additional-gallery-per-sku 2
+```
+
 ## Phases
 
 Prepare/download the official Grocery Store Dataset and write the fixed subset manifest:
