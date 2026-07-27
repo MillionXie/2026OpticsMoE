@@ -1,0 +1,21 @@
+base_config: base.yaml
+
+# Optimization trial A:
+# - visit every training image exactly once per epoch;
+# - retain packaging-safe mild augmentation;
+# - add weak AdamW regularization without changing the optical inference path.
+training:
+  optimizer: adamw
+  learning_rate: 0.005
+  weight_decay: 0.0001
+  epochs: 120
+  class_balanced_sampling: false
+
+augmentation:
+  enabled: true
+  crop_scale_min: 0.92
+  brightness_jitter: 0.12
+  contrast_jitter: 0.12
+  rotation_degrees: 7.0
+
+output_dir: ../runs/grocery10_d2nn2_opt_fullcoverage_mild
