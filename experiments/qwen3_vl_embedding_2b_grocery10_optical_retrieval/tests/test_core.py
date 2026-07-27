@@ -213,6 +213,19 @@ def test_relational_kd_config_is_independent_and_backward_compatible() -> None:
     assert trial.output_dir.name.endswith("augmented_relational_kd")
 
 
+def test_teacher_gallery_anchor_config_is_training_only() -> None:
+    base = load_settings(EXPERIMENT / "configs" / "grocery10.yaml")
+    trial = load_settings(
+        EXPERIMENT
+        / "configs"
+        / "grocery10_replaced_continue_epoch141_teacher_gallery_anchor.yaml"
+    )
+    assert base.lambda_teacher_gallery == 0.0
+    assert trial.lambda_teacher_gallery == 0.25
+    assert trial.lambda_relational_kd == 5.0
+    assert trial.output_dir.name.endswith("teacher_gallery_anchor")
+
+
 def test_gallery_coverage_selection_is_train_only_and_deterministic(
     tmp_path: Path,
 ) -> None:

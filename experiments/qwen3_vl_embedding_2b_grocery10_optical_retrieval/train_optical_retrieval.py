@@ -429,6 +429,7 @@ def save_checkpoint(
                 "lambda_relational_kd": settings.lambda_relational_kd,
                 "lambda_ret": settings.lambda_ret,
                 "lambda_gallery": settings.lambda_gallery,
+                "lambda_teacher_gallery": settings.lambda_teacher_gallery,
                 "lambda_router_balance": settings.lambda_router_balance,
                 "lambda_router_importance": settings.lambda_router_importance,
                 "temperature": settings.temperature,
@@ -587,6 +588,7 @@ def train_optical_retrieval(
         "relational_kd_loss",
         "retrieval_loss",
         "gallery_loss",
+        "teacher_gallery_loss",
         "router_balance_loss",
         "router_importance_loss",
         "vision_router_entropy",
@@ -633,6 +635,7 @@ def train_optical_retrieval(
             "relational_kd": 0.0,
             "ret": 0.0,
             "gallery": 0.0,
+            "teacher_gallery": 0.0,
             "balance": 0.0,
             "importance": 0.0,
             "samples": 0,
@@ -653,7 +656,10 @@ def train_optical_retrieval(
         started = time.perf_counter()
         for batch_index, batch in enumerate(loader, 1):
             query_count = len(batch["samples"])
-            gallery_training_enabled = settings.lambda_gallery > 0
+            gallery_training_enabled = (
+                settings.lambda_gallery > 0
+                or settings.lambda_teacher_gallery > 0
+            )
             selected_gallery_batch = (
                 collate_grocery(
                     select_gallery_items_for_queries(
@@ -738,10 +744,24 @@ def train_optical_retrieval(
                         ),
                     )
                     gallery = F.cross_entropy(gallery_logits, gallery_targets)
+                    teacher_gallery_logits, teacher_gallery_targets = (
+                        gallery_retrieval_logits(
+                            student[:query_count],
+                            query_labels,
+                            teacher[query_count:],
+                            selected_gallery_labels,
+                            settings.gallery_temperature,
+                            stop_gradient_on_gallery=True,
+                        )
+                    )
+                    teacher_gallery = F.cross_entropy(
+                        teacher_gallery_logits, teacher_gallery_targets
+                    )
                 else:
                     gallery_logits = None
                     gallery_targets = None
                     gallery = student.new_zeros(())
+                    teacher_gallery = student.new_zeros(())
                 router_losses = replacement.router_losses()
                 balance = 0.5 * (
                     router_losses["vision_balance"]
@@ -756,6 +776,7 @@ def train_optical_retrieval(
                     + settings.lambda_relational_kd * relational_kd
                     + settings.lambda_ret * retrieval
                     + settings.lambda_gallery * gallery
+                    + settings.lambda_teacher_gallery * teacher_gallery
                     + settings.lambda_router_balance * balance
                     + settings.lambda_router_importance * importance
                 )
@@ -764,7 +785,8 @@ def train_optical_retrieval(
                     f"Non-finite loss at epoch={epoch} batch={batch_index}: "
                     f"total={total}, kd={kd}, retrieval={retrieval}, "
                     f"relational_kd={relational_kd}, gallery={gallery}, "
-                    f"balance={balance}, importance={importance}"
+                    f"teacher_gallery={teacher_gallery}, balance={balance}, "
+                    f"importance={importance}"
                 )
             total.backward()
             bad_gradients = [
@@ -781,6 +803,7 @@ def train_optical_retrieval(
             totals["relational_kd"] += float(relational_kd.detach()) * count
             totals["ret"] += float(retrieval.detach()) * count
             totals["gallery"] += float(gallery.detach()) * count
+            totals["teacher_gallery"] += float(teacher_gallery.detach()) * count
             totals["balance"] += float(balance.detach()) * count
             totals["importance"] += float(importance.detach()) * count
             totals["samples"] += count
@@ -807,6 +830,8 @@ def train_optical_retrieval(
                     f"rel_kd={totals['relational_kd']/totals['samples']:.5f} "
                     f"ret={totals['ret']/totals['samples']:.5f} "
                     f"gallery={totals['gallery']/totals['samples']:.5f} "
+                    f"teacher_gallery="
+                    f"{totals['teacher_gallery']/totals['samples']:.5f} "
                     f"train_top1="
                     f"{totals['top1_correct']/max(1, totals['retrieval_queries']):.4f} "
                     f"balance={totals['balance']/totals['samples']:.5f} "
@@ -853,6 +878,7 @@ def train_optical_retrieval(
             "relational_kd_loss": totals["relational_kd"] / sample_count,
             "retrieval_loss": totals["ret"] / sample_count,
             "gallery_loss": totals["gallery"] / sample_count,
+            "teacher_gallery_loss": totals["teacher_gallery"] / sample_count,
             "router_balance_loss": totals["balance"] / sample_count,
             "router_importance_loss": totals["importance"] / sample_count,
             **{

@@ -98,6 +98,7 @@ class Settings:
     lambda_relational_kd: float
     lambda_ret: float
     lambda_gallery: float
+    lambda_teacher_gallery: float
     lambda_router_balance: float
     lambda_router_importance: float
     temperature: float
@@ -284,6 +285,7 @@ class Settings:
             self.lambda_relational_kd,
             self.lambda_ret,
             self.lambda_gallery,
+            self.lambda_teacher_gallery,
             self.lambda_router_balance,
             self.lambda_router_importance,
         )
@@ -355,6 +357,7 @@ class Settings:
                 "lambda_relational_kd": self.lambda_relational_kd,
                 "lambda_ret": self.lambda_ret,
                 "lambda_gallery": self.lambda_gallery,
+                "lambda_teacher_gallery": self.lambda_teacher_gallery,
                 "lambda_router_balance": self.lambda_router_balance,
                 "lambda_router_importance": self.lambda_router_importance,
                 "temperature": self.temperature,
@@ -494,6 +497,7 @@ def load_settings(path: str | Path) -> Settings:
         lambda_relational_kd=float(d("training.lambda_relational_kd", 0.0)),
         lambda_ret=float(d("training.lambda_ret", 1.0)),
         lambda_gallery=float(d("training.lambda_gallery", 0.0)),
+        lambda_teacher_gallery=float(d("training.lambda_teacher_gallery", 0.0)),
         lambda_router_balance=float(d("training.lambda_router_balance", 0.0)),
         lambda_router_importance=float(d("training.lambda_router_importance", 0.0)),
         temperature=float(d("training.temperature", 0.07)),
