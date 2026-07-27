@@ -1,0 +1,18 @@
+base_config: base.yaml
+
+dataset:
+  train_limit_per_sku: 1
+  test_limit_per_sku: 1
+
+training:
+  epochs: 1
+  batch_size: 2
+  inference_batch_size: 2
+  num_workers: 0
+  log_interval_batches: 1
+
+visualization:
+  save_interval_epochs: 1
+  sample_count: 2
+
+output_dir: ../runs/grocery10_d2nn2_smoke

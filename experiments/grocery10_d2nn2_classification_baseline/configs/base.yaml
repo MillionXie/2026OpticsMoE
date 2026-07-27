@@ -1,0 +1,88 @@
+dataset:
+  dataset_root: ../../../data/GroceryStoreDataset
+  download: true
+  download_url: https://github.com/marcusklasson/GroceryStoreDataset/archive/refs/heads/master.zip
+  selected_skus:
+    - God-Morgon-Orange-Juice
+    - Tropicana-Golden-Grapefruit
+    - Arla-Ecological-Medium-Fat-Milk
+    - Oatly-Natural-Oatghurt
+    - Oatly-Oat-Milk
+    - Alpro-Blueberry-Soyghurt
+    - Alpro-Shelf-Soy-Milk
+    - Yoggi-Strawberry-Yoghurt
+    - God-Morgon-Apple-Juice
+    - Tropicana-Mandarin-Morning
+  merge_official_validation_into_train: true
+  train_limit_per_sku: null
+  test_limit_per_sku: null
+  gallery_images_per_sku: 1
+
+input:
+  image_size: 224
+  encoding: grayscale_amplitude
+
+optics:
+  # Same propagation geometry as the Grocery optical experiment.
+  canvas_size: 1026
+  active_size: 986
+  first_phase_size: 224
+  wavelength_nm: 532.0
+  pixel_pitch_um: 8.0
+
+  # The amplitude image and first phase SLM are co-planar.
+  input_to_first_phase_distance_m: 0.0
+  first_to_second_phase_distance_m: 0.10
+  second_phase_to_detector_distance_m: 0.10
+
+  phase:
+    parameterization: sigmoid
+    init: zeros
+    init_std: 0.02
+
+  # Optional angular cutoff. Set enabled: true to test a finite-angle system.
+  k_space:
+    enabled: false
+    theta_max_deg: 1.0
+
+detector:
+  # Ten equal-area regions centered as three/four/three.
+  row_layout: [3, 4, 3]
+  region_size: 120
+  horizontal_gap: 60
+  vertical_gap: 100
+  normalize_total_energy: true
+  eps: 1.0e-8
+
+loss:
+  type: detector_region_cross_entropy
+  eps: 1.0e-8
+
+training:
+  optimizer: adam
+  learning_rate: 0.01
+  weight_decay: 0.0
+  scheduler: cosine
+  min_learning_rate: 1.0e-5
+  epochs: 100
+  batch_size: 4
+  inference_batch_size: 4
+  num_workers: 4
+  class_balanced_sampling: true
+  random_seed: 42
+  evaluate_test_each_epoch: true
+  log_interval_batches: 20
+
+augmentation:
+  enabled: true
+  crop_scale_min: 0.90
+  brightness_jitter: 0.10
+  contrast_jitter: 0.10
+  rotation_degrees: 5.0
+
+visualization:
+  save_interval_epochs: 10
+  sample_count: 8
+
+device: cuda
+output_dir: ../runs/grocery10_d2nn2_classification
