@@ -84,6 +84,19 @@ def test_continuation_config_adds_gallery_negatives_and_router_recovery() -> Non
     assert not settings.resume_optimizer_state
 
 
+def test_stable_epoch57_continuation_ends_at_epoch150() -> None:
+    settings = load_settings(
+        EXPERIMENT / "configs" / "grocery10_continue_epoch57_stable.yaml"
+    )
+    assert settings.epochs == 93
+    assert 57 + settings.epochs == 150
+    assert settings.learning_rate == 0.00005
+    assert settings.router_learning_rate == 0.0001
+    assert settings.lambda_kd == 5.0
+    assert settings.lambda_router_balance == 0.02
+    assert settings.lambda_router_importance == 0.005
+
+
 def test_student_has_one_expert_stage_plus_one_global_phase() -> None:
     settings = load_settings(EXPERIMENT / "configs" / "grocery10.yaml")
     vision = HomogeneousMoEOpticalCore(1024, 224, settings)

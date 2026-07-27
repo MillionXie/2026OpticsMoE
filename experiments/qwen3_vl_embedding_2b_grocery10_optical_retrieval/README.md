@@ -140,6 +140,14 @@ Student 训练；同时未启用 router 均衡损失，容易出现专家塌缩�
 CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_continue100.yaml --phase train --resume-checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/qwen3_vl_embedding_2b_grocery10_optical_retrieval/last_checkpoint.pt
 ```
 
+如果首段恢复训练已经得到 epoch 57 checkpoint，则使用稳定版配置完成
+epoch 58–150。该配置将 router LR 从 `1e-3` 降至 `1e-4`、base LR
+降至 `5e-5`，并把 KD 权重提高到 5，以避免小数据下的快速路由振荡：
+
+```text
+CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_continue_epoch57_stable.yaml --phase train --resume-checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/qwen3_vl_embedding_2b_grocery10_optical_retrieval/best_continuation_from_epoch_0050.pt
+```
+
 每轮可输出 test 指标供观察，但 checkpoint 只按训练总损失保存：
 
 - `last_checkpoint.pt`：最后一轮；
