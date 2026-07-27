@@ -226,6 +226,20 @@ def test_teacher_gallery_anchor_config_is_training_only() -> None:
     assert trial.output_dir.name.endswith("teacher_gallery_anchor")
 
 
+def test_stronger_augmentation_remains_packaging_safe() -> None:
+    settings = load_settings(
+        EXPERIMENT
+        / "configs"
+        / "grocery10_replaced_continue_epoch141_stronger_augmentation.yaml"
+    )
+    assert settings.augmentation_enabled
+    assert settings.crop_scale_min == 0.75
+    assert settings.brightness_jitter == 0.20
+    assert settings.contrast_jitter == 0.20
+    assert settings.rotation_degrees == 10.0
+    assert settings.phase_learning_rate == 1.0e-6
+
+
 def test_gallery_coverage_selection_is_train_only_and_deterministic(
     tmp_path: Path,
 ) -> None:

@@ -1,0 +1,12 @@
+base_config: grocery10_replaced_continue_epoch141_augmented_kd_phase_slow.yaml
+
+# Moderate viewpoint/illumination invariance for the tiny 330-image train set.
+# Package text is never mirrored; MixUp, CutMix, blur, and erasing remain off.
+augmentation:
+  enabled: true
+  crop_scale_min: 0.75
+  brightness_jitter: 0.20
+  contrast_jitter: 0.20
+  rotation_degrees: 10.0
+
+output_dir: ../runs/qwen3_vl_embedding_2b_grocery10_replaced_continue_epoch141_stronger_augmentation
