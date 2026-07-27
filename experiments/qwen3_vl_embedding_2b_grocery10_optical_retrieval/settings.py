@@ -257,8 +257,11 @@ class Settings:
             raise ValueError("The first retrieval baseline keeps native electronic attention disabled")
         if not self.transformer_residual_enabled:
             raise ValueError("Transformer-style residual must remain enabled")
-        if self.expert_layers != 4 or self.vision_tap_stages != (1, 2, 3):
-            raise ValueError("The reused DeepStack MoE16 mapping requires four stages and taps (1,2,3)")
+        if self.expert_layers != 1 or self.vision_tap_stages != (1,):
+            raise ValueError(
+                "The retrieval baseline requires one expert stage and one "
+                "student DeepStack tap at stage 1"
+            )
         if self.phase_dropout_mode != "none" or self.phase_dropout_p != 0.0:
             raise ValueError("Phase dropout is disabled for the initial retrieval experiment")
         if self.lambda_kd < 0 or self.lambda_ret < 0 or self.lambda_kd + self.lambda_ret <= 0:
@@ -459,7 +462,7 @@ def load_settings(path: str | Path) -> Settings:
         input_adapter_dim=int(d("optical.input_adapter_dim", 224)),
         max_visual_tokens=int(d("optical.max_visual_tokens", 224)),
         max_language_tokens=int(d("optical.max_language_tokens", 224)),
-        vision_tap_stages=tuple(int(v) for v in d("optical.vision_tap_stages", [1, 2, 3])),
+        vision_tap_stages=tuple(int(v) for v in d("optical.vision_tap_stages", [1])),
         student_language_mode="optical_moe",
         native_pre_attention_enabled=bool(d("optical.native_pre_attention_enabled", False)),
         native_pre_attention_initialize_from_teacher=bool(
@@ -476,7 +479,7 @@ def load_settings(path: str | Path) -> Settings:
         num_experts=int(d("optical.geometry.num_experts", 16)),
         expert_grid_rows=int(d("optical.geometry.grid_rows", 4)),
         expert_grid_cols=int(d("optical.geometry.grid_cols", 4)),
-        expert_layers=int(d("optical.geometry.layers_per_expert", 4)),
+        expert_layers=int(d("optical.geometry.layers_per_expert", 1)),
         top_k=int(d("optical.router.top_k", 4)),
         router_pool_size=int(d("optical.router.pool_size", 14)),
         router_temperature=float(d("optical.router.temperature", 1.0)),

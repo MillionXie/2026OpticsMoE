@@ -255,13 +255,28 @@ class DeepStackMultimodalReplacement:
             if self.native_pre_attention_enabled and self.language_mode == "optical_moe"
             else None
         )
-        self.deepstack_indexes = tuple(int(value) for value in self.visual.deepstack_visual_indexes)
-        if len(self.deepstack_indexes) != 3:
-            raise RuntimeError(f"Expected 3 DeepStack indexes, got {self.deepstack_indexes}")
+        self.native_deepstack_indexes = tuple(
+            int(value) for value in self.visual.deepstack_visual_indexes
+        )
+        if len(self.native_deepstack_indexes) != 3:
+            raise RuntimeError(
+                f"Expected 3 native Qwen DeepStack indexes, got "
+                f"{self.native_deepstack_indexes}"
+            )
+        auxiliary_count = len(vision.tap_stages)
+        if auxiliary_count != 1:
+            raise RuntimeError(
+                "The one-layer retrieval baseline requires exactly one student "
+                f"DeepStack auxiliary tap, got {auxiliary_count}"
+            )
+        # Keep Qwen's first native auxiliary route only. Its corresponding
+        # frozen deepstack merger remains intact; the other two auxiliary
+        # routes are disabled rather than filled with repeated optical output.
+        self.deepstack_indexes = self.native_deepstack_indexes[:auxiliary_count]
         self.language_surrogate.set_deepstack_injection_count(len(self.deepstack_indexes))
         final_index = len(self.vision_blocks) - 1
         provider_indexes = (*self.deepstack_indexes, final_index)
-        if len(set(provider_indexes)) != 4:
+        if len(set(provider_indexes)) != auxiliary_count + 1:
             raise RuntimeError("DeepStack indexes overlap final vision block")
 
         self.student_vision_modules: list[nn.Module] = [VisionBypass() for _ in self.vision_blocks]
@@ -275,8 +290,20 @@ class DeepStackMultimodalReplacement:
         self.student_language_modules: list[nn.Module] = [
             LanguageBypass() for _ in self.language_layers
         ]
-        for stage in range(len(language.core.expert_layers)):
-            self.student_language_modules[stage] = LanguageStageBlock(
+        # The sole auxiliary feature is injected after language slot 0. Put
+        # the single optical language stage at slot 1 so that both the main
+        # image embedding and the auxiliary feature enter the optical stack.
+        language_stage_start = len(self.deepstack_indexes)
+        self.language_optical_layer_indexes = tuple(
+            language_stage_start + stage
+            for stage in range(len(language.core.expert_layers))
+        )
+        if self.language_optical_layer_indexes[-1] >= len(self.language_layers):
+            raise RuntimeError(
+                "Optical language stage placement exceeds the Qwen language stack"
+            )
+        for stage, layer_index in enumerate(self.language_optical_layer_indexes):
+            self.student_language_modules[layer_index] = LanguageStageBlock(
                 language,
                 stage,
                 self.language_pre_attention if stage == 0 else None,
@@ -327,12 +354,18 @@ class DeepStackMultimodalReplacement:
         setattr(self.model, "_grocery_retrieval_optical_last_hidden", value)
 
     def use_teacher(self) -> None:
+        # The electronic Teacher always restores all three native Qwen
+        # DeepStack paths.
+        self.visual.deepstack_visual_indexes = list(self.native_deepstack_indexes)
         for index, layer in enumerate(self.original_vision):
             self.vision_blocks[index] = layer
         for index, layer in enumerate(self.original_language):
             self.language_layers[index] = layer
 
     def use_student(self) -> None:
+        # A one-element list makes Qwen inject only deepstack_merger_list[0]
+        # after language slot 0.
+        self.visual.deepstack_visual_indexes = list(self.deepstack_indexes)
         for index, layer in enumerate(self.student_vision_modules):
             self.vision_blocks[index] = layer
         layers = (
@@ -456,6 +489,12 @@ class DeepStackMultimodalReplacement:
             "language_attention_trainable_parameters": self._module_parameters(
                 self.language_pre_attention, True
             ),
+            "native_deepstack_visual_indexes": list(self.native_deepstack_indexes),
+            "student_deepstack_visual_indexes": list(self.deepstack_indexes),
+            "student_deepstack_auxiliary_count": len(self.deepstack_indexes),
+            "vision_single_expert_tap_reused_for_deepstack": False,
+            "language_deepstack_injections_before_optics": len(self.deepstack_indexes),
+            "language_optical_layer_indexes": list(self.language_optical_layer_indexes),
             "post_residual_activation": False,
             "equation": equation,
         }

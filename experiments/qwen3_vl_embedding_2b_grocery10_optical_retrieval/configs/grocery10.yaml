@@ -65,7 +65,7 @@ optical:
   input_adapter_dim: 224
   max_visual_tokens: 224
   max_language_tokens: 224
-  vision_tap_stages: [1, 2, 3]
+  vision_tap_stages: [1]
   native_pre_attention_enabled: false
   initialize_attention_from_teacher: false
   native_pre_attention_trainable: false
@@ -79,7 +79,7 @@ optical:
     num_experts: 16
     grid_rows: 4
     grid_cols: 4
-    layers_per_expert: 4
+    layers_per_expert: 1
 
   router:
     top_k: 4

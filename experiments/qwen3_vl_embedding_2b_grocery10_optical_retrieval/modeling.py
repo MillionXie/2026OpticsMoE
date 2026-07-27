@@ -242,6 +242,23 @@ def trainable_parameter_report(
         "teacher_model_id": getattr(model, "name_or_path", type(model).__name__),
         "teacher_parameters_frozen": all(not parameter.requires_grad for parameter in model.parameters()
                                          if id(parameter) not in trainable_ids),
+        "student_architecture": {
+            "optical_structure": "one_expert_stage_plus_one_global_phase",
+            "vision_expert_stages": len(
+                replacement.vision_surrogate.core.expert_layers
+            ),
+            "language_expert_stages": len(
+                replacement.language_surrogate.core.expert_layers
+            ),
+            "global_phase_planes_per_stack": 1,
+            "vision_tap_stages": list(replacement.vision_surrogate.tap_stages),
+            "student_deepstack_visual_indexes": list(
+                replacement.deepstack_indexes
+            ),
+            "language_optical_layer_indexes": list(
+                replacement.language_optical_layer_indexes
+            ),
+        },
         "vision_optical": vision,
         "language_optical": language,
         "retrieval_readout": readout.specification(),

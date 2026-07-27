@@ -19,6 +19,7 @@ from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.optics.geomet
 )
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.optics.moe import (
     FullPlaneReadout,
+    HomogeneousMoEOpticalCore,
     LanguageDeepStackHomogeneousMoE,
 )
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.prepare_grocery_retrieval_subset import (
@@ -49,6 +50,35 @@ def test_main_config_has_ten_packaged_skus() -> None:
     assert settings.instruction == (
         "Represent this product image for image-to-image product retrieval."
     )
+    assert settings.expert_layers == 1
+    assert settings.vision_tap_stages == (1,)
+
+
+def test_student_has_one_expert_stage_plus_one_global_phase() -> None:
+    settings = load_settings(EXPERIMENT / "configs" / "grocery10.yaml")
+    vision = HomogeneousMoEOpticalCore(1024, 224, settings)
+    language = HomogeneousMoEOpticalCore(2048, 224, settings)
+    assert len(vision.expert_layers) == 1
+    assert len(language.expert_layers) == 1
+    assert len(vision.interlayer_conversions) == 1
+    assert len(language.interlayer_conversions) == 1
+    vision_report = vision.parameter_breakdown()
+    language_report = language.parameter_breakdown()
+    assert vision_report["expert_phase_parameters"] == 16 * 224 * 224
+    assert language_report["expert_phase_parameters"] == 16 * 224 * 224
+    assert vision_report["global_phase_parameters"] == 986 * 986
+    assert language_report["global_phase_parameters"] == 986 * 986
+    assert vision_report["optical_phase_parameters"] == 1_775_012
+    assert language_report["optical_phase_parameters"] == 1_775_012
+    total_with_readout = (
+        vision_report["trainable_parameters"]
+        + language_report["trainable_parameters"]
+        + sum(
+            parameter.numel()
+            for parameter in OpticalRetrievalReadout(224, 64).parameters()
+        )
+    )
+    assert total_with_readout == 4_951_848
 
 
 def test_official_dataset_split_and_no_leakage(tmp_path: Path) -> None:

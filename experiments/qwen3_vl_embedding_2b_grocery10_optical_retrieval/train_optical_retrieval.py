@@ -154,7 +154,7 @@ def save_checkpoint(
     settings: Settings,
 ) -> None:
     payload = {
-        "checkpoint_version": 1,
+        "checkpoint_version": 2,
         "epoch": int(epoch),
         "train_loss": float(train_loss),
         "vision_optical": replacement.vision_surrogate.state_dict(),
@@ -166,6 +166,13 @@ def save_checkpoint(
             "detector_dim": settings.detector_output_size,
             "instruction": settings.instruction,
             "model_id": settings.model_id,
+            "expert_stages_per_stack": settings.expert_layers,
+            "vision_tap_stages": list(settings.vision_tap_stages),
+            "student_deepstack_auxiliary_count": len(settings.vision_tap_stages),
+            "language_optical_layer_indexes": list(
+                replacement.language_optical_layer_indexes
+            ),
+            "optical_architecture": "one_expert_stage_plus_one_global_phase",
             "selection_criterion": "minimum_training_total_loss",
             "test_metrics_used_for_selection": False,
         },
@@ -186,6 +193,17 @@ def load_checkpoint(
     if not path.is_file():
         raise FileNotFoundError(f"Optical retrieval checkpoint is missing: {path}")
     payload = torch.load(path, map_location="cpu", weights_only=False)
+    metadata = payload.get("metadata", {})
+    expected_layers = len(replacement.vision_surrogate.core.expert_layers)
+    saved_layers = metadata.get("expert_stages_per_stack")
+    if saved_layers is not None and int(saved_layers) != expected_layers:
+        raise RuntimeError(
+            "Optical retrieval checkpoint architecture mismatch: "
+            f"saved expert stages={saved_layers}, current expert stages={expected_layers}. "
+            "The corrected baseline uses one expert phase stage plus one global "
+            "phase plane; do not reuse a four-stage Student checkpoint. The "
+            "frozen Teacher embedding cache remains reusable."
+        )
     replacement.vision_surrogate.load_state_dict(payload["vision_optical"])
     replacement.language_surrogate.load_state_dict(payload["language_optical"])
     readout.load_state_dict(payload["retrieval_readout"])

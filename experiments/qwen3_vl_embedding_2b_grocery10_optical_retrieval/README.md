@@ -67,14 +67,23 @@ replacement：
 
 - frozen Qwen tokenizer、token embedding、vision patch embedding、vision merger、
   DeepStack injection 和 final RMSNorm；
-- Vision Optical MoE16：4 个 optical/OEO stages；
-- Language Optical MoE16：4 个 optical/OEO stages；
-- 每个 stage 为 16 个 `224×224` 专家、电子输入相关 Top-4 router；
+- Vision Optical MoE16：**1 层专家相位 + 1 层 global phase**；
+- Language Optical MoE16：**1 层专家相位 + 1 层 global phase**；
+- 唯一专家层包含 16 个 `224×224` phase-only 专家，由电子输入相关
+  Top-4 router 选择；
+- 专家层传播后执行一次 square-law detection、逐专家 LayerNorm、ReLU
+  和幅度重新加载，再经过 `986×986` global phase；
 - `986×986` active footprint，四周各 20 像素传播 guard，FFT canvas `1026×1026`；
 - 专家/global/CCD 的配置传播距离均为 10 cm；
 - Transformer identity residual 保留；
 - native electronic attention 关闭；
 - phase dropout 关闭。
+
+这对应仓库的 `...moe16_224_1layer_baseline`，不是四阶段 MoE16
+版本。Student 仅保留一个辅助 DeepStack 路径：Vision stage-1 的
+辅助输出经第一个 frozen DeepStack merger 注入；Language 的唯一
+光学层位于 decoder index 1，使主视觉 embedding 和该辅助注入都先
+进入语言光学层。
 
 Language optical 最终 CCD 读出为非负 `[B,224,224]`。读取最后一个有效 language
 token 对应的行，得到 detector feature `[B,224]`。检索读出只有：

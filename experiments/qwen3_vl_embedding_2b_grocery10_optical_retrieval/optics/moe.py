@@ -175,7 +175,7 @@ class FullPlaneReadout(nn.Module):
 
 
 class HomogeneousMoEOpticalCore(nn.Module):
-    """MoE16x4 core shared structurally, but not parametrically, by vision/language."""
+    """One-expert-stage MoE16 core shared structurally, not parametrically."""
 
     def __init__(self, hidden_size: int, max_tokens: int, settings: Any) -> None:
         super().__init__(); self.hidden_size = int(hidden_size); self.max_tokens = int(max_tokens)
@@ -212,9 +212,9 @@ class HomogeneousMoEOpticalCore(nn.Module):
                        "k_space_constraint_enabled": settings.k_space_constraint_enabled,
                        "theta_max_deg": settings.theta_max_deg}
         self.expert_layers = nn.ModuleList([ExpertPhasePlane(self.geometry, settings) for _ in range(settings.expert_layers)])
-        # All physical hops are configured to the same 10 cm distance.  Reuse
-        # one immutable transfer function instead of storing five identical
-        # 1026x1026 complex buffers per vision/language core.
+        # The expert-to-global and global-to-CCD hops are both fixed at 10 cm
+        # in this baseline. Reuse one immutable transfer function instead of
+        # storing duplicate 1026x1026 complex buffers.
         self.propagator = AngularSpectrumPropagator(
             distance_m=settings.expert_interlayer_distance_m,
             **prop_kwargs,
@@ -460,8 +460,12 @@ class LanguageDeepStackHomogeneousMoE(nn.Module):
         self.positions = []
 
     def set_deepstack_injection_count(self, count: int) -> None:
-        if count < 0 or count >= len(self.core.expert_layers):
-            raise ValueError(f"DeepStack injection count must be in [0,{len(self.core.expert_layers) - 1}], got {count}")
+        if count < 0:
+            raise ValueError("DeepStack injection count must be non-negative")
+        # In the one-stage baseline the sole selected DeepStack injection
+        # occurs in a bypassed Qwen language slot before the optical language
+        # stage. Therefore this count is placement metadata, not an
+        # optical-stage bound.
         self.deepstack_injection_count = int(count)
 
     def _mask_on(self, hidden: torch.Tensor) -> torch.Tensor:
