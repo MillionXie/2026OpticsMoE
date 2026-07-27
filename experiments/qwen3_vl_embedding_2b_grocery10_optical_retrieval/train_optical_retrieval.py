@@ -145,6 +145,36 @@ def embedding_distillation_loss(
     return (1.0 - F.cosine_similarity(student.float(), teacher.float(), dim=-1)).mean()
 
 
+def relational_embedding_distillation_loss(
+    student: torch.Tensor, teacher: torch.Tensor
+) -> torch.Tensor:
+    """Match the Teacher's off-diagonal pairwise cosine geometry.
+
+    Pointwise cosine KD leaves many embedding configurations with nearly the
+    same loss.  On a small retrieval dataset, matching all pairwise relations
+    in the current query/gallery batch supplies O(B^2) geometric constraints
+    without adding a classifier or changing inference.
+    """
+    if student.shape != teacher.shape:
+        raise RuntimeError(
+            f"Student/teacher embedding shapes differ: {student.shape} vs {teacher.shape}"
+        )
+    if student.ndim != 2:
+        raise ValueError("Relational embedding KD expects [B,D] tensors")
+    if len(student) < 2:
+        return student.float().sum() * 0.0
+    student_normalized = F.normalize(student.float(), dim=-1)
+    teacher_normalized = F.normalize(teacher.float(), dim=-1)
+    student_relations = student_normalized @ student_normalized.T
+    teacher_relations = teacher_normalized @ teacher_normalized.T
+    off_diagonal = ~torch.eye(
+        len(student), dtype=torch.bool, device=student.device
+    )
+    return F.mse_loss(
+        student_relations[off_diagonal], teacher_relations[off_diagonal]
+    )
+
+
 def gallery_retrieval_loss(
     query_embeddings: torch.Tensor,
     query_labels: torch.Tensor,
@@ -396,6 +426,7 @@ def save_checkpoint(
             "test_metrics_used_for_selection": False,
             "training_objective": {
                 "lambda_kd": settings.lambda_kd,
+                "lambda_relational_kd": settings.lambda_relational_kd,
                 "lambda_ret": settings.lambda_ret,
                 "lambda_gallery": settings.lambda_gallery,
                 "lambda_router_balance": settings.lambda_router_balance,
@@ -553,6 +584,7 @@ def train_optical_retrieval(
         "learning_rate",
         "total_loss",
         "kd_loss",
+        "relational_kd_loss",
         "retrieval_loss",
         "gallery_loss",
         "router_balance_loss",
@@ -598,6 +630,7 @@ def train_optical_retrieval(
         totals = {
             "total": 0.0,
             "kd": 0.0,
+            "relational_kd": 0.0,
             "ret": 0.0,
             "gallery": 0.0,
             "balance": 0.0,
@@ -687,6 +720,9 @@ def train_optical_retrieval(
                         f"Student detector output shape {tuple(detector.shape)} is invalid"
                     )
                 kd = embedding_distillation_loss(student, teacher)
+                relational_kd = relational_embedding_distillation_loss(
+                    student, teacher
+                )
                 retrieval = supervised_contrastive_loss(
                     student, combined_labels, settings.temperature
                 )
@@ -717,6 +753,7 @@ def train_optical_retrieval(
                 )
                 total = (
                     settings.lambda_kd * kd
+                    + settings.lambda_relational_kd * relational_kd
                     + settings.lambda_ret * retrieval
                     + settings.lambda_gallery * gallery
                     + settings.lambda_router_balance * balance
@@ -726,7 +763,8 @@ def train_optical_retrieval(
                 raise RuntimeError(
                     f"Non-finite loss at epoch={epoch} batch={batch_index}: "
                     f"total={total}, kd={kd}, retrieval={retrieval}, "
-                    f"gallery={gallery}, balance={balance}, importance={importance}"
+                    f"relational_kd={relational_kd}, gallery={gallery}, "
+                    f"balance={balance}, importance={importance}"
                 )
             total.backward()
             bad_gradients = [
@@ -740,6 +778,7 @@ def train_optical_retrieval(
             count = query_count
             totals["total"] += float(total.detach()) * count
             totals["kd"] += float(kd.detach()) * count
+            totals["relational_kd"] += float(relational_kd.detach()) * count
             totals["ret"] += float(retrieval.detach()) * count
             totals["gallery"] += float(gallery.detach()) * count
             totals["balance"] += float(balance.detach()) * count
@@ -765,6 +804,7 @@ def train_optical_retrieval(
                     f"batch {batch_index:04d}/{len(loader):04d} "
                     f"loss={totals['total']/totals['samples']:.5f} "
                     f"kd={totals['kd']/totals['samples']:.5f} "
+                    f"rel_kd={totals['relational_kd']/totals['samples']:.5f} "
                     f"ret={totals['ret']/totals['samples']:.5f} "
                     f"gallery={totals['gallery']/totals['samples']:.5f} "
                     f"train_top1="
@@ -810,6 +850,7 @@ def train_optical_retrieval(
             "learning_rate": optimizer.param_groups[0]["lr"],
             "total_loss": average_total,
             "kd_loss": totals["kd"] / sample_count,
+            "relational_kd_loss": totals["relational_kd"] / sample_count,
             "retrieval_loss": totals["ret"] / sample_count,
             "gallery_loss": totals["gallery"] / sample_count,
             "router_balance_loss": totals["balance"] / sample_count,

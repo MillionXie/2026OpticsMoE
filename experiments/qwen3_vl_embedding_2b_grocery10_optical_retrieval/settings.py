@@ -95,6 +95,7 @@ class Settings:
     learning_rate: float
     weight_decay: float
     lambda_kd: float
+    lambda_relational_kd: float
     lambda_ret: float
     lambda_gallery: float
     lambda_router_balance: float
@@ -280,6 +281,7 @@ class Settings:
             raise ValueError("Phase dropout is disabled for the initial retrieval experiment")
         loss_weights = (
             self.lambda_kd,
+            self.lambda_relational_kd,
             self.lambda_ret,
             self.lambda_gallery,
             self.lambda_router_balance,
@@ -350,6 +352,7 @@ class Settings:
                 "learning_rate": self.learning_rate,
                 "weight_decay": self.weight_decay,
                 "lambda_kd": self.lambda_kd,
+                "lambda_relational_kd": self.lambda_relational_kd,
                 "lambda_ret": self.lambda_ret,
                 "lambda_gallery": self.lambda_gallery,
                 "lambda_router_balance": self.lambda_router_balance,
@@ -488,6 +491,7 @@ def load_settings(path: str | Path) -> Settings:
         learning_rate=float(d("training.learning_rate", 0.002)),
         weight_decay=float(d("training.weight_decay", 0.0)),
         lambda_kd=float(d("training.lambda_kd", 1.0)),
+        lambda_relational_kd=float(d("training.lambda_relational_kd", 0.0)),
         lambda_ret=float(d("training.lambda_ret", 1.0)),
         lambda_gallery=float(d("training.lambda_gallery", 0.0)),
         lambda_router_balance=float(d("training.lambda_router_balance", 0.0)),

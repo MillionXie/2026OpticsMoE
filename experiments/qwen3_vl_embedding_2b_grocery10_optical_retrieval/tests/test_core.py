@@ -9,6 +9,7 @@ import torch
 import yaml
 from PIL import Image
 from torch import nn
+from torch.nn import functional as F
 
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.analyze_gallery_coverage import (
     select_additional_gallery_samples,
@@ -41,6 +42,7 @@ from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.train_optical
     embedding_distillation_loss,
     gallery_retrieval_logits,
     gallery_retrieval_loss,
+    relational_embedding_distillation_loss,
     retrieval_ranking_sums,
     select_gallery_items_for_queries,
     supervised_contrastive_loss,
@@ -177,6 +179,38 @@ def test_phase_learning_rate_gets_an_independent_optimizer_group() -> None:
         id(replacement.language_surrogate.core.raw_phase),
     }
     assert {id(value) for value in groups["optical_phases"]["params"]} == phase_ids
+
+
+def test_relational_kd_matches_pairwise_teacher_geometry() -> None:
+    teacher = F.normalize(
+        torch.tensor(
+            [
+                [1.0, 0.0, 0.0],
+                [0.8, 0.6, 0.0],
+                [0.0, 0.0, 1.0],
+            ]
+        ),
+        dim=-1,
+    )
+    identical = relational_embedding_distillation_loss(teacher.clone(), teacher)
+    distorted = relational_embedding_distillation_loss(
+        teacher[[0, 2, 1]], teacher
+    )
+    assert float(identical) == pytest.approx(0.0, abs=1.0e-8)
+    assert float(distorted) > 0.0
+
+
+def test_relational_kd_config_is_independent_and_backward_compatible() -> None:
+    base = load_settings(EXPERIMENT / "configs" / "grocery10.yaml")
+    trial = load_settings(
+        EXPERIMENT
+        / "configs"
+        / "grocery10_replaced_continue_epoch141_augmented_relational_kd.yaml"
+    )
+    assert base.lambda_relational_kd == 0.0
+    assert trial.lambda_relational_kd == 5.0
+    assert trial.phase_learning_rate == 1.0e-6
+    assert trial.output_dir.name.endswith("augmented_relational_kd")
 
 
 def test_gallery_coverage_selection_is_train_only_and_deterministic(
