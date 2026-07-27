@@ -125,4 +125,4 @@ optical:
 visualization:
   sample_count: 8
 
-output_dir: ../../../runs/qwen3_vl_embedding_2b_grocery10_optical_retrieval
+output_dir: ../runs/qwen3_vl_embedding_2b_grocery10_optical_retrieval

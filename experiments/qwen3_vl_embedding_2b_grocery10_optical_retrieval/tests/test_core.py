@@ -52,6 +52,18 @@ def test_main_config_has_ten_packaged_skus() -> None:
     )
     assert settings.expert_layers == 1
     assert settings.vision_tap_stages == (1,)
+    assert settings.output_dir == (
+        EXPERIMENT / "runs" / "qwen3_vl_embedding_2b_grocery10_optical_retrieval"
+    ).resolve()
+
+
+def test_smoke_output_is_also_inside_experiment() -> None:
+    settings = load_settings(EXPERIMENT / "configs" / "grocery10_smoke.yaml")
+    assert settings.output_dir == (
+        EXPERIMENT
+        / "runs"
+        / "qwen3_vl_embedding_2b_grocery10_optical_retrieval_smoke"
+    ).resolve()
 
 
 def test_student_has_one_expert_stage_plus_one_global_phase() -> None:

@@ -133,6 +133,15 @@ SKU 相似度、最大错误 SKU 相似度和每个 query 的 Top-3 结果。
 
 ## 输出
 
+所有运行结果默认保存在本实验目录内部：
+
+```text
+experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/
+```
+
+配置中的 `output_dir` 相对于 `configs/` 解析，因此使用 `../runs/...`。
+数据集仍放在仓库级 `data/GroceryStoreDataset`，不会复制进实验输出目录。
+
 正式 run 至少写出：
 
 ```text

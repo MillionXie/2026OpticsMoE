@@ -19,4 +19,4 @@ training:
 visualization:
   sample_count: 2
 
-output_dir: ../../../runs/qwen3_vl_embedding_2b_grocery10_optical_retrieval_smoke
+output_dir: ../runs/qwen3_vl_embedding_2b_grocery10_optical_retrieval_smoke
