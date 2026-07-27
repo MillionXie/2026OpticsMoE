@@ -148,6 +148,15 @@ epoch 58–150。该配置将 router LR 从 `1e-3` 降至 `1e-4`、base LR
 CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_continue_epoch57_stable.yaml --phase train --resume-checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/qwen3_vl_embedding_2b_grocery10_optical_retrieval/best_continuation_from_epoch_0050.pt
 ```
 
+若 gallery 与 query 两端同时更新出现移动 prototype 振荡，可从稳定的
+epoch 60 训练损失 checkpoint 使用固定-gallery-gradient 版本完成
+epoch 61–150。这里只在 gallery CE 分支停止 prototype 梯度；10 张
+gallery 仍在同一次 Student forward 中，并继续接受 Teacher KD：
+
+```text
+CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_continue_epoch60_fixed_gallery.yaml --phase train --resume-checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/qwen3_vl_embedding_2b_grocery10_optical_retrieval/best_continuation_from_epoch_0057.pt
+```
+
 每轮可输出 test 指标供观察，但 checkpoint 只按训练总损失保存：
 
 - `last_checkpoint.pt`：最后一轮；

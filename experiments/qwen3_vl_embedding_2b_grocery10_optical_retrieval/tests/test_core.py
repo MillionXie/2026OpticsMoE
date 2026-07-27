@@ -97,6 +97,18 @@ def test_stable_epoch57_continuation_ends_at_epoch150() -> None:
     assert settings.lambda_router_importance == 0.005
 
 
+def test_fixed_gallery_continuation_ends_at_epoch150() -> None:
+    settings = load_settings(
+        EXPERIMENT / "configs" / "grocery10_continue_epoch60_fixed_gallery.yaml"
+    )
+    assert settings.epochs == 90
+    assert 60 + settings.epochs == 150
+    assert settings.learning_rate == 0.00002
+    assert settings.router_learning_rate == 0.00005
+    assert settings.gallery_temperature == 0.15
+    assert settings.gallery_prototype_stop_gradient
+
+
 def test_student_has_one_expert_stage_plus_one_global_phase() -> None:
     settings = load_settings(EXPERIMENT / "configs" / "grocery10.yaml")
     vision = HomogeneousMoEOpticalCore(1024, 224, settings)
@@ -287,6 +299,23 @@ def test_gallery_retrieval_loss_uses_wrong_skus_as_negatives_and_backpropagates(
     good.backward()
     assert raw_query.grad is not None and torch.isfinite(raw_query.grad).all()
     assert raw_gallery.grad is not None and torch.isfinite(raw_gallery.grad).all()
+
+
+def test_gallery_stop_gradient_keeps_query_gradient() -> None:
+    raw_gallery = torch.eye(3, requires_grad=True)
+    raw_query = torch.eye(3, requires_grad=True)
+    labels = torch.arange(3)
+    loss = gallery_retrieval_loss(
+        raw_query,
+        labels,
+        raw_gallery,
+        labels,
+        temperature=0.15,
+        stop_gradient_on_gallery=True,
+    )
+    loss.backward()
+    assert raw_query.grad is not None and torch.isfinite(raw_query.grad).all()
+    assert raw_gallery.grad is None
 
 
 def test_retrieval_metrics_top1_top3_and_mrr(tmp_path: Path) -> None:

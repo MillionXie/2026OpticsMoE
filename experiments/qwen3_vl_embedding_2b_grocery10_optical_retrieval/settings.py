@@ -100,6 +100,8 @@ class Settings:
     lambda_router_balance: float
     lambda_router_importance: float
     temperature: float
+    gallery_temperature: float
+    gallery_prototype_stop_gradient: bool
     router_learning_rate: float | None
     resume_optimizer_state: bool
     random_seed: int
@@ -284,6 +286,8 @@ class Settings:
             )
         if self.temperature <= 0:
             raise ValueError("temperature must be positive")
+        if self.gallery_temperature <= 0:
+            raise ValueError("gallery_temperature must be positive")
         if self.router_learning_rate is not None and self.router_learning_rate <= 0:
             raise ValueError("router_learning_rate must be positive when configured")
         if self.gallery_aggregation == "mean_prototype" and self.gallery_images_per_sku < 1:
@@ -342,6 +346,10 @@ class Settings:
                 "lambda_router_balance": self.lambda_router_balance,
                 "lambda_router_importance": self.lambda_router_importance,
                 "temperature": self.temperature,
+                "gallery_temperature": self.gallery_temperature,
+                "gallery_prototype_stop_gradient": (
+                    self.gallery_prototype_stop_gradient
+                ),
                 "router_learning_rate": self.router_learning_rate,
                 "resume_optimizer_state": self.resume_optimizer_state,
                 "random_seed": self.random_seed,
@@ -475,6 +483,12 @@ def load_settings(path: str | Path) -> Settings:
         lambda_router_balance=float(d("training.lambda_router_balance", 0.0)),
         lambda_router_importance=float(d("training.lambda_router_importance", 0.0)),
         temperature=float(d("training.temperature", 0.07)),
+        gallery_temperature=float(
+            d("training.gallery_temperature", d("training.temperature", 0.07))
+        ),
+        gallery_prototype_stop_gradient=bool(
+            d("training.gallery_prototype_stop_gradient", False)
+        ),
         router_learning_rate=(
             None
             if d("training.router_learning_rate") is None

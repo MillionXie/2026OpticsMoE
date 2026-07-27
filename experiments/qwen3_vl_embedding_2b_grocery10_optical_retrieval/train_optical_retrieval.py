@@ -151,6 +151,8 @@ def gallery_retrieval_loss(
     gallery_embeddings: torch.Tensor,
     gallery_labels: torch.Tensor,
     temperature: float,
+    *,
+    stop_gradient_on_gallery: bool = False,
 ) -> torch.Tensor:
     """Cross-entropy retrieval against one differentiable prototype per SKU.
 
@@ -171,6 +173,8 @@ def gallery_retrieval_loss(
         raise ValueError("temperature must be positive")
     query = F.normalize(query_embeddings.float(), dim=-1)
     gallery = F.normalize(gallery_embeddings.float(), dim=-1)
+    if stop_gradient_on_gallery:
+        gallery = gallery.detach()
     sku_ids = torch.unique(gallery_labels, sorted=True)
     if sku_ids.numel() < 2:
         raise RuntimeError("Gallery retrieval loss needs at least two distinct SKUs")
@@ -293,6 +297,10 @@ def save_checkpoint(
                 "lambda_router_balance": settings.lambda_router_balance,
                 "lambda_router_importance": settings.lambda_router_importance,
                 "temperature": settings.temperature,
+                "gallery_temperature": settings.gallery_temperature,
+                "gallery_prototype_stop_gradient": (
+                    settings.gallery_prototype_stop_gradient
+                ),
             },
             "learning_rate": settings.learning_rate,
             "router_learning_rate": settings.router_learning_rate,
@@ -553,7 +561,10 @@ def train_optical_retrieval(
                         query_labels,
                         student[query_count:],
                         gallery_labels,
-                        settings.temperature,
+                        settings.gallery_temperature,
+                        stop_gradient_on_gallery=(
+                            settings.gallery_prototype_stop_gradient
+                        ),
                     )
                     if gallery_training_enabled
                     else student.new_zeros(())

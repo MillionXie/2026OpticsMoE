@@ -52,6 +52,8 @@ training:
   lambda_router_balance: 0.0
   lambda_router_importance: 0.0
   temperature: 0.07
+  gallery_temperature: 0.07
+  gallery_prototype_stop_gradient: false
   router_learning_rate: null
   resume_optimizer_state: true
   random_seed: 42
