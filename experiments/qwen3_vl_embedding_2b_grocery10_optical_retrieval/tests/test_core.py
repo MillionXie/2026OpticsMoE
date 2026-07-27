@@ -35,7 +35,10 @@ from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.settings impo
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.train_optical_retrieval import (
     PKBatchSampler,
     embedding_distillation_loss,
+    gallery_retrieval_logits,
     gallery_retrieval_loss,
+    retrieval_ranking_sums,
+    select_gallery_items_for_queries,
     supervised_contrastive_loss,
 )
 
@@ -65,6 +68,18 @@ def test_smoke_output_is_also_inside_experiment() -> None:
         / "runs"
         / "qwen3_vl_embedding_2b_grocery10_optical_retrieval_smoke"
     ).resolve()
+
+
+def test_grocery31_pretrain_config_is_valid_and_keeps_forward_batch_bounded() -> None:
+    settings = load_settings(EXPERIMENT / "configs" / "grocery31_pretrain.yaml")
+    assert len(settings.selected_skus) == 31
+    assert len(set(settings.selected_skus)) == 31
+    assert settings.pk_skus_per_batch == 10
+    assert settings.batch_size == 30
+    # The implementation appends one gallery image for only each selected SKU.
+    assert settings.batch_size + settings.pk_skus_per_batch == 40
+    assert settings.dataset_variant == "grocery31"
+    assert settings.subset_manifest_path.name == "grocery31_subset.csv"
 
 
 def test_continuation_config_adds_gallery_negatives_and_router_recovery() -> None:
@@ -325,6 +340,56 @@ def test_gallery_stop_gradient_keeps_query_gradient() -> None:
     loss.backward()
     assert raw_query.grad is not None and torch.isfinite(raw_query.grad).all()
     assert raw_gallery.grad is None
+
+
+def test_gallery_selection_and_training_retrieval_metrics(tmp_path: Path) -> None:
+    galleries = []
+    queries = []
+    for sku in range(4):
+        sample = GrocerySample(
+            f"g{sku}",
+            tmp_path / f"g{sku}.jpg",
+            sku,
+            f"sku{sku}",
+            sku,
+            "gallery",
+            "iconic",
+            True,
+        )
+        galleries.append({"image": object(), "sample": sample, "dataset_index": sku})
+        if sku in {1, 3}:
+            queries.append(
+                GrocerySample(
+                    f"q{sku}",
+                    tmp_path / f"q{sku}.jpg",
+                    sku,
+                    f"sku{sku}",
+                    sku,
+                    "train",
+                    "train",
+                    False,
+                )
+            )
+    selected = select_gallery_items_for_queries(galleries, queries)
+    assert [item["sample"].sku_index for item in selected] == [1, 3]
+
+    query_embeddings = torch.tensor([[1.0, 0.0], [0.0, 1.0]])
+    gallery_embeddings = query_embeddings.clone()
+    labels = torch.tensor([1, 3])
+    logits, targets = gallery_retrieval_logits(
+        query_embeddings,
+        labels,
+        gallery_embeddings,
+        labels,
+        temperature=0.15,
+    )
+    values = retrieval_ranking_sums(logits, targets)
+    assert values == {
+        "top1_correct": 2.0,
+        "top3_correct": 2.0,
+        "reciprocal_rank_sum": 2.0,
+        "query_count": 2.0,
+    }
 
 
 def test_retrieval_metrics_top1_top3_and_mrr(tmp_path: Path) -> None:

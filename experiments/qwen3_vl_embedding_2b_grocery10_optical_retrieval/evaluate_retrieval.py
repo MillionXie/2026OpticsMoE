@@ -154,7 +154,9 @@ def _plot_confusion(
     axis.set_yticks(range(len(class_names)), class_names)
     axis.set_xlabel("Retrieved SKU")
     axis.set_ylabel("True SKU")
-    axis.set_title("Optical Student Grocery-10 Retrieval Confusion Matrix")
+    axis.set_title(
+        f"Optical Student Grocery-{len(class_names)} Retrieval Confusion Matrix"
+    )
     for y in range(len(class_names)):
         for x in range(len(class_names)):
             axis.text(x, y, str(int(matrix[y, x])), ha="center", va="center", fontsize=8)

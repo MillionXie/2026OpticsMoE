@@ -30,7 +30,7 @@ PHASES = {
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Qwen3-VL-Embedding-2B -> Optical Student Grocery-10 retrieval"
+        description="Qwen3-VL-Embedding-2B -> Optical Student Grocery retrieval"
     )
     parser.add_argument("--config", required=True)
     parser.add_argument("--phase", choices=sorted(PHASES), default="all")

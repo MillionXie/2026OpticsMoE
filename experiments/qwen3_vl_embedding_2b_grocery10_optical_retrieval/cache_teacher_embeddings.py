@@ -96,7 +96,7 @@ def cache_identity(
 ) -> dict[str, Any]:
     return {
         "cache_version": CACHE_VERSION,
-        "dataset": "GroceryStoreDataset-grocery10-retrieval",
+        "dataset": f"GroceryStoreDataset-{settings.dataset_variant}-retrieval",
         "manifest_sha256": bundle.manifest_digest,
         "selected_skus": list(bundle.class_names),
         "model_id": settings.model_id,

@@ -186,8 +186,12 @@ class Settings:
         return self.output_dir / "teacher_cache" / "teacher_embeddings.pt"
 
     @property
+    def dataset_variant(self) -> str:
+        return f"grocery{len(self.selected_skus)}"
+
+    @property
     def subset_manifest_path(self) -> Path:
-        return self.output_dir / "manifests" / "grocery10_subset.csv"
+        return self.output_dir / "manifests" / f"{self.dataset_variant}_subset.csv"
 
     def resolve_architecture(self, model: Any) -> None:
         self.vision_depth = int(model.config.vision_config.depth)
@@ -204,8 +208,10 @@ class Settings:
             )
 
     def validate(self) -> None:
-        if len(self.selected_skus) != 10 or len(set(self.selected_skus)) != 10:
-            raise ValueError("selected_skus must contain exactly 10 unique SKU names")
+        if len(self.selected_skus) < 2:
+            raise ValueError("selected_skus must contain at least two SKU names")
+        if len(set(self.selected_skus)) != len(self.selected_skus):
+            raise ValueError("selected_skus must not contain duplicate SKU names")
         if not self.instruction.strip():
             raise ValueError("instruction must be non-empty")
         if self.embedding_dim != 64:

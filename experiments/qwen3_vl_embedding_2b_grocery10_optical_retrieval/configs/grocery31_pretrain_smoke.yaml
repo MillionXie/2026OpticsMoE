@@ -1,0 +1,22 @@
+base_config: grocery31_pretrain.yaml
+
+dataset:
+  train_limit_per_sku: 3
+  test_limit_per_sku: 2
+
+batching:
+  teacher_batch_size: 2
+  batch_size: 20
+  pk_skus_per_batch: 10
+  pk_images_per_sku: 2
+  inference_batch_size: 2
+  num_workers: 0
+
+training:
+  epochs: 1
+  log_interval_batches: 1
+
+visualization:
+  sample_count: 2
+
+output_dir: ../runs/qwen3_vl_embedding_2b_grocery31_optical_pretrain_smoke

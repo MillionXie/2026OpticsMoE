@@ -243,7 +243,12 @@ def prepare_grocery_subset(
             ],
         )
         write_json(settings.output_dir / "dataset.json", metadata)
-        write_json(settings.output_dir / "manifests" / "grocery10_subset_metadata.json", metadata)
+        write_json(
+            settings.output_dir
+            / "manifests"
+            / f"{settings.dataset_variant}_subset_metadata.json",
+            metadata,
+        )
     return bundle
 
 
@@ -410,7 +415,7 @@ def main() -> int:
     settings = load_settings(args.config)
     bundle = prepare_grocery_subset(settings, persist=True)
     print(
-        f"Prepared Grocery-10: train={len(bundle.train_samples)} "
+        f"Prepared Grocery-{len(bundle.class_names)}: train={len(bundle.train_samples)} "
         f"test={len(bundle.test_samples)} gallery={len(bundle.gallery_samples)} "
         f"manifest={bundle.manifest_digest[:12]}"
     )

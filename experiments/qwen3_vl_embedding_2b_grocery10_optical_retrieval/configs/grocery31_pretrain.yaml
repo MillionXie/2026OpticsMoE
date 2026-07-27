@@ -1,0 +1,67 @@
+base_config: grocery10.yaml
+
+# General packaged-product pretraining. The 31 fine-grained packaged SKUs are
+# all retained; fruit, vegetables, and loose produce remain excluded.
+dataset:
+  selected_skus:
+    - Bravo-Apple-Juice
+    - Bravo-Orange-Juice
+    - God-Morgon-Apple-Juice
+    - God-Morgon-Orange-Juice
+    - God-Morgon-Orange-Red-Grapefruit-Juice
+    - God-Morgon-Red-Grapefruit-Juice
+    - Tropicana-Apple-Juice
+    - Tropicana-Golden-Grapefruit
+    - Tropicana-Juice-Smooth
+    - Tropicana-Mandarin-Morning
+    - Arla-Ecological-Medium-Fat-Milk
+    - Arla-Lactose-Medium-Fat-Milk
+    - Arla-Medium-Fat-Milk
+    - Arla-Standard-Milk
+    - Garant-Ecological-Medium-Fat-Milk
+    - Garant-Ecological-Standard-Milk
+    - Oatly-Natural-Oatghurt
+    - Oatly-Oat-Milk
+    - Arla-Ecological-Sour-Cream
+    - Arla-Sour-Cream
+    - Arla-Sour-Milk
+    - Alpro-Blueberry-Soyghurt
+    - Alpro-Vanilla-Soyghurt
+    - Alpro-Fresh-Soy-Milk
+    - Alpro-Shelf-Soy-Milk
+    - Arla-Mild-Vanilla-Yoghurt
+    - Arla-Natural-Mild-Low-Fat-Yoghurt
+    - Arla-Natural-Yoghurt
+    - Valio-Vanilla-Yoghurt
+    - Yoggi-Strawberry-Yoghurt
+    - Yoggi-Vanilla-Yoghurt
+
+# Each optical forward sees 30 natural queries plus only the 10 gallery images
+# corresponding to the PK-selected SKUs, rather than all 31 gallery images.
+batching:
+  batch_size: 30
+  pk_skus_per_batch: 10
+  pk_images_per_sku: 3
+
+training:
+  epochs: 100
+  learning_rate: 0.0002
+  router_learning_rate: 0.0002
+  weight_decay: 0.0
+  lambda_kd: 5.0
+  lambda_ret: 1.0
+  lambda_gallery: 0.25
+  lambda_router_balance: 0.02
+  lambda_router_importance: 0.005
+  temperature: 0.07
+  gallery_temperature: 0.15
+  gallery_prototype_stop_gradient: true
+  resume_optimizer_state: false
+  evaluate_test_each_epoch: true
+  log_interval_batches: 5
+
+optical:
+  router:
+    temperature: 2.0
+
+output_dir: ../runs/qwen3_vl_embedding_2b_grocery31_optical_pretrain

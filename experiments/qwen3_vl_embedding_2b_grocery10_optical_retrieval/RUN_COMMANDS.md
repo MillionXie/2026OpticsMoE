@@ -14,6 +14,22 @@ python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config
 CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10.yaml --phase all
 ```
 
+## 31 packaged-SKU pretraining
+
+The command keeps the same one-expert-phase plus one-global-phase Student and
+pretrains it on all packaged SKUs. It uses a separate output directory and
+teacher cache.
+
+```bash
+CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery31_pretrain.yaml --phase all
+```
+
+Smoke:
+
+```bash
+CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery31_pretrain_smoke.yaml --phase all
+```
+
 ## Phases
 
 Prepare/download the official Grocery Store Dataset and write the fixed subset manifest:

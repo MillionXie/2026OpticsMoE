@@ -161,6 +161,27 @@ def gallery_retrieval_loss(
     above all other gallery SKUs. Multiple gallery images per SKU are supported
     by normalized mean prototypes.
     """
+    logits, targets = gallery_retrieval_logits(
+        query_embeddings,
+        query_labels,
+        gallery_embeddings,
+        gallery_labels,
+        temperature,
+        stop_gradient_on_gallery=stop_gradient_on_gallery,
+    )
+    return F.cross_entropy(logits, targets)
+
+
+def gallery_retrieval_logits(
+    query_embeddings: torch.Tensor,
+    query_labels: torch.Tensor,
+    gallery_embeddings: torch.Tensor,
+    gallery_labels: torch.Tensor,
+    temperature: float,
+    *,
+    stop_gradient_on_gallery: bool = False,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Return query-to-gallery-prototype logits and contiguous targets."""
     if query_embeddings.ndim != 2 or gallery_embeddings.ndim != 2:
         raise ValueError("Query and gallery embeddings must both be [N,D]")
     if query_labels.ndim != 1 or gallery_labels.ndim != 1:
@@ -191,7 +212,49 @@ def gallery_retrieval_loss(
         missing = torch.unique(query_labels[~valid]).detach().cpu().tolist()
         raise RuntimeError(f"Gallery is missing query SKU labels: {missing}")
     logits = query @ prototype_tensor.T / float(temperature)
-    return F.cross_entropy(logits, targets)
+    return logits, targets
+
+
+def retrieval_ranking_sums(
+    logits: torch.Tensor, targets: torch.Tensor
+) -> dict[str, float]:
+    """Return additive Top-1/Top-3/MRR statistics for epoch aggregation."""
+    if logits.ndim != 2 or targets.ndim != 1 or len(logits) != len(targets):
+        raise ValueError("Retrieval logits/targets must be [N,C] and [N]")
+    if logits.shape[1] < 2:
+        raise ValueError("Retrieval metrics need at least two candidate SKUs")
+    ranking = logits.detach().float().argsort(dim=1, descending=True)
+    top1 = ranking[:, 0].eq(targets)
+    top3 = ranking[:, : min(3, logits.shape[1])].eq(targets[:, None]).any(dim=1)
+    matching_positions = ranking.eq(targets[:, None]).nonzero(as_tuple=False)
+    if len(matching_positions) != len(targets):
+        raise RuntimeError("Each retrieval target must occur exactly once in its ranking")
+    reciprocal_rank = 1.0 / (matching_positions[:, 1].float() + 1.0)
+    return {
+        "top1_correct": float(top1.sum()),
+        "top3_correct": float(top3.sum()),
+        "reciprocal_rank_sum": float(reciprocal_rank.sum()),
+        "query_count": float(len(targets)),
+    }
+
+
+def select_gallery_items_for_queries(
+    gallery_items: Sequence[dict[str, Any]],
+    query_samples: Sequence[GrocerySample],
+) -> list[dict[str, Any]]:
+    """Select all standard gallery images for only the SKUs in this query batch."""
+    requested = sorted({int(sample.sku_index) for sample in query_samples})
+    grouped: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    for item in gallery_items:
+        grouped[int(item["sample"].sku_index)].append(item)
+    missing = [sku_index for sku_index in requested if sku_index not in grouped]
+    if missing:
+        raise RuntimeError(f"Gallery is missing query SKU labels: {missing}")
+    return [
+        item
+        for sku_index in requested
+        for item in grouped[sku_index]
+    ]
 
 
 def _router_diagnostics(
@@ -379,17 +442,13 @@ def train_optical_retrieval(
         settings.image_size,
         augment=False,
     )
-    gallery_batch = collate_grocery(
-        [gallery_dataset[index] for index in range(len(gallery_dataset))]
-    )
-    gallery_labels = torch.tensor(
-        [sample.sku_index for sample in gallery_batch["samples"]],
-        device=loaded.device,
-        dtype=torch.long,
-    )
-    if settings.lambda_gallery > 0 and len(torch.unique(gallery_labels)) != len(
-        bundle.class_names
-    ):
+    gallery_items = [
+        gallery_dataset[index] for index in range(len(gallery_dataset))
+    ]
+    gallery_sku_ids = {
+        int(item["sample"].sku_index) for item in gallery_items
+    }
+    if settings.lambda_gallery > 0 and len(gallery_sku_ids) != len(bundle.class_names):
         raise RuntimeError(
             "Gallery-aligned loss requires at least one standard image for every SKU"
         )
@@ -459,6 +518,10 @@ def train_optical_retrieval(
         "language_router_max_importance",
         "samples",
         "model_forward_samples",
+        "train_top1",
+        "train_top3",
+        "train_mrr",
+        "train_metric_definition",
         "epoch_time_sec",
         "test_top1",
         "test_top3",
@@ -494,6 +557,10 @@ def train_optical_retrieval(
             "importance": 0.0,
             "samples": 0,
             "forward_samples": 0,
+            "top1_correct": 0.0,
+            "top3_correct": 0.0,
+            "reciprocal_rank_sum": 0.0,
+            "retrieval_queries": 0,
         }
         router_totals = {
             "vision_router_entropy": 0.0,
@@ -507,13 +574,22 @@ def train_optical_retrieval(
         for batch_index, batch in enumerate(loader, 1):
             query_count = len(batch["samples"])
             gallery_training_enabled = settings.lambda_gallery > 0
+            selected_gallery_batch = (
+                collate_grocery(
+                    select_gallery_items_for_queries(
+                        gallery_items, batch["samples"]
+                    )
+                )
+                if gallery_training_enabled
+                else None
+            )
             combined_images = (
-                batch["images"] + gallery_batch["images"]
+                batch["images"] + selected_gallery_batch["images"]
                 if gallery_training_enabled
                 else batch["images"]
             )
             combined_samples = (
-                batch["samples"] + gallery_batch["samples"]
+                batch["samples"] + selected_gallery_batch["samples"]
                 if gallery_training_enabled
                 else batch["samples"]
             )
@@ -527,8 +603,20 @@ def train_optical_retrieval(
                 device=loaded.device,
                 dtype=torch.long,
             )
+            selected_gallery_labels = (
+                torch.tensor(
+                    [
+                        sample.sku_index
+                        for sample in selected_gallery_batch["samples"]
+                    ],
+                    device=loaded.device,
+                    dtype=torch.long,
+                )
+                if gallery_training_enabled
+                else None
+            )
             combined_labels = (
-                torch.cat((query_labels, gallery_labels))
+                torch.cat((query_labels, selected_gallery_labels))
                 if gallery_training_enabled
                 else query_labels
             )
@@ -555,20 +643,22 @@ def train_optical_retrieval(
                 retrieval = supervised_contrastive_loss(
                     student, combined_labels, settings.temperature
                 )
-                gallery = (
-                    gallery_retrieval_loss(
+                if gallery_training_enabled:
+                    gallery_logits, gallery_targets = gallery_retrieval_logits(
                         student[:query_count],
                         query_labels,
                         student[query_count:],
-                        gallery_labels,
+                        selected_gallery_labels,
                         settings.gallery_temperature,
                         stop_gradient_on_gallery=(
                             settings.gallery_prototype_stop_gradient
                         ),
                     )
-                    if gallery_training_enabled
-                    else student.new_zeros(())
-                )
+                    gallery = F.cross_entropy(gallery_logits, gallery_targets)
+                else:
+                    gallery_logits = None
+                    gallery_targets = None
+                    gallery = student.new_zeros(())
                 router_losses = replacement.router_losses()
                 balance = 0.5 * (
                     router_losses["vision_balance"]
@@ -609,6 +699,16 @@ def train_optical_retrieval(
             totals["importance"] += float(importance.detach()) * count
             totals["samples"] += count
             totals["forward_samples"] += len(combined_samples)
+            if gallery_logits is not None and gallery_targets is not None:
+                ranking = retrieval_ranking_sums(
+                    gallery_logits, gallery_targets
+                )
+                totals["top1_correct"] += ranking["top1_correct"]
+                totals["top3_correct"] += ranking["top3_correct"]
+                totals["reciprocal_rank_sum"] += ranking[
+                    "reciprocal_rank_sum"
+                ]
+                totals["retrieval_queries"] += int(ranking["query_count"])
             diagnostics = _router_diagnostics(replacement)
             for key, value in diagnostics.items():
                 router_totals[key] += value * count
@@ -620,6 +720,8 @@ def train_optical_retrieval(
                     f"kd={totals['kd']/totals['samples']:.5f} "
                     f"ret={totals['ret']/totals['samples']:.5f} "
                     f"gallery={totals['gallery']/totals['samples']:.5f} "
+                    f"train_top1="
+                    f"{totals['top1_correct']/max(1, totals['retrieval_queries']):.4f} "
                     f"balance={totals['balance']/totals['samples']:.5f} "
                     f"importance={totals['importance']/totals['samples']:.5f} "
                     f"active_v={diagnostics['vision_router_active_experts']:.0f}/"
@@ -629,6 +731,22 @@ def train_optical_retrieval(
                 )
         sample_count = int(totals["samples"])
         average_total = totals["total"] / sample_count
+        retrieval_query_count = int(totals["retrieval_queries"])
+        train_top1 = (
+            totals["top1_correct"] / retrieval_query_count
+            if retrieval_query_count
+            else None
+        )
+        train_top3 = (
+            totals["top3_correct"] / retrieval_query_count
+            if retrieval_query_count
+            else None
+        )
+        train_mrr = (
+            totals["reciprocal_rank_sum"] / retrieval_query_count
+            if retrieval_query_count
+            else None
+        )
         test_metrics: dict[str, Any] = {}
         if settings.evaluate_test_each_epoch:
             test_metrics = evaluate_student_split(
@@ -655,6 +773,15 @@ def train_optical_retrieval(
             },
             "samples": sample_count,
             "model_forward_samples": int(totals["forward_samples"]),
+            "train_top1": train_top1,
+            "train_top3": train_top3,
+            "train_mrr": train_mrr,
+            "train_metric_definition": (
+                "augmented training queries vs current Student gallery prototypes "
+                "for the PK-selected SKUs"
+                if retrieval_query_count
+                else "disabled because lambda_gallery=0"
+            ),
             "epoch_time_sec": time.perf_counter() - started,
             "test_top1": test_metrics.get("top1_retrieval_accuracy"),
             "test_top3": test_metrics.get("top3_retrieval_accuracy"),
@@ -707,6 +834,8 @@ def train_optical_retrieval(
             )
         print(
             f"epoch {epoch:03d} complete train_loss={average_total:.5f} "
+            f"train_top1="
+            f"{train_top1 if train_top1 is not None else float('nan'):.4f} "
             f"test_top1={test_metrics.get('top1_retrieval_accuracy', float('nan')):.4f} "
             f"best_train_loss={best_train_loss:.5f}"
         )

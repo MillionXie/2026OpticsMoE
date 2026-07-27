@@ -1,5 +1,20 @@
 # Grocery-10 商品图像检索：Qwen3-VL-Embedding Teacher + Optical Student
 
+本目录也提供 `grocery31_pretrain.yaml`，用于先在 Grocery Store Dataset
+的全部 31 个包装 SKU 上预训练同一个光学 Student，再将其 checkpoint
+迁移到筛选后的 10 个 SKU 上微调。31 类预训练不会改变物理网络结构；
+它只扩大商品外观覆盖范围。
+
+当 gallery-aligned loss 开启时，`train_log.csv` 额外记录
+`train_top1`、`train_top3` 和 `train_mrr`。这些训练指标表示“当前增强后
+训练 query 对本 batch 所选 SKU 的 Student gallery prototype”的在线检索
+结果；测试指标仍来自完整固定 test/gallery。两者之间的差距可用于判断
+过拟合，但训练在线指标通常比完整测试更乐观。
+
+31 类训练使用 `P=10, K=3`。每个 batch 只附加当前 10 个 SKU 的标准
+gallery 图，因此一次模型前向仍为 `30 query + 10 gallery = 40`，不会因
+总类别从 10 增到 31 而膨胀为 61。
+
 本实验验证一个小规模、部署形式明确的商品图库检索任务：
 
 ```text
