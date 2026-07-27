@@ -267,6 +267,19 @@ def test_stronger_augmentation_ema_config() -> None:
     assert settings.output_dir.name.endswith("stronger_augmentation_ema")
 
 
+def test_fresh_from31_finetune_uses_regularized_target10_recipe() -> None:
+    settings = load_settings(
+        EXPERIMENT
+        / "configs"
+        / "grocery10_replaced_finetune_from31_strong_ema.yaml"
+    )
+    assert len(settings.selected_skus) == 10
+    assert settings.ema_decay == 0.99
+    assert settings.phase_learning_rate == 1.0e-6
+    assert settings.crop_scale_min == 0.75
+    assert settings.output_dir.name.endswith("finetune_from31_strong_ema")
+
+
 def test_gallery_coverage_selection_is_train_only_and_deterministic(
     tmp_path: Path,
 ) -> None:

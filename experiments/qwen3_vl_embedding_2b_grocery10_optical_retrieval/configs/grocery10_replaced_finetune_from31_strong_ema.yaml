@@ -1,0 +1,6 @@
+base_config: grocery10_replaced_continue_epoch141_stronger_augmentation_ema.yaml
+
+# Fresh target-10 fine-tuning recipe. Resume this config from the generic
+# 31-SKU pretraining checkpoint (not from the already target-overfit epoch 141).
+# The absolute epoch numbers therefore continue from that source checkpoint.
+output_dir: ../runs/qwen3_vl_embedding_2b_grocery10_replaced_finetune_from31_strong_ema
