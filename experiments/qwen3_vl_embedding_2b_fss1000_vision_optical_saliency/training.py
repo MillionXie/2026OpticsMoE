@@ -34,7 +34,8 @@ HISTORY_FIELDS = [
     "train_mask_kd", "train_router_balance", "train_router_importance",
     "train_mean_iou", "train_mean_dice", "train_mae", "train_pixel_accuracy",
     "test_loss", "test_mean_iou", "test_mean_dice", "test_mae",
-    "test_pixel_accuracy", "epoch_time_sec",
+    "test_pixel_accuracy", "detector_identity_scale", "detector_input_scale",
+    "epoch_time_sec",
 ]
 
 
@@ -229,6 +230,13 @@ def train_student(
             epoch, optimizer.param_groups[0]["lr"], train_metrics, train_parts,
             test_metrics, time.perf_counter() - started,
         )
+        if student.head.detector_residual_enabled:
+            row["detector_identity_scale"] = float(
+                student.head.detector_identity_scale.detach()
+            )
+            row["detector_input_scale"] = float(
+                student.head.detector_input_scale.detach()
+            )
         history.append(row)
         _save_history(settings.output_dir / "metrics" / "student_training_history.csv", history)
         write_json(settings.output_dir / "metrics" / "student_training_latest.json", row)
@@ -237,11 +245,17 @@ def train_student(
         _save_checkpoint(last_path, payload)
         if improved:
             _save_checkpoint(best_path, payload)
+        residual_log = (
+            "residual_input_scale="
+            f"{float(student.head.detector_input_scale.detach()):.5f} "
+            if student.head.detector_residual_enabled else ""
+        )
         print(
             f"student epoch {epoch:03d}/{settings.student_epochs} "
             f"train_loss={train_metrics['loss']:.5f} train_mIoU={train_metrics['mean_iou']:.4f} "
             f"test_mIoU={test_metrics['mean_iou']:.4f} test_Dice={test_metrics['mean_dice']:.4f} "
             f"balance={train_parts['router_balance']:.5f} "
+            f"{residual_log}"
             f"best_train_loss={best_train_loss:.5f}",
             flush=True,
         )
@@ -400,6 +414,15 @@ def _student_head(loaded: LoadedVisionBackbone, settings: Any) -> nn.Module:
         progressive_refinement_enabled=(
             settings.student_segmentation_progressive_refinement_enabled
         ),
+        detector_residual_enabled=settings.student_detector_residual_enabled,
+        detector_identity_scale_init=settings.student_detector_identity_scale_init,
+        detector_input_scale_init=settings.student_detector_input_scale_init,
+        detector_identity_scale_trainable=(
+            settings.student_detector_identity_scale_trainable
+        ),
+        detector_input_scale_trainable=(
+            settings.student_detector_input_scale_trainable
+        ),
     ).to(loaded.device)
 
 
@@ -468,13 +491,19 @@ def _initialize_student(
     student.core.load_state_dict(payload["core_state_dict"], strict=True)
     head_result = student.head.load_state_dict(
         payload["head_state_dict"],
-        strict=not _refinement_enabled(student),
+        strict=not _head_extension_enabled(student),
     )
-    if _refinement_enabled(student):
+    if _head_extension_enabled(student):
         invalid_missing = [
             name for name in head_result.missing_keys
             if not name.startswith(
-                ("refinement.", "progressive_refinement.", "progressive_classifier.")
+                (
+                    "refinement.",
+                    "progressive_refinement.",
+                    "progressive_classifier.",
+                    "detector_identity_scale",
+                    "detector_input_scale",
+                )
             )
         ]
         if invalid_missing or head_result.unexpected_keys:
@@ -497,6 +526,16 @@ def _initialize_student(
         flush=True,
     )
     return report
+
+
+def _head_extension_enabled(
+    student: VisionOpticalSaliencyStudent,
+) -> bool:
+    return bool(
+        getattr(student.head, "refinement_enabled", False)
+        or getattr(student.head, "progressive_refinement_enabled", False)
+        or getattr(student.head, "detector_residual_enabled", False)
+    )
 
 
 def _refinement_enabled(
@@ -865,6 +904,8 @@ def _history_row(
         "test_mean_dice": test["mean_dice"],
         "test_mae": test["mae"],
         "test_pixel_accuracy": test["pixel_accuracy"],
+        "detector_identity_scale": None,
+        "detector_input_scale": None,
         "epoch_time_sec": epoch_time,
     }
 

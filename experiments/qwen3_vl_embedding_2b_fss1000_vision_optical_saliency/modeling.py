@@ -186,6 +186,11 @@ class LightweightSegmentationHead(nn.Module):
         output_size: int = 224,
         refinement_enabled: bool = False,
         progressive_refinement_enabled: bool = False,
+        detector_residual_enabled: bool = False,
+        detector_identity_scale_init: float = 1.0,
+        detector_input_scale_init: float = 0.1,
+        detector_identity_scale_trainable: bool = False,
+        detector_input_scale_trainable: bool = True,
     ) -> None:
         super().__init__()
         self.input_dim = int(input_dim)
@@ -210,6 +215,21 @@ class LightweightSegmentationHead(nn.Module):
         self.classifier = nn.Conv2d(current, 1, 1)
         self.refinement_enabled = bool(refinement_enabled)
         self.progressive_refinement_enabled = bool(progressive_refinement_enabled)
+        self.detector_residual_enabled = bool(detector_residual_enabled)
+        if self.detector_residual_enabled:
+            self._make_scale(
+                "detector_identity_scale",
+                detector_identity_scale_init,
+                detector_identity_scale_trainable,
+            )
+            self._make_scale(
+                "detector_input_scale",
+                detector_input_scale_init,
+                detector_input_scale_trainable,
+            )
+        else:
+            self.detector_identity_scale = None
+            self.detector_input_scale = None
         if self.refinement_enabled and self.progressive_refinement_enabled:
             raise ValueError("Local and progressive refinement cannot both be enabled")
         if self.refinement_enabled:
@@ -260,12 +280,35 @@ class LightweightSegmentationHead(nn.Module):
             self.progressive_refinement = None
             self.progressive_classifier = None
 
-    def forward(self, spatial_features: torch.Tensor) -> torch.Tensor:
+    def _make_scale(self, name: str, value: float, trainable: bool) -> None:
+        tensor = torch.tensor(float(value), dtype=torch.float32)
+        if trainable:
+            setattr(self, name, nn.Parameter(tensor))
+        else:
+            self.register_buffer(name, tensor)
+
+    def forward(
+        self,
+        spatial_features: torch.Tensor,
+        input_residual: torch.Tensor | None = None,
+    ) -> torch.Tensor:
         if spatial_features.ndim != 4 or spatial_features.shape[1] != self.input_dim:
             raise RuntimeError(
                 f"Segmentation head expects [B,{self.input_dim},H,W], got "
                 f"{tuple(spatial_features.shape)}"
             )
+        if self.detector_residual_enabled:
+            if input_residual is None or input_residual.shape != spatial_features.shape:
+                raise RuntimeError(
+                    "Detector residual requires a shape-compatible optical input "
+                    f"feature; detector={tuple(spatial_features.shape)}, "
+                    f"input={None if input_residual is None else tuple(input_residual.shape)}"
+                )
+            boundary_dtype = spatial_features.dtype
+            spatial_features = (
+                self.detector_identity_scale.float() * spatial_features.float()
+                + self.detector_input_scale.float() * input_residual.float()
+            ).to(boundary_dtype)
         tokens = spatial_features.permute(0, 2, 3, 1)
         projected = self.token_projection(self.token_norm(tokens.float()))
         decoded = self.decoder(projected.permute(0, 3, 1, 2))
@@ -308,6 +351,17 @@ class LightweightSegmentationHead(nn.Module):
             "output_size": self.output_size,
             "refinement_enabled": self.refinement_enabled,
             "progressive_refinement_enabled": self.progressive_refinement_enabled,
+            "detector_residual_enabled": self.detector_residual_enabled,
+            "detector_identity_scale": (
+                None
+                if self.detector_identity_scale is None
+                else float(self.detector_identity_scale.detach())
+            ),
+            "detector_input_scale": (
+                None
+                if self.detector_input_scale is None
+                else float(self.detector_input_scale.detach())
+            ),
             "parameters": sum(p.numel() for p in self.parameters()),
             "trainable_parameters": sum(p.numel() for p in self.parameters() if p.requires_grad),
         }
@@ -369,6 +423,7 @@ class _OpticalCaptureBlock(nn.Module):
         super().__init__()
         self.core = core
         self.token_counts: list[int] = []
+        self.current_input_fields: torch.Tensor | None = None
 
     def forward(
         self,
@@ -379,6 +434,7 @@ class _OpticalCaptureBlock(nn.Module):
         lengths = lengths_from_cu(hidden_states, cu_seqlens)
         self.token_counts = lengths
         fields = self.core.encode_groups(list(hidden_states.split(lengths)))
+        self.current_input_fields = fields
         field, routing = self.core.begin(fields)
         for index in range(len(self.core.expert_layers)):
             field = self.core.run_stage(index, field, routing)
@@ -455,7 +511,17 @@ class VisionOpticalSaliencyStudent(nn.Module):
         spatial = restore_detector_spatial(
             detector, image_grid_thw, self.capture_block.token_counts
         )
-        logits = self.head(spatial)
+        input_fields = self.capture_block.current_input_fields
+        input_spatial = (
+            restore_detector_spatial(
+                input_fields,
+                image_grid_thw,
+                self.capture_block.token_counts,
+            )
+            if self.head.detector_residual_enabled and input_fields is not None
+            else None
+        )
+        logits = self.head(spatial, input_residual=input_spatial)
         return logits, spatial, detector
 
     def router_losses(self) -> tuple[torch.Tensor, torch.Tensor]:
@@ -471,6 +537,7 @@ def build_teacher(loaded: LoadedVisionBackbone, settings: Any) -> FrozenQwenVisi
         output_size=settings.image_size,
         refinement_enabled=False,
         progressive_refinement_enabled=False,
+        detector_residual_enabled=False,
     ).to(loaded.device)
     return FrozenQwenVisionTeacher(loaded, head)
 
@@ -485,6 +552,15 @@ def build_student(loaded: LoadedVisionBackbone, settings: Any) -> VisionOpticalS
         refinement_enabled=settings.student_segmentation_refinement_enabled,
         progressive_refinement_enabled=(
             settings.student_segmentation_progressive_refinement_enabled
+        ),
+        detector_residual_enabled=settings.student_detector_residual_enabled,
+        detector_identity_scale_init=settings.student_detector_identity_scale_init,
+        detector_input_scale_init=settings.student_detector_input_scale_init,
+        detector_identity_scale_trainable=(
+            settings.student_detector_identity_scale_trainable
+        ),
+        detector_input_scale_trainable=(
+            settings.student_detector_input_scale_trainable
         ),
     ).to(loaded.device)
     student = VisionOpticalSaliencyStudent(loaded, settings, head)

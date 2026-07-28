@@ -122,6 +122,11 @@ class Settings:
     segmentation_groupnorm_groups: int
     student_segmentation_refinement_enabled: bool
     student_segmentation_progressive_refinement_enabled: bool
+    student_detector_residual_enabled: bool
+    student_detector_identity_scale_init: float
+    student_detector_input_scale_init: float
+    student_detector_identity_scale_trainable: bool
+    student_detector_input_scale_trainable: bool
     freeze_student_optical_core: bool
     freeze_student_base_head: bool
 
@@ -244,6 +249,13 @@ class Settings:
                 "Enable either the local or progressive student refinement branch, "
                 "not both"
             )
+        for name in (
+            "student_detector_identity_scale_init",
+            "student_detector_input_scale_init",
+        ):
+            value = float(getattr(self, name))
+            if not (-1.0e6 < value < 1.0e6):
+                raise ValueError(f"{name} must be finite")
         if min(
             self.bce_weight, self.dice_weight, self.router_balance_weight,
             self.router_importance_weight, self.mask_kd_weight,
@@ -374,6 +386,28 @@ def load_settings(path: str | Path) -> Settings:
         ),
         student_segmentation_progressive_refinement_enabled=bool(
             d("segmentation_head.student_progressive_refinement_enabled", False)
+        ),
+        student_detector_residual_enabled=bool(
+            d("segmentation_head.student_detector_residual.enabled", False)
+        ),
+        student_detector_identity_scale_init=float(
+            d("segmentation_head.student_detector_residual.identity_scale_init", 1.0)
+        ),
+        student_detector_input_scale_init=float(
+            d("segmentation_head.student_detector_residual.input_scale_init", 0.1)
+        ),
+        student_detector_identity_scale_trainable=bool(
+            d(
+                "segmentation_head.student_detector_residual."
+                "identity_scale_trainable",
+                False,
+            )
+        ),
+        student_detector_input_scale_trainable=bool(
+            d(
+                "segmentation_head.student_detector_residual.input_scale_trainable",
+                True,
+            )
         ),
         freeze_student_optical_core=bool(
             d("training.freeze_student_optical_core", False)

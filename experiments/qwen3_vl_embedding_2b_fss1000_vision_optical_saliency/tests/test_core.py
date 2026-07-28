@@ -169,6 +169,37 @@ def test_progressive_residual_only_profile_freezes_base() -> None:
     assert settings.student_batch_size == 16
 
 
+def test_detector_input_residual_is_checkpoint_compatible() -> None:
+    settings = load_settings(
+        EXPERIMENT / "configs"
+        / "fss1000_saliency_mask_kd_detector_residual_batch16.yaml"
+    )
+    assert settings.student_detector_residual_enabled is True
+    assert settings.freeze_student_optical_core is True
+
+    torch.manual_seed(19)
+    base = LightweightSegmentationHead(224, 128, (64, 32, 16), 8)
+    residual = LightweightSegmentationHead(
+        224,
+        128,
+        (64, 32, 16),
+        8,
+        detector_residual_enabled=True,
+        detector_input_scale_init=0.0,
+    )
+    result = residual.load_state_dict(base.state_dict(), strict=False)
+    assert result.unexpected_keys == []
+    assert set(result.missing_keys) == {
+        "detector_identity_scale",
+        "detector_input_scale",
+    }
+    detector = torch.randn(2, 224, 14, 14)
+    input_feature = torch.randn_like(detector)
+    assert torch.equal(base(detector), residual(detector, input_feature))
+    residual(detector, input_feature).mean().backward()
+    assert residual.detector_input_scale.grad is not None
+
+
 def test_restore_teacher_tokens_uses_runtime_grid() -> None:
     grid = torch.tensor([[1, 2, 3], [1, 2, 3]])
     packed = torch.arange(12 * 5, dtype=torch.float32).reshape(12, 5)
