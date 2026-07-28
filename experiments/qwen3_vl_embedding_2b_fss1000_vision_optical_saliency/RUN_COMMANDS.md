@@ -73,3 +73,17 @@ CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_fss1000_visio
 ```bash
 pytest experiments/qwen3_vl_embedding_2b_fss1000_vision_optical_saliency/tests -q
 ```
+
+## 第二阶段 mask KD 微调
+
+先为正式 Teacher checkpoint 构建一次最终 mask cache：
+
+```bash
+CUDA_VISIBLE_DEVICES=2 python -m experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency --config experiments/qwen3_vl_embedding_2b_fss1000_vision_optical_saliency/configs/fss1000_saliency.yaml --phase cache_teacher_masks
+```
+
+然后从原 Student 权重开始，以全新优化器和较小学习率进行微调：
+
+```bash
+CUDA_VISIBLE_DEVICES=2 python -m experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency --config experiments/qwen3_vl_embedding_2b_fss1000_vision_optical_saliency/configs/fss1000_saliency_mask_kd_finetune.yaml --phase student_train
+```

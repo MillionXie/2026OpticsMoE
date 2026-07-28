@@ -102,6 +102,7 @@ class Settings:
     mask_kd_temperature: float
     teacher_checkpoint: Path | None
     teacher_mask_cache: Path | None
+    student_initial_checkpoint: Path | None
     random_seed: int
     amp_enabled: bool
     evaluate_test_each_epoch: bool
@@ -318,6 +319,9 @@ def load_settings(path: str | Path) -> Settings:
         mask_kd_temperature=float(d("loss.mask_kd_temperature", 1.0)),
         teacher_checkpoint=_resolve(d("mask_kd.teacher_checkpoint"), base),
         teacher_mask_cache=_resolve(d("mask_kd.teacher_mask_cache"), base),
+        student_initial_checkpoint=_resolve(
+            d("student_initialization.checkpoint"), base
+        ),
         random_seed=int(d("training.random_seed", 42)),
         amp_enabled=bool(d("training.amp_enabled", True)),
         evaluate_test_each_epoch=bool(d("training.evaluate_test_each_epoch", True)),

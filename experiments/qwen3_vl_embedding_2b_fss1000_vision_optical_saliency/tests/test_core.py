@@ -44,6 +44,19 @@ def test_formal_config_keeps_validated_moe16_geometry() -> None:
         settings.detector_output_size,
     ) == (1026, 986, 224, 16, 4, 1, 224)
     assert settings.mask_kd_weight == 0.0
+    assert settings.student_initial_checkpoint is None
+
+
+def test_mask_kd_finetune_config_uses_fresh_optimizer_initialization() -> None:
+    settings = load_settings(
+        EXPERIMENT / "configs" / "fss1000_saliency_mask_kd_finetune.yaml"
+    )
+    assert settings.mask_kd_weight == pytest.approx(0.5)
+    assert settings.student_initial_checkpoint is not None
+    assert settings.student_learning_rate == pytest.approx(3e-4)
+    assert settings.phase_learning_rate == pytest.approx(1e-4)
+    assert settings.router_learning_rate == pytest.approx(1e-4)
+    assert settings.augmentation_enabled is False
 
 
 def test_restore_teacher_tokens_uses_runtime_grid() -> None:

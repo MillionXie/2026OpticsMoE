@@ -162,6 +162,9 @@ def train_student(
         head=_student_head(loaded, settings),
     )
     student.activate()
+    initialization = _initialize_student(
+        student, settings.student_initial_checkpoint
+    )
     report = trainable_parameter_report(student, prefix="optical_student")
     report["segmentation_head"] = student.head.specification()
     report["optical_core"] = student.core.parameter_breakdown()
@@ -169,6 +172,7 @@ def train_student(
     report["output_adapter_trainable"] = any(
         parameter.requires_grad for parameter in student.core.output_adapter.parameters()
     )
+    report["initialization"] = initialization
     write_json(settings.output_dir / "model_student.json", report)
     _print_parameter_report(report)
     train_loader, test_loader = build_loaders(
@@ -202,6 +206,7 @@ def train_student(
             "evaluation_status": "train_complete_test_pending",
             "selection_criterion": "minimum_train_loss",
             "mask_kd_weight": settings.mask_kd_weight,
+            "initialization": initialization,
             "head_specification": student.head.specification(),
         }
         _save_checkpoint(last_path, payload)
@@ -427,6 +432,47 @@ def _student_optimizer(
     return torch.optim.AdamW(groups, weight_decay=settings.weight_decay)
 
 
+def _initialize_student(
+    student: VisionOpticalSaliencyStudent,
+    checkpoint_path: Path | None,
+) -> dict[str, Any]:
+    if checkpoint_path is None:
+        return {
+            "mode": "random_initialization",
+            "checkpoint": None,
+            "optimizer_state_restored": False,
+        }
+    if not checkpoint_path.is_file():
+        raise FileNotFoundError(
+            f"Student initialization checkpoint does not exist: {checkpoint_path}"
+        )
+    payload = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+    missing = [
+        name for name in ("core_state_dict", "head_state_dict")
+        if name not in payload
+    ]
+    if missing:
+        raise RuntimeError(
+            f"Student initialization checkpoint is missing {missing}: {checkpoint_path}"
+        )
+    student.core.load_state_dict(payload["core_state_dict"], strict=True)
+    student.head.load_state_dict(payload["head_state_dict"], strict=True)
+    report = {
+        "mode": "checkpoint_weights_fresh_optimizer",
+        "checkpoint": str(checkpoint_path),
+        "source_epoch": int(payload.get("epoch", -1)),
+        "source_train_loss": payload.get("train_metrics", {}).get("loss"),
+        "optimizer_state_restored": False,
+    }
+    print(
+        "student initialized from "
+        f"{checkpoint_path} (source_epoch={report['source_epoch']}); "
+        "optimizer is freshly initialized",
+        flush=True,
+    )
+    return report
+
+
 def _train_epoch(
     model: nn.Module,
     processor: Any,
@@ -514,6 +560,13 @@ def evaluate_model(
     rows: list[dict[str, Any]] = []
     saved = 0
     worst_examples: list[dict[str, Any]] = []
+    routing_samples = 0
+    routing_selected = torch.zeros(settings.num_experts, dtype=torch.float64)
+    routing_weight = torch.zeros(settings.num_experts, dtype=torch.float64)
+    routing_probability = torch.zeros(settings.num_experts, dtype=torch.float64)
+    routing_entropy_sum = 0.0
+    routing_balance_sum = 0.0
+    routing_importance_sum = 0.0
     for batch in loader:
         inputs = preprocess_vision(processor, batch["images"], next(model.parameters()).device)
         masks = batch["masks"].to(next(model.parameters()).device, non_blocking=True)
@@ -525,6 +578,34 @@ def evaluate_model(
                 dice_weight=settings.dice_weight,
             )
         accumulator.update(logits, masks, loss=loss)
+        if model_kind == "student":
+            routing = model.core.last_routing
+            required = {
+                "selected_mask", "weights", "probabilities",
+                "normalized_entropy", "balance_loss", "importance_loss",
+            }
+            missing = sorted(required - set(routing))
+            if missing:
+                raise RuntimeError(
+                    f"Student router diagnostics are missing fields: {missing}"
+                )
+            selected = routing["selected_mask"].detach().double().cpu()
+            weights = routing["weights"].detach().double().cpu()
+            probabilities_cpu = routing["probabilities"].detach().double().cpu()
+            batch_size = int(selected.shape[0])
+            routing_samples += batch_size
+            routing_selected += selected.sum(0)
+            routing_weight += weights.sum(0)
+            routing_probability += probabilities_cpu.sum(0)
+            routing_entropy_sum += (
+                float(routing["normalized_entropy"].detach()) * batch_size
+            )
+            routing_balance_sum += (
+                float(routing["balance_loss"].detach()) * batch_size
+            )
+            routing_importance_sum += (
+                float(routing["importance_loss"].detach()) * batch_size
+            )
         probabilities = logits.float().sigmoid()
         binary = probabilities.ge(0.5)
         truth = masks.ge(0.5)
@@ -568,6 +649,32 @@ def evaluate_model(
                 worst_examples.sort(key=lambda item: item["iou"])
                 del worst_examples[settings.visualization_sample_count:]
     metrics = accumulator.compute()
+    if model_kind == "student":
+        if routing_samples != metrics["samples"]:
+            raise RuntimeError(
+                f"Router diagnostics saw {routing_samples} samples, segmentation "
+                f"metrics saw {metrics['samples']}"
+            )
+        selected_denominator = routing_selected.clamp_min(1.0)
+        metrics["router"] = {
+            "samples": routing_samples,
+            "top_k": settings.top_k,
+            "selection_rate_per_expert": (
+                routing_selected / routing_samples
+            ).tolist(),
+            "mean_sparse_weight_per_expert": (
+                routing_weight / routing_samples
+            ).tolist(),
+            "mean_weight_when_selected_per_expert": (
+                routing_weight / selected_denominator
+            ).tolist(),
+            "mean_dense_probability_per_expert": (
+                routing_probability / routing_samples
+            ).tolist(),
+            "normalized_entropy": routing_entropy_sum / routing_samples,
+            "balance_loss": routing_balance_sum / routing_samples,
+            "importance_loss": routing_importance_sum / routing_samples,
+        }
     if save_predictions:
         write_csv(
             settings.output_dir / "metrics" / f"{model_kind}_test_predictions.csv",

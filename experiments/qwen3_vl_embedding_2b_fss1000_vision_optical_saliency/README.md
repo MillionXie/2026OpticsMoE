@@ -98,5 +98,9 @@ Student 额外保留小权重 router balance/importance。没有 validation；ch
 可选 `fss1000_saliency_mask_kd.yaml` 只蒸馏电子 Teacher 的最终 mask logits，不蒸馏
 任何 Qwen hidden。缓存 logits 时关闭几何增强，避免像素错位。
 
+`fss1000_saliency_mask_kd_finetune.yaml` 是保守的第二阶段微调配置：加载原
+ground-truth-only Student 权重，但重新初始化优化器；降低 phase、router 和其余参数的
+学习率，并加入最终 mask soft-target KD。它使用独立 runs 目录，不会覆盖原结果。
+
 主要指标为 mean IoU、mean Dice/F1、MAE 和 pixel accuracy。结果和典型/失败案例分别写入
 `metrics/` 与 `figures/`。
