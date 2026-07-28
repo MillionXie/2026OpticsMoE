@@ -91,6 +91,16 @@ def test_augmented_mask_kd_config_replays_crop_and_flip() -> None:
     assert torch.allclose(actual, expected, atol=2e-4)
 
 
+def test_augmented_mask_kd_batch16_profile() -> None:
+    settings = load_settings(
+        EXPERIMENT / "configs"
+        / "fss1000_saliency_mask_kd_augmented_finetune_batch16.yaml"
+    )
+    assert settings.student_batch_size == 16
+    assert settings.inference_batch_size == 16
+    assert settings.mask_kd_align_augmentation is True
+
+
 def test_restore_teacher_tokens_uses_runtime_grid() -> None:
     grid = torch.tensor([[1, 2, 3], [1, 2, 3]])
     packed = torch.arange(12 * 5, dtype=torch.float32).reshape(12, 5)

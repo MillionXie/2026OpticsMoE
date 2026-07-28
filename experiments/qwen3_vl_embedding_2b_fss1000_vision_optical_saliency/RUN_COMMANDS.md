@@ -93,3 +93,9 @@ CUDA_VISIBLE_DEVICES=2 python -m experiments.qwen3_vl_embedding_2b_fss1000_visio
 ```bash
 CUDA_VISIBLE_DEVICES=2 python -m experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency --config experiments/qwen3_vl_embedding_2b_fss1000_vision_optical_saliency/configs/fss1000_saliency_mask_kd_augmented_finetune.yaml --phase student_train
 ```
+
+24 GB RTX 4090 的 batch-16 版本：
+
+```bash
+CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency --config experiments/qwen3_vl_embedding_2b_fss1000_vision_optical_saliency/configs/fss1000_saliency_mask_kd_augmented_finetune_batch16.yaml --phase student_train
+```
