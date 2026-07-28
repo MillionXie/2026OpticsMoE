@@ -175,6 +175,7 @@ def test_detector_input_residual_is_checkpoint_compatible() -> None:
         / "fss1000_saliency_mask_kd_detector_residual_batch16.yaml"
     )
     assert settings.student_detector_residual_enabled is True
+    assert settings.student_detector_residual_source == "nonnegative_input_field"
     assert settings.freeze_student_optical_core is True
 
     torch.manual_seed(19)
@@ -198,6 +199,16 @@ def test_detector_input_residual_is_checkpoint_compatible() -> None:
     assert torch.equal(base(detector), residual(detector, input_feature))
     residual(detector, input_feature).mean().backward()
     assert residual.detector_input_scale.grad is not None
+
+
+def test_signed_detector_residual_profile() -> None:
+    settings = load_settings(
+        EXPERIMENT / "configs"
+        / "fss1000_saliency_mask_kd_signed_detector_residual_batch16.yaml"
+    )
+    assert settings.student_detector_residual_enabled is True
+    assert settings.student_detector_residual_source == "signed_adapter_latent"
+    assert settings.freeze_student_optical_core is True
 
 
 def test_restore_teacher_tokens_uses_runtime_grid() -> None:

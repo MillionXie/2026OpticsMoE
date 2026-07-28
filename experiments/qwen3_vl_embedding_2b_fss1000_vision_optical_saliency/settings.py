@@ -123,6 +123,7 @@ class Settings:
     student_segmentation_refinement_enabled: bool
     student_segmentation_progressive_refinement_enabled: bool
     student_detector_residual_enabled: bool
+    student_detector_residual_source: str
     student_detector_identity_scale_init: float
     student_detector_input_scale_init: float
     student_detector_identity_scale_trainable: bool
@@ -256,6 +257,14 @@ class Settings:
             value = float(getattr(self, name))
             if not (-1.0e6 < value < 1.0e6):
                 raise ValueError(f"{name} must be finite")
+        if self.student_detector_residual_source not in {
+            "nonnegative_input_field",
+            "signed_adapter_latent",
+        }:
+            raise ValueError(
+                "segmentation_head.student_detector_residual.source must be "
+                "nonnegative_input_field or signed_adapter_latent"
+            )
         if min(
             self.bce_weight, self.dice_weight, self.router_balance_weight,
             self.router_importance_weight, self.mask_kd_weight,
@@ -389,6 +398,12 @@ def load_settings(path: str | Path) -> Settings:
         ),
         student_detector_residual_enabled=bool(
             d("segmentation_head.student_detector_residual.enabled", False)
+        ),
+        student_detector_residual_source=str(
+            d(
+                "segmentation_head.student_detector_residual.source",
+                "nonnegative_input_field",
+            )
         ),
         student_detector_identity_scale_init=float(
             d("segmentation_head.student_detector_residual.identity_scale_init", 1.0)

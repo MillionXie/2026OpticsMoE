@@ -419,11 +419,18 @@ class _VisionBypass(nn.Module):
 class _OpticalCaptureBlock(nn.Module):
     """Consume patch/position hidden in MoE16 and keep native block output bypassed."""
 
-    def __init__(self, core: HomogeneousMoEOpticalCore) -> None:
+    def __init__(
+        self,
+        core: HomogeneousMoEOpticalCore,
+        *,
+        capture_signed_input: bool = False,
+    ) -> None:
         super().__init__()
         self.core = core
+        self.capture_signed_input = bool(capture_signed_input)
         self.token_counts: list[int] = []
         self.current_input_fields: torch.Tensor | None = None
+        self.current_signed_input_fields: torch.Tensor | None = None
 
     def forward(
         self,
@@ -433,6 +440,36 @@ class _OpticalCaptureBlock(nn.Module):
     ) -> torch.Tensor:
         lengths = lengths_from_cu(hidden_states, cu_seqlens)
         self.token_counts = lengths
+        if self.capture_signed_input:
+            signed = self.core.input_norm(
+                self.core.input_adapter(hidden_states.float())
+            )
+            count_tensor = torch.tensor(lengths, device=signed.device)
+            valid_rows = (
+                torch.arange(
+                    self.core.geometry.expert_size,
+                    device=signed.device,
+                )[None, :]
+                < count_tensor[:, None]
+            )
+            signed_mask = valid_rows.unsqueeze(-1).expand(
+                -1,
+                -1,
+                self.core.geometry.expert_size,
+            )
+            signed_fields = signed.new_zeros(
+                (
+                    len(lengths),
+                    self.core.geometry.expert_size,
+                    self.core.geometry.expert_size,
+                )
+            )
+            self.current_signed_input_fields = signed_fields.masked_scatter(
+                signed_mask,
+                signed.reshape(-1),
+            )
+        else:
+            self.current_signed_input_fields = None
         fields = self.core.encode_groups(list(hidden_states.split(lengths)))
         self.current_input_fields = fields
         field, routing = self.core.begin(fields)
@@ -463,6 +500,7 @@ class VisionOpticalSaliencyStudent(nn.Module):
         head: LightweightSegmentationHead,
     ) -> None:
         super().__init__()
+        self.settings = settings
         self.visual = loaded.visual
         self.original_blocks = list(self.visual.blocks)
         self.core = HomogeneousMoEOpticalCore(
@@ -471,7 +509,14 @@ class VisionOpticalSaliencyStudent(nn.Module):
             settings,
         ).to(loaded.device)
         self.core.output_adapter.requires_grad_(False)
-        self.capture_block = _OpticalCaptureBlock(self.core)
+        self.capture_block = _OpticalCaptureBlock(
+            self.core,
+            capture_signed_input=(
+                settings.student_detector_residual_enabled
+                and settings.student_detector_residual_source
+                == "signed_adapter_latent"
+            ),
+        )
         self.head = head
         self.student_blocks = nn.ModuleList(
             [self.capture_block]
@@ -511,7 +556,12 @@ class VisionOpticalSaliencyStudent(nn.Module):
         spatial = restore_detector_spatial(
             detector, image_grid_thw, self.capture_block.token_counts
         )
-        input_fields = self.capture_block.current_input_fields
+        input_fields = (
+            self.capture_block.current_signed_input_fields
+            if self.settings.student_detector_residual_source
+            == "signed_adapter_latent"
+            else self.capture_block.current_input_fields
+        )
         input_spatial = (
             restore_detector_spatial(
                 input_fields,
