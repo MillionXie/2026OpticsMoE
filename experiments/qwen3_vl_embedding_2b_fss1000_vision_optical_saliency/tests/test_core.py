@@ -178,3 +178,40 @@ def test_mask_resize_remains_binary(tmp_path: Path) -> None:
     item = FSSSaliencyDataset((record,), settings, training=False)[0]
     assert item["mask"].shape == (1, 224, 224)
     assert set(torch.unique(item["mask"]).tolist()) <= {0.0, 1.0}
+
+
+def test_prepare_quarantines_source_geometry_mismatch(tmp_path: Path) -> None:
+    test_classes = [f"test_{index:03d}" for index in range(240)]
+    (tmp_path / "fss_test_set.txt").write_text(
+        "\n".join(test_classes) + "\n", encoding="utf-8"
+    )
+    for class_name in ["train_only", *test_classes]:
+        folder = tmp_path / "fewshot_data" / class_name
+        folder.mkdir(parents=True)
+        Image.new("RGB", (8, 8), "white").save(folder / "1.jpg")
+        Image.new("L", (8, 8), 255).save(folder / "1.png")
+    broken = tmp_path / "fewshot_data" / test_classes[0]
+    Image.new("RGB", (8, 8), "white").save(broken / "2.jpg")
+    Image.new("L", (16, 4), 255).save(broken / "2.png")
+    settings = SimpleNamespace(
+        data_root=tmp_path,
+        output_dir=tmp_path / "run",
+        download=False,
+        download_source="auto",
+        huggingface_dataset_id="unused",
+        huggingface_endpoint="unused",
+        download_file_id="unused",
+        official_test_list_url="unused",
+        merge_official_validation_into_train=True,
+        train_class_limit=None,
+        test_class_limit=None,
+        images_per_class_limit=None,
+    )
+    bundle = prepare_fss1000(settings)
+    assert len(bundle.test_records) == 240
+    assert bundle.metadata["ignored_geometry_mismatch"] == 1
+    ignored = (settings.output_dir / "manifests" / "ignored_samples.csv").read_text(
+        encoding="utf-8"
+    )
+    assert "source_image_mask_geometry_mismatch" in ignored
+    assert f"{test_classes[0]}/2" in ignored

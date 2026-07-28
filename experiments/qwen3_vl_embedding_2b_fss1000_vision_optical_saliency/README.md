@@ -8,7 +8,8 @@
 代码使用 FSS-1000 官方 `fss_test_set.txt` 的 240 个测试类别。因为本实验明确不创建 validation，其余官方 train/validation 类别合并为训练集。完整数据通常应得到：
 
 - train：760 个类别、7,600 张图；
-- test：240 个类别、2,400 张图；
+- test：官方为 240 个类别、2,400 条记录；当前公开镜像有 1 条源
+  image/mask 几何损坏记录，因此安全隔离后实际使用 2,399 张，240 个类别仍全部保留；
 - train/test 类别交集严格为空。
 
 程序会把实际类别数、图像数和路径写入 `dataset.json`，并持久化
@@ -27,6 +28,10 @@ data/FSS-1000/fewshot_data/<class>/1.png
 
 图像和 mask 使用同一套随机裁剪、翻转和旋转参数。RGB 使用 bicubic，mask 始终使用
 nearest-neighbor 并在读取后重新二值化。
+
+数据准备还会审计每对原始 image/mask 的几何。宽高不一致的记录不会被强行缩放，
+而会写入 `manifests/ignored_samples.csv` 并从样本清单中隔离，避免错误监督。
+当前 `nobg/FSS-1000` 镜像中唯一已知异常为 `peregine_falcon/8`。
 
 ## 两条模型路径
 

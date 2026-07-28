@@ -79,6 +79,7 @@ def prepare_fss1000(settings: Any, *, persist: bool = True) -> DatasetBundle:
         train_classes = train_classes[: int(settings.train_class_limit)]
 
     records: list[FSSRecord] = []
+    ignored_geometry_mismatches: list[dict[str, Any]] = []
     sample_index = 0
     for split, classes in (("train", train_classes), ("test", test_classes)):
         for class_name in classes:
@@ -88,6 +89,23 @@ def prepare_fss1000(settings: Any, *, persist: bool = True) -> DatasetBundle:
             if not pairs:
                 raise RuntimeError(f"No image/mask pairs found for class {class_name!r}")
             for image_path, mask_path in pairs:
+                image_size, mask_size = _pair_geometry(image_path, mask_path)
+                if image_size != mask_size:
+                    ignored_geometry_mismatches.append(
+                        {
+                            "split": split,
+                            "class_name": class_name,
+                            "sample_id": f"{class_name}/{image_path.stem}",
+                            "image_path": str(image_path),
+                            "mask_path": str(mask_path),
+                            "image_width": image_size[0],
+                            "image_height": image_size[1],
+                            "mask_width": mask_size[0],
+                            "mask_height": mask_size[1],
+                            "reason": "source_image_mask_geometry_mismatch",
+                        }
+                    )
+                    continue
                 records.append(
                     FSSRecord(sample_index, split, class_name, image_path, mask_path)
                 )
@@ -111,6 +129,10 @@ def prepare_fss1000(settings: Any, *, persist: bool = True) -> DatasetBundle:
         "test_images": len(test_records),
         "class_disjoint": not bool(set(train_classes) & set(test_classes)),
         "mask_resize_interpolation": "nearest",
+        "ignored_geometry_mismatch": len(ignored_geometry_mismatches),
+        "ignored_geometry_mismatch_manifest": (
+            "manifests/ignored_samples.csv" if ignored_geometry_mismatches else None
+        ),
     }
     if not train_records or not test_records:
         raise RuntimeError(f"Empty FSS split after limits: {metadata}")
@@ -134,6 +156,22 @@ def prepare_fss1000(settings: Any, *, persist: bool = True) -> DatasetBundle:
                 for record in records
             ],
             ["sample_index", "sample_id", "split", "class_name", "image_path", "mask_path"],
+        )
+        write_csv(
+            settings.output_dir / "manifests" / "ignored_samples.csv",
+            ignored_geometry_mismatches,
+            [
+                "split", "class_name", "sample_id", "image_path", "mask_path",
+                "image_width", "image_height", "mask_width", "mask_height", "reason",
+            ],
+        )
+    if ignored_geometry_mismatches:
+        print(
+            "WARNING: ignored "
+            f"{len(ignored_geometry_mismatches)} FSS-1000 image/mask pair(s) whose "
+            "source geometries do not match. No mask was force-resized against a "
+            "different-aspect-ratio image. See manifests/ignored_samples.csv.",
+            flush=True,
         )
     return DatasetBundle(
         train_records, test_records, tuple(train_classes), tuple(test_classes),
@@ -269,6 +307,23 @@ def _paired_files(class_dir: Path) -> list[tuple[Path, Path]]:
         elif suffix == ".png":
             masks[path.stem.removesuffix("_mask")] = path
     return [(images[key], masks[key]) for key in sorted(set(images) & set(masks))]
+
+
+def _pair_geometry(
+    image_path: Path,
+    mask_path: Path,
+) -> tuple[tuple[int, int], tuple[int, int]]:
+    try:
+        with Image.open(image_path) as source:
+            image_size = tuple(int(value) for value in source.size)
+        with Image.open(mask_path) as source:
+            mask_size = tuple(int(value) for value in source.size)
+    except Exception as exc:
+        raise RuntimeError(
+            f"Could not inspect FSS-1000 pair geometry: image={image_path}, "
+            f"mask={mask_path}: {type(exc).__name__}: {exc}"
+        ) from exc
+    return image_size, mask_size
 
 
 def _load_official_test_classes(settings: Any) -> list[str]:

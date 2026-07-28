@@ -100,6 +100,24 @@ def train_teacher(
             teacher, loaded.processor, train_loader, optimizer, settings,
             epoch=epoch, model_kind="teacher",
         )
+        improved = train_metrics["loss"] < best_train_loss
+        if improved:
+            best_train_loss = float(train_metrics["loss"])
+        payload = {
+            "epoch": epoch,
+            "head_state_dict": teacher.head.state_dict(),
+            "optimizer_state_dict": optimizer.state_dict(),
+            "train_metrics": train_metrics,
+            "test_metrics_observation_only": None,
+            "evaluation_status": "train_complete_test_pending",
+            "selection_criterion": "minimum_train_loss",
+            "head_specification": teacher.head.specification(),
+        }
+        # Selection uses training loss, so save the completed epoch before test
+        # evaluation. A bad evaluation record must not discard a full epoch.
+        _save_checkpoint(last_path, payload)
+        if improved:
+            _save_checkpoint(best_path, payload)
         test_metrics = (
             evaluate_model(
                 teacher, loaded.processor, test_loader, settings,
@@ -114,18 +132,10 @@ def train_teacher(
         history.append(row)
         _save_history(settings.output_dir / "metrics" / "teacher_training_history.csv", history)
         write_json(settings.output_dir / "metrics" / "teacher_training_latest.json", row)
-        payload = {
-            "epoch": epoch,
-            "head_state_dict": teacher.head.state_dict(),
-            "optimizer_state_dict": optimizer.state_dict(),
-            "train_metrics": train_metrics,
-            "test_metrics_observation_only": test_metrics,
-            "selection_criterion": "minimum_train_loss",
-            "head_specification": teacher.head.specification(),
-        }
+        payload["test_metrics_observation_only"] = test_metrics
+        payload["evaluation_status"] = "train_and_test_complete"
         _save_checkpoint(last_path, payload)
-        if train_metrics["loss"] < best_train_loss:
-            best_train_loss = float(train_metrics["loss"])
+        if improved:
             _save_checkpoint(best_path, payload)
         print(
             f"teacher epoch {epoch:03d}/{settings.teacher_epochs} "
@@ -179,6 +189,24 @@ def train_student(
             student, loaded.processor, train_loader, optimizer, settings,
             epoch=epoch, model_kind="student", mask_cache=mask_cache,
         )
+        improved = train_metrics["loss"] < best_train_loss
+        if improved:
+            best_train_loss = float(train_metrics["loss"])
+        payload = {
+            "epoch": epoch,
+            "core_state_dict": student.core.state_dict(),
+            "head_state_dict": student.head.state_dict(),
+            "optimizer_state_dict": optimizer.state_dict(),
+            "train_metrics": train_metrics,
+            "test_metrics_observation_only": None,
+            "evaluation_status": "train_complete_test_pending",
+            "selection_criterion": "minimum_train_loss",
+            "mask_kd_weight": settings.mask_kd_weight,
+            "head_specification": student.head.specification(),
+        }
+        _save_checkpoint(last_path, payload)
+        if improved:
+            _save_checkpoint(best_path, payload)
         test_metrics = (
             evaluate_model(
                 student, loaded.processor, test_loader, settings,
@@ -193,20 +221,10 @@ def train_student(
         history.append(row)
         _save_history(settings.output_dir / "metrics" / "student_training_history.csv", history)
         write_json(settings.output_dir / "metrics" / "student_training_latest.json", row)
-        payload = {
-            "epoch": epoch,
-            "core_state_dict": student.core.state_dict(),
-            "head_state_dict": student.head.state_dict(),
-            "optimizer_state_dict": optimizer.state_dict(),
-            "train_metrics": train_metrics,
-            "test_metrics_observation_only": test_metrics,
-            "selection_criterion": "minimum_train_loss",
-            "mask_kd_weight": settings.mask_kd_weight,
-            "head_specification": student.head.specification(),
-        }
+        payload["test_metrics_observation_only"] = test_metrics
+        payload["evaluation_status"] = "train_and_test_complete"
         _save_checkpoint(last_path, payload)
-        if train_metrics["loss"] < best_train_loss:
-            best_train_loss = float(train_metrics["loss"])
+        if improved:
             _save_checkpoint(best_path, payload)
         print(
             f"student epoch {epoch:03d}/{settings.student_epochs} "
