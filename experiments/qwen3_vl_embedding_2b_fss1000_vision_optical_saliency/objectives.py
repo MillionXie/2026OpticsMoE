@@ -15,12 +15,57 @@ def dice_loss(logits: torch.Tensor, target: torch.Tensor, eps: float = 1e-6) -> 
     return (1.0 - (2.0 * intersection + eps) / (denominator + eps)).mean()
 
 
+def soft_iou_loss(
+    logits: torch.Tensor,
+    target: torch.Tensor,
+    eps: float = 1e-6,
+) -> torch.Tensor:
+    probability = logits.float().sigmoid()
+    target = target.float()
+    intersection = (probability * target).flatten(1).sum(1)
+    union = (
+        probability + target - probability * target
+    ).flatten(1).sum(1)
+    return (1.0 - (intersection + eps) / (union + eps)).mean()
+
+
+def boundary_dice_loss(
+    logits: torch.Tensor,
+    target: torch.Tensor,
+    eps: float = 1e-6,
+) -> torch.Tensor:
+    """Dice loss on 3x3 morphological boundaries.
+
+    The operation remains differentiable for prediction probabilities and
+    directly emphasizes the thin/complex contours that dominate the observed
+    FSS-1000 student failures.
+    """
+    probability = logits.float().sigmoid()
+    target = target.float()
+    predicted_boundary = (
+        F.max_pool2d(probability, 3, stride=1, padding=1)
+        + F.max_pool2d(-probability, 3, stride=1, padding=1)
+    )
+    target_boundary = (
+        F.max_pool2d(target, 3, stride=1, padding=1)
+        + F.max_pool2d(-target, 3, stride=1, padding=1)
+    )
+    intersection = (predicted_boundary * target_boundary).flatten(1).sum(1)
+    denominator = (
+        predicted_boundary.flatten(1).sum(1)
+        + target_boundary.flatten(1).sum(1)
+    )
+    return (1.0 - (2.0 * intersection + eps) / (denominator + eps)).mean()
+
+
 def segmentation_loss(
     logits: torch.Tensor,
     target: torch.Tensor,
     *,
     bce_weight: float,
     dice_weight: float,
+    soft_iou_weight: float = 0.0,
+    boundary_weight: float = 0.0,
     teacher_logits: torch.Tensor | None = None,
     mask_kd_weight: float = 0.0,
     mask_kd_temperature: float = 1.0,
@@ -29,7 +74,14 @@ def segmentation_loss(
         raise RuntimeError(f"Logits {tuple(logits.shape)} != masks {tuple(target.shape)}")
     bce = F.binary_cross_entropy_with_logits(logits.float(), target.float())
     dice = dice_loss(logits, target)
-    total = bce_weight * bce + dice_weight * dice
+    soft_iou = soft_iou_loss(logits, target)
+    boundary = boundary_dice_loss(logits, target)
+    total = (
+        bce_weight * bce
+        + dice_weight * dice
+        + soft_iou_weight * soft_iou
+        + boundary_weight * boundary
+    )
     kd = logits.new_zeros(())
     if mask_kd_weight > 0:
         if teacher_logits is None or teacher_logits.shape != logits.shape:
@@ -40,7 +92,13 @@ def segmentation_loss(
             logits.float() / temperature, teacher_probability
         ) * temperature * temperature
         total = total + mask_kd_weight * kd
-    return total, {"bce": bce, "dice_loss": dice, "mask_kd": kd}
+    return total, {
+        "bce": bce,
+        "dice_loss": dice,
+        "soft_iou_loss": soft_iou,
+        "boundary_loss": boundary,
+        "mask_kd": kd,
+    }
 
 
 class SegmentationAccumulator:
@@ -99,4 +157,3 @@ class SegmentationAccumulator:
             "samples": self.sample_count,
             "pixels": self.pixel_count,
         }
-

@@ -31,6 +31,7 @@ from .visualization import (
 
 HISTORY_FIELDS = [
     "epoch", "learning_rate", "train_loss", "train_bce", "train_dice_loss",
+    "train_soft_iou_loss", "train_boundary_loss",
     "train_mask_kd", "train_router_balance", "train_router_importance",
     "train_mean_iou", "train_mean_dice", "train_mae", "train_pixel_accuracy",
     "test_loss", "test_mean_iou", "test_mean_dice", "test_mae",
@@ -624,7 +625,8 @@ def _train_epoch(
     model.train()
     accumulator = SegmentationAccumulator()
     parts = {
-        "bce": 0.0, "dice_loss": 0.0, "mask_kd": 0.0,
+        "bce": 0.0, "dice_loss": 0.0, "soft_iou_loss": 0.0,
+        "boundary_loss": 0.0, "mask_kd": 0.0,
         "router_balance": 0.0, "router_importance": 0.0,
     }
     sample_count = 0
@@ -650,6 +652,8 @@ def _train_epoch(
                 logits, masks,
                 bce_weight=settings.bce_weight,
                 dice_weight=settings.dice_weight,
+                soft_iou_weight=settings.soft_iou_weight,
+                boundary_weight=settings.boundary_weight,
                 teacher_logits=teacher_logits,
                 mask_kd_weight=settings.mask_kd_weight,
                 mask_kd_temperature=settings.mask_kd_temperature,
@@ -717,6 +721,8 @@ def evaluate_model(
                 logits, masks,
                 bce_weight=settings.bce_weight,
                 dice_weight=settings.dice_weight,
+                soft_iou_weight=settings.soft_iou_weight,
+                boundary_weight=settings.boundary_weight,
             )
         accumulator.update(logits, masks, loss=loss)
         if model_kind == "student":
@@ -892,6 +898,8 @@ def _history_row(
         "train_loss": train["loss"],
         "train_bce": parts["bce"],
         "train_dice_loss": parts["dice_loss"],
+        "train_soft_iou_loss": parts["soft_iou_loss"],
+        "train_boundary_loss": parts["boundary_loss"],
         "train_mask_kd": parts["mask_kd"],
         "train_router_balance": parts["router_balance"],
         "train_router_importance": parts["router_importance"],

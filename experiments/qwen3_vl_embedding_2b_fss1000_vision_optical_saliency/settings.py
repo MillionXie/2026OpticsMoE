@@ -96,6 +96,8 @@ class Settings:
     weight_decay: float
     bce_weight: float
     dice_weight: float
+    soft_iou_weight: float
+    boundary_weight: float
     router_balance_weight: float
     router_importance_weight: float
     mask_kd_weight: float
@@ -267,6 +269,7 @@ class Settings:
             )
         if min(
             self.bce_weight, self.dice_weight, self.router_balance_weight,
+            self.soft_iou_weight, self.boundary_weight,
             self.router_importance_weight, self.mask_kd_weight,
         ) < 0:
             raise ValueError("Loss weights cannot be negative")
@@ -362,6 +365,8 @@ def load_settings(path: str | Path) -> Settings:
         weight_decay=float(d("training.weight_decay", 0.0)),
         bce_weight=float(d("loss.bce_weight", 1.0)),
         dice_weight=float(d("loss.dice_weight", 1.0)),
+        soft_iou_weight=float(d("loss.soft_iou_weight", 0.0)),
+        boundary_weight=float(d("loss.boundary_weight", 0.0)),
         router_balance_weight=float(d("loss.router_balance_weight", 0.03)),
         router_importance_weight=float(d("loss.router_importance_weight", 0.0)),
         mask_kd_weight=float(d("loss.mask_kd_weight", 0.0)),

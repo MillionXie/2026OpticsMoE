@@ -19,8 +19,10 @@ from experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency.modeling 
 )
 from experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency.objectives import (
     SegmentationAccumulator,
+    boundary_dice_loss,
     dice_loss,
     segmentation_loss,
+    soft_iou_loss,
 )
 from experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency.settings import (
     load_settings,
@@ -209,6 +211,38 @@ def test_signed_detector_residual_profile() -> None:
     assert settings.student_detector_residual_enabled is True
     assert settings.student_detector_residual_source == "signed_adapter_latent"
     assert settings.freeze_student_optical_core is True
+
+
+def test_iou_boundary_objectives_are_differentiable() -> None:
+    target = torch.zeros(2, 1, 16, 16)
+    target[:, :, 4:12, 5:13] = 1
+    perfect_logits = torch.where(target.bool(), 20.0, -20.0)
+    assert float(soft_iou_loss(perfect_logits, target)) < 1e-5
+    assert float(boundary_dice_loss(perfect_logits, target)) < 1e-5
+
+    logits = torch.randn_like(target, requires_grad=True)
+    loss, parts = segmentation_loss(
+        logits,
+        target,
+        bce_weight=1.0,
+        dice_weight=1.0,
+        soft_iou_weight=0.75,
+        boundary_weight=0.25,
+    )
+    loss.backward()
+    assert logits.grad is not None
+    assert torch.isfinite(logits.grad).all()
+    assert set(("soft_iou_loss", "boundary_loss")).issubset(parts)
+
+
+def test_iou_boundary_finetune_profile() -> None:
+    settings = load_settings(
+        EXPERIMENT / "configs"
+        / "fss1000_saliency_mask_kd_iou_boundary_batch16.yaml"
+    )
+    assert settings.soft_iou_weight == pytest.approx(0.75)
+    assert settings.boundary_weight == pytest.approx(0.25)
+    assert settings.student_batch_size == 16
 
 
 def test_restore_teacher_tokens_uses_runtime_grid() -> None:
