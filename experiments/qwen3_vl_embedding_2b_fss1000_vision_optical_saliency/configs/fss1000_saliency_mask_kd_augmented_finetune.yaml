@@ -1,0 +1,37 @@
+base_config: fss1000_saliency.yaml
+
+# Recommended second-stage run. The cached teacher mask receives exactly the
+# same normalized crop and horizontal flip as the input/mask pair.
+training:
+  student_epochs: 30
+  student_learning_rate: 0.0003
+  router_learning_rate: 0.0001
+  phase_learning_rate: 0.0001
+  log_interval_batches: 250
+
+loss:
+  bce_weight: 1.0
+  dice_weight: 1.0
+  mask_kd_weight: 0.5
+  mask_kd_temperature: 1.0
+  router_balance_weight: 0.03
+  router_importance_weight: 0.005
+
+mask_kd:
+  teacher_checkpoint: ../runs/fss1000_saliency/checkpoints/teacher_best_train_loss.pt
+  teacher_mask_cache: ../runs/fss1000_saliency/teacher_mask_cache
+  align_augmentation: true
+
+student_initialization:
+  checkpoint: ../runs/fss1000_saliency/checkpoints/student_best_train_loss.pt
+
+augmentation:
+  enabled: true
+  crop_scale_min: 0.90
+  horizontal_flip_probability: 0.5
+  brightness_jitter: 0.10
+  contrast_jitter: 0.10
+  # Cached-target alignment deliberately rejects unsupported rotations.
+  rotation_degrees: 0.0
+
+output_dir: ../runs/fss1000_saliency_mask_kd_augmented_finetune

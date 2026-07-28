@@ -205,7 +205,7 @@ class FSSSaliencyDataset(Dataset[dict[str, Any]]):
                 f"Image/mask geometry mismatch for {record.sample_id}: "
                 f"image={image.size}, mask={mask.size}"
             )
-        image, mask = _paired_transform(
+        image, mask, geometry_transform = _paired_transform(
             image, mask, self.settings, training=self.training
         )
         mask_array = (np.asarray(mask, dtype=np.uint8) > 0).astype(np.float32)
@@ -221,6 +221,7 @@ class FSSSaliencyDataset(Dataset[dict[str, Any]]):
             "class_name": record.class_name,
             "image_path": str(record.image_path),
             "mask_path": str(record.mask_path),
+            "geometry_transform": geometry_transform,
         }
 
 
@@ -233,6 +234,7 @@ def collate_saliency(batch: list[dict[str, Any]]) -> dict[str, Any]:
         "class_names": [item["class_name"] for item in batch],
         "image_paths": [item["image_path"] for item in batch],
         "mask_paths": [item["mask_path"] for item in batch],
+        "geometry_transforms": [item["geometry_transform"] for item in batch],
     }
 
 
@@ -242,22 +244,37 @@ def _paired_transform(
     settings: Any,
     *,
     training: bool,
-) -> tuple[Image.Image, Image.Image]:
+) -> tuple[Image.Image, Image.Image, dict[str, Any]]:
     size = int(settings.image_size)
+    geometry_transform: dict[str, Any] = {
+        "crop_box_normalized": [0.0, 0.0, 1.0, 1.0],
+        "horizontal_flip": False,
+        "rotation_degrees": 0.0,
+    }
     if training and settings.augmentation_enabled:
         rng = random
+        source_width = image.width
+        source_height = image.height
         scale = rng.uniform(float(settings.crop_scale_min), 1.0)
         crop_w = max(1, round(image.width * scale))
         crop_h = max(1, round(image.height * scale))
         left = rng.randint(0, max(0, image.width - crop_w))
         top = rng.randint(0, max(0, image.height - crop_h))
         box = (left, top, left + crop_w, top + crop_h)
+        geometry_transform["crop_box_normalized"] = [
+            left / source_width,
+            top / source_height,
+            (left + crop_w) / source_width,
+            (top + crop_h) / source_height,
+        ]
         image = image.crop(box)
         mask = mask.crop(box)
         if rng.random() < float(settings.horizontal_flip_probability):
             image = ImageOps.mirror(image)
             mask = ImageOps.mirror(mask)
+            geometry_transform["horizontal_flip"] = True
         angle = rng.uniform(-float(settings.rotation_degrees), float(settings.rotation_degrees))
+        geometry_transform["rotation_degrees"] = float(angle)
         image = image.rotate(angle, resample=Image.Resampling.BICUBIC, fillcolor=(0, 0, 0))
         mask = mask.rotate(angle, resample=Image.Resampling.NEAREST, fillcolor=0)
         if settings.brightness_jitter > 0:
@@ -268,7 +285,7 @@ def _paired_transform(
             image = ImageEnhance.Contrast(image).enhance(factor)
     image = image.resize((size, size), Image.Resampling.BICUBIC)
     mask = mask.resize((size, size), Image.Resampling.NEAREST)
-    return image, mask
+    return image, mask, geometry_transform
 
 
 def _locate_data_directory(root: Path) -> Path | None:

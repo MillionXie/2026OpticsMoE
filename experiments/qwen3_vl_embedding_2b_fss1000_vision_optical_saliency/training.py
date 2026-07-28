@@ -473,6 +473,53 @@ def _initialize_student(
     return report
 
 
+def align_cached_teacher_logits(
+    teacher_logits: torch.Tensor,
+    geometry_transforms: list[dict[str, Any]],
+) -> torch.Tensor:
+    """Replay normalized crop/flip on reusable, unaugmented teacher masks."""
+    if teacher_logits.ndim != 4 or teacher_logits.shape[1] != 1:
+        raise RuntimeError(
+            f"Teacher mask logits must be [B,1,H,W], got {tuple(teacher_logits.shape)}"
+        )
+    if len(geometry_transforms) != teacher_logits.shape[0]:
+        raise RuntimeError(
+            "Teacher mask batch and geometry transform count do not match"
+        )
+    height, width = teacher_logits.shape[-2:]
+    probabilities = teacher_logits.float().sigmoid()
+    transformed: list[torch.Tensor] = []
+    for sample, trace in zip(probabilities, geometry_transforms):
+        angle = float(trace.get("rotation_degrees", 0.0))
+        if abs(angle) > 1e-8:
+            raise RuntimeError(
+                "Cached teacher mask alignment does not silently approximate "
+                f"rotation_degrees={angle}; configure rotation_degrees=0"
+            )
+        box = trace.get("crop_box_normalized")
+        if not isinstance(box, (list, tuple)) or len(box) != 4:
+            raise RuntimeError(f"Invalid normalized teacher-mask crop trace: {box}")
+        x0, y0, x1, y1 = (float(value) for value in box)
+        if not (0.0 <= x0 < x1 <= 1.0 and 0.0 <= y0 < y1 <= 1.0):
+            raise RuntimeError(f"Normalized crop is outside [0,1]: {box}")
+        left = min(width - 1, max(0, round(x0 * width)))
+        top = min(height - 1, max(0, round(y0 * height)))
+        right = min(width, max(left + 1, round(x1 * width)))
+        bottom = min(height, max(top + 1, round(y1 * height)))
+        value = sample[None, :, top:bottom, left:right]
+        if bool(trace.get("horizontal_flip", False)):
+            value = torch.flip(value, dims=(-1,))
+        value = torch.nn.functional.interpolate(
+            value,
+            size=(height, width),
+            mode="bilinear",
+            align_corners=False,
+        )
+        transformed.append(value[0])
+    probability = torch.stack(transformed, dim=0).clamp(1e-4, 1.0 - 1e-4)
+    return torch.logit(probability).to(teacher_logits.dtype)
+
+
 def _train_epoch(
     model: nn.Module,
     processor: Any,
@@ -502,6 +549,10 @@ def _train_epoch(
             mask_cache.fetch(batch["sample_ids"], masks.device)
             if mask_cache is not None else None
         )
+        if teacher_logits is not None and settings.mask_kd_align_augmentation:
+            teacher_logits = align_cached_teacher_logits(
+                teacher_logits, batch["geometry_transforms"]
+            )
         optimizer.zero_grad(set_to_none=True)
         with _autocast(settings):
             logits, _ = _model_forward(model, inputs)

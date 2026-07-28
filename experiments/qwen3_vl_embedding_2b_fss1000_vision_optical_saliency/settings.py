@@ -102,6 +102,7 @@ class Settings:
     mask_kd_temperature: float
     teacher_checkpoint: Path | None
     teacher_mask_cache: Path | None
+    mask_kd_align_augmentation: bool
     student_initial_checkpoint: Path | None
     random_seed: int
     amp_enabled: bool
@@ -240,10 +241,25 @@ class Settings:
             raise ValueError("At least one ground-truth segmentation loss must be enabled")
         if self.mask_kd_temperature <= 0:
             raise ValueError("mask_kd_temperature must be positive")
-        if self.mask_kd_weight > 0 and self.augmentation_enabled:
+        if (
+            self.mask_kd_weight > 0
+            and self.augmentation_enabled
+            and not self.mask_kd_align_augmentation
+        ):
             raise ValueError(
-                "Cached teacher mask KD requires augmentation.enabled=false so teacher "
-                "logits and ground-truth pixels remain geometrically aligned"
+                "Cached teacher mask KD with augmentation requires "
+                "mask_kd.align_augmentation=true so teacher logits and ground-truth "
+                "pixels remain geometrically aligned"
+            )
+        if (
+            self.mask_kd_weight > 0
+            and self.augmentation_enabled
+            and self.mask_kd_align_augmentation
+            and self.rotation_degrees != 0.0
+        ):
+            raise ValueError(
+                "Aligned cached mask KD currently supports normalized crop and "
+                "horizontal flip; set augmentation.rotation_degrees=0"
             )
 
     def to_dict(self) -> dict[str, Any]:
@@ -319,6 +335,9 @@ def load_settings(path: str | Path) -> Settings:
         mask_kd_temperature=float(d("loss.mask_kd_temperature", 1.0)),
         teacher_checkpoint=_resolve(d("mask_kd.teacher_checkpoint"), base),
         teacher_mask_cache=_resolve(d("mask_kd.teacher_mask_cache"), base),
+        mask_kd_align_augmentation=bool(
+            d("mask_kd.align_augmentation", False)
+        ),
         student_initial_checkpoint=_resolve(
             d("student_initialization.checkpoint"), base
         ),

@@ -102,5 +102,10 @@ Student 额外保留小权重 router balance/importance。没有 validation；ch
 ground-truth-only Student 权重，但重新初始化优化器；降低 phase、router 和其余参数的
 学习率，并加入最终 mask soft-target KD。它使用独立 runs 目录，不会覆盖原结果。
 
+类别不相交测试更推荐 `fss1000_saliency_mask_kd_augmented_finetune.yaml`。原始
+Teacher cache 仍保持不变，但 Dataset 会记录每个样本实际采用的 normalized crop 与
+horizontal flip，并对缓存 soft mask 重放同一几何变换。这样既不会发生 teacher/GT
+像素错位，也不需要放弃训练增强；当前该模式明确禁止 rotation，避免静默近似。
+
 主要指标为 mean IoU、mean Dice/F1、MAE 和 pixel accuracy。结果和典型/失败案例分别写入
 `metrics/` 与 `figures/`。

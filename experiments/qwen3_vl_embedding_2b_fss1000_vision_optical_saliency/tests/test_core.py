@@ -25,6 +25,9 @@ from experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency.objective
 from experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency.settings import (
     load_settings,
 )
+from experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency.training import (
+    align_cached_teacher_logits,
+)
 
 
 EXPERIMENT = Path(__file__).resolve().parents[1]
@@ -57,6 +60,35 @@ def test_mask_kd_finetune_config_uses_fresh_optimizer_initialization() -> None:
     assert settings.phase_learning_rate == pytest.approx(1e-4)
     assert settings.router_learning_rate == pytest.approx(1e-4)
     assert settings.augmentation_enabled is False
+
+
+def test_augmented_mask_kd_config_replays_crop_and_flip() -> None:
+    settings = load_settings(
+        EXPERIMENT / "configs" / "fss1000_saliency_mask_kd_augmented_finetune.yaml"
+    )
+    assert settings.mask_kd_align_augmentation is True
+    assert settings.augmentation_enabled is True
+    assert settings.rotation_degrees == 0.0
+
+    probability = torch.tensor(
+        [[[[0.1, 0.2, 0.3, 0.4],
+           [0.2, 0.3, 0.4, 0.5],
+           [0.6, 0.7, 0.8, 0.9],
+           [0.7, 0.8, 0.9, 0.95]]]],
+        dtype=torch.float32,
+    )
+    logits = torch.logit(probability)
+    trace = [{
+        "crop_box_normalized": [0.0, 0.5, 1.0, 1.0],
+        "horizontal_flip": True,
+        "rotation_degrees": 0.0,
+    }]
+    actual = align_cached_teacher_logits(logits, trace).sigmoid()
+    expected_crop = torch.flip(probability[:, :, 2:4, :], dims=(-1,))
+    expected = torch.nn.functional.interpolate(
+        expected_crop, size=(4, 4), mode="bilinear", align_corners=False
+    )
+    assert torch.allclose(actual, expected, atol=2e-4)
 
 
 def test_restore_teacher_tokens_uses_runtime_grid() -> None:
