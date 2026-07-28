@@ -5,7 +5,6 @@ from typing import Any, Sequence
 import torch
 from PIL import Image
 from torch import nn
-from torch.nn import functional as F
 from torchvision.transforms import functional as TF
 
 from .optics import (
@@ -16,35 +15,18 @@ from .optics import (
 from .settings import Settings
 
 
-def _encode_rgb_tensor(rgb: torch.Tensor, encoding: str) -> torch.Tensor:
+def _encode_rgb_tensor(
+    rgb: torch.Tensor, encoding: str = "grayscale_amplitude"
+) -> torch.Tensor:
     if rgb.ndim != 3 or rgb.shape[0] != 3 or rgb.shape[-2] != rgb.shape[-1]:
         raise ValueError("RGB tensor must have shape [3,H,H]")
-    if encoding == "grayscale_amplitude":
-        weights = rgb.new_tensor([0.2989, 0.5870, 0.1140]).view(3, 1, 1)
-        return (rgb * weights).sum(0, keepdim=True).clamp(0.0, 1.0)
-    if encoding == "rgb_quadrant_amplitude":
-        size = int(rgb.shape[-1])
-        if size % 2:
-            raise ValueError("rgb_quadrant_amplitude requires an even image size")
-        half = size // 2
-        reduced = F.interpolate(
-            rgb.unsqueeze(0),
-            size=(half, half),
-            mode="bicubic",
-            align_corners=False,
-            antialias=True,
-        )[0].clamp(0.0, 1.0)
-        luminance = (
-            reduced
-            * reduced.new_tensor([0.2989, 0.5870, 0.1140]).view(3, 1, 1)
-        ).sum(0)
-        amplitude = rgb.new_zeros(1, size, size)
-        amplitude[0, :half, :half] = reduced[0]
-        amplitude[0, :half, half:] = reduced[1]
-        amplitude[0, half:, :half] = reduced[2]
-        amplitude[0, half:, half:] = luminance
-        return amplitude
-    raise ValueError(f"Unsupported scalar-field input encoding {encoding!r}")
+    if encoding != "grayscale_amplitude":
+        raise ValueError(
+            "This D2NN baseline is a scalar grayscale optical system; "
+            "input.encoding must be grayscale_amplitude"
+        )
+    weights = rgb.new_tensor([0.2989, 0.5870, 0.1140]).view(3, 1, 1)
+    return (rgb * weights).sum(0, keepdim=True).clamp(0.0, 1.0)
 
 
 def pil_images_to_amplitude(
@@ -167,16 +149,7 @@ class TwoPlaneD2NNClassifier(nn.Module):
         images: torch.Tensor,
         *,
         return_intermediates: bool = False,
-        return_detector_intensity: bool = False,
-    ) -> (
-        torch.Tensor
-        | tuple[torch.Tensor, torch.Tensor]
-        | tuple[torch.Tensor, dict[str, Any]]
-    ):
-        if return_intermediates and return_detector_intensity:
-            raise ValueError(
-                "Choose return_intermediates or return_detector_intensity, not both"
-            )
+    ) -> torch.Tensor | tuple[torch.Tensor, dict[str, Any]]:
         input_field = self.prepare_input(images)
         field = (
             self.input_propagator(input_field)
@@ -197,11 +170,6 @@ class TwoPlaneD2NNClassifier(nn.Module):
         energies, detector_intensity, full_intensity = self.detector(detector_field)
         if not torch.isfinite(energies).all() or torch.any(energies < 0):
             raise RuntimeError("D2NN detector energies must be finite and nonnegative")
-        if return_detector_intensity:
-            # The detector-plane MSE path deliberately returns only the real
-            # intensity needed by the loss. Keeping the five complex fields
-            # below would retain their autograd graphs and waste GPU memory.
-            return energies, detector_intensity
         if not return_intermediates:
             return energies
         return energies, {

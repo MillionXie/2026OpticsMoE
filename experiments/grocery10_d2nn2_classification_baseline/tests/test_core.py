@@ -12,7 +12,6 @@ from experiments.grocery10_d2nn2_classification_baseline.modeling import (
 )
 from experiments.grocery10_d2nn2_classification_baseline.settings import load_settings
 from experiments.grocery10_d2nn2_classification_baseline.training import (
-    detector_plane_mse_loss,
     detector_region_cross_entropy,
 )
 
@@ -45,9 +44,6 @@ def _tiny_settings() -> SimpleNamespace:
         detector_normalize_total_energy=True,
         detector_eps=1e-8,
         loss_type="detector_region_cross_entropy",
-        detector_plane_mse_scale=100.0,
-        normalize_detector_plane_mse=True,
-        detector_plane_mse_normalization_eps=1e-8,
         loss_eps=1e-8,
     )
 
@@ -56,7 +52,8 @@ def test_formal_config_matches_experimental_optical_path() -> None:
     settings = load_settings(ROOT / "configs" / "grocery10_d2nn2.yaml")
     assert settings.canvas_size == 1026
     assert settings.active_size == 986
-    assert settings.first_phase_size == settings.image_size == 224
+    assert settings.first_phase_size == settings.image_size == 448
+    assert settings.input_encoding == "grayscale_amplitude"
     assert settings.pixel_pitch_um == 8.0
     assert settings.wavelength_nm == 532.0
     assert settings.input_to_first_phase_distance_m == 0.0
@@ -138,50 +135,13 @@ def test_detector_region_cross_entropy_is_not_similarity_learning() -> None:
     assert logits.grad is not None
 
 
-def test_detector_plane_mse_is_energy_scale_invariant_and_has_gradients() -> None:
-    intensity = torch.rand(2, 56, 56, requires_grad=True)
-    target = torch.zeros_like(intensity)
-    target[0, 4:8, 7:11] = 1.0
-    target[1, 30:34, 35:39] = 1.0
-    loss = detector_plane_mse_loss(
-        intensity,
-        target,
-        scale=100.0,
-        normalize=True,
-        eps=1e-8,
-    )
-    scaled_loss = detector_plane_mse_loss(
-        intensity * 9.0,
-        target,
-        scale=100.0,
-        normalize=True,
-        eps=1e-8,
-    )
-    assert torch.allclose(loss, scaled_loss, rtol=1e-5, atol=1e-6)
-    loss.backward()
-    assert intensity.grad is not None
-    assert torch.isfinite(intensity.grad).all()
-
-
-def test_detector_intensity_only_path_avoids_intermediate_field_capture() -> None:
-    model = TwoPlaneD2NNClassifier(_tiny_settings())
-    energies, detector_intensity = model(
-        torch.rand(2, 1, 16, 16), return_detector_intensity=True
-    )
-    assert energies.shape == (2, 10)
-    assert detector_intensity.shape == (2, 56, 56)
-    assert detector_intensity.requires_grad
-    assert torch.all(detector_intensity >= 0)
-
-
-def test_rgb_quadrant_encoding_is_fixed_nonnegative_and_preserves_channels() -> None:
+def test_rgb_files_are_converted_to_one_grayscale_amplitude_field() -> None:
     rgb = torch.zeros(3, 16, 16)
     rgb[0] = 0.2
     rgb[1] = 0.5
     rgb[2] = 0.8
-    amplitude = _encode_rgb_tensor(rgb, "rgb_quadrant_amplitude")
+    amplitude = _encode_rgb_tensor(rgb, "grayscale_amplitude")
     assert amplitude.shape == (1, 16, 16)
     assert torch.all(amplitude >= 0)
-    assert torch.allclose(amplitude[0, :8, :8], torch.full((8, 8), 0.2))
-    assert torch.allclose(amplitude[0, :8, 8:], torch.full((8, 8), 0.5))
-    assert torch.allclose(amplitude[0, 8:, :8], torch.full((8, 8), 0.8))
+    expected = 0.2989 * 0.2 + 0.5870 * 0.5 + 0.1140 * 0.8
+    assert torch.allclose(amplitude, torch.full_like(amplitude, expected))

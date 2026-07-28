@@ -1,0 +1,7 @@
+base_config: base.yaml
+
+model:
+  name: efficientnet_b0
+  weights: imagenet1k
+
+output_dir: ../runs/efficientnet_b0_direct_classification

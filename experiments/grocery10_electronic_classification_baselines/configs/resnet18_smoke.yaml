@@ -1,0 +1,20 @@
+base_config: resnet18_classification.yaml
+
+dataset:
+  train_limit_per_sku: 2
+  test_limit_per_sku: 1
+
+model:
+  weights: none
+
+batching:
+  batch_size: 10
+  inference_batch_size: 10
+  num_workers: 0
+
+training:
+  epochs: 1
+  evaluate_test_each_epoch: true
+  log_interval_batches: 1
+
+output_dir: ../runs/resnet18_direct_classification_smoke

@@ -49,56 +49,11 @@ def detector_region_cross_entropy(
     )
 
 
-def detector_plane_mse_loss(
-    intensity: torch.Tensor,
-    target_plane: torch.Tensor,
-    *,
-    scale: float,
-    normalize: bool,
-    eps: float,
-) -> torch.Tensor:
-    """Full-plane MSE with optional per-sample total-energy matching."""
-
-    if intensity.shape != target_plane.shape or intensity.ndim != 3:
-        raise ValueError("Detector intensity and target plane must share [B,H,W]")
-    if float(scale) <= 0 or float(eps) <= 0:
-        raise ValueError("Detector-plane MSE scale and eps must be positive")
-    prediction = intensity.float()
-    target = target_plane.float()
-    if normalize:
-        prediction_energy = prediction.sum((-2, -1), keepdim=True)
-        target_energy = target.sum((-2, -1), keepdim=True)
-        prediction = prediction * target_energy / prediction_energy.clamp_min(eps)
-    return float(scale) * F.mse_loss(prediction, target)
-
-
-def _active_detector_targets(
-    model: TwoPlaneD2NNClassifier, labels: torch.Tensor
-) -> torch.Tensor:
-    masks = model.detector.masks[
-        labels.long(),
-        model.active_start : model.active_end,
-        model.active_start : model.active_end,
-    ]
-    return masks.to(device=labels.device, dtype=torch.float32)
-
-
 def _forward_loss(
     model: TwoPlaneD2NNClassifier,
     images: torch.Tensor,
     labels: torch.Tensor,
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    settings = model.settings
-    if settings.loss_type == "detector_plane_mse":
-        energies, intensity = model(images, return_detector_intensity=True)
-        loss = detector_plane_mse_loss(
-            intensity,
-            _active_detector_targets(model, labels),
-            scale=settings.detector_plane_mse_scale,
-            normalize=settings.normalize_detector_plane_mse,
-            eps=settings.detector_plane_mse_normalization_eps,
-        )
-        return energies, loss
     energies = model(images)
     return energies, detector_region_cross_entropy(energies, labels)
 
@@ -327,9 +282,6 @@ def train(
     device: torch.device,
 ) -> dict[str, Any]:
     training_samples = list(bundle.train_samples)
-    if settings.include_gallery_in_training:
-        for _ in range(settings.gallery_repeat_factor):
-            training_samples.extend(bundle.gallery_samples)
     train_loader = _loader(training_samples, settings, train=True)
     test_loader = _loader(bundle.test_samples, settings, train=False)
     optimizer = _optimizer(model, settings)
@@ -450,11 +402,7 @@ def train(
             "total_time_sec": time.perf_counter() - started,
             "selection_criterion": f"minimum_training_{settings.loss_type}",
             "natural_training_samples": len(bundle.train_samples),
-            "gallery_training_samples_per_epoch": (
-                len(bundle.gallery_samples) * settings.gallery_repeat_factor
-                if settings.include_gallery_in_training
-                else 0
-            ),
+            "gallery_training_samples_per_epoch": 0,
         },
     )
     save_training_curves(rows, settings.output_dir / "figures" / "training_curves.png")

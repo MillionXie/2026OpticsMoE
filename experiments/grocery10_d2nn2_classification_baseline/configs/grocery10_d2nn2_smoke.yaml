@@ -15,4 +15,4 @@ visualization:
   save_interval_epochs: 1
   sample_count: 2
 
-output_dir: ../runs/grocery10_d2nn2_smoke
+output_dir: ../runs/grocery10_d2nn2_grayscale448_smoke

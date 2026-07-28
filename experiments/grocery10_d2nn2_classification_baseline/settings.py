@@ -91,9 +91,6 @@ class Settings:
     detector_eps: float
 
     loss_type: str
-    detector_plane_mse_scale: float
-    normalize_detector_plane_mse: bool
-    detector_plane_mse_normalization_eps: float
     loss_eps: float
     optimizer: str
     learning_rate: float
@@ -105,8 +102,6 @@ class Settings:
     inference_batch_size: int
     num_workers: int
     class_balanced_sampling: bool
-    include_gallery_in_training: bool
-    gallery_repeat_factor: int
     random_seed: int
     evaluate_test_each_epoch: bool
     log_interval_batches: int
@@ -137,12 +132,9 @@ class Settings:
             raise ValueError("This baseline requires exactly 10 unique selected_skus")
         if self.gallery_images_per_sku != 1:
             raise ValueError("Grocery Store supplies exactly one iconic gallery image per SKU")
-        if self.input_encoding not in {
-            "grayscale_amplitude",
-            "rgb_quadrant_amplitude",
-        }:
+        if self.input_encoding != "grayscale_amplitude":
             raise ValueError(
-                "input.encoding must be grayscale_amplitude or rgb_quadrant_amplitude"
+                "This D2NN baseline only supports grayscale_amplitude input"
             )
         for name in (
             "image_size",
@@ -167,9 +159,14 @@ class Settings:
             raise ValueError(
                 "image_size must equal first_phase_size so no spatial resampling occurs inside the model"
             )
-        if self.canvas_size != 1026 or self.active_size != 986 or self.first_phase_size != 224:
+        if (
+            self.canvas_size != 1026
+            or self.active_size != 986
+            or self.first_phase_size != 448
+        ):
             raise ValueError(
-                "The formal experimental-path baseline fixes canvas/active/first phase to 1026/986/224"
+                "The formal baseline fixes canvas/active/first phase to "
+                "1026/986/448"
             )
         if self.input_to_first_phase_distance_m < 0:
             raise ValueError("input_to_first_phase_distance_m cannot be negative")
@@ -194,18 +191,10 @@ class Settings:
             3,
         ):
             raise ValueError("The Grocery-10 detector layout must be [3,4,3]")
-        if self.loss_type not in {
-            "detector_region_cross_entropy",
-            "detector_plane_mse",
-        }:
+        if self.loss_type != "detector_region_cross_entropy":
             raise ValueError(
-                "loss.type must be detector_region_cross_entropy or detector_plane_mse"
-            )
-        if self.detector_plane_mse_scale <= 0:
-            raise ValueError("loss.scale must be positive")
-        if self.detector_plane_mse_normalization_eps <= 0:
-            raise ValueError(
-                "loss.detector_plane_mse_normalization_eps must be positive"
+                "The strict D2NN baseline only supports "
+                "loss.type=detector_region_cross_entropy"
             )
         if self.optimizer not in {"adam", "adamw"}:
             raise ValueError("optimizer must be adam or adamw")
@@ -213,8 +202,6 @@ class Settings:
             raise ValueError("scheduler must be cosine or none")
         if not 0.0 < self.crop_scale_min <= 1.0:
             raise ValueError("augmentation.crop_scale_min must be in (0,1]")
-        if self.gallery_repeat_factor <= 0:
-            raise ValueError("training.gallery_repeat_factor must be positive")
 
     def to_dict(self) -> dict[str, Any]:
         value = asdict(self)
@@ -244,11 +231,11 @@ def load_settings(path: str | Path) -> Settings:
         train_limit_per_sku=d("dataset.train_limit_per_sku"),
         test_limit_per_sku=d("dataset.test_limit_per_sku"),
         gallery_images_per_sku=int(d("dataset.gallery_images_per_sku", 1)),
-        image_size=int(d("input.image_size", 224)),
+        image_size=int(d("input.image_size", 448)),
         input_encoding=str(d("input.encoding", "grayscale_amplitude")),
         canvas_size=int(d("optics.canvas_size", 1026)),
         active_size=int(d("optics.active_size", 986)),
-        first_phase_size=int(d("optics.first_phase_size", 224)),
+        first_phase_size=int(d("optics.first_phase_size", 448)),
         wavelength_nm=float(d("optics.wavelength_nm", 532.0)),
         pixel_pitch_um=float(d("optics.pixel_pitch_um", 8.0)),
         input_to_first_phase_distance_m=float(
@@ -274,13 +261,6 @@ def load_settings(path: str | Path) -> Settings:
         ),
         detector_eps=float(d("detector.eps", 1e-8)),
         loss_type=str(d("loss.type", "detector_region_cross_entropy")),
-        detector_plane_mse_scale=float(d("loss.scale", 100.0)),
-        normalize_detector_plane_mse=bool(
-            d("loss.normalize_detector_plane_mse", True)
-        ),
-        detector_plane_mse_normalization_eps=float(
-            d("loss.detector_plane_mse_normalization_eps", 1e-8)
-        ),
         loss_eps=float(d("loss.eps", 1e-8)),
         optimizer=str(d("training.optimizer", "adam")),
         learning_rate=float(d("training.learning_rate", 0.01)),
@@ -292,10 +272,6 @@ def load_settings(path: str | Path) -> Settings:
         inference_batch_size=int(d("training.inference_batch_size", 4)),
         num_workers=int(d("training.num_workers", 4)),
         class_balanced_sampling=bool(d("training.class_balanced_sampling", True)),
-        include_gallery_in_training=bool(
-            d("training.include_gallery_in_training", False)
-        ),
-        gallery_repeat_factor=int(d("training.gallery_repeat_factor", 1)),
         random_seed=int(d("training.random_seed", 42)),
         evaluate_test_each_epoch=bool(d("training.evaluate_test_each_epoch", True)),
         log_interval_batches=int(d("training.log_interval_batches", 20)),

@@ -27,28 +27,6 @@ CUDA_VISIBLE_DEVICES=0 python -m experiments.grocery10_d2nn2_classification_base
 CUDA_VISIBLE_DEVICES=0 python -m experiments.grocery10_d2nn2_classification_baseline --config experiments/grocery10_d2nn2_classification_baseline/configs/grocery10_d2nn2.yaml --phase test
 ```
 
-## Generalization trials
-
-```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.grocery10_d2nn2_classification_baseline --config experiments/grocery10_d2nn2_classification_baseline/configs/grocery10_d2nn2_opt_fullcoverage_mild.yaml --phase all
-```
-
-```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.grocery10_d2nn2_classification_baseline --config experiments/grocery10_d2nn2_classification_baseline/configs/grocery10_d2nn2_opt_fullcoverage_strong.yaml --phase all
-```
-
-```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.grocery10_d2nn2_classification_baseline --config experiments/grocery10_d2nn2_classification_baseline/configs/grocery10_d2nn2_opt_rgb_quadrant.yaml --phase all
-```
-
-```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.grocery10_d2nn2_classification_baseline --config experiments/grocery10_d2nn2_classification_baseline/configs/grocery10_d2nn2_opt_rgb_gallery.yaml --phase all
-```
-
-```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.grocery10_d2nn2_classification_baseline --config experiments/grocery10_d2nn2_classification_baseline/configs/grocery10_d2nn2_opt_rgb_detector_mse.yaml --phase all
-```
-
 ## Unit tests
 
 ```bash

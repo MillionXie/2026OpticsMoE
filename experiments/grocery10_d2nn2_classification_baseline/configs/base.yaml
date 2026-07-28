@@ -19,14 +19,16 @@ dataset:
   gallery_images_per_sku: 1
 
 input:
-  image_size: 224
+  # One scalar optical field. RGB files are converted to luminance first.
+  image_size: 448
   encoding: grayscale_amplitude
 
 optics:
   # Same propagation geometry as the Grocery optical experiment.
   canvas_size: 1026
   active_size: 986
-  first_phase_size: 224
+  # Four 224x224 expert footprints have the same total pixel area as 448x448.
+  first_phase_size: 448
   wavelength_nm: 532.0
   pixel_pitch_um: 8.0
 
@@ -56,10 +58,6 @@ detector:
 
 loss:
   type: detector_region_cross_entropy
-  # Alternative: detector_plane_mse gives dense spatial supervision over CCD.
-  scale: 100.0
-  normalize_detector_plane_mse: true
-  detector_plane_mse_normalization_eps: 1.0e-8
   eps: 1.0e-8
 
 training:
@@ -73,8 +71,6 @@ training:
   inference_batch_size: 4
   num_workers: 4
   class_balanced_sampling: true
-  include_gallery_in_training: false
-  gallery_repeat_factor: 1
   random_seed: 42
   evaluate_test_each_epoch: true
   log_interval_batches: 20
@@ -91,4 +87,4 @@ visualization:
   sample_count: 8
 
 device: cuda
-output_dir: ../runs/grocery10_d2nn2_classification
+output_dir: ../runs/grocery10_d2nn2_grayscale448_classification

@@ -77,8 +77,12 @@ def save_phase_masks(
     label = f"{int(epoch):04d}" if isinstance(epoch, int) else str(epoch)
     _heatmap(
         first,
-        directory / f"epoch_{label}_phase_plane_1_local224.png",
-        title="Phase plane 1: local 224x224",
+        directory
+        / f"epoch_{label}_phase_plane_1_local{model.first_phase_size}.png",
+        title=(
+            f"Phase plane 1: local "
+            f"{model.first_phase_size}x{model.first_phase_size}"
+        ),
         colorbar_label="phase [rad]",
         cmap="twilight",
     )
@@ -91,7 +95,7 @@ def save_phase_masks(
     )
     torch.save(
         {
-            "phase_plane_1_local224_rad": first,
+            f"phase_plane_1_local{model.first_phase_size}_rad": first,
             "phase_plane_2_global986_rad": second,
         },
         directory / f"epoch_{label}_phase_masks.pt",
