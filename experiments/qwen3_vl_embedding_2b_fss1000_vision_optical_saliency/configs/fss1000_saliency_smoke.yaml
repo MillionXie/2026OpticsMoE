@@ -1,0 +1,23 @@
+base_config: fss1000_saliency.yaml
+
+dataset:
+  train_class_limit: 2
+  test_class_limit: 2
+  images_per_class_limit: 2
+
+batching:
+  teacher_batch_size: 1
+  student_batch_size: 1
+  inference_batch_size: 1
+  num_workers: 0
+
+training:
+  teacher_epochs: 1
+  student_epochs: 1
+  log_interval_batches: 1
+
+visualization:
+  sample_count: 2
+
+output_dir: ../runs/fss1000_saliency_smoke
+

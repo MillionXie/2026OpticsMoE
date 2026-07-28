@@ -1,0 +1,14 @@
+base_config: fss1000_saliency.yaml
+
+loss:
+  mask_kd_weight: 0.5
+  mask_kd_temperature: 1.0
+
+mask_kd:
+  teacher_checkpoint: ../runs/fss1000_saliency/checkpoints/teacher_best_train_loss.pt
+  teacher_mask_cache: ../runs/fss1000_saliency/teacher_mask_cache
+
+augmentation:
+  enabled: false
+
+output_dir: ../runs/fss1000_saliency_mask_kd

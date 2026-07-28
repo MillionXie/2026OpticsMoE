@@ -1,0 +1,123 @@
+dataset:
+  data_root: ../../../data/FSS-1000
+  download: true
+  download_source: auto
+  huggingface_dataset_id: nobg/FSS-1000
+  huggingface_endpoint: https://hf-mirror.com
+  download_file_id: 16TgqOeI_0P41Eh3jWQlxlRXG9KIqtMgI
+  official_test_list_url: https://raw.githubusercontent.com/HKUSTCV/FSS-1000/master/fss_test_set.txt
+  merge_official_validation_into_train: true
+  train_class_limit: null
+  test_class_limit: null
+  images_per_class_limit: null
+
+qwen:
+  model_id: Qwen/Qwen3-VL-Embedding-2B
+  cache_dir: null
+  local_files_only: false
+  processor_min_pixels: 50176
+  processor_max_pixels: 50176
+  dtype: bfloat16
+  attn_implementation: sdpa
+  device: cuda
+
+data:
+  image_size: 224
+
+batching:
+  teacher_batch_size: 4
+  student_batch_size: 2
+  inference_batch_size: 4
+  num_workers: 4
+
+training:
+  teacher_epochs: 30
+  student_epochs: 50
+  teacher_learning_rate: 0.001
+  student_learning_rate: 0.002
+  router_learning_rate: null
+  phase_learning_rate: null
+  weight_decay: 0.0
+  random_seed: 42
+  amp_enabled: true
+  evaluate_test_each_epoch: true
+  log_interval_batches: 25
+
+loss:
+  bce_weight: 1.0
+  dice_weight: 1.0
+  router_balance_weight: 0.03
+  router_importance_weight: 0.0
+  mask_kd_weight: 0.0
+  mask_kd_temperature: 1.0
+
+mask_kd:
+  teacher_checkpoint: null
+  teacher_mask_cache: null
+
+augmentation:
+  enabled: true
+  crop_scale_min: 0.90
+  horizontal_flip_probability: 0.5
+  brightness_jitter: 0.10
+  contrast_jitter: 0.10
+  rotation_degrees: 5.0
+
+segmentation_head:
+  projection_dim: 128
+  decoder_channels: [64, 32, 16]
+  groupnorm_groups: 8
+
+optical:
+  input_adapter_dim: 224
+  max_visual_tokens: 224
+  vision_tap_stages: [1]
+  geometry:
+    canvas_size: 1026
+    active_size: 986
+    expert_size: 224
+    expert_pitch: 254
+    num_experts: 16
+    grid_rows: 4
+    grid_cols: 4
+    layers_per_expert: 1
+  router:
+    top_k: 4
+    pool_size: 14
+    temperature: 1.0
+    input_layernorm_enabled: true
+    input_layernorm_eps: 1.0e-5
+    amplitude_weight_domain: amplitude
+    input_normalization: none
+  physics:
+    wavelength_nm: 532.0
+    pixel_pitch_um: 8.0
+    inter_layer_distance_m: 0.10
+    last_expert_to_global_distance_m: 0.10
+    global_to_detector_distance_m: 0.10
+  phase:
+    parameterization: sigmoid
+    init: zeros
+    init_std: 0.02
+  k_space:
+    enabled: false
+    theta_max_deg: 1.0
+  oeo:
+    enabled: true
+    per_expert_enabled: true
+    elementwise_affine: false
+    hard_route_mask: true
+    reapply_routing_weights: true
+    layernorm_eps: 1.0e-5
+    nonlinearity: relu
+  detector:
+    output_size: 224
+    layernorm_eps: 1.0e-5
+    layernorm_affine: false
+    layernorm_scope: per_token
+    nonlinearity: relu
+
+visualization:
+  sample_count: 12
+
+output_dir: ../runs/fss1000_saliency
