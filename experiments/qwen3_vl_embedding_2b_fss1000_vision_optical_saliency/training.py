@@ -167,6 +167,8 @@ def train_student(
     )
     if settings.freeze_student_optical_core:
         student.core.requires_grad_(False)
+    if settings.freeze_student_base_head:
+        _freeze_base_head_keep_refinement_trainable(student)
     report = trainable_parameter_report(student, prefix="optical_student")
     report["segmentation_head"] = student.head.specification()
     report["optical_core"] = student.core.parameter_breakdown()
@@ -176,6 +178,7 @@ def train_student(
     )
     report["initialization"] = initialization
     report["optical_core_frozen_for_finetune"] = settings.freeze_student_optical_core
+    report["base_head_frozen_for_finetune"] = settings.freeze_student_base_head
     write_json(settings.output_dir / "model_student.json", report)
     _print_parameter_report(report)
     train_loader, test_loader = build_loaders(
@@ -503,6 +506,22 @@ def _refinement_enabled(
         getattr(student.head, "refinement_enabled", False)
         or getattr(student.head, "progressive_refinement_enabled", False)
     )
+
+
+def _freeze_base_head_keep_refinement_trainable(
+    student: VisionOpticalSaliencyStudent,
+) -> None:
+    if not _refinement_enabled(student):
+        raise RuntimeError(
+            "training.freeze_student_base_head=true requires an enabled "
+            "student refinement branch"
+        )
+    student.head.requires_grad_(False)
+    if student.head.refinement is not None:
+        student.head.refinement.requires_grad_(True)
+    if student.head.progressive_refinement is not None:
+        student.head.progressive_refinement.requires_grad_(True)
+        student.head.progressive_classifier.requires_grad_(True)
 
 
 def align_cached_teacher_logits(

@@ -133,6 +133,7 @@ def test_progressive_refinement_preserves_initial_logits() -> None:
     )
     assert settings.student_segmentation_progressive_refinement_enabled is True
     assert settings.freeze_student_optical_core is True
+    assert settings.freeze_student_base_head is False
 
     torch.manual_seed(11)
     base = LightweightSegmentationHead(224, 128, (64, 32, 16), 8)
@@ -155,6 +156,17 @@ def test_progressive_refinement_preserves_initial_logits() -> None:
         p.numel() for p in base.parameters()
     )
     assert 90_000 < added < 110_000
+
+
+def test_progressive_residual_only_profile_freezes_base() -> None:
+    settings = load_settings(
+        EXPERIMENT / "configs"
+        / "fss1000_saliency_mask_kd_progressive_residual_only_batch16.yaml"
+    )
+    assert settings.student_segmentation_progressive_refinement_enabled is True
+    assert settings.freeze_student_optical_core is True
+    assert settings.freeze_student_base_head is True
+    assert settings.student_batch_size == 16
 
 
 def test_restore_teacher_tokens_uses_runtime_grid() -> None:
