@@ -1,0 +1,8 @@
+base_config: fss1000_saliency_mask_kd_augmented_finetune_batch16.yaml
+
+segmentation_head:
+  # Zero-initialized 224x224 residual boundary refinement. The first forward
+  # is exactly identical to the source checkpoint's original head.
+  student_refinement_enabled: true
+
+output_dir: ../runs/fss1000_saliency_mask_kd_augmented_refinement_batch16

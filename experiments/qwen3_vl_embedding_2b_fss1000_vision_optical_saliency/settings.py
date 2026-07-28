@@ -120,6 +120,7 @@ class Settings:
     segmentation_projection_dim: int
     segmentation_channels: tuple[int, ...]
     segmentation_groupnorm_groups: int
+    student_segmentation_refinement_enabled: bool
 
     # Exact one-stage MoE16 interface expected by the reused optical core.
     input_adapter_dim: int
@@ -357,6 +358,9 @@ def load_settings(path: str | Path) -> Settings:
             "segmentation_head.decoder_channels", [64, 32, 16]
         )),
         segmentation_groupnorm_groups=int(d("segmentation_head.groupnorm_groups", 8)),
+        student_segmentation_refinement_enabled=bool(
+            d("segmentation_head.student_refinement_enabled", False)
+        ),
         input_adapter_dim=int(d("optical.input_adapter_dim", 224)),
         max_visual_tokens=int(d("optical.max_visual_tokens", 224)),
         max_language_tokens=224,

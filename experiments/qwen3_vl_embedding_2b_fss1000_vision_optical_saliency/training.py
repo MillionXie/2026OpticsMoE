@@ -390,6 +390,7 @@ def _student_head(loaded: LoadedVisionBackbone, settings: Any) -> nn.Module:
         settings.segmentation_channels,
         settings.segmentation_groupnorm_groups,
         settings.image_size,
+        refinement_enabled=settings.student_segmentation_refinement_enabled,
     ).to(loaded.device)
 
 
@@ -456,7 +457,21 @@ def _initialize_student(
             f"Student initialization checkpoint is missing {missing}: {checkpoint_path}"
         )
     student.core.load_state_dict(payload["core_state_dict"], strict=True)
-    student.head.load_state_dict(payload["head_state_dict"], strict=True)
+    head_result = student.head.load_state_dict(
+        payload["head_state_dict"],
+        strict=not _refinement_enabled(student),
+    )
+    if _refinement_enabled(student):
+        invalid_missing = [
+            name for name in head_result.missing_keys
+            if not name.startswith("refinement.")
+        ]
+        if invalid_missing or head_result.unexpected_keys:
+            raise RuntimeError(
+                "Student initialization is incompatible with refinement head: "
+                f"missing={head_result.missing_keys}, "
+                f"unexpected={head_result.unexpected_keys}"
+            )
     report = {
         "mode": "checkpoint_weights_fresh_optimizer",
         "checkpoint": str(checkpoint_path),
@@ -471,6 +486,12 @@ def _initialize_student(
         flush=True,
     )
     return report
+
+
+def _refinement_enabled(
+    student: VisionOpticalSaliencyStudent,
+) -> bool:
+    return bool(getattr(student.head, "refinement_enabled", False))
 
 
 def align_cached_teacher_logits(

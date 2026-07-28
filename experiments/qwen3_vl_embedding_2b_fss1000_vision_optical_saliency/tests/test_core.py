@@ -101,6 +101,31 @@ def test_augmented_mask_kd_batch16_profile() -> None:
     assert settings.mask_kd_align_augmentation is True
 
 
+def test_refinement_head_is_zero_initialized_and_lightweight() -> None:
+    settings = load_settings(
+        EXPERIMENT / "configs"
+        / "fss1000_saliency_mask_kd_augmented_refinement_batch16.yaml"
+    )
+    assert settings.student_segmentation_refinement_enabled is True
+    assert settings.student_batch_size == 16
+
+    torch.manual_seed(7)
+    base = LightweightSegmentationHead(224, 128, (64, 32, 16), 8)
+    refined = LightweightSegmentationHead(
+        224, 128, (64, 32, 16), 8, refinement_enabled=True
+    )
+    source = base.state_dict()
+    result = refined.load_state_dict(source, strict=False)
+    assert result.unexpected_keys == []
+    assert all(name.startswith("refinement.") for name in result.missing_keys)
+    features = torch.randn(2, 224, 14, 14)
+    assert torch.equal(base(features), refined(features))
+    added = sum(p.numel() for p in refined.parameters()) - sum(
+        p.numel() for p in base.parameters()
+    )
+    assert 0 < added < 5_000
+
+
 def test_restore_teacher_tokens_uses_runtime_grid() -> None:
     grid = torch.tensor([[1, 2, 3], [1, 2, 3]])
     packed = torch.arange(12 * 5, dtype=torch.float32).reshape(12, 5)

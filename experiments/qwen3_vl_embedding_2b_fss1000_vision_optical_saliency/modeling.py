@@ -184,6 +184,7 @@ class LightweightSegmentationHead(nn.Module):
         decoder_channels: tuple[int, ...],
         groupnorm_groups: int,
         output_size: int = 224,
+        refinement_enabled: bool = False,
     ) -> None:
         super().__init__()
         self.input_dim = int(input_dim)
@@ -206,6 +207,23 @@ class LightweightSegmentationHead(nn.Module):
             current = int(channels)
         self.decoder = nn.Sequential(*layers)
         self.classifier = nn.Conv2d(current, 1, 1)
+        self.refinement_enabled = bool(refinement_enabled)
+        if self.refinement_enabled:
+            groups = min(int(groupnorm_groups), int(current))
+            while current % groups:
+                groups -= 1
+            self.refinement = nn.Sequential(
+                nn.Conv2d(current, current, 3, padding=1, bias=False),
+                nn.GroupNorm(groups, current),
+                nn.GELU(),
+                nn.Conv2d(current, 1, 1),
+            )
+            # Exact checkpoint-compatible initialization: before the first
+            # update, enabling refinement changes no logits.
+            nn.init.zeros_(self.refinement[-1].weight)
+            nn.init.zeros_(self.refinement[-1].bias)
+        else:
+            self.refinement = None
 
     def forward(self, spatial_features: torch.Tensor) -> torch.Tensor:
         if spatial_features.ndim != 4 or spatial_features.shape[1] != self.input_dim:
@@ -223,6 +241,8 @@ class LightweightSegmentationHead(nn.Module):
             align_corners=False,
         )
         logits = self.classifier(decoded)
+        if self.refinement is not None:
+            logits = logits + self.refinement(decoded)
         expected = (spatial_features.shape[0], 1, self.output_size, self.output_size)
         if logits.shape != expected:
             raise RuntimeError(f"Mask logits shape {tuple(logits.shape)} != {expected}")
@@ -233,6 +253,7 @@ class LightweightSegmentationHead(nn.Module):
             "type": "lightweight_spatial_segmentation_head",
             "input_dim": self.input_dim,
             "output_size": self.output_size,
+            "refinement_enabled": self.refinement_enabled,
             "parameters": sum(p.numel() for p in self.parameters()),
             "trainable_parameters": sum(p.numel() for p in self.parameters() if p.requires_grad),
         }
@@ -394,6 +415,7 @@ def build_teacher(loaded: LoadedVisionBackbone, settings: Any) -> FrozenQwenVisi
         decoder_channels=settings.segmentation_channels,
         groupnorm_groups=settings.segmentation_groupnorm_groups,
         output_size=settings.image_size,
+        refinement_enabled=False,
     ).to(loaded.device)
     return FrozenQwenVisionTeacher(loaded, head)
 
@@ -405,6 +427,7 @@ def build_student(loaded: LoadedVisionBackbone, settings: Any) -> VisionOpticalS
         decoder_channels=settings.segmentation_channels,
         groupnorm_groups=settings.segmentation_groupnorm_groups,
         output_size=settings.image_size,
+        refinement_enabled=settings.student_segmentation_refinement_enabled,
     ).to(loaded.device)
     student = VisionOpticalSaliencyStudent(loaded, settings, head)
     # Native Qwen and the unused hidden restore adapter remain frozen.
