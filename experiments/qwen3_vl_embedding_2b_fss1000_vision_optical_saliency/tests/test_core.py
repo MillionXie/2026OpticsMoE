@@ -126,6 +126,37 @@ def test_refinement_head_is_zero_initialized_and_lightweight() -> None:
     assert 0 < added < 5_000
 
 
+def test_progressive_refinement_preserves_initial_logits() -> None:
+    settings = load_settings(
+        EXPERIMENT / "configs"
+        / "fss1000_saliency_mask_kd_progressive_refinement_batch16.yaml"
+    )
+    assert settings.student_segmentation_progressive_refinement_enabled is True
+    assert settings.freeze_student_optical_core is True
+
+    torch.manual_seed(11)
+    base = LightweightSegmentationHead(224, 128, (64, 32, 16), 8)
+    progressive = LightweightSegmentationHead(
+        224,
+        128,
+        (64, 32, 16),
+        8,
+        progressive_refinement_enabled=True,
+    )
+    result = progressive.load_state_dict(base.state_dict(), strict=False)
+    assert result.unexpected_keys == []
+    assert all(
+        name.startswith(("progressive_refinement.", "progressive_classifier."))
+        for name in result.missing_keys
+    )
+    features = torch.randn(2, 224, 14, 14)
+    assert torch.equal(base(features), progressive(features))
+    added = sum(p.numel() for p in progressive.parameters()) - sum(
+        p.numel() for p in base.parameters()
+    )
+    assert 90_000 < added < 110_000
+
+
 def test_restore_teacher_tokens_uses_runtime_grid() -> None:
     grid = torch.tensor([[1, 2, 3], [1, 2, 3]])
     packed = torch.arange(12 * 5, dtype=torch.float32).reshape(12, 5)

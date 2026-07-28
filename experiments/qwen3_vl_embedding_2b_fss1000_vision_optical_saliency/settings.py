@@ -121,6 +121,8 @@ class Settings:
     segmentation_channels: tuple[int, ...]
     segmentation_groupnorm_groups: int
     student_segmentation_refinement_enabled: bool
+    student_segmentation_progressive_refinement_enabled: bool
+    freeze_student_optical_core: bool
 
     # Exact one-stage MoE16 interface expected by the reused optical core.
     input_adapter_dim: int
@@ -233,6 +235,14 @@ class Settings:
             raise ValueError("segmentation_channels must contain positive values")
         if self.segmentation_groupnorm_groups <= 0:
             raise ValueError("segmentation_groupnorm_groups must be positive")
+        if (
+            self.student_segmentation_refinement_enabled
+            and self.student_segmentation_progressive_refinement_enabled
+        ):
+            raise ValueError(
+                "Enable either the local or progressive student refinement branch, "
+                "not both"
+            )
         if min(
             self.bce_weight, self.dice_weight, self.router_balance_weight,
             self.router_importance_weight, self.mask_kd_weight,
@@ -360,6 +370,12 @@ def load_settings(path: str | Path) -> Settings:
         segmentation_groupnorm_groups=int(d("segmentation_head.groupnorm_groups", 8)),
         student_segmentation_refinement_enabled=bool(
             d("segmentation_head.student_refinement_enabled", False)
+        ),
+        student_segmentation_progressive_refinement_enabled=bool(
+            d("segmentation_head.student_progressive_refinement_enabled", False)
+        ),
+        freeze_student_optical_core=bool(
+            d("training.freeze_student_optical_core", False)
         ),
         input_adapter_dim=int(d("optical.input_adapter_dim", 224)),
         max_visual_tokens=int(d("optical.max_visual_tokens", 224)),

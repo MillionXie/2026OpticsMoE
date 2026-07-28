@@ -185,6 +185,7 @@ class LightweightSegmentationHead(nn.Module):
         groupnorm_groups: int,
         output_size: int = 224,
         refinement_enabled: bool = False,
+        progressive_refinement_enabled: bool = False,
     ) -> None:
         super().__init__()
         self.input_dim = int(input_dim)
@@ -208,6 +209,9 @@ class LightweightSegmentationHead(nn.Module):
         self.decoder = nn.Sequential(*layers)
         self.classifier = nn.Conv2d(current, 1, 1)
         self.refinement_enabled = bool(refinement_enabled)
+        self.progressive_refinement_enabled = bool(progressive_refinement_enabled)
+        if self.refinement_enabled and self.progressive_refinement_enabled:
+            raise ValueError("Local and progressive refinement cannot both be enabled")
         if self.refinement_enabled:
             groups = min(int(groupnorm_groups), int(current))
             while current % groups:
@@ -224,6 +228,37 @@ class LightweightSegmentationHead(nn.Module):
             nn.init.zeros_(self.refinement[-1].bias)
         else:
             self.refinement = None
+        if self.progressive_refinement_enabled:
+            progressive_channels = (64, 32, 16, 8)
+            progressive_layers: list[nn.Module] = []
+            progressive_current = int(projection_dim)
+            for channels in progressive_channels:
+                groups = min(int(groupnorm_groups), int(channels))
+                while channels % groups:
+                    groups -= 1
+                progressive_layers.append(
+                    nn.Sequential(
+                        nn.Conv2d(
+                            progressive_current,
+                            int(channels),
+                            3,
+                            padding=1,
+                            bias=False,
+                        ),
+                        nn.GroupNorm(groups, int(channels)),
+                        nn.GELU(),
+                    )
+                )
+                progressive_current = int(channels)
+            self.progressive_refinement = nn.ModuleList(progressive_layers)
+            self.progressive_classifier = nn.Conv2d(progressive_current, 1, 1)
+            # Preserve the source checkpoint's exact logits until training
+            # begins while allowing the multi-resolution branch to learn.
+            nn.init.zeros_(self.progressive_classifier.weight)
+            nn.init.zeros_(self.progressive_classifier.bias)
+        else:
+            self.progressive_refinement = None
+            self.progressive_classifier = None
 
     def forward(self, spatial_features: torch.Tensor) -> torch.Tensor:
         if spatial_features.ndim != 4 or spatial_features.shape[1] != self.input_dim:
@@ -243,6 +278,24 @@ class LightweightSegmentationHead(nn.Module):
         logits = self.classifier(decoded)
         if self.refinement is not None:
             logits = logits + self.refinement(decoded)
+        if self.progressive_refinement is not None:
+            progressive = projected.permute(0, 3, 1, 2)
+            for block in self.progressive_refinement:
+                progressive = F.interpolate(
+                    progressive,
+                    scale_factor=2.0,
+                    mode="bilinear",
+                    align_corners=False,
+                )
+                progressive = block(progressive)
+            if progressive.shape[-2:] != (self.output_size, self.output_size):
+                progressive = F.interpolate(
+                    progressive,
+                    size=(self.output_size, self.output_size),
+                    mode="bilinear",
+                    align_corners=False,
+                )
+            logits = logits + self.progressive_classifier(progressive)
         expected = (spatial_features.shape[0], 1, self.output_size, self.output_size)
         if logits.shape != expected:
             raise RuntimeError(f"Mask logits shape {tuple(logits.shape)} != {expected}")
@@ -254,6 +307,7 @@ class LightweightSegmentationHead(nn.Module):
             "input_dim": self.input_dim,
             "output_size": self.output_size,
             "refinement_enabled": self.refinement_enabled,
+            "progressive_refinement_enabled": self.progressive_refinement_enabled,
             "parameters": sum(p.numel() for p in self.parameters()),
             "trainable_parameters": sum(p.numel() for p in self.parameters() if p.requires_grad),
         }
@@ -416,6 +470,7 @@ def build_teacher(loaded: LoadedVisionBackbone, settings: Any) -> FrozenQwenVisi
         groupnorm_groups=settings.segmentation_groupnorm_groups,
         output_size=settings.image_size,
         refinement_enabled=False,
+        progressive_refinement_enabled=False,
     ).to(loaded.device)
     return FrozenQwenVisionTeacher(loaded, head)
 
@@ -428,6 +483,9 @@ def build_student(loaded: LoadedVisionBackbone, settings: Any) -> VisionOpticalS
         groupnorm_groups=settings.segmentation_groupnorm_groups,
         output_size=settings.image_size,
         refinement_enabled=settings.student_segmentation_refinement_enabled,
+        progressive_refinement_enabled=(
+            settings.student_segmentation_progressive_refinement_enabled
+        ),
     ).to(loaded.device)
     student = VisionOpticalSaliencyStudent(loaded, settings, head)
     # Native Qwen and the unused hidden restore adapter remain frozen.

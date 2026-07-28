@@ -165,6 +165,8 @@ def train_student(
     initialization = _initialize_student(
         student, settings.student_initial_checkpoint
     )
+    if settings.freeze_student_optical_core:
+        student.core.requires_grad_(False)
     report = trainable_parameter_report(student, prefix="optical_student")
     report["segmentation_head"] = student.head.specification()
     report["optical_core"] = student.core.parameter_breakdown()
@@ -173,6 +175,7 @@ def train_student(
         parameter.requires_grad for parameter in student.core.output_adapter.parameters()
     )
     report["initialization"] = initialization
+    report["optical_core_frozen_for_finetune"] = settings.freeze_student_optical_core
     write_json(settings.output_dir / "model_student.json", report)
     _print_parameter_report(report)
     train_loader, test_loader = build_loaders(
@@ -391,6 +394,9 @@ def _student_head(loaded: LoadedVisionBackbone, settings: Any) -> nn.Module:
         settings.segmentation_groupnorm_groups,
         settings.image_size,
         refinement_enabled=settings.student_segmentation_refinement_enabled,
+        progressive_refinement_enabled=(
+            settings.student_segmentation_progressive_refinement_enabled
+        ),
     ).to(loaded.device)
 
 
@@ -464,7 +470,9 @@ def _initialize_student(
     if _refinement_enabled(student):
         invalid_missing = [
             name for name in head_result.missing_keys
-            if not name.startswith("refinement.")
+            if not name.startswith(
+                ("refinement.", "progressive_refinement.", "progressive_classifier.")
+            )
         ]
         if invalid_missing or head_result.unexpected_keys:
             raise RuntimeError(
@@ -491,7 +499,10 @@ def _initialize_student(
 def _refinement_enabled(
     student: VisionOpticalSaliencyStudent,
 ) -> bool:
-    return bool(getattr(student.head, "refinement_enabled", False))
+    return bool(
+        getattr(student.head, "refinement_enabled", False)
+        or getattr(student.head, "progressive_refinement_enabled", False)
+    )
 
 
 def align_cached_teacher_logits(
