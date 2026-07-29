@@ -5,12 +5,14 @@ from types import SimpleNamespace
 
 import pytest
 import torch
+from PIL import Image
 
 from experiments.qwen3_vl_embedding_2b_abo_product_retrieval_optical_moe16.datasets import (
     CatalogItem,
     ImageRecord,
     assert_no_image_leakage,
     build_fixed_manifest,
+    load_product_image,
     split_stage2_images,
 )
 from experiments.qwen3_vl_embedding_2b_abo_product_retrieval_optical_moe16.evaluation import (
@@ -45,6 +47,18 @@ def test_main_catalog_image_can_be_fixed_as_gallery() -> None:
         "item", images, 42, preferred_gallery_ids=["image-3"]
     )
     assert split["image-3"] == "gallery"
+
+
+def test_product_preprocessing_letterboxes_without_stretching(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "wide.png"
+    Image.new("RGB", (200, 100), (10, 20, 30)).save(path)
+    output = load_product_image(path, 224)
+    assert output.size == (224, 224)
+    # The 2:1 source occupies 224x112 and is vertically centered on white.
+    assert output.getpixel((112, 0)) == (255, 255, 255)
+    assert output.getpixel((112, 112)) == (10, 20, 30)
 
 
 def test_fixed_manifest_excludes_gallery_and_query_from_both_training_stages() -> None:

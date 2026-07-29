@@ -53,6 +53,11 @@ Student 只运行 Qwen Vision，不运行 Language Model：
 → 224D retrieval embedding
 ```
 
+不同纵横比的 ABO 商品图会由 Teacher 和 Student 共用同一预处理：保持纵横比缩放，
+再以白色背景居中 letterbox 到 224×224。这样不会拉伸包装，同时避免 Qwen grid 对齐
+把非方形图像推到 224 个 optical token 以上；代码仍会对运行时 token 数严格检查，
+不会裁剪 token 或 hidden。
+
 物理布局保持既有 MoE16：
 
 - 4×4 experts；

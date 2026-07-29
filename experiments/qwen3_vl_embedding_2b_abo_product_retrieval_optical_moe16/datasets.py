@@ -62,21 +62,18 @@ class ABOSample:
 
 
 class ABORetrievalDataset(Dataset[dict[str, Any]]):
-    def __init__(self, samples: Sequence[ABOSample]) -> None:
+    def __init__(self, samples: Sequence[ABOSample], image_size: int = 224) -> None:
         self.samples = tuple(samples)
+        self.image_size = int(image_size)
 
     def __len__(self) -> int:
         return len(self.samples)
 
     def __getitem__(self, index: int) -> dict[str, Any]:
         sample = self.samples[index]
-        try:
-            with Image.open(sample.image_path) as image:
-                rgb = image.convert("RGB")
-        except Exception as exc:
-            raise RuntimeError(
-                f"Could not decode ABO image {sample.image_id}: {sample.image_path}"
-            ) from exc
+        rgb = load_product_image(
+            sample.image_path, self.image_size, image_id=sample.image_id
+        )
         return {
             "image": rgb,
             "image_id": sample.image_id,
@@ -114,6 +111,25 @@ def collate_abo(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
         "product_types": [row["product_type"] for row in rows],
         "splits": [row["split"] for row in rows],
     }
+
+
+def load_product_image(
+    path: Path, image_size: int = 224, *, image_id: str | None = None
+) -> Image.Image:
+    """Aspect-preserving resize plus white letterbox shared by Teacher/Student."""
+    try:
+        with Image.open(path) as image:
+            rgb = image.convert("RGB")
+    except Exception as exc:
+        label = image_id or path.name
+        raise RuntimeError(f"Could not decode ABO image {label}: {path}") from exc
+    rgb.thumbnail((image_size, image_size), Image.Resampling.LANCZOS)
+    canvas = Image.new("RGB", (image_size, image_size), "white")
+    canvas.paste(
+        rgb,
+        ((image_size - rgb.width) // 2, (image_size - rgb.height) // 2),
+    )
+    return canvas
 
 
 def prepare_abo(settings: Any, *, persist: bool = True) -> ABOBundle:
@@ -785,10 +801,10 @@ def _bundle_from_rows(
         if row["stage2_split"] == "query"
     ]
     return ABOBundle(
-        stage1_train=ABORetrievalDataset(stage1),
-        stage2_train=ABORetrievalDataset(stage2),
-        gallery=ABORetrievalDataset(gallery),
-        query=ABORetrievalDataset(query),
+        stage1_train=ABORetrievalDataset(stage1, settings.image_size),
+        stage2_train=ABORetrievalDataset(stage2, settings.image_size),
+        gallery=ABORetrievalDataset(gallery, settings.image_size),
+        query=ABORetrievalDataset(query, settings.image_size),
         stage1_item_ids=tuple(stage1_ids),
         stage2_item_ids=tuple(stage2_ids),
         manifest_digest=str(metadata["manifest_sha256"]),

@@ -16,23 +16,25 @@ from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.modeling impo
     LoadedBackbone,
 )
 
-from .datasets import ABOBundle, ABOSample, collate_abo
+from .datasets import ABOBundle, ABOSample, collate_abo, load_product_image
 from .io_utils import canonical_digest
 
 
 class _UniqueSampleDataset(Dataset[dict[str, Any]]):
-    def __init__(self, samples: Sequence[ABOSample]) -> None:
+    def __init__(
+        self, samples: Sequence[ABOSample], image_size: int = 224
+    ) -> None:
         self.samples = tuple(samples)
+        self.image_size = int(image_size)
 
     def __len__(self) -> int:
         return len(self.samples)
 
     def __getitem__(self, index: int) -> dict[str, Any]:
-        from PIL import Image
-
         sample = self.samples[index]
-        with Image.open(sample.image_path) as image:
-            rgb = image.convert("RGB")
+        rgb = load_product_image(
+            sample.image_path, self.image_size, image_id=sample.image_id
+        )
         return {
             "image": rgb,
             "image_id": sample.image_id,
@@ -87,7 +89,7 @@ def build_teacher_cache(
             samples.setdefault(sample.image_id, sample)
     ordered = [samples[key] for key in sorted(samples)]
     loader = DataLoader(
-        _UniqueSampleDataset(ordered),
+        _UniqueSampleDataset(ordered, settings.image_size),
         batch_size=settings.teacher_batch_size,
         shuffle=False,
         num_workers=settings.num_workers,
@@ -166,4 +168,3 @@ class TeacherEmbeddingStore:
         return self.embeddings.index_select(0, rows).to(
             device, non_blocking=True
         )
-
