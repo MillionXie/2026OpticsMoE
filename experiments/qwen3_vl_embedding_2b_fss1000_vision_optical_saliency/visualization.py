@@ -122,6 +122,127 @@ def save_optical_phase_figures(core: Any, directory: Path) -> None:
     plt.close(figure)
 
 
+def save_optical_debug_example(
+    directory: Path,
+    *,
+    input_field: torch.Tensor,
+    amplitude_slm: torch.Tensor,
+    stage_fields: list[torch.Tensor],
+    detector_intensity: torch.Tensor,
+    detector_readout: torch.Tensor,
+    routing_weights: torch.Tensor,
+    selected_mask: torch.Tensor,
+    grid_rows: int,
+    grid_cols: int,
+) -> None:
+    directory.mkdir(parents=True, exist_ok=True)
+    _save_scalar_map(
+        directory / "01_optical_input_field.png",
+        input_field,
+        "Optical input field after adapter, LayerNorm and Softplus",
+        "amplitude",
+    )
+    _save_scalar_map(
+        directory / "02_amplitude_slm_canvas.png",
+        amplitude_slm,
+        "Routed amplitude-SLM canvas",
+        "amplitude",
+    )
+    for stage_index, field in enumerate(stage_fields, start=1):
+        _save_scalar_map(
+            directory / f"03_expert_stage_{stage_index:02d}_intensity.png",
+            field.abs().square(),
+            f"Expert stage {stage_index} output intensity",
+            "intensity",
+        )
+    _save_scalar_map(
+        directory / "04_detector_intensity.png",
+        detector_intensity,
+        "Physical CCD intensity over active footprint",
+        "intensity",
+    )
+    _save_scalar_map(
+        directory / "05_detector_readout_224.png",
+        detector_readout,
+        "224x224 pooled/LN/ReLU detector readout",
+        "readout",
+    )
+    _save_routing_figure(
+        directory / "06_routing_weights.png",
+        routing_weights,
+        selected_mask,
+        grid_rows,
+        grid_cols,
+    )
+
+
+def _save_scalar_map(
+    path: Path,
+    value: torch.Tensor,
+    title: str,
+    colorbar_label: str,
+) -> None:
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    array = value.detach().float().cpu().squeeze().numpy()
+    if array.ndim != 2:
+        raise RuntimeError(f"Optical visualization must be 2-D, got {array.shape}")
+    figure, axis = plt.subplots(figsize=(7.2, 6.2))
+    artist = axis.imshow(array, cmap="viridis", vmin=0.0)
+    axis.set_title(
+        f"{title}\nshape={array.shape}, min={array.min():.3g}, "
+        f"max={array.max():.3g}, mean={array.mean():.3g}"
+    )
+    axis.set_xlabel("x (pixel)")
+    axis.set_ylabel("y (pixel)")
+    figure.colorbar(artist, ax=axis, label=colorbar_label)
+    figure.tight_layout()
+    figure.savefig(path, dpi=160, bbox_inches="tight")
+    plt.close(figure)
+
+
+def _save_routing_figure(
+    path: Path,
+    weights: torch.Tensor,
+    selected: torch.Tensor,
+    grid_rows: int,
+    grid_cols: int,
+) -> None:
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    values = weights.detach().float().cpu().numpy()
+    chosen = selected.detach().bool().cpu().numpy()
+    expected = grid_rows * grid_cols
+    if values.size != expected or chosen.size != expected:
+        raise RuntimeError(
+            f"Router visualization expected {expected} experts, got "
+            f"weights={values.size}, selected={chosen.size}"
+        )
+    figure, axes = plt.subplots(1, 2, figsize=(12, 4.8))
+    grid = values.reshape(grid_rows, grid_cols)
+    artist = axes[0].imshow(grid, cmap="magma", vmin=0.0, vmax=max(1e-8, values.max()))
+    axes[0].set_title("Top-k routing weights on 4x4 expert layout")
+    axes[0].set_xlabel("expert column")
+    axes[0].set_ylabel("expert row")
+    figure.colorbar(artist, ax=axes[0], label="routing amplitude weight")
+    colors = ["tab:blue" if flag else "lightgray" for flag in chosen]
+    axes[1].bar(np.arange(expected), values, color=colors)
+    axes[1].set_title("Per-expert routing weight")
+    axes[1].set_xlabel("expert index")
+    axes[1].set_ylabel("routing amplitude weight")
+    axes[1].set_xticks(np.arange(expected))
+    axes[1].grid(axis="y", alpha=0.25)
+    figure.tight_layout()
+    figure.savefig(path, dpi=160, bbox_inches="tight")
+    plt.close(figure)
+
+
 def _array(value: torch.Tensor) -> np.ndarray:
     array = value.detach().float().cpu().squeeze().numpy()
     if array.ndim != 2:

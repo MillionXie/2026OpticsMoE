@@ -1,0 +1,64 @@
+base_config: fss1000_saliency.yaml
+
+# Final reproducible Student run:
+# - one expert phase plane plus one global phase plane;
+# - every Student parameter starts from the configured initialization;
+# - the existing frozen electronic Teacher mask cache is supervision only.
+batching:
+  student_batch_size: 16
+  inference_batch_size: 16
+  num_workers: 8
+
+training:
+  student_epochs: 100
+  student_learning_rate: 0.001
+  router_learning_rate: 0.0005
+  phase_learning_rate: 0.001
+  student_lr_schedule: cosine
+  student_lr_min_ratio: 0.05
+  checkpoint_interval_epochs: 10
+  weight_decay: 0.0
+  log_interval_batches: 125
+
+student_initialization:
+  checkpoint: null
+
+loss:
+  bce_weight: 1.0
+  dice_weight: 1.0
+  soft_iou_weight: 0.75
+  boundary_weight: 0.25
+  mask_kd_weight: 0.5
+  mask_kd_temperature: 1.0
+  router_balance_weight: 0.03
+  router_importance_weight: 0.005
+
+mask_kd:
+  teacher_checkpoint: ../runs/fss1000_saliency/checkpoints/teacher_best_train_loss.pt
+  teacher_mask_cache: ../runs/fss1000_saliency/teacher_mask_cache
+  align_augmentation: true
+
+augmentation:
+  enabled: true
+  crop_scale_min: 0.90
+  horizontal_flip_probability: 0.5
+  brightness_jitter: 0.10
+  contrast_jitter: 0.10
+  rotation_degrees: 0.0
+
+segmentation_head:
+  student_refinement_enabled: false
+  student_progressive_refinement_enabled: false
+  student_detector_residual:
+    enabled: false
+
+optical:
+  geometry:
+    layers_per_expert: 1
+
+visualization:
+  sample_count: 12
+  optical_sample_count: 4
+  save_after_training: true
+
+output_dir: ../runs/fss1000_saliency_single_layer_from_scratch_100ep

@@ -28,9 +28,11 @@ from experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency.settings 
     load_settings,
 )
 from experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency.training import (
-    _initialize_student,
     _student_scheduler,
     align_cached_teacher_logits,
+)
+from experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency.visualization import (
+    save_optical_debug_example,
 )
 
 
@@ -54,21 +56,11 @@ def test_formal_config_keeps_validated_moe16_geometry() -> None:
     assert settings.student_initial_checkpoint is None
 
 
-def test_mask_kd_finetune_config_uses_fresh_optimizer_initialization() -> None:
+def test_final_config_replays_crop_and_flip_for_mask_kd() -> None:
     settings = load_settings(
-        EXPERIMENT / "configs" / "fss1000_saliency_mask_kd_finetune.yaml"
-    )
-    assert settings.mask_kd_weight == pytest.approx(0.5)
-    assert settings.student_initial_checkpoint is not None
-    assert settings.student_learning_rate == pytest.approx(3e-4)
-    assert settings.phase_learning_rate == pytest.approx(1e-4)
-    assert settings.router_learning_rate == pytest.approx(1e-4)
-    assert settings.augmentation_enabled is False
-
-
-def test_augmented_mask_kd_config_replays_crop_and_flip() -> None:
-    settings = load_settings(
-        EXPERIMENT / "configs" / "fss1000_saliency_mask_kd_augmented_finetune.yaml"
+        EXPERIMENT
+        / "configs"
+        / "fss1000_saliency_single_layer_from_scratch_100ep.yaml"
     )
     assert settings.mask_kd_align_augmentation is True
     assert settings.augmentation_enabled is True
@@ -95,24 +87,7 @@ def test_augmented_mask_kd_config_replays_crop_and_flip() -> None:
     assert torch.allclose(actual, expected, atol=2e-4)
 
 
-def test_augmented_mask_kd_batch16_profile() -> None:
-    settings = load_settings(
-        EXPERIMENT / "configs"
-        / "fss1000_saliency_mask_kd_augmented_finetune_batch16.yaml"
-    )
-    assert settings.student_batch_size == 16
-    assert settings.inference_batch_size == 16
-    assert settings.mask_kd_align_augmentation is True
-
-
 def test_refinement_head_is_zero_initialized_and_lightweight() -> None:
-    settings = load_settings(
-        EXPERIMENT / "configs"
-        / "fss1000_saliency_mask_kd_augmented_refinement_batch16.yaml"
-    )
-    assert settings.student_segmentation_refinement_enabled is True
-    assert settings.student_batch_size == 16
-
     torch.manual_seed(7)
     base = LightweightSegmentationHead(224, 128, (64, 32, 16), 8)
     refined = LightweightSegmentationHead(
@@ -131,14 +106,6 @@ def test_refinement_head_is_zero_initialized_and_lightweight() -> None:
 
 
 def test_progressive_refinement_preserves_initial_logits() -> None:
-    settings = load_settings(
-        EXPERIMENT / "configs"
-        / "fss1000_saliency_mask_kd_progressive_refinement_batch16.yaml"
-    )
-    assert settings.student_segmentation_progressive_refinement_enabled is True
-    assert settings.freeze_student_optical_core is True
-    assert settings.freeze_student_base_head is False
-
     torch.manual_seed(11)
     base = LightweightSegmentationHead(224, 128, (64, 32, 16), 8)
     progressive = LightweightSegmentationHead(
@@ -162,26 +129,7 @@ def test_progressive_refinement_preserves_initial_logits() -> None:
     assert 90_000 < added < 110_000
 
 
-def test_progressive_residual_only_profile_freezes_base() -> None:
-    settings = load_settings(
-        EXPERIMENT / "configs"
-        / "fss1000_saliency_mask_kd_progressive_residual_only_batch16.yaml"
-    )
-    assert settings.student_segmentation_progressive_refinement_enabled is True
-    assert settings.freeze_student_optical_core is True
-    assert settings.freeze_student_base_head is True
-    assert settings.student_batch_size == 16
-
-
 def test_detector_input_residual_is_checkpoint_compatible() -> None:
-    settings = load_settings(
-        EXPERIMENT / "configs"
-        / "fss1000_saliency_mask_kd_detector_residual_batch16.yaml"
-    )
-    assert settings.student_detector_residual_enabled is True
-    assert settings.student_detector_residual_source == "nonnegative_input_field"
-    assert settings.freeze_student_optical_core is True
-
     torch.manual_seed(19)
     base = LightweightSegmentationHead(224, 128, (64, 32, 16), 8)
     residual = LightweightSegmentationHead(
@@ -203,18 +151,6 @@ def test_detector_input_residual_is_checkpoint_compatible() -> None:
     assert torch.equal(base(detector), residual(detector, input_feature))
     residual(detector, input_feature).mean().backward()
     assert residual.detector_input_scale.grad is not None
-
-
-def test_signed_detector_residual_profile() -> None:
-    settings = load_settings(
-        EXPERIMENT / "configs"
-        / "fss1000_saliency_mask_kd_signed_detector_residual_batch16.yaml"
-    )
-    assert settings.student_detector_residual_enabled is True
-    assert settings.student_detector_residual_source == "signed_adapter_latent"
-    assert settings.freeze_student_optical_core is True
-
-
 def test_iou_boundary_objectives_are_differentiable() -> None:
     target = torch.zeros(2, 1, 16, 16)
     target[:, :, 4:12, 5:13] = 1
@@ -237,32 +173,30 @@ def test_iou_boundary_objectives_are_differentiable() -> None:
     assert set(("soft_iou_loss", "boundary_loss")).issubset(parts)
 
 
-def test_iou_boundary_finetune_profile() -> None:
+def test_final_from_scratch_profile_is_single_layer_and_reproducible() -> None:
     settings = load_settings(
         EXPERIMENT / "configs"
-        / "fss1000_saliency_mask_kd_iou_boundary_batch16.yaml"
-    )
-    assert settings.soft_iou_weight == pytest.approx(0.75)
-    assert settings.boundary_weight == pytest.approx(0.25)
-    assert settings.student_batch_size == 16
-
-
-def test_final_100_epoch_profile_uses_cosine_schedule_and_periodic_saves() -> None:
-    settings = load_settings(
-        EXPERIMENT / "configs"
-        / "fss1000_saliency_final_iou_boundary_100ep_batch16.yaml"
+        / "fss1000_saliency_single_layer_from_scratch_100ep.yaml"
     )
     assert settings.student_epochs == 100
     assert settings.student_batch_size == 16
+    assert settings.inference_batch_size == 16
+    assert settings.expert_layers == 1
+    assert settings.student_initial_checkpoint is None
+    assert settings.mask_kd_align_augmentation is True
+    assert settings.soft_iou_weight == pytest.approx(0.75)
+    assert settings.boundary_weight == pytest.approx(0.25)
     assert settings.student_lr_schedule == "cosine"
     assert settings.student_lr_min_ratio == pytest.approx(0.05)
     assert settings.checkpoint_interval_epochs == 10
-    assert settings.student_learning_rate == pytest.approx(2e-4)
-    assert settings.phase_learning_rate == pytest.approx(5e-5)
-    assert settings.router_learning_rate == pytest.approx(5e-5)
+    assert settings.student_learning_rate == pytest.approx(1e-3)
+    assert settings.phase_learning_rate == pytest.approx(1e-3)
+    assert settings.router_learning_rate == pytest.approx(5e-4)
+    assert settings.visualization_after_training is True
+    assert settings.visualization_optical_sample_count == 4
 
     parameter = torch.nn.Parameter(torch.ones(()))
-    optimizer = torch.optim.SGD([parameter], lr=2e-4)
+    optimizer = torch.optim.SGD([parameter], lr=1e-3)
     scheduler = _student_scheduler(optimizer, settings)
     assert scheduler is not None
     initial = optimizer.param_groups[0]["lr"]
@@ -270,64 +204,32 @@ def test_final_100_epoch_profile_uses_cosine_schedule_and_periodic_saves() -> No
         optimizer.step()
         scheduler.step()
     final = optimizer.param_groups[0]["lr"]
-    assert initial == pytest.approx(2e-4)
-    assert final == pytest.approx(2e-4 * 0.05)
+    assert initial == pytest.approx(1e-3)
+    assert final == pytest.approx(1e-3 * 0.05)
 
 
-def test_three_layer_profile_expands_one_layer_checkpoint(tmp_path: Path) -> None:
-    settings = load_settings(
-        EXPERIMENT / "configs"
-        / "fss1000_saliency_3layer_final_100ep_batch16.yaml"
+def test_optical_debug_writer_saves_all_views(tmp_path: Path) -> None:
+    save_optical_debug_example(
+        tmp_path,
+        input_field=torch.rand(8, 8),
+        amplitude_slm=torch.rand(16, 16),
+        stage_fields=[torch.complex(torch.rand(16, 16), torch.rand(16, 16))],
+        detector_intensity=torch.rand(12, 12),
+        detector_readout=torch.rand(8, 8),
+        routing_weights=torch.tensor([0.6, 0.0, 0.4, 0.0]),
+        selected_mask=torch.tensor([True, False, True, False]),
+        grid_rows=2,
+        grid_cols=2,
     )
-    assert settings.expert_layers == 3
-    assert settings.student_expand_expert_layers is True
-    assert settings.phase_learning_rate == pytest.approx(1e-4)
-
-    class FakeCore(torch.nn.Module):
-        def __init__(self, layers: int) -> None:
-            super().__init__()
-            self.shared = torch.nn.Linear(2, 2)
-            self.expert_layers = torch.nn.ModuleList(
-                [torch.nn.Linear(2, 2, bias=False) for _ in range(layers)]
-            )
-
-    class FakeStudent(torch.nn.Module):
-        def __init__(self, layers: int) -> None:
-            super().__init__()
-            self.core = FakeCore(layers)
-            self.head = torch.nn.Linear(2, 1)
-
-    torch.manual_seed(17)
-    source = FakeStudent(1)
-    with torch.no_grad():
-        source.core.shared.weight.fill_(0.25)
-        source.core.expert_layers[0].weight.fill_(0.75)
-        source.head.weight.fill_(0.5)
-    checkpoint = tmp_path / "one_layer.pt"
-    torch.save(
-        {
-            "epoch": 100,
-            "core_state_dict": source.core.state_dict(),
-            "head_state_dict": source.head.state_dict(),
-            "train_metrics": {"loss": 1.2},
-        },
-        checkpoint,
-    )
-    target = FakeStudent(3)
-    new_layer_before = target.core.expert_layers[1].weight.detach().clone()
-    fake_settings = SimpleNamespace(
-        student_initial_checkpoint=checkpoint,
-        student_expand_expert_layers=True,
-        phase_init="zeros",
-    )
-    report = _initialize_student(target, fake_settings)
-    assert torch.equal(
-        target.core.expert_layers[0].weight,
-        source.core.expert_layers[0].weight,
-    )
-    assert torch.equal(target.core.expert_layers[1].weight, new_layer_before)
-    assert report["expert_layer_expansion"]["source_expert_layers"] == 1
-    assert report["expert_layer_expansion"]["target_expert_layers"] == 3
+    expected = {
+        "01_optical_input_field.png",
+        "02_amplitude_slm_canvas.png",
+        "03_expert_stage_01_intensity.png",
+        "04_detector_intensity.png",
+        "05_detector_readout_224.png",
+        "06_routing_weights.png",
+    }
+    assert expected == {path.name for path in tmp_path.glob("*.png")}
 
 
 def test_restore_teacher_tokens_uses_runtime_grid() -> None:

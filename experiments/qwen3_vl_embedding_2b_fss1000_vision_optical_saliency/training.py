@@ -24,6 +24,7 @@ from .modeling import (
 from .objectives import SegmentationAccumulator, segmentation_loss
 from .teacher_cache import TeacherMaskCache, expected_cache_identity
 from .visualization import (
+    save_optical_debug_example,
     save_optical_phase_figures,
     save_prediction_panel,
     save_training_curves,
@@ -165,7 +166,9 @@ def train_student(
         head=_student_head(loaded, settings),
     )
     student.activate()
-    initialization = _initialize_student(student, settings)
+    initialization = _initialize_student(
+        student, settings.student_initial_checkpoint
+    )
     if settings.freeze_student_optical_core:
         student.core.requires_grad_(False)
     if settings.freeze_student_base_head:
@@ -279,8 +282,44 @@ def train_student(
     save_training_curves(
         settings.output_dir / "figures" / "student_training_curves.png", history
     )
+    final_metrics: dict[str, Any] | None = None
+    if settings.visualization_after_training:
+        checkpoint = torch.load(best_path, map_location="cpu", weights_only=False)
+        student.core.load_state_dict(checkpoint["core_state_dict"], strict=True)
+        student.head.load_state_dict(checkpoint["head_state_dict"], strict=True)
+        final_metrics, _ = evaluate_model(
+            student,
+            loaded.processor,
+            test_loader,
+            settings,
+            model_kind="student",
+            save_predictions=True,
+        )
+        final_metrics["checkpoint"] = str(best_path)
+        final_metrics["checkpoint_selection"] = (
+            "minimum_train_loss; test was not used for selection"
+        )
+        final_metrics["mask_kd_enabled"] = settings.mask_kd_weight > 0
+        write_json(
+            settings.output_dir / "metrics" / "student_test_metrics.json",
+            final_metrics,
+        )
+        save_optical_phase_figures(
+            student.core,
+            settings.output_dir / "figures" / "optical_parameters",
+        )
+        save_student_optical_debug_examples(
+            student,
+            loaded.processor,
+            test_loader,
+            settings,
+        )
     student.restore_native()
-    return {"best_checkpoint": str(best_path), "best_train_loss": best_train_loss}
+    return {
+        "best_checkpoint": str(best_path),
+        "best_train_loss": best_train_loss,
+        "final_test_metrics": final_metrics,
+    }
 
 
 def test_teacher(
@@ -507,15 +546,13 @@ def _student_scheduler(
 
 def _initialize_student(
     student: VisionOpticalSaliencyStudent,
-    settings: Any,
+    checkpoint_path: Path | None,
 ) -> dict[str, Any]:
-    checkpoint_path = settings.student_initial_checkpoint
     if checkpoint_path is None:
         return {
             "mode": "random_initialization",
             "checkpoint": None,
             "optimizer_state_restored": False,
-            "expert_layer_expansion": None,
         }
     if not checkpoint_path.is_file():
         raise FileNotFoundError(
@@ -530,45 +567,7 @@ def _initialize_student(
         raise RuntimeError(
             f"Student initialization checkpoint is missing {missing}: {checkpoint_path}"
         )
-    source_core = payload["core_state_dict"]
-    source_expert_layers = _checkpoint_expert_layer_count(source_core)
-    target_expert_layers = len(student.core.expert_layers)
-    expansion: dict[str, Any] | None = None
-    if settings.student_expand_expert_layers:
-        if source_expert_layers <= 0:
-            raise RuntimeError(
-                "Cannot expand expert layers because the source checkpoint has "
-                "no expert_layers.* tensors"
-            )
-        if target_expert_layers <= source_expert_layers:
-            raise RuntimeError(
-                "Expert-layer expansion requires the target to be deeper than "
-                f"the source: source={source_expert_layers}, "
-                f"target={target_expert_layers}"
-            )
-        core_result = student.core.load_state_dict(source_core, strict=False)
-        invalid_missing = [
-            name
-            for name in core_result.missing_keys
-            if not _new_expert_layer_key(name, source_expert_layers)
-        ]
-        if invalid_missing or core_result.unexpected_keys:
-            raise RuntimeError(
-                "Expanded Student initialization is incompatible with the "
-                f"checkpoint: missing={core_result.missing_keys}, "
-                f"unexpected={core_result.unexpected_keys}"
-            )
-        expansion = {
-            "source_expert_layers": source_expert_layers,
-            "target_expert_layers": target_expert_layers,
-            "new_expert_layers": list(
-                range(source_expert_layers, target_expert_layers)
-            ),
-            "new_layer_initialization": settings.phase_init,
-            "loaded_existing_layer_weights": True,
-        }
-    else:
-        student.core.load_state_dict(source_core, strict=True)
+    student.core.load_state_dict(payload["core_state_dict"], strict=True)
     head_result = student.head.load_state_dict(
         payload["head_state_dict"],
         strict=not _head_extension_enabled(student),
@@ -598,7 +597,6 @@ def _initialize_student(
         "source_epoch": int(payload.get("epoch", -1)),
         "source_train_loss": payload.get("train_metrics", {}).get("loss"),
         "optimizer_state_restored": False,
-        "expert_layer_expansion": expansion,
     }
     print(
         "student initialized from "
@@ -607,26 +605,6 @@ def _initialize_student(
         flush=True,
     )
     return report
-
-
-def _checkpoint_expert_layer_count(state_dict: dict[str, Any]) -> int:
-    indices: set[int] = set()
-    for name in state_dict:
-        if not name.startswith("expert_layers."):
-            continue
-        parts = name.split(".")
-        if len(parts) > 2 and parts[1].isdigit():
-            indices.add(int(parts[1]))
-    return max(indices) + 1 if indices else 0
-
-
-def _new_expert_layer_key(name: str, source_layers: int) -> bool:
-    for prefix in ("expert_layers.", "interlayer_conversions."):
-        if not name.startswith(prefix):
-            continue
-        parts = name.split(".")
-        return len(parts) > 2 and parts[1].isdigit() and int(parts[1]) >= source_layers
-    return False
 
 
 def _head_extension_enabled(
@@ -946,6 +924,82 @@ def evaluate_model(
                 ),
             )
     return metrics, rows
+
+
+@torch.no_grad()
+def save_student_optical_debug_examples(
+    student: VisionOpticalSaliencyStudent,
+    processor: Any,
+    loader: DataLoader,
+    settings: Any,
+) -> None:
+    """Save physical optical tensors for a small, deterministic test batch."""
+    student.eval()
+    batch = next(iter(loader))
+    count = min(
+        settings.visualization_optical_sample_count,
+        len(batch["sample_ids"]),
+    )
+    student.core.set_intermediate_field_capture(True, sample_count=count)
+    try:
+        inputs = preprocess_vision(
+            processor, batch["images"], next(student.parameters()).device
+        )
+        logits, _, _ = student(
+            inputs["pixel_values"], inputs["image_grid_thw"]
+        )
+        probabilities = logits.float().sigmoid().detach().cpu()
+        routing = {
+            name: value.detach().cpu()
+            for name, value in student.core.last_routing.items()
+            if torch.is_tensor(value)
+        }
+        for index in range(count):
+            directory = (
+                settings.output_dir
+                / "figures"
+                / "optical_debug_examples"
+                / f"{index:03d}_{batch['sample_ids'][index].replace('/', '_')}"
+            )
+            save_prediction_panel(
+                directory / "prediction_overview.png",
+                image=batch["images"][index],
+                ground_truth=batch["masks"][index],
+                student_probability=probabilities[index],
+                teacher_probability=None,
+                title=batch["sample_ids"][index],
+            )
+            save_optical_debug_example(
+                directory,
+                input_field=student.core.last_input_fields[index],
+                amplitude_slm=student.core.last_amplitude_slm_canvas[index],
+                stage_fields=[
+                    fields[index] for fields in student.core.last_stage_fields
+                ],
+                detector_intensity=student.core.last_detector_intensity[index],
+                detector_readout=student.core.last_detector_readout[index],
+                routing_weights=routing["weights"][index],
+                selected_mask=routing["selected_mask"][index],
+                grid_rows=settings.expert_grid_rows,
+                grid_cols=settings.expert_grid_cols,
+            )
+            write_json(
+                directory / "metadata.json",
+                {
+                    "sample_index": int(batch["sample_indices"][index]),
+                    "sample_id": batch["sample_ids"][index],
+                    "class_name": batch["class_names"][index],
+                    "image_path": batch["image_paths"][index],
+                    "mask_path": batch["mask_paths"][index],
+                    "routing_weights": routing["weights"][index].tolist(),
+                    "selected_experts": torch.nonzero(
+                        routing["selected_mask"][index], as_tuple=False
+                    ).flatten().tolist(),
+                    "optical_stage_count": len(student.core.last_stage_fields),
+                },
+            )
+    finally:
+        student.core.set_intermediate_field_capture(False)
 
 
 def _model_forward(

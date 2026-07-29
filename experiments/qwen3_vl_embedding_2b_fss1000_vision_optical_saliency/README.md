@@ -1,111 +1,88 @@
-# Qwen3-VL Vision Optical MoE16 on FSS-1000
+# FSS-1000 Qwen Vision Optical Saliency
 
-本实验把 FSS-1000 的所有类别统一视为前景，完成类别无关的二值显著性目标检测。输入为 `224×224 RGB`，输出为 `224×224` 单通道 mask logits。它是从
-`qwen3_vl_embedding_2b_grocery10_optical_retrieval` 独立派生的新实验，不会修改商品检索工程。
+该实验把 FSS-1000 的所有类别统一视为前景，完成类别无关二值显著性分割：
+
+```text
+RGB image [B,3,224,224] -> binary mask logits [B,1,224,224]
+```
 
 ## 数据划分
 
-代码使用 FSS-1000 官方 `fss_test_set.txt` 的 240 个测试类别。因为本实验明确不创建 validation，其余官方 train/validation 类别合并为训练集。完整数据通常应得到：
+- 使用官方 240 个 test 类别。
+- 其余类别合并为训练集。
+- train/test 类别严格不相交。
+- 不创建 validation。
+- checkpoint 仅根据最低训练损失保存；每个 epoch 的 test 指标只是观察值。
+- RGB 与 mask 使用相同几何增强，mask 始终使用 nearest-neighbor 插值。
+- 源图像与 mask 几何不一致的损坏样本会被隔离，不会强行 resize。
 
-- train：760 个类别、7,600 张图；
-- test：官方为 240 个类别、2,400 条记录；当前公开镜像有 1 条源
-  image/mask 几何损坏记录，因此安全隔离后实际使用 2,399 张，240 个类别仍全部保留；
-- train/test 类别交集严格为空。
-
-程序会把实际类别数、图像数和路径写入 `dataset.json`，并持久化
-`manifests/class_split.json` 与 `manifests/samples.csv`。若实际数据不符合上述结构，
-以 `dataset.json` 的扫描结果为准，不会静默伪造样本。
-
-`prepare_data` 默认先从服务器可访问的公开 Hugging Face 镜像
-`nobg/FSS-1000` 下载并验证 10,000 条 image/mask/class_name 记录，再物化为官方目录；
-若失败则回退官方 Google Drive 文件 ID。Google 回退需安装 `gdown`。
-数据目录也可手动整理为：
+## 电子 Teacher
 
 ```text
-data/FSS-1000/fewshot_data/<class>/1.jpg
-data/FSS-1000/fewshot_data/<class>/1.png
+224x224 RGB
+-> frozen Qwen3-VL-Embedding-2B Vision
+-> final pre-merger spatial hidden
+-> lightweight electronic segmentation head
+-> 224x224 mask logits
 ```
 
-图像和 mask 使用同一套随机裁剪、翻转和旋转参数。RGB 使用 bicubic，mask 始终使用
-nearest-neighbor 并在读取后重新二值化。
+Qwen 全部冻结，只训练分割头。保留的正式 run 中包含 Teacher checkpoint
+以及最终 mask-logit cache。
 
-数据准备还会审计每对原始 image/mask 的几何。宽高不一致的记录不会被强行缩放，
-而会写入 `manifests/ignored_samples.csv` 并从样本清单中隔离，避免错误监督。
-当前 `nobg/FSS-1000` 镜像中唯一已知异常为 `peregine_falcon/8`。
-
-## 两条模型路径
-
-电子 Teacher 上限：
+## 最终单层 Optical Student
 
 ```text
-RGB image
-→ frozen Qwen image processor
-→ frozen patch/position embedding
-→ all frozen native Qwen Vision blocks
-→ last pre-merger spatial hidden [ΣT, Dv]
-→ runtime image_grid_thw restore [B,Dv,Ht,Wt]
-→ lightweight electronic segmentation head
-→ [B,1,224,224] logits
+224x224 RGB
+-> frozen Qwen patch/position embedding
+-> Linear(Dv,224) + LayerNorm + Softplus
+-> electronic Top-4 router
+-> routed amplitude copies on 16 expert regions
+-> one 224x224 phase-only mask per expert
+-> 10 cm propagation
+-> square detection + per-expert LayerNorm + ReLU
+-> routing-weight reload and unselected-expert zeroing
+-> 986x986 global phase
+-> 10 cm propagation
+-> 986x986 CCD active ROI
+-> adaptive pooling / LayerNorm / ReLU to 224x224
+-> restore token spatial grid from image_grid_thw
+-> lightweight segmentation head
+-> 224x224 mask logits
 ```
 
-Optical Student：
+不运行 language model，不使用文本 instruction，不使用全局图像池化。
+未参与分割路径的 hidden output adapter 保持冻结。
 
-```text
-RGB image
-→ frozen Qwen patch/position embedding
-→ native Vision blocks bypassed
-→ Linear(Dv,224) + LayerNorm + Softplus
-→ existing electronic top-4 router
-→ 16 one-layer 224×224 phase-only experts
-→ propagation + OEO detector/LN/ReLU/reload
-→ 986×986 global phase
-→ 10 cm propagation
-→ 986×986 CCD ROI, pooled/read to [B,224,224]
-→ only valid token rows
-→ runtime image_grid_thw restore [B,224,Ht,Wt]
-→ lightweight electronic segmentation head
-→ [B,1,224,224] logits
-```
+## 最终从零训练配置
 
-这里不运行 language model、不创建文本 instruction、不做全局池化，也不使用商品检索的
-64 维 readout。原光学 core 中的 `Linear(224,Dv)` output adapter 不参与 segmentation
-loss，已冻结且 forward 不调用。
+`configs/fss1000_saliency_single_layer_from_scratch_100ep.yaml` 是唯一推荐的
+正式 Student 配置：
 
-## 空间映射的严格性
+- Student 不加载任何旧 Student checkpoint；
+- phase raw parameter 使用零初始化；
+- 训练 100 epoch，batch size 16；
+- BCE + Dice + soft-IoU + boundary loss；
+- 使用对齐 crop/flip 后的 Teacher final-mask KD；
+- phase dropout 与 weight decay 关闭；
+- cosine learning-rate decay；
+- 每 10 epoch 保存 checkpoint；
+- 训练完成后自动加载最低训练损失 checkpoint 并保存最终测试结果。
 
-Qwen processor 的 `image_grid_thw` 是唯一空间形状来源。实现不会硬编码 14×14：
+## 可视化输出
 
-- `T×H×W` 必须与捕获的 token 数完全相同；
-- 当前静态图像要求 `T=1`；
-- batch 内网格必须一致；
-- token 超过 224、数量不匹配或空间网格不一致时直接报错；
-- 不允许 crop、truncate 或 fallback reshape。
+最终 run 的 `figures/` 至少包含：
 
-在默认 pixel budget 50,176 和正方形 224 输入下，常见网格是
-`[1,14,14]`（196 tokens），但这只是运行结果，不是代码假设。
+- `student_training_curves.png`
+- `student_examples/`：输入、GT、概率图、二值预测和误差图
+- `failure_cases/`：最低 IoU 样本
+- `optical_parameters/expert_phase_overview.png`
+- `optical_parameters/global_phase.png`
+- `optical_debug_examples/`：
+  - optical input field
+  - routed amplitude-SLM canvas
+  - expert-stage detector intensity
+  - physical CCD intensity
+  - 224x224 detector readout
+  - Top-4 routing weights and selected experts
 
-## 训练与 checkpoint
-
-Teacher 和 Student 独立训练，损失均为：
-
-```text
-BCEWithLogits + Dice
-```
-
-Student 额外保留小权重 router balance/importance。没有 validation；checkpoint 只根据
-最低训练损失保存。每 epoch 的 test 指标仅用于观察，不参与 checkpoint、反向传播或调参。
-
-可选 `fss1000_saliency_mask_kd.yaml` 只蒸馏电子 Teacher 的最终 mask logits，不蒸馏
-任何 Qwen hidden。缓存 logits 时关闭几何增强，避免像素错位。
-
-`fss1000_saliency_mask_kd_finetune.yaml` 是保守的第二阶段微调配置：加载原
-ground-truth-only Student 权重，但重新初始化优化器；降低 phase、router 和其余参数的
-学习率，并加入最终 mask soft-target KD。它使用独立 runs 目录，不会覆盖原结果。
-
-类别不相交测试更推荐 `fss1000_saliency_mask_kd_augmented_finetune.yaml`。原始
-Teacher cache 仍保持不变，但 Dataset 会记录每个样本实际采用的 normalized crop 与
-horizontal flip，并对缓存 soft mask 重放同一几何变换。这样既不会发生 teacher/GT
-像素错位，也不需要放弃训练增强；当前该模式明确禁止 rotation，避免静默近似。
-
-主要指标为 mean IoU、mean Dice/F1、MAE 和 pixel accuracy。结果和典型/失败案例分别写入
-`metrics/` 与 `figures/`。
+详细命令见 `RUN_COMMANDS.md`。

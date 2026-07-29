@@ -1,101 +1,45 @@
-# Commands
+# Run commands
 
-所有命令均从仓库根目录 `2026OpticsMoE` 执行，命令中不使用反斜杠续行。
+All commands are run from the `2026OpticsMoE` repository root. Commands are
+single-line commands and do not use backslash continuation.
 
-## Install the dataset downloader
+## Final reproducible one-layer Student run
+
+This command starts a new Optical Student from random/zero initialization,
+trains for 100 epochs, evaluates the minimum-training-loss checkpoint, and
+saves prediction and optical-path visualizations automatically.
 
 ```bash
-python -m pip install gdown
+CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency --config experiments/qwen3_vl_embedding_2b_fss1000_vision_optical_saliency/configs/fss1000_saliency_single_layer_from_scratch_100ep.yaml --phase student_train
 ```
 
-## Prepare FSS-1000
+## Data preparation
 
 ```bash
 python -m experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency --config experiments/qwen3_vl_embedding_2b_fss1000_vision_optical_saliency/configs/fss1000_saliency.yaml --phase prepare_data
 ```
 
-## Strict shape smoke
+## Shape smoke
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency --config experiments/qwen3_vl_embedding_2b_fss1000_vision_optical_saliency/configs/fss1000_saliency_smoke.yaml --phase shape_smoke
+CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency --config experiments/qwen3_vl_embedding_2b_fss1000_vision_optical_saliency/configs/fss1000_saliency_smoke.yaml --phase shape_smoke
 ```
 
-## Electronic Teacher
+## Rebuild the reusable Teacher mask cache
+
+The preserved formal run already contains this cache. Run these commands only
+if that cache was deliberately removed.
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency --config experiments/qwen3_vl_embedding_2b_fss1000_vision_optical_saliency/configs/fss1000_saliency.yaml --phase teacher_train
-```
-
-```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency --config experiments/qwen3_vl_embedding_2b_fss1000_vision_optical_saliency/configs/fss1000_saliency.yaml --phase teacher_test
-```
-
-## Optical Student
-
-```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency --config experiments/qwen3_vl_embedding_2b_fss1000_vision_optical_saliency/configs/fss1000_saliency.yaml --phase student_train
+CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency --config experiments/qwen3_vl_embedding_2b_fss1000_vision_optical_saliency/configs/fss1000_saliency.yaml --phase teacher_train
 ```
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency --config experiments/qwen3_vl_embedding_2b_fss1000_vision_optical_saliency/configs/fss1000_saliency.yaml --phase student_test
-```
-
-## Optional mask-logit KD
-
-先使用普通配置训练 Teacher，然后构建无几何增强的最终 mask logit cache：
-
-```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency --config experiments/qwen3_vl_embedding_2b_fss1000_vision_optical_saliency/configs/fss1000_saliency_mask_kd.yaml --phase cache_teacher_masks
-```
-
-```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency --config experiments/qwen3_vl_embedding_2b_fss1000_vision_optical_saliency/configs/fss1000_saliency_mask_kd.yaml --phase student_train
-```
-
-KD smoke（复用普通 smoke 已训练的 Teacher）：
-
-```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency --config experiments/qwen3_vl_embedding_2b_fss1000_vision_optical_saliency/configs/fss1000_saliency_mask_kd_smoke.yaml --phase all
-```
-
-## One-command smoke / full run
-
-```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency --config experiments/qwen3_vl_embedding_2b_fss1000_vision_optical_saliency/configs/fss1000_saliency_smoke.yaml --phase all
-```
-
-```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency --config experiments/qwen3_vl_embedding_2b_fss1000_vision_optical_saliency/configs/fss1000_saliency.yaml --phase all
+CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency --config experiments/qwen3_vl_embedding_2b_fss1000_vision_optical_saliency/configs/fss1000_saliency_mask_kd.yaml --phase cache_teacher_masks
 ```
 
 ## Tests
 
 ```bash
 pytest experiments/qwen3_vl_embedding_2b_fss1000_vision_optical_saliency/tests -q
-```
-
-## 第二阶段 mask KD 微调
-
-先为正式 Teacher checkpoint 构建一次最终 mask cache：
-
-```bash
-CUDA_VISIBLE_DEVICES=2 python -m experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency --config experiments/qwen3_vl_embedding_2b_fss1000_vision_optical_saliency/configs/fss1000_saliency.yaml --phase cache_teacher_masks
-```
-
-然后从原 Student 权重开始，以全新优化器和较小学习率进行微调：
-
-```bash
-CUDA_VISIBLE_DEVICES=2 python -m experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency --config experiments/qwen3_vl_embedding_2b_fss1000_vision_optical_saliency/configs/fss1000_saliency_mask_kd_finetune.yaml --phase student_train
-```
-
-保留 crop/flip 增强并同步变换 Teacher soft mask 的推荐版本：
-
-```bash
-CUDA_VISIBLE_DEVICES=2 python -m experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency --config experiments/qwen3_vl_embedding_2b_fss1000_vision_optical_saliency/configs/fss1000_saliency_mask_kd_augmented_finetune.yaml --phase student_train
-```
-
-24 GB RTX 4090 的 batch-16 版本：
-
-```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency --config experiments/qwen3_vl_embedding_2b_fss1000_vision_optical_saliency/configs/fss1000_saliency_mask_kd_augmented_finetune_batch16.yaml --phase student_train
 ```
