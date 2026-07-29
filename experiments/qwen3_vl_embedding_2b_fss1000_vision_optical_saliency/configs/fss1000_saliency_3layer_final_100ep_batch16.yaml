@@ -1,0 +1,25 @@
+base_config: fss1000_saliency_final_iou_boundary_100ep_batch16.yaml
+
+# Capacity expansion after the one-layer model reached a representation
+# plateau. Existing layer-1/router/adapter/global/head weights are restored
+# from the completed one-layer run. New expert layers 2 and 3 retain the
+# configured zero raw-phase initialization.
+student_initialization:
+  checkpoint: ../runs/fss1000_saliency_final_iou_boundary_100ep_batch16/checkpoints/student_best_train_loss.pt
+  expand_expert_layers: true
+
+optical:
+  geometry:
+    layers_per_expert: 3
+
+training:
+  student_epochs: 100
+  student_learning_rate: 0.0002
+  router_learning_rate: 0.00005
+  phase_learning_rate: 0.0001
+  student_lr_schedule: cosine
+  student_lr_min_ratio: 0.05
+  checkpoint_interval_epochs: 10
+  log_interval_batches: 125
+
+output_dir: ../runs/fss1000_saliency_3layer_final_100ep_batch16

@@ -109,6 +109,7 @@ class Settings:
     teacher_mask_cache: Path | None
     mask_kd_align_augmentation: bool
     student_initial_checkpoint: Path | None
+    student_expand_expert_layers: bool
     random_seed: int
     amp_enabled: bool
     evaluate_test_each_epoch: bool
@@ -235,10 +236,10 @@ class Settings:
             raise ValueError("max_visual_tokens cannot exceed expert_size")
         if self.detector_output_size != 224:
             raise ValueError("The physical CCD readout is fixed at 224x224")
-        expected = (1026, 986, 16, 4, 4, 1, 4)
+        expected = (1026, 986, 16, 4, 4, 4)
         actual = (
             self.canvas_size, self.active_size, self.num_experts,
-            self.expert_grid_rows, self.expert_grid_cols, self.expert_layers, self.top_k,
+            self.expert_grid_rows, self.expert_grid_cols, self.top_k,
         )
         if actual != expected:
             raise ValueError(
@@ -246,7 +247,19 @@ class Settings:
                 f"expected {expected}, got {actual}"
             )
         if self.vision_tap_stages != (1,):
-            raise ValueError("The one-layer Vision Optical MoE requires vision_tap_stages=[1]")
+            raise ValueError(
+                "The saliency student exposes one final optical vision output, "
+                "so vision_tap_stages must remain [1]"
+            )
+        if self.student_expand_expert_layers:
+            if self.student_initial_checkpoint is None:
+                raise ValueError(
+                    "Expert-layer expansion requires student_initialization.checkpoint"
+                )
+            if self.expert_layers <= 1:
+                raise ValueError(
+                    "Expert-layer expansion requires layers_per_expert > 1"
+                )
         if self.phase_dropout_mode != "none" or self.phase_dropout_p != 0.0:
             raise ValueError("Phase dropout is disabled in the first saliency baseline")
         if not self.segmentation_channels or any(v <= 0 for v in self.segmentation_channels):
@@ -392,6 +405,9 @@ def load_settings(path: str | Path) -> Settings:
         ),
         student_initial_checkpoint=_resolve(
             d("student_initialization.checkpoint"), base
+        ),
+        student_expand_expert_layers=bool(
+            d("student_initialization.expand_expert_layers", False)
         ),
         random_seed=int(d("training.random_seed", 42)),
         amp_enabled=bool(d("training.amp_enabled", True)),

@@ -28,6 +28,7 @@ from experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency.settings 
     load_settings,
 )
 from experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency.training import (
+    _initialize_student,
     _student_scheduler,
     align_cached_teacher_logits,
 )
@@ -271,6 +272,62 @@ def test_final_100_epoch_profile_uses_cosine_schedule_and_periodic_saves() -> No
     final = optimizer.param_groups[0]["lr"]
     assert initial == pytest.approx(2e-4)
     assert final == pytest.approx(2e-4 * 0.05)
+
+
+def test_three_layer_profile_expands_one_layer_checkpoint(tmp_path: Path) -> None:
+    settings = load_settings(
+        EXPERIMENT / "configs"
+        / "fss1000_saliency_3layer_final_100ep_batch16.yaml"
+    )
+    assert settings.expert_layers == 3
+    assert settings.student_expand_expert_layers is True
+    assert settings.phase_learning_rate == pytest.approx(1e-4)
+
+    class FakeCore(torch.nn.Module):
+        def __init__(self, layers: int) -> None:
+            super().__init__()
+            self.shared = torch.nn.Linear(2, 2)
+            self.expert_layers = torch.nn.ModuleList(
+                [torch.nn.Linear(2, 2, bias=False) for _ in range(layers)]
+            )
+
+    class FakeStudent(torch.nn.Module):
+        def __init__(self, layers: int) -> None:
+            super().__init__()
+            self.core = FakeCore(layers)
+            self.head = torch.nn.Linear(2, 1)
+
+    torch.manual_seed(17)
+    source = FakeStudent(1)
+    with torch.no_grad():
+        source.core.shared.weight.fill_(0.25)
+        source.core.expert_layers[0].weight.fill_(0.75)
+        source.head.weight.fill_(0.5)
+    checkpoint = tmp_path / "one_layer.pt"
+    torch.save(
+        {
+            "epoch": 100,
+            "core_state_dict": source.core.state_dict(),
+            "head_state_dict": source.head.state_dict(),
+            "train_metrics": {"loss": 1.2},
+        },
+        checkpoint,
+    )
+    target = FakeStudent(3)
+    new_layer_before = target.core.expert_layers[1].weight.detach().clone()
+    fake_settings = SimpleNamespace(
+        student_initial_checkpoint=checkpoint,
+        student_expand_expert_layers=True,
+        phase_init="zeros",
+    )
+    report = _initialize_student(target, fake_settings)
+    assert torch.equal(
+        target.core.expert_layers[0].weight,
+        source.core.expert_layers[0].weight,
+    )
+    assert torch.equal(target.core.expert_layers[1].weight, new_layer_before)
+    assert report["expert_layer_expansion"]["source_expert_layers"] == 1
+    assert report["expert_layer_expansion"]["target_expert_layers"] == 3
 
 
 def test_restore_teacher_tokens_uses_runtime_grid() -> None:
