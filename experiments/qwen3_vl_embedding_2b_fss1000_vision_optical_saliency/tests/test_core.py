@@ -28,6 +28,7 @@ from experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency.settings 
     load_settings,
 )
 from experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency.training import (
+    _student_scheduler,
     align_cached_teacher_logits,
 )
 
@@ -243,6 +244,33 @@ def test_iou_boundary_finetune_profile() -> None:
     assert settings.soft_iou_weight == pytest.approx(0.75)
     assert settings.boundary_weight == pytest.approx(0.25)
     assert settings.student_batch_size == 16
+
+
+def test_final_100_epoch_profile_uses_cosine_schedule_and_periodic_saves() -> None:
+    settings = load_settings(
+        EXPERIMENT / "configs"
+        / "fss1000_saliency_final_iou_boundary_100ep_batch16.yaml"
+    )
+    assert settings.student_epochs == 100
+    assert settings.student_batch_size == 16
+    assert settings.student_lr_schedule == "cosine"
+    assert settings.student_lr_min_ratio == pytest.approx(0.05)
+    assert settings.checkpoint_interval_epochs == 10
+    assert settings.student_learning_rate == pytest.approx(2e-4)
+    assert settings.phase_learning_rate == pytest.approx(5e-5)
+    assert settings.router_learning_rate == pytest.approx(5e-5)
+
+    parameter = torch.nn.Parameter(torch.ones(()))
+    optimizer = torch.optim.SGD([parameter], lr=2e-4)
+    scheduler = _student_scheduler(optimizer, settings)
+    assert scheduler is not None
+    initial = optimizer.param_groups[0]["lr"]
+    for _ in range(settings.student_epochs - 1):
+        optimizer.step()
+        scheduler.step()
+    final = optimizer.param_groups[0]["lr"]
+    assert initial == pytest.approx(2e-4)
+    assert final == pytest.approx(2e-4 * 0.05)
 
 
 def test_restore_teacher_tokens_uses_runtime_grid() -> None:

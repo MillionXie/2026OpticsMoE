@@ -93,6 +93,9 @@ class Settings:
     student_learning_rate: float
     router_learning_rate: float | None
     phase_learning_rate: float | None
+    student_lr_schedule: str
+    student_lr_min_ratio: float
+    checkpoint_interval_epochs: int
     weight_decay: float
     bce_weight: float
     dice_weight: float
@@ -220,6 +223,12 @@ class Settings:
                 raise ValueError(f"{name} must be positive")
         if self.num_workers < 0:
             raise ValueError("num_workers cannot be negative")
+        if self.student_lr_schedule not in {"constant", "cosine"}:
+            raise ValueError("student_lr_schedule must be constant or cosine")
+        if not 0.0 <= self.student_lr_min_ratio <= 1.0:
+            raise ValueError("student_lr_min_ratio must be in [0, 1]")
+        if self.checkpoint_interval_epochs < 0:
+            raise ValueError("checkpoint_interval_epochs cannot be negative")
         if self.input_adapter_dim != 224 or self.expert_size != 224:
             raise ValueError("The reused Optical MoE16 requires 224 optical rows/channels")
         if self.max_visual_tokens > self.expert_size:
@@ -361,6 +370,11 @@ def load_settings(path: str | Path) -> Settings:
         phase_learning_rate=(
             None if d("training.phase_learning_rate") is None
             else float(d("training.phase_learning_rate"))
+        ),
+        student_lr_schedule=str(d("training.student_lr_schedule", "constant")),
+        student_lr_min_ratio=float(d("training.student_lr_min_ratio", 0.0)),
+        checkpoint_interval_epochs=int(
+            d("training.checkpoint_interval_epochs", 0)
         ),
         weight_decay=float(d("training.weight_decay", 0.0)),
         bce_weight=float(d("loss.bce_weight", 1.0)),

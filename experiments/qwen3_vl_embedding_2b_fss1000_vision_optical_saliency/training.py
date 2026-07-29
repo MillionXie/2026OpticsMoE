@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import csv
+import math
 import time
 from pathlib import Path
 from typing import Any
@@ -190,6 +191,7 @@ def train_student(
         train_augmentation=settings.augmentation_enabled,
     )
     optimizer = _student_optimizer(student, settings)
+    scheduler = _student_scheduler(optimizer, settings)
     mask_cache = _load_mask_cache(settings, "train") if settings.mask_kd_weight > 0 else None
     history: list[dict[str, Any]] = []
     best_train_loss = float("inf")
@@ -209,6 +211,10 @@ def train_student(
             "core_state_dict": student.core.state_dict(),
             "head_state_dict": student.head.state_dict(),
             "optimizer_state_dict": optimizer.state_dict(),
+            "scheduler_state_dict": (
+                scheduler.state_dict() if scheduler is not None else None
+            ),
+            "lr_schedule": settings.student_lr_schedule,
             "train_metrics": train_metrics,
             "test_metrics_observation_only": None,
             "evaluation_status": "train_complete_test_pending",
@@ -246,6 +252,16 @@ def train_student(
         _save_checkpoint(last_path, payload)
         if improved:
             _save_checkpoint(best_path, payload)
+        if (
+            settings.checkpoint_interval_epochs > 0
+            and epoch % settings.checkpoint_interval_epochs == 0
+        ):
+            _save_checkpoint(
+                settings.output_dir
+                / "checkpoints"
+                / f"student_epoch_{epoch:04d}.pt",
+                payload,
+            )
         residual_log = (
             "residual_input_scale="
             f"{float(student.head.detector_input_scale.detach()):.5f} "
@@ -260,6 +276,8 @@ def train_student(
             f"best_train_loss={best_train_loss:.5f}",
             flush=True,
         )
+        if scheduler is not None:
+            scheduler.step()
     save_training_curves(
         settings.output_dir / "figures" / "student_training_curves.png", history
     )
@@ -464,6 +482,29 @@ def _student_optimizer(
         {"params": remaining, "lr": settings.student_learning_rate, "name": "adapter_and_head"}
     )
     return torch.optim.AdamW(groups, weight_decay=settings.weight_decay)
+
+
+def _student_scheduler(
+    optimizer: torch.optim.Optimizer,
+    settings: Any,
+) -> torch.optim.lr_scheduler.LambdaLR | None:
+    if settings.student_lr_schedule == "constant":
+        return None
+    if settings.student_lr_schedule != "cosine":
+        raise ValueError(
+            f"Unsupported student_lr_schedule={settings.student_lr_schedule!r}"
+        )
+    total_epochs = max(int(settings.student_epochs), 1)
+    minimum = float(settings.student_lr_min_ratio)
+
+    def multiplier(step: int) -> float:
+        if total_epochs == 1:
+            return minimum
+        progress = min(max(step, 0), total_epochs - 1) / (total_epochs - 1)
+        cosine = 0.5 * (1.0 + math.cos(math.pi * progress))
+        return minimum + (1.0 - minimum) * cosine
+
+    return torch.optim.lr_scheduler.LambdaLR(optimizer, multiplier)
 
 
 def _initialize_student(

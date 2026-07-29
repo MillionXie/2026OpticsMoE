@@ -1,0 +1,21 @@
+base_config: fss1000_saliency_mask_kd_iou_boundary_batch16.yaml
+
+# Final long-run profile selected after the controlled FSS-1000 diagnostics.
+# This is a 100-epoch second-stage fine-tune initialized from the formal
+# optical Student checkpoint; it does not overwrite any earlier run.
+training:
+  student_epochs: 100
+  student_learning_rate: 0.0002
+  router_learning_rate: 0.00005
+  phase_learning_rate: 0.00005
+  student_lr_schedule: cosine
+  student_lr_min_ratio: 0.05
+  checkpoint_interval_epochs: 10
+  log_interval_batches: 125
+
+batching:
+  student_batch_size: 16
+  inference_batch_size: 16
+  num_workers: 8
+
+output_dir: ../runs/fss1000_saliency_final_iou_boundary_100ep_batch16
