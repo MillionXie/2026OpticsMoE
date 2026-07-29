@@ -39,6 +39,14 @@ def test_five_view_split_is_three_one_one_and_stable() -> None:
     assert list(first.values()).count("query") == 1
 
 
+def test_main_catalog_image_can_be_fixed_as_gallery() -> None:
+    images = [f"image-{index}" for index in range(5)]
+    split = split_stage2_images(
+        "item", images, 42, preferred_gallery_ids=["image-3"]
+    )
+    assert split["image-3"] == "gallery"
+
+
 def test_fixed_manifest_excludes_gallery_and_query_from_both_training_stages() -> None:
     items = []
     for item_index in range(5):
@@ -176,4 +184,3 @@ def test_stage2_identity_head_is_explicitly_training_only() -> None:
         "classifier.weight",
         "classifier.bias",
     }
-

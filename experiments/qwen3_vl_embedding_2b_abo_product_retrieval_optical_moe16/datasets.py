@@ -297,6 +297,9 @@ def build_fixed_manifest(
             settings.stage2_train_fraction,
             settings.stage2_gallery_fraction,
             settings.stage2_query_fraction,
+            preferred_gallery_ids=[
+                image.image_id for image in selected if image.is_main
+            ],
         )
         stage2_assignments[item.item_id] = assignments
         selected_images_by_item[item.item_id] = tuple(selected)
@@ -401,6 +404,7 @@ def split_stage2_images(
     train_fraction: float = 0.6,
     gallery_fraction: float = 0.2,
     query_fraction: float = 0.2,
+    preferred_gallery_ids: Sequence[str] = (),
 ) -> dict[str, str]:
     if len(set(image_ids)) != len(image_ids):
         raise ValueError(f"Duplicate image_id within item {item_id}")
@@ -423,12 +427,29 @@ def split_stage2_images(
         else:
             raise RuntimeError(f"Cannot create a 2/1/1 split for item {item_id}")
     train_count = total - gallery_count - query_count
+    preferred = [
+        image_id
+        for image_id in preferred_gallery_ids
+        if image_id in set(ordered)
+    ]
+    gallery_ids = list(dict.fromkeys(preferred))[:gallery_count]
+    gallery_ids.extend(
+        image_id
+        for image_id in ordered
+        if image_id not in gallery_ids
+    )
+    gallery_ids = gallery_ids[:gallery_count]
+    remaining = [image_id for image_id in ordered if image_id not in gallery_ids]
+    # Keep query selection deterministic and disjoint from the catalog-main
+    # Gallery preference. The remainder becomes Stage-2 training views.
+    query_ids = remaining[-query_count:]
+    train_ids = remaining[:train_count]
     assignments: dict[str, str] = {}
-    for image_id in ordered[:train_count]:
+    for image_id in train_ids:
         assignments[image_id] = "train"
-    for image_id in ordered[train_count : train_count + gallery_count]:
+    for image_id in gallery_ids:
         assignments[image_id] = "gallery"
-    for image_id in ordered[train_count + gallery_count :]:
+    for image_id in query_ids:
         assignments[image_id] = "query"
     return assignments
 

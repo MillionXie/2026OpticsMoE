@@ -103,7 +103,8 @@ proxy：原图分辨率、边缘清晰度、对比度及边界背景均匀程度
 均衡选择，使同类型相似商品形成更有价值的 hard negatives。这是工程筛选代理，不是
 人工质量标注，实际论文实验前应抽样核查 manifest。
 
-对于 5 张图的商品，固定划分严格为 3 train / 1 Gallery / 1 Query。
+对于 5 张图的商品，固定划分严格为 3 train / 1 Gallery / 1 Query；主 catalog
+图优先固定为 Gallery，Query 从其余视角中选择。
 
 ## Checkpoint 纪律
 
@@ -132,4 +133,3 @@ Gallery/Query 不用于选 epoch、调参或反向传播。最终 `evaluate` 才
 
 ABO 的官方网页与 AWS Registry 对许可名称的展示目前并不完全一致；用于论文或共享数据
 前，请按官方数据页面、archive 内 license 和单位要求完成归属与合规核查。
-
