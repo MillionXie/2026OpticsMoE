@@ -25,10 +25,10 @@ data:
   image_size: 224
 
 batching:
-  teacher_batch_size: 4
-  student_batch_size: 2
-  inference_batch_size: 4
-  num_workers: 4
+  teacher_batch_size: 16
+  student_batch_size: 8
+  inference_batch_size: 8
+  num_workers: 6
 
 training:
   teacher_epochs: 30
@@ -41,7 +41,7 @@ training:
   random_seed: 42
   amp_enabled: true
   evaluate_test_each_epoch: true
-  log_interval_batches: 25
+  log_interval_batches: 1000
 
 loss:
   bce_weight: 1.0

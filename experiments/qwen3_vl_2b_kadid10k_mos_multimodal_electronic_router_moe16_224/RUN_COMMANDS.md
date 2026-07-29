@@ -17,7 +17,7 @@ CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_kadid10k_mos_multimodal
 ## Full run
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_kadid10k_mos_multimodal_electronic_router_moe16_224 --config experiments/qwen3_vl_2b_kadid10k_mos_multimodal_electronic_router_moe16_224/configs/kadid10k_mos.json --phase all
+CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_2b_kadid10k_mos_multimodal_electronic_router_moe16_224 --config experiments/qwen3_vl_2b_kadid10k_mos_multimodal_electronic_router_moe16_224/configs/kadid10k_mos.json --phase all
 ```
 
 ## Task-driven rerun without SAM or weight decay
@@ -43,7 +43,7 @@ CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_kadid10k_mos_multimodal
 ```
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_kadid10k_mos_multimodal_electronic_router_moe16_224 --config experiments/qwen3_vl_2b_kadid10k_mos_multimodal_electronic_router_moe16_224/configs/kadid10k_mos_task_driven_no_sam_no_wd.json --phase student_train
+CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_2b_kadid10k_mos_multimodal_electronic_router_moe16_224 --config experiments/qwen3_vl_2b_kadid10k_mos_multimodal_electronic_router_moe16_224/configs/kadid10k_mos_task_driven_no_sam_no_wd.json --phase student_train
 ```
 
 ## Separate phases

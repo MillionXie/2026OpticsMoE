@@ -5,8 +5,8 @@ base_config: fss1000_saliency.yaml
 # - every Student parameter starts from the configured initialization;
 # - the existing frozen electronic Teacher mask cache is supervision only.
 batching:
-  student_batch_size: 16
-  inference_batch_size: 16
+  student_batch_size: 8
+  inference_batch_size: 8
   num_workers: 8
 
 training:

@@ -11,7 +11,7 @@ python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config
 ## Full run
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10.yaml --phase all
+CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10.yaml --phase all
 ```
 
 ## 31 packaged-SKU pretraining

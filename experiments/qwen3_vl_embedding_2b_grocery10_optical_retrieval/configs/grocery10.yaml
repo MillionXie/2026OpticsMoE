@@ -43,7 +43,7 @@ batching:
   num_workers: 4
 
 training:
-  epochs: 50
+  epochs: 100
   learning_rate: 0.002
   weight_decay: 0.0
   lambda_kd: 1.0
