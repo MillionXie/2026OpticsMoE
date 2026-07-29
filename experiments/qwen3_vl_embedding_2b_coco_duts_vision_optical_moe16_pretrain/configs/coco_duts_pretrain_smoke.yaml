@@ -1,0 +1,162 @@
+dataset:
+  coco_root: ../../../data/COCO2017
+  duts_root: ../../../data/DUTS
+  auto_download: true
+  remove_archives_after_extract: true
+  coco_train_url: http://images.cocodataset.org/zips/train2017.zip
+  coco_val_url: http://images.cocodataset.org/zips/val2017.zip
+  duts_train_url: https://saliencydetection.net/duts/download/DUTS-TR.zip
+  duts_test_url: https://saliencydetection.net/duts/download/DUTS-TE.zip
+  coco_train_limit: 12
+  coco_val_limit: 4
+  duts_train_limit: 8
+  duts_test_limit: 4
+  image_size: 224
+  coco_resize_mode: center_crop
+
+qwen:
+  model_id: Qwen/Qwen3-VL-Embedding-2B
+  cache_dir: null
+  local_files_only: false
+  processor_min_pixels: 50176
+  processor_max_pixels: 50176
+  dtype: bfloat16
+  attn_implementation: sdpa
+  device: cuda
+
+cache:
+  root: ../../../data/cache/qwen3_vl_embedding_2b_coco_duts_moe16_smoke
+  teacher_target_root: ../../../data/cache/qwen3_vl_embedding_2b_coco_duts_moe16_smoke/coco_teacher_pca224
+  teacher_shard_size: 4
+  teacher_lru_shards: 2
+  teacher_dtype: float16
+  rebuild: false
+
+pca:
+  path: ../../../data/cache/qwen3_vl_embedding_2b_coco_duts_moe16_smoke/pca_vision_1024_to_224.pt
+  rank: 224
+  calibration_images: 4
+  tokens_per_image: 64
+  max_tokens: 256
+  oversample: 0
+  niter: 1
+  device: cuda
+
+batching:
+  pca_batch_size: 1
+  teacher_cache_batch_size: 1
+  coco_batch_size: 1
+  duts_batch_size: 1
+  inference_batch_size: 1
+  num_workers: 0
+
+runtime:
+  random_seed: 42
+  amp_enabled: true
+  log_interval_batches: 1
+
+coco_training:
+  epochs: 1
+  optical_learning_rate: 0.0002
+  router_learning_rate: 0.0005
+  recombiner_learning_rate: 0.0005
+  weight_decay: 0.0
+
+coco_loss:
+  cosine_weight: 1.0
+  smooth_l1_weight: 0.5
+  smooth_l1_beta: 0.1
+  router_balance_weight: 0.03
+  router_importance_weight: 0.0
+
+duts:
+  initial_backbone_checkpoint: ../runs/coco_duts_vision_optical_moe16_pretrain_smoke/checkpoints/coco_backbone_best_train_loss.pt
+
+duts_training:
+  head_warmup_epochs: 1
+  finetune_epochs: 1
+  optical_learning_rate: 0.0001
+  recombiner_learning_rate: 0.0002
+  head_learning_rate: 0.001
+  weight_decay: 0.0
+  evaluate_test_each_epoch: true
+  checkpoint_interval_epochs: 1
+
+duts_loss:
+  bce_weight: 1.0
+  dice_weight: 1.0
+  soft_iou_weight: 0.75
+  boundary_weight: 0.25
+
+augmentation:
+  enabled: false
+  crop_scale_min: 0.90
+  horizontal_flip_probability: 0.0
+  brightness_jitter: 0.0
+  contrast_jitter: 0.0
+  rotation_degrees: 0.0
+
+recombiner:
+  alpha_init: 0.1
+  alpha_trainable: true
+  layernorm_affine: true
+  layernorm_eps: 1.0e-5
+
+segmentation_head:
+  projection_dim: 128
+  decoder_channels: [64, 32, 16]
+  groupnorm_groups: 8
+
+optical:
+  input_adapter_dim: 224
+  max_visual_tokens: 224
+  geometry:
+    canvas_size: 1026
+    active_size: 986
+    expert_size: 224
+    expert_pitch: 254
+    num_experts: 16
+    grid_rows: 4
+    grid_cols: 4
+    layers_per_expert: 3
+  router:
+    top_k: 4
+    pool_size: 14
+    temperature: 1.0
+    input_layernorm_enabled: true
+    input_layernorm_eps: 1.0e-5
+    amplitude_weight_domain: amplitude
+    input_normalization: none
+  physics:
+    wavelength_nm: 532.0
+    pixel_pitch_um: 8.0
+    inter_layer_distance_m: 0.10
+    last_expert_to_global_distance_m: 0.10
+    global_to_detector_distance_m: 0.10
+  phase:
+    parameterization: sigmoid
+    init: zeros
+    init_std: 0.02
+  k_space:
+    enabled: false
+    theta_max_deg: 1.0
+  oeo:
+    enabled: true
+    per_expert_enabled: true
+    elementwise_affine: false
+    hard_route_mask: true
+    reapply_routing_weights: true
+    layernorm_eps: 1.0e-5
+    nonlinearity: relu
+  detector:
+    output_size: 224
+    layernorm_eps: 1.0e-5
+    layernorm_affine: false
+    layernorm_scope: per_token
+    nonlinearity: relu
+
+visualization:
+  interval_epochs: 1
+  sample_count: 2
+
+output_dir: ../runs/coco_duts_vision_optical_moe16_pretrain_smoke
