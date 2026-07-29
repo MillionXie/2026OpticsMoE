@@ -138,3 +138,8 @@ Gallery/Query 不用于选 epoch、调参或反向传播。最终 `evaluate` 才
 
 ABO 的官方网页与 AWS Registry 对许可名称的展示目前并不完全一致；用于论文或共享数据
 前，请按官方数据页面、archive 内 license 和单位要求完成归属与合规核查。
+
+实验室服务器混有不同型号 GPU，CUDA 默认 `FASTEST_FIRST` 编号可能与
+`nvidia-smi` 不一致。因此 `RUN_COMMANDS.md` 显式设置
+`CUDA_DEVICE_ORDER=PCI_BUS_ID`，使 `CUDA_VISIBLE_DEVICES=N` 对应
+`nvidia-smi` 的物理编号。
