@@ -1,0 +1,28 @@
+base_config: abo_base.yaml
+
+dataset:
+  stage1_item_count: 20
+  stage1_target_image_count: 80
+  stage2_item_count: 20
+  stage2_product_type_count: 5
+  quality_candidate_multiplier: 1
+
+batching:
+  teacher_batch_size: 1
+  stage1_batch_size: 4
+  stage1_pk_items: 2
+  stage1_pk_images: 2
+  stage2_batch_size: 4
+  stage2_pk_items: 2
+  stage2_pk_images: 2
+  inference_batch_size: 1
+  num_workers: 0
+
+training:
+  stage1_epochs: 1
+  stage2_epochs: 1
+  log_interval_batches: 1
+
+artifact_cache_dir: cache/qwen3_vl_embedding_2b_abo_product_retrieval_optical_moe16_smoke
+output_dir: runs/qwen3_vl_embedding_2b_abo_product_retrieval_optical_moe16_smoke
+

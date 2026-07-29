@@ -1,0 +1,7 @@
+numpy
+Pillow
+PyYAML
+torch
+transformers
+matplotlib
+

@@ -1,0 +1,4 @@
+base_config: abo_base.yaml
+
+# Formal 3,000-item fine-tuning/retrieval experiment.
+

@@ -1,0 +1,15 @@
+base_config: abo_base.yaml
+
+dataset:
+  stage1_item_count: 500
+  stage1_target_image_count: 2000
+  stage2_item_count: 500
+  stage2_product_type_count: 10
+
+training:
+  stage1_epochs: 20
+  stage2_epochs: 30
+
+artifact_cache_dir: cache/qwen3_vl_embedding_2b_abo_product_retrieval_optical_moe16_500
+output_dir: runs/qwen3_vl_embedding_2b_abo_product_retrieval_optical_moe16_500
+

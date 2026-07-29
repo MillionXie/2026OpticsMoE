@@ -1,0 +1,130 @@
+dataset:
+  root: data/abo
+  download: true
+  listings_url: https://amazon-berkeley-objects.s3.amazonaws.com/archives/abo-listings.tar
+  images_url: https://amazon-berkeley-objects.s3.amazonaws.com/archives/abo-images-small.tar
+  stage1_item_count: 20000
+  stage1_target_image_count: 60000
+  stage1_min_images_per_item: 2
+  stage1_max_images_per_item: 6
+  stage2_item_count: 3000
+  stage2_min_images_per_item: 4
+  stage2_max_images_per_item: 10
+  stage2_train_fraction: 0.60
+  stage2_gallery_fraction: 0.20
+  stage2_query_fraction: 0.20
+  # Empty means: use the 30 densest product types, which supplies many
+  # visually similar hard negatives without hard-coding category names.
+  preferred_product_types: []
+  stage2_product_type_count: 30
+  quality_scan_enabled: true
+  quality_candidate_multiplier: 4
+  minimum_original_short_side: 224
+  # Never enable this for a continuation run: it deliberately changes the
+  # immutable Query/Gallery split and invalidates all caches/checkpoints.
+  rebuild_manifest: false
+
+qwen:
+  model_id: Qwen/Qwen3-VL-Embedding-2B
+  cache_dir: null
+  local_files_only: false
+  instruction: Represent this product image for image-to-image product retrieval.
+  processor_min_pixels: 50176
+  processor_max_pixels: 50176
+  dtype: bfloat16
+  attn_implementation: sdpa
+  device: cuda
+
+retrieval:
+  image_size: 224
+  embedding_dim: 224
+  gallery_aggregation: mean_prototype
+
+batching:
+  teacher_batch_size: 4
+  stage1_batch_size: 8
+  stage1_pk_items: 4
+  stage1_pk_images: 2
+  stage2_batch_size: 8
+  stage2_pk_items: 4
+  stage2_pk_images: 2
+  inference_batch_size: 8
+  num_workers: 6
+
+training:
+  stage1_epochs: 50
+  stage2_epochs: 50
+  stage1_learning_rate: 0.002
+  stage2_learning_rate: 0.001
+  weight_decay: 0.0
+  random_seed: 42
+  amp_enabled: true
+  log_interval_batches: 500
+
+loss:
+  stage1_kd: 1.0
+  stage1_supcon: 1.0
+  stage2_supcon: 1.0
+  stage2_id: 0.5
+  stage2_kd: 0.2
+  router_balance: 0.03
+  router_importance: 0.0
+  temperature: 0.07
+
+optical:
+  input_adapter_dim: 224
+  max_visual_tokens: 224
+  max_language_tokens: 224
+  geometry:
+    canvas_size: 1026
+    active_size: 986
+    expert_size: 224
+    expert_pitch: 254
+    num_experts: 16
+    grid_rows: 4
+    grid_cols: 4
+    layers_per_expert: 1
+  router:
+    top_k: 4
+    pool_size: 14
+    temperature: 1.0
+    input_layernorm_enabled: true
+    input_layernorm_eps: 1.0e-5
+    amplitude_weight_domain: amplitude
+    input_normalization: none
+  physics:
+    wavelength_nm: 532.0
+    pixel_pitch_um: 8.0
+    inter_layer_distance_m: 0.10
+    last_expert_to_global_distance_m: 0.10
+    global_to_detector_distance_m: 0.10
+  phase:
+    parameterization: sigmoid
+    init: zeros
+    init_std: 0.02
+  k_space:
+    enabled: false
+    theta_max_deg: 1.0
+  oeo:
+    enabled: true
+    per_expert_enabled: true
+    elementwise_affine: false
+    hard_route_mask: true
+    reapply_routing_weights: true
+    layernorm_eps: 1.0e-5
+    nonlinearity: relu
+  detector:
+    output_size: 224
+    layernorm_eps: 1.0e-5
+    layernorm_affine: false
+    layernorm_scope: per_token
+    nonlinearity: relu
+  phase_dropout:
+    mode: none
+    p: 0.0
+    block_size: 8
+    batch_shared: true
+
+artifact_cache_dir: cache/qwen3_vl_embedding_2b_abo_product_retrieval_optical_moe16
+output_dir: runs/qwen3_vl_embedding_2b_abo_product_retrieval_optical_moe16_3000
+
