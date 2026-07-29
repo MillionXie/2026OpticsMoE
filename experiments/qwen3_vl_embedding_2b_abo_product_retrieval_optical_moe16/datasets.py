@@ -235,9 +235,21 @@ def load_catalog_items(settings: Any) -> list[CatalogItem]:
                     image_owners[image_id].add(item_id)
 
     ambiguous = {image_id for image_id, owners in image_owners.items() if len(owners) > 1}
+    merged_types: dict[str, str] = {}
+    merged_references: dict[str, dict[str, bool]] = defaultdict(dict)
+    for item_id, product_type, references in raw_items:
+        if item_id not in merged_types or merged_types[item_id] == "UNKNOWN":
+            merged_types[item_id] = product_type
+        for image_id, is_main in references:
+            merged_references[item_id][image_id] = (
+                merged_references[item_id].get(image_id, False) or is_main
+            )
+
     items: list[CatalogItem] = []
     missing_files = 0
-    for item_id, product_type, references in raw_items:
+    for item_id in sorted(merged_references):
+        product_type = merged_types[item_id]
+        references = list(merged_references[item_id].items())
         images: list[ImageRecord] = []
         for image_id, is_main in references:
             if image_id in ambiguous or image_id not in image_metadata:
@@ -349,7 +361,11 @@ def build_fixed_manifest(
         } | set(stage2_map)
         image_lookup = {image.image_id: image for image in item.images}
         for image_id in sorted(included_ids):
-            image = stage2_images.get(image_id, image_lookup[image_id])
+            image = (
+                stage2_images[image_id]
+                if image_id in stage2_images
+                else image_lookup[image_id]
+            )
             score = quality_scores.get(
                 image_id, _metadata_quality(image.width, image.height)
             )
