@@ -28,11 +28,24 @@ from ..objectives import (
     normalized_feature_loss,
     shaped_reward,
 )
-from ..settings import load_settings
+from ..settings import EXPERIMENT_DIR, load_settings
 from ..smoke import run_smoke
 
 
 EXPERIMENT = Path(__file__).resolve().parents[1]
+
+
+def test_default_run_paths_are_owned_by_experiment() -> None:
+    settings = load_settings(EXPERIMENT_DIR / "configs" / "bench2drive.yaml")
+    expected = (
+        EXPERIMENT_DIR
+        / "runs"
+        / "qwen3_vl_embedding_2b_bdd100k_bench2drive_e2e_optical_moe16"
+    ).resolve()
+    assert settings.output_dir == expected
+    assert settings.pretrained_backbone_checkpoint == (
+        expected / "checkpoints" / "bdd_optical_backbone_best.pt"
+    )
 
 
 def test_settings_fix_requested_optical_geometry() -> None:

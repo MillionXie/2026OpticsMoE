@@ -58,13 +58,32 @@ def _path(value: str | Path | None) -> Path | None:
     return (path if path.is_absolute() else PROJECT_DIR / path).resolve()
 
 
+def _run_path(value: str | Path | None) -> Path | None:
+    """Resolve generated run artifacts inside this experiment.
+
+    Dataset and reusable cache paths remain repository-relative. A conventional
+    ``runs/...`` setting, however, belongs to this experiment rather than the
+    repository root. Absolute paths remain supported.
+    """
+    if value is None:
+        return None
+    path = Path(os.path.expandvars(os.path.expanduser(str(value))))
+    if path.is_absolute():
+        return path.resolve()
+    if path.parts and path.parts[0] == "runs":
+        return (EXPERIMENT_DIR / path).resolve()
+    return (PROJECT_DIR / path).resolve()
+
+
 class Settings:
     """Resolved settings, including the flat names consumed by Optical MoE16."""
 
     def __init__(self, raw: dict[str, Any], config_path: Path) -> None:
         self.raw = copy.deepcopy(raw)
         self.config_path = config_path.resolve()
-        self.output_dir = _required_path(_path(_nested(raw, "paths.output_dir")))
+        self.output_dir = _required_path(
+            _run_path(_nested(raw, "paths.output_dir"))
+        )
         self.artifact_cache_dir = _required_path(
             _path(_nested(raw, "paths.artifact_cache_dir"))
         )
@@ -73,7 +92,7 @@ class Settings:
             _path(_nested(raw, "paths.bench2drive_root"))
         )
         self.pretrained_backbone_checkpoint = _required_path(
-            _path(_nested(raw, "paths.pretrained_backbone_checkpoint"))
+            _run_path(_nested(raw, "paths.pretrained_backbone_checkpoint"))
         )
 
         self.model_id = str(
