@@ -26,6 +26,9 @@ from experiments.qwen3_vl_embedding_2b_abo_product_retrieval_optical_moe16.model
     DetectorTokenProjection,
     TrainingIdentityHead,
 )
+from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.modeling import (
+    resolve_cached_model_source,
+)
 from experiments.qwen3_vl_embedding_2b_abo_product_retrieval_optical_moe16.settings import (
     EXPERIMENT_DIR,
     load_settings,
@@ -45,6 +48,38 @@ def test_relative_output_dir_is_owned_by_experiment() -> None:
     assert settings.dataset_root == (
         EXPERIMENT_DIR.parents[1] / "data" / "abo"
     ).resolve()
+
+
+def test_model_snapshot_is_found_beside_repository(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repository = tmp_path / "workspace" / "2026OpticsMoE"
+    repository.mkdir(parents=True)
+    snapshot = (
+        tmp_path
+        / "workspace"
+        / ".cache"
+        / "huggingface"
+        / "hub"
+        / "models--Qwen--Qwen3-VL-Embedding-2B"
+        / "snapshots"
+        / "revision"
+    )
+    snapshot.mkdir(parents=True)
+    (snapshot / "config.json").write_text("{}", encoding="utf-8")
+    (snapshot / "preprocessor_config.json").write_text("{}", encoding="utf-8")
+    monkeypatch.chdir(repository)
+    monkeypatch.setenv("HOME", str(tmp_path / "empty-home"))
+    monkeypatch.delenv("HF_HOME", raising=False)
+    monkeypatch.delenv("HF_HUB_CACHE", raising=False)
+    monkeypatch.delenv("HUGGINGFACE_HUB_CACHE", raising=False)
+    monkeypatch.delenv("XDG_CACHE_HOME", raising=False)
+
+    resolved = resolve_cached_model_source(
+        "Qwen/Qwen3-VL-Embedding-2B", cache_dir=None
+    )
+
+    assert Path(resolved) == snapshot.resolve()
 
 
 def test_five_view_split_is_three_one_one_and_stable() -> None:

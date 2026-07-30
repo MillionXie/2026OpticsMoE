@@ -35,6 +35,8 @@ def load_vision_backbone(settings: Any, device: torch.device) -> LoadedVisionBac
     transformers = importlib.import_module("transformers")
     source = resolve_cached_model_source(settings.model_id, settings.cache_dir)
     using_snapshot = source != settings.model_id
+    if using_snapshot:
+        print(f"[model] using local Hugging Face snapshot: {source}", flush=True)
     common = {
         "cache_dir": str(settings.cache_dir) if settings.cache_dir else None,
         "local_files_only": settings.local_files_only or using_snapshot,
@@ -370,4 +372,3 @@ def _dtype(name: str) -> torch.dtype:
     if name not in values:
         raise ValueError(f"Unsupported dtype {name!r}")
     return values[name]
-

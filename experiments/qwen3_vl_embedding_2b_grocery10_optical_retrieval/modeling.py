@@ -274,11 +274,22 @@ def resolve_cached_model_source(model_id: str, cache_dir: Path | None) -> str:
     roots: list[Path] = []
     if cache_dir is not None:
         roots.append(Path(cache_dir))
+    if os.environ.get("HF_HUB_CACHE"):
+        roots.append(Path(os.environ["HF_HUB_CACHE"]))
     if os.environ.get("HUGGINGFACE_HUB_CACHE"):
         roots.append(Path(os.environ["HUGGINGFACE_HUB_CACHE"]))
     if os.environ.get("HF_HOME"):
         roots.append(Path(os.environ["HF_HOME"]) / "hub")
+    if os.environ.get("XDG_CACHE_HOME"):
+        roots.append(Path(os.environ["XDG_CACHE_HOME"]) / "huggingface" / "hub")
     roots.append(Path.home() / ".cache" / "huggingface" / "hub")
+    # Cluster accounts commonly keep large caches beside the repository rather
+    # than below the login HOME (for example /DATA/.../user/.cache). Search the
+    # working-directory ancestry so those snapshots remain reusable without
+    # hard-coding a server-specific absolute path in experiment configs.
+    working_directory = Path.cwd().resolve()
+    for parent in (working_directory, *working_directory.parents):
+        roots.append(parent / ".cache" / "huggingface" / "hub")
     repository = "models--" + model_id.replace("/", "--")
     for root in dict.fromkeys(path.resolve() for path in roots):
         directory = root / repository
