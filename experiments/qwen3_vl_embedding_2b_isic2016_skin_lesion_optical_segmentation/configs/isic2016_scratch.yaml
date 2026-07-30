@@ -1,0 +1,68 @@
+source:
+  # Supplies only the validated three-stage MoE16/Qwen/CCD architecture.
+  architecture_config: ../../qwen3_vl_embedding_2b_coco_duts_vision_optical_moe16_pretrain/configs/coco_duts_pretrain.yaml
+
+initialization:
+  mode: scratch_end_to_end
+  pretrained_checkpoint: null
+  load_segmentation_head: false
+
+dataset:
+  data_root: ../../../data/ISIC2016
+  auto_download: true
+  remove_archives_after_extract: true
+  expected_train_samples: 900
+  expected_test_samples: 379
+  train_limit: null
+  test_limit: null
+  resize_mode: stretch
+  urls:
+    train_images: https://isic-archive.s3.amazonaws.com/challenges/2016/ISBI2016_ISIC_Part1_Training_Data.zip
+    train_masks: https://isic-archive.s3.amazonaws.com/challenges/2016/ISBI2016_ISIC_Part1_Training_GroundTruth.zip
+    test_images: https://isic-archive.s3.amazonaws.com/challenges/2016/ISBI2016_ISIC_Part1_Test_Data.zip
+    test_masks: https://isic-archive.s3.amazonaws.com/challenges/2016/ISBI2016_ISIC_Part1_Test_GroundTruth.zip
+
+batching:
+  train_batch_size: 8
+  inference_batch_size: 8
+  num_workers: 8
+
+training:
+  # End-to-end here means all task-specific optical, recombiner and head
+  # parameters train jointly from random initialization. Qwen remains frozen.
+  head_warmup_epochs: 0
+  joint_finetune_epochs: 100
+  optical_learning_rate: 0.0002
+  router_learning_rate: 0.0005
+  recombiner_learning_rate: 0.0005
+  head_learning_rate: 0.001
+  weight_decay: 0.0
+  amp_enabled: true
+  random_seed: 42
+  log_interval_batches: 25
+  checkpoint_interval_epochs: 10
+  # Observation only: test metrics never choose a checkpoint or hyperparameter.
+  evaluate_test_each_epoch: true
+
+loss:
+  bce_weight: 1.0
+  dice_weight: 1.0
+  soft_iou_weight: 0.75
+  boundary_weight: 0.25
+  router_balance_weight: 0.03
+  router_importance_weight: 0.0
+
+augmentation:
+  enabled: true
+  crop_scale_min: 0.92
+  horizontal_flip_probability: 0.5
+  vertical_flip_probability: 0.5
+  brightness_jitter: 0.08
+  contrast_jitter: 0.08
+  rotation_degrees: 10.0
+
+visualization:
+  interval_epochs: 5
+  sample_count: 12
+
+output_dir: ../runs/isic2016_skin_lesion_scratch
