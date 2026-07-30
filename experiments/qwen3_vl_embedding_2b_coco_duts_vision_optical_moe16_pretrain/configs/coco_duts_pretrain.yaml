@@ -46,11 +46,11 @@ pca:
   device: cuda
 
 batching:
-  pca_batch_size: 4
-  teacher_cache_batch_size: 4
-  coco_batch_size: 4
-  duts_batch_size: 4
-  inference_batch_size: 4
+  pca_batch_size: 8
+  teacher_cache_batch_size: 8
+  coco_batch_size: 8
+  duts_batch_size: 8
+  inference_batch_size: 8
   num_workers: 8
 
 runtime:
@@ -59,7 +59,7 @@ runtime:
   log_interval_batches: 250
 
 coco_training:
-  epochs: 10
+  epochs: 30
   optical_learning_rate: 0.0002
   router_learning_rate: 0.0005
   recombiner_learning_rate: 0.0005
