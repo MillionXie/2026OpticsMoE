@@ -81,10 +81,48 @@ def initialize_model(
     checkpoint = settings.source_checkpoint
     if checkpoint is None or not checkpoint.is_file():
         raise FileNotFoundError(
-            "COCO/DUTS pretrained checkpoint is missing: "
+            "Initialization checkpoint is missing: "
             f"{checkpoint}. Run the source pretraining or update the config."
         )
     payload = torch_load(checkpoint)
+    if settings.initialization_mode == "isic_checkpoint_finetune":
+        if (
+            not isinstance(payload, dict)
+            or payload.get("checkpoint_type")
+            != "isic2016_skin_lesion_segmentation"
+        ):
+            raise RuntimeError(
+                "Expected an isic2016_skin_lesion_segmentation checkpoint, "
+                f"got {checkpoint}"
+            )
+        model.backbone.core.load_state_dict(
+            payload["backbone"]["core_state_dict"],
+            strict=True,
+        )
+        model.backbone.recombiner.load_state_dict(
+            payload["backbone"]["recombiner_state_dict"],
+            strict=True,
+        )
+        model.head.load_state_dict(payload["head_state_dict"], strict=True)
+        return {
+            "mode": "isic_checkpoint_finetune",
+            "checkpoint": str(checkpoint),
+            "source_epoch": int(payload["epoch"]),
+            "source_train_metrics": payload.get("train_metrics"),
+            "source_test_metrics_observation_only": payload.get(
+                "test_metrics_observation_only"
+            ),
+            "loaded_components": [
+                "optical_core",
+                "ccd_residual_recombiner",
+                "segmentation_head",
+            ],
+            "optimizer_restored": False,
+            "purpose": (
+                "continue the previous head-only run after correcting optical "
+                "trainability"
+            ),
+        }
     required = {"checkpoint_type", "backbone", "head_state_dict", "epoch"}
     if not isinstance(payload, dict) or not required.issubset(payload):
         missing = sorted(
@@ -198,11 +236,23 @@ def train_isic(
         if phase != current_phase:
             _configure_trainability(model, warmup=warmup)
             optimizer = _build_optimizer(model, settings, warmup=warmup)
+            effective_counts = _optimizer_parameter_counts(optimizer)
             current_phase = phase
             print(
                 f"[ISIC] entering {phase}; fresh optimizer with "
-                f"{len(optimizer.param_groups)} parameter group(s)",
+                f"{len(optimizer.param_groups)} parameter group(s): "
+                f"{effective_counts}",
                 flush=True,
+            )
+            write_json(
+                settings.output_dir
+                / "metrics"
+                / f"optimizer_{phase}.json",
+                {
+                    "phase": phase,
+                    "parameter_counts": effective_counts,
+                    "total_parameters": sum(effective_counts.values()),
+                },
             )
         assert optimizer is not None
         started = time.perf_counter()
@@ -533,10 +583,15 @@ def _configure_trainability(
     *,
     warmup: bool,
 ) -> None:
+    # Optical modules are registered inside visual.blocks[0] so that they can
+    # replace the native Qwen stack. Freeze the complete visual tree first,
+    # then explicitly re-enable the inserted student modules. Reversing this
+    # order silently freezes the optical core and leaves empty optimizer
+    # groups.
+    model.backbone.visual.requires_grad_(False)
     model.backbone.core.requires_grad_(not warmup)
     model.backbone.recombiner.requires_grad_(not warmup)
     model.head.requires_grad_(True)
-    model.backbone.visual.requires_grad_(False)
 
 
 def _build_optimizer(
@@ -553,6 +608,24 @@ def _build_optimizer(
             if not parameter.requires_grad:
                 continue
             (router if name.startswith("router.") else optical).append(parameter)
+        if not optical:
+            raise RuntimeError(
+                "Optical optimizer group is empty. The inserted optical core "
+                "was probably frozen recursively through Qwen visual."
+            )
+        if not router:
+            raise RuntimeError(
+                "Router optimizer group is empty. Check optical trainability."
+            )
+        recombiner = [
+            parameter
+            for parameter in model.backbone.recombiner.parameters()
+            if parameter.requires_grad
+        ]
+        if not recombiner:
+            raise RuntimeError(
+                "Recombiner optimizer group is empty. Check module freeze order."
+            )
         groups.extend(
             [
                 {
@@ -566,11 +639,7 @@ def _build_optimizer(
                     "name": "router",
                 },
                 {
-                    "params": [
-                        parameter
-                        for parameter in model.backbone.recombiner.parameters()
-                        if parameter.requires_grad
-                    ],
+                    "params": recombiner,
                     "lr": settings.recombiner_learning_rate,
                     "name": "recombiner",
                 },
@@ -588,6 +657,17 @@ def _build_optimizer(
         }
     )
     return torch.optim.AdamW(groups, weight_decay=settings.weight_decay)
+
+
+def _optimizer_parameter_counts(
+    optimizer: torch.optim.Optimizer,
+) -> dict[str, int]:
+    return {
+        str(group.get("name", f"group_{index}")): sum(
+            parameter.numel() for parameter in group["params"]
+        )
+        for index, group in enumerate(optimizer.param_groups)
+    }
 
 
 def _history_row(

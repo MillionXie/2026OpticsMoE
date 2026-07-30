@@ -65,4 +65,4 @@ visualization:
   interval_epochs: 5
   sample_count: 12
 
-output_dir: ../runs/isic2016_skin_lesion_scratch
+output_dir: ../runs/isic2016_skin_lesion_scratch_optical_trainable_v2

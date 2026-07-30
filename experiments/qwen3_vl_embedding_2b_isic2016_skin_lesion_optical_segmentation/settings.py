@@ -17,7 +17,11 @@ from experiments.qwen3_vl_embedding_2b_coco_duts_vision_optical_moe16_pretrain.s
 
 EXPERIMENT_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = EXPERIMENT_DIR.parents[1]
-INITIALIZATION_MODES = {"scratch_end_to_end", "coco_duts_pretrained"}
+INITIALIZATION_MODES = {
+    "scratch_end_to_end",
+    "coco_duts_pretrained",
+    "isic_checkpoint_finetune",
+}
 
 
 def _nested(raw: dict[str, Any], path: str, default: Any = None) -> Any:
@@ -180,11 +184,11 @@ class Settings:
                 f"initialization.mode must be one of {sorted(INITIALIZATION_MODES)}"
             )
         if (
-            self.initialization_mode == "coco_duts_pretrained"
+            self.initialization_mode != "scratch_end_to_end"
             and self.source_checkpoint is None
         ):
             raise ValueError(
-                "A pretrained checkpoint is required for coco_duts_pretrained"
+                f"A checkpoint is required for {self.initialization_mode}"
             )
         if self.image_size != 224 or self.detector_output_size != 224:
             raise ValueError("ISIC keeps the validated 224x224 optical interface")

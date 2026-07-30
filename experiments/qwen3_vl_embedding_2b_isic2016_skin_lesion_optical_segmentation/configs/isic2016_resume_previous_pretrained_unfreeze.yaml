@@ -2,8 +2,12 @@ source:
   architecture_config: ../../qwen3_vl_embedding_2b_coco_duts_vision_optical_moe16_pretrain/configs/coco_duts_pretrain.yaml
 
 initialization:
-  mode: coco_duts_pretrained
-  pretrained_checkpoint: ../../qwen3_vl_embedding_2b_coco_duts_vision_optical_moe16_pretrain/runs/coco_duts_vision_optical_moe16_pretrain/checkpoints/duts_student_best_train_loss.pt
+  # The previous 100-epoch run trained only the segmentation head because the
+  # optical modules were recursively frozen through visual.blocks[0]. Reuse
+  # its ISIC-adapted head and DUTS backbone, reset the optimizer, and now
+  # genuinely fine-tune the complete task-specific path.
+  mode: isic_checkpoint_finetune
+  pretrained_checkpoint: ../runs/isic2016_skin_lesion_coco_duts_pretrained/checkpoints/isic_student_best_train_loss.pt
   load_segmentation_head: true
 
 dataset:
@@ -27,19 +31,17 @@ batching:
   num_workers: 8
 
 training:
-  # Calibrate the transferred saliency head, then jointly fine-tune all
-  # task-specific optical/recombiner/head parameters with conservative LRs.
-  head_warmup_epochs: 5
-  joint_finetune_epochs: 95
-  optical_learning_rate: 0.00005
-  router_learning_rate: 0.0001
-  recombiner_learning_rate: 0.0001
-  head_learning_rate: 0.0005
+  head_warmup_epochs: 0
+  joint_finetune_epochs: 50
+  optical_learning_rate: 0.00002
+  router_learning_rate: 0.00005
+  recombiner_learning_rate: 0.00005
+  head_learning_rate: 0.0001
   weight_decay: 0.0
   amp_enabled: true
   random_seed: 42
   log_interval_batches: 25
-  checkpoint_interval_epochs: 10
+  checkpoint_interval_epochs: 5
   evaluate_test_each_epoch: true
 
 loss:
@@ -63,4 +65,4 @@ visualization:
   interval_epochs: 5
   sample_count: 12
 
-output_dir: ../runs/isic2016_skin_lesion_coco_duts_pretrained_optical_trainable_v2
+output_dir: ../runs/isic2016_skin_lesion_resume_pretrained_unfrozen

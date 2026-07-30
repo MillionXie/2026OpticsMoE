@@ -6,6 +6,7 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 import torch
+from torch import nn
 from PIL import Image
 
 from experiments.qwen3_vl_embedding_2b_isic2016_skin_lesion_optical_segmentation.datasets import (
@@ -23,6 +24,8 @@ from experiments.qwen3_vl_embedding_2b_isic2016_skin_lesion_optical_segmentation
     load_settings,
 )
 from experiments.qwen3_vl_embedding_2b_isic2016_skin_lesion_optical_segmentation.training import (
+    _build_optimizer,
+    _configure_trainability,
     initialize_model,
 )
 
@@ -199,8 +202,70 @@ def test_pretrained_initialization_requires_checkpoint(tmp_path: Path) -> None:
         initialization_mode="coco_duts_pretrained",
         source_checkpoint=tmp_path / "missing.pt",
     )
-    with pytest.raises(FileNotFoundError, match="pretrained checkpoint"):
+    with pytest.raises(FileNotFoundError, match="Initialization checkpoint"):
         initialize_model(object(), settings)
+
+
+def test_optical_modules_remain_trainable_after_freezing_qwen_visual() -> None:
+    class Core(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.input_adapter = nn.Linear(4, 4)
+            self.router = nn.Linear(4, 2)
+
+    class Capture(nn.Module):
+        def __init__(self, core: nn.Module, recombiner: nn.Module) -> None:
+            super().__init__()
+            self.core = core
+            self.recombiner = recombiner
+
+    class Backbone(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.core = Core()
+            self.recombiner = nn.Linear(4, 4)
+            self.visual = nn.Module()
+            self.visual.native_qwen = nn.Linear(4, 4)
+            self.visual.blocks = nn.ModuleList(
+                [Capture(self.core, self.recombiner)]
+            )
+
+    class Model(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.backbone = Backbone()
+            self.head = nn.Linear(4, 1)
+
+    model = Model()
+    _configure_trainability(model, warmup=False)
+    assert all(
+        parameter.requires_grad for parameter in model.backbone.core.parameters()
+    )
+    assert all(
+        parameter.requires_grad
+        for parameter in model.backbone.recombiner.parameters()
+    )
+    assert all(parameter.requires_grad for parameter in model.head.parameters())
+    assert not any(
+        parameter.requires_grad
+        for parameter in model.backbone.visual.native_qwen.parameters()
+    )
+    optimizer = _build_optimizer(
+        model,
+        SimpleNamespace(
+            optical_learning_rate=1e-4,
+            router_learning_rate=1e-4,
+            recombiner_learning_rate=1e-4,
+            head_learning_rate=1e-3,
+            weight_decay=0.0,
+        ),
+        warmup=False,
+    )
+    counts = {
+        group["name"]: sum(parameter.numel() for parameter in group["params"])
+        for group in optimizer.param_groups
+    }
+    assert all(counts[name] > 0 for name in ("optical", "router", "recombiner", "head"))
 
 
 def _save_pair(

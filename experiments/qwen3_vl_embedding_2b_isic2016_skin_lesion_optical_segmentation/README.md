@@ -40,6 +40,23 @@ The test split may be printed every epoch for observation, but checkpoint
 selection is always minimum training loss. The test results never select a
 checkpoint, threshold or hyperparameter.
 
+## Optical-trainability guard
+
+The optical replacement is registered inside `visual.blocks[0]`. Freezing
+the full Qwen visual tree must therefore happen **before** explicitly
+re-enabling the optical core and CCD recombiner. The training code verifies
+that optical, router and recombiner optimizer groups are non-empty and saves
+their effective parameter counts under `metrics/optimizer_*.json`.
+
+The original `isic2016_skin_lesion_scratch` and
+`isic2016_skin_lesion_coco_duts_pretrained` server runs predate this guard;
+their optimizer checkpoints show zero parameters in all three optical
+groups, so those results are head-only baselines. Formal corrected configs
+write to new `_optical_trainable_v2` run directories. The optional
+`isic2016_resume_previous_pretrained_unfreeze.yaml` config reuses the
+ISIC-adapted head from the old pretrained run, resets the optimizer, and
+fine-tunes the now-trainable optical path for 50 additional epochs.
+
 ## Loss and metrics
 
 Training uses:
