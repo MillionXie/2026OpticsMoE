@@ -1,0 +1,43 @@
+base_config: bench2drive.yaml
+
+paths:
+  bdd100k_root: data/_smoke/bdd100k
+  bench2drive_root: data/_smoke/bench2drive
+  artifact_cache_dir: cache/_smoke/qwen_bdd_bench2drive
+  output_dir: runs/_smoke/qwen_bdd_bench2drive
+  pretrained_backbone_checkpoint: runs/_smoke/qwen_bdd_bench2drive/checkpoints/bdd_optical_backbone_best.pt
+
+bdd100k:
+  require_auxiliary_labels: false
+  train_limit: 8
+  test_limit: 4
+
+pca:
+  calibration_images: 4
+  max_tokens: 256
+
+pretrain:
+  batch_size: 2
+  epochs: 1
+
+bench2drive:
+  frame_stride: 1
+  train_limit: 16
+  holdout_limit: 8
+
+behavior_cloning:
+  batch_size: 4
+  stage1_epochs: 1
+  stage2_epochs: 1
+
+sac:
+  env_factory: experiments.qwen3_vl_embedding_2b_bdd100k_bench2drive_e2e_optical_moe16.smoke:make_synthetic_env
+  total_steps: 12
+  random_steps: 4
+  batch_size: 4
+  replay_capacity: 64
+
+training:
+  num_workers: 0
+  amp_enabled: false
+  log_interval_batches: 1

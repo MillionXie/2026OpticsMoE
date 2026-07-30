@@ -1,0 +1,183 @@
+paths:
+  bdd100k_root: data/bdd100k
+  bench2drive_root: data/bench2drive
+  artifact_cache_dir: cache/qwen3_vl_embedding_2b_bdd100k_bench2drive_e2e_optical_moe16
+  output_dir: runs/qwen3_vl_embedding_2b_bdd100k_bench2drive_e2e_optical_moe16
+  pretrained_backbone_checkpoint: runs/qwen3_vl_embedding_2b_bdd100k_bench2drive_e2e_optical_moe16/checkpoints/bdd_optical_backbone_best.pt
+
+qwen:
+  model_id: Qwen/Qwen3-VL-Embedding-2B
+  cache_dir: null
+  local_files_only: false
+  processor_min_pixels: 50176
+  processor_max_pixels: 50176
+  dtype: bfloat16
+  attn_implementation: sdpa
+  device: cuda
+
+data:
+  image_size: 224
+
+bdd100k:
+  train_split: train
+  test_split: val
+  image_dir: images/100k
+  # Paths may be absolute or relative to bdd100k_root. Multiple official
+  # detection/lane/drivable JSON files can be merged by image name.
+  annotation_jsons:
+    - labels/bdd100k_labels_images_train.json
+    - labels/bdd100k_labels_images_val.json
+  # Optional official PNG-mask roots. Leave empty when using poly2d labels.
+  drivable_mask_dir: ""
+  lane_mask_dir: ""
+  require_auxiliary_labels: true
+  train_limit: null
+  test_limit: null
+  lane_width: 5
+  road_participant_categories:
+    - car
+    - bus
+    - truck
+    - person
+    - rider
+    - bike
+    - motor
+
+pca:
+  rank: 224
+  calibration_images: 2000
+  tokens_per_image: 64
+  max_tokens: 100000
+  oversample: 32
+  niter: 4
+  device: cpu
+
+pretrain:
+  batch_size: 2
+  epochs: 30
+  learning_rate: 0.002
+  weight_decay: 0.0
+  loss:
+    feature_cosine: 1.0
+    feature_smooth_l1: 0.5
+    drivable: 0.25
+    lane: 0.25
+    road_participant: 0.15
+    router_balance: 0.03
+    router_importance: 0.0
+
+bench2drive:
+  # Official clips contain camera/rgb_front/*.jpg and anno/*.json.gz.
+  frame_stride: 5
+  train_fraction: 0.95
+  train_limit: null
+  # Route-disjoint offline validation only. Official closed-loop routes remain
+  # the final benchmark and are never used for gradient updates.
+  holdout_limit: null
+  num_commands: 6
+  speed_normalization_mps: 12.0
+  target_point_clip_m: 50.0
+
+behavior_cloning:
+  batch_size: 4
+  stage1_epochs: 20
+  stage2_epochs: 30
+  actor_learning_rate: 0.001
+  linear_learning_rate: 0.0002
+  optical_learning_rate: 0.00002
+  weight_decay: 0.0
+  actor_hidden_dims: [256, 128]
+  loss:
+    steer: 1.0
+    throttle: 1.0
+    brake: 1.0
+    throttle_brake_exclusion: 0.1
+    router_balance: 0.03
+    router_importance: 0.0
+
+sac:
+  # Set to a Python factory "package.module:function" that returns a
+  # Gymnasium-style Bench2Drive/CARLA 0.9.15 environment.
+  env_factory: ""
+  total_steps: 100000
+  random_steps: 1000
+  batch_size: 64
+  replay_capacity: 100000
+  gamma: 0.99
+  tau: 0.005
+  learning_rate: 0.0003
+  initial_alpha: 0.2
+  autotune_alpha: true
+  replay_store_images: false
+  unfreeze:
+    freeze_backbone_steps: 100000
+    linear_step: null
+    phase_step: null
+  reward:
+    route_progress: 1.0
+    target_speed: 0.25
+    target_speed_scale_mps: 3.0
+    lane_keep: 0.2
+    lane_offset_scale_m: 2.0
+    collision: 5.0
+    offroad: 2.0
+    red_light: 2.0
+    control_smoothness: 0.05
+
+training:
+  seed: 42
+  num_workers: 8
+  amp_enabled: true
+  log_interval_batches: 250
+
+optical:
+  input_adapter_dim: 224
+  max_visual_tokens: 224
+  geometry:
+    canvas_size: 1026
+    active_size: 986
+    expert_size: 224
+    expert_pitch: 254
+    num_experts: 16
+    grid_rows: 4
+    grid_cols: 4
+    layers_per_expert: 1
+  router:
+    top_k: 4
+    pool_size: 14
+    temperature: 1.0
+    input_layernorm_enabled: true
+    input_layernorm_eps: 1.0e-5
+    amplitude_weight_domain: amplitude
+    input_normalization: none
+  physics:
+    wavelength_nm: 532.0
+    pixel_pitch_um: 8.0
+    expert_to_global_distance_m: 0.10
+    global_to_detector_distance_m: 0.10
+  phase:
+    parameterization: sigmoid
+    init: zeros
+    init_std: 0.02
+  k_space:
+    enabled: false
+    theta_max_deg: 1.0
+  oeo:
+    enabled: true
+    per_expert_enabled: true
+    elementwise_affine: false
+    hard_route_mask: true
+    reapply_routing_weights: true
+    layernorm_eps: 1.0e-5
+    nonlinearity: relu
+  detector:
+    output_size: 224
+    layernorm_eps: 1.0e-5
+    layernorm_affine: false
+    layernorm_scope: per_token
+    nonlinearity: relu
+  phase_dropout:
+    mode: none
+    p: 0.0
+    block_size: 8
+    batch_shared: true
