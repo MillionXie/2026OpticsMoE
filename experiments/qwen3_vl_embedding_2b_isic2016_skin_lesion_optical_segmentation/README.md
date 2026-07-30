@@ -33,8 +33,9 @@ parameters remain frozen.
 
 `isic2016_coco_duts_pretrained.yaml` loads the optical core, CCD residual
 recombiner and segmentation head from the completed COCO feature
-distillation followed by DUTS saliency pretraining. It first calibrates the
-head for five epochs, then jointly fine-tunes the task-specific modules.
+distillation followed by DUTS saliency pretraining. Optical phases, router,
+adapters, recombiner and segmentation head are jointly fine-tuned from the
+first batch.
 
 The test split may be printed every epoch for observation, but checkpoint
 selection is always minimum training loss. The test results never select a
