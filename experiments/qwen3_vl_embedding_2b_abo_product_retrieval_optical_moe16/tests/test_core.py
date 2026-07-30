@@ -26,9 +26,25 @@ from experiments.qwen3_vl_embedding_2b_abo_product_retrieval_optical_moe16.model
     DetectorTokenProjection,
     TrainingIdentityHead,
 )
+from experiments.qwen3_vl_embedding_2b_abo_product_retrieval_optical_moe16.settings import (
+    EXPERIMENT_DIR,
+    load_settings,
+)
 from experiments.qwen3_vl_embedding_2b_abo_product_retrieval_optical_moe16.training import (
     PKBatchSampler,
 )
+
+
+def test_relative_output_dir_is_owned_by_experiment() -> None:
+    settings = load_settings(EXPERIMENT_DIR / "configs" / "abo500.yaml")
+    assert settings.output_dir == (
+        EXPERIMENT_DIR
+        / "runs"
+        / "qwen3_vl_embedding_2b_abo_product_retrieval_optical_moe16_500"
+    ).resolve()
+    assert settings.dataset_root == (
+        EXPERIMENT_DIR.parents[1] / "data" / "abo"
+    ).resolve()
 
 
 def test_five_view_split_is_three_one_one_and_stable() -> None:

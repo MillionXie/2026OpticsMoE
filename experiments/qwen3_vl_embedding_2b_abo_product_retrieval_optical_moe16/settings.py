@@ -58,6 +58,21 @@ def _project_path(value: str | Path | None) -> Path | None:
     return (path if path.is_absolute() else PROJECT_DIR / path).resolve()
 
 
+def _experiment_output_path(value: str | Path | None) -> Path | None:
+    """Resolve run artifacts inside this experiment unless explicitly absolute.
+
+    Dataset and reusable teacher/cache artifacts intentionally remain rooted at
+    ``PROJECT_DIR``.  Training outputs are experiment-owned, matching the other
+    self-contained experiments and preventing ``runs/`` from escaping to the
+    repository root.
+    """
+
+    if value is None:
+        return None
+    path = Path(os.path.expandvars(os.path.expanduser(str(value))))
+    return (path if path.is_absolute() else EXPERIMENT_DIR / path).resolve()
+
+
 class Settings:
     """Resolved configuration with the flat attributes required by Optical MoE16."""
 
@@ -67,7 +82,7 @@ class Settings:
 
         # Dataset and immutable split.
         self.dataset_root = _project_path(_nested(raw, "dataset.root", "data/abo"))
-        self.output_dir = _project_path(
+        self.output_dir = _experiment_output_path(
             _nested(
                 raw,
                 "output_dir",
@@ -420,6 +435,7 @@ class Settings:
         value = copy.deepcopy(self.raw)
         value["resolved_paths"] = {
             "project_dir": str(PROJECT_DIR),
+            "experiment_dir": str(EXPERIMENT_DIR),
             "dataset_root": str(self.dataset_root),
             "output_dir": str(self.output_dir),
             "artifact_cache_dir": str(self.artifact_cache_dir),

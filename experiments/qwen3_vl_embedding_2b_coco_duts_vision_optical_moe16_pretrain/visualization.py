@@ -82,13 +82,14 @@ def save_segmentation_examples(
     *,
     epoch: int,
     phase: str,
+    dataset_slug: str = "duts",
 ) -> int:
     model.eval()
     saved = 0
     directory = (
         settings.output_dir
         / "figures"
-        / "duts_examples"
+        / f"{dataset_slug}_examples"
         / f"epoch_{epoch:04d}_{phase}"
     )
     for batch in loader:

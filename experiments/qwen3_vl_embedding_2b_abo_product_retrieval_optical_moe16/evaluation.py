@@ -241,6 +241,43 @@ def evaluate_all(
             _write_per_item(
                 settings.output_dir / "per_item_metrics.csv", metrics["per_item"]
             )
+    teacher = result["systems"]["teacher"]
+    student = result["systems"]["student"]
+    aligned = result["systems"]["student_query_teacher_gallery"]
+    gallery_items = int(student["gallery_item_count"])
+    result["comparison"] = {
+        "gallery_item_count": gallery_items,
+        "random_top1_accuracy": 1.0 / gallery_items,
+        "random_recall_at_5": min(1.0, 5.0 / gallery_items),
+        "random_recall_at_10": min(1.0, 10.0 / gallery_items),
+        "student_teacher_retention": {
+            "top1": _safe_ratio(
+                student["top1_accuracy"], teacher["top1_accuracy"]
+            ),
+            "recall_at_5": _safe_ratio(
+                student["recall_at_5"], teacher["recall_at_5"]
+            ),
+            "recall_at_10": _safe_ratio(
+                student["recall_at_10"], teacher["recall_at_10"]
+            ),
+            "mean_average_precision": _safe_ratio(
+                student["mean_average_precision"],
+                teacher["mean_average_precision"],
+            ),
+        },
+        "student_query_teacher_gallery": {
+            "top1_accuracy": aligned["top1_accuracy"],
+            "recall_at_5": aligned["recall_at_5"],
+            "recall_at_10": aligned["recall_at_10"],
+            "mean_average_precision": aligned["mean_average_precision"],
+            "diagnostic": (
+                "If this is much higher than student-vs-student, query embeddings "
+                "are partly aligned but the student gallery/prototype geometry is "
+                "unstable. If it is similarly low, the main bottleneck is teacher-"
+                "space alignment of the optical encoder."
+            ),
+        },
+    }
     write_json(settings.output_dir / "retrieval_metrics.json", result)
     write_json(
         settings.output_dir / "teacher_metrics.json",
@@ -251,6 +288,10 @@ def evaluate_all(
         result["systems"]["student"],
     )
     return result
+
+
+def _safe_ratio(numerator: float, denominator: float) -> float | None:
+    return None if float(denominator) == 0.0 else float(numerator) / float(denominator)
 
 
 def _write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
@@ -266,4 +307,3 @@ def _write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
 def _write_per_item(path: Path, metrics: dict[str, Any]) -> None:
     rows = [{"item_id": item_id, **values} for item_id, values in metrics.items()]
     _write_csv(path, rows)
-

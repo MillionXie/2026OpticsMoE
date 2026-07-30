@@ -1,0 +1,56 @@
+source:
+  architecture_config: ../../qwen3_vl_embedding_2b_coco_duts_vision_optical_moe16_pretrain/configs/coco_duts_pretrain.yaml
+  duts_checkpoint: ../../qwen3_vl_embedding_2b_coco_duts_vision_optical_moe16_pretrain/runs/coco_duts_vision_optical_moe16_pretrain/checkpoints/duts_student_best_train_loss.pt
+
+dataset:
+  data_root: ../../../data/FSS-1000
+  download: true
+  download_source: auto
+  download_file_id: 16TgqOeI_0P41Eh3jWQlxlRXG9KIqtMgI
+  huggingface_dataset_id: nobg/FSS-1000
+  huggingface_endpoint: https://hf-mirror.com
+  official_test_list_url: https://raw.githubusercontent.com/HKUSTCV/FSS-1000/master/fss_test_set.txt
+  train_class_limit: 2
+  test_class_limit: 2
+  images_per_class_limit: 2
+
+batching:
+  train_batch_size: 1
+  inference_batch_size: 1
+  num_workers: 0
+
+training:
+  head_warmup_epochs: 1
+  joint_finetune_epochs: 1
+  optical_learning_rate: 0.00005
+  recombiner_learning_rate: 0.0001
+  head_learning_rate: 0.0005
+  weight_decay: 0.0
+  amp_enabled: false
+  random_seed: 42
+  log_interval_batches: 1
+  checkpoint_interval_epochs: 0
+  evaluate_test_each_epoch: true
+
+loss:
+  bce_weight: 1.0
+  dice_weight: 1.0
+  soft_iou_weight: 0.75
+  boundary_weight: 0.25
+  router_balance_weight: 0.03
+  router_importance_weight: 0.0
+
+augmentation:
+  enabled: false
+  crop_scale_min: 1.0
+  horizontal_flip_probability: 0.0
+  brightness_jitter: 0.0
+  contrast_jitter: 0.0
+  rotation_degrees: 0.0
+
+visualization:
+  interval_epochs: 1
+  sample_count: 2
+
+output_dir: ../runs/fss1000_saliency_coco_duts_pretrained_moe16_smoke
+

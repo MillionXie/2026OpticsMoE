@@ -120,6 +120,7 @@ def main() -> int:
             )
             teacher = metrics["systems"]["teacher"]
             student = metrics["systems"]["student"]
+            aligned = metrics["systems"]["student_query_teacher_gallery"]
             print(
                 "Teacher retrieval: "
                 f"Top-1={teacher['top1_accuracy']:.4f} "
@@ -134,6 +135,21 @@ def main() -> int:
                 f"R@10={student['recall_at_10']:.4f} "
                 f"mAP={student['mean_average_precision']:.4f}"
             )
+            print(
+                "Diagnostic Student-query / Teacher-gallery: "
+                f"Top-1={aligned['top1_accuracy']:.4f} "
+                f"R@5={aligned['recall_at_5']:.4f} "
+                f"R@10={aligned['recall_at_10']:.4f} "
+                f"mAP={aligned['mean_average_precision']:.4f}"
+            )
+            retention = metrics["comparison"]["student_teacher_retention"]
+            print(
+                "Student/Teacher retention: "
+                f"Top-1={_ratio_text(retention['top1'])} "
+                f"R@5={_ratio_text(retention['recall_at_5'])} "
+                f"R@10={_ratio_text(retention['recall_at_10'])} "
+                f"mAP={_ratio_text(retention['mean_average_precision'])}"
+            )
             if args.phase == "evaluate":
                 return 0
         if args.phase in {"visualize", "all"}:
@@ -141,6 +157,10 @@ def main() -> int:
     finally:
         encoder.restore_native()
     return 0
+
+
+def _ratio_text(value: float | None) -> str:
+    return "n/a" if value is None else f"{value:.3f}"
 
 
 if __name__ == "__main__":
