@@ -26,3 +26,4 @@ __pycache__/
 _offline_packages
 
 /experiments/qwen_vl_cifar10/data
+/experiments/bdd100k_weather4_optical5_mlp/data/
