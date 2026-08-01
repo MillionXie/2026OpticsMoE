@@ -31,6 +31,7 @@ from .modeling import (
     trainable_parameter_report,
     unique_trainable_parameters,
 )
+from .optical_artifacts import save_phase_snapshot
 from .optics.replacement import DeepStackMultimodalReplacement
 from .prepare_grocery_retrieval_subset import (
     GroceryRetrievalBundle,
@@ -1023,6 +1024,13 @@ def train_optical_retrieval(
                 average_total,
                 settings,
             )
+            save_phase_snapshot(
+                replacement,
+                settings.output_dir / "best_optical_artifacts" / "live_weights",
+                epoch=epoch,
+                train_loss=average_total,
+                weight_variant="live",
+            )
             if ema_parameters is not None:
                 with use_parameter_ema(parameters, ema_parameters):
                     save_checkpoint(
@@ -1033,6 +1041,15 @@ def train_optical_retrieval(
                         epoch,
                         average_total,
                         settings,
+                        weight_variant="ema",
+                    )
+                    save_phase_snapshot(
+                        replacement,
+                        settings.output_dir
+                        / "best_optical_artifacts"
+                        / "ema_weights",
+                        epoch=epoch,
+                        train_loss=average_total,
                         weight_variant="ema",
                     )
             write_json(

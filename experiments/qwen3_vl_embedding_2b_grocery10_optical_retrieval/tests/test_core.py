@@ -18,6 +18,14 @@ from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.modeling impo
     OpticalRetrievalReadout,
     official_mrl_embedding,
 )
+from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipeline import (
+    load_hardware_config,
+)
+from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.optical_artifacts import (
+    encode_amplitude_uint8,
+    encode_phase_uint8,
+    export_centered_bmp,
+)
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.optics.geometry import (
     Aperture,
 )
@@ -25,6 +33,9 @@ from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.optics.moe im
     FullPlaneReadout,
     HomogeneousMoEOpticalCore,
     LanguageDeepStackHomogeneousMoE,
+)
+from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.optics.physical import (
+    SquareDetectionLayerNormReload,
 )
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.prepare_grocery_retrieval_subset import (
     GrocerySample,
@@ -105,39 +116,6 @@ def test_replaced_ten_sku_finetune_config() -> None:
     assert settings.dataset_variant == "grocery10"
 
 
-def test_epoch141_generalization_continuation_config() -> None:
-    settings = load_settings(
-        EXPERIMENT
-        / "configs"
-        / "grocery10_replaced_continue_epoch141_augmented_kd.yaml"
-    )
-    assert settings.epochs == 100
-    assert 141 + settings.epochs == 241
-    assert settings.learning_rate == 1.0e-5
-    assert settings.router_learning_rate == 2.0e-5
-    assert settings.lambda_kd == 8.0
-    assert settings.lambda_gallery == 0.25
-    assert settings.crop_scale_min == 0.85
-    assert settings.brightness_jitter == 0.15
-    assert settings.contrast_jitter == 0.15
-    assert settings.rotation_degrees == 7.0
-    assert not settings.resume_optimizer_state
-    assert settings.output_dir.name.endswith("epoch141_augmented_kd")
-
-
-def test_phase_slow_continuation_keeps_masks_trainable_at_lower_lr() -> None:
-    settings = load_settings(
-        EXPERIMENT
-        / "configs"
-        / "grocery10_replaced_continue_epoch141_augmented_kd_phase_slow.yaml"
-    )
-    assert settings.learning_rate == 1.0e-5
-    assert settings.router_learning_rate == 2.0e-5
-    assert settings.phase_learning_rate == 1.0e-6
-    assert settings.phase_learning_rate < settings.learning_rate
-    assert settings.output_dir.name.endswith("augmented_kd_phase_slow")
-
-
 def test_phase_learning_rate_gets_an_independent_optimizer_group() -> None:
     class Core(nn.Module):
         def __init__(self) -> None:
@@ -203,46 +181,6 @@ def test_relational_kd_matches_pairwise_teacher_geometry() -> None:
     assert float(distorted) > 0.0
 
 
-def test_relational_kd_config_is_independent_and_backward_compatible() -> None:
-    base = load_settings(EXPERIMENT / "configs" / "grocery10.yaml")
-    trial = load_settings(
-        EXPERIMENT
-        / "configs"
-        / "grocery10_replaced_continue_epoch141_augmented_relational_kd.yaml"
-    )
-    assert base.lambda_relational_kd == 0.0
-    assert trial.lambda_relational_kd == 5.0
-    assert trial.phase_learning_rate == 1.0e-6
-    assert trial.output_dir.name.endswith("augmented_relational_kd")
-
-
-def test_teacher_gallery_anchor_config_is_training_only() -> None:
-    base = load_settings(EXPERIMENT / "configs" / "grocery10.yaml")
-    trial = load_settings(
-        EXPERIMENT
-        / "configs"
-        / "grocery10_replaced_continue_epoch141_teacher_gallery_anchor.yaml"
-    )
-    assert base.lambda_teacher_gallery == 0.0
-    assert trial.lambda_teacher_gallery == 0.25
-    assert trial.lambda_relational_kd == 5.0
-    assert trial.output_dir.name.endswith("teacher_gallery_anchor")
-
-
-def test_stronger_augmentation_remains_packaging_safe() -> None:
-    settings = load_settings(
-        EXPERIMENT
-        / "configs"
-        / "grocery10_replaced_continue_epoch141_stronger_augmentation.yaml"
-    )
-    assert settings.augmentation_enabled
-    assert settings.crop_scale_min == 0.75
-    assert settings.brightness_jitter == 0.20
-    assert settings.contrast_jitter == 0.20
-    assert settings.rotation_degrees == 10.0
-    assert settings.phase_learning_rate == 1.0e-6
-
-
 def test_parameter_ema_updates_and_restores_live_weights() -> None:
     parameter = nn.Parameter(torch.tensor([1.0, 3.0]))
     ema = initialize_parameter_ema([parameter])
@@ -256,28 +194,91 @@ def test_parameter_ema_updates_and_restores_live_weights() -> None:
     assert torch.equal(parameter.detach(), live)
 
 
-def test_stronger_augmentation_ema_config() -> None:
-    settings = load_settings(
+def test_canonical_best_reproduction_configs_are_explicit() -> None:
+    stage1 = load_settings(
         EXPERIMENT
         / "configs"
-        / "grocery10_replaced_continue_epoch141_stronger_augmentation_ema.yaml"
+        / "grocery10_best_reproduction_stage1_grocery31.yaml"
     )
-    assert settings.ema_decay == 0.99
-    assert settings.crop_scale_min == 0.75
-    assert settings.output_dir.name.endswith("stronger_augmentation_ema")
-
-
-def test_fresh_from31_finetune_uses_regularized_target10_recipe() -> None:
-    settings = load_settings(
+    stage2 = load_settings(
         EXPERIMENT
         / "configs"
-        / "grocery10_replaced_finetune_from31_strong_ema.yaml"
+        / "grocery10_best_reproduction_stage2_replaced10.yaml"
     )
-    assert len(settings.selected_skus) == 10
-    assert settings.ema_decay == 0.99
-    assert settings.phase_learning_rate == 1.0e-6
-    assert settings.crop_scale_min == 0.75
-    assert settings.output_dir.name.endswith("finetune_from31_strong_ema")
+    stage3 = load_settings(
+        EXPERIMENT
+        / "configs"
+        / "grocery10_best_reproduction_stage3_strong_ema.yaml"
+    )
+    pipeline = yaml.safe_load(
+        (EXPERIMENT / "configs" / "grocery10_best_reproduction.yaml").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert len(stage1.selected_skus) == 31 and stage1.epochs == 100
+    assert len(stage2.selected_skus) == 10 and stage2.epochs == 50
+    assert stage3.epochs == 40
+    assert stage3.ema_decay == pytest.approx(0.99)
+    assert stage3.phase_learning_rate == pytest.approx(1.0e-6)
+    assert stage3.crop_scale_min == pytest.approx(0.75)
+    assert [stage["name"] for stage in pipeline["stages"]] == [
+        "grocery31_pretrain",
+        "replaced10_finetune",
+        "strong_augmentation_ema",
+    ]
+    assert pipeline["hardware_export"]["slm_pixel_pitch_um"] == 8.0
+    assert pipeline["hardware_export"]["amplitude_slm_size_wh"] == [1920, 1080]
+    assert pipeline["hardware_export"]["phase_slm_size_wh"] == [1920, 1200]
+
+
+def test_slm_encoding_preserves_relative_amplitude_and_wraps_phase() -> None:
+    encoded, metadata = encode_amplitude_uint8(torch.tensor([[0.0, 1.0, 2.0]]))
+    assert encoded.tolist() == [[0, 128, 255]]
+    assert metadata["normalization_divisor"] == pytest.approx(2.0)
+    phase = encode_phase_uint8(
+        torch.tensor([[0.0, torch.pi, 2.0 * torch.pi]])
+    )
+    assert phase[0, 0].item() == 0
+    assert phase[0, 1].item() in {127, 128}
+    assert phase[0, 2].item() == 0
+
+
+def test_grocery_active_plane_bmp_uses_scale_one_and_exact_centering(
+    tmp_path: Path,
+) -> None:
+    source = torch.ones(986, 986)
+    amplitude = export_centered_bmp(
+        source,
+        tmp_path / "amplitude.bmp",
+        value_type="amplitude",
+        scale_factor=1,
+        slm_width=1920,
+        slm_height=1080,
+    )
+    phase = export_centered_bmp(
+        torch.zeros_like(source),
+        tmp_path / "phase.bmp",
+        value_type="phase",
+        scale_factor=1,
+        slm_width=1920,
+        slm_height=1200,
+    )
+    assert Image.open(tmp_path / "amplitude.bmp").mode == "L"
+    assert Image.open(tmp_path / "amplitude.bmp").size == (1920, 1080)
+    assert Image.open(tmp_path / "phase.bmp").size == (1920, 1200)
+    assert amplitude["active_bounds_xyxy"] == [467, 47, 1453, 1033]
+    assert amplitude["center_padding_lrtb"] == [467, 467, 47, 47]
+    assert phase["active_bounds_xyxy"] == [467, 107, 1453, 1093]
+    assert phase["center_padding_lrtb"] == [467, 467, 107, 107]
+    with pytest.raises(ValueError, match="exceeds SLM"):
+        export_centered_bmp(
+            source,
+            tmp_path / "wrong_scale.bmp",
+            value_type="phase",
+            scale_factor=2,
+            slm_width=1920,
+            slm_height=1200,
+        )
 
 
 def test_gallery_coverage_selection_is_train_only_and_deterministic(
@@ -337,57 +338,6 @@ def test_gallery_coverage_selection_is_train_only_and_deterministic(
     ]
     assert all(row["selection_source"] == "train_only" for row in rows)
     assert all(row["test_used_for_selection"] is False for row in rows)
-
-
-def test_continuation_config_adds_gallery_negatives_and_router_recovery() -> None:
-    settings = load_settings(
-        EXPERIMENT / "configs" / "grocery10_continue100.yaml"
-    )
-    assert settings.epochs == 100
-    assert settings.batch_size == 30
-    assert settings.pk_images_per_sku == 3
-    assert settings.lambda_kd == 3.0
-    assert settings.lambda_gallery == 0.5
-    assert settings.lambda_router_balance == 0.05
-    assert settings.lambda_router_importance == 0.01
-    assert settings.learning_rate == 0.0002
-    assert settings.router_learning_rate == 0.001
-    assert settings.router_temperature == 2.0
-    assert not settings.resume_optimizer_state
-
-
-def test_stable_epoch57_continuation_ends_at_epoch150() -> None:
-    settings = load_settings(
-        EXPERIMENT / "configs" / "grocery10_continue_epoch57_stable.yaml"
-    )
-    assert settings.epochs == 93
-    assert 57 + settings.epochs == 150
-    assert settings.learning_rate == 0.00005
-    assert settings.router_learning_rate == 0.0001
-    assert settings.lambda_kd == 5.0
-    assert settings.lambda_router_balance == 0.02
-    assert settings.lambda_router_importance == 0.005
-
-
-def test_fixed_gallery_continuation_ends_at_epoch150() -> None:
-    settings = load_settings(
-        EXPERIMENT / "configs" / "grocery10_continue_epoch60_fixed_gallery.yaml"
-    )
-    assert settings.epochs == 90
-    assert 60 + settings.epochs == 150
-    assert settings.learning_rate == 0.00002
-    assert settings.router_learning_rate == 0.00005
-    assert settings.gallery_temperature == 0.15
-    assert settings.gallery_prototype_stop_gradient
-
-
-def test_epoch118_resume_ends_at_epoch150() -> None:
-    settings = load_settings(
-        EXPERIMENT / "configs" / "grocery10_continue_epoch118_to150.yaml"
-    )
-    assert settings.epochs == 32
-    assert 118 + settings.epochs == 150
-    assert settings.gallery_prototype_stop_gradient
 
 
 def test_student_has_one_expert_stage_plus_one_global_phase() -> None:
@@ -530,6 +480,58 @@ def test_square_law_detector_readout_is_nonnegative() -> None:
     assert intensity.shape == (2, 6, 6)
     assert torch.all(values >= 0)
     assert torch.all(intensity >= 0)
+
+
+def test_measured_intensity_entry_points_do_not_square_twice() -> None:
+    apertures = [Aperture(0, 2, 0, 2), Aperture(0, 2, 2, 4)]
+    conversion = SquareDetectionLayerNormReload(
+        4,
+        apertures,
+        1.0e-5,
+        "relu",
+        per_expert_enabled=True,
+        elementwise_affine=False,
+    )
+    field = torch.complex(torch.rand(2, 4, 4), torch.rand(2, 4, 4))
+    intensity = field.abs().square()
+    selected = torch.ones(2, 2, dtype=torch.bool)
+    weights = torch.full((2, 2), 0.5)
+    conversion.set_intermediate_capture(True, sample_count=2)
+    simulated = conversion(field, selected, weights)
+    measured = conversion.forward_intensity(intensity, selected, weights)
+    assert torch.allclose(simulated, measured, atol=1.0e-6)
+    assert torch.all(measured.real >= 0)
+    assert torch.count_nonzero(measured.imag) == 0
+    assert conversion.last_input_complex_field is not None
+    assert torch.equal(conversion.last_input_complex_field, field.to(torch.complex64).cpu())
+
+    geometry = SimpleNamespace(detector_aperture=Aperture(1, 7, 1, 7))
+    settings = SimpleNamespace(
+        detector_output_size=4,
+        detector_layernorm_scope="per_token",
+        detector_layernorm_eps=1e-5,
+        detector_layernorm_affine=False,
+        detector_nonlinearity="relu",
+    )
+    readout = FullPlaneReadout(geometry, settings)
+    regular, cropped = readout(field.new_zeros((2, 8, 8)).copy_(
+        torch.complex(torch.rand(2, 8, 8), torch.rand(2, 8, 8))
+    ))
+    replay, replay_intensity = readout.forward_intensity(cropped)
+    assert torch.allclose(regular, replay, atol=1.0e-6)
+    assert torch.equal(cropped, replay_intensity)
+
+
+def test_hardware_config_is_stage_first_and_uses_best_checkpoint() -> None:
+    config = load_hardware_config(
+        EXPERIMENT / "configs" / "grocery10_hardware_deployment.yaml"
+    )
+    assert config.queries_per_sku == 10
+    assert config.amplitude_slm_size == (1920, 1080)
+    assert config.phase_slm_size == (1920, 1200)
+    assert config.slm_pixel_pitch_um == 8.0
+    assert config.capture_roi_xywh is None
+    assert config.checkpoint.name == "ema_best_train_loss_checkpoint.pt"
 
 
 def test_pk_sampler_and_supervised_contrastive_backward(tmp_path: Path) -> None:

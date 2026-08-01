@@ -1,128 +1,69 @@
-# Commands
+# Grocery10 commands
 
-All commands below are run from the `2026OpticsMoE` repository root. They are intentionally one line each.
+All commands run from the `2026OpticsMoE` repository root. Exploratory configs
+were removed; the commands below are the maintained entry points.
 
-## Smoke
+## Reproduce the strongest saved recipe from scratch
 
-```bash
-python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_smoke.yaml --phase all
-```
-
-## Full run
-
-```bash
-CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10.yaml --phase all
-```
-
-## 31 packaged-SKU pretraining
-
-The command keeps the same one-expert-phase plus one-global-phase Student and
-pretrains it on all packaged SKUs. It uses a separate output directory and
-teacher cache.
+This runs Grocery31 pretraining, replacement-Grocery10 fine-tuning, and the
+40-epoch strong-augmentation/EMA continuation, then evaluates and exports the
+best optical checkpoint.
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery31_pretrain.yaml --phase all
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.reproduce_best --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_best_reproduction.yaml
 ```
 
-Smoke:
+Use `--dry-run` to print the complete chain without starting it. See
+`BEST_VERSION.md` for the audited metrics and checkpoint selection rule.
+
+## Train the three canonical stages manually
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery31_pretrain_smoke.yaml --phase all
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_best_reproduction_stage1_grocery31.yaml --phase all
 ```
-
-After the 31-SKU Teacher cache exists, screen two replacements on the official
-validation-source images only (never on test):
 
 ```bash
-python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.select_replacement_skus --all-sku-config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery31_pretrain.yaml --target-config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10.yaml --drop-sku Garant-Ecological-Standard-Milk --drop-sku Bravo-Apple-Juice
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_best_reproduction_stage2_replaced10.yaml --phase all --resume-checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/grocery10_best_reproduction/01_grocery31_pretrain/best_train_loss_checkpoint.pt
 ```
-
-Fine-tune the replacement 10-SKU subset from the 31-SKU checkpoint. The new
-output directory receives an independent manifest and Teacher cache:
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_replaced_finetune.yaml --phase all --resume-checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/qwen3_vl_embedding_2b_grocery31_optical_pretrain/best_train_loss_checkpoint.pt
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_best_reproduction_stage3_strong_ema.yaml --phase all --resume-checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/grocery10_best_reproduction/02_replaced10_finetune/best_train_loss_checkpoint.pt --checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/grocery10_best_reproduction/03_strong_augmentation_ema/ema_best_train_loss_checkpoint.pt
 ```
 
-Generalization continuation from the replacement-10 epoch-141 checkpoint:
+## Prepare the real SLM/CCD experiment
+
+Generate original/processor images, token fields, four shared phase masks,
+first-plane amplitude BMPs, and all four simulated detector references:
 
 ```bash
-CUDA_VISIBLE_DEVICES=5 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_replaced_continue_epoch141_augmented_kd.yaml --phase train --resume-checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/qwen3_vl_embedding_2b_grocery10_replaced_finetune/best_train_loss_checkpoint.pt
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipeline --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_hardware_deployment.yaml --phase prepare
 ```
 
-Diagnose one-view versus three-view gallery coverage without changing weights:
+Process the four physical CCD folders in order:
 
 ```bash
-CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.analyze_gallery_coverage --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_replaced_finetune.yaml --checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/qwen3_vl_embedding_2b_grocery10_replaced_finetune/best_train_loss_checkpoint.pt --additional-gallery-per-sku 2
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipeline --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_hardware_deployment.yaml --phase process_vision_expert
 ```
-
-Run the same continuation with a ten-times smaller optical-phase learning rate:
 
 ```bash
-CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_replaced_continue_epoch141_augmented_kd_phase_slow.yaml --phase train --resume-checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/qwen3_vl_embedding_2b_grocery10_replaced_finetune/best_train_loss_checkpoint.pt
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipeline --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_hardware_deployment.yaml --phase process_vision_global
 ```
-
-Run the pairwise Teacher-geometry distillation continuation:
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_replaced_continue_epoch141_augmented_relational_kd.yaml --phase train --resume-checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/qwen3_vl_embedding_2b_grocery10_replaced_finetune/best_train_loss_checkpoint.pt
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipeline --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_hardware_deployment.yaml --phase process_language_expert
 ```
-
-Run the frozen Teacher-gallery anchor continuation:
 
 ```bash
-CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_replaced_continue_epoch141_teacher_gallery_anchor.yaml --phase train --resume-checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/qwen3_vl_embedding_2b_grocery10_replaced_finetune/best_train_loss_checkpoint.pt
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipeline --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_hardware_deployment.yaml --phase process_language_global
 ```
 
-Run the stronger packaging-safe augmentation continuation:
+For an end-to-end dry hardware rehearsal using simulated CCD intensity:
 
 ```bash
-CUDA_VISIBLE_DEVICES=5 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_replaced_continue_epoch141_stronger_augmentation.yaml --phase train --resume-checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/qwen3_vl_embedding_2b_grocery10_replaced_finetune/best_train_loss_checkpoint.pt
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipeline --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_hardware_deployment.yaml --phase all_simulation
 ```
 
-Run stronger augmentation with an EMA copy of all Student weights:
-
-```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_replaced_continue_epoch141_stronger_augmentation_ema.yaml --phase train --resume-checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/qwen3_vl_embedding_2b_grocery10_replaced_finetune/best_train_loss_checkpoint.pt
-```
-
-Fresh 10-SKU fine-tuning from the generic 31-SKU checkpoint:
-
-```bash
-CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_replaced_finetune_from31_strong_ema.yaml --phase train --resume-checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/qwen3_vl_embedding_2b_grocery31_optical_pretrain/best_train_loss_checkpoint.pt
-```
-
-## Phases
-
-Prepare/download the official Grocery Store Dataset and write the fixed subset manifest:
-
-```bash
-python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.prepare_grocery_retrieval_subset --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10.yaml
-```
-
-Cache frozen 64-D Teacher embeddings:
-
-```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.cache_teacher_embeddings --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10.yaml
-```
-
-Train the optical retrieval Student:
-
-```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.train_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10.yaml
-```
-
-Evaluate Teacher, Student, and cross-space diagnostic retrieval:
-
-```bash
-CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.evaluate_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10.yaml
-```
-
-Regenerate result figures from the saved prediction CSV:
-
-```bash
-python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.visualize_retrieval_results --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10.yaml
-```
+See `HARDWARE_DEPLOYMENT.md` before collecting any physical CCD files.
 
 ## Tests
 

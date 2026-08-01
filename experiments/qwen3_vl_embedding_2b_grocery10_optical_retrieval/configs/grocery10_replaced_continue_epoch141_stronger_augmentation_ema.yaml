@@ -1,8 +1,0 @@
-base_config: grocery10_replaced_continue_epoch141_stronger_augmentation.yaml
-
-# Smooth the approximately five million trainable Student parameters over
-# optimizer steps. EMA changes neither parameter count nor optical inference.
-training:
-  ema_decay: 0.99
-
-output_dir: ../runs/qwen3_vl_embedding_2b_grocery10_replaced_continue_epoch141_stronger_augmentation_ema

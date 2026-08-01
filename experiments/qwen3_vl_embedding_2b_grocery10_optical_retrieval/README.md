@@ -1,258 +1,108 @@
-# Grocery-10 商品图像检索：Qwen3-VL-Embedding Teacher + Optical Student
+# Grocery10 optical image retrieval
 
-本目录也提供 `grocery31_pretrain.yaml`，用于先在 Grocery Store Dataset
-的全部 31 个包装 SKU 上预训练同一个光学 Student，再将其 checkpoint
-迁移到筛选后的 10 个 SKU 上微调。31 类预训练不会改变物理网络结构；
-它只扩大商品外观覆盖范围。
+This experiment retrieves one of ten packaged grocery products from a fixed
+gallery. It uses a frozen Qwen3-VL-Embedding-2B teacher and a trainable optical
+Student. It is a metric-retrieval task, not a ten-class classifier.
 
-当 gallery-aligned loss 开启时，`train_log.csv` 额外记录
-`train_top1`、`train_top3` 和 `train_mrr`。这些训练指标表示“当前增强后
-训练 query 对本 batch 所选 SKU 的 Student gallery prototype”的在线检索
-结果；测试指标仍来自完整固定 test/gallery。两者之间的差距可用于判断
-过拟合，但训练在线指标通常比完整测试更乐观。
+Chinese summary: 本工程将自然拍摄商品图和标准 gallery 图编码为 64 维 L2 归一化
+向量，并用余弦相似度完成 Top-1/Top-3 检索。当前维护版本同时包含 Vision 和
+Language 两套 Optical MoE，不是 Vision-only。
 
-31 类训练使用 `P=10, K=3`。每个 batch 只附加当前 10 个 SKU 的标准
-gallery 图，因此一次模型前向仍为 `30 query + 10 gallery = 40`，不会因
-总类别从 10 增到 31 而膨胀为 61。
+## Maintained result
 
-`grocery10_replaced_finetune.yaml` 删除原结果中最弱的
-`Garant-Ecological-Standard-Milk` 和 `Bravo-Apple-Juice`，并加入
-`God-Morgon-Apple-Juice` 与 `Tropicana-Mandarin-Morning`。替换组合由
-冻结 Teacher 在官方 train 来源图上筛选，官方 test 没有参与选类。
-微调从 31 类 `best_train_loss_checkpoint.pt` 加载 Student 权重，重置
-optimizer，并使用独立的 10 类 manifest、Teacher cache 和输出目录。
+The strongest reproducible saved checkpoint is the epoch-159 EMA checkpoint
+from the three-stage Grocery31 → replacement Grocery10 → strong-augmentation
+continuation. On the fixed 260-query/10-gallery split:
 
-本实验验证一个小规模、部署形式明确的商品图库检索任务：
+| system | Top-1 | Top-3 | MRR |
+|---|---:|---:|---:|
+| Frozen Teacher | 90.77% | 99.23% | 94.81% |
+| Optical Student | 73.46% | 91.92% | 83.62% |
 
-```text
-自然环境商品图 → 64 维归一化向量 → 余弦相似度 → Top-1 / Top-3 SKU
-```
+The training log briefly reached 74.23% at epoch 152, but no checkpoint for
+that exact epoch was retained. The canonical claim therefore uses the saved
+epoch-159 EMA checkpoint. See `BEST_VERSION.md` for the complete audit.
 
-它不是十分类实验。模型没有十分类 logits、CrossEntropy 分类头或 reranker；SKU
-标签只用于 supervised contrastive loss 和检索指标。
+## Student architecture
 
-## 数据与 10 个 SKU
-
-代码自动下载官方 Grocery Store Dataset，并严格使用其细粒度 SKU 和官方划分。
-默认配置选择以下 10 种包装商品：
-
-1. `Bravo-Apple-Juice`
-2. `God-Morgon-Orange-Juice`
-3. `Tropicana-Golden-Grapefruit`
-4. `Arla-Ecological-Medium-Fat-Milk`
-5. `Garant-Ecological-Standard-Milk`
-6. `Oatly-Natural-Oatghurt`
-7. `Oatly-Oat-Milk`
-8. `Alpro-Blueberry-Soyghurt`
-9. `Alpro-Shelf-Soy-Milk`
-10. `Yoggi-Strawberry-Yoghurt`
-
-水果、蔬菜和散装商品不进入实验。10 个名字仅存在于 YAML 配置中，训练脚本没有
-硬编码 SKU。
-
-划分方式：
-
-- train query：官方 `train + val`；
-- test query：官方 `test`；
-- gallery：每个 SKU 的官方 iconic 商品图（官方数据只有一张）；
-- 不创建 validation；
-- manifest 固定并保存 SHA256；
-- train、test、gallery 的图片绝对路径必须两两不相交。
-
-图片文件不会被复制到新的类别目录。`grocery10_subset.csv` 只记录路径和元数据。
-
-## Frozen Teacher
-
-Teacher 是完全冻结且始终处于 eval 模式的
-`Qwen/Qwen3-VL-Embedding-2B`。每张图只使用统一 instruction：
+Both stacks use the same physical geometry but independent parameters:
 
 ```text
-Represent this product image for image-to-image product retrieval.
+hidden tokens
+→ Linear(D,224) → LayerNorm(224) → Softplus
+→ zero-pad token rows to 224×224
+→ electronic Top-4 router
+→ directly load weighted copies into a 4×4 expert amplitude mosaic
+→ one 224×224 phase-only layer per expert (16 masks)
+→ 10 cm angular-spectrum propagation
+→ square-law detector
+→ per-expert LayerNorm → ReLU
+→ reapply the same routing weights and zero unselected experts
+→ one 986×986 global phase
+→ 10 cm propagation
+→ 986×986 CCD ROI
+→ adaptive pooling to 224×224 → LayerNorm → ReLU
+→ Linear(224,D) and Transformer-style residual
 ```
 
-输入不含商品名、SKU、标题或描述。低维输出遵循 Qwen embedding 的 Matryoshka
-接口语义：
+Vision uses `D=1024`; Language uses `D=2048`. Frozen Qwen patch/token
+embeddings, vision merger, one native DeepStack visual injection, multimodal
+token injection, and final RMSNorm remain in the path. The last valid Language
+detector row is read by:
 
 ```text
-最后有效 language token hidden
-→ 取前 64 个 Matryoshka 维度
-→ L2 Normalize
+LayerNorm(224) → Linear(224,64) → L2 normalization
 ```
 
-没有增加可训练的 `2048→64` MLP。gallery、train 和 test 的所有 Teacher
-embedding 会预先缓存；Student 训练期间不会再次运行 Teacher。
+There is no activation after the 64-D linear layer. Total trainable Student
+parameters are 4,951,848.
 
-## Optical Student
+## Physical geometry
 
-Student 复用仓库中已经验证的 Qwen DeepStack + homogeneous optical MoE16
-replacement：
+* wavelength: 532 nm
+* pixel pitch: 8 µm
+* expert: 224×224 pixels
+* layout: 4×4, pitch 254, gap 30
+* active footprint: 986×986
+* propagation canvas: 1026×1026 (20-pixel numerical guard each side)
+* expert/global propagation distance: 10 cm each
+* one expert phase plane + one global phase plane in each stack
 
-- frozen Qwen tokenizer、token embedding、vision patch embedding、vision merger、
-  DeepStack injection 和 final RMSNorm；
-- Vision Optical MoE16：**1 层专家相位 + 1 层 global phase**；
-- Language Optical MoE16：**1 层专家相位 + 1 层 global phase**；
-- 唯一专家层包含 16 个 `224×224` phase-only 专家，由电子输入相关
-  Top-4 router 选择；
-- 专家层传播后执行一次 square-law detection、逐专家 LayerNorm、ReLU
-  和幅度重新加载，再经过 `986×986` global phase；
-- `986×986` active footprint，四周各 20 像素传播 guard，FFT canvas `1026×1026`；
-- 专家/global/CCD 的配置传播距离均为 10 cm；
-- Transformer identity residual 保留；
-- native electronic attention 关闭；
-- phase dropout 关闭。
+The ideal amplitude-to-phase 4f relay is represented as co-planar amplitude and
+phase modulation; no additional numerical propagation is inserted for the
+relay.
 
-这对应仓库的 `...moe16_224_1layer_baseline`，不是四阶段 MoE16
-版本。Student 仅保留一个辅助 DeepStack 路径：Vision stage-1 的
-辅助输出经第一个 frozen DeepStack merger 注入；Language 的唯一
-光学层位于 decoder index 1，使主视觉 embedding 和该辅助注入都先
-进入语言光学层。
+## Training
 
-Language optical 最终 CCD 读出为非负 `[B,224,224]`。读取最后一个有效 language
-token 对应的行，得到 detector feature `[B,224]`。检索读出只有：
+The frozen Teacher produces official 64-D Matryoshka embeddings. The Student
+optimizes cosine embedding KD, supervised contrastive retrieval, optional
+gallery alignment, and router regularization. Packaging-safe augmentation never
+uses horizontal flips, MixUp, CutMix, strong blur, or random erasing.
 
-```text
-Detector feature [B,224]
-→ LayerNorm(224)
-→ Linear(224,64)
-→ L2 Normalize
-→ Student embedding [B,64]
-```
+Canonical configs:
 
-Linear 后没有 ReLU、GELU、Sigmoid、Softmax，因此 64 维向量允许正负值。
+* `grocery10_best_reproduction.yaml`: complete three-stage pipeline;
+* `grocery10_best_reproduction_stage1_grocery31.yaml`;
+* `grocery10_best_reproduction_stage2_replaced10.yaml`;
+* `grocery10_best_reproduction_stage3_strong_ema.yaml`;
+* `grocery10_hardware_deployment.yaml`: real SLM/CCD export and replay;
+* `grocery10.yaml` / `grocery10_smoke.yaml`: base and smoke definitions.
 
-## Loss
+Historical exploratory configs and failed run directories were removed to keep
+the experiment unambiguous.
 
-逻辑 batch 使用 `P` 个 SKU、每个 SKU `K` 张图。默认 `P=10, K=4`：
+## Hardware deployment
 
-```text
-L_kd  = mean(1 - cosine(student, frozen_teacher))
-L_ret = supervised contrastive / supervised InfoNCE
-L     = lambda_kd * L_kd + lambda_ret * L_ret
-```
+The trained network requires four physical exposures per sample: Vision expert,
+Vision global, Language expert, and Language global. Phase masks are shared
+across all samples, so acquisition is organized plane-first as four folder
+playbacks. See `HARDWARE_DEPLOYMENT.md` for:
 
-默认 `lambda_kd=1`、`lambda_ret=1`、temperature `0.07`。不使用分类 CE、
-teacher logits、生成 loss 或 test loss。
+* exact amplitude/phase BMP dimensions and centering;
+* original images, 224×224 token fields, masks, captured CCD intensities,
+  electronic reload amplitudes, and simulation complex-field references;
+* required CCD file formats and filenames;
+* the four electronic processing commands;
+* final hardware embedding/retrieval evaluation.
 
-## Epoch 50 后的修复性续训
-
-首轮 50 epoch 使用普通 PK-batch supervised contrastive loss：每批
-`10 SKU × 4 images`，因此每个 anchor 有 3 个同 SKU 正例和 36 个异
-SKU 反例。它并非没有反例，但标准 gallery 图片只参与评测，没有进入
-Student 训练；同时未启用 router 均衡损失，容易出现专家塌缩。
-
-`configs/grocery10_continue100.yaml` 用于从已有 epoch-50 权重继续 100
-个 epoch，并针对这两个问题进行修复：
-
-- 每批为 30 张自然图（`10×3`）加 10 张固定标准 gallery，总前向仍是
-  40 张，不提高原训练的 batch 峰值；
-- supervised contrastive loss 使用自然图与 gallery 的联合 embedding；
-- 增加 query 对 10 个可微 Student gallery prototype 的交叉熵检索损失，
-  每个 query 显式面对 9 个错误商品反例；
-- 加入已有 router 的 balance/importance loss，记录 Vision/Language
-  路由熵、活跃专家数和最大 importance；
-- base learning rate 降为 `2e-4`，router 单独使用 `1e-3`，Teacher KD
-  权重提高到 3；
-- 只加载 Student 权重并重置 AdamW 状态。旧 epoch 1–50 checkpoint、
-  日志和指标会自动归档到
-  `checkpoints/pre_resume_epoch_0050/`。
-
-续训命令（从仓库根目录执行）：
-
-```text
-CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_continue100.yaml --phase train --resume-checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/qwen3_vl_embedding_2b_grocery10_optical_retrieval/last_checkpoint.pt
-```
-
-如果首段恢复训练已经得到 epoch 57 checkpoint，则使用稳定版配置完成
-epoch 58–150。该配置将 router LR 从 `1e-3` 降至 `1e-4`、base LR
-降至 `5e-5`，并把 KD 权重提高到 5，以避免小数据下的快速路由振荡：
-
-```text
-CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_continue_epoch57_stable.yaml --phase train --resume-checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/qwen3_vl_embedding_2b_grocery10_optical_retrieval/best_continuation_from_epoch_0050.pt
-```
-
-若 gallery 与 query 两端同时更新出现移动 prototype 振荡，可从稳定的
-epoch 60 训练损失 checkpoint 使用固定-gallery-gradient 版本完成
-epoch 61–150。这里只在 gallery CE 分支停止 prototype 梯度；10 张
-gallery 仍在同一次 Student forward 中，并继续接受 Teacher KD：
-
-```text
-CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_continue_epoch60_fixed_gallery.yaml --phase train --resume-checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/qwen3_vl_embedding_2b_grocery10_optical_retrieval/best_continuation_from_epoch_0057.pt
-```
-
-若该任务已完成 epoch 118，可在修复一次性 test DataLoader 的
-`persistent_workers` 文件描述符泄漏后继续到 epoch 150：
-
-```text
-CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_continue_epoch118_to150.yaml --phase train --resume-checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/qwen3_vl_embedding_2b_grocery10_optical_retrieval/last_checkpoint.pt
-```
-
-每轮可输出 test 指标供观察，但 checkpoint 只按训练总损失保存：
-
-- `last_checkpoint.pt`：最后一轮；
-- `best_train_loss_checkpoint.pt`：训练总损失最低；
-- test 从不用于反向传播、调参或 checkpoint 选择。
-
-## 三组评测
-
-1. Frozen Teacher query vs Frozen Teacher gallery；
-2. Optical Student query vs Optical Student gallery（主要部署结果）；
-3. Optical Student query vs Frozen Teacher gallery（embedding 对齐诊断）。
-
-gallery 支持：
-
-- `mean_prototype`（默认）：同 SKU gallery 的归一化向量均值后再归一化；
-- `max_similarity`：对该 SKU 的所有 gallery 图取最大相似度。
-
-指标包括 Top-1、Top-3、MRR、每 SKU Top-1、10×10 confusion matrix、正确
-SKU 相似度、最大错误 SKU 相似度和每个 query 的 Top-3 结果。
-
-## 输出
-
-所有运行结果默认保存在本实验目录内部：
-
-```text
-experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/
-```
-
-配置中的 `output_dir` 相对于 `configs/` 解析，因此使用 `../runs/...`。
-数据集仍放在仓库级 `data/GroceryStoreDataset`，不会复制进实验输出目录。
-
-正式 run 至少写出：
-
-```text
-config.yaml
-environment.json
-dataset.json
-manifests/grocery10_subset.csv
-teacher_cache/teacher_embeddings.pt
-train_log.csv
-teacher_metrics.json
-student_metrics.json
-per_sku_metrics.csv
-retrieval_results.csv
-confusion_matrix.png
-teacher_retrieval_examples.png
-student_retrieval_examples.png
-student_failure_cases.png
-last_checkpoint.pt
-best_train_loss_checkpoint.pt
-model.json
-```
-
-`model.json` 会列出每个可训练 tensor 的名称、shape 和参数量。Teacher 原始参数
-保持冻结；可训练部分仅为两个 optical surrogate（含既有 adapters/router/OEO）
-和新的 detector retrieval readout。
-
-## 数据与模型要求
-
-- 首次运行需要联网下载 Grocery Store Dataset；
-- 首次运行需要可访问 `Qwen/Qwen3-VL-Embedding-2B`；
-- 运行 full optical MoE16 推荐 CUDA GPU；
-- 默认逻辑 batch 40 对显存要求较高，显存不足时同时减小 `P`、`K` 和
-  `batch_size`，并保持 `batch_size=P×K`、`K≥2`。
-
-数据或模型不可用时会明确报错，不会回退到合成数据、其他 Grocery 数据集或分类任务。
-`grocery10_replaced_continue_epoch141_augmented_kd.yaml` 是独立的泛化续训：
-从替换后 10-SKU 的 epoch-141 最低训练损失权重出发，使用更低学习率、
-更高 Teacher KD 权重，以及仍然保留包装文字/颜色的中等强度裁剪、亮度、
-对比度和小角度旋转。它不使用水平翻转、MixUp、CutMix、强模糊或擦除。
+Commands are collected in `RUN_COMMANDS.md`.

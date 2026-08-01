@@ -168,6 +168,26 @@ class FullPlaneReadout(nn.Module):
             aperture.y0:aperture.y1,
             aperture.x0:aperture.x1,
         ]
+        return self.forward_intensity(detector_intensity)
+
+    def forward_intensity(
+        self, detector_intensity: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        expected = (
+            self.geometry.detector_aperture.height,
+            self.geometry.detector_aperture.width,
+        )
+        if detector_intensity.ndim != 3 or tuple(detector_intensity.shape[-2:]) != expected:
+            raise ValueError(
+                f"Measured final CCD intensity must be [B,{expected[0]},{expected[1]}], "
+                f"got {tuple(detector_intensity.shape)}"
+            )
+        detector_intensity = detector_intensity.float()
+        if not torch.isfinite(detector_intensity).all():
+            raise RuntimeError("Measured final CCD intensity contains NaN or Inf")
+        if torch.any(detector_intensity < -1.0e-7):
+            raise RuntimeError("Measured final CCD intensity must be nonnegative")
+        detector_intensity = detector_intensity.clamp_min(0.0)
         pooled = self.pool(detector_intensity.unsqueeze(1)).squeeze(1)
         normalized = self.norm(pooled)
         readout = F.relu(normalized) if self.nonlinearity == "relu" else F.softplus(normalized)
@@ -234,6 +254,7 @@ class HomogeneousMoEOpticalCore(nn.Module):
         self.last_input_fields: torch.Tensor | None = None; self.last_routing: dict[str, torch.Tensor] = {}
         self.last_amplitude_slm_canvas: torch.Tensor | None = None
         self.last_stage_fields: list[torch.Tensor] = []; self.last_detector_intensity: torch.Tensor | None = None
+        self.last_detector_complex_field: torch.Tensor | None = None
         self.last_detector_readout: torch.Tensor | None = None
         # Graph-carrying final detector readout. Unlike last_detector_readout,
         # this tensor is never detached and is consumed by the retrieval
@@ -241,6 +262,8 @@ class HomogeneousMoEOpticalCore(nn.Module):
         self.current_detector_readout: torch.Tensor | None = None
         self.capture_intermediate_fields = False
         self.capture_sample_count = 1
+        self.hardware_stage_reload_fields: dict[int, torch.Tensor] = {}
+        self.hardware_final_detector_intensity: torch.Tensor | None = None
 
     def encode_groups(self, groups: list[torch.Tensor], *, injection: bool = False) -> torch.Tensor:
         if not groups:
@@ -317,6 +340,7 @@ class HomogeneousMoEOpticalCore(nn.Module):
         )
         self.last_stage_fields = []
         self.last_detector_intensity = None
+        self.last_detector_complex_field = None
         self.last_detector_readout = None
         self.current_detector_readout = None
         return field, routing
@@ -325,12 +349,21 @@ class HomogeneousMoEOpticalCore(nn.Module):
         return self._direct_amplitude_load(input_fields, routing)
 
     def run_stage(self, index: int, field: torch.Tensor, routing: dict[str, torch.Tensor]) -> torch.Tensor:
-        field = self.propagator(self.expert_layers[index](field))
-        if self.interlayer_enabled:
-            field = self.interlayer_conversions[index](
-                field,
-                selected_experts=routing["selected_mask"] if self.interlayer_hard_route_mask else None,
-                routing_weights=routing["weights"] if self.interlayer_reapply_routing_weights else None)
+        replay = self.hardware_stage_reload_fields.get(int(index))
+        if replay is not None:
+            if tuple(replay.shape) != tuple(field.shape):
+                raise RuntimeError(
+                    f"Hardware stage-{index} reload field shape {tuple(replay.shape)} "
+                    f"does not match optical field {tuple(field.shape)}"
+                )
+            field = replay.to(device=field.device, dtype=torch.complex64)
+        else:
+            field = self.propagator(self.expert_layers[index](field))
+            if self.interlayer_enabled:
+                field = self.interlayer_conversions[index](
+                    field,
+                    selected_experts=routing["selected_mask"] if self.interlayer_hard_route_mask else None,
+                    routing_weights=routing["weights"] if self.interlayer_reapply_routing_weights else None)
         if self.capture_intermediate_fields:
             capture_count = min(self.capture_sample_count, len(field))
             self.last_stage_fields.append(field[:capture_count].detach().cpu())
@@ -338,9 +371,28 @@ class HomogeneousMoEOpticalCore(nn.Module):
 
     def read_hidden(self, field: torch.Tensor, lengths: list[int], boundary_dtype: torch.dtype,
                     *, final: bool = False) -> torch.Tensor:
-        if final:
+        measured_intensity = self.hardware_final_detector_intensity if final else None
+        if final and measured_intensity is None:
             field = self.propagator(self.global_phase(field))
-        readout, intensity = self.readout(field)
+            if self.capture_intermediate_fields:
+                capture_count = min(self.capture_sample_count, len(field))
+                aperture = self.geometry.detector_aperture
+                self.last_detector_complex_field = field[
+                    :capture_count,
+                    aperture.y0:aperture.y1,
+                    aperture.x0:aperture.x1,
+                ].detach().cpu().to(torch.complex64)
+        if measured_intensity is not None:
+            if measured_intensity.shape[0] != field.shape[0]:
+                raise RuntimeError(
+                    "Hardware final CCD batch does not match the optical field batch: "
+                    f"{measured_intensity.shape[0]} != {field.shape[0]}"
+                )
+            readout, intensity = self.readout.forward_intensity(
+                measured_intensity.to(field.device)
+            )
+        else:
+            readout, intensity = self.readout(field)
         if final:
             if not torch.isfinite(readout).all():
                 raise RuntimeError("Final detector readout contains NaN or Inf")
@@ -368,6 +420,30 @@ class HomogeneousMoEOpticalCore(nn.Module):
             raise ValueError("Intermediate-field capture sample_count must be positive")
         self.capture_intermediate_fields = bool(enabled)
         self.capture_sample_count = int(sample_count)
+        for conversion in self.interlayer_conversions:
+            conversion.set_intermediate_capture(enabled, sample_count)
+
+    def set_hardware_replay(
+        self,
+        *,
+        stage_reload_fields: dict[int, torch.Tensor] | None = None,
+        final_detector_intensity: torch.Tensor | None = None,
+    ) -> None:
+        """Substitute measured electronic reload/final CCD tensors for propagation.
+
+        Reload fields are complex zero-phase amplitudes on the full numerical
+        canvas. Final CCD intensity is the registered physical active ROI. The
+        measured tensors remain differentiable only with respect to downstream
+        electronics; this path is intended for eval/deployment replay.
+        """
+        self.hardware_stage_reload_fields = {
+            int(index): value for index, value in (stage_reload_fields or {}).items()
+        }
+        self.hardware_final_detector_intensity = final_detector_intensity
+
+    def clear_hardware_replay(self) -> None:
+        self.hardware_stage_reload_fields = {}
+        self.hardware_final_detector_intensity = None
 
     def parameter_breakdown(self) -> dict[str, Any]:
         expert_phase = sum(

@@ -1,0 +1,6 @@
+base_config: grocery31_pretrain.yaml
+
+# Canonical stage 1 of the best reproducible Grocery10 training recipe.
+# The architecture is unchanged: one 224x224 phase plane per MoE16 expert
+# bank followed by one 986x986 global phase plane in each Qwen stack.
+output_dir: ../runs/grocery10_best_reproduction/01_grocery31_pretrain

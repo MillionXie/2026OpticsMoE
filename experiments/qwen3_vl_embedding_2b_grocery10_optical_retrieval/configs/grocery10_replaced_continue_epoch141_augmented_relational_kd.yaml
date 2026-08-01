@@ -1,9 +1,0 @@
-base_config: grocery10_replaced_continue_epoch141_augmented_kd_phase_slow.yaml
-
-# Small-data retrieval trial. In addition to pointwise 64-D cosine KD, match
-# the frozen Teacher's complete off-diagonal pairwise cosine matrix in every
-# query + gallery batch. This adds no layer and changes no inference behavior.
-training:
-  lambda_relational_kd: 5.0
-
-output_dir: ../runs/qwen3_vl_embedding_2b_grocery10_replaced_continue_epoch141_augmented_relational_kd

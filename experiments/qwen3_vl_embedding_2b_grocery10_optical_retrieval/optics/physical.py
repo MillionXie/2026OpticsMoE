@@ -125,6 +125,11 @@ class SquareDetectionLayerNormReload(nn.Module):
         else:
             self.register_parameter("affine_weight", None)
             self.register_parameter("affine_bias", None)
+        self.capture_intermediate = False
+        self.capture_sample_count = 1
+        self.last_input_complex_field: torch.Tensor | None = None
+        self.last_input_intensity: torch.Tensor | None = None
+        self.last_output_amplitude: torch.Tensor | None = None
 
     def forward(
         self,
@@ -132,16 +137,54 @@ class SquareDetectionLayerNormReload(nn.Module):
         selected_experts: torch.Tensor | None = None,
         routing_weights: torch.Tensor | None = None,
     ) -> torch.Tensor:
+        if self.capture_intermediate:
+            count = min(self.capture_sample_count, len(field))
+            self.last_input_complex_field = field[:count].detach().cpu().to(torch.complex64)
         intensity = field.to(torch.complex64).abs().square().float()
-        expected = (field.shape[0], len(self.apertures))
+        return self.forward_intensity(
+            intensity,
+            selected_experts=selected_experts,
+            routing_weights=routing_weights,
+        )
+
+    def forward_intensity(
+        self,
+        intensity: torch.Tensor,
+        selected_experts: torch.Tensor | None = None,
+        routing_weights: torch.Tensor | None = None,
+    ) -> torch.Tensor:
+        """Apply the electronic OEO transform to a measured CCD intensity.
+
+        Hardware CCD files already contain square-law intensity.  Keeping this
+        entry point separate prevents the common replay error of squaring a
+        captured intensity a second time.
+        """
+        if intensity.ndim != 3 or tuple(intensity.shape[-2:]) != (
+            self.canvas_size,
+            self.canvas_size,
+        ):
+            raise ValueError(
+                f"Measured expert CCD intensity must be [B,{self.canvas_size},"
+                f"{self.canvas_size}], got {tuple(intensity.shape)}"
+            )
+        intensity = intensity.float()
+        if not torch.isfinite(intensity).all():
+            raise RuntimeError("Measured expert CCD intensity contains NaN or Inf")
+        if torch.any(intensity < -1.0e-7):
+            raise RuntimeError("Measured expert CCD intensity must be nonnegative")
+        intensity = intensity.clamp_min(0.0)
+        if self.capture_intermediate:
+            count = min(self.capture_sample_count, len(intensity))
+            self.last_input_intensity = intensity[:count].detach().cpu()
+        expected = (intensity.shape[0], len(self.apertures))
         if selected_experts is not None:
             if tuple(selected_experts.shape) != expected:
                 raise ValueError(f"selected_experts must have shape {expected}, got {tuple(selected_experts.shape)}")
-            selected_experts = selected_experts.to(device=field.device, dtype=torch.bool)
+            selected_experts = selected_experts.to(device=intensity.device, dtype=torch.bool)
         if routing_weights is not None:
             if tuple(routing_weights.shape) != expected:
                 raise ValueError(f"routing_weights must have shape {expected}, got {tuple(routing_weights.shape)}")
-            routing_weights = routing_weights.to(device=field.device, dtype=intensity.dtype)
+            routing_weights = routing_weights.to(device=intensity.device, dtype=intensity.dtype)
         if self.per_expert_enabled:
             batch = intensity.shape[0]
             flat_indices = self.aperture_indices.reshape(-1)
@@ -170,4 +213,17 @@ class SquareDetectionLayerNormReload(nn.Module):
             if self.affine_weight is not None:
                 normalized = normalized * self.affine_weight[0] + self.affine_bias[0]
             output = F.relu(normalized) if self.nonlinearity == "relu" else F.softplus(normalized)
+        if self.capture_intermediate:
+            count = min(self.capture_sample_count, len(output))
+            self.last_output_amplitude = output[:count].detach().cpu()
         return torch.complex(output, torch.zeros_like(output))
+
+    def set_intermediate_capture(self, enabled: bool, sample_count: int = 1) -> None:
+        if sample_count <= 0:
+            raise ValueError("capture sample_count must be positive")
+        self.capture_intermediate = bool(enabled)
+        self.capture_sample_count = int(sample_count)
+        if not enabled:
+            self.last_input_complex_field = None
+            self.last_input_intensity = None
+            self.last_output_amplitude = None

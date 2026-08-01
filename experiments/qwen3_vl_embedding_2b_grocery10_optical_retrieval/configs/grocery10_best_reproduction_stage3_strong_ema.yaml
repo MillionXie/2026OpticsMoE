@@ -1,0 +1,33 @@
+base_config: grocery10_best_reproduction_stage2_replaced10.yaml
+
+# The historical best run was stopped after 40 continuation epochs
+# (absolute epochs 142..181) and selected its epoch-159 EMA weights by minimum
+# training total loss. Keep that duration explicit instead of inheriting the
+# exploratory 100-epoch continuation setting.
+training:
+  epochs: 40
+  learning_rate: 0.00001
+  router_learning_rate: 0.00002
+  phase_learning_rate: 0.000001
+  weight_decay: 0.0
+  lambda_kd: 8.0
+  lambda_ret: 1.0
+  lambda_gallery: 0.25
+  lambda_router_balance: 0.02
+  lambda_router_importance: 0.005
+  temperature: 0.07
+  gallery_temperature: 0.15
+  gallery_prototype_stop_gradient: true
+  resume_optimizer_state: false
+  evaluate_test_each_epoch: true
+  log_interval_batches: 5
+  ema_decay: 0.99
+
+augmentation:
+  enabled: true
+  crop_scale_min: 0.75
+  brightness_jitter: 0.20
+  contrast_jitter: 0.20
+  rotation_degrees: 10.0
+
+output_dir: ../runs/grocery10_best_reproduction/03_strong_augmentation_ema
