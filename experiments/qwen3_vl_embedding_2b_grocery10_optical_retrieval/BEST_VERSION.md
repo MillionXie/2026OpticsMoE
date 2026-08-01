@@ -124,7 +124,7 @@ BMP 约定经过自动检查：
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.export_best_optical_artifacts \
-  --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_replaced_continue_epoch141_stronger_augmentation_ema.yaml \
+  --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_best_reproduction_stage3_strong_ema.yaml \
   --checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/qwen3_vl_embedding_2b_grocery10_replaced_continue_epoch141_stronger_augmentation_ema/ema_best_train_loss_checkpoint.pt \
   --sample-count 8
 ```
