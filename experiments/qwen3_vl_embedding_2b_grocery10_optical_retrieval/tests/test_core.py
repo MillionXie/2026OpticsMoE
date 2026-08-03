@@ -773,7 +773,7 @@ def test_hardware_config_is_stage_first_and_uses_best_checkpoint() -> None:
     assert robust.clean_output_before_prepare
     assert robust.phase_flip_vertical
     assert robust.amplitude_encoding_percentile == pytest.approx(95.0)
-    assert robust.amplitude_encoding_gamma == pytest.approx(0.8)
+    assert robust.amplitude_encoding_gamma == pytest.approx(0.65)
 
 
 def test_pk_sampler_and_supervised_contrastive_backward(tmp_path: Path) -> None:
