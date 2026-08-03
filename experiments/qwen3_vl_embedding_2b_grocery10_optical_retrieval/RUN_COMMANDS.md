@@ -42,7 +42,7 @@ experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/hardware_runs/groc
 └── 00_manifest/         # 播放顺序及简要审计信息
 ```
 
-振幅编码使用正像素 P95 截断与 gamma=0.8，提高弱有效像素亮度；严格为零的
+振幅编码使用正像素 P95 截断与 gamma=0.65，提高弱有效像素亮度；严格为零的
 未选专家、间隙和 padding 保持为 0。
 
 ## 3. 生成光路对齐/标定 BMP

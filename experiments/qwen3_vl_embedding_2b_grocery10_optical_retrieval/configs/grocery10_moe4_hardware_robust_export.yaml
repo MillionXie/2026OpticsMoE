@@ -16,7 +16,9 @@ slm:
     # preserving exact zeros in unselected experts, gaps, and token padding.
     mode: positive_percentile
     percentile: 95.0
-    gamma: 0.8
+    # 0.65 is intentionally brighter than the former 0.8 hardware mapping.
+    # Do not add a non-zero floor: a floor would leak light into inactive areas.
+    gamma: 0.65
   phase_transform:
     # Required by the current folded phase-SLM optical path.
     flip_vertical: true
