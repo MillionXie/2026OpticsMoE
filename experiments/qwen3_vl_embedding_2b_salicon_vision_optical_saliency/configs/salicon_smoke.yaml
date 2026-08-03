@@ -1,0 +1,21 @@
+base_config: salicon.yaml
+
+dataset:
+  download: false
+  train_limit: 16
+  validation_limit: 8
+
+batching:
+  teacher_batch_size: 2
+  student_batch_size: 2
+  inference_batch_size: 2
+  num_workers: 0
+
+training:
+  teacher_epochs: 1
+  student_epochs: 1
+  log_interval_batches: 1
+
+artifact_cache_dir: cache/qwen3_vl_embedding_2b_salicon_vision_optical_saliency_smoke
+output_dir: runs/salicon_vision_optical_saliency_smoke
+

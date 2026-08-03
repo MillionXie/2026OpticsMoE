@@ -69,6 +69,8 @@ loss:
   stage2_kd: 0.2
   router_balance: 0.03
   router_importance: 0.0
+  # Suppress coherent zero-order content in each physical phase plane.
+  phase_dc: 5.0
   temperature: 0.07
 
 optical:
@@ -100,11 +102,11 @@ optical:
     global_to_detector_distance_m: 0.10
   phase:
     parameterization: sigmoid
-    init: zeros
-    init_std: 0.02
+    init: small_normal
+    init_std: 0.2
   k_space:
-    enabled: false
-    theta_max_deg: 1.0
+    enabled: true
+    theta_max_deg: 2.0
   oeo:
     enabled: true
     per_expert_enabled: true
@@ -127,4 +129,3 @@ optical:
 
 artifact_cache_dir: cache/qwen3_vl_embedding_2b_abo_product_retrieval_optical_moe16
 output_dir: runs/qwen3_vl_embedding_2b_abo_product_retrieval_optical_moe16_3000
-

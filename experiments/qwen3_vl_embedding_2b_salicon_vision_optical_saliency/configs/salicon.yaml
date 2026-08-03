@@ -1,0 +1,126 @@
+dataset:
+  data_root: data/SALICON
+  download: true
+  train_images_url: https://s3.amazonaws.com/salicon-dataset/2015r1/train.zip
+  validation_images_url: https://s3.amazonaws.com/salicon-dataset/2015r1/val.zip
+  train_annotations_url: https://s3.amazonaws.com/salicon-dataset/2015r1/fixations_train2014.json
+  validation_annotations_url: https://s3.amazonaws.com/salicon-dataset/2015r1/fixations_val2014.json
+  materialize_density_maps: true
+  density_sigma_px: 19.0
+  train_limit: null
+  validation_limit: null
+
+qwen:
+  model_id: Qwen/Qwen3-VL-Embedding-2B
+  cache_dir: null
+  local_files_only: false
+  processor_min_pixels: 50176
+  processor_max_pixels: 50176
+  dtype: bfloat16
+  attn_implementation: sdpa
+  device: cuda
+
+data:
+  image_size: 224
+
+batching:
+  teacher_batch_size: 16
+  student_batch_size: 8
+  inference_batch_size: 8
+  num_workers: 8
+
+training:
+  teacher_epochs: 30
+  student_epochs: 60
+  teacher_learning_rate: 0.001
+  student_learning_rate: 0.001
+  phase_learning_rate: 0.004
+  router_learning_rate: 0.0005
+  weight_decay: 0.0
+  random_seed: 42
+  amp_enabled: true
+  checkpoint_metric: validation_cc
+  gradient_clip_norm: 1.0
+  log_interval_batches: 100
+
+loss:
+  kl_weight: 1.0
+  cc_weight: 0.5
+  sim_weight: 0.25
+  nss_weight: 0.1
+  router_balance_weight: 0.03
+  router_importance_weight: 0.005
+  phase_dc_weight: 5.0
+  map_kd_weight: 0.0
+  map_kd_temperature: 1.0
+
+map_kd:
+  teacher_checkpoint: null
+
+augmentation:
+  enabled: true
+  crop_scale_min: 0.90
+  horizontal_flip_probability: 0.5
+  brightness_jitter: 0.10
+  contrast_jitter: 0.10
+
+saliency_head:
+  projection_dim: 128
+  decoder_channels: [64, 32, 16]
+  groupnorm_groups: 8
+
+optical:
+  input_adapter_dim: 224
+  max_visual_tokens: 224
+  vision_tap_stages: [1]
+  geometry:
+    canvas_size: 1026
+    active_size: 986
+    expert_size: 224
+    expert_pitch: 254
+    num_experts: 16
+    grid_rows: 4
+    grid_cols: 4
+    layers_per_expert: 1
+  router:
+    top_k: 4
+    pool_size: 14
+    temperature: 1.0
+    input_layernorm_enabled: true
+    input_layernorm_eps: 1.0e-5
+    amplitude_weight_domain: amplitude
+    input_normalization: none
+  physics:
+    wavelength_nm: 532.0
+    pixel_pitch_um: 8.0
+    inter_layer_distance_m: 0.10
+    last_expert_to_global_distance_m: 0.10
+    global_to_detector_distance_m: 0.10
+  phase:
+    parameterization: sigmoid
+    init: small_normal
+    init_std: 0.2
+  k_space:
+    enabled: true
+    theta_max_deg: 2.0
+  oeo:
+    enabled: true
+    per_expert_enabled: true
+    elementwise_affine: false
+    hard_route_mask: true
+    reapply_routing_weights: true
+    layernorm_eps: 1.0e-5
+    nonlinearity: relu
+  detector:
+    output_size: 224
+    layernorm_eps: 1.0e-5
+    layernorm_affine: false
+    layernorm_scope: per_token
+    nonlinearity: relu
+
+visualization:
+  sample_count: 16
+  optical_sample_count: 4
+
+artifact_cache_dir: cache/qwen3_vl_embedding_2b_salicon_vision_optical_saliency
+output_dir: runs/salicon_vision_optical_saliency

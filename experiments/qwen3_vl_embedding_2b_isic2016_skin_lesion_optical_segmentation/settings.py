@@ -105,6 +105,9 @@ class Settings:
         self.optical_learning_rate = float(
             d("training.optical_learning_rate", 1.0e-4)
         )
+        self.phase_learning_rate = float(
+            d("training.phase_learning_rate", 4.0e-3)
+        )
         self.router_learning_rate = float(
             d("training.router_learning_rate", 2.0e-4)
         )
@@ -137,6 +140,7 @@ class Settings:
         self.router_importance_weight = float(
             d("loss.router_importance_weight", 0.0)
         )
+        self.phase_dc_weight = float(d("loss.phase_dc_weight", 0.0))
 
         self.augmentation_enabled = bool(d("augmentation.enabled", True))
         self.crop_scale_min = float(d("augmentation.crop_scale_min", 0.92))
@@ -216,6 +220,7 @@ class Settings:
             raise ValueError("batch sizes must be positive")
         for name in (
             "optical_learning_rate",
+            "phase_learning_rate",
             "router_learning_rate",
             "recombiner_learning_rate",
             "head_learning_rate",
@@ -230,6 +235,7 @@ class Settings:
             "boundary_weight",
             "router_balance_weight",
             "router_importance_weight",
+            "phase_dc_weight",
         ):
             if float(getattr(self, name)) < 0:
                 raise ValueError(f"{name} cannot be negative")

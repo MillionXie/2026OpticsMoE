@@ -15,6 +15,7 @@ from .evaluation import evaluate_all
 from .io_utils import environment_report, seed_everything, write_json
 from .modeling import build_encoder, load_vision_backbone
 from .settings import load_settings, save_resolved_config
+from .teacher_adapter import train_teacher_adapter
 from .teacher_cache import TeacherEmbeddingStore, build_teacher_cache
 from .training import train_stage1, train_stage2
 from .visualize import visualize_results
@@ -23,6 +24,7 @@ from .visualize import visualize_results
 PHASES = {
     "prepare_data",
     "cache_teacher",
+    "train_teacher_adapter",
     "train_stage1",
     "train_stage2",
     "evaluate",
@@ -77,10 +79,26 @@ def main() -> int:
         if args.phase == "cache_teacher":
             return 0
 
+    if args.phase in {"train_teacher_adapter", "all"}:
+        if settings.teacher_embedding_mode != "adapted_head":
+            if args.phase == "train_teacher_adapter":
+                raise RuntimeError(
+                    "train_teacher_adapter requires "
+                    "retrieval.teacher_embedding_mode=adapted_head"
+                )
+        else:
+            train_teacher_adapter(bundle, settings, device)
+        if args.phase == "train_teacher_adapter":
+            return 0
+
     teacher_store = TeacherEmbeddingStore(bundle, settings)
-    loaded = load_vision_backbone(settings, device)
-    save_resolved_config(settings)
+    loaded = (
+        load_backbone(settings, device)
+        if settings.student_architecture == "multimodal_optical"
+        else load_vision_backbone(settings, device)
+    )
     encoder = build_encoder(loaded, settings)
+    save_resolved_config(settings)
     try:
         if args.phase in {"train_stage1", "all"}:
             train_stage1(

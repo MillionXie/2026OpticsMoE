@@ -3,14 +3,23 @@ from __future__ import annotations
 import importlib
 import time
 from dataclasses import dataclass
-from typing import Any, Iterable
+from typing import Any, Iterable, Mapping
 
 import torch
 from torch import nn
 from torch.nn import functional as F
 
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.modeling import (
+    LoadedBackbone,
+    OpticalRetrievalReadout,
+    build_optical_student,
     resolve_cached_model_source,
+)
+from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.features import (
+    move_inputs,
+    preprocess_images,
+    student_embeddings,
+    validate_token_budgets,
 )
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.optics.moe import (
     HomogeneousMoEOpticalCore,
@@ -270,12 +279,136 @@ class VisionOpticalRetrievalEncoder(nn.Module):
     def router_losses(self) -> tuple[torch.Tensor, torch.Tensor]:
         return self.core.router_losses()
 
-    def deployment_state_dict(self) -> dict[str, torch.Tensor]:
+    def router_loss_components(self) -> dict[str, torch.Tensor]:
+        balance, importance = self.core.router_losses()
+        entropy = self.core.last_routing["normalized_entropy"]
         return {
-            key: value.detach().cpu()
-            for key, value in self.state_dict().items()
-            if not key.startswith("visual.")
+            "vision_balance": balance,
+            "vision_importance": importance,
+            "vision_entropy_penalty": 1.0 - entropy,
+            "language_balance": balance.new_zeros(()),
+            "language_importance": balance.new_zeros(()),
+            "language_entropy_penalty": balance.new_zeros(()),
         }
+
+    def set_router_temperature(self, value: float) -> None:
+        self.core.router.router.temperature = float(value)
+
+    def router_diagnostics(self) -> dict[str, dict[str, torch.Tensor]]:
+        return {"vision": self.core.last_routing}
+
+    def deployment_state_dict(self) -> dict[str, Any]:
+        return {
+            "architecture": "vision_only",
+            "optical_core": self.core.state_dict(),
+            "detector_projection": self.readout.state_dict(),
+        }
+
+    def load_deployment_state_dict(self, state: dict[str, Any]) -> None:
+        if state.get("architecture") not in {None, "vision_only"}:
+            raise RuntimeError("Checkpoint is not a vision-only optical encoder")
+        self.core.load_state_dict(state["optical_core"])
+        self.readout.load_state_dict(state["detector_projection"])
+
+
+class MultimodalOpticalRetrievalEncoder(nn.Module):
+    """One-layer Vision + one-layer Language Optical MoE retrieval student."""
+
+    def __init__(self, loaded: LoadedBackbone, settings: Any) -> None:
+        super().__init__()
+        self.settings = settings
+        self.model = loaded.model
+        self.replacement, self.readout = build_optical_student(loaded, settings)
+        # DeepStackMultimodalReplacement is an orchestration object rather than
+        # nn.Module. Register every trainable optical module explicitly so
+        # encoder.parameters(), optimizers and checkpoints cannot silently see
+        # only the electronic retrieval readout while the surrogates sit outside
+        # the module tree.
+        self.vision_optical = self.replacement.vision_surrogate
+        self.language_optical = self.replacement.language_surrogate
+        if self.replacement.vision_pre_attention is not None:
+            self.vision_pre_attention = self.replacement.vision_pre_attention
+        if self.replacement.language_pre_attention is not None:
+            self.language_pre_attention = self.replacement.language_pre_attention
+        self.device = loaded.device
+
+    def train(self, mode: bool = True) -> "MultimodalOpticalRetrievalEncoder":
+        super().train(mode)
+        self.model.eval()
+        self.replacement.set_student_train_mode()
+        self.readout.train(mode)
+        return self
+
+    def forward(self, inputs: Mapping[str, torch.Tensor]) -> torch.Tensor:
+        embedding, _ = student_embeddings(
+            self.model, self.replacement, self.readout, inputs
+        )
+        return embedding
+
+    def router_losses(self) -> tuple[torch.Tensor, torch.Tensor]:
+        values = self.replacement.router_losses()
+        return (
+            values["vision_balance"] + values["language_balance"],
+            values["vision_importance"] + values["language_importance"],
+        )
+
+    def router_loss_components(self) -> dict[str, torch.Tensor]:
+        values = self.replacement.router_losses()
+        vision_entropy = (
+            1.0
+            - self.replacement.vision_surrogate.core.last_routing[
+                "normalized_entropy"
+            ]
+        )
+        language_entropy = (
+            1.0
+            - self.replacement.language_surrogate.core.last_routing[
+                "normalized_entropy"
+            ]
+        )
+        return {
+            **values,
+            "vision_entropy_penalty": vision_entropy,
+            "language_entropy_penalty": language_entropy,
+        }
+
+    def set_router_temperature(self, value: float) -> None:
+        self.replacement.vision_surrogate.core.router.router.temperature = float(
+            value
+        )
+        self.replacement.language_surrogate.core.router.router.temperature = float(
+            value
+        )
+
+    def router_diagnostics(self) -> dict[str, dict[str, torch.Tensor]]:
+        return {
+            "vision": self.replacement.vision_surrogate.core.last_routing,
+            "language": self.replacement.language_surrogate.core.last_routing,
+        }
+
+    def deployment_state_dict(self) -> dict[str, Any]:
+        return {
+            "architecture": "multimodal_optical",
+            "vision_optical": self.replacement.vision_surrogate.state_dict(),
+            "language_optical": self.replacement.language_surrogate.state_dict(),
+            "retrieval_readout": self.readout.state_dict(),
+            "prelude": self.replacement.prelude_state_dict(),
+        }
+
+    def load_deployment_state_dict(self, state: dict[str, Any]) -> None:
+        if state.get("architecture") != "multimodal_optical":
+            raise RuntimeError("Checkpoint is not a multimodal optical encoder")
+        self.replacement.vision_surrogate.load_state_dict(
+            state["vision_optical"]
+        )
+        self.replacement.language_surrogate.load_state_dict(
+            state["language_optical"]
+        )
+        self.readout.load_state_dict(state["retrieval_readout"])
+        self.replacement.load_prelude_state_dict(state.get("prelude"))
+
+    def restore_native(self) -> None:
+        self.replacement.close()
 
 
 class TrainingIdentityHead(nn.Module):
@@ -290,8 +423,12 @@ class TrainingIdentityHead(nn.Module):
 
 
 def build_encoder(
-    loaded: LoadedVisionBackbone, settings: Any
-) -> VisionOpticalRetrievalEncoder:
+    loaded: LoadedVisionBackbone | LoadedBackbone, settings: Any
+) -> VisionOpticalRetrievalEncoder | MultimodalOpticalRetrievalEncoder:
+    if settings.student_architecture == "multimodal_optical":
+        if not isinstance(loaded, LoadedBackbone):
+            raise TypeError("Multimodal optical Student needs the full Qwen backbone")
+        return MultimodalOpticalRetrievalEncoder(loaded, settings)
     encoder = VisionOpticalRetrievalEncoder(loaded, settings).to(loaded.device)
     # Qwen is frozen. Optical core except the unused restore adapter and the
     # detector projection are trainable.
@@ -300,6 +437,23 @@ def build_encoder(
     encoder.core.output_adapter.requires_grad_(False)
     encoder.readout.requires_grad_(True)
     return encoder
+
+
+def encode_product_images(
+    loaded: LoadedVisionBackbone | LoadedBackbone,
+    encoder: VisionOpticalRetrievalEncoder | MultimodalOpticalRetrievalEncoder,
+    images: list[Any],
+    settings: Any,
+) -> torch.Tensor:
+    if isinstance(encoder, MultimodalOpticalRetrievalEncoder):
+        inputs = preprocess_images(
+            loaded.processor, images, settings.instruction
+        )
+        validate_token_budgets(inputs, settings)
+        inputs = move_inputs(inputs, loaded.device)
+        return encoder(inputs)
+    inputs = preprocess_vision(loaded.processor, images, loaded.device)
+    return encoder(inputs["pixel_values"], inputs["image_grid_thw"])
 
 
 def unique_trainable_parameters(*modules: nn.Module) -> list[nn.Parameter]:
@@ -314,8 +468,8 @@ def unique_trainable_parameters(*modules: nn.Module) -> list[nn.Parameter]:
 
 
 def parameter_report(
-    encoder: VisionOpticalRetrievalEncoder,
-    identity_head: TrainingIdentityHead | None = None,
+    encoder: VisionOpticalRetrievalEncoder | MultimodalOpticalRetrievalEncoder,
+    identity_head: nn.Module | None = None,
 ) -> dict[str, Any]:
     modules: list[nn.Module] = [encoder]
     if identity_head is not None:
@@ -337,13 +491,26 @@ def parameter_report(
                         "parameters": parameter.numel(),
                     }
                 )
+    multimodal = isinstance(encoder, MultimodalOpticalRetrievalEncoder)
     return {
         "architecture": (
+            "Frozen Qwen patch/token stems -> one-layer Vision Optical MoE16 -> "
+            "frozen merger/injection -> one-layer Language Optical MoE16 -> "
+            "language CCD -> LN+Linear -> L2-normalized 224D embedding"
+            if multimodal
+            else
             "Frozen Qwen patch/position stem -> one-layer Optical MoE16 -> "
             "Global phase -> CCD 224x224 -> LN+Linear per valid row -> "
             "mean pooling -> L2-normalized 224D embedding"
         ),
-        "optical": encoder.core.parameter_breakdown(),
+        "optical": (
+            {
+                "vision": encoder.replacement.vision_surrogate.parameter_breakdown(),
+                "language": encoder.replacement.language_surrogate.parameter_breakdown(),
+            }
+            if multimodal
+            else encoder.core.parameter_breakdown()
+        ),
         "detector_projection": encoder.readout.specification(),
         "identity_head": (
             None

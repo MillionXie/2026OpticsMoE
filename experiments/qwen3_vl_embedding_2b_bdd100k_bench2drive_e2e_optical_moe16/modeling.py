@@ -98,6 +98,7 @@ class _SingleStageCapture(nn.Module):
         self.token_counts: list[int] = []
         self.current_packed: torch.Tensor | None = None
         self.current_ccd: torch.Tensor | None = None
+        self.last_numeric_stage: str = "not-run"
 
     def forward(
         self,
@@ -115,10 +116,44 @@ class _SingleStageCapture(nn.Module):
         if len(self.core.expert_layers) != 1:
             raise RuntimeError("Driving backbone requires exactly one expert phase plane")
         self.token_counts = lengths
+        _require_finite_optical("packed Qwen patch hidden", hidden_states)
+        _require_phase_parameters_finite(self.core)
         input_fields = self.core.encode_groups(list(hidden_states.split(lengths)))
+        _require_finite_optical("nonnegative optical input field", input_fields)
         field, routing = self.core.begin(input_fields)
-        field = self.core.run_stage(0, field, routing)
-        field = self.core.propagator(self.core.global_phase(field))
+        _require_finite_optical("amplitude-SLM field", field)
+        _require_finite_optical("router weights", routing["weights"])
+
+        # Expand the single generic run_stage call into its mathematically
+        # identical operations so an error identifies the first bad boundary.
+        # A bounded physical phase does not sanitize a NaN raw phase or an
+        # already non-finite input field.
+        field = self.core.expert_layers[0](field)
+        _require_finite_optical("expert phase output", field)
+        field = self.core.propagator(field)
+        _require_finite_optical("expert propagation output", field)
+        if self.core.interlayer_enabled:
+            field = self.core.interlayer_conversions[0](
+                field,
+                selected_experts=(
+                    routing["selected_mask"]
+                    if self.core.interlayer_hard_route_mask
+                    else None
+                ),
+                routing_weights=(
+                    routing["weights"]
+                    if self.core.interlayer_reapply_routing_weights
+                    else None
+                ),
+            )
+            _require_finite_optical("OEO reload field", field)
+        if self.core.capture_intermediate_fields:
+            count = min(self.core.capture_sample_count, len(field))
+            self.core.last_stage_fields.append(field[:count].detach().cpu())
+        field = self.core.global_phase(field)
+        _require_finite_optical("global phase output", field)
+        field = self.core.propagator(field)
+        _require_finite_optical("global-to-CCD propagation output", field)
         ccd = raw_ccd_readout(field, self.core)
         if torch.any(ccd < 0) or not torch.isfinite(ccd).all():
             raise RuntimeError("Physical CCD intensity must be finite and nonnegative")
@@ -132,6 +167,36 @@ class _SingleStageCapture(nn.Module):
             count = min(self.core.capture_sample_count, ccd.shape[0])
             self.core.last_detector_readout = ccd[:count].detach().cpu()
         return hidden_states
+
+
+def _require_finite_optical(name: str, tensor: torch.Tensor) -> None:
+    if torch.isfinite(tensor).all():
+        return
+    detached = tensor.detach()
+    magnitude = detached.abs().float() if detached.is_complex() else detached.float().abs()
+    finite = magnitude[torch.isfinite(magnitude)]
+    maximum = float(finite.max()) if finite.numel() else float("nan")
+    mean = float(finite.mean()) if finite.numel() else float("nan")
+    raise RuntimeError(
+        f"Non-finite {name}: shape={tuple(tensor.shape)} dtype={tensor.dtype} "
+        f"finite_abs_mean={mean:.6g} finite_abs_max={maximum:.6g}. "
+        "The 0..2pi phase constraint only bounds finite raw_phase values; it "
+        "cannot repair NaN optimizer parameters or non-finite input/OEO fields."
+    )
+
+
+def _require_phase_parameters_finite(core: HomogeneousMoEOpticalCore) -> None:
+    bad = [
+        name
+        for name, parameter in core.named_parameters()
+        if "raw_phase" in name and not torch.isfinite(parameter).all()
+    ]
+    if bad:
+        raise RuntimeError(
+            "Non-finite raw phase parameters before optical propagation: "
+            f"{bad[:8]}. sigmoid(NaN) remains NaN; restore the last finite "
+            "step checkpoint and reset the optimizer state."
+        )
 
 
 def raw_ccd_readout(

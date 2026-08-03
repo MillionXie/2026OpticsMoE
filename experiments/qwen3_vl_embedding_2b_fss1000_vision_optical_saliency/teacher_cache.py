@@ -105,6 +105,13 @@ def build_teacher_mask_cache(
     metadata = {
         "dataset": "FSS-1000",
         "split": split,
+        "dataset_split_mode": settings.split_mode,
+        "selected_class_pool": settings.selected_class_pool,
+        "selected_class_count": settings.selected_class_count,
+        "selected_class_offset": settings.selected_class_offset,
+        "within_class_train_images": settings.within_class_train_images,
+        "within_class_test_images": settings.within_class_test_images,
+        "split_seed": settings.random_seed,
         "samples": count,
         "sample_ids": sample_ids,
         "image_size": settings.image_size,
@@ -121,7 +128,7 @@ def build_teacher_mask_cache(
 
 
 def expected_cache_identity(settings: Any, checkpoint_path: Path) -> dict[str, Any]:
-    return {
+    identity = {
         "dataset": "FSS-1000",
         "image_size": settings.image_size,
         "model_id": settings.model_id,
@@ -130,3 +137,21 @@ def expected_cache_identity(settings: Any, checkpoint_path: Path) -> dict[str, A
         "teacher_checkpoint_sha256": checkpoint_sha256(checkpoint_path),
         "augmentation": False,
     }
+    # Keep legacy official-split caches readable. Selected-class adaptation
+    # receives a dedicated cache identity so changing the class/image split
+    # can never silently reuse stale teacher masks.
+    if getattr(settings, "split_mode", "official_class_disjoint") != (
+        "official_class_disjoint"
+    ):
+        identity.update(
+            {
+                "dataset_split_mode": settings.split_mode,
+                "selected_class_pool": settings.selected_class_pool,
+                "selected_class_count": settings.selected_class_count,
+                "selected_class_offset": settings.selected_class_offset,
+                "within_class_train_images": settings.within_class_train_images,
+                "within_class_test_images": settings.within_class_test_images,
+                "split_seed": settings.random_seed,
+            }
+        )
+    return identity

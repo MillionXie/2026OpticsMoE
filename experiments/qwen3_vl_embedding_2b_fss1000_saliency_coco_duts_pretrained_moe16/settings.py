@@ -104,6 +104,9 @@ class Settings:
         self.duts_optical_learning_rate = float(
             d("training.optical_learning_rate", 5.0e-5)
         )
+        self.duts_phase_learning_rate = float(
+            d("training.phase_learning_rate", 1.0e-3)
+        )
         self.duts_recombiner_learning_rate = float(
             d("training.recombiner_learning_rate", 1.0e-4)
         )
@@ -133,6 +136,7 @@ class Settings:
         self.router_importance_weight = float(
             d("loss.router_importance_weight", 0.0)
         )
+        self.phase_dc_weight = float(d("loss.phase_dc_weight", 0.0))
 
         self.augmentation_enabled = bool(d("augmentation.enabled", True))
         self.crop_scale_min = float(d("augmentation.crop_scale_min", 0.90))
@@ -186,11 +190,14 @@ class Settings:
             raise ValueError("At least one fine-tuning epoch is required")
         for name in (
             "duts_optical_learning_rate",
+            "duts_phase_learning_rate",
             "duts_recombiner_learning_rate",
             "duts_head_learning_rate",
         ):
             if float(getattr(self, name)) <= 0:
                 raise ValueError(f"{name} must be positive")
+        if self.phase_dc_weight < 0:
+            raise ValueError("loss.phase_dc_weight cannot be negative")
         if not 0.0 < self.crop_scale_min <= 1.0:
             raise ValueError("augmentation.crop_scale_min must be in (0,1]")
 
@@ -238,4 +245,3 @@ def load_settings(path: str | Path) -> Settings:
         raise ValueError("source.architecture_config is required")
     architecture = load_architecture_settings(architecture_path)
     return Settings(architecture, raw, config_path)
-

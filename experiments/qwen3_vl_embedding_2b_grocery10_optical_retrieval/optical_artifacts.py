@@ -108,6 +108,47 @@ def save_phase_snapshot(
     return report
 
 
+def save_phase_preview(replacement: Any, path: Path, *, title: str) -> None:
+    """Save fixed-scale expert/global phase maps for both optical stacks."""
+    import matplotlib.pyplot as plt
+
+    stacks = {
+        "Vision": phase_tensors(replacement.vision_surrogate.core),
+        "Language": phase_tensors(replacement.language_surrogate.core),
+    }
+    figure, axes = plt.subplots(2, 2, figsize=(13, 11), constrained_layout=True)
+    shown = None
+    for row, (stack_name, tensors) in enumerate(stacks.items()):
+        for column, (kind, key) in enumerate(
+            (
+                ("expert mosaic", "physical_expert_mosaic_rad"),
+                ("global phase", "physical_global_phase_rad"),
+            )
+        ):
+            value = tensors[key].float()
+            axis = axes[row, column]
+            shown = axis.imshow(
+                value.numpy(),
+                cmap="twilight",
+                vmin=0.0,
+                vmax=2.0 * math.pi,
+                origin="upper",
+            )
+            axis.set_title(
+                f"{stack_name} {kind}\n"
+                f"shape={tuple(value.shape)} std={float(value.std(unbiased=False)):.4f} rad"
+            )
+            axis.set_xlabel("x pixel")
+            axis.set_ylabel("y pixel")
+    if shown is not None:
+        figure.colorbar(shown, ax=axes.ravel().tolist(), label="physical phase (rad)")
+    figure.suptitle(title)
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    figure.savefig(path, dpi=160, bbox_inches="tight")
+    plt.close(figure)
+
+
 def encode_phase_uint8(phase: torch.Tensor) -> torch.Tensor:
     wrapped = torch.remainder(phase.detach().cpu().float(), 2.0 * math.pi)
     return torch.round(wrapped * (255.0 / (2.0 * math.pi))).to(torch.uint8)
@@ -115,6 +156,10 @@ def encode_phase_uint8(phase: torch.Tensor) -> torch.Tensor:
 
 def encode_amplitude_uint8(
     amplitude: torch.Tensor,
+    *,
+    mode: str = "per_plane_max",
+    percentile: float = 99.5,
+    gamma: float = 1.0,
 ) -> tuple[torch.Tensor, dict[str, float | str]]:
     value = amplitude.detach().cpu().float()
     if not torch.isfinite(value).all():
@@ -124,16 +169,55 @@ def encode_amplitude_uint8(
         raise RuntimeError(f"Amplitude must be nonnegative, got min={minimum}")
     value = value.clamp_min(0.0)
     maximum = float(value.max()) if value.numel() else 0.0
-    scale = maximum if maximum > 0.0 else 1.0
-    # OEO LayerNorm/ReLU amplitudes are not naturally bounded by one.  A hard
-    # clamp would destroy their relative structure, so the physical 8-bit SLM
-    # encoding uses one documented scalar normalization per plane.
-    encoded = torch.round((value / scale).clamp(0.0, 1.0) * 255.0).to(torch.uint8)
+    positive = value[value > 0.0]
+    mode = str(mode)
+    percentile = float(percentile)
+    gamma = float(gamma)
+    if gamma <= 0.0:
+        raise ValueError("Amplitude encoding gamma must be positive")
+    if mode == "per_plane_max":
+        scale = maximum if maximum > 0.0 else 1.0
+        encoding_name = "per_plane_max_then_uint8"
+    elif mode == "positive_percentile":
+        if not 0.0 < percentile <= 100.0:
+            raise ValueError("Amplitude encoding percentile must be in (0,100]")
+        if positive.numel():
+            scale = float(torch.quantile(positive, percentile / 100.0))
+        else:
+            scale = 1.0
+        scale = max(scale, 1.0e-12)
+        encoding_name = "positive_percentile_clip_then_uint8"
+    else:
+        raise ValueError(
+            "Amplitude encoding mode must be per_plane_max or positive_percentile"
+        )
+    normalized = (value / scale).clamp(0.0, 1.0)
+    if gamma != 1.0:
+        normalized = normalized.pow(gamma)
+    encoded = torch.round(normalized * 255.0).to(torch.uint8)
+    encoded_positive = encoded[encoded > 0]
+    clipped_ratio = (
+        float(value.gt(scale).float().mean()) if value.numel() else 0.0
+    )
     return encoded, {
-        "encoding": "per_plane_max_then_uint8",
+        "encoding": encoding_name,
         "raw_min": minimum,
         "raw_max": maximum,
         "normalization_divisor": scale,
+        "percentile": percentile if mode == "positive_percentile" else 100.0,
+        "percentile_population": "strictly_positive_pixels",
+        "gamma": gamma,
+        "raw_nonzero_ratio": (
+            float(value.gt(0).float().mean()) if value.numel() else 0.0
+        ),
+        "raw_clipped_ratio": clipped_ratio,
+        "encoded_mean": float(encoded.float().mean()) if encoded.numel() else 0.0,
+        "encoded_nonzero_ratio": (
+            float(encoded.gt(0).float().mean()) if encoded.numel() else 0.0
+        ),
+        "encoded_positive_median": (
+            float(encoded_positive.float().median()) if encoded_positive.numel() else 0.0
+        ),
     }
 
 
@@ -145,6 +229,9 @@ def export_centered_bmp(
     scale_factor: int,
     slm_width: int,
     slm_height: int,
+    amplitude_encoding_mode: str = "per_plane_max",
+    amplitude_percentile: float = 99.5,
+    amplitude_gamma: float = 1.0,
 ) -> dict[str, Any]:
     if value.ndim != 2:
         raise ValueError(f"SLM source plane must be 2-D, got {tuple(value.shape)}")
@@ -156,7 +243,12 @@ def export_centered_bmp(
             "phase_2pi_exclusive_uint8": 255,
         }
     elif value_type == "amplitude":
-        encoded, encoding = encode_amplitude_uint8(value)
+        encoded, encoding = encode_amplitude_uint8(
+            value,
+            mode=amplitude_encoding_mode,
+            percentile=amplitude_percentile,
+            gamma=amplitude_gamma,
+        )
     else:
         raise ValueError("value_type must be 'phase' or 'amplitude'")
     factor = int(scale_factor)

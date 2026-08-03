@@ -23,11 +23,12 @@ class Aperture:
 
 @dataclass(frozen=True)
 class MoEGeometry:
-    """Physical geometry for the 4x4, 224-pixel homogeneous expert bank.
+    """Physical geometry for a square homogeneous 224-pixel expert bank.
 
-    The 4x4 expert footprint and the global phase active area are both
-    986x986.  The propagation canvas adds a 20-pixel guard band on every
-    side, producing a 1026x1026 FFT grid.
+    Two verified layouts are supported.  MoE16 uses a 4x4, 986-pixel active
+    footprint on a 1026 FFT canvas.  The hardware-robust MoE4 variant uses a
+    2x2, 478-pixel footprint on a 518 canvas.  Both retain a 30-pixel expert
+    gap and a 20-pixel propagation guard band on every side.
     """
 
     canvas_size: int = 1026
@@ -93,7 +94,10 @@ class MoEGeometry:
         return mask
 
     def validate(self) -> None:
-        expected = (1026, 986, 224, 254, 16, 4, 4)
+        supported = {
+            (1026, 986, 224, 254, 16, 4, 4),
+            (518, 478, 224, 254, 4, 2, 2),
+        }
         actual = (
             self.canvas_size,
             self.active_size,
@@ -103,16 +107,17 @@ class MoEGeometry:
             self.grid_rows,
             self.grid_cols,
         )
-        if actual != expected:
+        if actual not in supported:
             raise ValueError(
-                "Expected the verified MoE16 geometry "
-                "canvas1026/active986/expert224/pitch254/16 experts/4x4 grid"
+                "Expected a verified geometry: either MoE16 "
+                "canvas1026/active986/expert224/pitch254/16 experts/4x4, "
+                "or MoE4 canvas518/active478/expert224/pitch254/4 experts/2x2"
             )
         if self.num_experts != self.grid_rows * self.grid_cols:
             raise ValueError("num_experts must equal grid_rows * grid_cols")
         if self.expert_gap != 30:
             raise ValueError("Adjacent expert apertures must have a 30-pixel gap")
         if self.footprint_height != self.active_size or self.footprint_width != self.active_size:
-            raise ValueError("The 4x4 expert footprint must exactly match the 986x986 global active area")
+            raise ValueError("The expert footprint must exactly match the global active area")
         if self.outer_padding != 20:
             raise ValueError("The active area must have a 20-pixel propagation guard band on every side")

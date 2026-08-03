@@ -1,0 +1,74 @@
+base_config: abo_base.yaml
+
+# Improved product-retrieval Student: both Qwen stacks are replaced by a
+# one-expert-layer + one-global-phase Optical MoE16.
+retrieval:
+  student_architecture: multimodal_optical
+  teacher_embedding_mode: adapted_head
+
+batching:
+  # More distinct products per physical batch; the 8192-entry queue supplies
+  # additional cross-batch negatives without retaining optical autograd graphs.
+  stage1_batch_size: 16
+  stage1_pk_items: 8
+  stage1_pk_images: 2
+  stage2_batch_size: 16
+  stage2_pk_items: 8
+  stage2_pk_images: 2
+  inference_batch_size: 4
+  contrastive_memory_size: 8192
+
+teacher_adapter:
+  epochs: 30
+  batch_size: 64
+  pk_items: 32
+  pk_images: 2
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  supcon_weight: 1.0
+  identity_weight: 0.5
+
+training:
+  # Phase masks retain a useful learning rate. Electronic adapters and routers
+  # use smaller, separately controlled rates to prevent their previous blow-up.
+  use_grouped_learning_rates: true
+  phase_learning_rate: 0.004
+  adapter_learning_rate: 0.0005
+  router_learning_rate: 0.0002
+  head_learning_rate: 0.001
+  electronic_weight_decay: 0.0001
+  gradient_clip_norm: 1.0
+
+loss:
+  stage1_kd: 1.0
+  stage1_supcon: 1.0
+  stage2_supcon: 1.0
+  stage2_id: 0.5
+  stage2_kd: 0.5
+  relational_kd: 0.5
+  router_balance: 0.03
+  router_importance: 0.02
+  router_entropy: 0.01
+  identity_scale: 30.0
+  identity_margin: 0.10
+
+augmentation:
+  enabled: true
+  crop_scale_min: 0.80
+  rotation_deg: 5.0
+  brightness: 0.15
+  contrast: 0.15
+
+optical:
+  vision_tap_stages: [1]
+  native_pre_attention_enabled: false
+  initialize_attention_from_teacher: false
+  native_pre_attention_trainable: false
+  residual_enabled: false
+  router:
+    temperature: 2.0
+    temperature_final: 1.0
+    temperature_warmup_epochs: 10
+
+artifact_cache_dir: cache/qwen3_vl_embedding_2b_abo_product_retrieval_multimodal_moe16
+output_dir: runs/qwen3_vl_embedding_2b_abo_product_retrieval_multimodal_moe16_3000

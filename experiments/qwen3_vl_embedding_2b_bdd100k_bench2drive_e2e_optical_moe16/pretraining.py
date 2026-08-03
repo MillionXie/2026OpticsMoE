@@ -7,6 +7,10 @@ from typing import Any
 import torch
 from torch.utils.data import DataLoader
 
+from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.optics.physical import (
+    phase_dc_loss,
+)
+
 from .datasets_bdd100k import BDD100KSpatialDataset, collate_bdd
 from .io_utils import append_csv, atomic_torch_save, write_json
 from .modeling import (
@@ -214,11 +218,17 @@ def _run_pretrain_epoch(
                 ),
             )
             balance, importance = model.backbone.router_losses()
+            dc = (
+                phase_dc_loss(model.backbone)
+                if training and settings.pretrain_phase_dc_weight > 0.0
+                else student.new_zeros(())
+            )
             loss = (
                 feature_loss
                 + auxiliary_loss
                 + settings.lambda_router_balance * balance.float()
                 + settings.lambda_router_importance * importance.float()
+                + settings.pretrain_phase_dc_weight * dc
             )
         if training:
             if scaler is not None:
@@ -236,6 +246,7 @@ def _run_pretrain_epoch(
             **auxiliary_parts,
             "router_balance": balance,
             "router_importance": importance,
+            "phase_dc": dc,
             "feature_cosine_similarity": 1.0 - feature_parts["feature_cosine"],
         }
         for key, value in values.items():

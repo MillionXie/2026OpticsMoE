@@ -3,6 +3,24 @@
 All commands are run from the `2026OpticsMoE` repository root. Commands are
 single-line commands and do not use backslash continuation.
 
+## Fine-tune on 100 fixed seen categories
+
+This protocol selects 100 eligible classes from the original official test
+pool, uses 8 images per class for adaptation, and reserves 2 different images
+per class for testing. The command reuses the preserved one-layer Student and
+Teacher checkpoints, builds a split-specific mask cache, fine-tunes all
+optical/router/head parameters for 50 epochs, and writes results to a new run.
+
+```bash
+CUDA_VISIBLE_DEVICES=2 python -m experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency --config experiments/qwen3_vl_embedding_2b_fss1000_vision_optical_saliency/configs/fss1000_saliency_seen100_finetune.yaml --phase all
+```
+
+Prepare and inspect the exact 800/200 image split without loading Qwen:
+
+```bash
+python -m experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency --config experiments/qwen3_vl_embedding_2b_fss1000_vision_optical_saliency/configs/fss1000_saliency_seen100_finetune.yaml --phase prepare_data
+```
+
 ## Final reproducible one-layer Student run
 
 This command starts a new Optical Student from random/zero initialization,

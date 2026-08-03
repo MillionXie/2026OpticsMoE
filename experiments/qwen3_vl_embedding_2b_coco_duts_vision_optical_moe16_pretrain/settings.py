@@ -68,6 +68,7 @@ class Settings:
     # COCO feature distillation.
     coco_epochs: int
     coco_optical_learning_rate: float
+    coco_phase_learning_rate: float
     coco_router_learning_rate: float
     coco_recombiner_learning_rate: float
     coco_weight_decay: float
@@ -76,12 +77,14 @@ class Settings:
     smooth_l1_beta: float
     router_balance_weight: float
     router_importance_weight: float
+    phase_dc_weight: float
     coco_checkpoint: Path
 
     # DUTS segmentation pretraining.
     duts_head_warmup_epochs: int
     duts_finetune_epochs: int
     duts_optical_learning_rate: float
+    duts_phase_learning_rate: float
     duts_recombiner_learning_rate: float
     duts_head_learning_rate: float
     duts_weight_decay: float
@@ -254,9 +257,11 @@ class Settings:
             raise ValueError("pca.tokens_per_image cannot exceed max_visual_tokens")
         for name in (
             "coco_optical_learning_rate",
+            "coco_phase_learning_rate",
             "coco_router_learning_rate",
             "coco_recombiner_learning_rate",
             "duts_optical_learning_rate",
+            "duts_phase_learning_rate",
             "duts_recombiner_learning_rate",
             "duts_head_learning_rate",
             "smooth_l1_beta",
@@ -268,6 +273,7 @@ class Settings:
             "smooth_l1_loss_weight",
             "router_balance_weight",
             "router_importance_weight",
+            "phase_dc_weight",
             "bce_weight",
             "dice_weight",
             "soft_iou_weight",
@@ -403,6 +409,9 @@ def load_settings(path: str | Path) -> Settings:
         coco_optical_learning_rate=float(
             d("coco_training.optical_learning_rate", 2e-4)
         ),
+        coco_phase_learning_rate=float(
+            d("coco_training.phase_learning_rate", 4e-3)
+        ),
         coco_router_learning_rate=float(
             d("coco_training.router_learning_rate", 5e-4)
         ),
@@ -417,11 +426,15 @@ def load_settings(path: str | Path) -> Settings:
         router_importance_weight=float(
             d("coco_loss.router_importance_weight", 0.0)
         ),
+        phase_dc_weight=float(d("optical.phase.dc_loss_weight", 0.0)),
         coco_checkpoint=coco_checkpoint,
         duts_head_warmup_epochs=int(d("duts_training.head_warmup_epochs", 5)),
         duts_finetune_epochs=int(d("duts_training.finetune_epochs", 50)),
         duts_optical_learning_rate=float(
             d("duts_training.optical_learning_rate", 1e-4)
+        ),
+        duts_phase_learning_rate=float(
+            d("duts_training.phase_learning_rate", 2e-3)
         ),
         duts_recombiner_learning_rate=float(
             d("duts_training.recombiner_learning_rate", 2e-4)

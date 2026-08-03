@@ -19,6 +19,7 @@ from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.modeling impo
     official_mrl_embedding,
 )
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipeline import (
+    bin_ccd_superpixels,
     load_hardware_config,
 )
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.optical_artifacts import (
@@ -28,6 +29,7 @@ from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.optical_artif
 )
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.optics.geometry import (
     Aperture,
+    MoEGeometry,
 )
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.optics.moe import (
     FullPlaneReadout,
@@ -35,7 +37,10 @@ from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.optics.moe im
     LanguageDeepStackHomogeneousMoE,
 )
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.optics.physical import (
+    PhaseLayer,
     SquareDetectionLayerNormReload,
+    phase_dc_loss,
+    phase_dc_statistics,
 )
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.prepare_grocery_retrieval_subset import (
     GrocerySample,
@@ -50,6 +55,10 @@ from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.settings impo
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.train_optical_retrieval import (
     PKBatchSampler,
     _build_optimizer,
+    _phase_focus_epoch,
+    _phase_motion_statistics,
+    _phase_reference,
+    _set_phase_focus_trainability,
     embedding_distillation_loss,
     gallery_retrieval_logits,
     gallery_retrieval_loss,
@@ -121,8 +130,11 @@ def test_phase_learning_rate_gets_an_independent_optimizer_group() -> None:
         def __init__(self) -> None:
             super().__init__()
             self.raw_phase = nn.Parameter(torch.zeros(2, 2))
-            self.adapter = nn.Linear(2, 2)
+            self.input_adapter = nn.Linear(2, 2)
+            self.input_norm = nn.LayerNorm(2)
+            self.output_adapter = nn.Linear(2, 2)
             self.router = nn.Linear(2, 2)
+            self.other = nn.Parameter(torch.ones(1))
 
     class Surrogate(nn.Module):
         def __init__(self) -> None:
@@ -145,6 +157,8 @@ def test_phase_learning_rate_gets_an_independent_optimizer_group() -> None:
         learning_rate=1.0e-5,
         router_learning_rate=2.0e-5,
         phase_learning_rate=1.0e-6,
+        adapter_learning_rate=3.0e-5,
+        readout_learning_rate=4.0e-5,
         weight_decay=0.0,
     )
     optimizer, _ = _build_optimizer(replacement, readout, settings)
@@ -153,6 +167,8 @@ def test_phase_learning_rate_gets_an_independent_optimizer_group() -> None:
         for group in optimizer.param_groups
     }
     assert groups["student_base"]["lr"] == 1.0e-5
+    assert groups["optical_adapters"]["lr"] == 3.0e-5
+    assert groups["retrieval_readout"]["lr"] == 4.0e-5
     assert groups["routers"]["lr"] == 2.0e-5
     assert groups["optical_phases"]["lr"] == 1.0e-6
     phase_ids = {
@@ -160,6 +176,107 @@ def test_phase_learning_rate_gets_an_independent_optimizer_group() -> None:
         id(replacement.language_surrogate.core.raw_phase),
     }
     assert {id(value) for value in groups["optical_phases"]["params"]} == phase_ids
+
+    _set_phase_focus_trainability(optimizer, True)
+    assert groups["optical_phases"]["lr"] == pytest.approx(1.0e-6)
+    assert all(
+        parameter.requires_grad
+        for parameter in groups["optical_phases"]["params"]
+    )
+    assert all(
+        not parameter.requires_grad
+        for name, group in groups.items()
+        if name != "optical_phases"
+        for parameter in group["params"]
+    )
+    _set_phase_focus_trainability(optimizer, False)
+    assert all(
+        parameter.requires_grad
+        for group in optimizer.param_groups
+        for parameter in group["params"]
+    )
+
+
+def test_phase_focus_schedule_and_motion_are_explicit() -> None:
+    settings = load_settings(
+        EXPERIMENT / "configs" / "grocery10_phase_engaged.yaml"
+    )
+    assert settings.phase_focus_enabled
+    assert not _phase_focus_epoch(settings, 5)
+    assert _phase_focus_epoch(settings, 6)
+    assert not _phase_focus_epoch(settings, 7)
+    assert _phase_focus_epoch(settings, 8)
+    assert not _phase_focus_epoch(settings, 9)
+    assert settings.phase_learning_rate == pytest.approx(8.0e-3)
+    assert settings.adapter_learning_rate == pytest.approx(2.0e-4)
+    assert settings.readout_learning_rate == pytest.approx(5.0e-4)
+    assert not settings.transformer_residual_enabled
+    assert settings.lambda_phase_dc == pytest.approx(5.0)
+    assert settings.phase_dc_start_epoch == 1
+    assert settings.phase_init == "small_normal"
+    assert settings.phase_init_std == pytest.approx(0.2)
+    assert settings.k_space_constraint_enabled
+    assert settings.theta_max_deg == pytest.approx(2.0)
+    assert settings.optimizer_steps_per_epoch == 100
+
+    phase_groups = {
+        "vision_expert": [nn.Parameter(torch.zeros(2, 2))],
+        "vision_global": [nn.Parameter(torch.zeros(2, 2))],
+        "language_expert": [nn.Parameter(torch.zeros(2, 2))],
+        "language_global": [nn.Parameter(torch.zeros(2, 2))],
+    }
+    reference = _phase_reference(phase_groups)
+    unchanged = _phase_motion_statistics(phase_groups, reference, reference)
+    assert unchanged["phase_physical_std_rad"] == pytest.approx(0.0, abs=1.0e-6)
+    assert unchanged["phase_delta_run_rms_rad"] == pytest.approx(0.0)
+    with torch.no_grad():
+        phase_groups["vision_expert"][0][0, 0] = 0.5
+    changed = _phase_motion_statistics(phase_groups, reference, reference)
+    assert changed["vision_expert_phase_delta_run_rms_rad"] > 0.0
+    assert changed["phase_delta_run_rms_rad"] > 0.0
+
+
+def test_phase_dc_loss_is_per_plane_and_has_gradient_after_symmetry_breaking() -> None:
+    module = nn.Sequential(
+        PhaseLayer(8, init="small_normal", init_std=0.2),
+        PhaseLayer(8, init="small_normal", init_std=0.2),
+    )
+    loss = phase_dc_loss(module)
+    assert loss.ndim == 0
+    assert 0.0 <= float(loss.detach()) <= 1.0 + 1.0e-6
+    loss.backward()
+    assert all(layer.raw_phase.grad is not None for layer in module)
+    assert all(torch.count_nonzero(layer.raw_phase.grad) > 0 for layer in module)
+    stats = phase_dc_statistics(module)
+    assert stats["phase_dc_plane_count"] == 2
+    assert stats["phase_dc_current_loss"] == pytest.approx(float(loss.detach()))
+
+
+def test_uniform_phase_dc_loss_exposes_zero_gradient_stationary_point() -> None:
+    layer = PhaseLayer(8, init="zeros")
+    loss = phase_dc_loss(layer)
+    loss.backward()
+    assert float(loss.detach()) == pytest.approx(1.0, abs=1.0e-6)
+    assert torch.allclose(layer.raw_phase.grad, torch.zeros_like(layer.raw_phase))
+
+
+def test_phase_dc_loss_accepts_non_module_replacement_wrapper() -> None:
+    class Wrapper:
+        def __init__(self) -> None:
+            self.vision_surrogate = nn.Sequential(
+                PhaseLayer(4, init="small_normal", init_std=0.2)
+            )
+            self.language_surrogate = nn.Sequential(
+                PhaseLayer(4, init="small_normal", init_std=0.2)
+            )
+
+    wrapper = Wrapper()
+    loss = phase_dc_loss(wrapper)
+    loss.backward()
+    assert torch.isfinite(loss)
+    assert phase_dc_statistics(wrapper)["phase_dc_plane_count"] == 2
+    for surrogate in (wrapper.vision_surrogate, wrapper.language_surrogate):
+        assert surrogate[0].raw_phase.grad is not None
 
 
 def test_relational_kd_matches_pairwise_teacher_geometry() -> None:
@@ -219,7 +336,7 @@ def test_canonical_best_reproduction_configs_are_explicit() -> None:
     assert len(stage2.selected_skus) == 10 and stage2.epochs == 50
     assert stage3.epochs == 40
     assert stage3.ema_decay == pytest.approx(0.99)
-    assert stage3.phase_learning_rate == pytest.approx(1.0e-6)
+    assert stage3.phase_learning_rate == pytest.approx(1.0e-3)
     assert stage3.crop_scale_min == pytest.approx(0.75)
     assert [stage["name"] for stage in pipeline["stages"]] == [
         "grocery31_pretrain",
@@ -241,6 +358,20 @@ def test_slm_encoding_preserves_relative_amplitude_and_wraps_phase() -> None:
     assert phase[0, 0].item() == 0
     assert phase[0, 1].item() in {127, 128}
     assert phase[0, 2].item() == 0
+
+
+def test_percentile_amplitude_encoding_ignores_padding_and_clips_outlier() -> None:
+    amplitude = torch.tensor([[0.0] * 100 + [1.0] * 99 + [100.0]])
+    encoded, metadata = encode_amplitude_uint8(
+        amplitude,
+        mode="positive_percentile",
+        percentile=99.0,
+    )
+    assert metadata["normalization_divisor"] < 100.0
+    assert metadata["raw_nonzero_ratio"] == pytest.approx(0.5)
+    assert metadata["raw_clipped_ratio"] > 0.0
+    assert int(encoded[0, -1]) == 255
+    assert int(encoded[0, 100]) > 2
 
 
 def test_grocery_active_plane_bmp_uses_scale_one_and_exact_centering(
@@ -365,6 +496,52 @@ def test_student_has_one_expert_stage_plus_one_global_phase() -> None:
         )
     )
     assert total_with_readout == 4_951_848
+
+
+def test_moe4_superpixel2_geometry_and_phase_parameter_count() -> None:
+    settings = load_settings(
+        EXPERIMENT / "configs" / "grocery10_phase_dc_kspace_moe4_superpixel2.yaml"
+    )
+    geometry = MoEGeometry(
+        settings.canvas_size,
+        settings.active_size,
+        settings.expert_size,
+        settings.expert_pitch,
+        settings.num_experts,
+        settings.expert_grid_rows,
+        settings.expert_grid_cols,
+    )
+    geometry.validate()
+    assert geometry.outer_padding == 20
+    assert geometry.expert_gap == 30
+    assert geometry.footprint_width == geometry.footprint_height == 478
+    assert len(geometry.expert_apertures) == 4
+    assert settings.top_k == 2
+    assert settings.pixel_pitch_um == pytest.approx(16.0)
+    core = HomogeneousMoEOpticalCore(1024, 224, settings)
+    report = core.parameter_breakdown()
+    assert report["expert_phase_parameters"] == 4 * 224 * 224
+    assert report["global_phase_parameters"] == 478 * 478
+    assert report["optical_phase_parameters"] == 429_188
+
+
+def test_two_by_two_ccd_binning_is_exact_block_reduction() -> None:
+    physical = torch.tensor(
+        [
+            [1.0, 3.0, 2.0, 4.0],
+            [5.0, 7.0, 6.0, 8.0],
+            [9.0, 11.0, 10.0, 12.0],
+            [13.0, 15.0, 14.0, 16.0],
+        ]
+    )
+    assert torch.equal(
+        bin_ccd_superpixels(physical, 2, "mean"),
+        torch.tensor([[4.0, 5.0], [12.0, 13.0]]),
+    )
+    assert torch.equal(
+        bin_ccd_superpixels(physical, 2, "sum"),
+        torch.tensor([[16.0, 20.0], [48.0, 52.0]]),
+    )
 
 
 def test_official_dataset_split_and_no_leakage(tmp_path: Path) -> None:
@@ -532,6 +709,24 @@ def test_hardware_config_is_stage_first_and_uses_best_checkpoint() -> None:
     assert config.slm_pixel_pitch_um == 8.0
     assert config.capture_roi_xywh is None
     assert config.checkpoint.name == "ema_best_train_loss_checkpoint.pt"
+
+    phase_dc = load_hardware_config(
+        EXPERIMENT / "configs" / "grocery10_phase_dc_kspace_hardware.yaml"
+    )
+    assert phase_dc.model_config.name == "grocery10_phase_engaged.yaml"
+    assert phase_dc.checkpoint.name == "best_train_loss_checkpoint.pt"
+    assert phase_dc.amplitude_encoding_mode == "positive_percentile"
+    assert phase_dc.amplitude_encoding_percentile == pytest.approx(98.0)
+    assert phase_dc.amplitude_encoding_gamma == pytest.approx(1.0)
+
+    moe4 = load_hardware_config(
+        EXPERIMENT / "configs" / "grocery10_phase_dc_kspace_moe4_superpixel2_hardware.yaml"
+    )
+    assert moe4.model_config.name == "grocery10_phase_dc_kspace_moe4_superpixel2.yaml"
+    assert moe4.slm_pixel_pitch_um == pytest.approx(8.0)
+    assert moe4.capture_binning_factor == 2
+    assert moe4.capture_binning_reduction == "mean"
+    assert moe4.amplitude_encoding_percentile == pytest.approx(98.0)
 
 
 def test_pk_sampler_and_supervised_contrastive_backward(tmp_path: Path) -> None:

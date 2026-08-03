@@ -86,6 +86,47 @@ class ABORetrievalDataset(Dataset[dict[str, Any]]):
         }
 
 
+class AugmentedABORetrievalDataset(Dataset[dict[str, Any]]):
+    """Training-only mild product augmentation; IDs and split remain unchanged."""
+
+    def __init__(self, source: ABORetrievalDataset, settings: Any) -> None:
+        self.source = source
+        self.samples = source.samples
+        try:
+            from torchvision import transforms
+        except ImportError as exc:
+            raise RuntimeError(
+                "Training augmentation requires torchvision"
+            ) from exc
+        self.transform = transforms.Compose(
+            [
+                transforms.RandomResizedCrop(
+                    source.image_size,
+                    scale=(settings.augmentation_crop_scale_min, 1.0),
+                    ratio=(0.90, 1.10),
+                    interpolation=transforms.InterpolationMode.BICUBIC,
+                ),
+                transforms.RandomRotation(
+                    settings.augmentation_rotation_deg,
+                    interpolation=transforms.InterpolationMode.BICUBIC,
+                    fill=(255, 255, 255),
+                ),
+                transforms.ColorJitter(
+                    brightness=settings.augmentation_brightness,
+                    contrast=settings.augmentation_contrast,
+                ),
+            ]
+        )
+
+    def __len__(self) -> int:
+        return len(self.source)
+
+    def __getitem__(self, index: int) -> dict[str, Any]:
+        value = dict(self.source[index])
+        value["image"] = self.transform(value["image"])
+        return value
+
+
 @dataclass(frozen=True)
 class ABOBundle:
     stage1_train: ABORetrievalDataset

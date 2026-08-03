@@ -90,9 +90,12 @@ class Settings:
     pk_images_per_sku: int
     inference_batch_size: int
     num_workers: int
+    optimizer_steps_per_epoch: int | None
 
     epochs: int
     learning_rate: float
+    adapter_learning_rate: float | None
+    readout_learning_rate: float | None
     weight_decay: float
     lambda_kd: float
     lambda_relational_kd: float
@@ -101,11 +104,21 @@ class Settings:
     lambda_teacher_gallery: float
     lambda_router_balance: float
     lambda_router_importance: float
+    lambda_phase_dc: float
+    phase_dc_start_epoch: int
     temperature: float
     gallery_temperature: float
     gallery_prototype_stop_gradient: bool
     router_learning_rate: float | None
     phase_learning_rate: float | None
+    gradient_clip_norm: float | None
+    phase_focus_enabled: bool
+    phase_focus_warmup_epochs: int
+    phase_focus_interval_epochs: int
+    phase_gradient_measure_interval_batches: int
+    phase_motion_warning_epoch: int
+    phase_motion_warning_threshold_rad: float
+    phase_preview_interval_epochs: int
     ema_decay: float | None
     resume_optimizer_state: bool
     random_seed: int
@@ -268,12 +281,12 @@ class Settings:
             raise ValueError("detector_output_size must equal input_adapter_dim")
         if self.max_visual_tokens > self.expert_size or self.max_language_tokens > self.expert_size:
             raise ValueError("token limits cannot exceed expert_size")
+        if self.top_k > self.num_experts:
+            raise ValueError("router top_k cannot exceed num_experts")
         if self.student_language_mode != "optical_moe":
             raise ValueError("This retrieval experiment requires optical vision and language stacks")
         if self.native_pre_attention_enabled:
             raise ValueError("The first retrieval baseline keeps native electronic attention disabled")
-        if not self.transformer_residual_enabled:
-            raise ValueError("Transformer-style residual must remain enabled")
         if self.expert_layers != 1 or self.vision_tap_stages != (1,):
             raise ValueError(
                 "The retrieval baseline requires one expert stage and one "
@@ -289,6 +302,7 @@ class Settings:
             self.lambda_teacher_gallery,
             self.lambda_router_balance,
             self.lambda_router_importance,
+            self.lambda_phase_dc,
         )
         if any(value < 0 for value in loss_weights):
             raise ValueError("All training loss weights must be non-negative")
@@ -304,10 +318,32 @@ class Settings:
             raise ValueError("router_learning_rate must be positive when configured")
         if self.phase_learning_rate is not None and self.phase_learning_rate <= 0:
             raise ValueError("phase_learning_rate must be positive when configured")
+        if self.adapter_learning_rate is not None and self.adapter_learning_rate <= 0:
+            raise ValueError("adapter_learning_rate must be positive when configured")
+        if self.readout_learning_rate is not None and self.readout_learning_rate <= 0:
+            raise ValueError("readout_learning_rate must be positive when configured")
+        if self.gradient_clip_norm is not None and self.gradient_clip_norm <= 0:
+            raise ValueError("gradient_clip_norm must be positive when configured")
+        if self.phase_focus_warmup_epochs < 0:
+            raise ValueError("phase_focus_warmup_epochs cannot be negative")
+        if self.phase_focus_interval_epochs <= 0:
+            raise ValueError("phase_focus_interval_epochs must be positive")
+        if self.phase_gradient_measure_interval_batches <= 0:
+            raise ValueError("phase_gradient_measure_interval_batches must be positive")
+        if self.phase_motion_warning_epoch <= 0:
+            raise ValueError("phase_motion_warning_epoch must be positive")
+        if self.phase_motion_warning_threshold_rad < 0:
+            raise ValueError("phase_motion_warning_threshold_rad cannot be negative")
+        if self.phase_preview_interval_epochs <= 0:
+            raise ValueError("phase_preview_interval_epochs must be positive")
+        if self.phase_dc_start_epoch <= 0:
+            raise ValueError("phase_dc_start_epoch must be positive")
         if self.ema_decay is not None and not 0.0 < self.ema_decay < 1.0:
             raise ValueError("ema_decay must be strictly between 0 and 1 when configured")
         if self.gallery_aggregation == "mean_prototype" and self.gallery_images_per_sku < 1:
             raise ValueError("mean_prototype needs at least one gallery image")
+        if self.optimizer_steps_per_epoch is not None and self.optimizer_steps_per_epoch <= 0:
+            raise ValueError("batching.optimizer_steps_per_epoch must be positive or null")
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -351,10 +387,13 @@ class Settings:
                 "pk_images_per_sku": self.pk_images_per_sku,
                 "inference_batch_size": self.inference_batch_size,
                 "num_workers": self.num_workers,
+                "optimizer_steps_per_epoch": self.optimizer_steps_per_epoch,
             },
             "training": {
                 "epochs": self.epochs,
                 "learning_rate": self.learning_rate,
+                "adapter_learning_rate": self.adapter_learning_rate,
+                "readout_learning_rate": self.readout_learning_rate,
                 "weight_decay": self.weight_decay,
                 "lambda_kd": self.lambda_kd,
                 "lambda_relational_kd": self.lambda_relational_kd,
@@ -363,6 +402,8 @@ class Settings:
                 "lambda_teacher_gallery": self.lambda_teacher_gallery,
                 "lambda_router_balance": self.lambda_router_balance,
                 "lambda_router_importance": self.lambda_router_importance,
+                "lambda_phase_dc": self.lambda_phase_dc,
+                "phase_dc_start_epoch": self.phase_dc_start_epoch,
                 "temperature": self.temperature,
                 "gallery_temperature": self.gallery_temperature,
                 "gallery_prototype_stop_gradient": (
@@ -370,6 +411,22 @@ class Settings:
                 ),
                 "router_learning_rate": self.router_learning_rate,
                 "phase_learning_rate": self.phase_learning_rate,
+                "gradient_clip_norm": self.gradient_clip_norm,
+                "phase_focus": {
+                    "enabled": self.phase_focus_enabled,
+                    "warmup_epochs": self.phase_focus_warmup_epochs,
+                    "interval_epochs": self.phase_focus_interval_epochs,
+                },
+                "phase_diagnostics": {
+                    "gradient_measure_interval_batches": (
+                        self.phase_gradient_measure_interval_batches
+                    ),
+                    "motion_warning_epoch": self.phase_motion_warning_epoch,
+                    "motion_warning_threshold_rad": (
+                        self.phase_motion_warning_threshold_rad
+                    ),
+                    "preview_interval_epochs": self.phase_preview_interval_epochs,
+                },
                 "ema_decay": self.ema_decay,
                 "resume_optimizer_state": self.resume_optimizer_state,
                 "random_seed": self.random_seed,
@@ -494,8 +551,23 @@ def load_settings(path: str | Path) -> Settings:
         pk_images_per_sku=int(d("batching.pk_images_per_sku", 4)),
         inference_batch_size=int(d("batching.inference_batch_size", 4)),
         num_workers=int(d("batching.num_workers", 4)),
+        optimizer_steps_per_epoch=(
+            None
+            if d("batching.optimizer_steps_per_epoch") is None
+            else int(d("batching.optimizer_steps_per_epoch"))
+        ),
         epochs=int(d("training.epochs", 50)),
         learning_rate=float(d("training.learning_rate", 0.002)),
+        adapter_learning_rate=(
+            None
+            if d("training.adapter_learning_rate") is None
+            else float(d("training.adapter_learning_rate"))
+        ),
+        readout_learning_rate=(
+            None
+            if d("training.readout_learning_rate") is None
+            else float(d("training.readout_learning_rate"))
+        ),
         weight_decay=float(d("training.weight_decay", 0.0)),
         lambda_kd=float(d("training.lambda_kd", 1.0)),
         lambda_relational_kd=float(d("training.lambda_relational_kd", 0.0)),
@@ -504,6 +576,8 @@ def load_settings(path: str | Path) -> Settings:
         lambda_teacher_gallery=float(d("training.lambda_teacher_gallery", 0.0)),
         lambda_router_balance=float(d("training.lambda_router_balance", 0.0)),
         lambda_router_importance=float(d("training.lambda_router_importance", 0.0)),
+        lambda_phase_dc=float(d("training.lambda_phase_dc", 0.0)),
+        phase_dc_start_epoch=int(d("training.phase_dc_start_epoch", 1)),
         temperature=float(d("training.temperature", 0.07)),
         gallery_temperature=float(
             d("training.gallery_temperature", d("training.temperature", 0.07))
@@ -520,6 +594,30 @@ def load_settings(path: str | Path) -> Settings:
             None
             if d("training.phase_learning_rate") is None
             else float(d("training.phase_learning_rate"))
+        ),
+        gradient_clip_norm=(
+            None
+            if d("training.gradient_clip_norm") is None
+            else float(d("training.gradient_clip_norm"))
+        ),
+        phase_focus_enabled=bool(d("training.phase_focus.enabled", False)),
+        phase_focus_warmup_epochs=int(
+            d("training.phase_focus.warmup_epochs", 5)
+        ),
+        phase_focus_interval_epochs=int(
+            d("training.phase_focus.interval_epochs", 3)
+        ),
+        phase_gradient_measure_interval_batches=int(
+            d("training.phase_diagnostics.gradient_measure_interval_batches", 10)
+        ),
+        phase_motion_warning_epoch=int(
+            d("training.phase_diagnostics.motion_warning_epoch", 5)
+        ),
+        phase_motion_warning_threshold_rad=float(
+            d("training.phase_diagnostics.motion_warning_threshold_rad", 0.01)
+        ),
+        phase_preview_interval_epochs=int(
+            d("training.phase_diagnostics.preview_interval_epochs", 5)
         ),
         ema_decay=(
             None

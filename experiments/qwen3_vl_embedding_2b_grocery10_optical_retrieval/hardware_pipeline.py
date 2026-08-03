@@ -57,8 +57,13 @@ class HardwareConfig:
     amplitude_slm_size: tuple[int, int]
     phase_slm_size: tuple[int, int]
     slm_pixel_pitch_um: float
+    amplitude_encoding_mode: str
+    amplitude_encoding_percentile: float
+    amplitude_encoding_gamma: float
     capture_roi_xywh: tuple[int, int, int, int] | None
     capture_dark_level: float
+    capture_binning_factor: int
+    capture_binning_reduction: str
     simulation_tensor_dtype: torch.dtype
     simulation_save_complex_fields: bool
     sample_limit: int | None = None
@@ -90,6 +95,7 @@ def load_hardware_config(path: str | Path) -> HardwareConfig:
     dtypes = {"float16": torch.float16, "float32": torch.float32}
     if dtype_name not in dtypes:
         raise ValueError("simulation.tensor_dtype must be float16 or float32")
+    amplitude_encoding = raw.get("slm", {}).get("amplitude_encoding", {})
     result = HardwareConfig(
         config_path=config_path,
         model_config=_resolve(raw["model_config"], base),
@@ -105,8 +111,17 @@ def load_hardware_config(path: str | Path) -> HardwareConfig:
         amplitude_slm_size=tuple(int(v) for v in raw.get("slm", {}).get("amplitude_size_wh", [1920, 1080])),
         phase_slm_size=tuple(int(v) for v in raw.get("slm", {}).get("phase_size_wh", [1920, 1200])),
         slm_pixel_pitch_um=float(raw.get("slm", {}).get("pixel_pitch_um", 8.0)),
+        amplitude_encoding_mode=str(
+            amplitude_encoding.get("mode", "per_plane_max")
+        ),
+        amplitude_encoding_percentile=float(
+            amplitude_encoding.get("percentile", 99.5)
+        ),
+        amplitude_encoding_gamma=float(amplitude_encoding.get("gamma", 1.0)),
         capture_roi_xywh=None if roi is None else tuple(int(v) for v in roi),
         capture_dark_level=float(raw.get("capture", {}).get("dark_level", 0.0)),
+        capture_binning_factor=int(raw.get("capture", {}).get("binning_factor", 1)),
+        capture_binning_reduction=str(raw.get("capture", {}).get("binning_reduction", "mean")),
         simulation_tensor_dtype=dtypes[dtype_name],
         simulation_save_complex_fields=bool(raw.get("simulation", {}).get("save_complex_fields", True)),
     )
@@ -114,8 +129,23 @@ def load_hardware_config(path: str | Path) -> HardwareConfig:
         raise ValueError("selection.queries_per_sku must be positive")
     if len(result.amplitude_slm_size) != 2 or len(result.phase_slm_size) != 2:
         raise ValueError("SLM sizes must be [width,height]")
+    if result.amplitude_encoding_mode not in {
+        "per_plane_max",
+        "positive_percentile",
+    }:
+        raise ValueError(
+            "slm.amplitude_encoding.mode must be per_plane_max or positive_percentile"
+        )
+    if not 0.0 < result.amplitude_encoding_percentile <= 100.0:
+        raise ValueError("slm.amplitude_encoding.percentile must be in (0,100]")
+    if result.amplitude_encoding_gamma <= 0.0:
+        raise ValueError("slm.amplitude_encoding.gamma must be positive")
     if result.capture_roi_xywh is not None and len(result.capture_roi_xywh) != 4:
         raise ValueError("capture.roi_xywh must be null or [x,y,width,height]")
+    if result.capture_binning_factor <= 0:
+        raise ValueError("capture.binning_factor must be positive")
+    if result.capture_binning_reduction not in {"mean", "sum"}:
+        raise ValueError("capture.binning_reduction must be mean or sum")
     return result
 
 
@@ -254,6 +284,9 @@ def _save_amplitude(runtime: Runtime, stage: str, key: str, amplitude: torch.Ten
         scale_factor=factor,
         slm_width=runtime.hardware.amplitude_slm_size[0],
         slm_height=runtime.hardware.amplitude_slm_size[1],
+        amplitude_encoding_mode=runtime.hardware.amplitude_encoding_mode,
+        amplitude_percentile=runtime.hardware.amplitude_encoding_percentile,
+        amplitude_gamma=runtime.hardware.amplitude_encoding_gamma,
     )
     _preview(amplitude, preview_path, f"{stage} amplitude {key}", "amplitude")
     write_json(prefix / "amplitude_metadata" / f"{key}.json", {**report, "raw_tensor": str(raw_path), "stats": tensor_stats(amplitude)})
@@ -301,6 +334,30 @@ def _load_numeric_image(path: Path) -> torch.Tensor:
     return torch.from_numpy(np.asarray(array).copy()).float()
 
 
+def bin_ccd_superpixels(
+    intensity: torch.Tensor,
+    factor: int,
+    reduction: str = "mean",
+) -> torch.Tensor:
+    """Combine physical CCD pixels into logical model pixels without interpolation."""
+    if intensity.ndim != 2:
+        raise ValueError(f"CCD superpixel binning expects 2-D intensity, got {tuple(intensity.shape)}")
+    factor = int(factor)
+    if factor <= 0:
+        raise ValueError("CCD binning factor must be positive")
+    height, width = intensity.shape
+    if height % factor or width % factor:
+        raise ValueError(
+            f"CCD shape {tuple(intensity.shape)} is not divisible by binning factor {factor}"
+        )
+    blocks = intensity.reshape(height // factor, factor, width // factor, factor)
+    if reduction == "mean":
+        return blocks.mean(dim=(1, 3))
+    if reduction == "sum":
+        return blocks.sum(dim=(1, 3))
+    raise ValueError("CCD binning reduction must be mean or sum")
+
+
 def load_captured_intensity(runtime: Runtime, stage: str, key: str, *, use_simulation: bool) -> torch.Tensor:
     root = runtime.hardware.output_dir / STAGES[stage]
     if use_simulation:
@@ -330,13 +387,26 @@ def load_captured_intensity(runtime: Runtime, stage: str, key: str, *, use_simul
         if value.ndim != 2 or x < 0 or y < 0 or y + height > value.shape[0] or x + width > value.shape[1]:
             raise RuntimeError(f"Configured CCD ROI {roi} is outside captured shape {tuple(value.shape)}")
         value = value[y : y + height, x : x + width]
-    expected = (runtime.settings.active_size, runtime.settings.active_size)
-    if value.ndim != 2 or tuple(value.shape) != expected:
-        raise RuntimeError(
-            f"Registered CCD intensity must be exactly {expected}; got {tuple(value.shape)}. "
-            "Set capture.roi_xywh explicitly for a full-sensor image. Resizing is forbidden."
-        )
+    if value.ndim != 2:
+        raise RuntimeError(f"Registered CCD intensity must be 2-D; got {tuple(value.shape)}")
     value = (value - runtime.hardware.capture_dark_level).clamp_min(0.0)
+    expected = (runtime.settings.active_size, runtime.settings.active_size)
+    factor = 1 if use_simulation else runtime.hardware.capture_binning_factor
+    physical_expected = (expected[0] * factor, expected[1] * factor)
+    if tuple(value.shape) != physical_expected:
+        raise RuntimeError(
+            f"Registered CCD intensity must be exactly {physical_expected} before "
+            f"{factor}x binning; got {tuple(value.shape)}. Set capture.roi_xywh "
+            "explicitly for a full-sensor image. Arbitrary resizing is forbidden."
+        )
+    if factor > 1:
+        value = bin_ccd_superpixels(
+            value,
+            factor,
+            runtime.hardware.capture_binning_reduction,
+        )
+    if tuple(value.shape) != expected:
+        raise RuntimeError(f"Binned CCD intensity must be {expected}, got {tuple(value.shape)}")
     if not torch.isfinite(value).all() or torch.any(value < 0):
         raise RuntimeError(f"CCD intensity {path} contains invalid values")
     return value
@@ -428,8 +498,13 @@ def _capture_readme(runtime: Runtime, stage: str) -> None:
         f"`../../00_masks/{STAGES[stage]}/` is loaded. Save one file with the exact "
         "same basename as each amplitude BMP. Accepted lossless formats: `.pt`, `.npy`, "
         "`.tif`, `.tiff`, `.png`. Data must be square-law detector intensity, not "
-        "amplitude. The registered ROI must be 986x986; use `capture.roi_xywh` for a "
-        "larger sensor image. JPEG and implicit resize are forbidden.\n",
+        "amplitude. The registered physical ROI must be "
+        f"{runtime.settings.active_size * runtime.hardware.capture_binning_factor}x"
+        f"{runtime.settings.active_size * runtime.hardware.capture_binning_factor}; "
+        "use `capture.roi_xywh` for a larger sensor image. The pipeline then performs "
+        f"non-interpolating {runtime.hardware.capture_binning_factor}x"
+        f" {runtime.hardware.capture_binning_reduction} binning. JPEG and arbitrary "
+        "resize are forbidden.\n",
         encoding="utf-8",
     )
 
@@ -520,6 +595,28 @@ def prepare(runtime: Runtime) -> dict[str, Any]:
         "checkpoint_copy": str(checkpoint_copy),
         "checkpoint_sha256": _sha256(checkpoint_copy),
         "model_config": str(runtime.settings.config_path),
+        "amplitude_encoding": {
+            "mode": runtime.hardware.amplitude_encoding_mode,
+            "percentile": runtime.hardware.amplitude_encoding_percentile,
+            "percentile_population": "strictly_positive_pixels",
+            "gamma": runtime.hardware.amplitude_encoding_gamma,
+            "warning": (
+                "Percentile clipping raises average SLM transmission but changes "
+                "the clipped tail. Every per-file divisor is recorded in "
+                "amplitude_metadata."
+            ),
+        },
+        "capture": {
+            "roi_xywh": runtime.hardware.capture_roi_xywh,
+            "dark_level": runtime.hardware.capture_dark_level,
+            "binning_factor": runtime.hardware.capture_binning_factor,
+            "binning_reduction": runtime.hardware.capture_binning_reduction,
+            "logical_active_shape": [runtime.settings.active_size, runtime.settings.active_size],
+            "required_physical_roi_shape": [
+                runtime.settings.active_size * runtime.hardware.capture_binning_factor,
+                runtime.settings.active_size * runtime.hardware.capture_binning_factor,
+            ],
+        },
         "dataset_manifest_sha256": runtime.bundle.manifest_digest,
         "phase_masks": phase_reports,
         "sequence": [
@@ -727,12 +824,15 @@ def main() -> int:
     parser.add_argument("--phase", required=True, choices=sorted(PHASES))
     parser.add_argument("--use-simulation", action="store_true", help="Use saved simulated CCD intensity instead of physical capture files")
     parser.add_argument("--output-dir", default=None, help="Optional deployment-output override, useful for a disposable replay smoke test")
+    parser.add_argument("--checkpoint", default=None, help="Optional checkpoint override; its architecture must match model_config")
     parser.add_argument("--queries-per-sku", type=int, default=None, help="Optional query-count override; all gallery images remain included")
     parser.add_argument("--sample-limit", type=int, default=None, help="Prepare-only equipment smoke limit; do not use for final retrieval evaluation")
     args = parser.parse_args()
     hardware = load_hardware_config(args.config)
     if args.output_dir is not None:
         hardware = replace(hardware, output_dir=Path(args.output_dir).expanduser().resolve())
+    if args.checkpoint is not None:
+        hardware = replace(hardware, checkpoint=Path(args.checkpoint).expanduser().resolve())
     if args.queries_per_sku is not None:
         if args.queries_per_sku <= 0:
             raise ValueError("--queries-per-sku must be positive")

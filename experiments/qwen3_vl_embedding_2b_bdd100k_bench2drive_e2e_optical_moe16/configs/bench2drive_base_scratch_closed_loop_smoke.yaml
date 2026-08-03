@@ -1,0 +1,21 @@
+base_config: bench2drive_base_scratch_runtime_smoke.yaml
+
+# Uses the real Python-3.8 CARLA service through the local process bridge, but
+# reuses the tiny real-data BC checkpoint produced by the runtime smoke.
+sac:
+  env_factory: experiments.qwen3_vl_embedding_2b_bdd100k_bench2drive_e2e_optical_moe16.carla_bridge:make_remote_carla_env
+  total_steps: 6
+  random_steps: 2
+  batch_size: 4
+  replay_capacity: 16
+  replay_store_images: false
+  unfreeze:
+    freeze_backbone_steps: 6
+    linear_step: null
+    phase_step: null
+  carla:
+    max_episode_steps: 20
+
+training:
+  log_interval_batches: 1
+

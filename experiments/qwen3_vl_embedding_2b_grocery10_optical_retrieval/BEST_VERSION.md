@@ -73,7 +73,8 @@ LayerNorm(224) → Linear(224,64) → L2 Normalize
    159 的最低训练损失 EMA 权重。
 
 最终阶段使用 KD weight 8、retrieval weight 1、gallery weight 0.25、router balance
-0.02、importance 0.005；base/router/phase learning rate 分别为 `1e-5 / 2e-5 / 1e-6`。
+0.02、importance 0.005；服务器保存的 resolved config 与 checkpoint metadata
+记录的 base/router/phase learning rate 分别为 `1e-5 / 2e-5 / 1e-3`。
 
 ## 一键复现
 

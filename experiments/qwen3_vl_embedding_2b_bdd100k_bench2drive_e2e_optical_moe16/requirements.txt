@@ -3,4 +3,6 @@ transformers
 Pillow
 numpy
 PyYAML
+huggingface_hub
+gymnasium
 pytest

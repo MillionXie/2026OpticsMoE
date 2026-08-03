@@ -186,6 +186,15 @@ class Settings:
         self.gallery_aggregation = str(
             _nested(raw, "retrieval.gallery_aggregation", "mean_prototype")
         )
+        self.student_architecture = str(
+            _nested(raw, "retrieval.student_architecture", "vision_only")
+        )
+        self.teacher_embedding_mode = str(
+            _nested(raw, "retrieval.teacher_embedding_mode", "frozen_mrl")
+        )
+        self.teacher_raw_hidden_dim = int(
+            _nested(raw, "retrieval.teacher_raw_hidden_dim", 2048)
+        )
         self.teacher_batch_size = int(_nested(raw, "batching.teacher_batch_size", 4))
         self.stage1_batch_size = int(_nested(raw, "batching.stage1_batch_size", 8))
         self.stage1_pk_items = int(_nested(raw, "batching.stage1_pk_items", 4))
@@ -197,6 +206,9 @@ class Settings:
             _nested(raw, "batching.inference_batch_size", 8)
         )
         self.num_workers = int(_nested(raw, "batching.num_workers", 6))
+        self.contrastive_memory_size = int(
+            _nested(raw, "batching.contrastive_memory_size", 0)
+        )
 
         # Training.
         self.stage1_epochs = int(_nested(raw, "training.stage1_epochs", 50))
@@ -208,6 +220,27 @@ class Settings:
             _nested(raw, "training.stage2_learning_rate", 0.001)
         )
         self.weight_decay = float(_nested(raw, "training.weight_decay", 0.0))
+        self.use_grouped_learning_rates = bool(
+            _nested(raw, "training.use_grouped_learning_rates", False)
+        )
+        self.phase_learning_rate = float(
+            _nested(raw, "training.phase_learning_rate", 1.0e-3)
+        )
+        self.adapter_learning_rate = float(
+            _nested(raw, "training.adapter_learning_rate", 5.0e-4)
+        )
+        self.router_learning_rate = float(
+            _nested(raw, "training.router_learning_rate", 2.0e-4)
+        )
+        self.head_learning_rate = float(
+            _nested(raw, "training.head_learning_rate", 1.0e-3)
+        )
+        self.electronic_weight_decay = float(
+            _nested(raw, "training.electronic_weight_decay", 1.0e-4)
+        )
+        self.gradient_clip_norm = float(
+            _nested(raw, "training.gradient_clip_norm", 1.0)
+        )
         self.random_seed = int(_nested(raw, "training.random_seed", 42))
         self.amp_enabled = bool(_nested(raw, "training.amp_enabled", True))
         self.log_interval_batches = int(
@@ -222,7 +255,59 @@ class Settings:
         self.lambda_router_importance = float(
             _nested(raw, "loss.router_importance", 0.0)
         )
+        self.lambda_router_entropy = float(
+            _nested(raw, "loss.router_entropy", 0.0)
+        )
+        self.lambda_phase_dc = float(_nested(raw, "loss.phase_dc", 0.0))
+        self.lambda_relational_kd = float(
+            _nested(raw, "loss.relational_kd", 0.0)
+        )
         self.temperature = float(_nested(raw, "loss.temperature", 0.07))
+        self.identity_scale = float(_nested(raw, "loss.identity_scale", 30.0))
+        self.identity_margin = float(_nested(raw, "loss.identity_margin", 0.10))
+
+        # Offline product-adapted Teacher head. It never enters deployment.
+        self.teacher_adapter_epochs = int(
+            _nested(raw, "teacher_adapter.epochs", 30)
+        )
+        self.teacher_adapter_batch_size = int(
+            _nested(raw, "teacher_adapter.batch_size", 64)
+        )
+        self.teacher_adapter_pk_items = int(
+            _nested(raw, "teacher_adapter.pk_items", 32)
+        )
+        self.teacher_adapter_pk_images = int(
+            _nested(raw, "teacher_adapter.pk_images", 2)
+        )
+        self.teacher_adapter_learning_rate = float(
+            _nested(raw, "teacher_adapter.learning_rate", 1.0e-3)
+        )
+        self.teacher_adapter_weight_decay = float(
+            _nested(raw, "teacher_adapter.weight_decay", 1.0e-4)
+        )
+        self.teacher_adapter_supcon_weight = float(
+            _nested(raw, "teacher_adapter.supcon_weight", 1.0)
+        )
+        self.teacher_adapter_identity_weight = float(
+            _nested(raw, "teacher_adapter.identity_weight", 0.5)
+        )
+
+        # Mild geometry/photometric augmentation. Gallery/Query remain deterministic.
+        self.augmentation_enabled = bool(
+            _nested(raw, "augmentation.enabled", False)
+        )
+        self.augmentation_crop_scale_min = float(
+            _nested(raw, "augmentation.crop_scale_min", 0.80)
+        )
+        self.augmentation_rotation_deg = float(
+            _nested(raw, "augmentation.rotation_deg", 5.0)
+        )
+        self.augmentation_brightness = float(
+            _nested(raw, "augmentation.brightness", 0.15)
+        )
+        self.augmentation_contrast = float(
+            _nested(raw, "augmentation.contrast", 0.15)
+        )
 
         # Optical core. Names intentionally match the validated reusable core.
         self.input_adapter_dim = int(_nested(raw, "optical.input_adapter_dim", 224))
@@ -244,6 +329,12 @@ class Settings:
         self.router_pool_size = int(_nested(raw, "optical.router.pool_size", 14))
         self.router_temperature = float(
             _nested(raw, "optical.router.temperature", 1.0)
+        )
+        self.router_temperature_final = float(
+            _nested(raw, "optical.router.temperature_final", self.router_temperature)
+        )
+        self.router_temperature_warmup_epochs = int(
+            _nested(raw, "optical.router.temperature_warmup_epochs", 0)
         )
         self.router_input_layernorm_enabled = bool(
             _nested(raw, "optical.router.input_layernorm_enabled", True)
@@ -323,8 +414,35 @@ class Settings:
             _nested(raw, "optical.phase_dropout.batch_shared", True)
         )
 
+        # Required by the reusable one-layer multimodal DeepStack replacement.
+        self.vision_tap_stages = tuple(
+            int(value)
+            for value in _nested(raw, "optical.vision_tap_stages", [1])
+        )
+        self.student_language_mode = "optical_moe"
+        self.native_pre_attention_enabled = bool(
+            _nested(raw, "optical.native_pre_attention_enabled", False)
+        )
+        self.native_pre_attention_initialize_from_teacher = bool(
+            _nested(raw, "optical.initialize_attention_from_teacher", False)
+        )
+        self.native_pre_attention_trainable = bool(
+            _nested(raw, "optical.native_pre_attention_trainable", False)
+        )
+        self.transformer_residual_enabled = bool(
+            _nested(raw, "optical.residual_enabled", False)
+        )
+        self.vision_attention_source_layer = int(
+            _nested(raw, "optical.vision_attention_source_layer", 0)
+        )
+        self.language_attention_source_layer = int(
+            _nested(raw, "optical.language_attention_source_layer", 0)
+        )
+
         self.vision_hidden_size: int | None = None
         self.vision_depth: int | None = None
+        self.text_hidden_size: int | None = None
+        self.text_depth: int | None = None
         self.validate()
 
     @property
@@ -339,15 +457,35 @@ class Settings:
     def teacher_cache_path(self) -> Path:
         return self.artifact_cache_dir / "teacher" / "teacher_embeddings.pt"
 
+    @property
+    def teacher_adapter_checkpoint(self) -> Path:
+        return self.output_dir / "checkpoints" / "teacher_adapter_best.pt"
+
     def resolve_architecture(self, model: Any) -> None:
         self.vision_hidden_size = int(model.config.vision_config.hidden_size)
         self.vision_depth = int(model.config.vision_config.depth)
+        text_config = getattr(model.config, "text_config", model.config)
+        self.text_hidden_size = int(text_config.hidden_size)
+        self.text_depth = int(text_config.num_hidden_layers)
+        if self.text_hidden_size != self.teacher_raw_hidden_dim:
+            raise RuntimeError(
+                f"Configured teacher_raw_hidden_dim={self.teacher_raw_hidden_dim} "
+                f"but Qwen text hidden size is {self.text_hidden_size}"
+            )
 
     def validate(self) -> None:
         if self.dataset_root is None or self.output_dir is None or self.artifact_cache_dir is None:
             raise ValueError("dataset_root, output_dir, and artifact_cache_dir are required")
         if self.embedding_dim != 224:
             raise ValueError("This experiment fixes the retrieval embedding to 224 dimensions")
+        if self.student_architecture not in {"vision_only", "multimodal_optical"}:
+            raise ValueError(
+                "retrieval.student_architecture must be vision_only or multimodal_optical"
+            )
+        if self.teacher_embedding_mode not in {"frozen_mrl", "adapted_head"}:
+            raise ValueError(
+                "retrieval.teacher_embedding_mode must be frozen_mrl or adapted_head"
+            )
         if self.image_size != 224:
             raise ValueError("The validated optical input size is fixed at 224x224")
         if self.stage1_min_images_per_item < 2:
@@ -396,6 +534,22 @@ class Settings:
             raise ValueError("Phase dropout is disabled in the initial ABO experiment")
         if self.temperature <= 0:
             raise ValueError("Contrastive temperature must be positive")
+        if self.contrastive_memory_size < 0:
+            raise ValueError("contrastive_memory_size cannot be negative")
+        if self.teacher_adapter_batch_size != (
+            self.teacher_adapter_pk_items * self.teacher_adapter_pk_images
+        ):
+            raise ValueError(
+                "teacher_adapter batch_size must equal pk_items*pk_images"
+            )
+        if self.teacher_adapter_pk_images < 2:
+            raise ValueError("teacher adapter PK batches need two positive views")
+        if not 0 < self.augmentation_crop_scale_min <= 1:
+            raise ValueError("augmentation.crop_scale_min must be in (0,1]")
+        if self.router_temperature <= 0 or self.router_temperature_final <= 0:
+            raise ValueError("router temperatures must be positive")
+        if self.gradient_clip_norm < 0:
+            raise ValueError("gradient_clip_norm cannot be negative")
         for name in (
             "lambda_stage1_kd",
             "lambda_stage1_supcon",
@@ -404,6 +558,9 @@ class Settings:
             "lambda_stage2_kd",
             "lambda_router_balance",
             "lambda_router_importance",
+            "lambda_router_entropy",
+            "lambda_phase_dc",
+            "lambda_relational_kd",
         ):
             if getattr(self, name) < 0:
                 raise ValueError(f"{name} cannot be negative")
@@ -443,6 +600,8 @@ class Settings:
         value["resolved_architecture"] = {
             "vision_hidden_size": self.vision_hidden_size,
             "vision_depth": self.vision_depth,
+            "text_hidden_size": self.text_hidden_size,
+            "text_depth": self.text_depth,
         }
         return value
 

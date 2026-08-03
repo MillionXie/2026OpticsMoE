@@ -1,5 +1,30 @@
 # FSS-1000 Qwen Vision Optical Saliency
 
+## 100-class seen-category adaptation
+
+`configs/fss1000_saliency_seen100_finetune.yaml` provides a separate,
+image-disjoint adaptation experiment intended to measure how much performance
+can improve when the deployment categories are known:
+
+- the source checkpoint was trained only on the official non-test class pool;
+- the first 100 eligible, alphabetically sorted official test classes are
+  selected;
+- a stable SHA256-derived per-class shuffle with seed 42 assigns 8 images to
+  fine-tuning and 2 different images to testing;
+- the resulting split is 100 shared categories, 800 training images, and 200
+  test images;
+- the optical core, phase masks, router, input adapter, and segmentation head
+  are jointly fine-tuned with a fresh optimizer;
+- a dedicated teacher-mask cache prevents accidental reuse of masks from the
+  original class-disjoint protocol.
+- `student_initial_test_metrics.json` records the source checkpoint on the
+  fixed 200-image test subset before any update, while
+  `student_finetune_comparison.json` records the final improvement.
+
+This score is a **seen-category adaptation** result. It must not be presented
+as the original FSS-1000 unseen-category/class-disjoint result. The image sets
+remain strictly disjoint, but the class sets intentionally overlap.
+
 该实验把 FSS-1000 的所有类别统一视为前景，完成类别无关二值显著性分割：
 
 ```text

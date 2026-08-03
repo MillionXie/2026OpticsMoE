@@ -91,8 +91,8 @@ class Settings:
         self.bench2drive_root = _required_path(
             _path(_nested(raw, "paths.bench2drive_root"))
         )
-        self.pretrained_backbone_checkpoint = _required_path(
-            _run_path(_nested(raw, "paths.pretrained_backbone_checkpoint"))
+        self.pretrained_backbone_checkpoint = _run_path(
+            _nested(raw, "paths.pretrained_backbone_checkpoint")
         )
 
         self.model_id = str(
@@ -187,9 +187,15 @@ class Settings:
         self.lambda_router_importance = float(
             _nested(raw, "pretrain.loss.router_importance", 0.0)
         )
+        self.pretrain_phase_dc_weight = float(
+            _nested(raw, "pretrain.loss.phase_dc", 0.0)
+        )
 
         self.bench_frame_stride = int(
             _nested(raw, "bench2drive.frame_stride", 5)
+        )
+        self.bench_record_cache_enabled = bool(
+            _nested(raw, "bench2drive.record_cache_enabled", True)
         )
         self.bench_train_fraction = float(
             _nested(raw, "bench2drive.train_fraction", 0.95)
@@ -213,6 +219,19 @@ class Settings:
         )
 
         self.bc_batch_size = int(_nested(raw, "behavior_cloning.batch_size", 4))
+        self.bc_samples_per_command_per_epoch = _optional_int(
+            _nested(raw, "behavior_cloning.samples_per_command_per_epoch", None)
+        )
+        self.bc_backbone_initialization = str(
+            _nested(
+                raw,
+                "behavior_cloning.backbone_initialization",
+                "bdd_pretrained",
+            )
+        ).strip().lower()
+        self.bc_train_optical_from_stage1 = bool(
+            _nested(raw, "behavior_cloning.train_optical_from_stage1", False)
+        )
         self.bc_stage1_epochs = int(
             _nested(raw, "behavior_cloning.stage1_epochs", 20)
         )
@@ -228,9 +247,63 @@ class Settings:
         self.bc_optical_learning_rate = float(
             _nested(raw, "behavior_cloning.optical_learning_rate", 2e-5)
         )
+        self.bc_stage1_optical_learning_rate = float(
+            _nested(
+                raw,
+                "behavior_cloning.stage1_optical_learning_rate",
+                self.bc_optical_learning_rate,
+            )
+        )
+        self.bc_stage2_optical_learning_rate = float(
+            _nested(
+                raw,
+                "behavior_cloning.stage2_optical_learning_rate",
+                self.bc_optical_learning_rate,
+            )
+        )
+        # Phase-only masks need their own step size.  Sharing the very small
+        # adapter learning rate left the physical phase almost flat even after
+        # a completed run (the bounded 0..2pi value was finite, but barely
+        # changed).  Defaults preserve old configs; formal configs opt in to a
+        # larger, independently reported phase LR.
+        self.bc_stage1_phase_learning_rate = float(
+            _nested(
+                raw,
+                "behavior_cloning.stage1_phase_learning_rate",
+                self.bc_stage1_optical_learning_rate,
+            )
+        )
+        self.bc_stage2_phase_learning_rate = float(
+            _nested(
+                raw,
+                "behavior_cloning.stage2_phase_learning_rate",
+                self.bc_stage2_optical_learning_rate,
+            )
+        )
+        self.bc_stage1_router_learning_rate = float(
+            _nested(
+                raw,
+                "behavior_cloning.stage1_router_learning_rate",
+                self.bc_stage1_optical_learning_rate,
+            )
+        )
+        self.bc_stage2_router_learning_rate = float(
+            _nested(
+                raw,
+                "behavior_cloning.stage2_router_learning_rate",
+                self.bc_stage2_optical_learning_rate,
+            )
+        )
         self.bc_weight_decay = float(
             _nested(raw, "behavior_cloning.weight_decay", 0.0)
         )
+        self.bc_gradient_clip_norm = float(
+            _nested(raw, "behavior_cloning.gradient_clip_norm", 1.0)
+        )
+        self.bc_checkpoint_interval_batches = int(
+            _nested(raw, "behavior_cloning.checkpoint_interval_batches", 250)
+        )
+        self.bc_resume = bool(_nested(raw, "behavior_cloning.resume", True))
         self.actor_hidden_dims = tuple(
             int(value)
             for value in _nested(
@@ -255,6 +328,9 @@ class Settings:
         self.bc_router_importance_weight = float(
             _nested(raw, "behavior_cloning.loss.router_importance", 0.0)
         )
+        self.bc_phase_dc_weight = float(
+            _nested(raw, "behavior_cloning.loss.phase_dc", 0.0)
+        )
 
         self.sac_env_factory = str(_nested(raw, "sac.env_factory", "")).strip()
         self.sac_total_steps = int(_nested(raw, "sac.total_steps", 100_000))
@@ -278,6 +354,30 @@ class Settings:
             _nested(raw, "sac.unfreeze.phase_step", None)
         )
         self.sac_store_images = bool(_nested(raw, "sac.replay_store_images", False))
+        self.carla_bridge_host = str(
+            _nested(raw, "sac.bridge.host", "127.0.0.1")
+        )
+        self.carla_bridge_port = int(_nested(raw, "sac.bridge.port", 24615))
+        self.carla_bridge_authkey = str(
+            _nested(raw, "sac.bridge.authkey", "bench2drive-local")
+        )
+        self.carla_bridge_timeout_seconds = float(
+            _nested(raw, "sac.bridge.timeout_seconds", 120.0)
+        )
+        self.carla_host = str(_nested(raw, "sac.carla.host", "127.0.0.1"))
+        self.carla_port = int(_nested(raw, "sac.carla.port", 24515))
+        self.carla_map = str(
+            _nested(raw, "sac.carla.map", "Town10HD_Opt")
+        )
+        self.carla_fixed_delta_seconds = float(
+            _nested(raw, "sac.carla.fixed_delta_seconds", 0.05)
+        )
+        self.carla_episode_steps = int(
+            _nested(raw, "sac.carla.max_episode_steps", 1000)
+        )
+        self.carla_target_speed_mps = float(
+            _nested(raw, "sac.carla.target_speed_mps", 8.0)
+        )
         reward = _nested(raw, "sac.reward", {})
         self.reward_weights = {
             "route_progress": float(reward.get("route_progress", 1.0)),
@@ -412,6 +512,14 @@ class Settings:
     def bench_index_path(self) -> Path:
         return self.artifact_cache_dir / "manifests" / "bench2drive_index.json"
 
+    @property
+    def bench_records_cache_path(self) -> Path:
+        return (
+            self.artifact_cache_dir
+            / "manifests"
+            / "bench2drive_records_v1.json.gz"
+        )
+
     def resolve_architecture(self, model: Any) -> None:
         self.vision_hidden_size = int(model.config.vision_config.hidden_size)
         self.vision_depth = int(model.config.vision_config.depth)
@@ -442,8 +550,66 @@ class Settings:
             raise ValueError("bench2drive.train_fraction must be in (0,1)")
         if self.bench_frame_stride <= 0:
             raise ValueError("bench2drive.frame_stride must be positive")
+        if (
+            self.bc_samples_per_command_per_epoch is not None
+            and self.bc_samples_per_command_per_epoch <= 0
+        ):
+            raise ValueError(
+                "behavior_cloning.samples_per_command_per_epoch must be positive or null"
+            )
+        if self.bc_batch_size <= 0:
+            raise ValueError("behavior_cloning.batch_size must be positive")
+        if self.bc_gradient_clip_norm <= 0:
+            raise ValueError("behavior_cloning.gradient_clip_norm must be positive")
+        if self.bc_checkpoint_interval_batches <= 0:
+            raise ValueError(
+                "behavior_cloning.checkpoint_interval_batches must be positive"
+            )
         if self.num_commands != 6:
             raise ValueError("Bench2Drive uses six high-level navigation commands")
+        if self.bc_backbone_initialization not in {"bdd_pretrained", "scratch"}:
+            raise ValueError(
+                "behavior_cloning.backbone_initialization must be "
+                "'bdd_pretrained' or 'scratch'"
+            )
+        if (
+            self.bc_backbone_initialization == "bdd_pretrained"
+            and self.pretrained_backbone_checkpoint is None
+        ):
+            raise ValueError(
+                "BDD-pretrained behavior cloning requires "
+                "paths.pretrained_backbone_checkpoint"
+            )
+        if (
+            self.bc_backbone_initialization == "scratch"
+            and self.pretrained_backbone_checkpoint is not None
+        ):
+            raise ValueError(
+                "Scratch behavior cloning must set "
+                "paths.pretrained_backbone_checkpoint: null"
+            )
+        for name, value in (
+            ("actor_learning_rate", self.bc_actor_learning_rate),
+            ("linear_learning_rate", self.bc_linear_learning_rate),
+            ("stage1_optical_learning_rate", self.bc_stage1_optical_learning_rate),
+            ("stage2_optical_learning_rate", self.bc_stage2_optical_learning_rate),
+            ("stage1_phase_learning_rate", self.bc_stage1_phase_learning_rate),
+            ("stage2_phase_learning_rate", self.bc_stage2_phase_learning_rate),
+            ("stage1_router_learning_rate", self.bc_stage1_router_learning_rate),
+            ("stage2_router_learning_rate", self.bc_stage2_router_learning_rate),
+        ):
+            if value <= 0:
+                raise ValueError(f"behavior_cloning.{name} must be positive")
+        if not (1 <= self.carla_bridge_port <= 65535):
+            raise ValueError("sac.bridge.port must be in [1,65535]")
+        if not (1 <= self.carla_port <= 65535):
+            raise ValueError("sac.carla.port must be in [1,65535]")
+        if not self.carla_bridge_authkey:
+            raise ValueError("sac.bridge.authkey must be non-empty")
+        if self.carla_bridge_timeout_seconds <= 0:
+            raise ValueError("sac.bridge.timeout_seconds must be positive")
+        if self.carla_fixed_delta_seconds <= 0 or self.carla_episode_steps <= 0:
+            raise ValueError("CARLA fixed delta and episode length must be positive")
         if self.sac_unfreeze_phase_step is not None and not self.sac_store_images:
             raise ValueError(
                 "SAC phase unfreezing needs replay_store_images=true so gradients "
@@ -466,6 +632,8 @@ class Settings:
         for name, value in self.reward_weights.items():
             if value < 0:
                 raise ValueError(f"SAC reward weight {name} cannot be negative")
+        if self.pretrain_phase_dc_weight < 0 or self.bc_phase_dc_weight < 0:
+            raise ValueError("Phase DC loss weights cannot be negative")
 
     def to_dict(self) -> dict[str, Any]:
         value = copy.deepcopy(self.raw)
@@ -475,8 +643,10 @@ class Settings:
             "artifact_cache_dir": str(self.artifact_cache_dir),
             "bdd100k_root": str(self.bdd_root),
             "bench2drive_root": str(self.bench2drive_root),
-            "pretrained_backbone_checkpoint": str(
-                self.pretrained_backbone_checkpoint
+            "pretrained_backbone_checkpoint": (
+                str(self.pretrained_backbone_checkpoint)
+                if self.pretrained_backbone_checkpoint is not None
+                else None
             ),
         }
         value["resolved_architecture"] = {

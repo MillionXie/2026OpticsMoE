@@ -12,9 +12,11 @@ from torch.utils.data import DataLoader
 from .datasets import ABOBundle, ABORetrievalDataset, collate_abo
 from .io_utils import write_json
 from .modeling import (
+    LoadedBackbone,
     LoadedVisionBackbone,
+    MultimodalOpticalRetrievalEncoder,
     VisionOpticalRetrievalEncoder,
-    preprocess_vision,
+    encode_product_images,
 )
 from .teacher_cache import TeacherEmbeddingStore
 from .training import load_encoder_checkpoint
@@ -22,8 +24,8 @@ from .training import load_encoder_checkpoint
 
 @torch.no_grad()
 def encode_student_dataset(
-    loaded: LoadedVisionBackbone,
-    encoder: VisionOpticalRetrievalEncoder,
+    loaded: LoadedVisionBackbone | LoadedBackbone,
+    encoder: VisionOpticalRetrievalEncoder | MultimodalOpticalRetrievalEncoder,
     dataset: ABORetrievalDataset,
     settings: Any,
 ) -> tuple[torch.Tensor, list[str], list[str], list[str]]:
@@ -42,11 +44,8 @@ def encode_student_dataset(
     item_ids: list[str] = []
     paths: list[str] = []
     for batch in loader:
-        inputs = preprocess_vision(
-            loaded.processor, batch["images"], loaded.device
-        )
-        embedding = encoder(
-            inputs["pixel_values"], inputs["image_grid_thw"]
+        embedding = encode_product_images(
+            loaded, encoder, batch["images"], settings
         )
         values.append(embedding.detach().cpu())
         image_ids.extend(batch["image_ids"])
@@ -182,8 +181,8 @@ def evaluate_retrieval(
 
 @torch.no_grad()
 def evaluate_all(
-    loaded: LoadedVisionBackbone,
-    encoder: VisionOpticalRetrievalEncoder,
+    loaded: LoadedVisionBackbone | LoadedBackbone,
+    encoder: VisionOpticalRetrievalEncoder | MultimodalOpticalRetrievalEncoder,
     bundle: ABOBundle,
     teacher_store: TeacherEmbeddingStore,
     settings: Any,

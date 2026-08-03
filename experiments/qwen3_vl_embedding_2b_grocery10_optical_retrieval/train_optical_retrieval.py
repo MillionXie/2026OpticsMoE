@@ -31,7 +31,8 @@ from .modeling import (
     trainable_parameter_report,
     unique_trainable_parameters,
 )
-from .optical_artifacts import save_phase_snapshot
+from .optical_artifacts import save_phase_preview, save_phase_snapshot
+from .optics.physical import phase_dc_loss, phase_dc_statistics
 from .optics.replacement import DeepStackMultimodalReplacement
 from .prepare_grocery_retrieval_subset import (
     GroceryRetrievalBundle,
@@ -53,6 +54,7 @@ class PKBatchSampler(Sampler[list[int]]):
         p: int,
         k: int,
         seed: int,
+        steps_per_epoch: int | None = None,
     ) -> None:
         self.p = int(p)
         self.k = int(k)
@@ -66,9 +68,14 @@ class PKBatchSampler(Sampler[list[int]]):
             raise ValueError(f"PK sampler needs P={self.p} SKUs, found {len(self.grouped)}")
         if any(not values for values in self.grouped.values()):
             raise ValueError("PK sampler encountered an empty SKU")
-        self.batch_count = max(
-            1, math.ceil(len(samples) / (self.p * self.k))
+        natural_batch_count = max(1, math.ceil(len(samples) / (self.p * self.k)))
+        self.batch_count = (
+            natural_batch_count
+            if steps_per_epoch is None
+            else int(steps_per_epoch)
         )
+        if self.batch_count <= 0:
+            raise ValueError("steps_per_epoch must be positive when configured")
 
     def set_epoch(self, epoch: int) -> None:
         self.epoch = int(epoch)
@@ -335,64 +342,259 @@ def _build_optimizer(
     phase_ids = {id(parameter) for parameter in phase_parameters}
     if len(phase_ids) != len(phase_parameters) or phase_ids & router_ids:
         raise RuntimeError("Optical phase/router parameter groups unexpectedly overlap")
+    readout_parameters = [
+        parameter for parameter in readout.parameters() if parameter.requires_grad
+    ]
+    readout_ids = {id(parameter) for parameter in readout_parameters}
+    adapter_parameters = []
+    for surrogate in (
+        replacement.vision_surrogate,
+        replacement.language_surrogate,
+    ):
+        for module in (
+            getattr(surrogate.core, name, None)
+            for name in ("input_adapter", "input_norm", "output_adapter")
+        ):
+            if module is None:
+                continue
+            adapter_parameters.extend(
+                parameter
+                for parameter in module.parameters()
+                if parameter.requires_grad
+            )
+    adapter_ids = {id(parameter) for parameter in adapter_parameters}
+    reserved_ids = router_ids | phase_ids | readout_ids | adapter_ids
+    if sum(map(len, (router_ids, phase_ids, readout_ids, adapter_ids))) != len(
+        reserved_ids
+    ):
+        raise RuntimeError("Optimizer parameter groups unexpectedly overlap")
     base_parameters = [
-        parameter
-        for parameter in parameters
-        if id(parameter) not in router_ids and id(parameter) not in phase_ids
+        parameter for parameter in parameters if id(parameter) not in reserved_ids
     ]
     configured_router_lr = settings.router_learning_rate
     configured_phase_lr = settings.phase_learning_rate
-    if configured_phase_lr is None and (
-        configured_router_lr is None
-        or math.isclose(configured_router_lr, settings.learning_rate)
-    ):
-        optimizer = torch.optim.AdamW(
-            parameters,
-            lr=settings.learning_rate,
-            weight_decay=settings.weight_decay,
+    group_specs = (
+        ("student_base", base_parameters, settings.learning_rate),
+        (
+            "optical_adapters",
+            adapter_parameters,
+            getattr(settings, "adapter_learning_rate", None)
+            if getattr(settings, "adapter_learning_rate", None) is not None
+            else settings.learning_rate,
+        ),
+        (
+            "retrieval_readout",
+            readout_parameters,
+            getattr(settings, "readout_learning_rate", None)
+            if getattr(settings, "readout_learning_rate", None) is not None
+            else settings.learning_rate,
+        ),
+        (
+            "optical_phases",
+            phase_parameters,
+            configured_phase_lr
+            if configured_phase_lr is not None
+            else settings.learning_rate,
+        ),
+        (
+            "routers",
+            router_parameters,
+            configured_router_lr
+            if configured_router_lr is not None
+            else settings.learning_rate,
+        ),
+    )
+    optimizer_groups = [
+        {
+            "params": group_parameters,
+            "lr": float(group_lr),
+            "configured_lr": float(group_lr),
+            "group_name": group_name,
+        }
+        for group_name, group_parameters, group_lr in group_specs
+        if group_parameters
+    ]
+    grouped_ids = {
+        id(parameter)
+        for group in optimizer_groups
+        for parameter in group["params"]
+    }
+    if grouped_ids != {id(parameter) for parameter in parameters}:
+        raise RuntimeError(
+            "Optimizer parameter partition does not cover every trainable tensor exactly once"
         )
-    elif configured_phase_lr is None:
-        optimizer = torch.optim.AdamW(
-            [
-                {
-                    "params": base_parameters + phase_parameters,
-                    "lr": settings.learning_rate,
-                    "group_name": "student_base",
-                },
-                {
-                    "params": router_parameters,
-                    "lr": configured_router_lr,
-                    "group_name": "routers",
-                },
-            ],
-            weight_decay=settings.weight_decay,
-        )
-    else:
-        optimizer = torch.optim.AdamW(
-            [
-                {
-                    "params": base_parameters,
-                    "lr": settings.learning_rate,
-                    "group_name": "student_base",
-                },
-                {
-                    "params": phase_parameters,
-                    "lr": configured_phase_lr,
-                    "group_name": "optical_phases",
-                },
-                {
-                    "params": router_parameters,
-                    "lr": (
-                        configured_router_lr
-                        if configured_router_lr is not None
-                        else settings.learning_rate
-                    ),
-                    "group_name": "routers",
-                },
-            ],
-            weight_decay=settings.weight_decay,
-        )
+    optimizer = torch.optim.AdamW(
+        optimizer_groups,
+        weight_decay=settings.weight_decay,
+    )
     return optimizer, parameters
+
+
+def _restore_configured_group_lrs(optimizer: torch.optim.Optimizer) -> None:
+    for group in optimizer.param_groups:
+        group["lr"] = float(group.get("configured_lr", group["lr"]))
+
+
+def _set_phase_focus_trainability(
+    optimizer: torch.optim.Optimizer,
+    enabled: bool,
+) -> None:
+    """Alternate joint and phase-only block-coordinate updates.
+
+    A phase-only epoch keeps the already learned adapters/router/readout in the
+    forward graph but prevents their Adam moments and weights from absorbing
+    the task gradient.  The only optimizer-owned tensors that receive a
+    gradient/update are the physical expert/global raw phases.
+    """
+    for group in optimizer.param_groups:
+        train_group = not enabled or group.get("group_name") == "optical_phases"
+        group["lr"] = (
+            float(group.get("configured_lr", group["lr"])) if train_group else 0.0
+        )
+        for parameter in group["params"]:
+            parameter.requires_grad_(train_group)
+
+
+def _phase_focus_epoch(settings: Settings, relative_epoch: int) -> bool:
+    if not settings.phase_focus_enabled:
+        return False
+    if relative_epoch <= settings.phase_focus_warmup_epochs:
+        return False
+    offset = relative_epoch - settings.phase_focus_warmup_epochs - 1
+    return offset % settings.phase_focus_interval_epochs == 0
+
+
+def _phase_named_parameters(
+    replacement: DeepStackMultimodalReplacement,
+) -> dict[str, list[nn.Parameter]]:
+    output: dict[str, list[nn.Parameter]] = {}
+    for stack_name, surrogate in (
+        ("vision", replacement.vision_surrogate),
+        ("language", replacement.language_surrogate),
+    ):
+        output[f"{stack_name}_expert"] = [
+            expert.raw_phase
+            for layer in surrogate.core.expert_layers
+            for expert in layer.experts
+        ]
+        output[f"{stack_name}_global"] = [
+            surrogate.core.global_phase.phase.raw_phase
+        ]
+    return output
+
+
+@torch.no_grad()
+def _phase_reference(
+    phase_groups: dict[str, list[nn.Parameter]],
+) -> dict[str, list[torch.Tensor]]:
+    return {
+        name: [parameter.detach().float().clone() for parameter in parameters]
+        for name, parameters in phase_groups.items()
+    }
+
+
+def _physical_phase(parameter: torch.Tensor) -> torch.Tensor:
+    return 2.0 * math.pi * torch.sigmoid(parameter.float())
+
+
+@torch.no_grad()
+def _phase_motion_statistics(
+    phase_groups: dict[str, list[nn.Parameter]],
+    run_reference: dict[str, list[torch.Tensor]],
+    epoch_reference: dict[str, list[torch.Tensor]],
+) -> dict[str, float | int]:
+    report: dict[str, float | int] = {}
+    all_current: list[torch.Tensor] = []
+    all_run_delta: list[torch.Tensor] = []
+    all_epoch_delta: list[torch.Tensor] = []
+    for name, parameters in phase_groups.items():
+        current = torch.cat(
+            [_physical_phase(parameter.detach()).reshape(-1) for parameter in parameters]
+        )
+        run_start = torch.cat(
+            [_physical_phase(value).reshape(-1) for value in run_reference[name]]
+        )
+        epoch_start = torch.cat(
+            [_physical_phase(value).reshape(-1) for value in epoch_reference[name]]
+        )
+        run_delta = current - run_start
+        epoch_delta = current - epoch_start
+        report[f"{name}_phase_std_rad"] = float(current.std(unbiased=False))
+        report[f"{name}_phase_delta_run_rms_rad"] = float(
+            run_delta.square().mean().sqrt()
+        )
+        report[f"{name}_phase_delta_epoch_rms_rad"] = float(
+            epoch_delta.square().mean().sqrt()
+        )
+        report[f"{name}_phase_moved_fraction_gt_0p01"] = float(
+            run_delta.abs().gt(0.01).float().mean()
+        )
+        all_current.append(current)
+        all_run_delta.append(run_delta)
+        all_epoch_delta.append(epoch_delta)
+    current = torch.cat(all_current)
+    run_delta = torch.cat(all_run_delta)
+    epoch_delta = torch.cat(all_epoch_delta)
+    raw = torch.cat(
+        [
+            parameter.detach().float().reshape(-1)
+            for parameters in phase_groups.values()
+            for parameter in parameters
+        ]
+    )
+    report.update(
+        {
+            "phase_physical_std_rad": float(current.std(unbiased=False)),
+            "phase_delta_from_pi_rms_rad": float(
+                (current - math.pi).square().mean().sqrt()
+            ),
+            "phase_delta_run_rms_rad": float(run_delta.square().mean().sqrt()),
+            "phase_delta_epoch_rms_rad": float(
+                epoch_delta.square().mean().sqrt()
+            ),
+            "phase_raw_abs_mean": float(raw.abs().mean()),
+            "phase_sigmoid_saturation_fraction_abs_raw_gt_4": float(
+                raw.abs().gt(4.0).float().mean()
+            ),
+        }
+    )
+    return report
+
+
+def _phase_gradient_statistics(
+    phase_groups: dict[str, list[nn.Parameter]],
+) -> dict[str, float | int]:
+    report: dict[str, float | int] = {}
+    all_gradients: list[torch.Tensor] = []
+    missing_total = 0
+    for name, parameters in phase_groups.items():
+        gradients = [
+            parameter.grad.detach().float().reshape(-1)
+            for parameter in parameters
+            if parameter.grad is not None
+        ]
+        missing = len(parameters) - len(gradients)
+        missing_total += missing
+        if gradients:
+            flattened = torch.cat(gradients)
+            report[f"{name}_phase_grad_rms"] = float(
+                flattened.square().mean().sqrt()
+            )
+            report[f"{name}_phase_grad_max"] = float(flattened.abs().max())
+            all_gradients.append(flattened)
+        else:
+            report[f"{name}_phase_grad_rms"] = 0.0
+            report[f"{name}_phase_grad_max"] = 0.0
+        report[f"{name}_phase_grad_missing_planes"] = missing
+    if all_gradients:
+        flattened = torch.cat(all_gradients)
+        report["phase_grad_rms"] = float(flattened.square().mean().sqrt())
+        report["phase_grad_max"] = float(flattened.abs().max())
+    else:
+        report["phase_grad_rms"] = 0.0
+        report["phase_grad_max"] = 0.0
+    report["phase_grad_missing_planes"] = missing_total
+    return report
 
 
 @torch.no_grad()
@@ -478,6 +680,8 @@ def save_checkpoint(
                 "lambda_teacher_gallery": settings.lambda_teacher_gallery,
                 "lambda_router_balance": settings.lambda_router_balance,
                 "lambda_router_importance": settings.lambda_router_importance,
+                "lambda_phase_dc": settings.lambda_phase_dc,
+                "phase_dc_start_epoch": settings.phase_dc_start_epoch,
                 "temperature": settings.temperature,
                 "gallery_temperature": settings.gallery_temperature,
                 "gallery_prototype_stop_gradient": (
@@ -485,8 +689,15 @@ def save_checkpoint(
                 ),
             },
             "learning_rate": settings.learning_rate,
+            "adapter_learning_rate": settings.adapter_learning_rate,
+            "readout_learning_rate": settings.readout_learning_rate,
             "router_learning_rate": settings.router_learning_rate,
             "phase_learning_rate": settings.phase_learning_rate,
+            "phase_focus": {
+                "enabled": settings.phase_focus_enabled,
+                "warmup_epochs": settings.phase_focus_warmup_epochs,
+                "interval_epochs": settings.phase_focus_interval_epochs,
+            },
             "ema_decay": settings.ema_decay,
         },
     }
@@ -520,8 +731,22 @@ def load_checkpoint(
     replacement.vision_surrogate.load_state_dict(payload["vision_optical"])
     replacement.language_surrogate.load_state_dict(payload["language_optical"])
     readout.load_state_dict(payload["retrieval_readout"])
+    payload["_optimizer_state_loaded"] = False
     if optimizer is not None and "optimizer" in payload:
-        optimizer.load_state_dict(payload["optimizer"])
+        try:
+            optimizer.load_state_dict(payload["optimizer"])
+            payload["_optimizer_state_loaded"] = True
+        except ValueError as error:
+            # Checkpoints made before the phase-engagement fix used one broad
+            # ``student_base`` group.  Their model weights remain compatible,
+            # but restoring those Adam moments would merge phase/readout LR
+            # ownership again.  Reset the optimizer explicitly and report it.
+            print(
+                "WARNING: checkpoint optimizer groups are incompatible with the "
+                "phase-engaged optimizer; model weights were loaded and Adam state "
+                f"was reset. Original error: {error}",
+                flush=True,
+            )
     return payload
 
 
@@ -549,6 +774,7 @@ def train_optical_retrieval(
         settings.pk_skus_per_batch,
         settings.pk_images_per_sku,
         settings.random_seed,
+        settings.optimizer_steps_per_epoch,
     )
     loader = DataLoader(
         train_dataset,
@@ -588,23 +814,13 @@ def train_optical_retrieval(
         start_epoch = resumed_from_epoch + 1
         # A continuation config may deliberately lower either learning rate.
         # Checkpoint optimizer state must never silently override that choice.
-        for group in optimizer.param_groups:
-            group_name = group.get("group_name", "student_base")
-            if group_name == "routers" and settings.router_learning_rate is not None:
-                group["lr"] = settings.router_learning_rate
-            elif (
-                group_name == "optical_phases"
-                and settings.phase_learning_rate is not None
-            ):
-                group["lr"] = settings.phase_learning_rate
-            else:
-                group["lr"] = settings.learning_rate
+        _restore_configured_group_lrs(optimizer)
         _archive_pre_resume_outputs(
             settings.output_dir, resume_checkpoint, resumed_from_epoch
         )
         print(
             f"Resuming Student weights from epoch {resumed_from_epoch}; "
-            f"optimizer_state={'loaded' if settings.resume_optimizer_state else 'reset'}, "
+            f"optimizer_state={'loaded' if payload.get('_optimizer_state_loaded') else 'reset'}, "
             f"additional_epochs={settings.epochs}, "
             f"absolute_epoch_range={start_epoch}..{resumed_from_epoch + settings.epochs}"
         )
@@ -615,11 +831,31 @@ def train_optical_retrieval(
         "resume_checkpoint": str(resume_checkpoint) if resume_checkpoint else None,
         "resumed_from_epoch": resumed_from_epoch,
         "optimizer_state_resumed": bool(
-            resume_checkpoint is not None and settings.resume_optimizer_state
+            resume_checkpoint is not None
+            and payload.get("_optimizer_state_loaded", False)
         ),
         "base_learning_rate": settings.learning_rate,
+        "adapter_learning_rate": settings.adapter_learning_rate,
+        "readout_learning_rate": settings.readout_learning_rate,
         "router_learning_rate": settings.router_learning_rate,
         "phase_learning_rate": settings.phase_learning_rate,
+        "lambda_phase_dc": settings.lambda_phase_dc,
+        "phase_dc_start_epoch": settings.phase_dc_start_epoch,
+        "optimizer_groups": [
+            {
+                "name": group.get("group_name", "unnamed"),
+                "learning_rate": float(group["lr"]),
+                "parameters": sum(
+                    parameter.numel() for parameter in group["params"]
+                ),
+            }
+            for group in optimizer.param_groups
+        ],
+        "phase_focus": {
+            "enabled": settings.phase_focus_enabled,
+            "warmup_epochs": settings.phase_focus_warmup_epochs,
+            "interval_epochs": settings.phase_focus_interval_epochs,
+        },
         "ema_decay": settings.ema_decay,
     }
     write_json(settings.output_dir / "model.json", report)
@@ -631,6 +867,11 @@ def train_optical_retrieval(
     fieldnames = [
         "epoch",
         "learning_rate",
+        "adapter_learning_rate",
+        "readout_learning_rate",
+        "router_learning_rate",
+        "phase_learning_rate",
+        "phase_focus_epoch",
         "total_loss",
         "kd_loss",
         "relational_kd_loss",
@@ -639,12 +880,62 @@ def train_optical_retrieval(
         "teacher_gallery_loss",
         "router_balance_loss",
         "router_importance_loss",
+        "phase_dc_loss",
+        "phase_dc_weighted_loss",
+        "phase_dc_current_loss",
+        "phase_dc_rho_mean",
+        "phase_dc_rho_max",
+        "phase_dc_plane_count",
         "vision_router_entropy",
         "language_router_entropy",
         "vision_router_active_experts",
         "language_router_active_experts",
         "vision_router_max_importance",
         "language_router_max_importance",
+        "vision_router_min_selection_count",
+        "vision_router_max_selection_count",
+        "vision_router_unselected_experts",
+        "language_router_min_selection_count",
+        "language_router_max_selection_count",
+        "language_router_unselected_experts",
+        "phase_grad_rms",
+        "phase_grad_max",
+        "phase_grad_missing_planes",
+        "vision_expert_phase_grad_rms",
+        "vision_expert_phase_grad_max",
+        "vision_expert_phase_grad_missing_planes",
+        "vision_global_phase_grad_rms",
+        "vision_global_phase_grad_max",
+        "vision_global_phase_grad_missing_planes",
+        "language_expert_phase_grad_rms",
+        "language_expert_phase_grad_max",
+        "language_expert_phase_grad_missing_planes",
+        "language_global_phase_grad_rms",
+        "language_global_phase_grad_max",
+        "language_global_phase_grad_missing_planes",
+        "phase_physical_std_rad",
+        "phase_delta_from_pi_rms_rad",
+        "phase_delta_run_rms_rad",
+        "phase_delta_epoch_rms_rad",
+        "phase_raw_abs_mean",
+        "phase_sigmoid_saturation_fraction_abs_raw_gt_4",
+        "vision_expert_phase_std_rad",
+        "vision_expert_phase_delta_run_rms_rad",
+        "vision_expert_phase_delta_epoch_rms_rad",
+        "vision_expert_phase_moved_fraction_gt_0p01",
+        "vision_global_phase_std_rad",
+        "vision_global_phase_delta_run_rms_rad",
+        "vision_global_phase_delta_epoch_rms_rad",
+        "vision_global_phase_moved_fraction_gt_0p01",
+        "language_expert_phase_std_rad",
+        "language_expert_phase_delta_run_rms_rad",
+        "language_expert_phase_delta_epoch_rms_rad",
+        "language_expert_phase_moved_fraction_gt_0p01",
+        "language_global_phase_std_rad",
+        "language_global_phase_delta_run_rms_rad",
+        "language_global_phase_delta_epoch_rms_rad",
+        "language_global_phase_moved_fraction_gt_0p01",
+        "trainable_tensors_without_gradient",
         "samples",
         "model_forward_samples",
         "train_top1",
@@ -680,8 +971,21 @@ def train_optical_retrieval(
         if settings.ema_decay is not None
         else None
     )
+    phase_groups = _phase_named_parameters(replacement)
+    phase_run_reference = _phase_reference(phase_groups)
     end_epoch = start_epoch + settings.epochs - 1
     for epoch in range(start_epoch, end_epoch + 1):
+        relative_epoch = epoch - start_epoch + 1
+        phase_focus = _phase_focus_epoch(settings, relative_epoch)
+        _set_phase_focus_trainability(optimizer, phase_focus)
+        phase_epoch_reference = _phase_reference(phase_groups)
+        phase_gradient_totals: dict[str, float] = defaultdict(float)
+        phase_gradient_measurements = 0
+        trainable_with_gradient: set[int] = set()
+        router_selection_counts = {
+            "vision": torch.zeros(settings.num_experts, dtype=torch.long),
+            "language": torch.zeros(settings.num_experts, dtype=torch.long),
+        }
         sampler.set_epoch(epoch)
         replacement.set_student_train_mode()
         readout.train()
@@ -694,6 +998,7 @@ def train_optical_retrieval(
             "teacher_gallery": 0.0,
             "balance": 0.0,
             "importance": 0.0,
+            "phase_dc": 0.0,
             "samples": 0,
             "forward_samples": 0,
             "top1_correct": 0.0,
@@ -827,6 +1132,15 @@ def train_optical_retrieval(
                     router_losses["vision_importance"]
                     + router_losses["language_importance"]
                 )
+                phase_dc_active = (
+                    settings.lambda_phase_dc > 0.0
+                    and relative_epoch >= settings.phase_dc_start_epoch
+                )
+                dc = (
+                    phase_dc_loss(replacement)
+                    if phase_dc_active
+                    else student.new_zeros(())
+                )
                 total = (
                     settings.lambda_kd * kd
                     + settings.lambda_relational_kd * relational_kd
@@ -835,6 +1149,7 @@ def train_optical_retrieval(
                     + settings.lambda_teacher_gallery * teacher_gallery
                     + settings.lambda_router_balance * balance
                     + settings.lambda_router_importance * importance
+                    + settings.lambda_phase_dc * dc
                 )
             if not torch.isfinite(total):
                 raise RuntimeError(
@@ -842,9 +1157,12 @@ def train_optical_retrieval(
                     f"total={total}, kd={kd}, retrieval={retrieval}, "
                     f"relational_kd={relational_kd}, gallery={gallery}, "
                     f"teacher_gallery={teacher_gallery}, balance={balance}, "
-                    f"importance={importance}"
+                    f"importance={importance}, phase_dc={dc}"
                 )
             total.backward()
+            for parameter in parameters:
+                if parameter.grad is not None:
+                    trainable_with_gradient.add(id(parameter))
             bad_gradients = [
                 index
                 for index, parameter in enumerate(parameters)
@@ -852,6 +1170,20 @@ def train_optical_retrieval(
             ]
             if bad_gradients:
                 raise RuntimeError(f"Non-finite gradients in trainable tensors {bad_gradients}")
+            if (
+                batch_index % settings.phase_gradient_measure_interval_batches == 0
+                or batch_index == len(loader)
+            ):
+                gradient_report = _phase_gradient_statistics(phase_groups)
+                for key, value in gradient_report.items():
+                    phase_gradient_totals[key] += float(value)
+                phase_gradient_measurements += 1
+            if settings.gradient_clip_norm is not None:
+                torch.nn.utils.clip_grad_norm_(
+                    [parameter for parameter in parameters if parameter.requires_grad],
+                    max_norm=settings.gradient_clip_norm,
+                    error_if_nonfinite=True,
+                )
             optimizer.step()
             if ema_parameters is not None:
                 update_parameter_ema(
@@ -866,6 +1198,7 @@ def train_optical_retrieval(
             totals["teacher_gallery"] += float(teacher_gallery.detach()) * count
             totals["balance"] += float(balance.detach()) * count
             totals["importance"] += float(importance.detach()) * count
+            totals["phase_dc"] += float(dc.detach()) * count
             totals["samples"] += count
             totals["forward_samples"] += len(combined_samples)
             if gallery_logits is not None and gallery_targets is not None:
@@ -879,6 +1212,17 @@ def train_optical_retrieval(
                 ]
                 totals["retrieval_queries"] += int(ranking["query_count"])
             diagnostics = _router_diagnostics(replacement)
+            for stack_name, surrogate in (
+                ("vision", replacement.vision_surrogate),
+                ("language", replacement.language_surrogate),
+            ):
+                router_selection_counts[stack_name] += (
+                    surrogate.core.last_routing["selected_mask"]
+                    .detach()
+                    .sum(dim=0)
+                    .cpu()
+                    .long()
+                )
             for key, value in diagnostics.items():
                 router_totals[key] += value * count
             if batch_index % settings.log_interval_batches == 0 or batch_index == len(loader):
@@ -896,13 +1240,47 @@ def train_optical_retrieval(
                     f"{totals['top1_correct']/max(1, totals['retrieval_queries']):.4f} "
                     f"balance={totals['balance']/totals['samples']:.5f} "
                     f"importance={totals['importance']/totals['samples']:.5f} "
+                    f"phase_dc={totals['phase_dc']/totals['samples']:.5f} "
+                    f"phase_focus={'yes' if phase_focus else 'no'} "
+                    f"phase_grad="
+                    f"{phase_gradient_totals.get('phase_grad_rms', 0.0)/max(1, phase_gradient_measurements):.3e} "
                     f"active_v={diagnostics['vision_router_active_experts']:.0f}/"
                     f"{settings.num_experts} "
                     f"active_l={diagnostics['language_router_active_experts']:.0f}/"
                     f"{settings.num_experts}"
                 )
+        # Restore all optimizer-owned tensors before evaluation/checkpointing;
+        # focus mode changes update ownership, not the saved model definition.
+        _set_phase_focus_trainability(optimizer, False)
         sample_count = int(totals["samples"])
         average_total = totals["total"] / sample_count
+        phase_motion = _phase_motion_statistics(
+            phase_groups, phase_run_reference, phase_epoch_reference
+        )
+        dc_statistics = phase_dc_statistics(replacement)
+        phase_gradients = {
+            key: value / max(1, phase_gradient_measurements)
+            for key, value in phase_gradient_totals.items()
+        }
+        coverage: dict[str, int] = {}
+        for stack_name, counts in router_selection_counts.items():
+            coverage[f"{stack_name}_router_min_selection_count"] = int(counts.min())
+            coverage[f"{stack_name}_router_max_selection_count"] = int(counts.max())
+            coverage[f"{stack_name}_router_unselected_experts"] = int(
+                counts.eq(0).sum()
+            )
+        expected_gradient_ids = (
+            {
+                id(parameter)
+                for grouped in phase_groups.values()
+                for parameter in grouped
+            }
+            if phase_focus
+            else {id(parameter) for parameter in parameters}
+        )
+        missing_gradient_tensors = len(
+            expected_gradient_ids - trainable_with_gradient
+        )
         retrieval_query_count = int(totals["retrieval_queries"])
         train_top1 = (
             totals["top1_correct"] / retrieval_query_count
@@ -944,7 +1322,28 @@ def train_optical_retrieval(
                 )
         row = {
             "epoch": epoch,
-            "learning_rate": optimizer.param_groups[0]["lr"],
+            "learning_rate": settings.learning_rate,
+            "adapter_learning_rate": (
+                settings.adapter_learning_rate
+                if settings.adapter_learning_rate is not None
+                else settings.learning_rate
+            ),
+            "readout_learning_rate": (
+                settings.readout_learning_rate
+                if settings.readout_learning_rate is not None
+                else settings.learning_rate
+            ),
+            "router_learning_rate": (
+                settings.router_learning_rate
+                if settings.router_learning_rate is not None
+                else settings.learning_rate
+            ),
+            "phase_learning_rate": (
+                settings.phase_learning_rate
+                if settings.phase_learning_rate is not None
+                else settings.learning_rate
+            ),
+            "phase_focus_epoch": phase_focus,
             "total_loss": average_total,
             "kd_loss": totals["kd"] / sample_count,
             "relational_kd_loss": totals["relational_kd"] / sample_count,
@@ -953,10 +1352,19 @@ def train_optical_retrieval(
             "teacher_gallery_loss": totals["teacher_gallery"] / sample_count,
             "router_balance_loss": totals["balance"] / sample_count,
             "router_importance_loss": totals["importance"] / sample_count,
+            "phase_dc_loss": totals["phase_dc"] / sample_count,
+            "phase_dc_weighted_loss": (
+                settings.lambda_phase_dc * totals["phase_dc"] / sample_count
+            ),
+            **dc_statistics,
             **{
                 key: value / sample_count
                 for key, value in router_totals.items()
             },
+            **coverage,
+            **phase_gradients,
+            **phase_motion,
+            "trainable_tensors_without_gradient": missing_gradient_tensors,
             "samples": sample_count,
             "model_forward_samples": int(totals["forward_samples"]),
             "train_top1": train_top1,
@@ -980,6 +1388,50 @@ def train_optical_retrieval(
         rows.append(row)
         _write_history(history_path, rows, fieldnames)
         write_json(settings.output_dir / "metrics" / "training_latest.json", row)
+        write_json(settings.output_dir / "metrics" / "phase_training_latest.json", {
+            "epoch": epoch,
+            "phase_focus_epoch": phase_focus,
+            "phase_dc": dc_statistics,
+            "phase_gradients": phase_gradients,
+            "phase_motion": phase_motion,
+            "router_coverage": coverage,
+            "trainable_tensors_without_gradient": missing_gradient_tensors,
+        })
+        if (
+            relative_epoch >= settings.phase_motion_warning_epoch
+            and phase_motion["phase_delta_run_rms_rad"]
+            < settings.phase_motion_warning_threshold_rad
+        ):
+            print(
+                "WARNING: optical phase is still effectively stationary: "
+                f"delta_run_rms={phase_motion['phase_delta_run_rms_rad']:.6f} rad "
+                f"after {relative_epoch} epoch(s), below configured threshold "
+                f"{settings.phase_motion_warning_threshold_rad:.6f} rad. "
+                "Inspect phase_grad_rms, router coverage, and phase optimizer LR.",
+                flush=True,
+            )
+        if (
+            relative_epoch % settings.phase_preview_interval_epochs == 0
+            or epoch == end_epoch
+        ):
+            phase_epoch_dir = (
+                settings.output_dir / "phase_training" / f"epoch_{epoch:04d}"
+            )
+            save_phase_snapshot(
+                replacement,
+                phase_epoch_dir,
+                epoch=epoch,
+                train_loss=average_total,
+                weight_variant="live",
+            )
+            save_phase_preview(
+                replacement,
+                phase_epoch_dir / "phase_preview.png",
+                title=(
+                    f"Grocery optical phase epoch {epoch} "
+                    f"(focus={'yes' if phase_focus else 'no'})"
+                ),
+            )
         save_checkpoint(
             settings.output_dir / "last_checkpoint.pt",
             replacement,
@@ -1031,6 +1483,14 @@ def train_optical_retrieval(
                 train_loss=average_total,
                 weight_variant="live",
             )
+            save_phase_preview(
+                replacement,
+                settings.output_dir
+                / "best_optical_artifacts"
+                / "live_weights"
+                / "phase_preview.png",
+                title=f"Best live optical phase at epoch {epoch}",
+            )
             if ema_parameters is not None:
                 with use_parameter_ema(parameters, ema_parameters):
                     save_checkpoint(
@@ -1051,6 +1511,14 @@ def train_optical_retrieval(
                         epoch=epoch,
                         train_loss=average_total,
                         weight_variant="ema",
+                    )
+                    save_phase_preview(
+                        replacement,
+                        settings.output_dir
+                        / "best_optical_artifacts"
+                        / "ema_weights"
+                        / "phase_preview.png",
+                        title=f"Best EMA optical phase at epoch {epoch}",
                     )
             write_json(
                 settings.output_dir / "metrics" / best_metrics_name,
@@ -1081,6 +1549,12 @@ def train_optical_retrieval(
             f"test_top1={test_metrics.get('top1_retrieval_accuracy', float('nan')):.4f} "
             f"ema_test_top1="
             f"{ema_test_metrics.get('top1_retrieval_accuracy', float('nan')):.4f} "
+            f"phase_focus={'yes' if phase_focus else 'no'} "
+            f"phase_delta={phase_motion['phase_delta_run_rms_rad']:.4f}rad "
+            f"phase_std={phase_motion['phase_physical_std_rad']:.4f}rad "
+            f"phase_grad={phase_gradients.get('phase_grad_rms', 0.0):.3e} "
+            f"unselected_v/l={coverage['vision_router_unselected_experts']}/"
+            f"{coverage['language_router_unselected_experts']} "
             f"best_train_loss={best_train_loss:.5f}"
         )
     return {

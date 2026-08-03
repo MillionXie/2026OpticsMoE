@@ -11,6 +11,10 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader
 
+from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.optics.physical import (
+    phase_dc_loss,
+)
+
 from .datasets import DatasetBundle, FSSSaliencyDataset, collate_saliency
 from .io_utils import write_csv, write_json
 from .modeling import (
@@ -35,6 +39,7 @@ HISTORY_FIELDS = [
     "epoch", "learning_rate", "train_loss", "train_bce", "train_dice_loss",
     "train_soft_iou_loss", "train_boundary_loss",
     "train_mask_kd", "train_router_balance", "train_router_importance",
+    "train_phase_dc",
     "train_mean_iou", "train_mean_dice", "train_mae", "train_pixel_accuracy",
     "test_loss", "test_mean_iou", "test_mean_dice", "test_mae",
     "test_pixel_accuracy", "detector_identity_scale", "detector_input_scale",
@@ -191,6 +196,35 @@ def train_student(
         train_batch_size=settings.student_batch_size,
         train_augmentation=settings.augmentation_enabled,
     )
+    initial_test_metrics: dict[str, Any] | None = None
+    if settings.student_initial_checkpoint is not None:
+        initial_test_metrics, _ = evaluate_model(
+            student,
+            loaded.processor,
+            test_loader,
+            settings,
+            model_kind="student",
+            save_predictions=False,
+        )
+        initial_test_metrics.update(
+            {
+                "stage": "before_selected_class_finetune",
+                "checkpoint": str(settings.student_initial_checkpoint),
+                "test_used_for_checkpoint_selection": False,
+            }
+        )
+        write_json(
+            settings.output_dir
+            / "metrics"
+            / "student_initial_test_metrics.json",
+            initial_test_metrics,
+        )
+        print(
+            "student before fine-tune: "
+            f"test_mIoU={initial_test_metrics['mean_iou']:.4f} "
+            f"test_Dice={initial_test_metrics['mean_dice']:.4f}",
+            flush=True,
+        )
     optimizer = _student_optimizer(student, settings)
     scheduler = _student_scheduler(optimizer, settings)
     mask_cache = _load_mask_cache(settings, "train") if settings.mask_kd_weight > 0 else None
@@ -304,6 +338,32 @@ def train_student(
             settings.output_dir / "metrics" / "student_test_metrics.json",
             final_metrics,
         )
+        if initial_test_metrics is not None:
+            comparison = {
+                "protocol": getattr(
+                    settings, "split_mode", "official_class_disjoint"
+                ),
+                "initial_checkpoint": str(settings.student_initial_checkpoint),
+                "initial_test_metrics": initial_test_metrics,
+                "finetuned_test_metrics": final_metrics,
+                "finetuned_minus_initial": {
+                    key: float(final_metrics[key])
+                    - float(initial_test_metrics[key])
+                    for key in (
+                        "mean_iou",
+                        "mean_dice",
+                        "mae",
+                        "pixel_accuracy",
+                    )
+                },
+                "test_used_for_checkpoint_selection": False,
+            }
+            write_json(
+                settings.output_dir
+                / "metrics"
+                / "student_finetune_comparison.json",
+                comparison,
+            )
         save_optical_phase_figures(
             student.core,
             settings.output_dir / "figures" / "optical_parameters",
@@ -318,6 +378,7 @@ def train_student(
     return {
         "best_checkpoint": str(best_path),
         "best_train_loss": best_train_loss,
+        "initial_test_metrics": initial_test_metrics,
         "final_test_metrics": final_metrics,
     }
 
@@ -705,7 +766,7 @@ def _train_epoch(
     parts = {
         "bce": 0.0, "dice_loss": 0.0, "soft_iou_loss": 0.0,
         "boundary_loss": 0.0, "mask_kd": 0.0,
-        "router_balance": 0.0, "router_importance": 0.0,
+        "router_balance": 0.0, "router_importance": 0.0, "phase_dc": 0.0,
     }
     sample_count = 0
     scaler = torch.amp.GradScaler(
@@ -740,11 +801,19 @@ def _train_epoch(
             importance = logits.new_zeros(())
             if model_kind == "student":
                 balance, importance = model.router_losses()
+                dc = (
+                    phase_dc_loss(model)
+                    if settings.phase_dc_weight > 0.0
+                    else logits.new_zeros(())
+                )
                 loss = (
                     loss
                     + settings.router_balance_weight * balance
                     + settings.router_importance_weight * importance
+                    + settings.phase_dc_weight * dc
                 )
+            else:
+                dc = logits.new_zeros(())
         if not torch.isfinite(loss):
             raise RuntimeError(f"Non-finite {model_kind} loss at epoch={epoch}, batch={batch_index}")
         scaler.scale(loss).backward()
@@ -757,12 +826,13 @@ def _train_epoch(
             parts[name] += float(value.detach()) * batch_size
         parts["router_balance"] += float(balance.detach()) * batch_size
         parts["router_importance"] += float(importance.detach()) * batch_size
+        parts["phase_dc"] += float(dc.detach()) * batch_size
         if batch_index % settings.log_interval_batches == 0 or batch_index == len(loader):
             print(
                 f"[{model_kind}_train] epoch={epoch} batch={batch_index}/{len(loader)} "
                 f"loss={float(loss.detach()):.5f} bce={float(loss_parts['bce']):.5f} "
                 f"dice={float(loss_parts['dice_loss']):.5f} "
-                f"balance={float(balance):.5f}",
+                f"balance={float(balance):.5f} phase_dc={float(dc):.5f}",
                 flush=True,
             )
     return accumulator.compute(), {name: value / sample_count for name, value in parts.items()}
@@ -1057,6 +1127,7 @@ def _history_row(
         "train_mask_kd": parts["mask_kd"],
         "train_router_balance": parts["router_balance"],
         "train_router_importance": parts["router_importance"],
+        "train_phase_dc": parts["phase_dc"],
         "train_mean_iou": train["mean_iou"],
         "train_mean_dice": train["mean_dice"],
         "train_mae": train["mae"],

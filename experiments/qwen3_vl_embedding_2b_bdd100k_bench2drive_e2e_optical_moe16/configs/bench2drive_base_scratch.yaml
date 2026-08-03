@@ -1,0 +1,55 @@
+base_config: bench2drive.yaml
+
+paths:
+  bdd100k_root: data/bdd100k
+  bench2drive_root: data/bench2drive/base
+  artifact_cache_dir: cache/qwen3_vl_embedding_2b_bench2drive_base_scratch_moe16
+  output_dir: runs/qwen3_vl_embedding_2b_bench2drive_base_scratch_moe16
+  pretrained_backbone_checkpoint: null
+
+bdd100k:
+  # This baseline deliberately skips BDD100K, PCA and road-structure pretraining.
+  require_auxiliary_labels: false
+
+bench2drive:
+  frame_stride: 5
+  record_cache_enabled: true
+  train_fraction: 0.95
+  train_limit: null
+  holdout_limit: null
+
+behavior_cloning:
+  backbone_initialization: scratch
+  train_optical_from_stage1: true
+  batch_size: 8
+  # "command" means one of the six high-level navigation commands, not a
+  # semantic image class. Base currently yields 9,398 frames/epoch under this
+  # cap and needs 18 rotating epochs to cover all 47,335 training frames once.
+  samples_per_command_per_epoch: 2000
+  stage1_epochs: 20
+  stage2_epochs: 30
+  actor_learning_rate: 0.001
+  linear_learning_rate: 0.0002
+  # Phase-only masks have an independent LR. This is deliberately below the
+  # validated CIFAR optical model's 8e-3, but high enough to avoid an almost
+  # flat pi-radian mask. Finite guards cover raw phase, fields, gradients and
+  # post-step parameters; bounded physical phase alone cannot do that.
+  optical_learning_rate: 0.0002
+  stage1_optical_learning_rate: 0.0002
+  stage2_optical_learning_rate: 0.0001
+  stage1_phase_learning_rate: 0.002
+  stage2_phase_learning_rate: 0.001
+  stage1_router_learning_rate: 0.0002
+  stage2_router_learning_rate: 0.0001
+  weight_decay: 0.0
+  gradient_clip_norm: 1.0
+  checkpoint_interval_batches: 250
+  resume: true
+
+optical:
+  phase:
+    parameterization: sigmoid
+    # DC loss is stationary at an exactly uniform mask, so use a reproducible
+    # small raw-phase perturbation to give it a usable first-step gradient.
+    init: small_normal
+    init_std: 0.2

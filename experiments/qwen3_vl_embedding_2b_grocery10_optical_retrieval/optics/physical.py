@@ -99,6 +99,69 @@ class PhaseLayer(nn.Module):
         self.dropout_active = bool(active)
 
 
+def _iter_phase_layers(module: object):
+    """Yield unique phase planes from a module or DeepStack hook wrapper."""
+    seen: set[int] = set()
+    roots: list[nn.Module] = []
+    if isinstance(module, nn.Module):
+        roots.append(module)
+    else:
+        # DeepStackMultimodalReplacement is deliberately not an nn.Module; it
+        # owns the two registered optical modules used by the forward hooks.
+        for name in ("vision_surrogate", "language_surrogate", "backbone"):
+            candidate = getattr(module, name, None)
+            if isinstance(candidate, nn.Module):
+                roots.append(candidate)
+    for root in roots:
+        for child in root.modules():
+            if isinstance(child, PhaseLayer) and id(child) not in seen:
+                seen.add(id(child))
+                yield child
+
+
+def phase_dc_loss(module: object) -> torch.Tensor:
+    """Return the mean coherent zero-order power of all phase planes.
+
+    The loss is evaluated independently for every physical phase plane before
+    averaging.  Combining phasors from different masks first would allow two
+    unrelated planes to cancel one another and would not describe either
+    mask's zero-order diffraction efficiency.
+
+    ``|mean(exp(i*phase))|^2`` is stationary at a perfectly uniform phase.  A
+    nonzero initialization jitter is therefore required when this loss is
+    expected to break a zero-initialized mask's spatial symmetry.
+    """
+    losses = []
+    for child in _iter_phase_layers(module):
+        phase = child.phase().float()
+        mean_real = torch.cos(phase).mean()
+        mean_imag = torch.sin(phase).mean()
+        losses.append(mean_real.square() + mean_imag.square())
+    if not losses:
+        raise RuntimeError("phase_dc_loss requires at least one PhaseLayer")
+    return torch.stack(losses).mean()
+
+
+@torch.no_grad()
+def phase_dc_statistics(module: object) -> dict[str, float | int]:
+    """Detached per-model diagnostics for coherent phase-mask DC power."""
+    rho_squared = []
+    for child in _iter_phase_layers(module):
+        phase = child.phase().detach().float()
+        mean_real = torch.cos(phase).mean()
+        mean_imag = torch.sin(phase).mean()
+        rho_squared.append(mean_real.square() + mean_imag.square())
+    if not rho_squared:
+        raise RuntimeError("phase_dc_statistics requires at least one PhaseLayer")
+    values = torch.stack(rho_squared)
+    return {
+        "phase_dc_current_loss": float(values.mean()),
+        "phase_dc_rho_mean": float(values.sqrt().mean()),
+        "phase_dc_rho_max": float(values.sqrt().max()),
+        "phase_dc_plane_count": int(values.numel()),
+    }
+
+
 class SquareDetectionLayerNormReload(nn.Module):
     """Per-expert, non-affine LayerNorm followed by activation and zero-phase reload."""
 

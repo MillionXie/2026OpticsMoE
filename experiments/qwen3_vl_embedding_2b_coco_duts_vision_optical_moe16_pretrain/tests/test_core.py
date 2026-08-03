@@ -52,6 +52,12 @@ def test_formal_config_encodes_requested_three_stage_architecture() -> None:
     assert settings.recombiner_alpha_init == pytest.approx(0.1)
     assert settings.duts_head_warmup_epochs == 5
     assert settings.duts_optical_learning_rate == pytest.approx(1e-4)
+    assert settings.coco_phase_learning_rate == pytest.approx(4e-3)
+    assert settings.duts_phase_learning_rate == pytest.approx(2e-3)
+    assert settings.phase_dc_weight == pytest.approx(5.0)
+    assert settings.phase_init == "small_normal"
+    assert settings.k_space_constraint_enabled
+    assert settings.theta_max_deg == pytest.approx(2.0)
     assert settings.duts_recombiner_learning_rate == pytest.approx(2e-4)
     assert settings.duts_head_learning_rate == pytest.approx(1e-3)
 

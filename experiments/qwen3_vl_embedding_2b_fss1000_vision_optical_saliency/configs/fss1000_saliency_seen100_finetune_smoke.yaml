@@ -1,0 +1,34 @@
+base_config: fss1000_saliency_seen100_finetune.yaml
+
+dataset:
+  selected_class_count: 2
+  within_class_train_images: 2
+  within_class_test_images: 2
+
+batching:
+  student_batch_size: 1
+  inference_batch_size: 1
+  num_workers: 0
+
+training:
+  student_epochs: 1
+  checkpoint_interval_epochs: 0
+  log_interval_batches: 1
+
+student_initialization:
+  checkpoint: null
+
+loss:
+  mask_kd_weight: 0.0
+
+mask_kd:
+  teacher_checkpoint: null
+  teacher_mask_cache: null
+  align_augmentation: false
+
+visualization:
+  sample_count: 2
+  optical_sample_count: 1
+  save_after_training: false
+
+output_dir: ../runs/fss1000_saliency_seen100_finetune_smoke

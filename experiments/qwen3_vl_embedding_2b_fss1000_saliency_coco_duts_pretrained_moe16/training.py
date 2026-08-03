@@ -33,6 +33,9 @@ from experiments.qwen3_vl_embedding_2b_coco_duts_vision_optical_moe16_pretrain.v
     save_segmentation_examples,
     save_training_curves,
 )
+from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.optics.physical import (
+    phase_dc_loss,
+)
 
 from .datasets import DatasetBundle, build_loaders
 
@@ -426,6 +429,7 @@ def _run_epoch(
         "boundary_loss": 0.0,
         "router_balance": 0.0,
         "router_importance": 0.0,
+        "phase_dc": 0.0,
     }
     samples = 0
     for batch_index, batch in enumerate(loader, start=1):
@@ -451,10 +455,16 @@ def _run_epoch(
                 boundary_weight=settings.boundary_weight,
             )
             balance, importance = model.router_losses()
+            dc = (
+                phase_dc_loss(model.backbone)
+                if not detach_backbone and settings.phase_dc_weight > 0.0
+                else segmentation.new_zeros(())
+            )
             total = (
                 segmentation
                 + settings.router_balance_weight * balance.float()
                 + settings.router_importance_weight * importance.float()
+                + settings.phase_dc_weight * dc
             )
         if not torch.isfinite(total):
             raise RuntimeError(
@@ -470,6 +480,7 @@ def _run_epoch(
             **parts,
             "router_balance": balance,
             "router_importance": importance,
+            "phase_dc": dc,
         }
         for name in sums:
             sums[name] += float(values[name].detach()) * batch_size
@@ -481,7 +492,7 @@ def _run_epoch(
                 f"{len(loader):,} loss={current['loss']:.5f} "
                 f"mIoU={current['mean_iou']:.4f} "
                 f"Dice={current['mean_dice']:.4f} "
-                f"balance={float(balance):.5f}",
+                f"balance={float(balance):.5f} phase_dc={float(dc):.5f}",
                 flush=True,
             )
     return accumulator.compute(), {
@@ -508,16 +519,27 @@ def _build_optimizer(
 ) -> torch.optim.Optimizer:
     groups: list[dict[str, Any]] = []
     if not warmup:
+        phase_parameters = [
+            parameter
+            for name, parameter in model.backbone.core.named_parameters()
+            if parameter.requires_grad and "raw_phase" in name
+        ]
+        phase_ids = {id(parameter) for parameter in phase_parameters}
         groups.extend(
             [
                 {
                     "params": [
                         parameter
                         for parameter in model.backbone.core.parameters()
-                        if parameter.requires_grad
+                        if parameter.requires_grad and id(parameter) not in phase_ids
                     ],
                     "lr": settings.duts_optical_learning_rate,
                     "name": "optical",
+                },
+                {
+                    "params": phase_parameters,
+                    "lr": settings.duts_phase_learning_rate,
+                    "name": "phase",
                 },
                 {
                     "params": [
@@ -583,4 +605,3 @@ def _print_trainable(report: dict[str, Any]) -> None:
             f"params={row['parameters']:,}",
             flush=True,
         )
-

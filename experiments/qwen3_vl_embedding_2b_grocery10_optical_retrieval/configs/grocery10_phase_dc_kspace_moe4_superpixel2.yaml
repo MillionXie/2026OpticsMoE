@@ -1,0 +1,34 @@
+base_config: grocery10_phase_engaged.yaml
+
+# Hardware-robust optical bank: 2x2 experts instead of 4x4. Each 224x224
+# logical expert is simulated at 16 um and exported to the 8 um SLM with a
+# 2x2 nearest-neighbor superpixel. This is a new architecture and cannot load
+# MoE16 optical checkpoints.
+optical:
+  geometry:
+    canvas_size: 518
+    active_size: 478
+    expert_size: 224
+    expert_pitch: 254
+    num_experts: 4
+    grid_rows: 2
+    grid_cols: 2
+    layers_per_expert: 1
+
+  router:
+    # Keep conditional routing: two of four experts are active per sample.
+    top_k: 2
+
+  physics:
+    wavelength_nm: 532.0
+    pixel_pitch_um: 16.0
+    inter_layer_distance_m: 0.05
+    last_expert_to_global_distance_m: 0.05
+    global_to_detector_distance_m: 0.05
+
+  # At 16 um sampling, one degree is a meaningful mild angular cutoff.
+  k_space:
+    enabled: true
+    theta_max_deg: 1.0
+
+output_dir: ../runs/qwen3_vl_embedding_2b_grocery10_phase_dc_kspace_moe4_superpixel2

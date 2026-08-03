@@ -84,9 +84,17 @@ def main(argv: list[str] | None = None) -> int:
         _sac(settings)
         return 0
     if phase == "all":
-        _prepare(settings, include_bdd=True)
-        _fit_pca(settings)
-        _bdd_pretrain(settings)
+        use_bdd_pretraining = settings.bc_backbone_initialization == "bdd_pretrained"
+        _prepare(settings, include_bdd=use_bdd_pretraining)
+        if use_bdd_pretraining:
+            _fit_pca(settings)
+            _bdd_pretrain(settings)
+        else:
+            print(
+                "[all] Scratch Optical Backbone selected: skipping BDD100K, PCA, "
+                "and BDD feature pretraining.",
+                flush=True,
+            )
         _behavior_cloning(settings, "bc_all")
         if settings.sac_env_factory:
             _sac(settings)
@@ -181,9 +189,7 @@ def _behavior_cloning(settings: Any, phase: str) -> None:
     device = _device(settings)
     train_records, validation_records = build_bench2drive_splits(settings)
     loaded = load_vision_backbone(settings, device)
-    backbone = build_backbone(
-        loaded, settings, settings.pretrained_backbone_checkpoint
-    )
+    backbone = build_backbone(loaded, settings, _initial_backbone_checkpoint(settings))
     policy = build_policy(backbone, settings)
     if phase in {"bc_stage1", "bc_all"}:
         train_behavior_cloning(
@@ -221,12 +227,23 @@ def _behavior_cloning(settings: Any, phase: str) -> None:
 def _sac(settings: Any) -> None:
     device = _device(settings)
     loaded = load_vision_backbone(settings, device)
-    backbone = build_backbone(
-        loaded, settings, settings.pretrained_backbone_checkpoint
-    )
+    backbone = build_backbone(loaded, settings, _initial_backbone_checkpoint(settings))
     policy = build_policy(backbone, settings)
     result = train_sac(policy, loaded.processor, settings, device)
     print(f"SAC complete: {result}", flush=True)
+
+
+def _initial_backbone_checkpoint(settings: Any) -> Path | None:
+    if settings.bc_backbone_initialization == "scratch":
+        return None
+    checkpoint = settings.pretrained_backbone_checkpoint
+    if checkpoint is None or not checkpoint.is_file():
+        raise FileNotFoundError(
+            "BDD-pretrained behavior cloning requires the exported Optical "
+            f"Backbone checkpoint, but it is missing: {checkpoint}. Run "
+            "--phase fit_pca and --phase bdd_pretrain, or use a scratch config."
+        )
+    return checkpoint
 
 
 if __name__ == "__main__":

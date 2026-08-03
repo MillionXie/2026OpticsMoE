@@ -1,0 +1,35 @@
+base_config: grocery10_phase_engaged.yaml
+
+dataset:
+  train_limit_per_sku: 2
+  test_limit_per_sku: 1
+
+batching:
+  teacher_batch_size: 2
+  batch_size: 4
+  pk_skus_per_batch: 2
+  pk_images_per_sku: 2
+  optimizer_steps_per_epoch: 5
+  inference_batch_size: 2
+  num_workers: 0
+
+training:
+  epochs: 3
+  log_interval_batches: 1
+  phase_focus:
+    enabled: true
+    warmup_epochs: 1
+    interval_epochs: 2
+  phase_diagnostics:
+    gradient_measure_interval_batches: 1
+    motion_warning_epoch: 1
+    motion_warning_threshold_rad: 0.0001
+    preview_interval_epochs: 1
+
+  lambda_phase_dc: 5.0
+  phase_dc_start_epoch: 1
+
+visualization:
+  sample_count: 2
+
+output_dir: ../runs/qwen3_vl_embedding_2b_grocery10_phase_engaged_smoke

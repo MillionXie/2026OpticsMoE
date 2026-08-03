@@ -65,10 +65,14 @@ pretrain:
     road_participant: 0.15
     router_balance: 0.03
     router_importance: 0.0
+    phase_dc: 5.0
 
 bench2drive:
   # Official clips contain camera/rgb_front/*.jpg and anno/*.json.gz.
   frame_stride: 5
+  # Persist parsed anno/*.json.gz records. This removes the high-CPU archive
+  # scan from subsequent launches; delete the cache after changing source data.
+  record_cache_enabled: true
   train_fraction: 0.95
   train_limit: null
   # Route-disjoint offline validation only. Official closed-loop routes remain
@@ -79,13 +83,34 @@ bench2drive:
   target_point_clip_m: 50.0
 
 behavior_cloning:
-  batch_size: 4
+  batch_size: 8
+  # Six navigation commands are the natural balancing groups. Null processes
+  # the full set every epoch; a positive value selects deterministic rotating
+  # windows and still covers the complete set over multiple epochs.
+  samples_per_command_per_epoch: 2000
+  backbone_initialization: bdd_pretrained
+  # Keep the deployable Optical core trainable from the first BC epoch. The
+  # frozen Qwen patch/position stem is never added to the optimizer.
+  train_optical_from_stage1: true
   stage1_epochs: 20
   stage2_epochs: 30
   actor_learning_rate: 0.001
   linear_learning_rate: 0.0002
-  optical_learning_rate: 0.00002
+  # Non-phase optical electronics (input adapter/OEO) use a conventional
+  # small LR. Phase masks are separated below: sharing 2e-5 left their
+  # physical standard deviation orders of magnitude below the validated CIFAR
+  # optical model even though raw_phase had nonzero gradients.
+  optical_learning_rate: 0.0002
+  stage1_optical_learning_rate: 0.0002
+  stage2_optical_learning_rate: 0.0001
+  stage1_phase_learning_rate: 0.002
+  stage2_phase_learning_rate: 0.001
+  stage1_router_learning_rate: 0.0002
+  stage2_router_learning_rate: 0.0001
   weight_decay: 0.0
+  gradient_clip_norm: 1.0
+  checkpoint_interval_batches: 250
+  resume: true
   actor_hidden_dims: [256, 128]
   loss:
     steer: 1.0
@@ -94,11 +119,24 @@ behavior_cloning:
     throttle_brake_exclusion: 0.1
     router_balance: 0.03
     router_importance: 0.0
+    phase_dc: 5.0
 
 sac:
-  # Set to a Python factory "package.module:function" that returns a
-  # Gymnasium-style Bench2Drive/CARLA 0.9.15 environment.
-  env_factory: ""
+  # The learner runs in Python 3.11; a local Python 3.8 service owns CARLA.
+  env_factory: experiments.qwen3_vl_embedding_2b_bdd100k_bench2drive_e2e_optical_moe16.carla_bridge:make_remote_carla_env
+  bridge:
+    host: 127.0.0.1
+    # CARLA also reserves rpc_port+1 (24516), so the bridge must not use it.
+    port: 24615
+    authkey: bench2drive-local
+    timeout_seconds: 120
+  carla:
+    host: 127.0.0.1
+    port: 24515
+    map: Town10HD_Opt
+    fixed_delta_seconds: 0.05
+    max_episode_steps: 1000
+    target_speed_mps: 8.0
   total_steps: 100000
   random_steps: 1000
   batch_size: 64
@@ -157,11 +195,11 @@ optical:
     global_to_detector_distance_m: 0.10
   phase:
     parameterization: sigmoid
-    init: zeros
-    init_std: 0.02
+    init: small_normal
+    init_std: 0.2
   k_space:
-    enabled: false
-    theta_max_deg: 1.0
+    enabled: true
+    theta_max_deg: 2.0
   oeo:
     enabled: true
     per_expert_enabled: true

@@ -1,0 +1,131 @@
+dataset:
+  data_root: ../../../data/lsp_pose
+  download: true
+  lsp_urls:
+    # The original host is offline. This public mirror preserves the exact
+    # 2,000-image low-resolution LSP archive and joints.mat.
+    - hf://LiuRunky/Leeds_Sports_Pose
+    - https://sam.johnson.io/research/lsp_dataset.zip
+    - http://sam.johnson.io/research/lsp_dataset.zip
+  lspet_urls:
+    # Maintained HR-LSPET mirror (9,428 images, about 2.86 GB compressed).
+    - https://datasets.d2.mpi-inf.mpg.de/hr-lspet/hr-lspet.zip
+    - https://sam.johnson.io/research/lspet_dataset.zip
+    - http://sam.johnson.io/research/lspet_dataset.zip
+  # MPI-INF HR-LSPET is a high-resolution, re-annotated 9,428-image subset.
+  # Set this to 10000 only when supplying the old complete low-resolution ZIP.
+  lspet_expected_count: 9428
+  # The third channel differs across redistributed .mat files. The official
+  # PCK protocol evaluates annotated joints, so coordinates are authoritative.
+  visibility_policy: coordinates_in_image
+  strict_dataset_counts: true
+  train_limit: null
+  test_limit: null
+
+qwen:
+  model_id: Qwen/Qwen3-VL-Embedding-2B
+  cache_dir: ../../../cache/qwen
+  local_files_only: false
+  processor_min_pixels: 50176
+  processor_max_pixels: 50176
+  dtype: bfloat16
+  attn_implementation: sdpa
+  device: cuda
+
+data:
+  image_size: 224
+  heatmap_size: 56
+  heatmap_sigma: 2.0
+
+batching:
+  teacher_batch_size: 8
+  student_batch_size: 4
+  inference_batch_size: 8
+  num_workers: 8
+
+training:
+  teacher_epochs: 40
+  student_epochs: 100
+  teacher_learning_rate: 0.001
+  student_learning_rate: 0.001
+  router_learning_rate: 0.0005
+  phase_learning_rate: 0.004
+  weight_decay: 0.0
+  random_seed: 42
+  amp_enabled: true
+  log_interval_batches: 100
+
+loss:
+  heatmap_weight: 1.0
+  coordinate_weight: 0.1
+  router_balance_weight: 0.03
+  router_importance_weight: 0.005
+  phase_dc_weight: 5.0
+
+augmentation:
+  enabled: true
+  crop_margin: 1.25
+  scale_jitter: 0.15
+  center_jitter: 0.05
+  horizontal_flip_probability: 0.5
+  brightness_jitter: 0.10
+  contrast_jitter: 0.10
+
+pose_head:
+  projection_dim: 128
+  decoder_channels: [128, 64]
+  groupnorm_groups: 8
+
+optical:
+  input_adapter_dim: 224
+  max_visual_tokens: 224
+  vision_tap_stages: [1]
+  geometry:
+    canvas_size: 1026
+    active_size: 986
+    expert_size: 224
+    expert_pitch: 254
+    num_experts: 16
+    grid_rows: 4
+    grid_cols: 4
+    layers_per_expert: 1
+  router:
+    top_k: 4
+    pool_size: 14
+    temperature: 1.0
+    input_layernorm_enabled: true
+    input_layernorm_eps: 1.0e-5
+    amplitude_weight_domain: amplitude
+    input_normalization: none
+  physics:
+    wavelength_nm: 532.0
+    pixel_pitch_um: 8.0
+    inter_layer_distance_m: 0.10
+    last_expert_to_global_distance_m: 0.10
+    global_to_detector_distance_m: 0.10
+  phase:
+    parameterization: sigmoid
+    init: small_normal
+    init_std: 0.2
+  k_space:
+    enabled: true
+    theta_max_deg: 2.0
+  oeo:
+    enabled: true
+    per_expert_enabled: true
+    elementwise_affine: false
+    hard_route_mask: true
+    reapply_routing_weights: true
+    layernorm_eps: 1.0e-5
+    nonlinearity: relu
+  detector:
+    output_size: 224
+    layernorm_eps: 1.0e-5
+    layernorm_affine: false
+    layernorm_scope: per_token
+    nonlinearity: relu
+
+visualization:
+  sample_count: 16
+
+output_dir: ../runs/lsp_pose_optical_moe16

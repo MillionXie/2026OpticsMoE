@@ -86,25 +86,44 @@ def build_bench2drive_splits(
             f"Bench2Drive root does not exist: {root}. Extract an official "
             "Mini/Base/Full dataset so each clip contains camera/rgb_front and anno."
         )
-    annotation_paths = sorted(root.glob("**/anno/*.json.gz"))
-    if not annotation_paths:
-        raise FileNotFoundError(
-            f"No Bench2Drive anno/*.json.gz files found recursively under {root}. "
-            "The official layout is <clip>/camera/rgb_front/*.jpg plus <clip>/anno/*.json.gz."
+    cached = _load_record_cache(settings) if settings.bench_record_cache_enabled else None
+    if cached is None:
+        annotation_paths = sorted(root.glob("**/anno/*.json.gz"))
+        if not annotation_paths:
+            raise FileNotFoundError(
+                f"No Bench2Drive anno/*.json.gz files found recursively under {root}. "
+                "The official layout is <clip>/camera/rgb_front/*.jpg plus <clip>/anno/*.json.gz."
+            )
+        routes: dict[str, list[Path]] = {}
+        for path in annotation_paths:
+            route_root = path.parent.parent
+            route_id = str(route_root.relative_to(root)).replace("\\", "/")
+            routes.setdefault(route_id, []).append(path)
+        route_ids = sorted(
+            routes, key=lambda value: _stable_key(value, settings.random_seed)
         )
-    routes: dict[str, list[Path]] = {}
-    for path in annotation_paths:
-        route_root = path.parent.parent
-        route_id = str(route_root.relative_to(root)).replace("\\", "/")
-        routes.setdefault(route_id, []).append(path)
-    route_ids = sorted(routes, key=lambda value: _stable_key(value, settings.random_seed))
-    split_index = max(1, min(len(route_ids) - 1, round(len(route_ids) * settings.bench_train_fraction)))
-    if len(route_ids) == 1:
-        train_routes, test_routes = route_ids, route_ids
+        split_index = max(
+            1,
+            min(
+                len(route_ids) - 1,
+                round(len(route_ids) * settings.bench_train_fraction),
+            ),
+        )
+        if len(route_ids) == 1:
+            train_routes, test_routes = route_ids, route_ids
+        else:
+            train_routes, test_routes = route_ids[:split_index], route_ids[split_index:]
+        train = _records_for_routes(
+            root, routes, train_routes, settings.bench_frame_stride
+        )
+        test = _records_for_routes(
+            root, routes, test_routes, settings.bench_frame_stride
+        )
+        if settings.bench_record_cache_enabled:
+            _save_record_cache(settings, train, test)
     else:
-        train_routes, test_routes = route_ids[:split_index], route_ids[split_index:]
-    train = _records_for_routes(root, routes, train_routes, settings.bench_frame_stride)
-    test = _records_for_routes(root, routes, test_routes, settings.bench_frame_stride)
+        train, test = cached
+        route_ids = sorted({row.route_id for row in [*train, *test]})
     if settings.bench_train_limit is not None:
         train = train[: settings.bench_train_limit]
     if settings.bench_test_limit is not None:
@@ -125,6 +144,11 @@ def build_bench2drive_splits(
             "route-disjoint offline validation; not the official closed-loop test"
         ),
         "frame_stride": settings.bench_frame_stride,
+        "record_cache": (
+            str(settings.bench_records_cache_path)
+            if settings.bench_record_cache_enabled
+            else None
+        ),
         "seed": settings.random_seed,
         "official_fields_used": [
             "speed",
@@ -141,6 +165,93 @@ def build_bench2drive_splits(
     }
     write_json(settings.bench_index_path, metadata)
     return train, test
+
+
+def _record_cache_identity(settings: Any) -> dict[str, Any]:
+    return {
+        "version": 1,
+        "root": str(settings.bench2drive_root.resolve()),
+        "frame_stride": settings.bench_frame_stride,
+        "train_fraction": settings.bench_train_fraction,
+        "seed": settings.random_seed,
+    }
+
+
+def _load_record_cache(
+    settings: Any,
+) -> tuple[list[Bench2DriveRecord], list[Bench2DriveRecord]] | None:
+    path = settings.bench_records_cache_path
+    if not path.is_file():
+        return None
+    try:
+        with gzip.open(path, "rt", encoding="utf-8") as handle:
+            payload = json.load(handle)
+        if payload.get("identity") != _record_cache_identity(settings):
+            return None
+        train = [_record_from_json(row) for row in payload["train"]]
+        test = [_record_from_json(row) for row in payload["validation"]]
+        probes = train[:1] + train[-1:] + test[:1] + test[-1:]
+        if any(
+            not row.image_path.is_file() or not row.annotation_path.is_file()
+            for row in probes
+        ):
+            return None
+        print(
+            f"Loaded Bench2Drive record cache: train={len(train):,} "
+            f"validation={len(test):,} from {path}",
+            flush=True,
+        )
+        return train, test
+    except (KeyError, OSError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        print(f"Ignoring invalid Bench2Drive record cache {path}: {exc}", flush=True)
+        return None
+
+
+def _save_record_cache(
+    settings: Any,
+    train: list[Bench2DriveRecord],
+    test: list[Bench2DriveRecord],
+) -> None:
+    path = settings.bench_records_cache_path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    payload = {
+        "identity": _record_cache_identity(settings),
+        "train": [_record_to_json(row) for row in train],
+        "validation": [_record_to_json(row) for row in test],
+    }
+    with gzip.open(temporary, "wt", encoding="utf-8", compresslevel=5) as handle:
+        json.dump(payload, handle, separators=(",", ":"), ensure_ascii=False)
+    temporary.replace(path)
+    print(
+        f"Saved Bench2Drive record cache: train={len(train):,} "
+        f"validation={len(test):,} to {path}",
+        flush=True,
+    )
+
+
+def _record_to_json(record: Bench2DriveRecord) -> dict[str, Any]:
+    value = asdict(record)
+    value["image_path"] = str(record.image_path)
+    value["annotation_path"] = str(record.annotation_path)
+    return value
+
+
+def _record_from_json(value: dict[str, Any]) -> Bench2DriveRecord:
+    return Bench2DriveRecord(
+        sample_id=str(value["sample_id"]),
+        route_id=str(value["route_id"]),
+        frame_id=str(value["frame_id"]),
+        image_path=Path(value["image_path"]),
+        annotation_path=Path(value["annotation_path"]),
+        speed=float(value["speed"]),
+        command=int(value["command"]),
+        target_x_local=float(value["target_x_local"]),
+        target_y_local=float(value["target_y_local"]),
+        steer=float(value["steer"]),
+        throttle=float(value["throttle"]),
+        brake=float(value["brake"]),
+    )
 
 
 def parse_annotation(

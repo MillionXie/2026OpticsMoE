@@ -28,6 +28,9 @@ from experiments.qwen3_vl_embedding_2b_coco_duts_vision_optical_moe16_pretrain.v
     save_segmentation_examples,
     save_training_curves,
 )
+from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.optics.physical import (
+    phase_dc_loss,
+)
 
 from .datasets import DatasetBundle, build_loaders
 from .metrics import ISICSegmentationAccumulator, per_sample_metrics
@@ -512,6 +515,7 @@ def _run_epoch(
         "boundary_loss": 0.0,
         "router_balance": 0.0,
         "router_importance": 0.0,
+        "phase_dc": 0.0,
     }
     samples = 0
     for batch_index, batch in enumerate(loader, start=1):
@@ -540,10 +544,16 @@ def _run_epoch(
                 boundary_weight=settings.boundary_weight,
             )
             balance, importance = model.router_losses()
+            dc = (
+                phase_dc_loss(model.backbone)
+                if not detach_backbone and settings.phase_dc_weight > 0.0
+                else segmentation.new_zeros(())
+            )
             total = (
                 segmentation
                 + settings.router_balance_weight * balance.float()
                 + settings.router_importance_weight * importance.float()
+                + settings.phase_dc_weight * dc
             )
         if not torch.isfinite(total):
             raise RuntimeError(
@@ -559,6 +569,7 @@ def _run_epoch(
             **parts,
             "router_balance": balance,
             "router_importance": importance,
+            "phase_dc": dc,
         }
         for name in sums:
             sums[name] += float(values[name].detach()) * batch_size
@@ -570,7 +581,7 @@ def _run_epoch(
                 f"{len(loader):,} loss={current['loss']:.5f} "
                 f"Jaccard={current['mean_iou']:.4f} "
                 f"Dice={current['mean_dice']:.4f} "
-                f"balance={float(balance):.5f}",
+                f"balance={float(balance):.5f} phase_dc={float(dc):.5f}",
                 flush=True,
             )
     return accumulator.compute(), {
@@ -603,11 +614,15 @@ def _build_optimizer(
     groups: list[dict[str, Any]] = []
     if not warmup:
         optical = []
+        phases = []
         router = []
         for name, parameter in model.backbone.core.named_parameters():
             if not parameter.requires_grad:
                 continue
-            (router if name.startswith("router.") else optical).append(parameter)
+            if "raw_phase" in name:
+                phases.append(parameter)
+            else:
+                (router if name.startswith("router.") else optical).append(parameter)
         if not optical:
             raise RuntimeError(
                 "Optical optimizer group is empty. The inserted optical core "
@@ -632,6 +647,19 @@ def _build_optimizer(
                     "params": optical,
                     "lr": settings.optical_learning_rate,
                     "name": "optical",
+                },
+                {
+                    "params": phases,
+                    # Keep the helper compatible with older programmatic
+                    # settings objects/checkpoints that predate the dedicated
+                    # phase group.  Parsed current configs always expose the
+                    # explicit value.
+                    "lr": getattr(
+                        settings,
+                        "phase_learning_rate",
+                        settings.optical_learning_rate,
+                    ),
+                    "name": "phase",
                 },
                 {
                     "params": router,

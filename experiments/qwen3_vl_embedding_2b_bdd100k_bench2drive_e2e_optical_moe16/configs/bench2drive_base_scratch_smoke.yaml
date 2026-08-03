@@ -1,0 +1,28 @@
+base_config: bench2drive_base_scratch.yaml
+
+paths:
+  bench2drive_root: data/_smoke/bench2drive
+  artifact_cache_dir: cache/_smoke/qwen_bench2drive_scratch
+  output_dir: runs/_smoke/qwen_bench2drive_scratch
+
+bench2drive:
+  frame_stride: 1
+  train_fraction: 0.5
+  train_limit: 2
+  holdout_limit: 2
+
+behavior_cloning:
+  batch_size: 1
+  stage1_epochs: 1
+  stage2_epochs: 1
+
+sac:
+  env_factory: experiments.qwen3_vl_embedding_2b_bdd100k_bench2drive_e2e_optical_moe16.smoke:make_synthetic_env
+  total_steps: 12
+  random_steps: 4
+  batch_size: 4
+  replay_capacity: 64
+
+training:
+  num_workers: 0
+  log_interval_batches: 1

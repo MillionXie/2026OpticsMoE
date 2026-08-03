@@ -1,0 +1,22 @@
+base_config: bench2drive_base_scratch.yaml
+
+# Uses the real downloaded Bench2Drive Base tree and the same persistent
+# parsed-record cache as the formal run, but keeps the optimizer smoke tiny.
+paths:
+  output_dir: runs/_smoke/qwen_bench2drive_base_scratch_runtime
+
+bench2drive:
+  train_limit: 24
+  holdout_limit: 8
+
+behavior_cloning:
+  batch_size: 8
+  samples_per_command_per_epoch: 4
+  stage1_epochs: 1
+  stage2_epochs: 1
+  checkpoint_interval_batches: 1
+  resume: false
+
+training:
+  num_workers: 2
+  log_interval_batches: 1

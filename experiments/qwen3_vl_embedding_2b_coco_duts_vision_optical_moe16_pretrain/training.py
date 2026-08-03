@@ -9,6 +9,10 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader
 
+from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.optics.physical import (
+    phase_dc_loss,
+)
+
 from .datasets import (
     CocoBundle,
     CocoImageDataset,
@@ -595,6 +599,7 @@ def _run_coco_epoch(
         "smooth_l1_loss": 0.0,
         "router_balance": 0.0,
         "router_importance": 0.0,
+        "phase_dc": 0.0,
     }
     part_weight = 0
     context = contextlib.nullcontext() if training else torch.no_grad()
@@ -641,6 +646,13 @@ def _run_coco_epoch(
                     router_importance=importance,
                     router_importance_weight=settings.router_importance_weight,
                 )
+                dc = (
+                    phase_dc_loss(backbone)
+                    if training and settings.phase_dc_weight > 0.0
+                    else loss.new_zeros(())
+                )
+                loss = loss + settings.phase_dc_weight * dc
+                parts["phase_dc"] = dc
             if training:
                 loss.backward()
                 optimizer.step()
@@ -689,6 +701,9 @@ def _run_duts_epoch(
         "dice_loss": 0.0,
         "soft_iou_loss": 0.0,
         "boundary_loss": 0.0,
+        "router_balance": 0.0,
+        "router_importance": 0.0,
+        "phase_dc": 0.0,
     }
     samples = 0
     for batch_index, batch in enumerate(loader, start=1):
@@ -716,6 +731,26 @@ def _run_duts_epoch(
                 soft_iou_weight=settings.soft_iou_weight,
                 boundary_weight=settings.boundary_weight,
             )
+            if not detach_backbone:
+                balance, importance = model.backbone.router_losses()
+                dc = (
+                    phase_dc_loss(model.backbone)
+                    if settings.phase_dc_weight > 0.0
+                    else loss.new_zeros(())
+                )
+                loss = (
+                    loss
+                    + settings.router_balance_weight * balance
+                    + settings.router_importance_weight * importance
+                    + settings.phase_dc_weight * dc
+                )
+            else:
+                balance = loss.new_zeros(())
+                importance = loss.new_zeros(())
+                dc = loss.new_zeros(())
+            parts["router_balance"] = balance
+            parts["router_importance"] = importance
+            parts["phase_dc"] = dc
         loss.backward()
         optimizer.step()
         batch_size = int(masks.shape[0])
@@ -811,11 +846,14 @@ def _coco_optimizer(
     settings: Any,
 ) -> torch.optim.Optimizer:
     optical: list[nn.Parameter] = []
+    phases: list[nn.Parameter] = []
     router: list[nn.Parameter] = []
     for name, parameter in backbone.core.named_parameters():
         if not parameter.requires_grad:
             continue
-        if name.startswith("router."):
+        if "raw_phase" in name:
+            phases.append(parameter)
+        elif name.startswith("router."):
             router.append(parameter)
         else:
             optical.append(parameter)
@@ -825,6 +863,11 @@ def _coco_optimizer(
                 "params": optical,
                 "lr": settings.coco_optical_learning_rate,
                 "name": "optical",
+            },
+            {
+                "params": phases,
+                "lr": settings.coco_phase_learning_rate,
+                "name": "phase",
             },
             {
                 "params": router,
@@ -862,16 +905,27 @@ def _duts_optimizer(
 ) -> torch.optim.Optimizer:
     groups: list[dict[str, Any]] = []
     if not warmup:
+        phase_parameters = [
+            parameter
+            for name, parameter in model.backbone.core.named_parameters()
+            if parameter.requires_grad and "raw_phase" in name
+        ]
+        phase_ids = {id(parameter) for parameter in phase_parameters}
         groups.extend(
             [
                 {
                     "params": [
                         parameter
                         for parameter in model.backbone.core.parameters()
-                        if parameter.requires_grad
+                        if parameter.requires_grad and id(parameter) not in phase_ids
                     ],
                     "lr": settings.duts_optical_learning_rate,
                     "name": "optical",
+                },
+                {
+                    "params": phase_parameters,
+                    "lr": settings.duts_phase_learning_rate,
+                    "name": "phase",
                 },
                 {
                     "params": [

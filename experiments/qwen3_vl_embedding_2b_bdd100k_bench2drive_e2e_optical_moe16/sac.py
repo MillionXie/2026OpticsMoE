@@ -166,28 +166,41 @@ def train_sac(
     critic = TwinQCritic().to(device)
     target_critic = copy.deepcopy(critic).requires_grad_(False)
     critic_optimizer = torch.optim.Adam(
-        [
-            {"params": critic.parameters(), "lr": settings.sac_learning_rate},
-            {
-                "params": policy.backbone.recombiner.parameters(),
-                "lr": settings.bc_linear_learning_rate,
-            },
-            {
-                "params": policy.backbone.core.parameters(),
-                "lr": settings.bc_optical_learning_rate,
-            },
-        ]
+        critic.parameters(), lr=settings.sac_learning_rate
     )
     actor_optimizer = torch.optim.Adam(
+        policy.actor.parameters(), lr=settings.sac_learning_rate
+    )
+    phase_parameters = [
+        parameter
+        for name, parameter in policy.backbone.core.named_parameters()
+        if "raw_phase" in name
+    ]
+    phase_ids = {id(parameter) for parameter in phase_parameters}
+    nonphase_optical_parameters = [
+        parameter
+        for parameter in policy.backbone.core.parameters()
+        if id(parameter) not in phase_ids
+    ]
+    # One optimizer owns every backbone tensor. The previous two-optimizer
+    # arrangement could step the same phase parameter once through the critic
+    # and again through the actor with independent Adam moments.
+    backbone_optimizer = torch.optim.Adam(
         [
-            {"params": policy.actor.parameters(), "lr": settings.sac_learning_rate},
             {
                 "params": policy.backbone.recombiner.parameters(),
                 "lr": settings.bc_linear_learning_rate,
+                "group_name": "ccd_recombiner",
             },
             {
-                "params": policy.backbone.core.parameters(),
-                "lr": settings.bc_optical_learning_rate,
+                "params": nonphase_optical_parameters,
+                "lr": settings.bc_stage2_optical_learning_rate,
+                "group_name": "optical_nonphase",
+            },
+            {
+                "params": phase_parameters,
+                "lr": settings.bc_stage2_phase_learning_rate,
+                "group_name": "optical_phases",
             },
         ]
     )
@@ -249,6 +262,7 @@ def train_sac(
                 target_critic,
                 actor_optimizer,
                 critic_optimizer,
+                backbone_optimizer,
                 log_alpha,
                 alpha_optimizer,
                 target_entropy,
@@ -292,6 +306,9 @@ def train_sac(
         "actor_state_dict": policy.actor.state_dict(),
         "critic_state_dict": critic.state_dict(),
         "target_critic_state_dict": target_critic.state_dict(),
+        "actor_optimizer_state_dict": actor_optimizer.state_dict(),
+        "critic_optimizer_state_dict": critic_optimizer.state_dict(),
+        "backbone_optimizer_state_dict": backbone_optimizer.state_dict(),
         "log_alpha": log_alpha.detach().cpu(),
         "settings": {
             "freeze_backbone_steps": settings.sac_freeze_backbone_steps,
@@ -337,6 +354,7 @@ def _sac_update(
     target_critic: TwinQCritic,
     actor_optimizer: torch.optim.Optimizer,
     critic_optimizer: torch.optim.Optimizer,
+    backbone_optimizer: torch.optim.Optimizer,
     log_alpha: torch.Tensor,
     alpha_optimizer: torch.optim.Optimizer | None,
     target_entropy: float,
@@ -365,10 +383,26 @@ def _sac_update(
     q1, q2 = critic(states, action_tensor)
     critic_loss = torch.nn.functional.mse_loss(q1, target) + torch.nn.functional.mse_loss(q2, target)
     critic_optimizer.zero_grad(set_to_none=True)
+    backbone_optimizer.zero_grad(set_to_none=True)
     critic_loss.backward()
     critic_optimizer.step()
+    if backbone_trainable:
+        backbone_parameters = [
+            parameter
+            for group in backbone_optimizer.param_groups
+            for parameter in group["params"]
+            if parameter.requires_grad and parameter.grad is not None
+        ]
+        torch.nn.utils.clip_grad_norm_(
+            backbone_parameters,
+            settings.bc_gradient_clip_norm,
+            error_if_nonfinite=True,
+        )
+        backbone_optimizer.step()
 
-    actor_states = state_builder.batch(observations, grad=backbone_trainable)
+    # Actor optimization sees the current optical state but does not perform a
+    # second independent update of the same physical masks.
+    actor_states = state_builder.batch(observations, grad=False)
     sampled_action, log_prob, _ = policy.actor.sample(actor_states)
     actor_q1, actor_q2 = critic(actor_states, sampled_action)
     actor_loss = (log_alpha.exp().detach() * log_prob - torch.minimum(actor_q1, actor_q2)).mean()

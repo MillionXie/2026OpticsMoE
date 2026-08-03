@@ -1,0 +1,15 @@
+base_config: salicon.yaml
+
+loss:
+  map_kd_weight: 0.5
+  map_kd_temperature: 1.0
+
+map_kd:
+  teacher_checkpoint: experiments/qwen3_vl_embedding_2b_salicon_vision_optical_saliency/runs/salicon_vision_optical_saliency/checkpoints/teacher_best.pt
+
+# Cached teacher logits are defined in the original 224x224 coordinates.
+# Disable random crop/flip so the cached map and student target stay aligned.
+augmentation:
+  enabled: false
+
+output_dir: runs/salicon_vision_optical_saliency_mask_kd

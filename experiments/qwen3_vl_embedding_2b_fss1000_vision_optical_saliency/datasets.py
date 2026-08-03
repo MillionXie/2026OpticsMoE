@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import random
+import hashlib
 import subprocess
 import sys
 import urllib.request
@@ -69,56 +70,74 @@ def prepare_fss1000(settings: Any, *, persist: bool = True) -> DatasetBundle:
             f"Official test list contains {len(missing_test)} classes absent from data: "
             f"{missing_test[:20]}"
         )
-    test_classes = sorted(set(test_names))
-    train_classes = sorted(set(all_classes) - set(test_classes))
-    if set(train_classes) & set(test_classes):
-        raise RuntimeError("FSS-1000 train/test class leakage detected")
-    if settings.test_class_limit is not None:
-        test_classes = test_classes[: int(settings.test_class_limit)]
-    if settings.train_class_limit is not None:
-        train_classes = train_classes[: int(settings.train_class_limit)]
-
     records: list[FSSRecord] = []
     ignored_geometry_mismatches: list[dict[str, Any]] = []
-    sample_index = 0
-    for split, classes in (("train", train_classes), ("test", test_classes)):
-        for class_name in classes:
-            pairs = _paired_files(data_dir / class_name)
-            if settings.images_per_class_limit is not None:
-                pairs = pairs[: int(settings.images_per_class_limit)]
-            if not pairs:
-                raise RuntimeError(f"No image/mask pairs found for class {class_name!r}")
-            for image_path, mask_path in pairs:
-                image_size, mask_size = _pair_geometry(image_path, mask_path)
-                if image_size != mask_size:
-                    ignored_geometry_mismatches.append(
-                        {
-                            "split": split,
-                            "class_name": class_name,
-                            "sample_id": f"{class_name}/{image_path.stem}",
-                            "image_path": str(image_path),
-                            "mask_path": str(mask_path),
-                            "image_width": image_size[0],
-                            "image_height": image_size[1],
-                            "mask_width": mask_size[0],
-                            "mask_height": mask_size[1],
-                            "reason": "source_image_mask_geometry_mismatch",
-                        }
-                    )
-                    continue
-                records.append(
-                    FSSRecord(sample_index, split, class_name, image_path, mask_path)
-                )
-                sample_index += 1
+    split_mode = getattr(settings, "split_mode", "official_class_disjoint")
+    skipped_selected_classes: list[dict[str, Any]] = []
+    if split_mode == "selected_classes_within_class":
+        records, train_classes, test_classes = _selected_class_records(
+            data_dir,
+            all_classes,
+            sorted(set(test_names)),
+            settings,
+            ignored_geometry_mismatches,
+            skipped_selected_classes,
+        )
+    elif split_mode == "official_class_disjoint":
+        test_classes = sorted(set(test_names))
+        train_classes = sorted(set(all_classes) - set(test_classes))
+        if set(train_classes) & set(test_classes):
+            raise RuntimeError("FSS-1000 train/test class leakage detected")
+        if settings.test_class_limit is not None:
+            test_classes = test_classes[: int(settings.test_class_limit)]
+        if settings.train_class_limit is not None:
+            train_classes = train_classes[: int(settings.train_class_limit)]
+        sample_index = 0
+        for split, classes in (("train", train_classes), ("test", test_classes)):
+            for class_name in classes:
+                pairs = _paired_files(data_dir / class_name)
+                if settings.images_per_class_limit is not None:
+                    pairs = pairs[: int(settings.images_per_class_limit)]
+                if not pairs:
+                    raise RuntimeError(f"No image/mask pairs found for class {class_name!r}")
+                for image_path, mask_path in pairs:
+                    if not _append_valid_record(
+                        records,
+                        ignored_geometry_mismatches,
+                        sample_index,
+                        split,
+                        class_name,
+                        image_path,
+                        mask_path,
+                    ):
+                        continue
+                    sample_index += 1
+    else:
+        raise RuntimeError(f"Unsupported FSS split_mode={split_mode!r}")
+
     train_records = tuple(record for record in records if record.split == "train")
     test_records = tuple(record for record in records if record.split == "test")
+    train_sample_ids = {record.sample_id for record in train_records}
+    test_sample_ids = {record.sample_id for record in test_records}
+    sample_overlap = sorted(train_sample_ids & test_sample_ids)
+    if sample_overlap:
+        raise RuntimeError(
+            f"FSS train/test image leakage detected: {sample_overlap[:20]}"
+        )
+    class_overlap = sorted(set(train_classes) & set(test_classes))
     metadata = {
         "dataset": "FSS-1000",
         "task": "class_agnostic_binary_saliency",
+        "split_mode": split_mode,
         "official_test_class_list": settings.official_test_list_url,
         "official_split_policy": (
             "official 240 test classes; remaining classes are training because this "
             "experiment intentionally has no validation split"
+            if split_mode == "official_class_disjoint"
+            else (
+                "fixed selected classes are adapted with an image-disjoint "
+                "within-class train/test split"
+            )
         ),
         "merge_official_validation_into_train": settings.merge_official_validation_into_train,
         "data_directory": str(data_dir),
@@ -127,7 +146,27 @@ def prepare_fss1000(settings: Any, *, persist: bool = True) -> DatasetBundle:
         "test_classes": len(test_classes),
         "train_images": len(train_records),
         "test_images": len(test_records),
-        "class_disjoint": not bool(set(train_classes) & set(test_classes)),
+        "class_disjoint": not bool(class_overlap),
+        "shared_train_test_classes": class_overlap,
+        "image_disjoint": not bool(sample_overlap),
+        "selected_class_pool": getattr(settings, "selected_class_pool", None),
+        "selected_class_count": (
+            len(train_classes)
+            if split_mode == "selected_classes_within_class"
+            else None
+        ),
+        "selected_class_offset": getattr(settings, "selected_class_offset", None),
+        "within_class_train_images": (
+            getattr(settings, "within_class_train_images", None)
+            if split_mode == "selected_classes_within_class"
+            else None
+        ),
+        "within_class_test_images": (
+            getattr(settings, "within_class_test_images", None)
+            if split_mode == "selected_classes_within_class"
+            else None
+        ),
+        "split_seed": getattr(settings, "random_seed", 42),
         "mask_resize_interpolation": "nearest",
         "ignored_geometry_mismatch": len(ignored_geometry_mismatches),
         "ignored_geometry_mismatch_manifest": (
@@ -140,7 +179,14 @@ def prepare_fss1000(settings: Any, *, persist: bool = True) -> DatasetBundle:
         write_json(settings.output_dir / "dataset.json", metadata)
         write_json(
             settings.output_dir / "manifests" / "class_split.json",
-            {"train": train_classes, "test": test_classes},
+            {
+                "protocol": split_mode,
+                "train": train_classes,
+                "test": test_classes,
+                "shared_classes": class_overlap,
+                "image_disjoint": not bool(sample_overlap),
+                "seed": getattr(settings, "random_seed", 42),
+            },
         )
         write_csv(
             settings.output_dir / "manifests" / "samples.csv",
@@ -165,6 +211,11 @@ def prepare_fss1000(settings: Any, *, persist: bool = True) -> DatasetBundle:
                 "image_width", "image_height", "mask_width", "mask_height", "reason",
             ],
         )
+        write_csv(
+            settings.output_dir / "manifests" / "skipped_selected_classes.csv",
+            skipped_selected_classes,
+            ["class_name", "valid_pairs", "required_pairs", "reason"],
+        )
     if ignored_geometry_mismatches:
         print(
             "WARNING: ignored "
@@ -177,6 +228,151 @@ def prepare_fss1000(settings: Any, *, persist: bool = True) -> DatasetBundle:
         train_records, test_records, tuple(train_classes), tuple(test_classes),
         data_dir, metadata,
     )
+
+
+def _selected_class_records(
+    data_dir: Path,
+    all_classes: list[str],
+    official_test_classes: list[str],
+    settings: Any,
+    ignored_geometry_mismatches: list[dict[str, Any]],
+    skipped_selected_classes: list[dict[str, Any]],
+) -> tuple[list[FSSRecord], list[str], list[str]]:
+    pool_name = str(settings.selected_class_pool)
+    official_test = set(official_test_classes)
+    if pool_name == "official_test":
+        pool = sorted(official_test)
+    elif pool_name == "official_train":
+        pool = sorted(set(all_classes) - official_test)
+    elif pool_name == "all":
+        pool = sorted(all_classes)
+    else:
+        raise RuntimeError(f"Unsupported selected_class_pool={pool_name!r}")
+
+    required = int(settings.within_class_train_images) + int(
+        settings.within_class_test_images
+    )
+    offset = int(settings.selected_class_offset)
+    target_count = int(settings.selected_class_count)
+    eligible_seen = 0
+    selected: list[tuple[str, list[tuple[Path, Path]]]] = []
+    for class_name in pool:
+        valid: list[tuple[Path, Path]] = []
+        for image_path, mask_path in _paired_files(data_dir / class_name):
+            image_size, mask_size = _pair_geometry(image_path, mask_path)
+            if image_size != mask_size:
+                ignored_geometry_mismatches.append(
+                    _geometry_mismatch_row(
+                        "selection_pool",
+                        class_name,
+                        image_path,
+                        mask_path,
+                        image_size,
+                        mask_size,
+                    )
+                )
+                continue
+            valid.append((image_path, mask_path))
+        if len(valid) < required:
+            skipped_selected_classes.append(
+                {
+                    "class_name": class_name,
+                    "valid_pairs": len(valid),
+                    "required_pairs": required,
+                    "reason": "insufficient_valid_image_mask_pairs",
+                }
+            )
+            continue
+        if eligible_seen < offset:
+            eligible_seen += 1
+            continue
+        selected.append((class_name, valid))
+        if len(selected) == target_count:
+            break
+    if len(selected) != target_count:
+        raise RuntimeError(
+            f"Requested {target_count} selected FSS classes from {pool_name} "
+            f"after offset={offset}, but only found {len(selected)} with at "
+            f"least {required} valid pairs"
+        )
+
+    records: list[FSSRecord] = []
+    sample_index = 0
+    train_count = int(settings.within_class_train_images)
+    test_count = int(settings.within_class_test_images)
+    for class_name, valid_pairs in selected:
+        shuffled = list(valid_pairs)
+        seed_material = f"{settings.random_seed}:{class_name}".encode("utf-8")
+        class_seed = int.from_bytes(
+            hashlib.sha256(seed_material).digest()[:8], "big"
+        )
+        random.Random(class_seed).shuffle(shuffled)
+        train_pairs = shuffled[:train_count]
+        test_pairs = shuffled[train_count:train_count + test_count]
+        for split, pairs in (("train", train_pairs), ("test", test_pairs)):
+            for image_path, mask_path in pairs:
+                records.append(
+                    FSSRecord(
+                        sample_index,
+                        split,
+                        class_name,
+                        image_path,
+                        mask_path,
+                    )
+                )
+                sample_index += 1
+    selected_names = [name for name, _ in selected]
+    return records, selected_names, list(selected_names)
+
+
+def _append_valid_record(
+    records: list[FSSRecord],
+    ignored_geometry_mismatches: list[dict[str, Any]],
+    sample_index: int,
+    split: str,
+    class_name: str,
+    image_path: Path,
+    mask_path: Path,
+) -> bool:
+    image_size, mask_size = _pair_geometry(image_path, mask_path)
+    if image_size != mask_size:
+        ignored_geometry_mismatches.append(
+            _geometry_mismatch_row(
+                split,
+                class_name,
+                image_path,
+                mask_path,
+                image_size,
+                mask_size,
+            )
+        )
+        return False
+    records.append(
+        FSSRecord(sample_index, split, class_name, image_path, mask_path)
+    )
+    return True
+
+
+def _geometry_mismatch_row(
+    split: str,
+    class_name: str,
+    image_path: Path,
+    mask_path: Path,
+    image_size: tuple[int, int],
+    mask_size: tuple[int, int],
+) -> dict[str, Any]:
+    return {
+        "split": split,
+        "class_name": class_name,
+        "sample_id": f"{class_name}/{image_path.stem}",
+        "image_path": str(image_path),
+        "mask_path": str(mask_path),
+        "image_width": image_size[0],
+        "image_height": image_size[1],
+        "mask_width": mask_size[0],
+        "mask_height": mask_size[1],
+        "reason": "source_image_mask_geometry_mismatch",
+    }
 
 
 class FSSSaliencyDataset(Dataset[dict[str, Any]]):

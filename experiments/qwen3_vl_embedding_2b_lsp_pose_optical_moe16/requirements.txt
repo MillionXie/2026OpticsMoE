@@ -1,0 +1,8 @@
+numpy
+Pillow
+PyYAML
+scipy
+torch
+transformers
+huggingface_hub
+matplotlib

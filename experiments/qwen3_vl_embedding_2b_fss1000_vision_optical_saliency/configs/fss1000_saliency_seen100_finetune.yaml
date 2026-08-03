@@ -1,0 +1,86 @@
+base_config: fss1000_saliency.yaml
+
+# Seen-category adaptation protocol:
+# 1. select the first 100 eligible classes (sorted by name) from the official
+#    240-class test pool;
+# 2. deterministically split each class into 8 fine-tuning images and 2 test
+#    images with seed 42;
+# 3. never reuse the same image in both partitions.
+dataset:
+  split_mode: selected_classes_within_class
+  selected_class_pool: official_test
+  selected_class_count: 100
+  selected_class_offset: 0
+  within_class_train_images: 8
+  within_class_test_images: 2
+  train_class_limit: null
+  test_class_limit: null
+  images_per_class_limit: null
+
+batching:
+  student_batch_size: 8
+  inference_batch_size: 8
+  num_workers: 8
+
+training:
+  student_epochs: 50
+  student_learning_rate: 0.0002
+  router_learning_rate: 0.0001
+  phase_learning_rate: 0.0005
+  student_lr_schedule: cosine
+  student_lr_min_ratio: 0.10
+  checkpoint_interval_epochs: 10
+  weight_decay: 0.0
+  random_seed: 42
+  amp_enabled: true
+  evaluate_test_each_epoch: true
+  log_interval_batches: 25
+  freeze_student_optical_core: false
+  freeze_student_base_head: false
+
+# Reuse the best one-layer optical model trained on the disjoint 760-class
+# training pool. A fresh optimizer is created for this 100-class adaptation.
+student_initialization:
+  checkpoint: ../runs/fss1000_saliency/checkpoints/student_best_train_loss.pt
+
+loss:
+  bce_weight: 1.0
+  dice_weight: 1.0
+  soft_iou_weight: 0.75
+  boundary_weight: 0.25
+  mask_kd_weight: 0.25
+  mask_kd_temperature: 1.0
+  router_balance_weight: 0.03
+  router_importance_weight: 0.005
+
+# This selected-class split needs its own cache. `--phase all` builds it
+# automatically from the preserved electronic Teacher checkpoint.
+mask_kd:
+  teacher_checkpoint: ../runs/fss1000_saliency/checkpoints/teacher_best_train_loss.pt
+  teacher_mask_cache: ../runs/fss1000_saliency_seen100_finetune/teacher_mask_cache
+  align_augmentation: true
+
+augmentation:
+  enabled: true
+  crop_scale_min: 0.85
+  horizontal_flip_probability: 0.5
+  brightness_jitter: 0.10
+  contrast_jitter: 0.10
+  rotation_degrees: 0.0
+
+segmentation_head:
+  student_refinement_enabled: false
+  student_progressive_refinement_enabled: false
+  student_detector_residual:
+    enabled: false
+
+optical:
+  geometry:
+    layers_per_expert: 1
+
+visualization:
+  sample_count: 20
+  optical_sample_count: 4
+  save_after_training: true
+
+output_dir: ../runs/fss1000_saliency_seen100_finetune

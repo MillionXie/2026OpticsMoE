@@ -1,5 +1,22 @@
 # BDD100K → Bench2Drive Optical MoE16 端到端驾驶
 
+## Bench2Drive Base scratch baseline
+
+`configs/bench2drive_base_scratch.yaml` 是当前不使用 BDD100K 的对照配置。它使用
+Bench2Drive Base（名义上 1,000 clips），把所有 expert/global `raw_phase` 初始化为
+零，并从行为克隆第一阶段开始联合训练 optical core。原生 Qwen patch/position
+embedding 仍作为冻结的图像 stem；该模式没有 BDD PCA target，也不加载预训练光学
+checkpoint。
+
+BC 两阶段都训练 Actor、CCD `LayerNorm+Linear`、input adapter、router、expert/global
+phase 和 OEO 参数。Stage 1 使用较大的 scratch optical LR；Stage 2 加载完整的
+Stage-1 policy，再用较小 LR 联合细化。两阶段都显式保持原生 Qwen 参数冻结。
+
+为控制磁盘占用，`prepare_bench2drive_base.py` 每次只下载一个官方归档，只解出
+`camera/rgb_front` 和 `anno`，记录可恢复进度后删除已完成归档。离线行为克隆不需要
+CARLA；只有后续官方闭环评测/SAC 才需要 CARLA 0.9.15 及兼容的 Python 3.7/3.8
+环境。VISTA 是另一套模拟器，切换后不能视为等价 Bench2Drive 结果。
+
 这是一个独立实验，不修改现有商品检索、分割或 SPAQ 工程。它分成两个离线阶段和一个闭环阶段：
 
 1. 用 BDD100K 前视 RGB 对 Optical Vision Backbone 做道路场景预训练；
@@ -98,8 +115,9 @@ mean-pooled optical token [224]
 → steer / throttle / brake
 ```
 
-- Stage 1：冻结全部 Optical Backbone，仅训练 Actor；
-- Stage 2：加载 Stage 1 best，使用小学习率联合微调 CCD Linear、Optical core 和 Actor。
+- Stage 1：是否冻结 Optical Backbone 由 `train_optical_from_stage1` 控制；当前
+  `bench2drive.yaml` 和 scratch 正式配置都设为 `true`，因此从第一阶段就联合训练。
+- Stage 2：加载 Stage 1 best，使用更小学习率联合微调 CCD Linear、Optical core 和 Actor。
 
 ## SAC 闭环微调
 
@@ -129,3 +147,24 @@ package.module:function
 ## 验证范围
 
 `--phase smoke` 不下载 Qwen、不需要 BDD100K/CARLA，实际执行 feature loss、辅助头、BC Actor、Critic 和 reward 的 forward/backward。它用于验证代码路径，不代表正式驾驶结果。
+
+## BC 稳定性与轮转采样
+
+正式配置默认 `batch_size=8`，并按六种导航命令各取最多 2,000 帧组成一个
+epoch。每种命令内部使用固定种子的循环窗口，不会永远重复固定子集；启动日志会打印
+真实命令分布、每轮样本数和覆盖完整训练集需要的 epoch 数。
+
+BC 在 backward 后检查 loss 和每个梯度是否有限，再以 `max_norm=1.0` 裁剪；NaN
+出现时会列出样本 ID 和首批异常参数，且不会执行该次 optimizer step。每 250 batch
+覆盖保存 `bc_stage{stage}_step_last.pt`，重新执行相同 phase 会从该 epoch/batch 继续。
+训练 history 还会记录 raw phase RMS 和相对零初始化的物理相位 RMS 变化，便于判断
+mask 是否真正更新。
+
+解析后的数万条 `anno/*.json.gz` 会缓存在：
+
+```text
+cache/qwen3_vl_embedding_2b_bench2drive_base_scratch_moe16/
+  manifests/bench2drive_records_v1.json.gz
+```
+
+修改或替换源 Bench2Drive 数据后应删除此索引，让程序重新构建。

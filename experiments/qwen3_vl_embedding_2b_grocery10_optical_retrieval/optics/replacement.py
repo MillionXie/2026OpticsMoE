@@ -408,6 +408,14 @@ class DeepStackMultimodalReplacement:
         self.vision_surrogate.requires_grad_(True)
         if self.language_mode == "optical_moe":
             self.language_surrogate.requires_grad_(True)
+            # Retrieval consumes ``core.current_detector_readout`` directly.
+            # The language D->hidden output adapter only feeds a Qwen hidden
+            # sequence whose final value is deliberately ignored by
+            # ``student_embeddings``.  Leaving it marked trainable produced a
+            # misleading ~461k "trainable" parameters that never received a
+            # gradient; freeze it explicitly while keeping it checkpoint
+            # compatible for hardware replay and older runs.
+            self.language_surrogate.core.output_adapter.requires_grad_(False)
         for module in (self.vision_pre_attention, self.language_pre_attention):
             if module is not None:
                 module.requires_grad_(self.native_pre_attention_trainable)

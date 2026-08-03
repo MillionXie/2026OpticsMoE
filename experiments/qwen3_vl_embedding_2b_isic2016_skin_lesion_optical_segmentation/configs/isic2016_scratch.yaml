@@ -33,6 +33,7 @@ training:
   head_warmup_epochs: 0
   joint_finetune_epochs: 100
   optical_learning_rate: 0.0002
+  phase_learning_rate: 0.004
   router_learning_rate: 0.0005
   recombiner_learning_rate: 0.0005
   head_learning_rate: 0.001
@@ -51,6 +52,7 @@ loss:
   boundary_weight: 0.25
   router_balance_weight: 0.03
   router_importance_weight: 0.0
+  phase_dc_weight: 5.0
 
 augmentation:
   enabled: true

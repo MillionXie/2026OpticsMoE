@@ -179,8 +179,8 @@ def test_final_from_scratch_profile_is_single_layer_and_reproducible() -> None:
         / "fss1000_saliency_single_layer_from_scratch_100ep.yaml"
     )
     assert settings.student_epochs == 100
-    assert settings.student_batch_size == 16
-    assert settings.inference_batch_size == 16
+    assert settings.student_batch_size == 8
+    assert settings.inference_batch_size == 8
     assert settings.expert_layers == 1
     assert settings.student_initial_checkpoint is None
     assert settings.mask_kd_align_augmentation is True
@@ -206,6 +206,24 @@ def test_final_from_scratch_profile_is_single_layer_and_reproducible() -> None:
     final = optimizer.param_groups[0]["lr"]
     assert initial == pytest.approx(1e-3)
     assert final == pytest.approx(1e-3 * 0.05)
+
+
+def test_seen100_config_is_image_disjoint_adaptation() -> None:
+    settings = load_settings(
+        EXPERIMENT
+        / "configs"
+        / "fss1000_saliency_seen100_finetune.yaml"
+    )
+    assert settings.split_mode == "selected_classes_within_class"
+    assert settings.selected_class_pool == "official_test"
+    assert settings.selected_class_count == 100
+    assert settings.within_class_train_images == 8
+    assert settings.within_class_test_images == 2
+    assert settings.student_initial_checkpoint is not None
+    assert settings.student_epochs == 50
+    assert settings.phase_learning_rate == pytest.approx(5e-4)
+    assert settings.mask_kd_weight == pytest.approx(0.25)
+    assert settings.freeze_student_optical_core is False
 
 
 def test_optical_debug_writer_saves_all_views(tmp_path: Path) -> None:
@@ -336,6 +354,59 @@ def test_official_test_classes_are_disjoint(tmp_path: Path) -> None:
     assert bundle.train_classes == ("train_only",)
     assert len(bundle.test_classes) == 240
     assert not (set(bundle.train_classes) & set(bundle.test_classes))
+
+
+def test_selected_class_split_is_reproducible_and_image_disjoint(
+    tmp_path: Path,
+) -> None:
+    official = [f"test_{index:03d}" for index in range(240)]
+    (tmp_path / "fss_test_set.txt").write_text(
+        "\n".join(official) + "\n", encoding="utf-8"
+    )
+    mask = np.zeros((8, 8), dtype=np.uint8)
+    mask[2:6, 2:6] = 255
+    for class_index, class_name in enumerate(official):
+        folder = tmp_path / "fewshot_data" / class_name
+        folder.mkdir(parents=True)
+        sample_count = 4 if class_index < 3 else 1
+        for sample in range(1, sample_count + 1):
+            Image.new("RGB", (8, 8), (class_index % 255, sample, 10)).save(
+                folder / f"{sample}.jpg"
+            )
+            Image.fromarray(mask).save(folder / f"{sample}.png")
+    settings = SimpleNamespace(
+        data_root=tmp_path,
+        output_dir=tmp_path / "run",
+        download=False,
+        download_source="auto",
+        huggingface_dataset_id="unused",
+        huggingface_endpoint="unused",
+        download_file_id="unused",
+        official_test_list_url="unused",
+        merge_official_validation_into_train=True,
+        train_class_limit=None,
+        test_class_limit=None,
+        images_per_class_limit=None,
+        split_mode="selected_classes_within_class",
+        selected_class_pool="official_test",
+        selected_class_count=3,
+        selected_class_offset=0,
+        within_class_train_images=2,
+        within_class_test_images=2,
+        random_seed=42,
+    )
+    first = prepare_fss1000(settings)
+    second = prepare_fss1000(settings, persist=False)
+    assert first.train_classes == first.test_classes == tuple(official[:3])
+    assert len(first.train_records) == len(first.test_records) == 6
+    assert {record.sample_id for record in first.train_records}.isdisjoint(
+        record.sample_id for record in first.test_records
+    )
+    assert [record.sample_id for record in first.train_records] == [
+        record.sample_id for record in second.train_records
+    ]
+    assert first.metadata["class_disjoint"] is False
+    assert first.metadata["image_disjoint"] is True
 
 
 def test_mask_resize_remains_binary(tmp_path: Path) -> None:

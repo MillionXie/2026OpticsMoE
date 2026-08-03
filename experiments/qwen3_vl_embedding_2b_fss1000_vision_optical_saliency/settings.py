@@ -72,6 +72,12 @@ class Settings:
     train_class_limit: int | None
     test_class_limit: int | None
     images_per_class_limit: int | None
+    split_mode: str
+    selected_class_pool: str
+    selected_class_count: int | None
+    selected_class_offset: int
+    within_class_train_images: int
+    within_class_test_images: int
 
     model_id: str
     cache_dir: Path | None
@@ -103,6 +109,7 @@ class Settings:
     boundary_weight: float
     router_balance_weight: float
     router_importance_weight: float
+    phase_dc_weight: float
     mask_kd_weight: float
     mask_kd_temperature: float
     teacher_checkpoint: Path | None
@@ -209,6 +216,43 @@ class Settings:
             raise ValueError(
                 "This no-validation experiment requires merge_official_validation_into_train=true"
             )
+        if self.split_mode not in {
+            "official_class_disjoint",
+            "selected_classes_within_class",
+        }:
+            raise ValueError(
+                "dataset.split_mode must be official_class_disjoint or "
+                "selected_classes_within_class"
+            )
+        if self.selected_class_pool not in {"official_test", "official_train", "all"}:
+            raise ValueError(
+                "dataset.selected_class_pool must be official_test, official_train, or all"
+            )
+        if self.selected_class_offset < 0:
+            raise ValueError("dataset.selected_class_offset cannot be negative")
+        if self.within_class_train_images <= 0 or self.within_class_test_images <= 0:
+            raise ValueError(
+                "dataset.within_class_train_images and "
+                "dataset.within_class_test_images must be positive"
+            )
+        if self.split_mode == "selected_classes_within_class":
+            if self.selected_class_count is None or self.selected_class_count <= 0:
+                raise ValueError(
+                    "selected_classes_within_class requires a positive "
+                    "dataset.selected_class_count"
+                )
+            if any(
+                value is not None
+                for value in (
+                    self.train_class_limit,
+                    self.test_class_limit,
+                    self.images_per_class_limit,
+                )
+            ):
+                raise ValueError(
+                    "The selected-class protocol cannot be combined with "
+                    "train_class_limit, test_class_limit, or images_per_class_limit"
+                )
         if self.processor_min_pixels <= 0 or self.processor_max_pixels <= 0:
             raise ValueError("processor pixel budgets must be explicit positive integers")
         if self.processor_min_pixels > self.processor_max_pixels:
@@ -286,6 +330,7 @@ class Settings:
             self.bce_weight, self.dice_weight, self.router_balance_weight,
             self.soft_iou_weight, self.boundary_weight,
             self.router_importance_weight, self.mask_kd_weight,
+            self.phase_dc_weight,
         ) < 0:
             raise ValueError("Loss weights cannot be negative")
         if self.bce_weight + self.dice_weight <= 0:
@@ -352,6 +397,12 @@ def load_settings(path: str | Path) -> Settings:
         train_class_limit=d("dataset.train_class_limit"),
         test_class_limit=d("dataset.test_class_limit"),
         images_per_class_limit=d("dataset.images_per_class_limit"),
+        split_mode=str(d("dataset.split_mode", "official_class_disjoint")),
+        selected_class_pool=str(d("dataset.selected_class_pool", "official_test")),
+        selected_class_count=d("dataset.selected_class_count"),
+        selected_class_offset=int(d("dataset.selected_class_offset", 0)),
+        within_class_train_images=int(d("dataset.within_class_train_images", 8)),
+        within_class_test_images=int(d("dataset.within_class_test_images", 2)),
         model_id=str(d("qwen.model_id", "Qwen/Qwen3-VL-Embedding-2B")),
         cache_dir=_resolve(d("qwen.cache_dir"), base),
         local_files_only=bool(d("qwen.local_files_only", False)),
@@ -389,6 +440,7 @@ def load_settings(path: str | Path) -> Settings:
         boundary_weight=float(d("loss.boundary_weight", 0.0)),
         router_balance_weight=float(d("loss.router_balance_weight", 0.03)),
         router_importance_weight=float(d("loss.router_importance_weight", 0.0)),
+        phase_dc_weight=float(d("loss.phase_dc_weight", 0.0)),
         mask_kd_weight=float(d("loss.mask_kd_weight", 0.0)),
         mask_kd_temperature=float(d("loss.mask_kd_temperature", 1.0)),
         teacher_checkpoint=_resolve(d("mask_kd.teacher_checkpoint"), base),

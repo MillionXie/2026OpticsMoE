@@ -36,7 +36,7 @@ training:
   teacher_learning_rate: 0.001
   student_learning_rate: 0.002
   router_learning_rate: null
-  phase_learning_rate: null
+  phase_learning_rate: 0.004
   weight_decay: 0.0
   random_seed: 42
   amp_enabled: true
@@ -48,6 +48,7 @@ loss:
   dice_weight: 1.0
   router_balance_weight: 0.03
   router_importance_weight: 0.0
+  phase_dc_weight: 5.0
   mask_kd_weight: 0.0
   mask_kd_temperature: 1.0
 
@@ -97,11 +98,11 @@ optical:
     global_to_detector_distance_m: 0.10
   phase:
     parameterization: sigmoid
-    init: zeros
-    init_std: 0.02
+    init: small_normal
+    init_std: 0.2
   k_space:
-    enabled: false
-    theta_max_deg: 1.0
+    enabled: true
+    theta_max_deg: 2.0
   oeo:
     enabled: true
     per_expert_enabled: true
