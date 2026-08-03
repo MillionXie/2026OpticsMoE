@@ -680,6 +680,7 @@ def save_checkpoint(
                 "lambda_teacher_gallery": settings.lambda_teacher_gallery,
                 "lambda_router_balance": settings.lambda_router_balance,
                 "lambda_router_importance": settings.lambda_router_importance,
+                "phase_dc_enabled": settings.phase_dc_enabled,
                 "lambda_phase_dc": settings.lambda_phase_dc,
                 "phase_dc_start_epoch": settings.phase_dc_start_epoch,
                 "temperature": settings.temperature,
@@ -839,6 +840,7 @@ def train_optical_retrieval(
         "readout_learning_rate": settings.readout_learning_rate,
         "router_learning_rate": settings.router_learning_rate,
         "phase_learning_rate": settings.phase_learning_rate,
+        "phase_dc_enabled": settings.phase_dc_enabled,
         "lambda_phase_dc": settings.lambda_phase_dc,
         "phase_dc_start_epoch": settings.phase_dc_start_epoch,
         "optimizer_groups": [
@@ -1133,7 +1135,8 @@ def train_optical_retrieval(
                     + router_losses["language_importance"]
                 )
                 phase_dc_active = (
-                    settings.lambda_phase_dc > 0.0
+                    settings.phase_dc_enabled
+                    and settings.lambda_phase_dc > 0.0
                     and relative_epoch >= settings.phase_dc_start_epoch
                 )
                 dc = (
@@ -1257,7 +1260,16 @@ def train_optical_retrieval(
         phase_motion = _phase_motion_statistics(
             phase_groups, phase_run_reference, phase_epoch_reference
         )
-        dc_statistics = phase_dc_statistics(replacement)
+        dc_statistics = (
+            phase_dc_statistics(replacement)
+            if settings.phase_dc_enabled
+            else {
+                "phase_dc_current_loss": 0.0,
+                "phase_dc_rho_mean": 0.0,
+                "phase_dc_rho_max": 0.0,
+                "phase_dc_plane_count": 0,
+            }
+        )
         phase_gradients = {
             key: value / max(1, phase_gradient_measurements)
             for key, value in phase_gradient_totals.items()

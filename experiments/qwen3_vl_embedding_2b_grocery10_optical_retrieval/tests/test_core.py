@@ -199,7 +199,7 @@ def test_phase_learning_rate_gets_an_independent_optimizer_group() -> None:
 
 def test_phase_focus_schedule_and_motion_are_explicit() -> None:
     settings = load_settings(
-        EXPERIMENT / "configs" / "grocery10_phase_engaged.yaml"
+        EXPERIMENT / "configs" / "grocery10_moe4_hardware_robust.yaml"
     )
     assert settings.phase_focus_enabled
     assert not _phase_focus_epoch(settings, 5)
@@ -207,16 +207,18 @@ def test_phase_focus_schedule_and_motion_are_explicit() -> None:
     assert not _phase_focus_epoch(settings, 7)
     assert _phase_focus_epoch(settings, 8)
     assert not _phase_focus_epoch(settings, 9)
-    assert settings.phase_learning_rate == pytest.approx(8.0e-3)
+    assert settings.phase_learning_rate == pytest.approx(4.0e-3)
     assert settings.adapter_learning_rate == pytest.approx(2.0e-4)
     assert settings.readout_learning_rate == pytest.approx(5.0e-4)
     assert not settings.transformer_residual_enabled
-    assert settings.lambda_phase_dc == pytest.approx(5.0)
+    assert not settings.phase_dc_enabled
+    assert settings.lambda_phase_dc == pytest.approx(0.0)
     assert settings.phase_dc_start_epoch == 1
-    assert settings.phase_init == "small_normal"
-    assert settings.phase_init_std == pytest.approx(0.2)
+    assert settings.phase_init == "zeros"
+    assert settings.phase_init_std == pytest.approx(0.0)
     assert settings.k_space_constraint_enabled
-    assert settings.theta_max_deg == pytest.approx(2.0)
+    assert settings.theta_max_deg == pytest.approx(0.65)
+    assert settings.interlayer_detector_integration_factor == 2
     assert settings.optimizer_steps_per_epoch == 100
 
     phase_groups = {
@@ -358,6 +360,23 @@ def test_slm_encoding_preserves_relative_amplitude_and_wraps_phase() -> None:
     assert phase[0, 0].item() == 0
     assert phase[0, 1].item() in {127, 128}
     assert phase[0, 2].item() == 0
+
+
+def test_phase_bmp_vertical_flip_is_exact(tmp_path: Path) -> None:
+    source = torch.tensor([[0.0, 0.0], [torch.pi, torch.pi]])
+    report = export_centered_bmp(
+        source,
+        tmp_path / "flipped_phase.bmp",
+        value_type="phase",
+        scale_factor=1,
+        slm_width=2,
+        slm_height=2,
+        flip_vertical=True,
+    )
+    pixels = torch.from_numpy(__import__("numpy").array(Image.open(tmp_path / "flipped_phase.bmp")).copy())
+    assert torch.all(pixels[0] >= 127)
+    assert torch.all(pixels[1] == 0)
+    assert report["flip_vertical_before_export"] is True
 
 
 def test_percentile_amplitude_encoding_ignores_padding_and_clips_outlier() -> None:
@@ -544,6 +563,24 @@ def test_two_by_two_ccd_binning_is_exact_block_reduction() -> None:
     )
 
 
+def test_oeo_detector_integration_is_exact_two_by_two_zero_order_hold() -> None:
+    conversion = SquareDetectionLayerNormReload(
+        4,
+        [Aperture(0, 4, 0, 4)],
+        1.0e-5,
+        "relu",
+        detector_integration_factor=2,
+    )
+    conversion.set_intermediate_capture(True)
+    intensity = torch.arange(16, dtype=torch.float32).reshape(1, 4, 4)
+    conversion.forward_intensity(intensity)
+    expected = torch.tensor(
+        [[2.5, 2.5, 4.5, 4.5], [2.5, 2.5, 4.5, 4.5],
+         [10.5, 10.5, 12.5, 12.5], [10.5, 10.5, 12.5, 12.5]]
+    )
+    assert torch.equal(conversion.last_input_intensity[0], expected)
+
+
 def test_official_dataset_split_and_no_leakage(tmp_path: Path) -> None:
     root = tmp_path / "GroceryStoreDataset"
     dataset = root / "dataset"
@@ -727,6 +764,16 @@ def test_hardware_config_is_stage_first_and_uses_best_checkpoint() -> None:
     assert moe4.capture_binning_factor == 2
     assert moe4.capture_binning_reduction == "mean"
     assert moe4.amplitude_encoding_percentile == pytest.approx(98.0)
+
+    robust = load_hardware_config(
+        EXPERIMENT / "configs" / "grocery10_moe4_hardware_robust_export.yaml"
+    )
+    assert robust.model_config.name == "grocery10_moe4_hardware_robust.yaml"
+    assert robust.minimal_artifacts
+    assert robust.clean_output_before_prepare
+    assert robust.phase_flip_vertical
+    assert robust.amplitude_encoding_percentile == pytest.approx(95.0)
+    assert robust.amplitude_encoding_gamma == pytest.approx(0.8)
 
 
 def test_pk_sampler_and_supervised_contrastive_backward(tmp_path: Path) -> None:

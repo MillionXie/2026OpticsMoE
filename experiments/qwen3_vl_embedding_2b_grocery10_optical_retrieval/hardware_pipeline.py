@@ -60,12 +60,15 @@ class HardwareConfig:
     amplitude_encoding_mode: str
     amplitude_encoding_percentile: float
     amplitude_encoding_gamma: float
+    phase_flip_vertical: bool
     capture_roi_xywh: tuple[int, int, int, int] | None
     capture_dark_level: float
     capture_binning_factor: int
     capture_binning_reduction: str
     simulation_tensor_dtype: torch.dtype
     simulation_save_complex_fields: bool
+    minimal_artifacts: bool
+    clean_output_before_prepare: bool
     sample_limit: int | None = None
 
 
@@ -118,12 +121,23 @@ def load_hardware_config(path: str | Path) -> HardwareConfig:
             amplitude_encoding.get("percentile", 99.5)
         ),
         amplitude_encoding_gamma=float(amplitude_encoding.get("gamma", 1.0)),
+        phase_flip_vertical=bool(
+            raw.get("slm", {}).get("phase_transform", {}).get(
+                "flip_vertical", True
+            )
+        ),
         capture_roi_xywh=None if roi is None else tuple(int(v) for v in roi),
         capture_dark_level=float(raw.get("capture", {}).get("dark_level", 0.0)),
         capture_binning_factor=int(raw.get("capture", {}).get("binning_factor", 1)),
         capture_binning_reduction=str(raw.get("capture", {}).get("binning_reduction", "mean")),
         simulation_tensor_dtype=dtypes[dtype_name],
         simulation_save_complex_fields=bool(raw.get("simulation", {}).get("save_complex_fields", True)),
+        minimal_artifacts=(
+            str(raw.get("artifacts", {}).get("profile", "full")) == "minimal"
+        ),
+        clean_output_before_prepare=bool(
+            raw.get("artifacts", {}).get("clean_output_before_prepare", False)
+        ),
     )
     if result.queries_per_sku <= 0:
         raise ValueError("selection.queries_per_sku must be positive")
@@ -267,6 +281,28 @@ def _save_tensor(path: Path, value: torch.Tensor, dtype: torch.dtype | None = No
 
 
 def _save_amplitude(runtime: Runtime, stage: str, key: str, amplitude: torch.Tensor, *, simulation: bool) -> dict[str, Any]:
+    if runtime.hardware.minimal_artifacts:
+        bmp_path = (
+            runtime.hardware.output_dir
+            / "amplitude_bmp"
+            / STAGES[stage]
+            / f"{key}.bmp"
+        )
+        ratio = runtime.settings.pixel_pitch_um / runtime.hardware.slm_pixel_pitch_um
+        factor = int(round(ratio))
+        if factor <= 0 or not math.isclose(ratio, factor, abs_tol=1.0e-9):
+            raise RuntimeError("Simulation/SLM pixel pitches require a positive integer scale")
+        return export_centered_bmp(
+            amplitude,
+            bmp_path,
+            value_type="amplitude",
+            scale_factor=factor,
+            slm_width=runtime.hardware.amplitude_slm_size[0],
+            slm_height=runtime.hardware.amplitude_slm_size[1],
+            amplitude_encoding_mode=runtime.hardware.amplitude_encoding_mode,
+            amplitude_percentile=runtime.hardware.amplitude_encoding_percentile,
+            amplitude_gamma=runtime.hardware.amplitude_encoding_gamma,
+        )
     root = runtime.hardware.output_dir / STAGES[stage]
     prefix = root / "simulation_reference" if simulation else root
     raw_path = prefix / "amplitude_raw" / f"{key}.pt"
@@ -294,6 +330,17 @@ def _save_amplitude(runtime: Runtime, stage: str, key: str, amplitude: torch.Ten
 
 
 def _save_simulated_ccd(runtime: Runtime, stage: str, key: str, intensity: torch.Tensor) -> None:
+    if runtime.hardware.minimal_artifacts:
+        _preview(
+            intensity,
+            runtime.hardware.output_dir
+            / "theoretical_ccd"
+            / STAGES[stage]
+            / f"{key}.png",
+            f"{stage} theoretical CCD {key}",
+            "intensity",
+        )
+        return
     root = runtime.hardware.output_dir / STAGES[stage] / "simulation_reference"
     _save_tensor(root / "ccd_intensity" / f"{key}.pt", intensity, runtime.hardware.simulation_tensor_dtype)
     _preview(intensity, root / "ccd_preview" / f"{key}.png", f"{stage} simulated CCD {key}", "intensity")
@@ -301,7 +348,7 @@ def _save_simulated_ccd(runtime: Runtime, stage: str, key: str, intensity: torch
 
 
 def _save_simulated_complex_field(runtime: Runtime, stage: str, key: str, field: torch.Tensor) -> None:
-    if not runtime.hardware.simulation_save_complex_fields:
+    if runtime.hardware.minimal_artifacts or not runtime.hardware.simulation_save_complex_fields:
         return
     root = runtime.hardware.output_dir / STAGES[stage] / "simulation_reference"
     # PyTorch has no portable complex-float16 tensor. Preserve real/imaginary
@@ -471,6 +518,22 @@ def _capture_values(core: Any) -> dict[str, torch.Tensor]:
 
 
 def _save_phase_mask(runtime: Runtime, stack: str, plane: str, value: torch.Tensor, stage: str) -> dict[str, Any]:
+    if runtime.hardware.minimal_artifacts:
+        bmp = (
+            runtime.hardware.output_dir
+            / "phase_bmp"
+            / f"{stack}_{plane}_phase_1920x1200.bmp"
+        )
+        ratio = runtime.settings.pixel_pitch_um / runtime.hardware.slm_pixel_pitch_um
+        return export_centered_bmp(
+            value,
+            bmp,
+            value_type="phase",
+            scale_factor=int(round(ratio)),
+            slm_width=runtime.hardware.phase_slm_size[0],
+            slm_height=runtime.hardware.phase_slm_size[1],
+            flip_vertical=runtime.hardware.phase_flip_vertical,
+        )
     root = runtime.hardware.output_dir / "00_masks" / STAGES[stage]
     raw = root / f"{stack}_{plane}_phase_rad.pt"
     bmp = root / f"{stack}_{plane}_phase_1920x1200.bmp"
@@ -483,6 +546,7 @@ def _save_phase_mask(runtime: Runtime, stack: str, plane: str, value: torch.Tens
         scale_factor=int(round(ratio)),
         slm_width=runtime.hardware.phase_slm_size[0],
         slm_height=runtime.hardware.phase_slm_size[1],
+        flip_vertical=runtime.hardware.phase_flip_vertical,
     )
     write_json(root / "mask_manifest.json", {**report, "raw_tensor": str(raw), "stats": tensor_stats(value)})
     return report
@@ -511,6 +575,8 @@ def _capture_readme(runtime: Runtime, stage: str) -> None:
 
 def prepare(runtime: Runtime) -> dict[str, Any]:
     output = runtime.hardware.output_dir
+    if runtime.hardware.clean_output_before_prepare and output.exists():
+        shutil.rmtree(output)
     output.mkdir(parents=True, exist_ok=True)
     selected = select_samples(runtime.bundle, runtime.settings, runtime.hardware)
     rows: list[dict[str, Any]] = []
@@ -525,10 +591,12 @@ def prepare(runtime: Runtime) -> dict[str, Any]:
             "source_image_path": str(sample.image_path),
         })
     write_csv(output / "00_manifest" / "play_order.csv", rows, list(rows[0]))
-    shutil.copy2(runtime.hardware.config_path, output / "00_manifest" / "hardware_config.yaml")
-    shutil.copy2(runtime.settings.config_path, output / "00_manifest" / "model_config.yaml")
-    shutil.copy2(runtime.hardware.checkpoint, output / "00_manifest" / "student_checkpoint.pt")
-    checkpoint_copy = output / "00_manifest" / "student_checkpoint.pt"
+    checkpoint_copy = None
+    if not runtime.hardware.minimal_artifacts:
+        shutil.copy2(runtime.hardware.config_path, output / "00_manifest" / "hardware_config.yaml")
+        shutil.copy2(runtime.settings.config_path, output / "00_manifest" / "model_config.yaml")
+        shutil.copy2(runtime.hardware.checkpoint, output / "00_manifest" / "student_checkpoint.pt")
+        checkpoint_copy = output / "00_manifest" / "student_checkpoint.pt"
     phases = {
         "vision": phase_tensors(runtime.replacement.vision_surrogate.core),
         "language": phase_tensors(runtime.replacement.language_surrogate.core),
@@ -539,8 +607,9 @@ def prepare(runtime: Runtime) -> dict[str, Any]:
         "language_expert": _save_phase_mask(runtime, "language", "expert", phases["language"]["physical_expert_mosaic_rad"], "language_expert"),
         "language_global": _save_phase_mask(runtime, "language", "global", phases["language"]["physical_global_phase_rad"], "language_global"),
     }
-    for stage in STAGES:
-        _capture_readme(runtime, stage)
+    if not runtime.hardware.minimal_artifacts:
+        for stage in STAGES:
+            _capture_readme(runtime, stage)
     runtime.replacement.set_intermediate_field_capture(True, sample_count=1)
     runtime.loaded.model.eval(); runtime.replacement.vision_surrogate.eval(); runtime.replacement.language_surrogate.eval(); runtime.readout.eval()
     by_id = _samples_by_id(runtime.bundle)
@@ -550,37 +619,41 @@ def prepare(runtime: Runtime) -> dict[str, Any]:
             sample = by_id[row["sample_id"]]
             _clear_replay(runtime)
             embedding, inputs, original, processed = _forward(runtime, sample)
-            original_path = output / "00_input_images" / "original" / f"{key}.png"
-            processor_path = output / "00_input_images" / "processor_224" / f"{key}.png"
-            original_path.parent.mkdir(parents=True, exist_ok=True)
-            processor_path.parent.mkdir(parents=True, exist_ok=True)
-            original.save(original_path)
-            processed.save(processor_path)
+            if not runtime.hardware.minimal_artifacts:
+                original_path = output / "00_input_images" / "original" / f"{key}.png"
+                processor_path = output / "00_input_images" / "processor_224" / f"{key}.png"
+                original_path.parent.mkdir(parents=True, exist_ok=True)
+                processor_path.parent.mkdir(parents=True, exist_ok=True)
+                original.save(original_path)
+                processed.save(processor_path)
             vision = _capture_values(runtime.replacement.vision_surrogate.core)
             language = _capture_values(runtime.replacement.language_surrogate.core)
-            _save_tensor(output / STAGES["vision_expert"] / "token_field_224" / f"{key}.pt", vision["token_field"], torch.float32)
+            if not runtime.hardware.minimal_artifacts:
+                _save_tensor(output / STAGES["vision_expert"] / "token_field_224" / f"{key}.pt", vision["token_field"], torch.float32)
             _save_amplitude(runtime, "vision_expert", key, vision["routed_amplitude"], simulation=False)
             _save_simulated_ccd(runtime, "vision_expert", key, vision["expert_ccd"])
             _save_simulated_complex_field(runtime, "vision_expert", key, vision["expert_complex"])
             _save_amplitude(runtime, "vision_global", key, vision["reload"], simulation=True)
             _save_simulated_ccd(runtime, "vision_global", key, vision["final_ccd"])
             _save_simulated_complex_field(runtime, "vision_global", key, vision["final_complex"])
-            _save_tensor(output / STAGES["language_expert"] / "simulation_reference" / "token_field_224" / f"{key}.pt", language["token_field"], runtime.hardware.simulation_tensor_dtype)
+            if not runtime.hardware.minimal_artifacts:
+                _save_tensor(output / STAGES["language_expert"] / "simulation_reference" / "token_field_224" / f"{key}.pt", language["token_field"], runtime.hardware.simulation_tensor_dtype)
             _save_amplitude(runtime, "language_expert", key, language["routed_amplitude"], simulation=True)
             _save_simulated_ccd(runtime, "language_expert", key, language["expert_ccd"])
             _save_simulated_complex_field(runtime, "language_expert", key, language["expert_complex"])
             _save_amplitude(runtime, "language_global", key, language["reload"], simulation=True)
             _save_simulated_ccd(runtime, "language_global", key, language["final_ccd"])
             _save_simulated_complex_field(runtime, "language_global", key, language["final_complex"])
-            _save_tensor(output / "05_retrieval" / "simulation_embeddings" / f"{key}.pt", embedding, torch.float32)
-            write_json(output / "00_manifest" / "sample_metadata" / f"{key}.json", {
+            if not runtime.hardware.minimal_artifacts:
+                _save_tensor(output / "05_retrieval" / "simulation_embeddings" / f"{key}.pt", embedding, torch.float32)
+                write_json(output / "00_manifest" / "sample_metadata" / f"{key}.json", {
                 **row,
                 "image_grid_thw": inputs["image_grid_thw"].detach().cpu().tolist(),
                 "visual_token_count": int(inputs["image_grid_thw"].long().prod(dim=-1).max()),
                 "language_sequence_length": int(inputs["attention_mask"].sum()),
                 "vision_routing_weights": runtime.replacement.vision_surrogate.core.last_routing["weights"][0].detach().cpu().tolist(),
                 "language_routing_weights": runtime.replacement.language_surrogate.core.last_routing["weights"][0].detach().cpu().tolist(),
-            })
+                })
     finally:
         runtime.replacement.set_intermediate_field_capture(False, sample_count=1)
         _clear_replay(runtime)
@@ -592,8 +665,8 @@ def prepare(runtime: Runtime) -> dict[str, Any]:
         "gallery_count": sum(row["role"] == "gallery" for row in rows),
         "query_count": sum(row["role"] == "query" for row in rows),
         "checkpoint": str(runtime.hardware.checkpoint),
-        "checkpoint_copy": str(checkpoint_copy),
-        "checkpoint_sha256": _sha256(checkpoint_copy),
+        "checkpoint_copy": str(checkpoint_copy) if checkpoint_copy else None,
+        "checkpoint_sha256": _sha256(runtime.hardware.checkpoint),
         "model_config": str(runtime.settings.config_path),
         "amplitude_encoding": {
             "mode": runtime.hardware.amplitude_encoding_mode,
@@ -619,6 +692,8 @@ def prepare(runtime: Runtime) -> dict[str, Any]:
         },
         "dataset_manifest_sha256": runtime.bundle.manifest_digest,
         "phase_masks": phase_reports,
+        "phase_flip_vertical_before_export": runtime.hardware.phase_flip_vertical,
+        "artifact_profile": "minimal" if runtime.hardware.minimal_artifacts else "full",
         "sequence": [
             "vision expert -> CCD -> expert LayerNorm/ReLU/same routing weights/hard zero",
             "vision global -> CCD -> pooling/LN/ReLU/output adapter/residual/frozen Qwen bridge",
@@ -829,6 +904,11 @@ def main() -> int:
     parser.add_argument("--sample-limit", type=int, default=None, help="Prepare-only equipment smoke limit; do not use for final retrieval evaluation")
     args = parser.parse_args()
     hardware = load_hardware_config(args.config)
+    if hardware.minimal_artifacts and args.phase != "prepare":
+        raise RuntimeError(
+            "artifacts.profile=minimal is an export-only package; use --phase prepare. "
+            "Use the full hardware profile for physical CCD bridge processing."
+        )
     if args.output_dir is not None:
         hardware = replace(hardware, output_dir=Path(args.output_dir).expanduser().resolve())
     if args.checkpoint is not None:

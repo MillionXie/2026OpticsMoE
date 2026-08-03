@@ -1,149 +1,74 @@
-# Grocery10 commands
+# Grocery10：当前维护命令
 
-All commands run from the `2026OpticsMoE` repository root. Exploratory configs
-were removed; the commands below are the maintained entry points.
+所有命令均在仓库根目录 `2026OpticsMoE/` 下执行。日常只需要下面三组。
 
-## Train the phase-engaged Grocery10 variant
+## 1. 推荐的 MoE4 训练
 
-This variant is intended to train physically meaningful masks rather than let
-the residual/adapters/readout absorb nearly all optimization. It starts from
-zero raw phase and writes phase motion/gradient diagnostics every epoch:
-
-```bash
-CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_phase_engaged.yaml --phase all
-```
-
-Small three-epoch validation, including one phase-only focus epoch:
+该版本使用 2×2 专家、Top-2、raw phase 全零初始化（物理相位 π）、
+0.65° K-space 通带、2×2 CCD 像素积分，并显式关闭 phase-DC loss。
+不使用 wrapped-phase smoothness。
 
 ```bash
-CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_phase_engaged_smoke.yaml --phase all
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval \
+  --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_moe4_hardware_robust.yaml \
+  --phase all
 ```
 
-Monitor `phase_delta`, `phase_std`, `phase_grad` and per-stack unselected expert
-counts in stdout. Detailed values are in `metrics/phase_training_latest.json`;
-raw phase tensors and fixed-scale previews are under `phase_training/`. See
-`PHASE_TRAINING_FIX.md` for the root-cause analysis.
-
-## Reproduce the strongest saved recipe from scratch
-
-This runs Grocery31 pretraining, replacement-Grocery10 fine-tuning, and the
-40-epoch strong-augmentation/EMA continuation, then evaluates and exports the
-best optical checkpoint.
+一轮 smoke：
 
 ```bash
-CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.reproduce_best --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_best_reproduction.yaml
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval \
+  --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_moe4_hardware_robust_smoke.yaml \
+  --phase all
 ```
 
-Use `--dry-run` to print the complete chain without starting it. See
-`BEST_VERSION.md` for the audited metrics and checkpoint selection rule.
+## 2. 导出可直接播放的硬件文件
 
-## Train the three canonical stages manually
+训练完成后执行：
 
 ```bash
-CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_best_reproduction_stage1_grocery31.yaml --phase all
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipeline \
+  --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_moe4_hardware_robust_export.yaml \
+  --phase prepare
 ```
+
+输出目录：
+
+```text
+experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/hardware_runs/grocery10_moe4_hardware_robust/
+├── amplitude_bmp/       # 四个播放阶段的 1920×1080 振幅 BMP
+├── phase_bmp/           # 四张 1920×1200 相位 BMP；导出前已上下翻转
+├── theoretical_ccd/     # 四个阶段的仿真 CCD PNG
+└── 00_manifest/         # 播放顺序及简要审计信息
+```
+
+振幅编码使用正像素 P95 截断与 gamma=0.8，提高弱有效像素亮度；严格为零的
+未选专家、间隙和 padding 保持为 0。
+
+## 3. 生成光路对齐/标定 BMP
 
 ```bash
-CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_best_reproduction_stage2_replaced10.yaml --phase all --resume-checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/grocery10_best_reproduction/01_grocery31_pretrain/best_train_loss_checkpoint.pt
+python -m experiments.slm_calibration_bmp_generator \
+  --config experiments/slm_calibration_bmp_generator/configs/slm_956.yaml
 ```
+
+生成棋盘格、十字、圆孔、字母 A、5 cm/10 cm 透镜相位等常用图案。
+
+## 测试
 
 ```bash
-CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_best_reproduction_stage3_strong_ema.yaml --phase all --resume-checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/grocery10_best_reproduction/02_replaced10_finetune/best_train_loss_checkpoint.pt --checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/grocery10_best_reproduction/03_strong_augmentation_ema/ema_best_train_loss_checkpoint.pt
+/home/guest3/miniconda3/envs/xml/bin/python -m pytest \
+  experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/tests \
+  experiments/slm_calibration_bmp_generator/tests -q
 ```
 
-## Prepare the real SLM/CCD experiment
+## 历史复现（仅在需要对照时使用）
 
-### Hardware-robust MoE4 with 2x2 superpixels
-
-This is a separate architecture, not a reinterpretation of a MoE16
-checkpoint. It uses four experts in a 2x2 grid, routes each sample to top-2,
-simulates 224x224 logical expert pixels at 16 um, and repeats every logical
-SLM pixel into an exact 2x2 block on the physical 8 um device. The logical
-active footprint is 478x478; the exported physical footprint is 956x956.
-Captured 956x956 CCD intensity is reduced to 478x478 by exact non-overlapping
-2x2 mean binning, never interpolation.
-
-Train the new model from scratch:
+历史最高结果的三阶段 Grocery31→Grocery10→EMA 配方仍保留：
 
 ```bash
-CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_phase_dc_kspace_moe4_superpixel2.yaml --phase all
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.reproduce_best \
+  --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_best_reproduction.yaml
 ```
 
-Run its one-epoch smoke configuration:
-
-```bash
-CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_phase_dc_kspace_moe4_superpixel2_smoke.yaml --phase all
-```
-
-After training, export the MoE4/superpixel2 hardware package:
-
-```bash
-CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipeline --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_phase_dc_kspace_moe4_superpixel2_hardware.yaml --phase prepare
-```
-
-The MoE4 checkpoint is shape-incompatible with every MoE16 checkpoint by
-design. Do not use `--resume-checkpoint` from the old 4x4 expert bank.
-
-There are two deliberately separate deployment configs:
-
-- `grocery10_hardware_deployment.yaml` exports the historical epoch-159 EMA
-  checkpoint used by the strongest reproduction pipeline.
-- `grocery10_phase_dc_kspace_hardware.yaml` exports the newly trained
-  phase-DC + k-space checkpoint. Use this one for the zero-order/DC experiment.
-
-The phase-DC deployment uses `positive_percentile=98.0` amplitude encoding.
-The normalization divisor is computed only from strictly positive pixels, so
-hard-zeroed experts, expert gaps, and token padding remain black without making
-the useful pixels artificially dark. The upper 2% of positive amplitudes is
-clipped, then the remaining values are mapped linearly to 8-bit. Every file's
-divisor, clipped ratio, encoded mean, and positive-pixel median are recorded in
-its `amplitude_metadata/*.json` file.
-
-Export the new phase-DC + k-space checkpoint:
-
-```bash
-CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipeline --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_phase_dc_kspace_hardware.yaml --phase prepare
-```
-
-This command does not train or alter weights. It loads the exact checkpoint
-named in the hardware YAML and copies both the resolved model config and
-checkpoint into `00_manifest/` for auditability.
-
-Generate original/processor images, token fields, four shared phase masks,
-first-plane amplitude BMPs, and all four simulated detector references:
-
-```bash
-CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipeline --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_hardware_deployment.yaml --phase prepare
-```
-
-Process the four physical CCD folders in order:
-
-```bash
-CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipeline --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_hardware_deployment.yaml --phase process_vision_expert
-```
-
-```bash
-CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipeline --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_hardware_deployment.yaml --phase process_vision_global
-```
-
-```bash
-CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipeline --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_hardware_deployment.yaml --phase process_language_expert
-```
-
-```bash
-CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipeline --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_hardware_deployment.yaml --phase process_language_global
-```
-
-For an end-to-end dry hardware rehearsal using simulated CCD intensity:
-
-```bash
-CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipeline --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_hardware_deployment.yaml --phase all_simulation
-```
-
-See `HARDWARE_DEPLOYMENT.md` before collecting any physical CCD files.
-
-## Tests
-
-```bash
-pytest experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/tests -q
-```
+旧 `phase_dc_*` 配置仅用于复现实验，不再推荐用于实物光路。

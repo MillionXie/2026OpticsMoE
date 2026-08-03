@@ -1,0 +1,38 @@
+base_config: grocery10_phase_dc_kspace_moe4_superpixel2.yaml
+
+# Recommended physical experiment.  The phase masks start from raw_phase=0,
+# hence every physical phase pixel starts at pi under 2*pi*sigmoid(raw_phase).
+# The former DC objective is explicitly disabled: it drove the masks toward
+# spatially incoherent phasors and produced a speckle-like detector field.
+training:
+  epochs: 100
+  phase_learning_rate: 0.004
+  phase_dc:
+    enabled: false
+    weight: 0.0
+    start_epoch: 1
+  lambda_phase_dc: 0.0
+  phase_diagnostics:
+    gradient_measure_interval_batches: 20
+    motion_warning_epoch: 5
+    motion_warning_threshold_rad: 0.01
+    preview_interval_epochs: 10
+
+optical:
+  phase:
+    parameterization: sigmoid
+    init: zeros
+    init_std: 0.0
+  # For dx=16 um and lambda=532 nm the axial Nyquist angle is about 0.953 deg.
+  # 0.65 deg retains useful low/mid spatial frequencies while suppressing the
+  # high-angle components that dominate fine coherent speckle.
+  k_space:
+    enabled: true
+    theta_max_deg: 0.65
+  oeo:
+    # Exact non-overlapping 2x2 detector-pixel integration. The reduced value
+    # is repeated by zero-order hold before per-expert LN/ReLU; no bilinear
+    # interpolation and no wrapped-phase smoothness are used.
+    detector_integration_factor: 2
+
+output_dir: ../runs/qwen3_vl_embedding_2b_grocery10_moe4_hardware_robust

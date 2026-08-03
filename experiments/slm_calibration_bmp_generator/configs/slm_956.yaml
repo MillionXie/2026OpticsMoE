@@ -1,0 +1,18 @@
+output_dir: ../generated/slm956_calibration
+
+# MoE4 logical active size 478 at 16 um becomes 956 physical pixels at 8 um.
+active_size: 956
+pixel_pitch_um: 8.0
+wavelength_nm: 532.0
+
+slm:
+  amplitude_size_wh: [1920, 1080]
+  phase_size_wh: [1920, 1200]
+  # Match the current folded phase-SLM path. Amplitude patterns are not flipped.
+  phase_flip_vertical: true
+
+patterns:
+  checkerboard_block_px: 32
+  lens_focal_lengths_cm: [5.0, 10.0]
+  letter: A
+

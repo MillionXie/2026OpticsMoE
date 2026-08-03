@@ -246,7 +246,8 @@ class HomogeneousMoEOpticalCore(nn.Module):
             SquareDetectionLayerNormReload(settings.canvas_size, self.geometry.expert_apertures,
                                            settings.interlayer_layernorm_eps, settings.interlayer_nonlinearity,
                                            settings.interlayer_per_expert_enabled,
-                                           settings.interlayer_elementwise_affine)
+                                           settings.interlayer_elementwise_affine,
+                                           settings.interlayer_detector_integration_factor)
             for _ in range(settings.expert_layers)]) if self.interlayer_enabled else nn.ModuleList()
         self.global_phase = GlobalPhasePlane(self.geometry, settings)
         self.readout = FullPlaneReadout(self.geometry, settings)

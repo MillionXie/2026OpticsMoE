@@ -232,11 +232,13 @@ def export_centered_bmp(
     amplitude_encoding_mode: str = "per_plane_max",
     amplitude_percentile: float = 99.5,
     amplitude_gamma: float = 1.0,
+    flip_vertical: bool = False,
 ) -> dict[str, Any]:
     if value.ndim != 2:
         raise ValueError(f"SLM source plane must be 2-D, got {tuple(value.shape)}")
+    source = torch.flip(value, dims=(-2,)) if flip_vertical else value
     if value_type == "phase":
-        encoded = encode_phase_uint8(value)
+        encoded = encode_phase_uint8(source)
         encoding: dict[str, Any] = {
             "encoding": "phase_mod_2pi_to_uint8",
             "phase_zero_uint8": 0,
@@ -244,7 +246,7 @@ def export_centered_bmp(
         }
     elif value_type == "amplitude":
         encoded, encoding = encode_amplitude_uint8(
-            value,
+            source,
             mode=amplitude_encoding_mode,
             percentile=amplitude_percentile,
             gamma=amplitude_gamma,
@@ -292,5 +294,6 @@ def export_centered_bmp(
         ],
         "scale_factor": factor,
         "padding_uint8": 0,
+        "flip_vertical_before_export": bool(flip_vertical),
         **encoding,
     }

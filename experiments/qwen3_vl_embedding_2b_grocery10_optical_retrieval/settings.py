@@ -104,6 +104,7 @@ class Settings:
     lambda_teacher_gallery: float
     lambda_router_balance: float
     lambda_router_importance: float
+    phase_dc_enabled: bool
     lambda_phase_dc: float
     phase_dc_start_epoch: int
     temperature: float
@@ -179,6 +180,7 @@ class Settings:
     interlayer_elementwise_affine: bool
     interlayer_hard_route_mask: bool
     interlayer_reapply_routing_weights: bool
+    interlayer_detector_integration_factor: int
     interlayer_layernorm_eps: float
     interlayer_nonlinearity: str
 
@@ -338,6 +340,16 @@ class Settings:
             raise ValueError("phase_preview_interval_epochs must be positive")
         if self.phase_dc_start_epoch <= 0:
             raise ValueError("phase_dc_start_epoch must be positive")
+        if self.interlayer_detector_integration_factor <= 0:
+            raise ValueError("optical.oeo.detector_integration_factor must be positive")
+        if self.canvas_size % self.interlayer_detector_integration_factor:
+            raise ValueError(
+                "canvas_size must be divisible by optical.oeo.detector_integration_factor"
+            )
+        if self.expert_size % self.interlayer_detector_integration_factor:
+            raise ValueError(
+                "expert_size must be divisible by optical.oeo.detector_integration_factor"
+            )
         if self.ema_decay is not None and not 0.0 < self.ema_decay < 1.0:
             raise ValueError("ema_decay must be strictly between 0 and 1 when configured")
         if self.gallery_aggregation == "mean_prototype" and self.gallery_images_per_sku < 1:
@@ -402,6 +414,13 @@ class Settings:
                 "lambda_teacher_gallery": self.lambda_teacher_gallery,
                 "lambda_router_balance": self.lambda_router_balance,
                 "lambda_router_importance": self.lambda_router_importance,
+                "phase_dc": {
+                    "enabled": self.phase_dc_enabled,
+                    "weight": self.lambda_phase_dc,
+                    "start_epoch": self.phase_dc_start_epoch,
+                },
+                # Retain the flat fields in resolved configs/checkpoints so old
+                # analysis scripts continue to work.
                 "lambda_phase_dc": self.lambda_phase_dc,
                 "phase_dc_start_epoch": self.phase_dc_start_epoch,
                 "temperature": self.temperature,
@@ -499,6 +518,9 @@ class Settings:
                     "elementwise_affine": self.interlayer_elementwise_affine,
                     "hard_route_mask": self.interlayer_hard_route_mask,
                     "reapply_routing_weights": self.interlayer_reapply_routing_weights,
+                    "detector_integration_factor": (
+                        self.interlayer_detector_integration_factor
+                    ),
                     "layernorm_eps": self.interlayer_layernorm_eps,
                     "nonlinearity": self.interlayer_nonlinearity,
                 },
@@ -576,8 +598,18 @@ def load_settings(path: str | Path) -> Settings:
         lambda_teacher_gallery=float(d("training.lambda_teacher_gallery", 0.0)),
         lambda_router_balance=float(d("training.lambda_router_balance", 0.0)),
         lambda_router_importance=float(d("training.lambda_router_importance", 0.0)),
-        lambda_phase_dc=float(d("training.lambda_phase_dc", 0.0)),
-        phase_dc_start_epoch=int(d("training.phase_dc_start_epoch", 1)),
+        phase_dc_enabled=bool(
+            d(
+                "training.phase_dc.enabled",
+                float(d("training.lambda_phase_dc", 0.0)) > 0.0,
+            )
+        ),
+        lambda_phase_dc=float(
+            d("training.phase_dc.weight", d("training.lambda_phase_dc", 0.0))
+        ),
+        phase_dc_start_epoch=int(
+            d("training.phase_dc.start_epoch", d("training.phase_dc_start_epoch", 1))
+        ),
         temperature=float(d("training.temperature", 0.07)),
         gallery_temperature=float(
             d("training.gallery_temperature", d("training.temperature", 0.07))
@@ -684,6 +716,9 @@ def load_settings(path: str | Path) -> Settings:
         interlayer_hard_route_mask=bool(d("optical.oeo.hard_route_mask", True)),
         interlayer_reapply_routing_weights=bool(
             d("optical.oeo.reapply_routing_weights", True)
+        ),
+        interlayer_detector_integration_factor=int(
+            d("optical.oeo.detector_integration_factor", 1)
         ),
         interlayer_layernorm_eps=float(d("optical.oeo.layernorm_eps", 1e-5)),
         interlayer_nonlinearity=str(d("optical.oeo.nonlinearity", "relu")),

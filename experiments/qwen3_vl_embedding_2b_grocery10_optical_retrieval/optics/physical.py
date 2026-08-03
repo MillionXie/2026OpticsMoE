@@ -166,7 +166,8 @@ class SquareDetectionLayerNormReload(nn.Module):
     """Per-expert, non-affine LayerNorm followed by activation and zero-phase reload."""
 
     def __init__(self, canvas_size: int, apertures: list, eps: float, nonlinearity: str,
-                 per_expert_enabled: bool = True, elementwise_affine: bool = False) -> None:
+                 per_expert_enabled: bool = True, elementwise_affine: bool = False,
+                 detector_integration_factor: int = 1) -> None:
         super().__init__()
         self.apertures = apertures
         self.eps = float(eps)
@@ -174,6 +175,11 @@ class SquareDetectionLayerNormReload(nn.Module):
         self.per_expert_enabled = bool(per_expert_enabled)
         self.elementwise_affine = bool(elementwise_affine)
         self.canvas_size = int(canvas_size)
+        self.detector_integration_factor = int(detector_integration_factor)
+        if self.detector_integration_factor <= 0:
+            raise ValueError("detector_integration_factor must be positive")
+        if self.canvas_size % self.detector_integration_factor:
+            raise ValueError("canvas_size must be divisible by detector_integration_factor")
         self.expert_size = apertures[0].y1 - apertures[0].y0
         self.register_buffer(
             "aperture_indices",
@@ -236,6 +242,18 @@ class SquareDetectionLayerNormReload(nn.Module):
         if torch.any(intensity < -1.0e-7):
             raise RuntimeError("Measured expert CCD intensity must be nonnegative")
         intensity = intensity.clamp_min(0.0)
+        # Model the finite CCD pixel aperture before electronic normalization.
+        # This is exact non-overlapping block integration followed by a
+        # zero-order hold back onto the logical grid; it is not bilinear image
+        # resizing and does not smooth or regularize the phase mask itself.
+        factor = self.detector_integration_factor
+        if factor > 1:
+            reduced = F.avg_pool2d(
+                intensity.unsqueeze(1), kernel_size=factor, stride=factor
+            )
+            intensity = reduced.repeat_interleave(factor, -2).repeat_interleave(
+                factor, -1
+            ).squeeze(1)
         if self.capture_intermediate:
             count = min(self.capture_sample_count, len(intensity))
             self.last_input_intensity = intensity[:count].detach().cpu()
