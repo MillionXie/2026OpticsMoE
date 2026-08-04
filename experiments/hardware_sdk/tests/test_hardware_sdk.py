@@ -210,3 +210,37 @@ def test_unset_dvp_python_is_rejected_before_device_open(
     )
     with pytest.raises(DeviceError, match="DVP_PYTHON_TEST_ONLY.*not set"):
         camera.validate_runtime()
+
+
+def test_dvp_subprocess_converts_raw_uint16_to_lossless_png(tmp_path: Path) -> None:
+    expected = np.array([[0, 1, 255], [256, 4095, 65535]], dtype=np.uint16)
+
+    class FakeInput:
+        def write(self, line: str) -> None:
+            request = __import__("json").loads(line)
+            np.save(request["path"], expected)
+
+        def flush(self) -> None:
+            return None
+
+    class FakeOutput:
+        def readline(self) -> str:
+            return '{"ok": true}\n'
+
+    camera = build_camera(
+        {
+            "driver": "dvp_subprocess",
+            "sdk_path": None,
+            "python_executable": __import__("sys").executable,
+        },
+        tmp_path,
+    )
+    camera._process = SimpleNamespace(stdin=FakeInput(), stdout=FakeOutput())
+    output = tmp_path / "frame.png"
+    camera.capture(output)
+    actual = np.asarray(Image.open(output))
+    # Pillow exposes 16-bit PNG as mode I / int32 on some versions, while all
+    # original uint16 sample values remain bit-exact.
+    assert np.issubdtype(actual.dtype, np.integer)
+    assert np.array_equal(actual.astype(np.uint16), expected)
+    assert not (tmp_path / ".frame.dvp_raw.npy").exists()

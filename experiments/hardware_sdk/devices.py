@@ -684,10 +684,20 @@ class DvpSubprocessCamera(CameraDriver):
     def capture(self, path: Path) -> None:
         if self._process is None or self._process.stdin is None or self._process.stdout is None:
             raise DeviceError("DVP subprocess camera is not open")
-        if path.suffix.lower() != ".npy":
-            raise DeviceError("dvp_subprocess stores lossless raw frames as .npy")
+        suffix = path.suffix.lower()
+        if suffix not in {".npy", ".png", ".tif", ".tiff"}:
+            raise DeviceError(
+                "dvp_subprocess supports lossless .npy, .png, .tif, or .tiff captures"
+            )
         path.parent.mkdir(parents=True, exist_ok=True)
-        self._process.stdin.write(json.dumps({"command": "capture", "path": str(path)}) + "\n")
+        raw_path = (
+            path
+            if suffix == ".npy"
+            else path.parent / f".{path.stem}.dvp_raw.npy"
+        )
+        if raw_path != path and raw_path.exists():
+            raw_path.unlink()
+        self._process.stdin.write(json.dumps({"command": "capture", "path": str(raw_path)}) + "\n")
         self._process.stdin.flush()
         response = self._process.stdout.readline().strip()
         try:
@@ -696,6 +706,18 @@ class DvpSubprocessCamera(CameraDriver):
             raise DeviceError(f"Invalid DVP worker response: {response!r}") from exc
         if not payload.get("ok"):
             raise DeviceError(f"DVP capture failed: {payload.get('error', payload)}")
+        if raw_path != path:
+            try:
+                array = np.load(raw_path, allow_pickle=False)
+                if array.ndim != 2 or array.dtype not in (np.uint8, np.uint16):
+                    raise DeviceError(
+                        f"DVP lossless image export expects 2-D uint8/uint16, got "
+                        f"shape={array.shape} dtype={array.dtype}"
+                    )
+                image = Image.fromarray(array)
+                image.save(path, format="PNG" if suffix == ".png" else "TIFF")
+            finally:
+                raw_path.unlink(missing_ok=True)
 
     def close(self) -> None:
         process, self._process = self._process, None

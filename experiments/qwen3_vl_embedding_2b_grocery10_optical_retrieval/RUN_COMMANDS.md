@@ -56,9 +56,9 @@ $SESSION/01_vision_expert/amplitude_to_play/*.bmp
 2. 从服务器下载本层 `amplitude_to_play/*.bmp` 到前者；
 3. 人工加载本层相位 mask；
 4. 运行 `python acquire_folder.py --config configs\acquisition_windows.json --clear-output`；
-5. 把 `hardware_sdk/ccd_captured/*.npy` 上传到服务器本层 `ccd_captured/`。
+5. 把 `hardware_sdk/ccd_captured/*.png` 上传到服务器本层 `ccd_captured/`。
 
-输入 BMP 与 CCD `.npy` 必须同 stem。禁止 JPEG、重命名、缩放或重复平方光强。实验室电脑的完整命令见 [共享 Hardware SDK](../hardware_sdk/RUN_COMMANDS.md)。
+输入 BMP 与 CCD `.png` 必须同 stem。PNG 是原始 8/16-bit 无损强度，不是归一化预览。禁止 JPEG、重命名、缩放或重复平方光强。实验室电脑的完整命令见 [共享 Hardware SDK](../hardware_sdk/RUN_COMMANDS.md)。
 
 ## 三、四层数据交接表
 

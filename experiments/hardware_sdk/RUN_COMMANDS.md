@@ -78,11 +78,13 @@ python acquire_folder.py --config configs\acquisition_windows.json --clear-outpu
 python acquire_folder.py --config configs\acquisition_windows.json --clear-output --yes
 ```
 
-CCD 原始帧输出到：
+CCD 原始帧默认以无损 PNG 输出到：
 
 ```text
-ccd_captured\<与输入 BMP 完全相同的 stem>.npy
+ccd_captured\<与输入 BMP 完全相同的 stem>.png
 ```
+
+PNG 保存的是 CCD 原始 `uint8/uint16` 数值，没有 percentile 拉伸、gamma 或 JPEG 压缩，因此既能直接查看，也能上传服务器计算。若以后需要 NumPy 原始容器，仍可把 `output_extension` 改回 `.npy`。
 
 采集清单和实际设备设置输出到：
 
@@ -121,8 +123,8 @@ python acquire_folder.py --config configs\acquisition_windows.json --clear-outpu
 
 ```powershell
 python roi_calibration.py `
-  --reference ccd_captured\000_black.npy `
-  --checkerboard ccd_captured\001_checkerboard.npy `
+  --reference ccd_captured\000_black.png `
+  --checkerboard ccd_captured\001_checkerboard.png `
   --expected-width 956 --expected-height 956 `
   --output-dir logs\roi_calibration
 ```

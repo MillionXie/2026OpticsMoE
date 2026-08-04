@@ -26,7 +26,7 @@ hardware_sessions/<session>/
 ├── 00_input_images/{original,processor_224}/
 ├── 01_vision_expert/
 │   ├── amplitude_to_play/*.bmp
-│   ├── ccd_captured/*.npy
+│   ├── ccd_captured/*.png
 │   ├── simulation_reference/ccd_intensity/*.pt
 │   └── electronic_output/*.json
 ├── 02_vision_global/

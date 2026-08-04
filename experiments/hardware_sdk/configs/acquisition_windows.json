@@ -2,7 +2,7 @@
   "input_dir": "../amplitude_to_play",
   "output_dir": "../ccd_captured",
   "log_dir": "../logs",
-  "output_extension": ".npy",
+  "output_extension": ".png",
   "settle_delay_ms": 40,
   "confirm_before_start": true,
 
