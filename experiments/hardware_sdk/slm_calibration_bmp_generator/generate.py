@@ -95,6 +95,7 @@ def _save(active: np.ndarray, path: Path, canvas_wh: tuple[int, int], *, flip_ve
 def generate(settings: Settings) -> dict[str, Any]:
     size = settings.active_size
     amplitude_patterns = {
+        "uniform_black": np.zeros((size, size), dtype=np.uint8),
         "uniform_white": np.full((size, size), 255, dtype=np.uint8),
         "uniform_gray_128": np.full((size, size), 128, dtype=np.uint8),
         "checkerboard": checkerboard(size, settings.checkerboard_block_px),
@@ -161,4 +162,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

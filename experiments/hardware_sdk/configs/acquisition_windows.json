@@ -1,0 +1,35 @@
+{
+  "input_dir": "../workspace/amplitude_to_play",
+  "output_dir": "../workspace/ccd_captured",
+  "log_dir": "../workspace/logs",
+  "output_extension": ".npy",
+  "settle_delay_ms": 40,
+  "confirm_before_start": true,
+
+  "amplitude_slm": {
+    "driver": "holoeye",
+    "sdk_path": "%HEDS_3_2_PYTHON_MODULES%",
+    "binary_folder": null,
+    "expected_resolution_wh": [1920, 1080],
+    "minimum_refresh_hz": 59.0,
+    "preload": true,
+    "wait_until_visible": true
+  },
+
+  "camera": {
+    "driver": "dvp_subprocess",
+    "sdk_path": "../ccd/lib/windows/python3.6/x64",
+    "python_executable": "%DVP_PYTHON%",
+    "camera_index": 0,
+    "timeout_ms": 4000,
+    "config_file": null,
+    "auto_exposure": false,
+    "exposure_us": 10000.0,
+    "analog_gain": 1.0,
+    "anti_flicker_hz": 0,
+    "resolution_mode": null,
+    "device_roi_xywh": null,
+    "warmup_frames": 3,
+    "discard_frames_after_display": 1
+  }
+}

@@ -1,60 +1,67 @@
-# Shared hardware SDK layer
+# Hardware SDK：轻量振幅播放与 CCD 采集
 
-该目录是仓库内所有实物光路实验共用的硬件接口。厂商二进制和示例放在同级目录但不上传 Git：
+这个目录可以单独复制到实验室 Windows 电脑使用。它不理解模型、Vision/Language、层数或电子后处理，只完成一件事：
 
 ```text
-experiments/hardware_sdk/
-├── amp_slm/                 # HOLOEYE SDK（本机文件，Git ignore）
-├── ccd/                     # DVP SDK（本机文件，Git ignore）
-├── phase_slm/               # Meadowlark Blink SDK（本机文件，Git ignore）
-├── devices.py               # 公共 SLM / Camera driver
-├── dvp_capture_worker.py    # Python 3.5 DVP 常驻采集进程
-├── amplitude_camera_demo.py
-├── phase_slm_demo.py
-└── slm_calibration_bmp_generator/
+workspace/amplitude_to_play/*.bmp
+→ 按文件名排序并预加载到振幅 SLM
+→ 每张等待 40 ms
+→ CCD 保存同名原始帧
+→ workspace/ccd_captured/*.npy
 ```
 
-## 振幅 SLM
+服务器上的模型代码负责生成每一层的振幅 BMP，以及把这一层 CCD 结果转换成下一层振幅 BMP。相位 SLM 暂时仍由实验员手动换 mask。
 
-HOLOEYE driver 会检查原生 runtime、设备分辨率和刷新率；每张 BMP 必须与面板分辨率完全一致，禁止隐式缩放。每个光学平面的整批 BMP 会先 preload 到 GPU，程序等 data handle 进入 `Visible` 后才开始稳定延迟。
+## 核心文件
 
-上传目录中仍未包含 Linux 原生 `libholoeye_slmdisplaysdk.so`。采集电脑必须安装完整 HOLOEYE Display SDK，并设置：
-
-```bash
-export HEDS_3_2_PYTHON=/path/to/installed/HOLOEYE/SDK
+```text
+hardware_sdk/
+├── acquire_folder.py                  # 通用振幅播放 + CCD 采集
+├── roi_calibration.py                 # 棋盘格定位与 ROI 建议
+├── devices.py                         # HOLOEYE / DVP 驱动封装
+├── dvp_capture_worker.py              # 厂商旧版 Python 的相机子进程
+├── configs/acquisition_windows.json   # 实验室 Windows 配置
+├── requirements-light.txt             # 仅 NumPy + Pillow，不含 Torch
+└── workspace/                         # 临时输入、输出；不会上传 Git
+    ├── amplitude_to_play/
+    ├── ccd_captured/
+    └── logs/
 ```
 
-或在 YAML 中把 `binary_folder` 指向包含该 `.so` 的目录。
+厂商 SDK 继续放在 `amp_slm/`、`ccd/`、`phase_slm/`，这些目录不会上传 Git。旧的数字/相位 demo 是可选工具，不参与主采集流程。
 
-BMP 灰度值只是数字驱动值，不自动等于线性光学振幅。偏振器角度、面板 gamma/LUT 和实际透过率需要单独标定。不要再让显示软件做 fit、gamma 或自动对比度。
+## 依赖与环境
 
-## DVP 相机
+主控制 Python 只需：
 
-当前 Linux SDK 是 Python 3.5 ABI，因此公共 driver 保持训练/后处理在 Python 3.11，并用 `dvp_capture_worker.py` 在 `dvp35` 环境中持续打开相机。
-
-定量实验不能依赖厂商软件窗口中“上一次”的状态。配置优先级是：
-
-1. 若 `config_file` 非空，先执行 DVP `LoadConfig()`；
-2. YAML 中的显式值随后覆盖它；
-3. 实际读回的 exposure、analog gain、ROI 等写入 session 的 `resolved_hardware_devices.json`。
-
-推荐固定：
-
-```yaml
-auto_exposure: false
-exposure_us: 10000.0       # 只是起始值，应按直方图校准
-analog_gain: 1.0
-anti_flicker_hz: 0
-warmup_frames: 3
-discard_frames_after_display: 1
+```powershell
+python -m pip install -r requirements-light.txt
 ```
 
-`settle_delay_ms: 40` 是 SLM 已确认可见后的等待；随后丢弃一个相机帧，再保存下一帧，避免读到上一张 BMP 的缓存帧。因此真实单帧周期会大于 40 ms。若相机支持硬触发，后续应优先改成 SLM/CCD 硬同步。
+无需安装 PyTorch、Qwen、Transformers 或 CUDA。
 
-自动曝光会让不同样本/不同层的标度发生变化，强光时还会饱和；自动增益会改变噪声。因此 MSE/PCC 对照、电子重载和最终准确率实验都应关闭它们。当前 driver 要求单通道 MONO 原始帧；若 SDK 返回 RGB，会直接报错。
+HOLOEYE Windows 安装中的：
 
-## 相位 SLM
+```text
+HEDS_3_2_PYTHON=C:\Program Files\HOLOEYE Photonics\SLM Display SDK (Python) v3.2.2
+HEDS_3_2_PYTHON_MODULES=...\python
+...\win64\holoeye_slmdisplaysdk.dll
+```
 
-主实验暂时仍人工换相位 mask。独立 demo 使用 Meadowlark Blink Windows DLL，明确加载 532 nm LUT，并可把 WFC 以 8-bit 模 256 加到相位 BMP 后显示。Linux 服务器只能执行 `--dry-run` 的图像检查，不能加载 Windows DLL。
+是正确的 Windows 结构，不需要 Linux 的 `libholoeye_slmdisplaysdk.so`。配置会展开 `%HEDS_3_2_PYTHON_MODULES%`。
 
-完整命令见 [RUN_COMMANDS.md](RUN_COMMANDS.md)。
+DVP Python 扩展使用旧 ABI 时，让它在独立旧 Python 子进程中运行。设置：
+
+```powershell
+$env:DVP_PYTHON = "C:\path\to\vendor-compatible-python.exe"
+```
+
+也可以直接修改 `configs/acquisition_windows.json` 中的 `camera.python_executable`。
+
+## 相机设置
+
+定量采集不能依赖厂商软件上一次打开时的状态。配置会显式关闭自动曝光，并设置曝光、模拟增益、预热帧、丢弃帧和设备 ROI；实际读回值写入 `workspace/logs/resolved_devices.json`。
+
+默认先使用全传感器采集并在服务器裁 ROI，最容易排查坐标错误。确认 ROI 后也可在相机侧设置 `device_roi_xywh`，但 DVP 硬件 ROI 可能要求坐标/宽高对齐到特定倍数，应以实际读回值为准。
+
+详细命令见 [RUN_COMMANDS.md](RUN_COMMANDS.md)。

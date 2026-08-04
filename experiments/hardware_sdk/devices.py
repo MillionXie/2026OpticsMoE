@@ -612,7 +612,7 @@ class DvpSubprocessCamera(CameraDriver):
 def _resolve_optional(value: Any, base: Path) -> Path | None:
     if value in (None, ""):
         return None
-    path = Path(str(value)).expanduser()
+    path = Path(os.path.expandvars(str(value))).expanduser()
     return (path if path.is_absolute() else base / path).resolve()
 
 
@@ -713,6 +713,8 @@ def build_camera(config: dict[str, Any], base: Path) -> CameraDriver:
                 )
             conda_root = executable.parents[3]
             python_executable = str(conda_root / "envs" / str(conda_env) / ("Scripts" if sys.platform.startswith("win") else "bin") / executable_name)
+        elif python_executable is not None:
+            python_executable = os.path.expandvars(str(python_executable))
         return DvpSubprocessCamera(
             sdk_path=sdk_path,
             python_executable=str(python_executable or "python3.5"),

@@ -13,6 +13,6 @@
 
 ## 硬件流程
 
-`hardware_automation.py` 按四个平面完成：人工确认共享相位 mask、预加载并播放整批振幅、等待 SLM 可见和稳定、DVP 拍照、CCD/theory 对照、电子后处理、生成下一层振幅，最后输出检索指标和混淆矩阵。
+当前正式流程采用“实验室采集、服务器后处理”解耦方式。实验室电脑上的 `hardware_sdk/acquire_folder.py` 只按文件名播放一批振幅 BMP，并保存同名 CCD `.npy`；它不加载模型、不理解层数，也不需要 Torch。采集结果上传到服务器对应层后，由 `hardware_pipeline.py` 生成下一层振幅。四层依次为 Vision expert、Vision global、Language expert、Language global，相位 mask 暂时人工更换。
 
-公共硬件 driver 和厂商 SDK 统一放在 `experiments/hardware_sdk/`。主流程暂时不自动控制相位 SLM；独立的振幅/CCD 与相位 SLM demo 见 [共享硬件说明](../hardware_sdk/README.md)。完整命令见 [RUN_COMMANDS.md](RUN_COMMANDS.md)。
+公共硬件接口见 [共享硬件说明](../hardware_sdk/README.md)，逐层目录和全部命令见 [RUN_COMMANDS.md](RUN_COMMANDS.md)。

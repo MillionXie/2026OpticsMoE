@@ -21,14 +21,13 @@ CCD 文件已经是平方律强度，电子桥不会再次平方。
 
 ```text
 hardware_sessions/<session>/
-├── 00_manifest/{play_order.csv,deployment.json,resolved_hardware_devices.json}
+├── 00_manifest/{play_order.csv,deployment.json}
 ├── 00_masks/{01_vision_expert,...,04_language_global}/
 ├── 00_input_images/{original,processor_224}/
 ├── 01_vision_expert/
 │   ├── amplitude_to_play/*.bmp
 │   ├── ccd_captured/*.npy
 │   ├── simulation_reference/ccd_intensity/*.pt
-│   ├── comparison/{ccd_vs_theory.csv,summary.json,*.png}
 │   └── electronic_output/*.json
 ├── 02_vision_global/
 ├── 03_language_expert/
@@ -42,6 +41,6 @@ hardware_sessions/<session>/
 
 `capture.roi_xywh` 对完整相机帧做严格裁剪，不做任意 resize。MoE4 需要 956×956 ROI，再做精确 2×2 block mean 得到 478×478；MoE16 需要 986×986。
 
-每层保存 mean-normalized MSE、MAE、PCC、均值、最大值和可视化。归一化仅消除整体曝光倍数，不能掩盖饱和、裁剪或几何错位。
+每层电子桥会保存相对于仿真中间结果的 MSE、MAE、relative L2 和 cosine。归一化、ROI 与曝光必须保持固定，不能用自动曝光掩盖饱和、裁剪或几何错位。
 
-硬件 driver、曝光/增益、SLM preload 和测试 demo 见 [共享硬件说明](../hardware_sdk/README.md)。
+实验室采集端只使用 `hardware_sdk/workspace/amplitude_to_play` 与 `ccd_captured` 两个交接目录；它不执行本文件中的模型运算。硬件 driver、曝光/增益、SLM preload 和 ROI 标定见 [共享硬件说明](../hardware_sdk/README.md)，四层上传与处理命令见 [RUN_COMMANDS.md](RUN_COMMANDS.md)。

@@ -42,9 +42,11 @@ def test_generate_expected_bmp_sizes_and_phase_flip(tmp_path: Path) -> None:
         letter="A",
     )
     report = generate(settings)
+    black = Path(report["files"]["amplitude"]["uniform_black"]["path"])
     amplitude = Path(report["files"]["amplitude"]["checkerboard"]["path"])
     phase = Path(report["files"]["phase"]["lens_5cm"]["path"])
     assert Image.open(amplitude).size == (40, 30)
+    assert np.asarray(Image.open(black)).max() == 0
     assert Image.open(phase).size == (40, 34)
     assert report["files"]["amplitude"]["checkerboard"]["flip_vertical_before_export"] is False
     assert report["files"]["phase"]["lens_5cm"]["flip_vertical_before_export"] is True
