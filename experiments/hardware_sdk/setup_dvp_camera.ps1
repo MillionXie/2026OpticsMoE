@@ -47,7 +47,10 @@ $env:DVP_PYTHON = $python
 [Environment]::SetEnvironmentVariable("DVP_PYTHON", $python, "User")
 $oldPath = $env:PATH
 try {
-    $env:PATH = "$runtime;$oldPath"
+    # Calling an environment's python.exe by absolute path does not perform
+    # `conda activate`.  Older NumPy/MKL builds therefore need the Conda DLL
+    # directories added explicitly.
+    $env:PATH = "$runtime;$environmentPath;$environmentPath\Library\bin;$environmentPath\DLLs;$oldPath"
     Push-Location $runtime
     & $python -c "import struct,sys,numpy,dvp; print('python=',sys.version); print('bits=',struct.calcsize('P')*8); print('numpy=',numpy.__version__); print('dvp=',dvp.__file__)"
     if ($LASTEXITCODE -ne 0) {

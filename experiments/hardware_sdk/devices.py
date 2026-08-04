@@ -636,7 +636,17 @@ class DvpSubprocessCamera(CameraDriver):
         ]
         environment = os.environ.copy()
         if sys.platform.startswith("win"):
-            environment["PATH"] = str(runtime_dir) + os.pathsep + environment.get("PATH", "")
+            python_root = Path(self.python_executable).resolve().parent
+            conda_runtime_paths = [
+                runtime_dir,
+                python_root,
+                python_root / "Library" / "bin",
+                python_root / "DLLs",
+            ]
+            prefix = os.pathsep.join(
+                str(path) for path in conda_runtime_paths if path.is_dir()
+            )
+            environment["PATH"] = prefix + os.pathsep + environment.get("PATH", "")
         if self.sdk_path is not None and sys.platform.startswith("linux"):
             environment["LD_LIBRARY_PATH"] = str(self.sdk_path) + os.pathsep + environment.get("LD_LIBRARY_PATH", "")
         try:
