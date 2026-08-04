@@ -7,16 +7,26 @@
 ```powershell
 cd C:\path\to\2026OpticsMoE\experiments\hardware_sdk
 python -m pip install -r requirements-light.txt
-py -0p
-$env:DVP_PYTHON = "C:\Users\MMLAB\.conda\envs\miniCamera\python.exe"
+. .\setup_dvp_camera.ps1
 ```
 
-主采集程序继续使用 Microsoft Store Python 3.12；CCD 子进程使用已有的 `miniCamera` Python 3.7。`dvp` 不需要安装进 Conda：程序会按厂商说明，把 worker、`dvp.pyd` 和 `DVPCamera64.dll` 自动放到同一个 `dvp_runtime/` 后启动。相机子进程只需要 NumPy，不需要 Torch、OpenCV 或 Qwen。
+注意命令开头是“点 + 空格”，这样脚本设置的 `DVP_PYTHON` 会立即保留在当前 PowerShell。脚本会：
 
-只需验证 Python 3.7 环境中已有 NumPy：
+1. 创建隔离的 `miniCamera36`，不修改现有 3.7/3.12；
+2. 只安装 Python 3.6 和 NumPy 1.16.2；
+3. 把 worker、`dvp.pyd`、`DVPCamera64.dll` 放入同一个 `dvp_runtime/`；
+4. 实际执行一次 `import dvp`；
+5. 保存用户级 `DVP_PYTHON`。
+
+主采集程序继续使用 Microsoft Store Python 3.12；只有 CCD 子进程使用 `miniCamera36`。不需要 Torch、OpenCV 或 Qwen。
+
+脚本成功时会直接打印如下信息，无需再手工验证：
 
 ```powershell
-& $env:DVP_PYTHON -c "import sys, numpy; print(sys.version); print(numpy.__version__)"
+python= 3.6.x ...
+bits= 64
+numpy= 1.16.2
+dvp= ...\dvp_runtime\dvp.pyd
 ```
 
 正式采集时会新建 `dvp_runtime/`。如果厂商模块仍返回 DLL 错误，直接检查该目录是否同时包含三个文件，不再跨目录猜测加载路径。
@@ -24,7 +34,7 @@ $env:DVP_PYTHON = "C:\Users\MMLAB\.conda\envs\miniCamera\python.exe"
 如果希望以后新开 PowerShell 也有效，可以设置用户环境变量：
 
 ```powershell
-[Environment]::SetEnvironmentVariable("DVP_PYTHON", "C:\Users\MMLAB\.conda\envs\miniCamera\python.exe", "User")
+[Environment]::SetEnvironmentVariable("DVP_PYTHON", "C:\Users\MMLAB\.conda\envs\miniCamera36\python.exe", "User")
 ```
 
 设置后需要重新打开 PowerShell。仅用 `$env:DVP_PYTHON=...` 时，只对当前窗口有效。
