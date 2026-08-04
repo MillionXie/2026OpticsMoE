@@ -75,6 +75,13 @@ def run(
             f"{len(existing)} captures already exist (first: {existing[0]}). "
             "Clean the output folder or pass --clear-output."
         )
+    # Resolve both runtimes before asking the operator to prepare a phase mask.
+    # This catches an unset DVP_PYTHON without opening either device.
+    slm_driver = build_slm(dict(raw["amplitude_slm"]), base)
+    camera_driver = build_camera(dict(raw["camera"]), base)
+    slm_driver.validate_runtime()
+    camera_driver.validate_runtime()
+
     if bool(raw.get("confirm_before_start", True)) and not assume_yes:
         answer = input(
             f"Found {len(files)} amplitude BMPs in:\n  {input_dir}\n"
@@ -84,12 +91,10 @@ def run(
             raise KeyboardInterrupt("operator cancelled acquisition")
 
     settle_seconds = float(raw.get("settle_delay_ms", 40.0)) / 1000.0
-    slm_config = dict(raw["amplitude_slm"])
-    camera_config = dict(raw["camera"])
     rows: list[dict[str, Any]] = []
     with ExitStack() as stack:
-        slm = stack.enter_context(build_slm(slm_config, base))
-        camera = stack.enter_context(build_camera(camera_config, base))
+        slm = stack.enter_context(slm_driver)
+        camera = stack.enter_context(camera_driver)
         slm.preload_files(files)
         device_report = {
             "config": str(config_path),

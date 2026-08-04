@@ -1,7 +1,7 @@
 {
-  "input_dir": "../workspace/amplitude_to_play",
-  "output_dir": "../workspace/ccd_captured",
-  "log_dir": "../workspace/logs",
+  "input_dir": "../amplitude_to_play",
+  "output_dir": "../ccd_captured",
+  "log_dir": "../logs",
   "output_extension": ".npy",
   "settle_delay_ms": 40,
   "confirm_before_start": true,

@@ -10,6 +10,8 @@ from __future__ import annotations
 import importlib
 import json
 import os
+import re
+import shutil
 import subprocess
 import sys
 from abc import ABC, abstractmethod
@@ -53,6 +55,9 @@ class SLMDriver(ABC):
     def device_info(self) -> dict[str, Any]:
         return {"driver": type(self).__name__}
 
+    def validate_runtime(self) -> None:
+        """Check local dependencies without opening the physical device."""
+
     def __enter__(self) -> "SLMDriver":
         self.open()
         return self
@@ -73,6 +78,9 @@ class CameraDriver(ABC):
 
     def device_info(self) -> dict[str, Any]:
         return {"driver": type(self).__name__}
+
+    def validate_runtime(self) -> None:
+        """Check local dependencies without opening the physical device."""
 
     def __enter__(self) -> "CameraDriver":
         self.open()
@@ -169,6 +177,10 @@ class HoloeyeSLM(SLMDriver):
                 f"HOLOEYE refresh rate is {refresh:.3f} Hz, below required "
                 f"{self.minimum_refresh_hz:.3f} Hz"
             )
+
+    def validate_runtime(self) -> None:
+        if not self.sdk_path.is_dir():
+            raise DeviceError(f"HOLOEYE SDK directory is missing: {self.sdk_path}")
 
     def _check(self, result: Any, operation: str) -> None:
         no_error = getattr(getattr(self._module, "ErrorCode", object), "NoError", 0)
@@ -507,7 +519,35 @@ class DvpSubprocessCamera(CameraDriver):
         self._process: subprocess.Popen[str] | None = None
         self._info: dict[str, Any] = {}
 
+    def validate_runtime(self) -> None:
+        raw = str(self.python_executable).strip()
+        unresolved = re.findall(r"%[^%]+%|\$\{[^}]+\}|\$[A-Za-z_][A-Za-z0-9_]*", raw)
+        if unresolved:
+            variable = unresolved[0].strip("%${}")
+            sdk_hint = "CPython 3.6 x64" if "python3.6" in str(self.sdk_path).lower() else "the Python ABI matching the vendor SDK"
+            raise DeviceError(
+                f"Camera runtime variable {unresolved[0]!r} is not set. The DVP "
+                f"module under {self.sdk_path} requires {sdk_hint}. In the same "
+                "PowerShell window, set for example:\n"
+                f"  $env:{variable} = 'C:\\path\\to\\Python36\\python.exe'\n"
+                f"Then verify it with: & $env:{variable} -c \"import sys; print(sys.executable)\""
+            )
+        candidate = Path(raw).expanduser()
+        resolved: str | None
+        if candidate.is_absolute() or candidate.parent != Path("."):
+            resolved = str(candidate.resolve()) if candidate.is_file() else None
+        else:
+            resolved = shutil.which(raw)
+        if resolved is None:
+            raise DeviceError(
+                f"DVP vendor Python executable was not found: {raw!r}. The current "
+                f"camera SDK is {self.sdk_path}. Set camera.python_executable (or "
+                "%DVP_PYTHON%) to the exact vendor-compatible python.exe path."
+            )
+        self.python_executable = resolved
+
     def open(self) -> None:
+        self.validate_runtime()
         worker = Path(__file__).with_name("dvp_capture_worker.py")
         command = [
             self.python_executable,
@@ -609,10 +649,22 @@ class DvpSubprocessCamera(CameraDriver):
         }
 
 
+def _expand_environment(value: Any) -> str:
+    raw = str(value)
+    # os.path.expandvars handles $VAR on every platform and %VAR% on Windows.
+    # Explicit percent expansion keeps a Windows JSON config testable on Linux.
+    raw = re.sub(
+        r"%([^%]+)%",
+        lambda match: os.environ.get(match.group(1), match.group(0)),
+        raw,
+    )
+    return os.path.expandvars(raw)
+
+
 def _resolve_optional(value: Any, base: Path) -> Path | None:
     if value in (None, ""):
         return None
-    path = Path(os.path.expandvars(str(value))).expanduser()
+    path = Path(_expand_environment(value)).expanduser()
     return (path if path.is_absolute() else base / path).resolve()
 
 
@@ -714,7 +766,7 @@ def build_camera(config: dict[str, Any], base: Path) -> CameraDriver:
             conda_root = executable.parents[3]
             python_executable = str(conda_root / "envs" / str(conda_env) / ("Scripts" if sys.platform.startswith("win") else "bin") / executable_name)
         elif python_executable is not None:
-            python_executable = os.path.expandvars(str(python_executable))
+            python_executable = _expand_environment(python_executable)
         return DvpSubprocessCamera(
             sdk_path=sdk_path,
             python_executable=str(python_executable or "python3.5"),

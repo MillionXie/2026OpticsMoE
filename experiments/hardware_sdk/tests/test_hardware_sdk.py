@@ -10,6 +10,7 @@ from PIL import Image
 from experiments.hardware_sdk.amplitude_camera_demo import generate_digit_bmps
 from experiments.hardware_sdk.acquire_folder import run as run_folder_acquisition
 from experiments.hardware_sdk.devices import (
+    DeviceError,
     DvpSubprocessCamera,
     HoloeyeSLM,
     _configure_dvp_camera,
@@ -151,6 +152,7 @@ def test_layer_agnostic_folder_acquisition_preserves_sorted_basenames(
     class FakeSlm:
         def __enter__(self): return self
         def __exit__(self, *_): return None
+        def validate_runtime(self): return None
         def preload_files(self, paths): self.paths = list(paths)
         def display_file(self, path): self.current = path
         def device_info(self): return {"driver": "fake_slm"}
@@ -158,6 +160,7 @@ def test_layer_agnostic_folder_acquisition_preserves_sorted_basenames(
     class FakeCamera:
         def __enter__(self): return self
         def __exit__(self, *_): return None
+        def validate_runtime(self): return None
         def capture(self, path): np.save(path, np.ones((4, 4), dtype=np.uint8))
         def device_info(self): return {"driver": "fake_camera"}
 
@@ -191,3 +194,19 @@ def test_layer_agnostic_folder_acquisition_preserves_sorted_basenames(
         "002_c.npy",
     ]
     assert (log_dir / "capture_manifest.csv").is_file()
+
+
+def test_unset_dvp_python_is_rejected_before_device_open(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("DVP_PYTHON_TEST_ONLY", raising=False)
+    camera = build_camera(
+        {
+            "driver": "dvp_subprocess",
+            "sdk_path": ".",
+            "python_executable": "%DVP_PYTHON_TEST_ONLY%",
+        },
+        tmp_path,
+    )
+    with pytest.raises(DeviceError, match="DVP_PYTHON_TEST_ONLY.*not set"):
+        camera.validate_runtime()

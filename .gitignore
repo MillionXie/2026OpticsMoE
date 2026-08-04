@@ -34,6 +34,9 @@ _offline_packages
 /experiments/hardware_sdk/phase_slm/
 /experiments/hardware_sdk/demo_outputs/
 /experiments/hardware_sdk/workspace/
+/experiments/hardware_sdk/amplitude_to_play/
+/experiments/hardware_sdk/ccd_captured/
+/experiments/hardware_sdk/logs/
 /experiments/hardware_sdk/slm_calibration_bmp_generator/generated/
 /experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/hardware_sessions/
 

@@ -52,11 +52,11 @@ $SESSION/01_vision_expert/amplitude_to_play/*.bmp
 
 每一层都只做以下动作：
 
-1. 清空 `hardware_sdk/workspace/amplitude_to_play/` 和 `ccd_captured/`；
+1. 清空 `hardware_sdk/amplitude_to_play/` 和 `ccd_captured/`；
 2. 从服务器下载本层 `amplitude_to_play/*.bmp` 到前者；
 3. 人工加载本层相位 mask；
 4. 运行 `python acquire_folder.py --config configs\acquisition_windows.json --clear-output`；
-5. 把 `hardware_sdk/workspace/ccd_captured/*.npy` 上传到服务器本层 `ccd_captured/`。
+5. 把 `hardware_sdk/ccd_captured/*.npy` 上传到服务器本层 `ccd_captured/`。
 
 输入 BMP 与 CCD `.npy` 必须同 stem。禁止 JPEG、重命名、缩放或重复平方光强。实验室电脑的完整命令见 [共享 Hardware SDK](../hardware_sdk/RUN_COMMANDS.md)。
 

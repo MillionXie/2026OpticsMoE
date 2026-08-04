@@ -43,4 +43,4 @@ hardware_sessions/<session>/
 
 每层电子桥会保存相对于仿真中间结果的 MSE、MAE、relative L2 和 cosine。归一化、ROI 与曝光必须保持固定，不能用自动曝光掩盖饱和、裁剪或几何错位。
 
-实验室采集端只使用 `hardware_sdk/workspace/amplitude_to_play` 与 `ccd_captured` 两个交接目录；它不执行本文件中的模型运算。硬件 driver、曝光/增益、SLM preload 和 ROI 标定见 [共享硬件说明](../hardware_sdk/README.md)，四层上传与处理命令见 [RUN_COMMANDS.md](RUN_COMMANDS.md)。
+实验室采集端只使用 `hardware_sdk/amplitude_to_play` 与 `ccd_captured` 两个交接目录；它不执行本文件中的模型运算。硬件 driver、曝光/增益、SLM preload 和 ROI 标定见 [共享硬件说明](../hardware_sdk/README.md)，四层上传与处理命令见 [RUN_COMMANDS.md](RUN_COMMANDS.md)。
