@@ -1,74 +1,94 @@
-# Grocery10：当前维护命令
+# Grocery10：保留版本与硬件命令
 
-所有命令均在仓库根目录 `2026OpticsMoE/` 下执行。日常只需要下面三组。
+所有命令都从仓库根目录 `2026OpticsMoE/` 执行。现在只保留两套配置：
 
-## 1. 推荐的 MoE4 训练
+| 名称 | 结构 | 用途 |
+|---|---|---|
+| `grocery10_moe16_best` | 4×4、16 experts、Top-4 | 历史最佳，保存的 EMA checkpoint Top-1 73.46% |
+| `grocery10_moe4_latest` | 2×2、4 experts、Top-2、2×2 CCD integration | 当前最新实物鲁棒版本 |
 
-该版本使用 2×2 专家、Top-2、raw phase 全零初始化（物理相位 π）、
-0.65° K-space 通带、2×2 CCD 像素积分，并显式关闭 phase-DC loss。
-不使用 wrapped-phase smoothness。
+## 1. 训练
+
+当前 MoE4 从零训练：
 
 ```bash
-CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval \
-  --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_moe4_hardware_robust.yaml \
+CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval \
+  --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_moe4_latest.yaml \
   --phase all
 ```
 
-一轮 smoke：
+历史 MoE16 最佳是从 epoch-141 checkpoint 继续 40 epoch 得到。保留起点后可复现实验段：
 
 ```bash
-CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval \
-  --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_moe4_hardware_robust_smoke.yaml \
-  --phase all
+CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval \
+  --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_moe16_best.yaml \
+  --phase all \
+  --resume-checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/qwen3_vl_embedding_2b_grocery10_replaced_continue_epoch141_stronger_augmentation_ema/checkpoints/pre_resume_epoch_0141/resume_checkpoint.pt
 ```
 
-## 2. 导出可直接播放的硬件文件
+该命令输出到独立 `...moe16_best_rerun`，不会覆盖保存的历史最佳。
 
-训练完成后执行：
+## 2. 一键仿真验证硬件流程
+
+先用少量样本验证四次曝光、四段电子处理、命名和指标：
 
 ```bash
-CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipeline \
-  --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_moe4_hardware_robust_export.yaml \
-  --phase prepare
+CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_automation \
+  --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_moe4_latest_hardware.yaml \
+  --simulate --yes --sample-limit 4 \
+  --session-dir experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/hardware_sessions/moe4_simulation_smoke
 ```
 
-输出目录：
+MoE16 将配置名改为 `grocery10_moe16_best_hardware.yaml` 即可。
+
+## 3. 真实 SLM/CCD 自动采集
+
+```bash
+CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_automation \
+  --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_moe4_latest_hardware.yaml \
+  --session-dir experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/hardware_sessions/moe4_physical_001
+```
+
+每层会提示：
 
 ```text
-experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/hardware_runs/grocery10_moe4_hardware_robust/
-├── amplitude_bmp/       # 四个播放阶段的 1920×1080 振幅 BMP
-├── phase_bmp/           # 四张 1920×1200 相位 BMP；导出前已上下翻转
-├── theoretical_ccd/     # 四个阶段的仿真 CCD PNG
-└── 00_manifest/         # 播放顺序及简要审计信息
+[vision_expert] 请准备并确认相位 mask：...bmp
+输入 y 开始播放本层全部振幅；输入 q 安全退出：
 ```
 
-振幅编码使用正像素 P95 截断与 gamma=0.65，提高弱有效像素亮度；严格为零的
-未选专家、间隙和 padding 保持为 0。
+输入 `y` 后自动完成本层全部播放与拍照。每张振幅加载后等待 40 ms，再调用相机；本层结束后自动计算 CCD-vs-theory MSE/PCC 和下一层振幅。
 
-## 3. 生成光路对齐/标定 BMP
+中断后继续同一目录：
+
+```bash
+CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_automation \
+  --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_moe4_latest_hardware.yaml \
+  --session-dir experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/hardware_sessions/moe4_physical_001 \
+  --skip-prepare
+```
+
+已有 capture 会按 basename 自动跳过。
+
+## 4. 厂商 SDK 设置
+
+当前配置使用：
+
+- 振幅 SLM：HOLOEYE `showDataFromFile`；
+- 相位 SLM：手工换 mask；
+- 相机：DVP Python 3.5 持久子进程，原始帧保存为 `.npy`；
+- SDK 放在实验目录的 `sdk/`，已被 Git 忽略。
+
+若系统没有 `python3.5`，将硬件 YAML 中 `python_executable` 改成厂商环境的绝对路径。更换厂家时只需在 `hardware_devices.py` 添加并在 YAML 选择新 driver，不改模型后处理。
+
+## 5. 常用标定 mask
 
 ```bash
 python -m experiments.slm_calibration_bmp_generator \
   --config experiments/slm_calibration_bmp_generator/configs/slm_956.yaml
 ```
 
-生成棋盘格、十字、圆孔、字母 A、5 cm/10 cm 透镜相位等常用图案。
-
-## 测试
+## 6. 测试
 
 ```bash
-/home/guest3/miniconda3/envs/xml/bin/python -m pytest \
-  experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/tests \
-  experiments/slm_calibration_bmp_generator/tests -q
+python -m pytest experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/tests -q
 ```
-
-## 历史复现（仅在需要对照时使用）
-
-历史最高结果的三阶段 Grocery31→Grocery10→EMA 配方仍保留：
-
-```bash
-CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.reproduce_best \
-  --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_best_reproduction.yaml
-```
-
-旧 `phase_dc_*` 配置仅用于复现实验，不再推荐用于实物光路。

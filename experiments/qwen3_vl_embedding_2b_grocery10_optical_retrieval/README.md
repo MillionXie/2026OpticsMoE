@@ -1,108 +1,30 @@
-# Grocery10 optical image retrieval
+# Grocery10 Optical Retrieval
 
-This experiment retrieves one of ten packaged grocery products from a fixed
-gallery. It uses a frozen Qwen3-VL-Embedding-2B teacher and a trainable optical
-Student. It is a metric-retrieval task, not a ten-class classifier.
+这是 10 种包装商品的图像到图像检索实验，不是十分类器。Frozen Qwen3-VL-Embedding-2B 提供 64D teacher embedding；Student 的 Vision 与 Language transformer stack 都由一层 expert phase + 一层 global phase 的 Optical MoE 替换，最后输出带正负值的 64D L2-normalized embedding。
 
-Chinese summary: 本工程将自然拍摄商品图和标准 gallery 图编码为 64 维 L2 归一化
-向量，并用余弦相似度完成 Top-1/Top-3 检索。当前维护版本同时包含 Vision 和
-Language 两套 Optical MoE，不是 Vision-only。
+## 当前只维护两个版本
 
-## Maintained result
+| 配置 | 专家布局 | 保存结果 |
+|---|---|---:|
+| `grocery10_moe16_best.yaml` | 4×4、16 experts、Top-4、8 µm、active 986 | Top-1 73.46%、Top-3 91.92%、MRR 0.8362 |
+| `grocery10_moe4_latest.yaml` | 2×2、4 experts、Top-2、16 µm、active 478 | Top-1 54.23%、Top-3 86.15%、MRR 0.7101 |
 
-The strongest reproducible saved checkpoint is the epoch-159 EMA checkpoint
-from the three-stage Grocery31 → replacement Grocery10 → strong-augmentation
-continuation. On the fixed 260-query/10-gallery split:
-
-| system | Top-1 | Top-3 | MRR |
-|---|---:|---:|---:|
-| Frozen Teacher | 90.77% | 99.23% | 94.81% |
-| Optical Student | 73.46% | 91.92% | 83.62% |
-
-The training log briefly reached 74.23% at epoch 152, but no checkpoint for
-that exact epoch was retained. The canonical claim therefore uses the saved
-epoch-159 EMA checkpoint. See `BEST_VERSION.md` for the complete audit.
-
-## Student architecture
-
-Both stacks use the same physical geometry but independent parameters:
+MoE16 的正式 checkpoint 是：
 
 ```text
-hidden tokens
-→ Linear(D,224) → LayerNorm(224) → Softplus
-→ zero-pad token rows to 224×224
-→ electronic Top-4 router
-→ directly load weighted copies into a 4×4 expert amplitude mosaic
-→ one 224×224 phase-only layer per expert (16 masks)
-→ 10 cm angular-spectrum propagation
-→ square-law detector
-→ per-expert LayerNorm → ReLU
-→ reapply the same routing weights and zero unselected experts
-→ one 986×986 global phase
-→ 10 cm propagation
-→ 986×986 CCD ROI
-→ adaptive pooling to 224×224 → LayerNorm → ReLU
-→ Linear(224,D) and Transformer-style residual
+runs/qwen3_vl_embedding_2b_grocery10_replaced_continue_epoch141_stronger_augmentation_ema/ema_best_train_loss_checkpoint.pt
 ```
 
-Vision uses `D=1024`; Language uses `D=2048`. Frozen Qwen patch/token
-embeddings, vision merger, one native DeepStack visual injection, multimodal
-token injection, and final RMSNorm remain in the path. The last valid Language
-detector row is read by:
+MoE4 的正式 checkpoint 是：
 
 ```text
-LayerNorm(224) → Linear(224,64) → L2 normalization
+runs/qwen3_vl_embedding_2b_grocery10_moe4_hardware_robust/best_train_loss_checkpoint.pt
 ```
 
-There is no activation after the 64-D linear layer. Total trainable Student
-parameters are 4,951,848.
+历史最佳训练日志曾出现 74.23%，但对应 checkpoint 未保存，因此正式只报告可加载的 73.46%。
 
-## Physical geometry
+## 自动硬件实验
 
-* wavelength: 532 nm
-* pixel pitch: 8 µm
-* expert: 224×224 pixels
-* layout: 4×4, pitch 254, gap 30
-* active footprint: 986×986
-* propagation canvas: 1026×1026 (20-pixel numerical guard each side)
-* expert/global propagation distance: 10 cm each
-* one expert phase plane + one global phase plane in each stack
+`hardware_automation.py` 按四个平面依次完成：人工确认共享相位 mask、SDK 播放整批振幅、等待 40 ms、SDK 拍照、CCD 与理论对照、电子后处理、生成下一层输入，最后输出 retrieval accuracy 与混淆矩阵。
 
-The ideal amplitude-to-phase 4f relay is represented as co-planar amplitude and
-phase modulation; no additional numerical propagation is inserted for the
-relay.
-
-## Training
-
-The frozen Teacher produces official 64-D Matryoshka embeddings. The Student
-optimizes cosine embedding KD, supervised contrastive retrieval, optional
-gallery alignment, and router regularization. Packaging-safe augmentation never
-uses horizontal flips, MixUp, CutMix, strong blur, or random erasing.
-
-Canonical configs:
-
-* `grocery10_best_reproduction.yaml`: complete three-stage pipeline;
-* `grocery10_best_reproduction_stage1_grocery31.yaml`;
-* `grocery10_best_reproduction_stage2_replaced10.yaml`;
-* `grocery10_best_reproduction_stage3_strong_ema.yaml`;
-* `grocery10_hardware_deployment.yaml`: real SLM/CCD export and replay;
-* `grocery10.yaml` / `grocery10_smoke.yaml`: base and smoke definitions.
-
-Historical exploratory configs and failed run directories were removed to keep
-the experiment unambiguous.
-
-## Hardware deployment
-
-The trained network requires four physical exposures per sample: Vision expert,
-Vision global, Language expert, and Language global. Phase masks are shared
-across all samples, so acquisition is organized plane-first as four folder
-playbacks. See `HARDWARE_DEPLOYMENT.md` for:
-
-* exact amplitude/phase BMP dimensions and centering;
-* original images, 224×224 token fields, masks, captured CCD intensities,
-  electronic reload amplitudes, and simulation complex-field references;
-* required CCD file formats and filenames;
-* the four electronic processing commands;
-* final hardware embedding/retrieval evaluation.
-
-Commands are collected in `RUN_COMMANDS.md`.
+厂商接口位于 `hardware_devices.py`；SDK 二进制位于被 Git 忽略的 `sdk/`。详见 `HARDWARE_DEPLOYMENT.md` 与 `RUN_COMMANDS.md`。

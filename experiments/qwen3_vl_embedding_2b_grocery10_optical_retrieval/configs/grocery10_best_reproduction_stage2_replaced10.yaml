@@ -1,5 +1,0 @@
-base_config: grocery10_replaced_finetune.yaml
-
-# Canonical stage 2: replace the two weakest original SKUs using only
-# train-source Teacher screening, then fine-tune from stage 1 for 50 epochs.
-output_dir: ../runs/grocery10_best_reproduction/02_replaced10_finetune

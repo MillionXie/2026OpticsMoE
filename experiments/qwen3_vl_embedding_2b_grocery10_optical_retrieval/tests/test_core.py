@@ -22,6 +22,17 @@ from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipe
     bin_ccd_superpixels,
     load_hardware_config,
 )
+from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_automation import (
+    load_automation_config,
+    normalized_ccd_comparison,
+)
+from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_devices import (
+    DvpSubprocessCamera,
+    HoloeyeSLM,
+    ManualSLM,
+    build_camera,
+    build_slm,
+)
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.optical_artifacts import (
     encode_amplitude_uint8,
     encode_phase_uint8,
@@ -76,7 +87,7 @@ EXPERIMENT = Path(__file__).resolve().parents[1]
 
 
 def test_main_config_has_ten_packaged_skus() -> None:
-    settings = load_settings(EXPERIMENT / "configs" / "grocery10.yaml")
+    settings = load_settings(EXPERIMENT / "configs" / "grocery10_moe16_best.yaml")
     assert len(settings.selected_skus) == 10
     assert settings.embedding_dim == 64
     assert settings.gallery_aggregation == "mean_prototype"
@@ -85,44 +96,17 @@ def test_main_config_has_ten_packaged_skus() -> None:
     )
     assert settings.expert_layers == 1
     assert settings.vision_tap_stages == (1,)
-    assert settings.output_dir == (
-        EXPERIMENT / "runs" / "qwen3_vl_embedding_2b_grocery10_optical_retrieval"
-    ).resolve()
+    assert settings.output_dir.name == "qwen3_vl_embedding_2b_grocery10_moe16_best_rerun"
+    assert settings.num_experts == 16 and settings.expert_grid_rows == 4
 
 
-def test_smoke_output_is_also_inside_experiment() -> None:
-    settings = load_settings(EXPERIMENT / "configs" / "grocery10_smoke.yaml")
-    assert settings.output_dir == (
-        EXPERIMENT
-        / "runs"
-        / "qwen3_vl_embedding_2b_grocery10_optical_retrieval_smoke"
-    ).resolve()
-
-
-def test_grocery31_pretrain_config_is_valid_and_keeps_forward_batch_bounded() -> None:
-    settings = load_settings(EXPERIMENT / "configs" / "grocery31_pretrain.yaml")
-    assert len(settings.selected_skus) == 31
-    assert len(set(settings.selected_skus)) == 31
-    assert settings.pk_skus_per_batch == 10
-    assert settings.batch_size == 30
-    # The implementation appends one gallery image for only each selected SKU.
-    assert settings.batch_size + settings.pk_skus_per_batch == 40
-    assert settings.dataset_variant == "grocery31"
-    assert settings.subset_manifest_path.name == "grocery31_subset.csv"
-
-
-def test_replaced_ten_sku_finetune_config() -> None:
-    settings = load_settings(
-        EXPERIMENT / "configs" / "grocery10_replaced_finetune.yaml"
+def test_only_two_canonical_model_configs_are_kept() -> None:
+    model_configs = sorted(
+        path.name
+        for path in (EXPERIMENT / "configs").glob("*.yaml")
+        if not path.name.endswith("_hardware.yaml")
     )
-    assert len(settings.selected_skus) == 10
-    assert "Garant-Ecological-Standard-Milk" not in settings.selected_skus
-    assert "Bravo-Apple-Juice" not in settings.selected_skus
-    assert "God-Morgon-Apple-Juice" in settings.selected_skus
-    assert "Tropicana-Mandarin-Morning" in settings.selected_skus
-    assert settings.epochs == 50
-    assert not settings.resume_optimizer_state
-    assert settings.dataset_variant == "grocery10"
+    assert model_configs == ["grocery10_moe16_best.yaml", "grocery10_moe4_latest.yaml"]
 
 
 def test_phase_learning_rate_gets_an_independent_optimizer_group() -> None:
@@ -199,7 +183,7 @@ def test_phase_learning_rate_gets_an_independent_optimizer_group() -> None:
 
 def test_phase_focus_schedule_and_motion_are_explicit() -> None:
     settings = load_settings(
-        EXPERIMENT / "configs" / "grocery10_moe4_hardware_robust.yaml"
+        EXPERIMENT / "configs" / "grocery10_moe4_latest.yaml"
     )
     assert settings.phase_focus_enabled
     assert not _phase_focus_epoch(settings, 5)
@@ -313,41 +297,16 @@ def test_parameter_ema_updates_and_restores_live_weights() -> None:
     assert torch.equal(parameter.detach(), live)
 
 
-def test_canonical_best_reproduction_configs_are_explicit() -> None:
-    stage1 = load_settings(
-        EXPERIMENT
-        / "configs"
-        / "grocery10_best_reproduction_stage1_grocery31.yaml"
-    )
-    stage2 = load_settings(
-        EXPERIMENT
-        / "configs"
-        / "grocery10_best_reproduction_stage2_replaced10.yaml"
-    )
-    stage3 = load_settings(
-        EXPERIMENT
-        / "configs"
-        / "grocery10_best_reproduction_stage3_strong_ema.yaml"
-    )
-    pipeline = yaml.safe_load(
-        (EXPERIMENT / "configs" / "grocery10_best_reproduction.yaml").read_text(
-            encoding="utf-8"
-        )
-    )
-    assert len(stage1.selected_skus) == 31 and stage1.epochs == 100
-    assert len(stage2.selected_skus) == 10 and stage2.epochs == 50
-    assert stage3.epochs == 40
-    assert stage3.ema_decay == pytest.approx(0.99)
-    assert stage3.phase_learning_rate == pytest.approx(1.0e-3)
-    assert stage3.crop_scale_min == pytest.approx(0.75)
-    assert [stage["name"] for stage in pipeline["stages"]] == [
-        "grocery31_pretrain",
-        "replaced10_finetune",
-        "strong_augmentation_ema",
-    ]
-    assert pipeline["hardware_export"]["slm_pixel_pitch_um"] == 8.0
-    assert pipeline["hardware_export"]["amplitude_slm_size_wh"] == [1920, 1080]
-    assert pipeline["hardware_export"]["phase_slm_size_wh"] == [1920, 1200]
+def test_canonical_best_and_latest_configs_are_explicit() -> None:
+    best = load_settings(EXPERIMENT / "configs" / "grocery10_moe16_best.yaml")
+    latest = load_settings(EXPERIMENT / "configs" / "grocery10_moe4_latest.yaml")
+    assert best.num_experts == 16 and best.top_k == 4
+    assert best.epochs == 40 and best.ema_decay == pytest.approx(0.99)
+    assert best.phase_learning_rate == pytest.approx(1.0e-3)
+    assert best.crop_scale_min == pytest.approx(0.75)
+    assert latest.num_experts == 4 and latest.top_k == 2
+    assert latest.pixel_pitch_um == pytest.approx(16.0)
+    assert latest.interlayer_detector_integration_factor == 2
 
 
 def test_slm_encoding_preserves_relative_amplitude_and_wraps_phase() -> None:
@@ -491,7 +450,7 @@ def test_gallery_coverage_selection_is_train_only_and_deterministic(
 
 
 def test_student_has_one_expert_stage_plus_one_global_phase() -> None:
-    settings = load_settings(EXPERIMENT / "configs" / "grocery10.yaml")
+    settings = load_settings(EXPERIMENT / "configs" / "grocery10_moe16_best.yaml")
     vision = HomogeneousMoEOpticalCore(1024, 224, settings)
     language = HomogeneousMoEOpticalCore(2048, 224, settings)
     assert len(vision.expert_layers) == 1
@@ -519,7 +478,7 @@ def test_student_has_one_expert_stage_plus_one_global_phase() -> None:
 
 def test_moe4_superpixel2_geometry_and_phase_parameter_count() -> None:
     settings = load_settings(
-        EXPERIMENT / "configs" / "grocery10_phase_dc_kspace_moe4_superpixel2.yaml"
+        EXPERIMENT / "configs" / "grocery10_moe4_latest.yaml"
     )
     geometry = MoEGeometry(
         settings.canvas_size,
@@ -585,7 +544,7 @@ def test_official_dataset_split_and_no_leakage(tmp_path: Path) -> None:
     root = tmp_path / "GroceryStoreDataset"
     dataset = root / "dataset"
     dataset.mkdir(parents=True)
-    base_settings = load_settings(EXPERIMENT / "configs" / "grocery10.yaml")
+    base_settings = load_settings(EXPERIMENT / "configs" / "grocery10_moe16_best.yaml")
     headers = [
         "Class Name (str)",
         "Class ID (int)",
@@ -617,7 +576,7 @@ def test_official_dataset_split_and_no_leakage(tmp_path: Path) -> None:
     config.write_text(
         yaml.safe_dump(
             {
-                "base_config": str(EXPERIMENT / "configs" / "grocery10.yaml"),
+                "base_config": str(EXPERIMENT / "configs" / "grocery10_moe16_best.yaml"),
                 "dataset": {"dataset_root": str(root), "download": False},
                 "output_dir": str(tmp_path / "run"),
             }
@@ -737,43 +696,56 @@ def test_measured_intensity_entry_points_do_not_square_twice() -> None:
 
 
 def test_hardware_config_is_stage_first_and_uses_best_checkpoint() -> None:
-    config = load_hardware_config(
-        EXPERIMENT / "configs" / "grocery10_hardware_deployment.yaml"
+    best = load_hardware_config(
+        EXPERIMENT / "configs" / "grocery10_moe16_best_hardware.yaml"
     )
-    assert config.queries_per_sku == 10
-    assert config.amplitude_slm_size == (1920, 1080)
-    assert config.phase_slm_size == (1920, 1200)
-    assert config.slm_pixel_pitch_um == 8.0
-    assert config.capture_roi_xywh is None
-    assert config.checkpoint.name == "ema_best_train_loss_checkpoint.pt"
+    latest = load_hardware_config(
+        EXPERIMENT / "configs" / "grocery10_moe4_latest_hardware.yaml"
+    )
+    assert best.queries_per_sku == latest.queries_per_sku == 10
+    assert best.amplitude_slm_size == latest.amplitude_slm_size == (1920, 1080)
+    assert best.phase_slm_size == latest.phase_slm_size == (1920, 1200)
+    assert best.checkpoint.name == "ema_best_train_loss_checkpoint.pt"
+    assert latest.checkpoint.name == "best_train_loss_checkpoint.pt"
+    assert best.capture_binning_factor == 1
+    assert latest.capture_binning_factor == 2
+    assert best.phase_flip_vertical and latest.phase_flip_vertical
+    assert not best.minimal_artifacts and not latest.minimal_artifacts
+    assert not best.copy_checkpoint_to_output
+    assert latest.amplitude_encoding_percentile == pytest.approx(95.0)
+    assert latest.amplitude_encoding_gamma == pytest.approx(0.65)
 
-    phase_dc = load_hardware_config(
-        EXPERIMENT / "configs" / "grocery10_phase_dc_kspace_hardware.yaml"
-    )
-    assert phase_dc.model_config.name == "grocery10_phase_engaged.yaml"
-    assert phase_dc.checkpoint.name == "best_train_loss_checkpoint.pt"
-    assert phase_dc.amplitude_encoding_mode == "positive_percentile"
-    assert phase_dc.amplitude_encoding_percentile == pytest.approx(98.0)
-    assert phase_dc.amplitude_encoding_gamma == pytest.approx(1.0)
 
-    moe4 = load_hardware_config(
-        EXPERIMENT / "configs" / "grocery10_phase_dc_kspace_moe4_superpixel2_hardware.yaml"
+def test_automation_config_and_replaceable_device_factories() -> None:
+    config_path = EXPERIMENT / "configs" / "grocery10_moe4_latest_hardware.yaml"
+    automation = load_automation_config(config_path)
+    assert automation.settle_delay_seconds == pytest.approx(0.040)
+    assert automation.confirm_each_phase_mask
+    assert automation.output_extension == ".npy"
+    assert isinstance(build_slm({"driver": "manual"}, EXPERIMENT), ManualSLM)
+    camera = build_camera(
+        {
+            "driver": "dvp_subprocess",
+            "sdk_path": ".",
+            "python_executable": "python3.5",
+        },
+        EXPERIMENT,
     )
-    assert moe4.model_config.name == "grocery10_phase_dc_kspace_moe4_superpixel2.yaml"
-    assert moe4.slm_pixel_pitch_um == pytest.approx(8.0)
-    assert moe4.capture_binning_factor == 2
-    assert moe4.capture_binning_reduction == "mean"
-    assert moe4.amplitude_encoding_percentile == pytest.approx(98.0)
+    assert isinstance(camera, DvpSubprocessCamera)
+    holoeye = build_slm({"driver": "holoeye", "sdk_path": "."}, EXPERIMENT)
+    assert isinstance(holoeye, HoloeyeSLM)
 
-    robust = load_hardware_config(
-        EXPERIMENT / "configs" / "grocery10_moe4_hardware_robust_export.yaml"
-    )
-    assert robust.model_config.name == "grocery10_moe4_hardware_robust.yaml"
-    assert robust.minimal_artifacts
-    assert robust.clean_output_before_prepare
-    assert robust.phase_flip_vertical
-    assert robust.amplitude_encoding_percentile == pytest.approx(95.0)
-    assert robust.amplitude_encoding_gamma == pytest.approx(0.65)
+
+def test_ccd_comparison_reports_zero_mse_and_unit_pcc_for_identical_fields() -> None:
+    field = torch.arange(1, 17, dtype=torch.float32).reshape(4, 4)
+    metrics = normalized_ccd_comparison(field, field, "mean")
+    assert metrics["normalized_mse"] == pytest.approx(0.0)
+    assert metrics["normalized_mae"] == pytest.approx(0.0)
+    assert metrics["pcc"] == pytest.approx(1.0)
+
+    scaled = normalized_ccd_comparison(field * 9.0, field, "mean")
+    assert scaled["normalized_mse"] == pytest.approx(0.0, abs=1e-12)
+    assert scaled["pcc"] == pytest.approx(1.0)
 
 
 def test_pk_sampler_and_supervised_contrastive_backward(tmp_path: Path) -> None:

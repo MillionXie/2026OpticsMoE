@@ -69,6 +69,7 @@ class HardwareConfig:
     simulation_save_complex_fields: bool
     minimal_artifacts: bool
     clean_output_before_prepare: bool
+    copy_checkpoint_to_output: bool
     sample_limit: int | None = None
 
 
@@ -137,6 +138,9 @@ def load_hardware_config(path: str | Path) -> HardwareConfig:
         ),
         clean_output_before_prepare=bool(
             raw.get("artifacts", {}).get("clean_output_before_prepare", False)
+        ),
+        copy_checkpoint_to_output=bool(
+            raw.get("artifacts", {}).get("copy_checkpoint", False)
         ),
     )
     if result.queries_per_sku <= 0:
@@ -595,8 +599,9 @@ def prepare(runtime: Runtime) -> dict[str, Any]:
     if not runtime.hardware.minimal_artifacts:
         shutil.copy2(runtime.hardware.config_path, output / "00_manifest" / "hardware_config.yaml")
         shutil.copy2(runtime.settings.config_path, output / "00_manifest" / "model_config.yaml")
-        shutil.copy2(runtime.hardware.checkpoint, output / "00_manifest" / "student_checkpoint.pt")
-        checkpoint_copy = output / "00_manifest" / "student_checkpoint.pt"
+        if runtime.hardware.copy_checkpoint_to_output:
+            shutil.copy2(runtime.hardware.checkpoint, output / "00_manifest" / "student_checkpoint.pt")
+            checkpoint_copy = output / "00_manifest" / "student_checkpoint.pt"
     phases = {
         "vision": phase_tensors(runtime.replacement.vision_surrogate.core),
         "language": phase_tensors(runtime.replacement.language_surrogate.core),

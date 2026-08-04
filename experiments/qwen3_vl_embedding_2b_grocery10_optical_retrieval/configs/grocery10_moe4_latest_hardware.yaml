@@ -1,0 +1,39 @@
+model_config: grocery10_moe4_latest.yaml
+checkpoint: ../runs/qwen3_vl_embedding_2b_grocery10_moe4_hardware_robust/best_train_loss_checkpoint.pt
+output_dir: ../hardware_sessions/grocery10_moe4_latest
+selection:
+  queries_per_sku: 10
+  prefer_correct_queries: true
+  results_csv: ../runs/qwen3_vl_embedding_2b_grocery10_moe4_hardware_robust/retrieval_results.csv
+slm:
+  amplitude_size_wh: [1920, 1080]
+  phase_size_wh: [1920, 1200]
+  pixel_pitch_um: 8.0
+  amplitude_encoding: {mode: positive_percentile, percentile: 95.0, gamma: 0.65}
+  phase_transform: {flip_vertical: true}
+capture:
+  # A full sensor frame may be used after setting [x,y,956,956].
+  roi_xywh: null
+  dark_level: 0.0
+  binning_factor: 2
+  binning_reduction: mean
+simulation: {tensor_dtype: float16, save_complex_fields: false}
+artifacts: {profile: full, clean_output_before_prepare: true, copy_checkpoint: false}
+automation:
+  settle_delay_ms: 40
+  confirm_each_phase_mask: true
+  resume_existing_captures: true
+  comparison_normalization: mean
+  comparison_preview_count: 8
+  devices:
+    phase_slm: {driver: manual}
+    amplitude_slm:
+      driver: holoeye
+      sdk_path: ../sdk/amp_slm
+    camera:
+      driver: dvp_subprocess
+      sdk_path: ../sdk/ccd/lib/linux/python3.5m/x64
+      python_executable: python3.5
+      camera_index: 0
+      timeout_ms: 4000
+      output_extension: .npy
