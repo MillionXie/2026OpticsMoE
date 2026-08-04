@@ -18,7 +18,7 @@
 
   "camera": {
     "driver": "dvp_subprocess",
-    "sdk_path": null,
+    "sdk_path": "../ccd/lib/windows/python3.6/x64",
     "python_executable": "%DVP_PYTHON%",
     "camera_index": 0,
     "timeout_ms": 4000,
