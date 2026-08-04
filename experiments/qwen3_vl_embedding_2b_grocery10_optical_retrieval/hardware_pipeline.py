@@ -907,8 +907,29 @@ def main() -> int:
     parser.add_argument("--checkpoint", default=None, help="Optional checkpoint override; its architecture must match model_config")
     parser.add_argument("--queries-per-sku", type=int, default=None, help="Optional query-count override; all gallery images remain included")
     parser.add_argument("--sample-limit", type=int, default=None, help="Prepare-only equipment smoke limit; do not use for final retrieval evaluation")
+    parser.add_argument(
+        "--artifact-profile",
+        choices=("minimal", "full"),
+        default=None,
+        help=(
+            "prepare defaults to minimal (BMPs + theoretical CCD + play manifest). "
+            "Use full only when manually constructing a complete bridge session; "
+            "hardware_automation selects the full profile from its YAML."
+        ),
+    )
     args = parser.parse_args()
     hardware = load_hardware_config(args.config)
+    # `hardware_pipeline --phase prepare` is the human-facing export command.
+    # Keep it clean by default even though the same YAML uses `full` when it is
+    # consumed by hardware_automation for iterative CCD/electronic bridges.
+    requested_profile = args.artifact_profile
+    if requested_profile is None and args.phase == "prepare":
+        requested_profile = "minimal"
+    if requested_profile is not None:
+        hardware = replace(
+            hardware,
+            minimal_artifacts=requested_profile == "minimal",
+        )
     if hardware.minimal_artifacts and args.phase != "prepare":
         raise RuntimeError(
             "artifacts.profile=minimal is an export-only package; use --phase prepare. "
@@ -931,7 +952,10 @@ def main() -> int:
     try:
         if args.phase == "prepare":
             report = prepare(runtime)
-            print(f"Prepared {report['sample_count']} samples and four shared masks under {hardware.output_dir}")
+            print(
+                f"Prepared {report['sample_count']} samples and four shared masks "
+                f"under {hardware.output_dir} (artifact_profile={report['artifact_profile']})"
+            )
         elif args.phase == "process_vision_expert":
             process_vision_expert(runtime, use_simulation=args.use_simulation)
         elif args.phase == "process_vision_global":

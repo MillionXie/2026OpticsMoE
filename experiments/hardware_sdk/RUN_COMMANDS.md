@@ -59,6 +59,16 @@ python -m experiments.hardware_sdk.phase_slm_demo `
 
 ## 4. Grocery 四平面实物流程
 
+只导出实验需要的振幅 BMP、四张相位 BMP、理论 CCD PNG 和播放顺序：
+
+```bash
+CUDA_VISIBLE_DEVICES=5 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipeline \
+  --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_moe4_latest_hardware.yaml \
+  --phase prepare
+```
+
+`prepare` 现在默认使用 `minimal`，即使 YAML 为自动化流程保留了 `artifacts.profile: full`。若确实需要手工创建完整 bridge session，可显式增加 `--artifact-profile full`。
+
 MoE4 仿真回放检查：
 
 ```bash
