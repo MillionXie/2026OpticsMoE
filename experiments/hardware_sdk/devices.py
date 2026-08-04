@@ -489,7 +489,7 @@ class DvpSubprocessCamera(CameraDriver):
 
     def __init__(
         self,
-        sdk_path: Path,
+        sdk_path: Path | None,
         python_executable: str,
         camera_index: int = 0,
         timeout_ms: int = 4000,
@@ -545,6 +545,41 @@ class DvpSubprocessCamera(CameraDriver):
                 "%DVP_PYTHON%) to the exact vendor-compatible python.exe path."
             )
         self.python_executable = resolved
+        probe = subprocess.run(
+            [
+                self.python_executable,
+                "-c",
+                "import json,struct,sys; print(json.dumps({'version':[sys.version_info[0],sys.version_info[1]],'bits':struct.calcsize('P')*8,'executable':sys.executable}))",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if probe.returncode != 0:
+            raise DeviceError(
+                f"Could not inspect DVP Python {self.python_executable!r}: {probe.stderr.strip()}"
+            )
+        python_info = json.loads(probe.stdout.strip())
+        if int(python_info["bits"]) != 64:
+            raise DeviceError(
+                f"DVP camera requires a 64-bit Python, got {python_info['bits']}-bit "
+                f"from {self.python_executable}"
+            )
+        if self.sdk_path is not None:
+            pyd = self.sdk_path / "dvp.pyd"
+            if not pyd.is_file():
+                raise DeviceError(f"DVP module is missing: {pyd}")
+            match = re.search(rb"python(\d)(\d+)\.dll", pyd.read_bytes().lower())
+            if match:
+                required = (int(match.group(1)), int(match.group(2)))
+                actual = tuple(int(value) for value in python_info["version"])
+                if actual != required:
+                    raise DeviceError(
+                        f"DVP ABI mismatch: {pyd} imports python{required[0]}{required[1]}.dll, "
+                        f"but {self.python_executable} is Python {actual[0]}.{actual[1]}. "
+                        "Use the matching vendor module directory, or set camera.sdk_path "
+                        "to null to import the working dvp module already installed in that environment."
+                    )
 
     def open(self) -> None:
         self.validate_runtime()
@@ -552,13 +587,13 @@ class DvpSubprocessCamera(CameraDriver):
         command = [
             self.python_executable,
             str(worker),
-            "--sdk-path",
-            str(self.sdk_path),
             "--camera-index",
             str(self.camera_index),
             "--timeout-ms",
             str(self.timeout_ms),
         ]
+        if self.sdk_path is not None:
+            command += ["--sdk-path", str(self.sdk_path)]
         if self.config_file is not None:
             command += ["--config-file", str(self.config_file)]
         if self.auto_exposure is not None:
@@ -580,7 +615,9 @@ class DvpSubprocessCamera(CameraDriver):
             str(self.discard_frames_after_display),
         ]
         environment = os.environ.copy()
-        if sys.platform.startswith("linux"):
+        if self.sdk_path is not None and sys.platform.startswith("win"):
+            environment["PATH"] = str(self.sdk_path) + os.pathsep + environment.get("PATH", "")
+        if self.sdk_path is not None and sys.platform.startswith("linux"):
             environment["LD_LIBRARY_PATH"] = str(self.sdk_path) + os.pathsep + environment.get("LD_LIBRARY_PATH", "")
         try:
             self._process = subprocess.Popen(
@@ -606,7 +643,10 @@ class DvpSubprocessCamera(CameraDriver):
             self.close()
             raise DeviceError(
                 "DVP subprocess did not become ready. Install NumPy and the DVP "
-                f"module in {self.python_executable!r}. stdout={line!r} stderr={detail}"
+                f"module in {self.python_executable!r}. If camera.sdk_path is null, "
+                "verify `import dvp` directly in that environment. If it is set, "
+                f"verify that dvp.pyd and its vendor DLL are both under {self.sdk_path}. "
+                f"stdout={line!r} stderr={detail}"
             )
         self._info = dict(ready.get("device", {}))
 
@@ -748,8 +788,6 @@ def build_camera(config: dict[str, Any], base: Path) -> CameraDriver:
         )
     if driver == "dvp_subprocess":
         sdk_path = _resolve_optional(config.get("sdk_path"), base)
-        if sdk_path is None:
-            raise ValueError("A DVP subprocess camera requires devices.camera.sdk_path")
         python_executable = config.get("python_executable")
         conda_env = config.get("conda_env")
         if python_executable is not None and conda_env is not None:

@@ -8,23 +8,29 @@
 cd C:\path\to\2026OpticsMoE\experiments\hardware_sdk
 python -m pip install -r requirements-light.txt
 py -0p
-$env:DVP_PYTHON = "C:\path\to\Python36\python.exe"
+$env:DVP_PYTHON = "C:\Users\MMLAB\.conda\envs\miniCamera\python.exe"
 ```
 
-当前厂商的 `dvp.pyd` 实际链接 `python36.dll`，因此这里必须是 **64 位 CPython 3.6**，不能指向正在运行主程序的 Microsoft Store Python 3.12。如果 `py -0p` 没有列出 3.6，需要先安装/准备一个 64 位 Python 3.6 runtime。只有 CCD 子进程使用它，主采集程序仍使用现有 Python 3.12。
+主采集程序可以继续使用 Microsoft Store Python 3.12；CCD 子进程使用厂商已经验证的 `miniCamera` Python 3.7。默认配置的 `camera.sdk_path=null`，表示不要强制插入仓库里那份 Python 3.6 `dvp.pyd`，而是使用 `miniCamera` 环境自己安装的兼容模块。
 
-为 DVP 子进程安装唯一必需的 Python 包并验证 ABI：
+先验证厂商环境，不要急着重新安装包：
 
 ```powershell
-& $env:DVP_PYTHON -m ensurepip
-& $env:DVP_PYTHON -m pip install "pip<22" "numpy==1.16.2"
-& $env:DVP_PYTHON -c "import sys; sys.path.insert(0, r'$PWD\ccd\lib\windows\python3.6\x64'); import dvp, numpy; print(sys.executable, numpy.__version__)"
+& $env:DVP_PYTHON -c "import sys, numpy, dvp; print(sys.version); print(numpy.__version__); print(dvp.__file__)"
 ```
+
+如果这条命令成功，当前正式配置无需填写 `sdk_path`。如果失败，说明原来的厂商程序运行时额外添加了模块/DLL目录。找到与 Python 3.7 匹配的 `dvp.pyd`：
+
+```powershell
+Get-ChildItem C:\Users\MMLAB\.conda\envs\miniCamera -Recurse -Filter dvp.pyd
+```
+
+把 `camera.sdk_path` 设置为该 `dvp.pyd` 所在目录；该目录或系统 `PATH` 中还必须能找到 `DVPCamera64.dll`。不要将 Python 3.7 指向 `ccd\lib\windows\python3.6\x64`；程序现在会在打开设备前明确报告 ABI mismatch。
 
 如果希望以后新开 PowerShell 也有效，可以设置用户环境变量：
 
 ```powershell
-[Environment]::SetEnvironmentVariable("DVP_PYTHON", "C:\path\to\Python36\python.exe", "User")
+[Environment]::SetEnvironmentVariable("DVP_PYTHON", "C:\Users\MMLAB\.conda\envs\miniCamera\python.exe", "User")
 ```
 
 设置后需要重新打开 PowerShell。仅用 `$env:DVP_PYTHON=...` 时，只对当前窗口有效。

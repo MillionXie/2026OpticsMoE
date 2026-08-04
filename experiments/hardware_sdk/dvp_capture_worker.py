@@ -98,7 +98,7 @@ def frame_to_array(frame_buffer, module):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--sdk-path", required=True)
+    parser.add_argument("--sdk-path", default=None)
     parser.add_argument("--camera-index", type=int, default=0)
     parser.add_argument("--timeout-ms", type=int, default=4000)
     parser.add_argument("--config-file", default=None)
@@ -111,7 +111,14 @@ def main():
     parser.add_argument("--warmup-frames", type=int, default=3)
     parser.add_argument("--discard-frames-after-display", type=int, default=1)
     args = parser.parse_args()
-    sys.path.insert(0, os.path.abspath(args.sdk_path))
+    dll_directory = None
+    if args.sdk_path:
+        sdk_path = os.path.abspath(args.sdk_path)
+        if sys.platform.startswith("win"):
+            os.environ["PATH"] = sdk_path + os.pathsep + os.environ.get("PATH", "")
+            if hasattr(os, "add_dll_directory"):
+                dll_directory = os.add_dll_directory(sdk_path)
+        sys.path.insert(0, sdk_path)
     import dvp
 
     devices = dvp.Refresh()
