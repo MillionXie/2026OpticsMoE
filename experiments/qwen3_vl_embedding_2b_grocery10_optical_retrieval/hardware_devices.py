@@ -355,7 +355,13 @@ def build_camera(config: dict[str, Any], base: Path) -> CameraDriver:
         if conda_env is not None:
             executable_name = "python.exe" if sys.platform.startswith("win") else "python"
             # .../miniconda/envs/current/bin/python -> .../miniconda
-            conda_root = Path(sys.executable).resolve().parents[2]
+            executable = Path(sys.executable).resolve()
+            if len(executable.parents) < 4 or executable.parents[2].name != "envs":
+                raise ValueError(
+                    "camera.conda_env requires the main interpreter to live under "
+                    "<conda-root>/envs/<current>/bin/python; set python_executable explicitly"
+                )
+            conda_root = executable.parents[3]
             python_executable = str(conda_root / "envs" / str(conda_env) / ("Scripts" if sys.platform.startswith("win") else "bin") / executable_name)
         return DvpSubprocessCamera(
             sdk_path=sdk_path,
