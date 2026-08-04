@@ -348,9 +348,18 @@ def build_camera(config: dict[str, Any], base: Path) -> CameraDriver:
         sdk_path = _resolve_optional(config.get("sdk_path"), base)
         if sdk_path is None:
             raise ValueError("A DVP subprocess camera requires devices.camera.sdk_path")
+        python_executable = config.get("python_executable")
+        conda_env = config.get("conda_env")
+        if python_executable is not None and conda_env is not None:
+            raise ValueError("Set only one of camera.python_executable and camera.conda_env")
+        if conda_env is not None:
+            executable_name = "python.exe" if sys.platform.startswith("win") else "python"
+            # .../miniconda/envs/current/bin/python -> .../miniconda
+            conda_root = Path(sys.executable).resolve().parents[2]
+            python_executable = str(conda_root / "envs" / str(conda_env) / ("Scripts" if sys.platform.startswith("win") else "bin") / executable_name)
         return DvpSubprocessCamera(
             sdk_path=sdk_path,
-            python_executable=str(config.get("python_executable", "python3.5")),
+            python_executable=str(python_executable or "python3.5"),
             camera_index=int(config.get("camera_index", 0)),
             timeout_ms=int(config.get("timeout_ms", 4000)),
             config_file=_resolve_optional(config.get("config_file"), base),

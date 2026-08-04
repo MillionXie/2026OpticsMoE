@@ -78,7 +78,7 @@ CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_opt
 - 相机：DVP Python 3.5 持久子进程，原始帧保存为 `.npy`；
 - SDK 放在实验目录的 `sdk/`，已被 Git 忽略。
 
-若系统没有 `python3.5`，将硬件 YAML 中 `python_executable` 改成厂商环境的绝对路径。更换厂家时只需在 `hardware_devices.py` 添加并在 YAML 选择新 driver，不改模型后处理。
+服务器已建立 `dvp35`（Python 3.5 + NumPy 1.14）环境，配置通过 `conda_env: dvp35` 自动定位，不需要激活它。若换到其他控制机，可改为对应环境名或显式 `python_executable`。更换厂家时只需在 `hardware_devices.py` 添加并在 YAML 选择新 driver，不改模型后处理。
 
 ## 5. 常用标定 mask
 

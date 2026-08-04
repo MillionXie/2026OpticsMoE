@@ -727,7 +727,7 @@ def test_automation_config_and_replaceable_device_factories() -> None:
         {
             "driver": "dvp_subprocess",
             "sdk_path": ".",
-            "python_executable": "python3.5",
+            "conda_env": "dvp35",
         },
         EXPERIMENT,
     )

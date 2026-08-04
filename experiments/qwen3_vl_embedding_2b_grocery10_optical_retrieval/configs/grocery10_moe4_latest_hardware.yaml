@@ -33,7 +33,7 @@ automation:
     camera:
       driver: dvp_subprocess
       sdk_path: ../sdk/ccd/lib/linux/python3.5m/x64
-      python_executable: python3.5
+      conda_env: dvp35
       camera_index: 0
       timeout_ms: 4000
       output_extension: .npy
