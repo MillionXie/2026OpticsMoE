@@ -606,8 +606,14 @@ class DvpSubprocessCamera(CameraDriver):
             "--timeout-ms",
             str(self.timeout_ms),
         ]
-        if self.sdk_path is not None and not sys.platform.startswith("win"):
-            command += ["--sdk-path", str(self.sdk_path)]
+        if self.sdk_path is not None:
+            # Keep this argument even for the staged Windows runtime.  Older
+            # vendor-compatible workers declared --sdk-path as required; the
+            # staged directory is also the correct import/DLL directory.
+            command += [
+                "--sdk-path",
+                str(runtime_dir if sys.platform.startswith("win") else self.sdk_path),
+            ]
         if self.config_file is not None:
             command += ["--config-file", str(self.config_file)]
         if self.auto_exposure is not None:
