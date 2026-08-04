@@ -20,6 +20,15 @@ python -m pip install -r requirements-light.txt
 
 主采集程序继续使用 Microsoft Store Python 3.12；只有 CCD 子进程使用 `miniCamera36`。不需要 Torch、OpenCV 或 Qwen。
 
+**不要执行 `conda activate miniCamera36` 后再启动主程序。** 如果命令行开头显示 `(miniCamera36)`，先执行：
+
+```powershell
+conda deactivate
+python --version  # 应显示主程序的 Python 3.12，而不是 3.6
+```
+
+`DVP_PYTHON` 会让程序自动为 CCD 启动 Python 3.6 子进程，不需要手工激活它。
+
 脚本成功时会直接打印如下信息，无需再手工验证：
 
 ```powershell

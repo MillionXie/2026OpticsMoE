@@ -65,5 +65,8 @@ finally {
 Write-Host ""
 Write-Host "DVP runtime is ready. DVP_PYTHON=$python"
 Write-Host "The user environment variable was saved permanently."
+Write-Host "IMPORTANT: do NOT activate miniCamera36 to run acquire_folder.py."
+Write-Host "The main acquisition program must stay on Python 3.12; only its CCD subprocess uses Python 3.6."
+Write-Host "If your prompt shows (miniCamera36), run: conda deactivate"
 Write-Host "If this script was dot-sourced, run acquisition in this PowerShell now."
 Write-Host "Otherwise reopen PowerShell before running acquire_folder.py."
