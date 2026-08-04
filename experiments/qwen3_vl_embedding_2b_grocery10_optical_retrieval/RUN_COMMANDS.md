@@ -40,6 +40,14 @@ CUDA_VISIBLE_DEVICES=5 python -m experiments.qwen3_vl_embedding_2b_grocery10_opt
 
 该流程按 `vision expert → vision global → language expert → language global` 运行；每层人工确认相位 mask，程序自动播放整批振幅、拍摄 CCD、输出 theory 对照、执行电子处理并生成下一层振幅。
 
+正式物理采集常用命令：
+
+```bash
+CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_automation \
+  --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_moe4_latest_hardware.yaml \
+  --session-dir experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/hardware_sessions/moe4_physical_001
+```
+
 ## 测试
 
 ```bash
