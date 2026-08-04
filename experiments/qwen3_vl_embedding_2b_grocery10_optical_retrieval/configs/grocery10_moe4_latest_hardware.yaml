@@ -30,6 +30,7 @@ automation:
     amplitude_slm:
       driver: holoeye
       sdk_path: ../sdk/amp_slm
+      binary_folder: null
     camera:
       driver: dvp_subprocess
       sdk_path: ../sdk/ccd/lib/linux/python3.5m/x64

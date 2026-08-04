@@ -29,6 +29,9 @@ automation:
     amplitude_slm:
       driver: holoeye
       sdk_path: ../sdk/amp_slm
+      # The uploaded files currently contain only the Python wrapper. Point
+      # this at a folder containing libholoeye_slmdisplaysdk.so.
+      binary_folder: null
     camera:
       # The uploaded Linux binary targets Python 3.5, so acquisition runs in a
       # persistent vendor subprocess while Qwen/post-processing stays in 3.11.

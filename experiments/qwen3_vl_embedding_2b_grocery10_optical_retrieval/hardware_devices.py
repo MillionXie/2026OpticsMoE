@@ -74,8 +74,9 @@ class ManualSLM(SLMDriver):
 
 
 class HoloeyeSLM(SLMDriver):
-    def __init__(self, sdk_path: Path) -> None:
+    def __init__(self, sdk_path: Path, binary_folder: Path | None = None) -> None:
         self.sdk_path = sdk_path
+        self.binary_folder = binary_folder
         self._module: Any = None
         self._slm: Any = None
 
@@ -96,7 +97,24 @@ class HoloeyeSLM(SLMDriver):
                 "native runtime on the acquisition computer. Attempts:\n  "
                 + "\n  ".join(errors)
             )
-        self._slm = self._module.SLMInstance()
+        binary_folder = self.binary_folder
+        if binary_folder is None:
+            environment_root = os.environ.get("HEDS_3_2_PYTHON")
+            if environment_root:
+                platform = "win64" if sys.platform.startswith("win") and sys.maxsize > 2**32 else ("win32" if sys.platform.startswith("win") else "linux")
+                binary_folder = Path(environment_root) / platform
+        library_name = "holoeye_slmdisplaysdk.dll" if sys.platform.startswith("win") else "libholoeye_slmdisplaysdk.so"
+        if binary_folder is None or not (binary_folder / library_name).is_file():
+            raise DeviceError(
+                "The HOLOEYE Python wrapper is present, but its native runtime is "
+                f"missing. Expected {library_name} under slm.binary_folder (current: "
+                f"{binary_folder}). Install the HOLOEYE SLM Display SDK runtime and "
+                "set devices.amplitude_slm.binary_folder in the hardware YAML."
+            )
+        try:
+            self._slm = self._module.SLMInstance(binaryFolder=str(binary_folder))
+        except Exception as exc:
+            raise DeviceError(f"Could not initialize the HOLOEYE native runtime: {exc}") from exc
         self._check(self._slm.open(), "open")
 
     def _check(self, result: Any, operation: str) -> None:
@@ -328,7 +346,10 @@ def build_slm(config: dict[str, Any], base: Path) -> SLMDriver:
         sdk_path = _resolve_optional(config.get("sdk_path"), base)
         if sdk_path is None:
             raise ValueError("A holoeye SLM requires devices.*.sdk_path")
-        return HoloeyeSLM(sdk_path)
+        return HoloeyeSLM(
+            sdk_path,
+            binary_folder=_resolve_optional(config.get("binary_folder"), base),
+        )
     raise ValueError(f"Unknown SLM driver {driver!r}; supported: manual, holoeye")
 
 
