@@ -518,6 +518,7 @@ class DvpSubprocessCamera(CameraDriver):
         self.discard_frames_after_display = int(discard_frames_after_display)
         self._process: subprocess.Popen[str] | None = None
         self._info: dict[str, Any] = {}
+        self._runtime_dir: Path | None = None
 
     def validate_runtime(self) -> None:
         raw = str(self.python_executable).strip()
@@ -566,24 +567,37 @@ class DvpSubprocessCamera(CameraDriver):
                 f"from {self.python_executable}"
             )
         if self.sdk_path is not None:
-            pyd = self.sdk_path / "dvp.pyd"
-            if not pyd.is_file():
-                raise DeviceError(f"DVP module is missing: {pyd}")
-            match = re.search(rb"python(\d)(\d+)\.dll", pyd.read_bytes().lower())
-            if match:
-                required = (int(match.group(1)), int(match.group(2)))
-                actual = tuple(int(value) for value in python_info["version"])
-                if actual != required:
-                    raise DeviceError(
-                        f"DVP ABI mismatch: {pyd} imports python{required[0]}{required[1]}.dll, "
-                        f"but {self.python_executable} is Python {actual[0]}.{actual[1]}. "
-                        "Use the matching vendor module directory, or set camera.sdk_path "
-                        "to null to import the working dvp module already installed in that environment."
-                    )
+            required_files = (
+                [self.sdk_path / "dvp.pyd", self.sdk_path / "DVPCamera64.dll"]
+                if sys.platform.startswith("win")
+                else [self.sdk_path / "dvp.so", self.sdk_path / "libdvp.so"]
+            )
+            missing = [path for path in required_files if not path.is_file()]
+            if missing:
+                raise DeviceError(
+                    "DVP runtime is incomplete. The vendor requires dvp.pyd and "
+                    f"DVPCamera64.dll together. Missing: {missing}"
+                )
+
+    def _prepare_inplace_runtime(self) -> tuple[Path, Path]:
+        source_worker = Path(__file__).with_name("dvp_capture_worker.py")
+        if self.sdk_path is None or not sys.platform.startswith("win"):
+            return source_worker, source_worker.parent
+        # The vendor explicitly requires the demo Python file, dvp.pyd and
+        # DVPCamera64.dll to be colocated.  Stage exactly that layout instead
+        # of relying on cross-directory DLL search behavior.
+        runtime = Path(__file__).with_name("dvp_runtime")
+        runtime.mkdir(parents=True, exist_ok=True)
+        staged_worker = runtime / "dvp_capture_worker.py"
+        shutil.copy2(source_worker, staged_worker)
+        for name in ("dvp.pyd", "DVPCamera64.dll"):
+            shutil.copy2(self.sdk_path / name, runtime / name)
+        self._runtime_dir = runtime
+        return staged_worker, runtime
 
     def open(self) -> None:
         self.validate_runtime()
-        worker = Path(__file__).with_name("dvp_capture_worker.py")
+        worker, runtime_dir = self._prepare_inplace_runtime()
         command = [
             self.python_executable,
             str(worker),
@@ -592,7 +606,7 @@ class DvpSubprocessCamera(CameraDriver):
             "--timeout-ms",
             str(self.timeout_ms),
         ]
-        if self.sdk_path is not None:
+        if self.sdk_path is not None and not sys.platform.startswith("win"):
             command += ["--sdk-path", str(self.sdk_path)]
         if self.config_file is not None:
             command += ["--config-file", str(self.config_file)]
@@ -615,8 +629,8 @@ class DvpSubprocessCamera(CameraDriver):
             str(self.discard_frames_after_display),
         ]
         environment = os.environ.copy()
-        if self.sdk_path is not None and sys.platform.startswith("win"):
-            environment["PATH"] = str(self.sdk_path) + os.pathsep + environment.get("PATH", "")
+        if sys.platform.startswith("win"):
+            environment["PATH"] = str(runtime_dir) + os.pathsep + environment.get("PATH", "")
         if self.sdk_path is not None and sys.platform.startswith("linux"):
             environment["LD_LIBRARY_PATH"] = str(self.sdk_path) + os.pathsep + environment.get("LD_LIBRARY_PATH", "")
         try:
@@ -628,6 +642,7 @@ class DvpSubprocessCamera(CameraDriver):
                 text=True,
                 bufsize=1,
                 env=environment,
+                cwd=str(runtime_dir),
             )
         except OSError as exc:
             raise DeviceError(
@@ -685,6 +700,7 @@ class DvpSubprocessCamera(CameraDriver):
         return {
             "driver": "dvp_subprocess",
             "python_executable": self.python_executable,
+            "runtime_dir": None if self._runtime_dir is None else str(self._runtime_dir),
             **self._info,
         }
 

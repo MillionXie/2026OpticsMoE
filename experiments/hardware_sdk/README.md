@@ -49,13 +49,13 @@ HEDS_3_2_PYTHON_MODULES=...\python
 
 是正确的 Windows 结构，不需要 Linux 的 `libholoeye_slmdisplaysdk.so`。配置会展开 `%HEDS_3_2_PYTHON_MODULES%`。
 
-DVP Python 扩展使用独立厂商环境运行。当前可确认存在的模块位于 `ccd/lib/windows/python3.6/x64/dvp.pyd`，它链接 `python36.dll`，所以默认使用独立的 64 位 Python 3.6 相机环境：
+DVP Python 扩展使用独立厂商环境运行。按厂商要求，程序会自动把 `dvp_capture_worker.py`、`dvp.pyd` 和 `DVPCamera64.dll` 复制到同一个忽略 Git 的 `dvp_runtime/` 目录，再使用实验室已有的 `miniCamera` Python 3.7 启动：
 
 ```powershell
-$env:DVP_PYTHON = "C:\Users\MMLAB\.conda\envs\miniCamera36\python.exe"
+$env:DVP_PYTHON = "C:\Users\MMLAB\.conda\envs\miniCamera\python.exe"
 ```
 
-程序会把 SDK 目录同时加入 Python 模块路径和 Windows DLL 搜索路径，因此同目录的 `DVPCamera64.dll` 可以被找到。程序也会读取 `dvp.pyd` 的 ABI，并在启动前拒绝 3.6/3.7/3.8 混用。若以后拿到真正的 Python 3.7 版 `dvp.pyd`，只需将 `camera.sdk_path` 和 `DVP_PYTHON` 一起切换到匹配版本。
+`dvp_runtime/` 同时作为子进程工作目录并被加入 Windows DLL 搜索路径，严格复现厂商 demo 的同目录结构。无需把厂商二进制安装到 Conda 环境，也无需手工复制。
 
 ## 相机设置
 
