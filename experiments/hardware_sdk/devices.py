@@ -1,0 +1,723 @@
+"""Replaceable SLM/camera drivers for the staged optical experiment.
+
+The orchestration code depends only on the small interfaces in this file.  A
+new vendor therefore requires a new driver here, not changes to the optical or
+electronic model implementation.
+"""
+
+from __future__ import annotations
+
+import importlib
+import json
+import os
+import subprocess
+import sys
+from abc import ABC, abstractmethod
+from pathlib import Path
+from typing import Any
+
+import numpy as np
+from PIL import Image
+
+
+__all__ = [
+    "CameraDriver",
+    "DeviceError",
+    "DvpCamera",
+    "DvpSubprocessCamera",
+    "HoloeyeSLM",
+    "ManualSLM",
+    "SLMDriver",
+    "build_camera",
+    "build_slm",
+]
+
+
+class DeviceError(RuntimeError):
+    pass
+
+
+class SLMDriver(ABC):
+    @abstractmethod
+    def open(self) -> None: ...
+
+    @abstractmethod
+    def display_file(self, path: Path) -> None: ...
+
+    @abstractmethod
+    def close(self) -> None: ...
+
+    def preload_files(self, paths: list[Path]) -> None:
+        """Optionally upload a plane's frames before acquisition."""
+
+    def device_info(self) -> dict[str, Any]:
+        return {"driver": type(self).__name__}
+
+    def __enter__(self) -> "SLMDriver":
+        self.open()
+        return self
+
+    def __exit__(self, *_: object) -> None:
+        self.close()
+
+
+class CameraDriver(ABC):
+    @abstractmethod
+    def open(self) -> None: ...
+
+    @abstractmethod
+    def capture(self, path: Path) -> None: ...
+
+    @abstractmethod
+    def close(self) -> None: ...
+
+    def device_info(self) -> dict[str, Any]:
+        return {"driver": type(self).__name__}
+
+    def __enter__(self) -> "CameraDriver":
+        self.open()
+        return self
+
+    def __exit__(self, *_: object) -> None:
+        self.close()
+
+
+class ManualSLM(SLMDriver):
+    """Marker driver: a human loads the shared phase mask."""
+
+    def open(self) -> None:
+        return None
+
+    def display_file(self, path: Path) -> None:
+        print(f"[manual SLM] load phase mask: {path}")
+
+    def close(self) -> None:
+        return None
+
+    def device_info(self) -> dict[str, Any]:
+        return {"driver": "manual", "automatic": False}
+
+
+class HoloeyeSLM(SLMDriver):
+    def __init__(
+        self,
+        sdk_path: Path,
+        binary_folder: Path | None = None,
+        expected_resolution: tuple[int, int] | None = None,
+        minimum_refresh_hz: float | None = None,
+        preload: bool = True,
+        wait_until_visible: bool = True,
+    ) -> None:
+        self.sdk_path = sdk_path
+        self.binary_folder = binary_folder
+        self.expected_resolution = expected_resolution
+        self.minimum_refresh_hz = minimum_refresh_hz
+        self.preload = bool(preload)
+        self.wait_until_visible = bool(wait_until_visible)
+        self._module: Any = None
+        self._slm: Any = None
+        self._handles: dict[Path, Any] = {}
+
+    def open(self) -> None:
+        if not self.sdk_path.is_dir():
+            raise DeviceError(f"HOLOEYE SDK directory is missing: {self.sdk_path}")
+        sys.path.insert(0, str(self.sdk_path))
+        errors: list[str] = []
+        for name in ("slmdisplaysdk", "holoeye.slmdisplaysdk"):
+            try:
+                self._module = importlib.import_module(name)
+                break
+            except Exception as exc:  # native-library errors need full context
+                errors.append(f"{name}: {type(exc).__name__}: {exc}")
+        if self._module is None:
+            raise DeviceError(
+                "Could not import the HOLOEYE SLM Display SDK. Install the SDK "
+                "native runtime on the acquisition computer. Attempts:\n  "
+                + "\n  ".join(errors)
+            )
+        binary_folder = self.binary_folder
+        if binary_folder is None:
+            environment_root = os.environ.get("HEDS_3_2_PYTHON")
+            if environment_root:
+                platform = "win64" if sys.platform.startswith("win") and sys.maxsize > 2**32 else ("win32" if sys.platform.startswith("win") else "linux")
+                binary_folder = Path(environment_root) / platform
+        library_name = "holoeye_slmdisplaysdk.dll" if sys.platform.startswith("win") else "libholoeye_slmdisplaysdk.so"
+        if binary_folder is None or not (binary_folder / library_name).is_file():
+            raise DeviceError(
+                "The HOLOEYE Python wrapper is present, but its native runtime is "
+                f"missing. Expected {library_name} under slm.binary_folder (current: "
+                f"{binary_folder}). Install the HOLOEYE SLM Display SDK runtime and "
+                "set devices.amplitude_slm.binary_folder in the hardware YAML."
+            )
+        self.binary_folder = binary_folder
+        try:
+            self._slm = self._module.SLMInstance(binaryFolder=str(binary_folder))
+        except Exception as exc:
+            raise DeviceError(f"Could not initialize the HOLOEYE native runtime: {exc}") from exc
+        if not self._slm.requiresVersion(5):
+            raise DeviceError("HOLOEYE runtime API version 5 or newer is required")
+        self._check(self._slm.open(), "open")
+        actual = (int(self._slm.width_px), int(self._slm.height_px))
+        if self.expected_resolution is not None and actual != self.expected_resolution:
+            raise DeviceError(
+                f"HOLOEYE resolution is {actual}, expected {self.expected_resolution}. "
+                "Do not allow the SDK/GPU to rescale experimental BMPs."
+            )
+        refresh = float(self._slm.refreshrate_hz)
+        if self.minimum_refresh_hz is not None and refresh < self.minimum_refresh_hz:
+            raise DeviceError(
+                f"HOLOEYE refresh rate is {refresh:.3f} Hz, below required "
+                f"{self.minimum_refresh_hz:.3f} Hz"
+            )
+
+    def _check(self, result: Any, operation: str) -> None:
+        no_error = getattr(getattr(self._module, "ErrorCode", object), "NoError", 0)
+        if result not in (None, 0, no_error):
+            detail = ""
+            if self._slm is not None and hasattr(self._slm, "errorString"):
+                try:
+                    detail = f": {self._slm.errorString(result)}"
+                except Exception:
+                    pass
+            raise DeviceError(f"HOLOEYE {operation} failed with code {result}{detail}")
+
+    def _validate_image(self, path: Path) -> Path:
+        path = path.expanduser().resolve()
+        if not path.is_file():
+            raise FileNotFoundError(path)
+        with Image.open(path) as image:
+            size = tuple(image.size)
+        expected = self.expected_resolution
+        if expected is None and self._slm is not None:
+            expected = (int(self._slm.width_px), int(self._slm.height_px))
+        if expected is not None and size != expected:
+            raise DeviceError(
+                f"{path.name} has size {size}, but the amplitude SLM requires "
+                f"{expected}; implicit fit/tile scaling is forbidden"
+            )
+        return path
+
+    def _release_handles(self) -> None:
+        for handle in self._handles.values():
+            try:
+                handle.release()
+            except Exception:
+                pass
+        self._handles.clear()
+
+    def preload_files(self, paths: list[Path]) -> None:
+        if not self.preload:
+            return
+        if self._slm is None:
+            raise DeviceError("HOLOEYE SLM is not open")
+        self._release_handles()
+        for raw_path in paths:
+            path = self._validate_image(raw_path)
+            error, handle = self._slm.loadDataFromFile(str(path))
+            self._check(error, f"load {path.name}")
+            self._check(
+                self._slm.datahandleWaitFor(handle, self._module.State.LoadingFile),
+                f"read {path.name}",
+            )
+            self._check(
+                self._slm.datahandleWaitFor(handle, self._module.State.ReadyToRender),
+                f"preload {path.name}",
+            )
+            self._handles[path] = handle
+        print(f"[HOLOEYE] preloaded {len(self._handles)} BMP files to GPU")
+
+    def display_file(self, path: Path) -> None:
+        if self._slm is None:
+            raise DeviceError("HOLOEYE SLM is not open")
+        path = self._validate_image(path)
+        handle = self._handles.get(path)
+        if handle is not None:
+            flags = self._module.ShowFlags.PresentAutomatic
+            self._check(self._slm.showDatahandle(handle, flags), f"display {path.name}")
+            if self.wait_until_visible:
+                self._check(
+                    self._slm.datahandleWaitFor(handle, self._module.State.Visible),
+                    f"wait until visible {path.name}",
+                )
+        else:
+            flags = self._module.ShowFlags.PresentAutomatic
+            self._check(
+                self._slm.showDataFromFile(str(path), flags),
+                f"display {path.name}",
+            )
+
+    def close(self) -> None:
+        if self._slm is not None:
+            try:
+                self._release_handles()
+                self._slm.close()
+            finally:
+                self._slm = None
+
+    def device_info(self) -> dict[str, Any]:
+        result: dict[str, Any] = {
+            "driver": "holoeye",
+            "sdk_path": str(self.sdk_path),
+            "binary_folder": None if self.binary_folder is None else str(self.binary_folder),
+            "preload": self.preload,
+            "wait_until_visible": self.wait_until_visible,
+        }
+        if self._slm is not None:
+            result.update(
+                resolution=[int(self._slm.width_px), int(self._slm.height_px)],
+                refresh_hz=float(self._slm.refreshrate_hz),
+                pixel_pitch_um=float(self._slm.pixelsize_um),
+            )
+        return result
+
+
+def _set_dvp_value(camera: Any, name: str, value: Any) -> None:
+    if value is None:
+        return
+    if not hasattr(camera, name):
+        raise DeviceError(f"The uploaded DVP SDK does not expose camera.{name}")
+    setattr(camera, name, value)
+
+
+def _configure_dvp_camera(
+    camera: Any,
+    module: Any,
+    *,
+    config_file: Path | None,
+    auto_exposure: bool | None,
+    exposure_us: float | None,
+    analog_gain: float | None,
+    anti_flicker_hz: int | None,
+    device_roi_xywh: tuple[int, int, int, int] | None,
+    resolution_mode: int | None,
+) -> None:
+    # A saved vendor configuration is a base; explicit YAML values always win.
+    if config_file is not None:
+        if not config_file.is_file():
+            raise DeviceError(f"DVP camera config is missing: {config_file}")
+        camera.LoadConfig(str(config_file))
+    camera.TriggerState = False
+    if resolution_mode is not None:
+        _set_dvp_value(camera, "ResolutionModeSel", int(resolution_mode))
+    if device_roi_xywh is not None:
+        x, y, width, height = device_roi_xywh
+        roi = camera.Roi
+        roi.X, roi.Y, roi.W, roi.H = int(x), int(y), int(width), int(height)
+        camera.Roi = roi
+    if auto_exposure is not None:
+        operation = (
+            module.AeOperation.AE_OP_CONTINUOUS
+            if auto_exposure
+            else module.AeOperation.AE_OP_OFF
+        )
+        camera.AeOperation = operation
+    if anti_flicker_hz is not None:
+        values = {
+            0: module.AntiFlick.ANTIFLICK_DISABLE,
+            50: module.AntiFlick.ANTIFLICK_50HZ,
+            60: module.AntiFlick.ANTIFLICK_60HZ,
+        }
+        if anti_flicker_hz not in values:
+            raise DeviceError("anti_flicker_hz must be 0, 50, or 60")
+        camera.AntiFlick = values[anti_flicker_hz]
+    _set_dvp_value(camera, "Exposure", exposure_us)
+    _set_dvp_value(camera, "AnalogGain", analog_gain)
+
+
+def _safe_dvp_info(camera: Any) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for name in ("TriggerState", "Exposure", "AnalogGain", "AeOperation", "AntiFlick", "ResolutionModeSel"):
+        try:
+            value = getattr(camera, name)
+            if isinstance(value, (str, int, float, bool)):
+                result[name] = value
+            elif hasattr(value, "value"):
+                result[name] = value.value
+            else:
+                result[name] = str(value)
+        except Exception:
+            result[name] = None
+    try:
+        roi = camera.Roi
+        result["device_roi_xywh"] = [int(roi.X), int(roi.Y), int(roi.W), int(roi.H)]
+    except Exception:
+        result["device_roi_xywh"] = None
+    return result
+
+
+class DvpCamera(CameraDriver):
+    """Adapter for the uploaded DVP Python SDK.
+
+    The uploaded binaries target Python 3.5 (Linux) / 3.6 (Windows).  Loading
+    them in Python 3.11 is impossible; the raised error deliberately explains
+    this instead of making the experiment appear to hang.
+    """
+
+    def __init__(
+        self,
+        sdk_path: Path,
+        camera_index: int = 0,
+        timeout_ms: int = 4000,
+        config_file: Path | None = None,
+        auto_exposure: bool | None = False,
+        exposure_us: float | None = None,
+        analog_gain: float | None = None,
+        anti_flicker_hz: int | None = 0,
+        device_roi_xywh: tuple[int, int, int, int] | None = None,
+        resolution_mode: int | None = None,
+        warmup_frames: int = 3,
+        discard_frames_after_display: int = 1,
+    ) -> None:
+        self.sdk_path = sdk_path
+        self.camera_index = int(camera_index)
+        self.timeout_ms = int(timeout_ms)
+        self.config_file = config_file
+        self.auto_exposure = auto_exposure
+        self.exposure_us = exposure_us
+        self.analog_gain = analog_gain
+        self.anti_flicker_hz = anti_flicker_hz
+        self.device_roi_xywh = device_roi_xywh
+        self.resolution_mode = resolution_mode
+        self.warmup_frames = int(warmup_frames)
+        self.discard_frames_after_display = int(discard_frames_after_display)
+        self._module: Any = None
+        self._camera: Any = None
+        self._info: dict[str, Any] = {}
+
+    def open(self) -> None:
+        if not self.sdk_path.is_dir():
+            raise DeviceError(f"DVP SDK directory is missing: {self.sdk_path}")
+        sys.path.insert(0, str(self.sdk_path))
+        try:
+            self._module = importlib.import_module("dvp")
+        except Exception as exc:
+            raise DeviceError(
+                "Could not import the DVP camera SDK. The uploaded package contains "
+                "Python 3.5/3.6 native modules, while this interpreter is "
+                f"Python {sys.version_info.major}.{sys.version_info.minor}. Run the "
+                "acquisition command in a vendor-compatible environment or replace "
+                "the camera driver. Original error: "
+                f"{type(exc).__name__}: {exc}"
+            ) from exc
+        devices = self._module.Refresh()
+        if not devices:
+            raise DeviceError("DVP Refresh() found no camera")
+        if not 0 <= self.camera_index < len(devices):
+            raise DeviceError(
+                f"camera_index={self.camera_index} is outside 0..{len(devices)-1}"
+            )
+        self._camera = self._module.Camera(self.camera_index)
+        _configure_dvp_camera(
+            self._camera,
+            self._module,
+            config_file=self.config_file,
+            auto_exposure=self.auto_exposure,
+            exposure_us=self.exposure_us,
+            analog_gain=self.analog_gain,
+            anti_flicker_hz=self.anti_flicker_hz,
+            device_roi_xywh=self.device_roi_xywh,
+            resolution_mode=self.resolution_mode,
+        )
+        self._camera.Start()
+        for _ in range(self.warmup_frames):
+            self._camera.GetFrame(self.timeout_ms)
+        self._info = _safe_dvp_info(self._camera)
+
+    @staticmethod
+    def _frame_to_array(frame_buffer: Any, module: Any) -> np.ndarray:
+        frame, buffer = frame_buffer
+        dtype = np.uint8 if frame.bits == module.Bits.BITS_8 else np.uint16
+        if module.ImageFormat.FORMAT_MONO <= frame.format <= module.ImageFormat.FORMAT_BAYER_RG:
+            channels = 1
+        elif frame.format in (module.ImageFormat.FORMAT_BGR24, module.ImageFormat.FORMAT_RGB24):
+            channels = 3
+        elif frame.format in (module.ImageFormat.FORMAT_BGR32, module.ImageFormat.FORMAT_RGB32):
+            channels = 4
+        else:
+            raise DeviceError(f"Unsupported DVP image format: {frame.format}")
+        array = np.frombuffer(buffer, dtype=dtype).reshape(frame.iHeight, frame.iWidth, channels)
+        if channels == 1:
+            return array[..., 0].copy()
+        rgb = array[..., :3]
+        if not np.array_equal(rgb[..., 0], rgb[..., 1]) or not np.array_equal(rgb[..., 0], rgb[..., 2]):
+            raise DeviceError(
+                "DVP returned a color frame. Configure the camera/SDK for raw MONO "
+                "intensity; silently converting RGB would change detector physics."
+            )
+        return rgb[..., 0].copy()
+
+    def capture(self, path: Path) -> None:
+        if self._camera is None:
+            raise DeviceError("DVP camera is not open")
+        for _ in range(self.discard_frames_after_display):
+            self._camera.GetFrame(self.timeout_ms)
+        array = self._frame_to_array(self._camera.GetFrame(self.timeout_ms), self._module)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        Image.fromarray(array).save(path)
+
+    def close(self) -> None:
+        if self._camera is not None:
+            try:
+                self._camera.Stop()
+            finally:
+                self._camera.Close()
+                self._camera = None
+
+    def device_info(self) -> dict[str, Any]:
+        return {"driver": "dvp", **self._info}
+
+
+class DvpSubprocessCamera(CameraDriver):
+    """Keep the legacy DVP SDK in a vendor Python subprocess.
+
+    This is the recommended bridge for the uploaded Python-3.5 Linux module:
+    the model stays in Python 3.11 while only acquisition runs in Python 3.5.
+    Frames are exchanged as lossless NumPy arrays, never through JPEG.
+    """
+
+    def __init__(
+        self,
+        sdk_path: Path,
+        python_executable: str,
+        camera_index: int = 0,
+        timeout_ms: int = 4000,
+        config_file: Path | None = None,
+        auto_exposure: bool | None = False,
+        exposure_us: float | None = None,
+        analog_gain: float | None = None,
+        anti_flicker_hz: int | None = 0,
+        device_roi_xywh: tuple[int, int, int, int] | None = None,
+        resolution_mode: int | None = None,
+        warmup_frames: int = 3,
+        discard_frames_after_display: int = 1,
+    ) -> None:
+        self.sdk_path = sdk_path
+        self.python_executable = python_executable
+        self.camera_index = int(camera_index)
+        self.timeout_ms = int(timeout_ms)
+        self.config_file = config_file
+        self.auto_exposure = auto_exposure
+        self.exposure_us = exposure_us
+        self.analog_gain = analog_gain
+        self.anti_flicker_hz = anti_flicker_hz
+        self.device_roi_xywh = device_roi_xywh
+        self.resolution_mode = resolution_mode
+        self.warmup_frames = int(warmup_frames)
+        self.discard_frames_after_display = int(discard_frames_after_display)
+        self._process: subprocess.Popen[str] | None = None
+        self._info: dict[str, Any] = {}
+
+    def open(self) -> None:
+        worker = Path(__file__).with_name("dvp_capture_worker.py")
+        command = [
+            self.python_executable,
+            str(worker),
+            "--sdk-path",
+            str(self.sdk_path),
+            "--camera-index",
+            str(self.camera_index),
+            "--timeout-ms",
+            str(self.timeout_ms),
+        ]
+        if self.config_file is not None:
+            command += ["--config-file", str(self.config_file)]
+        if self.auto_exposure is not None:
+            command += ["--auto-exposure", "on" if self.auto_exposure else "off"]
+        if self.exposure_us is not None:
+            command += ["--exposure-us", str(self.exposure_us)]
+        if self.analog_gain is not None:
+            command += ["--analog-gain", str(self.analog_gain)]
+        if self.anti_flicker_hz is not None:
+            command += ["--anti-flicker-hz", str(self.anti_flicker_hz)]
+        if self.device_roi_xywh is not None:
+            command += ["--device-roi-xywh", *[str(value) for value in self.device_roi_xywh]]
+        if self.resolution_mode is not None:
+            command += ["--resolution-mode", str(self.resolution_mode)]
+        command += [
+            "--warmup-frames",
+            str(self.warmup_frames),
+            "--discard-frames-after-display",
+            str(self.discard_frames_after_display),
+        ]
+        environment = os.environ.copy()
+        if sys.platform.startswith("linux"):
+            environment["LD_LIBRARY_PATH"] = str(self.sdk_path) + os.pathsep + environment.get("LD_LIBRARY_PATH", "")
+        try:
+            self._process = subprocess.Popen(
+                command,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                bufsize=1,
+                env=environment,
+            )
+        except OSError as exc:
+            raise DeviceError(
+                f"Could not start vendor Python {self.python_executable!r}: {exc}"
+            ) from exc
+        line = self._process.stdout.readline().strip() if self._process.stdout else ""
+        try:
+            ready = json.loads(line)
+        except json.JSONDecodeError:
+            ready = {}
+        if not ready.get("ready"):
+            detail = self._process.stderr.read() if self._process.stderr else ""
+            self.close()
+            raise DeviceError(
+                "DVP subprocess did not become ready. Install NumPy and the DVP "
+                f"module in {self.python_executable!r}. stdout={line!r} stderr={detail}"
+            )
+        self._info = dict(ready.get("device", {}))
+
+    def capture(self, path: Path) -> None:
+        if self._process is None or self._process.stdin is None or self._process.stdout is None:
+            raise DeviceError("DVP subprocess camera is not open")
+        if path.suffix.lower() != ".npy":
+            raise DeviceError("dvp_subprocess stores lossless raw frames as .npy")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        self._process.stdin.write(json.dumps({"command": "capture", "path": str(path)}) + "\n")
+        self._process.stdin.flush()
+        response = self._process.stdout.readline().strip()
+        try:
+            payload = json.loads(response)
+        except json.JSONDecodeError as exc:
+            raise DeviceError(f"Invalid DVP worker response: {response!r}") from exc
+        if not payload.get("ok"):
+            raise DeviceError(f"DVP capture failed: {payload.get('error', payload)}")
+
+    def close(self) -> None:
+        process, self._process = self._process, None
+        if process is None:
+            return
+        try:
+            if process.poll() is None and process.stdin is not None:
+                process.stdin.write(json.dumps({"command": "close"}) + "\n")
+                process.stdin.flush()
+                process.wait(timeout=5)
+        except Exception:
+            process.kill()
+        finally:
+            if process.poll() is None:
+                process.kill()
+
+    def device_info(self) -> dict[str, Any]:
+        return {
+            "driver": "dvp_subprocess",
+            "python_executable": self.python_executable,
+            **self._info,
+        }
+
+
+def _resolve_optional(value: Any, base: Path) -> Path | None:
+    if value in (None, ""):
+        return None
+    path = Path(str(value)).expanduser()
+    return (path if path.is_absolute() else base / path).resolve()
+
+
+def build_slm(config: dict[str, Any], base: Path) -> SLMDriver:
+    driver = str(config.get("driver", "manual")).lower()
+    if driver == "manual":
+        return ManualSLM()
+    if driver == "holoeye":
+        sdk_path = _resolve_optional(config.get("sdk_path"), base)
+        if sdk_path is None:
+            raise ValueError("A holoeye SLM requires devices.*.sdk_path")
+        return HoloeyeSLM(
+            sdk_path,
+            binary_folder=_resolve_optional(config.get("binary_folder"), base),
+            expected_resolution=(
+                tuple(int(value) for value in config["expected_resolution_wh"])
+                if config.get("expected_resolution_wh") is not None
+                else None
+            ),
+            minimum_refresh_hz=(
+                float(config["minimum_refresh_hz"])
+                if config.get("minimum_refresh_hz") is not None
+                else None
+            ),
+            preload=bool(config.get("preload", True)),
+            wait_until_visible=bool(config.get("wait_until_visible", True)),
+        )
+    raise ValueError(f"Unknown SLM driver {driver!r}; supported: manual, holoeye")
+
+
+def build_camera(config: dict[str, Any], base: Path) -> CameraDriver:
+    roi_raw = config.get("device_roi_xywh")
+    device_roi = (
+        tuple(int(value) for value in roi_raw) if roi_raw is not None else None
+    )
+    if device_roi is not None and len(device_roi) != 4:
+        raise ValueError("camera.device_roi_xywh must contain [x,y,width,height]")
+    common = dict(
+        camera_index=int(config.get("camera_index", 0)),
+        timeout_ms=int(config.get("timeout_ms", 4000)),
+        config_file=_resolve_optional(config.get("config_file"), base),
+        auto_exposure=(
+            bool(config["auto_exposure"])
+            if config.get("auto_exposure") is not None
+            else None
+        ),
+        exposure_us=(
+            float(config["exposure_us"])
+            if config.get("exposure_us") is not None
+            else None
+        ),
+        analog_gain=(
+            float(config["analog_gain"])
+            if config.get("analog_gain") is not None
+            else None
+        ),
+        anti_flicker_hz=(
+            int(config["anti_flicker_hz"])
+            if config.get("anti_flicker_hz") is not None
+            else None
+        ),
+        device_roi_xywh=device_roi,
+        resolution_mode=(
+            int(config["resolution_mode"])
+            if config.get("resolution_mode") is not None
+            else None
+        ),
+        warmup_frames=int(config.get("warmup_frames", 3)),
+        discard_frames_after_display=int(config.get("discard_frames_after_display", 1)),
+    )
+    if common["warmup_frames"] < 0 or common["discard_frames_after_display"] < 0:
+        raise ValueError("camera warmup/discard frame counts cannot be negative")
+    driver = str(config.get("driver", "dvp")).lower()
+    if driver == "dvp":
+        sdk_path = _resolve_optional(config.get("sdk_path"), base)
+        if sdk_path is None:
+            raise ValueError("A DVP camera requires devices.camera.sdk_path")
+        return DvpCamera(
+            sdk_path=sdk_path,
+            **common,
+        )
+    if driver == "dvp_subprocess":
+        sdk_path = _resolve_optional(config.get("sdk_path"), base)
+        if sdk_path is None:
+            raise ValueError("A DVP subprocess camera requires devices.camera.sdk_path")
+        python_executable = config.get("python_executable")
+        conda_env = config.get("conda_env")
+        if python_executable is not None and conda_env is not None:
+            raise ValueError("Set only one of camera.python_executable and camera.conda_env")
+        if conda_env is not None:
+            executable_name = "python.exe" if sys.platform.startswith("win") else "python"
+            # .../miniconda/envs/current/bin/python -> .../miniconda
+            executable = Path(sys.executable).resolve()
+            if len(executable.parents) < 4 or executable.parents[2].name != "envs":
+                raise ValueError(
+                    "camera.conda_env requires the main interpreter to live under "
+                    "<conda-root>/envs/<current>/bin/python; set python_executable explicitly"
+                )
+            conda_root = executable.parents[3]
+            python_executable = str(conda_root / "envs" / str(conda_env) / ("Scripts" if sys.platform.startswith("win") else "bin") / executable_name)
+        return DvpSubprocessCamera(
+            sdk_path=sdk_path,
+            python_executable=str(python_executable or "python3.5"),
+            **common,
+        )
+    raise ValueError(
+        f"Unknown camera driver {driver!r}; supported: dvp, dvp_subprocess"
+    )

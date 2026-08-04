@@ -722,6 +722,9 @@ def test_automation_config_and_replaceable_device_factories() -> None:
     assert automation.settle_delay_seconds == pytest.approx(0.040)
     assert automation.confirm_each_phase_mask
     assert automation.output_extension == ".npy"
+    assert automation.camera["auto_exposure"] is False
+    assert automation.camera["exposure_us"] == pytest.approx(10000.0)
+    assert automation.amplitude_slm["preload"] is True
     assert isinstance(build_slm({"driver": "manual"}, EXPERIMENT), ManualSLM)
     camera = build_camera(
         {

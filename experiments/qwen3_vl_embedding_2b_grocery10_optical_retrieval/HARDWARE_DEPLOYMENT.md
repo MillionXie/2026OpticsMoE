@@ -1,36 +1,27 @@
-# 自动化 SLM/CCD 实验流程
+# Grocery10 四平面硬件部署
 
-## 实际数据流
-
-该 Student 同时包含 Vision 与 Language 两套光学网络，所以每个样本需要四次曝光：
+Student 同时替换 Vision 和 Language stack，每个样本依次经过四个实物平面：
 
 ```text
-Vision expert mask + sample amplitude
-→ CCD-1
-→ per-expert LN → ReLU → 原 routing weight → 未选专家置零
-
-Vision global mask + reload amplitude
-→ CCD-2
-→ pooling/LN/ReLU → output adapter/residual
+Vision expert 相位 + 振幅输入 → CCD-1
+→ per-expert LN/ReLU → 再施加原 routing weight → 未选专家清零
+→ Vision global 相位 + 重载振幅 → CCD-2
+→ pooling/LN/ReLU/output adapter/residual
 → frozen Qwen merger/DeepStack/token injection → Language router
-
-Language expert mask + sample amplitude
-→ CCD-3
-→ per-expert LN → ReLU → 原 routing weight → 未选专家置零
-
-Language global mask + reload amplitude
-→ CCD-4
-→ pooling/LN/ReLU → output adapter/residual → frozen RMSNorm
+→ Language expert 相位 + 振幅输入 → CCD-3
+→ per-expert LN/ReLU → 再施加原 routing weight → 未选专家清零
+→ Language global 相位 + 重载振幅 → CCD-4
+→ pooling/LN/ReLU/output adapter/residual/frozen RMSNorm
 → LayerNorm(224) → Linear(224,64) → L2 normalize → retrieval
 ```
 
-平方律只在 CCD 发生一次。电子处理读取的文件已经是强度，不会再次平方。
+CCD 文件已经是平方律强度，电子桥不会再次平方。
 
-## 会话目录
+## Session 目录
 
 ```text
 hardware_sessions/<session>/
-├── 00_manifest/play_order.csv
+├── 00_manifest/{play_order.csv,deployment.json,resolved_hardware_devices.json}
 ├── 00_masks/{01_vision_expert,...,04_language_global}/
 ├── 00_input_images/{original,processor_224}/
 ├── 01_vision_expert/
@@ -42,39 +33,15 @@ hardware_sessions/<session>/
 ├── 02_vision_global/
 ├── 03_language_expert/
 ├── 04_language_global/
-└── 05_retrieval/
-    ├── metrics.json
-    ├── retrieval_results.csv
-    ├── confusion_matrix.csv
-    ├── confusion_matrix.png
-    └── automation_summary.json
+└── 05_retrieval/{metrics.json,retrieval_results.csv,confusion_matrix.*}
 ```
 
-`play_order.csv` 是四个平面共同遵守的顺序。相位 mask 在导出前已按当前折叠光路进行上下翻转；振幅 BMP 为 1920×1080，相位 BMP 为 1920×1200。
+`play_order.csv` 是四层共同使用的唯一顺序。振幅 BMP 为 1920×1080；相位 BMP 为 1920×1200，主实验导出时已按当前折叠光路上下翻转。
 
-## CCD 注册与对比
+## CCD 注册
 
-配置的 `capture.roi_xywh` 对全传感器图做严格裁剪；不做任意 resize。MoE4 要求物理 ROI 956×956，再做精确 2×2 block mean 得到 478×478；MoE16 要求 986×986。
+`capture.roi_xywh` 对完整相机帧做严格裁剪，不做任意 resize。MoE4 需要 956×956 ROI，再做精确 2×2 block mean 得到 478×478；MoE16 需要 986×986。
 
-每层对 measured/theoretical CCD 输出：
+每层保存 mean-normalized MSE、MAE、PCC、均值、最大值和可视化。归一化仅消除整体曝光倍数，不能掩盖饱和、裁剪或几何错位。
 
-- mean-normalized MSE（默认，去除整体曝光倍率）；
-- mean-normalized MAE；
-- Pearson correlation coefficient (PCC)；
-- measured/theoretical mean 与 max；
-- 若干并排对照图。
-
-MSE 对曝光倍率敏感，因此默认先分别除以均值；PCC 本身对整体线性增益不敏感。饱和、裁剪、几何错位不会被这一步消除。
-
-## SDK 隔离
-
-`hardware_devices.py` 定义稳定接口：
-
-```text
-SLMDriver.open / display_file / close
-CameraDriver.open / capture / close
-```
-
-现有 HOLOEYE 和 DVP 只是两个插件。DVP 上传包为旧 Python ABI，因此由 `dvp_capture_worker.py` 在 Python 3.5 中常驻打开相机；Qwen 与电子处理继续运行在 Python 3.11。后续换厂商只新增 driver 并修改 YAML。
-
-完整命令见 `RUN_COMMANDS.md`。
+硬件 driver、曝光/增益、SLM preload 和测试 demo 见 [共享硬件说明](../hardware_sdk/README.md)。

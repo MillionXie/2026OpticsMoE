@@ -172,6 +172,13 @@ def _capture_stage(
     amplitudes = stage_dir / "amplitude_to_play"
     captures = stage_dir / "ccd_captured"
     keys = _manifest_keys(runtime.hardware.output_dir)
+    amplitude_files = [amplitudes / f"{key}.bmp" for key in keys]
+    missing = [path for path in amplitude_files if not path.is_file()]
+    if missing:
+        raise FileNotFoundError(
+            f"{stage} is missing {len(missing)} amplitude frames; first: {missing[0]}"
+        )
+    amplitude_slm.preload_files(amplitude_files)
     for index, key in enumerate(keys, 1):
         amplitude = amplitudes / f"{key}.bmp"
         if not amplitude.is_file():
@@ -292,6 +299,19 @@ def run(
                 phase_slm = stack.enter_context(build_slm(automation.phase_slm, automation.config_path.parent))
                 amplitude_slm = stack.enter_context(build_slm(automation.amplitude_slm, automation.config_path.parent))
                 camera = stack.enter_context(build_camera(automation.camera, automation.config_path.parent))
+                write_json(
+                    hardware.output_dir / "00_manifest" / "resolved_hardware_devices.json",
+                    {
+                        "phase_slm": phase_slm.device_info(),
+                        "amplitude_slm": amplitude_slm.device_info(),
+                        "camera": camera.device_info(),
+                        "settle_delay_ms": automation.settle_delay_seconds * 1000.0,
+                        "note": (
+                            "Explicit YAML camera settings override a loaded vendor config. "
+                            "A stale frame is discarded before every saved frame when configured."
+                        ),
+                    },
+                )
                 result = None
                 for stage in STAGE_ORDER:
                     _capture_stage(runtime, stage, automation, phase_slm, amplitude_slm, camera, assume_yes=assume_yes)

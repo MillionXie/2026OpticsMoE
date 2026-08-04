@@ -26,8 +26,14 @@ __pycache__/
 *.zip
 _offline_packages
 
-# Vendor camera/SLM SDK binaries are machine-specific and license-bound.
+# Vendor camera/SLM SDK binaries are machine-specific and license-bound.  The
+# shared Python adapters/configs in hardware_sdk remain tracked.
 /experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/sdk/
+/experiments/hardware_sdk/amp_slm/
+/experiments/hardware_sdk/ccd/
+/experiments/hardware_sdk/phase_slm/
+/experiments/hardware_sdk/demo_outputs/
+/experiments/hardware_sdk/slm_calibration_bmp_generator/generated/
 /experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/hardware_sessions/
 
 /experiments/qwen_vl_cifar10/data

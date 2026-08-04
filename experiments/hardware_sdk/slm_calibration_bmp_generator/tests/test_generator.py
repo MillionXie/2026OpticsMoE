@@ -3,13 +3,13 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-from experiments.slm_calibration_bmp_generator.generate import (
+from experiments.hardware_sdk.slm_calibration_bmp_generator.generate import (
     centered_canvas,
     checkerboard,
     generate,
     lens_phase,
 )
-from experiments.slm_calibration_bmp_generator.settings import Settings
+from experiments.hardware_sdk.slm_calibration_bmp_generator.settings import Settings
 
 
 def test_centered_canvas_and_checkerboard() -> None:
@@ -48,4 +48,3 @@ def test_generate_expected_bmp_sizes_and_phase_flip(tmp_path: Path) -> None:
     assert Image.open(phase).size == (40, 34)
     assert report["files"]["amplitude"]["checkerboard"]["flip_vertical_before_export"] is False
     assert report["files"]["phase"]["lens_5cm"]["flip_vertical_before_export"] is True
-

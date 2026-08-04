@@ -1,15 +1,15 @@
 # Grocery10：保留版本与硬件命令
 
-所有命令都从仓库根目录 `2026OpticsMoE/` 执行。现在只保留两套配置：
+所有命令从仓库根目录执行。当前只维护两套模型配置：
 
-| 名称 | 结构 | 用途 |
+| 配置 | 结构 | 用途 |
 |---|---|---|
-| `grocery10_moe16_best` | 4×4、16 experts、Top-4 | 历史最佳，保存的 EMA checkpoint Top-1 73.46% |
-| `grocery10_moe4_latest` | 2×2、4 experts、Top-2、2×2 CCD integration | 当前最新实物鲁棒版本 |
+| `grocery10_moe16_best.yaml` | 4×4、16 experts、Top-4 | 历史最佳，可加载 checkpoint Top-1 73.46% |
+| `grocery10_moe4_latest.yaml` | 2×2、4 experts、Top-2、2×2 CCD integration | 当前实物鲁棒版本 |
 
-## 1. 训练
+## 训练
 
-当前 MoE4 从零训练：
+MoE4 从零训练：
 
 ```bash
 CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval \
@@ -17,7 +17,7 @@ CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_opt
   --phase all
 ```
 
-历史 MoE16 最佳是从 epoch-141 checkpoint 继续 40 epoch 得到。保留起点后可复现实验段：
+MoE16 从保留的 epoch-141 起点复现：
 
 ```bash
 CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval \
@@ -26,71 +26,14 @@ CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_opt
   --resume-checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/qwen3_vl_embedding_2b_grocery10_replaced_continue_epoch141_stronger_augmentation_ema/checkpoints/pre_resume_epoch_0141/resume_checkpoint.pt
 ```
 
-该命令输出到独立 `...moe16_best_rerun`，不会覆盖保存的历史最佳。
+## 四平面硬件采集
 
-## 2. 一键仿真验证硬件流程
+仿真、真实采集、振幅/相位 SLM demo 已统一放在 [共享硬件命令](../hardware_sdk/RUN_COMMANDS.md)。
 
-先用少量样本验证四次曝光、四段电子处理、命名和指标：
+该流程按 `vision expert → vision global → language expert → language global` 运行；每层人工确认相位 mask，程序自动播放整批振幅、拍摄 CCD、输出 theory 对照、执行电子处理并生成下一层振幅。
 
-```bash
-CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_automation \
-  --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_moe4_latest_hardware.yaml \
-  --simulate --yes --sample-limit 4 \
-  --session-dir experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/hardware_sessions/moe4_simulation_smoke
-```
-
-MoE16 将配置名改为 `grocery10_moe16_best_hardware.yaml` 即可。
-
-## 3. 真实 SLM/CCD 自动采集
+## 测试
 
 ```bash
-CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_automation \
-  --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_moe4_latest_hardware.yaml \
-  --session-dir experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/hardware_sessions/moe4_physical_001
-```
-
-每层会提示：
-
-```text
-[vision_expert] 请准备并确认相位 mask：...bmp
-输入 y 开始播放本层全部振幅；输入 q 安全退出：
-```
-
-输入 `y` 后自动完成本层全部播放与拍照。每张振幅加载后等待 40 ms，再调用相机；本层结束后自动计算 CCD-vs-theory MSE/PCC 和下一层振幅。
-
-中断后继续同一目录：
-
-```bash
-CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_automation \
-  --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_moe4_latest_hardware.yaml \
-  --session-dir experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/hardware_sessions/moe4_physical_001 \
-  --skip-prepare
-```
-
-已有 capture 会按 basename 自动跳过。
-
-## 4. 厂商 SDK 设置
-
-当前配置使用：
-
-- 振幅 SLM：HOLOEYE `showDataFromFile`；
-- 相位 SLM：手工换 mask；
-- 相机：DVP Python 3.5 持久子进程，原始帧保存为 `.npy`；
-- SDK 放在实验目录的 `sdk/`，已被 Git 忽略。
-
-当前服务器上传的 HOLOEYE 内容只有 Python wrapper，尚缺原生 `libholoeye_slmdisplaysdk.so`。安装完整 SDK 后，把硬件 YAML 的 `binary_folder` 指向包含该 `.so` 的目录；未设置时程序会在播放前明确拒绝启动，不会误以为图像已加载。
-
-服务器已建立 `dvp35`（Python 3.5 + NumPy 1.14）环境，配置通过 `conda_env: dvp35` 自动定位，不需要激活它。若换到其他控制机，可改为对应环境名或显式 `python_executable`。更换厂家时只需在 `hardware_devices.py` 添加并在 YAML 选择新 driver，不改模型后处理。
-
-## 5. 常用标定 mask
-
-```bash
-python -m experiments.slm_calibration_bmp_generator \
-  --config experiments/slm_calibration_bmp_generator/configs/slm_956.yaml
-```
-
-## 6. 测试
-
-```bash
-python -m pytest experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/tests -q
+pytest experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/tests -q
 ```

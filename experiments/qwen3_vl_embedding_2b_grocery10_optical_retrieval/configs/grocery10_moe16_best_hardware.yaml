@@ -28,16 +28,29 @@ automation:
     phase_slm: {driver: manual}
     amplitude_slm:
       driver: holoeye
-      sdk_path: ../sdk/amp_slm
+      sdk_path: ../../hardware_sdk/amp_slm
       # The uploaded files currently contain only the Python wrapper. Point
       # this at a folder containing libholoeye_slmdisplaysdk.so.
       binary_folder: null
+      expected_resolution_wh: [1920, 1080]
+      minimum_refresh_hz: 59.0
+      preload: true
+      wait_until_visible: true
     camera:
       # The uploaded Linux binary targets Python 3.5, so acquisition runs in a
       # persistent vendor subprocess while Qwen/post-processing stays in 3.11.
       driver: dvp_subprocess
-      sdk_path: ../sdk/ccd/lib/linux/python3.5m/x64
+      sdk_path: ../../hardware_sdk/ccd/lib/linux/python3.5m/x64
       conda_env: dvp35
       camera_index: 0
       timeout_ms: 4000
       output_extension: .npy
+      config_file: null
+      auto_exposure: false
+      exposure_us: 10000.0
+      analog_gain: 1.0
+      anti_flicker_hz: 0
+      resolution_mode: null
+      device_roi_xywh: null
+      warmup_frames: 3
+      discard_frames_after_display: 1
