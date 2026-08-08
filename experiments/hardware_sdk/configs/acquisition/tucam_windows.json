@@ -27,6 +27,7 @@
     "analog_gain": null,
     "anti_flicker_hz": null,
     "resolution_mode": null,
+    "require_device_roi": true,
     "device_roi_xywh": null,
     "saved_frame_size_wh": null,
     "saved_frame_resize_mode": "none",

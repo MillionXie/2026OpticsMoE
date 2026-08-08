@@ -108,6 +108,11 @@ class TucamCamera(CameraDriver):
                 "TUCam ROI left/top/width/height must be multiples of 4 pixels; "
                 f"invalid fields: {', '.join(invalid)}"
             )
+        if left + width > 2048 or top + height > 2048:
+            raise DeviceError(
+                "TUCam ROI exceeds the 2048x2048 sensor: "
+                f"[left, top, width, height]={list(roi_xywh)}"
+            )
 
     @staticmethod
     def _result_value(result: Any) -> int | None:

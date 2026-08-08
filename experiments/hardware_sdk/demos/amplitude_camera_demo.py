@@ -1,4 +1,4 @@
-"""Project ordered digit BMPs on the amplitude SLM and capture them with DVP.
+"""Project ordered digit BMPs and audit SLM-to-camera timing/order.
 
 The filenames and manifest are the source of truth for ordering.  The final
 contact sheet puts each commanded frame beside the captured frame so a bench
@@ -21,12 +21,12 @@ import yaml
 from PIL import Image, ImageDraw, ImageFont
 
 try:
-    from ..devices import build_camera, build_slm
+    from ..devices import build_camera, build_slm, verify_camera_roi
 except ImportError:  # direct execution inside demos/
     import sys
 
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-    from devices import build_camera, build_slm
+    from devices import build_camera, build_slm, verify_camera_roi
 
 
 def _resolve(value: str | Path, base: Path) -> Path:
@@ -194,17 +194,24 @@ def run(config_path: str | Path, *, generate_only: bool = False) -> dict[str, An
         return manifest
 
     device = dict(raw.get("devices", {}))
-    extension = str(device.get("camera", {}).get("output_extension", ".npy")).lower()
+    camera_config = dict(device["camera"])
+    extension = str(camera_config.get("output_extension", ".npy")).lower()
     if extension not in {".npy", ".png", ".tif", ".tiff"}:
         raise ValueError("camera.output_extension must be a lossless format")
     settle_seconds = float(raw.get("settle_delay_ms", 40.0)) / 1000.0
     rows: list[dict[str, Any]] = []
     captures.mkdir(parents=True, exist_ok=True)
+    verify_camera_roi(camera_config)
+    if bool(raw.get("confirm_before_start", True)):
+        input(
+            "请确认相位 SLM 已加载 phase_zero.bmp、配置中的手动 ROI 正确，"
+            "然后按 Enter 开始按 0→9 顺序播放和采集："
+        )
     with ExitStack() as stack:
         slm = stack.enter_context(build_slm(dict(device["amplitude_slm"]), base))
-        camera_config = dict(device["camera"])
         camera_config.pop("output_extension", None)
         camera = stack.enter_context(build_camera(camera_config, base))
+        verify_camera_roi(camera_config, camera.device_info())
         slm.preload_files(files)
         manifest["amplitude_slm"] = slm.device_info()
         manifest["camera"] = camera.device_info()
@@ -233,7 +240,9 @@ def run(config_path: str | Path, *, generate_only: bool = False) -> dict[str, An
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Amplitude-SLM + DVP ordered digit capture demo")
+    parser = argparse.ArgumentParser(
+        description="Amplitude-SLM + camera ordered 0..9 timing/ROI audit"
+    )
     parser.add_argument("--config", required=True)
     parser.add_argument("--generate-only", action="store_true")
     args = parser.parse_args()

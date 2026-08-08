@@ -33,11 +33,58 @@ __all__ = [
     "build_camera",
     "build_slm",
     "resize_detector_intensity",
+    "verify_camera_roi",
 ]
 
 
 class DeviceError(RuntimeError):
     pass
+
+
+def verify_camera_roi(
+    camera_config: dict[str, Any], device_info: dict[str, Any] | None = None
+) -> tuple[int, int, int, int] | None:
+    """Validate an explicitly configured SDK ROI and the ROI reported by camera.
+
+    Camera vendor applications do not share their live ROI state with a new
+    Python process.  ``device_roi_xywh`` is therefore the source of truth for
+    acquisition.  Workflows that set ``require_device_roi: true`` call this
+    helper before and after opening the camera.
+    """
+
+    raw = camera_config.get("device_roi_xywh")
+    required = bool(camera_config.get("require_device_roi", False))
+    if raw is None:
+        if required:
+            raise DeviceError(
+                "camera.device_roi_xywh is null. Manually determine the camera ROI, "
+                "then set [left, top, width, height] in this config. The vendor "
+                "application's ROI is not inherited by this Python process."
+            )
+        return None
+    if not isinstance(raw, (list, tuple)) or len(raw) != 4:
+        raise DeviceError(
+            "camera.device_roi_xywh must be [left, top, width, height]"
+        )
+    expected = tuple(int(value) for value in raw)
+    if min(expected[:2]) < 0 or min(expected[2:]) <= 0:
+        raise DeviceError(f"camera.device_roi_xywh is invalid: {list(expected)}")
+    if device_info is None:
+        return expected
+    reported = device_info.get("device_roi_xywh")
+    if reported is None:
+        if required:
+            raise DeviceError(
+                "The camera opened without an active ROI although "
+                f"device_roi_xywh={list(expected)} was requested."
+            )
+        return expected
+    actual = tuple(int(value) for value in reported)
+    if actual != expected:
+        raise DeviceError(
+            f"Camera ROI mismatch: configured={list(expected)}, reported={list(actual)}"
+        )
+    return expected
 
 
 def resize_detector_intensity(

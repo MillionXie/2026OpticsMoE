@@ -12,10 +12,10 @@ import numpy as np
 from PIL import Image
 
 try:
-    from ..devices import build_camera
+    from ..devices import build_camera, verify_camera_roi
 except ImportError:  # direct execution from hardware_sdk/
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-    from devices import build_camera
+    from devices import build_camera, verify_camera_roi
 
 
 def run(config_path: str | Path, output_dir: str | Path, frame_count: int) -> dict:
@@ -23,10 +23,13 @@ def run(config_path: str | Path, output_dir: str | Path, frame_count: int) -> di
     raw = json.loads(config_path.read_text(encoding="utf-8"))
     output_dir = Path(output_dir).expanduser().resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
-    camera = build_camera(dict(raw["camera"]), config_path.parent)
+    camera_config = dict(raw["camera"])
+    verify_camera_roi(camera_config)
+    camera = build_camera(camera_config, config_path.parent)
     camera.validate_runtime()
     rows = []
     with camera:
+        verify_camera_roi(camera_config, camera.device_info())
         print(json.dumps(camera.device_info(), ensure_ascii=False, indent=2))
         for index in range(int(frame_count)):
             path = output_dir / f"frame_{index:03d}.npy"

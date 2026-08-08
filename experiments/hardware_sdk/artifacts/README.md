@@ -1,7 +1,7 @@
 # Generated artifacts
 
-- `calibration/masks/`: background、coarse、fine、曝光响应和 ROI 验证 BMP。
-- `calibration/results/`: background、标定矩阵、残差和响应曲线。
+- `calibration/masks/`: zero、人工 ROI 验证和曝光响应 BMP。
+- `calibration/results/`: 最终硬件 ROI 下采集的 background 和响应曲线。
 - `demos/`: 相机/SLM 独立自检输出。
 - `logs/`: 正式采集 manifest 和解析后的设备信息。
 

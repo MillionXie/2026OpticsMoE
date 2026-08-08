@@ -17,21 +17,16 @@ from experiments.hardware_sdk.devices import (
     build_camera,
     build_slm,
     resize_detector_intensity,
+    verify_camera_roi,
 )
 from experiments.hardware_sdk.drivers.tucam_camera import TucamCamera
-from experiments.hardware_sdk.workflows.batch_postprocess import (
-    camera_to_regular_square,
-    run_batch_postprocess,
-)
+from experiments.hardware_sdk.workflows.batch_postprocess import run_batch_postprocess
 from experiments.hardware_sdk.demos.phase_slm_demo import prepare_phase_frame
 from experiments.hardware_sdk.workflows.roi_calibration import (
-    detect_marker_centroid,
     exposure_patch,
-    fit_affine,
     gaussian_marker,
     generate_calibration_files,
     rectangle_marker,
-    recommend_roi,
     roi_boundary_source_points,
 )
 
@@ -170,6 +165,23 @@ def test_tucam_roi_requires_four_pixel_alignment() -> None:
     TucamCamera.validate_roi((12, 20, 956, 956))
     with pytest.raises(DeviceError, match="multiples of 4"):
         TucamCamera.validate_roi((10, 20, 956, 956))
+    with pytest.raises(DeviceError, match="exceeds the 2048x2048 sensor"):
+        TucamCamera.validate_roi((1200, 1200, 956, 956))
+
+
+def test_manual_roi_is_required_and_must_match_camera_report() -> None:
+    with pytest.raises(DeviceError, match="device_roi_xywh is null"):
+        verify_camera_roi({"require_device_roi": True, "device_roi_xywh": None})
+    config = {
+        "require_device_roi": True,
+        "device_roi_xywh": [12, 20, 956, 956],
+    }
+    assert verify_camera_roi(config) == (12, 20, 956, 956)
+    assert verify_camera_roi(
+        config, {"device_roi_xywh": [12, 20, 956, 956]}
+    ) == (12, 20, 956, 956)
+    with pytest.raises(DeviceError, match="Camera ROI mismatch"):
+        verify_camera_roi(config, {"device_roi_xywh": [16, 20, 956, 956]})
 
 
 def test_tucam_frame_copy_preserves_uint16_stride_and_header() -> None:
@@ -245,34 +257,13 @@ def test_build_camera_accepts_explicit_unprocessed_raw_mode(tmp_path: Path) -> N
     assert camera.saved_frame_resize_mode == "none"
 
 
-def test_roi_recommendation_uses_black_reference_and_exact_requested_shape() -> None:
-    black = np.full((120, 180), 4.0)
-    checker = black.copy()
-    checker[30:90, 70:130] += 100.0
-    roi, stats = recommend_roi(checker, black, (80, 70), 80.0)
-    assert roi == (60, 25, 80, 70)
-    assert stats["signal_center_x"] == pytest.approx(99.5)
-    assert stats["signal_center_y"] == pytest.approx(59.5)
-
-
-def test_gaussian_marker_is_uint8_and_weighted_centroid_rejects_noise() -> None:
+def test_gaussian_marker_is_uint8_and_centered() -> None:
     marker = gaussian_marker((200, 160), (91.5, 73.5), 80, 18)
-    corrected = marker.astype(np.float32)
-    corrected[2, 2] = 255  # bright one-pixel noise must not become the marker
-    point, details = detect_marker_centroid(
-        corrected,
-        {
-            "threshold_fraction_of_peak": 0.2,
-            "threshold_percentile": 99.0,
-            "minimum_component_area_px": 20,
-            "maximum_component_area_fraction": 0.2,
-        },
-    )
     assert marker.dtype == np.uint8
     assert marker.shape == (160, 200)
-    assert point[0] == pytest.approx(91.5, abs=0.6)
-    assert point[1] == pytest.approx(73.5, abs=0.6)
-    assert details["chosen"]["area"] >= 20
+    yy, xx = np.indices(marker.shape)
+    assert float((marker * xx).sum() / marker.sum()) == pytest.approx(91.5, abs=0.1)
+    assert float((marker * yy).sum() / marker.sum()) == pytest.approx(73.5, abs=0.1)
 
 
 def test_exposure_patch_has_uniform_center_and_cosine_taper() -> None:
@@ -284,31 +275,13 @@ def test_exposure_patch_has_uniform_center_and_cosine_taper() -> None:
     assert 0 < patch[48, 75] < 200
 
 
-def test_affine_fit_and_regular_square_warp_are_geometry_consistent() -> None:
-    source = np.array([[0, 0], [10, 0], [0, 10], [10, 10], [5, 5]], dtype=np.float64)
-    destination = source * np.array([2.0, 3.0]) + np.array([7.0, 11.0])
-    matrix, residuals, rms = fit_affine(source, destination)
-    assert rms < 1e-10
-    assert np.max(residuals) < 1e-10
-    calibration = {
-        "forward_matrix": matrix.tolist(),
-        "amplitude_roi": {"width": 10, "height": 10, "center_x": 5, "center_y": 5},
-    }
-    camera = np.zeros((50, 50), dtype=np.float32)
-    camera[11:42, 7:28] = 1.0
-    output, intermediate, metadata = camera_to_regular_square(camera, calibration, (10, 10))
-    assert output.shape == (10, 10)
-    assert intermediate.shape[0] >= 10
-    assert metadata["validity_fraction"] > 0.9
-
-
 def test_generate_calibration_masks_have_exact_8bit_slm_sizes(tmp_path: Path) -> None:
     config = {
         "paths": {"masks_dir": "masks", "results_dir": "results"},
         "amplitude_slm": {"width": 192, "height": 108},
         "phase_slm": {"width": 192, "height": 120},
         "amplitude_roi": {"width": 96, "height": 96, "center_x": 95.5, "center_y": 53.5},
-        "calibration": {"marker_size_px": 20, "marker_sigma_px": 5, "marker_margin_px": 10},
+        "calibration": {"marker_size_px": 20, "marker_sigma_px": 5},
         "exposure_calibration": {
             "gray_start": 0, "gray_stop": 2, "gray_step": 1,
             "patch_size_px": 20, "patch_inner_size_px": 16, "edge_taper_px": 2,
@@ -322,9 +295,8 @@ def test_generate_calibration_masks_have_exact_8bit_slm_sizes(tmp_path: Path) ->
     assert amp.mode == phase.mode == "L"
     assert amp.size == (192, 108)
     assert phase.size == (192, 120)
-    assert report["coarse_patterns"] == 5
-    assert report["fine_patterns"] == 9
     assert report["verification_patterns"] == 3
+    assert report["automatic_geometry_calibration"] is False
     boundary = roi_boundary_source_points(config)
     assert boundary == [
         (95.5, 53.5),
@@ -359,27 +331,17 @@ def test_batch_postprocess_saves_quantitative_outputs_without_normalization(
     background = np.full((10, 10), 10, dtype=np.float32)
     np.save(input_dir / "sample.npy", raw)
     np.save(tmp_path / "background.npy", background)
-    calibration = {
-        "model_type": "affine",
-        "forward_matrix": [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
-        "camera_hardware_roi_width_height": [10, 10],
-        "camera_hardware_roi_xywh": [0, 0, 10, 10],
-        "amplitude_roi": {"width": 10, "height": 10, "center_x": 5, "center_y": 5},
-    }
-    (tmp_path / "calibration.json").write_text(
-        __import__("json").dumps(calibration), encoding="utf-8"
-    )
     (tmp_path / "config.yaml").write_text(
         "postprocess:\n"
+        "  resize_enabled: false\n"
         "  target_width: 10\n  target_height: 10\n  resize_mode: area\n"
         "  save_npy: true\n  save_tiff: true\n  save_png_preview: false\n"
-        "  saturation_fraction_warning: 1.0\n  blank_fraction_warning: 1.0\n",
+        "  saturation_fraction_warning: 1.0\n",
         encoding="utf-8",
     )
     output_dir = tmp_path / "processed"
     summary = run_batch_postprocess(
-        tmp_path / "config.yaml", input_dir, tmp_path / "calibration.json",
-        tmp_path / "background.npy", output_dir,
+        tmp_path / "config.yaml", input_dir, tmp_path / "background.npy", output_dir,
     )
     processed = np.load(output_dir / "sample.npy")
     assert processed.dtype == np.float32
@@ -387,6 +349,7 @@ def test_batch_postprocess_saves_quantitative_outputs_without_normalization(
     assert processed.min() == pytest.approx(0.0)
     assert processed.max() == pytest.approx(99.0)
     assert summary["per_image_normalization"] is False
+    assert summary["geometry_transform"] == "none"
     assert (output_dir / "sample.tif").is_file()
     assert (output_dir / "processing_manifest.csv").is_file()
     assert (output_dir / "before_after_preview.png").is_file()

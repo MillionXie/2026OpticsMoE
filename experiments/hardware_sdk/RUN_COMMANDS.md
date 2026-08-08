@@ -1,4 +1,4 @@
-# Hardware SDK — Complete Commands
+# Hardware SDK 完整命令
 
 以下命令均从仓库根目录执行：
 
@@ -7,32 +7,33 @@ cd D:\code\guest\2026OpticsMoE
 python -m pip install -r experiments\hardware_sdk\requirements-light.txt
 ```
 
-## 0. 目录约定
+## 1. 手动填写相机 ROI
+
+先在厂商软件中人工确定 ROI，记录：
 
 ```text
-vendor_sdk/                         厂商 SDK，不放实验数据
-data/amplitude_to_play/             当前要播放的 1920×1080 振幅 BMP
-data/ccd_captured/                  相机原始 NPY/TIFF
-data/processed/                     统一后处理结果
-artifacts/calibration/masks/        ROI/背景/曝光标定 BMP
-artifacts/calibration/results/      background、变换矩阵、响应曲线
-artifacts/demos/                    独立设备 demo 输出
-artifacts/logs/                     采集 manifest
+left, top, width, height
 ```
 
-每轮正式采集前只清理 `data/amplitude_to_play/` 和 `data/ccd_captured/`；不要
-删除 `vendor_sdk/`、标定结果或配置。
-
-## 1. 新 TUCam/Mosaic CCD 自检
-
-确认以下文件存在：
+然后将同一组数写入下面三个文件中的 `device_roi_xywh`：
 
 ```text
-experiments\hardware_sdk\vendor_sdk\camera_tucam_mosaic\TUCam.py
-experiments\hardware_sdk\vendor_sdk\camera_tucam_mosaic\lib\x64\TUCam.dll
+experiments\hardware_sdk\configs\acquisition\tucam_windows.json
+experiments\hardware_sdk\configs\calibration\tucam.yaml
+experiments\hardware_sdk\configs\digit_sequence_tucam.yaml
 ```
 
-只打开相机，不打开 SLM：
+示例仅说明格式：
+
+```json
+"require_device_roi": true,
+"device_roi_xywh": [548, 548, 956, 956]
+```
+
+TUCam 的 `left/top/width/height` 都必须是 4 的倍数。不要把示例坐标当作实验
+标定结果。`null` 会被正式流程拒绝，以免误拍完整传感器画面。
+
+## 2. 相机单独检查
 
 ```powershell
 python -m experiments.hardware_sdk.tools.camera_smoke_test `
@@ -41,16 +42,16 @@ python -m experiments.hardware_sdk.tools.camera_smoke_test `
   --frames 3
 ```
 
-定量原始帧为 `frame_*.npy`，`frame_*_preview.png` 只用于肉眼检查。
+检查输出的 `frame_*_preview.png`，并核对原始帧尺寸就是配置的 ROI 尺寸。
 
-## 2. 生成 ROI/曝光标定 BMP
+## 3. 生成零图和人工 ROI 验证图
 
 ```powershell
 python -m experiments.hardware_sdk.workflows.roi_calibration generate `
   --config experiments\hardware_sdk\configs\calibration\tucam.yaml
 ```
 
-主要输出：
+输出：
 
 ```text
 artifacts\calibration\masks\amplitude\amplitude_zero.bmp
@@ -58,77 +59,86 @@ artifacts\calibration\masks\phase\phase_zero.bmp
 artifacts\calibration\masks\amplitude\verify_roi_5points.bmp
 artifacts\calibration\masks\amplitude\verify_roi_5rectangles.bmp
 artifacts\calibration\masks\amplitude\verify_roi_outline.bmp
-artifacts\calibration\masks\amplitude\coarse_*.bmp
-artifacts\calibration\masks\amplitude\fine_*.bmp
-artifacts\calibration\masks\exposure\gray_*.bmp
-artifacts\calibration\masks\manifest.csv
+artifacts\calibration\masks\exposure\gray_000.bmp ... gray_255.bmp
 ```
 
-其中五点图的四角是实际 956×956 ROI 角点；五矩形图使用相同中心位置，
-轮廓图直接显示 ROI 四边。
+这一步不再估计 ROI，不生成 affine/homography。
 
-## 3. 完整标定流程
+## 4. 0～9 播放和采集顺序校验
 
-### 3.1 统一系统背景
+先确认 `digit_sequence_tucam.yaml` 已填写最终 ROI。运行：
 
-保持激光开启；相位和振幅 SLM 都加载 zero BMP：
+```powershell
+python -m experiments.hardware_sdk.demos.amplitude_camera_demo `
+  --config experiments\hardware_sdk\configs\digit_sequence_tucam.yaml
+```
+
+输出：
+
+```text
+artifacts\demos\tucam_digit_sequence\input_bmp\
+artifacts\demos\tucam_digit_sequence\ccd_captured\
+artifacts\demos\tucam_digit_sequence\capture_order.csv
+artifacts\demos\tucam_digit_sequence\input_vs_capture_order.png
+```
+
+联系表左侧是指令图，右侧是同序号 CCD 帧。若出现前一张、重复帧或错序，依次调：
+
+```yaml
+settle_delay_ms: 200
+discard_frames_after_display: 1
+```
+
+建议先将 `settle_delay_ms` 调到 300～500 ms 确认绝对正确，再逐步降低。若图像
+稳定但始终落后一帧，将 `discard_frames_after_display` 从 1 调为 2。
+
+只生成 0～9 BMP、暂不打开设备：
+
+```powershell
+python -m experiments.hardware_sdk.demos.amplitude_camera_demo `
+  --config experiments\hardware_sdk\configs\digit_sequence_tucam.yaml `
+  --generate-only
+```
+
+## 5. 在最终 ROI 下采集统一 background
+
+必须先完成第 1、4 步。保持激光开启，然后运行：
 
 ```powershell
 python -m experiments.hardware_sdk.workflows.roi_calibration background `
   --config experiments\hardware_sdk\configs\calibration\tucam.yaml
 ```
 
-### 3.2 粗 ROI
-
-相机先保持完整视野：
-
-```powershell
-python -m experiments.hardware_sdk.workflows.roi_calibration coarse `
-  --config experiments\hardware_sdk\configs\calibration\tucam.yaml
-```
-
-查看：
+程序会加载振幅零图；相位 SLM 为手动模式时，会打印 `phase_zero.bmp` 的路径并
+等待确认。输出：
 
 ```text
-artifacts\calibration\results\tucam\coarse_calibration.json
-artifacts\calibration\results\tucam\coarse_overlay.png
+artifacts\calibration\results\tucam\background.npy
+artifacts\calibration\results\tucam\background.tif
+artifacts\calibration\results\tucam\background_preview.png
+artifacts\calibration\results\tucam\background_metadata.json
 ```
 
-把建议的 `left/top/width/height` 填入厂商软件。TUCam 四项都必须是 4
-像素的倍数。程序结束时会保持五点验证图，亦可人工改载五矩形或 ROI 轮廓图。
+只要 ROI、曝光、增益或光路位置发生改变，就重新采集 background。
 
-### 3.3 精标定
-
-在厂商软件设置并保持硬件 ROI 后：
-
-```powershell
-python -m experiments.hardware_sdk.workflows.roi_calibration fine `
-  --config experiments\hardware_sdk\configs\calibration\tucam.yaml
-```
-
-输出 `calibration.json`、`fine_overlay.png` 和 `residual_vectors.png`。
-
-### 3.4 灰度/曝光检查
+## 6. 可选：0～255 灰度响应检查
 
 ```powershell
 python -m experiments.hardware_sdk.workflows.roi_calibration exposure `
   --config experiments\hardware_sdk\configs\calibration\tucam.yaml
 ```
 
-查看 `slm_response.csv`、原始/归一化响应曲线和曝光 preview，人工决定正式
-曝光；程序不会自动改正式配置。
+输出响应 CSV、原始曲线、归一化曲线和典型灰度预览。程序不会自动修改正式曝光。
 
-## 4. 正式振幅播放与原始 CCD 采集
+## 7. 正式振幅播放和原始 CCD 采集
 
-1. 把本轮全部 1920×1080、8-bit 灰度 BMP 放入：
+把本轮全部 1920×1080、8-bit 灰度 BMP 放入：
 
 ```text
-data\amplitude_to_play\
+experiments\hardware_sdk\data\amplitude_to_play\
 ```
 
-2. 手动加载当前相位 mask。
-
-3. 运行新 CCD：
+手动加载本层相位 mask，然后运行：
 
 ```powershell
 python -m experiments.hardware_sdk.workflows.acquire_folder `
@@ -136,39 +146,47 @@ python -m experiments.hardware_sdk.workflows.acquire_folder `
   --clear-output
 ```
 
-输出：
+输出原始 ROI 帧：
 
 ```text
-data\ccd_captured\*.npy
-artifacts\logs\tucam\capture_manifest.csv
-artifacts\logs\tucam\resolved_devices.json
+experiments\hardware_sdk\data\ccd_captured\*.npy
+experiments\hardware_sdk\artifacts\logs\tucam\capture_manifest.csv
+experiments\hardware_sdk\artifacts\logs\tucam\resolved_devices.json
 ```
 
-采集阶段不 resize、不扣背景、不归一化。
+## 8. 批量后处理
 
-## 5. 正式帧统一后处理
+默认只扣除 background，不缩放：
 
 ```powershell
 python -m experiments.hardware_sdk.workflows.batch_postprocess `
   --config experiments\hardware_sdk\configs\calibration\tucam.yaml `
   --input-dir experiments\hardware_sdk\data\ccd_captured `
-  --calibration experiments\hardware_sdk\artifacts\calibration\results\tucam\calibration.json `
   --background experiments\hardware_sdk\artifacts\calibration\results\tucam\background.npy `
   --output-dir experiments\hardware_sdk\data\processed
 ```
 
-流程为：原始帧减统一 background → affine/homography → 原采样密度规则正方形
-→ `INTER_AREA` 缩小到 956×956。定量输出不做逐图归一化。
-
-## 6. 继续使用旧 DVP CCD
-
-SDK 位于：
+处理公式只有：
 
 ```text
-vendor_sdk\camera_dvp_legacy\
+maximum(raw.astype(float32) - background, 0)
 ```
 
-正式采集：
+需要将更大的硬件 ROI 下采样到 956×956 时，才在 `tucam.yaml` 中设置：
+
+```yaml
+postprocess:
+  resize_enabled: true
+  target_width: 956
+  target_height: 956
+  resize_mode: area
+```
+
+不会执行 affine、homography、透视矫正或逐图归一化。
+
+## 9. 旧 DVP 相机
+
+旧驱动和 SDK 仍保留：
 
 ```powershell
 python -m experiments.hardware_sdk.workflows.acquire_folder `
@@ -176,72 +194,29 @@ python -m experiments.hardware_sdk.workflows.acquire_folder `
   --clear-output
 ```
 
-旧 CCD 标定：
-
-```powershell
-python -m experiments.hardware_sdk.workflows.roi_calibration generate --config experiments\hardware_sdk\configs\calibration_config.yaml
-python -m experiments.hardware_sdk.workflows.roi_calibration background --config experiments\hardware_sdk\configs\calibration_config.yaml
-python -m experiments.hardware_sdk.workflows.roi_calibration coarse --config experiments\hardware_sdk\configs\calibration_config.yaml
-python -m experiments.hardware_sdk.workflows.roi_calibration fine --config experiments\hardware_sdk\configs\calibration_config.yaml
-python -m experiments.hardware_sdk.workflows.roi_calibration exposure --config experiments\hardware_sdk\configs\calibration_config.yaml
-```
-
-`configs\acquisition_windows.json` 继续作为旧 DVP 兼容配置。
-
-## 7. SLM 独立测试
-
-振幅 SLM + 旧相机数字顺序 demo：
-
-```powershell
-python -m experiments.hardware_sdk.demos.amplitude_camera_demo `
-  --config experiments\hardware_sdk\configs\amplitude_camera_digit_demo.yaml
-```
-
-相位 SLM dry-run：
-
-```powershell
-python -m experiments.hardware_sdk.demos.phase_slm_demo `
-  --config experiments\hardware_sdk\configs\phase_slm_demo.yaml `
-  --dry-run
-```
-
-生成棋盘格、5 cm/10 cm 透镜、字母等常用图案：
+## 10. 常用 SLM 图案
 
 ```powershell
 python -m experiments.hardware_sdk.generators.slm_patterns `
   --config experiments\hardware_sdk\generators\slm_patterns\configs\slm_956.yaml
 ```
 
-输出位于：
+## 11. Grocery 多层实验交接
 
-```text
-experiments\hardware_sdk\generators\slm_patterns\generated\slm956_calibration\
-```
+每层执行：
 
-## 8. Grocery 多层光电光交接
+1. 从服务器下载该层 `amplitude_to_play/*.bmp`；
+2. 清理本地 `data/amplitude_to_play/`，复制本层 BMP；
+3. 手动加载该层相位 mask；
+4. 执行第 7 节采集；
+5. 执行第 8 节 background 扣除；
+6. 把 `data/processed/` 同名文件上传到服务器对应层的 `ccd_captured/`；
+7. 执行 Grocery 工程 `RUN_COMMANDS.md` 对应层的电子处理/微调；
+8. 下载下一层振幅并重复。
 
-`hardware_sdk` 只负责播放一个文件夹并拍摄同名帧。服务器上的模型处理仍按
-Grocery 工程的分层 session 进行：
-
-1. 从服务器下载某层 `amplitude_to_play/*.bmp` 到本机
-   `data/amplitude_to_play/`；
-2. 加载该层相位 mask；
-3. 用本文件第 4 节采集；
-4. 用第 5 节统一矫正；
-5. 将 `data/processed/` 同名文件上传回服务器该层 `ccd_captured/`；
-6. 执行 Grocery `RUN_COMMANDS.md` 中对应层的处理/微调命令；
-7. 下载下一层振幅并重复。
-
-服务器完整分层命令见：
-
-```text
-experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/RUN_COMMANDS.md
-```
-
-## 9. 测试
+## 12. 测试
 
 ```powershell
-cd D:\code\guest\2026OpticsMoE
 python -m pytest experiments\hardware_sdk\tests -q
 python -m pytest experiments\hardware_sdk\generators\slm_patterns\tests -q
 ```

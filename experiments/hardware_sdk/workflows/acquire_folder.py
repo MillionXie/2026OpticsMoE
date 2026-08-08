@@ -16,12 +16,12 @@ from pathlib import Path
 from typing import Any
 
 try:
-    from ..devices import build_camera, build_slm
+    from ..devices import build_camera, build_slm, verify_camera_roi
 except ImportError:  # direct execution from workflows/
     import sys
 
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-    from devices import build_camera, build_slm
+    from devices import build_camera, build_slm, verify_camera_roi
 
 
 CAPTURE_SUFFIXES = {".npy", ".png", ".tif", ".tiff"}
@@ -79,8 +79,10 @@ def run(
         )
     # Resolve both runtimes before asking the operator to prepare a phase mask.
     # This catches an unset DVP_PYTHON without opening either device.
+    camera_config = dict(raw["camera"])
+    verify_camera_roi(camera_config)
     slm_driver = build_slm(dict(raw["amplitude_slm"]), base)
-    camera_driver = build_camera(dict(raw["camera"]), base)
+    camera_driver = build_camera(camera_config, base)
     slm_driver.validate_runtime()
     camera_driver.validate_runtime()
 
@@ -97,6 +99,7 @@ def run(
     with ExitStack() as stack:
         slm = stack.enter_context(slm_driver)
         camera = stack.enter_context(camera_driver)
+        verify_camera_roi(camera_config, camera.device_info())
         slm.preload_files(files)
         device_report = {
             "config": str(config_path),

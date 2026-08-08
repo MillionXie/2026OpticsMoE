@@ -49,20 +49,13 @@ camera:
   analog_gain: 1.0
   anti_flicker_hz: 0
   resolution_mode: null
+  # 旧 DVP 也必须手动填写最终 [left, top, width, height]。
+  require_device_roi: true
   device_roi_xywh: null
   saved_frame_size_wh: null
   saved_frame_resize_mode: none
   warmup_frames: 3
   discard_frames_after_display: 1
-  # Hardware ROI restrictions vary by camera.  Replace these values with the
-  # values reported by the vendor software when its alignment is stricter.
-  roi_constraints:
-    offset_step_x: 1
-    offset_step_y: 1
-    width_step: 1
-    height_step: 1
-    min_width: 1
-    min_height: 1
 
 propagation_mm: 50
 relay_nominal_magnification: 1.0
@@ -71,19 +64,7 @@ settle_delay_ms: 40
 calibration:
   marker_size_px: 80
   marker_sigma_px: 18
-  # Only automatic coarse/fine single-marker patterns use this inward margin.
-  # verify_roi_* patterns always mark the exact 956x956 ROI boundary.
-  marker_margin_px: 96
   roi_outline_width_px: 4
-  frames_per_pattern: 3
-  camera_roi_padding_ratio: 0.04
-  homography_min_rms_improvement: 0.20
-  large_residual_px: 8.0
-  detection:
-    threshold_fraction_of_peak: 0.20
-    threshold_percentile: 99.0
-    minimum_component_area_px: 20
-    maximum_component_area_fraction: 0.20
 
 background:
   frames: 10
@@ -97,11 +78,12 @@ exposure_calibration:
   patch_size_px: 160
   patch_inner_size_px: 128
   edge_taper_px: 16
-  measurement_window_padding_ratio: 0.10
+  measurement_window_size_px: 128
   low_response_fraction_of_sensor_range: 0.02
   saturation_fraction_warning: 0.001
 
 postprocess:
+  resize_enabled: false
   target_width: 956
   target_height: 956
   resize_mode: area
@@ -109,4 +91,3 @@ postprocess:
   save_tiff: true
   save_png_preview: false
   saturation_fraction_warning: 0.001
-  blank_fraction_warning: 0.20
