@@ -196,6 +196,20 @@ class TucamCamera(CameraDriver):
         except DeviceError:
             return None
 
+    def _get_capability(self, identifier: Any) -> int | None:
+        assert self._module is not None
+        value = ctypes.c_int32()
+        try:
+            self._check(
+                self._module.TUCAM_Capa_GetValue(
+                    self._handle(), identifier.value, ctypes.pointer(value)
+                ),
+                f"read capability {identifier.name}",
+            )
+            return int(value.value)
+        except DeviceError:
+            return None
+
     def _get_model(self) -> str | None:
         assert self._module is not None
         try:
@@ -311,6 +325,24 @@ class TucamCamera(CameraDriver):
                 "device_roi_xywh": self._get_roi(),
                 "Exposure": None if exposure_ms is None else exposure_ms * 1000.0,
                 "exposure_unit": "us",
+                "auto_exposure_enabled": self._get_capability(
+                    self._module.TUCAM_IDCAPA.TUIDC_ATEXPOSURE
+                ),
+                "analog_gain": self._get_property(
+                    self._module.TUCAM_IDPROP.TUIDP_GLOBALGAIN
+                ),
+                "black_level": self._get_property(
+                    self._module.TUCAM_IDPROP.TUIDP_BLACKLEVEL
+                ),
+                "black_level_high_gain": self._get_property(
+                    self._module.TUCAM_IDPROP.TUIDP_BLACKLEVELHG
+                ),
+                "black_level_low_gain": self._get_property(
+                    self._module.TUCAM_IDPROP.TUIDP_BLACKLEVELLG
+                ),
+                "black_level_correction_enabled": self._get_capability(
+                    self._module.TUCAM_IDCAPA.TUIDC_ENABLEBLACKLEVEL
+                ),
                 "sensor_native_resolution_wh": [2048, 2048],
                 "sensor_pixel_pitch_um": 6.5,
             }

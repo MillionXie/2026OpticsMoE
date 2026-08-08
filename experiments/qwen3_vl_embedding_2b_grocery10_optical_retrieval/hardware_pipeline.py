@@ -52,6 +52,7 @@ class HardwareConfig:
     model_config: Path
     checkpoint: Path
     output_dir: Path
+    selection_mode: str
     queries_per_sku: int
     prefer_correct_queries: bool
     selection_results_csv: Path | None
@@ -109,6 +110,9 @@ def load_hardware_config(path: str | Path) -> HardwareConfig:
         model_config=_resolve(raw["model_config"], base),
         checkpoint=_resolve(raw["checkpoint"], base),
         output_dir=_resolve(raw["output_dir"], base),
+        selection_mode=str(
+            raw.get("selection", {}).get("mode", "selected_test")
+        ),
         queries_per_sku=int(raw.get("selection", {}).get("queries_per_sku", 10)),
         prefer_correct_queries=bool(raw.get("selection", {}).get("prefer_correct_queries", True)),
         selection_results_csv=(
@@ -156,6 +160,14 @@ def load_hardware_config(path: str | Path) -> HardwareConfig:
             raw.get("artifacts", {}).get("copy_checkpoint", False)
         ),
     )
+    if result.selection_mode not in {
+        "selected_test",
+        "test_only",
+        "full_dataset",
+    }:
+        raise ValueError(
+            "selection.mode must be selected_test, test_only or full_dataset"
+        )
     if result.queries_per_sku <= 0:
         raise ValueError("selection.queries_per_sku must be positive")
     if len(result.amplitude_slm_size) != 2 or len(result.phase_slm_size) != 2:
@@ -215,7 +227,33 @@ def _read_previous_results(path: Path) -> dict[str, dict[str, str]]:
 
 
 def select_samples(bundle: GroceryRetrievalBundle, settings: Settings, hardware: HardwareConfig) -> list[tuple[str, GrocerySample]]:
-    selected: list[tuple[str, GrocerySample]] = [("gallery", sample) for sample in bundle.gallery_samples]
+    selected: list[tuple[str, GrocerySample]] = [
+        ("gallery", sample)
+        for sample in sorted(bundle.gallery_samples, key=lambda value: value.sample_id)
+    ]
+    if hardware.selection_mode in {"test_only", "full_dataset"}:
+        if hardware.selection_mode == "full_dataset":
+            selected.extend(
+                ("train", sample)
+                for sample in sorted(
+                    bundle.train_samples, key=lambda value: value.sample_id
+                )
+            )
+        selected.extend(
+            ("query", sample)
+            for sample in sorted(bundle.test_samples, key=lambda value: value.sample_id)
+        )
+        sample_ids = [sample.sample_id for _, sample in selected]
+        image_paths = [str(sample.image_path.resolve()) for _, sample in selected]
+        if len(sample_ids) != len(set(sample_ids)):
+            raise RuntimeError("Hardware manifest contains duplicate sample_id values")
+        if len(image_paths) != len(set(image_paths)):
+            raise RuntimeError("Hardware manifest contains duplicate image paths")
+        return (
+            selected
+            if hardware.sample_limit is None
+            else selected[: hardware.sample_limit]
+        )
     results_path = hardware.selection_results_csv or settings.output_dir / "retrieval_results.csv"
     previous = _read_previous_results(results_path)
     by_sku: dict[int, list[GrocerySample]] = {}
@@ -665,6 +703,20 @@ def prepare(runtime: Runtime) -> dict[str, Any]:
     output = runtime.hardware.output_dir
     if runtime.hardware.clean_output_before_prepare and output.exists():
         shutil.rmtree(output)
+    elif output.exists():
+        checkpoint_metadata = (
+            output / "00_manifest" / "checkpoint_metadata.json"
+        ).resolve()
+        existing = [
+            path
+            for path in output.rglob("*")
+            if path.is_file() and path.resolve() != checkpoint_metadata
+        ]
+        if existing:
+            raise FileExistsError(
+                f"Hardware session already contains {len(existing)} files under {output}. "
+                "Use a new --output-dir; do not overwrite a session containing CCD captures."
+            )
     output.mkdir(parents=True, exist_ok=True)
     selected = select_samples(runtime.bundle, runtime.settings, runtime.hardware)
     rows: list[dict[str, Any]] = []
@@ -673,6 +725,9 @@ def prepare(runtime: Runtime) -> dict[str, Any]:
             "play_index": index,
             "sample_key": _sample_key(index, sample, role),
             "role": role,
+            "dataset_split": sample.split,
+            "source_split": sample.source_split,
+            "is_gallery": bool(sample.is_gallery),
             "sample_id": sample.sample_id,
             "sku_index": sample.sku_index,
             "sku_name": sample.sku_name,
@@ -752,7 +807,9 @@ def prepare(runtime: Runtime) -> dict[str, Any]:
         "physical_exposure_count_per_sample": 4,
         "sample_count": len(rows),
         "gallery_count": sum(row["role"] == "gallery" for row in rows),
+        "train_count": sum(row["role"] == "train" for row in rows),
         "query_count": sum(row["role"] == "query" for row in rows),
+        "selection_mode": runtime.hardware.selection_mode,
         "checkpoint": str(runtime.hardware.checkpoint),
         "checkpoint_copy": str(checkpoint_copy) if checkpoint_copy else None,
         "checkpoint_sha256": _sha256(runtime.hardware.checkpoint),
@@ -987,6 +1044,9 @@ def process_language_global(runtime: Runtime, *, use_simulation: bool) -> dict[s
         **evaluation.metrics,
         "capture_source": "simulation_reference" if use_simulation else "physical_ccd",
         "checkpoint": str(runtime.hardware.checkpoint),
+        "hardware_adaptation": "none_in_hardware_pipeline",
+        "test_captures_used_for_hardware_adaptation": False,
+        "independent_test_evaluation": True,
     }
     write_json(runtime.hardware.output_dir / "05_retrieval" / "metrics.json", metrics)
     write_csv(runtime.hardware.output_dir / "05_retrieval" / "retrieval_results.csv", evaluation.rows, list(evaluation.rows[0]))
@@ -1027,6 +1087,15 @@ def main() -> int:
     parser.add_argument("--output-dir", default=None, help="Optional deployment-output override, useful for a disposable replay smoke test")
     parser.add_argument("--checkpoint", default=None, help="Optional checkpoint override; its architecture must match model_config")
     parser.add_argument("--queries-per-sku", type=int, default=None, help="Optional query-count override; all gallery images remain included")
+    parser.add_argument(
+        "--selection-mode",
+        choices=("selected_test", "test_only", "full_dataset"),
+        default=None,
+        help=(
+            "Prepare manifest override: test_only exports gallery+all test; "
+            "full_dataset exports gallery+all train+all test"
+        ),
+    )
     parser.add_argument("--sample-limit", type=int, default=None, help="Prepare-only equipment smoke limit; do not use for final retrieval evaluation")
     parser.add_argument(
         "--artifact-profile",
@@ -1064,6 +1133,8 @@ def main() -> int:
         if args.queries_per_sku <= 0:
             raise ValueError("--queries-per-sku must be positive")
         hardware = replace(hardware, queries_per_sku=args.queries_per_sku)
+    if args.selection_mode is not None:
+        hardware = replace(hardware, selection_mode=args.selection_mode)
     if args.sample_limit is not None:
         if args.sample_limit <= 0:
             raise ValueError("--sample-limit must be positive")
@@ -1074,7 +1145,9 @@ def main() -> int:
         if args.phase == "prepare":
             report = prepare(runtime)
             print(
-                f"Prepared {report['sample_count']} samples and four shared masks "
+                f"Prepared {report['sample_count']} samples "
+                f"(gallery={report['gallery_count']}, train={report['train_count']}, "
+                f"test={report['query_count']}) and four shared masks "
                 f"under {hardware.output_dir} (artifact_profile={report['artifact_profile']})"
             )
         elif args.phase == "process_vision_expert":

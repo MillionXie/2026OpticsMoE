@@ -93,3 +93,11 @@ exposure_calibration:
   measurement_window_size_px: 128
   saturation_fraction_warning: 0.001
 
+# 可选背景实验，不属于正式采集流程。正式原始 CCD 文件始终保留不动。
+# 每个相位层建议单独 capture 一份背景，再离线 subtract 到新目录。
+optional_background:
+  frames: 10
+  zero_amplitude_bmp: ../artifacts/calibration/masks/amplitude/amplitude_zero.bmp
+  background_dir: ../artifacts/optional_background
+  corrected_output_dir: ../data/ccd_background_subtracted
+  output_extension: .npy

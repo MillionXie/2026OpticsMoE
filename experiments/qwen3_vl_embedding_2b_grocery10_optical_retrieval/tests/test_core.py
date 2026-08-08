@@ -23,11 +23,13 @@ from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipe
     bin_ccd_superpixels,
     load_captured_intensity,
     load_hardware_config,
+    select_samples,
 )
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_finetune import (
     _epoch_batches,
     configure_downstream_trainability,
     prototype_retrieval_objective,
+    select_adaptation_rows,
 )
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_automation import (
     load_automation_config,
@@ -725,6 +727,12 @@ def test_hardware_config_is_stage_first_and_uses_best_checkpoint() -> None:
     assert latest.amplitude_encoding_percentile == pytest.approx(95.0)
     assert latest.amplitude_encoding_gamma == pytest.approx(0.65)
 
+    full = load_hardware_config(
+        EXPERIMENT / "configs" / "grocery10_moe4_from31_hardware.yaml"
+    )
+    assert full.selection_mode == "full_dataset"
+    assert full.checkpoint.name == "ema_last_checkpoint.pt"
+
 
 def test_ccd_nearest_registration_then_exact_superpixel_binning(tmp_path: Path) -> None:
     hardware = load_hardware_config(
@@ -827,6 +835,65 @@ def test_hardware_epoch_batches_cover_every_query_and_include_all_galleries() ->
     )
     for batch in batches:
         assert {samples[row["sample_id"]].sku_index for row in batch if row["role"] == "gallery"} == {0, 1, 2}
+
+
+def test_full_hardware_selection_exports_gallery_train_and_all_test() -> None:
+    def sample(sample_id: str, split: str, gallery: bool = False):
+        return SimpleNamespace(
+            sample_id=sample_id,
+            image_path=Path(f"/{sample_id}.png"),
+            split=split,
+            source_split=split,
+            is_gallery=gallery,
+            sku_index=0,
+        )
+
+    bundle = SimpleNamespace(
+        gallery_samples=(sample("g", "gallery", True),),
+        train_samples=(sample("t2", "train"), sample("t1", "train")),
+        test_samples=(sample("q2", "test"), sample("q1", "test")),
+    )
+    hardware = SimpleNamespace(
+        selection_mode="full_dataset", sample_limit=None
+    )
+    selected = select_samples(bundle, SimpleNamespace(), hardware)
+    assert [(role, value.sample_id) for role, value in selected] == [
+        ("gallery", "g"),
+        ("train", "t1"),
+        ("train", "t2"),
+        ("query", "q1"),
+        ("query", "q2"),
+    ]
+
+    test_only = SimpleNamespace(selection_mode="test_only", sample_limit=None)
+    selected_test = select_samples(bundle, SimpleNamespace(), test_only)
+    assert [(role, value.sample_id) for role, value in selected_test] == [
+        ("gallery", "g"),
+        ("query", "q1"),
+        ("query", "q2"),
+    ]
+
+
+def test_hardware_adaptation_test_inclusion_is_explicit() -> None:
+    rows = [
+        {"sample_id": "g", "role": "gallery"},
+        {"sample_id": "t", "role": "train"},
+        {"sample_id": "q", "role": "query"},
+    ]
+    independent, independent_report = select_adaptation_rows(
+        rows, include_test_split=False
+    )
+    assert [row["sample_id"] for row in independent] == ["g", "t"]
+    assert independent[-1]["role"] == "query"
+    assert independent[-1]["source_role"] == "train"
+    assert independent_report["independent_test_evaluation"] is True
+
+    transductive, transductive_report = select_adaptation_rows(
+        rows, include_test_split=True
+    )
+    assert [row["sample_id"] for row in transductive] == ["g", "t", "q"]
+    assert transductive_report["test_count_used_for_adaptation"] == 1
+    assert transductive_report["independent_test_evaluation"] is False
 
 
 def test_measured_gallery_prototype_objective_has_perfect_top1_and_backward() -> None:

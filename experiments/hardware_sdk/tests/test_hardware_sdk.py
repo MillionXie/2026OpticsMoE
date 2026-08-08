@@ -28,6 +28,9 @@ from experiments.hardware_sdk.workflows.roi_calibration import (
     rectangle_marker,
     roi_boundary_source_points,
 )
+from experiments.hardware_sdk.workflows.optional_background import (
+    subtract_background_directory,
+)
 
 
 def test_digit_bmps_have_stable_order_and_exact_slm_shape(tmp_path: Path) -> None:
@@ -319,6 +322,27 @@ def test_rectangle_marker_is_filled_and_centered() -> None:
     assert marker.shape == (80, 100)
     assert int((marker > 0).sum()) == 400
     assert marker[30:50, 40:60].min() == 255
+
+
+def test_optional_background_subtraction_is_float_clipped_and_non_destructive(
+    tmp_path: Path,
+) -> None:
+    input_dir = tmp_path / "raw"
+    output_dir = tmp_path / "corrected"
+    input_dir.mkdir()
+    raw = np.array([[2, 10], [30, 100]], dtype=np.uint16)
+    background = np.array([[5, 4], [30, 40]], dtype=np.float32)
+    np.save(input_dir / "sample.npy", raw)
+    np.save(tmp_path / "background.npy", background)
+    summary = subtract_background_directory(
+        input_dir, tmp_path / "background.npy", output_dir
+    )
+    corrected = np.load(output_dir / "sample.npy")
+    assert corrected.dtype == np.float32
+    assert corrected.tolist() == [[0.0, 6.0], [0.0, 60.0]]
+    assert np.array_equal(np.load(input_dir / "sample.npy"), raw)
+    assert summary["resize"] is False
+    assert summary["normalization"] is False
 
 
 def test_layer_agnostic_folder_acquisition_preserves_sorted_basenames(

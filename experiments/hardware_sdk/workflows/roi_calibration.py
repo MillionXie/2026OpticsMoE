@@ -381,6 +381,7 @@ def run_exposure(
     settle_seconds = float(config.get("settle_delay_ms", 200)) / 1000.0
     rows: list[dict[str, Any]] = []
     previews: dict[int, np.ndarray] = {}
+    camera_settings: dict[str, dict[str, Any]] = {}
     with _slm_session(config, config_path, patterns) as (amplitude, phase):
         phase.display(phase_zero)
         _confirm(
@@ -391,6 +392,7 @@ def run_exposure(
         for exposure_us in settings["exposure_times_us"]:
             camera = _open_verified_camera(config, config_path, float(exposure_us))
             try:
+                camera_settings[str(exposure_us)] = dict(camera.device_info())
                 roi = camera.device_info()["device_roi_xywh"]
                 frame_shape = (int(roi[3]), int(roi[2]))
                 window = _measurement_window(
@@ -459,11 +461,26 @@ def run_exposure(
     if previews:
         fig, axes = plt.subplots(1, len(previews), figsize=(4 * len(previews), 4), constrained_layout=True)
         axes = np.atleast_1d(axes)
+        # A shared display scale is essential here. Per-panel autoscaling makes
+        # the weak gray=0 residual look as bright as gray=255 and is therefore
+        # unsuitable for judging extinction or exposure.
+        preview_min = min(float(frame.min()) for frame in previews.values())
+        preview_max = max(float(frame.max()) for frame in previews.values())
+        if preview_max <= preview_min:
+            preview_max = preview_min + 1.0
         for axis_item, gray in zip(axes, sorted(previews)):
-            axis_item.imshow(previews[gray], cmap="gray")
-            axis_item.set_title(f"gray={gray}")
+            frame = previews[gray]
+            axis_item.imshow(
+                frame, cmap="gray", vmin=preview_min, vmax=preview_max
+            )
+            axis_item.set_title(
+                f"gray={gray}\nmean={float(frame.mean()):.1f} max={float(frame.max()):.0f}"
+            )
             axis_item.set_xlabel("CCD x")
             axis_item.set_ylabel("CCD y")
+        fig.suptitle(
+            f"Shared CCD scale [{preview_min:.0f}, {preview_max:.0f}] (no per-panel autoscale)"
+        )
         fig.savefig(results / "exposure_preview.png", dpi=160)
         plt.close(fig)
     max_saturation = max(row["saturated_pixel_fraction"] for row in rows)
@@ -472,6 +489,8 @@ def run_exposure(
         "camera_roi_xywh": config["camera"]["device_roi_xywh"],
         "background_subtraction": False,
         "measurement_window": "fixed_center_window",
+        "preview_scaling": "shared_raw_min_max_across_preview_frames",
+        "camera_readback_by_exposure_us": camera_settings,
         "max_saturated_pixel_fraction": max_saturation,
         "warning": (
             "Saturation detected; reduce exposure."

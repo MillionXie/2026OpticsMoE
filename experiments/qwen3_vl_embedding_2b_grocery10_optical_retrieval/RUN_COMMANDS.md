@@ -1,302 +1,274 @@
-# Grocery10 训练与逐层实物实验命令
+# Grocery10 MoE4：训练、四层实物采集、可选逐层微调与最终推理
 
-所有服务器命令均从仓库根目录 `2026OpticsMoE/` 执行。当前实物版本固定使用：
+本文只描述当前推荐的 2×2 / 四专家版本。所有服务器命令均从仓库根目录 `2026OpticsMoE/` 执行，且均为单行命令。
 
-```text
-model config: grocery10_moe4_latest.yaml
-hardware config: grocery10_moe4_latest_hardware.yaml
-结构: Vision expert → Vision global → Language expert → Language global
-物理 CCD ROI: 956×956 → 2×2 mean binning → 478×478
-```
+## 0. 当前正式版本
 
-## 1. 从零训练当前 MoE4
+- 结构：Vision expert → Vision global → Language expert → Language global。
+- 每个 stack 只有一个 MoE4 expert phase plane 和一个 global phase plane。
+- 当前已保存的最佳 MoE4 checkpoint：
 
-```bash
-CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval \
-  --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_moe4_latest.yaml \
-  --phase all
-```
+    experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/qwen3_vl_embedding_2b_grocery10_moe4_from31_epoch40_replay/ema_last_checkpoint.pt
+
+- 该 checkpoint 的完整复评结果：Top-1 67.69%，Top-3 87.31%，MRR 79.16%。
+- 历史 73.46% 是 4×4/MoE16，不属于当前四专家结构，不能交叉加载。
+
+下面用 `CUDA_VISIBLE_DEVICES=3` 举例；按服务器空闲情况修改 GPU 编号。
+
+## 1. 从零复现推荐训练流程
+
+### 1.1 Grocery31、MoE4 预训练 26 epoch
+
+这一步自动准备数据、缓存 31-SKU Teacher embedding、训练、评测和可视化：
+
+    CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/optimization/grocery31_moe4_pretrain.yaml --phase all
+
+固定第 26 epoch EMA checkpoint：
+
+    experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/qwen3_vl_embedding_2b_grocery31_moe4_pretrain/ema_last_checkpoint.pt
+
+### 1.2 缓存目标 Grocery10 的 Teacher embedding
+
+31-SKU 和目标 10-SKU 的 manifest 不同，因此必须单独构建目标缓存：
+
+    CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/optimization/grocery10_moe4_from31_strong_ema.yaml --phase cache_teacher_embeddings
+
+### 1.3 从第 26 epoch 继续目标 10-SKU 微调 14 epoch
+
+最终绝对 epoch 为 40，优化器按目标配置重新初始化：
+
+    CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/optimization/grocery10_moe4_from31_strong_ema.yaml --phase train --resume-checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/qwen3_vl_embedding_2b_grocery31_moe4_pretrain/ema_last_checkpoint.pt
+
+新复现实验的固定 epoch-40 EMA：
+
+    experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/qwen3_vl_embedding_2b_grocery10_moe4_from31_epoch40_reproduction/ema_last_checkpoint.pt
+
+### 1.4 对固定 epoch-40 EMA 做完整评测与可视化
+
+    CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/optimization/grocery10_moe4_from31_strong_ema.yaml --phase evaluate --checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/qwen3_vl_embedding_2b_grocery10_moe4_from31_epoch40_reproduction/ema_last_checkpoint.pt
+
+    CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/optimization/grocery10_moe4_from31_strong_ema.yaml --phase visualize
 
 ## 2. 创建一次完整硬件 session
 
-只在实验开始时运行一次。开始采集后不要再次运行 `prepare`，否则配置中的清理选项会重建 session。
+即使直接使用服务器已有的 epoch-40 checkpoint、不重新训练，也要先执行第 1.2 节一次，确保逐层硬件微调所需的目标 Grocery10 Teacher cache 存在。纯不微调推理不读取该 cache。
 
-```bash
-export CFG=experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_moe4_latest_hardware.yaml
-export SESSION=experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/hardware_sessions/moe4_transfer_001
-export GPU=2  # 按服务器空闲情况修改
+硬件配置：
 
-CUDA_VISIBLE_DEVICES=$GPU python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipeline \
-  --config "$CFG" --phase prepare --artifact-profile full --output-dir "$SESSION"
-```
+    experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_moe4_from31_hardware.yaml
 
-初始输入与四张共享相位 mask：
+配置中的 `selection.mode: full_dataset` 会固定导出：
+
+- 全部 gallery；
+- 全部训练图像；
+- 全部测试 query；
+- 四个共享 phase BMP；
+- 每个样本的第一层振幅 BMP；
+- 每一层的理论 CCD 参考。
+
+使用现有已验证最佳 checkpoint：
+
+    CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipeline --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_moe4_from31_hardware.yaml --phase prepare --artifact-profile full
+
+如果使用第 1 节新复现的 checkpoint：
+
+    CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipeline --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_moe4_from31_hardware.yaml --phase prepare --artifact-profile full --checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/qwen3_vl_embedding_2b_grocery10_moe4_from31_epoch40_reproduction/ema_last_checkpoint.pt
+
+默认 session：
+
+    experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/hardware_sessions/moe4_from31_epoch40_full_001
+
+只运行一次 `prepare`。当前正式配置禁止覆盖已有 session；若目录已有文件，程序会要求换一个新的 `--output-dir`，不会删除已经上传的 CCD。
+
+固定播放顺序：
+
+    hardware_sessions/moe4_from31_epoch40_full_001/00_manifest/play_order.csv
+
+其中 `role=gallery/train/query` 分别对应登记图库、训练集、测试集。每一层必须严格保持相同文件名和播放顺序。
+
+### 2.1 可选：创建只含 gallery + 全 test 的纯推理 session
+
+如果本次明确不做任何硬件微调，可以不采训练集，使用同一个配置但覆盖 manifest 类型和输出目录：
+
+    CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipeline --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_moe4_from31_hardware.yaml --phase prepare --artifact-profile full --selection-mode test_only --output-dir experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/hardware_sessions/moe4_from31_epoch40_test_only_001
+
+该 session 只能走第 4 节不微调推理。后续四条处理命令均增加：
+
+    --output-dir experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/hardware_sessions/moe4_from31_epoch40_test_only_001
+
+`hardware_finetune` 会拒绝没有 train 样本的 test-only manifest，避免误把测试集自动当训练集。
+
+## 3. 实验室电脑每一层的统一采集方式
+
+对当前层执行以下步骤：
+
+1. 将该层 `amplitude_to_play/*.bmp` 复制到 `experiments/hardware_sdk/data/amplitude_to_play/`。
+2. 手动加载 session 中该层 `00_masks/<stage>/*.bmp` 相位图。
+3. 清空上一次 `hardware_sdk/data/ccd_captured/`。
+4. 运行下面命令。
+
+    python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\hardware_sdk\configs\tucam_windows.yaml --clear-output
+
+5. 将同名 CCD NPY 上传到 session 对应层的 `ccd_captured/`。
+
+四层目录：
+
+    01_vision_expert
+    02_vision_global
+    03_language_expert
+    04_language_global
+
+不要改 BMP/NPY basename。服务器会逐项核对 manifest；缺一张、多一种同名扩展或尺寸不符都会报错。
+
+## 4. 路线 A：完全不微调，只做四层真实光路推理
+
+以下四条服务器命令彼此不训练参数。每完成一层采集后运行对应命令，它只读取 CCD、执行该层后的电子处理，并生成下一层振幅。
+
+### 4.1 Vision expert CCD → Vision global 振幅
+
+上传到：
+
+    hardware_sessions/moe4_from31_epoch40_full_001/01_vision_expert/ccd_captured
+
+处理：
+
+    CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipeline --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_moe4_from31_hardware.yaml --phase process_vision_expert
+
+下一层振幅：
+
+    hardware_sessions/moe4_from31_epoch40_full_001/02_vision_global/amplitude_to_play
+
+### 4.2 Vision global CCD → Language expert 振幅
+
+    CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipeline --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_moe4_from31_hardware.yaml --phase process_vision_global
+
+下一层振幅：
+
+    hardware_sessions/moe4_from31_epoch40_full_001/03_language_expert/amplitude_to_play
+
+### 4.3 Language expert CCD → Language global 振幅
+
+    CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipeline --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_moe4_from31_hardware.yaml --phase process_language_expert
+
+下一层振幅：
+
+    hardware_sessions/moe4_from31_epoch40_full_001/04_language_global/amplitude_to_play
+
+### 4.4 Language global CCD → 最终检索结果
+
+    CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipeline --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_moe4_from31_hardware.yaml --phase process_language_global
+
+最终结果只使用 manifest 中 `role=query` 的测试图像与 `role=gallery` 的登记图：
+
+    hardware_sessions/moe4_from31_epoch40_full_001/05_retrieval/metrics.json
+    hardware_sessions/moe4_from31_epoch40_full_001/05_retrieval/retrieval_results.csv
+    hardware_sessions/moe4_from31_epoch40_full_001/05_retrieval/confusion_matrix.csv
+
+## 5. 路线 B：每层实测后微调其下游 100 epoch
+
+每个实测平面及其上游永久冻结，只微调物理上位于该 CCD 后面的光学与电子参数。默认：
+
+- gallery 作为登记图库；
+- train 实测图参与适配；
+- test 实测图不参与反向传播，只在最后评测；
+- `adaptation.include_test_split: false`。
+
+若主动把它改成 `true`，test 也会参与适配，最终结果会明确标记为 transductive/selection-biased，不能再称为独立测试精度。
+
+### 5.1 Vision expert 后适配
+
+采集并上传第一层全量 CCD 后运行：
+
+    CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_finetune --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_moe4_from31_hardware.yaml --capture-stage vision_expert
+
+第一阶段最佳 checkpoint：
+
+    hardware_sessions/moe4_from31_epoch40_full_001/06_hardware_finetune/after_01_vision_expert__ccd_vhflip__full_train_v1/checkpoints/best_train_loss.pt
+
+程序会同步更新 `00_masks/02_vision_global` 并重新生成全样本 `02_vision_global/amplitude_to_play`。加载新 mask 后再采第二层。
+
+### 5.2 Vision global 后适配
+
+    CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_finetune --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_moe4_from31_hardware.yaml --checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/hardware_sessions/moe4_from31_epoch40_full_001/06_hardware_finetune/after_01_vision_expert__ccd_vhflip__full_train_v1/checkpoints/best_train_loss.pt --capture-stage vision_global
+
+第二阶段最佳 checkpoint：
+
+    hardware_sessions/moe4_from31_epoch40_full_001/06_hardware_finetune/after_02_vision_global__ccd_vhflip__full_train_v1/checkpoints/best_train_loss.pt
+
+程序更新 Language expert/global mask，并生成全样本第三层振幅。
+
+### 5.3 Language expert 后适配
+
+    CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_finetune --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_moe4_from31_hardware.yaml --checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/hardware_sessions/moe4_from31_epoch40_full_001/06_hardware_finetune/after_02_vision_global__ccd_vhflip__full_train_v1/checkpoints/best_train_loss.pt --capture-stage language_expert
+
+第三阶段最佳 checkpoint：
+
+    hardware_sessions/moe4_from31_epoch40_full_001/06_hardware_finetune/after_03_language_expert__ccd_vhflip__full_train_v1/checkpoints/best_train_loss.pt
+
+程序更新 Language global mask，并生成全样本第四层振幅。
+
+### 5.4 Language global 后只适配最终电子读出
+
+    CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_finetune --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_moe4_from31_hardware.yaml --checkpoint experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/hardware_sessions/moe4_from31_epoch40_full_001/06_hardware_finetune/after_03_language_expert__ccd_vhflip__full_train_v1/checkpoints/best_train_loss.pt --capture-stage language_global
+
+第四阶段只训练 final detector normalization 和 64D retrieval readout，不再生成光学振幅。最终独立 test 结果仍写入 `05_retrieval/`。
+
+每阶段额外保存：
+
+    06_hardware_finetune/after_*/metrics/adaptation_split.json
+    06_hardware_finetune/after_*/metrics/history.csv
+    06_hardware_finetune/after_*/metrics/summary.json
+    06_hardware_finetune/after_*/trainable_parameters.json
+    06_hardware_finetune/after_*/exported_downstream_masks
+    06_hardware_finetune/after_*/next_amplitude_bmp
+
+## 6. 训练已完成但导出阶段中断
+
+不要重新训练 100 epoch。对相同 stage、相同输入 checkpoint 加 `--finalize-only`：
+
+    CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_finetune --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_moe4_from31_hardware.yaml --capture-stage language_global --finalize-only
+
+若该 stage 的训练是从上一阶段 checkpoint 开始，仍需同时传入与原训练相同的 `--checkpoint`。
+
+## 7. 可选背景扣除
+
+正式采集原图不自动扣背景。若要试验背景扣除，使用共享硬件工程的独立流程；扣除后的 NPY 可以作为该层 `ccd_captured` 输入，但同一目录不要同时保留原始和扣除后的同名不同扩展。
+
+命令见：
+
+    experiments/hardware_sdk/RUN_COMMANDS.md
+
+## 8. 验证
+
+    python -m pytest experiments/hardware_sdk/tests experiments/hardware_sdk/generators/slm_patterns/tests experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/tests -q
+
+## 9. Session 目录约定
 
 ```text
-$SESSION/01_vision_expert/amplitude_to_play/*.bmp
-$SESSION/00_masks/01_vision_expert/*.bmp
-$SESSION/00_masks/02_vision_global/*.bmp
-$SESSION/00_masks/03_language_expert/*.bmp
-$SESSION/00_masks/04_language_global/*.bmp
-```
-
-相位 BMP 已在导出前上下翻转。实验室电脑从仓库根目录执行同一条命令（新 TUCam CCD）：
-
-```powershell
-python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\hardware_sdk\configs\tucam_windows.yaml --clear-output
-```
-
-将生成的同名无损 PNG 上传到对应的 `$SESSION/<layer>/ccd_captured/`。
-
-## 3. 普通逐层处理（不微调）
-
-### Layer 1：Vision expert
-
-上传 CCD 到：
-
-```text
-$SESSION/01_vision_expert/ccd_captured/
-```
-
-```bash
-CUDA_VISIBLE_DEVICES=$GPU python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipeline \
-  --config "$CFG" --output-dir "$SESSION" --phase process_vision_expert
-```
-
-下一层振幅：`$SESSION/02_vision_global/amplitude_to_play/`
-
-### Layer 2：Vision global
-
-上传 CCD 到 `$SESSION/02_vision_global/ccd_captured/`，然后运行：
-
-```bash
-CUDA_VISIBLE_DEVICES=$GPU python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipeline \
-  --config "$CFG" --output-dir "$SESSION" --phase process_vision_global
-```
-
-下一层振幅：`$SESSION/03_language_expert/amplitude_to_play/`
-
-### Layer 3：Language expert
-
-上传 CCD 到 `$SESSION/03_language_expert/ccd_captured/`，然后运行：
-
-```bash
-CUDA_VISIBLE_DEVICES=$GPU python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipeline \
-  --config "$CFG" --output-dir "$SESSION" --phase process_language_expert
-```
-
-下一层振幅：`$SESSION/04_language_global/amplitude_to_play/`
-
-### Layer 4：Language global
-
-上传 CCD 到 `$SESSION/04_language_global/ccd_captured/`，然后运行：
-
-```bash
-CUDA_VISIBLE_DEVICES=$GPU python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipeline \
-  --config "$CFG" --output-dir "$SESSION" --phase process_language_global
-```
-
-最终结果：
-
-```text
-$SESSION/05_retrieval/metrics.json
-$SESSION/05_retrieval/retrieval_results.csv
-$SESSION/05_retrieval/confusion_matrix.csv
-```
-
-## 4. 推荐：每层实测后微调剩余网络
-
-规则是：实测 CCD 所在平面及其上游全部冻结，只训练它后面的光学和电子参数。每次命令会：
-
-1. 读取本层所有同名 CCD 和 SKU 标签；
-2. 用 Teacher embedding KD + SKU supervised contrastive loss 微调；
-3. 保存本层 `best_train_loss.pt` 与 `last.pt`；
-4. 导出所有被更新的下游相位 BMP；
-5. 自动生成下一层振幅 BMP；
-6. 下一层从本层 best checkpoint 继续，形成明确 checkpoint 链。
-
-### 捕获 Layer 1 后
-
-```bash
-CUDA_VISIBLE_DEVICES=$GPU python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_finetune \
-  --config "$CFG" --output-dir "$SESSION" --capture-stage vision_expert
-```
-
-```bash
-export CKPT1=$SESSION/06_hardware_finetune/after_01_vision_expert__ccd_native/checkpoints/best_train_loss.pt
-```
-
-加载更新后的 `$SESSION/00_masks/02_vision_global/*.bmp`，播放更新后的 `$SESSION/02_vision_global/amplitude_to_play/*.bmp`。
-
-### 捕获 Layer 2 后
-
-```bash
-CUDA_VISIBLE_DEVICES=$GPU python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_finetune \
-  --config "$CFG" --output-dir "$SESSION" --checkpoint "$CKPT1" --capture-stage vision_global
-export CKPT2=$SESSION/06_hardware_finetune/after_02_vision_global__ccd_native/checkpoints/best_train_loss.pt
-```
-
-加载更新后的 `$SESSION/00_masks/03_language_expert/*.bmp`，播放 `$SESSION/03_language_expert/amplitude_to_play/*.bmp`。
-
-### 捕获 Layer 3 后
-
-```bash
-CUDA_VISIBLE_DEVICES=$GPU python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_finetune \
-  --config "$CFG" --output-dir "$SESSION" --checkpoint "$CKPT2" --capture-stage language_expert
-export CKPT3=$SESSION/06_hardware_finetune/after_03_language_expert__ccd_native/checkpoints/best_train_loss.pt
-```
-
-加载更新后的 `$SESSION/00_masks/04_language_global/*.bmp`，播放 `$SESSION/04_language_global/amplitude_to_play/*.bmp`。
-
-### 捕获 Layer 4 后
-
-```bash
-CUDA_VISIBLE_DEVICES=$GPU python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_finetune \
-  --config "$CFG" --output-dir "$SESSION" --checkpoint "$CKPT3" --capture-stage language_global
-```
-
-这里没有后续光学层，因此只训练 final detector normalization 和 64D retrieval readout，并直接写最终指标。
-
-### 只捕获 Layer 4 的快捷方式
-
-无需补齐前三层 CCD。把最终 CCD 按 manifest 同名放入：
-
-```text
-$SESSION/04_language_global/ccd_captured/
-```
-
-直接执行：
-
-```bash
-CUDA_VISIBLE_DEVICES=$GPU python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_finetune \
-  --config "$CFG" --output-dir "$SESSION" --capture-stage language_global
-```
-
-该模式以前三层仿真路径提供样本上下文，但最终 embedding 的 detector 输入严格替换为实测 Layer-4 CCD；只有最终电子 readout 可训练。
-
-如果 20 个 epoch 已经训练完成、只在最后生成指标时中断，不要重跑训练。直接加载本阶段已经保存的 best checkpoint 收尾：
-
-```bash
-CUDA_VISIBLE_DEVICES=$GPU python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_finetune \
-  --config "$CFG" --output-dir "$SESSION" --checkpoint "$CKPT3" \
-  --capture-stage language_global --finalize-only
-```
-
-## 5. 输出目录约定
-
-```text
-$SESSION/
-├── 00_manifest/                         # 固定样本与播放顺序
-├── 00_masks/                            # 当前 checkpoint 对应、实验应加载的相位 BMP
-├── 01_vision_expert/{amplitude_to_play,ccd_captured,registered_ccd}/
-├── 02_vision_global/{amplitude_to_play,ccd_captured,registered_ccd}/
-├── 03_language_expert/{amplitude_to_play,ccd_captured,registered_ccd}/
-├── 04_language_global/{amplitude_to_play,ccd_captured,registered_ccd}/
-├── 05_retrieval/                        # 最终检索指标
+moe4_from31_epoch40_full_001/
+├── 00_manifest/
+│   ├── play_order.csv
+│   ├── deployment.json
+│   └── sample_metadata/
+├── 00_masks/
+│   ├── 01_vision_expert/
+│   ├── 02_vision_global/
+│   ├── 03_language_expert/
+│   └── 04_language_global/
+├── 01_vision_expert/
+├── 02_vision_global/
+├── 03_language_expert/
+├── 04_language_global/
+├── 05_retrieval/
 └── 06_hardware_finetune/
-    └── after_XX_<stage>__ccd_<transform>/
-        ├── checkpoints/{best_train_loss.pt,last.pt}
-        ├── metrics/{history.csv,summary.json}
-        ├── exported_downstream_masks/   # 本次适配后的 mask 快照
-        └── next_amplitude_bmp/          # 本次适配后的下一层振幅快照
 ```
 
-始终以 `00_masks/` 和下一层标准 `amplitude_to_play/` 作为下一次实验输入；`06_hardware_finetune/` 是不可覆盖的追溯副本。
-
-## 6. ROI 与最近邻注册
-
-推荐先用棋盘格确定 `capture.roi_xywh=[x,y,width,height]`。裁剪后若 CCD 尺寸仍不是 956×956，当前配置会执行：
+每个物理层目录统一包含：
 
 ```text
-captured CCD → ROI crop → optional vertical flip → optional horizontal flip → nearest resize to 956×956 → 2×2 mean binning → 478×478
-```
-
-每张图的原始尺寸和目标尺寸记录在对应层 `registered_ccd/<sample>.json`。最近邻只解决像素数差异，不能纠正旋转、透视和 ROI 位置错误。
-
-`capture.flip_vertical` 和 `capture.flip_horizontal` 只作用于实测 CCD，不作用于
-仿真张量。ROI 的 `[x,y,width,height]` 始终按相机原始画面填写；程序裁完 ROI
-后依次执行垂直、水平变换。当前重建光路的实测配置两者均为 `true`。
-
-微调目录会按坐标变换自动区分，避免混用 checkpoint：
-
-```text
-__ccd_native   # 不翻转
-__ccd_vflip    # 仅上下翻转
-__ccd_hflip    # 仅左右翻转
-__ccd_vhflip   # 上下和左右都翻转（当前重建光路）
-```
-
-### 最终 CCD 的全 SKU 原型检索强化
-
-重新搭建并确认 CCD 方向后，使用下列配置继续训练最终电子读出：
-
-```bash
-CUDA_VISIBLE_DEVICES=3 python -m \
-  experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_finetune \
-  --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_moe4_high_accuracy_hardware.yaml \
-  --capture-stage language_global
-```
-
-这一版不会覆盖原来的 36% checkpoint，输出到：
-
-```text
-hardware_sessions/moe4_transfer_001/06_hardware_finetune/
-after_04_language_global__ccd_vhflip__prototype_allsku_v1/
-```
-
-与旧微调每轮随机使用 `20/110` 张图不同，新版每个 epoch 覆盖全部 100 张
-实测 query；每个 batch 都包含 10 个 SKU 的实测 gallery prototype，并直接优化
-与部署一致的 cosine gallery retrieval。日志新增 `prototype_loss`、`train_top1`、
-`train_top3` 与 `train_mrr`，checkpoint 首先按实测训练 Top-1、同 Top-1 时按总损失选择。
-
-注意：这 100 张 query 同时参与硬件域适配，因此这里的 `train_top1` 是校准集
-重代入精度，不是独立测试精度。要报告无泄漏泛化结果，应重新采集未参与微调的
-商品视角作为独立 query。
-
-## 7. 测试
-
-```bash
-pytest experiments/hardware_sdk/tests \
-  experiments/hardware_sdk/generators/slm_patterns/tests \
-  experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/tests -q
-```
-## 推荐正式方案：Grocery31 预训练 → 目标 10 SKU 微调
-
-第一阶段使用相同 2×2 / MoE4 实物结构学习 31 种包装商品，第二阶段切回目标 10 SKU 并降低学习率、开启强增强和 EMA。两个阶段不共享测试图像参与反向传播。
-
-```bash
-EXP=experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval
-PRE_CFG=$EXP/configs/optimization/grocery31_moe4_pretrain.yaml
-FT_CFG=$EXP/configs/optimization/grocery10_moe4_from31_strong_ema.yaml
-PRE_OUT=$EXP/runs/qwen3_vl_embedding_2b_grocery31_moe4_pretrain
-
-CUDA_VISIBLE_DEVICES=3 python -m \
-  experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval \
-  --config "$PRE_CFG" --phase all
-
-CUDA_VISIBLE_DEVICES=3 python -m \
-  experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval \
-  --config "$FT_CFG" --phase all \
-  --resume-checkpoint "$PRE_OUT/ema_best_train_loss_checkpoint.pt"
-```
-
-最终 10-SKU 结果位于：
-
-```text
-$EXP/runs/qwen3_vl_embedding_2b_grocery10_moe4_from31_strong_ema/
-```
-
-当前服务器参考结果还额外保留了固定第 40 轮的 EMA：
-
-```text
-$EXP/runs/qwen3_vl_embedding_2b_grocery10_moe4_from31_epoch40_replay/ema_last_checkpoint.pt
-```
-
-为这组新权重建立全新的硬件 session（旧 CCD 是旧 mask 的输出，不能混用）：
-
-```bash
-CUDA_VISIBLE_DEVICES=3 python -m \
-  experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipeline \
-  --config "$EXP/configs/grocery10_moe4_from31_hardware.yaml" \
-  --phase prepare --artifact-profile full
+amplitude_to_play/      # 下载到实验室振幅 SLM 的 BMP
+ccd_captured/           # 上传回服务器的原始或可选扣背景 CCD
+registered_ccd/         # 尺寸、翻转和 2×2 binning 的审计记录
+simulation_reference/   # 对应样本的理论 CCD/光场
+electronic_output/      # 本层 CCD 后电子处理说明与误差统计
 ```

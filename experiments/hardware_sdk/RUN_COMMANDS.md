@@ -118,3 +118,24 @@ ROI 或主要光路不变时，不需要每次正式实验都重跑。
     python -m pytest experiments\hardware_sdk\tests -q
 
     python -m pytest experiments\hardware_sdk\generators\slm_patterns\tests -q
+
+## 11. 可选背景扣除实验（不属于正式采集）
+
+正式采集的原始 CCD 文件不会自动扣背景，也不会被覆盖。建议在目标图像采集完后、光路和当前相位 mask 均未改变时运行。
+
+第一步：保持目标图像采集时使用的相位 mask，不要切换相位；程序自动给振幅 SLM 加载全零 BMP，并以 10 帧中位数保存背景：
+
+    python -m experiments.hardware_sdk.workflows.optional_background capture --config experiments\hardware_sdk\configs\tucam_windows.yaml --output-dir experiments\hardware_sdk\artifacts\optional_background\current_layer
+
+输出：
+
+    experiments\hardware_sdk\artifacts\optional_background\current_layer\background.npy
+    experiments\hardware_sdk\artifacts\optional_background\current_layer\background.tif
+    experiments\hardware_sdk\artifacts\optional_background\current_layer\background_preview.png
+    experiments\hardware_sdk\artifacts\optional_background\current_layer\background_metadata.json
+
+第二步：对正式原始图像目录离线扣背景，输出到新目录：
+
+    python -m experiments.hardware_sdk.workflows.optional_background subtract --config experiments\hardware_sdk\configs\tucam_windows.yaml --input-dir experiments\hardware_sdk\data\ccd_captured --background experiments\hardware_sdk\artifacts\optional_background\current_layer\background.npy --output-dir experiments\hardware_sdk\data\ccd_background_subtracted --output-extension .npy --clear-output
+
+计算严格为 `maximum(raw.astype(float32) - background, 0)`。不 resize、不归一化、不改变空间方向。原始 `ccd_captured` 文件始终保留。不同相位层最好分别采集背景，并把 `current_layer` 换成明确的层名称。

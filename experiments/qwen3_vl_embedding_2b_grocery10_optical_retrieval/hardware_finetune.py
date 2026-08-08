@@ -60,6 +60,7 @@ class AdaptationConfig:
     temperature: float
     prototype_temperature: float
     gradient_clip_norm: float
+    include_test_split: bool
     run_tag: str | None
 
 
@@ -80,6 +81,7 @@ def load_adaptation_config(path: Path) -> AdaptationConfig:
         temperature=float(values.get("temperature", 0.07)),
         prototype_temperature=float(values.get("prototype_temperature", 0.07)),
         gradient_clip_norm=float(values.get("gradient_clip_norm", 1.0)),
+        include_test_split=bool(values.get("include_test_split", False)),
         run_tag=(str(values["run_tag"]).strip() if values.get("run_tag") else None),
     )
     if result.epochs <= 0 or result.learning_rate <= 0:
@@ -97,6 +99,52 @@ def load_adaptation_config(path: Path) -> AdaptationConfig:
     if result.lambda_kd < 0 or result.lambda_retrieval < 0 or result.lambda_prototype < 0:
         raise ValueError("adaptation loss weights must be nonnegative")
     return result
+
+
+def select_adaptation_rows(
+    manifest_rows: list[dict[str, str]], *, include_test_split: bool
+) -> tuple[list[dict[str, str]], dict[str, Any]]:
+    """Build an explicit calibration set without changing the fixed manifest.
+
+    Gallery views are registered deployment references.  Training views are
+    calibration queries.  Test queries are included only when the config opts
+    into transductive/test-set adaptation; in that case the resulting test
+    metric is explicitly not an independent generalization estimate.
+    """
+    galleries = [dict(row) for row in manifest_rows if row.get("role") == "gallery"]
+    train = [dict(row) for row in manifest_rows if row.get("role") == "train"]
+    test = [dict(row) for row in manifest_rows if row.get("role") == "query"]
+    if not galleries:
+        raise RuntimeError("Hardware adaptation manifest contains no gallery samples")
+    if not train:
+        raise RuntimeError(
+            "Hardware adaptation manifest contains no training samples. Re-run "
+            "hardware_pipeline --phase prepare with selection.mode=full_dataset."
+        )
+    calibration = train + (test if include_test_split else [])
+    converted: list[dict[str, str]] = []
+    for row in calibration:
+        value = dict(row)
+        value["source_role"] = str(row["role"])
+        value["role"] = "query"
+        converted.append(value)
+    selected = galleries + converted
+    report = {
+        "gallery_count": len(galleries),
+        "train_count": len(train),
+        "test_count_available": len(test),
+        "test_count_used_for_adaptation": len(test) if include_test_split else 0,
+        "adaptation_query_count": len(converted),
+        "include_test_split": include_test_split,
+        "independent_test_evaluation": not include_test_split,
+        "warning": (
+            "Test captures participate in parameter optimization; final test metrics "
+            "are calibration-set metrics, not an independent test result."
+            if include_test_split
+            else None
+        ),
+    }
+    return selected, report
 
 
 def _enable(module: torch.nn.Module, values: list[torch.nn.Parameter]) -> None:
@@ -456,6 +504,26 @@ def _regenerate_next_stage(
     }
 
 
+def _annotate_final_metrics(
+    runtime: Runtime,
+    regenerated: dict[str, Any],
+    adaptation_split: dict[str, Any],
+) -> None:
+    metrics_path = runtime.hardware.output_dir / "05_retrieval" / "metrics.json"
+    metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
+    include_test = bool(adaptation_split["include_test_split"])
+    metrics.update(
+        {
+            "hardware_adaptation": "downstream_causal_finetune",
+            "test_captures_used_for_hardware_adaptation": include_test,
+            "independent_test_evaluation": not include_test,
+            "adaptation_split": adaptation_split,
+        }
+    )
+    write_json(metrics_path, metrics)
+    regenerated["final_metrics"] = metrics
+
+
 def _adaptation_root(
     runtime: Runtime, capture_stage: str, run_tag: str | None = None
 ) -> Path:
@@ -505,6 +573,17 @@ def finalize_existing_adaptation(
     regenerated = _regenerate_next_stage(
         runtime, capture_stage, use_simulation, root
     )
+    if capture_stage == "language_global":
+        split_path = root / "metrics" / "adaptation_split.json"
+        if not split_path.is_file():
+            raise FileNotFoundError(
+                f"Adaptation split audit is missing: {split_path}"
+            )
+        _annotate_final_metrics(
+            runtime,
+            regenerated,
+            json.loads(split_path.read_text(encoding="utf-8")),
+        )
     summary = {
         "capture_stage": capture_stage,
         "finalize_only": True,
@@ -547,7 +626,22 @@ def adapt_after_capture(
         runtime.settings.teacher_cache_path, runtime.bundle, runtime.settings
     )
     by_id = _samples_by_id(runtime.bundle)
-    rows = _manifest_rows(runtime)
+    manifest_rows = _manifest_rows(runtime)
+    rows, adaptation_split = select_adaptation_rows(
+        manifest_rows, include_test_split=config.include_test_split
+    )
+    write_json(root / "metrics" / "adaptation_split.json", adaptation_split)
+    print(
+        "[hardware_finetune:split] "
+        f"gallery={adaptation_split['gallery_count']} "
+        f"train={adaptation_split['train_count']} "
+        f"test_used={adaptation_split['test_count_used_for_adaptation']}/"
+        f"{adaptation_split['test_count_available']} "
+        f"independent_test={adaptation_split['independent_test_evaluation']}",
+        flush=True,
+    )
+    if adaptation_split["warning"]:
+        print(f"WARNING: {adaptation_split['warning']}", flush=True)
     final_ccd_cache = (
         _build_final_ccd_cache(
             runtime, rows, by_id, use_simulation=use_simulation
@@ -689,6 +783,8 @@ def adapt_after_capture(
     runtime.hardware = replace(runtime.hardware, checkpoint=best_path)
     exported_masks = _export_downstream_masks(runtime, capture_stage, root)
     regenerated = _regenerate_next_stage(runtime, capture_stage, use_simulation, root)
+    if capture_stage == "language_global":
+        _annotate_final_metrics(runtime, regenerated, adaptation_split)
     summary = {
         "capture_stage": capture_stage,
         "source_checkpoint": str(source_checkpoint),
@@ -697,6 +793,7 @@ def adapt_after_capture(
         "best_training_top1": best_train_top1,
         "checkpoint_selection": "highest measured-query vs measured-gallery train Top-1, then lower total loss",
         "trainable_parameters": sum(value.numel() for value in parameters),
+        "adaptation_split": adaptation_split,
         "exported_downstream_phase_bmps": exported_masks,
         "regenerated": regenerated,
         "physical_causality": (

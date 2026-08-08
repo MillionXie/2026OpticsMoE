@@ -37,9 +37,9 @@ dataset:
     - Yoggi-Vanilla-Yoghurt
 
 training:
-  # The 31-SKU EMA test curve peaked around epoch 21 in the reference run;
-  # stop at 25 before the small packaged-product set is memorized.
-  epochs: 25
+  # Fixed 26-epoch first stage. The target continuation below adds 14 epochs,
+  # producing the reproducible absolute epoch-40 EMA checkpoint.
+  epochs: 26
   learning_rate: 0.0002
   adapter_learning_rate: 0.0002
   readout_learning_rate: 0.0005

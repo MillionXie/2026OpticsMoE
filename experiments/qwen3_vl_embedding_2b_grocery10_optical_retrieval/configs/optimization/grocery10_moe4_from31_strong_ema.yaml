@@ -44,4 +44,4 @@ augmentation:
   contrast_jitter: 0.20
   rotation_degrees: 10.0
 
-output_dir: ../../runs/qwen3_vl_embedding_2b_grocery10_moe4_from31_strong_ema
+output_dir: ../../runs/qwen3_vl_embedding_2b_grocery10_moe4_from31_epoch40_reproduction
