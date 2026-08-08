@@ -7,8 +7,8 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from experiments.hardware_sdk.amplitude_camera_demo import generate_digit_bmps
-from experiments.hardware_sdk.acquire_folder import run as run_folder_acquisition
+from experiments.hardware_sdk.demos.amplitude_camera_demo import generate_digit_bmps
+from experiments.hardware_sdk.workflows.acquire_folder import run as run_folder_acquisition
 from experiments.hardware_sdk.devices import (
     DeviceError,
     DvpSubprocessCamera,
@@ -19,18 +19,20 @@ from experiments.hardware_sdk.devices import (
     resize_detector_intensity,
 )
 from experiments.hardware_sdk.drivers.tucam_camera import TucamCamera
-from experiments.hardware_sdk.batch_postprocess import (
+from experiments.hardware_sdk.workflows.batch_postprocess import (
     camera_to_regular_square,
     run_batch_postprocess,
 )
-from experiments.hardware_sdk.phase_slm_demo import prepare_phase_frame
-from experiments.hardware_sdk.roi_calibration import (
+from experiments.hardware_sdk.demos.phase_slm_demo import prepare_phase_frame
+from experiments.hardware_sdk.workflows.roi_calibration import (
     detect_marker_centroid,
     exposure_patch,
     fit_affine,
     gaussian_marker,
     generate_calibration_files,
+    rectangle_marker,
     recommend_roi,
+    roi_boundary_source_points,
 )
 
 
@@ -322,7 +324,30 @@ def test_generate_calibration_masks_have_exact_8bit_slm_sizes(tmp_path: Path) ->
     assert phase.size == (192, 120)
     assert report["coarse_patterns"] == 5
     assert report["fine_patterns"] == 9
+    assert report["verification_patterns"] == 3
+    boundary = roi_boundary_source_points(config)
+    assert boundary == [
+        (95.5, 53.5),
+        (47.5, 5.5),
+        (143.5, 5.5),
+        (47.5, 101.5),
+        (143.5, 101.5),
+    ]
+    points = Image.open(tmp_path / "masks" / "amplitude" / "verify_roi_5points.bmp")
+    rectangles = Image.open(
+        tmp_path / "masks" / "amplitude" / "verify_roi_5rectangles.bmp"
+    )
+    outline = Image.open(tmp_path / "masks" / "amplitude" / "verify_roi_outline.bmp")
+    assert points.mode == rectangles.mode == outline.mode == "L"
+    assert points.size == rectangles.size == outline.size == (192, 108)
     assert (tmp_path / "masks" / "manifest.csv").is_file()
+
+
+def test_rectangle_marker_is_filled_and_centered() -> None:
+    marker = rectangle_marker((100, 80), (50, 40), 20)
+    assert marker.shape == (80, 100)
+    assert int((marker > 0).sum()) == 400
+    assert marker[30:50, 40:60].min() == 255
 
 
 def test_batch_postprocess_saves_quantitative_outputs_without_normalization(
@@ -393,10 +418,12 @@ def test_layer_agnostic_folder_acquisition_preserves_sorted_basenames(
         def device_info(self): return {"driver": "fake_camera"}
 
     monkeypatch.setattr(
-        "experiments.hardware_sdk.acquire_folder.build_slm", lambda *_: FakeSlm()
+        "experiments.hardware_sdk.workflows.acquire_folder.build_slm",
+        lambda *_: FakeSlm(),
     )
     monkeypatch.setattr(
-        "experiments.hardware_sdk.acquire_folder.build_camera", lambda *_: FakeCamera()
+        "experiments.hardware_sdk.workflows.acquire_folder.build_camera",
+        lambda *_: FakeCamera(),
     )
     config = tmp_path / "acquisition.json"
     config.write_text(

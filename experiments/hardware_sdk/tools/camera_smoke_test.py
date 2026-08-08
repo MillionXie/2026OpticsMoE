@@ -69,7 +69,7 @@ def main() -> int:
     parser.add_argument(
         "--config", default="configs/acquisition/tucam_windows.json"
     )
-    parser.add_argument("--output-dir", default="demo_outputs/camera_smoke_test")
+    parser.add_argument("--output-dir", default="artifacts/demos/camera_smoke_test")
     parser.add_argument("--frames", type=int, default=3)
     args = parser.parse_args()
     if args.frames <= 0:

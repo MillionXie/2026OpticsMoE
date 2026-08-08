@@ -40,10 +40,12 @@ $SESSION/00_masks/03_language_expert/*.bmp
 $SESSION/00_masks/04_language_global/*.bmp
 ```
 
-相位 BMP 已在导出前上下翻转。实验室电脑每层都执行同一条命令：
+相位 BMP 已在导出前上下翻转。实验室电脑从仓库根目录执行同一条命令（新 TUCam CCD）：
 
 ```powershell
-python acquire_folder.py --config configs\acquisition_windows.json --clear-output
+python -m experiments.hardware_sdk.workflows.acquire_folder `
+  --config experiments\hardware_sdk\configs\acquisition\tucam_windows.json `
+  --clear-output
 ```
 
 将生成的同名无损 PNG 上传到对应的 `$SESSION/<layer>/ccd_captured/`。
@@ -257,7 +259,7 @@ after_04_language_global__ccd_vhflip__prototype_allsku_v1/
 
 ```bash
 pytest experiments/hardware_sdk/tests \
-  experiments/hardware_sdk/slm_calibration_bmp_generator/tests \
+  experiments/hardware_sdk/generators/slm_patterns/tests \
   experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/tests -q
 ```
 ## 推荐正式方案：Grocery31 预训练 → 目标 10 SKU 微调

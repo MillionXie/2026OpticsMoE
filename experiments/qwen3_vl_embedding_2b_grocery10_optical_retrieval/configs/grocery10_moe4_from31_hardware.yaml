@@ -34,7 +34,7 @@ automation:
     phase_slm: {driver: manual}
     amplitude_slm:
       driver: holoeye
-      sdk_path: ../../hardware_sdk/amp_slm
+      sdk_path: ../../hardware_sdk/vendor_sdk/amplitude_holoeye
       binary_folder: null
       expected_resolution_wh: [1920, 1080]
       minimum_refresh_hz: 59.0
@@ -42,7 +42,7 @@ automation:
       wait_until_visible: true
     camera:
       driver: dvp_subprocess
-      sdk_path: ../../hardware_sdk/ccd/lib/linux/python3.5m/x64
+      sdk_path: ../../hardware_sdk/vendor_sdk/camera_dvp_legacy/lib/linux/python3.5m/x64
       conda_env: dvp35
       camera_index: 0
       timeout_ms: 4000

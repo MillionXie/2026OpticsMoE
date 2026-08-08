@@ -1,7 +1,7 @@
 {
-  "input_dir": "../../amplitude_to_play",
-  "output_dir": "../../ccd_captured",
-  "log_dir": "../../logs/tucam",
+  "input_dir": "../../data/amplitude_to_play",
+  "output_dir": "../../data/ccd_captured",
+  "log_dir": "../../artifacts/logs/tucam",
   "output_extension": ".npy",
   "settle_delay_ms": 200,
   "confirm_before_start": true,
@@ -18,7 +18,7 @@
 
   "camera": {
     "driver": "tucam",
-    "sdk_path": "../../ccd_2_mosaic",
+    "sdk_path": "../../vendor_sdk/camera_tucam_mosaic",
     "camera_index": 0,
     "timeout_ms": 10000,
     "config_file": null,

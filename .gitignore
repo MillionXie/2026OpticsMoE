@@ -26,29 +26,31 @@ __pycache__/
 *.zip
 _offline_packages
 
-# Vendor camera/SLM SDK binaries are machine-specific and license-bound.  The
-# shared Python adapters/configs in hardware_sdk remain tracked.
+# Hardware SDKs are intentionally versioned under hardware_sdk/vendor_sdk so
+# the bench-control project can be cloned onto another laboratory computer.
 /experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/sdk/
-/experiments/hardware_sdk/amp_slm/
-/experiments/hardware_sdk/ccd/
-/experiments/hardware_sdk/ccd_2_mosaic/
-/experiments/hardware_sdk/phase_slm/
-/experiments/hardware_sdk/demo_outputs/
 /experiments/hardware_sdk/workspace/
-/experiments/hardware_sdk/amplitude_to_play/
-/experiments/hardware_sdk/ccd_captured/
 /experiments/hardware_sdk/logs/
 /experiments/hardware_sdk/dvp_runtime/
-/experiments/hardware_sdk/slm_calibration_bmp_generator/generated/
-/experiments/hardware_sdk/calibration_masks/amplitude/*.bmp
-/experiments/hardware_sdk/calibration_masks/phase/*.bmp
-/experiments/hardware_sdk/calibration_masks/exposure/*.bmp
-/experiments/hardware_sdk/calibration_masks/manifest.csv
-/experiments/hardware_sdk/calibration_results/*
-!/experiments/hardware_sdk/calibration_masks/amplitude/.gitkeep
-!/experiments/hardware_sdk/calibration_masks/phase/.gitkeep
-!/experiments/hardware_sdk/calibration_masks/exposure/.gitkeep
-!/experiments/hardware_sdk/calibration_results/.gitkeep
+/experiments/hardware_sdk/data/amplitude_to_play/*
+/experiments/hardware_sdk/data/ccd_captured/*
+/experiments/hardware_sdk/data/processed/*
+!/experiments/hardware_sdk/data/amplitude_to_play/.gitkeep
+!/experiments/hardware_sdk/data/ccd_captured/.gitkeep
+!/experiments/hardware_sdk/data/processed/.gitkeep
+/experiments/hardware_sdk/artifacts/demos/*
+!/experiments/hardware_sdk/artifacts/demos/.gitkeep
+/experiments/hardware_sdk/artifacts/logs/
+/experiments/hardware_sdk/artifacts/calibration/masks/amplitude/*.bmp
+/experiments/hardware_sdk/artifacts/calibration/masks/phase/*.bmp
+/experiments/hardware_sdk/artifacts/calibration/masks/exposure/*.bmp
+/experiments/hardware_sdk/artifacts/calibration/masks/manifest.csv
+/experiments/hardware_sdk/artifacts/calibration/results/*
+!/experiments/hardware_sdk/artifacts/calibration/masks/amplitude/.gitkeep
+!/experiments/hardware_sdk/artifacts/calibration/masks/phase/.gitkeep
+!/experiments/hardware_sdk/artifacts/calibration/masks/exposure/.gitkeep
+!/experiments/hardware_sdk/artifacts/calibration/results/.gitkeep
+/experiments/hardware_sdk/generators/slm_patterns/generated/
 /experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/hardware_sessions/
 
 /experiments/qwen_vl_cifar10/data

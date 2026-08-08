@@ -1,77 +1,79 @@
 # Hardware SDK
 
-该目录负责实验室设备控制、标定和原始 CCD 数据整理，不包含 Qwen、Torch 或模型训练逻辑。
+这是一个可独立复制到实验室 Windows 电脑使用的轻量硬件工程，不依赖
+Torch、Qwen 或训练代码。它负责 SLM 播放、CCD 原始采集、ROI/曝光标定和
+离线后处理。
 
-## 目录职责
+## 目录
 
 ```text
 hardware_sdk/
-├─ drivers/                       # 相机厂商适配器
-│  ├─ tucam_camera.py             # 新 Dhyana 400BSI V3 / TUCam
-│  └─ README.md
-├─ tools/                         # 独立设备自检工具
-│  └─ camera_smoke_test.py
+├─ vendor_sdk/                         # 随 Git 同步的全部厂商 SDK
+│  ├─ amplitude_holoeye/               # HOLOEYE 振幅 SLM
+│  ├─ phase_meadowlark/                # Meadowlark 相位 SLM
+│  ├─ camera_dvp_legacy/               # 旧 DVP CCD
+│  └─ camera_tucam_mosaic/             # 新 Mosaic/TUCam CCD
 ├─ configs/
-│  ├─ acquisition/
-│  │  ├─ tucam_windows.json       # 新 CCD，当前默认
-│  │  └─ dvp_windows.json         # 旧 CCD，继续支持
-│  └─ calibration/
-│     └─ tucam.yaml               # 新 CCD 标定配置
-├─ acquire_folder.py              # 振幅 SLM 播放 + 原始 CCD 采集
-├─ roi_calibration.py             # background/coarse/fine/exposure
-├─ batch_postprocess.py           # 正式采集后的统一离线处理
-├─ calibration_common.py          # 标定共享纯函数
-├─ devices.py                     # 稳定设备接口与工厂
-├─ amplitude_camera_demo.py       # 旧振幅 SLM demo，保留兼容
-├─ phase_slm_demo.py              # 旧相位 SLM demo，保留兼容
-└─ slm_calibration_bmp_generator/ # 独立常用 SLM 图案生成器
+│  ├─ acquisition/                     # 新旧 CCD 正式采集配置
+│  └─ calibration/                     # 新 CCD 标定配置
+├─ drivers/                            # 可替换相机后端
+├─ tools/                              # 单设备 smoke test
+├─ workflows/                          # 采集、标定、统一后处理
+├─ demos/                              # 振幅/相位 SLM 独立 demo
+├─ legacy/                             # 旧 DVP worker 与环境安装脚本
+├─ generators/slm_patterns/            # 棋盘格、透镜、字母等 BMP
+├─ data/
+│  ├─ amplitude_to_play/               # 本轮要播放的振幅 BMP
+│  ├─ ccd_captured/                    # 原始 CCD 帧
+│  └─ processed/                       # 离线矫正后的定量帧
+├─ artifacts/
+│  ├─ calibration/masks/               # 标定 BMP
+│  ├─ calibration/results/             # background/矩阵/曲线
+│  ├─ demos/                           # demo 输出
+│  └─ logs/                            # 采集 manifest 与设备信息
+├─ devices.py                          # 稳定设备接口和 driver 工厂
+├─ README.md
+└─ RUN_COMMANDS.md
 ```
 
-本机厂商文件仍放在：
+`vendor_sdk/` 会提交到 Git；`data/` 和 `artifacts/` 中的运行结果默认忽略，
+避免把数百 MB 实验帧混入代码版本。空目录通过 `.gitkeep` 保留。
 
-```text
-amp_slm/          HOLOEYE 示例/SDK
-phase_slm/        Meadowlark Blink SDK
-ccd/              旧 DVP SDK
-ccd_2_mosaic/     新 TUCam/Mosaic SDK 与官方 demo/PDF
-```
+## 相机切换
 
-这些二进制文件与许可证相关，已被 Git 忽略；GitHub 和服务器只同步共享适配代码、配置与文档。
+上层只调用 `devices.build_camera`，由配置中的 `camera.driver` 选择后端：
 
-## 相机后端
-
-所有上层程序只调用：
-
-```python
-camera = build_camera(config, config_base)
-camera.open()
-camera.capture(path)
-camera.close()
-```
-
-配置中的 `camera.driver` 决定后端：
-
-- `tucam`：当前新 CCD，Dhyana 400BSI V3；
-- `dvp_subprocess`：旧 DVP 相机及旧 Python ABI；
+- `tucam`：新 Dhyana 400BSI V3 / Mosaic TUCam；
+- `dvp_subprocess`：旧 DVP 相机及其独立 Python ABI；
 - `dvp`：旧 DVP 同进程模式。
 
-新 TUCam 适配器严格参考上传的 `00_init_open.py`、`05_wait_frame.py`、`06_roi_mode.py` 和 `25_set_exposure.py`：
+新 TUCam 后端执行：
 
 ```text
-Api_Init → Dev_Open → exposure/ROI
-→ Buf_Alloc → Cap_Start
-→ Buf_WaitForFrame
-→ 复制原始 mono uint8/uint16 buffer
+Api_Init → Dev_Open → 设置曝光/ROI
+→ Buf_Alloc → Cap_Start → WaitForFrame
+→ 按 frame header、stride 和位深复制原始单色数据
 ```
 
-不调用 JPEG，不做显示拉伸，不把 16-bit 图像转成 8-bit。`exposure_us` 在公共配置中统一使用微秒，传入 TUCam 前按厂商 demo 转换成毫秒。
+公共配置的曝光单位是 μs，传入 TUCam 时转换为 ms。TUCam ROI 的
+`left/top/width/height` 必须都是 4 像素的倍数。
 
-新相机配置采用厂商规格：原生 2048×2048、6.5 μm 像素、单色。正式使用时仍以 `device_info()` 和实际帧 metadata 为准。
-TUCam 硬件 ROI 的 `left/top/width/height` 必须都是 4 像素的倍数；标定配置会按这一约束生成合法建议值。
+## 956×956 ROI 验证图
 
-## 正式采集原则
+`roi_calibration.py generate` 会生成：
 
-默认配置：
+- `verify_roi_5points.bmp`：中心点和四个精确 ROI 角点，角点跨度就是
+  956×956，不使用自动检测所需的 96 像素内缩；
+- `verify_roi_5rectangles.bmp`：同样五个位置改为 80×80 实心矩形；
+- `verify_roi_outline.bmp`：956×956 ROI 的完整矩形轮廓；
+- `verify_5points.bmp`：兼容文件名，内容与修正后的五点图相同。
+
+`marker_margin_px` 只影响自动 coarse/fine 的单标记图，不再影响以上人工
+ROI 验证图。
+
+## 数据原则
+
+正式采集默认：
 
 ```json
 "output_extension": ".npy",
@@ -79,42 +81,9 @@ TUCam 硬件 ROI 的 `left/top/width/height` 必须都是 4 像素的倍数；�
 "saved_frame_resize_mode": "none"
 ```
 
-因此采集循环只保存相机硬件 ROI 返回的原始帧：
+因此保存相机硬件 ROI 返回的原始 uint8/uint16 帧，不在采集循环中 resize、
+扣背景、做几何变换或逐图归一化。`capture_manifest.csv` 记录播放顺序、曝光、
+ROI、原始尺寸、保存尺寸、dtype 和 UTC 时间。所有处理统一交给
+`batch_postprocess.py`。
 
-- 不 resize；
-- 不扣背景；
-- 不做 affine/homography；
-- 不逐图归一化；
-- 保留 uint8/uint16 位深；
-- manifest 保存帧号、UTC 时间、曝光、ROI、原始尺寸和 dtype。
-
-所有处理统一交给 `batch_postprocess.py`。
-
-## 标定流程
-
-`roi_calibration.py` 提供：
-
-- `generate`：两张 zero BMP、五点粗标定、九点精标定和曝光灰度块；
-- `background`：激光开启、两块 SLM 均为零图时的系统背景；
-- `coarse`：完整视野下估计硬件 ROI；
-- `fine`：硬件 ROI 下比较 affine/homography；
-- `exposure`：固定窗口检查灰度 0～255 响应与饱和。
-
-系统 background 不是关闭激光得到的 dark frame。统一扣除方式为：
-
-```python
-corrected = maximum(raw.astype(float32) - background, 0)
-```
-
-`batch_postprocess.py` 先在接近 CCD 原采样密度下完成几何矫正，再以 `cv2.INTER_AREA` 缩小到 956×956，不在 warp 时直接低分辨率输出。
-
-## 安装与测试
-
-```powershell
-python -m pip install -r requirements-light.txt
-python -m pytest tests -q
-```
-
-新 TUCam SDK 直接使用当前 64-bit Windows Python 和 ctypes；旧 DVP 相机仍使用原来的独立兼容 Python，不互相影响。
-
-完整命令见 [RUN_COMMANDS.md](RUN_COMMANDS.md)。
+完整命令和先后顺序见 [RUN_COMMANDS.md](RUN_COMMANDS.md)。

@@ -1,0 +1,44 @@
+<?TUXML version="1.0" encoding="UTF-8"?>
+<Cam_Dhyana400BSIV3 Using="DftParameter">
+    <ParameterSets Name="DftParameter">
+        <Resolution>0</Resolution>
+        <PixelClock>0</PixelClock>
+        <BitOfDepth>16</BitOfDepth>
+        <GlobalGain>0</GlobalGain>
+        <Brightness>90</Brightness>
+        <ATExposure>0</ATExposure>
+        <FMExposure>0</FMExposure>
+        <LNExposure>1517</LNExposure>
+        <FlatFieldCorrection>0</FlatFieldCorrection>
+        <Sharpness>0</Sharpness>
+        <DenoiseValue>3</DenoiseValue>
+        <DenoisePermission>1</DenoisePermission>
+        <Temperature>40</Temperature>
+        <FanMode>1</FanMode>
+        <TriggerOutput>0</TriggerOutput>
+        <ImageModeSelect>2</ImageModeSelect>
+        <Enhance>0</Enhance>
+        <ImageProcessEnable>14</ImageProcessEnable>
+        <DefectCorrectionValue>0</DefectCorrectionValue>
+        <MultipleCameras>1</MultipleCameras>
+        <Gamma>100</Gamma>
+        <Contrast>128</Contrast>
+        <LeftLevels>0</LeftLevels>
+        <RightLevels>65535</RightLevels>
+        <HistogramStatistic>0</HistogramStatistic>
+        <AutoLevels>0</AutoLevels>
+        <Horizontal>0</Horizontal>
+        <Vertical>0</Vertical>
+        <Shift>0</Shift>
+        <VerticalCorrection>1</VerticalCorrection>
+        <USBLed>1</USBLed>
+        <TimeStampEn>0</TimeStampEn>
+        <AtlevelGear>1</AtlevelGear>
+        <RollingScanMode>0</RollingScanMode>
+        <RollingScanLTD>0</RollingScanLTD>
+        <RollingScanSlit>1</RollingScanSlit>
+        <RollingScanDir>0</RollingScanDir>
+        <RollingScanReset>0</RollingScanReset>
+        <IgnorePercentage>10</IgnorePercentage>
+    </ParameterSets>
+</Cam_Dhyana400BSIV3>

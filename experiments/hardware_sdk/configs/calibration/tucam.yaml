@@ -1,8 +1,8 @@
 wavelength_nm: 532
 
 paths:
-  masks_dir: ../../calibration_masks
-  results_dir: ../../calibration_results/tucam
+  masks_dir: ../../artifacts/calibration/masks
+  results_dir: ../../artifacts/calibration/results/tucam
 
 amplitude_slm:
   driver: holoeye
@@ -21,10 +21,10 @@ phase_slm:
   width: 1920
   height: 1200
   pixel_pitch_um: 8
-  sdk_root: ../../phase_slm
-  lut_file: ../../phase_slm/LUT Files/slm3_at532.lut
+  sdk_root: ../../vendor_sdk/phase_meadowlark
+  lut_file: ../../vendor_sdk/phase_meadowlark/LUT Files/slm3_at532.lut
   apply_wavefront_correction: false
-  wavefront_correction_file: ../../phase_slm/WFC Files/slm7001_at532_WFC.bmp
+  wavefront_correction_file: ../../vendor_sdk/phase_meadowlark/WFC Files/slm7001_at532_WFC.bmp
   flip_vertical: false
 
 amplitude_roi:
@@ -35,7 +35,7 @@ amplitude_roi:
 
 camera:
   driver: tucam
-  sdk_path: ../../ccd_2_mosaic
+  sdk_path: ../../vendor_sdk/camera_tucam_mosaic
   camera_index: 0
   # Dhyana 400BSI V3: native 2048x2048, 6.5 um pixels, monochrome.
   pixel_pitch_um: 6.5
@@ -69,7 +69,10 @@ settle_delay_ms: 200
 calibration:
   marker_size_px: 80
   marker_sigma_px: 18
+  # Only automatic coarse/fine single-marker patterns use this inward margin.
+  # verify_roi_* patterns always mark the exact 956x956 ROI boundary.
   marker_margin_px: 96
+  roi_outline_width_px: 4
   frames_per_pattern: 3
   camera_roi_padding_ratio: 0.04
   homography_min_rms_improvement: 0.20

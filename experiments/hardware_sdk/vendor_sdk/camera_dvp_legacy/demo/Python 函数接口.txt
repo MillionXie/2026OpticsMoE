@@ -1,0 +1,777 @@
+
+class Camera(Boost.Python.instance)
+ |  相机设备类
+ |
+ |  Method resolution order:
+ |      Camera
+ |      Boost.Python.instance
+ |      builtins.object
+ |
+ |  Static methods defined here:
+ |
+ |  Close(...)
+ |      Close( (Camera)arg1) -> Status :
+ |          关闭句柄，释放所有资源
+ |
+ |          C++ signature :
+ |              enum dvpStatus Close(class Camera {lvalue})
+ |
+ |  DebugReport(...)
+ |      DebugReport( (Camera)arg1, (ReportPart)Part, (ReportLevel)Level, (bool)Force [, (str)Text='' [, (int)Param=0]]) -> Status :
+ |          报告设备运行状态
+ |
+ |          C++ signature :
+ |              enum dvpStatus DebugReport(class Camera {lvalue},enum dvpReportPart,enum dvpReportLevel,bool [,class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> >='' [,unsigned int=0]])
+ |
+ |  Dialog(...)
+ |      Dialog( (Camera)arg1 [, (int)WinId=0]) -> Status :
+ |          显示设备属性页
+ |
+ |          C++ signature :
+ |              enum dvpStatus Dialog(class Camera {lvalue} [,int=0])
+ |
+ |  GetConfigString(...)
+ |      GetConfigString( (Camera)arg1, (str)dvpStr) -> str :
+ |          获取字符串参数
+ |
+ |          C++ signature :
+ |              char const * __ptr64 GetConfigString(class Camera {lvalue},char const * __ptr64)
+ |
+ |  GetFrame(...)
+ |      GetFrame( (Camera)arg1 [, (int)Timeout=1000]) -> tuple :
+ |          获取一帧图像
+ |
+ |          C++ signature :
+ |              class boost::python::tuple GetFrame(class Camera {lvalue} [,unsigned int=1000])
+ |
+ |  GetInputIoFunction(...)
+ |      GetInputIoFunction( (Camera)arg1, (InputIo)dvpInputIo) -> InputIoFunction :
+ |          获取输入IO的功能配置
+ |
+ |          C++ signature :
+ |              enum dvpInputIoFunction GetInputIoFunction(class Camera {lvalue},enum dvpInputIo)
+ |
+ |  GetInputIoLevel(...)
+ |      GetInputIoLevel( (Camera)arg1, (InputIo)dvpInputIo) -> bool :
+ |          获取输入IO的电平状态
+ |
+ |          C++ signature :
+ |              bool GetInputIoLevel(class Camera {lvalue},enum dvpInputIo)
+ |
+ |  GetLineInverter(...)
+ |      GetLineInverter( (Camera)arg1, (Line)dvpLine) -> bool :
+ |          获取引脚电平反向使能
+ |
+ |          C++ signature :
+ |              bool GetLineInverter(class Camera {lvalue},enum dvpLine)
+ |
+ |  GetLineLevel(...)
+ |      GetLineLevel( (Camera)arg1, (Line)dvpLine) -> bool :
+ |          获取@link dvpLineMode::LINE_MODE_OUTPUT 输出引脚@endlink 的电平
+ |
+ |          C++ signature :
+ |              bool GetLineLevel(class Camera {lvalue},enum dvpLine)
+ |
+ |  GetLineMode(...)
+ |      GetLineMode( (Camera)arg1, (Line)dvpLine) -> LineMode :
+ |          获取引脚的I/O模式
+ |
+ |          C++ signature :
+ |              enum dvpLineMode GetLineMode(class Camera {lvalue},enum dvpLine)
+ |
+ |  GetLineSource(...)
+ |      GetLineSource( (Camera)arg1, (Line)dvpLine) -> LineSource :
+ |          获取引脚的输出信号源
+ |
+ |          C++ signature :
+ |              enum dvpLineSource GetLineSource(class Camera {lvalue},enum dvpLine)
+ |
+ |  GetLineStatus(...)
+ |      GetLineStatus( (Camera)arg1, (Line)dvpLine) -> bool :
+ |          获取引脚电平状态的回读
+ |
+ |          C++ signature :
+ |              bool GetLineStatus(class Camera {lvalue},enum dvpLine)
+ |
+ |  GetOutputIoFunction(...)
+ |      GetOutputIoFunction( (Camera)arg1, (OutputIo)dvpOutputIo) -> OutputIoFunction :
+ |          获取输出IO的功能配置
+ |
+ |          C++ signature :
+ |              enum dvpOutputIoFunction GetOutputIoFunction(class Camera {lvalue},enum dvpOutputIo)
+ |
+ |  GetOutputIoLevel(...)
+ |      GetOutputIoLevel( (Camera)arg1, (OutputIo)dvpOutputIo) -> bool :
+ |          获取输出IO的电平状态
+ |
+ |          C++ signature :
+ |              bool GetOutputIoLevel(class Camera {lvalue},enum dvpOutputIo)
+ |
+ |  LoadConfig(...)
+ |      LoadConfig( (Camera)arg1 [, (str)path='']) -> Status :
+ |          加载指定路径的ini到当前设置
+ |
+ |          C++ signature :
+ |              enum dvpStatus LoadConfig(class Camera {lvalue} [,char const * __ptr64=''])
+ |
+ |  LoadDefault(...)
+ |      LoadDefault( (Camera)arg1) -> Status :
+ |          加载默认存档
+ |
+ |          C++ signature :
+ |              enum dvpStatus LoadDefault(class Camera {lvalue})
+ |
+ |  LoadUserSet(...)
+ |      LoadUserSet( (Camera)arg1 [, (UserSet)set=dvp.UserSet.USER_SET_DEFAULT]) -> Status :
+ |          从相机存储器加载设置
+ |
+ |          C++ signature :
+ |              enum dvpStatus LoadUserSet(class Camera {lvalue} [,enum dvpUserSet=dvp.UserSet.USER_SET_DEFAULT])
+ |
+ |  Open(...)
+ |      Open( (Camera)arg1 [, (int)Index=0 [, (OpenMode)OpenMode=dvp.OpenMode.OPEN_NORMAL]]) -> None :
+ |          根据索引号打开设备
+ |
+ |          C++ signature :
+ |              void Open(class Camera {lvalue} [,unsigned int=0 [,enum dvpOpenMode=dvp.OpenMode.OPEN_NORMAL]])
+ |
+ |  OpenByName(...)
+ |      OpenByName( (Camera)arg1 [, (str)FriendlyName='' [, (OpenMode)OpenMode=dvp.OpenMode.OPEN_NORMAL]]) -> None : |          根据友好名称打开设备
+ |
+ |          C++ signature :
+ |              void OpenByName(class Camera {lvalue} [,char const * __ptr64='' [,enum dvpOpenMode=dvp.OpenMode.OPEN_NORMAL]]) |
+ |  OpenByUserId(...)
+ |      OpenByUserId( (Camera)arg1 [, (str)UserId='' [, (OpenMode)OpenMode=dvp.OpenMode.OPEN_NORMAL]]) -> None :
+ |          根据用户命名打开设备
+ |
+ |          C++ signature :
+ |              void OpenByUserId(class Camera {lvalue} [,char const * __ptr64='' [,enum dvpOpenMode=dvp.OpenMode.OPEN_NORMAL]]) |
+ |  ProcessImage(...)
+ |      ProcessImage( (Camera)arg1, (tuple)FrameAndBuffer, (object)TargetBuffer [, (StreamFormat)TargetFormat=dvp.StreamFormat.S_BGR24]) -> tuple : |          在用户线程中处理一帧图像
+ |
+ |          C++ signature :
+ |              class boost::python::tuple ProcessImage(class Camera {lvalue},class boost::python::tuple,struct _object * __ptr64 [,enum dvpStreamFormat=dvp.StreamFormat.S_BGR24]) |
+ |  ReadUserData(...)
+ |      ReadUserData( (Camera)arg1, (int)Address=0, (int)Size) -> str :
+ |          从设备的持久性存储器读取用户数据
+ |
+ |          C++ signature :
+ |              class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > ReadUserData(class Camera {lvalue},unsigned int=0,unsigned int) |
+ |  RegisterEventCallback(...)
+ |      RegisterEventCallback( (Camera)arg1, (object)Function, (Event)Event) -> Status :
+ |          注册一般事件通知回调函数
+ |
+ |          C++ signature :
+ |              enum dvpStatus RegisterEventCallback(class Camera {lvalue},struct _object * __ptr64,enum dvpEvent)
+ |
+ |  RegisterStreamCallback(...)
+ |      RegisterStreamCallback( (Camera)arg1, (object)Function, (StreamEvent)Event) -> Status :
+ |          注册视频流回调函数
+ |
+ |          C++ signature :
+ |              enum dvpStatus RegisterStreamCallback(class Camera {lvalue},struct _object * __ptr64,enum dvpStreamEvent) |
+ |  SaveConfig(...)
+ |      SaveConfig( (Camera)arg1 [, (str)path='']) -> Status :
+ |          将当前设置存储到指定路径的ini
+ |
+ |          C++ signature :
+ |              enum dvpStatus SaveConfig(class Camera {lvalue} [,char const * __ptr64=''])
+ |
+ |      SaveConfig( (Camera)arg1 [, (str)set=dvp.UserSet.USER_SET_DEFAULT]) -> Status :
+ |          保存设置到相机存储器
+ |
+ |          C++ signature :
+ |              enum dvpStatus SaveConfig(class Camera {lvalue} [,char const * __ptr64=dvp.UserSet.USER_SET_DEFAULT]) |
+ |  SetConfigString(...)
+ |      SetConfigString( (Camera)arg1, (str)arg2, (str)dvpStr) -> Status :
+ |          设置字符串参数
+ |
+ |          C++ signature :
+ |              enum dvpStatus SetConfigString(class Camera {lvalue},char const * __ptr64,char const * __ptr64)
+ |
+ |  SetInputIoFunction(...)
+ |      SetInputIoFunction( (Camera)arg1, (InputIo)arg2, (InputIoFunction)dvpInputIo) -> Status :
+ |          设置输入IO的功能配置
+ |
+ |          C++ signature :
+ |              enum dvpStatus SetInputIoFunction(class Camera {lvalue},enum dvpInputIo,enum dvpInputIoFunction)
+ |
+ |  SetLineInverter(...)
+ |      SetLineInverter( (Camera)arg1, (Line)arg2, (bool)dvpLine) -> Status :
+ |          设置引脚电平反向使能
+ |
+ |          C++ signature :
+ |              enum dvpStatus SetLineInverter(class Camera {lvalue},enum dvpLine,bool)
+ |
+ |  SetLineLevel(...)
+ |      SetLineLevel( (Camera)arg1, (Line)arg2, (bool)dvpLine) -> Status :
+ |          设置@link dvpLineMode::LINE_MODE_OUTPUT 输出引脚@endlink 的电平
+ |
+ |          C++ signature :
+ |              enum dvpStatus SetLineLevel(class Camera {lvalue},enum dvpLine,bool)
+ |
+ |  SetLineMode(...)
+ |      SetLineMode( (Camera)arg1, (Line)arg2, (LineMode)dvpLine) -> Status :
+ |          设置引脚的I/O模式
+ |
+ |          C++ signature :
+ |              enum dvpStatus SetLineMode(class Camera {lvalue},enum dvpLine,enum dvpLineMode)
+ |
+ |  SetLineSource(...)
+ |      SetLineSource( (Camera)arg1, (Line)arg2, (LineSource)dvpLine) -> Status :
+ |          设置引脚的输出信号源
+ |
+ |          C++ signature :
+ |              enum dvpStatus SetLineSource(class Camera {lvalue},enum dvpLine,enum dvpLineSource)
+ |
+ |  SetOutputIoFunction(...)
+ |      SetOutputIoFunction( (Camera)arg1, (OutputIo)arg2, (OutputIoFunction)dvpOutputIo) -> Status :
+ |          设置输出IO的功能配置
+ |
+ |          C++ signature :
+ |              enum dvpStatus SetOutputIoFunction(class Camera {lvalue},enum dvpOutputIo,enum dvpOutputIoFunction)
+ |
+ |  SetOutputIoLevel(...)
+ |      SetOutputIoLevel( (Camera)arg1, (OutputIo)arg2, (bool)dvpOutputIo) -> Status :
+ |          设置输出IO的电平状态
+ |
+ |          C++ signature :
+ |              enum dvpStatus SetOutputIoLevel(class Camera {lvalue},enum dvpOutputIo,bool)
+ |
+ |  Start(...)
+ |      Start( (Camera)arg1) -> Status :
+ |          启动视频流
+ |
+ |          C++ signature :
+ |              enum dvpStatus Start(class Camera {lvalue})
+ |
+ |  Stop(...)
+ |      Stop( (Camera)arg1) -> Status :
+ |          停止视频流
+ |
+ |          C++ signature :
+ |              enum dvpStatus Stop(class Camera {lvalue})
+ |
+ |  UnregisterEventCallback(...)
+ |      UnregisterEventCallback( (Camera)arg1, (object)Function, (Event)Event) -> Status :
+ |          注销一般事件通知回调函数
+ |
+ |          C++ signature :
+ |              enum dvpStatus UnregisterEventCallback(class Camera {lvalue},struct _object * __ptr64,enum dvpEvent) |
+ |  UnregisterStreamCallback(...)
+ |      UnregisterStreamCallback( (Camera)arg1, (object)Function, (StreamEvent)Event) -> Status :
+ |          注销视频流回调函数
+ |
+ |          C++ signature :
+ |              enum dvpStatus UnregisterStreamCallback(class Camera {lvalue},struct _object * __ptr64,enum dvpStreamEvent) |
+ |  WriteUserData(...)
+ |      WriteUserData( (Camera)arg1, (int)Address=0, (str)Size) -> str :
+ |          写入用户数据到设备的持久性存储器
+ |
+ |          C++ signature :
+ |              class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > WriteUserData(class Camera {lvalue},unsigned int=0,class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> >) |
+ |  __init__(...)
+ |      __init__( (object)arg1) -> None :
+ |
+ |          C++ signature :
+ |              void __init__(struct _object * __ptr64)
+ |
+ |      __init__( (object)arg1, (Handle)handle) -> None :
+ |          根据句柄创建对象
+ |
+ |          C++ signature :
+ |              void __init__(struct _object * __ptr64,struct dvpHandle)
+ |
+ |      __init__( (object)arg1 [, (int)Index=0 [, (OpenMode)OpenMode=dvp.OpenMode.OPEN_NORMAL]]) -> None :
+ |          根据索引号创建对象
+ |
+ |          C++ signature :
+ |              void __init__(struct _object * __ptr64 [,unsigned int=0 [,enum dvpOpenMode=dvp.OpenMode.OPEN_NORMAL]]) |
+ |      __init__( (object)arg1, (str)FriendlyName [, (OpenMode)OpenMode=dvp.OpenMode.OPEN_NORMAL]) -> None :
+ |          根据友好名称创建对象
+ |
+ |          C++ signature :
+ |              void __init__(struct _object * __ptr64,char const * __ptr64 [,enum dvpOpenMode=dvp.OpenMode.OPEN_NORMAL]) |
+ |  __reduce__ = <unnamed Boost.Python function>(...)
+ |
+ |  __str__(...)
+ |      __str__( (Camera)arg1) -> str :
+ |
+ |          C++ signature :
+ |              class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > __str__(class Camera {lvalue}) |
+ |  ----------------------------------------------------------------------
+ |  Readonly properties defined here:
+ |
+ |  AccelerateSelDescr
+ |      硬件加速器
+ |
+ |  AeRoiDescr
+ |      区域曝光描述
+ |
+ |  AeSchemeSelDescr
+ |      自动曝光方案
+ |
+ |  AeTargetDescr
+ |      自动曝光目标亮度的描述信息
+ |
+ |  AnalogGainDescr
+ |      模拟增益的描述信息
+ |
+ |  AwbRoiDescr
+ |      区域白平衡描述
+ |
+ |  BGainDescr
+ |      蓝色数字增益的描述信息
+ |
+ |  BayerDecodeSelDescr
+ |      Bayer转RGB解码算法
+ |
+ |  BlackLevelDescr
+ |      黑场的描述信息
+ |
+ |  BufferQueueSizeDescr
+ |      缓存队列大小的描述信息
+ |
+ |  CameraInfo
+ |      相机信息
+ |
+ |  ColorSolutionSelDescr
+ |      色彩方案
+ |
+ |  ColorTemperatureDescr
+ |      色温的描述信息
+ |
+ |  ContrastDescr
+ |      对比度的描述信息
+ |
+ |  DeviceType
+ |      设备类型
+ |
+ |  ExposureDescr
+ |      曝光时间的描述信息
+ |
+ |  FirstPosition
+ |      第一个像素对应的位置
+ |
+ |  FrameCount
+ |      帧计数
+ |
+ |  FramesPerTriggerDescr
+ |      单次触发的输出帧数的描述信息
+ |
+ |  FunctionInfo
+ |      功能信息
+ |
+ |  GGainDescr
+ |      绿色数字增益的描述信息
+ |
+ |  GammaDescr
+ |      伽玛的描述信息
+ |
+ |  IsHold
+ |      视频流是否暂停
+ |
+ |  IsOnline
+ |      设备是否联机
+ |
+ |  IsValid
+ |      句柄是否有效
+ |
+ |  Line
+ |      相机引脚
+ |
+ |  LineInfo
+ |      引脚描述标志
+ |
+ |  MultiFramesDescr
+ |      多帧采集的描述信息
+ |
+ |  NoiseReduct2dDescr
+ |      2D降噪的描述信息
+ |
+ |  NoiseReduct3dDescr
+ |      3D降噪的描述信息
+ |
+ |  PacketSizeSelDescr
+ |      典型的数据传输包长
+ |
+ |  PixelRateSelDescr
+ |      像素采集速率
+ |
+ |  QuickRoiSelDescr
+ |      快速Roi
+ |
+ |  RGainDescr
+ |      红色数字增益的描述信息
+ |
+ |  ResolutionModeSelDescr
+ |      分辨率模式
+ |
+ |  RoiDescr
+ |      图像Roi(相对于整个传感器区域)的描述信息
+ |
+ |  SaturationDescr
+ |      饱和度的描述信息
+ |
+ |  SensorInfo
+ |      传感器信息
+ |
+ |  SharpnessDescr
+ |      锐度的描述信息
+ |
+ |  SoftTriggerLoopDescr
+ |      循环触发的描述信息
+ |
+ |  SourceFormatSelDescr
+ |      原始图像格式
+ |
+ |  StreamFlowCtrlSelDescr
+ |      流控制方案
+ |
+ |  StreamPackIntervalDescr
+ |      数据传输包间隔的描述信息
+ |
+ |  StreamPackSizeDescr
+ |      数据传输包长的描述信息
+ |
+ |  StrobeDelayDescr
+ |      Strobe信号的延时的描述信息
+ |
+ |  StrobeDurationDescr
+ |      Strobe信号的持续时间的描述信息
+ |
+ |  TargetFormatSelDescr
+ |      输出图像格式
+ |
+ |  TemperatureInfo
+ |      设备温度信息
+ |
+ |  TimerValueDescr
+ |      相机中的计时器的描述信息
+ |
+ |  TriggerDelayDescr
+ |      触发延时的描述信息
+ |
+ |  TriggerJitterFilterDescr
+ |      外部触发信号消抖时间的描述信息
+ |
+ |  UserIoInfo
+ |      用户IO有效标志
+ |
+ |  UserSetSync
+ |      相机设置
+ |
+ |  ----------------------------------------------------------------------
+ |  Data descriptors defined here:
+ |
+ |  AccelerateSel
+ |      当前硬件加速器选项的索引
+ |
+ |  AeConfig
+ |      自动曝光配置信息
+ |
+ |  AeMode
+ |      自动曝光模式
+ |
+ |  AeOperation
+ |      自动曝光的操作方式
+ |
+ |  AeRoi
+ |      自动曝光统计区域（相对于整个可见区域）
+ |
+ |  AeSchemeSel
+ |      当前自动曝光方案选项的索引
+ |
+ |  AeTarget
+ |      自动曝光目标亮度
+ |
+ |  AnalogGain
+ |      模拟增益
+ |
+ |  AntiFlick
+ |      抗频闪状态
+ |
+ |  AutoDefectFixState
+ |      自动消除彩点的使能状态
+ |
+ |  AwbOperation
+ |      自动白平衡的操作方式
+ |
+ |  AwbRoi
+ |      自动白平衡统计区域（相对于整个可见区域）
+ |
+ |  BGain
+ |      蓝色数字增益
+ |
+ |  BGainState
+ |      蓝色数字增益功能的使能状态
+ |
+ |  BayerDecodeSel
+ |      当前Bayer转RGB解码算法选项的索引
+ |
+ |  BlackLevel
+ |      黑场
+ |
+ |  BlackLevelState
+ |      黑场功能的使能状态
+ |
+ |  BufferConfig
+ |      缓存配置
+ |
+ |  BufferQueueSize
+ |      缓存队列大小
+ |
+ |  ColorCorrection
+ |      颜色校正数据
+ |
+ |  ColorSolutionSel
+ |      当前色彩方案选项的索引
+ |
+ |  ColorTemperature
+ |      色温
+ |
+ |  ColorTemperatureState
+ |      色温功能的使能状态
+ |
+ |  Contrast
+ |      对比度
+ |
+ |  ContrastState
+ |      对比度功能的使能状态
+ |
+ |  CoolerState
+ |      制冷器的使能状态
+ |
+ |  CreateDefectFixInfo
+ |      执行创建彩点校正信息
+ |
+ |  CreateFlatFieldInfo
+ |      执行创建平场校正信息
+ |
+ |  CurveLut
+ |      LUT曲线
+ |
+ |  Default
+ |      恢复出厂设置
+ |
+ |  DefectFixState
+ |      消除彩点的使能状态
+ |
+ |  Exposure
+ |      曝光时间
+ |
+ |  FlatFieldState
+ |      平场的使能状态
+ |
+ |  FlipHorizontalState
+ |      横向翻转的使能状态
+ |
+ |  FlipVerticalState
+ |      纵向翻转的使能状态
+ |
+ |  FramesPerTrigger
+ |      单次触发的输出帧数
+ |
+ |  GGain
+ |      绿色数字增益
+ |
+ |  GGainState
+ |      绿色数字增益功能的使能状态
+ |
+ |  Gamma
+ |      伽玛
+ |
+ |  GammaState
+ |      伽玛功能的使能状态
+ |
+ |  Handle
+ |      句柄
+ |
+ |  HardwareIspState
+ |      相机内置硬件ISP的使能状态
+ |
+ |  Hold
+ |      执行快速暂停视频流
+ |
+ |  InverseState
+ |      负片的使能状态
+ |
+ |  LinkTimeout
+ |      连接超时时间
+ |
+ |  Load
+ |      加载参数
+ |
+ |  MonoState
+ |      去色的使能状态
+ |
+ |  MultiFrames
+ |      多帧采集
+ |
+ |  MultiFramesState
+ |      多帧采集功能的使能状态
+ |
+ |  NoiseReduct2d
+ |      2D降噪
+ |
+ |  NoiseReduct2dState
+ |      2D降噪功能的使能状态
+ |
+ |  NoiseReduct3d
+ |      3D降噪
+ |
+ |  NoiseReduct3dState
+ |      3D降噪功能的使能状态
+ |
+ |  OpenMode
+ |      相机打开模式
+ |
+ |  PacketSizeSel
+ |      当前典型的数据传输包长选项的索引
+ |
+ |  PixelRateSel
+ |      当前像素采集速率选项的索引
+ |
+ |  QuickRoiSel
+ |      当前快速Roi选项的索引
+ |
+ |  RGain
+ |      红色数字增益
+ |
+ |  RGainState
+ |      红色数字增益功能的使能状态
+ |
+ |  ResetDevice
+ |      执行复位设备
+ |
+ |  ResolutionModeSel
+ |      当前分辨率模式选项的索引
+ |
+ |  Restart
+ |      执行快速重启/恢复视频流
+ |
+ |  Roi
+ |      图像Roi(相对于整个传感器区域)
+ |
+ |  RoiState
+ |      图像Roi(相对于整个传感器区域)功能的使能状态
+ |
+ |  RotateOpposite
+ |      图像旋转方向
+ |
+ |  RotateState
+ |      图像旋转使能状态
+ |
+ |  Saturation
+ |      饱和度
+ |
+ |  SaturationState
+ |      饱和度功能的使能状态
+ |
+ |  Save
+ |      保存参数
+ |
+ |  Sharpness
+ |      锐度
+ |
+ |  SharpnessState
+ |      锐度功能的使能状态
+ |
+ |  SoftTriggerLoop
+ |      循环触发
+ |
+ |  SoftTriggerLoopState
+ |      循环触发功能的使能状态
+ |
+ |  SourceFormat
+ |      源图像格式
+ |
+ |  SourceFormatSel
+ |      当前原始图像格式选项的索引
+ |
+ |  StreamFlowCtrlSel
+ |      当前流控制方案选项的索引
+ |
+ |  StreamPackInterval
+ |      数据传输包间隔
+ |
+ |  StreamPackSize
+ |      数据传输包长
+ |
+ |  StreamState
+ |      视频流状态
+ |
+ |  StrobeDelay
+ |      Strobe信号的延时
+ |
+ |  StrobeDriver
+ |      Strobe（闪光灯）信号驱动方式
+ |
+ |  StrobeDuration
+ |      Strobe信号的持续时间
+ |
+ |  StrobeOutputType
+ |      Strobe（闪光灯）信号类型
+ |
+ |  TargetFormat
+ |      目标图像格式
+ |
+ |  TargetFormatSel
+ |      当前输出图像格式选项的索引
+ |
+ |  TimerValue
+ |      相机中的计时器
+ |
+ |  TriggerDelay
+ |      触发延时
+ |
+ |  TriggerFire
+ |      执行发送软件触发信号
+ |
+ |  TriggerInputType
+ |      触发输入信号类型
+ |
+ |  TriggerJitterFilter
+ |      外部触发信号消抖时间
+ |
+ |  TriggerLineMode
+ |      相机触发源引脚的模式
+ |
+ |  TriggerSource
+ |      相机的触发源
+ |
+ |  TriggerState
+ |      触发模式的使能状态
+ |
+ |  UserColorMatrix
+ |      用户颜色矩阵
+ |
+ |  UserId
+ |      设备用户命名
+ |
+ |  UserSet
+ |      当前用户设置
+ |
+ |  ----------------------------------------------------------------------
+ |  Data and other attributes defined here:
+ |
+ |  LineClass = <class 'dvp.LineClass'>
+ |      引脚代理类
+ |
+ |  UserSetClass = <class 'dvp.UserSetClass'>
+ |      用户设置代理类
+ |
+ |  __instance_size__ = 40
+ |
+ |  ----------------------------------------------------------------------
+ |  Static methods inherited from Boost.Python.instance:
+ |
+ |  __new__(*args, **kwargs) from Boost.Python.class
+ |      Create and return a new object.  See help(type) for accurate signature.
+ |
+ |  ----------------------------------------------------------------------
+ |  Data descriptors inherited from Boost.Python.instance:
+ |
+ |  __dict__
+ |
+ |  __weakref__

@@ -660,7 +660,7 @@ class DvpSubprocessCamera(CameraDriver):
                 )
 
     def _prepare_inplace_runtime(self) -> tuple[Path, Path]:
-        source_worker = Path(__file__).with_name("dvp_capture_worker.py")
+        source_worker = Path(__file__).parent / "legacy" / "dvp_capture_worker.py"
         if self.sdk_path is None or not sys.platform.startswith("win"):
             return source_worker, source_worker.parent
         # The vendor explicitly requires the demo Python file, dvp.pyd and

@@ -2,8 +2,9 @@
 
 The public entry point is always `devices.build_camera(config, base)`.
 
-- `driver: tucam`: new Dhyana 400BSI V3 / Mosaic TUCam SDK. The local vendor
-  files remain under `../ccd_2_mosaic/` and are ignored by Git.
+- `driver: tucam`: new Dhyana 400BSI V3 / Mosaic TUCam SDK. The vendor files
+  are versioned under `../vendor_sdk/camera_tucam_mosaic/` so a cloned bench
+  project receives the same Python binding, DLL, demos and manuals.
 - `driver: dvp_subprocess`: legacy DVP camera through its vendor-compatible
   Python subprocess.
 - `driver: dvp`: legacy in-process DVP adapter.
