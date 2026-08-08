@@ -39,6 +39,33 @@ hardware_sessions/<session>/
 
 ## CCD 注册
 
+当前硬件配置先执行 `capture.roi_xywh` 裁剪，再按配置依次执行
+`capture.flip_vertical`（上下翻转）与 `capture.flip_horizontal`（左右翻转），
+然后使用 nearest-neighbor 注册到模型要求的物理 ROI。MoE4 为 `956×956`，随后进行
+严格的 `2×2 mean binning` 得到 `478×478`。最近邻不会生成双线性灰度，
+但也不能修正旋转、透视或错误 ROI；每张图的注册信息保存在该层
+`registered_ccd/*.json`。
+
+ROI 坐标按相机原始图填写，翻转发生在 ROI 裁剪之后。仿真 CCD 已在模型坐标系，
+不会被翻转。当前实验观察表明无需上下翻转，因此 MoE4 默认配置为
+当前重建光路经四种方向实测后采用
+`flip_vertical: true, flip_horizontal: true`；两个开关仍保留用于重新标定。
+
+## 相机缓存参数
+
+- `warmup_frames: 3`：相机流刚打开时先读取并丢弃 3 帧，用于稳定曝光、增益和驱动缓存。
+- `discard_frames_after_display: 1`：每次 SLM 切换 BMP 并等待 40 ms 后，再丢弃 1 帧，避免保存到仍属于上一张图案的缓存帧。
+
+两者都不是训练 batch，也不会减少需要保存的样本数。前者每次打开相机只执行一次；后者每切换一张 BMP 执行一次。
+
+## 实测后逐层适配
+
+`hardware_finetune.py` 将实测 CCD 作为不可微、固定的物理边界，并且只优化该
+边界后面的模块。因此 Layer-1 CCD 可优化 Vision OEO、Vision global、完整
+Language 光路和最终 readout；Layer-4 CCD 只能优化最终 detector normalization
+和 64D readout。每层 best checkpoint、更新后的下游 mask 和下一层振幅都有独立
+追溯目录。完整命令和 checkpoint 串联方式见 [RUN_COMMANDS.md](RUN_COMMANDS.md)。
+
 `capture.roi_xywh` 对完整相机帧做严格裁剪，不做任意 resize。MoE4 需要 956×956 ROI，再做精确 2×2 block mean 得到 478×478；MoE16 需要 986×986。
 
 每层电子桥会保存相对于仿真中间结果的 MSE、MAE、relative L2 和 cosine。归一化、ROI 与曝光必须保持固定，不能用自动曝光掩盖饱和、裁剪或几何错位。

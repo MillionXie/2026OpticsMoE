@@ -1,7 +1,7 @@
 {
-  "input_dir": "../amplitude_to_play",
-  "output_dir": "../ccd_captured",
-  "log_dir": "../logs",
+  "input_dir": "../../amplitude_to_play",
+  "output_dir": "../../ccd_captured",
+  "log_dir": "../../logs/dvp",
   "output_extension": ".npy",
   "settle_delay_ms": 200,
   "confirm_before_start": true,
@@ -18,7 +18,7 @@
 
   "camera": {
     "driver": "dvp_subprocess",
-    "sdk_path": "../ccd/lib/windows/python3.6/x64",
+    "sdk_path": "../../ccd/lib/windows/python3.6/x64",
     "python_executable": "C:\\Users\\MMLAB\\.conda\\envs\\RFL\\python.exe",
     "camera_index": 0,
     "timeout_ms": 4000,

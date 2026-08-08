@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -20,7 +21,13 @@ from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.modeling impo
 )
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipeline import (
     bin_ccd_superpixels,
+    load_captured_intensity,
     load_hardware_config,
+)
+from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_finetune import (
+    _epoch_batches,
+    configure_downstream_trainability,
+    prototype_retrieval_objective,
 )
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_automation import (
     load_automation_config,
@@ -709,11 +716,139 @@ def test_hardware_config_is_stage_first_and_uses_best_checkpoint() -> None:
     assert latest.checkpoint.name == "best_train_loss_checkpoint.pt"
     assert best.capture_binning_factor == 1
     assert latest.capture_binning_factor == 2
+    assert latest.capture_registration_mode == "nearest_resize"
+    assert not best.capture_flip_vertical and not best.capture_flip_horizontal
+    assert latest.capture_flip_vertical and latest.capture_flip_horizontal
     assert best.phase_flip_vertical and latest.phase_flip_vertical
     assert not best.minimal_artifacts and not latest.minimal_artifacts
     assert not best.copy_checkpoint_to_output
     assert latest.amplitude_encoding_percentile == pytest.approx(95.0)
     assert latest.amplitude_encoding_gamma == pytest.approx(0.65)
+
+
+def test_ccd_nearest_registration_then_exact_superpixel_binning(tmp_path: Path) -> None:
+    hardware = load_hardware_config(
+        EXPERIMENT / "configs" / "grocery10_moe4_latest_hardware.yaml"
+    )
+    hardware = replace(
+        hardware,
+        output_dir=tmp_path,
+        capture_flip_vertical=True,
+        capture_flip_horizontal=True,
+    )
+    capture = tmp_path / "01_vision_expert" / "ccd_captured"
+    capture.mkdir(parents=True)
+    source = torch.arange(15, dtype=torch.float32).reshape(3, 5)
+    torch.save(source, capture / "sample.pt")
+    runtime = SimpleNamespace(
+        hardware=hardware,
+        settings=SimpleNamespace(active_size=2),
+    )
+    actual = load_captured_intensity(
+        runtime, "vision_expert", "sample", use_simulation=False
+    )
+    registered = F.interpolate(
+        torch.flip(source, dims=(-2, -1))[None, None], size=(4, 4), mode="nearest"
+    )[0, 0]
+    expected = bin_ccd_superpixels(registered, 2, "mean")
+    assert torch.equal(actual, expected)
+    metadata = tmp_path / "01_vision_expert" / "registered_ccd" / "sample.json"
+    assert metadata.is_file()
+    assert '"flip_vertical_after_roi": true' in metadata.read_text(encoding="utf-8")
+    assert '"flip_horizontal_after_roi": true' in metadata.read_text(encoding="utf-8")
+
+
+class _AdaptationCore(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.input_adapter = nn.Linear(2, 2)
+        self.input_norm = nn.LayerNorm(2)
+        self.router = nn.Linear(2, 2)
+        self.expert_layers = nn.ModuleList([nn.Linear(2, 2)])
+        self.interlayer_conversions = nn.ModuleList([nn.Linear(2, 2)])
+        self.global_phase = nn.Linear(2, 2)
+        self.readout = nn.LayerNorm(2)
+        self.output_adapter = nn.Linear(2, 2)
+
+
+class _AdaptationSurrogate(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.core = _AdaptationCore()
+
+
+def test_final_ccd_adaptation_trains_only_downstream_electronics() -> None:
+    vision = _AdaptationSurrogate()
+    language = _AdaptationSurrogate()
+    readout = nn.Linear(2, 2)
+    runtime = SimpleNamespace(
+        loaded=SimpleNamespace(model=nn.Linear(2, 2)),
+        replacement=SimpleNamespace(
+            vision_surrogate=vision, language_surrogate=language
+        ),
+        readout=readout,
+    )
+    parameters, report = configure_downstream_trainability(
+        runtime, "language_global"
+    )
+    assert parameters
+    assert all(parameter.requires_grad for parameter in language.core.readout.parameters())
+    assert all(parameter.requires_grad for parameter in readout.parameters())
+    assert all(not parameter.requires_grad for parameter in language.core.global_phase.parameters())
+    assert all(not parameter.requires_grad for parameter in vision.parameters())
+    assert {row["name"].split(".")[0] for row in report} == {
+        "language",
+        "retrieval_readout",
+    }
+
+
+def test_hardware_epoch_batches_cover_every_query_and_include_all_galleries() -> None:
+    samples = {}
+    rows = []
+    for sku in range(3):
+        gallery_id = f"g{sku}"
+        samples[gallery_id] = SimpleNamespace(sku_index=sku)
+        rows.append({"sample_id": gallery_id, "sample_key": gallery_id, "role": "gallery"})
+        for index in range(5):
+            sample_id = f"q{sku}_{index}"
+            samples[sample_id] = SimpleNamespace(sku_index=sku)
+            rows.append({"sample_id": sample_id, "sample_key": sample_id, "role": "query"})
+    config = SimpleNamespace(skus_per_batch=3, samples_per_sku=2)
+    batches = _epoch_batches(rows, samples, config, epoch=1)
+    assert len(batches) == 3
+    query_ids = [
+        row["sample_id"]
+        for batch in batches
+        for row in batch
+        if row["role"] == "query"
+    ]
+    assert sorted(query_ids) == sorted(
+        row["sample_id"] for row in rows if row["role"] == "query"
+    )
+    for batch in batches:
+        assert {samples[row["sample_id"]].sku_index for row in batch if row["role"] == "gallery"} == {0, 1, 2}
+
+
+def test_measured_gallery_prototype_objective_has_perfect_top1_and_backward() -> None:
+    samples = []
+    rows = []
+    values = []
+    for sku in range(3):
+        for role in ("gallery", "query", "query"):
+            samples.append(SimpleNamespace(sku_index=sku))
+            rows.append({"role": role})
+            values.append(torch.eye(3)[sku])
+    raw = torch.stack(values).requires_grad_(True)
+    embeddings = F.normalize(raw, dim=-1)
+    loss, metrics = prototype_retrieval_objective(
+        embeddings, rows, samples, temperature=0.07
+    )
+    assert metrics["query_count"] == 6
+    assert metrics["top1"] == pytest.approx(1.0)
+    assert metrics["top3"] == pytest.approx(1.0)
+    assert metrics["mrr"] == pytest.approx(1.0)
+    loss.backward()
+    assert raw.grad is not None and torch.isfinite(raw.grad).all()
 
 
 def test_automation_config_and_replaceable_device_factories() -> None:

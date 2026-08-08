@@ -31,6 +31,7 @@ _offline_packages
 /experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/sdk/
 /experiments/hardware_sdk/amp_slm/
 /experiments/hardware_sdk/ccd/
+/experiments/hardware_sdk/ccd_2_mosaic/
 /experiments/hardware_sdk/phase_slm/
 /experiments/hardware_sdk/demo_outputs/
 /experiments/hardware_sdk/workspace/
@@ -39,6 +40,15 @@ _offline_packages
 /experiments/hardware_sdk/logs/
 /experiments/hardware_sdk/dvp_runtime/
 /experiments/hardware_sdk/slm_calibration_bmp_generator/generated/
+/experiments/hardware_sdk/calibration_masks/amplitude/*.bmp
+/experiments/hardware_sdk/calibration_masks/phase/*.bmp
+/experiments/hardware_sdk/calibration_masks/exposure/*.bmp
+/experiments/hardware_sdk/calibration_masks/manifest.csv
+/experiments/hardware_sdk/calibration_results/*
+!/experiments/hardware_sdk/calibration_masks/amplitude/.gitkeep
+!/experiments/hardware_sdk/calibration_masks/phase/.gitkeep
+!/experiments/hardware_sdk/calibration_masks/exposure/.gitkeep
+!/experiments/hardware_sdk/calibration_results/.gitkeep
 /experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/hardware_sessions/
 
 /experiments/qwen_vl_cifar10/data

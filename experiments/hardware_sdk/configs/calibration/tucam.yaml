@@ -1,0 +1,107 @@
+wavelength_nm: 532
+
+paths:
+  masks_dir: ../../calibration_masks
+  results_dir: ../../calibration_results/tucam
+
+amplitude_slm:
+  driver: holoeye
+  sdk_path: "%HEDS_3_2_PYTHON_MODULES%"
+  binary_folder: null
+  width: 1920
+  height: 1080
+  pixel_pitch_um: 8
+  expected_resolution_wh: [1920, 1080]
+  minimum_refresh_hz: 59.0
+  preload: true
+  wait_until_visible: true
+
+phase_slm:
+  driver: manual
+  width: 1920
+  height: 1200
+  pixel_pitch_um: 8
+  sdk_root: ../../phase_slm
+  lut_file: ../../phase_slm/LUT Files/slm3_at532.lut
+  apply_wavefront_correction: false
+  wavefront_correction_file: ../../phase_slm/WFC Files/slm7001_at532_WFC.bmp
+  flip_vertical: false
+
+amplitude_roi:
+  width: 956
+  height: 956
+  center_x: 959.5
+  center_y: 539.5
+
+camera:
+  driver: tucam
+  sdk_path: ../../ccd_2_mosaic
+  camera_index: 0
+  # Dhyana 400BSI V3: native 2048x2048, 6.5 um pixels, monochrome.
+  pixel_pitch_um: 6.5
+  native_resolution_wh: [2048, 2048]
+  default_exposure_us: 5000
+  timeout_ms: 10000
+  config_file: null
+  auto_exposure: false
+  exposure_us: 5000
+  analog_gain: null
+  anti_flicker_hz: null
+  resolution_mode: null
+  device_roi_xywh: null
+  saved_frame_size_wh: null
+  saved_frame_resize_mode: none
+  warmup_frames: 3
+  discard_frames_after_display: 1
+  roi_constraints:
+    # TUCam SDK: ROI offsets and sizes must be multiples of four pixels.
+    offset_step_x: 4
+    offset_step_y: 4
+    width_step: 4
+    height_step: 4
+    min_width: 4
+    min_height: 4
+
+propagation_mm: 50
+relay_nominal_magnification: 1.0
+settle_delay_ms: 200
+
+calibration:
+  marker_size_px: 80
+  marker_sigma_px: 18
+  marker_margin_px: 96
+  frames_per_pattern: 3
+  camera_roi_padding_ratio: 0.04
+  homography_min_rms_improvement: 0.20
+  large_residual_px: 8.0
+  detection:
+    threshold_fraction_of_peak: 0.20
+    threshold_percentile: 99.0
+    minimum_component_area_px: 20
+    maximum_component_area_fraction: 0.20
+
+background:
+  frames: 10
+
+exposure_calibration:
+  exposure_times_us: [5000]
+  gray_start: 0
+  gray_stop: 255
+  gray_step: 1
+  frames_per_gray: 2
+  patch_size_px: 160
+  patch_inner_size_px: 128
+  edge_taper_px: 16
+  measurement_window_padding_ratio: 0.10
+  low_response_fraction_of_sensor_range: 0.02
+  saturation_fraction_warning: 0.001
+
+postprocess:
+  target_width: 956
+  target_height: 956
+  resize_mode: area
+  save_npy: true
+  save_tiff: true
+  save_png_preview: false
+  saturation_fraction_warning: 0.001
+  blank_fraction_warning: 0.20

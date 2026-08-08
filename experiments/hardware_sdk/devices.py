@@ -32,11 +32,59 @@ __all__ = [
     "SLMDriver",
     "build_camera",
     "build_slm",
+    "resize_detector_intensity",
 ]
 
 
 class DeviceError(RuntimeError):
     pass
+
+
+def resize_detector_intensity(
+    array: np.ndarray,
+    size_wh: tuple[int, int] | None,
+    mode: str = "area",
+) -> np.ndarray:
+    """Resize a monochrome detector frame while preserving its integer dtype.
+
+    ``area`` averages source detector pixels and is the recommended compression
+    mode. ``nearest`` is provided for exact legacy-coordinate experiments.
+    Neither mode performs display normalization, gamma, or contrast stretching.
+    """
+    if array.ndim != 2 or array.dtype not in (np.uint8, np.uint16):
+        raise DeviceError(
+            "CCD frame resizing expects a 2-D uint8/uint16 intensity array; "
+            f"got shape={array.shape} dtype={array.dtype}"
+        )
+    mode = str(mode).lower()
+    if size_wh is None or mode == "none":
+        return array
+    width, height = (int(size_wh[0]), int(size_wh[1]))
+    if width <= 0 or height <= 0:
+        raise DeviceError("camera.saved_frame_size_wh values must be positive")
+    source_height, source_width = array.shape
+    if (source_width, source_height) == (width, height):
+        return array
+    if mode == "nearest":
+        x = np.floor(np.arange(width, dtype=np.float64) * source_width / width)
+        y = np.floor(np.arange(height, dtype=np.float64) * source_height / height)
+        x = np.minimum(x.astype(np.int64), source_width - 1)
+        y = np.minimum(y.astype(np.int64), source_height - 1)
+        return array[np.ix_(y, x)].copy()
+    if mode != "area":
+        raise DeviceError("camera.saved_frame_resize_mode must be none, area, or nearest")
+    if width > source_width or height > source_height:
+        raise DeviceError(
+            "area mode is for CCD downsampling only; choose nearest to enlarge a frame"
+        )
+    floating = Image.fromarray(array.astype(np.float32), mode="F")
+    resampling = getattr(Image, "Resampling", Image)
+    resized = np.asarray(
+        floating.resize((width, height), resample=resampling.BOX),
+        dtype=np.float32,
+    )
+    limit = np.iinfo(array.dtype)
+    return np.rint(resized).clip(limit.min, limit.max).astype(array.dtype)
 
 
 class SLMDriver(ABC):
@@ -379,6 +427,8 @@ class DvpCamera(CameraDriver):
         resolution_mode: int | None = None,
         warmup_frames: int = 3,
         discard_frames_after_display: int = 1,
+        saved_frame_size_wh: tuple[int, int] | None = None,
+        saved_frame_resize_mode: str = "area",
     ) -> None:
         self.sdk_path = sdk_path
         self.camera_index = int(camera_index)
@@ -392,6 +442,9 @@ class DvpCamera(CameraDriver):
         self.resolution_mode = resolution_mode
         self.warmup_frames = int(warmup_frames)
         self.discard_frames_after_display = int(discard_frames_after_display)
+        self.saved_frame_size_wh = saved_frame_size_wh
+        self.saved_frame_resize_mode = str(saved_frame_resize_mode).lower()
+        self._last_capture_info: dict[str, Any] | None = None
         self._module: Any = None
         self._camera: Any = None
         self._info: dict[str, Any] = {}
@@ -464,8 +517,22 @@ class DvpCamera(CameraDriver):
         for _ in range(self.discard_frames_after_display):
             self._camera.GetFrame(self.timeout_ms)
         array = self._frame_to_array(self._camera.GetFrame(self.timeout_ms), self._module)
+        source_size = [int(array.shape[1]), int(array.shape[0])]
+        array = resize_detector_intensity(
+            array, self.saved_frame_size_wh, self.saved_frame_resize_mode
+        )
         path.parent.mkdir(parents=True, exist_ok=True)
-        Image.fromarray(array).save(path)
+        if path.suffix.lower() == ".npy":
+            np.save(path, array)
+        else:
+            Image.fromarray(array).save(path)
+        self._last_capture_info = {
+            "source_size_wh": source_size,
+            "saved_size_wh": [int(array.shape[1]), int(array.shape[0])],
+            "resize_mode": self.saved_frame_resize_mode,
+            "resized": source_size != [int(array.shape[1]), int(array.shape[0])],
+            "dtype": str(array.dtype),
+        }
 
     def close(self) -> None:
         if self._camera is not None:
@@ -476,7 +543,15 @@ class DvpCamera(CameraDriver):
                 self._camera = None
 
     def device_info(self) -> dict[str, Any]:
-        return {"driver": "dvp", **self._info}
+        return {
+            "driver": "dvp",
+            "saved_frame_size_wh": (
+                None if self.saved_frame_size_wh is None else list(self.saved_frame_size_wh)
+            ),
+            "saved_frame_resize_mode": self.saved_frame_resize_mode,
+            "last_capture": self._last_capture_info,
+            **self._info,
+        }
 
 
 class DvpSubprocessCamera(CameraDriver):
@@ -502,6 +577,8 @@ class DvpSubprocessCamera(CameraDriver):
         resolution_mode: int | None = None,
         warmup_frames: int = 3,
         discard_frames_after_display: int = 1,
+        saved_frame_size_wh: tuple[int, int] | None = None,
+        saved_frame_resize_mode: str = "area",
     ) -> None:
         self.sdk_path = sdk_path
         self.python_executable = python_executable
@@ -516,9 +593,12 @@ class DvpSubprocessCamera(CameraDriver):
         self.resolution_mode = resolution_mode
         self.warmup_frames = int(warmup_frames)
         self.discard_frames_after_display = int(discard_frames_after_display)
+        self.saved_frame_size_wh = saved_frame_size_wh
+        self.saved_frame_resize_mode = str(saved_frame_resize_mode).lower()
         self._process: subprocess.Popen[str] | None = None
         self._info: dict[str, Any] = {}
         self._runtime_dir: Path | None = None
+        self._last_capture_info: dict[str, Any] | None = None
 
     def validate_runtime(self) -> None:
         raw = str(self.python_executable).strip()
@@ -690,10 +770,11 @@ class DvpSubprocessCamera(CameraDriver):
                 "dvp_subprocess supports lossless .npy, .png, .tif, or .tiff captures"
             )
         path.parent.mkdir(parents=True, exist_ok=True)
+        needs_postprocess = suffix != ".npy" or self.saved_frame_size_wh is not None
         raw_path = (
-            path
-            if suffix == ".npy"
-            else path.parent / f".{path.stem}.dvp_raw.npy"
+            path.parent / f".{path.stem}.dvp_raw.npy"
+            if needs_postprocess
+            else path
         )
         if raw_path != path and raw_path.exists():
             raw_path.unlink()
@@ -706,7 +787,7 @@ class DvpSubprocessCamera(CameraDriver):
             raise DeviceError(f"Invalid DVP worker response: {response!r}") from exc
         if not payload.get("ok"):
             raise DeviceError(f"DVP capture failed: {payload.get('error', payload)}")
-        if raw_path != path:
+        if needs_postprocess:
             try:
                 array = np.load(raw_path, allow_pickle=False)
                 if array.ndim != 2 or array.dtype not in (np.uint8, np.uint16):
@@ -714,10 +795,34 @@ class DvpSubprocessCamera(CameraDriver):
                         f"DVP lossless image export expects 2-D uint8/uint16, got "
                         f"shape={array.shape} dtype={array.dtype}"
                     )
-                image = Image.fromarray(array)
-                image.save(path, format="PNG" if suffix == ".png" else "TIFF")
+                source_size = [int(array.shape[1]), int(array.shape[0])]
+                array = resize_detector_intensity(
+                    array, self.saved_frame_size_wh, self.saved_frame_resize_mode
+                )
+                if suffix == ".npy":
+                    np.save(path, array)
+                else:
+                    image = Image.fromarray(array)
+                    image.save(path, format="PNG" if suffix == ".png" else "TIFF")
+                saved_size = [int(array.shape[1]), int(array.shape[0])]
+                self._last_capture_info = {
+                    "source_size_wh": source_size,
+                    "saved_size_wh": saved_size,
+                    "resize_mode": self.saved_frame_resize_mode,
+                    "resized": source_size != saved_size,
+                    "dtype": str(array.dtype),
+                }
             finally:
                 raw_path.unlink(missing_ok=True)
+        else:
+            array = np.load(path, mmap_mode="r", allow_pickle=False)
+            self._last_capture_info = {
+                "source_size_wh": [int(array.shape[1]), int(array.shape[0])],
+                "saved_size_wh": [int(array.shape[1]), int(array.shape[0])],
+                "resize_mode": self.saved_frame_resize_mode,
+                "resized": False,
+                "dtype": str(array.dtype),
+            }
 
     def close(self) -> None:
         process, self._process = self._process, None
@@ -739,6 +844,11 @@ class DvpSubprocessCamera(CameraDriver):
             "driver": "dvp_subprocess",
             "python_executable": self.python_executable,
             "runtime_dir": None if self._runtime_dir is None else str(self._runtime_dir),
+            "saved_frame_size_wh": (
+                None if self.saved_frame_size_wh is None else list(self.saved_frame_size_wh)
+            ),
+            "saved_frame_resize_mode": self.saved_frame_resize_mode,
+            "last_capture": self._last_capture_info,
             **self._info,
         }
 
@@ -796,6 +906,28 @@ def build_camera(config: dict[str, Any], base: Path) -> CameraDriver:
     )
     if device_roi is not None and len(device_roi) != 4:
         raise ValueError("camera.device_roi_xywh must contain [x,y,width,height]")
+    saved_size_raw = config.get("saved_frame_size_wh")
+    saved_frame_size = (
+        tuple(int(value) for value in saved_size_raw)
+        if saved_size_raw is not None
+        else None
+    )
+    if saved_frame_size is not None and (
+        len(saved_frame_size) != 2 or any(value <= 0 for value in saved_frame_size)
+    ):
+        raise ValueError("camera.saved_frame_size_wh must contain positive [width,height]")
+    saved_frame_resize_mode = str(
+        config.get("saved_frame_resize_mode", "area")
+    ).lower()
+    if saved_frame_resize_mode not in {"none", "area", "nearest"}:
+        raise ValueError(
+            "camera.saved_frame_resize_mode must be none, area, or nearest"
+        )
+    if saved_frame_resize_mode == "none" and saved_frame_size is not None:
+        raise ValueError(
+            "camera.saved_frame_size_wh must be null when "
+            "saved_frame_resize_mode is none"
+        )
     common = dict(
         camera_index=int(config.get("camera_index", 0)),
         timeout_ms=int(config.get("timeout_ms", 4000)),
@@ -828,6 +960,8 @@ def build_camera(config: dict[str, Any], base: Path) -> CameraDriver:
         ),
         warmup_frames=int(config.get("warmup_frames", 3)),
         discard_frames_after_display=int(config.get("discard_frames_after_display", 1)),
+        saved_frame_size_wh=saved_frame_size,
+        saved_frame_resize_mode=saved_frame_resize_mode,
     )
     if common["warmup_frames"] < 0 or common["discard_frames_after_display"] < 0:
         raise ValueError("camera warmup/discard frame counts cannot be negative")
@@ -864,6 +998,16 @@ def build_camera(config: dict[str, Any], base: Path) -> CameraDriver:
             python_executable=str(python_executable or "python3.5"),
             **common,
         )
+    if driver in {"tucam", "mosaic"}:
+        sdk_path = _resolve_optional(config.get("sdk_path"), base)
+        if sdk_path is None:
+            raise ValueError("A TUCam camera requires camera.sdk_path")
+        try:
+            from .drivers.tucam_camera import TucamCamera
+        except ImportError:  # direct execution from inside hardware_sdk/
+            from drivers.tucam_camera import TucamCamera
+
+        return TucamCamera(sdk_path=sdk_path, **common)
     raise ValueError(
-        f"Unknown camera driver {driver!r}; supported: dvp, dvp_subprocess"
+        f"Unknown camera driver {driver!r}; supported: dvp, dvp_subprocess, tucam"
     )

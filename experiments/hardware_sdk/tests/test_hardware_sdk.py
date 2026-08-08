@@ -16,9 +16,22 @@ from experiments.hardware_sdk.devices import (
     _configure_dvp_camera,
     build_camera,
     build_slm,
+    resize_detector_intensity,
+)
+from experiments.hardware_sdk.drivers.tucam_camera import TucamCamera
+from experiments.hardware_sdk.batch_postprocess import (
+    camera_to_regular_square,
+    run_batch_postprocess,
 )
 from experiments.hardware_sdk.phase_slm_demo import prepare_phase_frame
-from experiments.hardware_sdk.roi_calibration import recommend_roi
+from experiments.hardware_sdk.roi_calibration import (
+    detect_marker_centroid,
+    exposure_patch,
+    fit_affine,
+    gaussian_marker,
+    generate_calibration_files,
+    recommend_roi,
+)
 
 
 def test_digit_bmps_have_stable_order_and_exact_slm_shape(tmp_path: Path) -> None:
@@ -121,12 +134,113 @@ def test_shared_factories_preserve_replaceable_vendor_interfaces(tmp_path: Path)
             "exposure_us": 10000,
             "analog_gain": 1.0,
             "discard_frames_after_display": 1,
+            "saved_frame_size_wh": [956, 956],
+            "saved_frame_resize_mode": "area",
         },
         tmp_path,
     )
     assert isinstance(camera, DvpSubprocessCamera)
     assert camera.exposure_us == pytest.approx(10000.0)
     assert camera.discard_frames_after_display == 1
+    assert camera.saved_frame_size_wh == (956, 956)
+    assert camera.saved_frame_resize_mode == "area"
+
+
+def test_factory_builds_tucam_without_changing_legacy_dvp(tmp_path: Path) -> None:
+    camera = build_camera(
+        {
+            "driver": "tucam",
+            "sdk_path": ".",
+            "exposure_us": 5000,
+            "analog_gain": None,
+            "anti_flicker_hz": None,
+            "saved_frame_size_wh": None,
+            "saved_frame_resize_mode": "none",
+        },
+        tmp_path,
+    )
+    assert isinstance(camera, TucamCamera)
+    assert camera.exposure_us == pytest.approx(5000)
+    assert camera.saved_frame_resize_mode == "none"
+
+
+def test_tucam_roi_requires_four_pixel_alignment() -> None:
+    TucamCamera.validate_roi((12, 20, 956, 956))
+    with pytest.raises(DeviceError, match="multiples of 4"):
+        TucamCamera.validate_roi((10, 20, 956, 956))
+
+
+def test_tucam_frame_copy_preserves_uint16_stride_and_header() -> None:
+    import ctypes
+
+    height, width, header, stride = 3, 4, 8, 12
+    expected = np.array(
+        [[1, 2, 3, 4], [100, 200, 300, 400], [4095, 8191, 16383, 65535]],
+        dtype=np.uint16,
+    )
+    payload = bytearray(header + stride * height)
+    for row in range(height):
+        encoded = expected[row].astype("<u2").tobytes()
+        start = header + row * stride
+        payload[start : start + len(encoded)] = encoded
+    buffer = ctypes.create_string_buffer(bytes(payload))
+    frame = SimpleNamespace(
+        usWidth=width,
+        usHeight=height,
+        ucChannels=1,
+        ucElemBytes=2,
+        uiWidthStep=stride,
+        uiImgSize=stride * height,
+        usHeader=header,
+        pBuffer=ctypes.addressof(buffer),
+    )
+    actual = TucamCamera.frame_to_array(frame)
+    assert actual.dtype == np.uint16
+    assert np.array_equal(actual, expected)
+
+
+def test_saved_frame_nearest_resize_has_exact_shape_and_mapping() -> None:
+    source = np.arange(24, dtype=np.uint16).reshape(4, 6)
+    resized = resize_detector_intensity(source, (3, 2), "nearest")
+    assert resized.shape == (2, 3)
+    assert resized.dtype == np.uint16
+    assert resized.tolist() == [[0, 2, 4], [12, 14, 16]]
+
+
+def test_saved_frame_area_resize_preserves_constant_uint16_intensity() -> None:
+    source = np.full((2000, 3000), 4095, dtype=np.uint16)
+    resized = resize_detector_intensity(source, (956, 956), "area")
+    assert resized.shape == (956, 956)
+    assert resized.dtype == np.uint16
+    assert np.all(resized == 4095)
+
+
+def test_saved_frame_area_mode_rejects_enlargement() -> None:
+    with pytest.raises(DeviceError, match="downsampling only"):
+        resize_detector_intensity(np.zeros((10, 10), dtype=np.uint8), (20, 20), "area")
+
+
+def test_saved_frame_none_mode_preserves_raw_array_without_copy() -> None:
+    source = np.arange(35, dtype=np.uint16).reshape(5, 7)
+    actual = resize_detector_intensity(source, None, "none")
+    assert actual is source
+    assert actual.shape == (5, 7)
+    assert np.array_equal(actual, source)
+
+
+def test_build_camera_accepts_explicit_unprocessed_raw_mode(tmp_path: Path) -> None:
+    camera = build_camera(
+        {
+            "driver": "dvp_subprocess",
+            "sdk_path": None,
+            "python_executable": __import__("sys").executable,
+            "saved_frame_size_wh": None,
+            "saved_frame_resize_mode": "none",
+        },
+        tmp_path,
+    )
+    assert camera.saved_frame_size_wh is None
+    assert camera.saved_frame_resize_mode == "none"
 
 
 def test_roi_recommendation_uses_black_reference_and_exact_requested_shape() -> None:
@@ -137,6 +251,120 @@ def test_roi_recommendation_uses_black_reference_and_exact_requested_shape() -> 
     assert roi == (60, 25, 80, 70)
     assert stats["signal_center_x"] == pytest.approx(99.5)
     assert stats["signal_center_y"] == pytest.approx(59.5)
+
+
+def test_gaussian_marker_is_uint8_and_weighted_centroid_rejects_noise() -> None:
+    marker = gaussian_marker((200, 160), (91.5, 73.5), 80, 18)
+    corrected = marker.astype(np.float32)
+    corrected[2, 2] = 255  # bright one-pixel noise must not become the marker
+    point, details = detect_marker_centroid(
+        corrected,
+        {
+            "threshold_fraction_of_peak": 0.2,
+            "threshold_percentile": 99.0,
+            "minimum_component_area_px": 20,
+            "maximum_component_area_fraction": 0.2,
+        },
+    )
+    assert marker.dtype == np.uint8
+    assert marker.shape == (160, 200)
+    assert point[0] == pytest.approx(91.5, abs=0.6)
+    assert point[1] == pytest.approx(73.5, abs=0.6)
+    assert details["chosen"]["area"] >= 20
+
+
+def test_exposure_patch_has_uniform_center_and_cosine_taper() -> None:
+    patch = exposure_patch((300, 240), (149.5, 119.5), 200, 160, 128, 16)
+    assert patch.shape == (240, 300)
+    assert patch.dtype == np.uint8
+    assert patch[120, 150] == 200
+    assert patch[40, 70] == 0
+    assert 0 < patch[48, 75] < 200
+
+
+def test_affine_fit_and_regular_square_warp_are_geometry_consistent() -> None:
+    source = np.array([[0, 0], [10, 0], [0, 10], [10, 10], [5, 5]], dtype=np.float64)
+    destination = source * np.array([2.0, 3.0]) + np.array([7.0, 11.0])
+    matrix, residuals, rms = fit_affine(source, destination)
+    assert rms < 1e-10
+    assert np.max(residuals) < 1e-10
+    calibration = {
+        "forward_matrix": matrix.tolist(),
+        "amplitude_roi": {"width": 10, "height": 10, "center_x": 5, "center_y": 5},
+    }
+    camera = np.zeros((50, 50), dtype=np.float32)
+    camera[11:42, 7:28] = 1.0
+    output, intermediate, metadata = camera_to_regular_square(camera, calibration, (10, 10))
+    assert output.shape == (10, 10)
+    assert intermediate.shape[0] >= 10
+    assert metadata["validity_fraction"] > 0.9
+
+
+def test_generate_calibration_masks_have_exact_8bit_slm_sizes(tmp_path: Path) -> None:
+    config = {
+        "paths": {"masks_dir": "masks", "results_dir": "results"},
+        "amplitude_slm": {"width": 192, "height": 108},
+        "phase_slm": {"width": 192, "height": 120},
+        "amplitude_roi": {"width": 96, "height": 96, "center_x": 95.5, "center_y": 53.5},
+        "calibration": {"marker_size_px": 20, "marker_sigma_px": 5, "marker_margin_px": 10},
+        "exposure_calibration": {
+            "gray_start": 0, "gray_stop": 2, "gray_step": 1,
+            "patch_size_px": 20, "patch_inner_size_px": 16, "edge_taper_px": 2,
+        },
+    }
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text("placeholder", encoding="utf-8")
+    report = generate_calibration_files(config, config_path)
+    amp = Image.open(tmp_path / "masks" / "amplitude" / "amplitude_zero.bmp")
+    phase = Image.open(tmp_path / "masks" / "phase" / "phase_zero.bmp")
+    assert amp.mode == phase.mode == "L"
+    assert amp.size == (192, 108)
+    assert phase.size == (192, 120)
+    assert report["coarse_patterns"] == 5
+    assert report["fine_patterns"] == 9
+    assert (tmp_path / "masks" / "manifest.csv").is_file()
+
+
+def test_batch_postprocess_saves_quantitative_outputs_without_normalization(
+    tmp_path: Path,
+) -> None:
+    input_dir = tmp_path / "raw"
+    input_dir.mkdir()
+    raw = np.arange(100, dtype=np.uint16).reshape(10, 10) + 10
+    background = np.full((10, 10), 10, dtype=np.float32)
+    np.save(input_dir / "sample.npy", raw)
+    np.save(tmp_path / "background.npy", background)
+    calibration = {
+        "model_type": "affine",
+        "forward_matrix": [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
+        "camera_hardware_roi_width_height": [10, 10],
+        "camera_hardware_roi_xywh": [0, 0, 10, 10],
+        "amplitude_roi": {"width": 10, "height": 10, "center_x": 5, "center_y": 5},
+    }
+    (tmp_path / "calibration.json").write_text(
+        __import__("json").dumps(calibration), encoding="utf-8"
+    )
+    (tmp_path / "config.yaml").write_text(
+        "postprocess:\n"
+        "  target_width: 10\n  target_height: 10\n  resize_mode: area\n"
+        "  save_npy: true\n  save_tiff: true\n  save_png_preview: false\n"
+        "  saturation_fraction_warning: 1.0\n  blank_fraction_warning: 1.0\n",
+        encoding="utf-8",
+    )
+    output_dir = tmp_path / "processed"
+    summary = run_batch_postprocess(
+        tmp_path / "config.yaml", input_dir, tmp_path / "calibration.json",
+        tmp_path / "background.npy", output_dir,
+    )
+    processed = np.load(output_dir / "sample.npy")
+    assert processed.dtype == np.float32
+    assert processed.shape == (10, 10)
+    assert processed.min() == pytest.approx(0.0)
+    assert processed.max() == pytest.approx(99.0)
+    assert summary["per_image_normalization"] is False
+    assert (output_dir / "sample.tif").is_file()
+    assert (output_dir / "processing_manifest.csv").is_file()
+    assert (output_dir / "before_after_preview.png").is_file()
 
 
 def test_layer_agnostic_folder_acquisition_preserves_sorted_basenames(
@@ -244,3 +472,44 @@ def test_dvp_subprocess_converts_raw_uint16_to_lossless_png(tmp_path: Path) -> N
     assert np.issubdtype(actual.dtype, np.integer)
     assert np.array_equal(actual.astype(np.uint16), expected)
     assert not (tmp_path / ".frame.dvp_raw.npy").exists()
+
+
+def test_dvp_subprocess_resizes_raw_frame_before_png_save(tmp_path: Path) -> None:
+    expected = np.full((1200, 1600), 1234, dtype=np.uint16)
+
+    class FakeInput:
+        def write(self, line: str) -> None:
+            request = __import__("json").loads(line)
+            np.save(request["path"], expected)
+
+        def flush(self) -> None:
+            return None
+
+    class FakeOutput:
+        def readline(self) -> str:
+            return '{"ok": true}\n'
+
+    camera = build_camera(
+        {
+            "driver": "dvp_subprocess",
+            "sdk_path": None,
+            "python_executable": __import__("sys").executable,
+            "saved_frame_size_wh": [956, 956],
+            "saved_frame_resize_mode": "area",
+        },
+        tmp_path,
+    )
+    camera._process = SimpleNamespace(stdin=FakeInput(), stdout=FakeOutput())
+    output = tmp_path / "frame_956.png"
+    camera.capture(output)
+    actual = np.asarray(Image.open(output))
+    assert actual.shape == (956, 956)
+    assert np.all(actual.astype(np.uint16) == 1234)
+    assert camera.device_info()["last_capture"] == {
+        "source_size_wh": [1600, 1200],
+        "saved_size_wh": [956, 956],
+        "resize_mode": "area",
+        "resized": True,
+        "dtype": "uint16",
+    }
+    assert not (tmp_path / ".frame_956.dvp_raw.npy").exists()

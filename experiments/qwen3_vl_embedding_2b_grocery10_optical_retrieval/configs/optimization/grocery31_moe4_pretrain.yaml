@@ -1,0 +1,64 @@
+base_config: ../grocery10_moe4_latest.yaml
+
+# Same deployable MoE4 optics, trained first on all packaged GroceryStore SKUs.
+dataset:
+  dataset_root: ../../../../data/GroceryStoreDataset
+  selected_skus:
+    - Bravo-Apple-Juice
+    - Bravo-Orange-Juice
+    - God-Morgon-Apple-Juice
+    - God-Morgon-Orange-Juice
+    - God-Morgon-Orange-Red-Grapefruit-Juice
+    - God-Morgon-Red-Grapefruit-Juice
+    - Tropicana-Apple-Juice
+    - Tropicana-Golden-Grapefruit
+    - Tropicana-Juice-Smooth
+    - Tropicana-Mandarin-Morning
+    - Arla-Ecological-Medium-Fat-Milk
+    - Arla-Lactose-Medium-Fat-Milk
+    - Arla-Medium-Fat-Milk
+    - Arla-Standard-Milk
+    - Garant-Ecological-Medium-Fat-Milk
+    - Garant-Ecological-Standard-Milk
+    - Oatly-Natural-Oatghurt
+    - Oatly-Oat-Milk
+    - Arla-Ecological-Sour-Cream
+    - Arla-Sour-Cream
+    - Arla-Sour-Milk
+    - Alpro-Blueberry-Soyghurt
+    - Alpro-Vanilla-Soyghurt
+    - Alpro-Fresh-Soy-Milk
+    - Alpro-Shelf-Soy-Milk
+    - Arla-Mild-Vanilla-Yoghurt
+    - Arla-Natural-Mild-Low-Fat-Yoghurt
+    - Arla-Natural-Yoghurt
+    - Valio-Vanilla-Yoghurt
+    - Yoggi-Strawberry-Yoghurt
+    - Yoggi-Vanilla-Yoghurt
+
+training:
+  # The 31-SKU EMA test curve peaked around epoch 21 in the reference run;
+  # stop at 25 before the small packaged-product set is memorized.
+  epochs: 25
+  learning_rate: 0.0002
+  adapter_learning_rate: 0.0002
+  readout_learning_rate: 0.0005
+  router_learning_rate: 0.0002
+  phase_learning_rate: 0.004
+  lambda_kd: 8.0
+  lambda_relational_kd: 0.10
+  lambda_ret: 1.0
+  lambda_gallery: 0.25
+  lambda_teacher_gallery: 0.10
+  lambda_router_balance: 0.02
+  lambda_router_importance: 0.005
+  ema_decay: 0.99
+
+augmentation:
+  enabled: true
+  crop_scale_min: 0.85
+  brightness_jitter: 0.15
+  contrast_jitter: 0.15
+  rotation_degrees: 7.0
+
+output_dir: ../../runs/qwen3_vl_embedding_2b_grocery31_moe4_pretrain

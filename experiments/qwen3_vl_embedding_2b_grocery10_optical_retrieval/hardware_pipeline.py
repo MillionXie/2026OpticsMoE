@@ -18,6 +18,7 @@ import numpy as np
 import torch
 import yaml
 from PIL import Image, ImageOps
+from torch.nn import functional as F
 
 from .features import move_inputs, preprocess_images, student_embeddings, validate_token_budgets
 from .io_utils import seed_everything, write_csv, write_json
@@ -62,9 +63,12 @@ class HardwareConfig:
     amplitude_encoding_gamma: float
     phase_flip_vertical: bool
     capture_roi_xywh: tuple[int, int, int, int] | None
+    capture_flip_vertical: bool
+    capture_flip_horizontal: bool
     capture_dark_level: float
     capture_binning_factor: int
     capture_binning_reduction: str
+    capture_registration_mode: str
     simulation_tensor_dtype: torch.dtype
     simulation_save_complex_fields: bool
     minimal_artifacts: bool
@@ -128,9 +132,18 @@ def load_hardware_config(path: str | Path) -> HardwareConfig:
             )
         ),
         capture_roi_xywh=None if roi is None else tuple(int(v) for v in roi),
+        capture_flip_vertical=bool(
+            raw.get("capture", {}).get("flip_vertical", False)
+        ),
+        capture_flip_horizontal=bool(
+            raw.get("capture", {}).get("flip_horizontal", False)
+        ),
         capture_dark_level=float(raw.get("capture", {}).get("dark_level", 0.0)),
         capture_binning_factor=int(raw.get("capture", {}).get("binning_factor", 1)),
         capture_binning_reduction=str(raw.get("capture", {}).get("binning_reduction", "mean")),
+        capture_registration_mode=str(
+            raw.get("capture", {}).get("registration_mode", "strict")
+        ),
         simulation_tensor_dtype=dtypes[dtype_name],
         simulation_save_complex_fields=bool(raw.get("simulation", {}).get("save_complex_fields", True)),
         minimal_artifacts=(
@@ -164,6 +177,10 @@ def load_hardware_config(path: str | Path) -> HardwareConfig:
         raise ValueError("capture.binning_factor must be positive")
     if result.capture_binning_reduction not in {"mean", "sum"}:
         raise ValueError("capture.binning_reduction must be mean or sum")
+    if result.capture_registration_mode not in {"strict", "nearest_resize"}:
+        raise ValueError(
+            "capture.registration_mode must be strict or nearest_resize"
+        )
     return result
 
 
@@ -432,6 +449,7 @@ def load_captured_intensity(runtime: Runtime, stage: str, key: str, *, use_simul
         else:
             value = _load_numeric_image(path)
     value = value.squeeze()
+    source_shape = tuple(int(v) for v in value.shape)
     roi = runtime.hardware.capture_roi_xywh
     if roi is not None:
         x, y, width, height = roi
@@ -440,16 +458,26 @@ def load_captured_intensity(runtime: Runtime, stage: str, key: str, *, use_simul
         value = value[y : y + height, x : x + width]
     if value.ndim != 2:
         raise RuntimeError(f"Registered CCD intensity must be 2-D; got {tuple(value.shape)}")
+    cropped_shape = tuple(int(v) for v in value.shape)
     value = (value - runtime.hardware.capture_dark_level).clamp_min(0.0)
+    if not use_simulation and runtime.hardware.capture_flip_vertical:
+        value = torch.flip(value, dims=(-2,))
+    if not use_simulation and runtime.hardware.capture_flip_horizontal:
+        value = torch.flip(value, dims=(-1,))
     expected = (runtime.settings.active_size, runtime.settings.active_size)
     factor = 1 if use_simulation else runtime.hardware.capture_binning_factor
     physical_expected = (expected[0] * factor, expected[1] * factor)
-    if tuple(value.shape) != physical_expected:
-        raise RuntimeError(
-            f"Registered CCD intensity must be exactly {physical_expected} before "
-            f"{factor}x binning; got {tuple(value.shape)}. Set capture.roi_xywh "
-            "explicitly for a full-sensor image. Arbitrary resizing is forbidden."
-        )
+    captured_shape = tuple(int(v) for v in value.shape)
+    if captured_shape != physical_expected:
+        if runtime.hardware.capture_registration_mode == "strict":
+            raise RuntimeError(
+                f"Registered CCD intensity must be exactly {physical_expected} before "
+                f"{factor}x binning; got {captured_shape}. Set capture.roi_xywh "
+                "explicitly, or set capture.registration_mode=nearest_resize."
+            )
+        value = F.interpolate(
+            value[None, None], size=physical_expected, mode="nearest"
+        )[0, 0]
     if factor > 1:
         value = bin_ccd_superpixels(
             value,
@@ -460,7 +488,58 @@ def load_captured_intensity(runtime: Runtime, stage: str, key: str, *, use_simul
         raise RuntimeError(f"Binned CCD intensity must be {expected}, got {tuple(value.shape)}")
     if not torch.isfinite(value).all() or torch.any(value < 0):
         raise RuntimeError(f"CCD intensity {path} contains invalid values")
+    if not use_simulation:
+        registration_root = root / "registered_ccd"
+        registration_root.mkdir(parents=True, exist_ok=True)
+        write_json(
+            registration_root / f"{key}.json",
+            {
+                "source": str(path),
+                "source_shape": list(source_shape),
+                "roi_xywh_in_source_coordinates": runtime.hardware.capture_roi_xywh,
+                "shape_after_roi": list(cropped_shape),
+                "flip_vertical_after_roi": runtime.hardware.capture_flip_vertical,
+                "flip_horizontal_after_roi": runtime.hardware.capture_flip_horizontal,
+                "target_physical_shape": list(physical_expected),
+                "registration_interpolation": (
+                    "none" if captured_shape == physical_expected else "nearest"
+                ),
+                "binning_factor": factor,
+                "binning_reduction": runtime.hardware.capture_binning_reduction,
+                "final_logical_shape": list(expected),
+                "operation_order": [
+                    "load_raw_intensity",
+                    "crop_roi_in_camera_coordinates",
+                    "subtract_dark_level_and_clamp_nonnegative",
+                    "flip_vertical" if runtime.hardware.capture_flip_vertical else "no_flip",
+                    "flip_horizontal" if runtime.hardware.capture_flip_horizontal else "no_flip",
+                    "nearest_resize_if_needed",
+                    "exact_superpixel_binning",
+                ],
+                "warning": (
+                    "Nearest-neighbor registration corrects array size only. "
+                    "Set capture.roi_xywh from an optical calibration target to "
+                    "avoid geometric misalignment or aspect-ratio distortion."
+                ),
+            },
+        )
     return value
+
+
+def has_captured_intensity(runtime: Runtime, stage: str, key: str) -> bool:
+    """Return whether exactly one supported physical CCD file is available."""
+    capture = runtime.hardware.output_dir / STAGES[stage] / "ccd_captured"
+    matches = [
+        capture / f"{key}{suffix}"
+        for suffix in (".pt", ".npy", ".tif", ".tiff", ".png")
+        if (capture / f"{key}{suffix}").is_file()
+    ]
+    if len(matches) > 1:
+        raise RuntimeError(
+            f"Multiple captured CCD files share sample key {key}: "
+            f"{[str(path) for path in matches]}"
+        )
+    return len(matches) == 1
 
 
 def _processed_amplitude(runtime: Runtime, stage: str, key: str) -> torch.Tensor:
@@ -569,10 +648,15 @@ def _capture_readme(runtime: Runtime, stage: str) -> None:
         "amplitude. The registered physical ROI must be "
         f"{runtime.settings.active_size * runtime.hardware.capture_binning_factor}x"
         f"{runtime.settings.active_size * runtime.hardware.capture_binning_factor}; "
-        "use `capture.roi_xywh` for a larger sensor image. The pipeline then performs "
+        "use `capture.roi_xywh` for a larger sensor image. If "
+        f"`capture.flip_vertical={str(runtime.hardware.capture_flip_vertical).lower()}`, "
+        "the cropped physical CCD is vertically flipped into simulation coordinates. "
+        f"With `capture.flip_horizontal={str(runtime.hardware.capture_flip_horizontal).lower()}`, "
+        "it is then horizontally flipped. "
+        "`capture.registration_mode=nearest_resize`, a mismatched cropped frame is "
+        "resized to that physical ROI using nearest-neighbor interpolation. The pipeline then performs "
         f"non-interpolating {runtime.hardware.capture_binning_factor}x"
-        f" {runtime.hardware.capture_binning_reduction} binning. JPEG and arbitrary "
-        "resize are forbidden.\n",
+        f" {runtime.hardware.capture_binning_reduction} binning. JPEG is forbidden.\n",
         encoding="utf-8",
     )
 
@@ -686,9 +770,12 @@ def prepare(runtime: Runtime) -> dict[str, Any]:
         },
         "capture": {
             "roi_xywh": runtime.hardware.capture_roi_xywh,
+            "flip_vertical_after_roi": runtime.hardware.capture_flip_vertical,
+            "flip_horizontal_after_roi": runtime.hardware.capture_flip_horizontal,
             "dark_level": runtime.hardware.capture_dark_level,
             "binning_factor": runtime.hardware.capture_binning_factor,
             "binning_reduction": runtime.hardware.capture_binning_reduction,
+            "registration_mode": runtime.hardware.capture_registration_mode,
             "logical_active_shape": [runtime.settings.active_size, runtime.settings.active_size],
             "required_physical_roi_shape": [
                 runtime.settings.active_size * runtime.hardware.capture_binning_factor,
@@ -717,10 +804,23 @@ def _write_bridge_report(runtime: Runtime, stage: str, key: str, values: dict[st
 
 def _replay_vision(runtime: Runtime, key: str, use_simulation: bool) -> None:
     core = runtime.replacement.vision_surrogate.core
-    reload_amplitude = _processed_amplitude(runtime, "vision_global", key).to(runtime.loaded.device)
     final_ccd = load_captured_intensity(runtime, "vision_global", key, use_simulation=use_simulation).to(runtime.loaded.device)
+    reload_path = (
+        runtime.hardware.output_dir
+        / STAGES["vision_global"]
+        / "amplitude_raw"
+        / f"{key}.pt"
+    )
+    stage_reload_fields = None
+    if reload_path.is_file():
+        reload_amplitude = torch.load(
+            reload_path, map_location="cpu", weights_only=True
+        ).float().to(runtime.loaded.device)
+        stage_reload_fields = {
+            0: _active_to_canvas(core, reload_amplitude).unsqueeze(0)
+        }
     core.set_hardware_replay(
-        stage_reload_fields={0: _active_to_canvas(core, reload_amplitude).unsqueeze(0)},
+        stage_reload_fields=stage_reload_fields,
         final_detector_intensity=final_ccd.unsqueeze(0),
     )
 
@@ -802,7 +902,9 @@ def process_language_expert(runtime: Runtime, *, use_simulation: bool) -> None:
     core = runtime.replacement.language_surrogate.core
     for row in _manifest_rows(runtime):
         key = row["sample_key"]
-        _clear_replay(runtime); _replay_vision(runtime, key, use_simulation)
+        _clear_replay(runtime)
+        if use_simulation or has_captured_intensity(runtime, "vision_global", key):
+            _replay_vision(runtime, key, use_simulation)
         _forward(runtime, by_id[row["sample_id"]])
         measured = load_captured_intensity(runtime, "language_expert", key, use_simulation=use_simulation)
         full = _intensity_active_to_canvas(core, measured).unsqueeze(0).to(runtime.loaded.device)
@@ -829,12 +931,31 @@ def process_language_global(runtime: Runtime, *, use_simulation: bool) -> dict[s
     rows = _manifest_rows(runtime)
     for row in rows:
         key = row["sample_key"]
-        _clear_replay(runtime); _replay_vision(runtime, key, use_simulation)
+        _clear_replay(runtime)
+        # A final-plane-only calibration has no earlier physical CCD files.
+        # In that case the upstream Vision/Language context remains simulated,
+        # while the Language-global detector is still replaced by the measured
+        # final CCD below.  If a Vision-global capture exists, prefer it.
+        if use_simulation or has_captured_intensity(runtime, "vision_global", key):
+            _replay_vision(runtime, key, use_simulation)
         language = runtime.replacement.language_surrogate.core
-        reload_amplitude = _processed_amplitude(runtime, "language_global", key).to(runtime.loaded.device)
         final_ccd = load_captured_intensity(runtime, "language_global", key, use_simulation=use_simulation).to(runtime.loaded.device)
+        reload_path = (
+            runtime.hardware.output_dir
+            / STAGES["language_global"]
+            / "amplitude_raw"
+            / f"{key}.pt"
+        )
+        stage_reload_fields = None
+        if reload_path.is_file():
+            reload_amplitude = torch.load(
+                reload_path, map_location="cpu", weights_only=True
+            ).float().to(runtime.loaded.device)
+            stage_reload_fields = {
+                0: _active_to_canvas(language, reload_amplitude).unsqueeze(0)
+            }
         language.set_hardware_replay(
-            stage_reload_fields={0: _active_to_canvas(language, reload_amplitude).unsqueeze(0)},
+            stage_reload_fields=stage_reload_fields,
             final_detector_intensity=final_ccd.unsqueeze(0),
         )
         embedding, _, _, _ = _forward(runtime, by_id[row["sample_id"]])

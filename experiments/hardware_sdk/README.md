@@ -1,66 +1,120 @@
-# Hardware SDK：轻量振幅播放与 CCD 采集
+# Hardware SDK
 
-这个目录可以单独复制到实验室 Windows 电脑使用。它不理解模型、Vision/Language、层数或电子后处理，只完成一件事：
+该目录负责实验室设备控制、标定和原始 CCD 数据整理，不包含 Qwen、Torch 或模型训练逻辑。
 
-```text
-amplitude_to_play/*.bmp
-→ 按文件名排序并预加载到振幅 SLM
-→ 每张等待 40 ms
-→ CCD 保存同名原始帧
-→ ccd_captured/*.png
-```
-
-服务器上的模型代码负责生成每一层的振幅 BMP，以及把这一层 CCD 结果转换成下一层振幅 BMP。相位 SLM 暂时仍由实验员手动换 mask。默认 CCD 输出为无损 PNG：8-bit/16-bit 原始整数值保持不变，既方便查看，也可直接用于服务器数值处理；不是经过对比度拉伸的预览图。
-
-## 核心文件
+## 目录职责
 
 ```text
 hardware_sdk/
-├── acquire_folder.py                  # 通用振幅播放 + CCD 采集
-├── roi_calibration.py                 # 棋盘格定位与 ROI 建议
-├── devices.py                         # HOLOEYE / DVP 驱动封装
-├── dvp_capture_worker.py              # 厂商旧版 Python 的相机子进程
-├── configs/acquisition_windows.json   # 实验室 Windows 配置
-├── requirements-light.txt             # 仅 NumPy + Pillow，不含 Torch
-├── amplitude_to_play/                 # 当前一层待播放 BMP；不会上传 Git
-├── ccd_captured/                      # 当前一层 CCD 原始帧；不会上传 Git
-└── logs/                              # 播放清单、设备读回与 ROI 报告
+├─ drivers/                       # 相机厂商适配器
+│  ├─ tucam_camera.py             # 新 Dhyana 400BSI V3 / TUCam
+│  └─ README.md
+├─ tools/                         # 独立设备自检工具
+│  └─ camera_smoke_test.py
+├─ configs/
+│  ├─ acquisition/
+│  │  ├─ tucam_windows.json       # 新 CCD，当前默认
+│  │  └─ dvp_windows.json         # 旧 CCD，继续支持
+│  └─ calibration/
+│     └─ tucam.yaml               # 新 CCD 标定配置
+├─ acquire_folder.py              # 振幅 SLM 播放 + 原始 CCD 采集
+├─ roi_calibration.py             # background/coarse/fine/exposure
+├─ batch_postprocess.py           # 正式采集后的统一离线处理
+├─ calibration_common.py          # 标定共享纯函数
+├─ devices.py                     # 稳定设备接口与工厂
+├─ amplitude_camera_demo.py       # 旧振幅 SLM demo，保留兼容
+├─ phase_slm_demo.py              # 旧相位 SLM demo，保留兼容
+└─ slm_calibration_bmp_generator/ # 独立常用 SLM 图案生成器
 ```
 
-厂商 SDK 继续放在 `amp_slm/`、`ccd/`、`phase_slm/`，这些目录不会上传 Git。旧的数字/相位 demo 是可选工具，不参与主采集流程。
+本机厂商文件仍放在：
 
-## 依赖与环境
+```text
+amp_slm/          HOLOEYE 示例/SDK
+phase_slm/        Meadowlark Blink SDK
+ccd/              旧 DVP SDK
+ccd_2_mosaic/     新 TUCam/Mosaic SDK 与官方 demo/PDF
+```
 
-主控制 Python 只需：
+这些二进制文件与许可证相关，已被 Git 忽略；GitHub 和服务器只同步共享适配代码、配置与文档。
+
+## 相机后端
+
+所有上层程序只调用：
+
+```python
+camera = build_camera(config, config_base)
+camera.open()
+camera.capture(path)
+camera.close()
+```
+
+配置中的 `camera.driver` 决定后端：
+
+- `tucam`：当前新 CCD，Dhyana 400BSI V3；
+- `dvp_subprocess`：旧 DVP 相机及旧 Python ABI；
+- `dvp`：旧 DVP 同进程模式。
+
+新 TUCam 适配器严格参考上传的 `00_init_open.py`、`05_wait_frame.py`、`06_roi_mode.py` 和 `25_set_exposure.py`：
+
+```text
+Api_Init → Dev_Open → exposure/ROI
+→ Buf_Alloc → Cap_Start
+→ Buf_WaitForFrame
+→ 复制原始 mono uint8/uint16 buffer
+```
+
+不调用 JPEG，不做显示拉伸，不把 16-bit 图像转成 8-bit。`exposure_us` 在公共配置中统一使用微秒，传入 TUCam 前按厂商 demo 转换成毫秒。
+
+新相机配置采用厂商规格：原生 2048×2048、6.5 μm 像素、单色。正式使用时仍以 `device_info()` 和实际帧 metadata 为准。
+TUCam 硬件 ROI 的 `left/top/width/height` 必须都是 4 像素的倍数；标定配置会按这一约束生成合法建议值。
+
+## 正式采集原则
+
+默认配置：
+
+```json
+"output_extension": ".npy",
+"saved_frame_size_wh": null,
+"saved_frame_resize_mode": "none"
+```
+
+因此采集循环只保存相机硬件 ROI 返回的原始帧：
+
+- 不 resize；
+- 不扣背景；
+- 不做 affine/homography；
+- 不逐图归一化；
+- 保留 uint8/uint16 位深；
+- manifest 保存帧号、UTC 时间、曝光、ROI、原始尺寸和 dtype。
+
+所有处理统一交给 `batch_postprocess.py`。
+
+## 标定流程
+
+`roi_calibration.py` 提供：
+
+- `generate`：两张 zero BMP、五点粗标定、九点精标定和曝光灰度块；
+- `background`：激光开启、两块 SLM 均为零图时的系统背景；
+- `coarse`：完整视野下估计硬件 ROI；
+- `fine`：硬件 ROI 下比较 affine/homography；
+- `exposure`：固定窗口检查灰度 0～255 响应与饱和。
+
+系统 background 不是关闭激光得到的 dark frame。统一扣除方式为：
+
+```python
+corrected = maximum(raw.astype(float32) - background, 0)
+```
+
+`batch_postprocess.py` 先在接近 CCD 原采样密度下完成几何矫正，再以 `cv2.INTER_AREA` 缩小到 956×956，不在 warp 时直接低分辨率输出。
+
+## 安装与测试
 
 ```powershell
 python -m pip install -r requirements-light.txt
+python -m pytest tests -q
 ```
 
-无需安装 PyTorch、Qwen、Transformers 或 CUDA。
+新 TUCam SDK 直接使用当前 64-bit Windows Python 和 ctypes；旧 DVP 相机仍使用原来的独立兼容 Python，不互相影响。
 
-HOLOEYE Windows 安装中的：
-
-```text
-HEDS_3_2_PYTHON=C:\Program Files\HOLOEYE Photonics\SLM Display SDK (Python) v3.2.2
-HEDS_3_2_PYTHON_MODULES=...\python
-...\win64\holoeye_slmdisplaysdk.dll
-```
-
-是正确的 Windows 结构，不需要 Linux 的 `libholoeye_slmdisplaysdk.so`。配置会展开 `%HEDS_3_2_PYTHON_MODULES%`。
-
-DVP Python 扩展使用独立厂商环境运行。按厂商要求，程序会自动把 `dvp_capture_worker.py`、`dvp.pyd` 和 `DVPCamera64.dll` 复制到同一个忽略 Git 的 `dvp_runtime/` 目录，再使用实验室已有的 `miniCamera` Python 3.7 启动：
-
-```powershell
-$env:DVP_PYTHON = "C:\Users\MMLAB\.conda\envs\miniCamera\python.exe"
-```
-
-`dvp_runtime/` 同时作为子进程工作目录并被加入 Windows DLL 搜索路径，严格复现厂商 demo 的同目录结构。无需把厂商二进制安装到 Conda 环境，也无需手工复制。
-
-## 相机设置
-
-定量采集不能依赖厂商软件上一次打开时的状态。配置会显式关闭自动曝光，并设置曝光、模拟增益、预热帧、丢弃帧和设备 ROI；实际读回值写入 `logs/resolved_devices.json`。
-
-默认先使用全传感器采集并在服务器裁 ROI，最容易排查坐标错误。确认 ROI 后也可在相机侧设置 `device_roi_xywh`，但 DVP 硬件 ROI 可能要求坐标/宽高对齐到特定倍数，应以实际读回值为准。
-
-详细命令见 [RUN_COMMANDS.md](RUN_COMMANDS.md)。
+完整命令见 [RUN_COMMANDS.md](RUN_COMMANDS.md)。

@@ -1,10 +1,13 @@
-model_config: grocery10_moe16_best.yaml
-checkpoint: ../runs/qwen3_vl_embedding_2b_grocery10_replaced_continue_epoch141_stronger_augmentation_ema/ema_best_train_loss_checkpoint.pt
-output_dir: ../hardware_sessions/grocery10_moe16_best
+# Hardware export/session for the improved Grocery31 -> target-10 MoE4 EMA.
+# This starts a new physical session; it does not reuse CCD captures made with
+# the older phase masks.
+model_config: optimization/grocery10_moe4_from31_strong_ema.yaml
+checkpoint: ../runs/qwen3_vl_embedding_2b_grocery10_moe4_from31_epoch40_replay/ema_last_checkpoint.pt
+output_dir: ../hardware_sessions/moe4_from31_ema_001
 selection:
   queries_per_sku: 10
   prefer_correct_queries: true
-  results_csv: ../runs/qwen3_vl_embedding_2b_grocery10_replaced_continue_epoch141_stronger_augmentation_ema/retrieval_results.csv
+  results_csv: ../runs/qwen3_vl_embedding_2b_grocery10_moe4_from31_epoch40_replay/retrieval_results.csv
 slm:
   amplitude_size_wh: [1920, 1080]
   phase_size_wh: [1920, 1200]
@@ -13,11 +16,11 @@ slm:
   phase_transform: {flip_vertical: true}
 capture:
   roi_xywh: null
-  flip_vertical: false
-  flip_horizontal: false
+  flip_vertical: true
+  flip_horizontal: true
   registration_mode: nearest_resize
   dark_level: 0.0
-  binning_factor: 1
+  binning_factor: 2
   binning_reduction: mean
 simulation: {tensor_dtype: float16, save_complex_fields: false}
 artifacts: {profile: full, clean_output_before_prepare: true, copy_checkpoint: false}
@@ -32,16 +35,12 @@ automation:
     amplitude_slm:
       driver: holoeye
       sdk_path: ../../hardware_sdk/amp_slm
-      # The uploaded files currently contain only the Python wrapper. Point
-      # this at a folder containing libholoeye_slmdisplaysdk.so.
       binary_folder: null
       expected_resolution_wh: [1920, 1080]
       minimum_refresh_hz: 59.0
       preload: true
       wait_until_visible: true
     camera:
-      # The uploaded Linux binary targets Python 3.5, so acquisition runs in a
-      # persistent vendor subprocess while Qwen/post-processing stays in 3.11.
       driver: dvp_subprocess
       sdk_path: ../../hardware_sdk/ccd/lib/linux/python3.5m/x64
       conda_env: dvp35
@@ -57,3 +56,16 @@ automation:
       device_roi_xywh: null
       warmup_frames: 3
       discard_frames_after_display: 1
+adaptation:
+  run_tag: prototype_allsku_v1
+  epochs: 100
+  learning_rate: 0.0005
+  weight_decay: 0.0
+  skus_per_batch: 10
+  samples_per_sku: 2
+  lambda_kd: 0.25
+  lambda_retrieval: 0.5
+  lambda_prototype: 1.0
+  temperature: 0.07
+  prototype_temperature: 0.07
+  gradient_clip_norm: 1.0

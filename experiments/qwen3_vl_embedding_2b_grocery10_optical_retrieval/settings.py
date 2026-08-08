@@ -316,14 +316,19 @@ class Settings:
             raise ValueError("temperature must be positive")
         if self.gallery_temperature <= 0:
             raise ValueError("gallery_temperature must be positive")
-        if self.router_learning_rate is not None and self.router_learning_rate <= 0:
-            raise ValueError("router_learning_rate must be positive when configured")
-        if self.phase_learning_rate is not None and self.phase_learning_rate <= 0:
-            raise ValueError("phase_learning_rate must be positive when configured")
-        if self.adapter_learning_rate is not None and self.adapter_learning_rate <= 0:
-            raise ValueError("adapter_learning_rate must be positive when configured")
-        if self.readout_learning_rate is not None and self.readout_learning_rate <= 0:
-            raise ValueError("readout_learning_rate must be positive when configured")
+        # A per-group learning rate of exactly zero is an intentional freeze.
+        # This is useful for hardware-compatible generalization continuations:
+        # the deployed phase/router tensors stay bit-identical while the small
+        # electronic adapters/readout are calibrated.  Negative rates remain
+        # invalid and the global learning rate is still required to be positive.
+        if self.router_learning_rate is not None and self.router_learning_rate < 0:
+            raise ValueError("router_learning_rate must be non-negative when configured")
+        if self.phase_learning_rate is not None and self.phase_learning_rate < 0:
+            raise ValueError("phase_learning_rate must be non-negative when configured")
+        if self.adapter_learning_rate is not None and self.adapter_learning_rate < 0:
+            raise ValueError("adapter_learning_rate must be non-negative when configured")
+        if self.readout_learning_rate is not None and self.readout_learning_rate < 0:
+            raise ValueError("readout_learning_rate must be non-negative when configured")
         if self.gradient_clip_norm is not None and self.gradient_clip_norm <= 0:
             raise ValueError("gradient_clip_norm must be positive when configured")
         if self.phase_focus_warmup_epochs < 0:

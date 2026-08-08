@@ -1,0 +1,443 @@
+"""Thin adapter for the vendor TUCam Python/ctypes SDK.
+
+The implementation follows the uploaded ``00_init_open.py``,
+``05_wait_frame.py``, ``06_roi_mode.py`` and ``25_set_exposure.py`` demos.
+No vendor source or DLL is copied into this tracked module.
+"""
+
+from __future__ import annotations
+
+import ctypes
+import importlib.util
+import os
+import sys
+from pathlib import Path
+from types import ModuleType
+from typing import Any
+
+import numpy as np
+from PIL import Image
+
+try:
+    from ..devices import CameraDriver, DeviceError, resize_detector_intensity
+except ImportError:  # imported by a direct hardware_sdk script
+    from devices import CameraDriver, DeviceError, resize_detector_intensity
+
+
+class TucamCamera(CameraDriver):
+    """TUCam/Dhyana camera backend preserving raw monochrome sample values."""
+
+    def __init__(
+        self,
+        sdk_path: Path,
+        camera_index: int = 0,
+        timeout_ms: int = 4000,
+        config_file: Path | None = None,
+        auto_exposure: bool | None = False,
+        exposure_us: float | None = None,
+        analog_gain: float | None = None,
+        anti_flicker_hz: int | None = None,
+        device_roi_xywh: tuple[int, int, int, int] | None = None,
+        resolution_mode: int | None = None,
+        warmup_frames: int = 3,
+        discard_frames_after_display: int = 1,
+        saved_frame_size_wh: tuple[int, int] | None = None,
+        saved_frame_resize_mode: str = "none",
+    ) -> None:
+        self.sdk_path = Path(sdk_path)
+        self.camera_index = int(camera_index)
+        self.timeout_ms = int(timeout_ms)
+        self.config_file = config_file
+        self.auto_exposure = auto_exposure
+        self.exposure_us = exposure_us
+        self.analog_gain = analog_gain
+        self.anti_flicker_hz = anti_flicker_hz
+        self.device_roi_xywh = device_roi_xywh
+        self.resolution_mode = resolution_mode
+        self.warmup_frames = int(warmup_frames)
+        self.discard_frames_after_display = int(discard_frames_after_display)
+        self.saved_frame_size_wh = saved_frame_size_wh
+        self.saved_frame_resize_mode = str(saved_frame_resize_mode).lower()
+        self._module: ModuleType | None = None
+        self._init: Any = None
+        self._open: Any = None
+        self._frame: Any = None
+        self._dll_directory: Any = None
+        self._api_initialized = False
+        self._buffer_allocated = False
+        self._capture_started = False
+        self._last_capture_info: dict[str, Any] | None = None
+        self._info: dict[str, Any] = {}
+
+    def validate_runtime(self) -> None:
+        if not sys.platform.startswith("win"):
+            raise DeviceError("The uploaded TUCam/Mosaic SDK is Windows-only")
+        required = [
+            self.sdk_path / "TUCam.py",
+            self.sdk_path / "lib" / "x64" / "TUCam.dll",
+        ]
+        missing = [path for path in required if not path.is_file()]
+        if missing:
+            raise DeviceError(f"TUCam SDK is incomplete; missing: {missing}")
+        if ctypes.sizeof(ctypes.c_void_p) != 8:
+            raise DeviceError("TUCam x64 requires a 64-bit Python interpreter")
+        if self.config_file is not None:
+            raise DeviceError(
+                "TUCam config_file loading is not enabled in this minimal adapter; "
+                "set exposure/ROI explicitly in JSON instead"
+            )
+        if self.anti_flicker_hz not in (None, 0):
+            raise DeviceError("TUCam scientific-camera backend does not use anti_flicker_hz")
+
+    @staticmethod
+    def validate_roi(roi_xywh: tuple[int, int, int, int]) -> None:
+        """Validate the ROI restrictions documented by the uploaded TUCam SDK."""
+        left, top, width, height = (int(value) for value in roi_xywh)
+        if min(left, top) < 0 or min(width, height) <= 0:
+            raise DeviceError("camera.device_roi_xywh contains invalid values")
+        invalid = [
+            name
+            for name, value in zip(
+                ("left", "top", "width", "height"),
+                (left, top, width, height),
+            )
+            if value % 4
+        ]
+        if invalid:
+            raise DeviceError(
+                "TUCam ROI left/top/width/height must be multiples of 4 pixels; "
+                f"invalid fields: {', '.join(invalid)}"
+            )
+
+    @staticmethod
+    def _result_value(result: Any) -> int | None:
+        if result is None:
+            return None
+        value = getattr(result, "value", result)
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return None
+
+    def _check(self, result: Any, operation: str) -> None:
+        assert self._module is not None
+        success = int(self._module.TUCAMRET.TUCAMRET_SUCCESS.value)
+        actual = self._result_value(result)
+        if actual != success:
+            detail = repr(result) if actual is None else f"0x{actual & 0xFFFFFFFF:08X}"
+            raise DeviceError(f"TUCam {operation} failed: {detail}")
+
+    def _load_vendor_module(self) -> ModuleType:
+        module_path = self.sdk_path / "TUCam.py"
+        library_dir = self.sdk_path / "lib" / "x64"
+        if hasattr(os, "add_dll_directory"):
+            self._dll_directory = os.add_dll_directory(str(library_dir))
+        old_cwd = Path.cwd()
+        old_path = list(sys.path)
+        try:
+            # The supplied TUCam.py loads ./lib/x64/TUCam.dll.  Import it from
+            # its own SDK root so that this vendor-relative path stays valid.
+            os.chdir(self.sdk_path)
+            sys.path.insert(0, str(self.sdk_path))
+            spec = importlib.util.spec_from_file_location(
+                "hardware_sdk_vendor_tucam", module_path
+            )
+            if spec is None or spec.loader is None:
+                raise DeviceError(f"Could not create an import spec for {module_path}")
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            return module
+        except Exception as exc:
+            raise DeviceError(
+                f"Could not load TUCam.py/TUCam.dll from {self.sdk_path}: "
+                f"{type(exc).__name__}: {exc}"
+            ) from exc
+        finally:
+            os.chdir(old_cwd)
+            sys.path[:] = old_path
+
+    def _handle(self) -> Any:
+        if self._open is None or not self._open.hIdxTUCam:
+            raise DeviceError("TUCam camera is not open")
+        return self._open.hIdxTUCam
+
+    def _set_capability(self, identifier: Any, value: int, operation: str) -> None:
+        assert self._module is not None
+        self._check(
+            self._module.TUCAM_Capa_SetValue(self._handle(), identifier.value, int(value)),
+            operation,
+        )
+
+    def _set_property(self, identifier: Any, value: float, operation: str) -> None:
+        assert self._module is not None
+        self._check(
+            self._module.TUCAM_Prop_SetValue(
+                self._handle(), identifier.value, float(value), 0
+            ),
+            operation,
+        )
+
+    def _get_property(self, identifier: Any) -> float | None:
+        assert self._module is not None
+        value = ctypes.c_double()
+        try:
+            self._check(
+                self._module.TUCAM_Prop_GetValue(
+                    self._handle(), identifier.value, ctypes.pointer(value), 0
+                ),
+                f"read property {identifier.name}",
+            )
+            return float(value.value)
+        except DeviceError:
+            return None
+
+    def _get_model(self) -> str | None:
+        assert self._module is not None
+        try:
+            identifier = self._module.TUCAM_IDINFO.TUIDI_CAMERA_MODEL
+            value = self._module.TUCAM_VALUE_INFO(identifier.value, 0, None, 0)
+            self._check(
+                self._module.TUCAM_Dev_GetInfo(self._handle(), ctypes.pointer(value)),
+                "read camera model",
+            )
+            return None if not value.pText else value.pText.decode("utf-8", errors="replace")
+        except Exception:
+            return None
+
+    def _get_roi(self) -> list[int] | None:
+        assert self._module is not None
+        roi = self._module.TUCAM_ROI_ATTR()
+        try:
+            self._check(
+                self._module.TUCAM_Cap_GetROI(self._handle(), ctypes.pointer(roi)),
+                "read ROI",
+            )
+            if not int(roi.bEnable):
+                return None
+            return [int(roi.nHOffset), int(roi.nVOffset), int(roi.nWidth), int(roi.nHeight)]
+        except DeviceError:
+            return None
+
+    def open(self) -> None:
+        self.validate_runtime()
+        try:
+            self._module = self._load_vendor_module()
+            self._init = self._module.TUCAM_INIT(
+                0, str(self.sdk_path).encode("utf-8")
+            )
+            self._check(
+                self._module.TUCAM_Api_Init(
+                    ctypes.pointer(self._init), self.timeout_ms
+                ),
+                "API init",
+            )
+            self._api_initialized = True
+            count = int(self._init.uiCamCount)
+            if not 0 <= self.camera_index < count:
+                raise DeviceError(
+                    f"camera_index={self.camera_index} is outside 0..{count - 1}"
+                )
+            self._open = self._module.TUCAM_OPEN(self.camera_index, 0)
+            self._check(
+                self._module.TUCAM_Dev_Open(ctypes.pointer(self._open)), "open camera"
+            )
+            if not self._open.hIdxTUCam:
+                raise DeviceError("TUCam returned a null camera handle")
+
+            if self.resolution_mode is not None:
+                self._set_capability(
+                    self._module.TUCAM_IDCAPA.TUIDC_RESOLUTION,
+                    int(self.resolution_mode), "set resolution mode",
+                )
+            if self.auto_exposure is not None:
+                self._set_capability(
+                    self._module.TUCAM_IDCAPA.TUIDC_ATEXPOSURE,
+                    int(bool(self.auto_exposure)), "set auto exposure",
+                )
+            if self.exposure_us is not None:
+                if self.exposure_us <= 0:
+                    raise DeviceError("camera.exposure_us must be positive")
+                # The uploaded 25_set_exposure.py demo defines this property in ms.
+                self._set_property(
+                    self._module.TUCAM_IDPROP.TUIDP_EXPOSURETM,
+                    float(self.exposure_us) / 1000.0,
+                    "set exposure time (ms)",
+                )
+            if self.analog_gain is not None:
+                self._set_property(
+                    self._module.TUCAM_IDPROP.TUIDP_GLOBALGAIN,
+                    float(self.analog_gain), "set global gain",
+                )
+            if self.device_roi_xywh is not None:
+                left, top, width, height = self.device_roi_xywh
+                self.validate_roi((left, top, width, height))
+                roi = self._module.TUCAM_ROI_ATTR(1, left, top, width, height)
+                self._check(
+                    self._module.TUCAM_Cap_SetROI(self._handle(), roi), "set ROI"
+                )
+
+            self._frame = self._module.TUCAM_FRAME()
+            self._frame.pBuffer = 0
+            self._frame.ucFormatGet = self._module.TUFRM_FORMATS.TUFRM_FMT_USUAl.value
+            self._frame.uiRsdSize = 1
+            self._check(
+                self._module.TUCAM_Buf_Alloc(
+                    self._handle(), ctypes.pointer(self._frame)
+                ),
+                "allocate frame buffer",
+            )
+            self._buffer_allocated = True
+            self._check(
+                self._module.TUCAM_Cap_Start(
+                    self._handle(),
+                    self._module.TUCAM_CAPTURE_MODES.TUCCM_SEQUENCE.value,
+                ),
+                "start sequence capture",
+            )
+            self._capture_started = True
+            for _ in range(self.warmup_frames):
+                self._grab_array()
+            exposure_ms = self._get_property(
+                self._module.TUCAM_IDPROP.TUIDP_EXPOSURETM
+            )
+            self._info = {
+                "camera_model": self._get_model(),
+                "camera_count": count,
+                "device_roi_xywh": self._get_roi(),
+                "Exposure": None if exposure_ms is None else exposure_ms * 1000.0,
+                "exposure_unit": "us",
+                "sensor_native_resolution_wh": [2048, 2048],
+                "sensor_pixel_pitch_um": 6.5,
+            }
+        except Exception:
+            self.close()
+            raise
+
+    @staticmethod
+    def frame_to_array(frame: Any) -> np.ndarray:
+        """Copy a TUCAM_FRAME into a tightly packed monochrome NumPy array."""
+        width, height = int(frame.usWidth), int(frame.usHeight)
+        channels, elem_bytes = int(frame.ucChannels), int(frame.ucElemBytes)
+        if width <= 0 or height <= 0 or not frame.pBuffer:
+            raise DeviceError("TUCam returned an empty frame")
+        if channels != 1:
+            raise DeviceError(
+                f"TUCam returned {channels} channels; configure raw monochrome output"
+            )
+        if elem_bytes not in (1, 2):
+            raise DeviceError(f"Unsupported TUCam element size: {elem_bytes} bytes")
+        row_bytes = width * channels * elem_bytes
+        stride = int(frame.uiWidthStep) or row_bytes
+        image_size = int(frame.uiImgSize)
+        minimum_size = stride * height
+        if image_size < minimum_size:
+            # Some SDK revisions report packed image size while WidthStep is
+            # stale. Accept exactly packed data, but reject shorter buffers.
+            if image_size < row_bytes * height:
+                raise DeviceError(
+                    f"TUCam buffer is too small: {image_size} < {row_bytes * height}"
+                )
+            stride = row_bytes
+            minimum_size = row_bytes * height
+        pointer = int(frame.pBuffer) + int(frame.usHeader)
+        copied = ctypes.string_at(pointer, minimum_size)
+        rows = np.frombuffer(copied, dtype=np.uint8).reshape(height, stride)
+        packed = np.ascontiguousarray(rows[:, :row_bytes])
+        dtype = np.uint8 if elem_bytes == 1 else np.dtype("<u2")
+        return packed.view(dtype).reshape(height, width).copy()
+
+    def _grab_array(self) -> np.ndarray:
+        if self._module is None or self._frame is None:
+            raise DeviceError("TUCam camera is not capturing")
+        self._check(
+            self._module.TUCAM_Buf_WaitForFrame(
+                self._handle(), ctypes.pointer(self._frame), self.timeout_ms
+            ),
+            "wait for frame",
+        )
+        return self.frame_to_array(self._frame)
+
+    def capture(self, path: Path) -> None:
+        for _ in range(self.discard_frames_after_display):
+            self._grab_array()
+        array = self._grab_array()
+        source_size = [int(array.shape[1]), int(array.shape[0])]
+        source_dtype = str(array.dtype)
+        array = resize_detector_intensity(
+            array, self.saved_frame_size_wh, self.saved_frame_resize_mode
+        )
+        path.parent.mkdir(parents=True, exist_ok=True)
+        suffix = path.suffix.lower()
+        if suffix == ".npy":
+            np.save(path, array)
+        elif suffix in {".png", ".tif", ".tiff"}:
+            Image.fromarray(array).save(
+                path, format="PNG" if suffix == ".png" else "TIFF"
+            )
+        else:
+            raise DeviceError("TUCam supports lossless .npy/.png/.tif/.tiff output")
+        saved_size = [int(array.shape[1]), int(array.shape[0])]
+        self._last_capture_info = {
+            "source_size_wh": source_size,
+            "saved_size_wh": saved_size,
+            "resize_mode": self.saved_frame_resize_mode,
+            "resized": source_size != saved_size,
+            "dtype": str(array.dtype),
+            "source_dtype": source_dtype,
+            "sensor_bit_depth": int(getattr(self._frame, "ucDepth", 0)),
+            "camera_frame_index": int(getattr(self._frame, "uiIndex", 0)),
+        }
+
+    def close(self) -> None:
+        module, opened = self._module, self._open
+        handle = None if opened is None else opened.hIdxTUCam
+        if module is not None and handle:
+            if self._capture_started:
+                try:
+                    module.TUCAM_Buf_AbortWait(handle)
+                except Exception:
+                    pass
+                try:
+                    module.TUCAM_Cap_Stop(handle)
+                except Exception:
+                    pass
+            if self._buffer_allocated:
+                try:
+                    module.TUCAM_Buf_Release(handle)
+                except Exception:
+                    pass
+            try:
+                module.TUCAM_Dev_Close(handle)
+            except Exception:
+                pass
+        if module is not None and self._api_initialized:
+            try:
+                module.TUCAM_Api_Uninit()
+            except Exception:
+                pass
+        if self._dll_directory is not None:
+            try:
+                self._dll_directory.close()
+            except Exception:
+                pass
+        self._module = None
+        self._init = None
+        self._open = None
+        self._frame = None
+        self._dll_directory = None
+        self._api_initialized = False
+        self._buffer_allocated = False
+        self._capture_started = False
+
+    def device_info(self) -> dict[str, Any]:
+        return {
+            "driver": "tucam",
+            "sdk_path": str(self.sdk_path),
+            "saved_frame_size_wh": (
+                None if self.saved_frame_size_wh is None
+                else list(self.saved_frame_size_wh)
+            ),
+            "saved_frame_resize_mode": self.saved_frame_resize_mode,
+            "last_capture": self._last_capture_info,
+            **self._info,
+        }

@@ -15,6 +15,7 @@ from .devices import (
     build_camera,
     build_slm,
 )
+from .drivers import TucamCamera
 
 __all__ = [
     "CameraDriver",
@@ -24,6 +25,7 @@ __all__ = [
     "HoloeyeSLM",
     "ManualSLM",
     "SLMDriver",
+    "TucamCamera",
     "build_camera",
     "build_slm",
 ]

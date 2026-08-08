@@ -1,0 +1,47 @@
+base_config: grocery31_moe4_pretrain.yaml
+
+# Target-10 continuation. Resume from the Grocery31 MoE4 best-train-loss
+# checkpoint; no class-dependent layer exists, so all optical/readout weights
+# are compatible while the pair sampler and gallery switch to these 10 SKUs.
+dataset:
+  dataset_root: ../../../../data/GroceryStoreDataset
+  selected_skus:
+    - God-Morgon-Orange-Juice
+    - Tropicana-Golden-Grapefruit
+    - Arla-Ecological-Medium-Fat-Milk
+    - Oatly-Natural-Oatghurt
+    - Oatly-Oat-Milk
+    - Alpro-Blueberry-Soyghurt
+    - Alpro-Shelf-Soy-Milk
+    - Yoggi-Strawberry-Yoghurt
+    - God-Morgon-Apple-Juice
+    - Tropicana-Mandarin-Morning
+
+training:
+  # Short target adaptation avoids returning to the 99%-train/low-test regime.
+  # With the retained pretraining checkpoint this covers absolute epochs 27-40.
+  epochs: 14
+  learning_rate: 0.00001
+  adapter_learning_rate: 0.00002
+  readout_learning_rate: 0.00005
+  router_learning_rate: 0.00002
+  phase_learning_rate: 0.0005
+  lambda_kd: 8.0
+  lambda_relational_kd: 0.10
+  lambda_ret: 1.0
+  lambda_gallery: 0.25
+  lambda_teacher_gallery: 0.10
+  lambda_router_balance: 0.02
+  lambda_router_importance: 0.005
+  phase_focus: {enabled: false, warmup_epochs: 0, interval_epochs: 1}
+  ema_decay: 0.99
+  resume_optimizer_state: false
+
+augmentation:
+  enabled: true
+  crop_scale_min: 0.75
+  brightness_jitter: 0.20
+  contrast_jitter: 0.20
+  rotation_degrees: 10.0
+
+output_dir: ../../runs/qwen3_vl_embedding_2b_grocery10_moe4_from31_strong_ema

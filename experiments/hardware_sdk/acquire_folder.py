@@ -114,17 +114,47 @@ def run(
             slm.display_file(amplitude_path)
             time.sleep(settle_seconds)
             camera.capture(capture_path)
+            capture_info = camera.device_info().get("last_capture") or {}
             row = {
                 "play_index": index,
                 "amplitude_bmp": amplitude_path.name,
                 "ccd_capture": capture_path.name,
                 "captured_utc": datetime.now(timezone.utc).isoformat(),
+                "camera_exposure_us": (
+                    camera.device_info().get("Exposure")
+                    if camera.device_info().get("Exposure") is not None
+                    else raw.get("camera", {}).get("exposure_us")
+                ),
+                "camera_device_roi_xywh": json.dumps(
+                    camera.device_info().get("device_roi_xywh"), ensure_ascii=False
+                ),
+                "camera_source_size_wh": json.dumps(
+                    capture_info.get("source_size_wh"), ensure_ascii=False
+                ),
+                "saved_frame_size_wh": json.dumps(
+                    capture_info.get("saved_size_wh"), ensure_ascii=False
+                ),
+                "saved_frame_resize_mode": capture_info.get("resize_mode"),
+                "saved_dtype": capture_info.get("dtype"),
+                "frame_number": index,
             }
             rows.append(row)
+            size_text = ""
+            if capture_info.get("source_size_wh") and capture_info.get("saved_size_wh"):
+                source_width, source_height = capture_info["source_size_wh"]
+                saved_width, saved_height = capture_info["saved_size_wh"]
+                size_text = (
+                    f" [{source_width}x{source_height} -> "
+                    f"{saved_width}x{saved_height}, {capture_info.get('resize_mode')}]"
+                )
             print(
                 f"[acquire] {index + 1}/{len(files)} "
-                f"{amplitude_path.name} -> {capture_path.name}"
+                f"{amplitude_path.name} -> {capture_path.name}{size_text}"
             )
+        device_report["camera"] = camera.device_info()
+        (log_dir / "resolved_devices.json").write_text(
+            json.dumps(device_report, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
     with (log_dir / "capture_manifest.csv").open(
         "w", encoding="utf-8", newline=""
     ) as handle:
@@ -139,7 +169,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Play every amplitude BMP in a folder and save same-name CCD frames"
     )
-    parser.add_argument("--config", default="configs/acquisition_windows.json")
+    parser.add_argument("--config", default="configs/acquisition/tucam_windows.json")
     parser.add_argument("--input-dir", default=None)
     parser.add_argument("--output-dir", default=None)
     parser.add_argument("--clear-output", action="store_true")
