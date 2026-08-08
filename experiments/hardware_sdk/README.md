@@ -92,7 +92,7 @@ background。
 
 ```text
 corrected = maximum(raw - background, 0)
-→ 可选 INTER_AREA 下采样
+→ 可选 BOX 面积下采样
 ```
 
 不再执行 affine、homography、透视 warp、自动配准、逐图归一化、滤波或增强。

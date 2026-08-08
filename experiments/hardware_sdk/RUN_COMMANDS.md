@@ -172,7 +172,7 @@ python -m experiments.hardware_sdk.workflows.batch_postprocess `
 maximum(raw.astype(float32) - background, 0)
 ```
 
-需要将更大的硬件 ROI 下采样到 956×956 时，才在 `tucam.yaml` 中设置：
+需要将更大的硬件 ROI 做面积下采样到 956×956 时，才在 `tucam.yaml` 中设置：
 
 ```yaml
 postprocess:

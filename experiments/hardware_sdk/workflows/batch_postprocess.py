@@ -1,7 +1,7 @@
 """Minimal offline processing for manually configured camera-ROI frames.
 
 The quantitative path contains only system-background subtraction and an
-optional INTER_AREA downsample.  It performs no affine/homography correction,
+optional BOX area downsample.  It performs no affine/homography correction,
 registration, per-image normalization, denoising, or contrast enhancement.
 """
 
@@ -14,7 +14,6 @@ import warnings
 from pathlib import Path
 from typing import Any
 
-import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
@@ -65,16 +64,16 @@ def _optional_area_resize(
     source_height, source_width = corrected.shape
     if width > source_width or height > source_height:
         raise ValueError(
-            "INTER_AREA is only enabled for downsampling; set resize_enabled=false "
+            "Area resizing is only enabled for downsampling; set resize_enabled=false "
             "or choose a target no larger than the camera ROI."
         )
     if (source_width, source_height) == (width, height):
         return corrected.astype(np.float32, copy=False), False
-    return cv2.resize(
-        corrected.astype(np.float32),
-        (width, height),
-        interpolation=cv2.INTER_AREA,
-    ).astype(np.float32), True
+    resampling = getattr(Image, "Resampling", Image)
+    resized = Image.fromarray(corrected.astype(np.float32), mode="F").resize(
+        (width, height), resample=resampling.BOX
+    )
+    return np.asarray(resized, dtype=np.float32), True
 
 
 def run_batch_postprocess(

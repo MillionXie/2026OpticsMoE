@@ -92,7 +92,7 @@ exposure_calibration:
 
 postprocess:
   # 手动硬件 ROI 已正确时保持 false：只扣 background，不做缩放。
-  # 只有原始 ROI 大于目标尺寸时才可设 true，并使用 INTER_AREA 下采样。
+  # 只有原始 ROI 大于目标尺寸时才可设 true，并使用 BOX 面积下采样。
   resize_enabled: false
   target_width: 956
   target_height: 956
