@@ -43,9 +43,7 @@ $SESSION/00_masks/04_language_global/*.bmp
 相位 BMP 已在导出前上下翻转。实验室电脑从仓库根目录执行同一条命令（新 TUCam CCD）：
 
 ```powershell
-python -m experiments.hardware_sdk.workflows.acquire_folder `
-  --config experiments\hardware_sdk\configs\acquisition\tucam_windows.json `
-  --clear-output
+python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\hardware_sdk\configs\tucam_windows.yaml --clear-output
 ```
 
 将生成的同名无损 PNG 上传到对应的 `$SESSION/<layer>/ccd_captured/`。

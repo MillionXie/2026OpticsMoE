@@ -1,8 +1,17 @@
-wavelength_nm: 532
+# 新 TUCam/Mosaic CCD 的唯一主配置。
+# ROI、曝光、播放延迟只在这里修改一次，正式采集、0~9 校验和曝光检查共用。
+
+input_dir: ../data/amplitude_to_play
+output_dir: ../data/ccd_captured
+log_dir: ../artifacts/logs/tucam
+digit_output_dir: ../artifacts/demos/tucam_digit_sequence
+output_extension: .npy
+settle_delay_ms: 200
+confirm_before_start: true
 
 paths:
   masks_dir: ../artifacts/calibration/masks
-  results_dir: ../artifacts/calibration/results/dvp
+  results_dir: ../artifacts/calibration/results/tucam
 
 amplitude_slm:
   driver: holoeye
@@ -16,9 +25,8 @@ amplitude_slm:
   preload: true
   wait_until_visible: true
 
-# "manual" keeps the current operator-loaded phase-SLM workflow.  Set driver
-# to "meadowlark" and fill the paths below to use the existing Blink controller.
 phase_slm:
+  # 当前相位 SLM 仍由操作者手动加载；程序只打印所需 phase_zero.bmp 路径。
   driver: manual
   width: 1920
   height: 1200
@@ -36,40 +44,44 @@ amplitude_roi:
   center_y: 539.5
 
 camera:
-  driver: dvp_subprocess
-  sdk_path: ../vendor_sdk/camera_dvp_legacy/lib/windows/python3.6/x64
-  python_executable: "%DVP_PYTHON%"
+  driver: tucam
+  sdk_path: ../vendor_sdk/camera_tucam_mosaic
   camera_index: 0
-  pixel_pitch_um: 2.4
-  default_exposure_us: 5000
-  timeout_ms: 4000
+  timeout_ms: 10000
   config_file: null
   auto_exposure: false
-  exposure_us: 5000
-  analog_gain: 1.0
-  anti_flicker_hz: 0
+  exposure_us: 5000.0
+  analog_gain: null
+  anti_flicker_hz: null
   resolution_mode: null
-  # 旧 DVP 也必须手动填写最终 [left, top, width, height]。
+
+  # 唯一需要人工填写的位置：[left, top, width, height]。
+  # 厂商软件中的 ROI 不会共享给 Python。四项均须为 4 的倍数。
+  # [548, 548, 956, 956] 只是居中格式示例，不是实际标定结果。
   require_device_roi: true
   device_roi_xywh: null
+
+  # 直接保存相机硬件 ROI；不软件 resize、不扣背景、不归一化。
   saved_frame_size_wh: null
   saved_frame_resize_mode: none
   warmup_frames: 3
   discard_frames_after_display: 1
 
-propagation_mm: 50
-relay_nominal_magnification: 1.0
-settle_delay_ms: 40
+digits:
+  source: synthetic
+  slm_size_wh: [1920, 1080]
+  active_size_wh: [956, 956]
+  digit_size_px: 700
+  foreground_level: 255
+  background_level: 0
 
 calibration:
   marker_size_px: 80
   marker_sigma_px: 18
   roi_outline_width_px: 4
 
-background:
-  frames: 10
-
 exposure_calibration:
+  # 一般在 ROI 设置后执行一次；光强、曝光、增益或光路改变后再重测。
   exposure_times_us: [5000]
   gray_start: 0
   gray_stop: 255
@@ -79,15 +91,5 @@ exposure_calibration:
   patch_inner_size_px: 128
   edge_taper_px: 16
   measurement_window_size_px: 128
-  low_response_fraction_of_sensor_range: 0.02
   saturation_fraction_warning: 0.001
 
-postprocess:
-  resize_enabled: false
-  target_width: 956
-  target_height: 956
-  resize_mode: area
-  save_npy: true
-  save_tiff: true
-  save_png_preview: false
-  saturation_fraction_warning: 0.001

@@ -20,7 +20,6 @@ from experiments.hardware_sdk.devices import (
     verify_camera_roi,
 )
 from experiments.hardware_sdk.drivers.tucam_camera import TucamCamera
-from experiments.hardware_sdk.workflows.batch_postprocess import run_batch_postprocess
 from experiments.hardware_sdk.demos.phase_slm_demo import prepare_phase_frame
 from experiments.hardware_sdk.workflows.roi_calibration import (
     exposure_patch,
@@ -322,39 +321,6 @@ def test_rectangle_marker_is_filled_and_centered() -> None:
     assert marker[30:50, 40:60].min() == 255
 
 
-def test_batch_postprocess_saves_quantitative_outputs_without_normalization(
-    tmp_path: Path,
-) -> None:
-    input_dir = tmp_path / "raw"
-    input_dir.mkdir()
-    raw = np.arange(100, dtype=np.uint16).reshape(10, 10) + 10
-    background = np.full((10, 10), 10, dtype=np.float32)
-    np.save(input_dir / "sample.npy", raw)
-    np.save(tmp_path / "background.npy", background)
-    (tmp_path / "config.yaml").write_text(
-        "postprocess:\n"
-        "  resize_enabled: false\n"
-        "  target_width: 10\n  target_height: 10\n  resize_mode: area\n"
-        "  save_npy: true\n  save_tiff: true\n  save_png_preview: false\n"
-        "  saturation_fraction_warning: 1.0\n",
-        encoding="utf-8",
-    )
-    output_dir = tmp_path / "processed"
-    summary = run_batch_postprocess(
-        tmp_path / "config.yaml", input_dir, tmp_path / "background.npy", output_dir,
-    )
-    processed = np.load(output_dir / "sample.npy")
-    assert processed.dtype == np.float32
-    assert processed.shape == (10, 10)
-    assert processed.min() == pytest.approx(0.0)
-    assert processed.max() == pytest.approx(99.0)
-    assert summary["per_image_normalization"] is False
-    assert summary["geometry_transform"] == "none"
-    assert (output_dir / "sample.tif").is_file()
-    assert (output_dir / "processing_manifest.csv").is_file()
-    assert (output_dir / "before_after_preview.png").is_file()
-
-
 def test_layer_agnostic_folder_acquisition_preserves_sorted_basenames(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -377,8 +343,20 @@ def test_layer_agnostic_folder_acquisition_preserves_sorted_basenames(
         def __enter__(self): return self
         def __exit__(self, *_): return None
         def validate_runtime(self): return None
-        def capture(self, path): np.save(path, np.ones((4, 4), dtype=np.uint8))
-        def device_info(self): return {"driver": "fake_camera"}
+        def capture(self, path):
+            np.save(path, np.ones((4, 4), dtype=np.uint8))
+            self.last = {
+                "source_size_wh": [4, 4],
+                "saved_size_wh": [4, 4],
+                "resize_mode": "none",
+                "dtype": "uint8",
+            }
+        def device_info(self):
+            return {
+                "driver": "fake_camera",
+                "device_roi_xywh": [0, 0, 4, 4],
+                "last_capture": getattr(self, "last", None),
+            }
 
     monkeypatch.setattr(
         "experiments.hardware_sdk.workflows.acquire_folder.build_slm",
@@ -399,7 +377,11 @@ def test_layer_agnostic_folder_acquisition_preserves_sorted_basenames(
                 "settle_delay_ms": 0,
                 "confirm_before_start": False,
                 "amplitude_slm": {"driver": "manual"},
-                "camera": {"driver": "unused"},
+                "camera": {
+                    "driver": "unused",
+                    "require_device_roi": True,
+                    "device_roi_xywh": [0, 0, 4, 4],
+                },
             }
         ),
         encoding="utf-8",

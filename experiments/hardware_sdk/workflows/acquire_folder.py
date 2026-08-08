@@ -17,11 +17,13 @@ from typing import Any
 
 try:
     from ..devices import build_camera, build_slm, verify_camera_roi
+    from .calibration_common import load_yaml_config
 except ImportError:  # direct execution from workflows/
     import sys
 
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     from devices import build_camera, build_slm, verify_camera_roi
+    from workflows.calibration_common import load_yaml_config
 
 
 CAPTURE_SUFFIXES = {".npy", ".png", ".tif", ".tiff"}
@@ -55,8 +57,7 @@ def run(
     clear_output: bool = False,
     assume_yes: bool = False,
 ) -> dict[str, Any]:
-    config_path = Path(config_path).expanduser().resolve()
-    raw = json.loads(config_path.read_text(encoding="utf-8"))
+    raw, config_path = load_yaml_config(config_path)
     base = config_path.parent
     input_dir = _resolve(input_override or raw["input_dir"], base)
     output_dir = _resolve(output_override or raw["output_dir"], base)
@@ -120,6 +121,21 @@ def run(
             time.sleep(settle_seconds)
             camera.capture(capture_path)
             capture_info = camera.device_info().get("last_capture") or {}
+            requested_roi = verify_camera_roi(camera_config)
+            expected_size = (
+                None
+                if requested_roi is None
+                else [int(requested_roi[2]), int(requested_roi[3])]
+            )
+            if expected_size is not None:
+                source_size = capture_info.get("source_size_wh")
+                saved_size = capture_info.get("saved_size_wh")
+                if source_size != expected_size or saved_size != expected_size:
+                    capture_path.unlink(missing_ok=True)
+                    raise RuntimeError(
+                        "Camera frame size does not match device_roi_xywh: "
+                        f"expected={expected_size}, source={source_size}, saved={saved_size}"
+                    )
             row = {
                 "play_index": index,
                 "amplitude_bmp": amplitude_path.name,
@@ -174,7 +190,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Play every amplitude BMP in a folder and save same-name CCD frames"
     )
-    parser.add_argument("--config", default="configs/acquisition/tucam_windows.json")
+    parser.add_argument("--config", default="configs/tucam_windows.yaml")
     parser.add_argument("--input-dir", default=None)
     parser.add_argument("--output-dir", default=None)
     parser.add_argument("--clear-output", action="store_true")

@@ -1,4 +1,4 @@
-"""Manual-ROI hardware preparation, background, and gray-response checks.
+"""Manual-ROI mask generation and raw gray-response checks.
 
 ROI geometry is deliberately configured by the operator.  This module does
 not estimate affine/homography transforms and does not warp camera images.
@@ -21,14 +21,10 @@ try:
     from ..devices import build_camera, build_slm, verify_camera_roi
     from ..demos.phase_slm_demo import BlinkPhaseSLM, prepare_phase_frame
     from .calibration_common import (
-        corrected_frame,
         json_dump,
-        load_frame,
         load_yaml_config,
         median_capture,
         resolve_path,
-        save_preview,
-        save_tiff,
         utc_now,
     )
 except ImportError:  # direct execution from workflows/
@@ -38,14 +34,10 @@ except ImportError:  # direct execution from workflows/
     from devices import build_camera, build_slm, verify_camera_roi
     from demos.phase_slm_demo import BlinkPhaseSLM, prepare_phase_frame
     from workflows.calibration_common import (
-        corrected_frame,
         json_dump,
-        load_frame,
         load_yaml_config,
         median_capture,
         resolve_path,
-        save_preview,
-        save_tiff,
         utc_now,
     )
 
@@ -141,7 +133,7 @@ def exposure_patch(
 
 
 def generate_calibration_files(config: dict[str, Any], config_path: Path) -> dict[str, Any]:
-    """Generate only manual-ROI, zero-background, and exposure patterns."""
+    """Generate manual-ROI verification, zero, and exposure patterns."""
 
     masks, _ = _paths(config, config_path)
     amplitude_dir = masks / "amplitude"
@@ -361,66 +353,6 @@ def _open_verified_camera(config: dict[str, Any], config_path: Path, exposure_us
         raise
 
 
-def acquire_background(
-    config: dict[str, Any], config_path: Path, *, assume_yes: bool = False
-) -> dict[str, Any]:
-    """Capture background after the final manual hardware ROI is configured."""
-
-    masks, results = _paths(config, config_path)
-    amplitude_zero = masks / "amplitude" / "amplitude_zero.bmp"
-    phase_zero = masks / "phase" / "phase_zero.bmp"
-    if not amplitude_zero.is_file() or not phase_zero.is_file():
-        generate_calibration_files(config, config_path)
-    verify_camera_roi(_camera_config(config))
-    results.mkdir(parents=True, exist_ok=True)
-    frame_count = int(config["background"]["frames"])
-    settle_seconds = float(config.get("settle_delay_ms", 200)) / 1000.0
-    with _slm_session(config, config_path, [amplitude_zero]) as (amplitude, phase):
-        phase.display(phase_zero)
-        amplitude.display_file(amplitude_zero)
-        time.sleep(settle_seconds)
-        _confirm(
-            "\n背景采集前必须完成以下检查：\n"
-            "1. 已在本 YAML 的 camera.device_roi_xywh 填入最终手动 ROI。\n"
-            "2. 激光保持开启。\n"
-            f"3. 相位 SLM 当前为：{phase_zero}\n"
-            f"4. 振幅 SLM 当前为：{amplitude_zero}\n"
-            f"5. 程序将采集 {frame_count} 帧并取逐像素中位数。",
-            assume_yes,
-        )
-        # Confirming can take a long time. Re-display the zero frame so the
-        # final commanded amplitude state is unambiguous before acquisition.
-        amplitude.display_file(amplitude_zero)
-        time.sleep(settle_seconds)
-        camera = _open_verified_camera(config, config_path)
-        try:
-            background, frame_metadata = median_capture(
-                camera, results, "background", frame_count
-            )
-            camera_info = camera.device_info()
-        finally:
-            camera.close()
-    np.save(results / "background.npy", background.astype(np.float32))
-    save_tiff(results / "background.tif", background.astype(np.float32))
-    save_preview(results / "background_preview.png", background)
-    metadata = {
-        "background_type": "laser_on_both_slms_zero_pattern",
-        "is_camera_dark_frame": False,
-        "captured_after_manual_hardware_roi": True,
-        "frames": frame_count,
-        "shape_hw": list(background.shape),
-        "dtype": "float32_median",
-        "source_frame_metadata": frame_metadata,
-        "camera": camera_info,
-        "amplitude_pattern": str(amplitude_zero),
-        "phase_pattern": str(phase_zero),
-        "timestamp": utc_now(),
-    }
-    json_dump(results / "background_metadata.json", metadata)
-    print(f"Background saved under {results}")
-    return metadata
-
-
 def _measurement_window(shape: tuple[int, int], size: int) -> tuple[slice, slice]:
     height, width = shape
     size = min(int(size), height, width)
@@ -433,15 +365,9 @@ def run_exposure(
     config: dict[str, Any], config_path: Path, *, assume_yes: bool = False
 ) -> dict[str, Any]:
     masks, results = _paths(config, config_path)
-    background_path = results / "background.npy"
-    if not background_path.is_file():
-        raise FileNotFoundError(
-            "Background is missing. Set the final manual camera ROI, then run "
-            "the background phase before exposure calibration."
-        )
-    background = load_frame(background_path)
     if not (masks / "manifest.csv").is_file():
         generate_calibration_files(config, config_path)
+    results.mkdir(parents=True, exist_ok=True)
     settings = config["exposure_calibration"]
     gray_values = list(
         range(
@@ -458,22 +384,17 @@ def run_exposure(
     with _slm_session(config, config_path, patterns) as (amplitude, phase):
         phase.display(phase_zero)
         _confirm(
-            "曝光响应检查将使用当前手动硬件 ROI 和已有 background；"
-            "确认相位 SLM 为 phase_zero.bmp。",
+            "曝光响应检查直接记录当前手动硬件 ROI 的原始强度，不扣 background；"
+            "请确认相位 SLM 为 phase_zero.bmp。",
             assume_yes,
         )
         for exposure_us in settings["exposure_times_us"]:
             camera = _open_verified_camera(config, config_path, float(exposure_us))
             try:
-                if tuple(background.shape) != tuple(
-                    reversed(camera.device_info()["device_roi_xywh"][2:])
-                ):
-                    raise ValueError(
-                        f"background shape {background.shape} does not match active camera ROI "
-                        f"{camera.device_info()['device_roi_xywh'][2:]}; recapture background."
-                    )
+                roi = camera.device_info()["device_roi_xywh"]
+                frame_shape = (int(roi[3]), int(roi[2]))
                 window = _measurement_window(
-                    background.shape,
+                    frame_shape,
                     int(settings.get("measurement_window_size_px", 128)),
                 )
                 for gray, pattern in zip(gray_values, patterns):
@@ -485,8 +406,11 @@ def run_exposure(
                         f"exposure_{int(exposure_us)}_{gray:03d}",
                         int(settings["frames_per_gray"]),
                     )
-                    corrected = corrected_frame(raw, background)
-                    measured = corrected[window]
+                    if raw.shape != frame_shape:
+                        raise RuntimeError(
+                            f"Camera returned shape {raw.shape}, expected ROI shape {frame_shape}"
+                        )
+                    measured = raw[window].astype(np.float32)
                     dtype_max = (
                         float(np.iinfo(raw.dtype).max)
                         if np.issubdtype(raw.dtype, np.integer)
@@ -504,7 +428,7 @@ def run_exposure(
                         }
                     )
                     if gray in {0, 64, 128, 192, 255}:
-                        previews[gray] = corrected
+                        previews[gray] = raw
             finally:
                 camera.close()
     with (results / "slm_response.csv").open("w", encoding="utf-8", newline="") as handle:
@@ -523,7 +447,7 @@ def run_exposure(
         normalized = shifted / max(float(shifted.max()), 1e-12)
         normalized_axis.plot(x, normalized, marker=".", label=f"{exposure_us} us")
     for current, title, ylabel, path in (
-        (axis, "SLM gray response", "background-corrected integrated energy", results / "response_curve.png"),
+        (axis, "SLM gray response", "raw integrated energy", results / "response_curve.png"),
         (normalized_axis, "Normalized SLM gray response", "normalized integrated energy", results / "response_curve_normalized.png"),
     ):
         current.set_xlabel("amplitude SLM gray value")
@@ -546,7 +470,7 @@ def run_exposure(
     summary = {
         "row_count": len(rows),
         "camera_roi_xywh": config["camera"]["device_roi_xywh"],
-        "background": str(background_path),
+        "background_subtraction": False,
         "measurement_window": "fixed_center_window",
         "max_saturated_pixel_fraction": max_saturation,
         "warning": (
@@ -563,17 +487,15 @@ def run_exposure(
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Generate manual-ROI masks, capture background, or check gray response"
+        description="Generate manual-ROI masks or check the raw 0..255 gray response"
     )
-    parser.add_argument("phase", choices=("generate", "background", "exposure"))
-    parser.add_argument("--config", default="configs/calibration/tucam.yaml")
+    parser.add_argument("phase", choices=("generate", "exposure"))
+    parser.add_argument("--config", default="configs/tucam_windows.yaml")
     parser.add_argument("--yes", action="store_true")
     args = parser.parse_args()
     config, config_path = load_yaml_config(args.config)
     if args.phase == "generate":
         generate_calibration_files(config, config_path)
-    elif args.phase == "background":
-        acquire_background(config, config_path, assume_yes=args.yes)
     else:
         run_exposure(config, config_path, assume_yes=args.yes)
     return 0

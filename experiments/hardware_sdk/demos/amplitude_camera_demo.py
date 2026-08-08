@@ -163,7 +163,7 @@ def run(config_path: str | Path, *, generate_only: bool = False) -> dict[str, An
     raw = yaml.safe_load(path.read_text(encoding="utf-8"))
     base = path.parent
     output = _resolve(
-        raw.get("output_dir", "../artifacts/demos/amplitude_digits"), base
+        raw.get("digit_output_dir", "../artifacts/demos/amplitude_digits"), base
     )
     inputs = output / "input_bmp"
     captures = output / "ccd_captured"
@@ -193,9 +193,8 @@ def run(config_path: str | Path, *, generate_only: bool = False) -> dict[str, An
         print(f"Generated {len(files)} ordered amplitude BMPs under {inputs}")
         return manifest
 
-    device = dict(raw.get("devices", {}))
-    camera_config = dict(device["camera"])
-    extension = str(camera_config.get("output_extension", ".npy")).lower()
+    camera_config = dict(raw["camera"])
+    extension = str(raw.get("output_extension", ".npy")).lower()
     if extension not in {".npy", ".png", ".tif", ".tiff"}:
         raise ValueError("camera.output_extension must be a lossless format")
     settle_seconds = float(raw.get("settle_delay_ms", 40.0)) / 1000.0
@@ -208,8 +207,7 @@ def run(config_path: str | Path, *, generate_only: bool = False) -> dict[str, An
             "然后按 Enter 开始按 0→9 顺序播放和采集："
         )
     with ExitStack() as stack:
-        slm = stack.enter_context(build_slm(dict(device["amplitude_slm"]), base))
-        camera_config.pop("output_extension", None)
+        slm = stack.enter_context(build_slm(dict(raw["amplitude_slm"]), base))
         camera = stack.enter_context(build_camera(camera_config, base))
         verify_camera_roi(camera_config, camera.device_info())
         slm.preload_files(files)

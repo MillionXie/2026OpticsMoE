@@ -5,7 +5,6 @@
   "output_extension": ".npy",
   "settle_delay_ms": 200,
   "confirm_before_start": true,
-
   "amplitude_slm": {
     "driver": "holoeye",
     "sdk_path": "%HEDS_3_2_PYTHON_MODULES%",
@@ -15,7 +14,6 @@
     "preload": true,
     "wait_until_visible": true
   },
-
   "camera": {
     "driver": "dvp_subprocess",
     "sdk_path": "../../vendor_sdk/camera_dvp_legacy/lib/windows/python3.6/x64",

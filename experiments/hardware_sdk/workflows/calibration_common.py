@@ -15,9 +15,6 @@ import yaml
 from PIL import Image
 
 
-FRAME_SUFFIXES = {".npy", ".png", ".tif", ".tiff", ".bmp"}
-
-
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
@@ -57,42 +54,6 @@ def load_frame(path: str | Path) -> np.ndarray:
     if not np.isfinite(value).all():
         raise ValueError(f"Frame contains NaN/Inf: {path}")
     return value
-
-
-def save_tiff(path: str | Path, value: np.ndarray, *, force_uint16: bool = False) -> None:
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    array = np.asarray(value)
-    if force_uint16:
-        array = np.rint(np.clip(array, 0, 65535)).astype(np.uint16)
-    elif array.dtype not in (np.uint8, np.uint16, np.float32):
-        array = array.astype(np.float32)
-    Image.fromarray(array).save(path, format="TIFF")
-
-
-def preview_uint8(value: np.ndarray) -> np.ndarray:
-    value = np.asarray(value, dtype=np.float32)
-    finite = value[np.isfinite(value)]
-    if finite.size == 0:
-        return np.zeros(value.shape, dtype=np.uint8)
-    low, high = np.percentile(finite, [1.0, 99.8])
-    if high <= low:
-        high = low + 1.0
-    return np.rint(np.clip((value - low) / (high - low), 0, 1) * 255).astype(np.uint8)
-
-
-def save_preview(path: str | Path, value: np.ndarray) -> None:
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    Image.fromarray(preview_uint8(value), mode="L").save(path)
-
-
-def corrected_frame(raw: np.ndarray, background: np.ndarray) -> np.ndarray:
-    if raw.shape != background.shape:
-        raise ValueError(
-            f"Raw/background shape mismatch: raw={raw.shape}, background={background.shape}"
-        )
-    return np.maximum(raw.astype(np.float32) - background.astype(np.float32), 0.0)
 
 
 def capture_array(camera: Any, temporary_dir: Path, stem: str) -> tuple[np.ndarray, dict[str, Any]]:

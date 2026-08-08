@@ -26,6 +26,8 @@ __pycache__/
 *.zip
 _offline_packages
 
+.github
+
 # Hardware SDKs are intentionally versioned under hardware_sdk/vendor_sdk so
 # the bench-control project can be cloned onto another laboratory computer.
 /experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/sdk/
@@ -34,10 +36,8 @@ _offline_packages
 /experiments/hardware_sdk/dvp_runtime/
 /experiments/hardware_sdk/data/amplitude_to_play/*
 /experiments/hardware_sdk/data/ccd_captured/*
-/experiments/hardware_sdk/data/processed/*
 !/experiments/hardware_sdk/data/amplitude_to_play/.gitkeep
 !/experiments/hardware_sdk/data/ccd_captured/.gitkeep
-!/experiments/hardware_sdk/data/processed/.gitkeep
 /experiments/hardware_sdk/artifacts/demos/*
 !/experiments/hardware_sdk/artifacts/demos/.gitkeep
 /experiments/hardware_sdk/artifacts/logs/

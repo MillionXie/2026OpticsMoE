@@ -13,14 +13,15 @@ from PIL import Image
 
 try:
     from ..devices import build_camera, verify_camera_roi
+    from ..workflows.calibration_common import load_yaml_config
 except ImportError:  # direct execution from hardware_sdk/
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     from devices import build_camera, verify_camera_roi
+    from workflows.calibration_common import load_yaml_config
 
 
 def run(config_path: str | Path, output_dir: str | Path, frame_count: int) -> dict:
-    config_path = Path(config_path).expanduser().resolve()
-    raw = json.loads(config_path.read_text(encoding="utf-8"))
+    raw, config_path = load_yaml_config(config_path)
     output_dir = Path(output_dir).expanduser().resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
     camera_config = dict(raw["camera"])
@@ -70,7 +71,7 @@ def run(config_path: str | Path, output_dir: str | Path, frame_count: int) -> di
 def main() -> int:
     parser = argparse.ArgumentParser(description="Lossless camera-only smoke test")
     parser.add_argument(
-        "--config", default="configs/acquisition/tucam_windows.json"
+        "--config", default="configs/tucam_windows.yaml"
     )
     parser.add_argument("--output-dir", default="artifacts/demos/camera_smoke_test")
     parser.add_argument("--frames", type=int, default=3)
