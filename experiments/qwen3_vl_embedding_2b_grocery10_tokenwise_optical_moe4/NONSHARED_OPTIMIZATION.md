@@ -40,6 +40,8 @@ The student architecture, physical 8-µm geometry, nonshared position experts,
 top-2 router, two optical planes, output embedding dimension and deployment
 path are unchanged.
 
-The test set is still observed each epoch per the existing project convention.
-EMA best-observed-test is explicitly marked selection-biased; the EMA-last
-checkpoint is also retained for a non-test-selected reference.
+For efficiency, the 31-SKU pretraining test set is evaluated only after the
+stage completes because transfer always uses EMA-last. During target-10
+fine-tuning, test is still observed each epoch per the existing project
+convention. EMA best-observed-test is explicitly marked selection-biased; the
+EMA-last checkpoint is also retained for a non-test-selected reference.

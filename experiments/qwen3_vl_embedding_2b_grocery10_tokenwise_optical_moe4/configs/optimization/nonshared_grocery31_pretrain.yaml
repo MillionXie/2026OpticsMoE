@@ -59,6 +59,9 @@ training:
   temperature: 0.07
   gallery_temperature: 0.07
   ema_decay: 0.99
+  # Pretraining transfers EMA-last weights; per-epoch evaluation would run the
+  # 31-SKU test set twice (live + EMA) without affecting checkpoint choice.
+  evaluate_test_each_epoch: false
 
 augmentation:
   enabled: true
@@ -72,4 +75,3 @@ evaluation:
 
 teacher_cache_path: ../../cache/grocery31_tokenwise_196px_teacher_embeddings.pt
 output_dir: ../../runs/optimization/nonshared_grocery31_pretrain
-
