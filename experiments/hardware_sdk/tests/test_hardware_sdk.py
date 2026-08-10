@@ -184,7 +184,7 @@ def test_tucam_vendor_enum_restypes_are_replaced_without_touching_other_calls() 
     tucam_function = SimpleNamespace(restype=ReturnCode)
     tuimg_function = SimpleNamespace(restype=ReturnCode)
     unrelated_function = SimpleNamespace(restype=ReturnCode)
-    already_raw_function = SimpleNamespace(restype=__import__("ctypes").c_uint32)
+    already_raw_function = SimpleNamespace(restype=__import__("ctypes").c_int32)
     module = SimpleNamespace(
         TUCAMRET=ReturnCode,
         TUCAM_Prop_GetValue=tucam_function,
@@ -197,10 +197,10 @@ def test_tucam_vendor_enum_restypes_are_replaced_without_touching_other_calls() 
 
     import ctypes
 
-    assert tucam_function.restype is ctypes.c_uint32
-    assert tuimg_function.restype is ctypes.c_uint32
+    assert tucam_function.restype is ctypes.c_int32
+    assert tuimg_function.restype is ctypes.c_int32
     assert unrelated_function.restype is ReturnCode
-    assert already_raw_function.restype is ctypes.c_uint32
+    assert already_raw_function.restype is ctypes.c_int32
 
 
 def test_manual_roi_is_required_and_must_match_camera_report() -> None:

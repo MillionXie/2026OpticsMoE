@@ -130,7 +130,7 @@ class TucamCamera(CameraDriver):
 
     @staticmethod
     def _configure_vendor_return_types(module: ModuleType) -> None:
-        """Return raw uint32 status codes instead of constructing TUCAMRET.
+        """Return raw signed int32 status codes instead of constructing TUCAMRET.
 
         The uploaded vendor binding assigns ``TUCAMRET`` (a Python ``Enum``)
         directly as the ctypes ``restype``.  On Windows, error statuses whose
@@ -138,7 +138,11 @@ class TucamCamera(CameraDriver):
         Even valid statuses such as ``TUCAMRET_NOT_SUPPORT`` then raise
         ``ValueError`` before this adapter can handle the error.  Keeping the
         vendor file untouched and normalizing its loaded function objects here
-        lets ``_check`` process every status consistently.
+        lets ``_check`` process every status consistently.  TUCam loads its DLL
+        through ``OleDLL``; using ``c_uint32`` here makes high-bit error codes
+        overflow OleDLL's signed C-long result path, so ``c_int32`` is required.
+        ``_result_value`` converts that signed result back to its uint32 bit
+        pattern before comparison and reporting.
         """
         enum_type = getattr(module, "TUCAMRET", None)
         if enum_type is None:
@@ -148,7 +152,7 @@ class TucamCamera(CameraDriver):
                 continue
             function = getattr(module, name, None)
             if getattr(function, "restype", None) is enum_type:
-                function.restype = ctypes.c_uint32
+                function.restype = ctypes.c_int32
 
     def _check(self, result: Any, operation: str) -> None:
         assert self._module is not None
@@ -220,7 +224,7 @@ class TucamCamera(CameraDriver):
                 f"read property {identifier.name}",
             )
             return float(value.value)
-        except DeviceError:
+        except (DeviceError, ValueError, OverflowError, OSError):
             return None
 
     def _get_capability(self, identifier: Any) -> int | None:
@@ -234,7 +238,7 @@ class TucamCamera(CameraDriver):
                 f"read capability {identifier.name}",
             )
             return int(value.value)
-        except DeviceError:
+        except (DeviceError, ValueError, OverflowError, OSError):
             return None
 
     def _get_model(self) -> str | None:
