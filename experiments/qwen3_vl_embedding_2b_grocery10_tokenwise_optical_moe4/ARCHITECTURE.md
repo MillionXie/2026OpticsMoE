@@ -32,6 +32,16 @@ position. The nonshared ablation instead allocates independent phase masks for
 all `196 x 4` token-position/expert pairs; this tests position capacity but is
 not the canonical parameter-sharing MoE interpretation.
 
+With the current non-affine settings, exact trainable counts are:
+
+- shared Vision+Language model: 6,018,768;
+- nonshared position-expert ablation: 7,616,208.
+
+These include both optical cores and the Language dimensional bridge. Each
+shared optical core has 910,696 parameters. In the nonshared variant, each
+core has 1,709,416 parameters because its first expert bank grows from 4,096 to
+802,816 phase values.
+
 ## Boundary with Qwen
 
 The replacement is installed at `visual.blocks[0]`. Native Qwen vision blocks
