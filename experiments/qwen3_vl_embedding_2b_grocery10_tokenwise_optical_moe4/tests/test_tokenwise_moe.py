@@ -277,6 +277,34 @@ def test_optical_language_configs_disable_deepstack_and_define_ablation() -> Non
     assert nonshared.share_expert_phase_across_tokens is False
 
 
+def test_nonshared_optimization_configs_are_staged_and_regularized() -> None:
+    pretrain = load_settings(
+        EXPERIMENT
+        / "configs"
+        / "optimization"
+        / "nonshared_grocery31_pretrain.yaml"
+    )
+    finetune = load_settings(
+        EXPERIMENT
+        / "configs"
+        / "optimization"
+        / "nonshared_grocery10_finetune.yaml"
+    )
+    assert pretrain.share_expert_phase_across_tokens is False
+    assert finetune.share_expert_phase_across_tokens is False
+    assert len(pretrain.selected_skus) == 31
+    assert len(finetune.selected_skus) == 10
+    assert pretrain.pk_skus_per_batch == finetune.pk_skus_per_batch == 10
+    assert pretrain.lambda_kd == finetune.lambda_kd == 8.0
+    assert pretrain.lambda_relational_kd > 0.0
+    assert finetune.lambda_teacher_gallery > 0.0
+    assert pretrain.ema_decay == finetune.ema_decay == 0.99
+    assert finetune.phase_dropout_mode == "block_phase_bypass"
+    assert finetune.phase_dropout_p == pytest.approx(0.03)
+    assert finetune.evaluation_checkpoint == "ema_best_observed_test"
+    assert pretrain.output_dir != finetune.output_dir
+
+
 def test_replacement_disables_deepstack_and_restores_teacher_modules() -> None:
     class IdentityBlock(torch.nn.Module):
         def forward(self, hidden_states, **_):

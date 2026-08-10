@@ -2,6 +2,23 @@
 
 Run every command from the repository root.
 
+## Recommended nonshared optimization pipeline
+
+This preserves the completed baseline and writes both stages under
+`runs/optimization/`. It performs Grocery31 pretraining followed by
+weights-only Grocery10 fine-tuning with a fresh optimizer:
+
+    CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4.optimize_nonshared
+
+Preview the exact commands without running them:
+
+    python -m experiments.qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4.optimize_nonshared --dry-run
+
+Completed stages are skipped automatically. To intentionally overwrite both
+stages, append `--force`. The recipe and baseline diagnosis are recorded in
+`NONSHARED_OPTIMIZATION.md`, while each run stores resolved config, history,
+live/EMA checkpoints, metrics and phase figures.
+
 ## Recommended: optical Vision + optical Language
 
 The main new run disables DeepStack, injects the final visual tokens once, and

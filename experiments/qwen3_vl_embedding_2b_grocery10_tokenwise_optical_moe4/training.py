@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 import time
 from collections import defaultdict
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Sequence
 
@@ -36,6 +37,7 @@ from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.retrieval_met
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.train_optical_retrieval import (
     PKBatchSampler,
     embedding_distillation_loss,
+    relational_embedding_distillation_loss,
     supervised_contrastive_loss,
 )
 
@@ -136,6 +138,54 @@ def _batch_retrieval_accuracy(embeddings: torch.Tensor, labels: torch.Tensor) ->
     return float(predicted.eq(labels).float().mean())
 
 
+@torch.no_grad()
+def _teacher_gallery_prototypes(
+    teacher_store: TeacherEmbeddingStore,
+    bundle: GroceryRetrievalBundle,
+    device: torch.device,
+) -> torch.Tensor:
+    embeddings = teacher_store.lookup(bundle.gallery_samples).to(device).float()
+    labels = torch.tensor(
+        [sample.sku_index for sample in bundle.gallery_samples],
+        device=device,
+        dtype=torch.long,
+    )
+    prototypes = []
+    for sku_index in range(len(bundle.class_names)):
+        selected = embeddings[labels.eq(sku_index)]
+        if len(selected) == 0:
+            raise RuntimeError(f"Teacher gallery has no image for SKU index {sku_index}")
+        prototypes.append(F.normalize(selected, dim=-1).mean(dim=0))
+    return F.normalize(torch.stack(prototypes), dim=-1)
+
+
+@torch.no_grad()
+def _update_ema(
+    parameters: Sequence[torch.nn.Parameter],
+    averages: Sequence[torch.Tensor],
+    decay: float,
+) -> None:
+    for parameter, average in zip(parameters, averages):
+        average.mul_(decay).add_(parameter.detach().float(), alpha=1.0 - decay)
+
+
+@contextmanager
+def _use_ema(
+    parameters: Sequence[torch.nn.Parameter],
+    averages: Sequence[torch.Tensor],
+):
+    backups = [parameter.detach().clone() for parameter in parameters]
+    try:
+        with torch.no_grad():
+            for parameter, average in zip(parameters, averages):
+                parameter.copy_(average.to(device=parameter.device, dtype=parameter.dtype))
+        yield
+    finally:
+        with torch.no_grad():
+            for parameter, backup in zip(parameters, backups):
+                parameter.copy_(backup)
+
+
 def train(
     loaded: LoadedBackbone,
     replacement: TokenwiseVisionReplacement,
@@ -143,7 +193,10 @@ def train(
     teacher_store: TeacherEmbeddingStore,
     settings: Any,
     resume_checkpoint: Path | None = None,
+    initialize_checkpoint: Path | None = None,
 ) -> dict[str, Any]:
+    if resume_checkpoint is not None and initialize_checkpoint is not None:
+        raise ValueError("Use either resume_checkpoint or initialize_checkpoint, not both")
     report = trainable_parameter_report(loaded, replacement)
     write_json(settings.output_dir / "metrics" / "model_parameters.json", report)
     print(
@@ -157,6 +210,13 @@ def train(
     loader, sampler = _loader(bundle.train_samples, settings, training=True)
     optimizer = _optimizer(replacement, settings)
     start_epoch = 1
+    if initialize_checkpoint is not None:
+        payload = load_checkpoint(replacement, initialize_checkpoint, loaded.device)
+        print(
+            f"initialized model weights from {initialize_checkpoint} "
+            f"(source epoch={payload.get('epoch')}); optimizer and epoch reset",
+            flush=True,
+        )
     if resume_checkpoint is not None:
         payload = load_checkpoint(replacement, resume_checkpoint, loaded.device)
         if settings.weight_decay == payload.get("settings", {}).get("weight_decay"):
@@ -169,6 +229,23 @@ def train(
     best_train_loss = float("inf")
     best_observed_test_top1 = float("-inf")
     best_observed_test_epoch = -1
+    best_ema_observed_test_top1 = float("-inf")
+    best_ema_observed_test_epoch = -1
+    parameters = [
+        parameter
+        for parameter in replacement.trainable_parameters()
+        if parameter.requires_grad
+    ]
+    ema_parameters = (
+        [parameter.detach().float().clone() for parameter in parameters]
+        if settings.ema_decay is not None
+        else None
+    )
+    teacher_gallery_prototypes = (
+        _teacher_gallery_prototypes(teacher_store, bundle, loaded.device)
+        if settings.lambda_teacher_gallery > 0.0
+        else None
+    )
     history_path = settings.output_dir / "metrics" / "training_history.csv"
     history_path.unlink(missing_ok=True)
     scaler = torch.amp.GradScaler(
@@ -201,7 +278,21 @@ def train(
                     loaded, replacement, inputs, settings.embedding_dim
                 )
                 kd = embedding_distillation_loss(student, teacher)
+                relational_kd = relational_embedding_distillation_loss(
+                    student, teacher
+                )
                 retrieval = supervised_contrastive_loss(student, labels, settings.temperature)
+                if teacher_gallery_prototypes is not None:
+                    teacher_gallery_logits = (
+                        F.normalize(student.float(), dim=-1)
+                        @ teacher_gallery_prototypes.T
+                        / settings.gallery_temperature
+                    )
+                    teacher_gallery = F.cross_entropy(
+                        teacher_gallery_logits, labels
+                    )
+                else:
+                    teacher_gallery = student.sum() * 0.0
                 router = replacement.router_losses()
                 dc = (
                     replacement.phase_dc_loss()
@@ -210,7 +301,9 @@ def train(
                 )
                 loss = (
                     settings.lambda_kd * kd
+                    + settings.lambda_relational_kd * relational_kd
                     + settings.lambda_ret * retrieval
+                    + settings.lambda_teacher_gallery * teacher_gallery
                     + settings.lambda_router_balance * router["balance"]
                     + settings.lambda_router_importance * router["importance"]
                     + settings.phase_dc_weight * dc
@@ -224,12 +317,16 @@ def train(
             )
             scaler.step(optimizer)
             scaler.update()
+            if ema_parameters is not None:
+                _update_ema(parameters, ema_parameters, settings.ema_decay)
             count = len(batch["samples"])
             seen += count
             values = {
                 "loss": loss,
                 "kd_loss": kd,
+                "relational_kd_loss": relational_kd,
                 "retrieval_loss": retrieval,
+                "teacher_gallery_loss": teacher_gallery,
                 "router_balance_loss": router["balance"],
                 "router_importance_loss": router["importance"],
                 "phase_dc_loss": dc,
@@ -246,7 +343,10 @@ def train(
                 print(
                     f"epoch {epoch:03d}/{settings.epochs:03d} batch {batch_index:04d}/{len(loader):04d} "
                     f"loss={sums['loss']/seen:.5f} kd={sums['kd_loss']/seen:.5f} "
-                    f"ret={sums['retrieval_loss']/seen:.5f} train_top1={sums['train_top1']/seen:.4f} "
+                    f"rel_kd={sums['relational_kd_loss']/seen:.5f} "
+                    f"ret={sums['retrieval_loss']/seen:.5f} "
+                    f"t_gallery={sums['teacher_gallery_loss']/seen:.5f} "
+                    f"train_top1={sums['train_top1']/seen:.4f} "
                     f"balance={sums['router_balance_loss']/seen:.4f} "
                     f"v_entropy={sums['vision_router_entropy']/seen:.4f} "
                     + (
@@ -268,6 +368,26 @@ def train(
                 "test_top3": evaluation.metrics["top3_retrieval_accuracy"],
                 "test_mrr": evaluation.metrics["mrr"],
             })
+            if ema_parameters is not None:
+                with _use_ema(parameters, ema_parameters):
+                    ema_evaluation = evaluate_student(
+                        loaded,
+                        replacement,
+                        bundle.test_samples,
+                        bundle.gallery_samples,
+                        bundle.class_names,
+                        settings,
+                        system_name="student_ema_epoch",
+                    )
+                row.update({
+                    "ema_test_top1": ema_evaluation.metrics[
+                        "top1_retrieval_accuracy"
+                    ],
+                    "ema_test_top3": ema_evaluation.metrics[
+                        "top3_retrieval_accuracy"
+                    ],
+                    "ema_test_mrr": ema_evaluation.metrics["mrr"],
+                })
         history.append(row)
         _append_csv(history_path, row)
         save_checkpoint(
@@ -277,6 +397,16 @@ def train(
             epoch,
             settings,
         )
+        if ema_parameters is not None:
+            with _use_ema(parameters, ema_parameters):
+                save_checkpoint(
+                    replacement,
+                    optimizer,
+                    settings.output_dir / "checkpoints" / "ema_last_checkpoint.pt",
+                    epoch,
+                    settings,
+                    weight_variant="ema",
+                )
         if row["loss"] < best_train_loss:
             best_train_loss = row["loss"]
             save_checkpoint(
@@ -302,9 +432,39 @@ def train(
                     "selection_biased": True,
                     "warning": "This checkpoint was selected by repeatedly observing the test set.",
                     "epoch": epoch,
+                    "weight_variant": "live",
                     "test_top1": row["test_top1"],
                     "test_top3": row["test_top3"],
                     "test_mrr": row["test_mrr"],
+                },
+            )
+        if (
+            "ema_test_top1" in row
+            and row["ema_test_top1"] > best_ema_observed_test_top1
+        ):
+            best_ema_observed_test_top1 = row["ema_test_top1"]
+            best_ema_observed_test_epoch = epoch
+            with _use_ema(parameters, ema_parameters):
+                save_checkpoint(
+                    replacement,
+                    optimizer,
+                    settings.output_dir
+                    / "checkpoints"
+                    / "ema_best_observed_test_top1_checkpoint.pt",
+                    epoch,
+                    settings,
+                    weight_variant="ema",
+                )
+            write_json(
+                settings.output_dir / "metrics" / "ema_best_observed_test.json",
+                {
+                    "selection_biased": True,
+                    "warning": "This EMA checkpoint was selected by repeatedly observing the test set.",
+                    "epoch": epoch,
+                    "weight_variant": "ema",
+                    "test_top1": row["ema_test_top1"],
+                    "test_top3": row["ema_test_top3"],
+                    "test_mrr": row["ema_test_mrr"],
                 },
             )
         if epoch == 1 or epoch % 10 == 0 or epoch == settings.epochs:
@@ -313,6 +473,7 @@ def train(
             f"epoch {epoch:03d} complete train_loss={row['loss']:.5f} "
             f"train_top1={row['train_top1']:.4f} "
             + (f"test_top1={row['test_top1']:.4f} " if "test_top1" in row else "")
+            + (f"ema_test_top1={row['ema_test_top1']:.4f} " if "ema_test_top1" in row else "")
             + f"best_train_loss={best_train_loss:.5f} "
             + (
                 f"best_observed_test_top1={best_observed_test_top1:.4f}@{best_observed_test_epoch}"
@@ -325,6 +486,8 @@ def train(
         "best_train_loss": best_train_loss,
         "best_observed_test_top1": best_observed_test_top1,
         "best_observed_test_epoch": best_observed_test_epoch,
+        "best_ema_observed_test_top1": best_ema_observed_test_top1,
+        "best_ema_observed_test_epoch": best_ema_observed_test_epoch,
         "epochs": settings.epochs,
     }
 
@@ -384,11 +547,12 @@ def evaluate(
     checkpoint: Path | None = None,
 ) -> dict[str, Any]:
     if checkpoint is None:
-        filename = (
-            "best_observed_test_top1_checkpoint.pt"
-            if settings.evaluation_checkpoint == "best_observed_test"
-            else "best_train_loss_checkpoint.pt"
-        )
+        filename = {
+            "best_train_loss": "best_train_loss_checkpoint.pt",
+            "best_observed_test": "best_observed_test_top1_checkpoint.pt",
+            "ema_last": "ema_last_checkpoint.pt",
+            "ema_best_observed_test": "ema_best_observed_test_top1_checkpoint.pt",
+        }[settings.evaluation_checkpoint]
         checkpoint = settings.output_dir / "checkpoints" / filename
     payload = load_checkpoint(replacement, checkpoint, loaded.device)
     student = evaluate_student(
@@ -451,6 +615,8 @@ def save_checkpoint(
     path: Path,
     epoch: int,
     settings: Any,
+    *,
+    weight_variant: str = "live",
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     torch.save({
@@ -459,6 +625,7 @@ def save_checkpoint(
         "optimizer": optimizer.state_dict(),
         "settings": settings.to_dict(),
         "architecture": replacement.architecture_report(),
+        "weight_variant": str(weight_variant),
     }, path)
 
 

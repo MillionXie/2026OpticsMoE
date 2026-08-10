@@ -34,6 +34,11 @@ def main() -> int:
     parser.add_argument("--phase", choices=sorted(PHASES), default="all")
     parser.add_argument("--checkpoint", default=None)
     parser.add_argument("--resume-checkpoint", default=None)
+    parser.add_argument(
+        "--initialize-checkpoint",
+        default=None,
+        help="Load model weights only, then reset optimizer and start at epoch 1",
+    )
     parser.add_argument("--force-teacher-cache", action="store_true")
     args = parser.parse_args()
     settings = load_settings(args.config)
@@ -100,6 +105,11 @@ def main() -> int:
                 resume_checkpoint=(
                     Path(args.resume_checkpoint).expanduser().resolve()
                     if args.resume_checkpoint
+                    else None
+                ),
+                initialize_checkpoint=(
+                    Path(args.initialize_checkpoint).expanduser().resolve()
+                    if args.initialize_checkpoint
                     else None
                 ),
             )

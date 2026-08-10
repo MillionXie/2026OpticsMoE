@@ -49,10 +49,14 @@ class Settings:
     phase_learning_rate: float
     weight_decay: float
     lambda_kd: float
+    lambda_relational_kd: float
     lambda_ret: float
+    lambda_teacher_gallery: float
     lambda_router_balance: float
     lambda_router_importance: float
     temperature: float
+    gallery_temperature: float
+    ema_decay: float | None
     gradient_clip_norm: float
     amp_enabled: bool
     evaluate_test_each_epoch: bool
@@ -194,8 +198,16 @@ class Settings:
             raise ValueError("oeo_nonlinearity must be relu or softplus")
         if self.oeo_response_gain_min <= 0 or self.oeo_response_gain_max < self.oeo_response_gain_min:
             raise ValueError("OEO response gain bounds must satisfy 0 < min <= max")
-        if self.evaluation_checkpoint not in {"best_train_loss", "best_observed_test"}:
-            raise ValueError("evaluation.checkpoint must be best_train_loss or best_observed_test")
+        if self.evaluation_checkpoint not in {
+            "best_train_loss",
+            "best_observed_test",
+            "ema_last",
+            "ema_best_observed_test",
+        }:
+            raise ValueError(
+                "evaluation.checkpoint must be best_train_loss, best_observed_test, "
+                "ema_last, or ema_best_observed_test"
+            )
         if self.final_aggregation not in {"routing_weighted_sum", "selected_mean"}:
             raise ValueError("Unsupported final_aggregation")
         if self.phase_parameterization not in {"sigmoid", "unconstrained"}:
@@ -210,6 +222,21 @@ class Settings:
             raise ValueError("propagation_distance_m cannot be negative")
         if self.gallery_aggregation not in {"mean_prototype", "max_similarity"}:
             raise ValueError("Unsupported gallery_aggregation")
+        if min(
+            self.lambda_kd,
+            self.lambda_relational_kd,
+            self.lambda_ret,
+            self.lambda_teacher_gallery,
+            self.lambda_router_balance,
+            self.lambda_router_importance,
+        ) < 0.0:
+            raise ValueError("Training loss weights cannot be negative")
+        if self.temperature <= 0.0 or self.gallery_temperature <= 0.0:
+            raise ValueError("Contrastive temperatures must be positive")
+        if self.ema_decay is not None and not 0.0 < self.ema_decay < 1.0:
+            raise ValueError(
+                "training.ema_decay must be null or strictly between 0 and 1"
+            )
         if self.pk_images_per_sku < 2:
             raise ValueError("PK training needs at least two images per SKU")
         if not self.oeo_enabled:
@@ -316,10 +343,18 @@ def load_settings(path: str | Path) -> Settings:
         phase_learning_rate=float(d("training.phase_learning_rate", 4e-3)),
         weight_decay=float(d("training.weight_decay", 0.0)),
         lambda_kd=float(d("training.lambda_kd", 1.0)),
+        lambda_relational_kd=float(d("training.lambda_relational_kd", 0.0)),
         lambda_ret=float(d("training.lambda_ret", 1.0)),
+        lambda_teacher_gallery=float(d("training.lambda_teacher_gallery", 0.0)),
         lambda_router_balance=float(d("training.lambda_router_balance", 0.03)),
         lambda_router_importance=float(d("training.lambda_router_importance", 0.0)),
         temperature=float(d("training.temperature", 0.07)),
+        gallery_temperature=float(d("training.gallery_temperature", 0.07)),
+        ema_decay=(
+            None
+            if d("training.ema_decay") is None
+            else float(d("training.ema_decay"))
+        ),
         gradient_clip_norm=float(d("training.gradient_clip_norm", 1.0)),
         amp_enabled=bool(d("training.amp_enabled", True)),
         evaluate_test_each_epoch=bool(d("training.evaluate_test_each_epoch", True)),
