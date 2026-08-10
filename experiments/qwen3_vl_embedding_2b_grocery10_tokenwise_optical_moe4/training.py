@@ -313,7 +313,11 @@ def train(
             f"epoch {epoch:03d} complete train_loss={row['loss']:.5f} "
             f"train_top1={row['train_top1']:.4f} "
             + (f"test_top1={row['test_top1']:.4f} " if "test_top1" in row else "")
-            + f"best_train_loss={best_train_loss:.5f}",
+            + f"best_train_loss={best_train_loss:.5f} "
+            + (
+                f"best_observed_test_top1={best_observed_test_top1:.4f}@{best_observed_test_epoch}"
+                if best_observed_test_epoch >= 0 else ""
+            ),
             flush=True,
         )
     save_training_curves(history, settings.output_dir / "figures" / "training_curves.png")
