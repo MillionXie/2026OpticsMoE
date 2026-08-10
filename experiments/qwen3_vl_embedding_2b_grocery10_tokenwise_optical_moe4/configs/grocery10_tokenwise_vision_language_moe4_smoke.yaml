@@ -1,0 +1,20 @@
+base_config: grocery10_tokenwise_vision_language_moe4_shared.yaml
+
+dataset:
+  train_limit_per_sku: 2
+  test_limit_per_sku: 1
+
+batching:
+  teacher_batch_size: 1
+  pk_skus_per_batch: 2
+  pk_images_per_sku: 2
+  inference_batch_size: 1
+  num_workers: 0
+  optimizer_steps_per_epoch: 1
+
+training:
+  epochs: 1
+  log_interval_batches: 1
+
+teacher_cache_path: ../cache/grocery10_tokenwise_vision_language_smoke_teacher.pt
+output_dir: ../runs/qwen3_vl_embedding_2b_grocery10_tokenwise_vision_language_moe4_smoke
