@@ -304,3 +304,73 @@ def test_replacement_disables_deepstack_and_restores_teacher_modules() -> None:
     assert model.visual.deepstack_visual_indexes == [1, 2, 3]
     assert list(model.visual.blocks) == original_vision
     assert list(model.language_model.layers) == original_language
+
+
+def test_tiny_real_qwen_multimodal_forward_reaches_both_optical_cores() -> None:
+    transformers = pytest.importorskip("transformers")
+    configuration = pytest.importorskip(
+        "transformers.models.qwen3_vl.configuration_qwen3_vl"
+    )
+    model_class = getattr(transformers, "Qwen3VLForConditionalGeneration", None)
+    if model_class is None:
+        pytest.skip("Installed transformers has no Qwen3-VL implementation")
+    vision_config = configuration.Qwen3VLVisionConfig(
+        depth=2,
+        hidden_size=16,
+        intermediate_size=32,
+        num_heads=4,
+        in_channels=3,
+        patch_size=2,
+        spatial_merge_size=2,
+        temporal_patch_size=2,
+        out_hidden_size=32,
+        num_position_embeddings=64,
+        deepstack_visual_indexes=[0],
+    )
+    text_config = configuration.Qwen3VLTextConfig(
+        vocab_size=100,
+        hidden_size=32,
+        intermediate_size=64,
+        num_hidden_layers=2,
+        num_attention_heads=4,
+        num_key_value_heads=2,
+        head_dim=8,
+        max_position_embeddings=128,
+        rope_scaling={"rope_type": "default", "mrope_section": [2, 1, 1]},
+    )
+    config = configuration.Qwen3VLConfig(
+        text_config=text_config.to_dict(),
+        vision_config=vision_config.to_dict(),
+        image_token_id=90,
+        video_token_id=92,
+        vision_start_token_id=91,
+        vision_end_token_id=93,
+    )
+    model = model_class(config)
+    settings = fake_settings()
+    settings.student_deepstack_enabled = False
+    vision = TokenwiseOpticalMoE(16, settings)
+    language = TokenwiseLanguageSurrogate(32, settings)
+    replacement = TokenwiseVisionReplacement(model, vision, settings, language)
+    replacement.use_student()
+    replacement.prepare_student_batch(torch.ones(1, 3, dtype=torch.long))
+    output = model.model(
+        input_ids=torch.tensor([[91, 90, 1]]),
+        attention_mask=torch.ones(1, 3, dtype=torch.long),
+        pixel_values=torch.randn(4, 24),
+        image_grid_thw=torch.tensor([[1, 2, 2]]),
+        use_cache=False,
+        return_dict=True,
+    ).last_hidden_state
+    assert output.shape == (1, 3, 32)
+    assert model.model.visual.deepstack_visual_indexes == []
+    output.square().mean().backward()
+    gradients = (
+        vision.first_expert_phase.raw_phase.grad,
+        language.optical_core.first_expert_phase.raw_phase.grad,
+        language.input_adapter.weight.grad,
+        language.output_adapter.weight.grad,
+    )
+    assert all(value is not None and torch.isfinite(value).all() for value in gradients)
+    assert all(torch.count_nonzero(value) > 0 for value in gradients)
+    replacement.close()
