@@ -28,6 +28,20 @@ TUCam 的四个 ROI 数值都必须是 4 的倍数，且不得超出 2048×2048�
 如果配置的 ROI 为 956×956，程序直接保存相机返回的 956×956 原始 uint8/uint16
 帧；不 resize、不扣 background、不归一化、不做几何变换。
 
+推荐让硬件 ROI 本身就是目标 ROI：
+
+```yaml
+camera:
+  device_roi_xywh: [实际_left, 实际_top, 956, 956]
+  saved_frame_size_wh: null
+  saved_frame_resize_mode: none
+```
+
+如果必须使用更大的硬件 ROI，例如 1200×1200，也可以设置
+`saved_frame_size_wh: [956,956]` 和 `saved_frame_resize_mode: area`。这会把完整
+1200×1200 视野缩小到 956×956，并不是从中裁出目标区域，因此不能替代正确的
+硬件 ROI 定位。
+
 ## 最简流程
 
 1. 人工确定相机 ROI，并只在 `tucam_windows.yaml` 填写一次。

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from types import SimpleNamespace
+from enum import Enum
 
 import numpy as np
 import pytest
@@ -169,6 +170,37 @@ def test_tucam_roi_requires_four_pixel_alignment() -> None:
         TucamCamera.validate_roi((10, 20, 956, 956))
     with pytest.raises(DeviceError, match="exceeds the 2048x2048 sensor"):
         TucamCamera.validate_roi((1200, 1200, 956, 956))
+
+
+def test_tucam_signed_error_status_is_normalized_to_uint32() -> None:
+    assert TucamCamera._result_value(-2147482862) == 0x80000312
+
+
+def test_tucam_vendor_enum_restypes_are_replaced_without_touching_other_calls() -> None:
+    class ReturnCode(Enum):
+        SUCCESS = 1
+        NOT_SUPPORT = 0x80000312
+
+    tucam_function = SimpleNamespace(restype=ReturnCode)
+    tuimg_function = SimpleNamespace(restype=ReturnCode)
+    unrelated_function = SimpleNamespace(restype=ReturnCode)
+    already_raw_function = SimpleNamespace(restype=__import__("ctypes").c_uint32)
+    module = SimpleNamespace(
+        TUCAMRET=ReturnCode,
+        TUCAM_Prop_GetValue=tucam_function,
+        TUIMG_File_Open=tuimg_function,
+        OTHER_Function=unrelated_function,
+        TUCAM_AlreadyRaw=already_raw_function,
+    )
+
+    TucamCamera._configure_vendor_return_types(module)
+
+    import ctypes
+
+    assert tucam_function.restype is ctypes.c_uint32
+    assert tuimg_function.restype is ctypes.c_uint32
+    assert unrelated_function.restype is ReturnCode
+    assert already_raw_function.restype is ctypes.c_uint32
 
 
 def test_manual_roi_is_required_and_must_match_camera_report() -> None:

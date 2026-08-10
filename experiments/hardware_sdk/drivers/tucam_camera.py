@@ -120,9 +120,35 @@ class TucamCamera(CameraDriver):
             return None
         value = getattr(result, "value", result)
         try:
-            return int(value)
+            # TUCAM status values use the high bit for errors.  Some ctypes
+            # paths expose them as signed int32 (for example 0x80000312 is
+            # returned as -2147482862), while the vendor enum stores the same
+            # value as an unsigned integer.  Normalize both representations.
+            return int(value) & 0xFFFFFFFF
         except (TypeError, ValueError):
             return None
+
+    @staticmethod
+    def _configure_vendor_return_types(module: ModuleType) -> None:
+        """Return raw uint32 status codes instead of constructing TUCAMRET.
+
+        The uploaded vendor binding assigns ``TUCAMRET`` (a Python ``Enum``)
+        directly as the ctypes ``restype``.  On Windows, error statuses whose
+        high bit is set can reach that enum constructor as signed integers.
+        Even valid statuses such as ``TUCAMRET_NOT_SUPPORT`` then raise
+        ``ValueError`` before this adapter can handle the error.  Keeping the
+        vendor file untouched and normalizing its loaded function objects here
+        lets ``_check`` process every status consistently.
+        """
+        enum_type = getattr(module, "TUCAMRET", None)
+        if enum_type is None:
+            raise DeviceError("Loaded TUCam module does not define TUCAMRET")
+        for name in dir(module):
+            if not name.startswith(("TUCAM_", "TUIMG_")):
+                continue
+            function = getattr(module, name, None)
+            if getattr(function, "restype", None) is enum_type:
+                function.restype = ctypes.c_uint32
 
     def _check(self, result: Any, operation: str) -> None:
         assert self._module is not None
@@ -151,6 +177,7 @@ class TucamCamera(CameraDriver):
                 raise DeviceError(f"Could not create an import spec for {module_path}")
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
+            self._configure_vendor_return_types(module)
             return module
         except Exception as exc:
             raise DeviceError(

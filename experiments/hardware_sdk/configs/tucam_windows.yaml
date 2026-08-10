@@ -58,12 +58,18 @@ camera:
   # 唯一需要人工填写的位置：[left, top, width, height]。
   # 厂商软件中的 ROI 不会共享给 Python。四项均须为 4 的倍数。
   # [548, 548, 956, 956] 只是居中格式示例，不是实际标定结果。
+  # 推荐把 width/height 直接设为目标 956/956：这样相机 SDK 返回的就是
+  # 目标 ROI，而不是先采大 ROI 再软件缩放。
   require_device_roi: true
   device_roi_xywh: null
 
-  # 直接保存相机硬件 ROI；不软件 resize、不扣背景、不归一化。
+  # 推荐模式：直接保存相机硬件 ROI；不软件 resize、不扣背景、不归一化。
   saved_frame_size_wh: null
   saved_frame_resize_mode: none
+  # 如果必须保留较大的硬件 ROI（例如 1200x1200），但只需要一张缩小后的
+  # 956x956 图，则改成下面两项。注意这是整幅缩放，不是空间裁剪：
+  # saved_frame_size_wh: [956, 956]
+  # saved_frame_resize_mode: area
   warmup_frames: 3
   discard_frames_after_display: 1
 

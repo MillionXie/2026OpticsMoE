@@ -23,6 +23,19 @@
 TUCam 四项 ROI 数值必须是 4 的倍数。width=956、height=956 时，正式输出直接
 保存为 956×956，不做软件 resize。
 
+推荐设置为真正的 956×956 硬件 ROI：
+
+    device_roi_xywh: [实际_left, 实际_top, 956, 956]
+    saved_frame_size_wh: null
+    saved_frame_resize_mode: none
+
+若硬件 ROI 必须保留为 1200×1200，而输出只需要缩小为 956×956，可设置：
+
+    saved_frame_size_wh: [956, 956]
+    saved_frame_resize_mode: area
+
+后者是整幅缩放，不是中心裁剪。
+
 播放延迟已经统一为：
 
     settle_delay_ms: 200
