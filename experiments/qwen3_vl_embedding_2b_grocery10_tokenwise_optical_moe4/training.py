@@ -359,7 +359,11 @@ def evaluate(
     root = settings.output_dir / "metrics"
     write_json(root / "student_metrics.json", student.metrics)
     write_json(root / "teacher_metrics.json", teacher.metrics)
-    write_csv(root / "student_retrieval_results.csv", student.rows)
+    write_csv(
+        root / "student_retrieval_results.csv",
+        student.rows,
+        list(student.rows[0]) if student.rows else [],
+    )
     comparison = {
         "checkpoint": str(checkpoint),
         "checkpoint_epoch": int(payload.get("epoch", -1)),
