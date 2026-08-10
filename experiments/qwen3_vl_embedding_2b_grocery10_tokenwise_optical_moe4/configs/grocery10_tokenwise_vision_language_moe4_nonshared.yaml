@@ -1,0 +1,9 @@
+# Position-specific expert ablation.  Every one of the 196 token positions has
+# its own four 32x32 expert masks in both Vision and Language optical stacks.
+base_config: grocery10_tokenwise_vision_language_moe4_shared.yaml
+
+optical:
+  layout:
+    share_expert_phase_across_tokens: false
+
+output_dir: ../runs/qwen3_vl_embedding_2b_grocery10_tokenwise_vision_language_moe4_nonshared_8um

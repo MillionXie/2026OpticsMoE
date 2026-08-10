@@ -50,9 +50,17 @@ def main() -> int:
         "active_panel_size": [settings.active_height, settings.active_width],
         "propagation_canvas": [settings.canvas_size, settings.canvas_size],
         "second_plane_mode": settings.second_plane_mode,
-        "input_adapter": None,
-        "output_adapter": None,
-        "language_stack": "frozen native electronic Qwen",
+        "vision_input_adapter": None,
+        "vision_output_adapter": None,
+        "language_stack": settings.student_language_mode,
+        "language_input_adapter": (
+            [2048, 1024] if settings.student_language_mode == "optical_moe" else None
+        ),
+        "language_output_adapter": (
+            [1024, 2048] if settings.student_language_mode == "optical_moe" else None
+        ),
+        "deepstack_enabled": settings.student_deepstack_enabled,
+        "visual_text_merge_count": 1 if not settings.student_deepstack_enabled else 4,
     })
     bundle = prepare_grocery_subset(settings, persist=True)
     if args.phase == "prepare_data":

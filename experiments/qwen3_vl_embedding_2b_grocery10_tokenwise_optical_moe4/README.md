@@ -1,5 +1,18 @@
 # Qwen3-VL-Embedding-2B token-wise Optical MoE4
 
+The current recommended configuration is
+`configs/grocery10_tokenwise_vision_language_moe4_shared.yaml`. Unlike the
+original vision-only diagnostic, it replaces both Vision and Language stacks
+with separate token-wise optical MoE4 cores. DeepStack is disabled, so the
+final visual representation is merged with text tokens once. The Language
+bridge is `LayerNorm(2048) -> Linear(2048,1024) -> optical core ->
+Linear(1024,2048)`; frozen final RMSNorm and official 64-D embedding readout
+remain active.
+
+`configs/grocery10_tokenwise_vision_language_moe4_nonshared.yaml` is the
+position-specific expert ablation and must be reported separately because its
+phase parameter count is much larger than the shared-expert model.
+
 This independent experiment tests token-level routing for Grocery-10 product
 retrieval. It does not modify the existing Grocery retrieval experiment.
 

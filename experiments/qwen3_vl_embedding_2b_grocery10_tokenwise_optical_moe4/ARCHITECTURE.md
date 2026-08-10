@@ -1,5 +1,37 @@
 # Architecture and tensor contract
 
+## Optical-language variant (recommended current experiment)
+
+```text
+Qwen patch/position embedding [Nv,1024]
+-> Vision token-wise Optical MoE4 [Nv,1024]
+-> frozen Qwen vision merger
+-> one normal visual-token/text-token merge (DeepStack disabled)
+-> multimodal hidden [B,S,2048]
+-> trainable LayerNorm + Linear(2048,1024)
+-> Language token-wise Optical MoE4 [valid S,1024]
+-> trainable Linear(1024,2048)
+-> frozen Qwen final RMSNorm
+-> official 64-D MRL embedding + L2 normalization
+```
+
+The `1024->2048` bridge is required because the frozen final RMSNorm and the
+official embedding readout operate in Qwen's 2048-D language space. It is not
+a classifier. Padding language tokens never enter the optical panel, and a
+sequence longer than 196 valid tokens raises an error instead of truncation.
+
+After first-plane detection, per-token/per-expert LayerNorm would erase all
+relative response magnitude. With response-amplitude preservation enabled, the
+implementation measures pre-LN RMS field response, removes the already-applied
+router scale, normalizes response across the selected experts of that token,
+clips only for numerical stability, then reapplies the original routing scale
+once. Unselected experts remain exactly zero.
+
+The shared configuration uses four expert identities repeatedly at every token
+position. The nonshared ablation instead allocates independent phase masks for
+all `196 x 4` token-position/expert pairs; this tests position capacity but is
+not the canonical parameter-sharing MoE interpretation.
+
 ## Boundary with Qwen
 
 The replacement is installed at `visual.blocks[0]`. Native Qwen vision blocks

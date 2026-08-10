@@ -1,0 +1,33 @@
+# Main Vision Optical + Language Optical experiment.  The original vision-only
+# configs remain unchanged so their completed checkpoints stay reproducible.
+base_config: grocery10_tokenwise_moe4_8um_hardware_geometry.yaml
+
+qwen:
+  # The language optical panel has the same 14x14=196 token capacity.
+  max_language_tokens: 196
+
+student:
+  language_mode: optical_moe
+  # No auxiliary DeepStack taps: merged visual tokens enter the multimodal
+  # sequence once, before the one optical language stack.
+  deepstack_enabled: false
+  language_adapter_layernorm_affine: false
+
+optical:
+  layout:
+    # One expert phase per expert identity, shared by all 196 token positions.
+    share_expert_phase_across_tokens: true
+  oeo:
+    # Preserve the relative physical response lost by per-token/expert LN,
+    # then reapply the original top-k routing amplitude exactly once.
+    preserve_response_amplitude: true
+    response_gain_min: 0.25
+    response_gain_max: 4.0
+
+evaluation:
+  # Explicitly selection-biased observation checkpoint; best train-loss and
+  # last checkpoints are still saved independently.
+  checkpoint: best_observed_test
+
+output_dir: ../runs/qwen3_vl_embedding_2b_grocery10_tokenwise_vision_language_moe4_shared_8um
+

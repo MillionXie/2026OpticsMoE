@@ -220,6 +220,7 @@ class TokenwiseOpticalMoE(nn.Module):
         self.last_amplitude_canvas: torch.Tensor | None = None
         self.last_first_detector_intensity: torch.Tensor | None = None
         self.last_reload_amplitude: torch.Tensor | None = None
+        self.last_response_gain: torch.Tensor | None = None
         self.last_final_detector_intensity: torch.Tensor | None = None
         self.last_signed_readout: torch.Tensor | None = None
 
@@ -326,6 +327,30 @@ class TokenwiseOpticalMoE(nn.Module):
         bias = self.oeo_bias[None, None] if self.oeo_bias is not None else None
         signed = tokenwise_layer_norm(crops, self.settings.oeo_layernorm_eps, weight, bias)
         amplitude = F.relu(signed) if self.settings.oeo_nonlinearity == "relu" else F.softplus(signed)
+        if self.settings.oeo_preserve_response_amplitude:
+            # LayerNorm intentionally standardizes the spatial pattern, but would
+            # otherwise erase the relative optical response of the selected
+            # experts.  Recover that response before normalization, remove the
+            # already-applied router amplitude, and normalize only across the
+            # selected experts of the same token.  The router is applied once
+            # again below, so this gain contains response information, not a
+            # second copy of the routing weight.
+            selected = routing["selected_mask"].to(crops.dtype)
+            response_rms = crops.mean(dim=(-2, -1)).clamp_min(0.0).sqrt()
+            routed_scale = self._route_scales(routing).clamp_min(1e-4)
+            ungated_response = response_rms / routed_scale
+            selected_mean = (
+                (ungated_response * selected).sum(dim=-1, keepdim=True)
+                / selected.sum(dim=-1, keepdim=True).clamp_min(1.0)
+            ).clamp_min(1e-6)
+            response_gain = (ungated_response / selected_mean).clamp(
+                self.settings.oeo_response_gain_min,
+                self.settings.oeo_response_gain_max,
+            )
+            amplitude = amplitude * response_gain[..., None, None]
+            self.last_response_gain = response_gain.detach()
+        else:
+            self.last_response_gain = None
         if self.settings.oeo_reapply_routing_weights:
             amplitude = amplitude * self._route_scales(routing)[..., None, None]
         if self.settings.oeo_hard_route_mask:
@@ -439,4 +464,5 @@ class TokenwiseOpticalMoE(nn.Module):
             "shared_expert_phase_across_tokens": self.settings.share_expert_phase_across_tokens,
             "k_space_enabled": self.settings.k_space_enabled,
             "k_space_pass_fraction": self.propagator.pass_fraction,
+            "response_amplitude_preservation": self.settings.oeo_preserve_response_amplitude,
         }

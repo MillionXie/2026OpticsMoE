@@ -2,6 +2,28 @@
 
 Run every command from the repository root.
 
+## Recommended: optical Vision + optical Language
+
+The main new run disables DeepStack, injects the final visual tokens once, and
+uses independent Vision/Language optical cores. It enables response-amplitude
+preservation and evaluates the explicitly selection-biased best-observed-test
+checkpoint while also retaining last and best-train-loss checkpoints.
+
+    CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4 --config experiments/qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4/configs/grocery10_tokenwise_vision_language_moe4_shared.yaml --phase all
+
+Position-specific expert ablation (196 independent four-expert banks per
+optical stack):
+
+    CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4 --config experiments/qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4/configs/grocery10_tokenwise_vision_language_moe4_nonshared.yaml --phase all
+
+Evaluate the saved best-observed-test checkpoint selected by the config:
+
+    CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4 --config experiments/qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4/configs/grocery10_tokenwise_vision_language_moe4_shared.yaml --phase evaluate
+
+The checkpoint is written to
+`checkpoints/best_observed_test_top1_checkpoint.pt`. This result is intentionally
+labelled selection-biased because the test set is observed every epoch.
+
 ## 1. Verify configuration and dataset
 
     python -m experiments.qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4 --config experiments/qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4/configs/grocery10_tokenwise_moe4.yaml --phase prepare_data

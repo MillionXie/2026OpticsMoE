@@ -12,6 +12,9 @@ from experiments.qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4.optics.t
     TokenwiseLayout,
     TokenwiseOpticalMoE,
 )
+from experiments.qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4.modeling import (
+    TokenwiseLanguageSurrogate,
+)
 from experiments.qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4.settings import (
     load_settings,
 )
@@ -60,6 +63,9 @@ def fake_settings(second_plane_mode: str = "expert") -> SimpleNamespace:
         oeo_nonlinearity="relu",
         oeo_reapply_routing_weights=True,
         oeo_hard_route_mask=True,
+        oeo_preserve_response_amplitude=True,
+        oeo_response_gain_min=0.25,
+        oeo_response_gain_max=4.0,
         final_layernorm_eps=1e-5,
         final_layernorm_affine=False,
         final_aggregation="routing_weighted_sum",
@@ -68,6 +74,9 @@ def fake_settings(second_plane_mode: str = "expert") -> SimpleNamespace:
         residual_scale_trainable=False,
         capture_intermediate_fields=True,
         visualization_sample_count=2,
+        max_language_tokens=4,
+        hidden_size=16,
+        language_adapter_layernorm_affine=False,
     )
 
 
@@ -194,3 +203,59 @@ def test_parameter_counts_match_shared_default_design() -> None:
     assert report["input_adapter_parameters"] == 0
     assert report["output_adapter_parameters"] == 0
     assert report["total_parameters"] == 910696
+
+
+def test_response_amplitude_preservation_is_finite_and_bounded() -> None:
+    core = TokenwiseOpticalMoE(16, fake_settings())
+    core(torch.randn(4, 16), torch.tensor([0, 4], dtype=torch.int32))
+    assert core.last_response_gain is not None
+    selected = core.last_routing["selected_mask"]
+    gains = core.last_response_gain[selected]
+    assert torch.isfinite(gains).all()
+    assert float(gains.min()) >= 0.25
+    assert float(gains.max()) <= 4.0
+
+
+def test_language_adapter_and_optical_core_forward_backward() -> None:
+    settings = fake_settings()
+    language = TokenwiseLanguageSurrogate(32, settings)
+    mask = torch.tensor([[True, True, True, False], [True, True, False, False]])
+    language.prepare_batch(mask)
+    hidden = torch.randn(2, 4, 32, requires_grad=True)
+    output = language(hidden)
+    assert output.shape == hidden.shape
+    assert torch.isfinite(output).all()
+    output[mask].square().mean().backward()
+    assert language.input_adapter.weight.grad is not None
+    assert language.output_adapter.weight.grad is not None
+    assert language.optical_core.first_expert_phase.raw_phase.grad is not None
+
+
+def test_language_token_overflow_is_explicit() -> None:
+    language = TokenwiseLanguageSurrogate(32, fake_settings())
+    with pytest.raises(RuntimeError, match="language token count 5 exceeds optical panel capacity 4"):
+        language.prepare_batch(torch.ones(1, 5, dtype=torch.bool))
+
+
+def test_nonshared_position_expert_ablation_has_independent_masks() -> None:
+    settings = fake_settings()
+    settings.share_expert_phase_across_tokens = False
+    core = TokenwiseOpticalMoE(16, settings)
+    assert core.first_expert_phase.raw_phase.shape == (4, 4, 4, 4)
+    assert core.parameter_breakdown()["shared_expert_phase_across_tokens"] is False
+
+
+def test_optical_language_configs_disable_deepstack_and_define_ablation() -> None:
+    shared = load_settings(
+        EXPERIMENT / "configs" / "grocery10_tokenwise_vision_language_moe4_shared.yaml"
+    )
+    nonshared = load_settings(
+        EXPERIMENT / "configs" / "grocery10_tokenwise_vision_language_moe4_nonshared.yaml"
+    )
+    assert shared.student_language_mode == "optical_moe"
+    assert shared.student_deepstack_enabled is False
+    assert shared.max_language_tokens == 196
+    assert shared.oeo_preserve_response_amplitude is True
+    assert shared.share_expert_phase_across_tokens is True
+    assert shared.evaluation_checkpoint == "best_observed_test"
+    assert nonshared.share_expert_phase_across_tokens is False

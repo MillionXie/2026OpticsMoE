@@ -34,6 +34,9 @@ class Settings:
     gallery_aggregation: str
     max_visual_tokens: int
     max_language_tokens: int
+    student_language_mode: str
+    student_deepstack_enabled: bool
+    language_adapter_layernorm_affine: bool
     teacher_batch_size: int
     pk_skus_per_batch: int
     pk_images_per_sku: int
@@ -98,6 +101,9 @@ class Settings:
     oeo_nonlinearity: str
     oeo_reapply_routing_weights: bool
     oeo_hard_route_mask: bool
+    oeo_preserve_response_amplitude: bool
+    oeo_response_gain_min: float
+    oeo_response_gain_max: float
     final_layernorm_eps: float
     final_layernorm_affine: bool
     final_aggregation: str
@@ -108,6 +114,7 @@ class Settings:
     phase_dc_weight: float
     capture_intermediate_fields: bool
     visualization_sample_count: int
+    evaluation_checkpoint: str
     output_dir: Path
     teacher_cache_path: Path
 
@@ -156,6 +163,10 @@ class Settings:
             )
         if self.max_visual_tokens != self.max_tokens:
             raise ValueError("max_visual_tokens must equal token_grid_rows * token_grid_cols")
+        if self.student_language_mode not in {"frozen_native_electronic", "optical_moe"}:
+            raise ValueError("student.language_mode must be frozen_native_electronic or optical_moe")
+        if self.student_language_mode == "optical_moe" and self.max_language_tokens > self.max_tokens:
+            raise ValueError("Optical language max_language_tokens cannot exceed the token panel capacity")
         if self.num_experts < 1 or not 1 <= self.top_k <= self.num_experts:
             raise ValueError("top_k must be in [1, num_experts]")
         if min(
@@ -181,6 +192,10 @@ class Settings:
             raise ValueError("Unsupported input_amplitude_normalization")
         if self.oeo_nonlinearity not in {"relu", "softplus"}:
             raise ValueError("oeo_nonlinearity must be relu or softplus")
+        if self.oeo_response_gain_min <= 0 or self.oeo_response_gain_max < self.oeo_response_gain_min:
+            raise ValueError("OEO response gain bounds must satisfy 0 < min <= max")
+        if self.evaluation_checkpoint not in {"best_train_loss", "best_observed_test"}:
+            raise ValueError("evaluation.checkpoint must be best_train_loss or best_observed_test")
         if self.final_aggregation not in {"routing_weighted_sum", "selected_mean"}:
             raise ValueError("Unsupported final_aggregation")
         if self.phase_parameterization not in {"sigmoid", "unconstrained"}:
@@ -215,6 +230,15 @@ class Settings:
             raise RuntimeError(
                 f"Qwen vision hidden size is {hidden}, but token field is {self.hidden_size}"
             )
+        if self.student_language_mode == "optical_moe":
+            language_config = getattr(getattr(model, "config", None), "text_config", None)
+            language_hidden = getattr(language_config, "hidden_size", None)
+            if language_hidden is None:
+                language_hidden = getattr(getattr(model, "config", None), "hidden_size", None)
+            if language_hidden is not None and int(language_hidden) != 2048:
+                raise RuntimeError(
+                    f"This experiment expects Qwen language hidden size 2048, got {language_hidden}"
+                )
 
     def to_dict(self) -> dict[str, Any]:
         values = asdict(self)
@@ -275,6 +299,11 @@ def load_settings(path: str | Path) -> Settings:
         gallery_aggregation=str(d("retrieval.gallery_aggregation", "mean_prototype")),
         max_visual_tokens=int(d("optical.layout.max_tokens", 196)),
         max_language_tokens=int(d("qwen.max_language_tokens", 512)),
+        student_language_mode=str(d("student.language_mode", "frozen_native_electronic")),
+        student_deepstack_enabled=bool(d("student.deepstack_enabled", True)),
+        language_adapter_layernorm_affine=bool(
+            d("student.language_adapter_layernorm_affine", False)
+        ),
         teacher_batch_size=int(d("batching.teacher_batch_size", 4)),
         pk_skus_per_batch=int(d("batching.pk_skus_per_batch", 4)),
         pk_images_per_sku=int(d("batching.pk_images_per_sku", 2)),
@@ -339,6 +368,11 @@ def load_settings(path: str | Path) -> Settings:
         oeo_nonlinearity=str(d("optical.oeo.nonlinearity", "relu")),
         oeo_reapply_routing_weights=bool(d("optical.oeo.reapply_routing_weights", True)),
         oeo_hard_route_mask=bool(d("optical.oeo.hard_route_mask", True)),
+        oeo_preserve_response_amplitude=bool(
+            d("optical.oeo.preserve_response_amplitude", False)
+        ),
+        oeo_response_gain_min=float(d("optical.oeo.response_gain_min", 0.25)),
+        oeo_response_gain_max=float(d("optical.oeo.response_gain_max", 4.0)),
         final_layernorm_eps=float(d("optical.detector.layernorm_eps", 1e-5)),
         final_layernorm_affine=bool(d("optical.detector.layernorm_affine", False)),
         final_aggregation=str(d("optical.detector.aggregation", "routing_weighted_sum")),
@@ -349,6 +383,7 @@ def load_settings(path: str | Path) -> Settings:
         phase_dc_weight=float(d("regularization.phase_dc.weight", 0.0)),
         capture_intermediate_fields=bool(d("visualization.capture_intermediate_fields", False)),
         visualization_sample_count=int(d("visualization.sample_count", 4)),
+        evaluation_checkpoint=str(d("evaluation.checkpoint", "best_train_loss")),
         output_dir=_path(d("output_dir", "../runs/tokenwise_moe4"), base),
         teacher_cache_path=_path(d("teacher_cache_path", "../cache/teacher_embeddings.pt"), base),
     )

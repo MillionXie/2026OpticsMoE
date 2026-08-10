@@ -98,10 +98,15 @@ def _inputs(loaded: LoadedBackbone, batch: dict[str, Any], settings: Any) -> dic
 
 
 def _optimizer(replacement: TokenwiseVisionReplacement, settings: Any) -> torch.optim.Optimizer:
-    router_ids = {id(p) for p in replacement.vision_surrogate.router.parameters()}
+    cores = [replacement.vision_surrogate]
+    if replacement.language_surrogate is not None:
+        cores.append(replacement.language_surrogate.optical_core)
+    router_ids = {id(p) for core in cores for p in core.router.parameters()}
     phase_ids = {
-        id(replacement.vision_surrogate.first_expert_phase.raw_phase),
-        id(replacement.vision_surrogate.second_phase.raw_phase),
+        id(parameter)
+        for core in cores
+        for name, parameter in core.named_parameters()
+        if name.endswith("raw_phase")
     }
     router, phase, other = [], [], []
     for parameter in replacement.trainable_parameters():
@@ -162,6 +167,8 @@ def train(
         print(f"resumed {resume_checkpoint} at epoch={start_epoch}", flush=True)
     history: list[dict[str, Any]] = []
     best_train_loss = float("inf")
+    best_observed_test_top1 = float("-inf")
+    best_observed_test_epoch = -1
     history_path = settings.output_dir / "metrics" / "training_history.csv"
     history_path.unlink(missing_ok=True)
     scaler = torch.amp.GradScaler(
@@ -197,7 +204,7 @@ def train(
                 retrieval = supervised_contrastive_loss(student, labels, settings.temperature)
                 router = replacement.router_losses()
                 dc = (
-                    replacement.vision_surrogate.phase_dc_loss()
+                    replacement.phase_dc_loss()
                     if settings.phase_dc_enabled and settings.phase_dc_weight > 0.0
                     else student.sum() * 0.0
                 )
@@ -227,8 +234,12 @@ def train(
                 "router_importance_loss": router["importance"],
                 "phase_dc_loss": dc,
                 "train_top1": torch.tensor(_batch_retrieval_accuracy(student.detach(), labels)),
-                "router_entropy": replacement.vision_surrogate.last_routing["normalized_entropy"],
+                "vision_router_entropy": replacement.vision_surrogate.last_routing["normalized_entropy"],
             }
+            if replacement.language_surrogate is not None:
+                values["language_router_entropy"] = (
+                    replacement.language_surrogate.optical_core.last_routing["normalized_entropy"]
+                )
             for name, value in values.items():
                 sums[name] += float(value.detach()) * count
             if batch_index % settings.log_interval_batches == 0 or batch_index == len(loader):
@@ -237,7 +248,11 @@ def train(
                     f"loss={sums['loss']/seen:.5f} kd={sums['kd_loss']/seen:.5f} "
                     f"ret={sums['retrieval_loss']/seen:.5f} train_top1={sums['train_top1']/seen:.4f} "
                     f"balance={sums['router_balance_loss']/seen:.4f} "
-                    f"entropy={sums['router_entropy']/seen:.4f}",
+                    f"v_entropy={sums['vision_router_entropy']/seen:.4f} "
+                    + (
+                        f"l_entropy={sums['language_router_entropy']/seen:.4f}"
+                        if replacement.language_surrogate is not None else ""
+                    ),
                     flush=True,
                 )
         row = {"epoch": epoch, **{name: value / seen for name, value in sums.items()}}
@@ -271,6 +286,27 @@ def train(
                 epoch,
                 settings,
             )
+        if "test_top1" in row and row["test_top1"] > best_observed_test_top1:
+            best_observed_test_top1 = row["test_top1"]
+            best_observed_test_epoch = epoch
+            save_checkpoint(
+                replacement,
+                optimizer,
+                settings.output_dir / "checkpoints" / "best_observed_test_top1_checkpoint.pt",
+                epoch,
+                settings,
+            )
+            write_json(
+                settings.output_dir / "metrics" / "best_observed_test.json",
+                {
+                    "selection_biased": True,
+                    "warning": "This checkpoint was selected by repeatedly observing the test set.",
+                    "epoch": epoch,
+                    "test_top1": row["test_top1"],
+                    "test_top3": row["test_top3"],
+                    "test_mrr": row["test_mrr"],
+                },
+            )
         if epoch == 1 or epoch % 10 == 0 or epoch == settings.epochs:
             save_phase_preview(replacement, settings.output_dir / "figures", epoch)
         print(
@@ -281,7 +317,12 @@ def train(
             flush=True,
         )
     save_training_curves(history, settings.output_dir / "figures" / "training_curves.png")
-    return {"best_train_loss": best_train_loss, "epochs": settings.epochs}
+    return {
+        "best_train_loss": best_train_loss,
+        "best_observed_test_top1": best_observed_test_top1,
+        "best_observed_test_epoch": best_observed_test_epoch,
+        "epochs": settings.epochs,
+    }
 
 
 @torch.no_grad()
@@ -295,6 +336,8 @@ def encode_samples(
     replacement.use_student()
     loaded.model.eval()
     replacement.vision_surrogate.eval()
+    if replacement.language_surrogate is not None:
+        replacement.language_surrogate.eval()
     chunks = []
     for batch in loader:
         inputs = _inputs(loaded, batch, settings)
@@ -336,7 +379,13 @@ def evaluate(
     settings: Any,
     checkpoint: Path | None = None,
 ) -> dict[str, Any]:
-    checkpoint = checkpoint or settings.output_dir / "checkpoints" / "best_train_loss_checkpoint.pt"
+    if checkpoint is None:
+        filename = (
+            "best_observed_test_top1_checkpoint.pt"
+            if settings.evaluation_checkpoint == "best_observed_test"
+            else "best_train_loss_checkpoint.pt"
+        )
+        checkpoint = settings.output_dir / "checkpoints" / filename
     payload = load_checkpoint(replacement, checkpoint, loaded.device)
     student = evaluate_student(
         loaded,
@@ -402,7 +451,7 @@ def save_checkpoint(
     path.parent.mkdir(parents=True, exist_ok=True)
     torch.save({
         "epoch": int(epoch),
-        "vision_tokenwise_optical": replacement.vision_surrogate.state_dict(),
+        **replacement.state_dict(),
         "optimizer": optimizer.state_dict(),
         "settings": settings.to_dict(),
         "architecture": replacement.architecture_report(),
@@ -417,16 +466,25 @@ def load_checkpoint(
     if not path.is_file():
         raise FileNotFoundError(f"Checkpoint is missing: {path}")
     payload = torch.load(path, map_location=device, weights_only=False)
-    state = payload.get("vision_tokenwise_optical")
-    if state is None:
+    if payload.get("vision_tokenwise_optical") is None:
         raise RuntimeError("Checkpoint does not contain vision_tokenwise_optical")
-    replacement.vision_surrogate.load_state_dict(state)
+    replacement.load_state_dict(payload)
     return payload
 
 
 def save_phase_preview(replacement: TokenwiseVisionReplacement, root: Path, epoch: int) -> None:
     root.mkdir(parents=True, exist_ok=True)
-    core = replacement.vision_surrogate
+    _save_core_phase_preview(
+        replacement.vision_surrogate, root / f"vision_phase_epoch_{epoch:03d}.png"
+    )
+    if replacement.language_surrogate is not None:
+        _save_core_phase_preview(
+            replacement.language_surrogate.optical_core,
+            root / f"language_phase_epoch_{epoch:03d}.png",
+        )
+
+
+def _save_core_phase_preview(core: Any, path: Path) -> None:
     first = core.first_expert_phase.phase().detach().cpu()
     second = core.second_phase.phase().detach().cpu()
     if first.ndim == 4:
@@ -453,7 +511,7 @@ def save_phase_preview(replacement: TokenwiseVisionReplacement, root: Path, epoc
             axes[1, expert].set_title(f"stage2 expert {expert}")
             figure.colorbar(image, ax=axes[1, expert], fraction=0.046)
     figure.tight_layout()
-    figure.savefig(root / f"phase_epoch_{epoch:03d}.png", dpi=160)
+    figure.savefig(path, dpi=160)
     plt.close(figure)
 
 
@@ -493,14 +551,24 @@ def save_confusion(matrix: torch.Tensor, names: Sequence[str], path: Path) -> No
 
 
 def save_routing_summary(replacement: TokenwiseVisionReplacement, path: Path) -> None:
-    routing = replacement.vision_surrogate.last_routing
-    write_json(path, {
+    def summary(core: Any) -> dict[str, Any]:
+        routing = core.last_routing
+        return {
+            "importance": routing.get("importance", torch.empty(0)).detach().cpu().tolist(),
+            "load": routing.get("load", torch.empty(0)).detach().cpu().tolist(),
+            "normalized_entropy": float(
+                routing.get("normalized_entropy", torch.tensor(0.0))
+            ),
+            "token_counts": core.last_token_counts,
+        }
+
+    payload: dict[str, Any] = {
         "scope": "last evaluated batch; routing is independently computed per token",
-        "importance": routing.get("importance", torch.empty(0)).detach().cpu().tolist(),
-        "load": routing.get("load", torch.empty(0)).detach().cpu().tolist(),
-        "normalized_entropy": float(routing.get("normalized_entropy", torch.tensor(0.0))),
-        "token_counts": replacement.vision_surrogate.last_token_counts,
-    })
+        "vision": summary(replacement.vision_surrogate),
+    }
+    if replacement.language_surrogate is not None:
+        payload["language"] = summary(replacement.language_surrogate.optical_core)
+    write_json(path, payload)
 
 
 def _append_csv(path: Path, row: dict[str, Any]) -> None:
