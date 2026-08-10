@@ -1,0 +1,9 @@
+# Ablation: keep the same routing decision and use a second shared expert phase
+# bank instead of the 950x950 global phase. All other settings match the main run.
+base_config: grocery10_tokenwise_moe4.yaml
+
+optical:
+  second_plane:
+    mode: expert
+
+output_dir: ../runs/qwen3_vl_embedding_2b_grocery10_tokenwise_moe4_second_expert

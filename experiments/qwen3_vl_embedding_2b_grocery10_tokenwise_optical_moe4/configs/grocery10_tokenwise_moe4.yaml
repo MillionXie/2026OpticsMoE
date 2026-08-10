@@ -1,0 +1,160 @@
+# Main experiment: each Qwen vision token owns one physical 66x66 group that
+# contains a 2x2 grid of 32x32 experts. 14x14 groups form a 950x950 active SLM.
+dataset:
+  dataset_root: ../../../data/GroceryStoreDataset
+  variant: selected10
+  download: true
+  download_url: https://github.com/marcusklasson/GroceryStoreDataset/archive/refs/heads/master.zip
+  selected_skus:
+    - God-Morgon-Orange-Juice
+    - Tropicana-Golden-Grapefruit
+    - Arla-Ecological-Medium-Fat-Milk
+    - Oatly-Natural-Oatghurt
+    - Oatly-Oat-Milk
+    - Alpro-Blueberry-Soyghurt
+    - Alpro-Shelf-Soy-Milk
+    - Yoggi-Strawberry-Yoghurt
+    - God-Morgon-Apple-Juice
+    - Tropicana-Mandarin-Morning
+  merge_official_validation_into_train: true
+  train_limit_per_sku: null
+  test_limit_per_sku: null
+  gallery_images_per_sku: 1
+
+qwen:
+  model_id: Qwen/Qwen3-VL-Embedding-2B
+  cache_dir: null
+  local_files_only: false
+  instruction: Represent this product image for image-to-image product retrieval.
+  # 196x196 is divisible by Qwen's 28-pixel spatial factor and produces a
+  # 14x14 pre-merger vision grid (196 tokens). Runtime still verifies cu_seqlens.
+  processor_min_pixels: 38416
+  processor_max_pixels: 38416
+  max_language_tokens: 512
+  dtype: bfloat16
+  attn_implementation: sdpa
+  device: cuda
+
+retrieval:
+  image_size: 196
+  embedding_dim: 64
+  gallery_aggregation: mean_prototype
+
+batching:
+  teacher_batch_size: 4
+  # Physical canvas is 990x990. Reduce P first if memory is insufficient;
+  # keep K >= 2 so every contrastive anchor has a positive.
+  pk_skus_per_batch: 4
+  pk_images_per_sku: 2
+  inference_batch_size: 1
+  num_workers: 4
+  optimizer_steps_per_epoch: 50
+
+training:
+  epochs: 100
+  learning_rate: 0.0002
+  router_learning_rate: 0.0002
+  phase_learning_rate: 0.004
+  weight_decay: 0.0
+  lambda_kd: 1.0
+  lambda_ret: 1.0
+  lambda_router_balance: 0.03
+  lambda_router_importance: 0.0
+  temperature: 0.07
+  gradient_clip_norm: 1.0
+  amp_enabled: true
+  # Test is observation only. Best checkpoint is selected by train loss.
+  evaluate_test_each_epoch: true
+  log_interval_batches: 5
+  random_seed: 42
+
+augmentation:
+  enabled: true
+  crop_scale_min: 0.9
+  brightness_jitter: 0.1
+  contrast_jitter: 0.1
+  rotation_degrees: 5.0
+
+optical:
+  layout:
+    token_grid_rows: 14
+    token_grid_cols: 14
+    max_tokens: 196
+    token_feature_side: 32       # 32x32 = 1024; no input/output adapter
+    expert_grid_rows: 2
+    expert_grid_cols: 2          # four experts per token
+    expert_gap: 2                # group = 32*2 + 2 = 66
+    token_group_gap: 2           # active = 66*14 + 2*13 = 950
+    propagation_padding: 20      # numerical FFT canvas = 990x990
+    # true is a real MoE: expert e uses the same learned phase for every token.
+    # false gives every token position independent phases and many more params.
+    share_expert_phase_across_tokens: true
+
+  router:
+    top_k: 2
+    temperature: 1.0
+    layernorm_enabled: true
+    layernorm_affine: false
+    noise_std: 0.0
+    gate_init_std: 0.01
+    # amplitude: optical amplitude *= w; power: amplitude *= sqrt(w).
+    amplitude_weight_domain: amplitude
+
+  input:
+    # Shape-preserving fixed electronics only; no D->d Linear adapter.
+    normalization: layernorm       # none | layernorm
+    nonlinearity: softplus         # softplus | relu | absolute
+    amplitude_normalization: none  # none | per_token_max | per_token_rms
+
+  physics:
+    wavelength_nm: 532.0
+    pixel_pitch_um: 16.0
+    propagation_distance_m: 0.05
+
+  second_plane:
+    # global: one trainable 950x950 full active phase plane.
+    # expert: another shared four-expert phase bank, reusing the first routing.
+    mode: global
+
+  phase:
+    parameterization: sigmoid
+    init: zeros                   # raw_phase=0 -> physical phase=pi
+    init_std: 0.0
+    dropout_mode: none            # none | phase_bypass | block_phase_bypass
+    dropout_p: 0.0
+    dropout_block_size: 4
+    dropout_batch_shared: true
+
+  k_space:
+    enabled: false
+    theta_max_deg: 0.65
+
+  oeo:
+    enabled: true
+    layernorm_eps: 1.0e-5
+    elementwise_affine: false
+    nonlinearity: relu
+    reapply_routing_weights: true
+    hard_route_mask: true
+
+  detector:
+    layernorm_eps: 1.0e-5
+    layernorm_affine: false
+    aggregation: routing_weighted_sum  # routing_weighted_sum | selected_mean
+
+  residual:
+    enabled: false
+    initial_scale: 1.0
+    trainable_scale: false
+
+regularization:
+  phase_dc:
+    enabled: false
+    weight: 0.0
+
+visualization:
+  capture_intermediate_fields: false
+  sample_count: 4
+
+teacher_cache_path: ../cache/grocery10_tokenwise_196px_teacher_embeddings.pt
+output_dir: ../runs/qwen3_vl_embedding_2b_grocery10_tokenwise_moe4_global

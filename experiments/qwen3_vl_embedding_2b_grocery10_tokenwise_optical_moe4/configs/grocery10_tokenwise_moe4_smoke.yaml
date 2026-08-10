@@ -1,0 +1,24 @@
+base_config: grocery10_tokenwise_moe4.yaml
+
+dataset:
+  selected_skus:
+    - God-Morgon-Orange-Juice
+    - Oatly-Oat-Milk
+  train_limit_per_sku: 2
+  test_limit_per_sku: 1
+
+batching:
+  teacher_batch_size: 1
+  pk_skus_per_batch: 2
+  pk_images_per_sku: 2
+  inference_batch_size: 1
+  num_workers: 0
+  optimizer_steps_per_epoch: 1
+
+training:
+  epochs: 1
+  evaluate_test_each_epoch: true
+  log_interval_batches: 1
+
+teacher_cache_path: ../cache/grocery10_tokenwise_smoke_teacher_embeddings.pt
+output_dir: ../runs/qwen3_vl_embedding_2b_grocery10_tokenwise_moe4_smoke
