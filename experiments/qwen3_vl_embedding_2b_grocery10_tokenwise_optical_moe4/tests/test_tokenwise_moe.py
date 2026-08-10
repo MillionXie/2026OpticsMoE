@@ -232,6 +232,21 @@ def test_language_adapter_and_optical_core_forward_backward() -> None:
     assert language.optical_core.first_expert_phase.raw_phase.grad is not None
 
 
+def test_language_scatter_is_amp_dtype_safe() -> None:
+    settings = fake_settings()
+    language = TokenwiseLanguageSurrogate(32, settings)
+    mask = torch.tensor([[True, True, True, False]])
+    language.prepare_batch(mask)
+    hidden = torch.randn(1, 4, 32, requires_grad=True)
+    with torch.autocast(device_type="cpu", dtype=torch.bfloat16):
+        output = language(hidden)
+        loss = output[mask].float().square().mean()
+    assert output.dtype == hidden.dtype
+    assert torch.isfinite(output).all()
+    loss.backward()
+    assert language.output_adapter.weight.grad is not None
+
+
 def test_language_token_overflow_is_explicit() -> None:
     language = TokenwiseLanguageSurrogate(32, fake_settings())
     with pytest.raises(RuntimeError, match="language token count 5 exceeds optical panel capacity 4"):

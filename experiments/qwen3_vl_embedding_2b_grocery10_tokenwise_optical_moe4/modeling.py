@@ -119,7 +119,10 @@ class TokenwiseLanguageSurrogate(nn.Module):
         optical = self.optical_core(packed, cu_seqlens)
         decoded = self.output_adapter(optical.float())
         output = hidden_states.float().clone()
-        output[mask] = decoded
+        # Linear follows the active autocast policy (BF16 on the server), while
+        # the numerically stable scatter buffer is deliberately FP32. Boolean
+        # indexed assignment requires exact dtype equality, unlike arithmetic.
+        output[mask] = decoded.to(dtype=output.dtype)
         return output.to(original_dtype)
 
 
