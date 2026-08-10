@@ -167,13 +167,14 @@ class SquareDetectionLayerNormReload(nn.Module):
 
     def __init__(self, canvas_size: int, apertures: list, eps: float, nonlinearity: str,
                  per_expert_enabled: bool = True, elementwise_affine: bool = False,
-                 detector_integration_factor: int = 1) -> None:
+                 detector_integration_factor: int = 1, preserve_amplitude: bool = False) -> None:
         super().__init__()
         self.apertures = apertures
         self.eps = float(eps)
         self.nonlinearity = str(nonlinearity)
         self.per_expert_enabled = bool(per_expert_enabled)
         self.elementwise_affine = bool(elementwise_affine)
+        self.preserve_amplitude = bool(preserve_amplitude)
         self.canvas_size = int(canvas_size)
         self.detector_integration_factor = int(detector_integration_factor)
         if self.detector_integration_factor <= 0:
@@ -199,6 +200,9 @@ class SquareDetectionLayerNormReload(nn.Module):
         self.last_input_complex_field: torch.Tensor | None = None
         self.last_input_intensity: torch.Tensor | None = None
         self.last_output_amplitude: torch.Tensor | None = None
+        # Per-expert response magnitude [B, E] of the pre-normalization crops
+        # (detached), used as a routing-response consistency target.
+        self.last_expert_response: torch.Tensor | None = None
 
     def forward(
         self,
@@ -272,7 +276,17 @@ class SquareDetectionLayerNormReload(nn.Module):
             crops = intensity.flatten(1).index_select(1, flat_indices).reshape(
                 batch, len(self.apertures), self.expert_size, self.expert_size
             )
+            # Response magnitude of each expert's raw CCD crop. The per-expert
+            # LayerNorm below removes this amplitude, which starves the router
+            # of the "which expert responded more strongly" signal. With
+            # preserve_amplitude we re-scale the normalized shape by the L2 norm
+            # so amplitude-dependent routing gradients survive (kept detached
+            # only for the consistency-loss target, not for the forward path).
+            response = crops.flatten(-2).norm(dim=-1)
+            self.last_expert_response = response.detach()
             normalized = F.layer_norm(crops, crops.shape[-2:], weight=None, bias=None, eps=self.eps)
+            if self.preserve_amplitude:
+                normalized = normalized * response[..., None, None].clamp_max(256.0)
             if self.affine_weight is not None:
                 normalized = normalized * self.affine_weight.unsqueeze(0) + self.affine_bias.unsqueeze(0)
             activated = F.relu(normalized) if self.nonlinearity == "relu" else F.softplus(normalized)

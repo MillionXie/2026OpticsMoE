@@ -231,7 +231,10 @@ class LSPPoseDataset(Dataset):
         record = self.records[index]
         with Image.open(record.image_path) as source:
             image = source.convert("RGB")
-        transformed, keypoints, visible, crop = transform_person(
+        # Un-augmented canonical crop box, used to warp cached teacher heatmaps
+        # (computed on canonical crops) into the augmented student view.
+        canon_box = canonical_crop_box(record.keypoints, self.settings.crop_margin)
+        transformed, keypoints, visible, crop, flipped = transform_person(
             image,
             record.keypoints,
             image_size=self.settings.image_size,
@@ -259,6 +262,9 @@ class LSPPoseDataset(Dataset):
             "source": record.source,
             "image_path": str(record.image_path),
             "crop_box": crop,
+            "canon_box": canon_box,
+            "flipped": flipped,
+            "index": index,
         }
 
 
@@ -274,7 +280,36 @@ def pose_collate(items: list[dict[str, Any]]) -> dict[str, Any]:
         "source": [item["source"] for item in items],
         "image_path": [item["image_path"] for item in items],
         "crop_box": [item["crop_box"] for item in items],
+        "canon_box": torch.as_tensor(
+            [item["canon_box"] for item in items], dtype=torch.float32,
+        ),
+        "flipped": torch.as_tensor(
+            [item["flipped"] for item in items], dtype=torch.bool,
+        ),
+        "index": [item["index"] for item in items],
     }
+
+
+def canonical_crop_box(keypoints: np.ndarray, crop_margin: float) -> list[float]:
+    """Un-augmented ``[left, top, right, bottom]`` crop box in image pixels.
+
+    Mirrors the crop geometry used by ``transform_person(training=False)`` so
+    cached teacher heatmaps (computed on canonical crops) can be warped into
+    the jittered/flipped student view with the same coordinate convention.
+    """
+    keypoints = np.asarray(keypoints, dtype=np.float32)
+    finite = np.isfinite(keypoints).all(axis=1)
+    if not finite.any():
+        raise RuntimeError("Pose sample contains no finite joint coordinates")
+    xy = keypoints[finite]
+    center = (xy.min(axis=0) + xy.max(axis=0)) * 0.5
+    side = max(float(np.ptp(xy[:, 0])), float(np.ptp(xy[:, 1])), 32.0) * crop_margin
+    return [
+        float(math.floor(center[0] - side * 0.5)),
+        float(math.floor(center[1] - side * 0.5)),
+        float(math.ceil(center[0] + side * 0.5)),
+        float(math.ceil(center[1] + side * 0.5)),
+    ]
 
 
 def transform_person(
@@ -289,7 +324,7 @@ def transform_person(
     flip_probability: float,
     brightness_jitter: float,
     contrast_jitter: float,
-) -> tuple[Image.Image, np.ndarray, np.ndarray, list[float]]:
+) -> tuple[Image.Image, np.ndarray, np.ndarray, list[float], bool]:
     keypoints = np.asarray(keypoints, dtype=np.float32).copy()
     finite = np.isfinite(keypoints).all(axis=1)
     if not finite.any():
@@ -313,7 +348,9 @@ def transform_person(
     keypoints[:, 0] = (keypoints[:, 0] - actual_left) * scale_x
     keypoints[:, 1] = (keypoints[:, 1] - actual_top) * scale_y
     transformed = cropped.resize((image_size, image_size), Image.Resampling.BILINEAR)
+    flipped = False
     if training and random.random() < flip_probability:
+        flipped = True
         transformed = transformed.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
         keypoints[:, 0] = image_size - 1 - keypoints[:, 0]
         keypoints = keypoints[np.asarray(FLIP_PERMUTATION)]
@@ -329,7 +366,10 @@ def transform_person(
     visible = finite & (keypoints[:, 0] >= 0) & (keypoints[:, 0] < image_size)
     visible &= (keypoints[:, 1] >= 0) & (keypoints[:, 1] < image_size)
     keypoints[~visible] = np.nan
-    return transformed, keypoints.astype(np.float32), visible.astype(bool), [left, top, right, bottom]
+    return (
+        transformed, keypoints.astype(np.float32), visible.astype(bool),
+        [left, top, right, bottom], flipped,
+    )
 
 
 def make_heatmaps(

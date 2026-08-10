@@ -1,0 +1,30 @@
+# Round 2: Deconv readout head + router optimizations.
+#
+# Diagnosis (2026-08-09):
+#   1. The old readout head used a single 4x bilinear upsample (14x14 -> 56x56)
+#      with only ~0.25-0.36M params. Standard pose baselines (SimpleBaseline)
+#      use learned transposed-conv upsampling with ~17M params in the head.
+#      The head is a clear under-powered bottleneck.
+#   2. Router analysis showed eval entropy ~1.0 (near-uniform probs) with a
+#      fixed 4-expert preference and 4 dead experts -> the router does NOT do
+#      true input-dependent routing yet.  The router optimizations from round 1
+#      (temp 0.5, noise 0.3 annealed, lr 0.004, balance 0.01) are kept for now;
+#      fixing the gain-normalization issue is deferred as future work.
+#
+# This round: replace the pose head with a SimpleBaseline-style deconv head
+# (14->28->56 learned upsampling), retrain the teacher for a new upper bound,
+# and resume the student core (phases/router/adapter) with a fresh deconv head.
+base_config: lsp_pose_opt.yaml
+
+pose_head:
+  mode: deconv
+  # (body_channels, up_channels) - two body convs + two transposed convs, all 128ch
+  decoder_channels: [128, 128]
+
+training:
+  student_epochs: 150
+  resume_student_checkpoint: ../runs/lsp_pose_optical_moe16_opt/checkpoints/student_best_train_loss.pt
+  reinit_router: true
+  reinit_head: true
+
+output_dir: ../runs/lsp_pose_optical_moe16_opt2

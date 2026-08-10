@@ -1,0 +1,22 @@
+# Smoke test for the round-4 ablation (ALL variant), student only.
+# Reuses the round-3 full teacher cache (indices 0..31 cover the smoke subset).
+base_config: lsp_pose_opt4.yaml
+
+dataset:
+  strict_dataset_counts: true
+  train_limit: 32
+  test_limit: 16
+
+batching:
+  student_batch_size: 1
+  inference_batch_size: 2
+  num_workers: 0
+
+training:
+  student_epochs: 1
+  log_interval_batches: 1
+
+visualization:
+  sample_count: 4
+
+output_dir: ../runs/lsp_pose_optical_moe16_opt4_smoke

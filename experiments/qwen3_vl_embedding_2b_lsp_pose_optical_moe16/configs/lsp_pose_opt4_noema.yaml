@@ -1,0 +1,7 @@
+# Ablation: ALL minus weight EMA.
+base_config: lsp_pose_opt4.yaml
+
+training:
+  ema_decay: 0.0
+
+output_dir: ../runs/lsp_pose_optical_moe16_opt4_noema

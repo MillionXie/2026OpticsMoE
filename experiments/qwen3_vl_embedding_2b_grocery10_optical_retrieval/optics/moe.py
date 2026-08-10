@@ -219,6 +219,8 @@ class HomogeneousMoEOpticalCore(nn.Module):
             settings.router_temperature,
             settings.router_input_layernorm_enabled,
             settings.router_input_layernorm_eps,
+            noise_std=getattr(settings, "router_noise_std", 0.0),
+            gate_init_std=getattr(settings, "router_gate_init_std", 0.01),
         )
         self.amplitude_slm_weight_domain = settings.amplitude_slm_weight_domain
         self.amplitude_slm_input_normalization = settings.amplitude_slm_input_normalization
@@ -247,12 +249,14 @@ class HomogeneousMoEOpticalCore(nn.Module):
                                            settings.interlayer_layernorm_eps, settings.interlayer_nonlinearity,
                                            settings.interlayer_per_expert_enabled,
                                            settings.interlayer_elementwise_affine,
-                                           settings.interlayer_detector_integration_factor)
+                                           settings.interlayer_detector_integration_factor,
+                                           getattr(settings, "oeo_preserve_amplitude", False))
             for _ in range(settings.expert_layers)]) if self.interlayer_enabled else nn.ModuleList()
         self.global_phase = GlobalPhasePlane(self.geometry, settings)
         self.readout = FullPlaneReadout(self.geometry, settings)
         self.output_adapter = nn.Linear(settings.input_adapter_dim, hidden_size)
         self.last_input_fields: torch.Tensor | None = None; self.last_routing: dict[str, torch.Tensor] = {}
+        self.last_expert_response: torch.Tensor | None = None
         self.last_amplitude_slm_canvas: torch.Tensor | None = None
         self.last_stage_fields: list[torch.Tensor] = []; self.last_detector_intensity: torch.Tensor | None = None
         self.last_detector_complex_field: torch.Tensor | None = None
@@ -334,6 +338,7 @@ class HomogeneousMoEOpticalCore(nn.Module):
             if self.capture_intermediate_fields else None
         )
         routing = self.router(input_fields); self.last_routing = routing
+        self.last_expert_response = None
         field = self._direct_amplitude_load(input_fields, routing)
         self.last_amplitude_slm_canvas = (
             field.real[:capture_count].detach().cpu()
@@ -365,6 +370,9 @@ class HomogeneousMoEOpticalCore(nn.Module):
                     field,
                     selected_experts=routing["selected_mask"] if self.interlayer_hard_route_mask else None,
                     routing_weights=routing["weights"] if self.interlayer_reapply_routing_weights else None)
+                response = self.interlayer_conversions[index].last_expert_response
+                if response is not None:
+                    self.last_expert_response = response
         if self.capture_intermediate_fields:
             capture_count = min(self.capture_sample_count, len(field))
             self.last_stage_fields.append(field[:capture_count].detach().cpu())

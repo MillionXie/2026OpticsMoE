@@ -99,9 +99,20 @@ class Settings:
     router_balance_weight: float
     router_importance_weight: float
     phase_dc_weight: float
+    teacher_distill_weight: float
+    teacher_distill_temperature: float
+    teacher_distill_checkpoint: Path | None
+    teacher_cache_path: Path | None
+    teacher_cache_batch_size: int
+    router_response_consistency_weight: float
+    ema_decay: float
+    tta_enabled: bool
     random_seed: int
     amp_enabled: bool
     log_interval_batches: int
+    resume_student_checkpoint: Path | None
+    reinit_router: bool
+    reinit_head: bool
 
     augmentation_enabled: bool
     crop_margin: float
@@ -114,6 +125,7 @@ class Settings:
     pose_projection_dim: int
     pose_decoder_channels: tuple[int, ...]
     pose_groupnorm_groups: int
+    pose_head_mode: str
     visualization_sample_count: int
 
     # Interface consumed by the reused, validated Optical MoE16 core.
@@ -139,6 +151,8 @@ class Settings:
     top_k: int
     router_pool_size: int
     router_temperature: float
+    router_noise_std: float
+    router_gate_init_std: float
     router_input_layernorm_enabled: bool
     router_input_layernorm_eps: float
     amplitude_slm_weight_domain: str
@@ -161,6 +175,8 @@ class Settings:
     interlayer_reapply_routing_weights: bool
     interlayer_layernorm_eps: float
     interlayer_nonlinearity: str
+    interlayer_detector_integration_factor: int
+    oeo_preserve_amplitude: bool
     detector_output_size: int
     detector_layernorm_eps: float
     detector_layernorm_affine: bool
@@ -287,9 +303,20 @@ def load_settings(path: str | Path) -> Settings:
         router_balance_weight=float(d("loss.router_balance_weight", 0.03)),
         router_importance_weight=float(d("loss.router_importance_weight", 0.005)),
         phase_dc_weight=float(d("loss.phase_dc_weight", 0.0)),
+        teacher_distill_weight=float(d("loss.teacher_distill_weight", 0.0)),
+        teacher_distill_temperature=float(d("loss.teacher_distill_temperature", 4.0)),
+        teacher_distill_checkpoint=_resolve(d("loss.teacher_distill_checkpoint"), base),
+        teacher_cache_path=_resolve(d("loss.teacher_cache_path"), base),
+        teacher_cache_batch_size=int(d("batching.teacher_cache_batch_size", 8)),
+        router_response_consistency_weight=float(d("loss.router_response_consistency_weight", 0.0)),
+        ema_decay=float(d("training.ema_decay", 0.0)),
+        tta_enabled=bool(d("inference.tta_enabled", False)),
         random_seed=int(d("training.random_seed", 42)),
         amp_enabled=bool(d("training.amp_enabled", True)),
         log_interval_batches=int(d("training.log_interval_batches", 100)),
+        resume_student_checkpoint=_resolve(d("training.resume_student_checkpoint"), base),
+        reinit_router=bool(d("training.reinit_router", False)),
+        reinit_head=bool(d("training.reinit_head", False)),
         augmentation_enabled=bool(d("augmentation.enabled", True)),
         crop_margin=float(d("augmentation.crop_margin", 1.25)),
         crop_scale_jitter=float(d("augmentation.scale_jitter", 0.15)),
@@ -300,6 +327,7 @@ def load_settings(path: str | Path) -> Settings:
         pose_projection_dim=int(d("pose_head.projection_dim", 128)),
         pose_decoder_channels=tuple(int(v) for v in d("pose_head.decoder_channels", [128, 64])),
         pose_groupnorm_groups=int(d("pose_head.groupnorm_groups", 8)),
+        pose_head_mode=str(d("pose_head.mode", "bilinear")),
         visualization_sample_count=int(d("visualization.sample_count", 16)),
         input_adapter_dim=int(d("optical.input_adapter_dim", 224)),
         max_visual_tokens=int(d("optical.max_visual_tokens", 224)),
@@ -323,6 +351,8 @@ def load_settings(path: str | Path) -> Settings:
         top_k=int(d("optical.router.top_k", 4)),
         router_pool_size=int(d("optical.router.pool_size", 14)),
         router_temperature=float(d("optical.router.temperature", 1.0)),
+        router_noise_std=float(d("optical.router.noise_std", 0.0)),
+        router_gate_init_std=float(d("optical.router.gate_init_std", 0.01)),
         router_input_layernorm_enabled=bool(d("optical.router.input_layernorm_enabled", True)),
         router_input_layernorm_eps=float(d("optical.router.input_layernorm_eps", 1e-5)),
         amplitude_slm_weight_domain=str(d("optical.router.amplitude_weight_domain", "amplitude")),
@@ -345,6 +375,8 @@ def load_settings(path: str | Path) -> Settings:
         interlayer_reapply_routing_weights=bool(d("optical.oeo.reapply_routing_weights", True)),
         interlayer_layernorm_eps=float(d("optical.oeo.layernorm_eps", 1e-5)),
         interlayer_nonlinearity=str(d("optical.oeo.nonlinearity", "relu")),
+        interlayer_detector_integration_factor=int(d("optical.oeo.detector_integration_factor", 1)),
+        oeo_preserve_amplitude=bool(d("optical.oeo.preserve_amplitude", False)),
         detector_output_size=int(d("optical.detector.output_size", 224)),
         detector_layernorm_eps=float(d("optical.detector.layernorm_eps", 1e-5)),
         detector_layernorm_affine=bool(d("optical.detector.layernorm_affine", False)),

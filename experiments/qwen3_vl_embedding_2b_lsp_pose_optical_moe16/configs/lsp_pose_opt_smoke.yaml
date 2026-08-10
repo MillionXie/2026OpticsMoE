@@ -1,0 +1,25 @@
+# Smoke test for the router-optimized LSP pose run.
+# Runs 1 epoch on a tiny slice, resuming from the trained checkpoint with a
+# re-initialized router, to validate the full optimized training path.
+base_config: lsp_pose_opt.yaml
+
+dataset:
+  strict_dataset_counts: true
+  train_limit: 32
+  test_limit: 16
+
+batching:
+  teacher_batch_size: 2
+  student_batch_size: 1
+  inference_batch_size: 2
+  num_workers: 0
+
+training:
+  teacher_epochs: 1
+  student_epochs: 1
+  log_interval_batches: 1
+
+visualization:
+  sample_count: 4
+
+output_dir: ../runs/lsp_pose_optical_moe16_opt_smoke

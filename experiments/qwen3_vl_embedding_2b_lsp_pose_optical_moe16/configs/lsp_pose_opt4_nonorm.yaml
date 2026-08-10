@@ -1,0 +1,8 @@
+# Ablation: ALL minus amplitude-preserving OEO normalization.
+base_config: lsp_pose_opt4.yaml
+
+optical:
+  oeo:
+    preserve_amplitude: false
+
+output_dir: ../runs/lsp_pose_optical_moe16_opt4_nonorm

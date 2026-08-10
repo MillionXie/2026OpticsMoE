@@ -9,23 +9,31 @@ from torch.nn import functional as F
 
 class InputTopKRouter(nn.Module):
     def __init__(self, num_experts: int, top_k: int, pool_size: int, temperature: float,
-                 input_layernorm_enabled: bool = True, input_layernorm_eps: float = 1e-5) -> None:
+                 input_layernorm_enabled: bool = True, input_layernorm_eps: float = 1e-5,
+                 noise_std: float = 0.0, gate_init_std: float = 0.01) -> None:
         super().__init__()
         self.num_experts = int(num_experts)
         self.top_k = int(top_k)
         self.pool_size = int(pool_size)
         self.temperature = float(temperature)
+        self.noise_std = float(noise_std)
+        self.gate_init_std = float(gate_init_std)
         self.input_norm = (nn.LayerNorm(self.pool_size * self.pool_size, eps=float(input_layernorm_eps),
                                         elementwise_affine=False)
                            if input_layernorm_enabled else nn.Identity())
         self.gate = nn.Linear(self.pool_size * self.pool_size, self.num_experts)
-        nn.init.normal_(self.gate.weight, 0.0, 0.01)
+        nn.init.normal_(self.gate.weight, 0.0, self.gate_init_std)
         nn.init.zeros_(self.gate.bias)
 
     def forward(self, fields: torch.Tensor) -> dict[str, torch.Tensor]:
         pooled = F.adaptive_avg_pool2d(fields.float().unsqueeze(1), (self.pool_size, self.pool_size)).flatten(1)
         router_input = self.input_norm(pooled)
         logits = self.gate(router_input)
+        # Noisy top-k gating (Shazeer et al. 2017): train-time Gaussian logit
+        # noise forces exploration so the router escapes the uniform attractor.
+        # At eval time noise is disabled and routing is deterministic.
+        if self.training and self.noise_std > 0.0:
+            logits = logits + torch.randn_like(logits) * self.noise_std
         probabilities = torch.softmax(logits / self.temperature, dim=-1)
         _, indices = torch.topk(probabilities, self.top_k, dim=-1)
         selected = torch.zeros_like(probabilities, dtype=torch.bool).scatter(1, indices, True)
@@ -51,7 +59,8 @@ class ElectronicAmplitudeRouter(nn.Module):
 
     def __init__(self, geometry, top_k: int, pool_size: int, temperature: float,
                  input_layernorm_enabled: bool = True,
-                 input_layernorm_eps: float = 1e-5) -> None:
+                 input_layernorm_eps: float = 1e-5,
+                 noise_std: float = 0.0, gate_init_std: float = 0.01) -> None:
         super().__init__()
         self.geometry = geometry
         self.router = InputTopKRouter(
@@ -61,6 +70,8 @@ class ElectronicAmplitudeRouter(nn.Module):
             temperature,
             input_layernorm_enabled,
             input_layernorm_eps,
+            noise_std,
+            gate_init_std,
         )
 
     def forward(self, input_fields: torch.Tensor) -> dict[str, torch.Tensor]:
@@ -71,3 +82,7 @@ class ElectronicAmplitudeRouter(nn.Module):
             "phase_prompt_used": False,
             "amplitude_phase_relay": "ideal_4f_identity",
         }
+
+    def set_noise_std(self, value: float) -> None:
+        """Update train-time exploration noise (used for annealing schedules)."""
+        self.router.noise_std = max(0.0, float(value))

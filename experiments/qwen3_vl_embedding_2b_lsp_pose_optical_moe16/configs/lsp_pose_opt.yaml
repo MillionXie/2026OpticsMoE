@@ -1,0 +1,39 @@
+# Router optimization run for the LSP pose optical MoE16 student.
+#
+# Diagnosis (2026-08-09, tools_router_diagnostic.py): the router task gradient
+# (~0.0015/batch) is ~96x smaller than the balance-loss gradient (~0.144),
+# pinning the router at the uniform distribution (normalized entropy = 1.0).
+# The MoE therefore degenerates into near-random top-4 selection.
+#
+# Fixes applied here:
+#   - re-initialize the router gate with a wider spread (break uniform attractor)
+#   - sharpen router temperature 1.0 -> 0.5 (amplify routing effect + gradient)
+#   - train-time noisy top-k gating (annealed to zero over the run) for exploration
+#   - raise router learning rate 0.0005 -> 0.004 (match phase learning rate)
+#   - reduce balance/importance loss weights so task gradient is not drowned
+#   - resume from the trained student checkpoint to keep the converged phases/head
+base_config: lsp_pose.yaml
+
+training:
+  student_epochs: 150
+  student_learning_rate: 0.001
+  router_learning_rate: 0.004
+  phase_learning_rate: 0.004
+  resume_student_checkpoint: ../runs/lsp_pose_optical_moe16/checkpoints/student_best_train_loss.pt
+  reinit_router: true
+
+loss:
+  # phase_dc_weight must stay 0: the original run never applied it (the resolved
+  # config from that run has no such field), and it dominates the loss (0.7*5)
+  # when resumed from the trained phases, drowning the task signal.
+  phase_dc_weight: 0.0
+  router_balance_weight: 0.01
+  router_importance_weight: 0.002
+
+optical:
+  router:
+    temperature: 0.5
+    noise_std: 0.3
+    gate_init_std: 0.3
+
+output_dir: ../runs/lsp_pose_optical_moe16_opt

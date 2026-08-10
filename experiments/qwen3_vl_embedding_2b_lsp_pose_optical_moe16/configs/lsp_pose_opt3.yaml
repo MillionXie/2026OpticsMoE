@@ -1,0 +1,37 @@
+# Round 3: Teacher heatmap distillation.
+#
+# Diagnosis (2026-08-09):
+#   The student is trained only against fixed-sigma Gaussian ground truth,
+#   while the deconv-head teacher (PCK 0.72 / PCKh 0.88) produces far sharper,
+#   more accurate heatmaps that carry localization uncertainty the optical
+#   student could exploit. The teacher's heatmaps are used as soft spatial
+#   regression targets via direct masked per-pixel MSE (the standard pose
+#   distillation objective; a spatial-softmax version would shrink to
+#   ~1/(56*56) scale and contribute ~nothing).
+#
+# This round: keep the opt2 deconv head + phases + router (resume the best
+# opt2 student checkpoint, no re-init), load the frozen opt2 teacher as a
+# distillation target, and add teacher_distill_weight * distill to the loss.
+# Teacher is frozen (eval + no_grad) and shares no parameters with the student
+# (it gets its own separate frozen Qwen vision copy).
+base_config: lsp_pose_opt2.yaml
+
+loss:
+  # Direct heatmap MSE is on the same scale as the GT heatmap loss (~0.005-0.05),
+  # so a 0.5 weight gives a meaningful, balanced contribution vs heatmap 1.0.
+  teacher_distill_weight: 0.5
+  teacher_distill_temperature: 1.0
+  teacher_distill_checkpoint: ../runs/lsp_pose_optical_moe16_opt2/checkpoints/teacher_best_train_loss.pt
+  # Teacher heatmaps are pre-computed ONCE on canonical (un-augmented) crops by
+  # the `teacher_cache` phase and reused for every student epoch; the student
+  # warps each cached heatmap into its augmented view at train time, so the
+  # frozen teacher is never re-run during student training.
+  teacher_cache_path: ../runs/lsp_pose_optical_moe16_opt3/teacher_heatmaps_cache.pt
+
+training:
+  student_epochs: 120
+  resume_student_checkpoint: ../runs/lsp_pose_optical_moe16_opt2/checkpoints/student_best_train_loss.pt
+  reinit_router: false
+  reinit_head: false
+
+output_dir: ../runs/lsp_pose_optical_moe16_opt3

@@ -88,6 +88,93 @@ class LightweightPoseHead(nn.Module):
         }
 
 
+class DeconvPoseHead(nn.Module):
+    """SimpleBaseline-style pose head: learned transposed-conv upsampling.
+
+    Replaces the bilinear-upsample-at-the-end of ``LightweightPoseHead`` with a
+    stack of trainable transposed convolutions (14x14 -> 28x28 -> 56x56), each
+    followed by GroupNorm/GELU, plus a final refinement convolution before the
+    1x1 joint predictor.  Progressive learned upsampling recovers more spatial
+    detail than a single 4x bilinear interpolation.
+    """
+
+    def __init__(
+        self,
+        input_dim: int,
+        projection_dim: int = 128,
+        body_channels: tuple[int, ...] = (128, 128),
+        up_channels: tuple[int, ...] = (128, 128),
+        groupnorm_groups: int = 8,
+        heatmap_size: int = 56,
+        num_joints: int = NUM_JOINTS,
+    ) -> None:
+        super().__init__()
+        self.input_dim = int(input_dim)
+        self.heatmap_size = int(heatmap_size)
+        self.num_joints = int(num_joints)
+        self.token_norm = nn.LayerNorm(self.input_dim)
+        self.token_projection = nn.Linear(self.input_dim, int(projection_dim))
+
+        def block(in_ch: int, out_ch: int, conv: nn.Module) -> nn.Module:
+            groups = min(int(groupnorm_groups), int(out_ch))
+            while out_ch % groups:
+                groups -= 1
+            return nn.Sequential(conv, nn.GroupNorm(groups, out_ch), nn.GELU())
+
+        body: list[nn.Module] = []
+        current = int(projection_dim)
+        for channels in body_channels:
+            body.append(block(current, int(channels), nn.Conv2d(current, int(channels), 3, padding=1, bias=False)))
+            current = int(channels)
+        self.body = nn.Sequential(*body)
+
+        up: list[nn.Module] = []
+        for channels in up_channels:
+            up.append(block(
+                current, int(channels),
+                nn.ConvTranspose2d(current, int(channels), kernel_size=4, stride=2, padding=1, bias=False),
+            ))
+            current = int(channels)
+        self.upsampler = nn.Sequential(*up)
+
+        self.final_refine = block(current, current, nn.Conv2d(current, current, 3, padding=1, bias=False))
+        self.predictor = nn.Conv2d(current, self.num_joints, 1)
+
+    def forward(self, spatial_features: torch.Tensor) -> torch.Tensor:
+        if spatial_features.ndim != 4 or spatial_features.shape[1] != self.input_dim:
+            raise RuntimeError(
+                f"Pose head expects [B,{self.input_dim},H,W], got {tuple(spatial_features.shape)}"
+            )
+        tokens = spatial_features.permute(0, 2, 3, 1)
+        projected = self.token_projection(self.token_norm(tokens.float()))
+        decoded = self.body(projected.permute(0, 3, 1, 2))
+        decoded = self.upsampler(decoded)
+        decoded = self.final_refine(decoded)
+        if tuple(decoded.shape[-2:]) != (self.heatmap_size, self.heatmap_size):
+            decoded = F.interpolate(
+                decoded, size=(self.heatmap_size, self.heatmap_size),
+                mode="bilinear", align_corners=False,
+            )
+        heatmaps = self.predictor(decoded)
+        expected = (
+            spatial_features.shape[0], self.num_joints,
+            self.heatmap_size, self.heatmap_size,
+        )
+        if tuple(heatmaps.shape) != expected:
+            raise RuntimeError(f"Pose heatmap shape {tuple(heatmaps.shape)} != {expected}")
+        return heatmaps
+
+    def specification(self) -> dict[str, Any]:
+        return {
+            "type": "deconv_qwen_spatial_pose_head",
+            "input_dim": self.input_dim,
+            "heatmap_size": self.heatmap_size,
+            "num_joints": self.num_joints,
+            "parameters": sum(p.numel() for p in self.parameters()),
+            "trainable_parameters": sum(p.numel() for p in self.parameters() if p.requires_grad),
+        }
+
+
 class FrozenQwenVisionPoseTeacher(nn.Module):
     """Frozen native Qwen Vision plus a trainable 14-joint heatmap head."""
 
@@ -230,16 +317,29 @@ class VisionOpticalPoseStudent(nn.Module):
         return self.core.router_losses()
 
 
-def build_teacher(
-    loaded: LoadedVisionBackbone, settings: Any,
-) -> FrozenQwenVisionPoseTeacher:
-    head = LightweightPoseHead(
-        settings.vision_hidden_size,
+def _build_pose_head(input_dim: int, settings: Any) -> nn.Module:
+    if getattr(settings, "pose_head_mode", "bilinear") == "deconv":
+        return DeconvPoseHead(
+            input_dim,
+            settings.pose_projection_dim,
+            settings.pose_decoder_channels,
+            settings.pose_decoder_channels,
+            settings.pose_groupnorm_groups,
+            settings.heatmap_size,
+        )
+    return LightweightPoseHead(
+        input_dim,
         settings.pose_projection_dim,
         settings.pose_decoder_channels,
         settings.pose_groupnorm_groups,
         settings.heatmap_size,
-    ).to(loaded.device)
+    )
+
+
+def build_teacher(
+    loaded: LoadedVisionBackbone, settings: Any,
+) -> FrozenQwenVisionPoseTeacher:
+    head = _build_pose_head(settings.vision_hidden_size, settings).to(loaded.device)
     return FrozenQwenVisionPoseTeacher(loaded, head)
 
 
@@ -247,13 +347,7 @@ def build_student(
     loaded: LoadedVisionBackbone, settings: Any,
 ) -> VisionOpticalPoseStudent:
     loaded.model.requires_grad_(False)
-    head = LightweightPoseHead(
-        settings.detector_output_size,
-        settings.pose_projection_dim,
-        settings.pose_decoder_channels,
-        settings.pose_groupnorm_groups,
-        settings.heatmap_size,
-    ).to(loaded.device)
+    head = _build_pose_head(settings.detector_output_size, settings).to(loaded.device)
     student = VisionOpticalPoseStudent(loaded, settings, head)
     student.core.requires_grad_(True)
     student.core.output_adapter.requires_grad_(False)

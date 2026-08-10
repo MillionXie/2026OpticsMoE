@@ -72,21 +72,23 @@ def test_standard_protocol_is_11000_train_1000_test_and_disjoint() -> None:
 def test_person_transform_and_flip_preserve_joint_semantics() -> None:
     image = Image.new("RGB", (100, 100), color="white")
     points = np.stack((np.linspace(20, 80, 14), np.linspace(25, 75, 14)), axis=1).astype(np.float32)
-    transformed, flipped, visible, _ = transform_person(
+    transformed, flipped, visible, _, was_flipped = transform_person(
         image, points, image_size=224, crop_margin=1.25, training=True,
         scale_jitter=0.0, center_jitter=0.0, flip_probability=1.0,
         brightness_jitter=0.0, contrast_jitter=0.0,
     )
     assert transformed.size == (224, 224)
     assert visible.all()
+    assert was_flipped is True
     # Right ankle after a flip comes from the former left ankle (index 5).
-    _, unflipped, _, _ = transform_person(
+    _, unflipped, _, _, was_flipped = transform_person(
         image, points, image_size=224, crop_margin=1.25, training=False,
         scale_jitter=0.0, center_jitter=0.0, flip_probability=0.0,
         brightness_jitter=0.0, contrast_jitter=0.0,
     )
     assert flipped[0, 0] == pytest.approx(223.0 - unflipped[FLIP_PERMUTATION[0], 0])
     assert flipped[0, 1] == pytest.approx(unflipped[FLIP_PERMUTATION[0], 1])
+    assert was_flipped is False
 
 
 def test_heatmaps_shape_mask_and_peak() -> None:

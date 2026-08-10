@@ -1,0 +1,7 @@
+# Ablation: ALL minus explicit routing-response consistency loss.
+base_config: lsp_pose_opt4.yaml
+
+loss:
+  router_response_consistency_weight: 0.0
+
+output_dir: ../runs/lsp_pose_optical_moe16_opt4_noroute

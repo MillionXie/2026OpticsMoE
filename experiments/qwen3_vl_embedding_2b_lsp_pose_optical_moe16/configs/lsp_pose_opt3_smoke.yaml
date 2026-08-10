@@ -1,0 +1,24 @@
+# Smoke test for the distillation (round 3) run: student only, no teacher retrain.
+base_config: lsp_pose_opt3.yaml
+
+dataset:
+  strict_dataset_counts: true
+  train_limit: 32
+  test_limit: 16
+
+batching:
+  student_batch_size: 1
+  inference_batch_size: 2
+  num_workers: 0
+
+training:
+  student_epochs: 1
+  log_interval_batches: 1
+
+loss:
+  teacher_cache_path: ../runs/lsp_pose_optical_moe16_opt3_smoke/teacher_heatmaps_cache.pt
+
+visualization:
+  sample_count: 4
+
+output_dir: ../runs/lsp_pose_optical_moe16_opt3_smoke

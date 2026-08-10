@@ -1,0 +1,43 @@
+# Round 4 (ablation "ALL"): amplitude-preserving OEO + explicit routing-response
+# consistency + EMA (+ TTA at inference), on top of the round-3 cached teacher
+# distillation recipe.
+#
+#  1. preserve_amplitude: per-expert LayerNorm re-scales the normalized shape by
+#     the expert's raw L2 norm, restoring the amplitude signal that lets the
+#     router learn input-dependent routing (previously ~96x task/balance
+#     gradient imbalance; router stuck near-uniform).
+#  2. router_response_consistency: extra loss pulling router probabilities
+#     toward the normalized per-expert response magnitudes -> explicit
+#     "route more to experts that respond more" supervision.
+#  3. EMA: exponential moving average of core+head weights used for eval and
+#     checkpointing (smoother final model).
+#  4. TTA: horizontal-flip test-time augmentation at inference only.
+#
+# No teacher-coordinate distillation (per user decision). Teacher heatmaps are
+# reused from the round-3 cache. All runs resume the round-3 best checkpoint.
+base_config: lsp_pose_opt3.yaml
+
+batching:
+  # The shared box is CPU-saturated (load ~135 on 80 cores) when multiple
+  # ablation runs run in parallel; 2 workers per run keeps total workers at 8
+  # instead of 32, which is much faster wall-clock per epoch.
+  num_workers: 2
+
+optical:
+  oeo:
+    preserve_amplitude: true
+
+loss:
+  router_response_consistency_weight: 0.1
+
+training:
+  student_epochs: 100
+  ema_decay: 0.999
+  resume_student_checkpoint: ../runs/lsp_pose_optical_moe16_opt3/checkpoints/student_best_train_loss.pt
+  reinit_router: false
+  reinit_head: false
+
+inference:
+  tta_enabled: true
+
+output_dir: ../runs/lsp_pose_optical_moe16_opt4

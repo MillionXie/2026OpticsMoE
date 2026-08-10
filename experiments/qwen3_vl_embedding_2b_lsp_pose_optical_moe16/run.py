@@ -10,6 +10,7 @@ from .datasets import prepare_lsp
 from .modeling import load_vision_backbone
 from .settings import load_settings, save_resolved_config
 from .training import (
+    cache_teacher_heatmaps,
     infer_student,
     infer_teacher,
     save_comparison,
@@ -21,7 +22,7 @@ from .training import (
 
 PHASES = (
     "prepare_data", "teacher_train", "teacher_inference",
-    "student_train", "student_inference", "compare", "all",
+    "teacher_cache", "student_train", "student_inference", "compare", "all",
 )
 
 
@@ -54,6 +55,8 @@ def main(argv: list[str] | None = None) -> int:
         train_teacher(loaded, bundle, settings)
     if args.phase in {"teacher_inference", "all"}:
         infer_teacher(loaded, bundle, settings)
+    if args.phase in {"teacher_cache", "all"}:
+        cache_teacher_heatmaps(loaded, bundle, settings)
     if args.phase in {"student_train", "all"}:
         train_student(loaded, bundle, settings)
     if args.phase in {"student_inference", "all"}:
