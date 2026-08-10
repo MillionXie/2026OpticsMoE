@@ -27,6 +27,7 @@ from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipe
 )
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_finetune import (
     _epoch_batches,
+    _teacher_store_for_adaptation,
     configure_downstream_trainability,
     prototype_retrieval_objective,
     select_adaptation_rows,
@@ -808,6 +809,12 @@ def test_final_ccd_adaptation_trains_only_downstream_electronics() -> None:
         "language",
         "retrieval_readout",
     }
+
+
+def test_zero_kd_hardware_adaptation_does_not_require_teacher_cache() -> None:
+    assert _teacher_store_for_adaptation(
+        SimpleNamespace(), SimpleNamespace(lambda_kd=0.0)
+    ) is None
 
 
 def test_hardware_epoch_batches_cover_every_query_and_include_all_galleries() -> None:

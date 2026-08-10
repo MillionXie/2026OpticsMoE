@@ -152,6 +152,17 @@ def _enable(module: torch.nn.Module, values: list[torch.nn.Parameter]) -> None:
     values.extend(parameter for parameter in module.parameters() if parameter.requires_grad)
 
 
+def _teacher_store_for_adaptation(
+    runtime: Runtime, config: AdaptationConfig
+) -> TeacherEmbeddingStore | None:
+    """Load Teacher targets only when KD contributes to the objective."""
+    if config.lambda_kd <= 0.0:
+        return None
+    return TeacherEmbeddingStore(
+        runtime.settings.teacher_cache_path, runtime.bundle, runtime.settings
+    )
+
+
 def configure_downstream_trainability(
     runtime: Runtime, capture_stage: str
 ) -> tuple[list[torch.nn.Parameter], list[dict[str, Any]]]:
@@ -622,9 +633,13 @@ def adapt_after_capture(
     optimizer = torch.optim.AdamW(
         parameters, lr=config.learning_rate, weight_decay=config.weight_decay
     )
-    teacher_store = TeacherEmbeddingStore(
-        runtime.settings.teacher_cache_path, runtime.bundle, runtime.settings
-    )
+    teacher_store = _teacher_store_for_adaptation(runtime, config)
+    if teacher_store is None:
+        print(
+            "[hardware_finetune] lambda_kd=0: frozen Teacher embedding cache "
+            "is not loaded; adaptation uses measured retrieval supervision only.",
+            flush=True,
+        )
     by_id = _samples_by_id(runtime.bundle)
     manifest_rows = _manifest_rows(runtime)
     rows, adaptation_split = select_adaptation_rows(
@@ -686,13 +701,18 @@ def adapt_after_capture(
                     embeddings.append(embedding[0])
                     _clear_replay(runtime)
             student = torch.stack(embeddings)
-            teacher = teacher_store.lookup(batch_samples).to(student.device)
             labels = torch.tensor(
                 [sample.sku_index for sample in batch_samples],
                 device=student.device,
                 dtype=torch.long,
             )
-            kd = embedding_distillation_loss(student, teacher)
+            kd = (
+                embedding_distillation_loss(
+                    student, teacher_store.lookup(batch_samples).to(student.device)
+                )
+                if teacher_store is not None
+                else student.sum() * 0.0
+            )
             retrieval = supervised_contrastive_loss(
                 student, labels, config.temperature
             )
@@ -813,6 +833,15 @@ def main() -> int:
     parser.add_argument("--capture-stage", required=True, choices=CAPTURE_STAGES)
     parser.add_argument("--checkpoint", default=None)
     parser.add_argument("--output-dir", default=None)
+    parser.add_argument(
+        "--lambda-kd",
+        type=float,
+        default=None,
+        help=(
+            "Optional hardware-adaptation KD override. Set to 0 for a quick "
+            "measured-CCD-only run that does not require a Teacher cache."
+        ),
+    )
     parser.add_argument("--use-simulation", action="store_true")
     parser.add_argument(
         "--finalize-only",
@@ -838,6 +867,12 @@ def main() -> int:
     runtime = build_runtime(hardware)
     try:
         adaptation_config = load_adaptation_config(hardware.config_path)
+        if args.lambda_kd is not None:
+            if args.lambda_kd < 0.0:
+                raise ValueError("--lambda-kd must be nonnegative")
+            adaptation_config = replace(
+                adaptation_config, lambda_kd=float(args.lambda_kd)
+            )
         if args.finalize_only:
             summary = finalize_existing_adaptation(
                 runtime,

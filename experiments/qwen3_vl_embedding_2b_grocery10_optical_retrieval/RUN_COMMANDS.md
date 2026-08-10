@@ -242,6 +242,21 @@
 
     python -m pytest experiments/hardware_sdk/tests experiments/hardware_sdk/generators/slm_patterns/tests experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/tests -q
 
+## Quick final-CCD adaptation without Teacher cache
+
+When `04_language_global/ccd_captured` was acquired directly from the original
+simulation checkpoint, the final electronic detector/readout can be calibrated
+from the measured gallery and training-query captures without rebuilding the
+frozen Qwen Teacher cache. Explicitly set the KD weight to zero:
+
+    CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_finetune --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/grocery10_moe4_from31_hardware.yaml --capture-stage language_global --lambda-kd 0
+
+This intentionally loads the original checkpoint declared by the hardware
+config. Do not pass a nonexistent stage-3 checkpoint. The optimization still
+uses measured gallery/query prototype loss and supervised contrastive loss.
+`--finalize-only` is only valid after this command has already produced the
+stage-4 `checkpoints/best_train_loss.pt`.
+
 ## 9. Session 目录约定
 
 ```text
