@@ -14,6 +14,10 @@ Preview the exact commands without running them:
 
     python -m experiments.qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4.optimize_nonshared --dry-run
 
+CUDA smoke test for the new losses, EMA and P=10/K=2 batch:
+
+    CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4 --config experiments/qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4/configs/optimization/nonshared_optimization_smoke.yaml --phase all
+
 Completed stages are skipped automatically. To intentionally overwrite both
 stages, append `--force`. The recipe and baseline diagnosis are recorded in
 `NONSHARED_OPTIMIZATION.md`, while each run stores resolved config, history,
