@@ -85,6 +85,15 @@ def test_default_config_panel_is_950_and_adapter_free() -> None:
     assert settings.second_plane_mode == "global"
 
 
+def test_8um_hardware_geometry_keeps_panel_pixels_but_changes_physics() -> None:
+    settings = load_settings(
+        EXPERIMENT / "configs" / "grocery10_tokenwise_moe4_8um_hardware_geometry.yaml"
+    )
+    assert settings.active_height == settings.active_width == 950
+    assert settings.canvas_size == 990
+    assert settings.pixel_pitch_um == 8.0
+
+
 def test_layout_has_unique_token_expert_apertures() -> None:
     layout = TokenwiseLayout(14, 14, 32, 2, 2, 2, 2, 20)
     indexes = layout.linear_indices()

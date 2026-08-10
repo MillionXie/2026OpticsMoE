@@ -1,0 +1,11 @@
+# Hardware-compatible geometry for the current 8-um SLMs. The 950x950 active
+# panel occupies 7.6x7.6 mm and fits both 1920x1080 amplitude and 1920x1200
+# phase devices without 2x upscaling. This must be trained independently from
+# the 16-um numerical configuration because propagation physics changes.
+base_config: grocery10_tokenwise_moe4.yaml
+
+optical:
+  physics:
+    pixel_pitch_um: 8.0
+
+output_dir: ../runs/qwen3_vl_embedding_2b_grocery10_tokenwise_moe4_global_8um

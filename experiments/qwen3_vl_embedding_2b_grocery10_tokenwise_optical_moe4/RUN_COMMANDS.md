@@ -15,7 +15,7 @@ The resolved architecture must report:
 
 ## 2. Cache frozen teacher embeddings
 
-    CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4 --config experiments/qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4/configs/grocery10_tokenwise_moe4.yaml --phase cache_teacher_embeddings
+    CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4 --config experiments/qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4/configs/grocery10_tokenwise_moe4.yaml --phase cache_teacher_embeddings
 
 Cache path:
 
@@ -23,35 +23,42 @@ Cache path:
 
 ## 3. Train the main global-second-plane experiment
 
-    CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4 --config experiments/qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4/configs/grocery10_tokenwise_moe4.yaml --phase train
+    CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4 --config experiments/qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4/configs/grocery10_tokenwise_moe4.yaml --phase train
 
 Resume:
 
-    CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4 --config experiments/qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4/configs/grocery10_tokenwise_moe4.yaml --phase train --resume-checkpoint experiments/qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4/runs/qwen3_vl_embedding_2b_grocery10_tokenwise_moe4_global/checkpoints/last_checkpoint.pt
+    CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4 --config experiments/qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4/configs/grocery10_tokenwise_moe4.yaml --phase train --resume-checkpoint experiments/qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4/runs/qwen3_vl_embedding_2b_grocery10_tokenwise_moe4_global/checkpoints/last_checkpoint.pt
 
 ## 4. Evaluate
 
-    CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4 --config experiments/qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4/configs/grocery10_tokenwise_moe4.yaml --phase evaluate
+    CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4 --config experiments/qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4/configs/grocery10_tokenwise_moe4.yaml --phase evaluate
 
 Evaluate a specific checkpoint:
 
-    CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4 --config experiments/qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4/configs/grocery10_tokenwise_moe4.yaml --phase evaluate --checkpoint experiments/qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4/runs/qwen3_vl_embedding_2b_grocery10_tokenwise_moe4_global/checkpoints/last_checkpoint.pt
+    CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4 --config experiments/qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4/configs/grocery10_tokenwise_moe4.yaml --phase evaluate --checkpoint experiments/qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4/runs/qwen3_vl_embedding_2b_grocery10_tokenwise_moe4_global/checkpoints/last_checkpoint.pt
 
 ## 5. One-command full run
 
-    CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4 --config experiments/qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4/configs/grocery10_tokenwise_moe4.yaml --phase all
+    CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4 --config experiments/qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4/configs/grocery10_tokenwise_moe4.yaml --phase all
 
 ## 6. Second expert-plane ablation
 
 This reuses the first router decision; it never computes another router output.
 
-    CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4 --config experiments/qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4/configs/grocery10_tokenwise_moe4_second_expert.yaml --phase all
+    CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4 --config experiments/qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4/configs/grocery10_tokenwise_moe4_second_expert.yaml --phase all
 
-## 7. Smoke run
+## 7. Direct 8-µm hardware geometry
 
-    CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4 --config experiments/qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4/configs/grocery10_tokenwise_moe4_smoke.yaml --phase all
+This configuration fits the 950×950 active panel directly on the current SLMs.
+It is a separate training run, not a post-training resize of the 16-µm mask.
 
-## 8. Unit tests
+    CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4 --config experiments/qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4/configs/grocery10_tokenwise_moe4_8um_hardware_geometry.yaml --phase all
+
+## 8. Smoke run
+
+    CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4 --config experiments/qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4/configs/grocery10_tokenwise_moe4_smoke.yaml --phase all
+
+## 9. Unit tests
 
     python -m pytest experiments/qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4/tests -q
 

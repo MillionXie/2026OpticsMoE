@@ -30,6 +30,13 @@ language token cannot be mapped to 32×32 without an adapter.
 - routing: top-2 per token;
 - propagation distance after each plane: 5 cm at 532 nm and 16 µm pixels.
 
+At 16 µm, the active panel is 15.2×15.2 mm. It cannot be exported by simply
+doubling to a 1920×1200, 8 µm phase SLM because 1900 pixels exceed the device's
+1200-pixel height. The supplied `grocery10_tokenwise_moe4_8um_hardware_geometry.yaml`
+uses 8 µm simulation pixels directly: the panel is then 7.6×7.6 mm and 950×950
+device pixels. Because pixel pitch changes diffraction, the 8 µm version must
+be trained separately; phase weights are not interchangeable with the 16 µm run.
+
 The four expert phase tensors are shared over all 196 token positions by
 default. The SLM therefore displays 196 physical copies of the same four expert
 functions, while the router assigns different experts and weights to each
