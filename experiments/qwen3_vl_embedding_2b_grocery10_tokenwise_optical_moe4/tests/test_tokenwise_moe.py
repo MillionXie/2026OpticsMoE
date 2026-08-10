@@ -14,6 +14,7 @@ from experiments.qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4.optics.t
 )
 from experiments.qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4.modeling import (
     TokenwiseLanguageSurrogate,
+    TokenwiseVisionReplacement,
 )
 from experiments.qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4.settings import (
     load_settings,
@@ -259,3 +260,47 @@ def test_optical_language_configs_disable_deepstack_and_define_ablation() -> Non
     assert shared.share_expert_phase_across_tokens is True
     assert shared.evaluation_checkpoint == "best_observed_test"
     assert nonshared.share_expert_phase_across_tokens is False
+
+
+def test_replacement_disables_deepstack_and_restores_teacher_modules() -> None:
+    class IdentityBlock(torch.nn.Module):
+        def forward(self, hidden_states, **_):
+            return hidden_states
+
+    class FakeVisual(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.blocks = torch.nn.ModuleList([IdentityBlock() for _ in range(4)])
+            self.deepstack_visual_indexes = [1, 2, 3]
+
+    class FakeLanguage(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.layers = torch.nn.ModuleList([IdentityBlock() for _ in range(4)])
+            self.norm = torch.nn.LayerNorm(32)
+
+    class FakeModel(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.visual = FakeVisual()
+            self.language_model = FakeLanguage()
+
+    settings = fake_settings()
+    settings.student_deepstack_enabled = False
+    model = FakeModel()
+    original_vision = list(model.visual.blocks)
+    original_language = list(model.language_model.layers)
+    vision = TokenwiseOpticalMoE(16, settings)
+    language = TokenwiseLanguageSurrogate(32, settings)
+    replacement = TokenwiseVisionReplacement(model, vision, settings, language)
+    replacement.use_student()
+    assert model.visual.deepstack_visual_indexes == []
+    assert model.language_model.layers[0] is language
+    assert all(
+        model.language_model.layers[index] is replacement.student_language_layers[index]
+        for index in range(1, 4)
+    )
+    replacement.use_teacher()
+    assert model.visual.deepstack_visual_indexes == [1, 2, 3]
+    assert list(model.visual.blocks) == original_vision
+    assert list(model.language_model.layers) == original_language
