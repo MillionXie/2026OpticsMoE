@@ -844,6 +844,41 @@ def test_hardware_epoch_batches_cover_every_query_and_include_all_galleries() ->
         assert {samples[row["sample_id"]].sku_index for row in batch if row["role"] == "gallery"} == {0, 1, 2}
 
 
+def test_hardware_epoch_batches_merge_single_sku_tail_without_duplication() -> None:
+    samples = {}
+    rows = []
+    for sku, query_count in enumerate((5, 4, 1)):
+        gallery_id = f"g{sku}"
+        samples[gallery_id] = SimpleNamespace(sku_index=sku)
+        rows.append({"sample_id": gallery_id, "sample_key": gallery_id, "role": "gallery"})
+        for index in range(query_count):
+            sample_id = f"q{sku}_{index}"
+            samples[sample_id] = SimpleNamespace(sku_index=sku)
+            rows.append({"sample_id": sample_id, "sample_key": sample_id, "role": "query"})
+    batches = _epoch_batches(
+        rows,
+        samples,
+        SimpleNamespace(skus_per_batch=3, samples_per_sku=2),
+        epoch=1,
+    )
+    query_ids = [
+        row["sample_id"]
+        for batch in batches
+        for row in batch
+        if row["role"] == "query"
+    ]
+    expected = [row["sample_id"] for row in rows if row["role"] == "query"]
+    assert sorted(query_ids) == sorted(expected)
+    assert len(query_ids) == len(set(query_ids))
+    for batch in batches:
+        counts: dict[int, int] = {}
+        for row in batch:
+            sku = samples[row["sample_id"]].sku_index
+            counts[sku] = counts.get(sku, 0) + 1
+        assert len(counts) >= 2
+        assert min(counts.values()) >= 2
+
+
 def test_full_hardware_selection_exports_gallery_train_and_all_test() -> None:
     def sample(sample_id: str, split: str, gallery: bool = False):
         return SimpleNamespace(

@@ -346,19 +346,32 @@ def _epoch_batches(
             // config.samples_per_sku
             for sku in selected
         )
+        group_batches: list[list[dict[str, str]]] = []
         for round_index in range(rounds):
-            # Every batch contains the registered gallery for every selected SKU.
-            # Query slices are disjoint, so one epoch covers every measured query.
-            batch = [row for sku in selected for row in grouped[sku]["gallery"]]
             begin = round_index * config.samples_per_sku
             end = begin + config.samples_per_sku
-            batch.extend(
-                row
+            query_slices = {
+                sku: shuffled_queries[sku][begin:end]
                 for sku in selected
-                for row in shuffled_queries[sku][begin:end]
-            )
-            if len(batch) > len(selected):
-                batches.append(batch)
+                if shuffled_queries[sku][begin:end]
+            }
+            active = list(query_slices)
+            if len(active) == 1 and group_batches:
+                # Unequal per-SKU counts can leave one class alone in the last
+                # round. Merge that tail into the preceding multi-SKU batch:
+                # every query is still visited exactly once and every SupCon
+                # anchor retains both a positive and a negative.
+                group_batches[-1].extend(query_slices[active[0]])
+                continue
+            if len(active) < 2:
+                raise RuntimeError(
+                    "Hardware adaptation could not form a two-SKU contrastive "
+                    f"batch from active SKUs={active}"
+                )
+            batch = [row for sku in active for row in grouped[sku]["gallery"]]
+            batch.extend(row for sku in active for row in query_slices[sku])
+            group_batches.append(batch)
+        batches.extend(group_batches)
     return batches
 
 
