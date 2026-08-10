@@ -1,11 +1,11 @@
-# 新 TUCam/Mosaic CCD 的唯一主配置。
-# ROI、曝光、播放延迟只在这里修改一次，正式采集、0~9 校验和曝光检查共用。
+# TUCam/Mosaic CCD 主配置。正式采集、0~9 校验、曝光检查和可选背景
+# 都读取本文件；通常只需要修改 device_roi_xywh、曝光和 data 下的目录。
 
 input_dir: ../data/amplitude_to_play
 output_dir: ../data/ccd_captured
 log_dir: ../artifacts/logs/tucam
 digit_output_dir: ../artifacts/demos/tucam_digit_sequence
-output_extension: .npy
+output_extension: .png
 settle_delay_ms: 200
 confirm_before_start: true
 
@@ -26,7 +26,7 @@ amplitude_slm:
   wait_until_visible: true
 
 phase_slm:
-  # 当前相位 SLM 仍由操作者手动加载；程序只打印所需 phase_zero.bmp 路径。
+  # 当前相位 SLM 由操作者手动加载，程序只提示所需图案。
   driver: manual
   width: 1920
   height: 1200
@@ -55,21 +55,19 @@ camera:
   anti_flicker_hz: null
   resolution_mode: null
 
-  # 唯一需要人工填写的位置：[left, top, width, height]。
-  # 厂商软件中的 ROI 不会共享给 Python。四项均须为 4 的倍数。
-  # [548, 548, 956, 956] 只是居中格式示例，不是实际标定结果。
-  # 推荐把 width/height 直接设为目标 956/956：这样相机 SDK 返回的就是
-  # 目标 ROI，而不是先采大 ROI 再软件缩放。
+  # 必须填写为 [left, top, width, height]，四项均为 4 的倍数。
+  # 厂商软件中的 ROI 不会自动共享给 Python。
   require_device_roi: true
   device_roi_xywh: null
 
-  # 推荐模式：直接保存相机硬件 ROI；不软件 resize、不扣背景、不归一化。
-  saved_frame_size_wh: null
-  saved_frame_resize_mode: none
-  # 如果必须保留较大的硬件 ROI（例如 1200x1200），但只需要一张缩小后的
-  # 956x956 图，则改成下面两项。注意这是整幅缩放，不是空间裁剪：
-  # saved_frame_size_wh: [956, 956]
-  # saved_frame_resize_mode: area
+  # 示例：硬件 ROI 为 1200×1200，但保存为目标 956×956 的 8-bit PNG。
+  # area 只适合缩小；如果硬件 ROI 本身就是 956×956，也可保持此设置。
+  saved_frame_size_wh: [956, 956]
+  saved_frame_resize_mode: area
+  saved_frame_bit_depth: 8
+  # TUCam 当前返回 uint16；固定 0..65535 线性映射到 0..255。
+  # 这是全样本一致映射，不会逐张图拉伸。若相机有效范围不同，可在此修改。
+  saved_frame_input_range: [0, 65535]
   warmup_frames: 3
   discard_frames_after_display: 1
 
@@ -87,7 +85,6 @@ calibration:
   roi_outline_width_px: 4
 
 exposure_calibration:
-  # 一般在 ROI 设置后执行一次；光强、曝光、增益或光路改变后再重测。
   exposure_times_us: [5000]
   gray_start: 0
   gray_stop: 255
@@ -99,11 +96,13 @@ exposure_calibration:
   measurement_window_size_px: 128
   saturation_fraction_warning: 0.001
 
-# 可选背景实验，不属于正式采集流程。正式原始 CCD 文件始终保留不动。
-# 每个相位层建议单独 capture 一份背景，再离线 subtract 到新目录。
+# 可选背景实验，不属于正式采集；以下路径都在这里设置，命令无需再传目录。
+# capture 生成 background.png；subtract 读取正式采集 PNG 并另存扣背景 PNG。
 optional_background:
   frames: 10
   zero_amplitude_bmp: ../artifacts/calibration/masks/amplitude/amplitude_zero.bmp
-  background_dir: ../artifacts/optional_background
+  source_capture_dir: ../data/ccd_captured
+  background_dir: ../artifacts/optional_background/current_layer
+  background_filename: background.png
   corrected_output_dir: ../data/ccd_background_subtracted
-  output_extension: .npy
+  output_extension: .png

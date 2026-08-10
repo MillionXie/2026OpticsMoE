@@ -129,13 +129,24 @@ def run(
             )
             if expected_size is not None:
                 source_size = capture_info.get("source_size_wh")
-                saved_size = capture_info.get("saved_size_wh")
-                if source_size != expected_size or saved_size != expected_size:
+                if source_size != expected_size:
                     capture_path.unlink(missing_ok=True)
                     raise RuntimeError(
-                        "Camera frame size does not match device_roi_xywh: "
-                        f"expected={expected_size}, source={source_size}, saved={saved_size}"
+                        "Camera source frame does not match device_roi_xywh: "
+                        f"expected={expected_size}, source={source_size}"
                     )
+            configured_saved_size = camera_config.get("saved_frame_size_wh")
+            expected_saved_size = (
+                [int(value) for value in configured_saved_size]
+                if configured_saved_size is not None else expected_size
+            )
+            saved_size = capture_info.get("saved_size_wh")
+            if expected_saved_size is not None and saved_size != expected_saved_size:
+                capture_path.unlink(missing_ok=True)
+                raise RuntimeError(
+                    "Saved CCD frame does not match camera.saved_frame_size_wh: "
+                    f"expected={expected_saved_size}, saved={saved_size}"
+                )
             row = {
                 "play_index": index,
                 "amplitude_bmp": amplitude_path.name,

@@ -1,154 +1,123 @@
-# Hardware SDK 最简命令
+# Hardware SDK 命令
 
-所有命令都从仓库根目录执行，并且都是完整单行命令。不要分行复制。
+所有命令都从仓库根目录执行，均为可直接复制的单行命令。
 
-## 1. 安装轻量依赖
-
-    cd D:\code\guest\2026OpticsMoE
+## 1. 安装
 
     python -m pip install -r experiments\hardware_sdk\requirements-light.txt
 
-## 2. 只修改一个配置
+## 2. 唯一主配置
 
-当前唯一主配置：
+当前 TUCam、振幅 SLM、正式采集、顺序校验、曝光检查和可选背景都读取：
 
     experiments\hardware_sdk\configs\tucam_windows.yaml
 
-在 camera 部分填写：
+实验前至少填写：
 
-    exposure_us: 5000.0
-    require_device_roi: true
-    device_roi_xywh: [left, top, width, height]
+    camera:
+      exposure_us: 5000.0
+      require_device_roi: true
+      device_roi_xywh: [left, top, width, height]
+      saved_frame_size_wh: [956, 956]
+      saved_frame_resize_mode: area
+      saved_frame_bit_depth: 8
+      saved_frame_input_range: [0, 65535]
 
-TUCam 四项 ROI 数值必须是 4 的倍数。width=956、height=956 时，正式输出直接
-保存为 956×956，不做软件 resize。
-
-推荐设置为真正的 956×956 硬件 ROI：
-
-    device_roi_xywh: [实际_left, 实际_top, 956, 956]
-    saved_frame_size_wh: null
-    saved_frame_resize_mode: none
-
-若硬件 ROI 必须保留为 1200×1200，而输出只需要缩小为 956×956，可设置：
-
-    saved_frame_size_wh: [956, 956]
-    saved_frame_resize_mode: area
-
-后者是整幅缩放，不是中心裁剪。
-
-播放延迟已经统一为：
-
-    settle_delay_ms: 200
+TUCam 的 ROI 四项必须为 4 的倍数。程序先核对 SDK 返回的原始帧是否等于硬件
+ROI，再核对保存结果是否等于 956×956，因此硬件 ROI 为 1200×1200 时也可正确
+压缩。保存格式默认为 8-bit 灰度 PNG。0～65535 到 0～255 是固定线性映射，不会
+对每张图单独拉伸。
 
 ## 3. 相机单独检查
 
     python -m experiments.hardware_sdk.tools.camera_smoke_test --config experiments\hardware_sdk\configs\tucam_windows.yaml --output-dir experiments\hardware_sdk\artifacts\demos\tucam_smoke --frames 3
 
-查看：
-
-    experiments\hardware_sdk\artifacts\demos\tucam_smoke\frame_000_preview.png
-
-并检查 NPY shape 是否等于配置 ROI 的 height×width。
-
-## 4. 可选：生成 ROI 人工观察图和曝光图案
+## 4. 生成 ROI 观察图和曝光图案
 
     python -m experiments.hardware_sdk.workflows.roi_calibration generate --config experiments\hardware_sdk\configs\tucam_windows.yaml
 
-主要输出：
+生成的 5 点、5 矩形、ROI 外框和灰度块位于：
 
-    experiments\hardware_sdk\artifacts\calibration\masks\amplitude\verify_roi_5points.bmp
-    experiments\hardware_sdk\artifacts\calibration\masks\amplitude\verify_roi_5rectangles.bmp
-    experiments\hardware_sdk\artifacts\calibration\masks\amplitude\verify_roi_outline.bmp
-    experiments\hardware_sdk\artifacts\calibration\masks\exposure\gray_000.bmp ... gray_255.bmp
+    experiments\hardware_sdk\artifacts\calibration\masks
 
-这些图只供人工观察，不执行自动 ROI 计算。
-
-## 5. 可选：0～9 播放与相机顺序校验
+## 5. 0～9 播放顺序校验
 
     python -m experiments.hardware_sdk.demos.amplitude_camera_demo --config experiments\hardware_sdk\configs\tucam_windows.yaml
 
-查看：
-
-    experiments\hardware_sdk\artifacts\demos\tucam_digit_sequence\input_vs_capture_order.png
-
-当前默认 200 ms。若右侧实拍图和左侧数字完全对应，不需要再调整。
-
-只生成 0～9 BMP、不打开设备：
+只生成图案、不打开设备：
 
     python -m experiments.hardware_sdk.demos.amplitude_camera_demo --config experiments\hardware_sdk\configs\tucam_windows.yaml --generate-only
 
-## 6. 推荐执行一次：0～255 曝光响应检查
+当前 `settle_delay_ms: 200` 表示 SLM 切图后等待 200 ms，再请求相机曝光。相机曝光
+时间由 `camera.exposure_us` 控制。
+
+## 6. 0～255 曝光响应检查
 
     python -m experiments.hardware_sdk.workflows.roi_calibration exposure --config experiments\hardware_sdk\configs\tucam_windows.yaml
 
-该流程直接统计原始相机强度，不扣 background。输出：
+结果位于：
 
-    experiments\hardware_sdk\artifacts\calibration\results\tucam\slm_response.csv
-    experiments\hardware_sdk\artifacts\calibration\results\tucam\response_curve.png
-    experiments\hardware_sdk\artifacts\calibration\results\tucam\response_curve_normalized.png
-    experiments\hardware_sdk\artifacts\calibration\results\tucam\exposure_preview.png
+    experiments\hardware_sdk\artifacts\calibration\results\tucam
 
-根据曲线人工确定曝光时间，再修改同一个 tucam_windows.yaml。光强、曝光、增益、
-ROI 或主要光路不变时，不需要每次正式实验都重跑。
+光强、曝光、增益、ROI 或主要光路不变时通常只需执行一次。
 
 ## 7. 正式采集
 
-把本轮全部 1920×1080、8-bit 灰度 BMP 放入：
-
-    experiments\hardware_sdk\data\amplitude_to_play\
-
-手动加载当前层相位 mask，然后运行：
+把本层全部 1920×1080、8-bit 灰度 BMP 放入 YAML 的 `input_dir`，手动加载本层
+相位 mask，然后运行：
 
     python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\hardware_sdk\configs\tucam_windows.yaml --clear-output
 
-输出：
+默认输入与输出：
 
-    experiments\hardware_sdk\data\ccd_captured\*.npy
-    experiments\hardware_sdk\artifacts\logs\tucam\capture_manifest.csv
-    experiments\hardware_sdk\artifacts\logs\tucam\resolved_devices.json
+    experiments\hardware_sdk\data\amplitude_to_play\*.bmp
+    experiments\hardware_sdk\data\ccd_captured\*.png
 
-这些文件就是相机硬件 ROI 的原始结果。当前流程没有 background、没有批量扣背景、
-没有几何变换，也没有额外 postprocess 命令。
+采集 manifest 与设备实际配置位于：
 
-## 8. Grocery 多层实验
+    experiments\hardware_sdk\artifacts\logs\tucam
 
-每层只需要：
+正式采集不扣背景、不做几何变换、不逐图归一化。
 
-1. 下载该层 amplitude_to_play BMP 到硬件电脑。
-2. 清理本地 data/amplitude_to_play 并复制本层 BMP。
-3. 手动加载该层相位 mask。
-4. 执行第 7 节正式采集命令。
-5. 将 data/ccd_captured 中的同名原始 NPY 上传到服务器对应层目录。
-6. 在服务器执行 Grocery 工程对应层的电子处理或微调。
-7. 下载下一层振幅，重复以上步骤。
+## 8. 可选背景扣除
 
-## 9. 旧 DVP 相机
+它不属于正式采集。背景、待处理图像和输出目录统一在主 YAML 中设置：
+
+    optional_background:
+      frames: 10
+      zero_amplitude_bmp: ../artifacts/calibration/masks/amplitude/amplitude_zero.bmp
+      source_capture_dir: ../data/ccd_captured
+      background_dir: ../artifacts/optional_background/current_layer
+      background_filename: background.png
+      corrected_output_dir: ../data/ccd_background_subtracted
+      output_extension: .png
+
+保持采集目标时的相位 mask 不变，采集全零振幅背景：
+
+    python -m experiments.hardware_sdk.workflows.optional_background capture --config experiments\hardware_sdk\configs\tucam_windows.yaml
+
+对 YAML 指定的正式采集目录扣背景：
+
+    python -m experiments.hardware_sdk.workflows.optional_background subtract --config experiments\hardware_sdk\configs\tucam_windows.yaml --clear-output
+
+背景保存为 `background.png`，扣除结果也保存为 8-bit PNG。计算为
+`maximum(raw.astype(float32) - background, 0)`，不覆盖原图、不归一化。每个相位层
+应单独采集背景，只需修改 YAML 中的目录名称。
+
+## 9. Grocery 多层实验
+
+每层重复：下载该层振幅 BMP到 `amplitude_to_play` → 手动加载相位 mask → 正式采集
+→ 将同名 PNG 上传到服务器对应 CCD 目录 → 执行该层电子处理/微调 → 下载下一层
+振幅 BMP。
+
+## 10. 旧 DVP 相机
 
     python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\hardware_sdk\configs\legacy\dvp_windows.json --clear-output
 
-## 10. 测试
+旧 DVP 配置不受 TUCam 8-bit PNG 默认值影响。
+
+## 11. 测试
 
     python -m pytest experiments\hardware_sdk\tests -q
 
     python -m pytest experiments\hardware_sdk\generators\slm_patterns\tests -q
-
-## 11. 可选背景扣除实验（不属于正式采集）
-
-正式采集的原始 CCD 文件不会自动扣背景，也不会被覆盖。建议在目标图像采集完后、光路和当前相位 mask 均未改变时运行。
-
-第一步：保持目标图像采集时使用的相位 mask，不要切换相位；程序自动给振幅 SLM 加载全零 BMP，并以 10 帧中位数保存背景：
-
-    python -m experiments.hardware_sdk.workflows.optional_background capture --config experiments\hardware_sdk\configs\tucam_windows.yaml --output-dir experiments\hardware_sdk\artifacts\optional_background\current_layer
-
-输出：
-
-    experiments\hardware_sdk\artifacts\optional_background\current_layer\background.npy
-    experiments\hardware_sdk\artifacts\optional_background\current_layer\background.tif
-    experiments\hardware_sdk\artifacts\optional_background\current_layer\background_preview.png
-    experiments\hardware_sdk\artifacts\optional_background\current_layer\background_metadata.json
-
-第二步：对正式原始图像目录离线扣背景，输出到新目录：
-
-    python -m experiments.hardware_sdk.workflows.optional_background subtract --config experiments\hardware_sdk\configs\tucam_windows.yaml --input-dir experiments\hardware_sdk\data\ccd_captured --background experiments\hardware_sdk\artifacts\optional_background\current_layer\background.npy --output-dir experiments\hardware_sdk\data\ccd_background_subtracted --output-extension .npy --clear-output
-
-计算严格为 `maximum(raw.astype(float32) - background, 0)`。不 resize、不归一化、不改变空间方向。原始 `ccd_captured` 文件始终保留。不同相位层最好分别采集背景，并把 `current_layer` 换成明确的层名称。

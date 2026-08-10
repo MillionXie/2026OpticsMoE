@@ -19,9 +19,14 @@ import numpy as np
 from PIL import Image
 
 try:
-    from ..devices import CameraDriver, DeviceError, resize_detector_intensity
+    from ..devices import (
+        CameraDriver,
+        DeviceError,
+        convert_detector_bit_depth,
+        resize_detector_intensity,
+    )
 except ImportError:  # imported by a direct hardware_sdk script
-    from devices import CameraDriver, DeviceError, resize_detector_intensity
+    from devices import CameraDriver, DeviceError, convert_detector_bit_depth, resize_detector_intensity
 
 
 class TucamCamera(CameraDriver):
@@ -43,6 +48,8 @@ class TucamCamera(CameraDriver):
         discard_frames_after_display: int = 1,
         saved_frame_size_wh: tuple[int, int] | None = None,
         saved_frame_resize_mode: str = "none",
+        saved_frame_bit_depth: int | None = None,
+        saved_frame_input_range: tuple[float, float] | None = None,
     ) -> None:
         self.sdk_path = Path(sdk_path)
         self.camera_index = int(camera_index)
@@ -58,6 +65,8 @@ class TucamCamera(CameraDriver):
         self.discard_frames_after_display = int(discard_frames_after_display)
         self.saved_frame_size_wh = saved_frame_size_wh
         self.saved_frame_resize_mode = str(saved_frame_resize_mode).lower()
+        self.saved_frame_bit_depth = saved_frame_bit_depth
+        self.saved_frame_input_range = saved_frame_input_range
         self._module: ModuleType | None = None
         self._init: Any = None
         self._open: Any = None
@@ -434,6 +443,9 @@ class TucamCamera(CameraDriver):
         array = resize_detector_intensity(
             array, self.saved_frame_size_wh, self.saved_frame_resize_mode
         )
+        array = convert_detector_bit_depth(
+            array, self.saved_frame_bit_depth, self.saved_frame_input_range
+        )
         path.parent.mkdir(parents=True, exist_ok=True)
         suffix = path.suffix.lower()
         if suffix == ".npy":
@@ -452,6 +464,11 @@ class TucamCamera(CameraDriver):
             "resized": source_size != saved_size,
             "dtype": str(array.dtype),
             "source_dtype": source_dtype,
+            "saved_frame_bit_depth": self.saved_frame_bit_depth,
+            "saved_frame_input_range": (
+                None if self.saved_frame_input_range is None
+                else list(self.saved_frame_input_range)
+            ),
             "sensor_bit_depth": int(getattr(self._frame, "ucDepth", 0)),
             "camera_frame_index": int(getattr(self._frame, "uiIndex", 0)),
         }
@@ -506,6 +523,11 @@ class TucamCamera(CameraDriver):
                 else list(self.saved_frame_size_wh)
             ),
             "saved_frame_resize_mode": self.saved_frame_resize_mode,
+            "saved_frame_bit_depth": self.saved_frame_bit_depth,
+            "saved_frame_input_range": (
+                None if self.saved_frame_input_range is None
+                else list(self.saved_frame_input_range)
+            ),
             "last_capture": self._last_capture_info,
             **self._info,
         }

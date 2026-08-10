@@ -46,7 +46,7 @@ except ImportError:  # direct execution from workflows/
 
 
 INPUT_SUFFIXES = {".npy", ".png", ".tif", ".tiff"}
-OUTPUT_SUFFIXES = {".npy", ".tif", ".tiff"}
+OUTPUT_SUFFIXES = {".npy", ".png", ".tif", ".tiff"}
 
 
 def _settings(config: dict[str, Any]) -> dict[str, Any]:
@@ -54,6 +54,9 @@ def _settings(config: dict[str, Any]) -> dict[str, Any]:
 
 
 def _expected_shape(config: dict[str, Any]) -> tuple[int, int]:
+    saved_size = config["camera"].get("saved_frame_size_wh")
+    if saved_size is not None:
+        return int(saved_size[1]), int(saved_size[0])
     roi = verify_camera_roi(dict(config["camera"]))
     if roi is None:
         raise RuntimeError("Optional background requires camera.device_roi_xywh")
@@ -146,9 +149,15 @@ def capture_background(
             f"Background shape {background.shape} does not match camera ROI {expected_shape}"
         )
 
-    background = background.astype(np.float32, copy=False)
-    np.save(output_dir / "background.npy", background)
-    Image.fromarray(background, mode="F").save(output_dir / "background.tif")
+    # The normal hardware workflow stores 8-bit PNG frames.  Keep the optional
+    # background in the same directly inspectable representation.
+    background = np.rint(background).clip(0, 255).astype(np.uint8)
+    background_path = output_dir / str(
+        settings.get("background_filename", "background.png")
+    )
+    if background_path.suffix.lower() != ".png":
+        raise ValueError("optional_background.background_filename must end in .png")
+    Image.fromarray(background, mode="L").save(background_path, format="PNG")
     _save_preview(output_dir / "background_preview.png", background)
     metadata = {
         "kind": "optional_system_background",
@@ -158,6 +167,7 @@ def capture_background(
         "aggregation": "pixelwise_median",
         "shape": list(background.shape),
         "dtype": str(background.dtype),
+        "background_file": str(background_path),
         "min": float(background.min()),
         "max": float(background.max()),
         "mean": float(background.mean()),
@@ -174,6 +184,9 @@ def capture_background(
 def _save_corrected(path: Path, value: np.ndarray) -> None:
     if path.suffix.lower() == ".npy":
         np.save(path, value.astype(np.float32, copy=False))
+    elif path.suffix.lower() == ".png":
+        converted = np.rint(value).clip(0, 255).astype(np.uint8)
+        Image.fromarray(converted, mode="L").save(path, format="PNG")
     else:
         Image.fromarray(value.astype(np.float32, copy=False), mode="F").save(path)
 
@@ -273,16 +286,22 @@ def subtract_from_config(
     background_dir = resolve_path(
         settings.get("background_dir", "../artifacts/optional_background"), base
     )
+    background_filename = str(settings.get("background_filename", "background.png"))
     return subtract_background_directory(
-        resolve_path(input_override or config["output_dir"], base),
-        resolve_path(background_override or background_dir / "background.npy", base),
+        resolve_path(
+            input_override or settings.get("source_capture_dir", config["output_dir"]),
+            base,
+        ),
+        resolve_path(
+            background_override or background_dir / background_filename, base
+        ),
         resolve_path(
             output_override
             or settings.get("corrected_output_dir", "../data/ccd_background_subtracted"),
             base,
         ),
         output_extension=output_extension
-        or str(settings.get("output_extension", ".npy")),
+        or str(settings.get("output_extension", ".png")),
         clear_output=clear_output,
     )
 

@@ -1,78 +1,37 @@
 # Hardware SDK
 
-这是可以复制到实验室 Windows 电脑独立使用的轻量硬件工程。当前新 TUCam
-主流程只做三件事：振幅 SLM 文件夹播放、相机原始 ROI 采集、曝光响应检查。
+这是可复制到实验室 Windows 电脑独立使用的轻量硬件工程。它复用现有 HOLOEYE
+振幅 SLM、TUCam/Mosaic CCD 和旧 DVP CCD 驱动，不依赖 Torch 或 Qwen。
 
-## 唯一主配置
+## 当前主流程
 
-新相机只需要修改：
+1. 从文件夹顺序播放 1920×1080、8-bit 灰度 BMP。
+2. 等待配置的 SLM 稳定时间。
+3. 由相机 SDK 采集配置的硬件 ROI。
+4. 可选用 area 将硬件 ROI 缩小到 956×956。
+5. 用全样本一致的固定范围映射保存 8-bit 灰度 PNG。
 
-`configs/tucam_windows.yaml`
+主配置只有 [configs/tucam_windows.yaml](configs/tucam_windows.yaml)。实验室通常只需
+修改相机 ROI、曝光时间、输入输出目录。`saved_frame_input_range` 默认把 TUCam 的
+uint16 0～65535 映射到 PNG 0～255；程序禁止逐图自动拉伸，以保留相对光强。
 
-正式采集、相机检查、0～9 顺序校验、ROI 图生成和曝光响应检查都读取这一个文件。
-旧 DVP 配置单独放在 `configs/legacy/`，不会和当前流程混在一起。
-
-需要人工填写：
-
-```yaml
-camera:
-  exposure_us: 5000.0
-  require_device_roi: true
-  device_roi_xywh: [left, top, width, height]
-```
-
-TUCam 的四个 ROI 数值都必须是 4 的倍数，且不得超出 2048×2048。厂商软件
-中的 ROI 不会传给新的 Python 进程，因此代码会再次通过 SDK 设置，并核对相机
-实际返回值。
-
-如果配置的 ROI 为 956×956，程序直接保存相机返回的 956×956 原始 uint8/uint16
-帧；不 resize、不扣 background、不归一化、不做几何变换。
-
-推荐让硬件 ROI 本身就是目标 ROI：
-
-```yaml
-camera:
-  device_roi_xywh: [实际_left, 实际_top, 956, 956]
-  saved_frame_size_wh: null
-  saved_frame_resize_mode: none
-```
-
-如果必须使用更大的硬件 ROI，例如 1200×1200，也可以设置
-`saved_frame_size_wh: [956,956]` 和 `saved_frame_resize_mode: area`。这会把完整
-1200×1200 视野缩小到 956×956，并不是从中裁出目标区域，因此不能替代正确的
-硬件 ROI 定位。
-
-## 最简流程
-
-1. 人工确定相机 ROI，并只在 `tucam_windows.yaml` 填写一次。
-2. 可选运行 0～9 顺序检查，确认 200 ms 延迟没有错帧。
-3. 光路和 ROI 确定后运行一次 0～255 曝光响应检查。
-4. 人工选择曝光时间，写回同一个配置。
-5. 正式播放文件夹并直接保存相机硬件 ROI 原始帧。
-
-光强、曝光、增益、ROI 或主要光路发生变化后，再重新运行曝光响应检查。当前
-流程不采集 background，也不做 background subtraction。
+可选背景扣除与正式采集分离。背景本身、扣除结果和预览均为 PNG；所有目录均在
+主 YAML 的 `optional_background` 中指定，执行命令无需再重复传路径。
 
 ## 目录
 
 ```text
 hardware_sdk/
-├── configs/
-│   ├── tucam_windows.yaml       # 当前唯一主配置
-│   ├── phase_slm_demo.yaml
-│   └── legacy/dvp_windows.json  # 旧相机兼容配置
-├── vendor_sdk/                  # 随 Git 同步的厂商 SDK
-├── drivers/                     # 相机适配层
-├── workflows/                   # 正式文件夹采集和曝光检查
-├── demos/                       # 0～9 顺序校验
+├── configs/                    # 一个 TUCam 主配置 + legacy 配置
+├── vendor_sdk/                 # 厂商 SDK
+├── drivers/                    # 薄设备适配层
+├── workflows/                  # 正式采集、曝光和可选背景
+├── demos/                      # 0～9 顺序校验
 ├── data/
 │   ├── amplitude_to_play/
-│   └── ccd_captured/
-└── artifacts/
-    ├── calibration/masks/
-    ├── calibration/results/tucam/
-    ├── demos/
-    └── logs/
+│   ├── ccd_captured/
+│   └── ccd_background_subtracted/
+└── artifacts/                  # 图案、标定输出和日志
 ```
 
-完整单行命令见 [RUN_COMMANDS.md](RUN_COMMANDS.md)。
+完整命令见 [RUN_COMMANDS.md](RUN_COMMANDS.md)。

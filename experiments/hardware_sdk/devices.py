@@ -32,6 +32,7 @@ __all__ = [
     "SLMDriver",
     "build_camera",
     "build_slm",
+    "convert_detector_bit_depth",
     "resize_detector_intensity",
     "verify_camera_roi",
 ]
@@ -132,6 +133,44 @@ def resize_detector_intensity(
     )
     limit = np.iinfo(array.dtype)
     return np.rint(resized).clip(limit.min, limit.max).astype(array.dtype)
+
+
+def convert_detector_bit_depth(
+    array: np.ndarray,
+    target_bit_depth: int | None,
+    input_range: tuple[float, float] | None = None,
+) -> np.ndarray:
+    """Convert a detector frame with a fixed, sample-independent linear map.
+
+    Per-frame min/max normalization is deliberately forbidden because it would
+    destroy optical-power differences between samples.  When ``input_range`` is
+    omitted, the full range of the source integer dtype is used.
+    """
+    if array.ndim != 2 or array.dtype not in (np.uint8, np.uint16):
+        raise DeviceError(
+            "CCD bit-depth conversion expects a 2-D uint8/uint16 array; "
+            f"got shape={array.shape} dtype={array.dtype}"
+        )
+    if target_bit_depth is None:
+        return array
+    target_bit_depth = int(target_bit_depth)
+    if target_bit_depth not in {8, 16}:
+        raise DeviceError("camera.saved_frame_bit_depth must be null, 8, or 16")
+    target_dtype = np.uint8 if target_bit_depth == 8 else np.uint16
+    if array.dtype == target_dtype:
+        return array
+    if input_range is None:
+        limits = np.iinfo(array.dtype)
+        low, high = float(limits.min), float(limits.max)
+    else:
+        low, high = float(input_range[0]), float(input_range[1])
+        if not np.isfinite([low, high]).all() or high <= low:
+            raise DeviceError(
+                "camera.saved_frame_input_range must be finite [min,max] with max>min"
+            )
+    target_max = float(np.iinfo(target_dtype).max)
+    scaled = (array.astype(np.float32) - low) / (high - low)
+    return np.rint(np.clip(scaled, 0.0, 1.0) * target_max).astype(target_dtype)
 
 
 class SLMDriver(ABC):
@@ -476,6 +515,8 @@ class DvpCamera(CameraDriver):
         discard_frames_after_display: int = 1,
         saved_frame_size_wh: tuple[int, int] | None = None,
         saved_frame_resize_mode: str = "area",
+        saved_frame_bit_depth: int | None = None,
+        saved_frame_input_range: tuple[float, float] | None = None,
     ) -> None:
         self.sdk_path = sdk_path
         self.camera_index = int(camera_index)
@@ -491,6 +532,8 @@ class DvpCamera(CameraDriver):
         self.discard_frames_after_display = int(discard_frames_after_display)
         self.saved_frame_size_wh = saved_frame_size_wh
         self.saved_frame_resize_mode = str(saved_frame_resize_mode).lower()
+        self.saved_frame_bit_depth = saved_frame_bit_depth
+        self.saved_frame_input_range = saved_frame_input_range
         self._last_capture_info: dict[str, Any] | None = None
         self._module: Any = None
         self._camera: Any = None
@@ -568,6 +611,9 @@ class DvpCamera(CameraDriver):
         array = resize_detector_intensity(
             array, self.saved_frame_size_wh, self.saved_frame_resize_mode
         )
+        array = convert_detector_bit_depth(
+            array, self.saved_frame_bit_depth, self.saved_frame_input_range
+        )
         path.parent.mkdir(parents=True, exist_ok=True)
         if path.suffix.lower() == ".npy":
             np.save(path, array)
@@ -579,6 +625,7 @@ class DvpCamera(CameraDriver):
             "resize_mode": self.saved_frame_resize_mode,
             "resized": source_size != [int(array.shape[1]), int(array.shape[0])],
             "dtype": str(array.dtype),
+            "saved_frame_bit_depth": self.saved_frame_bit_depth,
         }
 
     def close(self) -> None:
@@ -626,6 +673,8 @@ class DvpSubprocessCamera(CameraDriver):
         discard_frames_after_display: int = 1,
         saved_frame_size_wh: tuple[int, int] | None = None,
         saved_frame_resize_mode: str = "area",
+        saved_frame_bit_depth: int | None = None,
+        saved_frame_input_range: tuple[float, float] | None = None,
     ) -> None:
         self.sdk_path = sdk_path
         self.python_executable = python_executable
@@ -642,6 +691,8 @@ class DvpSubprocessCamera(CameraDriver):
         self.discard_frames_after_display = int(discard_frames_after_display)
         self.saved_frame_size_wh = saved_frame_size_wh
         self.saved_frame_resize_mode = str(saved_frame_resize_mode).lower()
+        self.saved_frame_bit_depth = saved_frame_bit_depth
+        self.saved_frame_input_range = saved_frame_input_range
         self._process: subprocess.Popen[str] | None = None
         self._info: dict[str, Any] = {}
         self._runtime_dir: Path | None = None
@@ -817,7 +868,11 @@ class DvpSubprocessCamera(CameraDriver):
                 "dvp_subprocess supports lossless .npy, .png, .tif, or .tiff captures"
             )
         path.parent.mkdir(parents=True, exist_ok=True)
-        needs_postprocess = suffix != ".npy" or self.saved_frame_size_wh is not None
+        needs_postprocess = (
+            suffix != ".npy"
+            or self.saved_frame_size_wh is not None
+            or self.saved_frame_bit_depth is not None
+        )
         raw_path = (
             path.parent / f".{path.stem}.dvp_raw.npy"
             if needs_postprocess
@@ -845,6 +900,9 @@ class DvpSubprocessCamera(CameraDriver):
                 source_size = [int(array.shape[1]), int(array.shape[0])]
                 array = resize_detector_intensity(
                     array, self.saved_frame_size_wh, self.saved_frame_resize_mode
+                )
+                array = convert_detector_bit_depth(
+                    array, self.saved_frame_bit_depth, self.saved_frame_input_range
                 )
                 if suffix == ".npy":
                     np.save(path, array)
@@ -970,6 +1028,24 @@ def build_camera(config: dict[str, Any], base: Path) -> CameraDriver:
         raise ValueError(
             "camera.saved_frame_resize_mode must be none, area, or nearest"
         )
+    saved_frame_bit_depth_raw = config.get("saved_frame_bit_depth")
+    saved_frame_bit_depth = (
+        None if saved_frame_bit_depth_raw is None else int(saved_frame_bit_depth_raw)
+    )
+    if saved_frame_bit_depth not in {None, 8, 16}:
+        raise ValueError("camera.saved_frame_bit_depth must be null, 8, or 16")
+    saved_range_raw = config.get("saved_frame_input_range")
+    saved_frame_input_range = (
+        None if saved_range_raw is None
+        else tuple(float(value) for value in saved_range_raw)
+    )
+    if saved_frame_input_range is not None and (
+        len(saved_frame_input_range) != 2
+        or saved_frame_input_range[1] <= saved_frame_input_range[0]
+    ):
+        raise ValueError(
+            "camera.saved_frame_input_range must be [min,max] with max>min"
+        )
     if saved_frame_resize_mode == "none" and saved_frame_size is not None:
         raise ValueError(
             "camera.saved_frame_size_wh must be null when "
@@ -1009,6 +1085,8 @@ def build_camera(config: dict[str, Any], base: Path) -> CameraDriver:
         discard_frames_after_display=int(config.get("discard_frames_after_display", 1)),
         saved_frame_size_wh=saved_frame_size,
         saved_frame_resize_mode=saved_frame_resize_mode,
+        saved_frame_bit_depth=saved_frame_bit_depth,
+        saved_frame_input_range=saved_frame_input_range,
     )
     if common["warmup_frames"] < 0 or common["discard_frames_after_display"] < 0:
         raise ValueError("camera warmup/discard frame counts cannot be negative")

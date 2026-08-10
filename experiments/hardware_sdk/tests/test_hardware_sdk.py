@@ -17,6 +17,7 @@ from experiments.hardware_sdk.devices import (
     _configure_dvp_camera,
     build_camera,
     build_slm,
+    convert_detector_bit_depth,
     resize_detector_intensity,
     verify_camera_roi,
 )
@@ -276,6 +277,23 @@ def test_saved_frame_none_mode_preserves_raw_array_without_copy() -> None:
     assert np.array_equal(actual, source)
 
 
+def test_saved_frame_uint16_to_uint8_uses_fixed_range_without_per_frame_stretch() -> None:
+    source = np.array([[0, 32768, 65535]], dtype=np.uint16)
+    actual = convert_detector_bit_depth(source, 8, (0, 65535))
+    assert actual.dtype == np.uint8
+    assert actual.tolist() == [[0, 128, 255]]
+    dim = convert_detector_bit_depth(
+        np.array([[0, 1000]], dtype=np.uint16), 8, (0, 65535)
+    )
+    assert dim.tolist() == [[0, 4]]
+
+
+def test_saved_frame_uint8_is_not_rescaled_by_uint16_input_range() -> None:
+    source = np.array([[0, 128, 255]], dtype=np.uint8)
+    actual = convert_detector_bit_depth(source, 8, (0, 65535))
+    assert actual is source
+
+
 def test_build_camera_accepts_explicit_unprocessed_raw_mode(tmp_path: Path) -> None:
     camera = build_camera(
         {
@@ -377,6 +395,30 @@ def test_optional_background_subtraction_is_float_clipped_and_non_destructive(
     assert summary["normalization"] is False
 
 
+def test_optional_background_supports_directly_inspectable_uint8_png(
+    tmp_path: Path,
+) -> None:
+    input_dir = tmp_path / "raw"
+    output_dir = tmp_path / "corrected"
+    input_dir.mkdir()
+    Image.fromarray(
+        np.array([[10, 20], [30, 255]], dtype=np.uint8), mode="L"
+    ).save(input_dir / "sample.png")
+    Image.fromarray(
+        np.array([[5, 25], [10, 100]], dtype=np.uint8), mode="L"
+    ).save(tmp_path / "background.png")
+    summary = subtract_background_directory(
+        input_dir,
+        tmp_path / "background.png",
+        output_dir,
+        output_extension=".png",
+    )
+    corrected = np.asarray(Image.open(output_dir / "sample.png"))
+    assert corrected.dtype == np.uint8
+    assert corrected.tolist() == [[5, 0], [20, 155]]
+    assert summary["output_extension"] == ".png"
+
+
 def test_layer_agnostic_folder_acquisition_preserves_sorted_basenames(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -450,6 +492,74 @@ def test_layer_agnostic_folder_acquisition_preserves_sorted_basenames(
         "002_c.npy",
     ]
     assert (log_dir / "capture_manifest.csv").is_file()
+
+
+def test_folder_acquisition_allows_saved_size_smaller_than_hardware_roi(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    input_dir = tmp_path / "input"
+    output_dir = tmp_path / "output"
+    input_dir.mkdir()
+    Image.new("L", (8, 8), 255).save(input_dir / "000.bmp")
+
+    class FakeSlm:
+        def __enter__(self): return self
+        def __exit__(self, *_): return None
+        def validate_runtime(self): return None
+        def preload_files(self, paths): return None
+        def display_file(self, path): return None
+        def device_info(self): return {"driver": "fake_slm"}
+
+    class FakeCamera:
+        def __enter__(self): return self
+        def __exit__(self, *_): return None
+        def validate_runtime(self): return None
+        def capture(self, path):
+            Image.fromarray(np.ones((2, 2), dtype=np.uint8), mode="L").save(path)
+            self.last = {
+                "source_size_wh": [4, 4],
+                "saved_size_wh": [2, 2],
+                "resize_mode": "area",
+                "dtype": "uint8",
+            }
+        def device_info(self):
+            return {
+                "driver": "fake_camera",
+                "device_roi_xywh": [0, 0, 4, 4],
+                "last_capture": getattr(self, "last", None),
+            }
+
+    monkeypatch.setattr(
+        "experiments.hardware_sdk.workflows.acquire_folder.build_slm",
+        lambda *_: FakeSlm(),
+    )
+    monkeypatch.setattr(
+        "experiments.hardware_sdk.workflows.acquire_folder.build_camera",
+        lambda *_: FakeCamera(),
+    )
+    config = tmp_path / "acquisition.yaml"
+    config.write_text(
+        "\n".join(
+            [
+                f"input_dir: {input_dir.as_posix()}",
+                f"output_dir: {output_dir.as_posix()}",
+                f"log_dir: {(tmp_path / 'logs').as_posix()}",
+                "output_extension: .png",
+                "confirm_before_start: false",
+                "amplitude_slm: {driver: manual}",
+                "camera:",
+                "  driver: unused",
+                "  require_device_roi: true",
+                "  device_roi_xywh: [0, 0, 4, 4]",
+                "  saved_frame_size_wh: [2, 2]",
+                "  saved_frame_resize_mode: area",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    report = run_folder_acquisition(config, assume_yes=True)
+    assert report["count"] == 1
+    assert Image.open(output_dir / "000.png").size == (2, 2)
 
 
 def test_unset_dvp_python_is_rejected_before_device_open(
