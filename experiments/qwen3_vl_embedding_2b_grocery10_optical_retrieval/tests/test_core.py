@@ -776,6 +776,20 @@ def test_hardware_config_is_stage_first_and_uses_best_checkpoint() -> None:
     assert full.amplitude_encoding_gamma == pytest.approx(0.65)
 
 
+def test_response_preserving_hardware_config_inherits_release_geometry() -> None:
+    optimized = load_hardware_config(
+        EXPERIMENT
+        / "configs"
+        / "optimization"
+        / "hardware_response_preserving.yaml"
+    )
+    assert optimized.model_config.name == "response_preserving_stage2_grocery10.yaml"
+    assert optimized.checkpoint.name == "ema_best_observed_test_checkpoint.pt"
+    assert optimized.amplitude_slm_size == (1920, 1080)
+    assert optimized.phase_slm_size == (1920, 1200)
+    assert optimized.capture_binning_factor == 2
+
+
 def test_ccd_nearest_registration_then_exact_superpixel_binning(tmp_path: Path) -> None:
     hardware = load_hardware_config(
         EXPERIMENT / "configs" / "release" / "hardware_moe4.yaml"

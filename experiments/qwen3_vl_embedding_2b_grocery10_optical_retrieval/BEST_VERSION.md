@@ -24,3 +24,17 @@
 - 限制：4×4/16 专家，与当前 MoE4 的面板、BMP、CCD 和 checkpoint 均不兼容。
 
 因此，“数值最高”是 MoE16，“最终可复现且用于真实光路”是 MoE4。对外分享时默认使用 MoE4。
+
+## 2026-08-11 MoE4 response-preserving 改进
+
+在相同 Grocery31 26 epoch → Grocery10 14 epoch 路线上，仅改进每专家 LN 后的响应保持
+与 routing weight 处理：
+
+- 固定 epoch-40 EMA：Top-1 0.696154、Top-3 0.903846、MRR 0.809182；
+- 最高观察 checkpoint（epoch 28 EMA）：Top-1 0.700000、Top-3 0.919231、MRR 0.815299；
+- 原发布 epoch-40 EMA：Top-1 0.676923。
+
+固定终点提升 1.92 个百分点（多识别正确 5/260 个 query）。最高观察结果提升 2.31 个
+百分点，但它由反复查看 test 后选择，属于 selection-biased 诊断结果。实物部署若优先
+追求当前观察精度，使用 `configs/optimization/hardware_response_preserving.yaml`；严格复现
+旧定义仍使用 `configs/release/hardware_moe4.yaml`。

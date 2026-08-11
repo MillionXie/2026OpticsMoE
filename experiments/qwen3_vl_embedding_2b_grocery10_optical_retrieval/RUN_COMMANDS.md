@@ -53,6 +53,18 @@ experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/optimization_
 固定 epoch-40 EMA 是公平对比结果；`best_observed_test_checkpoint.pt` 和
 `ema_best_observed_test_checkpoint.pt` 是反复观察 test 后选出的诊断结果，明确带有选择偏差。
 
+对当前最高观察 checkpoint 生成/处理硬件 session 时使用：
+
+```bash
+CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipeline --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/optimization/hardware_response_preserving.yaml --phase prepare --artifact-profile full
+```
+
+最后一层 CCD 已放好后：
+
+```bash
+CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipeline --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/optimization/hardware_response_preserving.yaml --phase process_language_global
+```
+
 ## 3. 生成完整四平面硬件 session
 
 生成 gallery、全部 train 和全部 test 的固定 manifest、逐层 amplitude BMP、四张 phase BMP

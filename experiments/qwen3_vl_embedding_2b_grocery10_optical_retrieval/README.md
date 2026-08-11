@@ -4,6 +4,10 @@
 `configs/release/` 中的 MoE4 两阶段方案；训练、仿真和实物处理不要与后续 token-wise
 实验混用。
 
+在不改变 MoE4 物理布局的前提下，`configs/optimization/` 还提供了相对响应保持版本：
+固定 epoch-40 EMA Top-1 为 69.62%，最高观察 checkpoint 为 70.00%。旧发布 checkpoint
+的 Top-1 为 67.69%。完整解释与选择偏差标记见 `BEST_VERSION.md`。
+
 ## 最终模型
 
 ```text

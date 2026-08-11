@@ -93,11 +93,34 @@ def _resolve(value: Any, base: Path) -> Path:
     return (path if path.is_absolute() else base / path).resolve()
 
 
-def load_hardware_config(path: str | Path) -> HardwareConfig:
-    config_path = Path(path).expanduser().resolve()
-    raw = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+def _read_hardware_config(path: Path, seen: set[Path] | None = None) -> dict[str, Any]:
+    """Read a small inherited hardware config without duplicating all knobs."""
+    path = path.resolve()
+    seen = set() if seen is None else seen
+    if path in seen:
+        raise ValueError(f"Cyclic hardware base_config reference involving {path}")
+    seen.add(path)
+    raw = yaml.safe_load(path.read_text(encoding="utf-8"))
     if not isinstance(raw, dict):
         raise ValueError("Hardware deployment config must be a YAML mapping")
+    parent_value = raw.pop("base_config", None)
+    if parent_value is None:
+        return raw
+    parent = Path(str(parent_value)).expanduser()
+    if not parent.is_absolute():
+        parent = path.parent / parent
+    merged = _read_hardware_config(parent, seen)
+    for key, value in raw.items():
+        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+            merged[key] = {**merged[key], **value}
+        else:
+            merged[key] = value
+    return merged
+
+
+def load_hardware_config(path: str | Path) -> HardwareConfig:
+    config_path = Path(path).expanduser().resolve()
+    raw = _read_hardware_config(config_path)
     base = config_path.parent
     roi = raw.get("capture", {}).get("roi_xywh")
     dtype_name = str(raw.get("simulation", {}).get("tensor_dtype", "float16"))
