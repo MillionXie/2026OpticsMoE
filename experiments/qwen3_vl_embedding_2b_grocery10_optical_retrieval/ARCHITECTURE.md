@@ -84,7 +84,7 @@ Router 只在 stack 入口计算一次，层间不会生成新的 routing weight
 - 完整 Teacher；
 - Qwen tokenizer、processor、patch/token embeddings；
 - visual bridge/merger；
--未替换 Qwen 参数和 final RMSNorm。
+- 未替换 Qwen 参数和 final RMSNorm。
 
 ## 损失
 

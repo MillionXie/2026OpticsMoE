@@ -957,13 +957,13 @@ def test_measured_gallery_prototype_objective_has_perfect_top1_and_backward() ->
     assert raw.grad is not None and torch.isfinite(raw.grad).all()
 
 
-def test_automation_config_and_replaceable_device_factories() -> None:
+def test_release_hardware_config_leaves_device_control_external() -> None:
     config_path = EXPERIMENT / "configs" / "release" / "hardware_moe4.yaml"
     automation = load_automation_config(config_path)
     assert automation.settle_delay_seconds == pytest.approx(0.040)
     assert automation.confirm_each_phase_mask
     assert automation.output_extension == ".npy"
-    assert automation.camera == {"output_extension": ".npy"}
+    assert automation.camera == {}
     assert automation.amplitude_slm == {"driver": "manual"}
     assert automation.phase_slm == {"driver": "manual"}
 
