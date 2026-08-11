@@ -1,0 +1,75 @@
+# Fair shared-expert counterpart of nonshared_grocery31_pretrain.yaml.
+# All optimization/data settings are identical; only expert phases are shared
+# across the 196 token positions through the shared base configuration.
+base_config: ../grocery10_tokenwise_vision_language_moe4_shared.yaml
+
+dataset:
+  dataset_root: ../../../../data/GroceryStoreDataset
+  variant: packaged31_pretrain
+  selected_skus:
+    - Bravo-Apple-Juice
+    - Bravo-Orange-Juice
+    - God-Morgon-Apple-Juice
+    - God-Morgon-Orange-Juice
+    - God-Morgon-Orange-Red-Grapefruit-Juice
+    - God-Morgon-Red-Grapefruit-Juice
+    - Tropicana-Apple-Juice
+    - Tropicana-Golden-Grapefruit
+    - Tropicana-Juice-Smooth
+    - Tropicana-Mandarin-Morning
+    - Arla-Ecological-Medium-Fat-Milk
+    - Arla-Lactose-Medium-Fat-Milk
+    - Arla-Medium-Fat-Milk
+    - Arla-Standard-Milk
+    - Garant-Ecological-Medium-Fat-Milk
+    - Garant-Ecological-Standard-Milk
+    - Oatly-Natural-Oatghurt
+    - Oatly-Oat-Milk
+    - Arla-Ecological-Sour-Cream
+    - Arla-Sour-Cream
+    - Arla-Sour-Milk
+    - Alpro-Blueberry-Soyghurt
+    - Alpro-Vanilla-Soyghurt
+    - Alpro-Fresh-Soy-Milk
+    - Alpro-Shelf-Soy-Milk
+    - Arla-Mild-Vanilla-Yoghurt
+    - Arla-Natural-Mild-Low-Fat-Yoghurt
+    - Arla-Natural-Yoghurt
+    - Valio-Vanilla-Yoghurt
+    - Yoggi-Strawberry-Yoghurt
+    - Yoggi-Vanilla-Yoghurt
+
+batching:
+  pk_skus_per_batch: 10
+  pk_images_per_sku: 2
+  optimizer_steps_per_epoch: 25
+
+training:
+  epochs: 40
+  learning_rate: 0.0002
+  router_learning_rate: 0.0002
+  phase_learning_rate: 0.004
+  weight_decay: 0.0
+  lambda_kd: 8.0
+  lambda_relational_kd: 0.10
+  lambda_ret: 1.0
+  lambda_teacher_gallery: 0.10
+  lambda_router_balance: 0.02
+  lambda_router_importance: 0.005
+  temperature: 0.07
+  gallery_temperature: 0.07
+  ema_decay: 0.99
+  evaluate_test_each_epoch: false
+
+augmentation:
+  enabled: true
+  crop_scale_min: 0.85
+  brightness_jitter: 0.15
+  contrast_jitter: 0.15
+  rotation_degrees: 7.0
+
+evaluation:
+  checkpoint: ema_last
+
+teacher_cache_path: ../../cache/grocery31_tokenwise_196px_teacher_embeddings.pt
+output_dir: ../../runs/optimization/shared_grocery31_pretrain

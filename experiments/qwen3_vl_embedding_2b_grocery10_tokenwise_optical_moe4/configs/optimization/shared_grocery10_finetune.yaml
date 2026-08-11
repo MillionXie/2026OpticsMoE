@@ -1,0 +1,47 @@
+# Fair shared-expert counterpart of nonshared_grocery10_finetune.yaml.
+base_config: ../grocery10_tokenwise_vision_language_moe4_shared.yaml
+
+dataset:
+  dataset_root: ../../../../data/GroceryStoreDataset
+  variant: selected10
+
+batching:
+  pk_skus_per_batch: 10
+  pk_images_per_sku: 2
+  optimizer_steps_per_epoch: 25
+
+training:
+  epochs: 40
+  learning_rate: 0.00005
+  router_learning_rate: 0.00005
+  phase_learning_rate: 0.0008
+  weight_decay: 0.0
+  lambda_kd: 8.0
+  lambda_relational_kd: 0.20
+  lambda_ret: 1.0
+  lambda_teacher_gallery: 0.25
+  lambda_router_balance: 0.02
+  lambda_router_importance: 0.005
+  temperature: 0.07
+  gallery_temperature: 0.07
+  ema_decay: 0.99
+
+augmentation:
+  enabled: true
+  crop_scale_min: 0.80
+  brightness_jitter: 0.20
+  contrast_jitter: 0.20
+  rotation_degrees: 10.0
+
+optical:
+  phase:
+    dropout_mode: block_phase_bypass
+    dropout_p: 0.03
+    dropout_block_size: 4
+    dropout_batch_shared: true
+
+evaluation:
+  checkpoint: ema_best_observed_test
+
+teacher_cache_path: ../../cache/grocery10_tokenwise_196px_teacher_embeddings.pt
+output_dir: ../../runs/optimization/shared_grocery10_from31_finetune

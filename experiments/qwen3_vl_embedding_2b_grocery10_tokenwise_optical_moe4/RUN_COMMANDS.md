@@ -112,3 +112,11 @@ It is a separate training run, not a post-training resize of the 16-µm mask.
 If CUDA memory is insufficient, lower `pk_skus_per_batch` while keeping
 `pk_images_per_sku >= 2`. Do not increase processor pixels unless the resulting
 visual token count still fits the configured token panel.
+# Shared-expert optimization (Grocery31 pretrain -> Grocery10 fine-tune)
+
+The command below is the controlled shared-expert counterpart of the
+nonshared optimization. It automatically resumes incomplete stages.
+
+```bash
+CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4.optimize_shared
+```
