@@ -81,13 +81,19 @@ def _loader(
             collate_fn=collate_grocery,
         )
         return loader, sampler
+    # Evaluation is invoked repeatedly (live + EMA) during fine-tuning.  A new
+    # multiprocessing DataLoader on every invocation leaves worker queues/file
+    # descriptors pending until Python's GC runs and eventually exhausts the
+    # process ulimit.  Evaluation preprocessing is small, so keep it in the
+    # parent process.  The long-lived training loader still uses configured
+    # workers and persistent workers above.
     loader = DataLoader(
         dataset,
         batch_size=settings.inference_batch_size,
         shuffle=False,
-        num_workers=settings.num_workers,
+        num_workers=0,
         pin_memory=torch.cuda.is_available(),
-        persistent_workers=settings.num_workers > 0,
+        persistent_workers=False,
         collate_fn=collate_grocery,
     )
     return loader, None
@@ -217,20 +223,38 @@ def train(
             f"(source epoch={payload.get('epoch')}); optimizer and epoch reset",
             flush=True,
         )
+    resume_payload: dict[str, Any] | None = None
     if resume_checkpoint is not None:
-        payload = load_checkpoint(replacement, resume_checkpoint, loaded.device)
+        resume_payload = load_checkpoint(replacement, resume_checkpoint, loaded.device)
+        payload = resume_payload
         if settings.weight_decay == payload.get("settings", {}).get("weight_decay"):
             optimizer_state = payload.get("optimizer")
             if optimizer_state is not None:
                 optimizer.load_state_dict(optimizer_state)
         start_epoch = int(payload.get("epoch", 0)) + 1
         print(f"resumed {resume_checkpoint} at epoch={start_epoch}", flush=True)
-    history: list[dict[str, Any]] = []
-    best_train_loss = float("inf")
-    best_observed_test_top1 = float("-inf")
-    best_observed_test_epoch = -1
-    best_ema_observed_test_top1 = float("-inf")
-    best_ema_observed_test_epoch = -1
+    history_path = settings.output_dir / "metrics" / "training_history.csv"
+    history = _load_training_history(history_path) if resume_checkpoint is not None else []
+    history = [row for row in history if int(row["epoch"]) < start_epoch]
+    best_train_loss = min((float(row["loss"]) for row in history), default=float("inf"))
+    observed = [row for row in history if "test_top1" in row]
+    if observed:
+        best_row = max(observed, key=lambda row: float(row["test_top1"]))
+        best_observed_test_top1 = float(best_row["test_top1"])
+        best_observed_test_epoch = int(best_row["epoch"])
+    else:
+        best_observed_test_top1 = float("-inf")
+        best_observed_test_epoch = -1
+    ema_observed = [row for row in history if "ema_test_top1" in row]
+    if ema_observed:
+        best_ema_row = max(
+            ema_observed, key=lambda row: float(row["ema_test_top1"])
+        )
+        best_ema_observed_test_top1 = float(best_ema_row["ema_test_top1"])
+        best_ema_observed_test_epoch = int(best_ema_row["epoch"])
+    else:
+        best_ema_observed_test_top1 = float("-inf")
+        best_ema_observed_test_epoch = -1
     parameters = [
         parameter
         for parameter in replacement.trainable_parameters()
@@ -241,13 +265,29 @@ def train(
         if settings.ema_decay is not None
         else None
     )
+    if ema_parameters is not None and resume_payload is not None:
+        ema_path = resume_checkpoint.with_name("ema_last_checkpoint.pt")
+        if ema_path.is_file():
+            ema_payload = torch.load(
+                ema_path, map_location=loaded.device, weights_only=False
+            )
+            if int(ema_payload.get("epoch", -1)) == start_epoch - 1:
+                replacement.load_state_dict(ema_payload)
+                ema_parameters = [
+                    parameter.detach().float().clone() for parameter in parameters
+                ]
+                replacement.load_state_dict(resume_payload)
+                print(
+                    f"restored EMA weights from {ema_path} at epoch={start_epoch - 1}",
+                    flush=True,
+                )
     teacher_gallery_prototypes = (
         _teacher_gallery_prototypes(teacher_store, bundle, loaded.device)
         if settings.lambda_teacher_gallery > 0.0
         else None
     )
-    history_path = settings.output_dir / "metrics" / "training_history.csv"
-    history_path.unlink(missing_ok=True)
+    if resume_checkpoint is None:
+        history_path.unlink(missing_ok=True)
     scaler = torch.amp.GradScaler(
         "cuda", enabled=settings.amp_enabled and loaded.device.type == "cuda"
     )
@@ -750,3 +790,19 @@ def _append_csv(path: Path, row: dict[str, Any]) -> None:
         if not exists:
             writer.writeheader()
         writer.writerow(row)
+
+
+def _load_training_history(path: Path) -> list[dict[str, Any]]:
+    if not path.is_file():
+        return []
+    rows: list[dict[str, Any]] = []
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        for raw in csv.DictReader(handle):
+            row: dict[str, Any] = {}
+            for key, value in raw.items():
+                if value is None or value == "":
+                    continue
+                row[key] = int(value) if key == "epoch" else float(value)
+            if "epoch" in row:
+                rows.append(row)
+    return rows

@@ -10,6 +10,8 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+import torch
+
 
 EXPERIMENT = "experiments.qwen3_vl_embedding_2b_grocery10_tokenwise_optical_moe4"
 
@@ -18,6 +20,13 @@ def _run(command: list[str], *, dry_run: bool) -> None:
     print("+ " + " ".join(command), flush=True)
     if not dry_run:
         subprocess.run(command, check=True)
+
+
+def _checkpoint_epoch(path: Path) -> int:
+    if not path.is_file():
+        return 0
+    payload = torch.load(path, map_location="cpu", weights_only=False)
+    return int(payload.get("epoch", 0))
 
 
 def main() -> int:
@@ -33,6 +42,8 @@ def main() -> int:
     pretrain_output = experiment_root / "runs/optimization/nonshared_grocery31_pretrain"
     finetune_output = experiment_root / "runs/optimization/nonshared_grocery10_from31_finetune"
     pretrain_checkpoint = pretrain_output / "checkpoints/ema_last_checkpoint.pt"
+    pretrain_last = pretrain_output / "checkpoints/last_checkpoint.pt"
+    finetune_last = finetune_output / "checkpoints/last_checkpoint.pt"
     final_checkpoint = (
         finetune_output
         / "checkpoints/ema_best_observed_test_top1_checkpoint.pt"
@@ -40,10 +51,10 @@ def main() -> int:
     started = time.time()
     stages: list[dict[str, object]] = []
 
-    pretrain_skipped = pretrain_checkpoint.is_file() and not args.force
+    pretrain_epoch = _checkpoint_epoch(pretrain_last)
+    pretrain_skipped = pretrain_epoch >= 40 and pretrain_checkpoint.is_file() and not args.force
     if not pretrain_skipped:
-        _run(
-            [
+        command = [
                 sys.executable,
                 "-m",
                 EXPERIMENT,
@@ -51,9 +62,10 @@ def main() -> int:
                 str(pretrain_config),
                 "--phase",
                 "all",
-            ],
-            dry_run=args.dry_run,
-        )
+            ]
+        if pretrain_epoch > 0 and not args.force:
+            command.extend(["--resume-checkpoint", str(pretrain_last)])
+        _run(command, dry_run=args.dry_run)
     stages.append(
         {
             "stage": "grocery31_pretrain",
@@ -63,14 +75,14 @@ def main() -> int:
         }
     )
 
-    finetune_skipped = final_checkpoint.is_file() and not args.force
+    finetune_epoch = _checkpoint_epoch(finetune_last)
+    finetune_skipped = finetune_epoch >= 40 and final_checkpoint.is_file() and not args.force
     if not finetune_skipped:
         if not args.dry_run and not pretrain_checkpoint.is_file():
             raise FileNotFoundError(
                 f"Pretraining checkpoint was not created: {pretrain_checkpoint}"
             )
-        _run(
-            [
+        command = [
                 sys.executable,
                 "-m",
                 EXPERIMENT,
@@ -78,11 +90,12 @@ def main() -> int:
                 str(finetune_config),
                 "--phase",
                 "all",
-                "--initialize-checkpoint",
-                str(pretrain_checkpoint),
-            ],
-            dry_run=args.dry_run,
-        )
+            ]
+        if finetune_epoch > 0 and not args.force:
+            command.extend(["--resume-checkpoint", str(finetune_last)])
+        else:
+            command.extend(["--initialize-checkpoint", str(pretrain_checkpoint)])
+        _run(command, dry_run=args.dry_run)
     stages.append(
         {
             "stage": "grocery10_finetune",
