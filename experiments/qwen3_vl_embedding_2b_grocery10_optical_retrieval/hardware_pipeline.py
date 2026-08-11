@@ -1104,14 +1104,14 @@ def main() -> int:
         help=(
             "prepare defaults to minimal (BMPs + theoretical CCD + play manifest). "
             "Use full only when manually constructing a complete bridge session; "
-            "hardware_automation selects the full profile from its YAML."
+            "Use the full profile for staged CCD replay and electronic bridges."
         ),
     )
     args = parser.parse_args()
     hardware = load_hardware_config(args.config)
     # `hardware_pipeline --phase prepare` is the human-facing export command.
     # Keep it clean by default even though the same YAML uses `full` when it is
-    # consumed by hardware_automation for iterative CCD/electronic bridges.
+    # Staged CCD/electronic bridges require the full artifact profile.
     requested_profile = args.artifact_profile
     if requested_profile is None and args.phase == "prepare":
         requested_profile = "minimal"

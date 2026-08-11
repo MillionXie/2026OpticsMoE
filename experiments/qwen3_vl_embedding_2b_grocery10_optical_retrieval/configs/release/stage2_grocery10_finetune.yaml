@@ -1,4 +1,4 @@
-base_config: grocery31_moe4_pretrain.yaml
+base_config: stage1_grocery31_pretrain.yaml
 
 # Target-10 continuation. Resume from the Grocery31 MoE4 best-train-loss
 # checkpoint; no class-dependent layer exists, so all optical/readout weights
@@ -44,4 +44,4 @@ augmentation:
   contrast_jitter: 0.20
   rotation_degrees: 10.0
 
-output_dir: ../../runs/qwen3_vl_embedding_2b_grocery10_moe4_from31_epoch40_reproduction
+output_dir: ../../runs/release_moe4_grocery10_epoch40

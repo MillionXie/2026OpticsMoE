@@ -36,13 +36,6 @@ from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_auto
     load_automation_config,
     normalized_ccd_comparison,
 )
-from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_devices import (
-    DvpSubprocessCamera,
-    HoloeyeSLM,
-    ManualSLM,
-    build_camera,
-    build_slm,
-)
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.optical_artifacts import (
     encode_amplitude_uint8,
     encode_phase_uint8,
@@ -97,7 +90,9 @@ EXPERIMENT = Path(__file__).resolve().parents[1]
 
 
 def test_main_config_has_ten_packaged_skus() -> None:
-    settings = load_settings(EXPERIMENT / "configs" / "grocery10_moe16_best.yaml")
+    settings = load_settings(
+        EXPERIMENT / "configs" / "archive" / "historical_moe16_best.yaml"
+    )
     assert len(settings.selected_skus) == 10
     assert settings.embedding_dim == 64
     assert settings.gallery_aggregation == "mean_prototype"
@@ -106,17 +101,20 @@ def test_main_config_has_ten_packaged_skus() -> None:
     )
     assert settings.expert_layers == 1
     assert settings.vision_tap_stages == (1,)
-    assert settings.output_dir.name == "qwen3_vl_embedding_2b_grocery10_moe16_best_rerun"
+    assert settings.output_dir.name == "historical_moe16_rerun"
     assert settings.num_experts == 16 and settings.expert_grid_rows == 4
 
 
-def test_only_two_canonical_model_configs_are_kept() -> None:
-    model_configs = sorted(
-        path.name
-        for path in (EXPERIMENT / "configs").glob("*.yaml")
-        if not path.name.endswith("_hardware.yaml")
-    )
-    assert model_configs == ["grocery10_moe16_best.yaml", "grocery10_moe4_latest.yaml"]
+def test_release_configs_are_small_and_explicit() -> None:
+    release = sorted(path.name for path in (EXPERIMENT / "configs" / "release").glob("*.yaml"))
+    archive = sorted(path.name for path in (EXPERIMENT / "configs" / "archive").glob("*.yaml"))
+    assert release == [
+        "hardware_moe4.yaml",
+        "model_moe4.yaml",
+        "stage1_grocery31_pretrain.yaml",
+        "stage2_grocery10_finetune.yaml",
+    ]
+    assert archive == ["historical_moe16_best.yaml"]
 
 
 def test_phase_learning_rate_gets_an_independent_optimizer_group() -> None:
@@ -193,7 +191,7 @@ def test_phase_learning_rate_gets_an_independent_optimizer_group() -> None:
 
 def test_phase_focus_schedule_and_motion_are_explicit() -> None:
     settings = load_settings(
-        EXPERIMENT / "configs" / "grocery10_moe4_latest.yaml"
+        EXPERIMENT / "configs" / "release" / "model_moe4.yaml"
     )
     assert settings.phase_focus_enabled
     assert not _phase_focus_epoch(settings, 5)
@@ -308,8 +306,12 @@ def test_parameter_ema_updates_and_restores_live_weights() -> None:
 
 
 def test_canonical_best_and_latest_configs_are_explicit() -> None:
-    best = load_settings(EXPERIMENT / "configs" / "grocery10_moe16_best.yaml")
-    latest = load_settings(EXPERIMENT / "configs" / "grocery10_moe4_latest.yaml")
+    best = load_settings(
+        EXPERIMENT / "configs" / "archive" / "historical_moe16_best.yaml"
+    )
+    latest = load_settings(
+        EXPERIMENT / "configs" / "release" / "model_moe4.yaml"
+    )
     assert best.num_experts == 16 and best.top_k == 4
     assert best.epochs == 40 and best.ema_decay == pytest.approx(0.99)
     assert best.phase_learning_rate == pytest.approx(1.0e-3)
@@ -460,7 +462,9 @@ def test_gallery_coverage_selection_is_train_only_and_deterministic(
 
 
 def test_student_has_one_expert_stage_plus_one_global_phase() -> None:
-    settings = load_settings(EXPERIMENT / "configs" / "grocery10_moe16_best.yaml")
+    settings = load_settings(
+        EXPERIMENT / "configs" / "archive" / "historical_moe16_best.yaml"
+    )
     vision = HomogeneousMoEOpticalCore(1024, 224, settings)
     language = HomogeneousMoEOpticalCore(2048, 224, settings)
     assert len(vision.expert_layers) == 1
@@ -488,7 +492,7 @@ def test_student_has_one_expert_stage_plus_one_global_phase() -> None:
 
 def test_moe4_superpixel2_geometry_and_phase_parameter_count() -> None:
     settings = load_settings(
-        EXPERIMENT / "configs" / "grocery10_moe4_latest.yaml"
+        EXPERIMENT / "configs" / "release" / "model_moe4.yaml"
     )
     geometry = MoEGeometry(
         settings.canvas_size,
@@ -554,7 +558,9 @@ def test_official_dataset_split_and_no_leakage(tmp_path: Path) -> None:
     root = tmp_path / "GroceryStoreDataset"
     dataset = root / "dataset"
     dataset.mkdir(parents=True)
-    base_settings = load_settings(EXPERIMENT / "configs" / "grocery10_moe16_best.yaml")
+    base_settings = load_settings(
+        EXPERIMENT / "configs" / "archive" / "historical_moe16_best.yaml"
+    )
     headers = [
         "Class Name (str)",
         "Class ID (int)",
@@ -586,7 +592,9 @@ def test_official_dataset_split_and_no_leakage(tmp_path: Path) -> None:
     config.write_text(
         yaml.safe_dump(
             {
-                "base_config": str(EXPERIMENT / "configs" / "grocery10_moe16_best.yaml"),
+                "base_config": str(
+                    EXPERIMENT / "configs" / "archive" / "historical_moe16_best.yaml"
+                ),
                 "dataset": {"dataset_root": str(root), "download": False},
                 "output_dir": str(tmp_path / "run"),
             }
@@ -706,38 +714,27 @@ def test_measured_intensity_entry_points_do_not_square_twice() -> None:
 
 
 def test_hardware_config_is_stage_first_and_uses_best_checkpoint() -> None:
-    best = load_hardware_config(
-        EXPERIMENT / "configs" / "grocery10_moe16_best_hardware.yaml"
-    )
-    latest = load_hardware_config(
-        EXPERIMENT / "configs" / "grocery10_moe4_latest_hardware.yaml"
-    )
-    assert best.queries_per_sku == latest.queries_per_sku == 10
-    assert best.amplitude_slm_size == latest.amplitude_slm_size == (1920, 1080)
-    assert best.phase_slm_size == latest.phase_slm_size == (1920, 1200)
-    assert best.checkpoint.name == "ema_best_train_loss_checkpoint.pt"
-    assert latest.checkpoint.name == "best_train_loss_checkpoint.pt"
-    assert best.capture_binning_factor == 1
-    assert latest.capture_binning_factor == 2
-    assert latest.capture_registration_mode == "nearest_resize"
-    assert not best.capture_flip_vertical and not best.capture_flip_horizontal
-    assert latest.capture_flip_vertical and latest.capture_flip_horizontal
-    assert best.phase_flip_vertical and latest.phase_flip_vertical
-    assert not best.minimal_artifacts and not latest.minimal_artifacts
-    assert not best.copy_checkpoint_to_output
-    assert latest.amplitude_encoding_percentile == pytest.approx(95.0)
-    assert latest.amplitude_encoding_gamma == pytest.approx(0.65)
-
     full = load_hardware_config(
-        EXPERIMENT / "configs" / "grocery10_moe4_from31_hardware.yaml"
+        EXPERIMENT / "configs" / "release" / "hardware_moe4.yaml"
     )
     assert full.selection_mode == "full_dataset"
     assert full.checkpoint.name == "ema_last_checkpoint.pt"
+    assert full.queries_per_sku == 10
+    assert full.amplitude_slm_size == (1920, 1080)
+    assert full.phase_slm_size == (1920, 1200)
+    assert full.capture_binning_factor == 2
+    assert full.capture_registration_mode == "nearest_resize"
+    assert full.capture_flip_vertical and full.capture_flip_horizontal
+    assert full.phase_flip_vertical
+    assert not full.minimal_artifacts
+    assert not full.copy_checkpoint_to_output
+    assert full.amplitude_encoding_percentile == pytest.approx(95.0)
+    assert full.amplitude_encoding_gamma == pytest.approx(0.65)
 
 
 def test_ccd_nearest_registration_then_exact_superpixel_binning(tmp_path: Path) -> None:
     hardware = load_hardware_config(
-        EXPERIMENT / "configs" / "grocery10_moe4_latest_hardware.yaml"
+        EXPERIMENT / "configs" / "release" / "hardware_moe4.yaml"
     )
     hardware = replace(
         hardware,
@@ -961,26 +958,14 @@ def test_measured_gallery_prototype_objective_has_perfect_top1_and_backward() ->
 
 
 def test_automation_config_and_replaceable_device_factories() -> None:
-    config_path = EXPERIMENT / "configs" / "grocery10_moe4_latest_hardware.yaml"
+    config_path = EXPERIMENT / "configs" / "release" / "hardware_moe4.yaml"
     automation = load_automation_config(config_path)
     assert automation.settle_delay_seconds == pytest.approx(0.040)
     assert automation.confirm_each_phase_mask
     assert automation.output_extension == ".npy"
-    assert automation.camera["auto_exposure"] is False
-    assert automation.camera["exposure_us"] == pytest.approx(10000.0)
-    assert automation.amplitude_slm["preload"] is True
-    assert isinstance(build_slm({"driver": "manual"}, EXPERIMENT), ManualSLM)
-    camera = build_camera(
-        {
-            "driver": "dvp_subprocess",
-            "sdk_path": ".",
-            "conda_env": "dvp35",
-        },
-        EXPERIMENT,
-    )
-    assert isinstance(camera, DvpSubprocessCamera)
-    holoeye = build_slm({"driver": "holoeye", "sdk_path": "."}, EXPERIMENT)
-    assert isinstance(holoeye, HoloeyeSLM)
+    assert automation.camera == {"output_extension": ".npy"}
+    assert automation.amplitude_slm == {"driver": "manual"}
+    assert automation.phase_slm == {"driver": "manual"}
 
 
 def test_ccd_comparison_reports_zero_mse_and_unit_pcc_for_identical_fields() -> None:

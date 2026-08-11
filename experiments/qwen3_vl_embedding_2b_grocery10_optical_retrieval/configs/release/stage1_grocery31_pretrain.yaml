@@ -1,4 +1,4 @@
-base_config: ../grocery10_moe4_latest.yaml
+base_config: model_moe4.yaml
 
 # Same deployable MoE4 optics, trained first on all packaged GroceryStore SKUs.
 dataset:
@@ -61,4 +61,4 @@ augmentation:
   contrast_jitter: 0.15
   rotation_degrees: 7.0
 
-output_dir: ../../runs/qwen3_vl_embedding_2b_grocery31_moe4_pretrain
+output_dir: ../../runs/release_moe4_grocery31_pretrain

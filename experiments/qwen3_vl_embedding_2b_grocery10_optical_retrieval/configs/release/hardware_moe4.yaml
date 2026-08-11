@@ -1,9 +1,9 @@
-# Hardware export/session for the improved Grocery31 -> target-10 MoE4 EMA.
-# This starts a new physical session; it does not reuse CCD captures made with
-# the older phase masks.
-model_config: optimization/grocery10_moe4_from31_strong_ema.yaml
-checkpoint: ../runs/qwen3_vl_embedding_2b_grocery10_moe4_from31_epoch40_replay/ema_last_checkpoint.pt
-output_dir: ../hardware_sessions/moe4_from31_epoch40_full_001
+# Project-specific four-plane replay/electronic bridge configuration. Physical
+# camera/SLM control stays in experiments/hardware_sdk and is intentionally not
+# duplicated here.
+model_config: stage2_grocery10_finetune.yaml
+checkpoint: ../../runs/release_moe4_grocery10_epoch40/ema_last_checkpoint.pt
+output_dir: ../../hardware_sessions/release_moe4_epoch40
 selection:
   # Export one fixed manifest containing the registered gallery, every training
   # image and every test query. The same basename is retained through all four
@@ -28,38 +28,6 @@ capture:
   binning_reduction: mean
 simulation: {tensor_dtype: float16, save_complex_fields: false}
 artifacts: {profile: full, clean_output_before_prepare: false, copy_checkpoint: false}
-automation:
-  settle_delay_ms: 40
-  confirm_each_phase_mask: true
-  resume_existing_captures: true
-  comparison_normalization: mean
-  comparison_preview_count: 8
-  devices:
-    phase_slm: {driver: manual}
-    amplitude_slm:
-      driver: holoeye
-      sdk_path: ../../hardware_sdk/vendor_sdk/amplitude_holoeye
-      binary_folder: null
-      expected_resolution_wh: [1920, 1080]
-      minimum_refresh_hz: 59.0
-      preload: true
-      wait_until_visible: true
-    camera:
-      driver: dvp_subprocess
-      sdk_path: ../../hardware_sdk/vendor_sdk/camera_dvp_legacy/lib/linux/python3.5m/x64
-      conda_env: dvp35
-      camera_index: 0
-      timeout_ms: 4000
-      output_extension: .npy
-      config_file: null
-      auto_exposure: false
-      exposure_us: 10000.0
-      analog_gain: 1.0
-      anti_flicker_hz: 0
-      resolution_mode: null
-      device_roi_xywh: null
-      warmup_frames: 3
-      discard_frames_after_display: 1
 adaptation:
   run_tag: full_train_v1
   epochs: 100

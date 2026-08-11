@@ -1,141 +1,116 @@
-# Architecture
+# MoE4 architecture
 
-## Teacher path
+## Teacher
 
 ```text
-RGB product image
-  + one fixed retrieval instruction
-→ official Qwen chat template
-→ frozen Qwen3-VL-Embedding-2B vision-language model
-→ final valid language-token hidden (2048)
-→ first 64 Matryoshka dimensions
-→ L2 normalization
-→ z_teacher [B,64]
+RGB image + fixed retrieval instruction
+→ frozen Qwen3-VL-Embedding-2B
+→ official 64D Matryoshka embedding
+→ L2 normalize
 ```
 
-Teacher is under `eval()`, `requires_grad_(False)`, and `torch.no_grad()`.
-All embeddings are materialized before Student training.
+Teacher 始终为 `eval()`、`requires_grad_(False)`，embedding 在 Student 训练前缓存。
 
-## Student path
+## Student
 
 ```text
-RGB product image + same fixed instruction
+RGB image + same instruction
 → frozen Qwen processor / patch embedding
-→ Vision Optical MoE16: one expert phase stage + one global phase
-→ frozen vision merger and one native DeepStack auxiliary injection
-→ frozen token embedding + multimodal injection
-→ Language Optical MoE16: one expert phase stage + one global phase
-→ final optical CCD intensity
-→ detector LayerNorm/nonlinearity and pool [B,224,224]
-→ select last valid token row [B,224]
-→ trainable LayerNorm(224)
-→ trainable Linear(224,64)
-→ L2 normalization
-→ z_student [B,64]
+→ Vision input adapter: hidden → 224
+→ Vision Optical MoE4
+→ Vision output adapter and frozen Qwen visual bridge
+→ frozen token embedding + one multimodal injection
+→ Language input adapter: 2048 → 224
+→ Language Optical MoE4
+→ Language output adapter: 224 → 2048
+→ frozen final RMSNorm
+→ retrieval LayerNorm + Linear(2048,64)
+→ L2 normalize
 ```
 
-The detector tensor and final embedding serve different roles:
+最终部署比较 Student query 与 Student gallery 的 cosine similarity，不存在十分类 head。
 
-- detector intensity/readout is nonnegative;
-- the post-detector Linear output is signed;
-- only the signed 64-D vector is L2-normalized for retrieval.
-
-No activation is allowed after `Linear(224,64)`.
-
-## Optical geometry per vision/language core
+## 每个 Optical MoE4 stack
 
 ```text
-Input adapter: hidden D → 224
-LayerNorm + Softplus
-token rows zero-padded to 224×224
-electronic Top-4 router
-4×4 homogeneous expert bank
-one bank of 16 experts × 224×224 phase-only masks
-10 cm propagation
-square-law detection → per-expert LayerNorm → ReLU → routed amplitude reload
-986×986 global phase active area
-10 cm propagation
-1026×1026 propagation canvas
-986×986 physical CCD ROI
-AdaptiveAvgPool → 224×224 token-row readout
+[B,224,224] amplitude
+→ electronic Top-2 router
+→ copy weighted amplitude into selected regions of a 2×2 expert bank
+→ four independent 224×224 phase-only masks
+→ 5 cm angular-spectrum propagation
+→ square-law CCD
+→ selected expert regions: independent LN → ReLU
+→ reapply the original routing weights once
+→ hard-zero all unselected expert regions
+→ reload nonnegative amplitude
+→ 478×478 global phase-only mask
+→ 5 cm angular-spectrum propagation
+→ square-law CCD
+→ 2×2 detector integration and 224×224 readout
 ```
 
-There are exactly two trainable phase planes in each optical stack:
+Router 只在 stack 入口计算一次，层间不会生成新的 routing weights。振幅入口和 phase mask
+在仿真中视为共面；实验中的理想 4f relay 不额外模拟传播。
 
-1. one heterogeneous-in-position but homogeneous-in-type bank containing
-   sixteen independent `224×224` expert masks;
-2. one shared `986×986` global phase mask.
+## 物理尺寸
 
-This experiment deliberately follows the repository's
-`qwen3_vl_2b_spaq_single_attribute_multimodal_electronic_router_moe16_224_1layer_baseline`.
-It does **not** use the four-stage MoE16 implementation.
+| 项目 | 仿真 |
+|---|---:|
+| wavelength | 532 nm |
+| pixel pitch | 16 μm |
+| expert | 224×224 |
+| expert pitch | 254 |
+| expert gap | 30 |
+| active area | 478×478 |
+| FFT canvas | 518×518 |
+| outer padding | 20 |
+| propagation distance | 5 cm |
 
-## Single auxiliary DeepStack mapping
+硬件 SLM 为 8 μm，因此每个仿真像素最近邻展开为物理 `2×2` pixels；active area 对应
+956×956。CCD 读入后先注册至 956×956，再做 2×2 mean binning 回 478×478。
 
-The electronic Teacher retains Qwen's three native DeepStack auxiliary paths.
-The one-layer Student cannot provide three distinct optical stages, so it keeps
-only the first native auxiliary route:
+## 训练边界
+
+训练：
+
+- Vision/Language input、output adapters；
+- 两个 electronic routers；
+- 8 张 expert phase masks；
+- 2 张 global phase masks；
+- retrieval LayerNorm/Linear。
+
+冻结：
+
+- 完整 Teacher；
+- Qwen tokenizer、processor、patch/token embeddings；
+- visual bridge/merger；
+-未替换 Qwen 参数和 final RMSNorm。
+
+## 损失
 
 ```text
-Vision:
-  patch hidden
-  → one expert stage
-  → auxiliary detector/readout → frozen deepstack_merger_list[0]
-  → global phase + final detector/readout → frozen final vision merger
-
-Language:
-  decoder slot 0 is bypassed and receives the one auxiliary injection
-  → the sole optical language layer is installed at decoder index 1
-  → all later decoder layers are bypassed
+8.0 × pointwise embedding KD
++ 0.1 × relational KD
++ 1.0 × supervised contrastive retrieval
++ 0.25 × student-gallery loss
++ 0.10 × teacher-gallery anchor loss
++ 0.02 × router balance
++ 0.005 × router importance
 ```
 
-No single optical tap is copied three times.
+Stage 2 使用相同目标，但降低各组学习率并增强裁剪、亮度、对比度和旋转扰动。
 
-The existing output adapter is retained because it feeds the frozen Qwen merger,
-DeepStack injection and language replacement path. Retrieval additionally reads
-the graph-carrying final language detector tensor directly.
+## 光路适配项
 
-## Trainability boundary
+- 仿真相位参数化：`2π·sigmoid(raw_phase)`；raw zero 对应初始相位 π。
+- K-space 限制：开启，0.65°。
+- phase DC loss：关闭。
+- amplitude BMP：正值 95th percentile 标定，gamma 0.65，提高暗输入可见性。
+- phase BMP：导出前上下翻转。
+- CCD：当前实验标定为上下、左右均翻转；其他光路必须重新确认。
+- 不逐样本归一化最终 embedding 之前的 CCD 功率关系；只有最终 64D embedding 做 L2 normalize。
 
-Trainable:
+## 数据隔离
 
-- Vision optical expert/global phase masks;
-- Language optical expert/global phase masks;
-- existing vision/language input and output adapters;
-- electronic Top-K routers;
-- configured optoelectronic interlayer affine parameters, if enabled;
-- retrieval `LayerNorm(224)` and `Linear(224,64)`.
-
-Frozen:
-
-- complete Teacher;
-- Student Qwen tokenizer and processor;
-- token embedding;
-- patch embedding;
-- vision merger;
-- native DeepStack machinery;
-- final RMSNorm;
-- all unreplaced Qwen parameters.
-
-The authoritative parameter inventory is generated at runtime in `model.json`.
-
-## Retrieval, not classification
-
-There is no ten-way output layer. A query is ranked against SKU gallery embeddings
-using cosine similarity. SKU labels only define positive pairs in the supervised
-contrastive loss and ground truth during evaluation.
-
-## Leakage and cache guards
-
-The subset builder rejects any shared image path across train, test and gallery.
-Teacher-cache identity contains:
-
-- subset manifest SHA256;
-- exact selected SKU order;
-- model ID;
-- instruction;
-- processor min/max pixels;
-- embedding dimension;
-- low-dimensional pooling method.
-
-Any mismatch requires an explicit cache rebuild.
+Gallery、train、test 不共享图像路径。Teacher cache identity 包含数据 manifest、SKU 顺序、
+模型 ID、instruction、processor pixel budget 和 embedding 维度；不匹配时拒绝复用。
