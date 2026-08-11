@@ -842,6 +842,9 @@ def train_optical_retrieval(
         "phase_learning_rate": settings.phase_learning_rate,
         "phase_dc_enabled": settings.phase_dc_enabled,
         "lambda_phase_dc": settings.lambda_phase_dc,
+        "lambda_router_response_consistency": (
+            settings.lambda_router_response_consistency
+        ),
         "phase_dc_start_epoch": settings.phase_dc_start_epoch,
         "optimizer_groups": [
             {
@@ -882,6 +885,7 @@ def train_optical_retrieval(
         "teacher_gallery_loss",
         "router_balance_loss",
         "router_importance_loss",
+        "router_response_consistency_loss",
         "phase_dc_loss",
         "phase_dc_weighted_loss",
         "phase_dc_current_loss",
@@ -966,6 +970,22 @@ def train_optical_retrieval(
                 f"checkpoint epoch={resumed_from_epoch}, latest train_log epoch="
                 f"{latest_logged_epoch}. Restore matching artifacts before continuing."
             )
+    best_observed_test_top1 = max(
+        (
+            float(row["test_top1"])
+            for row in rows
+            if row.get("test_top1") not in (None, "")
+        ),
+        default=-math.inf,
+    )
+    best_observed_ema_test_top1 = max(
+        (
+            float(row["ema_test_top1"])
+            for row in rows
+            if row.get("ema_test_top1") not in (None, "")
+        ),
+        default=-math.inf,
+    )
     amp_dtype = torch.bfloat16 if settings.dtype == "bfloat16" else torch.float16
     use_amp = settings.amp_enabled and loaded.device.type == "cuda"
     ema_parameters = (
@@ -1000,6 +1020,7 @@ def train_optical_retrieval(
             "teacher_gallery": 0.0,
             "balance": 0.0,
             "importance": 0.0,
+            "router_response": 0.0,
             "phase_dc": 0.0,
             "samples": 0,
             "forward_samples": 0,
@@ -1134,6 +1155,11 @@ def train_optical_retrieval(
                     router_losses["vision_importance"]
                     + router_losses["language_importance"]
                 )
+                router_response = (
+                    replacement.router_response_consistency_loss()
+                    if settings.lambda_router_response_consistency > 0.0
+                    else student.new_zeros(())
+                )
                 phase_dc_active = (
                     settings.phase_dc_enabled
                     and settings.lambda_phase_dc > 0.0
@@ -1152,6 +1178,8 @@ def train_optical_retrieval(
                     + settings.lambda_teacher_gallery * teacher_gallery
                     + settings.lambda_router_balance * balance
                     + settings.lambda_router_importance * importance
+                    + settings.lambda_router_response_consistency
+                    * router_response
                     + settings.lambda_phase_dc * dc
                 )
             if not torch.isfinite(total):
@@ -1201,6 +1229,7 @@ def train_optical_retrieval(
             totals["teacher_gallery"] += float(teacher_gallery.detach()) * count
             totals["balance"] += float(balance.detach()) * count
             totals["importance"] += float(importance.detach()) * count
+            totals["router_response"] += float(router_response.detach()) * count
             totals["phase_dc"] += float(dc.detach()) * count
             totals["samples"] += count
             totals["forward_samples"] += len(combined_samples)
@@ -1243,6 +1272,8 @@ def train_optical_retrieval(
                     f"{totals['top1_correct']/max(1, totals['retrieval_queries']):.4f} "
                     f"balance={totals['balance']/totals['samples']:.5f} "
                     f"importance={totals['importance']/totals['samples']:.5f} "
+                    f"router_response="
+                    f"{totals['router_response']/totals['samples']:.5f} "
                     f"phase_dc={totals['phase_dc']/totals['samples']:.5f} "
                     f"phase_focus={'yes' if phase_focus else 'no'} "
                     f"phase_grad="
@@ -1364,6 +1395,9 @@ def train_optical_retrieval(
             "teacher_gallery_loss": totals["teacher_gallery"] / sample_count,
             "router_balance_loss": totals["balance"] / sample_count,
             "router_importance_loss": totals["importance"] / sample_count,
+            "router_response_consistency_loss": (
+                totals["router_response"] / sample_count
+            ),
             "phase_dc_loss": totals["phase_dc"] / sample_count,
             "phase_dc_weighted_loss": (
                 settings.lambda_phase_dc * totals["phase_dc"] / sample_count
@@ -1465,6 +1499,64 @@ def train_optical_retrieval(
                     settings,
                     weight_variant="ema",
                 )
+        observed_test_top1 = test_metrics.get("top1_retrieval_accuracy")
+        if (
+            observed_test_top1 is not None
+            and float(observed_test_top1) > best_observed_test_top1
+        ):
+            best_observed_test_top1 = float(observed_test_top1)
+            observed_path = settings.output_dir / "best_observed_test_checkpoint.pt"
+            save_checkpoint(
+                observed_path,
+                replacement,
+                readout,
+                optimizer,
+                epoch,
+                average_total,
+                settings,
+                weight_variant="live",
+            )
+            write_json(
+                settings.output_dir / "metrics" / "best_observed_test.json",
+                {
+                    "epoch": epoch,
+                    "test_top1": best_observed_test_top1,
+                    "selection_criterion": "maximum repeatedly observed test Top-1",
+                    "selection_biased": True,
+                    "checkpoint": str(observed_path),
+                },
+            )
+        observed_ema_test_top1 = ema_test_metrics.get("top1_retrieval_accuracy")
+        if (
+            ema_parameters is not None
+            and observed_ema_test_top1 is not None
+            and float(observed_ema_test_top1) > best_observed_ema_test_top1
+        ):
+            best_observed_ema_test_top1 = float(observed_ema_test_top1)
+            observed_ema_path = (
+                settings.output_dir / "ema_best_observed_test_checkpoint.pt"
+            )
+            with use_parameter_ema(parameters, ema_parameters):
+                save_checkpoint(
+                    observed_ema_path,
+                    replacement,
+                    readout,
+                    optimizer,
+                    epoch,
+                    average_total,
+                    settings,
+                    weight_variant="ema",
+                )
+            write_json(
+                settings.output_dir / "metrics" / "ema_best_observed_test.json",
+                {
+                    "epoch": epoch,
+                    "test_top1": best_observed_ema_test_top1,
+                    "selection_criterion": "maximum repeatedly observed EMA test Top-1",
+                    "selection_biased": True,
+                    "checkpoint": str(observed_ema_path),
+                },
+            )
         if average_total < best_train_loss:
             best_train_loss = average_total
             continuation_checkpoint_name = (
@@ -1567,7 +1659,9 @@ def train_optical_retrieval(
             f"phase_grad={phase_gradients.get('phase_grad_rms', 0.0):.3e} "
             f"unselected_v/l={coverage['vision_router_unselected_experts']}/"
             f"{coverage['language_router_unselected_experts']} "
-            f"best_train_loss={best_train_loss:.5f}"
+            f"best_train_loss={best_train_loss:.5f} "
+            f"best_observed_test={best_observed_test_top1:.4f} "
+            f"best_observed_ema_test={best_observed_ema_test_top1:.4f}"
         )
     return {
         "additional_epochs": settings.epochs,

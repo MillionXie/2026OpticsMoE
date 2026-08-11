@@ -35,6 +35,7 @@ def evaluate_all_systems(
         or settings.output_dir / "best_train_loss_checkpoint.pt"
     )
     checkpoint = load_checkpoint(checkpoint_path, replacement, readout)
+    observed_test_selected = "observed_test" in checkpoint_path.name
     teacher_query = teacher_store.lookup(bundle.test_samples)
     teacher_gallery = teacher_store.lookup(bundle.gallery_samples)
     student_gallery = encode_student_samples(
@@ -88,7 +89,12 @@ def evaluate_all_systems(
         ].metrics,
         "checkpoint": str(checkpoint_path),
         "checkpoint_epoch": checkpoint.get("epoch"),
-        "checkpoint_selection": "minimum training total loss; test was not used",
+        "checkpoint_selection": (
+            "maximum repeatedly observed test Top-1; selection-biased diagnostic"
+            if observed_test_selected
+            else "minimum training total loss or fixed final epoch; test was not used"
+        ),
+        "selection_biased": observed_test_selected,
         "student_detector_output_shape": [
             len(bundle.test_samples),
             settings.detector_output_size,

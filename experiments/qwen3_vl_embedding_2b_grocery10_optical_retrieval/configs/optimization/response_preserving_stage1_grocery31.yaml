@@ -1,0 +1,15 @@
+base_config: ../release/stage1_grocery31_pretrain.yaml
+
+# Controlled improvement over the canonical MoE4 route. The physical layout,
+# data, losses and 26 -> 40 schedule remain unchanged. Only the OEO/router
+# treatment learned from the pose and token-wise experiments is enabled.
+optical:
+  oeo:
+    preserve_response_amplitude: true
+    response_gain_min: 0.25
+    response_gain_max: 4.0
+
+training:
+  lambda_router_response_consistency: 0.10
+
+output_dir: ../../runs/optimization_moe4_response_grocery31_pretrain

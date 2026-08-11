@@ -250,13 +250,16 @@ class HomogeneousMoEOpticalCore(nn.Module):
                                            settings.interlayer_per_expert_enabled,
                                            settings.interlayer_elementwise_affine,
                                            settings.interlayer_detector_integration_factor,
-                                           getattr(settings, "oeo_preserve_amplitude", False))
+                                           settings.oeo_preserve_response_amplitude,
+                                           settings.oeo_response_gain_min,
+                                           settings.oeo_response_gain_max)
             for _ in range(settings.expert_layers)]) if self.interlayer_enabled else nn.ModuleList()
         self.global_phase = GlobalPhasePlane(self.geometry, settings)
         self.readout = FullPlaneReadout(self.geometry, settings)
         self.output_adapter = nn.Linear(settings.input_adapter_dim, hidden_size)
         self.last_input_fields: torch.Tensor | None = None; self.last_routing: dict[str, torch.Tensor] = {}
         self.last_expert_response: torch.Tensor | None = None
+        self.last_response_gain: torch.Tensor | None = None
         self.last_amplitude_slm_canvas: torch.Tensor | None = None
         self.last_stage_fields: list[torch.Tensor] = []; self.last_detector_intensity: torch.Tensor | None = None
         self.last_detector_complex_field: torch.Tensor | None = None
@@ -339,6 +342,7 @@ class HomogeneousMoEOpticalCore(nn.Module):
         )
         routing = self.router(input_fields); self.last_routing = routing
         self.last_expert_response = None
+        self.last_response_gain = None
         field = self._direct_amplitude_load(input_fields, routing)
         self.last_amplitude_slm_canvas = (
             field.real[:capture_count].detach().cpu()
@@ -369,10 +373,14 @@ class HomogeneousMoEOpticalCore(nn.Module):
                 field = self.interlayer_conversions[index](
                     field,
                     selected_experts=routing["selected_mask"] if self.interlayer_hard_route_mask else None,
-                    routing_weights=routing["weights"] if self.interlayer_reapply_routing_weights else None)
+                    routing_weights=routing["weights"] if self.interlayer_reapply_routing_weights else None,
+                    input_amplitude_scales=routing.get("amplitude_scales"))
                 response = self.interlayer_conversions[index].last_expert_response
                 if response is not None:
                     self.last_expert_response = response
+                response_gain = self.interlayer_conversions[index].last_response_gain
+                if response_gain is not None:
+                    self.last_response_gain = response_gain
         if self.capture_intermediate_fields:
             capture_count = min(self.capture_sample_count, len(field))
             self.last_stage_fields.append(field[:capture_count].detach().cpu())
@@ -419,6 +427,30 @@ class HomogeneousMoEOpticalCore(nn.Module):
 
     def router_losses(self) -> tuple[torch.Tensor, torch.Tensor]:
         return self.last_routing["balance_loss"], self.last_routing["importance_loss"]
+
+    def router_response_consistency_loss(self) -> torch.Tensor:
+        """Align sparse routing weights with the experts' ungated CCD response.
+
+        The response target is detached: it supervises the electronic router
+        without letting the optical phases reduce this auxiliary loss by
+        changing the target itself. Only the already selected top-k experts
+        participate, so diffraction leakage into inactive apertures cannot
+        become a routing target.
+        """
+        weights = self.last_routing.get("weights")
+        selected = self.last_routing.get("selected_mask")
+        response = self.last_expert_response
+        if weights is None or selected is None or response is None:
+            if weights is None:
+                return next(self.parameters()).new_zeros(())
+            return weights.new_zeros(())
+        selected_float = selected.to(response.dtype)
+        target = response * selected_float
+        target = target / target.sum(dim=-1, keepdim=True).clamp_min(1.0e-8)
+        difference = (weights.float() - target.float()).square() * selected_float
+        return difference.sum(dim=-1).div(
+            selected_float.sum(dim=-1).clamp_min(1.0)
+        ).mean()
 
     def set_phase_dropout_active(self, active: bool) -> None:
         for layer in self.expert_layers: layer.set_phase_dropout_active(active)

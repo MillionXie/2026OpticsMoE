@@ -521,6 +521,13 @@ class DeepStackMultimodalReplacement:
             "language_importance": li,
         }
 
+    def router_response_consistency_loss(self) -> torch.Tensor:
+        vision = self.vision_surrogate.core.router_response_consistency_loss()
+        if self.language_mode != "optical_moe":
+            return vision
+        language = self.language_surrogate.core.router_response_consistency_loss()
+        return 0.5 * (vision + language)
+
     def set_phase_dropout_active(self, active: bool) -> None:
         self.vision_surrogate.set_phase_dropout_active(active)
         if self.language_mode == "optical_moe":

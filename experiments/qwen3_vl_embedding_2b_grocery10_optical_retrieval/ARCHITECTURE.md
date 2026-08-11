@@ -102,6 +102,18 @@ Stage 2 使用相同目标，但降低各组学习率并增强裁剪、亮度、
 
 ## 光路适配项
 
+### LN 与 routing weight 的处理
+
+发布版固定 checkpoint 保留原始定义：每个被选专家独立空间 LayerNorm，经过 ReLU 后
+重施加一次原始 routing weight，未选专家严格置零。改进配置额外启用
+`preserve_response_amplitude`：先从 CCD 强度计算响应 RMS，除去输入振幅 SLM 已施加的
+routing amplitude，再以同一样本所选专家的平均响应为尺度得到有界相对增益。该增益只
+恢复不同专家的相对光学响应，不重复施加 routing weight；原始 routing weight 仍只在
+ReLU 后重施加一次。
+
+可选 `lambda_router_response_consistency` 用上述去路由后的响应比例监督 router。响应目标
+detach，且只在 top-k 集合内比较，因此不会让未选区域的衍射泄漏参与路由目标。
+
 - 仿真相位参数化：`2π·sigmoid(raw_phase)`；raw zero 对应初始相位 π。
 - K-space 限制：开启，0.65°。
 - phase DC loss：关闭。

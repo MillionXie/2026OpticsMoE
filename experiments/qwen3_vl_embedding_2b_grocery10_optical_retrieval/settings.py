@@ -104,6 +104,7 @@ class Settings:
     lambda_teacher_gallery: float
     lambda_router_balance: float
     lambda_router_importance: float
+    lambda_router_response_consistency: float
     phase_dc_enabled: bool
     lambda_phase_dc: float
     phase_dc_start_epoch: int
@@ -180,6 +181,9 @@ class Settings:
     interlayer_elementwise_affine: bool
     interlayer_hard_route_mask: bool
     interlayer_reapply_routing_weights: bool
+    oeo_preserve_response_amplitude: bool
+    oeo_response_gain_min: float
+    oeo_response_gain_max: float
     interlayer_detector_integration_factor: int
     interlayer_layernorm_eps: float
     interlayer_nonlinearity: str
@@ -304,6 +308,7 @@ class Settings:
             self.lambda_teacher_gallery,
             self.lambda_router_balance,
             self.lambda_router_importance,
+            self.lambda_router_response_consistency,
             self.lambda_phase_dc,
         )
         if any(value < 0 for value in loss_weights):
@@ -354,6 +359,12 @@ class Settings:
         if self.expert_size % self.interlayer_detector_integration_factor:
             raise ValueError(
                 "expert_size must be divisible by optical.oeo.detector_integration_factor"
+            )
+        if self.oeo_response_gain_min <= 0:
+            raise ValueError("optical.oeo.response_gain_min must be positive")
+        if self.oeo_response_gain_max < self.oeo_response_gain_min:
+            raise ValueError(
+                "optical.oeo.response_gain_max must be >= response_gain_min"
             )
         if self.ema_decay is not None and not 0.0 < self.ema_decay < 1.0:
             raise ValueError("ema_decay must be strictly between 0 and 1 when configured")
@@ -419,6 +430,9 @@ class Settings:
                 "lambda_teacher_gallery": self.lambda_teacher_gallery,
                 "lambda_router_balance": self.lambda_router_balance,
                 "lambda_router_importance": self.lambda_router_importance,
+                "lambda_router_response_consistency": (
+                    self.lambda_router_response_consistency
+                ),
                 "phase_dc": {
                     "enabled": self.phase_dc_enabled,
                     "weight": self.lambda_phase_dc,
@@ -523,6 +537,11 @@ class Settings:
                     "elementwise_affine": self.interlayer_elementwise_affine,
                     "hard_route_mask": self.interlayer_hard_route_mask,
                     "reapply_routing_weights": self.interlayer_reapply_routing_weights,
+                    "preserve_response_amplitude": (
+                        self.oeo_preserve_response_amplitude
+                    ),
+                    "response_gain_min": self.oeo_response_gain_min,
+                    "response_gain_max": self.oeo_response_gain_max,
                     "detector_integration_factor": (
                         self.interlayer_detector_integration_factor
                     ),
@@ -603,6 +622,9 @@ def load_settings(path: str | Path) -> Settings:
         lambda_teacher_gallery=float(d("training.lambda_teacher_gallery", 0.0)),
         lambda_router_balance=float(d("training.lambda_router_balance", 0.0)),
         lambda_router_importance=float(d("training.lambda_router_importance", 0.0)),
+        lambda_router_response_consistency=float(
+            d("training.lambda_router_response_consistency", 0.0)
+        ),
         phase_dc_enabled=bool(
             d(
                 "training.phase_dc.enabled",
@@ -721,6 +743,15 @@ def load_settings(path: str | Path) -> Settings:
         interlayer_hard_route_mask=bool(d("optical.oeo.hard_route_mask", True)),
         interlayer_reapply_routing_weights=bool(
             d("optical.oeo.reapply_routing_weights", True)
+        ),
+        oeo_preserve_response_amplitude=bool(
+            d("optical.oeo.preserve_response_amplitude", False)
+        ),
+        oeo_response_gain_min=float(
+            d("optical.oeo.response_gain_min", 0.25)
+        ),
+        oeo_response_gain_max=float(
+            d("optical.oeo.response_gain_max", 4.0)
         ),
         interlayer_detector_integration_factor=int(
             d("optical.oeo.detector_integration_factor", 1)

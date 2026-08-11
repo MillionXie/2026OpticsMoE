@@ -121,6 +121,11 @@ optical:
     elementwise_affine: false
     hard_route_mask: true
     reapply_routing_weights: true
+    # Keep the published 67.69% checkpoint's exact forward definition.
+    # The response-preserving optimization route overrides this to true.
+    preserve_response_amplitude: false
+    response_gain_min: 0.25
+    response_gain_max: 4.0
     detector_integration_factor: 2
     layernorm_eps: 1.0e-5
     nonlinearity: relu

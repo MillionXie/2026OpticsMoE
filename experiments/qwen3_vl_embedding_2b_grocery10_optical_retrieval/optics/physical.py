@@ -167,14 +167,21 @@ class SquareDetectionLayerNormReload(nn.Module):
 
     def __init__(self, canvas_size: int, apertures: list, eps: float, nonlinearity: str,
                  per_expert_enabled: bool = True, elementwise_affine: bool = False,
-                 detector_integration_factor: int = 1, preserve_amplitude: bool = False) -> None:
+                 detector_integration_factor: int = 1,
+                 preserve_response_amplitude: bool = False,
+                 response_gain_min: float = 0.25,
+                 response_gain_max: float = 4.0) -> None:
         super().__init__()
         self.apertures = apertures
         self.eps = float(eps)
         self.nonlinearity = str(nonlinearity)
         self.per_expert_enabled = bool(per_expert_enabled)
         self.elementwise_affine = bool(elementwise_affine)
-        self.preserve_amplitude = bool(preserve_amplitude)
+        self.preserve_response_amplitude = bool(preserve_response_amplitude)
+        self.response_gain_min = float(response_gain_min)
+        self.response_gain_max = float(response_gain_max)
+        if self.response_gain_min <= 0 or self.response_gain_max < self.response_gain_min:
+            raise ValueError("Invalid OEO response-gain bounds")
         self.canvas_size = int(canvas_size)
         self.detector_integration_factor = int(detector_integration_factor)
         if self.detector_integration_factor <= 0:
@@ -203,12 +210,14 @@ class SquareDetectionLayerNormReload(nn.Module):
         # Per-expert response magnitude [B, E] of the pre-normalization crops
         # (detached), used as a routing-response consistency target.
         self.last_expert_response: torch.Tensor | None = None
+        self.last_response_gain: torch.Tensor | None = None
 
     def forward(
         self,
         field: torch.Tensor,
         selected_experts: torch.Tensor | None = None,
         routing_weights: torch.Tensor | None = None,
+        input_amplitude_scales: torch.Tensor | None = None,
     ) -> torch.Tensor:
         if self.capture_intermediate:
             count = min(self.capture_sample_count, len(field))
@@ -218,6 +227,7 @@ class SquareDetectionLayerNormReload(nn.Module):
             intensity,
             selected_experts=selected_experts,
             routing_weights=routing_weights,
+            input_amplitude_scales=input_amplitude_scales,
         )
 
     def forward_intensity(
@@ -225,6 +235,7 @@ class SquareDetectionLayerNormReload(nn.Module):
         intensity: torch.Tensor,
         selected_experts: torch.Tensor | None = None,
         routing_weights: torch.Tensor | None = None,
+        input_amplitude_scales: torch.Tensor | None = None,
     ) -> torch.Tensor:
         """Apply the electronic OEO transform to a measured CCD intensity.
 
@@ -270,23 +281,57 @@ class SquareDetectionLayerNormReload(nn.Module):
             if tuple(routing_weights.shape) != expected:
                 raise ValueError(f"routing_weights must have shape {expected}, got {tuple(routing_weights.shape)}")
             routing_weights = routing_weights.to(device=intensity.device, dtype=intensity.dtype)
+        if input_amplitude_scales is not None:
+            if tuple(input_amplitude_scales.shape) != expected:
+                raise ValueError(
+                    "input_amplitude_scales must have shape "
+                    f"{expected}, got {tuple(input_amplitude_scales.shape)}"
+                )
+            input_amplitude_scales = input_amplitude_scales.to(
+                device=intensity.device, dtype=intensity.dtype
+            )
         if self.per_expert_enabled:
             batch = intensity.shape[0]
             flat_indices = self.aperture_indices.reshape(-1)
             crops = intensity.flatten(1).index_select(1, flat_indices).reshape(
                 batch, len(self.apertures), self.expert_size, self.expert_size
             )
-            # Response magnitude of each expert's raw CCD crop. The per-expert
-            # LayerNorm below removes this amplitude, which starves the router
-            # of the "which expert responded more strongly" signal. With
-            # preserve_amplitude we re-scale the normalized shape by the L2 norm
-            # so amplitude-dependent routing gradients survive (kept detached
-            # only for the consistency-loss target, not for the forward path).
-            response = crops.flatten(-2).norm(dim=-1)
-            self.last_expert_response = response.detach()
+            # Per-expert LayerNorm intentionally removes absolute response
+            # scale. Recover only the *relative ungated response* among the
+            # selected experts: first undo the amplitude coefficient already
+            # applied at the input SLM, then divide by the selected-expert
+            # mean. This is dimensionless and bounded, unlike the former raw
+            # L2 multiplier whose scale grew with aperture size.
+            response_rms = crops.mean(dim=(-2, -1)).clamp_min(0.0).sqrt()
+            route_scales = (
+                input_amplitude_scales
+                if input_amplitude_scales is not None
+                else routing_weights
+            )
+            ungated_response = (
+                response_rms / route_scales.clamp_min(1.0e-4)
+                if route_scales is not None
+                else response_rms
+            )
+            self.last_expert_response = ungated_response.detach()
             normalized = F.layer_norm(crops, crops.shape[-2:], weight=None, bias=None, eps=self.eps)
-            if self.preserve_amplitude:
-                normalized = normalized * response[..., None, None].clamp_max(256.0)
+            if self.preserve_response_amplitude:
+                if selected_experts is None:
+                    raise RuntimeError(
+                        "Response-amplitude preservation requires selected_experts"
+                    )
+                selected = selected_experts.to(ungated_response.dtype)
+                selected_mean = (
+                    (ungated_response * selected).sum(dim=-1, keepdim=True)
+                    / selected.sum(dim=-1, keepdim=True).clamp_min(1.0)
+                ).clamp_min(1.0e-6)
+                response_gain = (ungated_response / selected_mean).clamp(
+                    self.response_gain_min, self.response_gain_max
+                )
+                normalized = normalized * response_gain[..., None, None]
+                self.last_response_gain = response_gain.detach()
+            else:
+                self.last_response_gain = None
             if self.affine_weight is not None:
                 normalized = normalized * self.affine_weight.unsqueeze(0) + self.affine_bias.unsqueeze(0)
             activated = F.relu(normalized) if self.nonlinearity == "relu" else F.softplus(normalized)

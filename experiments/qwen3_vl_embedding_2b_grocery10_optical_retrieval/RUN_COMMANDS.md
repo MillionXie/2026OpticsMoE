@@ -34,6 +34,25 @@ CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_opt
 CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/release/stage2_grocery10_finetune.yaml --phase visualize
 ```
 
+## 2.1 LN / routing-response 改进路线
+
+该路线保持相同的 MoE4 光路、Grocery31→Grocery10 数据路线和 26+14 epoch，
+只启用新版的相对响应保持和 router-response consistency：
+
+```bash
+CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.optimize_response_preserving
+```
+
+输出目录为：
+
+```text
+experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/optimization_moe4_response_grocery31_pretrain
+experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/runs/optimization_moe4_response_grocery10_epoch40
+```
+
+固定 epoch-40 EMA 是公平对比结果；`best_observed_test_checkpoint.pt` 和
+`ema_best_observed_test_checkpoint.pt` 是反复观察 test 后选出的诊断结果，明确带有选择偏差。
+
 ## 3. 生成完整四平面硬件 session
 
 生成 gallery、全部 train 和全部 test 的固定 manifest、逐层 amplitude BMP、四张 phase BMP
@@ -75,6 +94,8 @@ CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_opt
 ```bash
 CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_pipeline --config experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/release/hardware_moe4.yaml --phase process_language_global
 ```
+
+旧路径 `configs/grocery10_moe4_from31_hardware.yaml` 已在目录整理时移除；不要再使用。
 
 最终结果：
 

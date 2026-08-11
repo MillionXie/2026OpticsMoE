@@ -211,7 +211,22 @@ def test_phase_focus_schedule_and_motion_are_explicit() -> None:
     assert settings.k_space_constraint_enabled
     assert settings.theta_max_deg == pytest.approx(0.65)
     assert settings.interlayer_detector_integration_factor == 2
+    assert not settings.oeo_preserve_response_amplitude
+    assert settings.oeo_response_gain_min == pytest.approx(0.25)
+    assert settings.oeo_response_gain_max == pytest.approx(4.0)
     assert settings.optimizer_steps_per_epoch == 100
+
+
+def test_response_preserving_optimization_config_is_isolated() -> None:
+    settings = load_settings(
+        EXPERIMENT
+        / "configs"
+        / "optimization"
+        / "response_preserving_stage2_grocery10.yaml"
+    )
+    assert settings.oeo_preserve_response_amplitude
+    assert settings.lambda_router_response_consistency == pytest.approx(0.10)
+    assert settings.output_dir.name == "optimization_moe4_response_grocery10_epoch40"
 
     phase_groups = {
         "vision_expert": [nn.Parameter(torch.zeros(2, 2))],
@@ -552,6 +567,35 @@ def test_oeo_detector_integration_is_exact_two_by_two_zero_order_hold() -> None:
          [10.5, 10.5, 12.5, 12.5], [10.5, 10.5, 12.5, 12.5]]
     )
     assert torch.equal(conversion.last_input_intensity[0], expected)
+
+
+def test_oeo_preserves_bounded_relative_ungated_response() -> None:
+    conversion = SquareDetectionLayerNormReload(
+        4,
+        [Aperture(0, 2, 0, 2), Aperture(0, 2, 2, 4)],
+        1.0e-5,
+        "relu",
+        preserve_response_amplitude=True,
+        response_gain_min=0.25,
+        response_gain_max=4.0,
+    )
+    intensity = torch.zeros(1, 4, 4)
+    intensity[:, 0:2, 0:2] = 1.0
+    intensity[:, 0:2, 2:4] = 4.0
+    selected = torch.tensor([[True, True]])
+    weights = torch.tensor([[0.5, 0.5]])
+    conversion.forward_intensity(
+        intensity,
+        selected_experts=selected,
+        routing_weights=weights,
+        input_amplitude_scales=weights,
+    )
+    assert conversion.last_response_gain is not None
+    assert torch.allclose(
+        conversion.last_response_gain,
+        torch.tensor([[2.0 / 3.0, 4.0 / 3.0]]),
+        atol=1.0e-5,
+    )
 
 
 def test_official_dataset_split_and_no_leakage(tmp_path: Path) -> None:

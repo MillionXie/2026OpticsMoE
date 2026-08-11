@@ -1,0 +1,12 @@
+base_config: ../release/stage2_grocery10_finetune.yaml
+
+optical:
+  oeo:
+    preserve_response_amplitude: true
+    response_gain_min: 0.25
+    response_gain_max: 4.0
+
+training:
+  lambda_router_response_consistency: 0.10
+
+output_dir: ../../runs/optimization_moe4_response_grocery10_epoch40
