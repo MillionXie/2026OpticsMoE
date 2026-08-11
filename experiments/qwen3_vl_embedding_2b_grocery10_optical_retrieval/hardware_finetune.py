@@ -23,6 +23,7 @@ from .hardware_pipeline import (
     _replay_vision,
     _samples_by_id,
     _save_phase_mask,
+    _read_hardware_config,
     build_runtime,
     close_runtime,
     has_captured_intensity,
@@ -65,9 +66,7 @@ class AdaptationConfig:
 
 
 def load_adaptation_config(path: Path) -> AdaptationConfig:
-    import yaml
-
-    raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    raw = _read_hardware_config(path)
     values = raw.get("adaptation", {})
     result = AdaptationConfig(
         epochs=int(values.get("epochs", 20)),

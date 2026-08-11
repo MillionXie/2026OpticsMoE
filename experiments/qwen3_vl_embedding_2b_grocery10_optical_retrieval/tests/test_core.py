@@ -29,6 +29,7 @@ from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.hardware_fine
     _epoch_batches,
     _teacher_store_for_adaptation,
     configure_downstream_trainability,
+    load_adaptation_config,
     prototype_retrieval_objective,
     select_adaptation_rows,
 )
@@ -788,6 +789,10 @@ def test_response_preserving_hardware_config_inherits_release_geometry() -> None
     assert optimized.amplitude_slm_size == (1920, 1080)
     assert optimized.phase_slm_size == (1920, 1200)
     assert optimized.capture_binning_factor == 2
+    adaptation = load_adaptation_config(optimized.config_path)
+    assert adaptation.epochs == 100
+    assert adaptation.skus_per_batch == 10
+    assert adaptation.samples_per_sku == 2
 
 
 def test_ccd_nearest_registration_then_exact_superpixel_binning(tmp_path: Path) -> None:
