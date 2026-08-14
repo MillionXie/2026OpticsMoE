@@ -111,7 +111,7 @@ optical:
     # At 16 um the 950-pixel panel is 15.2 mm wide. It is a numerical
     # comparison setting and cannot be 2x-expanded onto a 1920x1200 8-um SLM.
     # Use grocery10_tokenwise_moe4_8um_hardware_geometry.yaml for direct loading.
-    pixel_pitch_um: 16.0
+    pixel_pitch_um: 8.0
     propagation_distance_m: 0.05
 
   second_plane:

@@ -1,0 +1,17 @@
+base_config: model_moe4.yaml
+
+dataset:
+  use_all_classes: true
+  selected_classes: []
+
+batching:
+  # 7,500 draws per epoch, approximately one pass over the object images.
+  optimizer_steps_per_epoch: 250
+
+training:
+  epochs: 30
+  # Avoid a full 101-class query pass after every epoch. `--phase all` still
+  # performs one explicit evaluation after the fixed final checkpoint.
+  evaluate_test_each_epoch: false
+
+output_dir: ../runs/caltech101_101class_pretrain

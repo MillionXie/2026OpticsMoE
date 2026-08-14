@@ -1,0 +1,43 @@
+base_config: model_moe4.yaml
+
+# Class-level retrieval. Caltech-101 has category labels but no object-instance IDs.
+dataset:
+  use_all_classes: false
+  selected_classes:
+    - airplanes
+    - Motorbikes
+    - Faces
+    - Leopards
+    - accordion
+    - grand_piano
+    - scorpion
+    - sunflower
+    - watch
+    - yin_yang
+
+qwen:
+  # Slice the target paths from the already computed all-101 teacher cache.
+  # Identity fields are verified before reuse; no target image is rerun through Qwen.
+  teacher_cache_source: ../runs/caltech101_101class_pretrain/teacher_cache/teacher_embeddings.pt
+
+batching:
+  optimizer_steps_per_epoch: 100
+
+training:
+  # Additional epochs 31-50 when resumed from the all-101 epoch-30 EMA model.
+  epochs: 20
+  learning_rate: 0.00002
+  adapter_learning_rate: 0.00004
+  readout_learning_rate: 0.00010
+  router_learning_rate: 0.00004
+  phase_learning_rate: 0.001
+  phase_focus: {enabled: false, warmup_epochs: 0, interval_epochs: 1}
+  resume_optimizer_state: false
+
+augmentation:
+  crop_scale_min: 0.75
+  brightness_jitter: 0.20
+  contrast_jitter: 0.20
+  rotation_degrees: 10.0
+
+output_dir: ../runs/caltech101_10class_finetune_epoch50

@@ -1,0 +1,28 @@
+base_config: caltech101_10class_finetune.yaml
+
+# Conservative expert-choice calibration from the fixed epoch-50 EMA model.
+# The training-only load update modifies the router's existing gate bias using
+# batch Top-2 frequency; it adds no deployed parameter and uses no test labels.
+batching:
+  optimizer_steps_per_epoch: 100
+
+training:
+  epochs: 3
+  learning_rate: 0.000001
+  adapter_learning_rate: 0.000001
+  readout_learning_rate: 0.000005
+  router_learning_rate: 0.00002
+  phase_learning_rate: 0.00002
+  resume_optimizer_state: false
+
+  lambda_router_balance: 0.02
+  lambda_router_importance: 0.005
+  lambda_router_hard_load_balance: 0.0
+  router_load_bias_update_rate: 0.002
+  router_load_bias_update_start_epoch: 1
+  lambda_router_response_consistency: 0.10
+  phase_focus: {enabled: false, warmup_epochs: 0, interval_epochs: 1}
+  ema_decay: 0.99
+
+output_dir: ../runs/caltech101_10class_router_bias_rebalance_epoch53
+

@@ -1,0 +1,32 @@
+base_config: caltech101_10class_finetune.yaml
+
+# Post-training router rebalance continuation.
+# Resume from the fixed epoch-50 EMA checkpoint; do not overwrite the 93.88%
+# baseline.  The new hard-load loss acts on actual Top-2 selection frequency
+# through a straight-through gradient, while the original importance term keeps
+# soft probabilities smooth.
+batching:
+  optimizer_steps_per_epoch: 100
+
+training:
+  # Five conservative additional epochs: absolute epoch 51-55.
+  epochs: 5
+  learning_rate: 0.000002
+  adapter_learning_rate: 0.000002
+  readout_learning_rate: 0.00001
+  router_learning_rate: 0.00008
+  phase_learning_rate: 0.00005
+  resume_optimizer_state: false
+
+  # Original 0.02 balance contributed only about 0.02 in weighted magnitude and
+  # did not directly penalize deterministic Top-2 collapse. Retain a mild soft
+  # regularizer and add the explicit hard-load term.
+  lambda_router_balance: 0.02
+  lambda_router_importance: 0.01
+  lambda_router_hard_load_balance: 0.05
+  lambda_router_response_consistency: 0.10
+
+  phase_focus: {enabled: false, warmup_epochs: 0, interval_epochs: 1}
+  ema_decay: 0.99
+
+output_dir: ../runs/caltech101_10class_router_rebalance_epoch55

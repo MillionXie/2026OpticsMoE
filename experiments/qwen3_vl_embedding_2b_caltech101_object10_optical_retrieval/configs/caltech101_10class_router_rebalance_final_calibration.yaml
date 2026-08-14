@@ -1,0 +1,10 @@
+base_config: caltech101_10class_router_bias_rebalance.yaml
+
+# One epoch only: move actual Top-2 load, then stop moving the routing target.
+training:
+  epochs: 1
+  router_load_bias_update_rate: 0.005
+  phase_learning_rate: 0.00002
+
+output_dir: ../runs/caltech101_10class_router_rebalance_final_calibration_epoch51
+

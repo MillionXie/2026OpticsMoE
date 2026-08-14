@@ -1,0 +1,18 @@
+base_config: model_moe4.yaml
+
+dataset:
+  use_all_classes: true
+  selected_classes: []
+
+batching:
+  # 9,000 training examples per epoch; rotating PK batches repeatedly cover
+  # the roughly 30k training images without making one epoch excessively long.
+  optimizer_steps_per_epoch: 300
+
+training:
+  epochs: 30
+  # Avoid a full 50-class query pass after every epoch. `--phase all` still
+  # performs one explicit evaluation after the fixed final checkpoint.
+  evaluate_test_each_epoch: false
+
+output_dir: ../runs/awa2_50class_pretrain

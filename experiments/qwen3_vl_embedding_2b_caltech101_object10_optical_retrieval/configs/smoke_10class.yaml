@@ -1,0 +1,26 @@
+base_config: caltech101_10class_finetune.yaml
+
+dataset:
+  # This smoke test reuses an already downloaded official Caltech101 tree.
+  download: false
+  train_limit_per_class: 3
+  test_limit_per_class: 1
+  gallery_images_per_class: 1
+
+batching:
+  teacher_batch_size: 1
+  batch_size: 20
+  pk_classes_per_batch: 10
+  pk_images_per_class: 2
+  inference_batch_size: 1
+  num_workers: 0
+  optimizer_steps_per_epoch: 1
+
+training:
+  epochs: 1
+  amp_enabled: false
+  log_interval_batches: 1
+  phase_focus: {enabled: false, warmup_epochs: 0, interval_epochs: 1}
+
+visualization: {sample_count: 2}
+output_dir: ../runs/smoke_10class

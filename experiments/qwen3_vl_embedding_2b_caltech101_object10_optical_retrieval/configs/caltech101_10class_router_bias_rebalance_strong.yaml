@@ -1,0 +1,10 @@
+base_config: caltech101_10class_router_bias_rebalance.yaml
+
+# Stronger three-epoch calibration branch used to map the accuracy/balance
+# trade-off. It still resumes independently from the original epoch-50 EMA.
+training:
+  router_load_bias_update_rate: 0.01
+  phase_learning_rate: 0.00005
+
+output_dir: ../runs/caltech101_10class_router_bias_rebalance_strong_epoch53
+

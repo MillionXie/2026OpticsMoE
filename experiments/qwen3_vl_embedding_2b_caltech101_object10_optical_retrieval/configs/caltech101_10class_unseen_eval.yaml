@@ -1,0 +1,26 @@
+base_config: model_moe4.yaml
+
+# These classes are held out from the target-10 fine-tuning stage, but were
+# present in the all-101 pretraining stage. This measures retained transfer,
+# not strict unseen-to-pretraining zero-shot generalization.
+dataset:
+  use_all_classes: false
+  selected_classes:
+    - butterfly
+    - camera
+    - chair
+    - dolphin
+    - elephant
+    - laptop
+    - pizza
+    - saxophone
+    - soccer_ball
+    - umbrella
+
+qwen:
+  teacher_cache_source: ../runs/caltech101_101class_pretrain/teacher_cache/teacher_embeddings.pt
+
+training:
+  evaluate_test_each_epoch: false
+
+output_dir: ../runs/caltech101_10class_unseen_eval

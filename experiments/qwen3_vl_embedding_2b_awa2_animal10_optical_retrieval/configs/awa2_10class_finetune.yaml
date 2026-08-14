@@ -1,0 +1,43 @@
+base_config: model_moe4.yaml
+
+# Class-level retrieval. AwA2 has species labels but no individual-animal IDs.
+dataset:
+  use_all_classes: false
+  selected_classes:
+    - antelope
+    - grizzly+bear
+    - killer+whale
+    - beaver
+    - dalmatian
+    - persian+cat
+    - horse
+    - german+shepherd
+    - zebra
+    - dolphin
+
+qwen:
+  # Slice the target paths from the already computed all-50 teacher cache.
+  # Identity fields are verified before reuse; no target image is rerun through Qwen.
+  teacher_cache_source: ../runs/awa2_50class_pretrain/teacher_cache/teacher_embeddings.pt
+
+batching:
+  optimizer_steps_per_epoch: 120
+
+training:
+  # Additional epochs 31-50 when resumed from the all-50 epoch-30 EMA model.
+  epochs: 20
+  learning_rate: 0.00002
+  adapter_learning_rate: 0.00004
+  readout_learning_rate: 0.00010
+  router_learning_rate: 0.00004
+  phase_learning_rate: 0.001
+  phase_focus: {enabled: false, warmup_epochs: 0, interval_epochs: 1}
+  resume_optimizer_state: false
+
+augmentation:
+  crop_scale_min: 0.75
+  brightness_jitter: 0.20
+  contrast_jitter: 0.20
+  rotation_degrees: 10.0
+
+output_dir: ../runs/awa2_10class_finetune_epoch50

@@ -1,0 +1,17 @@
+base_config: caltech101_10class_router_bias_rebalance_strong.yaml
+
+# Recovery stage after strong load calibration. Router choices are frozen;
+# phases/adapters/readout learn to use the newly activated experts.
+training:
+  epochs: 5
+  learning_rate: 0.000005
+  adapter_learning_rate: 0.00002
+  readout_learning_rate: 0.00005
+  router_learning_rate: 0.0
+  phase_learning_rate: 0.001
+  router_load_bias_update_rate: 0.0
+  lambda_router_hard_load_balance: 0.0
+  resume_optimizer_state: false
+
+output_dir: ../runs/caltech101_10class_router_bias_rebalance_strong_recovery_epoch58
+
