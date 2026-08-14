@@ -168,13 +168,16 @@ class DatasetBundle:
 
 def _download_with_resume(url: str, destination: Path) -> None:
     destination.parent.mkdir(parents=True, exist_ok=True)
-    if destination.exists() and destination.stat().st_size > 0:
-        return
-    wget = shutil.which("wget")
-    if wget is not None:
-        subprocess.run([wget, "-c", url, "-O", str(destination)], check=True)
+    if destination.exists() and destination.stat().st_size > 0 and tarfile.is_tarfile(destination):
         return
     temporary = destination.with_suffix(destination.suffix + ".part")
+    if destination.exists() and not temporary.exists():
+        destination.replace(temporary)
+    wget = shutil.which("wget")
+    if wget is not None:
+        subprocess.run([wget, "-c", url, "-O", str(temporary)], check=True)
+        temporary.replace(destination)
+        return
     headers: dict[str, str] = {}
     mode = "wb"
     if temporary.exists():
