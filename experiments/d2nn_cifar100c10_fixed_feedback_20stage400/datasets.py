@@ -166,9 +166,25 @@ class DatasetBundle:
     finetune_test: CIFAR100CorruptionView
 
 
-def _download_with_resume(url: str, destination: Path) -> None:
+CIFAR100C_ARCHIVE_BYTES = 2_918_473_216
+
+
+def _archive_is_complete(path: Path, *, expected_bytes: int) -> bool:
+    return (
+        path.exists()
+        and path.stat().st_size == expected_bytes
+        and tarfile.is_tarfile(path)
+    )
+
+
+def _download_with_resume(
+    url: str,
+    destination: Path,
+    *,
+    expected_bytes: int = CIFAR100C_ARCHIVE_BYTES,
+) -> None:
     destination.parent.mkdir(parents=True, exist_ok=True)
-    if destination.exists() and destination.stat().st_size > 0 and tarfile.is_tarfile(destination):
+    if _archive_is_complete(destination, expected_bytes=expected_bytes):
         return
     temporary = destination.with_suffix(destination.suffix + ".part")
     if destination.exists() and not temporary.exists():
@@ -176,6 +192,11 @@ def _download_with_resume(url: str, destination: Path) -> None:
     wget = shutil.which("wget")
     if wget is not None:
         subprocess.run([wget, "-c", url, "-O", str(temporary)], check=True)
+        if temporary.stat().st_size != expected_bytes:
+            raise RuntimeError(
+                f"CIFAR-100-C download is incomplete: {temporary.stat().st_size} "
+                f"of {expected_bytes} bytes. Re-run prepare_data to resume it."
+            )
         temporary.replace(destination)
         return
     headers: dict[str, str] = {}
@@ -184,8 +205,17 @@ def _download_with_resume(url: str, destination: Path) -> None:
         headers["Range"] = f"bytes={temporary.stat().st_size}-"
         mode = "ab"
     request = urllib.request.Request(url, headers=headers)
-    with urllib.request.urlopen(request, timeout=120) as response, temporary.open(mode) as output:
-        shutil.copyfileobj(response, output, length=8 * 1024 * 1024)
+    with urllib.request.urlopen(request, timeout=120) as response:
+        # Some mirrors ignore Range and return the complete object. In that
+        # case overwrite the partial archive instead of appending a duplicate.
+        response_mode = mode if getattr(response, "status", None) == 206 else "wb"
+        with temporary.open(response_mode) as output:
+            shutil.copyfileobj(response, output, length=8 * 1024 * 1024)
+    if temporary.stat().st_size != expected_bytes:
+        raise RuntimeError(
+            f"CIFAR-100-C download is incomplete: {temporary.stat().st_size} "
+            f"of {expected_bytes} bytes. Re-run prepare_data to resume it."
+        )
     temporary.replace(destination)
 
 
