@@ -77,3 +77,23 @@ the natural number of PK batches, and emphasizes frozen-Teacher targets over
 the current Student gallery. Use a chronologically chosen `ema_last` checkpoint
 rather than a test-selected `ema_best_observed_test` checkpoint for an unbiased
 comparison.
+
+## Recommended full retraining
+
+Grocery10 contains only 306 training images. The checked-in full retraining
+route first uses all 31 packaged GroceryStore SKUs (964 train images), then
+adapts to the target ten SKUs. Both stages use natural-length epochs, fixed
+training schedules, nonzero AdamW learning rates and no per-epoch test peeking.
+
+All commands are in one executable file:
+
+```bash
+GPU_ID=1 bash \
+  experiments/qwen3_vl_embedding_2b_grocery10_robust_hybrid_retrieval/commands/01_retrain_grocery31_to_grocery10.sh
+```
+
+Stage 1 uses `1e-4` for electronics, `5e-5` for router/phase and 60 natural
+epochs. Stage 2 uses `5e-5` electronics, `2e-5` router, `1e-5` phase and 20
+natural epochs. The script reuses compatible Teacher caches when present,
+refuses to overwrite an existing checkpoint, evaluates only fixed final EMA
+checkpoints, and writes separate logs/output directories for both stages.

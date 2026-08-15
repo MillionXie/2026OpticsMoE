@@ -1,0 +1,73 @@
+base_config: ../release/robust_hybrid_moe4.yaml
+
+# In-domain representation pretraining on all 31 packaged GroceryStore SKUs:
+# 964 train, 781 test and 31 iconic gallery images. Test is evaluated only
+# after the fixed 60-epoch schedule, never used for checkpoint selection.
+dataset:
+  selected_skus:
+    - Bravo-Apple-Juice
+    - Bravo-Orange-Juice
+    - God-Morgon-Apple-Juice
+    - God-Morgon-Orange-Juice
+    - God-Morgon-Orange-Red-Grapefruit-Juice
+    - God-Morgon-Red-Grapefruit-Juice
+    - Tropicana-Apple-Juice
+    - Tropicana-Golden-Grapefruit
+    - Tropicana-Juice-Smooth
+    - Tropicana-Mandarin-Morning
+    - Arla-Ecological-Medium-Fat-Milk
+    - Arla-Lactose-Medium-Fat-Milk
+    - Arla-Medium-Fat-Milk
+    - Arla-Standard-Milk
+    - Garant-Ecological-Medium-Fat-Milk
+    - Garant-Ecological-Standard-Milk
+    - Oatly-Natural-Oatghurt
+    - Oatly-Oat-Milk
+    - Arla-Ecological-Sour-Cream
+    - Arla-Sour-Cream
+    - Arla-Sour-Milk
+    - Alpro-Blueberry-Soyghurt
+    - Alpro-Vanilla-Soyghurt
+    - Alpro-Fresh-Soy-Milk
+    - Alpro-Shelf-Soy-Milk
+    - Arla-Mild-Vanilla-Yoghurt
+    - Arla-Natural-Mild-Low-Fat-Yoghurt
+    - Arla-Natural-Yoghurt
+    - Valio-Vanilla-Yoghurt
+    - Yoggi-Strawberry-Yoghurt
+    - Yoggi-Vanilla-Yoghurt
+
+batching:
+  # Natural epoch: ceil(964 / 30) = 33 optimizer updates.
+  optimizer_steps_per_epoch: null
+
+training:
+  epochs: 60
+  # Conventional AdamW fine-tuning scale. Phase remains lower than electronics
+  # because the physical mask should move smoothly.
+  learning_rate: 0.0001
+  adapter_learning_rate: 0.0001
+  readout_learning_rate: 0.0001
+  router_learning_rate: 0.00005
+  phase_learning_rate: 0.00005
+  weight_decay: 0.0001
+  lambda_kd: 8.0
+  lambda_relational_kd: 0.5
+  lambda_ret: 1.0
+  lambda_gallery: 0.25
+  lambda_teacher_gallery: 0.5
+  lambda_router_balance: 0.02
+  lambda_router_importance: 0.005
+  phase_focus: {enabled: false, warmup_epochs: 0, interval_epochs: 2}
+  ema_decay: 0.995
+  resume_optimizer_state: false
+  evaluate_test_each_epoch: false
+
+augmentation:
+  enabled: true
+  crop_scale_min: 0.75
+  brightness_jitter: 0.20
+  contrast_jitter: 0.20
+  rotation_degrees: 10.0
+
+output_dir: ../../runs/robust_hybrid_grocery31_pretrain

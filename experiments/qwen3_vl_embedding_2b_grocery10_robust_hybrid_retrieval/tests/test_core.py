@@ -22,6 +22,12 @@ REGULARIZED_CONFIG = (
     / "continuation"
     / "regularized_electronic_finetune.yaml"
 )
+STAGE1_RETRAIN_CONFIG = (
+    EXPERIMENT_DIR / "configs" / "retrain" / "stage1_grocery31_pretrain.yaml"
+)
+STAGE2_RETRAIN_CONFIG = (
+    EXPERIMENT_DIR / "configs" / "retrain" / "stage2_grocery10_finetune.yaml"
+)
 
 
 def test_robust_configuration_is_deliberate() -> None:
@@ -49,6 +55,26 @@ def test_regularized_continuation_reduces_memorization_pressure() -> None:
     assert settings.lambda_teacher_gallery > settings.lambda_gallery
     assert settings.crop_scale_min == pytest.approx(0.75)
     assert settings.readout_dropout == pytest.approx(0.25)
+
+
+def test_two_stage_retraining_uses_natural_epochs_and_normal_lrs() -> None:
+    stage1 = load_settings(STAGE1_RETRAIN_CONFIG)
+    stage2 = load_settings(STAGE2_RETRAIN_CONFIG)
+    assert len(stage1.selected_skus) == 31
+    assert len(stage2.selected_skus) == 10
+    assert stage1.optimizer_steps_per_epoch is None
+    assert stage2.optimizer_steps_per_epoch is None
+    assert stage1.learning_rate == pytest.approx(1.0e-4)
+    assert stage1.adapter_learning_rate == pytest.approx(1.0e-4)
+    assert stage1.readout_learning_rate == pytest.approx(1.0e-4)
+    assert stage1.router_learning_rate == pytest.approx(5.0e-5)
+    assert stage1.phase_learning_rate == pytest.approx(5.0e-5)
+    assert stage2.learning_rate == pytest.approx(5.0e-5)
+    assert stage2.phase_learning_rate == pytest.approx(1.0e-5)
+    assert stage1.weight_decay == pytest.approx(1.0e-4)
+    assert stage2.weight_decay == pytest.approx(1.0e-4)
+    assert not stage1.evaluate_test_each_epoch
+    assert not stage2.evaluate_test_each_epoch
 
 
 def test_zero_fill_translation_does_not_wrap() -> None:

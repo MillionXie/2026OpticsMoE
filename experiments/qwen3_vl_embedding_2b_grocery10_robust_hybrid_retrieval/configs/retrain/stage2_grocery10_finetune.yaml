@@ -1,0 +1,48 @@
+base_config: stage1_grocery31_pretrain.yaml
+
+# Fixed-length target-domain adaptation from stage-1 ema_last_checkpoint.pt.
+dataset:
+  selected_skus:
+    - God-Morgon-Orange-Juice
+    - Tropicana-Golden-Grapefruit
+    - Arla-Ecological-Medium-Fat-Milk
+    - Oatly-Natural-Oatghurt
+    - Oatly-Oat-Milk
+    - Alpro-Blueberry-Soyghurt
+    - Alpro-Shelf-Soy-Milk
+    - Yoggi-Strawberry-Yoghurt
+    - God-Morgon-Apple-Juice
+    - Tropicana-Mandarin-Morning
+
+batching:
+  # Natural epoch: ceil(306 / 30) = 11 optimizer updates.
+  optimizer_steps_per_epoch: null
+
+training:
+  epochs: 20
+  learning_rate: 0.00005
+  adapter_learning_rate: 0.00005
+  readout_learning_rate: 0.00005
+  router_learning_rate: 0.00002
+  phase_learning_rate: 0.00001
+  weight_decay: 0.0001
+  lambda_kd: 10.0
+  lambda_relational_kd: 0.5
+  lambda_ret: 0.5
+  lambda_gallery: 0.1
+  lambda_teacher_gallery: 1.0
+  lambda_router_balance: 0.01
+  lambda_router_importance: 0.0025
+  phase_focus: {enabled: false, warmup_epochs: 0, interval_epochs: 2}
+  ema_decay: 0.995
+  resume_optimizer_state: false
+  evaluate_test_each_epoch: false
+
+augmentation:
+  enabled: true
+  crop_scale_min: 0.75
+  brightness_jitter: 0.25
+  contrast_jitter: 0.25
+  rotation_degrees: 12.0
+
+output_dir: ../../runs/robust_hybrid_grocery10_from_grocery31
