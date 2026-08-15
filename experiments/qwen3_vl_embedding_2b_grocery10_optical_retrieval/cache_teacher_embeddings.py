@@ -94,9 +94,10 @@ class TeacherEmbeddingStore:
 def cache_identity(
     bundle: GroceryRetrievalBundle, settings: Settings
 ) -> dict[str, Any]:
+    dataset_name = str(bundle.metadata.get("dataset", "GroceryStoreDataset"))
     return {
         "cache_version": CACHE_VERSION,
-        "dataset": f"GroceryStoreDataset-{settings.dataset_variant}-retrieval",
+        "dataset": f"{dataset_name}-{settings.dataset_variant}-retrieval",
         "manifest_sha256": bundle.manifest_digest,
         "selected_skus": list(bundle.class_names),
         "model_id": settings.model_id,

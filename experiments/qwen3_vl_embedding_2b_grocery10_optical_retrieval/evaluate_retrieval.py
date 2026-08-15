@@ -153,19 +153,35 @@ def _plot_confusion(
     matrix: torch.Tensor, class_names: tuple[str, ...], path: Path
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    figure, axis = plt.subplots(figsize=(12, 10), constrained_layout=True)
+    side = max(12.0, min(32.0, len(class_names) * 0.28))
+    figure, axis = plt.subplots(figsize=(side, side), constrained_layout=True)
     image = axis.imshow(matrix.numpy(), cmap="Blues")
     figure.colorbar(image, ax=axis, label="Query count")
-    axis.set_xticks(range(len(class_names)), class_names, rotation=45, ha="right")
-    axis.set_yticks(range(len(class_names)), class_names)
-    axis.set_xlabel("Retrieved SKU")
-    axis.set_ylabel("True SKU")
-    axis.set_title(
-        f"Optical Student Grocery-{len(class_names)} Retrieval Confusion Matrix"
+    tick_size = max(3, min(8, round(300 / len(class_names))))
+    axis.set_xticks(
+        range(len(class_names)),
+        class_names,
+        rotation=90 if len(class_names) > 40 else 45,
+        ha="center" if len(class_names) > 40 else "right",
+        fontsize=tick_size,
     )
-    for y in range(len(class_names)):
-        for x in range(len(class_names)):
-            axis.text(x, y, str(int(matrix[y, x])), ha="center", va="center", fontsize=8)
+    axis.set_yticks(range(len(class_names)), class_names, fontsize=tick_size)
+    axis.set_xlabel("Retrieved class")
+    axis.set_ylabel("True class")
+    axis.set_title(
+        f"Optical Student {len(class_names)}-Class Retrieval Confusion Matrix"
+    )
+    if len(class_names) <= 31:
+        for y in range(len(class_names)):
+            for x in range(len(class_names)):
+                axis.text(
+                    x,
+                    y,
+                    str(int(matrix[y, x])),
+                    ha="center",
+                    va="center",
+                    fontsize=8,
+                )
     figure.savefig(path, dpi=180)
     plt.close(figure)
 

@@ -1474,7 +1474,7 @@ def train_optical_retrieval(
                 replacement,
                 phase_epoch_dir / "phase_preview.png",
                 title=(
-                    f"Grocery optical phase epoch {epoch} "
+                    f"Optical retrieval phase epoch {epoch} "
                     f"(focus={'yes' if phase_focus else 'no'})"
                 ),
             )

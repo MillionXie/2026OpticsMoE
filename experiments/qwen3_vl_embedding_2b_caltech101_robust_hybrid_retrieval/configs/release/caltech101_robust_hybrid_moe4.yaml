@@ -1,0 +1,55 @@
+base_config: ../../../qwen3_vl_embedding_2b_grocery10_robust_hybrid_retrieval/configs/release/robust_hybrid_moe4.yaml
+
+dataset:
+  dataset_root: ../../../../data/Caltech101
+  download: true
+  download_url: https://data.caltech.edu/records/mzrjq-6wc02/files/caltech-101.zip?download=1
+  use_all_categories: true
+  merge_official_validation_into_train: false
+  # Capped retrieval protocol: up to 3 references, 30 training queries and
+  # 20 held-out queries per category. Short categories are never resampled.
+  # BACKGROUND_Google is excluded.
+  gallery_images_per_sku: 3
+  train_limit_per_sku: 30
+  test_limit_per_sku: 20
+
+qwen:
+  instruction: Represent this image for image-to-image object-category retrieval.
+
+batching:
+  teacher_batch_size: 4
+  batch_size: 30
+  pk_skus_per_batch: 10
+  pk_images_per_sku: 3
+  inference_batch_size: 4
+  num_workers: 4
+  optimizer_steps_per_epoch: null
+
+training:
+  epochs: 40
+  learning_rate: 0.0001
+  adapter_learning_rate: 0.0001
+  readout_learning_rate: 0.0001
+  router_learning_rate: 0.00005
+  phase_learning_rate: 0.00002
+  weight_decay: 0.0001
+  lambda_kd: 8.0
+  lambda_relational_kd: 0.5
+  lambda_ret: 1.0
+  lambda_gallery: 0.5
+  lambda_teacher_gallery: 0.5
+  lambda_router_balance: 0.02
+  lambda_router_importance: 0.005
+  phase_focus: {enabled: false, warmup_epochs: 0, interval_epochs: 2}
+  ema_decay: 0.995
+  resume_optimizer_state: false
+  evaluate_test_each_epoch: false
+
+augmentation:
+  enabled: true
+  crop_scale_min: 0.75
+  brightness_jitter: 0.20
+  contrast_jitter: 0.20
+  rotation_degrees: 12.0
+
+output_dir: ../../runs/caltech101_robust_hybrid_moe4
