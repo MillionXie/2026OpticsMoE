@@ -78,5 +78,13 @@ def test_full_robust_core_forward_and_backward() -> None:
     assert core.current_detector_readout.shape == (2, 224, 224)
     hidden.square().mean().backward()
     assert inputs.grad is not None
+    assert torch.isfinite(inputs.grad).all()
     assert core.expert_fusions[0].input_weight_logit.grad is not None
     assert core.detector_fusion.input_weight_logit.grad is not None
+    gradients = [
+        parameter.grad
+        for parameter in core.parameters()
+        if parameter.grad is not None
+    ]
+    assert gradients
+    assert all(torch.isfinite(gradient).all() for gradient in gradients)

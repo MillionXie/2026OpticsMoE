@@ -182,8 +182,15 @@ class LearnableResidualFusion(nn.Module):
 
     @staticmethod
     def _unit_rms(value: torch.Tensor) -> torch.Tensor:
-        scale = value.float().square().mean(dim=(-2, -1), keepdim=True).sqrt()
-        return value.float() / scale.clamp_min(1.0e-6)
+        # Top-k routing leaves whole expert crops exactly zero.  Clamp the
+        # mean-square *before* sqrt: clamping only the resulting scale still
+        # executes SqrtBackward at zero and yields an infinite derivative,
+        # which becomes NaN when multiplied by the zero crop gradient.
+        mean_square = value.float().square().mean(
+            dim=(-2, -1), keepdim=True
+        )
+        scale = mean_square.clamp_min(1.0e-12).sqrt()
+        return value.float() / scale
 
     def input_weight(self) -> torch.Tensor:
         return torch.sigmoid(self.input_weight_logit)
@@ -301,7 +308,13 @@ class RobustHybridOpticalCore(_RandomRegistrationMixin, HomogeneousMoEOpticalCor
                 self.last_expert_response = conversion.last_expert_response
                 self.last_response_gain = conversion.last_response_gain
 
-        optical = self._expert_crops(field.abs().float())
+        # ``SquareDetectionLayerNormReload`` and hardware stage replay both
+        # return a zero-phase, explicitly nonnegative amplitude.  Reading its
+        # real component is therefore exact.  Do not use ``complex.abs()``
+        # here: hard routing creates many exact complex zeros, and the
+        # derivative of |z| at z=0 is undefined in PyTorch, which contaminates
+        # the router and every expert phase with NaN on the first backward.
+        optical = self._expert_crops(field.real.float().clamp_min(0.0))
         residual = self._expert_crops(routing["amplitude_slm_canvas"].float())
         batch, experts, height, width = optical.shape
         fused = self.expert_fusions[index](
