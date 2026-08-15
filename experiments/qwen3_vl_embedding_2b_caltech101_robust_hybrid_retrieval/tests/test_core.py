@@ -1,8 +1,12 @@
 from pathlib import Path
 from types import SimpleNamespace
 
+import torch
 from PIL import Image
 
+from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.cache_teacher_embeddings import (
+    cache_identity,
+)
 from experiments.qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval.categories import (
     CALTECH101_CATEGORIES,
 )
@@ -13,10 +17,16 @@ from experiments.qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval.prepar
 from experiments.qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval.settings import (
     load_settings,
 )
+from experiments.qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval.teacher_cache import (
+    _derive_subset_cache,
+)
 
 
 EXPERIMENT_DIR = Path(__file__).resolve().parents[1]
 CONFIG = EXPERIMENT_DIR / "configs" / "release" / "caltech101_robust_hybrid_moe4.yaml"
+TARGET10_CONFIG = (
+    EXPERIMENT_DIR / "configs" / "release" / "caltech101_target10_finetune.yaml"
+)
 
 
 def test_release_config_uses_all_categories_and_normal_lrs() -> None:
@@ -31,6 +41,34 @@ def test_release_config_uses_all_categories_and_normal_lrs() -> None:
     assert settings.learning_rate == 1.0e-4
     assert settings.phase_learning_rate == 2.0e-5
     assert not settings.evaluate_test_each_epoch
+    assert settings.teacher_cache_path.parent == (
+        EXPERIMENT_DIR / "cache" / "caltech101_all101_seed42_g3_train30_test20"
+    ).resolve()
+
+
+def test_target10_resumes_with_lower_lrs_and_shared_subset_cache() -> None:
+    settings = load_settings(TARGET10_CONFIG)
+    assert settings.selected_skus == (
+        "airplanes",
+        "Motorbikes",
+        "Faces",
+        "Leopards",
+        "accordion",
+        "grand_piano",
+        "scorpion",
+        "sunflower",
+        "watch",
+        "yin_yang",
+    )
+    assert settings.epochs == 20
+    assert settings.learning_rate == 5.0e-5
+    assert settings.phase_learning_rate == 1.0e-5
+    assert settings.evaluate_test_each_epoch
+    assert settings.teacher_cache_path.parent.name.startswith("caltech101_target10")
+    assert settings.teacher_cache_source_path is not None
+    assert settings.teacher_cache_source_path.parent.name.startswith(
+        "caltech101_all101"
+    )
 
 
 def test_seeded_caltech_split_is_capped_disjoint_and_reproducible(tmp_path: Path) -> None:
@@ -72,3 +110,63 @@ def test_seeded_caltech_split_is_capped_disjoint_and_reproducible(tmp_path: Path
     assert paths[1].isdisjoint(paths[2])
     assert first.manifest_digest == second.manifest_digest
     assert BACKGROUND_CATEGORY not in first.class_names
+
+
+def test_target_cache_is_sliced_from_all_class_cache_without_teacher_forward(
+    tmp_path: Path,
+) -> None:
+    categories_root = tmp_path / "101_ObjectCategories"
+    for category in ("alpha", "beta", "gamma"):
+        directory = categories_root / category
+        directory.mkdir(parents=True)
+        for index in range(8):
+            Image.new("RGB", (4, 4), color=(index, 0, 0)).save(
+                directory / f"image_{index:04d}.jpg"
+            )
+
+    def make_settings(selected: tuple[str, ...], variant: str) -> SimpleNamespace:
+        return SimpleNamespace(
+            dataset_root=tmp_path,
+            download=False,
+            selected_skus=selected,
+            gallery_images_per_sku=2,
+            train_limit_per_sku=3,
+            test_limit_per_sku=2,
+            random_seed=42,
+            subset_manifest_path=tmp_path / f"{variant}.csv",
+            output_dir=tmp_path / variant,
+            dataset_variant=variant,
+            model_id="teacher",
+            instruction="same instruction",
+            processor_min_pixels=16,
+            processor_max_pixels=16,
+            embedding_dim=64,
+        )
+
+    source_settings = make_settings(("alpha", "beta", "gamma"), "all")
+    source_bundle = prepare_caltech101_subset(source_settings, persist=False)
+    source_path = tmp_path / "all_cache" / "teacher_embeddings.pt"
+    source_path.parent.mkdir()
+    embeddings = torch.nn.functional.normalize(
+        torch.randn(len(source_bundle.all_samples()), 64), dim=-1
+    ).half()
+    torch.save(
+        {
+            "metadata": cache_identity(source_bundle, source_settings),
+            "records": [sample.manifest_record() for sample in source_bundle.all_samples()],
+            "teacher_embeddings": embeddings,
+        },
+        source_path,
+    )
+    target_settings = make_settings(("alpha", "gamma"), "target")
+    target_bundle = prepare_caltech101_subset(target_settings, persist=False)
+    destination = tmp_path / "target_cache" / "teacher_embeddings.pt"
+    result = _derive_subset_cache(
+        source_path, destination, target_bundle, target_settings
+    )
+    payload = torch.load(result, map_location="cpu", weights_only=False)
+    assert payload["metadata"]["derived_without_teacher_forward"] is True
+    assert payload["teacher_embeddings"].shape == (
+        len(target_bundle.all_samples()),
+        64,
+    )

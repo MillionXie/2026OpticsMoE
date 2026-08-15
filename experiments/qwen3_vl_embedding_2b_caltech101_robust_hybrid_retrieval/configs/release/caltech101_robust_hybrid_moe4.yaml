@@ -52,4 +52,9 @@ augmentation:
   contrast_jitter: 0.20
   rotation_degrees: 12.0
 
+teacher_cache:
+  # Stable across output_dir changes and future retraining runs.
+  directory: ../../cache/caltech101_all101_seed42_g3_train30_test20
+  derive_from: null
+
 output_dir: ../../runs/caltech101_robust_hybrid_moe4

@@ -1,0 +1,40 @@
+base_config: caltech101_robust_hybrid_moe4.yaml
+
+dataset:
+  use_all_categories: false
+  selected_skus:
+    - airplanes
+    - Motorbikes
+    - Faces
+    - Leopards
+    - accordion
+    - grand_piano
+    - scorpion
+    - sunflower
+    - watch
+    - yin_yang
+
+training:
+  # Additional epochs 41-60 when resumed from the all-101 epoch-40 EMA.
+  epochs: 20
+  learning_rate: 0.00005
+  adapter_learning_rate: 0.00005
+  readout_learning_rate: 0.00005
+  router_learning_rate: 0.00002
+  phase_learning_rate: 0.00001
+  weight_decay: 0.0001
+  lambda_kd: 10.0
+  lambda_relational_kd: 0.5
+  lambda_ret: 0.5
+  lambda_gallery: 0.25
+  lambda_teacher_gallery: 1.0
+  lambda_router_balance: 0.01
+  lambda_router_importance: 0.0025
+  evaluate_test_each_epoch: true
+  resume_optimizer_state: false
+
+teacher_cache:
+  directory: ../../cache/caltech101_target10_seed42_g3_train30_test20
+  derive_from: ../../cache/caltech101_all101_seed42_g3_train30_test20
+
+output_dir: ../../runs/caltech101_target10_finetune_epoch60

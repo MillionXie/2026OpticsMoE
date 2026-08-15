@@ -5,10 +5,6 @@ from pathlib import Path
 
 import torch
 
-from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.cache_teacher_embeddings import (
-    TeacherEmbeddingStore,
-    build_teacher_embedding_cache,
-)
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.evaluate_retrieval import (
     evaluate_all_systems,
 )
@@ -30,6 +26,7 @@ from experiments.qwen3_vl_embedding_2b_grocery10_robust_hybrid_retrieval.modelin
 
 from .prepare_caltech101_retrieval import prepare_caltech101_subset
 from .settings import load_settings, save_resolved_config
+from .teacher_cache import TeacherEmbeddingStore, build_teacher_embedding_cache
 
 
 PHASES = {
