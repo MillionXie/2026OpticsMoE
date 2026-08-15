@@ -15,22 +15,26 @@ partial CIFAR-100-C archive when `wget` is available.
 
 ## 2. BP group: common pretraining followed by matched BP fine-tuning
 
-    CUDA_VISIBLE_DEVICES=GPU python -m experiments.d2nn_cifar100c10_fixed_feedback_20stage400 --config experiments/d2nn_cifar100c10_fixed_feedback_20stage400/configs/main.yaml --phase run --method bp
+    PHYSICAL_GPU_INDEX=3 bash experiments/d2nn_cifar100c10_fixed_feedback_20stage400/commands/02_run_bp.sh
 
 This is the first formal command to run. It creates the only shared pretrained
 checkpoint, then runs the three configured downstream seeds.
 
+The shell scripts resolve the selected `nvidia-smi` index to its GPU UUID before
+launch. This avoids CUDA enumeration differing from the physical index. Change
+`PHYSICAL_GPU_INDEX=3` to a GPU that is actually idle.
+
 ## 3. Fixed pretrained feedback group
 
-    CUDA_VISIBLE_DEVICES=GPU python -m experiments.d2nn_cifar100c10_fixed_feedback_20stage400 --config experiments/d2nn_cifar100c10_fixed_feedback_20stage400/configs/main.yaml --phase run --method fa_pretrained
+    PHYSICAL_GPU_INDEX=3 bash experiments/d2nn_cifar100c10_fixed_feedback_20stage400/commands/03_run_fa_pretrained.sh
 
 ## 4. Fixed random feedback group
 
-    CUDA_VISIBLE_DEVICES=GPU python -m experiments.d2nn_cifar100c10_fixed_feedback_20stage400 --config experiments/d2nn_cifar100c10_fixed_feedback_20stage400/configs/main.yaml --phase run --method fa_random
+    PHYSICAL_GPU_INDEX=3 bash experiments/d2nn_cifar100c10_fixed_feedback_20stage400/commands/04_run_fa_random.sh
 
 ## 5. No-fine-tuning group
 
-    CUDA_VISIBLE_DEVICES=GPU python -m experiments.d2nn_cifar100c10_fixed_feedback_20stage400 --config experiments/d2nn_cifar100c10_fixed_feedback_20stage400/configs/main.yaml --phase run --method no_finetune
+    PHYSICAL_GPU_INDEX=3 bash experiments/d2nn_cifar100c10_fixed_feedback_20stage400/commands/05_run_no_finetune.sh
 
 ## 6. Compare every completed method with matched BP endpoints
 

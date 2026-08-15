@@ -25,7 +25,9 @@ def _stable_seed(*values: object) -> int:
 
 
 def _gray_tensor(image: np.ndarray | torch.Tensor) -> torch.Tensor:
-    value = torch.as_tensor(np.asarray(image) if not isinstance(image, torch.Tensor) else image)
+    # PIL and memory-mapped CIFAR-C views may expose a read-only NumPy array.
+    # Copying here prevents undefined writes and removes one warning per worker.
+    value = image if isinstance(image, torch.Tensor) else torch.from_numpy(np.array(image, copy=True))
     if value.ndim == 3 and value.shape[-1] == 3:
         value = value.permute(2, 0, 1)
     value = value.float() / 255.0 if value.max() > 1.0 else value.float()
