@@ -16,6 +16,12 @@ from ..settings import load_settings
 
 EXPERIMENT_DIR = Path(__file__).resolve().parents[1]
 CONFIG = EXPERIMENT_DIR / "configs" / "release" / "robust_hybrid_moe4.yaml"
+REGULARIZED_CONFIG = (
+    EXPERIMENT_DIR
+    / "configs"
+    / "continuation"
+    / "regularized_electronic_finetune.yaml"
+)
 
 
 def test_robust_configuration_is_deliberate() -> None:
@@ -29,6 +35,20 @@ def test_robust_configuration_is_deliberate() -> None:
     assert settings.phase_shift_max_px == 12
     assert settings.ccd_shift_max_px == 12
     assert not settings.transformer_residual_enabled
+
+
+def test_regularized_continuation_reduces_memorization_pressure() -> None:
+    settings = load_settings(REGULARIZED_CONFIG)
+    assert settings.optimizer_steps_per_epoch is None
+    assert settings.weight_decay == pytest.approx(1.0e-3)
+    assert settings.phase_learning_rate == 0.0
+    assert settings.router_learning_rate == 0.0
+    assert settings.adapter_learning_rate == pytest.approx(1.0e-5)
+    assert settings.readout_learning_rate == pytest.approx(2.0e-5)
+    assert settings.lambda_kd > settings.lambda_ret
+    assert settings.lambda_teacher_gallery > settings.lambda_gallery
+    assert settings.crop_scale_min == pytest.approx(0.75)
+    assert settings.readout_dropout == pytest.approx(0.25)
 
 
 def test_zero_fill_translation_does_not_wrap() -> None:

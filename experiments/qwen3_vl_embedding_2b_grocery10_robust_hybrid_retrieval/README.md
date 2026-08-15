@@ -50,3 +50,30 @@ python -m pytest \
 
 This configuration starts a new model. A baseline checkpoint cannot be loaded
 strictly because the residual refiners and embedding head add new state.
+
+## Regularized continuation
+
+The from-scratch config deliberately oversamples each logged epoch. Once its
+training retrieval approaches saturation, stop it and continue the latest EMA
+weights with the natural-length, electronics-only regularization config:
+
+```bash
+RUN_ROOT=experiments/qwen3_vl_embedding_2b_grocery10_robust_hybrid_retrieval/runs
+SOURCE="$RUN_ROOT/robust_hybrid_moe4_from_scratch"
+TARGET="$RUN_ROOT/robust_hybrid_moe4_regularized_continuation"
+mkdir -p "$TARGET/teacher_cache"
+cp "$SOURCE/teacher_cache/teacher_embeddings.pt" "$TARGET/teacher_cache/"
+cp "$SOURCE/teacher_cache/metadata.json" "$TARGET/teacher_cache/"
+
+python -m experiments.qwen3_vl_embedding_2b_grocery10_robust_hybrid_retrieval \
+  --config experiments/qwen3_vl_embedding_2b_grocery10_robust_hybrid_retrieval/configs/continuation/regularized_electronic_finetune.yaml \
+  --phase train \
+  --resume-checkpoint "$SOURCE/ema_last_checkpoint.pt"
+```
+
+This continuation freezes phase/router tensors, reduces electronic learning
+rates, enables weight decay and stronger image/dropout augmentation, uses only
+the natural number of PK batches, and emphasizes frozen-Teacher targets over
+the current Student gallery. Use a chronologically chosen `ema_last` checkpoint
+rather than a test-selected `ema_best_observed_test` checkpoint for an unbiased
+comparison.

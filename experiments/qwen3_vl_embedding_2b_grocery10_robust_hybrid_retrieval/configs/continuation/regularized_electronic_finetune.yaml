@@ -1,0 +1,64 @@
+base_config: ../release/robust_hybrid_moe4.yaml
+
+# Regularized continuation for a converged robust-hybrid checkpoint.
+# Use with --phase train --resume-checkpoint <ema_last_checkpoint.pt>.
+batching:
+  # null uses the natural epoch length: ceil(306 / 30) ~= 11 updates instead
+  # of the from-scratch config's 100 resampled updates per logged epoch.
+  optimizer_steps_per_epoch: null
+
+training:
+  epochs: 30
+  learning_rate: 0.00001
+  adapter_learning_rate: 0.00001
+  readout_learning_rate: 0.00002
+  # Preserve the learned physical deployment and routing while electronics
+  # are regularized. LR=0 is an intentional supported freeze.
+  router_learning_rate: 0.0
+  phase_learning_rate: 0.0
+  weight_decay: 0.001
+
+  # Shift supervision away from memorizing the current Student gallery and
+  # toward the 90.77%-Top1 frozen Teacher's pointwise/relational geometry.
+  lambda_kd: 12.0
+  lambda_relational_kd: 0.5
+  lambda_ret: 0.5
+  lambda_gallery: 0.1
+  lambda_teacher_gallery: 1.0
+  lambda_router_balance: 0.0
+  lambda_router_importance: 0.0
+  ema_decay: 0.995
+  resume_optimizer_state: false
+  evaluate_test_each_epoch: true
+
+augmentation:
+  enabled: true
+  crop_scale_min: 0.75
+  brightness_jitter: 0.25
+  contrast_jitter: 0.25
+  rotation_degrees: 12.0
+
+optical:
+  phase:
+    dropout_mode: block_phase_bypass
+    dropout_p: 0.10
+    dropout_block_size: 8
+    dropout_batch_shared: true
+
+robust_hybrid:
+  electronic_refiner:
+    width: 16
+    second_dilation: 2
+    dropout: 0.10
+  embedding_head:
+    bottleneck_dim: 96
+    dropout: 0.25
+  alignment:
+    enabled: true
+    apply_during_eval: false
+    input_shift_max_logical_px: 12
+    phase_shift_max_logical_px: 12
+    ccd_shift_max_logical_px: 12
+    batch_shared: true
+
+output_dir: ../../runs/robust_hybrid_moe4_regularized_continuation
