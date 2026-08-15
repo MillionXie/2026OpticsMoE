@@ -21,8 +21,8 @@ def config(stages: int = 3, size: int = 16) -> OpticalConfig:
         phase_parameterization="sigmoid",
         phase_init="zeros",
         layernorm_eps=1e-5,
-        residual_main_init=0.9,
-        residual_skip_init=0.1,
+        residual_main_init=0.1,
+        residual_skip_init=0.9,
         readout_pool_size=4,
         readout_hidden_dim=8,
         num_output_classes=10,
@@ -49,8 +49,8 @@ def test_raw_zero_means_pi_and_residual_has_two_trainable_weights() -> None:
     assert torch.allclose(model.phase_stack(), torch.full_like(model.phase_stack(), math.pi))
     weights = model.residual_weights()
     assert tuple(weights.shape) == (3, 2)
-    assert torch.allclose(weights[:, 0], torch.full((3,), 0.9))
-    assert torch.allclose(weights[:, 1], torch.full((3,), 0.1))
+    assert torch.allclose(weights[:, 0], torch.full((3,), 0.1))
+    assert torch.allclose(weights[:, 1], torch.full((3,), 0.9))
     assert all(stage.residual.logits.requires_grad for stage in model.stages)
 
 

@@ -17,10 +17,22 @@ real nonnegative amplitude
 ```
 
 The two residual coefficients are independent trainable logits followed by a
-two-element softmax. They start at optical=0.9 and skip=0.1, remain positive and
-sum to one. They always use ordinary backpropagation. After stage 20, fixed
+two-element softmax. They start at optical=0.1 and skip=0.9, remain positive and
+sum to one. The identity-dominant initialization prevents twenty consecutive
+OEO conversions from destroying the input before learning begins. Both weights
+always use ordinary backpropagation. After stage 20, fixed
 20 x 20 average pooling feeds a small `Linear(400,128) -> GELU -> Linear(128,100)`
 electronic readout.
+
+### Residual initialization diagnostic
+
+The initial optical=0.9/skip=0.1 draft remained near the CIFAR-100 random
+baseline through epoch 27. A controlled 32-sample/32-class overfit check gave
+71.9% accuracy and loss 1.081 after 40 updates. Reversing only the initial
+mixture to optical=0.1/skip=0.9 reached 100% and loss 0.026 after the same 40
+updates. The formal configuration therefore uses the identity-dominant start;
+the coefficients remain trainable and are not fixed during either pretraining
+or downstream adaptation.
 
 There is no padding, k-space constraint, phase dropout, DC penalty, phase
 smoothness loss, MoE router, or sample-wise power renormalization beyond the

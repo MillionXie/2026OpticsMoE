@@ -12,9 +12,10 @@ optical:
   phase_init: zeros
   layernorm_eps: 1.0e-5
   residual:
-    # Each stage learns two positive softmax weights. Both use standard BP.
-    main_init: 0.9
-    skip_init: 0.1
+    # Identity-dominant initialization preserves information through 20 OEO
+    # stages. Both positive softmax weights remain trainable with standard BP.
+    main_init: 0.1
+    skip_init: 0.9
   readout:
     pool_size: 20
     hidden_dim: 128
