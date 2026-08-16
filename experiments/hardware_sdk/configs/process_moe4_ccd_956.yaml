@@ -8,12 +8,12 @@ roi_xywh: null
 target_size_wh: [956, 956]
 
 # Fixed radiometric conversion only: no background estimation or subtraction.
-# The current hardware_sdk capture is already 8-bit, hence [0,255].  For a true
-# 16-bit source explicitly change white_level to the calibrated sensor maximum.
+# The current laboratory captures are 16-bit PNG. Keep one fixed mapping for
+# every frame; adjust this only when the camera's calibrated range changes.
 intensity:
   mode: fixed_range
   black_level: 0
-  white_level: 255
+  white_level: 65535
 
 # Flips intentionally belong to the experiment's hardware.ccd settings.
 flip_vertical: false

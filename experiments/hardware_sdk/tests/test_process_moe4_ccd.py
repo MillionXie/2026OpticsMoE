@@ -34,3 +34,34 @@ def test_processor_resizes_entire_roi_to_uint8_without_flip(tmp_path) -> None:
     report = json.loads((output_dir / "processing_report.json").read_text())
     assert report["flip_applied"] is False
     assert report["resize_rule"] == "resize the entire selected ROI; no center crop"
+
+
+def test_cli_relative_paths_are_resolved_from_working_directory(
+    tmp_path, monkeypatch
+) -> None:
+    source_dir = tmp_path / "raw_override"
+    source_dir.mkdir()
+    Image.fromarray(np.arange(16, dtype=np.uint16).reshape(4, 4)).save(
+        source_dir / "frame.png"
+    )
+    config_dir = tmp_path / "configs"
+    config_dir.mkdir()
+    config = {
+        "input_dir": "unused_raw",
+        "output_dir": "unused_output",
+        "roi_xywh": None,
+        "target_size_wh": [956, 956],
+        "intensity": {
+            "mode": "fixed_range",
+            "black_level": 0,
+            "white_level": 65535,
+        },
+        "flip_vertical": False,
+        "flip_horizontal": False,
+    }
+    config_path = config_dir / "config.yaml"
+    config_path.write_text(yaml.safe_dump(config), encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+    process(config_path, "raw_override", "processed_override")
+    assert (tmp_path / "processed_override" / "frame.png").is_file()
+    assert not (config_dir / "processed_override").exists()

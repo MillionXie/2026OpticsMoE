@@ -58,3 +58,4 @@ _offline_packages
 
 # Local experiment-review documents and copied server evidence.
 /document/
+hardware_sessions

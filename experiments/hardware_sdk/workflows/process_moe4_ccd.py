@@ -23,9 +23,14 @@ TARGET_SIZE = (956, 956)
 SUPPORTED_SUFFIXES = {".bmp", ".png", ".tif", ".tiff"}
 
 
-def _resolve(config_path: Path, value: str) -> Path:
+def _resolve_config_value(config_path: Path, value: str) -> Path:
     path = Path(value).expanduser()
     return path.resolve() if path.is_absolute() else (config_path.parent / path).resolve()
+
+
+def _resolve_cli_override(value: str) -> Path:
+    """Resolve command-line paths against the caller's working directory."""
+    return Path(value).expanduser().resolve()
 
 
 def _read_frame(path: Path) -> np.ndarray:
@@ -62,9 +67,7 @@ def _resize_entire_roi(value: np.ndarray) -> np.ndarray:
     return np.asarray(image.resize(TARGET_SIZE, resample=resampling), dtype=np.float32)
 
 
-def _intensity_range(
-    _frames: list[tuple[Path, np.ndarray]], settings: dict[str, Any]
-) -> tuple[float, float, str]:
+def _intensity_range(settings: dict[str, Any]) -> tuple[float, float, str]:
     mode = str(settings.get("mode", "fixed_range"))
     if mode != "fixed_range":
         raise ValueError(
@@ -80,8 +83,16 @@ def _intensity_range(
 
 def process(config_path: Path, input_override: str | None, output_override: str | None) -> None:
     raw = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
-    input_dir = _resolve(config_path, input_override or raw["input_dir"])
-    output_dir = _resolve(config_path, output_override or raw["output_dir"])
+    input_dir = (
+        _resolve_cli_override(input_override)
+        if input_override is not None
+        else _resolve_config_value(config_path, raw["input_dir"])
+    )
+    output_dir = (
+        _resolve_cli_override(output_override)
+        if output_override is not None
+        else _resolve_config_value(config_path, raw["output_dir"])
+    )
     if input_dir == output_dir:
         raise ValueError("input_dir and output_dir must differ")
     if tuple(raw.get("target_size_wh", TARGET_SIZE)) != TARGET_SIZE:
@@ -97,16 +108,13 @@ def process(config_path: Path, input_override: str | None, output_override: str 
         raise FileNotFoundError(f"No CCD images found in {input_dir}")
     if len({path.stem for path in paths}) != len(paths):
         raise RuntimeError("Input files with different extensions share a basename")
-    selected = []
-    for path in paths:
-        source = _read_frame(path)
-        selected.append((path, _select_roi(source, roi, path), source.shape))
-    low, high, intensity_mode = _intensity_range(
-        [(path, value) for path, value, _ in selected], raw.get("intensity", {})
-    )
+    low, high, intensity_mode = _intensity_range(raw.get("intensity", {}))
     output_dir.mkdir(parents=True, exist_ok=True)
     rows: list[dict[str, Any]] = []
-    for index, (path, value, source_shape) in enumerate(selected, 1):
+    for index, path in enumerate(paths, 1):
+        source = _read_frame(path)
+        source_shape = source.shape
+        value = _select_roi(source, roi, path)
         resized = _resize_entire_roi(value)
         encoded = np.clip((resized - low) * (255.0 / (high - low)), 0.0, 255.0)
         encoded = np.rint(encoded).astype(np.uint8)
@@ -125,8 +133,8 @@ def process(config_path: Path, input_override: str | None, output_override: str 
                 "flip_applied": False,
             }
         )
-        if index % 20 == 0 or index == len(selected):
-            print(f"[process_moe4_ccd] {index}/{len(selected)}", flush=True)
+        if index % 20 == 0 or index == len(paths):
+            print(f"[process_moe4_ccd] {index}/{len(paths)}", flush=True)
     with (output_dir / "processing_manifest.csv").open("w", encoding="utf-8-sig", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
         writer.writeheader()

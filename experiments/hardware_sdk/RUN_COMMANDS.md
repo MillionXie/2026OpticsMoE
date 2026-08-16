@@ -10,9 +10,10 @@
 
     python -m experiments.hardware_sdk.workflows.process_moe4_ccd --config experiments/hardware_sdk/configs/process_moe4_ccd_956.yaml --input-dir experiments/hardware_sdk/data/ccd_captured_raw --output-dir experiments/hardware_sdk/data/ccd_captured_moe4_956
 
-默认使用固定 `0→255` 映射，因为正式采集已经输出 8-bit。这里不估计、不扣除背景。
-如果输入确实是 16-bit，必须根据相机标定显式填写固定的
-`black_level/white_level`，不要对每张图自行拉伸。
+当前实验室文件是 16-bit PNG，因此配置使用统一的 `0→65535` 映射。这里不估计、
+不扣除背景，也不对每张图自行拉伸；只有相机标定范围变化时才统一修改
+`black_level/white_level`。命令行覆盖路径相对当前工作目录解析，YAML 内路径相对
+YAML 文件解析。
 
 ## 1. 安装
 

@@ -11,7 +11,7 @@ CUDA_VISIBLE_DEVICES=6 python -m experiments.qwen3_vl_embedding_2b_caltech101_la
 ## 2. 导出 Language Block 2 全局光路输入与 mask
 
 ```bash
-CUDA_VISIBLE_DEVICES=6 python -m experiments.qwen3_vl_embedding_2b_caltech101_language2_optical_retrieval.hardware_bridge --config experiments/qwen3_vl_embedding_2b_caltech101_language2_optical_retrieval/configs/release/caltech101_language2_optical_residual.yaml --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_language2_optical_retrieval/runs/caltech101_language_two_block_moe4_dual_fusion/ema_best_train_loss_checkpoint.pt --session-dir experiments/qwen3_vl_embedding_2b_caltech101_language2_optical_retrieval/hardware_sessions/language2_run1 --phase export
+CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_caltech101_language2_optical_retrieval.hardware_bridge --config experiments/qwen3_vl_embedding_2b_caltech101_language2_optical_retrieval/configs/release/caltech101_language2_optical_residual.yaml --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_language2_optical_retrieval/runs/caltech101_language_two_block_moe4_dual_fusion/ema_best_train_loss_checkpoint.pt --session-dir experiments/qwen3_vl_embedding_2b_caltech101_language2_optical_retrieval/hardware_sessions/language2_run1 --phase export
 ```
 
 程序先完成 Block 1 的专家 CCD readout、gate1 光电融合，再把融合结果重新编码。
@@ -24,11 +24,14 @@ CUDA_VISIBLE_DEVICES=6 python -m experiments.qwen3_vl_embedding_2b_caltech101_la
 `roi_xywh` 和强度映射，然后执行：
 
 ```bash
-python -m experiments.hardware_sdk.workflows.process_moe4_ccd --config experiments/hardware_sdk/configs/process_moe4_ccd_956.yaml --input-dir experiments/hardware_sdk/data/ccd_captured_raw --output-dir experiments/qwen3_vl_embedding_2b_caltech101_language2_optical_retrieval/hardware_sessions/language2_run1/ccd_captured
+python -m experiments.hardware_sdk.workflows.process_moe4_ccd --config experiments/hardware_sdk/configs/process_moe4_ccd_956.yaml --input-dir experiments/qwen3_vl_embedding_2b_caltech101_language2_optical_retrieval/hardware_sessions/language2_run1/ccd_captured_raw --output-dir experiments/qwen3_vl_embedding_2b_caltech101_language2_optical_retrieval/hardware_sessions/language2_run1/ccd_captured
 ```
 
 输出必须是与 manifest 同 basename 的 8-bit 灰度 `956×956` PNG。这里缩放的是
 完整目标 ROI，不是中心裁剪 `224×224`，也不会做任何翻转。
+命令行中的相对路径以仓库根目录等当前工作目录为基准；YAML 内的相对路径才以
+YAML 所在目录为基准。原始图片必须放在 `ccd_captured_raw`，不要直接放进会写入
+处理结果的 `ccd_captured`，从而避免覆盖 16-bit 原图。
 
 ## 4. 按配置翻转并注册为逻辑 CCD
 
@@ -42,7 +45,7 @@ python -m experiments.qwen3_vl_embedding_2b_caltech101_language2_optical_retriev
 ## 5. 用实测 CCD 微调下游电子部分
 
 ```bash
-CUDA_VISIBLE_DEVICES=6 python -m experiments.qwen3_vl_embedding_2b_caltech101_language2_optical_retrieval.hardware_bridge --config experiments/qwen3_vl_embedding_2b_caltech101_language2_optical_retrieval/configs/release/caltech101_language2_optical_residual.yaml --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_language2_optical_retrieval/runs/caltech101_language_two_block_moe4_dual_fusion/ema_best_train_loss_checkpoint.pt --session-dir experiments/qwen3_vl_embedding_2b_caltech101_language2_optical_retrieval/hardware_sessions/language2_run1 --phase finetune
+CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_caltech101_language2_optical_retrieval.hardware_bridge --config experiments/qwen3_vl_embedding_2b_caltech101_language2_optical_retrieval/configs/release/caltech101_language2_optical_residual.yaml --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_language2_optical_retrieval/runs/caltech101_language_two_block_moe4_dual_fusion/ema_best_train_loss_checkpoint.pt --session-dir experiments/qwen3_vl_embedding_2b_caltech101_language2_optical_retrieval/hardware_sessions/language2_run1 --phase finetune
 ```
 
 结果保存为 `hardware_finetuned_checkpoint.pt`。正式采集前可追加
