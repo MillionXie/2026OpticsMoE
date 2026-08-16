@@ -1,12 +1,15 @@
-# Caltech101 Language Block-2 Optical Residual
+# Caltech101 Language Block-2 MoE4 Optical Residual
 
-该实验从已训练的 Vision-2D、no-DeepStack 电子 checkpoint 初始化。Vision 和
-Language 电子主路默认冻结，只在 Language Mixer 第 2 个 block 内增加单相位面
-光学残差。没有 MoE、router 或 router loss。
+本实验从已训练的 Vision-2D、no-DeepStack 电子 checkpoint 初始化。Vision 和
+Language 电子主路默认冻结；Language Mixer 第 2 个 block 内加入一个并联光学残差。
 
-光路输入是 Language Block 2 的 192 维 token，经过 `192 -> 224` 非负振幅编码，
-形成 `224 x 224` SLM 输入。仿真传播在 `518 x 518` padding canvas 上执行，CCD
-读取中心 `224 x 224` 区域。CCD 后使用与实测完全相同的增益/背景稳健归一化。
+光学支路保留旧 Grocery 光路的 MoE4：`2×2` 个 `224×224` 专家、pitch `254`、
+top-k `2` router、逻辑有效区 `478×478`、FFT canvas `518×518`。router 正常参与
+前向和检索梯度训练，只关闭 router balance/importance 两项辅助 loss。
 
-物理光路接入及文件约定见 `HARDWARE_BRIDGE.md`，所有命令见 `RUN_COMMANDS.md`。
+流程为：`192→224` 非负场编码 → MoE4 router → 专家相位/传播/OEO → 全局相位 →
+CCD `478×478` → 稳健强度归一化 → 面积池化到 `224×224` → `224→192` → 与电子
+Block 2 输出按可学习 gate 相加。硬件快速接入只替换“全局相位输入到最终 CCD”这段；
+前面的专家级先用仿真生成。
 
+物理接口和文件约定见 `HARDWARE_BRIDGE.md`，命令见 `RUN_COMMANDS.md`。

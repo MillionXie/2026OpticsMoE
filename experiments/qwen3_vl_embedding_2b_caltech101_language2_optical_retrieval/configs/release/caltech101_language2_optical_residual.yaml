@@ -11,7 +11,7 @@ training:
   adapter_learning_rate: 0.0001
   readout_learning_rate: 0.00005
   phase_learning_rate: 0.0002
-  router_learning_rate: 0.0
+  router_learning_rate: 0.00005
   lambda_router_balance: 0.0
   lambda_router_importance: 0.0
   lambda_ccd_operating_point: 0.02
@@ -40,6 +40,7 @@ language_optical:
   perturbation:
     # 8 logical pixels correspond to 16 physical pixels after 2x SLM/CCD scaling.
     max_shift_pixels: 8
+    phase_shift_pixels: 8
     ccd_shift_pixels: 8
     gain_min: 0.5
     gain_max: 2.0
@@ -52,13 +53,10 @@ hardware:
     flip_vertical: true
     flip_horizontal: false
   ccd:
-    # Optional source-image ROI in [x, y, width, height]; applied before flips.
-    roi_xywh: null
+    # Input must already be an 8-bit 956x956 image from hardware_sdk.
     flip_vertical: false
     flip_horizontal: false
-    # strict | resize | center_crop_resize
-    registration_mode: center_crop_resize
     physical_binning_factor: 2
-    target_size: 224
+    target_size: 478
 
-output_dir: ../../runs/caltech101_language2_optical_residual
+output_dir: ../../runs/caltech101_language2_moe4_global_residual

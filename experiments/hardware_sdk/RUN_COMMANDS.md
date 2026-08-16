@@ -2,6 +2,17 @@
 
 所有命令都从仓库根目录执行，均为可直接复制的单行命令。
 
+## MoE4 CCD 采集后统一处理（独立于训练工程）
+
+先编辑 `experiments/hardware_sdk/configs/process_moe4_ccd_956.yaml` 中的统一
+`roi_xywh`。它应框住旧 `2×2` 专家的整个有效区域；程序缩放完整 ROI 到
+`956×956`，输出 8-bit 灰度 PNG，不做翻转，也不会中心裁剪到 `224×224`。
+
+    python -m experiments.hardware_sdk.workflows.process_moe4_ccd --config experiments/hardware_sdk/configs/process_moe4_ccd_956.yaml --input-dir experiments/hardware_sdk/data/ccd_captured_raw --output-dir experiments/hardware_sdk/data/ccd_captured_moe4_956
+
+默认对整个文件夹估计一组共同的百分位强度范围，不会逐图归一化。相机黑电平和饱和
+值已知时，把 `intensity.mode` 改为 `fixed_range` 并填写 `black_level/white_level`。
+
 ## 1. 安装
 
     python -m pip install -r experiments\hardware_sdk\requirements-light.txt

@@ -373,10 +373,14 @@ def _build_optimizer(
     settings: Settings,
 ) -> tuple[torch.optim.Optimizer, list[nn.Parameter]]:
     parameters = unique_trainable_parameters(replacement, readout)
-    router_parameters = list(replacement.vision_surrogate.core.router.parameters())
-    router_parameters.extend(
-        replacement.language_surrogate.core.router.parameters()
-    )
+    custom_router_parameters = getattr(replacement, "router_parameters", None)
+    if callable(custom_router_parameters):
+        router_parameters = list(custom_router_parameters())
+    else:
+        router_parameters = list(replacement.vision_surrogate.core.router.parameters())
+        router_parameters.extend(
+            replacement.language_surrogate.core.router.parameters()
+        )
     router_ids = {id(parameter) for parameter in router_parameters}
     if len(router_ids) != len(router_parameters):
         raise RuntimeError("Vision/language router parameter sets unexpectedly overlap")

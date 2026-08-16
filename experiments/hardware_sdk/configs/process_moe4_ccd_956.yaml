@@ -1,0 +1,21 @@
+# Paths are relative to this YAML file unless overridden on the command line.
+input_dir: ../data/ccd_captured_raw
+output_dir: ../data/ccd_captured_moe4_956
+
+# Set this to the approximate 2x2-expert active region in every raw CCD frame.
+# The selected rectangle is resized as a whole; it is never center-cropped.
+roi_xywh: null
+target_size_wh: [956, 956]
+
+# One common mapping is estimated for the complete capture folder, rather than
+# stretching every frame independently.  Use fixed_range when camera black and
+# saturation levels are calibrated (for 16-bit: black_level 0, white_level 65535).
+intensity:
+  mode: global_percentile
+  lower_percentile: 0.1
+  upper_percentile: 99.9
+  sample_stride: 16
+
+# Flips intentionally belong to the experiment's hardware.ccd settings.
+flip_vertical: false
+flip_horizontal: false

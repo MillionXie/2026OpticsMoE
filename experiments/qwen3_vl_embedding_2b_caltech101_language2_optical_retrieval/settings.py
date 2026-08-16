@@ -87,6 +87,9 @@ def load_settings(path: str | Path) -> Any:
     settings.language_optical_max_shift_pixels = int(
         d("language_optical.perturbation.max_shift_pixels", 4)
     )
+    settings.language_optical_phase_shift_pixels = int(
+        d("language_optical.perturbation.phase_shift_pixels", 4)
+    )
     settings.language_optical_ccd_shift_pixels = int(
         d("language_optical.perturbation.ccd_shift_pixels", 4)
     )
@@ -108,25 +111,41 @@ def load_settings(path: str | Path) -> Any:
     settings.hardware_phase_flip_horizontal = bool(
         d("hardware.phase_mask.flip_horizontal", False)
     )
-    roi = d("hardware.ccd.roi_xywh", None)
-    settings.hardware_ccd_roi_xywh = (
-        None if roi is None else tuple(int(value) for value in roi)
-    )
     settings.hardware_ccd_flip_vertical = bool(
         d("hardware.ccd.flip_vertical", False)
     )
     settings.hardware_ccd_flip_horizontal = bool(
         d("hardware.ccd.flip_horizontal", False)
     )
-    settings.hardware_ccd_registration_mode = str(
-        d("hardware.ccd.registration_mode", "center_crop_resize")
-    )
     settings.hardware_ccd_physical_binning_factor = int(
         d("hardware.ccd.physical_binning_factor", 2)
     )
     settings.hardware_ccd_target_size = int(
-        d("hardware.ccd.target_size", settings.language_optical_grid_size)
+        d("hardware.ccd.target_size", settings.active_size)
     )
+    # The electronic experiment intentionally forces a one-path compatibility
+    # router. Restore the canonical Grocery MoE4 geometry for this hybrid.
+    settings.num_experts = int(d("optical.geometry.num_experts", 4))
+    settings.expert_grid_rows = int(d("optical.geometry.grid_rows", 2))
+    settings.expert_grid_cols = int(d("optical.geometry.grid_cols", 2))
+    settings.top_k = int(d("optical.router.top_k", 2))
+    settings.router_learning_rate = float(d("training.router_learning_rate", 5.0e-5))
+    # HomogeneousMoEOpticalCore consumes the canonical setting names.  Make the
+    # experiment-local phase controls authoritative for all four expert masks
+    # and the global mask.
+    settings.phase_parameterization = settings.language_optical_phase_parameterization
+    settings.phase_init = settings.language_optical_phase_init
+    settings.phase_init_std = settings.language_optical_phase_init_std
+    settings.phase_dropout_mode = settings.language_optical_phase_dropout_mode
+    settings.phase_dropout_p = settings.language_optical_phase_dropout_p
+    settings.phase_dropout_block_size = (
+        settings.language_optical_phase_dropout_block_size
+    )
+    settings.wavelength_nm = settings.language_optical_wavelength_nm
+    settings.pixel_pitch_um = settings.language_optical_pixel_pitch_um
+    settings.expert_interlayer_distance_m = settings.language_optical_distance_m
+    settings.k_space_constraint_enabled = settings.language_optical_k_space_enabled
+    settings.theta_max_deg = settings.language_optical_theta_max_deg
 
     if settings.electronic_layers != 2:
         raise ValueError("Language-layer-2 optics requires exactly two electronic blocks")
@@ -142,6 +161,7 @@ def load_settings(path: str | Path) -> Any:
         raise ValueError("lambda_ccd_operating_point must be nonnegative")
     if (
         settings.language_optical_max_shift_pixels < 0
+        or settings.language_optical_phase_shift_pixels < 0
         or settings.language_optical_ccd_shift_pixels < 0
     ):
         raise ValueError("Optical input/CCD shift bounds must be nonnegative")
@@ -150,26 +170,25 @@ def load_settings(path: str | Path) -> Any:
     if not 0.0 < settings.language_optical_phase_dropout_p < 1.0:
         raise ValueError("phase dropout probability must be in (0,1)")
     if settings.lambda_router_balance or settings.lambda_router_importance:
-        raise ValueError("This single-path optical experiment has no router loss")
-    if settings.hardware_ccd_roi_xywh is not None:
-        if len(settings.hardware_ccd_roi_xywh) != 4:
-            raise ValueError("hardware.ccd.roi_xywh must be null or [x,y,width,height]")
-        if any(value < 0 for value in settings.hardware_ccd_roi_xywh[:2]) or any(
-            value <= 0 for value in settings.hardware_ccd_roi_xywh[2:]
-        ):
-            raise ValueError("hardware.ccd.roi_xywh contains invalid coordinates")
-    if settings.hardware_ccd_registration_mode not in {
-        "strict",
-        "resize",
-        "center_crop_resize",
-    }:
+        raise ValueError("MoE4 routing is enabled, but router auxiliary losses must be zero")
+    if settings.hardware_ccd_physical_binning_factor != 2:
+        raise ValueError("Canonical 16um-to-8um hardware mapping requires factor=2")
+    if settings.hardware_ccd_target_size != settings.active_size:
+        raise ValueError("hardware.ccd.target_size must equal MoE active_size=478")
+    if (
+        settings.canvas_size != 518
+        or settings.active_size != 478
+        or settings.expert_size != 224
+        or settings.expert_pitch != 254
+        or settings.num_experts != 4
+        or settings.expert_grid_rows != 2
+        or settings.expert_grid_cols != 2
+        or settings.top_k != 2
+    ):
         raise ValueError(
-            "hardware.ccd.registration_mode must be strict, resize, or center_crop_resize"
+            "Language layer-2 hardware experiment requires canonical "
+            "MoE4: canvas518/active478/expert224/grid2x2/top_k2"
         )
-    if settings.hardware_ccd_physical_binning_factor <= 0:
-        raise ValueError("hardware.ccd.physical_binning_factor must be positive")
-    if settings.hardware_ccd_target_size != settings.language_optical_grid_size:
-        raise ValueError("hardware.ccd.target_size must equal the optical grid size")
     return settings
 
 
@@ -182,10 +201,13 @@ def save_resolved_config(settings: Any) -> None:
         "initial_electronic_checkpoint": str(settings.initial_electronic_checkpoint),
         "freeze_electronic": settings.hybrid_freeze_electronic,
         "initial_fusion": settings.optical_fusion_initial,
-        "router_enabled": False,
+        "router_enabled": True,
+        "router_loss_enabled": False,
     }
     values["language_optical"] = {
-        "grid_size": settings.language_optical_grid_size,
+        "layout": "MoE4_2x2_topk2",
+        "expert_size": settings.expert_size,
+        "active_size": settings.active_size,
         "canvas_size": settings.language_optical_canvas_size,
         "wavelength_nm": settings.language_optical_wavelength_nm,
         "pixel_pitch_um": settings.language_optical_pixel_pitch_um,
@@ -203,14 +225,8 @@ def save_resolved_config(settings: Any) -> None:
             "flip_horizontal": settings.hardware_phase_flip_horizontal,
         },
         "ccd": {
-            "roi_xywh": (
-                None
-                if settings.hardware_ccd_roi_xywh is None
-                else list(settings.hardware_ccd_roi_xywh)
-            ),
             "flip_vertical": settings.hardware_ccd_flip_vertical,
             "flip_horizontal": settings.hardware_ccd_flip_horizontal,
-            "registration_mode": settings.hardware_ccd_registration_mode,
             "physical_binning_factor": settings.hardware_ccd_physical_binning_factor,
             "target_size": settings.hardware_ccd_target_size,
         },

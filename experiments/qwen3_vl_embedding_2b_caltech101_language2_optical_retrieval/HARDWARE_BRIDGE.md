@@ -1,34 +1,32 @@
 # Language Block 2 实物光路桥接
 
-## 数据边界
+## 光路边界与尺寸
 
-`manifest.csv` 固定了 gallery、train、test 的播放顺序和 basename。训练 CCD 只用于
-下游微调；test CCD 只用于报告性能，不参与参数更新。实物文件必须保持 manifest
-中的 basename，避免电子缓存和 CCD 错配。
+保留旧 MoE4/router。专家相位、专家传播和 OEO 先在服务器仿真；导出的振幅是全局
+相位板之前的 `478×478` 逻辑有效区。按 8 μm 实物像素播放时最近邻扩展 2 倍，得到
+`956×956` 物理有效区。全局 phase mask 同样由 `478×478` 扩展到 `956×956` 后居中
+放入 SLM 画布。仿真仍以 16 μm logical sampling 在 `518×518` canvas 上传播。
 
-## 光路定义
+CCD 原始照片可比它大，也可以不是正方形。先在独立的 `hardware_sdk` 配置中指定你
+截取到的近似 2×2 专家有效区 ROI；处理器会缩放完整 ROI 到 `956×956`，不会只裁
+中央 `224×224`。输出固定为 8-bit 灰度 PNG，且不翻转。项目随后按
+`hardware.ccd.flip_vertical/flip_horizontal` 翻转，再做严格 `2×2` block mean，得到
+模型使用的 `478×478` 强度。CCD 已经表示光强，不能再次平方。
 
-导出的 `224 x 224` 振幅在 8 um 实物 SLM 上按最近邻扩展成 `448 x 448`，相位
-也采用同一物理尺寸。仿真使用 16 um logical sampling 和 518 padding canvas。
-CCD 推荐直接采集对齐的 `448 x 448` ROI，程序严格执行 2x2 block mean，还原为
-`224 x 224` logical intensity。其他 CCD 尺寸可以在配置中指定源图 ROI，并选择
-`resize` 或 `center_crop_resize` 注册到 224；所有裁剪、翻转、缩放操作都会记录
-在 `ccd_registered/*.json`。CCD 文件已经是强度，禁止再次平方。
+## 归一化与扰动
 
-phase mask 的垂直/水平翻转由 `hardware.phase_mask` 控制。当前默认垂直翻转、
-不水平翻转，对应旧 Grocery 折叠光路。CCD 的垂直/水平翻转独立配置，不能直接
-照搬 phase mask 的方向。
+独立预处理用全文件夹共享的强度范围转成 8-bit，避免逐图拉伸破坏相对光强。若相机
+黑电平和饱和值已标定，优先使用 `fixed_range`；否则默认用全数据共同的百分位范围。
+进入模型后，仿真和实测共同执行低分位背景扣除、每帧均值除法、相对强度裁剪及
+`log1p`。训练还分别扰动输入/专家、全局相位输入以及 CCD 偏移，并加入全局增益、
+偏置和读出噪声。
 
-## 归一化
+## 数据和微调
 
-仿真与实测共同执行：低分位背景扣除、每帧平均光强除法、相对强度裁剪、log1p
-压缩和逐 token LayerNorm。前两步主要抵消暗电平、激光功率、曝光和模拟/实物的
-全局增益差；它不会修复空间错位，因此训练中另行加入输入错位和读出噪声。
-输入相对 phase mask 的平移与 CCD ROI 的平移是两次独立随机扰动，默认各为
-正负 8 logical pixels，即当前 2x 实物缩放下约正负 16 个物理像素。
+`manifest.csv` 固定 gallery、train、test 的播放次序与 basename。处理后的 PNG 必须按
+相同 basename 放进 session 的 `ccd_captured/`。`register_ccd` 会拒绝非 uint8、非
+`956×956` 文件，并把翻转、块平均及统计写进 `ccd_registered/*.json`。
 
-## 微调范围
-
-实测 CCD 被视为不可微边界。只更新 CCD normalizer 的 affine、光学 decoder、
-融合 gate、Language output norm 和 64D retrieval readout。相位、光前编码器、
-Vision、Language Block 1 以及电子 Block 2 均冻结。
+实测 CCD 是不可微边界。微调只更新 MoE CCD readout/output adapter、融合 gate、
+Language output norm 与 64D retrieval readout；相位、router、光前编码器、Vision、
+Language Block 1 和电子 Block 2 都冻结。

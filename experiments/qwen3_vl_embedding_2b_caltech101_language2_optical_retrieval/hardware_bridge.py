@@ -31,6 +31,7 @@ from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.io_utils impo
 )
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.optical_artifacts import (
     export_centered_bmp,
+    phase_tensors,
 )
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.train_optical_retrieval import (
     episodic_prototype_retrieval_loss,
@@ -72,7 +73,9 @@ def export_session(settings: Any, checkpoint: Path, session_dir: Path) -> None:
     _load_hybrid_checkpoint(checkpoint, replacement, readout)
     session_dir.mkdir(parents=True, exist_ok=True)
     core = replacement.language_surrogate.core
-    physical_phase = core.optical_branch.phase.phase().detach().cpu()
+    optical_core = core.optical_branch.core
+    phases = phase_tensors(optical_core)
+    physical_phase = phases["physical_global_phase_rad"]
     phase = physical_phase
     if settings.hardware_phase_flip_vertical:
         phase = torch.flip(phase, dims=(-2,))
@@ -80,20 +83,24 @@ def export_session(settings: Any, checkpoint: Path, session_dir: Path) -> None:
         phase = torch.flip(phase, dims=(-1,))
     phase_report = export_centered_bmp(
         phase,
-        session_dir / "phase_mask" / "language_block2_phase.bmp",
+        session_dir / "phase_mask" / "language_block2_global_phase.bmp",
         value_type="phase",
-        scale_factor=2,
+        scale_factor=settings.hardware_ccd_physical_binning_factor,
         slm_width=1920,
         slm_height=1200,
         flip_vertical=False,
     )
     torch.save(
         physical_phase,
-        session_dir / "phase_mask" / "language_block2_phase_model_coordinates_rad.pt",
+        session_dir / "phase_mask" / "language_block2_global_phase_model_coordinates_rad.pt",
     )
     torch.save(
         phase,
-        session_dir / "phase_mask" / "language_block2_phase_export_coordinates_rad.pt",
+        session_dir / "phase_mask" / "language_block2_global_phase_export_coordinates_rad.pt",
+    )
+    torch.save(
+        phases["physical_expert_mosaic_rad"],
+        session_dir / "phase_mask" / "simulated_expert_mosaic_model_coordinates_rad.pt",
     )
     for name in ("block2_input", "electronic_block2_output", "simulation_ccd"):
         (session_dir / name).mkdir(parents=True, exist_ok=True)
@@ -112,7 +119,7 @@ def export_session(settings: Any, checkpoint: Path, session_dir: Path) -> None:
             inputs = move_inputs(inputs, loaded.device)
             student_embeddings(loaded.model, replacement, readout, inputs)
             key = _key(sample)
-            amplitude = core.optical_branch.last_amplitude[0].cpu()
+            amplitude = core.optical_branch.last_global_input_amplitude[0].cpu()
             simulated_ccd = core.optical_branch.last_raw_ccd[0].cpu()
             block2_input = core.last_block2_input_groups[0].cpu()
             electronic = core.last_electronic_block2_groups[0].cpu()
@@ -132,7 +139,7 @@ def export_session(settings: Any, checkpoint: Path, session_dir: Path) -> None:
                 amplitude,
                 session_dir / "amplitude_to_play" / f"{key}.bmp",
                 value_type="amplitude",
-                scale_factor=2,
+                scale_factor=settings.hardware_ccd_physical_binning_factor,
                 slm_width=1920,
                 slm_height=1080,
                 amplitude_encoding_mode="positive_percentile",
@@ -171,12 +178,15 @@ def export_session(settings: Any, checkpoint: Path, session_dir: Path) -> None:
             "phase_flip_vertical_before_export": (
                 settings.hardware_phase_flip_vertical
             ),
-            "logical_amplitude_shape": [224, 224],
-            "physical_active_shape": [448, 448],
-            "preferred_ccd_rule": "exact 2x2 block mean from 448x448 to 224x224",
-            "configured_ccd_registration_mode": (
-                settings.hardware_ccd_registration_mode
+            "optical_boundary": (
+                "after simulated MoE4 expert phase/propagation/OEO and before "
+                "the physical global phase"
             ),
+            "moe_layout": "2x2 experts, each 224x224 logical pixels, pitch 254, top-k=2",
+            "logical_active_shape": [478, 478],
+            "physical_active_shape": [956, 956],
+            "required_capture_file": "8-bit grayscale 956x956 produced by hardware_sdk",
+            "ccd_registration": "configured flips, then exact 2x2 block mean to 478x478",
             "ccd_semantics": "captured files are intensity and must never be squared again",
             "normalization": (
                 "background quantile subtraction; divide by per-frame mean; "
@@ -209,6 +219,19 @@ def _load_image_tensor(path: Path) -> torch.Tensor:
     return value.squeeze().float()
 
 
+def _load_measured_uint8(path: Path) -> torch.Tensor:
+    with Image.open(path) as image:
+        if image.mode != "L":
+            raise RuntimeError(
+                f"Measured CCD {path} must be an 8-bit grayscale image (PIL mode L), "
+                f"got mode {image.mode!r}; run hardware_sdk preprocessing first"
+            )
+        array = np.asarray(image)
+    if array.dtype != np.uint8:
+        raise RuntimeError(f"Measured CCD {path} must use uint8 pixels, got {array.dtype}")
+    return torch.from_numpy(array.copy()).float()
+
+
 def load_ccd(
     session_dir: Path,
     key: str,
@@ -223,9 +246,11 @@ def load_ccd(
     if use_simulation:
         path = session_dir / "simulation_ccd" / f"{key}.pt"
         value = _load_image_tensor(path)
-        if tuple(value.shape) != (224, 224):
+        target = int(getattr(settings, "hardware_ccd_target_size", 478))
+        if tuple(value.shape) != (target, target):
             raise RuntimeError(
-                f"Simulated CCD {path} must already be 224x224, got {tuple(value.shape)}"
+                f"Simulated CCD {path} must already be {target}x{target}, "
+                f"got {tuple(value.shape)}"
             )
         return value
     registered = session_dir / "ccd_registered" / f"{key}.pt"
@@ -235,11 +260,15 @@ def load_ccd(
         and flip_vertical is None
         and flip_horizontal is None
     ):
-        return torch.load(registered, map_location="cpu", weights_only=True).float()
+        value = torch.load(registered, map_location="cpu", weights_only=True).float()
+        target = int(getattr(settings, "hardware_ccd_target_size", 478))
+        if tuple(value.shape) != (target, target):
+            raise RuntimeError(f"Stale registered CCD has shape {tuple(value.shape)}")
+        return value
     root = session_dir / "ccd_captured"
     candidates = [
         root / f"{key}{suffix}"
-        for suffix in (".pt", ".npy", ".tif", ".tiff", ".png")
+        for suffix in (".png", ".bmp", ".tif", ".tiff")
     ]
     matches = [candidate for candidate in candidates if candidate.is_file()]
     if len(matches) != 1:
@@ -247,20 +276,11 @@ def load_ccd(
             f"Expected one measured CCD for {key} below {root}, found {len(matches)}"
         )
     path = matches[0]
-    value = _load_image_tensor(path)
+    value = _load_measured_uint8(path)
     source_shape = tuple(int(item) for item in value.shape)
     if value.ndim != 2:
         raise RuntimeError(f"CCD {path} must be a 2-D intensity image")
 
-    roi = getattr(settings, "hardware_ccd_roi_xywh", None)
-    if roi is not None:
-        x, y, width, height = roi
-        if x + width > value.shape[1] or y + height > value.shape[0]:
-            raise RuntimeError(
-                f"Configured CCD ROI {roi} is outside source shape {source_shape}"
-            )
-        value = value[y : y + height, x : x + width]
-    cropped_shape = tuple(int(item) for item in value.shape)
     vertical = (
         bool(getattr(settings, "hardware_ccd_flip_vertical", False))
         if flip_vertical is None
@@ -276,36 +296,16 @@ def load_ccd(
     if horizontal:
         value = torch.flip(value, (-1,))
 
-    target = int(getattr(settings, "hardware_ccd_target_size", 224))
+    target = int(getattr(settings, "hardware_ccd_target_size", 478))
     factor = int(getattr(settings, "hardware_ccd_physical_binning_factor", 2))
-    registration_mode = str(
-        getattr(settings, "hardware_ccd_registration_mode", "strict")
-    )
-    registration_action = "already_logical_size"
-    center_crop_xyxy: list[int] | None = None
-    if tuple(value.shape) == (target * factor, target * factor):
-        value = value.reshape(target, factor, target, factor).mean(dim=(1, 3))
-        registration_action = f"exact_{factor}x{factor}_block_mean"
-    elif tuple(value.shape) != (target, target):
-        if registration_mode == "strict":
-            raise RuntimeError(
-                f"CCD {path} is {tuple(value.shape)} after ROI/flips; strict mode accepts "
-                f"only {(target, target)} or {(target * factor, target * factor)}"
-            )
-        if registration_mode == "center_crop_resize":
-            height, width = value.shape
-            side = min(height, width)
-            x0 = (width - side) // 2
-            y0 = (height - side) // 2
-            center_crop_xyxy = [x0, y0, x0 + side, y0 + side]
-            value = value[y0 : y0 + side, x0 : x0 + side]
-        downsampling = value.shape[0] >= target and value.shape[1] >= target
-        mode = "area" if downsampling else "bilinear"
-        interpolate_kwargs = {} if mode == "area" else {"align_corners": False}
-        value = F.interpolate(
-            value[None, None], size=(target, target), mode=mode, **interpolate_kwargs
-        )[0, 0]
-        registration_action = f"{registration_mode}_{mode}_to_{target}"
+    physical = target * factor
+    if tuple(value.shape) != (physical, physical):
+        raise RuntimeError(
+            f"CCD {path} is {tuple(value.shape)}; expected preprocessed uint8 "
+            f"{physical}x{physical}. Crop/resize it with hardware_sdk first."
+        )
+    value = value.reshape(target, factor, target, factor).mean(dim=(1, 3))
+    registration_action = f"flip_then_exact_{factor}x{factor}_block_mean"
 
     value = value.float().clamp_min(0.0)
     if tuple(value.shape) != (target, target):
@@ -320,13 +320,9 @@ def load_ccd(
             {
                 "source": str(path),
                 "source_shape": list(source_shape),
-                "roi_xywh": roi,
-                "shape_after_roi": list(cropped_shape),
                 "flip_vertical": vertical,
                 "flip_horizontal": horizontal,
-                "registration_mode": registration_mode,
                 "registration_action": registration_action,
-                "center_crop_xyxy_after_flip": center_crop_xyxy,
                 "registered_shape": list(value.shape),
                 "registered_min": float(value.min()),
                 "registered_max": float(value.max()),
@@ -336,7 +332,7 @@ def load_ccd(
     return value
 
 
-def prepare_captured_ccd(
+def register_captured_ccd(
     settings: Any,
     session_dir: Path,
     *,
@@ -356,7 +352,7 @@ def prepare_captured_ccd(
             reuse_registered=False,
         )
         if index % 20 == 0 or index == len(rows):
-            print(f"[prepare_ccd] {index}/{len(rows)}", flush=True)
+            print(f"[register_ccd] {index}/{len(rows)}", flush=True)
 
 
 def _load_downstream(settings: Any, checkpoint: Path, device: torch.device):
@@ -377,8 +373,8 @@ def _load_downstream(settings: Any, checkpoint: Path, device: torch.device):
     ).to(device)
     readout.load_state_dict(payload["retrieval_readout"], strict=True)
     core.requires_grad_(False)
-    core.optical_branch.ccd_normalizer.requires_grad_(True)
-    core.optical_branch.decoder.requires_grad_(True)
+    core.optical_branch.core.readout.requires_grad_(True)
+    core.optical_branch.core.output_adapter.requires_grad_(True)
     core.output_norm.requires_grad_(True)
     core.optical_fusion_logit.requires_grad_(True)
     readout.requires_grad_(True)
@@ -478,8 +474,8 @@ def finetune_session(
     generator = torch.Generator().manual_seed(settings.random_seed)
     for epoch in range(1, epochs + 1):
         core.eval()
-        core.optical_branch.ccd_normalizer.train()
-        core.optical_branch.decoder.train()
+        core.optical_branch.core.readout.train()
+        core.optical_branch.core.output_adapter.train()
         core.output_norm.train()
         readout.train()
         steps = max(1, len(train_rows) // 30)
@@ -530,7 +526,9 @@ def finetune_session(
                 "epoch": epoch,
                 "train_loss": average,
                 "observed_test_top1": top1,
-                "trainable_scope": "CCD normalizer, decoder, fusion, output norm, readout",
+                "trainable_scope": (
+                    "MoE CCD readout/output adapter, fusion, output norm, retrieval readout"
+                ),
             }
             torch.save(updated, session_dir / "hardware_finetuned_checkpoint.pt")
 
@@ -541,7 +539,7 @@ def main() -> int:
     parser.add_argument("--checkpoint", default=None)
     parser.add_argument("--session-dir", required=True)
     parser.add_argument(
-        "--phase", choices=("export", "prepare_ccd", "finetune"), required=True
+        "--phase", choices=("export", "register_ccd", "finetune"), required=True
     )
     parser.add_argument("--use-simulation", action="store_true")
     parser.add_argument(
@@ -562,8 +560,8 @@ def main() -> int:
         if checkpoint is None:
             parser.error("--checkpoint is required for --phase export")
         export_session(settings, checkpoint, session_dir)
-    elif args.phase == "prepare_ccd":
-        prepare_captured_ccd(
+    elif args.phase == "register_ccd":
+        register_captured_ccd(
             settings,
             session_dir,
             flip_vertical=args.flip_vertical,

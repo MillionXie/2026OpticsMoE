@@ -19,10 +19,10 @@ batching:
   optimizer_steps_per_epoch: 1
 
 language_optical:
-  canvas_size: 224
   k_space: {enabled: false, theta_max_deg: 0.65}
   perturbation:
     max_shift_pixels: 1
+    phase_shift_pixels: 1
     ccd_shift_pixels: 1
 
-output_dir: ../../runs/smoke_language2_optical
+output_dir: ../../runs/smoke_language2_moe4_global

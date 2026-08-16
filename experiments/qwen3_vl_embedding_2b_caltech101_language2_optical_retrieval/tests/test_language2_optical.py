@@ -1,128 +1,112 @@
 import json
+from pathlib import Path
 from types import SimpleNamespace
 
+import numpy as np
 import torch
+from PIL import Image
 
 from ..hardware_bridge import load_ccd
 from ..optical_blocks import LanguageSecondLayerOpticalCore, RobustCCDNormalizer
+from ..settings import load_settings
 
 
-def _settings() -> SimpleNamespace:
-    return SimpleNamespace(
-        electronic_width=6,
-        electronic_expansion=2.0,
-        electronic_token_mixer_enabled=True,
-        electronic_token_mixer_kernel_size=3,
-        electronic_vision_token_mixer_type="depthwise_conv2d",
-        electronic_language_token_mixer_type="depthwise_conv1d",
-        electronic_vision_token_mixer_kernel_size=3,
-        electronic_language_token_mixer_kernel_size=3,
-        electronic_dropout=0.0,
-        electronic_initial_residual_weight=0.1,
-        electronic_layers=2,
-        optical_fusion_initial=0.05,
-        language_optical_grid_size=8,
-        language_optical_canvas_size=16,
-        language_optical_input_rms=0.5,
-        language_optical_ccd_target_mean=0.25,
-        language_optical_max_shift_pixels=0,
-        language_optical_ccd_shift_pixels=0,
-        language_optical_gain_min=0.5,
-        language_optical_gain_max=2.0,
-        language_optical_offset_fraction=0.03,
-        language_optical_read_noise_fraction=0.01,
-        language_optical_background_quantile=0.01,
-        language_optical_normalization_clip=12.0,
-        language_optical_log_compression=1.0,
-        language_optical_phase_parameterization="sigmoid",
-        language_optical_phase_init="small_normal",
-        language_optical_phase_init_std=0.02,
-        language_optical_phase_dropout_mode="block_phase_bypass",
-        language_optical_phase_dropout_p=0.05,
-        language_optical_phase_dropout_block_size=2,
-        language_optical_wavelength_nm=532.0,
-        language_optical_pixel_pitch_um=16.0,
-        language_optical_distance_m=0.01,
-        language_optical_k_space_enabled=False,
-        language_optical_theta_max_deg=1.0,
+EXPERIMENT = Path(__file__).resolve().parents[1]
+
+
+def _settings():
+    settings = load_settings(
+        EXPERIMENT / "configs" / "release" / "caltech101_language2_optical_residual.yaml"
     )
+    settings.electronic_width = 6
+    settings.electronic_expansion = 2.0
+    settings.electronic_dropout = 0.0
+    settings.language_optical_max_shift_pixels = 0
+    settings.language_optical_phase_shift_pixels = 0
+    settings.language_optical_ccd_shift_pixels = 0
+    settings.k_space_constraint_enabled = False
+    return settings
 
 
 def test_ccd_normalization_rejects_global_gain_and_offset() -> None:
-    normalizer = RobustCCDNormalizer(8, _settings()).eval()
-    value = torch.rand(2, 8, 8) + 0.1
+    settings = _settings()
+    normalizer = RobustCCDNormalizer(settings).eval()
+    value = torch.rand(2, 478, 478) + 0.1
     first = normalizer(value)
     second = normalizer(value * 3.7 + 0.4)
     assert torch.allclose(first, second, atol=2.0e-4, rtol=2.0e-4)
 
 
-def test_language_second_layer_optics_has_finite_phase_gradient() -> None:
-    core = LanguageSecondLayerOpticalCore(10, 8, _settings()).train()
-    groups = [torch.randn(7, 10), torch.randn(5, 10)]
+def test_moe4_language_second_layer_has_router_and_finite_phase_gradient() -> None:
+    core = LanguageSecondLayerOpticalCore(10, 224, _settings()).train()
+    groups = [torch.randn(5, 10)]
     packed, latent = core.forward_groups(groups, causal=True)
     loss = packed.square().mean() + core.optical_branch.current_operating_loss
     loss.backward()
-    assert packed.shape == (12, 10)
-    assert latent.shape == (2, 7, 6)
-    gradient = core.optical_branch.phase.raw_phase.grad
-    assert gradient is not None
-    assert torch.isfinite(gradient).all()
-    assert float(gradient.abs().sum()) > 0.0
+    routing = core.last_routing
+    assert packed.shape == (5, 10)
+    assert latent.shape == (1, 5, 6)
+    assert routing["selected_mask"].shape == (1, 4)
+    assert torch.equal(routing["selected_mask"].sum(dim=1), torch.tensor([2]))
+    gradients = [
+        parameter.grad
+        for name, parameter in core.optical_branch.named_parameters()
+        if "raw_phase" in name
+    ]
+    assert gradients and all(gradient is not None for gradient in gradients)
+    assert all(torch.isfinite(gradient).all() for gradient in gradients)
+    assert sum(float(gradient.abs().sum()) for gradient in gradients) > 0.0
 
 
-def test_zero_initialized_optical_decoder_preserves_electronic_path() -> None:
-    core = LanguageSecondLayerOpticalCore(10, 8, _settings()).eval()
-    groups = [torch.randn(6, 10)]
+def test_nearly_closed_optical_gate_preserves_electronic_path() -> None:
+    core = LanguageSecondLayerOpticalCore(10, 224, _settings()).eval()
+    core.optical_fusion_logit.data.fill_(-30.0)
+    groups = [torch.randn(5, 10)]
     _, latent = core.forward_groups(groups, causal=True)
-    mask = torch.zeros(1, 6, dtype=torch.bool)
+    mask = torch.zeros(1, 5, dtype=torch.bool)
     input_latent = core.input_norm(core.input_adapter(groups[0].unsqueeze(0)))
     first = core.blocks[0](input_latent, padding_mask=mask, causal=True)
     electronic = core.blocks[1](first, padding_mask=mask, causal=True)
-    expected = core.output_norm(electronic)
-    assert torch.allclose(latent, expected, atol=1.0e-6, rtol=1.0e-6)
+    assert torch.allclose(latent, core.output_norm(electronic), atol=1.0e-6, rtol=1.0e-6)
 
 
-def test_physical_ccd_is_block_binned_without_interpolation(tmp_path) -> None:
+def test_physical_uint8_ccd_is_flipped_then_block_binned(tmp_path) -> None:
     root = tmp_path / "ccd_captured"
     root.mkdir()
-    physical = torch.arange(448 * 448, dtype=torch.float32).reshape(448, 448)
-    torch.save(physical, root / "sample.pt")
-    logical = load_ccd(
-        tmp_path,
-        "sample",
-        use_simulation=False,
-        flip_vertical=False,
-        flip_horizontal=False,
-    )
-    expected = physical.reshape(224, 2, 224, 2).mean(dim=(1, 3))
-    assert logical.shape == (224, 224)
-    assert torch.equal(logical, expected)
-
-
-def test_arbitrary_ccd_size_is_flipped_cropped_resized_and_audited(tmp_path) -> None:
-    root = tmp_path / "ccd_captured"
-    root.mkdir()
-    source = torch.arange(300 * 500, dtype=torch.float32).reshape(300, 500)
-    torch.save(source, root / "sample.pt")
-    hardware = SimpleNamespace(
-        hardware_ccd_roi_xywh=None,
+    physical = np.arange(28 * 28, dtype=np.uint16).reshape(28, 28) % 256
+    Image.fromarray(physical.astype(np.uint8), mode="L").save(root / "sample.png")
+    settings = SimpleNamespace(
+        hardware_ccd_target_size=14,
+        hardware_ccd_physical_binning_factor=2,
         hardware_ccd_flip_vertical=True,
         hardware_ccd_flip_horizontal=False,
-        hardware_ccd_target_size=224,
-        hardware_ccd_physical_binning_factor=2,
-        hardware_ccd_registration_mode="center_crop_resize",
     )
     logical = load_ccd(
-        tmp_path,
-        "sample",
-        use_simulation=False,
-        settings=hardware,
-        flip_vertical=None,
-        flip_horizontal=None,
+        tmp_path, "sample", use_simulation=False, settings=settings,
+        flip_vertical=None, flip_horizontal=None,
     )
+    expected = torch.from_numpy(np.flip(physical.astype(np.float32), axis=0).copy())
+    expected = expected.reshape(14, 2, 14, 2).mean(dim=(1, 3))
     report = json.loads((tmp_path / "ccd_registered" / "sample.json").read_text())
-    assert logical.shape == (224, 224)
-    assert report["source_shape"] == [300, 500]
+    assert torch.equal(logical, expected)
+    assert report["source_shape"] == [28, 28]
     assert report["flip_vertical"] is True
-    assert report["center_crop_xyxy_after_flip"] == [100, 0, 400, 300]
-    assert report["registration_action"] == "center_crop_resize_area_to_224"
+    assert report["registration_action"] == "flip_then_exact_2x2_block_mean"
+
+
+def test_project_rejects_unprocessed_ccd_size(tmp_path) -> None:
+    root = tmp_path / "ccd_captured"
+    root.mkdir()
+    Image.fromarray(np.zeros((30, 30), dtype=np.uint8), mode="L").save(root / "sample.png")
+    settings = SimpleNamespace(
+        hardware_ccd_target_size=14,
+        hardware_ccd_physical_binning_factor=2,
+        hardware_ccd_flip_vertical=False,
+        hardware_ccd_flip_horizontal=False,
+    )
+    try:
+        load_ccd(tmp_path, "sample", use_simulation=False, settings=settings)
+    except RuntimeError as error:
+        assert "hardware_sdk" in str(error)
+    else:
+        raise AssertionError("unprocessed CCD size was accepted")

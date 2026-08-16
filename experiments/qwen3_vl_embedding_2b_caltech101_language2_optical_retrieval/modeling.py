@@ -21,11 +21,11 @@ from .optical_blocks import LanguageSecondLayerOpticalReplacement
 
 
 class Language2OpticalReplacement(ElectronicDeepStackReplacement):
-    # The legacy two-stack phase artifact writer cannot describe this asymmetric
-    # one-plane experiment. Hardware artifacts are exported by hardware_bridge.
+    # The legacy Vision+Language artifact writer cannot describe this asymmetric
+    # Language-only MoE4 experiment. Hardware artifacts come from hardware_bridge.
     has_optical_phases = False
-    training_architecture_label = "language2_optical_residual_no_router"
-    checkpoint_architecture = "language_block2_parallel_single_phase_residual"
+    training_architecture_label = "language2_moe4_global_hardware_residual"
+    checkpoint_architecture = "language_block2_parallel_moe4_topk2_residual"
 
     def __init__(self, *args: Any, freeze_electronic: bool, **kwargs: Any) -> None:
         self.freeze_electronic = bool(freeze_electronic)
@@ -56,28 +56,36 @@ class Language2OpticalReplacement(ElectronicDeepStackReplacement):
             value = self.language_surrogate.core.optical_fusion_logit.new_zeros(())
         return {"ccd_operating_point": value}
 
+    def router_parameters(self) -> list[torch.nn.Parameter]:
+        """Expose the real MoE4 router nested in the Language optical branch."""
+        return list(
+            self.language_surrogate.core.optical_branch.core.router.parameters()
+        )
+
     def student_architecture_report(self) -> dict[str, Any]:
         core = self.language_surrogate.core
         return {
-            "type": "vision2d_language2_single_plane_optical_residual",
+            "type": "vision2d_language2_moe4_optical_residual",
             "optical_enabled": True,
             "optical_location": "parallel residual inside Language mixer block 2",
-            "router_enabled": False,
+            "router_enabled": True,
+            "router_layout": "2x2 experts, top-k=2",
             "router_loss_enabled": False,
             "deepstack_enabled": False,
             "vision_mixer": "2x depthwise_conv2d_residual_mlp",
             "language_block1": "depthwise_conv1d_residual_mlp",
             "language_block2_electronic_path": "depthwise_conv1d_residual_mlp",
             "language_block2_optical_path": (
-                "Linear(192,224)->Softplus/RMS->phase224->ASM518->CCD224->"
-                "robust_norm->MLP(224,192)"
+                "Linear(192,224)->Softplus/RMS->MoE4 router(top-k=2)->"
+                "2x2 expert phase(224 each)->ASM/OEO->global phase(478 active)->"
+                "ASM->CCD478->robust_norm->pool224->Linear(224,192)"
             ),
             "fusion": "electronic_block2 + sigmoid(gate) * optical_delta",
             "fusion_initial": float(core.optical_fusion.detach()),
             "electronic_frozen": self.freeze_electronic,
             "ccd_normalization": (
                 "dark quantile subtraction -> per-frame mean division -> "
-                "clamp/log1p -> row LayerNorm"
+                "clamp/log1p -> 478-to-224 area pooling -> row LayerNorm"
             ),
         }
 
