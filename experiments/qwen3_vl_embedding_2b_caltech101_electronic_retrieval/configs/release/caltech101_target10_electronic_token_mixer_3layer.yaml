@@ -1,10 +1,10 @@
 base_config: caltech101_target10_electronic.yaml
 
-# Attention-free electronic V2. The baseline config remains unchanged so the
-# original MLP and teacher-KD runs stay reproducible.
+# Archived configuration for the original V2 run that reached >80% while it
+# was still training. Keep it separate so its checkpoints remain reproducible.
 electronic:
   width: 192
-  layers: 2
+  layers: 3
   expansion: 2.0
   dropout: 0.10
   initial_residual_weight: 0.10
@@ -19,4 +19,4 @@ training:
   lambda_relational_kd: 0.0
   lambda_teacher_gallery: 0.0
 
-output_dir: ../../runs/caltech101_target10_electronic_token_mixer_2layer
+output_dir: ../../runs/caltech101_target10_electronic_token_mixer
