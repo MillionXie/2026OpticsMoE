@@ -48,3 +48,32 @@ CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_caltech101_el
   --config experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/configs/smoke/electronic_target10_smoke.yaml \
   --phase all
 ```
+
+## 6. 有教师 cosine KD 的严格消融
+
+这一组与无教师版本使用完全相同的网络、2625/200/30 数据、采样器、学习率和 60 epoch；唯一新增项是 `1.0 × cosine embedding KD`。首次运行先生成一次全量教师 cache：
+
+```bash
+CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_caltech101_electronic_retrieval \
+  --config experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/configs/release/caltech101_target10_mlp_teacher_kd.yaml \
+  --phase cache_teacher_embeddings
+```
+
+cache 会稳定保存在本工程的 `cache/caltech101_target10_all_data_seed42_g3_test20/teacher_embeddings.pt`；后续重新训练无需再次生成。
+
+训练：
+
+```bash
+CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_caltech101_electronic_retrieval \
+  --config experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/configs/release/caltech101_target10_mlp_teacher_kd.yaml \
+  --phase train
+```
+
+固定 EMA checkpoint 评测：
+
+```bash
+CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_caltech101_electronic_retrieval \
+  --config experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/configs/release/caltech101_target10_mlp_teacher_kd.yaml \
+  --phase evaluate \
+  --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/runs/caltech101_target10_mlp_all_data_teacher_kd/ema_best_train_loss_checkpoint.pt
+```

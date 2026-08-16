@@ -44,6 +44,7 @@ def load_settings(path: str | Path) -> Caltech101Settings:
     settings.episodic_prototype_loss_enabled = bool(
         d("training.episodic_prototype_loss", True)
     )
+    settings.teacher_enabled = bool(d("training.teacher_enabled", False))
     settings.learning_rate_schedule = str(
         d("training.learning_rate_schedule", "cosine")
     )
@@ -67,15 +68,18 @@ def load_settings(path: str | Path) -> Caltech101Settings:
         raise ValueError("Unsupported learning_rate_schedule")
     if not 0.0 <= settings.learning_rate_warmup_ratio < 1.0:
         raise ValueError("learning_rate_warmup_ratio must be in [0,1)")
-    if any(
+    teacher_weights = (
+        settings.lambda_kd,
+        settings.lambda_relational_kd,
+        settings.lambda_teacher_gallery,
+    )
+    if not settings.teacher_enabled and any(
         value != 0.0
-        for value in (
-            settings.lambda_kd,
-            settings.lambda_relational_kd,
-            settings.lambda_teacher_gallery,
-        )
+        for value in teacher_weights
     ):
         raise ValueError("Pure electronic training disables every teacher loss")
+    if settings.teacher_enabled and not any(value > 0.0 for value in teacher_weights):
+        raise ValueError("Teacher-enabled training requires a positive teacher loss")
 
     # Keep the shared training/evaluation engine on its single deterministic
     # route. There is no learned router, expert selection, or optical phase.
@@ -98,11 +102,14 @@ def save_resolved_config(settings: Caltech101Settings) -> None:
     # common Qwen/data settings. They are not part of this resolved model.
     values.pop("optical", None)
     values.pop("robust_hybrid", None)
-    values.pop("teacher_cache", None)
+    if not settings.teacher_enabled:
+        values.pop("teacher_cache", None)
     values["student_initialization"] = {
         "student_checkpoint": None,
         "all101_pretraining": False,
-        "teacher_qwen_frozen": True,
+        "base_qwen_pretrained": True,
+        "base_qwen_frozen": True,
+        "teacher_embedding_supervision": settings.teacher_enabled,
     }
     values["electronic"] = {
         "type": "shared_tokenwise_residual_mlp",
@@ -117,7 +124,7 @@ def save_resolved_config(settings: Caltech101Settings) -> None:
         "initial_residual_weight": settings.electronic_initial_residual_weight,
         "embedding_head": "LayerNorm -> Linear(128,64) -> L2Normalize",
     }
-    values["training"]["teacher_used"] = False
+    values["training"]["teacher_used"] = settings.teacher_enabled
     values["training"]["episodic_prototype_loss"] = True
     values["training"]["learning_rate_schedule"] = settings.learning_rate_schedule
     values["training"]["learning_rate_warmup_ratio"] = (

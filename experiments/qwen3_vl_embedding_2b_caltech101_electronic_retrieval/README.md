@@ -24,3 +24,5 @@ episodic loss 在每个类别的 3 张 batch 图片中随机取 1 张 support、
 电子主体、输入输出 adapter、embedding head 的峰值学习率分别为 `1.5e-4`、`1e-4`、`2e-4`，前 5% step 线性 warmup，之后 cosine decay。AdamW weight decay 为 `0.01`，gradient clipping 为 `1.0`，EMA 为 `0.995`，共训练 60 epoch。每个 epoch 都输出测试指标以观察过拟合，但 checkpoint 仍按训练 loss 选择，不使用 test 选模型。
 
 运行方式见 [RUN_COMMANDS.md](RUN_COMMANDS.md)。
+
+`configs/release/caltech101_target10_mlp_teacher_kd.yaml` 是严格教师消融：只在上述两个学生 loss 之外增加 `1.0 × cosine embedding KD`，其余设置不变。relational KD 和 teacher-gallery CE 仍保持关闭。

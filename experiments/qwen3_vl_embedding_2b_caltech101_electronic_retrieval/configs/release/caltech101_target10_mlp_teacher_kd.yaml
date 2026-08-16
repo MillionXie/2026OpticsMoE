@@ -1,0 +1,15 @@
+base_config: caltech101_target10_electronic.yaml
+
+# Strict ablation: architecture, data, sampler, optimizer and 60-epoch schedule
+# are identical to the no-teacher run. Only output-level cosine KD is added.
+training:
+  teacher_enabled: true
+  lambda_kd: 1.0
+  lambda_relational_kd: 0.0
+  lambda_teacher_gallery: 0.0
+
+teacher_cache:
+  directory: ../../cache/caltech101_target10_all_data_seed42_g3_test20
+  derive_from: null
+
+output_dir: ../../runs/caltech101_target10_mlp_all_data_teacher_kd

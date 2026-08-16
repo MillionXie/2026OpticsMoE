@@ -100,3 +100,35 @@ def test_cosine_schedule_warms_up_then_decays() -> None:
     assert _learning_rate_scale(settings, 9, 100) == 1.0
     assert _learning_rate_scale(settings, 10, 100) == 1.0
     assert _learning_rate_scale(settings, 100, 100) == 0.0
+
+
+def test_teacher_ablation_changes_only_teacher_kd_and_output() -> None:
+    no_teacher = load_settings(
+        "experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/"
+        "configs/release/caltech101_target10_electronic.yaml"
+    )
+    teacher = load_settings(
+        "experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/"
+        "configs/release/caltech101_target10_mlp_teacher_kd.yaml"
+    )
+    assert teacher.teacher_enabled is True
+    assert teacher.lambda_kd == 1.0
+    assert teacher.lambda_relational_kd == 0.0
+    assert teacher.lambda_teacher_gallery == 0.0
+    for name in (
+        "selected_skus",
+        "train_limit_per_sku",
+        "test_limit_per_sku",
+        "epochs",
+        "learning_rate",
+        "adapter_learning_rate",
+        "readout_learning_rate",
+        "electronic_width",
+        "electronic_layers",
+        "electronic_expansion",
+        "lambda_ret",
+        "lambda_gallery",
+    ):
+        assert getattr(teacher, name) == getattr(no_teacher, name)
+    assert teacher.output_dir != no_teacher.output_dir
+    assert teacher.teacher_cache_path != no_teacher.teacher_cache_path
