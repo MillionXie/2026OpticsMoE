@@ -29,40 +29,53 @@ def load_settings(path: str | Path) -> Caltech101Settings:
     raw = _read_config(config_path)
     d = lambda key, default=None: _nested(raw, key, default)
 
-    settings.electronic_width = int(d("electronic.width", 256))
+    settings.electronic_width = int(d("electronic.width", 128))
     settings.electronic_layers = int(d("electronic.layers", 2))
-    settings.electronic_heads = int(d("electronic.attention_heads", 8))
-    settings.electronic_ff_multiplier = float(d("electronic.ff_multiplier", 2.5))
+    settings.electronic_expansion = float(d("electronic.expansion", 2.0))
     settings.electronic_dropout = _dropout(
         "electronic.dropout", d("electronic.dropout", 0.10)
-    )
-    settings.electronic_attention_dropout = _dropout(
-        "electronic.attention_dropout",
-        d("electronic.attention_dropout", 0.05),
     )
     settings.electronic_initial_residual_weight = float(
         d("electronic.initial_residual_weight", 0.10)
     )
-    settings.electronic_readout_hidden = int(
-        d("electronic.embedding_head.hidden_dim", 384)
+    settings.reserve_test_before_train = bool(
+        d("dataset.reserve_test_before_train", True)
     )
-    settings.electronic_readout_dropout = _dropout(
-        "electronic.embedding_head.dropout",
-        d("electronic.embedding_head.dropout", 0.15),
+    settings.episodic_prototype_loss_enabled = bool(
+        d("training.episodic_prototype_loss", True)
+    )
+    settings.learning_rate_schedule = str(
+        d("training.learning_rate_schedule", "cosine")
+    )
+    settings.learning_rate_warmup_ratio = float(
+        d("training.learning_rate_warmup_ratio", 0.05)
     )
 
     if settings.use_all_categories or len(settings.selected_skus) != 10:
         raise ValueError("The direct electronic experiment requires exactly 10 categories")
     if settings.electronic_width <= 0 or settings.electronic_layers <= 0:
         raise ValueError("Electronic width/layers must be positive")
-    if settings.electronic_heads <= 0 or settings.electronic_width % settings.electronic_heads:
-        raise ValueError("Electronic width must be divisible by attention_heads")
-    if settings.electronic_ff_multiplier <= 0.0:
-        raise ValueError("Electronic ff_multiplier must be positive")
+    if settings.electronic_expansion <= 0.0:
+        raise ValueError("Electronic expansion must be positive")
     if not 0.0 < settings.electronic_initial_residual_weight < 1.0:
         raise ValueError("Electronic initial_residual_weight must be in (0,1)")
-    if settings.electronic_readout_hidden <= 0:
-        raise ValueError("Electronic embedding-head hidden_dim must be positive")
+    if not settings.reserve_test_before_train:
+        raise ValueError("Electronic all-data training must reserve test before train")
+    if not settings.episodic_prototype_loss_enabled:
+        raise ValueError("Electronic training requires episodic prototype loss")
+    if settings.learning_rate_schedule not in {"constant", "cosine"}:
+        raise ValueError("Unsupported learning_rate_schedule")
+    if not 0.0 <= settings.learning_rate_warmup_ratio < 1.0:
+        raise ValueError("learning_rate_warmup_ratio must be in [0,1)")
+    if any(
+        value != 0.0
+        for value in (
+            settings.lambda_kd,
+            settings.lambda_relational_kd,
+            settings.lambda_teacher_gallery,
+        )
+    ):
+        raise ValueError("Pure electronic training disables every teacher loss")
 
     # Keep the shared training/evaluation engine on its single deterministic
     # route. There is no learned router, expert selection, or optical phase.
@@ -85,27 +98,31 @@ def save_resolved_config(settings: Caltech101Settings) -> None:
     # common Qwen/data settings. They are not part of this resolved model.
     values.pop("optical", None)
     values.pop("robust_hybrid", None)
+    values.pop("teacher_cache", None)
     values["student_initialization"] = {
         "student_checkpoint": None,
         "all101_pretraining": False,
         "teacher_qwen_frozen": True,
     }
     values["electronic"] = {
-        "type": "dense_transformer_replacement",
+        "type": "shared_tokenwise_residual_mlp",
         "optical_enabled": False,
         "moe_enabled": False,
         "width": settings.electronic_width,
         "layers": settings.electronic_layers,
-        "attention_heads": settings.electronic_heads,
-        "ff_multiplier": settings.electronic_ff_multiplier,
+        "attention_enabled": False,
+        "token_mixing_enabled": False,
+        "expansion": settings.electronic_expansion,
         "dropout": settings.electronic_dropout,
-        "attention_dropout": settings.electronic_attention_dropout,
         "initial_residual_weight": settings.electronic_initial_residual_weight,
-        "embedding_head": {
-            "hidden_dim": settings.electronic_readout_hidden,
-            "dropout": settings.electronic_readout_dropout,
-        },
+        "embedding_head": "LayerNorm -> Linear(128,64) -> L2Normalize",
     }
+    values["training"]["teacher_used"] = False
+    values["training"]["episodic_prototype_loss"] = True
+    values["training"]["learning_rate_schedule"] = settings.learning_rate_schedule
+    values["training"]["learning_rate_warmup_ratio"] = (
+        settings.learning_rate_warmup_ratio
+    )
     path.write_text(
         yaml.safe_dump(values, sort_keys=False, allow_unicode=True),
         encoding="utf-8",

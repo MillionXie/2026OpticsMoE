@@ -53,15 +53,26 @@ def prepare_caltech101_subset(
         random.Random(f"{settings.random_seed}:{class_name}").shuffle(paths)
         gallery_paths = paths[: settings.gallery_images_per_sku]
         remainder = paths[settings.gallery_images_per_sku :]
-        train_count = (
-            len(remainder) - 1
-            if settings.train_limit_per_sku is None
-            else min(int(settings.train_limit_per_sku), len(remainder) - 1)
-        )
-        train_paths = remainder[:train_count]
-        test_paths = remainder[train_count:]
-        if settings.test_limit_per_sku is not None:
-            test_paths = test_paths[: int(settings.test_limit_per_sku)]
+        if getattr(settings, "reserve_test_before_train", False):
+            test_count = (
+                max(1, len(remainder) // 5)
+                if settings.test_limit_per_sku is None
+                else min(int(settings.test_limit_per_sku), len(remainder) - 1)
+            )
+            test_paths = remainder[:test_count]
+            train_paths = remainder[test_count:]
+            if settings.train_limit_per_sku is not None:
+                train_paths = train_paths[: int(settings.train_limit_per_sku)]
+        else:
+            train_count = (
+                len(remainder) - 1
+                if settings.train_limit_per_sku is None
+                else min(int(settings.train_limit_per_sku), len(remainder) - 1)
+            )
+            train_paths = remainder[:train_count]
+            test_paths = remainder[train_count:]
+            if settings.test_limit_per_sku is not None:
+                test_paths = test_paths[: int(settings.test_limit_per_sku)]
         if not train_paths or not test_paths:
             raise RuntimeError(f"{class_name} produced an empty train or test partition")
         gallery.extend(

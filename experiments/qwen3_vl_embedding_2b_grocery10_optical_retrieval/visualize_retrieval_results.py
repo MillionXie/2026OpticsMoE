@@ -28,25 +28,33 @@ def visualize_saved_results(settings: Settings) -> None:
     student = [
         row
         for row in rows
-        if row["system"] == "optical_student_query_vs_optical_student_gallery"
+        if row["system"] in {
+            "optical_student_query_vs_optical_student_gallery",
+            "electronic_student_query_vs_electronic_student_gallery",
+        }
     ]
-    rng = random.Random(settings.random_seed)
-    _plot_retrieval_rows(
-        _sample(teacher, settings.visualization_sample_count, rng),
-        settings.output_dir / "teacher_retrieval_examples.png",
-        "Frozen Qwen3-VL-Embedding Teacher Retrieval",
+    electronic = any(
+        row["system"] == "electronic_student_query_vs_electronic_student_gallery"
+        for row in student
     )
+    rng = random.Random(settings.random_seed)
+    if teacher:
+        _plot_retrieval_rows(
+            _sample(teacher, settings.visualization_sample_count, rng),
+            settings.output_dir / "teacher_retrieval_examples.png",
+            "Frozen Qwen3-VL-Embedding Teacher Retrieval",
+        )
     _plot_retrieval_rows(
         _sample(student, settings.visualization_sample_count, rng),
         settings.output_dir / "student_retrieval_examples.png",
-        "Optical Student Retrieval",
+        "Electronic Student Retrieval" if electronic else "Optical Student Retrieval",
     )
     failures = [row for row in student if row["top1_correct"].lower() == "false"]
     _plot_retrieval_rows(
         _sample(failures, settings.visualization_sample_count, rng),
         settings.output_dir / "student_failure_cases.png",
-        "Optical Student Top-1 Failure Cases",
-        empty_message="No optical-student Top-1 failures were found.",
+        "Electronic Student Top-1 Failure Cases" if electronic else "Optical Student Top-1 Failure Cases",
+        empty_message="No student Top-1 failures were found.",
     )
     _plot_training_loss(settings.output_dir / "train_log.csv", settings.output_dir / "training_loss.png")
 
@@ -118,11 +126,12 @@ def _plot_training_loss(csv_path: Path, path: Path) -> None:
         ("total_loss", "Total"),
         ("kd_loss", "Embedding KD"),
         ("retrieval_loss", "Supervised contrastive"),
+        ("gallery_loss", "Prototype retrieval CE"),
     ):
         axis.plot(epochs, [float(row[key]) for row in rows], label=label)
     axis.set_xlabel("Epoch")
     axis.set_ylabel("Loss")
-    axis.set_title("Optical Retrieval Training Loss")
+    axis.set_title("Student Retrieval Training Loss")
     axis.grid(alpha=0.25)
     axis.legend()
     figure.savefig(path, dpi=180)

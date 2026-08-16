@@ -26,7 +26,7 @@ def evaluate_all_systems(
     replacement: Any,
     readout: Any,
     bundle: GroceryRetrievalBundle,
-    teacher_store: TeacherEmbeddingStore,
+    teacher_store: TeacherEmbeddingStore | None,
     settings: Settings,
     checkpoint_path: Path | None = None,
 ) -> dict[str, RetrievalEvaluation]:
@@ -36,8 +36,6 @@ def evaluate_all_systems(
     )
     checkpoint = load_checkpoint(checkpoint_path, replacement, readout)
     observed_test_selected = "observed_test" in checkpoint_path.name
-    teacher_query = teacher_store.lookup(bundle.test_samples)
-    teacher_gallery = teacher_store.lookup(bundle.gallery_samples)
     student_gallery = encode_student_samples(
         loaded, replacement, readout, bundle.gallery_samples, settings
     )
@@ -45,15 +43,6 @@ def evaluate_all_systems(
         loaded, replacement, readout, bundle.test_samples, settings
     )
     systems = {
-        "teacher": evaluate_embeddings(
-            teacher_query,
-            bundle.test_samples,
-            teacher_gallery,
-            bundle.gallery_samples,
-            bundle.class_names,
-            settings.gallery_aggregation,
-            system_name="frozen_teacher_query_vs_frozen_teacher_gallery",
-        ),
         "student": evaluate_embeddings(
             student_query,
             bundle.test_samples,
@@ -67,7 +56,21 @@ def evaluate_all_systems(
                 else "electronic_student_query_vs_electronic_student_gallery"
             ),
         ),
-        "student_teacher_gallery": evaluate_embeddings(
+    }
+    teacher_metrics: dict[str, Any] | None = None
+    if teacher_store is not None:
+        teacher_query = teacher_store.lookup(bundle.test_samples)
+        teacher_gallery = teacher_store.lookup(bundle.gallery_samples)
+        systems["teacher"] = evaluate_embeddings(
+            teacher_query,
+            bundle.test_samples,
+            teacher_gallery,
+            bundle.gallery_samples,
+            bundle.class_names,
+            settings.gallery_aggregation,
+            system_name="frozen_teacher_query_vs_frozen_teacher_gallery",
+        )
+        systems["student_teacher_gallery"] = evaluate_embeddings(
             student_query,
             bundle.test_samples,
             teacher_gallery,
@@ -79,22 +82,25 @@ def evaluate_all_systems(
                 if getattr(replacement, "has_optical_phases", True)
                 else "electronic_student_query_vs_frozen_teacher_gallery_diagnostic"
             ),
-        ),
-    }
-    teacher_metrics = {
-        **systems["teacher"].metrics,
-        "teacher_embedding_shape": [len(bundle.test_samples), settings.embedding_dim],
-        "teacher_frozen": True,
-        "teacher_trainable_parameters": 0,
-        "instruction": settings.instruction,
-        "manifest_sha256": bundle.manifest_digest,
-    }
+        )
+        teacher_metrics = {
+            **systems["teacher"].metrics,
+            "teacher_embedding_shape": [
+                len(bundle.test_samples), settings.embedding_dim
+            ],
+            "teacher_frozen": True,
+            "teacher_trainable_parameters": 0,
+            "instruction": settings.instruction,
+            "manifest_sha256": bundle.manifest_digest,
+        }
     student_metrics = {
         **systems["student"].metrics,
         "main_deployment_result": True,
-        "diagnostic_student_query_teacher_gallery": systems[
-            "student_teacher_gallery"
-        ].metrics,
+        "diagnostic_student_query_teacher_gallery": (
+            systems["student_teacher_gallery"].metrics
+            if "student_teacher_gallery" in systems
+            else None
+        ),
         "checkpoint": str(checkpoint_path),
         "checkpoint_epoch": checkpoint.get("epoch"),
         "checkpoint_selection": (
@@ -110,13 +116,10 @@ def evaluate_all_systems(
         "student_embedding_shape": [len(bundle.test_samples), settings.embedding_dim],
         "manifest_sha256": bundle.manifest_digest,
     }
-    write_json(settings.output_dir / "teacher_metrics.json", teacher_metrics)
+    if teacher_metrics is not None:
+        write_json(settings.output_dir / "teacher_metrics.json", teacher_metrics)
     write_json(settings.output_dir / "student_metrics.json", student_metrics)
-    all_rows = [
-        row
-        for name in ("teacher", "student", "student_teacher_gallery")
-        for row in systems[name].rows
-    ]
+    all_rows = [row for result in systems.values() for row in result.rows]
     if all_rows:
         write_csv(
             settings.output_dir / "retrieval_results.csv",
@@ -136,6 +139,11 @@ def evaluate_all_systems(
         systems["student"].confusion,
         bundle.class_names,
         settings.output_dir / "confusion_matrix.png",
+        student_kind=(
+            "Optical"
+            if getattr(replacement, "has_optical_phases", True)
+            else "Electronic"
+        ),
     )
     write_json(
         settings.output_dir / "metrics" / "evaluation_summary.json",
@@ -146,11 +154,11 @@ def evaluate_all_systems(
                 loaded.model, replacement, readout
             )["trainable_parameters"],
             "data_leakage_check": "passed during subset preparation",
-            "normalization_check": "all cached and evaluated embeddings are finite and L2 normalized",
+            "normalization_check": "all evaluated embeddings are finite and L2 normalized",
             "dimension_check": {
-                "teacher": settings.embedding_dim,
+                "teacher": settings.embedding_dim if teacher_metrics else None,
                 "student": settings.embedding_dim,
-                "match": True,
+                "match": True if teacher_metrics else None,
             },
         },
     )
@@ -158,7 +166,11 @@ def evaluate_all_systems(
 
 
 def _plot_confusion(
-    matrix: torch.Tensor, class_names: tuple[str, ...], path: Path
+    matrix: torch.Tensor,
+    class_names: tuple[str, ...],
+    path: Path,
+    *,
+    student_kind: str = "Optical",
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     side = max(12.0, min(32.0, len(class_names) * 0.28))
@@ -177,7 +189,7 @@ def _plot_confusion(
     axis.set_xlabel("Retrieved class")
     axis.set_ylabel("True class")
     axis.set_title(
-        f"Optical Student {len(class_names)}-Class Retrieval Confusion Matrix"
+        f"{student_kind} Student {len(class_names)}-Class Retrieval Confusion Matrix"
     )
     if len(class_names) <= 31:
         for y in range(len(class_names)):

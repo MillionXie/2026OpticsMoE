@@ -4,69 +4,44 @@ from typing import Any
 
 import torch
 from torch import nn
-from torch.nn import functional as F
 
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.optics.moe import (
     lengths_from_cu,
 )
 
 
-class ElectronicTransformerBlock(nn.Module):
-    """Pre-norm attention and SwiGLU FFN at a compact token width."""
+class ElectronicResidualMLPBlock(nn.Module):
+    """Shared token-wise residual MLP; deliberately contains no attention."""
 
     def __init__(
         self,
         width: int,
-        heads: int,
-        ff_multiplier: float,
+        expansion: float,
         dropout: float,
-        attention_dropout: float,
+        initial_residual_weight: float,
     ) -> None:
         super().__init__()
-        ff_width = int(round(width * ff_multiplier))
-        self.attention_norm = nn.LayerNorm(width)
-        self.attention = nn.MultiheadAttention(
-            width,
-            heads,
-            dropout=attention_dropout,
-            batch_first=True,
+        hidden_width = int(round(width * expansion))
+        self.norm = nn.LayerNorm(width)
+        self.mlp = nn.Sequential(
+            nn.Linear(width, hidden_width),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_width, width),
+            nn.Dropout(dropout),
         )
-        self.attention_dropout = nn.Dropout(dropout)
-        self.ffn_norm = nn.LayerNorm(width)
-        self.ffn_in = nn.Linear(width, 2 * ff_width)
-        self.ffn_out = nn.Linear(ff_width, width)
-        self.ffn_dropout = nn.Dropout(dropout)
+        self.residual_logit = nn.Parameter(
+            torch.logit(torch.tensor(float(initial_residual_weight)))
+        )
 
     def forward(
         self,
         hidden: torch.Tensor,
         *,
         padding_mask: torch.Tensor,
-        causal: bool,
     ) -> torch.Tensor:
-        normalized = self.attention_norm(hidden)
-        causal_mask = (
-            torch.ones(
-                hidden.shape[1],
-                hidden.shape[1],
-                dtype=torch.bool,
-                device=hidden.device,
-            ).triu(1)
-            if causal
-            else None
-        )
-        attention, _ = self.attention(
-            normalized,
-            normalized,
-            normalized,
-            key_padding_mask=padding_mask,
-            attn_mask=causal_mask,
-            need_weights=False,
-        )
-        hidden = hidden + self.attention_dropout(attention)
-        gate, value = self.ffn_in(self.ffn_norm(hidden)).chunk(2, dim=-1)
-        update = self.ffn_out(F.silu(gate) * value)
-        hidden = hidden + self.ffn_dropout(update)
+        update = self.mlp(self.norm(hidden))
+        hidden = hidden + torch.sigmoid(self.residual_logit) * update
         return hidden.masked_fill(padding_mask.unsqueeze(-1), 0.0)
 
 
@@ -99,16 +74,16 @@ class ElectronicSequenceCore(nn.Module):
         self.hidden_size = int(hidden_size)
         self.max_tokens = int(max_tokens)
         self.width = int(settings.electronic_width)
+        self.expansion = float(settings.electronic_expansion)
         self.input_adapter = nn.Linear(self.hidden_size, self.width)
         self.input_norm = nn.LayerNorm(self.width)
         self.blocks = nn.ModuleList(
             [
-                ElectronicTransformerBlock(
+                ElectronicResidualMLPBlock(
                     self.width,
-                    settings.electronic_heads,
-                    settings.electronic_ff_multiplier,
+                    self.expansion,
                     settings.electronic_dropout,
-                    settings.electronic_attention_dropout,
+                    settings.electronic_initial_residual_weight,
                 )
                 for _ in range(settings.electronic_layers)
             ]
@@ -152,7 +127,7 @@ class ElectronicSequenceCore(nn.Module):
         input_latent = self.input_norm(self.input_adapter(padded.float()))
         latent = input_latent
         for block in self.blocks:
-            latent = block(latent, padding_mask=padding_mask, causal=causal)
+            latent = block(latent, padding_mask=padding_mask)
         latent = self.output_norm(latent)
         gate = torch.sigmoid(self.residual_logit)
         latent = input_latent + gate * (latent - input_latent)
@@ -179,16 +154,10 @@ class ElectronicSequenceCore(nn.Module):
         return self.residual_logit.new_zeros(())
 
     def parameter_breakdown(self) -> dict[str, Any]:
-        attention = sum(
-            parameter.numel()
-            for block in self.blocks
-            for parameter in block.attention.parameters()
-        )
         ffn = sum(
             parameter.numel()
             for block in self.blocks
-            for module in (block.ffn_in, block.ffn_out)
-            for parameter in module.parameters()
+            for parameter in block.mlp.parameters()
         )
         adapters = sum(
             parameter.numel()
@@ -197,11 +166,13 @@ class ElectronicSequenceCore(nn.Module):
         )
         total = sum(parameter.numel() for parameter in self.parameters())
         return {
-            "implementation": "dense_electronic_transformer",
+            "implementation": "shared_tokenwise_residual_mlp",
             "moe_enabled": False,
+            "attention_enabled": False,
+            "token_mixing_enabled": False,
             "optical_parameters": 0,
             "router_parameters": 0,
-            "attention_parameters": attention,
+            "attention_parameters": 0,
             "ffn_parameters": ffn,
             "adapter_parameters": adapters,
             "residual_gate_parameters": self.residual_logit.numel(),
@@ -303,7 +274,7 @@ class LanguageElectronicReplacement(nn.Module):
         if len(self.core.last_latent_groups) != len(self.lengths):
             raise RuntimeError("Language electronic features are unavailable")
         features = torch.stack(
-            [group[-1] for group in self.core.last_latent_groups], dim=0
+            [group.mean(dim=0) for group in self.core.last_latent_groups], dim=0
         )
         if not torch.isfinite(features).all():
             raise RuntimeError("Language electronic features contain NaN or Inf")

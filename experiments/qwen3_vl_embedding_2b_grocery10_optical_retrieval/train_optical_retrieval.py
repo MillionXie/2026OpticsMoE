@@ -211,6 +211,56 @@ def gallery_retrieval_loss(
     return F.cross_entropy(logits, targets)
 
 
+def episodic_prototype_retrieval_loss(
+    embeddings: torch.Tensor,
+    labels: torch.Tensor,
+    temperature: float,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """One random support per class and query-to-support prototype CE.
+
+    Every embedding remains differentiable: the chosen supports receive
+    gradients through the prototypes and the remaining samples through the
+    query logits. Re-sampling each batch avoids fitting a fixed gallery.
+    """
+    if embeddings.ndim != 2 or labels.ndim != 1 or len(embeddings) != len(labels):
+        raise ValueError("Episodic prototype inputs must be [B,D] and [B]")
+    classes = torch.unique(labels, sorted=True)
+    if len(classes) < 2:
+        raise RuntimeError("Episodic prototype loss requires at least two classes")
+    normalized = F.normalize(embeddings.float(), dim=-1)
+    prototypes: list[torch.Tensor] = []
+    queries: list[torch.Tensor] = []
+    targets: list[torch.Tensor] = []
+    for target, class_id in enumerate(classes):
+        indexes = torch.nonzero(labels.eq(class_id), as_tuple=False).flatten()
+        if len(indexes) < 2:
+            raise RuntimeError(
+                "Every episodic class needs at least one support and one query"
+            )
+        support_offset = int(
+            torch.randint(len(indexes), (), device=indexes.device).item()
+        )
+        support_index = indexes[support_offset]
+        query_indexes = torch.cat(
+            (indexes[:support_offset], indexes[support_offset + 1 :])
+        )
+        prototypes.append(normalized[support_index])
+        queries.append(normalized[query_indexes])
+        targets.append(
+            torch.full(
+                (len(query_indexes),),
+                target,
+                dtype=torch.long,
+                device=labels.device,
+            )
+        )
+    prototype_tensor = F.normalize(torch.stack(prototypes), dim=-1)
+    query_tensor = torch.cat(queries)
+    target_tensor = torch.cat(targets)
+    logits = query_tensor @ prototype_tensor.T / float(temperature)
+    return F.cross_entropy(logits, target_tensor), logits, target_tensor
+
+
 def gallery_retrieval_logits(
     query_embeddings: torch.Tensor,
     query_labels: torch.Tensor,
@@ -458,6 +508,34 @@ def _set_phase_focus_trainability(
         )
         for parameter in group["params"]:
             parameter.requires_grad_(train_group)
+
+
+def _learning_rate_scale(settings: Settings, step: int, total_steps: int) -> float:
+    schedule = getattr(settings, "learning_rate_schedule", "constant")
+    if schedule == "constant":
+        return 1.0
+    if schedule != "cosine":
+        raise ValueError(f"Unsupported learning-rate schedule: {schedule}")
+    warmup = int(round(
+        total_steps * float(getattr(settings, "learning_rate_warmup_ratio", 0.0))
+    ))
+    if warmup > 0 and step < warmup:
+        return float(step + 1) / float(warmup)
+    decay_steps = max(1, total_steps - warmup)
+    progress = min(1.0, max(0.0, (step - warmup) / decay_steps))
+    return 0.5 * (1.0 + math.cos(math.pi * progress))
+
+
+def _apply_learning_rate_scale(
+    optimizer: torch.optim.Optimizer, scale: float, phase_focus: bool
+) -> None:
+    for group in optimizer.param_groups:
+        train_group = not phase_focus or group.get("group_name") == "optical_phases"
+        group["lr"] = (
+            float(group.get("configured_lr", group["lr"])) * float(scale)
+            if train_group
+            else 0.0
+        )
 
 
 def _phase_focus_epoch(settings: Settings, relative_epoch: int) -> bool:
@@ -761,7 +839,7 @@ def train_optical_retrieval(
     replacement: DeepStackMultimodalReplacement,
     readout: OpticalRetrievalReadout,
     bundle: GroceryRetrievalBundle,
-    teacher_store: TeacherEmbeddingStore,
+    teacher_store: TeacherEmbeddingStore | None,
     settings: Settings,
     *,
     resume_checkpoint: Path | None = None,
@@ -801,7 +879,24 @@ def train_optical_retrieval(
     gallery_sku_ids = {
         int(item["sample"].sku_index) for item in gallery_items
     }
-    if settings.lambda_gallery > 0 and len(gallery_sku_ids) != len(bundle.class_names):
+    episodic_prototype = bool(
+        getattr(settings, "episodic_prototype_loss_enabled", False)
+    )
+    teacher_training_enabled = any(
+        weight > 0.0
+        for weight in (
+            settings.lambda_kd,
+            settings.lambda_relational_kd,
+            settings.lambda_teacher_gallery,
+        )
+    )
+    if teacher_training_enabled and teacher_store is None:
+        raise RuntimeError("Teacher-dependent loss is enabled without a Teacher store")
+    fixed_gallery_training = (
+        (settings.lambda_gallery > 0.0 and not episodic_prototype)
+        or settings.lambda_teacher_gallery > 0.0
+    )
+    if fixed_gallery_training and len(gallery_sku_ids) != len(bundle.class_names):
         raise RuntimeError(
             "Gallery-aligned loss requires at least one standard image for every SKU"
         )
@@ -882,6 +977,7 @@ def train_optical_retrieval(
         "router_learning_rate",
         "phase_learning_rate",
         "phase_focus_epoch",
+        "learning_rate_scale",
         "total_loss",
         "kd_loss",
         "relational_kd_loss",
@@ -1001,6 +1097,8 @@ def train_optical_retrieval(
     phase_groups = _phase_named_parameters(replacement)
     phase_run_reference = _phase_reference(phase_groups)
     end_epoch = start_epoch + settings.epochs - 1
+    total_optimizer_steps = max(1, settings.epochs * len(loader))
+    current_lr_scale = 1.0
     for epoch in range(start_epoch, end_epoch + 1):
         relative_epoch = epoch - start_epoch + 1
         phase_focus = _phase_focus_epoch(settings, relative_epoch)
@@ -1045,10 +1143,7 @@ def train_optical_retrieval(
         started = time.perf_counter()
         for batch_index, batch in enumerate(loader, 1):
             query_count = len(batch["samples"])
-            gallery_training_enabled = (
-                settings.lambda_gallery > 0
-                or settings.lambda_teacher_gallery > 0
-            )
+            gallery_training_enabled = fixed_gallery_training
             selected_gallery_batch = (
                 collate_grocery(
                     select_gallery_items_for_queries(
@@ -1095,9 +1190,18 @@ def train_optical_retrieval(
                 if gallery_training_enabled
                 else query_labels
             )
-            teacher = teacher_store.lookup(combined_samples).to(
-                loaded.device, non_blocking=True
+            teacher = (
+                teacher_store.lookup(combined_samples).to(
+                    loaded.device, non_blocking=True
+                )
+                if teacher_training_enabled and teacher_store is not None
+                else None
             )
+            schedule_step = (relative_epoch - 1) * len(loader) + batch_index - 1
+            current_lr_scale = _learning_rate_scale(
+                settings, schedule_step, total_optimizer_steps
+            )
+            _apply_learning_rate_scale(optimizer, current_lr_scale, phase_focus)
             optimizer.zero_grad(set_to_none=True)
             with torch.autocast(
                 device_type=loaded.device.type,
@@ -1114,14 +1218,32 @@ def train_optical_retrieval(
                     raise RuntimeError(
                         f"Student detector output shape {tuple(detector.shape)} is invalid"
                     )
-                kd = embedding_distillation_loss(student, teacher)
-                relational_kd = relational_embedding_distillation_loss(
-                    student, teacher
+                zero = student.new_zeros(())
+                kd = (
+                    embedding_distillation_loss(student, teacher)
+                    if settings.lambda_kd > 0.0 and teacher is not None
+                    else zero
                 )
-                retrieval = supervised_contrastive_loss(
-                    student, combined_labels, settings.temperature
+                relational_kd = (
+                    relational_embedding_distillation_loss(student, teacher)
+                    if settings.lambda_relational_kd > 0.0 and teacher is not None
+                    else zero
                 )
-                if gallery_training_enabled:
+                retrieval = (
+                    supervised_contrastive_loss(
+                        student, combined_labels, settings.temperature
+                    )
+                    if settings.lambda_ret > 0.0
+                    else zero
+                )
+                if episodic_prototype and settings.lambda_gallery > 0.0:
+                    gallery, gallery_logits, gallery_targets = (
+                        episodic_prototype_retrieval_loss(
+                            student, combined_labels, settings.gallery_temperature
+                        )
+                    )
+                    teacher_gallery = zero
+                elif gallery_training_enabled:
                     gallery_logits, gallery_targets = gallery_retrieval_logits(
                         student[:query_count],
                         query_labels,
@@ -1133,19 +1255,22 @@ def train_optical_retrieval(
                         ),
                     )
                     gallery = F.cross_entropy(gallery_logits, gallery_targets)
-                    teacher_gallery_logits, teacher_gallery_targets = (
-                        gallery_retrieval_logits(
-                            student[:query_count],
-                            query_labels,
-                            teacher[query_count:],
-                            selected_gallery_labels,
-                            settings.gallery_temperature,
-                            stop_gradient_on_gallery=True,
+                    if settings.lambda_teacher_gallery > 0.0 and teacher is not None:
+                        teacher_gallery_logits, teacher_gallery_targets = (
+                            gallery_retrieval_logits(
+                                student[:query_count],
+                                query_labels,
+                                teacher[query_count:],
+                                selected_gallery_labels,
+                                settings.gallery_temperature,
+                                stop_gradient_on_gallery=True,
+                            )
                         )
-                    )
-                    teacher_gallery = F.cross_entropy(
-                        teacher_gallery_logits, teacher_gallery_targets
-                    )
+                        teacher_gallery = F.cross_entropy(
+                            teacher_gallery_logits, teacher_gallery_targets
+                        )
+                    else:
+                        teacher_gallery = zero
                 else:
                     gallery_logits = None
                     gallery_targets = None
@@ -1263,6 +1388,22 @@ def train_optical_retrieval(
             for key, value in diagnostics.items():
                 router_totals[key] += value * count
             if batch_index % settings.log_interval_batches == 0 or batch_index == len(loader):
+                batch_architecture_diagnostics = (
+                    (
+                        f"phase_focus={'yes' if phase_focus else 'no'} "
+                        f"phase_grad="
+                        f"{phase_gradient_totals.get('phase_grad_rms', 0.0)/max(1, phase_gradient_measurements):.3e} "
+                        f"active_v={diagnostics['vision_router_active_experts']:.0f}/"
+                        f"{settings.num_experts} "
+                        f"active_l={diagnostics['language_router_active_experts']:.0f}/"
+                        f"{settings.num_experts}"
+                    )
+                    if getattr(replacement, "has_optical_phases", True)
+                    else (
+                        f"lr_scale={current_lr_scale:.5f} "
+                        "architecture=residual_mlp_no_attention"
+                    )
+                )
                 print(
                     f"epoch {epoch:03d}/{end_epoch:03d} "
                     f"batch {batch_index:04d}/{len(loader):04d} "
@@ -1280,13 +1421,7 @@ def train_optical_retrieval(
                     f"router_response="
                     f"{totals['router_response']/totals['samples']:.5f} "
                     f"phase_dc={totals['phase_dc']/totals['samples']:.5f} "
-                    f"phase_focus={'yes' if phase_focus else 'no'} "
-                    f"phase_grad="
-                    f"{phase_gradient_totals.get('phase_grad_rms', 0.0)/max(1, phase_gradient_measurements):.3e} "
-                    f"active_v={diagnostics['vision_router_active_experts']:.0f}/"
-                    f"{settings.num_experts} "
-                    f"active_l={diagnostics['language_router_active_experts']:.0f}/"
-                    f"{settings.num_experts}"
+                    f"{batch_architecture_diagnostics}"
                 )
         # Restore all optimizer-owned tensors before evaluation/checkpointing;
         # focus mode changes update ownership, not the saved model definition.
@@ -1392,6 +1527,7 @@ def train_optical_retrieval(
                 else settings.learning_rate
             ),
             "phase_focus_epoch": phase_focus,
+            "learning_rate_scale": current_lr_scale,
             "total_loss": average_total,
             "kd_loss": totals["kd"] / sample_count,
             "relational_kd_loss": totals["relational_kd"] / sample_count,
@@ -1422,7 +1558,9 @@ def train_optical_retrieval(
             "train_top3": train_top3,
             "train_mrr": train_mrr,
             "train_metric_definition": (
-                "augmented training queries vs current Student gallery prototypes "
+                "episodic in-batch query vs randomly selected support prototypes"
+                if episodic_prototype and retrieval_query_count
+                else "augmented training queries vs current Student gallery prototypes "
                 "for the PK-selected SKUs"
                 if retrieval_query_count
                 else "disabled because lambda_gallery=0"
@@ -1668,7 +1806,7 @@ def train_optical_retrieval(
                 f"{coverage['language_router_unselected_experts']} "
             )
             if has_optical_phases
-            else "architecture=dense_electronic_no_moe "
+            else "architecture=residual_mlp_no_attention_no_moe "
         )
         print(
             f"epoch {epoch:03d} complete train_loss={average_total:.5f} "
