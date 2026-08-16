@@ -25,4 +25,4 @@ language_optical:
     phase_shift_pixels: 1
     ccd_shift_pixels: 1
 
-output_dir: ../../runs/smoke_language2_moe4_global
+output_dir: ../../runs/smoke_language_expert_block1_global_block2_moe4

@@ -7,7 +7,7 @@ import torch
 from PIL import Image
 
 from ..hardware_bridge import load_ccd
-from ..optical_blocks import LanguageSecondLayerOpticalCore, RobustCCDNormalizer
+from ..optical_blocks import LanguageTwoBlockOpticalCore, RobustCCDNormalizer
 from ..settings import load_settings
 
 
@@ -38,7 +38,21 @@ def test_ccd_normalization_rejects_global_gain_and_offset() -> None:
 
 
 def test_moe4_language_second_layer_has_router_and_finite_phase_gradient() -> None:
-    core = LanguageSecondLayerOpticalCore(10, 224, _settings()).train()
+    core = LanguageTwoBlockOpticalCore(10, 224, _settings()).train()
+    events = []
+    original_expert = core.optical_branch.run_expert_block
+    original_global = core.optical_branch.run_global_block
+
+    def recorded_expert(*args, **kwargs):
+        events.append("block1_expert")
+        return original_expert(*args, **kwargs)
+
+    def recorded_global(*args, **kwargs):
+        events.append("block2_global")
+        return original_global(*args, **kwargs)
+
+    core.optical_branch.run_expert_block = recorded_expert
+    core.optical_branch.run_global_block = recorded_global
     groups = [torch.randn(5, 10)]
     packed, latent = core.forward_groups(groups, causal=True)
     loss = packed.square().mean() + core.optical_branch.current_operating_loss
@@ -48,6 +62,7 @@ def test_moe4_language_second_layer_has_router_and_finite_phase_gradient() -> No
     assert latent.shape == (1, 5, 6)
     assert routing["selected_mask"].shape == (1, 4)
     assert torch.equal(routing["selected_mask"].sum(dim=1), torch.tensor([2]))
+    assert events == ["block1_expert", "block2_global"]
     gradients = [
         parameter.grad
         for name, parameter in core.optical_branch.named_parameters()
@@ -59,7 +74,7 @@ def test_moe4_language_second_layer_has_router_and_finite_phase_gradient() -> No
 
 
 def test_nearly_closed_optical_gate_preserves_electronic_path() -> None:
-    core = LanguageSecondLayerOpticalCore(10, 224, _settings()).eval()
+    core = LanguageTwoBlockOpticalCore(10, 224, _settings()).eval()
     core.optical_fusion_logit.data.fill_(-30.0)
     groups = [torch.randn(5, 10)]
     _, latent = core.forward_groups(groups, causal=True)

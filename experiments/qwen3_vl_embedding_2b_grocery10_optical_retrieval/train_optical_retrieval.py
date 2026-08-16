@@ -554,6 +554,9 @@ def _phase_focus_epoch(settings: Settings, relative_epoch: int) -> bool:
 def _phase_named_parameters(
     replacement: DeepStackMultimodalReplacement,
 ) -> dict[str, list[nn.Parameter]]:
+    custom_phase_groups = getattr(replacement, "phase_parameter_groups", None)
+    if callable(custom_phase_groups):
+        return custom_phase_groups()
     output: dict[str, list[nn.Parameter]] = {}
     for stack_name, surrogate in (
         ("vision", replacement.vision_surrogate),
@@ -813,6 +816,17 @@ def load_checkpoint(
         raise FileNotFoundError(f"Optical retrieval checkpoint is missing: {path}")
     payload = torch.load(path, map_location="cpu", weights_only=False)
     metadata = payload.get("metadata", {})
+    expected_architecture = getattr(replacement, "checkpoint_architecture", None)
+    saved_architecture = metadata.get("optical_architecture")
+    if (
+        expected_architecture is not None
+        and saved_architecture is not None
+        and str(saved_architecture) != str(expected_architecture)
+    ):
+        raise RuntimeError(
+            "Optical retrieval checkpoint architecture mismatch: "
+            f"saved={saved_architecture!r}, current={expected_architecture!r}"
+        )
     expected_layers = len(replacement.vision_surrogate.core.expert_layers)
     saved_layers = metadata.get("expert_stages_per_stack")
     if saved_layers is not None and int(saved_layers) != expected_layers:

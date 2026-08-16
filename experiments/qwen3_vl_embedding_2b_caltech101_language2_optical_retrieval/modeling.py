@@ -17,15 +17,15 @@ from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.modeling impo
     load_backbone,
 )
 
-from .optical_blocks import LanguageSecondLayerOpticalReplacement
+from .optical_blocks import LanguageTwoBlockOpticalReplacement
 
 
 class Language2OpticalReplacement(ElectronicDeepStackReplacement):
     # The legacy Vision+Language artifact writer cannot describe this asymmetric
     # Language-only MoE4 experiment. Hardware artifacts come from hardware_bridge.
     has_optical_phases = False
-    training_architecture_label = "language2_moe4_global_hardware_residual"
-    checkpoint_architecture = "language_block2_parallel_moe4_topk2_residual"
+    training_architecture_label = "language_expert_block1_global_block2_moe4"
+    checkpoint_architecture = "language_two_block_moe4_topk2_residual"
 
     def __init__(self, *args: Any, freeze_electronic: bool, **kwargs: Any) -> None:
         self.freeze_electronic = bool(freeze_electronic)
@@ -62,23 +62,47 @@ class Language2OpticalReplacement(ElectronicDeepStackReplacement):
             self.language_surrogate.core.optical_branch.core.router.parameters()
         )
 
+    def phase_parameter_groups(self) -> dict[str, list[torch.nn.Parameter]]:
+        """Report real nested Language phases while keeping Vision electronic."""
+        vision = self.vision_surrogate.core
+        optical = self.language_surrogate.core.optical_branch.core
+        return {
+            "vision_expert": [
+                expert.raw_phase
+                for layer in vision.expert_layers
+                for expert in layer.experts
+            ],
+            "vision_global": [vision.global_phase.phase.raw_phase],
+            "language_expert": [
+                expert.raw_phase
+                for layer in optical.expert_layers
+                for expert in layer.experts
+            ],
+            "language_global": [optical.global_phase.phase.raw_phase],
+        }
+
     def student_architecture_report(self) -> dict[str, Any]:
         core = self.language_surrogate.core
         return {
             "type": "vision2d_language2_moe4_optical_residual",
             "optical_enabled": True,
-            "optical_location": "parallel residual inside Language mixer block 2",
+            "optical_location": (
+                "MoE4 experts in Language Block 1; global phase/CCD in Block 2"
+            ),
             "router_enabled": True,
             "router_layout": "2x2 experts, top-k=2",
             "router_loss_enabled": False,
             "deepstack_enabled": False,
             "vision_mixer": "2x depthwise_conv2d_residual_mlp",
             "language_block1": "depthwise_conv1d_residual_mlp",
+            "language_block1_optical_path": (
+                "Linear(192,224)->Softplus/RMS->MoE4 router(top-k=2)->"
+                "2x2 expert phase(224 each)->ASM/OEO"
+            ),
             "language_block2_electronic_path": "depthwise_conv1d_residual_mlp",
             "language_block2_optical_path": (
-                "Linear(192,224)->Softplus/RMS->MoE4 router(top-k=2)->"
-                "2x2 expert phase(224 each)->ASM/OEO->global phase(478 active)->"
-                "ASM->CCD478->robust_norm->pool224->Linear(224,192)"
+                "Block1 optical field->global phase(478 active)->ASM->CCD478->"
+                "robust_norm->pool224->Linear(224,192)"
             ),
             "fusion": "electronic_block2 + sigmoid(gate) * optical_delta",
             "fusion_initial": float(core.optical_fusion.detach()),
@@ -97,7 +121,7 @@ def build_hybrid_student(
     vision = VisionElectronicReplacement(settings.vision_hidden_size, settings).to(
         loaded.device
     )
-    language = LanguageSecondLayerOpticalReplacement(
+    language = LanguageTwoBlockOpticalReplacement(
         settings.text_hidden_size, settings
     ).to(loaded.device)
     replacement = Language2OpticalReplacement(

@@ -33,7 +33,10 @@ PHASES = {"prepare_data", "train", "evaluate", "all"}
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Caltech101 Vision-2D electronic + Language block-2 optical residual"
+        description=(
+            "Caltech101 Vision-2D electronic + Language Block-1 expert / "
+            "Block-2 global MoE4 residual"
+        )
     )
     parser.add_argument("--config", required=True)
     parser.add_argument("--phase", choices=sorted(PHASES), default="all")
@@ -99,4 +102,3 @@ def main() -> int:
     finally:
         replacement.close()
     return 0
-

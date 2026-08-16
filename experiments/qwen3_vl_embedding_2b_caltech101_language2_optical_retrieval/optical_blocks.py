@@ -47,8 +47,8 @@ class RobustCCDNormalizer(nn.Module):
         return torch.log1p(self.log_compression * relative)
 
 
-class MoE4LanguageSecondPhysicalLayer(nn.Module):
-    """Canonical MoE4 optics with the final global-phase CCD as replay boundary."""
+class MoE4LanguageTwoBlockOpticalPath(nn.Module):
+    """Two-block MoE4 path: experts in Block 1, global phase in Block 2."""
 
     def __init__(self, width: int, settings: Any) -> None:
         super().__init__()
@@ -126,9 +126,10 @@ class MoE4LanguageSecondPhysicalLayer(nn.Module):
         )
         return self.core.output_adapter(packed).to(dtype)
 
-    def forward(
+    def run_expert_block(
         self, latent: torch.Tensor, padding_mask: torch.Tensor
-    ) -> torch.Tensor:
+    ) -> tuple[torch.Tensor, list[int]]:
+        """Run the router and 2x2 expert plane assigned to Language Block 1."""
         lengths = [int((~row).sum()) for row in padding_mask]
         groups = [latent[index, :length] for index, length in enumerate(lengths)]
         input_fields = self.core.encode_groups(groups)
@@ -137,6 +138,16 @@ class MoE4LanguageSecondPhysicalLayer(nn.Module):
         field, routing = self.core.begin(input_fields)
         field = self._random_shift(field, self.input_shift_pixels)
         field = self.core.run_stage(0, field, routing)
+        return field, lengths
+
+    def run_global_block(
+        self,
+        field: torch.Tensor,
+        lengths: list[int],
+        padding_mask: torch.Tensor,
+        dtype: torch.dtype,
+    ) -> torch.Tensor:
+        """Run the global phase and final CCD assigned to Language Block 2."""
         field = self._random_shift(field, self.global_shift_pixels)
         active = self.core.geometry.active_aperture
         self.last_global_input_amplitude = field[
@@ -153,11 +164,23 @@ class MoE4LanguageSecondPhysicalLayer(nn.Module):
         )
         self.last_raw_ccd = raw_ccd.detach()
         packed_delta = self._readout_delta(
-            self._perturb_ccd(raw_ccd), lengths, latent.dtype
+            self._perturb_ccd(raw_ccd), lengths, dtype
         )
-        delta = torch.zeros_like(latent)
+        delta = torch.zeros(
+            padding_mask.shape[0], padding_mask.shape[1], self.width,
+            device=field.device, dtype=dtype,
+        )
         delta[~padding_mask] = packed_delta
         return delta
+
+
+    def forward(
+        self, latent: torch.Tensor, padding_mask: torch.Tensor
+    ) -> torch.Tensor:
+        field, lengths = self.run_expert_block(latent, padding_mask)
+        return self.run_global_block(
+            field, lengths, padding_mask, latent.dtype
+        )
 
     def decode_measured_ccd(
         self,
@@ -178,7 +201,7 @@ class MoE4LanguageSecondPhysicalLayer(nn.Module):
         self.core.set_phase_dropout_active(active)
 
 
-class LanguageSecondLayerOpticalCore(ElectronicSequenceCore):
+class LanguageTwoBlockOpticalCore(ElectronicSequenceCore):
     def __init__(self, hidden_size: int, max_tokens: int, settings: Any) -> None:
         super().__init__(
             hidden_size,
@@ -188,13 +211,21 @@ class LanguageSecondLayerOpticalCore(ElectronicSequenceCore):
             settings.electronic_language_token_mixer_kernel_size,
         )
         if len(self.blocks) != 2:
-            raise ValueError("Language second-layer optics requires two mixer blocks")
-        self.optical_branch = MoE4LanguageSecondPhysicalLayer(self.width, settings)
+            raise ValueError("Two-slot Language optics requires two electronic mixer blocks")
+        # DeepStackMultimodalReplacement uses this length to occupy consecutive
+        # Qwen language slots.  These are placement markers only; the physical
+        # phases live in optical_branch.core.
+        self.expert_layers = nn.ModuleList([nn.Identity(), nn.Identity()])
+        self.optical_branch = MoE4LanguageTwoBlockOpticalPath(self.width, settings)
         self.optical_fusion_logit = nn.Parameter(
             torch.logit(torch.tensor(float(settings.optical_fusion_initial)))
         )
         self.last_block2_input_groups: list[torch.Tensor] = []
         self.last_electronic_block2_groups: list[torch.Tensor] = []
+        self._stage1_field: torch.Tensor | None = None
+        self._stage1_latent: torch.Tensor | None = None
+        self._stage1_lengths: list[int] = []
+        self._stage1_padding_mask: torch.Tensor | None = None
 
     @property
     def optical_fusion(self) -> torch.Tensor:
@@ -203,24 +234,20 @@ class LanguageSecondLayerOpticalCore(ElectronicSequenceCore):
     def parameter_breakdown(self) -> dict[str, Any]:
         report = super().parameter_breakdown()
         optical = self.optical_branch.core.parameter_breakdown()
-        report["implementation"] = "electronic_block2_plus_moe4_optical_residual"
+        report["implementation"] = "moe4_expert_block1_global_block2_residual"
         report["optical_parameters"] = optical["total_parameters"]
         report["optical_phase_parameters"] = optical["optical_phase_parameters"]
         report["router_parameters"] = optical["router_parameters"]
         report["optical_fusion_parameters"] = self.optical_fusion_logit.numel()
         return report
 
-    def forward_groups(
-        self,
-        groups: list[torch.Tensor],
-        *,
-        causal: bool,
-        spatial_shapes: list[tuple[int, int, int]] | None = None,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
-        if not causal:
-            raise RuntimeError("Language optical core expects causal token mixing")
+    def _pad_groups(
+        self, groups: list[torch.Tensor]
+    ) -> tuple[torch.Tensor, torch.Tensor, list[int]]:
+        if not groups or any(group.ndim != 2 for group in groups):
+            raise ValueError("Language core expects a non-empty list of [T,D] groups")
         lengths = [len(group) for group in groups]
-        if not lengths or any(length <= 0 or length > self.max_tokens for length in lengths):
+        if any(length <= 0 or length > self.max_tokens for length in lengths):
             raise RuntimeError(f"Invalid Language token lengths {lengths}")
         max_length = max(lengths)
         padded = groups[0].new_zeros(len(groups), max_length, self.hidden_size)
@@ -230,18 +257,68 @@ class LanguageSecondLayerOpticalCore(ElectronicSequenceCore):
         for index, group in enumerate(groups):
             padded[index, : len(group)] = group
             padding_mask[index, : len(group)] = False
-        input_latent = self.input_norm(self.input_adapter(padded.float()))
-        block2_input = self.blocks[0](
-            input_latent, padding_mask=padding_mask, causal=True
+        return padded, padding_mask, lengths
+
+    @staticmethod
+    def _pack(
+        value: torch.Tensor, lengths: list[int]
+    ) -> torch.Tensor:
+        return torch.cat(
+            [value[index, :length] for index, length in enumerate(lengths)], dim=0
         )
+
+    def forward_stage_groups(
+        self,
+        stage: int,
+        groups: list[torch.Tensor],
+        *,
+        causal: bool = True,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        if not causal:
+            raise RuntimeError("Language optical core expects causal token mixing")
+        padded, padding_mask, lengths = self._pad_groups(groups)
+        gate = torch.sigmoid(self.residual_logit)
+        if stage == 0:
+            input_latent = self.input_norm(self.input_adapter(padded.float()))
+            optical_field, optical_lengths = self.optical_branch.run_expert_block(
+                input_latent, padding_mask
+            )
+            block1_latent = self.blocks[0](
+                input_latent, padding_mask=padding_mask, causal=True
+            )
+            self._stage1_field = optical_field
+            self._stage1_latent = block1_latent
+            self._stage1_lengths = optical_lengths
+            self._stage1_padding_mask = padding_mask
+            stage1_output = padded.float() + gate * self.output_adapter(block1_latent)
+            stage1_output = stage1_output.masked_fill(
+                padding_mask.unsqueeze(-1), 0.0
+            ).to(groups[0].dtype)
+            return self._pack(stage1_output, lengths), block1_latent
+        if stage != 1:
+            raise RuntimeError("Language MoE4 replacement has exactly stages 0 and 1")
+        if (
+            self._stage1_field is None
+            or self._stage1_latent is None
+            or self._stage1_padding_mask is None
+            or lengths != self._stage1_lengths
+        ):
+            raise RuntimeError("Language Block 1 expert stage must run before Block 2 global")
+        if tuple(padding_mask.shape) != tuple(self._stage1_padding_mask.shape):
+            raise RuntimeError("Language token layout changed between optical blocks")
+        block2_input = self._stage1_latent
         electronic = self.blocks[1](
             block2_input, padding_mask=padding_mask, causal=True
         )
-        optical_delta = self.optical_branch(block2_input, padding_mask)
+        optical_delta = self.optical_branch.run_global_block(
+            self._stage1_field,
+            self._stage1_lengths,
+            padding_mask,
+            block2_input.dtype,
+        )
         latent = self.output_norm(
             electronic + self.optical_fusion * optical_delta
         ).masked_fill(padding_mask.unsqueeze(-1), 0.0)
-        gate = torch.sigmoid(self.residual_logit)
         output = padded.float() + gate * self.output_adapter(latent)
         output = output.to(groups[0].dtype)
         self.last_latent_groups = [
@@ -254,10 +331,20 @@ class LanguageSecondLayerOpticalCore(ElectronicSequenceCore):
             electronic[index, :length].detach() for index, length in enumerate(lengths)
         ]
         self.last_routing = self.optical_branch.core.last_routing
-        packed = torch.cat(
-            [output[index, :length] for index, length in enumerate(lengths)], dim=0
-        )
-        return packed, latent
+        return self._pack(output, lengths), latent
+
+    def forward_groups(
+        self,
+        groups: list[torch.Tensor],
+        *,
+        causal: bool,
+        spatial_shapes: list[tuple[int, int, int]] | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Convenience path used by unit tests; production uses two Qwen slots."""
+        packed, _ = self.forward_stage_groups(0, groups, causal=causal)
+        lengths = [len(group) for group in groups]
+        stage1_groups = list(packed.split(lengths))
+        return self.forward_stage_groups(1, stage1_groups, causal=causal)
 
     def detector_features_from_cached(
         self, electronic: torch.Tensor, ccd: torch.Tensor
@@ -278,12 +365,29 @@ class LanguageSecondLayerOpticalCore(ElectronicSequenceCore):
         return torch.cat((latent.mean(dim=0), latent.amax(dim=0)), dim=0)
 
 
-class LanguageSecondLayerOpticalReplacement(LanguageElectronicReplacement):
+class LanguageTwoBlockOpticalReplacement(LanguageElectronicReplacement):
     def __init__(self, hidden_size: int, settings: Any) -> None:
         super().__init__(hidden_size, settings)
-        self.core = LanguageSecondLayerOpticalCore(
+        self.core = LanguageTwoBlockOpticalCore(
             hidden_size, settings.max_language_tokens, settings
         )
+
+    def forward_stage(
+        self,
+        stage: int,
+        hidden_states: torch.Tensor,
+        optical_input: torch.Tensor | None = None,
+        residual_base: torch.Tensor | None = None,
+    ) -> torch.Tensor:
+        branch = hidden_states if optical_input is None else optical_input
+        if self.valid_mask is None or self.valid_mask.shape != branch.shape[:2]:
+            raise RuntimeError("Call prepare_student_batch before language replacement")
+        mask = self.valid_mask.to(branch.device)
+        groups = [branch[index, mask[index]] for index in range(branch.shape[0])]
+        packed, _ = self.core.forward_stage_groups(stage, groups, causal=True)
+        output = torch.zeros_like(hidden_states)
+        output[mask] = packed
+        return output
 
     def set_phase_dropout_active(self, active: bool) -> None:
         self.core.optical_branch.set_phase_dropout_active(active)

@@ -40,7 +40,7 @@ from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.train_optical
 )
 
 from .modeling import build_hybrid_student, load_backbone
-from .optical_blocks import LanguageSecondLayerOpticalCore
+from .optical_blocks import LanguageTwoBlockOpticalCore
 from .settings import load_settings
 
 
@@ -179,8 +179,8 @@ def export_session(settings: Any, checkpoint: Path, session_dir: Path) -> None:
                 settings.hardware_phase_flip_vertical
             ),
             "optical_boundary": (
-                "after simulated MoE4 expert phase/propagation/OEO and before "
-                "the physical global phase"
+                "after simulated Language Block-1 MoE4 expert phase/propagation/OEO "
+                "and before the physical Language Block-2 global phase"
             ),
             "moe_layout": "2x2 experts, each 224x224 logical pixels, pitch 254, top-k=2",
             "logical_active_shape": [478, 478],
@@ -359,7 +359,7 @@ def _load_downstream(settings: Any, checkpoint: Path, device: torch.device):
     payload = torch.load(checkpoint, map_location="cpu", weights_only=False)
     language_state = payload["language_optical"]
     input_weight = language_state["core.input_adapter.weight"]
-    core = LanguageSecondLayerOpticalCore(
+    core = LanguageTwoBlockOpticalCore(
         int(input_weight.shape[1]), settings.max_language_tokens, settings
     ).to(device)
     core_state = {
@@ -384,7 +384,7 @@ def _load_downstream(settings: Any, checkpoint: Path, device: torch.device):
 def _embedding(
     row: dict[str, str],
     session_dir: Path,
-    core: LanguageSecondLayerOpticalCore,
+    core: LanguageTwoBlockOpticalCore,
     readout: ElectronicRetrievalReadout,
     device: torch.device,
     *,
@@ -534,7 +534,9 @@ def finetune_session(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Language block-2 optical hardware bridge")
+    parser = argparse.ArgumentParser(
+        description="Replay Language Block-2 global phase/CCD after simulated Block-1 experts"
+    )
     parser.add_argument("--config", required=True)
     parser.add_argument("--checkpoint", default=None)
     parser.add_argument("--session-dir", required=True)

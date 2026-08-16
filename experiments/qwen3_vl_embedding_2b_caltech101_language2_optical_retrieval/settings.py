@@ -197,7 +197,7 @@ def save_resolved_config(settings: Any) -> None:
     path = settings.output_dir / "config.yaml"
     values = yaml.safe_load(path.read_text(encoding="utf-8"))
     values["hybrid"] = {
-        "type": "language_block2_parallel_optical_residual",
+        "type": "language_expert_block1_global_block2_moe4_residual",
         "initial_electronic_checkpoint": str(settings.initial_electronic_checkpoint),
         "freeze_electronic": settings.hybrid_freeze_electronic,
         "initial_fusion": settings.optical_fusion_initial,
