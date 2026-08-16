@@ -126,7 +126,9 @@ def student_embeddings(
     inputs: Mapping[str, torch.Tensor],
 ) -> tuple[torch.Tensor, torch.Tensor]:
     replacement.use_student()
-    replacement.prepare_student_batch(inputs["attention_mask"])
+    replacement.prepare_student_batch(
+        inputs["attention_mask"], inputs.get("image_grid_thw")
+    )
     forward_base_hidden(model, inputs)
     detector_features = replacement.language_surrogate.retrieval_detector_features()
     if detector_features.ndim != 2:

@@ -106,3 +106,22 @@ CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_caltech101_el
   --phase evaluate \
   --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/runs/caltech101_target10_electronic_token_mixer_2layer_no_deepstack/ema_best_train_loss_checkpoint.pt
 ```
+
+## 8. Vision 二维 Mixer 消融
+
+这一组以第 7 组为基线，只把 Vision 的 `kernel=5` Conv1D 换成正确恢复 Qwen 二维网格后的 `3×3` depthwise Conv2D；Language 仍为 `kernel=5` causal Conv1D，DeepStack 仍关闭。
+
+```bash
+CUDA_VISIBLE_DEVICES=6 python -m experiments.qwen3_vl_embedding_2b_caltech101_electronic_retrieval \
+  --config experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/configs/release/caltech101_target10_electronic_vision2d.yaml \
+  --phase train
+```
+
+固定 EMA checkpoint 评测：
+
+```bash
+CUDA_VISIBLE_DEVICES=6 python -m experiments.qwen3_vl_embedding_2b_caltech101_electronic_retrieval \
+  --config experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/configs/release/caltech101_target10_electronic_vision2d.yaml \
+  --phase evaluate \
+  --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/runs/caltech101_target10_electronic_vision2d_no_deepstack/ema_best_train_loss_checkpoint.pt
+```

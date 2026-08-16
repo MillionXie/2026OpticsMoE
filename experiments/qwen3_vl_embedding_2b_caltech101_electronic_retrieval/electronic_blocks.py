@@ -22,19 +22,18 @@ class ElectronicResidualMLPBlock(nn.Module):
         initial_residual_weight: float,
         token_mixer_enabled: bool = False,
         token_mixer_kernel_size: int = 5,
+        token_mixer_type: str = "depthwise_conv1d",
     ) -> None:
         super().__init__()
         hidden_width = int(round(width * expansion))
         self.token_mixer_enabled = bool(token_mixer_enabled)
         self.token_mixer_kernel_size = int(token_mixer_kernel_size)
+        self.token_mixer_type = str(token_mixer_type)
         if self.token_mixer_enabled:
             self.token_norm = nn.LayerNorm(width)
-            self.token_depthwise = nn.Conv1d(
-                width,
-                width,
-                kernel_size=self.token_mixer_kernel_size,
-                groups=width,
-                bias=False,
+            convolution = nn.Conv2d if self.token_mixer_type == "depthwise_conv2d" else nn.Conv1d
+            self.token_depthwise = convolution(
+                width, width, kernel_size=self.token_mixer_kernel_size, groups=width, bias=False
             )
             self.token_pointwise = nn.Linear(width, width)
             self.token_dropout = nn.Dropout(dropout)
@@ -59,21 +58,27 @@ class ElectronicResidualMLPBlock(nn.Module):
         *,
         padding_mask: torch.Tensor,
         causal: bool,
+        spatial_shapes: list[tuple[int, int, int]] | None = None,
     ) -> torch.Tensor:
         if self.token_mixer_enabled:
             token_input = self.token_norm(hidden).masked_fill(
                 padding_mask.unsqueeze(-1), 0.0
             )
-            token_input = token_input.transpose(1, 2)
-            if causal:
-                token_input = F.pad(
-                    token_input, (self.token_mixer_kernel_size - 1, 0)
-                )
+            if self.token_mixer_type == "depthwise_conv2d":
+                if causal or spatial_shapes is None:
+                    raise RuntimeError("2D token mixing requires non-causal spatial shapes")
+                token_update = self._mix_spatial_tokens(token_input, spatial_shapes)
             else:
-                left = self.token_mixer_kernel_size // 2
-                right = self.token_mixer_kernel_size - 1 - left
-                token_input = F.pad(token_input, (left, right))
-            token_update = self.token_depthwise(token_input).transpose(1, 2)
+                token_input = token_input.transpose(1, 2)
+                if causal:
+                    token_input = F.pad(
+                        token_input, (self.token_mixer_kernel_size - 1, 0)
+                    )
+                else:
+                    left = self.token_mixer_kernel_size // 2
+                    right = self.token_mixer_kernel_size - 1 - left
+                    token_input = F.pad(token_input, (left, right))
+                token_update = self.token_depthwise(token_input).transpose(1, 2)
             token_update = self.token_pointwise(F.gelu(token_update))
             token_update = self.token_dropout(token_update)
             hidden = hidden + torch.sigmoid(self.token_residual_logit) * token_update
@@ -81,6 +86,53 @@ class ElectronicResidualMLPBlock(nn.Module):
         update = self.mlp(self.norm(hidden))
         hidden = hidden + torch.sigmoid(self.residual_logit) * update
         return hidden.masked_fill(padding_mask.unsqueeze(-1), 0.0)
+
+    def _mix_spatial_tokens(
+        self,
+        token_input: torch.Tensor,
+        spatial_shapes: list[tuple[int, int, int]],
+    ) -> torch.Tensor:
+        if len(spatial_shapes) != token_input.shape[0]:
+            raise RuntimeError("Spatial shape count does not match the vision batch")
+        merge_size = 2
+        mixed = torch.zeros_like(token_input)
+        padding = self.token_mixer_kernel_size // 2
+        for index, (frames, height, width) in enumerate(spatial_shapes):
+            token_count = frames * height * width
+            if height % merge_size or width % merge_size:
+                raise RuntimeError("Vision grid must be divisible by Qwen spatial merge size 2")
+            if token_count > token_input.shape[1]:
+                raise RuntimeError("Vision grid contains more tokens than the padded sequence")
+            # Qwen stores patches block-major as [t,H/2,W/2,2,2,C]. Restore
+            # the true image grid before convolution and restore Qwen order after it.
+            grid = (
+                token_input[index, :token_count]
+                .view(
+                    frames,
+                    height // merge_size,
+                    width // merge_size,
+                    merge_size,
+                    merge_size,
+                    token_input.shape[-1],
+                )
+                .permute(0, 5, 1, 3, 2, 4)
+                .reshape(frames, token_input.shape[-1], height, width)
+            )
+            grid = self.token_depthwise(F.pad(grid, (padding, padding, padding, padding)))
+            restored = (
+                grid.view(
+                    frames,
+                    token_input.shape[-1],
+                    height // merge_size,
+                    merge_size,
+                    width // merge_size,
+                    merge_size,
+                )
+                .permute(0, 2, 4, 3, 5, 1)
+                .reshape(token_count, token_input.shape[-1])
+            )
+            mixed[index, :token_count] = restored
+        return mixed
 
 
 class _CompatibilityRouter(nn.Module):
@@ -107,14 +159,26 @@ class _CompatibilityGlobalPhase(nn.Module):
 
 
 class ElectronicSequenceCore(nn.Module):
-    def __init__(self, hidden_size: int, max_tokens: int, settings: Any) -> None:
+    def __init__(
+        self,
+        hidden_size: int,
+        max_tokens: int,
+        settings: Any,
+        token_mixer_type: str | None = None,
+        token_mixer_kernel_size: int | None = None,
+    ) -> None:
         super().__init__()
         self.hidden_size = int(hidden_size)
         self.max_tokens = int(max_tokens)
         self.width = int(settings.electronic_width)
         self.expansion = float(settings.electronic_expansion)
         self.token_mixer_enabled = bool(settings.electronic_token_mixer_enabled)
-        self.token_mixer_kernel_size = int(settings.electronic_token_mixer_kernel_size)
+        self.token_mixer_kernel_size = int(
+            token_mixer_kernel_size or settings.electronic_token_mixer_kernel_size
+        )
+        self.token_mixer_type = str(
+            token_mixer_type or settings.electronic_vision_token_mixer_type
+        )
         self.input_adapter = nn.Linear(self.hidden_size, self.width)
         self.input_norm = nn.LayerNorm(self.width)
         self.blocks = nn.ModuleList(
@@ -126,6 +190,7 @@ class ElectronicSequenceCore(nn.Module):
                     settings.electronic_initial_residual_weight,
                     self.token_mixer_enabled,
                     self.token_mixer_kernel_size,
+                    self.token_mixer_type,
                 )
                 for _ in range(settings.electronic_layers)
             ]
@@ -150,6 +215,7 @@ class ElectronicSequenceCore(nn.Module):
         groups: list[torch.Tensor],
         *,
         causal: bool,
+        spatial_shapes: list[tuple[int, int, int]] | None = None,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         if not groups or any(group.ndim != 2 for group in groups):
             raise ValueError("Electronic core expects a non-empty list of [T,D] groups")
@@ -169,7 +235,12 @@ class ElectronicSequenceCore(nn.Module):
         input_latent = self.input_norm(self.input_adapter(padded.float()))
         latent = input_latent
         for block in self.blocks:
-            latent = block(latent, padding_mask=padding_mask, causal=causal)
+            latent = block(
+                latent,
+                padding_mask=padding_mask,
+                causal=causal,
+                spatial_shapes=spatial_shapes,
+            )
         latent = self.output_norm(latent)
         gate = torch.sigmoid(self.residual_logit)
         latent = input_latent + gate * (latent - input_latent)
@@ -229,7 +300,7 @@ class ElectronicSequenceCore(nn.Module):
             "attention_enabled": False,
             "token_mixing_enabled": self.token_mixer_enabled,
             "token_mixer_type": (
-                "depthwise_conv1d_pointwise_linear"
+                f"{self.token_mixer_type}_pointwise_linear"
                 if self.token_mixer_enabled
                 else "none"
             ),
@@ -254,11 +325,25 @@ class VisionElectronicReplacement(nn.Module):
     def __init__(self, hidden_size: int, settings: Any) -> None:
         super().__init__()
         self.core = ElectronicSequenceCore(
-            hidden_size, settings.max_visual_tokens, settings
+            hidden_size,
+            settings.max_visual_tokens,
+            settings,
+            settings.electronic_vision_token_mixer_type,
+            settings.electronic_vision_token_mixer_kernel_size,
         )
         self.tap_stages = (1,) if settings.electronic_deepstack_enabled else ()
         self.tap_outputs: list[torch.Tensor] = []
         self.last_output: torch.Tensor | None = None
+        self.spatial_shapes: list[tuple[int, int, int]] | None = None
+
+    def set_image_grid_thw(self, image_grid_thw: torch.Tensor | None) -> None:
+        if image_grid_thw is None:
+            self.spatial_shapes = None
+            return
+        shapes: list[tuple[int, int, int]] = []
+        for frames, height, width in image_grid_thw.detach().cpu().long().tolist():
+            shapes.extend((1, int(height), int(width)) for _ in range(int(frames)))
+        self.spatial_shapes = shapes
 
     def compute(
         self,
@@ -268,7 +353,13 @@ class VisionElectronicReplacement(nn.Module):
     ) -> None:
         lengths = lengths_from_cu(hidden_states, cu_seqlens)
         packed, _ = self.core.forward_groups(
-            list(hidden_states.split(lengths)), causal=False
+            list(hidden_states.split(lengths)),
+            causal=False,
+            spatial_shapes=(
+                self.spatial_shapes
+                if self.core.token_mixer_type == "depthwise_conv2d"
+                else None
+            ),
         )
         if hidden_states.shape != packed.shape:
             raise RuntimeError("Vision electronic replacement changed packed shape")
@@ -301,7 +392,11 @@ class LanguageElectronicReplacement(nn.Module):
     def __init__(self, hidden_size: int, settings: Any) -> None:
         super().__init__()
         self.core = ElectronicSequenceCore(
-            hidden_size, settings.max_language_tokens, settings
+            hidden_size,
+            settings.max_language_tokens,
+            settings,
+            settings.electronic_language_token_mixer_type,
+            settings.electronic_language_token_mixer_kernel_size,
         )
         self.valid_mask: torch.Tensor | None = None
         self.lengths: list[int] = []

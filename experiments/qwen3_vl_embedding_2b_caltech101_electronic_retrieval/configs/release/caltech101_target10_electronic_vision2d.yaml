@@ -1,0 +1,13 @@
+base_config: caltech101_target10_electronic_token_mixer.yaml
+
+# Strict spatial-mixer ablation: only the Vision token mixer changes from 1D
+# to true 2D grid convolution. Main merger only; Language remains causal 1D.
+electronic:
+  vision_token_mixer:
+    type: depthwise_conv2d
+    kernel_size: 3
+  language_token_mixer:
+    type: depthwise_conv1d
+    kernel_size: 5
+
+output_dir: ../../runs/caltech101_target10_electronic_vision2d_no_deepstack

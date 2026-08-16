@@ -100,7 +100,8 @@ class ElectronicDeepStackReplacement(DeepStackMultimodalReplacement):
             "blocks_per_modality": len(self.vision_surrogate.core.blocks),
             "attention_enabled": False,
             "token_mixing_enabled": self.vision_surrogate.core.token_mixer_enabled,
-            "token_mixer": "depthwise_conv1d_pointwise_linear",
+            "vision_token_mixer": self.vision_surrogate.core.token_mixer_type,
+            "language_token_mixer": self.language_surrogate.core.token_mixer_type,
             "token_mixer_kernel_size": (
                 self.vision_surrogate.core.token_mixer_kernel_size
             ),

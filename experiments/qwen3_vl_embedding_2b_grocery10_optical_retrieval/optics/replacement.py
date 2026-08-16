@@ -376,9 +376,16 @@ class DeepStackMultimodalReplacement:
         for index, layer in enumerate(layers):
             self.language_layers[index] = layer
 
-    def prepare_student_batch(self, attention_mask: torch.Tensor) -> None:
+    def prepare_student_batch(
+        self,
+        attention_mask: torch.Tensor,
+        image_grid_thw: torch.Tensor | None = None,
+    ) -> None:
         if self.language_mode == "optical_moe":
             self.language_surrogate.set_attention_mask(attention_mask)
+        set_grid = getattr(self.vision_surrogate, "set_image_grid_thw", None)
+        if callable(set_grid):
+            set_grid(image_grid_thw)
 
     def teacher_token_counts(self) -> list[int]:
         if self.teacher_cu_seqlens is None:

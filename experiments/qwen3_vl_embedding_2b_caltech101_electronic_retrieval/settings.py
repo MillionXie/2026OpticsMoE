@@ -44,6 +44,24 @@ def load_settings(path: str | Path) -> Caltech101Settings:
     settings.electronic_token_mixer_kernel_size = int(
         d("electronic.token_mixer.kernel_size", 5)
     )
+    settings.electronic_vision_token_mixer_type = str(
+        d("electronic.vision_token_mixer.type", "depthwise_conv1d")
+    )
+    settings.electronic_language_token_mixer_type = str(
+        d("electronic.language_token_mixer.type", "depthwise_conv1d")
+    )
+    settings.electronic_vision_token_mixer_kernel_size = int(
+        d(
+            "electronic.vision_token_mixer.kernel_size",
+            settings.electronic_token_mixer_kernel_size,
+        )
+    )
+    settings.electronic_language_token_mixer_kernel_size = int(
+        d(
+            "electronic.language_token_mixer.kernel_size",
+            settings.electronic_token_mixer_kernel_size,
+        )
+    )
     settings.electronic_pooling = str(d("electronic.pooling", "mean"))
     settings.electronic_deepstack_enabled = bool(
         d("electronic.deepstack_enabled", True)
@@ -70,13 +88,23 @@ def load_settings(path: str | Path) -> Caltech101Settings:
         raise ValueError("Electronic expansion must be positive")
     if not 0.0 < settings.electronic_initial_residual_weight < 1.0:
         raise ValueError("Electronic initial_residual_weight must be in (0,1)")
-    if (
-        settings.electronic_token_mixer_kernel_size <= 0
-        or settings.electronic_token_mixer_kernel_size % 2 == 0
+    for kernel_size in (
+        settings.electronic_token_mixer_kernel_size,
+        settings.electronic_vision_token_mixer_kernel_size,
+        settings.electronic_language_token_mixer_kernel_size,
     ):
-        raise ValueError("Electronic token mixer kernel_size must be a positive odd integer")
+        if kernel_size <= 0 or kernel_size % 2 == 0:
+            raise ValueError("Electronic token mixer kernel_size must be a positive odd integer")
     if settings.electronic_pooling not in {"mean", "mean_max"}:
         raise ValueError("Electronic pooling must be mean or mean_max")
+    mixer_types = {
+        settings.electronic_vision_token_mixer_type,
+        settings.electronic_language_token_mixer_type,
+    }
+    if not mixer_types <= {"depthwise_conv1d", "depthwise_conv2d"}:
+        raise ValueError("Electronic token mixer type must be depthwise_conv1d or depthwise_conv2d")
+    if settings.electronic_language_token_mixer_type != "depthwise_conv1d":
+        raise ValueError("Language electronic token mixer must remain one-dimensional")
     if not settings.reserve_test_before_train:
         raise ValueError("Electronic all-data training must reserve test before train")
     if not settings.episodic_prototype_loss_enabled:
@@ -143,8 +171,10 @@ def save_resolved_config(settings: Caltech101Settings) -> None:
         "attention_enabled": False,
         "token_mixing_enabled": settings.electronic_token_mixer_enabled,
         "token_mixer": {
-            "type": "depthwise_conv1d_pointwise_linear",
-            "kernel_size": settings.electronic_token_mixer_kernel_size,
+            "vision_type": settings.electronic_vision_token_mixer_type,
+            "language_type": settings.electronic_language_token_mixer_type,
+            "vision_kernel_size": settings.electronic_vision_token_mixer_kernel_size,
+            "language_kernel_size": settings.electronic_language_token_mixer_kernel_size,
             "language_padding": "causal_left",
             "vision_padding": "symmetric",
         },

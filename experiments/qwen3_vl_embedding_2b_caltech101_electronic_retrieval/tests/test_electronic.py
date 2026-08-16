@@ -5,6 +5,7 @@ from types import SimpleNamespace
 import torch
 
 from experiments.qwen3_vl_embedding_2b_caltech101_electronic_retrieval.electronic_blocks import (
+    ElectronicResidualMLPBlock,
     ElectronicSequenceCore,
 )
 from experiments.qwen3_vl_embedding_2b_caltech101_electronic_retrieval.modeling import (
@@ -28,6 +29,10 @@ def _settings() -> SimpleNamespace:
         electronic_initial_residual_weight=0.1,
         electronic_token_mixer_enabled=False,
         electronic_token_mixer_kernel_size=5,
+        electronic_vision_token_mixer_type="depthwise_conv1d",
+        electronic_language_token_mixer_type="depthwise_conv1d",
+        electronic_vision_token_mixer_kernel_size=5,
+        electronic_language_token_mixer_kernel_size=5,
     )
 
 
@@ -68,6 +73,48 @@ def test_token_mixer_uses_tokens_and_masks_padding() -> None:
     assert breakdown["token_mixer_parameters"] > 0
 
 
+def test_vision_2d_mixer_restores_qwen_block_major_grid_exactly() -> None:
+    block = ElectronicResidualMLPBlock(
+        2,
+        1.0,
+        0.0,
+        0.1,
+        token_mixer_enabled=True,
+        token_mixer_kernel_size=3,
+        token_mixer_type="depthwise_conv2d",
+    )
+    with torch.no_grad():
+        block.token_depthwise.weight.zero_()
+        block.token_depthwise.weight[:, 0, 1, 1] = 1.0
+    tokens = torch.arange(32, dtype=torch.float32).view(1, 16, 2)
+    restored = block._mix_spatial_tokens(tokens, [(1, 4, 4)])
+    assert torch.equal(restored, tokens)
+
+
+def test_vision_2d_core_has_finite_nonzero_gradients() -> None:
+    settings = _settings()
+    settings.electronic_token_mixer_enabled = True
+    settings.electronic_vision_token_mixer_type = "depthwise_conv2d"
+    settings.electronic_vision_token_mixer_kernel_size = 3
+    core = ElectronicSequenceCore(
+        48,
+        16,
+        settings,
+        settings.electronic_vision_token_mixer_type,
+        settings.electronic_vision_token_mixer_kernel_size,
+    )
+    packed, latent = core.forward_groups(
+        [torch.randn(16, 48), torch.randn(16, 48)],
+        causal=False,
+        spatial_shapes=[(1, 4, 4), (1, 4, 4)],
+    )
+    (packed.square().mean() + latent.square().mean()).backward()
+    gradients = [parameter.grad for parameter in core.parameters() if parameter.requires_grad]
+    assert all(gradient is not None for gradient in gradients)
+    assert all(torch.isfinite(gradient).all() for gradient in gradients if gradient is not None)
+    assert all(torch.count_nonzero(gradient) > 0 for gradient in gradients if gradient is not None)
+
+
 def test_v2_config_enables_mean_max_token_mixing_without_teacher() -> None:
     settings = load_settings(
         "experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/"
@@ -78,12 +125,28 @@ def test_v2_config_enables_mean_max_token_mixing_without_teacher() -> None:
     assert settings.electronic_layers == 2
     assert settings.electronic_token_mixer_enabled is True
     assert settings.electronic_token_mixer_kernel_size == 5
+    assert settings.electronic_vision_token_mixer_type == "depthwise_conv1d"
+    assert settings.electronic_language_token_mixer_type == "depthwise_conv1d"
     assert settings.electronic_pooling == "mean_max"
     assert settings.electronic_deepstack_enabled is False
     assert settings.detector_output_size == 384
     assert settings.lambda_kd == 0.0
     assert settings.lambda_relational_kd == 0.0
     assert settings.lambda_teacher_gallery == 0.0
+
+
+def test_vision2d_config_changes_only_spatial_mixer_geometry() -> None:
+    settings = load_settings(
+        "experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/"
+        "configs/release/caltech101_target10_electronic_vision2d.yaml"
+    )
+    assert settings.electronic_deepstack_enabled is False
+    assert settings.electronic_layers == 2
+    assert settings.electronic_vision_token_mixer_type == "depthwise_conv2d"
+    assert settings.electronic_vision_token_mixer_kernel_size == 3
+    assert settings.electronic_language_token_mixer_type == "depthwise_conv1d"
+    assert settings.electronic_language_token_mixer_kernel_size == 5
+    assert settings.teacher_enabled is False
 
 
 def test_archived_v2_config_keeps_original_three_layer_run_reproducible() -> None:
