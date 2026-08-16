@@ -7,14 +7,13 @@ output_dir: ../data/ccd_captured_moe4_956
 roi_xywh: null
 target_size_wh: [956, 956]
 
-# One common mapping is estimated for the complete capture folder, rather than
-# stretching every frame independently.  Use fixed_range when camera black and
-# saturation levels are calibrated (for 16-bit: black_level 0, white_level 65535).
+# Fixed radiometric conversion only: no background estimation or subtraction.
+# The current hardware_sdk capture is already 8-bit, hence [0,255].  For a true
+# 16-bit source explicitly change white_level to the calibrated sensor maximum.
 intensity:
-  mode: global_percentile
-  lower_percentile: 0.1
-  upper_percentile: 99.9
-  sample_stride: 16
+  mode: fixed_range
+  black_level: 0
+  white_level: 255
 
 # Flips intentionally belong to the experiment's hardware.ccd settings.
 flip_vertical: false

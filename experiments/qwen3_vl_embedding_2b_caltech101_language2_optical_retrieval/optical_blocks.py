@@ -17,14 +17,11 @@ from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.optics.moe im
 
 
 class RobustCCDNormalizer(nn.Module):
-    """Remove global CCD dark level and gain before the canonical MoE readout."""
+    """Normalize measured intensity scale without inventing a background frame."""
 
     def __init__(self, settings: Any) -> None:
         super().__init__()
         self.active_size = int(settings.active_size)
-        self.background_quantile = float(
-            settings.language_optical_background_quantile
-        )
         self.relative_clip = float(settings.language_optical_normalization_clip)
         self.log_compression = float(settings.language_optical_log_compression)
 
@@ -38,10 +35,6 @@ class RobustCCDNormalizer(nn.Module):
         value = intensity.float().clamp_min(0.0)
         if not torch.isfinite(value).all():
             raise RuntimeError("CCD intensity contains NaN or Inf")
-        background = torch.quantile(
-            value.flatten(1), self.background_quantile, dim=1
-        ).detach()[:, None, None]
-        value = (value - background).clamp_min(0.0)
         frame_mean = value.mean(dim=(-2, -1), keepdim=True).clamp_min(1.0e-6)
         relative = (value / frame_mean).clamp_max(self.relative_clip)
         return torch.log1p(self.log_compression * relative)
@@ -73,9 +66,18 @@ class MoE4LanguageTwoBlockOpticalPath(nn.Module):
             settings.language_optical_read_noise_fraction
         )
         self.ccd_normalizer = RobustCCDNormalizer(settings)
+        # The two optical blocks use the same readout architecture but own
+        # independent weights.  Hardware fine-tuning Block 2 must not silently
+        # change the simulated Block-1 expert readout.
+        self.expert_readout = copy.deepcopy(self.core.readout)
+        self.expert_output_adapter = copy.deepcopy(self.core.output_adapter)
         self.current_operating_loss: torch.Tensor | None = None
+        self.current_expert_operating_loss: torch.Tensor | None = None
+        self.current_global_operating_loss: torch.Tensor | None = None
         self.last_global_input_amplitude: torch.Tensor | None = None
+        self.last_raw_expert_ccd: torch.Tensor | None = None
         self.last_raw_ccd: torch.Tensor | None = None
+        self.last_normalized_expert_ccd: torch.Tensor | None = None
         self.last_normalized_ccd: torch.Tensor | None = None
 
     @staticmethod
@@ -116,29 +118,81 @@ class MoE4LanguageTwoBlockOpticalPath(nn.Module):
         detector_intensity: torch.Tensor,
         lengths: list[int],
         dtype: torch.dtype,
+        *,
+        final: bool,
     ) -> torch.Tensor:
         normalized_intensity = self.ccd_normalizer(detector_intensity)
-        readout, _ = self.core.readout.forward_intensity(normalized_intensity)
-        self.core.current_detector_readout = readout
-        self.last_normalized_ccd = normalized_intensity.detach()
+        if final:
+            readout, _ = self.core.readout.forward_intensity(normalized_intensity)
+            self.core.current_detector_readout = readout
+            self.last_normalized_ccd = normalized_intensity.detach()
+        else:
+            readout, _ = self.expert_readout.forward_intensity(normalized_intensity)
+            self.last_normalized_expert_ccd = normalized_intensity.detach()
         packed = torch.cat(
             [readout[index, :length] for index, length in enumerate(lengths)], dim=0
         )
-        return self.core.output_adapter(packed).to(dtype)
+        adapter = self.core.output_adapter if final else self.expert_output_adapter
+        return adapter(packed).to(dtype)
 
-    def run_expert_block(
+    def _operating_loss(self, raw_ccd: torch.Tensor) -> torch.Tensor:
+        clean_mean = raw_ccd.mean(dim=(-2, -1)).clamp_min(1.0e-8)
+        target = raw_ccd.new_tensor(self.target_mean).clamp_min(1.0e-8)
+        return F.smooth_l1_loss(
+            clean_mean.log(), target.log().expand_as(clean_mean)
+        )
+
+    def _encode_input_fields(
         self, latent: torch.Tensor, padding_mask: torch.Tensor
     ) -> tuple[torch.Tensor, list[int]]:
-        """Run the router and 2x2 expert plane assigned to Language Block 1."""
         lengths = [int((~row).sum()) for row in padding_mask]
         groups = [latent[index, :length] for index, length in enumerate(lengths)]
         input_fields = self.core.encode_groups(groups)
         rms = input_fields.square().mean(dim=(-2, -1), keepdim=True).sqrt().clamp_min(1e-6)
-        input_fields = input_fields * (self.input_rms / rms)
+        return input_fields * (self.input_rms / rms), lengths
+
+    def _scatter_delta(
+        self,
+        packed: torch.Tensor,
+        padding_mask: torch.Tensor,
+        dtype: torch.dtype,
+    ) -> torch.Tensor:
+        delta = torch.zeros(
+            padding_mask.shape[0], padding_mask.shape[1], self.width,
+            device=packed.device, dtype=dtype,
+        )
+        delta[~padding_mask] = packed
+        return delta
+
+    def run_expert_block(
+        self, latent: torch.Tensor, padding_mask: torch.Tensor
+    ) -> tuple[torch.Tensor, dict[str, torch.Tensor], list[int]]:
+        """Expert optics -> CCD -> a readout architecturally matching global."""
+        input_fields, lengths = self._encode_input_fields(latent, padding_mask)
         field, routing = self.core.begin(input_fields)
         field = self._random_shift(field, self.input_shift_pixels)
-        field = self.core.run_stage(0, field, routing)
-        return field, lengths
+        detector_field = self.core.propagator(self.core.expert_layers[0](field))
+        active = self.core.geometry.active_aperture
+        raw_ccd = detector_field[
+            :, active.y0 : active.y1, active.x0 : active.x1
+        ].abs().square().float()
+        self.current_expert_operating_loss = self._operating_loss(raw_ccd)
+        self.current_operating_loss = self.current_expert_operating_loss
+        self.last_raw_expert_ccd = raw_ccd.detach()
+        packed = self._readout_delta(
+            self._perturb_ccd(raw_ccd), lengths, latent.dtype, final=False
+        )
+        return self._scatter_delta(packed, padding_mask, latent.dtype), routing, lengths
+
+    def encode_global_input(
+        self,
+        fused_latent: torch.Tensor,
+        padding_mask: torch.Tensor,
+        routing: dict[str, torch.Tensor],
+    ) -> torch.Tensor:
+        """Electronically reload the Block-1 fused result for global optics."""
+        input_fields, _ = self._encode_input_fields(fused_latent, padding_mask)
+        return self.core.fanout(input_fields, routing)
 
     def run_global_block(
         self,
@@ -157,30 +211,18 @@ class MoE4LanguageTwoBlockOpticalPath(nn.Module):
         raw_ccd = detector_field[
             :, active.y0 : active.y1, active.x0 : active.x1
         ].abs().square().float()
-        clean_mean = raw_ccd.mean(dim=(-2, -1)).clamp_min(1.0e-8)
-        target = raw_ccd.new_tensor(self.target_mean).clamp_min(1.0e-8)
-        self.current_operating_loss = F.smooth_l1_loss(
-            clean_mean.log(), target.log().expand_as(clean_mean)
+        self.current_global_operating_loss = self._operating_loss(raw_ccd)
+        expert_loss = self.current_expert_operating_loss
+        self.current_operating_loss = (
+            self.current_global_operating_loss
+            if expert_loss is None
+            else 0.5 * (expert_loss + self.current_global_operating_loss)
         )
         self.last_raw_ccd = raw_ccd.detach()
         packed_delta = self._readout_delta(
-            self._perturb_ccd(raw_ccd), lengths, dtype
+            self._perturb_ccd(raw_ccd), lengths, dtype, final=True
         )
-        delta = torch.zeros(
-            padding_mask.shape[0], padding_mask.shape[1], self.width,
-            device=field.device, dtype=dtype,
-        )
-        delta[~padding_mask] = packed_delta
-        return delta
-
-
-    def forward(
-        self, latent: torch.Tensor, padding_mask: torch.Tensor
-    ) -> torch.Tensor:
-        field, lengths = self.run_expert_block(latent, padding_mask)
-        return self.run_global_block(
-            field, lengths, padding_mask, latent.dtype
-        )
+        return self._scatter_delta(packed_delta, padding_mask, dtype)
 
     def decode_measured_ccd(
         self,
@@ -189,13 +231,10 @@ class MoE4LanguageTwoBlockOpticalPath(nn.Module):
         dtype: torch.dtype,
     ) -> torch.Tensor:
         lengths = [int((~row).sum()) for row in padding_mask]
-        packed = self._readout_delta(detector_intensity, lengths, dtype)
-        delta = torch.zeros(
-            len(lengths), padding_mask.shape[1], self.width,
-            device=detector_intensity.device, dtype=dtype,
+        packed = self._readout_delta(
+            detector_intensity, lengths, dtype, final=True
         )
-        delta[~padding_mask] = packed
-        return delta
+        return self._scatter_delta(packed, padding_mask, dtype)
 
     def set_phase_dropout_active(self, active: bool) -> None:
         self.core.set_phase_dropout_active(active)
@@ -217,28 +256,48 @@ class LanguageTwoBlockOpticalCore(ElectronicSequenceCore):
         # phases live in optical_branch.core.
         self.expert_layers = nn.ModuleList([nn.Identity(), nn.Identity()])
         self.optical_branch = MoE4LanguageTwoBlockOpticalPath(self.width, settings)
-        self.optical_fusion_logit = nn.Parameter(
-            torch.logit(torch.tensor(float(settings.optical_fusion_initial)))
+        initial_fusion = torch.logit(
+            torch.tensor(float(settings.optical_fusion_initial))
         )
+        self.block1_optical_fusion_logit = nn.Parameter(initial_fusion.clone())
+        self.block2_optical_fusion_logit = nn.Parameter(initial_fusion.clone())
         self.last_block2_input_groups: list[torch.Tensor] = []
         self.last_electronic_block2_groups: list[torch.Tensor] = []
-        self._stage1_field: torch.Tensor | None = None
+        self._stage1_global_input: torch.Tensor | None = None
         self._stage1_latent: torch.Tensor | None = None
         self._stage1_lengths: list[int] = []
         self._stage1_padding_mask: torch.Tensor | None = None
 
     @property
-    def optical_fusion(self) -> torch.Tensor:
-        return torch.sigmoid(self.optical_fusion_logit)
+    def block1_optical_fusion(self) -> torch.Tensor:
+        return torch.sigmoid(self.block1_optical_fusion_logit)
+
+    @property
+    def block2_optical_fusion(self) -> torch.Tensor:
+        return torch.sigmoid(self.block2_optical_fusion_logit)
 
     def parameter_breakdown(self) -> dict[str, Any]:
         report = super().parameter_breakdown()
         optical = self.optical_branch.core.parameter_breakdown()
-        report["implementation"] = "moe4_expert_block1_global_block2_residual"
-        report["optical_parameters"] = optical["total_parameters"]
+        report["implementation"] = "moe4_expert_block1_global_block2_dual_fusion"
+        expert_readout_parameters = sum(
+            parameter.numel()
+            for module in (
+                self.optical_branch.expert_readout,
+                self.optical_branch.expert_output_adapter,
+            )
+            for parameter in module.parameters()
+        )
+        report["optical_parameters"] = (
+            optical["total_parameters"] + expert_readout_parameters
+        )
+        report["expert_readout_parameters"] = expert_readout_parameters
         report["optical_phase_parameters"] = optical["optical_phase_parameters"]
         report["router_parameters"] = optical["router_parameters"]
-        report["optical_fusion_parameters"] = self.optical_fusion_logit.numel()
+        report["optical_fusion_parameters"] = (
+            self.block1_optical_fusion_logit.numel()
+            + self.block2_optical_fusion_logit.numel()
+        )
         return report
 
     def _pad_groups(
@@ -280,25 +339,30 @@ class LanguageTwoBlockOpticalCore(ElectronicSequenceCore):
         gate = torch.sigmoid(self.residual_logit)
         if stage == 0:
             input_latent = self.input_norm(self.input_adapter(padded.float()))
-            optical_field, optical_lengths = self.optical_branch.run_expert_block(
+            expert_delta, routing, optical_lengths = self.optical_branch.run_expert_block(
                 input_latent, padding_mask
             )
             block1_latent = self.blocks[0](
                 input_latent, padding_mask=padding_mask, causal=True
             )
-            self._stage1_field = optical_field
-            self._stage1_latent = block1_latent
+            fused_block1 = (
+                block1_latent + self.block1_optical_fusion * expert_delta
+            ).masked_fill(padding_mask.unsqueeze(-1), 0.0)
+            self._stage1_global_input = self.optical_branch.encode_global_input(
+                fused_block1, padding_mask, routing
+            )
+            self._stage1_latent = fused_block1
             self._stage1_lengths = optical_lengths
             self._stage1_padding_mask = padding_mask
-            stage1_output = padded.float() + gate * self.output_adapter(block1_latent)
+            stage1_output = padded.float() + gate * self.output_adapter(fused_block1)
             stage1_output = stage1_output.masked_fill(
                 padding_mask.unsqueeze(-1), 0.0
             ).to(groups[0].dtype)
-            return self._pack(stage1_output, lengths), block1_latent
+            return self._pack(stage1_output, lengths), fused_block1
         if stage != 1:
             raise RuntimeError("Language MoE4 replacement has exactly stages 0 and 1")
         if (
-            self._stage1_field is None
+            self._stage1_global_input is None
             or self._stage1_latent is None
             or self._stage1_padding_mask is None
             or lengths != self._stage1_lengths
@@ -311,13 +375,13 @@ class LanguageTwoBlockOpticalCore(ElectronicSequenceCore):
             block2_input, padding_mask=padding_mask, causal=True
         )
         optical_delta = self.optical_branch.run_global_block(
-            self._stage1_field,
+            self._stage1_global_input,
             self._stage1_lengths,
             padding_mask,
             block2_input.dtype,
         )
         latent = self.output_norm(
-            electronic + self.optical_fusion * optical_delta
+            electronic + self.block2_optical_fusion * optical_delta
         ).masked_fill(padding_mask.unsqueeze(-1), 0.0)
         output = padded.float() + gate * self.output_adapter(latent)
         output = output.to(groups[0].dtype)
@@ -360,7 +424,8 @@ class LanguageTwoBlockOpticalCore(ElectronicSequenceCore):
             ccd.unsqueeze(0), mask, electronic.dtype
         )[0, :length]
         latent = self.output_norm(
-            electronic.to(delta.device).float() + self.optical_fusion * delta.float()
+            electronic.to(delta.device).float()
+            + self.block2_optical_fusion * delta.float()
         )
         return torch.cat((latent.mean(dim=0), latent.amax(dim=0)), dim=0)
 

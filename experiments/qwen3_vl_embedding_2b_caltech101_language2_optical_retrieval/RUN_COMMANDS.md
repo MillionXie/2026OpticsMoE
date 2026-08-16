@@ -11,11 +11,11 @@ CUDA_VISIBLE_DEVICES=6 python -m experiments.qwen3_vl_embedding_2b_caltech101_la
 ## 2. 导出 Language Block 2 全局光路输入与 mask
 
 ```bash
-CUDA_VISIBLE_DEVICES=6 python -m experiments.qwen3_vl_embedding_2b_caltech101_language2_optical_retrieval.hardware_bridge --config experiments/qwen3_vl_embedding_2b_caltech101_language2_optical_retrieval/configs/release/caltech101_language2_optical_residual.yaml --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_language2_optical_retrieval/runs/caltech101_language_expert_block1_global_block2_moe4/ema_best_train_loss_checkpoint.pt --session-dir experiments/qwen3_vl_embedding_2b_caltech101_language2_optical_retrieval/hardware_sessions/language2_run1 --phase export
+CUDA_VISIBLE_DEVICES=6 python -m experiments.qwen3_vl_embedding_2b_caltech101_language2_optical_retrieval.hardware_bridge --config experiments/qwen3_vl_embedding_2b_caltech101_language2_optical_retrieval/configs/release/caltech101_language2_optical_residual.yaml --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_language2_optical_retrieval/runs/caltech101_language_two_block_moe4_dual_fusion/ema_best_train_loss_checkpoint.pt --session-dir experiments/qwen3_vl_embedding_2b_caltech101_language2_optical_retrieval/hardware_sessions/language2_run1 --phase export
 ```
 
-程序先正常计算 Language Block 1（router、专家相位、传播、OEO）。导出的
-`amplitude_to_play/*.bmp` 是 Block 1 输出；`phase_mask/language_block2_global_phase.bmp`
+程序先完成 Block 1 的专家 CCD readout、gate1 光电融合，再把融合结果重新编码。
+`amplitude_to_play/*.bmp` 是重新编码后的 global 输入；`phase_mask/language_block2_global_phase.bmp`
 都包含 `956×956` 的物理有效区。
 
 ## 3. 独立处理采集后的 CCD（不翻转）
@@ -42,7 +42,7 @@ python -m experiments.qwen3_vl_embedding_2b_caltech101_language2_optical_retriev
 ## 5. 用实测 CCD 微调下游电子部分
 
 ```bash
-CUDA_VISIBLE_DEVICES=6 python -m experiments.qwen3_vl_embedding_2b_caltech101_language2_optical_retrieval.hardware_bridge --config experiments/qwen3_vl_embedding_2b_caltech101_language2_optical_retrieval/configs/release/caltech101_language2_optical_residual.yaml --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_language2_optical_retrieval/runs/caltech101_language_expert_block1_global_block2_moe4/ema_best_train_loss_checkpoint.pt --session-dir experiments/qwen3_vl_embedding_2b_caltech101_language2_optical_retrieval/hardware_sessions/language2_run1 --phase finetune
+CUDA_VISIBLE_DEVICES=6 python -m experiments.qwen3_vl_embedding_2b_caltech101_language2_optical_retrieval.hardware_bridge --config experiments/qwen3_vl_embedding_2b_caltech101_language2_optical_retrieval/configs/release/caltech101_language2_optical_residual.yaml --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_language2_optical_retrieval/runs/caltech101_language_two_block_moe4_dual_fusion/ema_best_train_loss_checkpoint.pt --session-dir experiments/qwen3_vl_embedding_2b_caltech101_language2_optical_retrieval/hardware_sessions/language2_run1 --phase finetune
 ```
 
 结果保存为 `hardware_finetuned_checkpoint.pt`。正式采集前可追加

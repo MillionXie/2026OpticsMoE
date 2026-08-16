@@ -13,8 +13,8 @@ training:
   log_interval_batches: 1
 
 batching:
-  batch_size: 20
-  pk_skus_per_batch: 10
+  batch_size: 10
+  pk_skus_per_batch: 5
   pk_images_per_sku: 2
   optimizer_steps_per_epoch: 1
 
@@ -25,4 +25,4 @@ language_optical:
     phase_shift_pixels: 1
     ccd_shift_pixels: 1
 
-output_dir: ../../runs/smoke_language_expert_block1_global_block2_moe4
+output_dir: ../../runs/smoke_language_two_block_moe4_dual_fusion

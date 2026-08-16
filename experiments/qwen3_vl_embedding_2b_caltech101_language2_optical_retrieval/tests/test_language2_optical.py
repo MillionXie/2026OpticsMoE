@@ -28,17 +28,24 @@ def _settings():
     return settings
 
 
-def test_ccd_normalization_rejects_global_gain_and_offset() -> None:
+def test_ccd_normalization_rejects_global_gain_without_assuming_background() -> None:
     settings = _settings()
     normalizer = RobustCCDNormalizer(settings).eval()
     value = torch.rand(2, 478, 478) + 0.1
     first = normalizer(value)
-    second = normalizer(value * 3.7 + 0.4)
+    second = normalizer(value * 3.7)
     assert torch.allclose(first, second, atol=2.0e-4, rtol=2.0e-4)
+    # An additive offset is not silently treated as a measured dark frame.
+    assert not torch.allclose(first, normalizer(value + 0.4))
 
 
 def test_moe4_language_second_layer_has_router_and_finite_phase_gradient() -> None:
     core = LanguageTwoBlockOpticalCore(10, 224, _settings()).train()
+    assert core.optical_branch.expert_readout is not core.optical_branch.core.readout
+    assert (
+        core.optical_branch.expert_output_adapter
+        is not core.optical_branch.core.output_adapter
+    )
     events = []
     original_expert = core.optical_branch.run_expert_block
     original_global = core.optical_branch.run_global_block
@@ -63,6 +70,10 @@ def test_moe4_language_second_layer_has_router_and_finite_phase_gradient() -> No
     assert routing["selected_mask"].shape == (1, 4)
     assert torch.equal(routing["selected_mask"].sum(dim=1), torch.tensor([2]))
     assert events == ["block1_expert", "block2_global"]
+    assert core.optical_branch.last_raw_expert_ccd.shape[-2:] == (478, 478)
+    assert core.optical_branch.last_raw_ccd.shape[-2:] == (478, 478)
+    assert core.optical_branch.last_normalized_expert_ccd.shape[-2:] == (478, 478)
+    assert core.optical_branch.last_normalized_ccd.shape[-2:] == (478, 478)
     gradients = [
         parameter.grad
         for name, parameter in core.optical_branch.named_parameters()
@@ -71,11 +82,22 @@ def test_moe4_language_second_layer_has_router_and_finite_phase_gradient() -> No
     assert gradients and all(gradient is not None for gradient in gradients)
     assert all(torch.isfinite(gradient).all() for gradient in gradients)
     assert sum(float(gradient.abs().sum()) for gradient in gradients) > 0.0
+    assert all(
+        parameter.grad is not None and torch.isfinite(parameter.grad).all()
+        for module in (
+            core.optical_branch.expert_readout,
+            core.optical_branch.expert_output_adapter,
+            core.optical_branch.core.readout,
+            core.optical_branch.core.output_adapter,
+        )
+        for parameter in module.parameters()
+    )
 
 
 def test_nearly_closed_optical_gate_preserves_electronic_path() -> None:
     core = LanguageTwoBlockOpticalCore(10, 224, _settings()).eval()
-    core.optical_fusion_logit.data.fill_(-30.0)
+    core.block1_optical_fusion_logit.data.fill_(-30.0)
+    core.block2_optical_fusion_logit.data.fill_(-30.0)
     groups = [torch.randn(5, 10)]
     _, latent = core.forward_groups(groups, causal=True)
     mask = torch.zeros(1, 5, dtype=torch.bool)

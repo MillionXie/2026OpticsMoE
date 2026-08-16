@@ -24,8 +24,8 @@ class Language2OpticalReplacement(ElectronicDeepStackReplacement):
     # The legacy Vision+Language artifact writer cannot describe this asymmetric
     # Language-only MoE4 experiment. Hardware artifacts come from hardware_bridge.
     has_optical_phases = False
-    training_architecture_label = "language_expert_block1_global_block2_moe4"
-    checkpoint_architecture = "language_two_block_moe4_topk2_residual"
+    training_architecture_label = "language_two_block_moe4_dual_fusion"
+    checkpoint_architecture = "language_two_block_moe4_topk2_dual_fusion_v2"
 
     def __init__(self, *args: Any, freeze_electronic: bool, **kwargs: Any) -> None:
         self.freeze_electronic = bool(freeze_electronic)
@@ -39,7 +39,8 @@ class Language2OpticalReplacement(ElectronicDeepStackReplacement):
         core = self.language_surrogate.core
         core.requires_grad_(False)
         core.optical_branch.requires_grad_(True)
-        core.optical_fusion_logit.requires_grad_(True)
+        core.block1_optical_fusion_logit.requires_grad_(True)
+        core.block2_optical_fusion_logit.requires_grad_(True)
 
     def set_student_train_mode(self) -> None:
         if not self.freeze_electronic:
@@ -53,7 +54,7 @@ class Language2OpticalReplacement(ElectronicDeepStackReplacement):
     def auxiliary_losses(self) -> dict[str, torch.Tensor]:
         value = self.language_surrogate.core.optical_branch.current_operating_loss
         if value is None:
-            value = self.language_surrogate.core.optical_fusion_logit.new_zeros(())
+            value = self.language_surrogate.core.block2_optical_fusion_logit.new_zeros(())
         return {"ccd_operating_point": value}
 
     def router_parameters(self) -> list[torch.nn.Parameter]:
@@ -97,19 +98,28 @@ class Language2OpticalReplacement(ElectronicDeepStackReplacement):
             "language_block1": "depthwise_conv1d_residual_mlp",
             "language_block1_optical_path": (
                 "Linear(192,224)->Softplus/RMS->MoE4 router(top-k=2)->"
-                "2x2 expert phase(224 each)->ASM/OEO"
+                "2x2 expert phase(224 each)->ASM->CCD478->expert readout->192"
+            ),
+            "language_block1_fusion": (
+                "electronic1 + sigmoid(gate1) * expert_ccd_delta"
             ),
             "language_block2_electronic_path": "depthwise_conv1d_residual_mlp",
             "language_block2_optical_path": (
-                "Block1 optical field->global phase(478 active)->ASM->CCD478->"
+                "re-encode fused Block1 result->global phase(478 active)->ASM->CCD478->"
                 "robust_norm->pool224->Linear(224,192)"
             ),
-            "fusion": "electronic_block2 + sigmoid(gate) * optical_delta",
-            "fusion_initial": float(core.optical_fusion.detach()),
+            "language_block2_fusion": (
+                "LN(electronic2 + sigmoid(gate2) * global_ccd_delta)"
+            ),
+            "fusion_initial": {
+                "block1": float(core.block1_optical_fusion.detach()),
+                "block2": float(core.block2_optical_fusion.detach()),
+            },
             "electronic_frozen": self.freeze_electronic,
             "ccd_normalization": (
-                "dark quantile subtraction -> per-frame mean division -> "
-                "clamp/log1p -> 478-to-224 area pooling -> row LayerNorm"
+                "per-frame mean division (no background subtraction) -> clamp/log1p -> "
+                "478-to-224 area pooling -> row LayerNorm; same architecture but "
+                "independent readout weights in the two blocks"
             ),
         }
 
@@ -157,7 +167,11 @@ def load_electronic_initialization(
     allowed_missing = {
         name
         for name in replacement.language_surrogate.state_dict()
-        if name.startswith("core.optical_branch.") or name == "core.optical_fusion_logit"
+        if name.startswith("core.optical_branch.")
+        or name in {
+            "core.block1_optical_fusion_logit",
+            "core.block2_optical_fusion_logit",
+        }
     }
     if set(missing) != allowed_missing or unexpected:
         raise RuntimeError(

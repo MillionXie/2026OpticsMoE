@@ -2,9 +2,10 @@
 
 ## 光路边界与尺寸
 
-保留旧 MoE4/router。Language Block 1 的专家相位、专家传播和 OEO 在服务器正常
-前向；导出的振幅就是它的输出、也就是 Language Block 2 全局相位板之前的
-`478×478` 逻辑有效区。按 8 μm 实物像素播放时最近邻扩展 2 倍，得到
+Language Block 1 的专家相位、传播、专家 CCD、本层 readout 和第一次门控融合均在
+服务器正常前向。融合结果 `F1` 被重新编码并按 router 写回 2×2 区域；导出的振幅
+正是这个 Language Block 2 global phase 输入的 `478×478` 逻辑有效区。按 8 μm
+实物像素播放时最近邻扩展 2 倍，得到
 `956×956` 物理有效区。全局 phase mask 同样由 `478×478` 扩展到 `956×956` 后居中
 放入 SLM 画布。仿真仍以 16 μm logical sampling 在 `518×518` canvas 上传播。
 
@@ -16,11 +17,13 @@ CCD 原始照片可比它大，也可以不是正方形。先在独立的 `hardw
 
 ## 归一化与扰动
 
-独立预处理用全文件夹共享的强度范围转成 8-bit，避免逐图拉伸破坏相对光强。若相机
-黑电平和饱和值已标定，优先使用 `fixed_range`；否则默认用全数据共同的百分位范围。
-进入模型后，仿真和实测共同执行低分位背景扣除、每帧均值除法、相对强度裁剪及
-`log1p`。训练还分别扰动输入/专家、全局相位输入以及 CCD 偏移，并加入全局增益、
-偏置和读出噪声。
+独立预处理默认保持已有 8-bit 的固定 `0→255` 标度，不逐图拉伸，也不估计背景。
+如果原图确实是 16-bit，必须根据相机标定显式填写统一 fixed range。
+没有独立暗场文件，因此模型明确不执行背景扣除，也不会从当前 CCD 图像猜测背景。
+仿真和实测只共同执行每帧均值尺度归一化、相对强度裁剪及 `log1p`。该操作抵消乘性
+光强/曝光变化，但不会假装消除加性背景。训练仍加入全局增益、偏置、读出噪声和
+空间错位，让后续网络学习承受这些误差。若以后确实采集 dark frame，应在独立
+hardware_sdk 流程中显式扣除并记录，而不是在模型中估计。
 
 ## 数据和微调
 
@@ -28,6 +31,6 @@ CCD 原始照片可比它大，也可以不是正方形。先在独立的 `hardw
 相同 basename 放进 session 的 `ccd_captured/`。`register_ccd` 会拒绝非 uint8、非
 `956×956` 文件，并把翻转、块平均及统计写进 `ccd_registered/*.json`。
 
-实测 CCD 是不可微边界。微调只更新 MoE CCD readout/output adapter、融合 gate、
+实测 CCD 是不可微边界。微调只更新 Block 2 CCD readout/output adapter、Block 2 gate、
 Language output norm 与 64D retrieval readout；相位、router、光前编码器、Vision、
 Language Block 1 和电子 Block 2 都冻结。

@@ -179,8 +179,8 @@ def export_session(settings: Any, checkpoint: Path, session_dir: Path) -> None:
                 settings.hardware_phase_flip_vertical
             ),
             "optical_boundary": (
-                "after simulated Language Block-1 MoE4 expert phase/propagation/OEO "
-                "and before the physical Language Block-2 global phase"
+                "after simulated Block-1 expert CCD/readout/gate1 fusion and "
+                "electronic re-encoding, before physical Block-2 global phase"
             ),
             "moe_layout": "2x2 experts, each 224x224 logical pixels, pitch 254, top-k=2",
             "logical_active_shape": [478, 478],
@@ -189,8 +189,8 @@ def export_session(settings: Any, checkpoint: Path, session_dir: Path) -> None:
             "ccd_registration": "configured flips, then exact 2x2 block mean to 478x478",
             "ccd_semantics": "captured files are intensity and must never be squared again",
             "normalization": (
-                "background quantile subtraction; divide by per-frame mean; "
-                "relative clipping; log1p; row LayerNorm"
+                "no background subtraction; divide by per-frame mean; relative "
+                "clipping; log1p; row LayerNorm"
             ),
         },
     )
@@ -376,7 +376,7 @@ def _load_downstream(settings: Any, checkpoint: Path, device: torch.device):
     core.optical_branch.core.readout.requires_grad_(True)
     core.optical_branch.core.output_adapter.requires_grad_(True)
     core.output_norm.requires_grad_(True)
-    core.optical_fusion_logit.requires_grad_(True)
+    core.block2_optical_fusion_logit.requires_grad_(True)
     readout.requires_grad_(True)
     return payload, core, readout
 
@@ -506,7 +506,7 @@ def finetune_session(
         print(
             f"[hardware_finetune] epoch={epoch:03d}/{epochs:03d} "
             f"loss={average:.5f} test_top1={top1:.4f} "
-            f"fusion={float(core.optical_fusion.detach()):.4f}",
+            f"block2_fusion={float(core.block2_optical_fusion.detach()):.4f}",
             flush=True,
         )
         if average < best_loss:
@@ -527,7 +527,8 @@ def finetune_session(
                 "train_loss": average,
                 "observed_test_top1": top1,
                 "trainable_scope": (
-                    "MoE CCD readout/output adapter, fusion, output norm, retrieval readout"
+                    "Block-2 CCD readout/output adapter, Block-2 fusion gate, "
+                    "output norm, retrieval readout"
                 ),
             }
             torch.save(updated, session_dir / "hardware_finetuned_checkpoint.pt")

@@ -63,19 +63,16 @@ def _resize_entire_roi(value: np.ndarray) -> np.ndarray:
 
 
 def _intensity_range(
-    frames: list[tuple[Path, np.ndarray]], settings: dict[str, Any]
+    _frames: list[tuple[Path, np.ndarray]], settings: dict[str, Any]
 ) -> tuple[float, float, str]:
-    mode = str(settings.get("mode", "global_percentile"))
-    if mode == "fixed_range":
-        low = float(settings["black_level"])
-        high = float(settings["white_level"])
-    elif mode == "global_percentile":
-        stride = max(1, int(settings.get("sample_stride", 16)))
-        sampled = np.concatenate([value[::stride, ::stride].reshape(-1) for _, value in frames])
-        low = float(np.percentile(sampled, float(settings.get("lower_percentile", 0.1))))
-        high = float(np.percentile(sampled, float(settings.get("upper_percentile", 99.9))))
-    else:
-        raise ValueError("intensity.mode must be fixed_range or global_percentile")
+    mode = str(settings.get("mode", "fixed_range"))
+    if mode != "fixed_range":
+        raise ValueError(
+            "intensity.mode must be fixed_range; automatic percentile/background "
+            "estimation is intentionally unsupported"
+        )
+    low = float(settings["black_level"])
+    high = float(settings["white_level"])
     if not high > low:
         raise RuntimeError(f"Invalid common intensity range [{low}, {high}]")
     return low, high, mode

@@ -75,9 +75,6 @@ def load_settings(path: str | Path) -> Any:
     settings.language_optical_ccd_target_mean = float(
         d("language_optical.ccd_target_mean", 0.25)
     )
-    settings.language_optical_background_quantile = float(
-        d("language_optical.normalization.background_quantile", 0.01)
-    )
     settings.language_optical_normalization_clip = float(
         d("language_optical.normalization.relative_clip", 12.0)
     )
@@ -165,8 +162,6 @@ def load_settings(path: str | Path) -> Any:
         or settings.language_optical_ccd_shift_pixels < 0
     ):
         raise ValueError("Optical input/CCD shift bounds must be nonnegative")
-    if not 0.0 <= settings.language_optical_background_quantile < 0.5:
-        raise ValueError("background_quantile must be in [0,0.5)")
     if not 0.0 < settings.language_optical_phase_dropout_p < 1.0:
         raise ValueError("phase dropout probability must be in (0,1)")
     if settings.lambda_router_balance or settings.lambda_router_importance:
@@ -197,10 +192,13 @@ def save_resolved_config(settings: Any) -> None:
     path = settings.output_dir / "config.yaml"
     values = yaml.safe_load(path.read_text(encoding="utf-8"))
     values["hybrid"] = {
-        "type": "language_expert_block1_global_block2_moe4_residual",
+        "type": "language_two_block_moe4_dual_fusion",
         "initial_electronic_checkpoint": str(settings.initial_electronic_checkpoint),
         "freeze_electronic": settings.hybrid_freeze_electronic,
-        "initial_fusion": settings.optical_fusion_initial,
+        "initial_fusion": {
+            "block1": settings.optical_fusion_initial,
+            "block2": settings.optical_fusion_initial,
+        },
         "router_enabled": True,
         "router_loss_enabled": False,
     }
@@ -213,8 +211,8 @@ def save_resolved_config(settings: Any) -> None:
         "pixel_pitch_um": settings.language_optical_pixel_pitch_um,
         "distance_m": settings.language_optical_distance_m,
         "normalization": {
-            "type": "dark_quantile_then_frame_mean_then_log_row_layernorm",
-            "background_quantile": settings.language_optical_background_quantile,
+            "type": "frame_mean_then_log_then_pool_row_layernorm",
+            "background_subtraction": False,
             "relative_clip": settings.language_optical_normalization_clip,
         },
         "ccd_operating_point_loss_weight": settings.lambda_ccd_operating_point,

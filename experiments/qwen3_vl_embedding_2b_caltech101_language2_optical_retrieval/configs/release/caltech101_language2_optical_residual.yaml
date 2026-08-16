@@ -34,7 +34,6 @@ language_optical:
     dropout_p: 0.05
     dropout_block_size: 8
   normalization:
-    background_quantile: 0.01
     relative_clip: 12.0
     log_compression: 1.0
   perturbation:
@@ -59,4 +58,4 @@ hardware:
     physical_binning_factor: 2
     target_size: 478
 
-output_dir: ../../runs/caltech101_language_expert_block1_global_block2_moe4
+output_dir: ../../runs/caltech101_language_two_block_moe4_dual_fusion
