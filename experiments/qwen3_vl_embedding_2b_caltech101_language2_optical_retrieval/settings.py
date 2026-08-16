@@ -102,6 +102,31 @@ def load_settings(path: str | Path) -> Any:
     settings.language_optical_read_noise_fraction = float(
         d("language_optical.perturbation.read_noise_fraction", 0.01)
     )
+    settings.hardware_phase_flip_vertical = bool(
+        d("hardware.phase_mask.flip_vertical", True)
+    )
+    settings.hardware_phase_flip_horizontal = bool(
+        d("hardware.phase_mask.flip_horizontal", False)
+    )
+    roi = d("hardware.ccd.roi_xywh", None)
+    settings.hardware_ccd_roi_xywh = (
+        None if roi is None else tuple(int(value) for value in roi)
+    )
+    settings.hardware_ccd_flip_vertical = bool(
+        d("hardware.ccd.flip_vertical", False)
+    )
+    settings.hardware_ccd_flip_horizontal = bool(
+        d("hardware.ccd.flip_horizontal", False)
+    )
+    settings.hardware_ccd_registration_mode = str(
+        d("hardware.ccd.registration_mode", "center_crop_resize")
+    )
+    settings.hardware_ccd_physical_binning_factor = int(
+        d("hardware.ccd.physical_binning_factor", 2)
+    )
+    settings.hardware_ccd_target_size = int(
+        d("hardware.ccd.target_size", settings.language_optical_grid_size)
+    )
 
     if settings.electronic_layers != 2:
         raise ValueError("Language-layer-2 optics requires exactly two electronic blocks")
@@ -126,6 +151,25 @@ def load_settings(path: str | Path) -> Any:
         raise ValueError("phase dropout probability must be in (0,1)")
     if settings.lambda_router_balance or settings.lambda_router_importance:
         raise ValueError("This single-path optical experiment has no router loss")
+    if settings.hardware_ccd_roi_xywh is not None:
+        if len(settings.hardware_ccd_roi_xywh) != 4:
+            raise ValueError("hardware.ccd.roi_xywh must be null or [x,y,width,height]")
+        if any(value < 0 for value in settings.hardware_ccd_roi_xywh[:2]) or any(
+            value <= 0 for value in settings.hardware_ccd_roi_xywh[2:]
+        ):
+            raise ValueError("hardware.ccd.roi_xywh contains invalid coordinates")
+    if settings.hardware_ccd_registration_mode not in {
+        "strict",
+        "resize",
+        "center_crop_resize",
+    }:
+        raise ValueError(
+            "hardware.ccd.registration_mode must be strict, resize, or center_crop_resize"
+        )
+    if settings.hardware_ccd_physical_binning_factor <= 0:
+        raise ValueError("hardware.ccd.physical_binning_factor must be positive")
+    if settings.hardware_ccd_target_size != settings.language_optical_grid_size:
+        raise ValueError("hardware.ccd.target_size must equal the optical grid size")
     return settings
 
 
@@ -152,6 +196,24 @@ def save_resolved_config(settings: Any) -> None:
             "relative_clip": settings.language_optical_normalization_clip,
         },
         "ccd_operating_point_loss_weight": settings.lambda_ccd_operating_point,
+    }
+    values["hardware"] = {
+        "phase_mask": {
+            "flip_vertical": settings.hardware_phase_flip_vertical,
+            "flip_horizontal": settings.hardware_phase_flip_horizontal,
+        },
+        "ccd": {
+            "roi_xywh": (
+                None
+                if settings.hardware_ccd_roi_xywh is None
+                else list(settings.hardware_ccd_roi_xywh)
+            ),
+            "flip_vertical": settings.hardware_ccd_flip_vertical,
+            "flip_horizontal": settings.hardware_ccd_flip_horizontal,
+            "registration_mode": settings.hardware_ccd_registration_mode,
+            "physical_binning_factor": settings.hardware_ccd_physical_binning_factor,
+            "target_size": settings.hardware_ccd_target_size,
+        },
     }
     path.write_text(
         yaml.safe_dump(values, sort_keys=False, allow_unicode=True), encoding="utf-8"

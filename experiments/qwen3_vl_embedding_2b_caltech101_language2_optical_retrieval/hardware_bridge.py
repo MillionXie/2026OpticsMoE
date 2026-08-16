@@ -72,7 +72,12 @@ def export_session(settings: Any, checkpoint: Path, session_dir: Path) -> None:
     _load_hybrid_checkpoint(checkpoint, replacement, readout)
     session_dir.mkdir(parents=True, exist_ok=True)
     core = replacement.language_surrogate.core
-    phase = core.optical_branch.phase.phase().detach().cpu()
+    physical_phase = core.optical_branch.phase.phase().detach().cpu()
+    phase = physical_phase
+    if settings.hardware_phase_flip_vertical:
+        phase = torch.flip(phase, dims=(-2,))
+    if settings.hardware_phase_flip_horizontal:
+        phase = torch.flip(phase, dims=(-1,))
     phase_report = export_centered_bmp(
         phase,
         session_dir / "phase_mask" / "language_block2_phase.bmp",
@@ -80,9 +85,16 @@ def export_session(settings: Any, checkpoint: Path, session_dir: Path) -> None:
         scale_factor=2,
         slm_width=1920,
         slm_height=1200,
-        flip_vertical=True,
+        flip_vertical=False,
     )
-    torch.save(phase, session_dir / "phase_mask" / "language_block2_phase_rad.pt")
+    torch.save(
+        physical_phase,
+        session_dir / "phase_mask" / "language_block2_phase_model_coordinates_rad.pt",
+    )
+    torch.save(
+        phase,
+        session_dir / "phase_mask" / "language_block2_phase_export_coordinates_rad.pt",
+    )
     for name in ("block2_input", "electronic_block2_output", "simulation_ccd"):
         (session_dir / name).mkdir(parents=True, exist_ok=True)
 
@@ -153,9 +165,18 @@ def export_session(settings: Any, checkpoint: Path, session_dir: Path) -> None:
             "manifest_digest": bundle.manifest_digest,
             "samples": len(rows),
             "phase": phase_report,
+            "phase_flip_horizontal_before_export": (
+                settings.hardware_phase_flip_horizontal
+            ),
+            "phase_flip_vertical_before_export": (
+                settings.hardware_phase_flip_vertical
+            ),
             "logical_amplitude_shape": [224, 224],
             "physical_active_shape": [448, 448],
-            "ccd_rule": "strict 2x2 block mean from 448x448 to 224x224",
+            "preferred_ccd_rule": "exact 2x2 block mean from 448x448 to 224x224",
+            "configured_ccd_registration_mode": (
+                settings.hardware_ccd_registration_mode
+            ),
             "ccd_semantics": "captured files are intensity and must never be squared again",
             "normalization": (
                 "background quantile subtraction; divide by per-frame mean; "
@@ -193,34 +214,142 @@ def load_ccd(
     key: str,
     *,
     use_simulation: bool,
-    flip_vertical: bool,
-    flip_horizontal: bool,
+    settings: Any | None = None,
+    flip_vertical: bool | None = None,
+    flip_horizontal: bool | None = None,
+    persist_registered: bool = True,
 ) -> torch.Tensor:
     if use_simulation:
         path = session_dir / "simulation_ccd" / f"{key}.pt"
-    else:
-        root = session_dir / "ccd_captured"
-        candidates = [root / f"{key}{suffix}" for suffix in (".pt", ".npy", ".tif", ".tiff", ".png")]
-        matches = [candidate for candidate in candidates if candidate.is_file()]
-        if len(matches) != 1:
-            raise FileNotFoundError(
-                f"Expected one measured CCD for {key} below {root}, found {len(matches)}"
+        value = _load_image_tensor(path)
+        if tuple(value.shape) != (224, 224):
+            raise RuntimeError(
+                f"Simulated CCD {path} must already be 224x224, got {tuple(value.shape)}"
             )
-        path = matches[0]
-    value = _load_image_tensor(path)
-    if flip_vertical:
-        value = torch.flip(value, (-2,))
-    if flip_horizontal:
-        value = torch.flip(value, (-1,))
-    if tuple(value.shape) == (448, 448):
-        value = value.reshape(224, 2, 224, 2).mean(dim=(1, 3))
-    if tuple(value.shape) != (224, 224):
-        raise RuntimeError(
-            f"CCD {path} must be 224x224 or physical 448x448, got {tuple(value.shape)}"
+        return value
+    registered = session_dir / "ccd_registered" / f"{key}.pt"
+    if registered.is_file() and flip_vertical is None and flip_horizontal is None:
+        return torch.load(registered, map_location="cpu", weights_only=True).float()
+    root = session_dir / "ccd_captured"
+    candidates = [
+        root / f"{key}{suffix}"
+        for suffix in (".pt", ".npy", ".tif", ".tiff", ".png")
+    ]
+    matches = [candidate for candidate in candidates if candidate.is_file()]
+    if len(matches) != 1:
+        raise FileNotFoundError(
+            f"Expected one measured CCD for {key} below {root}, found {len(matches)}"
         )
-    if not torch.isfinite(value).all() or torch.any(value < 0):
+    path = matches[0]
+    value = _load_image_tensor(path)
+    source_shape = tuple(int(item) for item in value.shape)
+    if value.ndim != 2:
+        raise RuntimeError(f"CCD {path} must be a 2-D intensity image")
+
+    roi = getattr(settings, "hardware_ccd_roi_xywh", None)
+    if roi is not None:
+        x, y, width, height = roi
+        if x + width > value.shape[1] or y + height > value.shape[0]:
+            raise RuntimeError(
+                f"Configured CCD ROI {roi} is outside source shape {source_shape}"
+            )
+        value = value[y : y + height, x : x + width]
+    cropped_shape = tuple(int(item) for item in value.shape)
+    vertical = (
+        bool(getattr(settings, "hardware_ccd_flip_vertical", False))
+        if flip_vertical is None
+        else bool(flip_vertical)
+    )
+    horizontal = (
+        bool(getattr(settings, "hardware_ccd_flip_horizontal", False))
+        if flip_horizontal is None
+        else bool(flip_horizontal)
+    )
+    if vertical:
+        value = torch.flip(value, (-2,))
+    if horizontal:
+        value = torch.flip(value, (-1,))
+
+    target = int(getattr(settings, "hardware_ccd_target_size", 224))
+    factor = int(getattr(settings, "hardware_ccd_physical_binning_factor", 2))
+    registration_mode = str(
+        getattr(settings, "hardware_ccd_registration_mode", "strict")
+    )
+    registration_action = "already_logical_size"
+    center_crop_xyxy: list[int] | None = None
+    if tuple(value.shape) == (target * factor, target * factor):
+        value = value.reshape(target, factor, target, factor).mean(dim=(1, 3))
+        registration_action = f"exact_{factor}x{factor}_block_mean"
+    elif tuple(value.shape) != (target, target):
+        if registration_mode == "strict":
+            raise RuntimeError(
+                f"CCD {path} is {tuple(value.shape)} after ROI/flips; strict mode accepts "
+                f"only {(target, target)} or {(target * factor, target * factor)}"
+            )
+        if registration_mode == "center_crop_resize":
+            height, width = value.shape
+            side = min(height, width)
+            x0 = (width - side) // 2
+            y0 = (height - side) // 2
+            center_crop_xyxy = [x0, y0, x0 + side, y0 + side]
+            value = value[y0 : y0 + side, x0 : x0 + side]
+        downsampling = value.shape[0] >= target and value.shape[1] >= target
+        mode = "area" if downsampling else "bilinear"
+        interpolate_kwargs = {} if mode == "area" else {"align_corners": False}
+        value = F.interpolate(
+            value[None, None], size=(target, target), mode=mode, **interpolate_kwargs
+        )[0, 0]
+        registration_action = f"{registration_mode}_{mode}_to_{target}"
+
+    value = value.float().clamp_min(0.0)
+    if tuple(value.shape) != (target, target):
+        raise RuntimeError(f"Registered CCD shape is invalid: {tuple(value.shape)}")
+    if not torch.isfinite(value).all():
         raise RuntimeError(f"CCD {path} contains invalid intensity")
+    if persist_registered:
+        registered.parent.mkdir(parents=True, exist_ok=True)
+        torch.save(value, registered)
+        write_json(
+            session_dir / "ccd_registered" / f"{key}.json",
+            {
+                "source": str(path),
+                "source_shape": list(source_shape),
+                "roi_xywh": roi,
+                "shape_after_roi": list(cropped_shape),
+                "flip_vertical": vertical,
+                "flip_horizontal": horizontal,
+                "registration_mode": registration_mode,
+                "registration_action": registration_action,
+                "center_crop_xyxy_after_flip": center_crop_xyxy,
+                "registered_shape": list(value.shape),
+                "registered_min": float(value.min()),
+                "registered_max": float(value.max()),
+                "registered_mean": float(value.mean()),
+            },
+        )
     return value
+
+
+def prepare_captured_ccd(
+    settings: Any,
+    session_dir: Path,
+    *,
+    flip_vertical: bool | None,
+    flip_horizontal: bool | None,
+) -> None:
+    rows = _read_manifest(session_dir)
+    for index, row in enumerate(rows, 1):
+        load_ccd(
+            session_dir,
+            row["key"],
+            use_simulation=False,
+            settings=settings,
+            flip_vertical=flip_vertical,
+            flip_horizontal=flip_horizontal,
+            persist_registered=True,
+        )
+        if index % 20 == 0 or index == len(rows):
+            print(f"[prepare_ccd] {index}/{len(rows)}", flush=True)
 
 
 def _load_downstream(settings: Any, checkpoint: Path, device: torch.device):
@@ -257,8 +386,9 @@ def _embedding(
     device: torch.device,
     *,
     use_simulation: bool,
-    flip_vertical: bool,
-    flip_horizontal: bool,
+    flip_vertical: bool | None,
+    flip_horizontal: bool | None,
+    settings: Any,
 ) -> torch.Tensor:
     key = row["key"]
     electronic = torch.load(
@@ -270,6 +400,7 @@ def _embedding(
         session_dir,
         key,
         use_simulation=use_simulation,
+        settings=settings,
         flip_vertical=flip_vertical,
         flip_horizontal=flip_horizontal,
     ).to(device)
@@ -310,8 +441,8 @@ def finetune_session(
     session_dir: Path,
     *,
     use_simulation: bool,
-    flip_vertical: bool,
-    flip_horizontal: bool,
+    flip_vertical: bool | None,
+    flip_horizontal: bool | None,
     epochs: int,
 ) -> None:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -334,6 +465,7 @@ def finetune_session(
         "use_simulation": use_simulation,
         "flip_vertical": flip_vertical,
         "flip_horizontal": flip_horizontal,
+        "settings": settings,
     }
     best_loss = float("inf")
     generator = torch.Generator().manual_seed(settings.random_seed)
@@ -399,21 +531,40 @@ def finetune_session(
 def main() -> int:
     parser = argparse.ArgumentParser(description="Language block-2 optical hardware bridge")
     parser.add_argument("--config", required=True)
-    parser.add_argument("--checkpoint", required=True)
+    parser.add_argument("--checkpoint", default=None)
     parser.add_argument("--session-dir", required=True)
-    parser.add_argument("--phase", choices=("export", "finetune"), required=True)
+    parser.add_argument(
+        "--phase", choices=("export", "prepare_ccd", "finetune"), required=True
+    )
     parser.add_argument("--use-simulation", action="store_true")
-    parser.add_argument("--flip-vertical", action="store_true")
-    parser.add_argument("--flip-horizontal", action="store_true")
+    parser.add_argument(
+        "--flip-vertical", action=argparse.BooleanOptionalAction, default=None
+    )
+    parser.add_argument(
+        "--flip-horizontal", action=argparse.BooleanOptionalAction, default=None
+    )
     parser.add_argument("--epochs", type=int, default=20)
     args = parser.parse_args()
     settings = load_settings(args.config)
     seed_everything(settings.random_seed)
-    checkpoint = Path(args.checkpoint).expanduser().resolve()
+    checkpoint = (
+        None if args.checkpoint is None else Path(args.checkpoint).expanduser().resolve()
+    )
     session_dir = Path(args.session_dir).expanduser().resolve()
     if args.phase == "export":
+        if checkpoint is None:
+            parser.error("--checkpoint is required for --phase export")
         export_session(settings, checkpoint, session_dir)
+    elif args.phase == "prepare_ccd":
+        prepare_captured_ccd(
+            settings,
+            session_dir,
+            flip_vertical=args.flip_vertical,
+            flip_horizontal=args.flip_horizontal,
+        )
     else:
+        if checkpoint is None:
+            parser.error("--checkpoint is required for --phase finetune")
         finetune_session(
             settings,
             checkpoint,

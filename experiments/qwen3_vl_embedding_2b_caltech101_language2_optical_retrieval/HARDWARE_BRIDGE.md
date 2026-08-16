@@ -11,7 +11,13 @@
 导出的 `224 x 224` 振幅在 8 um 实物 SLM 上按最近邻扩展成 `448 x 448`，相位
 也采用同一物理尺寸。仿真使用 16 um logical sampling 和 518 padding canvas。
 CCD 推荐直接采集对齐的 `448 x 448` ROI，程序严格执行 2x2 block mean，还原为
-`224 x 224` logical intensity。CCD 文件已经是强度，禁止再次平方。
+`224 x 224` logical intensity。其他 CCD 尺寸可以在配置中指定源图 ROI，并选择
+`resize` 或 `center_crop_resize` 注册到 224；所有裁剪、翻转、缩放操作都会记录
+在 `ccd_registered/*.json`。CCD 文件已经是强度，禁止再次平方。
+
+phase mask 的垂直/水平翻转由 `hardware.phase_mask` 控制。当前默认垂直翻转、
+不水平翻转，对应旧 Grocery 折叠光路。CCD 的垂直/水平翻转独立配置，不能直接
+照搬 phase mask 的方向。
 
 ## 归一化
 

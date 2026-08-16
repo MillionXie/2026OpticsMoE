@@ -1,3 +1,4 @@
+import json
 from types import SimpleNamespace
 
 import torch
@@ -96,3 +97,32 @@ def test_physical_ccd_is_block_binned_without_interpolation(tmp_path) -> None:
     expected = physical.reshape(224, 2, 224, 2).mean(dim=(1, 3))
     assert logical.shape == (224, 224)
     assert torch.equal(logical, expected)
+
+
+def test_arbitrary_ccd_size_is_flipped_cropped_resized_and_audited(tmp_path) -> None:
+    root = tmp_path / "ccd_captured"
+    root.mkdir()
+    source = torch.arange(300 * 500, dtype=torch.float32).reshape(300, 500)
+    torch.save(source, root / "sample.pt")
+    hardware = SimpleNamespace(
+        hardware_ccd_roi_xywh=None,
+        hardware_ccd_flip_vertical=True,
+        hardware_ccd_flip_horizontal=False,
+        hardware_ccd_target_size=224,
+        hardware_ccd_physical_binning_factor=2,
+        hardware_ccd_registration_mode="center_crop_resize",
+    )
+    logical = load_ccd(
+        tmp_path,
+        "sample",
+        use_simulation=False,
+        settings=hardware,
+        flip_vertical=None,
+        flip_horizontal=None,
+    )
+    report = json.loads((tmp_path / "ccd_registered" / "sample.json").read_text())
+    assert logical.shape == (224, 224)
+    assert report["source_shape"] == [300, 500]
+    assert report["flip_vertical"] is True
+    assert report["center_crop_xyxy_after_flip"] == [100, 0, 400, 300]
+    assert report["registration_action"] == "center_crop_resize_area_to_224"
