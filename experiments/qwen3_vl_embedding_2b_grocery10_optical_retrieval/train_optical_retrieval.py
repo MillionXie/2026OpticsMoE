@@ -751,7 +751,11 @@ def save_checkpoint(
             "language_optical_layer_indexes": list(
                 replacement.language_optical_layer_indexes
             ),
-            "optical_architecture": "one_expert_stage_plus_one_global_phase",
+            "optical_architecture": getattr(
+                replacement,
+                "checkpoint_architecture",
+                "one_expert_stage_plus_one_global_phase",
+            ),
             "selection_criterion": "minimum_training_total_loss",
             "test_metrics_used_for_selection": False,
             "weight_variant": weight_variant,
@@ -765,6 +769,9 @@ def save_checkpoint(
                 "lambda_router_importance": settings.lambda_router_importance,
                 "phase_dc_enabled": settings.phase_dc_enabled,
                 "lambda_phase_dc": settings.lambda_phase_dc,
+                "lambda_ccd_operating_point": float(
+                    getattr(settings, "lambda_ccd_operating_point", 0.0)
+                ),
                 "phase_dc_start_epoch": settings.phase_dc_start_epoch,
                 "temperature": settings.temperature,
                 "gallery_temperature": settings.gallery_temperature,
@@ -989,6 +996,8 @@ def train_optical_retrieval(
         "router_response_consistency_loss",
         "phase_dc_loss",
         "phase_dc_weighted_loss",
+        "ccd_operating_point_loss",
+        "ccd_operating_point_weighted_loss",
         "phase_dc_current_loss",
         "phase_dc_rho_mean",
         "phase_dc_rho_max",
@@ -1125,6 +1134,7 @@ def train_optical_retrieval(
             "importance": 0.0,
             "router_response": 0.0,
             "phase_dc": 0.0,
+            "ccd_operating": 0.0,
             "samples": 0,
             "forward_samples": 0,
             "top1_correct": 0.0,
@@ -1300,6 +1310,18 @@ def train_optical_retrieval(
                     if phase_dc_active
                     else student.new_zeros(())
                 )
+                auxiliary_losses_fn = getattr(replacement, "auxiliary_losses", None)
+                auxiliary_losses = (
+                    auxiliary_losses_fn()
+                    if callable(auxiliary_losses_fn)
+                    else {}
+                )
+                ccd_operating = auxiliary_losses.get(
+                    "ccd_operating_point", student.new_zeros(())
+                )
+                lambda_ccd_operating = float(
+                    getattr(settings, "lambda_ccd_operating_point", 0.0)
+                )
                 total = (
                     settings.lambda_kd * kd
                     + settings.lambda_relational_kd * relational_kd
@@ -1311,6 +1333,7 @@ def train_optical_retrieval(
                     + settings.lambda_router_response_consistency
                     * router_response
                     + settings.lambda_phase_dc * dc
+                    + lambda_ccd_operating * ccd_operating
                 )
             if not torch.isfinite(total):
                 raise RuntimeError(
@@ -1318,7 +1341,8 @@ def train_optical_retrieval(
                     f"total={total}, kd={kd}, retrieval={retrieval}, "
                     f"relational_kd={relational_kd}, gallery={gallery}, "
                     f"teacher_gallery={teacher_gallery}, balance={balance}, "
-                    f"importance={importance}, phase_dc={dc}"
+                    f"importance={importance}, phase_dc={dc}, "
+                    f"ccd_operating={ccd_operating}"
                 )
             total.backward()
             for parameter in parameters:
@@ -1361,6 +1385,7 @@ def train_optical_retrieval(
             totals["importance"] += float(importance.detach()) * count
             totals["router_response"] += float(router_response.detach()) * count
             totals["phase_dc"] += float(dc.detach()) * count
+            totals["ccd_operating"] += float(ccd_operating.detach()) * count
             totals["samples"] += count
             totals["forward_samples"] += len(combined_samples)
             if gallery_logits is not None and gallery_targets is not None:
@@ -1401,7 +1426,8 @@ def train_optical_retrieval(
                     if getattr(replacement, "has_optical_phases", True)
                     else (
                         f"lr_scale={current_lr_scale:.5f} "
-                        "architecture=residual_mlp_no_attention"
+                        "architecture="
+                        f"{getattr(replacement, 'training_architecture_label', 'residual_mlp_no_attention')}"
                     )
                 )
                 print(
@@ -1421,6 +1447,7 @@ def train_optical_retrieval(
                     f"router_response="
                     f"{totals['router_response']/totals['samples']:.5f} "
                     f"phase_dc={totals['phase_dc']/totals['samples']:.5f} "
+                    f"ccd_mid={totals['ccd_operating']/totals['samples']:.5f} "
                     f"{batch_architecture_diagnostics}"
                 )
         # Restore all optimizer-owned tensors before evaluation/checkpointing;
@@ -1542,6 +1569,12 @@ def train_optical_retrieval(
             "phase_dc_loss": totals["phase_dc"] / sample_count,
             "phase_dc_weighted_loss": (
                 settings.lambda_phase_dc * totals["phase_dc"] / sample_count
+            ),
+            "ccd_operating_point_loss": totals["ccd_operating"] / sample_count,
+            "ccd_operating_point_weighted_loss": (
+                float(getattr(settings, "lambda_ccd_operating_point", 0.0))
+                * totals["ccd_operating"]
+                / sample_count
             ),
             **dc_statistics,
             **{
@@ -1806,7 +1839,10 @@ def train_optical_retrieval(
                 f"{coverage['language_router_unselected_experts']} "
             )
             if has_optical_phases
-            else "architecture=residual_mlp_no_attention_no_moe "
+            else (
+                "architecture="
+                f"{getattr(replacement, 'training_architecture_label', 'residual_mlp_no_attention_no_moe')} "
+            )
         )
         print(
             f"epoch {epoch:03d} complete train_loss={average_total:.5f} "

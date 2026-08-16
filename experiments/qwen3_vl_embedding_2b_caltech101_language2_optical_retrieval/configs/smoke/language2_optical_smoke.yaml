@@ -1,0 +1,28 @@
+base_config: ../release/caltech101_language2_optical_residual.yaml
+
+hybrid:
+  initial_electronic_checkpoint: ../../../qwen3_vl_embedding_2b_caltech101_electronic_retrieval/runs/smoke_target10_electronic_vision2d_no_deepstack/ema_best_train_loss_checkpoint.pt
+
+dataset:
+  train_limit_per_sku: 3
+  test_limit_per_sku: 2
+
+training:
+  epochs: 1
+  evaluate_test_each_epoch: true
+  log_interval_batches: 1
+
+batching:
+  batch_size: 20
+  pk_skus_per_batch: 10
+  pk_images_per_sku: 2
+  optimizer_steps_per_epoch: 1
+
+language_optical:
+  canvas_size: 224
+  k_space: {enabled: false, theta_max_deg: 0.65}
+  perturbation:
+    max_shift_pixels: 1
+    ccd_shift_pixels: 1
+
+output_dir: ../../runs/smoke_language2_optical
