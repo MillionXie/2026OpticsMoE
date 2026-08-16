@@ -373,10 +373,15 @@ def _build_optimizer(
     ]
     configured_router_lr = settings.router_learning_rate
     configured_phase_lr = settings.phase_learning_rate
+    adapter_group_name = (
+        "optical_adapters"
+        if getattr(replacement, "has_optical_phases", True)
+        else "electronic_adapters"
+    )
     group_specs = (
         ("student_base", base_parameters, settings.learning_rate),
         (
-            "optical_adapters",
+            adapter_group_name,
             adapter_parameters,
             getattr(settings, "adapter_learning_rate", None)
             if getattr(settings, "adapter_learning_rate", None) is not None
@@ -1443,7 +1448,12 @@ def train_optical_retrieval(
             "router_coverage": coverage,
             "trainable_tensors_without_gradient": missing_gradient_tensors,
         })
+        has_optical_phases = bool(
+            getattr(replacement, "has_optical_phases", True)
+        )
         if (
+            has_optical_phases
+            and
             relative_epoch >= settings.phase_motion_warning_epoch
             and phase_motion["phase_delta_run_rms_rad"]
             < settings.phase_motion_warning_threshold_rad
@@ -1456,7 +1466,7 @@ def train_optical_retrieval(
                 "Inspect phase_grad_rms, router coverage, and phase optimizer LR.",
                 flush=True,
             )
-        if (
+        if has_optical_phases and (
             relative_epoch % settings.phase_preview_interval_epochs == 0
             or epoch == end_epoch
         ):
@@ -1580,21 +1590,22 @@ def train_optical_retrieval(
                 average_total,
                 settings,
             )
-            save_phase_snapshot(
-                replacement,
-                settings.output_dir / "best_optical_artifacts" / "live_weights",
-                epoch=epoch,
-                train_loss=average_total,
-                weight_variant="live",
-            )
-            save_phase_preview(
-                replacement,
-                settings.output_dir
-                / "best_optical_artifacts"
-                / "live_weights"
-                / "phase_preview.png",
-                title=f"Best live optical phase at epoch {epoch}",
-            )
+            if has_optical_phases:
+                save_phase_snapshot(
+                    replacement,
+                    settings.output_dir / "best_optical_artifacts" / "live_weights",
+                    epoch=epoch,
+                    train_loss=average_total,
+                    weight_variant="live",
+                )
+                save_phase_preview(
+                    replacement,
+                    settings.output_dir
+                    / "best_optical_artifacts"
+                    / "live_weights"
+                    / "phase_preview.png",
+                    title=f"Best live optical phase at epoch {epoch}",
+                )
             if ema_parameters is not None:
                 with use_parameter_ema(parameters, ema_parameters):
                     save_checkpoint(
@@ -1607,23 +1618,24 @@ def train_optical_retrieval(
                         settings,
                         weight_variant="ema",
                     )
-                    save_phase_snapshot(
-                        replacement,
-                        settings.output_dir
-                        / "best_optical_artifacts"
-                        / "ema_weights",
-                        epoch=epoch,
-                        train_loss=average_total,
-                        weight_variant="ema",
-                    )
-                    save_phase_preview(
-                        replacement,
-                        settings.output_dir
-                        / "best_optical_artifacts"
-                        / "ema_weights"
-                        / "phase_preview.png",
-                        title=f"Best EMA optical phase at epoch {epoch}",
-                    )
+                    if has_optical_phases:
+                        save_phase_snapshot(
+                            replacement,
+                            settings.output_dir
+                            / "best_optical_artifacts"
+                            / "ema_weights",
+                            epoch=epoch,
+                            train_loss=average_total,
+                            weight_variant="ema",
+                        )
+                        save_phase_preview(
+                            replacement,
+                            settings.output_dir
+                            / "best_optical_artifacts"
+                            / "ema_weights"
+                            / "phase_preview.png",
+                            title=f"Best EMA optical phase at epoch {epoch}",
+                        )
             write_json(
                 settings.output_dir / "metrics" / best_metrics_name,
                 {
@@ -1646,6 +1658,18 @@ def train_optical_retrieval(
                     / "metrics"
                     / continuation_metrics_name,
                 )
+        architecture_diagnostics = (
+            (
+                f"phase_focus={'yes' if phase_focus else 'no'} "
+                f"phase_delta={phase_motion['phase_delta_run_rms_rad']:.4f}rad "
+                f"phase_std={phase_motion['phase_physical_std_rad']:.4f}rad "
+                f"phase_grad={phase_gradients.get('phase_grad_rms', 0.0):.3e} "
+                f"unselected_v/l={coverage['vision_router_unselected_experts']}/"
+                f"{coverage['language_router_unselected_experts']} "
+            )
+            if has_optical_phases
+            else "architecture=dense_electronic_no_moe "
+        )
         print(
             f"epoch {epoch:03d} complete train_loss={average_total:.5f} "
             f"train_top1="
@@ -1653,12 +1677,7 @@ def train_optical_retrieval(
             f"test_top1={test_metrics.get('top1_retrieval_accuracy', float('nan')):.4f} "
             f"ema_test_top1="
             f"{ema_test_metrics.get('top1_retrieval_accuracy', float('nan')):.4f} "
-            f"phase_focus={'yes' if phase_focus else 'no'} "
-            f"phase_delta={phase_motion['phase_delta_run_rms_rad']:.4f}rad "
-            f"phase_std={phase_motion['phase_physical_std_rad']:.4f}rad "
-            f"phase_grad={phase_gradients.get('phase_grad_rms', 0.0):.3e} "
-            f"unselected_v/l={coverage['vision_router_unselected_experts']}/"
-            f"{coverage['language_router_unselected_experts']} "
+            f"{architecture_diagnostics}"
             f"best_train_loss={best_train_loss:.5f} "
             f"best_observed_test={best_observed_test_top1:.4f} "
             f"best_observed_ema_test={best_observed_ema_test_top1:.4f}"
@@ -1746,7 +1765,11 @@ def evaluate_student_split(
         gallery_samples,
         class_names,
         settings.gallery_aggregation,
-        system_name="optical_student_query_vs_optical_student_gallery",
+        system_name=(
+            "optical_student_query_vs_optical_student_gallery"
+            if getattr(replacement, "has_optical_phases", True)
+            else "electronic_student_query_vs_electronic_student_gallery"
+        ),
     ).metrics
 
 

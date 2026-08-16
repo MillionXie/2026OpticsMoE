@@ -1,0 +1,23 @@
+base_config: ../release/caltech101_target10_electronic.yaml
+
+dataset:
+  train_limit_per_sku: 2
+  test_limit_per_sku: 2
+
+batching:
+  batch_size: 20
+  pk_skus_per_batch: 10
+  pk_images_per_sku: 2
+  inference_batch_size: 4
+  num_workers: 0
+  optimizer_steps_per_epoch: 1
+
+training:
+  epochs: 1
+  log_interval_batches: 1
+
+teacher_cache:
+  directory: ../../cache/smoke_target10
+  derive_from: ../../../qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval/cache/caltech101_target10_seed42_g3_train30_test20
+
+output_dir: ../../runs/smoke_target10_electronic

@@ -61,7 +61,11 @@ def evaluate_all_systems(
             bundle.gallery_samples,
             bundle.class_names,
             settings.gallery_aggregation,
-            system_name="optical_student_query_vs_optical_student_gallery",
+            system_name=(
+                "optical_student_query_vs_optical_student_gallery"
+                if getattr(replacement, "has_optical_phases", True)
+                else "electronic_student_query_vs_electronic_student_gallery"
+            ),
         ),
         "student_teacher_gallery": evaluate_embeddings(
             student_query,
@@ -70,7 +74,11 @@ def evaluate_all_systems(
             bundle.gallery_samples,
             bundle.class_names,
             settings.gallery_aggregation,
-            system_name="optical_student_query_vs_frozen_teacher_gallery_diagnostic",
+            system_name=(
+                "optical_student_query_vs_frozen_teacher_gallery_diagnostic"
+                if getattr(replacement, "has_optical_phases", True)
+                else "electronic_student_query_vs_frozen_teacher_gallery_diagnostic"
+            ),
         ),
     }
     teacher_metrics = {

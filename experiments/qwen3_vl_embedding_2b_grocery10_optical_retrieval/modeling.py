@@ -238,11 +238,10 @@ def trainable_parameter_report(
     vision = replacement.vision_surrogate.parameter_breakdown()
     language = replacement.language_surrogate.parameter_breakdown()
     count = sum(parameter.numel() for parameter in unique_trainable_parameters(replacement, readout))
-    return {
-        "teacher_model_id": getattr(model, "name_or_path", type(model).__name__),
-        "teacher_parameters_frozen": all(not parameter.requires_grad for parameter in model.parameters()
-                                         if id(parameter) not in trainable_ids),
-        "student_architecture": {
+    student_architecture = (
+        replacement.student_architecture_report()
+        if hasattr(replacement, "student_architecture_report")
+        else {
             "optical_structure": "one_expert_stage_plus_one_global_phase",
             "vision_expert_stages": len(
                 replacement.vision_surrogate.core.expert_layers
@@ -258,9 +257,18 @@ def trainable_parameter_report(
             "language_optical_layer_indexes": list(
                 replacement.language_optical_layer_indexes
             ),
-        },
-        "vision_optical": vision,
-        "language_optical": language,
+        }
+    )
+    modality_key_suffix = (
+        "optical" if getattr(replacement, "has_optical_phases", True) else "electronic"
+    )
+    return {
+        "teacher_model_id": getattr(model, "name_or_path", type(model).__name__),
+        "teacher_parameters_frozen": all(not parameter.requires_grad for parameter in model.parameters()
+                                         if id(parameter) not in trainable_ids),
+        "student_architecture": student_architecture,
+        f"vision_{modality_key_suffix}": vision,
+        f"language_{modality_key_suffix}": language,
         "retrieval_readout": readout.specification(),
         "trainable_parameters": count,
         "trainable_tensors": len(names),
