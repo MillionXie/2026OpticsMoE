@@ -45,6 +45,9 @@ def load_settings(path: str | Path) -> Caltech101Settings:
         d("electronic.token_mixer.kernel_size", 5)
     )
     settings.electronic_pooling = str(d("electronic.pooling", "mean"))
+    settings.electronic_deepstack_enabled = bool(
+        d("electronic.deepstack_enabled", True)
+    )
     settings.reserve_test_before_train = bool(
         d("dataset.reserve_test_before_train", True)
     )
@@ -145,6 +148,10 @@ def save_resolved_config(settings: Caltech101Settings) -> None:
             "language_padding": "causal_left",
             "vision_padding": "symmetric",
         },
+        "deepstack_enabled": settings.electronic_deepstack_enabled,
+        "deepstack_auxiliary_count": (
+            1 if settings.electronic_deepstack_enabled else 0
+        ),
         "expansion": settings.electronic_expansion,
         "dropout": settings.electronic_dropout,
         "initial_residual_weight": settings.electronic_initial_residual_weight,

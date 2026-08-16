@@ -256,7 +256,7 @@ class VisionElectronicReplacement(nn.Module):
         self.core = ElectronicSequenceCore(
             hidden_size, settings.max_visual_tokens, settings
         )
-        self.tap_stages = (1,)
+        self.tap_stages = (1,) if settings.electronic_deepstack_enabled else ()
         self.tap_outputs: list[torch.Tensor] = []
         self.last_output: torch.Tensor | None = None
 

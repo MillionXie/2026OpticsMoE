@@ -264,14 +264,14 @@ class DeepStackMultimodalReplacement:
                 f"{self.native_deepstack_indexes}"
             )
         auxiliary_count = len(vision.tap_stages)
-        if auxiliary_count != 1:
+        if auxiliary_count not in {0, 1}:
             raise RuntimeError(
-                "The one-layer retrieval baseline requires exactly one student "
+                "The retrieval replacement supports zero or one student "
                 f"DeepStack auxiliary tap, got {auxiliary_count}"
             )
-        # Keep Qwen's first native auxiliary route only. Its corresponding
-        # frozen deepstack merger remains intact; the other two auxiliary
-        # routes are disabled rather than filled with repeated optical output.
+        # An empty tap list disables every auxiliary merger while retaining the
+        # final main merger. A one-element list keeps Qwen's first auxiliary
+        # route and disables the other two.
         self.deepstack_indexes = self.native_deepstack_indexes[:auxiliary_count]
         self.language_surrogate.set_deepstack_injection_count(len(self.deepstack_indexes))
         final_index = len(self.vision_blocks) - 1
@@ -290,9 +290,9 @@ class DeepStackMultimodalReplacement:
         self.student_language_modules: list[nn.Module] = [
             LanguageBypass() for _ in self.language_layers
         ]
-        # The sole auxiliary feature is injected after language slot 0. Put
-        # the single optical language stage at slot 1 so that both the main
-        # image embedding and the auxiliary feature enter the optical stack.
+        # Place the language replacement after all enabled auxiliary
+        # injections. With no DeepStack it occupies slot 0 and consumes only
+        # the main-merger image embeddings.
         language_stage_start = len(self.deepstack_indexes)
         self.language_optical_layer_indexes = tuple(
             language_stage_start + stage

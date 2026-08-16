@@ -78,23 +78,23 @@ CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_caltech101_el
   --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/runs/caltech101_target10_mlp_all_data_teacher_kd/ema_best_train_loss_checkpoint.pt
 ```
 
-## 7. 无教师 Electronic V2：2 层 1D token mixer + mean/max pooling
+## 7. 无教师 Electronic V2：2 层 1D token mixer + mean/max pooling + 无 DeepStack
 
-这一组在 Vision 和 Language 中分别使用 2 个 mixer block，不读取 teacher cache，不使用任何教师 loss、attention、MoE 或多层 Qwen 特征。它从零训练 10 类学生，并保留原始 MLP 配置作为对照。最初的每模态 3-block 运行仍由 `caltech101_target10_electronic_token_mixer_3layer.yaml` 保存，不要用 2-block checkpoint 与其交叉续训。
+这一组在 Vision 和 Language 中分别使用 2 个 mixer block，只保留 Qwen 主 merger，并关闭全部 DeepStack 辅助 merger。它不读取 teacher cache，不使用任何教师 loss、attention、MoE 或多层 Qwen 特征。原 2+2 单路 DeepStack 对照由 `caltech101_target10_electronic_token_mixer_single_deepstack.yaml` 保存，最初的 3+3 运行由 `caltech101_target10_electronic_token_mixer_3layer.yaml` 保存；三组 checkpoint 不要交叉续训。
 
 先做一轮冒烟测试：
 
 ```bash
-CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_caltech101_electronic_retrieval 
-  --config experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/configs/smoke/electronic_target10_token_mixer_smoke.yaml 
+CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_caltech101_electronic_retrieval \
+  --config experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/configs/smoke/electronic_target10_token_mixer_smoke.yaml \
   --phase all
 ```
 
 正式训练：
 
 ```bash
-CUDA_VISIBLE_DEVICES=6 python -m experiments.qwen3_vl_embedding_2b_caltech101_electronic_retrieval 
-  --config experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/configs/release/caltech101_target10_electronic_token_mixer.yaml 
+CUDA_VISIBLE_DEVICES=6 python -m experiments.qwen3_vl_embedding_2b_caltech101_electronic_retrieval \
+  --config experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/configs/release/caltech101_target10_electronic_token_mixer.yaml \
   --phase train
 ```
 
@@ -104,5 +104,5 @@ CUDA_VISIBLE_DEVICES=6 python -m experiments.qwen3_vl_embedding_2b_caltech101_el
 CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_caltech101_electronic_retrieval \
   --config experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/configs/release/caltech101_target10_electronic_token_mixer.yaml \
   --phase evaluate \
-  --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/runs/caltech101_target10_electronic_token_mixer_2layer/ema_best_train_loss_checkpoint.pt
+  --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/runs/caltech101_target10_electronic_token_mixer_2layer_no_deepstack/ema_best_train_loss_checkpoint.pt
 ```

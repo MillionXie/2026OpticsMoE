@@ -9,6 +9,7 @@ electronic:
   dropout: 0.10
   initial_residual_weight: 0.10
   pooling: mean_max
+  deepstack_enabled: true
   token_mixer:
     enabled: true
     kernel_size: 5

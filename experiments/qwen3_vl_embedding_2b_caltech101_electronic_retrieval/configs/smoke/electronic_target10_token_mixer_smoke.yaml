@@ -16,4 +16,4 @@ training:
   epochs: 1
   log_interval_batches: 1
 
-output_dir: ../../runs/smoke_target10_electronic_token_mixer_2layer
+output_dir: ../../runs/smoke_target10_electronic_token_mixer_2layer_no_deepstack

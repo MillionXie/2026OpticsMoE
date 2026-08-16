@@ -79,6 +79,7 @@ def test_v2_config_enables_mean_max_token_mixing_without_teacher() -> None:
     assert settings.electronic_token_mixer_enabled is True
     assert settings.electronic_token_mixer_kernel_size == 5
     assert settings.electronic_pooling == "mean_max"
+    assert settings.electronic_deepstack_enabled is False
     assert settings.detector_output_size == 384
     assert settings.lambda_kd == 0.0
     assert settings.lambda_relational_kd == 0.0
@@ -91,7 +92,19 @@ def test_archived_v2_config_keeps_original_three_layer_run_reproducible() -> Non
         "configs/release/caltech101_target10_electronic_token_mixer_3layer.yaml"
     )
     assert settings.electronic_layers == 3
+    assert settings.electronic_deepstack_enabled is True
     assert settings.output_dir.name == "caltech101_target10_electronic_token_mixer"
+
+
+def test_single_deepstack_control_keeps_two_layer_checkpoint_compatible() -> None:
+    settings = load_settings(
+        "experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/"
+        "configs/release/"
+        "caltech101_target10_electronic_token_mixer_single_deepstack.yaml"
+    )
+    assert settings.electronic_layers == 2
+    assert settings.electronic_deepstack_enabled is True
+    assert settings.output_dir.name == "caltech101_target10_electronic_token_mixer_2layer"
 
 
 def test_release_config_is_direct_target10_without_optical_or_moe() -> None:
