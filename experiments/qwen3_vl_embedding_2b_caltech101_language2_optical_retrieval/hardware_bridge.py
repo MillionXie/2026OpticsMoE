@@ -218,6 +218,7 @@ def load_ccd(
     flip_vertical: bool | None = None,
     flip_horizontal: bool | None = None,
     persist_registered: bool = True,
+    reuse_registered: bool = True,
 ) -> torch.Tensor:
     if use_simulation:
         path = session_dir / "simulation_ccd" / f"{key}.pt"
@@ -228,7 +229,12 @@ def load_ccd(
             )
         return value
     registered = session_dir / "ccd_registered" / f"{key}.pt"
-    if registered.is_file() and flip_vertical is None and flip_horizontal is None:
+    if (
+        reuse_registered
+        and registered.is_file()
+        and flip_vertical is None
+        and flip_horizontal is None
+    ):
         return torch.load(registered, map_location="cpu", weights_only=True).float()
     root = session_dir / "ccd_captured"
     candidates = [
@@ -347,6 +353,7 @@ def prepare_captured_ccd(
             flip_vertical=flip_vertical,
             flip_horizontal=flip_horizontal,
             persist_registered=True,
+            reuse_registered=False,
         )
         if index % 20 == 0 or index == len(rows):
             print(f"[prepare_ccd] {index}/{len(rows)}", flush=True)
