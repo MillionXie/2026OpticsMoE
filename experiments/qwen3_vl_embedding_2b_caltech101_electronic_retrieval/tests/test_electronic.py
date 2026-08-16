@@ -26,6 +26,8 @@ def _settings() -> SimpleNamespace:
         electronic_dropout=0.0,
         electronic_layers=2,
         electronic_initial_residual_weight=0.1,
+        electronic_token_mixer_enabled=False,
+        electronic_token_mixer_kernel_size=5,
     )
 
 
@@ -50,6 +52,37 @@ def test_electronic_readout_returns_unit_64d_embeddings() -> None:
     output = readout(torch.randn(4, 32))
     assert output.shape == (4, 64)
     assert torch.allclose(output.norm(dim=-1), torch.ones(4), atol=1.0e-5)
+
+
+def test_token_mixer_uses_tokens_and_masks_padding() -> None:
+    settings = _settings()
+    settings.electronic_token_mixer_enabled = True
+    core = ElectronicSequenceCore(48, 8, settings)
+    groups = [torch.randn(3, 48), torch.randn(5, 48)]
+    packed, latent = core.forward_groups(groups, causal=True)
+    assert packed.shape == (8, 48)
+    assert latent.shape == (2, 5, 32)
+    assert torch.count_nonzero(latent[0, 3:]) == 0
+    breakdown = core.parameter_breakdown()
+    assert breakdown["token_mixing_enabled"] is True
+    assert breakdown["token_mixer_parameters"] > 0
+
+
+def test_v2_config_enables_mean_max_token_mixing_without_teacher() -> None:
+    settings = load_settings(
+        "experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/"
+        "configs/release/caltech101_target10_electronic_token_mixer.yaml"
+    )
+    assert settings.teacher_enabled is False
+    assert settings.electronic_width == 192
+    assert settings.electronic_layers == 3
+    assert settings.electronic_token_mixer_enabled is True
+    assert settings.electronic_token_mixer_kernel_size == 5
+    assert settings.electronic_pooling == "mean_max"
+    assert settings.detector_output_size == 384
+    assert settings.lambda_kd == 0.0
+    assert settings.lambda_relational_kd == 0.0
+    assert settings.lambda_teacher_gallery == 0.0
 
 
 def test_release_config_is_direct_target10_without_optical_or_moe() -> None:

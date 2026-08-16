@@ -77,3 +77,32 @@ CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_caltech101_el
   --phase evaluate \
   --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/runs/caltech101_target10_mlp_all_data_teacher_kd/ema_best_train_loss_checkpoint.pt
 ```
+
+## 7. 无教师 Electronic V2：1D token mixer + mean/max pooling
+
+这一组不读取 teacher cache，不使用任何教师 loss、attention、MoE 或多层 Qwen 特征。它从零训练 10 类学生，并保留原始 MLP 配置作为对照。
+
+先做一轮冒烟测试：
+
+```bash
+CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_caltech101_electronic_retrieval \
+  --config experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/configs/smoke/electronic_target10_token_mixer_smoke.yaml \
+  --phase all
+```
+
+正式训练：
+
+```bash
+CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_caltech101_electronic_retrieval \
+  --config experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/configs/release/caltech101_target10_electronic_token_mixer.yaml \
+  --phase train
+```
+
+固定 EMA checkpoint 评测：
+
+```bash
+CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_caltech101_electronic_retrieval \
+  --config experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/configs/release/caltech101_target10_electronic_token_mixer.yaml \
+  --phase evaluate \
+  --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/runs/caltech101_target10_electronic_token_mixer/ema_best_train_loss_checkpoint.pt
+```

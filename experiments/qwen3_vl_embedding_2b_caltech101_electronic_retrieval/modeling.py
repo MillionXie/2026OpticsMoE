@@ -84,7 +84,10 @@ class ElectronicDeepStackReplacement(DeepStackMultimodalReplacement):
             "language_replacement_layer_indexes": list(
                 self.language_optical_layer_indexes
             ),
-            "equation": "Y = X + sigmoid(g) * MLP(LayerNorm(X))",
+            "equation": (
+                "X1 = X + sigmoid(gt) * TokenMixer(LN(X)); "
+                "Y = X1 + sigmoid(gc) * MLP(LN(X1))"
+            ),
         }
 
     def student_architecture_report(self) -> dict[str, Any]:
@@ -96,9 +99,13 @@ class ElectronicDeepStackReplacement(DeepStackMultimodalReplacement):
             "width": self.vision_surrogate.core.width,
             "blocks_per_modality": len(self.vision_surrogate.core.blocks),
             "attention_enabled": False,
-            "token_mixing_enabled": False,
+            "token_mixing_enabled": self.vision_surrogate.core.token_mixer_enabled,
+            "token_mixer": "depthwise_conv1d_pointwise_linear",
+            "token_mixer_kernel_size": (
+                self.vision_surrogate.core.token_mixer_kernel_size
+            ),
             "mlp_expansion": self.vision_surrogate.core.expansion,
-            "language_pooling": "mean_over_valid_multimodal_tokens",
+            "language_pooling": self.language_surrogate.pooling,
             "learnable_identity_residual_per_modality": True,
             "student_deepstack_visual_indexes": list(self.deepstack_indexes),
             "language_replacement_layer_indexes": list(
@@ -122,7 +129,7 @@ def build_electronic_student(
         loaded.model, vision, language, settings
     )
     readout = ElectronicRetrievalReadout(
-        settings.electronic_width,
+        settings.detector_output_size,
         settings.embedding_dim,
     ).to(loaded.device)
     replacement.configure_student_trainability()

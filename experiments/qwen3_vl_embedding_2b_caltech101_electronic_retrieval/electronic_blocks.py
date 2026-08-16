@@ -4,6 +4,7 @@ from typing import Any
 
 import torch
 from torch import nn
+from torch.nn import functional as F
 
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.optics.moe import (
     lengths_from_cu,
@@ -11,7 +12,7 @@ from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.optics.moe im
 
 
 class ElectronicResidualMLPBlock(nn.Module):
-    """Shared token-wise residual MLP; deliberately contains no attention."""
+    """Attention-free token mixer followed by a channel-wise residual MLP."""
 
     def __init__(
         self,
@@ -19,9 +20,27 @@ class ElectronicResidualMLPBlock(nn.Module):
         expansion: float,
         dropout: float,
         initial_residual_weight: float,
+        token_mixer_enabled: bool = False,
+        token_mixer_kernel_size: int = 5,
     ) -> None:
         super().__init__()
         hidden_width = int(round(width * expansion))
+        self.token_mixer_enabled = bool(token_mixer_enabled)
+        self.token_mixer_kernel_size = int(token_mixer_kernel_size)
+        if self.token_mixer_enabled:
+            self.token_norm = nn.LayerNorm(width)
+            self.token_depthwise = nn.Conv1d(
+                width,
+                width,
+                kernel_size=self.token_mixer_kernel_size,
+                groups=width,
+                bias=False,
+            )
+            self.token_pointwise = nn.Linear(width, width)
+            self.token_dropout = nn.Dropout(dropout)
+            self.token_residual_logit = nn.Parameter(
+                torch.logit(torch.tensor(float(initial_residual_weight)))
+            )
         self.norm = nn.LayerNorm(width)
         self.mlp = nn.Sequential(
             nn.Linear(width, hidden_width),
@@ -39,7 +58,26 @@ class ElectronicResidualMLPBlock(nn.Module):
         hidden: torch.Tensor,
         *,
         padding_mask: torch.Tensor,
+        causal: bool,
     ) -> torch.Tensor:
+        if self.token_mixer_enabled:
+            token_input = self.token_norm(hidden).masked_fill(
+                padding_mask.unsqueeze(-1), 0.0
+            )
+            token_input = token_input.transpose(1, 2)
+            if causal:
+                token_input = F.pad(
+                    token_input, (self.token_mixer_kernel_size - 1, 0)
+                )
+            else:
+                left = self.token_mixer_kernel_size // 2
+                right = self.token_mixer_kernel_size - 1 - left
+                token_input = F.pad(token_input, (left, right))
+            token_update = self.token_depthwise(token_input).transpose(1, 2)
+            token_update = self.token_pointwise(F.gelu(token_update))
+            token_update = self.token_dropout(token_update)
+            hidden = hidden + torch.sigmoid(self.token_residual_logit) * token_update
+            hidden = hidden.masked_fill(padding_mask.unsqueeze(-1), 0.0)
         update = self.mlp(self.norm(hidden))
         hidden = hidden + torch.sigmoid(self.residual_logit) * update
         return hidden.masked_fill(padding_mask.unsqueeze(-1), 0.0)
@@ -75,6 +113,8 @@ class ElectronicSequenceCore(nn.Module):
         self.max_tokens = int(max_tokens)
         self.width = int(settings.electronic_width)
         self.expansion = float(settings.electronic_expansion)
+        self.token_mixer_enabled = bool(settings.electronic_token_mixer_enabled)
+        self.token_mixer_kernel_size = int(settings.electronic_token_mixer_kernel_size)
         self.input_adapter = nn.Linear(self.hidden_size, self.width)
         self.input_norm = nn.LayerNorm(self.width)
         self.blocks = nn.ModuleList(
@@ -84,6 +124,8 @@ class ElectronicSequenceCore(nn.Module):
                     self.expansion,
                     settings.electronic_dropout,
                     settings.electronic_initial_residual_weight,
+                    self.token_mixer_enabled,
+                    self.token_mixer_kernel_size,
                 )
                 for _ in range(settings.electronic_layers)
             ]
@@ -127,10 +169,11 @@ class ElectronicSequenceCore(nn.Module):
         input_latent = self.input_norm(self.input_adapter(padded.float()))
         latent = input_latent
         for block in self.blocks:
-            latent = block(latent, padding_mask=padding_mask)
+            latent = block(latent, padding_mask=padding_mask, causal=causal)
         latent = self.output_norm(latent)
         gate = torch.sigmoid(self.residual_logit)
         latent = input_latent + gate * (latent - input_latent)
+        latent = latent.masked_fill(padding_mask.unsqueeze(-1), 0.0)
         delta = self.output_adapter(latent)
         output = padded.float() + gate * delta
         output = output.to(groups[0].dtype)
@@ -159,6 +202,17 @@ class ElectronicSequenceCore(nn.Module):
             for block in self.blocks
             for parameter in block.mlp.parameters()
         )
+        token_mixer = sum(
+            parameter.numel()
+            for block in self.blocks
+            if block.token_mixer_enabled
+            for module in (
+                block.token_norm,
+                block.token_depthwise,
+                block.token_pointwise,
+            )
+            for parameter in module.parameters()
+        )
         adapters = sum(
             parameter.numel()
             for module in (self.input_adapter, self.output_adapter)
@@ -166,10 +220,21 @@ class ElectronicSequenceCore(nn.Module):
         )
         total = sum(parameter.numel() for parameter in self.parameters())
         return {
-            "implementation": "shared_tokenwise_residual_mlp",
+            "implementation": (
+                "depthwise_token_mixer_residual_mlp"
+                if self.token_mixer_enabled
+                else "shared_tokenwise_residual_mlp"
+            ),
             "moe_enabled": False,
             "attention_enabled": False,
-            "token_mixing_enabled": False,
+            "token_mixing_enabled": self.token_mixer_enabled,
+            "token_mixer_type": (
+                "depthwise_conv1d_pointwise_linear"
+                if self.token_mixer_enabled
+                else "none"
+            ),
+            "token_mixer_kernel_size": self.token_mixer_kernel_size,
+            "token_mixer_parameters": token_mixer,
             "optical_parameters": 0,
             "router_parameters": 0,
             "attention_parameters": 0,
@@ -241,6 +306,7 @@ class LanguageElectronicReplacement(nn.Module):
         self.valid_mask: torch.Tensor | None = None
         self.lengths: list[int] = []
         self.deepstack_injection_count = 0
+        self.pooling = str(settings.electronic_pooling)
 
     def set_attention_mask(self, mask: torch.Tensor) -> None:
         self.valid_mask = mask.bool()
@@ -273,9 +339,20 @@ class LanguageElectronicReplacement(nn.Module):
     def retrieval_detector_features(self) -> torch.Tensor:
         if len(self.core.last_latent_groups) != len(self.lengths):
             raise RuntimeError("Language electronic features are unavailable")
-        features = torch.stack(
-            [group.mean(dim=0) for group in self.core.last_latent_groups], dim=0
-        )
+        if self.pooling == "mean":
+            features = torch.stack(
+                [group.mean(dim=0) for group in self.core.last_latent_groups], dim=0
+            )
+        elif self.pooling == "mean_max":
+            features = torch.stack(
+                [
+                    torch.cat((group.mean(dim=0), group.amax(dim=0)), dim=0)
+                    for group in self.core.last_latent_groups
+                ],
+                dim=0,
+            )
+        else:
+            raise RuntimeError(f"Unsupported electronic pooling: {self.pooling}")
         if not torch.isfinite(features).all():
             raise RuntimeError("Language electronic features contain NaN or Inf")
         return features
