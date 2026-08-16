@@ -24,3 +24,8 @@ resolved configuration, data manifests, training CSV files, checkpoints,
 gradient-to-BP diagnostics, endpoint drift statistics, phase masks, residual
 weights, optical stage examples, confusion matrices, and aggregate comparison
 figures.
+
+The comparison phase also writes a publication-oriented, checkpoint-policy-aware
+record to [results/main/RESULTS_AND_ANALYSIS.md](results/main/RESULTS_AND_ANALYSIS.md).
+It separates fixed-budget task performance, validation-selected task performance,
+and matched-epoch endpoint geometry; these quantities must not be mixed.

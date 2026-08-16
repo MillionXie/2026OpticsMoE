@@ -36,8 +36,8 @@ definition and server results.
 Run from the repository root:
 
 ```bash
-python -m experiments.qwen3_vl_embedding_2b_grocery10_robust_hybrid_retrieval \
-  --config experiments/qwen3_vl_embedding_2b_grocery10_robust_hybrid_retrieval/configs/release/robust_hybrid_moe4.yaml \
+python -m experiments.qwen3_vl_embedding_2b_grocery10_robust_hybrid_retrieval 
+  --config experiments/qwen3_vl_embedding_2b_grocery10_robust_hybrid_retrieval/configs/release/robust_hybrid_moe4.yaml 
   --phase all
 ```
 

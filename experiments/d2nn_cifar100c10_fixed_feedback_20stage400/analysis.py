@@ -10,7 +10,7 @@ import torch
 from torch.nn import functional as F
 
 from .settings import Settings
-from .visualization import save_comparison_plots
+from .publication_report import generate_publication_report
 
 
 METHODS = ("bp", "fa_pretrained", "fa_random")
@@ -70,7 +70,7 @@ def compare_methods(settings: Settings) -> Path:
             initial_flat = torch.cat(
                 [initial_parameters[name].detach().float().reshape(-1) for name in sorted(initial_parameters)]
             )
-            cosine = float(F.cosine_similarity(delta, bp_delta, dim=0, eps=1e-12))
+            cosine = float(F.cosine_similarity(delta, bp_delta, dim=0, eps=1e-12).clamp(-1.0, 1.0))
             metrics = checkpoint["metrics"]
             per_seed.append(
                 {
@@ -98,7 +98,8 @@ def compare_methods(settings: Settings) -> Path:
             "validation_accuracy": float("nan"),
             "relative_parameter_drift": 0.0,
             "endpoint_update_norm": 0.0,
-            "endpoint_cosine_to_bp": 0.0,
+            # No fine-tuning has a zero update, so its direction is undefined.
+            "endpoint_cosine_to_bp": float("nan"),
             "phase_circular_rms_rad": 0.0,
             "phase_phasor_drift": 0.0,
             "phase_operator_coherence": 1.0,
@@ -109,7 +110,12 @@ def compare_methods(settings: Settings) -> Path:
         rows = [row for row in per_seed if row["method"] == method]
         test_mean, test_std = _aggregate([float(row["test_accuracy"]) for row in rows])
         drift_mean, drift_std = _aggregate([float(row["relative_parameter_drift"]) for row in rows])
-        cosine_mean, cosine_std = _aggregate([float(row["endpoint_cosine_to_bp"]) for row in rows])
+        cosine_values = [
+            float(row["endpoint_cosine_to_bp"])
+            for row in rows
+            if torch.isfinite(torch.tensor(float(row["endpoint_cosine_to_bp"])))
+        ]
+        cosine_mean, cosine_std = _aggregate(cosine_values) if cosine_values else (float("nan"), float("nan"))
         aggregate.append(
             {
                 "method": method,
@@ -145,6 +151,6 @@ def compare_methods(settings: Settings) -> Path:
         ),
         encoding="utf-8",
     )
-    save_comparison_plots(aggregate, comparison_dir)
+    generate_publication_report(settings, legacy_comparison_dir=comparison_dir)
     print(json.dumps(aggregate, indent=2), flush=True)
     return output

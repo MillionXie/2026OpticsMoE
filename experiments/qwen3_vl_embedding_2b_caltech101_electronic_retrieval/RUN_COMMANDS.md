@@ -85,16 +85,16 @@ CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_caltech101_el
 先做一轮冒烟测试：
 
 ```bash
-CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_caltech101_electronic_retrieval \
-  --config experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/configs/smoke/electronic_target10_token_mixer_smoke.yaml \
+CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_caltech101_electronic_retrieval 
+  --config experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/configs/smoke/electronic_target10_token_mixer_smoke.yaml 
   --phase all
 ```
 
 正式训练：
 
 ```bash
-CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_caltech101_electronic_retrieval \
-  --config experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/configs/release/caltech101_target10_electronic_token_mixer.yaml \
+CUDA_VISIBLE_DEVICES=6 python -m experiments.qwen3_vl_embedding_2b_caltech101_electronic_retrieval 
+  --config experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/configs/release/caltech101_target10_electronic_token_mixer.yaml 
   --phase train
 ```
 
