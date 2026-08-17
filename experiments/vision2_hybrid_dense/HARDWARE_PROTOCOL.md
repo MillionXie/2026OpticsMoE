@@ -32,12 +32,12 @@
 
 ## 实验室重建与采集
 
-将下文的 `STAGE_DIR` 替换为相应的 `01_vision_expert` 或 `02_vision_global`：
+将下文的 `STAGE_DIR` 替换为相应的 `01_vision_expert` 或 `02_vision_global` 的真实路径。不要在仓库根目录直接把 `compact_amplitude` 当作输入路径：
 
 ```bash
-python -m experiments.hardware_sdk.workflows.reconstruct_slm --input-dir STAGE_DIR/compact_amplitude --output-dir STAGE_DIR/amplitude_to_play --slm-width 1920 --slm-height 1080 --scale-factor 2
+python -m experiments.hardware_sdk.workflows.reconstruct_slm --stage-dir STAGE_DIR --payload amplitude
 
-python -m experiments.hardware_sdk.workflows.reconstruct_slm --input-dir STAGE_DIR/compact_phase --output-dir STAGE_DIR/phase_to_play --slm-width 1920 --slm-height 1200 --scale-factor 2 --center-x 980 --center-y 590
+python -m experiments.hardware_sdk.workflows.reconstruct_slm --stage-dir STAGE_DIR --payload phase --center-x 980 --center-y 590
 
 python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments/hardware_sdk/configs/tucam_windows.yaml --input-dir STAGE_DIR/amplitude_to_play --output-dir STAGE_DIR/ccd_captured --clear-output
 ```

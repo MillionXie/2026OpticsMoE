@@ -7,6 +7,7 @@ from PIL import Image
 from experiments.hardware_sdk.workflows.reconstruct_slm import (
     encode_active_amplitude_with_metadata,
     reconstruct_directory,
+    resolve_reconstruction_layout,
     save_active_png,
 )
 
@@ -73,3 +74,30 @@ def test_compact_payload_uses_configured_slm_center(tmp_path) -> None:
     assert row["active_bounds_xyxy"] == "6,1,10,5"
     assert row["active_center_xy"] == "8,3"
     assert row["canvas_center_offset_xy"] == "2,-2"
+
+
+def test_stage_shortcut_resolves_payload_directories_and_default_sizes(
+    tmp_path,
+) -> None:
+    amplitude = resolve_reconstruction_layout(
+        stage_dir=tmp_path / "01_vision_expert",
+        payload="amplitude",
+        input_dir=None,
+        output_dir=None,
+        slm_width=None,
+        slm_height=None,
+    )
+    phase = resolve_reconstruction_layout(
+        stage_dir=tmp_path / "01_vision_expert",
+        payload="phase",
+        input_dir=None,
+        output_dir=None,
+        slm_width=None,
+        slm_height=None,
+    )
+    assert amplitude[0].name == "compact_amplitude"
+    assert amplitude[1].name == "amplitude_to_play"
+    assert amplitude[2] == (1920, 1080)
+    assert phase[0].name == "compact_phase"
+    assert phase[1].name == "phase_to_play"
+    assert phase[2] == (1920, 1200)

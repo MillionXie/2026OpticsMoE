@@ -177,12 +177,75 @@ def reconstruct_directory(
     return report
 
 
+def resolve_reconstruction_layout(
+    *,
+    stage_dir: Path | None,
+    payload: str | None,
+    input_dir: Path | None,
+    output_dir: Path | None,
+    slm_width: int | None,
+    slm_height: int | None,
+) -> tuple[Path, Path, tuple[int, int]]:
+    """Resolve either the safe stage shortcut or the legacy explicit layout."""
+
+    if stage_dir is not None:
+        if payload not in {"amplitude", "phase"}:
+            raise ValueError(
+                "--stage-dir requires --payload amplitude or --payload phase"
+            )
+        if input_dir is not None or output_dir is not None:
+            raise ValueError(
+                "Do not combine --stage-dir with --input-dir/--output-dir"
+            )
+        defaults = {
+            "amplitude": (1920, 1080),
+            "phase": (1920, 1200),
+        }
+        default_width, default_height = defaults[payload]
+        root = stage_dir.expanduser().resolve()
+        return (
+            root / f"compact_{payload}",
+            root / f"{payload}_to_play",
+            (
+                default_width if slm_width is None else int(slm_width),
+                default_height if slm_height is None else int(slm_height),
+            ),
+        )
+    if payload is not None:
+        raise ValueError("--payload is only valid together with --stage-dir")
+    missing = [
+        name
+        for name, value in (
+            ("--input-dir", input_dir),
+            ("--output-dir", output_dir),
+            ("--slm-width", slm_width),
+            ("--slm-height", slm_height),
+        )
+        if value is None
+    ]
+    if missing:
+        raise ValueError(
+            "Explicit mode is missing "
+            + ", ".join(missing)
+            + "; alternatively use --stage-dir with --payload"
+        )
+    return input_dir, output_dir, (int(slm_width), int(slm_height))
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--input-dir", required=True)
-    parser.add_argument("--output-dir", required=True)
-    parser.add_argument("--slm-width", type=int, required=True)
-    parser.add_argument("--slm-height", type=int, required=True)
+    parser.add_argument(
+        "--stage-dir",
+        help=(
+            "Hardware stage directory containing compact_amplitude/ or "
+            "compact_phase/; avoids ambiguous repository-root relative paths"
+        ),
+    )
+    parser.add_argument("--payload", choices=("amplitude", "phase"))
+    parser.add_argument("--input-dir")
+    parser.add_argument("--output-dir")
+    parser.add_argument("--slm-width", type=int)
+    parser.add_argument("--slm-height", type=int)
     parser.add_argument("--scale-factor", type=int, default=2)
     parser.add_argument(
         "--center-x",
@@ -197,10 +260,21 @@ def main() -> int:
     args = parser.parse_args()
     if (args.center_x is None) != (args.center_y is None):
         parser.error("--center-x and --center-y must be provided together")
+    try:
+        input_dir, output_dir, slm_size = resolve_reconstruction_layout(
+            stage_dir=(None if args.stage_dir is None else Path(args.stage_dir)),
+            payload=args.payload,
+            input_dir=(None if args.input_dir is None else Path(args.input_dir)),
+            output_dir=(None if args.output_dir is None else Path(args.output_dir)),
+            slm_width=args.slm_width,
+            slm_height=args.slm_height,
+        )
+    except ValueError as exc:
+        parser.error(str(exc))
     report = reconstruct_directory(
-        Path(args.input_dir),
-        Path(args.output_dir),
-        slm_size_wh=(args.slm_width, args.slm_height),
+        input_dir,
+        output_dir,
+        slm_size_wh=slm_size,
         scale_factor=args.scale_factor,
         center_xy=(
             None
