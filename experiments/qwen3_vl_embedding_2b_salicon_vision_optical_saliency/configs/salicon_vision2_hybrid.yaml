@@ -1,0 +1,59 @@
+base_config: salicon.yaml
+
+training:
+  student_epochs: 60
+  weight_decay: 0.01
+  checkpoint_metric: validation_cc
+
+loss:
+  router_balance_weight: 0.0
+  router_importance_weight: 0.0
+  phase_dc_weight: 0.0
+  map_kd_weight: 0.0
+
+vision2_hybrid:
+  enabled: true
+  initial_fusion: 0.05
+  max_visual_tokens: 224
+  electronic:
+    width: 192
+    layers: 2
+    expansion: 2.0
+    dropout: 0.10
+    kernel_size: 3
+    initial_residual_weight: 0.10
+  optimization:
+    electronic_learning_rate: 0.0001
+    phase_learning_rate: 0.0001
+    router_learning_rate: 0.00005
+    readout_learning_rate: 0.00005
+    head_learning_rate: 0.0003
+  loss:
+    ccd_operating_point_weight: 0.02
+  phase:
+    parameterization: sigmoid
+    init: small_normal
+    init_std: 0.02
+    dropout_mode: block_phase_bypass
+    dropout_p: 0.05
+    dropout_block_size: 8
+  k_space: {enabled: true, theta_max_deg: 0.65}
+  perturbation:
+    max_shift_pixels: 8
+    phase_shift_pixels: 8
+    ccd_shift_pixels: 8
+    gain_min: 0.5
+    gain_max: 2.0
+    offset_fraction: 0.03
+    read_noise_fraction: 0.01
+  hardware:
+    capture_train_limit: 256
+    capture_eval_limit: 64
+    finetune_batch_size: 8
+    finetune_learning_rate: 0.00005
+    phase_flip_vertical: true
+    phase_flip_horizontal: false
+    ccd_flip_vertical: true
+    ccd_flip_horizontal: true
+
+output_dir: runs/salicon_vision2_hybrid

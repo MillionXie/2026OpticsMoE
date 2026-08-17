@@ -40,6 +40,20 @@ def build_teacher(
 def build_student(
     loaded: LoadedVisionBackbone, settings: Any
 ) -> VisionOpticalSaliencyStudent:
+    if getattr(settings, "vision2_hybrid_enabled", False):
+        from experiments.vision2_hybrid_dense.modeling import (
+            SaliencyDensityDecoder,
+            Vision2HybridDenseStudent,
+        )
+
+        return Vision2HybridDenseStudent(
+            loaded,
+            settings,
+            SaliencyDensityDecoder(
+                input_dim=settings.electronic_width,
+                output_size=settings.image_size,
+            ),
+        )
     head = ContinuousSaliencyHead(
         input_dim=settings.detector_output_size,
         projection_dim=settings.segmentation_projection_dim,
@@ -64,14 +78,25 @@ def assert_student_trainability(student: VisionOpticalSaliencyStudent) -> None:
         for name, parameter in student.named_parameters()
         if parameter.requires_grad
     }
-    required_fragments = (
-        "core.input_adapter",
-        "core.router",
-        "core.expert_layers",
-        "core.global_phase",
-        "head.token_projection",
-        "head.classifier",
-    )
+    if hasattr(student.core, "hybrid"):
+        required_fragments = (
+            "core.hybrid.input_adapter",
+            "core.hybrid.blocks.0.token_depthwise",
+            "core.hybrid.optical_branch.core.router",
+            "core.hybrid.optical_branch.core.expert_layers",
+            "core.hybrid.optical_branch.core.global_phase",
+            "head.token_projection",
+            "head.classifier",
+        )
+    else:
+        required_fragments = (
+            "core.input_adapter",
+            "core.router",
+            "core.expert_layers",
+            "core.global_phase",
+            "head.token_projection",
+            "head.classifier",
+        )
     missing = [
         fragment
         for fragment in required_fragments
@@ -87,7 +112,11 @@ def assert_student_trainability(student: VisionOpticalSaliencyStudent) -> None:
         if parameter.requires_grad
         and (
             "visual.patch_embed" in name
-            or "core.output_adapter" in name
+            or name in {"core.output_adapter.weight", "core.output_adapter.bias"}
+            or name in {
+                "core.hybrid.output_adapter.weight",
+                "core.hybrid.output_adapter.bias",
+            }
         )
     ]
     if forbidden:

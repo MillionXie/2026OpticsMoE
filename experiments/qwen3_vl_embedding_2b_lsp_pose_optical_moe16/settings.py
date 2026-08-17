@@ -390,6 +390,11 @@ def load_settings(path: str | Path) -> Settings:
     if settings.data_root is None or settings.output_dir is None:
         raise ValueError("dataset.data_root and output_dir are required")
     settings.validate()
+    from experiments.vision2_hybrid_dense.settings import (
+        apply_vision2_hybrid_settings,
+    )
+
+    apply_vision2_hybrid_settings(settings, raw)
     return settings
 
 

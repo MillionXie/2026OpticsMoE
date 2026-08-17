@@ -385,6 +385,11 @@ def _train_epoch(
             )
             if kind == "student":
                 balance, importance = model.router_losses()
+                operating = (
+                    model.operating_loss()
+                    if hasattr(model, "operating_loss")
+                    else logits.new_zeros(())
+                )
                 dc = (
                     phase_dc_loss(model)
                     if settings.phase_dc_weight > 0.0
@@ -395,11 +400,14 @@ def _train_epoch(
                     + settings.router_balance_weight * balance
                     + settings.router_importance_weight * importance
                     + settings.phase_dc_weight * dc
+                    + getattr(settings, "ccd_operating_point_weight", 0.0)
+                    * operating
                 )
             else:
                 balance = logits.new_zeros(())
                 importance = logits.new_zeros(())
                 dc = logits.new_zeros(())
+                operating = logits.new_zeros(())
                 total = task_loss
         if not torch.isfinite(total):
             raise RuntimeError(
@@ -424,6 +432,7 @@ def _train_epoch(
         totals["router_balance"] += float(balance.detach()) * count
         totals["router_importance"] += float(importance.detach()) * count
         totals["phase_dc"] += float(dc.detach()) * count
+        totals["ccd_operating_point"] += float(operating.detach()) * count
         if (
             batch_index % settings.log_interval_batches == 0
             or batch_index == len(loader)
@@ -435,7 +444,8 @@ def _train_epoch(
                 f"KLD={totals['kl']/denominator:.4f} "
                 f"CC={totals['cc']/denominator:.4f} "
                 f"NSS={totals['nss']/denominator:.4f} "
-                f"phase_dc={totals['phase_dc']/denominator:.4f}",
+                f"phase_dc={totals['phase_dc']/denominator:.4f} "
+                f"ccd_op={totals['ccd_operating_point']/denominator:.4f}",
                 flush=True,
             )
     denominator = totals["samples"]
@@ -487,6 +497,8 @@ def _student_optimizer(
     groups: dict[str, list[nn.Parameter]] = {
         "phase": [],
         "router": [],
+        "readout": [],
+        "head": [],
         "electronic": [],
     }
     for name, parameter in model.named_parameters():
@@ -496,6 +508,10 @@ def _student_optimizer(
             groups["phase"].append(parameter)
         elif "router" in name:
             groups["router"].append(parameter)
+        elif name.startswith("head."):
+            groups["head"].append(parameter)
+        elif "readout" in name or "output_adapter" in name:
+            groups["readout"].append(parameter)
         else:
             groups["electronic"].append(parameter)
     values = [
@@ -507,6 +523,20 @@ def _student_optimizer(
         {
             "params": groups["router"],
             "lr": settings.router_learning_rate,
+            "weight_decay": settings.weight_decay,
+        },
+        {
+            "params": groups["readout"],
+            "lr": getattr(
+                settings, "dense_readout_learning_rate", settings.student_learning_rate
+            ),
+            "weight_decay": settings.weight_decay,
+        },
+        {
+            "params": groups["head"],
+            "lr": getattr(
+                settings, "dense_head_learning_rate", settings.student_learning_rate
+            ),
             "weight_decay": settings.weight_decay,
         },
         {

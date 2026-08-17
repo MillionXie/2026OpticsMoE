@@ -346,6 +346,21 @@ def build_teacher(
 def build_student(
     loaded: LoadedVisionBackbone, settings: Any,
 ) -> VisionOpticalPoseStudent:
+    if getattr(settings, "vision2_hybrid_enabled", False):
+        from experiments.vision2_hybrid_dense.modeling import (
+            PoseHeatmapDecoder,
+            Vision2HybridDenseStudent,
+        )
+
+        return Vision2HybridDenseStudent(
+            loaded,
+            settings,
+            PoseHeatmapDecoder(
+                input_dim=settings.electronic_width,
+                heatmap_size=settings.heatmap_size,
+                num_joints=NUM_JOINTS,
+            ),
+        )
     loaded.model.requires_grad_(False)
     head = _build_pose_head(settings.detector_output_size, settings).to(loaded.device)
     student = VisionOpticalPoseStudent(loaded, settings, head)

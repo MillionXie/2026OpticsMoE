@@ -420,8 +420,14 @@ def _optional_int(value: Any) -> int | None:
 
 def load_settings(path: str | Path) -> Settings:
     config_path = Path(path).expanduser().resolve()
-    settings = Settings(_read_config(config_path), config_path)
+    raw = _read_config(config_path)
+    settings = Settings(raw, config_path)
     settings.validate()
+    from experiments.vision2_hybrid_dense.settings import (
+        apply_vision2_hybrid_settings,
+    )
+
+    apply_vision2_hybrid_settings(settings, raw)
     return settings
 
 

@@ -305,11 +305,40 @@ def train_student(loaded: Any, bundle: DatasetBundle, settings: Any) -> dict[str
     phase_parameters = list(model.core.expert_layers.parameters()) + list(model.core.global_phase.parameters())
     router_parameters = list(model.core.router.parameters())
     special = {id(p) for p in [*phase_parameters, *router_parameters]}
-    base_parameters = [p for p in model.parameters() if p.requires_grad and id(p) not in special]
+    head_parameters = list(model.head.parameters())
+    head_ids = {id(parameter) for parameter in head_parameters}
+    readout_parameters = [
+        parameter
+        for name, parameter in model.core.named_parameters()
+        if parameter.requires_grad
+        and ("readout" in name or "output_adapter" in name)
+        and id(parameter) not in special
+    ]
+    readout_ids = {id(parameter) for parameter in readout_parameters}
+    base_parameters = [
+        parameter
+        for parameter in model.parameters()
+        if parameter.requires_grad
+        and id(parameter) not in special
+        and id(parameter) not in head_ids
+        and id(parameter) not in readout_ids
+    ]
     optimizer = torch.optim.AdamW([
         {"params": base_parameters, "lr": settings.student_learning_rate},
         {"params": router_parameters, "lr": settings.router_learning_rate},
         {"params": phase_parameters, "lr": settings.phase_learning_rate},
+        {
+            "params": readout_parameters,
+            "lr": getattr(
+                settings, "dense_readout_learning_rate", settings.student_learning_rate
+            ),
+        },
+        {
+            "params": head_parameters,
+            "lr": getattr(
+                settings, "dense_head_learning_rate", settings.student_learning_rate
+            ),
+        },
     ], weight_decay=settings.weight_decay)
     ema = EMAHelper(model.core, model.head, settings.ema_decay) if settings.ema_decay > 0.0 else None
     if ema is not None:
@@ -448,6 +477,11 @@ def _train_epoch(
             )
             if kind == "student":
                 balance, importance = model.router_losses()
+                operating = (
+                    model.operating_loss()
+                    if hasattr(model, "operating_loss")
+                    else predictions.new_zeros(())
+                )
                 entropy = model.core.last_routing.get(
                     "normalized_entropy", predictions.new_zeros(())
                 )
@@ -500,6 +534,7 @@ def _train_epoch(
                 dc = predictions.new_zeros(())
                 distill = predictions.new_zeros(())
                 response_loss = predictions.new_zeros(())
+                operating = predictions.new_zeros(())
             loss = (
                 settings.heatmap_loss_weight * heatmap_loss
                 + settings.coordinate_loss_weight * coordinate_loss
@@ -508,6 +543,8 @@ def _train_epoch(
                 + settings.phase_dc_weight * dc
                 + settings.teacher_distill_weight * distill
                 + settings.router_response_consistency_weight * response_loss
+                + getattr(settings, "ccd_operating_point_weight", 0.0)
+                * operating
             )
         if not torch.isfinite(loss):
             raise RuntimeError(f"Non-finite {kind} loss at epoch={epoch} batch={batch_index}")

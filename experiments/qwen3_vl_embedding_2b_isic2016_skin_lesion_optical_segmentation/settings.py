@@ -169,6 +169,15 @@ class Settings:
 
         if self.output_dir is None or self.data_root is None:
             raise ValueError("output_dir and dataset.data_root are required")
+        from experiments.vision2_hybrid_dense.settings import (
+            apply_vision2_hybrid_settings,
+        )
+
+        apply_vision2_hybrid_settings(self, raw)
+        if self.vision2_hybrid_enabled:
+            self.optical_learning_rate = self.student_learning_rate
+            self.recombiner_learning_rate = self.dense_readout_learning_rate
+            self.head_learning_rate = self.dense_head_learning_rate
         self.validate()
 
     @property
@@ -194,12 +203,27 @@ class Settings:
             raise ValueError(
                 f"A checkpoint is required for {self.initialization_mode}"
             )
-        if self.image_size != 224 or self.detector_output_size != 224:
-            raise ValueError("ISIC keeps the validated 224x224 optical interface")
-        if self.expert_layers != 3:
-            raise ValueError("ISIC comparison requires exactly three optical stages")
-        if self.num_experts != 16 or self.top_k != 4:
-            raise ValueError("ISIC comparison requires MoE16 with Top-4 routing")
+        if self.image_size != 224:
+            raise ValueError("ISIC output size must remain 224x224")
+        if self.vision2_hybrid_enabled:
+            if self.initialization_mode != "scratch_end_to_end":
+                raise ValueError(
+                    "Vision2 hybrid ISIC currently starts with joint random "
+                    "task-module initialization"
+                )
+            if self.detector_output_size != 224:
+                raise ValueError("Vision2 hybrid physical detector width must be 224")
+        else:
+            if self.detector_output_size != 224:
+                raise ValueError("Legacy ISIC optical interface is 224x224")
+            if self.expert_layers != 3:
+                raise ValueError(
+                    "Legacy ISIC comparison requires three optical stages"
+                )
+            if self.num_experts != 16 or self.top_k != 4:
+                raise ValueError(
+                    "Legacy ISIC comparison requires MoE16 with Top-4 routing"
+                )
         if self.total_epochs <= 0:
             raise ValueError("At least one training epoch is required")
         if self.head_warmup_epochs < 0 or self.joint_finetune_epochs < 0:

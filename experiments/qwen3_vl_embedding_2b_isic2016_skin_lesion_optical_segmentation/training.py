@@ -16,10 +16,9 @@ from experiments.qwen3_vl_embedding_2b_coco_duts_vision_optical_moe16_pretrain.i
 from experiments.qwen3_vl_embedding_2b_coco_duts_vision_optical_moe16_pretrain.modeling import (
     DUTSSaliencyModel,
     LoadedVisionBackbone,
-    build_duts_model,
-    preprocess_vision,
     trainable_parameter_report,
 )
+from .modeling import build_duts_model, preprocess_vision
 from experiments.qwen3_vl_embedding_2b_coco_duts_vision_optical_moe16_pretrain.objectives import (
     segmentation_loss,
 )
@@ -40,6 +39,7 @@ HISTORY_FIELDS = [
     "epoch",
     "training_phase",
     "learning_rate_optical",
+    "learning_rate_phase",
     "learning_rate_router",
     "learning_rate_recombiner",
     "learning_rate_head",
@@ -51,6 +51,7 @@ HISTORY_FIELDS = [
     "train_boundary_loss",
     "train_router_balance",
     "train_router_importance",
+    "train_ccd_operating",
     "train_mean_iou",
     "train_mean_dice",
     "train_mae",
@@ -198,6 +199,7 @@ def train_isic(
         "head_warmup_epochs": settings.head_warmup_epochs,
         "joint_finetune_epochs": settings.joint_finetune_epochs,
         "optical_learning_rate": settings.optical_learning_rate,
+        "phase_learning_rate": settings.phase_learning_rate,
         "router_learning_rate": settings.router_learning_rate,
         "recombiner_learning_rate": settings.recombiner_learning_rate,
         "head_learning_rate": settings.head_learning_rate,
@@ -516,6 +518,7 @@ def _run_epoch(
         "router_balance": 0.0,
         "router_importance": 0.0,
         "phase_dc": 0.0,
+        "ccd_operating": 0.0,
     }
     samples = 0
     for batch_index, batch in enumerate(loader, start=1):
@@ -549,11 +552,18 @@ def _run_epoch(
                 if not detach_backbone and settings.phase_dc_weight > 0.0
                 else segmentation.new_zeros(())
             )
+            operating = (
+                model.operating_loss()
+                if hasattr(model, "operating_loss")
+                else segmentation.new_zeros(())
+            )
             total = (
                 segmentation
                 + settings.router_balance_weight * balance.float()
                 + settings.router_importance_weight * importance.float()
                 + settings.phase_dc_weight * dc
+                + getattr(settings, "ccd_operating_point_weight", 0.0)
+                * operating
             )
         if not torch.isfinite(total):
             raise RuntimeError(
@@ -570,6 +580,7 @@ def _run_epoch(
             "router_balance": balance,
             "router_importance": importance,
             "phase_dc": dc,
+            "ccd_operating": operating,
         }
         for name in sums:
             sums[name] += float(values[name].detach()) * batch_size
@@ -616,13 +627,18 @@ def _build_optimizer(
         optical = []
         phases = []
         router = []
+        recombiner_from_core = []
         for name, parameter in model.backbone.core.named_parameters():
             if not parameter.requires_grad:
                 continue
             if "raw_phase" in name:
                 phases.append(parameter)
+            elif "router" in name:
+                router.append(parameter)
+            elif "readout" in name or "output_adapter" in name:
+                recombiner_from_core.append(parameter)
             else:
-                (router if name.startswith("router.") else optical).append(parameter)
+                optical.append(parameter)
         if not optical:
             raise RuntimeError(
                 "Optical optimizer group is empty. The inserted optical core "
@@ -632,12 +648,14 @@ def _build_optimizer(
             raise RuntimeError(
                 "Router optimizer group is empty. Check optical trainability."
             )
-        recombiner = [
+        recombiner = recombiner_from_core + [
             parameter
             for parameter in model.backbone.recombiner.parameters()
             if parameter.requires_grad
         ]
-        if not recombiner:
+        if not recombiner and not getattr(
+            settings, "vision2_hybrid_enabled", False
+        ):
             raise RuntimeError(
                 "Recombiner optimizer group is empty. Check module freeze order."
             )
@@ -712,6 +730,7 @@ def _history_row(
         "epoch": epoch,
         "training_phase": phase,
         "learning_rate_optical": _optional_lr(optimizer, "optical"),
+        "learning_rate_phase": _optional_lr(optimizer, "phase"),
         "learning_rate_router": _optional_lr(optimizer, "router"),
         "learning_rate_recombiner": _optional_lr(optimizer, "recombiner"),
         "learning_rate_head": _optional_lr(optimizer, "head"),
@@ -723,6 +742,7 @@ def _history_row(
         "train_boundary_loss": parts["boundary_loss"],
         "train_router_balance": parts["router_balance"],
         "train_router_importance": parts["router_importance"],
+        "train_ccd_operating": parts["ccd_operating"],
         "train_mean_iou": train["mean_iou"],
         "train_mean_dice": train["mean_dice"],
         "train_mae": train["mae"],

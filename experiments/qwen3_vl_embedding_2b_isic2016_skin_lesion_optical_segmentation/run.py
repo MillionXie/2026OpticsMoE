@@ -10,17 +10,12 @@ from experiments.qwen3_vl_embedding_2b_coco_duts_vision_optical_moe16_pretrain.i
     seed_everything,
     write_json,
 )
-from experiments.qwen3_vl_embedding_2b_coco_duts_vision_optical_moe16_pretrain.modeling import (
-    build_duts_model,
-    load_vision_backbone,
-    preprocess_vision,
-)
-
 from .datasets import (
     ISICSegmentationDataset,
     collate_segmentation,
     prepare_isic2016,
 )
+from .modeling import build_duts_model, load_vision_backbone, preprocess_vision
 from .settings import load_settings
 from .training import (
     evaluate_checkpoint,
@@ -120,15 +115,21 @@ def _shape_smoke(loaded: object, bundle: object, settings: object) -> None:
             inputs["image_grid_thw"],
         )
     expected_tokens = int(inputs["image_grid_thw"][0].prod())
+    spatial_channels = (
+        settings.electronic_width
+        if getattr(settings, "vision2_hybrid_enabled", False)
+        else 224
+    )
     expected_spatial = (
         1,
-        224,
+        spatial_channels,
         int(inputs["image_grid_thw"][0, 1]),
         int(inputs["image_grid_thw"][0, 2]),
     )
     if logits.shape != (1, 1, 224, 224):
         raise RuntimeError(f"Unexpected ISIC logits shape: {tuple(logits.shape)}")
-    if ccd.shape != (1, 224, 224):
+    expected_ccd = (1, 224, settings.detector_output_size)
+    if ccd.shape != expected_ccd:
         raise RuntimeError(f"Unexpected ISIC CCD shape: {tuple(ccd.shape)}")
     if spatial.shape != expected_spatial:
         raise RuntimeError(
