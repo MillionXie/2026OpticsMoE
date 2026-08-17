@@ -7,7 +7,7 @@
 服务器只需传输 `478×478` 的 8-bit PNG。实验室用下面的确定性规则恢复完整画布：
 
     python -m experiments.hardware_sdk.workflows.reconstruct_slm --input-dir compact_amplitude --output-dir amplitude_to_play --slm-width 1920 --slm-height 1080 --scale-factor 2
-    python -m experiments.hardware_sdk.workflows.reconstruct_slm --input-dir compact_phase --output-dir phase_to_play --slm-width 1920 --slm-height 1200 --scale-factor 2
+    python -m experiments.hardware_sdk.workflows.reconstruct_slm --input-dir compact_phase --output-dir phase_to_play --slm-width 1920 --slm-height 1200 --scale-factor 2 --center-x 980 --center-y 590
 
 每个逻辑像素严格重复为 `2×2`，再精确居中补零；basename 不变，输出目录中的
 `reconstruction_manifest.csv` 记录源/目标 SHA256 和有效区坐标。

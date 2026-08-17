@@ -69,6 +69,7 @@ def reconstruct_directory(
     *,
     slm_size_wh: tuple[int, int],
     scale_factor: int = 2,
+    center_xy: tuple[int, int] | None = None,
 ) -> dict[str, object]:
     input_dir = input_dir.expanduser().resolve()
     output_dir = output_dir.expanduser().resolve()
@@ -93,8 +94,25 @@ def reconstruct_directory(
         )
         if active.width > width or active.height > height:
             raise RuntimeError(f"Active payload {active.size} exceeds SLM {(width, height)}")
-        left = (width - active.width) // 2
-        top = (height - active.height) // 2
+        if center_xy is None:
+            # Preserve the original placement exactly for backward
+            # compatibility, including odd canvas/payload combinations.
+            left = (width - active.width) // 2
+            top = (height - active.height) // 2
+        else:
+            center_x, center_y = map(int, center_xy)
+            left = center_x - active.width // 2
+            top = center_y - active.height // 2
+        right = left + active.width
+        bottom = top + active.height
+        if left < 0 or top < 0 or right > width or bottom > height:
+            requested = "geometric center" if center_xy is None else center_xy
+            raise ValueError(
+                f"Active payload {active.size} centered at {requested} has "
+                f"bounds {(left, top, right, bottom)}, outside SLM {(width, height)}"
+            )
+        actual_center_x = left + active.width / 2.0
+        actual_center_y = top + active.height / 2.0
         canvas = Image.new("L", (width, height), 0)
         canvas.paste(active, (left, top))
         destination = output_dir / f"{source.stem}.bmp"
@@ -111,7 +129,12 @@ def reconstruct_directory(
                 "active_size_wh": f"{active.width},{active.height}",
                 "slm_size_wh": f"{width},{height}",
                 "active_bounds_xyxy": (
-                    f"{left},{top},{left + active.width},{top + active.height}"
+                    f"{left},{top},{right},{bottom}"
+                ),
+                "active_center_xy": f"{actual_center_x:g},{actual_center_y:g}",
+                "canvas_center_offset_xy": (
+                    f"{actual_center_x - width / 2.0:g},"
+                    f"{actual_center_y - height / 2.0:g}"
                 ),
                 "scale_factor": scale_factor,
             }
@@ -123,13 +146,30 @@ def reconstruct_directory(
         writer.writeheader()
         writer.writerows(rows)
     report = {
-        "schema_version": 1,
+        "schema_version": 2,
         "input_dir": str(input_dir),
         "output_dir": str(output_dir),
         "files": len(rows),
         "slm_size_wh": [width, height],
         "scale_factor": scale_factor,
-        "rule": "logical pixel nearest-repeat then exact centered zero padding",
+        "requested_center_xy": (
+            None if center_xy is None else [int(center_xy[0]), int(center_xy[1])]
+        ),
+        "canvas_geometric_center_xy": [width / 2.0, height / 2.0],
+        "active_center_xy": [actual_center_x, actual_center_y],
+        "center_offset_xy": [
+            actual_center_x - width / 2.0,
+            actual_center_y - height / 2.0,
+        ],
+        "coordinate_convention": (
+            "x increases right, y increases down, origin is the top-left "
+            "canvas boundary"
+        ),
+        "rule": (
+            "logical pixel nearest-repeat then zero-pad at configured center"
+            if center_xy is not None
+            else "logical pixel nearest-repeat then exact geometric-center zero padding"
+        ),
     }
     (output_dir / "reconstruction_report.json").write_text(
         json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8"
@@ -144,12 +184,29 @@ def main() -> int:
     parser.add_argument("--slm-width", type=int, required=True)
     parser.add_argument("--slm-height", type=int, required=True)
     parser.add_argument("--scale-factor", type=int, default=2)
+    parser.add_argument(
+        "--center-x",
+        type=int,
+        help="Active-region center x in full-SLM pixels (default: geometric center)",
+    )
+    parser.add_argument(
+        "--center-y",
+        type=int,
+        help="Active-region center y in full-SLM pixels (default: geometric center)",
+    )
     args = parser.parse_args()
+    if (args.center_x is None) != (args.center_y is None):
+        parser.error("--center-x and --center-y must be provided together")
     report = reconstruct_directory(
         Path(args.input_dir),
         Path(args.output_dir),
         slm_size_wh=(args.slm_width, args.slm_height),
         scale_factor=args.scale_factor,
+        center_xy=(
+            None
+            if args.center_x is None
+            else (args.center_x, args.center_y)
+        ),
     )
     print(json.dumps(report, ensure_ascii=False))
     return 0

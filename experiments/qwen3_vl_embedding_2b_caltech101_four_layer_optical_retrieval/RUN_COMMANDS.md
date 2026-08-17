@@ -26,7 +26,7 @@ CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_caltech101_fo
 
 ```bash
 python -m experiments.hardware_sdk.workflows.reconstruct_slm --input-dir SESSION/01_vision_expert/compact_amplitude --output-dir SESSION/01_vision_expert/amplitude_to_play --slm-width 1920 --slm-height 1080 --scale-factor 2
-python -m experiments.hardware_sdk.workflows.reconstruct_slm --input-dir SESSION/01_vision_expert/compact_phase --output-dir SESSION/01_vision_expert/phase_to_play --slm-width 1920 --slm-height 1200 --scale-factor 2
+python -m experiments.hardware_sdk.workflows.reconstruct_slm --input-dir SESSION/01_vision_expert/compact_phase --output-dir SESSION/01_vision_expert/phase_to_play --slm-width 1920 --slm-height 1200 --scale-factor 2 --center-x 980 --center-y 590
 ```
 
 实验室的 `tucam_windows.yaml` 已配置为直接保存 `478×478 uint8`。采集文件必须按相同

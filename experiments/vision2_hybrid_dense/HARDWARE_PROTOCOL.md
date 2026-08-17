@@ -37,10 +37,12 @@
 ```bash
 python -m experiments.hardware_sdk.workflows.reconstruct_slm --input-dir STAGE_DIR/compact_amplitude --output-dir STAGE_DIR/amplitude_to_play --slm-width 1920 --slm-height 1080 --scale-factor 2
 
-python -m experiments.hardware_sdk.workflows.reconstruct_slm --input-dir STAGE_DIR/compact_phase --output-dir STAGE_DIR/phase_to_play --slm-width 1920 --slm-height 1200 --scale-factor 2
+python -m experiments.hardware_sdk.workflows.reconstruct_slm --input-dir STAGE_DIR/compact_phase --output-dir STAGE_DIR/phase_to_play --slm-width 1920 --slm-height 1200 --scale-factor 2 --center-x 980 --center-y 590
 
 python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments/hardware_sdk/configs/tucam_windows.yaml --input-dir STAGE_DIR/amplitude_to_play --output-dir STAGE_DIR/ccd_captured --clear-output
 ```
+
+`--center-x/--center-y` 是完整 SLM 画布中的有效区中心坐标，原点在左上角，x 向右、y 向下；两项必须同时设置。当前相位 SLM 标定为 `(980,590)`，相对几何中心 `(960,600)` 即向右 20 px、向上 10 px。对于 `956×956` 有效区，最终边界为 `(502,112,1458,1068)`，会写入 `reconstruction_manifest.csv`。振幅 SLM 未传中心参数，因此继续使用几何中心。
 
 相机工作流必须输出目标大小；若相机原 ROI 不是 478，则在实验室端用 area resize 一次变为 478。不要在服务器再次裁剪或重复缩放。
 

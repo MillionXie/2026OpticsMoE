@@ -328,7 +328,10 @@ def export_stage(
                 "scale_factor": 2,
                 "amplitude_slm_size_wh": [1920, 1080],
                 "phase_slm_size_wh": [1920, 1200],
-                "rule": "nearest-repeat each logical pixel then exact center padding",
+                "rule": (
+                    "nearest-repeat each logical pixel then zero-pad at the "
+                    "laboratory-configured SLM center"
+                ),
             },
             "expected_ccd_upload": "478x478 uint8 grayscale PNG; no flip",
             "server_persistence": "no simulation CCD and no per-sample float32 PT cache",

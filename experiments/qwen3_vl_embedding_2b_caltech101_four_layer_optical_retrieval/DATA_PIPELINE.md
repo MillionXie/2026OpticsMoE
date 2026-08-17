@@ -15,7 +15,7 @@ float32 CCD PT 缓存。
 ```text
 服务器 compact_amplitude/phase 478 PNG
     ↓ 仅传紧凑文件
-实验室 nearest 2× 重复 + 精确居中补零
+实验室 nearest 2× 重复 + 按已标定 SLM 中心补零
     ↓
 完整 amplitude 1920×1080 BMP / phase 1920×1200 BMP
     ↓ 光路
@@ -27,8 +27,10 @@ float32 CCD PT 缓存。
 ```
 
 紧凑 SLM 重建是确定性的：一个逻辑像素严格重复为 `2×2` 物理像素，有效区为
-`956×956`，然后零填充到完整 SLM。`reconstruction_manifest.csv` 保存源/目标 SHA256
-及有效区边界，basename 不改变，因此 CCD、amplitude 和主 manifest 可一一对应。
+`956×956`，然后零填充到完整 SLM。振幅默认使用几何中心；相位可通过
+`--center-x/--center-y` 使用标定中心，当前为 `(980,590)`。
+`reconstruction_manifest.csv` 保存源/目标 SHA256、实际中心、相对几何中心偏移及有效区
+边界，basename 不改变，因此 CCD、amplitude 和主 manifest 可一一对应。
 
 ## Session 目录
 
