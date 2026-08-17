@@ -60,9 +60,9 @@ camera:
   require_device_roi: true
   device_roi_xywh: null
 
-  # 示例：硬件 ROI 为 1200×1200，但保存为目标 956×956 的 8-bit PNG。
-  # area 只适合缩小；如果硬件 ROI 本身就是 956×956，也可保持此设置。
-  saved_frame_size_wh: [956, 956]
+  # 直接保存模型最终使用的逻辑 CCD：硬件 ROI -> 478×478 uint8。
+  # 服务器只负责按实验配置翻转，不再保存 956×956 中间图或 float32 PT。
+  saved_frame_size_wh: [478, 478]
   saved_frame_resize_mode: area
   saved_frame_bit_depth: 8
   # TUCam 当前返回 uint16；固定 0..65535 线性映射到 0..255。
@@ -95,14 +95,3 @@ exposure_calibration:
   edge_taper_px: 16
   measurement_window_size_px: 128
   saturation_fraction_warning: 0.001
-
-# 可选背景实验，不属于正式采集；以下路径都在这里设置，命令无需再传目录。
-# capture 生成 background.png；subtract 读取正式采集 PNG 并另存扣背景 PNG。
-optional_background:
-  frames: 10
-  zero_amplitude_bmp: ../artifacts/calibration/masks/amplitude/amplitude_zero.bmp
-  source_capture_dir: ../data/ccd_captured
-  background_dir: ../artifacts/optional_background/current_layer
-  background_filename: background.png
-  corrected_output_dir: ../data/ccd_background_subtracted
-  output_extension: .png

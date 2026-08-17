@@ -1,0 +1,67 @@
+base_config: ../../../qwen3_vl_embedding_2b_caltech101_electronic_retrieval/configs/release/caltech101_target10_electronic_vision2d.yaml
+
+hybrid:
+  initial_electronic_checkpoint: null
+  freeze_electronic: false
+  initial_fusion: 0.05
+
+training:
+  epochs: 60
+  learning_rate: 0.0001
+  adapter_learning_rate: 0.0001
+  readout_learning_rate: 0.00005
+  phase_learning_rate: 0.00002
+  router_learning_rate: 0.00005
+  lambda_router_balance: 0.0
+  lambda_router_importance: 0.0
+  lambda_ccd_operating_point: 0.02
+  phase_focus: {enabled: false, warmup_epochs: 0, interval_epochs: 1}
+
+batching:
+  batch_size: 10
+  pk_skus_per_batch: 5
+  pk_images_per_sku: 2
+
+language_optical:
+  grid_size: 224
+  canvas_size: 518
+  wavelength_nm: 532.0
+  pixel_pitch_um: 16.0
+  distance_m: 0.10
+  input_rms: 0.50
+  ccd_target_mean: 0.25
+  k_space: {enabled: true, theta_max_deg: 0.65}
+  phase:
+    parameterization: sigmoid
+    init: small_normal
+    init_std: 0.02
+    dropout_mode: block_phase_bypass
+    dropout_p: 0.05
+    dropout_block_size: 8
+  normalization:
+    relative_clip: 12.0
+    log_compression: 1.0
+  perturbation:
+    # 8 logical pixels correspond to 16 physical pixels after 2x SLM/CCD scaling.
+    max_shift_pixels: 8
+    phase_shift_pixels: 8
+    ccd_shift_pixels: 8
+    gain_min: 0.5
+    gain_max: 2.0
+    offset_fraction: 0.03
+    read_noise_fraction: 0.01
+
+hardware:
+  phase_mask:
+    # Folded optical path used by the current setup.
+    flip_vertical: true
+    flip_horizontal: false
+  ccd:
+    # Laboratory transport is already the logical 478x478 uint8 target.
+    flip_vertical: true
+    flip_horizontal: true
+    physical_binning_factor: 2
+    target_size: 478
+    transport_size: 478
+
+output_dir: ../../runs/caltech101_four_layer_moe4_joint

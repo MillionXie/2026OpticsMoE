@@ -299,13 +299,17 @@ def load_ccd(
     target = int(getattr(settings, "hardware_ccd_target_size", 478))
     factor = int(getattr(settings, "hardware_ccd_physical_binning_factor", 2))
     physical = target * factor
-    if tuple(value.shape) != (physical, physical):
+    if tuple(value.shape) == (target, target):
+        registration_action = "logical_transport_flip_only"
+    elif tuple(value.shape) == (physical, physical):
+        value = value.reshape(target, factor, target, factor).mean(dim=(1, 3))
+        registration_action = f"flip_then_exact_{factor}x{factor}_block_mean"
+    else:
         raise RuntimeError(
             f"CCD {path} is {tuple(value.shape)}; expected preprocessed uint8 "
-            f"{physical}x{physical}. Crop/resize it with hardware_sdk first."
+            f"{target}x{target} transport or legacy {physical}x{physical}. "
+            "Use the hardware_sdk capture/preprocessing workflow before upload."
         )
-    value = value.reshape(target, factor, target, factor).mean(dim=(1, 3))
-    registration_action = f"flip_then_exact_{factor}x{factor}_block_mean"
 
     value = value.float().clamp_min(0.0)
     if tuple(value.shape) != (target, target):

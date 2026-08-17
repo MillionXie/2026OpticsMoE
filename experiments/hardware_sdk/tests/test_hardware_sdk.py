@@ -135,7 +135,7 @@ def test_shared_factories_preserve_replaceable_vendor_interfaces(tmp_path: Path)
             "exposure_us": 10000,
             "analog_gain": 1.0,
             "discard_frames_after_display": 1,
-            "saved_frame_size_wh": [956, 956],
+            "saved_frame_size_wh": [478, 478],
             "saved_frame_resize_mode": "area",
         },
         tmp_path,
@@ -143,7 +143,7 @@ def test_shared_factories_preserve_replaceable_vendor_interfaces(tmp_path: Path)
     assert isinstance(camera, DvpSubprocessCamera)
     assert camera.exposure_us == pytest.approx(10000.0)
     assert camera.discard_frames_after_display == 1
-    assert camera.saved_frame_size_wh == (956, 956)
+    assert camera.saved_frame_size_wh == (478, 478)
     assert camera.saved_frame_resize_mode == "area"
 
 

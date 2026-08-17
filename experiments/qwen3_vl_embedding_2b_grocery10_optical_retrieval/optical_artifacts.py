@@ -64,6 +64,22 @@ def phase_tensors(core: Any) -> dict[str, torch.Tensor]:
     }
 
 
+def replacement_phase_cores(replacement: Any) -> dict[str, Any]:
+    """Resolve physical cores, including experiment-local nested optical paths."""
+    custom = getattr(replacement, "optical_artifact_cores", None)
+    if callable(custom):
+        cores = dict(custom())
+        if set(cores) != {"vision", "language"}:
+            raise RuntimeError(
+                "optical_artifact_cores() must return vision and language cores"
+            )
+        return cores
+    return {
+        "vision": replacement.vision_surrogate.core,
+        "language": replacement.language_surrogate.core,
+    }
+
+
 def save_phase_snapshot(
     replacement: Any,
     output_dir: Path,
@@ -75,8 +91,8 @@ def save_phase_snapshot(
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     stacks = {
-        "vision": phase_tensors(replacement.vision_surrogate.core),
-        "language": phase_tensors(replacement.language_surrogate.core),
+        name: phase_tensors(core)
+        for name, core in replacement_phase_cores(replacement).items()
     }
     payload = {
         "schema_version": 1,
@@ -113,8 +129,8 @@ def save_phase_preview(replacement: Any, path: Path, *, title: str) -> None:
     import matplotlib.pyplot as plt
 
     stacks = {
-        "Vision": phase_tensors(replacement.vision_surrogate.core),
-        "Language": phase_tensors(replacement.language_surrogate.core),
+        name.title(): phase_tensors(core)
+        for name, core in replacement_phase_cores(replacement).items()
     }
     figure, axes = plt.subplots(2, 2, figsize=(13, 11), constrained_layout=True)
     shown = None
