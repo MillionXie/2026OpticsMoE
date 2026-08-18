@@ -64,9 +64,19 @@
 
 专题级只读验证入口：`FixedFeedbackSFT/commands/01_verify_v2_results.sh`。
 
-性能优先新实验的 CLI 和命令目录约定：
-`FixedFeedbackSFT/commands/02_performance_first_runbook.md`。该模块尚未实现，不能把
-runbook 中的接口描述为已有结果。
+性能优先实验已经实现：
+
+`experiments/d2nn_cifar10_high_performance_optical_backbone`
+
+- `OPTIMIZATION_LOG.md`：A00-A05 的动作、失败、阶段结果和最终结论；
+- `optics.py` / `model.py`：RGB 八层 OEO 骨干、受约束残差和光学消融；
+- `training.py`：validation checkpoint、初始化基线保护和完整测试诊断；
+- `configs/`：A01、A02、A03/A04 预训练迁移、A05 精修配置；
+- `commands/`：服务器准备、测试、训练、迁移与评估命令；
+- `tests/test_core.py`：5 项核心测试。
+
+当前最高准确率为 A05 CIFAR-10 test 61.02%；推荐正式固定反馈研究采用 A03→A04
+预训练链条，A04 CIFAR-10 test 60.71%、normalized optical dependence 94.77%。
 
 ## 固定反馈核心代码位置
 

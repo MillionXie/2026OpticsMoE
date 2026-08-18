@@ -318,7 +318,7 @@ normalized_optical_dependence
 - FA-pretrained；
 - FA-random。
 
-建议额外加入 head-only，区分下游收益来自电子读出还是光学相位更新。
+head-only 只作为内部光学依赖诊断，区分下游收益来自电子读出还是光学相位更新；不进入正式四组主表。
 
 ### 8.2 公平控制
 
@@ -391,7 +391,7 @@ drift 只作为辅助量。
 2. 不同 stage/RGB/residual/readout 的消融表；
 3. optical-off、phase-random、phase-shuffle 对照；
 4. strong source checkpoint 的训练曲线和光学路径热力图；
-5. 下游 NoFT/BP/FA-pretrained/FA-random/head-only 主结果；
+5. 下游 NoFT/BP/FA-pretrained/FA-random 四组主结果；
 6. operator distance -> gradient cosine -> task gap；
 7. 非理想强度与 periodic refresh；
 8. optical/electronic 结构比例、MACs、同步和校准代价表。

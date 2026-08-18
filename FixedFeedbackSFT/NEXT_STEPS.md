@@ -3,6 +3,20 @@
 完整方案见 [RESEARCH_PLAN.md](RESEARCH_PLAN.md)。当前 V1/V2 固定反馈结果保留，
 但暂停新增 FA 训练，直到新 backbone 通过性能和光学依赖两道 gate。
 
+## 2026-08-18 gate 状态
+
+性能优先实验已经实现并完成，目录为
+`experiments/d2nn_cifar10_high_performance_optical_backbone`：
+
+- G1 性能已通过：A05 CIFAR-10 full test 为 61.02%；
+- G2 光学依赖已通过：A05 normalized dependence 为 91.10%；
+- G3 预训练已通过：A03 CIFAR-100 test 为 32.13%，迁移后的 A04 CIFAR-10 test 为 60.71%；
+- A04 optical-off/random-phase/shuffled-phase 为 12.65%/11.99%/13.64%，normalized dependence 为 94.77%。
+
+当前推荐固定 A03 的 CIFAR-100 best checkpoint 作为 source optical operator，并以 A04
+作为 BP 微调端点。A05 的 61.02% 保留为从 CIFAR-10 直接训练得到的性能参考。下一步不再扩展
+方法数量，先复现多 seed，再只运行 NoFT、BP、FA-pretrained、FA-random 四个正式组。
+
 ## P0：锁定已有结果
 
 已有 V2 不重跑，只作为当前 31% baseline 和反馈实现正确性证据：
@@ -91,10 +105,11 @@ weight。建议进入下一阶段的条件：
 只有 P2-P4 完成后再比较：
 
 - NoFT；
-- head-only；
 - BP；
 - FA-pretrained；
 - FA-random。
+
+head-only 只作为内部光学依赖诊断，不进入正式四组主表。
 
 此时再做 phase LR/horizon/trust-region 的 operator drift sweep，以及 noisy/shuffled/
 identity/periodic-refresh connector 消融。
