@@ -72,7 +72,7 @@ PHYSICAL_GPU_INDEX=<空闲物理卡号> bash experiments/d2nn_cifar10_high_perfo
 
 ### A02：低成本定向调参
 
-状态：已确定并准备启动。
+状态：已在 epoch 10 停止，判定无收益。
 
 A01 在 epoch 10 的 train/validation Top-1 为 42.70%/45.22%，曲线仍呈欠拟合。A02 只将最终光学场池化从 8×8 改为 16×16，hidden dim 仍为 512，其他变量全部保持 A01 不变。假设是 8×8 读出过早丢失空间信息。A02 的 phase 参数约 39.3 万，电子头参数也约 40 万，参数量不会变成压倒性的电子主导；主要计算仍是 8 层三通道角谱传播。
 
@@ -86,9 +86,18 @@ PHYSICAL_GPU_INDEX=<空闲物理卡号> bash experiments/d2nn_cifar10_high_perfo
 
 判定：比较同 epoch 验证曲线和各自 best validation；只有最终选中的候选才进入完整测试结论。若 A02 没有稳定提升，不继续扩大电子头。
 
-### A03：CIFAR-100 监督预训练
+实测：A02 epoch 10 的 train/validation Top-1 为 40.47%/42.64%，A01 同期为 42.70%/45.22%，A02 均低 2 个百分点以上。保留 epoch-10 checkpoint 和训练日志后终止进程。结论：更大池化读出没有改善优化或泛化，不采用，也不继续扩大电子头。
 
-将同一光学骨干的分类头改为 100 类，在 CIFAR-100 上训练；随后只替换 10 类分类头，并分别测试 head warm-up 和全骨干微调。该方案直接产生“现成的预训练光学算子”，解决当前没有光学预训练骨干的问题。
+### A03/A04：CIFAR-100 监督预训练与 CIFAR-10 迁移
+
+状态：配置与命令已实现，A03 等待服务器启动。
+
+A03 将 A01 的同一光学骨干分类头改为 100 类，在 CIFAR-100 的固定 45,000/5,000 分层划分上训练。A04 载入 A03 best checkpoint 中的全部 stage（相位、传播 buffer 与残差），丢弃 100 类电子头并新建 10 类头，再以较小 phase LR 做 CIFAR-10 全骨干微调。该方案直接产生“现成的预训练光学算子”，解决当前没有光学预训练骨干的问题。
+
+- A03 配置：`configs/a03_cifar100_pretrain.yaml`
+- A04 配置：`configs/a04_cifar100_to_cifar10.yaml`
+- A03 启动：`commands/07_pretrain_a03_cifar100.sh`
+- A04 启动：`commands/08_finetune_a04_cifar10.sh`（必须等待 A03 完成）
 
 ### A04：教师蒸馏（仅在 A03 不足时）
 
