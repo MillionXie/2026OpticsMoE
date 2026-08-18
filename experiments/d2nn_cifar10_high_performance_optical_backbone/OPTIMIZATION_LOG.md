@@ -96,7 +96,7 @@ PHYSICAL_GPU_INDEX=<空闲物理卡号> bash experiments/d2nn_cifar10_high_perfo
 
 ### A03/A04：CIFAR-100 监督预训练与 CIFAR-10 迁移
 
-状态：A03 正在服务器 GPU 2 训练；A04 等待 A03 最终 best checkpoint。
+状态：A03 已完成；A04 正在服务器 GPU 2 训练。
 
 A03 将 A01 的同一光学骨干分类头改为 100 类，在 CIFAR-100 的固定 45,000/5,000 分层划分上训练。A04 载入 A03 best checkpoint 中的全部 stage（相位、传播 buffer 与残差），丢弃 100 类电子头并新建 10 类头，再以较小 phase LR 做 CIFAR-10 全骨干微调。该方案直接产生“现成的预训练光学算子”，解决当前没有光学预训练骨干的问题。
 
@@ -105,13 +105,15 @@ A03 将 A01 的同一光学骨干分类头改为 100 类，在 CIFAR-100 的固�
 - A03 启动：`commands/07_pretrain_a03_cifar100.sh`
 - A04 启动：`commands/08_finetune_a04_cifar10.sh`（必须等待 A03 完成）
 
+A03 实测：best validation 为 30.80%（epoch 78），完整 CIFAR-100 测试 normal/optical-off/random-phase/shuffled-phase Top-1 为 32.13%/4.76%/3.26%/1.22%，归一化光学依赖为 87.92%。结论：得到一个具有实质 100 类辨别能力、且强依赖学习相位的光学预训练骨干。A04 已在 GPU 2 启动，PID 3864506；随机初始化的新 10 类头使 epoch-0 validation 为 10.38%，该基线已按修正后的协议登记。
+
 ### A06：教师蒸馏（仅在预训练迁移不足时）
 
 使用固定的高性能电子教师提供软标签或中间表征，但学生推理仍只能使用已定义的光学骨干和紧凑读出。必须同时报告无蒸馏学生和光路破坏消融，避免把教师性能误记为光学能力。
 
 ### A05：A01 低学习率连续精修
 
-状态：首次启动后发现初始化基线保护问题，已停止并修正，等待强制重跑。
+状态：修正后已强制重跑；截至 epoch 14 尚未超过 epoch-0 基线。
 
 A01 已接近收敛且仅差 0.07 个百分点达到测试门槛。A05 从 A01 epoch-76 best checkpoint 完整加载光学 stage 和电子头，不改变任何架构；phase/electronic LR 均降至 5e-4，residual LR 为 2e-4，继续 30 epoch cosine 精修。若仍不能稳定越过 60%，则不继续堆叠相同训练，而等待 A03/A04 的预训练迁移结果。
 
