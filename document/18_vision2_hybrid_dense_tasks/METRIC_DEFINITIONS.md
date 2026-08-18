@@ -48,3 +48,27 @@
 这里的 torso scale 是两条 shoulder-to-opposite-hip 对角距离的均值；head scale 是 `2 × distance(neck, head_top)`。
 
 低 router entropy 只说明每个样本的路由概率尖锐，不能单独证明所有样本集中到同一个 expert。判断全局负载是否塌缩还需要 expert selection frequency。
+
+## Caltech101-10 图像检索
+
+测试流程不是 10 类分类 head，而是 prototype retrieval：每类 3 张独立 gallery 图先通过同一个网络得到 64-D L2-normalized embedding，再取均值得到一个 class prototype；200 张 test query 分别与 10 个 prototype 计算相似度并排序。
+
+| 字段 | 含义 | 方向 |
+|---|---|---:|
+| `test_top1` | 正确类别 prototype 排名第 1 的 query 比例 | ↑ |
+| `test_top3` | 正确类别 prototype 位于前 3 的 query 比例 | ↑ |
+| `test_mrr` | 正确类别排名倒数 `1/rank` 的 query 均值 | ↑ |
+| `ema_test_*` | 使用参数 EMA checkpoint 计算的对应指标 | ↑ |
+| `train_top1/top3/mrr` | 每个训练 batch 内随机抽 support 建 prototype、其余样本作 query 的 episodic 指标 | 训练诊断 |
+| `total_loss` | supervised contrastive、gallery/prototype CE 与加权 CCD operating-point loss 的和 | ↓ |
+| `phase_grad_rms` | phase 参数在反传中收到的 RMS 梯度 | 诊断量 |
+| `phase_delta_run_rms_rad` | phase 相对 run 初始化值的 RMS 位移（rad） | 诊断量 |
+
+术语关系：
+
+- `support`：只在训练 episode 内临时抽出的同类参考样本，用于构造 batch prototype；
+- `gallery`：评估时固定的参考库，本次为 10 类 × 3 张；
+- `query`：待检索样本，本次 test 为 10 类 × 20 张；
+- 正确的 gallery 类别排名越靠前，Top-k 和 MRR 越高。
+
+正式 checkpoint 为 `total_loss` 最小的 epoch 54，raw Top-1 `0.88500`，同 epoch EMA Top-1 `0.89000`。虽然 `test_*` 有完整逐轮记录，但它们没有参与该 checkpoint 选择；观察到的 raw Top-1 最大值 `0.89000` 只能作为 monitored-test 诊断。另需同时报告 `phase_learning_rate=0` 和 `phase_delta_run_rms_rad=0`，否则“光学 phase 可训练”的表述会与证据不符。

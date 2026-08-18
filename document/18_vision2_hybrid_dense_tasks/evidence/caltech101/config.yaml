@@ -1,0 +1,161 @@
+dataset:
+  dataset_root: /DATA/DATA1/guest3/2026OpticsMoE/data/Caltech101
+  download: true
+  download_url: https://data.caltech.edu/records/mzrjq-6wc02/files/caltech-101.zip?download=1
+  selected_skus:
+  - airplanes
+  - Motorbikes
+  - Faces
+  - Leopards
+  - accordion
+  - grand_piano
+  - scorpion
+  - sunflower
+  - watch
+  - yin_yang
+  merge_official_validation_into_train: false
+  train_limit_per_sku: null
+  test_limit_per_sku: 20
+  gallery_images_per_sku: 3
+  use_all_categories: false
+qwen:
+  model_id: Qwen/Qwen3-VL-Embedding-2B
+  cache_dir: null
+  local_files_only: false
+  instruction: Represent this image for image-to-image object-category retrieval.
+  processor_min_pixels: 50176
+  processor_max_pixels: 50176
+  dtype: bfloat16
+  attn_implementation: sdpa
+  device: cuda
+  resolved_architecture:
+    vision_depth: null
+    vision_hidden_size: null
+    text_depth: null
+    text_hidden_size: null
+    deepstack_visual_indexes: []
+retrieval:
+  image_size: 224
+  embedding_dim: 64
+  gallery_aggregation: mean_prototype
+batching:
+  teacher_batch_size: 4
+  batch_size: 10
+  pk_skus_per_batch: 5
+  pk_images_per_sku: 2
+  inference_batch_size: 4
+  num_workers: 4
+  optimizer_steps_per_epoch: null
+training:
+  epochs: 60
+  learning_rate: 0.0001
+  adapter_learning_rate: 0.0001
+  readout_learning_rate: 5.0e-05
+  weight_decay: 0.01
+  lambda_kd: 0.0
+  lambda_relational_kd: 0.0
+  lambda_ret: 1.0
+  lambda_gallery: 1.0
+  lambda_teacher_gallery: 0.0
+  lambda_router_balance: 0.0
+  lambda_router_importance: 0.0
+  lambda_router_response_consistency: 0.0
+  phase_dc:
+    enabled: false
+    weight: 0.0
+    start_epoch: 1
+  lambda_phase_dc: 0.0
+  phase_dc_start_epoch: 1
+  temperature: 0.07
+  gallery_temperature: 0.15
+  gallery_prototype_stop_gradient: true
+  router_learning_rate: 5.0e-05
+  phase_learning_rate: 0.0
+  gradient_clip_norm: 1.0
+  phase_focus:
+    enabled: false
+    warmup_epochs: 0
+    interval_epochs: 1
+  phase_diagnostics:
+    gradient_measure_interval_batches: 20
+    motion_warning_epoch: 5
+    motion_warning_threshold_rad: 0.01
+    preview_interval_epochs: 10
+  ema_decay: 0.995
+  resume_optimizer_state: false
+  random_seed: 42
+  amp_enabled: true
+  evaluate_test_each_epoch: true
+  log_interval_batches: 5
+  teacher_used: false
+  episodic_prototype_loss: true
+  learning_rate_schedule: cosine
+  learning_rate_warmup_ratio: 0.05
+augmentation:
+  enabled: true
+  crop_scale_min: 0.8
+  brightness_jitter: 0.15
+  contrast_jitter: 0.15
+  rotation_degrees: 10.0
+visualization_sample_count: 8
+output_dir: /DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/runs/caltech101_four_layer_moe4_joint
+student_initialization:
+  student_checkpoint: null
+  all101_pretraining: false
+  base_qwen_pretrained: true
+  base_qwen_frozen: true
+  teacher_embedding_supervision: false
+electronic:
+  type: depthwise_token_mixer_residual_mlp
+  optical_enabled: false
+  moe_enabled: false
+  width: 192
+  layers: 2
+  attention_enabled: false
+  token_mixing_enabled: true
+  token_mixer:
+    vision_type: depthwise_conv2d
+    language_type: depthwise_conv1d
+    vision_kernel_size: 3
+    language_kernel_size: 5
+    language_padding: causal_left
+    vision_padding: symmetric
+  deepstack_enabled: false
+  deepstack_auxiliary_count: 0
+  expansion: 2.0
+  dropout: 0.1
+  initial_residual_weight: 0.1
+  pooling: mean_max
+  embedding_head: LayerNorm(384) -> Linear(384,64) -> L2Normalize
+hybrid:
+  type: vision2_language2_moe4_joint_dual_fusion
+  initial_electronic_checkpoint: null
+  freeze_electronic: false
+  initial_fusion:
+    block1: 0.05
+    block2: 0.05
+  router_enabled: true
+  router_loss_enabled: false
+language_optical:
+  layout: MoE4_2x2_topk2
+  expert_size: 224
+  active_size: 478
+  canvas_size: 518
+  wavelength_nm: 532.0
+  pixel_pitch_um: 16.0
+  distance_m: 0.1
+  normalization:
+    type: frame_mean_then_log_then_pool_row_layernorm
+    background_subtraction: false
+    relative_clip: 12.0
+  ccd_operating_point_loss_weight: 0.02
+hardware:
+  phase_mask:
+    flip_vertical: true
+    flip_horizontal: false
+  ccd:
+    flip_vertical: true
+    flip_horizontal: true
+    physical_binning_factor: 2
+    target_size: 478
+    transport_size: 478

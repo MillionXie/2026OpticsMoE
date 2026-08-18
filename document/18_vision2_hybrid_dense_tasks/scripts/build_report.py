@@ -1,4 +1,4 @@
-"""Freeze summaries and draw compact Nature-style figures for three dense tasks.
+"""Freeze summaries and draw compact Nature-style figures for four hybrid tasks.
 
 The script reads only the evidence copied into this document directory.  It
 does not read checkpoints or live run directories, so a later rerun cannot
@@ -61,6 +61,16 @@ SOURCE_PATHS = {
     "lsp/student_model.json": "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/runs/lsp_pose_vision2_hybrid/metrics/student_model.json",
     "lsp/dataset.json": "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/runs/lsp_pose_vision2_hybrid/dataset.json",
     "lsp/resolved_config.yaml": "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/runs/lsp_pose_vision2_hybrid/resolved_config.yaml",
+    "caltech101/train_log.csv": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/runs/caltech101_four_layer_moe4_joint/train_log.csv",
+    "caltech101/config.yaml": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/runs/caltech101_four_layer_moe4_joint/config.yaml",
+    "caltech101/dataset.json": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/runs/caltech101_four_layer_moe4_joint/dataset.json",
+    "caltech101/model.json": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/runs/caltech101_four_layer_moe4_joint/model.json",
+    "caltech101/environment.json": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/runs/caltech101_four_layer_moe4_joint/environment.json",
+    "caltech101/metrics_training_latest.json": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/runs/caltech101_four_layer_moe4_joint/metrics/training_latest.json",
+    "caltech101/metrics_best_train_loss.json": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/runs/caltech101_four_layer_moe4_joint/metrics/best_train_loss.json",
+    "caltech101/metrics_best_observed_test.json": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/runs/caltech101_four_layer_moe4_joint/metrics/best_observed_test.json",
+    "caltech101/metrics_ema_best_observed_test.json": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/runs/caltech101_four_layer_moe4_joint/metrics/ema_best_observed_test.json",
+    "caltech101/metrics_phase_training_latest.json": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/runs/caltech101_four_layer_moe4_joint/metrics/phase_training_latest.json",
 }
 
 
@@ -119,27 +129,50 @@ def selected_rows() -> dict[str, Any]:
     salicon = load_csv("salicon/student_history.csv")
     isic = load_csv("isic2016/training_history.csv")
     lsp = load_csv("lsp/student_training_history.csv")
+    caltech = load_csv("caltech101/train_log.csv")
     validate_history("SALICON", salicon, 60)
     validate_history("ISIC 2016", isic, 100)
     validate_history("LSP", lsp, 150)
+    validate_history("Caltech101", caltech, 60)
 
     salicon_selected = salicon.loc[salicon["validation_cc"].idxmax()]
     isic_selected = isic.loc[isic["train_loss"].idxmin()]
     lsp_selected = lsp.loc[lsp["train_loss"].idxmin()]
     lsp_observed = lsp.loc[lsp["test_pck_at_0.2_torso"].idxmax()]
+    caltech_selected = caltech.loc[caltech["total_loss"].idxmin()]
+    caltech_observed = caltech.loc[caltech["test_top1"].idxmax()]
+    caltech_best_train = load_json("caltech101/metrics_best_train_loss.json")
+    caltech_dataset = load_json("caltech101/dataset.json")
     isic_test = load_json("isic2016/test_metrics.json")
     if int(isic_test["checkpoint_epoch"]) != int(isic_selected["epoch"]):
         raise RuntimeError("ISIC test result does not match min-train-loss checkpoint")
     if bool(isic_test["test_used_for_selection"]):
         raise RuntimeError("ISIC test set unexpectedly participated in selection")
+    if int(caltech_best_train["epoch"]) != int(caltech_selected["epoch"]):
+        raise RuntimeError("Caltech101 best-train-loss record does not match history")
+    if not bool(caltech_best_train["test_was_not_used_for_selection"]):
+        raise RuntimeError("Caltech101 test unexpectedly participated in formal selection")
+    if not np.allclose(caltech["phase_learning_rate"].to_numpy(dtype=float), 0.0):
+        raise RuntimeError("Caltech101 frozen evidence no longer has fixed phase masks")
+    if not np.allclose(caltech["phase_delta_run_rms_rad"].to_numpy(dtype=float), 0.0):
+        raise RuntimeError("Caltech101 phase masks moved despite the fixed-phase record")
 
     return {
-        "frames": {"salicon": salicon, "isic2016": isic, "lsp": lsp},
+        "frames": {
+            "salicon": salicon,
+            "isic2016": isic,
+            "lsp": lsp,
+            "caltech101": caltech,
+        },
         "salicon_selected": salicon_selected,
         "isic_selected": isic_selected,
         "isic_test": isic_test,
         "lsp_selected": lsp_selected,
         "lsp_observed": lsp_observed,
+        "caltech_selected": caltech_selected,
+        "caltech_observed": caltech_observed,
+        "caltech_best_train": caltech_best_train,
+        "caltech_dataset": caltech_dataset,
     }
 
 
@@ -157,6 +190,9 @@ def write_summaries(rows: dict[str, Any]) -> None:
     isic_test = rows["isic_test"]
     lsp = rows["lsp_selected"]
     lsp_peak = rows["lsp_observed"]
+    caltech = rows["caltech_selected"]
+    caltech_peak = rows["caltech_observed"]
+    caltech_dataset = rows["caltech_dataset"]
     summary = {
         "generated_from_frozen_evidence": True,
         "common_architecture": {
@@ -172,6 +208,26 @@ def write_summaries(rows: dict[str, Any]) -> None:
             "joint_training_from_epoch_1": True,
             "teacher_or_kd_used": False,
             "attention_used": False,
+        },
+        "caltech101_architecture": {
+            "name": "Vision2 + Language2 four-stage hybrid retrieval",
+            "evaluation_mode": "simulation only",
+            "qwen_backbone": "pretrained and frozen",
+            "deepstack_enabled": False,
+            "latent_width": 192,
+            "vision_electronic_blocks": "2x 3x3 depthwise Conv2D residual MLP",
+            "language_electronic_blocks": "2x causal depthwise Conv1D residual MLP",
+            "optical_stages": [
+                "vision MoE4 expert",
+                "vision global",
+                "language MoE4 expert",
+                "language global",
+            ],
+            "fusion": "electronic + sigmoid(gate) * optical_delta at each stage",
+            "teacher_or_kd_used": False,
+            "attention_used": False,
+            "phase_masks_optimized_in_this_run": False,
+            "phase_learning_rate": 0.0,
         },
         "tasks": {
             "salicon": {
@@ -232,6 +288,54 @@ def write_summaries(rows: dict[str, Any]) -> None:
                     "pckh_at_0.5_head": float(lsp_peak["test_pckh_at_0.5_head"]),
                 },
             },
+            "caltech101": {
+                "epochs": 60,
+                "selection": "minimum training total loss; test monitored every epoch",
+                "selected_epoch": int(caltech["epoch"]),
+                "split": "fixed class-balanced test query set",
+                "samples": int(caltech_dataset["counts"]["test"]),
+                "gallery_samples": int(caltech_dataset["counts"]["gallery"]),
+                "train_samples": int(caltech_dataset["counts"]["train"]),
+                "classes": len(caltech_dataset["selected_categories"]),
+                "simulation_only": True,
+                "phase_masks_optimized": False,
+                "phase_learning_rate": float(caltech["phase_learning_rate"]),
+                "selected_checkpoint_metrics": {
+                    "top1": float(caltech["test_top1"]),
+                    "top3": float(caltech["test_top3"]),
+                    "mrr": float(caltech["test_mrr"]),
+                    "ema_top1": float(caltech["ema_test_top1"]),
+                    "ema_top3": float(caltech["ema_test_top3"]),
+                    "ema_mrr": float(caltech["ema_test_mrr"]),
+                },
+                "observed_test_peak_not_for_formal_selection": {
+                    "epoch": int(caltech_peak["epoch"]),
+                    "top1": float(caltech_peak["test_top1"]),
+                    "selection_biased": True,
+                },
+                "selected_checkpoint_diagnostics": {
+                    "phase_grad_rms": float(caltech["phase_grad_rms"]),
+                    "phase_delta_run_rms_rad": float(
+                        caltech["phase_delta_run_rms_rad"]
+                    ),
+                    "vision_router_entropy": float(caltech["vision_router_entropy"]),
+                    "language_router_entropy": float(
+                        caltech["language_router_entropy"]
+                    ),
+                    "vision_router_max_importance": float(
+                        caltech["vision_router_max_importance"]
+                    ),
+                    "language_router_max_importance": float(
+                        caltech["language_router_max_importance"]
+                    ),
+                    "vision_router_unselected_experts": int(
+                        caltech["vision_router_unselected_experts"]
+                    ),
+                    "language_router_unselected_experts": int(
+                        caltech["language_router_unselected_experts"]
+                    ),
+                },
+            },
         },
     }
     (EVIDENCE / "summary.json").write_text(
@@ -274,6 +378,18 @@ def write_summaries(rows: dict[str, Any]) -> None:
             "secondary_metric": "PCKh@0.5 head",
             "secondary_value": float(lsp["test_pckh_at_0.5_head"]),
             "status": "single run; selected without test metric",
+        },
+        {
+            "task": "Caltech101-10",
+            "selected_epoch": int(caltech["epoch"]),
+            "selection_rule": "min training total loss",
+            "evaluation_split": "fixed test queries monitored each epoch",
+            "evaluation_samples": int(caltech_dataset["counts"]["test"]),
+            "primary_metric": "Top-1",
+            "primary_value": float(caltech["test_top1"]),
+            "secondary_metric": "EMA Top-1",
+            "secondary_value": float(caltech["ema_test_top1"]),
+            "status": "simulation only; phase LR 0; single run",
         },
     ]
     with (EVIDENCE / "experiment_summary.csv").open(
@@ -472,6 +588,67 @@ def lsp_figure(rows: dict[str, Any]) -> None:
     export(figure, "lsp_vision2_hybrid")
 
 
+def caltech101_figure(rows: dict[str, Any]) -> None:
+    frame = rows["frames"]["caltech101"]
+    selected = rows["caltech_selected"]
+    peak = rows["caltech_observed"]
+    figure, axes = plt.subplots(1, 2, figsize=FIGSIZE)
+
+    axis = axes[0]
+    axis.plot(frame["epoch"], frame["test_top1"], label="Raw Top-1", color=COLORS["blue"])
+    axis.plot(
+        frame["epoch"], frame["ema_test_top1"],
+        label="EMA Top-1", color=COLORS["teal"],
+    )
+    axis.axvline(
+        int(selected["epoch"]), color=COLORS["grey"], linewidth=0.8,
+        linestyle="--", label="Selected",
+    )
+    axis.scatter(
+        [peak["epoch"]], [peak["test_top1"]], marker="x", s=24,
+        linewidth=1.0, color=COLORS["red"], zorder=5,
+    )
+    axis.set(
+        xlabel="Epoch",
+        ylabel="Monitored-test Top-1",
+        title="Caltech101-10 retrieval trajectory",
+    )
+    axis.set_ylim(0.40, 0.93)
+    axis.legend(loc="lower right", ncol=3, columnspacing=0.8, handlelength=1.4)
+    finish_axes(axis)
+    panel_label(axis, "a")
+
+    axis = axes[1]
+    labels = ["Top-1", "Top-3", "MRR"]
+    raw = np.array([selected["test_top1"], selected["test_top3"], selected["test_mrr"]])
+    ema = np.array(
+        [selected["ema_test_top1"], selected["ema_test_top3"], selected["ema_test_mrr"]]
+    )
+    x = np.arange(len(labels))
+    width = 0.32
+    axis.bar(x - width / 2, raw, width, label="Raw", color=COLORS["blue"])
+    axis.bar(x + width / 2, ema, width, label="EMA", color=COLORS["teal"])
+    for positions, values in [(x - width / 2, raw), (x + width / 2, ema)]:
+        for position, value in zip(positions, values):
+            axis.text(position, value + 0.004, f"{value:.3f}", ha="center", va="bottom")
+    axis.set_xticks(x, labels)
+    axis.set(
+        ylabel="Selected-checkpoint score",
+        title=f"Epoch {int(selected['epoch'])} retrieval metrics",
+    )
+    axis.set_ylim(0.84, 1.005)
+    axis.legend(loc="upper left", ncol=2, columnspacing=1.0, handlelength=1.5)
+    finish_axes(axis)
+    panel_label(axis, "b")
+    add_note(
+        figure,
+        "Simulation only; 10 classes, 200 test queries and 30 gallery images; "
+        f"epoch {int(selected['epoch'])} selected by training loss; phase LR=0 (fixed masks); single run.",
+    )
+    figure.subplots_adjust(left=0.075, right=0.985, top=0.87, bottom=0.29, wspace=0.30)
+    export(figure, "caltech101_four_layer_hybrid_simulation")
+
+
 def main() -> None:
     configure_plotting()
     rows = selected_rows()
@@ -480,8 +657,9 @@ def main() -> None:
     salicon_figure(rows)
     isic_figure(rows)
     lsp_figure(rows)
+    caltech101_figure(rows)
     print(
-        f"Wrote summaries and 3 figure sets at {FIGURE_WIDTH_MM:.0f} x "
+        f"Wrote summaries and 4 figure sets at {FIGURE_WIDTH_MM:.0f} x "
         f"{FIGURE_HEIGHT_MM:.0f} mm with Arial 7 pt."
     )
 

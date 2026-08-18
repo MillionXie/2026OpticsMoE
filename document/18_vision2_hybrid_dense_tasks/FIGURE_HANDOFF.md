@@ -34,11 +34,21 @@
 - 红色 ×：epoch 149 的 monitored-test 峰值，只是诊断标记；
 - 图注必须披露 test 每 epoch 被监控，不能把峰值描述为 validation-selected checkpoint。
 
+### `caltech101_four_layer_hybrid_simulation`
+
+- panel a：`train_log.csv` 的 `test_top1` 和 `ema_test_top1`；
+- panel b：training loss 选中的 epoch 54 上 raw/EMA 的 Top-1、Top-3 和 MRR；
+- 灰色虚线：按 `total_loss` 最小选中的 epoch 54；
+- 红色 ×：raw Top-1 逐轮观察峰值首次出现的 epoch 42，只是诊断标记；
+- 图注必须写明 `simulation only`、10 类、200 test queries、30 gallery images、单次 run；
+- 图注或正文必须披露 `phase LR=0`，不得把该结果描述成 phase mask 已完成联合优化；
+- 不得加入 `hardware_sessions/` 中的 CCD 图片或硬件微调数字。本次交接范围明确不含实际光路。
+
 ## 推荐后续补图
 
 优先级从高到低：
 
-1. 三个任务各 3–5 seeds 后，将主指标改成 mean ± s.d.，同时保留代表性训练轨迹；
+1. 四个任务各 3–5 seeds 后，将主指标改成 mean ± s.d.，同时保留代表性训练轨迹；
 2. 与参数量匹配的纯电子 Vision2 baseline；
 3. 仿真与硬件逐层替换后的性能下降曲线；
 4. 每级光学融合 gate、CCD 强度分布和 phase mask 的联合图；
@@ -52,6 +62,8 @@
 - 不要给单次运行添加虚构标准差；
 - 不要把 ISIC 训练 IoU 当成 test IoU；
 - 不要把 LSP epoch 149 观察峰值写成独立验证集选模结果；
+- 不要把 Caltech101 epoch 42 的 test 观察峰值写成独立验证集选模结果；
+- 不要把 Caltech101 的固定 phase mask 仿真写成“mask 联合学习”，也不要混入真实 CCD 数据；
 - 不要读取 live `runs/` 后直接覆盖 evidence；新实验应新建带日期/variant 的快照目录并更新 manifest；
 - 不要使用 JPEG 保存线图或 mask，避免压缩伪影。
 

@@ -1,0 +1,66 @@
+{
+  "dataset": "Caltech101",
+  "dataset_source": "https://data.caltech.edu/records/mzrjq-6wc02",
+  "dataset_root": "/DATA/DATA1/guest3/2026OpticsMoE/data/Caltech101",
+  "selected_categories": [
+    "airplanes",
+    "Motorbikes",
+    "Faces",
+    "Leopards",
+    "accordion",
+    "grand_piano",
+    "scorpion",
+    "sunflower",
+    "watch",
+    "yin_yang"
+  ],
+  "excluded_categories": [
+    "BACKGROUND_Google"
+  ],
+  "split_policy": "seeded per-category shuffle; disjoint gallery, train, then test; class imbalance capped by configured per-category limits",
+  "seed": 42,
+  "manifest_sha256": "c8accd596cd418bbef65834ac75b11cd35ce7cdd4ebe418aa51d942e00701d11",
+  "counts": {
+    "train": 2625,
+    "test": 200,
+    "gallery": 30
+  },
+  "per_category_counts": {
+    "train": {
+      "Faces": 412,
+      "Leopards": 177,
+      "Motorbikes": 775,
+      "accordion": 32,
+      "airplanes": 777,
+      "grand_piano": 76,
+      "scorpion": 61,
+      "sunflower": 62,
+      "watch": 216,
+      "yin_yang": 37
+    },
+    "test": {
+      "Faces": 20,
+      "Leopards": 20,
+      "Motorbikes": 20,
+      "accordion": 20,
+      "airplanes": 20,
+      "grand_piano": 20,
+      "scorpion": 20,
+      "sunflower": 20,
+      "watch": 20,
+      "yin_yang": 20
+    },
+    "gallery": {
+      "Faces": 3,
+      "Leopards": 3,
+      "Motorbikes": 3,
+      "accordion": 3,
+      "airplanes": 3,
+      "grand_piano": 3,
+      "scorpion": 3,
+      "sunflower": 3,
+      "watch": 3,
+      "yin_yang": 3
+    }
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "epoch": 60,
+  "phase_focus_epoch": false,
+  "phase_dc": {
+    "phase_dc_current_loss": 0.0,
+    "phase_dc_rho_mean": 0.0,
+    "phase_dc_rho_max": 0.0,
+    "phase_dc_plane_count": 0
+  },
+  "phase_gradients": {
+    "vision_expert_phase_grad_rms": 1.1352925895380395e-05,
+    "vision_expert_phase_grad_max": 0.0004831270385433787,
+    "vision_expert_phase_grad_missing_planes": 0.0,
+    "vision_global_phase_grad_rms": 7.872971337974377e-06,
+    "vision_global_phase_grad_max": 0.00038144241547602827,
+    "vision_global_phase_grad_missing_planes": 0.0,
+    "language_expert_phase_grad_rms": 1.3101758230707868e-06,
+    "language_expert_phase_grad_max": 3.75489976818244e-05,
+    "language_expert_phase_grad_missing_planes": 0.0,
+    "language_global_phase_grad_rms": 1.0399680055529968e-06,
+    "language_global_phase_grad_max": 3.528934733562242e-05,
+    "language_global_phase_grad_missing_planes": 0.0,
+    "phase_grad_rms": 6.913016881477623e-06,
+    "phase_grad_max": 0.0004961913759221456,
+    "phase_grad_missing_planes": 0.0
+  },
+  "phase_motion": {
+    "vision_expert_phase_std_rad": 0.031409479677677155,
+    "vision_expert_phase_delta_run_rms_rad": 0.0,
+    "vision_expert_phase_delta_epoch_rms_rad": 0.0,
+    "vision_expert_phase_moved_fraction_gt_0p01": 0.0,
+    "vision_global_phase_std_rad": 0.03135201707482338,
+    "vision_global_phase_delta_run_rms_rad": 0.0,
+    "vision_global_phase_delta_epoch_rms_rad": 0.0,
+    "vision_global_phase_moved_fraction_gt_0p01": 0.0,
+    "language_expert_phase_std_rad": 0.03138719126582146,
+    "language_expert_phase_delta_run_rms_rad": 0.0,
+    "language_expert_phase_delta_epoch_rms_rad": 0.0,
+    "language_expert_phase_moved_fraction_gt_0p01": 0.0,
+    "language_global_phase_std_rad": 0.031321294605731964,
+    "language_global_phase_delta_run_rms_rad": 0.0,
+    "language_global_phase_delta_epoch_rms_rad": 0.0,
+    "language_global_phase_moved_fraction_gt_0p01": 0.0,
+    "phase_physical_std_rad": 0.03136559575796127,
+    "phase_delta_from_pi_rms_rad": 0.03136562556028366,
+    "phase_delta_run_rms_rad": 0.0,
+    "phase_delta_epoch_rms_rad": 0.0,
+    "phase_raw_abs_mean": 0.01592807099223137,
+    "phase_sigmoid_saturation_fraction_abs_raw_gt_4": 0.0
+  },
+  "router_coverage": {
+    "vision_router_min_selection_count": 540,
+    "vision_router_max_selection_count": 2630,
+    "vision_router_unselected_experts": 0,
+    "language_router_min_selection_count": 52,
+    "language_router_max_selection_count": 2630,
+    "language_router_unselected_experts": 0
+  },
+  "trainable_tensors_without_gradient": 0
+}

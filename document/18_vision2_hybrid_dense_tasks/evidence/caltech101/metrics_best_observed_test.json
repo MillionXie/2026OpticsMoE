@@ -1,0 +1,7 @@
+{
+  "epoch": 42,
+  "test_top1": 0.8899999856948853,
+  "selection_criterion": "maximum repeatedly observed test Top-1",
+  "selection_biased": true,
+  "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/runs/caltech101_four_layer_moe4_joint/best_observed_test_checkpoint.pt"
+}

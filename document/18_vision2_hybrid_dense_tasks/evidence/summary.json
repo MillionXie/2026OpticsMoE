@@ -17,6 +17,26 @@
     "teacher_or_kd_used": false,
     "attention_used": false
   },
+  "caltech101_architecture": {
+    "name": "Vision2 + Language2 four-stage hybrid retrieval",
+    "evaluation_mode": "simulation only",
+    "qwen_backbone": "pretrained and frozen",
+    "deepstack_enabled": false,
+    "latent_width": 192,
+    "vision_electronic_blocks": "2x 3x3 depthwise Conv2D residual MLP",
+    "language_electronic_blocks": "2x causal depthwise Conv1D residual MLP",
+    "optical_stages": [
+      "vision MoE4 expert",
+      "vision global",
+      "language MoE4 expert",
+      "language global"
+    ],
+    "fusion": "electronic + sigmoid(gate) * optical_delta at each stage",
+    "teacher_or_kd_used": false,
+    "attention_used": false,
+    "phase_masks_optimized_in_this_run": false,
+    "phase_learning_rate": 0.0
+  },
   "tasks": {
     "salicon": {
       "epochs": 60,
@@ -66,6 +86,42 @@
         "epoch": 149,
         "pck_at_0.2_torso": 0.7185,
         "pckh_at_0.5_head": 0.8421428571428572
+      }
+    },
+    "caltech101": {
+      "epochs": 60,
+      "selection": "minimum training total loss; test monitored every epoch",
+      "selected_epoch": 54,
+      "split": "fixed class-balanced test query set",
+      "samples": 200,
+      "gallery_samples": 30,
+      "train_samples": 2625,
+      "classes": 10,
+      "simulation_only": true,
+      "phase_masks_optimized": false,
+      "phase_learning_rate": 0.0,
+      "selected_checkpoint_metrics": {
+        "top1": 0.8849999904632568,
+        "top3": 0.975000023841858,
+        "mrr": 0.9267559051513672,
+        "ema_top1": 0.8899999856948853,
+        "ema_top3": 0.975000023841858,
+        "ema_mrr": 0.930089235305786
+      },
+      "observed_test_peak_not_for_formal_selection": {
+        "epoch": 42,
+        "top1": 0.8899999856948853,
+        "selection_biased": true
+      },
+      "selected_checkpoint_diagnostics": {
+        "phase_grad_rms": 6.761288466756403e-06,
+        "phase_delta_run_rms_rad": 0.0,
+        "vision_router_entropy": 0.0017490258100424,
+        "language_router_entropy": 0.0248351826442285,
+        "vision_router_max_importance": 0.999691177683638,
+        "language_router_max_importance": 0.995395324755984,
+        "vision_router_unselected_experts": 0,
+        "language_router_unselected_experts": 0
       }
     }
   }

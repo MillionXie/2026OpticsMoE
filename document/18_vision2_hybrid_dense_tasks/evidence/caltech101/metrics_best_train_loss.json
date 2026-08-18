@@ -1,0 +1,8 @@
+{
+  "epoch": 54,
+  "train_total_loss": 0.3692700667271369,
+  "selection_criterion": "minimum_training_total_loss",
+  "test_was_not_used_for_selection": true,
+  "resumed_from_epoch": null,
+  "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/runs/caltech101_four_layer_moe4_joint/best_train_loss_checkpoint.pt"
+}
