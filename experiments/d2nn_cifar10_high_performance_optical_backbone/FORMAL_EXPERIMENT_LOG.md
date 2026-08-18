@@ -80,6 +80,8 @@ seed 2026 的初步结果触发了原协议的重复验证；seed 2027、2028 �
 
 P01 结论：在当前高性能、强光学依赖但小相位更新的 regime 中，预训练固定反馈复现了 BP 的性能和更新轨迹，而随机固定反馈稳定较差。该结论不应外推到大相位漂移：BP/FA-pretrained 的平均 phase RMS drift 只有约 0.068 rad，operator coherence 约 0.9977。下一轮不再增加方法组，而是在同样四组内提高训练时长/phase LR，并把残差光学权重下限提高，检验结论在更高光学处理比例和更强更新下是否仍成立。
 
+后续 BP 可行性 A07 已验证上述方向：`main_min=0.50`、50 epoch 时 test Top-1 60.25%，平均光学权重 51.73%，normalized optical dependence 97.71%。因此下一轮四组协议应直接固定 A07 设置，不再筛选更多结构；目标是判断 FA-pretrained 是否仍贴近 BP 且优于 FA-random，而不是继续增加对比方法。
+
 ## 工程验证 S01
 
 在 P01 长跑前，用 `configs/formal_smoke.yaml` 对真实 A03 source 执行一次 head warm-up、四种方法各两个训练 batch、四种光学消融和完整性受检的比较汇总。S01 只验证数据、checkpoint、固定反馈 autograd 与文件输出链路，不用于科学结论。

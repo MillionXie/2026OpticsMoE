@@ -135,6 +135,7 @@ A01 已接近收敛且仅差 0.07 个百分点达到测试门槛。A05 从 A01 e
 | 正式 source optical operator | `runs/a03_cifar100_pretrain/seed_1234/best.pt` | `f632c57cf851805090686cda81d4b4a0efc07b02c91dc0e0b63c00912247becc` | 9,188,450 |
 | 预训练迁移 BP endpoint | `runs/a04_cifar100_to_cifar10/seed_1234/best.pt` | `679f9552cd402a71b0a37734640547edaf7f2d6c136a68a063fca4b0024d4486` | 8,629,858 |
 | 最高准确率参考 | `runs/a05_refine_a01/seed_1234/best.pt` | `b549bd322e39aa847b20458aa09fd19373e0f49a9e14c64ce8559a933bcf5938` | 8,627,938 |
+| 高光学占比 BP endpoint | `runs/a07_high_optical_cifar100_to_cifar10/seed_1234/best.pt` | `a9b3784ad392dc19546266c0c804dc8f77a2c90d92812ae425b2d3c52a487084` | 8,630,498 |
 
 ## P01 正式反馈对性能优化的结论（2026-08-18）
 
@@ -144,7 +145,7 @@ A01 已接近收敛且仅差 0.07 个百分点达到测试门槛。A05 从 A01 e
 
 ## A07：预训练迁移下的高光学占比骨干
 
-状态：配置与服务器指令已建立，等待/正在运行 BP 可行性验证；不计为第五个正式方法组。
+状态：已完成并通过 60% 性能门槛；不计为第五个正式方法组。
 
 - 配置：`configs/a07_high_optical_cifar100_to_cifar10.yaml`；
 - 启动：`commands/17_train_a07_high_optical.sh`；
@@ -153,3 +154,20 @@ A01 已接近收敛且仅差 0.07 个百分点达到测试门槛。A05 从 A01 e
 - 保持不变：RGB 八层结构、CIFAR-100 source、随机种子、50 epoch、phase LR=1e-3、electronic LR=1e-3、residual LR=5e-4、数据划分和 validation-best 规则；
 - 目标：test Top-1 尽量达到 60%，同时所有 stage 的光学混合权重不低于 0.50，并通过 optical-off/random/shuffle 诊断；
 - 判定：若性能明显低于 A04，A07 仍作为“提高物理处理比例的代价”保留记录，不通过增加电子头容量掩盖问题。
+
+最终结果：
+
+| 项目 | A07 | A04 参考 |
+|---|---:|---:|
+| selected epoch | 48 | 43 |
+| best validation Top-1 | 60.40% | 60.48% |
+| test Top-1 | 60.25% | 60.71% |
+| optical-off Top-1 | 11.15% | 12.65% |
+| random-phase Top-1 | 10.95% | 11.99% |
+| shuffled-phase Top-1 | 9.73% | 13.64% |
+| normalized optical dependence | 97.71% | 94.77% |
+| selected-checkpoint mean optical weight | 51.73% | 约 37.58% |
+
+A07 最佳 checkpoint 的八层光学权重为 `[0.6245, 0.5059, 0.5031, 0.5018, 0.5006, 0.5005, 0.5007, 0.5013]`。相对 A04，测试性能只下降 0.46 pp，平均光学权重提高约 14.15 pp，归一化光学依赖提高 2.94 pp；三种相位/光路破坏后的准确率均降到接近随机水平。结论：A07 是当前更适合作为“高光学占比”主设置的骨干，严格通过 60% 门槛。
+
+冻结 checkpoint：`runs/a07_high_optical_cifar100_to_cifar10/seed_1234/best.pt`，SHA-256 `a9b3784ad392dc19546266c0c804dc8f77a2c90d92812ae425b2d3c52a487084`，大小 8,630,498 byte。下一正式动作是在仍然只有 NoFT/BP/FA-pretrained/FA-random 四组的前提下，把 A07 的 `main_min=0.50` 与 50 epoch schedule 固定为共同协议，验证 P01 的固定反馈结论能否延伸到更高光学占比和更强更新。
