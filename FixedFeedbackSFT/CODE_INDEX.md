@@ -64,6 +64,10 @@
 
 专题级只读验证入口：`FixedFeedbackSFT/commands/01_verify_v2_results.sh`。
 
+性能优先新实验的 CLI 和命令目录约定：
+`FixedFeedbackSFT/commands/02_performance_first_runbook.md`。该模块尚未实现，不能把
+runbook 中的接口描述为已有结果。
+
 ## 固定反馈核心代码位置
 
 V2 中最关键的实现：

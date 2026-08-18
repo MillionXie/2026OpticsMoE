@@ -20,3 +20,11 @@ PYTHON_BIN=/path/to/python bash FixedFeedbackSFT/commands/01_verify_v2_results.s
 
 脚本不会重新训练或删除 checkpoint。正式训练和单组恢复命令仍位于各实验自己的
 `commands/` 目录。SSH 密码不得写入本目录或任何 Git 跟踪文件。
+
+性能优先的新 backbone CLI 与命令目录约定见：
+
+```text
+FixedFeedbackSFT/commands/02_performance_first_runbook.md
+```
+
+该 runbook 当前是接口设计，不代表性能实验代码已经实现。

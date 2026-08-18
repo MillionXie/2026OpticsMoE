@@ -12,6 +12,16 @@ bash FixedFeedbackSFT/commands/01_verify_v2_results.sh
 
 该脚本只运行测试、重新聚合和校验结果文件，不会重新训练或删除 checkpoint。
 
+## 性能优先新实验接口
+
+新 backbone 尚未实现。计划中的模块名、CLI 和必须提供的 `commands/` 文件见：
+
+```text
+FixedFeedbackSFT/commands/02_performance_first_runbook.md
+```
+
+在代码实现前，不要把 runbook 中的接口当作可运行结果。
+
 ## V1：已完成分类版
 
 单元测试：

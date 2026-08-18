@@ -1,275 +1,426 @@
-# 光学固定反馈微调：研究架构与实验路线
+# 性能优先的光学固定反馈微调研究架构
 
-更新日期：2026-08-18
+版本：V2，更新日期：2026-08-18
 
-## 1. 建议聚焦的核心命题
+## 1. 总体顺序
 
-本项目不应只复现“FA-pretrained 和 BP 精度接近”这一现象，而应回答一个更适合
-光学系统、也更容易形成完整论文的问题：
+本项目的实验顺序调整为：
 
-> 对已经预训练的光学网络，在受控的小算子漂移微调中，冻结于预训练状态的
-> 光学反馈连接器能否在不逐步同步当前反馈算子的情况下，保持接近 BP 的更新
-> 方向和任务性能？它的有效边界由什么决定，在光学非理想条件下是否仍成立？
+```text
+强 BP 光学模型
+-> 证明模型真正依赖光学路径
+-> 固化可迁移的 pretrained optical backbone
+-> 比较 BP / FA-pretrained / FA-random / NoFT
+-> 漂移边界、非理想条件和系统收益
+```
 
-这里的“预训练骨干”不要求存在类似 ImageNet ResNet 的现成公共模型。源任务上
-训练完成并保存相位掩模的光学网络，本身就是后续微调所需的 pretrained optical
-backbone。当前 CIFAR-100 SupCon checkpoint 已经满足这个形式定义；真正的问题是
-它的表示能力和光学路径使用率都偏低，需要进一步加强。
+固定反馈不能再作为第一阶段的优化对象。只有 BP 下的模型已经具备不错性能，且
+关闭或扰动光学路径会明显破坏性能，才能有说服力地讨论固定反馈是否适用于光学
+神经网络。
 
-## 2. 论文原文实际支持什么
+## 2. 建议形成的论文叙事
 
-参考论文在 Qwen2.5-3B/7B 的短程全参数 SFT 中观察到：
+完整工作可分为四部分：
 
-- FA-pretrained 以预训练权重转置作为固定反馈连接器；
-- 固定的只是选定线性模块向前一级发送的 error connector；
-- 当前 forward、当前 loss、当前 batch error 和当前局部参数更新仍然重算；
-- LLM SFT 的相对参数漂移仅约 0.004-0.005；
-- 在这一小漂移区间，FA-pretrained 的任务性能和 BP 接近，终点更新 cosine 较高；
-- 论文只称结果与 small-drift explanation 一致，没有证明因果，也没有证明相对 BP
-  的计算优势；
-- 论文的 checkpoint 选择规则并不统一：GSM8K 以及 BP 的 SAMSum 报告中使用了
-  test-selected scheduled checkpoint。当前项目坚持 validation selection，统计上更干净。
+1. **高性能光学骨干**：设计一个在 CIFAR-10 等非平凡数据集上达到可展示性能的
+   OEO/光电混合网络；
+2. **高光学依赖度**：证明主要特征变换确实由相位调制、传播和探测完成，而不是由
+   skip path 或大电子后端完成；
+3. **固定反馈微调**：从同一 pretrained optical checkpoint 出发，验证
+   FA-pretrained 在任务性能和更新几何上接近 BP；
+4. **光学系统意义**：研究算子漂移、SLM/CCD 非理想、校准失配和周期刷新策略。
 
-因此，不能把论文结论扩张为“微调时普遍可以使用预训练算子”。更准确的外推是：
-当反馈算子相对预训练状态变化有限时，预训练连接器可能仍是当前 BP 连接器的好近似。
+对应的核心命题是：
 
-## 3. 当前两代实验已经得到的证据
+> 对一个性能足够强且任务决策显著依赖光学路径的预训练光学网络，在受控小算子
+> 漂移的微调区间内，固定预训练反馈能否保留 BP 的主要适应收益，并减少当前反馈
+> 算子的逐步同步或重新校准需求？
 
-### 3.1 V1：几何现象成立，但任务设计失败
+## 3. 数据集与任务阶梯
 
-V1 的 FA-pretrained 终点 cosine 明显高于 FA-random，但 NoFT 准确率最高，且 BP
-relative drift 达到约 0.40。它只能作为早期几何验证，不能作为主性能结果。
+### 3.1 调试数据集：不作为主结果
 
-### 3.2 V2：四组性能关系已经成立
+- MNIST：检查传播、训练、读出和硬件闭环；
+- Fashion-MNIST：检查比 MNIST 更复杂的灰度分类；
+- 小规模类别子集：只用于单 batch、过拟合和梯度正确性验证。
 
-服务器上的 V2 正式实验已经完成，所有方法使用同一 pretrained checkpoint，三个
-matched seeds 的 batch order 在 30 个 epoch 中逐 epoch 一致，test 未用于选择。
+这些任务可以快速暴露实现问题，但不能作为论文的主要性能证据。
 
-| policy | BP | FA-pretrained | FA-random | NoFT |
-|---|---:|---:|---:|---:|
-| 固定 epoch 30 test | 31.00 +/- 0.52% | 31.02 +/- 0.52% | 28.19 +/- 2.24% | 27.56% |
-| validation-selected test | 30.70 +/- 0.28% | 30.77 +/- 0.14% | 29.91 +/- 0.49% | 27.56% |
+### 3.2 第一主数据集：CIFAR-10 全测试集
 
-epoch 30 的匹配终点几何为：
+CIFAR-10 应作为第一性能目标：类别数适中、训练成本可控，也是光学分类常用基准。
+必须使用完整标准 test split，不使用几百张子集作为主数字。
 
-| method | relative drift | drift/BP | cosine to BP |
-|---|---:|---:|---:|
-| BP | 0.1744 +/- 0.0015 | 1.000 | 1.000 |
-| FA-pretrained | 0.1743 +/- 0.0015 | 1.000 | 0.9975 +/- 0.0001 |
-| FA-random | 0.2385 +/- 0.0090 | 1.368 | 0.3865 +/- 0.0202 |
+建议按以下层级定义阶段门槛：
 
-这比 V1 更接近一个可展示的主结果：FA-pretrained 同时匹配 BP 的性能、更新幅度和
-更新方向，而且明显优于随机反馈及 NoFT。
+| 层级 | CIFAR-10 full-test accuracy | 用途 |
+|---|---:|---|
+| 工程最低线 | >= 50% | 说明模型不只是勉强高于 chance |
+| 可展示线 | >= 60% | 可以进入光学比例与微调实验 |
+| 较好目标 | >= 65% | 适合作为主要 backbone |
+| 强目标 | >= 70% | 可与较强自由空间/混合光学工作对话 |
 
-### 3.3 当前最大混杂因素：网络绕开了光学路径
+这些数字是项目 gate，不是跨硬件的统一 SOTA 判断。已有原始工作中，CIFAR-10
+结果随架构和光电划分差异很大：三层 loose-neuron 实验约 45.6%，衍射网络集成约
+61%-62%，自由空间光学编码器加数字后端约 72%-73%，某些带 CNN/光学非线性的
+仿真可以超过 80%。因此本项目第一阶段以完整 test set 上稳定达到 60%-65% 为合理
+目标，再尝试 70%。
 
-V2 把 residual optical/skip 初始化从 0.10/0.90 提高到 0.35/0.65，但在 120 epoch
-预训练后：
+### 3.3 第二主数据集：CIFAR-100
 
-- 平均 optical weight 约为 0.070；
-- 最小 optical weight 约为 0.021；
-- 最大 optical weight 约为 0.346。
+CIFAR-10 达标后再转向 CIFAR-100，用于：
 
-微调到 epoch 30 后平均 optical weight 仍只有约 0.072。于是 BP 与 FA-pretrained
-极度接近存在两种解释：
+- 检查 backbone 是否只适合十分类；
+- 生成类别更丰富的 source pretrained checkpoint；
+- 为 CIFAR-100 -> CIFAR-10 label-transfer 提供预训练状态。
 
-1. pretrained feedback connector 的确准确；
-2. 光学路径被 skip path 强烈衰减，connector 的选择对输出本来就不敏感。
+CIFAR-100 初期不强行设置绝对阈值，应同时报告：
 
-在排除第二种解释前，V2 还不能作为强机制证据。绝对准确率约 31% 也主要反映了
-当前 pretrained representation 较弱，而不是固定反馈方法本身的上限。
+- full-model accuracy；
+- 相同电子后端的 phase-random/optical-off baseline；
+- 参数规模匹配的小型数字模型；
+- 相对 current V2 source representation 的提升。
 
-## 4. 应该回答的五个研究问题
+### 3.4 固定反馈的两个下游任务
 
-### RQ1：现象是否真实
+性能骨干确定后，至少覆盖两个不同迁移类型：
 
-在公平控制下，FA-pretrained 是否持续比 FA-random 更接近 BP，并且能保留 BP 的
-下游收益？V2 已经给出肯定的初步答案。
+1. **同标签域迁移**：CIFAR-10 clean -> CIFAR-10-C；
+   - 保留同一分类头；
+   - 适合展示强 pretrained model 在硬件/环境漂移下的小幅适应；
+   - 最符合 small-drift fine-tuning 假设。
+2. **新标签迁移**：CIFAR-100 -> CIFAR-10；
+   - 先冻结 optical backbone 训练新 head；
+   - 把该 head-warmup checkpoint 固定为所有反馈方法的共同起点；
+   - 再比较 BP、FA-pretrained、FA-random 和 NoFT。
 
-### RQ2：现象是否由光学反馈路径造成
+第一篇完整结果可以以 CIFAR-10/CIFAR-10-C 为主线，CIFAR-100 -> CIFAR-10 作为
+跨标签补充。不要一开始同时扩展到 ImageNet。
 
-当网络不能绕开光学路径时，FA-pretrained 是否仍然匹配 BP？这是下一步最优先的
-因果问题。
+## 4. 第一阶段：只优化 BP 性能
 
-### RQ3：固定反馈的有效范围是什么
+### 4.1 先把任务改回直接监督分类
 
-随着当前相位算子远离预训练算子，instantaneous gradient cosine、endpoint cosine
-和任务性能差距如何变化？是否存在可复现的漂移阈值？这是最有论文价值的主机制。
+当前 V2 的 SupCon + prototype 流程适合研究迁移，但不适合快速定位 backbone 的
+性能上限。架构筛选阶段建议使用：
 
-### RQ4：预训练结构为何有用
+```text
+optical backbone
+-> compact electronic readout
+-> 10 logits
+-> cross-entropy
+```
 
-收益来自“任意物理可实现的固定传播”、预训练相位的层特异性，还是与当前前向
-算子的初始精确对齐？需要 identity、layer-shuffled、noisy-pretrained 等对照。
-
-### RQ5：是否产生光学系统收益
-
-在相位量化、SLM/CCD 噪声、配准误差和模型失配下，固定反馈能否减少逐步同步、
-反向校准或当前数字模型更新的需求？当前仿真实现尚未证明速度或能耗优势。
-
-## 5. 分阶段实验矩阵
-
-### E0：锁定并展示 V2 已有结果（不重跑）
-
-目的：形成当前 baseline，避免丢失已完成实验。
-
-- 固化 resolved config、checkpoint digest、batch-order hash 和结果 CSV；
-- 画四组 accuracy trajectory、固定终点和 validation-selected 并列表；
-- 画 drift/cosine trajectory；
-- 单独画 20 层 optical residual weight 热力图；
-- 报告当前局限：低绝对精度、optical bypass、理想仿真。
-
-### E1：光学路径使用率与参数更新归因（最高优先级）
-
-先做低成本诊断，再决定是否重训架构。
-
-1. **post-hoc optical occlusion**：评估时把各层 optical contribution 置零，观察
-   accuracy/embedding 的下降；若几乎不下降，当前 backbone 不是有效光学骨干。
-2. **phase permutation/noise at evaluation**：打乱或扰动相位后若性能不变，也说明
-   phase 未承载主要表示。
-3. **更新范围对照**：
-   - readout-only；
-   - phase-only BP / FA-pretrained / FA-random；
-   - phase + readout；
-   - full parameter（现有设置）。
-4. **残差消融**：先用单 seed 筛选以下设置，再用三个 seeds 复验：
-   - learned residual（现有）；
-   - 固定 optical/skip = 0.35/0.65；
-   - 对 optical weight 加软下限或路径使用正则；
-   - 无 skip 或更少 stage 的诊断网络。
-
-关键成功条件不是强行让 optical weight 越大越好，而是证明移除/扰动光学路径会
-造成显著性能下降，同时网络仍可稳定训练。
-
-### E2：算子漂移-反馈失配响应曲线（核心机制实验）
-
-这部分应成为论文主图，而不是只报告一个 epoch 终点。
-
-1. 从同一 pretrained checkpoint 出发，改变单一因素控制漂移：
-   - phase LR：0.0003、0.001、0.003；
-   - horizon：5、10、20、30 epoch；
-   - 独立 trust-region 配置：
-     `lambda * mean(|exp(i*phi)-exp(i*phi_pre)|^2)`。
-2. 对每个 checkpoint 同时记录：
-   - phase circular RMS；
-   - operator phasor distance/coherence；
-   - per-layer instantaneous gradient cosine 和 norm ratio；
-   - endpoint cosine；
-   - FA-pretrained 与 BP 的 validation/test gap。
-3. 主横轴使用光学算子距离，而不是 raw phase 参数的相对 L2 漂移。对 phase-only
-   传播，phasor distance 直接对应当前算子与预训练算子的相对失配，更有物理意义。
-4. 画 `operator distance -> gradient cosine -> task gap` 的链式图，拟合或分箱展示
-   fixed feedback 的有效区间。
-
-为减少算力，先对 seed 1234 做筛选；确定 3-4 个代表性漂移点后再跑三个 matched
-seeds。最终主结论配置建议增加到五个 seeds。
-
-### E3：反馈连接器结构消融
-
-保留现有四组作为主比较，增加以下机制对照：
-
-- `fa_identity_phase`：无 phase screen、只保留传播 adjoint；
-- `fa_shuffled_pretrained`：预训练 phase 在层间打乱；
-- `fa_noisy_pretrained_sigma_*`：在预训练 phase 上加入受控角度噪声；
-- `fa_random_phase`：现有物理形状兼容随机 baseline；
-- `fa_periodic_refresh_K`：每 K 个 epoch 或达到漂移阈值后刷新一次 connector。
-
-其中 noisy-pretrained sweep 最重要，因为它能主动控制 connector 失配并验证因果；
-shuffled-pretrained 用于判断“预训练统计分布”与“正确层配对”哪一个重要。
-
-### E4：构造更强的 pretrained optical backbone
-
-没有公共光学骨干不是障碍，可以在本项目中明确构造并发布自己的 source checkpoint：
-
-1. 先解决 optical bypass，再比较 5/10/20 stage，选择能稳定训练且确实使用相位的
-   最小架构；
-2. 使用更强的源任务预训练：supervised CE、SupCon 或 self-supervised objective；
-3. 可使用电子 teacher 对 optical embedding 做特征蒸馏。teacher 只负责构造更强的
-   光学预训练状态，不参与 BP/FA 微调比较；
-4. 新任务先冻结 optical backbone，仅训练新 readout，得到所有方法共享的 downstream
-   起点；再执行 phase/full fine-tuning，避免随机新 head 把反馈比较淹没；
-5. 至少覆盖两类迁移：
-   - 同标签域迁移：clean -> corruption/domain shift；
-   - 新标签迁移：CIFAR-100 -> CIFAR-10 或更强 source -> disjoint target。
-
-绝对精度的目标不是追逐纯电子 SOTA，而是让 NoFT、BP 和 FA 之间有足够动态范围，
-同时证明任务性能确实依赖光学相位。
-
-### E5：光学非理想与系统级实验
-
-在理想仿真结论稳定后依次加入，避免一开始混入过多因素：
-
-- SLM phase quantization、phase response bias 和 temporal noise；
-- CCD shot/read noise、饱和与有限位深；
-- 横向位移、旋转、传播距离和波长误差；
-- forward model 与 feedback model 的校准失配；
-- fixed feedback、periodic refresh 与 current-BP/PAT 的比较。
-
-系统指标至少包括：每次微调需要的当前相位同步次数、反馈校准次数、FFT/数字传播
-次数、显存、wall-clock 和硬件测量次数。若固定连接器仍通过相同 FFT 实现，就不能
-宣称计算量低于 BP；更合理的主张是减少 weight transport、逐步校准和当前反馈路径
-同步。
-
-## 6. 主实验与消融的推荐优先级
-
-| 优先级 | 实验 | 回答的问题 | 运行策略 |
-|---|---|---|---|
-| P0 | V2 结果固化和作图 | 当前现象是否完整 | 不重跑 |
-| P0 | optical occlusion / phase permutation | 网络是否真的使用光学路径 | 现有 checkpoint 直接评估 |
-| P1 | 固定/受约束 residual，小规模架构筛选 | 排除 optical bypass | 1 seed 筛选，3 seeds 复验 |
-| P1 | drift sweep + gradient diagnostics | 固定反馈有效边界 | 1 seed 扫描，代表点多 seed |
-| P2 | noisy/shuffled/identity connector | 预训练结构为何有用 | 复用同一 checkpoint |
-| P2 | 更强 source pretraining / distillation | 提升可展示性能 | 独立新实验，不覆盖 V2 |
-| P3 | 光学误差与 periodic refresh | 是否有系统实用性 | 仿真稳定后再做 |
-| P4 | 实物平台 | 硬件证据 | 明确可观测量后再做 |
-
-## 7. 预先注册的评价指标与成功标准
-
-### 任务指标
-
-- primary：固定训练预算的 test metric；
-- secondary：validation-selected checkpoint 对应的 test metric；
-- paired seed difference：FA-pretrained - BP、FA-pretrained - FA-random、方法 - NoFT；
-- 不使用 test 选择 checkpoint 或超参数。
-
-### 几何与机制指标
-
-- operator phasor distance/coherence；
-- phase circular RMS；
-- per-layer instantaneous gradient cosine、norm ratio、relative error；
-- matched-epoch endpoint cosine 和 drift ratio；
-- residual optical weight 的 layer-epoch 分布；
-- optical occlusion/permutation 导致的性能下降。
-
-### 建议的成功判据
-
-1. 在多个 matched seeds 上，FA-pretrained 的任务性能接近 BP 且优于 FA-random；
-2. FA-pretrained 的 gradient/endpoint cosine 显著高于随机与错配 connector；
-3. 任务性能对相位扰动和 optical occlusion 明显敏感，排除 skip-only 解释；
-4. 随 operator distance 增大，gradient cosine 和任务差距呈稳定、可解释的响应；
-5. 在预先定义的漂移区间内，FA-pretrained 保留 BP 的主要下游增益；
-6. 最终关键配置至少五个 seeds；探索阶段三个 seeds，不把 n=3 的小差异写成显著性结论。
-
-## 8. 建议的论文/汇报图表
-
-1. **方法图**：current forward、current local phase update、frozen pretrained
-   feedback connector 三条信息流；
-2. **V2 主结果图**：四组任务性能与 paired seed 连线；
-3. **光学使用率图**：20 层 residual heatmap，加 optical occlusion 前后性能；
-4. **核心机制图**：operator distance vs instantaneous gradient cosine；
-5. **因果链图**：operator distance vs endpoint cosine vs BP-FA task gap；
-6. **连接器消融图**：pretrained、noisy、shuffled、identity、random；
-7. **非理想鲁棒性图**：噪声/失配强度下 BP、FA-pretrained、periodic refresh；
-8. **系统代价表**：同步、校准、数字传播、显存和 wall-clock。
-
-## 9. 给老师汇报时的建议表述
-
-当前可以明确说：
-
-> 我们已经在理想光学仿真中完成两代实验。第二代真实跨数据集迁移中，固定预训练
-> 反馈在三个匹配随机种子上同时复现了 BP 的任务性能与更新几何，并优于随机固定
-> 反馈和不微调。但我们审计发现网络大部分走 skip path，因此下一步不会只堆更多
-> accuracy，而是先证明任务确实依赖光学路径，然后系统测量固定反馈随光学算子漂移
-> 的失效边界，最后再加入物理误差和周期刷新策略。
-
-这套叙事比“把 LLM 论文搬到光学分类”更完整：它把论文中的 small-drift hypothesis
-转化成可控、可测、具有光学系统意义的实验问题。
+先在 CIFAR-10 direct supervised classification 下找出强架构；通过 gate 后再给该
+backbone 增加 embedding/SupCon 目标。这样可以区分“架构性能不足”和“对比学习协议
+不足”。
+
+### 4.2 颜色信息优先
+
+当前灰度输入丢失了 CIFAR-10 的重要信息。性能优先阶段至少比较：
+
+- grayscale 单路；
+- RGB 三个独立光学通道；
+- 若硬件允许，三波长/三次曝光共享或独立 phase；
+- RGB 经固定线性变换后的有限通道编码。
+
+主结果应明确颜色编码需要的光学通道数、曝光数和电子融合操作。不能为了精度默默
+引入一个大型电子 RGB encoder。
+
+### 4.3 重新筛选深度，而不是默认 20 stage
+
+20 个 OEO stage 并不自动意味着更强。反复 CCD 探测、归一化、ReLU 和振幅重载
+可能损失信息，也容易迫使 residual 走 skip path。建议首轮比较：
+
+- 4 stage；
+- 8 stage；
+- 12 stage；
+- 20 stage 作为现有对照。
+
+筛选时同时看 accuracy、训练稳定性、显存、单 epoch 时间和 optical dependence。
+如果 8 stage 明显优于 20 stage，应优先使用较浅模型；固定反馈研究并不要求网络
+必须很深。
+
+### 4.4 优化传播和相位参数化
+
+按单因素顺序验证：
+
+1. 传播 padding/band-limit，排除无 padding 带来的循环边界伪影；
+2. zero/pi phase init 与小随机相位 init；
+3. phase LR、warmup 和 cosine decay；
+4. 相位平滑、频谱带宽或硬件可实现性正则；
+5. 逐样本/逐通道功率归一化与现有 full-plane LayerNorm 的比较。
+
+每次只改变一个机制。架构筛选阶段可以使用单 seed；进入正式结果后必须 matched
+multi-seed。
+
+### 4.5 限制电子读出的容量
+
+建议从小到大比较：
+
+1. detector regions / global pooling + linear classifier；
+2. 当前 20 x 20 pooling + 小型线性或两层 MLP；
+3. 中等电子后端，仅作为 performance upper bound。
+
+最终主模型不一定要电子参数最少，但必须同时给出电子 MACs、参数数和 head-only
+baseline。若大部分性能来自电子后端，就不能把结果称为高光学处理比例。
+
+### 4.6 训练协议
+
+在结构稳定后，再逐项加入标准性能策略：
+
+- random crop + horizontal flip；
+- cross-entropy label smoothing；
+- AdamW 或 SGD+momentum 对照；
+- warmup + cosine decay；
+- 合理 weight decay；
+- Cutout/Mixup 只作为后期消融，不在首轮同时开启；
+- validation 选择，test 只做最终评估。
+
+若仍无法达到 60%，可使用电子 teacher 做 feature/logit distillation。teacher 只帮助
+构造强 optical checkpoint，不能参与之后 BP/FA 方法的差异比较。
+
+## 5. 第二阶段：提高并量化光学处理比例
+
+“光学比例”不能只用 residual optical weight 表示。建议分成三个维度。
+
+### 5.1 结构比例
+
+- optical phase parameter count / total trainable parameter count；
+- optical stage 数、光学传播次数和探测次数；
+- electronic trainable parameters 和 MACs；
+- 输入编码和读出的电子操作列表。
+
+光学 phase 参数很多不代表它们真的被使用，所以结构比例只能作为辅助指标。
+
+### 5.2 路径权重
+
+- 每层 residual optical/skip weight；
+- min/mean/max 以及 layer-epoch heatmap；
+- optical 与 skip 分支激活 RMS/能量比；
+- 两分支输出相关性。
+
+只提高 softmax weight 也不够；如果 optical 输出与 skip 输出相同，仍不能证明光学
+变换承担了关键计算。
+
+### 5.3 因果光学依赖度：主指标
+
+定义：
+
+```text
+optical_occlusion_drop = Acc_full - Acc_optical_off
+
+normalized_optical_dependence
+  = (Acc_full - Acc_optical_off) / (Acc_full - Acc_chance)
+```
+
+同时报告：
+
+- optical-off；
+- pretrained phase -> random phase；
+- layer-shuffled phase；
+- phase noise sweep；
+- 只保留 electronic head 的结果。
+
+建议的进入固定反馈阶段 gate：
+
+- CIFAR-10 full accuracy >= 60%；
+- normalized optical dependence >= 0.5；
+- phase shuffle/randomization 至少造成清晰、跨 seed 稳定的性能下降；
+- 平均 optical weight 不再接近当前的 0.07；
+- 电子 head 单独不能复现 full-model 性能。
+
+`0.5` 是项目预注册门槛，可以在第一次正式运行前根据 chance 和模型结构锁定，但
+不能看完 test 后再调整。
+
+### 5.4 提高光学依赖度的手段
+
+按推荐顺序：
+
+1. 固定 optical/skip mixing，先比较 0.35/0.65、0.5/0.5 和无 skip；
+2. learned residual 加 optical-weight lower-bound/soft constraint；
+3. 减少或移除跨越多个 optical stage 的长旁路；
+4. 限制 electronic head 容量；
+5. 用 RGB/多通道光学变换增加有效光学特征；
+6. 通过 distillation 让 optical feature 对齐强 teacher feature；
+7. 多探测平面或多光学分支，只在单分支性能饱和后考虑。
+
+优化目标应是 accuracy 与 optical dependence 的 Pareto frontier，而不是单独最大化
+某个 residual weight。
+
+## 6. 推荐的性能-光学比例筛选矩阵
+
+第一轮不要做全因子组合。建议采用逐级筛选。
+
+### Round A：结构筛选，单 seed
+
+固定 direct CIFAR-10 CE 任务：
+
+| 轴 | 候选 |
+|---|---|
+| 输入 | grayscale / RGB 3-channel optical |
+| stage | 4 / 8 / 12 / 20 |
+| residual | learned / fixed 0.5 / no skip |
+| readout | GAP+linear / small MLP |
+
+先筛输入和 stage，再筛 residual，最后筛 readout；不要一次跑完所有组合。每个候选
+必须同时输出 accuracy 和 optical occlusion 指标。
+
+### Round B：训练与传播优化，三个 seeds
+
+对 Round A 的前 2-3 个 Pareto 候选比较：
+
+- padding/band-limit；
+- phase initialization；
+- optimizer/scheduler；
+- optical constraint；
+- 轻量数据增强。
+
+### Round C：正式 backbone，五个 seeds
+
+选一个主配置和一个计算量较低的备选配置：
+
+- 完整训练；
+- validation-selected checkpoint；
+- full test evaluation；
+- optical-off/random/shuffle/noise；
+- 参数、MACs、运行时间和显存；
+- 保存可公开复用的 pretrained checkpoint 和 digest。
+
+## 7. 第三阶段：构造 pretrained optical backbone
+
+性能和光学依赖度达标后，固定模型结构，不再为 FA 单独调 backbone。
+
+建议保存两个 checkpoint：
+
+1. **CIFAR-10 supervised checkpoint**：用于 clean -> CIFAR-10-C；
+2. **CIFAR-100 supervised/CE+SupCon checkpoint**：用于 CIFAR-100 -> CIFAR-10。
+
+每个 checkpoint 必须记录：
+
+- model/config digest；
+- phase/operator snapshot；
+- source validation/test performance；
+- optical dependence 指标；
+- residual weights；
+- input encoding、readout 和电子 MACs；
+- 是否使用 distillation。
+
+这两个自行训练并冻结的 checkpoint 就是项目的 pretrained optical backbone，不需要
+等待社区出现现成光学基础模型。
+
+## 8. 第四阶段：固定反馈微调
+
+### 8.1 主比较组
+
+- NoFT；
+- BP；
+- FA-pretrained；
+- FA-random。
+
+建议额外加入 head-only，区分下游收益来自电子读出还是光学相位更新。
+
+### 8.2 公平控制
+
+- 相同 pretrained/head-warmup checkpoint；
+- 相同 seed、batch order 和 sample augmentation；
+- 相同 optimizer、LR、epoch 和 checkpoint policy；
+- test 不参与选择；
+- geometry 只比较 matched seed、matched epoch。
+
+### 8.3 主结果
+
+固定反馈阶段应同时满足：
+
+1. BP 明显优于 NoFT/head-only，证明 optical fine-tuning 有任务收益；
+2. FA-pretrained 接近 BP；
+3. FA-pretrained 优于 FA-random；
+4. optical-off 和 phase shuffle 仍会破坏微调后性能；
+5. 算子距离、gradient cosine 和 BP-FA task gap 呈可解释关系。
+
+### 8.4 漂移边界
+
+在主配置上改变 phase LR、horizon 和 trust-region，画：
+
+```text
+operator phasor distance
+-> instantaneous gradient cosine
+-> endpoint cosine
+-> FA-pretrained - BP task gap
+```
+
+光学相位模型应以 phasor/operator distance 为主漂移指标，raw parameter relative
+drift 只作为辅助量。
+
+## 9. 第五阶段：物理非理想与系统指标
+
+在性能、光学依赖和固定反馈三道 gate 全部通过后再加入：
+
+- SLM phase quantization、bias 和 temporal noise；
+- CCD shot/read noise、位深和饱和；
+- 横向位移、旋转、距离和波长误差；
+- forward/feedback calibration mismatch；
+- fixed feedback 与 periodic refresh；
+- current BP/PAT 对照。
+
+系统报告必须包括：
+
+- 当前相位/反馈算子同步次数；
+- 反馈校准和硬件测量次数；
+- 数字 FFT/传播次数；
+- electronic MACs、显存和 wall-clock；
+- 达到相同性能所需的 refresh 频率。
+
+如果固定反馈仍使用与 BP 相同数量的数字 FFT，就不能声称计算复杂度更低；更可靠的
+主张是降低 weight transport、当前反馈路径同步或校准频率。
+
+## 10. 阶段 gate 总表
+
+| Gate | 必须达到的结果 | 未通过时做什么 |
+|---|---|---|
+| G1 性能 | CIFAR-10 full test >= 60% | 继续优化 BP backbone，不运行 FA |
+| G2 光学依赖 | normalized dependence >= 0.5，phase 扰动显著降性能 | 约束 residual、缩小 head、调整架构 |
+| G3 预训练 | source checkpoint 稳定、可迁移、digest 固化 | 改进 source objective 或 distillation |
+| G4 微调收益 | BP > NoFT/head-only | 修正 downstream task/LR/horizon |
+| G5 固定反馈 | FA-pretrained 约等于 BP 且优于 random | 分析 operator drift 和连接器失配 |
+| G6 系统意义 | 非理想下仍有效，或 periodic refresh 有明确收益 | 限定结论到理想仿真 |
+
+## 11. 建议的最终图表
+
+1. CIFAR-10 backbone accuracy 与 optical dependence Pareto 图；
+2. 不同 stage/RGB/residual/readout 的消融表；
+3. optical-off、phase-random、phase-shuffle 对照；
+4. strong source checkpoint 的训练曲线和光学路径热力图；
+5. 下游 NoFT/BP/FA-pretrained/FA-random/head-only 主结果；
+6. operator distance -> gradient cosine -> task gap；
+7. 非理想强度与 periodic refresh；
+8. optical/electronic 结构比例、MACs、同步和校准代价表。
+
+## 12. 给老师汇报的简洁版本
+
+> 我们会先暂时放下固定反馈比较，优先在完整 CIFAR-10 上把 BP 光学模型做到至少
+> 60%-65%。随后不只看相位参数数量或 residual weight，而是通过 optical-off、相位
+> 随机化和层打乱定义因果光学依赖度，在准确率与光学依赖度的 Pareto 前沿上选择
+> backbone。只有 backbone 同时通过性能和光学依赖两道 gate，才固化成预训练光学
+> checkpoint，并进一步比较 BP、固定预训练反馈、随机反馈和不微调。最后研究算子
+> 漂移以及 SLM/CCD 非理想条件下的有效边界。
+
+## 13. CIFAR-10 性能目标的参考范围
+
+不同论文的输入编码、光学非线性、电子后端、仿真/实测和 test 规模不同，以下数字
+只用于设定项目 gate，不能直接横向排名：
+
+- [Loose neuron array and functional learning](https://www.nature.com/articles/s41467-023-37390-3)：
+  三层 LFNN 的 CIFAR-10 实测约 45.62%；
+- [Ensemble learning of diffractive optical networks](https://www.nature.com/articles/s41377-020-00446-w)：
+  多个衍射网络集成的完整 CIFAR-10 blind test 约 61%-62%；
+- [Transferable polychromatic optical encoder](https://www.nature.com/articles/s41467-025-61338-4)：
+  自由空间光学编码器加数字后端约 72.1%，重训后端约 73.2%；
+- [Integrated reconfigurable photonic tensor processor](https://www.nature.com/articles/s41467-026-71599-2)：
+  报告 99% optical workload，但 CIFAR-10 光子推理 72% 是在 400 张子集上；
+- [Picosecond pulsed optical neural network](https://www.nature.com/articles/s41377-025-02175-4)：
+  使用 CNN/ResNet 型结构和光学非线性仿真得到 82.96%。
+
+因此当前自由空间 OEO 项目以完整 test set 的 60% 为进入下一阶段的 gate、65% 为
+较好目标、70% 为强目标；达到后再比较光学依赖和固定反馈，比直接追逐跨架构最高
+数字更可信。

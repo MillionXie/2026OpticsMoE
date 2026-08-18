@@ -194,26 +194,25 @@ path，所以 feedback connector 影响很弱”的解释。
 
 ## 8. 下一会话应优先做什么
 
-1. 不要重跑 V2；先运行 `FixedFeedbackSFT/commands/01_verify_v2_results.sh` 固化结果。
-2. 在现有 checkpoint 上增加 evaluation-only optical occlusion、phase shuffle/noise，
-   判断任务是否真正依赖光学路径。
-3. 若 optical bypass 得到确认，新建独立实验比较固定 residual、soft constraint 和
-   更少 stage；不要覆盖 V2。
-4. 在确实使用光学路径的 backbone 上做 operator-distance sweep，主指标为 phasor
-   distance/coherence、瞬时梯度 cosine、matched endpoint cosine 和 task gap。
-5. 再做 noisy/shuffled/identity/periodic-refresh connector 消融，刻画 fixed feedback
-   的有效边界和层特异性。
-6. 完整实验架构以 `FixedFeedbackSFT/RESEARCH_PLAN.md` 为准；始终禁止使用 test
-   选择 checkpoint 或超参数。
+1. 不要重跑或覆盖 V1/V2；它们只作为当前 baseline 和反馈实现验证。
+2. 暂停新增 FA 训练，新建 CIFAR-10 direct supervised BP backbone 实验。
+3. 优先比较 RGB/grayscale、4/8/12/20 stage、residual 和小型 readout，使完整
+   CIFAR-10 test accuracy 先达到 60%，再争取 65%-70%。
+4. 每个性能运行都同时做 optical-off、phase-random/phase-shuffle，计算 normalized
+   optical dependence；不能只用 phase 参数量或 residual weight 代表光学比例。
+5. 只有 accuracy >= 60% 且 normalized optical dependence 达到预注册门槛后，才把
+   模型固化为 pretrained optical backbone，并恢复 BP/FA-pretrained/FA-random/NoFT。
+6. 完整实验架构以 `FixedFeedbackSFT/RESEARCH_PLAN.md` 为准；新模块 CLI 约定见
+   `FixedFeedbackSFT/commands/02_performance_first_runbook.md`。
 
 ## 9. 可直接贴给下一个 AI 的短提示
 
 ```text
 请先阅读仓库根目录 FixedFeedbackSFT/ 下的 README.md、HANDOFF.md、METHOD.md、
 EXPERIMENTS.md、RESEARCH_PLAN.md 和 CODE_INDEX.md。不要修改或覆盖已经完成的
-V1/V2 正式实验。V2 已完成，当前优先工作是用现有 checkpoint 做 optical occlusion
-和 phase perturbation，排除 skip-path 混杂。严格保持 FA-pretrained 的定义：current forward、current batch
-error、current local phase gradient，但用 frozen pretrained phase operator 连接
-到前一层；固定的是 operator，不是 sample-specific backward field。所有方法
-必须匹配初始化、batch order、augmentation、optimizer、seed 和训练预算。
+V1/V2 正式实验。当前优先工作不是继续跑 FA，而是新建性能优先的 CIFAR-10 direct
+supervised BP backbone：先达到 full-test accuracy >= 60%，并用 optical-off、
+phase-random 和 phase-shuffle 证明 normalized optical dependence。通过两道 gate 后
+才固化 pretrained checkpoint 并恢复 fixed-feedback 对比。所有代码/config 修改必须
+通过 Git 同步，启动入口放在新实验的 commands/ 中。
 ```

@@ -50,7 +50,9 @@ FA-pretrained 固定的是**预训练结束时各光学层对应的反馈算子*
 
 V2 固定 epoch 30 的 test accuracy 为 BP 31.00 +/- 0.52%、FA-pretrained
 31.02 +/- 0.52%、FA-random 28.19 +/- 2.24%、NoFT 27.56%。这说明主性能关系
-已经成立，但预训练后平均 optical residual weight 只有约 0.07，下一步必须先排除
-网络主要走 skip path 的混杂解释。
+已经成立，但绝对性能和光学依赖均不足：预训练后平均 optical residual weight 只有
+约 0.07。当前路线已调整为先在 BP 下建立 full-test accuracy >= 60% 的 CIFAR-10
+backbone，再通过 optical-off/phase-random 等因果消融把光学依赖度提高到预注册门槛，
+最后才恢复 fixed-feedback 主实验。
 
 本专题最后整理日期：2026-08-18。

@@ -150,9 +150,10 @@ V2 服务器结果位于：
 
 ## 当前最有价值的科学问题
 
-1. optical occlusion 或相位扰动是否会显著降低 V2 性能，证明网络确实依赖光学路径？
-2. 在固定或受约束 residual 下，FA-pretrained 是否仍能匹配 BP？
-3. gradient cosine 和任务差距如何随 operator phasor distance 增大而变化？
-4. fixed connector 的收益来自正确的 pretrained phase、层特异性，还是传播物理先验？
-5. 能否通过更强 source pretraining 或 teacher distillation 得到有展示力的光学骨干？
+1. 能否在完整 CIFAR-10 test split 上先把 BP optical/hybrid backbone 做到 60%-65%？
+2. RGB 编码、stage 深度、传播设置、residual 和 readout 中，什么限制了当前性能？
+3. 在高性能模型中，optical-off/phase-random 会损失多少性能，因果光学依赖度多高？
+4. 在 accuracy-optical-dependence Pareto 前沿选出的 backbone 上，FA-pretrained 是否
+   仍能匹配 BP 并优于 FA-random？
+5. gradient cosine 和任务差距如何随 operator phasor distance 增大而变化？
 6. 在 SLM/CCD 噪声与校准误差下，固定反馈和 periodic refresh 的有效边界是什么？

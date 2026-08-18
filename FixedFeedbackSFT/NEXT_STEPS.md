@@ -1,88 +1,115 @@
-# 最近一轮执行优先级
+# 最近一轮执行优先级：先性能，再光学比例
 
-完整研究架构见 [RESEARCH_PLAN.md](RESEARCH_PLAN.md)。本文件只记录下一轮应按什么
-顺序执行，避免同时改变过多因素。
+完整方案见 [RESEARCH_PLAN.md](RESEARCH_PLAN.md)。当前 V1/V2 固定反馈结果保留，
+但暂停新增 FA 训练，直到新 backbone 通过性能和光学依赖两道 gate。
 
-## P0：固化现有 V2，不重跑
+## P0：锁定已有结果
 
-服务器 V2 的四组正式实验已经完成。先运行只读验证入口：
+已有 V2 不重跑，只作为当前 31% baseline 和反馈实现正确性证据：
 
 ```bash
 bash FixedFeedbackSFT/commands/01_verify_v2_results.sh
 ```
 
-保存并报告：
+## P1：新建性能 backbone 实验
 
-- shared pretrained checkpoint digest；
-- 三方法逐 epoch matched batch-order hash；
-- fixed endpoint 和 validation-selected 两套任务指标；
-- matched epoch 10/20/30 的 parameter delta；
-- phase phasor distance/coherence；
-- per-layer instantaneous gradient cosine；
-- 20 层 residual optical weight trajectory。
+新建独立实验目录，不能覆盖 V1/V2。第一任务固定为 CIFAR-10 direct supervised
+classification：
 
-现有主数字不需要通过重新训练“优化”。它们应作为冻结的 V2 baseline。
+```text
+RGB/grayscale input
+-> optical OEO backbone
+-> compact electronic readout
+-> 10 logits
+-> cross-entropy
+```
 
-## P1：用现有 checkpoint 检查 optical bypass
+第一轮先完成以下最小筛选：
 
-这是下一次代码修改和服务器运行的首要任务。
+1. grayscale vs RGB optical encoding；
+2. 4/8/12/20 stage；
+3. learned residual vs fixed 0.5/0.5 vs no skip；
+4. GAP+linear vs small MLP readout。
 
-1. 增加 evaluation-only optical occlusion：把 optical contribution 置零但不改 checkpoint；
-2. 增加 evaluation-only phase permutation/noise；
-3. 报告原始、occlusion、phase-shuffled 三种状态的 validation/test accuracy 和 embedding
-   变化；
-4. 输出每层 residual optical weight 和 occlusion sensitivity；
-5. 先只分析现有 BP/pretrained checkpoint，不启动新训练。
+每个运行都必须同时保存 normal accuracy、optical-off accuracy 和 phase-random
+accuracy。首轮单 seed，达到候选线后再扩展 seeds。
 
-判断规则：如果关闭或打乱光学路径几乎不影响结果，当前 V2 只能保留为算法 smoke，
-不能作为光学机制主结果。
+## P2：达到性能 gate
 
-## P2：独立新建 residual/架构筛选实验
+阶段目标使用完整 CIFAR-10 test split：
 
-不要覆盖 V2。先用 seed 1234 比较：
+- 最低工程线：50%；
+- 可展示线：60%；
+- 较好目标：65%；
+- 强目标：70%。
 
-- learned residual（现有 baseline）；
-- fixed optical/skip = 0.35/0.65；
-- optical-weight soft constraint；
-- 更少 stage 或无 skip 的诊断配置。
+若最佳结构低于 60%，按顺序检查：
 
-筛选标准同时包括：训练稳定、源任务表示、光学 occlusion drop 和平均/最小 optical
-weight。选出 1-2 个设置后再跑三个 matched seeds。
+1. RGB 信息是否丢失；
+2. 20-stage 是否因重复探测/重载导致退化；
+3. propagation padding/band-limit；
+4. phase initialization 和 LR/scheduler；
+5. normalization 与 readout；
+6. 最后才加入 distillation。
 
-## P3：算子漂移 sweep
+未通过 60% gate 前不做新 fixed-feedback 主实验。
 
-在选定的、确实使用光学路径的 backbone 上，从同一 checkpoint 出发逐项改变：
+## P3：达到光学依赖 gate
 
-1. phase LR：0.0003、0.001、0.003；
-2. horizon：5、10、20、30 epoch；
-3. 独立 trust-region 配置。
+对达到 60% 的模型计算：
 
-主横轴使用 phase operator phasor distance，不把 raw-parameter relative drift 作为唯一
-漂移指标。画出 operator distance、instantaneous gradient cosine、endpoint cosine 和
-BP-FA task gap 的响应关系。
+```text
+normalized_optical_dependence
+  = (Acc_full - Acc_optical_off) / (Acc_full - Acc_chance)
+```
 
-## P4：连接器结构消融
+并报告 phase-random、phase-shuffle、phase-noise、head-only、每层分支能量和 residual
+weight。建议进入下一阶段的条件：
 
-在同一 backbone 和同一微调协议下增加清晰的新方法名：
+- normalized optical dependence >= 0.5；
+- phase 随机/打乱造成稳定性能下降；
+- 平均 optical weight 不再接近 0.07；
+- 小电子 head 不能单独复现 full-model 性能。
 
-- `fa_identity_phase`；
-- `fa_shuffled_pretrained`；
-- `fa_noisy_pretrained_sigma_*`；
-- `fa_periodic_refresh_K`；
-- 保留现有 `fa_random`。
+如果性能高但光学依赖低，优先固定/约束 residual、缩小电子 head 或减少旁路，不把
+这个模型直接用于 FA 论文主结果。
 
-不能静默改变现有 `fa_pretrained` 定义。noisy-pretrained sweep 优先于构造完整
-full-stage frozen Jacobian，因为它更直接检验 connector mismatch 的因果作用。
+## P4：固化 pretrained optical backbone
 
-## P5：更强 backbone 与物理误差
+在 accuracy-optical-dependence Pareto 前沿选择：
 
-完成 P1-P4 后再投入大规模预训练或硬件仿真：
+- 一个主配置；
+- 一个低计算量配置。
 
-- source-task CE/SupCon/self-supervised pretraining；
-- teacher feature distillation 到 optical embedding；
-- 新 readout 先冻结 backbone warm-up，再从共享 checkpoint 联合微调；
-- SLM phase quantization/noise、CCD noise、配准和传播参数失配；
-- current BP/PAT、fixed feedback、periodic refresh 的系统代价对比。
+正式运行五个 seeds，保存 config/model/operator digest。随后构造：
 
-硬件版本必须明确 current forward、local phase update 和 error signal 分别如何观测或
-计算。固定 feedback 不等于不需要层间状态，也不自动等于计算量低于 BP。
+1. CIFAR-10 source checkpoint，用于 CIFAR-10-C；
+2. CIFAR-100 source checkpoint，用于 CIFAR-100 -> CIFAR-10。
+
+## P5：恢复固定反馈实验
+
+只有 P2-P4 完成后再比较：
+
+- NoFT；
+- head-only；
+- BP；
+- FA-pretrained；
+- FA-random。
+
+此时再做 phase LR/horizon/trust-region 的 operator drift sweep，以及 noisy/shuffled/
+identity/periodic-refresh connector 消融。
+
+## 命令维护约定
+
+新性能实验必须在其 `commands/` 中提供：
+
+```text
+01_prepare_data.sh
+02_smoke.sh
+03_train_bp_backbone.sh
+04_evaluate_optical_dependence.sh
+05_aggregate.sh
+COMMANDS.md
+```
+
+每次源代码或 config 修改都提交并推送 Git，再由服务器 `git pull --ff-only` 同步。
