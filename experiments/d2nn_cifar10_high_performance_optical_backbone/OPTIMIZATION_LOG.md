@@ -55,14 +55,14 @@ PHYSICAL_GPU_INDEX=<空闲物理卡号> bash experiments/d2nn_cifar10_high_perfo
 | 项目 | 结果 |
 |---|---:|
 | commit | 实现 b3ab2ba8；测试修正 56549567 |
-| 最优验证轮次 | 待回填 |
-| 最优验证 Top-1 | 待回填 |
-| 测试 Top-1 | 待回填 |
-| optical-off Top-1 | 待回填 |
-| random-phase Top-1 | 待回填 |
-| shuffled-phase Top-1 | 待回填 |
-| full - optical-off | 待回填 |
-| 单轮/总耗时 | 待回填 |
+| 最优验证轮次 | 76 |
+| 最优验证 Top-1 | 59.86% |
+| 测试 Top-1 | 59.93% |
+| optical-off Top-1 | 14.92% |
+| random-phase Top-1 | 13.07% |
+| shuffled-phase Top-1 | 10.97% |
+| full - optical-off | 45.01 个百分点；归一化依赖 90.15% |
+| 单轮/总耗时 | 约 45 秒/约 60 分钟 |
 
 继续/停止规则：
 
@@ -71,6 +71,8 @@ PHYSICAL_GPU_INDEX=<空闲物理卡号> bash experiments/d2nn_cifar10_high_perfo
 - 若最终测试低于 60%，A02 只做同数据集优化器与残差/读出小范围筛选。
 - 若从零训练接近或超过 60%，进入 A03 的 CIFAR-100 光学骨干预训练，再切回 CIFAR-10 微调。
 - 达到性能门槛后才比较光学依赖；若 full 与 optical-off 几乎相同，则降低旁路或改为无旁路的后段 stage，而不是用高总准确率掩盖电子主导。
+
+最终结论：A01 相比旧项目约 31% 的结果实现了大幅提升，并证明性能高度依赖学习到的光学相位；但测试 59.93% 比预设 60% 门槛低 0.07 个百分点，严格记为“接近但未通过”。因此不修改门槛，进入 A05 低学习率精修。
 
 ## 后续候选（尚未执行）
 
@@ -94,7 +96,7 @@ PHYSICAL_GPU_INDEX=<空闲物理卡号> bash experiments/d2nn_cifar10_high_perfo
 
 ### A03/A04：CIFAR-100 监督预训练与 CIFAR-10 迁移
 
-状态：配置与命令已实现，A03 等待服务器启动。
+状态：A03 正在服务器 GPU 2 训练；A04 等待 A03 最终 best checkpoint。
 
 A03 将 A01 的同一光学骨干分类头改为 100 类，在 CIFAR-100 的固定 45,000/5,000 分层划分上训练。A04 载入 A03 best checkpoint 中的全部 stage（相位、传播 buffer 与残差），丢弃 100 类电子头并新建 10 类头，再以较小 phase LR 做 CIFAR-10 全骨干微调。该方案直接产生“现成的预训练光学算子”，解决当前没有光学预训练骨干的问题。
 
@@ -103,6 +105,15 @@ A03 将 A01 的同一光学骨干分类头改为 100 类，在 CIFAR-100 的固�
 - A03 启动：`commands/07_pretrain_a03_cifar100.sh`
 - A04 启动：`commands/08_finetune_a04_cifar10.sh`（必须等待 A03 完成）
 
-### A04：教师蒸馏（仅在 A03 不足时）
+### A06：教师蒸馏（仅在预训练迁移不足时）
 
 使用固定的高性能电子教师提供软标签或中间表征，但学生推理仍只能使用已定义的光学骨干和紧凑读出。必须同时报告无蒸馏学生和光路破坏消融，避免把教师性能误记为光学能力。
+
+### A05：A01 低学习率连续精修
+
+状态：配置与命令已实现，等待服务器启动。
+
+A01 已接近收敛且仅差 0.07 个百分点达到测试门槛。A05 从 A01 epoch-76 best checkpoint 完整加载光学 stage 和电子头，不改变任何架构；phase/electronic LR 均降至 5e-4，residual LR 为 2e-4，继续 30 epoch cosine 精修。若仍不能稳定越过 60%，则不继续堆叠相同训练，而等待 A03/A04 的预训练迁移结果。
+
+- 配置：`configs/a05_refine_a01.yaml`
+- 启动：`commands/09_refine_a05_from_a01.sh`

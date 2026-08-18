@@ -11,6 +11,7 @@ bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/05_aggr
 PHYSICAL_GPU_INDEX=2 bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/06_train_a02_pool16.sh
 PHYSICAL_GPU_INDEX=2 bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/07_pretrain_a03_cifar100.sh
 PHYSICAL_GPU_INDEX=2 bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/08_finetune_a04_cifar10.sh
+PHYSICAL_GPU_INDEX=1 bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/09_refine_a05_from_a01.sh
 ```
 
 长任务后台启动示例：
@@ -25,3 +26,5 @@ nohup env PHYSICAL_GPU_INDEX=3 \
 默认会从 `latest.pt` 自动续训。只有明确希望丢弃同配置断点时才直接在 Python 命令追加 `--force`。
 
 `08_finetune_a04_cifar10.sh` 依赖 A03 的 `best.pt`，必须等 `07_pretrain_a03_cifar100.sh` 正常结束后启动。
+
+`09_refine_a05_from_a01.sh` 依赖 A01 的 `best.pt`，用于低学习率连续精修；它不改变架构。
