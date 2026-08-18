@@ -25,16 +25,40 @@ NoFT 直接评估共同起点。三个微调组的电子头和 residual 均使�
 
 ## Pilot P01
 
-状态：代码已实现，等待服务器测试与运行。
+状态：2026-08-18 seed 2026 已完成；seed 2027、2028 作为原协议直接重复，不改超参数。
 
 - 配置：`configs/formal_pilot.yaml`
 - head warm-up：10 epoch，seed 4242；
-- downstream pilot：seed 2026，20 epoch；
+- downstream：seed 2026、2027、2028，各 20 epoch；
 - phase LR：5e-4；electronic/residual LR：3e-4；
 - checkpoint：validation best，且 epoch-0 共同起点受到保护；
 - 预期用途：验证高性能 RGB 八层骨干上是否仍出现 FA-pretrained 接近 BP、且优于 FA-random 的现象。
 
 必须回填：共同 checkpoint SHA-256、head-warmup best、四组 test accuracy、光学依赖、epoch-0 分层 gradient cosine、endpoint phase drift、BP-FA gap 和是否进入多 seed。
+
+已完成的共同起点与 NoFT：
+
+- head warm-up selected epoch：10；validation accuracy：54.10%；
+- common checkpoint SHA-256：`deceeec8dfad0026904b921f4d8e20f352bf1ac33735ef2bc14ad1787030c31a`；
+- NoFT test accuracy：55.53%；optical-off：16.08%；phase-random：14.14%；phase-shuffle：10.40%；
+- NoFT normalized optical dependence：86.65%。
+
+这说明共同起点已经具有可展示的下游性能，并且该性能不是电子 bypass 单独提供的。四种方法均引用这个完全相同的 checkpoint；后三种方法在每个 seed 内采用完全相同的数据顺序与预算。
+
+### P01 seed 2026 结果
+
+| 方法 | selected epoch | validation | test | optical-off | normalized optical dependence | phase RMS drift |
+|---|---:|---:|---:|---:|---:|---:|
+| NoFT | 0 | 54.10% | 55.53% | 16.08% | 86.65% | 0.0000 rad |
+| BP | 20 | 57.04% | 58.44% | 15.15% | 89.37% | 0.0680 rad |
+| FA-pretrained | 20 | 57.04% | 58.44% | 15.16% | 89.35% | 0.0682 rad |
+| FA-random | 15 | 56.38% | 57.39% | 15.95% | 87.44% | 0.0955 rad |
+
+直接差值：BP - NoFT = +2.91 pp；FA-pretrained - NoFT = +2.91 pp；FA-pretrained - FA-random = +1.05 pp；BP - FA-pretrained = 0.00 pp。
+
+机制检查：FA-pretrained 在 epoch 0 的八层 gradient cosine 均约为 1；FA-random 从第一层到末层为 `[0.0428, 0.0623, 0.2471, 0.0826, 0.4010, 0.4279, 0.7140, 1.0000]`。随机反馈的末层为 1 是设计预期，因为末层不经过更后的固定 connector。
+
+初步判断：seed 2026 支持“预训练固定反馈贴近 BP，并优于随机固定反馈”，且不是由电子 bypass 单独支撑；但相位漂移较小、只有单 seed，暂不升级为最终结论。下一动作是保持相同 common checkpoint 与训练预算，补 seed 2027、2028；之后再决定是否进入更高 phase LR / 更高光学占比的强更新实验。
 
 ## 工程验证 S01
 

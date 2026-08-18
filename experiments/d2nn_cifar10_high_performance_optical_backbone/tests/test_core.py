@@ -117,7 +117,7 @@ def test_random_feedback_changes_connector_but_not_forward() -> None:
 
 def test_formal_pilot_has_only_the_expected_contract() -> None:
     formal = load_formal_settings(CONFIG.parent / "formal_pilot.yaml")
-    assert formal.formal.finetune_seeds == (2026,)
+    assert formal.formal.finetune_seeds == (2026, 2027, 2028)
     assert formal.formal.head_warmup_epochs == 10
     assert formal.formal.finetune_epochs == 20
     assert len(formal.formal.source_checkpoint_sha256) == 64

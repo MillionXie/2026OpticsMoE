@@ -36,7 +36,7 @@ FORCE_RESTART=1 PHYSICAL_GPU_INDEX=1 \
   bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/09_refine_a05_from_a01.sh
 ```
 
-正式四组 pilot 必须先生成共同 head-warmup checkpoint，再运行四组：
+正式四组实验必须先生成共同 head-warmup checkpoint，再运行四组。每个方法脚本会依次补齐配置中的 seed 2026、2027、2028，并自动复用已经完成的结果：
 
 ```bash
 PHYSICAL_GPU_INDEX=1 bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/10_prepare_common_formal.sh

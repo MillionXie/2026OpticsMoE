@@ -1,4 +1,4 @@
-# Single-seed pilot for the only four formal groups.
+# Three-seed replication for the only four formal groups.
 output_dir: experiments/d2nn_cifar10_high_performance_optical_backbone/runs/formal_pilot
 
 optical:
@@ -43,7 +43,7 @@ optimizer:
 
 training:
   epochs: 20
-  seeds: [2026]
+  seeds: [2026, 2027, 2028]
   batch_size: 32
   evaluation_batch_size: 64
   label_smoothing: 0.10
@@ -64,7 +64,7 @@ formal:
   head_warmup_epochs: 10
   head_learning_rate: 0.001
   finetune_epochs: 20
-  finetune_seeds: [2026]
+  finetune_seeds: [2026, 2027, 2028]
   phase_learning_rate: 0.0005
   residual_learning_rate: 0.0003
   electronic_learning_rate: 0.0003
