@@ -12,4 +12,9 @@
 
 产物写入 `runs/<attempt>/seed_<seed>/`，包括断点、逐轮历史、验证集选出的 best checkpoint 和完整测试/光学消融结果。`runs/` 不应提交 Git。
 
-截至 2026-08-18，最高准确率候选 A05 的 CIFAR-10 完整测试 Top-1 为 61.02%，关闭光路后 14.54%，归一化光学依赖 91.10%。CIFAR-100 预训练迁移 A04 的测试 Top-1 为 60.71%，关闭光路后 12.65%，归一化光学依赖 94.77%。建议保留 A05 作为性能参考，采用 A03→A04 作为正式固定反馈研究的主预训练骨干。
+截至 2026-08-19，预算内低分辨率电子残差候选 A13 的单 seed CIFAR-10 完整测试 Top-1 为
+72.18%，关闭光路后 13.39%，随机/置换相位后为 12.48%/12.76%，归一化光学依赖 94.55%。
+八层 optical gate 均不低于 0.50；residual electronic processing 为 312,336 参数，连同原
+MLP readout 总电子参数 416,666。A13 是当前待多 seed 复验的性能骨干，不是新的反馈方法；
+正式方法仍只有 NoFT、BP、FA-pretrained、FA-random 四组。详细动作、早停候选和消融见
+`OPTIMIZATION_LOG.md`，结构与 RGB/归一化/读出解释见 `ARCHITECTURE.md`。

@@ -1,6 +1,6 @@
 # 光学骨干性能优化复盘
 
-更新日期：2026-08-18
+更新日期：2026-08-19
 
 ## 目标与边界
 
@@ -19,7 +19,7 @@
 - 关键问题：预训练表征本身只有约 31% 的原型分类能力；训练后平均光学残差权重从 0.35 附近塌缩到约 0.07，电子旁路主导。
 - 决策：暂停 FA 横向扩展，先构造性能足够的 BP 光学骨干；残差光学权重设置硬下限，并添加光学依赖诊断。
 
-## 当前尝试：A01（RGB-8stage constrained residual）
+## 已完成尝试：A01（RGB-8stage constrained residual）
 
 状态：服务器单元测试首次运行 4 passed / 1 failed。失败来自 float32 中 0.35 表示为 0.349999994，而测试使用了无容差比较；模型行为、相位梯度与消融前向无异常。改为 1e-6 容差后复测为 5 passed。两批次端到端 smoke test 已完成，训练、best checkpoint、四种消融评估和聚合均成功，无 NaN/崩溃；两条支路 RMS 均约为 1，光学权重约为 0.50。smoke 只评估 8 个样本，其准确率不作为性能结论。
 
@@ -50,7 +50,7 @@
 PHYSICAL_GPU_INDEX=<空闲物理卡号> bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/03_train_a01.sh
 ```
 
-结果待回填：
+最终结果：
 
 | 项目 | 结果 |
 |---|---:|
@@ -74,7 +74,7 @@ PHYSICAL_GPU_INDEX=<空闲物理卡号> bash experiments/d2nn_cifar10_high_perfo
 
 最终结论：A01 相比旧项目约 31% 的结果实现了大幅提升，并证明性能高度依赖学习到的光学相位；但测试 59.93% 比预设 60% 门槛低 0.07 个百分点，严格记为“接近但未通过”。因此不修改门槛，进入 A05 低学习率精修。
 
-## 后续候选（尚未执行）
+## 后续尝试
 
 ### A02：低成本定向调参
 
@@ -96,7 +96,7 @@ PHYSICAL_GPU_INDEX=<空闲物理卡号> bash experiments/d2nn_cifar10_high_perfo
 
 ### A03/A04：CIFAR-100 监督预训练与 CIFAR-10 迁移
 
-状态：A03 已完成；A04 正在服务器 GPU 2 训练。
+状态：A03/A04 均已完成。
 
 A03 将 A01 的同一光学骨干分类头改为 100 类，在 CIFAR-100 的固定 45,000/5,000 分层划分上训练。A04 载入 A03 best checkpoint 中的全部 stage（相位、传播 buffer 与残差），丢弃 100 类电子头并新建 10 类头，再以较小 phase LR 做 CIFAR-10 全骨干微调。该方案直接产生“现成的预训练光学算子”，解决当前没有光学预训练骨干的问题。
 
@@ -105,7 +105,7 @@ A03 将 A01 的同一光学骨干分类头改为 100 类，在 CIFAR-100 的固�
 - A03 启动：`commands/07_pretrain_a03_cifar100.sh`
 - A04 启动：`commands/08_finetune_a04_cifar10.sh`（必须等待 A03 完成）
 
-A03 实测：best validation 为 30.80%（epoch 78），完整 CIFAR-100 测试 normal/optical-off/random-phase/shuffled-phase Top-1 为 32.13%/4.76%/3.26%/1.22%，归一化光学依赖为 87.92%。结论：得到一个具有实质 100 类辨别能力、且强依赖学习相位的光学预训练骨干。A04 已在 GPU 2 启动，PID 3864506；随机初始化的新 10 类头使 epoch-0 validation 为 10.38%，该基线已按修正后的协议登记。
+A03 实测：best validation 为 30.80%（epoch 78），完整 CIFAR-100 测试 normal/optical-off/random-phase/shuffled-phase Top-1 为 32.13%/4.76%/3.26%/1.22%，归一化光学依赖为 87.92%。结论：得到一个具有实质 100 类辨别能力、且强依赖学习相位的光学预训练骨干。A04 训练启动时，随机初始化的新 10 类头使 epoch-0 validation 为 10.38%，该基线已按修正后的协议登记。
 
 A04 最终实测：best validation 为 60.48%（epoch 43），完整 CIFAR-10 测试 normal/optical-off/random-phase/shuffled-phase Top-1 为 60.71%/12.65%/11.99%/13.64%。normal 比 optical-off 高 48.06 个百分点，归一化光学依赖为 94.77%。结论：A04 测试准确率比 A05 低 0.31 个百分点，但光学依赖高 3.67 个百分点，并且直接建立了 CIFAR-100 预训练光学算子到 CIFAR-10 微调的链条。建议 A05 保留为最高准确率参考，A03→A04 作为正式四组固定反馈实验的主预训练骨干。
 
@@ -121,7 +121,7 @@ A01 已接近收敛且仅差 0.07 个百分点达到测试门槛。A05 从 A01 e
 
 首次启动的 epoch-1 validation 为 57.92%，低于初始化 A01 的 59.86%。检查发现训练器原本只在新 run 内选 best，会忘记 epoch-0 初始化性能。已停止进程并修改协议：所有带初始化 checkpoint 的 run 先评估并保存 epoch-0 best，后续只有严格超过它才覆盖。这一修正同时适用于 A04。A05 将用 `FORCE_RESTART=1` 从 A01 checkpoint 干净重跑；首次两轮结果不纳入结论。
 
-最终实测：best validation 为 60.54%（A05 epoch 28），完整 CIFAR-10 测试 normal/optical-off/random-phase/shuffled-phase Top-1 为 61.02%/14.54%/13.44%/11.29%。normal 比 optical-off 高 46.48 个百分点，归一化光学依赖为 91.10%。phase/electronic 参数分别为 393,216/104,330。结论：严格通过 60% 性能门槛，且相位破坏后的性能接近随机；A05 可作为当前最优 BP 光学骨干候选。继续 A04 的目的不是补救 A05，而是验证光学预训练能否给出更高性能或更强论文叙事。
+最终实测：best validation 为 60.54%（A05 epoch 28），完整 CIFAR-10 测试 normal/optical-off/random-phase/shuffled-phase Top-1 为 61.02%/14.54%/13.44%/11.29%。normal 比 optical-off 高 46.48 个百分点，归一化光学依赖为 91.10%。phase/electronic 参数分别为 393,216/104,330。结论：严格通过 60% 性能门槛，且相位破坏后的性能接近随机；A05 是该阶段的最优 BP 光学骨干候选。继续 A04 的目的不是补救 A05，而是验证光学预训练能否给出更高性能或更强论文叙事。
 
 - 配置：`configs/a05_refine_a01.yaml`
 - 启动：`commands/09_refine_a05_from_a01.sh`
@@ -168,13 +168,13 @@ A01 已接近收敛且仅差 0.07 个百分点达到测试门槛。A05 从 A01 e
 | normalized optical dependence | 97.71% | 94.77% |
 | selected-checkpoint mean optical weight | 51.73% | 约 37.58% |
 
-A07 最佳 checkpoint 的八层光学权重为 `[0.6245, 0.5059, 0.5031, 0.5018, 0.5006, 0.5005, 0.5007, 0.5013]`。相对 A04，测试性能只下降 0.46 pp，平均光学权重提高约 14.15 pp，归一化光学依赖提高 2.94 pp；三种相位/光路破坏后的准确率均降到接近随机水平。结论：A07 是当前更适合作为“高光学占比”主设置的骨干，严格通过 60% 门槛。
+A07 最佳 checkpoint 的八层光学权重为 `[0.6245, 0.5059, 0.5031, 0.5018, 0.5006, 0.5005, 0.5007, 0.5013]`。相对 A04，测试性能只下降 0.46 pp，平均光学权重提高约 14.15 pp，归一化光学依赖提高 2.94 pp；三种相位/光路破坏后的准确率均降到接近随机水平。结论：A07 在该阶段是更适合作为“高光学占比”主设置的骨干，严格通过 60% 门槛。
 
-冻结 checkpoint：`runs/a07_high_optical_cifar100_to_cifar10/seed_1234/best.pt`，SHA-256 `a9b3784ad392dc19546266c0c804dc8f77a2c90d92812ae425b2d3c52a487084`，大小 8,630,498 byte。下一正式动作是在仍然只有 NoFT/BP/FA-pretrained/FA-random 四组的前提下，把 A07 的 `main_min=0.50` 与 50 epoch schedule 固定为共同协议，验证 P01 的固定反馈结论能否延伸到更高光学占比和更强更新。
+冻结 checkpoint：`runs/a07_high_optical_cifar100_to_cifar10/seed_1234/best.pt`，SHA-256 `a9b3784ad392dc19546266c0c804dc8f77a2c90d92812ae425b2d3c52a487084`，大小 8,630,498 byte。当时计划把 A07 的 `main_min=0.50` 与 50 epoch schedule 固定为四组共同协议；随后按用户要求先继续优化骨干性能，形成 A08--A13。
 
 ## A08–A10：高光学约束下的轻量电子残差筛选
 
-状态：2026-08-19 完成实现和预注册，等待/正在服务器运行。它们是 BP 骨干优化 run，不是新增正式方法。
+状态：2026-08-19 已完成训练与统一消融。它们是 BP 骨干优化 run，不是新增正式方法。
 
 动机：A01–A07 的三个颜色通道在八层光学传播中完全独立，只有最终 MLP 读出能够混合 RGB；每层 bypass 也只是原振幅的 RMS-normalized identity。用户允许在保证每层 optical gate 不低于 0.5 的前提下，对 bypass 做少量电子处理，并建议尝试 U-Net 式跳连。
 
@@ -218,3 +218,77 @@ validation-best 仍落后 A08 超过 0.5 pp，则判定为被支配候选，停�
 旁路降采样到 32×32，以 64 通道进行低分辨率空间处理，再上采样并以 `scale<=0.25` 加回旁路；
 八层约 0.31M residual 参数，连同约 0.10M MLP head 总电子参数约 0.42M。它仍严格位于
 `1-alpha<=0.5` 的 bypass 中，并使用与 A08/A07 相同 source 和训练协议。
+
+第一轮完整结果（单 seed，仅用于架构筛选）：
+
+| 项目 | A07 参考 | A08 pointwise | A09 depthwise | A10 depthwise + long skip |
+|---|---:|---:|---:|---:|
+| selected epoch | 48 | 48 | 41 | 48 |
+| best validation Top-1 | 60.40% | **63.64%** | 62.72% | 63.22% |
+| test Top-1 | 60.25% | 62.05% | **63.05%** | 62.79% |
+| optical-off Top-1 | 11.15% | 15.47% | 16.26% | 14.95% |
+| random-phase Top-1 | 10.95% | 13.66% | 15.24% | 12.65% |
+| shuffled-phase Top-1 | 9.73% | 11.18% | 10.93% | 11.99% |
+| electronic-skip-off Top-1 | 不适用 | 38.52% | 32.87% | 29.64% |
+| long-skip-off Top-1 | 不适用 | 62.05% | 63.05% | 60.60% |
+| normalized optical dependence | 97.71% | 89.49% | 88.20% | 90.62% |
+| residual electronic parameters | 0 | 592 | 856 | 859 |
+
+A08/A09/A10 都比 A07 提高约 1.8--2.8 pp，同时 optical-off 和两种相位破坏仍接近随机，
+因此提升不能用电子旁路单独分类解释。A09 的单次 test 最高，但 A08 的 validation 最高；在只做
+单 seed 架构筛选时不能依据 test 反选 A09。A10 的 `long-skip-off` 比完整模型低 2.19 pp，说明
+长跳连确实被使用，但完整性能没有形成新的 Pareto 优势，因此不保留 U-Net-like 长跳连。
+
+读出头筛选的 A11/A12 都在第 20 轮按验证曲线止损：
+
+| 项目 | A08 原 MLP，跑满 50 轮 | A11 conv head，止于 20 轮 | A12 avg/max MLP，止于 20 轮 |
+|---|---:|---:|---:|
+| best validation Top-1 | 63.64% | 57.88% | 58.30% |
+| test Top-1 | 62.05% | 58.46% | 58.74% |
+| optical-off Top-1 | 15.47% | 12.68% | 15.55% |
+| random-phase Top-1 | 13.66% | 14.08% | 9.98% |
+| shuffled-phase Top-1 | 11.18% | 14.76% | 13.31% |
+| electronic-skip-off Top-1 | 38.52% | 41.02% | 42.42% |
+| normalized optical dependence | 89.49% | 94.47% | 88.61% |
+| head electronic parameters | 104,330 | 88,362 | 203,018 |
+
+A11/A12 的验证曲线都没有显示出追平 A08 的趋势；继续训练会消耗大量共享 GPU 时间，且不能
+改变由验证集作出的架构选择，因此保留原 `8x8 pool -> 192x512 MLP` 读出。A13 的最终结果
+见下一节。
+
+## A13：预算内低分辨率电子残差
+
+状态：2026-08-19 跑满 50 epochs 并完成统一消融；当前单 seed 性能骨干候选。
+
+| 项目 | A07 高光学参考 | A08 极小 pointwise | A13 低分辨率电子残差 |
+|---|---:|---:|---:|
+| selected epoch | 48 | 48 | 49 |
+| best validation Top-1 | 60.40% | 63.64% | **73.08%** |
+| test Top-1 | 60.25% | 62.05% | **72.18%** |
+| optical-off Top-1 | 11.15% | 15.47% | 13.39% |
+| random-phase Top-1 | 10.95% | 13.66% | 12.48% |
+| shuffled-phase Top-1 | 9.73% | 11.18% | 12.76% |
+| electronic-skip-off Top-1 | 不适用 | 38.52% | 28.06% |
+| normalized optical dependence | 97.71% | 89.49% | **94.55%** |
+| mean optical gate | 51.73% | 51.72% | 51.18% |
+| residual electronic parameters | 0 | 592 | 312,336 |
+| head electronic parameters | 104,330 | 104,330 | 104,330 |
+| total electronic parameters | 104,330 | 104,922 | **416,666** |
+| estimated electronic MAC/sample | 约 0.10M | 9.54M | **317.82M** |
+
+A13 相对 A07/A08 的 test Top-1 分别提高 11.93/10.13 pp，而 optical-off 只有 13.39%，
+random/shuffle phase 也只有约 12%--13%。因此 72.18% 不能由电子路径单独分类解释，学习到的
+光学相位仍是必要条件。关闭新增电子变换后下降到 28.06%，说明几十万参数的低分辨率电子
+残差对光电协同同样关键；A13 应表述为“强光学因果依赖的混合光电网络”，不能表述为纯光学
+网络。
+
+最佳 checkpoint 的八层 optical gate 为
+`[0.5827, 0.5039, 0.5023, 0.5016, 0.5005, 0.5007, 0.5010, 0.5020]`，最小值 50.05%，
+全部满足 `alpha>=0.5`。residual electronic processing 共 312,336 参数，低于实验室 1--2M
+上限且处于“几十万”经验范围；连同读出头总电子参数 416,666。与此同时，估算电子卷积为
+317.82M MAC/sample，参数合规不等于时延或能耗已经合规，后续系统实验必须单独报告。
+
+冻结 checkpoint：`runs/a13_lowres_electronic_residual/seed_1234/best.pt`，SHA-256
+`69c3a680e5f53f7c49b7d657daafa10174192000611b30a1c570c5604ae97cf6`，大小 12,458,658 byte。
+A13 目前只是在 CIFAR-10 上、seed 1234 的架构筛选胜者；下一步应先做独立 seeds 复验，再
+冻结它并回到唯一四组 NoFT/BP/FA-pretrained/FA-random，不能把 A13 当作第五种反馈方法。

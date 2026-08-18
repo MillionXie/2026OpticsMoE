@@ -7,7 +7,9 @@ phase-only modulation -> angular-spectrum propagation -> CCD intensity
 -> spatial standardization -> ReLU -> RMS balance -> constrained residual reload
 ```
 
-共使用 8 个 stage。每层光学分支占比从 0.50 开始学习且不得低于 0.35。最后将三路振幅池化到 8×8，再由 LayerNorm、512 维 GELU 隐层和线性分类器输出类别。
+共使用 8 个 stage。A01--A06 的每层光学分支占比从 0.50 开始学习且不得低于 0.35；
+A07--A13 将硬下限提高到 0.50。最后将三路振幅池化到 8×8，再由 LayerNorm、512 维 GELU
+隐层和线性分类器输出类别。
 
 该模型仍是混合光电网络：传播与相位调制是光学算子，CCD 后归一化、激活、重载和最终分类头是电子算子。因此“光学处理比例”不只用参数量表述，还必须看关闭光路和破坏已学习相位后的性能下降。
 
@@ -54,7 +56,7 @@ AdaptiveAvgPool(8×8) -> flatten(192) -> LayerNorm -> Linear(192,512)
 -> GELU -> Dropout -> classifier
 ```
 
-新增但尚待第二轮筛选的 `conv` 头是：
+第二轮筛选过的 `conv` 头是：
 
 ```text
 pool -> 3×3 Conv -> GroupNorm -> GELU
@@ -64,12 +66,20 @@ pool -> 3×3 Conv -> GroupNorm -> GELU
 
 它与当前 MLP 头参数量同量级，并保留粗粒度空间布局。另一个 `dual_pool` 候选把 8×8
 average-pooled 与 max-pooled 光学图样拼接后送入 MLP，用于同时读取平均能量和局部衍射峰。
-是否采用只由验证集性能和光学因果消融共同决定，不能只看完整模型准确率。
+A11/A12 在统一协议第 20 轮的 best validation 分别只有 57.88%/58.30%，明显落后原 MLP
+候选 A08 的后续曲线，因此均止损。当前保留 104,330 参数的原 MLP 头；这是验证集选择，
+不是因为卷积头在一般情况下必然更差。
 
 ## 电子预算扩展 A13
 
-A08 的电子残差只有 592 个参数，是极小有效性基线。根据实验室可接受的 1–2M 电子参数
+A08 的电子残差只有 592 个参数，是极小有效性基线。根据实验室可接受的 1--2M 电子参数
 预算，A13 把旁路先平均池化到 32×32，在低分辨率使用 64 通道的两层空间变换，再双线性
 上采样回 128×128。电子修正仍以 `s<=0.25` 残差加入旁路，随后通过 `alpha>=0.5` 的门控
-与同层光学输出合并。八层电子残差约 0.31M 参数，加旧 MLP head 后总电子参数约 0.42M。
+与同层光学输出合并。八层电子残差 312,336 参数，加旧 MLP head 后总电子参数 416,666。
 这样利用了几十万级合理容量，同时避免直接在 128×128 上运行 64 通道全卷积。
+
+A13 最佳 checkpoint 的 test/optical-off/random-phase/shuffled-phase/electronic-skip-off Top-1
+分别为 72.18%/13.39%/12.48%/12.76%/28.06%，normalized optical dependence 为 94.55%。
+八层 gate 的最小值/均值为 50.05%/51.18%，因此门控约束和光学因果消融都通过。其估算电子
+卷积量仍有 317.82M MAC/sample，所以 `alpha>=0.5` 只表示经过 RMS 平衡后的分支混合权重，
+不能称为实际光学计算比例、能耗比例或硬件加速比。

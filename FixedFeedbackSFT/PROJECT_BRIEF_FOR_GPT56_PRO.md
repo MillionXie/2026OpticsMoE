@@ -208,10 +208,10 @@ normalized_optical_dependence
 虽然关系符合预期，但平均 optical residual weight 只有约 0.07，网络大部分走 skip path；
 绝对性能也弱。因此 V2 只能作为开发历史和动机，不能成为强主结果。
 
-### 6.2 A01–A07 是工程尝试编号，不是论文方法
+### 6.2 A01–A13 是工程尝试编号，不是论文方法
 
-`A01`、`A03`、`A07` 等只是内部性能优化和 checkpoint 追踪编号，类似实验日志的 run ID。
-它们不是七个需要放入主表的算法，也不应拿来和四种正式反馈方法并列。
+`A01`、`A03`、`A07`、`A13` 等只是内部性能优化和 checkpoint 追踪编号，类似实验日志的
+run ID。它们不是需要放入主表的算法，也不应拿来和四种正式反馈方法并列。
 
 关键节点如下：
 
@@ -220,8 +220,10 @@ normalized_optical_dependence
 | A01 | RGB 8-stage 直接 CIFAR-10 基线 | test 59.93%，光学依赖 90.15% | 证明新骨干设计有效 |
 | A03 | CIFAR-100 source 预训练 | test 32.13%，光学依赖 87.92% | 正式 pretrained optical source |
 | A04 | A03 → CIFAR-10 的 BP 迁移 | test 60.71%，光学依赖 94.77% | 普通光学权重下限参考 |
-| A05 | 从 A01 低学习率精修 | test 61.02% | 当前最高准确率参考，但不是真正跨数据集 source |
-| A07 | A03 → CIFAR-10 高光学权重 BP 可行性 | test 60.25%，光学依赖 97.71% | 下一轮四组的共同高光学设置 |
+| A05 | 从 A01 低学习率精修 | test 61.02% | 历史性能参考，但不是真正跨数据集 source |
+| A07 | A03 → CIFAR-10 高光学权重 BP 可行性 | test 60.25%，光学依赖 97.71% | 无新增电子残差的高光学参考 |
+| A08 | A07 + 极小 pointwise 电子残差 | test 62.05%，光学依赖 89.49% | 592 参数电子残差基线 |
+| A13 | A07 + 低分辨率电子残差 | test 72.18%，光学依赖 94.55% | 当前待多 seed 复验的性能骨干 |
 
 A07 相对 A04 唯一结构性变化是把每层 residual optical weight 的硬下限从 0.35 提到
 0.50，训练 50 epochs。A07 最佳 checkpoint 的八层光学权重为
@@ -260,18 +262,47 @@ P01 不能支持：固定反馈在大算子漂移、高光学权重下限、其�
 规模、硬件非理想或真实光学平台上仍然有效。BP/FA-pretrained 的 operator coherence 约
 0.9977，说明目前仍处于非常接近 source operator 的区域。
 
-### 6.4 当前两个结果还没有合并
+### 6.4 正式四组结果与更强骨干还没有合并
 
 这是理解项目现状最重要的一句话：
 
 ```text
 P01 = 四组关系已经成立，但只训练 20 epoch，test 约 58.4%，相位漂移小。
-A07 = BP 达到 60.25% 且光学依赖 97.71%，但其他三组尚未运行。
+A13 = BP 性能骨干达到 72.18% 且光学依赖 94.55%，但目前只是单 seed 架构筛选，
+      其他三组尚未在该结构运行。
 ```
 
-因此下一项已经锁定的实验应是：在不再改结构、不按方法单独调参的前提下，使用 A07 的
-`main_min=0.50 + 50 epoch` 共同协议，完整运行 NoFT、BP、FA-pretrained、FA-random
-三个 seeds。它会回答 P01 结论能否延伸到更高光学占比和更强更新，而不是继续增加方法组。
+因此不能把 72.18% 和 P01 的固定反馈关系拼成一个未经运行的结论。先用额外 seeds 确认 A13
+不是偶然的架构筛选峰值；若复验通过，就冻结 A13 的结构、电子预算、`main_min=0.50` 和训练
+协议，再运行 NoFT、BP、FA-pretrained、FA-random。它会回答 P01 结论能否延伸到更强骨干，
+而不是继续增加方法组。
+
+### 6.5 2026-08-19 性能优化闭环：A08--A13
+
+在用户给定“每层 optical gate 不低于 0.5、residual electronic processing 总参数优先几十万且
+不超过 1--2M、合理设计读出头”的约束下，完成了三条结构轴：极小 RGB pointwise/depthwise
+旁路、U-Net-like 跨层跳连、两种读出头，以及预算内的低分辨率电子残差。主要筛选结果为：
+
+| 候选 | test Top-1 | optical-off | normalized optical dependence | 结论 |
+|---|---:|---:|---:|---|
+| A08 pointwise | 62.05% | 15.47% | 89.49% | 592 参数即可带来有效提升 |
+| A09 depthwise | 63.05% | 16.26% | 88.20% | 单次 test 最高但 validation 不胜 A08 |
+| A10 + long skip | 62.79% | 14.95% | 90.62% | 跳连有效但不构成 Pareto 优势 |
+| A11 conv readout | 58.46% | 12.68% | 94.47% | 第 20 轮止损 |
+| A12 avg/max readout | 58.74% | 15.55% | 88.61% | 第 20 轮止损 |
+| A13 low-resolution residual | **72.18%** | **13.39%** | **94.55%** | 当前胜者，需多 seed 复验 |
+
+A13 每个 stage 把 128×128 bypass 平均池化到 32×32，经 `3→64→64→3` 两层 3×3 空间变换
+和 1×1 投影，再上采样并以 `scale<=0.25` 残差加入；最终仍与同层光学输出按 `alpha>=0.5`
+混合。八层 residual electronic parameters 为 312,336，原 MLP head 为 104,330，总电子参数
+416,666。八层 optical gate 最小/均值为 50.05%/51.18%。random/shuffled phase 只有
+12.48%/12.76%，但关闭新增电子残差后也降到 28.06%，所以它是依赖双方协同的混合光电
+网络：不能称为电子旁路取巧，也不能称为纯光学模型。
+
+必须同时看到它的系统代价：估算电子卷积为 317.82M MAC/sample。门控 `alpha>=0.5` 是两个
+RMS 平衡分支的数值混合约束，不是实际光学计算占比或能耗占比；后续需要独立的硬件映射、
+时延和能耗分析。A13 的结构筛选发生在 CIFAR-10，不能用同一测试集继续挑变体，也不能把
+单 seed 的 72.18% 当成顶刊级外部有效性证据。
 
 ---
 
@@ -283,15 +314,15 @@ A07 = BP 达到 60.25% 且光学依赖 97.71%，但其他三组尚未运行。
 - 在 CIFAR-100 → CIFAR-10 迁移中，FA-pretrained 可接近 BP，并稳定优于物理形状匹配的
   FA-random；
 - 该现象不只存在于早期 31% 弱模型，也存在于 58% 左右且具有强光学因果依赖的骨干；
-- A07 说明 60% 准确率、每层至少 50% optical mixing 和接近随机水平的光学破坏结果可以
-  同时实现；
+- A13 说明 72.18% 准确率、每层至少 50% optical mixing、几十万 residual electronic
+  parameters 和接近随机水平的光学破坏结果可以同时实现；
 - 固定反馈效果与小算子漂移、高梯度对齐相伴出现。
 
 ### 当前不能声称
 
 - 不能声称固定预训练反馈普遍等价于 BP；
 - 不能声称已经在多数据集、多任务或大模型上成立；
-- 不能声称 A07 的高光学设置已验证四组结论；
+- 不能声称 A13 的强性能设置已验证四组结论，也不能把单 seed 架构筛选结果当作稳定均值；
 - 不能把 residual mixing weight 称为实际“光学计算占比”或“能耗占比”；
 - 不能声称省显存、加速或节能，当前实现的自定义 autograd 仍是数字仿真，尚未做系统收益测量；
 - 不能声称对真实光学硬件的噪声和校准误差鲁棒；
@@ -357,7 +388,7 @@ CIFAR-100 在当前设计中主要承担 source pretraining，并不等于已经
 5. **系统收益不足**：没有测量反向校准次数、状态传输、显存、时延和能耗；
 6. **统计力度不足**：目前三 seeds 适合 pilot，但若主张差异小且要做等效性结论，需要置信区间、
    配对设计和预先定义的 equivalence/non-inferiority margin；
-7. **潜在选择偏差**：A01–A07 是在 CIFAR-10 上逐步开发出来的，后续需要锁定协议并在未参与
+7. **潜在选择偏差**：A01–A13 是在 CIFAR-10 上逐步开发出来的，后续需要锁定协议并在未参与
    调参的新数据集上验证；
 8. **没有大模型桥梁**：尚未说明光学算子在 ViT/VLM/LLM 中替代哪一部分，也没有大模型结果。
 
@@ -373,7 +404,8 @@ CIFAR-100 在当前设计中主要承担 source pretraining，并不等于已经
 
 ### WP0：先完成已经欠缺的闭环
 
-- 固定 A07 架构、`main_min=0.50`、50-epoch schedule 和 source/common start；
+- 先用额外 seeds 复验 A13；通过后冻结其结构、电子预算、`main_min=0.50`、50-epoch
+  schedule 和 source/common start；
 - 运行唯一四组、三个或五个 matched seeds；
 - 同时报 accuracy、optical-off/random/shuffle、operator drift/coherence、逐层 gradient cosine；
 - 预注册 validation、checkpoint 和等效性判断规则；
@@ -539,6 +571,7 @@ Pareto front，而不是只追求 CIFAR-10 单点最高准确率。
 | A03 CIFAR-100 source optical operator | `f632c57cf8518050904...247becc` |
 | P01 shared CIFAR-10 head-warmup start | `deceeec8dfad0026904...0c31a` |
 | A07 high-optical BP endpoint | `a9b3784ad392dc19546...487084` |
+| A13 budgeted residual BP endpoint | `69c3a680e5f53f7c49...97cf6` |
 
 完整 digest 以实验日志为准。服务器项目路径为 `/DATA/DATA1/guest3/2026OpticsMoE`，正式训练
 应在服务器执行。所有新增启动指令应进入对应实验的 `commands/` 目录；每次代码或文档修改后
@@ -548,7 +581,7 @@ Pareto front，而不是只追求 CIFAR-10 单点最高准确率。
 
 ## 14. 阅读本简报时最容易误解的四点
 
-1. **A07 不是算法名。** 它只是一次高光学 BP 可行性 run；正式算法始终只有四组。
+1. **A07/A13 不是算法名。** 它们只是骨干优化 run；正式算法始终只有四组。
 2. **FA-pretrained 不冻结前向。** 前向相位继续训练，只固定跨层误差传播所用的 source operator。
 3. **现在不是已经有两个强下游数据集。** CIFAR-100 是 source，强结果的下游仍只有 CIFAR-10。
 4. **当前结论是“小漂移下有效”，不是“固定反馈普遍替代 BP”。** 把边界找清楚可能比继续追求
