@@ -1,0 +1,11 @@
+{
+  "phase": "joint_end_to_end",
+  "parameter_counts": {
+    "optical": 616423,
+    "phase": 429188,
+    "router": 788,
+    "recombiner": 284032,
+    "head": 85845
+  },
+  "total_parameters": 1416276
+}

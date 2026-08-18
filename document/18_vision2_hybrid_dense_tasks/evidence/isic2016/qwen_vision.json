@@ -1,0 +1,10 @@
+{
+  "model_id": "Qwen/Qwen3-VL-Embedding-2B",
+  "vision_depth": 24,
+  "vision_hidden_size": 1024,
+  "processor_min_pixels": 50176,
+  "processor_max_pixels": 50176,
+  "language_model_forward_used": false,
+  "native_vision_blocks_used_for_student": false,
+  "expert_stages": 1
+}

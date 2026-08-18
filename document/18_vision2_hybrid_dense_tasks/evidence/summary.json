@@ -1,0 +1,72 @@
+{
+  "generated_from_frozen_evidence": true,
+  "common_architecture": {
+    "name": "Vision2 hybrid dense MoE4",
+    "qwen_stem": "frozen patch embedding and position processing",
+    "native_qwen_vision_blocks_executed": 0,
+    "deepstack_enabled": false,
+    "latent_width": 192,
+    "electronic_blocks": 2,
+    "electronic_token_mixer": "3x3 depthwise Conv2D + pointwise projection",
+    "optical_stages": [
+      "MoE4 expert stage (top-2)",
+      "global phase stage"
+    ],
+    "fusion": "electronic + sigmoid(gate) * optical_delta at each stage",
+    "joint_training_from_epoch_1": true,
+    "teacher_or_kd_used": false,
+    "attention_used": false
+  },
+  "tasks": {
+    "salicon": {
+      "epochs": 60,
+      "selection": "maximum validation CC",
+      "selected_epoch": 59,
+      "split": "official public validation",
+      "samples": 5000,
+      "metrics": {
+        "kld": 0.1128667651653289,
+        "cc": 0.8627402809143067,
+        "sim": 0.8241132705688476,
+        "nss": 0.9719996684074402,
+        "auc_judd": 0.7699950941909464,
+        "mae": 0.0773074612557888
+      }
+    },
+    "isic2016": {
+      "epochs": 100,
+      "selection": "minimum training loss; test evaluated once after selection",
+      "selected_epoch": 96,
+      "split": "official test",
+      "samples": 379,
+      "metrics": {
+        "loss": 0.6049606152134395,
+        "mean_iou": 0.8302785784133899,
+        "mean_dice": 0.8972993144043045,
+        "mae": 0.05776795998932208,
+        "pixel_accuracy": 0.9479689540311507,
+        "sensitivity": 0.921226751252184,
+        "specificity": 0.9584615957967668,
+        "balanced_pixel_accuracy": 0.9398441735244754
+      }
+    },
+    "lsp": {
+      "epochs": 150,
+      "selection": "minimum training loss",
+      "selected_epoch": 148,
+      "split": "fixed LSP test; monitored every epoch",
+      "samples": 1000,
+      "selected_checkpoint_metrics": {
+        "pck_at_0.2_torso": 0.713,
+        "pckh_at_0.5_head": 0.8375,
+        "mean_pixel_error": 15.950625112150265,
+        "normalized_mean_error_torso": 0.2433885728409451
+      },
+      "observed_test_peak_not_for_formal_selection": {
+        "epoch": 149,
+        "pck_at_0.2_torso": 0.7185,
+        "pckh_at_0.5_head": 0.8421428571428572
+      }
+    }
+  }
+}

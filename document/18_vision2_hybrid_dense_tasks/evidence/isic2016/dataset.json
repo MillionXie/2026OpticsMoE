@@ -1,0 +1,28 @@
+{
+  "dataset": "ISBI2016_ISIC_Task1",
+  "task": "skin_lesion_boundary_binary_segmentation",
+  "license": "CC0",
+  "official_split": true,
+  "validation_split": false,
+  "full_train_samples": 900,
+  "full_test_samples": 379,
+  "train_samples": 900,
+  "test_samples": 379,
+  "train_test_overlap": 0,
+  "image_size": 224,
+  "mask_resize_interpolation": "nearest",
+  "checkpoint_selection": "minimum_training_loss",
+  "test_used_for_checkpoint_selection": false,
+  "directories": {
+    "train_images": "/DATA/DATA1/guest3/2026OpticsMoE/data/ISIC2016/ISBI2016_ISIC_Part1_Training_Data",
+    "train_masks": "/DATA/DATA1/guest3/2026OpticsMoE/data/ISIC2016/ISBI2016_ISIC_Part1_Training_GroundTruth",
+    "test_images": "/DATA/DATA1/guest3/2026OpticsMoE/data/ISIC2016/ISBI2016_ISIC_Part1_Test_Data",
+    "test_masks": "/DATA/DATA1/guest3/2026OpticsMoE/data/ISIC2016/ISBI2016_ISIC_Part1_Test_GroundTruth"
+  },
+  "official_urls": {
+    "train_images": "https://isic-archive.s3.amazonaws.com/challenges/2016/ISBI2016_ISIC_Part1_Training_Data.zip",
+    "train_masks": "https://isic-archive.s3.amazonaws.com/challenges/2016/ISBI2016_ISIC_Part1_Training_GroundTruth.zip",
+    "test_images": "https://isic-archive.s3.amazonaws.com/challenges/2016/ISBI2016_ISIC_Part1_Test_Data.zip",
+    "test_masks": "https://isic-archive.s3.amazonaws.com/challenges/2016/ISBI2016_ISIC_Part1_Test_GroundTruth.zip"
+  }
+}

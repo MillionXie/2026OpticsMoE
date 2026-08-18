@@ -1,0 +1,154 @@
+{
+  "config": {
+    "source": {
+      "architecture_config": "../../qwen3_vl_embedding_2b_coco_duts_vision_optical_moe16_pretrain/configs/coco_duts_pretrain.yaml"
+    },
+    "initialization": {
+      "mode": "scratch_end_to_end",
+      "pretrained_checkpoint": null,
+      "load_segmentation_head": false
+    },
+    "dataset": {
+      "data_root": "../../../data/ISIC2016",
+      "auto_download": true,
+      "remove_archives_after_extract": true,
+      "expected_train_samples": 900,
+      "expected_test_samples": 379,
+      "train_limit": null,
+      "test_limit": null,
+      "resize_mode": "stretch",
+      "urls": {
+        "train_images": "https://isic-archive.s3.amazonaws.com/challenges/2016/ISBI2016_ISIC_Part1_Training_Data.zip",
+        "train_masks": "https://isic-archive.s3.amazonaws.com/challenges/2016/ISBI2016_ISIC_Part1_Training_GroundTruth.zip",
+        "test_images": "https://isic-archive.s3.amazonaws.com/challenges/2016/ISBI2016_ISIC_Part1_Test_Data.zip",
+        "test_masks": "https://isic-archive.s3.amazonaws.com/challenges/2016/ISBI2016_ISIC_Part1_Test_GroundTruth.zip"
+      }
+    },
+    "batching": {
+      "train_batch_size": 8,
+      "inference_batch_size": 8,
+      "num_workers": 8
+    },
+    "training": {
+      "head_warmup_epochs": 0,
+      "joint_finetune_epochs": 100,
+      "optical_learning_rate": 0.0001,
+      "phase_learning_rate": 0.0001,
+      "router_learning_rate": 5e-05,
+      "recombiner_learning_rate": 5e-05,
+      "head_learning_rate": 0.0003,
+      "weight_decay": 0.0001,
+      "evaluate_test_each_epoch": false,
+      "checkpoint_interval_epochs": 10,
+      "log_interval_batches": 25,
+      "amp_enabled": true,
+      "random_seed": 42
+    },
+    "loss": {
+      "bce_weight": 1.0,
+      "dice_weight": 1.0,
+      "soft_iou_weight": 0.75,
+      "boundary_weight": 0.25,
+      "router_balance_weight": 0.0,
+      "router_importance_weight": 0.0,
+      "phase_dc_weight": 0.0
+    },
+    "augmentation": {
+      "enabled": true,
+      "crop_scale_min": 0.92,
+      "horizontal_flip_probability": 0.5,
+      "vertical_flip_probability": 0.5,
+      "brightness_jitter": 0.08,
+      "contrast_jitter": 0.08,
+      "rotation_degrees": 10.0
+    },
+    "visualization": {
+      "interval_epochs": 5,
+      "sample_count": 12
+    },
+    "vision2_hybrid": {
+      "enabled": true,
+      "electronic": {
+        "width": 192,
+        "layers": 2,
+        "expansion": 2.0,
+        "dropout": 0.1,
+        "kernel_size": 3,
+        "initial_residual_weight": 0.1
+      },
+      "initial_fusion": 0.05,
+      "max_visual_tokens": 224,
+      "optimization": {
+        "electronic_learning_rate": 0.0001,
+        "phase_learning_rate": 0.0001,
+        "router_learning_rate": 5e-05,
+        "readout_learning_rate": 5e-05,
+        "head_learning_rate": 0.0003
+      },
+      "router": {
+        "pool_size": 14,
+        "temperature": 1.0
+      },
+      "phase": {
+        "parameterization": "sigmoid",
+        "init": "small_normal",
+        "init_std": 0.02,
+        "dropout_mode": "block_phase_bypass",
+        "dropout_p": 0.05,
+        "dropout_block_size": 8
+      },
+      "physics": {
+        "wavelength_nm": 532.0,
+        "pixel_pitch_um": 16.0,
+        "distance_m": 0.1
+      },
+      "k_space": {
+        "enabled": true,
+        "theta_max_deg": 0.65
+      },
+      "normalization": {
+        "input_rms": 0.5,
+        "ccd_target_mean": 0.25,
+        "relative_clip": 12.0,
+        "log_compression": 1.0
+      },
+      "perturbation": {
+        "max_shift_pixels": 8,
+        "phase_shift_pixels": 8,
+        "ccd_shift_pixels": 8,
+        "gain_min": 0.5,
+        "gain_max": 2.0,
+        "offset_fraction": 0.03,
+        "read_noise_fraction": 0.01
+      },
+      "loss": {
+        "ccd_operating_point_weight": 0.02
+      },
+      "hardware": {
+        "capture_train_limit": 512,
+        "capture_eval_limit": 128,
+        "finetune_batch_size": 8,
+        "finetune_learning_rate": 5e-05,
+        "phase_flip_vertical": true,
+        "phase_flip_horizontal": false,
+        "ccd_flip_vertical": true,
+        "ccd_flip_horizontal": true
+      }
+    },
+    "output_dir": "../runs/isic2016_vision2_hybrid"
+  },
+  "resolved": {
+    "experiment_dir": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_isic2016_skin_lesion_optical_segmentation",
+    "project_dir": "/DATA/DATA1/guest3/2026OpticsMoE",
+    "output_dir": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_isic2016_skin_lesion_optical_segmentation/runs/isic2016_vision2_hybrid",
+    "data_root": "/DATA/DATA1/guest3/2026OpticsMoE/data/ISIC2016",
+    "source_architecture_config": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_coco_duts_vision_optical_moe16_pretrain/configs/coco_duts_pretrain.yaml",
+    "initialization_mode": "scratch_end_to_end",
+    "source_checkpoint": null,
+    "expert_stages": 1,
+    "num_experts": 4,
+    "top_k": 2,
+    "total_epochs": 100,
+    "test_used_for_checkpoint_selection": false
+  }
+}

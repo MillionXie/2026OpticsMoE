@@ -1,0 +1,23 @@
+{
+  "loss": 2.204090850648905,
+  "mean_iou": 0.06682613834999514,
+  "mean_dice": 0.12251226431197157,
+  "mean_f1": 0.12251226431197157,
+  "mae": 0.46741750330065085,
+  "pixel_accuracy": 0.6667464561682193,
+  "samples": 379,
+  "pixels": 19016704,
+  "sensitivity": 0.0994473241115563,
+  "specificity": 0.8893334515557957,
+  "balanced_pixel_accuracy": 0.494390387833676,
+  "mean_sample_sensitivity": 0.09912571083127071,
+  "mean_sample_specificity": 0.889103272659483,
+  "true_positive_pixels": 532922,
+  "true_negative_pixels": 12146398,
+  "false_positive_pixels": 1511469,
+  "false_negative_pixels": 4825915,
+  "threshold": 0.5,
+  "stage": "before_isic_training",
+  "initialization_mode": "scratch_end_to_end",
+  "test_used_for_checkpoint_selection": false
+}

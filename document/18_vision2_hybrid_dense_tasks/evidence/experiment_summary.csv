@@ -1,0 +1,4 @@
+task,selected_epoch,selection_rule,evaluation_split,evaluation_samples,primary_metric,primary_value,secondary_metric,secondary_value,status
+SALICON,59,max validation CC,official public validation,5000,CC,0.8627402809143067,AUC-Judd,0.7699950941909464,single run
+ISIC 2016,96,min training loss,official test,379,mean IoU,0.8302785784133899,mean Dice,0.8972993144043045,single run; test evaluated once after selection
+LSP,148,min training loss,fixed LSP test monitored each epoch,1000,PCK@0.2 torso,0.713,PCKh@0.5 head,0.8375,single run; selected without test metric

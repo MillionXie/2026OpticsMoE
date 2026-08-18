@@ -1,0 +1,29 @@
+{
+  "dataset": "SALICON 2015r1",
+  "task": "human_fixation_density_prediction",
+  "official_split_policy": "official train2014 trains the model; public val2014 ground truth is held out for checkpoint selection/evaluation; test annotations are private",
+  "train_images": 10000,
+  "validation_images": 5000,
+  "image_id_disjoint": true,
+  "image_size": 224,
+  "density_sigma_px_at_source": 19.0,
+  "density_construction": "fixation coordinates projected to 224x224, then Gaussian blurred with separate x/y source-sigma scaling",
+  "density_resize_interpolation": "bilinear during aligned augmentation",
+  "fixation_resize_interpolation": "coordinate projection / nearest for augmentation",
+  "splits": {
+    "train": {
+      "images": 10000,
+      "annotation_images": 10000,
+      "annotation_rows": 579221,
+      "images_with_fixations": 10000,
+      "annotation_path": "/DATA/DATA1/guest3/2026OpticsMoE/data/SALICON/annotations/fixations_train2014.json"
+    },
+    "validation": {
+      "images": 5000,
+      "annotation_images": 5000,
+      "annotation_rows": 314633,
+      "images_with_fixations": 5000,
+      "annotation_path": "/DATA/DATA1/guest3/2026OpticsMoE/data/SALICON/annotations/fixations_val2014.json"
+    }
+  }
+}
