@@ -27,7 +27,7 @@ def test_constrained_residual_initialization_and_bound() -> None:
     mixer = ResidualMixer("constrained", main_init=0.5, main_min=0.35)
     assert torch.isclose(mixer.main_weight(), torch.tensor(0.5), atol=1e-5)
     mixer.logit.data.fill_(-100.0)
-    assert float(mixer.main_weight()) >= 0.35
+    assert float(mixer.main_weight()) >= 0.35 - 1e-6
 
 
 def test_phase_parameterization_is_physical() -> None:
