@@ -41,6 +41,7 @@ def test_electronic_skip_processor_is_bounded_and_shape_preserving() -> None:
         channels=3,
         mode="depthwise",
         hidden_channels=12,
+        downsample_factor=4,
         scale_init=0.10,
         scale_max=0.25,
         long_skip_enabled=True,
@@ -122,6 +123,18 @@ def test_dual_pool_readout_forward_backward() -> None:
     logits.mean().backward()
     assert logits.shape == (2, 10)
     assert all(stage.raw_phase.grad is not None for stage in model.stages)
+
+
+def test_low_resolution_electronic_budget_and_forward() -> None:
+    root = CONFIG.parent
+    settings = load_settings(root / "a13_lowres_electronic_residual.yaml")
+    optical = replace(settings.optical, canvas_size=16, pool_size=2, hidden_dim=16)
+    model = OpticalClassifier(optical, num_classes=10)
+    logits = model(torch.rand(2, 3, 32, 32))
+    residual_parameters = sum(parameter.numel() for parameter in model.residual_parameters())
+    assert logits.shape == (2, 10)
+    assert 300_000 <= residual_parameters <= 400_000
+    assert model.estimated_electronic_macs() > 0
 
 
 def test_optical_off_does_not_depend_on_phase() -> None:

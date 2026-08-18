@@ -91,3 +91,9 @@ PHYSICAL_GPU_INDEX=5 bash experiments/d2nn_cifar10_high_performance_optical_back
 CONFIG_PATH=experiments/d2nn_cifar10_high_performance_optical_backbone/configs/a09_depthwise_electronic_residual.yaml \
 PHYSICAL_GPU_INDEX=4 bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/23_evaluate_candidate.sh
 ```
+
+在实验室允许的 1–2M 电子参数预算内，A13 使用约 0.31M 的低分辨率电子残差；加读出头后总电子参数约 0.42M：
+
+```bash
+PHYSICAL_GPU_INDEX=4 bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/24_train_a13_lowres_residual.sh
+```

@@ -212,3 +212,9 @@ validation-best 仍落后 A08 超过 0.5 pp，则判定为被支配候选，停�
 第二轮固定 A08 pointwise bypass，只改变读出头：A11 使用参数量与旧 MLP 同量级、保留 2×2
 空间布局的小卷积头；A12 拼接 8×8 average/max pool 后使用 MLP。两组仍使用 A03 source、
 `main_min=0.50` 和相同 50-epoch 优化协议，并与 A08 当前 MLP 头直接比较。
+
+电子预算补充：实验室允许 residual electronic processing 总参数在 1–2M 以内，经验上几十万
+参数合理。A08 的 592 参数虽然高效，但不能代表允许预算下的性能上限。因此新增 A13：每层
+旁路降采样到 32×32，以 64 通道进行低分辨率空间处理，再上采样并以 `scale<=0.25` 加回旁路；
+八层约 0.31M residual 参数，连同约 0.10M MLP head 总电子参数约 0.42M。它仍严格位于
+`1-alpha<=0.5` 的 bypass 中，并使用与 A08/A07 相同 source 和训练协议。

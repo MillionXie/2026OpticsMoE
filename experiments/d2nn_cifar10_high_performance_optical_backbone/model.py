@@ -97,6 +97,7 @@ class OpticalClassifier(nn.Module):
                     random_seed=1729 + index,
                     electronic_skip_mode=config.electronic_skip_mode,
                     electronic_skip_hidden_channels=config.electronic_skip_hidden_channels,
+                    electronic_skip_downsample_factor=config.electronic_skip_downsample_factor,
                     electronic_skip_scale_init=config.electronic_skip_scale_init,
                     electronic_skip_scale_max=config.electronic_skip_scale_max,
                     long_skip_enabled=(
@@ -109,6 +110,7 @@ class OpticalClassifier(nn.Module):
             ]
         )
         self.head = _build_head(config, num_classes)
+        self.num_classes = int(num_classes)
 
     def _input_amplitude(self, images: torch.Tensor) -> torch.Tensor:
         value = images.float()
@@ -196,6 +198,44 @@ class OpticalClassifier(nn.Module):
 
     def long_skip_weights(self) -> list[float]:
         return [float(stage.electronic_skip.long_skip_weight().detach().cpu()) for stage in self.stages]
+
+    def estimated_electronic_macs(self) -> int:
+        """Count convolution/linear MACs per sample; norms, activations and resampling are excluded."""
+
+        config = self.config
+        channels = config.input_channels
+        hidden = config.electronic_skip_hidden_channels
+        size = config.canvas_size
+        per_stage = 0
+        if config.electronic_skip_mode == "pointwise":
+            per_stage = size * size * (channels * hidden + hidden * channels)
+        elif config.electronic_skip_mode == "depthwise":
+            per_stage = size * size * (
+                9 * channels + channels * hidden + hidden * channels
+            )
+        elif config.electronic_skip_mode == "lowres":
+            low = size // config.electronic_skip_downsample_factor
+            per_stage = low * low * (
+                9 * channels * hidden + 9 * hidden * hidden + hidden * channels
+            )
+        residual = config.num_stages * per_stage
+        pool = config.pool_size
+        if config.readout_mode == "mlp":
+            features = channels * pool * pool
+            head = features * config.hidden_dim + config.hidden_dim * self.num_classes
+        elif config.readout_mode == "dual_pool":
+            features = 2 * channels * pool * pool
+            head = features * config.hidden_dim + config.hidden_dim * self.num_classes
+        else:
+            conv = config.conv_channels
+            second = (pool + 1) // 2
+            head = (
+                pool * pool * 9 * channels * conv
+                + second * second * 9 * conv * (2 * conv)
+                + 8 * conv * config.hidden_dim
+                + config.hidden_dim * self.num_classes
+            )
+        return int(residual + head)
 
     def snapshot_phases(self) -> torch.Tensor:
         return torch.stack([stage.phase().detach().cpu() for stage in self.stages], dim=0)

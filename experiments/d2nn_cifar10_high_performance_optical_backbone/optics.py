@@ -154,6 +154,36 @@ def _bounded_logit(initial: float, maximum: float) -> torch.Tensor:
     return torch.tensor(math.log(probability / (1.0 - probability)))
 
 
+class LowResolutionElectronicTransform(nn.Module):
+    """Process the bypass at reduced resolution to spend parameters without excessive full-plane MACs."""
+
+    def __init__(self, channels: int, hidden_channels: int, downsample_factor: int) -> None:
+        super().__init__()
+        hidden = int(hidden_channels)
+        self.downsample_factor = int(downsample_factor)
+        groups = 8 if hidden % 8 == 0 else 1
+        self.layers = nn.Sequential(
+            nn.Conv2d(channels, hidden, kernel_size=3, padding=1, bias=False),
+            nn.GroupNorm(groups, hidden),
+            nn.GELU(),
+            nn.Conv2d(hidden, hidden, kernel_size=3, padding=1, bias=False),
+            nn.GroupNorm(groups, hidden),
+            nn.GELU(),
+            nn.Conv2d(hidden, channels, kernel_size=1, bias=False),
+        )
+        nn.init.zeros_(self.layers[-1].weight)
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        target_size = value.shape[-2:]
+        reduced = F.avg_pool2d(
+            value,
+            kernel_size=self.downsample_factor,
+            stride=self.downsample_factor,
+        )
+        delta = self.layers(reduced)
+        return F.interpolate(delta, size=target_size, mode="bilinear", align_corners=False)
+
+
 class ElectronicSkipProcessor(nn.Module):
     """Apply a deliberately small electronic transform to the bounded bypass branch."""
 
@@ -163,6 +193,7 @@ class ElectronicSkipProcessor(nn.Module):
         channels: int,
         mode: str,
         hidden_channels: int,
+        downsample_factor: int,
         scale_init: float,
         scale_max: float,
         long_skip_enabled: bool,
@@ -194,12 +225,19 @@ class ElectronicSkipProcessor(nn.Module):
                 nn.GELU(),
                 nn.Conv2d(hidden, channels, kernel_size=1, bias=False),
             )
+        elif self.mode == "lowres":
+            self.transform = LowResolutionElectronicTransform(
+                channels,
+                hidden,
+                downsample_factor,
+            )
         else:
             raise ValueError(f"Unsupported electronic skip mode: {self.mode}")
         if self.transform is not None:
             # Start from the pretrained identity bypass. The new branch first
             # learns its final projection and only then perturbs earlier layers.
-            nn.init.zeros_(self.transform[-1].weight)
+            if isinstance(self.transform, nn.Sequential):
+                nn.init.zeros_(self.transform[-1].weight)
             self.scale_logit = nn.Parameter(_bounded_logit(scale_init, scale_max))
         if self.long_skip_enabled:
             self.long_skip_logit = nn.Parameter(
@@ -256,6 +294,7 @@ class OpticalOEOStage(nn.Module):
         random_seed: int,
         electronic_skip_mode: str = "identity",
         electronic_skip_hidden_channels: int = 12,
+        electronic_skip_downsample_factor: int = 4,
         electronic_skip_scale_init: float = 0.10,
         electronic_skip_scale_max: float = 0.25,
         long_skip_enabled: bool = False,
@@ -277,6 +316,7 @@ class OpticalOEOStage(nn.Module):
             channels=self.channels,
             mode=electronic_skip_mode,
             hidden_channels=electronic_skip_hidden_channels,
+            downsample_factor=electronic_skip_downsample_factor,
             scale_init=electronic_skip_scale_init,
             scale_max=electronic_skip_scale_max,
             long_skip_enabled=long_skip_enabled,

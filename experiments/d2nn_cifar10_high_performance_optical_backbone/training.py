@@ -206,6 +206,11 @@ def _diagnostics(
         "phase_parameters": sum(parameter.numel() for parameter in model.phase_parameters()),
         "electronic_parameters": sum(parameter.numel() for parameter in model.electronic_parameters()),
         "residual_parameters": sum(parameter.numel() for parameter in model.residual_parameters()),
+        "electronic_total_parameters": (
+            sum(parameter.numel() for parameter in model.electronic_parameters())
+            + sum(parameter.numel() for parameter in model.residual_parameters())
+        ),
+        "estimated_electronic_macs_per_sample": model.estimated_electronic_macs(),
     }
 
 

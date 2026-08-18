@@ -42,6 +42,7 @@ class OpticalConfig:
     normalize_branch_rms: bool
     electronic_skip_mode: str
     electronic_skip_hidden_channels: int
+    electronic_skip_downsample_factor: int
     electronic_skip_scale_init: float
     electronic_skip_scale_max: float
     long_skip_enabled: bool
@@ -138,6 +139,9 @@ def load_settings(path: str | Path) -> Settings:
         electronic_skip_hidden_channels=int(
             _get(raw, "optical.residual.electronic.hidden_channels", 12)
         ),
+        electronic_skip_downsample_factor=int(
+            _get(raw, "optical.residual.electronic.downsample_factor", 4)
+        ),
         electronic_skip_scale_init=float(
             _get(raw, "optical.residual.electronic.scale_init", 0.10)
         ),
@@ -208,7 +212,7 @@ def load_settings(path: str | Path) -> Settings:
         raise ValueError("optical.input_channels must be 1 or 3")
     if optical.residual_mode not in {"fixed", "learned", "constrained", "none"}:
         raise ValueError("Unsupported residual mode")
-    if optical.electronic_skip_mode not in {"identity", "pointwise", "depthwise"}:
+    if optical.electronic_skip_mode not in {"identity", "pointwise", "depthwise", "lowres"}:
         raise ValueError("Unsupported electronic residual mode")
     if optical.readout_mode not in {"mlp", "conv", "dual_pool"}:
         raise ValueError("Unsupported readout mode")
@@ -222,6 +226,8 @@ def load_settings(path: str | Path) -> Settings:
         raise ValueError("Long-skip weights must satisfy 0 <= init <= max <= 1")
     if optical.electronic_skip_hidden_channels < optical.input_channels:
         raise ValueError("electronic hidden_channels must be at least input_channels")
+    if optical.electronic_skip_downsample_factor < 1:
+        raise ValueError("electronic downsample_factor must be positive")
     if optical.conv_channels < 1:
         raise ValueError("readout conv_channels must be positive")
     if len(optimizer.betas) != 2:
