@@ -110,7 +110,7 @@ def _train_epoch(
     model: OpticalClassifier,
     loader,
     optimizer: torch.optim.Optimizer,
-    scaler: torch.cuda.amp.GradScaler,
+    scaler: torch.amp.GradScaler,
     device: torch.device,
     settings: Settings,
     epoch: int,
@@ -226,7 +226,7 @@ def _checkpoint(
     model: OpticalClassifier,
     optimizer: torch.optim.Optimizer,
     scheduler: torch.optim.lr_scheduler.LambdaLR,
-    scaler: torch.cuda.amp.GradScaler,
+    scaler: torch.amp.GradScaler,
     *,
     epoch: int,
     best_validation_accuracy: float,
@@ -263,7 +263,7 @@ def train_seed(
     model = build_model(settings, device)
     optimizer = build_optimizer(model, settings)
     scheduler = build_scheduler(optimizer, settings)
-    scaler = torch.cuda.amp.GradScaler(enabled=settings.training.use_amp and device.type == "cuda")
+    scaler = torch.amp.GradScaler("cuda", enabled=settings.training.use_amp and device.type == "cuda")
     latest_path = run_dir / "latest.pt"
     start_epoch = 1
     best_accuracy = -1.0
