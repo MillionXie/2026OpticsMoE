@@ -135,3 +135,21 @@ A01 已接近收敛且仅差 0.07 个百分点达到测试门槛。A05 从 A01 e
 | 正式 source optical operator | `runs/a03_cifar100_pretrain/seed_1234/best.pt` | `f632c57cf851805090686cda81d4b4a0efc07b02c91dc0e0b63c00912247becc` | 9,188,450 |
 | 预训练迁移 BP endpoint | `runs/a04_cifar100_to_cifar10/seed_1234/best.pt` | `679f9552cd402a71b0a37734640547edaf7f2d6c136a68a063fca4b0024d4486` | 8,629,858 |
 | 最高准确率参考 | `runs/a05_refine_a01/seed_1234/best.pt` | `b549bd322e39aa847b20458aa09fd19373e0f49a9e14c64ce8559a933bcf5938` | 8,627,938 |
+
+## P01 正式反馈对性能优化的结论（2026-08-18）
+
+基于 A03 预训练光学算子的唯一四组实验已完成三个 seed。NoFT、BP、FA-pretrained、FA-random 的 CIFAR-10 test Top-1 分别为 55.53%、58.36%±0.09 pp、58.39%±0.09 pp、57.48%±0.15 pp；后三组平均归一化光学依赖分别为 89.27%、89.28%、88.08%。FA-pretrained 在三个 seed 中相对 FA-random 分别提高 1.05、0.62、1.04 pp，同时与 BP 的差值只有 0.00、0.01、0.06 pp。
+
+这证明当前骨干已经能在不是电子旁路主导的条件下展示预训练固定反馈的价值，但也暴露出两个下一阶段性能缺口：正式协议只训练 20 epoch，低于 A04 的 50 epoch，因此 58.39% 仍低于 A04 的 60.71%；BP/FA-pretrained 的平均相位 RMS 漂移约 0.068 rad，属于小更新范围。下一优化动作是保持正式方法仍为四组，只构造一个更强的共同设置：延长 schedule、适度提高 phase LR，并提高 residual optical weight 的硬下限。先用 BP 验证该设置能兼顾接近/超过 60% 的性能和更高光学占比，再冻结设置运行其余三组，避免按方法单独调参。
+
+## A07：预训练迁移下的高光学占比骨干
+
+状态：配置与服务器指令已建立，等待/正在运行 BP 可行性验证；不计为第五个正式方法组。
+
+- 配置：`configs/a07_high_optical_cifar100_to_cifar10.yaml`；
+- 启动：`commands/17_train_a07_high_optical.sh`；
+- source：A03 checkpoint，SHA-256 `f632c57cf851805090686cda81d4b4a0efc07b02c91dc0e0b63c00912247becc`；
+- 相对 A04 的唯一实验变量：`residual.main_min` 从 0.35 提高到 0.50；
+- 保持不变：RGB 八层结构、CIFAR-100 source、随机种子、50 epoch、phase LR=1e-3、electronic LR=1e-3、residual LR=5e-4、数据划分和 validation-best 规则；
+- 目标：test Top-1 尽量达到 60%，同时所有 stage 的光学混合权重不低于 0.50，并通过 optical-off/random/shuffle 诊断；
+- 判定：若性能明显低于 A04，A07 仍作为“提高物理处理比例的代价”保留记录，不通过增加电子头容量掩盖问题。

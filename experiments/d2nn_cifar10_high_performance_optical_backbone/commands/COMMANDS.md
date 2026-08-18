@@ -54,3 +54,9 @@ PHYSICAL_GPU_INDEX=1 bash experiments/d2nn_cifar10_high_performance_optical_back
 ```
 
 11-14 必须等待 10 正常结束。12-14 可以在不同 GPU 并行，但不得修改 config 或共同 checkpoint。
+
+A07 是正式四组之外的 BP 骨干优化，只测试把光学残差权重硬下限从 0.35 提高到 0.50；它不作为第五种正式方法：
+
+```bash
+PHYSICAL_GPU_INDEX=2 bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/17_train_a07_high_optical.sh
+```

@@ -121,3 +121,13 @@ def test_formal_pilot_has_only_the_expected_contract() -> None:
     assert formal.formal.head_warmup_epochs == 10
     assert formal.formal.finetune_epochs == 20
     assert len(formal.formal.source_checkpoint_sha256) == 64
+
+
+def test_a07_changes_only_the_optical_floor_contract() -> None:
+    baseline = load_settings(CONFIG.parent / "a04_cifar100_to_cifar10.yaml")
+    candidate = load_settings(CONFIG.parent / "a07_high_optical_cifar100_to_cifar10.yaml")
+    assert baseline.optical.residual_main_min == 0.35
+    assert candidate.optical.residual_main_min == 0.50
+    assert baseline.optical.residual_main_init == candidate.optical.residual_main_init == 0.50
+    assert baseline.optimizer == candidate.optimizer
+    assert baseline.training == candidate.training
