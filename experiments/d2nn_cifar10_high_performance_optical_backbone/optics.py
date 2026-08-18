@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import math
+from typing import Literal
 
 import torch
 from torch import nn
 from torch.nn import functional as F
+
+
+FeedbackMode = Literal["bp", "fa_pretrained", "fa_random"]
 
 
 def physical_phase(raw_phase: torch.Tensor) -> torch.Tensor:
@@ -19,6 +23,15 @@ def _spatial_rms(value: torch.Tensor, eps: float) -> torch.Tensor:
 
 def rms_normalize(value: torch.Tensor, eps: float) -> torch.Tensor:
     return value / _spatial_rms(value, eps)
+
+
+def _propagate(field: torch.Tensor, transfer_function: torch.Tensor) -> torch.Tensor:
+    spectrum = torch.fft.fft2(field.to(torch.complex64), dim=(-2, -1), norm="ortho")
+    return torch.fft.ifft2(
+        spectrum * transfer_function,
+        dim=(-2, -1),
+        norm="ortho",
+    ).to(torch.complex64)
 
 
 class AngularSpectrumPropagator(nn.Module):
@@ -42,12 +55,63 @@ class AngularSpectrumPropagator(nn.Module):
     def forward(self, field: torch.Tensor) -> torch.Tensor:
         if field.ndim != 4 or tuple(field.shape[-2:]) != (self.size, self.size):
             raise ValueError(f"Expected [B,C,{self.size},{self.size}], got {tuple(field.shape)}")
-        spectrum = torch.fft.fft2(field.to(torch.complex64), dim=(-2, -1), norm="ortho")
-        return torch.fft.ifft2(
-            spectrum * self.transfer_function,
-            dim=(-2, -1),
-            norm="ortho",
-        ).to(torch.complex64)
+        return _propagate(field, self.transfer_function)
+
+
+class _FixedFeedbackOptical(torch.autograd.Function):
+    """Use the current phase locally and a frozen phase for the preceding-stage error connector."""
+
+    @staticmethod
+    def forward(
+        ctx,
+        amplitude: torch.Tensor,
+        raw_phase: torch.Tensor,
+        feedback_phase: torch.Tensor,
+        transfer_function: torch.Tensor,
+    ) -> torch.Tensor:
+        modulation = torch.exp(1j * physical_phase(raw_phase)).to(torch.complex64)
+        field = torch.complex(amplitude.float(), torch.zeros_like(amplitude.float())) * modulation.unsqueeze(0)
+        output = _propagate(field, transfer_function)
+        ctx.save_for_backward(amplitude, raw_phase, feedback_phase, transfer_function)
+        return output
+
+    @staticmethod
+    def backward(ctx, grad_output: torch.Tensor):
+        amplitude, raw_phase, feedback_phase, transfer_function = ctx.saved_tensors
+        upstream = grad_output.to(torch.complex64)
+        with torch.enable_grad():
+            # The local phase update remains the exact gradient of the current
+            # forward operator. Only the connector to the preceding stage is fixed.
+            phase_variable = raw_phase.detach().requires_grad_(True)
+            current_modulation = torch.exp(1j * physical_phase(phase_variable)).to(torch.complex64)
+            current_field = (
+                torch.complex(amplitude.detach(), torch.zeros_like(amplitude))
+                * current_modulation.unsqueeze(0)
+            )
+            current_output = _propagate(current_field, transfer_function)
+            (phase_gradient,) = torch.autograd.grad(
+                current_output,
+                phase_variable,
+                grad_outputs=upstream,
+                retain_graph=False,
+                create_graph=False,
+            )
+
+            amplitude_variable = amplitude.detach().requires_grad_(True)
+            feedback_modulation = torch.exp(1j * feedback_phase.detach()).to(torch.complex64)
+            feedback_field = (
+                torch.complex(amplitude_variable, torch.zeros_like(amplitude_variable))
+                * feedback_modulation.unsqueeze(0)
+            )
+            feedback_output = _propagate(feedback_field, transfer_function)
+            (amplitude_gradient,) = torch.autograd.grad(
+                feedback_output,
+                amplitude_variable,
+                grad_outputs=upstream,
+                retain_graph=False,
+                create_graph=False,
+            )
+        return amplitude_gradient, phase_gradient, None, None
 
 
 class ResidualMixer(nn.Module):
@@ -118,17 +182,44 @@ class OpticalOEOStage(nn.Module):
             2.0 * math.pi * torch.rand(self.channels, self.size, self.size, generator=generator),
             persistent=True,
         )
+        self.register_buffer(
+            "feedback_phase",
+            torch.full((self.channels, self.size, self.size), math.pi, dtype=torch.float32),
+            persistent=True,
+        )
+        self.feedback_mode: FeedbackMode = "bp"
 
     def phase(self) -> torch.Tensor:
         return physical_phase(self.raw_phase)
 
-    def _optical_branch(self, amplitude: torch.Tensor, phase: torch.Tensor) -> torch.Tensor:
+    def set_feedback(self, mode: FeedbackMode, phase: torch.Tensor | None = None) -> None:
+        if mode not in {"bp", "fa_pretrained", "fa_random"}:
+            raise ValueError(f"Unsupported feedback mode: {mode}")
+        if mode != "bp":
+            if phase is None or tuple(phase.shape) != (self.channels, self.size, self.size):
+                raise ValueError(
+                    f"A [{self.channels},{self.size},{self.size}] feedback phase is required for {mode}"
+                )
+            self.feedback_phase.copy_(phase.detach().to(self.feedback_phase))
+        self.feedback_mode = mode
+
+    def _optical_branch(self, amplitude: torch.Tensor, phase_override: torch.Tensor | None) -> torch.Tensor:
         # Complex FFTs remain float32 even when the electronic head uses AMP.
         with torch.autocast(device_type=amplitude.device.type, enabled=False):
             value = amplitude.float()
-            modulation = torch.exp(1j * phase.float()).to(torch.complex64)
-            field = torch.complex(value, torch.zeros_like(value)) * modulation.unsqueeze(0)
-            intensity = self.propagator(field).abs().square().float()
+            if self.feedback_mode == "bp" or phase_override is not None:
+                phase = self.phase() if phase_override is None else phase_override
+                modulation = torch.exp(1j * phase.float()).to(torch.complex64)
+                field = torch.complex(value, torch.zeros_like(value)) * modulation.unsqueeze(0)
+                propagated = self.propagator(field)
+            else:
+                propagated = _FixedFeedbackOptical.apply(
+                    value,
+                    self.raw_phase,
+                    self.feedback_phase,
+                    self.propagator.transfer_function,
+                )
+            intensity = propagated.abs().square().float()
             mean = intensity.mean(dim=(-2, -1), keepdim=True)
             variance = intensity.var(dim=(-2, -1), keepdim=True, unbiased=False)
             activated = F.relu((intensity - mean) * torch.rsqrt(variance + self.eps))
@@ -152,7 +243,7 @@ class OpticalOEOStage(nn.Module):
             output = skip
             optical = torch.zeros_like(skip)
         else:
-            optical = self._optical_branch(amplitude, self.phase() if phase_override is None else phase_override)
+            optical = self._optical_branch(amplitude, phase_override)
             output = self.residual(optical, skip)
         if not return_details:
             return output

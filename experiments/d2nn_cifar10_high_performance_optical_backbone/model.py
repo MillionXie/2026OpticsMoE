@@ -6,7 +6,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from .optics import OpticalOEOStage
+from .optics import FeedbackMode, OpticalOEOStage
 from .settings import OpticalConfig
 
 
@@ -111,6 +111,40 @@ class OpticalClassifier(nn.Module):
 
     def optical_weights(self) -> list[float]:
         return [float(stage.residual.main_weight().detach().cpu()) for stage in self.stages]
+
+    def snapshot_phases(self) -> torch.Tensor:
+        return torch.stack([stage.phase().detach().cpu() for stage in self.stages], dim=0)
+
+    def configure_feedback(
+        self,
+        mode: FeedbackMode,
+        *,
+        pretrained_phases: torch.Tensor | None = None,
+        random_seed: int = 0,
+    ) -> None:
+        expected = (
+            len(self.stages),
+            self.config.input_channels,
+            self.config.canvas_size,
+            self.config.canvas_size,
+        )
+        if mode == "fa_pretrained" and (
+            pretrained_phases is None or tuple(pretrained_phases.shape) != expected
+        ):
+            raise ValueError(f"pretrained_phases must have shape {expected}")
+        generator = torch.Generator().manual_seed(int(random_seed))
+        for index, stage in enumerate(self.stages):
+            phase = None
+            if mode == "fa_pretrained":
+                phase = pretrained_phases[index]
+            elif mode == "fa_random":
+                phase = 2.0 * torch.pi * torch.rand(
+                    stage.channels,
+                    stage.size,
+                    stage.size,
+                    generator=generator,
+                )
+            stage.set_feedback(mode, phase)
 
     def backbone_state_dict(self) -> dict[str, torch.Tensor]:
         return {name: value for name, value in self.state_dict().items() if name.startswith("stages.")}
