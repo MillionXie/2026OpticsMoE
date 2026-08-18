@@ -72,7 +72,19 @@ PHYSICAL_GPU_INDEX=<空闲物理卡号> bash experiments/d2nn_cifar10_high_perfo
 
 ### A02：低成本定向调参
 
-根据 A01 的欠拟合/过拟合证据，只选择一类变量调整，例如 phase LR、残差下限、池化尺寸或 stage 数；不同时改变预训练方案。目标是得到稳定的 CIFAR-10 从零训练基线。
+状态：已确定并准备启动。
+
+A01 在 epoch 10 的 train/validation Top-1 为 42.70%/45.22%，曲线仍呈欠拟合。A02 只将最终光学场池化从 8×8 改为 16×16，hidden dim 仍为 512，其他变量全部保持 A01 不变。假设是 8×8 读出过早丢失空间信息。A02 的 phase 参数约 39.3 万，电子头参数也约 40 万，参数量不会变成压倒性的电子主导；主要计算仍是 8 层三通道角谱传播。
+
+配置：`configs/a02_pool16.yaml`
+
+启动：
+
+```bash
+PHYSICAL_GPU_INDEX=<空闲物理卡号> bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/06_train_a02_pool16.sh
+```
+
+判定：比较同 epoch 验证曲线和各自 best validation；只有最终选中的候选才进入完整测试结论。若 A02 没有稳定提升，不继续扩大电子头。
 
 ### A03：CIFAR-100 监督预训练
 

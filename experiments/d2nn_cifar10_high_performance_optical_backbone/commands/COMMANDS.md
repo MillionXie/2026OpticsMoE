@@ -8,6 +8,7 @@ PHYSICAL_GPU_INDEX=3 bash experiments/d2nn_cifar10_high_performance_optical_back
 PHYSICAL_GPU_INDEX=3 bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/03_train_a01.sh
 PHYSICAL_GPU_INDEX=3 bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/04_evaluate_a01.sh
 bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/05_aggregate_a01.sh
+PHYSICAL_GPU_INDEX=2 bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/06_train_a02_pool16.sh
 ```
 
 长任务后台启动示例：
