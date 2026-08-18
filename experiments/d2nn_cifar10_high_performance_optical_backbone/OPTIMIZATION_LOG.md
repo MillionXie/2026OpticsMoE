@@ -125,3 +125,13 @@ A01 已接近收敛且仅差 0.07 个百分点达到测试门槛。A05 从 A01 e
 
 - 配置：`configs/a05_refine_a01.yaml`
 - 启动：`commands/09_refine_a05_from_a01.sh`
+
+## 冻结 checkpoint 清单
+
+以下 SHA-256 在服务器训练全部结束后计算。正式四组实验应引用 A03 source checkpoint 的路径与 digest；若使用 head warm-up 后的公共起点，应另行生成并记录新 digest，不能直接复用 A04 的 BP endpoint 作为其他方法起点。
+
+| 用途 | checkpoint | SHA-256 | 大小（byte） |
+|---|---|---|---:|
+| 正式 source optical operator | `runs/a03_cifar100_pretrain/seed_1234/best.pt` | `f632c57cf851805090686cda81d4b4a0efc07b02c91dc0e0b63c00912247becc` | 9,188,450 |
+| 预训练迁移 BP endpoint | `runs/a04_cifar100_to_cifar10/seed_1234/best.pt` | `679f9552cd402a71b0a37734640547edaf7f2d6c136a68a063fca4b0024d4486` | 8,629,858 |
+| 最高准确率参考 | `runs/a05_refine_a01/seed_1234/best.pt` | `b549bd322e39aa847b20458aa09fd19373e0f49a9e14c64ce8559a933bcf5938` | 8,627,938 |
