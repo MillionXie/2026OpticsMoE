@@ -185,7 +185,9 @@ class OpticalOEOStage(nn.Module):
         self.register_buffer(
             "feedback_phase",
             torch.full((self.channels, self.size, self.size), math.pi, dtype=torch.float32),
-            persistent=True,
+            # Runtime connector state is reconstructed from the frozen source
+            # checkpoint and must not change forward-checkpoint compatibility.
+            persistent=False,
         )
         self.feedback_mode: FeedbackMode = "bp"
 

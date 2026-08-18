@@ -35,3 +35,22 @@ A05 只有在明确重置该输出目录的训练状态时使用 `FORCE_RESTART=
 FORCE_RESTART=1 PHYSICAL_GPU_INDEX=1 \
   bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/09_refine_a05_from_a01.sh
 ```
+
+正式四组 pilot 必须先生成共同 head-warmup checkpoint，再运行四组：
+
+```bash
+PHYSICAL_GPU_INDEX=1 bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/10_prepare_common_formal.sh
+PHYSICAL_GPU_INDEX=1 bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/11_run_noft_pilot.sh
+PHYSICAL_GPU_INDEX=1 bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/12_run_bp_pilot.sh
+PHYSICAL_GPU_INDEX=2 bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/13_run_fa_pretrained_pilot.sh
+PHYSICAL_GPU_INDEX=5 bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/14_run_fa_random_pilot.sh
+bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/15_compare_formal_pilot.sh
+```
+
+正式长跑前，先用真实 A03 source 和限量 batch 跑通四组全链路（仅工程检查，不作为实验结果）：
+
+```bash
+CUDA_VISIBLE_DEVICES=1 bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/16_smoke_formal.sh
+```
+
+11-14 必须等待 10 正常结束。12-14 可以在不同 GPU 并行，但不得修改 config 或共同 checkpoint。

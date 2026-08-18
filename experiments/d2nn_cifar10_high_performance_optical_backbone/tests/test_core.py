@@ -6,6 +6,7 @@ from pathlib import Path
 import torch
 
 from experiments.d2nn_cifar10_high_performance_optical_backbone.datasets import _split
+from experiments.d2nn_cifar10_high_performance_optical_backbone.formal_settings import load_formal_settings
 from experiments.d2nn_cifar10_high_performance_optical_backbone.model import OpticalClassifier
 from experiments.d2nn_cifar10_high_performance_optical_backbone.optics import (
     OpticalOEOStage,
@@ -112,3 +113,11 @@ def test_random_feedback_changes_connector_but_not_forward() -> None:
     fixed_output.square().mean().backward()
     assert not torch.allclose(bp_input.grad, fixed_input.grad)
     torch.testing.assert_close(bp.raw_phase.grad, fixed.raw_phase.grad, rtol=2e-4, atol=2e-5)
+
+
+def test_formal_pilot_has_only_the_expected_contract() -> None:
+    formal = load_formal_settings(CONFIG.parent / "formal_pilot.yaml")
+    assert formal.formal.finetune_seeds == (2026,)
+    assert formal.formal.head_warmup_epochs == 10
+    assert formal.formal.finetune_epochs == 20
+    assert len(formal.formal.source_checkpoint_sha256) == 64
