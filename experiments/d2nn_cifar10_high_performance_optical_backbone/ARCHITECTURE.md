@@ -58,7 +58,10 @@ AdaptiveAvgPool(8×8) -> flatten(192) -> LayerNorm -> Linear(192,512)
 
 ```text
 pool -> 3×3 Conv -> GroupNorm -> GELU
--> stride-2 3×3 Conv -> GroupNorm -> GELU -> GAP -> classifier
+-> stride-2 3×3 Conv -> GroupNorm -> GELU
+-> 2×2 pool -> MLP -> classifier
 ```
 
-它用更少参数保留局部空间归纳偏置。是否采用只由验证集性能和光学因果消融共同决定，不能只看完整模型准确率。
+它与当前 MLP 头参数量同量级，并保留粗粒度空间布局。另一个 `dual_pool` 候选把 8×8
+average-pooled 与 max-pooled 光学图样拼接后送入 MLP，用于同时读取平均能量和局部衍射峰。
+是否采用只由验证集性能和光学因果消融共同决定，不能只看完整模型准确率。

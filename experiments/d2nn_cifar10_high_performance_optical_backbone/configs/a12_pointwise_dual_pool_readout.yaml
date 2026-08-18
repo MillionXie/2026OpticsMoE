@@ -1,0 +1,68 @@
+# Attempt A12: A08 pointwise bypass with average+maximum pooled diffraction statistics.
+output_dir: experiments/d2nn_cifar10_high_performance_optical_backbone/runs/a12_pointwise_dual_pool_readout
+
+optical:
+  canvas_size: 128
+  input_channels: 3
+  num_stages: 8
+  wavelength_m: 5.32e-7
+  pixel_size_m: 1.6e-5
+  propagation_distance_m: 0.05
+  phase_init_std: 0.05
+  layernorm_eps: 1.0e-5
+  normalize_branch_rms: true
+  residual:
+    mode: constrained
+    main_init: 0.50
+    main_min: 0.50
+    electronic:
+      mode: pointwise
+      hidden_channels: 12
+      scale_init: 0.10
+      scale_max: 0.25
+    long_skip:
+      enabled: false
+      weight_init: 0.00
+      weight_max: 0.00
+  readout:
+    mode: dual_pool
+    pool_size: 8
+    hidden_dim: 512
+    conv_channels: 32
+    dropout: 0.10
+
+data:
+  dataset: cifar10
+  root: data/cifar100_fixed_feedback/torchvision
+  validation_per_class: 500
+  split_seed: 42
+  num_workers: 8
+  pin_memory: true
+  augmentation:
+    crop_padding: 4
+    horizontal_flip: true
+
+optimizer:
+  phase_learning_rate: 0.001
+  residual_learning_rate: 0.0005
+  electronic_learning_rate: 0.001
+  weight_decay: 1.0e-4
+  betas: [0.9, 0.999]
+  eps: 1.0e-8
+  warmup_epochs: 3
+  min_learning_rate_ratio: 0.05
+
+training:
+  epochs: 50
+  seeds: [1234]
+  batch_size: 32
+  evaluation_batch_size: 64
+  label_smoothing: 0.10
+  use_amp: true
+  log_interval_batches: 100
+  checkpoint_interval_epochs: 10
+  gradient_clip_norm: 5.0
+  max_train_batches: null
+  max_evaluation_batches: null
+  init_checkpoint: experiments/d2nn_cifar10_high_performance_optical_backbone/runs/a03_cifar100_pretrain/seed_1234/best.pt
+  load_backbone_only: true

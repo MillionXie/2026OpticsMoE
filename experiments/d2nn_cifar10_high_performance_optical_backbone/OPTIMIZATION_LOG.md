@@ -204,3 +204,11 @@ A07 最佳 checkpoint 的八层光学权重为 `[0.6245, 0.5059, 0.5031, 0.5018,
 - 每层 optical gate、电子修正系数、长跳连权重与参数量。
 
 保留标准：相对 A07 的 60.25%，优先选择 validation/test 提升且 normalized optical dependence 仍高的 Pareto 候选。若完整性能提高但 optical-off 同幅提高、相位破坏不再接近随机水平，则判定为电子旁路扩张，不进入下一阶段。第一轮胜者再与小型卷积 readout 做单变量第二轮比较。
+
+中期预注册补充：A08 在 epoch 34 达到 63.34% validation，A09/A10 到 epoch 40 时若
+validation-best 仍落后 A08 超过 0.5 pp，则判定为被支配候选，停止剩余 10 epochs，保留 best
+并补齐统一消融。A08 仍跑满 50 epochs。该止损规则在读取 A09/A10 epoch-40 结果前写入。
+
+第二轮固定 A08 pointwise bypass，只改变读出头：A11 使用参数量与旧 MLP 同量级、保留 2×2
+空间布局的小卷积头；A12 拼接 8×8 average/max pool 后使用 MLP。两组仍使用 A03 source、
+`main_min=0.50` 和相同 50-epoch 优化协议，并与 A08 当前 MLP 头直接比较。

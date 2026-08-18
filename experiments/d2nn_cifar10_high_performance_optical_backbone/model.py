@@ -20,6 +20,28 @@ Ablation = Literal[
 ]
 
 
+class DualPoolReadout(nn.Module):
+    """Combine mean energy and salient diffraction peaks without a deep CNN."""
+
+    def __init__(self, config: OpticalConfig, num_classes: int) -> None:
+        super().__init__()
+        features = 2 * config.input_channels * config.pool_size * config.pool_size
+        self.pool_size = int(config.pool_size)
+        self.classifier = nn.Sequential(
+            nn.LayerNorm(features),
+            nn.Linear(features, config.hidden_dim),
+            nn.GELU(),
+            nn.Dropout(config.dropout),
+            nn.Linear(config.hidden_dim, int(num_classes)),
+        )
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        size = (self.pool_size, self.pool_size)
+        average = F.adaptive_avg_pool2d(value, size)
+        maximum = F.adaptive_max_pool2d(value, size)
+        return self.classifier(torch.cat((average, maximum), dim=1).flatten(1))
+
+
 def _build_head(config: OpticalConfig, num_classes: int) -> nn.Module:
     if config.readout_mode == "mlp":
         features = config.input_channels * config.pool_size * config.pool_size
@@ -32,6 +54,8 @@ def _build_head(config: OpticalConfig, num_classes: int) -> nn.Module:
             nn.Dropout(config.dropout),
             nn.Linear(config.hidden_dim, int(num_classes)),
         )
+    if config.readout_mode == "dual_pool":
+        return DualPoolReadout(config, num_classes)
     channels = int(config.conv_channels)
     groups = 8 if channels % 8 == 0 else 1
     return nn.Sequential(
@@ -42,10 +66,13 @@ def _build_head(config: OpticalConfig, num_classes: int) -> nn.Module:
         nn.Conv2d(channels, 2 * channels, kernel_size=3, stride=2, padding=1, bias=False),
         nn.GroupNorm(groups, 2 * channels),
         nn.GELU(),
-        nn.AdaptiveAvgPool2d(1),
+        nn.AdaptiveAvgPool2d(2),
         nn.Flatten(),
+        nn.LayerNorm(8 * channels),
+        nn.Linear(8 * channels, config.hidden_dim),
+        nn.GELU(),
         nn.Dropout(config.dropout),
-        nn.Linear(2 * channels, int(num_classes)),
+        nn.Linear(config.hidden_dim, int(num_classes)),
     )
 
 

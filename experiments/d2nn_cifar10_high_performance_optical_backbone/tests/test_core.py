@@ -107,6 +107,23 @@ def test_conv_readout_and_long_skip_forward_backward() -> None:
     )
 
 
+def test_dual_pool_readout_forward_backward() -> None:
+    settings = load_settings(CONFIG)
+    optical = replace(
+        settings.optical,
+        canvas_size=16,
+        pool_size=4,
+        hidden_dim=16,
+        readout_mode="dual_pool",
+    )
+    model = OpticalClassifier(optical, num_classes=10)
+    images = torch.rand(2, 3, 32, 32)
+    logits = model(images)
+    logits.mean().backward()
+    assert logits.shape == (2, 10)
+    assert all(stage.raw_phase.grad is not None for stage in model.stages)
+
+
 def test_optical_off_does_not_depend_on_phase() -> None:
     settings = load_settings(CONFIG)
     optical = replace(settings.optical, canvas_size=16, pool_size=2, hidden_dim=16, dropout=0.0)

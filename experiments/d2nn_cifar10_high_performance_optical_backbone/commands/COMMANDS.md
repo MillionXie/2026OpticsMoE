@@ -77,3 +77,17 @@ nohup env PHYSICAL_GPU_INDEX=5 bash experiments/d2nn_cifar10_high_performance_op
 ```
 
 三个脚本都会在 validation-best checkpoint 上自动运行六项测试：normal、optical-off、phase-random、phase-shuffle、electronic-skip-off 和 long-skip-off。先选出 accuracy–optical-dependence Pareto 候选，再对读出头做第二轮受控比较。
+
+第二轮把第一轮胜出的 A08 pointwise bypass 固定，只比较读出头：
+
+```bash
+PHYSICAL_GPU_INDEX=2 bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/21_train_a11_conv_readout.sh
+PHYSICAL_GPU_INDEX=5 bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/22_train_a12_dual_pool_readout.sh
+```
+
+筛选候选若按预先声明的规则提前停止，保留其 validation-best checkpoint 后用统一脚本补齐六项消融：
+
+```bash
+CONFIG_PATH=experiments/d2nn_cifar10_high_performance_optical_backbone/configs/a09_depthwise_electronic_residual.yaml \
+PHYSICAL_GPU_INDEX=4 bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/23_evaluate_candidate.sh
+```

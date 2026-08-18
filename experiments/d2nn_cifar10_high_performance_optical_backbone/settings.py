@@ -210,7 +210,7 @@ def load_settings(path: str | Path) -> Settings:
         raise ValueError("Unsupported residual mode")
     if optical.electronic_skip_mode not in {"identity", "pointwise", "depthwise"}:
         raise ValueError("Unsupported electronic residual mode")
-    if optical.readout_mode not in {"mlp", "conv"}:
+    if optical.readout_mode not in {"mlp", "conv", "dual_pool"}:
         raise ValueError("Unsupported readout mode")
     if not (0.0 <= optical.residual_main_min <= optical.residual_main_init <= 1.0):
         raise ValueError("Residual weights must satisfy 0 <= min <= init <= 1")
