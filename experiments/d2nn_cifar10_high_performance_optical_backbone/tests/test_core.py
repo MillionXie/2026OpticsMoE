@@ -9,6 +9,7 @@ from experiments.d2nn_cifar10_high_performance_optical_backbone.datasets import 
 from experiments.d2nn_cifar10_high_performance_optical_backbone.formal_settings import load_formal_settings
 from experiments.d2nn_cifar10_high_performance_optical_backbone.model import OpticalClassifier
 from experiments.d2nn_cifar10_high_performance_optical_backbone.optics import (
+    ElectronicSkipProcessor,
     OpticalOEOStage,
     ResidualMixer,
     physical_phase,
@@ -35,6 +36,29 @@ def test_constrained_residual_initialization_and_bound() -> None:
     assert float(mixer.main_weight()) >= 0.35 - 1e-6
 
 
+def test_electronic_skip_processor_is_bounded_and_shape_preserving() -> None:
+    processor = ElectronicSkipProcessor(
+        channels=3,
+        mode="depthwise",
+        hidden_channels=12,
+        scale_init=0.10,
+        scale_max=0.25,
+        long_skip_enabled=True,
+        long_skip_weight_init=0.10,
+        long_skip_weight_max=0.25,
+        eps=1e-5,
+    )
+    value = torch.rand(2, 3, 8, 8)
+    source = torch.rand_like(value)
+    output = processor(value, long_skip=source)
+    assert output.shape == value.shape
+    assert torch.all(output >= 0.0)
+    assert 0.0 <= float(processor.transform_scale()) <= 0.25
+    assert 0.0 <= float(processor.long_skip_weight()) <= 0.25
+    spatial_rms = output.square().mean(dim=(-2, -1)).sqrt()
+    torch.testing.assert_close(spatial_rms, torch.ones_like(spatial_rms), rtol=2e-4, atol=2e-4)
+
+
 def test_phase_parameterization_is_physical() -> None:
     raw = torch.tensor([-100.0, 0.0, 100.0])
     phase = physical_phase(raw)
@@ -54,6 +78,33 @@ def test_forward_backward_and_ablation_shapes() -> None:
     assert model(images, ablation="optical_off").shape == (2, 10)
     assert model(images, ablation="phase_random").shape == (2, 10)
     assert model(images, ablation="phase_shuffle").shape == (2, 10)
+    assert model(images, ablation="electronic_skip_off").shape == (2, 10)
+    assert model(images, ablation="long_skip_off").shape == (2, 10)
+
+
+def test_conv_readout_and_long_skip_forward_backward() -> None:
+    settings = load_settings(CONFIG)
+    optical = replace(
+        settings.optical,
+        canvas_size=16,
+        pool_size=4,
+        readout_mode="conv",
+        conv_channels=8,
+        electronic_skip_mode="depthwise",
+        electronic_skip_hidden_channels=6,
+        long_skip_enabled=True,
+    )
+    model = OpticalClassifier(optical, num_classes=10)
+    images = torch.rand(2, 3, 32, 32)
+    logits = model(images)
+    logits.square().mean().backward()
+    assert logits.shape == (2, 10)
+    assert all(stage.raw_phase.grad is not None for stage in model.stages)
+    assert any(
+        parameter.grad is not None
+        for stage in model.stages
+        for parameter in stage.electronic_skip.parameters()
+    )
 
 
 def test_optical_off_does_not_depend_on_phase() -> None:
@@ -131,3 +182,20 @@ def test_a07_changes_only_the_optical_floor_contract() -> None:
     assert baseline.optical.residual_main_init == candidate.optical.residual_main_init == 0.50
     assert baseline.optimizer == candidate.optimizer
     assert baseline.training == candidate.training
+
+
+def test_a08_a10_keep_a07_training_budget_and_optical_floor() -> None:
+    root = CONFIG.parent
+    a07 = load_settings(root / "a07_high_optical_cifar100_to_cifar10.yaml")
+    a08 = load_settings(root / "a08_pointwise_electronic_residual.yaml")
+    a09 = load_settings(root / "a09_depthwise_electronic_residual.yaml")
+    a10 = load_settings(root / "a10_depthwise_unet_skips.yaml")
+    assert all(candidate.optical.residual_main_min == 0.50 for candidate in (a08, a09, a10))
+    assert all(candidate.optimizer == a07.optimizer for candidate in (a08, a09, a10))
+    assert all(candidate.training == a07.training for candidate in (a08, a09, a10))
+    assert a08.optical.electronic_skip_mode == "pointwise"
+    assert a09.optical.electronic_skip_mode == "depthwise"
+    assert a10.optical.electronic_skip_mode == "depthwise"
+    assert not a08.optical.long_skip_enabled
+    assert not a09.optical.long_skip_enabled
+    assert a10.optical.long_skip_enabled

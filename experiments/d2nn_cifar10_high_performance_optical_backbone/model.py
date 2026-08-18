@@ -10,7 +10,43 @@ from .optics import FeedbackMode, OpticalOEOStage
 from .settings import OpticalConfig
 
 
-Ablation = Literal["normal", "optical_off", "phase_random", "phase_shuffle"]
+Ablation = Literal[
+    "normal",
+    "optical_off",
+    "phase_random",
+    "phase_shuffle",
+    "electronic_skip_off",
+    "long_skip_off",
+]
+
+
+def _build_head(config: OpticalConfig, num_classes: int) -> nn.Module:
+    if config.readout_mode == "mlp":
+        features = config.input_channels * config.pool_size * config.pool_size
+        return nn.Sequential(
+            nn.AdaptiveAvgPool2d((config.pool_size, config.pool_size)),
+            nn.Flatten(),
+            nn.LayerNorm(features),
+            nn.Linear(features, config.hidden_dim),
+            nn.GELU(),
+            nn.Dropout(config.dropout),
+            nn.Linear(config.hidden_dim, int(num_classes)),
+        )
+    channels = int(config.conv_channels)
+    groups = 8 if channels % 8 == 0 else 1
+    return nn.Sequential(
+        nn.AdaptiveAvgPool2d((config.pool_size, config.pool_size)),
+        nn.Conv2d(config.input_channels, channels, kernel_size=3, padding=1, bias=False),
+        nn.GroupNorm(groups, channels),
+        nn.GELU(),
+        nn.Conv2d(channels, 2 * channels, kernel_size=3, stride=2, padding=1, bias=False),
+        nn.GroupNorm(groups, 2 * channels),
+        nn.GELU(),
+        nn.AdaptiveAvgPool2d(1),
+        nn.Flatten(),
+        nn.Dropout(config.dropout),
+        nn.Linear(2 * channels, int(num_classes)),
+    )
 
 
 class OpticalClassifier(nn.Module):
@@ -32,20 +68,20 @@ class OpticalClassifier(nn.Module):
                     residual_main_min=config.residual_main_min,
                     normalize_branch_rms=config.normalize_branch_rms,
                     random_seed=1729 + index,
+                    electronic_skip_mode=config.electronic_skip_mode,
+                    electronic_skip_hidden_channels=config.electronic_skip_hidden_channels,
+                    electronic_skip_scale_init=config.electronic_skip_scale_init,
+                    electronic_skip_scale_max=config.electronic_skip_scale_max,
+                    long_skip_enabled=(
+                        config.long_skip_enabled and index > config.num_stages // 2
+                    ),
+                    long_skip_weight_init=config.long_skip_weight_init,
+                    long_skip_weight_max=config.long_skip_weight_max,
                 )
                 for index in range(config.num_stages)
             ]
         )
-        features = config.input_channels * config.pool_size * config.pool_size
-        self.head = nn.Sequential(
-            nn.AdaptiveAvgPool2d((config.pool_size, config.pool_size)),
-            nn.Flatten(),
-            nn.LayerNorm(features),
-            nn.Linear(features, config.hidden_dim),
-            nn.GELU(),
-            nn.Dropout(config.dropout),
-            nn.Linear(config.hidden_dim, int(num_classes)),
-        )
+        self.head = _build_head(config, num_classes)
 
     def _input_amplitude(self, images: torch.Tensor) -> torch.Tensor:
         value = images.float()
@@ -70,21 +106,36 @@ class OpticalClassifier(nn.Module):
         ablation: Ablation = "normal",
         return_diagnostics: bool = False,
     ):
-        if ablation not in {"normal", "optical_off", "phase_random", "phase_shuffle"}:
+        if ablation not in {
+            "normal",
+            "optical_off",
+            "phase_random",
+            "phase_shuffle",
+            "electronic_skip_off",
+            "long_skip_off",
+        }:
             raise ValueError(f"Unsupported ablation: {ablation}")
         amplitude = self._input_amplitude(images)
         diagnostics: list[dict[str, torch.Tensor]] = []
         phases = [stage.phase() for stage in self.stages]
+        stage_outputs: list[torch.Tensor] = []
         for index, stage in enumerate(self.stages):
             override = None
             if ablation == "phase_random":
                 override = stage.random_phase
             elif ablation == "phase_shuffle":
                 override = phases[(index + 1) % len(phases)]
+            source_index = len(self.stages) - 1 - index
+            long_skip = None
+            if self.config.long_skip_enabled and 0 <= source_index < index - 1:
+                long_skip = stage_outputs[source_index]
             result = stage(
                 amplitude,
                 phase_override=override,
                 optical_off=ablation == "optical_off",
+                long_skip=long_skip,
+                disable_electronic_skip=ablation == "electronic_skip_off",
+                disable_long_skip=ablation == "long_skip_off",
                 return_details=return_diagnostics,
             )
             if return_diagnostics:
@@ -92,6 +143,7 @@ class OpticalClassifier(nn.Module):
                 diagnostics.append(details)
             else:
                 amplitude = result
+            stage_outputs.append(amplitude)
         logits = self.head(amplitude)
         return (logits, diagnostics) if return_diagnostics else logits
 
@@ -111,6 +163,12 @@ class OpticalClassifier(nn.Module):
 
     def optical_weights(self) -> list[float]:
         return [float(stage.residual.main_weight().detach().cpu()) for stage in self.stages]
+
+    def electronic_skip_scales(self) -> list[float]:
+        return [float(stage.electronic_skip.transform_scale().detach().cpu()) for stage in self.stages]
+
+    def long_skip_weights(self) -> list[float]:
+        return [float(stage.electronic_skip.long_skip_weight().detach().cpu()) for stage in self.stages]
 
     def snapshot_phases(self) -> torch.Tensor:
         return torch.stack([stage.phase().detach().cpu() for stage in self.stages], dim=0)

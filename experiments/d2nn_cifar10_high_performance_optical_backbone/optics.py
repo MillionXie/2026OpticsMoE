@@ -147,6 +147,95 @@ class ResidualMixer(nn.Module):
         return main * optical + (1.0 - main) * skip
 
 
+def _bounded_logit(initial: float, maximum: float) -> torch.Tensor:
+    if maximum <= 0.0:
+        return torch.tensor(-20.0)
+    probability = min(max(float(initial) / float(maximum), 1e-5), 1.0 - 1e-5)
+    return torch.tensor(math.log(probability / (1.0 - probability)))
+
+
+class ElectronicSkipProcessor(nn.Module):
+    """Apply a deliberately small electronic transform to the bounded bypass branch."""
+
+    def __init__(
+        self,
+        *,
+        channels: int,
+        mode: str,
+        hidden_channels: int,
+        scale_init: float,
+        scale_max: float,
+        long_skip_enabled: bool,
+        long_skip_weight_init: float,
+        long_skip_weight_max: float,
+        eps: float,
+    ) -> None:
+        super().__init__()
+        self.mode = str(mode)
+        self.scale_max = float(scale_max)
+        self.long_skip_enabled = bool(long_skip_enabled)
+        self.long_skip_weight_max = float(long_skip_weight_max)
+        self.eps = float(eps)
+        hidden = int(hidden_channels)
+        if self.mode == "identity":
+            self.transform = None
+        elif self.mode == "pointwise":
+            self.transform = nn.Sequential(
+                nn.Conv2d(channels, hidden, kernel_size=1, bias=False),
+                nn.GELU(),
+                nn.Conv2d(hidden, channels, kernel_size=1, bias=False),
+            )
+        elif self.mode == "depthwise":
+            self.transform = nn.Sequential(
+                nn.Conv2d(channels, channels, kernel_size=3, padding=1, groups=channels, bias=False),
+                nn.GroupNorm(channels, channels),
+                nn.GELU(),
+                nn.Conv2d(channels, hidden, kernel_size=1, bias=False),
+                nn.GELU(),
+                nn.Conv2d(hidden, channels, kernel_size=1, bias=False),
+            )
+        else:
+            raise ValueError(f"Unsupported electronic skip mode: {self.mode}")
+        if self.transform is not None:
+            # Start from the pretrained identity bypass. The new branch first
+            # learns its final projection and only then perturbs earlier layers.
+            nn.init.zeros_(self.transform[-1].weight)
+            self.scale_logit = nn.Parameter(_bounded_logit(scale_init, scale_max))
+        if self.long_skip_enabled:
+            self.long_skip_logit = nn.Parameter(
+                _bounded_logit(long_skip_weight_init, long_skip_weight_max)
+            )
+
+    def transform_scale(self) -> torch.Tensor:
+        if self.transform is None:
+            return torch.zeros(())
+        return self.scale_max * torch.sigmoid(self.scale_logit)
+
+    def long_skip_weight(self) -> torch.Tensor:
+        if not self.long_skip_enabled:
+            return torch.zeros(())
+        return self.long_skip_weight_max * torch.sigmoid(self.long_skip_logit)
+
+    def forward(
+        self,
+        value: torch.Tensor,
+        *,
+        long_skip: torch.Tensor | None = None,
+        disable_transform: bool = False,
+        disable_long_skip: bool = False,
+    ) -> torch.Tensor:
+        base = rms_normalize(value.float(), self.eps)
+        if self.long_skip_enabled and long_skip is not None and not disable_long_skip:
+            source = rms_normalize(long_skip.float(), self.eps)
+            weight = self.long_skip_weight().to(device=base.device, dtype=base.dtype)
+            base = rms_normalize((1.0 - weight) * base + weight * source, self.eps)
+        if self.transform is None or disable_transform:
+            return base
+        scale = self.transform_scale().to(device=base.device, dtype=base.dtype)
+        processed = F.relu(base + scale * self.transform(base))
+        return rms_normalize(processed, self.eps)
+
+
 class OpticalOEOStage(nn.Module):
     """Phase mask -> propagation -> square-law CCD -> electronic nonlinearity -> reload."""
 
@@ -165,6 +254,13 @@ class OpticalOEOStage(nn.Module):
         residual_main_min: float,
         normalize_branch_rms: bool,
         random_seed: int,
+        electronic_skip_mode: str = "identity",
+        electronic_skip_hidden_channels: int = 12,
+        electronic_skip_scale_init: float = 0.10,
+        electronic_skip_scale_max: float = 0.25,
+        long_skip_enabled: bool = False,
+        long_skip_weight_init: float = 0.10,
+        long_skip_weight_max: float = 0.25,
     ) -> None:
         super().__init__()
         self.size = int(size)
@@ -177,6 +273,17 @@ class OpticalOEOStage(nn.Module):
         )
         self.propagator = AngularSpectrumPropagator(size, wavelength_m, pixel_size_m, distance_m)
         self.residual = ResidualMixer(residual_mode, residual_main_init, residual_main_min)
+        self.electronic_skip = ElectronicSkipProcessor(
+            channels=self.channels,
+            mode=electronic_skip_mode,
+            hidden_channels=electronic_skip_hidden_channels,
+            scale_init=electronic_skip_scale_init,
+            scale_max=electronic_skip_scale_max,
+            long_skip_enabled=long_skip_enabled,
+            long_skip_weight_init=long_skip_weight_init,
+            long_skip_weight_max=long_skip_weight_max,
+            eps=self.eps,
+        )
         self.register_buffer(
             "random_phase",
             2.0 * math.pi * torch.rand(self.channels, self.size, self.size, generator=generator),
@@ -235,12 +342,22 @@ class OpticalOEOStage(nn.Module):
         *,
         phase_override: torch.Tensor | None = None,
         optical_off: bool = False,
+        long_skip: torch.Tensor | None = None,
+        disable_electronic_skip: bool = False,
+        disable_long_skip: bool = False,
         return_details: bool = False,
     ):
         expected = (self.channels, self.size, self.size)
         if amplitude.ndim != 4 or tuple(amplitude.shape[1:]) != expected:
             raise ValueError(f"Expected [B,{self.channels},{self.size},{self.size}], got {tuple(amplitude.shape)}")
-        skip = rms_normalize(amplitude.float(), self.eps) if self.normalize_branch_rms else amplitude.float()
+        skip = self.electronic_skip(
+            amplitude,
+            long_skip=long_skip,
+            disable_transform=disable_electronic_skip,
+            disable_long_skip=disable_long_skip,
+        )
+        if not self.normalize_branch_rms:
+            skip = amplitude.float()
         if optical_off:
             output = skip
             optical = torch.zeros_like(skip)
@@ -254,4 +371,6 @@ class OpticalOEOStage(nn.Module):
             "skip_rms": _spatial_rms(skip, self.eps).mean().detach(),
             "output_rms": _spatial_rms(output, self.eps).mean().detach(),
             "optical_weight": self.residual.main_weight().detach(),
+            "electronic_skip_scale": self.electronic_skip.transform_scale().detach(),
+            "long_skip_weight": self.electronic_skip.long_skip_weight().detach(),
         }

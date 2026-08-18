@@ -200,9 +200,12 @@ def _diagnostics(
         "stage_optical_rms": [float(row["optical_rms"].cpu()) for row in stages],
         "stage_skip_rms": [float(row["skip_rms"].cpu()) for row in stages],
         "stage_output_rms": [float(row["output_rms"].cpu()) for row in stages],
+        "electronic_skip_scales": model.electronic_skip_scales(),
+        "long_skip_weights": model.long_skip_weights(),
         "trainable_parameters": sum(parameter.numel() for parameter in model.parameters() if parameter.requires_grad),
         "phase_parameters": sum(parameter.numel() for parameter in model.phase_parameters()),
         "electronic_parameters": sum(parameter.numel() for parameter in model.electronic_parameters()),
+        "residual_parameters": sum(parameter.numel() for parameter in model.residual_parameters()),
     }
 
 
@@ -363,7 +366,14 @@ def evaluate_checkpoint(
     validation = evaluate(model, validation_loader, device, settings)
     ablations = {
         name: evaluate(model, test_loader, device, settings, ablation=name)
-        for name in ("normal", "optical_off", "phase_random", "phase_shuffle")
+        for name in (
+            "normal",
+            "optical_off",
+            "phase_random",
+            "phase_shuffle",
+            "electronic_skip_off",
+            "long_skip_off",
+        )
     }
     full = float(ablations["normal"]["accuracy"])
     off = float(ablations["optical_off"]["accuracy"])

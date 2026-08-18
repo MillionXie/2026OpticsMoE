@@ -171,3 +171,36 @@ A01 已接近收敛且仅差 0.07 个百分点达到测试门槛。A05 从 A01 e
 A07 最佳 checkpoint 的八层光学权重为 `[0.6245, 0.5059, 0.5031, 0.5018, 0.5006, 0.5005, 0.5007, 0.5013]`。相对 A04，测试性能只下降 0.46 pp，平均光学权重提高约 14.15 pp，归一化光学依赖提高 2.94 pp；三种相位/光路破坏后的准确率均降到接近随机水平。结论：A07 是当前更适合作为“高光学占比”主设置的骨干，严格通过 60% 门槛。
 
 冻结 checkpoint：`runs/a07_high_optical_cifar100_to_cifar10/seed_1234/best.pt`，SHA-256 `a9b3784ad392dc19546266c0c804dc8f77a2c90d92812ae425b2d3c52a487084`，大小 8,630,498 byte。下一正式动作是在仍然只有 NoFT/BP/FA-pretrained/FA-random 四组的前提下，把 A07 的 `main_min=0.50` 与 50 epoch schedule 固定为共同协议，验证 P01 的固定反馈结论能否延伸到更高光学占比和更强更新。
+
+## A08–A10：高光学约束下的轻量电子残差筛选
+
+状态：2026-08-19 完成实现和预注册，等待/正在服务器运行。它们是 BP 骨干优化 run，不是新增正式方法。
+
+动机：A01–A07 的三个颜色通道在八层光学传播中完全独立，只有最终 MLP 读出能够混合 RGB；每层 bypass 也只是原振幅的 RMS-normalized identity。用户允许在保证每层 optical gate 不低于 0.5 的前提下，对 bypass 做少量电子处理，并建议尝试 U-Net 式跳连。
+
+共同控制：
+
+- A03 CIFAR-100 source checkpoint 和 `load_backbone_only=true`；
+- CIFAR-10 split、seed 1234、数据增强、50 epochs 和 A07 的全部 optimizer 设置；
+- 每层 `residual.main_min=0.50`，电子分支永远只位于剩余不超过 0.50 的 bypass 内；
+- 电子残差修正系数限制为 `<=0.25`，U-Net-like 长跳连权重限制为 `<=0.25`；
+- MLP readout 在第一轮保持不变，避免把 branch 与 head 的效果混在一起；
+- validation 选择 checkpoint，test 不参与选择。
+
+候选：
+
+| run | 唯一新增结构 | 目的 |
+|---|---|---|
+| A08 | 每层 pointwise bottleneck | 用极少电子参数实现 RGB 交互 |
+| A09 | depthwise 3×3 + pointwise bottleneck | 在 bypass 中补充局部空间归纳偏置 |
+| A10 | A09 + stage 0→7、1→6、2→5 的有界长跳连 | 检验跨深度特征复用是否改善优化 |
+
+完整模型之外必须报告：
+
+- optical-off：电子路径单独能达到什么性能；
+- phase-random / phase-shuffle：学习到的物理相位是否必要；
+- electronic-skip-off：新增电子局部变换的直接消融；
+- long-skip-off：长跳连的直接消融；
+- 每层 optical gate、电子修正系数、长跳连权重与参数量。
+
+保留标准：相对 A07 的 60.25%，优先选择 validation/test 提升且 normalized optical dependence 仍高的 Pareto 候选。若完整性能提高但 optical-off 同幅提高、相位破坏不再接近随机水平，则判定为电子旁路扩张，不进入下一阶段。第一轮胜者再与小型卷积 readout 做单变量第二轮比较。

@@ -60,3 +60,20 @@ A07 是正式四组之外的 BP 骨干优化，只测试把光学残差权重硬
 ```bash
 PHYSICAL_GPU_INDEX=2 bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/17_train_a07_high_optical.sh
 ```
+
+A08–A10 是高光学骨干的电子残差筛选，不增加正式 fixed-feedback 方法数量。三个候选共享 A03 source、A07 的 50-epoch 预算和 `main_min=0.50`，可在不同 GPU 并行：
+
+```bash
+mkdir -p experiments/d2nn_cifar10_high_performance_optical_backbone/runs/a08_pointwise_electronic_residual
+mkdir -p experiments/d2nn_cifar10_high_performance_optical_backbone/runs/a09_depthwise_electronic_residual
+mkdir -p experiments/d2nn_cifar10_high_performance_optical_backbone/runs/a10_depthwise_unet_skips
+
+nohup env PHYSICAL_GPU_INDEX=2 bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/18_train_a08_pointwise_residual.sh \
+  > experiments/d2nn_cifar10_high_performance_optical_backbone/runs/a08_pointwise_electronic_residual/train.log 2>&1 &
+nohup env PHYSICAL_GPU_INDEX=4 bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/19_train_a09_depthwise_residual.sh \
+  > experiments/d2nn_cifar10_high_performance_optical_backbone/runs/a09_depthwise_electronic_residual/train.log 2>&1 &
+nohup env PHYSICAL_GPU_INDEX=5 bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/20_train_a10_unet_skips.sh \
+  > experiments/d2nn_cifar10_high_performance_optical_backbone/runs/a10_depthwise_unet_skips/train.log 2>&1 &
+```
+
+三个脚本都会在 validation-best checkpoint 上自动运行六项测试：normal、optical-off、phase-random、phase-shuffle、electronic-skip-off 和 long-skip-off。先选出 accuracy–optical-dependence Pareto 候选，再对读出头做第二轮受控比较。
