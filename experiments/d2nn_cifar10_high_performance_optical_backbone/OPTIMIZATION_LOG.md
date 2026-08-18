@@ -113,11 +113,13 @@ A03 实测：best validation 为 30.80%（epoch 78），完整 CIFAR-100 测试 
 
 ### A05：A01 低学习率连续精修
 
-状态：修正后已强制重跑；截至 epoch 14 尚未超过 epoch-0 基线。
+状态：已完成并通过性能门槛。
 
 A01 已接近收敛且仅差 0.07 个百分点达到测试门槛。A05 从 A01 epoch-76 best checkpoint 完整加载光学 stage 和电子头，不改变任何架构；phase/electronic LR 均降至 5e-4，residual LR 为 2e-4，继续 30 epoch cosine 精修。若仍不能稳定越过 60%，则不继续堆叠相同训练，而等待 A03/A04 的预训练迁移结果。
 
 首次启动的 epoch-1 validation 为 57.92%，低于初始化 A01 的 59.86%。检查发现训练器原本只在新 run 内选 best，会忘记 epoch-0 初始化性能。已停止进程并修改协议：所有带初始化 checkpoint 的 run 先评估并保存 epoch-0 best，后续只有严格超过它才覆盖。这一修正同时适用于 A04。A05 将用 `FORCE_RESTART=1` 从 A01 checkpoint 干净重跑；首次两轮结果不纳入结论。
+
+最终实测：best validation 为 60.54%（A05 epoch 28），完整 CIFAR-10 测试 normal/optical-off/random-phase/shuffled-phase Top-1 为 61.02%/14.54%/13.44%/11.29%。normal 比 optical-off 高 46.48 个百分点，归一化光学依赖为 91.10%。phase/electronic 参数分别为 393,216/104,330。结论：严格通过 60% 性能门槛，且相位破坏后的性能接近随机；A05 可作为当前最优 BP 光学骨干候选。继续 A04 的目的不是补救 A05，而是验证光学预训练能否给出更高性能或更强论文叙事。
 
 - 配置：`configs/a05_refine_a01.yaml`
 - 启动：`commands/09_refine_a05_from_a01.sh`
