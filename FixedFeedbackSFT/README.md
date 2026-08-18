@@ -20,13 +20,14 @@ FA-pretrained 固定的是**预训练结束时各光学层对应的反馈算子*
 
 ## 阅读顺序
 
-1. [HANDOFF.md](HANDOFF.md)：给下一个会话的完整背景和当前状态。
-2. [METHOD.md](METHOD.md)：数学定义、光学数据流和代码中的准确实现。
-3. [EXPERIMENTS.md](EXPERIMENTS.md)：两代实验、已有结果和已知问题。
-4. [RESEARCH_PLAN.md](RESEARCH_PLAN.md)：面向汇报和后续论文的完整实验架构。
-5. [NEXT_STEPS.md](NEXT_STEPS.md)：最近一轮的执行优先级。
-6. [CODE_INDEX.md](CODE_INDEX.md)：源码、配置、结果和测试入口。
-7. [COMMANDS.md](COMMANDS.md)：可直接执行的命令。
+1. [PROJECT_BRIEF_FOR_GPT56_PRO.md](PROJECT_BRIEF_FOR_GPT56_PRO.md)：截至 2026-08-19 的完整事实简报、证据边界、顶刊实验缺口与大模型规划问题。
+2. [HANDOFF.md](HANDOFF.md)：早期两代实验的完整背景和交接状态。
+3. [METHOD.md](METHOD.md)：数学定义、光学数据流和代码中的准确实现。
+4. [EXPERIMENTS.md](EXPERIMENTS.md)：两代实验、已有结果和已知问题。
+5. [RESEARCH_PLAN.md](RESEARCH_PLAN.md)：性能优化开始前制定的完整实验架构。
+6. [NEXT_STEPS.md](NEXT_STEPS.md)：最近一轮的执行优先级。
+7. [CODE_INDEX.md](CODE_INDEX.md)：源码、配置、结果和测试入口。
+8. [COMMANDS.md](COMMANDS.md)：可直接执行的命令。
 
 ## 为什么没有把源码物理移动到本目录
 
