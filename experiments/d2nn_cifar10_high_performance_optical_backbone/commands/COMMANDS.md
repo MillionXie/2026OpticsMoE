@@ -50,7 +50,7 @@ bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/15_comp
 正式长跑前，先用真实 A03 source 和限量 batch 跑通四组全链路（仅工程检查，不作为实验结果）：
 
 ```bash
-CUDA_VISIBLE_DEVICES=1 bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/16_smoke_formal.sh
+PHYSICAL_GPU_INDEX=1 bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/16_smoke_formal.sh
 ```
 
 11-14 必须等待 10 正常结束。12-14 可以在不同 GPU 并行，但不得修改 config 或共同 checkpoint。
