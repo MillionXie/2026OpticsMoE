@@ -1,5 +1,10 @@
 # CIFAR-100 → CIFAR-10 contrastive optical fixed feedback
 
+Repository-level research context and the handoff record are maintained in
+[`../../FixedFeedbackSFT/README.md`](../../FixedFeedbackSFT/README.md).
+This directory is the V2 contrastive-transfer implementation. Its formal
+three-seed results and current limitations are recorded in the repository-level handoff.
+
 This independent experiment replaces the class-index-bound 100-way classifier
 with a transferable 128-dimensional L2-normalized embedding. It does not modify
 or overwrite the completed CIFAR-100-C classification experiment.

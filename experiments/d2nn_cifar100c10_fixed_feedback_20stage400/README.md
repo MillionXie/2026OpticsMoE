@@ -1,5 +1,10 @@
 # CIFAR-100-C optical fixed-feedback experiment
 
+Repository-level research context and the handoff record are maintained in
+[`../../FixedFeedbackSFT/README.md`](../../FixedFeedbackSFT/README.md).
+This directory is the completed V1 classification experiment and must remain
+unchanged when developing later fixed-feedback variants.
+
 This independent experiment tests whether the adjoints of pretrained optical
 operators remain useful fixed feedback connectors during small-drift optical
 fine-tuning. It implements BP, fixed pretrained feedback, fixed random feedback,
