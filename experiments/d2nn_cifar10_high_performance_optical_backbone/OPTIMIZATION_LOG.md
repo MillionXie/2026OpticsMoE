@@ -111,9 +111,11 @@ A03 将 A01 的同一光学骨干分类头改为 100 类，在 CIFAR-100 的固�
 
 ### A05：A01 低学习率连续精修
 
-状态：配置与命令已实现，等待服务器启动。
+状态：首次启动后发现初始化基线保护问题，已停止并修正，等待强制重跑。
 
 A01 已接近收敛且仅差 0.07 个百分点达到测试门槛。A05 从 A01 epoch-76 best checkpoint 完整加载光学 stage 和电子头，不改变任何架构；phase/electronic LR 均降至 5e-4，residual LR 为 2e-4，继续 30 epoch cosine 精修。若仍不能稳定越过 60%，则不继续堆叠相同训练，而等待 A03/A04 的预训练迁移结果。
+
+首次启动的 epoch-1 validation 为 57.92%，低于初始化 A01 的 59.86%。检查发现训练器原本只在新 run 内选 best，会忘记 epoch-0 初始化性能。已停止进程并修改协议：所有带初始化 checkpoint 的 run 先评估并保存 epoch-0 best，后续只有严格超过它才覆盖。这一修正同时适用于 A04。A05 将用 `FORCE_RESTART=1` 从 A01 checkpoint 干净重跑；首次两轮结果不纳入结论。
 
 - 配置：`configs/a05_refine_a01.yaml`
 - 启动：`commands/09_refine_a05_from_a01.sh`

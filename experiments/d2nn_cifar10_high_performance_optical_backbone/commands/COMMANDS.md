@@ -28,3 +28,10 @@ nohup env PHYSICAL_GPU_INDEX=3 \
 `08_finetune_a04_cifar10.sh` 依赖 A03 的 `best.pt`，必须等 `07_pretrain_a03_cifar100.sh` 正常结束后启动。
 
 `09_refine_a05_from_a01.sh` 依赖 A01 的 `best.pt`，用于低学习率连续精修；它不改变架构。
+
+A05 只有在明确重置该输出目录的训练状态时使用 `FORCE_RESTART=1`，否则默认从自己的 `latest.pt` 续训：
+
+```bash
+FORCE_RESTART=1 PHYSICAL_GPU_INDEX=1 \
+  bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/09_refine_a05_from_a01.sh
+```

@@ -283,6 +283,25 @@ def train_seed(
         initialization = {"resumed_from": str(latest_path)}
     else:
         initialization = _load_initial_checkpoint(model, settings)
+        if initialization is not None:
+            initial_validation = evaluate(model, validation_loader, device, settings)
+            best_accuracy = float(initial_validation["accuracy"])
+            initialization["initial_validation"] = initial_validation
+            baseline = _checkpoint(
+                model,
+                optimizer,
+                scheduler,
+                scaler,
+                epoch=0,
+                best_validation_accuracy=best_accuracy,
+                history=history,
+                settings=settings,
+            )
+            _atomic_torch_save(baseline, run_dir / "best.pt")
+            print(
+                f"[initialization] validation={best_accuracy:.4f} registered_as_epoch_zero_best",
+                flush=True,
+            )
     for epoch in range(start_epoch, settings.training.epochs + 1):
         train_metrics = _train_epoch(model, train_loader, optimizer, scaler, device, settings, epoch)
         validation_metrics = evaluate(model, validation_loader, device, settings)
