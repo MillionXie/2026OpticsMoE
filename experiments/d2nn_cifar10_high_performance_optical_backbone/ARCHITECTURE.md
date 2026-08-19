@@ -78,8 +78,9 @@ A08 的电子残差只有 592 个参数，是极小有效性基线。根据实�
 与同层光学输出合并。八层电子残差 312,336 参数，加旧 MLP head 后总电子参数 416,666。
 这样利用了几十万级合理容量，同时避免直接在 128×128 上运行 64 通道全卷积。
 
-A13 最佳 checkpoint 的 test/optical-off/random-phase/shuffled-phase/electronic-skip-off Top-1
-分别为 72.18%/13.39%/12.48%/12.76%/28.06%，normalized optical dependence 为 94.55%。
-八层 gate 的最小值/均值为 50.05%/51.18%，因此门控约束和光学因果消融都通过。其估算电子
+A13 四 seed test Top-1 为 72.34% ± 0.14 pp；optical-off 和 normalized optical dependence
+均值为 13.70% 和 94.07%。所有 seed 的 random/shuffled phase 都接近随机，electronic-skip-off
+为 24.76%--28.06%。八层 gate 的跨 seed 最小值为 50.05%，因此门控约束和光学因果消融都
+通过。其估算电子
 卷积量仍有 317.82M MAC/sample，所以 `alpha>=0.5` 只表示经过 RMS 平衡后的分支混合权重，
 不能称为实际光学计算比例、能耗比例或硬件加速比。

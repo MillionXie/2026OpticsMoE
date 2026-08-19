@@ -308,3 +308,23 @@ optical dependence 不低于 90%、所有 stage optical gate 不低于 0.5，则
 补充确认性运行：用户在 seed 2026 完成后提供另一张低占用卡，因此增加 seed 2028 作为第四个
 确认性 seed。它使用完全相同的 replication config，结果无论好坏都报告，但不改变上面的三
 seed 通过门槛。唯一启动入口为 `commands/27_train_a13_confirmatory_seed2028.sh`。
+
+复验最终结果：
+
+| seed | selected epoch | validation | test | optical-off | random phase | phase shuffle | electronic-skip-off | optical dependence | min/mean gate |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 1234 | 49 | 73.08% | 72.18% | 13.39% | 12.48% | 12.76% | 28.06% | 94.55% | 50.05% / 51.18% |
+| 2026 | 48 | 73.10% | 72.52% | 14.74% | 10.17% | 11.47% | 24.76% | 92.42% | 50.05% / 51.09% |
+| 2027 | 47 | 73.72% | 72.33% | 13.67% | 11.34% | 13.49% | 25.67% | 94.11% | 50.05% / 51.11% |
+| 2028（确认） | 49 | 72.84% | 72.31% | 12.98% | 11.13% | 13.50% | 26.68% | 95.22% | 50.05% / 51.11% |
+
+预注册的前三 seed test 为 **72.34% ± 0.17 pp**；加入确认性 seed 2028 后为
+**72.34% ± 0.14 pp**。四 seed optical-off/random/shuffle/electronic-skip-off 均值分别为
+13.70%/11.28%/12.81%/26.29%，normalized optical dependence 为 94.07% ± 1.19 pp。
+前三 seed 全部满足 test 不低于 70%、均值不低于 71%、光学依赖不低于 90% 和逐层 gate
+不低于 0.5 的预注册门槛；确认性第四 seed 同样满足。
+
+冻结决定：A13 通过复验，不再在 CIFAR-10 上修改架构或超参数。原筛选配置 SHA-256 为
+`beafc5521e81cf05be84a6c142ad2935d04f0d49541f20c09418dced97dc7239`，三 seed replication
+配置 SHA-256 为 `eb4f3d3659b48b5f4920c7710d5b4a45c5ec512e2bb96b5d96bbad6d1db47376`。
+下一阶段只运行 NoFT/BP/FA-pretrained/FA-random 四组 P02，不再增加正式方法。

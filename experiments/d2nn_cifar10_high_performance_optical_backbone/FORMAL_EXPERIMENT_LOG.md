@@ -97,7 +97,7 @@ P01 结论：在当前高性能、强光学依赖但小相位更新的 regime �
 
 结论：S01 只覆盖极少样本，accuracy 不作解释；工程链路允许进入 P01。
 
-## P02：A13 强骨干上的唯一四组（已预注册，尚未启动）
+## P02：A13 强骨干上的唯一四组（已启动）
 
 启动门槛：A13 的 seed 1234/2026/2027 三 seed 复验必须先通过
 `OPTIMIZATION_LOG.md` 预注册性能、光学依赖和 gate 条件。确认性 seed 2028 无论好坏都报告，
@@ -119,3 +119,11 @@ P01 结论：在当前高性能、强光学依赖但小相位更新的 regime �
 配置为 `configs/formal_a13_high_performance.yaml`；共同起点、单个 method×seed 和最终比较只能
 分别使用 `commands/28_prepare_common_a13_formal.sh`、`commands/29_run_a13_formal_method.sh`、
 `commands/30_compare_a13_formal.sh`。在 A13 复验结束前只准备代码和测试，不启动 P02。
+
+2026-08-19 启动记录：A13 预注册三 seed test 为 72.34% ± 0.17 pp，全部通过性能、光学依赖
+和 gate 门槛；确认性第四 seed 也通过，因此触发 P02。共同 head warm-up selected epoch 10，
+validation 50.42%，checkpoint SHA-256
+`b64570eec65141037cd512a1626e44e879500a73cf7df817e892fd3455b728f0`。NoFT 三 seed test
+均为 51.18%，optical-off 11.59%，normalized optical dependence 96.14%；
+electronic-skip-off 仍为 51.18%，证明共同起点的新电子残差保持零初始化。BP、FA-pretrained、
+FA-random 的 seed 2026 已分别在 GPU 4/5/2 启动，结果待统一回填。
