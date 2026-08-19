@@ -134,3 +134,7 @@ FA-random 的 seed 2026 已分别在 GPU 4/5/2 启动，结果待统一回填。
 不修改配置或训练逻辑。GPU 4 已排队 BP seeds 2027/2028，GPU 5 已排队 FA-pretrained seeds
 2027/2028，GPU 2 已排队 FA-random seed 2028。至此九个可训练的 method×seed 均已运行或排队，
 NoFT 三 seed 已完成。
+
+最终汇总由 `commands/32_wait_and_compare_a13_formal.sh` 在 CPU 侧等待固定的四方法乘三 seed
+共 12 个结果，齐全后自动调用 command 30。comparison 输出除 test mean/std 外，还包括所有
+光学/电子消融、光学依赖、相位漂移、门控、梯度对齐统计和预注册方法之间的逐 seed 配对差值。

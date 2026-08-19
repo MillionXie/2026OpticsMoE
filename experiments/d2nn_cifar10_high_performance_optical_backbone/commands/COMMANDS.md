@@ -154,3 +154,11 @@ nohup env PHYSICAL_GPU_INDEX=4 METHOD=bp RUN_SEEDS=2027,2028 WAIT_PID=<launcher-
   bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/31_queue_a13_formal_method.sh \
   > experiments/d2nn_cifar10_high_performance_optical_backbone/runs/formal_a13_high_performance/launch_logs/bp_seed_2027_2028_queue.log 2>&1 &
 ```
+
+Start the CPU-side completion watcher once. It waits for the locked 4 methods x 3 seeds and then
+runs command 30 automatically:
+
+```bash
+nohup bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/32_wait_and_compare_a13_formal.sh \
+  > experiments/d2nn_cifar10_high_performance_optical_backbone/runs/formal_a13_high_performance/launch_logs/wait_and_compare.log 2>&1 &
+```
