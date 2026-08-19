@@ -116,3 +116,12 @@ nohup env PHYSICAL_GPU_INDEX=5 RUN_SEED=2027 \
 ```bash
 bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/26_aggregate_a13_replicas.sh
 ```
+
+若另有低占用卡，可增加正式种子体系中的 seed 2028 作为确认性第四 seed。它不改变前三 seed
+预注册通过规则：
+
+```bash
+nohup env PHYSICAL_GPU_INDEX=5 \
+  bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/27_train_a13_confirmatory_seed2028.sh \
+  > experiments/d2nn_cifar10_high_performance_optical_backbone/runs/a13_lowres_electronic_residual/train_seed_2028.log 2>&1 &
+```

@@ -304,3 +304,7 @@ A13 目前只是在 CIFAR-10 上、seed 1234 的架构筛选胜者；下一步�
 预先判定：若三 seed test Top-1 均不低于 70%，均值不低于 71%，且每个 seed 的 normalized
 optical dependence 不低于 90%、所有 stage optical gate 不低于 0.5，则 A13 通过复验并冻结；
 否则保留完整离散结果，分析方差或失败原因，不再依据 test 结果修改同一数据集上的架构。
+
+补充确认性运行：用户在 seed 2026 完成后提供另一张低占用卡，因此增加 seed 2028 作为第四个
+确认性 seed。它使用完全相同的 replication config，结果无论好坏都报告，但不改变上面的三
+seed 通过门槛。唯一启动入口为 `commands/27_train_a13_confirmatory_seed2028.sh`。
