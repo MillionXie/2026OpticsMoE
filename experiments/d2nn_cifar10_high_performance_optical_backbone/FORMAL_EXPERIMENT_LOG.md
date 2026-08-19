@@ -157,3 +157,10 @@ BP 且显著优于随机固定反馈；它仍然只覆盖理想数字光学环�
 
 下一阶段 P03 冻结上述 checkpoint，仅在推理光路注入部署非理想因素。预注册设计见
 `DEPLOYMENT_ROBUSTNESS_PLAN.md`；P03-S 先在 validation split 筛选误差工作区间，不修改模型。
+
+P03 已完成三 training seeds × 三 deployment seeds 的 test 确认。相位 0.15 rad、横向失配
+0.125 pixel、探测器 5% RMS 和联合工作点下，FA-pretrained 相对 FA-random 的配对优势分别
+为 4.69/3.35/7.89/4.20 pp；对应 BP 相对 FA-pretrained 的差距为 2.03/2.56/1.08/2.00 pp。
+0.25 pixel 失配下三种高性能模型严重退化且 FA-pretrained - FA-random 反转为 -7.36 pp，定义为
+装调失效边界而非有效部署工作点。完整协议、筛选过程、分层统计和限制见
+`DEPLOYMENT_ROBUSTNESS_PLAN.md`。

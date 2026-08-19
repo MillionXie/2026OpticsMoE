@@ -102,3 +102,38 @@ P03-S2 显示 0.125 pixel 时 BP/FA-pretrained/FA-random 为 62.20%/60.04%/56.22
 detector 5% 的联合工作点。正式配置使用三个 training seeds 和三个 deployment seeds；0.25 pixel
 明确标记为失效边界，不用于支撑“关系成立”的主结论。配置为
 `configs/p03_deployment_robustness_formal.yaml`，只能由 commands 35/36 运行和汇总。
+
+## 8. P03-F 正式结果
+
+36 个 checkpoint×deployment-seed 结果全部完成。下表先对每个 training seed 的三个 deployment
+seeds 求均值，再报告三个 training seeds 的 mean ± sample std，避免把九个相关运行直接当成九个
+独立模型：
+
+| test 条件 | NoFT | BP | FA-pretrained | FA-random |
+|---|---:|---:|---:|---:|
+| ideal | 51.18% ± 0.00 | 72.30% ± 0.54 | 71.44% ± 0.42 | 63.29% ± 0.91 |
+| phase 0.05 rad | 50.76% ± 0.00 | 72.05% ± 0.79 | 70.98% ± 0.58 | 63.28% ± 0.93 |
+| phase 0.15 rad | 41.66% ± 0.00 | 68.55% ± 0.98 | 66.52% ± 1.23 | 61.83% ± 0.98 |
+| shift 0.0625 pixel | 49.04% ± 0.00 | 69.99% ± 0.59 | 68.67% ± 0.40 | 61.61% ± 1.08 |
+| shift 0.125 pixel | 41.34% ± 0.00 | 62.00% ± 0.77 | 59.44% ± 0.58 | 56.09% ± 0.71 |
+| shift 0.25 pixel（边界） | 22.90% ± 0.00 | 30.91% ± 1.80 | 28.45% ± 1.92 | 35.81% ± 0.48 |
+| detector 1% RMS | 51.08% ± 0.00 | 72.33% ± 0.57 | 71.37% ± 0.45 | 63.32% ± 0.95 |
+| detector 5% RMS | 50.96% ± 0.00 | 72.25% ± 0.76 | 71.16% ± 0.55 | 63.27% ± 0.89 |
+| combined operating | 41.12% ± 0.00 | 65.92% ± 0.58 | 63.92% ± 0.40 | 59.72% ± 1.16 |
+
+关键配对差值（同样先平均 deployment seeds）：
+
+| 条件 | BP - FA-pretrained | FA-pretrained - FA-random |
+|---|---:|---:|
+| ideal | 0.86 ± 0.26 pp | 8.15 ± 1.32 pp |
+| phase 0.15 rad | 2.03 ± 0.31 pp | 4.69 ± 2.20 pp |
+| shift 0.0625 pixel | 1.32 ± 0.19 pp | 7.06 ± 1.45 pp |
+| shift 0.125 pixel | 2.56 ± 0.19 pp | 3.35 ± 1.17 pp |
+| detector 5% RMS | 1.08 ± 0.29 pp | 7.89 ± 1.43 pp |
+| combined operating | 2.00 ± 0.23 pp | 4.20 ± 1.56 pp |
+| shift 0.25 pixel（边界） | 2.46 ± 0.20 pp | **-7.36 ± 2.38 pp** |
+
+P03-F 支持：在仍有可用任务信息的相位误差、探测器噪声、0.0625/0.125 pixel 失配和联合工作
+点内，FA-pretrained 仍接近 BP 且优于 FA-random。它不支持“任意部署误差下都成立”：0.25
+pixel 已破坏高性能光学表征并导致相对排序反转。当前探测器结果还只代表经过每层标准化的相对
+高斯读出噪声，不能替代绝对光功率、shot noise、量化、饱和和动态范围实验。

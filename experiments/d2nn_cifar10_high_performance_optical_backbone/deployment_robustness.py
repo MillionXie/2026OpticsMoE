@@ -384,18 +384,52 @@ def compare(settings: RobustnessSettings) -> dict[str, object]:
         for row in rows
     }
     paired: dict[str, object] = {}
+    hierarchical_paired: dict[str, object] = {}
     for left, right in (("bp", "fa_pretrained"), ("fa_pretrained", "fa_random")):
         contrast: dict[str, object] = {}
+        hierarchical_contrast: dict[str, object] = {}
         for condition in settings.conditions:
             deltas = []
+            per_training_seed: dict[str, object] = {}
+            deployment_averaged_deltas: list[float] = []
             for training_seed in settings.training_seeds:
+                seed_deltas = []
                 for deployment_seed in settings.deployment_seeds:
                     key = (training_seed, deployment_seed, condition.name)
-                    deltas.append(
-                        keyed[(left, *key)] - keyed[(right, *key)]
-                    )
+                    delta = keyed[(left, *key)] - keyed[(right, *key)]
+                    deltas.append(delta)
+                    seed_deltas.append(delta)
+                per_training_seed[str(training_seed)] = _summary(seed_deltas)
+                deployment_averaged_deltas.append(float(np.mean(seed_deltas)))
             contrast[condition.name] = _summary(deltas)
+            hierarchical_contrast[condition.name] = {
+                "by_training_seed": per_training_seed,
+                "across_training_seed": _summary(deployment_averaged_deltas),
+            }
         paired[f"{left}_minus_{right}"] = contrast
+        hierarchical_paired[f"{left}_minus_{right}"] = hierarchical_contrast
+
+    hierarchical_summary: dict[str, object] = {}
+    for condition in settings.conditions:
+        condition_summary: dict[str, object] = {}
+        for method in settings.methods:
+            by_training_seed: dict[str, object] = {}
+            deployment_averaged_accuracies: list[float] = []
+            for training_seed in settings.training_seeds:
+                values = [
+                    float(row["accuracy"])
+                    for row in rows
+                    if row["condition"] == condition.name
+                    and row["method"] == method
+                    and row["training_seed"] == training_seed
+                ]
+                by_training_seed[str(training_seed)] = _summary(values)
+                deployment_averaged_accuracies.append(float(np.mean(values)))
+            condition_summary[method] = {
+                "by_training_seed": by_training_seed,
+                "across_training_seed": _summary(deployment_averaged_accuracies),
+            }
+        hierarchical_summary[condition.name] = condition_summary
 
     output = {
         "config": str(settings.config_path),
@@ -403,6 +437,8 @@ def compare(settings: RobustnessSettings) -> dict[str, object]:
         "split": settings.split,
         "summary": summary,
         "paired_accuracy_deltas": paired,
+        "hierarchical_summary": hierarchical_summary,
+        "hierarchical_paired_accuracy_deltas": hierarchical_paired,
         "rows": rows,
     }
     comparison_dir = settings.output_dir / "comparison"
