@@ -138,3 +138,22 @@ NoFT 三 seed 已完成。
 最终汇总由 `commands/32_wait_and_compare_a13_formal.sh` 在 CPU 侧等待固定的四方法乘三 seed
 共 12 个结果，齐全后自动调用 command 30。comparison 输出除 test mean/std 外，还包括所有
 光学/电子消融、光学依赖、相位漂移、门控、梯度对齐统计和预注册方法之间的逐 seed 配对差值。
+
+P02 最终结果（2026/2027/2028 三个配对 seeds，均值 ± sample std）：
+
+| 方法 | test | optical-off | electronic-skip-off | optical dependence | phase RMS drift |
+|---|---:|---:|---:|---:|---:|
+| NoFT | 51.18% ± 0.00 pp | 11.59% | 51.18% | 96.14% | 0.000 rad |
+| BP | **72.30% ± 0.54 pp** | 13.70% | 32.06% | 94.06% | 0.304 rad |
+| FA-pretrained | **71.44% ± 0.42 pp** | 12.76% | 32.87% | 95.51% | 0.295 rad |
+| FA-random | 63.29% ± 0.91 pp | 15.01% | 16.37% | 90.59% | 0.480 rad |
+
+逐 seed 配对差值：`BP - FA-pretrained = 0.86 ± 0.26 pp`；
+`FA-pretrained - FA-random = 8.15 ± 1.32 pp`。FA-pretrained 的 epoch-0 分层 gradient cosine
+均值/最小值约为 1.000/1.000；FA-random 三 seed 的均值为 0.224，逐运行最小层的平均值为
+-0.203。FA-random 相位更新更大但性能更低，说明优势不能只用“更大更新量”解释。所有方法的
+最小光学 gate 均保持不低于 0.50008。P02 支持在冻结 A13 高性能骨干上，预训练固定反馈接近
+BP 且显著优于随机固定反馈；它仍然只覆盖理想数字光学环境。
+
+下一阶段 P03 冻结上述 checkpoint，仅在推理光路注入部署非理想因素。预注册设计见
+`DEPLOYMENT_ROBUSTNESS_PLAN.md`；P03-S 先在 validation split 筛选误差工作区间，不修改模型。

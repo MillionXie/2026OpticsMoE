@@ -162,3 +162,21 @@ runs command 30 automatically:
 nohup bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/32_wait_and_compare_a13_formal.sh \
   > experiments/d2nn_cifar10_high_performance_optical_backbone/runs/formal_a13_high_performance/launch_logs/wait_and_compare.log 2>&1 &
 ```
+
+P03 deployment-robustness screening is validation-only and locked to training seed 2026. Split the
+four formal methods over two idle GPUs:
+
+```bash
+nohup env PHYSICAL_GPU_INDEX=4 METHODS_CSV=noft,bp \
+  bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/33_run_p03_deployment_screen.sh \
+  > experiments/d2nn_cifar10_high_performance_optical_backbone/runs/p03_deployment_robustness_screen/gpu4_noft_bp.log 2>&1 &
+nohup env PHYSICAL_GPU_INDEX=5 METHODS_CSV=fa_pretrained,fa_random \
+  bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/33_run_p03_deployment_screen.sh \
+  > experiments/d2nn_cifar10_high_performance_optical_backbone/runs/p03_deployment_robustness_screen/gpu5_fa.log 2>&1 &
+```
+
+After all four screen results exist, aggregate them on CPU:
+
+```bash
+bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/34_compare_p03_deployment_screen.sh
+```

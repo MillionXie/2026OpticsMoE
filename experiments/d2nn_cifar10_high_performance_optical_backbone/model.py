@@ -6,7 +6,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from .optics import FeedbackMode, OpticalOEOStage
+from .optics import FeedbackMode, OpticalDeploymentState, OpticalOEOStage
 from .settings import OpticalConfig
 
 
@@ -133,6 +133,7 @@ class OpticalClassifier(nn.Module):
         images: torch.Tensor,
         *,
         ablation: Ablation = "normal",
+        deployment: OpticalDeploymentState | None = None,
         return_diagnostics: bool = False,
     ):
         if ablation not in {
@@ -144,13 +145,22 @@ class OpticalClassifier(nn.Module):
             "long_skip_off",
         }:
             raise ValueError(f"Unsupported ablation: {ablation}")
+        if deployment is not None and ablation != "normal":
+            raise ValueError("Deployment perturbations cannot be combined with diagnostic ablations")
+        if deployment is not None:
+            if deployment.phase_overrides and len(deployment.phase_overrides) != len(self.stages):
+                raise ValueError("Deployment phase_overrides must contain one tensor per stage")
+            if deployment.detector_generators and len(deployment.detector_generators) != len(self.stages):
+                raise ValueError("Deployment detector_generators must contain one generator per stage")
         amplitude = self._input_amplitude(images)
         diagnostics: list[dict[str, torch.Tensor]] = []
         phases = [stage.phase() for stage in self.stages]
         stage_outputs: list[torch.Tensor] = []
         for index, stage in enumerate(self.stages):
             override = None
-            if ablation == "phase_random":
+            if deployment is not None and deployment.phase_overrides:
+                override = deployment.phase_overrides[index]
+            elif ablation == "phase_random":
                 override = stage.random_phase
             elif ablation == "phase_shuffle":
                 override = phases[(index + 1) % len(phases)]
@@ -165,6 +175,14 @@ class OpticalClassifier(nn.Module):
                 long_skip=long_skip,
                 disable_electronic_skip=ablation == "electronic_skip_off",
                 disable_long_skip=ablation == "long_skip_off",
+                detector_noise_relative_rms=(
+                    deployment.detector_noise_relative_rms if deployment is not None else 0.0
+                ),
+                detector_generator=(
+                    deployment.detector_generators[index]
+                    if deployment is not None and deployment.detector_generators
+                    else None
+                ),
                 return_details=return_diagnostics,
             )
             if return_diagnostics:

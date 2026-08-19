@@ -10,6 +10,12 @@ from experiments.d2nn_cifar10_high_performance_optical_backbone.fixed_feedback_t
     _sample_summary,
 )
 from experiments.d2nn_cifar10_high_performance_optical_backbone.datasets import _split
+from experiments.d2nn_cifar10_high_performance_optical_backbone.deployment_robustness import (
+    DeploymentCondition,
+    _translate_phase,
+    build_deployment_state,
+    load_robustness_settings,
+)
 from experiments.d2nn_cifar10_high_performance_optical_backbone.formal_settings import load_formal_settings
 from experiments.d2nn_cifar10_high_performance_optical_backbone.model import OpticalClassifier
 from experiments.d2nn_cifar10_high_performance_optical_backbone.optics import (
@@ -288,4 +294,58 @@ def test_formal_comparison_helpers_use_sample_statistics_and_paired_seeds() -> N
     assert all(
         abs(delta - 0.1) < 1.0e-12
         for delta in contrasts["fa_pretrained_minus_fa_random"]["by_seed"].values()
+    )
+
+
+def test_deployment_state_is_paired_reproducible_and_shape_preserving() -> None:
+    settings = load_settings(CONFIG)
+    optical = replace(settings.optical, canvas_size=16, pool_size=2, hidden_dim=16)
+    model = OpticalClassifier(optical, num_classes=10).eval()
+    condition = DeploymentCondition(
+        name="combined",
+        phase_noise_std_rad=0.1,
+        phase_shift_pixels=1,
+        detector_noise_relative_rms=0.02,
+    )
+    first, first_metadata = build_deployment_state(
+        model,
+        condition,
+        deployment_seed=9101,
+        device=torch.device("cpu"),
+    )
+    second, second_metadata = build_deployment_state(
+        model,
+        condition,
+        deployment_seed=9101,
+        device=torch.device("cpu"),
+    )
+    assert first_metadata == second_metadata
+    assert len(first.phase_overrides) == len(model.stages)
+    assert all(
+        torch.equal(left, right)
+        for left, right in zip(first.phase_overrides, second.phase_overrides, strict=True)
+    )
+    images = torch.rand(2, 3, 32, 32)
+    torch.testing.assert_close(model(images, deployment=first), model(images, deployment=second))
+
+
+def test_phase_translation_does_not_wrap_and_screen_is_validation_only() -> None:
+    phase = torch.arange(9, dtype=torch.float32).reshape(1, 3, 3)
+    shifted = _translate_phase(phase, dy=1, dx=1)
+    expected = torch.tensor([[[0.0, 0.0, 0.0], [0.0, 0.0, 1.0], [0.0, 3.0, 4.0]]])
+    torch.testing.assert_close(shifted, expected)
+
+    screen = load_robustness_settings(CONFIG.parent / "p03_deployment_robustness_screen.yaml")
+    assert screen.split == "validation"
+    assert screen.training_seeds == (2026,)
+    assert screen.deployment_seeds == (9101,)
+    assert tuple(condition.name for condition in screen.conditions) == (
+        "ideal",
+        "phase_noise_0p05rad",
+        "phase_noise_0p15rad",
+        "lateral_shift_1px",
+        "lateral_shift_2px",
+        "detector_noise_0p01rms",
+        "detector_noise_0p05rms",
+        "combined_moderate",
     )

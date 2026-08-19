@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from dataclasses import dataclass
 from typing import Literal
 
 import torch
@@ -9,6 +10,15 @@ from torch.nn import functional as F
 
 
 FeedbackMode = Literal["bp", "fa_pretrained", "fa_random"]
+
+
+@dataclass(frozen=True)
+class OpticalDeploymentState:
+    """Frozen deployment errors plus reproducible detector-noise streams."""
+
+    phase_overrides: tuple[torch.Tensor, ...] = ()
+    detector_noise_relative_rms: float = 0.0
+    detector_generators: tuple[torch.Generator, ...] = ()
 
 
 def physical_phase(raw_phase: torch.Tensor) -> torch.Tensor:
@@ -352,7 +362,14 @@ class OpticalOEOStage(nn.Module):
             self.feedback_phase.copy_(phase.detach().to(self.feedback_phase))
         self.feedback_mode = mode
 
-    def _optical_branch(self, amplitude: torch.Tensor, phase_override: torch.Tensor | None) -> torch.Tensor:
+    def _optical_branch(
+        self,
+        amplitude: torch.Tensor,
+        phase_override: torch.Tensor | None,
+        *,
+        detector_noise_relative_rms: float = 0.0,
+        detector_generator: torch.Generator | None = None,
+    ) -> torch.Tensor:
         # Complex FFTs remain float32 even when the electronic head uses AMP.
         with torch.autocast(device_type=amplitude.device.type, enabled=False):
             value = amplitude.float()
@@ -369,6 +386,18 @@ class OpticalOEOStage(nn.Module):
                     self.propagator.transfer_function,
                 )
             intensity = propagated.abs().square().float()
+            noise_level = float(detector_noise_relative_rms)
+            if noise_level < 0.0:
+                raise ValueError("detector_noise_relative_rms must be non-negative")
+            if noise_level > 0.0:
+                noise = torch.randn(
+                    intensity.shape,
+                    device=intensity.device,
+                    dtype=intensity.dtype,
+                    generator=detector_generator,
+                )
+                intensity_rms = _spatial_rms(intensity, self.eps)
+                intensity = (intensity + noise_level * intensity_rms * noise).clamp_min(0.0)
             mean = intensity.mean(dim=(-2, -1), keepdim=True)
             variance = intensity.var(dim=(-2, -1), keepdim=True, unbiased=False)
             activated = F.relu((intensity - mean) * torch.rsqrt(variance + self.eps))
@@ -385,6 +414,8 @@ class OpticalOEOStage(nn.Module):
         long_skip: torch.Tensor | None = None,
         disable_electronic_skip: bool = False,
         disable_long_skip: bool = False,
+        detector_noise_relative_rms: float = 0.0,
+        detector_generator: torch.Generator | None = None,
         return_details: bool = False,
     ):
         expected = (self.channels, self.size, self.size)
@@ -402,7 +433,12 @@ class OpticalOEOStage(nn.Module):
             output = skip
             optical = torch.zeros_like(skip)
         else:
-            optical = self._optical_branch(amplitude, phase_override)
+            optical = self._optical_branch(
+                amplitude,
+                phase_override,
+                detector_noise_relative_rms=detector_noise_relative_rms,
+                detector_generator=detector_generator,
+            )
             output = self.residual(optical, skip)
         if not return_details:
             return output
