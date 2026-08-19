@@ -61,3 +61,18 @@ P04 新增可微部署路径：前向传播始终使用发生固定横向偏移�
 - GPU 4 运行 global 0.125/0.25 px；GPU 5 运行 layerwise 0.125/0.25 px。两卡均通过 command 39 启动。
 - 第一个完整 BP-current epoch：global 0.125 px 从 57.94% 恢复到 71.20%；layerwise 0.125 px 从 62.20% 恢复到 71.50%；共同 source ideal 为 73.40%。这证明 P03 的低值来自冻结推理，而不是 BP 无法获得部署后的当前关系。
 - 上述为运行中检查点，不替代 10 epoch validation-best 汇总；必须等待四条件四方法全部完成后再判断 FA-pretrained 与 FA-random。
+
+## 8. 0.125 pixel 四组完整结果
+
+共同 P02 BP source 的理想 validation 为 73.40%。下表为同一 source、同一偏移和同一适配预算下的 validation-best：
+
+| 位移几何 | NoFT | BP-current | FA-pretrained | FA-random |
+|---|---:|---:|---:|---:|
+| global 0.125 px | 57.94% | 73.54% | 73.36% | 69.24% |
+| layerwise 0.125 px | 62.20% | 73.48% | 73.42% | 70.54% |
+
+- global：BP 与 FA-pretrained 分别恢复 15.60/15.42 pp，差 0.18 pp；FA-pretrained 比 FA-random 高 4.12 pp。
+- layerwise：BP 与 FA-pretrained 分别恢复 11.28/11.22 pp，差 0.06 pp；FA-pretrained 比 FA-random 高 2.88 pp。
+- BP 与 FA-pretrained 的最佳点均为 epoch 8；FA-random 的 global/layerwise 最佳点分别为 epoch 9/2。
+- 这批结果首次严格证明：部署偏移后 BP-current 能获得最新关系并恢复性能；部署前最后一次光学算子在 0.125 px 下几乎复现 BP，而同形状随机连接明显较差。
+- 0.25 px 仍在运行。其即时 NoFT 为 global 24.70%、layerwise 29.66%，用于检验从 P03 失效边界能否通过部署后训练恢复。
