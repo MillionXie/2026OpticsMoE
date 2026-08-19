@@ -78,3 +78,27 @@ FA-pretrained 接近随机水平，因此 1/2 pixel 不适合作为最终失配�
 `commands/33_run_p03_deployment_screen.sh`，全部四组结果齐全后由
 `commands/34_compare_p03_deployment_screen.sh` 汇总。输出位于
 `runs/p03_deployment_robustness_screen/`，不提交 checkpoint 或运行产物到 Git。
+
+## 7. 筛选结果与正式冻结
+
+P03-S1 的四组 validation accuracy（NoFT/BP/FA-pretrained/FA-random）为：
+
+| 条件 | NoFT | BP | FA-pretrained | FA-random |
+|---|---:|---:|---:|---:|
+| ideal | 50.42% | 73.40% | 72.68% | 62.96% |
+| phase 0.05 rad | 50.00% | 72.94% | 72.00% | 62.80% |
+| phase 0.15 rad | 42.54% | 69.88% | 67.64% | 61.20% |
+| detector 1% RMS | 50.42% | 73.32% | 72.54% | 63.20% |
+| detector 5% RMS | 50.22% | 73.08% | 72.04% | 62.98% |
+| shift 1 pixel | 16.72% | 14.84% | 13.68% | 23.04% |
+| shift 2 pixel | 13.04% | 16.86% | 15.40% | 19.58% |
+
+P03-S2 显示 0.125 pixel 时 BP/FA-pretrained/FA-random 为 62.20%/60.04%/56.22%，排序仍
+成立；0.25 pixel 时为 29.66%/27.42%/37.36%，说明约 2--4 μm 之间存在明显失配拐点。
+0.5 pixel 后三种可训练方法均接近随机水平。
+
+在查看 test robustness 前冻结 P03-F：phase 0.05/0.15 rad、shift
+0.0625/0.125/0.25 pixel、detector 1%/5%，以及 phase 0.15 rad + shift 0.0625 pixel +
+detector 5% 的联合工作点。正式配置使用三个 training seeds 和三个 deployment seeds；0.25 pixel
+明确标记为失效边界，不用于支撑“关系成立”的主结论。配置为
+`configs/p03_deployment_robustness_formal.yaml`，只能由 commands 35/36 运行和汇总。

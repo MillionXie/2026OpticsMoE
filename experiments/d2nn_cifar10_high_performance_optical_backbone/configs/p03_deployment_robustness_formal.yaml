@@ -1,0 +1,28 @@
+formal_config: experiments/d2nn_cifar10_high_performance_optical_backbone/configs/formal_a13_high_performance.yaml
+output_dir: experiments/d2nn_cifar10_high_performance_optical_backbone/runs/p03_deployment_robustness_formal
+split: test
+
+methods: [noft, bp, fa_pretrained, fa_random]
+training_seeds: [2026, 2027, 2028]
+deployment_seeds: [9101, 9102, 9103]
+
+conditions:
+  - name: ideal
+  - name: phase_noise_0p05rad
+    phase_noise_std_rad: 0.05
+  - name: phase_noise_0p15rad
+    phase_noise_std_rad: 0.15
+  - name: lateral_shift_0p0625px
+    phase_shift_pixels: 0.0625
+  - name: lateral_shift_0p125px
+    phase_shift_pixels: 0.125
+  - name: lateral_shift_0p25px_boundary
+    phase_shift_pixels: 0.25
+  - name: detector_noise_0p01rms
+    detector_noise_relative_rms: 0.01
+  - name: detector_noise_0p05rms
+    detector_noise_relative_rms: 0.05
+  - name: combined_operating
+    phase_noise_std_rad: 0.15
+    phase_shift_pixels: 0.0625
+    detector_noise_relative_rms: 0.05

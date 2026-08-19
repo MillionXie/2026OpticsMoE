@@ -190,3 +190,21 @@ ROBUSTNESS_CONFIG=experiments/d2nn_cifar10_high_performance_optical_backbone/con
 ROBUSTNESS_CONFIG=experiments/d2nn_cifar10_high_performance_optical_backbone/configs/p03b_deployment_subpixel_screen.yaml \
   bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/34_compare_p03_deployment_screen.sh
 ```
+
+After P03-S1/S2 lock the severity grid, run the three-training-seed by three-deployment-seed P03-F
+test confirmation on two GPUs:
+
+```bash
+nohup env PHYSICAL_GPU_INDEX=4 METHODS_CSV=noft,bp \
+  bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/35_run_p03_deployment_formal.sh \
+  > experiments/d2nn_cifar10_high_performance_optical_backbone/runs/p03_deployment_robustness_formal/gpu4_noft_bp.log 2>&1 &
+nohup env PHYSICAL_GPU_INDEX=5 METHODS_CSV=fa_pretrained,fa_random \
+  bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/35_run_p03_deployment_formal.sh \
+  > experiments/d2nn_cifar10_high_performance_optical_backbone/runs/p03_deployment_robustness_formal/gpu5_fa.log 2>&1 &
+```
+
+When all 36 checkpoint/deployment-seed results exist, aggregate on CPU:
+
+```bash
+bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/36_compare_p03_deployment_formal.sh
+```

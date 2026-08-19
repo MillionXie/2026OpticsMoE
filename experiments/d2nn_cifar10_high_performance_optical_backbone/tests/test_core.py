@@ -352,3 +352,7 @@ def test_phase_translation_does_not_wrap_and_screen_is_validation_only() -> None
         "detector_noise_0p05rms",
         "combined_moderate",
     )
+    formal = load_robustness_settings(CONFIG.parent / "p03_deployment_robustness_formal.yaml")
+    assert formal.split == "test"
+    assert formal.training_seeds == (2026, 2027, 2028)
+    assert formal.deployment_seeds == (9101, 9102, 9103)
