@@ -96,3 +96,26 @@ P01 结论：在当前高性能、强光学依赖但小相位更新的 regime �
 - FA-random 的前七层 gradient cosine 为 `[0.1023, 0.1749, 0.1194, 0.4647, 0.2537, 0.5784, 0.7256]`，末层为 1，符合“只替换跨层 error connector，末层仍由相同 head 误差直接驱动”的预期。
 
 结论：S01 只覆盖极少样本，accuracy 不作解释；工程链路允许进入 P01。
+
+## P02：A13 强骨干上的唯一四组（已预注册，尚未启动）
+
+启动门槛：A13 的 seed 1234/2026/2027 三 seed 复验必须先通过
+`OPTIMIZATION_LOG.md` 预注册性能、光学依赖和 gate 条件。确认性 seed 2028 无论好坏都报告，
+但不改变启动门槛。
+
+若门槛通过，P02 固定以下内容，不再按方法单独调参：
+
+- 唯一四组仍为 NoFT、BP、FA-pretrained、FA-random；
+- A03 source checkpoint 与 SHA-256 保持不变；
+- A13 的 low-resolution electronic residual、312,336 residual electronic parameters、
+  104,330 参数 MLP head、`main_min=0.50` 全部锁定；
+- 共同 head warm-up 为 seed 4242、10 epochs；stage 全冻结，因此新电子残差在共同起点仍为
+  零初始化，不允许某个反馈方法单独获得预训练电子旁路；
+- downstream seeds 为 2026/2027/2028，每组 50 epochs，LR 和 cosine schedule 与 A13 相同；
+- 所有电子模块始终用普通 BP，四组只改变光学 stage 之间的 backward connector；
+- 除原有 normal/optical-off/random/shuffle 外，正式结果增加 electronic-skip-off 和
+  long-skip-off，排除电子旁路解释。
+
+配置为 `configs/formal_a13_high_performance.yaml`；共同起点、单个 method×seed 和最终比较只能
+分别使用 `commands/28_prepare_common_a13_formal.sh`、`commands/29_run_a13_formal_method.sh`、
+`commands/30_compare_a13_formal.sh`。在 A13 复验结束前只准备代码和测试，不启动 P02。

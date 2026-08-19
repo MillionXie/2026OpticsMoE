@@ -355,7 +355,14 @@ def _test_diagnostics(
     loader = make_loader(datasets.test, settings.base, train=False, seed=seed + 2)
     results = {
         name: evaluate(model, loader, device, settings.base, ablation=name)
-        for name in ("normal", "optical_off", "phase_random", "phase_shuffle")
+        for name in (
+            "normal",
+            "optical_off",
+            "phase_random",
+            "phase_shuffle",
+            "electronic_skip_off",
+            "long_skip_off",
+        )
     }
     full = float(results["normal"]["accuracy"])
     off = float(results["optical_off"]["accuracy"])
@@ -499,7 +506,8 @@ def compare(settings: FormalSettings) -> dict[str, object]:
                 continue
             result = json.loads(path.read_text(encoding="utf-8"))
             common_digests.add(result["common_checkpoint_sha256"])
-            normal = result["test"]["ablations"]["normal"]["accuracy"]
+            ablations = result["test"]["ablations"]
+            normal = ablations["normal"]["accuracy"]
             rows.append(
                 {
                     "method": method,
@@ -507,9 +515,17 @@ def compare(settings: FormalSettings) -> dict[str, object]:
                     "selected_epoch": result["selected_epoch"],
                     "validation_accuracy": result["best_validation_accuracy"],
                     "test_accuracy": normal,
-                    "optical_off_accuracy": result["test"]["ablations"]["optical_off"]["accuracy"],
-                    "phase_random_accuracy": result["test"]["ablations"]["phase_random"]["accuracy"],
-                    "phase_shuffle_accuracy": result["test"]["ablations"]["phase_shuffle"]["accuracy"],
+                    "optical_off_accuracy": ablations["optical_off"]["accuracy"],
+                    "phase_random_accuracy": ablations["phase_random"]["accuracy"],
+                    "phase_shuffle_accuracy": ablations["phase_shuffle"]["accuracy"],
+                    # Historical P01 results predate these diagnostics. Identity/disabled
+                    # branches are equivalent to the normal forward in those checkpoints.
+                    "electronic_skip_off_accuracy": ablations.get(
+                        "electronic_skip_off", ablations["normal"]
+                    )["accuracy"],
+                    "long_skip_off_accuracy": ablations.get(
+                        "long_skip_off", ablations["normal"]
+                    )["accuracy"],
                     "normalized_optical_dependence": result["test"]["normalized_optical_dependence"],
                     **result["endpoint_geometry"],
                 }

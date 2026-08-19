@@ -125,3 +125,23 @@ nohup env PHYSICAL_GPU_INDEX=5 \
   bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/27_train_a13_confirmatory_seed2028.sh \
   > experiments/d2nn_cifar10_high_performance_optical_backbone/runs/a13_lowres_electronic_residual/train_seed_2028.log 2>&1 &
 ```
+
+仅当 A13 三 seed 复验通过后，准备 P02 共同起点：
+
+```bash
+PHYSICAL_GPU_INDEX=<空闲卡> bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/28_prepare_common_a13_formal.sh
+```
+
+共同起点冻结并登记 SHA-256 后，每个正式 `method x seed` 使用同一入口；只允许四种方法和
+2026/2027/2028 三个 seeds：
+
+```bash
+METHOD=bp RUN_SEED=2026 PHYSICAL_GPU_INDEX=<空闲卡> \
+  bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/29_run_a13_formal_method.sh
+```
+
+12 个结果全部存在后在 CPU 汇总：
+
+```bash
+bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/30_compare_a13_formal.sh
+```

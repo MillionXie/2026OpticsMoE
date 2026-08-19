@@ -216,6 +216,20 @@ def test_formal_pilot_has_only_the_expected_contract() -> None:
     assert len(formal.formal.source_checkpoint_sha256) == 64
 
 
+def test_formal_a13_matches_the_locked_backbone_contract() -> None:
+    root = CONFIG.parent
+    a13 = load_settings(root / "a13_lowres_electronic_residual.yaml")
+    formal = load_formal_settings(root / "formal_a13_high_performance.yaml")
+    assert formal.base.optical == a13.optical
+    assert formal.base.data == a13.data
+    assert formal.base.optimizer == a13.optimizer
+    assert formal.formal.finetune_seeds == (2026, 2027, 2028)
+    assert formal.formal.finetune_epochs == a13.training.epochs == 50
+    assert formal.formal.phase_learning_rate == a13.optimizer.phase_learning_rate
+    assert formal.formal.residual_learning_rate == a13.optimizer.residual_learning_rate
+    assert formal.formal.electronic_learning_rate == a13.optimizer.electronic_learning_rate
+
+
 def test_a07_changes_only_the_optical_floor_contract() -> None:
     baseline = load_settings(CONFIG.parent / "a04_cifar100_to_cifar10.yaml")
     candidate = load_settings(CONFIG.parent / "a07_high_optical_cifar100_to_cifar10.yaml")
