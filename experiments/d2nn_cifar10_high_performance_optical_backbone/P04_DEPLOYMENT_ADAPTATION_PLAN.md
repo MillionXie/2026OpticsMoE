@@ -52,3 +52,12 @@ P04 新增可微部署路径：前向传播始终使用发生固定横向偏移�
 ## 6. 后续门槛
 
 若 BP-current 在 0.125/0.25 pixel 下不能明显恢复，优先排查可微偏移、学习率和可逆性，不解释 FA 排名。只有 BP-current 恢复成立后，才判断旧算子 FA 是否有效。若两者都能恢复，再固定协议扩展到多 seed、test、数 pixel 偏移，并增加 misalignment-vaccinated/SAT 鲁棒训练；后者是训练策略，不增加第五个反馈方法组。
+
+## 7. 2026-08-20 启动与首批检查
+
+- Git 实现提交：`efa2e93d`；本地只提交本实验目录，没有纳入工作区中原有的 Qwen/.gitignore 改动。
+- 服务器同步后单元测试：`21 passed`。
+- 真实 checkpoint 两 batch smoke：global 0.125 px 下，初始 validation 57.94%；BP-current 到 61.16%，FA-pretrained 到 61.10%。FA-pretrained 相对 BP-current 的八层梯度 cosine 为 0.974--1.000，且两种方法部署前向一致。
+- GPU 4 运行 global 0.125/0.25 px；GPU 5 运行 layerwise 0.125/0.25 px。两卡均通过 command 39 启动。
+- 第一个完整 BP-current epoch：global 0.125 px 从 57.94% 恢复到 71.20%；layerwise 0.125 px 从 62.20% 恢复到 71.50%；共同 source ideal 为 73.40%。这证明 P03 的低值来自冻结推理，而不是 BP 无法获得部署后的当前关系。
+- 上述为运行中检查点，不替代 10 epoch validation-best 汇总；必须等待四条件四方法全部完成后再判断 FA-pretrained 与 FA-random。
