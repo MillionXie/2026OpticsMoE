@@ -97,3 +97,22 @@ PHYSICAL_GPU_INDEX=4 bash experiments/d2nn_cifar10_high_performance_optical_back
 ```bash
 PHYSICAL_GPU_INDEX=4 bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/24_train_a13_lowres_residual.sh
 ```
+
+A13 架构锁定后，不再改结构或超参数，只补 seed 2026/2027 复现。两个进程写入同一实验目录下
+互不重叠的 `seed_<seed>/`，并且显式 `--seed` 时不会在训练结束时抢写 aggregate：
+
+```bash
+mkdir -p experiments/d2nn_cifar10_high_performance_optical_backbone/runs/a13_lowres_electronic_residual
+nohup env PHYSICAL_GPU_INDEX=4 RUN_SEED=2026 \
+  bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/25_train_a13_replica.sh \
+  > experiments/d2nn_cifar10_high_performance_optical_backbone/runs/a13_lowres_electronic_residual/train_seed_2026.log 2>&1 &
+nohup env PHYSICAL_GPU_INDEX=5 RUN_SEED=2027 \
+  bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/25_train_a13_replica.sh \
+  > experiments/d2nn_cifar10_high_performance_optical_backbone/runs/a13_lowres_electronic_residual/train_seed_2027.log 2>&1 &
+```
+
+两组都生成 `evaluation.json` 后，在 CPU 上汇总三个 seeds：
+
+```bash
+bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/26_aggregate_a13_replicas.sh
+```

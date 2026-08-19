@@ -137,6 +137,18 @@ def test_low_resolution_electronic_budget_and_forward() -> None:
     assert model.estimated_electronic_macs() > 0
 
 
+def test_a13_replication_changes_only_the_seed_list() -> None:
+    root = CONFIG.parent
+    screening = load_settings(root / "a13_lowres_electronic_residual.yaml")
+    replication = load_settings(root / "a13_multiseed_replication.yaml")
+    assert replication.training.seeds == (1234, 2026, 2027)
+    assert replace(replication.training, seeds=screening.training.seeds) == screening.training
+    assert replication.output_dir == screening.output_dir
+    assert replication.optical == screening.optical
+    assert replication.data == screening.data
+    assert replication.optimizer == screening.optimizer
+
+
 def test_optical_off_does_not_depend_on_phase() -> None:
     settings = load_settings(CONFIG)
     optical = replace(settings.optical, canvas_size=16, pool_size=2, hidden_dim=16, dropout=0.0)

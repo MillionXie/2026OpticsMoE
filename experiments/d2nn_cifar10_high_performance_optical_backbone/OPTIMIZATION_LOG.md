@@ -292,3 +292,15 @@ random/shuffle phase 也只有约 12%--13%。因此 72.18% 不能由电子路径
 `69c3a680e5f53f7c49b7d657daafa10174192000611b30a1c570c5604ae97cf6`，大小 12,458,658 byte。
 A13 目前只是在 CIFAR-10 上、seed 1234 的架构筛选胜者；下一步应先做独立 seeds 复验，再
 冻结它并回到唯一四组 NoFT/BP/FA-pretrained/FA-random，不能把 A13 当作第五种反馈方法。
+
+### A13 多 seed 复验协议
+
+2026-08-19 在读取额外 seed 结果前锁定协议：增加 seed 2026/2027，与已有 seed 1234 组成
+三 seed 复验；复用项目正式实验的随机种子体系。除 `training.seeds` 外，复制配置经单元测试
+保证与 A13 原配置的 output、optical、data、optimizer 和全部 training 字段相同。两张空闲卡
+并行训练，仍按各自 validation-best 选择 checkpoint，并自动执行六项统一消融。启动和汇总
+只能使用 `commands/25_train_a13_replica.sh` 与 `commands/26_aggregate_a13_replicas.sh`。
+
+预先判定：若三 seed test Top-1 均不低于 70%，均值不低于 71%，且每个 seed 的 normalized
+optical dependence 不低于 90%、所有 stage optical gate 不低于 0.5，则 A13 通过复验并冻结；
+否则保留完整离散结果，分析方差或失败原因，不再依据 test 结果修改同一数据集上的架构。
