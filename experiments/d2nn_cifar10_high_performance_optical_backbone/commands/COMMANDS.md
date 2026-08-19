@@ -145,3 +145,12 @@ METHOD=bp RUN_SEED=2026 PHYSICAL_GPU_INDEX=<空闲卡> \
 ```bash
 bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/30_compare_a13_formal.sh
 ```
+
+To queue multiple seeds on the same GPU after an already running launcher exits, use the
+checked queue entry point. `WAIT_PID` is optional; every queued item still goes through command 29:
+
+```bash
+nohup env PHYSICAL_GPU_INDEX=4 METHOD=bp RUN_SEEDS=2027,2028 WAIT_PID=<launcher-pid> \
+  bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/31_queue_a13_formal_method.sh \
+  > experiments/d2nn_cifar10_high_performance_optical_backbone/runs/formal_a13_high_performance/launch_logs/bp_seed_2027_2028_queue.log 2>&1 &
+```
