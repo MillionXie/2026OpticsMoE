@@ -164,3 +164,15 @@ P03 已完成三 training seeds × 三 deployment seeds 的 test 确认。相位
 0.25 pixel 失配下三种高性能模型严重退化且 FA-pretrained - FA-random 反转为 -7.36 pp，定义为
 装调失效边界而非有效部署工作点。完整协议、筛选过程、分层统计和限制见
 `DEPLOYMENT_ROBUSTNESS_PLAN.md`。
+
+## P04：部署偏移后的继续训练（2026-08-20 启动）
+
+P03 不包含部署后反向传播。P04 修复 `detach phase_override` 不能继续训练且会绕过 FA 的问题，
+新增可微部署位移：前向使用固定偏移后的当前光学算子；BP-current 使用当前精确 Jacobian；
+FA-pretrained 只把跨层 error connector 固定为部署前最后一次训练的算子，局部相位梯度仍精确；
+FA-random 使用同形状固定随机 connector。四组均从 P02 BP seed 2026 的同一个 endpoint 开始，
+避免不同预部署 checkpoint 的性能和电子依赖混淆适配结论。
+
+首轮为 validation-only：global/layerwise 两种几何分别测试 0.125/0.25 pixel，适配 10 epochs，
+GPU 4/5 由 command 39 并行执行。正式协议、代码动作、指标和进入多 seed/test 的门槛见
+`P04_DEPLOYMENT_ADAPTATION_PLAN.md`。

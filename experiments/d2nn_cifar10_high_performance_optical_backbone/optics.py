@@ -17,6 +17,8 @@ class OpticalDeploymentState:
     """Frozen deployment errors plus reproducible detector-noise streams."""
 
     phase_overrides: tuple[torch.Tensor, ...] = ()
+    phase_shifts_dy_dx: tuple[tuple[float, float], ...] = ()
+    phase_errors_rad: tuple[torch.Tensor, ...] = ()
     detector_noise_relative_rms: float = 0.0
     detector_generators: tuple[torch.Generator, ...] = ()
 
@@ -33,6 +35,50 @@ def _spatial_rms(value: torch.Tensor, eps: float) -> torch.Tensor:
 
 def rms_normalize(value: torch.Tensor, eps: float) -> torch.Tensor:
     return value / _spatial_rms(value, eps)
+
+
+def translate_phase(phase: torch.Tensor, dy: float, dx: float) -> torch.Tensor:
+    """Differentiably translate a finite phase mask without periodic wrapping."""
+
+    if dy == 0 and dx == 0:
+        return phase
+    height, width = phase.shape[-2:]
+    if abs(dy) >= height or abs(dx) >= width:
+        return torch.zeros_like(phase)
+    if float(dy).is_integer() and float(dx).is_integer():
+        integer_y = int(dy)
+        integer_x = int(dx)
+        output = torch.zeros_like(phase)
+        source_y = slice(max(-integer_y, 0), min(height - integer_y, height))
+        target_y = slice(max(integer_y, 0), min(height + integer_y, height))
+        source_x = slice(max(-integer_x, 0), min(width - integer_x, width))
+        target_x = slice(max(integer_x, 0), min(width + integer_x, width))
+        output[..., target_y, target_x] = phase[..., source_y, source_x]
+        return output
+
+    # Interpolate the complex phasor, not the wrapped angle. This preserves
+    # continuity around 0/2pi while retaining gradients to raw_phase.
+    phasor = torch.stack((torch.cos(phase), torch.sin(phase)), dim=1)
+    theta = torch.eye(2, 3, device=phase.device, dtype=phase.dtype)
+    theta = theta.unsqueeze(0).repeat(phase.shape[0], 1, 1)
+    theta[:, 0, 2] = -2.0 * float(dx) / max(width - 1, 1)
+    theta[:, 1, 2] = -2.0 * float(dy) / max(height - 1, 1)
+    grid = F.affine_grid(theta, phasor.shape, align_corners=True)
+    shifted = F.grid_sample(
+        phasor,
+        grid,
+        mode="bilinear",
+        padding_mode="zeros",
+        align_corners=True,
+    )
+    real = shifted[:, 0]
+    imaginary = shifted[:, 1]
+    uncovered = real.square() + imaginary.square() < 1.0e-12
+    # atan2(0, 0) has an undefined derivative. Uncovered finite-mask pixels
+    # physically use zero phase and must contribute zero gradient.
+    safe_real = torch.where(uncovered, torch.ones_like(real), real)
+    safe_imaginary = torch.where(uncovered, torch.zeros_like(imaginary), imaginary)
+    return torch.remainder(torch.atan2(safe_imaginary, safe_real), 2.0 * math.pi)
 
 
 def _propagate(field: torch.Tensor, transfer_function: torch.Tensor) -> torch.Tensor:
@@ -122,6 +168,32 @@ class _FixedFeedbackOptical(torch.autograd.Function):
                 create_graph=False,
             )
         return amplitude_gradient, phase_gradient, None, None
+
+
+def _fixed_feedback_with_current_phase(
+    amplitude: torch.Tensor,
+    current_phase: torch.Tensor,
+    feedback_phase: torch.Tensor,
+    transfer_function: torch.Tensor,
+) -> torch.Tensor:
+    """Current deployed forward/local gradient with a frozen inter-stage connector."""
+
+    # The first term owns the exact local gradient of the shifted current mask,
+    # but amplitude is detached so it cannot define the preceding-stage error.
+    local_field = (
+        torch.complex(amplitude.detach(), torch.zeros_like(amplitude))
+        * torch.exp(1j * current_phase).to(torch.complex64).unsqueeze(0)
+    )
+    local_output = _propagate(local_field, transfer_function)
+
+    # This zero-valued straight-through term contributes only the frozen
+    # feedback connector to the preceding stage.
+    connector_field = (
+        torch.complex(amplitude, torch.zeros_like(amplitude))
+        * torch.exp(1j * feedback_phase.detach()).to(torch.complex64).unsqueeze(0)
+    )
+    connector_output = _propagate(connector_field, transfer_function)
+    return local_output + connector_output - connector_output.detach()
 
 
 class ResidualMixer(nn.Module):
@@ -367,17 +439,36 @@ class OpticalOEOStage(nn.Module):
         amplitude: torch.Tensor,
         phase_override: torch.Tensor | None,
         *,
+        phase_shift_dy_dx: tuple[float, float] | None = None,
+        phase_error_rad: torch.Tensor | None = None,
         detector_noise_relative_rms: float = 0.0,
         detector_generator: torch.Generator | None = None,
     ) -> torch.Tensor:
         # Complex FFTs remain float32 even when the electronic head uses AMP.
         with torch.autocast(device_type=amplitude.device.type, enabled=False):
             value = amplitude.float()
+            has_deployment_transform = phase_shift_dy_dx is not None or phase_error_rad is not None
+            if phase_override is not None and has_deployment_transform:
+                raise ValueError("phase_override cannot be combined with differentiable deployment transforms")
+            phase = self.phase() if phase_override is None else phase_override
+            if phase_shift_dy_dx is not None:
+                phase = translate_phase(phase, *phase_shift_dy_dx)
+            if phase_error_rad is not None:
+                phase = torch.remainder(
+                    phase + phase_error_rad.to(device=phase.device, dtype=phase.dtype),
+                    2.0 * math.pi,
+                )
             if self.feedback_mode == "bp" or phase_override is not None:
-                phase = self.phase() if phase_override is None else phase_override
                 modulation = torch.exp(1j * phase.float()).to(torch.complex64)
                 field = torch.complex(value, torch.zeros_like(value)) * modulation.unsqueeze(0)
                 propagated = self.propagator(field)
+            elif has_deployment_transform:
+                propagated = _fixed_feedback_with_current_phase(
+                    value,
+                    phase.float(),
+                    self.feedback_phase,
+                    self.propagator.transfer_function,
+                )
             else:
                 propagated = _FixedFeedbackOptical.apply(
                     value,
@@ -410,6 +501,8 @@ class OpticalOEOStage(nn.Module):
         amplitude: torch.Tensor,
         *,
         phase_override: torch.Tensor | None = None,
+        phase_shift_dy_dx: tuple[float, float] | None = None,
+        phase_error_rad: torch.Tensor | None = None,
         optical_off: bool = False,
         long_skip: torch.Tensor | None = None,
         disable_electronic_skip: bool = False,
@@ -436,6 +529,8 @@ class OpticalOEOStage(nn.Module):
             optical = self._optical_branch(
                 amplitude,
                 phase_override,
+                phase_shift_dy_dx=phase_shift_dy_dx,
+                phase_error_rad=phase_error_rad,
                 detector_noise_relative_rms=detector_noise_relative_rms,
                 detector_generator=detector_generator,
             )

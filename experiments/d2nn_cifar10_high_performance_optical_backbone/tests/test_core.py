@@ -13,6 +13,7 @@ from experiments.d2nn_cifar10_high_performance_optical_backbone.datasets import 
 from experiments.d2nn_cifar10_high_performance_optical_backbone.deployment_robustness import (
     DeploymentCondition,
     _translate_phase,
+    build_differentiable_deployment_state,
     build_deployment_state,
     load_robustness_settings,
 )
@@ -218,6 +219,25 @@ def test_random_feedback_changes_connector_but_not_forward() -> None:
     torch.testing.assert_close(bp.raw_phase.grad, fixed.raw_phase.grad, rtol=2e-4, atol=2e-5)
 
 
+def test_deployed_fixed_feedback_keeps_current_forward_and_local_phase_gradient() -> None:
+    bp = _stage()
+    fixed = _stage()
+    fixed.load_state_dict(bp.state_dict())
+    fixed.set_feedback("fa_pretrained", bp.phase().detach())
+    bp_input = torch.rand(2, 2, 8, 8, requires_grad=True)
+    fixed_input = bp_input.detach().clone().requires_grad_(True)
+    shift = (0.0, 0.25)
+    bp_output = bp(bp_input, phase_shift_dy_dx=shift)
+    fixed_output = fixed(fixed_input, phase_shift_dy_dx=shift)
+    torch.testing.assert_close(bp_output, fixed_output, rtol=2e-5, atol=2e-6)
+    bp_output.square().mean().backward()
+    fixed_output.square().mean().backward()
+    assert torch.isfinite(bp.raw_phase.grad).all()
+    assert torch.isfinite(fixed.raw_phase.grad).all()
+    torch.testing.assert_close(bp.raw_phase.grad, fixed.raw_phase.grad, rtol=3e-4, atol=3e-5)
+    assert not torch.allclose(bp_input.grad, fixed_input.grad)
+
+
 def test_formal_pilot_has_only_the_expected_contract() -> None:
     formal = load_formal_settings(CONFIG.parent / "formal_pilot.yaml")
     assert formal.formal.finetune_seeds == (2026, 2027, 2028)
@@ -327,6 +347,29 @@ def test_deployment_state_is_paired_reproducible_and_shape_preserving() -> None:
     )
     images = torch.rand(2, 3, 32, 32)
     torch.testing.assert_close(model(images, deployment=first), model(images, deployment=second))
+
+
+def test_differentiable_global_deployment_shift_preserves_phase_gradients() -> None:
+    settings = load_settings(CONFIG)
+    optical = replace(settings.optical, canvas_size=16, pool_size=2, hidden_dim=16)
+    model = OpticalClassifier(optical, num_classes=10)
+    condition = DeploymentCondition(
+        name="global_shift",
+        phase_shift_pixels=0.25,
+        phase_shift_geometry="global",
+    )
+    deployment, metadata = build_differentiable_deployment_state(
+        model,
+        condition,
+        deployment_seed=9101,
+        device=torch.device("cpu"),
+    )
+    assert len(deployment.phase_shifts_dy_dx) == len(model.stages)
+    assert len(set(deployment.phase_shifts_dy_dx)) == 1
+    assert metadata["phase_shift_geometry"] == "global"
+    model(torch.rand(2, 3, 32, 32), deployment=deployment).mean().backward()
+    assert all(stage.raw_phase.grad is not None for stage in model.stages)
+    assert all(torch.isfinite(stage.raw_phase.grad).all() for stage in model.stages)
 
 
 def test_phase_translation_does_not_wrap_and_screen_is_validation_only() -> None:

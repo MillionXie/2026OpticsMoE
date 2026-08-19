@@ -17,7 +17,7 @@ from .datasets import load_datasets, make_loader
 from .fixed_feedback_training import METHODS, sha256_file
 from .formal_settings import load_formal_settings
 from .model import OpticalClassifier
-from .optics import OpticalDeploymentState
+from .optics import OpticalDeploymentState, translate_phase as _translate_phase
 from .training import build_model, set_seed
 
 
@@ -27,6 +27,7 @@ class DeploymentCondition:
     phase_noise_std_rad: float = 0.0
     phase_shift_pixels: float = 0.0
     detector_noise_relative_rms: float = 0.0
+    phase_shift_geometry: str = "layerwise"
 
     def validate(self) -> None:
         if not self.name:
@@ -37,6 +38,8 @@ class DeploymentCondition:
             raise ValueError(f"Negative phase shift in {self.name}")
         if self.detector_noise_relative_rms < 0.0:
             raise ValueError(f"Negative detector noise in {self.name}")
+        if self.phase_shift_geometry not in {"layerwise", "global"}:
+            raise ValueError(f"Unsupported phase_shift_geometry in {self.name}")
 
 
 @dataclass(frozen=True)
@@ -79,41 +82,28 @@ def load_robustness_settings(path: Path) -> RobustnessSettings:
     )
 
 
-def _translate_phase(phase: torch.Tensor, dy: float, dx: float) -> torch.Tensor:
-    """Translate a finite phase mask without wrapping; uncovered pixels use zero phase."""
-
-    if dy == 0 and dx == 0:
-        return phase.clone()
-    height, width = phase.shape[-2:]
-    if abs(dy) >= height or abs(dx) >= width:
-        return torch.zeros_like(phase)
-    if float(dy).is_integer() and float(dx).is_integer():
-        integer_y = int(dy)
-        integer_x = int(dx)
-        output = torch.zeros_like(phase)
-        source_y = slice(max(-integer_y, 0), min(height - integer_y, height))
-        target_y = slice(max(integer_y, 0), min(height + integer_y, height))
-        source_x = slice(max(-integer_x, 0), min(width - integer_x, width))
-        target_x = slice(max(integer_x, 0), min(width + integer_x, width))
-        output[..., target_y, target_x] = phase[..., source_y, source_x]
-        return output
-
-    # Interpolate the complex phasor rather than the wrapped phase angle.
-    # This avoids an artificial discontinuity between values close to 0 and 2pi.
-    phasor = torch.stack((torch.cos(phase), torch.sin(phase)), dim=1)
-    theta = torch.eye(2, 3, device=phase.device, dtype=phase.dtype)
-    theta = theta.unsqueeze(0).repeat(phase.shape[0], 1, 1)
-    theta[:, 0, 2] = -2.0 * float(dx) / max(width - 1, 1)
-    theta[:, 1, 2] = -2.0 * float(dy) / max(height - 1, 1)
-    grid = F.affine_grid(theta, phasor.shape, align_corners=True)
-    shifted = F.grid_sample(
-        phasor,
-        grid,
-        mode="bilinear",
-        padding_mode="zeros",
-        align_corners=True,
+def _sample_phase_shifts(
+    num_stages: int,
+    condition: DeploymentCondition,
+    *,
+    deployment_seed: int,
+) -> tuple[tuple[float, float], ...]:
+    if condition.phase_shift_pixels <= 0:
+        return ()
+    generator = torch.Generator().manual_seed(int(deployment_seed) + 23)
+    directions = ((-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1))
+    if condition.phase_shift_geometry == "global":
+        index = int(torch.randint(len(directions), (), generator=generator))
+        indices = [index] * num_stages
+    else:
+        indices = [int(torch.randint(len(directions), (), generator=generator)) for _ in range(num_stages)]
+    return tuple(
+        (
+            directions[index][0] * condition.phase_shift_pixels,
+            directions[index][1] * condition.phase_shift_pixels,
+        )
+        for index in indices
     )
-    return torch.remainder(torch.atan2(shifted[:, 1], shifted[:, 0]), 2.0 * math.pi)
 
 
 def build_deployment_state(
@@ -125,21 +115,19 @@ def build_deployment_state(
 ) -> tuple[OpticalDeploymentState, dict[str, object]]:
     condition.validate()
     phase_generator = torch.Generator().manual_seed(int(deployment_seed) + 11)
-    shift_generator = torch.Generator().manual_seed(int(deployment_seed) + 23)
-    directions = ((-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1))
+    sampled_shifts = _sample_phase_shifts(
+        len(model.stages), condition, deployment_seed=deployment_seed
+    )
     overrides: list[torch.Tensor] = []
     shifts: list[list[float]] = []
     phase_error_squares: list[torch.Tensor] = []
     has_static_error = condition.phase_noise_std_rad > 0.0 or condition.phase_shift_pixels > 0
     if has_static_error:
-        for stage in model.stages:
+        for stage_index, stage in enumerate(model.stages):
             phase = stage.phase().detach()
             dy = dx = 0.0
-            if condition.phase_shift_pixels > 0:
-                direction_index = int(torch.randint(len(directions), (), generator=shift_generator))
-                direction = directions[direction_index]
-                dy = direction[0] * condition.phase_shift_pixels
-                dx = direction[1] * condition.phase_shift_pixels
+            if sampled_shifts:
+                dy, dx = sampled_shifts[stage_index]
                 phase = _translate_phase(phase, dy, dx)
             if condition.phase_noise_std_rad > 0.0:
                 unit_error = torch.randn(stage.phase().shape, generator=phase_generator)
@@ -168,6 +156,54 @@ def build_deployment_state(
     metadata = {
         "phase_error_actual_rms_rad": actual_phase_rms,
         "phase_shifts_dy_dx": shifts,
+    }
+    return state, metadata
+
+
+def build_differentiable_deployment_state(
+    model: OpticalClassifier,
+    condition: DeploymentCondition,
+    *,
+    deployment_seed: int,
+    device: torch.device,
+) -> tuple[OpticalDeploymentState, dict[str, object]]:
+    """Build static deployment errors while preserving gradients to current phases."""
+
+    condition.validate()
+    shifts = _sample_phase_shifts(
+        len(model.stages), condition, deployment_seed=deployment_seed
+    )
+    phase_errors: list[torch.Tensor] = []
+    phase_error_squares: list[torch.Tensor] = []
+    if condition.phase_noise_std_rad > 0.0:
+        generator = torch.Generator().manual_seed(int(deployment_seed) + 11)
+        for stage in model.stages:
+            error = torch.randn(stage.phase().shape, generator=generator)
+            error = error.to(device=device, dtype=stage.raw_phase.dtype)
+            error = error * condition.phase_noise_std_rad
+            phase_errors.append(error)
+            phase_error_squares.append(error.detach().float().square().mean().cpu())
+
+    detector_generators: list[torch.Generator] = []
+    if condition.detector_noise_relative_rms > 0.0:
+        for stage_index in range(len(model.stages)):
+            generator = torch.Generator(device=device)
+            generator.manual_seed(int(deployment_seed) * 1000 + stage_index)
+            detector_generators.append(generator)
+
+    actual_phase_rms = (
+        float(torch.stack(phase_error_squares).mean().sqrt()) if phase_error_squares else 0.0
+    )
+    state = OpticalDeploymentState(
+        phase_shifts_dy_dx=shifts,
+        phase_errors_rad=tuple(phase_errors),
+        detector_noise_relative_rms=condition.detector_noise_relative_rms,
+        detector_generators=tuple(detector_generators),
+    )
+    metadata = {
+        "phase_error_actual_rms_rad": actual_phase_rms,
+        "phase_shifts_dy_dx": [list(value) for value in shifts],
+        "phase_shift_geometry": condition.phase_shift_geometry,
     }
     return state, metadata
 

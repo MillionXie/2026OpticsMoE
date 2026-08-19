@@ -208,3 +208,17 @@ When all 36 checkpoint/deployment-seed results exist, aggregate on CPU:
 ```bash
 bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/36_compare_p03_deployment_formal.sh
 ```
+
+P04 studies post-deployment adaptation from one shared ideal BP endpoint. The dual-GPU launcher
+puts global rigid shifts on physical GPU 4 and layerwise-independent shifts on physical GPU 5:
+
+```bash
+bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/39_launch_p04_adaptation_screen_dual_gpu.sh
+```
+
+The underlying single-GPU entry point is command 37. After all four methods and four conditions
+finish, aggregate the validation-only screen on CPU:
+
+```bash
+bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/38_compare_p04_adaptation_screen.sh
+```

@@ -150,6 +150,10 @@ class OpticalClassifier(nn.Module):
         if deployment is not None:
             if deployment.phase_overrides and len(deployment.phase_overrides) != len(self.stages):
                 raise ValueError("Deployment phase_overrides must contain one tensor per stage")
+            if deployment.phase_shifts_dy_dx and len(deployment.phase_shifts_dy_dx) != len(self.stages):
+                raise ValueError("Deployment phase_shifts_dy_dx must contain one pair per stage")
+            if deployment.phase_errors_rad and len(deployment.phase_errors_rad) != len(self.stages):
+                raise ValueError("Deployment phase_errors_rad must contain one tensor per stage")
             if deployment.detector_generators and len(deployment.detector_generators) != len(self.stages):
                 raise ValueError("Deployment detector_generators must contain one generator per stage")
         amplitude = self._input_amplitude(images)
@@ -171,6 +175,16 @@ class OpticalClassifier(nn.Module):
             result = stage(
                 amplitude,
                 phase_override=override,
+                phase_shift_dy_dx=(
+                    deployment.phase_shifts_dy_dx[index]
+                    if deployment is not None and deployment.phase_shifts_dy_dx
+                    else None
+                ),
+                phase_error_rad=(
+                    deployment.phase_errors_rad[index]
+                    if deployment is not None and deployment.phase_errors_rad
+                    else None
+                ),
                 optical_off=ablation == "optical_off",
                 long_skip=long_skip,
                 disable_electronic_skip=ablation == "electronic_skip_off",
