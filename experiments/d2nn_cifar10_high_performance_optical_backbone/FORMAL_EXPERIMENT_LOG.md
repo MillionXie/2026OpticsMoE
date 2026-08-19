@@ -127,3 +127,10 @@ validation 50.42%，checkpoint SHA-256
 均为 51.18%，optical-off 11.59%，normalized optical dependence 96.14%；
 electronic-skip-off 仍为 51.18%，证明共同起点的新电子残差保持零初始化。BP、FA-pretrained、
 FA-random 的 seed 2026 已分别在 GPU 4/5/2 启动，结果待统一回填。
+
+资源调度记录：发现 GPU 3 计算利用率为 0%、剩余显存足够后，使用同一正式入口在 GPU 3
+并行启动 FA-random seed 2027。为保证长任务连续执行并留下可复现入口，新增
+`commands/31_queue_a13_formal_method.sh`；它只等待当前 launcher 结束并逐项调用 command 29，
+不修改配置或训练逻辑。GPU 4 已排队 BP seeds 2027/2028，GPU 5 已排队 FA-pretrained seeds
+2027/2028，GPU 2 已排队 FA-random seed 2028。至此九个可训练的 method×seed 均已运行或排队，
+NoFT 三 seed 已完成。
