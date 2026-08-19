@@ -20,6 +20,66 @@ from .training import build_model, evaluate, set_seed
 
 Method = Literal["noft", "bp", "fa_pretrained", "fa_random"]
 METHODS: tuple[Method, ...] = ("noft", "bp", "fa_pretrained", "fa_random")
+SUMMARY_METRICS = (
+    "test_accuracy",
+    "optical_off_accuracy",
+    "phase_random_accuracy",
+    "phase_shuffle_accuracy",
+    "electronic_skip_off_accuracy",
+    "long_skip_off_accuracy",
+    "absolute_full_minus_off",
+    "electronic_residual_gain",
+    "normalized_optical_dependence",
+    "phase_circular_rms_rad",
+    "phase_phasor_distance",
+    "phase_operator_coherence",
+    "gradient_cosine_mean",
+    "gradient_cosine_min",
+    "optical_weight_min",
+    "optical_weight_mean",
+)
+PAIRED_TEST_CONTRASTS = (
+    ("bp", "noft"),
+    ("fa_pretrained", "noft"),
+    ("fa_random", "noft"),
+    ("bp", "fa_pretrained"),
+    ("fa_pretrained", "fa_random"),
+)
+
+
+def _sample_summary(values: list[float]) -> dict[str, float | int]:
+    return {
+        "n": len(values),
+        "mean": float(np.mean(values)),
+        "std": float(np.std(values, ddof=1)) if len(values) > 1 else 0.0,
+    }
+
+
+def _paired_test_accuracy_deltas(rows: list[dict[str, object]]) -> dict[str, object]:
+    by_method_seed = {
+        (str(row["method"]), int(row["seed"])): float(row["test_accuracy"])
+        for row in rows
+    }
+    output: dict[str, object] = {}
+    for left, right in PAIRED_TEST_CONTRASTS:
+        common_seeds = sorted(
+            seed
+            for method, seed in by_method_seed
+            if method == left and (right, seed) in by_method_seed
+        )
+        deltas = [
+            by_method_seed[(left, seed)] - by_method_seed[(right, seed)]
+            for seed in common_seeds
+        ]
+        if deltas:
+            output[f"{left}_minus_{right}"] = {
+                **_sample_summary(deltas),
+                "by_seed": {
+                    str(seed): delta
+                    for seed, delta in zip(common_seeds, deltas, strict=True)
+                },
+            }
+    return output
 
 
 def sha256_file(path: Path) -> str:
@@ -508,6 +568,13 @@ def compare(settings: FormalSettings) -> dict[str, object]:
             common_digests.add(result["common_checkpoint_sha256"])
             ablations = result["test"]["ablations"]
             normal = ablations["normal"]["accuracy"]
+            electronic_skip_off = ablations.get(
+                "electronic_skip_off", ablations["normal"]
+            )["accuracy"]
+            gradient_cosines = [
+                float(item["cosine"]) for item in result.get("gradient_diagnostic_epoch_zero", [])
+            ]
+            optical_weights = [float(value) for value in result.get("optical_weights", [])]
             rows.append(
                 {
                     "method": method,
@@ -520,13 +587,21 @@ def compare(settings: FormalSettings) -> dict[str, object]:
                     "phase_shuffle_accuracy": ablations["phase_shuffle"]["accuracy"],
                     # Historical P01 results predate these diagnostics. Identity/disabled
                     # branches are equivalent to the normal forward in those checkpoints.
-                    "electronic_skip_off_accuracy": ablations.get(
-                        "electronic_skip_off", ablations["normal"]
-                    )["accuracy"],
+                    "electronic_skip_off_accuracy": electronic_skip_off,
                     "long_skip_off_accuracy": ablations.get(
                         "long_skip_off", ablations["normal"]
                     )["accuracy"],
+                    "absolute_full_minus_off": normal - ablations["optical_off"]["accuracy"],
+                    "electronic_residual_gain": normal - electronic_skip_off,
                     "normalized_optical_dependence": result["test"]["normalized_optical_dependence"],
+                    "gradient_cosine_mean": (
+                        float(np.mean(gradient_cosines)) if gradient_cosines else None
+                    ),
+                    "gradient_cosine_min": min(gradient_cosines) if gradient_cosines else None,
+                    "gradient_cosine_by_stage": gradient_cosines,
+                    "optical_weight_min": min(optical_weights) if optical_weights else None,
+                    "optical_weight_mean": float(np.mean(optical_weights)) if optical_weights else None,
+                    "optical_weights": optical_weights,
                     **result["endpoint_geometry"],
                 }
             )
@@ -536,16 +611,25 @@ def compare(settings: FormalSettings) -> dict[str, object]:
         raise RuntimeError(f"Methods used different common checkpoints: {sorted(common_digests)}")
     if not rows:
         raise FileNotFoundError("No formal result.json files found")
-    summary = {}
+    summary: dict[str, dict[str, object]] = {}
     for method in METHODS:
-        values = [float(row["test_accuracy"]) for row in rows if row["method"] == method]
-        if values:
-            summary[method] = {
-                "n": len(values),
-                "test_accuracy_mean": float(np.mean(values)),
-                "test_accuracy_std": float(np.std(values, ddof=1)) if len(values) > 1 else 0.0,
-            }
-    output = {"common_checkpoint_sha256": next(iter(common_digests)), "summary": summary, "runs": rows}
+        method_rows = [row for row in rows if row["method"] == method]
+        if not method_rows:
+            continue
+        method_summary: dict[str, object] = {"n": len(method_rows)}
+        for metric in SUMMARY_METRICS:
+            values = [float(row[metric]) for row in method_rows if row.get(metric) is not None]
+            if values:
+                metric_summary = _sample_summary(values)
+                method_summary[f"{metric}_mean"] = metric_summary["mean"]
+                method_summary[f"{metric}_std"] = metric_summary["std"]
+        summary[method] = method_summary
+    output = {
+        "common_checkpoint_sha256": next(iter(common_digests)),
+        "summary": summary,
+        "paired_test_accuracy_deltas": _paired_test_accuracy_deltas(rows),
+        "runs": rows,
+    }
     comparison_dir = settings.base.output_dir / "comparison"
     _write_json(comparison_dir / "comparison.json", output)
     _write_history(comparison_dir / "runs.csv", rows)

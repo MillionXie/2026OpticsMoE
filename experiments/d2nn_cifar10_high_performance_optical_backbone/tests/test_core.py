@@ -5,6 +5,10 @@ from pathlib import Path
 
 import torch
 
+from experiments.d2nn_cifar10_high_performance_optical_backbone.fixed_feedback_training import (
+    _paired_test_accuracy_deltas,
+    _sample_summary,
+)
 from experiments.d2nn_cifar10_high_performance_optical_backbone.datasets import _split
 from experiments.d2nn_cifar10_high_performance_optical_backbone.formal_settings import load_formal_settings
 from experiments.d2nn_cifar10_high_performance_optical_backbone.model import OpticalClassifier
@@ -255,3 +259,33 @@ def test_a08_a10_keep_a07_training_budget_and_optical_floor() -> None:
     assert not a08.optical.long_skip_enabled
     assert not a09.optical.long_skip_enabled
     assert a10.optical.long_skip_enabled
+
+
+def test_formal_comparison_helpers_use_sample_statistics_and_paired_seeds() -> None:
+    summary = _sample_summary([0.7, 0.8, 0.9])
+    assert summary["n"] == 3
+    assert abs(float(summary["mean"]) - 0.8) < 1.0e-12
+    assert abs(float(summary["std"]) - 0.1) < 1.0e-12
+
+    rows = [
+        {"method": method, "seed": seed, "test_accuracy": accuracy}
+        for method, seed, accuracy in (
+            ("noft", 2026, 0.50),
+            ("noft", 2027, 0.51),
+            ("bp", 2026, 0.72),
+            ("bp", 2027, 0.73),
+            ("fa_pretrained", 2026, 0.70),
+            ("fa_pretrained", 2027, 0.71),
+            ("fa_random", 2026, 0.60),
+            ("fa_random", 2027, 0.61),
+        )
+    ]
+    contrasts = _paired_test_accuracy_deltas(rows)
+    assert all(
+        abs(delta - 0.02) < 1.0e-12
+        for delta in contrasts["bp_minus_fa_pretrained"]["by_seed"].values()
+    )
+    assert all(
+        abs(delta - 0.1) < 1.0e-12
+        for delta in contrasts["fa_pretrained_minus_fa_random"]["by_seed"].values()
+    )
