@@ -180,3 +180,13 @@ After all four screen results exist, aggregate them on CPU:
 ```bash
 bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/34_compare_p03_deployment_screen.sh
 ```
+
+P03-S2 reuses commands 33/34 with the locked subpixel validation config:
+
+```bash
+ROBUSTNESS_CONFIG=experiments/d2nn_cifar10_high_performance_optical_backbone/configs/p03b_deployment_subpixel_screen.yaml \
+  METHODS_CSV=bp PHYSICAL_GPU_INDEX=4 \
+  bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/33_run_p03_deployment_screen.sh
+ROBUSTNESS_CONFIG=experiments/d2nn_cifar10_high_performance_optical_backbone/configs/p03b_deployment_subpixel_screen.yaml \
+  bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/34_compare_p03_deployment_screen.sh
+```

@@ -334,6 +334,9 @@ def test_phase_translation_does_not_wrap_and_screen_is_validation_only() -> None
     shifted = _translate_phase(phase, dy=1, dx=1)
     expected = torch.tensor([[[0.0, 0.0, 0.0], [0.0, 0.0, 1.0], [0.0, 3.0, 4.0]]])
     torch.testing.assert_close(shifted, expected)
+    wrapped = torch.tensor([[[0.01, 2.0 * torch.pi - 0.01], [0.02, 2.0 * torch.pi - 0.02]]])
+    subpixel = _translate_phase(wrapped, dy=0.0, dx=0.25)
+    assert torch.all((subpixel < 0.2) | (subpixel > 2.0 * torch.pi - 0.2))
 
     screen = load_robustness_settings(CONFIG.parent / "p03_deployment_robustness_screen.yaml")
     assert screen.split == "validation"

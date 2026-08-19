@@ -25,7 +25,7 @@ from .training import build_model, set_seed
 class DeploymentCondition:
     name: str
     phase_noise_std_rad: float = 0.0
-    phase_shift_pixels: int = 0
+    phase_shift_pixels: float = 0.0
     detector_noise_relative_rms: float = 0.0
 
     def validate(self) -> None:
@@ -79,7 +79,7 @@ def load_robustness_settings(path: Path) -> RobustnessSettings:
     )
 
 
-def _translate_phase(phase: torch.Tensor, dy: int, dx: int) -> torch.Tensor:
+def _translate_phase(phase: torch.Tensor, dy: float, dx: float) -> torch.Tensor:
     """Translate a finite phase mask without wrapping; uncovered pixels use zero phase."""
 
     if dy == 0 and dx == 0:
@@ -87,13 +87,33 @@ def _translate_phase(phase: torch.Tensor, dy: int, dx: int) -> torch.Tensor:
     height, width = phase.shape[-2:]
     if abs(dy) >= height or abs(dx) >= width:
         return torch.zeros_like(phase)
-    output = torch.zeros_like(phase)
-    source_y = slice(max(-dy, 0), min(height - dy, height))
-    target_y = slice(max(dy, 0), min(height + dy, height))
-    source_x = slice(max(-dx, 0), min(width - dx, width))
-    target_x = slice(max(dx, 0), min(width + dx, width))
-    output[..., target_y, target_x] = phase[..., source_y, source_x]
-    return output
+    if float(dy).is_integer() and float(dx).is_integer():
+        integer_y = int(dy)
+        integer_x = int(dx)
+        output = torch.zeros_like(phase)
+        source_y = slice(max(-integer_y, 0), min(height - integer_y, height))
+        target_y = slice(max(integer_y, 0), min(height + integer_y, height))
+        source_x = slice(max(-integer_x, 0), min(width - integer_x, width))
+        target_x = slice(max(integer_x, 0), min(width + integer_x, width))
+        output[..., target_y, target_x] = phase[..., source_y, source_x]
+        return output
+
+    # Interpolate the complex phasor rather than the wrapped phase angle.
+    # This avoids an artificial discontinuity between values close to 0 and 2pi.
+    phasor = torch.stack((torch.cos(phase), torch.sin(phase)), dim=1)
+    theta = torch.eye(2, 3, device=phase.device, dtype=phase.dtype)
+    theta = theta.unsqueeze(0).repeat(phase.shape[0], 1, 1)
+    theta[:, 0, 2] = -2.0 * float(dx) / max(width - 1, 1)
+    theta[:, 1, 2] = -2.0 * float(dy) / max(height - 1, 1)
+    grid = F.affine_grid(theta, phasor.shape, align_corners=True)
+    shifted = F.grid_sample(
+        phasor,
+        grid,
+        mode="bilinear",
+        padding_mode="zeros",
+        align_corners=True,
+    )
+    return torch.remainder(torch.atan2(shifted[:, 1], shifted[:, 0]), 2.0 * math.pi)
 
 
 def build_deployment_state(
@@ -108,13 +128,13 @@ def build_deployment_state(
     shift_generator = torch.Generator().manual_seed(int(deployment_seed) + 23)
     directions = ((-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1))
     overrides: list[torch.Tensor] = []
-    shifts: list[list[int]] = []
+    shifts: list[list[float]] = []
     phase_error_squares: list[torch.Tensor] = []
     has_static_error = condition.phase_noise_std_rad > 0.0 or condition.phase_shift_pixels > 0
     if has_static_error:
         for stage in model.stages:
             phase = stage.phase().detach()
-            dy = dx = 0
+            dy = dx = 0.0
             if condition.phase_shift_pixels > 0:
                 direction_index = int(torch.randint(len(directions), (), generator=shift_generator))
                 direction = directions[direction_index]

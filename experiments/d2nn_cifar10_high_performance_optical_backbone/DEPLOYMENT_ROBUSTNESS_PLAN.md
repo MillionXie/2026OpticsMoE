@@ -60,7 +60,19 @@ FA-pretrained 在单因素条件下仍优于 FA-random。联合强条件允许�
 
 补充材料记录每层实际位移、相位误差实际 RMS、部署 seed、checkpoint SHA-256 和全部逐运行数据。
 
-## 5. 可复现入口
+## 5. P03-S1 首轮观察与亚像素补充
+
+P03-S1 seed 2026 验证集结果表明，0.05/0.15 rad 相位误差和 1%/5% 探测器噪声位于有效
+工作区间；FA-pretrained 在这四个条件中均保持高于 FA-random。相反，1 pixel 已使 BP、
+FA-pretrained 接近随机水平，因此 1/2 pixel 不适合作为最终失配曲线的低/中强度点。这一负
+结果保留在原输出中，不删除也不重定义。
+
+在查看 test robustness 之前，增加 validation-only 的 P03-S2 亚像素筛选，配置为
+`configs/p03b_deployment_subpixel_screen.yaml`，位移为 0.125/0.25/0.5/0.75 pixel（约
+2/4/8/12 μm）。亚像素平移对复相位 phasor 的实部/虚部做双线性采样，再恢复相位，避免直接
+插值 0/2π 包裹角产生伪误差。P03-F 将依据 S1/S2 的 validation 曲线冻结失配强度。
+
+## 6. 可复现入口
 
 筛选配置为 `configs/p03_deployment_robustness_screen.yaml`。GPU 推理只能使用
 `commands/33_run_p03_deployment_screen.sh`，全部四组结果齐全后由

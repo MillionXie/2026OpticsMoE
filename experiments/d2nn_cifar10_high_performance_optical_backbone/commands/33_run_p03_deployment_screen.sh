@@ -5,6 +5,7 @@ select_gpu
 
 : "${METHODS_CSV:?Set METHODS_CSV to a comma-separated subset of noft,bp,fa_pretrained,fa_random}"
 TRAINING_SEED="${TRAINING_SEED:-2026}"
+ROBUSTNESS_CONFIG="${ROBUSTNESS_CONFIG:-experiments/d2nn_cifar10_high_performance_optical_backbone/configs/p03_deployment_robustness_screen.yaml}"
 case "${TRAINING_SEED}" in
   2026) ;;
   *) echo "P03 screen is locked to TRAINING_SEED=2026" >&2; exit 2 ;;
@@ -19,7 +20,7 @@ for method in "${methods[@]}"; do
 done
 
 "${PYTHON_BIN}" -m experiments.d2nn_cifar10_high_performance_optical_backbone.deployment_robustness \
-  --config experiments/d2nn_cifar10_high_performance_optical_backbone/configs/p03_deployment_robustness_screen.yaml \
+  --config "${ROBUSTNESS_CONFIG}" \
   --phase run \
   --methods "${methods[@]}" \
   --training-seeds "${TRAINING_SEED}"
