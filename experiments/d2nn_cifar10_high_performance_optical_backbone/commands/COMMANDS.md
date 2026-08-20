@@ -247,3 +247,20 @@ internal mechanism diagnostic, not an additional feedback method:
 PHYSICAL_GPU_INDEX=1 \
   bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/43_run_p04_update_attribution.sh
 ```
+
+P05 trains one shared source against continuously resampled 0.25--2 pixel global/layerwise
+misalignment. It keeps the A13 optical floor and electronic budget unchanged:
+
+```bash
+PHYSICAL_GPU_INDEX=4 \
+  bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/45_run_p05_misalignment_vaccination.sh
+```
+
+Start the CPU watcher once. It waits for the vaccinated checkpoint, launches the same four feedback
+groups on held-out global/layerwise deployments, and aggregates all 16 results:
+
+```bash
+nohup env GLOBAL_GPU_INDEX=3 LAYERWISE_GPU_INDEX=4 \
+  bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/49_wait_p05_and_run_adaptation.sh \
+  > experiments/d2nn_cifar10_high_performance_optical_backbone/logs/p05_pipeline.log 2>&1 &
+```

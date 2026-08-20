@@ -17,8 +17,16 @@ from experiments.d2nn_cifar10_high_performance_optical_backbone.deployment_robus
     build_deployment_state,
     load_robustness_settings,
 )
+from experiments.d2nn_cifar10_high_performance_optical_backbone.deployment_adaptation import (
+    load_adaptation_settings,
+)
 from experiments.d2nn_cifar10_high_performance_optical_backbone.formal_settings import load_formal_settings
 from experiments.d2nn_cifar10_high_performance_optical_backbone.model import OpticalClassifier
+from experiments.d2nn_cifar10_high_performance_optical_backbone.misalignment_vaccination import (
+    curriculum_shift_pixels,
+    load_vaccination_settings,
+    sample_training_deployment,
+)
 from experiments.d2nn_cifar10_high_performance_optical_backbone.optics import (
     ElectronicSkipProcessor,
     OpticalOEOStage,
@@ -399,3 +407,45 @@ def test_phase_translation_does_not_wrap_and_screen_is_validation_only() -> None
     assert formal.split == "test"
     assert formal.training_seeds == (2026, 2027, 2028)
     assert formal.deployment_seeds == (9101, 9102, 9103)
+
+
+def test_p05_vaccination_samples_continuous_paired_geometries() -> None:
+    root = CONFIG.parent
+    settings = load_vaccination_settings(root / "p05_misalignment_vaccination.yaml")
+    assert settings.training_seeds == (2026,)
+    assert settings.target_shift_pixels == 2.0
+    assert curriculum_shift_pixels(settings, 1) == 0.46875
+    assert curriculum_shift_pixels(settings, settings.epochs) == 2.0
+
+    first, first_metadata = sample_training_deployment(
+        8,
+        max_shift_pixels=1.25,
+        global_geometry_probability=1.0,
+        generator=torch.Generator().manual_seed(17),
+    )
+    second, second_metadata = sample_training_deployment(
+        8,
+        max_shift_pixels=1.25,
+        global_geometry_probability=1.0,
+        generator=torch.Generator().manual_seed(17),
+    )
+    assert first == second
+    assert first_metadata == second_metadata
+    assert len(set(first.phase_shifts_dy_dx)) == 1
+    assert all(abs(value) <= 1.25 for value in first.phase_shifts_dy_dx[0])
+
+    layerwise, metadata = sample_training_deployment(
+        8,
+        max_shift_pixels=1.25,
+        global_geometry_probability=0.0,
+        generator=torch.Generator().manual_seed(17),
+    )
+    assert metadata["geometry"] == "layerwise"
+    assert len(set(layerwise.phase_shifts_dy_dx)) > 1
+
+    adaptation = load_adaptation_settings(
+        root / "p05b_vaccinated_deployment_adaptation.yaml"
+    )
+    assert adaptation.source_checkpoint is not None
+    assert adaptation.methods == ("noft", "bp", "fa_pretrained", "fa_random")
+    assert adaptation.deployment_seeds == (9301,)

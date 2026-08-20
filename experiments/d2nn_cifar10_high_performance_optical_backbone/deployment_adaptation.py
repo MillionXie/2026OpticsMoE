@@ -31,6 +31,7 @@ class AdaptationSettings:
     formal_config: Path
     output_dir: Path
     source_method: str
+    source_checkpoint: str | None
     methods: tuple[str, ...]
     training_seeds: tuple[int, ...]
     deployment_seeds: tuple[int, ...]
@@ -68,6 +69,11 @@ def load_adaptation_settings(path: Path) -> AdaptationSettings:
         formal_config=Path(payload["formal_config"]),
         output_dir=Path(payload["output_dir"]),
         source_method=source_method,
+        source_checkpoint=(
+            None
+            if not payload.get("source_checkpoint")
+            else str(payload["source_checkpoint"])
+        ),
         methods=methods,
         training_seeds=tuple(int(value) for value in payload["training_seeds"]),
         deployment_seeds=tuple(int(value) for value in payload["deployment_seeds"]),
@@ -327,12 +333,19 @@ def _load_source(
     model: OpticalClassifier,
     training_seed: int,
 ) -> tuple[Path, str, torch.Tensor]:
-    checkpoint = (
-        formal.base.output_dir
-        / settings.source_method
-        / f"seed_{training_seed}"
-        / "best.pt"
-    )
+    if settings.source_checkpoint is None:
+        checkpoint = (
+            formal.base.output_dir
+            / settings.source_method
+            / f"seed_{training_seed}"
+            / "best.pt"
+        )
+    else:
+        checkpoint = Path(
+            settings.source_checkpoint.format(training_seed=training_seed)
+        )
+    if not checkpoint.exists():
+        raise FileNotFoundError(f"Adaptation source checkpoint does not exist: {checkpoint}")
     payload = torch.load(checkpoint, map_location="cpu", weights_only=False)
     model.load_state_dict(payload["model"], strict=True)
     return checkpoint, sha256_file(checkpoint), model.snapshot_phases()

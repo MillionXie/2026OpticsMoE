@@ -1,0 +1,35 @@
+# P05-B: the same four feedback rules adapt a shared vaccinated source under
+# held-out fixed deployments.  This is the second half of the prevention +
+# calibration method, not a fifth feedback group.
+formal_config: experiments/d2nn_cifar10_high_performance_optical_backbone/configs/formal_a13_high_performance.yaml
+output_dir: experiments/d2nn_cifar10_high_performance_optical_backbone/runs/p05b_vaccinated_deployment_adaptation
+source_method: bp
+source_checkpoint: experiments/d2nn_cifar10_high_performance_optical_backbone/runs/p05_misalignment_vaccination/seed_{training_seed}/best.pt
+evaluation_split: validation
+
+methods: [noft, bp, fa_pretrained, fa_random]
+training_seeds: [2026]
+deployment_seeds: [9301]
+
+adaptation:
+  epochs: 10
+  phase_learning_rate: 0.0005
+  electronic_learning_rate: 0.0005
+  residual_learning_rate: 0.00025
+  warmup_epochs: 1
+  min_learning_rate_ratio: 0.10
+  max_train_batches: null
+
+conditions:
+  - name: heldout_global_shift_1px
+    phase_shift_pixels: 1.0
+    phase_shift_geometry: global
+  - name: heldout_global_shift_2px
+    phase_shift_pixels: 2.0
+    phase_shift_geometry: global
+  - name: heldout_layerwise_shift_1px
+    phase_shift_pixels: 1.0
+    phase_shift_geometry: layerwise
+  - name: heldout_layerwise_shift_2px
+    phase_shift_pixels: 2.0
+    phase_shift_geometry: layerwise

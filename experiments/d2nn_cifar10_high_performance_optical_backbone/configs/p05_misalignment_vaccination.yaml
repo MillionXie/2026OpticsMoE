@@ -1,0 +1,49 @@
+# P05: turn fixed post-deployment recoverability into pre-deployment tolerance.
+# The shared P02 BP endpoint is trained against continuously resampled global
+# and layerwise phase-mask translations.  Model selection is validation-only.
+formal_config: experiments/d2nn_cifar10_high_performance_optical_backbone/configs/formal_a13_high_performance.yaml
+output_dir: experiments/d2nn_cifar10_high_performance_optical_backbone/runs/p05_misalignment_vaccination
+source_method: bp
+training_seeds: [2026]
+
+# These locked states are never sampled by the batch-wise training RNG.  The
+# deployment-adaptation confirmation below uses another seed again.
+evaluation_deployment_seeds: [9201]
+
+vaccination:
+  epochs: 20
+  phase_learning_rate: 0.0003
+  electronic_learning_rate: 0.0003
+  residual_learning_rate: 0.00015
+  warmup_epochs: 2
+  min_learning_rate_ratio: 0.10
+  starting_shift_pixels: 0.25
+  target_shift_pixels: 2.0
+  curriculum_epochs: 8
+  global_geometry_probability: 0.50
+  ideal_loss_weight: 0.35
+  shifted_loss_weight: 0.65
+  consistency_weight: 0.10
+  consistency_temperature: 2.0
+  max_train_batches: null
+
+evaluation_conditions:
+  - name: ideal
+  - name: global_shift_0p5px
+    phase_shift_pixels: 0.5
+    phase_shift_geometry: global
+  - name: global_shift_1px
+    phase_shift_pixels: 1.0
+    phase_shift_geometry: global
+  - name: global_shift_2px
+    phase_shift_pixels: 2.0
+    phase_shift_geometry: global
+  - name: layerwise_shift_0p5px
+    phase_shift_pixels: 0.5
+    phase_shift_geometry: layerwise
+  - name: layerwise_shift_1px
+    phase_shift_pixels: 1.0
+    phase_shift_geometry: layerwise
+  - name: layerwise_shift_2px
+    phase_shift_pixels: 2.0
+    phase_shift_geometry: layerwise

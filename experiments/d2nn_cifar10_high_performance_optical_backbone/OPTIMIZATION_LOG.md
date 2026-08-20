@@ -328,3 +328,13 @@ seed 通过门槛。唯一启动入口为 `commands/27_train_a13_confirmatory_se
 `beafc5521e81cf05be84a6c142ad2935d04f0d49541f20c09418dced97dc7239`，三 seed replication
 配置 SHA-256 为 `eb4f3d3659b48b5f4920c7710d5b4a45c5ec512e2bb96b5d96bbad6d1db47376`。
 下一阶段只运行 NoFT/BP/FA-pretrained/FA-random 四组 P02，不再增加正式方法。
+
+## P05：连续错位疫苗化，而不是继续堆固定点消融
+
+状态：2026-08-20 完成协议和代码，等待服务器 smoke 后启动。
+
+P04-S2 显示原 P02 BP source 在 0.5--2 pixel 固定错位下零样本只有 12.06%--49.68%，但 BP-current 适配后可以恢复到 66.04%--73.28%。因此本轮不再改变 A13 结构、电子预算或增加反馈组，而是建立“部署前预防 + 部署后校准”的方法链。
+
+具体动作：新增连续 batch-wise global/layerwise 位移采样；最大位移在 8 epoch 内从 0.25 增到 2 pixel；使用理想 CE、错位 CE 和 teacher-consistency KL 联合训练；用训练未见的 seed 9201 上七环境平均 validation accuracy 选择 checkpoint；保留 epoch 0 source 作为失败兜底。疫苗化结束后，再用 seed 9301 的 1/2 pixel 固定偏移运行唯一四组。光学 gate 下限和 A13 的 416,666 个电子参数完全不变。
+
+所有配置、指标、门槛和命令见 `P05_MISALIGNMENT_VACCINATION_PLAN.md`。这一轮的首要结果不是某个网络变体胜出，而是零样本错位工作区能否扩大、以及预训练反馈算子能否在残余校准中保持接近 BP 且优于随机反馈。
