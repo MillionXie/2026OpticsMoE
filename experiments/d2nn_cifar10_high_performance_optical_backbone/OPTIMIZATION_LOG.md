@@ -339,4 +339,4 @@ P04-S2 显示原 P02 BP source 在 0.5--2 pixel 固定错位下零样本只有 1
 
 所有配置、指标、门槛和命令见 `P05_MISALIGNMENT_VACCINATION_PLAN.md`。这一轮的首要结果不是某个网络变体胜出，而是零样本错位工作区能否扩大、以及预训练反馈算子能否在残余校准中保持接近 BP 且优于随机反馈。
 
-服务器动作记录：提交 `43fa9b61` 同步后 22 个测试通过，真实 checkpoint 一 batch smoke 通过；物理 GPU 4 已运行 command 45，CPU watcher 将在结束后自动使用 GPU 3/4 运行唯一四组 held-out 校准。epoch 2 的七环境平均由 source 33.06% 提高到 42.75%，理想 validation 从 73.40% 降到 70.74%；这是运行中检查点，完整逐条件值和限制见 P05 计划第 8 节。
+服务器动作记录：提交 `43fa9b61` 同步后 22 个测试通过，真实 checkpoint 一 batch smoke 通过；物理 GPU 4 已运行 command 45，CPU watcher 将在结束后自动使用 GPU 3/4 运行唯一四组 held-out 校准。epoch 3 的七环境平均由 source 33.06% 提高到 45.64%，最差环境由 13.60% 提高到 21.34%，理想 validation 从 73.40% 降到 70.70%；这是运行中检查点，完整逐条件值和限制见 P05 计划第 8 节。
