@@ -37,6 +37,18 @@ def load_settings(path: str | Path) -> Any:
     settings.lambda_ccd_operating_point = float(
         d("training.lambda_ccd_operating_point", 0.02)
     )
+    # The electronic parent intentionally zeros every optical/router setting.
+    # Restore the experiment-local values after loading the electronic base so
+    # YAML phase/router controls actually reach the shared optimizer.
+    settings.phase_learning_rate = float(
+        d("training.phase_learning_rate", 5.0e-4)
+    )
+    settings.lambda_router_balance = float(
+        d("training.lambda_router_balance", 0.0)
+    )
+    settings.lambda_router_importance = float(
+        d("training.lambda_router_importance", 0.0)
+    )
 
     settings.language_optical_grid_size = int(d("language_optical.grid_size", 224))
     settings.language_optical_canvas_size = int(d("language_optical.canvas_size", 518))
@@ -112,6 +124,48 @@ def load_settings(path: str | Path) -> Any:
     settings.hardware_phase_flip_horizontal = bool(
         d("hardware.phase_mask.flip_horizontal", False)
     )
+    settings.hardware_amplitude_slm_width = int(
+        d("hardware.amplitude_slm.width", 1920)
+    )
+    settings.hardware_amplitude_slm_height = int(
+        d("hardware.amplitude_slm.height", 1080)
+    )
+    settings.hardware_amplitude_slm_pixel_pitch_um = float(
+        d("hardware.amplitude_slm.pixel_pitch_um", 8.0)
+    )
+    settings.hardware_amplitude_slm_center_x = float(
+        d(
+            "hardware.amplitude_slm.center_x",
+            settings.hardware_amplitude_slm_width / 2.0,
+        )
+    )
+    settings.hardware_amplitude_slm_center_y = float(
+        d(
+            "hardware.amplitude_slm.center_y",
+            settings.hardware_amplitude_slm_height / 2.0,
+        )
+    )
+    settings.hardware_phase_slm_width = int(
+        d("hardware.phase_mask.width", 1920)
+    )
+    settings.hardware_phase_slm_height = int(
+        d("hardware.phase_mask.height", 1200)
+    )
+    settings.hardware_phase_slm_pixel_pitch_um = float(
+        d("hardware.phase_mask.pixel_pitch_um", 8.0)
+    )
+    settings.hardware_phase_slm_center_x = float(
+        d(
+            "hardware.phase_mask.center_x",
+            settings.hardware_phase_slm_width / 2.0,
+        )
+    )
+    settings.hardware_phase_slm_center_y = float(
+        d(
+            "hardware.phase_mask.center_y",
+            settings.hardware_phase_slm_height / 2.0,
+        )
+    )
     settings.hardware_ccd_flip_vertical = bool(
         d("hardware.ccd.flip_vertical", False)
     )
@@ -171,17 +225,34 @@ def load_settings(path: str | Path) -> Any:
         raise ValueError("Optical input/CCD shift bounds must be nonnegative")
     if not 0.0 < settings.language_optical_phase_dropout_p < 1.0:
         raise ValueError("phase dropout probability must be in (0,1)")
-    if settings.lambda_router_balance or settings.lambda_router_importance:
-        raise ValueError("MoE4 routing is enabled, but router auxiliary losses must be zero")
-    if settings.hardware_ccd_physical_binning_factor != 2:
-        raise ValueError("Canonical 16um-to-8um hardware mapping requires factor=2")
+    if settings.phase_learning_rate <= 0.0:
+        raise ValueError("Four-layer joint training requires a positive phase learning rate")
+    if settings.lambda_router_balance < 0.0 or settings.lambda_router_importance < 0.0:
+        raise ValueError("Router auxiliary-loss weights must be nonnegative")
+    if settings.hardware_ccd_physical_binning_factor <= 0:
+        raise ValueError("hardware.ccd.physical_binning_factor must be positive")
+    if min(
+        settings.hardware_amplitude_slm_width,
+        settings.hardware_amplitude_slm_height,
+        settings.hardware_phase_slm_width,
+        settings.hardware_phase_slm_height,
+    ) <= 0:
+        raise ValueError("Hardware SLM dimensions must be positive")
+    if min(
+        settings.hardware_amplitude_slm_pixel_pitch_um,
+        settings.hardware_phase_slm_pixel_pitch_um,
+    ) <= 0.0:
+        raise ValueError("Hardware SLM pixel pitches must be positive")
     if settings.hardware_ccd_target_size != settings.active_size:
         raise ValueError("hardware.ccd.target_size must equal MoE active_size=478")
     if settings.hardware_ccd_transport_size not in {
         settings.active_size,
         settings.active_size * settings.hardware_ccd_physical_binning_factor,
     }:
-        raise ValueError("hardware.ccd.transport_size must be 478 or legacy 956")
+        raise ValueError(
+            "hardware.ccd.transport_size must be active_size or "
+            "active_size*physical_binning_factor"
+        )
     if settings.hybrid_freeze_electronic:
         raise ValueError("Four-layer joint training requires hybrid.freeze_electronic=false")
     if (
@@ -218,7 +289,9 @@ def save_resolved_config(settings: Any) -> None:
             "block2": settings.optical_fusion_initial,
         },
         "router_enabled": True,
-        "router_loss_enabled": False,
+        "router_loss_enabled": bool(
+            settings.lambda_router_balance or settings.lambda_router_importance
+        ),
     }
     values["language_optical"] = {
         "layout": "MoE4_2x2_topk2",
@@ -236,9 +309,26 @@ def save_resolved_config(settings: Any) -> None:
         "ccd_operating_point_loss_weight": settings.lambda_ccd_operating_point,
     }
     values["hardware"] = {
+        "amplitude_slm": {
+            "width": settings.hardware_amplitude_slm_width,
+            "height": settings.hardware_amplitude_slm_height,
+            "pixel_pitch_um": settings.hardware_amplitude_slm_pixel_pitch_um,
+            "center_x": settings.hardware_amplitude_slm_center_x,
+            "center_y": settings.hardware_amplitude_slm_center_y,
+            "mapping": "one_to_one" if (
+                settings.hardware_amplitude_slm_pixel_pitch_um
+                == settings.language_optical_pixel_pitch_um
+            ) else "physical_pitch_nearest",
+        },
         "phase_mask": {
             "flip_vertical": settings.hardware_phase_flip_vertical,
             "flip_horizontal": settings.hardware_phase_flip_horizontal,
+            "width": settings.hardware_phase_slm_width,
+            "height": settings.hardware_phase_slm_height,
+            "pixel_pitch_um": settings.hardware_phase_slm_pixel_pitch_um,
+            "center_x": settings.hardware_phase_slm_center_x,
+            "center_y": settings.hardware_phase_slm_center_y,
+            "mapping": "physical_pitch_nearest",
         },
         "ccd": {
             "flip_vertical": settings.hardware_ccd_flip_vertical,

@@ -504,6 +504,9 @@ class LanguageTwoBlockOpticalReplacement(LanguageElectronicReplacement):
     def set_phase_dropout_active(self, active: bool) -> None:
         self.core.optical_branch.set_phase_dropout_active(active)
 
+    def router_losses(self) -> tuple[torch.Tensor, torch.Tensor]:
+        return self.core.optical_branch.core.router_losses()
+
 
 class VisionTwoBlockOpticalCore(ElectronicSequenceCore):
     """Vision 2D Mixer and two optical planes trained in parallel."""
@@ -671,8 +674,7 @@ class VisionTwoBlockOpticalReplacement(nn.Module):
         raise RuntimeError("Vision optical outputs are unavailable")
 
     def router_losses(self) -> tuple[torch.Tensor, torch.Tensor]:
-        zero = self.core.residual_logit.new_zeros(())
-        return zero, zero
+        return self.core.optical_branch.core.router_losses()
 
     def set_phase_dropout_active(self, active: bool) -> None:
         self.core.optical_branch.set_phase_dropout_active(active)

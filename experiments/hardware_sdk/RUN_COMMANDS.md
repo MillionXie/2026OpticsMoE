@@ -12,6 +12,15 @@
 每个逻辑像素严格重复为 `2×2`，再精确居中补零；basename 不变，输出目录中的
 `reconstruction_manifest.csv` 记录源/目标 SHA256 和有效区坐标。
 
+新 `17 µm` 输入 SLM 使用一像素对一像素；新相位导出使用物理 pitch，而不是整数放大：
+
+    python -m experiments.hardware_sdk.workflows.reconstruct_slm --input-dir compact_amplitude --output-dir amplitude_to_play --slm-width 1024 --slm-height 1024 --scale-factor 1 --center-x 512 --center-y 512
+    python -m experiments.hardware_sdk.workflows.reconstruct_slm --input-dir compact_phase --output-dir phase_to_play --slm-width 1920 --slm-height 1200 --logical-pixel-pitch-um 17 --slm-pixel-pitch-um 8 --center-x 980 --center-y 590
+
+生成两块新 SLM 的棋盘格、光栅、MoE4 分区和孔径扫描 BMP：
+
+    python -m experiments.hardware_sdk.generators.dual_slm_alignment --config experiments/hardware_sdk/generators/slm_patterns/configs/dual_slm_17um_8um.yaml
+
 ## MoE4 CCD 采集后统一处理（独立于训练工程）
 
 先编辑 `experiments/hardware_sdk/configs/process_moe4_ccd_956.yaml` 中的统一

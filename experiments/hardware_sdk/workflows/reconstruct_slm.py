@@ -6,6 +6,7 @@ import argparse
 import csv
 import hashlib
 import json
+import math
 from pathlib import Path
 
 import numpy as np
@@ -63,13 +64,90 @@ def save_active_png(value: np.ndarray, path: Path) -> None:
     Image.fromarray(array, mode="L").save(path, optimize=True)
 
 
+def physical_pitch_nearest(
+    value: np.ndarray,
+    *,
+    logical_pixel_pitch_um: float,
+    slm_pixel_pitch_um: float,
+) -> np.ndarray:
+    """Rasterize logical pixels onto a native SLM grid by physical position.
+
+    Pixel centers are aligned about the same continuous optical axis.  This is
+    deliberately not an image-content resize: every native SLM pixel receives
+    exactly one logical value, phase wrap boundaries are never interpolated,
+    and non-integer pitch ratios cannot accumulate a one-sided placement error.
+    """
+
+    source = np.asarray(value)
+    if source.ndim != 2 or source.dtype != np.uint8:
+        raise ValueError("Physical-pitch raster input must be a 2-D uint8 array")
+    logical_pitch = float(logical_pixel_pitch_um)
+    native_pitch = float(slm_pixel_pitch_um)
+    if logical_pitch <= 0.0 or native_pitch <= 0.0:
+        raise ValueError("Logical and SLM pixel pitches must be positive")
+    source_height, source_width = source.shape
+    output_width = int(round(source_width * logical_pitch / native_pitch))
+    output_height = int(round(source_height * logical_pitch / native_pitch))
+    if output_width <= 0 or output_height <= 0:
+        raise ValueError("Physical-pitch raster produced an empty active area")
+
+    def source_indexes(source_size: int, output_size: int) -> np.ndarray:
+        # Native pixel-center coordinate relative to the shared optical axis.
+        physical = (
+            np.arange(output_size, dtype=np.float64) + 0.5 - output_size / 2.0
+        ) * native_pitch
+        indexes = np.floor(physical / logical_pitch + source_size / 2.0)
+        return np.clip(indexes.astype(np.int64), 0, source_size - 1)
+
+    y_indexes = source_indexes(source_height, output_height)
+    x_indexes = source_indexes(source_width, output_width)
+    return source[np.ix_(y_indexes, x_indexes)]
+
+
+def place_at_center(
+    active: Image.Image,
+    *,
+    slm_size_wh: tuple[int, int],
+    center_xy: tuple[float, float] | None,
+) -> tuple[Image.Image, tuple[int, int, int, int], tuple[float, float]]:
+    width, height = map(int, slm_size_wh)
+    if active.width > width or active.height > height:
+        raise RuntimeError(f"Active payload {active.size} exceeds SLM {(width, height)}")
+    requested_center = (
+        (width / 2.0, height / 2.0)
+        if center_xy is None
+        else (float(center_xy[0]), float(center_xy[1]))
+    )
+    if center_xy is None:
+        # Preserve the legacy placement exactly when odd dimensions make the
+        # geometric center fall between two realizable integer placements.
+        left = (width - active.width) // 2
+        top = (height - active.height) // 2
+    else:
+        left = int(math.floor(requested_center[0] - active.width / 2.0 + 0.5))
+        top = int(math.floor(requested_center[1] - active.height / 2.0 + 0.5))
+    right = left + active.width
+    bottom = top + active.height
+    if left < 0 or top < 0 or right > width or bottom > height:
+        raise ValueError(
+            f"Active payload {active.size} centered at {requested_center} has "
+            f"bounds {(left, top, right, bottom)}, outside SLM {(width, height)}"
+        )
+    actual_center = (left + active.width / 2.0, top + active.height / 2.0)
+    canvas = Image.new("L", (width, height), 0)
+    canvas.paste(active, (left, top))
+    return canvas, (left, top, right, bottom), actual_center
+
+
 def reconstruct_directory(
     input_dir: Path,
     output_dir: Path,
     *,
     slm_size_wh: tuple[int, int],
-    scale_factor: int = 2,
-    center_xy: tuple[int, int] | None = None,
+    scale_factor: int | None = 2,
+    center_xy: tuple[float, float] | None = None,
+    logical_pixel_pitch_um: float | None = None,
+    slm_pixel_pitch_um: float | None = None,
 ) -> dict[str, object]:
     input_dir = input_dir.expanduser().resolve()
     output_dir = output_dir.expanduser().resolve()
@@ -79,8 +157,22 @@ def reconstruct_directory(
     if not paths:
         raise FileNotFoundError(f"No compact SLM PNGs found in {input_dir}")
     width, height = map(int, slm_size_wh)
-    if min(width, height, scale_factor) <= 0:
-        raise ValueError("SLM dimensions and scale_factor must be positive")
+    if min(width, height) <= 0:
+        raise ValueError("SLM dimensions must be positive")
+    pitch_mapping = (
+        logical_pixel_pitch_um is not None or slm_pixel_pitch_um is not None
+    )
+    if pitch_mapping and (
+        logical_pixel_pitch_um is None or slm_pixel_pitch_um is None
+    ):
+        raise ValueError(
+            "logical_pixel_pitch_um and slm_pixel_pitch_um must be provided together"
+        )
+    if pitch_mapping and scale_factor is not None:
+        raise ValueError("Physical-pitch mapping and integer scale_factor are exclusive")
+    if not pitch_mapping and (scale_factor is None or scale_factor <= 0):
+        raise ValueError("scale_factor must be positive for integer-repeat mapping")
+    mapping_mode = "physical_pitch_nearest" if pitch_mapping else "integer_repeat"
     output_dir.mkdir(parents=True, exist_ok=True)
     rows: list[dict[str, object]] = []
     for index, source in enumerate(paths, 1):
@@ -88,33 +180,23 @@ def reconstruct_directory(
             if image.mode != "L":
                 raise RuntimeError(f"Compact SLM payload must be mode L: {source}")
             logical = image.copy()
-        active = logical.resize(
-            (logical.width * scale_factor, logical.height * scale_factor),
-            resample=Image.Resampling.NEAREST,
-        )
-        if active.width > width or active.height > height:
-            raise RuntimeError(f"Active payload {active.size} exceeds SLM {(width, height)}")
-        if center_xy is None:
-            # Preserve the original placement exactly for backward
-            # compatibility, including odd canvas/payload combinations.
-            left = (width - active.width) // 2
-            top = (height - active.height) // 2
-        else:
-            center_x, center_y = map(int, center_xy)
-            left = center_x - active.width // 2
-            top = center_y - active.height // 2
-        right = left + active.width
-        bottom = top + active.height
-        if left < 0 or top < 0 or right > width or bottom > height:
-            requested = "geometric center" if center_xy is None else center_xy
-            raise ValueError(
-                f"Active payload {active.size} centered at {requested} has "
-                f"bounds {(left, top, right, bottom)}, outside SLM {(width, height)}"
+        if pitch_mapping:
+            active_array = physical_pitch_nearest(
+                np.asarray(logical),
+                logical_pixel_pitch_um=float(logical_pixel_pitch_um),
+                slm_pixel_pitch_um=float(slm_pixel_pitch_um),
             )
-        actual_center_x = left + active.width / 2.0
-        actual_center_y = top + active.height / 2.0
-        canvas = Image.new("L", (width, height), 0)
-        canvas.paste(active, (left, top))
+            active = Image.fromarray(active_array, mode="L")
+        else:
+            active = logical.resize(
+                (logical.width * int(scale_factor), logical.height * int(scale_factor)),
+                resample=Image.Resampling.NEAREST,
+            )
+        canvas, bounds, actual_center = place_at_center(
+            active, slm_size_wh=(width, height), center_xy=center_xy
+        )
+        left, top, right, bottom = bounds
+        actual_center_x, actual_center_y = actual_center
         destination = output_dir / f"{source.stem}.bmp"
         canvas.save(destination, format="BMP")
         rows.append(
@@ -136,7 +218,19 @@ def reconstruct_directory(
                     f"{actual_center_x - width / 2.0:g},"
                     f"{actual_center_y - height / 2.0:g}"
                 ),
-                "scale_factor": scale_factor,
+                "mapping_mode": mapping_mode,
+                "scale_factor": "" if scale_factor is None else scale_factor,
+                "logical_pixel_pitch_um": (
+                    "" if logical_pixel_pitch_um is None else logical_pixel_pitch_um
+                ),
+                "slm_pixel_pitch_um": (
+                    "" if slm_pixel_pitch_um is None else slm_pixel_pitch_um
+                ),
+                "physical_ratio": (
+                    ""
+                    if not pitch_mapping
+                    else float(logical_pixel_pitch_um) / float(slm_pixel_pitch_um)
+                ),
             }
         )
     with (output_dir / "reconstruction_manifest.csv").open(
@@ -151,9 +245,17 @@ def reconstruct_directory(
         "output_dir": str(output_dir),
         "files": len(rows),
         "slm_size_wh": [width, height],
+        "mapping_mode": mapping_mode,
         "scale_factor": scale_factor,
+        "logical_pixel_pitch_um": logical_pixel_pitch_um,
+        "slm_pixel_pitch_um": slm_pixel_pitch_um,
+        "physical_ratio": (
+            None
+            if not pitch_mapping
+            else float(logical_pixel_pitch_um) / float(slm_pixel_pitch_um)
+        ),
         "requested_center_xy": (
-            None if center_xy is None else [int(center_xy[0]), int(center_xy[1])]
+            None if center_xy is None else [float(center_xy[0]), float(center_xy[1])]
         ),
         "canvas_geometric_center_xy": [width / 2.0, height / 2.0],
         "active_center_xy": [actual_center_x, actual_center_y],
@@ -166,9 +268,9 @@ def reconstruct_directory(
             "canvas boundary"
         ),
         "rule": (
-            "logical pixel nearest-repeat then zero-pad at configured center"
-            if center_xy is not None
-            else "logical pixel nearest-repeat then exact geometric-center zero padding"
+            "physical-coordinate nearest raster then zero-pad at configured center"
+            if pitch_mapping
+            else "logical pixel nearest-repeat then zero-pad at configured center"
         ),
     }
     (output_dir / "reconstruction_report.json").write_text(
@@ -246,20 +348,41 @@ def main() -> int:
     parser.add_argument("--output-dir")
     parser.add_argument("--slm-width", type=int)
     parser.add_argument("--slm-height", type=int)
-    parser.add_argument("--scale-factor", type=int, default=2)
+    parser.add_argument(
+        "--scale-factor",
+        type=int,
+        default=None,
+        help="Legacy integer nearest-repeat factor (default: 2 when pitches are omitted)",
+    )
+    parser.add_argument(
+        "--logical-pixel-pitch-um",
+        type=float,
+        help="Logical payload pitch for physical-coordinate nearest rasterization",
+    )
+    parser.add_argument(
+        "--slm-pixel-pitch-um",
+        type=float,
+        help="Native SLM pitch; must accompany --logical-pixel-pitch-um",
+    )
     parser.add_argument(
         "--center-x",
-        type=int,
+        type=float,
         help="Active-region center x in full-SLM pixels (default: geometric center)",
     )
     parser.add_argument(
         "--center-y",
-        type=int,
+        type=float,
         help="Active-region center y in full-SLM pixels (default: geometric center)",
     )
     args = parser.parse_args()
     if (args.center_x is None) != (args.center_y is None):
         parser.error("--center-x and --center-y must be provided together")
+    if (args.logical_pixel_pitch_um is None) != (args.slm_pixel_pitch_um is None):
+        parser.error(
+            "--logical-pixel-pitch-um and --slm-pixel-pitch-um must be provided together"
+        )
+    if args.logical_pixel_pitch_um is not None and args.scale_factor is not None:
+        parser.error("Do not combine physical pixel pitches with --scale-factor")
     try:
         input_dir, output_dir, slm_size = resolve_reconstruction_layout(
             stage_dir=(None if args.stage_dir is None else Path(args.stage_dir)),
@@ -275,12 +398,18 @@ def main() -> int:
         input_dir,
         output_dir,
         slm_size_wh=slm_size,
-        scale_factor=args.scale_factor,
+        scale_factor=(
+            None
+            if args.logical_pixel_pitch_um is not None
+            else (2 if args.scale_factor is None else args.scale_factor)
+        ),
         center_xy=(
             None
             if args.center_x is None
             else (args.center_x, args.center_y)
         ),
+        logical_pixel_pitch_um=args.logical_pixel_pitch_um,
+        slm_pixel_pitch_um=args.slm_pixel_pitch_um,
     )
     print(json.dumps(report, ensure_ascii=False))
     return 0

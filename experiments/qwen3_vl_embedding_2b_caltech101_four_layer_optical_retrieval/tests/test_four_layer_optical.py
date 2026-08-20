@@ -45,7 +45,14 @@ def test_vision_and_language_have_two_independent_fusion_gates() -> None:
     language_output, _ = language.forward_groups(
         [torch.randn(5, 12)], causal=True
     )
-    loss = vision_output.square().mean() + language_output.square().mean()
+    vision_balance, vision_importance = vision.optical_branch.core.router_losses()
+    language_balance, language_importance = language.optical_branch.core.router_losses()
+    loss = (
+        vision_output.square().mean()
+        + language_output.square().mean()
+        + 0.02 * (vision_balance + language_balance)
+        + 0.005 * (vision_importance + language_importance)
+    )
     loss.backward()
     assert vision_output.shape == (4, 10)
     assert language_output.shape == (5, 12)
@@ -59,6 +66,32 @@ def test_vision_and_language_have_two_independent_fusion_gates() -> None:
         ]
         assert phases and all(parameter.grad is not None for parameter in phases)
         assert all(torch.isfinite(parameter.grad).all() for parameter in phases)
+        router_parameters = list(core.optical_branch.core.router.parameters())
+        assert router_parameters
+        assert all(parameter.grad is not None for parameter in router_parameters)
+        assert all(torch.isfinite(parameter.grad).all() for parameter in router_parameters)
+
+
+def test_17um_release_restores_phase_and_router_training_controls() -> None:
+    settings = load_settings(
+        EXPERIMENT
+        / "configs"
+        / "release"
+        / "caltech101_four_layer_optical_joint_17um.yaml"
+    )
+    assert settings.language_optical_pixel_pitch_um == 17.0
+    assert settings.phase_learning_rate == 5.0e-4
+    assert settings.router_learning_rate == 2.0e-4
+    assert settings.lambda_router_balance == 0.02
+    assert settings.lambda_router_importance == 0.005
+    assert settings.language_optical_max_shift_pixels == 12
+    assert settings.language_optical_phase_shift_pixels == 12
+    assert settings.language_optical_ccd_shift_pixels == 12
+    assert settings.hardware_amplitude_slm_pixel_pitch_um == 17.0
+    assert settings.hardware_phase_slm_pixel_pitch_um == 8.0
+    assert settings.hardware_phase_flip_vertical is True
+    assert settings.hardware_phase_slm_center_x == 980.0
+    assert settings.hardware_phase_slm_center_y == 590.0
 
 
 def test_logical_measured_ccd_replaces_both_simulated_boundaries() -> None:

@@ -1,0 +1,20 @@
+output_dir: ../generated/dual_slm_17um_8um_alignment
+
+logical:
+  active_size: 478
+  usable_size: 518
+  pixel_pitch_um: 17.0
+
+amplitude_slm:
+  size_wh: [1024, 1024]
+  pixel_pitch_um: 17.0
+  center_xy: [512.0, 512.0]
+
+phase_slm:
+  size_wh: [1920, 1200]
+  pixel_pitch_um: 8.0
+  # This remains a runtime calibration value and may be changed without
+  # retraining. It is deliberately separate from the learned logical mask.
+  center_xy: [980.0, 590.0]
+  flip_vertical: true
+  flip_horizontal: false

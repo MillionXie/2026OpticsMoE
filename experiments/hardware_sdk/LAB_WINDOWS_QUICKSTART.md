@@ -54,6 +54,22 @@ $STAGE\phase_to_play\*.bmp
 
 旧的显式 `--input-dir/--output-dir/--slm-width/--slm-height` 用法继续兼容。
 
+## 新 17 µm 输入 SLM / 8 µm 相位 SLM
+
+新输入 SLM 不放大，直接把478逻辑像素一对一放入 `1024×1024`：
+
+```powershell
+python -m experiments.hardware_sdk.workflows.reconstruct_slm --input-dir "$STAGE\compact_amplitude" --output-dir "$STAGE\amplitude_to_play" --slm-width 1024 --slm-height 1024 --scale-factor 1 --center-x 512 --center-y 512
+```
+
+相位端按物理像素间距 `17/8` 栅格化，并允许单独改变相位 SLM 中心：
+
+```powershell
+python -m experiments.hardware_sdk.workflows.reconstruct_slm --input-dir "$STAGE\compact_phase" --output-dir "$STAGE\phase_to_play" --slm-width 1920 --slm-height 1200 --logical-pixel-pitch-um 17 --slm-pixel-pitch-um 8 --center-x 980 --center-y 590
+```
+
+该过程不会插值相位灰度；每个原生8 µm像素只取一个逻辑相位值。纵向翻转已经在服务器导出的紧凑 phase 中完成。
+
 ## 实验室电脑没有 Git 时如何只更新这个工具
 
 在仓库根目录执行以下 PowerShell 命令，只下载本次需要的单个 Python 文件：

@@ -14,6 +14,7 @@ from PIL import Image, ImageOps
 from experiments.hardware_sdk.workflows.reconstruct_slm import (
     encode_active_amplitude_with_metadata,
     encode_active_phase,
+    reconstruct_directory,
     save_active_png,
 )
 from experiments.qwen3_vl_embedding_2b_caltech101_language2_optical_retrieval.hardware_bridge import (
@@ -267,9 +268,25 @@ def export_stage(
     compact = destination / "compact_amplitude"
     compact.mkdir(parents=True, exist_ok=True)
     (destination / "ccd_captured").mkdir(exist_ok=True)
+    compact_phase_path = destination / "compact_phase" / f"{stage}.png"
     save_active_png(
         _phase_for_stage(replacement, stage, settings),
-        destination / "compact_phase" / f"{stage}.png",
+        compact_phase_path,
+    )
+    reconstruct_directory(
+        compact_phase_path.parent,
+        destination / "phase_to_play",
+        slm_size_wh=(
+            settings.hardware_phase_slm_width,
+            settings.hardware_phase_slm_height,
+        ),
+        scale_factor=None,
+        center_xy=(
+            settings.hardware_phase_slm_center_x,
+            settings.hardware_phase_slm_center_y,
+        ),
+        logical_pixel_pitch_um=settings.language_optical_pixel_pitch_um,
+        slm_pixel_pitch_um=settings.hardware_phase_slm_pixel_pitch_um,
     )
     amplitude_rows: list[dict[str, Any]] = []
     try:
@@ -325,13 +342,39 @@ def export_stage(
             "compact_amplitude": "478x478 uint8 PNG in model coordinates",
             "compact_phase": "478x478 uint8 PNG in configured export orientation",
             "laboratory_reconstruction": {
-                "scale_factor": 2,
-                "amplitude_slm_size_wh": [1920, 1080],
-                "phase_slm_size_wh": [1920, 1200],
-                "rule": (
-                    "nearest-repeat each logical pixel then zero-pad at the "
-                    "laboratory-configured SLM center"
-                ),
+                "amplitude": {
+                    "logical_pixel_pitch_um": settings.language_optical_pixel_pitch_um,
+                    "slm_pixel_pitch_um": settings.hardware_amplitude_slm_pixel_pitch_um,
+                    "slm_size_wh": [
+                        settings.hardware_amplitude_slm_width,
+                        settings.hardware_amplitude_slm_height,
+                    ],
+                    "center_xy": [
+                        settings.hardware_amplitude_slm_center_x,
+                        settings.hardware_amplitude_slm_center_y,
+                    ],
+                    "rule": (
+                        "one logical pixel to one native pixel"
+                        if settings.hardware_amplitude_slm_pixel_pitch_um
+                        == settings.language_optical_pixel_pitch_um
+                        else "centered physical-coordinate nearest raster"
+                    ),
+                },
+                "phase": {
+                    "logical_pixel_pitch_um": settings.language_optical_pixel_pitch_um,
+                    "slm_pixel_pitch_um": settings.hardware_phase_slm_pixel_pitch_um,
+                    "slm_size_wh": [
+                        settings.hardware_phase_slm_width,
+                        settings.hardware_phase_slm_height,
+                    ],
+                    "center_xy": [
+                        settings.hardware_phase_slm_center_x,
+                        settings.hardware_phase_slm_center_y,
+                    ],
+                    "rule": "centered physical-coordinate nearest raster",
+                    "flip_vertical_before_raster": settings.hardware_phase_flip_vertical,
+                    "flip_horizontal_before_raster": settings.hardware_phase_flip_horizontal,
+                },
             },
             "expected_ccd_upload": "478x478 uint8 grayscale PNG; no flip",
             "server_persistence": "no simulation CCD and no per-sample float32 PT cache",

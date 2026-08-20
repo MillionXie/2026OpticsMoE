@@ -75,3 +75,19 @@ session/
 - SLM amplitude 因模型已经做 input-RMS 归一化，使用逐样本 99.5 percentile 量化到
   uint8；每张图的 scale 写入 `compact_amplitude_manifest.csv`，不能与 CCD 映射混用。
 - 当前协议没有暗场输入，因此不执行背景扣除。
+
+## 17 µm 输入 SLM / 8 µm 相位 SLM
+
+新光路使用 `caltech101_four_layer_optical_joint_17um.yaml`，不改变模型逻辑尺寸：
+
+```text
+训练/输入 SLM：478×478 @ 17 µm
+相位 SLM：逻辑 478×478 @ 17 µm
+           → physical-coordinate nearest
+           → 原生约 1016×1016 @ 8 µm
+           → 放入 1920×1200，默认中心 (980,590)
+```
+
+输入 amplitude 在 `1024×1024 @ 17 µm` SLM 上使用 `--scale-factor 1`，不存在图片缩放。相位端不是普通图像 resize，而是按照像素中心的物理坐标分配原生 SLM 像素，因此 `17/8` 非整数比例不会产生单向累计误差。相位逻辑图先沿用旧光路的纵向翻转，再执行物理栅格化。
+
+中心只属于硬件导出参数。修改 `hardware.phase_mask.center_x/center_y` 后重新导出 BMP 即可，不要求重新训练。四组训练 phase 可由 `export_phase_bmps` 一次导出；逐层 amplitude 仍必须由上一层实测 CCD 和微调 checkpoint 重新前向生成。

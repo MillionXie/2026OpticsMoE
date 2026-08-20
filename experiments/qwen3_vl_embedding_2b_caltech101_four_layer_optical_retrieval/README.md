@@ -31,15 +31,18 @@ Language:[Nl,2048] -> Linear/LN -> [Nl,192]
 四个光学阶段、四个融合门和 64 维 readout 从第一步同时优化。训练不加载纯电子实验
 checkpoint，也不启用 DeepStack 或 teacher KD。
 
-正式目标保持精简：`1.0× supervised contrastive + 1.0× episodic prototype
-retrieval CE + 0.02× CCD operating-point loss`。router 仍由检索梯度学习，但不增加
-balance/importance 辅助 loss。
+17 µm 正式配置的目标为：`1.0× supervised contrastive + 1.0× episodic prototype
+retrieval CE + 0.02× CCD operating-point + 0.02× router balance + 0.005× router
+importance`。phase 学习率为 `5e-4`、router 学习率为 `2e-4`；配置加载后会验证 phase
+学习率为正，避免电子基类把它静默归零。
 
 CCD 不做背景扣除。模型内只做逐帧均值尺度归一化、clip/log1p、478→224 pooling
 和本层独立 readout。
 
 硬件流程使用 `478×478 uint8 PNG` 作为唯一 CCD 传输格式；服务器不再保存逐样本
-float32 registered CCD 或 simulation CCD。SLM 仅传输 `478×478` 紧凑 PNG，实验室按
-固定规则放大两倍并居中重建完整 BMP。
+float32 registered CCD 或 simulation CCD。新输入 SLM 是 `1024×1024 @ 17 µm`，
+478 逻辑 amplitude 一像素对一像素放置；相位 SLM 是 `1920×1200 @ 8 µm`，478
+逻辑 phase 按 `17/8` 的物理坐标映射为约1016像素宽，保持原纵向翻转并放到可配置
+中心。旧 `16 µm→8 µm×2` 配置继续保留。
 
 详见 [DATA_PIPELINE.md](DATA_PIPELINE.md) 和 [RUN_COMMANDS.md](RUN_COMMANDS.md)。

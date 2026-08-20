@@ -6,6 +6,7 @@ from PIL import Image
 
 from experiments.hardware_sdk.workflows.reconstruct_slm import (
     encode_active_amplitude_with_metadata,
+    physical_pitch_nearest,
     reconstruct_directory,
     resolve_reconstruction_layout,
     save_active_png,
@@ -74,6 +75,39 @@ def test_compact_payload_uses_configured_slm_center(tmp_path) -> None:
     assert row["active_bounds_xyxy"] == "6,1,10,5"
     assert row["active_center_xy"] == "8,3"
     assert row["canvas_center_offset_xy"] == "2,-2"
+
+
+def test_physical_pitch_raster_centers_17um_pixels_on_8um_slm(tmp_path) -> None:
+    logical = np.arange(8, dtype=np.uint8)[None, :]
+    native = physical_pitch_nearest(
+        logical,
+        logical_pixel_pitch_um=17.0,
+        slm_pixel_pitch_um=8.0,
+    )
+    assert native.shape == (2, 17)
+    counts = np.bincount(native[0], minlength=8)
+    assert counts.sum() == 17
+    assert set(counts.tolist()) <= {2, 3}
+
+    source = tmp_path / "compact"
+    output = tmp_path / "full"
+    save_active_png(np.arange(16, dtype=np.uint8).reshape(4, 4), source / "phase.png")
+    report = reconstruct_directory(
+        source,
+        output,
+        slm_size_wh=(30, 24),
+        scale_factor=None,
+        center_xy=(16.0, 11.0),
+        logical_pixel_pitch_um=17.0,
+        slm_pixel_pitch_um=8.0,
+    )
+    with Image.open(output / "phase.bmp") as image:
+        actual = np.asarray(image)
+    # round(4 * 17 / 8) = 8 native pixels on each axis.
+    assert np.count_nonzero(actual) > 0
+    assert report["mapping_mode"] == "physical_pitch_nearest"
+    assert report["active_center_xy"] == [16.0, 11.0]
+    assert report["physical_ratio"] == 2.125
 
 
 def test_stage_shortcut_resolves_payload_directories_and_default_sizes(
