@@ -232,6 +232,14 @@ bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/42_laun
 bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/41_compare_p04b_large_shift_screen.sh
 ```
 
+After launching P04-S2, start the CPU-side completion watcher once. It validates that the training
+launchers remain alive and automatically runs command 41 when all 24 results exist:
+
+```bash
+nohup bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/44_wait_and_compare_p04b_large_shift.sh \
+  > experiments/d2nn_cifar10_high_performance_optical_backbone/logs/p04b_wait_and_compare.log 2>&1 &
+```
+
 Attribute a completed adaptation result to optical-phase versus electronic updates. This is an
 internal mechanism diagnostic, not an additional feedback method:
 
