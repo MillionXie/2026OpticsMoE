@@ -76,3 +76,20 @@ P04 新增可微部署路径：前向传播始终使用发生固定横向偏移�
 - BP 与 FA-pretrained 的最佳点均为 epoch 8；FA-random 的 global/layerwise 最佳点分别为 epoch 9/2。
 - 这批结果首次严格证明：部署偏移后 BP-current 能获得最新关系并恢复性能；部署前最后一次光学算子在 0.125 px 下几乎复现 BP，而同形状随机连接明显较差。
 - 0.25 px 仍在运行。其即时 NoFT 为 global 24.70%、layerwise 29.66%，用于检验从 P03 失效边界能否通过部署后训练恢复。
+
+## 9. 0.25 pixel 四组完整结果
+
+| 位移几何 | NoFT | BP-current | FA-pretrained | FA-random |
+|---|---:|---:|---:|---:|
+| global 0.25 px | 24.70% | 72.20% | 71.96% | 65.86% |
+| layerwise 0.25 px | 29.66% | 72.56% | 72.50% | 67.40% |
+
+- global：BP/FA-pretrained 找回偏移损失的 97.54%/97.04%；二者相差 0.24 pp，FA-pretrained 比 FA-random 高 6.10 pp。
+- layerwise：BP/FA-pretrained 找回偏移损失的 98.08%/97.94%；二者相差 0.06 pp，FA-pretrained 比 FA-random 高 5.10 pp。
+- FA-pretrained 相对当前 BP 的 epoch-0 分层 gradient cosine：global 平均 0.9546、最小 0.8879；layerwise 平均 0.9675、最小 0.9257。
+- FA-random 对应平均 cosine 只有 0.3243/0.3659，且 global 最小层为 -0.0831。这将准确率差异与误差信号质量联系起来。
+- 当前结论是“冻结推理会在亚像素偏移下坍缩，但允许少量部署后训练时，当前 BP 和部署前最后算子都能恢复绝大多数性能”。这不等于系统已经对数 pixel 偏移鲁棒。
+
+## 10. P04-S2 数 pixel 适配边界
+
+在不修改共同 source、四组方法、学习率或 10 epoch 预算的前提下，继续 validation-only 测试 global/layerwise 的 0.5、1、2 pixel。配置为 `configs/p04b_deployment_adaptation_large_shift_screen.yaml`；command 42 使用 GPU 4/5 分开运行两种几何，command 41 汇总。只有完成这条边界曲线后，才从中选取一个可恢复工作点和一个失败点进入多 seed/test，避免只在已经验证容易恢复的 0.125/0.25 px 上消耗正式预算。

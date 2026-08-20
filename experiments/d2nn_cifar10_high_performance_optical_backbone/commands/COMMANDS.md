@@ -222,3 +222,12 @@ finish, aggregate the validation-only screen on CPU:
 ```bash
 bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/38_compare_p04_adaptation_screen.sh
 ```
+
+After P04 establishes recoverability at 0.125/0.25 pixel, P04-S2 maps the larger 0.5/1/2-pixel
+adaptation boundary without changing the four methods or optimizer. Launch global/layerwise
+geometry on GPUs 4/5 and aggregate after all 24 results finish:
+
+```bash
+bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/42_launch_p04b_large_shift_screen_dual_gpu.sh
+bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/41_compare_p04b_large_shift_screen.sh
+```

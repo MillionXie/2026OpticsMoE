@@ -1,0 +1,40 @@
+# P04-S2: validation-only large-shift adaptation boundary screen.
+# This keeps the P04 optimizer and shared BP source unchanged and only extends
+# the fixed transverse deployment displacement to 0.5/1/2 pixels.
+formal_config: experiments/d2nn_cifar10_high_performance_optical_backbone/configs/formal_a13_high_performance.yaml
+output_dir: experiments/d2nn_cifar10_high_performance_optical_backbone/runs/p04b_deployment_adaptation_large_shift_screen
+source_method: bp
+evaluation_split: validation
+
+methods: [noft, bp, fa_pretrained, fa_random]
+training_seeds: [2026]
+deployment_seeds: [9101]
+
+adaptation:
+  epochs: 10
+  phase_learning_rate: 0.0005
+  electronic_learning_rate: 0.0005
+  residual_learning_rate: 0.00025
+  warmup_epochs: 1
+  min_learning_rate_ratio: 0.10
+  max_train_batches: null
+
+conditions:
+  - name: global_shift_0p5px
+    phase_shift_pixels: 0.5
+    phase_shift_geometry: global
+  - name: global_shift_1px
+    phase_shift_pixels: 1.0
+    phase_shift_geometry: global
+  - name: global_shift_2px
+    phase_shift_pixels: 2.0
+    phase_shift_geometry: global
+  - name: layerwise_shift_0p5px
+    phase_shift_pixels: 0.5
+    phase_shift_geometry: layerwise
+  - name: layerwise_shift_1px
+    phase_shift_pixels: 1.0
+    phase_shift_geometry: layerwise
+  - name: layerwise_shift_2px
+    phase_shift_pixels: 2.0
+    phase_shift_geometry: layerwise
