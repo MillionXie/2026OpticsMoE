@@ -93,3 +93,18 @@ P04 新增可微部署路径：前向传播始终使用发生固定横向偏移�
 ## 10. P04-S2 数 pixel 适配边界
 
 在不修改共同 source、四组方法、学习率或 10 epoch 预算的前提下，继续 validation-only 测试 global/layerwise 的 0.5、1、2 pixel。配置为 `configs/p04b_deployment_adaptation_large_shift_screen.yaml`；command 42 使用 GPU 4/5 分开运行两种几何，command 41 汇总。只有完成这条边界曲线后，才从中选取一个可恢复工作点和一个失败点进入多 seed/test，避免只在已经验证容易恢复的 0.125/0.25 px 上消耗正式预算。
+
+## 11. 光学/电子更新归因
+
+为避免把联合微调恢复全部归因于光学相位，使用相同 best checkpoint 做参数拼接诊断：`phase_updates_only` 只保留适配相位，其余参数恢复 source；`electronic_updates_only` 恢复 source 相位，只保留适配电子头、电子残差和 gate。该诊断不增加反馈方法组，正式入口为 command 43。
+
+| 0.25 px 条件 | 方法 | 完整适配 | 仅光学相位更新 | 仅电子/门控更新 |
+|---|---|---:|---:|---:|
+| global | BP | 72.20% | 51.20% | 45.14% |
+| global | FA-pretrained | 71.96% | 51.64% | 47.02% |
+| global | FA-random | 65.86% | 26.86% | 54.34% |
+| layerwise | BP | 72.56% | 61.28% | 44.76% |
+| layerwise | FA-pretrained | 72.50% | 61.40% | 46.40% |
+| layerwise | FA-random | 67.40% | 37.94% | 52.28% |
+
+BP/FA-pretrained 的仅相位更新已经从 24.70%/29.66% 初始值恢复到 51--61%，而随机反馈的仅相位恢复显著较弱；完整性能又高于任一单侧更新，说明结果来自光学与电子协同，且预训练反馈的主要优势确实反映在光学更新质量上。FA-random 更依赖电子更新保底。

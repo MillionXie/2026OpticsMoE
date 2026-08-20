@@ -231,3 +231,11 @@ geometry on GPUs 4/5 and aggregate after all 24 results finish:
 bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/42_launch_p04b_large_shift_screen_dual_gpu.sh
 bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/41_compare_p04b_large_shift_screen.sh
 ```
+
+Attribute a completed adaptation result to optical-phase versus electronic updates. This is an
+internal mechanism diagnostic, not an additional feedback method:
+
+```bash
+PHYSICAL_GPU_INDEX=1 \
+  bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/43_run_p04_update_attribution.sh
+```
