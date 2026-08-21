@@ -362,4 +362,12 @@ PHYSICAL_GPU_INDEX=5 \
 
 PHYSICAL_GPU_INDICES=4,5 \
   bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/68_launch_p06_imagenet_capacity_12x192.sh
+
+bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/72_launch_p06_imagenet_capacity_watcher.sh
+
+tail -f experiments/d2nn_cifar10_high_performance_optical_backbone/runs/p06_imagenet_capacity_12x192/train.log
 ```
+
+Command 71 checks F2C every five minutes, allows 30 minutes for a cold validation/data-cache
+interval, resumes from `last.pt` after a missing or stalled process, and stops after `result.json`
+is complete. Command 72 starts one duplicate-safe background watcher.
