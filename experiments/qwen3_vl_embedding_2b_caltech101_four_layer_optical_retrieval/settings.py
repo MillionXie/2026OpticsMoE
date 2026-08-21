@@ -43,6 +43,15 @@ def load_settings(path: str | Path) -> Any:
     settings.phase_learning_rate = float(
         d("training.phase_learning_rate", 5.0e-4)
     )
+    settings.phase_focus_enabled = bool(
+        d("training.phase_focus.enabled", False)
+    )
+    settings.phase_focus_warmup_epochs = int(
+        d("training.phase_focus.warmup_epochs", 5)
+    )
+    settings.phase_focus_interval_epochs = int(
+        d("training.phase_focus.interval_epochs", 3)
+    )
     settings.lambda_router_balance = float(
         d("training.lambda_router_balance", 0.0)
     )
@@ -227,6 +236,10 @@ def load_settings(path: str | Path) -> Any:
         raise ValueError("phase dropout probability must be in (0,1)")
     if settings.phase_learning_rate <= 0.0:
         raise ValueError("Four-layer joint training requires a positive phase learning rate")
+    if settings.phase_focus_warmup_epochs < 0:
+        raise ValueError("training.phase_focus.warmup_epochs must be nonnegative")
+    if settings.phase_focus_interval_epochs <= 0:
+        raise ValueError("training.phase_focus.interval_epochs must be positive")
     if settings.lambda_router_balance < 0.0 or settings.lambda_router_importance < 0.0:
         raise ValueError("Router auxiliary-loss weights must be nonnegative")
     if settings.hardware_ccd_physical_binning_factor <= 0:
