@@ -125,40 +125,75 @@ def save_phase_snapshot(
 
 
 def save_phase_preview(replacement: Any, path: Path, *, title: str) -> None:
-    """Save fixed-scale expert/global phase maps for both optical stacks."""
+    """Save the task-relevant phase variation for both optical stacks.
+
+    A learned mask may sit close to a spatially constant pi offset.  Plotting
+    it on a fixed 0..2pi scale makes a useful 0.1-rad structure look flat, even
+    though only relative phase affects propagation.  The preview therefore
+    removes each plane's circular mean and uses one symmetric scale for all
+    four panels.  Absolute mean and standard deviation remain in every title.
+    Exported masks and saved tensors are unchanged.
+    """
     import matplotlib.pyplot as plt
 
     stacks = {
         name.title(): phase_tensors(core)
         for name, core in replacement_phase_cores(replacement).items()
     }
-    figure, axes = plt.subplots(2, 2, figsize=(13, 11), constrained_layout=True)
-    shown = None
-    for row, (stack_name, tensors) in enumerate(stacks.items()):
-        for column, (kind, key) in enumerate(
-            (
-                ("expert mosaic", "physical_expert_mosaic_rad"),
-                ("global phase", "physical_global_phase_rad"),
-            )
+    plotted: dict[str, dict[str, tuple[torch.Tensor, float, float]]] = {}
+    maximum_std = 0.0
+    for stack_name, tensors in stacks.items():
+        plotted[stack_name] = {}
+        for kind, key in (
+            ("expert mosaic", "physical_expert_mosaic_rad"),
+            ("global phase", "physical_global_phase_rad"),
         ):
             value = tensors[key].float()
+            phasor_mean = torch.exp(1j * value).mean()
+            circular_mean = float(torch.angle(phasor_mean))
+            if circular_mean < 0.0:
+                circular_mean += 2.0 * math.pi
+            residual = torch.remainder(
+                value - circular_mean + math.pi, 2.0 * math.pi
+            ) - math.pi
+            standard_deviation = float(residual.std(unbiased=False))
+            maximum_std = max(maximum_std, standard_deviation)
+            plotted[stack_name][kind] = (
+                residual,
+                circular_mean,
+                standard_deviation,
+            )
+
+    display_limit = min(math.pi, max(0.05, 3.0 * maximum_std))
+    figure, axes = plt.subplots(2, 2, figsize=(13, 11), constrained_layout=True)
+    shown = None
+    for row, (stack_name, values) in enumerate(plotted.items()):
+        for column, kind in enumerate(("expert mosaic", "global phase")):
+            residual, circular_mean, standard_deviation = values[kind]
             axis = axes[row, column]
             shown = axis.imshow(
-                value.numpy(),
-                cmap="twilight",
-                vmin=0.0,
-                vmax=2.0 * math.pi,
+                residual.numpy(),
+                cmap="RdBu_r",
+                vmin=-display_limit,
+                vmax=display_limit,
                 origin="upper",
             )
             axis.set_title(
                 f"{stack_name} {kind}\n"
-                f"shape={tuple(value.shape)} std={float(value.std(unbiased=False)):.4f} rad"
+                f"shape={tuple(residual.shape)} mean={circular_mean:.4f} rad "
+                f"std={standard_deviation:.4f} rad"
             )
             axis.set_xlabel("x pixel")
             axis.set_ylabel("y pixel")
     if shown is not None:
-        figure.colorbar(shown, ax=axes.ravel().tolist(), label="physical phase (rad)")
-    figure.suptitle(title)
+        figure.colorbar(
+            shown,
+            ax=axes.ravel().tolist(),
+            label="relative phase after circular-mean removal (rad)",
+        )
+    figure.suptitle(
+        f"{title}\nshared display range = +/-{display_limit:.4f} rad"
+    )
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     figure.savefig(path, dpi=160, bbox_inches="tight")

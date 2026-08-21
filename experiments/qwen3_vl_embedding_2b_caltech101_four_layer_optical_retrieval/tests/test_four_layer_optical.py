@@ -94,6 +94,23 @@ def test_17um_release_restores_phase_and_router_training_controls() -> None:
     assert settings.hardware_phase_slm_center_y == 590.0
 
 
+def test_strong_phase_release_uses_focus_epochs_and_stronger_fusion() -> None:
+    settings = load_settings(
+        EXPERIMENT
+        / "configs"
+        / "release"
+        / "caltech101_four_layer_optical_joint_17um_strong_phase.yaml"
+    )
+    assert settings.phase_learning_rate == 4.0e-3
+    assert settings.phase_focus_enabled is True
+    assert settings.phase_focus_warmup_epochs == 5
+    assert settings.phase_focus_interval_epochs == 3
+    assert settings.optical_fusion_initial == 0.15
+    assert settings.output_dir.name == (
+        "caltech101_four_layer_moe4_joint_17um_strong_phase"
+    )
+
+
 def test_logical_measured_ccd_replaces_both_simulated_boundaries() -> None:
     settings = _settings()
     core = VisionTwoBlockOpticalCore(10, 224, settings).eval()

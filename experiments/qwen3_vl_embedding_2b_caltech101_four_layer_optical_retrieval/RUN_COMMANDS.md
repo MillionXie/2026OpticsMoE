@@ -18,6 +18,24 @@ CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_
 - 输入、phase、CCD 的逻辑错位范围均为 `±12 px`；
 - 训练输出：`experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/runs/caltech101_four_layer_moe4_joint_17um`。
 
+### 强 phase 训练组（当前推荐）
+
+```bash
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval --config experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/configs/release/caltech101_four_layer_optical_joint_17um_strong_phase.yaml --phase train
+```
+
+它仍然从头联合训练，不读取上一组 checkpoint。相对于普通 17 µm 组只改变优化强度：
+
+- phase LR：`5e-4 → 4e-3`；
+- 光学融合门初值：`0.05 → 0.15`；
+- 前 5 轮正常联合 warmup，之后每 3 轮安排一次 phase-only epoch；
+- phase preview 每 5 轮保存一次，显示去掉每个平面圆周均值后的相对相位，标题保留绝对均值和 rad 标准差；
+- 输出目录：`runs/caltech101_four_layer_moe4_joint_17um_strong_phase`。
+
+强 phase 组导出时，把下面命令中的配置、run 目录替换为
+`caltech101_four_layer_optical_joint_17um_strong_phase.yaml` 和
+`caltech101_four_layer_moe4_joint_17um_strong_phase`。
+
 ## 2. 导出训练完成后的四组相位 BMP
 
 ```bash
@@ -47,6 +65,7 @@ python -m experiments.hardware_sdk.generators.dual_slm_alignment --config experi
 experiments/hardware_sdk/generators/slm_patterns/generated/dual_slm_17um_8um_alignment/
 ├── amplitude_bmp/     # 1024×1024，17 µm，一像素对一像素
 ├── phase_bmp/         # 1920×1200，8 µm，保持纵向翻转
+├── registration_preview/ # 理想聚焦叠加预览，不是传播仿真
 └── alignment_manifest.json
 ```
 
@@ -58,7 +77,27 @@ amplitude checker block 16 ↔ phase checker block 34
 amplitude checker block 32 ↔ phase checker block 68
 ```
 
-相位中心需要改变时，修改 `dual_slm_17um_8um.yaml` 中的 `phase_slm.center_xy` 后重新生成。
+老师示例对应的新配对文件使用 `registration_checker` / `registration_checker_xy`
+前缀。提供逻辑格宽 `64/80/96 px` 三档，每档包含 primary 与 complement 两次曝光：
+
+```text
+amplitude_registration_checker_c80_1024x1024.bmp
+phase_registration_checker_xy_c80_p8_1920x1200.bmp
+
+amplitude_registration_checker_c80_complement_1024x1024.bmp
+phase_registration_checker_xy_c80_p8_1920x1200.bmp
+```
+
+调幅图是黑白大棋盘；调相图在完全相同的逻辑格边界内逐行交替放置 x/y 二值
+`0/π` 光栅。对焦且对齐后，亮格里的横/纵光栅应被调幅边界整齐截断。primary 与
+complement 都拍摄后，每个相位格至少会被照亮一次。建议先用 `c96` 粗调、`c80`
+确认、`c64` 精调，并根据相机图像中的边界残差修改 phase center。
+
+相位中心需要改变时，可以修改 YAML 的 `phase_slm.center_xy`，也可以直接覆盖：
+
+```bash
+python -m experiments.hardware_sdk.generators.dual_slm_alignment --config experiments/hardware_sdk/generators/slm_patterns/configs/dual_slm_17um_8um.yaml --phase-center-x 980 --phase-center-y 590
+```
 
 ## 4. 逐层实验导出与微调
 
