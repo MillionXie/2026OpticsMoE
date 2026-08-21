@@ -87,6 +87,7 @@ class P06TrainingConfig:
     persistent_workers: bool
     pin_memory: bool
     prefetch_factor: int
+    shuffle_block_size: int | None
     use_amp: bool
     log_interval_batches: int
     checkpoint_interval_epochs: int
@@ -209,6 +210,7 @@ def load_p06_settings(path: str | Path) -> P06Settings:
             persistent_workers=bool(training_raw.get("persistent_workers", True)),
             pin_memory=bool(training_raw.get("pin_memory", True)),
             prefetch_factor=int(training_raw.get("prefetch_factor", 2)),
+            shuffle_block_size=_optional_int(training_raw.get("shuffle_block_size")),
             use_amp=bool(training_raw.get("use_amp", True)),
             log_interval_batches=int(training_raw.get("log_interval_batches", 50)),
             checkpoint_interval_epochs=int(training_raw.get("checkpoint_interval_epochs", 1)),
@@ -234,6 +236,11 @@ def load_p06_settings(path: str | Path) -> P06Settings:
         and settings.training.train_samples_per_class < 1
     ) or settings.training.validation_samples_per_class < 1:
         raise ValueError("Per-class sample counts must be positive")
+    if (
+        settings.training.shuffle_block_size is not None
+        and settings.training.shuffle_block_size < 1
+    ):
+        raise ValueError("training.shuffle_block_size must be positive or null")
     if len(settings.optimizer.betas) != 2:
         raise ValueError("optimizer.betas must have two values")
     if settings.loss.contrastive_weight < 0 or settings.loss.contrastive_temperature <= 0:
@@ -458,7 +465,14 @@ def stratified_base_indices(targets: list[int], per_class: int, seed: int) -> li
 
 
 class SubsetEpochViewSampler(Sampler[int]):
-    """DDP-safe one-view-per-image sampler over fixed full-cache indices."""
+    """DDP-safe one-view-per-image sampler over fixed full-cache indices.
+
+    ``shuffle_block_size`` preserves sequential reads inside each block while
+    randomising block order every epoch.  This is important for the Hugging
+    Face ImageNet Arrow store: a global per-image permutation turns compressed
+    image decoding into pathological random I/O.  The upstream train split is
+    already class-shuffled, so local sequential runs remain class-diverse.
+    """
 
     def __init__(
         self,
@@ -469,6 +483,7 @@ class SubsetEpochViewSampler(Sampler[int]):
         seed: int,
         rank: int = 0,
         world_size: int = 1,
+        shuffle_block_size: int | None = None,
     ) -> None:
         self.dataset = dataset
         self.base_indices = list(base_indices)
@@ -476,9 +491,14 @@ class SubsetEpochViewSampler(Sampler[int]):
         self.seed = int(seed)
         self.rank = int(rank)
         self.world_size = int(world_size)
+        self.shuffle_block_size = (
+            None if shuffle_block_size is None else int(shuffle_block_size)
+        )
         self.epoch = 0
         if not 0 <= self.rank < self.world_size:
             raise ValueError("Invalid rank/world_size")
+        if self.shuffle_block_size is not None and self.shuffle_block_size < 1:
+            raise ValueError("shuffle_block_size must be positive or None")
 
     def set_epoch(self, epoch: int) -> None:
         self.epoch = int(epoch)
@@ -490,8 +510,17 @@ class SubsetEpochViewSampler(Sampler[int]):
         indices = list(self.base_indices)
         if self.shuffle:
             generator = torch.Generator().manual_seed(self.seed + self.epoch)
-            order = torch.randperm(len(indices), generator=generator).tolist()
-            indices = [indices[position] for position in order]
+            if self.shuffle_block_size is None:
+                order = torch.randperm(len(indices), generator=generator).tolist()
+                indices = [indices[position] for position in order]
+            else:
+                block_size = self.shuffle_block_size
+                blocks = [
+                    indices[start : start + block_size]
+                    for start in range(0, len(indices), block_size)
+                ]
+                block_order = torch.randperm(len(blocks), generator=generator).tolist()
+                indices = [sample for block in block_order for sample in blocks[block]]
         total_size = math.ceil(len(indices) / self.world_size) * self.world_size
         if total_size > len(indices):
             indices.extend(indices[: total_size - len(indices)])
@@ -864,6 +893,7 @@ def run(settings: P06Settings, context: DistributedContext, *, resume: bool) -> 
         seed=settings.training.seed,
         rank=context.rank,
         world_size=context.world_size,
+        shuffle_block_size=settings.training.shuffle_block_size,
     )
     validation_sampler = SubsetEpochViewSampler(
         bundle.validation,
@@ -927,6 +957,7 @@ def run(settings: P06Settings, context: DistributedContext, *, resume: bool) -> 
         "train_base_samples": len(train_indices),
         "validation_base_samples": len(validation_indices),
         "train_cached_views_per_image": bundle.train.views,
+        "train_shuffle_block_size": settings.training.shuffle_block_size,
         "imagenet_dataset_digest": bundle.digest,
         "clip_cache_directory": str(cache_directory(imagenet_settings)),
         "source": source_report,

@@ -90,6 +90,42 @@ def test_stratified_sampler_preserves_full_cache_indices_and_views() -> None:
     assert all(0 <= index % 4 < 4 for index in composite)
 
 
+def test_block_shuffle_preserves_coverage_locality_and_epoch_view_cycle() -> None:
+    class Dataset:
+        views = 4
+
+    base_indices = list(range(24))
+    epoch_zero = SubsetEpochViewSampler(
+        Dataset(),
+        base_indices,
+        shuffle=True,
+        seed=17,
+        rank=0,
+        world_size=1,
+        shuffle_block_size=4,
+    )
+    epoch_zero.set_epoch(0)
+    first = list(epoch_zero)
+    epoch_zero.set_epoch(0)
+    assert list(epoch_zero) == first
+
+    first_base = [index // 4 for index in first]
+    assert sorted(first_base) == base_indices
+    # Each shuffled unit must still be a forward-contiguous source block.
+    chunks = [first_base[start : start + 4] for start in range(0, 24, 4)]
+    assert all(chunk == list(range(chunk[0], chunk[0] + len(chunk))) for chunk in chunks)
+
+    epoch_zero.set_epoch(1)
+    second = list(epoch_zero)
+    assert [index // 4 for index in second] != first_base
+    by_sample_first = {index // 4: index % 4 for index in first}
+    by_sample_second = {index // 4: index % 4 for index in second}
+    assert all(
+        by_sample_second[sample] == (by_sample_first[sample] + 1) % 4
+        for sample in base_indices
+    )
+
+
 def test_contrastive_distillation_penalizes_collapsed_or_mismatched_features() -> None:
     teacher = torch.eye(4)
     matched = batch_contrastive_loss(teacher, teacher, temperature=0.07)
@@ -113,3 +149,4 @@ def test_full_imagenet_config_uses_every_base_sample() -> None:
     assert settings.training.train_samples_per_class is None
     assert settings.training.validation_samples_per_class == 50
     assert settings.training.epochs == 10
+    assert settings.training.shuffle_block_size == 4096

@@ -321,7 +321,9 @@ Command 56 is its foreground/resumable entry point.
 After the 100k S3 curve plateaus, expand the same best checkpoint to every ImageNet train image and
 the complete 50k validation split. The verified default uses the otherwise idle, matched RTX 3090
 GPUs 2 and 5 (effective batch 64), with cross-NUMA NCCL P2P/IB disabled. Command 58 is
-foreground/resumable and command 59 is duplicate-safe/backgrounded:
+foreground/resumable and command 59 is duplicate-safe/backgrounded. Its full-data sampler shuffles
+4096-image blocks while reading rows sequentially inside a block, avoiding pathological random I/O
+without changing full-epoch coverage or the deterministic four-view cycle:
 
 ```bash
 PHYSICAL_GPU_INDICES=2,5 \

@@ -48,6 +48,9 @@ training:
   persistent_workers: true
   pin_memory: true
   prefetch_factor: 2
+  # The HF train split is already class-shuffled. Shuffle 4096-image blocks
+  # instead of individual rows so Arrow/image bytes are read sequentially.
+  shuffle_block_size: 4096
   use_amp: true
   log_interval_batches: 500
   checkpoint_interval_epochs: 1

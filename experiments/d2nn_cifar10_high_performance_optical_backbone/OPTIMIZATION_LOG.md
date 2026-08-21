@@ -469,6 +469,14 @@ Top-1 5.05%、Top-5 14.18%、student/teacher zero-shot 1.78%/64.62%、cosine 0.7
 耗时 0.67--0.68 秒。14:00 使用 command 59 重新启动，launcher/torchrun PID 为
 1833065/1833108，rank PID 为 1833388/1833389。双卡 full-validation 起点复现为 Top-1 5.05%、
 Top-5 14.18%；batch 500/20019 在 44.9 秒到达，running loss 9.6729、Top-1 3.02%、cosine
-0.7562、phase LR 1.5e-5。仅 batch 1 的 AMP scale 从 65536 自动降至 32768，此后更新正常。
-按首 500 batch 粗估单 epoch 约 30 分钟；最终以实际 epoch 日志为准。command 58/59 的默认
-设备和 NCCL 环境已据此锁定为经过验证的 GPU 2/5 路径。
+0.7562、phase LR 1.5e-5。仅 batch 1 的 AMP scale 从 65536 自动降至 32768；但 500 batch
+之后不能按 44.9 秒线性外推：全局逐样本随机顺序令 Hugging Face Arrow 压缩图像发生大范围
+随机读，DataLoader worker 明确进入 `wait_on_page_bit_common`，两个 DDP rank 轮流等待且超过
+5 分钟仍未到 batch 1000。该进程没有 epoch checkpoint，遂停止以免继续浪费 GPU 时。
+
+数据集标签顺序审计显示原始 ImageNet train 本身已经充分打散：首个 64/256/1024/4096 连续
+窗口平均分别覆盖 62.2/226.1/643.0/983.0 个类别，连续同标签 run 平均 1.001、最大 3。因此新增
+可配置 locality-aware sampler：每 epoch 随机排列 4096-image blocks，block 内保持正向连续，
+同时继续保证全数据覆盖、DDP 等长 padding 和每图四 view 逐 epoch 轮换。这将每图一次随机 seek
+改为每 4096 图一次，且不会形成类别排序批次。对应覆盖性、确定性、局部连续性和 view-cycle
+单元测试已加入；command 58/59 的默认设备和 NCCL 环境继续锁定为验证过的 GPU 2/5 路径。
