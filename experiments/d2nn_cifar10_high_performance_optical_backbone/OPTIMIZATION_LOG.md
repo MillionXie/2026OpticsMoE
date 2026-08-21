@@ -480,3 +480,17 @@ Top-5 14.18%；batch 500/20019 在 44.9 秒到达，running loss 9.6729、Top-1 
 同时继续保证全数据覆盖、DDP 等长 padding 和每图四 view 逐 epoch 轮换。这将每图一次随机 seek
 改为每 4096 图一次，且不会形成类别排序批次。对应覆盖性、确定性、局部连续性和 view-cycle
 单元测试已加入；command 58/59 的默认设备和 NCCL 环境继续锁定为验证过的 GPU 2/5 路径。
+
+locality sampler 提交 `dfdd8752` 在服务器通过 28 项测试后，于 14:13 再次由 command 59
+正式启动；launcher/torchrun PID 为 1912262/1912343，rank PID 为 1912617/1912618。manifest
+确认 world size 2、train/validation 1,281,167/50,000、`train_shuffle_block_size=4096`，配置
+digest 为 `be3bc639c22fbc2d5afc8641cc24e001cb2dacba45eaeb216d853588bbec2ce4`。完整验证起点第三次
+复现 Top-1/Top-5 5.05%/14.18%，说明采样器改动没有改变初始化权重或验证语义。
+
+连续吞吐验证已越过旧运行的失速点：batch 500/1000/1500 累计耗时分别为
+89.4/173.2/260.5 秒，两个后续 500-batch 区间为 83.8/87.3 秒，未再出现分钟级随机 I/O
+停顿。batch 1500 的即时 loss 为 9.3515，累计训练 Top-1 3.12%、cosine 0.7553；warm-up 在
+batch 1000 完成，phase LR 达到 3e-5。AMP 在 batch 1/220 将 scale 从 65536 依次降至
+32768/16384，此后至 batch 1500 没有再次跳过更新。按稳定实测速度，单个 20,019-batch epoch
+约 58 分钟，10 epochs 约 9.7 小时再加逐轮验证和最终消融；最终耗时和性能只按落盘 epoch
+metrics 报告，不再用首 500 batch 估计。
