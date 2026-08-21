@@ -4,7 +4,36 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-from experiments.hardware_sdk.generators.dual_slm_alignment import generate
+from experiments.hardware_sdk.generators.dual_slm_alignment import (
+    _polyomino_registration_amplitude,
+    _registered_checker_grating,
+    generate,
+)
+
+
+def test_polyomino_phase_is_flat_in_black_and_alternates_in_both_axes() -> None:
+    amplitude = _polyomino_registration_amplitude(478, 64)
+    phase = _registered_checker_grating(478, 64, 8, amplitude)
+    assert np.all(phase[amplitude == 0] == 0)
+
+    # Known O and T tetromino landmarks are entirely black.
+    for row, column in ((0, 0), (0, 1), (1, 0), (1, 1), (0, 4), (1, 5)):
+        patch = amplitude[row * 64 : (row + 1) * 64, column * 64 : (column + 1) * 64]
+        assert np.all(patch == 0)
+
+    # Adjacent open cells switch x/y orientation along rows and columns.
+    def changes(cell_row: int, cell_column: int) -> tuple[bool, bool]:
+        patch = phase[
+            cell_row * 64 + 1 : (cell_row + 1) * 64,
+            cell_column * 64 + 1 : (cell_column + 1) * 64,
+        ]
+        return bool(np.any(np.diff(patch, axis=0))), bool(
+            np.any(np.diff(patch, axis=1))
+        )
+
+    assert changes(2, 2) == (False, True)
+    assert changes(2, 3) == (True, False)
+    assert changes(3, 2) == (True, False)
 
 
 def test_checker_grating_registration_pairs_share_logical_geometry(
@@ -55,8 +84,17 @@ def test_checker_grating_registration_pairs_share_logical_geometry(
     assert set(np.unique(amplitude)) == {0, 255}
     assert set(np.unique(phase)) == {0, 128}
     assert set(np.unique(preview)) == {0, 55, 245}
+    complement_c64 = next(
+        row for row in pairs if row["pair_id"] == "checker_xy_c64_p8_complement"
+    )
+    assert complement_c64["amplitude_layout"] == "polyomino_black_landmarks"
+    assert complement_c64["phase"].endswith(
+        "phase_registration_checker_xy_c64_p8_1920x1200.bmp"
+    )
+    assert primary["phase"].endswith("_primary_1920x1200.bmp")
     persisted = json.loads(
         (output_dir / "alignment_manifest.json").read_text(encoding="utf-8")
     )
     assert persisted["phase_slm"]["flip_vertical_before_raster"] is True
     assert persisted["registration_protocol"]["preview_is_propagation_simulation"] is False
+    assert persisted["schema_version"] == 2

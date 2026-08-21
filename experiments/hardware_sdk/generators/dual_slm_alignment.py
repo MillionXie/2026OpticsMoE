@@ -81,28 +81,68 @@ def _registered_checker_grating(
     size: int,
     cell_size: int,
     grating_period: int,
+    amplitude: np.ndarray,
 ) -> np.ndarray:
-    """Alternate x/y 0-pi gratings on the same grid as an amplitude checker.
+    """Place alternating x/y 0-pi gratings only in open amplitude cells.
 
     The phase-cell edges and amplitude-cell edges are generated from identical
     logical coordinates.  A focused 1x 4F relay therefore shows grating lines
     clipped exactly by the bright amplitude squares when both SLMs are aligned.
     """
+    if amplitude.shape != (size, size):
+        raise ValueError(
+            f"Registration amplitude shape={amplitude.shape}, expected={(size, size)}"
+        )
+    if not np.isin(amplitude, (0, 255)).all():
+        raise ValueError("Registration amplitude must be binary 0/255")
     y, x = np.indices((size, size))
     cell_row = y // cell_size
     cell_column = x // cell_size
     vertical = _binary_grating(size, size, grating_period, "x")
     horizontal = _binary_grating(size, size, grating_period, "y")
-    # Keep grating orientation independent from checker parity.  Otherwise all
-    # bright cells in one checker exposure would accidentally show the same
-    # direction.  Alternating by row produces both x/y gratings in one focused
-    # image, matching the laboratory acceptance example.
-    phase = np.where(cell_row % 2 == 0, vertical, horizontal)
+    # Alternating on row+column parity makes neighboring cells switch grating
+    # direction along both axes.  The irregular open/closed layout deliberately
+    # leaves adjacent open cells so both directions remain visible in one shot.
+    phase = np.where((cell_row + cell_column) % 2 == 0, vertical, horizontal)
     # A one-logical-pixel zero-phase frame makes every phase-cell boundary
     # explicit without changing the corresponding checker geometry.
     on_boundary = (x % cell_size == 0) | (y % cell_size == 0)
     phase[on_boundary] = 0
+    # The phase SLM must be flat wherever the amplitude SLM is black.  This is
+    # applied before the configured phase-axis flips and 17/8 raster mapping.
+    phase[amplitude == 0] = 0
     return phase.astype(np.uint8)
+
+
+def _polyomino_registration_amplitude(size: int, cell_size: int) -> np.ndarray:
+    """Mostly-open c64 grid with asymmetric black polyomino landmarks.
+
+    The layout contains an O tetromino, T tetromino, L pentomino, Z tetromino,
+    and one isolated orientation marker.  Shapes use only complete logical
+    cells; a partial edge cell, if present, remains open.
+    """
+    full_cells = size // cell_size
+    if full_cells < 7:
+        raise ValueError(
+            "Polyomino registration layout requires at least 7 full cells per axis"
+        )
+    black_cells = {
+        # O tetromino: upper left.
+        (0, 0), (0, 1), (1, 0), (1, 1),
+        # T tetromino: upper right.
+        (0, 4), (0, 5), (0, 6), (1, 5),
+        # L pentomino: lower left.
+        (3, 0), (4, 0), (5, 0), (5, 1), (5, 2),
+        # Z tetromino: lower right.
+        (4, 4), (4, 5), (5, 5), (5, 6),
+        # Isolated asymmetric marker.
+        (6, 3),
+    }
+    result = np.full((size, size), 255, dtype=np.uint8)
+    for row, column in black_cells:
+        y0, x0 = row * cell_size, column * cell_size
+        result[y0 : y0 + cell_size, x0 : x0 + cell_size] = 0
+    return result
 
 
 def _ideal_registration_preview(
@@ -232,9 +272,21 @@ def generate(
     registration_specs = ((64, 8), (80, 8), (96, 8))
     registration_logical: dict[str, dict[str, Any]] = {}
     for cell_size, period in registration_specs:
-        checker = 255 - _checker(active_size, cell_size)
-        complement = 255 - checker
-        grating = _registered_checker_grating(active_size, cell_size, period)
+        if cell_size == 64:
+            complement = _polyomino_registration_amplitude(
+                active_size, cell_size
+            )
+            layout = "polyomino_black_landmarks"
+        else:
+            complement = _checker(active_size, cell_size)
+            layout = "regular_checker"
+        checker = 255 - complement
+        complement_grating = _registered_checker_grating(
+            active_size, cell_size, period, complement
+        )
+        primary_grating = _registered_checker_grating(
+            active_size, cell_size, period, checker
+        )
         amplitude_patterns[f"registration_checker_c{cell_size}"] = checker
         amplitude_patterns[f"registration_checker_c{cell_size}_complement"] = (
             complement
@@ -242,9 +294,13 @@ def generate(
         registration_logical[f"checker_xy_c{cell_size}_p{period}"] = {
             "cell_size": cell_size,
             "period": period,
+            "layout": layout,
             "checker": checker,
             "complement": complement,
-            "phase": grating,
+            # The unsuffixed phase filename is intentionally paired with the
+            # user-facing complement amplitude filename.
+            "phase": complement_grating,
+            "primary_phase": primary_grating,
         }
 
     phase_patterns: dict[str, np.ndarray] = {
@@ -263,6 +319,7 @@ def generate(
     }
     for name, values in registration_logical.items():
         phase_patterns[f"registration_{name}"] = values["phase"]
+        phase_patterns[f"registration_{name}_primary"] = values["primary_phase"]
     for index, (axis, period) in enumerate(
         (("x", 8), ("y", 8), ("x", 16), ("y", 16))
     ):
@@ -300,19 +357,27 @@ def generate(
     preview_dir = output_dir / "registration_preview"
     preview_dir.mkdir(parents=True, exist_ok=True)
     for name, values in registration_logical.items():
-        phase_name = f"registration_{name}"
-        for amplitude_suffix, amplitude_key in (
-            ("primary", f"registration_checker_c{values['cell_size']}"),
+        complement_phase_name = f"registration_{name}"
+        primary_phase_name = f"registration_{name}_primary"
+        for amplitude_suffix, amplitude_key, phase_name, logical_phase in (
+            (
+                "primary",
+                f"registration_checker_c{values['cell_size']}",
+                primary_phase_name,
+                values["primary_phase"],
+            ),
             (
                 "complement",
                 f"registration_checker_c{values['cell_size']}_complement",
+                complement_phase_name,
+                values["phase"],
             ),
         ):
             preview = _ideal_registration_preview(
                 values["checker"]
                 if amplitude_suffix == "primary"
                 else values["complement"],
-                values["phase"],
+                logical_phase,
             )
             preview_path = preview_dir / f"pair_{name}_{amplitude_suffix}.png"
             Image.fromarray(preview, mode="L").save(preview_path, format="PNG")
@@ -325,6 +390,11 @@ def generate(
                     "preview_sha256": _sha256(preview_path),
                     "logical_cell_size_px": values["cell_size"],
                     "logical_grating_period_px": values["period"],
+                    "amplitude_layout": values["layout"],
+                    "phase_mask_rule": (
+                        "phase=0 in black amplitude cells; alternating x/y "
+                        "0-pi gratings in white cells"
+                    ),
                     "phase_native_cell_size_px_approx": round(
                         values["cell_size"] * logical_pitch / phase_pitch
                     ),
@@ -335,7 +405,7 @@ def generate(
             )
 
     report = {
-        "schema_version": 1,
+        "schema_version": 2,
         "purpose": "17um amplitude to 8um phase SLM registration without magnification",
         "coordinate_model": "shared 4F optical axis; translation center only",
         "logical": {
@@ -366,8 +436,18 @@ def generate(
         "background_subtraction": False,
         "registration_protocol": {
             "target": "focused amplitude edges and phase-cell edges coincide to approximately one camera pixel",
-            "pattern": "binary amplitude checker plus alternating x/y 0-pi phase gratings",
-            "use_complement": "capture both primary and complement so every phase cell is visible once",
+            "pattern": (
+                "binary amplitude landmarks; phase=0 in black cells and "
+                "row+column alternating x/y 0-pi gratings in white cells"
+            ),
+            "c64_complement_layout": (
+                "O/T/Z tetrominoes, one L pentomino, and an isolated marker"
+            ),
+            "phase_pairing": (
+                "unsuffixed phase_registration_checker_xy_* is paired with "
+                "amplitude *_complement; *_primary phase is paired with the "
+                "unsuffixed amplitude"
+            ),
             "preview_is_propagation_simulation": False,
             "pairs": registration_pairs,
         },

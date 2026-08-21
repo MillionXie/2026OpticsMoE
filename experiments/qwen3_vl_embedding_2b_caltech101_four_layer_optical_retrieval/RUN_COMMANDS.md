@@ -78,20 +78,26 @@ amplitude checker block 32 ↔ phase checker block 68
 ```
 
 老师示例对应的新配对文件使用 `registration_checker` / `registration_checker_xy`
-前缀。提供逻辑格宽 `64/80/96 px` 三档，每档包含 primary 与 complement 两次曝光：
+前缀。`c64 complement` 是当前推荐精调图：振幅黑区包含 O/T/Z tetromino、L
+pentomino 和一个独立方向标记，不再是严格黑白棋盘；相位在黑区恒为0，只在白区显示
+光栅，相邻格沿行、列两个方向都按横/纵交替：
 
 ```text
-amplitude_registration_checker_c80_1024x1024.bmp
-phase_registration_checker_xy_c80_p8_1920x1200.bmp
-
-amplitude_registration_checker_c80_complement_1024x1024.bmp
-phase_registration_checker_xy_c80_p8_1920x1200.bmp
+amplitude_registration_checker_c64_complement_1024x1024.bmp
+phase_registration_checker_xy_c64_p8_1920x1200.bmp
 ```
 
-调幅图是黑白大棋盘；调相图在完全相同的逻辑格边界内逐行交替放置 x/y 二值
-`0/π` 光栅。对焦且对齐后，亮格里的横/纵光栅应被调幅边界整齐截断。primary 与
-complement 都拍摄后，每个相位格至少会被照亮一次。建议先用 `c96` 粗调、`c80`
-确认、`c64` 精调，并根据相机图像中的边界残差修改 phase center。
+如果需要拍摄反相图，配对关系是：
+
+```text
+amplitude_registration_checker_c64_1024x1024.bmp
+phase_registration_checker_xy_c64_p8_primary_1920x1200.bmp
+```
+
+每一对 phase 都已经按对应 amplitude 做逻辑遮罩，不能把 primary 与 complement 的
+phase 交叉使用。对焦且对齐后，白区里的横/纵光栅应被调幅边界整齐截断，黑区不应
+出现光栅。建议先用 `c96` 粗调、`c80` 确认、`c64` polyomino 图精调，并根据相机
+图像中的边界残差修改 phase center。
 
 相位中心需要改变时，可以修改 YAML 的 `phase_slm.center_xy`，也可以直接覆盖：
 
