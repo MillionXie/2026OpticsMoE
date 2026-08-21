@@ -47,6 +47,7 @@ training:
   prefetch_factor: 2
   shuffle_block_size: null
   use_amp: true
+  amp_initial_scale: 4096
   log_interval_batches: 1
   checkpoint_interval_epochs: 1
   max_train_batches: 2

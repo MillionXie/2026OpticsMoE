@@ -92,6 +92,7 @@ class P06TrainingConfig:
     prefetch_factor: int
     shuffle_block_size: int | None
     use_amp: bool
+    amp_initial_scale: float
     log_interval_batches: int
     checkpoint_interval_epochs: int
     max_train_batches: int | None
@@ -228,6 +229,7 @@ def load_p06_settings(path: str | Path) -> P06Settings:
             prefetch_factor=int(training_raw.get("prefetch_factor", 2)),
             shuffle_block_size=_optional_int(training_raw.get("shuffle_block_size")),
             use_amp=bool(training_raw.get("use_amp", True)),
+            amp_initial_scale=float(training_raw.get("amp_initial_scale", 65536.0)),
             log_interval_batches=int(training_raw.get("log_interval_batches", 50)),
             checkpoint_interval_epochs=int(training_raw.get("checkpoint_interval_epochs", 1)),
             max_train_batches=_optional_int(training_raw.get("max_train_batches")),
@@ -284,6 +286,8 @@ def load_p06_settings(path: str | Path) -> P06Settings:
         and settings.training.shuffle_block_size < 1
     ):
         raise ValueError("training.shuffle_block_size must be positive or null")
+    if settings.training.amp_initial_scale <= 0.0:
+        raise ValueError("training.amp_initial_scale must be positive")
     if len(settings.optimizer.betas) != 2:
         raise ValueError("optimizer.betas must have two values")
     if settings.loss.contrastive_weight < 0 or settings.loss.contrastive_temperature <= 0:
@@ -973,7 +977,12 @@ def train_one_epoch(
             )
         scaler.scale(loss).backward()
         scaler.unscale_(optimizer)
-        if not head_only and gradient_report is None:
+        if not head_only and (
+            gradient_report is None or not gradient_report["all_finite"]
+        ):
+            # The first AMP-scaled batch may legitimately overflow. Keep
+            # auditing until a real finite phase update is observed instead
+            # of permanently reporting the skipped batch as the epoch result.
             gradient_report = _phase_gradient_report(unwrap(model))
         torch.nn.utils.clip_grad_norm_(model.parameters(), settings.optimizer.gradient_clip_norm)
         scale_before_step = float(scaler.get_scale())
@@ -1184,7 +1193,9 @@ def run(settings: P06Settings, context: DistributedContext, *, resume: bool) -> 
     )
     scheduler = build_scheduler(optimizer, settings, steps_per_epoch)
     scaler = torch.amp.GradScaler(
-        "cuda", enabled=settings.training.use_amp and context.device.type == "cuda"
+        "cuda",
+        enabled=settings.training.use_amp and context.device.type == "cuda",
+        init_scale=settings.training.amp_initial_scale,
     )
     prototypes_path = cache_directory(imagenet_settings) / "imagenet_text_prototypes.pt"
     text_prototypes, clip_logit_scale = load_text_prototypes(
