@@ -12,6 +12,9 @@ from experiments.hardware_sdk.workflows.reconstruct_slm import (
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.io_utils import (
     write_json,
 )
+from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.optical_artifacts import (
+    save_phase_preview,
+)
 
 from .hardware_bridge import STAGES, _load_model, _phase_for_stage
 from .settings import load_settings
@@ -31,6 +34,11 @@ def export_all(settings, checkpoint: Path, output_dir: Path) -> dict[str, object
                 _phase_for_stage(replacement, stage, settings),
                 compact_dir / f"{stage}.png",
             )
+        save_phase_preview(
+            replacement,
+            output_dir / "phase_preview.png",
+            title=f"Exported four-layer phase ({checkpoint.name})",
+        )
     finally:
         replacement.close()
     reconstruction = reconstruct_directory(
@@ -52,6 +60,7 @@ def export_all(settings, checkpoint: Path, output_dir: Path) -> dict[str, object
         "schema_version": 1,
         "checkpoint": str(checkpoint),
         "stages": list(STAGES),
+        "relative_phase_preview": str(output_dir / "phase_preview.png"),
         "logical_phase_shape": [settings.active_size, settings.active_size],
         "logical_pixel_pitch_um": settings.language_optical_pixel_pitch_um,
         "phase_slm": {
