@@ -348,3 +348,29 @@ P05 最终 validation-best 为 epoch 18：七环境平均 60.94%，相对 source
 2026-08-21 完成服务器资产和已有路线审计。ImageNet-1K/CLIP 4-view cache 完整；Caltech-101、KADID-10k、ISIC2016 均可直接使用。已有 792×792 OpticalMixerMoE9 在 epoch 8 的 ImageNet validation Top-1 为 6.59%，单 epoch 约 3--5.4 小时，因此不继续把重型 MoE 当主线。
 
 新主线固定从 P05 epoch-18 checkpoint 初始化紧凑 128×128 八层骨干，增加无参数 stage 2/4/6/8 特征导出，用 ImageNet CE + CLIP cosine/KL 训练通用表示，再在分类/检索、IQA 回归和医学分割三种输出形态上运行唯一四组。新增电子 residual 仍为 0；预训练 projector/classifier 约 0.71M 且下游时丢弃。完整阶段、门槛、数据防泄漏规则和计算预算见 `P06_GENERAL_OPTICAL_BACKBONE_PLAN.md`。
+
+### P06-E0/S 实现与启动记录（2026-08-21）
+
+本轮没有改动已冻结的 A13/P05 光学—电子主体，而是实现了通用预训练入口
+`general_backbone_pretraining.py`。具体动作如下：
+
+- 严格校验 P05 epoch-18 checkpoint SHA-256
+  `5bd7889700f16eae112776f622b10cd52e59c064384558d85ae7be999b1aa8aa`，加载全部八层相位、
+  逐层门控和低分辨率电子残差；原 CIFAR-10 head 随后丢弃。
+- CLIP cache 对应的输入先用 CLIP mean/std 反标准化并截断到 `[0,1]` RGB intensity，之后才由
+  光学模型缩放到 128×128 并开平方编码为 amplitude。训练首 batch 会把标准化/反标准化数值范围
+  写入 `metrics/latest.json`，防止静默重复标准化。
+- 从物理 stage 2/4/6/8 分别做 4×4 average/max pooling，得到 384 维描述，再通过
+  `LayerNorm(384) -> Linear(384,512)` 和 ImageNet 线性分类器。预训练头在下游丢弃；原有
+  residual electronic processing 参数量不增加。
+- 损失固定为 `0.5 CE + 1.0 cosine + 0.5 CLIP-text KL`。第一轮只训练读出头，后五轮使用
+  当前精确 BP 联合更新八层相位、电子残差和读出头；只有联合 BP epoch 可以成为 best checkpoint。
+- 100k screen 固定每类 100 张 train、每类 10 张 validation，并保留原始 128 万 cache index；
+  DDP sampler 每个原图每 epoch 只取四个缓存 view 中一个，避免复制 ImageNet 或错配 teacher。
+- 每个联合 BP 运行记录八层 raw-phase gradient norm/finite/nonzero、逐层 optical gate、Top-1/Top-5、
+  CLIP cosine/zero-shot、两项光学破坏消融和完整配置摘要。`last.pt` 可恢复，`best.pt` 仅按联合 BP
+  validation Top-1 选择。
+
+对应配置为 `p06_imagenet_smoke.yaml` 和 `p06_imagenet_100k_screen.yaml`；command 51 负责真实
+单卡 smoke，command 52/53 负责 GPU 3、5 双卡 DDP screen 与后台启动。服务器实测结果和首轮
+速度将在运行后追加到本节，不能用本地 Windows 的损坏 PyTorch DLL 状态代替服务器验证。

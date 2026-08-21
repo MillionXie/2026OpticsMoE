@@ -271,3 +271,23 @@ transfer datasets. This is CPU-only and writes one reproducible JSON manifest:
 ```bash
 bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/50_audit_p06_general_backbone_assets.sh
 ```
+
+P06-E0 uses the real ImageNet Arrow split, matching CLIP memmap entries and the frozen P05
+epoch-18 source. It performs two head-only and two exact-BP mini-batches, validates RGB
+de-normalisation and checks all eight phase gradients on one physical GPU:
+
+```bash
+PHYSICAL_GPU_INDEX=3 \
+  bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/51_run_p06_imagenet_smoke.sh
+```
+
+After the smoke passes, launch the class-balanced 100k ImageNet screen on physical GPUs 3 and 5.
+The launcher is duplicate-safe, records its PID, logs to the run directory, and command 52 resumes
+from `last.pt` after an interruption:
+
+```bash
+PHYSICAL_GPU_INDICES=3,5 \
+  bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/53_launch_p06_imagenet_100k_screen.sh
+
+tail -f experiments/d2nn_cifar10_high_performance_optical_backbone/runs/p06_imagenet_100k_screen/train.log
+```

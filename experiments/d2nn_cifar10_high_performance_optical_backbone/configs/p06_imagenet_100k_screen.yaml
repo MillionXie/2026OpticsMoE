@@ -1,0 +1,55 @@
+# P06-S: fixed class-balanced 100k ImageNet screen before a full 1.28M run.
+output_dir: experiments/d2nn_cifar10_high_performance_optical_backbone/runs/p06_imagenet_100k_screen
+imagenet_config: experiments/optical_mlp_mixer_moe9_imagenet1k_clip_distill/configs/imagenet1k.json
+architecture_config: experiments/d2nn_cifar10_high_performance_optical_backbone/configs/formal_a13_high_performance.yaml
+source_checkpoint: experiments/d2nn_cifar10_high_performance_optical_backbone/runs/p05_misalignment_vaccination/seed_2026/best.pt
+source_checkpoint_sha256: 5bd7889700f16eae112776f622b10cd52e59c064384558d85ae7be999b1aa8aa
+
+model:
+  selected_stage_indices: [1, 3, 5, 7]
+  pool_size: 4
+  projection_dim: 512
+  num_classes: 1000
+
+loss:
+  supervised_ce_weight: 0.5
+  feature_cosine_weight: 1.0
+  clip_logit_kd_weight: 0.5
+  distill_temperature: 2.0
+  label_smoothing: 0.1
+
+optimizer:
+  phase_learning_rate: 1.0e-4
+  residual_learning_rate: 1.0e-4
+  head_learning_rate: 5.0e-4
+  weight_decay: 1.0e-4
+  betas: [0.9, 0.999]
+  eps: 1.0e-8
+  gradient_clip_norm: 5.0
+  warmup_steps: 2000
+  minimum_learning_rate_ratio: 0.05
+
+training:
+  seed: 2026
+  head_warmup_epochs: 1
+  joint_epochs: 5
+  train_samples_per_class: 100
+  validation_samples_per_class: 10
+  batch_size: 32
+  validation_batch_size: 64
+  num_workers: 8
+  persistent_workers: true
+  pin_memory: true
+  prefetch_factor: 2
+  use_amp: true
+  log_interval_batches: 50
+  checkpoint_interval_epochs: 1
+  max_train_batches: null
+  max_validation_batches: null
+  run_final_ablations: true
+
+gates:
+  validation_top1_min: 0.10
+  clip_cosine_min: 0.70
+  optical_gate_min: 0.50
+  optical_disruption_relative_drop_min: 0.30
