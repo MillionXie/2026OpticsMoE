@@ -532,18 +532,22 @@ def _load_huggingface_split(settings: ExperimentSettings, split: str):
             "`huggingface_hub`, and `hf_xet`."
         ) from error
     token = get_token()
+    # A gated-dataset token is required to download ImageNet, but not to read a
+    # previously materialised Arrow cache.  Shared servers can lose/rotate the
+    # login credential while retaining the audited cache, so force a strict
+    # offline lookup in that case instead of failing before datasets can inspect
+    # the local files.
+    local_files_only = not settings.dataset.download or not token
     if not token:
-        raise RuntimeError(
-            "ImageNet-1K authorization is missing. First accept the terms at "
-            "https://huggingface.co/datasets/ILSVRC/imagenet-1k, then run "
-            "`hf auth login` in this server account. The token is read from the "
-            "Hugging Face credential store and is never written to experiment JSON."
+        print(
+            "[imagenet] Hugging Face token unavailable; using strict local-cache mode",
+            flush=True,
         )
     cache_dir = settings.dataset.hf_cache_dir
     cache_dir.mkdir(parents=True, exist_ok=True)
     download_config = DownloadConfig(
         cache_dir=str(cache_dir / "downloads"),
-        local_files_only=not settings.dataset.download,
+        local_files_only=local_files_only,
     )
     try:
         return load_dataset(
@@ -555,12 +559,12 @@ def _load_huggingface_split(settings: ExperimentSettings, split: str):
             download_config=download_config,
         )
     except Exception as error:
-        mode = "download/reuse" if settings.dataset.download else "offline reuse"
+        mode = "offline reuse" if local_files_only else "download/reuse"
         raise RuntimeError(
             f"Could not {mode} gated ImageNet split {split!r} from "
             f"{settings.dataset.hf_dataset_id}@{settings.dataset.hf_revision}. "
-            "Confirm that the same Hugging Face account accepted the ImageNet "
-            "terms and that its read token is active. Cache directory: "
+            "If the cache is absent, accept the ImageNet terms and run `hf auth login`; "
+            "otherwise verify that this is the same cache directory: "
             f"{cache_dir}. Original error: {type(error).__name__}: {error}"
         ) from error
 
