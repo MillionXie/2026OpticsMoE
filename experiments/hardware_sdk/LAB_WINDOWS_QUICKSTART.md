@@ -152,6 +152,9 @@ python -m experiments.hardware_sdk.workflows.roi_calibration exposure --config e
 
 在仓库根目录执行以下 PowerShell 命令，下载本次需要的文件：
 
+> 下载 YAML 前先记下你已经实测填写的 `camera.device_roi_xywh`；仓库配置保留为
+> `null`，更新后必须把这四个数重新填回去，不能用猜测值替代。
+
 ```powershell
 Invoke-WebRequest "https://raw.githubusercontent.com/MillionXie/2026OpticsMoE/main/experiments/hardware_sdk/workflows/reconstruct_slm.py" -OutFile "experiments\hardware_sdk\workflows\reconstruct_slm.py"
 Invoke-WebRequest "https://raw.githubusercontent.com/MillionXie/2026OpticsMoE/main/experiments/hardware_sdk/workflows/acquire_folder.py" -OutFile "experiments\hardware_sdk\workflows\acquire_folder.py"
