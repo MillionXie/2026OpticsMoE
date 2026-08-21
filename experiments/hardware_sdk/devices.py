@@ -186,6 +186,9 @@ class SLMDriver(ABC):
     def preload_files(self, paths: list[Path]) -> None:
         """Optionally upload a plane's frames before acquisition."""
 
+    def validate_files(self, paths: list[Path]) -> None:
+        """Validate playback files without opening the physical device."""
+
     def device_info(self) -> dict[str, Any]:
         return {"driver": type(self).__name__}
 
@@ -371,6 +374,10 @@ class HoloeyeSLM(SLMDriver):
             )
             self._handles[path] = handle
         print(f"[HOLOEYE] preloaded {len(self._handles)} BMP files to GPU")
+
+    def validate_files(self, paths: list[Path]) -> None:
+        for path in paths:
+            self._validate_image(path)
 
     def display_file(self, path: Path) -> None:
         if self._slm is None:
@@ -1001,7 +1008,50 @@ def build_slm(config: dict[str, Any], base: Path) -> SLMDriver:
             preload=bool(config.get("preload", True)),
             wait_until_visible=bool(config.get("wait_until_visible", True)),
         )
-    raise ValueError(f"Unknown SLM driver {driver!r}; supported: manual, holoeye")
+    if driver in {"meadowlark", "meadowlark_pcie", "blink_pcie"}:
+        sdk_path = _resolve_optional(config.get("sdk_path"), base)
+        lut_file = _resolve_optional(config.get("lut_file"), base)
+        if sdk_path is None:
+            raise ValueError("A Meadowlark PCIe SLM requires amplitude_slm.sdk_path")
+        if lut_file is None:
+            raise ValueError(
+                "A Meadowlark PCIe SLM requires amplitude_slm.lut_file; "
+                "do not acquire with an unknown voltage LUT"
+            )
+        try:
+            from .drivers.meadowlark_pcie_slm import MeadowlarkPCIeSLM
+        except ImportError:  # direct execution from inside hardware_sdk/
+            from drivers.meadowlark_pcie_slm import MeadowlarkPCIeSLM
+
+        return MeadowlarkPCIeSLM(
+            sdk_path=sdk_path,
+            lut_file=lut_file,
+            board_number=int(config.get("board_number", 1)),
+            expected_resolution=(
+                tuple(int(value) for value in config["expected_resolution_wh"])
+                if config.get("expected_resolution_wh") is not None
+                else None
+            ),
+            expected_bit_depth=(
+                int(config["expected_bit_depth"])
+                if config.get("expected_bit_depth") is not None
+                else None
+            ),
+            expected_pixel_pitch_um=(
+                float(config["pixel_pitch_um"])
+                if config.get("pixel_pitch_um") is not None
+                else None
+            ),
+            timeout_ms=int(config.get("timeout_ms", 5000)),
+            wait_for_trigger=bool(config.get("wait_for_trigger", False)),
+            flip_immediate=bool(config.get("flip_immediate", False)),
+            output_pulse=bool(config.get("output_pulse", False)),
+            preload=bool(config.get("preload", False)),
+            blank_on_close=bool(config.get("blank_on_close", True)),
+        )
+    raise ValueError(
+        f"Unknown SLM driver {driver!r}; supported: manual, holoeye, meadowlark_pcie"
+    )
 
 
 def build_camera(config: dict[str, Any], base: Path) -> CameraDriver:

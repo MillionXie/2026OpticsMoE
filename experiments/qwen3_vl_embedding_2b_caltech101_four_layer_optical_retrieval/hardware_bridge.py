@@ -113,6 +113,21 @@ def _read_manifest(session_dir: Path) -> list[dict[str, str]]:
 
 
 def _load_model(settings: Any, checkpoint: Path):
+    checkpoint = checkpoint.expanduser().resolve()
+    if not checkpoint.is_file():
+        configured_output = Path(settings.output_dir).expanduser().resolve()
+        runs_root = configured_output.parent
+        candidates = sorted(runs_root.glob("*/ema_best_train_loss_checkpoint.pt"))
+        candidate_text = "\n".join(f"  - {path}" for path in candidates[:12])
+        if not candidate_text:
+            candidate_text = "  (no EMA checkpoint found under the experiment runs directory)"
+        raise FileNotFoundError(
+            f"Four-layer checkpoint is missing: {checkpoint}\n"
+            f"This YAML resolves training.output_dir to: {configured_output}\n"
+            "Available sibling EMA checkpoints are listed only for diagnosis; "
+            "do not mix a checkpoint with a different YAML:\n"
+            f"{candidate_text}"
+        )
     device = torch.device(
         settings.device
         if settings.device != "cuda" or torch.cuda.is_available()

@@ -1,0 +1,68 @@
+# 1024x1024 Meadowlark Blink PCIe amplitude SLM + TUCam/Mosaic CCD.
+# Run on the laboratory Windows computer from the repository root.
+
+input_dir: ../data/amplitude_to_play
+output_dir: ../data/ccd_captured
+log_dir: ../artifacts/logs/tucam_meadowlark_1024
+output_extension: .png
+settle_delay_ms: 200
+confirm_before_start: true
+max_files: null
+
+# The phase SLM remains operator-controlled.  Formal acquisition refuses to
+# start unless the exact 1920x1200 phase BMP is supplied here or by
+# --phase-mask; its SHA256 is written into every capture row.
+require_phase_mask: true
+phase_mask_file: null
+
+amplitude_slm:
+  driver: meadowlark_pcie
+  sdk_path: ../vendor_sdk/amplitude_meadowlark
+  board_number: 1
+  expected_resolution_wh: [1024, 1024]
+  expected_bit_depth: 8
+  pixel_pitch_um: 17.0
+  timeout_ms: 5000
+  wait_for_trigger: false
+  flip_immediate: false
+  output_pulse: false
+  # Host preloading is intentionally disabled: a formal stage can contain
+  # hundreds of 1 MiB frames.  Each BMP is validated before the device opens.
+  preload: false
+  blank_on_close: true
+  # Select the LUT matching the physical SLM and operating temperature.
+  # The uploaded SDK contains both slm7930_at532_30C and _70C variants.
+  lut_file: ../vendor_sdk/amplitude_meadowlark/LUT Files/slm7930_at532_30C.lut
+
+phase_slm:
+  driver: manual
+  width: 1920
+  height: 1200
+  expected_resolution_wh: [1920, 1200]
+  pixel_pitch_um: 8.0
+
+camera:
+  driver: tucam
+  sdk_path: ../vendor_sdk/camera_tucam_mosaic
+  camera_index: 0
+  timeout_ms: 10000
+  config_file: null
+  auto_exposure: false
+  exposure_us: 5000.0
+  analog_gain: null
+  anti_flicker_hz: null
+  resolution_mode: null
+
+  # Required: fill [left, top, width, height] after laboratory ROI alignment.
+  # Every value must be divisible by four for the Dhyana 400BSI V3 SDK.
+  require_device_roi: true
+  device_roi_xywh: null
+
+  # Store the model-ready transport directly. No background subtraction,
+  # per-image stretching, flip, or intermediate 956/1024 frame is saved.
+  saved_frame_size_wh: [478, 478]
+  saved_frame_resize_mode: area
+  saved_frame_bit_depth: 8
+  saved_frame_input_range: [0, 65535]
+  warmup_frames: 3
+  discard_frames_after_display: 1

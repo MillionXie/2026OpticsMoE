@@ -22,6 +22,10 @@ from experiments.hardware_sdk.devices import (
     verify_camera_roi,
 )
 from experiments.hardware_sdk.drivers.tucam_camera import TucamCamera
+from experiments.hardware_sdk.drivers.meadowlark_pcie_slm import (
+    MeadowlarkPCIeSLM,
+    load_meadowlark_frame,
+)
 from experiments.hardware_sdk.demos.phase_slm_demo import prepare_phase_frame
 from experiments.hardware_sdk.workflows.roi_calibration import (
     exposure_patch,
@@ -163,6 +167,88 @@ def test_factory_builds_tucam_without_changing_legacy_dvp(tmp_path: Path) -> Non
     assert isinstance(camera, TucamCamera)
     assert camera.exposure_us == pytest.approx(5000)
     assert camera.saved_frame_resize_mode == "none"
+
+
+def test_factory_builds_board_indexed_meadowlark_pcie_slm(tmp_path: Path) -> None:
+    slm = build_slm(
+        {
+            "driver": "meadowlark_pcie",
+            "sdk_path": "vendor",
+            "lut_file": "lut/device.lut",
+            "board_number": 1,
+            "expected_resolution_wh": [1024, 1024],
+            "expected_bit_depth": 8,
+            "preload": False,
+        },
+        tmp_path,
+    )
+    assert isinstance(slm, MeadowlarkPCIeSLM)
+    assert slm.expected_resolution == (1024, 1024)
+    assert slm.expected_pixel_pitch_um is None
+    assert slm.board_number == 1
+    assert slm.lut_file == (tmp_path / "lut" / "device.lut").resolve()
+
+
+def test_meadowlark_frame_requires_exact_8bit_grayscale_bmp(
+    tmp_path: Path,
+) -> None:
+    value = np.array([[0, 64], [128, 255]], dtype=np.uint8)
+    good = tmp_path / "good.bmp"
+    Image.fromarray(value, mode="L").save(good)
+    actual = load_meadowlark_frame(good, (2, 2))
+    assert actual.dtype == np.uint8
+    assert actual.flags.c_contiguous
+    assert np.array_equal(actual, value)
+
+    rgb = tmp_path / "rgb.bmp"
+    Image.fromarray(np.zeros((2, 2, 3), dtype=np.uint8), mode="RGB").save(rgb)
+    with pytest.raises(DeviceError, match="8-bit grayscale"):
+        load_meadowlark_frame(rgb, (2, 2))
+    with pytest.raises(DeviceError, match="no implicit scaling"):
+        load_meadowlark_frame(good, (3, 2))
+
+
+def test_meadowlark_display_waits_for_image_write_complete(tmp_path: Path) -> None:
+    path = tmp_path / "frame.bmp"
+    Image.fromarray(np.arange(4, dtype=np.uint8).reshape(2, 2), mode="L").save(path)
+
+    class Library:
+        def __init__(self) -> None:
+            self.operations = []
+
+        def Write_image(self, board, _pointer, timeout):
+            self.operations.append(("write", board, timeout))
+            return 1
+
+        def ImageWriteComplete(self, board, timeout):
+            self.operations.append(("complete", board, timeout))
+            return 1
+
+        def Read_SLM_temperature(self, board):
+            self.operations.append(("temperature", board))
+            return 30.5
+
+        def Get_last_error_message(self):
+            return b""
+
+    slm = MeadowlarkPCIeSLM(
+        tmp_path,
+        tmp_path / "device.lut",
+        expected_resolution=(2, 2),
+        timeout_ms=1234,
+        blank_on_close=False,
+    )
+    library = Library()
+    slm._library = library
+    slm._sdk_created = True
+    slm.width = slm.height = 2
+    slm.display_file(path)
+    assert library.operations == [
+        ("write", 1, 1234),
+        ("complete", 1, 1234),
+        ("temperature", 1),
+    ]
+    assert slm.temperature_c == pytest.approx(30.5)
 
 
 def test_tucam_roi_requires_four_pixel_alignment() -> None:
@@ -433,6 +519,7 @@ def test_layer_agnostic_folder_acquisition_preserves_sorted_basenames(
         def __enter__(self): return self
         def __exit__(self, *_): return None
         def validate_runtime(self): return None
+        def validate_files(self, paths): return None
         def preload_files(self, paths): self.paths = list(paths)
         def display_file(self, path): self.current = path
         def device_info(self): return {"driver": "fake_slm"}
@@ -506,6 +593,7 @@ def test_folder_acquisition_allows_saved_size_smaller_than_hardware_roi(
         def __enter__(self): return self
         def __exit__(self, *_): return None
         def validate_runtime(self): return None
+        def validate_files(self, paths): return None
         def preload_files(self, paths): return None
         def display_file(self, path): return None
         def device_info(self): return {"driver": "fake_slm"}
@@ -560,6 +648,73 @@ def test_folder_acquisition_allows_saved_size_smaller_than_hardware_roi(
     report = run_folder_acquisition(config, assume_yes=True)
     assert report["count"] == 1
     assert Image.open(output_dir / "000.png").size == (2, 2)
+
+
+def test_folder_acquisition_validate_only_binds_exact_phase_without_opening(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    input_dir = tmp_path / "input"
+    input_dir.mkdir()
+    Image.new("L", (8, 8), 127).save(input_dir / "000.bmp")
+    phase = tmp_path / "phase.bmp"
+    Image.new("L", (12, 10), 64).save(phase)
+    entered = {"slm": False, "camera": False}
+
+    class FakeSlm:
+        def __enter__(self):
+            entered["slm"] = True
+            return self
+        def __exit__(self, *_): return None
+        def validate_runtime(self): return None
+        def validate_files(self, paths):
+            assert [path.name for path in paths] == ["000.bmp"]
+        def device_info(self): return {"driver": "fake_slm"}
+
+    class FakeCamera:
+        def __enter__(self):
+            entered["camera"] = True
+            return self
+        def __exit__(self, *_): return None
+        def validate_runtime(self): return None
+        def device_info(self): return {"driver": "fake_camera"}
+
+    monkeypatch.setattr(
+        "experiments.hardware_sdk.workflows.acquire_folder.build_slm",
+        lambda *_: FakeSlm(),
+    )
+    monkeypatch.setattr(
+        "experiments.hardware_sdk.workflows.acquire_folder.build_camera",
+        lambda *_: FakeCamera(),
+    )
+    config = tmp_path / "acquisition.yaml"
+    config.write_text(
+        "\n".join(
+            [
+                f"input_dir: {input_dir.as_posix()}",
+                f"output_dir: {(tmp_path / 'output').as_posix()}",
+                f"log_dir: {(tmp_path / 'logs').as_posix()}",
+                "output_extension: .png",
+                "require_phase_mask: true",
+                "amplitude_slm: {driver: unused}",
+                "phase_slm:",
+                "  expected_resolution_wh: [12, 10]",
+                "camera:",
+                "  driver: unused",
+                "  require_device_roi: true",
+                "  device_roi_xywh: [0, 0, 4, 4]",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    report = run_folder_acquisition(
+        config, phase_override=phase, validate_only=True
+    )
+    assert entered == {"slm": False, "camera": False}
+    assert report["validate_only"] is True
+    assert report["phase_mask"]["basename"] == "phase.bmp"
+    assert len(report["phase_mask"]["sha256"]) == 64
+    assert not (tmp_path / "output").exists()
+    assert (tmp_path / "logs" / "resolved_devices.json").is_file()
 
 
 def test_unset_dvp_python_is_rejected_before_device_open(

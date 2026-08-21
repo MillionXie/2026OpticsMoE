@@ -70,6 +70,32 @@ python -m experiments.hardware_sdk.workflows.reconstruct_slm --input-dir "$STAGE
 
 该过程不会插值相位灰度；每个原生8 µm像素只取一个逻辑相位值。纵向翻转已经在服务器导出的紧凑 phase 中完成。
 
+## 新 Meadowlark 振幅 SLM 与 TUCam 采集
+
+新设备不是原有 HOLOEYE/HDMI 接口，而是 Meadowlark Blink PCIe 的 board-indexed
+接口。使用前先安装厂商 Blink Plus PCIe 驱动/runtime，并编辑：
+
+```text
+experiments\hardware_sdk\configs\tucam_meadowlark_1024_windows.yaml
+```
+
+至少确认实际 LUT（默认 30 °C 标定，SDK 也提供 70 °C 版本）并填写四项均为 4 的
+倍数的 `camera.device_roi_xywh`。随后先做不打开设备的完整预检：
+
+```powershell
+python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\hardware_sdk\configs\tucam_meadowlark_1024_windows.yaml --input-dir "$STAGE\amplitude_to_play" --output-dir "$STAGE\ccd_captured" --phase-mask "$STAGE\phase_to_play\vision_expert.bmp" --validate-only
+```
+
+手动把上面同一张相位 BMP 加载到相位 SLM 后，先采 3 张：
+
+```powershell
+python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\hardware_sdk\configs\tucam_meadowlark_1024_windows.yaml --input-dir "$STAGE\amplitude_to_play" --output-dir "$STAGE\ccd_captured" --phase-mask "$STAGE\phase_to_play\vision_expert.bmp" --limit 3 --clear-output
+```
+
+确认后删除试采结果并移除 `--limit 3` 采完整批次。程序按文件名排序执行
+`Meadowlark Write_image → ImageWriteComplete → 等待 200 ms → TUCam capture`，
+直接保存同名 478×478 uint8 PNG。没有背景扣除、逐图拉伸或中间大图。
+
 ## 实验室电脑没有 Git 时如何只更新这个工具
 
 在仓库根目录执行以下 PowerShell 命令，只下载本次需要的单个 Python 文件：

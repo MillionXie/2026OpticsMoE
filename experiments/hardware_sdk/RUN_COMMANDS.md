@@ -42,9 +42,21 @@ YAML 文件解析。
 
 ## 2. 唯一主配置
 
-当前 TUCam、振幅 SLM、正式采集、顺序校验、曝光检查和可选背景都读取：
+旧 HOLOEYE 振幅 SLM 流程读取：
 
     experiments\hardware_sdk\configs\tucam_windows.yaml
+
+新 1024×1024 Meadowlark Blink PCIe 振幅 SLM 与 TUCam 联合采集读取：
+
+    experiments\hardware_sdk\configs\tucam_meadowlark_1024_windows.yaml
+
+使用新配置前必须完成三件事：
+
+1. 在实验室 Windows 电脑安装 Meadowlark Blink Plus PCIe 驱动/runtime；仓库里的 DLL
+   不是 PCIe 设备驱动的替代品。
+2. 确认 `amplitude_slm.lut_file` 对应真实 SLM 和温度。配置默认指向上传 SDK 中的
+   `slm7930_at532_30C.lut`；若实验使用 70 °C 标定，必须改为 `_70C.lut`。
+3. 填写 `camera.device_roi_xywh`；四项都必须为 4 的倍数。
 
 实验前至少填写：
 
@@ -112,6 +124,38 @@ ROI，再核对保存结果是否等于 478×478，因此硬件 ROI 为 1200×12
     experiments\hardware_sdk\artifacts\logs\tucam
 
 正式采集不扣背景、不做几何变换、不逐图归一化。
+
+### 新 Meadowlark 1024×1024 振幅 SLM + TUCam
+
+假设 `$STAGE` 是实验室电脑上的当前层目录。先把服务器传来的 478×478 紧凑振幅
+重建为原生 1024×1024 BMP；这一步不做缩放，逻辑像素与振幅 SLM 像素一一对应：
+
+```powershell
+python -m experiments.hardware_sdk.workflows.reconstruct_slm --stage-dir $STAGE --payload amplitude
+```
+
+在打开硬件前，校验全部振幅 BMP、指定相位 BMP、两套 SDK、LUT 和相机 ROI：
+
+```powershell
+python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\hardware_sdk\configs\tucam_meadowlark_1024_windows.yaml --input-dir "$STAGE\amplitude_to_play" --output-dir "$STAGE\ccd_captured" --phase-mask "$STAGE\phase_to_play\vision_expert.bmp" --validate-only
+```
+
+手动在相位 SLM 上加载同一个 `--phase-mask` 文件。首次只采 3 张，确认播放、曝光和
+basename 对应关系：
+
+```powershell
+python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\hardware_sdk\configs\tucam_meadowlark_1024_windows.yaml --input-dir "$STAGE\amplitude_to_play" --output-dir "$STAGE\ccd_captured" --phase-mask "$STAGE\phase_to_play\vision_expert.bmp" --limit 3 --clear-output
+```
+
+确认无误后清空上述 3 张并采完整批次：
+
+```powershell
+python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\hardware_sdk\configs\tucam_meadowlark_1024_windows.yaml --input-dir "$STAGE\amplitude_to_play" --output-dir "$STAGE\ccd_captured" --phase-mask "$STAGE\phase_to_play\vision_expert.bmp" --clear-output
+```
+
+`--phase-mask` 只用于校验和记录。程序不会打开相位 SLM；开始前会显示相位文件名和
+SHA256，实验人员确认屏幕上加载的是同一个文件后输入 `y`。振幅 BMP 必须是原生
+1024×1024、8-bit 灰度 BMP，驱动拒绝隐式缩放、翻转和逐图归一化。
 
 ## 8. 四层光电实验
 
