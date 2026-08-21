@@ -436,3 +436,10 @@ PID 1226147 经精确命令行核验后收到 TERM，两个 rank 正常退出；
 `3e-5/3e-5/1.5e-4`，运行 24 joint epochs。训练器现在会先在同一 10k validation 上评估初始
 checkpoint，并将它保存为 epoch-0 best；只有后续 Top-1 严格超过 3.84% 才能替换，因而精炼
 失败时最终模型也不会性能倒退。无 head warm-up 的 DDP 同时关闭 unused-parameter 图遍历。
+
+S3 经服务器 26 项测试通过后，在物理 GPU 2、4 启动；launcher/torchrun PID 为
+1289248/1289267，两个 guest3 rank 为 1289577/1289578。epoch-0 完整 10k validation 复测
+Top-1/Top-5 为 3.84%/11.80%，student/teacher zero-shot 为 1.27%/64.52%，并成功写为保护性
+best。epoch 1/2 Top-1 为 3.74%/3.64%，未替换 best；epoch 3 上升到 **4.03%**，Top-5
+11.67%、student zero-shot 1.40%、cosine 0.7035，首次严格超过 S1 并替换 best。epoch 4 正在
+继续运行。该在线提升只说明 S3 方向优于 S2，仍未通过 10% Top-1 的 full-ImageNet 准入门槛。
