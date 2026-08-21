@@ -82,6 +82,8 @@ def _registered_checker_grating(
     cell_size: int,
     grating_period: int,
     amplitude: np.ndarray,
+    *,
+    orientation_mode: str = "neighbor_cells",
 ) -> np.ndarray:
     """Place alternating x/y 0-pi gratings only in open amplitude cells.
 
@@ -100,10 +102,19 @@ def _registered_checker_grating(
     cell_column = x // cell_size
     vertical = _binary_grating(size, size, grating_period, "x")
     horizontal = _binary_grating(size, size, grating_period, "y")
-    # Alternating on row+column parity makes neighboring cells switch grating
-    # direction along both axes.  The irregular open/closed layout deliberately
-    # leaves adjacent open cells so both directions remain visible in one shot.
-    phase = np.where((cell_row + cell_column) % 2 == 0, vertical, horizontal)
+    if orientation_mode == "neighbor_cells":
+        # Neighboring grid cells switch direction along both axes.  This is
+        # appropriate for the mostly-open polyomino landmark layout.
+        orientation_index = cell_row + cell_column
+    elif orientation_mode == "visible_checker_cells":
+        # In a strict checkerboard, visible white cells are two grid steps apart
+        # along a row/column.  Dividing the coordinate sum by two makes those
+        # successive visible cells alternate x/y instead of all sharing one
+        # orientation.
+        orientation_index = (cell_row + cell_column) // 2
+    else:
+        raise ValueError(f"Unknown registration orientation_mode={orientation_mode!r}")
+    phase = np.where(orientation_index % 2 == 0, vertical, horizontal)
     # A one-logical-pixel zero-phase frame makes every phase-cell boundary
     # explicit without changing the corresponding checker geometry.
     on_boundary = (x % cell_size == 0) | (y % cell_size == 0)
@@ -303,6 +314,19 @@ def generate(
             "primary_phase": primary_grating,
         }
 
+    # Additional strict c64 checker pair requested for direct visual alignment.
+    # Its phase is masked to the white cells, and visible white cells alternate
+    # x/y gratings along both rows and columns.
+    regular_checker = _checker(active_size, 64)
+    regular_checker_phase = _registered_checker_grating(
+        active_size,
+        64,
+        8,
+        regular_checker,
+        orientation_mode="visible_checker_cells",
+    )
+    amplitude_patterns["registration_regular_checker_c64"] = regular_checker
+
     phase_patterns: dict[str, np.ndarray] = {
         "flat_0": np.zeros((active_size, active_size), dtype=np.uint8),
         "flat_pi": np.full((active_size, active_size), 128, dtype=np.uint8),
@@ -320,6 +344,9 @@ def generate(
     for name, values in registration_logical.items():
         phase_patterns[f"registration_{name}"] = values["phase"]
         phase_patterns[f"registration_{name}_primary"] = values["primary_phase"]
+    phase_patterns["registration_regular_checker_xy_c64_p8"] = (
+        regular_checker_phase
+    )
     for index, (axis, period) in enumerate(
         (("x", 8), ("y", 8), ("x", 16), ("y", 16))
     ):
@@ -404,6 +431,34 @@ def generate(
                 }
             )
 
+    regular_amplitude_name = "registration_regular_checker_c64"
+    regular_phase_name = "registration_regular_checker_xy_c64_p8"
+    regular_preview = _ideal_registration_preview(
+        regular_checker, regular_checker_phase
+    )
+    regular_preview_path = preview_dir / "pair_regular_checker_xy_c64_p8.png"
+    Image.fromarray(regular_preview, mode="L").save(
+        regular_preview_path, format="PNG"
+    )
+    registration_pairs.append(
+        {
+            "pair_id": "regular_checker_xy_c64_p8",
+            "amplitude": files["amplitude"][regular_amplitude_name]["path"],
+            "phase": files["phase"][regular_phase_name]["path"],
+            "idealized_preview": str(regular_preview_path),
+            "preview_sha256": _sha256(regular_preview_path),
+            "logical_cell_size_px": 64,
+            "logical_grating_period_px": 8,
+            "amplitude_layout": "strict_binary_checkerboard",
+            "phase_mask_rule": (
+                "phase=0 in black amplitude cells; successive visible white "
+                "cells alternate x/y 0-pi gratings along rows and columns"
+            ),
+            "phase_native_cell_size_px_approx": round(64 * logical_pitch / phase_pitch),
+            "phase_native_grating_period_px": round(8 * logical_pitch / phase_pitch),
+        }
+    )
+
     report = {
         "schema_version": 2,
         "purpose": "17um amplitude to 8um phase SLM registration without magnification",
@@ -442,6 +497,10 @@ def generate(
             ),
             "c64_complement_layout": (
                 "O/T/Z tetrominoes, one L pentomino, and an isolated marker"
+            ),
+            "regular_c64_pair": (
+                "strict checker amplitude; phase only in white cells; visible "
+                "white cells alternate x/y along every row and column"
             ),
             "phase_pairing": (
                 "unsuffixed phase_registration_checker_xy_* is paired with "

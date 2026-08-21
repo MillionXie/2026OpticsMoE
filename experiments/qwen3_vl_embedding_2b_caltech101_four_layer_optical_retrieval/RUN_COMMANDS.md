@@ -99,6 +99,14 @@ phase 交叉使用。对焦且对齐后，白区里的横/纵光栅应被调幅�
 出现光栅。建议先用 `c96` 粗调、`c80` 确认、`c64` polyomino 图精调，并根据相机
 图像中的边界残差修改 phase center。
 
+另外提供一组严格黑白相间的 c64 棋盘格。相位只在白格内出现；沿任意一行或一列，
+相邻可见白格中的光栅按横/纵交替：
+
+```text
+amplitude_registration_regular_checker_c64_1024x1024.bmp
+phase_registration_regular_checker_xy_c64_p8_1920x1200.bmp
+```
+
 相位中心需要改变时，可以修改 YAML 的 `phase_slm.center_xy`，也可以直接覆盖：
 
 ```bash

@@ -36,6 +36,33 @@ def test_polyomino_phase_is_flat_in_black_and_alternates_in_both_axes() -> None:
     assert changes(3, 2) == (True, False)
 
 
+def test_regular_checker_phase_is_only_in_white_and_visible_cells_alternate() -> None:
+    y, x = np.indices((478, 478))
+    amplitude = (((x // 64 + y // 64) % 2) * 255).astype(np.uint8)
+    phase = _registered_checker_grating(
+        478,
+        64,
+        8,
+        amplitude,
+        orientation_mode="visible_checker_cells",
+    )
+    assert np.all(phase[amplitude == 0] == 0)
+
+    def changes(cell_row: int, cell_column: int) -> tuple[bool, bool]:
+        patch = phase[
+            cell_row * 64 + 1 : (cell_row + 1) * 64,
+            cell_column * 64 + 1 : (cell_column + 1) * 64,
+        ]
+        return bool(np.any(np.diff(patch, axis=0))), bool(
+            np.any(np.diff(patch, axis=1))
+        )
+
+    # White cells (0,1)->(0,3) and (0,1)->(2,1) alternate direction.
+    assert changes(0, 1) == (False, True)
+    assert changes(0, 3) == (True, False)
+    assert changes(2, 1) == (True, False)
+
+
 def test_checker_grating_registration_pairs_share_logical_geometry(
     tmp_path: Path,
 ) -> None:
@@ -66,7 +93,7 @@ def test_checker_grating_registration_pairs_share_logical_geometry(
 
     report = generate(config)
     pairs = report["registration_protocol"]["pairs"]
-    assert len(pairs) == 6
+    assert len(pairs) == 7
     assert {row["logical_cell_size_px"] for row in pairs} == {64, 80, 96}
     assert {row["phase_native_grating_period_px"] for row in pairs} == {17}
 
@@ -92,6 +119,16 @@ def test_checker_grating_registration_pairs_share_logical_geometry(
         "phase_registration_checker_xy_c64_p8_1920x1200.bmp"
     )
     assert primary["phase"].endswith("_primary_1920x1200.bmp")
+    regular = next(
+        row for row in pairs if row["pair_id"] == "regular_checker_xy_c64_p8"
+    )
+    assert regular["amplitude_layout"] == "strict_binary_checkerboard"
+    assert regular["amplitude"].endswith(
+        "amplitude_registration_regular_checker_c64_1024x1024.bmp"
+    )
+    assert regular["phase"].endswith(
+        "phase_registration_regular_checker_xy_c64_p8_1920x1200.bmp"
+    )
     persisted = json.loads(
         (output_dir / "alignment_manifest.json").read_text(encoding="utf-8")
     )
