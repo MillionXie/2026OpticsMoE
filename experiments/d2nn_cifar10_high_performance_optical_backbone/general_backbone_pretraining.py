@@ -93,6 +93,7 @@ class P06TrainingConfig:
     shuffle_block_size: int | None
     use_amp: bool
     amp_initial_scale: float
+    amp_growth_interval: int
     log_interval_batches: int
     checkpoint_interval_epochs: int
     max_train_batches: int | None
@@ -230,6 +231,7 @@ def load_p06_settings(path: str | Path) -> P06Settings:
             shuffle_block_size=_optional_int(training_raw.get("shuffle_block_size")),
             use_amp=bool(training_raw.get("use_amp", True)),
             amp_initial_scale=float(training_raw.get("amp_initial_scale", 65536.0)),
+            amp_growth_interval=int(training_raw.get("amp_growth_interval", 2000)),
             log_interval_batches=int(training_raw.get("log_interval_batches", 50)),
             checkpoint_interval_epochs=int(training_raw.get("checkpoint_interval_epochs", 1)),
             max_train_batches=_optional_int(training_raw.get("max_train_batches")),
@@ -288,6 +290,8 @@ def load_p06_settings(path: str | Path) -> P06Settings:
         raise ValueError("training.shuffle_block_size must be positive or null")
     if settings.training.amp_initial_scale <= 0.0:
         raise ValueError("training.amp_initial_scale must be positive")
+    if settings.training.amp_growth_interval < 1:
+        raise ValueError("training.amp_growth_interval must be positive")
     if len(settings.optimizer.betas) != 2:
         raise ValueError("optimizer.betas must have two values")
     if settings.loss.contrastive_weight < 0 or settings.loss.contrastive_temperature <= 0:
@@ -1196,6 +1200,7 @@ def run(settings: P06Settings, context: DistributedContext, *, resume: bool) -> 
         "cuda",
         enabled=settings.training.use_amp and context.device.type == "cuda",
         init_scale=settings.training.amp_initial_scale,
+        growth_interval=settings.training.amp_growth_interval,
     )
     prototypes_path = cache_directory(imagenet_settings) / "imagenet_text_prototypes.pt"
     text_prototypes, clip_logit_scale = load_text_prototypes(

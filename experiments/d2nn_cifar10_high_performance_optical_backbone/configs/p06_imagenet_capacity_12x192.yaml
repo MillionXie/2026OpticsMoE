@@ -53,7 +53,10 @@ training:
   prefetch_factor: 2
   shuffle_block_size: 4096
   use_amp: true
-  amp_initial_scale: 4096
+  # The expanded 12-stage trunk has much larger early gradients. Keep a
+  # conservative fixed-like scale across the head-only and joint transition.
+  amp_initial_scale: 256
+  amp_growth_interval: 100000
   log_interval_batches: 250
   checkpoint_interval_epochs: 1
   max_train_batches: null
