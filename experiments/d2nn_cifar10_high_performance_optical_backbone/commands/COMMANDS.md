@@ -331,3 +331,13 @@ PHYSICAL_GPU_INDICES=2,5 \
 
 tail -f experiments/d2nn_cifar10_high_performance_optical_backbone/runs/p06_imagenet_full_stage1/train.log
 ```
+
+For the unattended multi-hour run, command 60 checks progress every five minutes. It relaunches a
+missing job from `last.pt`, treats 20 minutes without a log update as a stall, permits at most three
+restarts, and exits when `result.json` exists. Launch one duplicate-safe background watcher with:
+
+```bash
+bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/61_launch_p06_imagenet_full_stage1_watcher.sh
+
+tail -f experiments/d2nn_cifar10_high_performance_optical_backbone/runs/p06_imagenet_full_stage1/watcher.log
+```
