@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
 
 import torch
+from torch.nn import functional as F
 
 from experiments.optical_mlp_mixer_moe9_imagenet1k_clip_distill.datasets import (
     CLIP_MEAN,
@@ -14,8 +16,10 @@ from ..general_backbone_pretraining import (
     SubsetEpochViewSampler,
     batch_contrastive_loss,
     load_p06_settings,
+    sha256_file,
     stratified_base_indices,
 )
+from ..formal_settings import load_formal_settings
 from ..settings import OpticalConfig
 
 
@@ -67,6 +71,107 @@ def test_clip_denormalization_and_feature_contract() -> None:
     assert embedding.shape == (2, 7)
     assert descriptor.shape == (2, 48)
     assert torch.allclose(embedding.norm(dim=-1), torch.ones(2), atol=1e-5)
+
+
+def test_descriptor_mlp_decouples_classifier_from_clip_projection() -> None:
+    model = CompactOpticalImageNetStudent(
+        _tiny_optical(),
+        selected_stage_indices=(0, 1),
+        pool_size=2,
+        projection_dim=7,
+        num_classes=5,
+        classifier_mode="descriptor_mlp",
+        classifier_hidden_dim=11,
+        classifier_dropout=0.1,
+    )
+    logits, embedding, descriptor = model(torch.rand(2, 3, 20, 20))
+    assert logits.shape == (2, 5)
+    assert embedding.shape == (2, 7)
+    assert descriptor.shape == (2, 48)
+    assert model.classifier[0].in_features == 48
+    assert model.classifier[3].out_features == 5
+
+
+def test_compatible_checkpoint_load_restores_encoder_but_reinitializes_head(
+    tmp_path: Path,
+) -> None:
+    source = CompactOpticalImageNetStudent(
+        _tiny_optical(),
+        selected_stage_indices=(0, 1),
+        pool_size=2,
+        projection_dim=7,
+        num_classes=5,
+    )
+    checkpoint = tmp_path / "source.pt"
+    torch.save({"model": source.state_dict(), "epoch": 3}, checkpoint)
+    target = CompactOpticalImageNetStudent(
+        _tiny_optical(),
+        selected_stage_indices=(0, 1),
+        pool_size=2,
+        projection_dim=7,
+        num_classes=5,
+        classifier_mode="descriptor_mlp",
+        classifier_hidden_dim=11,
+    )
+    report = target.load_pretraining_checkpoint(
+        checkpoint,
+        sha256_file(checkpoint),
+        load_mode="compatible",
+    )
+    assert report["load"]["mode"] == "compatible"
+    assert not any(
+        key.startswith("encoder.") for key in report["load"]["missing_keys"]
+    )
+    assert "classifier.weight" in report["load"]["unexpected_keys"]
+    assert "classifier.0.weight" in report["load"]["missing_keys"]
+    for key, value in source.encoder.state_dict().items():
+        assert torch.equal(value, target.encoder.state_dict()[key])
+
+
+def test_expanded_checkpoint_load_interpolates_depth_and_phase_resolution(
+    tmp_path: Path,
+) -> None:
+    source = CompactOpticalImageNetStudent(
+        _tiny_optical(),
+        selected_stage_indices=(0, 1),
+        pool_size=2,
+        projection_dim=7,
+        num_classes=5,
+    )
+    checkpoint = tmp_path / "compact.pt"
+    torch.save({"model": source.state_dict(), "epoch": 10}, checkpoint)
+    expanded_optical = replace(_tiny_optical(), canvas_size=20, num_stages=4)
+    target = CompactOpticalImageNetStudent(
+        expanded_optical,
+        selected_stage_indices=(0, 3),
+        pool_size=2,
+        projection_dim=7,
+        num_classes=5,
+    )
+    report = target.load_pretraining_checkpoint(
+        checkpoint,
+        sha256_file(checkpoint),
+        load_mode="expanded",
+    )
+    load = report["load"]
+    assert load["source_stage_count"] == 2
+    assert load["target_stage_count"] == 4
+    assert len(load["stage_mapping"]) == 4
+    expected_first = F.interpolate(
+        source.encoder.stages[0].raw_phase.detach().unsqueeze(0),
+        size=(20, 20),
+        mode="bicubic",
+        align_corners=False,
+    ).squeeze(0)
+    expected_last = F.interpolate(
+        source.encoder.stages[1].raw_phase.detach().unsqueeze(0),
+        size=(20, 20),
+        mode="bicubic",
+        align_corners=False,
+    ).squeeze(0)
+    assert torch.allclose(target.encoder.stages[0].raw_phase, expected_first)
+    assert torch.allclose(target.encoder.stages[-1].raw_phase, expected_last)
+    assert sum(parameter.numel() for parameter in target.encoder.phase_parameters()) == 4800
 
 
 def test_stratified_sampler_preserves_full_cache_indices_and_views() -> None:
@@ -150,3 +255,34 @@ def test_full_imagenet_config_uses_every_base_sample() -> None:
     assert settings.training.validation_samples_per_class == 50
     assert settings.training.epochs == 10
     assert settings.training.shuffle_block_size == 4096
+
+
+def test_capacity_expansion_is_million_scale_and_electronically_bounded() -> None:
+    root = Path(__file__).resolve().parents[1]
+    config = root / "configs" / "p06_imagenet_capacity_12x192.yaml"
+    settings = load_p06_settings(config)
+    assert settings.source_checkpoint_load_mode == "integrity_only"
+    assert settings.initial_checkpoint_load_mode == "expanded"
+    assert settings.model.selected_stage_indices == (2, 5, 8, 11)
+    architecture = load_formal_settings(settings.architecture_config).base
+    model = CompactOpticalImageNetStudent(
+        architecture.optical,
+        selected_stage_indices=settings.model.selected_stage_indices,
+        pool_size=settings.model.pool_size,
+        projection_dim=settings.model.projection_dim,
+        num_classes=settings.model.num_classes,
+        classifier_mode=settings.model.classifier_mode,
+        classifier_hidden_dim=settings.model.classifier_hidden_dim,
+        classifier_dropout=settings.model.classifier_dropout,
+    )
+    report = model.parameter_report()
+    assert architecture.optical.canvas_size == 192
+    assert architecture.optical.num_stages == 12
+    assert report["phase_parameters"] == 12 * 3 * 192 * 192
+    assert 1_000_000 <= report["phase_parameters"] <= 2_000_000
+    assert report["residual_electronic_parameters"] < 1_000_000
+    assert (
+        report["residual_electronic_parameters"]
+        + report["pretraining_head_parameters"]
+        < 2_000_000
+    )

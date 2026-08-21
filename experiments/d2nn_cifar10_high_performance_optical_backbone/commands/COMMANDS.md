@@ -341,3 +341,23 @@ bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/61_laun
 
 tail -f experiments/d2nn_cifar10_high_performance_optical_backbone/runs/p06_imagenet_full_stage1/watcher.log
 ```
+
+P06-F2 uses two internal optimisation diagnostics; these do not add feedback groups to the final
+four-group experiment. F2A keeps the F1 architecture and tests a CE-heavier continuation on GPUs
+2/5. F2B decouples a sub-million-parameter MLP classifier from the CLIP projection on GPU 4:
+
+```bash
+bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/63_launch_p06_imagenet_full_supervised_refine.sh
+bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/65_launch_p06_imagenet_full_mlp_readout.sh
+```
+
+The million-scale optical candidate has 12 RGB phase stages at 192x192 resolution (1,327,104
+optical parameters). Command 66 first verifies expanded checkpoint loading and all twelve phase
+gradients. Commands 67/68 run it on GPUs 2/5. Commands 69/70 can queue it behind F2A:
+
+```bash
+PHYSICAL_GPU_INDEX=5 \
+  bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/66_smoke_p06_imagenet_capacity_12x192.sh
+
+bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/70_launch_capacity_queue.sh
+```

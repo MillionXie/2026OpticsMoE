@@ -506,3 +506,28 @@ command 61 已在服务器实际启动 watcher PID 1971968；首条监督记录�
 进程与显存均正常。数据相关的非有限梯度又令 AMP 在 batch 2130/2245 将 scale 从 16384 降至
 8192/4096；这两批同样只跳过 optimizer/scheduler update，累计 4/2500 次（0.16%），当前继续
 训练并观察 scale 4096 是否稳定，不为消除少量自动保护事件而重启已正常运行的长任务。
+
+### P06-F1 最终结果与 F2 容量扩展决定（2026-08-22）
+
+P06-F1 于 2026-08-21 21:53 正常完成，watcher 未发生重启并在 `result.json` 出现后退出。完整
+ImageNet validation 从 epoch-0 Top-1/Top-5 5.05%/14.184% 提高到 epoch-10 的
+**8.468%/21.16%**；student zero-shot 从 1.784% 提高到 3.394%，CLIP cosine 为 0.7133。
+optical-off/phase-random Top-1 仅 0.142%/0.108%，相对光学破坏下降 98.32%；八层 phase
+gradient 全部 finite/nonzero，最小 optical gate 0.500248。best SHA-256 为
+`08366dd0010fc74168e870f8750cffcb9e8ee037174a026e8bddb11c8f6dea5d`。总墙钟时间约 7 小时
+40 分钟，其中前两轮 Arrow/OS cache 冷读分别约 2 小时 15 分和 1 小时 57 分，后八轮每轮约
+22--27 分钟。epoch 9/10 Top-1 为 8.450%/8.468%，原配方已经平台且未过 10% 门槛。
+
+原 F1 光学参数仅为 `8*3*128*128=393,216`，同时把 224 输入降到 128；这对于 ImageNet
+通用 backbone 偏小。因此 F2 不只调整电子头：新增 12-stage、192x192 RGB 光学主干，光学
+相位参数为 `12*3*192*192=1,327,104`。已有 8x128 raw phase 先做 bicubic 空间插值，再按
+相对深度线性映射到 12 层；旧 stage 2/4/6/8 对应新 stage 3/6/9/12，读出语义得以保留。
+每层电子残差同样按深度插值，但 downsample factor 从 4 改为 8，使 192 平面的电子支路只在
+24x24 上处理，避免电子 MAC 随分辨率暴涨。预计残差电子参数 468,504，连同 710,888 预训练
+读出头共约 1.18M，仍在约束内；所有 12 个 optical gate 继续硬约束 `>=0.5`。
+
+F2A/F2B 是瓶颈诊断而不是正式第五/第六反馈组：F2A 保持 F1 结构，以更高 CE 权重和重启的
+低 LR 检查训练配方；F2B 把监督分类从 CLIP projector 解耦为 `384->512->1000` MLP，检查
+线性读出瓶颈。F2C 才是面向 backbone 容量的主试验：从 F1 best 扩展初始化 12x192，先一轮
+冻结 trunk 校准读出，再四轮 exact joint-BP。所有配置、smoke 和长跑入口固定在 command
+62--70；结果仍以完整 50k validation、光学破坏消融和 10% Top-1 门槛判断。

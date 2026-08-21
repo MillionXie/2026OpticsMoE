@@ -48,6 +48,9 @@ class P06ModelConfig:
     pool_size: int
     projection_dim: int
     num_classes: int
+    classifier_mode: str
+    classifier_hidden_dim: int
+    classifier_dropout: float
 
 
 @dataclass(frozen=True)
@@ -116,8 +119,10 @@ class P06Settings:
     architecture_config: Path
     source_checkpoint: Path
     source_checkpoint_sha256: str
+    source_checkpoint_load_mode: str
     initial_checkpoint: Path | None
     initial_checkpoint_sha256: str | None
+    initial_checkpoint_load_mode: str
     model: P06ModelConfig
     loss: P06LossConfig
     optimizer: P06OptimizerConfig
@@ -168,13 +173,24 @@ def load_p06_settings(path: str | Path) -> P06Settings:
         architecture_config=_resolve(raw["architecture_config"]),
         source_checkpoint=_resolve(raw["source_checkpoint"]),
         source_checkpoint_sha256=checksum,
+        source_checkpoint_load_mode=str(
+            raw.get("source_checkpoint_load_mode", "strict")
+        ).lower(),
         initial_checkpoint=_resolve(initial_value) if initial_value else None,
         initial_checkpoint_sha256=initial_checksum,
+        initial_checkpoint_load_mode=str(
+            raw.get("initial_checkpoint_load_mode", "strict")
+        ).lower(),
         model=P06ModelConfig(
             selected_stage_indices=tuple(int(value) for value in model_raw.get("selected_stage_indices", [1, 3, 5, 7])),
             pool_size=int(model_raw.get("pool_size", 4)),
             projection_dim=int(model_raw.get("projection_dim", 512)),
             num_classes=int(model_raw.get("num_classes", 1000)),
+            classifier_mode=str(
+                model_raw.get("classifier_mode", "projected_linear")
+            ).lower(),
+            classifier_hidden_dim=int(model_raw.get("classifier_hidden_dim", 512)),
+            classifier_dropout=float(model_raw.get("classifier_dropout", 0.0)),
         ),
         loss=P06LossConfig(
             supervised_ce_weight=float(loss_raw.get("supervised_ce_weight", 0.5)),
@@ -229,6 +245,33 @@ def load_p06_settings(path: str | Path) -> P06Settings:
         raise ValueError("At least one selected stage is required")
     if settings.model.pool_size < 1 or settings.model.projection_dim < 1:
         raise ValueError("P06 pool/projection sizes must be positive")
+    if settings.model.classifier_mode not in {
+        "projected_linear",
+        "descriptor_linear",
+        "descriptor_mlp",
+    }:
+        raise ValueError("Unsupported model.classifier_mode")
+    if settings.model.classifier_hidden_dim < 1:
+        raise ValueError("model.classifier_hidden_dim must be positive")
+    if not 0.0 <= settings.model.classifier_dropout < 1.0:
+        raise ValueError("model.classifier_dropout must be in [0, 1)")
+    if settings.source_checkpoint_load_mode not in {"strict", "integrity_only"}:
+        raise ValueError("source_checkpoint_load_mode must be strict or integrity_only")
+    if settings.initial_checkpoint_load_mode not in {
+        "strict",
+        "compatible",
+        "expanded",
+    }:
+        raise ValueError(
+            "initial_checkpoint_load_mode must be strict, compatible or expanded"
+        )
+    if (
+        settings.source_checkpoint_load_mode == "integrity_only"
+        and settings.initial_checkpoint_load_mode != "expanded"
+    ):
+        raise ValueError(
+            "source integrity_only is allowed only with an expanded initial checkpoint"
+        )
     if settings.training.head_warmup_epochs < 0 or settings.training.joint_epochs < 1:
         raise ValueError("P06 requires at least one joint-training epoch")
     if (
@@ -329,6 +372,9 @@ class CompactOpticalImageNetStudent(nn.Module):
         projection_dim: int = 512,
         num_classes: int = 1000,
         source_num_classes: int = 10,
+        classifier_mode: str = "projected_linear",
+        classifier_hidden_dim: int = 512,
+        classifier_dropout: float = 0.0,
     ) -> None:
         super().__init__()
         self.encoder = OpticalClassifier(optical, source_num_classes)
@@ -338,9 +384,23 @@ class CompactOpticalImageNetStudent(nn.Module):
         self.pool_size = int(pool_size)
         features_per_stage = 2 * optical.input_channels * self.pool_size * self.pool_size
         self.descriptor_dim = len(self.selected_stage_indices) * features_per_stage
+        self.classifier_mode = str(classifier_mode)
         self.descriptor_norm = nn.LayerNorm(self.descriptor_dim)
         self.projector = nn.Linear(self.descriptor_dim, int(projection_dim))
-        self.classifier = nn.Linear(int(projection_dim), int(num_classes))
+        if self.classifier_mode == "projected_linear":
+            self.classifier = nn.Linear(int(projection_dim), int(num_classes))
+        elif self.classifier_mode == "descriptor_linear":
+            self.classifier = nn.Linear(self.descriptor_dim, int(num_classes))
+        elif self.classifier_mode == "descriptor_mlp":
+            hidden = int(classifier_hidden_dim)
+            self.classifier = nn.Sequential(
+                nn.Linear(self.descriptor_dim, hidden),
+                nn.GELU(),
+                nn.Dropout(float(classifier_dropout)),
+                nn.Linear(hidden, int(num_classes)),
+            )
+        else:
+            raise ValueError(f"Unsupported classifier_mode: {self.classifier_mode}")
         self.register_buffer(
             "clip_mean",
             torch.tensor(CLIP_MEAN, dtype=torch.float32).reshape(1, 3, 1, 1),
@@ -352,17 +412,29 @@ class CompactOpticalImageNetStudent(nn.Module):
             persistent=False,
         )
 
-    def load_source(self, checkpoint: Path, expected_sha256: str) -> dict[str, Any]:
+    def load_source(
+        self,
+        checkpoint: Path,
+        expected_sha256: str,
+        *,
+        load_mode: str = "strict",
+    ) -> dict[str, Any]:
         actual = sha256_file(checkpoint)
         if actual != expected_sha256:
             raise RuntimeError(
                 f"P05 source checksum mismatch: expected {expected_sha256}, got {actual}"
             )
         payload = torch.load(checkpoint, map_location="cpu", weights_only=False)
-        state = payload.get("model", payload)
-        if any(str(key).startswith("module.") for key in state):
-            state = {str(key).removeprefix("module."): value for key, value in state.items()}
-        self.encoder.load_state_dict(state, strict=True)
+        if load_mode == "strict":
+            state = payload.get("model", payload)
+            if any(str(key).startswith("module.") for key in state):
+                state = {
+                    str(key).removeprefix("module."): value
+                    for key, value in state.items()
+                }
+            self.encoder.load_state_dict(state, strict=True)
+        elif load_mode != "integrity_only":
+            raise ValueError(f"Unsupported source checkpoint load mode: {load_mode}")
         self.encoder.head = nn.Identity()
         self.encoder.configure_feedback("bp")
         return {
@@ -370,13 +442,18 @@ class CompactOpticalImageNetStudent(nn.Module):
             "sha256": actual,
             "selected_epoch": payload.get("selected_epoch"),
             "best_validation_accuracy": payload.get("best_validation_accuracy"),
+            "load_mode": load_mode,
         }
 
     def denormalize_clip_input(self, images: torch.Tensor) -> torch.Tensor:
         return (images.float() * self.clip_std + self.clip_mean).clamp(0.0, 1.0)
 
     def load_pretraining_checkpoint(
-        self, checkpoint: Path, expected_sha256: str
+        self,
+        checkpoint: Path,
+        expected_sha256: str,
+        *,
+        load_mode: str = "strict",
     ) -> dict[str, Any]:
         actual = sha256_file(checkpoint)
         if actual != expected_sha256:
@@ -387,7 +464,156 @@ class CompactOpticalImageNetStudent(nn.Module):
         state = payload.get("model", payload)
         if any(str(key).startswith("module.") for key in state):
             state = {str(key).removeprefix("module."): value for key, value in state.items()}
-        self.load_state_dict(state, strict=True)
+        if load_mode == "strict":
+            self.load_state_dict(state, strict=True)
+            load_report = {
+                "mode": "strict",
+                "loaded_tensors": len(state),
+                "missing_keys": [],
+                "shape_mismatches": {},
+                "unexpected_keys": [],
+            }
+        elif load_mode == "compatible":
+            current = self.state_dict()
+            compatible = {
+                key: value
+                for key, value in state.items()
+                if key in current and tuple(value.shape) == tuple(current[key].shape)
+            }
+            shape_mismatches = {
+                key: {
+                    "checkpoint": list(value.shape),
+                    "model": list(current[key].shape),
+                }
+                for key, value in state.items()
+                if key in current and tuple(value.shape) != tuple(current[key].shape)
+            }
+            missing = sorted(set(current) - set(compatible))
+            encoder_missing = [key for key in missing if key.startswith("encoder.")]
+            if encoder_missing:
+                raise RuntimeError(
+                    "Compatible P06 load must restore the complete optical encoder; "
+                    f"missing {encoder_missing[:5]}"
+                )
+            self.load_state_dict(compatible, strict=False)
+            load_report = {
+                "mode": "compatible",
+                "loaded_tensors": len(compatible),
+                "missing_keys": missing,
+                "shape_mismatches": shape_mismatches,
+                "unexpected_keys": sorted(set(state) - set(current)),
+            }
+        elif load_mode == "expanded":
+            current = self.state_dict()
+            source_stage_indices = sorted(
+                {
+                    int(key.split(".")[2])
+                    for key in state
+                    if key.startswith("encoder.stages.")
+                    and key.split(".")[2].isdigit()
+                }
+            )
+            if not source_stage_indices or source_stage_indices != list(
+                range(len(source_stage_indices))
+            ):
+                raise RuntimeError("Expanded P06 load requires contiguous source stages")
+            source_stage_count = len(source_stage_indices)
+            target_stage_count = len(self.encoder.stages)
+            expanded: dict[str, torch.Tensor] = {}
+            stage_mapping: list[dict[str, float | int]] = []
+
+            def adapt_stage_tensor(
+                value: torch.Tensor,
+                target: torch.Tensor,
+                suffix: str,
+            ) -> torch.Tensor | None:
+                if tuple(value.shape) == tuple(target.shape):
+                    return value
+                if (
+                    suffix == "raw_phase"
+                    and value.ndim == 3
+                    and target.ndim == 3
+                    and value.shape[0] == target.shape[0]
+                ):
+                    return F.interpolate(
+                        value.float().unsqueeze(0),
+                        size=target.shape[-2:],
+                        mode="bicubic",
+                        align_corners=False,
+                    ).squeeze(0).to(dtype=target.dtype)
+                return None
+
+            for target_index in range(target_stage_count):
+                position = (
+                    0.0
+                    if target_stage_count == 1
+                    else target_index
+                    * (source_stage_count - 1)
+                    / (target_stage_count - 1)
+                )
+                lower = int(math.floor(position))
+                upper = int(math.ceil(position))
+                weight = float(position - lower)
+                stage_mapping.append(
+                    {
+                        "target": target_index,
+                        "source_lower": lower,
+                        "source_upper": upper,
+                        "upper_weight": weight,
+                    }
+                )
+                prefix = f"encoder.stages.{target_index}."
+                for key, target in current.items():
+                    if not key.startswith(prefix):
+                        continue
+                    suffix = key[len(prefix) :]
+                    if suffix in {"propagator.transfer_function", "random_phase"}:
+                        continue
+                    lower_key = f"encoder.stages.{lower}.{suffix}"
+                    upper_key = f"encoder.stages.{upper}.{suffix}"
+                    if lower_key not in state or upper_key not in state:
+                        continue
+                    lower_value = adapt_stage_tensor(state[lower_key], target, suffix)
+                    upper_value = adapt_stage_tensor(state[upper_key], target, suffix)
+                    if lower_value is None or upper_value is None:
+                        continue
+                    if weight == 0.0 or not torch.is_floating_point(lower_value):
+                        expanded[key] = lower_value
+                    else:
+                        expanded[key] = torch.lerp(
+                            lower_value.float(), upper_value.float(), weight
+                        ).to(dtype=target.dtype)
+
+            for key, value in state.items():
+                if key.startswith("encoder.stages."):
+                    continue
+                if key in current and tuple(value.shape) == tuple(current[key].shape):
+                    expanded[key] = value
+
+            parameter_names = set(dict(self.named_parameters()))
+            missing_trainable_encoder = sorted(
+                key
+                for key in parameter_names
+                if key.startswith("encoder.") and key not in expanded
+            )
+            if missing_trainable_encoder:
+                raise RuntimeError(
+                    "Expanded P06 load did not initialise all trainable encoder tensors; "
+                    f"missing {missing_trainable_encoder[:5]}"
+                )
+            self.load_state_dict(expanded, strict=False)
+            load_report = {
+                "mode": "expanded",
+                "loaded_tensors": len(expanded),
+                "source_stage_count": source_stage_count,
+                "target_stage_count": target_stage_count,
+                "stage_mapping": stage_mapping,
+                "missing_keys": sorted(set(current) - set(expanded)),
+                "shape_mismatches": {},
+                "unexpected_keys": sorted(set(state) - set(current)),
+            }
+        else:
+            raise ValueError(f"Unsupported checkpoint load mode: {load_mode}")
         self.encoder.configure_feedback("bp")
         return {
             "path": str(checkpoint),
@@ -395,6 +621,7 @@ class CompactOpticalImageNetStudent(nn.Module):
             "epoch": payload.get("epoch"),
             "best_validation_top1": payload.get("best_validation_top1"),
             "settings_digest": payload.get("settings_digest"),
+            "load": load_report,
         }
 
     def forward(
@@ -420,7 +647,10 @@ class CompactOpticalImageNetStudent(nn.Module):
         embedding = F.normalize(projected.float(), dim=-1)
         # CE receives the unnormalised feature so its logit scale is not
         # artificially capped; CLIP cosine/KD use the unit embedding.
-        logits = self.classifier(projected)
+        classifier_input = (
+            projected if self.classifier_mode == "projected_linear" else descriptor
+        )
+        logits = self.classifier(classifier_input)
         return logits, embedding, descriptor
 
     def parameter_report(self) -> dict[str, Any]:
@@ -437,6 +667,7 @@ class CompactOpticalImageNetStudent(nn.Module):
             "pretraining_head_parameters": head,
             "total_trainable_parameters": sum(parameter.numel() for parameter in self.parameters()),
             "descriptor_dim": self.descriptor_dim,
+            "classifier_mode": self.classifier_mode,
             "selected_stage_indices_zero_based": list(self.selected_stage_indices),
             "selected_stage_numbers": [index + 1 for index in self.selected_stage_indices],
             "optical_gates": self.encoder.optical_weights(),
@@ -919,14 +1150,23 @@ def run(settings: P06Settings, context: DistributedContext, *, resume: bool) -> 
         projection_dim=settings.model.projection_dim,
         num_classes=settings.model.num_classes,
         source_num_classes=architecture.num_classes,
+        classifier_mode=settings.model.classifier_mode,
+        classifier_hidden_dim=settings.model.classifier_hidden_dim,
+        classifier_dropout=settings.model.classifier_dropout,
     )
-    source_report = model.load_source(settings.source_checkpoint, settings.source_checkpoint_sha256)
+    source_report = model.load_source(
+        settings.source_checkpoint,
+        settings.source_checkpoint_sha256,
+        load_mode=settings.source_checkpoint_load_mode,
+    )
     initial_report = None
     if settings.initial_checkpoint is not None:
         if settings.initial_checkpoint_sha256 is None:
             raise RuntimeError("Missing checksum for P06 initial checkpoint")
         initial_report = model.load_pretraining_checkpoint(
-            settings.initial_checkpoint, settings.initial_checkpoint_sha256
+            settings.initial_checkpoint,
+            settings.initial_checkpoint_sha256,
+            load_mode=settings.initial_checkpoint_load_mode,
         )
     model.to(context.device)
     if context.world_size > 1:
