@@ -160,3 +160,75 @@ language_global ← checkpoints/after_language_expert.pt
 configs/release/caltech101_four_layer_optical_joint.yaml
 --scale-factor 2
 ```
+
+## 6. 快速模式：只实测第四层 Language global
+
+这个模式不需要采集前三层。Vision expert、Vision global 和 Language expert 使用已训练
+checkpoint 的仿真输出，服务器直接生成第四层的理论振幅输入；实验中只播放第四层输入
+和 `language_global.bmp`。采回 CCD 后，只有最后一个 Language 电子 Mixer、第四层 CCD
+readout/output adapter、第四层融合门、输出归一化和64维检索头参与微调，四组 phase、
+router、前三层及 Qwen 主体保持冻结。
+
+服务器导出：
+
+```bash
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval.hardware_bridge --config experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/configs/release/caltech101_four_layer_optical_joint_17um_strong_phase.yaml --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/runs/caltech101_four_layer_moe4_joint_17um_strong_phase/ema_best_train_loss_checkpoint.pt --session-dir experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/hardware_sessions/quick_language_global_17um_strong --stage language_global --phase export --upstream-source simulation
+```
+
+把整个 `04_language_global` 目录传到实验室电脑，重建振幅 SLM BMP：
+
+```powershell
+$STAGE = "experiments\qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval\hardware_sessions\quick_language_global_17um_strong\04_language_global"
+python -m experiments.hardware_sdk.workflows.reconstruct_slm --stage-dir $STAGE --payload amplitude
+```
+
+加载本层相位文件：
+
+```text
+$STAGE\phase_to_play\language_global.bmp
+```
+
+填写 `tucam_meadowlark_1024_windows.yaml` 中的相机 ROI 和正确 LUT 后，先做预检和3帧
+试采：
+
+```powershell
+python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\hardware_sdk\configs\tucam_meadowlark_1024_windows.yaml --input-dir "$STAGE\amplitude_to_play" --output-dir "$STAGE\ccd_captured" --phase-mask "$STAGE\phase_to_play\language_global.bmp" --validate-only
+python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\hardware_sdk\configs\tucam_meadowlark_1024_windows.yaml --input-dir "$STAGE\amplitude_to_play" --output-dir "$STAGE\ccd_captured" --phase-mask "$STAGE\phase_to_play\language_global.bmp" --limit 3 --clear-output
+```
+
+确认3帧后，移除 `--limit 3` 并重新使用 `--clear-output` 采集全部2,855张。把同名
+478×478 uint8 PNG 上传回服务器的 `04_language_global/ccd_captured/`，然后运行：
+
+```bash
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval.hardware_bridge --config experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/configs/release/caltech101_four_layer_optical_joint_17um_strong_phase.yaml --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/runs/caltech101_four_layer_moe4_joint_17um_strong_phase/ema_best_train_loss_checkpoint.pt --session-dir experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/hardware_sessions/quick_language_global_17um_strong --stage language_global --phase finetune --upstream-source simulation --epochs 20
+```
+
+结果位于：
+
+```text
+hardware_sessions/quick_language_global_17um_strong/
+├── 04_language_global/finetune_metrics.json
+└── checkpoints/after_language_global.pt
+```
+
+`--upstream-source simulation` 必须在导出和微调两条命令中同时保留；去掉它会回到
+完整四层顺序实验，并要求前三层实测 CCD 文件存在。
+
+## 7. Python 环境
+
+服务器模型和实验室硬件代码的统一可复现环境已写入：
+
+```text
+environment_server_and_lab.yml
+```
+
+安装与激活：
+
+```bash
+conda env create -f experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/environment_server_and_lab.yml
+conda activate opticsmoe-four-layer
+```
+
+实验室 Windows 必须另外安装64位 Meadowlark Blink Plus PCIe 驱动/runtime 和
+TUCam/Mosaic 驱动；这些是系统驱动，不能由 conda/pip 安装。正式采集前运行
+`--validate-only` 检查 DLL、LUT、ROI 和全部 BMP。

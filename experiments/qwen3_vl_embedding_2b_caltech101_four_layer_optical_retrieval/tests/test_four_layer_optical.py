@@ -11,7 +11,11 @@ from ..optical_blocks import (
     LanguageTwoBlockOpticalCore,
     VisionTwoBlockOpticalCore,
 )
-from ..hardware_bridge import _downstream_optimizer, _downstream_parameters
+from ..hardware_bridge import (
+    _downstream_optimizer,
+    _downstream_parameters,
+    _measurement_plan,
+)
 from ..settings import load_settings
 
 
@@ -108,6 +112,26 @@ def test_strong_phase_release_uses_focus_epochs_and_stronger_fusion() -> None:
     assert settings.optical_fusion_initial == 0.15
     assert settings.output_dir.name == (
         "caltech101_four_layer_moe4_joint_17um_strong_phase"
+    )
+
+
+def test_quick_final_stage_uses_only_final_measured_ccd() -> None:
+    assert _measurement_plan(
+        "language_global", "simulation", include_current=False
+    ) == ()
+    assert _measurement_plan(
+        "language_global", "simulation", include_current=True
+    ) == ("language_global",)
+    assert _measurement_plan(
+        "language_global", "measured", include_current=False
+    ) == ("vision_expert", "vision_global", "language_expert")
+    assert _measurement_plan(
+        "language_global", "measured", include_current=True
+    ) == (
+        "vision_expert",
+        "vision_global",
+        "language_expert",
+        "language_global",
     )
 
 

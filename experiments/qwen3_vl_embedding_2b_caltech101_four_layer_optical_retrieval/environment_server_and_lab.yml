@@ -1,0 +1,32 @@
+# Reproducible full environment for both this Qwen optical experiment and the
+# Windows Meadowlark amplitude-SLM + TUCam acquisition tools.
+#
+# Create:   conda env create -f environment_server_and_lab.yml
+# Activate: conda activate opticsmoe-four-layer
+#
+# Python packages do not install the physical-device drivers.  On the lab PC,
+# separately install the 64-bit Meadowlark Blink Plus PCIe driver/runtime and
+# the TUCam/Mosaic camera driver before running --validate-only.
+
+name: opticsmoe-four-layer
+channels:
+  - defaults
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+      - --extra-index-url https://download.pytorch.org/whl/cu124
+      - torch==2.6.0+cu124
+      - torchvision==0.21.0+cu124
+      - transformers==4.57.3
+      - accelerate==1.14.0
+      - datasets==2.21.0
+      - safetensors==0.8.0
+      - tokenizers==0.22.2
+      - numpy==1.26.4
+      - Pillow==12.2.0
+      - PyYAML==6.0.2
+      - matplotlib==3.8.4
+      - scipy==1.17.1
+      - timm==1.0.27
+      - pytest==8.3.5

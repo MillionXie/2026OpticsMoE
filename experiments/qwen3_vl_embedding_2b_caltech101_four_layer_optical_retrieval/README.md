@@ -55,3 +55,8 @@ float32 registered CCD 或 simulation CCD。新输入 SLM 是 `1024×1024 @ 17 �
 接近像素级重合。
 
 详见 [DATA_PIPELINE.md](DATA_PIPELINE.md) 和 [RUN_COMMANDS.md](RUN_COMMANDS.md)。
+
+硬件桥还提供快速单层模式：前三个光学阶段使用 checkpoint 中的仿真，直接导出
+`language_global` 的理论输入和第四张 phase mask；采集该层 CCD 后，只把第四层相关
+电子 Mixer、CCD readout/output adapter、融合门、输出归一化和检索 readout 解冻。
+该模式用于快速估计一层真实光路造成的性能下降，不代表四层全部实测结果。

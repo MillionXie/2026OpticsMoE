@@ -56,6 +56,7 @@ STAGES = (
     "language_expert",
     "language_global",
 )
+UPSTREAM_SOURCES = ("measured", "simulation")
 
 
 def _replacement_modules(replacement: Any) -> list[torch.nn.Module]:
@@ -156,22 +157,44 @@ def _load_stage_ccd(
     )
 
 
+def _measurement_plan(
+    stage: str,
+    upstream_source: str,
+    *,
+    include_current: bool,
+) -> tuple[str, ...]:
+    if upstream_source not in UPSTREAM_SOURCES:
+        raise ValueError(
+            f"upstream_source must be one of {UPSTREAM_SOURCES}; "
+            f"got {upstream_source!r}"
+        )
+    stage_index = STAGES.index(stage)
+    if upstream_source == "measured":
+        stop = stage_index + (1 if include_current else 0)
+        return tuple(STAGES[:stop])
+    return (stage,) if include_current else ()
+
+
 def _install_measurements(
     replacement: Any,
     settings: Any,
     session_dir: Path,
     keys: list[str],
     *,
-    through_stage: int,
+    measured_stages: tuple[str, ...],
 ) -> None:
+    unknown = set(measured_stages).difference(STAGES)
+    if unknown:
+        raise ValueError(f"Unknown measured optical stages: {sorted(unknown)}")
+    selected = set(measured_stages)
     tensors: dict[str, torch.Tensor | None] = {}
     device = next(replacement.vision_surrogate.parameters()).device
-    for index, stage in enumerate(STAGES):
+    for stage in STAGES:
         tensors[stage] = (
             torch.stack(
                 [_load_stage_ccd(settings, session_dir, stage, key) for key in keys]
             ).to(device)
-            if index <= through_stage
+            if stage in selected
             else None
         )
     replacement.vision_surrogate.core.optical_branch.set_measured_ccd(
@@ -254,9 +277,16 @@ def _phase_for_stage(replacement: Any, stage: str, settings: Any) -> np.ndarray:
 
 @torch.no_grad()
 def export_stage(
-    settings: Any, checkpoint: Path, session_dir: Path, stage: str
+    settings: Any,
+    checkpoint: Path,
+    session_dir: Path,
+    stage: str,
+    upstream_source: str = "measured",
 ) -> None:
     stage_index = STAGES.index(stage)
+    measured_upstream_stages = _measurement_plan(
+        stage, upstream_source, include_current=False
+    )
     bundle = prepare_caltech101_subset(settings, persist=True)
     samples = _samples(bundle)
     loaded, replacement, readout = _load_model(settings, checkpoint)
@@ -313,7 +343,7 @@ def export_stage(
                 settings,
                 session_dir,
                 keys,
-                through_stage=stage_index - 1,
+                measured_stages=measured_upstream_stages,
             )
             _forward_samples(loaded, replacement, readout, settings, batch)
             amplitude = _amplitude_for_stage(
@@ -350,8 +380,14 @@ def export_stage(
     write_json(
         destination / "transport_spec.json",
         {
-            "schema_version": 1,
+            "schema_version": 2,
             "stage": stage,
+            "upstream_source": upstream_source,
+            "measured_upstream_stages": list(measured_upstream_stages),
+            "simulated_upstream_stages": [
+                name for name in STAGES[:stage_index]
+                if name not in measured_upstream_stages
+            ],
             "checkpoint": str(checkpoint),
             "samples": len(samples),
             "compact_amplitude": "478x478 uint8 PNG in model coordinates",
@@ -548,14 +584,14 @@ def _batch_embeddings(
     settings: Any,
     session_dir: Path,
     samples: list[Any],
-    through_stage: int,
+    measured_stages: tuple[str, ...],
 ) -> torch.Tensor:
     _install_measurements(
         replacement,
         settings,
         session_dir,
         [_key(sample) for sample in samples],
-        through_stage=through_stage,
+        measured_stages=measured_stages,
     )
     return _forward_samples(loaded, replacement, readout, settings, samples)
 
@@ -588,7 +624,7 @@ def _hardware_embeddings(
     settings: Any,
     session_dir: Path,
     samples: list[Any],
-    through_stage: int,
+    measured_stages: tuple[str, ...],
 ) -> torch.Tensor:
     chunks = []
     _set_replacement_eval(replacement)
@@ -603,7 +639,7 @@ def _hardware_embeddings(
                 settings,
                 session_dir,
                 samples[start : start + 10],
-                through_stage,
+                measured_stages,
             ).detach().cpu()
         )
     return torch.cat(chunks, dim=0)
@@ -615,8 +651,11 @@ def finetune_stage(
     session_dir: Path,
     stage: str,
     epochs: int,
+    upstream_source: str = "measured",
 ) -> None:
-    stage_index = STAGES.index(stage)
+    measured_stages = _measurement_plan(
+        stage, upstream_source, include_current=True
+    )
     bundle = prepare_caltech101_subset(settings, persist=True)
     samples = _samples(bundle)
     loaded, replacement, readout = _load_model(settings, checkpoint)
@@ -649,7 +688,7 @@ def finetune_stage(
                     settings,
                     session_dir,
                     batch,
-                    stage_index,
+                    measured_stages,
                 )
                 labels = torch.tensor(
                     [sample.sku_index for sample in batch], device=embeddings.device
@@ -692,8 +731,15 @@ def finetune_stage(
                     "source_checkpoint": str(checkpoint),
                     "epoch": epoch,
                     "train_loss": average,
-                    "measured_stages": list(STAGES[: stage_index + 1]),
-                    "rule": "only modules downstream of the newest measured CCD are trainable",
+                    "measured_stages": list(measured_stages),
+                    "upstream_source": upstream_source,
+                    "rule": (
+                        "only the selected measured stage and its downstream "
+                        "electronic modules are adapted; all earlier optical "
+                        "stages remain simulated"
+                        if upstream_source == "simulation"
+                        else "only modules downstream of the newest measured CCD are trainable"
+                    ),
                 }
                 torch.save(payload, output)
         load_checkpoint(output, replacement, readout)
@@ -704,7 +750,7 @@ def finetune_stage(
             settings,
             session_dir,
             list(bundle.test_samples),
-            stage_index,
+            measured_stages,
         )
         gallery_embeddings = _hardware_embeddings(
             loaded,
@@ -713,7 +759,7 @@ def finetune_stage(
             settings,
             session_dir,
             list(bundle.gallery_samples),
-            stage_index,
+            measured_stages,
         )
         evaluation = evaluate_embeddings(
             query_embeddings,
@@ -730,7 +776,8 @@ def finetune_stage(
                 **evaluation.metrics,
                 "stage": stage,
                 "checkpoint": str(output),
-                "measured_stages": list(STAGES[: stage_index + 1]),
+                "measured_stages": list(measured_stages),
+                "upstream_source": upstream_source,
                 "background_subtraction": False,
             },
         )
@@ -754,16 +801,37 @@ def main() -> int:
     parser.add_argument("--stage", choices=STAGES, required=True)
     parser.add_argument("--phase", choices=("export", "finetune"), required=True)
     parser.add_argument("--epochs", type=int, default=20)
+    parser.add_argument(
+        "--upstream-source",
+        choices=UPSTREAM_SOURCES,
+        default="measured",
+        help=(
+            "measured requires the preceding stage CCD folders; simulation "
+            "runs all preceding optical stages in the trained simulator and "
+            "is the fast single-stage hardware path"
+        ),
+    )
     args = parser.parse_args()
     settings = load_settings(args.config)
     seed_everything(settings.random_seed)
     checkpoint = Path(args.checkpoint).expanduser().resolve()
     session_dir = Path(args.session_dir).expanduser().resolve()
     if args.phase == "export":
-        export_stage(settings, checkpoint, session_dir, args.stage)
+        export_stage(
+            settings,
+            checkpoint,
+            session_dir,
+            args.stage,
+            upstream_source=args.upstream_source,
+        )
     else:
         finetune_stage(
-            settings, checkpoint, session_dir, args.stage, args.epochs
+            settings,
+            checkpoint,
+            session_dir,
+            args.stage,
+            args.epochs,
+            upstream_source=args.upstream_source,
         )
     return 0
 
