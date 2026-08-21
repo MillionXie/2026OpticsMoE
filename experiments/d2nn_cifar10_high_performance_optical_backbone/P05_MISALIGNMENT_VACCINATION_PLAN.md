@@ -90,3 +90,25 @@ nohup env GLOBAL_GPU_INDEX=3 LAYERWISE_GPU_INDEX=4 \
 | epoch 3，训练上限 0.906 px | 70.70% | 47.88 / 62.00 / 51.60 | 40.70 / 21.34 / 25.28 | **45.64%** | **21.34%** |
 
 到 epoch 3，七环境平均相对 source 提高 12.58 pp，已经通过平均性能 +10 pp 的首轮门槛；理想性能下降 2.70 pp，尚处预先声明的 3 pp 容忍线内。所有六个错位环境均相对 source 改善；最差环境提高 7.74 pp，距离预设 +15 pp 门槛仍有差距，当前最弱项是 layerwise 1 pixel。训练已进入 epoch 4，并继续按既定课程扩到 2 pixel，不能用以上中途结果替代 validation-best 最终汇总。
+
+## 9. 最终结果与 held-out 四组校准
+
+20 epochs 全部完成，validation-best 为 epoch 18：
+
+| checkpoint | ideal | global 0.5/1/2 px | layerwise 0.5/1/2 px | 七环境平均 | 最差 |
+|---|---:|---:|---:|---:|---:|
+| source / epoch 0 | 73.40% | 13.74 / 59.90 / 42.22 | 13.60 / 14.36 / 14.18 | 33.06% | 13.60% |
+| vaccinated epoch 18 | 72.84% | 60.62 / 70.88 / 67.48 | 53.72 / 50.70 / 50.36 | **60.94%** | **50.36%** |
+
+七环境平均提高 27.89 pp，最差环境提高 36.76 pp，理想精度仅下降 0.56 pp，三个预设门槛全部通过。这说明连续随机错位没有只记忆少数离散方向，也没有用明显牺牲理想性能换取鲁棒性。
+
+在疫苗化训练未见过的 deployment seed 9301 上，四组 10-epoch 适配结果为：
+
+| held-out 固定偏移 | NoFT | BP-current | FA-pretrained | FA-random |
+|---|---:|---:|---:|---:|
+| global 1 px | 71.76% | 74.48% | 73.94% | 73.18% |
+| global 2 px | 66.86% | 74.14% | 73.84% | 72.50% |
+| layerwise 1 px | 55.50% | 72.80% | 71.08% | 70.18% |
+| layerwise 2 px | 48.78% | 72.10% | 70.54% | 69.94% |
+
+FA-pretrained 在四个条件下都优于 FA-random，并距离 BP 0.30--1.72 pp；疫苗化还把适配前下限显著提高。P05 因此形成了“部署前扩大工作区 + 部署后用旧算子校准”的完整结果。下一步不继续枚举 CIFAR 偏移，而是使用该 epoch-18 checkpoint 初始化 ImageNet 通用 backbone，见 `P06_GENERAL_OPTICAL_BACKBONE_PLAN.md`。

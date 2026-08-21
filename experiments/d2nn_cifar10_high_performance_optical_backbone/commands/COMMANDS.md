@@ -264,3 +264,10 @@ nohup env GLOBAL_GPU_INDEX=3 LAYERWISE_GPU_INDEX=4 \
   bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/49_wait_p05_and_run_adaptation.sh \
   > experiments/d2nn_cifar10_high_performance_optical_backbone/logs/p05_pipeline.log 2>&1 &
 ```
+
+Before P06 ImageNet pretraining, audit the existing full ImageNet/CLIP cache and all three proposed
+transfer datasets. This is CPU-only and writes one reproducible JSON manifest:
+
+```bash
+bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/50_audit_p06_general_backbone_assets.sh
+```

@@ -102,6 +102,24 @@ def test_forward_backward_and_ablation_shapes() -> None:
     assert model(images, ablation="long_skip_off").shape == (2, 10)
 
 
+def test_forward_features_are_the_head_independent_backbone_contract() -> None:
+    settings = load_settings(CONFIG)
+    optical = replace(
+        settings.optical,
+        canvas_size=16,
+        pool_size=2,
+        hidden_dim=16,
+        dropout=0.0,
+    )
+    model = OpticalClassifier(optical, num_classes=10).eval()
+    images = torch.rand(2, 3, 32, 32)
+    final, stages = model.forward_features(images)
+    assert final.shape == (2, 3, 16, 16)
+    assert len(stages) == optical.num_stages
+    torch.testing.assert_close(final, stages[-1])
+    torch.testing.assert_close(model(images), model.head(final))
+
+
 def test_conv_readout_and_long_skip_forward_backward() -> None:
     settings = load_settings(CONFIG)
     optical = replace(

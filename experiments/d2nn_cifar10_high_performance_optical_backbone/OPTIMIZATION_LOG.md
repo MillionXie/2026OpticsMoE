@@ -340,3 +340,11 @@ P04-S2 显示原 P02 BP source 在 0.5--2 pixel 固定错位下零样本只有 1
 所有配置、指标、门槛和命令见 `P05_MISALIGNMENT_VACCINATION_PLAN.md`。这一轮的首要结果不是某个网络变体胜出，而是零样本错位工作区能否扩大、以及预训练反馈算子能否在残余校准中保持接近 BP 且优于随机反馈。
 
 服务器动作记录：提交 `43fa9b61` 同步后 22 个测试通过，真实 checkpoint 一 batch smoke 通过；物理 GPU 4 已运行 command 45，CPU watcher 将在结束后自动使用 GPU 3/4 运行唯一四组 held-out 校准。epoch 3 的七环境平均由 source 33.06% 提高到 45.64%，最差环境由 13.60% 提高到 21.34%，理想 validation 从 73.40% 降到 70.70%；这是运行中检查点，完整逐条件值和限制见 P05 计划第 8 节。
+
+P05 最终 validation-best 为 epoch 18：七环境平均 60.94%，相对 source 提高 27.89 pp；最差环境 50.36%，提高 36.76 pp；理想 validation 72.84%，只下降 0.56 pp。held-out seed 9301 的 1/2 pixel global/layerwise 四组适配也全部完成：FA-pretrained 距离 BP 为 0.30--1.72 pp，并在四条件全部优于 FA-random。完整表见 P05 计划第 9 节。
+
+## P06/P07：ImageNet 通用 backbone 与跨任务迁移
+
+2026-08-21 完成服务器资产和已有路线审计。ImageNet-1K/CLIP 4-view cache 完整；Caltech-101、KADID-10k、ISIC2016 均可直接使用。已有 792×792 OpticalMixerMoE9 在 epoch 8 的 ImageNet validation Top-1 为 6.59%，单 epoch 约 3--5.4 小时，因此不继续把重型 MoE 当主线。
+
+新主线固定从 P05 epoch-18 checkpoint 初始化紧凑 128×128 八层骨干，增加无参数 stage 2/4/6/8 特征导出，用 ImageNet CE + CLIP cosine/KL 训练通用表示，再在分类/检索、IQA 回归和医学分割三种输出形态上运行唯一四组。新增电子 residual 仍为 0；预训练 projector/classifier 约 0.71M 且下游时丢弃。完整阶段、门槛、数据防泄漏规则和计算预算见 `P06_GENERAL_OPTICAL_BACKBONE_PLAN.md`。

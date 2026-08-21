@@ -136,6 +136,36 @@ class OpticalClassifier(nn.Module):
         deployment: OpticalDeploymentState | None = None,
         return_diagnostics: bool = False,
     ):
+        features = self.forward_features(
+            images,
+            ablation=ablation,
+            deployment=deployment,
+            return_diagnostics=return_diagnostics,
+        )
+        if return_diagnostics:
+            amplitude, _, diagnostics = features
+        else:
+            amplitude, _ = features
+            diagnostics = []
+        logits = self.head(amplitude)
+        return (logits, diagnostics) if return_diagnostics else logits
+
+    def forward_features(
+        self,
+        images: torch.Tensor,
+        *,
+        ablation: Ablation = "normal",
+        deployment: OpticalDeploymentState | None = None,
+        return_diagnostics: bool = False,
+    ):
+        """Return the final amplitude and all stage maps without applying a task head.
+
+        The stage tuple is the reusable backbone contract.  In particular,
+        downstream global heads may pool stages 2/4/6/8, while dense heads can
+        retain their spatial maps.  This method owns no additional parameters,
+        so every existing classifier checkpoint remains strictly compatible.
+        """
+
         if ablation not in {
             "normal",
             "optical_off",
@@ -205,8 +235,9 @@ class OpticalClassifier(nn.Module):
             else:
                 amplitude = result
             stage_outputs.append(amplitude)
-        logits = self.head(amplitude)
-        return (logits, diagnostics) if return_diagnostics else logits
+        if return_diagnostics:
+            return amplitude, tuple(stage_outputs), diagnostics
+        return amplitude, tuple(stage_outputs)
 
     def phase_parameters(self):
         for stage in self.stages:
