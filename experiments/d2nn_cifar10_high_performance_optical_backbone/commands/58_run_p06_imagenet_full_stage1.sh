@@ -2,7 +2,12 @@
 set -euo pipefail
 source "$(dirname "$0")/_common.sh"
 
-PHYSICAL_GPU_INDICES="${PHYSICAL_GPU_INDICES:-2,4,5}"
+# GPUs 2 and 5 are both RTX 3090s and passed the cross-NUMA NCCL smoke test.
+# Keep P2P/IB disabled by default on this host: the initial heterogeneous
+# 2/4/5 launch stalled in the first DDP update while GPU 4 was shared.
+PHYSICAL_GPU_INDICES="${PHYSICAL_GPU_INDICES:-2,5}"
+export NCCL_P2P_DISABLE="${NCCL_P2P_DISABLE:-1}"
+export NCCL_IB_DISABLE="${NCCL_IB_DISABLE:-1}"
 IFS=',' read -r -a gpu_indices <<< "${PHYSICAL_GPU_INDICES}"
 gpu_uuids=()
 for gpu_index in "${gpu_indices[@]}"; do

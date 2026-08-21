@@ -455,5 +455,20 @@ P06-F1 因此不是放宽门槛，而是扩大数据支持集：严格从 S3 epo
 1,281,167 张 ImageNet train 图，每图每 epoch 轮换四个 cache view 中的一个；验证改为完整
 50,000 张。保留 S3 损失与较低 LR，重启 1,000-step warm-up 后运行 10 joint-BP epochs；同样先
 建立 full-validation epoch-0 best，只有更高 Top-1 才替换。command 58/59 默认使用物理 GPU
-2/4/5 三卡、有效 batch 96。该阶段的停止标准仍为 Top-1 10%、cosine 0.65、gate 0.5 和光学
+2/5 双卡、有效 batch 64。该阶段的停止标准仍为 Top-1 10%、cosine 0.65、gate 0.5 和光学
 破坏下降 30%，没有因 100k 失败而降低标准。
+
+P06-F1 首次于 2026-08-21 13:50 在 GPU 2/4/5 启动。完整 50k validation 的保护性起点为
+Top-1 5.05%、Top-5 14.18%、student/teacher zero-shot 1.78%/64.62%、cosine 0.7068；但三卡
+在首个反向批次之后不再前进：GPU 2/4 持续执行而 rank 2 在 GPU 5 等待，且 GPU 4 同时存在
+其他用户训练和本项目硬件导出进程。该次没有产生 optimizer checkpoint，torchrun PID 1766442
+经命令行核验后于 14:00 收到 TERM，全部子进程退出，未影响 S3 immutable best。
+
+随后在真正空闲且同为 RTX 3090 的 GPU 2/5 上，以 `NCCL_P2P_DISABLE=1`、
+`NCCL_IB_DISABLE=1` 完成双 rank 通信 smoke：连续 20 次 64 MiB all-reduce 数值一致，各 rank
+耗时 0.67--0.68 秒。14:00 使用 command 59 重新启动，launcher/torchrun PID 为
+1833065/1833108，rank PID 为 1833388/1833389。双卡 full-validation 起点复现为 Top-1 5.05%、
+Top-5 14.18%；batch 500/20019 在 44.9 秒到达，running loss 9.6729、Top-1 3.02%、cosine
+0.7562、phase LR 1.5e-5。仅 batch 1 的 AMP scale 从 65536 自动降至 32768，此后更新正常。
+按首 500 batch 粗估单 epoch 约 30 分钟；最终以实际 epoch 日志为准。command 58/59 的默认
+设备和 NCCL 环境已据此锁定为经过验证的 GPU 2/5 路径。
