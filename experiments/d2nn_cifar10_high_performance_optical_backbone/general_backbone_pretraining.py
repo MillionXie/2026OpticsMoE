@@ -895,7 +895,7 @@ def run(settings: P06Settings, context: DistributedContext, *, resume: bool) -> 
             device_ids=[context.local_rank],
             output_device=context.local_rank,
             broadcast_buffers=False,
-            find_unused_parameters=True,
+            find_unused_parameters=settings.training.head_warmup_epochs > 0,
         )
     optimizer = build_optimizer(unwrap(model), settings)
     steps_per_epoch = min(
@@ -933,12 +933,54 @@ def run(settings: P06Settings, context: DistributedContext, *, resume: bool) -> 
     start_epoch = 1
     best_top1 = -math.inf
     history: list[dict[str, Any]] = []
+    resumed = False
     if resume and last_path.is_file():
         start_epoch, best_top1, history = load_checkpoint(
             last_path, model, optimizer, scheduler, scaler, settings, context.device
         )
+        resumed = True
         if context.is_main:
             print(f"[resume] checkpoint={last_path} start_epoch={start_epoch}", flush=True)
+
+    # A refinement is never allowed to silently replace its source with a
+    # worse checkpoint. Evaluate and register the immutable input as epoch 0;
+    # later epochs must exceed this validation Top-1 to become best.
+    if initial_report is not None and not resumed:
+        validation_sampler.set_epoch(0)
+        baseline = evaluate(
+            model,
+            validation_loader,
+            text_prototypes,
+            clip_logit_scale,
+            settings,
+            context,
+        )
+        best_top1 = baseline["top1_accuracy"]
+        if context.is_main:
+            write_json(settings.output_dir / "metrics" / "initial_baseline.json", baseline)
+            save_checkpoint(
+                best_path,
+                model,
+                optimizer,
+                scheduler,
+                scaler,
+                epoch=0,
+                best_top1=best_top1,
+                history=history,
+                settings=settings,
+            )
+            print(
+                f"[baseline] epoch=0 val_top1={baseline['top1_accuracy']:.4f} "
+                f"val_top5={baseline['top5_accuracy']:.4f} "
+                f"student_zero={baseline['clip_zero_shot_top1']:.4f} "
+                f"teacher_zero={baseline['teacher_zero_shot_top1']:.4f}",
+                flush=True,
+            )
+        best_tensor = torch.tensor(best_top1, device=context.device)
+        if context.world_size > 1:
+            torch.distributed.broadcast(best_tensor, src=0)
+        best_top1 = float(best_tensor)
+        barrier()
 
     latest_phase_gradients = next(
         (

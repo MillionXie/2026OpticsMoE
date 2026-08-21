@@ -305,3 +305,15 @@ tail -f experiments/d2nn_cifar10_high_performance_optical_backbone/runs/p06_imag
 
 Command 54 is the foreground/resumable implementation used by command 55. It validates both the
 original P05 source and the P06-S best checkpoint by SHA-256 before allocating the training model.
+
+S2 showed that contrastive weight 1.0 was too destructive and was stopped after two epochs. The
+locked conservative continuation uses weight 0.1, lower backbone LR and an epoch-0 best fallback:
+
+```bash
+PHYSICAL_GPU_INDICES=2,4 \
+  bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/57_launch_p06_imagenet_100k_balanced_refine.sh
+
+tail -f experiments/d2nn_cifar10_high_performance_optical_backbone/runs/p06_imagenet_100k_balanced_refine/train.log
+```
+
+Command 56 is its foreground/resumable entry point.

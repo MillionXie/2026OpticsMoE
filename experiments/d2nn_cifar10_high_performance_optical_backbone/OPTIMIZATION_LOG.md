@@ -424,3 +424,15 @@ student↔teacher InfoNCE 以 0.07 temperature 强制每个 student 对应自己
 样本靠向相同均值。训练器同时新增 teacher zero-shot 指标，使 teacher 上限、student zero-shot 和
 监督 classifier Top-1 可逐 epoch 对照。精炼运行 24 个 joint-BP epochs，重新 warm up 500 steps
 并使用新的 cosine 周期；command 54/55 默认在物理 GPU 2、4 双卡运行。
+
+S2 在 GPU 2、4 上实跑两轮后按在线门槛止损。epoch 1/2 的 validation classifier Top-1 为
+3.41%/3.10%，均低于 S1 的 3.84%；student zero-shot 由 1.27% 小幅升至 1.55%/1.60%，但
+cosine 同时降到 0.620/0.550。对比损失从 3.535 降到 3.398，证明一一对应目标被优化，然而
+`contrastive_weight=1.0` 在当前低维 backbone 上过强，破坏原表征快于恢复类别结构。torchrun
+PID 1226147 经精确命令行核验后收到 TERM，两个 rank 正常退出；两轮日志/checkpoint 保留。
+
+由此新增 S3 保守精炼：始终从未被 S2 覆盖的 S1 best 开始，将 contrastive weight 降到 0.1，
+保留 cosine weight 1.0，CE 提高到 1.0；phase/residual/head LR 降为
+`3e-5/3e-5/1.5e-4`，运行 24 joint epochs。训练器现在会先在同一 10k validation 上评估初始
+checkpoint，并将它保存为 epoch-0 best；只有后续 Top-1 严格超过 3.84% 才能替换，因而精炼
+失败时最终模型也不会性能倒退。无 head warm-up 的 DDP 同时关闭 unused-parameter 图遍历。
