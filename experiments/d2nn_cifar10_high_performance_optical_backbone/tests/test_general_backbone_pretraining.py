@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import torch
 
 from experiments.optical_mlp_mixer_moe9_imagenet1k_clip_distill.datasets import (
@@ -11,6 +13,7 @@ from ..general_backbone_pretraining import (
     CompactOpticalImageNetStudent,
     SubsetEpochViewSampler,
     batch_contrastive_loss,
+    load_p06_settings,
     stratified_base_indices,
 )
 from ..settings import OpticalConfig
@@ -98,3 +101,15 @@ def test_contrastive_distillation_penalizes_collapsed_or_mismatched_features() -
     )
     assert matched < collapsed
     assert matched < mismatched
+
+
+def test_full_imagenet_config_uses_every_base_sample() -> None:
+    config = (
+        Path(__file__).resolve().parents[1]
+        / "configs"
+        / "p06_imagenet_full_stage1.yaml"
+    )
+    settings = load_p06_settings(config)
+    assert settings.training.train_samples_per_class is None
+    assert settings.training.validation_samples_per_class == 50
+    assert settings.training.epochs == 10

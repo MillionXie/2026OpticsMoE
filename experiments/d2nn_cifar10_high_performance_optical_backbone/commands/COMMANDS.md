@@ -317,3 +317,14 @@ tail -f experiments/d2nn_cifar10_high_performance_optical_backbone/runs/p06_imag
 ```
 
 Command 56 is its foreground/resumable entry point.
+
+After the 100k S3 curve plateaus, expand the same best checkpoint to every ImageNet train image and
+the complete 50k validation split. The default launch uses physical GPUs 2, 4 and 5 (effective
+batch 96); command 58 is foreground/resumable and command 59 is duplicate-safe/backgrounded:
+
+```bash
+PHYSICAL_GPU_INDICES=2,4,5 \
+  bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/59_launch_p06_imagenet_full_stage1.sh
+
+tail -f experiments/d2nn_cifar10_high_performance_optical_backbone/runs/p06_imagenet_full_stage1/train.log
+```

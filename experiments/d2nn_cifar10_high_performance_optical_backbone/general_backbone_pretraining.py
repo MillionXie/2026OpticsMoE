@@ -79,7 +79,7 @@ class P06TrainingConfig:
     seed: int
     head_warmup_epochs: int
     joint_epochs: int
-    train_samples_per_class: int
+    train_samples_per_class: int | None
     validation_samples_per_class: int
     batch_size: int
     validation_batch_size: int
@@ -199,7 +199,9 @@ def load_p06_settings(path: str | Path) -> P06Settings:
             seed=int(training_raw.get("seed", 2026)),
             head_warmup_epochs=int(training_raw.get("head_warmup_epochs", 1)),
             joint_epochs=int(training_raw.get("joint_epochs", 5)),
-            train_samples_per_class=int(training_raw.get("train_samples_per_class", 100)),
+            train_samples_per_class=_optional_int(
+                training_raw.get("train_samples_per_class", 100)
+            ),
             validation_samples_per_class=int(training_raw.get("validation_samples_per_class", 10)),
             batch_size=int(training_raw.get("batch_size", 32)),
             validation_batch_size=int(training_raw.get("validation_batch_size", 64)),
@@ -227,7 +229,10 @@ def load_p06_settings(path: str | Path) -> P06Settings:
         raise ValueError("P06 pool/projection sizes must be positive")
     if settings.training.head_warmup_epochs < 0 or settings.training.joint_epochs < 1:
         raise ValueError("P06 requires at least one joint-training epoch")
-    if settings.training.train_samples_per_class < 1 or settings.training.validation_samples_per_class < 1:
+    if (
+        settings.training.train_samples_per_class is not None
+        and settings.training.train_samples_per_class < 1
+    ) or settings.training.validation_samples_per_class < 1:
         raise ValueError("Per-class sample counts must be positive")
     if len(settings.optimizer.betas) != 2:
         raise ValueError("optimizer.betas must have two values")
@@ -839,9 +844,14 @@ def run(settings: P06Settings, context: DistributedContext, *, resume: bool) -> 
     validation_store = ClipFeatureStore("validation", bundle.validation, bundle, imagenet_settings)
     train_dataset = DistillationViewDataset(bundle.train, train_store)
     validation_dataset = DistillationViewDataset(bundle.validation, validation_store)
-    train_indices = stratified_base_indices(
-        bundle.train.targets, settings.training.train_samples_per_class, settings.training.seed
-    )
+    if settings.training.train_samples_per_class is None:
+        train_indices = list(range(bundle.train.base_sample_count))
+    else:
+        train_indices = stratified_base_indices(
+            bundle.train.targets,
+            settings.training.train_samples_per_class,
+            settings.training.seed,
+        )
     validation_indices = stratified_base_indices(
         bundle.validation.targets,
         settings.training.validation_samples_per_class,

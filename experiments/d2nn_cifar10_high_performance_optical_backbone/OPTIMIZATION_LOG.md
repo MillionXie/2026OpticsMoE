@@ -443,3 +443,17 @@ Top-1/Top-5 为 3.84%/11.80%，student/teacher zero-shot 为 1.27%/64.52%，并�
 best。epoch 1/2 Top-1 为 3.74%/3.64%，未替换 best；epoch 3 上升到 **4.03%**，Top-5
 11.67%、student zero-shot 1.40%、cosine 0.7035，首次严格超过 S1 并替换 best。epoch 4 正在
 继续运行。该在线提升只说明 S3 方向优于 S2，仍未通过 10% Top-1 的 full-ImageNet 准入门槛。
+
+S3 最终完成 24 epochs，validation-best 为 epoch 19：Top-1 **5.01%**、Top-5 14.62%、
+student zero-shot 1.70%、cosine 0.7075；best SHA-256 为
+`590eb01c55498596f4784750084cef7fd37762d67d14cd6581ffb2e65e94f8b1`。optical-off 和
+phase-random Top-1 仅 0.12%/0.11%，相对光学破坏下降 97.60%；八层 phase gradient 全部
+finite/nonzero，最小 gate 0.50023。Top-1 从 3.84% 提升 1.17 pp，说明保守精炼有效，但
+epoch 19--24 已在 4.86%--5.01% 平台且仍低于 10% 门槛，不能继续重复相同 100k subset。
+
+P06-F1 因此不是放宽门槛，而是扩大数据支持集：严格从 S3 epoch-19 best 接续，训练使用全部
+1,281,167 张 ImageNet train 图，每图每 epoch 轮换四个 cache view 中的一个；验证改为完整
+50,000 张。保留 S3 损失与较低 LR，重启 1,000-step warm-up 后运行 10 joint-BP epochs；同样先
+建立 full-validation epoch-0 best，只有更高 Top-1 才替换。command 58/59 默认使用物理 GPU
+2/4/5 三卡、有效 batch 96。该阶段的停止标准仍为 Top-1 10%、cosine 0.65、gate 0.5 和光学
+破坏下降 30%，没有因 100k 失败而降低标准。
