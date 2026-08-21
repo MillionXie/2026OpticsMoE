@@ -374,3 +374,15 @@ P05 最终 validation-best 为 epoch 18：七环境平均 60.94%，相对 source
 对应配置为 `p06_imagenet_smoke.yaml` 和 `p06_imagenet_100k_screen.yaml`；command 51 负责真实
 单卡 smoke，command 52/53 负责 GPU 3、5 双卡 DDP screen 与后台启动。服务器实测结果和首轮
 速度将在运行后追加到本节，不能用本地 Windows 的损坏 PyTorch DLL 状态代替服务器验证。
+
+首次真实 smoke 暴露并修复了两项只会在服务器数据链上出现的问题。第一，服务器已缓存全部
+ImageNet Arrow 文件但 Hugging Face token 已过期；共享 ImageNet loader 现在会在无 token 时
+强制 `local_files_only` 复用已审计缓存，缓存缺失仍明确报错。第二，AMP 初始 loss scaling 可能
+跳过一次非有限更新；batch scheduler 现在只在 optimizer 确实更新后前进，避免悄然缩短 warm-up。
+
+修复前的真实数据 smoke 已完成两次 head-only 和两次 joint-BP batch：八层 phase gradient norm 为
+`[0.1895, 0.0437, 0.0486, 0.1492, 0.1073, 0.1863, 0.0924, 0.0861]`，全部 finite/nonzero；
+最小 optical gate 为 `0.50021`。审计到 phase/residual/pretraining-head 参数分别为
+393,216 / 312,336 / 710,888，384 维 stage descriptor 符合设计。该 smoke 只评估工程正确性；
+validation 仅运行 8 张图，0% Top-1 不具有统计意义。修正 AMP scheduler 后将重新执行 smoke，
+再启动 100k screen。

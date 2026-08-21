@@ -645,9 +645,22 @@ def train_one_epoch(
         if not head_only and gradient_report is None:
             gradient_report = _phase_gradient_report(unwrap(model))
         torch.nn.utils.clip_grad_norm_(model.parameters(), settings.optimizer.gradient_clip_norm)
+        scale_before_step = float(scaler.get_scale())
         scaler.step(optimizer)
         scaler.update()
-        scheduler.step()
+        # AMP deliberately skips optimizer.step when it detects overflow.  Do
+        # not advance the batch scheduler on that skipped update, otherwise the
+        # first high-scale batch silently shortens warm-up (and PyTorch warns
+        # that scheduler.step preceded optimizer.step).
+        optimizer_updated = not scaler.is_enabled() or float(scaler.get_scale()) >= scale_before_step
+        if optimizer_updated:
+            scheduler.step()
+        elif context.is_main:
+            print(
+                f"[amp] skipped non-finite optimizer update at epoch={epoch} batch={batch_index}; "
+                f"scale={scale_before_step:.1f}->{float(scaler.get_scale()):.1f}",
+                flush=True,
+            )
         _update_metrics(vector, logits, labels, losses, labels.numel())
         if context.is_main and (
             batch_index % settings.training.log_interval_batches == 0 or batch_index == total_batches
