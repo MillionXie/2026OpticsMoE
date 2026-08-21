@@ -144,19 +144,38 @@ def save_phase_preview(replacement: Any, path: Path, *, title: str) -> None:
     maximum_std = 0.0
     for stack_name, tensors in stacks.items():
         plotted[stack_name] = {}
-        for kind, key in (
-            ("expert mosaic", "physical_expert_mosaic_rad"),
-            ("global phase", "physical_global_phase_rad"),
+        for kind, display_key, measurement_key in (
+            (
+                "expert mosaic",
+                "physical_expert_mosaic_rad",
+                "physical_expert_phase_rad",
+            ),
+            (
+                "global phase",
+                "physical_global_phase_rad",
+                "physical_global_phase_rad",
+            ),
         ):
-            value = tensors[key].float()
-            phasor_mean = torch.exp(1j * value).mean()
+            display_value = tensors[display_key].float()
+            measurement_value = tensors[measurement_key].float()
+            phasor_mean = torch.exp(1j * measurement_value).mean()
             circular_mean = float(torch.angle(phasor_mean))
             if circular_mean < 0.0:
                 circular_mean += 2.0 * math.pi
-            residual = torch.remainder(
-                value - circular_mean + math.pi, 2.0 * math.pi
+            measured_residual = torch.remainder(
+                measurement_value - circular_mean + math.pi, 2.0 * math.pi
             ) - math.pi
-            standard_deviation = float(residual.std(unbiased=False))
+            residual = torch.remainder(
+                display_value - circular_mean + math.pi, 2.0 * math.pi
+            ) - math.pi
+            if kind == "expert mosaic":
+                # The 2x2 MoE layout contains fixed zero-filled gaps between
+                # its four learned 224x224 masks.  Show those gaps as missing
+                # data instead of treating their -pi residual as learned phase.
+                residual = residual.masked_fill(display_value == 0.0, torch.nan)
+            standard_deviation = float(
+                measured_residual.std(unbiased=False)
+            )
             maximum_std = max(maximum_std, standard_deviation)
             plotted[stack_name][kind] = (
                 residual,
@@ -166,6 +185,8 @@ def save_phase_preview(replacement: Any, path: Path, *, title: str) -> None:
 
     display_limit = min(math.pi, max(0.05, 3.0 * maximum_std))
     figure, axes = plt.subplots(2, 2, figsize=(13, 11), constrained_layout=True)
+    color_map = plt.get_cmap("RdBu_r").copy()
+    color_map.set_bad(color="#303030")
     shown = None
     for row, (stack_name, values) in enumerate(plotted.items()):
         for column, kind in enumerate(("expert mosaic", "global phase")):
@@ -173,7 +194,7 @@ def save_phase_preview(replacement: Any, path: Path, *, title: str) -> None:
             axis = axes[row, column]
             shown = axis.imshow(
                 residual.numpy(),
-                cmap="RdBu_r",
+                cmap=color_map,
                 vmin=-display_limit,
                 vmax=display_limit,
                 origin="upper",
