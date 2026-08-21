@@ -65,14 +65,14 @@ YAML 文件解析。
       require_device_roi: true
       device_roi_xywh: [left, top, width, height]
       saved_frame_size_wh: [478, 478]
-      saved_frame_resize_mode: area
+      saved_frame_resize_mode: auto
       saved_frame_bit_depth: 8
       saved_frame_input_range: [0, 65535]
 
 TUCam 的 ROI 四项必须为 4 的倍数。程序先核对 SDK 返回的原始帧是否等于硬件
-ROI，再核对保存结果是否等于 478×478，因此硬件 ROI 为 1200×1200 时也可正确
-压缩。保存格式默认为 8-bit 灰度 PNG。0～65535 到 0～255 是固定线性映射，不会
-对每张图单独拉伸。
+ROI，再核对保存结果是否等于 478×478。`auto` 对较大 ROI 使用 area，下采样；对
+当前实验室的 472×472 ROI 使用 bilinear，小幅上采样到 478×478。保存格式默认为
+8-bit 灰度 PNG。0～65535 到 0～255 是固定线性映射，不会对每张图单独拉伸。
 
 ## 3. 相机单独检查
 
@@ -80,7 +80,11 @@ ROI，再核对保存结果是否等于 478×478，因此硬件 ROI 为 1200×12
 
 ## 4. 生成 ROI 观察图和曝光图案
 
-    python -m experiments.hardware_sdk.workflows.roi_calibration generate --config experiments\hardware_sdk\configs\tucam_windows.yaml
+python -m experiments.hardware_sdk.workflows.roi_calibration generate --config experiments\hardware_sdk\configs\tucam_windows.yaml
+
+新 1024×1024、17 µm Meadowlark 版本：
+
+    python -m experiments.hardware_sdk.workflows.roi_calibration generate --config experiments\hardware_sdk\configs\tucam_meadowlark_1024_windows.yaml
 
 生成的 5 点、5 矩形、ROI 外框和灰度块位于：
 
@@ -92,14 +96,22 @@ ROI，再核对保存结果是否等于 478×478，因此硬件 ROI 为 1200×12
 
 只生成图案、不打开设备：
 
-    python -m experiments.hardware_sdk.demos.amplitude_camera_demo --config experiments\hardware_sdk\configs\tucam_windows.yaml --generate-only
+python -m experiments.hardware_sdk.demos.amplitude_camera_demo --config experiments\hardware_sdk\configs\tucam_windows.yaml --generate-only
+
+新 17 µm Meadowlark 版本：
+
+    python -m experiments.hardware_sdk.demos.amplitude_camera_demo --config experiments\hardware_sdk\configs\tucam_meadowlark_1024_windows.yaml --generate-only
 
 当前 `settle_delay_ms: 200` 表示 SLM 切图后等待 200 ms，再请求相机曝光。相机曝光
 时间由 `camera.exposure_us` 控制。
 
 ## 6. 0～255 曝光响应检查
 
-    python -m experiments.hardware_sdk.workflows.roi_calibration exposure --config experiments\hardware_sdk\configs\tucam_windows.yaml
+python -m experiments.hardware_sdk.workflows.roi_calibration exposure --config experiments\hardware_sdk\configs\tucam_windows.yaml
+
+新 17 µm Meadowlark 版本：
+
+    python -m experiments.hardware_sdk.workflows.roi_calibration exposure --config experiments\hardware_sdk\configs\tucam_meadowlark_1024_windows.yaml
 
 结果位于：
 
@@ -131,30 +143,31 @@ ROI，再核对保存结果是否等于 478×478，因此硬件 ROI 为 1200×12
 重建为原生 1024×1024 BMP；这一步不做缩放，逻辑像素与振幅 SLM 像素一一对应：
 
 ```powershell
-python -m experiments.hardware_sdk.workflows.reconstruct_slm --stage-dir $STAGE --payload amplitude
+python -m experiments.hardware_sdk.workflows.reconstruct_slm --stage-dir $STAGE --payload amplitude --hardware-profile meadowlark_17um
 ```
 
 在打开硬件前，校验全部振幅 BMP、指定相位 BMP、两套 SDK、LUT 和相机 ROI：
 
 ```powershell
-python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\hardware_sdk\configs\tucam_meadowlark_1024_windows.yaml --input-dir "$STAGE\amplitude_to_play" --output-dir "$STAGE\ccd_captured" --phase-mask "$STAGE\phase_to_play\vision_expert.bmp" --validate-only
+python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\hardware_sdk\configs\tucam_meadowlark_1024_windows.yaml --stage-dir $STAGE --validate-only
 ```
 
 手动在相位 SLM 上加载同一个 `--phase-mask` 文件。首次只采 3 张，确认播放、曝光和
 basename 对应关系：
 
 ```powershell
-python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\hardware_sdk\configs\tucam_meadowlark_1024_windows.yaml --input-dir "$STAGE\amplitude_to_play" --output-dir "$STAGE\ccd_captured" --phase-mask "$STAGE\phase_to_play\vision_expert.bmp" --limit 3 --clear-output
+python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\hardware_sdk\configs\tucam_meadowlark_1024_windows.yaml --stage-dir $STAGE --limit 3 --clear-output
 ```
 
 确认无误后清空上述 3 张并采完整批次：
 
 ```powershell
-python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\hardware_sdk\configs\tucam_meadowlark_1024_windows.yaml --input-dir "$STAGE\amplitude_to_play" --output-dir "$STAGE\ccd_captured" --phase-mask "$STAGE\phase_to_play\vision_expert.bmp" --clear-output
+python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\hardware_sdk\configs\tucam_meadowlark_1024_windows.yaml --stage-dir $STAGE --clear-output
 ```
 
-`--phase-mask` 只用于校验和记录。程序不会打开相位 SLM；开始前会显示相位文件名和
-SHA256，实验人员确认屏幕上加载的是同一个文件后输入 `y`。振幅 BMP 必须是原生
+stage 模式会自动要求 `phase_to_play/` 中恰好存在一张 BMP，并将其用于校验和记录。
+程序不会打开相位 SLM；开始前会显示相位文件名和 SHA256，实验人员确认屏幕上加载
+的是同一个文件后输入 `y`。振幅 BMP 必须是原生
 1024×1024、8-bit 灰度 BMP，驱动拒绝隐式缩放、翻转和逐图归一化。
 
 ## 8. 四层光电实验

@@ -52,6 +52,29 @@ def _clear_capture_files(directory: Path) -> None:
             path.unlink()
 
 
+def _resolve_stage_layout(stage_dir: str | Path) -> tuple[Path, Path, Path, Path]:
+    """Resolve the four folders owned by one exported optical stage.
+
+    Stage paths are intentionally resolved against the process working
+    directory, so a path copied from PowerShell at the repository root has the
+    same meaning as it does for ``reconstruct_slm``.
+    """
+
+    stage = _resolve(stage_dir, Path.cwd())
+    input_dir = stage / "amplitude_to_play"
+    output_dir = stage / "ccd_captured"
+    log_dir = stage / "acquisition_logs"
+    phase_dir = stage / "phase_to_play"
+    phase_files = sorted(phase_dir.glob("*.bmp")) if phase_dir.is_dir() else []
+    if len(phase_files) != 1:
+        raise FileNotFoundError(
+            f"--stage-dir expects exactly one phase BMP under {phase_dir}; "
+            f"found {len(phase_files)}. Reconstruct/copy the stage phase mask first, "
+            "or use the explicit --input-dir/--output-dir/--phase-mask mode."
+        )
+    return input_dir, output_dir, log_dir, phase_files[0]
+
+
 def _phase_mask_metadata(
     path: Path,
     expected_size_wh: tuple[int, int],
@@ -88,6 +111,7 @@ def run(
     input_override: str | Path | None = None,
     output_override: str | Path | None = None,
     phase_override: str | Path | None = None,
+    stage_override: str | Path | None = None,
     clear_output: bool = False,
     assume_yes: bool = False,
     validate_only: bool = False,
@@ -95,9 +119,20 @@ def run(
 ) -> dict[str, Any]:
     raw, config_path = load_yaml_config(config_path)
     base = config_path.parent
-    input_dir = _resolve(input_override or raw["input_dir"], base)
-    output_dir = _resolve(output_override or raw["output_dir"], base)
-    log_dir = _resolve(raw.get("log_dir", "../workspace/logs"), base)
+    if stage_override is not None:
+        if any(value is not None for value in (input_override, output_override, phase_override)):
+            raise ValueError(
+                "Do not combine --stage-dir with --input-dir, --output-dir, or "
+                "--phase-mask"
+            )
+        input_dir, output_dir, log_dir, resolved_stage_phase = _resolve_stage_layout(
+            stage_override
+        )
+    else:
+        input_dir = _resolve(input_override or raw["input_dir"], base)
+        output_dir = _resolve(output_override or raw["output_dir"], base)
+        log_dir = _resolve(raw.get("log_dir", "../workspace/logs"), base)
+        resolved_stage_phase = None
     files = sorted(input_dir.glob("*.bmp"))
     if not files:
         raise FileNotFoundError(f"No amplitude BMP files found in {input_dir}")
@@ -129,7 +164,7 @@ def run(
             (phase_config.get("width", 1920), phase_config.get("height", 1200)),
         )
     )
-    raw_phase_path = phase_override or raw.get("phase_mask_file")
+    raw_phase_path = resolved_stage_phase or phase_override or raw.get("phase_mask_file")
     phase_required = bool(raw.get("require_phase_mask", False))
     if raw_phase_path is None and phase_required:
         raise ValueError(
@@ -153,6 +188,7 @@ def run(
 
     readiness_report = {
         "config": str(config_path),
+        "stage_dir": str(input_dir.parent) if stage_override is not None else None,
         "input_dir": str(input_dir),
         "output_dir": str(output_dir),
         "play_count": len(files),
@@ -200,6 +236,7 @@ def run(
         slm.preload_files(files)
         device_report = {
             "config": str(config_path),
+            "stage_dir": str(input_dir.parent) if stage_override is not None else None,
             "input_dir": str(input_dir),
             "output_dir": str(output_dir),
             "play_count": len(files),
@@ -297,7 +334,13 @@ def run(
         writer.writeheader()
         writer.writerows(rows)
     print(f"Captured {len(rows)} frames under {output_dir}")
-    return {"count": len(rows), "input_dir": str(input_dir), "output_dir": str(output_dir)}
+    return {
+        "count": len(rows),
+        "stage_dir": str(input_dir.parent) if stage_override is not None else None,
+        "input_dir": str(input_dir),
+        "output_dir": str(output_dir),
+        "log_dir": str(log_dir),
+    }
 
 
 def main() -> int:
@@ -305,6 +348,14 @@ def main() -> int:
         description="Play every amplitude BMP in a folder and save same-name CCD frames"
     )
     parser.add_argument("--config", default="configs/tucam_windows.yaml")
+    parser.add_argument(
+        "--stage-dir",
+        default=None,
+        help=(
+            "Stage directory containing amplitude_to_play/ and exactly one "
+            "phase_to_play/*.bmp; CCD and logs stay under this stage"
+        ),
+    )
     parser.add_argument("--input-dir", default=None)
     parser.add_argument("--output-dir", default=None)
     parser.add_argument(
@@ -326,6 +377,7 @@ def main() -> int:
         input_override=args.input_dir,
         output_override=args.output_dir,
         phase_override=args.phase_mask,
+        stage_override=args.stage_dir,
         clear_output=args.clear_output,
         assume_yes=args.yes,
         validate_only=args.validate_only,

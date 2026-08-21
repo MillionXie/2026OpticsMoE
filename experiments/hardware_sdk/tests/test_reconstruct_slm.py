@@ -135,3 +135,16 @@ def test_stage_shortcut_resolves_payload_directories_and_default_sizes(
     assert phase[0].name == "compact_phase"
     assert phase[1].name == "phase_to_play"
     assert phase[2] == (1920, 1200)
+
+
+def test_meadowlark_stage_profile_uses_native_1024_amplitude_canvas(tmp_path) -> None:
+    amplitude = resolve_reconstruction_layout(
+        stage_dir=tmp_path / "04_language_global",
+        payload="amplitude",
+        input_dir=None,
+        output_dir=None,
+        slm_width=None,
+        slm_height=None,
+        hardware_profile="meadowlark_17um",
+    )
+    assert amplitude[2] == (1024, 1024)

@@ -2,7 +2,7 @@
 
 ## 唯一职责
 
-实验室电脑负责：播放、采集、固定 ROI、area resize、固定强度映射、保存
+实验室电脑负责：播放、采集、固定 ROI、auto 几何重采样、固定强度映射、保存
 `478×478 uint8 PNG`、重建完整 SLM BMP。它不做背景扣除、逐图拉伸、翻转、模型
 归一化或训练。
 
@@ -22,7 +22,7 @@ phase：478×478 @ 17 µm，按物理坐标栅格化到约 1016×1016 @ 8 µm，
        再放入 1920×1200
     ↓ 光路
 相机 ROI（仅内存 uint16）
-    ↓ area resize + 固定 0..65535→0..255
+    ↓ auto 几何重采样（大图 area / 小图 bilinear）+ 固定 0..65535→0..255
 478×478 uint8 PNG（不翻转）
     ↓ 上传
 服务器按 YAML 翻转并直接送入本层 CCD readout
@@ -48,6 +48,7 @@ session/
 │   ├── amplitude_to_play/       # 仅实验室重建
 │   ├── phase_to_play/           # 仅实验室重建
 │   ├── ccd_captured/            # 实验室上传的 478 uint8
+│   ├── acquisition_logs/        # 设备配置、phase SHA256、逐帧采集清单
 │   ├── finetune_metrics.json     # 本层实测 query-gallery 测试性能
 │   └── transport_spec.json
 ├── 02_vision_global/

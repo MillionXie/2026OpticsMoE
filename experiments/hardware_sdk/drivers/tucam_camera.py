@@ -23,10 +23,17 @@ try:
         CameraDriver,
         DeviceError,
         convert_detector_bit_depth,
+        resolve_detector_resize_mode,
         resize_detector_intensity,
     )
 except ImportError:  # imported by a direct hardware_sdk script
-    from devices import CameraDriver, DeviceError, convert_detector_bit_depth, resize_detector_intensity
+    from devices import (
+        CameraDriver,
+        DeviceError,
+        convert_detector_bit_depth,
+        resolve_detector_resize_mode,
+        resize_detector_intensity,
+    )
 
 
 class TucamCamera(CameraDriver):
@@ -440,8 +447,11 @@ class TucamCamera(CameraDriver):
         array = self._grab_array()
         source_size = [int(array.shape[1]), int(array.shape[0])]
         source_dtype = str(array.dtype)
+        resolved_resize_mode = resolve_detector_resize_mode(
+            tuple(source_size), self.saved_frame_size_wh, self.saved_frame_resize_mode
+        )
         array = resize_detector_intensity(
-            array, self.saved_frame_size_wh, self.saved_frame_resize_mode
+            array, self.saved_frame_size_wh, resolved_resize_mode
         )
         array = convert_detector_bit_depth(
             array, self.saved_frame_bit_depth, self.saved_frame_input_range
@@ -460,7 +470,7 @@ class TucamCamera(CameraDriver):
         self._last_capture_info = {
             "source_size_wh": source_size,
             "saved_size_wh": saved_size,
-            "resize_mode": self.saved_frame_resize_mode,
+            "resize_mode": resolved_resize_mode,
             "resized": source_size != saved_size,
             "dtype": str(array.dtype),
             "source_dtype": source_dtype,

@@ -33,6 +33,7 @@ __all__ = [
     "build_camera",
     "build_slm",
     "convert_detector_bit_depth",
+    "resolve_detector_resize_mode",
     "resize_detector_intensity",
     "verify_camera_roi",
 ]
@@ -88,6 +89,33 @@ def verify_camera_roi(
     return expected
 
 
+def resolve_detector_resize_mode(
+    source_size_wh: tuple[int, int],
+    target_size_wh: tuple[int, int] | None,
+    mode: str,
+) -> str:
+    """Resolve ``auto`` to a deterministic intensity-image resampler."""
+
+    mode = str(mode).lower()
+    supported = {"none", "area", "nearest", "bilinear", "auto"}
+    if mode not in supported:
+        raise DeviceError(
+            "camera.saved_frame_resize_mode must be one of "
+            "none, area, nearest, bilinear, or auto"
+        )
+    if target_size_wh is None or tuple(source_size_wh) == tuple(target_size_wh):
+        return "none"
+    if mode != "auto":
+        return mode
+    source_width, source_height = (int(value) for value in source_size_wh)
+    target_width, target_height = (int(value) for value in target_size_wh)
+    return (
+        "area"
+        if target_width <= source_width and target_height <= source_height
+        else "bilinear"
+    )
+
+
 def resize_detector_intensity(
     array: np.ndarray,
     size_wh: tuple[int, int] | None,
@@ -96,16 +124,19 @@ def resize_detector_intensity(
     """Resize a monochrome detector frame while preserving its integer dtype.
 
     ``area`` averages source detector pixels and is the recommended compression
-    mode. ``nearest`` is provided for exact legacy-coordinate experiments.
-    Neither mode performs display normalization, gamma, or contrast stretching.
+    mode. ``bilinear`` supports the small enlargement needed when a hardware ROI
+    such as 472x472 is mapped to the model's 478x478 grid. ``auto`` selects area
+    for downsampling and bilinear for enlargement. ``nearest`` remains available
+    for exact legacy-coordinate experiments. No mode performs display
+    normalization, gamma, or contrast stretching.
     """
     if array.ndim != 2 or array.dtype not in (np.uint8, np.uint16):
         raise DeviceError(
             "CCD frame resizing expects a 2-D uint8/uint16 intensity array; "
             f"got shape={array.shape} dtype={array.dtype}"
         )
-    mode = str(mode).lower()
-    if size_wh is None or mode == "none":
+    requested_mode = str(mode).lower()
+    if size_wh is None or requested_mode == "none":
         return array
     width, height = (int(size_wh[0]), int(size_wh[1]))
     if width <= 0 or height <= 0:
@@ -113,22 +144,30 @@ def resize_detector_intensity(
     source_height, source_width = array.shape
     if (source_width, source_height) == (width, height):
         return array
+    mode = resolve_detector_resize_mode(
+        (source_width, source_height), (width, height), requested_mode
+    )
     if mode == "nearest":
         x = np.floor(np.arange(width, dtype=np.float64) * source_width / width)
         y = np.floor(np.arange(height, dtype=np.float64) * source_height / height)
         x = np.minimum(x.astype(np.int64), source_width - 1)
         y = np.minimum(y.astype(np.int64), source_height - 1)
         return array[np.ix_(y, x)].copy()
-    if mode != "area":
-        raise DeviceError("camera.saved_frame_resize_mode must be none, area, or nearest")
-    if width > source_width or height > source_height:
+    if mode == "area" and (width > source_width or height > source_height):
         raise DeviceError(
-            "area mode is for CCD downsampling only; choose nearest to enlarge a frame"
+            "area mode is for CCD downsampling only; choose auto or bilinear "
+            "to enlarge a frame"
+        )
+    if mode not in {"area", "bilinear"}:
+        raise DeviceError(
+            "camera.saved_frame_resize_mode must be one of "
+            "none, area, nearest, bilinear, or auto"
         )
     floating = Image.fromarray(array.astype(np.float32), mode="F")
     resampling = getattr(Image, "Resampling", Image)
+    resampler = resampling.BOX if mode == "area" else resampling.BILINEAR
     resized = np.asarray(
-        floating.resize((width, height), resample=resampling.BOX),
+        floating.resize((width, height), resample=resampler),
         dtype=np.float32,
     )
     limit = np.iinfo(array.dtype)
@@ -615,8 +654,11 @@ class DvpCamera(CameraDriver):
             self._camera.GetFrame(self.timeout_ms)
         array = self._frame_to_array(self._camera.GetFrame(self.timeout_ms), self._module)
         source_size = [int(array.shape[1]), int(array.shape[0])]
+        resolved_resize_mode = resolve_detector_resize_mode(
+            tuple(source_size), self.saved_frame_size_wh, self.saved_frame_resize_mode
+        )
         array = resize_detector_intensity(
-            array, self.saved_frame_size_wh, self.saved_frame_resize_mode
+            array, self.saved_frame_size_wh, resolved_resize_mode
         )
         array = convert_detector_bit_depth(
             array, self.saved_frame_bit_depth, self.saved_frame_input_range
@@ -629,7 +671,7 @@ class DvpCamera(CameraDriver):
         self._last_capture_info = {
             "source_size_wh": source_size,
             "saved_size_wh": [int(array.shape[1]), int(array.shape[0])],
-            "resize_mode": self.saved_frame_resize_mode,
+            "resize_mode": resolved_resize_mode,
             "resized": source_size != [int(array.shape[1]), int(array.shape[0])],
             "dtype": str(array.dtype),
             "saved_frame_bit_depth": self.saved_frame_bit_depth,
@@ -905,8 +947,13 @@ class DvpSubprocessCamera(CameraDriver):
                         f"shape={array.shape} dtype={array.dtype}"
                     )
                 source_size = [int(array.shape[1]), int(array.shape[0])]
+                resolved_resize_mode = resolve_detector_resize_mode(
+                    tuple(source_size),
+                    self.saved_frame_size_wh,
+                    self.saved_frame_resize_mode,
+                )
                 array = resize_detector_intensity(
-                    array, self.saved_frame_size_wh, self.saved_frame_resize_mode
+                    array, self.saved_frame_size_wh, resolved_resize_mode
                 )
                 array = convert_detector_bit_depth(
                     array, self.saved_frame_bit_depth, self.saved_frame_input_range
@@ -920,7 +967,7 @@ class DvpSubprocessCamera(CameraDriver):
                 self._last_capture_info = {
                     "source_size_wh": source_size,
                     "saved_size_wh": saved_size,
-                    "resize_mode": self.saved_frame_resize_mode,
+                    "resize_mode": resolved_resize_mode,
                     "resized": source_size != saved_size,
                     "dtype": str(array.dtype),
                 }
@@ -1074,9 +1121,16 @@ def build_camera(config: dict[str, Any], base: Path) -> CameraDriver:
     saved_frame_resize_mode = str(
         config.get("saved_frame_resize_mode", "area")
     ).lower()
-    if saved_frame_resize_mode not in {"none", "area", "nearest"}:
+    if saved_frame_resize_mode not in {
+        "none",
+        "area",
+        "nearest",
+        "bilinear",
+        "auto",
+    }:
         raise ValueError(
-            "camera.saved_frame_resize_mode must be none, area, or nearest"
+            "camera.saved_frame_resize_mode must be one of "
+            "none, area, nearest, bilinear, or auto"
         )
     saved_frame_bit_depth_raw = config.get("saved_frame_bit_depth")
     saved_frame_bit_depth = (

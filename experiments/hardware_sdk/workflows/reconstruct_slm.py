@@ -287,6 +287,7 @@ def resolve_reconstruction_layout(
     output_dir: Path | None,
     slm_width: int | None,
     slm_height: int | None,
+    hardware_profile: str = "legacy_16um",
 ) -> tuple[Path, Path, tuple[int, int]]:
     """Resolve either the safe stage shortcut or the legacy explicit layout."""
 
@@ -299,10 +300,19 @@ def resolve_reconstruction_layout(
             raise ValueError(
                 "Do not combine --stage-dir with --input-dir/--output-dir"
             )
-        defaults = {
-            "amplitude": (1920, 1080),
-            "phase": (1920, 1200),
+        profiles = {
+            "legacy_16um": {
+                "amplitude": (1920, 1080),
+                "phase": (1920, 1200),
+            },
+            "meadowlark_17um": {
+                "amplitude": (1024, 1024),
+                "phase": (1920, 1200),
+            },
         }
+        if hardware_profile not in profiles:
+            raise ValueError(f"Unknown hardware profile: {hardware_profile}")
+        defaults = profiles[hardware_profile]
         default_width, default_height = defaults[payload]
         root = stage_dir.expanduser().resolve()
         return (
@@ -344,6 +354,15 @@ def main() -> int:
         ),
     )
     parser.add_argument("--payload", choices=("amplitude", "phase"))
+    parser.add_argument(
+        "--hardware-profile",
+        choices=("legacy_16um", "meadowlark_17um"),
+        default="legacy_16um",
+        help=(
+            "Stage shortcut defaults. meadowlark_17um uses 1024x1024, 1:1 "
+            "amplitude and 17um-to-8um physical phase rasterization"
+        ),
+    )
     parser.add_argument("--input-dir")
     parser.add_argument("--output-dir")
     parser.add_argument("--slm-width", type=int)
@@ -391,25 +410,39 @@ def main() -> int:
             output_dir=(None if args.output_dir is None else Path(args.output_dir)),
             slm_width=args.slm_width,
             slm_height=args.slm_height,
+            hardware_profile=args.hardware_profile,
         )
     except ValueError as exc:
         parser.error(str(exc))
+    logical_pitch = args.logical_pixel_pitch_um
+    slm_pitch = args.slm_pixel_pitch_um
+    scale_factor = args.scale_factor
+    if (
+        args.stage_dir is not None
+        and args.hardware_profile == "meadowlark_17um"
+        and logical_pitch is None
+        and scale_factor is None
+    ):
+        if args.payload == "amplitude":
+            scale_factor = 1
+        else:
+            logical_pitch, slm_pitch = 17.0, 8.0
     report = reconstruct_directory(
         input_dir,
         output_dir,
         slm_size_wh=slm_size,
         scale_factor=(
             None
-            if args.logical_pixel_pitch_um is not None
-            else (2 if args.scale_factor is None else args.scale_factor)
+            if logical_pitch is not None
+            else (2 if scale_factor is None else scale_factor)
         ),
         center_xy=(
             None
             if args.center_x is None
             else (args.center_x, args.center_y)
         ),
-        logical_pixel_pitch_um=args.logical_pixel_pitch_um,
-        slm_pixel_pitch_um=args.slm_pixel_pitch_um,
+        logical_pixel_pitch_um=logical_pitch,
+        slm_pixel_pitch_um=slm_pitch,
     )
     print(json.dumps(report, ensure_ascii=False))
     return 0

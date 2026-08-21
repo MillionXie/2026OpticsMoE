@@ -193,7 +193,7 @@ CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_
 
 ```powershell
 $STAGE = "experiments\qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval\hardware_sessions\quick_language_global_17um_strong\04_language_global"
-python -m experiments.hardware_sdk.workflows.reconstruct_slm --stage-dir $STAGE --payload amplitude
+python -m experiments.hardware_sdk.workflows.reconstruct_slm --stage-dir $STAGE --payload amplitude --hardware-profile meadowlark_17um
 ```
 
 加载本层相位文件：
@@ -206,8 +206,8 @@ $STAGE\phase_to_play\language_global.bmp
 试采：
 
 ```powershell
-python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\hardware_sdk\configs\tucam_meadowlark_1024_windows.yaml --input-dir "$STAGE\amplitude_to_play" --output-dir "$STAGE\ccd_captured" --phase-mask "$STAGE\phase_to_play\language_global.bmp" --validate-only
-python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\hardware_sdk\configs\tucam_meadowlark_1024_windows.yaml --input-dir "$STAGE\amplitude_to_play" --output-dir "$STAGE\ccd_captured" --phase-mask "$STAGE\phase_to_play\language_global.bmp" --limit 3 --clear-output
+python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\hardware_sdk\configs\tucam_meadowlark_1024_windows.yaml --stage-dir $STAGE --validate-only
+python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\hardware_sdk\configs\tucam_meadowlark_1024_windows.yaml --stage-dir $STAGE --limit 3 --clear-output
 ```
 
 确认3帧后，移除 `--limit 3` 并重新使用 `--clear-output` 采集全部2,855张。把同名

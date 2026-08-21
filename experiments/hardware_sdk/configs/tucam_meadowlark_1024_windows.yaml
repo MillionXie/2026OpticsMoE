@@ -4,6 +4,7 @@
 input_dir: ../data/amplitude_to_play
 output_dir: ../data/ccd_captured
 log_dir: ../artifacts/logs/tucam_meadowlark_1024
+digit_output_dir: ../../qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/hardware_sessions/_calibration_17um/digit_sequence
 output_extension: .png
 settle_delay_ms: 200
 confirm_before_start: true
@@ -15,11 +16,19 @@ max_files: null
 require_phase_mask: true
 phase_mask_file: null
 
+# Generated calibration assets stay inside the Caltech101 four-layer project,
+# not at the repository root. hardware_sessions/ is intentionally not tracked.
+paths:
+  masks_dir: ../../qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/hardware_sessions/_calibration_17um/masks
+  results_dir: ../../qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/hardware_sessions/_calibration_17um/results
+
 amplitude_slm:
   driver: meadowlark_pcie
   sdk_path: ../vendor_sdk/amplitude_meadowlark
   board_number: 1
   expected_resolution_wh: [1024, 1024]
+  width: 1024
+  height: 1024
   expected_bit_depth: 8
   pixel_pitch_um: 17.0
   timeout_ms: 5000
@@ -41,6 +50,13 @@ phase_slm:
   expected_resolution_wh: [1920, 1200]
   pixel_pitch_um: 8.0
 
+amplitude_roi:
+  # 478 model pixels are placed 1:1 at the center of the 1024 SLM.
+  width: 478
+  height: 478
+  center_x: 511.5
+  center_y: 511.5
+
 camera:
   driver: tucam
   sdk_path: ../vendor_sdk/camera_tucam_mosaic
@@ -61,8 +77,37 @@ camera:
   # Store the model-ready transport directly. No background subtraction,
   # per-image stretching, flip, or intermediate 956/1024 frame is saved.
   saved_frame_size_wh: [478, 478]
-  saved_frame_resize_mode: area
+  # auto: area when the hardware ROI is larger than 478, bilinear when the
+  # lab ROI is slightly smaller (the current machine returns 472x472).
+  saved_frame_resize_mode: auto
   saved_frame_bit_depth: 8
   saved_frame_input_range: [0, 65535]
   warmup_frames: 3
   discard_frames_after_display: 1
+
+digits:
+  # Offline handwritten-style 0..9 glyphs avoid a Torch/torchvision dependency
+  # on the lightweight laboratory controller.
+  source: synthetic
+  slm_size_wh: [1024, 1024]
+  active_size_wh: [478, 478]
+  digit_size_px: 360
+  foreground_level: 255
+  background_level: 0
+
+calibration:
+  marker_size_px: 40
+  marker_sigma_px: 9
+  roi_outline_width_px: 3
+
+exposure_calibration:
+  exposure_times_us: [5000]
+  gray_start: 0
+  gray_stop: 255
+  gray_step: 1
+  frames_per_gray: 2
+  patch_size_px: 400
+  patch_inner_size_px: 320
+  edge_taper_px: 40
+  measurement_window_size_px: 256
+  saturation_fraction_warning: 0.001

@@ -57,6 +57,20 @@ def _amplitude_roi(config: dict[str, Any]) -> tuple[float, float, float, float]:
     return center_x - width / 2, center_y - height / 2, width, height
 
 
+def _configured_slm_size(device: dict[str, Any]) -> tuple[int, int]:
+    expected = device.get("expected_resolution_wh")
+    if expected is not None:
+        if not isinstance(expected, (list, tuple)) or len(expected) != 2:
+            raise ValueError("expected_resolution_wh must be [width, height]")
+        return int(expected[0]), int(expected[1])
+    try:
+        return int(device["width"]), int(device["height"])
+    except KeyError as exc:
+        raise ValueError(
+            "SLM config requires expected_resolution_wh or width/height"
+        ) from exc
+
+
 def roi_boundary_source_points(config: dict[str, Any]) -> list[tuple[float, float]]:
     """Return center plus the four exact configured amplitude-ROI corners."""
 
@@ -142,14 +156,8 @@ def generate_calibration_files(config: dict[str, Any], config_path: Path) -> dic
     for directory in (amplitude_dir, phase_dir, exposure_dir):
         directory.mkdir(parents=True, exist_ok=True)
 
-    amplitude_size = (
-        int(config["amplitude_slm"]["width"]),
-        int(config["amplitude_slm"]["height"]),
-    )
-    phase_size = (
-        int(config["phase_slm"]["width"]),
-        int(config["phase_slm"]["height"]),
-    )
+    amplitude_size = _configured_slm_size(config["amplitude_slm"])
+    phase_size = _configured_slm_size(config["phase_slm"])
     Image.new("L", amplitude_size, 0).save(amplitude_dir / "amplitude_zero.bmp")
     Image.new("L", phase_size, 0).save(phase_dir / "phase_zero.bmp")
 
@@ -278,7 +286,7 @@ class _PhaseController:
         if self._context is None:
             print(f"[phase SLM/manual] 请手动加载并保持：{path}")
             return
-        expected = (int(self.config["width"]), int(self.config["height"]))
+        expected = _configured_slm_size(self.config)
         correction = (
             resolve_path(self.config["wavefront_correction_file"], self.base)
             if bool(self.config.get("apply_wavefront_correction", False))
@@ -304,10 +312,10 @@ def _slm_session(
     config: dict[str, Any], config_path: Path, amplitude_files: list[Path]
 ) -> Iterator[tuple[Any, _PhaseController]]:
     amplitude_config = dict(config["amplitude_slm"])
-    amplitude_config.setdefault(
-        "expected_resolution_wh",
-        [amplitude_config["width"], amplitude_config["height"]],
-    )
+    if "expected_resolution_wh" not in amplitude_config:
+        amplitude_config["expected_resolution_wh"] = list(
+            _configured_slm_size(amplitude_config)
+        )
     amplitude = build_slm(amplitude_config, config_path.parent)
     phase = _PhaseController(config, config_path)
     amplitude.validate_runtime()

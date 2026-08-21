@@ -9,7 +9,10 @@ import pytest
 from PIL import Image
 
 from experiments.hardware_sdk.demos.amplitude_camera_demo import generate_digit_bmps
-from experiments.hardware_sdk.workflows.acquire_folder import run as run_folder_acquisition
+from experiments.hardware_sdk.workflows.acquire_folder import (
+    _resolve_stage_layout,
+    run as run_folder_acquisition,
+)
 from experiments.hardware_sdk.devices import (
     DeviceError,
     DvpSubprocessCamera,
@@ -18,6 +21,7 @@ from experiments.hardware_sdk.devices import (
     build_camera,
     build_slm,
     convert_detector_bit_depth,
+    resolve_detector_resize_mode,
     resize_detector_intensity,
     verify_camera_roi,
 )
@@ -355,6 +359,30 @@ def test_saved_frame_area_mode_rejects_enlargement() -> None:
         resize_detector_intensity(np.zeros((10, 10), dtype=np.uint8), (20, 20), "area")
 
 
+def test_saved_frame_auto_uses_bilinear_for_472_to_478_enlargement() -> None:
+    source = np.full((472, 472), 12345, dtype=np.uint16)
+    assert resolve_detector_resize_mode((472, 472), (478, 478), "auto") == "bilinear"
+    resized = resize_detector_intensity(source, (478, 478), "auto")
+    assert resized.shape == (478, 478)
+    assert resized.dtype == np.uint16
+    assert np.all(resized == 12345)
+
+
+def test_saved_frame_auto_uses_area_for_downsampling() -> None:
+    assert resolve_detector_resize_mode((480, 480), (478, 478), "auto") == "area"
+
+
+def test_stage_acquisition_layout_keeps_all_artifacts_under_stage(tmp_path: Path) -> None:
+    stage = tmp_path / "04_language_global"
+    (stage / "phase_to_play").mkdir(parents=True)
+    Image.new("L", (12, 10), 0).save(stage / "phase_to_play" / "language_global.bmp")
+    input_dir, output_dir, log_dir, phase = _resolve_stage_layout(stage)
+    assert input_dir == stage / "amplitude_to_play"
+    assert output_dir == stage / "ccd_captured"
+    assert log_dir == stage / "acquisition_logs"
+    assert phase == stage / "phase_to_play" / "language_global.bmp"
+
+
 def test_saved_frame_none_mode_preserves_raw_array_without_copy() -> None:
     source = np.arange(35, dtype=np.uint16).reshape(5, 7)
     actual = resize_detector_intensity(source, None, "none")
@@ -393,6 +421,21 @@ def test_build_camera_accepts_explicit_unprocessed_raw_mode(tmp_path: Path) -> N
     )
     assert camera.saved_frame_size_wh is None
     assert camera.saved_frame_resize_mode == "none"
+
+
+def test_build_camera_accepts_auto_detector_resize_mode(tmp_path: Path) -> None:
+    camera = build_camera(
+        {
+            "driver": "dvp_subprocess",
+            "sdk_path": None,
+            "python_executable": __import__("sys").executable,
+            "saved_frame_size_wh": [478, 478],
+            "saved_frame_resize_mode": "auto",
+        },
+        tmp_path,
+    )
+    assert camera.saved_frame_size_wh == (478, 478)
+    assert camera.saved_frame_resize_mode == "auto"
 
 
 def test_gaussian_marker_is_uint8_and_centered() -> None:
