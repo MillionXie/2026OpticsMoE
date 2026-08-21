@@ -386,3 +386,17 @@ ImageNet Arrow 文件但 Hugging Face token 已过期；共享 ImageNet loader �
 393,216 / 312,336 / 710,888，384 维 stage descriptor 符合设计。该 smoke 只评估工程正确性；
 validation 仅运行 8 张图，0% Top-1 不具有统计意义。修正 AMP scheduler 后将重新执行 smoke，
 再启动 100k screen。
+
+AMP 修正后的 smoke 再次通过：检测到的两次 overflow 分别使 scale 从 65536 降到 32768、
+再降到 16384，scheduler 均未前进；之后 optimizer 正常更新且不再出现 PyTorch 调度顺序警告。
+输入诊断为 CLIP-normalized `[-1.7923, 2.1459]`、反标准化 intensity `[0,1]`；八层 phase
+gradient 再次全部 finite/nonzero，norm 为
+`[0.1942, 0.0456, 0.0489, 0.1563, 0.1085, 0.1837, 0.0950, 0.0872]`。
+
+2026-08-21 11:25（Asia/Shanghai）使用 command 53 在物理 GPU 3（RTX 4090）和 GPU 5
+（RTX 3090）启动 P06-S 双卡 DDP；launcher PID 792349、torchrun PID 792561，完整日志为
+`runs/p06_imagenet_100k_screen/train.log`。manifest 已确认 world size 2、train/validation
+分别 100,000/10,000、train cache 每图 4 views、P05 source selected epoch 18。每卡 batch 32，
+有效 batch 64，共 1,563 optimizer batches/epoch。head warm-up batch 50 时 running Top-1 0.06%、
+CLIP cosine -0.0003、loss 9.2143，耗时 50.4 秒；这些是随机新 head 的起始在线指标，不能当作
+epoch 结果。按首 50 batch 粗估 warm-up epoch 约 26 分钟，联合 BP 速度需以第二 epoch 实测修正。
