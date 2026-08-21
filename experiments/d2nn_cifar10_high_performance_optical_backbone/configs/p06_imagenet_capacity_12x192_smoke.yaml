@@ -39,8 +39,9 @@ training:
   joint_epochs: 1
   train_samples_per_class: 1
   validation_samples_per_class: 1
-  batch_size: 2
-  validation_batch_size: 2
+  # Match the production per-GPU allocation so the smoke is also a memory test.
+  batch_size: 32
+  validation_batch_size: 32
   num_workers: 0
   persistent_workers: false
   pin_memory: false
@@ -51,8 +52,8 @@ training:
   amp_growth_interval: 100000
   log_interval_batches: 1
   checkpoint_interval_epochs: 1
-  max_train_batches: 2
-  max_validation_batches: 2
+  max_train_batches: 1
+  max_validation_batches: 1
   run_final_ablations: false
 gates:
   validation_top1_min: 0.0

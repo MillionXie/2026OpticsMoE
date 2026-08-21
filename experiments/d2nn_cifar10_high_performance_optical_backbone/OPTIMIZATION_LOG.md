@@ -531,3 +531,11 @@ F2A/F2B 是瓶颈诊断而不是正式第五/第六反馈组：F2A 保持 F1 结
 线性读出瓶颈。F2C 才是面向 backbone 容量的主试验：从 F1 best 扩展初始化 12x192，先一轮
 冻结 trunk 校准读出，再四轮 exact joint-BP。所有配置、smoke 和长跑入口固定在 command
 62--70；结果仍以完整 50k validation、光学破坏消融和 10% Top-1 门槛判断。
+
+### P06-F2C 生产批量与设备复核（2026-08-22）
+
+小批量真实数据 smoke 在 `amp_initial_scale=256`、禁止自动增长的设置下完成两次有效更新，
+12 层 raw-phase 梯度全部 finite/nonzero；因此没有缩回 10x192。为避免只验证数值而遗漏显存
+问题，command 66 的 smoke 改为与正式训练一致的每卡 batch 32，并各执行一个 train/validation
+batch。长跑默认设备从当时有低占用进程的 GPU 2/5 改为真正空闲的 GPU 4/5；command 67--70
+及命令文档同步更新。只有生产批量 smoke 和双卡通信都通过，才允许启动 F2C 长跑。

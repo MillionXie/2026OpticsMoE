@@ -352,12 +352,14 @@ bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/65_laun
 ```
 
 The million-scale optical candidate has 12 RGB phase stages at 192x192 resolution (1,327,104
-optical parameters). Command 66 first verifies expanded checkpoint loading and all twelve phase
-gradients. Commands 67/68 run it on GPUs 2/5. Commands 69/70 can queue it behind F2A:
+optical parameters). Command 66 first verifies expanded checkpoint loading, a production-size
+32-image batch, and all twelve phase gradients. Commands 67/68 default to the currently idle GPUs
+4/5. Commands 69/70 can queue it behind F2A:
 
 ```bash
 PHYSICAL_GPU_INDEX=5 \
   bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/66_smoke_p06_imagenet_capacity_12x192.sh
 
-bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/70_launch_capacity_queue.sh
+PHYSICAL_GPU_INDICES=4,5 \
+  bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/68_launch_p06_imagenet_capacity_12x192.sh
 ```

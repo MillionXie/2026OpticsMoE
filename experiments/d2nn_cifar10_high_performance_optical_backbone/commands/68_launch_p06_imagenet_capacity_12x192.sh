@@ -2,7 +2,7 @@
 set -euo pipefail
 source "$(dirname "$0")/_common.sh"
 
-PHYSICAL_GPU_INDICES="${PHYSICAL_GPU_INDICES:-2,5}"
+PHYSICAL_GPU_INDICES="${PHYSICAL_GPU_INDICES:-4,5}"
 RUN_DIR="experiments/d2nn_cifar10_high_performance_optical_backbone/runs/p06_imagenet_capacity_12x192"
 mkdir -p "${RUN_DIR}"
 if pgrep -af "general_backbone_pretraining.*p06_imagenet_capacity_12x192.yaml" >/dev/null; then
