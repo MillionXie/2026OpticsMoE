@@ -10,6 +10,7 @@ from experiments.optical_mlp_mixer_moe9_imagenet1k_clip_distill.datasets import 
 from ..general_backbone_pretraining import (
     CompactOpticalImageNetStudent,
     SubsetEpochViewSampler,
+    batch_contrastive_loss,
     stratified_base_indices,
 )
 from ..settings import OpticalConfig
@@ -84,3 +85,16 @@ def test_stratified_sampler_preserves_full_cache_indices_and_views() -> None:
     composite = list(rank_zero) + list(rank_one)
     assert sorted(index // 4 for index in composite) == selected
     assert all(0 <= index % 4 < 4 for index in composite)
+
+
+def test_contrastive_distillation_penalizes_collapsed_or_mismatched_features() -> None:
+    teacher = torch.eye(4)
+    matched = batch_contrastive_loss(teacher, teacher, temperature=0.07)
+    collapsed = batch_contrastive_loss(
+        torch.ones_like(teacher), teacher, temperature=0.07
+    )
+    mismatched = batch_contrastive_loss(
+        teacher.roll(1, dims=0), teacher, temperature=0.07
+    )
+    assert matched < collapsed
+    assert matched < mismatched

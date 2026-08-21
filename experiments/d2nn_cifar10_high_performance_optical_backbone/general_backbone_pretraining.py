@@ -55,6 +55,8 @@ class P06LossConfig:
     supervised_ce_weight: float
     feature_cosine_weight: float
     clip_logit_kd_weight: float
+    contrastive_weight: float
+    contrastive_temperature: float
     distill_temperature: float
     label_smoothing: float
 
@@ -113,6 +115,8 @@ class P06Settings:
     architecture_config: Path
     source_checkpoint: Path
     source_checkpoint_sha256: str
+    initial_checkpoint: Path | None
+    initial_checkpoint_sha256: str | None
     model: P06ModelConfig
     loss: P06LossConfig
     optimizer: P06OptimizerConfig
@@ -146,6 +150,16 @@ def load_p06_settings(path: str | Path) -> P06Settings:
     checksum = str(raw["source_checkpoint_sha256"]).lower()
     if len(checksum) != 64 or any(character not in "0123456789abcdef" for character in checksum):
         raise ValueError("source_checkpoint_sha256 must be a lowercase SHA-256")
+    initial_value = raw.get("initial_checkpoint")
+    initial_checksum_value = raw.get("initial_checkpoint_sha256")
+    if bool(initial_value) != bool(initial_checksum_value):
+        raise ValueError("initial_checkpoint and initial_checkpoint_sha256 must be provided together")
+    initial_checksum = str(initial_checksum_value).lower() if initial_checksum_value else None
+    if initial_checksum is not None and (
+        len(initial_checksum) != 64
+        or any(character not in "0123456789abcdef" for character in initial_checksum)
+    ):
+        raise ValueError("initial_checkpoint_sha256 must be a lowercase SHA-256")
     settings = P06Settings(
         config_path=config_path,
         output_dir=_resolve(raw["output_dir"]),
@@ -153,6 +167,8 @@ def load_p06_settings(path: str | Path) -> P06Settings:
         architecture_config=_resolve(raw["architecture_config"]),
         source_checkpoint=_resolve(raw["source_checkpoint"]),
         source_checkpoint_sha256=checksum,
+        initial_checkpoint=_resolve(initial_value) if initial_value else None,
+        initial_checkpoint_sha256=initial_checksum,
         model=P06ModelConfig(
             selected_stage_indices=tuple(int(value) for value in model_raw.get("selected_stage_indices", [1, 3, 5, 7])),
             pool_size=int(model_raw.get("pool_size", 4)),
@@ -163,6 +179,8 @@ def load_p06_settings(path: str | Path) -> P06Settings:
             supervised_ce_weight=float(loss_raw.get("supervised_ce_weight", 0.5)),
             feature_cosine_weight=float(loss_raw.get("feature_cosine_weight", 1.0)),
             clip_logit_kd_weight=float(loss_raw.get("clip_logit_kd_weight", 0.5)),
+            contrastive_weight=float(loss_raw.get("contrastive_weight", 0.0)),
+            contrastive_temperature=float(loss_raw.get("contrastive_temperature", 0.07)),
             distill_temperature=float(loss_raw.get("distill_temperature", 2.0)),
             label_smoothing=float(loss_raw.get("label_smoothing", 0.1)),
         ),
@@ -213,6 +231,8 @@ def load_p06_settings(path: str | Path) -> P06Settings:
         raise ValueError("Per-class sample counts must be positive")
     if len(settings.optimizer.betas) != 2:
         raise ValueError("optimizer.betas must have two values")
+    if settings.loss.contrastive_weight < 0 or settings.loss.contrastive_temperature <= 0:
+        raise ValueError("Contrastive weight must be non-negative and temperature positive")
     return settings
 
 
@@ -342,6 +362,28 @@ class CompactOpticalImageNetStudent(nn.Module):
 
     def denormalize_clip_input(self, images: torch.Tensor) -> torch.Tensor:
         return (images.float() * self.clip_std + self.clip_mean).clamp(0.0, 1.0)
+
+    def load_pretraining_checkpoint(
+        self, checkpoint: Path, expected_sha256: str
+    ) -> dict[str, Any]:
+        actual = sha256_file(checkpoint)
+        if actual != expected_sha256:
+            raise RuntimeError(
+                f"P06 initial checkpoint checksum mismatch: expected {expected_sha256}, got {actual}"
+            )
+        payload = torch.load(checkpoint, map_location="cpu", weights_only=False)
+        state = payload.get("model", payload)
+        if any(str(key).startswith("module.") for key in state):
+            state = {str(key).removeprefix("module."): value for key, value in state.items()}
+        self.load_state_dict(state, strict=True)
+        self.encoder.configure_feedback("bp")
+        return {
+            "path": str(checkpoint),
+            "sha256": actual,
+            "epoch": payload.get("epoch"),
+            "best_validation_top1": payload.get("best_validation_top1"),
+            "settings_digest": payload.get("settings_digest"),
+        }
 
     def forward(
         self,
@@ -505,6 +547,20 @@ def build_scheduler(optimizer, settings: P06Settings, steps_per_epoch: int):
     return torch.optim.lr_scheduler.LambdaLR(optimizer, multiplier)
 
 
+def batch_contrastive_loss(
+    student_embedding: torch.Tensor,
+    teacher_embedding: torch.Tensor,
+    temperature: float,
+) -> torch.Tensor:
+    """Match each student to its paired teacher instead of the CLIP mean direction."""
+
+    scores = student_embedding.float() @ teacher_embedding.float().T / float(temperature)
+    targets = torch.arange(scores.shape[0], device=scores.device)
+    return 0.5 * (
+        F.cross_entropy(scores, targets) + F.cross_entropy(scores.T, targets)
+    )
+
+
 def compute_losses(
     logits: torch.Tensor,
     embedding: torch.Tensor,
@@ -525,19 +581,25 @@ def compute_losses(
         F.softmax(teacher_clip_logits / temperature, dim=-1),
         reduction="batchmean",
     ) * temperature**2
+    contrastive = batch_contrastive_loss(
+        embedding, teacher, settings.loss.contrastive_temperature
+    )
     ce = F.cross_entropy(logits.float(), labels, label_smoothing=settings.loss.label_smoothing)
     total = (
         settings.loss.supervised_ce_weight * ce
         + settings.loss.feature_cosine_weight * feature
         + settings.loss.clip_logit_kd_weight * kd
+        + settings.loss.contrastive_weight * contrastive
     )
     return total, {
         "loss_total": total.detach(),
         "loss_ce": ce.detach(),
         "loss_feature": feature.detach(),
         "loss_kd": kd.detach(),
+        "loss_contrastive": contrastive.detach(),
         "clip_cosine": cosine.mean().detach(),
         "zero_shot_correct": student_clip_logits.argmax(-1).eq(labels).sum().detach(),
+        "teacher_zero_shot_correct": teacher_clip_logits.argmax(-1).eq(labels).sum().detach(),
     }
 
 
@@ -548,8 +610,8 @@ def _reduce(values: torch.Tensor) -> torch.Tensor:
 
 
 def _metric_vector(device: torch.device) -> torch.Tensor:
-    # samples, loss totals x4, cosine sum, classifier top1/top5, CLIP zero-shot top1
-    return torch.zeros(10, dtype=torch.float64, device=device)
+    # samples, losses x5, cosine, classifier top1/top5, student/teacher zero-shot, batches
+    return torch.zeros(12, dtype=torch.float64, device=device)
 
 
 def _update_metrics(vector, logits, labels, losses, batch_size: int) -> None:
@@ -558,12 +620,14 @@ def _update_metrics(vector, logits, labels, losses, batch_size: int) -> None:
     vector[2] += float(losses["loss_ce"]) * batch_size
     vector[3] += float(losses["loss_feature"]) * batch_size
     vector[4] += float(losses["loss_kd"]) * batch_size
-    vector[5] += float(losses["clip_cosine"]) * batch_size
+    vector[5] += float(losses["loss_contrastive"]) * batch_size
+    vector[6] += float(losses["clip_cosine"]) * batch_size
     topk = logits.detach().topk(min(5, logits.shape[-1]), dim=-1).indices
-    vector[6] += topk[:, :1].eq(labels[:, None]).any(-1).sum()
-    vector[7] += topk.eq(labels[:, None]).any(-1).sum()
-    vector[8] += losses["zero_shot_correct"]
-    vector[9] += 1
+    vector[7] += topk[:, :1].eq(labels[:, None]).any(-1).sum()
+    vector[8] += topk.eq(labels[:, None]).any(-1).sum()
+    vector[9] += losses["zero_shot_correct"]
+    vector[10] += losses["teacher_zero_shot_correct"]
+    vector[11] += 1
 
 
 def _metrics(vector: torch.Tensor, seconds: float) -> dict[str, float]:
@@ -575,11 +639,13 @@ def _metrics(vector: torch.Tensor, seconds: float) -> dict[str, float]:
         "loss_ce": float(vector[2] / count),
         "loss_feature": float(vector[3] / count),
         "loss_kd": float(vector[4] / count),
-        "clip_cosine": float(vector[5] / count),
-        "top1_accuracy": float(vector[6] / count),
-        "top5_accuracy": float(vector[7] / count),
-        "clip_zero_shot_top1": float(vector[8] / count),
-        "batches": int(vector[9]),
+        "loss_contrastive": float(vector[5] / count),
+        "clip_cosine": float(vector[6] / count),
+        "top1_accuracy": float(vector[7] / count),
+        "top5_accuracy": float(vector[8] / count),
+        "clip_zero_shot_top1": float(vector[9] / count),
+        "teacher_zero_shot_top1": float(vector[10] / count),
+        "batches": int(vector[11]),
         "seconds": float(seconds),
     }
 
@@ -669,7 +735,7 @@ def train_one_epoch(
             print(
                 f"[train] epoch={epoch}/{settings.training.epochs} stage={'head' if head_only else 'joint'} "
                 f"batch={batch_index}/{total_batches} loss={float(loss):.4f} "
-                f"top1={float(vector[6] / vector[0]):.4f} cos={float(vector[5] / vector[0]):.4f} "
+                f"top1={float(vector[7] / vector[0]):.4f} cos={float(vector[6] / vector[0]):.4f} "
                 f"lr_phase={optimizer.param_groups[0]['lr']:.3e} elapsed={elapsed:.1f}s",
                 flush=True,
             )
@@ -815,6 +881,13 @@ def run(settings: P06Settings, context: DistributedContext, *, resume: bool) -> 
         source_num_classes=architecture.num_classes,
     )
     source_report = model.load_source(settings.source_checkpoint, settings.source_checkpoint_sha256)
+    initial_report = None
+    if settings.initial_checkpoint is not None:
+        if settings.initial_checkpoint_sha256 is None:
+            raise RuntimeError("Missing checksum for P06 initial checkpoint")
+        initial_report = model.load_pretraining_checkpoint(
+            settings.initial_checkpoint, settings.initial_checkpoint_sha256
+        )
     model.to(context.device)
     if context.world_size > 1:
         model = DistributedDataParallel(
@@ -847,6 +920,7 @@ def run(settings: P06Settings, context: DistributedContext, *, resume: bool) -> 
         "imagenet_dataset_digest": bundle.digest,
         "clip_cache_directory": str(cache_directory(imagenet_settings)),
         "source": source_report,
+        "initial_checkpoint": initial_report,
         "model": model_report,
     }
     if context.is_main:

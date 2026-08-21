@@ -291,3 +291,17 @@ PHYSICAL_GPU_INDICES=3,5 \
 
 tail -f experiments/d2nn_cifar10_high_performance_optical_backbone/runs/p06_imagenet_100k_screen/train.log
 ```
+
+If P06-S reaches the CLIP cosine gate but not the classification gate, continue from its immutable
+`best.pt` with pairwise contrastive distillation. This S2 command defaults to the currently separate
+physical GPUs 2 and 4 and refuses duplicate launches:
+
+```bash
+PHYSICAL_GPU_INDICES=2,4 \
+  bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/55_launch_p06_imagenet_100k_contrastive_refine.sh
+
+tail -f experiments/d2nn_cifar10_high_performance_optical_backbone/runs/p06_imagenet_100k_contrastive_refine/train.log
+```
+
+Command 54 is the foreground/resumable implementation used by command 55. It validates both the
+original P05 source and the P06-S best checkpoint by SHA-256 before allocating the training model.

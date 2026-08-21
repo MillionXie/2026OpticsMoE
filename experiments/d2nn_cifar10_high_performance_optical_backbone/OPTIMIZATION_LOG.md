@@ -400,3 +400,27 @@ gradient 再次全部 finite/nonzero，norm 为
 有效 batch 64，共 1,563 optimizer batches/epoch。head warm-up batch 50 时 running Top-1 0.06%、
 CLIP cosine -0.0003、loss 9.2143，耗时 50.4 秒；这些是随机新 head 的起始在线指标，不能当作
 epoch 结果。按首 50 batch 粗估 warm-up epoch 约 26 分钟，联合 BP 速度需以第二 epoch 实测修正。
+
+### P06-S 完成审计与防塌缩精炼（2026-08-21）
+
+P06-S 并非进程丢失，而是在 11:57 正常完成全部 6 epochs 后释放 GPU。head warm-up 首次读取
+Arrow 数据耗时 1109.7 秒；数据进入系统 cache 后，五个 joint-BP epoch 各约 127--133 秒。
+validation Top-1 从 joint epoch 2 的 1.70% 单调上升到 epoch 6 的 3.84%，Top-5 11.78%，
+CLIP cosine 0.7014；八层 phase gradient 全部 finite/nonzero，最小 optical gate 0.50022。
+optical-off / phase-random Top-1 分别只有 0.22% / 0.14%，相对破坏下降 94.27%，所以模型确实
+更新并依赖光学路径，但未通过预注册的 10% Top-1 门槛，不能进入 full ImageNet。
+
+进一步直接读取相同 10k validation 的 teacher cache：CLIP teacher zero-shot Top-1/Top-5 为
+64.61%/87.38%，但 teacher embedding 与其全局平均方向的 cosine 已高达 0.7210±0.0648。
+P06-S student cosine 0.7014 而 student zero-shot 仅 1.27%，说明单样本 cosine 很大程度可由靠近
+公共均值方向获得，类别/实例结构没有同步学到。因而不原样延长 S1，也不把 cosine 过线误写成
+通用 backbone 成功。
+
+P06-S2 从 S1 epoch-6 best（SHA-256
+`8212bb07c453b9d8723ce1e52e0c75c57240095651110b3a6930d8704d3730b5`）严格继续，保留同一
+100k/10k split 和 0.5 optical gate floor。损失改为
+`1.0 CE + 0.25 cosine + 0.5 text-KL + 1.0 paired contrastive`；batch 内双向
+student↔teacher InfoNCE 以 0.07 temperature 强制每个 student 对应自己的 teacher，而不是所有
+样本靠向相同均值。训练器同时新增 teacher zero-shot 指标，使 teacher 上限、student zero-shot 和
+监督 classifier Top-1 可逐 epoch 对照。精炼运行 24 个 joint-BP epochs，重新 warm up 500 steps
+并使用新的 cosine 周期；command 54/55 默认在物理 GPU 2、4 双卡运行。
