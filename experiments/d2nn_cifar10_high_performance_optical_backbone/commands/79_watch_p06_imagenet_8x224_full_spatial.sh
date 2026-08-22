@@ -39,7 +39,7 @@ while [[ ! -f "${RESULT}" ]]; do
     fi
     restarts="$((restarts + 1))"
     echo "[$(date -Iseconds)] 8x224 full absent; restart ${restarts}/${MAX_RESTARTS}"
-    PHYSICAL_GPU_INDICES="${PHYSICAL_GPU_INDICES:-4,5}" \
+    PHYSICAL_GPU_INDICES="${PHYSICAL_GPU_INDICES:-1,5}" \
       bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/78_launch_p06_imagenet_8x224_full_spatial.sh
     sleep 30
   fi

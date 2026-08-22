@@ -589,3 +589,10 @@ best SHA-256 为 `35e1503cf41ad442cd161d90ba4a26871846a3784a71b1e59ea1b6e1378b05
 epochs，有效batch 64，phase/residual/head LR 为 `2e-5/1e-5/1.5e-4`，重启1000-step warm-up。
 command 77--80 固定双卡启动、恢复和监督流程；正式判定仍要求Top-1至少10%、cosine至少0.65、
 逐层gate至少0.5及光学破坏相对下降至少30%。
+
+启动时GPU 4被其他用户在数分钟内新增两个任务，占用升至6.8GB并高负载；首次4/5 DDP尚未
+产生baseline或训练checkpoint即被精确终止。随后迁移到低占用GPU 1和空闲GPU 5，唯一DDP
+实例 launcher/torchrun PID 为1323910/1324007，watcher PID 1324898并继承1/5设备映射。
+完整50k起始验证为Top-1/Top-5 **3.90%/11.51%**，高于10k screen的3.66%；首个250-batch
+检查点在52.5秒到达，running Top-1 2.89%、cosine 0.7271，证明双rank、数据和正常联合BP
+均已实际前进。command 77--79默认设备同步改为当前验证过的1/5。

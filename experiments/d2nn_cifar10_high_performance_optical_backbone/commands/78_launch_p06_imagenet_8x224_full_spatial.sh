@@ -2,7 +2,7 @@
 set -euo pipefail
 source "$(dirname "$0")/_common.sh"
 
-PHYSICAL_GPU_INDICES="${PHYSICAL_GPU_INDICES:-4,5}"
+PHYSICAL_GPU_INDICES="${PHYSICAL_GPU_INDICES:-1,5}"
 RUN_DIR="experiments/d2nn_cifar10_high_performance_optical_backbone/runs/p06_imagenet_8x224_full_spatial"
 CONFIG_NAME="p06_imagenet_8x224_full_spatial.yaml"
 mkdir -p "${RUN_DIR}"

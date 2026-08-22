@@ -2,7 +2,7 @@
 set -euo pipefail
 source "$(dirname "$0")/_common.sh"
 
-PHYSICAL_GPU_INDICES="${PHYSICAL_GPU_INDICES:-4,5}"
+PHYSICAL_GPU_INDICES="${PHYSICAL_GPU_INDICES:-1,5}"
 export NCCL_P2P_DISABLE="${NCCL_P2P_DISABLE:-1}"
 export NCCL_IB_DISABLE="${NCCL_IB_DISABLE:-1}"
 IFS=',' read -r -a gpu_indices <<< "${PHYSICAL_GPU_INDICES}"
