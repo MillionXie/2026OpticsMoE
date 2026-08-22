@@ -384,5 +384,6 @@ groups:
 PHYSICAL_GPU_INDEX=2 \
   bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/73_smoke_p06_imagenet_8x224.sh
 
-bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/75_launch_p06_imagenet_8x224_screens.sh
+PROJECTED_GPU_INDEX=1 MLP_GPU_INDEX=4 SUPERVISED_MLP_GPU_INDEX=5 \
+  bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/75_launch_p06_imagenet_8x224_screens.sh
 ```

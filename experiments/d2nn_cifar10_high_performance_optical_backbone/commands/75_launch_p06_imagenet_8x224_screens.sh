@@ -21,6 +21,6 @@ launch_screen() {
   echo "Launched 8x224 ${variant} screen pid=${pid} physical_gpu=${gpu}"
 }
 
-launch_screen projected 2 p06_imagenet_8x224_screen_projected
-launch_screen mlp 4 p06_imagenet_8x224_screen_mlp
-launch_screen supervised_mlp 5 p06_imagenet_8x224_screen_supervised_mlp
+launch_screen projected "${PROJECTED_GPU_INDEX:-2}" p06_imagenet_8x224_screen_projected
+launch_screen mlp "${MLP_GPU_INDEX:-4}" p06_imagenet_8x224_screen_mlp
+launch_screen supervised_mlp "${SUPERVISED_MLP_GPU_INDEX:-5}" p06_imagenet_8x224_screen_supervised_mlp
