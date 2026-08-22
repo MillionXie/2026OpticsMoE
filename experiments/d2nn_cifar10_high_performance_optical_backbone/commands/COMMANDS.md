@@ -396,3 +396,14 @@ budget. Start it on a released card after the first three screens:
 PHYSICAL_GPU_INDEX=1 \
   bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/76_launch_p06_imagenet_8x224_spatial_screen.sh
 ```
+
+After the spatial screen wins, continue its immutable best checkpoint on all ImageNet training
+images for 12 exact-BP epochs. Commands 77/78 default to GPUs 4/5; commands 79/80 supervise and
+resume the long run. There is no head-only stage:
+
+```bash
+PHYSICAL_GPU_INDICES=4,5 \
+  bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/78_launch_p06_imagenet_8x224_full_spatial.sh
+
+bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/80_launch_p06_imagenet_8x224_full_watcher.sh
+```

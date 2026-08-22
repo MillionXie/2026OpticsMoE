@@ -271,10 +271,10 @@ def load_p06_settings(path: str | Path) -> P06Settings:
         )
     if (
         settings.source_checkpoint_load_mode == "integrity_only"
-        and settings.initial_checkpoint_load_mode != "expanded"
+        and settings.initial_checkpoint is None
     ):
         raise ValueError(
-            "source integrity_only is allowed only with an expanded initial checkpoint"
+            "source integrity_only requires a complete P06 initial checkpoint"
         )
     if settings.training.head_warmup_epochs < 0 or settings.training.joint_epochs < 1:
         raise ValueError("P06 requires at least one joint-training epoch")

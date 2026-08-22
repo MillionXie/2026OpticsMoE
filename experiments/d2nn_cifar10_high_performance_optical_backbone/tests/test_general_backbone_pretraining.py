@@ -339,3 +339,14 @@ def test_eight_stage_224_capacity_keeps_pixel_size_and_joint_bp() -> None:
         + spatial_report["pretraining_head_parameters"]
         < 2_000_000
     )
+
+    full = load_p06_settings(
+        root / "configs" / "p06_imagenet_8x224_full_spatial.yaml"
+    )
+    assert full.source_checkpoint_load_mode == "integrity_only"
+    assert full.initial_checkpoint_load_mode == "strict"
+    assert full.training.head_warmup_epochs == 0
+    assert full.training.joint_epochs == 12
+    assert full.training.train_samples_per_class is None
+    assert full.training.validation_samples_per_class == 50
+    assert full.training.run_final_ablations

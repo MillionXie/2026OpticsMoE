@@ -576,3 +576,16 @@ BP。三个 100k 配方 screen 分别检查原 projected-linear 读出、解耦�
 2/4/6/8 的 parameter-free average/max pooling 从4x4提高到8x8，descriptor 从384增至1536，
 检查原读出是否过早丢弃224平面的空间信息。该 projected readout 连同残差电子仍低于2M预算；
 它在前三条中的一张卡释放后运行。至此内部配方筛选封顶为四条，不再继续枚举读出变体。
+
+四条 screen 的 epoch-3 统一10k validation Top-1/Top-5 为：projected-4x4
+2.41%/7.82%，MLP-4x4 1.56%/6.15%，supervised-MLP-4x4 1.49%/5.88%，以及
+projected-8x8 **3.66%/11.18%**。MLP 虽有更高 cosine，但没有转化为分类性能；提高 CE 权重
+也没有弥补。因此锁定 projected-8x8，不再保留MLP。胜出模型八层梯度全部 finite/nonzero，
+best SHA-256 为 `35e1503cf41ad442cd161d90ba4a26871846a3784a71b1e59ea1b6e1378b050e`；相位、
+残差电子、临时读出分别为1,204,224/312,336/1,303,016，后两者合计1,615,352，低于2M。
+
+全量阶段从该100k best 严格加载，不重新扩容；取消所有 head-only epoch，从首 batch 对8层
+224相位、残差和读出执行 exact BP。使用完整1,281,167 train/50,000 validation，12个joint
+epochs，有效batch 64，phase/residual/head LR 为 `2e-5/1e-5/1.5e-4`，重启1000-step warm-up。
+command 77--80 固定双卡启动、恢复和监督流程；正式判定仍要求Top-1至少10%、cosine至少0.65、
+逐层gate至少0.5及光学破坏相对下降至少30%。
