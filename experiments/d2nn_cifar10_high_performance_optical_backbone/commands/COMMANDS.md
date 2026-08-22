@@ -371,3 +371,18 @@ tail -f experiments/d2nn_cifar10_high_performance_optical_backbone/runs/p06_imag
 Command 71 checks F2C every five minutes, allows 30 minutes for a cold validation/data-cache
 interval, resumes from `last.pt` after a missing or stalled process, and stops after `result.json`
 is complete. Command 72 starts one duplicate-safe background watcher.
+
+P06-F3 keeps the physical pixel size at 16 um, returns to eight stages, and raises the RGB phase
+plane to 224x224 (1,204,224 optical parameters). There is no frozen-head epoch: every screen uses
+exact whole-backbone BP from its first batch. Command 73 first validates production batch 32 and
+all eight phase gradients. Command 75 then uses the three idle cards for bounded 100k screens:
+projected-linear on GPU 2, nonlinear descriptor readout on GPU 4, and the same nonlinear readout
+with a more supervised objective on GPU 5. These are recipe screens, not extra formal feedback
+groups:
+
+```bash
+PHYSICAL_GPU_INDEX=2 \
+  bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/73_smoke_p06_imagenet_8x224.sh
+
+bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/75_launch_p06_imagenet_8x224_screens.sh
+```

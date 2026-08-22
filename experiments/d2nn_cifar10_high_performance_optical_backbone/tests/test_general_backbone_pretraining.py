@@ -286,3 +286,37 @@ def test_capacity_expansion_is_million_scale_and_electronically_bounded() -> Non
         + report["pretraining_head_parameters"]
         < 2_000_000
     )
+
+
+def test_eight_stage_224_capacity_keeps_pixel_size_and_joint_bp() -> None:
+    root = Path(__file__).resolve().parents[1]
+    config = root / "configs" / "p06_imagenet_8x224_screen_projected.yaml"
+    settings = load_p06_settings(config)
+    architecture = load_formal_settings(settings.architecture_config).base
+    model = CompactOpticalImageNetStudent(
+        architecture.optical,
+        selected_stage_indices=settings.model.selected_stage_indices,
+        pool_size=settings.model.pool_size,
+        projection_dim=settings.model.projection_dim,
+        num_classes=settings.model.num_classes,
+        classifier_mode=settings.model.classifier_mode,
+        classifier_hidden_dim=settings.model.classifier_hidden_dim,
+        classifier_dropout=settings.model.classifier_dropout,
+    )
+    report = model.parameter_report()
+    assert architecture.optical.canvas_size == 224
+    assert architecture.optical.num_stages == 8
+    assert architecture.optical.pixel_size_m == 1.6e-5
+    assert architecture.optical.electronic_skip_downsample_factor == 7
+    assert settings.training.head_warmup_epochs == 0
+    assert settings.training.joint_epochs == 3
+    assert settings.initial_checkpoint_load_mode == "expanded"
+    assert settings.model.selected_stage_indices == (1, 3, 5, 7)
+    assert report["phase_parameters"] == 8 * 3 * 224 * 224
+    assert report["phase_parameters"] == 1_204_224
+    assert report["residual_electronic_parameters"] < 1_000_000
+    assert (
+        report["residual_electronic_parameters"]
+        + report["pretraining_head_parameters"]
+        < 2_000_000
+    )
