@@ -433,3 +433,24 @@ PHYSICAL_GPU_INDICES=1,5 \
 
 bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/80_launch_p06_imagenet_8x224_full_watcher.sh
 ```
+
+P07 removes the CLIP teacher as an actual data/model path, not merely by setting a nominal loss
+weight. Three bounded internal screens load only the same immutable P06 encoder, reinitialize every
+classification readout, and compare one linear, MLP, and lightweight spatial-conv+MLP head. All use
+the same teacher-free CE/Mixup/CutMix recipe and full 50k validation. The default launch maps them to
+the currently idle physical GPUs 2/4/5:
+
+```bash
+LINEAR_GPU_INDEX=2 MLP_GPU_INDEX=4 CONV_MLP_GPU_INDEX=5 \
+  bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/88_launch_p07_teacher_free_head_screens.sh
+
+bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/90_launch_p07_teacher_free_watcher.sh
+
+tail -f experiments/d2nn_cifar10_high_performance_optical_backbone/runs/p07_teacher_free_head_screens/watcher.log
+```
+
+Command 87 is the foreground/resumable entry point and requires `P07_CONFIG` plus
+`PHYSICAL_GPU_INDEX`. Command 89 supervises all three short jobs and relaunches missing variants up
+to three times. These head screens do not add feedback groups to the formal four-group comparison.
+Their encoder was previously CLIP-trained, so they are recipe-selection runs only; the formal clean
+P07 run described in `P07_TEACHER_FREE_BACKBONE_PLAN.md` starts from the no-CLIP P05 operator.

@@ -620,3 +620,34 @@ PID为1690859。manifest实测相位、残差电子、预训练头分别为1,204
 descriptor norm及CLIP projector，只重新初始化分类MLP；因此完整50k起始分类Top-1 0.10%
 而student zero-shot仍为2.80%，符合预期。head校准batch 250/500分别在19.4/38.1秒到达，
 loss 15.4910/15.5916，running Top-1 0.11%/0.13%，证明GPU、全量数据和优化器均实际前进。
+### P07：移除 CLIP 教师、单读出头与规范 Backbone 协议（2026-08-22）
+
+用户决定本阶段不再使用 CLIP 教师，也不保留“CLIP 投影头+分类头”的双头结构。为避免出现
+“把教师损失权重写成0、实际仍读取teacher cache”的伪消融，训练器新增了可审计的纯监督路径：
+当 feature cosine、CLIP logit KD 和 contrastive 权重全部为0时，不创建 CLIP projector，不实例化
+`ClipFeatureStore`，不读取 teacher embedding，不加载文本原型；训练和结果指标仅保留 CE、
+Top-1/Top-5 及光学/梯度审计。纯监督路径支持 label smoothing、Mixup 和 CutMix；含教师路径禁止
+batch mixing，避免混合图像与缓存教师目标不匹配。
+
+读出只保留三个内部候选：1536维空间描述符后的 Linear、`1536->256->1000` MLP，以及把
+第2/4/6/8层各自池化到8x8后用轻量`3x3 + depthwise/1x1`卷积融合、双池化再接MLP的
+Conv+MLP。Conv+MLP 的电子读出约0.34M，连同0.312M残差电子约0.65M；Linear/MLP连同残差
+也都低于2M预算。新增`encoder_only`加载模式，三个候选只从同一不可变P06 best恢复完整主干，
+所有读出参数重新初始化，保证头部比较公平；输出另存仅含encoder的`backbone.pt`及SHA-256。
+
+新增稳定的`forward_backbone()`接口，返回最后一层和全部八层stage maps。由此明确：只在
+ImageNet跑一圈并不自动构成backbone；正式交付还必须包括可丢弃分类头、多层特征接口、冻结
+linear probe、完整fine-tune，以及KADID-10k回归或ISIC2016分割等非分类迁移。完整分阶段方案、
+停止规则和论文证据边界记录在`P07_TEACHER_FREE_BACKBONE_PLAN.md`。
+
+P07-S1/S2/S3使用相同P06 8x224 encoder（best SHA-256
+`092fba19959c1c1ffcabcc59bca5d46d9786bdd54d0a74444a7cf82bc4879e94`）、每类100张训练图、
+完整50k validation、1轮head warm-up和2轮joint BP，并共享RandAugment、label smoothing及
+50%概率Mixup/CutMix。它们只用于迅速选单头配方；由于该encoder历史上见过CLIP，它们不能
+冒充“全程无教师”证据。正式P07-F将从未接触CLIP的P05算子扩展到8x224，使用完整ImageNet
+训练30轮并视20--30轮曲线决定是否延长至50轮。
+
+启动与监督入口固定为command 87--90，默认使用当前空闲物理GPU 2/4/5。代码与配置必须先在
+服务器通过单元测试和真实batch smoke，再允许三个screen后台运行；启动PID、manifest中的
+`teacher_features_loaded=false`、首个训练日志和GPU进程需共同复核，不能只以nohup返回作为
+“已经训练”的证据。

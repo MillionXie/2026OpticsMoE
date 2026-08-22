@@ -14,7 +14,9 @@ from experiments.optical_mlp_mixer_moe9_imagenet1k_clip_distill.datasets import 
 from ..general_backbone_pretraining import (
     CompactOpticalImageNetStudent,
     SubsetEpochViewSampler,
+    apply_batch_mixing,
     batch_contrastive_loss,
+    compute_losses,
     load_p06_settings,
     sha256_file,
     stratified_base_indices,
@@ -112,6 +114,59 @@ def test_descriptor_mlp_decouples_classifier_from_clip_projection() -> None:
     assert descriptor.shape == (2, 48)
     assert model.classifier[0].in_features == 48
     assert model.classifier[3].out_features == 5
+
+
+def test_teacher_free_conv_mlp_has_one_head_and_reusable_stage_contract() -> None:
+    model = CompactOpticalImageNetStudent(
+        _tiny_optical(),
+        selected_stage_indices=(0, 1),
+        pool_size=4,
+        projection_dim=7,
+        num_classes=5,
+        classifier_mode="spatial_conv_mlp",
+        classifier_hidden_dim=11,
+        classifier_conv_channels=8,
+        enable_clip_head=False,
+    )
+    images = torch.rand(2, 3, 20, 20)
+    final, stages = model.forward_backbone(images)
+    logits, embedding, descriptor = model(images)
+    assert final.shape == stages[-1].shape
+    assert len(stages) == 2
+    assert logits.shape == (2, 5)
+    assert descriptor.shape == (2, 32)
+    assert embedding.shape == descriptor.shape
+    assert model.projector is None
+    report = model.parameter_report()
+    assert not report["clip_projection_enabled"]
+    assert report["clip_projection_head_parameters"] == 0
+
+
+def test_teacher_free_config_omits_clip_loss_and_supports_batch_mixing() -> None:
+    config = (
+        Path(__file__).resolve().parents[1]
+        / "configs"
+        / "p07_teacher_free_screen_mlp.yaml"
+    )
+    settings = load_p06_settings(config)
+    assert not settings.loss.uses_teacher
+    assert settings.initial_checkpoint_load_mode == "encoder_only"
+    images = torch.rand(4, 3, 16, 16)
+    labels = torch.arange(4)
+    mixed, primary, paired, weight, mode = apply_batch_mixing(images, labels, settings)
+    assert mixed.shape == images.shape
+    assert torch.equal(primary, labels)
+    assert mode in {"none", "mixup", "cutmix"}
+    if paired is not None:
+        assert 0.0 <= weight <= 1.0
+    logits = torch.randn(4, 5, requires_grad=True)
+    embedding = torch.randn(4, 48)
+    loss, metrics = compute_losses(
+        logits, embedding, None, labels, None, None, settings
+    )
+    loss.backward()
+    assert logits.grad is not None
+    assert float(metrics["loss_feature"]) == 0.0
 
 
 def test_compatible_checkpoint_load_restores_encoder_but_reinitializes_head(

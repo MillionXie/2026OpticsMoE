@@ -51,6 +51,7 @@ class P06ModelConfig:
     num_classes: int
     classifier_mode: str
     classifier_hidden_dim: int
+    classifier_conv_channels: int
     classifier_dropout: float
 
 
@@ -63,6 +64,20 @@ class P06LossConfig:
     contrastive_temperature: float
     distill_temperature: float
     label_smoothing: float
+    mixup_alpha: float
+    cutmix_alpha: float
+    batch_mix_probability: float
+
+    @property
+    def uses_teacher(self) -> bool:
+        return any(
+            weight > 0.0
+            for weight in (
+                self.feature_cosine_weight,
+                self.clip_logit_kd_weight,
+                self.contrastive_weight,
+            )
+        )
 
 
 @dataclass(frozen=True)
@@ -193,6 +208,7 @@ def load_p06_settings(path: str | Path) -> P06Settings:
                 model_raw.get("classifier_mode", "projected_linear")
             ).lower(),
             classifier_hidden_dim=int(model_raw.get("classifier_hidden_dim", 512)),
+            classifier_conv_channels=int(model_raw.get("classifier_conv_channels", 64)),
             classifier_dropout=float(model_raw.get("classifier_dropout", 0.0)),
         ),
         loss=P06LossConfig(
@@ -203,6 +219,9 @@ def load_p06_settings(path: str | Path) -> P06Settings:
             contrastive_temperature=float(loss_raw.get("contrastive_temperature", 0.07)),
             distill_temperature=float(loss_raw.get("distill_temperature", 2.0)),
             label_smoothing=float(loss_raw.get("label_smoothing", 0.1)),
+            mixup_alpha=float(loss_raw.get("mixup_alpha", 0.0)),
+            cutmix_alpha=float(loss_raw.get("cutmix_alpha", 0.0)),
+            batch_mix_probability=float(loss_raw.get("batch_mix_probability", 0.0)),
         ),
         optimizer=P06OptimizerConfig(
             phase_learning_rate=float(optimizer_raw.get("phase_learning_rate", 1e-4)),
@@ -254,21 +273,27 @@ def load_p06_settings(path: str | Path) -> P06Settings:
         "projected_linear",
         "descriptor_linear",
         "descriptor_mlp",
+        "spatial_conv_mlp",
     }:
         raise ValueError("Unsupported model.classifier_mode")
     if settings.model.classifier_hidden_dim < 1:
         raise ValueError("model.classifier_hidden_dim must be positive")
+    if settings.model.classifier_conv_channels < 1:
+        raise ValueError("model.classifier_conv_channels must be positive")
     if not 0.0 <= settings.model.classifier_dropout < 1.0:
         raise ValueError("model.classifier_dropout must be in [0, 1)")
-    if settings.source_checkpoint_load_mode not in {"strict", "integrity_only"}:
-        raise ValueError("source_checkpoint_load_mode must be strict or integrity_only")
+    if settings.source_checkpoint_load_mode not in {"strict", "integrity_only", "expanded"}:
+        raise ValueError(
+            "source_checkpoint_load_mode must be strict, integrity_only or expanded"
+        )
     if settings.initial_checkpoint_load_mode not in {
         "strict",
         "compatible",
         "expanded",
+        "encoder_only",
     }:
         raise ValueError(
-            "initial_checkpoint_load_mode must be strict, compatible or expanded"
+            "initial_checkpoint_load_mode must be strict, compatible, expanded or encoder_only"
         )
     if (
         settings.source_checkpoint_load_mode == "integrity_only"
@@ -297,6 +322,17 @@ def load_p06_settings(path: str | Path) -> P06Settings:
         raise ValueError("optimizer.betas must have two values")
     if settings.loss.contrastive_weight < 0 or settings.loss.contrastive_temperature <= 0:
         raise ValueError("Contrastive weight must be non-negative and temperature positive")
+    if settings.loss.supervised_ce_weight <= 0.0:
+        raise ValueError("supervised_ce_weight must be positive")
+    if settings.loss.mixup_alpha < 0.0 or settings.loss.cutmix_alpha < 0.0:
+        raise ValueError("mixup_alpha and cutmix_alpha must be non-negative")
+    if not 0.0 <= settings.loss.batch_mix_probability <= 1.0:
+        raise ValueError("batch_mix_probability must be in [0, 1]")
+    if settings.loss.uses_teacher and settings.loss.batch_mix_probability > 0.0:
+        raise ValueError(
+            "Batch mixing is only supported by the teacher-free objective because "
+            "cached CLIP targets no longer match mixed images"
+        )
     return settings
 
 
@@ -369,6 +405,48 @@ def atomic_torch_save(path: Path, value: Any) -> None:
     temporary.replace(path)
 
 
+class SpatialConvFusion(nn.Module):
+    """Fuse selected optical stage maps before the final classification MLP.
+
+    Convolution runs only on the configured pooled grid, so it preserves local
+    layout without turning the electronic branch into a second large backbone.
+    """
+
+    def __init__(self, input_channels: int, channels: int, pool_size: int) -> None:
+        super().__init__()
+        groups = min(8, int(channels))
+        while int(channels) % groups:
+            groups -= 1
+        output_channels = 2 * int(channels)
+        output_groups = min(8, output_channels)
+        while output_channels % output_groups:
+            output_groups -= 1
+        self.pool_size = int(pool_size)
+        self.output_dim = 2 * output_channels
+        self.net = nn.Sequential(
+            nn.Conv2d(int(input_channels), int(channels), 3, padding=1, bias=False),
+            nn.GroupNorm(groups, int(channels)),
+            nn.GELU(),
+            nn.Conv2d(
+                int(channels), int(channels), 3, padding=1, groups=int(channels), bias=False
+            ),
+            nn.Conv2d(int(channels), output_channels, 1, bias=False),
+            nn.GroupNorm(output_groups, output_channels),
+            nn.GELU(),
+        )
+
+    def forward(self, stage_maps: Iterable[torch.Tensor]) -> torch.Tensor:
+        size = (self.pool_size, self.pool_size)
+        spatial = torch.cat(
+            [F.adaptive_avg_pool2d(feature, size) for feature in stage_maps], dim=1
+        )
+        fused = self.net(spatial)
+        return torch.cat(
+            (F.adaptive_avg_pool2d(fused, 1), F.adaptive_max_pool2d(fused, 1)),
+            dim=1,
+        ).flatten(1)
+
+
 class CompactOpticalImageNetStudent(nn.Module):
     """P05 optical/OEO trunk with a small multi-stage semantic readout."""
 
@@ -383,7 +461,9 @@ class CompactOpticalImageNetStudent(nn.Module):
         source_num_classes: int = 10,
         classifier_mode: str = "projected_linear",
         classifier_hidden_dim: int = 512,
+        classifier_conv_channels: int = 64,
         classifier_dropout: float = 0.0,
+        enable_clip_head: bool = True,
     ) -> None:
         super().__init__()
         self.encoder = OpticalClassifier(optical, source_num_classes)
@@ -391,16 +471,34 @@ class CompactOpticalImageNetStudent(nn.Module):
         if min(self.selected_stage_indices) < 0 or max(self.selected_stage_indices) >= optical.num_stages:
             raise ValueError("selected_stage_indices are outside the optical trunk")
         self.pool_size = int(pool_size)
-        features_per_stage = 2 * optical.input_channels * self.pool_size * self.pool_size
-        self.descriptor_dim = len(self.selected_stage_indices) * features_per_stage
         self.classifier_mode = str(classifier_mode)
+        self.enable_clip_head = bool(enable_clip_head)
+        self.spatial_fusion: SpatialConvFusion | None = None
+        if self.classifier_mode == "spatial_conv_mlp":
+            self.spatial_fusion = SpatialConvFusion(
+                len(self.selected_stage_indices) * optical.input_channels,
+                int(classifier_conv_channels),
+                self.pool_size,
+            )
+            self.descriptor_dim = self.spatial_fusion.output_dim
+        else:
+            features_per_stage = (
+                2 * optical.input_channels * self.pool_size * self.pool_size
+            )
+            self.descriptor_dim = len(self.selected_stage_indices) * features_per_stage
         self.descriptor_norm = nn.LayerNorm(self.descriptor_dim)
-        self.projector = nn.Linear(self.descriptor_dim, int(projection_dim))
+        self.projector = (
+            nn.Linear(self.descriptor_dim, int(projection_dim))
+            if self.enable_clip_head
+            else None
+        )
         if self.classifier_mode == "projected_linear":
+            if self.projector is None:
+                raise ValueError("projected_linear requires enable_clip_head=True")
             self.classifier = nn.Linear(int(projection_dim), int(num_classes))
         elif self.classifier_mode == "descriptor_linear":
             self.classifier = nn.Linear(self.descriptor_dim, int(num_classes))
-        elif self.classifier_mode == "descriptor_mlp":
+        elif self.classifier_mode in {"descriptor_mlp", "spatial_conv_mlp"}:
             hidden = int(classifier_hidden_dim)
             self.classifier = nn.Sequential(
                 nn.Linear(self.descriptor_dim, hidden),
@@ -434,14 +532,58 @@ class CompactOpticalImageNetStudent(nn.Module):
                 f"P05 source checksum mismatch: expected {expected_sha256}, got {actual}"
             )
         payload = torch.load(checkpoint, map_location="cpu", weights_only=False)
+        state = payload.get("model", payload)
+        if any(str(key).startswith("module.") for key in state):
+            state = {
+                str(key).removeprefix("module."): value for key, value in state.items()
+            }
+        load_report: dict[str, Any] = {"mode": load_mode}
         if load_mode == "strict":
-            state = payload.get("model", payload)
-            if any(str(key).startswith("module.") for key in state):
-                state = {
-                    str(key).removeprefix("module."): value
-                    for key, value in state.items()
-                }
             self.encoder.load_state_dict(state, strict=True)
+            load_report["loaded_tensors"] = len(state)
+        elif load_mode == "expanded":
+            current = self.encoder.state_dict()
+            expanded: dict[str, torch.Tensor] = {}
+            for key, target in current.items():
+                if key not in state:
+                    continue
+                value = state[key]
+                if tuple(value.shape) == tuple(target.shape):
+                    expanded[key] = value
+                elif (
+                    key.endswith("raw_phase")
+                    and value.ndim == 3
+                    and target.ndim == 3
+                    and value.shape[0] == target.shape[0]
+                ):
+                    expanded[key] = F.interpolate(
+                        value.float().unsqueeze(0),
+                        size=target.shape[-2:],
+                        mode="bicubic",
+                        align_corners=False,
+                    ).squeeze(0).to(dtype=target.dtype)
+            required = {
+                key
+                for key, _ in self.encoder.named_parameters()
+                if key.startswith("stages.")
+            }
+            missing = sorted(required - set(expanded))
+            if missing:
+                raise RuntimeError(
+                    "Expanded P05 source did not initialise every trainable stage tensor; "
+                    f"missing {missing[:5]}"
+                )
+            self.encoder.load_state_dict(expanded, strict=False)
+            load_report.update(
+                {
+                    "loaded_tensors": len(expanded),
+                    "phase_resolution": [
+                        int(state["stages.0.raw_phase"].shape[-1]),
+                        int(current["stages.0.raw_phase"].shape[-1]),
+                    ],
+                    "missing_keys": sorted(set(current) - set(expanded)),
+                }
+            )
         elif load_mode != "integrity_only":
             raise ValueError(f"Unsupported source checkpoint load mode: {load_mode}")
         self.encoder.head = nn.Identity()
@@ -452,6 +594,7 @@ class CompactOpticalImageNetStudent(nn.Module):
             "selected_epoch": payload.get("selected_epoch"),
             "best_validation_accuracy": payload.get("best_validation_accuracy"),
             "load_mode": load_mode,
+            "load": load_report,
         }
 
     def denormalize_clip_input(self, images: torch.Tensor) -> torch.Tensor:
@@ -511,6 +654,34 @@ class CompactOpticalImageNetStudent(nn.Module):
                 "missing_keys": missing,
                 "shape_mismatches": shape_mismatches,
                 "unexpected_keys": sorted(set(state) - set(current)),
+            }
+        elif load_mode == "encoder_only":
+            current = self.state_dict()
+            compatible = {
+                key: value
+                for key, value in state.items()
+                if key.startswith("encoder.")
+                and key in current
+                and tuple(value.shape) == tuple(current[key].shape)
+            }
+            parameter_names = set(dict(self.named_parameters()))
+            missing_trainable_encoder = sorted(
+                key
+                for key in parameter_names
+                if key.startswith("encoder.") and key not in compatible
+            )
+            if missing_trainable_encoder:
+                raise RuntimeError(
+                    "Encoder-only P06 load did not restore every trainable backbone tensor; "
+                    f"missing {missing_trainable_encoder[:5]}"
+                )
+            self.load_state_dict(compatible, strict=False)
+            load_report = {
+                "mode": "encoder_only",
+                "loaded_tensors": len(compatible),
+                "missing_keys": sorted(set(current) - set(compatible)),
+                "shape_mismatches": {},
+                "unexpected_keys": sorted(set(state) - set(compatible)),
             }
         elif load_mode == "expanded":
             current = self.state_dict()
@@ -641,44 +812,91 @@ class CompactOpticalImageNetStudent(nn.Module):
         ablation: Ablation = "normal",
         deployment: OpticalDeploymentState | None = None,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        intensity = self.denormalize_clip_input(images)
-        if detach_backbone:
-            with torch.no_grad():
-                _, stages = self.encoder.forward_features(
-                    intensity, ablation=ablation, deployment=deployment
-                )
+        _, stages = self.forward_backbone(
+            images,
+            detach_backbone=detach_backbone,
+            ablation=ablation,
+            deployment=deployment,
+        )
+        selected = [stages[index] for index in self.selected_stage_indices]
+        if self.spatial_fusion is not None:
+            descriptor = self.descriptor_norm(self.spatial_fusion(selected))
         else:
-            _, stages = self.encoder.forward_features(
-                intensity, ablation=ablation, deployment=deployment
-            )
-        pooled = []
-        size = (self.pool_size, self.pool_size)
-        for index in self.selected_stage_indices:
-            feature = stages[index]
-            pooled.extend((F.adaptive_avg_pool2d(feature, size), F.adaptive_max_pool2d(feature, size)))
-        descriptor = self.descriptor_norm(torch.cat(pooled, dim=1).flatten(1))
-        projected = self.projector(descriptor)
-        embedding = F.normalize(projected.float(), dim=-1)
-        # CE receives the unnormalised feature so its logit scale is not
-        # artificially capped; CLIP cosine/KD use the unit embedding.
+            pooled = []
+            size = (self.pool_size, self.pool_size)
+            for feature in selected:
+                pooled.extend(
+                    (
+                        F.adaptive_avg_pool2d(feature, size),
+                        F.adaptive_max_pool2d(feature, size),
+                    )
+                )
+            descriptor = self.descriptor_norm(torch.cat(pooled, dim=1).flatten(1))
+        projected = self.projector(descriptor) if self.projector is not None else None
+        embedding = F.normalize(
+            (projected if projected is not None else descriptor).float(), dim=-1
+        )
         classifier_input = (
             projected if self.classifier_mode == "projected_linear" else descriptor
         )
+        if classifier_input is None:
+            raise RuntimeError("Projected classifier is missing its projection head")
         logits = self.classifier(classifier_input)
         return logits, embedding, descriptor
+
+    def forward_backbone(
+        self,
+        images: torch.Tensor,
+        *,
+        detach_backbone: bool = False,
+        ablation: Ablation = "normal",
+        deployment: OpticalDeploymentState | None = None,
+    ) -> tuple[torch.Tensor, tuple[torch.Tensor, ...]]:
+        """Stable reusable-backbone API independent of the pretraining head."""
+
+        intensity = self.denormalize_clip_input(images)
+        if detach_backbone:
+            with torch.no_grad():
+                final, stages = self.encoder.forward_features(
+                    intensity, ablation=ablation, deployment=deployment
+                )
+        else:
+            final, stages = self.encoder.forward_features(
+                intensity, ablation=ablation, deployment=deployment
+            )
+        return final, tuple(stages)
+
+    def head_modules(self) -> tuple[nn.Module, ...]:
+        return tuple(
+            module
+            for module in (
+                self.spatial_fusion,
+                self.descriptor_norm,
+                self.projector,
+                self.classifier,
+            )
+            if module is not None
+        )
 
     def parameter_report(self) -> dict[str, Any]:
         phase = sum(parameter.numel() for parameter in self.encoder.phase_parameters())
         residual = sum(parameter.numel() for parameter in self.encoder.residual_parameters())
         head = sum(
             parameter.numel()
-            for module in (self.descriptor_norm, self.projector, self.classifier)
+            for module in self.head_modules()
             for parameter in module.parameters()
+        )
+        clip_head = (
+            sum(parameter.numel() for parameter in self.projector.parameters())
+            if self.projector is not None
+            else 0
         )
         return {
             "phase_parameters": phase,
             "residual_electronic_parameters": residual,
             "pretraining_head_parameters": head,
+            "clip_projection_head_parameters": clip_head,
+            "clip_projection_enabled": self.projector is not None,
             "total_trainable_parameters": sum(parameter.numel() for parameter in self.parameters()),
             "descriptor_dim": self.descriptor_dim,
             "classifier_mode": self.classifier_mode,
@@ -797,7 +1015,7 @@ def build_optimizer(model: CompactOpticalImageNetStudent, settings: P06Settings)
     residual = list(model.encoder.residual_parameters())
     head = [
         parameter
-        for module in (model.descriptor_norm, model.projector, model.classifier)
+        for module in model.head_modules()
         for parameter in module.parameters()
     ]
     return torch.optim.AdamW(
@@ -840,15 +1058,83 @@ def batch_contrastive_loss(
     )
 
 
+def apply_batch_mixing(
+    images: torch.Tensor,
+    labels: torch.Tensor,
+    settings: P06Settings,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor | None, float, str]:
+    """Apply one standard ImageNet Mixup/CutMix regularizer to a training batch."""
+
+    probability = settings.loss.batch_mix_probability
+    if images.shape[0] < 2 or probability <= 0.0 or random.random() >= probability:
+        return images, labels, None, 1.0, "none"
+    permutation = torch.randperm(images.shape[0], device=images.device)
+    paired = labels[permutation]
+    can_mixup = settings.loss.mixup_alpha > 0.0
+    can_cutmix = settings.loss.cutmix_alpha > 0.0
+    use_cutmix = can_cutmix and (not can_mixup or random.random() < 0.5)
+    if use_cutmix:
+        lam = float(
+            np.random.beta(settings.loss.cutmix_alpha, settings.loss.cutmix_alpha)
+        )
+        height, width = images.shape[-2:]
+        ratio = math.sqrt(max(0.0, 1.0 - lam))
+        cut_height = max(1, int(round(height * ratio)))
+        cut_width = max(1, int(round(width * ratio)))
+        center_y = random.randrange(height)
+        center_x = random.randrange(width)
+        top = max(0, center_y - cut_height // 2)
+        bottom = min(height, center_y + (cut_height + 1) // 2)
+        left = max(0, center_x - cut_width // 2)
+        right = min(width, center_x + (cut_width + 1) // 2)
+        mixed = images.clone()
+        mixed[:, :, top:bottom, left:right] = images[
+            permutation, :, top:bottom, left:right
+        ]
+        actual_lam = 1.0 - ((bottom - top) * (right - left)) / (height * width)
+        return mixed, labels, paired, float(actual_lam), "cutmix"
+    if can_mixup:
+        lam = float(np.random.beta(settings.loss.mixup_alpha, settings.loss.mixup_alpha))
+        mixed = images * lam + images[permutation] * (1.0 - lam)
+        return mixed, labels, paired, lam, "mixup"
+    return images, labels, None, 1.0, "none"
+
+
 def compute_losses(
     logits: torch.Tensor,
     embedding: torch.Tensor,
-    teacher_embedding: torch.Tensor,
+    teacher_embedding: torch.Tensor | None,
     labels: torch.Tensor,
-    text_prototypes: torch.Tensor,
-    clip_logit_scale: float,
+    text_prototypes: torch.Tensor | None,
+    clip_logit_scale: float | None,
     settings: P06Settings,
+    *,
+    paired_labels: torch.Tensor | None = None,
+    primary_label_weight: float = 1.0,
 ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
+    ce = F.cross_entropy(
+        logits.float(), labels, label_smoothing=settings.loss.label_smoothing
+    )
+    if paired_labels is not None:
+        paired_ce = F.cross_entropy(
+            logits.float(), paired_labels, label_smoothing=settings.loss.label_smoothing
+        )
+        ce = float(primary_label_weight) * ce + (1.0 - float(primary_label_weight)) * paired_ce
+    if not settings.loss.uses_teacher:
+        zero = logits.new_zeros((), dtype=torch.float32)
+        total = settings.loss.supervised_ce_weight * ce
+        return total, {
+            "loss_total": total.detach(),
+            "loss_ce": ce.detach(),
+            "loss_feature": zero,
+            "loss_kd": zero,
+            "loss_contrastive": zero,
+            "clip_cosine": zero,
+            "zero_shot_correct": zero,
+            "teacher_zero_shot_correct": zero,
+        }
+    if teacher_embedding is None or text_prototypes is None or clip_logit_scale is None:
+        raise RuntimeError("Teacher objective requires cached embeddings and text prototypes")
     teacher = F.normalize(teacher_embedding.float(), dim=-1)
     cosine = (embedding.float() * teacher).sum(-1)
     feature = (1.0 - cosine).mean()
@@ -863,7 +1149,6 @@ def compute_losses(
     contrastive = batch_contrastive_loss(
         embedding, teacher, settings.loss.contrastive_temperature
     )
-    ce = F.cross_entropy(logits.float(), labels, label_smoothing=settings.loss.label_smoothing)
     total = (
         settings.loss.supervised_ce_weight * ce
         + settings.loss.feature_cosine_weight * feature
@@ -909,24 +1194,32 @@ def _update_metrics(vector, logits, labels, losses, batch_size: int) -> None:
     vector[11] += 1
 
 
-def _metrics(vector: torch.Tensor, seconds: float) -> dict[str, float]:
+def _metrics(
+    vector: torch.Tensor, seconds: float, *, include_teacher: bool
+) -> dict[str, float]:
     vector = _reduce(vector)
     count = max(float(vector[0]), 1.0)
-    return {
+    result = {
         "samples": int(vector[0]),
         "loss_total": float(vector[1] / count),
         "loss_ce": float(vector[2] / count),
-        "loss_feature": float(vector[3] / count),
-        "loss_kd": float(vector[4] / count),
-        "loss_contrastive": float(vector[5] / count),
-        "clip_cosine": float(vector[6] / count),
         "top1_accuracy": float(vector[7] / count),
         "top5_accuracy": float(vector[8] / count),
-        "clip_zero_shot_top1": float(vector[9] / count),
-        "teacher_zero_shot_top1": float(vector[10] / count),
         "batches": int(vector[11]),
         "seconds": float(seconds),
     }
+    if include_teacher:
+        result.update(
+            {
+                "loss_feature": float(vector[3] / count),
+                "loss_kd": float(vector[4] / count),
+                "loss_contrastive": float(vector[5] / count),
+                "clip_cosine": float(vector[6] / count),
+                "clip_zero_shot_top1": float(vector[9] / count),
+                "teacher_zero_shot_top1": float(vector[10] / count),
+            }
+        )
+    return result
 
 
 def _phase_gradient_report(model: CompactOpticalImageNetStudent) -> dict[str, Any]:
@@ -962,6 +1255,7 @@ def train_one_epoch(
     started = time.perf_counter()
     gradient_report = None
     input_report = None
+    mixing_counts = {"none": 0, "mixup": 0, "cutmix": 0}
     limit = settings.training.max_train_batches
     total_batches = min(len(loader), limit) if limit is not None else len(loader)
     for batch_index, batch in enumerate(loader, 1):
@@ -969,7 +1263,11 @@ def train_one_epoch(
             break
         images = batch["image"].to(context.device, non_blocking=True)
         labels = batch["label"].to(context.device, non_blocking=True)
-        teacher = batch["teacher_embedding"].to(context.device, non_blocking=True)
+        teacher = (
+            batch["teacher_embedding"].to(context.device, non_blocking=True)
+            if settings.loss.uses_teacher
+            else None
+        )
         if batch_index == 1:
             intensity = unwrap(model).denormalize_clip_input(images)
             input_report = {
@@ -979,11 +1277,23 @@ def train_one_epoch(
                 "intensity_max": float(intensity.max().detach().cpu()),
             }
         optimizer.zero_grad(set_to_none=True)
+        images, primary_labels, paired_labels, primary_weight, mix_mode = apply_batch_mixing(
+            images, labels, settings
+        )
+        mixing_counts[mix_mode] += 1
         amp = settings.training.use_amp and context.device.type == "cuda"
         with torch.autocast(device_type=context.device.type, dtype=torch.float16, enabled=amp):
             logits, embedding, _ = model(images, detach_backbone=head_only)
             loss, losses = compute_losses(
-                logits, embedding, teacher, labels, text_prototypes, clip_logit_scale, settings
+                logits,
+                embedding,
+                teacher,
+                primary_labels,
+                text_prototypes,
+                clip_logit_scale,
+                settings,
+                paired_labels=paired_labels,
+                primary_label_weight=primary_weight,
             )
         scaler.scale(loss).backward()
         scaler.unscale_(optimizer)
@@ -1016,14 +1326,25 @@ def train_one_epoch(
             batch_index % settings.training.log_interval_batches == 0 or batch_index == total_batches
         ):
             elapsed = time.perf_counter() - started
+            teacher_fragment = (
+                f" cos={float(vector[6] / vector[0]):.4f}"
+                if settings.loss.uses_teacher
+                else ""
+            )
             print(
                 f"[train] epoch={epoch}/{settings.training.epochs} stage={'head' if head_only else 'joint'} "
                 f"batch={batch_index}/{total_batches} loss={float(loss):.4f} "
-                f"top1={float(vector[7] / vector[0]):.4f} cos={float(vector[6] / vector[0]):.4f} "
+                f"top1={float(vector[7] / vector[0]):.4f}{teacher_fragment} "
                 f"lr_phase={optimizer.param_groups[0]['lr']:.3e} elapsed={elapsed:.1f}s",
                 flush=True,
             )
-    return _metrics(vector, time.perf_counter() - started), gradient_report, input_report
+    metrics = _metrics(
+        vector,
+        time.perf_counter() - started,
+        include_teacher=settings.loss.uses_teacher,
+    )
+    metrics["batch_mixing"] = mixing_counts
+    return metrics, gradient_report, input_report
 
 
 @torch.no_grad()
@@ -1046,7 +1367,11 @@ def evaluate(
             break
         images = batch["image"].to(context.device, non_blocking=True)
         labels = batch["label"].to(context.device, non_blocking=True)
-        teacher = batch["teacher_embedding"].to(context.device, non_blocking=True)
+        teacher = (
+            batch["teacher_embedding"].to(context.device, non_blocking=True)
+            if settings.loss.uses_teacher
+            else None
+        )
         amp = settings.training.use_amp and context.device.type == "cuda"
         with torch.autocast(device_type=context.device.type, dtype=torch.float16, enabled=amp):
             logits, embedding, _ = model(images, ablation=ablation)
@@ -1054,7 +1379,11 @@ def evaluate(
                 logits, embedding, teacher, labels, text_prototypes, clip_logit_scale, settings
             )
         _update_metrics(vector, logits, labels, losses, labels.numel())
-    return _metrics(vector, time.perf_counter() - started)
+    return _metrics(
+        vector,
+        time.perf_counter() - started,
+        include_teacher=settings.loss.uses_teacher,
+    )
 
 
 def save_checkpoint(path, model, optimizer, scheduler, scaler, *, epoch, best_top1, history, settings):
@@ -1094,9 +1423,8 @@ def _gate_report(
 ) -> dict[str, Any]:
     disrupted = max((value["top1_accuracy"] for value in ablations.values()), default=normal["top1_accuracy"])
     relative_drop = 0.0 if normal["top1_accuracy"] <= 0 else 1.0 - disrupted / normal["top1_accuracy"]
-    checks = {
+    checks: dict[str, bool] = {
         "validation_top1": normal["top1_accuracy"] >= settings.gates.validation_top1_min,
-        "clip_cosine": normal["clip_cosine"] >= settings.gates.clip_cosine_min,
         "phase_gradients": bool(
             phase_gradients
             and phase_gradients.get("all_finite")
@@ -1105,6 +1433,8 @@ def _gate_report(
         "optical_gate_floor": model_report["minimum_optical_gate"] >= settings.gates.optical_gate_min,
         "optical_disruption": relative_drop >= settings.gates.optical_disruption_relative_drop_min,
     }
+    if settings.loss.uses_teacher:
+        checks["clip_cosine"] = normal["clip_cosine"] >= settings.gates.clip_cosine_min
     return {
         "checks": checks,
         "all_passed": all(checks.values()),
@@ -1119,10 +1449,18 @@ def run(settings: P06Settings, context: DistributedContext, *, resume: bool) -> 
     if imagenet_settings.model.num_classes != settings.model.num_classes:
         raise RuntimeError("ImageNet cache and P06 class counts differ")
     bundle = load_imagenet(imagenet_settings)
-    train_store = ClipFeatureStore("train", bundle.train, bundle, imagenet_settings)
-    validation_store = ClipFeatureStore("validation", bundle.validation, bundle, imagenet_settings)
-    train_dataset = DistillationViewDataset(bundle.train, train_store)
-    validation_dataset = DistillationViewDataset(bundle.validation, validation_store)
+    if settings.loss.uses_teacher:
+        train_store = ClipFeatureStore("train", bundle.train, bundle, imagenet_settings)
+        validation_store = ClipFeatureStore(
+            "validation", bundle.validation, bundle, imagenet_settings
+        )
+        train_dataset = DistillationViewDataset(bundle.train, train_store)
+        validation_dataset = DistillationViewDataset(bundle.validation, validation_store)
+    else:
+        # A genuine teacher-free run must not even open the CLIP memmap.  The
+        # underlying ImageNet view dataset already returns image/label pairs.
+        train_dataset = bundle.train
+        validation_dataset = bundle.validation
     if settings.training.train_samples_per_class is None:
         train_indices = list(range(bundle.train.base_sample_count))
     else:
@@ -1171,7 +1509,9 @@ def run(settings: P06Settings, context: DistributedContext, *, resume: bool) -> 
         source_num_classes=architecture.num_classes,
         classifier_mode=settings.model.classifier_mode,
         classifier_hidden_dim=settings.model.classifier_hidden_dim,
+        classifier_conv_channels=settings.model.classifier_conv_channels,
         classifier_dropout=settings.model.classifier_dropout,
+        enable_clip_head=settings.loss.uses_teacher,
     )
     source_report = model.load_source(
         settings.source_checkpoint,
@@ -1208,10 +1548,13 @@ def run(settings: P06Settings, context: DistributedContext, *, resume: bool) -> 
         init_scale=settings.training.amp_initial_scale,
         growth_interval=settings.training.amp_growth_interval,
     )
-    prototypes_path = cache_directory(imagenet_settings) / "imagenet_text_prototypes.pt"
-    text_prototypes, clip_logit_scale = load_text_prototypes(
-        prototypes_path, bundle.class_names, imagenet_settings, context.device
-    )
+    text_prototypes: torch.Tensor | None = None
+    clip_logit_scale: float | None = None
+    if settings.loss.uses_teacher:
+        prototypes_path = cache_directory(imagenet_settings) / "imagenet_text_prototypes.pt"
+        text_prototypes, clip_logit_scale = load_text_prototypes(
+            prototypes_path, bundle.class_names, imagenet_settings, context.device
+        )
     model_report = unwrap(model).parameter_report()
     manifest = {
         "settings_digest": settings.digest(),
@@ -1221,7 +1564,13 @@ def run(settings: P06Settings, context: DistributedContext, *, resume: bool) -> 
         "train_cached_views_per_image": bundle.train.views,
         "train_shuffle_block_size": settings.training.shuffle_block_size,
         "imagenet_dataset_digest": bundle.digest,
-        "clip_cache_directory": str(cache_directory(imagenet_settings)),
+        "training_objective": (
+            "clip_distillation" if settings.loss.uses_teacher else "imagenet_supervised"
+        ),
+        "teacher_features_loaded": settings.loss.uses_teacher,
+        "clip_cache_directory": (
+            str(cache_directory(imagenet_settings)) if settings.loss.uses_teacher else None
+        ),
         "source": source_report,
         "initial_checkpoint": initial_report,
         "model": model_report,
@@ -1272,11 +1621,15 @@ def run(settings: P06Settings, context: DistributedContext, *, resume: bool) -> 
                 history=history,
                 settings=settings,
             )
+            teacher_fragment = (
+                f" student_zero={baseline['clip_zero_shot_top1']:.4f}"
+                f" teacher_zero={baseline['teacher_zero_shot_top1']:.4f}"
+                if settings.loss.uses_teacher
+                else ""
+            )
             print(
                 f"[baseline] epoch=0 val_top1={baseline['top1_accuracy']:.4f} "
-                f"val_top5={baseline['top5_accuracy']:.4f} "
-                f"student_zero={baseline['clip_zero_shot_top1']:.4f} "
-                f"teacher_zero={baseline['teacher_zero_shot_top1']:.4f}",
+                f"val_top5={baseline['top5_accuracy']:.4f}{teacher_fragment}",
                 flush=True,
             )
         best_tensor = torch.tensor(best_top1, device=context.device)
@@ -1384,12 +1737,17 @@ def run(settings: P06Settings, context: DistributedContext, *, resume: bool) -> 
                     history=history,
                     settings=settings,
                 )
+            teacher_fragment = (
+                f" val_cos={validation_metrics['clip_cosine']:.4f}"
+                if settings.loss.uses_teacher
+                else ""
+            )
             print(
                 f"[epoch] {epoch}/{settings.training.epochs} stage={row['stage']} "
                 f"train_top1={train_metrics['top1_accuracy']:.4f} "
                 f"val_top1={validation_metrics['top1_accuracy']:.4f} "
                 f"val_top5={validation_metrics['top5_accuracy']:.4f} "
-                f"val_cos={validation_metrics['clip_cosine']:.4f} best={best_top1:.4f}",
+                f"{teacher_fragment} best={best_top1:.4f}",
                 flush=True,
             )
         best_tensor = torch.tensor(best_top1, device=context.device)
@@ -1418,11 +1776,27 @@ def run(settings: P06Settings, context: DistributedContext, *, resume: bool) -> 
             )
     final_model_report = unwrap(model).parameter_report()
     gates = _gate_report(normal, ablations, latest_phase_gradients, final_model_report, settings)
+    backbone_path = settings.output_dir / "checkpoints" / "backbone.pt"
+    if context.is_main:
+        atomic_torch_save(
+            backbone_path,
+            {
+                "encoder": unwrap(model).encoder.state_dict(),
+                "best_epoch": int(best_payload["epoch"]),
+                "source_checkpoint_sha256": settings.source_checkpoint_sha256,
+                "architecture_config": str(settings.architecture_config),
+                "stage_feature_contract": "tuple of all optical/OEO stage maps",
+            },
+        )
     result = {
         "status": "complete",
         "best_epoch": int(best_payload["epoch"]),
         "best_checkpoint": str(best_path),
         "best_checkpoint_sha256": sha256_file(best_path) if context.is_main else None,
+        "backbone_checkpoint": str(backbone_path),
+        "backbone_checkpoint_sha256": (
+            sha256_file(backbone_path) if context.is_main else None
+        ),
         "validation": normal,
         "ablations": ablations,
         "phase_gradients": latest_phase_gradients,
