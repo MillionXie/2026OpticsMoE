@@ -387,3 +387,12 @@ PHYSICAL_GPU_INDEX=2 \
 PROJECTED_GPU_INDEX=1 MLP_GPU_INDEX=4 SUPERVISED_MLP_GPU_INDEX=5 \
   bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/75_launch_p06_imagenet_8x224_screens.sh
 ```
+
+The fourth and final recipe screen retains an 8x8 average/max grid from stages 2/4/6/8 instead
+of compressing each map to 4x4. Its residual plus temporary readout stays below the 2M electronic
+budget. Start it on a released card after the first three screens:
+
+```bash
+PHYSICAL_GPU_INDEX=1 \
+  bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/76_launch_p06_imagenet_8x224_spatial_screen.sh
+```

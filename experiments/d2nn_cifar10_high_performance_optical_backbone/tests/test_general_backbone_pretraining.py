@@ -287,7 +287,6 @@ def test_capacity_expansion_is_million_scale_and_electronically_bounded() -> Non
         < 2_000_000
     )
 
-
 def test_eight_stage_224_capacity_keeps_pixel_size_and_joint_bp() -> None:
     root = Path(__file__).resolve().parents[1]
     config = root / "configs" / "p06_imagenet_8x224_screen_projected.yaml"
@@ -318,5 +317,25 @@ def test_eight_stage_224_capacity_keeps_pixel_size_and_joint_bp() -> None:
     assert (
         report["residual_electronic_parameters"]
         + report["pretraining_head_parameters"]
+        < 2_000_000
+    )
+
+    spatial_settings = load_p06_settings(
+        root / "configs" / "p06_imagenet_8x224_screen_spatial.yaml"
+    )
+    spatial_model = CompactOpticalImageNetStudent(
+        architecture.optical,
+        selected_stage_indices=spatial_settings.model.selected_stage_indices,
+        pool_size=spatial_settings.model.pool_size,
+        projection_dim=spatial_settings.model.projection_dim,
+        num_classes=spatial_settings.model.num_classes,
+        classifier_mode=spatial_settings.model.classifier_mode,
+    )
+    spatial_report = spatial_model.parameter_report()
+    assert spatial_settings.model.pool_size == 8
+    assert spatial_report["descriptor_dim"] == 1536
+    assert (
+        spatial_report["residual_electronic_parameters"]
+        + spatial_report["pretraining_head_parameters"]
         < 2_000_000
     )

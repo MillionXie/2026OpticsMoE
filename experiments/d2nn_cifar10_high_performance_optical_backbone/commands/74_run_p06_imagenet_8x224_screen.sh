@@ -2,7 +2,7 @@
 set -euo pipefail
 source "$(dirname "$0")/_common.sh"
 
-: "${SCREEN_VARIANT:?Set SCREEN_VARIANT to projected, mlp or supervised_mlp}"
+: "${SCREEN_VARIANT:?Set SCREEN_VARIANT to projected, mlp, supervised_mlp or spatial}"
 case "${SCREEN_VARIANT}" in
   projected)
     CONFIG_NAME="p06_imagenet_8x224_screen_projected.yaml"
@@ -15,6 +15,10 @@ case "${SCREEN_VARIANT}" in
   supervised_mlp)
     CONFIG_NAME="p06_imagenet_8x224_screen_supervised_mlp.yaml"
     PHYSICAL_GPU_INDEX="${PHYSICAL_GPU_INDEX:-5}"
+    ;;
+  spatial)
+    CONFIG_NAME="p06_imagenet_8x224_screen_spatial.yaml"
+    PHYSICAL_GPU_INDEX="${PHYSICAL_GPU_INDEX:-1}"
     ;;
   *)
     echo "Unsupported SCREEN_VARIANT=${SCREEN_VARIANT}" >&2
