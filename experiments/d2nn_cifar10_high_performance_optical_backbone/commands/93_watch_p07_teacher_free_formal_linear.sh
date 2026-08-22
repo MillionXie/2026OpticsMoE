@@ -29,6 +29,15 @@ while [[ ! -f "${RESULT}" ]]; do
       sleep 15
     fi
   else
+    launcher_pid=""
+    if [[ -f "${RUN_DIR}/launcher.pid" ]]; then
+      launcher_pid="$(cat "${RUN_DIR}/launcher.pid")"
+    fi
+    if [[ -n "${launcher_pid}" ]] && kill -0 "${launcher_pid}" 2>/dev/null; then
+      echo "[$(date -Iseconds)] launcher ${launcher_pid} is still handing off to torchrun"
+      sleep 30
+      continue
+    fi
     if (( restarts >= MAX_RESTARTS )); then
       echo "P07-F restart budget exhausted (${MAX_RESTARTS})" >&2
       exit 1

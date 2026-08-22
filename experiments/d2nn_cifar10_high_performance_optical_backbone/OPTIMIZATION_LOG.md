@@ -673,3 +673,16 @@ batch 32 smoke中确认`teacher=False`、`projector=False`、`encoder_only`，�
 50% Mixup/CutMix、AdamW分组LR`3e-5/1.5e-5/3e-4`和cosine。训练器同时改为任何新run都保存
 epoch-0完整验证，以便正式无教师线也有可审计的随机读出起点。command 91--94固定双卡启动、
 恢复和监督；长训开始前仍须验证P05 expanded加载和生产batch梯度。
+
+正式source-expanded真实batch smoke随后通过：加载86个可训练tensor，相位从128扩到224，
+只重建16个传播/随机相位buffer；Mixup批次loss 7.1584，八层相位梯度
+`[0.0947,0.0507,0.0347,0.0344,0.0207,0.0224,0.0128,0.0127]`全部有效。首次把command 92和
+94在同一SSH伪终端中无等待连续调用时，watcher在torchrun尚未进入进程表的数秒窗口误启动第二
+份launcher；两份随后随伪终端关闭收到SIGHUP，尚未产生optimizer checkpoint。该次严格记为
+启动失败，不计为训练。
+
+第二次使用无伪终端先单独启动command 92，确认唯一torchrun及双rank后才复用已存活watcher。
+正式实例launcher/torchrun PID为2024380/2024402，epoch-0完整50k验证Top-1/Top-5为
+0.100%/0.542%；epoch-1已到batch 250/20019，loss 6.9614，GPU 2/5利用率均约95%，证明训练
+已真实推进。为消除复现竞态，command 92现在最多等待30秒直到torchrun pattern可见才返回；
+command 93也会在launcher PID仍存活时给予30秒hand-off宽限，不再误启重复任务。
