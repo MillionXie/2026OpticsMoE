@@ -383,6 +383,21 @@ PHYSICAL_GPU_INDEX=4 \
 tail -f experiments/d2nn_cifar10_high_performance_optical_backbone/runs/p06_imagenet_8x224_epoch4_shift_screen/run.log
 ```
 
+The deployment screen was deliberately stopped before producing a result when performance
+pretraining was reprioritised. GPU 4 instead runs one full-data performance branch from the
+immutable epoch-4 8x224 trunk. It decouples the supervised classifier from the CLIP projection
+with a 1536->256->1000 MLP while keeping residual plus pretraining-head electronics below 2M:
+
+```bash
+PHYSICAL_GPU_INDEX=4 \
+  bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/84_launch_p06_imagenet_8x224_full_decoupled_mlp.sh
+
+PHYSICAL_GPU_INDEX=4 \
+  bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/86_launch_p06_imagenet_8x224_full_decoupled_mlp_watcher.sh
+
+tail -f experiments/d2nn_cifar10_high_performance_optical_backbone/runs/p06_imagenet_8x224_full_decoupled_mlp/train.log
+```
+
 P06-F3 keeps the physical pixel size at 16 um, returns to eight stages, and raises the RGB phase
 plane to 224x224 (1,204,224 optical parameters). There is no frozen-head epoch: every screen uses
 exact whole-backbone BP from its first batch. Command 73 first validates production batch 32 and
