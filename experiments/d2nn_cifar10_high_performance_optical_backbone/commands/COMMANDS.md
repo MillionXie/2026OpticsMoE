@@ -470,3 +470,21 @@ PHYSICAL_GPU_INDICES=2,5 \
 
 tail -f experiments/d2nn_cifar10_high_performance_optical_backbone/runs/p07_teacher_free_formal_linear/train.log
 ```
+
+P07-A is the single parallel performance branch selected after P07-F reached epoch 5. It restores
+only the immutable teacher-free P07-F epoch-5 encoder, creates a new disposable classifier, and
+changes the readout contract from stages 2/4/6/8 at 8x8 to all eight stages at 5x5. This supplies a
+shorter direct supervised path to every optical stage while keeping residual plus temporary head
+electronics at about 1.52M parameters. One frozen-encoder epoch calibrates the new head; the next
+29 epochs use exact whole-backbone BP. Commands 95/96 run it on the three currently idle RTX 4090
+cards, and commands 97/98 supervise and resume only its own checkpoints:
+
+```bash
+PHYSICAL_GPU_INDICES=1,3,4 \
+  bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/96_launch_p07_teacher_free_allstage_pool5.sh
+
+PHYSICAL_GPU_INDICES=1,3,4 \
+  bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/98_launch_p07_teacher_free_allstage_watcher.sh
+
+tail -f experiments/d2nn_cifar10_high_performance_optical_backbone/runs/p07_teacher_free_allstage_pool5/train.log
+```

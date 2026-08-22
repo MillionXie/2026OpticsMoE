@@ -686,3 +686,23 @@ epoch-0完整验证，以便正式无教师线也有可审计的随机读出起�
 0.100%/0.542%；epoch-1已到batch 250/20019，loss 6.9614，GPU 2/5利用率均约95%，证明训练
 已真实推进。为消除复现竞态，command 92现在最多等待30秒直到torchrun pattern可见才返回；
 command 93也会在launcher PID仍存活时给予30秒hand-off宽限，不再误启重复任务。
+
+### P07-A：全八层直接监督的并行性能分支（2026-08-22）
+
+P07-F 在完整 ImageNet-1K 上已连续提升：epoch 1--5 的 validation Top-1 为
+3.074%、4.756%、5.858%、6.486%、7.002%，没有停训或平台期。当前 P07-F 是一组实验，
+由物理 GPU 2/5 做双卡 DDP；GPU 1/3/4 在 21:30 均为空闲 4090。
+
+为避免再枚举多个普通分类头，本轮只增加一个针对 backbone 优化路径的分支 P07-A。
+它固定使用 P07-F 的不可变 epoch-5 encoder（SHA-256
+`0d35d64fa6f5905cef6c5e1ea4defd807d8275659a2c36e734462a0b92162775`），只加载 encoder，
+重新初始化一次性 ImageNet 分类头。原 P07-F 只把 stage 2/4/6/8 的 8x8 avg/max 特征送入
+监督头；P07-A 改为全部八个 stage 的 5x5 avg/max 特征拼接后接单 Linear。这样每一层都有
+到分类损失的短直接路径，目标是改善中前层表示和深层光学优化，而不是仅扩大末端 MLP。
+
+P07-A descriptor 为 `8*2*3*5*5=1200` 维；LayerNorm+Linear 头为 1,203,400 参数，连同
+312,336 个 residual electronic 参数共 1,515,736，低于 2M 电子预算。光学相位仍为
+1,204,224，八层 gate 仍受 `>=0.5` 约束。目标函数仍为无教师 ImageNet CE，不创建 CLIP
+projector、不读取 teacher cache；增强、标签正则和 P07-F 保持一致。先用 1 epoch 冻结 encoder
+校准新头，再做 29 epoch 全主干 exact BP。配置及启动/恢复/监控入口固定为 command 95--98，
+默认使用 GPU 1/3/4；P07-F 的 GPU 2/5 不受影响。
