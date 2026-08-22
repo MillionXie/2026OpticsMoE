@@ -39,6 +39,7 @@ from experiments.optical_mlp_mixer_moe9_imagenet1k_clip_distill.teacher_cache im
 
 from .formal_settings import load_formal_settings
 from .model import Ablation, OpticalClassifier
+from .optics import OpticalDeploymentState
 from .settings import OpticalConfig, REPO_ROOT
 
 
@@ -638,13 +639,18 @@ class CompactOpticalImageNetStudent(nn.Module):
         *,
         detach_backbone: bool = False,
         ablation: Ablation = "normal",
+        deployment: OpticalDeploymentState | None = None,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         intensity = self.denormalize_clip_input(images)
         if detach_backbone:
             with torch.no_grad():
-                _, stages = self.encoder.forward_features(intensity, ablation=ablation)
+                _, stages = self.encoder.forward_features(
+                    intensity, ablation=ablation, deployment=deployment
+                )
         else:
-            _, stages = self.encoder.forward_features(intensity, ablation=ablation)
+            _, stages = self.encoder.forward_features(
+                intensity, ablation=ablation, deployment=deployment
+            )
         pooled = []
         size = (self.pool_size, self.pool_size)
         for index in self.selected_stage_indices:

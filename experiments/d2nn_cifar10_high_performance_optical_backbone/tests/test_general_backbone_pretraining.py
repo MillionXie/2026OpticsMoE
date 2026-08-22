@@ -20,6 +20,7 @@ from ..general_backbone_pretraining import (
     stratified_base_indices,
 )
 from ..formal_settings import load_formal_settings
+from ..optics import OpticalDeploymentState
 from ..settings import OpticalConfig
 
 
@@ -71,6 +72,27 @@ def test_clip_denormalization_and_feature_contract() -> None:
     assert embedding.shape == (2, 7)
     assert descriptor.shape == (2, 48)
     assert torch.allclose(embedding.norm(dim=-1), torch.ones(2), atol=1e-5)
+
+
+def test_compact_backbone_accepts_fixed_deployment_shift() -> None:
+    model = CompactOpticalImageNetStudent(
+        _tiny_optical(),
+        selected_stage_indices=(0, 1),
+        pool_size=2,
+        projection_dim=7,
+        num_classes=5,
+    )
+    deployment = OpticalDeploymentState(
+        phase_shifts_dy_dx=((0.5, 0.0), (0.5, 0.0))
+    )
+    logits, embedding, descriptor = model(
+        torch.rand(2, 3, 20, 20), deployment=deployment
+    )
+    assert logits.shape == (2, 5)
+    assert embedding.shape == (2, 7)
+    assert descriptor.shape == (2, 48)
+    logits.sum().backward()
+    assert all(stage.raw_phase.grad is not None for stage in model.encoder.stages)
 
 
 def test_descriptor_mlp_decouples_classifier_from_clip_projection() -> None:

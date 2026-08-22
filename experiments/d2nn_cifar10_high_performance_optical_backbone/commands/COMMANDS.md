@@ -372,6 +372,17 @@ Command 71 checks F2C every five minutes, allows 30 minutes for a cold validatio
 interval, resumes from `last.pt` after a missing or stalled process, and stops after `result.json`
 is complete. Command 72 starts one duplicate-safe background watcher.
 
+While the full 8x224 run continues, use the otherwise idle GPU 4 to evaluate its immutable epoch-4
+checkpoint under fixed deployment shifts. This is inference-only and covers global and independent
+layerwise offsets at 0.5, 1, and 2 pixels on the complete 50k ImageNet validation split:
+
+```bash
+PHYSICAL_GPU_INDEX=4 \
+  bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/82_launch_p06_imagenet_8x224_epoch4_shift_screen.sh
+
+tail -f experiments/d2nn_cifar10_high_performance_optical_backbone/runs/p06_imagenet_8x224_epoch4_shift_screen/run.log
+```
+
 P06-F3 keeps the physical pixel size at 16 um, returns to eight stages, and raises the RGB phase
 plane to 224x224 (1,204,224 optical parameters). There is no frozen-head epoch: every screen uses
 exact whole-backbone BP from its first batch. Command 73 first validates production batch 32 and

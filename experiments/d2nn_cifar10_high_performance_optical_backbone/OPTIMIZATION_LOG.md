@@ -596,3 +596,12 @@ command 77--80 固定双卡启动、恢复和监督流程；正式判定仍要�
 完整50k起始验证为Top-1/Top-5 **3.90%/11.51%**，高于10k screen的3.66%；首个250-batch
 检查点在52.5秒到达，running Top-1 2.89%、cosine 0.7271，证明双rank、数据和正常联合BP
 均已实际前进。command 77--79默认设备同步改为当前验证过的1/5。
+
+### P06-F3 并行错位压力测试（2026-08-22）
+
+全量8x224训练至epoch 4时，完整ImageNet validation Top-1/Top-5 已达7.734%/19.714%，明显
+优于12x192在四轮joint-BP后的5.212%，且正在继续第5/12轮。为利用空闲GPU 4而不重复训练
+配方，新增通用backbone部署评估入口：Compact student前向现在可接收冻结的deployment state，
+在不改变训练时BP语义的前提下评估相位横向偏移。command 81/82固定使用epoch-4 checkpoint
+及其SHA-256，在完整50k validation上运行ideal和global/layerwise 0.5/1/2 pixel七种条件。
+该轮只建立百万相位backbone的错位基线；最终best产生后复用同一入口复测，不增加反馈方法组。
