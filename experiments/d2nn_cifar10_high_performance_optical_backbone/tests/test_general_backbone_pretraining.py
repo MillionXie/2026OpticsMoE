@@ -168,6 +168,16 @@ def test_teacher_free_config_omits_clip_loss_and_supports_batch_mixing() -> None
     assert logits.grad is not None
     assert float(metrics["loss_feature"]) == 0.0
 
+    formal = load_p06_settings(
+        config.parent / "p07_teacher_free_formal_linear.yaml"
+    )
+    assert not formal.loss.uses_teacher
+    assert formal.source_checkpoint_load_mode == "expanded"
+    assert formal.initial_checkpoint is None
+    assert formal.training.head_warmup_epochs == 0
+    assert formal.training.joint_epochs == 30
+    assert formal.training.train_samples_per_class is None
+
 
 def test_compatible_checkpoint_load_restores_encoder_but_reinitializes_head(
     tmp_path: Path,

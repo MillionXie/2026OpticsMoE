@@ -1594,10 +1594,10 @@ def run(settings: P06Settings, context: DistributedContext, *, resume: bool) -> 
         if context.is_main:
             print(f"[resume] checkpoint={last_path} start_epoch={start_epoch}", flush=True)
 
-    # A refinement is never allowed to silently replace its source with a
-    # worse checkpoint. Evaluate and register the immutable input as epoch 0;
-    # later epochs must exceed this validation Top-1 to become best.
-    if initial_report is not None and not resumed:
+    # Always register the immutable epoch-0 state.  This protects refinements
+    # from regression and gives clean source-expanded runs an auditable random
+    # readout baseline before any ImageNet update.
+    if not resumed:
         validation_sampler.set_epoch(0)
         baseline = evaluate(
             model,

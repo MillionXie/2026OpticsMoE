@@ -454,3 +454,19 @@ Command 87 is the foreground/resumable entry point and requires `P07_CONFIG` plu
 to three times. These head screens do not add feedback groups to the formal four-group comparison.
 Their encoder was previously CLIP-trained, so they are recipe-selection runs only; the formal clean
 P07 run described in `P07_TEACHER_FREE_BACKBONE_PLAN.md` starts from the no-CLIP P05 operator.
+
+The three complete-screen Top-1/Top-5 results are linear 3.954%/11.632%, MLP 2.754%/9.250%, and
+spatial-conv+MLP 1.964%/7.102%. Therefore the formal single-head recipe is linear. Commands 91/92
+run and background a 30-epoch, full ImageNet-1K, two-GPU training job. It expands the no-CLIP P05
+operator from 128 to 224, never loads any P06/CLIP checkpoint, and trains all optical/OEO stages from
+the first batch. Commands 93/94 supervise the long run and resume only from its own `last.pt`:
+
+```bash
+PHYSICAL_GPU_INDICES=2,5 \
+  bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/92_launch_p07_teacher_free_formal_linear.sh
+
+PHYSICAL_GPU_INDICES=2,5 \
+  bash experiments/d2nn_cifar10_high_performance_optical_backbone/commands/94_launch_p07_teacher_free_formal_watcher.sh
+
+tail -f experiments/d2nn_cifar10_high_performance_optical_backbone/runs/p07_teacher_free_formal_linear/train.log
+```

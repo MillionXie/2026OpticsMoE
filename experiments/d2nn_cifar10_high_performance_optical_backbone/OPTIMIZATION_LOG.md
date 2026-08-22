@@ -651,3 +651,25 @@ P07-S1/S2/S3使用相同P06 8x224 encoder（best SHA-256
 服务器通过单元测试和真实batch smoke，再允许三个screen后台运行；启动PID、manifest中的
 `teacher_features_loaded=false`、首个训练日志和GPU进程需共同复核，不能只以nohup返回作为
 “已经训练”的证据。
+
+服务器提交`1d947f02`同步后，13项backbone测试全部通过。最复杂Conv+MLP在真实ImageNet
+batch 32 smoke中确认`teacher=False`、`projector=False`、`encoder_only`，八层相位梯度范数
+为`[0.0120,0.0070,0.0050,0.0031,0.0023,0.0026,0.0013,0.0016]`，全部有限非零；相位、
+残差电子和单读出分别为1,204,224/312,336/339,368。随后三条screen在物理GPU 2/4/5实际
+并行运行，manifest均确认10万train、完整5万validation、`teacher_features_loaded=false`。
+
+三条screen均正常完成，epoch-3完整验证结果为：Linear **3.954%/11.632%**、MLP
+2.754%/9.250%、Conv+MLP 1.964%/7.102%（Top-1/Top-5）。三者八层梯度全部finite/nonzero，
+最小gate分别为0.500190/0.500190/0.500192。best SHA-256分别为
+`6bfc62b28aa8565434765692a82e677f384de2770aa558ab614482236bf20a57`、
+`4a9a677765b46a223f332a39af6731895ad554c9d66ea533eedd923220ab3f8d`、
+`75cb2e80e165093edd67e4bc09f902c2582982ca02628efc18e4536f12bf3d13`。因此锁定单Linear
+读出；它的1.540M临时头连同0.312M残差电子为1.852M，仍满足2M预算。Conv读出虽最省参数，
+但把多层1536维空间描述压到256维后没有获得性能收益，不进入长训。
+
+正式P07-F配置不继承上述历史上见过CLIP的screen encoder，而是从P05无CLIP算子做
+128->224相位bicubic扩展；新建单Linear头，从第一个batch开始30轮全主干BP。使用完整
+1,281,167/50,000 ImageNet train/validation、双卡有效batch64、RandAugment、label smoothing、
+50% Mixup/CutMix、AdamW分组LR`3e-5/1.5e-5/3e-4`和cosine。训练器同时改为任何新run都保存
+epoch-0完整验证，以便正式无教师线也有可审计的随机读出起点。command 91--94固定双卡启动、
+恢复和监督；长训开始前仍须验证P05 expanded加载和生产batch梯度。

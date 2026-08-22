@@ -57,6 +57,10 @@ P07 去掉 CLIP 教师。纯监督配置必须同时满足：
 校准新头，再 2 epoch 全主干正常 BP；采用相同 RandAugment、label smoothing=0.1、50% 概率的
 Mixup/CutMix。选择规则首先看 joint-BP 后的完整验证 Top-1，其次看 Top-5、电子参数量与稳定性。
 
+实际筛选结果为 Linear 3.954%/11.632%、MLP 2.754%/9.250%、Conv+MLP
+1.964%/7.102%（Top-1/Top-5）。因此 P07-F 锁定单 Linear 头；它连同残差电子为1.852M，仍低于
+2M。该结论只用于选正式配方，不把短 screen 的绝对准确率解释为完整预训练性能。
+
 ## 4. 正式 ImageNet 监督预训练
 
 选定读出后启动 P07-F，不能把三轮筛选当成正式 backbone 训练。锁定建议配方如下：
