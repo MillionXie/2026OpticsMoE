@@ -68,3 +68,21 @@ training:
   max_evaluation_batches: null
   init_checkpoint: ""
   load_backbone_only: false
+
+# Required by the shared formal-settings parser. P06 uses its own checkpoint
+# fields; these values preserve the locked A13 provenance contract.
+formal:
+  source_checkpoint: experiments/d2nn_cifar10_high_performance_optical_backbone/runs/a03_cifar100_pretrain/seed_1234/best.pt
+  source_checkpoint_sha256: f632c57cf851805090686cda81d4b4a0efc07b02c91dc0e0b63c00912247becc
+  common_checkpoint: experiments/d2nn_cifar10_high_performance_optical_backbone/runs/formal_a13_high_performance/common/head_warmup_best.pt
+  head_warmup_seed: 4242
+  head_warmup_epochs: 10
+  head_learning_rate: 0.001
+  finetune_epochs: 50
+  finetune_seeds: [2026]
+  phase_learning_rate: 0.001
+  residual_learning_rate: 0.0005
+  electronic_learning_rate: 0.001
+  warmup_epochs: 3
+  min_learning_rate_ratio: 0.05
+  checkpoint_interval_epochs: 10
