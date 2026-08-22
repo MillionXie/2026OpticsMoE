@@ -706,3 +706,15 @@ P07-A descriptor 为 `8*2*3*5*5=1200` 维；LayerNorm+Linear 头为 1,203,400 �
 projector、不读取 teacher cache；增强、标签正则和 P07-F 保持一致。先用 1 epoch 冻结 encoder
 校准新头，再做 29 epoch 全主干 exact BP。配置及启动/恢复/监控入口固定为 command 95--98，
 默认使用 GPU 1/3/4；P07-F 的 GPU 2/5 不受影响。
+
+服务器提交 `c65cec81`（配置、命令与协议）和 `fef66751`（命令可执行位）已同步本地、GitHub
+与服务器。服务器 `xml` 环境的 13 项 backbone 测试全部通过。真实 ImageNet batch 32 smoke
+确认 `teacher=false`、`projector=false`、epoch-5 `encoder_only` 恢复成功，输出为 `[32,1000]`；
+八层相位梯度范数为 `[0.06678,0.03847,0.02981,0.02476,0.01811,0.01312,0.00951,0.00571]`，
+全部有限非零，最小 gate 为 0.500166。
+
+P07-A 于 21:38 正式启动：launcher/torchrun PID 为 `2170608/2170628`，三个 rank 使用物理
+GPU 1/3/4，watcher PID 为 `2170654`。完整 50k epoch-0 基线为 Top-1/Top-5
+0.14%/0.55%，随后已进入 epoch 1 的新头校准，并到达 batch 750/13346；同期 P07-F 在
+GPU 2/5 正常进入 epoch 7。PIL 的少量 corrupt-EXIF warning 来自 ImageNet 原始元数据，图像
+仍成功解码、batch 与优化持续前进，不属于训练失败。
