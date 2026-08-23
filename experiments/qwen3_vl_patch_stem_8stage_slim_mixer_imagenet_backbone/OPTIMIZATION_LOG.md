@@ -48,6 +48,18 @@ can be reconstructed without relying on chat history.
   (`c10.dll`) fails to initialize. This is an environment failure also affecting
   the unchanged P08 tests; authoritative tests are run in the server `xml`
   environment before launch.
-- Server unit/integration tests: pending Git synchronization.
-- Server batch-96 GPU forward/backward/optimizer smoke: pending tests.
-- Formal P09 launch and live-process/GPU verification: pending smoke success.
+- Git synchronization: commit `a72cbdb0` reached both local and server checkouts
+  and was pushed to `origin/main`. The server checkout was advanced without
+  touching unrelated dirty files.
+- Server unit/integration tests: 7 passed in the `xml` environment, covering the
+  Qwen-order grid round trip, dual gates, identity initialization, parameter
+  budget, backbone export contract and end-to-end phase/mixer backpropagation.
+- Server batch-96 GPU forward/backward/optimizer smoke: passed on physical GPU 5
+  for four real ImageNet updates and two validation batches. Peak PyTorch memory
+  was 8,250.9 MiB allocated / 8,466.0 MiB reserved, and measured throughput was
+  78.4 images/s. All eight phase-gradient norms were finite and nonzero; mean
+  phase motion reached 0.01583 rad. All three gate types changed from their exact
+  0.10 initialization, confirming mixer learning rather than a forward-only run.
+- Runtime parameter audit exactly matched the deterministic counts: reusable
+  backbone optical share 0.5551097 and all-trainable share 0.4270378.
+- Formal P09 launch and live-process/GPU verification: pending final Git sync.
