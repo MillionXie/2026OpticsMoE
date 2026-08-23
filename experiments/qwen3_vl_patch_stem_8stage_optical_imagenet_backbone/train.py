@@ -251,6 +251,8 @@ def train_epoch(
     epoch: int,
 ) -> tuple[dict[str, float], dict[str, Any] | None]:
     model.train()
+    if context.device.type == "cuda":
+        torch.cuda.reset_peak_memory_stats(context.device)
     vector = torch.zeros(5, dtype=torch.float64, device=context.device)
     started = time.perf_counter()
     limit = config["training"].get("max_train_batches")
@@ -302,7 +304,22 @@ def train_epoch(
                 f"loss={float(loss.detach()):.4f} lr={rates}",
                 flush=True,
             )
-    return reduce_metrics(vector, time.perf_counter() - started), gradient_report
+    metrics = reduce_metrics(vector, time.perf_counter() - started)
+    metrics["samples_per_second"] = metrics["samples"] / max(metrics["seconds"], 1.0e-9)
+    if context.device.type == "cuda":
+        peak = torch.tensor(
+            [
+                torch.cuda.max_memory_allocated(context.device),
+                torch.cuda.max_memory_reserved(context.device),
+            ],
+            dtype=torch.float64,
+            device=context.device,
+        )
+        if torch.distributed.is_initialized():
+            torch.distributed.all_reduce(peak, op=torch.distributed.ReduceOp.MAX)
+        metrics["peak_allocated_mib"] = float(peak[0].cpu()) / (1024.0 ** 2)
+        metrics["peak_reserved_mib"] = float(peak[1].cpu()) / (1024.0 ** 2)
+    return metrics, gradient_report
 
 
 @torch.no_grad()
