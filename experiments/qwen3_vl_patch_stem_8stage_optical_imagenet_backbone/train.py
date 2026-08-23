@@ -602,7 +602,9 @@ def run(
             {
                 "backbone": unwrap(model).backbone_state_dict(),
                 "best_epoch": int(best_payload["epoch"]),
+                "config_digest": config["_config_digest"],
                 "stem_checkpoint_sha256": unwrap(model).stem.checkpoint_sha256,
+                "model_report": unwrap(model).parameter_report(),
                 "feature_contract": {
                     "input": "CLIP-normalized RGB [B,3,224,224]",
                     "final": "three latent optical banks [B,3,224,224]",
