@@ -98,7 +98,7 @@ def seed_all(seed: int, rank: int) -> None:
         torch.cuda.manual_seed_all(value)
 
 
-def unwrap(model: nn.Module) -> QwenStemOpticalImageNetBackbone:
+def unwrap(model: nn.Module) -> nn.Module:
     return model.module if isinstance(model, DistributedDataParallel) else model
 
 
@@ -121,7 +121,7 @@ def make_loader(dataset, sampler, config: dict[str, Any], *, train: bool) -> Dat
     )
 
 
-def build_optimizer(model: QwenStemOpticalImageNetBackbone, config: dict[str, Any]):
+def build_optimizer(model: nn.Module, config: dict[str, Any]):
     values = config["optimizer"]
     groups = [
         {
@@ -222,7 +222,7 @@ def reduce_metrics(vector: torch.Tensor, elapsed: float) -> dict[str, float]:
     }
 
 
-def phase_gradient_report(model: QwenStemOpticalImageNetBackbone) -> dict[str, Any]:
+def phase_gradient_report(model: nn.Module) -> dict[str, Any]:
     norms = []
     finite = []
     for parameter in model.phase_parameters():
@@ -381,7 +381,14 @@ def save_checkpoint(
     )
 
 
-def run(config: dict[str, Any], context: Context, *, resume: bool) -> None:
+def run(
+    config: dict[str, Any],
+    context: Context,
+    *,
+    resume: bool,
+    model_class: type[nn.Module] = QwenStemOpticalImageNetBackbone,
+    experiment_name: str = "P08 Qwen static patch stem + eight-stage optical ImageNet backbone",
+) -> None:
     training = config["training"]
     seed_all(int(training.get("seed", 2026)), context.rank)
     output = resolve_path(config["output_dir"])
@@ -424,13 +431,24 @@ def run(config: dict[str, Any], context: Context, *, resume: bool) -> None:
     validation_loader = make_loader(bundle.validation, validation_sampler, config, train=False)
     model_config = dict(config["model"])
     model_config.setdefault("seed", int(training.get("seed", 2026)))
-    model = QwenStemOpticalImageNetBackbone(
-        resolve_path(config["stem_checkpoint"]), model_config
-    )
+    model = model_class(resolve_path(config["stem_checkpoint"]), model_config)
     initial_phases = model.phase_snapshot()
     report = model.parameter_report()
-    if report["optical_fraction_of_trainable"] < 0.50:
-        raise RuntimeError("Locked architecture must keep at least 50% optical trainable parameters")
+    fraction_scope = str(model_config.get("optical_parameter_fraction_scope", "all_trainable"))
+    if fraction_scope == "all_trainable":
+        measured_fraction = float(
+            report.get("optical_fraction_of_all_trainable", report["optical_fraction_of_trainable"])
+        )
+    elif fraction_scope == "backbone_excluding_task_head":
+        measured_fraction = float(report["optical_fraction_of_backbone_trainable"])
+    else:
+        raise ValueError(f"Unsupported optical parameter fraction scope: {fraction_scope}")
+    required_fraction = float(model_config.get("minimum_optical_parameter_fraction", 0.50))
+    if measured_fraction < required_fraction:
+        raise RuntimeError(
+            f"Optical parameter fraction {measured_fraction:.4f} in scope {fraction_scope!r} "
+            f"is below the required {required_fraction:.4f}"
+        )
     if report["minimum_optical_gate"] < 0.50:
         raise RuntimeError("Optical fusion gate fell below 0.5 before training")
     model.to(context.device)
@@ -453,7 +471,7 @@ def run(config: dict[str, Any], context: Context, *, resume: bool) -> None:
         growth_interval=int(training.get("amp_growth_interval", 100000)),
     )
     manifest = {
-        "experiment": "P08 Qwen static patch stem + eight-stage optical ImageNet backbone",
+        "experiment": experiment_name,
         "config": config["_config_path"],
         "config_digest": config["_config_digest"],
         "world_size": context.world_size,
@@ -463,6 +481,11 @@ def run(config: dict[str, Any], context: Context, *, resume: bool) -> None:
         "online_qwen_stem": True,
         "hidden_state_cache_used": False,
         "full_qwen_loaded": False,
+        "optical_parameter_budget": {
+            "scope": fraction_scope,
+            "measured_fraction": measured_fraction,
+            "minimum_required_fraction": required_fraction,
+        },
         "model": report,
     }
     if context.is_main:
@@ -528,6 +551,9 @@ def run(config: dict[str, Any], context: Context, *, resume: bool) -> None:
             "phase_motion": motion,
             "optical_gates": unwrap(model).optical_gates(),
         }
+        electronic_skip_gates = getattr(unwrap(model), "electronic_skip_gates", None)
+        if callable(electronic_skip_gates):
+            row["electronic_skip_gates"] = electronic_skip_gates()
         if context.is_main:
             history.append(row)
             write_json(output / "metrics" / "history.json", history)
