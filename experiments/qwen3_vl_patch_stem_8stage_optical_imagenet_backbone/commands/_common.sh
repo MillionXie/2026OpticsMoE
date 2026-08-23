@@ -20,6 +20,6 @@ select_gpu() {
 
 ensure_stem() {
   if [[ ! -f "${STEM_CHECKPOINT}" ]]; then
-    "${SCRIPT_DIR}/01_extract_stem.sh"
+    bash "${SCRIPT_DIR}/01_extract_stem.sh"
   fi
 }
