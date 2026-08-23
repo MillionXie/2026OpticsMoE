@@ -148,3 +148,17 @@ New run directory: `runs/p08_imagenet1k_pretrain_bs96_90e`. New log:
 `logs/p08_imagenet1k_pretrain_bs96_90e.log`. The expected training-only epoch
 time from the DDP benchmark is about 24.1 minutes, versus 27.7--28.2 minutes for
 the old run.
+
+Launch verification at 2026-08-23 21:04 CST:
+
+- Git commit: `3c7725b1`;
+- torchrun PID: `1563573`;
+- physical GPUs: 3 (RTX 4090) and 5 (RTX 3090);
+- initial full validation: 0.10% Top-1 / 0.45% Top-5;
+- observed beyond process creation: epoch 1 batch 300/6,672;
+- observed GPU utilization: 97% on both devices;
+- observed process memory: about 8.4GB / 8.3GB;
+- batch 300 loss: 6.9108, with finite warmup learning rates.
+
+This confirms that the new job is executing forward propagation, exact
+backpropagation and optimizer updates rather than merely holding CUDA memory.
