@@ -4,11 +4,16 @@ All commands are run from the repository root on the server.
 
 ```bash
 bash experiments/qwen3_vl_patch_stem_8stage_optical_imagenet_backbone/commands/01_extract_stem.sh
+bash experiments/qwen3_vl_patch_stem_8stage_optical_imagenet_backbone/commands/02_validate_stem_equivalence.sh
 bash experiments/qwen3_vl_patch_stem_8stage_optical_imagenet_backbone/commands/02_smoke.sh
 bash experiments/qwen3_vl_patch_stem_8stage_optical_imagenet_backbone/commands/03_run_100k_screen.sh
 bash experiments/qwen3_vl_patch_stem_8stage_optical_imagenet_backbone/commands/04_train_imagenet_90e.sh
 bash experiments/qwen3_vl_patch_stem_8stage_optical_imagenet_backbone/commands/05_watch.sh
 ```
+
+The equivalence command compares the extracted Conv2D/position stem against the
+official Qwen image processor and original Conv3D tensors without loading the
+full model. Long training should not start unless it passes.
 
 Override GPU selection without editing a script:
 

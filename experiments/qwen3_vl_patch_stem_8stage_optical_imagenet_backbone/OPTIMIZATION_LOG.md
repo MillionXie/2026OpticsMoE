@@ -37,3 +37,21 @@ Implemented decisions:
 The run sequence is extraction -> smoke -> 100k supervised screen -> 90-epoch
 full ImageNet pretraining. Server commands and any subsequent results are kept
 in this file so changes can be replayed without relying on shell history.
+
+## 2026-08-23: extraction, equivalence and smoke results
+
+- Extracted checkpoint: 988,160 frozen parameters, 3,955,552 bytes.
+- Static equivalence input: deterministic 224x224 RGB image.
+- Official Qwen processor output: 196 patches of width 1536, grid `[1,14,14]`.
+- Official Conv3D+position versus extracted Conv2D+position maximum absolute
+  error: `1.9073486328125e-6`.
+- Mean absolute error: `9.361252750750282e-8`; RMS error:
+  `1.5390361340905656e-7`; equivalence passed at `atol=rtol=1e-4`.
+- Unit tests: 3 passed.
+- GPU smoke: two exact-BP optimizer steps completed, all eight phase-gradient
+  norms finite and nonzero. Norms ranged from 0.0954 to 0.8373 before clipping.
+- Training-state mean circular physical phase motion after two steps:
+  `0.006729 rad`. This confirms the `4e-3` phase schedule can move the masks.
+- Exact accounting: 1,204,224 phase parameters; 1,194,587 trainable electronic
+  parameters; optical fraction of newly trainable parameters: 50.2009%.
+- Full Qwen loaded during training: no. Hidden-state cache used: no.

@@ -1,0 +1,4 @@
+assets/*.pt
+assets/*.json
+logs/
+runs/
