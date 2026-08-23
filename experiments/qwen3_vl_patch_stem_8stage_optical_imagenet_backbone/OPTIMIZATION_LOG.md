@@ -100,3 +100,51 @@ rad. The screen therefore passed both convergence and optical-dependence checks.
 The job was confirmed beyond process creation: both CUDA ranks were resident,
 both GPUs showed active utilization, and batch 250/22,878 of epoch 1 had been
 logged before handoff.
+
+## 2026-08-23: batch-size calibration and optimized restart
+
+The initial per-rank batch 28 was a conservative stability setting rather than
+a throughput optimum. Five candidates were measured on physical GPU 1 (RTX
+4090) for 300 complete training updates, including the online frozen stem,
+eight optical stages, exact backpropagation, AMP, augmentation and AdamW.
+
+| per-rank batch | images/s | peak allocated MiB | peak reserved MiB |
+|---:|---:|---:|---:|
+| 64 | 518.172 | 5127.4 | 5214.0 |
+| **96** | **550.457** | 7652.6 | 7772.0 |
+| 128 | 525.451 | 10177.7 | 10294.0 |
+| 160 | 537.712 | 12702.8 | 12836.0 |
+| 192 | 538.924 | 15228.0 | 15372.0 |
+
+Memory was not the limiting resource: throughput peaked at 96 and regressed
+for every larger candidate. The actual heterogeneous physical GPU 3 (RTX 4090)
++ GPU 5 (RTX 3090) pair was then measured for 300 DDP updates:
+
+| per-rank batch | global batch | global images/s | max peak allocated MiB |
+|---:|---:|---:|---:|
+| 64 | 128 | 845.153 | 5136.6 |
+| **96** | **192** | **884.936** | 7661.7 |
+
+The original global-batch-56 run processed 757.6, 764.9 and 770.6 images/s in
+epochs 1--3. Its validation Top-1 reached 6.83%, 12.18% and **14.33%**, with
+0.7919 rad mean phase motion after epoch 3. That checkpoint and history remain
+under `runs/p08_imagenet1k_pretrain_90e`; the incomplete fourth epoch was
+stopped deliberately after the calibration established a faster setting.
+
+Selected formal configuration: per-rank batch 96, global batch 192, validation
+batch 192 and 90 epochs. Because the global batch increased by 3.43x, learning
+rates use a conservative approximately square-root scaling instead of the risky
+linear jump: phase `7e-3`, adapter `5e-4`, residual `3.5e-4`, head `9e-4`, with
+one full warmup epoch and the existing gradient clipping. The phase LR remains
+large enough to produce visible physical mask motion.
+
+Reproducible launcher:
+
+```bash
+PHYSICAL_GPU_INDICES=3,5 bash experiments/qwen3_vl_patch_stem_8stage_optical_imagenet_backbone/commands/08_launch_imagenet_90e_bs96.sh
+```
+
+New run directory: `runs/p08_imagenet1k_pretrain_bs96_90e`. New log:
+`logs/p08_imagenet1k_pretrain_bs96_90e.log`. The expected training-only epoch
+time from the DDP benchmark is about 24.1 minutes, versus 27.7--28.2 minutes for
+the old run.
