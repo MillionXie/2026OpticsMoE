@@ -59,3 +59,44 @@ in this file so changes can be replayed without relying on shell history.
 The final training runner separately exports `checkpoints/backbone.pt` without
 the ImageNet readout. Its stable contract is the final three-bank optical field
 plus the tuple of all eight OEO stage maps.
+
+## 2026-08-23: 100k screen result
+
+The single-GPU screen used 100 images per class for training, 10 per class for
+validation and five supervised epochs. Validation Top-1 increased monotonically:
+
+| epoch | train Top-1 | validation Top-1 | mean phase motion |
+|---:|---:|---:|---:|
+| 1 | 0.13% | 0.42% | 0.0643 rad |
+| 2 | 0.52% | 1.60% | 0.1960 rad |
+| 3 | 1.19% | 2.15% | 0.2762 rad |
+| 4 | 1.82% | 2.90% | 0.2982 rad |
+| 5 | 2.24% | **3.96%** | **0.3023 rad** |
+
+Final validation Top-5 was 11.59%. Causal evaluations on the same 10,000-image
+validation subset were:
+
+- normal: 3.96% Top-1;
+- optical off: 0.33% Top-1;
+- random phase: 0.21% Top-1;
+- electronic residual off: 2.31% Top-1.
+
+At the selected checkpoint, 74.02% of phase pixels had moved by more than 0.1
+rad. The screen therefore passed both convergence and optical-dependence checks.
+
+## 2026-08-23: full ImageNet launch
+
+- configuration: `configs/pretrain_90e.yaml`;
+- epochs: 90, full 1,281,167-image training split and 50,000-image validation;
+- GPUs: physical 3 (RTX 4090) and 5 (RTX 3090), two-rank DDP;
+- per-rank batch: 28; global batch: 56;
+- launch shell PID: 1122715;
+- log: `logs/p08_imagenet1k_pretrain_90e.log`;
+- run: `runs/p08_imagenet1k_pretrain_90e`;
+- initial validation: 0.10% Top-1 / 0.45% Top-5;
+- observed memory after training began: approximately 3.0GB / 2.8GB;
+- resume: command `04_train_imagenet_90e.sh` always passes `--resume`.
+
+The job was confirmed beyond process creation: both CUDA ranks were resident,
+both GPUs showed active utilization, and batch 250/22,878 of epoch 1 had been
+logged before handoff.
