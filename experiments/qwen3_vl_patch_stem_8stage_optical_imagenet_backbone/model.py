@@ -205,6 +205,15 @@ class QwenStemOpticalImageNetBackbone(nn.Module):
     def optical_gates(self) -> list[float]:
         return [float(stage.residual.main_weight().detach().cpu()) for stage in self.stages]
 
+    def backbone_state_dict(self) -> dict[str, torch.Tensor]:
+        """Export the reusable image-to-optical-feature path without the task head."""
+
+        return {
+            name: value
+            for name, value in self.state_dict().items()
+            if not name.startswith("readout.")
+        }
+
     def parameter_report(self) -> dict[str, Any]:
         optical = sum(parameter.numel() for parameter in self.phase_parameters())
         adapter = sum(parameter.numel() for parameter in self.adapter_parameters())

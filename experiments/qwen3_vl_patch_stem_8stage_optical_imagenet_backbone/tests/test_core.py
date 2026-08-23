@@ -62,6 +62,9 @@ def test_locked_model_has_million_scale_optics_and_no_qwen_parameters(tmp_path: 
     assert report["minimum_optical_gate"] >= 0.50
     assert report["contains_electronic_transformer"] is False
     assert all(not parameter.requires_grad for parameter in model.stem.parameters())
+    assert all(not name.startswith("readout.") for name in model.backbone_state_dict())
+    assert any(name.startswith("adapter.") for name in model.backbone_state_dict())
+    assert any(name.startswith("stages.") for name in model.backbone_state_dict())
 
 
 def test_adapter_packs_196_tokens_and_copies_three_latent_banks(tmp_path: Path) -> None:

@@ -553,9 +553,25 @@ def run(config: dict[str, Any], context: Context, *, resume: bool) -> None:
         for name in ("optical_off", "phase_random", "electronic_skip_off"):
             ablations[name] = evaluate(model, validation_loader, config, context, ablation=name)
     if context.is_main:
+        backbone_path = output / "checkpoints" / "backbone.pt"
+        atomic_save(
+            backbone_path,
+            {
+                "backbone": unwrap(model).backbone_state_dict(),
+                "best_epoch": int(best_payload["epoch"]),
+                "stem_checkpoint_sha256": unwrap(model).stem.checkpoint_sha256,
+                "feature_contract": {
+                    "input": "CLIP-normalized RGB [B,3,224,224]",
+                    "final": "three latent optical banks [B,3,224,224]",
+                    "stages": "tuple of eight [B,3,224,224] OEO feature maps",
+                    "qwen_transformer_required": False,
+                },
+            },
+        )
         result = {
             "status": "complete",
             "best_epoch": int(best_payload["epoch"]),
+            "backbone_checkpoint": str(backbone_path),
             "best_validation": normal,
             "ablations": ablations,
             "model": unwrap(model).parameter_report(),

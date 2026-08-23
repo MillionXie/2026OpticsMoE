@@ -55,3 +55,7 @@ in this file so changes can be replayed without relying on shell history.
 - Exact accounting: 1,204,224 phase parameters; 1,194,587 trainable electronic
   parameters; optical fraction of newly trainable parameters: 50.2009%.
 - Full Qwen loaded during training: no. Hidden-state cache used: no.
+
+The final training runner separately exports `checkpoints/backbone.pt` without
+the ImageNet readout. Its stable contract is the final three-bank optical field
+plus the tuple of all eight OEO stage maps.

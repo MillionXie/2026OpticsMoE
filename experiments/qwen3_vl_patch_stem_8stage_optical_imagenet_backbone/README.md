@@ -32,3 +32,7 @@ Their eight phase planes contain 1,204,224 trainable optical values.
 
 See `commands/COMMANDS.md` for the reproducible server commands and
 `OPTIMIZATION_LOG.md` for implementation and run decisions.
+
+At completion, `checkpoints/backbone.pt` excludes the disposable ImageNet
+readout and retains the frozen stem, token adapter and all eight optical/OEO
+feature stages. `forward_features` is the downstream feature contract.
