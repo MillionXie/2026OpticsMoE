@@ -62,4 +62,11 @@ can be reconstructed without relying on chat history.
   0.10 initialization, confirming mixer learning rather than a forward-only run.
 - Runtime parameter audit exactly matched the deterministic counts: reusable
   backbone optical share 0.5551097 and all-trainable share 0.4270378.
-- Formal P09 launch and live-process/GPU verification: pending final Git sync.
+- Formal P09 launched under `torchrun` as PID 1980929 on physical GPUs 3 and 5,
+  with batch 96 per rank / global batch 192. Both ranks and their data-loader
+  workers were verified alive after startup.
+- The full 50k-image initial validation completed at Top-1 0.12% / Top-5 0.54%.
+  Formal optimization then reached epoch 1 batch 100/6,672 without OOM, NaN or
+  DDP failure; loss moved from 7.2646 on batch 1 to 7.0362 at the batch-100 log.
+  GPU 3/5 utilization was 97%/98% with 9,124/8,961 MiB total device memory in
+  use. The run is intentionally left active for all 90 epochs.
