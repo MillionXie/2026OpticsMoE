@@ -371,7 +371,7 @@ ImageNet 规模的 FA 四组结果。
 - backbone（不含临时 ImageNet head）光学参数占比 `55.51%`；
 - 90 epochs、每卡 batch 96、双卡全局 batch 192。
 
-截至本报告快照，P09 已完成 epoch 32 并进入 epoch 33：
+截至本报告快照，P09 已完成 epoch 33 并进入 epoch 34：
 
 | epoch | ImageNet-1K validation Top-1 | Top-5 |
 |---:|---:|---:|
@@ -382,9 +382,10 @@ ImageNet 规模的 FA 四组结果。
 | 25 | 40.854% | 65.842% |
 | 30 | 42.580% | 67.534% |
 | 32 | **43.112%** | **68.118%** |
+| 33 | **43.458%** | **68.528%** |
 
-epoch 32 八层 phase gradients 全部 finite/nonzero，平均绝对相位移动约 `1.919 rad`；当前结果
-仍在上升，不能用 epoch 32 代替最终 90-epoch 结果。
+epoch 33 八层 phase gradients 全部 finite/nonzero，平均绝对相位移动约 `1.927 rad`；当前结果
+仍在上升，不能用 epoch 33 代替最终 90-epoch 结果。
 
 ### 10.2 P10/P11 光学混合方式
 
@@ -394,8 +395,10 @@ epoch 32 八层 phase gradients 全部 finite/nonzero，平均绝对相位移动
 | P11 | `[token-axis 1-D -> channel-axis 1-D] × 4` | 已在 GPU 1/2 正式启动 90 epochs |
 
 P11 与 P09 的数据、batch、学习率、电子结构、参数量和训练周期保持一致，只改变光学 mixing
-operator，因而可以做受控架构比较。启动检查已确认两个 DDP ranks 实际占用 GPU 1/2，日志已
-出现 baseline 和 `epoch 1 batch 300/6672`；这只证明训练链路正常，不是性能结果。
+operator，因而可以做受控架构比较。两个 DDP ranks 已确认实际占用 GPU 1/2。P11 第 1 轮已经
+完整结束并自动进入第 2 轮：ImageNet-1K validation Top-1/Top-5 为 `6.712%/18.348%`；八层
+phase gradients 全部 finite/nonzero，平均绝对相位移动 `0.305 rad`，`best.pt` 和 `last.pt`
+均已落盘。这个首轮结果仅用于确认优化和保存链路健康，不能替代同 epoch 曲线或 90 轮最终比较。
 
 ## 11. 当前可以和不可以支持的结论
 

@@ -59,13 +59,22 @@
   `runs/p11_imagenet1k_pretrain_bs96_90e/` and
   `logs/p11_imagenet1k_pretrain_bs96_90e.log`.
 - Startup validation completed with the expected random-initialization
-  baseline Top-1/Top-5 of `0.0008/0.0053`. The log then reached at least epoch
-  1 batch `2100/6672`; an early utilization check measured roughly
-  10,852/9,170 MiB and 95%/96% utilization on physical GPU 1/2.
+  baseline Top-1/Top-5 of `0.0008/0.0053`. An early utilization check measured
+  roughly 10,852/9,170 MiB and 95%/96% utilization on physical GPU 1/2.
+- Epoch 1 completed and the run automatically entered epoch 2. Validation
+  Top-1/Top-5 were `0.06712/0.18348` with loss `5.42346`; training throughput
+  was `783.48 samples/s`, with peak allocated/reserved memory
+  `8,482.15/8,706 MiB` per reported rank.
+- All eight phase-gradient norms were finite and nonzero (range
+  `0.003623-0.041196`). Mean absolute phase motion was `0.304789 rad`, and
+  `74.04%` of phase parameters moved by more than `0.1 rad`. All eight optical
+  gates remained above the enforced `0.5` lower bound (`0.568-0.597`).
+- Recoverable `best.pt` and `last.pt` checkpoints were both written after
+  epoch 1 (approximately 44 MiB each), and `metrics/latest.json` plus
+  `metrics/history.json` were present.
 - No OOM, NCCL failure or traceback was observed. PIL emitted isolated corrupt
   EXIF warnings while still decoding the affected images; training continued.
 - The existing P09 controlled run was not stopped and continued independently
   on its assigned devices.
-- This is only a launch/health record. Scientific comparison must wait for
-  matched completed epochs, and epoch 1 must still confirm finite/nonzero
-  gradients for all eight phases plus a recoverable `last.pt` checkpoint.
+- This remains an early launch/health result. Scientific P09--P11 comparison
+  must use matched completed epochs and ultimately the locked 90-epoch budget.
