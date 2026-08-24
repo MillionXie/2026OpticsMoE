@@ -8,5 +8,6 @@ bash experiments/qwen3_vl_patch_stem_8stage_separable_optical_imagenet_backbone/
 ```
 
 The formal launcher intentionally has no default GPU pair, so it cannot start
-accidentally. It has been prepared for a future two-free-GPU window but was not
-executed during implementation.
+accidentally. The active 2026-08-24 run was launched with
+`PHYSICAL_GPU_INDICES=1,2`; always re-check device ownership before any resume
+or replacement launch.

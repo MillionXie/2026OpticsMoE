@@ -13,7 +13,8 @@ are ideally relayed. Before token-axis optics, the first 196 Qwen tokens are
 permuted from Qwen 2x2 block-major order to true row-major order; the optical
 output is returned to canonical Qwen order before electronic fusion.
 
-The formal 90-epoch config and guarded launcher are prepared but have not been
-run. See [ARCHITECTURE.md](ARCHITECTURE.md),
+The formal 90-epoch run was user-authorized and launched on physical GPU 1/2 on
+2026-08-24 after unit and GPU smoke verification. See
+[ARCHITECTURE.md](ARCHITECTURE.md),
 [OPTIMIZATION_LOG.md](OPTIMIZATION_LOG.md) and
 [commands/COMMANDS.md](commands/COMMANDS.md).

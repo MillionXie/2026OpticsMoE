@@ -21,7 +21,11 @@ P04-S2 已经证明固定错位后的算子仍可学习：共同 P02 BP source �
 
 每个 batch 同时执行理想前向和随机错位前向：
 
-`L = 0.35 * CE(ideal) + 0.65 * CE(shifted) + 0.10 * KL(shifted || stopgrad(ideal))`
+`L = 0.35 * CE(ideal) + 0.65 * CE(shifted) + 0.10 * KL(stopgrad(p_ideal) || p_shifted)`
+
+其中 ideal 分布是停止梯度的 teacher，shifted 分布是 student。代码使用 PyTorch
+`kl_div(log_softmax(shifted/T), softmax(ideal.detach()/T)) * T^2`，因此 KL 的数学方向是
+`ideal || shifted`。2026-08-24 修正了本段旧记号的反向书写；训练实现和既有结果未改变。
 
 KL 温度为 2。理想视图用于防止鲁棒训练完全牺牲原始性能；错位监督直接优化部署分布；一致性项使分类语义对连续位移稳定。两个前向共享当前光学相位、受限电子残差和读出头，光学 gate 下限仍为 0.5，电子参数量仍为 416,666，没有放宽架构或电子预算。
 
@@ -31,7 +35,8 @@ KL 温度为 2。理想视图用于防止鲁棒训练完全牺牲原始性能；
 
 - 只使用 CIFAR-10 validation，当前阶段不查看 test。
 - 训练 seed：2026；训练位移使用逐 epoch 独立 RNG。
-- 疫苗化模型选择 seed：9201；锁定 ideal 加 global/layerwise 的 0.5/1/2 pixel，共七个环境。
+- 疫苗化模型选择使用 validation split 上的 deployment perturbation seed 9201；锁定 ideal 加
+  global/layerwise 的 0.5/1/2 pixel，共七个环境。
 - 选择指标：七个环境的平均 validation accuracy；同时报告最差环境和理想环境。
 - epoch 0 原 P02 source 参与模型选择。如果全部鲁棒训练 epoch 都更差，则输出 source，而不是强行宣称改进。
 - 第二阶段使用未见 deployment seed 9301，避免在模型选择方向上继续适配和汇报。
@@ -102,7 +107,8 @@ nohup env GLOBAL_GPU_INDEX=3 LAYERWISE_GPU_INDEX=4 \
 
 七环境平均提高 27.89 pp，最差环境提高 36.76 pp，理想精度仅下降 0.56 pp，三个预设门槛全部通过。这说明连续随机错位没有只记忆少数离散方向，也没有用明显牺牲理想性能换取鲁棒性。
 
-在疫苗化训练未见过的 deployment seed 9301 上，四组 10-epoch 适配结果为：
+在疫苗化训练未见过的 held-out deployment perturbation seed 9301 上，四组 10-epoch
+validation 适配结果为（仍不是 test split）：
 
 | held-out 固定偏移 | NoFT | BP-current | FA-pretrained | FA-random |
 |---|---:|---:|---:|---:|

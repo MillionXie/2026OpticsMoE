@@ -43,4 +43,29 @@
   `runs/gpu_smoke_20260824_014543/`; use `metrics/latest.json` for the
   post-update diagnostics. The tiny 12-train/16-validation sample metrics have
   no accuracy interpretation.
-- Formal training: intentionally not started.
+- At implementation/smoke time, formal training was intentionally not started;
+  the later user-authorized launch is recorded below.
+
+## 2026-08-24 formal ImageNet launch
+
+- The user assigned physical GPU 1 (RTX 4090) and GPU 2 (RTX 3090). Immediately
+  before launch they used approximately 1,523 MiB/0% and 13 MiB/0%,
+  respectively.
+- Launched only through
+  `commands/03_launch_imagenet_90e_bs96.sh` with
+  `PHYSICAL_GPU_INDICES=1,2`; launcher PID: `3395957`.
+- The locked run uses two DDP ranks, batch 96 per rank/global batch 192, the
+  full ImageNet-1K train/validation splits and 90 epochs. Output and log are:
+  `runs/p11_imagenet1k_pretrain_bs96_90e/` and
+  `logs/p11_imagenet1k_pretrain_bs96_90e.log`.
+- Startup validation completed with the expected random-initialization
+  baseline Top-1/Top-5 of `0.0008/0.0053`. The log then reached at least epoch
+  1 batch `2100/6672`; an early utilization check measured roughly
+  10,852/9,170 MiB and 95%/96% utilization on physical GPU 1/2.
+- No OOM, NCCL failure or traceback was observed. PIL emitted isolated corrupt
+  EXIF warnings while still decoding the affected images; training continued.
+- The existing P09 controlled run was not stopped and continued independently
+  on its assigned devices.
+- This is only a launch/health record. Scientific comparison must wait for
+  matched completed epochs, and epoch 1 must still confirm finite/nonzero
+  gradients for all eight phases plus a recoverable `last.pt` checkpoint.
