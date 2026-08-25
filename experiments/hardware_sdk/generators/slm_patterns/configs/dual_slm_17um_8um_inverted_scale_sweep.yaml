@@ -1,0 +1,25 @@
+output_dir: ../generated/dual_slm_17um_8um_inverted_k_sweep
+
+logical:
+  active_size: 478
+  pixel_pitch_um: 17.0
+  grating_period_px: 8
+
+amplitude_slm:
+  size_wh: [1024, 1024]
+  pixel_pitch_um: 17.0
+  center_xy: [512.0, 512.0]
+
+phase_slm:
+  size_wh: [1920, 1200]
+  pixel_pitch_um: 8.0
+  center_xy: [980.0, 590.0]
+  # Keep the established optical-axis relation from the previous generator.
+  flip_vertical: true
+  flip_horizontal: false
+
+phase_scale_sweep:
+  # k values are emitted center-out: 1.0000, +0.0005, -0.0005, ...
+  # through +/-0.0050. Formula: n=(8/17)k*m, hence m=17n/(8k).
+  max_abs_delta: 0.005
+  step: 0.0005
