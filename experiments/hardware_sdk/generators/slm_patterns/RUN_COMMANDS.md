@@ -24,28 +24,36 @@ python -m experiments.hardware_sdk.generators.dual_slm_registration_sweep --conf
 输出使用全新目录，不会覆盖旧的 `dual_slm_17um_8um_alignment`：
 
 ```text
-generated/dual_slm_17um_8um_inverted_k_sweep/
+generated/dual_slm_17um_8um_inv_large_blocks_k0p1/
 ├── 01_checker_c64_inv/
 │   ├── amplitude_bmp/                 # 旧规则棋盘的整画布黑白取反
 │   ├── phase_bmp_scale_sweep/         # 相位规则不变，21个k值
 │   └── preview/
-├── 02_tetromino_c24_inv/
-│   ├── amplitude_bmp/                 # 25个密集俄罗斯方块，命令图黑白取反
-│   ├── phase_bmp_scale_sweep/         # 仅在实际光路白区有横/纵0-pi光栅
+├── 02_large_blocks_c48_inv/
+│   ├── amplitude_bmp/                 # 4/5/6/9格组成的简单大块
+│   ├── phase_bmp_scale_sweep_x/       # 每张仅X方向0-pi光栅
+│   ├── phase_bmp_scale_sweep_y/       # 每张仅Y方向0-pi光栅
 │   └── preview/
 ├── scale_sweep_manifest.csv
 └── alignment_scale_manifest.json
 ```
 
 每组先固定播放它自己的振幅 BMP，再按 `phase_00`、`phase_01`……顺序测试相位。
-播放顺序从无缩放开始，然后向正负方向逐步扩大：
+大块组的 X 与 Y 光栅必须分开测试；任意一张相位图中都只有一个方向，不再在同一图案
+内部交替横纵方向。规则棋盘组仍保留前一版相位不变。
+播放顺序从无缩放开始，然后向正负方向逐步扩大。先保留近 `k=1` 的精细扫描，再扩展
+到 `±0.1`：
 
 ```text
 k = 1.0000,
     1.0005, 0.9995,
     1.0010, 0.9990,
     ...,
-    1.0050, 0.9950
+    1.0050, 0.9950,
+    1.0100, 0.9900,
+    1.0200, 0.9800,
+    ...,
+    1.1000, 0.9000
 ```
 
 严格按照老师给出的关系：

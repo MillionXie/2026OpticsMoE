@@ -14,6 +14,7 @@ import yaml
 from PIL import Image
 
 from experiments.hardware_sdk.generators.dual_slm_alignment import (
+    _binary_grating,
     _checker,
     _ideal_registration_preview,
     _registered_checker_grating,
@@ -28,59 +29,86 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def phase_scale_values(max_abs_delta: float, step: float) -> list[float]:
+def phase_scale_values(
+    max_abs_delta: float | None = None,
+    step: float | None = None,
+    *,
+    absolute_deltas: list[float] | tuple[float, ...] | None = None,
+) -> list[float]:
     """Return 1 first, then positive/negative scale corrections outwards."""
 
-    max_abs_delta = float(max_abs_delta)
-    step = float(step)
-    if not 0.0 < step <= max_abs_delta <= 0.005 + 1.0e-12:
-        raise ValueError("require 0 < step <= max_abs_delta <= 0.005")
-    count = int(round(max_abs_delta / step))
-    if not np.isclose(count * step, max_abs_delta, atol=1.0e-12):
-        raise ValueError("max_abs_delta must be an integer multiple of step")
+    if absolute_deltas is not None:
+        if max_abs_delta is not None or step is not None:
+            raise ValueError("absolute_deltas cannot be combined with max_abs_delta/step")
+        deltas = [round(float(value), 7) for value in absolute_deltas]
+        if (
+            not deltas
+            or any(value <= 0.0 or value > 0.1 + 1.0e-12 for value in deltas)
+            or deltas != sorted(set(deltas))
+        ):
+            raise ValueError(
+                "absolute_deltas must be unique, increasing, and within (0, 0.1]"
+            )
+    else:
+        if max_abs_delta is None or step is None:
+            raise ValueError("provide absolute_deltas or max_abs_delta and step")
+        max_abs_delta = float(max_abs_delta)
+        step = float(step)
+        if not 0.0 < step <= max_abs_delta <= 0.1 + 1.0e-12:
+            raise ValueError("require 0 < step <= max_abs_delta <= 0.1")
+        count = int(round(max_abs_delta / step))
+        if not np.isclose(count * step, max_abs_delta, atol=1.0e-12):
+            raise ValueError("max_abs_delta must be an integer multiple of step")
+        deltas = [round(index * step, 7) for index in range(1, count + 1)]
     values = [1.0]
-    for index in range(1, count + 1):
-        delta = index * step
+    for delta in deltas:
         values.extend((1.0 + delta, 1.0 - delta))
     return [round(value, 7) for value in values]
 
 
-def dense_tetromino_mask(size: int, cell_size: int) -> tuple[np.ndarray, int]:
-    """Return 25 separated white tetrominoes on a black logical background.
+def large_block_mask(size: int, cell_size: int) -> tuple[np.ndarray, list[int]]:
+    """Return six plain, large connected regions made from 4--9 cells."""
 
-    A 5x5 arrangement of 3x3 piece tiles with a one-cell gutter gives many
-    asymmetric landmarks while keeping individual tetromino boundaries easy to
-    inspect through the focused 4F relay.
-    """
-
-    full_cells = int(size) // int(cell_size)
-    if full_cells < 19:
-        raise ValueError("dense tetromino layout requires at least 19 cells per axis")
+    full_cells = 9
+    logical_extent = full_cells * int(cell_size)
+    if logical_extent > int(size):
+        raise ValueError("large block layout exceeds the logical active area")
     shapes = (
-        ((0, 0), (0, 1), (0, 2), (1, 1)),  # T
-        ((0, 0), (0, 1), (1, 0), (1, 1)),  # O
-        ((0, 0), (1, 0), (2, 0), (2, 1)),  # L
-        ((0, 1), (1, 1), (2, 0), (2, 1)),  # J
-        ((0, 1), (0, 2), (1, 0), (1, 1)),  # S
-        ((0, 0), (0, 1), (1, 1), (1, 2)),  # Z
-        ((0, 0), (1, 0), (1, 1), (2, 0)),  # rotated T
-        ((0, 0), (0, 1), (0, 2), (1, 2)),  # rotated L
+        ((0, 0), (0, 1), (1, 0), (1, 1)),  # 2x2 square: 4 cells
+        ((0, 4), (0, 5), (0, 6), (1, 4), (1, 5), (1, 6)),  # 2x3: 6
+        ((3, 0), (4, 0), (5, 0), (5, 1), (5, 2)),  # plain L: 5
+        tuple((row, column) for row in range(3, 6) for column in range(4, 7)),
+        ((7, 0), (7, 1), (7, 2), (8, 0), (8, 1), (8, 2)),  # 2x3: 6
+        ((7, 5), (7, 6), (8, 5), (8, 6)),  # 2x2 square: 4
     )
     cells = np.zeros((full_cells, full_cells), dtype=np.uint8)
-    piece_count = 0
-    for tile_row in range(5):
-        for tile_column in range(5):
-            shape = shapes[(tile_row * 5 + tile_column) % len(shapes)]
-            origin_row, origin_column = tile_row * 4, tile_column * 4
-            for row_offset, column_offset in shape:
-                cells[origin_row + row_offset, origin_column + column_offset] = 255
-            piece_count += 1
+    cell_counts: list[int] = []
+    for shape in shapes:
+        for row, column in shape:
+            cells[row, column] = 255
+        cell_counts.append(len(shape))
+    expanded = np.repeat(np.repeat(cells, cell_size, axis=0), cell_size, axis=1)
     result = np.zeros((size, size), dtype=np.uint8)
-    logical_extent = full_cells * cell_size
-    result[:logical_extent, :logical_extent] = np.repeat(
-        np.repeat(cells, cell_size, axis=0), cell_size, axis=1
-    )
-    return result, piece_count
+    offset = (size - logical_extent) // 2
+    result[offset : offset + logical_extent, offset : offset + logical_extent] = expanded
+    return result, cell_counts
+
+
+def single_axis_masked_grating(
+    intended_open_mask: np.ndarray,
+    period: int,
+    axis: str,
+) -> np.ndarray:
+    """Use one continuous grating direction across every open region."""
+
+    if intended_open_mask.ndim != 2 or not np.isin(
+        intended_open_mask, (0, 255)
+    ).all():
+        raise ValueError("intended_open_mask must be a binary 2-D uint8 array")
+    height, width = intended_open_mask.shape
+    phase = _binary_grating(height, width, period, axis)
+    phase[intended_open_mask == 0] = 0
+    return phase.astype(np.uint8)
 
 
 def _save_inverted_amplitude(
@@ -184,12 +212,17 @@ def generate(config_path: Path) -> dict[str, Any]:
     phase_pitch_um = float(phase_config["pixel_pitch_um"])
     flip_vertical = bool(phase_config.get("flip_vertical", True))
     flip_horizontal = bool(phase_config.get("flip_horizontal", False))
-    k_values = phase_scale_values(
-        float(sweep["max_abs_delta"]), float(sweep["step"])
-    )
+    if sweep.get("absolute_deltas") is not None:
+        k_values = phase_scale_values(
+            absolute_deltas=tuple(float(value) for value in sweep["absolute_deltas"])
+        )
+    else:
+        k_values = phase_scale_values(
+            float(sweep["max_abs_delta"]), float(sweep["step"])
+        )
 
     regular_open = _checker(active_size, 64)
-    dense_open, tetromino_count = dense_tetromino_mask(active_size, 24)
+    large_open, large_cell_counts = large_block_mask(active_size, 48)
     patterns: list[dict[str, Any]] = [
         {
             "order": 1,
@@ -200,16 +233,18 @@ def generate(config_path: Path) -> dict[str, Any]:
             "orientation_mode": "visible_checker_cells",
             "layout": "strict checker; command BMP is the exact full-canvas inverse",
             "landmark_count": None,
+            "phase_mode": "legacy_xy",
         },
         {
             "order": 2,
-            "name": "dense_tetromino_c24_25pieces",
-            "folder": "02_tetromino_c24_inv",
-            "cell_size": 24,
-            "intended_open": dense_open,
-            "orientation_mode": "neighbor_cells",
-            "layout": "5x5 separated T/O/L/J/S/Z tetromino field",
-            "landmark_count": tetromino_count,
+            "name": "large_blocks_c48_4to9cells",
+            "folder": "02_large_blocks_c48_inv",
+            "cell_size": 48,
+            "intended_open": large_open,
+            "layout": "six plain square/rectangle/L regions made from 4--9 cells",
+            "landmark_count": len(large_cell_counts),
+            "landmark_cell_counts": large_cell_counts,
+            "phase_mode": "separate_x_y",
         },
     ]
 
@@ -218,20 +253,32 @@ def generate(config_path: Path) -> dict[str, Any]:
     for pattern in patterns:
         pair_dir = output_dir / pattern["folder"]
         intended_open = pattern["intended_open"]
-        logical_phase = _registered_checker_grating(
-            active_size,
-            int(pattern["cell_size"]),
-            grating_period,
-            intended_open,
-            orientation_mode=str(pattern["orientation_mode"]),
-        )
+        if pattern["phase_mode"] == "legacy_xy":
+            phase_variants = {
+                "legacy_xy": _registered_checker_grating(
+                    active_size,
+                    int(pattern["cell_size"]),
+                    grating_period,
+                    intended_open,
+                    orientation_mode="visible_checker_cells",
+                )
+            }
+        else:
+            phase_variants = {
+                "x": single_axis_masked_grating(
+                    intended_open, grating_period, "x"
+                ),
+                "y": single_axis_masked_grating(
+                    intended_open, grating_period, "y"
+                ),
+            }
         amplitude_path = (
             pair_dir
             / "amplitude_bmp"
             / (
                 "amplitude_checker_c64_inv_1024x1024.bmp"
                 if pattern["order"] == 1
-                else "amplitude_tetromino_c24_inv_1024x1024.bmp"
+                else "amplitude_large_blocks_c48_inv_1024x1024.bmp"
             )
         )
         amplitude_report = _save_inverted_amplitude(
@@ -246,80 +293,95 @@ def generate(config_path: Path) -> dict[str, Any]:
         Image.fromarray(intended_open, mode="L").save(
             preview_dir / "intended_optical_white_regions.png", format="PNG"
         )
-        Image.fromarray(
-            _ideal_registration_preview(intended_open, logical_phase), mode="L"
-        ).save(preview_dir / "ideal_focused_overlay_k1p0000.png", format="PNG")
-
-        oriented_phase = logical_phase
-        if flip_vertical:
-            oriented_phase = np.flipud(oriented_phase)
-        if flip_horizontal:
-            oriented_phase = np.fliplr(oriented_phase)
-        oriented_phase = np.ascontiguousarray(oriented_phase)
-
         phase_reports: list[dict[str, Any]] = []
-        for sweep_index, k_value in enumerate(k_values):
-            # Teacher's relation: n=(8/17)k*m, therefore m=17*n/(8*k).
-            effective_logical_pitch_um = logical_pitch_um / k_value
-            native_phase = physical_pitch_nearest(
-                oriented_phase,
-                logical_pixel_pitch_um=effective_logical_pitch_um,
-                slm_pixel_pitch_um=phase_pitch_um,
+        for grating_axis, logical_phase in phase_variants.items():
+            Image.fromarray(
+                _ideal_registration_preview(intended_open, logical_phase), mode="L"
+            ).save(
+                preview_dir / f"ideal_focused_overlay_{grating_axis}_k1p0000.png",
+                format="PNG",
             )
-            phase_path = (
-                pair_dir
-                / "phase_bmp_scale_sweep"
-                / (
-                    f"phase_{sweep_index:02d}_k{_k_tag(k_value)}_"
-                    f"{'checker_c64' if pattern['order'] == 1 else 'tetromino_c24'}_"
-                    f"p{grating_period}_1920x1200.bmp"
+            oriented_phase = logical_phase
+            if flip_vertical:
+                oriented_phase = np.flipud(oriented_phase)
+            if flip_horizontal:
+                oriented_phase = np.fliplr(oriented_phase)
+            oriented_phase = np.ascontiguousarray(oriented_phase)
+
+            phase_subdir = (
+                "phase_bmp_scale_sweep"
+                if grating_axis == "legacy_xy"
+                else f"phase_bmp_scale_sweep_{grating_axis}"
+            )
+            for sweep_index, k_value in enumerate(k_values):
+                # Teacher's relation: n=(8/17)k*m, therefore m=17*n/(8*k).
+                effective_logical_pitch_um = logical_pitch_um / k_value
+                native_phase = physical_pitch_nearest(
+                    oriented_phase,
+                    logical_pixel_pitch_um=effective_logical_pitch_um,
+                    slm_pixel_pitch_um=phase_pitch_um,
                 )
-            )
-            phase_report = _save_phase(
-                native_phase,
-                phase_path,
-                slm_size_wh=phase_size,
-                center_xy=phase_center,
-            )
-            native_width = int(native_phase.shape[1])
-            realized_k = (
-                logical_pitch_um * active_size / (phase_pitch_um * native_width)
-            )
-            target_cell_px = (
-                logical_pitch_um * int(pattern["cell_size"])
-                / (phase_pitch_um * k_value)
-            )
-            phase_report.update(
-                {
-                    "sweep_index": sweep_index,
-                    "k": k_value,
-                    "delta_from_1": k_value - 1.0,
-                    "formula": "n=(8/17)*k*m; m=17*n/(8*k)",
-                    "effective_logical_pitch_um": effective_logical_pitch_um,
-                    "target_phase_pixels_per_amplitude_cell": target_cell_px,
-                    "realized_k_from_full_active_width": realized_k,
-                    "realized_k_error": realized_k - k_value,
-                }
-            )
-            phase_reports.append(phase_report)
-            csv_rows.append(
-                {
-                    "pattern_order": pattern["order"],
-                    "pattern": pattern["name"],
-                    "amplitude_bmp": str(amplitude_path),
-                    "phase_bmp": str(phase_path),
-                    "sweep_index": sweep_index,
-                    "k": f"{k_value:.4f}",
-                    "delta_from_1": f"{k_value - 1.0:+.4f}",
-                    "native_phase_active_width_px": native_width,
-                    "native_phase_active_height_px": int(native_phase.shape[0]),
-                    "target_phase_cell_px": f"{target_cell_px:.6f}",
-                    "realized_k": f"{realized_k:.8f}",
-                    "realized_k_error": f"{realized_k - k_value:+.8f}",
-                    "amplitude_sha256": amplitude_report["sha256"],
-                    "phase_sha256": phase_report["sha256"],
-                }
-            )
+                pattern_tag = (
+                    "checker_c64"
+                    if pattern["order"] == 1
+                    else "large_blocks_c48"
+                )
+                axis_tag = "" if grating_axis == "legacy_xy" else f"_{grating_axis}"
+                phase_path = (
+                    pair_dir
+                    / phase_subdir
+                    / (
+                        f"phase_{sweep_index:02d}_k{_k_tag(k_value)}_"
+                        f"{pattern_tag}{axis_tag}_p{grating_period}_1920x1200.bmp"
+                    )
+                )
+                phase_report = _save_phase(
+                    native_phase,
+                    phase_path,
+                    slm_size_wh=phase_size,
+                    center_xy=phase_center,
+                )
+                native_width = int(native_phase.shape[1])
+                realized_k = (
+                    logical_pitch_um * active_size / (phase_pitch_um * native_width)
+                )
+                target_cell_px = (
+                    logical_pitch_um * int(pattern["cell_size"])
+                    / (phase_pitch_um * k_value)
+                )
+                phase_report.update(
+                    {
+                        "grating_axis": grating_axis,
+                        "sweep_index": sweep_index,
+                        "k": k_value,
+                        "delta_from_1": k_value - 1.0,
+                        "formula": "n=(8/17)*k*m; m=17*n/(8*k)",
+                        "effective_logical_pitch_um": effective_logical_pitch_um,
+                        "target_phase_pixels_per_amplitude_cell": target_cell_px,
+                        "realized_k_from_full_active_width": realized_k,
+                        "realized_k_error": realized_k - k_value,
+                    }
+                )
+                phase_reports.append(phase_report)
+                csv_rows.append(
+                    {
+                        "pattern_order": pattern["order"],
+                        "pattern": pattern["name"],
+                        "grating_axis": grating_axis,
+                        "amplitude_bmp": str(amplitude_path),
+                        "phase_bmp": str(phase_path),
+                        "sweep_index": sweep_index,
+                        "k": f"{k_value:.4f}",
+                        "delta_from_1": f"{k_value - 1.0:+.4f}",
+                        "native_phase_active_width_px": native_width,
+                        "native_phase_active_height_px": int(native_phase.shape[0]),
+                        "target_phase_cell_px": f"{target_cell_px:.6f}",
+                        "realized_k": f"{realized_k:.8f}",
+                        "realized_k_error": f"{realized_k - k_value:+.8f}",
+                        "amplitude_sha256": amplitude_report["sha256"],
+                        "phase_sha256": phase_report["sha256"],
+                    }
+                )
         manifest_patterns.append(
             {
                 "order": pattern["order"],
@@ -328,11 +390,12 @@ def generate(config_path: Path) -> dict[str, Any]:
                 "cell_size_amplitude_px": pattern["cell_size"],
                 "layout": pattern["layout"],
                 "landmark_count": pattern["landmark_count"],
+                "landmark_cell_counts": pattern.get("landmark_cell_counts"),
                 "amplitude": amplitude_report,
                 "phase_scale_sweep": phase_reports,
                 "phase_rule": (
-                    "phase=0 in intended optical black regions; alternating "
-                    "x/y 0-pi gratings in intended optical white regions"
+                    "regular checker preserves the previous phase; large blocks "
+                    "use separate globally x-only and y-only 0-pi phase files"
                 ),
             }
         )
@@ -386,15 +449,17 @@ def generate(config_path: Path) -> dict[str, Any]:
         """# 双 SLM 反相振幅与相位倍率扫描
 
 只使用本目录中的两个编号文件夹。每个文件夹内先固定播放唯一的
-`amplitude_bmp/*.bmp`，再按 `phase_bmp_scale_sweep/phase_00...phase_20` 的编号顺序
+`amplitude_bmp/*.bmp`，再按 `phase_bmp_scale_sweep/phase_00...phase_40` 的编号顺序
 逐张测试相位。
 
 - `phase_00_k1p0000`：无倍率修正，规则棋盘相位与旧版逐像素相同。
-- 后续顺序：`+0.0005, -0.0005, +0.0010, -0.0010, ...`，直到 `±0.0050`。
+- 精细段：`+0.0005, -0.0005, ...`，直到 `±0.0050`。
+- 大范围段：`+0.0100, -0.0100, ...`，直到 `±0.1000`。
 - 振幅命令图已经整画布黑白取反；不要在播放软件中再次反相。
 - 相位已经沿用旧版纵向翻转；不要在播放软件中再次翻转。
 - 相位中心为 `(980,590)`。
-- `01_checker_c64_inv` 和 `02_tetromino_c24_inv` 的振幅/相位不能交叉配对。
+- `02_large_blocks_c48_inv` 的 X/Y 相位分别位于两个目录；单张相位只有一个方向。
+- `01_checker_c64_inv` 和 `02_large_blocks_c48_inv` 的振幅/相位不能交叉配对。
 
 老师给出的关系按 `n=(8/17)×k×m` 实现，即 `m=17n/(8k)`。每一档实际尺寸、
 量化误差和 SHA256 见 `scale_sweep_manifest.csv` 与

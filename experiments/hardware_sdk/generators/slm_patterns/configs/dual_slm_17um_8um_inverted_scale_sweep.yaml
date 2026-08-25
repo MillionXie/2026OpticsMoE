@@ -1,4 +1,4 @@
-output_dir: ../generated/dual_slm_17um_8um_inverted_k_sweep
+output_dir: ../generated/dual_slm_17um_8um_inv_large_blocks_k0p1
 
 logical:
   active_size: 478
@@ -19,7 +19,27 @@ phase_slm:
   flip_horizontal: false
 
 phase_scale_sweep:
-  # k values are emitted center-out: 1.0000, +0.0005, -0.0005, ...
-  # through +/-0.0050. Formula: n=(8/17)k*m, hence m=17n/(8k).
-  max_abs_delta: 0.005
-  step: 0.0005
+  # Values are emitted center-out. Preserve fine alignment near k=1, then
+  # extend to +/-0.1 in 0.01 increments.
+  # Formula: n=(8/17)k*m, hence m=17n/(8k).
+  absolute_deltas:
+    - 0.0005
+    - 0.0010
+    - 0.0015
+    - 0.0020
+    - 0.0025
+    - 0.0030
+    - 0.0035
+    - 0.0040
+    - 0.0045
+    - 0.0050
+    - 0.0100
+    - 0.0200
+    - 0.0300
+    - 0.0400
+    - 0.0500
+    - 0.0600
+    - 0.0700
+    - 0.0800
+    - 0.0900
+    - 0.1000
