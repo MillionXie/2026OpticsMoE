@@ -1,0 +1,45 @@
+base_config: ../../../qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust/configs/release/caltech101_four_layer_optical_joint_17um_10cm_robust.yaml
+
+hybrid:
+  initial_electronic_checkpoint: null
+  freeze_electronic: false
+  minimum_optical_fusion: 0.05
+  initial_fusion: 0.055
+
+warmstart:
+  stage: optical_calibration
+  electronic_checkpoint: ../../../qwen3_vl_embedding_2b_caltech101_electronic_retrieval/runs/caltech101_target10_electronic_vision2d_no_deepstack/ema_best_train_loss_checkpoint.pt
+  electronic_sha256: ebbb758f916cfe4ebedcc8f97d315e4c677c2a56388f4ff9c5ca9f50e36beddc
+  optical_checkpoint: ../../../qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust/runs/caltech101_four_layer_moe4_joint_17um_10cm_robust/ema_best_train_loss_checkpoint.pt
+  optical_sha256: 5bf4337d7a173aada16fe9011e591ee13983d7c834db02b90cb46e58f2d67d5b
+  stage_a_checkpoint: null
+
+training:
+  epochs: 4
+  learning_rate: 0.0001
+  adapter_learning_rate: 0.0001
+  readout_learning_rate: 0.0001
+  phase_learning_rate: 0.006
+  router_learning_rate: 0.0002
+  lambda_kd: 0.0
+  lambda_relational_kd: 0.0
+  lambda_ret: 1.0
+  lambda_gallery: 1.0
+  lambda_teacher_gallery: 0.0
+  lambda_router_balance: 0.05
+  lambda_router_importance: 0.005
+  lambda_ccd_operating_point: 0.02
+  evaluate_test_each_epoch: false
+  resume_optimizer_state: false
+  ema_decay: 0.995
+  learning_rate_schedule: cosine
+  learning_rate_warmup_ratio: 0.05
+  phase_focus: {enabled: true, warmup_epochs: 1, interval_epochs: 2}
+
+batching:
+  batch_size: 30
+  pk_skus_per_batch: 10
+  pk_images_per_sku: 3
+  optimizer_steps_per_epoch: 12
+
+output_dir: ../../runs/caltech101_warmstart5_stage1_optical_calibration

@@ -1,0 +1,25 @@
+base_config: stage1_optical_calibration.yaml
+
+warmstart:
+  stage: joint
+  electronic_checkpoint: null
+  electronic_sha256: null
+  optical_checkpoint: null
+  optical_sha256: null
+  stage_a_checkpoint: ../../runs/caltech101_warmstart5_stage1_optical_calibration/ema_best_train_loss_checkpoint.pt
+
+training:
+  epochs: 12
+  learning_rate: 0.00002
+  adapter_learning_rate: 0.000005
+  readout_learning_rate: 0.00001
+  phase_learning_rate: 0.006
+  router_learning_rate: 0.0001
+  evaluate_test_each_epoch: false
+  resume_optimizer_state: false
+  phase_focus: {enabled: true, warmup_epochs: 2, interval_epochs: 2}
+
+batching:
+  optimizer_steps_per_epoch: 12
+
+output_dir: ../../runs/caltech101_warmstart5_stage2_joint_sealed_test
