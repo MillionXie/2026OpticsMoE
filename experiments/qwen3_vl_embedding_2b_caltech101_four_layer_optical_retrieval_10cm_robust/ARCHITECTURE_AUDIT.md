@@ -131,9 +131,13 @@ phase-only epoch 仍使用任务损失反向传播，只冻结电子、router和
 Vision和Language各有独立电子 top-k router，均为4专家选2。联合训练和硬件下游微调都加入：
 
 ```text
-0.02 × router balance loss
+0.05 × router balance loss
 + 0.005 × router importance loss
 ```
+
+正式配置在训练态给router logits加入标准差0.10的高斯探索噪声，避免接近均匀的
+soft概率经过确定性top-k时长期饿死某些物理专家。`eval()`、固定checkpoint评估、
+BMP导出和实验室推理均自动关闭该噪声，仍使用确定性top-2。
 
 ## 7. 检索损失
 
@@ -143,7 +147,7 @@ Vision和Language各有独立电子 top-k router，均为4专家选2。联合训
 1.0 × supervised contrastive loss
 + 1.0 × episodic prototype retrieval CE
 + 0.02 × CCD operating-point loss
-+ 0.02 × router balance loss
++ 0.05 × router balance loss
 + 0.005 × router importance loss
 ```
 
