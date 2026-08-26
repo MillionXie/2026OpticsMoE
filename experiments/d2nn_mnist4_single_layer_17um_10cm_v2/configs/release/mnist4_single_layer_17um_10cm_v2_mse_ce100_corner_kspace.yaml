@@ -1,0 +1,11 @@
+base_config: mnist4_single_layer_17um_10cm_v2_notebook_mse_corner_kspace.yaml
+
+loss:
+  # Final bounded diagnostic: stronger relative raw-ROI separation while the
+  # notebook full-plane MSE remains active with its original scale of 100.
+  detector_ce_weight: 1.0
+
+hardware:
+  export_subdir: hardware_export_10cm_v2_mse_ce100_corner_kspace
+
+output_dir: ../../runs/mnist4_single_layer_17um_10cm_v2_mse_ce100_corner_kspace
