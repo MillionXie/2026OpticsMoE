@@ -1,0 +1,84 @@
+dataset:
+  root: ../../../d2nn_mnist4_single_layer_17um/cache/mnist
+  classes: [0, 1, 2, 3]
+  download: true
+  val_fraction: 0.10
+  train_limit: null
+  val_limit: null
+  test_limit: null
+
+optics:
+  wavelength_nm: 532.0
+  logical_pixel_pitch_um: 17.0
+  canvas_size: 518
+  propagation_grid_size: 1024
+  active_size: 478
+  input_size: 400
+  # Notebook-exact content: Resize(336), Pad(32) -> 400 optical input field.
+  input_content_size: 336
+  detector_distance_m: 0.10
+  phase:
+    parameterization: sigmoid
+    init: zeros
+  k_space:
+    enabled: true
+    theta_max_deg: 0.65
+
+detector:
+  # Notebook [75,125) and [275,325) on 400 are mapped edge-by-edge to 478.
+  # The exact result is [90,149) and [329,388): four 59x59 regions.
+  size: 59
+  reference_grid_size: 400
+  reference_intervals: [[75, 125], [275, 325]]
+
+robustness:
+  enabled: true
+  probability: 0.75
+  # Each component independently samples zero or one cardinal direction.
+  input_shift_max_px: 2
+  phase_shift_max_px: 2
+  pre_ccd_shift_max_px: 2
+
+loss:
+  eps: 1.0e-8
+  # Kept positive for compatibility with the reusable base Settings schema;
+  # v2 trains only the two explicitly named raw-CCD losses below.
+  template_mse_weight: 1.0
+  detector_ce_weight: 0.0
+  target_region_mse_weight: 1.0
+  background_mse_weight: 0.5
+
+training:
+  optimizer: adam
+  phase_learning_rate: 0.01
+  min_learning_rate: 0.001
+  epochs: 60
+  batch_size: 64
+  inference_batch_size: 64
+  num_workers: 4
+  random_seed: 42
+  gradient_clip_norm: 5.0
+  log_interval_batches: 50
+
+hardware:
+  amplitude_slm:
+    size_wh: [1024, 1024]
+    pixel_pitch_um: 17.0
+    center_xy: [512.0, 512.0]
+    invert_before_export: false
+  phase_slm:
+    size_wh: [1920, 1200]
+    pixel_pitch_um: 8.0
+    center_xy: [980.0, 590.0]
+    flip_vertical: true
+    flip_horizontal: false
+  ccd:
+    target_size: 478
+    # Binding contract: raw pixels only after capture.
+    postprocess: none_raw_linear
+  demo_samples_per_class: 10
+  evaluation_samples_per_class: 100
+  export_subdir: hardware_export_10cm_v2_proportional_roi
+
+device: cuda
+output_dir: ../../runs/mnist4_single_layer_17um_10cm_v2_robust_raw

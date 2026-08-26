@@ -1,0 +1,19 @@
+base_config: ../release/mnist4_single_layer_17um_10cm_v2_robust_raw.yaml
+
+dataset:
+  train_limit: 64
+  val_limit: 32
+  test_limit: 40
+
+training:
+  epochs: 1
+  batch_size: 4
+  inference_batch_size: 4
+  num_workers: 0
+  log_interval_batches: 4
+
+hardware:
+  demo_samples_per_class: 1
+  evaluation_samples_per_class: 1
+
+output_dir: ../../runs/smoke_mnist4_single_layer_17um_10cm_v2
