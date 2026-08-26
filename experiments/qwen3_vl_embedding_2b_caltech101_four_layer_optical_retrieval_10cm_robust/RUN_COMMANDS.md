@@ -52,8 +52,9 @@ CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_
 
 快速配置每个epoch只训练15个均衡batch，即`15×(10类×3图)=450`次样本出现，
 约为完整训练集的17%。采样器用绝对epoch重新设种子，所以各轮会重新洗牌并继续
-覆盖不同样本，不是固定450张。50个短epoch保留逐轮仿真测试、EMA、phase-focus、
-router loss、phase dropout、三路错位及k-space。按RTX 4090实测预计约90～110分钟。
+覆盖不同样本，不是固定450张。25个短epoch保留逐轮仿真测试、EMA、phase-focus、
+router loss、phase dropout、三路错位及k-space。按RTX 4090实测训练步和双评估
+开销拆分后预计约93～99分钟。
 
 从已有同架构`last_checkpoint.pt`继续（当前推荐）：
 

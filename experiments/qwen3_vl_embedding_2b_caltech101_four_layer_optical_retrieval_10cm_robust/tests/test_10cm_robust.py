@@ -52,7 +52,7 @@ def test_release_contract_is_explicitly_10cm_and_robust() -> None:
 def test_fast_release_only_changes_time_budget() -> None:
     full = load_settings(CONFIG)
     fast = load_settings(FAST_CONFIG)
-    assert fast.epochs == 50
+    assert fast.epochs == 25
     assert fast.optimizer_steps_per_epoch == 15
     assert fast.batch_size == 30
     assert fast.pk_skus_per_batch == 10

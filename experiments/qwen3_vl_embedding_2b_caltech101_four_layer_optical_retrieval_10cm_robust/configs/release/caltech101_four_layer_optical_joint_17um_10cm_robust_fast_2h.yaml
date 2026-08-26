@@ -5,8 +5,7 @@ base_config: caltech101_four_layer_optical_joint_17um_10cm_robust.yaml
 # split). PKBatchSampler reseeds with the absolute epoch, so later epochs see
 # different images instead of replaying one fixed subset.
 training:
-  epochs: 50
+  epochs: 25
 
 batching:
   optimizer_steps_per_epoch: 15
-
