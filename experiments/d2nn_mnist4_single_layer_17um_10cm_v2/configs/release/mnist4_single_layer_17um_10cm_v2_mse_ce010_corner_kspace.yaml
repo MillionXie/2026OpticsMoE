@@ -1,0 +1,11 @@
+base_config: mnist4_single_layer_17um_10cm_v2_notebook_mse_corner_kspace.yaml
+
+loss:
+  # Validation-only trade-off run: retain the notebook background objective
+  # while adding a gentler raw four-region discrimination term than CE=0.25.
+  detector_ce_weight: 0.10
+
+hardware:
+  export_subdir: hardware_export_10cm_v2_mse_ce010_corner_kspace
+
+output_dir: ../../runs/mnist4_single_layer_17um_10cm_v2_mse_ce010_corner_kspace

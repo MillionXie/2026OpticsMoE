@@ -29,6 +29,12 @@ MSE_CE_CONFIG = (
     / "release"
     / "mnist4_single_layer_17um_10cm_v2_mse_ce_corner_kspace.yaml"
 )
+MSE_CE010_CONFIG = (
+    Path(__file__).resolve().parents[1]
+    / "configs"
+    / "release"
+    / "mnist4_single_layer_17um_10cm_v2_mse_ce010_corner_kspace.yaml"
+)
 
 
 def test_notebook_detector_geometry_maps_edge_by_edge_to_478() -> None:
@@ -112,3 +118,6 @@ def test_mse_ce_ablation_keeps_raw_ccd_and_one_small_discriminative_term() -> No
     assert settings.notebook_full_plane_mse_scale == pytest.approx(100.0)
     assert settings.detector_ce_loss_weight == pytest.approx(0.25)
     assert settings.ccd_postprocess == "none_raw_linear"
+    compromise = load_settings(MSE_CE010_CONFIG)
+    assert compromise.detector_ce_loss_weight == pytest.approx(0.10)
+    assert compromise.ccd_postprocess == "none_raw_linear"
