@@ -81,6 +81,9 @@ $STAGE\acquisition_logs\
 python -m experiments.hardware_sdk.workflows.reconstruct_slm --input-dir "$STAGE\compact_amplitude" --output-dir "$STAGE\amplitude_to_play" --slm-width 1024 --slm-height 1024 --scale-factor 1 --center-x 512 --center-y 512
 ```
 
+该命令同时生成 `$STAGE\amplitude_to_play\reconstruction_manifest.csv`。后续三条
+采集命令都必须绑定它，只播放本次重建清单中的 BMP，不能依赖目录扫描。
+
 相位端按物理像素间距 `17/8` 栅格化，并允许单独改变相位 SLM 中心：
 
 ```powershell
@@ -102,16 +105,22 @@ experiments\hardware_sdk\configs\tucam_meadowlark_1024_windows.yaml
 倍数的 `camera.device_roi_xywh`。随后先做不打开设备的完整预检：
 
 ```powershell
-python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\hardware_sdk\configs\tucam_meadowlark_1024_windows.yaml --stage-dir $STAGE --validate-only
+python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\hardware_sdk\configs\tucam_meadowlark_1024_windows.yaml --stage-dir $STAGE --file-manifest "$STAGE\amplitude_to_play\reconstruction_manifest.csv" --validate-only
 ```
 
 手动把上面同一张相位 BMP 加载到相位 SLM 后，先采 3 张：
 
 ```powershell
-python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\hardware_sdk\configs\tucam_meadowlark_1024_windows.yaml --stage-dir $STAGE --limit 3 --clear-output
+python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\hardware_sdk\configs\tucam_meadowlark_1024_windows.yaml --stage-dir $STAGE --file-manifest "$STAGE\amplitude_to_play\reconstruction_manifest.csv" --limit 3 --clear-output
 ```
 
-确认后删除试采结果并移除 `--limit 3` 采完整批次。程序按文件名排序执行
+确认后用同一清单清空试采结果并采完整批次：
+
+```powershell
+python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\hardware_sdk\configs\tucam_meadowlark_1024_windows.yaml --stage-dir $STAGE --file-manifest "$STAGE\amplitude_to_play\reconstruction_manifest.csv" --clear-output
+```
+
+程序按文件名排序执行
 `Meadowlark Write_image → ImageWriteComplete → 等待 200 ms → TUCam capture`，
 直接保存同名 478×478 uint8 PNG。没有背景扣除、逐图拉伸或中间大图。
 

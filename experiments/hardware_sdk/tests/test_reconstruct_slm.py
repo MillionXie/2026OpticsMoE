@@ -4,6 +4,7 @@ import json
 import numpy as np
 from PIL import Image
 
+from experiments.hardware_sdk.workflows.acquire_folder import _files_from_manifest
 from experiments.hardware_sdk.workflows.reconstruct_slm import (
     encode_active_amplitude_with_metadata,
     physical_pitch_nearest,
@@ -40,6 +41,9 @@ def test_compact_payload_reconstructs_exact_centered_slm(tmp_path) -> None:
         row = next(csv.DictReader(handle))
     assert row["basename"] == "sample"
     assert row["active_bounds_xyxy"] == "2,2,10,8"
+    assert _files_from_manifest(
+        output, output / "reconstruction_manifest.csv"
+    ) == [output / "sample.bmp"]
 
 
 def test_compact_payload_uses_configured_slm_center(tmp_path) -> None:

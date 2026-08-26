@@ -19,6 +19,16 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
+from experiments.hardware_sdk.generators.dual_slm_checker_grating_contract import (
+    ARCHIVE_ROOT as DUAL_SLM_ARCHIVE_ROOT,
+    validate_dual_slm_checker_grating_pair,
+)
+from experiments.hardware_sdk.generators.fresnel_roi_vertex_contract import (
+    CALIBRATION_ARCHIVE_ROOT,
+    CALIBRATION_DIRECTORY_NAME,
+    validate_fresnel_roi_vertex_calibration,
+)
+
 
 PROJECT_PACKAGE = (
     "qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_"
@@ -40,6 +50,18 @@ QUICK_SAMPLE_COUNT = 210
 TAIL_PARAMETER_COUNT = 255_811
 FUSION_MINIMUM = 0.05
 FUSION_INITIAL = 0.055
+EXPECTED_CHECKPOINT_SHA256 = (
+    "6a27f54d8c869cce46150583383a127b0ba47b3d34503f5753aa23974ac1e55d"
+)
+EXPECTED_FRESNEL_MANIFEST_SHA256 = (
+    "88dae667691dc823c09c41e355014d75efc40457e84450073323e6b69b748a2b"
+)
+EXPECTED_DUAL_AMPLITUDE_SHA256 = (
+    "268fe1964a8c8edebe9587a057a4b4f6e2f309b120d961615e349fd28e0910ec"
+)
+EXPECTED_DUAL_PHASE_SHA256 = (
+    "d35ccd6802812d99265414a64789e370aa605be8a8f9388d74a8b910bec58868"
+)
 DEFAULT_ZIP_NAME = "qwen_caltech101_10cm_warmstart5_quick210_lab_bundle.zip"
 
 
@@ -479,6 +501,20 @@ def _quick210_files(
     )
     _validate_image(compact_phase, (478, 478), "quick compact phase")
     _validate_image(native_phase, (1920, 1200), "quick native phase")
+    phase_manifest = _require_file(
+        stage_dir / "phase_to_play" / "reconstruction_manifest.csv",
+        "quick phase reconstruction manifest",
+    )
+    phase_rows = _read_csv(phase_manifest)
+    phase_matches = [
+        row
+        for row in phase_rows
+        if str(row.get("output_bmp", "")).strip() == native_phase.name
+    ]
+    if len(phase_matches) != 1 or str(
+        phase_matches[0].get("output_sha256", "")
+    ).lower() != _sha256(native_phase):
+        raise RuntimeError("Quick phase BMP is not bound to its reconstruction manifest")
     offline_paths, offline_contract = _validate_offline_payload(
         offline_dir=stage_dir / "offline_downstream",
         manifest_path=manifest_path,
@@ -493,10 +529,10 @@ def _quick210_files(
         *amplitude_paths,
         compact_phase,
         native_phase,
+        phase_manifest,
         *offline_paths,
     ]
     for optional in (
-        stage_dir / "phase_to_play" / "reconstruction_manifest.csv",
         stage_dir / "phase_to_play" / "reconstruction_report.json",
     ):
         if optional.is_file():
@@ -525,6 +561,7 @@ def _runtime_files(repo_root: Path, include_vendor_sdk: bool) -> Iterable[Bundle
         "experiments/hardware_sdk/__init__.py",
         "experiments/hardware_sdk/devices.py",
         "experiments/hardware_sdk/configs/tucam_meadowlark_1024_windows.yaml",
+        "experiments/hardware_sdk/configs/tucam_meadowlark_calibration_windows.yaml",
         "experiments/hardware_sdk/workflows/__init__.py",
         "experiments/hardware_sdk/workflows/acquire_folder.py",
         "experiments/hardware_sdk/workflows/calibration_common.py",
@@ -532,8 +569,16 @@ def _runtime_files(repo_root: Path, include_vendor_sdk: bool) -> Iterable[Bundle
         "experiments/hardware_sdk/drivers/__init__.py",
         "experiments/hardware_sdk/drivers/meadowlark_pcie_slm.py",
         "experiments/hardware_sdk/drivers/tucam_camera.py",
+        "experiments/hardware_sdk/generators/__init__.py",
+        "experiments/hardware_sdk/generators/dual_slm_checker_grating_contract.py",
+        "experiments/hardware_sdk/generators/fresnel_phase_array.py",
+        "experiments/hardware_sdk/generators/fresnel_roi_vertex_array.py",
+        "experiments/hardware_sdk/generators/fresnel_roi_vertex_contract.py",
+        "experiments/hardware_sdk/generators/slm_patterns/__init__.py",
+        "experiments/hardware_sdk/generators/slm_patterns/configs/fresnel_roi_vertex_array_17um_8um.yaml",
         f"{project}/__init__.py",
         f"{project}/offline_quick_finetune.py",
+        f"{project}/result_report.py",
         f"{project}/requirements-lab.txt",
         f"{project}/requirements-offline-finetune.txt",
         f"{robust}/__init__.py",
@@ -548,21 +593,80 @@ def _runtime_files(repo_root: Path, include_vendor_sdk: bool) -> Iterable[Bundle
         )
     if not include_vendor_sdk:
         return
-    for relative in (
-        "experiments/hardware_sdk/vendor_sdk/amplitude_meadowlark",
-        "experiments/hardware_sdk/vendor_sdk/camera_tucam_mosaic",
-    ):
-        directory = repo_root / relative
-        if not directory.is_dir():
-            raise FileNotFoundError(f"Required vendor SDK directory is missing: {directory}")
-        for path in sorted(directory.rglob("*")):
-            if not path.is_file() or "__pycache__" in path.parts:
-                continue
-            if path.suffix.lower() in {".pyc", ".pyo"}:
-                continue
+    # Transfer only the x64 runtime required by the two adapters.  The uploaded
+    # vendor trees also contain x86 DLLs, IDE metadata, PDFs and many MiB of
+    # example BMPs (including obsolete Fresnel masks); none is needed for
+    # acquisition and including it makes laboratory transfers ambiguous.
+    amplitude_root = (
+        repo_root
+        / "experiments"
+        / "hardware_sdk"
+        / "vendor_sdk"
+        / "amplitude_meadowlark"
+    )
+    camera_root = (
+        repo_root
+        / "experiments"
+        / "hardware_sdk"
+        / "vendor_sdk"
+        / "camera_tucam_mosaic"
+    )
+    required = (
+        amplitude_root / "SDK" / "Blink_C_wrapper.dll",
+        amplitude_root / "SDK" / "Blink_SDK.dll",
+        amplitude_root / "LUT Files" / "slm7930_at532_30C.lut",
+        amplitude_root / "LUT Files" / "slm7930_at532_70C.lut",
+        camera_root / "TUCam.py",
+        camera_root / "lib" / "x64" / "TUCam.dll",
+    )
+    for path in required:
+        _require_file(path, "vendor x64 runtime file")
+
+    selected = {
+        *amplitude_root.joinpath("SDK").glob("*.dll"),
+        *amplitude_root.joinpath("LUT Files").glob("*.lut"),
+        camera_root / "TUCam.py",
+        *camera_root.joinpath("lib", "x64").glob("*"),
+        *camera_root.glob("*.xml"),
+    }
+    for path in sorted(selected):
+        if path.is_file():
             yield BundleFile(
-                path, path.relative_to(repo_root).as_posix(), "vendor_sdk"
+                path, path.relative_to(repo_root).as_posix(), "vendor_sdk_runtime_x64"
             )
+
+
+def _fresnel_calibration_files(
+    calibration_dir: Path,
+) -> tuple[list[BundleFile], dict[str, Any]]:
+    paths, contract = validate_fresnel_roi_vertex_calibration(calibration_dir)
+    files = [
+        BundleFile(
+            path,
+            (
+                Path(CALIBRATION_ARCHIVE_ROOT)
+                / path.relative_to(calibration_dir.resolve())
+            ).as_posix(),
+            "formal_roi_vertex_calibration",
+        )
+        for path in paths
+    ]
+    return files, contract
+
+
+def _dual_slm_calibration_files(
+    pair_dir: Path,
+) -> tuple[list[BundleFile], dict[str, Any]]:
+    paths, contract = validate_dual_slm_checker_grating_pair(pair_dir)
+    files = [
+        BundleFile(
+            path,
+            (Path(DUAL_SLM_ARCHIVE_ROOT) / path.name).as_posix(),
+            "formal_dual_slm_checker_grating_calibration",
+        )
+        for path in paths
+    ]
+    return files, contract
 
 
 def _reference_files(repo_root: Path) -> Iterable[BundleFile]:
@@ -580,6 +684,8 @@ def _reference_files(repo_root: Path) -> Iterable[BundleFile]:
         "RUN_COMMANDS.md",
         "FORMAL_RESULT.md",
         "LAB_BUNDLE.md",
+        "CALIBRATION.md",
+        "RESULT_PLOTTING.md",
         "configs/release/stage1_optical_calibration.yaml",
         "configs/release/stage2_joint_sealed_test.yaml",
         "configs/release/quick_last_stage_10x10.yaml",
@@ -634,14 +740,30 @@ def _evidence_files(
     student = evaluation.get("student")
     if not isinstance(student, dict):
         raise RuntimeError("Stage-B evaluation summary has no student metrics")
+    expected_metrics = {
+        "top1_retrieval_accuracy": 0.81,
+        "top3_retrieval_accuracy": 0.93,
+        "mrr": 0.876345,
+    }
     if (
         int(student.get("query_count", -1)) != 200
+        or int(student.get("gallery_image_count", -1)) != 30
         or int(student.get("sku_count", -1)) != 10
-        or float(student.get("top1_retrieval_accuracy", -1.0)) <= 0.80
+        or any(
+            not math.isclose(
+                float(student.get(name, math.nan)),
+                expected,
+                rel_tol=0.0,
+                abs_tol=1.0e-6,
+            )
+            for name, expected in expected_metrics.items()
+        )
     ):
         raise RuntimeError(
-            "Formal Stage-B evidence must contain the fixed 200-query result with Top-1 > 0.80"
+            "Formal Stage-B evidence must contain the sealed 200-query, 30-gallery "
+            "result (Top-1=0.81, Top-3=0.93, MRR=0.876345)"
         )
+    evaluation_path = stage_b_run_dir / "metrics" / "evaluation_summary.json"
     return files, {
         "top1_retrieval_accuracy": float(student["top1_retrieval_accuracy"]),
         "top3_retrieval_accuracy": float(student["top3_retrieval_accuracy"]),
@@ -649,6 +771,150 @@ def _evidence_files(
         "query_count": int(student["query_count"]),
         "gallery_image_count": int(student["gallery_image_count"]),
         "sku_count": int(student["sku_count"]),
+        "evaluation_summary_sha256": _sha256(evaluation_path),
+    }
+
+
+def _fixed_simulation_report_files(
+    report_dir: Path,
+    *,
+    expected_evaluation_sha256: str,
+) -> tuple[list[BundleFile], dict[str, Any]]:
+    root = report_dir.expanduser().resolve()
+    report = _read_json(root / "results_report.json")
+    figure_manifest = _read_json(root / "figure_manifest.json")
+    _require_file(root / "figure_manifest.csv", "fixed simulation figure manifest CSV")
+    _require_file(root / "QA_REPORT.md", "fixed simulation figure QA report")
+    records = report.get("records")
+    if not isinstance(records, list):
+        raise RuntimeError("Fixed simulation report has no records list")
+    simulations = [row for row in records if row.get("kind") == "simulation"]
+    if len(simulations) != 1:
+        raise RuntimeError("Fixed simulation report must contain exactly one simulation record")
+    simulation = simulations[0]
+    expected = {
+        "top1": 0.81,
+        "top3": 0.93,
+        "mrr": 0.876345,
+    }
+    for key, value in expected.items():
+        observed = float(simulation.get(key, math.nan))
+        # Metrics are emitted from float32 tensors, so the sealed values retain
+        # harmless representation noise (for example 0.8100000024 for 0.81).
+        # Keep the contract strict at the reported six-decimal precision while
+        # accepting that serialization noise.
+        if not math.isclose(observed, value, rel_tol=0.0, abs_tol=1.0e-6):
+            raise RuntimeError(
+                f"Fixed simulation report {key} mismatch: {observed} != {value}"
+            )
+    if int(simulation.get("query_count", -1)) != 200:
+        raise RuntimeError("Fixed simulation report must contain the 200-query result")
+    availability = report.get("availability", {})
+    if availability.get("simulation_baseline") is not True:
+        raise RuntimeError("Fixed simulation report does not declare its baseline available")
+    if any(
+        bool(value)
+        for key, value in availability.items()
+        if key != "simulation_baseline"
+    ):
+        raise RuntimeError("Fixed simulation preview must not claim unavailable hardware data")
+    if (
+        report.get("font_requested") != "Arial"
+        or report.get("font_resolved") != "Arial"
+        or report.get("font_requirement") != "strict"
+    ):
+        raise RuntimeError("Fixed simulation report must be rendered in strict Arial mode")
+    source_inventory = report.get("input_source_inventory")
+    if not isinstance(source_inventory, list) or len(source_inventory) != 1:
+        raise RuntimeError("Fixed simulation report must have exactly one input source")
+    if str(source_inventory[0].get("sha256", "")).lower() != str(
+        expected_evaluation_sha256
+    ).lower():
+        raise RuntimeError(
+            "Fixed simulation report is not bound to the packaged Stage-B evaluation JSON"
+        )
+
+    figures = figure_manifest.get("figures")
+    if not isinstance(figures, list):
+        raise RuntimeError("Fixed simulation figure manifest has no figures list")
+    available_count = 0
+    for figure in figures:
+        if figure.get("status") != "available":
+            continue
+        available_count += 1
+        for item in figure.get("files", []):
+            name = str(item.get("path", ""))
+            relative = Path(name)
+            if not name or relative.is_absolute() or ".." in relative.parts:
+                raise RuntimeError(f"Unsafe fixed simulation figure path: {name!r}")
+            path = _require_file(root / relative, "fixed simulation figure")
+            if _sha256(path) != str(item.get("sha256", "")).lower():
+                raise RuntimeError(f"Fixed simulation figure SHA-256 mismatch: {name}")
+    if available_count < 1:
+        raise RuntimeError("Fixed simulation report contains no rendered figure")
+    if report.get("figures") != figures:
+        raise RuntimeError("Fixed simulation report and figure manifest disagree")
+    expected_source_data = {
+        "source_data/overall_metrics.csv",
+        "source_data/per_class_metrics.csv",
+        "source_data/confusion_matrix_long.csv",
+        "source_data/ccd_qc_per_frame.csv",
+        "source_data/ccd_qc_by_stage.csv",
+        "source_data/predictions_long.csv",
+        "source_data/paired_predictions.csv",
+        "source_data/report_data.json",
+    }
+    if set(report.get("source_data", ())) != expected_source_data:
+        raise RuntimeError("Fixed simulation report source-data inventory is incomplete")
+    declared_figure_files = {
+        str(item["path"])
+        for figure in figures
+        if figure.get("status") == "available"
+        for item in figure.get("files", [])
+    }
+    expected_files = {
+        "results_report.json",
+        "figure_manifest.json",
+        "figure_manifest.csv",
+        "QA_REPORT.md",
+        "FIGURE_LEGENDS.md",
+        *expected_source_data,
+        *declared_figure_files,
+    }
+    observed_files = {
+        path.relative_to(root).as_posix()
+        for path in root.rglob("*")
+        if path.is_file() and not path.is_symlink()
+    }
+    if observed_files != expected_files:
+        raise RuntimeError(
+            "Fixed simulation report contains stale, missing, or undeclared files: "
+            f"extra={sorted(observed_files - expected_files)}, "
+            f"missing={sorted(expected_files - observed_files)}"
+        )
+    selected: list[BundleFile] = []
+    for relative in sorted(expected_files):
+        path = _require_file(root / relative, "declared fixed simulation report file")
+        selected.append(
+            BundleFile(
+                path,
+                (
+                    Path("reference/fixed_simulation_report")
+                    / path.relative_to(root)
+                ).as_posix(),
+                "fixed_simulation_report",
+            )
+        )
+    return selected, {
+        "included": True,
+        "top1": expected["top1"],
+        "top3": expected["top3"],
+        "mrr": expected["mrr"],
+        "query_count": 200,
+        "available_figure_count": available_count,
+        "file_count": len(selected),
+        "hardware_values_imputed": False,
+        "archive_root": "reference/fixed_simulation_report",
     }
 
 
@@ -723,6 +989,59 @@ def _verify_zip(path: Path, manifest: dict[str, Any]) -> dict[str, Any]:
     }
     if observed_tensor_payloads != allowed_tensor_payloads:
         raise RuntimeError("ZIP contains an extra or missing tensor/checkpoint payload")
+    fresnel_prefix = f"{CALIBRATION_ARCHIVE_ROOT}/phase_bmp/"
+    fresnel_phase = {
+        name
+        for name in names
+        if name.startswith(fresnel_prefix) and name.lower().endswith(".bmp")
+    }
+    if len(fresnel_phase) != 9:
+        raise RuntimeError("ZIP does not contain exactly nine corrected n1/n4/n9 phase BMPs")
+    if any("fresnel_phase_array_532nm" in name for name in names):
+        raise RuntimeError("ZIP contains the historical quadrant-centre Fresnel directory")
+    dual_contract = manifest["formal_dual_slm_checker_grating_contract"]
+    expected_dual = {
+        dual_contract["amplitude"]["archive_path"],
+        dual_contract["phase"]["archive_path"],
+    }
+    observed_dual = {
+        name
+        for name in names
+        if name.startswith(f"{DUAL_SLM_ARCHIVE_ROOT}/")
+        and name.lower().endswith(".bmp")
+    }
+    if observed_dual != expected_dual:
+        raise RuntimeError("ZIP dual-SLM checker/grating pair is incomplete or ambiguous")
+    if f"{DUAL_SLM_ARCHIVE_ROOT}/pair_manifest.json" in names:
+        raise RuntimeError("ZIP must not copy the source pair manifest with absolute paths")
+    if manifest.get("include_vendor_sdk"):
+        required_vendor = {
+            "experiments/hardware_sdk/vendor_sdk/amplitude_meadowlark/SDK/Blink_C_wrapper.dll",
+            "experiments/hardware_sdk/vendor_sdk/amplitude_meadowlark/SDK/Blink_SDK.dll",
+            "experiments/hardware_sdk/vendor_sdk/amplitude_meadowlark/LUT Files/slm7930_at532_30C.lut",
+            "experiments/hardware_sdk/vendor_sdk/amplitude_meadowlark/LUT Files/slm7930_at532_70C.lut",
+            "experiments/hardware_sdk/vendor_sdk/camera_tucam_mosaic/TUCam.py",
+            "experiments/hardware_sdk/vendor_sdk/camera_tucam_mosaic/lib/x64/TUCam.dll",
+        }
+        if not required_vendor.issubset(names):
+            raise RuntimeError("ZIP is missing a required x64 vendor runtime/LUT file")
+        forbidden_vendor_fragments = (
+            "/lib/x86/",
+            "/image files/",
+            "/wfc files/",
+            "/.idea/",
+        )
+        vendor_names = {
+            name.lower()
+            for name in names
+            if name.startswith("experiments/hardware_sdk/vendor_sdk/")
+        }
+        if any(
+            fragment in name
+            for name in vendor_names
+            for fragment in forbidden_vendor_fragments
+        ) or any(name.endswith(".pdf") for name in vendor_names):
+            raise RuntimeError("ZIP contains non-runtime vendor examples or x86 files")
     return {"entry_count": len(names), "crc_and_hash_validation": "passed"}
 
 
@@ -737,6 +1056,11 @@ def create_lab_bundle(
     include_vendor_sdk: bool = True,
     overwrite: bool = False,
     repo_root: str | Path | None = None,
+    fresnel_calibration_dir: str | Path | None = None,
+    dual_slm_calibration_dir: str | Path | None = None,
+    fixed_simulation_report_dir: str | Path | None = None,
+    expected_checkpoint_sha256: str | None = EXPECTED_CHECKPOINT_SHA256,
+    require_fixed_simulation_report: bool = True,
 ) -> dict[str, Any]:
     root = (
         Path(repo_root).expanduser().resolve()
@@ -747,6 +1071,54 @@ def create_lab_bundle(
         Path(checkpoint).expanduser().resolve(), "selected Stage-B checkpoint"
     )
     checkpoint_sha256 = _sha256(checkpoint_path)
+    if (
+        expected_checkpoint_sha256 is not None
+        and checkpoint_sha256 != str(expected_checkpoint_sha256).lower()
+    ):
+        raise RuntimeError(
+            "This transfer package is pinned to the sealed 81% warmstart5 "
+            f"checkpoint {expected_checkpoint_sha256}; got {checkpoint_sha256}"
+        )
+    calibration_root = (
+        Path(fresnel_calibration_dir).expanduser().resolve()
+        if fresnel_calibration_dir is not None
+        else root
+        / "experiments"
+        / "hardware_sdk"
+        / "generators"
+        / "slm_patterns"
+        / "generated"
+        / CALIBRATION_DIRECTORY_NAME
+    )
+    calibration_files, calibration_contract = _fresnel_calibration_files(
+        calibration_root
+    )
+    dual_slm_root = (
+        Path(dual_slm_calibration_dir).expanduser().resolve()
+        if dual_slm_calibration_dir is not None
+        else root
+        / "experiments"
+        / "hardware_sdk"
+        / "generators"
+        / "slm_patterns"
+        / "generated"
+        / "dual_slm_17um_8um_alignment_normal_polarity"
+        / "recommended_checker_grating_pair"
+    )
+    dual_slm_files, dual_slm_contract = _dual_slm_calibration_files(dual_slm_root)
+    if expected_checkpoint_sha256 is not None:
+        if (
+            calibration_contract.get("calibration_manifest_sha256")
+            != EXPECTED_FRESNEL_MANIFEST_SHA256
+        ):
+            raise RuntimeError("Formal Fresnel calibration manifest SHA-256 mismatch")
+        if (
+            dual_slm_contract.get("amplitude", {}).get("sha256")
+            != EXPECTED_DUAL_AMPLITUDE_SHA256
+            or dual_slm_contract.get("phase", {}).get("sha256")
+            != EXPECTED_DUAL_PHASE_SHA256
+        ):
+            raise RuntimeError("Formal dual-SLM checker/grating BMP SHA-256 mismatch")
     checkpoint_report = _validate_checkpoint(checkpoint_path)
     phase_files, phase_report = _phase_export_files(
         Path(phase_export_dir).expanduser().resolve(), checkpoint_sha256
@@ -754,14 +1126,45 @@ def create_lab_bundle(
     quick_files, quick_report = _quick210_files(
         Path(quick_session_dir).expanduser().resolve(), checkpoint_sha256
     )
-    evidence_files, fixed_metrics = _evidence_files(
-        Path(stage_a_run_dir).expanduser().resolve(),
-        Path(stage_b_run_dir).expanduser().resolve(),
+    stage_a_root = Path(stage_a_run_dir).expanduser().resolve()
+    stage_b_root = Path(stage_b_run_dir).expanduser().resolve()
+    evidence_files, fixed_metrics = _evidence_files(stage_a_root, stage_b_root)
+    fixed_report_root = (
+        Path(fixed_simulation_report_dir).expanduser().resolve()
+        if fixed_simulation_report_dir is not None
+        else stage_b_root / "fixed_simulation_report"
     )
+    if fixed_report_root.is_dir():
+        fixed_report_files, fixed_report_contract = _fixed_simulation_report_files(
+            fixed_report_root,
+            expected_evaluation_sha256=fixed_metrics[
+                "evaluation_summary_sha256"
+            ],
+        )
+    elif fixed_simulation_report_dir is not None or require_fixed_simulation_report:
+        raise FileNotFoundError(
+            "The formal laboratory package requires the strict-Arial fixed "
+            f"simulation report directory: {fixed_report_root}"
+        )
+    else:
+        fixed_report_files = []
+        fixed_report_contract = {
+            "included": False,
+            "reason": "stage_b/fixed_simulation_report was not generated before packaging",
+            "hardware_values_imputed": False,
+        }
     project_root = root / "experiments" / PROJECT_PACKAGE
     readme = _require_file(project_root / "LAB_BUNDLE.md", "laboratory README")
+    calibration_readme = _require_file(
+        project_root / "CALIBRATION.md", "calibration README"
+    )
     files: list[BundleFile] = [
         BundleFile(readme, "README_LAB_AND_SERVER.md", "documentation"),
+        BundleFile(
+            calibration_readme,
+            "payload/calibration/README.md",
+            "calibration_documentation",
+        ),
         BundleFile(
             checkpoint_path,
             f"payload/checkpoint/{checkpoint_path.name}",
@@ -769,7 +1172,10 @@ def create_lab_bundle(
         ),
         *phase_files,
         *quick_files,
+        *calibration_files,
+        *dual_slm_files,
         *evidence_files,
+        *fixed_report_files,
         *_runtime_files(root, include_vendor_sdk),
         *_reference_files(root),
     ]
@@ -805,9 +1211,19 @@ def create_lab_bundle(
             "phase_slm": phase_report["phase_slm"],
             "amplitude_polarity": "255=bright/transmissive, 0=dark/blocking",
         },
+        "formal_roi_vertex_calibration_contract": calibration_contract,
+        "formal_dual_slm_checker_grating_contract": dual_slm_contract,
+        "formal_assets_sha256_pinned": expected_checkpoint_sha256 is not None,
+        "formal_calibration_sequence": [
+            "dual-SLM checker/grating pair for near-pixel registration",
+            "n1 Fresnel mask for focal-plane search",
+            "n4 Fresnel mask whose foci directly mark the four ROI vertices",
+            "n9 Fresnel mask for full-ROI geometry verification",
+        ],
         "selected_checkpoint": {
             "archive_path": selected_archive_path,
             "sha256": checkpoint_sha256,
+            "formal_sha256_pinned": expected_checkpoint_sha256 is not None,
             **checkpoint_report,
         },
         "quick210_contract": {
@@ -829,6 +1245,7 @@ def create_lab_bundle(
             "checkpoint_selection": "minimum_train_loss_only",
         },
         "fixed_simulation_metrics": fixed_metrics,
+        "fixed_simulation_report_contract": fixed_report_contract,
         "responsibility_split": {
             "capture_only_lab": (
                 "reconstruct 1024x1024 amplitude BMP, play amplitude SLM, manually load "
@@ -852,6 +1269,9 @@ def create_lab_bundle(
             "no reconstructed full-size amplitude_to_play BMPs",
             "no extra checkpoint beyond the selected Stage-B EMA checkpoint",
             "offline_downstream/cache.pt is the sole intentional latent tail cache",
+            "historical 508-pixel quadrant-centre Fresnel arrays are not included",
+            "vendor package is limited to x64 runtime DLLs/bindings and calibrated LUTs",
+            "vendor x86 libraries, example images, PDFs, IDE files and WFC examples are excluded",
         ],
         "category_file_counts": dict(
             sorted(Counter(row["category"] for row in archive_rows).items())
@@ -885,6 +1305,13 @@ def create_lab_bundle(
         "fixed_test_top1": fixed_metrics["top1_retrieval_accuracy"],
         "quick_samples": QUICK_SAMPLE_COUNT,
         "offline_trainable_parameters": TAIL_PARAMETER_COUNT,
+        "formal_roi_vertex_calibration_phase_masks": int(
+            calibration_contract["phase_bmp_count"]
+        ),
+        "formal_dual_slm_checker_grating_bmps": len(dual_slm_files),
+        "fixed_simulation_report_included": bool(
+            fixed_report_contract["included"]
+        ),
         "vendor_sdk_included": bool(include_vendor_sdk),
         "manifest_entry_count": len(archive_rows),
         "zip_validation": zip_validation,
@@ -912,6 +1339,27 @@ def main(argv: list[str] | None = None) -> int:
         help="Test-only compact archive; formal laboratory delivery must include SDKs",
     )
     parser.add_argument("--overwrite", action="store_true")
+    parser.add_argument(
+        "--fresnel-calibration-dir",
+        help=(
+            "Corrected ROI-vertex calibration directory; defaults to the v2 "
+            "generated directory in hardware_sdk"
+        ),
+    )
+    parser.add_argument(
+        "--dual-slm-calibration-dir",
+        help=(
+            "Normal-polarity recommended checker/grating pair directory; defaults "
+            "to the compact generated recommended pair"
+        ),
+    )
+    parser.add_argument(
+        "--fixed-simulation-report-dir",
+        help=(
+            "Optional pre-rendered real 81%% simulation report directory; defaults "
+            "to stage-b-run-dir/fixed_simulation_report when present"
+        ),
+    )
     args = parser.parse_args(argv)
     report = create_lab_bundle(
         checkpoint=args.checkpoint,
@@ -922,6 +1370,9 @@ def main(argv: list[str] | None = None) -> int:
         output_path=args.output,
         include_vendor_sdk=not args.omit_vendor_sdk,
         overwrite=args.overwrite,
+        fresnel_calibration_dir=args.fresnel_calibration_dir,
+        dual_slm_calibration_dir=args.dual_slm_calibration_dir,
+        fixed_simulation_report_dir=args.fixed_simulation_report_dir,
     )
     print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
     return 0

@@ -1,0 +1,45 @@
+# Corrected ROI-vertex Fresnel calibration.  This writes to a new directory and
+# deliberately leaves the historical tile-center array untouched.
+output_dir: ../generated/fresnel_roi_vertex_array_532nm_17um_8um_v2
+
+wavelength_nm: 532.0
+propagation_distances_cm: [5.0, 10.0, 15.0]
+
+amplitude_slm:
+  size_wh: [1024, 1024]
+  pixel_pitch_um: 17.0
+  # Continuous pixel-edge coordinate of the shared optical axis.
+  center_xy: [512.0, 512.0]
+  bright_value_uint8: 255
+  dark_value_uint8: 0
+
+phase_slm:
+  size_wh: [1920, 1200]
+  pixel_pitch_um: 8.0
+  # Configurable continuous pixel-edge coordinate measured on the phase SLM.
+  center_xy: [980.0, 590.0]
+  # Preserve the established physical-path export convention.
+  flip_vertical: true
+  flip_horizontal: false
+
+shared_optical_support:
+  # 478*17 um = 8126 um = 1015.75 phase pixels.  The raster carrier is 1016.
+  amplitude_active_size_px: 478
+
+phase_aperture:
+  # Quadratic phase slope reaches the sampling Nyquist limit at
+  # r=lambda*z/(2*p^2).  Stay 8% inside it at every propagation distance.
+  nyquist_safety_factor: 0.92
+  # This is phase-only hardware: pixels outside the safe circular lens cannot
+  # be made dark.  They are explicitly encoded as zero/flat phase instead.
+  out_of_aperture_mode: flat_zero
+
+numerical_validation:
+  # 2048 is >=2*1016, so ROI-edge foci cannot wrap through the FFT boundary.
+  pad_size: 2048
+  search_radius_px: 8
+  target_exclusion_radius_px: 12
+  min_peak_to_global_median: 100.0
+  # Every intended target peak must be at least 50x stronger than the strongest
+  # pixel outside all target neighborhoods; this rejects hidden spurious foci.
+  min_peak_to_max_outside_targets: 50.0

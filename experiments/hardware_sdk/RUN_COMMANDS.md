@@ -146,23 +146,26 @@ python -m experiments.hardware_sdk.workflows.roi_calibration exposure --config e
 python -m experiments.hardware_sdk.workflows.reconstruct_slm --stage-dir $STAGE --payload amplitude --hardware-profile meadowlark_17um
 ```
 
+重建清单位于 `$STAGE\amplitude_to_play\reconstruction_manifest.csv`；下面的预检、
+试拍和正式采集都以它作为严格 allowlist，避免播放目录内残留 BMP。
+
 在打开硬件前，校验全部振幅 BMP、指定相位 BMP、两套 SDK、LUT 和相机 ROI：
 
 ```powershell
-python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\hardware_sdk\configs\tucam_meadowlark_1024_windows.yaml --stage-dir $STAGE --validate-only
+python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\hardware_sdk\configs\tucam_meadowlark_1024_windows.yaml --stage-dir $STAGE --file-manifest "$STAGE\amplitude_to_play\reconstruction_manifest.csv" --validate-only
 ```
 
 手动在相位 SLM 上加载同一个 `--phase-mask` 文件。首次只采 3 张，确认播放、曝光和
 basename 对应关系：
 
 ```powershell
-python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\hardware_sdk\configs\tucam_meadowlark_1024_windows.yaml --stage-dir $STAGE --limit 3 --clear-output
+python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\hardware_sdk\configs\tucam_meadowlark_1024_windows.yaml --stage-dir $STAGE --file-manifest "$STAGE\amplitude_to_play\reconstruction_manifest.csv" --limit 3 --clear-output
 ```
 
 确认无误后清空上述 3 张并采完整批次：
 
 ```powershell
-python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\hardware_sdk\configs\tucam_meadowlark_1024_windows.yaml --stage-dir $STAGE --clear-output
+python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\hardware_sdk\configs\tucam_meadowlark_1024_windows.yaml --stage-dir $STAGE --file-manifest "$STAGE\amplitude_to_play\reconstruction_manifest.csv" --clear-output
 ```
 
 stage 模式会自动要求 `phase_to_play/` 中恰好存在一张 BMP，并将其用于校验和记录。

@@ -74,7 +74,70 @@ BMP 合同固定为：振幅 `1024×1024`、8-bit 灰度、仅0/255；相位
 旧配置 `dual_slm_17um_8um_inverted_scale_sweep.yaml` 只用于复现极性修正前的历史文件，
 当前实验不要使用。
 
-## 532 nm 菲涅尔阵列：焦面、翻转和 CCD ROI 标定
+## 532 nm 菲涅尔阵列修正版：焦点直接位于 ROI 顶点
+
+从仓库根目录执行：
+
+```powershell
+python -m experiments.hardware_sdk.generators.fresnel_roi_vertex_array --config experiments/hardware_sdk/generators/slm_patterns/configs/fresnel_roi_vertex_array_17um_8um.yaml
+```
+
+输出到全新目录，不覆盖任何旧标定文件：
+
+```text
+experiments/hardware_sdk/generators/slm_patterns/generated/fresnel_roi_vertex_array_532nm_17um_8um_v2/
+├── amplitude_bmp/
+│   ├── amplitude_focus_full_white_1024x1024.bmp
+│   └── amplitude_roi478_white_black_1024x1024.bmp
+├── phase_bmp/                      # n1/n4/n9 × 5/10/15 cm，共9张
+├── preview/
+├── fresnel_focus_targets.csv
+├── numerical_focus_validation.csv
+├── numerical_focus_validation.json
+├── fresnel_roi_vertex_manifest.json
+└── README.md
+```
+
+精确几何关系：
+
+```text
+振幅有效宽度             = 478 × 17 µm = 8126 µm
+相位SLM上的精确宽度       = 8126 / 8 = 1015.75 pixel
+精确物理边界（edge坐标）  = [472.125,82.125] → [1487.875,1097.875]
+量化承载边界（半开区间）   = [472,82,1488,1098)，1016×1016
+```
+
+四点图的四个焦点直接落在精确物理边界四角，不再外推；九点图落在四角、四个边中点和
+中心。生成器不是只修改manifest：每个分区的二次相位中心直接使用目标ROI点，角点对应
+向内quarter-lens，边中点对应向内half-lens。几何cell完整覆盖1016×1016且无重叠，
+但为避免相位采样混叠，只有安全圆内写透镜相位：
+
+```text
+r_Nyquist = lambda*z/(2*p^2)
+r_safe    = 0.92*r_Nyquist
+5/10/15 cm的r_safe约为191.2/382.4/573.6个相位像素
+```
+
+安全圆外明确写0平相位；相位SLM无法把这部分变暗，因此四点/九点必须配合中央478白窗
+黑底振幅图，不能把平相位区域误称为光学暗孔径。
+
+BMP像素索引 `(x,y)` 的中心使用连续edge坐标 `(x+0.5,y+0.5)`。精确物理边界可能位于
+两个像素中心之间，实验时应拟合光斑质心；最亮像素允许存在不超过0.5像素的采样误差。
+相位BMP已经执行既有纵向翻转，播放端禁止再次翻转。manifest和CSV同时给出逻辑坐标与
+实际导出BMP坐标。
+
+推荐流程：
+
+1. 播放全白振幅和 `n1` 的5/10/15 cm版本，沿z轴寻找实际焦面；
+2. 改播中央478白窗黑底振幅和对应距离的 `n4_exact_roi_vertices`，直接测四个ROI顶点；
+3. 播放同距离 `n9_exact_roi_vertices_edge_midpoints_center` 检查旋转、剪切和非线性畸变；
+4. 查看 `numerical_focus_validation.json`。九张量化相位图均需同时通过：≤0.75相位像素
+   位置误差、焦点一一对应、目标峰/全局背景中位数≥100、最弱目标峰/目标区外最强伪峰≥50。
+
+四点/九点几何本身对称，不能仅凭等强光点判断翻转身份；应采用已知的BMP纵翻约定，
+必要时另播非对称棋盘/光栅图确认方向。
+
+## 历史532 nm菲涅尔分区中心阵列（留档，不能直接当ROI顶点）
 
 从仓库根目录执行：
 

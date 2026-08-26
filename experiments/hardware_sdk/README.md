@@ -23,6 +23,12 @@ uint16 0～65535 映射到 PNG 0～255；程序禁止逐图自动拉伸，以保
 校验其格式和尺寸，并把文件名与 SHA256 写入采集日志，从而防止振幅批次与相位 mask
 错配；采集代码不会控制或修改相位 SLM。
 
+`reconstruct_slm` 会在重建目录写入 `reconstruction_manifest.csv`，其中
+`output_bmp` 是本批次唯一允许播放的 BMP basename。预检、试拍和正式采集都应把该
+文件传给 `acquire_folder --file-manifest`；采集器会拒绝路径、重复项和缺失文件，且
+不会误播目录中上次实验遗留的 BMP。它也兼容导出流程使用的 `amplitude_file` 和
+`amplitude_bmp` 两种清单列名。
+
 可选背景扣除与正式采集分离。背景本身、扣除结果和预览均为 PNG；所有目录均在
 主 YAML 的 `optional_background` 中指定，执行命令无需再重复传路径。
 

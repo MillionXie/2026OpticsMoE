@@ -14,6 +14,10 @@ import pytest
 import torch
 from PIL import Image
 
+from experiments.hardware_sdk.tests._fresnel_roi_vertex_fixture import (
+    make_dual_slm_checker_grating_fixture,
+    make_fresnel_roi_vertex_fixture,
+)
 from experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust.offline_tail import (
     LanguageGlobalOfflineTail,
 )
@@ -22,6 +26,7 @@ from ..lab_package import (
     EXPECTED_ARCHITECTURE,
     STAGES,
     TAIL_PARAMETER_COUNT,
+    _runtime_files,
     _sha256,
     _validate_checkpoint,
     create_lab_bundle,
@@ -99,6 +104,8 @@ def _make_checkpoint(path: Path, *, test_selected: bool = False) -> Path:
 
 
 def _make_fixture(root: Path) -> dict[str, Path]:
+    calibration = make_fresnel_roi_vertex_fixture(root)
+    dual_slm_calibration = make_dual_slm_checker_grating_fixture(root)
     checkpoint = _make_checkpoint(root / "ema_best_train_loss_checkpoint.pt")
     checkpoint_sha = _sha256(checkpoint)
 
@@ -158,7 +165,18 @@ def _make_fixture(root: Path) -> dict[str, Path]:
     _write_csv(session / "manifest.csv", rows)
     _write_csv(stage_dir / "compact_amplitude_manifest.csv", amplitude_rows)
     _save_image(stage_dir / "compact_phase" / "language_global.png", (478, 478))
-    _save_image(stage_dir / "phase_to_play" / "language_global.bmp", (1920, 1200))
+    native_phase = stage_dir / "phase_to_play" / "language_global.bmp"
+    _save_image(native_phase, (1920, 1200))
+    _write_csv(
+        stage_dir / "phase_to_play" / "reconstruction_manifest.csv",
+        [
+            {
+                "order": 0,
+                "output_bmp": native_phase.name,
+                "output_sha256": _sha256(native_phase),
+            }
+        ],
+    )
     _write_json(
         stage_dir / "transport_spec.json",
         {
@@ -261,6 +279,8 @@ def _make_fixture(root: Path) -> dict[str, Path]:
         "session": session,
         "stage_a": stage_a,
         "stage_b": stage_b,
+        "calibration": calibration,
+        "dual_slm_calibration": dual_slm_calibration,
     }
 
 
@@ -277,6 +297,10 @@ def test_bundle_is_hash_bound_minimal_and_offline_ready(tmp_path: Path) -> None:
         output_path=output,
         include_vendor_sdk=False,
         repo_root=repository,
+        fresnel_calibration_dir=fixture["calibration"],
+        dual_slm_calibration_dir=fixture["dual_slm_calibration"],
+        expected_checkpoint_sha256=None,
+        require_fixed_simulation_report=False,
     )
     assert report["fixed_test_top1"] == pytest.approx(0.81)
     assert report["offline_trainable_parameters"] == 255_811
@@ -286,6 +310,49 @@ def test_bundle_is_hash_bound_minimal_and_offline_ready(tmp_path: Path) -> None:
         manifest = json.loads(archive.read("bundle_manifest.json"))
     assert manifest["architecture_contract"]["minimum_optical_fusion_coefficient"] == 0.05
     assert manifest["architecture_contract"]["initial_optical_fusion_coefficient"] == 0.055
+    assert manifest["formal_roi_vertex_calibration_contract"][
+        "logical_roi_vertex_spacing_phase_px"
+    ] == [1015.75, 1015.75]
+    assert not manifest["formal_roi_vertex_calibration_contract"][
+        "historical_quadrant_center_arrays_formal"
+    ]
+    assert report["formal_roi_vertex_calibration_phase_masks"] == 9
+    assert report["formal_dual_slm_checker_grating_bmps"] == 2
+    assert len(
+        [
+            name
+            for name in names
+            if name.startswith(
+                "payload/calibration/fresnel_roi_vertex_array_532nm_17um_8um_v2/phase_bmp/"
+            )
+        ]
+    ) == 9
+    dual_contract = manifest["formal_dual_slm_checker_grating_contract"]
+    assert manifest["formal_calibration_sequence"][0].startswith(
+        "dual-SLM checker/grating"
+    )
+    assert dual_contract["amplitude"]["polarity"] == (
+        "255=open/transmissive; 0=closed/opaque"
+    )
+    assert dual_contract["phase"]["vertical_flip_already_applied"] is True
+    assert dual_contract["source_absolute_paths_copied_to_bundle"] is False
+    assert (
+        "payload/calibration/dual_slm_checker_grating/"
+        "amplitude_checker_255open_c64_1024x1024.bmp"
+    ) in names
+    assert (
+        "payload/calibration/dual_slm_checker_grating/"
+        "phase_grating_xy_in_255open_cells_c64_p8_1920x1200.bmp"
+    ) in names
+    assert not any(name.endswith("pair_manifest.json") for name in names)
+    assert (
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_"
+        "10cm_warmstart5/result_report.py"
+    ) in names
+    assert (
+        "reference/qwen_project_source/RESULT_PLOTTING.md"
+    ) in names
+    assert manifest["fixed_simulation_report_contract"]["included"] is False
     assert len(
         [
             name
@@ -297,6 +364,24 @@ def test_bundle_is_hash_bound_minimal_and_offline_ready(tmp_path: Path) -> None:
     assert not any("ccd_captured" in name or "amplitude_to_play" in name for name in names)
     assert "payload/quick210/04_language_global/offline_downstream/cache.pt" in names
     assert "payload/quick210/04_language_global/offline_downstream/downstream_state.pt" in names
+
+
+def test_vendor_transfer_is_x64_runtime_only() -> None:
+    repository = Path(__file__).resolve().parents[3]
+    paths = {
+        item.archive_path
+        for item in _runtime_files(repository, include_vendor_sdk=True)
+        if item.category == "vendor_sdk_runtime_x64"
+    }
+    assert any(path.endswith("/SDK/Blink_C_wrapper.dll") for path in paths)
+    assert any(path.endswith("/lib/x64/TUCam.dll") for path in paths)
+    assert any(path.endswith("slm7930_at532_30C.lut") for path in paths)
+    assert any(path.endswith("slm7930_at532_70C.lut") for path in paths)
+    lowered = {path.lower() for path in paths}
+    assert not any("/lib/x86/" in path for path in lowered)
+    assert not any("/image files/" in path for path in lowered)
+    assert not any("/wfc files/" in path for path in lowered)
+    assert not any(path.endswith(".pdf") for path in lowered)
 
 
 def test_bundle_rejects_phase_checkpoint_hash_drift(tmp_path: Path) -> None:
@@ -315,6 +400,28 @@ def test_bundle_rejects_phase_checkpoint_hash_drift(tmp_path: Path) -> None:
             output_path=tmp_path / "bad.zip",
             include_vendor_sdk=False,
             repo_root=Path(__file__).resolve().parents[3],
+            fresnel_calibration_dir=fixture["calibration"],
+            dual_slm_calibration_dir=fixture["dual_slm_calibration"],
+            expected_checkpoint_sha256=None,
+            require_fixed_simulation_report=False,
+        )
+
+
+def test_formal_bundle_rejects_an_unpinned_checkpoint(tmp_path: Path) -> None:
+    fixture = _make_fixture(tmp_path)
+    with pytest.raises(RuntimeError, match="pinned to the sealed 81%"):
+        create_lab_bundle(
+            checkpoint=fixture["checkpoint"],
+            phase_export_dir=fixture["phase"],
+            quick_session_dir=fixture["session"],
+            stage_a_run_dir=fixture["stage_a"],
+            stage_b_run_dir=fixture["stage_b"],
+            output_path=tmp_path / "wrong_formal.zip",
+            include_vendor_sdk=False,
+            repo_root=Path(__file__).resolve().parents[3],
+            fresnel_calibration_dir=fixture["calibration"],
+            dual_slm_calibration_dir=fixture["dual_slm_calibration"],
+            require_fixed_simulation_report=False,
         )
 
 

@@ -1,4 +1,4 @@
-"""Layer-agnostic amplitude-SLM playback and CCD acquisition.
+"""Layer-agnostic allowlisted amplitude-SLM playback and CCD acquisition.
 
 This file intentionally has no Torch/Qwen/model imports.  Run it as the
 ``experiments.hardware_sdk.workflows.acquire_folder`` module.
@@ -52,7 +52,9 @@ def _clear_capture_files(directory: Path) -> None:
             path.unlink()
 
 
-def _resolve_stage_layout(stage_dir: str | Path) -> tuple[Path, Path, Path, Path]:
+def _resolve_stage_layout(
+    stage_dir: str | Path,
+) -> tuple[Path, Path, Path, Path, Path]:
     """Resolve the four folders owned by one exported optical stage.
 
     Stage paths are intentionally resolved against the process working
@@ -72,7 +74,14 @@ def _resolve_stage_layout(stage_dir: str | Path) -> tuple[Path, Path, Path, Path
             f"found {len(phase_files)}. Reconstruct/copy the stage phase mask first, "
             "or use the explicit --input-dir/--output-dir/--phase-mask mode."
         )
-    return input_dir, output_dir, log_dir, phase_files[0]
+    phase_manifest = phase_dir / "reconstruction_manifest.csv"
+    return (
+        input_dir,
+        output_dir,
+        log_dir,
+        phase_files[0],
+        phase_manifest,
+    )
 
 
 def _files_from_manifest(input_dir: Path, manifest: Path) -> list[Path]:
@@ -81,7 +90,9 @@ def _files_from_manifest(input_dir: Path, manifest: Path) -> list[Path]:
     The manifest is deliberately an allowlist rather than a directory hint.  This
     lets a quick diagnostic and a formal run share one (potentially large) BMP
     directory without copying files or accidentally playing frames from another
-    profile.
+    profile.  It accepts the export manifests' ``amplitude_file`` /
+    ``amplitude_bmp`` columns and ``reconstruct_slm``'s ``output_bmp`` column;
+    every selected value must still be a unique, existing plain BMP basename.
     """
 
     manifest = manifest.expanduser().resolve()
@@ -90,25 +101,32 @@ def _files_from_manifest(input_dir: Path, manifest: Path) -> list[Path]:
     with manifest.open("r", encoding="utf-8-sig", newline="") as handle:
         reader = csv.DictReader(handle)
         fieldnames = set(reader.fieldnames or ())
-        column = (
-            "amplitude_file"
-            if "amplitude_file" in fieldnames
-            else "amplitude_bmp" if "amplitude_bmp" in fieldnames else None
+        supported_columns = ("amplitude_file", "amplitude_bmp", "output_bmp")
+        column = next(
+            (candidate for candidate in supported_columns if candidate in fieldnames),
+            None,
         )
         if column is None:
             raise ValueError(
-                f"Amplitude selection manifest must contain amplitude_file or "
-                f"amplitude_bmp: {manifest}"
+                "Amplitude selection manifest must contain one of "
+                f"{', '.join(supported_columns)}: {manifest}"
             )
-        names = [str(row.get(column, "")).strip() for row in reader]
+        rows = list(reader)
+        names = [str(row.get(column, "")).strip() for row in rows]
     if not names or any(not name for name in names):
         raise ValueError(f"Amplitude selection manifest is empty/incomplete: {manifest}")
-    if len(names) != len(set(names)):
+    if len(names) != len({name.casefold() for name in names}):
         raise ValueError(f"Amplitude selection manifest contains duplicate files: {manifest}")
     paths: list[Path] = []
     for name in names:
         candidate_name = Path(name)
-        if candidate_name.name != name or candidate_name.suffix.lower() != ".bmp":
+        if (
+            candidate_name.name != name
+            or "/" in name
+            or "\\" in name
+            or ":" in name
+            or candidate_name.suffix.lower() != ".bmp"
+        ):
             raise ValueError(
                 "Manifest amplitude entries must be plain BMP basenames (no paths): "
                 f"{name!r}"
@@ -118,6 +136,14 @@ def _files_from_manifest(input_dir: Path, manifest: Path) -> list[Path]:
             raise FileNotFoundError(
                 f"Manifest-selected amplitude BMP is missing: {candidate}"
             )
+        declared_sha = str(rows[len(paths)].get("output_sha256", "")).strip().lower()
+        if column == "output_bmp" and declared_sha:
+            observed_sha = hashlib.sha256(candidate.read_bytes()).hexdigest()
+            if observed_sha != declared_sha:
+                raise RuntimeError(
+                    "Reconstructed amplitude BMP SHA-256 differs from its manifest: "
+                    f"{candidate.name}"
+                )
         paths.append(candidate)
     return sorted(paths, key=lambda value: value.name)
 
@@ -125,6 +151,7 @@ def _files_from_manifest(input_dir: Path, manifest: Path) -> list[Path]:
 def _phase_mask_metadata(
     path: Path,
     expected_size_wh: tuple[int, int],
+    expected_manifest: Path | None = None,
 ) -> dict[str, Any]:
     path = path.expanduser().resolve()
     if not path.is_file():
@@ -142,12 +169,45 @@ def _phase_mask_metadata(
                 f"Phase mask {path.name} size={image.size}, "
                 f"expected={expected_size_wh}"
             )
+    observed_sha = hashlib.sha256(path.read_bytes()).hexdigest()
+    manifest_metadata: dict[str, Any] | None = None
+    if expected_manifest is not None:
+        manifest_path = expected_manifest.expanduser().resolve()
+        if not manifest_path.is_file():
+            raise FileNotFoundError(
+                f"Expected phase reconstruction manifest is missing: {manifest_path}"
+            )
+        with manifest_path.open("r", encoding="utf-8-sig", newline="") as handle:
+            rows = list(csv.DictReader(handle))
+        matches = [row for row in rows if str(row.get("output_bmp", "")).strip() == path.name]
+        if len(matches) != 1:
+            raise RuntimeError(
+                "Phase reconstruction manifest must contain exactly one row for "
+                f"{path.name}; found {len(matches)}"
+            )
+        declared_sha = str(matches[0].get("output_sha256", "")).strip().lower()
+        if len(declared_sha) != 64:
+            raise RuntimeError(
+                "Phase reconstruction manifest has no valid output_sha256 for "
+                f"{path.name}"
+            )
+        if observed_sha != declared_sha:
+            raise RuntimeError(
+                f"Phase BMP SHA-256 differs from reconstruction manifest: {path.name}"
+            )
+        manifest_metadata = {
+            "path": str(manifest_path),
+            "sha256": hashlib.sha256(manifest_path.read_bytes()).hexdigest(),
+            "declared_output_sha256": declared_sha,
+            "verified": True,
+        }
     return {
         "path": str(path),
         "basename": path.name,
         "size_wh": list(expected_size_wh),
         "mode": "L",
-        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+        "sha256": observed_sha,
+        "reconstruction_manifest": manifest_metadata,
         "controlled_by_workflow": False,
     }
 
@@ -161,6 +221,7 @@ def run(
     stage_override: str | Path | None = None,
     log_override: str | Path | None = None,
     file_manifest_override: str | Path | None = None,
+    phase_manifest_override: str | Path | None = None,
     clear_output: bool = False,
     assume_yes: bool = False,
     validate_only: bool = False,
@@ -174,14 +235,19 @@ def run(
                 "Do not combine --stage-dir with --input-dir, --output-dir, or "
                 "--phase-mask"
             )
-        input_dir, output_dir, log_dir, resolved_stage_phase = _resolve_stage_layout(
-            stage_override
-        )
+        (
+            input_dir,
+            output_dir,
+            log_dir,
+            resolved_stage_phase,
+            resolved_stage_phase_manifest,
+        ) = _resolve_stage_layout(stage_override)
     else:
         input_dir = _resolve(input_override or raw["input_dir"], base)
         output_dir = _resolve(output_override or raw["output_dir"], base)
         log_dir = _resolve(raw.get("log_dir", "../workspace/logs"), base)
         resolved_stage_phase = None
+        resolved_stage_phase_manifest = None
     if log_override is not None:
         log_dir = _resolve(log_override, Path.cwd())
     selection_manifest = (
@@ -225,6 +291,7 @@ def run(
         )
     )
     raw_phase_path = resolved_stage_phase or phase_override or raw.get("phase_mask_file")
+    raw_phase_manifest = phase_manifest_override or resolved_stage_phase_manifest
     phase_required = bool(raw.get("require_phase_mask", False))
     if raw_phase_path is None and phase_required:
         raise ValueError(
@@ -232,7 +299,15 @@ def run(
             "in YAML or pass --phase-mask."
         )
     phase_metadata = (
-        _phase_mask_metadata(_resolve(raw_phase_path, base), expected_phase_size)
+        _phase_mask_metadata(
+            _resolve(raw_phase_path, base),
+            expected_phase_size,
+            (
+                _resolve(raw_phase_manifest, Path.cwd())
+                if raw_phase_manifest is not None
+                else None
+            ),
+        )
         if raw_phase_path is not None
         else None
     )
@@ -378,6 +453,20 @@ def run(
                 "phase_mask_sha256": (
                     None if phase_metadata is None else phase_metadata["sha256"]
                 ),
+                "phase_manifest_sha256": (
+                    None
+                    if phase_metadata is None
+                    or phase_metadata["reconstruction_manifest"] is None
+                    else phase_metadata["reconstruction_manifest"]["sha256"]
+                ),
+                "phase_manifest_verified": (
+                    False
+                    if phase_metadata is None
+                    or phase_metadata["reconstruction_manifest"] is None
+                    else bool(
+                        phase_metadata["reconstruction_manifest"]["verified"]
+                    )
+                ),
             }
             rows.append(row)
             size_text = ""
@@ -415,7 +504,10 @@ def run(
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Play every amplitude BMP in a folder and save same-name CCD frames"
+        description=(
+            "Play selected amplitude BMPs and save same-name CCD frames; bind a "
+            "manifest for formal acquisition"
+        )
     )
     parser.add_argument("--config", default="configs/tucam_windows.yaml")
     parser.add_argument(
@@ -437,14 +529,22 @@ def main() -> int:
         "--file-manifest",
         default=None,
         help=(
-            "CSV allowlist containing amplitude_file or amplitude_bmp; only these "
-            "shared-directory BMPs are played"
+            "CSV allowlist containing amplitude_file, amplitude_bmp, or "
+            "reconstruct_slm output_bmp; only these plain-basename BMPs are played"
         ),
     )
     parser.add_argument(
         "--phase-mask",
         default=None,
         help="Exact 1920x1200 phase BMP already loaded by the operator",
+    )
+    parser.add_argument(
+        "--phase-manifest",
+        default=None,
+        help=(
+            "Optional reconstruction_manifest.csv whose output_sha256 must match "
+            "the phase BMP; --stage-dir discovers phase_to_play manifest automatically"
+        ),
     )
     parser.add_argument("--clear-output", action="store_true")
     parser.add_argument("--yes", action="store_true")
@@ -463,6 +563,7 @@ def main() -> int:
         stage_override=args.stage_dir,
         log_override=args.log_dir,
         file_manifest_override=args.file_manifest,
+        phase_manifest_override=args.phase_manifest,
         clear_output=args.clear_output,
         assume_yes=args.yes,
         validate_only=args.validate_only,

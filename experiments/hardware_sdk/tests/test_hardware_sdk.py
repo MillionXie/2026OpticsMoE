@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 from types import SimpleNamespace
 from enum import Enum
@@ -11,6 +12,7 @@ from PIL import Image
 from experiments.hardware_sdk.demos.amplitude_camera_demo import generate_digit_bmps
 from experiments.hardware_sdk.workflows.acquire_folder import (
     _files_from_manifest,
+    _phase_mask_metadata,
     _resolve_stage_layout,
     run as run_folder_acquisition,
 )
@@ -377,11 +379,37 @@ def test_stage_acquisition_layout_keeps_all_artifacts_under_stage(tmp_path: Path
     stage = tmp_path / "04_language_global"
     (stage / "phase_to_play").mkdir(parents=True)
     Image.new("L", (12, 10), 0).save(stage / "phase_to_play" / "language_global.bmp")
-    input_dir, output_dir, log_dir, phase = _resolve_stage_layout(stage)
+    phase_manifest_path = stage / "phase_to_play" / "reconstruction_manifest.csv"
+    phase_manifest_path.write_text("output_bmp,output_sha256\n", encoding="utf-8")
+    input_dir, output_dir, log_dir, phase, phase_manifest = _resolve_stage_layout(stage)
     assert input_dir == stage / "amplitude_to_play"
     assert output_dir == stage / "ccd_captured"
     assert log_dir == stage / "acquisition_logs"
     assert phase == stage / "phase_to_play" / "language_global.bmp"
+    assert phase_manifest == phase_manifest_path
+
+
+def test_phase_bmp_is_bound_to_reconstruction_manifest_sha256(
+    tmp_path: Path,
+) -> None:
+    phase = tmp_path / "language_global.bmp"
+    Image.new("L", (12, 10), 0).save(phase)
+    digest = hashlib.sha256(phase.read_bytes()).hexdigest()
+    manifest = tmp_path / "reconstruction_manifest.csv"
+    manifest.write_text(
+        f"output_bmp,output_sha256\n{phase.name},{digest}\n",
+        encoding="utf-8",
+    )
+    metadata = _phase_mask_metadata(phase, (12, 10), manifest)
+    assert metadata["sha256"] == digest
+    assert metadata["reconstruction_manifest"]["verified"] is True
+
+    manifest.write_text(
+        f"output_bmp,output_sha256\n{phase.name},{'0' * 64}\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(RuntimeError, match="differs from reconstruction manifest"):
+        _phase_mask_metadata(phase, (12, 10), manifest)
 
 
 def test_saved_frame_none_mode_preserves_raw_array_without_copy() -> None:
@@ -646,6 +674,61 @@ def test_amplitude_manifest_is_an_exact_sorted_allowlist(tmp_path: Path) -> None
         "key,amplitude_file\na,../formal_y0.bmp\n", encoding="utf-8"
     )
     with pytest.raises(ValueError, match="plain BMP basenames"):
+        _files_from_manifest(input_dir, manifest)
+
+
+def test_reconstruction_manifest_output_bmp_is_a_strict_allowlist(
+    tmp_path: Path,
+) -> None:
+    input_dir = tmp_path / "amplitude_to_play"
+    input_dir.mkdir()
+    for name in ("000.bmp", "001.bmp", "residual.bmp"):
+        Image.new("L", (8, 8), 255).save(input_dir / name)
+    manifest = input_dir / "reconstruction_manifest.csv"
+    sha_000 = hashlib.sha256((input_dir / "000.bmp").read_bytes()).hexdigest()
+    sha_001 = hashlib.sha256((input_dir / "001.bmp").read_bytes()).hexdigest()
+    manifest.write_text(
+        "order,source_png,output_bmp,output_sha256\n"
+        f"1,001.png,001.bmp,{sha_001}\n"
+        f"0,000.png,000.bmp,{sha_000}\n",
+        encoding="utf-8-sig",
+    )
+
+    assert [path.name for path in _files_from_manifest(input_dir, manifest)] == [
+        "000.bmp",
+        "001.bmp",
+    ]
+
+    manifest.write_text(
+        "order,output_bmp,output_sha256\n"
+        f"0,000.bmp,{'0' * 64}\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(RuntimeError, match="amplitude BMP SHA-256 differs"):
+        _files_from_manifest(input_dir, manifest)
+
+    manifest.write_text(
+        "order,output_bmp\n0,000.bmp\n1,000.bmp\n", encoding="utf-8"
+    )
+    with pytest.raises(ValueError, match="duplicate files"):
+        _files_from_manifest(input_dir, manifest)
+
+    manifest.write_text(
+        "order,output_bmp\n0,000.bmp\n1,000.BMP\n", encoding="utf-8"
+    )
+    with pytest.raises(ValueError, match="duplicate files"):
+        _files_from_manifest(input_dir, manifest)
+
+    manifest.write_text(
+        "order,output_bmp\n0,nested\\001.bmp\n", encoding="utf-8"
+    )
+    with pytest.raises(ValueError, match="plain BMP basenames"):
+        _files_from_manifest(input_dir, manifest)
+
+    manifest.write_text(
+        "order,output_bmp\n0,missing.bmp\n", encoding="utf-8"
+    )
+    with pytest.raises(FileNotFoundError, match="missing.bmp"):
         _files_from_manifest(input_dir, manifest)
 
 
