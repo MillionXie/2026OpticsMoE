@@ -22,6 +22,12 @@ CONFIG = (
     / "release"
     / "caltech101_four_layer_optical_joint_17um_10cm_robust.yaml"
 )
+FAST_CONFIG = (
+    Path(__file__).resolve().parents[1]
+    / "configs"
+    / "release"
+    / "caltech101_four_layer_optical_joint_17um_10cm_robust_fast_2h.yaml"
+)
 
 
 def test_release_contract_is_explicitly_10cm_and_robust() -> None:
@@ -41,6 +47,20 @@ def test_release_contract_is_explicitly_10cm_and_robust() -> None:
     assert settings.hardware_phase_slm_pixel_pitch_um == 8.0
     assert settings.hardware_phase_flip_vertical is True
     assert FourLayerOpticalReplacement.checkpoint_architecture.endswith("_v2")
+
+
+def test_fast_release_only_changes_time_budget() -> None:
+    full = load_settings(CONFIG)
+    fast = load_settings(FAST_CONFIG)
+    assert fast.epochs == 50
+    assert fast.optimizer_steps_per_epoch == 15
+    assert fast.batch_size == 30
+    assert fast.pk_skus_per_batch == 10
+    assert fast.pk_images_per_sku == 3
+    assert fast.language_optical_distance_m == full.language_optical_distance_m
+    assert fast.phase_learning_rate == full.phase_learning_rate
+    assert fast.optical_fusion_minimum == full.optical_fusion_minimum
+    assert fast.output_dir == full.output_dir
 
 
 def test_bounded_gate_starts_at_requested_fraction_and_never_crosses_floor() -> None:

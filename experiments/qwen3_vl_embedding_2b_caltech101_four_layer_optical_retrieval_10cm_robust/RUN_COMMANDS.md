@@ -48,6 +48,23 @@ CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_
 CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust --config experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust/configs/release/caltech101_four_layer_optical_joint_17um_10cm_robust.yaml --phase train --resume-checkpoint experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust/runs/caltech101_four_layer_moe4_joint_17um_10cm_robust/last_checkpoint.pt
 ```
 
+### 3.1 只有1～2小时：随机均衡快速训练
+
+快速配置每个epoch只训练15个均衡batch，即`15×(10类×3图)=450`次样本出现，
+约为完整训练集的17%。采样器用绝对epoch重新设种子，所以各轮会重新洗牌并继续
+覆盖不同样本，不是固定450张。50个短epoch保留逐轮仿真测试、EMA、phase-focus、
+router loss、phase dropout、三路错位及k-space。按RTX 4090实测预计约90～110分钟。
+
+从已有同架构`last_checkpoint.pt`继续（当前推荐）：
+
+```bash
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust --config experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust/configs/release/caltech101_four_layer_optical_joint_17um_10cm_robust_fast_2h.yaml --phase train --resume-checkpoint experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust/runs/caltech101_four_layer_moe4_joint_17um_10cm_robust/last_checkpoint.pt
+```
+
+若没有任何checkpoint，也可以用同一快速配置从头联合训练；去掉
+`--resume-checkpoint ...`即可。快速配置只改变附加epoch数和每轮优化步数，不改变
+模型、loss、学习率、batch组成、10 cm传播或鲁棒性参数。
+
 ## 4. 固定checkpoint仿真评估
 
 ```bash

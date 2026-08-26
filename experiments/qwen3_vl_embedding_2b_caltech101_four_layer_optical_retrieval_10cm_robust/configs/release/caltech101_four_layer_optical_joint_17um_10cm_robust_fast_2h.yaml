@@ -1,0 +1,12 @@
+base_config: caltech101_four_layer_optical_joint_17um_10cm_robust.yaml
+
+# Time-budgeted formal continuation.  One logical epoch draws 15 balanced
+# 10-class x 3-image batches (450 sample appearances, about 17% of the train
+# split). PKBatchSampler reseeds with the absolute epoch, so later epochs see
+# different images instead of replaying one fixed subset.
+training:
+  epochs: 50
+
+batching:
+  optimizer_steps_per_epoch: 15
+
