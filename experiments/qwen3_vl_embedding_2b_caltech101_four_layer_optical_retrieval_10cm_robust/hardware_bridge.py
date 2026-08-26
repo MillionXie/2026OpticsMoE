@@ -389,6 +389,7 @@ def export_stage(
                 if name not in measured_upstream_stages
             ],
             "checkpoint": str(checkpoint),
+            "checkpoint_sha256": _sha256(checkpoint),
             "samples": len(samples),
             "compact_amplitude": "478x478 uint8 PNG in model coordinates",
             "compact_phase": "478x478 uint8 PNG in configured export orientation",

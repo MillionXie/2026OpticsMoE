@@ -16,7 +16,7 @@ from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.optical_artif
     save_phase_preview,
 )
 
-from .hardware_bridge import STAGES, _load_model, _phase_for_stage
+from .hardware_bridge import STAGES, _load_model, _phase_for_stage, _sha256
 from .settings import load_settings
 
 
@@ -59,6 +59,7 @@ def export_all(settings, checkpoint: Path, output_dir: Path) -> dict[str, object
     report = {
         "schema_version": 1,
         "checkpoint": str(checkpoint),
+        "checkpoint_sha256": _sha256(checkpoint),
         "stages": list(STAGES),
         "relative_phase_preview": str(output_dir / "phase_preview.png"),
         "logical_phase_shape": [settings.active_size, settings.active_size],
