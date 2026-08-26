@@ -1,0 +1,20 @@
+base_config: mnist4_single_layer_17um_10cm_v2_notebook_mse_corner_kspace.yaml
+
+detector:
+  # Keep the requested 59x59 current-plane ROI, but preserve the notebook
+  # centre steering angle after z changes from 20 cm to 10 cm and the pitch
+  # changes from 16 um to 17 um. This maps the two intervals to [162,221)
+  # and [257,316), instead of the unreachable [90,149)/[329,388) layout.
+  mapping_mode: preserve_reference_angle
+  reference_pixel_pitch_um: 16.0
+  reference_distance_m: 0.20
+
+loss:
+  # Use the notebook's successful full-plane raw-intensity MSE unchanged.
+  # No CCD normalization, activation, log, clipping, or background removal.
+  detector_ce_weight: 0.0
+
+hardware:
+  export_subdir: hardware_export_10cm_v2_angle_roi
+
+output_dir: ../../runs/mnist4_single_layer_17um_10cm_v2_angle_roi

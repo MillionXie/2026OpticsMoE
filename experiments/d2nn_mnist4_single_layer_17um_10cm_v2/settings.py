@@ -20,8 +20,11 @@ from experiments.d2nn_mnist4_single_layer_17um_10cm.settings import (
 @dataclass
 class V2Settings(BaseSettings):
     input_content_size: int
+    detector_mapping_mode: str
     detector_reference_grid_size: int
     detector_reference_intervals: tuple[tuple[int, int], ...]
+    detector_reference_pixel_pitch_um: float
+    detector_reference_distance_m: float
 
     k_space_enabled: bool
     k_space_theta_max_deg: float
@@ -46,13 +49,51 @@ class V2Settings(BaseSettings):
         return int(math.floor(float(edge) * float(target) / float(source) + 0.5))
 
     def detector_bounds(self) -> tuple[tuple[int, int, int, int], ...]:
-        intervals = tuple(
-            (
-                self._scale_edge(left, self.detector_reference_grid_size, self.active_size),
-                self._scale_edge(right, self.detector_reference_grid_size, self.active_size),
+        if self.detector_mapping_mode == "proportional_active_plane":
+            intervals = tuple(
+                (
+                    self._scale_edge(
+                        left, self.detector_reference_grid_size, self.active_size
+                    ),
+                    self._scale_edge(
+                        right, self.detector_reference_grid_size, self.active_size
+                    ),
+                )
+                for left, right in self.detector_reference_intervals
             )
-            for left, right in self.detector_reference_intervals
-        )
+        elif self.detector_mapping_mode == "preserve_reference_angle":
+            # The notebook used z=20 cm.  Keeping its coordinates after moving
+            # the detector to z=10 cm would require roughly twice the steering
+            # angle and places the four ROIs outside the useful 17 um sampled
+            # k-space.  Preserve each notebook ROI centre's propagation angle,
+            # while keeping the explicitly requested current-plane ROI size.
+            reference_center = 0.5 * float(self.detector_reference_grid_size)
+            target_center = 0.5 * float(self.active_size)
+            offset_scale = (
+                self.detector_reference_pixel_pitch_um
+                * self.detector_distance_m
+                / (
+                    self.logical_pixel_pitch_um
+                    * self.detector_reference_distance_m
+                )
+            )
+            intervals_list: list[tuple[int, int]] = []
+            for left, right in self.detector_reference_intervals:
+                source_center = 0.5 * float(left + right)
+                mapped_center = target_center + (
+                    source_center - reference_center
+                ) * offset_scale
+                mapped_left = int(
+                    math.floor(mapped_center - 0.5 * self.detector_size + 0.5)
+                )
+                intervals_list.append(
+                    (mapped_left, mapped_left + int(self.detector_size))
+                )
+            intervals = tuple(intervals_list)
+        else:  # validation should make this unreachable
+            raise RuntimeError(
+                f"Unsupported detector mapping mode: {self.detector_mapping_mode}"
+            )
         if len(intervals) != 2:
             raise ValueError("MNIST-4 v2 requires two reference intervals per axis")
         return tuple(
@@ -77,12 +118,30 @@ class V2Settings(BaseSettings):
             raise ValueError(
                 "The audited notebook detector intervals are [75,125) and [275,325)"
             )
+        if self.detector_mapping_mode not in {
+            "proportional_active_plane",
+            "preserve_reference_angle",
+        }:
+            raise ValueError(
+                "detector.mapping_mode must be proportional_active_plane or "
+                "preserve_reference_angle"
+            )
+        if min(
+            self.detector_reference_pixel_pitch_um,
+            self.detector_reference_distance_m,
+        ) <= 0.0:
+            raise ValueError("Notebook detector reference geometry must be positive")
         widths = {right - left for left, _, right, _ in self.detector_bounds()}
         heights = {bottom - top for _, top, _, bottom in self.detector_bounds()}
         if widths != {self.detector_size} or heights != {self.detector_size}:
             raise ValueError(
-                "detector.size must equal the proportionally mapped notebook ROI"
+                "detector.size must equal the mapped notebook ROI width"
             )
+        for left, top, right, bottom in self.detector_bounds():
+            if not (0 <= left < right <= self.active_size):
+                raise ValueError("Mapped detector x bounds leave the active CCD")
+            if not (0 <= top < bottom <= self.active_size):
+                raise ValueError("Mapped detector y bounds leave the active CCD")
         if not self.k_space_enabled:
             raise ValueError("The formal v2 contract requires k-space filtering")
         if not 0.0 < self.k_space_theta_max_deg < 90.0:
@@ -145,8 +204,17 @@ def load_settings(path: str | Path) -> V2Settings:
     settings = V2Settings(
         **base_values,
         input_content_size=int(d("optics.input_content_size", 336)),
+        detector_mapping_mode=str(
+            d("detector.mapping_mode", "proportional_active_plane")
+        ),
         detector_reference_grid_size=int(d("detector.reference_grid_size", 400)),
         detector_reference_intervals=intervals,
+        detector_reference_pixel_pitch_um=float(
+            d("detector.reference_pixel_pitch_um", 16.0)
+        ),
+        detector_reference_distance_m=float(
+            d("detector.reference_distance_m", 0.20)
+        ),
         k_space_enabled=bool(d("optics.k_space.enabled", True)),
         k_space_theta_max_deg=float(d("optics.k_space.theta_max_deg", 0.65)),
         robustness_enabled=bool(d("robustness.enabled", True)),

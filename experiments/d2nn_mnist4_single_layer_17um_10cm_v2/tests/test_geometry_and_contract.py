@@ -1,3 +1,4 @@
+import math
 from pathlib import Path
 
 import pytest
@@ -40,6 +41,12 @@ MSE_CE100_CONFIG = (
     / "configs"
     / "release"
     / "mnist4_single_layer_17um_10cm_v2_mse_ce100_corner_kspace.yaml"
+)
+ANGLE_ROI_CONFIG = (
+    Path(__file__).resolve().parents[1]
+    / "configs"
+    / "release"
+    / "mnist4_single_layer_17um_10cm_v2_notebook_mse_angle_roi.yaml"
 )
 
 
@@ -90,7 +97,7 @@ def test_incorrect_detector_size_is_rejected(tmp_path: Path) -> None:
     text = CONFIG.read_text(encoding="utf-8").replace("size: 59", "size: 49", 1)
     config = tmp_path / "bad.yaml"
     config.write_text(text, encoding="utf-8")
-    with pytest.raises(ValueError, match="proportionally mapped"):
+    with pytest.raises(ValueError, match="mapped notebook ROI"):
         load_settings(config)
 
 
@@ -130,3 +137,21 @@ def test_mse_ce_ablation_keeps_raw_ccd_and_one_small_discriminative_term() -> No
     stronger = load_settings(MSE_CE100_CONFIG)
     assert stronger.detector_ce_loss_weight == pytest.approx(1.0)
     assert stronger.ccd_postprocess == "none_raw_linear"
+
+
+def test_10cm_angle_preserving_detector_layout_is_kspace_reachable() -> None:
+    settings = load_settings(ANGLE_ROI_CONFIG)
+    assert settings.detector_mapping_mode == "preserve_reference_angle"
+    assert settings.detector_bounds() == (
+        (162, 162, 221, 221),
+        (257, 162, 316, 221),
+        (162, 257, 221, 316),
+        (257, 257, 316, 316),
+    )
+    assert settings.detector_ce_loss_weight == pytest.approx(0.0)
+    # The farthest ROI corner is about 1.06 degrees radially at z=10 cm,
+    # inside the configured 1.10-degree circular k-space passband.
+    farthest_offset_px = 316.0 - settings.active_size / 2.0
+    radial_m = (2.0**0.5) * farthest_offset_px * 17.0e-6
+    required_deg = math.degrees(math.atan2(radial_m, 0.10))
+    assert required_deg < settings.k_space_theta_max_deg
