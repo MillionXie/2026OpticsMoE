@@ -17,6 +17,12 @@ CORRECTED_CONFIG = (
     / "release"
     / "mnist4_single_layer_17um_10cm_v2_notebook_mse_light_robust.yaml"
 )
+CORNER_KSPACE_CONFIG = (
+    Path(__file__).resolve().parents[1]
+    / "configs"
+    / "release"
+    / "mnist4_single_layer_17um_10cm_v2_notebook_mse_corner_kspace.yaml"
+)
 
 
 def test_notebook_detector_geometry_maps_edge_by_edge_to_478() -> None:
@@ -82,3 +88,13 @@ def test_corrected_contract_uses_notebook_loss_and_light_delayed_jitter() -> Non
     assert settings.pre_ccd_shift_max_px == 1
     assert settings.phase_learning_rate == pytest.approx(0.01)
     assert settings.min_learning_rate == pytest.approx(0.01)
+
+
+def test_recommended_kspace_filters_only_sampled_spectrum_corners() -> None:
+    settings = load_settings(CORNER_KSPACE_CONFIG)
+    assert settings.loss_mode == "notebook_full_plane_mse"
+    assert settings.k_space_theta_max_deg == pytest.approx(1.10)
+    assert settings.robustness_warmup_epochs == 8
+    assert settings.input_shift_max_px == 1
+    assert settings.phase_shift_max_px == 1
+    assert settings.pre_ccd_shift_max_px == 1

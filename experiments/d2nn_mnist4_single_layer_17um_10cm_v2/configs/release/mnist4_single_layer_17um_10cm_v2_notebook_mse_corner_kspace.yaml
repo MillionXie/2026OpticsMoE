@@ -1,0 +1,14 @@
+base_config: mnist4_single_layer_17um_10cm_v2_notebook_mse_light_robust.yaml
+
+optics:
+  k_space:
+    # For 17 um / 532 nm sampling this retains 96.29% of the 1024x1024
+    # spectrum and removes only the square-grid high-frequency corners.
+    # The 0.80 deg comparison retains only 62.54% and is kept as a strong
+    # filtering ablation, not the recommended hardware model.
+    theta_max_deg: 1.10
+
+hardware:
+  export_subdir: hardware_export_10cm_v2_notebook_mse_corner_kspace
+
+output_dir: ../../runs/mnist4_single_layer_17um_10cm_v2_notebook_mse_corner_kspace

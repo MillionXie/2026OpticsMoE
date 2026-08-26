@@ -39,7 +39,8 @@ notebook 逐项核对，没有 0/3 互换或半像素偏移。CCD 必须提供�
 
 ## 鲁棒性
 
-- k 空间截止角为 0.80°，比失败版 0.65° 保留更多有效结构；
+- 推荐 k 空间截止角为 1.10°，在 17 μm/532 nm/1024 网格上保留 96.29%
+  频谱，只滤除方形采样频谱的高频角落；0.80°（保留 62.54%）仅保留为强滤波对照；
 - 前 8 epoch 不注入随机错位；
 - 第 9 epoch 起，输入、相位、CCD 前复光场分别以 50% 概率做最多 1 像素的
   上/下/左/右零填充平移；
@@ -51,5 +52,5 @@ CCD 光电探测 `|E|²` 之后没有归一化、激活、log、截断、背景�
 正式配置：
 
 ```text
-experiments/d2nn_mnist4_single_layer_17um_10cm_v2/configs/release/mnist4_single_layer_17um_10cm_v2_notebook_mse_light_robust.yaml
+experiments/d2nn_mnist4_single_layer_17um_10cm_v2/configs/release/mnist4_single_layer_17um_10cm_v2_notebook_mse_corner_kspace.yaml
 ```
