@@ -19,40 +19,46 @@
 
 | 指标 | 结果 |
 |---|---:|
-| 最佳 epoch（从 1 开始计数） | 29 |
-| Validation accuracy | 0.7361616162 |
+| 最佳 epoch（从 1 开始计数） | 44 |
+| Validation accuracy | 0.7434343434 |
+| Validation loss（template MSE） | 1.5794771768 |
+
+正式配置仅将原30轮训练延长到60轮，结构、数据、ROI、loss、batch和学习率均未
+同时改变。旧30轮最佳验证准确率为0.7361616162；本次提高0.7273个百分点。
 
 ## 3. Official test 仿真结果
 
 | 指标 | 结果 |
 |---|---:|
-| Accuracy | 0.7541496271 |
-| Loss（template MSE） | 1.5981779455 |
-| Target fraction | 0.06823754 |
-| Capture fraction | 0.14086348 |
+| Accuracy | 0.7604041376（3161/4157） |
+| Loss（template MSE） | 1.5779869163 |
+| Detector CE（仅诊断，loss权重为0） | 0.7932167653 |
+| Target fraction | 0.0678723387 |
+| Capture fraction | 0.1401467001 |
 
 混淆矩阵的行是真实类别、列是预测类别，类别顺序均为 `0, 1, 2, 3`：
 
 ```text
 [
-  [867,  13,  54,  46],
-  [ 16, 888, 123, 108],
-  [ 50,  90, 746, 146],
-  [ 76, 277,  23, 634]
+  [874,  13,  44,  49],
+  [ 11, 886, 124, 114],
+  [ 48,  85, 745, 154],
+  [ 72, 257,  25, 656]
 ]
 ```
 
-该混淆矩阵共包含 4,157 个 official test 样本，其中对角线正确样本数为
-3,135，对应 accuracy 为 0.7541496271。
+各类准确率依次约为89.18%、78.06%、72.19%和64.95%。该混淆矩阵共包含
+4,157个official test样本，其中对角线正确样本数为3,161。相对旧30轮的
+0.7541496271，本次提高0.6255个百分点，多正确26张。
 
 ## 4. 相位与可训练参数
 
 | 项目 | 结果 |
 |---|---:|
-| Phase mean | 3.225398 rad |
-| Phase std | 1.496451 rad |
-| Phase min | 0.000559 rad |
-| Phase max | 6.282399 rad |
+| Phase mean | 3.214946 rad |
+| Phase std | 1.556396 rad |
+| Phase min | 0.000049 rad |
+| Phase max | 6.283134 rad |
 | 可训练光学参数 | 228,484 |
 | 可训练电子参数 | 0 |
 
@@ -76,7 +82,7 @@ experiments/d2nn_mnist4_single_layer_17um_10cm/runs/mnist4_single_layer_17um_10c
 
 ```text
 experiments/d2nn_mnist4_single_layer_17um_10cm/runs/mnist4_single_layer_17um_10cm_notebook_mse/checkpoints/best.pt
-SHA-256: a60456390ee339d6d7f9a7b241bc9df5874b576f90c4767813c99da40d588b884
+SHA-256: bf23d56c6f8f14af3b57a914864af16107260b73c1807d43db03807103ed68ad
 ```
 
 硬件导出根目录：
@@ -89,15 +95,16 @@ experiments/d2nn_mnist4_single_layer_17um_10cm/runs/mnist4_single_layer_17um_10c
 
 ```text
 experiments/d2nn_mnist4_single_layer_17um_10cm/runs/mnist4_single_layer_17um_10cm_notebook_mse/hardware_export_10cm_normal_polarity/phase_to_play/mnist4_single_layer_17um_10cm.bmp
-SHA-256: 6670fd88de9dd0bcc6ce05d049f923487431584159c22f6cddf22c59ae58914a
+SHA-256: f7e50a067240e97ef33b1f0f9bbb5042eb204f87e2f917ae18d0166b929047bb
 ```
 
 实验室交付 ZIP：
 
 ```text
 experiments/d2nn_mnist4_single_layer_17um_10cm/runs/mnist4_single_layer_17um_10cm_notebook_mse/mnist4_single_layer_17um_10cm_lab_bundle.zip
-大小: 52,121,990 bytes
-SHA-256: 09e26cf5f9fca9abb72d0fe1687cc5b84c561c40bc86da63671eb78145ea9625
+大小: 52,090,417 bytes
+成员数: 582（`zip.testzip()`通过）
+SHA-256: 31bc33cea7e51c2966d14a6ebe9d6d0cab664ace83e8361d300422ba91faf59f
 ```
 
 正式硬件 400 张测试 stage 位于交付包中的：
@@ -114,6 +121,6 @@ payload/demo_topk/
 
 ## 6. 结果口径
 
-- `0.7541496271` 是 MNIST official test 数据上的正式仿真精度，不是实际光路精度。
+- `0.7604041376` 是 MNIST official test 数据上的正式仿真精度，不是实际光路精度。
 - 实际硬件精度必须完成 `formal_fixed_random_100_per_class` 的 400 张采集与评估后才能报告。
 - `demo_topk` 的 40 张样本经过仿真正确性与边界筛选，存在选择偏差，只能用于对齐和演示，不得作为准确率报告。
