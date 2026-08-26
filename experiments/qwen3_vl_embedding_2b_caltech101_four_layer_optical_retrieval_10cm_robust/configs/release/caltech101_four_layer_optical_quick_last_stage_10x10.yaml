@@ -1,0 +1,12 @@
+base_config: caltech101_four_layer_optical_joint_17um_10cm_robust.yaml
+
+# Independent small hardware subset for the single-stage language-global path.
+# The separate output directory prevents persisted subset metadata from
+# overwriting the formal training evidence.
+dataset:
+  train_limit_per_sku: 10
+  test_limit_per_sku: 10
+  reserve_test_before_train: true
+
+output_dir: ../../runs/caltech101_four_layer_quick_last_stage_10x10_metadata
+

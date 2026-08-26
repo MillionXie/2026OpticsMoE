@@ -34,6 +34,12 @@ RECOVERY_CONFIG = (
     / "release"
     / "caltech101_four_layer_optical_joint_17um_10cm_robust_fast_remaining20.yaml"
 )
+QUICK_HARDWARE_CONFIG = (
+    Path(__file__).resolve().parents[1]
+    / "configs"
+    / "release"
+    / "caltech101_four_layer_optical_quick_last_stage_10x10.yaml"
+)
 
 
 def test_release_contract_is_explicitly_10cm_and_robust() -> None:
@@ -79,6 +85,18 @@ def test_router_recovery_continuation_preserves_absolute_end_epoch() -> None:
     assert recovery.phase_focus_interval_epochs == 2
     assert recovery.router_noise_std == 0.10
     assert recovery.lambda_router_balance == 0.05
+
+
+def test_quick_last_stage_uses_isolated_small_dataset_metadata() -> None:
+    full = load_settings(CONFIG)
+    quick = load_settings(QUICK_HARDWARE_CONFIG)
+    assert quick.train_limit_per_sku == 10
+    assert quick.test_limit_per_sku == 10
+    assert quick.reserve_test_before_train is True
+    assert quick.output_dir != full.output_dir
+    assert quick.language_optical_distance_m == full.language_optical_distance_m
+    assert quick.phase_learning_rate == full.phase_learning_rate
+    assert quick.optical_fusion_minimum == full.optical_fusion_minimum
 
 
 def test_bounded_gate_starts_at_requested_fraction_and_never_crosses_floor() -> None:
