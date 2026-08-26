@@ -42,8 +42,28 @@ def _stratified_train_validation(
     return train_indices, validation_indices
 
 
-def _limit(indices: list[int], limit: int | None) -> list[int]:
-    return indices if limit is None else indices[: int(limit)]
+def _balanced_limit(
+    indices: list[int],
+    targets: torch.Tensor,
+    classes: tuple[int, ...],
+    limit: int | None,
+) -> list[int]:
+    if limit is None or int(limit) >= len(indices):
+        return indices
+    groups = {
+        label: [index for index in indices if int(targets[index]) == label]
+        for label in classes
+    }
+    result: list[int] = []
+    while len(result) < int(limit):
+        changed = False
+        for label in classes:
+            if groups[label] and len(result) < int(limit):
+                result.append(groups[label].pop(0))
+                changed = True
+        if not changed:
+            break
+    return result
 
 
 def build_datasets(settings: Settings) -> DatasetBundle:
@@ -75,9 +95,24 @@ def build_datasets(settings: Settings) -> DatasetBundle:
         settings.random_seed,
     )
     test_indices = _class_indices(full_test.targets, settings.classes)
-    train_indices = _limit(train_indices, settings.train_limit)
-    validation_indices = _limit(validation_indices, settings.val_limit)
-    test_indices = _limit(test_indices, settings.test_limit)
+    train_indices = _balanced_limit(
+        train_indices,
+        full_train.targets,
+        settings.classes,
+        settings.train_limit,
+    )
+    validation_indices = _balanced_limit(
+        validation_indices,
+        full_train.targets,
+        settings.classes,
+        settings.val_limit,
+    )
+    test_indices = _balanced_limit(
+        test_indices,
+        full_test.targets,
+        settings.classes,
+        settings.test_limit,
+    )
     counts = {
         str(label): {
             "train": sum(int(full_train.targets[index]) == label for index in train_indices),
@@ -135,4 +170,3 @@ def build_loaders(
         **common,
     )
     return train, validation, test
-

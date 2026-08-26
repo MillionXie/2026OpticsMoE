@@ -8,6 +8,7 @@ from PIL import Image
 from experiments.d2nn_mnist4_single_layer_17um.ccd_evaluate import (
     evaluate_directory,
 )
+from experiments.d2nn_mnist4_single_layer_17um.data import build_datasets
 from experiments.d2nn_mnist4_single_layer_17um.hardware_export import (
     _full_amplitude_frame,
 )
@@ -49,6 +50,16 @@ def test_detector_geometry_matches_four_focus_physical_centers() -> None:
     assert detector_spacing_um == 4063.0
     assert phase_lens_spacing_um == 4064.0
     assert abs(detector_spacing_um - phase_lens_spacing_um) == 1.0
+
+
+def test_smoke_limits_remain_class_balanced() -> None:
+    settings = replace(
+        _settings(), train_limit=16, val_limit=8, test_limit=8
+    )
+    bundle = build_datasets(settings)
+    for split in ("train", "validation", "test"):
+        counts = [bundle.metadata["per_class"][str(label)][split] for label in range(4)]
+        assert max(counts) - min(counts) <= 1
 
 
 def test_forward_has_finite_nonzero_raw_phase_gradient() -> None:
@@ -101,4 +112,3 @@ def test_ccd_evaluator_recovers_four_detector_classes(tmp_path: Path) -> None:
     )
     assert summary["accuracy"] == 1.0
     assert summary["background_subtraction"] is False
-
