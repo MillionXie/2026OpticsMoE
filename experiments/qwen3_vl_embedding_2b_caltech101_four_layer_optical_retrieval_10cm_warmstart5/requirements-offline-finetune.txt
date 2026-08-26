@@ -1,0 +1,5 @@
+# Optional lightweight Language-global micro-tuning environment.
+# This intentionally contains no Transformers or Qwen dependency.
+numpy>=1.24,<3
+Pillow>=10,<13
+torch>=2.1,<3

@@ -1,0 +1,4 @@
+# Capture-only Windows environment.  Intentionally no Torch/Transformers/Qwen.
+numpy>=1.24,<3
+Pillow>=10,<13
+PyYAML>=6,<7
