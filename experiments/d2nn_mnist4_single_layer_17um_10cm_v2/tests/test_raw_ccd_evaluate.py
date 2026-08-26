@@ -108,3 +108,32 @@ def test_raw_ccd_evaluator_refuses_resize(tmp_path: Path, monkeypatch) -> None:
             output_dir=stage / "evaluation",
             allow_biased_demo_metric=True,
         )
+
+
+def test_frame_qc_flags_black_saturated_and_flat_frames() -> None:
+    black = np.zeros((478, 478), dtype=np.float32)
+    black_report = ccd_evaluate._frame_qc(black, [0.0, 0.0, 0.0, 0.0])
+    assert black_report["valid"] is False
+    assert "near_black_mean_le_1" in black_report["reasons"]
+    assert "four_roi_relative_spread_le_2pct" in black_report["reasons"]
+
+    saturated = np.full((478, 478), 255.0, dtype=np.float32)
+    saturated_report = ccd_evaluate._frame_qc(
+        saturated, [100.0, 50.0, 25.0, 10.0]
+    )
+    assert saturated_report["valid"] is False
+    assert "saturated_pixels_ge_5pct" in saturated_report["reasons"]
+
+    valid = np.full((478, 478), 5.0, dtype=np.float32)
+    valid_report = ccd_evaluate._frame_qc(valid, [100.0, 20.0, 10.0, 5.0])
+    assert valid_report["valid"] is True
+
+
+def test_quick40_contract_is_diagnostic_without_being_biased_demo() -> None:
+    rows = [
+        {"key": f"sample_{label}_{index}", "label": str(label)}
+        for label in range(4)
+        for index in range(10)
+    ]
+    assert ccd_evaluate._is_quick40_diagnostic(rows, "quick40", False)
+    assert not ccd_evaluate._is_quick40_diagnostic(rows, "demo_topk", False)

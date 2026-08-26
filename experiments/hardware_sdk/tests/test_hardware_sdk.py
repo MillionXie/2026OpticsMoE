@@ -10,6 +10,7 @@ from PIL import Image
 
 from experiments.hardware_sdk.demos.amplitude_camera_demo import generate_digit_bmps
 from experiments.hardware_sdk.workflows.acquire_folder import (
+    _files_from_manifest,
     _resolve_stage_layout,
     run as run_folder_acquisition,
 )
@@ -620,6 +621,123 @@ def test_layer_agnostic_folder_acquisition_preserves_sorted_basenames(
         "000_a.npy",
         "001_b.npy",
         "002_c.npy",
+    ]
+    assert (log_dir / "capture_manifest.csv").is_file()
+
+
+def test_amplitude_manifest_is_an_exact_sorted_allowlist(tmp_path: Path) -> None:
+    input_dir = tmp_path / "shared_amplitudes"
+    input_dir.mkdir()
+    for name in ("formal_y1.bmp", "formal_y0.bmp", "not_selected.bmp"):
+        Image.new("L", (8, 8), 255).save(input_dir / name)
+    manifest = tmp_path / "quick40.csv"
+    manifest.write_text(
+        "key,amplitude_file,label\n"
+        "b,formal_y1.bmp,1\n"
+        "a,formal_y0.bmp,0\n",
+        encoding="utf-8",
+    )
+    assert [path.name for path in _files_from_manifest(input_dir, manifest)] == [
+        "formal_y0.bmp",
+        "formal_y1.bmp",
+    ]
+
+    manifest.write_text(
+        "key,amplitude_file\na,../formal_y0.bmp\n", encoding="utf-8"
+    )
+    with pytest.raises(ValueError, match="plain BMP basenames"):
+        _files_from_manifest(input_dir, manifest)
+
+
+def test_folder_acquisition_manifest_and_log_overrides_are_bound(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    input_dir = tmp_path / "shared"
+    output_dir = tmp_path / "result" / "ccd_captured"
+    log_dir = tmp_path / "result" / "acquisition_logs"
+    input_dir.mkdir()
+    for name in ("000.bmp", "001.bmp", "002.bmp"):
+        Image.new("L", (8, 8), 255).save(input_dir / name)
+    manifest = tmp_path / "quick.csv"
+    manifest.write_text(
+        "key,amplitude_file\nk2,002.bmp\nk0,000.bmp\n", encoding="utf-8"
+    )
+    phase = tmp_path / "mask.bmp"
+    Image.new("L", (12, 10), 127).save(phase)
+
+    class FakeSlm:
+        def __enter__(self): return self
+        def __exit__(self, *_): return None
+        def validate_runtime(self): return None
+        def validate_files(self, paths):
+            assert [path.name for path in paths] == ["000.bmp", "002.bmp"]
+        def preload_files(self, paths): return None
+        def display_file(self, path): return None
+        def device_info(self): return {"driver": "fake_slm"}
+
+    class FakeCamera:
+        def __enter__(self): return self
+        def __exit__(self, *_): return None
+        def validate_runtime(self): return None
+        def capture(self, path):
+            Image.new("L", (4, 4), 1).save(path)
+            self.last = {
+                "source_size_wh": [4, 4],
+                "saved_size_wh": [4, 4],
+                "resize_mode": "none",
+                "dtype": "uint8",
+            }
+        def device_info(self):
+            return {
+                "driver": "fake_camera",
+                "device_roi_xywh": [0, 0, 4, 4],
+                "last_capture": getattr(self, "last", None),
+            }
+
+    monkeypatch.setattr(
+        "experiments.hardware_sdk.workflows.acquire_folder.build_slm",
+        lambda *_: FakeSlm(),
+    )
+    monkeypatch.setattr(
+        "experiments.hardware_sdk.workflows.acquire_folder.build_camera",
+        lambda *_: FakeCamera(),
+    )
+    config = tmp_path / "acquisition.yaml"
+    config.write_text(
+        "\n".join(
+            [
+                f"input_dir: {input_dir.as_posix()}",
+                f"output_dir: {(tmp_path / 'unused-output').as_posix()}",
+                f"log_dir: {(tmp_path / 'unused-logs').as_posix()}",
+                "output_extension: .png",
+                "settle_delay_ms: 0",
+                "confirm_before_start: false",
+                "require_phase_mask: true",
+                "amplitude_slm: {driver: unused}",
+                "phase_slm: {expected_resolution_wh: [12, 10]}",
+                "camera:",
+                "  driver: unused",
+                "  require_device_roi: true",
+                "  device_roi_xywh: [0, 0, 4, 4]",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    report = run_folder_acquisition(
+        config,
+        input_override=input_dir,
+        output_override=output_dir,
+        phase_override=phase,
+        log_override=log_dir,
+        file_manifest_override=manifest,
+        assume_yes=True,
+    )
+    assert report["count"] == 2
+    assert report["selection_manifest"]["path"] == str(manifest.resolve())
+    assert len(report["selection_manifest"]["sha256"]) == 64
+    assert [path.name for path in sorted(output_dir.glob("*.png"))] == [
+        "000.png",
+        "002.png",
     ]
     assert (log_dir / "capture_manifest.csv").is_file()
 

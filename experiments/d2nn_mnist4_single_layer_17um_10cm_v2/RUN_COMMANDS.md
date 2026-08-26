@@ -1,12 +1,6 @@
 # Commands
 
-所有命令都从仓库根目录执行；本文件只是命令记录，不是 `.sh`。
-
-正式配置：
-
-```text
-experiments/d2nn_mnist4_single_layer_17um_10cm_v2/configs/release/mnist4_single_layer_17um_10cm_v2_notebook_mse_angle_roi.yaml
-```
+所有命令均从仓库或解压包根目录执行。本文件只是命令记录，不是 `.sh`。
 
 ## 1. 单元测试
 
@@ -14,56 +8,65 @@ experiments/d2nn_mnist4_single_layer_17um_10cm_v2/configs/release/mnist4_single_
 python -m pytest experiments/d2nn_mnist4_single_layer_17um_10cm_v2/tests -q
 ```
 
-## 2. 正式训练、固定测试和硬件导出
+## 2. 服务器生成正式实验室 ZIP
 
 ```bash
-CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=6 python -u -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2 --config experiments/d2nn_mnist4_single_layer_17um_10cm_v2/configs/release/mnist4_single_layer_17um_10cm_v2_notebook_mse_angle_roi.yaml --phase all 2>&1 | tee experiments/d2nn_mnist4_single_layer_17um_10cm_v2/runs/mnist4_single_layer_17um_10cm_v2_angle_roi/formal_train.log
+python -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2.lab_package \
+  --export-dir experiments/d2nn_mnist4_single_layer_17um_10cm_v2/runs/mnist4_single_layer_17um_10cm_v2_angle_roi/hardware_export_10cm_v2_angle_roi \
+  --mask-dir experiments/d2nn_mnist4_single_layer_17um_10cm_v2/runs/mnist4_single_layer_17um_10cm_v2_angle_roi/mask_candidates/phase_bmp \
+  --output experiments/d2nn_mnist4_single_layer_17um_10cm_v2/runs/mnist4_single_layer_17um_10cm_v2_angle_roi/mnist4_angle_roi_four_mask_lab_bundle.zip \
+  --overwrite
 ```
 
-输出目录：
+正式包包含 vendor SDK；只有开发测试时才允许加 `--omit-vendor-sdk`。生成后同时
+得到 `.zip.json`，内含 ZIP SHA-256、大小和 CRC/hash 校验结果。
 
-```text
-experiments/d2nn_mnist4_single_layer_17um_10cm_v2/runs/mnist4_single_layer_17um_10cm_v2_angle_roi/
-```
-
-## 3. 只测试 best checkpoint
-
-```bash
-CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=6 python -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2 --config experiments/d2nn_mnist4_single_layer_17um_10cm_v2/configs/release/mnist4_single_layer_17um_10cm_v2_notebook_mse_angle_roi.yaml --phase test --checkpoint experiments/d2nn_mnist4_single_layer_17um_10cm_v2/runs/mnist4_single_layer_17um_10cm_v2_angle_roi/checkpoints/best.pt
-```
-
-## 4. 只导出硬件文件
-
-```bash
-CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=6 python -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2 --config experiments/d2nn_mnist4_single_layer_17um_10cm_v2/configs/release/mnist4_single_layer_17um_10cm_v2_notebook_mse_angle_roi.yaml --phase export --checkpoint experiments/d2nn_mnist4_single_layer_17um_10cm_v2/runs/mnist4_single_layer_17um_10cm_v2_angle_roi/checkpoints/best.pt
-```
-
-相位文件为 `mnist4_single_layer_17um_10cm_v2.bmp`。振幅极性是修正后的
-`255=白/透光，0=黑/遮光`。
-
-若只需要若干候选相位 mask，不重建任何振幅数据：
-
-```bash
-python -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2.export_mask_candidates --config experiments/d2nn_mnist4_single_layer_17um_10cm_v2/configs/release/mnist4_single_layer_17um_10cm_v2_notebook_mse_angle_roi.yaml --candidate pre_robust_best=experiments/d2nn_mnist4_single_layer_17um_10cm_v2/runs/mnist4_single_layer_17um_10cm_v2_angle_roi/mask_candidates/checkpoints/pre_robust_best.pt --candidate early_robust=experiments/d2nn_mnist4_single_layer_17um_10cm_v2/runs/mnist4_single_layer_17um_10cm_v2_angle_roi/mask_candidates/checkpoints/early_robust_epoch010.pt --output-dir experiments/d2nn_mnist4_single_layer_17um_10cm_v2/runs/mnist4_single_layer_17um_10cm_v2_angle_roi/mask_candidates/phase_bmp
-```
-
-输出目录只包含 1920×1200、8-bit 灰度 BMP 和记录 epoch、验证准确率、checkpoint/BMP
-SHA-256 的 `mask_candidates.json`；不会生成振幅图片。
-
-## 5. 实验室电脑自动播放与采集
-
-先在相位 SLM 加载导出的唯一 phase BMP，再执行：
+## 3. 实验室安装轻量环境
 
 ```powershell
-python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\d2nn_mnist4_single_layer_17um_10cm\lab_hardware_config.yaml --stage-dir experiments\d2nn_mnist4_single_layer_17um_10cm_v2\runs\mnist4_single_layer_17um_10cm_v2_angle_roi\hardware_export_10cm_v2_angle_roi\formal_fixed_random_100_per_class
+py -3.11 -m venv .venv
+.venv\Scripts\python -m pip install --upgrade pip
+.venv\Scripts\python -m pip install -r experiments\d2nn_mnist4_single_layer_17um_10cm_v2\requirements-lab.txt
 ```
 
-## 6. 原始 CCD 四区求和评估
+## 4. 创建 quick40 会话
 
 ```powershell
-python -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2.ccd_evaluate --config experiments\d2nn_mnist4_single_layer_17um_10cm_v2\runs\mnist4_single_layer_17um_10cm_v2_angle_roi\hardware_export_10cm_v2_angle_roi\lab_model_config.yaml --manifest experiments\d2nn_mnist4_single_layer_17um_10cm_v2\runs\mnist4_single_layer_17um_10cm_v2_angle_roi\hardware_export_10cm_v2_angle_roi\formal_fixed_random_100_per_class\samples.csv --ccd-dir experiments\d2nn_mnist4_single_layer_17um_10cm_v2\runs\mnist4_single_layer_17um_10cm_v2_angle_roi\hardware_export_10cm_v2_angle_roi\formal_fixed_random_100_per_class\ccd_captured --output-dir experiments\d2nn_mnist4_single_layer_17um_10cm_v2\runs\mnist4_single_layer_17um_10cm_v2_angle_roi\hardware_export_10cm_v2_angle_roi\formal_fixed_random_100_per_class\hardware_evaluation_raw
+.venv\Scripts\python -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2.lab_session --profile quick40 --mask post_robust_best --output-dir sessions\post_robust_best\quick40
 ```
 
-相机需直接输出已对准的 478×478 灰度 ROI。评估器拒绝 resize，也不做归一化、
-非线性、动态拉伸或背景扣除。只有 Fresnel 标定确认确需翻转时，才给评估命令加
-`--flip-vertical` 或 `--flip-horizontal`。
+可选 mask 名：`post_robust_best`、`mid_robust_energy`、`pre_robust_best`、
+`early_robust`。四张 mask 的 quick40 key 完全相同。
+
+## 5. 验证、采集、quick40 诊断
+
+```powershell
+.venv\Scripts\python -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2.lab_pipeline --phase validate --stage-dir sessions\post_robust_best\quick40
+
+.venv\Scripts\python -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2.lab_pipeline --phase acquire --stage-dir sessions\post_robust_best\quick40
+
+.venv\Scripts\python -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2.lab_pipeline --phase evaluate --stage-dir sessions\post_robust_best\quick40 --allow-quick40-diagnostic
+```
+
+quick40 不能报告正式 accuracy。
+
+## 6. 创建并完整运行 formal400
+
+```powershell
+.venv\Scripts\python -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2.lab_session --profile formal400 --mask post_robust_best --output-dir sessions\post_robust_best\formal400
+
+.venv\Scripts\python -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2.lab_pipeline --phase all --stage-dir sessions\post_robust_best\formal400
+```
+
+formal400 默认对近黑、严重饱和或四 ROI 几乎无差异的帧执行只读 QC；存在无效帧时
+先写出诊断再拒绝生成可报告 accuracy。不要用 `--allow-invalid-formal` 结果写论文，
+该参数只用于定位采集问题。
+
+## 7. 汇总四张 mask 的 formal400 论文图
+
+```powershell
+.venv\Scripts\python -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2.paper_evaluation --run post_robust_best=sessions\post_robust_best\formal400\hardware_evaluation --run mid_robust_energy=sessions\mid_robust_energy\formal400\hardware_evaluation --run pre_robust_best=sessions\pre_robust_best\formal400\hardware_evaluation --run early_robust=sessions\early_robust\formal400\hardware_evaluation --output-dir reports\formal400_four_masks
+```
+
+详细合同、配置注意事项、图表输出和安全说明见 `README_FIRST.md`（仓库中为
+`LAB_BUNDLE.md`）。

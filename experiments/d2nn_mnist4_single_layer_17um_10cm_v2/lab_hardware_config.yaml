@@ -1,0 +1,60 @@
+# Laboratory Windows profile: 1024x1024 Meadowlark amplitude SLM + TUCam CCD.
+# Paths are relative to this file and remain valid after extracting the ZIP.
+
+input_dir: .
+output_dir: .
+log_dir: .
+output_extension: .png
+settle_delay_ms: 200
+confirm_before_start: true
+require_phase_mask: true
+phase_mask_file: null
+
+amplitude_slm:
+  driver: meadowlark_pcie
+  sdk_path: ../hardware_sdk/vendor_sdk/amplitude_meadowlark
+  board_number: 1
+  expected_resolution_wh: [1024, 1024]
+  expected_bit_depth: 8
+  pixel_pitch_um: 17.0
+  timeout_ms: 5000
+  wait_for_trigger: false
+  flip_immediate: false
+  output_pulse: false
+  preload: false
+  blank_on_close: true
+  # Confirm the physical SLM operating temperature before changing the LUT.
+  lut_file: ../hardware_sdk/vendor_sdk/amplitude_meadowlark/LUT Files/slm7930_at532_30C.lut
+
+phase_slm:
+  driver: manual
+  expected_resolution_wh: [1920, 1200]
+  pixel_pitch_um: 8.0
+
+camera:
+  driver: tucam
+  sdk_path: ../hardware_sdk/vendor_sdk/camera_tucam_mosaic
+  camera_index: 0
+  timeout_ms: 10000
+  config_file: null
+  auto_exposure: false
+  exposure_us: 5000.0
+  analog_gain: null
+  anti_flicker_hz: null
+  resolution_mode: null
+
+  # REQUIRED: fill [left, top, width, height] after Fresnel/ROI calibration.
+  # TUCam requires all four values to be divisible by four.
+  require_device_roi: true
+  device_roi_xywh: null
+
+  # The camera driver writes one model-ready transport frame. It performs no
+  # background subtraction, per-frame normalization, nonlinear compression,
+  # or orientation flip. If the physical ROI differs, this is the sole fixed
+  # geometry conversion; the evaluator then strictly requires 478x478.
+  saved_frame_size_wh: [478, 478]
+  saved_frame_resize_mode: auto
+  saved_frame_bit_depth: 8
+  saved_frame_input_range: [0, 65535]
+  warmup_frames: 3
+  discard_frames_after_display: 1

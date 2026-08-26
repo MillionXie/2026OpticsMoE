@@ -75,6 +75,53 @@ def _resolve_stage_layout(stage_dir: str | Path) -> tuple[Path, Path, Path, Path
     return input_dir, output_dir, log_dir, phase_files[0]
 
 
+def _files_from_manifest(input_dir: Path, manifest: Path) -> list[Path]:
+    """Return the exact, sorted amplitude allowlist recorded by a CSV manifest.
+
+    The manifest is deliberately an allowlist rather than a directory hint.  This
+    lets a quick diagnostic and a formal run share one (potentially large) BMP
+    directory without copying files or accidentally playing frames from another
+    profile.
+    """
+
+    manifest = manifest.expanduser().resolve()
+    if not manifest.is_file():
+        raise FileNotFoundError(f"Amplitude selection manifest is missing: {manifest}")
+    with manifest.open("r", encoding="utf-8-sig", newline="") as handle:
+        reader = csv.DictReader(handle)
+        fieldnames = set(reader.fieldnames or ())
+        column = (
+            "amplitude_file"
+            if "amplitude_file" in fieldnames
+            else "amplitude_bmp" if "amplitude_bmp" in fieldnames else None
+        )
+        if column is None:
+            raise ValueError(
+                f"Amplitude selection manifest must contain amplitude_file or "
+                f"amplitude_bmp: {manifest}"
+            )
+        names = [str(row.get(column, "")).strip() for row in reader]
+    if not names or any(not name for name in names):
+        raise ValueError(f"Amplitude selection manifest is empty/incomplete: {manifest}")
+    if len(names) != len(set(names)):
+        raise ValueError(f"Amplitude selection manifest contains duplicate files: {manifest}")
+    paths: list[Path] = []
+    for name in names:
+        candidate_name = Path(name)
+        if candidate_name.name != name or candidate_name.suffix.lower() != ".bmp":
+            raise ValueError(
+                "Manifest amplitude entries must be plain BMP basenames (no paths): "
+                f"{name!r}"
+            )
+        candidate = input_dir / name
+        if not candidate.is_file():
+            raise FileNotFoundError(
+                f"Manifest-selected amplitude BMP is missing: {candidate}"
+            )
+        paths.append(candidate)
+    return sorted(paths, key=lambda value: value.name)
+
+
 def _phase_mask_metadata(
     path: Path,
     expected_size_wh: tuple[int, int],
@@ -112,6 +159,8 @@ def run(
     output_override: str | Path | None = None,
     phase_override: str | Path | None = None,
     stage_override: str | Path | None = None,
+    log_override: str | Path | None = None,
+    file_manifest_override: str | Path | None = None,
     clear_output: bool = False,
     assume_yes: bool = False,
     validate_only: bool = False,
@@ -133,7 +182,18 @@ def run(
         output_dir = _resolve(output_override or raw["output_dir"], base)
         log_dir = _resolve(raw.get("log_dir", "../workspace/logs"), base)
         resolved_stage_phase = None
-    files = sorted(input_dir.glob("*.bmp"))
+    if log_override is not None:
+        log_dir = _resolve(log_override, Path.cwd())
+    selection_manifest = (
+        _resolve(file_manifest_override, Path.cwd())
+        if file_manifest_override is not None
+        else None
+    )
+    files = (
+        _files_from_manifest(input_dir, selection_manifest)
+        if selection_manifest is not None
+        else sorted(input_dir.glob("*.bmp"))
+    )
     if not files:
         raise FileNotFoundError(f"No amplitude BMP files found in {input_dir}")
     configured_limit = limit if limit is not None else raw.get("max_files")
@@ -192,6 +252,14 @@ def run(
         "input_dir": str(input_dir),
         "output_dir": str(output_dir),
         "play_count": len(files),
+        "selection_manifest": (
+            None
+            if selection_manifest is None
+            else {
+                "path": str(selection_manifest),
+                "sha256": hashlib.sha256(selection_manifest.read_bytes()).hexdigest(),
+            }
+        ),
         "phase_mask": phase_metadata,
         "amplitude_slm": slm_driver.device_info(),
         "camera": camera_driver.device_info(),
@@ -240,6 +308,7 @@ def run(
             "input_dir": str(input_dir),
             "output_dir": str(output_dir),
             "play_count": len(files),
+            "selection_manifest": readiness_report["selection_manifest"],
             "settle_delay_ms": settle_seconds * 1000.0,
             "phase_mask": phase_metadata,
             "amplitude_slm": slm.device_info(),
@@ -340,6 +409,7 @@ def run(
         "input_dir": str(input_dir),
         "output_dir": str(output_dir),
         "log_dir": str(log_dir),
+        "selection_manifest": readiness_report["selection_manifest"],
     }
 
 
@@ -358,6 +428,19 @@ def main() -> int:
     )
     parser.add_argument("--input-dir", default=None)
     parser.add_argument("--output-dir", default=None)
+    parser.add_argument(
+        "--log-dir",
+        default=None,
+        help="Override acquisition log directory (resolved from the working directory)",
+    )
+    parser.add_argument(
+        "--file-manifest",
+        default=None,
+        help=(
+            "CSV allowlist containing amplitude_file or amplitude_bmp; only these "
+            "shared-directory BMPs are played"
+        ),
+    )
     parser.add_argument(
         "--phase-mask",
         default=None,
@@ -378,6 +461,8 @@ def main() -> int:
         output_override=args.output_dir,
         phase_override=args.phase_mask,
         stage_override=args.stage_dir,
+        log_override=args.log_dir,
+        file_manifest_override=args.file_manifest,
         clear_output=args.clear_output,
         assume_yes=args.yes,
         validate_only=args.validate_only,

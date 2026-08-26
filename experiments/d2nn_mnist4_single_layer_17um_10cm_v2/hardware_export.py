@@ -228,10 +228,15 @@ def _write_lab_model_config(output_dir: Path, settings: V2Settings) -> None:
         },
         "detector": {
             "size": settings.detector_size,
+            "mapping_mode": settings.detector_mapping_mode,
             "reference_grid_size": settings.detector_reference_grid_size,
             "reference_intervals": [
                 list(value) for value in settings.detector_reference_intervals
             ],
+            "reference_pixel_pitch_um": (
+                settings.detector_reference_pixel_pitch_um
+            ),
+            "reference_distance_m": settings.detector_reference_distance_m,
         },
         "robustness": {
             "enabled": settings.robustness_enabled,
