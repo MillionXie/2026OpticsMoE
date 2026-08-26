@@ -78,3 +78,52 @@
   on its assigned devices.
 - This remains an early launch/health result. Scientific P09--P11 comparison
   must use matched completed epochs and ultimately the locked 90-epoch budget.
+
+## 2026-08-24 interruption checkpoint
+
+- The first formal run completed epochs 1--15 and was then stopped at the
+  user's request so the GPUs could be released. A partial epoch 16 reached
+  approximately batch 800 but had no epoch checkpoint and was intentionally
+  discarded.
+- The complete epoch-15 result was Top-1/Top-5 `37.392%/62.168%`, validation
+  loss `3.004432`, and training throughput `792.76 images/s`. Epoch 15 was also
+  the best checkpoint at interruption time.
+- `best.pt`, `last.pt` and `epoch_015.pt` all load successfully, contain the
+  same 225 model tensors and record epoch 15, 15 history rows and best Top-1
+  `0.37392`. Optimizer state (203 entries), scheduler state, AMP scaler,
+  initial phases and the matching config digest are present.
+- At the matched epoch 15, P09 was `36.430%/61.064%`; P11 led by
+  `+0.962/+1.104 pp` Top-1/Top-5. This is an encouraging controlled partial
+  result, not a replacement for the full 90-epoch comparison.
+
+## 2026-08-26 resume on physical GPUs 2 and 3
+
+- Immediately before resume, physical GPU 2 (RTX 3090) and GPU 3 (RTX 4090)
+  used `13/17 MiB` with `0%/0%` utilization. No P11 process remained; the old
+  `launch.pid=3395957` was stale.
+- The original log was preserved as
+  `logs/p11_imagenet1k_pretrain_bs96_90e.log.through_epoch15_20260824` before
+  the launcher opened a fresh active log. No checkpoint or metric file was
+  deleted or renamed.
+- Resumed only through `commands/03_launch_imagenet_90e_bs96.sh` with
+  `PHYSICAL_GPU_INDICES=2,3`. New torchrun PID is `1133915`; physical GPU 2 is
+  DDP rank 0 and physical GPU 3 is rank 1. Per-rank batch remains 96 and global
+  batch remains 192.
+- The trainer explicitly reported `[resume] epoch=16 best=0.3739`, followed by
+  epoch-16 batches 1, 100 and 200. A health snapshot measured approximately
+  `9,206/9,378 MiB` and `96%/95%` utilization on GPUs 2/3, with no OOM, NCCL,
+  strict-load or config-digest error.
+- Resume restores model, optimizer, LR scheduler, AMP scaler, best score,
+  history and initial phases. It restarts epoch 16 from batch 1, so the earlier
+  uncheckpointed partial epoch cannot contaminate the metrics. The epoch-aware
+  sampler reproduces the epoch-16 sample order.
+- Checkpoints do not store Python/NumPy/Torch/CUDA RNG states. Consequently
+  stochastic augmentations after process restart are statistically valid but
+  not bitwise identical to an uninterrupted run. This limitation must be kept
+  in the reproducibility record; optimizer and learning-rate continuation are
+  exact.
+
+The active job is intentionally left running through epoch 90 and final
+normal/optical-off/random-phase/electronic-skip-off evaluation. Completion is
+defined by `result.json` with `status=complete` and creation of
+`checkpoints/backbone.pt`, not merely by the absence of the torchrun process.
