@@ -5,12 +5,16 @@ training:
   phase_focus: {enabled: false, warmup_epochs: 0, interval_epochs: 1}
 
 dataset:
-  train_limit: 40
-  test_limit: 20
+  # Caltech's loader limits each selected class, rather than the whole split.
+  # The former train_limit/test_limit names were ignored and accidentally made
+  # this "smoke" run a complete 657-step epoch.
+  train_limit_per_sku: 3
+  test_limit_per_sku: 1
 
 batching:
   batch_size: 4
   pk_skus_per_batch: 2
   pk_images_per_sku: 2
+  optimizer_steps_per_epoch: 1
 
 output_dir: ../../runs/smoke_four_layer_moe4_joint_17um_10cm_robust

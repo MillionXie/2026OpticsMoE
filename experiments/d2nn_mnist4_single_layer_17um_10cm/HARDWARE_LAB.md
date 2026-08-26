@@ -88,6 +88,16 @@ Or execute validation, acquisition, and evaluation as one sequence:
 python -m experiments.d2nn_mnist4_single_layer_17um_10cm.lab_pipeline --phase all --stage-dir payload\formal_fixed_random_100_per_class
 ```
 
+For the biased demonstration stage, evaluation is deliberately disabled unless
+the diagnostic opt-in is explicit:
+
+```powershell
+python -m experiments.d2nn_mnist4_single_layer_17um_10cm.lab_pipeline --phase all --stage-dir payload\demo_topk --allow-biased-demo-metric
+```
+
+That command reports `demo_success_rate`, never `accuracy`. It is not a test
+metric and must not be used in a paper table.
+
 Use `--clear-output` only when intentionally replacing captures already stored
 under that stage. Add `--flip-vertical` or `--flip-horizontal` only if the
 Fresnel correspondence measurement requires it. The configured camera already
@@ -101,5 +111,14 @@ Results are written to:
 <stage>\hardware_evaluation\processed_478\
 ```
 
+Formal evaluation first verifies `acquisition_logs/capture_manifest.csv`, the
+exact CCD file set and play count, and the phase-mask SHA-256. Missing or
+mismatched acquisition records are rejected. Near-black, substantially
+saturated, or four-detector-near-equal frames receive prediction `-1`; formal
+evaluation fails by default if any such invalid frame exists. The JSON and CSV
+retain `valid_count`, `invalid_count`, and per-frame QC reasons for diagnosis.
+
 The metrics include overall accuracy, a 4×4 confusion matrix, and per-class
-accuracy. No synthetic or unmeasured background subtraction is performed.
+accuracy. No synthetic or unmeasured background subtraction is performed. The
+controller performs an automatic sequential playback/capture loop; the default
+configuration does not promise a particular acquisition rate.

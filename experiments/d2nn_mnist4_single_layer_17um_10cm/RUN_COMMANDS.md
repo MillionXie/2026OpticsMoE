@@ -76,7 +76,7 @@ experiments\d2nn_mnist4_single_layer_17um_10cm\lab_hardware_config.yaml
 python -m experiments.d2nn_mnist4_single_layer_17um_10cm.lab_pipeline --phase validate --stage-dir payload\formal_fixed_random_100_per_class
 ```
 
-手动把程序提示的唯一 10 cm phase BMP 加载到相位 SLM，然后自动高速播放振幅、采集同名 CCD：
+手动把程序提示的唯一 10 cm phase BMP 加载到相位 SLM，然后自动顺序播放振幅、采集同名 CCD：
 
 ```powershell
 python -m experiments.d2nn_mnist4_single_layer_17um_10cm.lab_pipeline --phase acquire --stage-dir payload\formal_fixed_random_100_per_class
@@ -93,7 +93,9 @@ python -m experiments.d2nn_mnist4_single_layer_17um_10cm.lab_pipeline --phase ev
 ## 8. 快速演示组
 
 ```powershell
-python -m experiments.d2nn_mnist4_single_layer_17um_10cm.lab_pipeline --phase all --stage-dir payload\demo_topk
+python -m experiments.d2nn_mnist4_single_layer_17um_10cm.lab_pipeline --phase all --stage-dir payload\demo_topk --allow-biased-demo-metric
 ```
 
-这组样本经过仿真边界筛选，准确率有偏，只能用于光路演示与快速排障。
+这组样本经过仿真正确性与边界筛选，输出字段是
+`demo_success_rate`，不是 `accuracy`；它只能用于光路演示与快速排障。
+不加 `--allow-biased-demo-metric` 时，`evaluate` 和 `all` 会主动拒绝 demo。

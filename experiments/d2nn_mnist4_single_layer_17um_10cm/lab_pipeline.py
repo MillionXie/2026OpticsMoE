@@ -11,7 +11,13 @@ from typing import Any
 
 from experiments.hardware_sdk.workflows.acquire_folder import run as acquire_folder
 
-from .ccd_evaluate import evaluate_directory, parse_roi
+from .ccd_evaluate import (
+    DEFAULT_QC_MAX_SATURATION_FRACTION,
+    DEFAULT_QC_MIN_MEAN_UINT8,
+    DEFAULT_QC_MIN_REGION_RELATIVE_SPREAD,
+    evaluate_directory,
+    parse_roi,
+)
 
 
 PHASES = {"validate", "acquire", "evaluate", "all"}
@@ -65,6 +71,11 @@ def validate_stage(stage_dir: str | Path) -> dict[str, Any]:
         contract.get("samples", -1)
     ) != len(rows):
         raise RuntimeError("stage_contract.json does not match samples.csv")
+    if not isinstance(contract.get("suitable_for_accuracy_reporting"), bool):
+        raise RuntimeError(
+            "stage_contract.json must contain boolean "
+            "suitable_for_accuracy_reporting"
+        )
     phase_sha256 = _sha256(phase_files[0])
     if contract.get("phase_sha256") != phase_sha256:
         raise RuntimeError("Phase BMP SHA-256 does not match stage_contract.json")
@@ -85,6 +96,9 @@ def validate_stage(stage_dir: str | Path) -> dict[str, Any]:
         "manifest": str(manifest),
         "phase_mask": str(phase_files[0]),
         "phase_sha256": phase_sha256,
+        "suitable_for_accuracy_reporting": contract[
+            "suitable_for_accuracy_reporting"
+        ],
         "amplitude_dir": str(amplitude_dir),
         "ccd_dir": str(stage / "ccd_captured"),
     }
@@ -101,12 +115,27 @@ def run_pipeline(
     flip_horizontal: bool = False,
     clear_output: bool = False,
     assume_yes: bool = False,
+    allow_biased_demo_metric: bool = False,
+    allow_invalid_formal: bool = False,
+    qc_min_mean_uint8: float = DEFAULT_QC_MIN_MEAN_UINT8,
+    qc_max_saturation_fraction: float = DEFAULT_QC_MAX_SATURATION_FRACTION,
+    qc_min_region_relative_spread: float = DEFAULT_QC_MIN_REGION_RELATIVE_SPREAD,
 ) -> dict[str, Any]:
     if phase not in PHASES:
         raise ValueError(f"phase must be one of {sorted(PHASES)}, got {phase!r}")
     stage = Path(stage_dir).expanduser().resolve()
     hardware_config_path = Path(hardware_config).expanduser().resolve()
     stage_report = validate_stage(stage)
+    if (
+        phase in {"evaluate", "all"}
+        and not stage_report["suitable_for_accuracy_reporting"]
+        and not allow_biased_demo_metric
+    ):
+        raise PermissionError(
+            "The demo profile is deliberately preselected and cannot produce an "
+            "accuracy metric. Use --allow-biased-demo-metric only for a diagnostic "
+            "demo_success_rate."
+        )
     results: dict[str, Any] = {"stage": stage_report}
 
     if phase in {"validate", "all"}:
@@ -142,6 +171,13 @@ def run_pipeline(
             roi=roi,
             flip_vertical=flip_vertical,
             flip_horizontal=flip_horizontal,
+            stage_contract=stage / "stage_contract.json",
+            capture_manifest=stage / "acquisition_logs" / "capture_manifest.csv",
+            allow_biased_demo_metric=allow_biased_demo_metric,
+            allow_invalid_formal=allow_invalid_formal,
+            qc_min_mean_uint8=qc_min_mean_uint8,
+            qc_max_saturation_fraction=qc_max_saturation_fraction,
+            qc_min_region_relative_spread=qc_min_region_relative_spread,
         )
     return results
 
@@ -169,6 +205,21 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--flip-horizontal", action="store_true")
     parser.add_argument("--clear-output", action="store_true")
     parser.add_argument("--yes", action="store_true")
+    parser.add_argument("--allow-biased-demo-metric", action="store_true")
+    parser.add_argument("--allow-invalid-formal", action="store_true")
+    parser.add_argument(
+        "--qc-min-mean-uint8", type=float, default=DEFAULT_QC_MIN_MEAN_UINT8
+    )
+    parser.add_argument(
+        "--qc-max-saturation-fraction",
+        type=float,
+        default=DEFAULT_QC_MAX_SATURATION_FRACTION,
+    )
+    parser.add_argument(
+        "--qc-min-region-relative-spread",
+        type=float,
+        default=DEFAULT_QC_MIN_REGION_RELATIVE_SPREAD,
+    )
     args = parser.parse_args(argv)
     report = run_pipeline(
         phase=args.phase,
@@ -180,6 +231,11 @@ def main(argv: list[str] | None = None) -> int:
         flip_horizontal=args.flip_horizontal,
         clear_output=args.clear_output,
         assume_yes=args.yes,
+        allow_biased_demo_metric=args.allow_biased_demo_metric,
+        allow_invalid_formal=args.allow_invalid_formal,
+        qc_min_mean_uint8=args.qc_min_mean_uint8,
+        qc_max_saturation_fraction=args.qc_max_saturation_fraction,
+        qc_min_region_relative_spread=args.qc_min_region_relative_spread,
     )
     print(json.dumps(report, ensure_ascii=False, indent=2))
     return 0
