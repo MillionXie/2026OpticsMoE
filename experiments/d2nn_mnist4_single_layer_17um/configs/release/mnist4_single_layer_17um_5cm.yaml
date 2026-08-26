@@ -24,8 +24,11 @@ detector:
   size: 49
 
 loss:
-  # One optical routing objective: -log(correct detector energy / total energy).
+  # Two physically interpretable terms: discriminate the four detector regions
+  # first, while retaining enough captured light for the real CCD.
   eps: 1.0e-8
+  classification_weight: 1.0
+  capture_weight: 0.2
 
 training:
   optimizer: adam
@@ -58,4 +61,3 @@ hardware:
 
 device: cuda
 output_dir: ../../runs/mnist4_single_layer_17um_5cm
-

@@ -63,6 +63,12 @@ def main(argv: list[str] | None = None) -> int:
             "raw_phase_initialization": 0.0,
             "initial_actual_phase_rad": float(torch.pi),
             "phase_parameterization": "2*pi*sigmoid(raw_phase)",
+            "loss": {
+                "classification": "-log(correct detector / all four detectors)",
+                "capture": "-log(all four detectors / full output)",
+                "classification_weight": settings.classification_loss_weight,
+                "capture_weight": settings.capture_loss_weight,
+            },
             "detector_bounds_xyxy": [list(value) for value in settings.detector_bounds()],
         },
     )
@@ -106,4 +112,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

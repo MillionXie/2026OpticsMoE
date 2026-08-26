@@ -76,6 +76,8 @@ class Settings:
     phase_init: str
     detector_size: int
     loss_eps: float
+    classification_loss_weight: float
+    capture_loss_weight: float
 
     optimizer: str
     phase_learning_rate: float
@@ -161,6 +163,8 @@ class Settings:
             self.phase_learning_rate,
             self.min_learning_rate,
             self.loss_eps,
+            self.classification_loss_weight,
+            self.capture_loss_weight,
             self.gradient_clip_norm,
         ) <= 0:
             raise ValueError("Learning rates, eps and gradient clip must be positive")
@@ -212,6 +216,8 @@ def load_settings(path: str | Path) -> Settings:
         phase_init=str(d("optics.phase.init", "zeros")),
         detector_size=int(d("detector.size", 49)),
         loss_eps=float(d("loss.eps", 1.0e-8)),
+        classification_loss_weight=float(d("loss.classification_weight", 1.0)),
+        capture_loss_weight=float(d("loss.capture_weight", 0.2)),
         optimizer=str(d("training.optimizer", "adam")),
         phase_learning_rate=float(d("training.phase_learning_rate", 0.02)),
         min_learning_rate=float(d("training.min_learning_rate", 0.002)),
@@ -237,4 +243,3 @@ def load_settings(path: str | Path) -> Settings:
     )
     settings.validate()
     return settings
-

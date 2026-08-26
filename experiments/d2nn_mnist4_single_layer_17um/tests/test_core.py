@@ -70,7 +70,9 @@ def test_forward_has_finite_nonzero_raw_phase_gradient() -> None:
     output = model(images)
     assert output["detector_intensity"].shape == (2, 478, 478)
     assert output["detector_fraction"].shape == (2, 4)
-    loss = model.target_detector_nll(output, targets)
+    loss, classification, capture = model.optical_routing_loss(output, targets)
+    assert torch.isfinite(classification)
+    assert torch.isfinite(capture)
     loss.backward()
     assert model.raw_phase.grad is not None
     assert torch.isfinite(model.raw_phase.grad).all()

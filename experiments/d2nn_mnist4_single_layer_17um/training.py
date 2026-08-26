@@ -17,14 +17,18 @@ def _batch_metrics(
     model: SingleLayerMNIST4D2NN,
     output: dict[str, torch.Tensor],
     targets: torch.Tensor,
-) -> tuple[torch.Tensor, int, float, float]:
-    loss = model.target_detector_nll(output, targets)
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, int, float, float]:
+    loss, classification_loss, capture_loss = model.optical_routing_loss(
+        output, targets
+    )
     predictions = output["detector_fraction"].argmax(dim=1)
     rows = torch.arange(len(targets), device=targets.device)
     target_fraction = output["detector_fraction"][rows, targets]
     capture_fraction = output["detector_fraction"].sum(dim=1)
     return (
         loss,
+        classification_loss,
+        capture_loss,
         int((predictions == targets).sum()),
         float(target_fraction.sum()),
         float(capture_fraction.sum()),
@@ -40,6 +44,8 @@ def train_epoch(
 ) -> dict[str, float]:
     model.train()
     total_loss = 0.0
+    total_classification_loss = 0.0
+    total_capture_loss = 0.0
     total_correct = 0
     total_target_fraction = 0.0
     total_capture_fraction = 0.0
@@ -51,7 +57,7 @@ def train_epoch(
         targets = targets.to(device, non_blocking=True)
         optimizer.zero_grad(set_to_none=True)
         output = model(images)
-        loss, correct, target_sum, capture_sum = _batch_metrics(
+        loss, classification_loss, capture_loss, correct, target_sum, capture_sum = _batch_metrics(
             model, output, targets
         )
         if not torch.isfinite(loss):
@@ -68,6 +74,8 @@ def train_epoch(
         optimizer.step()
         batch = len(targets)
         total_loss += float(loss) * batch
+        total_classification_loss += float(classification_loss) * batch
+        total_capture_loss += float(capture_loss) * batch
         total_correct += correct
         total_target_fraction += target_sum
         total_capture_fraction += capture_sum
@@ -80,6 +88,8 @@ def train_epoch(
             )
     return {
         "loss": total_loss / total_count,
+        "classification_loss": total_classification_loss / total_count,
+        "capture_loss": total_capture_loss / total_count,
         "accuracy": total_correct / total_count,
         "target_fraction": total_target_fraction / total_count,
         "capture_fraction": total_capture_fraction / total_count,
@@ -95,6 +105,8 @@ def evaluate(
 ) -> dict[str, Any]:
     model.eval()
     total_loss = 0.0
+    total_classification_loss = 0.0
+    total_capture_loss = 0.0
     total_correct = 0
     total_target_fraction = 0.0
     total_capture_fraction = 0.0
@@ -104,7 +116,7 @@ def evaluate(
         images = images.to(device, non_blocking=True)
         targets = targets.to(device, non_blocking=True)
         output = model(images)
-        loss, correct, target_sum, capture_sum = _batch_metrics(
+        loss, classification_loss, capture_loss, correct, target_sum, capture_sum = _batch_metrics(
             model, output, targets
         )
         predictions = output["detector_fraction"].argmax(dim=1)
@@ -112,12 +124,16 @@ def evaluate(
             confusion[int(target), int(prediction)] += 1
         batch = len(targets)
         total_loss += float(loss) * batch
+        total_classification_loss += float(classification_loss) * batch
+        total_capture_loss += float(capture_loss) * batch
         total_correct += correct
         total_target_fraction += target_sum
         total_capture_fraction += capture_sum
         total_count += batch
     return {
         "loss": total_loss / total_count,
+        "classification_loss": total_classification_loss / total_count,
+        "capture_loss": total_capture_loss / total_count,
         "accuracy": total_correct / total_count,
         "target_fraction": total_target_fraction / total_count,
         "capture_fraction": total_capture_fraction / total_count,
@@ -195,11 +211,15 @@ def train_model(
             "epoch": epoch,
             "learning_rate": optimizer.param_groups[0]["lr"],
             "train_loss": train_metrics["loss"],
+            "train_classification_loss": train_metrics["classification_loss"],
+            "train_capture_loss": train_metrics["capture_loss"],
             "train_accuracy": train_metrics["accuracy"],
             "train_target_fraction": train_metrics["target_fraction"],
             "train_capture_fraction": train_metrics["capture_fraction"],
             "phase_grad_rms": train_metrics["phase_grad_rms"],
             "validation_loss": validation_metrics["loss"],
+            "validation_classification_loss": validation_metrics["classification_loss"],
+            "validation_capture_loss": validation_metrics["capture_loss"],
             "validation_accuracy": validation_metrics["accuracy"],
             "validation_target_fraction": validation_metrics["target_fraction"],
             "validation_capture_fraction": validation_metrics["capture_fraction"],
@@ -251,4 +271,3 @@ def train_model(
     }
     write_json(settings.output_dir / "metrics" / "training_summary.json", summary)
     return summary
-

@@ -127,12 +127,22 @@ class SingleLayerMNIST4D2NN(nn.Module):
             "active_amplitude": active_amplitude,
         }
 
-    def target_detector_nll(
+    def optical_routing_loss(
         self, output: dict[str, torch.Tensor], targets: torch.Tensor
-    ) -> torch.Tensor:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         rows = torch.arange(len(targets), device=targets.device)
-        target_fraction = output["detector_fraction"][rows, targets]
-        return -torch.log(target_fraction.clamp_min(self.settings.loss_eps)).mean()
+        fractions = output["detector_fraction"]
+        detector_capture = fractions.sum(dim=1).clamp_min(self.settings.loss_eps)
+        class_probability = fractions / detector_capture[:, None]
+        classification = -torch.log(
+            class_probability[rows, targets].clamp_min(self.settings.loss_eps)
+        ).mean()
+        capture = -torch.log(detector_capture).mean()
+        total = (
+            self.settings.classification_loss_weight * classification
+            + self.settings.capture_loss_weight * capture
+        )
+        return total, classification, capture
 
     @torch.no_grad()
     def phase_statistics(self) -> dict[str, float]:
@@ -146,4 +156,3 @@ class SingleLayerMNIST4D2NN(nn.Module):
             "phase_min_rad": float(phase.min()),
             "phase_max_rad": float(phase.max()),
         }
-
