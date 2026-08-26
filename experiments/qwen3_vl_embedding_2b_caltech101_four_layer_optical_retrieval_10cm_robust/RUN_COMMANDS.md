@@ -84,6 +84,16 @@ python -m experiments.hardware_sdk.generators.dual_slm_alignment --config experi
 python -m experiments.hardware_sdk.generators.dual_slm_registration_sweep --config experiments/hardware_sdk/generators/slm_patterns/configs/dual_slm_17um_8um_normal_scale_sweep.yaml
 ```
 
+1、4、9个焦点的菲涅尔阵列（532 nm，5/10/15 cm）也必须按修正后的极性重新生成：
+
+```bash
+python -m experiments.hardware_sdk.generators.fresnel_phase_array --config experiments/hardware_sdk/generators/slm_patterns/configs/fresnel_phase_array_17um_8um.yaml
+```
+
+修正后的硬件中，`0` 是遮光而不是照明，所以菲涅尔标定必须播放正常目录中的
+`amplitude_uniform_white_1024x1024.bmp`（全255）。旧目录中的
+`amplitude_all_zero_1024x1024.bmp` 会把光关掉，不能用于聚焦或ROI标定。
+
 推荐使用独立目录中唯一的一对文件，避免与历史 primary/complement 文件错配：
 
 ```text
@@ -93,6 +103,14 @@ experiments/hardware_sdk/generators/slm_patterns/generated/dual_slm_17um_8um_ali
 ```
 
 不要使用旧 `_inv` 或 `inverted` 目录。
+
+服务器上可直接下载的三个已校验ZIP为：
+
+```text
+experiments/hardware_sdk/generators/slm_patterns/generated/dual_slm_17um_8um_alignment_normal_polarity/recommended_checker_grating_pair.zip
+experiments/hardware_sdk/generators/slm_patterns/generated/dual_slm_17um_8um_normal_large_blocks_k0p1.zip
+experiments/hardware_sdk/generators/slm_patterns/generated/fresnel_phase_array_532nm_17um_8um_normal_polarity.zip
+```
 
 ## 7. 实验室每层通用采集命令
 
