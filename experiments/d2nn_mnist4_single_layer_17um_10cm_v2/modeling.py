@@ -252,7 +252,7 @@ class RobustRawCCDMNIST4D2NN(nn.Module):
         self,
         output: Mapping[str, torch.Tensor | ShiftMap],
         targets: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         intensity = output["ccd_intensity"]
         if not isinstance(intensity, torch.Tensor):
             raise TypeError("ccd_intensity must be a tensor")
@@ -268,6 +268,15 @@ class RobustRawCCDMNIST4D2NN(nn.Module):
             intensity.square().mul(background_mask).sum()
             / (len(targets) * background_area)
         )
+        detector_energy = torch.einsum(
+            "bhw,chw->bc", intensity, self.detector_masks
+        )
+        # Training-only discriminative diagnostic/loss. Using log(raw energy)
+        # as logits makes softmax exactly E_c / sum_j(E_j); it does not alter
+        # the CCD tensor or add any inference-time nonlinearity.
+        detector_ce = F.cross_entropy(
+            detector_energy.clamp_min(self.settings.loss_eps).log(), targets
+        )
         if self.settings.loss_mode == "notebook_full_plane_mse":
             # This is the audited notebook objective, now evaluated on the
             # proportionally mapped 478x478 CCD plane. The target is one in the
@@ -276,6 +285,7 @@ class RobustRawCCDMNIST4D2NN(nn.Module):
             total = self.settings.notebook_full_plane_mse_scale * (
                 intensity - target_mask
             ).square().mean()
+            total = total + self.settings.detector_ce_loss_weight * detector_ce
         elif self.settings.loss_mode == "legacy_balanced_region_mse":
             total = (
                 self.settings.target_region_mse_weight * target_region_mse
@@ -283,7 +293,7 @@ class RobustRawCCDMNIST4D2NN(nn.Module):
             )
         else:  # Settings validation should make this unreachable.
             raise RuntimeError(f"Unsupported raw CCD loss mode: {self.settings.loss_mode}")
-        return total, target_region_mse, background_mse
+        return total, target_region_mse, background_mse, detector_ce
 
     @torch.no_grad()
     def phase_statistics(self) -> dict[str, float]:

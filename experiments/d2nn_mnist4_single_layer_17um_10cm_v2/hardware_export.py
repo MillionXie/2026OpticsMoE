@@ -248,7 +248,7 @@ def _write_lab_model_config(output_dir: Path, settings: V2Settings) -> None:
             ),
             "eps": settings.loss_eps,
             "template_mse_weight": settings.template_mse_loss_weight,
-            "detector_ce_weight": 0.0,
+            "detector_ce_weight": settings.detector_ce_loss_weight,
             "target_region_mse_weight": settings.target_region_mse_weight,
             "background_mse_weight": settings.background_mse_weight,
         },

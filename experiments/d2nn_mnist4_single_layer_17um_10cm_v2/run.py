@@ -76,6 +76,10 @@ def main(argv: list[str] | None = None) -> int:
                 "notebook_full_plane_mse_scale": (
                     settings.notebook_full_plane_mse_scale
                 ),
+                "detector_ce_weight": settings.detector_ce_loss_weight,
+                "detector_ce_scope": (
+                    "training objective only; raw ROI-energy argmax at inference"
+                ),
                 "formal_objective": (
                     "scale * mean((raw_ccd_intensity - binary_target_template)^2)"
                     if settings.loss_mode == "notebook_full_plane_mse"

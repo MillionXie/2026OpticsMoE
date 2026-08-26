@@ -54,3 +54,12 @@ CCD 光电探测 `|E|²` 之后没有归一化、激活、log、截断、背景�
 ```text
 experiments/d2nn_mnist4_single_layer_17um_10cm_v2/configs/release/mnist4_single_layer_17um_10cm_v2_notebook_mse_corner_kspace.yaml
 ```
+
+若纯 notebook MSE 的验证混淆矩阵仍把 0 类大量送入 2/3 区，使用以下独立配置：
+
+```text
+experiments/d2nn_mnist4_single_layer_17um_10cm_v2/configs/release/mnist4_single_layer_17um_10cm_v2_mse_ce_corner_kspace.yaml
+```
+
+它只增加 `0.25 × CE(log(raw four ROI sums), class)`。CE 仅用于训练目标；不会
+写入硬件推理图，也不会改变 raw CCD、四区求和或 argmax 判别。

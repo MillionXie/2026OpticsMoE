@@ -1,0 +1,11 @@
+base_config: mnist4_single_layer_17um_10cm_v2_notebook_mse_corner_kspace.yaml
+
+loss:
+  # Keep the notebook full-plane raw-intensity MSE for background suppression,
+  # and add one small training-only term for relative four-region separation.
+  detector_ce_weight: 0.25
+
+hardware:
+  export_subdir: hardware_export_10cm_v2_mse_ce_corner_kspace
+
+output_dir: ../../runs/mnist4_single_layer_17um_10cm_v2_mse_ce_corner_kspace

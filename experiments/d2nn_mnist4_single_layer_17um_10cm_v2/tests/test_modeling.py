@@ -30,6 +30,8 @@ def _tiny_settings() -> SimpleNamespace:
         notebook_full_plane_mse_scale=100.0,
         target_region_mse_weight=1.0,
         background_mse_weight=0.5,
+        detector_ce_loss_weight=0.0,
+        loss_eps=1.0e-8,
         detector_bounds=lambda: (
             (2, 2, 6, 6),
             (10, 2, 14, 6),
@@ -90,11 +92,31 @@ def test_notebook_full_plane_loss_and_diagnostics_match_raw_pixel_definition() -
     intensity = torch.zeros(1, 16, 16)
     intensity[:, 2:6, 2:6] = 0.25
     output = {"ccd_intensity": intensity}
-    total, target, background = model.raw_ccd_loss(output, torch.tensor([0]))
+    total, target, background, detector_ce = model.raw_ccd_loss(
+        output, torch.tensor([0])
+    )
     torch.testing.assert_close(target, torch.tensor((0.25 - 1.0) ** 2))
     torch.testing.assert_close(background, torch.tensor(0.0))
     expected_full_plane = 100.0 * 16.0 * (0.25 - 1.0) ** 2 / (16.0 * 16.0)
     torch.testing.assert_close(total, torch.tensor(expected_full_plane))
+    assert torch.isfinite(detector_ce)
+
+
+def test_detector_ce_uses_only_raw_region_energy_ratios() -> None:
+    settings = _tiny_settings()
+    settings.detector_ce_loss_weight = 0.25
+    model = RobustRawCCDMNIST4D2NN(settings)
+    intensity = torch.zeros(1, 16, 16)
+    for index, value in enumerate((1.0, 2.0, 3.0, 4.0)):
+        left, top, right, bottom = settings.detector_bounds()[index]
+        intensity[:, top:bottom, left:right] = value
+    total, _, _, detector_ce = model.raw_ccd_loss(
+        {"ccd_intensity": intensity}, torch.tensor([3])
+    )
+    expected_ce = -torch.log(torch.tensor(4.0 / 10.0))
+    torch.testing.assert_close(detector_ce, expected_ce)
+    full_plane = 100.0 * (intensity - model.detector_masks[[3]]).square().mean()
+    torch.testing.assert_close(total, full_plane + 0.25 * expected_ce)
 
 
 def test_robustness_can_be_disabled_during_training_warmup() -> None:
@@ -113,7 +135,7 @@ def test_forced_pre_ccd_shifts_are_cardinal_and_phase_gradient_survives() -> Non
     forced = {"input": (0, 2), "phase": (-1, 0), "pre_ccd": (1, 0)}
     output = model(torch.rand(1, 1, 12, 12), forced_shifts=forced)
     assert output["applied_shifts"] == forced
-    loss, _, _ = model.raw_ccd_loss(output, torch.tensor([2]))
+    loss, _, _, _ = model.raw_ccd_loss(output, torch.tensor([2]))
     loss.backward()
     assert model.raw_phase.grad is not None
     assert torch.isfinite(model.raw_phase.grad).all()

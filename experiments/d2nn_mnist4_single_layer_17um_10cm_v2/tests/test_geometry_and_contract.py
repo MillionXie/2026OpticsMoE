@@ -23,6 +23,12 @@ CORNER_KSPACE_CONFIG = (
     / "release"
     / "mnist4_single_layer_17um_10cm_v2_notebook_mse_corner_kspace.yaml"
 )
+MSE_CE_CONFIG = (
+    Path(__file__).resolve().parents[1]
+    / "configs"
+    / "release"
+    / "mnist4_single_layer_17um_10cm_v2_mse_ce_corner_kspace.yaml"
+)
 
 
 def test_notebook_detector_geometry_maps_edge_by_edge_to_478() -> None:
@@ -98,3 +104,11 @@ def test_recommended_kspace_filters_only_sampled_spectrum_corners() -> None:
     assert settings.input_shift_max_px == 1
     assert settings.phase_shift_max_px == 1
     assert settings.pre_ccd_shift_max_px == 1
+
+
+def test_mse_ce_ablation_keeps_raw_ccd_and_one_small_discriminative_term() -> None:
+    settings = load_settings(MSE_CE_CONFIG)
+    assert settings.loss_mode == "notebook_full_plane_mse"
+    assert settings.notebook_full_plane_mse_scale == pytest.approx(100.0)
+    assert settings.detector_ce_loss_weight == pytest.approx(0.25)
+    assert settings.ccd_postprocess == "none_raw_linear"

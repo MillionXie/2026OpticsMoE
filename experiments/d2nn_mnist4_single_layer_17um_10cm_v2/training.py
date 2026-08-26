@@ -17,8 +17,10 @@ def _batch_metrics(
     model: RobustRawCCDMNIST4D2NN,
     output: dict[str, torch.Tensor | ShiftMap],
     targets: torch.Tensor,
-) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, int, float, float]:
-    loss, target_loss, background_loss = model.raw_ccd_loss(output, targets)
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, int, float, float]:
+    loss, target_loss, background_loss, detector_ce = model.raw_ccd_loss(
+        output, targets
+    )
     detector_energy = output["detector_energy"]
     ccd_intensity = output["ccd_intensity"]
     if not isinstance(detector_energy, torch.Tensor) or not isinstance(
@@ -34,6 +36,7 @@ def _batch_metrics(
         loss,
         target_loss,
         background_loss,
+        detector_ce,
         int((predictions == targets).sum()),
         float(target_energy.detach().sum()),
         float(background_energy.detach().sum()),
@@ -52,6 +55,7 @@ def train_epoch(
         "loss": 0.0,
         "target_region_mse": 0.0,
         "background_mse": 0.0,
+        "detector_ce": 0.0,
         "correct": 0.0,
         "target_energy": 0.0,
         "background_energy": 0.0,
@@ -64,9 +68,15 @@ def train_epoch(
         targets = targets.to(device, non_blocking=True)
         optimizer.zero_grad(set_to_none=True)
         output = model(images)
-        loss, target_loss, background_loss, correct, target_energy, background_energy = (
-            _batch_metrics(model, output, targets)
-        )
+        (
+            loss,
+            target_loss,
+            background_loss,
+            detector_ce,
+            correct,
+            target_energy,
+            background_energy,
+        ) = _batch_metrics(model, output, targets)
         if not torch.isfinite(loss):
             raise RuntimeError(f"Non-finite training loss at batch {step}")
         loss.backward()
@@ -81,6 +91,7 @@ def train_epoch(
         totals["loss"] += float(loss.detach()) * batch
         totals["target_region_mse"] += float(target_loss.detach()) * batch
         totals["background_mse"] += float(background_loss.detach()) * batch
+        totals["detector_ce"] += float(detector_ce.detach()) * batch
         totals["correct"] += correct
         totals["target_energy"] += target_energy
         totals["background_energy"] += background_energy
@@ -97,6 +108,7 @@ def train_epoch(
         "loss": totals["loss"] / count,
         "target_region_mse": totals["target_region_mse"] / count,
         "background_mse": totals["background_mse"] / count,
+        "detector_ce": totals["detector_ce"] / count,
         "accuracy": totals["correct"] / count,
         "target_energy": totals["target_energy"] / count,
         "background_energy": totals["background_energy"] / count,
@@ -115,6 +127,7 @@ def evaluate(
         "loss": 0.0,
         "target_region_mse": 0.0,
         "background_mse": 0.0,
+        "detector_ce": 0.0,
         "correct": 0.0,
         "target_energy": 0.0,
         "background_energy": 0.0,
@@ -125,9 +138,15 @@ def evaluate(
         images = images.to(device, non_blocking=True)
         targets = targets.to(device, non_blocking=True)
         output = model(images)
-        loss, target_loss, background_loss, correct, target_energy, background_energy = (
-            _batch_metrics(model, output, targets)
-        )
+        (
+            loss,
+            target_loss,
+            background_loss,
+            detector_ce,
+            correct,
+            target_energy,
+            background_energy,
+        ) = _batch_metrics(model, output, targets)
         detector_energy = output["detector_energy"]
         if not isinstance(detector_energy, torch.Tensor):
             raise TypeError("detector_energy must be a tensor")
@@ -138,6 +157,7 @@ def evaluate(
         totals["loss"] += float(loss) * batch
         totals["target_region_mse"] += float(target_loss) * batch
         totals["background_mse"] += float(background_loss) * batch
+        totals["detector_ce"] += float(detector_ce) * batch
         totals["correct"] += correct
         totals["target_energy"] += target_energy
         totals["background_energy"] += background_energy
@@ -147,6 +167,7 @@ def evaluate(
         "loss": totals["loss"] / count,
         "target_region_mse": totals["target_region_mse"] / count,
         "background_mse": totals["background_mse"] / count,
+        "detector_ce": totals["detector_ce"] / count,
         "accuracy": totals["correct"] / count,
         "target_energy": totals["target_energy"] / count,
         "background_energy": totals["background_energy"] / count,
