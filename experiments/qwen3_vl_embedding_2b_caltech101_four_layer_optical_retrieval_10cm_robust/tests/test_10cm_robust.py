@@ -90,6 +90,7 @@ def test_router_recovery_continuation_preserves_absolute_end_epoch() -> None:
 def test_quick_last_stage_uses_isolated_small_dataset_metadata() -> None:
     full = load_settings(CONFIG)
     quick = load_settings(QUICK_HARDWARE_CONFIG)
+    assert quick.gallery_images_per_sku == 1
     assert quick.train_limit_per_sku == 10
     assert quick.test_limit_per_sku == 10
     assert quick.reserve_test_before_train is True
