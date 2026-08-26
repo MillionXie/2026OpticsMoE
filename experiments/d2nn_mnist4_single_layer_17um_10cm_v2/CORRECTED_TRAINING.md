@@ -9,7 +9,7 @@
 
 ## 修正版目标
 
-修正版直接复现 notebook 的目标形式，只把坐标按 `478/400` 映射：
+修正版直接复现 notebook 的目标形式：
 
 ```text
 target[y, x] = 1  （正确的 59×59 探测区）
@@ -19,23 +19,38 @@ loss = 100 × mean((raw_ccd_intensity - target)^2)
 
 这个 mean 同时覆盖 batch 和完整 478×478 平面，因此背景自然按真实像素数参与。
 `target_region_mse` 与 `background_mse` 仍写入日志，但只作诊断，不再独立加权。
-Notebook 原实验用 20 cm；本工程为新光路固定使用 10 cm，这是一项有意的物理差异。
+Notebook 原实验用 20 cm；本工程为新光路固定使用 10 cm。因此不能只按
+`478/400` 缩放位置，还必须补偿传播距离和像素间距造成的偏转角变化。
 
 ## 探测区域
 
-Notebook 在 400×400 上使用 `[75,125)` 和 `[275,325)`。逐边按 478/400
-比例、round-half-up 映射后为：
+Notebook 在 400×400、16 μm、20 cm 上使用 `[75,125)` 和 `[275,325)`。
+直接按 `478/400` 映射得到的旧位置是 `[90,149)` / `[329,388)`；在新的
+17 μm、10 cm 系统中，四个中心需要约 1.65° 的径向偏转，超过当前 1.10°
+k 空间通带，也超出 17 μm 采样在单轴上的可用偏转范围。这正是旧运行长期只有
+约 70%–77%、背景亮而目标区不明显的主要原因。
+
+正式版保留当前 478 平面所需的 59×59 区域大小，但按 notebook 中心的传播角度
+重新映射：
 
 ```text
-class 0: x=[90,149),  y=[90,149)    top-left
-class 1: x=[329,388), y=[90,149)    top-right
-class 2: x=[90,149),  y=[329,388)   bottom-left
-class 3: x=[329,388), y=[329,388)   bottom-right
+offset_new_px = offset_notebook_px
+                × 16 μm × 0.10 m / (17 μm × 0.20 m)
+              = offset_notebook_px × 0.470588...
 ```
 
-每个区域都是 59×59；中心为 119.5 或 358.5。类别顺序、x/y 轴及裁剪链均已与
-notebook 逐项核对，没有 0/3 互换或半像素偏移。CCD 必须提供严格 478×478 的
-同一坐标画面，评估器不会 resize。
+最终区域为：
+
+```text
+class 0: x=[162,221), y=[162,221)   top-left
+class 1: x=[257,316), y=[162,221)   top-right
+class 2: x=[162,221), y=[257,316)   bottom-left
+class 3: x=[257,316), y=[257,316)   bottom-right
+```
+
+每个区域都是 59×59；中心为 191.5 或 286.5。最外角只需约 1.06° 的径向偏转，
+位于 1.10° 通带内。类别顺序、x/y 轴及裁剪链均已与 notebook 逐项核对，没有
+0/3 互换。CCD 必须提供严格 478×478 的同一坐标画面，评估器不会 resize。
 
 ## 鲁棒性
 
@@ -52,10 +67,13 @@ CCD 光电探测 `|E|²` 之后没有归一化、激活、log、截断、背景�
 正式配置：
 
 ```text
-experiments/d2nn_mnist4_single_layer_17um_10cm_v2/configs/release/mnist4_single_layer_17um_10cm_v2_notebook_mse_corner_kspace.yaml
+experiments/d2nn_mnist4_single_layer_17um_10cm_v2/configs/release/mnist4_single_layer_17um_10cm_v2_notebook_mse_angle_roi.yaml
 ```
 
-若纯 notebook MSE 的验证混淆矩阵仍把 0 类大量送入 2/3 区，使用以下独立配置：
+旧的比例位置与 CE 配置只保留为诊断消融，不再作为硬件默认。CE=1.0 虽可提高约
+2.5 个百分点，却显著降低目标/全平面能量占比并抬高背景；正式模型不采用。
+
+旧诊断配置：
 
 ```text
 experiments/d2nn_mnist4_single_layer_17um_10cm_v2/configs/release/mnist4_single_layer_17um_10cm_v2_mse_ce_corner_kspace.yaml

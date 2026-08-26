@@ -5,7 +5,7 @@
 正式配置：
 
 ```text
-experiments/d2nn_mnist4_single_layer_17um_10cm_v2/configs/release/mnist4_single_layer_17um_10cm_v2_notebook_mse_corner_kspace.yaml
+experiments/d2nn_mnist4_single_layer_17um_10cm_v2/configs/release/mnist4_single_layer_17um_10cm_v2_notebook_mse_angle_roi.yaml
 ```
 
 ## 1. 单元测试
@@ -17,42 +17,51 @@ python -m pytest experiments/d2nn_mnist4_single_layer_17um_10cm_v2/tests -q
 ## 2. 正式训练、固定测试和硬件导出
 
 ```bash
-CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=6 python -u -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2 --config experiments/d2nn_mnist4_single_layer_17um_10cm_v2/configs/release/mnist4_single_layer_17um_10cm_v2_notebook_mse_corner_kspace.yaml --phase all 2>&1 | tee experiments/d2nn_mnist4_single_layer_17um_10cm_v2/runs/mnist4_single_layer_17um_10cm_v2_notebook_mse_corner_kspace/formal_train.log
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=6 python -u -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2 --config experiments/d2nn_mnist4_single_layer_17um_10cm_v2/configs/release/mnist4_single_layer_17um_10cm_v2_notebook_mse_angle_roi.yaml --phase all 2>&1 | tee experiments/d2nn_mnist4_single_layer_17um_10cm_v2/runs/mnist4_single_layer_17um_10cm_v2_angle_roi/formal_train.log
 ```
 
 输出目录：
 
 ```text
-experiments/d2nn_mnist4_single_layer_17um_10cm_v2/runs/mnist4_single_layer_17um_10cm_v2_notebook_mse_corner_kspace/
+experiments/d2nn_mnist4_single_layer_17um_10cm_v2/runs/mnist4_single_layer_17um_10cm_v2_angle_roi/
 ```
 
 ## 3. 只测试 best checkpoint
 
 ```bash
-CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=6 python -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2 --config experiments/d2nn_mnist4_single_layer_17um_10cm_v2/configs/release/mnist4_single_layer_17um_10cm_v2_notebook_mse_corner_kspace.yaml --phase test --checkpoint experiments/d2nn_mnist4_single_layer_17um_10cm_v2/runs/mnist4_single_layer_17um_10cm_v2_notebook_mse_corner_kspace/checkpoints/best.pt
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=6 python -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2 --config experiments/d2nn_mnist4_single_layer_17um_10cm_v2/configs/release/mnist4_single_layer_17um_10cm_v2_notebook_mse_angle_roi.yaml --phase test --checkpoint experiments/d2nn_mnist4_single_layer_17um_10cm_v2/runs/mnist4_single_layer_17um_10cm_v2_angle_roi/checkpoints/best.pt
 ```
 
 ## 4. 只导出硬件文件
 
 ```bash
-CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=6 python -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2 --config experiments/d2nn_mnist4_single_layer_17um_10cm_v2/configs/release/mnist4_single_layer_17um_10cm_v2_notebook_mse_corner_kspace.yaml --phase export --checkpoint experiments/d2nn_mnist4_single_layer_17um_10cm_v2/runs/mnist4_single_layer_17um_10cm_v2_notebook_mse_corner_kspace/checkpoints/best.pt
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=6 python -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2 --config experiments/d2nn_mnist4_single_layer_17um_10cm_v2/configs/release/mnist4_single_layer_17um_10cm_v2_notebook_mse_angle_roi.yaml --phase export --checkpoint experiments/d2nn_mnist4_single_layer_17um_10cm_v2/runs/mnist4_single_layer_17um_10cm_v2_angle_roi/checkpoints/best.pt
 ```
 
 相位文件为 `mnist4_single_layer_17um_10cm_v2.bmp`。振幅极性是修正后的
 `255=白/透光，0=黑/遮光`。
+
+若只需要若干候选相位 mask，不重建任何振幅数据：
+
+```bash
+python -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2.export_mask_candidates --config experiments/d2nn_mnist4_single_layer_17um_10cm_v2/configs/release/mnist4_single_layer_17um_10cm_v2_notebook_mse_angle_roi.yaml --candidate pre_robust_best=experiments/d2nn_mnist4_single_layer_17um_10cm_v2/runs/mnist4_single_layer_17um_10cm_v2_angle_roi/mask_candidates/checkpoints/pre_robust_best.pt --candidate early_robust=experiments/d2nn_mnist4_single_layer_17um_10cm_v2/runs/mnist4_single_layer_17um_10cm_v2_angle_roi/mask_candidates/checkpoints/early_robust_epoch010.pt --output-dir experiments/d2nn_mnist4_single_layer_17um_10cm_v2/runs/mnist4_single_layer_17um_10cm_v2_angle_roi/mask_candidates/phase_bmp
+```
+
+输出目录只包含 1920×1200、8-bit 灰度 BMP 和记录 epoch、验证准确率、checkpoint/BMP
+SHA-256 的 `mask_candidates.json`；不会生成振幅图片。
 
 ## 5. 实验室电脑自动播放与采集
 
 先在相位 SLM 加载导出的唯一 phase BMP，再执行：
 
 ```powershell
-python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\d2nn_mnist4_single_layer_17um_10cm\lab_hardware_config.yaml --stage-dir experiments\d2nn_mnist4_single_layer_17um_10cm_v2\runs\mnist4_single_layer_17um_10cm_v2_notebook_mse_corner_kspace\hardware_export_10cm_v2_notebook_mse_corner_kspace\formal_fixed_random_100_per_class
+python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\d2nn_mnist4_single_layer_17um_10cm\lab_hardware_config.yaml --stage-dir experiments\d2nn_mnist4_single_layer_17um_10cm_v2\runs\mnist4_single_layer_17um_10cm_v2_angle_roi\hardware_export_10cm_v2_angle_roi\formal_fixed_random_100_per_class
 ```
 
 ## 6. 原始 CCD 四区求和评估
 
 ```powershell
-python -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2.ccd_evaluate --config experiments\d2nn_mnist4_single_layer_17um_10cm_v2\runs\mnist4_single_layer_17um_10cm_v2_notebook_mse_corner_kspace\hardware_export_10cm_v2_notebook_mse_corner_kspace\lab_model_config.yaml --manifest experiments\d2nn_mnist4_single_layer_17um_10cm_v2\runs\mnist4_single_layer_17um_10cm_v2_notebook_mse_corner_kspace\hardware_export_10cm_v2_notebook_mse_corner_kspace\formal_fixed_random_100_per_class\samples.csv --ccd-dir experiments\d2nn_mnist4_single_layer_17um_10cm_v2\runs\mnist4_single_layer_17um_10cm_v2_notebook_mse_corner_kspace\hardware_export_10cm_v2_notebook_mse_corner_kspace\formal_fixed_random_100_per_class\ccd_captured --output-dir experiments\d2nn_mnist4_single_layer_17um_10cm_v2\runs\mnist4_single_layer_17um_10cm_v2_notebook_mse_corner_kspace\hardware_export_10cm_v2_notebook_mse_corner_kspace\formal_fixed_random_100_per_class\hardware_evaluation_raw
+python -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2.ccd_evaluate --config experiments\d2nn_mnist4_single_layer_17um_10cm_v2\runs\mnist4_single_layer_17um_10cm_v2_angle_roi\hardware_export_10cm_v2_angle_roi\lab_model_config.yaml --manifest experiments\d2nn_mnist4_single_layer_17um_10cm_v2\runs\mnist4_single_layer_17um_10cm_v2_angle_roi\hardware_export_10cm_v2_angle_roi\formal_fixed_random_100_per_class\samples.csv --ccd-dir experiments\d2nn_mnist4_single_layer_17um_10cm_v2\runs\mnist4_single_layer_17um_10cm_v2_angle_roi\hardware_export_10cm_v2_angle_roi\formal_fixed_random_100_per_class\ccd_captured --output-dir experiments\d2nn_mnist4_single_layer_17um_10cm_v2\runs\mnist4_single_layer_17um_10cm_v2_angle_roi\hardware_export_10cm_v2_angle_roi\formal_fixed_random_100_per_class\hardware_evaluation_raw
 ```
 
 相机需直接输出已对准的 478×478 灰度 ROI。评估器拒绝 resize，也不做归一化、
