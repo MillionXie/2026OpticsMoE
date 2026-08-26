@@ -47,6 +47,7 @@ from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.train_optical
 )
 
 from .modeling import build_hybrid_student, load_backbone
+from .offline_tail import LanguageGlobalOfflineTail
 from .settings import load_settings
 
 
@@ -57,6 +58,7 @@ STAGES = (
     "language_global",
 )
 UPSTREAM_SOURCES = ("measured", "simulation")
+OFFLINE_SPLIT_CODES = {"train": 0, "gallery": 1, "test": 2}
 
 
 def _replacement_modules(replacement: Any) -> list[torch.nn.Module]:
@@ -98,12 +100,308 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def _sha256_text(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
 def _stage_dir(session_dir: Path, stage: str) -> Path:
     return session_dir / f"{STAGES.index(stage) + 1:02d}_{stage}"
 
 
 def _samples(bundle: Any) -> list[Any]:
     return list(bundle.all_samples())
+
+
+def _module_state_with_prefix(
+    destination: dict[str, torch.Tensor], prefix: str, module: torch.nn.Module
+) -> None:
+    for name, value in module.state_dict().items():
+        destination[f"{prefix}.{name}"] = value.detach().cpu().clone()
+
+
+def _language_global_offline_tail_state(
+    replacement: Any, readout: Any
+) -> dict[str, torch.Tensor]:
+    """Extract only the trainable tail after the frozen Language Block-1 boundary."""
+
+    core = replacement.language_surrogate.core
+    state: dict[str, torch.Tensor] = {}
+    _module_state_with_prefix(state, "block2", core.blocks[1])
+    _module_state_with_prefix(
+        state, "ccd_readout", core.optical_branch.core.readout
+    )
+    _module_state_with_prefix(
+        state,
+        "optical_output_adapter",
+        core.optical_branch.core.output_adapter,
+    )
+    _module_state_with_prefix(state, "output_norm", core.output_norm)
+    state["block2_optical_fusion_logit"] = (
+        core.block2_optical_fusion_logit.detach().cpu().clone()
+    )
+    _module_state_with_prefix(state, "retrieval_norm", readout.norm)
+    _module_state_with_prefix(state, "retrieval_projection", readout.projection)
+    return state
+
+
+def _offline_tail_construction(settings: Any, replacement: Any) -> dict[str, Any]:
+    core = replacement.language_surrogate.core
+    block2 = core.blocks[1]
+    optical = core.optical_branch
+    detector_readout = optical.core.readout
+    return {
+        "width": int(core.width),
+        "max_tokens": int(core.max_tokens),
+        "expansion": float(block2.mlp[0].out_features / core.width),
+        "dropout": float(block2.mlp[2].p),
+        "initial_residual_weight": float(settings.electronic_initial_residual_weight),
+        "token_mixer_enabled": bool(block2.token_mixer_enabled),
+        "token_mixer_type": str(block2.token_mixer_type),
+        "token_mixer_kernel_size": int(block2.token_mixer_kernel_size),
+        "detector_size": int(optical.ccd_normalizer.active_size),
+        "detector_output_size": int(detector_readout.output_size),
+        "detector_layernorm_eps": float(detector_readout.norm.eps),
+        "detector_layernorm_affine": bool(
+            detector_readout.norm.elementwise_affine
+        ),
+        "detector_layernorm_scope": str(detector_readout.layernorm_scope),
+        "detector_nonlinearity": str(detector_readout.nonlinearity),
+        "ccd_relative_clip": float(optical.ccd_normalizer.relative_clip),
+        "ccd_log_compression": float(optical.ccd_normalizer.log_compression),
+        "minimum_optical_fusion": float(core.minimum_optical_fusion),
+        "embedding_dim": int(settings.embedding_dim),
+    }
+
+
+def _atomic_torch_save(value: Any, path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    torch.save(value, temporary)
+    temporary.replace(path)
+
+
+def _write_language_global_offline_payload(
+    *,
+    settings: Any,
+    replacement: Any,
+    checkpoint: Path,
+    session_dir: Path,
+    destination: Path,
+    rows: list[dict[str, Any]],
+    block2_input_groups: list[torch.Tensor],
+    tail_state: dict[str, torch.Tensor],
+    upstream_source: str,
+    measured_upstream_stages: tuple[str, ...],
+) -> None:
+    if len(rows) != len(block2_input_groups):
+        raise RuntimeError(
+            "Language-global offline cache count does not match the hardware manifest"
+        )
+    if not rows:
+        raise RuntimeError("Cannot write an empty Language-global offline cache")
+    required_splits = set(OFFLINE_SPLIT_CODES)
+    seen_keys: set[str] = set()
+    split_counts = {name: 0 for name in OFFLINE_SPLIT_CODES}
+    class_names: dict[int, str] = {}
+    class_split_counts: dict[int, dict[str, int]] = {}
+    lengths: list[int] = []
+    labels: list[int] = []
+    split_codes: list[int] = []
+    for index, (row, group) in enumerate(zip(rows, block2_input_groups)):
+        key = str(row["key"])
+        split = str(row["split"])
+        label = int(row["sku_index"])
+        name = str(row["sku_name"])
+        if int(row["order"]) != index:
+            raise RuntimeError("Hardware manifest order is not contiguous")
+        if not key or Path(key).name != key or key in seen_keys:
+            raise RuntimeError(f"Invalid or duplicate hardware key {key!r}")
+        if split not in required_splits:
+            raise RuntimeError(f"Unsupported offline split {split!r}")
+        if group.ndim != 2 or group.shape[-1] != int(
+            replacement.language_surrogate.core.width
+        ):
+            raise RuntimeError("Cached Language Block-2 input must be [L,width]")
+        if len(group) <= 0 or len(group) > int(
+            replacement.language_surrogate.core.max_tokens
+        ):
+            raise RuntimeError(f"Invalid cached Language token length {len(group)}")
+        if not torch.isfinite(group).all():
+            raise RuntimeError(f"Cached Language Block-2 input for {key} is non-finite")
+        if label in class_names and class_names[label] != name:
+            raise RuntimeError(f"Label {label} maps to multiple class names")
+        seen_keys.add(key)
+        class_names[label] = name
+        class_split_counts.setdefault(
+            label, {split_name: 0 for split_name in OFFLINE_SPLIT_CODES}
+        )[split] += 1
+        split_counts[split] += 1
+        lengths.append(len(group))
+        labels.append(label)
+        split_codes.append(OFFLINE_SPLIT_CODES[split])
+    expected_labels = list(range(len(class_names)))
+    if sorted(class_names) != expected_labels:
+        raise RuntimeError(
+            f"Offline class indexes must be contiguous from zero, got {sorted(class_names)}"
+        )
+    if any(count <= 0 for count in split_counts.values()):
+        raise RuntimeError(f"Every offline split must be present, got {split_counts}")
+    quick210_requested = (
+        getattr(settings, "gallery_images_per_sku", None) == 1
+        and getattr(settings, "train_limit_per_sku", None) == 10
+        and getattr(settings, "test_limit_per_sku", None) == 10
+    )
+    if quick210_requested:
+        expected_per_class = {"train": 10, "gallery": 1, "test": 10}
+        if (
+            len(class_names) != 10
+            or len(rows) != 210
+            or split_counts != {"train": 100, "gallery": 10, "test": 100}
+            or any(
+                class_split_counts[index] != expected_per_class
+                for index in expected_labels
+            )
+        ):
+            raise RuntimeError(
+                "quick210 requires exactly 10 classes with train/gallery/test "
+                "counts 10/1/10 per class"
+            )
+
+    offsets = [0]
+    for length in lengths:
+        offsets.append(offsets[-1] + length)
+    packed = torch.cat(
+        [group.detach().cpu().float().contiguous() for group in block2_input_groups],
+        dim=0,
+    )
+    cache = {
+        "packed_block2_inputs": packed,
+        "offsets": torch.tensor(offsets, dtype=torch.int64),
+        "lengths": torch.tensor(lengths, dtype=torch.int64),
+        "labels": torch.tensor(labels, dtype=torch.int64),
+        "split_codes": torch.tensor(split_codes, dtype=torch.uint8),
+        "orders": torch.arange(len(rows), dtype=torch.int64),
+    }
+    construction = _offline_tail_construction(settings, replacement)
+    nonfinite_state = [
+        name
+        for name, value in tail_state.items()
+        if value.is_floating_point() and not torch.isfinite(value).all()
+    ]
+    if nonfinite_state:
+        raise RuntimeError(
+            f"Language-global offline tail state is non-finite: {nonfinite_state}"
+        )
+    validation_tail = LanguageGlobalOfflineTail(**construction)
+    validation_tail.load_state_dict(tail_state, strict=True)
+    tail_parameter_count = sum(
+        parameter.numel() for parameter in validation_tail.parameters()
+    )
+    if quick210_requested and tail_parameter_count != 255_811:
+        raise RuntimeError(
+            "Formal quick210 Language-global tail must contain exactly 255,811 "
+            f"parameters, got {tail_parameter_count}"
+        )
+    offline_dir = destination / "offline_downstream"
+    cache_path = offline_dir / "cache.pt"
+    state_path = offline_dir / "downstream_state.pt"
+    _atomic_torch_save(cache, cache_path)
+    _atomic_torch_save(tail_state, state_path)
+    manifest_path = session_dir / "manifest.csv"
+    ordered_keys = [str(row["key"]) for row in rows]
+    contract = {
+        "schema_version": 1,
+        "type": "language_global_quick_offline_full_parity",
+        "profile": "quick210" if quick210_requested else "generic",
+        "stage": "language_global",
+        "checkpoint_architecture": str(replacement.checkpoint_architecture),
+        "source_checkpoint": str(checkpoint),
+        "source_checkpoint_sha256": _sha256(checkpoint),
+        "upstream_source": upstream_source,
+        "measured_upstream_stages": list(measured_upstream_stages),
+        "sample_count": len(rows),
+        "manifest_relative_path": "../../manifest.csv",
+        "manifest_sha256": _sha256(manifest_path),
+        "ordered_keys_sha256": _sha256_text("\n".join(ordered_keys)),
+        "cache_file": cache_path.name,
+        "cache_sha256": _sha256(cache_path),
+        "state_file": state_path.name,
+        "state_sha256": _sha256(state_path),
+        "cache_dtype": "float32",
+        "cache_tensor": "Language Block-1 fused latent / Block-2 input [L,192]",
+        "tail_construction": construction,
+        "tail_trainable_parameter_count": int(tail_parameter_count),
+        "tail_state_source_mapping": {
+            "block2": "language_optical.core.blocks.1",
+            "ccd_readout": "language_optical.core.optical_branch.core.readout",
+            "optical_output_adapter": (
+                "language_optical.core.optical_branch.core.output_adapter"
+            ),
+            "output_norm": "language_optical.core.output_norm",
+            "block2_optical_fusion_logit": (
+                "language_optical.core.block2_optical_fusion_logit"
+            ),
+            "retrieval_norm": "retrieval_readout.norm",
+            "retrieval_projection": "retrieval_readout.projection",
+        },
+        "split_codes": OFFLINE_SPLIT_CODES,
+        "split_counts": split_counts,
+        "class_names": [class_names[index] for index in expected_labels],
+        "class_split_counts": {
+            str(index): class_split_counts[index] for index in expected_labels
+        },
+        "ccd_contract": {
+            "directory_relative_to_stage": "ccd_captured",
+            "filename": "<manifest-key>.png",
+            "mode": "L",
+            "dtype": "uint8",
+            "shape_hw": [
+                int(settings.hardware_ccd_target_size),
+                int(settings.hardware_ccd_target_size),
+            ],
+            "flip_vertical_after_load": bool(settings.hardware_ccd_flip_vertical),
+            "flip_horizontal_after_load": bool(
+                settings.hardware_ccd_flip_horizontal
+            ),
+            "background_subtraction": False,
+            "resizing": False,
+            "normalization_order": [
+                "clamp_nonnegative",
+                "divide_by_single_frame_mean",
+                f"relative_clip_{construction['ccd_relative_clip']}",
+                f"log1p_factor_{construction['ccd_log_compression']}",
+                "adaptive_avg_pool_478_to_224",
+                "per_token_layernorm",
+                str(construction["detector_nonlinearity"]),
+            ],
+        },
+        "training_contract": {
+            "recommended_epochs": 10,
+            "seed": int(settings.random_seed),
+            "pk_classes": int(settings.pk_skus_per_batch),
+            "pk_images_per_class": int(settings.pk_images_per_sku),
+            "learning_rate": float(settings.learning_rate),
+            "readout_learning_rate": float(settings.readout_learning_rate),
+            "weight_decay": float(settings.weight_decay),
+            "gradient_clip_norm": 1.0,
+            "supervised_contrastive_temperature": float(settings.temperature),
+            "episodic_prototype_temperature": float(settings.gallery_temperature),
+            "loss": "supervised_contrastive + episodic_prototype",
+            "checkpoint_selection": "minimum_train_loss_only",
+            "block2_mode": "eval_with_gradients_dropout_disabled",
+            "gallery_aggregation": str(settings.gallery_aggregation),
+            "token_pooling": "mean_max",
+            "embedding_normalization": "l2",
+        },
+        "excluded_from_offline_tail": [
+            "Qwen backbone",
+            "Vision optics/electronics",
+            "Language input adapter and Block 1",
+            "all phase masks and routers",
+            "simulation propagation kernels",
+        ],
+    }
+    write_json(offline_dir / "contract.json", contract)
 
 
 def _read_manifest(session_dir: Path) -> list[dict[str, str]]:
@@ -290,6 +588,12 @@ def export_stage(
     bundle = prepare_caltech101_subset(settings, persist=True)
     samples = _samples(bundle)
     loaded, replacement, readout = _load_model(settings, checkpoint)
+    offline_tail_state = (
+        _language_global_offline_tail_state(replacement, readout)
+        if stage == "language_global"
+        else None
+    )
+    offline_block2_inputs: list[torch.Tensor] = []
     session_dir.mkdir(parents=True, exist_ok=True)
     rows = [
         {
@@ -305,10 +609,21 @@ def export_stage(
     ]
     if not (session_dir / "manifest.csv").is_file():
         write_csv(session_dir / "manifest.csv", rows, list(rows[0]))
-    elif [row["key"] for row in _read_manifest(session_dir)] != [
-        row["key"] for row in rows
-    ]:
-        raise RuntimeError("Existing hardware manifest does not match this dataset")
+    else:
+        existing_rows = _read_manifest(session_dir)
+        identity_fields = ("order", "key", "split", "sku_index", "sku_name")
+        existing_identity = [
+            tuple(str(row[field]) for field in identity_fields)
+            for row in existing_rows
+        ]
+        expected_identity = [
+            tuple(str(row[field]) for field in identity_fields) for row in rows
+        ]
+        if existing_identity != expected_identity:
+            raise RuntimeError(
+                "Existing hardware manifest order/split/class metadata does not "
+                "match this dataset"
+            )
     destination = _stage_dir(session_dir, stage)
     compact = destination / "compact_amplitude"
     compact.mkdir(parents=True, exist_ok=True)
@@ -346,6 +661,17 @@ def export_stage(
                 measured_stages=measured_upstream_stages,
             )
             _forward_samples(loaded, replacement, readout, settings, batch)
+            if stage == "language_global":
+                cached_groups = (
+                    replacement.language_surrogate.core.last_block2_input_groups
+                )
+                if len(cached_groups) != len(batch):
+                    raise RuntimeError(
+                        "Language-global hook did not preserve the export batch layout"
+                    )
+                offline_block2_inputs.extend(
+                    group.detach().cpu().float().clone() for group in cached_groups
+                )
             amplitude = _amplitude_for_stage(
                 _branch_for_stage(replacement, stage), stage
             ).detach().cpu()
@@ -372,6 +698,21 @@ def export_stage(
     finally:
         _clear_measurements(replacement)
         replacement.close()
+    if stage == "language_global":
+        if offline_tail_state is None:
+            raise RuntimeError("Language-global offline tail state was not captured")
+        _write_language_global_offline_payload(
+            settings=settings,
+            replacement=replacement,
+            checkpoint=checkpoint,
+            session_dir=session_dir,
+            destination=destination,
+            rows=rows,
+            block2_input_groups=offline_block2_inputs,
+            tail_state=offline_tail_state,
+            upstream_source=upstream_source,
+            measured_upstream_stages=measured_upstream_stages,
+        )
     write_csv(
         destination / "compact_amplitude_manifest.csv",
         amplitude_rows,
@@ -432,7 +773,12 @@ def export_stage(
                 },
             },
             "expected_ccd_upload": "478x478 uint8 grayscale PNG; no flip",
-            "server_persistence": "no simulation CCD and no per-sample float32 PT cache",
+            "server_persistence": (
+                "one packed float32 Language Block-2 input cache; no simulation CCD "
+                "and no per-sample PT cache"
+                if stage == "language_global"
+                else "no simulation CCD and no per-sample float32 PT cache"
+            ),
         },
     )
 

@@ -643,6 +643,57 @@ class LanguageTwoBlockOpticalCore(ElectronicSequenceCore):
         )
         return torch.cat((latent.mean(dim=0), latent.amax(dim=0)), dim=0)
 
+    def detector_features_from_block2_inputs(
+        self, block2_input_groups: list[torch.Tensor], ccd: torch.Tensor
+    ) -> torch.Tensor:
+        """Batch the exact trainable Language-Global tail after a frozen capture boundary."""
+
+        if not block2_input_groups or any(
+            group.ndim != 2 or group.shape[-1] != self.width
+            for group in block2_input_groups
+        ):
+            raise ValueError("Cached Language Block-2 inputs must be non-empty [L,width]")
+        lengths = [len(group) for group in block2_input_groups]
+        if any(length <= 0 or length > self.max_tokens for length in lengths):
+            raise ValueError(f"Invalid cached Language token lengths {lengths}")
+        if ccd.ndim != 3 or len(ccd) != len(block2_input_groups):
+            raise ValueError("Measured CCD batch must match cached Language groups")
+        device = block2_input_groups[0].device
+        if ccd.device != device or any(group.device != device for group in block2_input_groups):
+            raise ValueError("Cached Language groups and CCD must use the same device")
+        max_length = max(lengths)
+        padded = block2_input_groups[0].new_zeros(
+            len(block2_input_groups), max_length, self.width
+        )
+        padding_mask = torch.ones(
+            len(block2_input_groups), max_length, dtype=torch.bool, device=device
+        )
+        for index, group in enumerate(block2_input_groups):
+            padded[index, : len(group)] = group.float()
+            padding_mask[index, : len(group)] = False
+        electronic = self.blocks[1](
+            padded.float(), padding_mask=padding_mask, causal=True
+        )
+        delta = self.optical_branch.decode_measured_ccd(
+            ccd, padding_mask, electronic.dtype
+        )
+        latent = self.output_norm(
+            electronic + self.block2_optical_fusion * delta
+        ).masked_fill(padding_mask.unsqueeze(-1), 0.0)
+        return torch.stack(
+            [
+                torch.cat(
+                    (
+                        latent[index, :length].mean(dim=0),
+                        latent[index, :length].amax(dim=0),
+                    ),
+                    dim=0,
+                )
+                for index, length in enumerate(lengths)
+            ],
+            dim=0,
+        )
+
 
 class LanguageTwoBlockOpticalReplacement(LanguageElectronicReplacement):
     def __init__(self, hidden_size: int, settings: Any) -> None:
