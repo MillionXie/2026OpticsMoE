@@ -37,7 +37,9 @@ training:
   # Match the successful reference notebook rather than the earlier 0.02 setup.
   phase_learning_rate: 0.01
   min_learning_rate: 0.001
-  epochs: 30
+  # The first 30-epoch run selected epoch 29, so it had not demonstrated
+  # convergence.  Keep every other factor fixed and extend this clean run.
+  epochs: 60
   batch_size: 64
   inference_batch_size: 64
   num_workers: 4
