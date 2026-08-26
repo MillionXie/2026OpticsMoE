@@ -1,0 +1,25 @@
+output_dir: ../generated/fresnel_phase_array_532nm_17um_8um
+
+wavelength_nm: 532.0
+propagation_distances_cm: [5.0, 10.0, 15.0]
+
+amplitude_slm:
+  size_wh: [1024, 1024]
+  pixel_pitch_um: 17.0
+  center_xy: [512.0, 512.0]
+
+phase_slm:
+  size_wh: [1920, 1200]
+  pixel_pitch_um: 8.0
+  center_xy: [980.0, 590.0]
+  flip_vertical: true
+  flip_horizontal: false
+
+shared_optical_support:
+  # Exact trained/input logical support. 478*17 um=8126 um, which maps to
+  # round(8126/8)=1016 native phase pixels (8128 um; +2 um quantization).
+  amplitude_active_size_px: 478
+
+# flip_coded variants reduce only the logical top-left lens phase aperture.
+# This changes focal intensity, not focal center, and breaks flip symmetry.
+orientation_marker_aperture_fraction: 0.55

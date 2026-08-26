@@ -69,3 +69,55 @@ m = 17n / (8k)
 
 BMP 合同固定为：振幅 `1024×1024`、8-bit 灰度、仅0/255；相位
 `1920×1200`、8-bit 灰度、仅0/128。相位继续使用原有纵向翻转和中心 `(980,590)`。
+
+## 532 nm 菲涅尔阵列：焦面、翻转和 CCD ROI 标定
+
+从仓库根目录执行：
+
+```powershell
+python -m experiments.hardware_sdk.generators.fresnel_phase_array --config experiments/hardware_sdk/generators/slm_patterns/configs/fresnel_phase_array_17um_8um.yaml
+```
+
+输出目录：
+
+```text
+experiments/hardware_sdk/generators/slm_patterns/generated/fresnel_phase_array_532nm_17um_8um/
+├── amplitude_bmp/       # 1张全0、1024×1024、8-bit振幅BMP
+├── phase_bmp/           # 15张1920×1200、8-bit相位BMP
+├── preview/             # 相位有效区预览PNG，不用于硬件播放
+├── fresnel_lens_centers.csv
+├── fresnel_array_manifest.json
+└── README.md
+```
+
+相位文件覆盖 `1/4/9` 个透镜和 `5/10/15 cm` 三个传播距离。4阵列和9阵列各有
+两种版本：
+
+- `uniform`：所有透镜口径相同，用于精确提取焦点中心和拟合ROI；
+- `flip_coded`：仅“逻辑左上角”透镜的有效相位口径缩小到55%，焦点中心不变、
+  强度较弱，用于消除完全对称阵列的上下/左右翻转歧义。
+
+共同物理口径由输入端 `478×17 µm = 8126 µm` 决定，在8 µm相位SLM上量化为
+`1016×1016` 像素（8128 µm，物理宽度误差仅 `+2 µm`）。相位中心为可配置的
+`(980,590)`，所以有效边界为 `[472,82,1488,1098]`。2×2阵列的逻辑中心为：
+
+```text
+(726,336)   (1234,336)
+(726,844)   (1234,844)
+```
+
+这些坐标采用“像素边界坐标”；对应像素索引中心应各减 `0.5`。导出BMP已经执行旧
+光路使用的纵向翻转，CSV同时保存逻辑坐标和实际BMP坐标，不能再次手工翻转。
+
+建议依次播放：
+
+1. 全0振幅 + `n1_1x1_uniform` 的5/10/15 cm版本，选择实际焦面；
+2. 同一距离的 `n4_2x2_flip_coded`，通过唯一弱焦点确定四点对应及翻转；
+3. `n4_2x2_uniform`，用四个等强焦点拟合CCD ROI；
+4. `n9_3x3_uniform`，检查边缘畸变和非线性误差。
+
+无明显旋转/透视时，若四焦点左右、上下中心间距分别为 `dx`、`dy`，ROI可由焦点
+外推半个间距：`left=x_left-dx/2`、`right=x_right+dx/2`、
+`top=y_top-dy/2`、`bottom=y_bottom+dy/2`。存在旋转、剪切或畸变时，应先用已知
+的四个相位中心与实测CCD中心拟合仿射/单应映射，再映射有效区四角；不能只用轴对齐
+外推。四个完全相同的焦点本身具有对称性，所以只播放 `uniform` 不能判断翻转。
