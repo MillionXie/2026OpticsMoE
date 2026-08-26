@@ -208,6 +208,7 @@ def load_settings(path: str | Path) -> Any:
     settings.expert_grid_rows = int(d("optical.geometry.grid_rows", 2))
     settings.expert_grid_cols = int(d("optical.geometry.grid_cols", 2))
     settings.top_k = int(d("optical.router.top_k", 2))
+    settings.router_noise_std = float(d("optical.router.noise_std", 0.0))
     settings.router_learning_rate = float(d("training.router_learning_rate", 5.0e-5))
     # HomogeneousMoEOpticalCore consumes the canonical setting names.  Make the
     # experiment-local phase controls authoritative for all four expert masks
@@ -274,6 +275,8 @@ def load_settings(path: str | Path) -> Any:
         raise ValueError("training.phase_focus.interval_epochs must be positive")
     if settings.lambda_router_balance < 0.0 or settings.lambda_router_importance < 0.0:
         raise ValueError("Router auxiliary-loss weights must be nonnegative")
+    if settings.router_noise_std < 0.0:
+        raise ValueError("optical.router.noise_std must be nonnegative")
     if settings.hardware_ccd_physical_binning_factor <= 0:
         raise ValueError("hardware.ccd.physical_binning_factor must be positive")
     if min(
@@ -346,6 +349,7 @@ def save_resolved_config(settings: Any) -> None:
             "minimum + (1-minimum)*sigmoid(raw_gate)"
         ),
         "router_enabled": True,
+        "router_train_noise_std": settings.router_noise_std,
         "router_loss_enabled": bool(
             settings.lambda_router_balance or settings.lambda_router_importance
         ),

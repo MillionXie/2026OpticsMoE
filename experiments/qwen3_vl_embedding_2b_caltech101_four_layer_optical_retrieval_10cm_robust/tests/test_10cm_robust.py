@@ -28,6 +28,12 @@ FAST_CONFIG = (
     / "release"
     / "caltech101_four_layer_optical_joint_17um_10cm_robust_fast_2h.yaml"
 )
+RECOVERY_CONFIG = (
+    Path(__file__).resolve().parents[1]
+    / "configs"
+    / "release"
+    / "caltech101_four_layer_optical_joint_17um_10cm_robust_fast_remaining20.yaml"
+)
 
 
 def test_release_contract_is_explicitly_10cm_and_robust() -> None:
@@ -43,6 +49,8 @@ def test_release_contract_is_explicitly_10cm_and_robust() -> None:
     assert settings.batch_size == 30
     assert settings.pk_skus_per_batch == 10
     assert settings.pk_images_per_sku == 3
+    assert settings.router_noise_std == 0.10
+    assert settings.lambda_router_balance == 0.05
     assert settings.hardware_amplitude_slm_pixel_pitch_um == 17.0
     assert settings.hardware_phase_slm_pixel_pitch_um == 8.0
     assert settings.hardware_phase_flip_vertical is True
@@ -61,6 +69,16 @@ def test_fast_release_only_changes_time_budget() -> None:
     assert fast.phase_learning_rate == full.phase_learning_rate
     assert fast.optical_fusion_minimum == full.optical_fusion_minimum
     assert fast.output_dir == full.output_dir
+
+
+def test_router_recovery_continuation_preserves_absolute_end_epoch() -> None:
+    recovery = load_settings(RECOVERY_CONFIG)
+    assert recovery.epochs == 20
+    assert recovery.optimizer_steps_per_epoch == 15
+    assert recovery.phase_focus_warmup_epochs == 0
+    assert recovery.phase_focus_interval_epochs == 2
+    assert recovery.router_noise_std == 0.10
+    assert recovery.lambda_router_balance == 0.05
 
 
 def test_bounded_gate_starts_at_requested_fraction_and_never_crosses_floor() -> None:

@@ -66,6 +66,15 @@ CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_
 `--resume-checkpoint ...`即可。快速配置只改变附加epoch数和每轮优化步数，不改变
 模型、loss、学习率、batch组成、10 cm传播或鲁棒性参数。
 
+本次快速运行在绝对epoch 5～7观察到Language硬top-2连续只覆盖2/4专家，因而从
+epoch 7 checkpoint开始使用以下“剩余20轮”配置。它加入训练态`noise_std=0.10`
+和`0.05×router balance loss`；测试、BMP导出和实际硬件路由没有噪声。该配置还把
+续训相对warmup设为0，使phase-focus继续落在绝对epoch 8、10、…、26：
+
+```bash
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust --config experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust/configs/release/caltech101_four_layer_optical_joint_17um_10cm_robust_fast_remaining20.yaml --phase train --resume-checkpoint experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust/runs/caltech101_four_layer_moe4_joint_17um_10cm_robust/last_checkpoint.pt
+```
+
 ## 4. 固定checkpoint仿真评估
 
 ```bash

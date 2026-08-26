@@ -16,7 +16,7 @@ training:
   # 50% above the former strong-phase 4e-3 run; avoids an untested 2x jump.
   phase_learning_rate: 0.006
   router_learning_rate: 0.0002
-  lambda_router_balance: 0.02
+  lambda_router_balance: 0.05
   lambda_router_importance: 0.005
   lambda_ccd_operating_point: 0.02
   phase_focus: {enabled: true, warmup_epochs: 5, interval_epochs: 2}
@@ -36,6 +36,12 @@ batching:
   pk_skus_per_batch: 10
   pk_images_per_sku: 3
   optimizer_steps_per_epoch: null
+
+optical:
+  router:
+    # Training-only Gaussian logit noise prevents deterministic top-k ties
+    # from starving physical experts. Evaluation/export remain noise-free.
+    noise_std: 0.10
 
 language_optical:
   wavelength_nm: 532.0

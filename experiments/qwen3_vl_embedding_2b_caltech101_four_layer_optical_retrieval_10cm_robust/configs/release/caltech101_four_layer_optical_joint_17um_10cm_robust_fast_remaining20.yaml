@@ -1,0 +1,9 @@
+base_config: caltech101_four_layer_optical_joint_17um_10cm_robust_fast_2h.yaml
+
+# Continuation after absolute epoch 7 of the 2026-08-26 fast run.  The first
+# recovery epoch is phase-only, preserving the originally planned absolute
+# phase-focus cadence at epochs 8,10,...,26.
+training:
+  epochs: 20
+  phase_focus: {enabled: true, warmup_epochs: 0, interval_epochs: 2}
+
