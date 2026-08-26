@@ -82,13 +82,13 @@ def test_flip_coded_array_keeps_centers_and_reduces_only_top_left_aperture() -> 
     assert np.array_equal(coded[:60, 60:], uniform[:60, 60:])
 
 
-def test_all_zero_amplitude_bmp_contract(tmp_path: Path) -> None:
-    path = tmp_path / "amplitude_zero.bmp"
-    Image.fromarray(np.zeros((1024, 1024), dtype=np.uint8), mode="L").save(
+def test_uniform_white_amplitude_bmp_contract(tmp_path: Path) -> None:
+    path = tmp_path / "amplitude_uniform_white.bmp"
+    Image.fromarray(np.full((1024, 1024), 255, dtype=np.uint8), mode="L").save(
         path, format="BMP"
     )
     with Image.open(path) as image:
         assert image.format == "BMP"
         assert image.mode == "L"
         assert image.size == (1024, 1024)
-        assert np.asarray(image).max() == 0
+        assert np.asarray(image).min() == 255

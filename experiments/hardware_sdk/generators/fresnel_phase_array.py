@@ -213,11 +213,27 @@ def generate(config_path: Path) -> dict[str, Any]:
     native_active_size = int(round(physical_width_um / phase_pitch_um))
     marker_fraction = float(raw["orientation_marker_aperture_fraction"])
 
-    amplitude_zero = np.zeros((amplitude_size[1], amplitude_size[0]), dtype=np.uint8)
+    bright_value = int(amplitude.get("bright_value_uint8", 255))
+    dark_value = int(amplitude.get("dark_value_uint8", 0))
+    if (bright_value, dark_value) != (255, 0):
+        raise ValueError(
+            "The corrected amplitude-SLM contract requires bright=255 and dark=0"
+        )
+    amplitude_uniform = np.full(
+        (amplitude_size[1], amplitude_size[0]), bright_value, dtype=np.uint8
+    )
     amplitude_report = _save_bmp(
-        amplitude_zero,
-        output_dir / "amplitude_bmp" / "amplitude_all_zero_1024x1024.bmp",
+        amplitude_uniform,
+        output_dir / "amplitude_bmp" / "amplitude_uniform_white_1024x1024.bmp",
         amplitude_size,
+    )
+    amplitude_report.update(
+        {
+            "optical_role": "uniform bright illumination",
+            "bright_value_uint8": bright_value,
+            "dark_value_uint8": dark_value,
+            "black_white_inverted": False,
+        }
     )
 
     # Determine exact placement once. All phase arrays share these bounds.
@@ -400,7 +416,8 @@ def generate(config_path: Path) -> dict[str, Any]:
     (output_dir / "README.md").write_text(
         """# 532 nm Fresnel phase arrays
 
-1. 振幅SLM固定播放 `amplitude_bmp/amplitude_all_zero_1024x1024.bmp`。
+1. 振幅SLM固定播放 `amplitude_bmp/amplitude_uniform_white_1024x1024.bmp`。当前硬件合同是
+   `255=白/透光`、`0=黑/遮光`，因此均匀照明必须使用全255，不能再使用旧版全0图。
 2. 先用 `n1_1x1_uniform` 比较5/10/15 cm，确认相机处于哪个焦面。
 3. 用对应距离的 `n4_2x2_flip_coded` 判断上下/左右对应关系：逻辑左上角透镜的
    有效相位口径较小，因此对应焦点应明显更弱，但中心坐标不变。
@@ -433,7 +450,7 @@ def main() -> int:
     args = parser.parse_args()
     report = generate(Path(args.config))
     print(
-        f"Generated 1 all-zero amplitude BMP and {len(report['files'])} "
+        f"Generated 1 uniform-white amplitude BMP and {len(report['files'])} "
         f"Fresnel phase-array BMPs"
     )
     return 0

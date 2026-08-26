@@ -1,4 +1,4 @@
-output_dir: ../generated/fresnel_phase_array_532nm_17um_8um
+output_dir: ../generated/fresnel_phase_array_532nm_17um_8um_normal_polarity
 
 wavelength_nm: 532.0
 propagation_distances_cm: [5.0, 10.0, 15.0]
@@ -7,6 +7,9 @@ amplitude_slm:
   size_wh: [1024, 1024]
   pixel_pitch_um: 17.0
   center_xy: [512.0, 512.0]
+  # Corrected hardware polarity: command 255 is white/bright/transmissive.
+  bright_value_uint8: 255
+  dark_value_uint8: 0
 
 phase_slm:
   size_wh: [1920, 1200]

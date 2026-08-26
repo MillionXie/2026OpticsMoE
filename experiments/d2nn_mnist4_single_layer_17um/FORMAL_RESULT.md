@@ -58,10 +58,10 @@ metrics/training_summary.json
 metrics/test_metrics.json
 phase_initial.png
 phase_best.png
-hardware_export/phase_to_play/mnist4_single_layer_17um_5cm.bmp
-hardware_export/amplitude_to_play/*.bmp
-hardware_export/samples.csv
-mnist4_single_layer_17um_5cm_hardware_bundle.zip
+hardware_export_normal_polarity/phase_to_play/mnist4_single_layer_17um_5cm.bmp
+hardware_export_normal_polarity/amplitude_to_play/*.bmp
+hardware_export_normal_polarity/samples.csv
+mnist4_single_layer_17um_5cm_hardware_bundle_normal_polarity.zip
 ```
 
 SHA-256：
@@ -79,5 +79,6 @@ hardware ZIP:
 
 导出检查：相位BMP为1920×1200、8-bit灰度；40张振幅BMP均为1024×1024、
 8-bit灰度。相位有效区为1016×1016，边界 `[472,82,1488,1098]`，中心
-`(980,590)`，并执行既有纵向翻转。振幅有效区边界为 `[273,273,751,751]`，按当前
-光路极性执行黑白反相。
+`(980,590)`，并执行既有纵向翻转。振幅有效区边界为 `[273,273,751,751]`；新导出按
+修正后的硬件极性直接编码为 `255=白/透光`、`0=黑/遮光`，不再黑白反相。上方旧ZIP
+哈希属于历史反相导出；新ZIP哈希以服务器新生成文件为准。

@@ -250,6 +250,12 @@ def generate(
     amplitude_size = tuple(map(int, amplitude["size_wh"]))
     phase_size = tuple(map(int, phase["size_wh"]))
     amplitude_center = tuple(map(float, amplitude["center_xy"]))
+    invert_amplitude = bool(amplitude.get("invert_before_export", False))
+    if invert_amplitude:
+        raise ValueError(
+            "dual_slm_alignment emits direct normal-polarity commands; "
+            "use dual_slm_registration_sweep for historical inverted export"
+        )
     phase_center = (
         tuple(map(float, phase_center_override))
         if phase_center_override is not None
@@ -473,6 +479,9 @@ def generate(
             "pixel_pitch_um": float(amplitude["pixel_pitch_um"]),
             "center_xy": list(amplitude_center),
             "mapping": "one_to_one",
+            "invert_before_export": False,
+            "bright_value_uint8": 255,
+            "dark_value_uint8": 0,
         },
         "phase_slm": {
             "size_wh": list(phase_size),

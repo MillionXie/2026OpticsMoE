@@ -258,6 +258,11 @@ def generate_calibration_files(config: dict[str, Any], config_path: Path) -> dic
         writer.writerows(manifest_rows)
     report = {
         "amplitude_size_wh": list(amplitude_size),
+        "amplitude_polarity": {
+            "bright_value_uint8": 255,
+            "dark_value_uint8": 0,
+            "invert_before_export": False,
+        },
         "phase_size_wh": list(phase_size),
         "roi_boundary_points": [[float(x), float(y)] for x, y in points],
         "verification_patterns": 3,

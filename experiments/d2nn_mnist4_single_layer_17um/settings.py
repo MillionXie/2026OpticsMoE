@@ -102,6 +102,7 @@ class Settings:
     phase_flip_horizontal: bool
     ccd_target_size: int
     export_samples_per_class: int
+    hardware_export_subdir: str
 
     @property
     def canvas_guard(self) -> int:
@@ -179,6 +180,13 @@ class Settings:
             self.export_samples_per_class,
         ) <= 0:
             raise ValueError("Training/export counts must be positive")
+        export_path = Path(self.hardware_export_subdir)
+        if (
+            export_path.is_absolute()
+            or len(export_path.parts) != 1
+            or export_path.name in {"", ".", ".."}
+        ):
+            raise ValueError("hardware.export_subdir must be one safe directory name")
 
     def to_dict(self) -> dict[str, Any]:
         result = asdict(self)
@@ -240,6 +248,9 @@ def load_settings(path: str | Path) -> Settings:
         phase_flip_horizontal=bool(d("hardware.phase_slm.flip_horizontal", False)),
         ccd_target_size=int(d("hardware.ccd.target_size", 478)),
         export_samples_per_class=int(d("hardware.export_samples_per_class", 10)),
+        hardware_export_subdir=str(
+            d("hardware.export_subdir", "hardware_export_normal_polarity")
+        ),
     )
     settings.validate()
     return settings

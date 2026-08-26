@@ -185,6 +185,13 @@ def run(config_path: str | Path, *, generate_only: bool = False) -> dict[str, An
         "generated_utc": datetime.now(timezone.utc).isoformat(),
         "slm_size_wh": list(slm_size),
         "active_size_wh": list(active_size),
+        "amplitude_polarity": {
+            "bright_value_uint8": 255,
+            "dark_value_uint8": 0,
+            "invert_before_export": False,
+            "foreground_level": int(digits.get("foreground_level", 255)),
+            "background_level": int(digits.get("background_level", 0)),
+        },
         "play_order": [value.name for value in files],
     }
     output.mkdir(parents=True, exist_ok=True)

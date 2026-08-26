@@ -1,4 +1,4 @@
-"""Generate inverted-amplitude dual-SLM registration pairs with a phase scale sweep."""
+"""Generate polarity-explicit dual-SLM registration pairs and phase scale sweeps."""
 
 from __future__ import annotations
 
@@ -111,6 +111,42 @@ def single_axis_masked_grating(
     return phase.astype(np.uint8)
 
 
+def _save_amplitude(
+    intended_open_mask: np.ndarray,
+    path: Path,
+    *,
+    slm_size_wh: tuple[int, int],
+    center_xy: tuple[float, float],
+    invert_before_export: bool,
+) -> dict[str, Any]:
+    intended_canvas, bounds, actual_center = place_at_center(
+        Image.fromarray(intended_open_mask, mode="L"),
+        slm_size_wh=slm_size_wh,
+        center_xy=center_xy,
+    )
+    intended = np.asarray(intended_canvas, dtype=np.uint8)
+    commanded = 255 - intended if invert_before_export else intended
+    path.parent.mkdir(parents=True, exist_ok=True)
+    Image.fromarray(commanded, mode="L").save(path, format="BMP")
+    _validate_bmp(path, slm_size_wh, {0, 255})
+    return {
+        "path": str(path),
+        "sha256": _sha256(path),
+        "encoding": (
+            "full_canvas_black_white_inverse"
+            if invert_before_export
+            else "direct_uint8_255_bright_0_dark"
+        ),
+        "invert_before_export": bool(invert_before_export),
+        "bright_value_uint8": 0 if invert_before_export else 255,
+        "dark_value_uint8": 255 if invert_before_export else 0,
+        "active_bounds_xyxy": list(bounds),
+        "actual_center_xy": list(actual_center),
+        "commanded_black_fraction": float(np.mean(commanded == 0)),
+        "commanded_white_fraction": float(np.mean(commanded == 255)),
+    }
+
+
 def _save_inverted_amplitude(
     intended_open_mask: np.ndarray,
     path: Path,
@@ -118,27 +154,15 @@ def _save_inverted_amplitude(
     slm_size_wh: tuple[int, int],
     center_xy: tuple[float, float],
 ) -> dict[str, Any]:
-    intended_canvas, bounds, actual_center = place_at_center(
-        Image.fromarray(intended_open_mask, mode="L"),
+    """Compatibility wrapper for historical inverted-polarity bundles."""
+
+    return _save_amplitude(
+        intended_open_mask,
+        path,
         slm_size_wh=slm_size_wh,
         center_xy=center_xy,
+        invert_before_export=True,
     )
-    # The new amplitude optical path is observed to reverse black and white.
-    # Invert the full command canvas, including the region outside the active
-    # logical aperture, so the optical field reproduces intended_open_mask.
-    commanded = 255 - np.asarray(intended_canvas, dtype=np.uint8)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    Image.fromarray(commanded, mode="L").save(path, format="BMP")
-    _validate_bmp(path, slm_size_wh, {0, 255})
-    return {
-        "path": str(path),
-        "sha256": _sha256(path),
-        "encoding": "full_canvas_black_white_inverse",
-        "active_bounds_xyxy": list(bounds),
-        "actual_center_xy": list(actual_center),
-        "commanded_black_fraction": float(np.mean(commanded == 0)),
-        "commanded_white_fraction": float(np.mean(commanded == 255)),
-    }
 
 
 def _save_phase(
@@ -207,6 +231,8 @@ def generate(config_path: Path) -> dict[str, Any]:
     grating_period = int(logical["grating_period_px"])
     amplitude_size = tuple(int(value) for value in amplitude_config["size_wh"])
     amplitude_center = tuple(float(value) for value in amplitude_config["center_xy"])
+    invert_amplitude = bool(amplitude_config.get("invert_before_export", False))
+    polarity_tag = "inv" if invert_amplitude else "normal"
     phase_size = tuple(int(value) for value in phase_config["size_wh"])
     phase_center = tuple(float(value) for value in phase_config["center_xy"])
     phase_pitch_um = float(phase_config["pixel_pitch_um"])
@@ -227,18 +253,22 @@ def generate(config_path: Path) -> dict[str, Any]:
         {
             "order": 1,
             "name": "regular_checker_c64",
-            "folder": "01_checker_c64_inv",
+            "folder": f"01_checker_c64_{polarity_tag}",
             "cell_size": 64,
             "intended_open": regular_open,
             "orientation_mode": "visible_checker_cells",
-            "layout": "strict checker; command BMP is the exact full-canvas inverse",
+            "layout": (
+                "strict checker; command BMP is the exact full-canvas inverse"
+                if invert_amplitude
+                else "strict checker; command 255 is optically open"
+            ),
             "landmark_count": None,
             "phase_mode": "legacy_xy",
         },
         {
             "order": 2,
             "name": "large_blocks_c48_4to9cells",
-            "folder": "02_large_blocks_c48_inv",
+            "folder": f"02_large_blocks_c48_{polarity_tag}",
             "cell_size": 48,
             "intended_open": large_open,
             "layout": "six plain square/rectangle/L regions made from 4--9 cells",
@@ -276,16 +306,17 @@ def generate(config_path: Path) -> dict[str, Any]:
             pair_dir
             / "amplitude_bmp"
             / (
-                "amplitude_checker_c64_inv_1024x1024.bmp"
+                f"amplitude_checker_c64_{polarity_tag}_1024x1024.bmp"
                 if pattern["order"] == 1
-                else "amplitude_large_blocks_c48_inv_1024x1024.bmp"
+                else f"amplitude_large_blocks_c48_{polarity_tag}_1024x1024.bmp"
             )
         )
-        amplitude_report = _save_inverted_amplitude(
+        amplitude_report = _save_amplitude(
             intended_open,
             amplitude_path,
             slm_size_wh=amplitude_size,
             center_xy=amplitude_center,
+            invert_before_export=invert_amplitude,
         )
 
         preview_dir = pair_dir / "preview"
@@ -408,10 +439,10 @@ def generate(config_path: Path) -> dict[str, Any]:
         writer.writeheader()
         writer.writerows(csv_rows)
     report = {
-        "schema_version": 1,
-        "purpose": "inverted amplitude and phase magnification sweep for dual-SLM 4F registration",
+        "schema_version": 2,
+        "purpose": "polarity-explicit amplitude and phase magnification sweep for dual-SLM 4F registration",
         "output_dir": str(output_dir),
-        "amplitude_black_white_inverted": True,
+        "amplitude_black_white_inverted": invert_amplitude,
         "phase_nominal_unchanged_from_regular_c64_algorithm": True,
         "scale_formula": {
             "teacher_relation": "n=(8/17)*k*m",
@@ -428,6 +459,9 @@ def generate(config_path: Path) -> dict[str, Any]:
         "amplitude_slm": {
             "size_wh": list(amplitude_size),
             "center_xy": list(amplitude_center),
+            "invert_before_export": invert_amplitude,
+            "bright_value_uint8": 0 if invert_amplitude else 255,
+            "dark_value_uint8": 255 if invert_amplitude else 0,
         },
         "phase_slm": {
             "size_wh": list(phase_size),
@@ -446,7 +480,7 @@ def generate(config_path: Path) -> dict[str, Any]:
         json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8"
     )
     (output_dir / "README.md").write_text(
-        """# 双 SLM 反相振幅与相位倍率扫描
+        f"""# 双 SLM 振幅与相位倍率扫描（{polarity_tag}）
 
 只使用本目录中的两个编号文件夹。每个文件夹内先固定播放唯一的
 `amplitude_bmp/*.bmp`，再按 `phase_bmp_scale_sweep/phase_00...phase_40` 的编号顺序
@@ -455,11 +489,12 @@ def generate(config_path: Path) -> dict[str, Any]:
 - `phase_00_k1p0000`：无倍率修正，规则棋盘相位与旧版逐像素相同。
 - 精细段：`+0.0005, -0.0005, ...`，直到 `±0.0050`。
 - 大范围段：`+0.0100, -0.0100, ...`，直到 `±0.1000`。
-- 振幅命令图已经整画布黑白取反；不要在播放软件中再次反相。
+- 振幅硬件合同：`255=白/透光`、`0=黑/遮光`；本目录
+  `invert_before_export={str(invert_amplitude).lower()}`，不要在播放软件中另行反相。
 - 相位已经沿用旧版纵向翻转；不要在播放软件中再次翻转。
 - 相位中心为 `(980,590)`。
-- `02_large_blocks_c48_inv` 的 X/Y 相位分别位于两个目录；单张相位只有一个方向。
-- `01_checker_c64_inv` 和 `02_large_blocks_c48_inv` 的振幅/相位不能交叉配对。
+- `02_large_blocks_c48_{polarity_tag}` 的 X/Y 相位分别位于两个目录；单张相位只有一个方向。
+- `01_checker_c64_{polarity_tag}` 和 `02_large_blocks_c48_{polarity_tag}` 的振幅/相位不能交叉配对。
 
 老师给出的关系按 `n=(8/17)×k×m` 实现，即 `m=17n/(8k)`。每一档实际尺寸、
 量化误差和 SHA256 见 `scale_sweep_manifest.csv` 与
@@ -479,7 +514,7 @@ def main() -> int:
         len(pattern["phase_scale_sweep"]) for pattern in report["patterns"]
     )
     print(
-        f"Generated {len(report['patterns'])} inverted amplitude BMPs and "
+        f"Generated {len(report['patterns'])} amplitude BMPs and "
         f"{phase_count} phase scale-sweep BMPs under {report['output_dir']}"
     )
     return 0

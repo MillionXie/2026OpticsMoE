@@ -58,7 +58,7 @@ class 2: [95,334,144,383]     class 3: [334,334,383,383]
 训练完成后自动生成：
 
 ```text
-runs/mnist4_single_layer_17um_5cm/hardware_export/
+runs/mnist4_single_layer_17um_5cm/hardware_export_normal_polarity/
 ├── phase_to_play/        # 一张1920×1200相位BMP
 ├── amplitude_to_play/    # 默认每类10张，共40张1024×1024振幅BMP
 ├── samples.csv           # 标签、仿真预测、能量比例和哈希
@@ -69,7 +69,8 @@ runs/mnist4_single_layer_17um_5cm/hardware_export/
 
 相位按17 µm逻辑坐标中心对齐地栅格化到8 µm原生像素，得到1016×1016有效相位区，
 放在 `(980,590)`，并保留原光路的纵向翻转。振幅一逻辑像素对应一个原生17 µm像素，
-478×478有效区位于 `[273,273,751,751]`。振幅BMP按当前实验观察执行黑白反相。
+478×478有效区位于 `[273,273,751,751]`。振幅BMP直接使用修正后的硬件极性：
+`255=白/透光`、`0=黑/遮光`，不执行黑白反相。
 
 CCD评估不做没有依据的背景扣除。探测区能量除以整帧能量，因此对统一的曝光时间、
 增益或入射光强缩放不敏感。

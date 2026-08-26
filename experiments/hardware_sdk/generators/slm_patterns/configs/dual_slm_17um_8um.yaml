@@ -1,4 +1,4 @@
-output_dir: ../generated/dual_slm_17um_8um_alignment
+output_dir: ../generated/dual_slm_17um_8um_alignment_normal_polarity
 
 logical:
   active_size: 478
@@ -9,6 +9,8 @@ amplitude_slm:
   size_wh: [1024, 1024]
   pixel_pitch_um: 17.0
   center_xy: [512.0, 512.0]
+  # Generator values are direct commands: 255=bright/open, 0=dark/closed.
+  invert_before_export: false
 
 phase_slm:
   size_wh: [1920, 1200]

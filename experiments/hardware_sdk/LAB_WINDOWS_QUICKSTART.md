@@ -121,6 +121,9 @@ python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments
 
 ## 17 µm Meadowlark 手写数字与曝光校准
 
+当前振幅SLM命令极性已确认：`255=白/透光`、`0=黑/遮光`。本节生成的数字、ROI标记、
+灰阶曝光图均直接使用这一极性，不要在SDK或播放软件中再次反相。
+
 两类输出也全部位于 Caltech101 四层工程的
 `hardware_sessions/_calibration_17um/`，不会落到仓库根目录。
 

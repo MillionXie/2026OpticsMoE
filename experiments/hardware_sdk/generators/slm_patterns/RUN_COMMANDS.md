@@ -13,23 +13,23 @@ python -m experiments.hardware_sdk.generators.slm_patterns \
 experiments/hardware_sdk/generators/slm_patterns/generated/slm956_calibration/
 ```
 
-## 17 µm / 8 µm：振幅反相、俄罗斯方块和相位倍率扫描
+## 17 µm / 8 µm：正常极性、大块标定和相位倍率扫描
 
 从仓库根目录执行：
 
 ```powershell
-python -m experiments.hardware_sdk.generators.dual_slm_registration_sweep --config experiments/hardware_sdk/generators/slm_patterns/configs/dual_slm_17um_8um_inverted_scale_sweep.yaml
+python -m experiments.hardware_sdk.generators.dual_slm_registration_sweep --config experiments/hardware_sdk/generators/slm_patterns/configs/dual_slm_17um_8um_normal_scale_sweep.yaml
 ```
 
-输出使用全新目录，不会覆盖旧的 `dual_slm_17um_8um_alignment`：
+输出使用全新目录，不会覆盖旧反相产物：
 
 ```text
-generated/dual_slm_17um_8um_inv_large_blocks_k0p1/
-├── 01_checker_c64_inv/
-│   ├── amplitude_bmp/                 # 旧规则棋盘的整画布黑白取反
-│   ├── phase_bmp_scale_sweep/         # 相位规则不变，21个k值
+generated/dual_slm_17um_8um_normal_large_blocks_k0p1/
+├── 01_checker_c64_normal/
+│   ├── amplitude_bmp/                 # 255=白/透光，0=黑/遮光
+│   ├── phase_bmp_scale_sweep/         # 相位规则不变，41个k值
 │   └── preview/
-├── 02_large_blocks_c48_inv/
+├── 02_large_blocks_c48_normal/
 │   ├── amplitude_bmp/                 # 4/5/6/9格组成的简单大块
 │   ├── phase_bmp_scale_sweep_x/       # 每张仅X方向0-pi光栅
 │   ├── phase_bmp_scale_sweep_y/       # 每张仅Y方向0-pi光栅
@@ -69,6 +69,10 @@ m = 17n / (8k)
 
 BMP 合同固定为：振幅 `1024×1024`、8-bit 灰度、仅0/255；相位
 `1920×1200`、8-bit 灰度、仅0/128。相位继续使用原有纵向翻转和中心 `(980,590)`。
+振幅命令不再反相，播放软件中也不得再次反相。
+
+旧配置 `dual_slm_17um_8um_inverted_scale_sweep.yaml` 只用于复现极性修正前的历史文件，
+当前实验不要使用。
 
 ## 532 nm 菲涅尔阵列：焦面、翻转和 CCD ROI 标定
 
@@ -81,8 +85,8 @@ python -m experiments.hardware_sdk.generators.fresnel_phase_array --config exper
 输出目录：
 
 ```text
-experiments/hardware_sdk/generators/slm_patterns/generated/fresnel_phase_array_532nm_17um_8um/
-├── amplitude_bmp/       # 1张全0、1024×1024、8-bit振幅BMP
+experiments/hardware_sdk/generators/slm_patterns/generated/fresnel_phase_array_532nm_17um_8um_normal_polarity/
+├── amplitude_bmp/       # 1张全255、1024×1024、8-bit均匀照明BMP
 ├── phase_bmp/           # 15张1920×1200、8-bit相位BMP
 ├── preview/             # 相位有效区预览PNG，不用于硬件播放
 ├── fresnel_lens_centers.csv
@@ -123,7 +127,7 @@ experiments/hardware_sdk/generators/slm_patterns/generated/fresnel_phase_array_5
 进行数值复核后，即使有效透镜区外保持平相位，四个最强焦点仍全部落在理论中心；峰值
 约为背景中位数的 `3.1×10^4` 倍，位置误差为偶数网格坐标约定导致的±0.5个相位像素。
 
-实验流程应是：数值全0振幅提供均匀照明（前提是当前振幅SLM极性中0确实为透光）→
+实验流程应是：全255振幅提供均匀照明（当前合同为255=白/透光，0=黑/遮光）→
 播放菲涅尔阵列→沿z轴移动CCD寻找对应5/10/15 cm图案中最清晰的焦面→提取四焦点
 中心。四焦点是四个半区的中心，不是有效区边界，因此轴对齐情况下要向外延伸半个
 焦点间距才能得到完整ROI；有旋转/剪切时应将已知四中心拟合为仿射/单应映射，再映射
@@ -131,7 +135,7 @@ experiments/hardware_sdk/generators/slm_patterns/generated/fresnel_phase_array_5
 
 建议依次播放：
 
-1. 全0振幅 + `n1_1x1_uniform` 的5/10/15 cm版本，选择实际焦面；
+1. 全255振幅 `amplitude_uniform_white_1024x1024.bmp` + `n1_1x1_uniform` 的5/10/15 cm版本，选择实际焦面；
 2. 同一距离的 `n4_2x2_flip_coded`，通过唯一弱焦点确定四点对应及翻转；
 3. `n4_2x2_uniform`，用四个等强焦点拟合CCD ROI；
 4. `n9_3x3_uniform`，检查边缘畸变和非线性误差。

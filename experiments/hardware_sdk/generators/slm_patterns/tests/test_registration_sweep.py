@@ -4,6 +4,7 @@ import numpy as np
 from PIL import Image
 
 from experiments.hardware_sdk.generators.dual_slm_registration_sweep import (
+    _save_amplitude,
     _save_inverted_amplitude,
     _save_phase,
     large_block_mask,
@@ -73,6 +74,26 @@ def test_amplitude_export_inverts_the_entire_slm_canvas(tmp_path: Path) -> None:
     expected_intended = np.zeros((6, 8), dtype=np.uint8)
     expected_intended[1:5, 2:6] = intended
     assert np.array_equal(actual, 255 - expected_intended)
+
+
+def test_normal_amplitude_export_keeps_255_open_and_zero_dark(tmp_path: Path) -> None:
+    intended = np.zeros((4, 4), dtype=np.uint8)
+    intended[:2, :2] = 255
+    output = tmp_path / "amplitude_normal.bmp"
+    report = _save_amplitude(
+        intended,
+        output,
+        slm_size_wh=(8, 6),
+        center_xy=(4.0, 3.0),
+        invert_before_export=False,
+    )
+    with Image.open(output) as image:
+        actual = np.asarray(image)
+    expected = np.zeros((6, 8), dtype=np.uint8)
+    expected[1:5, 2:6] = intended
+    assert np.array_equal(actual, expected)
+    assert report["bright_value_uint8"] == 255
+    assert report["dark_value_uint8"] == 0
 
 
 def test_phase_export_is_native_8bit_binary_bmp(tmp_path: Path) -> None:

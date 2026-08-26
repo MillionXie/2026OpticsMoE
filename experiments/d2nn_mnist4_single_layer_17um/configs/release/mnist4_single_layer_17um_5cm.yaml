@@ -47,8 +47,8 @@ hardware:
     size_wh: [1024, 1024]
     pixel_pitch_um: 17.0
     center_xy: [512.0, 512.0]
-    # Current laboratory observation: BMP black is optically bright.
-    invert_before_export: true
+    # Corrected hardware polarity: command 255 is white/bright/transmissive.
+    invert_before_export: false
   phase_slm:
     size_wh: [1920, 1200]
     pixel_pitch_um: 8.0
@@ -58,6 +58,7 @@ hardware:
   ccd:
     target_size: 478
   export_samples_per_class: 10
+  export_subdir: hardware_export_normal_polarity
 
 device: cuda
 output_dir: ../../runs/mnist4_single_layer_17um_5cm

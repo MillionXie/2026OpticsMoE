@@ -79,15 +79,15 @@ def test_forward_has_finite_nonzero_raw_phase_gradient() -> None:
     assert torch.count_nonzero(model.raw_phase.grad) > 0
 
 
-def test_inverted_amplitude_export_contract() -> None:
+def test_normal_polarity_amplitude_export_contract() -> None:
     settings = _settings()
     active = np.zeros((478, 478), dtype=np.float32)
     active[239, 239] = 1.0
     frame, bounds = _full_amplitude_frame(active, settings)
     assert frame.shape == (1024, 1024)
     assert bounds == (273, 273, 751, 751)
-    assert frame[0, 0] == 255
-    assert frame[273 + 239, 273 + 239] == 0
+    assert frame[0, 0] == 0
+    assert frame[273 + 239, 273 + 239] == 255
 
 
 def test_ccd_evaluator_recovers_four_detector_classes(tmp_path: Path) -> None:

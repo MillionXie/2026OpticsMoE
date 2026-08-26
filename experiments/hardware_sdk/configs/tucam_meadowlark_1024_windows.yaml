@@ -31,6 +31,8 @@ amplitude_slm:
   height: 1024
   expected_bit_depth: 8
   pixel_pitch_um: 17.0
+  # Corrected command polarity used by every generated amplitude BMP below.
+  # 255=white/bright/transmissive; 0=black/dark/blocking.
   timeout_ms: 5000
   wait_for_trigger: false
   flip_immediate: false

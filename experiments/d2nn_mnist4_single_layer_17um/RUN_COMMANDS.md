@@ -29,16 +29,18 @@ CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=4 python -m experiments.d2nn_m
 CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=4 python -m experiments.d2nn_mnist4_single_layer_17um --config experiments/d2nn_mnist4_single_layer_17um/configs/release/mnist4_single_layer_17um_5cm.yaml --phase export --checkpoint experiments/d2nn_mnist4_single_layer_17um/runs/mnist4_single_layer_17um_5cm/checkpoints/best.pt
 ```
 
+当前修正后的极性为 `255=白/透光`、`0=黑/遮光`。新BMP写入
+`runs/mnist4_single_layer_17um_5cm/hardware_export_normal_polarity/`，不会与旧反相导出混放。
+
 ## 5. 评估实验CCD图像
 
 先用四菲涅尔焦点确定原始相机坐标中的ROI和翻转关系。采集文件应使用
 `samples.csv` 中的 `key` 作为文件主名，然后执行：
 
 ```powershell
-python -m experiments.d2nn_mnist4_single_layer_17um.ccd_evaluate --config experiments/d2nn_mnist4_single_layer_17um/configs/release/mnist4_single_layer_17um_5cm.yaml --manifest experiments/d2nn_mnist4_single_layer_17um/runs/mnist4_single_layer_17um_5cm/hardware_export/samples.csv --ccd-dir ccd_captured --output-dir ccd_evaluation --roi LEFT,TOP,RIGHT,BOTTOM --flip-vertical --flip-horizontal
+python -m experiments.d2nn_mnist4_single_layer_17um.ccd_evaluate --config experiments/d2nn_mnist4_single_layer_17um/configs/release/mnist4_single_layer_17um_5cm.yaml --manifest experiments/d2nn_mnist4_single_layer_17um/runs/mnist4_single_layer_17um_5cm/hardware_export_normal_polarity/samples.csv --ccd-dir ccd_captured --output-dir ccd_evaluation --roi LEFT,TOP,RIGHT,BOTTOM --flip-vertical --flip-horizontal
 ```
 
 `--flip-vertical`、`--flip-horizontal` 只填写实际标定得到的方向；不需要的参数应删除。
 若实验室端已经提前裁剪到准确ROI，可以不传 `--roi`。程序会面积重采样到478×478，
 不会执行背景扣除。
-

@@ -99,7 +99,7 @@ def main(argv: list[str] | None = None) -> int:
             flush=True,
         )
     if args.phase in {"export", "all"}:
-        export_dir = settings.output_dir / "hardware_export"
+        export_dir = settings.output_dir / settings.hardware_export_subdir
         contract = export_hardware_bundle(
             model, bundle.test, settings, device, export_dir
         )

@@ -205,6 +205,8 @@ def export_hardware_bundle(
             "active_bounds_xyxy": list(amplitude_bounds or ()),
             "invert_before_export": settings.amplitude_invert_before_export,
             "outside_active_value_uint8": 255 if settings.amplitude_invert_before_export else 0,
+            "bright_value_uint8": 0 if settings.amplitude_invert_before_export else 255,
+            "dark_value_uint8": 255 if settings.amplitude_invert_before_export else 0,
         },
         "phase_slm": {
             "file": phase_path.name,
@@ -229,12 +231,16 @@ def export_hardware_bundle(
         "sample_count": len(sample_rows),
     }
     write_json(output_dir / "hardware_contract.json", contract)
+    polarity_text = (
+        "振幅BMP执行黑白反相：数字区域为低灰度、背景为高灰度。"
+        if settings.amplitude_invert_before_export
+        else "振幅BMP不反相：255=白/透光、0=黑/遮光，数字区域为高灰度、背景为0。"
+    )
     (output_dir / "README.md").write_text(
-        """# MNIST-4 hardware bundle
+        f"""# MNIST-4 hardware bundle
 
 固定播放 `phase_to_play/mnist4_single_layer_17um_5cm.bmp`，再逐张播放
-`amplitude_to_play/*.bmp` 并用相同文件主名保存CCD图像。振幅BMP已经按当前实验观察
-执行黑白反相：数字区域为低灰度、背景为高灰度。
+`amplitude_to_play/*.bmp` 并用相同文件主名保存CCD图像。{polarity_text}
 
 CCD先使用四菲涅尔焦点标定得到的ROI裁剪，再按实验测得的上下/左右对应关系翻转，
 最后以面积重采样到478×478。分类只对 `detector_regions.csv` 的四个区域积分并取最大值，
@@ -243,4 +249,3 @@ CCD先使用四菲涅尔焦点标定得到的ROI裁剪，再按实验测得的�
         encoding="utf-8",
     )
     return contract
-
