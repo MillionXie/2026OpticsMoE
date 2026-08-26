@@ -139,6 +139,8 @@ experiments/hardware_sdk/configs/tucam_meadowlark_1024_windows.yaml
 
 提前导出下一层会使输入重新退回仿真上游，破坏正式四层实测链。
 
+每层fine-tune还执行参数级采集合同检查：任何决定本层已播放振幅或已采CCD的上游参数均保持冻结，只允许测量边界后的电子处理、尚未采集的后续光学层和检索头更新。若修改trainable范围破坏该合同，程序会在建立优化器前终止；不能用旧CCD继续训练已经改变其输入生成器的模型。
+
 ## 8. 最后一层快速模式
 
 快速 session 与正式四层 session 分开保存。使用：

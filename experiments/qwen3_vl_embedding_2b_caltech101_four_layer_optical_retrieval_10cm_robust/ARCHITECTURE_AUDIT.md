@@ -4,7 +4,7 @@
 
 新工程满足当前正式实验的主要要求：10 cm传播、17 µm逻辑输入、8 µm相位导出、正常振幅极性、四个有硬下限的光学融合门、较强 phase 更新、phase dropout、k-space约束、±16 pixel错位和逐层硬件微调。
 
-它与旧工程 checkpoint 不兼容。原因不是 Qwen 主体变化，而是融合门由普通 sigmoid 改成了带0.10硬下限的参数化，训练超参数和鲁棒性分布也发生了变化。正式 run 应从头训练。
+它与旧工程 checkpoint 不兼容。原因不是 Qwen 主体变化，而是融合门由普通 sigmoid 改成了带0.10硬下限的参数化，训练超参数和鲁棒性分布也发生了变化。当前独立错位物理语义的checkpoint architecture为`..._v2`；修复前`..._v1`也会被加载器拒绝。正式 run 应从头训练。
 
 ## 2. 主干与形状
 
@@ -104,13 +104,13 @@ phase-only epoch 仍使用任务损失反向传播，只冻结电子、router和
 
 ### 6.1 几何错位
 
-训练时对每个光学边界使用±16个逻辑像素的整数平移：
+每个expert/global物理阶段都会在完整518×518逻辑面上，独立采样三类±16 pixel整数位移：
 
-- expert输入场相对expert相位的错位；
-- global输入场相对global相位的错位；
-- CCD ROI读出错位。
+- 输入复光场先在518面上平移，越界补0；
+- phase modulation map独立平移，越界补单位相位调制，之后才与输入场相乘；
+- 传播得到完整518强度后先平移，再裁出478×478 CCD ROI。该顺序允许原ROI外、518计算窗内的光进入偏移ROI，不能用“先裁478再零填平移”代替。
 
-一个逻辑像素是17 µm，因此最大单轴位移为272 µm。当前扰动为每个 batch 共享的随机整数平移，不包含旋转、非整数亚像素移动或4F倍率变化。
+一个逻辑像素是17 µm，因此每个绝对位移的最大单轴幅度为272 µm。三次抽样彼此独立，所以输入场与phase mask在同一轴上的最坏相对错位是±32逻辑像素，即±544 µm；这不是把单项配置从±16改成±32。同一次抽样在一个batch内共享；expert和global阶段还会分别重新抽样。不包含旋转、非整数亚像素移动或4F倍率变化。
 
 ### 6.2 强度与噪声
 
@@ -148,6 +148,8 @@ Vision和Language各有独立电子 top-k router，均为4专家选2。联合训
 ```
 
 硬件逐层微调使用 supervised contrastive、episodic prototype 以及 router balance/importance。测得的当前层 CCD 会截断该层 phase 的梯度，因此只更新当前实测边界之后仍有意义的电子模块、后续仿真模块和最终检索头。
+
+代码还会建立参数级“采集合同”：凡是决定已播放振幅或已采CCD的adapter、router、当前phase、上游readout、Block-1及其融合门都必须冻结；若trainable集合与该合同相交会直接报错。特别是采完`language_expert`后，Language `input_adapter/input_norm`保持冻结，避免微调后的理论输入与已播放BMP不再对应。
 
 ## 8. 硬件坐标合同
 

@@ -250,6 +250,20 @@ def load_settings(path: str | Path) -> Any:
         or settings.language_optical_ccd_shift_pixels < 0
     ):
         raise ValueError("Optical input/CCD shift bounds must be nonnegative")
+    if (
+        settings.language_optical_max_shift_pixels >= settings.canvas_size
+        or settings.language_optical_phase_shift_pixels >= settings.canvas_size
+    ):
+        raise ValueError(
+            "Input-field and phase-mask shift bounds must be smaller than "
+            f"the {settings.canvas_size}-pixel logical canvas"
+        )
+    detector_margin = (settings.canvas_size - settings.active_size) // 2
+    if settings.language_optical_ccd_shift_pixels > detector_margin:
+        raise ValueError(
+            "CCD/ROI shift bound must not exceed the centered detector margin "
+            f"of {detector_margin} pixels"
+        )
     if not 0.0 < settings.language_optical_phase_dropout_p < 1.0:
         raise ValueError("phase dropout probability must be in (0,1)")
     if settings.phase_learning_rate <= 0.0:
@@ -359,8 +373,16 @@ def save_resolved_config(settings: Any) -> None:
         },
         "perturbation": {
             "input_shift_pixels": settings.language_optical_max_shift_pixels,
-            "phase_relative_shift_pixels": settings.language_optical_phase_shift_pixels,
-            "ccd_shift_pixels": settings.language_optical_ccd_shift_pixels,
+            "phase_mask_shift_pixels": settings.language_optical_phase_shift_pixels,
+            "ccd_roi_shift_pixels": settings.language_optical_ccd_shift_pixels,
+            "sampling": "three_independent_batch_shared_integer_translations_per_stage",
+            "input_translation_domain": "complex_field_on_full_518_canvas_before_phase",
+            "phase_translation_domain": (
+                "complex_phase_modulation_on_full_518_canvas_with_identity_fill"
+            ),
+            "ccd_translation_domain": (
+                "intensity_on_full_518_canvas_before_478_roi_crop"
+            ),
             "gain_min": settings.language_optical_gain_min,
             "gain_max": settings.language_optical_gain_max,
             "offset_fraction": settings.language_optical_offset_fraction,

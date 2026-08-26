@@ -16,6 +16,65 @@ from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.optics.moe im
 )
 
 
+def _translate_with_fill(
+    value: torch.Tensor,
+    shift_y: int,
+    shift_x: int,
+    *,
+    fill_value: float | complex,
+) -> torch.Tensor:
+    """Translate the last two dimensions without circular wraparound."""
+
+    shift_y = int(shift_y)
+    shift_x = int(shift_x)
+    shifted = torch.roll(value, (shift_y, shift_x), dims=(-2, -1))
+    height, width = value.shape[-2:]
+    if abs(shift_y) >= height or abs(shift_x) >= width:
+        return torch.full_like(value, fill_value)
+    if shift_y > 0:
+        shifted[..., :shift_y, :] = fill_value
+    elif shift_y < 0:
+        shifted[..., shift_y:, :] = fill_value
+    if shift_x > 0:
+        shifted[..., :, :shift_x] = fill_value
+    elif shift_x < 0:
+        shifted[..., :, shift_x:] = fill_value
+    return shifted
+
+
+def _sample_integer_shift(maximum: int, *, training: bool) -> tuple[int, int]:
+    """Draw one batch-shared integer translation inside the configured bound."""
+
+    maximum = int(maximum)
+    if not training or maximum <= 0:
+        return 0, 0
+    return (
+        int(torch.randint(-maximum, maximum + 1, ()).item()),
+        int(torch.randint(-maximum, maximum + 1, ()).item()),
+    )
+
+
+def _shift_full_detector_then_crop(
+    full_intensity: torch.Tensor,
+    *,
+    shift_y: int,
+    shift_x: int,
+    y0: int,
+    y1: int,
+    x0: int,
+    x1: int,
+) -> torch.Tensor:
+    """Move the 518-plane detector response before selecting the 478 ROI."""
+
+    shifted = _translate_with_fill(
+        full_intensity,
+        shift_y,
+        shift_x,
+        fill_value=0.0,
+    )
+    return shifted[..., int(y0) : int(y1), int(x0) : int(x1)]
+
+
 def _initial_bounded_fusion_logit(initial: float, minimum: float) -> torch.Tensor:
     """Map an actual initial fusion fraction into the bounded raw gate."""
 
@@ -74,7 +133,7 @@ class MoE4LanguageTwoBlockOpticalPath(nn.Module):
         self.input_rms = float(settings.language_optical_input_rms)
         self.target_mean = float(settings.language_optical_ccd_target_mean)
         self.input_shift_pixels = int(settings.language_optical_max_shift_pixels)
-        self.global_shift_pixels = int(settings.language_optical_phase_shift_pixels)
+        self.phase_shift_pixels = int(settings.language_optical_phase_shift_pixels)
         self.ccd_shift_pixels = int(settings.language_optical_ccd_shift_pixels)
         self.gain_min = float(settings.language_optical_gain_min)
         self.gain_max = float(settings.language_optical_gain_max)
@@ -99,31 +158,106 @@ class MoE4LanguageTwoBlockOpticalPath(nn.Module):
         self.last_normalized_ccd: torch.Tensor | None = None
         self.measured_expert_ccd: torch.Tensor | None = None
         self.measured_global_ccd: torch.Tensor | None = None
+        self.last_sampled_shifts: dict[
+            str, dict[str, tuple[int, int]]
+        ] = {}
 
     @staticmethod
     def _translate_zero(value: torch.Tensor, shift_y: int, shift_x: int) -> torch.Tensor:
-        shifted = torch.roll(value, (shift_y, shift_x), dims=(-2, -1))
-        if shift_y > 0:
-            shifted[..., :shift_y, :] = 0
-        elif shift_y < 0:
-            shifted[..., shift_y:, :] = 0
-        if shift_x > 0:
-            shifted[..., :, :shift_x] = 0
-        elif shift_x < 0:
-            shifted[..., :, shift_x:] = 0
-        return shifted
+        return _translate_with_fill(
+            value, shift_y, shift_x, fill_value=0.0
+        )
 
-    def _random_shift(self, value: torch.Tensor, maximum: int) -> torch.Tensor:
-        if not self.training or maximum <= 0:
-            return value
-        shift_y = int(torch.randint(-maximum, maximum + 1, ()).item())
-        shift_x = int(torch.randint(-maximum, maximum + 1, ()).item())
-        return self._translate_zero(value, shift_y, shift_x)
+    def _draw_stage_shifts(self, stage: str) -> dict[str, tuple[int, int]]:
+        """Independently sample input, phase-map and detector-ROI offsets."""
+
+        if stage not in {"expert", "global"}:
+            raise ValueError(f"Unknown optical stage {stage!r}")
+        shifts = {
+            "input": _sample_integer_shift(
+                self.input_shift_pixels, training=self.training
+            ),
+            "phase": _sample_integer_shift(
+                self.phase_shift_pixels, training=self.training
+            ),
+            "ccd": _sample_integer_shift(
+                self.ccd_shift_pixels, training=self.training
+            ),
+        }
+        self.last_sampled_shifts[stage] = shifts
+        return shifts
+
+    def _expert_phase_modulation(self, field: torch.Tensor) -> torch.Tensor:
+        """Build the full 518 expert modulation map with identity-filled gaps."""
+
+        layer = self.core.expert_layers[0]
+        modulation = layer._stacked_modulation(field.shape[0])
+        # ExpertPhasePlane returns [E,H,W] when dropout is inactive, and
+        # [1|B,E,H,W] when dropout is active. Normalize both paths explicitly;
+        # eval/export must not rely on dropout adding a batch dimension.
+        if modulation.ndim == 3:
+            modulation = modulation.unsqueeze(0)
+        elif modulation.ndim != 4:
+            raise RuntimeError(
+                "Expert phase modulation must be [E,H,W] or [1|B,E,H,W], "
+                f"got {tuple(modulation.shape)}"
+            )
+        if modulation.shape[0] == 1 and field.shape[0] != 1:
+            modulation = modulation.expand(field.shape[0], -1, -1, -1)
+        elif modulation.shape[0] != field.shape[0]:
+            raise RuntimeError(
+                "Expert phase modulation batch does not match optical field: "
+                f"{modulation.shape[0]} != {field.shape[0]}"
+            )
+        canvas = torch.ones_like(field, dtype=torch.complex64)
+        for index, aperture in enumerate(self.core.geometry.expert_apertures):
+            canvas[
+                :,
+                aperture.y0 : aperture.y1,
+                aperture.x0 : aperture.x1,
+            ] = modulation[:, index]
+        return canvas
+
+    def _global_phase_modulation(self, field: torch.Tensor) -> torch.Tensor:
+        """Build the full 518 global modulation map with identity outside 478."""
+
+        identity = torch.ones_like(field, dtype=torch.complex64)
+        return self.core.global_phase(identity)
+
+    def _simulate_detector_roi(
+        self,
+        field: torch.Tensor,
+        modulation: torch.Tensor,
+        shifts: dict[str, tuple[int, int]],
+    ) -> torch.Tensor:
+        """Shift the phase map, propagate, then shift the full CCD before ROI crop."""
+
+        phase_y, phase_x = shifts["phase"]
+        shifted_modulation = _translate_with_fill(
+            modulation,
+            phase_y,
+            phase_x,
+            fill_value=1.0 + 0.0j,
+        )
+        detector_field = self.core.propagator(
+            field.to(torch.complex64) * shifted_modulation
+        )
+        full_intensity = detector_field.abs().square().float()
+        ccd_y, ccd_x = shifts["ccd"]
+        active = self.core.geometry.active_aperture
+        return _shift_full_detector_then_crop(
+            full_intensity,
+            shift_y=ccd_y,
+            shift_x=ccd_x,
+            y0=active.y0,
+            y1=active.y1,
+            x0=active.x0,
+            x1=active.x1,
+        )
 
     def _perturb_ccd(self, intensity: torch.Tensor) -> torch.Tensor:
         if not self.training:
             return intensity
-        intensity = self._random_shift(intensity, self.ccd_shift_pixels)
         batch = intensity.shape[0]
         gain = torch.empty(batch, 1, 1, device=intensity.device).uniform_(
             self.gain_min, self.gain_max
@@ -190,16 +324,21 @@ class MoE4LanguageTwoBlockOpticalPath(nn.Module):
         """Expert optics -> CCD -> a readout architecturally matching global."""
         input_fields, lengths = self._encode_input_fields(latent, padding_mask)
         field, routing = self.core.begin(input_fields)
-        field = self._random_shift(field, self.input_shift_pixels)
+        shifts = self._draw_stage_shifts("expert")
+        input_y, input_x = shifts["input"]
+        field = _translate_with_fill(
+            field, input_y, input_x, fill_value=0.0
+        )
         active = self.core.geometry.active_aperture
         self.last_expert_input_amplitude = field[
             :, active.y0 : active.y1, active.x0 : active.x1
         ].abs().detach()
         if self.measured_expert_ccd is None:
-            detector_field = self.core.propagator(self.core.expert_layers[0](field))
-            raw_ccd = detector_field[
-                :, active.y0 : active.y1, active.x0 : active.x1
-            ].abs().square().float()
+            raw_ccd = self._simulate_detector_roi(
+                field,
+                self._expert_phase_modulation(field),
+                shifts,
+            )
         else:
             raw_ccd = self.measured_expert_ccd.to(field.device).float()
             if tuple(raw_ccd.shape) != (len(field), self.active_size, self.active_size):
@@ -237,16 +376,21 @@ class MoE4LanguageTwoBlockOpticalPath(nn.Module):
         dtype: torch.dtype,
     ) -> torch.Tensor:
         """Run the global phase and final CCD assigned to Language Block 2."""
-        field = self._random_shift(field, self.global_shift_pixels)
+        shifts = self._draw_stage_shifts("global")
+        input_y, input_x = shifts["input"]
+        field = _translate_with_fill(
+            field, input_y, input_x, fill_value=0.0
+        )
         active = self.core.geometry.active_aperture
         self.last_global_input_amplitude = field[
             :, active.y0 : active.y1, active.x0 : active.x1
         ].abs().detach()
         if self.measured_global_ccd is None:
-            detector_field = self.core.propagator(self.core.global_phase(field))
-            raw_ccd = detector_field[
-                :, active.y0 : active.y1, active.x0 : active.x1
-            ].abs().square().float()
+            raw_ccd = self._simulate_detector_roi(
+                field,
+                self._global_phase_modulation(field),
+                shifts,
+            )
         else:
             raw_ccd = self.measured_global_ccd.to(field.device).float()
             if tuple(raw_ccd.shape) != (len(field), self.active_size, self.active_size):

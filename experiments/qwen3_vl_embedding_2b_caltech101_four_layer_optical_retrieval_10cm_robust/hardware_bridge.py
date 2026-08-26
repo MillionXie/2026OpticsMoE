@@ -448,7 +448,120 @@ def _enable(modules: list[torch.nn.Module]) -> list[torch.nn.Parameter]:
     return result
 
 
+def _capture_contract_parameters(
+    replacement: Any, stage: str
+) -> dict[str, torch.nn.Parameter]:
+    """Parameters that must stay frozen after the stage payload was captured.
+
+    The contract covers every module that determined either an already-played
+    amplitude frame or an already-captured CCD frame. Updating one of these
+    tensors without replaying the SLM would make the injected measurement no
+    longer correspond to the model's current upstream computation.
+    """
+
+    if stage not in STAGES:
+        raise ValueError(f"Unknown optical stage {stage!r}")
+    v = replacement.vision_surrogate.core
+    l = replacement.language_surrogate.core
+    vb = v.optical_branch
+    lb = l.optical_branch
+    named: dict[str, torch.nn.Parameter] = {}
+    seen: set[int] = set()
+
+    def add_module(label: str, module: torch.nn.Module | None) -> None:
+        if module is None:
+            return
+        for name, parameter in module.named_parameters():
+            if id(parameter) in seen:
+                continue
+            seen.add(id(parameter))
+            suffix = f".{name}" if name else ""
+            named[f"{label}{suffix}"] = parameter
+
+    def add_parameter(label: str, parameter: torch.nn.Parameter) -> None:
+        if id(parameter) in seen:
+            return
+        seen.add(id(parameter))
+        named[label] = parameter
+
+    def add_vision_expert_contract() -> None:
+        add_module("vision.input_adapter", v.input_adapter)
+        add_module("vision.input_norm", v.input_norm)
+        add_module("vision.optical.input_adapter", vb.core.input_adapter)
+        add_module("vision.optical.input_norm", vb.core.input_norm)
+        add_module("vision.router", vb.core.router)
+        add_module("vision.expert_phase", vb.core.expert_layers)
+        add_module(
+            "vision.pre_attention",
+            getattr(replacement, "vision_pre_attention", None),
+        )
+
+    def add_vision_global_contract() -> None:
+        add_vision_expert_contract()
+        add_module("vision.block1", v.blocks[0])
+        add_module("vision.expert_readout", vb.expert_readout)
+        add_module("vision.expert_output_adapter", vb.expert_output_adapter)
+        add_parameter("vision.block1_optical_fusion_logit", v.block1_optical_fusion_logit)
+        add_module("vision.global_phase", vb.core.global_phase)
+
+    def add_language_expert_contract() -> None:
+        # Language payloads consume the complete frozen Vision result.
+        add_module("vision.surrogate", replacement.vision_surrogate)
+        add_module(
+            "vision.pre_attention",
+            getattr(replacement, "vision_pre_attention", None),
+        )
+        add_module("language.input_adapter", l.input_adapter)
+        add_module("language.input_norm", l.input_norm)
+        add_module("language.optical.input_adapter", lb.core.input_adapter)
+        add_module("language.optical.input_norm", lb.core.input_norm)
+        add_module("language.router", lb.core.router)
+        add_module("language.expert_phase", lb.core.expert_layers)
+        add_module(
+            "language.pre_attention",
+            getattr(replacement, "language_pre_attention", None),
+        )
+
+    def add_language_global_contract() -> None:
+        add_language_expert_contract()
+        add_module("language.block1", l.blocks[0])
+        add_module("language.expert_readout", lb.expert_readout)
+        add_module("language.expert_output_adapter", lb.expert_output_adapter)
+        add_parameter(
+            "language.block1_optical_fusion_logit",
+            l.block1_optical_fusion_logit,
+        )
+        add_module("language.global_phase", lb.core.global_phase)
+
+    if stage == "vision_expert":
+        add_vision_expert_contract()
+    elif stage == "vision_global":
+        add_vision_global_contract()
+    elif stage == "language_expert":
+        add_language_expert_contract()
+    else:
+        add_language_global_contract()
+    return named
+
+
+def _assert_capture_contract_frozen(replacement: Any, stage: str) -> None:
+    violations = [
+        name
+        for name, parameter in _capture_contract_parameters(replacement, stage).items()
+        if parameter.requires_grad
+    ]
+    if violations:
+        preview = ", ".join(violations[:12])
+        suffix = " ..." if len(violations) > 12 else ""
+        raise RuntimeError(
+            f"Hardware capture contract for {stage} would be invalidated by "
+            f"trainable upstream tensors: {preview}{suffix}"
+        )
+
+
 def _downstream_parameters(replacement: Any, readout: Any, stage: str):
+    if stage not in STAGES:
+        raise ValueError(f"Unknown optical stage {stage!r}")
     for module in _replacement_modules(replacement):
         module.requires_grad_(False)
     readout.requires_grad_(False)
@@ -483,8 +596,6 @@ def _downstream_parameters(replacement: Any, readout: Any, stage: str):
         v.block2_optical_fusion_logit.requires_grad_(True)
     elif stage == "language_expert":
         modules += [
-            l.input_adapter,
-            l.input_norm,
             l.blocks,
             lb.expert_readout,
             lb.expert_output_adapter,
@@ -514,6 +625,7 @@ def _downstream_parameters(replacement: Any, readout: Any, stage: str):
     for parameter in _replacement_parameters(replacement):
         if parameter.requires_grad and all(id(parameter) != id(item) for item in parameters):
             parameters.append(parameter)
+    _assert_capture_contract_frozen(replacement, stage)
     return parameters
 
 
@@ -776,10 +888,13 @@ def finetune_stage(
                     "upstream_source": upstream_source,
                     "rule": (
                         "only the selected measured stage and its downstream "
-                        "electronic modules are adapted; all earlier optical "
-                        "stages remain simulated"
+                        "electronic and uncaptured optical modules are adapted; "
+                        "all earlier optical stages remain simulated"
                         if upstream_source == "simulation"
-                        else "only modules downstream of the newest measured CCD are trainable"
+                        else (
+                            "only downstream electronic and uncaptured optical "
+                            "modules after the newest measured CCD are trainable"
+                        )
                     ),
                 }
                 torch.save(payload, output)

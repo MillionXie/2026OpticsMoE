@@ -24,7 +24,7 @@ class FourLayerOpticalReplacement(ElectronicDeepStackReplacement):
 
     has_optical_phases = True
     training_architecture_label = "vision2_language2_moe4_10cm_robust_bounded_fusion"
-    checkpoint_architecture = "vision2_language2_moe4_10cm_robust_bounded_fusion_v1"
+    checkpoint_architecture = "vision2_language2_moe4_10cm_robust_bounded_fusion_v2"
 
     def configure_student_trainability(self) -> None:
         # Original Qwen stays frozen. Every compact electronic and optical

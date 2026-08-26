@@ -40,7 +40,7 @@ python -m pytest experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical
 CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust --config experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust/configs/release/caltech101_four_layer_optical_joint_17um_10cm_robust.yaml --phase train
 ```
 
-这条命令不加载旧 checkpoint。Qwen冻结，电子 Mixer、四组阶段phase、两个router、CCD readout、四个有下限的融合门和64维检索头从头联合训练。
+这条命令不加载旧 checkpoint。Qwen冻结，电子 Mixer、四组阶段phase、两个router、CCD readout、四个有下限的融合门和64维检索头从头联合训练。当前正式checkpoint architecture为独立518面阵错位语义的`..._v2`，不要用修复前`..._v1`恢复训练。
 
 若进程中断，仅在确认 checkpoint 来自同一个新工程和同一配置后恢复：
 

@@ -42,7 +42,9 @@ language_optical:
     relative_clip: 12.0
     log_compression: 1.0
   perturbation:
-    # Independent input/phase/CCD translations; 16 logical pixels = 272 um.
+    # Each physical stage independently draws three translations on the full
+    # 518 canvas: input field, phase-modulation map and CCD-before-478-ROI.
+    # 16 logical pixels = 272 um. Formal numeric hyperparameters are unchanged.
     max_shift_pixels: 16
     phase_shift_pixels: 16
     ccd_shift_pixels: 16

@@ -2,6 +2,8 @@
 
 这个工程是 `qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval` 的独立正式版本。它面向新的双 SLM 光路，从头联合训练紧凑电子网络、MoE4 router、四个光学阶段、CCD readout、四个融合门和最终 64 维检索头，不加载旧纯电子或旧光学 checkpoint。
 
+当前采样语义对应checkpoint architecture `..._v2`：输入场、phase map和CCD ROI在518面阵上独立错位。修复前的本工程`..._v1` checkpoint没有这一物理语义，禁止作为正式初始化或与v2结果混用；正式实验仍从零训练。
+
 原始 Qwen3-VL-Embedding-2B 主体始终冻结，DeepStack 关闭，训练目标为 Caltech101 中固定的 10 类图像检索。
 
 ## 固定实验合同
@@ -21,7 +23,7 @@
 | 光学融合系数 | 初值0.20，硬下限0.10 |
 | phase LR | 0.006 |
 | phase dropout | 8×8块旁路，概率0.08 |
-| 错位扰动 | 输入/相对相位/CCD分别为±16个逻辑像素 |
+| 错位扰动 | 每个物理阶段在518面阵上独立采样输入场、phase map、CCD ROI三种±16逻辑像素平移；输入与phase最坏相对错位为±32像素 |
 | k-space | 开启，`theta_max=0.65°` |
 
 融合写成：
