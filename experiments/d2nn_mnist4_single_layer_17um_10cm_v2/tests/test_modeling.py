@@ -22,9 +22,12 @@ def _tiny_settings() -> SimpleNamespace:
         k_space_theta_max_deg=0.65,
         robustness_enabled=True,
         robustness_probability=1.0,
+        robustness_warmup_epochs=0,
         input_shift_max_px=2,
         phase_shift_max_px=2,
         pre_ccd_shift_max_px=2,
+        loss_mode="notebook_full_plane_mse",
+        notebook_full_plane_mse_scale=100.0,
         target_region_mse_weight=1.0,
         background_mse_weight=0.5,
         detector_bounds=lambda: (
@@ -81,7 +84,7 @@ def test_raw_ccd_has_no_post_detection_normalization_or_nonlinear_readout() -> N
     )
 
 
-def test_target_and_background_losses_match_raw_pixel_definition() -> None:
+def test_notebook_full_plane_loss_and_diagnostics_match_raw_pixel_definition() -> None:
     settings = _tiny_settings()
     model = RobustRawCCDMNIST4D2NN(settings)
     intensity = torch.zeros(1, 16, 16)
@@ -90,7 +93,19 @@ def test_target_and_background_losses_match_raw_pixel_definition() -> None:
     total, target, background = model.raw_ccd_loss(output, torch.tensor([0]))
     torch.testing.assert_close(target, torch.tensor((0.25 - 1.0) ** 2))
     torch.testing.assert_close(background, torch.tensor(0.0))
-    torch.testing.assert_close(total, target)
+    expected_full_plane = 100.0 * 16.0 * (0.25 - 1.0) ** 2 / (16.0 * 16.0)
+    torch.testing.assert_close(total, torch.tensor(expected_full_plane))
+
+
+def test_robustness_can_be_disabled_during_training_warmup() -> None:
+    model = RobustRawCCDMNIST4D2NN(_tiny_settings()).train()
+    model.set_robustness_training_active(False)
+    output = model(torch.rand(1, 1, 12, 12))
+    assert output["applied_shifts"] == {
+        "input": (0, 0),
+        "phase": (0, 0),
+        "pre_ccd": (0, 0),
+    }
 
 
 def test_forced_pre_ccd_shifts_are_cardinal_and_phase_gradient_survives() -> None:

@@ -213,12 +213,18 @@ def train_model(
     best_loss = float("inf")
     best_epoch = 0
     for epoch in range(1, settings.epochs + 1):
+        robustness_active = (
+            settings.robustness_enabled
+            and epoch > settings.robustness_warmup_epochs
+        )
+        model.set_robustness_training_active(robustness_active)
         train_metrics = train_epoch(model, train_loader, optimizer, settings, device)
         validation_metrics = evaluate(model, validation_loader, device)
         phase_stats = model.phase_statistics()
         row = {
             "epoch": epoch,
             "learning_rate": optimizer.param_groups[0]["lr"],
+            "robustness_active": robustness_active,
             **{f"train_{key}": value for key, value in train_metrics.items()},
             **{
                 f"validation_{key}": value
@@ -258,6 +264,7 @@ def train_model(
             f"epoch {epoch:03d} train_loss={train_metrics['loss']:.5f} "
             f"train_acc={train_metrics['accuracy']:.4f} "
             f"val_acc={validation_metrics['accuracy']:.4f} "
+            f"robustness={'on' if robustness_active else 'warmup'} "
             f"phase_std={phase_stats['phase_std_rad']:.4f}rad "
             f"grad={train_metrics['phase_grad_rms']:.3e}",
             flush=True,

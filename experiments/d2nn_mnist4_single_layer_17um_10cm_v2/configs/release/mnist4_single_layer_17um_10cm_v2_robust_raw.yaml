@@ -34,12 +34,17 @@ detector:
 robustness:
   enabled: true
   probability: 0.75
+  warmup_epochs: 0
   # Each component independently samples zero or one cardinal direction.
   input_shift_max_px: 2
   phase_shift_max_px: 2
   pre_ccd_shift_max_px: 2
 
 loss:
+  # Retain this failed-objective configuration as an explicit reproducibility
+  # baseline. Use the notebook_mse_light_robust config for the corrected run.
+  mode: legacy_balanced_region_mse
+  notebook_full_plane_mse_scale: 100.0
   eps: 1.0e-8
   # Kept positive for compatibility with the reusable base Settings schema;
   # v2 trains only the two explicitly named raw-CCD losses below.

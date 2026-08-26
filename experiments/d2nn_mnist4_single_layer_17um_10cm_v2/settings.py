@@ -28,10 +28,13 @@ class V2Settings(BaseSettings):
 
     robustness_enabled: bool
     robustness_probability: float
+    robustness_warmup_epochs: int
     input_shift_max_px: int
     phase_shift_max_px: int
     pre_ccd_shift_max_px: int
 
+    loss_mode: str
+    notebook_full_plane_mse_scale: float
     target_region_mse_weight: float
     background_mse_weight: float
     ccd_postprocess: str
@@ -86,6 +89,8 @@ class V2Settings(BaseSettings):
             raise ValueError("k_space.theta_max_deg must be in (0,90)")
         if not 0.0 <= self.robustness_probability <= 1.0:
             raise ValueError("robustness.probability must be in [0,1]")
+        if not 0 <= self.robustness_warmup_epochs < self.epochs:
+            raise ValueError("robustness.warmup_epochs must be in [0, epochs)")
         if min(
             self.input_shift_max_px,
             self.phase_shift_max_px,
@@ -98,6 +103,16 @@ class V2Settings(BaseSettings):
             self.pre_ccd_shift_max_px,
         ) == 0:
             raise ValueError("Enabled robustness requires at least one nonzero shift")
+        if self.loss_mode not in {
+            "notebook_full_plane_mse",
+            "legacy_balanced_region_mse",
+        }:
+            raise ValueError(
+                "loss.mode must be notebook_full_plane_mse or "
+                "legacy_balanced_region_mse"
+            )
+        if self.notebook_full_plane_mse_scale <= 0.0:
+            raise ValueError("loss.notebook_full_plane_mse_scale must be positive")
         if min(self.target_region_mse_weight, self.background_mse_weight) <= 0.0:
             raise ValueError("Both raw-CCD loss weights must be positive")
         if self.ccd_postprocess != "none_raw_linear":
@@ -136,9 +151,14 @@ def load_settings(path: str | Path) -> V2Settings:
         k_space_theta_max_deg=float(d("optics.k_space.theta_max_deg", 0.65)),
         robustness_enabled=bool(d("robustness.enabled", True)),
         robustness_probability=float(d("robustness.probability", 0.75)),
+        robustness_warmup_epochs=int(d("robustness.warmup_epochs", 0)),
         input_shift_max_px=int(d("robustness.input_shift_max_px", 2)),
         phase_shift_max_px=int(d("robustness.phase_shift_max_px", 2)),
         pre_ccd_shift_max_px=int(d("robustness.pre_ccd_shift_max_px", 2)),
+        loss_mode=str(d("loss.mode", "legacy_balanced_region_mse")),
+        notebook_full_plane_mse_scale=float(
+            d("loss.notebook_full_plane_mse_scale", 100.0)
+        ),
         target_region_mse_weight=float(
             d("loss.target_region_mse_weight", 1.0)
         ),

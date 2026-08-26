@@ -96,6 +96,7 @@ class RobustRawCCDMNIST4D2NN(nn.Module):
     def __init__(self, settings: V2Settings) -> None:
         super().__init__()
         self.settings = settings
+        self.robustness_training_active = True
         self.raw_phase = nn.Parameter(
             torch.zeros(settings.active_size, settings.active_size, dtype=torch.float32)
         )
@@ -121,6 +122,11 @@ class RobustRawCCDMNIST4D2NN(nn.Module):
 
     def phase(self) -> torch.Tensor:
         return 2.0 * math.pi * torch.sigmoid(self.raw_phase)
+
+    def set_robustness_training_active(self, active: bool) -> None:
+        """Enable train-time geometry jitter without changing eval behavior/state."""
+
+        self.robustness_training_active = bool(active)
 
     def prepare_active_amplitude(self, images: torch.Tensor) -> torch.Tensor:
         if images.ndim == 3:
@@ -164,7 +170,11 @@ class RobustRawCCDMNIST4D2NN(nn.Module):
                 key: tuple(int(value) for value in forced_shifts.get(key, (0, 0)))
                 for key in SHIFT_KEYS
             }
-        if not self.training or not self.settings.robustness_enabled:
+        if (
+            not self.training
+            or not self.settings.robustness_enabled
+            or not self.robustness_training_active
+        ):
             return {key: (0, 0) for key in SHIFT_KEYS}
         probability = self.settings.robustness_probability
         return {
@@ -258,10 +268,21 @@ class RobustRawCCDMNIST4D2NN(nn.Module):
             intensity.square().mul(background_mask).sum()
             / (len(targets) * background_area)
         )
-        total = (
-            self.settings.target_region_mse_weight * target_region_mse
-            + self.settings.background_mse_weight * background_mse
-        )
+        if self.settings.loss_mode == "notebook_full_plane_mse":
+            # This is the audited notebook objective, now evaluated on the
+            # proportionally mapped 478x478 CCD plane. The target is one in the
+            # correct detector and zero everywhere else, so the large optical
+            # background receives its proper pixel-count weight.
+            total = self.settings.notebook_full_plane_mse_scale * (
+                intensity - target_mask
+            ).square().mean()
+        elif self.settings.loss_mode == "legacy_balanced_region_mse":
+            total = (
+                self.settings.target_region_mse_weight * target_region_mse
+                + self.settings.background_mse_weight * background_mse
+            )
+        else:  # Settings validation should make this unreachable.
+            raise RuntimeError(f"Unsupported raw CCD loss mode: {self.settings.loss_mode}")
         return total, target_region_mse, background_mse
 
     @torch.no_grad()

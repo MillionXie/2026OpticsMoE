@@ -1,0 +1,36 @@
+base_config: mnist4_single_layer_17um_10cm_v2_robust_raw.yaml
+
+optics:
+  k_space:
+    # 0.65 deg retained only ~41% of the sampled spectrum. 0.80 deg is a
+    # moderate hardware-aperture prior while preserving substantially more
+    # useful MNIST structure.
+    theta_max_deg: 0.80
+
+robustness:
+  enabled: true
+  probability: 0.50
+  # First learn a useful focus, then introduce only one-pixel cardinal jitter.
+  warmup_epochs: 8
+  input_shift_max_px: 1
+  phase_shift_max_px: 1
+  pre_ccd_shift_max_px: 1
+
+loss:
+  mode: notebook_full_plane_mse
+  notebook_full_plane_mse_scale: 100.0
+
+training:
+  # Match the successful notebook optimizer scale. Equal min/max makes the
+  # existing cosine scheduler exactly constant without a hidden LR change.
+  phase_learning_rate: 0.01
+  min_learning_rate: 0.01
+  epochs: 60
+  batch_size: 100
+  inference_batch_size: 100
+  log_interval_batches: 40
+
+hardware:
+  export_subdir: hardware_export_10cm_v2_notebook_mse_light_robust
+
+output_dir: ../../runs/mnist4_single_layer_17um_10cm_v2_notebook_mse_light_robust

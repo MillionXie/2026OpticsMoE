@@ -72,10 +72,17 @@ def main(argv: list[str] | None = None) -> int:
             "notebook_geometry_scale": settings.active_size
             / settings.detector_reference_grid_size,
             "loss": {
-                "target_region": "MSE(raw intensity, 1) inside true 59x59 ROI",
-                "background": "MSE(raw intensity, 0) outside true ROI",
-                "target_weight": settings.target_region_mse_weight,
-                "background_weight": settings.background_mse_weight,
+                "mode": settings.loss_mode,
+                "notebook_full_plane_mse_scale": (
+                    settings.notebook_full_plane_mse_scale
+                ),
+                "formal_objective": (
+                    "scale * mean((raw_ccd_intensity - binary_target_template)^2)"
+                    if settings.loss_mode == "notebook_full_plane_mse"
+                    else "legacy separately averaged target/background MSE"
+                ),
+                "target_region_mse": "diagnostic only in notebook mode",
+                "background_mse": "diagnostic only in notebook mode",
             },
             "ccd_postprocess": {
                 "normalization": False,
@@ -84,6 +91,13 @@ def main(argv: list[str] | None = None) -> int:
                 "classification": "four raw region sums then argmax",
             },
             "k_space_pass_fraction": model.propagator.pass_fraction,
+            "robustness": {
+                "warmup_epochs": settings.robustness_warmup_epochs,
+                "probability_after_warmup": settings.robustness_probability,
+                "input_shift_max_px": settings.input_shift_max_px,
+                "phase_shift_max_px": settings.phase_shift_max_px,
+                "pre_ccd_shift_max_px": settings.pre_ccd_shift_max_px,
+            },
         },
     )
     print(

@@ -236,11 +236,16 @@ def _write_lab_model_config(output_dir: Path, settings: V2Settings) -> None:
         "robustness": {
             "enabled": settings.robustness_enabled,
             "probability": settings.robustness_probability,
+            "warmup_epochs": settings.robustness_warmup_epochs,
             "input_shift_max_px": settings.input_shift_max_px,
             "phase_shift_max_px": settings.phase_shift_max_px,
             "pre_ccd_shift_max_px": settings.pre_ccd_shift_max_px,
         },
         "loss": {
+            "mode": settings.loss_mode,
+            "notebook_full_plane_mse_scale": (
+                settings.notebook_full_plane_mse_scale
+            ),
             "eps": settings.loss_eps,
             "template_mse_weight": settings.template_mse_loss_weight,
             "detector_ce_weight": 0.0,
