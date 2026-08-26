@@ -1,0 +1,80 @@
+base_config: ../../../qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/configs/release/caltech101_four_layer_optical_joint_17um.yaml
+
+# New formal run. Nothing is loaded from the former runs: compact electronics,
+# optical phases/readouts, routers, fusion gates and retrieval head train jointly.
+hybrid:
+  initial_electronic_checkpoint: null
+  freeze_electronic: false
+  initial_fusion: 0.20
+  minimum_optical_fusion: 0.10
+
+training:
+  epochs: 80
+  learning_rate: 0.0001
+  adapter_learning_rate: 0.0001
+  readout_learning_rate: 0.00005
+  # 50% above the former strong-phase 4e-3 run; avoids an untested 2x jump.
+  phase_learning_rate: 0.006
+  router_learning_rate: 0.0002
+  lambda_router_balance: 0.02
+  lambda_router_importance: 0.005
+  lambda_ccd_operating_point: 0.02
+  phase_focus: {enabled: true, warmup_epochs: 5, interval_epochs: 2}
+  phase_diagnostics:
+    gradient_measure_interval_batches: 10
+    motion_warning_epoch: 4
+    motion_warning_threshold_rad: 0.08
+    preview_interval_epochs: 4
+
+language_optical:
+  wavelength_nm: 532.0
+  pixel_pitch_um: 17.0
+  distance_m: 0.10
+  k_space: {enabled: true, theta_max_deg: 0.65}
+  phase:
+    parameterization: sigmoid
+    init: small_normal
+    init_std: 0.02
+    dropout_mode: block_phase_bypass
+    dropout_p: 0.08
+    dropout_block_size: 8
+  normalization:
+    relative_clip: 12.0
+    log_compression: 1.0
+  perturbation:
+    # Independent input/phase/CCD translations; 16 logical pixels = 272 um.
+    max_shift_pixels: 16
+    phase_shift_pixels: 16
+    ccd_shift_pixels: 16
+    gain_min: 0.4
+    gain_max: 2.5
+    offset_fraction: 0.05
+    read_noise_fraction: 0.015
+
+hardware:
+  amplitude_slm:
+    width: 1024
+    height: 1024
+    pixel_pitch_um: 17.0
+    center_x: 512.0
+    center_y: 512.0
+    # Corrected command polarity: 255=bright/open, 0=dark/closed.
+    bright_value_uint8: 255
+    dark_value_uint8: 0
+    invert_before_export: false
+  phase_mask:
+    width: 1920
+    height: 1200
+    pixel_pitch_um: 8.0
+    center_x: 980.0
+    center_y: 590.0
+    flip_vertical: true
+    flip_horizontal: false
+  ccd:
+    flip_vertical: true
+    flip_horizontal: true
+    physical_binning_factor: 1
+    target_size: 478
+    transport_size: 478
+
+output_dir: ../../runs/caltech101_four_layer_moe4_joint_17um_10cm_robust

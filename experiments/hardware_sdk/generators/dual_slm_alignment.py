@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import shutil
 from pathlib import Path
 from typing import Any
 
@@ -139,13 +140,26 @@ def _polyomino_registration_amplitude(size: int, cell_size: int) -> np.ndarray:
         )
     black_cells = {
         # O tetromino: upper left.
-        (0, 0), (0, 1), (1, 0), (1, 1),
+        (0, 0),
+        (0, 1),
+        (1, 0),
+        (1, 1),
         # T tetromino: upper right.
-        (0, 4), (0, 5), (0, 6), (1, 5),
+        (0, 4),
+        (0, 5),
+        (0, 6),
+        (1, 5),
         # L pentomino: lower left.
-        (3, 0), (4, 0), (5, 0), (5, 1), (5, 2),
+        (3, 0),
+        (4, 0),
+        (5, 0),
+        (5, 1),
+        (5, 2),
         # Z tetromino: lower right.
-        (4, 4), (4, 5), (5, 5), (5, 6),
+        (4, 4),
+        (4, 5),
+        (5, 5),
+        (5, 6),
         # Isolated asymmetric marker.
         (6, 3),
     }
@@ -175,7 +189,9 @@ def _spot_grid(size: int, count: int = 7) -> np.ndarray:
             result[y - radius : y + radius + 1, x - radius : x + radius + 1] = 255
     # Unique orientation marker in the upper-left lattice cell.
     x, y = positions[0], positions[0]
-    result[y - 2 * radius : y + 2 * radius + 1, x - 2 * radius : x + 2 * radius + 1] = 128
+    result[
+        y - 2 * radius : y + 2 * radius + 1, x - 2 * radius : x + 2 * radius + 1
+    ] = 128
     return result
 
 
@@ -229,6 +245,20 @@ def _save_full(
         "active_bounds_xyxy": list(bounds),
         "actual_center_xy": list(actual_center),
     }
+
+
+def _copy_bmp_with_geometry(
+    source: dict[str, Any],
+    destination: Path,
+) -> dict[str, Any]:
+    """Copy one generated BMP while preserving its audited geometry report."""
+    source_path = Path(source["path"])
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(source_path, destination)
+    copied = dict(source)
+    copied["path"] = str(destination)
+    copied["sha256"] = _sha256(destination)
+    return copied
 
 
 def generate(
@@ -290,9 +320,7 @@ def generate(
     registration_logical: dict[str, dict[str, Any]] = {}
     for cell_size, period in registration_specs:
         if cell_size == 64:
-            complement = _polyomino_registration_amplitude(
-                active_size, cell_size
-            )
+            complement = _polyomino_registration_amplitude(active_size, cell_size)
             layout = "polyomino_black_landmarks"
         else:
             complement = _checker(active_size, cell_size)
@@ -305,9 +333,7 @@ def generate(
             active_size, cell_size, period, checker
         )
         amplitude_patterns[f"registration_checker_c{cell_size}"] = checker
-        amplitude_patterns[f"registration_checker_c{cell_size}_complement"] = (
-            complement
-        )
+        amplitude_patterns[f"registration_checker_c{cell_size}_complement"] = complement
         registration_logical[f"checker_xy_c{cell_size}_p{period}"] = {
             "cell_size": cell_size,
             "period": period,
@@ -350,12 +376,8 @@ def generate(
     for name, values in registration_logical.items():
         phase_patterns[f"registration_{name}"] = values["phase"]
         phase_patterns[f"registration_{name}_primary"] = values["primary_phase"]
-    phase_patterns["registration_regular_checker_xy_c64_p8"] = (
-        regular_checker_phase
-    )
-    for index, (axis, period) in enumerate(
-        (("x", 8), ("y", 8), ("x", 16), ("y", 16))
-    ):
+    phase_patterns["registration_regular_checker_xy_c64_p8"] = regular_checker_phase
+    for index, (axis, period) in enumerate((("x", 8), ("y", 8), ("x", 16), ("y", 16))):
         phase_patterns[f"expert_{index}_{axis}_grating_p{period}"] = _expert_window(
             active_size, index, _blazed(224, period, axis)
         )
@@ -443,9 +465,7 @@ def generate(
         regular_checker, regular_checker_phase
     )
     regular_preview_path = preview_dir / "pair_regular_checker_xy_c64_p8.png"
-    Image.fromarray(regular_preview, mode="L").save(
-        regular_preview_path, format="PNG"
-    )
+    Image.fromarray(regular_preview, mode="L").save(regular_preview_path, format="PNG")
     registration_pairs.append(
         {
             "pair_id": "regular_checker_xy_c64_p8",
@@ -464,6 +484,103 @@ def generate(
             "phase_native_grating_period_px": round(8 * logical_pitch / phase_pitch),
         }
     )
+
+    # Put the recommended strict-checker pair in its own two-BMP directory.
+    # The generic alignment bundle intentionally contains several primary and
+    # complement variants whose similar names are useful for diagnostics but
+    # easy to cross-pair at the optical bench.
+    recommended_dir = output_dir / "recommended_checker_grating_pair"
+    recommended_amplitude_path = (
+        recommended_dir / "amplitude_checker_255open_c64_1024x1024.bmp"
+    )
+    recommended_phase_path = (
+        recommended_dir / "phase_grating_xy_in_255open_cells_c64_p8_1920x1200.bmp"
+    )
+    recommended_amplitude = _copy_bmp_with_geometry(
+        files["amplitude"][regular_amplitude_name],
+        recommended_amplitude_path,
+    )
+    recommended_phase = _copy_bmp_with_geometry(
+        files["phase"][regular_phase_name],
+        recommended_phase_path,
+    )
+    recommended_pair = {
+        "schema_version": 1,
+        "pair_id": "recommended_checker_grating_pair",
+        "use_only_as_a_pair": True,
+        "amplitude_command_contract": {
+            "white_open_value_uint8": 255,
+            "black_closed_value_uint8": 0,
+            "invert_in_player": False,
+        },
+        "logical_geometry": {
+            "active_size_wh": [active_size, active_size],
+            "pixel_pitch_um": logical_pitch,
+            "checker_cell_size_px": 64,
+            "grating_period_px": 8,
+        },
+        "phase_rule": (
+            "phase=0 in amplitude-0 black/closed cells; visible amplitude-255 "
+            "white/open cells contain alternating x/y 0-pi gratings"
+        ),
+        "phase_transform": {
+            "center_xy": list(phase_center),
+            "flip_vertical_before_raster": flip_vertical,
+            "flip_horizontal_before_raster": flip_horizontal,
+            "logical_pitch_um": logical_pitch,
+            "native_pitch_um": phase_pitch,
+            "raster": "centered physical-coordinate nearest",
+        },
+        "amplitude": recommended_amplitude,
+        "phase": recommended_phase,
+    }
+    recommended_manifest_path = recommended_dir / "pair_manifest.json"
+    recommended_manifest_path.write_text(
+        json.dumps(recommended_pair, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    recommended_readme_path = recommended_dir / "README.md"
+    recommended_readme_path.write_text(
+        f"""# Recommended checker / grating registration pair
+
+Only play the following two BMPs together. Do not substitute similarly named
+`primary` or `complement` files from the parent directory.
+
+- Amplitude: `{recommended_amplitude_path.name}`
+- Phase: `{recommended_phase_path.name}`
+
+## Hardware contract
+
+- Amplitude command `255` is white/open/transmissive.
+- Amplitude command `0` is black/closed/opaque.
+- Do not invert the amplitude BMP in the playback program.
+- The phase is zero in every amplitude-0 cell. Only amplitude-255 cells contain
+  a 0/pi grating, and the visible cells alternate x/y grating orientation along
+  rows and columns.
+
+## Geometry already applied
+
+- Amplitude canvas/center/active bounds: `{amplitude_size}` / `{amplitude_center}` /
+  `{tuple(recommended_amplitude['active_bounds_xyxy'])}`
+- Phase canvas/center/active bounds: `{phase_size}` / `{phase_center}` /
+  `{tuple(recommended_phase['active_bounds_xyxy'])}`
+- Phase vertical flip: `{flip_vertical}`
+- Phase horizontal flip: `{flip_horizontal}`
+- Logical/native pixel pitch: `{logical_pitch} um` / `{phase_pitch} um`
+
+Do not flip, resize, recenter, or invert either BMP again in the player.
+
+## SHA256
+
+- Amplitude: `{recommended_amplitude['sha256']}`
+- Phase: `{recommended_phase['sha256']}`
+
+Machine-readable details are in `pair_manifest.json`.
+""",
+        encoding="utf-8",
+    )
+    recommended_pair["manifest"] = str(recommended_manifest_path)
+    recommended_pair["readme"] = str(recommended_readme_path)
 
     report = {
         "schema_version": 2,
@@ -517,6 +634,7 @@ def generate(
                 "unsuffixed amplitude"
             ),
             "preview_is_propagation_simulation": False,
+            "recommended_checker_grating_pair": recommended_pair,
             "pairs": registration_pairs,
         },
         "files": files,

@@ -1,0 +1,16 @@
+base_config: ../release/caltech101_four_layer_optical_joint_17um_10cm_robust.yaml
+
+training:
+  epochs: 1
+  phase_focus: {enabled: false, warmup_epochs: 0, interval_epochs: 1}
+
+dataset:
+  train_limit: 40
+  test_limit: 20
+
+batching:
+  batch_size: 4
+  pk_skus_per_batch: 2
+  pk_images_per_sku: 2
+
+output_dir: ../../runs/smoke_four_layer_moe4_joint_17um_10cm_robust
