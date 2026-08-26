@@ -26,6 +26,17 @@ training:
     motion_warning_threshold_rad: 0.08
     preview_interval_epochs: 4
 
+# Restore the Caltech target-10 baseline's balanced 10-class x 3-image batch.
+# The former inherited optical override (5 classes x 2 images) left most of a
+# 24 GB 4090 idle and tripled CPU processor/loader scheduling per epoch. This
+# still traverses the complete training split once per epoch and changes no
+# loss weight, epoch count or learning rate.
+batching:
+  batch_size: 30
+  pk_skus_per_batch: 10
+  pk_images_per_sku: 3
+  optimizer_steps_per_epoch: null
+
 language_optical:
   wavelength_nm: 532.0
   pixel_pitch_um: 17.0

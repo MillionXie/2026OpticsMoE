@@ -34,6 +34,9 @@ def test_release_contract_is_explicitly_10cm_and_robust() -> None:
     assert settings.language_optical_max_shift_pixels == 16
     assert settings.language_optical_phase_shift_pixels == 16
     assert settings.language_optical_ccd_shift_pixels == 16
+    assert settings.batch_size == 30
+    assert settings.pk_skus_per_batch == 10
+    assert settings.pk_images_per_sku == 3
     assert settings.hardware_amplitude_slm_pixel_pitch_um == 17.0
     assert settings.hardware_phase_slm_pixel_pitch_um == 8.0
     assert settings.hardware_phase_flip_vertical is True
