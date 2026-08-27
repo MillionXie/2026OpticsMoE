@@ -4,7 +4,7 @@
 input_dir: ../data/amplitude_to_play
 output_dir: ../data/ccd_captured
 log_dir: ../artifacts/logs/tucam_meadowlark_1024
-digit_output_dir: ../../qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/hardware_sessions/_calibration_17um/digit_sequence
+digit_output_dir: ../artifacts/calibration/digit_sequence
 output_extension: .png
 settle_delay_ms: 200
 confirm_before_start: true
@@ -16,11 +16,12 @@ max_files: null
 require_phase_mask: true
 phase_mask_file: null
 
-# Generated calibration assets stay inside the Caltech101 four-layer project,
-# not at the repository root. hardware_sessions/ is intentionally not tracked.
+# Device-wide calibration assets belong to hardware_sdk, not to one Qwen
+# project and never at the repository root. Task captures remain under the
+# selected project's hardware_sessions/ stage directory.
 paths:
-  masks_dir: ../../qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/hardware_sessions/_calibration_17um/masks
-  results_dir: ../../qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/hardware_sessions/_calibration_17um/results
+  masks_dir: ../artifacts/calibration/masks
+  results_dir: ../artifacts/calibration/results
 
 amplitude_slm:
   driver: meadowlark_pcie
@@ -87,6 +88,16 @@ camera:
   warmup_frames: 3
   discard_frames_after_display: 1
 
+  # Legacy axis-aligned ROI + resize remains active while this is false.  To
+  # use four-corner rectification, first create a contract with
+  # workflows.detector_homography, then set enabled=true and pin the exact
+  # contract file SHA-256.  A canonicalized output must never be flipped again
+  # by a downstream loader.
+  detector_geometry:
+    enabled: false
+    contract_file: null
+    expected_file_sha256: null
+
 digits:
   # Offline handwritten-style 0..9 glyphs avoid a Torch/torchvision dependency
   # on the lightweight laboratory controller.
@@ -104,10 +115,12 @@ calibration:
 
 exposure_calibration:
   exposure_times_us: [5000]
-  gray_start: 0
-  gray_stop: 255
-  gray_step: 1
-  frames_per_gray: 2
+  # 32 approximately uniform values including closed=0 and open=255.
+  # To use custom values, replace gray_point_count with an increasing
+  # gray_values list that includes both endpoints.
+  gray_point_count: 32
+  frames_per_gray: 3
+  preview_gray_values: [0, 128, 255]
   patch_size_px: 400
   patch_inner_size_px: 320
   edge_taper_px: 40

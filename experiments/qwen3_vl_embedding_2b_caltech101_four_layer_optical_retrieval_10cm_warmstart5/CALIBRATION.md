@@ -1,5 +1,11 @@
 # Warmstart5 双 SLM、焦面与 ROI 标定
 
+> 本文后续 v2 内容是封存 formal ZIP 的历史合同。当前新光路请优先使用完整方孔
+> Fresnel v3、k=1 即播套装和四点 canonical homography，见
+> `experiments/hardware_sdk/GEOMETRY_AND_BRIGHTNESS.md`、
+> `experiments/hardware_sdk/generators/slm_patterns/V3_CALIBRATION_COMMANDS.md` 与
+> `LAB_VALIDATION_BUNDLE.md`。新流程输出已经是模型方向，禁止再做旧版横纵双翻。
+
 本说明只使用 ZIP 中 `payload/calibration/` 下的正式资产。不要用厂商 SDK
 示例图，也不要用历史 `fresnel_phase_array_...` 中 508 像素间距的 n4 图替代。
 

@@ -1,0 +1,46 @@
+# Copy this file to an experiment-owned calibration directory and replace every
+# coordinate below with the measured CCD coordinates.  Run commands from the
+# repository root.  The four points must be labelled by their LOGICAL optical
+# field identity, not merely sorted by their position in the camera image.
+
+# TUCam's active device ROI, in full 2048x2048 sensor coordinates.  Every value
+# must be divisible by four.  Source point coordinates below remain full-sensor
+# coordinates; the fitting tool records both full and ROI-local coordinates.
+device_roi_xywh_full_sensor: [0, 0, 2048, 2048]
+
+# Replace null with [x,y].  Use single-corner/asymmetric calibration patterns to
+# identify the logical labels if the 4F system rotates or mirrors the image.
+source_points_full_sensor_xy:
+  top_left: null
+  top_right: null
+  bottom_right: null
+  bottom_left: null
+
+target_size_wh: [478, 478]
+
+# Logical labels resolve rotation/mirroring in the homography.  These values
+# must stay false; otherwise the fitting tool refuses to create the contract.
+orientation:
+  flip_vertical_after_warp: false
+  flip_horizontal_after_warp: false
+  downstream_loader_flip_vertical: false
+  downstream_loader_flip_horizontal: false
+
+# Optional independent n9 check.  Do not use the same four fitting points as
+# validation: four correspondences always fit a homography exactly.  Expected
+# coordinates follow the continuous boundary convention: corners at -0.5 and
+# 477.5, edge midpoint/center at 238.5.
+# validation_points_full_sensor_xy:
+#   top_mid: [x, y]
+#   right_mid: [x, y]
+#   bottom_mid: [x, y]
+#   left_mid: [x, y]
+#   center: [x, y]
+# validation_expected_target_xy:
+#   top_mid: [238.5, -0.5]
+#   right_mid: [477.5, 238.5]
+#   bottom_mid: [238.5, 477.5]
+#   left_mid: [-0.5, 238.5]
+#   center: [238.5, 238.5]
+validation_max_rms_error_px: 1.5
+validation_max_error_px: 3.0

@@ -71,6 +71,11 @@ camera:
   warmup_frames: 3
   discard_frames_after_display: 1
 
+  detector_geometry:
+    enabled: false
+    contract_file: null
+    expected_file_sha256: null
+
 digits:
   source: synthetic
   slm_size_wh: [1920, 1080]
@@ -86,10 +91,9 @@ calibration:
 
 exposure_calibration:
   exposure_times_us: [5000]
-  gray_start: 0
-  gray_stop: 255
-  gray_step: 1
-  frames_per_gray: 2
+  gray_point_count: 32
+  frames_per_gray: 3
+  preview_gray_values: [0, 128, 255]
   patch_size_px: 160
   patch_inner_size_px: 128
   edge_taper_px: 16

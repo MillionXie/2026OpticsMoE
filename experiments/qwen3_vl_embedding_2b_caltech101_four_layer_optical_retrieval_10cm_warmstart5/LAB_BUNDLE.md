@@ -1,5 +1,10 @@
 # Warmstart5 实验室独立包
 
+> 本文件主体描述已封存的 81% formal ZIP，其中的 Fresnel v2 与 `payload/` 路径仅用于
+> 复现旧包。当前 17 µm/8 µm 新光路的几何、方向、Fresnel v3、32×3 亮度标定和
+> sim-to-real 多指标流程统一以 `LAB_VALIDATION_BUNDLE.md` 为准；新数据只写入
+> `experiments/.../hardware_sessions/`。
+
 这个包对应唯一固定的 Stage-B EMA checkpoint：光电融合系数硬下限为 5%，
 初始化值为 5.5%，固定仿真测试 Top-1 为 81.00%。打包器会同时核对 checkpoint、
 四张 phase、quick210 transport 和离线末层 cache/state 的 SHA-256；任一来源不一致

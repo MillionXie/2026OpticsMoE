@@ -16,17 +16,33 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 from PIL import Image
 
 try:
-    from ..devices import build_camera, build_slm, verify_camera_roi
+    from ..devices import (
+        build_camera,
+        build_slm,
+        convert_detector_bit_depth,
+        verify_camera_roi,
+    )
     from .calibration_common import load_yaml_config
+    from .detector_homography import load_geometry_contract, warp_detector_intensity
 except ImportError:  # direct execution from workflows/
     import sys
 
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-    from devices import build_camera, build_slm, verify_camera_roi
+    from devices import (
+        build_camera,
+        build_slm,
+        convert_detector_bit_depth,
+        verify_camera_roi,
+    )
     from workflows.calibration_common import load_yaml_config
+    from workflows.detector_homography import (
+        load_geometry_contract,
+        warp_detector_intensity,
+    )
 
 
 CAPTURE_SUFFIXES = {".npy", ".png", ".tif", ".tiff"}
@@ -212,6 +228,152 @@ def _phase_mask_metadata(
     }
 
 
+def _resolve_detector_geometry(
+    camera_config: dict[str, Any], base: Path
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None, dict[str, Any]]:
+    """Load an optional immutable homography and return raw camera settings.
+
+    The returned camera settings disable the legacy resize/bit-depth path.  The
+    acquisition loop applies the homography to the raw device ROI first, then
+    performs the configured fixed bit-depth conversion exactly once.
+    """
+
+    geometry_config = camera_config.get("detector_geometry")
+    if geometry_config is None:
+        return None, None, dict(camera_config)
+    if not isinstance(geometry_config, dict):
+        raise ValueError("camera.detector_geometry must be a mapping")
+    if not bool(geometry_config.get("enabled", False)):
+        return None, None, dict(camera_config)
+    forbidden_flip_flags = []
+    for owner, mapping in (
+        ("camera", camera_config),
+        ("camera.detector_geometry", geometry_config),
+    ):
+        for key in (
+            "flip_vertical",
+            "flip_horizontal",
+            "flip_vertical_after_warp",
+            "flip_horizontal_after_warp",
+            "downstream_loader_flip_vertical",
+            "downstream_loader_flip_horizontal",
+        ):
+            if bool(mapping.get(key, False)):
+                forbidden_flip_flags.append(f"{owner}.{key}")
+    if forbidden_flip_flags:
+        raise ValueError(
+            "canonical homography mode cannot be mixed with camera/downstream flips; "
+            f"set these false and correct the logical TL/TR/BR/BL labels: "
+            f"{forbidden_flip_flags}"
+        )
+    contract_raw = geometry_config.get("contract_file")
+    if not contract_raw:
+        raise ValueError(
+            "camera.detector_geometry.enabled=true requires contract_file"
+        )
+    contract_path = _resolve(contract_raw, base)
+    expected_sha = geometry_config.get("expected_file_sha256")
+    if not expected_sha:
+        raise ValueError(
+            "formal homography acquisition requires expected_file_sha256"
+        )
+    contract, metadata = load_geometry_contract(
+        contract_path, expected_file_sha256=str(expected_sha)
+    )
+    configured_roi = verify_camera_roi(camera_config)
+    contract_roi = tuple(
+        int(value)
+        for value in contract["source"]["device_roi_xywh_full_sensor"]
+    )
+    if configured_roi != contract_roi:
+        raise ValueError(
+            "camera.device_roi_xywh does not match the homography contract: "
+            f"configured={configured_roi}, contract={contract_roi}"
+        )
+    target_size = [int(value) for value in contract["destination"]["size_wh"]]
+    configured_saved = camera_config.get("saved_frame_size_wh")
+    if configured_saved is not None and [int(value) for value in configured_saved] != target_size:
+        raise ValueError(
+            "camera.saved_frame_size_wh must equal the homography target "
+            f"{target_size}"
+        )
+    if camera_config.get("saved_frame_bit_depth") not in {8, 16}:
+        raise ValueError(
+            "homography acquisition requires a fixed saved_frame_bit_depth of 8 or 16"
+        )
+    raw_camera_config = dict(camera_config)
+    raw_camera_config.pop("detector_geometry", None)
+    raw_camera_config["saved_frame_size_wh"] = None
+    raw_camera_config["saved_frame_resize_mode"] = "none"
+    raw_camera_config["saved_frame_bit_depth"] = None
+    raw_camera_config["saved_frame_input_range"] = None
+    return contract, metadata, raw_camera_config
+
+
+def _save_rectified_capture(
+    path: Path,
+    value: np.ndarray,
+) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    suffix = path.suffix.lower()
+    if suffix == ".npy":
+        np.save(path, value)
+    elif suffix in {".png", ".tif", ".tiff"}:
+        Image.fromarray(value).save(
+            path, format="PNG" if suffix == ".png" else "TIFF"
+        )
+    else:
+        raise ValueError(f"unsupported rectified capture extension: {suffix}")
+
+
+def _capture_with_optional_geometry(
+    camera: Any,
+    capture_path: Path,
+    camera_config: dict[str, Any],
+    geometry_contract: dict[str, Any] | None,
+) -> dict[str, Any]:
+    if geometry_contract is None:
+        camera.capture(capture_path)
+        return dict(camera.device_info().get("last_capture") or {})
+
+    raw_path = capture_path.parent / f".{capture_path.stem}.raw_device_roi.npy"
+    if raw_path.exists():
+        raise FileExistsError(f"stale temporary raw detector frame exists: {raw_path}")
+    try:
+        camera.capture(raw_path)
+        raw_capture_info = dict(camera.device_info().get("last_capture") or {})
+        raw = np.load(raw_path, allow_pickle=False)
+        raw = np.asarray(raw).squeeze()
+        rectified = warp_detector_intensity(raw, geometry_contract)
+        converted = convert_detector_bit_depth(
+            rectified,
+            int(camera_config["saved_frame_bit_depth"]),
+            (
+                None
+                if camera_config.get("saved_frame_input_range") is None
+                else tuple(float(value) for value in camera_config["saved_frame_input_range"])
+            ),
+        )
+        _save_rectified_capture(capture_path, converted)
+    finally:
+        raw_path.unlink(missing_ok=True)
+    return {
+        "source_size_wh": raw_capture_info.get("source_size_wh"),
+        "saved_size_wh": [int(converted.shape[1]), int(converted.shape[0])],
+        "resize_mode": "homography_bilinear_intensity",
+        "resized": raw_capture_info.get("source_size_wh")
+        != [int(converted.shape[1]), int(converted.shape[0])],
+        "dtype": str(converted.dtype),
+        "source_dtype": str(raw.dtype),
+        "saved_frame_bit_depth": int(camera_config["saved_frame_bit_depth"]),
+        "saved_frame_input_range": camera_config.get("saved_frame_input_range"),
+        "detector_geometry_applied": True,
+        "saved_frame_orientation": "canonical_model_xy",
+        "downstream_loader_flip_required": False,
+        "raw_capture_info": raw_capture_info,
+    }
+
+
 def run(
     config_path: str | Path,
     *,
@@ -315,8 +477,11 @@ def run(
     # This catches an unset DVP_PYTHON without opening either device.
     camera_config = dict(raw["camera"])
     verify_camera_roi(camera_config)
+    geometry_contract, geometry_metadata, raw_camera_config = _resolve_detector_geometry(
+        camera_config, base
+    )
     slm_driver = build_slm(dict(raw["amplitude_slm"]), base)
-    camera_driver = build_camera(camera_config, base)
+    camera_driver = build_camera(raw_camera_config, base)
     slm_driver.validate_runtime()
     camera_driver.validate_runtime()
     slm_driver.validate_files(files)
@@ -336,6 +501,11 @@ def run(
             }
         ),
         "phase_mask": phase_metadata,
+        "detector_geometry": geometry_metadata,
+        "orientation_canonicalized": geometry_contract is not None,
+        "detector_processing_mode": (
+            "canonical_homography" if geometry_contract is not None else "legacy_rectangle_resize"
+        ),
         "amplitude_slm": slm_driver.device_info(),
         "camera": camera_driver.device_info(),
         "validate_only": bool(validate_only),
@@ -386,6 +556,13 @@ def run(
             "selection_manifest": readiness_report["selection_manifest"],
             "settle_delay_ms": settle_seconds * 1000.0,
             "phase_mask": phase_metadata,
+            "detector_geometry": geometry_metadata,
+            "orientation_canonicalized": geometry_contract is not None,
+            "detector_processing_mode": (
+                "canonical_homography"
+                if geometry_contract is not None
+                else "legacy_rectangle_resize"
+            ),
             "amplitude_slm": slm.device_info(),
             "camera": camera.device_info(),
         }
@@ -395,10 +572,17 @@ def run(
         )
         for index, amplitude_path in enumerate(files):
             capture_path = output_dir / f"{amplitude_path.stem}{extension}"
+            # Bind the exact frame before it is sent to the display SDK.  This
+            # proves which amplitude payload was played even if the BMP is
+            # accidentally modified after acquisition.
+            amplitude_bmp_sha256 = hashlib.sha256(
+                amplitude_path.read_bytes()
+            ).hexdigest()
             slm.display_file(amplitude_path)
             time.sleep(settle_seconds)
-            camera.capture(capture_path)
-            capture_info = camera.device_info().get("last_capture") or {}
+            capture_info = _capture_with_optional_geometry(
+                camera, capture_path, camera_config, geometry_contract
+            )
             requested_roi = verify_camera_roi(camera_config)
             expected_size = (
                 None
@@ -428,6 +612,7 @@ def run(
             row = {
                 "play_index": index,
                 "amplitude_bmp": amplitude_path.name,
+                "amplitude_bmp_sha256": amplitude_bmp_sha256,
                 "ccd_capture": capture_path.name,
                 "captured_utc": datetime.now(timezone.utc).isoformat(),
                 "camera_exposure_us": (
@@ -446,6 +631,39 @@ def run(
                 ),
                 "saved_frame_resize_mode": capture_info.get("resize_mode"),
                 "saved_dtype": capture_info.get("dtype"),
+                "output_sha256": hashlib.sha256(capture_path.read_bytes()).hexdigest(),
+                "detector_geometry_file_sha256": (
+                    None
+                    if geometry_metadata is None
+                    else geometry_metadata["file_sha256"]
+                ),
+                "detector_geometry_payload_sha256": (
+                    None
+                    if geometry_metadata is None
+                    else geometry_metadata["payload_sha256"]
+                ),
+                "orientation_canonicalized": geometry_contract is not None,
+                "saved_frame_orientation": (
+                    capture_info.get("saved_frame_orientation")
+                    if geometry_contract is not None
+                    else "legacy_camera_native"
+                ),
+                "downstream_loader_flip_required": (
+                    False if geometry_contract is not None else "legacy_config_defined"
+                ),
+                "downstream_loader_flip_vertical_required": (
+                    False if geometry_contract is not None else "legacy_config_defined"
+                ),
+                "downstream_loader_flip_horizontal_required": (
+                    False if geometry_contract is not None else "legacy_config_defined"
+                ),
+                "detector_processing_order": (
+                    "raw_device_roi>homography_bilinear_intensity>fixed_bit_depth>save"
+                    if geometry_contract is not None
+                    else "device_roi>legacy_resize>fixed_bit_depth>save"
+                ),
+                "background_subtraction": False,
+                "per_frame_minmax_normalization": False,
                 "frame_number": index,
                 "phase_mask": (
                     None if phase_metadata is None else phase_metadata["basename"]
@@ -482,6 +700,7 @@ def run(
                 f"{amplitude_path.name} -> {capture_path.name}{size_text}"
             )
         device_report["camera"] = camera.device_info()
+        device_report["last_processed_capture"] = capture_info
         (log_dir / "resolved_devices.json").write_text(
             json.dumps(device_report, ensure_ascii=False, indent=2), encoding="utf-8"
         )
@@ -499,6 +718,11 @@ def run(
         "output_dir": str(output_dir),
         "log_dir": str(log_dir),
         "selection_manifest": readiness_report["selection_manifest"],
+        "detector_geometry": geometry_metadata,
+        "orientation_canonicalized": geometry_contract is not None,
+        "detector_processing_mode": (
+            "canonical_homography" if geometry_contract is not None else "legacy_rectangle_resize"
+        ),
     }
 
 

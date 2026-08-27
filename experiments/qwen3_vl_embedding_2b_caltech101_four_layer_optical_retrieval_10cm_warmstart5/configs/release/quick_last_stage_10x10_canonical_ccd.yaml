@@ -1,0 +1,9 @@
+base_config: quick_last_stage_10x10.yaml
+
+# Use only with CCD PNGs produced by the audited logical-corner homography.
+hardware:
+  ccd:
+    flip_vertical: false
+    flip_horizontal: false
+
+output_dir: ../../runs/caltech101_warmstart5_quick_last_stage_canonical_ccd_metadata

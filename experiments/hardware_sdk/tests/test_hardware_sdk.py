@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import hashlib
 from pathlib import Path
 from types import SimpleNamespace
@@ -39,6 +40,7 @@ from experiments.hardware_sdk.workflows.roi_calibration import (
     gaussian_marker,
     generate_calibration_files,
     rectangle_marker,
+    resolve_brightness_gray_values,
     roi_boundary_source_points,
 )
 from experiments.hardware_sdk.workflows.optional_background import (
@@ -485,6 +487,23 @@ def test_exposure_patch_has_uniform_center_and_cosine_taper() -> None:
     assert 0 < patch[48, 75] < 200
 
 
+def test_fast_brightness_default_is_32_unique_points_with_endpoints() -> None:
+    values = resolve_brightness_gray_values({"gray_point_count": 32})
+    assert len(values) == 32
+    assert values[0] == 0
+    assert values[-1] == 255
+    assert values == sorted(set(values))
+    assert max(np.diff(values)) - min(np.diff(values)) <= 1
+
+
+def test_fast_brightness_accepts_explicit_values_but_rejects_missing_endpoints() -> None:
+    assert resolve_brightness_gray_values(
+        {"gray_values": [0, 32, 96, 160, 224, 255]}
+    ) == [0, 32, 96, 160, 224, 255]
+    with pytest.raises(ValueError, match="include closed=0 and open=255"):
+        resolve_brightness_gray_values({"gray_values": [16, 128, 240]})
+
+
 def test_generate_calibration_masks_have_exact_8bit_slm_sizes(tmp_path: Path) -> None:
     config = {
         "paths": {"masks_dir": "masks", "results_dir": "results"},
@@ -523,6 +542,35 @@ def test_generate_calibration_masks_have_exact_8bit_slm_sizes(tmp_path: Path) ->
     assert points.mode == rectangles.mode == outline.mode == "L"
     assert points.size == rectangles.size == outline.size == (192, 108)
     assert (tmp_path / "masks" / "manifest.csv").is_file()
+
+
+def test_generate_fast_brightness_masks_removes_stale_historical_levels(
+    tmp_path: Path,
+) -> None:
+    config = {
+        "paths": {"masks_dir": "masks", "results_dir": "results"},
+        "amplitude_slm": {"width": 64, "height": 64},
+        "phase_slm": {"width": 64, "height": 64},
+        "amplitude_roi": {"width": 32, "height": 32, "center_x": 31.5, "center_y": 31.5},
+        "calibration": {"marker_size_px": 8, "marker_sigma_px": 2},
+        "exposure_calibration": {
+            "gray_point_count": 32,
+            "patch_size_px": 20,
+            "patch_inner_size_px": 16,
+            "edge_taper_px": 2,
+        },
+    }
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text("placeholder", encoding="utf-8")
+    stale_dir = tmp_path / "masks" / "exposure"
+    stale_dir.mkdir(parents=True)
+    Image.new("L", (64, 64), 17).save(stale_dir / "gray_017.bmp")
+    report = generate_calibration_files(config, config_path)
+    paths = sorted(stale_dir.glob("gray_*.bmp"))
+    assert report["exposure_patterns"] == 32
+    assert len(paths) == 32
+    assert report["removed_stale_generated_exposure_masks"] == 1
+    assert not (stale_dir / "gray_017.bmp").exists()
 
 
 def test_rectangle_marker_is_filled_and_centered() -> None:
@@ -650,7 +698,16 @@ def test_layer_agnostic_folder_acquisition_preserves_sorted_basenames(
         "001_b.npy",
         "002_c.npy",
     ]
-    assert (log_dir / "capture_manifest.csv").is_file()
+    capture_manifest = log_dir / "capture_manifest.csv"
+    assert capture_manifest.is_file()
+    with capture_manifest.open(encoding="utf-8-sig", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    assert len(rows) == 3
+    for row in rows:
+        amplitude = input_dir / row["amplitude_bmp"]
+        assert row["amplitude_bmp_sha256"] == hashlib.sha256(
+            amplitude.read_bytes()
+        ).hexdigest()
 
 
 def test_amplitude_manifest_is_an_exact_sorted_allowlist(tmp_path: Path) -> None:

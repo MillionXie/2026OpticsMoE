@@ -8,13 +8,16 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import time
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Iterator
 
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib import font_manager
 from PIL import Image
 
 try:
@@ -146,6 +149,126 @@ def exposure_patch(
     return np.rint(value).astype(np.uint8)
 
 
+def resolve_brightness_gray_values(settings: dict[str, Any]) -> list[int]:
+    """Resolve a small deterministic 0..255 response sweep.
+
+    ``gray_values`` has highest priority.  ``gray_point_count`` then creates an
+    approximately uniform inclusive grid (32 points by default).  The old
+    start/stop/step fields remain readable for existing custom configs, but the
+    repository profiles use the bounded point-count form.
+    """
+
+    explicit = settings.get("gray_values")
+    legacy_range = False
+    if explicit is not None:
+        if not isinstance(explicit, (list, tuple)) or not explicit:
+            raise ValueError("exposure_calibration.gray_values must be a non-empty list")
+        values = [int(value) for value in explicit]
+    elif "gray_point_count" in settings:
+        count = int(settings["gray_point_count"])
+        if not 2 <= count <= 256:
+            raise ValueError("gray_point_count must be in 2..256")
+        values = np.rint(np.linspace(0.0, 255.0, count)).astype(np.int64).tolist()
+    elif any(key in settings for key in ("gray_start", "gray_stop", "gray_step")):
+        legacy_range = True
+        start = int(settings.get("gray_start", 0))
+        stop = int(settings.get("gray_stop", 255))
+        step = int(settings.get("gray_step", 1))
+        if step <= 0 or stop < start:
+            raise ValueError("legacy gray_start/gray_stop/gray_step are invalid")
+        values = list(range(start, stop + 1, step))
+    else:
+        values = np.rint(np.linspace(0.0, 255.0, 32)).astype(np.int64).tolist()
+    if any(value < 0 or value > 255 for value in values):
+        raise ValueError("brightness gray values must all be in 0..255")
+    if values != sorted(set(values)):
+        raise ValueError("brightness gray values must be unique and strictly increasing")
+    if not legacy_range and (values[0] != 0 or values[-1] != 255):
+        raise ValueError("brightness gray values must include closed=0 and open=255")
+    return values
+
+
+def _nearest_preview_values(gray_values: list[int], requested: Any) -> set[int]:
+    anchors = [0, 128, 255] if requested is None else [int(value) for value in requested]
+    if not anchors:
+        return set()
+    return {
+        min(gray_values, key=lambda candidate: (abs(candidate - anchor), candidate))
+        for anchor in anchors
+    }
+
+
+def _sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _configure_publication_style() -> dict[str, Any]:
+    requested = "Arial"
+    resolved_path: str | None = None
+    resolved_family: str | None = None
+    for candidate in ("Arial", "Helvetica", "DejaVu Sans"):
+        try:
+            path = font_manager.findfont(candidate, fallback_to_default=False)
+        except ValueError:
+            continue
+        resolved_path = str(Path(path).resolve())
+        resolved_family = font_manager.FontProperties(fname=path).get_name()
+        break
+    if resolved_family is None:
+        path = font_manager.findfont("sans-serif", fallback_to_default=True)
+        resolved_path = str(Path(path).resolve())
+        resolved_family = font_manager.FontProperties(fname=path).get_name()
+    mpl.rcParams.update(
+        {
+            "font.family": "sans-serif",
+            "font.sans-serif": [resolved_family, "Arial", "Helvetica", "DejaVu Sans"],
+            "font.size": 7,
+            "axes.titlesize": 7,
+            "axes.labelsize": 7,
+            "xtick.labelsize": 7,
+            "ytick.labelsize": 7,
+            "legend.fontsize": 7,
+            "axes.spines.right": False,
+            "axes.spines.top": False,
+            "axes.linewidth": 0.7,
+            "legend.frameon": False,
+            "svg.fonttype": "none",
+            "pdf.fonttype": 42,
+            "savefig.facecolor": "white",
+        }
+    )
+    fallback = resolved_family.casefold() != requested.casefold()
+    if fallback:
+        print(
+            f"[brightness figure] Arial unavailable; using {resolved_family} "
+            f"from {resolved_path}"
+        )
+    return {
+        "requested_font_family": requested,
+        "resolved_font_family": resolved_family,
+        "resolved_font_path": resolved_path,
+        "font_fallback_used": fallback,
+        "font_size_pt": 7.0,
+        "raster_dpi": 600,
+        "response_figure_size_mm": [183.0, 55.0],
+        "preview_figure_size_mm": [183.0, 55.0],
+    }
+
+
+def _save_response_figure(fig: Any, base: Path) -> list[str]:
+    outputs: list[str] = []
+    for suffix, options in (
+        (".svg", {}),
+        (".pdf", {}),
+        (".png", {"dpi": 600}),
+        (".tiff", {"dpi": 600, "pil_kwargs": {"compression": "tiff_lzw"}}),
+    ):
+        path = base.with_suffix(suffix)
+        fig.savefig(path, **options)
+        outputs.append(path.name)
+    return outputs
+
+
 def generate_calibration_files(config: dict[str, Any], config_path: Path) -> dict[str, Any]:
     """Generate manual-ROI verification, zero, and exposure patterns."""
 
@@ -200,13 +323,13 @@ def generate_calibration_files(config: dict[str, Any], config_path: Path) -> dic
     Image.fromarray(outline, mode="L").save(amplitude_dir / "verify_roi_outline.bmp")
 
     exposure = config["exposure_calibration"]
-    gray_values = list(
-        range(
-            int(exposure["gray_start"]),
-            int(exposure["gray_stop"]) + 1,
-            int(exposure["gray_step"]),
-        )
-    )
+    gray_values = resolve_brightness_gray_values(exposure)
+    expected_exposure_names = {f"gray_{gray:03d}.bmp" for gray in gray_values}
+    removed_stale_exposure_masks = 0
+    for stale in exposure_dir.glob("gray_*.bmp"):
+        if stale.is_file() and stale.name not in expected_exposure_names:
+            stale.unlink()
+            removed_stale_exposure_masks += 1
     center = (
         float(config["amplitude_roi"]["center_x"]),
         float(config["amplitude_roi"]["center_y"]),
@@ -267,6 +390,8 @@ def generate_calibration_files(config: dict[str, Any], config_path: Path) -> dic
         "roi_boundary_points": [[float(x), float(y)] for x, y in points],
         "verification_patterns": 3,
         "exposure_patterns": len(gray_values),
+        "exposure_gray_values": gray_values,
+        "removed_stale_generated_exposure_masks": removed_stale_exposure_masks,
         "automatic_geometry_calibration": False,
     }
     print(f"Generated manual-ROI masks under {masks}")
@@ -336,8 +461,14 @@ def _slm_session(
 
 def _camera_config(config: dict[str, Any], exposure_us: float | None = None) -> dict[str, Any]:
     value = dict(config["camera"])
+    # Brightness calibration measures the detector response before the formal
+    # transport's fixed uint16->uint8 conversion.  Keeping the source dtype
+    # avoids hiding weak closed-state leakage or quantizing small response
+    # differences.  The temporary NPY frames are deleted by median_capture.
     value["saved_frame_size_wh"] = None
     value["saved_frame_resize_mode"] = "none"
+    value["saved_frame_bit_depth"] = None
+    value["saved_frame_input_range"] = None
     if exposure_us is not None:
         value["auto_exposure"] = False
         value["exposure_us"] = float(exposure_us)
@@ -374,22 +505,52 @@ def _measurement_window(shape: tuple[int, int], size: int) -> tuple[slice, slice
     return slice(y0, y0 + size), slice(x0, x0 + size)
 
 
+def _captured_dtype_max(metadata: list[dict[str, Any]]) -> float:
+    dtype_names = {
+        str(item.get("dtype") or item.get("source_dtype") or "").strip()
+        for item in metadata
+    }
+    dtype_names.discard("")
+    if len(dtype_names) != 1:
+        raise RuntimeError(f"camera capture dtype changed during a median group: {dtype_names}")
+    dtype = np.dtype(next(iter(dtype_names)))
+    if not np.issubdtype(dtype, np.integer):
+        raise RuntimeError(f"brightness calibration requires integer detector data, got {dtype}")
+    return float(np.iinfo(dtype).max)
+
+
 def run_exposure(
     config: dict[str, Any], config_path: Path, *, assume_yes: bool = False
 ) -> dict[str, Any]:
     masks, results = _paths(config, config_path)
-    if not (masks / "manifest.csv").is_file():
-        generate_calibration_files(config, config_path)
+    # Regenerate the small deterministic allowlist every time.  This also
+    # removes stale gray_*.bmp files left by the historical 256-level sweep.
+    generate_calibration_files(config, config_path)
     results.mkdir(parents=True, exist_ok=True)
+    for legacy_plot in (
+        results / "response_curve.png",
+        results / "response_curve_normalized.png",
+    ):
+        legacy_plot.unlink(missing_ok=True)
     settings = config["exposure_calibration"]
-    gray_values = list(
-        range(
-            int(settings["gray_start"]),
-            int(settings["gray_stop"]) + 1,
-            int(settings["gray_step"]),
+    exposure_times = [float(value) for value in settings["exposure_times_us"]]
+    if len(exposure_times) != 1 or exposure_times[0] <= 0.0:
+        raise ValueError(
+            "fast brightness calibration requires exactly one positive fixed exposure"
         )
+    gray_values = resolve_brightness_gray_values(settings)
+    frames_per_gray = int(settings.get("frames_per_gray", 3))
+    if frames_per_gray != 3:
+        raise ValueError(
+            "the audited fast brightness calibration requires frames_per_gray=3"
+        )
+    preview_values = _nearest_preview_values(
+        gray_values, settings.get("preview_gray_values")
     )
     patterns = [masks / "exposure" / f"gray_{gray:03d}.bmp" for gray in gray_values]
+    missing_patterns = [path for path in patterns if not path.is_file()]
+    if missing_patterns:
+        raise FileNotFoundError(f"brightness calibration masks are missing: {missing_patterns[:3]}")
     phase_zero = masks / "phase" / "phase_zero.bmp"
     settle_seconds = float(config.get("settle_delay_ms", 200)) / 1000.0
     rows: list[dict[str, Any]] = []
@@ -402,7 +563,7 @@ def run_exposure(
             "请确认相位 SLM 为 phase_zero.bmp。",
             assume_yes,
         )
-        for exposure_us in settings["exposure_times_us"]:
+        for exposure_us in exposure_times:
             camera = _open_verified_camera(config, config_path, float(exposure_us))
             try:
                 camera_settings[str(exposure_us)] = dict(camera.device_info())
@@ -415,64 +576,115 @@ def run_exposure(
                 for gray, pattern in zip(gray_values, patterns):
                     amplitude.display_file(pattern)
                     time.sleep(settle_seconds)
-                    raw, _ = median_capture(
+                    raw, capture_metadata = median_capture(
                         camera,
                         results,
                         f"exposure_{int(exposure_us)}_{gray:03d}",
-                        int(settings["frames_per_gray"]),
+                        frames_per_gray,
                     )
                     if raw.shape != frame_shape:
                         raise RuntimeError(
                             f"Camera returned shape {raw.shape}, expected ROI shape {frame_shape}"
                         )
                     measured = raw[window].astype(np.float32)
-                    dtype_max = (
-                        float(np.iinfo(raw.dtype).max)
-                        if np.issubdtype(raw.dtype, np.integer)
-                        else float(raw.max())
-                    )
+                    dtype_max = _captured_dtype_max(capture_metadata)
                     rows.append(
                         {
                             "gray_value": gray,
                             "exposure_us": float(exposure_us),
+                            "frames_in_median": frames_per_gray,
+                            "pattern_sha256": _sha256(pattern),
                             "mean_intensity": float(measured.mean()),
+                            "median_intensity": float(np.median(measured)),
+                            "std_intensity": float(measured.std()),
                             "integrated_energy": float(measured.sum()),
+                            "p01": float(np.percentile(measured, 1)),
                             "p99": float(np.percentile(measured, 99)),
                             "max_intensity": float(measured.max()),
+                            "detector_dtype_max": dtype_max,
                             "saturated_pixel_fraction": float(np.mean(raw[window] >= dtype_max)),
                         }
                     )
-                    if gray in {0, 64, 128, 192, 255}:
+                    if gray in preview_values:
                         previews[gray] = raw
             finally:
                 camera.close()
+    exposure_summaries: dict[str, dict[str, Any]] = {}
+    for exposure_us in exposure_times:
+        group = [row for row in rows if row["exposure_us"] == float(exposure_us)]
+        closed = float(group[0]["integrated_energy"])
+        opened = float(group[-1]["integrated_energy"])
+        span = opened - closed
+        if span <= 0.0:
+            raise RuntimeError(
+                f"open-state energy must exceed closed-state leakage at {exposure_us} us"
+            )
+        energies = np.asarray([row["integrated_energy"] for row in group], dtype=np.float64)
+        normalized = (energies - closed) / span
+        for row, response in zip(group, normalized):
+            row["response_normalized_curve_only"] = float(response)
+        negative_steps = np.diff(energies)
+        monotonic_violations = int(np.count_nonzero(negative_steps < -0.01 * span))
+        exposure_summaries[str(float(exposure_us))] = {
+            "closed_state_leakage_integrated_energy": closed,
+            "open_state_integrated_energy": opened,
+            "open_minus_closed_dynamic_range": span,
+            "open_to_closed_ratio": opened / max(closed, 1.0e-12),
+            "large_monotonicity_violations": monotonic_violations,
+            "curve_only_normalization": "(I-I_closed)/(I_open-I_closed)",
+            "closed_state_is_not_a_background_frame": True,
+        }
+
     with (results / "slm_response.csv").open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
         writer.writeheader()
         writer.writerows(rows)
 
-    fig, axis = plt.subplots(figsize=(9, 6), constrained_layout=True)
-    normalized_fig, normalized_axis = plt.subplots(figsize=(9, 6), constrained_layout=True)
-    for exposure_us in settings["exposure_times_us"]:
+    figure_style = _configure_publication_style()
+    response_fig, response_axes = plt.subplots(
+        1,
+        2,
+        figsize=(7.2047244094, 2.1653543307),  # 183 mm x 55 mm
+        constrained_layout=True,
+    )
+    axis, normalized_axis = response_axes
+    for exposure_us in exposure_times:
         group = [row for row in rows if row["exposure_us"] == float(exposure_us)]
         x = np.asarray([row["gray_value"] for row in group])
         y = np.asarray([row["integrated_energy"] for row in group], dtype=np.float64)
-        axis.plot(x, y, marker=".", label=f"{exposure_us} us")
+        axis.plot(x, y, marker="o", markersize=2.2, linewidth=1.0, color="#4C78A8")
         shifted = y - y[0]
-        normalized = shifted / max(float(shifted.max()), 1e-12)
-        normalized_axis.plot(x, normalized, marker=".", label=f"{exposure_us} us")
-    for current, title, ylabel, path in (
-        (axis, "SLM gray response", "raw integrated energy", results / "response_curve.png"),
-        (normalized_axis, "Normalized SLM gray response", "normalized integrated energy", results / "response_curve_normalized.png"),
-    ):
-        current.set_xlabel("amplitude SLM gray value")
-        current.set_ylabel(ylabel)
-        current.set_title(title)
-        current.legend()
-        current.figure.savefig(path, dpi=180)
-        plt.close(current.figure)
+        normalized = shifted / max(float(y[-1] - y[0]), 1e-12)
+        normalized_axis.plot(
+            x,
+            normalized,
+            marker="o",
+            markersize=2.2,
+            linewidth=1.0,
+            color="#4C78A8",
+        )
+    axis.set_xlabel("Amplitude SLM gray value")
+    axis.set_ylabel("Raw integrated CCD intensity")
+    axis.set_title("a  Measured response", loc="left", fontweight="bold")
+    normalized_axis.set_xlabel("Amplitude SLM gray value")
+    normalized_axis.set_ylabel("(I-I_closed)/(I_open-I_closed)")
+    normalized_axis.set_title("b  Curve-only normalization", loc="left", fontweight="bold")
+    for current in response_axes:
+        current.set_xlim(0, 255)
+        current.tick_params(width=0.7, length=2.5)
+        current.grid(axis="y", color="#D9D9D9", linewidth=0.45, alpha=0.65)
+    response_exports = _save_response_figure(
+        response_fig, results / "brightness_response"
+    )
+    plt.close(response_fig)
+    preview_exports: list[str] = []
     if previews:
-        fig, axes = plt.subplots(1, len(previews), figsize=(4 * len(previews), 4), constrained_layout=True)
+        fig, axes = plt.subplots(
+            1,
+            len(previews),
+            figsize=(7.2047244094, 2.1653543307),  # 183 mm x 55 mm
+            constrained_layout=True,
+        )
         axes = np.atleast_1d(axes)
         # A shared display scale is essential here. Per-panel autoscaling makes
         # the weak gray=0 residual look as bright as gray=255 and is therefore
@@ -491,19 +703,30 @@ def run_exposure(
             )
             axis_item.set_xlabel("CCD x")
             axis_item.set_ylabel("CCD y")
-        fig.suptitle(
-            f"Shared CCD scale [{preview_min:.0f}, {preview_max:.0f}] (no per-panel autoscale)"
-        )
-        fig.savefig(results / "exposure_preview.png", dpi=160)
+            axis_item.tick_params(width=0.7, length=2.0)
+        preview_path = results / "exposure_preview.png"
+        fig.savefig(preview_path, dpi=600)
+        preview_exports.append(preview_path.name)
         plt.close(fig)
     max_saturation = max(row["saturated_pixel_fraction"] for row in rows)
     summary = {
         "row_count": len(rows),
+        "unique_gray_point_count": len(gray_values),
+        "gray_values": gray_values,
+        "frames_per_gray": frames_per_gray,
         "camera_roi_xywh": config["camera"]["device_roi_xywh"],
+        "closed_state_name": "amplitude_slm_gray_0_closed_state_leakage",
+        "closed_state_is_background": False,
+        "background_capture_performed": False,
         "background_subtraction": False,
         "measurement_window": "fixed_center_window",
         "preview_scaling": "shared_raw_min_max_across_preview_frames",
+        "preview_gray_values": sorted(previews),
+        "figure_style": figure_style,
+        "figure_exports": response_exports + preview_exports,
+        "raw_full_frames_persisted": False,
         "camera_readback_by_exposure_us": camera_settings,
+        "response_by_exposure_us": exposure_summaries,
         "max_saturated_pixel_fraction": max_saturation,
         "warning": (
             "Saturation detected; reduce exposure."

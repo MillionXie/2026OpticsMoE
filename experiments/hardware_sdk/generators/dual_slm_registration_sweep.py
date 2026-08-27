@@ -6,6 +6,7 @@ import argparse
 import csv
 import hashlib
 import json
+import shutil
 from pathlib import Path
 from typing import Any
 
@@ -215,6 +216,65 @@ def _k_tag(value: float) -> str:
     return f"{value:.4f}".replace(".", "p")
 
 
+def _materialize_k1_suite(
+    output_dir: Path,
+    entries: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Copy the nominal-scale pairs into three unambiguous ready-to-play folders."""
+
+    suite_dir = output_dir / "00_k1_ready_to_play"
+    pair_reports: list[dict[str, Any]] = []
+    for index, entry in enumerate(entries, start=1):
+        pair_dir = suite_dir / f"{index:02d}_{entry['name']}"
+        pair_dir.mkdir(parents=True, exist_ok=True)
+        amplitude_target = pair_dir / "amplitude_1024x1024.bmp"
+        phase_target = pair_dir / "phase_1920x1200.bmp"
+        preview_target = pair_dir / "ideal_overlay.png"
+        shutil.copy2(Path(entry["amplitude_path"]), amplitude_target)
+        shutil.copy2(Path(entry["phase_path"]), phase_target)
+        shutil.copy2(Path(entry["preview_path"]), preview_target)
+        pair_reports.append(
+            {
+                "order": index,
+                "name": entry["name"],
+                "grating_axis": entry["grating_axis"],
+                "k": 1.0,
+                "amplitude_bmp": amplitude_target.relative_to(suite_dir).as_posix(),
+                "amplitude_sha256": _sha256(amplitude_target),
+                "phase_bmp": phase_target.relative_to(suite_dir).as_posix(),
+                "phase_sha256": _sha256(phase_target),
+                "preview_png": preview_target.relative_to(suite_dir).as_posix(),
+            }
+        )
+    report = {
+        "schema_version": 1,
+        "purpose": "nominal-scale dual-SLM registration pairs ready for playback",
+        "pairing_rule": "use amplitude_1024x1024.bmp and phase_1920x1200.bmp from the same folder only",
+        "scale_k": 1.0,
+        "amplitude_polarity": "255=white/open, 0=black/closed",
+        "pairs": pair_reports,
+    }
+    suite_dir.mkdir(parents=True, exist_ok=True)
+    (suite_dir / "k1_pair_manifest.json").write_text(
+        json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
+    (suite_dir / "README.md").write_text(
+        """# k=1 双 SLM 对齐即播套装
+
+本目录只有无倍率修正（`k=1.0000`）的三组严格配对文件：规则棋盘格、
+不规则大块 X 光栅和不规则大块 Y 光栅。每个子目录内固定播放
+`amplitude_1024x1024.bmp` 与 `phase_1920x1200.bmp`，不要跨目录配对。
+
+- 振幅：8-bit 灰度 BMP，`255=白/透光`，`0=黑/遮光`。
+- 相位：8-bit 灰度 BMP，已经包含既有纵向翻转和相位中心设置，播放端不要再翻转。
+- `ideal_overlay.png` 只用于人工核对，不用于硬件播放。
+- 文件哈希和严格配对关系记录在 `k1_pair_manifest.json`。
+""",
+        encoding="utf-8",
+    )
+    return report
+
+
 def generate(config_path: Path) -> dict[str, Any]:
     config_path = config_path.expanduser().resolve()
     raw = yaml.safe_load(config_path.read_text(encoding="utf-8"))
@@ -280,6 +340,7 @@ def generate(config_path: Path) -> dict[str, Any]:
 
     manifest_patterns: list[dict[str, Any]] = []
     csv_rows: list[dict[str, Any]] = []
+    k1_entries: list[dict[str, Any]] = []
     for pattern in patterns:
         pair_dir = output_dir / pattern["folder"]
         intended_open = pattern["intended_open"]
@@ -326,10 +387,13 @@ def generate(config_path: Path) -> dict[str, Any]:
         )
         phase_reports: list[dict[str, Any]] = []
         for grating_axis, logical_phase in phase_variants.items():
+            preview_path = (
+                preview_dir / f"ideal_focused_overlay_{grating_axis}_k1p0000.png"
+            )
             Image.fromarray(
                 _ideal_registration_preview(intended_open, logical_phase), mode="L"
             ).save(
-                preview_dir / f"ideal_focused_overlay_{grating_axis}_k1p0000.png",
+                preview_path,
                 format="PNG",
             )
             oriented_phase = logical_phase
@@ -394,6 +458,20 @@ def generate(config_path: Path) -> dict[str, Any]:
                     }
                 )
                 phase_reports.append(phase_report)
+                if np.isclose(k_value, 1.0, atol=1.0e-12):
+                    k1_entries.append(
+                        {
+                            "name": (
+                                "checker_c64"
+                                if pattern["order"] == 1
+                                else f"large_blocks_c48_{grating_axis}"
+                            ),
+                            "grating_axis": grating_axis,
+                            "amplitude_path": amplitude_path,
+                            "phase_path": phase_path,
+                            "preview_path": preview_path,
+                        }
+                    )
                 csv_rows.append(
                     {
                         "pattern_order": pattern["order"],
@@ -432,6 +510,7 @@ def generate(config_path: Path) -> dict[str, Any]:
         )
 
     output_dir.mkdir(parents=True, exist_ok=True)
+    k1_report = _materialize_k1_suite(output_dir, k1_entries)
     with (output_dir / "scale_sweep_manifest.csv").open(
         "w", encoding="utf-8", newline=""
     ) as handle:
@@ -475,6 +554,7 @@ def generate(config_path: Path) -> dict[str, Any]:
         },
         "background_subtraction": False,
         "patterns": manifest_patterns,
+        "k1_ready_to_play": k1_report,
     }
     (output_dir / "alignment_scale_manifest.json").write_text(
         json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8"

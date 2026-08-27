@@ -1,8 +1,32 @@
 # Hardware SDK 命令
 
+> [!IMPORTANT]
+> 当前实验室新光路请先阅读 [LAB_WINDOWS_QUICKSTART.md](LAB_WINDOWS_QUICKSTART.md)，并从
+> `E:\code\guest\2026OpticsMoE` 仓库根目录使用 `--stage-dir`。不要在仓库根目录直接运行
+> `--input-dir compact_amplitude`：它会去寻找不存在的
+> `E:\code\guest\2026OpticsMoE\compact_amplitude`，从而报
+> `No compact SLM PNGs found`。
+
+## 当前 17 µm 新光路：stage-dir 重建
+
+先把 `$STAGE` 改为服务器导出并完整复制到实验室电脑的真实 stage 目录：
+
+```powershell
+$STAGE = "experiments\qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5\hardware_sessions\<session>\04_language_global"
+
+python -m experiments.hardware_sdk.workflows.reconstruct_slm `
+  --stage-dir $STAGE --payload amplitude --hardware-profile meadowlark_17um
+
+python -m experiments.hardware_sdk.workflows.reconstruct_slm `
+  --stage-dir $STAGE --payload phase --hardware-profile meadowlark_17um `
+  --center-x 980 --center-y 590
+```
+
 所有命令都从仓库根目录执行，均为可直接复制的单行命令。
 
-## 紧凑 SLM payload 重建
+## 历史兼容：仓库根目录 input-dir 写法（当前勿用）
+
+下面命令仅用于目录确实位于当前工作目录下的旧 payload；不是当前 17 µm stage 工作流。
 
 服务器只需传输 `478×478` 的 8-bit PNG。实验室用下面的确定性规则恢复完整画布：
 
@@ -58,7 +82,9 @@ YAML 文件解析。
    `slm7930_at532_30C.lut`；若实验使用 70 °C 标定，必须改为 `_70C.lut`。
 3. 填写 `camera.device_roi_xywh`；四项都必须为 4 的倍数。
 
-实验前至少填写：
+实验前至少填写硬件 ROI，并按 `GEOMETRY_AND_BRIGHTNESS.md` 生成四点合同。当前正式
+Qwen/agreement 采集还必须把 `detector_geometry.enabled` 设为 `true`，并固定合同路径
+及 SHA-256：
 
     camera:
       exposure_us: 5000.0
@@ -68,11 +94,16 @@ YAML 文件解析。
       saved_frame_resize_mode: auto
       saved_frame_bit_depth: 8
       saved_frame_input_range: [0, 65535]
+      detector_geometry:
+        enabled: true
+        contract_file: ../artifacts/calibration/detector_homography_478.contract.json
+        expected_file_sha256: <64位SHA-256>
 
 TUCam 的 ROI 四项必须为 4 的倍数。程序先核对 SDK 返回的原始帧是否等于硬件
-ROI，再核对保存结果是否等于 478×478。`auto` 对较大 ROI 使用 area，下采样；对
-当前实验室的 472×472 ROI 使用 bilinear，小幅上采样到 478×478。保存格式默认为
-8-bit 灰度 PNG。0～65535 到 0～255 是固定线性映射，不会对每张图单独拉伸。
+ROI，再在 raw ROI 上做一次固定 homography，并核对保存结果是否为 canonical
+478×478。保存格式默认为 8-bit 灰度 PNG；0～65535 到 0～255 是固定线性映射，不会
+对每张图单独拉伸。仅在 `detector_geometry.enabled=false` 的 legacy/smoke 模式下，
+`saved_frame_resize_mode:auto` 才会按尺寸选择 area 或 bilinear 普通缩放。
 
 ## 3. 相机单独检查
 

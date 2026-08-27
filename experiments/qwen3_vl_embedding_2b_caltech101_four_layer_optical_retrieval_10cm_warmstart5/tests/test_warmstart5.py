@@ -6,6 +6,13 @@ import pytest
 import torch
 from torch import nn
 
+from experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust.offline_tail import (
+    LanguageGlobalOfflineTail,
+)
+from experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust.optical_blocks import (
+    RobustCCDNormalizer,
+)
+
 from ..modeling import (
     GATE_KEYS,
     apply_stage_trainability,
@@ -123,6 +130,12 @@ def test_release_configs_seal_test_and_fix_fusion_floor() -> None:
     stage_a = load_settings(project / "configs/release/stage1_optical_calibration.yaml")
     stage_b = load_settings(project / "configs/release/stage2_joint_sealed_test.yaml")
     quick = load_settings(project / "configs/release/quick_last_stage_10x10.yaml")
+    hardware = load_settings(
+        project / "configs/release/stage2_joint_hardware_canonical_ccd.yaml"
+    )
+    quick_hardware = load_settings(
+        project / "configs/release/quick_last_stage_10x10_canonical_ccd.yaml"
+    )
     assert stage_a.warmstart_stage == "optical_calibration"
     assert stage_b.warmstart_stage == "joint"
     assert not stage_a.evaluate_test_each_epoch
@@ -132,3 +145,38 @@ def test_release_configs_seal_test_and_fix_fusion_floor() -> None:
     assert stage_a.optimizer_steps_per_epoch == stage_b.optimizer_steps_per_epoch == 12
     assert quick.gallery_images_per_sku == 1
     assert quick.train_limit_per_sku == quick.test_limit_per_sku == 10
+    assert hardware.hardware_ccd_flip_vertical is False
+    assert hardware.hardware_ccd_flip_horizontal is False
+    assert quick_hardware.hardware_ccd_flip_vertical is False
+    assert quick_hardware.hardware_ccd_flip_horizontal is False
+
+
+def test_simulation_and_offline_hardware_use_identical_ccd_normalization() -> None:
+    settings = SimpleNamespace(
+        active_size=4,
+        language_optical_normalization_clip=12.0,
+        language_optical_log_compression=1.0,
+    )
+    simulation_normalizer = RobustCCDNormalizer(settings)
+    offline_contract = SimpleNamespace(
+        detector_size=4,
+        ccd_relative_clip=12.0,
+        ccd_log_compression=1.0,
+    )
+    intensity = torch.tensor(
+        [
+            [
+                [-2.0, 0.0, 1.0, 2.0],
+                [4.0, 8.0, 16.0, 32.0],
+                [0.5, 1.5, 3.0, 6.0],
+                [12.0, 24.0, 48.0, 96.0],
+            ]
+        ]
+    )
+
+    simulation = simulation_normalizer(intensity)
+    measured = LanguageGlobalOfflineTail._normalize_ccd(
+        offline_contract, intensity
+    )
+
+    torch.testing.assert_close(simulation, measured, rtol=0.0, atol=0.0)

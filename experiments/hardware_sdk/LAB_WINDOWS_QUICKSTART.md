@@ -1,9 +1,12 @@
 # 实验室 Windows：SLM 重建快速说明
 
+新的四点 CCD 校正和快速亮度标定流程见
+[GEOMETRY_AND_BRIGHTNESS.md](GEOMETRY_AND_BRIGHTNESS.md)。
+
 所有命令都从仓库根目录运行，例如：
 
 ```powershell
-PS D:\code\guest\2026OpticsMoE>
+PS E:\code\guest\2026OpticsMoE>
 ```
 
 实验室电脑只做 SLM/CCD 时无需安装 Qwen 或 CUDA。安装厂商驱动后，用 Python 3.11
@@ -19,7 +22,7 @@ python -m pip install -r experiments\hardware_sdk\requirements-light.txt
 代表：
 
 ```text
-D:\code\guest\2026OpticsMoE\compact_amplitude
+E:\code\guest\2026OpticsMoE\compact_amplitude
 ```
 
 正常情况下，payload 实际位于某个 session stage，例如：
@@ -133,8 +136,9 @@ python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments
 当前振幅SLM命令极性已确认：`255=白/透光`、`0=黑/遮光`。本节生成的数字、ROI标记、
 灰阶曝光图均直接使用这一极性，不要在SDK或播放软件中再次反相。
 
-两类输出也全部位于 Caltech101 四层工程的
-`hardware_sessions/_calibration_17um/`，不会落到仓库根目录。
+通用手写数字和设备标定输出统一位于
+`experiments/hardware_sdk/artifacts/calibration/`，不会落到仓库根目录。Qwen
+任务自己的输入、CCD 和采集日志则保留在 warmstart5 项目的 `hardware_sessions/<session>/<stage>/`。
 
 先只生成 1024×1024、8-bit、17 µm SLM 用的离线手写风格 0～9 顺序图（不依赖
 Torch/torchvision 或联网下载）：
@@ -151,7 +155,9 @@ python -m experiments.hardware_sdk.demos.amplitude_camera_demo --config experime
 python -m experiments.hardware_sdk.workflows.roi_calibration generate --config experiments\hardware_sdk\configs\tucam_meadowlark_1024_windows.yaml
 ```
 
-加载配置生成的 `masks\phase\phase_zero.bmp` 后执行曝光响应采集：
+在相位 SLM 上固定加载刚生成的
+`experiments\hardware_sdk\artifacts\calibration\masks\phase\phase_zero.bmp`；确认加载后，
+保持该相位图、曝光时间和增益不变，再执行完整 32×3 曝光响应采集：
 
 ```powershell
 python -m experiments.hardware_sdk.workflows.roi_calibration exposure --config experiments\hardware_sdk\configs\tucam_meadowlark_1024_windows.yaml

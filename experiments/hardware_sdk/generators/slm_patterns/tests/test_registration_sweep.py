@@ -4,6 +4,7 @@ import numpy as np
 from PIL import Image
 
 from experiments.hardware_sdk.generators.dual_slm_registration_sweep import (
+    _materialize_k1_suite,
     _save_amplitude,
     _save_inverted_amplitude,
     _save_phase,
@@ -112,3 +113,54 @@ def test_phase_export_is_native_8bit_binary_bmp(tmp_path: Path) -> None:
         assert image.size == (12, 10)
         assert set(np.unique(np.asarray(image))) == {0, 128}
     assert report["native_active_size_wh"] == [6, 4]
+
+
+def test_k1_ready_suite_keeps_each_amplitude_phase_pair_together(
+    tmp_path: Path,
+) -> None:
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    entries = []
+    for name, axis in (
+        ("checker_c64", "legacy_xy"),
+        ("large_blocks_c48_x", "x"),
+        ("large_blocks_c48_y", "y"),
+    ):
+        amplitude = source_dir / f"{name}_amplitude.bmp"
+        phase = source_dir / f"{name}_phase.bmp"
+        preview = source_dir / f"{name}_preview.png"
+        Image.fromarray(np.full((4, 4), 255, dtype=np.uint8), mode="L").save(
+            amplitude, format="BMP"
+        )
+        Image.fromarray(np.full((4, 4), 128, dtype=np.uint8), mode="L").save(
+            phase, format="BMP"
+        )
+        Image.fromarray(np.full((4, 4), 64, dtype=np.uint8), mode="L").save(
+            preview, format="PNG"
+        )
+        entries.append(
+            {
+                "name": name,
+                "grating_axis": axis,
+                "amplitude_path": amplitude,
+                "phase_path": phase,
+                "preview_path": preview,
+            }
+        )
+
+    report = _materialize_k1_suite(tmp_path / "output", entries)
+
+    assert [pair["name"] for pair in report["pairs"]] == [
+        "checker_c64",
+        "large_blocks_c48_x",
+        "large_blocks_c48_y",
+    ]
+    for pair in report["pairs"]:
+        assert not Path(pair["amplitude_bmp"]).is_absolute()
+        assert not Path(pair["phase_bmp"]).is_absolute()
+        assert not Path(pair["preview_png"]).is_absolute()
+        suite = tmp_path / "output" / "00_k1_ready_to_play"
+        assert (suite / pair["amplitude_bmp"]).is_file()
+        assert (suite / pair["phase_bmp"]).is_file()
+        assert (suite / pair["preview_png"]).is_file()
+        assert pair["k"] == 1.0
