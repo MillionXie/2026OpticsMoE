@@ -42,3 +42,26 @@
   post-update diagnostics. The tiny 12-train/16-validation sample metrics have
   no accuracy interpretation.
 - Formal training: intentionally not started.
+
+## 2026-08-27 formal ImageNet launch
+
+- P11 had completed before launch, and no P09/P11 training process remained.
+  Physical GPU 0 and GPU 3 were both idle RTX 4090 devices at `12 MiB/0%`.
+- Launched only through `commands/03_launch_imagenet_90e_bs96.sh` with
+  `PHYSICAL_GPU_INDICES=0,3`; torchrun PID is `3804958`.
+- The controlled run uses the full ImageNet-1K splits, two DDP ranks, batch 96
+  per rank/global batch 192 and the same 90-epoch optimization recipe as P09
+  and P11. P10 changes only the propagation schedule to
+  `[local 5 mm -> global 50 mm] x 4` and adds no trainable parameters.
+- Full initial validation completed at Top-1/Top-5 `0.11%/0.52%`. Training
+  entered epoch 1 and reached batch 100/6,672; logged loss moved from `7.0776`
+  at batch 1 to `7.0021` at batch 100 during warmup.
+- A post-start health check measured approximately `9,122/9,124 MiB` device
+  memory and `97%/98%` utilization on physical GPUs 0/3. Both DDP workers and
+  their data-loader workers were alive, with no baseline restart error, OOM,
+  NCCL failure, config mismatch or traceback.
+
+The job is intentionally left active through epoch 90 and the same final
+normal/optical-off/random-phase/electronic-skip-off evaluation used by P09 and
+P11. Completion requires `result.json` with `status=complete` and an exported
+`checkpoints/backbone.pt`.

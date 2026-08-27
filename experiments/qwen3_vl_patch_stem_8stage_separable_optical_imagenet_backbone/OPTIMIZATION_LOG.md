@@ -127,3 +127,50 @@ The active job is intentionally left running through epoch 90 and final
 normal/optical-off/random-phase/electronic-skip-off evaluation. Completion is
 defined by `result.json` with `status=complete` and creation of
 `checkpoints/backbone.pt`, not merely by the absence of the torchrun process.
+
+## 2026-08-27 completed 90-epoch ImageNet pretraining
+
+- The resumed run completed all epochs and all final evaluations.
+  `result.json` records `status=complete`, `history.json` contains epochs
+  1--90, and `checkpoints/backbone.pt` was exported successfully.
+- The Top-1-selected checkpoint is epoch 88: validation Top-1/Top-5
+  `51.348%/75.552%`, loss `2.209665`, over all 50,000 ImageNet-1K validation
+  images. Epoch 90 ended at `51.224%/75.582%`; the small difference confirms a
+  late plateau rather than a failed ending.
+- Selected Top-1 trajectory was `6.712%` at epoch 1, `37.392%` at epoch 15,
+  `44.234%` at epoch 30, `49.832%` at epoch 60, `51.198%` at epoch 80 and
+  `51.348%` at epoch 88. Epochs 80--88 added only `0.150 pp`.
+- Against the controlled P09 checkpoint selected by the same Top-1 rule, P11
+  improves Top-1 from `49.812%` to `51.348%` (`+1.536 pp`) and Top-5 from
+  `74.224%` to `75.552%` (`+1.328 pp`). P09 and P11 have the same optical,
+  adapter, residual and task-head parameter counts and the same 90-epoch
+  recipe; the controlled change is the optical propagation operator.
+- At the selected checkpoint, circular mean absolute phase motion is
+  `1.66190 rad`, and `92.721%` of phases moved more than `0.1 rad`. The
+  per-stage mean motion is
+  `[1.6962, 1.8388, 1.9966, 1.9440, 1.9437, 1.7907, 1.4500, 0.6352] rad`.
+  The last channel-axis stage moved substantially less than the earlier
+  stages, but randomizing all phases still collapses performance.
+- Final inference diagnostics at the selected checkpoint are: optical-off
+  Top-1 `4.556%`, random-phase `0.086%`, and electronic-skip-off `0.098%`.
+  Learned optics and the electronic residual are therefore both necessary for
+  the trained model. P11 retains more information in the destructive
+  optical-off path than P09 (`4.556%` versus `0.262%`), so the accuracy gain
+  must not be described as proof that every layer became more optically
+  dominant.
+- Epoch-90 optical fusion weights are
+  `[0.5018, 0.5001, 0.5034, 0.5048, 0.5505, 0.5068, 0.5364, 0.7137]`
+  (mean `0.5397`). The mean is close to P09's `0.5394`, but P11 concentrates a
+  much stronger optical weight in the final channel-axis stage while several
+  earlier stages remain close to the hard `0.5` lower bound.
+- Epoch-90 training throughput was `773.80 images/s` with approximately
+  `8,504/8,744 MiB` peak allocated/reserved PyTorch memory per reported rank.
+  P11 is slower than P09 under the matched mixed 4090/3090 setting because the
+  axis-specific layout and propagation add overhead.
+
+Scientific interpretation: the full result upgrades the epoch-15 indication
+to a meaningful controlled single-seed result. Explicit token/channel-axis
+optical mixing improves the source-backbone objective by 1.536 percentage
+points without increasing parameters. It is not yet a multi-seed generalization
+claim, and the optical-off/gate pattern shows that the gain still comes from a
+co-adapted hybrid system rather than a standalone optical branch.
