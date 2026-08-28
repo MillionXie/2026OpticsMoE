@@ -42,3 +42,10 @@ sha256sum $OUTPUT
 ```text
 E:\code\guest\2026OpticsMoE\experiments\lab_qwen
 ```
+
+在实验室 PowerShell 下载并覆盖解压到仓库根目录：
+
+```powershell
+scp -P 24096 guest3@202.120.62.181:/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/lab_full_bundles/qwen_full_lab.zip .
+Expand-Archive .\qwen_full_lab.zip -DestinationPath E:\code\guest\2026OpticsMoE -Force
+```

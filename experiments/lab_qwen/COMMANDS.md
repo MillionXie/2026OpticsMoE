@@ -4,6 +4,15 @@
 `E:\code\guest\2026OpticsMoE` 执行。先运行 `conda activate xml`；不要激活 ZIP 内旧
 虚拟环境。
 
+若尚未下载，先在实验室 PowerShell 执行：
+
+```powershell
+scp -P 24096 guest3@202.120.62.181:/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/lab_full_bundles/qwen_full_lab.zip .
+Expand-Archive .\qwen_full_lab.zip -DestinationPath E:\code\guest\2026OpticsMoE -Force
+Set-Location E:\code\guest\2026OpticsMoE
+conda activate xml
+```
+
 ## 0. 只修改这两个配置文件
 
 1. `experiments\lab_qwen\config\hardware.yaml`
