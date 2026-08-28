@@ -1,7 +1,7 @@
 # 新实验室完整流程：唯一命令文档
 
-本文件按实际执行顺序书写。所有 PowerShell 命令均在仓库根目录
-`E:\code\guest\2026OpticsMoE` 执行。实验人员只编辑
+本文件按实际执行顺序书写。所有 PowerShell 命令均在本独立工程根目录
+`E:\code\guest\qwen_mnist4_full_lab` 执行。实验人员只编辑
 `experiments\lab_qwen\LAB_CONFIG.yaml`，不要编辑 `generated` 目录，也不需要手算
 ROI、透视变换或 SHA-256。
 
@@ -10,7 +10,7 @@ ROI、透视变换或 SHA-256。
 把完整 ZIP 解压后，先执行：
 
 ```powershell
-Set-Location E:\code\guest\2026OpticsMoE
+Set-Location E:\code\guest\qwen_mnist4_full_lab
 conda activate xml
 python -m pip install -r experiments\qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5\requirements-lab.txt
 python -m pip install -r experiments\qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5\requirements-offline-finetune.txt

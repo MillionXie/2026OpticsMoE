@@ -1,6 +1,6 @@
 # Qwen + MNIST-4 新实验室完整包
 
-把 ZIP 解压到 `E:\code\guest\2026OpticsMoE`。实验人员只编辑
+把 ZIP 解压到独立目录 `E:\code\guest\qwen_mnist4_full_lab`。实验人员只编辑
 `experiments\lab_qwen\LAB_CONFIG.yaml`，全部操作从 `COMMANDS.md` 第 0 步顺序执行。
 
 包内只面向本次设备：1024×1024、17 µm Meadowlark 高速振幅 SLM；1920×1200、
