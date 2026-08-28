@@ -218,6 +218,21 @@ python -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2.lab_session `
 experiments\lab_qwen\mnist4_sessions\post_robust_best\quick40\phase_to_play
 ```
 
+采集前可先在实验室电脑生成与 40 张输入同名的黑白仿真 CCD。灰度图是黑底白光的
+0–255 线性显示，另附严格 0/255 二值图：
+
+```powershell
+python -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2.simulation_agreement `
+  --stage-dir experiments\lab_qwen\mnist4_sessions\post_robust_best\quick40 `
+  --export-simulation-only `
+  --device auto `
+  --batch-size 4
+```
+
+结果在 `quick40\simulation_reference_monochrome`。灰度 PNG 只用于查看和按文件名配对；
+采集后的正式 PCC/SSIM 仍由原始 CCD 强度和 float 仿真重新计算，不使用显示 PNG
+代替原始数据。
+
 先只读检查设备，然后采集：
 
 ```powershell
@@ -292,6 +307,10 @@ formal400\hardware_evaluation\paper_evaluation\figures
 formal400\simulation_agreement\agreement_summary.json
 formal400\simulation_agreement\per_sample_agreement.csv
 formal400\simulation_agreement\figures
+formal400\simulation_agreement\measured_grayscale_8bit
+formal400\simulation_agreement\simulation_grayscale_8bit
+formal400\simulation_agreement\measured_binary_8bit
+formal400\simulation_agreement\simulation_binary_8bit
 ```
 
 相似度报告包含 PCC、signal-PCC、SSIM、shape-NRMSE、余弦相似度、能量比、质心误差、

@@ -12,8 +12,11 @@ from ..lab_session import _read_csv, _read_json
 from ..simulation_agreement import (
     PlayedBMPSimulator,
     _load_amplitude,
+    binary_metrics,
+    binary_uint8,
     decode_played_phase,
     inverse_physical_pitch_nearest,
+    monochrome_uint8,
 )
 
 
@@ -39,6 +42,21 @@ def test_inverse_preserves_export_flip_contract() -> None:
     )
     recovered = np.flipud(inverse_physical_pitch_nearest(exported))
     np.testing.assert_array_equal(recovered, logical)
+
+
+def test_monochrome_and_binary_outputs_are_declared_uint8_maps() -> None:
+    value = np.arange(16, dtype=np.float32).reshape(4, 4)
+    monochrome = monochrome_uint8(value)
+    binary = binary_uint8(value, threshold_ratio=0.2)
+    assert monochrome.dtype == np.uint8
+    assert int(monochrome.min()) == 0
+    assert int(monochrome.max()) == 255
+    assert set(np.unique(binary)) == {0, 255}
+    metrics = binary_metrics(value, value, threshold_ratio=0.2)
+    assert metrics["binary_pcc"] == pytest.approx(1.0)
+    assert metrics["binary_ssim"] == pytest.approx(1.0)
+    assert metrics["binary_iou"] == pytest.approx(1.0)
+    assert metrics["binary_dice"] == pytest.approx(1.0)
 
 
 @pytest.mark.skipif(
