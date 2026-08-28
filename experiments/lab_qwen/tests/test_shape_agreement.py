@@ -149,4 +149,3 @@ def test_ideal_canonical_capture_scores_one(generated_session: Path) -> None:
     assert report["primary_pcc_mean"] == pytest.approx(1.0, abs=1.0e-7)
     assert report["primary_ssim_mean"] == pytest.approx(1.0, abs=1.0e-7)
     assert report["primary_cosine_mean"] == pytest.approx(1.0, abs=1.0e-7)
-
