@@ -47,11 +47,12 @@ class Entry:
         if self.literal is not None:
             return self.literal
         if self.source_path is not None:
-            return self.source_path.read_bytes()
-        if self.source_zip is None or self.source_member is None:
-            raise RuntimeError(f"Entry has no source: {self.archive_path}")
-        with zipfile.ZipFile(self.source_zip) as archive:
-            data = archive.read(self.source_member)
+            data = self.source_path.read_bytes()
+        else:
+            if self.source_zip is None or self.source_member is None:
+                raise RuntimeError(f"Entry has no source: {self.archive_path}")
+            with zipfile.ZipFile(self.source_zip) as archive:
+                data = archive.read(self.source_member)
         if self.transform == "compact_478_to_native_1024_bmp":
             from PIL import Image
 
@@ -128,6 +129,28 @@ def _map_directory(
             ),
             replace=replace,
         )
+
+
+def _add_ready_bmps_from_compact(
+    entries: dict[str, Entry],
+    *,
+    source_session: Path,
+    destination: str,
+    category: str,
+) -> int:
+    compact_files = sorted(source_session.glob("*/compact_amplitude/*.png"))
+    for compact in compact_files:
+        stage_name = compact.parent.parent.name
+        _put(
+            entries,
+            Entry(
+                f"{destination}/{stage_name}/amplitude_to_play/{compact.stem}.bmp",
+                category,
+                source_path=compact,
+                transform="compact_478_to_native_1024_bmp",
+            ),
+        )
+    return len(compact_files)
 
 
 def _formal_entries(entries: dict[str, Entry], formal_zip: Path) -> None:
@@ -279,6 +302,22 @@ def create_bundle(
     _map_directory(entries, exposure_dir, f"{ARCHIVE_ROOT}/calib/exposure", "exposure_32x3")
     _map_directory(entries, agreement_session, f"{ARCHIVE_ROOT}/agree", "agreement_session")
     _map_directory(entries, four_session, f"{ARCHIVE_ROOT}/four", "four_stage_initial")
+    agreement_ready = _add_ready_bmps_from_compact(
+        entries,
+        source_session=agreement_session,
+        destination=f"{ARCHIVE_ROOT}/agree",
+        category="agreement_ready_bmp",
+    )
+    four_ready = _add_ready_bmps_from_compact(
+        entries,
+        source_session=four_session,
+        destination=f"{ARCHIVE_ROOT}/four",
+        category="four_stage_ready_bmp",
+    )
+    if agreement_ready == 0:
+        raise RuntimeError("Agreement session contains no compact amplitudes to reconstruct")
+    if four_ready == 0:
+        raise RuntimeError("Four-stage session contains no compact amplitudes to reconstruct")
 
     for path in _current_source_files(root):
         relative = path.relative_to(root).as_posix()
