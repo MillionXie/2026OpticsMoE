@@ -326,6 +326,56 @@ python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrie
   --output-dir experiments\lab_qwen\results\agreement
 ```
 
+### 6.1 形状输入 × 形状相位 mask：独立仿真—光路一致性
+
+这一步不依赖 Qwen checkpoint，也不评价分类准确率。它固定使用 532 nm、17 µm
+逻辑像素、518×518 传播画布、478×478 有效区、10 cm 和 0.65° k 空间截止，生成
+6 个非对称振幅形状 × 6 个几何相位 mask，共 36 个采集。先生成完整会话：
+
+```powershell
+python -m experiments.lab_qwen.shape_agreement generate `
+  --output-dir experiments\lab_qwen\shape_agreement
+```
+
+如果相位 SLM 中心不再是 `[980,590]`，在生成时明确传入实测中心：
+
+```powershell
+python -m experiments.lab_qwen.shape_agreement generate `
+  --output-dir experiments\lab_qwen\shape_agreement `
+  --phase-center-x 980 `
+  --phase-center-y 590
+```
+
+生成后只按下面这一个新文件中的 6 组命令顺序操作；每组先手动加载该目录唯一的
+相位 BMP，再由程序连续播放 6 张振幅 BMP：
+
+```text
+experiments\lab_qwen\shape_agreement\RUN_COMMANDS.md
+```
+
+36 帧全部采集完成后运行：
+
+```powershell
+python -m experiments.lab_qwen.shape_agreement evaluate `
+  --session-dir experiments\lab_qwen\shape_agreement
+```
+
+正式结果在：
+
+```text
+experiments\lab_qwen\shape_agreement\shape_agreement_results\shape_agreement_summary.json
+experiments\lab_qwen\shape_agreement\shape_agreement_results\metrics_per_pair.csv
+experiments\lab_qwen\shape_agreement\shape_agreement_results\metrics_summary_by_phase.csv
+experiments\lab_qwen\shape_agreement\shape_agreement_results\figures
+```
+
+主指标为 transport-quantized 仿真参考、线性强度域、固定 canonical 方向下的 PCC、
+signal-PCC、SSIM、shape-NRMSE、余弦相似度、质心误差、能量比例、理论信号区外能量
+和饱和率。程序不做背景扣除、逐帧 min-max、逐帧配准或自动挑选翻转方向。
+`best_orientation_diagnostic` 只负责提示四点角标是否填反，不能代替正式主指标。
+
+不要在已有实测 CCD 的目录上使用 `--overwrite`；该参数会重建整个形状会话。
+
 ## 7. Qwen 最后一层 quick210 快速验证
 
 相位 SLM 加载 `last\04_language_global\phase_to_play` 中唯一 BMP：

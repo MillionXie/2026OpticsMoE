@@ -400,11 +400,13 @@ def _current_source_files(repo_root: Path) -> Iterable[Path]:
         "experiments/hardware_sdk/workflows/acquire_folder.py",
         "experiments/hardware_sdk/workflows/calibration_common.py",
         "experiments/hardware_sdk/workflows/detector_homography.py",
+        "experiments/hardware_sdk/workflows/reconstruct_slm.py",
         "experiments/hardware_sdk/workflows/roi_calibration.py",
         "experiments/hardware_sdk/demos/__init__.py",
         "experiments/hardware_sdk/demos/phase_slm_demo.py",
         "experiments/lab_qwen/__init__.py",
         "experiments/lab_qwen/prepare_lab.py",
+        "experiments/lab_qwen/shape_agreement.py",
         "experiments/lab_qwen/COMMANDS.md",
         "experiments/lab_qwen/README.md",
         "experiments/lab_qwen/LAB_CONFIG.yaml",
@@ -593,6 +595,7 @@ def verify_bundle(path: Path) -> dict[str, Any]:
             f"{ARCHIVE_ROOT}/LAB_CONFIG.yaml",
             f"{ARCHIVE_ROOT}/internal/hardware_template.yaml",
             f"{ARCHIVE_ROOT}/prepare_lab.py",
+            f"{ARCHIVE_ROOT}/shape_agreement.py",
             f"{ARCHIVE_ROOT}/calib/fresnel/A_WHITE.bmp",
             f"{ARCHIVE_ROOT}/calib/fresnel/P4_POINT.bmp",
             f"{ARCHIVE_ROOT}/calib/dual/k1_pair_manifest.json",
@@ -606,6 +609,7 @@ def verify_bundle(path: Path) -> dict[str, Any]:
             f"{ARCHIVE_ROOT}/mnist4/payload/samples/formal400.csv",
             f"{ARCHIVE_ROOT}/mnist4/payload/phase_masks/phase_masks.json",
             "experiments/d2nn_mnist4_single_layer_17um_10cm_v2/simulation_agreement.py",
+            "experiments/hardware_sdk/workflows/reconstruct_slm.py",
         }
         missing = required.difference(names)
         if missing:

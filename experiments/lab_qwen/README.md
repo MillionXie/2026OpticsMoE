@@ -12,3 +12,9 @@ ROI 会自动按当前 TUCam 约束生成：左/上/高按 4 像素、宽按 8 �
 一致性、Qwen 最后一层和四层逐层流程，以及 MNIST-4 的 4 个已训练 mask、quick40、
 formal400、原始四 ROI 分类、PCC/SSIM/NRMSE/余弦/能量/质心等一致性分析和 Arial
 7 pt 的 PDF/SVG/600 dpi PNG 图表。
+
+另外提供 `shape_agreement.py` 的模型无关几何基准：6 个非对称振幅形状与 6 个
+几何相位 mask 形成 36 组 10 cm 传播实验，同时导出理想连续相位和实际 8-bit
+传输量化仿真。评估严格复用正式四点 homography，输出逐样本及逐 mask 的 PCC、
+signal-PCC、SSIM、shape-NRMSE、余弦、质心、能量与饱和指标；具体命令见
+`COMMANDS.md` 第 6.1 节。
