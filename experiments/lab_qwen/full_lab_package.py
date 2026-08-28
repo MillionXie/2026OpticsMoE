@@ -116,7 +116,11 @@ def _map_directory(
 ) -> None:
     if not source.is_dir():
         raise FileNotFoundError(f"Required {category} directory is missing: {source}")
-    files = sorted(path for path in source.rglob("*") if path.is_file())
+    files = sorted(
+        path
+        for path in source.rglob("*")
+        if path.is_file() and path.name.casefold() != "readme.md"
+    )
     if not files:
         raise RuntimeError(f"Required {category} directory is empty: {source}")
     for path in files:
