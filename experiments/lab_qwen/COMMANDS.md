@@ -14,11 +14,12 @@
 2. `experiments\lab_qwen\config\geometry.yaml`
    - 填写 P4 的四个逻辑顶点在 CCD 全图中的坐标；不能只按画面位置排序。
 
-先检查硬件环境：
+`config\bootstrap.yaml` 只用于尚不知道 ROI 时的全传感器标定；其中只需同步修改 LUT
+温度和临时曝光。先检查硬件环境：
 
 ```powershell
 python -m experiments.hardware_sdk.workflows.acquire_folder `
-  --config experiments\lab_qwen\config\hardware.yaml `
+  --config experiments\lab_qwen\config\bootstrap.yaml `
   --input-dir experiments\lab_qwen\calib\fresnel `
   --output-dir experiments\lab_qwen\work\smoke `
   --phase-mask experiments\lab_qwen\calib\fresnel\P1_POINT.bmp `
@@ -45,6 +46,17 @@ experiments\lab_qwen\calib\fresnel\A_WHITE.bmp
 `P9_POINT.bmp`（独立检查中点/中心）。如果点太小不便肉眼观察，改播同编号
 `*_CROSS.bmp`。相位灰度 0 是 0 rad，不是遮光；振幅没有单开口。
 
+例如保存 P4 全传感器图（P1/P9 只需替换相位文件和输出目录名）：
+
+```powershell
+python -m experiments.hardware_sdk.workflows.acquire_folder `
+  --config experiments\lab_qwen\config\bootstrap.yaml `
+  --input-dir experiments\lab_qwen\calib\fresnel `
+  --output-dir experiments\lab_qwen\work\fresnel_p4 `
+  --phase-mask experiments\lab_qwen\calib\fresnel\P4_POINT.bmp `
+  --file-manifest experiments\lab_qwen\calib\fresnel\amplitude_manifest.csv --yes
+```
+
 填完 `geometry.yaml` 后生成固定合同：
 
 ```powershell
@@ -55,7 +67,8 @@ Get-FileHash experiments\lab_qwen\config\geometry.json -Algorithm SHA256
 ```
 
 把输出 SHA-256 与 `geometry.json` 路径填入 `hardware.yaml`，并启用
-`detector_geometry.enabled: true`。正式网络采集后不再额外左右/上下翻转。
+`detector_geometry.enabled: true`（`contract_file: geometry.json`）。正式网络采集后不再
+额外左右/上下翻转。
 
 ## 3. 32 灰度×3 帧曝光标定
 

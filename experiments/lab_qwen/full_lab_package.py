@@ -398,6 +398,7 @@ def verify_bundle(path: Path) -> dict[str, Any]:
                 raise RuntimeError(f"ZIP verification failed: {record['path']}")
         required = {
             f"{ARCHIVE_ROOT}/COMMANDS.md",
+            f"{ARCHIVE_ROOT}/config/bootstrap.yaml",
             f"{ARCHIVE_ROOT}/config/hardware.yaml",
             f"{ARCHIVE_ROOT}/calib/fresnel/A_WHITE.bmp",
             f"{ARCHIVE_ROOT}/calib/fresnel/P4_POINT.bmp",
