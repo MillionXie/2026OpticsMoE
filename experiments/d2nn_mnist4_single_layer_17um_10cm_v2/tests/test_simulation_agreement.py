@@ -1,10 +1,20 @@
 from __future__ import annotations
 
+import os
+from pathlib import Path
+
 import numpy as np
+import pytest
 
 from experiments.hardware_sdk.workflows.reconstruct_slm import physical_pitch_nearest
 
-from ..simulation_agreement import inverse_physical_pitch_nearest
+from ..lab_session import _read_csv, _read_json
+from ..simulation_agreement import (
+    PlayedBMPSimulator,
+    _load_amplitude,
+    decode_played_phase,
+    inverse_physical_pitch_nearest,
+)
 
 
 def test_inverse_physical_pitch_nearest_recovers_every_logical_pixel() -> None:
@@ -29,3 +39,30 @@ def test_inverse_preserves_export_flip_contract() -> None:
     )
     recovered = np.flipud(inverse_physical_pitch_nearest(exported))
     np.testing.assert_array_equal(recovered, logical)
+
+
+@pytest.mark.skipif(
+    not os.environ.get("MNIST4_FULL_SMOKE_STAGE"),
+    reason="set MNIST4_FULL_SMOKE_STAGE for the optional 1024-grid integration test",
+)
+def test_full_grid_played_bmp_simulation_on_configured_device() -> None:
+    import torch
+
+    stage = Path(os.environ["MNIST4_FULL_SMOKE_STAGE"]).resolve()
+    bundle_root = Path(os.environ["MNIST4_FULL_SMOKE_BUNDLE_ROOT"]).resolve()
+    contract = _read_json(stage / "stage_contract.json")
+    phase_bmp = next((stage / "phase_to_play").glob("*.bmp"))
+    phase = decode_played_phase(phase_bmp, contract)
+    row = _read_csv(stage / "samples.csv")[0]
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    simulator = PlayedBMPSimulator(
+        bundle_root / "payload" / "model" / "lab_model_config.yaml",
+        phase,
+        device,
+    )
+    amplitude = _load_amplitude(stage / "amplitude_to_play" / row["amplitude_file"])
+    output = simulator(np.stack([amplitude]))
+    assert output.shape == (1, 478, 478)
+    assert np.isfinite(output).all()
+    assert float(output.min()) >= 0.0
+    assert float(output.max()) > 0.0
