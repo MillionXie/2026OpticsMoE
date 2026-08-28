@@ -1,0 +1,17 @@
+# 实验人员唯一需要编辑的配置文件。
+#
+# 1. LUT 只写文件名；文件必须放在：
+#    experiments/hardware_sdk/vendor_sdk/amplitude_meadowlark/LUT Files/
+# 2. 曝光单位是微秒。
+# 3. 四点使用 CCD 2048x2048 全传感器坐标；坐标不要求是 4 的倍数。
+# 4. 标签表示“光场的逻辑方向”，不是相机画面上的左右位置。
+
+amplitude_lut_filename: slm7930_at532-70c-pixel-2.lut
+camera_exposure_us: 5000.0
+
+logical_corners_full_sensor_xy:
+  # 当前 CCD 是左右镜像的，所以逻辑左上角出现在画面右侧，这是正确的。
+  top_left: [1626, 281]
+  top_right: [358, 285]
+  bottom_right: [363, 1547]
+  bottom_left: [1631, 1545]

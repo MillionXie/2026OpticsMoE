@@ -28,7 +28,7 @@ python -m experiments.hardware_sdk.generators.fresnel_full_panel_array \
 python -m experiments.hardware_sdk.generators.dual_slm_registration_sweep \
   --config experiments/hardware_sdk/generators/slm_patterns/configs/dual_slm_17um_8um_normal_scale_sweep.yaml
 python -m experiments.hardware_sdk.workflows.roi_calibration generate \
-  --config experiments/lab_qwen/config/hardware.yaml
+  --config experiments/lab_qwen/internal/hardware_template.yaml
 
 python -m experiments.lab_qwen.full_lab_package --create \
   --repo-root . --formal-zip $FORMAL --fresnel-dir $FRESNEL --dual-dir $DUAL \

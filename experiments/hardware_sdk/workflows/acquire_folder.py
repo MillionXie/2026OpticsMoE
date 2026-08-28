@@ -405,8 +405,20 @@ def run(
             resolved_stage_phase_manifest,
         ) = _resolve_stage_layout(stage_override)
     else:
-        input_dir = _resolve(input_override or raw["input_dir"], base)
-        output_dir = _resolve(output_override or raw["output_dir"], base)
+        # Explicit CLI paths follow normal shell semantics and resolve from the
+        # current working directory.  Only paths written inside YAML resolve
+        # relative to that YAML file.  The previous mixed behavior was a major
+        # source of duplicated ``.../config/experiments/...`` paths on Windows.
+        input_dir = (
+            _resolve(input_override, Path.cwd())
+            if input_override is not None
+            else _resolve(raw["input_dir"], base)
+        )
+        output_dir = (
+            _resolve(output_override, Path.cwd())
+            if output_override is not None
+            else _resolve(raw["output_dir"], base)
+        )
         log_dir = _resolve(raw.get("log_dir", "../workspace/logs"), base)
         resolved_stage_phase = None
         resolved_stage_phase_manifest = None
@@ -460,9 +472,10 @@ def run(
             "This acquisition requires the exact phase BMP. Set phase_mask_file "
             "in YAML or pass --phase-mask."
         )
+    phase_base = Path.cwd() if phase_override is not None else base
     phase_metadata = (
         _phase_mask_metadata(
-            _resolve(raw_phase_path, base),
+            _resolve(raw_phase_path, phase_base),
             expected_phase_size,
             (
                 _resolve(raw_phase_manifest, Path.cwd())

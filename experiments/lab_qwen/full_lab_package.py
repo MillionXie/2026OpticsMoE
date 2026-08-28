@@ -255,11 +255,11 @@ def _current_source_files(repo_root: Path) -> Iterable[Path]:
         "experiments/hardware_sdk/demos/__init__.py",
         "experiments/hardware_sdk/demos/phase_slm_demo.py",
         "experiments/lab_qwen/__init__.py",
-        "experiments/lab_qwen/setup_geometry.py",
+        "experiments/lab_qwen/prepare_lab.py",
         "experiments/lab_qwen/COMMANDS.md",
         "experiments/lab_qwen/README.md",
-        "experiments/lab_qwen/config/geometry.yaml",
-        "experiments/lab_qwen/config/hardware.yaml",
+        "experiments/lab_qwen/LAB_CONFIG.yaml",
+        "experiments/lab_qwen/internal/hardware_template.yaml",
         "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/__init__.py",
         "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/agreement_common.py",
         "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/agreement_evaluate.py",
@@ -309,6 +309,22 @@ def create_bundle(
         ),
     )
     _map_directory(entries, dual_dir, f"{ARCHIVE_ROOT}/calib/dual", "dual_slm_k1")
+    # Each pair folder also contains a phase BMP.  Bind an amplitude-only CSV
+    # allowlist so acquire_folder never tries to send the 1920x1200 phase frame
+    # to the 1024x1024 Meadowlark amplitude SLM.
+    for pair_directory in (
+        "01_checker_c64",
+        "02_large_blocks_c48_x",
+        "03_large_blocks_c48_y",
+    ):
+        _put(
+            entries,
+            Entry(
+                f"{ARCHIVE_ROOT}/calib/dual/{pair_directory}/amplitude_manifest.csv",
+                "dual_slm_k1",
+                literal=b"amplitude_bmp\r\namplitude_1024x1024.bmp\r\n",
+            ),
+        )
     _map_directory(entries, exposure_dir, f"{ARCHIVE_ROOT}/calib/exposure", "exposure_32x3")
     _map_directory(entries, agreement_session, f"{ARCHIVE_ROOT}/agree", "agreement_session")
     _map_directory(entries, four_session, f"{ARCHIVE_ROOT}/four", "four_stage_initial")
@@ -408,11 +424,15 @@ def verify_bundle(path: Path) -> dict[str, Any]:
                 raise RuntimeError(f"ZIP verification failed: {record['path']}")
         required = {
             f"{ARCHIVE_ROOT}/COMMANDS.md",
-            f"{ARCHIVE_ROOT}/config/hardware.yaml",
-            f"{ARCHIVE_ROOT}/setup_geometry.py",
+            f"{ARCHIVE_ROOT}/LAB_CONFIG.yaml",
+            f"{ARCHIVE_ROOT}/internal/hardware_template.yaml",
+            f"{ARCHIVE_ROOT}/prepare_lab.py",
             f"{ARCHIVE_ROOT}/calib/fresnel/A_WHITE.bmp",
             f"{ARCHIVE_ROOT}/calib/fresnel/P4_POINT.bmp",
             f"{ARCHIVE_ROOT}/calib/dual/k1_pair_manifest.json",
+            f"{ARCHIVE_ROOT}/calib/dual/01_checker_c64/amplitude_manifest.csv",
+            f"{ARCHIVE_ROOT}/calib/dual/02_large_blocks_c48_x/amplitude_manifest.csv",
+            f"{ARCHIVE_ROOT}/calib/dual/03_large_blocks_c48_y/amplitude_manifest.csv",
             f"{ARCHIVE_ROOT}/agree/agreement_manifest.json",
             f"{ARCHIVE_ROOT}/last/04_language_global/offline_downstream/cache.pt",
             f"{ARCHIVE_ROOT}/model/ema.pt",
