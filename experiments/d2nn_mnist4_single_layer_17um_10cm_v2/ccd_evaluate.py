@@ -239,6 +239,14 @@ def evaluate_directory(
         summary["demo_success_rate"] = rate
         summary["reportable_accuracy"] = False
         summary["warning"] = "Biased demo; never report as hardware accuracy."
+
+    # Persist the metrics that correspond to the predictions *before* the
+    # paper evaluator discovers the adjacent JSON.  On a repeated evaluation,
+    # delaying this write until after figure generation made the evaluator see
+    # the previous run's confusion matrix beside the newly written prediction
+    # CSV and correctly reject the mismatched pair.
+    metrics_path = output_dir / "hardware_metrics_raw.json"
+    write_json(metrics_path, summary)
     if generate_paper_report and invalid_count == 0:
         from .paper_evaluation import PredictionRunSpec, evaluate_prediction_runs
 
@@ -273,7 +281,8 @@ def evaluate_directory(
             "status": "skipped_due_to_failed_frame_qc",
             "invalid_frames": invalid_count,
         }
-    write_json(output_dir / "hardware_metrics_raw.json", summary)
+    # Add the paper-report provenance to the same already-current metrics file.
+    write_json(metrics_path, summary)
     if suitable and invalid_count and not allow_invalid_formal:
         raise RuntimeError(
             f"Formal raw-CCD evaluation found {invalid_count} invalid frame(s). "

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 from pathlib import Path
 from typing import Any
 
@@ -65,11 +66,17 @@ def run_pipeline(
             validate_only=False,
         )
     if phase in {"evaluate", "all"}:
+        evaluation_output = stage / "hardware_evaluation"
+        if clear_output and evaluation_output.exists():
+            # ``stage`` has already passed the ownership/hash validation above;
+            # this removes generated evaluation artifacts only, never captures,
+            # amplitudes, masks, or the session contract.
+            shutil.rmtree(evaluation_output)
         results["evaluation"] = evaluate_directory(
             config=root / "payload" / "model" / "lab_model_config.yaml",
             manifest=stage / "samples.csv",
             ccd_dir=stage / "ccd_captured",
-            output_dir=stage / "hardware_evaluation",
+            output_dir=evaluation_output,
             flip_vertical=flip_vertical,
             flip_horizontal=flip_horizontal,
             allow_biased_demo_metric=allow_quick40_diagnostic,

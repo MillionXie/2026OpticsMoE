@@ -88,6 +88,56 @@ def test_raw_ccd_evaluator_uses_unscaled_region_sums(tmp_path: Path, monkeypatch
     assert float(predictions[0]["raw_energy_0"]) == 200.0 * 59.0 * 59.0
 
 
+def test_repeated_evaluation_replaces_stale_metrics_before_paper_report(
+    tmp_path: Path, monkeypatch
+) -> None:
+    monkeypatch.setattr(
+        ccd_evaluate,
+        "load_settings",
+        lambda _: SimpleNamespace(detector_bounds=lambda: BOUNDS),
+    )
+    stage = tmp_path / "demo"
+    rows = _make_demo_stage(stage)
+    captures = stage / "ccd_captured"
+    captures.mkdir()
+    output = stage / "evaluation"
+
+    def write_captures(offset: int) -> None:
+        for row in rows:
+            label = int(row["label"])
+            predicted = (label + offset) % 4
+            frame = np.zeros((478, 478), dtype=np.uint8)
+            left, top, right, bottom = BOUNDS[predicted]
+            frame[top:bottom, left:right] = 200
+            Image.fromarray(frame, mode="L").save(captures / f"{row['key']}.png")
+
+    write_captures(0)
+    first = ccd_evaluate.evaluate_directory(
+        config=tmp_path / "unused.yaml",
+        manifest=stage / "samples.csv",
+        ccd_dir=captures,
+        output_dir=output,
+        allow_biased_demo_metric=True,
+    )
+    assert first["demo_success_rate"] == 1.0
+
+    # Reuse the same output directory with genuinely different predictions.
+    # The previous metrics JSON must not be paired with the new CSV.
+    write_captures(1)
+    second = ccd_evaluate.evaluate_directory(
+        config=tmp_path / "unused.yaml",
+        manifest=stage / "samples.csv",
+        ccd_dir=captures,
+        output_dir=output,
+        allow_biased_demo_metric=True,
+    )
+    assert second["demo_success_rate"] == 0.0
+    persisted = json.loads(
+        (output / "hardware_metrics_raw.json").read_text(encoding="utf-8")
+    )
+    assert persisted["confusion_matrix"] == second["confusion_matrix"]
+
+
 def test_raw_ccd_evaluator_refuses_resize(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setattr(
         ccd_evaluate,
