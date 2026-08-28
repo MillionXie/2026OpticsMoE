@@ -8,6 +8,7 @@ payloads and historical command documents are intentionally excluded.
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
 import io
 import json
@@ -54,19 +55,7 @@ class Entry:
             with zipfile.ZipFile(self.source_zip) as archive:
                 data = archive.read(self.source_member)
         if self.transform == "compact_478_to_native_1024_bmp":
-            from PIL import Image
-
-            compact = Image.open(io.BytesIO(data)).convert("L")
-            if compact.size != (478, 478):
-                raise RuntimeError(
-                    f"Expected 478x478 compact amplitude, got {compact.size}: "
-                    f"{self.source_member}"
-                )
-            native = Image.new("L", (1024, 1024), color=0)
-            native.paste(compact, (273, 273))
-            buffer = io.BytesIO()
-            native.save(buffer, format="BMP")
-            return buffer.getvalue()
+            return _compact_478_to_native_1024_bmp(data, label=self.source_member)
         if self.transform is not None:
             raise RuntimeError(f"Unknown entry transform: {self.transform}")
         return data
@@ -89,6 +78,63 @@ def _sha256_file(path: Path) -> str:
         for block in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def _compact_478_to_native_1024_bmp(data: bytes, *, label: object) -> bytes:
+    from PIL import Image
+
+    with Image.open(io.BytesIO(data)) as opened:
+        opened.load()
+        if opened.mode != "L" or opened.size != (478, 478):
+            raise RuntimeError(
+                f"Expected 478x478 L compact amplitude, got "
+                f"{opened.mode}/{opened.size}: {label}"
+            )
+        compact = opened.copy()
+    native = Image.new("L", (1024, 1024), color=0)
+    native.paste(compact, (273, 273))
+    buffer = io.BytesIO()
+    native.save(buffer, format="BMP")
+    return buffer.getvalue()
+
+
+def _amplitude_reconstruction_manifest(
+    records: list[tuple[str, bytes, str, bytes]],
+) -> bytes:
+    """Describe the exact compact-PNG to ready-BMP transform in the ZIP."""
+
+    rows: list[dict[str, object]] = []
+    for order, (source_name, source_data, output_name, output_data) in enumerate(
+        records
+    ):
+        rows.append(
+            {
+                "order": order,
+                "basename": Path(source_name).stem,
+                "source_png": source_name,
+                "output_bmp": output_name,
+                "source_sha256": _sha256_bytes(source_data),
+                "output_sha256": _sha256_bytes(output_data),
+                "logical_size_wh": "478,478",
+                "active_size_wh": "478,478",
+                "slm_size_wh": "1024,1024",
+                "active_bounds_xyxy": "273,273,751,751",
+                "active_center_xy": "512,512",
+                "canvas_center_offset_xy": "0,0",
+                "mapping_mode": "physical_pitch_nearest",
+                "scale_factor": "",
+                "logical_pixel_pitch_um": 17.0,
+                "slm_pixel_pitch_um": 17.0,
+                "physical_ratio": 1.0,
+            }
+        )
+    if not rows:
+        raise RuntimeError("Cannot create an empty amplitude reconstruction manifest")
+    buffer = io.StringIO(newline="")
+    writer = csv.DictWriter(buffer, fieldnames=list(rows[0]))
+    writer.writeheader()
+    writer.writerows(rows)
+    return buffer.getvalue().encode("utf-8-sig")
 
 
 def _put(entries: dict[str, Entry], entry: Entry, *, replace: bool = False) -> None:
@@ -143,16 +189,35 @@ def _add_ready_bmps_from_compact(
     category: str,
 ) -> int:
     compact_files = sorted(source_session.glob("*/compact_amplitude/*.png"))
+    stage_records: dict[str, list[tuple[str, bytes, str, bytes]]] = {}
     for compact in compact_files:
         stage_name = compact.parent.parent.name
+        source_data = compact.read_bytes()
+        output_name = f"{compact.stem}.bmp"
+        output_data = _compact_478_to_native_1024_bmp(
+            source_data, label=compact
+        )
         _put(
             entries,
             Entry(
-                f"{destination}/{stage_name}/amplitude_to_play/{compact.stem}.bmp",
+                f"{destination}/{stage_name}/amplitude_to_play/{output_name}",
                 category,
-                source_path=compact,
-                transform="compact_478_to_native_1024_bmp",
+                literal=output_data,
             ),
+        )
+        stage_records.setdefault(stage_name, []).append(
+            (compact.name, source_data, output_name, output_data)
+        )
+    for stage_name, records in sorted(stage_records.items()):
+        _put(
+            entries,
+            Entry(
+                f"{destination}/{stage_name}/amplitude_to_play/"
+                "reconstruction_manifest.csv",
+                category,
+                literal=_amplitude_reconstruction_manifest(records),
+            ),
+            replace=True,
         )
     return len(compact_files)
 
@@ -225,18 +290,38 @@ def _formal_entries(entries: dict[str, Entry], formal_zip: Path) -> None:
             raise RuntimeError(
                 f"Formal ZIP must contain 210 compact quick inputs, got {len(compact_members)}"
             )
+        reconstruction_records: list[tuple[str, bytes, str, bytes]] = []
         for member in compact_members:
             stem = Path(member).stem
+            source_data = archive.read(member)
+            output_name = f"{stem}.bmp"
+            output_data = _compact_478_to_native_1024_bmp(
+                source_data, label=member
+            )
             _put(
                 entries,
                 Entry(
-                    f"{ARCHIVE_ROOT}/last/04_language_global/amplitude_to_play/{stem}.bmp",
+                    f"{ARCHIVE_ROOT}/last/04_language_global/amplitude_to_play/"
+                    f"{output_name}",
                     "last_stage_ready_bmp",
-                    source_zip=formal_zip,
-                    source_member=member,
-                    transform="compact_478_to_native_1024_bmp",
+                    literal=output_data,
                 ),
             )
+            reconstruction_records.append(
+                (Path(member).name, source_data, output_name, output_data)
+            )
+        _put(
+            entries,
+            Entry(
+                f"{ARCHIVE_ROOT}/last/04_language_global/amplitude_to_play/"
+                "reconstruction_manifest.csv",
+                "last_stage_ready_bmp",
+                literal=_amplitude_reconstruction_manifest(
+                    reconstruction_records
+                ),
+            ),
+            replace=True,
+        )
 
 
 def _mnist_entries(entries: dict[str, Entry], mnist_zip: Path) -> None:
@@ -565,6 +650,56 @@ def verify_bundle(path: Path) -> dict[str, Any]:
         ]
         if len(last_amplitudes) != 210:
             raise RuntimeError(f"ZIP must contain 210 last-stage inputs, got {len(last_amplitudes)}")
+        ready_amplitudes = [
+            name
+            for name in names
+            if name.lower().endswith(".bmp")
+            and "/amplitude_to_play/" in name
+            and name.startswith(
+                (
+                    f"{ARCHIVE_ROOT}/agree/",
+                    f"{ARCHIVE_ROOT}/four/",
+                    f"{ARCHIVE_ROOT}/last/",
+                )
+            )
+        ]
+        for parent in sorted({name.rsplit("/", 1)[0] for name in ready_amplitudes}):
+            manifest_name = f"{parent}/reconstruction_manifest.csv"
+            if manifest_name not in names:
+                raise RuntimeError(
+                    f"ZIP ready amplitudes have no reconstruction manifest: {parent}"
+                )
+            rows = list(
+                csv.DictReader(
+                    io.StringIO(archive.read(manifest_name).decode("utf-8-sig"))
+                )
+            )
+            expected_outputs = {
+                name.rsplit("/", 1)[1]
+                for name in ready_amplitudes
+                if name.rsplit("/", 1)[0] == parent
+            }
+            observed_outputs = {str(row.get("output_bmp", "")) for row in rows}
+            if observed_outputs != expected_outputs or len(rows) != len(expected_outputs):
+                raise RuntimeError(
+                    f"ZIP reconstruction manifest does not exactly bind {parent}"
+                )
+            compact_parent = parent.rsplit("/amplitude_to_play", 1)[0]
+            for row in rows:
+                output_path = f"{parent}/{row['output_bmp']}"
+                source_path = f"{compact_parent}/compact_amplitude/{row['source_png']}"
+                if source_path not in names:
+                    raise RuntimeError(
+                        f"ZIP reconstruction source is missing: {source_path}"
+                    )
+                if _sha256_bytes(archive.read(output_path)) != row["output_sha256"]:
+                    raise RuntimeError(
+                        f"ZIP reconstruction output hash failed: {output_path}"
+                    )
+                if _sha256_bytes(archive.read(source_path)) != row["source_sha256"]:
+                    raise RuntimeError(
+                        f"ZIP reconstruction source hash failed: {source_path}"
+                    )
         mnist_amplitudes = [
             name
             for name in names

@@ -300,6 +300,10 @@ formal400\simulation_agreement\figures
 
 ## 6. Qwen 仿真—实测光场一致性
 
+完整包已经在每个 `amplitude_to_play` 中提供与 BMP 哈希绑定的
+`reconstruction_manifest.csv`；不要删除该文件，也不需要再次运行
+`reconstruct_slm`。
+
 相位 SLM 加载 `agree\04_language_global\phase_to_play` 中唯一 BMP：
 
 ```powershell
