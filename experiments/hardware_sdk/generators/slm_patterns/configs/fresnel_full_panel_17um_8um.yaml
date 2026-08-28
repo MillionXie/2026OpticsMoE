@@ -1,0 +1,28 @@
+# Current Fresnel calibration: full-white amplitude and full-panel phase.
+output_dir: ../generated/fresnel_full_panel_532nm_17um_8um
+
+wavelength_nm: 532.0
+propagation_cm: 10.0
+
+amplitude_slm:
+  size_wh: [1024, 1024]
+  pixel_pitch_um: 17.0
+
+phase_slm:
+  size_wh: [1920, 1200]
+  pixel_pitch_um: 8.0
+  center_xy: [980.0, 590.0]
+  flip_vertical: true
+  flip_horizontal: false
+
+# The four outer targets are the exact corners of the formal 478x478 field:
+# half span = 478 * 17 um / 2 = 4063 um = 507.875 phase pixels.
+target_field:
+  size_px: 478
+  pixel_pitch_um: 17.0
+
+cross_relative_phase_rad: 1.5707963267948966
+
+simulation:
+  pad_size: 2048
+  log_floor_db: -50.0

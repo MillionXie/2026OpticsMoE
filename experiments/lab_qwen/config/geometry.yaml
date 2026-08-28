@@ -1,0 +1,16 @@
+# EDIT every null coordinate after observing P4_POINT.bmp on the CCD.
+# Coordinates are full-sensor coordinates and must retain these logical labels.
+device_roi_xywh_full_sensor: [0, 0, 2048, 2048]
+source_points_full_sensor_xy:
+  top_left: null
+  top_right: null
+  bottom_right: null
+  bottom_left: null
+target_size_wh: [478, 478]
+orientation:
+  flip_vertical_after_warp: false
+  flip_horizontal_after_warp: false
+  downstream_loader_flip_vertical: false
+  downstream_loader_flip_horizontal: false
+validation_max_rms_error_px: 1.5
+validation_max_error_px: 3.0
