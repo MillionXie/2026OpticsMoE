@@ -55,7 +55,7 @@ camera:
   anti_flicker_hz: null
   resolution_mode: null
 
-  # 必须填写为 [left, top, width, height]，四项均为 4 的倍数。
+  # 必须填写为 [left, top, width, height]；左/上/高为 4 的倍数，宽为 8 的倍数。
   # 厂商软件中的 ROI 不会自动共享给 Python。
   require_device_roi: true
   device_roi_xywh: null

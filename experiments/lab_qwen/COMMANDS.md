@@ -64,8 +64,10 @@ experiments\lab_qwen\generated\detector_homography_478.contract.json
 experiments\lab_qwen\generated\prepare_report.json
 ```
 
-当前四点自动得到硬件 ROI `[292,216,1404,1396]`；程序先留 64 px 余量，再把硬件
-ROI 向外对齐到 4 的倍数，最后透视校正为严格 478×478。
+当前四点自动得到硬件 ROI `[292,216,1408,1396]`；程序先留 64 px 余量，再按本机
+TUCam 的实测约束向外对齐：`left/top/height` 为 4 的倍数、`width` 为 8 的倍数，
+最后透视校正为严格 478×478。不要把宽度改回 1404；相机会将其静默截成 1400，
+从而触发 ROI mismatch 并使透视合同失效。
 
 ## 2. 双 SLM 像素级对齐
 

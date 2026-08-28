@@ -107,21 +107,24 @@ class TucamCamera(CameraDriver):
 
     @staticmethod
     def validate_roi(roi_xywh: tuple[int, int, int, int]) -> None:
-        """Validate the ROI restrictions documented by the uploaded TUCam SDK."""
+        """Validate the ROI restrictions measured on the current TUCam.
+
+        The SDK accepts left/top/height in four-pixel increments, while the
+        active camera quantizes width to eight pixels.  Rejecting a 4-only
+        aligned width here avoids a later, much less obvious ROI mismatch.
+        """
         left, top, width, height = (int(value) for value in roi_xywh)
         if min(left, top) < 0 or min(width, height) <= 0:
             raise DeviceError("camera.device_roi_xywh contains invalid values")
+        alignment = {"left": 4, "top": 4, "width": 8, "height": 4}
         invalid = [
-            name
-            for name, value in zip(
-                ("left", "top", "width", "height"),
-                (left, top, width, height),
-            )
-            if value % 4
+            f"{name} (requires {alignment[name]})"
+            for name, value in zip(alignment, (left, top, width, height))
+            if value % alignment[name]
         ]
         if invalid:
             raise DeviceError(
-                "TUCam ROI left/top/width/height must be multiples of 4 pixels; "
+                "TUCam ROI alignment is left/top/height=4 px and width=8 px; "
                 f"invalid fields: {', '.join(invalid)}"
             )
         if left + width > 2048 or top + height > 2048:

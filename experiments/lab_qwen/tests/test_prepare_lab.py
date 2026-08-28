@@ -40,7 +40,7 @@ def _fake_repo(tmp_path: Path) -> Path:
 
 
 def test_arbitrary_points_produce_aligned_padded_roi() -> None:
-    assert derive_device_roi(POINTS) == [292, 216, 1404, 1396]
+    assert derive_device_roi(POINTS) == [292, 216, 1408, 1396]
 
 
 def test_prepare_lab_generates_pinned_formal_runtime(tmp_path: Path) -> None:
@@ -54,7 +54,7 @@ def test_prepare_lab_generates_pinned_formal_runtime(tmp_path: Path) -> None:
     )
 
     assert report["status"] == "ready"
-    assert report["derived_device_roi_xywh"] == [292, 216, 1404, 1396]
+    assert report["derived_device_roi_xywh"] == [292, 216, 1408, 1396]
     assert len(report["contract_sha256"]) == 64
     assert (generated / "detector_homography_478.contract.json.sha256").is_file()
     contract = json.loads(
@@ -66,7 +66,7 @@ def test_prepare_lab_generates_pinned_formal_runtime(tmp_path: Path) -> None:
     formal = yaml.safe_load(
         (generated / "formal_hardware.yaml").read_text(encoding="utf-8")
     )
-    assert formal["camera"]["device_roi_xywh"] == [292, 216, 1404, 1396]
+    assert formal["camera"]["device_roi_xywh"] == [292, 216, 1408, 1396]
     assert formal["camera"]["exposure_us"] == 4321.0
     assert formal["camera"]["detector_geometry"] == {
         "enabled": True,

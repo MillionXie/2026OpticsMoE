@@ -80,7 +80,7 @@ YAML 文件解析。
    不是 PCIe 设备驱动的替代品。
 2. 确认 `amplitude_slm.lut_file` 对应真实 SLM 和温度。配置默认指向上传 SDK 中的
    `slm7930_at532_30C.lut`；若实验使用 70 °C 标定，必须改为 `_70C.lut`。
-3. 填写 `camera.device_roi_xywh`；四项都必须为 4 的倍数。
+3. 填写 `camera.device_roi_xywh`；左/上/高必须为 4 的倍数，宽必须为 8 的倍数。
 
 实验前至少填写硬件 ROI，并按 `GEOMETRY_AND_BRIGHTNESS.md` 生成四点合同。当前正式
 Qwen/agreement 采集还必须把 `detector_geometry.enabled` 设为 `true`，并固定合同路径
@@ -99,7 +99,7 @@ Qwen/agreement 采集还必须把 `detector_geometry.enabled` 设为 `true`，�
         contract_file: ../artifacts/calibration/detector_homography_478.contract.json
         expected_file_sha256: <64位SHA-256>
 
-TUCam 的 ROI 四项必须为 4 的倍数。程序先核对 SDK 返回的原始帧是否等于硬件
+TUCam 的 ROI 左/上/高必须为 4 的倍数，宽必须为 8 的倍数。程序先核对 SDK 返回的原始帧是否等于硬件
 ROI，再在 raw ROI 上做一次固定 homography，并核对保存结果是否为 canonical
 478×478。保存格式默认为 8-bit 灰度 PNG；0～65535 到 0～255 是固定线性映射，不会
 对每张图单独拉伸。仅在 `detector_geometry.enabled=false` 的 legacy/smoke 模式下，

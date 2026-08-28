@@ -204,8 +204,10 @@ def build_geometry_contract(config: Mapping[str, Any]) -> dict[str, Any]:
     left, top, width, height = (int(value) for value in roi_raw)
     if min(left, top) < 0 or min(width, height) <= 0:
         raise ValueError("device_roi_xywh_full_sensor is invalid")
-    if any(value % 4 for value in (left, top, width, height)):
-        raise ValueError("TUCam device ROI left/top/width/height must be multiples of four")
+    if left % 4 or top % 4 or width % 8 or height % 4:
+        raise ValueError(
+            "TUCam device ROI alignment is left/top/height=4 px and width=8 px"
+        )
 
     full_points = _points_from_mapping(
         config.get("source_points_full_sensor_xy"), "source_points_full_sensor_xy"

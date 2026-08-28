@@ -260,12 +260,14 @@ def test_meadowlark_display_waits_for_image_write_complete(tmp_path: Path) -> No
     assert slm.temperature_c == pytest.approx(30.5)
 
 
-def test_tucam_roi_requires_four_pixel_alignment() -> None:
-    TucamCamera.validate_roi((12, 20, 956, 956))
-    with pytest.raises(DeviceError, match="multiples of 4"):
-        TucamCamera.validate_roi((10, 20, 956, 956))
+def test_tucam_roi_uses_eight_pixel_width_alignment() -> None:
+    TucamCamera.validate_roi((12, 20, 960, 956))
+    with pytest.raises(DeviceError, match="left/top/height=4 px and width=8 px"):
+        TucamCamera.validate_roi((10, 20, 960, 956))
+    with pytest.raises(DeviceError, match="left/top/height=4 px and width=8 px"):
+        TucamCamera.validate_roi((12, 20, 956, 956))
     with pytest.raises(DeviceError, match="exceeds the 2048x2048 sensor"):
-        TucamCamera.validate_roi((1200, 1200, 956, 956))
+        TucamCamera.validate_roi((1200, 1200, 960, 956))
 
 
 def test_tucam_signed_error_status_is_normalized_to_uint32() -> None:

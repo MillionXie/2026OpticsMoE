@@ -2,8 +2,9 @@
 
 The operator edits only ``experiments/lab_qwen/LAB_CONFIG.yaml``.  Measured
 optical corners may be arbitrary CCD pixel coordinates.  This module derives a
-TUCam-compatible bounding ROI (multiples of four), creates and hashes the
-homography contract, and writes immutable generated runtime configs.
+TUCam-compatible bounding ROI (left/top/height on four-pixel boundaries and
+width on an eight-pixel boundary), creates and hashes the homography contract,
+and writes immutable generated runtime configs.
 """
 
 from __future__ import annotations
@@ -27,7 +28,9 @@ from experiments.hardware_sdk.workflows.detector_homography import (
 
 SENSOR_SIZE_WH = (2048, 2048)
 TARGET_SIZE_WH = (478, 478)
-ROI_ALIGNMENT = 4
+ROI_OFFSET_ALIGNMENT = 4
+ROI_WIDTH_ALIGNMENT = 8
+ROI_HEIGHT_ALIGNMENT = 4
 ROI_MARGIN_PX = 64
 LUT_RELATIVE_DIRECTORY = Path(
     "experiments/hardware_sdk/vendor_sdk/amplitude_meadowlark/LUT Files"
@@ -110,32 +113,66 @@ def derive_device_roi(
     *,
     sensor_size_wh: tuple[int, int] = SENSOR_SIZE_WH,
     margin_px: int = ROI_MARGIN_PX,
-    alignment: int = ROI_ALIGNMENT,
+    offset_alignment: int = ROI_OFFSET_ALIGNMENT,
+    width_alignment: int = ROI_WIDTH_ALIGNMENT,
+    height_alignment: int = ROI_HEIGHT_ALIGNMENT,
 ) -> list[int]:
-    """Return [left,top,width,height] enclosing arbitrary measured corners."""
+    """Return an exact TUCam ROI enclosing arbitrary measured corners.
 
-    if margin_px < 0 or alignment <= 0:
-        raise ValueError("margin_px must be non-negative and alignment positive")
+    The current 2048x2048 TUCam accepts left/top offsets and height in
+    four-pixel increments, but its ROI width is quantized to eight pixels.  If
+    width is only four-pixel aligned the SDK silently rounds it down (for
+    example 1404 -> 1400), which invalidates the detector homography contract.
+    We therefore round the bounding width *outward* to eight pixels here.
+    """
+
+    alignments = (offset_alignment, width_alignment, height_alignment)
+    if margin_px < 0 or any(value <= 0 for value in alignments):
+        raise ValueError("margin_px must be non-negative and alignments positive")
     sensor_width, sensor_height = sensor_size_wh
-    if sensor_width % alignment or sensor_height % alignment:
-        raise ValueError("sensor dimensions must be divisible by ROI alignment")
+    if sensor_width % width_alignment or sensor_height % height_alignment:
+        raise ValueError("sensor dimensions must be divisible by ROI size alignment")
     xs = [float(corners[label][0]) for label in POINT_LABELS]
     ys = [float(corners[label][1]) for label in POINT_LABELS]
 
-    left = max(0, math.floor((min(xs) - margin_px) / alignment) * alignment)
-    top = max(0, math.floor((min(ys) - margin_px) / alignment) * alignment)
+    left = max(
+        0,
+        math.floor((min(xs) - margin_px) / offset_alignment) * offset_alignment,
+    )
+    top = max(
+        0,
+        math.floor((min(ys) - margin_px) / offset_alignment) * offset_alignment,
+    )
     # +1 makes an integer point on the maximum pixel center part of the ROI.
-    right = min(
+    required_right = min(
         sensor_width,
-        math.ceil((max(xs) + margin_px + 1.0) / alignment) * alignment,
+        math.ceil(max(xs) + margin_px + 1.0),
     )
-    bottom = min(
+    required_bottom = min(
         sensor_height,
-        math.ceil((max(ys) + margin_px + 1.0) / alignment) * alignment,
+        math.ceil(max(ys) + margin_px + 1.0),
     )
-    roi = [int(left), int(top), int(right - left), int(bottom - top)]
-    if min(roi[2:]) <= 0 or any(item % alignment for item in roi):
+
+    width = math.ceil((required_right - left) / width_alignment) * width_alignment
+    height = (
+        math.ceil((required_bottom - top) / height_alignment) * height_alignment
+    )
+    if left + width > sensor_width:
+        left = sensor_width - width
+    if top + height > sensor_height:
+        top = sensor_height - height
+
+    roi = [int(left), int(top), int(width), int(height)]
+    invalid_alignment = (
+        roi[0] % offset_alignment
+        or roi[1] % offset_alignment
+        or roi[2] % width_alignment
+        or roi[3] % height_alignment
+    )
+    if min(roi[2:]) <= 0 or invalid_alignment:
         raise RuntimeError(f"derived an invalid TUCam ROI: {roi}")
+    if roi[0] + roi[2] > sensor_width or roi[1] + roi[3] > sensor_height:
+        raise RuntimeError(f"derived a TUCam ROI outside the sensor: {roi}")
     return roi
 
 
@@ -194,7 +231,12 @@ def prepare_lab(
         "camera_exposure_us": exposure_us,
         "bootstrap_config": str(bootstrap_path),
         "corner_coordinates_require_multiple_of_four": False,
-        "hardware_roi_is_automatically_aligned_to_multiple_of_four": True,
+        "hardware_roi_alignment_px": {
+            "left": ROI_OFFSET_ALIGNMENT,
+            "top": ROI_OFFSET_ALIGNMENT,
+            "width": ROI_WIDTH_ALIGNMENT,
+            "height": ROI_HEIGHT_ALIGNMENT,
+        },
     }
 
     formal_names = (
