@@ -1,161 +1,246 @@
-# 当前唯一操作顺序
+# 实验室唯一操作文档
 
-以下命令均在 PowerShell 的仓库根目录
-`E:\code\guest\2026OpticsMoE` 执行。先运行 `conda activate xml`；不要激活 ZIP 内旧
-虚拟环境。
+只按本文件从上到下执行。不要再看 `hardware_sdk` 中的历史说明，也不需要运行
+`detector_homography apply`、`Get-FileHash` 或准备 `raw_roi.npy`。
 
-若尚未下载，先在实验室 PowerShell 执行：
+所有 PowerShell 命令均在“能直接看到 `experiments` 文件夹”的仓库根目录执行：
 
 ```powershell
-scp -P 24096 guest3@202.120.62.181:/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/lab_full_bundles/qwen_full_lab.zip .
-Expand-Archive .\qwen_full_lab.zip -DestinationPath E:\code\guest\2026OpticsMoE -Force
-Set-Location E:\code\guest\2026OpticsMoE
 conda activate xml
 ```
 
-## 0. 只修改这两个配置文件
+## 1. 第一次实验只改两个文件
 
-1. `experiments\lab_qwen\config\hardware.yaml`
-   - `camera.device_roi_xywh`：相机硬件 ROI，四个值均需被 4 整除；
-   - `camera.exposure_us` 与 `exposure_calibration.exposure_times_us`：保持一致；
-   - `amplitude_slm.lut_file`：按实际温度选 30C/70C；
-   - 完成四点拟合后，把 `detector_geometry.enabled` 改成 `true`，填写合同路径和 SHA-256。
-2. `experiments\lab_qwen\config\geometry.yaml`
-   - 填写 P4 的四个逻辑顶点在 CCD 全图中的坐标；不能只按画面位置排序。
+### 1.1 `experiments\lab_qwen\config\hardware.yaml`
 
-`config\bootstrap.yaml` 只用于尚不知道 ROI 时的全传感器标定；其中只需同步修改 LUT
-温度和临时曝光。先检查硬件环境：
+只确认：
 
-```powershell
-python -m experiments.hardware_sdk.workflows.acquire_folder `
-  --config experiments\lab_qwen\config\bootstrap.yaml `
-  --input-dir experiments\lab_qwen\calib\fresnel `
-  --output-dir experiments\lab_qwen\work\smoke `
-  --phase-mask experiments\lab_qwen\calib\fresnel\P1_POINT.bmp `
-  --file-manifest experiments\lab_qwen\calib\fresnel\amplitude_manifest.csv `
-  --validate-only --limit 1
+- `amplitude_slm.lut_file` 是实际使用的 30C 或 70C LUT；
+- `camera.exposure_us` 是临时曝光时间。
+
+ROI、合同路径和 SHA 不要手填，步骤4会自动填写。
+
+### 1.2 `experiments\lab_qwen\config\geometry.yaml`
+
+当前已写入本次测得的逻辑坐标：
+
+```yaml
+top_left: [1626, 281]
+top_right: [358, 285]
+bottom_right: [363, 1547]
+bottom_left: [1631, 1545]
 ```
 
-## 1. 两个 SLM 对齐
+这里已经处理了 CCD 左右镜像，四个 orientation 开关必须保持 `false`。
 
-只使用 `experiments\lab_qwen\calib\dual` 中配成对的 A/P BMP；目录内
-`k1_pair_manifest.json` 给出一一对应关系。先规则棋盘，再不规则大块。振幅极性为
-255=白/透光。
-相位中心已设为 `(980,590)`，并保留原来的上下翻转。
+## 2. 两个 SLM 对齐
 
-## 2. CCD 距离与 ROI：Fresnel
+目录：
 
-振幅始终播放：
+```text
+experiments\lab_qwen\calib\dual
+```
+
+严格按 `k1_pair_manifest.json` 同文件夹配对加载振幅和相位：
+
+1. `01_checker_c64`
+2. `02_large_blocks_c48_x`
+3. `03_large_blocks_c48_y`
+
+振幅约定固定为 `255=白/透光，0=黑/遮光`。
+
+## 3. Fresnel距离和四点位置
+
+振幅 SLM 始终加载：
 
 ```text
 experiments\lab_qwen\calib\fresnel\A_WHITE.bmp
 ```
 
-相位依次播放：`P1_POINT.bmp`（移动 CCD 找 10 cm 焦面）、`P4_POINT.bmp`（四顶点）、
-`P9_POINT.bmp`（独立检查中点/中心）。如果点太小不便肉眼观察，改播同编号
-`*_CROSS.bmp`。相位灰度 0 是 0 rad，不是遮光；振幅没有单开口。
+相位 SLM 按顺序加载：
 
-例如保存 P4 全传感器图（P1/P9 只需替换相位文件和输出目录名）：
+1. `P1_POINT.bmp`：移动 CCD，寻找10 cm焦面；
+2. `P4_POINT.bmp`：读取四个逻辑顶点；
+3. `P9_POINT.bmp`：检查中点、中心和几何畸变。
 
-```powershell
-python -m experiments.hardware_sdk.workflows.acquire_folder `
-  --config experiments\lab_qwen\config\bootstrap.yaml `
-  --input-dir experiments\lab_qwen\calib\fresnel `
-  --output-dir experiments\lab_qwen\work\fresnel_p4 `
-  --phase-mask experiments\lab_qwen\calib\fresnel\P4_POINT.bmp `
-  --file-manifest experiments\lab_qwen\calib\fresnel\amplitude_manifest.csv --yes
-```
+如果点太小不方便肉眼观察，只把相位换成相同编号的 `*_CROSS.bmp`。不要改变振幅。
 
-填完 `geometry.yaml` 后生成固定合同：
-
-```powershell
-python -m experiments.hardware_sdk.workflows.detector_homography fit `
-  --config experiments\lab_qwen\config\geometry.yaml `
-  --output experiments\lab_qwen\config\geometry.json
-Get-FileHash experiments\lab_qwen\config\geometry.json -Algorithm SHA256
-```
-
-把输出 SHA-256 与 `geometry.json` 路径填入 `hardware.yaml`，并启用
-`detector_geometry.enabled: true`（`contract_file: geometry.json`）。正式网络采集后不再
-额外左右/上下翻转。
-
-## 3. 32 灰度×3 帧曝光标定
-
-相位 SLM 加载 `calib\fresnel\P1_POINT.bmp`，然后执行：
-
-```powershell
-python -m experiments.hardware_sdk.workflows.roi_calibration exposure `
-  --config experiments\lab_qwen\config\hardware.yaml --yes
-```
-
-查看 `experiments\lab_qwen\results\exposure\brightness_response.png`。出现饱和就降低
-`exposure_us` 后重跑；该流程不把灰度 0 当背景，也不做背景扣除。
-
-## 4. 仿真与实测光路差异
-
-Agreement 数据已在 `experiments\lab_qwen\agree`。加载
-`agree\04_language_global\phase_to_play` 中唯一相位，自动播放该阶段：
+每次确认相位已加载后，可以用下面的命令保存一张全传感器图。以 P4 为例：
 
 ```powershell
 python -m experiments.hardware_sdk.workflows.acquire_folder `
   --config experiments\lab_qwen\config\hardware.yaml `
-  --stage-dir experiments\lab_qwen\agree\04_language_global --clear-output --yes
+  --input-dir experiments\lab_qwen\calib\fresnel `
+  --output-dir experiments\lab_qwen\work\fresnel_p4 `
+  --phase-mask experiments\lab_qwen\calib\fresnel\P4_POINT.bmp `
+  --file-manifest experiments\lab_qwen\calib\fresnel\amplitude_manifest.csv
 ```
 
-计算 PCC、SSIM、NRMSE、余弦相似度、能量比例和质心误差，并画图：
+## 4. 一条命令完成四点合同、SHA和正式配置
+
+确认 `geometry.yaml` 坐标无误后，只运行：
+
+```powershell
+python -m experiments.lab_qwen.setup_geometry
+```
+
+它会自动完成：
+
+- 生成 `experiments\lab_qwen\config\geometry.json`；
+- 生成对应 `.sha256`；
+- 将 ROI、合同路径和 SHA 写入 `hardware.yaml`；
+- 开启正式的478×478四点透视校正；
+- 保持网络下游不再翻转。
+
+看到 `"status": "ready"` 就完成。本实验不需要 `detector_homography apply`。
+
+## 5. 曝光标定
+
+相位 SLM 加载：
+
+```text
+experiments\lab_qwen\calib\exposure\phase\phase_zero.bmp
+```
+
+然后运行：
+
+```powershell
+python -m experiments.hardware_sdk.workflows.roi_calibration exposure `
+  --config experiments\lab_qwen\config\hardware.yaml
+```
+
+程序固定采集32个灰度、每个灰度3帧。查看：
+
+```text
+experiments\lab_qwen\results\exposure\brightness_response.png
+```
+
+如果有饱和，只修改 `hardware.yaml` 的 `camera.exposure_us`，重新运行步骤4使曝光配置同步，
+再重新执行本步骤。
+
+## 6. 仿真与实测光场一致性
+
+手动加载此目录中唯一的相位 BMP：
+
+```text
+experiments\lab_qwen\agree\04_language_global\phase_to_play
+```
+
+采集：
+
+```powershell
+python -m experiments.hardware_sdk.workflows.acquire_folder `
+  --config experiments\lab_qwen\config\hardware.yaml `
+  --stage-dir experiments\lab_qwen\agree\04_language_global --clear-output
+```
+
+评价并画图：
 
 ```powershell
 python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5.agreement_evaluate `
   --session-dir experiments\lab_qwen\agree --stage language_global
+
 python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5.agreement_report `
   --evaluation-dir experiments\lab_qwen\agree\agreement_evaluation `
   --output-dir experiments\lab_qwen\results\agreement
 ```
 
-## 5. 最后一层快速正式测试
+## 7. 最后一层快速测试
 
-加载 `last\04_language_global\phase_to_play` 的相位，采集 210 帧：
+手动加载此目录中唯一的相位 BMP：
+
+```text
+experiments\lab_qwen\last\04_language_global\phase_to_play
+```
+
+依次运行：
 
 ```powershell
 python -m experiments.hardware_sdk.workflows.acquire_folder `
   --config experiments\lab_qwen\config\hardware.yaml `
-  --stage-dir experiments\lab_qwen\last\04_language_global --clear-output --yes
+  --stage-dir experiments\lab_qwen\last\04_language_global --clear-output
+
 python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5.offline_quick_finetune `
   --session-dir experiments\lab_qwen\last --device auto --epochs 10
+
 python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5.result_report `
   --root experiments\lab_qwen `
   --session-dir experiments\lab_qwen\last `
   --output-dir experiments\lab_qwen\results\last
 ```
 
-## 6. 四层逐层采集与微调
+## 8. 四层逐层实验
 
-ZIP 已含第一层 `experiments\lab_qwen\four\01_vision_expert`。实验室采集：
+实验室当前先采第一层：手动加载
+`four\01_vision_expert\phase_to_play` 中唯一相位，然后运行：
 
 ```powershell
 python -m experiments.hardware_sdk.workflows.acquire_folder `
   --config experiments\lab_qwen\config\hardware.yaml `
-  --stage-dir experiments\lab_qwen\four\01_vision_expert --clear-output --yes
+  --stage-dir experiments\lab_qwen\four\01_vision_expert --clear-output
 ```
 
-把 `four` 目录传回服务器仓库。服务器 GPU4 对当前层微调并导出下一层，随后再把
-`four` 目录传回实验室。四层严格按以下顺序循环：
+将整个 `experiments\lab_qwen\four` 复制回服务器仓库的相同位置。后续严格按：
 
 ```text
-vision_expert -> vision_global -> language_expert -> language_global
+vision_expert → vision_global → language_expert → language_global
 ```
 
-服务器命令（把 `STAGE` 与 `NEXT` 改成当前/下一层；最后一层不再 export NEXT）：
+实验室每次只做一件事：服务器生成下一层目录后，把更新后的 `four` 目录复制回来，加载
+该目录唯一相位，运行与上面相同的 `acquire_folder` 命令并修改阶段文件夹名称。
+
+以下命令只在服务器仓库根目录执行，GPU固定为4。先设置公共变量：
 
 ```bash
+MODULE=experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5.hardware_bridge
 PROJECT=experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5
 CONFIG=$PROJECT/configs/release/stage2_joint_hardware_canonical_ccd.yaml
 SESSION=experiments/lab_qwen/four
-MODULE=experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5.hardware_bridge
-CUDA_VISIBLE_DEVICES=4 python -m $MODULE \
-  --config $CONFIG --checkpoint experiments/lab_qwen/model/ema.pt \
-  --session-dir $SESSION --stage STAGE --phase finetune
-CUDA_VISIBLE_DEVICES=4 python -m $MODULE \
-  --config $CONFIG --checkpoint $SESSION/checkpoints/after_STAGE.pt \
-  --session-dir $SESSION --stage NEXT --phase export --upstream-source measured
+```
+
+第一层实测后，微调并导出第二层：
+
+```bash
+CUDA_VISIBLE_DEVICES=4 python -m $MODULE --config $CONFIG \
+  --checkpoint experiments/lab_qwen/model/ema.pt --session-dir $SESSION \
+  --stage vision_expert --phase finetune
+CUDA_VISIBLE_DEVICES=4 python -m $MODULE --config $CONFIG \
+  --checkpoint $SESSION/checkpoints/after_vision_expert.pt --session-dir $SESSION \
+  --stage vision_global --phase export --upstream-source measured
+```
+
+第二层实测后，微调并导出第三层：
+
+```bash
+CUDA_VISIBLE_DEVICES=4 python -m $MODULE --config $CONFIG \
+  --checkpoint $SESSION/checkpoints/after_vision_expert.pt --session-dir $SESSION \
+  --stage vision_global --phase finetune
+CUDA_VISIBLE_DEVICES=4 python -m $MODULE --config $CONFIG \
+  --checkpoint $SESSION/checkpoints/after_vision_global.pt --session-dir $SESSION \
+  --stage language_expert --phase export --upstream-source measured
+```
+
+第三层实测后，微调并导出第四层：
+
+```bash
+CUDA_VISIBLE_DEVICES=4 python -m $MODULE --config $CONFIG \
+  --checkpoint $SESSION/checkpoints/after_vision_global.pt --session-dir $SESSION \
+  --stage language_expert --phase finetune
+CUDA_VISIBLE_DEVICES=4 python -m $MODULE --config $CONFIG \
+  --checkpoint $SESSION/checkpoints/after_language_expert.pt --session-dir $SESSION \
+  --stage language_global --phase export --upstream-source measured
+```
+
+第四层实测后完成最终微调：
+
+```bash
+CUDA_VISIBLE_DEVICES=4 python -m $MODULE --config $CONFIG \
+  --checkpoint $SESSION/checkpoints/after_language_expert.pt --session-dir $SESSION \
+  --stage language_global --phase finetune
+```
+
+最终 checkpoint 为：
+
+```text
+experiments/lab_qwen/four/checkpoints/after_language_global.pt
 ```

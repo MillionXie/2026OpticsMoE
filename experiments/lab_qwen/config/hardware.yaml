@@ -1,8 +1,5 @@
-# EDIT THESE FIELDS before formal acquisition:
-#   camera.device_roi_xywh
-#   camera.exposure_us
-#   camera.detector_geometry.contract_file + expected_file_sha256
-#   amplitude_slm.lut_file (30 C or 70 C)
+# Before calibration edit only amplitude_slm.lut_file and camera.exposure_us.
+# setup_geometry automatically fills ROI, contract path and SHA-256 below.
 
 input_dir: ../work/amplitude
 output_dir: ../work/ccd
@@ -60,17 +57,17 @@ camera:
   analog_gain: null
   anti_flicker_hz: null
   resolution_mode: null
-  require_device_roi: true
-  # REQUIRED: replace with [left, top, width, height], all divisible by four.
+  # Initial full-sensor calibration mode. setup_geometry changes this to true.
+  require_device_roi: false
   device_roi_xywh: null
-  saved_frame_size_wh: [478, 478]
-  saved_frame_resize_mode: auto
+  saved_frame_size_wh: null
+  saved_frame_resize_mode: none
   saved_frame_bit_depth: 8
   saved_frame_input_range: [0, 65535]
   warmup_frames: 3
   discard_frames_after_display: 1
   detector_geometry:
-    # Keep false only while locating the four points. Formal capture requires true.
+    # setup_geometry enables and pins this automatically.
     enabled: false
     contract_file: null
     expected_file_sha256: null

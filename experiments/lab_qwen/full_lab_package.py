@@ -190,9 +190,12 @@ def _formal_entries(entries: dict[str, Entry], formal_zip: Path) -> None:
             elif member.startswith("reference/fixed_simulation_report/"):
                 destination = f"{ARCHIVE_ROOT}/{member}"
                 category = "fixed_simulation_report"
-            elif member.startswith("experiments/"):
+            elif member.startswith("experiments/hardware_sdk/vendor_sdk/amplitude_meadowlark/"):
                 destination = member
-                category = "runtime_or_vendor"
+                category = "meadowlark_runtime"
+            elif member.startswith("experiments/hardware_sdk/vendor_sdk/camera_tucam_mosaic/"):
+                destination = member
+                category = "tucam_runtime"
             elif member == "bundle_manifest.json":
                 destination = f"{ARCHIVE_ROOT}/reference/sealed_bundle_manifest.json"
                 category = "formal_provenance"
@@ -233,40 +236,43 @@ def _formal_entries(entries: dict[str, Entry], formal_zip: Path) -> None:
 
 
 def _current_source_files(repo_root: Path) -> Iterable[Path]:
-    roots = (
-        "experiments/hardware_sdk",
-        "experiments/lab_qwen",
-        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5",
-        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust",
-        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval",
-        "experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval",
-        "experiments/qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval",
-        "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval",
+    required = (
+        "experiments/__init__.py",
+        "experiments/hardware_sdk/__init__.py",
+        "experiments/hardware_sdk/devices.py",
+        "experiments/hardware_sdk/drivers/__init__.py",
+        "experiments/hardware_sdk/drivers/meadowlark_pcie_slm.py",
+        "experiments/hardware_sdk/drivers/tucam_camera.py",
+        "experiments/hardware_sdk/workflows/__init__.py",
+        "experiments/hardware_sdk/workflows/acquire_folder.py",
+        "experiments/hardware_sdk/workflows/calibration_common.py",
+        "experiments/hardware_sdk/workflows/detector_homography.py",
+        "experiments/hardware_sdk/workflows/roi_calibration.py",
+        "experiments/hardware_sdk/demos/__init__.py",
+        "experiments/hardware_sdk/demos/phase_slm_demo.py",
+        "experiments/lab_qwen/__init__.py",
+        "experiments/lab_qwen/setup_geometry.py",
+        "experiments/lab_qwen/COMMANDS.md",
+        "experiments/lab_qwen/README.md",
+        "experiments/lab_qwen/config/geometry.yaml",
+        "experiments/lab_qwen/config/hardware.yaml",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/__init__.py",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/agreement_common.py",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/agreement_evaluate.py",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/agreement_report.py",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/offline_quick_finetune.py",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/result_report.py",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/requirements-lab.txt",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/requirements-offline-finetune.txt",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust/__init__.py",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust/offline_quick_finetune.py",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust/offline_tail.py",
     )
-    suffixes = {".py", ".yaml", ".yml", ".md", ".txt"}
-    forbidden_parts = {
-        "__pycache__",
-        "runs",
-        "hardware_sessions",
-        "lab_bundles",
-        "validation_bundles",
-        "lab_full_bundles",
-        "generated",
-        "tests",
-        "data",
-        "work",
-        "results",
-    }
-    for relative in roots:
-        root = repo_root / relative
-        if not root.is_dir():
-            raise FileNotFoundError(f"Required source tree is missing: {root}")
-        for path in sorted(root.rglob("*")):
-            if not path.is_file() or path.suffix.lower() not in suffixes:
-                continue
-            if any(part in forbidden_parts for part in path.relative_to(root).parts):
-                continue
-            yield path
+    for relative in required:
+        path = repo_root / relative
+        if not path.is_file():
+            raise FileNotFoundError(f"Required laboratory source is missing: {path}")
+        yield path
 
 
 def create_bundle(
@@ -398,8 +404,8 @@ def verify_bundle(path: Path) -> dict[str, Any]:
                 raise RuntimeError(f"ZIP verification failed: {record['path']}")
         required = {
             f"{ARCHIVE_ROOT}/COMMANDS.md",
-            f"{ARCHIVE_ROOT}/config/bootstrap.yaml",
             f"{ARCHIVE_ROOT}/config/hardware.yaml",
+            f"{ARCHIVE_ROOT}/setup_geometry.py",
             f"{ARCHIVE_ROOT}/calib/fresnel/A_WHITE.bmp",
             f"{ARCHIVE_ROOT}/calib/fresnel/P4_POINT.bmp",
             f"{ARCHIVE_ROOT}/calib/dual/k1_pair_manifest.json",
@@ -410,6 +416,36 @@ def verify_bundle(path: Path) -> dict[str, Any]:
         missing = required.difference(names)
         if missing:
             raise RuntimeError(f"ZIP required-data check failed: {sorted(missing)}")
+        forbidden_fragments = (
+            "amplitude_holoeye",
+            "fresnel_roi_vertex",
+            "fresnel_square_aperture",
+            "LAB_VALIDATION_BUNDLE",
+        )
+        forbidden = [
+            name for name in names if any(fragment in name for fragment in forbidden_fragments)
+        ]
+        if forbidden:
+            raise RuntimeError(
+                "ZIP contains retired hardware/calibration material: "
+                f"{forbidden[:5]}"
+            )
+        operational_markdown = [
+            name
+            for name in names
+            if name.startswith("experiments/")
+            and not name.startswith(f"{ARCHIVE_ROOT}/reference/")
+            and name.lower().endswith(".md")
+        ]
+        expected_markdown = {
+            f"{ARCHIVE_ROOT}/COMMANDS.md",
+            f"{ARCHIVE_ROOT}/README.md",
+        }
+        if set(operational_markdown) != expected_markdown:
+            raise RuntimeError(
+                "ZIP must expose exactly one command document and one short README; "
+                f"got {operational_markdown}"
+            )
         four_amplitudes = [
             name for name in names if name.startswith(f"{ARCHIVE_ROOT}/four/") and "/amplitude_to_play/" in name and name.lower().endswith(".bmp")
         ]
