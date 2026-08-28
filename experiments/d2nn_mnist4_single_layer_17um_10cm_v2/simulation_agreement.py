@@ -181,7 +181,11 @@ def _cosine(left: np.ndarray, right: np.ndarray) -> float | None:
     return None if denominator <= 1.0e-12 else float(np.dot(x, y) / denominator)
 
 
-def _canonical_capture_contract(stage: Path, rows: list[dict[str, str]]) -> None:
+def _canonical_capture_contract(
+    stage: Path,
+    rows: list[dict[str, str]],
+    contract: dict[str, Any],
+) -> None:
     manifest = stage / "acquisition_logs" / "capture_manifest.csv"
     captured = _read_csv(manifest)
     if len(captured) != len(rows):
@@ -209,6 +213,26 @@ def _canonical_capture_contract(stage: Path, rows: list[dict[str, str]]) -> None
     observed_amplitudes = [row.get("amplitude_bmp", "") for row in captured]
     if observed_amplitudes != expected_amplitudes:
         raise RuntimeError("Captured amplitude order differs from samples.csv")
+    expected_phase_name = Path(str(contract["phase_file"])).name
+    if {row.get("phase_mask", "") for row in captured} != {expected_phase_name}:
+        raise RuntimeError("Captured phase filename differs from stage_contract.json")
+    if {row.get("phase_mask_sha256", "") for row in captured} != {
+        str(contract["phase_sha256"])
+    }:
+        raise RuntimeError("Captured phase SHA-256 differs from stage_contract.json")
+    expected_ccd_names = {f"{row['key']}.png" for row in rows}
+    observed_ccd_names = {row.get("ccd_capture", "") for row in captured}
+    actual_ccd_names = {
+        path.name
+        for path in (stage / "ccd_captured").iterdir()
+        if path.is_file()
+    }
+    if observed_ccd_names != expected_ccd_names or actual_ccd_names != expected_ccd_names:
+        raise RuntimeError("CCD file set differs from samples/capture manifests")
+    for row in captured:
+        path = stage / "ccd_captured" / row["ccd_capture"]
+        if _sha256(path) != row.get("output_sha256", ""):
+            raise RuntimeError(f"Captured CCD SHA-256 mismatch: {path.name}")
 
 
 class PlayedBMPSimulator:
@@ -445,8 +469,8 @@ def evaluate_agreement(
     root = bundle_root.expanduser().resolve()
     stage_report = validate_session(stage)
     rows = _read_csv(stage / "samples.csv")
-    _canonical_capture_contract(stage, rows)
     contract = _read_json(stage / "stage_contract.json")
+    _canonical_capture_contract(stage, rows, contract)
     phase_files = sorted((stage / "phase_to_play").glob("*.bmp"))
     phase = decode_played_phase(phase_files[0], contract)
     selected_device = torch.device(
