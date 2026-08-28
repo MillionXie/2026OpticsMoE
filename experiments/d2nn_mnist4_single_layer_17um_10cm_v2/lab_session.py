@@ -70,7 +70,7 @@ def _write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
 
 
 def _default_bundle_root() -> Path:
-    return Path(__file__).resolve().parents[2]
+    return Path(__file__).resolve().parents[1] / "lab_qwen" / "mnist4"
 
 
 def _safe_replace_target(target: Path, overwrite: bool) -> None:
@@ -178,6 +178,15 @@ def validate_session(stage_dir: str | Path) -> dict[str, Any]:
     phase_files = sorted((stage / "phase_to_play").glob("*.bmp"))
     if len(phase_files) != 1 or _sha256(phase_files[0]) != marker.get("phase_sha256"):
         raise RuntimeError("Session phase file/hash is invalid")
+    phase_manifest = _read_csv(
+        stage / "phase_to_play" / "reconstruction_manifest.csv"
+    )
+    if (
+        len(phase_manifest) != 1
+        or phase_manifest[0].get("output_bmp") != phase_files[0].name
+        or phase_manifest[0].get("output_sha256") != marker.get("phase_sha256")
+    ):
+        raise RuntimeError("Session phase reconstruction manifest is invalid")
     amplitude_dir = stage / "amplitude_to_play"
     expected = {f"{row['key']}.bmp" for row in rows}
     actual = {path.name for path in amplitude_dir.glob("*.bmp")}
@@ -251,6 +260,20 @@ def prepare_session(
         shutil.copy2(phase_source, phase_destination)
         if _sha256(phase_destination) != mask["sha256"]:
             raise RuntimeError("Phase mask changed while preparing session")
+        _write_csv(
+            phase_dir / "reconstruction_manifest.csv",
+            [
+                {
+                    "source_file": phase_source.name,
+                    "output_bmp": phase_destination.name,
+                    "output_sha256": mask["sha256"],
+                    "output_width": PHASE_SIZE[0],
+                    "output_height": PHASE_SIZE[1],
+                    "output_mode": "L",
+                    "transform": "already_native_physical_pitch_nearest",
+                }
+            ],
+        )
 
         stage_rows: list[dict[str, Any]] = []
         compact_dir = payload / "samples" / "compact_amplitude"
@@ -308,6 +331,16 @@ def prepare_session(
             "phase_mask_name": mask_name,
             "phase_file": f"phase_to_play/{phase_source.name}",
             "phase_sha256": mask["sha256"],
+            "phase_export": {
+                "logical_shape_hw": [478, 478],
+                "logical_pixel_pitch_um": 17.0,
+                "native_pixel_pitch_um": 8.0,
+                "native_active_bounds_xyxy": list(mask["phase_bounds_xyxy"]),
+                "rasterization": "physical_pitch_nearest",
+                "encoding": "floor(mod(phase,2pi)/(2pi)*256)",
+                "flip_vertical_before_rasterization": True,
+                "flip_horizontal_before_rasterization": False,
+            },
             "amplitude_directory": "amplitude_to_play",
             "capture_directory": "ccd_captured",
             "manifest": "samples.csv",

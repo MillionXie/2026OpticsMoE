@@ -11,9 +11,10 @@ from experiments.hardware_sdk.workflows.acquire_folder import run as acquire_fol
 
 from .ccd_evaluate import evaluate_directory
 from .lab_session import _default_bundle_root, validate_session
+from .simulation_agreement import evaluate_agreement
 
 
-PHASES = {"validate", "acquire", "evaluate", "all"}
+PHASES = {"validate", "acquire", "evaluate", "agreement", "all"}
 
 
 def run_pipeline(
@@ -28,6 +29,8 @@ def run_pipeline(
     allow_invalid_formal: bool = False,
     flip_vertical: bool = False,
     flip_horizontal: bool = False,
+    device: str = "auto",
+    batch_size: int = 4,
 ) -> dict[str, Any]:
     if phase not in PHASES:
         raise ValueError(f"phase must be one of {sorted(PHASES)}")
@@ -73,6 +76,13 @@ def run_pipeline(
             allow_invalid_formal=allow_invalid_formal,
             generate_paper_report=True,
         )
+    if phase in {"agreement", "all"}:
+        results["agreement"] = evaluate_agreement(
+            stage_dir=stage,
+            bundle_root=root,
+            device=device,
+            batch_size=batch_size,
+        )
     return results
 
 
@@ -82,7 +92,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--stage-dir", required=True)
     parser.add_argument(
         "--hardware-config",
-        default=str(Path(__file__).with_name("lab_hardware_config.yaml")),
+        default=str(
+            Path(__file__).resolve().parents[1]
+            / "lab_qwen"
+            / "generated"
+            / "formal_hardware.yaml"
+        ),
     )
     parser.add_argument("--bundle-root", default=None)
     parser.add_argument("--clear-output", action="store_true")
@@ -95,6 +110,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--flip-vertical", action="store_true")
     parser.add_argument("--flip-horizontal", action="store_true")
+    parser.add_argument("--device", default="auto")
+    parser.add_argument("--batch-size", type=int, default=4)
     args = parser.parse_args(argv)
     report = run_pipeline(
         phase=args.phase,
@@ -107,6 +124,8 @@ def main(argv: list[str] | None = None) -> int:
         allow_invalid_formal=args.allow_invalid_formal,
         flip_vertical=args.flip_vertical,
         flip_horizontal=args.flip_horizontal,
+        device=args.device,
+        batch_size=args.batch_size,
     )
     print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
     return 0

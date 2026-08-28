@@ -1,35 +1,40 @@
-# Qwen 光路实验：唯一操作顺序
+# 新实验室完整流程：唯一命令文档
 
-本文是本实验唯一的操作入口。所有 PowerShell 命令都在仓库根目录
-`E:\code\guest\2026OpticsMoE` 执行。不要再编辑旧 `hardware.yaml`，不要运行
-`Get-FileHash`，也不要手工填写 contract 路径或 SHA。
+本文件按实际执行顺序书写。所有 PowerShell 命令均在仓库根目录
+`E:\code\guest\2026OpticsMoE` 执行。实验人员只编辑
+`experiments\lab_qwen\LAB_CONFIG.yaml`，不要编辑 `generated` 目录，也不需要手算
+ROI、透视变换或 SHA-256。
 
-## 0. 准备一次环境和 LUT
+## 0. 解压与环境
+
+把完整 ZIP 解压后，先执行：
 
 ```powershell
 Set-Location E:\code\guest\2026OpticsMoE
 conda activate xml
 python -m pip install -r experiments\qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5\requirements-lab.txt
+python -m pip install -r experiments\qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5\requirements-offline-finetune.txt
+python -c "import torch; print(torch.__version__, torch.cuda.is_available())"
 ```
 
-确认此文件真实存在：
+确认下面两个实验室专用文件确实存在：
 
 ```text
 experiments\hardware_sdk\vendor_sdk\amplitude_meadowlark\LUT Files\slm7930_at532-70c-pixel-2.lut
+experiments\hardware_sdk\vendor_sdk\camera_tucam_mosaic\TUCam.dll
 ```
 
-如果实验室电脑上的 LUT 文件名不同，把实际 `.lut` 文件放到上面的 `LUT Files`
-目录，并在下一步只改文件名。路径中虽然有空格，但不需要手写引号或反斜杠转义。
+不要激活包内 `.venv_capture`；全程使用 `xml` 环境。
 
-## 1. 唯一需要编辑的文件
+## 1. 唯一配置和自动生成 ROI
 
-打开：
+打开唯一需要编辑的文件：
 
 ```powershell
 notepad experiments\lab_qwen\LAB_CONFIG.yaml
 ```
 
-该文件只包含三类信息：
+只需填写 LUT 文件名、曝光时间和四个逻辑角点：
 
 ```yaml
 amplitude_lut_filename: slm7930_at532-70c-pixel-2.lut
@@ -41,32 +46,17 @@ logical_corners_full_sensor_xy:
   bottom_left: [1631, 1545]
 ```
 
-四点是 CCD 的 `2048×2048` 全传感器坐标，完全不要求是 4 的倍数。标签描述
-光场的逻辑方位。当前 CCD 左右镜像，因此逻辑 `top_left` 出现在画面右侧是正常的。
+四点是 CCD 的 2048×2048 全传感器坐标，不要求是 4 的倍数。标签表示光场的逻辑
+方位；当前系统左右镜像，所以逻辑左上角出现在相机画面右侧是正常的。若换光路且还没
+测量四点，先把四项全部改成 `null`，不能只留部分为 `null`。
 
-如果还没有测四点，把四项暂时都写成 `null`；不能只留一部分为 `null`：
-
-```yaml
-logical_corners_full_sensor_xy:
-  top_left: null
-  top_right: null
-  bottom_right: null
-  bottom_left: null
-```
-
-保存后运行唯一准备命令：
+每次修改后只运行：
 
 ```powershell
 python -m experiments.lab_qwen.prepare_lab
 ```
 
-它总会生成：
-
-```text
-experiments\lab_qwen\generated\bootstrap_hardware.yaml
-```
-
-四点齐全时还会自动生成：
+四点齐全时必须看到 `"status": "ready"`。程序自动生成：
 
 ```text
 experiments\lab_qwen\generated\formal_hardware.yaml
@@ -74,15 +64,13 @@ experiments\lab_qwen\generated\detector_homography_478.contract.json
 experiments\lab_qwen\generated\prepare_report.json
 ```
 
-你当前这组四点会自动得到硬件 ROI `[292,216,1404,1396]`。程序先向四周留
-64 px 余量，再把硬件 ROI 向外对齐到 4 的倍数；四点透视校正最终输出严格的
-`478×478` 正方形。看到 `"status": "ready"` 后即可正式采集。SHA 已写入生成配置，
-无需复制或计算。
+当前四点自动得到硬件 ROI `[292,216,1404,1396]`；程序先留 64 px 余量，再把硬件
+ROI 向外对齐到 4 的倍数，最后透视校正为严格 478×478。
 
-## 2. 双 SLM 对齐
+## 2. 双 SLM 像素级对齐
 
-按顺序检查三对图案。每次先在相位 SLM 软件中加载该目录的
-`phase_1920x1200.bmp`，再运行对应命令；振幅图由 Python 自动播放。
+每组都先用相位 SLM 软件加载目录内的 `phase_1920x1200.bmp`，再运行对应命令；
+Python 只控制高速振幅 SLM 和 CCD。
 
 ### 2.1 棋盘格
 
@@ -97,7 +85,7 @@ python -m experiments.hardware_sdk.workflows.acquire_folder `
   --clear-output
 ```
 
-### 2.2 大块图案，X 光栅
+### 2.2 大块图案与 X 光栅
 
 ```powershell
 python -m experiments.hardware_sdk.workflows.acquire_folder `
@@ -110,7 +98,7 @@ python -m experiments.hardware_sdk.workflows.acquire_folder `
   --clear-output
 ```
 
-### 2.3 大块图案，Y 光栅
+### 2.3 大块图案与 Y 光栅
 
 ```powershell
 python -m experiments.hardware_sdk.workflows.acquire_folder `
@@ -123,14 +111,14 @@ python -m experiments.hardware_sdk.workflows.acquire_folder `
   --clear-output
 ```
 
-三组都应满足白色振幅区出现对应光栅，边界接近像素级重合。此处振幅约定为
-`255=白/通光，0=黑/遮光`。
+振幅约定固定为 `255=白/通光，0=黑/遮光`。白色区域应出现对应光栅，边界应接近
+像素级重合。
 
-## 3. Fresnel 距离、方向和四角点
+## 3. Fresnel 距离、方向与四角点
 
-振幅 SLM 固定播放 `calib\fresnel\A_WHITE.bmp`。相位 SLM 分别手动加载以下文件。
+振幅 SLM 始终播放全白 `calib\fresnel\A_WHITE.bmp`。相位 SLM 分别加载下面文件。
 
-### 3.1 单点 P1：寻找 10 cm 焦面和方向
+### 3.1 P1：寻找 10 cm 焦面
 
 ```powershell
 python -m experiments.hardware_sdk.workflows.acquire_folder `
@@ -143,7 +131,7 @@ python -m experiments.hardware_sdk.workflows.acquire_folder `
   --clear-output
 ```
 
-### 3.2 四点 P4：读取四个逻辑角点
+### 3.2 P4：读取四个逻辑角点
 
 ```powershell
 python -m experiments.hardware_sdk.workflows.acquire_folder `
@@ -156,10 +144,15 @@ python -m experiments.hardware_sdk.workflows.acquire_folder `
   --clear-output
 ```
 
-从这张全传感器图中读取四个焦点坐标，按光场逻辑身份填入 `LAB_CONFIG.yaml`。
-不要按画面上的从左到右顺序擅自重新命名。P4 只用于拟合。
+将四个焦点的全传感器坐标按逻辑身份填入 `LAB_CONFIG.yaml`，再次运行：
 
-### 3.3 九点 P9：独立检查中心和畸变
+```powershell
+python -m experiments.lab_qwen.prepare_lab
+```
+
+必须看到 `"status": "ready"`。之后全部正式采集只用 `generated\formal_hardware.yaml`。
+
+### 3.3 P9：独立检查中心和畸变
 
 ```powershell
 python -m experiments.hardware_sdk.workflows.acquire_folder `
@@ -172,17 +165,7 @@ python -m experiments.hardware_sdk.workflows.acquire_folder `
   --clear-output
 ```
 
-如果 POINT 焦点太小不便观察，只把相位文件分别换成同编号的 `P1_CROSS.bmp`、
-`P4_CROSS.bmp`、`P9_CROSS.bmp`；振幅仍然必须是全白 `A_WHITE.bmp`。
-
-填好四点后再次运行：
-
-```powershell
-python -m experiments.lab_qwen.prepare_lab
-```
-
-必须看到 `"status": "ready"`。从下一步开始，所有采集都固定使用
-`generated\formal_hardware.yaml`，不再使用 bootstrap。
+若点太小，可把 `P1/P4/P9_POINT.bmp` 换成同编号的 `CROSS.bmp`；振幅仍为全白。
 
 ## 4. 32 灰度 × 3 帧亮度/曝光标定
 
@@ -199,43 +182,135 @@ python -m experiments.hardware_sdk.workflows.roi_calibration exposure `
   --config experiments\lab_qwen\generated\formal_hardware.yaml
 ```
 
-结果位于：
+结果在 `experiments\lab_qwen\results\exposure`。若饱和，只改 `LAB_CONFIG.yaml` 中的
+曝光，再运行 `prepare_lab` 和本步骤。
+
+## 5. MNIST-4 简单任务：先 quick40，再 formal400
+
+任务只识别数字 0、1、2、3。输入为 478×478 有效场，单层相位，532 nm、17 µm、
+传播 10 cm、1.10° k 空间截止。CCD 分类严格使用四个 59×59 区域的原始强度和
+argmax；不做 CCD 后归一化、非线性、背景扣除或再次缩放。四点透视校正只负责把
+相机坐标恢复为模型的 478×478 坐标。
+
+四个可选 mask 按建议顺序为：
 
 ```text
-experiments\lab_qwen\results\exposure\brightness_response.png
-experiments\lab_qwen\results\exposure\slm_response.csv
+post_robust_best
+mid_robust_energy
+pre_robust_best
+early_robust
 ```
 
-若存在饱和，只改 `LAB_CONFIG.yaml` 的 `camera_exposure_us`，重新运行
-`prepare_lab`，再重新跑本步骤。不要去修改生成的 `formal_hardware.yaml`。
+### 5.1 生成 quick40 会话
 
-## 5. 先做设备只读校验
+```powershell
+python -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2.lab_session `
+  --profile quick40 `
+  --mask post_robust_best `
+  --output-dir experiments\lab_qwen\mnist4_sessions\post_robust_best\quick40
+```
 
-把 `agree\04_language_global\phase_to_play` 中唯一的 BMP 加载到相位 SLM，然后运行：
+相位 SLM 手动加载下面目录内唯一的 BMP：
+
+```text
+experiments\lab_qwen\mnist4_sessions\post_robust_best\quick40\phase_to_play
+```
+
+先只读检查设备，然后采集：
+
+```powershell
+python -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2.lab_pipeline `
+  --phase validate `
+  --stage-dir experiments\lab_qwen\mnist4_sessions\post_robust_best\quick40
+
+python -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2.lab_pipeline `
+  --phase acquire `
+  --stage-dir experiments\lab_qwen\mnist4_sessions\post_robust_best\quick40 `
+  --clear-output
+```
+
+计算 quick40 诊断成功率和仿真—CCD 相似度：
+
+```powershell
+python -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2.lab_pipeline `
+  --phase evaluate `
+  --stage-dir experiments\lab_qwen\mnist4_sessions\post_robust_best\quick40 `
+  --allow-quick40-diagnostic
+
+python -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2.lab_pipeline `
+  --phase agreement `
+  --stage-dir experiments\lab_qwen\mnist4_sessions\post_robust_best\quick40 `
+  --device auto `
+  --batch-size 4
+```
+
+quick40 只用于对齐、曝光和选 mask，不能作为论文准确率。可把上述 mask 名和输出目录
+依次换成另外三个候选，多加载几张 mask 比较。
+
+### 5.2 正式 formal400
+
+选好 mask 后生成 400 张固定随机样本；下面仍以 `post_robust_best` 为例：
+
+```powershell
+python -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2.lab_session `
+  --profile formal400 `
+  --mask post_robust_best `
+  --output-dir experiments\lab_qwen\mnist4_sessions\post_robust_best\formal400
+```
+
+加载 `formal400\phase_to_play` 中唯一 BMP，然后依次运行：
+
+```powershell
+python -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2.lab_pipeline `
+  --phase validate `
+  --stage-dir experiments\lab_qwen\mnist4_sessions\post_robust_best\formal400
+
+python -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2.lab_pipeline `
+  --phase acquire `
+  --stage-dir experiments\lab_qwen\mnist4_sessions\post_robust_best\formal400 `
+  --clear-output
+
+python -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2.lab_pipeline `
+  --phase evaluate `
+  --stage-dir experiments\lab_qwen\mnist4_sessions\post_robust_best\formal400
+
+python -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2.lab_pipeline `
+  --phase agreement `
+  --stage-dir experiments\lab_qwen\mnist4_sessions\post_robust_best\formal400 `
+  --device auto `
+  --batch-size 4
+```
+
+正式输出：
+
+```text
+formal400\hardware_evaluation\hardware_metrics_raw.json
+formal400\hardware_evaluation\hardware_predictions_raw.csv
+formal400\hardware_evaluation\paper_evaluation\figures
+formal400\simulation_agreement\agreement_summary.json
+formal400\simulation_agreement\per_sample_agreement.csv
+formal400\simulation_agreement\figures
+```
+
+相似度报告包含 PCC、signal-PCC、SSIM、shape-NRMSE、余弦相似度、能量比、质心误差、
+理论信号区外能量比例、饱和率、仿真/实测预测一致率。相似度中的形状归一化只用于分析，
+不会进入 MNIST 分类。
+
+## 6. Qwen 仿真—实测光场一致性
+
+相位 SLM 加载 `agree\04_language_global\phase_to_play` 中唯一 BMP：
 
 ```powershell
 python -m experiments.hardware_sdk.workflows.acquire_folder `
   --config experiments\lab_qwen\generated\formal_hardware.yaml `
   --stage-dir experiments\lab_qwen\agree\04_language_global `
   --validate-only
-```
 
-此命令不拍摄，只检查 LUT、SDK、相机、ROI、contract、相位尺寸和振幅文件。
-
-## 6. 仿真—实测 CCD 一致性
-
-保持上一步相位不变，采集 32 张：
-
-```powershell
 python -m experiments.hardware_sdk.workflows.acquire_folder `
   --config experiments\lab_qwen\generated\formal_hardware.yaml `
   --stage-dir experiments\lab_qwen\agree\04_language_global `
   --clear-output
-```
 
-评价 PCC、SSIM、NRMSE、余弦相似度、能量和质心误差，并绘图：
-
-```powershell
 python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5.agreement_evaluate `
   --session-dir experiments\lab_qwen\agree `
   --stages language_global
@@ -245,9 +320,9 @@ python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrie
   --output-dir experiments\lab_qwen\results\agreement
 ```
 
-## 7. 最后一层 quick210 快速实验
+## 7. Qwen 最后一层 quick210 快速验证
 
-相位 SLM 加载 `last\04_language_global\phase_to_play` 中唯一的 BMP，然后依次运行：
+相位 SLM 加载 `last\04_language_global\phase_to_play` 中唯一 BMP：
 
 ```powershell
 python -m experiments.hardware_sdk.workflows.acquire_folder `
@@ -266,56 +341,44 @@ python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrie
   --output-dir experiments\lab_qwen\results\last
 ```
 
-末层准确率和图表位于 `results\last`，离线微调不会重新加载完整 Qwen。
+## 8. Qwen 四层逐层采集与微调
 
-## 8. 四层逐层采集和服务器微调
-
-顺序固定为：
+固定顺序：
 
 ```text
 01_vision_expert -> 02_vision_global -> 03_language_expert -> 04_language_global
 ```
 
-每层都遵循同一循环：实验室采集当前层 → 上传当前层 CCD → 服务器微调 → 服务器
-导出下一层 → 下载下一层 → 再采集。不能同时采完四层，因为后一层输入依赖前一层实测 CCD。
+每一层都执行同一闭环：实验室采当前层 → 上传当前层 CCD 与日志 → 服务器微调 →
+服务器导出下一层 → 下载下一层 → 再采集。不能预先同时采完四层，因为下一层输入依赖
+上一层实测 CCD。
 
-### 8.1 实验室采集第一层
+### 8.1 第一层 vision_expert
 
-加载 `four\01_vision_expert\phase_to_play` 中唯一相位 BMP：
-
-```powershell
-python -m experiments.hardware_sdk.workflows.acquire_folder `
-  --config experiments\lab_qwen\generated\formal_hardware.yaml `
-  --stage-dir experiments\lab_qwen\four\01_vision_expert `
-  --clear-output
-```
-
-把第一层 CCD 和采集日志上传到服务器已有 session：
+加载 `four\01_vision_expert\phase_to_play` 中唯一 BMP：
 
 ```powershell
+python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\lab_qwen\generated\formal_hardware.yaml --stage-dir experiments\lab_qwen\four\01_vision_expert --clear-output
 scp -P 24096 -r experiments\lab_qwen\four\01_vision_expert\ccd_captured guest3@202.120.62.181:/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1/01_vision_expert/
 scp -P 24096 -r experiments\lab_qwen\four\01_vision_expert\acquisition_logs guest3@202.120.62.181:/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1/01_vision_expert/
 ```
 
-### 8.2 服务器微调第一层并导出第二层
-
-在服务器仓库根目录运行：
+服务器仓库根目录执行：
 
 ```bash
 CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5.hardware_bridge --config experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/configs/release/stage2_joint_hardware_canonical_ccd.yaml --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/runs/caltech101_warmstart5_stage2_joint_sealed_test/ema_best_train_loss_checkpoint.pt --session-dir experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1 --stage vision_expert --phase finetune --epochs 20 --upstream-source measured
-
 CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5.hardware_bridge --config experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/configs/release/stage2_joint_hardware_canonical_ccd.yaml --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1/checkpoints/after_vision_expert.pt --session-dir experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1 --stage vision_global --phase export --upstream-source measured
 ```
 
-实验室下载第二层：
+下载第二层：
 
 ```powershell
 scp -P 24096 -r guest3@202.120.62.181:/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1/02_vision_global experiments\lab_qwen\four\
 ```
 
-### 8.3 第二层：采集、上传、微调、导出第三层
+### 8.2 第二层 vision_global
 
-加载 `four\02_vision_global\phase_to_play` 中唯一相位 BMP，然后：
+加载第二层唯一相位 BMP：
 
 ```powershell
 python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\lab_qwen\generated\formal_hardware.yaml --stage-dir experiments\lab_qwen\four\02_vision_global --clear-output
@@ -327,19 +390,16 @@ scp -P 24096 -r experiments\lab_qwen\four\02_vision_global\acquisition_logs gues
 
 ```bash
 CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5.hardware_bridge --config experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/configs/release/stage2_joint_hardware_canonical_ccd.yaml --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1/checkpoints/after_vision_expert.pt --session-dir experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1 --stage vision_global --phase finetune --epochs 20 --upstream-source measured
-
 CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5.hardware_bridge --config experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/configs/release/stage2_joint_hardware_canonical_ccd.yaml --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1/checkpoints/after_vision_global.pt --session-dir experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1 --stage language_expert --phase export --upstream-source measured
 ```
-
-实验室下载第三层：
 
 ```powershell
 scp -P 24096 -r guest3@202.120.62.181:/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1/03_language_expert experiments\lab_qwen\four\
 ```
 
-### 8.4 第三层：采集、上传、微调、导出第四层
+### 8.3 第三层 language_expert
 
-加载 `four\03_language_expert\phase_to_play` 中唯一相位 BMP，然后：
+加载第三层唯一相位 BMP：
 
 ```powershell
 python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\lab_qwen\generated\formal_hardware.yaml --stage-dir experiments\lab_qwen\four\03_language_expert --clear-output
@@ -351,19 +411,16 @@ scp -P 24096 -r experiments\lab_qwen\four\03_language_expert\acquisition_logs gu
 
 ```bash
 CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5.hardware_bridge --config experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/configs/release/stage2_joint_hardware_canonical_ccd.yaml --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1/checkpoints/after_vision_global.pt --session-dir experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1 --stage language_expert --phase finetune --epochs 20 --upstream-source measured
-
 CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5.hardware_bridge --config experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/configs/release/stage2_joint_hardware_canonical_ccd.yaml --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1/checkpoints/after_language_expert.pt --session-dir experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1 --stage language_global --phase export --upstream-source measured
 ```
-
-实验室下载第四层：
 
 ```powershell
 scp -P 24096 -r guest3@202.120.62.181:/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1/04_language_global experiments\lab_qwen\four\
 ```
 
-### 8.5 第四层：采集、上传并完成最终微调
+### 8.4 第四层 language_global
 
-加载 `four\04_language_global\phase_to_play` 中唯一相位 BMP，然后：
+加载第四层唯一相位 BMP：
 
 ```powershell
 python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\lab_qwen\generated\formal_hardware.yaml --stage-dir experiments\lab_qwen\four\04_language_global --clear-output
@@ -371,7 +428,7 @@ scp -P 24096 -r experiments\lab_qwen\four\04_language_global\ccd_captured guest3
 scp -P 24096 -r experiments\lab_qwen\four\04_language_global\acquisition_logs guest3@202.120.62.181:/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1/04_language_global/
 ```
 
-服务器：
+服务器最终微调：
 
 ```bash
 CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5.hardware_bridge --config experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/configs/release/stage2_joint_hardware_canonical_ccd.yaml --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1/checkpoints/after_language_expert.pt --session-dir experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1 --stage language_global --phase finetune --epochs 20 --upstream-source measured
@@ -383,10 +440,11 @@ CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_embedding_2b_caltech101_fo
 experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1/checkpoints/after_language_global.pt
 ```
 
-## 9. 不再使用的旧操作
+## 9. 明确不再使用的旧流程
 
-- 不手写 `camera.device_roi_xywh`。
-- 不手写 `camera.detector_geometry.contract_file` 或 SHA。
+- 不手填 `camera.device_roi_xywh`。
+- 不手填 contract 路径或 SHA，也不运行 `Get-FileHash`。
 - 不运行 `detector_homography fit/apply`。
-- 不准备 `raw_roi.npy`、`rectified_478.tif` 或 `<FIT命令输出的SHA>`。
-- 不编辑 `generated` 和 `internal` 目录中的任何文件。
+- 不准备未命名的 `raw_roi.npy` 或 `rectified_478.tif`。
+- 不使用 Holoeye、旧振幅 SLM、旧相机或旧 `lab_hardware_config.yaml`。
+- 不对已经透视校正的 CCD 再做左右/上下翻转；逻辑镜像由四点 homography 一次解决。

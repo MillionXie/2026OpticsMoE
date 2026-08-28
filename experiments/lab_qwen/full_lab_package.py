@@ -1,4 +1,4 @@
-"""Build one complete, short-path Qwen optical laboratory ZIP.
+"""Build one complete, short-path Qwen + MNIST-4 optical laboratory ZIP.
 
 This combines the sealed quick210 bundle with current calibration, agreement,
 four-stage, capture, evaluation, and plotting assets.  Historical calibration
@@ -19,7 +19,7 @@ from typing import Any, Iterable
 
 
 ARCHIVE_ROOT = "experiments/lab_qwen"
-DEFAULT_NAME = "qwen_full_lab.zip"
+DEFAULT_NAME = "qwen_mnist4_full_lab.zip"
 REQUIRED_FRESNEL = {
     "A_WHITE.bmp",
     "P1_POINT.bmp",
@@ -239,6 +239,70 @@ def _formal_entries(entries: dict[str, Entry], formal_zip: Path) -> None:
             )
 
 
+def _mnist_entries(entries: dict[str, Entry], mnist_zip: Path) -> None:
+    """Import only the sealed MNIST payload, not its retired device/docs tree."""
+
+    if not mnist_zip.is_file():
+        raise FileNotFoundError(f"Sealed MNIST-4 ZIP is missing: {mnist_zip}")
+    with zipfile.ZipFile(mnist_zip) as archive:
+        names = set(archive.namelist())
+        manifest = json.loads(archive.read("bundle_manifest.json"))
+        records = manifest.get("archive_files")
+        if not isinstance(records, list):
+            raise RuntimeError("MNIST-4 bundle_manifest.json has no archive_files")
+        for record in records:
+            member = str(record.get("archive_path", ""))
+            if member not in names:
+                raise RuntimeError(f"MNIST-4 manifest member is missing: {member}")
+            data = archive.read(member)
+            if (
+                len(data) != int(record.get("size_bytes", -1))
+                or _sha256_bytes(data) != record.get("sha256")
+            ):
+                raise RuntimeError(f"MNIST-4 sealed payload hash failed: {member}")
+        payload_members = sorted(
+            member
+            for member in names
+            if member.startswith("payload/") and not member.endswith("/")
+        )
+        compact = [
+            member
+            for member in payload_members
+            if member.startswith("payload/samples/compact_amplitude/")
+            and member.lower().endswith(".png")
+        ]
+        masks = [
+            member
+            for member in payload_members
+            if member.startswith("payload/phase_masks/")
+            and member.lower().endswith(".bmp")
+        ]
+        if len(compact) != 400 or len(masks) != 4:
+            raise RuntimeError(
+                "MNIST-4 sealed payload must contain 400 compact amplitudes and "
+                f"4 phase masks; got amplitudes={len(compact)}, masks={len(masks)}"
+            )
+        for member in payload_members:
+            _put(
+                entries,
+                Entry(
+                    f"{ARCHIVE_ROOT}/mnist4/{member}",
+                    "mnist4_sealed_payload",
+                    source_zip=mnist_zip,
+                    source_member=member,
+                ),
+            )
+        _put(
+            entries,
+            Entry(
+                f"{ARCHIVE_ROOT}/mnist4/bundle_manifest.json",
+                "mnist4_provenance",
+                source_zip=mnist_zip,
+                source_member="bundle_manifest.json",
+            ),
+        )
+
+
 def _current_source_files(repo_root: Path) -> Iterable[Path]:
     required = (
         "experiments/__init__.py",
@@ -260,6 +324,19 @@ def _current_source_files(repo_root: Path) -> Iterable[Path]:
         "experiments/lab_qwen/README.md",
         "experiments/lab_qwen/LAB_CONFIG.yaml",
         "experiments/lab_qwen/internal/hardware_template.yaml",
+        "experiments/d2nn_mnist4_single_layer_17um_10cm/__init__.py",
+        "experiments/d2nn_mnist4_single_layer_17um_10cm/settings.py",
+        "experiments/d2nn_mnist4_single_layer_17um_10cm/ccd_evaluate.py",
+        "experiments/d2nn_mnist4_single_layer_17um_10cm_v2/__init__.py",
+        "experiments/d2nn_mnist4_single_layer_17um_10cm_v2/io_utils.py",
+        "experiments/d2nn_mnist4_single_layer_17um_10cm_v2/settings.py",
+        "experiments/d2nn_mnist4_single_layer_17um_10cm_v2/modeling.py",
+        "experiments/d2nn_mnist4_single_layer_17um_10cm_v2/lab_session.py",
+        "experiments/d2nn_mnist4_single_layer_17um_10cm_v2/lab_pipeline.py",
+        "experiments/d2nn_mnist4_single_layer_17um_10cm_v2/ccd_evaluate.py",
+        "experiments/d2nn_mnist4_single_layer_17um_10cm_v2/simulation_agreement.py",
+        "experiments/d2nn_mnist4_single_layer_17um_10cm_v2/paper_evaluation.py",
+        "experiments/d2nn_mnist4_single_layer_17um_10cm_v2/requirements-lab.txt",
         "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/__init__.py",
         "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/agreement_common.py",
         "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/agreement_evaluate.py",
@@ -283,6 +360,7 @@ def create_bundle(
     *,
     repo_root: Path,
     formal_zip: Path,
+    mnist_zip: Path,
     fresnel_dir: Path,
     dual_dir: Path,
     exposure_dir: Path,
@@ -294,6 +372,7 @@ def create_bundle(
     root = repo_root.resolve()
     entries: dict[str, Entry] = {}
     _formal_entries(entries, formal_zip.resolve())
+    _mnist_entries(entries, mnist_zip.resolve())
 
     observed_fresnel = {path.name for path in fresnel_dir.iterdir() if path.is_file()}
     missing_fresnel = REQUIRED_FRESNEL.difference(observed_fresnel)
@@ -383,10 +462,11 @@ def create_bundle(
             )
         manifest = {
             "schema_version": 1,
-            "type": "qwen_complete_short_path_optical_lab_bundle",
+            "type": "qwen_mnist4_complete_short_path_optical_lab_bundle",
             "created_utc": datetime.now(timezone.utc).isoformat(),
             "archive_root": ARCHIVE_ROOT,
             "formal_source_zip_sha256": _sha256_file(formal_zip),
+            "mnist4_source_zip_sha256": _sha256_file(mnist_zip),
             "workflow": {
                 "dual_slm_calibration": True,
                 "fresnel_ccd_calibration": "full-white amplitude; point and cross phase sets",
@@ -394,6 +474,7 @@ def create_bundle(
                 "sim_to_real_agreement": True,
                 "last_stage_quick210": True,
                 "four_stage": "initial stage included; subsequent stages depend on preceding measured CCD",
+                "mnist4_simple_task": "quick40 diagnostic + formal400 reportable evaluation + played-BMP sim-to-real agreement",
             },
             "file_count_excluding_manifest": len(records),
             "files": records,
@@ -436,6 +517,10 @@ def verify_bundle(path: Path) -> dict[str, Any]:
             f"{ARCHIVE_ROOT}/agree/agreement_manifest.json",
             f"{ARCHIVE_ROOT}/last/04_language_global/offline_downstream/cache.pt",
             f"{ARCHIVE_ROOT}/model/ema.pt",
+            f"{ARCHIVE_ROOT}/mnist4/payload/samples/quick40.csv",
+            f"{ARCHIVE_ROOT}/mnist4/payload/samples/formal400.csv",
+            f"{ARCHIVE_ROOT}/mnist4/payload/phase_masks/phase_masks.json",
+            "experiments/d2nn_mnist4_single_layer_17um_10cm_v2/simulation_agreement.py",
         }
         missing = required.difference(names)
         if missing:
@@ -480,11 +565,30 @@ def verify_bundle(path: Path) -> dict[str, Any]:
         ]
         if len(last_amplitudes) != 210:
             raise RuntimeError(f"ZIP must contain 210 last-stage inputs, got {len(last_amplitudes)}")
+        mnist_amplitudes = [
+            name
+            for name in names
+            if name.startswith(f"{ARCHIVE_ROOT}/mnist4/payload/samples/compact_amplitude/")
+            and name.lower().endswith(".png")
+        ]
+        mnist_masks = [
+            name
+            for name in names
+            if name.startswith(f"{ARCHIVE_ROOT}/mnist4/payload/phase_masks/")
+            and name.lower().endswith(".bmp")
+        ]
+        if len(mnist_amplitudes) != 400 or len(mnist_masks) != 4:
+            raise RuntimeError(
+                f"ZIP MNIST payload is incomplete: amplitudes={len(mnist_amplitudes)}, "
+                f"masks={len(mnist_masks)}"
+            )
     return {
         "path": str(path),
         "files": len(names),
         "last_stage_inputs": len(last_amplitudes),
         "four_stage_amplitude_bmps": len(four_amplitudes),
+        "mnist4_compact_amplitudes": len(mnist_amplitudes),
+        "mnist4_phase_masks": len(mnist_masks),
     }
 
 
@@ -495,6 +599,7 @@ def main() -> int:
     mode.add_argument("--create", action="store_true")
     parser.add_argument("--repo-root", default=".")
     parser.add_argument("--formal-zip")
+    parser.add_argument("--mnist-zip")
     parser.add_argument("--fresnel-dir")
     parser.add_argument("--dual-dir")
     parser.add_argument("--exposure-dir", default="experiments/lab_qwen/calib/exposure")
@@ -508,6 +613,7 @@ def main() -> int:
     else:
         required = {
             "formal_zip": args.formal_zip,
+            "mnist_zip": args.mnist_zip,
             "fresnel_dir": args.fresnel_dir,
             "dual_dir": args.dual_dir,
             "agreement_session": args.agreement_session,
@@ -520,6 +626,7 @@ def main() -> int:
         report = create_bundle(
             repo_root=root,
             formal_zip=Path(args.formal_zip).expanduser().resolve(),
+            mnist_zip=Path(args.mnist_zip).expanduser().resolve(),
             fresnel_dir=Path(args.fresnel_dir).expanduser().resolve(),
             dual_dir=Path(args.dual_dir).expanduser().resolve(),
             exposure_dir=(root / args.exposure_dir).resolve(),

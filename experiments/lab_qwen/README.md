@@ -1,15 +1,13 @@
-# Qwen 光路实验完整包
+# Qwen + MNIST-4 新实验室完整包
 
-把 ZIP 解压到 `E:\code\guest\2026OpticsMoE`，所有实验入口都位于短路径
-`experiments\lab_qwen`。实验人员只编辑 `LAB_CONFIG.yaml`；运行一次
-`python -m experiments.lab_qwen.prepare_lab` 后，程序会自动计算合法硬件 ROI、生成
-四点透视 contract、固定 SHA，并生成正式硬件配置。实验顺序只看 `COMMANDS.md`。
+把 ZIP 解压到 `E:\code\guest\2026OpticsMoE`。实验人员只编辑
+`experiments\lab_qwen\LAB_CONFIG.yaml`，全部操作从 `COMMANDS.md` 第 0 步顺序执行。
 
-包内包含：双 SLM 配准 BMP、全白振幅的 Fresnel 点/十字标定、32 灰度×3 帧曝光
-标定、sim-to-real agreement 理论帧与采集清单、quick210 末层离线微调数据、四层逐层
-采集的首阶段数据、正式 EMA checkpoint、训练证据和绘图代码。
+包内只面向本次设备：1024×1024、17 µm Meadowlark 高速振幅 SLM；1920×1200、
+8 µm 手动相位 SLM；2048×2048 TUCam CCD。程序根据四个任意像素坐标自动生成合法
+硬件 ROI、478×478 透视校正、contract 和 SHA，不要求角点坐标是 4 的倍数。
 
-四个光学角点使用 CCD 全传感器坐标，不要求是 4 的倍数；只有程序自动外扩得到的
-TUCam 硬件 ROI 必须按 4 对齐。实验室电脑负责 SLM/CCD 播放采集、末层离线微调和
-画图；四层逐层流程每完成一层后仍需把该层 CCD 传回服务器生成下一层输入。ZIP 不复制
-数 GB 的 Qwen 基座权重，服务器沿用完整仓库和已有 Qwen cache。
+内容包括双 SLM 对齐、Fresnel P1/P4/P9、32 灰度×3 帧曝光标定、Qwen 仿真—实测
+一致性、Qwen 最后一层和四层逐层流程，以及 MNIST-4 的 4 个已训练 mask、quick40、
+formal400、原始四 ROI 分类、PCC/SSIM/NRMSE/余弦/能量/质心等一致性分析和 Arial
+7 pt 的 PDF/SVG/600 dpi PNG 图表。
