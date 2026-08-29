@@ -488,6 +488,7 @@ def _current_source_files(repo_root: Path) -> Iterable[Path]:
         "experiments/lab_qwen/prepare_lab.py",
         "experiments/lab_qwen/shape_agreement.py",
         "experiments/lab_qwen/mnist_timing_diagnostic.py",
+        "experiments/lab_qwen/local_four_stage.py",
         "experiments/lab_qwen/COMMANDS.md",
         "experiments/lab_qwen/README.md",
         "experiments/lab_qwen/LAB_CONFIG.yaml",
@@ -513,6 +514,7 @@ def _current_source_files(repo_root: Path) -> Iterable[Path]:
         "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/result_report.py",
         "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/requirements-lab.txt",
         "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/requirements-offline-finetune.txt",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/requirements-local-four-stage.txt",
         "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust/__init__.py",
         "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust/offline_quick_finetune.py",
         "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust/offline_tail.py",
@@ -532,11 +534,45 @@ def _current_source_files(repo_root: Path) -> Iterable[Path]:
         "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/configs/release/agreement_quick_language_global.yaml",
         "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/configs/release/stage_hardware_canonical_ccd.yaml",
     )
+    seen: set[Path] = set()
     for relative in required:
         path = repo_root / relative
         if not path.is_file():
             raise FileNotFoundError(f"Required laboratory source is missing: {path}")
-        yield path
+        resolved = path.resolve()
+        if resolved not in seen:
+            seen.add(resolved)
+            yield path
+
+    # Full local stages load frozen Qwen and the compact optical replacement.
+    # Package only executable Python and inherited YAML contracts, not tests,
+    # old run outputs, caches, or documentation from these source projects.
+    runtime_packages = (
+        "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval",
+        "experiments/qwen3_vl_embedding_2b_grocery10_robust_hybrid_retrieval",
+        "experiments/qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval",
+        "experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1",
+    )
+    for relative in runtime_packages:
+        package = repo_root / relative
+        if not package.is_dir():
+            raise FileNotFoundError(f"Required local-finetune package is missing: {package}")
+        for path in sorted(package.rglob("*")):
+            if (
+                not path.is_file()
+                or path.suffix.lower() not in {".py", ".yaml", ".txt"}
+                or "tests" in path.parts
+                or "__pycache__" in path.parts
+            ):
+                continue
+            resolved = path.resolve()
+            if resolved not in seen:
+                seen.add(resolved)
+                yield path
 
 
 def create_bundle(
@@ -747,7 +783,10 @@ def create_bundle(
                 ),
                 "sim_to_real_agreement": True,
                 "last_stage_quick210": True,
-                "four_stage": "initial stage included; subsequent stages depend on preceding measured CCD",
+                "four_stage": (
+                    "initial stage included; all four measured-CCD fine-tunes and "
+                    "next-stage exports can run locally with development-selected checkpoints"
+                ),
                 "mnist4_simple_task": "quick40 diagnostic + formal400 reportable evaluation + played-BMP sim-to-real agreement",
                 "mnist4_timing_diagnostic": (
                     "5 configurable SLM settle delays x 4 fixed digits; "
@@ -788,6 +827,7 @@ def verify_bundle(path: Path) -> dict[str, Any]:
             f"{ARCHIVE_ROOT}/prepare_lab.py",
             f"{ARCHIVE_ROOT}/shape_agreement.py",
             f"{ARCHIVE_ROOT}/mnist_timing_diagnostic.py",
+            f"{ARCHIVE_ROOT}/local_four_stage.py",
             f"{ARCHIVE_ROOT}/calib/fresnel/A_WHITE.bmp",
             f"{ARCHIVE_ROOT}/calib/fresnel/P1_POINT.bmp",
             f"{ARCHIVE_ROOT}/calib/fresnel/P4_POINT.bmp",
@@ -805,6 +845,8 @@ def verify_bundle(path: Path) -> dict[str, Any]:
             "experiments/d2nn_mnist4_single_layer_17um_10cm_v2/simulation_agreement.py",
             "experiments/hardware_sdk/workflows/reconstruct_slm.py",
             "experiments/hardware_sdk/workflows/amplitude_lut_calibration.py",
+            "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/requirements-local-four-stage.txt",
+            "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust/hardware_bridge.py",
             "experiments/hardware_sdk/vendor_sdk/amplitude_meadowlark/LUT Files/slm7930_at532_30C.lut",
             "experiments/hardware_sdk/vendor_sdk/amplitude_meadowlark/LUT Files/slm7930_at532_70C.lut",
             "experiments/hardware_sdk/vendor_sdk/amplitude_meadowlark/LUT Files/slm7930_at532-70c-pixel-2.lut",

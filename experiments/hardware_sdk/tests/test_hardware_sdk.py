@@ -14,6 +14,7 @@ from experiments.hardware_sdk.demos.amplitude_camera_demo import generate_digit_
 from experiments.hardware_sdk.workflows.acquire_folder import (
     _files_from_manifest,
     _phase_mask_metadata,
+    _reconstruct_missing_stage_amplitudes,
     _resolve_stage_layout,
     run as run_folder_acquisition,
 )
@@ -391,6 +392,31 @@ def test_stage_acquisition_layout_keeps_all_artifacts_under_stage(tmp_path: Path
     assert log_dir == stage / "acquisition_logs"
     assert phase == stage / "phase_to_play" / "language_global.bmp"
     assert phase_manifest == phase_manifest_path
+
+
+def test_stage_download_auto_reconstructs_native_17um_amplitudes(
+    tmp_path: Path,
+) -> None:
+    stage = tmp_path / "02_vision_global"
+    compact = stage / "compact_amplitude"
+    compact.mkdir(parents=True)
+    source = np.arange(478 * 478, dtype=np.uint8).reshape(478, 478)
+    Image.fromarray(source, mode="L").save(compact / "sample.png")
+    output = stage / "amplitude_to_play"
+    raw = {
+        "amplitude_slm": {
+            "expected_resolution_wh": [1024, 1024],
+            "pixel_pitch_um": 17.0,
+        }
+    }
+    assert _reconstruct_missing_stage_amplitudes(raw, stage, output) is True
+    with Image.open(output / "sample.bmp") as image:
+        value = np.asarray(image)
+    assert value.shape == (1024, 1024)
+    np.testing.assert_array_equal(value[273:751, 273:751], source)
+    assert np.count_nonzero(value[:273]) == 0
+    assert (output / "reconstruction_manifest.csv").is_file()
+    assert _reconstruct_missing_stage_amplitudes(raw, stage, output) is False
 
 
 def test_phase_bmp_is_bound_to_reconstruction_manifest_sha256(

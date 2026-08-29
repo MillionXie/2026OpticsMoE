@@ -557,6 +557,74 @@ def _evaluate(
     }
 
 
+def _development_split(
+    data: OfflineQuickData,
+    *,
+    seed: int,
+    development_per_class: int,
+) -> tuple[dict[int, list[int]], torch.Tensor, torch.Tensor]:
+    if development_per_class < 2:
+        raise ValueError("development_per_class must be at least 2")
+    grouped: dict[int, list[int]] = defaultdict(list)
+    for index in data.indexes_for_split("train"):
+        grouped[int(data.labels[int(index)])].append(int(index))
+    generator = torch.Generator().manual_seed(int(seed))
+    fitting: dict[int, list[int]] = {}
+    support: list[int] = []
+    query: list[int] = []
+    for label in sorted(grouped):
+        values = grouped[label]
+        if len(values) <= development_per_class:
+            raise RuntimeError(
+                f"Class {label} has too few train captures for a fixed development split"
+            )
+        order = torch.randperm(len(values), generator=generator).tolist()
+        held_out = [values[offset] for offset in order[:development_per_class]]
+        fitting[label] = [values[offset] for offset in order[development_per_class:]]
+        support.append(held_out[0])
+        query.extend(held_out[1:])
+    return (
+        fitting,
+        torch.tensor(support, dtype=torch.long),
+        torch.tensor(query, dtype=torch.long),
+    )
+
+
+@torch.no_grad()
+def _development_metrics(
+    tail: LanguageGlobalOfflineTail,
+    data: OfflineQuickData,
+    device: torch.device,
+    batch_size: int,
+    support_indexes: torch.Tensor,
+    query_indexes: torch.Tensor,
+    temperature: float,
+) -> dict[str, float]:
+    support = F.normalize(
+        _embeddings(tail, data, support_indexes, device, batch_size).float(), dim=-1
+    )
+    query = F.normalize(
+        _embeddings(tail, data, query_indexes, device, batch_size).float(), dim=-1
+    )
+    support_labels = data.labels.index_select(0, support_indexes)
+    query_labels = data.labels.index_select(0, query_indexes)
+    classes = torch.unique(support_labels, sorted=True)
+    if len(classes) != len(support_indexes):
+        raise RuntimeError("Development support requires one image per class")
+    prototypes = torch.stack(
+        [support[support_labels.eq(label)][0] for label in classes]
+    )
+    label_to_target = {int(label): index for index, label in enumerate(classes)}
+    targets = torch.tensor(
+        [label_to_target[int(label)] for label in query_labels], dtype=torch.long
+    )
+    logits = query @ prototypes.T / float(temperature)
+    return {
+        "development_top1": float(logits.argmax(dim=1).eq(targets).float().mean()),
+        "development_ce": float(F.cross_entropy(logits, targets)),
+    }
+
+
 def _cpu_state(module: torch.nn.Module) -> dict[str, torch.Tensor]:
     return {
         name: value.detach().cpu().clone() for name, value in module.state_dict().items()
@@ -580,6 +648,9 @@ def finetune_offline_quick(
     device_name: str = "auto",
     epochs: int | None = None,
     validate_only: bool = False,
+    selection_policy: str = "auto",
+    development_per_class: int = 2,
+    early_stopping_patience: int = 0,
 ) -> dict[str, Any]:
     data = load_offline_quick_data(session_dir, ccd_dir=ccd_dir)
     contract = data.contract
@@ -600,6 +671,15 @@ def finetune_offline_quick(
     epoch_count = int(training["recommended_epochs"] if epochs is None else epochs)
     if epoch_count <= 0:
         raise ValueError("Offline fine-tuning epochs must be positive")
+    if selection_policy not in {"auto", "development", "train_loss"}:
+        raise ValueError("selection_policy must be auto, development, or train_loss")
+    if early_stopping_patience < 0:
+        raise ValueError("early_stopping_patience must be nonnegative")
+    resolved_selection = (
+        "development"
+        if selection_policy == "auto" and contract.get("profile") == "quick210"
+        else ("train_loss" if selection_policy == "auto" else selection_policy)
+    )
     seed = int(training["seed"])
     random.seed(seed)
     np.random.seed(seed)
@@ -607,9 +687,18 @@ def finetune_offline_quick(
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
     train_indexes = data.indexes_for_split("train")
-    grouped: dict[int, list[int]] = defaultdict(list)
-    for index in train_indexes:
-        grouped[int(data.labels[int(index)])].append(int(index))
+    development_support = torch.empty(0, dtype=torch.long)
+    development_query = torch.empty(0, dtype=torch.long)
+    if resolved_selection == "development":
+        grouped, development_support, development_query = _development_split(
+            data,
+            seed=seed,
+            development_per_class=development_per_class,
+        )
+    else:
+        grouped = defaultdict(list)
+        for index in train_indexes:
+            grouped[int(data.labels[int(index)])].append(int(index))
     class_count = int(training["pk_classes"])
     images_per_class = int(training["pk_images_per_class"])
     if len(grouped) != class_count or any(
@@ -619,7 +708,8 @@ def finetune_offline_quick(
             "Offline PK contract does not match the captured training split"
         )
     batch_size = class_count * images_per_class
-    steps = max(1, len(train_indexes) // batch_size)
+    fitting_count = sum(len(values) for values in grouped.values())
+    steps = max(1, fitting_count // batch_size)
     head_parameters = [
         *tail.retrieval_norm.parameters(),
         *tail.retrieval_projection.parameters(),
@@ -646,6 +736,10 @@ def finetune_offline_quick(
     generator = torch.Generator().manual_seed(seed)
     best_loss = float("inf")
     best_epoch = 0
+    best_development_top1 = float("nan")
+    best_development_ce = float("nan")
+    best_score: tuple[float, float, float] | None = None
+    epochs_without_improvement = 0
     best_state = _cpu_state(tail)
     log_rows: list[dict[str, Any]] = []
     for epoch in range(1, epoch_count + 1):
@@ -687,25 +781,64 @@ def finetune_offline_quick(
             epoch_supcon += float(supcon.detach())
             epoch_prototype += float(prototype.detach())
         average = epoch_total / steps
+        development = (
+            _development_metrics(
+                tail,
+                data,
+                device,
+                batch_size,
+                development_support,
+                development_query,
+                float(training["episodic_prototype_temperature"]),
+            )
+            if resolved_selection == "development"
+            else {
+                "development_top1": float("nan"),
+                "development_ce": float("nan"),
+            }
+        )
         row = {
             "epoch": epoch,
             "train_loss": average,
             "supervised_contrastive": epoch_supcon / steps,
             "episodic_prototype": epoch_prototype / steps,
             "block2_optical_fusion": float(tail.block2_optical_fusion.detach()),
+            **development,
         }
         log_rows.append(row)
         print(
             f"[offline_language_global] epoch={epoch:03d}/{epoch_count:03d} "
             f"loss={average:.5f} supcon={row['supervised_contrastive']:.5f} "
             f"prototype={row['episodic_prototype']:.5f} "
-            f"gate={row['block2_optical_fusion']:.4f}",
+            f"gate={row['block2_optical_fusion']:.4f} "
+            f"dev_top1={development['development_top1']:.4f} "
+            f"dev_ce={development['development_ce']:.5f}",
             flush=True,
         )
-        if average < best_loss:
+        score = (
+            (
+                development["development_top1"],
+                -development["development_ce"],
+                -average,
+            )
+            if resolved_selection == "development"
+            else (-average, 0.0, 0.0)
+        )
+        if best_score is None or score > best_score:
             best_loss = average
             best_epoch = epoch
+            best_development_top1 = development["development_top1"]
+            best_development_ce = development["development_ce"]
+            best_score = score
+            epochs_without_improvement = 0
             best_state = _cpu_state(tail)
+        else:
+            epochs_without_improvement += 1
+        if (
+            early_stopping_patience > 0
+            and epochs_without_improvement >= early_stopping_patience
+        ):
+            break
     tail.load_state_dict(best_state, strict=True)
     metrics = _evaluate(tail, data, device, batch_size)
     result_dir = (
@@ -742,7 +875,8 @@ def finetune_offline_quick(
         **metrics,
         "best_epoch": best_epoch,
         "best_train_loss": best_loss,
-        "epochs": epoch_count,
+        "epochs_requested": epoch_count,
+        "epochs": len(log_rows),
         "optimizer_steps_per_epoch": steps,
         "device": str(device),
         "tail_trainable_parameters": sum(
@@ -755,7 +889,19 @@ def finetune_offline_quick(
         "tail_state": str(state_path),
         "tail_state_sha256": _sha256(state_path),
         "background_subtraction": False,
-        "test_selection_rule": "best checkpoint selected only by train loss",
+        "selection_policy": resolved_selection,
+        "best_development_top1": best_development_top1,
+        "best_development_ce": best_development_ce,
+        "development_images_per_class": (
+            development_per_class if resolved_selection == "development" else 0
+        ),
+        "sealed_test_used_for_selection": False,
+        "test_evaluations_during_selection": 0,
+        "test_selection_rule": (
+            "best checkpoint selected by fixed development top1, then development CE"
+            if resolved_selection == "development"
+            else "best checkpoint selected only by train loss"
+        ),
     }
     _write_json(result_dir / "metrics.json", report)
     print(
@@ -779,6 +925,13 @@ def main() -> int:
     parser.add_argument("--device", default="auto", help="auto, cpu, cuda, or cuda:N")
     parser.add_argument("--epochs", type=int)
     parser.add_argument("--validate-only", action="store_true")
+    parser.add_argument(
+        "--selection-policy",
+        choices=("auto", "development", "train_loss"),
+        default="auto",
+    )
+    parser.add_argument("--development-per-class", type=int, default=2)
+    parser.add_argument("--early-stopping-patience", type=int, default=0)
     args = parser.parse_args()
     report = finetune_offline_quick(
         session_dir=args.session_dir,
@@ -787,6 +940,9 @@ def main() -> int:
         device_name=args.device,
         epochs=args.epochs,
         validate_only=args.validate_only,
+        selection_policy=args.selection_policy,
+        development_per_class=args.development_per_class,
+        early_stopping_patience=args.early_stopping_patience,
     )
     if args.validate_only:
         print(json.dumps(report, ensure_ascii=False, sort_keys=True), flush=True)

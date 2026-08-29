@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import csv
 import hashlib
+import math
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, Iterable
@@ -10,15 +11,13 @@ from typing import Any, Iterable
 import numpy as np
 import torch
 from PIL import Image, ImageOps
+from torch.nn import functional as F
 
 from experiments.hardware_sdk.workflows.reconstruct_slm import (
     encode_active_amplitude_with_metadata,
     encode_active_phase,
     reconstruct_directory,
     save_active_png,
-)
-from experiments.qwen3_vl_embedding_2b_caltech101_language2_optical_retrieval.hardware_bridge import (
-    load_ccd,
 )
 from experiments.qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval.prepare_caltech101_retrieval import (
     prepare_caltech101_subset,
@@ -59,6 +58,51 @@ STAGES = (
 )
 UPSTREAM_SOURCES = ("measured", "simulation")
 OFFLINE_SPLIT_CODES = {"train": 0, "gallery": 1, "test": 2}
+
+
+def _load_measured_ccd_uint8(path: Path) -> torch.Tensor:
+    with Image.open(path) as image:
+        if image.mode != "L":
+            raise RuntimeError(
+                f"Measured CCD {path} must be an 8-bit grayscale image (mode L), "
+                f"got {image.mode!r}"
+            )
+        array = np.asarray(image)
+    if array.dtype != np.uint8:
+        raise RuntimeError(f"Measured CCD {path} must use uint8 pixels")
+    return torch.from_numpy(array.copy()).float()
+
+
+def _load_hardware_ccd(
+    stage_dir: Path, key: str, *, settings: Any
+) -> torch.Tensor:
+    root = stage_dir / "ccd_captured"
+    candidates = [root / f"{key}{suffix}" for suffix in (".png", ".bmp", ".tif", ".tiff")]
+    matches = [path for path in candidates if path.is_file()]
+    if len(matches) != 1:
+        raise FileNotFoundError(
+            f"Expected one measured CCD for {key} below {root}, found {len(matches)}"
+        )
+    value = _load_measured_ccd_uint8(matches[0])
+    if bool(settings.hardware_ccd_flip_vertical):
+        value = torch.flip(value, (-2,))
+    if bool(settings.hardware_ccd_flip_horizontal):
+        value = torch.flip(value, (-1,))
+    target = int(settings.hardware_ccd_target_size)
+    factor = int(settings.hardware_ccd_physical_binning_factor)
+    if tuple(value.shape) == (target, target):
+        pass
+    elif tuple(value.shape) == (target * factor, target * factor):
+        value = value.reshape(target, factor, target, factor).mean(dim=(1, 3))
+    else:
+        raise RuntimeError(
+            f"CCD {matches[0]} is {tuple(value.shape)}; expected {target}x{target} "
+            f"or {target * factor}x{target * factor}"
+        )
+    value = value.float().clamp_min(0.0)
+    if not torch.isfinite(value).all():
+        raise RuntimeError(f"CCD {matches[0]} contains invalid intensity")
+    return value
 
 
 def _replacement_modules(replacement: Any) -> list[torch.nn.Module]:
@@ -376,7 +420,7 @@ def _write_language_global_offline_payload(
             ],
         },
         "training_contract": {
-            "recommended_epochs": 10,
+            "recommended_epochs": 100,
             "seed": int(settings.random_seed),
             "pk_classes": int(settings.pk_skus_per_batch),
             "pk_images_per_class": int(settings.pk_images_per_sku),
@@ -387,7 +431,9 @@ def _write_language_global_offline_payload(
             "supervised_contrastive_temperature": float(settings.temperature),
             "episodic_prototype_temperature": float(settings.gallery_temperature),
             "loss": "supervised_contrastive + episodic_prototype",
-            "checkpoint_selection": "minimum_train_loss_only",
+            "checkpoint_selection": (
+                "fixed_train_development_top1_then_ce; sealed_test_once_after_selection"
+            ),
             "block2_mode": "eval_with_gradients_dropout_disabled",
             "gallery_aggregation": str(settings.gallery_aggregation),
             "token_pooling": "mean_max",
@@ -445,14 +491,7 @@ def _load_model(settings: Any, checkpoint: Path):
 def _load_stage_ccd(
     settings: Any, session_dir: Path, stage: str, key: str
 ) -> torch.Tensor:
-    return load_ccd(
-        _stage_dir(session_dir, stage),
-        key,
-        use_simulation=False,
-        settings=settings,
-        persist_registered=False,
-        reuse_registered=False,
-    )
+    return _load_hardware_ccd(_stage_dir(session_dir, stage), key, settings=settings)
 
 
 def _measurement_plan(
@@ -580,7 +619,10 @@ def export_stage(
     session_dir: Path,
     stage: str,
     upstream_source: str = "measured",
+    inference_batch_size: int = 10,
 ) -> None:
+    if inference_batch_size <= 0:
+        raise ValueError("inference_batch_size must be positive")
     stage_index = STAGES.index(stage)
     measured_upstream_stages = _measurement_plan(
         stage, upstream_source, include_current=False
@@ -650,8 +692,8 @@ def export_stage(
     )
     amplitude_rows: list[dict[str, Any]] = []
     try:
-        for start in range(0, len(samples), 10):
-            batch = samples[start : start + 10]
+        for start in range(0, len(samples), inference_batch_size):
+            batch = samples[start : start + inference_batch_size]
             keys = [_key(sample) for sample in batch]
             _install_measurements(
                 replacement,
@@ -1087,12 +1129,15 @@ def _hardware_embeddings(
     session_dir: Path,
     samples: list[Any],
     measured_stages: tuple[str, ...],
+    batch_size: int = 10,
 ) -> torch.Tensor:
+    if batch_size <= 0:
+        raise ValueError("Hardware embedding batch_size must be positive")
     chunks = []
     _set_replacement_eval(replacement)
     replacement.set_phase_dropout_active(False)
     readout.eval()
-    for start in range(0, len(samples), 10):
+    for start in range(0, len(samples), batch_size):
         chunks.append(
             _batch_embeddings(
                 loaded,
@@ -1100,11 +1145,106 @@ def _hardware_embeddings(
                 readout,
                 settings,
                 session_dir,
-                samples[start : start + 10],
+                samples[start : start + batch_size],
                 measured_stages,
             ).detach().cpu()
         )
     return torch.cat(chunks, dim=0)
+
+
+def _split_hardware_development(
+    grouped: dict[int, list[Any]], *, seed: int, development_per_class: int
+) -> tuple[dict[int, list[Any]], list[Any], list[Any]]:
+    """Make a fixed development support/query set from captured train images."""
+
+    if development_per_class < 2:
+        raise ValueError("development_per_class must be at least 2")
+    generator = torch.Generator().manual_seed(int(seed))
+    fitting: dict[int, list[Any]] = {}
+    support: list[Any] = []
+    query: list[Any] = []
+    for label in sorted(grouped):
+        values = grouped[label]
+        if len(values) <= development_per_class:
+            raise RuntimeError(
+                f"Class {label} has {len(values)} train captures; development "
+                f"selection requires more than {development_per_class}"
+            )
+        order = torch.randperm(len(values), generator=generator).tolist()
+        held_out = [values[index] for index in order[:development_per_class]]
+        fitting[label] = [values[index] for index in order[development_per_class:]]
+        support.append(held_out[0])
+        query.extend(held_out[1:])
+    return fitting, support, query
+
+
+@torch.no_grad()
+def _hardware_development_metrics(
+    loaded: Any,
+    replacement: Any,
+    readout: Any,
+    settings: Any,
+    session_dir: Path,
+    support_samples: list[Any],
+    query_samples: list[Any],
+    measured_stages: tuple[str, ...],
+    *,
+    inference_batch_size: int,
+) -> dict[str, float]:
+    support = F.normalize(
+        _hardware_embeddings(
+            loaded,
+            replacement,
+            readout,
+            settings,
+            session_dir,
+            support_samples,
+            measured_stages,
+            batch_size=inference_batch_size,
+        ).float(),
+        dim=-1,
+    )
+    query = F.normalize(
+        _hardware_embeddings(
+            loaded,
+            replacement,
+            readout,
+            settings,
+            session_dir,
+            query_samples,
+            measured_stages,
+            batch_size=inference_batch_size,
+        ).float(),
+        dim=-1,
+    )
+    labels = sorted({int(sample.sku_index) for sample in support_samples})
+    if len(labels) != len(support_samples):
+        raise RuntimeError("Development support requires exactly one image per class")
+    label_to_target = {label: index for index, label in enumerate(labels)}
+    prototypes = torch.stack(
+        [
+            F.normalize(
+                support[
+                    next(
+                        index
+                        for index, sample in enumerate(support_samples)
+                        if int(sample.sku_index) == label
+                    )
+                ],
+                dim=0,
+            )
+            for label in labels
+        ]
+    )
+    targets = torch.tensor(
+        [label_to_target[int(sample.sku_index)] for sample in query_samples],
+        dtype=torch.long,
+    )
+    logits = query @ prototypes.T / float(settings.gallery_temperature)
+    return {
+        "development_top1": float(logits.argmax(dim=1).eq(targets).float().mean()),
+        "development_ce": float(F.cross_entropy(logits, targets)),
+    }
 
 
 def finetune_stage(
@@ -1114,7 +1254,21 @@ def finetune_stage(
     stage: str,
     epochs: int,
     upstream_source: str = "measured",
+    selection_policy: str = "development",
+    development_per_class: int = 2,
+    pk_classes: int | None = None,
+    pk_images_per_class: int | None = None,
+    inference_batch_size: int = 10,
+    early_stopping_patience: int = 0,
 ) -> None:
+    if selection_policy not in {"development", "train_loss"}:
+        raise ValueError("selection_policy must be development or train_loss")
+    if epochs <= 0:
+        raise ValueError("epochs must be positive")
+    if inference_batch_size <= 0:
+        raise ValueError("inference_batch_size must be positive")
+    if early_stopping_patience < 0:
+        raise ValueError("early_stopping_patience must be nonnegative")
     measured_stages = _measurement_plan(
         stage, upstream_source, include_current=True
     )
@@ -1129,14 +1283,51 @@ def finetune_stage(
             grouped[int(sample.sku_index)].append(sample)
     if len(grouped) != 10 or any(len(group) < 3 for group in grouped.values()):
         raise RuntimeError("Four-layer fine-tuning requires 10 classes and 3 train captures")
+    development_support: list[Any] = []
+    development_query: list[Any] = []
+    if selection_policy == "development":
+        grouped, development_support, development_query = _split_hardware_development(
+            grouped,
+            seed=settings.random_seed,
+            development_per_class=development_per_class,
+        )
+    class_count = int(
+        min(len(grouped), settings.pk_skus_per_batch)
+        if pk_classes is None
+        else pk_classes
+    )
+    images_per_class = int(
+        settings.pk_images_per_sku
+        if pk_images_per_class is None
+        else pk_images_per_class
+    )
+    if not 2 <= class_count <= len(grouped):
+        raise ValueError(f"pk_classes must be in [2,{len(grouped)}]")
+    if images_per_class < 2 or any(
+        len(values) < images_per_class for values in grouped.values()
+    ):
+        raise ValueError(
+            "pk_images_per_class must be at least 2 and no larger than every "
+            "class's fitting split"
+        )
     generator = torch.Generator().manual_seed(settings.random_seed)
     best = float("inf")
+    best_epoch = 0
+    best_development_top1 = float("nan")
+    best_development_ce = float("nan")
+    best_score: tuple[float, float, float] | None = None
+    epochs_without_improvement = 0
+    log_rows: list[dict[str, Any]] = []
     output = session_dir / "checkpoints" / f"after_{stage}.pt"
     output.parent.mkdir(parents=True, exist_ok=True)
     try:
         for epoch in range(1, epochs + 1):
             _set_hardware_finetune_mode(replacement, readout, stage)
-            steps = max(1, sum(map(len, grouped.values())) // 30)
+            batch_size = class_count * images_per_class
+            steps = max(
+                1,
+                math.ceil(sum(map(len, grouped.values())) / batch_size),
+            )
             total = 0.0
             total_contrastive = 0.0
             total_prototype = 0.0
@@ -1144,9 +1335,18 @@ def finetune_stage(
             total_router_importance = 0.0
             for _ in range(steps):
                 batch: list[Any] = []
-                for label in sorted(grouped):
-                    indexes = torch.randperm(len(grouped[label]), generator=generator)[:3]
-                    batch.extend(grouped[label][int(index)] for index in indexes)
+                label_order = torch.randperm(len(grouped), generator=generator)
+                selected_labels = [
+                    sorted(grouped)[int(index)] for index in label_order[:class_count]
+                ]
+                for label in selected_labels:
+                    indexes = torch.randperm(
+                        len(grouped[label]), generator=generator
+                    )[:images_per_class]
+                    batch.extend(
+                        grouped[label][int(index)]
+                        for index in indexes[:images_per_class]
+                    )
                 embeddings = _batch_embeddings(
                     loaded,
                     replacement,
@@ -1196,16 +1396,61 @@ def finetune_stage(
             average_prototype = total_prototype / steps
             average_router_balance = total_router_balance / steps
             average_router_importance = total_router_importance / steps
+            development = (
+                _hardware_development_metrics(
+                    loaded,
+                    replacement,
+                    readout,
+                    settings,
+                    session_dir,
+                    development_support,
+                    development_query,
+                    measured_stages,
+                    inference_batch_size=inference_batch_size,
+                )
+                if selection_policy == "development"
+                else {
+                    "development_top1": float("nan"),
+                    "development_ce": float("nan"),
+                }
+            )
+            row = {
+                "epoch": epoch,
+                "train_loss": average,
+                "supervised_contrastive": average_contrastive,
+                "episodic_prototype": average_prototype,
+                "router_balance": average_router_balance,
+                "router_importance": average_router_importance,
+                **development,
+            }
+            log_rows.append(row)
             print(
                 f"[finetune_{stage}] epoch={epoch:03d}/{epochs:03d} "
                 f"loss={average:.5f} supcon={average_contrastive:.5f} "
                 f"prototype={average_prototype:.5f} "
                 f"router_balance={average_router_balance:.5f} "
-                f"router_importance={average_router_importance:.5f}",
+                f"router_importance={average_router_importance:.5f} "
+                f"dev_top1={development['development_top1']:.4f} "
+                f"dev_ce={development['development_ce']:.5f}",
                 flush=True,
             )
-            if average < best:
+            score = (
+                (
+                    development["development_top1"],
+                    -development["development_ce"],
+                    -average,
+                )
+                if selection_policy == "development"
+                else (-average, 0.0, 0.0)
+            )
+            improved = best_score is None or score > best_score
+            if improved:
                 best = average
+                best_epoch = epoch
+                best_development_top1 = development["development_top1"]
+                best_development_ce = development["development_ce"]
+                best_score = score
+                epochs_without_improvement = 0
                 payload = torch.load(checkpoint, map_location="cpu", weights_only=False)
                 payload["vision_optical"] = {
                     name: value.detach().cpu()
@@ -1223,6 +1468,10 @@ def finetune_stage(
                     "source_checkpoint": str(checkpoint),
                     "epoch": epoch,
                     "train_loss": average,
+                    "selection_policy": selection_policy,
+                    "development_top1": best_development_top1,
+                    "development_ce": best_development_ce,
+                    "sealed_test_used_for_selection": False,
                     "train_loss_components": {
                         "supervised_contrastive": average_contrastive,
                         "episodic_prototype": average_prototype,
@@ -1245,6 +1494,23 @@ def finetune_stage(
                     ),
                 }
                 torch.save(payload, output)
+            else:
+                epochs_without_improvement += 1
+            if (
+                early_stopping_patience > 0
+                and epochs_without_improvement >= early_stopping_patience
+            ):
+                print(
+                    f"[finetune_{stage}] early_stop epoch={epoch:03d} "
+                    f"best_epoch={best_epoch:03d}",
+                    flush=True,
+                )
+                break
+        write_csv(
+            _stage_dir(session_dir, stage) / "finetune_train_log.csv",
+            log_rows,
+            list(log_rows[0]),
+        )
         load_checkpoint(output, replacement, readout)
         query_embeddings = _hardware_embeddings(
             loaded,
@@ -1254,6 +1520,7 @@ def finetune_stage(
             session_dir,
             list(bundle.test_samples),
             measured_stages,
+            batch_size=inference_batch_size,
         )
         gallery_embeddings = _hardware_embeddings(
             loaded,
@@ -1263,6 +1530,7 @@ def finetune_stage(
             session_dir,
             list(bundle.gallery_samples),
             measured_stages,
+            batch_size=inference_batch_size,
         )
         evaluation = evaluate_embeddings(
             query_embeddings,
@@ -1282,6 +1550,20 @@ def finetune_stage(
                 "measured_stages": list(measured_stages),
                 "upstream_source": upstream_source,
                 "background_subtraction": False,
+                "epochs_requested": epochs,
+                "epochs_completed": len(log_rows),
+                "best_epoch": best_epoch,
+                "best_train_loss": best,
+                "selection_policy": selection_policy,
+                "best_development_top1": best_development_top1,
+                "best_development_ce": best_development_ce,
+                "development_images_per_class": (
+                    development_per_class
+                    if selection_policy == "development"
+                    else 0
+                ),
+                "sealed_test_used_for_selection": False,
+                "test_evaluations_during_selection": 0,
             },
         )
         print(
@@ -1305,6 +1587,25 @@ def main() -> int:
     parser.add_argument("--phase", choices=("export", "finetune"), required=True)
     parser.add_argument("--epochs", type=int, default=20)
     parser.add_argument(
+        "--selection-policy",
+        choices=("development", "train_loss"),
+        default="development",
+        help=(
+            "development selects checkpoints on a fixed held-out subset of the "
+            "captured train split; the sealed test is evaluated only once"
+        ),
+    )
+    parser.add_argument("--development-per-class", type=int, default=2)
+    parser.add_argument("--pk-classes", type=int)
+    parser.add_argument("--pk-images-per-class", type=int)
+    parser.add_argument("--inference-batch-size", type=int, default=10)
+    parser.add_argument(
+        "--early-stopping-patience",
+        type=int,
+        default=0,
+        help="0 disables early stopping",
+    )
+    parser.add_argument(
         "--upstream-source",
         choices=UPSTREAM_SOURCES,
         default="measured",
@@ -1326,6 +1627,7 @@ def main() -> int:
             session_dir,
             args.stage,
             upstream_source=args.upstream_source,
+            inference_batch_size=args.inference_batch_size,
         )
     else:
         finetune_stage(
@@ -1335,6 +1637,12 @@ def main() -> int:
             args.stage,
             args.epochs,
             upstream_source=args.upstream_source,
+            selection_policy=args.selection_policy,
+            development_per_class=args.development_per_class,
+            pk_classes=args.pk_classes,
+            pk_images_per_class=args.pk_images_per_class,
+            inference_batch_size=args.inference_batch_size,
+            early_stopping_patience=args.early_stopping_patience,
         )
     return 0
 

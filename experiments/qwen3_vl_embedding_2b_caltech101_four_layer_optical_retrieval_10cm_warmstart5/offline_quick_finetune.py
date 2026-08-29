@@ -3,8 +3,8 @@
 The strict data loader and optimizer are shared with the audited 10 cm
 implementation. This thin 5% runner additionally preserves query-level
 evaluation evidence immediately before fine-tuning and after restoring the
-train-loss-selected tail. Neither gallery nor test metrics participate in
-checkpoint selection.
+selected tail. quick210 uses a fixed development subset by default; neither
+gallery nor sealed-test metrics participate in checkpoint selection.
 
 Importing this module loads PyTorch only; it does not import Qwen,
 Transformers, or the full optical simulator.
@@ -197,6 +197,9 @@ def finetune_offline_quick(
     device_name: str = "auto",
     epochs: int | None = None,
     validate_only: bool = False,
+    selection_policy: str = "auto",
+    development_per_class: int = 2,
+    early_stopping_patience: int = 0,
 ) -> dict[str, Any]:
     """Run the shared optimizer and write paired pre/post test evidence."""
 
@@ -209,6 +212,9 @@ def finetune_offline_quick(
             device_name=device_name,
             epochs=epochs,
             validate_only=True,
+            selection_policy=selection_policy,
+            development_per_class=development_per_class,
+            early_stopping_patience=early_stopping_patience,
         )
 
     device = _implementation._select_device(device_name)
@@ -225,7 +231,8 @@ def finetune_offline_quick(
         system="quick210_0_pre_finetune",
     )
 
-    # The shared implementation selects the tail strictly by training loss.
+    # quick210 defaults to a fixed development split; the sealed test remains
+    # outside the epoch-selection loop.
     report = _implementation.finetune_offline_quick(
         session_dir=session_dir,
         ccd_dir=ccd_dir,
@@ -233,7 +240,12 @@ def finetune_offline_quick(
         device_name=device_name,
         epochs=epochs,
         validate_only=False,
+        selection_policy=selection_policy,
+        development_per_class=development_per_class,
+        early_stopping_patience=early_stopping_patience,
     )
+    selected_by = str(report["selection_policy"])
+    post_evaluation_point = f"after_{selected_by}_selected_offline_finetune"
     result_dir = _result_directory(data, output_dir)
     state_path = result_dir / "best_offline_tail_state.pt"
     best_state = torch.load(state_path, map_location="cpu", weights_only=True)
@@ -257,7 +269,7 @@ def finetune_offline_quick(
         "source_checkpoint_sha256": data.contract["source_checkpoint_sha256"],
         "contract_sha256": _implementation._sha256(data.contract_path),
         "ccd_set_sha256": report["ccd_set_sha256"],
-        "test_selection_rule": "best checkpoint selected only by train loss",
+        "test_selection_rule": report["test_selection_rule"],
         "gallery_or_test_used_for_epoch_selection": False,
     }
     pre_payload = {
@@ -271,7 +283,7 @@ def finetune_offline_quick(
         **report,
         **post_metrics,
         **provenance,
-        "evaluation_point": "after_train_loss_selected_offline_finetune",
+        "evaluation_point": post_evaluation_point,
         "tail_state_source": "best_offline_tail_state.pt",
     }
     _implementation._write_json(
@@ -299,7 +311,7 @@ def finetune_offline_quick(
 
     report.update(
         {
-            "evaluation_point": "after_train_loss_selected_offline_finetune",
+            "evaluation_point": post_evaluation_point,
             "pre_finetune_metrics": "pre_finetune_metrics.json",
             "post_finetune_metrics": "post_finetune_metrics.json",
             "query_predictions": "predictions.csv",
@@ -325,6 +337,13 @@ def main() -> int:
     parser.add_argument("--device", default="auto", help="auto, cpu, cuda, or cuda:N")
     parser.add_argument("--epochs", type=int)
     parser.add_argument("--validate-only", action="store_true")
+    parser.add_argument(
+        "--selection-policy",
+        choices=("auto", "development", "train_loss"),
+        default="auto",
+    )
+    parser.add_argument("--development-per-class", type=int, default=2)
+    parser.add_argument("--early-stopping-patience", type=int, default=0)
     args = parser.parse_args()
     report = finetune_offline_quick(
         session_dir=args.session_dir,
@@ -333,6 +352,9 @@ def main() -> int:
         device_name=args.device,
         epochs=args.epochs,
         validate_only=args.validate_only,
+        selection_policy=args.selection_policy,
+        development_per_class=args.development_per_class,
+        early_stopping_patience=args.early_stopping_patience,
     )
     if args.validate_only:
         print(json.dumps(report, ensure_ascii=False, sort_keys=True), flush=True)

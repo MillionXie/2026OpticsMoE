@@ -10,6 +10,7 @@ from ..hardware_bridge import (
     STAGES,
     _capture_contract_parameters,
     _downstream_parameters,
+    _split_hardware_development,
 )
 
 
@@ -136,3 +137,24 @@ def test_stage_specific_capture_boundaries_are_strict() -> None:
         parameter.requires_grad
         for parameter in l.optical_branch.core.global_phase.parameters()
     )
+
+
+def test_development_split_is_fixed_balanced_and_disjoint() -> None:
+    grouped = {
+        label: [SimpleNamespace(sku_index=label, sample_id=f"{label}:{index}") for index in range(10)]
+        for label in range(10)
+    }
+    fitting, support, query = _split_hardware_development(
+        grouped, seed=42, development_per_class=2
+    )
+    repeated = _split_hardware_development(
+        grouped, seed=42, development_per_class=2
+    )
+    assert [[item.sample_id for item in fitting[label]] for label in fitting] == [
+        [item.sample_id for item in repeated[0][label]] for label in repeated[0]
+    ]
+    assert all(len(values) == 8 for values in fitting.values())
+    assert len(support) == len(query) == 10
+    fitting_ids = {item.sample_id for values in fitting.values() for item in values}
+    development_ids = {item.sample_id for item in support + query}
+    assert fitting_ids.isdisjoint(development_ids)

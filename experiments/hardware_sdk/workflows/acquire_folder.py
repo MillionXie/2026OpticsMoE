@@ -100,6 +100,63 @@ def _resolve_stage_layout(
     )
 
 
+def _reconstruct_missing_stage_amplitudes(
+    raw: dict[str, Any], stage_dir: str | Path, input_dir: Path
+) -> bool:
+    """Rebuild compact 17 um payloads downloaded from the training server.
+
+    Server-side stage exports intentionally transport 478x478 PNGs instead of
+    1024x1024 BMPs.  A laboratory ``--stage-dir`` acquisition is otherwise
+    easy to start one command too early.  Only the current, unambiguous
+    Meadowlark 17 um contract is reconstructed automatically; legacy or
+    differently sized devices still require an explicit ``reconstruct_slm``
+    command.
+    """
+
+    if any(input_dir.glob("*.bmp")):
+        return False
+    stage = _resolve(stage_dir, Path.cwd())
+    compact_dir = stage / "compact_amplitude"
+    compact_files = sorted(compact_dir.glob("*.png")) if compact_dir.is_dir() else []
+    if not compact_files:
+        return False
+
+    slm = dict(raw.get("amplitude_slm", {}))
+    expected_size = tuple(
+        int(value)
+        for value in slm.get(
+            "expected_resolution_wh",
+            (slm.get("width", 0), slm.get("height", 0)),
+        )
+    )
+    pixel_pitch_um = float(slm.get("pixel_pitch_um", 0.0))
+    if expected_size != (1024, 1024) or abs(pixel_pitch_um - 17.0) > 1.0e-9:
+        raise FileNotFoundError(
+            f"No amplitude BMP files found in {input_dir}. Compact PNGs do exist, "
+            "but automatic reconstruction is restricted to the 1024x1024, "
+            "17 um Meadowlark contract. Run reconstruct_slm explicitly."
+        )
+
+    try:
+        from .reconstruct_slm import reconstruct_directory
+    except ImportError:  # direct execution from workflows/
+        from workflows.reconstruct_slm import reconstruct_directory
+
+    reconstruct_directory(
+        compact_dir,
+        input_dir,
+        slm_size_wh=expected_size,
+        scale_factor=1,
+        center_xy=(expected_size[0] / 2.0, expected_size[1] / 2.0),
+    )
+    print(
+        "[stage preparation] reconstructed "
+        f"{len(compact_files)} compact 478x478 PNGs into {input_dir}",
+        flush=True,
+    )
+    return True
+
+
 def _files_from_manifest(input_dir: Path, manifest: Path) -> list[Path]:
     """Return the exact, sorted amplitude allowlist recorded by a CSV manifest.
 
@@ -429,6 +486,8 @@ def run(
         if file_manifest_override is not None
         else None
     )
+    if stage_override is not None:
+        _reconstruct_missing_stage_amplitudes(raw, stage_override, input_dir)
     files = (
         _files_from_manifest(input_dir, selection_manifest)
         if selection_manifest is not None
