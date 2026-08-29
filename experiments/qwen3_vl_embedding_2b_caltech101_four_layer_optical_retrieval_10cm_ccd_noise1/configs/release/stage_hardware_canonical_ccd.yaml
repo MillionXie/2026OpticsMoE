@@ -1,0 +1,11 @@
+base_config: quick_last_stage_10x10.yaml
+
+# Used for all four sequential capture/fine-tune stages.  Training-time CCD
+# noise remains active only while simulated downstream optical stages train;
+# measured CCD tensors are loaded in canonical 478x478 coordinates.
+hardware:
+  ccd:
+    flip_vertical: false
+    flip_horizontal: false
+
+output_dir: ../../runs/noise_strong_stage_hardware_canonical_ccd

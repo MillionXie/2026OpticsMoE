@@ -1,16 +1,22 @@
 # 新实验室完整流程：唯一命令文档
 
-本文件按实际执行顺序书写。所有 PowerShell 命令均在本独立工程根目录
-`E:\code\guest\qwen_mnist4_full_lab` 执行。实验人员只编辑
+本文件按实际执行顺序书写。所有 PowerShell 命令均在统一仓库根目录
+`E:\code\guest\2026OpticsMoE` 执行。实验人员只编辑
 `experiments\lab_qwen\LAB_CONFIG.yaml`，不要编辑 `generated` 目录，也不需要手算
 ROI、透视变换或 SHA-256。
+
+本包的 Qwen 主模型固定为强噪声续训版本：训练时在每层仿真 CCD 强度上加入相对
+干净单帧均值的截断偏置高斯噪声（均值 6%、标准差 5%、截断到 -4%～16%），光学
+融合系数下限为 1%。正式 EMA 检查点 SHA-256 为
+`39bd00bd0f5a8d01f99c65dd4566b9e602a68bcc8a1660f27b6829fad9d4a2e1`，固定测试
+Top-1/Top-3 为 82.0%/93.5%；测试结果没有参与 checkpoint 选择。
 
 ## 0. 解压与环境
 
 把完整 ZIP 解压后，先执行：
 
 ```powershell
-Set-Location E:\code\guest\qwen_mnist4_full_lab
+Set-Location E:\code\guest\2026OpticsMoE
 conda activate xml
 python -m pip install -r experiments\qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5\requirements-lab.txt
 python -m pip install -r experiments\qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5\requirements-offline-finetune.txt
@@ -338,11 +344,11 @@ python -m experiments.hardware_sdk.workflows.acquire_folder `
   --stage-dir experiments\lab_qwen\agree\04_language_global `
   --clear-output
 
-python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5.agreement_evaluate `
+python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1.agreement_evaluate `
   --session-dir experiments\lab_qwen\agree `
   --stages language_global
 
-python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5.agreement_report `
+python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1.agreement_report `
   --evaluation-dir experiments\lab_qwen\agree\agreement_evaluation `
   --output-dir experiments\lab_qwen\results\agreement
 ```
@@ -407,12 +413,12 @@ python -m experiments.hardware_sdk.workflows.acquire_folder `
   --stage-dir experiments\lab_qwen\last\04_language_global `
   --clear-output
 
-python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5.offline_quick_finetune `
+python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1.offline_quick_finetune `
   --session-dir experiments\lab_qwen\last `
   --device auto `
   --epochs 10
 
-python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5.result_report `
+python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1.result_report `
   --root experiments\lab_qwen `
   --session-dir experiments\lab_qwen\last `
   --output-dir experiments\lab_qwen\results\last
@@ -436,21 +442,21 @@ python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrie
 
 ```powershell
 python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\lab_qwen\generated\formal_hardware.yaml --stage-dir experiments\lab_qwen\four\01_vision_expert --clear-output
-scp -P 24096 -r experiments\lab_qwen\four\01_vision_expert\ccd_captured guest3@202.120.62.181:/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1/01_vision_expert/
-scp -P 24096 -r experiments\lab_qwen\four\01_vision_expert\acquisition_logs guest3@202.120.62.181:/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1/01_vision_expert/
+scp -P 24096 -r experiments\lab_qwen\four\01_vision_expert\ccd_captured guest3@202.120.62.181:/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/hardware_sessions/four210_run1/01_vision_expert/
+scp -P 24096 -r experiments\lab_qwen\four\01_vision_expert\acquisition_logs guest3@202.120.62.181:/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/hardware_sessions/four210_run1/01_vision_expert/
 ```
 
 服务器仓库根目录执行：
 
 ```bash
-CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5.hardware_bridge --config experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/configs/release/stage2_joint_hardware_canonical_ccd.yaml --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/runs/caltech101_warmstart5_stage2_joint_sealed_test/ema_best_train_loss_checkpoint.pt --session-dir experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1 --stage vision_expert --phase finetune --epochs 20 --upstream-source measured
-CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5.hardware_bridge --config experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/configs/release/stage2_joint_hardware_canonical_ccd.yaml --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1/checkpoints/after_vision_expert.pt --session-dir experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1 --stage vision_global --phase export --upstream-source measured
+CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1.hardware_bridge --config experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/configs/release/stage_hardware_canonical_ccd.yaml --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/runs/noise_strong_mu0p06_sigma0p05_phase0p03/ema_best_train_loss_checkpoint.pt --session-dir experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/hardware_sessions/four210_run1 --stage vision_expert --phase finetune --epochs 20 --upstream-source measured
+CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1.hardware_bridge --config experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/configs/release/stage_hardware_canonical_ccd.yaml --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/hardware_sessions/four210_run1/checkpoints/after_vision_expert.pt --session-dir experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/hardware_sessions/four210_run1 --stage vision_global --phase export --upstream-source measured
 ```
 
 下载第二层：
 
 ```powershell
-scp -P 24096 -r guest3@202.120.62.181:/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1/02_vision_global experiments\lab_qwen\four\
+scp -P 24096 -r guest3@202.120.62.181:/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/hardware_sessions/four210_run1/02_vision_global experiments\lab_qwen\four\
 ```
 
 ### 8.2 第二层 vision_global
@@ -459,19 +465,19 @@ scp -P 24096 -r guest3@202.120.62.181:/DATA/DATA1/guest3/2026OpticsMoE/experimen
 
 ```powershell
 python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\lab_qwen\generated\formal_hardware.yaml --stage-dir experiments\lab_qwen\four\02_vision_global --clear-output
-scp -P 24096 -r experiments\lab_qwen\four\02_vision_global\ccd_captured guest3@202.120.62.181:/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1/02_vision_global/
-scp -P 24096 -r experiments\lab_qwen\four\02_vision_global\acquisition_logs guest3@202.120.62.181:/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1/02_vision_global/
+scp -P 24096 -r experiments\lab_qwen\four\02_vision_global\ccd_captured guest3@202.120.62.181:/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/hardware_sessions/four210_run1/02_vision_global/
+scp -P 24096 -r experiments\lab_qwen\four\02_vision_global\acquisition_logs guest3@202.120.62.181:/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/hardware_sessions/four210_run1/02_vision_global/
 ```
 
 服务器：
 
 ```bash
-CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5.hardware_bridge --config experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/configs/release/stage2_joint_hardware_canonical_ccd.yaml --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1/checkpoints/after_vision_expert.pt --session-dir experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1 --stage vision_global --phase finetune --epochs 20 --upstream-source measured
-CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5.hardware_bridge --config experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/configs/release/stage2_joint_hardware_canonical_ccd.yaml --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1/checkpoints/after_vision_global.pt --session-dir experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1 --stage language_expert --phase export --upstream-source measured
+CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1.hardware_bridge --config experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/configs/release/stage_hardware_canonical_ccd.yaml --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/hardware_sessions/four210_run1/checkpoints/after_vision_expert.pt --session-dir experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/hardware_sessions/four210_run1 --stage vision_global --phase finetune --epochs 20 --upstream-source measured
+CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1.hardware_bridge --config experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/configs/release/stage_hardware_canonical_ccd.yaml --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/hardware_sessions/four210_run1/checkpoints/after_vision_global.pt --session-dir experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/hardware_sessions/four210_run1 --stage language_expert --phase export --upstream-source measured
 ```
 
 ```powershell
-scp -P 24096 -r guest3@202.120.62.181:/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1/03_language_expert experiments\lab_qwen\four\
+scp -P 24096 -r guest3@202.120.62.181:/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/hardware_sessions/four210_run1/03_language_expert experiments\lab_qwen\four\
 ```
 
 ### 8.3 第三层 language_expert
@@ -480,19 +486,19 @@ scp -P 24096 -r guest3@202.120.62.181:/DATA/DATA1/guest3/2026OpticsMoE/experimen
 
 ```powershell
 python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\lab_qwen\generated\formal_hardware.yaml --stage-dir experiments\lab_qwen\four\03_language_expert --clear-output
-scp -P 24096 -r experiments\lab_qwen\four\03_language_expert\ccd_captured guest3@202.120.62.181:/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1/03_language_expert/
-scp -P 24096 -r experiments\lab_qwen\four\03_language_expert\acquisition_logs guest3@202.120.62.181:/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1/03_language_expert/
+scp -P 24096 -r experiments\lab_qwen\four\03_language_expert\ccd_captured guest3@202.120.62.181:/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/hardware_sessions/four210_run1/03_language_expert/
+scp -P 24096 -r experiments\lab_qwen\four\03_language_expert\acquisition_logs guest3@202.120.62.181:/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/hardware_sessions/four210_run1/03_language_expert/
 ```
 
 服务器：
 
 ```bash
-CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5.hardware_bridge --config experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/configs/release/stage2_joint_hardware_canonical_ccd.yaml --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1/checkpoints/after_vision_global.pt --session-dir experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1 --stage language_expert --phase finetune --epochs 20 --upstream-source measured
-CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5.hardware_bridge --config experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/configs/release/stage2_joint_hardware_canonical_ccd.yaml --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1/checkpoints/after_language_expert.pt --session-dir experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1 --stage language_global --phase export --upstream-source measured
+CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1.hardware_bridge --config experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/configs/release/stage_hardware_canonical_ccd.yaml --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/hardware_sessions/four210_run1/checkpoints/after_vision_global.pt --session-dir experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/hardware_sessions/four210_run1 --stage language_expert --phase finetune --epochs 20 --upstream-source measured
+CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1.hardware_bridge --config experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/configs/release/stage_hardware_canonical_ccd.yaml --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/hardware_sessions/four210_run1/checkpoints/after_language_expert.pt --session-dir experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/hardware_sessions/four210_run1 --stage language_global --phase export --upstream-source measured
 ```
 
 ```powershell
-scp -P 24096 -r guest3@202.120.62.181:/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1/04_language_global experiments\lab_qwen\four\
+scp -P 24096 -r guest3@202.120.62.181:/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/hardware_sessions/four210_run1/04_language_global experiments\lab_qwen\four\
 ```
 
 ### 8.4 第四层 language_global
@@ -501,20 +507,20 @@ scp -P 24096 -r guest3@202.120.62.181:/DATA/DATA1/guest3/2026OpticsMoE/experimen
 
 ```powershell
 python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\lab_qwen\generated\formal_hardware.yaml --stage-dir experiments\lab_qwen\four\04_language_global --clear-output
-scp -P 24096 -r experiments\lab_qwen\four\04_language_global\ccd_captured guest3@202.120.62.181:/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1/04_language_global/
-scp -P 24096 -r experiments\lab_qwen\four\04_language_global\acquisition_logs guest3@202.120.62.181:/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1/04_language_global/
+scp -P 24096 -r experiments\lab_qwen\four\04_language_global\ccd_captured guest3@202.120.62.181:/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/hardware_sessions/four210_run1/04_language_global/
+scp -P 24096 -r experiments\lab_qwen\four\04_language_global\acquisition_logs guest3@202.120.62.181:/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/hardware_sessions/four210_run1/04_language_global/
 ```
 
 服务器最终微调：
 
 ```bash
-CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5.hardware_bridge --config experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/configs/release/stage2_joint_hardware_canonical_ccd.yaml --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1/checkpoints/after_language_expert.pt --session-dir experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1 --stage language_global --phase finetune --epochs 20 --upstream-source measured
+CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1.hardware_bridge --config experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/configs/release/stage_hardware_canonical_ccd.yaml --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/hardware_sessions/four210_run1/checkpoints/after_language_expert.pt --session-dir experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/hardware_sessions/four210_run1 --stage language_global --phase finetune --epochs 20 --upstream-source measured
 ```
 
 最终 checkpoint：
 
 ```text
-experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/hardware_sessions/four210_run1/checkpoints/after_language_global.pt
+experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/hardware_sessions/four210_run1/checkpoints/after_language_global.pt
 ```
 
 ## 9. 明确不再使用的旧流程

@@ -1,0 +1,12 @@
+base_config: quick_last_stage_10x10.yaml
+
+agreement:
+  task_test_per_class: 2
+  repeat_task_keys: 2
+  repeats_per_key: 3
+  probe_seed: 42
+  batch_size: 5
+  relative_clip: 12.0
+  log_compression: 1.0
+  signal_energy_fraction: 0.99
+  bootstrap_samples: 2000

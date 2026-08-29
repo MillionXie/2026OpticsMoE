@@ -31,6 +31,14 @@ SUPPORTED_CHECKPOINT_ARCHITECTURES = {
     "vision2_language2_moe4_10cm_warmstart5_stage_b_v1": 0.05,
 }
 
+# The CCD-noise continuation deliberately keeps the warmstart5 checkpoint
+# architecture label so old tensors load strictly, while changing only the
+# construction-time optical-fusion floor from 5% to 1%.  Both values are
+# audited contracts; no arbitrary floor is accepted.
+AUDITED_ALTERNATE_FUSION_FLOORS = {
+    "vision2_language2_moe4_10cm_warmstart5_stage_b_v1": {0.01},
+}
+
 
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
@@ -343,10 +351,13 @@ def load_offline_quick_data(
         raise RuntimeError("Offline contract has no tail construction")
     expected_floor = SUPPORTED_CHECKPOINT_ARCHITECTURES[architecture]
     observed_floor = float(construction.get("minimum_optical_fusion", -1.0))
-    if abs(observed_floor - expected_floor) > 1.0e-12:
+    allowed_floors = {expected_floor} | AUDITED_ALTERNATE_FUSION_FLOORS.get(
+        architecture, set()
+    )
+    if not any(abs(observed_floor - value) <= 1.0e-12 for value in allowed_floors):
         raise RuntimeError(
             "Offline fusion floor does not match its checkpoint architecture: "
-            f"expected {expected_floor}, got {observed_floor}"
+            f"expected one of {sorted(allowed_floors)}, got {observed_floor}"
         )
     ccd_contract = contract.get("ccd_contract")
     if not isinstance(ccd_contract, dict):

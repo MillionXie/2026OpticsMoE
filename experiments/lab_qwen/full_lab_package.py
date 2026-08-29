@@ -1,8 +1,10 @@
 """Build one complete, short-path Qwen + MNIST-4 optical laboratory ZIP.
 
-This combines the sealed quick210 bundle with current calibration, agreement,
-four-stage, capture, evaluation, and plotting assets.  Historical calibration
-payloads and historical command documents are intentionally excluded.
+This combines a checkpoint-matched quick210 export with current calibration,
+agreement, four-stage, capture, evaluation, and plotting assets.  The current
+formal build replaces the legacy 5% checkpoint with the selected 1% strong CCD-
+noise continuation.  Historical calibration payloads and command documents are
+intentionally excluded.
 """
 
 from __future__ import annotations
@@ -20,7 +22,7 @@ from typing import Any, Iterable
 
 
 ARCHIVE_ROOT = "experiments/lab_qwen"
-DEFAULT_NAME = "qwen_mnist4_full_lab.zip"
+DEFAULT_NAME = "qwen_mnist4_strong_noise_full_lab.zip"
 REQUIRED_FRESNEL = {
     "A_WHITE.bmp",
     "P1_POINT.bmp",
@@ -219,7 +221,14 @@ def _add_ready_bmps_from_compact(
     return len(compact_files)
 
 
-def _formal_entries(entries: dict[str, Entry], formal_zip: Path) -> None:
+def _formal_entries(
+    entries: dict[str, Entry],
+    formal_zip: Path,
+    *,
+    use_formal_model: bool = True,
+    use_formal_quick: bool = True,
+    use_formal_model_reference: bool = True,
+) -> None:
     if not formal_zip.is_file():
         raise FileNotFoundError(f"Sealed formal ZIP is missing: {formal_zip}")
     with zipfile.ZipFile(formal_zip) as archive:
@@ -238,22 +247,34 @@ def _formal_entries(entries: dict[str, Entry], formal_zip: Path) -> None:
                 continue
             destination: str | None = None
             category = "formal_runtime"
-            if member == "payload/checkpoint/ema_best_train_loss_checkpoint.pt":
+            if (
+                use_formal_model
+                and member == "payload/checkpoint/ema_best_train_loss_checkpoint.pt"
+            ):
                 destination = f"{ARCHIVE_ROOT}/model/ema.pt"
                 category = "formal_checkpoint"
-            elif member.startswith("payload/quick210/"):
+            elif use_formal_quick and member.startswith("payload/quick210/"):
                 destination = f"{ARCHIVE_ROOT}/last/{member[len('payload/quick210/'):]}"
                 category = "last_stage_quick210"
-            elif member.startswith("payload/four_phase_export/"):
+            elif (
+                use_formal_model_reference
+                and member.startswith("payload/four_phase_export/")
+            ):
                 destination = (
                     f"{ARCHIVE_ROOT}/reference/four_phase_export/"
                     f"{member[len('payload/four_phase_export/'):]}"
                 )
                 category = "formal_phase_reference"
-            elif member.startswith("reference/training_evidence/"):
+            elif (
+                use_formal_model_reference
+                and member.startswith("reference/training_evidence/")
+            ):
                 destination = f"{ARCHIVE_ROOT}/{member}"
                 category = "training_evidence"
-            elif member.startswith("reference/fixed_simulation_report/"):
+            elif (
+                use_formal_model_reference
+                and member.startswith("reference/fixed_simulation_report/")
+            ):
                 destination = f"{ARCHIVE_ROOT}/{member}"
                 category = "fixed_simulation_report"
             elif member.startswith("experiments/hardware_sdk/vendor_sdk/amplitude_meadowlark/"):
@@ -277,6 +298,8 @@ def _formal_entries(entries: dict[str, Entry], formal_zip: Path) -> None:
                         source_member=member,
                     ),
                 )
+        if not use_formal_quick:
+            return
         compact_prefix = "payload/quick210/04_language_global/compact_amplitude/"
         compact_members = sorted(
             member
@@ -385,6 +408,62 @@ def _mnist_entries(entries: dict[str, Entry], mnist_zip: Path) -> None:
         )
 
 
+def _selected_noise_evidence(
+    entries: dict[str, Entry], noise_run_dir: Path
+) -> None:
+    """Include auditable metrics without duplicating optimizer/checkpoint tensors."""
+
+    names = (
+        "config.yaml",
+        "continuation_initialization_report.json",
+        "dataset.json",
+        "environment.json",
+        "model.json",
+        "student_metrics.json",
+        "train_log.csv",
+        "per_sku_metrics.csv",
+        "retrieval_results.csv",
+        "confusion_matrix.png",
+    )
+    for name in names:
+        source = noise_run_dir / name
+        if not source.is_file():
+            raise FileNotFoundError(f"Required strong-noise evidence is missing: {source}")
+        _put(
+            entries,
+            Entry(
+                f"{ARCHIVE_ROOT}/reference/strong_noise_training/{name}",
+                "strong_noise_training_evidence",
+                source_path=source,
+            ),
+        )
+
+
+def _require_session_checkpoint(session_dir: Path, expected_sha256: str) -> None:
+    """Reject mixed exports whose amplitudes/phases came from another model."""
+
+    observed: list[tuple[Path, str]] = []
+    for path in sorted(session_dir.rglob("transport_spec.json")):
+        value = json.loads(path.read_text(encoding="utf-8")).get("checkpoint_sha256")
+        if value:
+            observed.append((path, str(value).lower()))
+    agreement = session_dir / "agreement_manifest.json"
+    if agreement.is_file():
+        value = json.loads(agreement.read_text(encoding="utf-8")).get(
+            "checkpoint_sha256"
+        )
+        if value:
+            observed.append((agreement, str(value).lower()))
+    if not observed:
+        raise RuntimeError(f"Session has no checkpoint-bound transport contract: {session_dir}")
+    mismatched = [str(path) for path, digest in observed if digest != expected_sha256]
+    if mismatched:
+        raise RuntimeError(
+            "Session was exported from a different checkpoint: "
+            f"expected={expected_sha256}, files={mismatched}"
+        )
+
+
 def _current_source_files(repo_root: Path) -> Iterable[Path]:
     required = (
         "experiments/__init__.py",
@@ -432,6 +511,21 @@ def _current_source_files(repo_root: Path) -> Iterable[Path]:
         "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust/__init__.py",
         "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust/offline_quick_finetune.py",
         "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust/offline_tail.py",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/__init__.py",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/modeling.py",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/settings.py",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/hardware_bridge.py",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/agreement_export.py",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/export_phase_bmps.py",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/offline_quick_finetune.py",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/agreement_evaluate.py",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/agreement_report.py",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/result_report.py",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/configs/release/common.yaml",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/configs/release/noise_strong.yaml",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/configs/release/quick_last_stage_10x10.yaml",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/configs/release/agreement_quick_language_global.yaml",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/configs/release/stage_hardware_canonical_ccd.yaml",
     )
     for relative in required:
         path = repo_root / relative
@@ -452,11 +546,74 @@ def create_bundle(
     four_session: Path,
     output: Path,
     overwrite: bool,
+    model_checkpoint: Path | None = None,
+    last_session: Path | None = None,
+    noise_run_dir: Path | None = None,
+    phase_export_dir: Path | None = None,
 ) -> dict[str, Any]:
     root = repo_root.resolve()
     entries: dict[str, Entry] = {}
-    _formal_entries(entries, formal_zip.resolve())
+    selected_checkpoint = model_checkpoint.resolve() if model_checkpoint else None
+    selected_checkpoint_sha256 = (
+        _sha256_file(selected_checkpoint) if selected_checkpoint else None
+    )
+    _formal_entries(
+        entries,
+        formal_zip.resolve(),
+        use_formal_model=selected_checkpoint is None,
+        use_formal_quick=last_session is None,
+        use_formal_model_reference=(
+            selected_checkpoint is None and noise_run_dir is None
+        ),
+    )
     _mnist_entries(entries, mnist_zip.resolve())
+
+    if selected_checkpoint is not None:
+        if not selected_checkpoint.is_file():
+            raise FileNotFoundError(
+                f"Selected strong-noise checkpoint is missing: {selected_checkpoint}"
+            )
+        _put(
+            entries,
+            Entry(
+                f"{ARCHIVE_ROOT}/model/ema.pt",
+                "strong_noise_checkpoint",
+                source_path=selected_checkpoint,
+            ),
+            replace=True,
+        )
+    if last_session is not None:
+        last_session = last_session.resolve()
+        if selected_checkpoint_sha256 is None:
+            raise ValueError("last_session requires model_checkpoint")
+        _require_session_checkpoint(last_session, selected_checkpoint_sha256)
+        _map_directory(
+            entries,
+            last_session,
+            f"{ARCHIVE_ROOT}/last",
+            "strong_noise_last_stage",
+            replace=True,
+        )
+        last_ready = _add_ready_bmps_from_compact(
+            entries,
+            source_session=last_session,
+            destination=f"{ARCHIVE_ROOT}/last",
+            category="strong_noise_last_stage_ready_bmp",
+        )
+        if last_ready != 210:
+            raise RuntimeError(
+                f"Strong-noise last-stage session must contain 210 inputs, got {last_ready}"
+            )
+    if noise_run_dir is not None:
+        _selected_noise_evidence(entries, noise_run_dir.resolve())
+    if phase_export_dir is not None:
+        _map_directory(
+            entries,
+            phase_export_dir.resolve(),
+            f"{ARCHIVE_ROOT}/reference/four_phase_export",
+            "strong_noise_phase_reference",
+            replace=True,
+        )
 
     observed_fresnel = {path.name for path in fresnel_dir.iterdir() if path.is_file()}
     missing_fresnel = REQUIRED_FRESNEL.difference(observed_fresnel)
@@ -491,6 +648,11 @@ def create_bundle(
     _map_directory(entries, exposure_dir, f"{ARCHIVE_ROOT}/calib/exposure", "exposure_32x3")
     _map_directory(entries, agreement_session, f"{ARCHIVE_ROOT}/agree", "agreement_session")
     _map_directory(entries, four_session, f"{ARCHIVE_ROOT}/four", "four_stage_initial")
+    if selected_checkpoint_sha256 is not None:
+        _require_session_checkpoint(
+            agreement_session.resolve(), selected_checkpoint_sha256
+        )
+        _require_session_checkpoint(four_session.resolve(), selected_checkpoint_sha256)
     agreement_ready = _add_ready_bmps_from_compact(
         entries,
         source_session=agreement_session,
@@ -551,6 +713,23 @@ def create_bundle(
             "archive_root": ARCHIVE_ROOT,
             "formal_source_zip_sha256": _sha256_file(formal_zip),
             "mnist4_source_zip_sha256": _sha256_file(mnist_zip),
+            "selected_model": {
+                "kind": (
+                    "strong_truncated_biased_gaussian_ccd_noise"
+                    if selected_checkpoint is not None
+                    else "formal_source_checkpoint"
+                ),
+                "sha256": selected_checkpoint_sha256,
+                "noise_mean_fraction_of_clean_frame_mean": (
+                    0.06 if selected_checkpoint is not None else None
+                ),
+                "noise_std_fraction_of_clean_frame_mean": (
+                    0.05 if selected_checkpoint is not None else None
+                ),
+                "minimum_optical_fusion_coefficient": (
+                    0.01 if selected_checkpoint is not None else None
+                ),
+            },
             "workflow": {
                 "dual_slm_calibration": True,
                 "fresnel_ccd_calibration": (
@@ -596,7 +775,9 @@ def verify_bundle(path: Path) -> dict[str, Any]:
             f"{ARCHIVE_ROOT}/prepare_lab.py",
             f"{ARCHIVE_ROOT}/shape_agreement.py",
             f"{ARCHIVE_ROOT}/calib/fresnel/A_WHITE.bmp",
+            f"{ARCHIVE_ROOT}/calib/fresnel/P1_POINT.bmp",
             f"{ARCHIVE_ROOT}/calib/fresnel/P4_POINT.bmp",
+            f"{ARCHIVE_ROOT}/calib/fresnel/P9_POINT.bmp",
             f"{ARCHIVE_ROOT}/calib/dual/k1_pair_manifest.json",
             f"{ARCHIVE_ROOT}/calib/dual/01_checker_c64/amplitude_manifest.csv",
             f"{ARCHIVE_ROOT}/calib/dual/02_large_blocks_c48_x/amplitude_manifest.csv",
@@ -610,9 +791,37 @@ def verify_bundle(path: Path) -> dict[str, Any]:
             "experiments/d2nn_mnist4_single_layer_17um_10cm_v2/simulation_agreement.py",
             "experiments/hardware_sdk/workflows/reconstruct_slm.py",
         }
+        selected_model = manifest.get("selected_model", {})
+        if selected_model.get("kind") == (
+            "strong_truncated_biased_gaussian_ccd_noise"
+        ):
+            required.update(
+                {
+                    f"{ARCHIVE_ROOT}/reference/strong_noise_training/student_metrics.json",
+                    f"{ARCHIVE_ROOT}/reference/strong_noise_training/train_log.csv",
+                    f"{ARCHIVE_ROOT}/reference/four_phase_export/phase_export_report.json",
+                    "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/hardware_bridge.py",
+                    "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/configs/release/stage_hardware_canonical_ccd.yaml",
+                }
+            )
         missing = required.difference(names)
         if missing:
             raise RuntimeError(f"ZIP required-data check failed: {sorted(missing)}")
+        if selected_model.get("kind") == (
+            "strong_truncated_biased_gaussian_ccd_noise"
+        ):
+            model_digest = _sha256_bytes(
+                archive.read(f"{ARCHIVE_ROOT}/model/ema.pt")
+            )
+            if model_digest != selected_model.get("sha256"):
+                raise RuntimeError("Strong-noise model SHA-256 differs from manifest")
+        fresnel = json.loads(
+            archive.read(f"{ARCHIVE_ROOT}/calib/fresnel/manifest.json")
+        )
+        if fresnel.get("source_principle") != (
+            "teacher MATLAB quadratic square-window array"
+        ):
+            raise RuntimeError("ZIP does not contain the current teacher-MATLAB Fresnel set")
         forbidden_fragments = (
             "amplitude_holoeye",
             "fresnel_roi_vertex",
@@ -743,6 +952,22 @@ def main() -> int:
     parser.add_argument("--exposure-dir", default="experiments/lab_qwen/calib/exposure")
     parser.add_argument("--agreement-session")
     parser.add_argument("--four-session")
+    parser.add_argument(
+        "--model-checkpoint",
+        help="Optional strong-noise EMA checkpoint replacing the formal source model",
+    )
+    parser.add_argument(
+        "--last-session",
+        help="Checkpoint-matched 210-sample language-global export replacing formal quick210",
+    )
+    parser.add_argument(
+        "--noise-run-dir",
+        help="Strong-noise run directory whose non-checkpoint evidence is archived",
+    )
+    parser.add_argument(
+        "--phase-export-dir",
+        help="Checkpoint-matched four-mask reference export",
+    )
     parser.add_argument("--output", default=DEFAULT_NAME)
     parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args()
@@ -772,6 +997,26 @@ def main() -> int:
             four_session=Path(args.four_session).expanduser().resolve(),
             output=Path(args.output).expanduser().resolve(),
             overwrite=args.overwrite,
+            model_checkpoint=(
+                Path(args.model_checkpoint).expanduser().resolve()
+                if args.model_checkpoint
+                else None
+            ),
+            last_session=(
+                Path(args.last_session).expanduser().resolve()
+                if args.last_session
+                else None
+            ),
+            noise_run_dir=(
+                Path(args.noise_run_dir).expanduser().resolve()
+                if args.noise_run_dir
+                else None
+            ),
+            phase_export_dir=(
+                Path(args.phase_export_dir).expanduser().resolve()
+                if args.phase_export_dir
+                else None
+            ),
         )
     print(json.dumps(report, ensure_ascii=False, indent=2))
     return 0

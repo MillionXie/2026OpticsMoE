@@ -1,0 +1,17 @@
+base_config: noise_strong.yaml
+
+# Fixed 210-sample laboratory profile: 10 train, 1 gallery and 10 sealed test
+# images per class.  The checkpoint is still selected by training loss only.
+dataset:
+  gallery_images_per_sku: 1
+  train_limit_per_sku: 10
+  test_limit_per_sku: 10
+  reserve_test_before_train: true
+
+hardware:
+  ccd:
+    # The four-point homography already returns canonical model coordinates.
+    flip_vertical: false
+    flip_horizontal: false
+
+output_dir: ../../runs/noise_strong_quick_last_stage_metadata

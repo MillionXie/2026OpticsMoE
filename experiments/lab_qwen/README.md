@@ -1,7 +1,11 @@
 # Qwen + MNIST-4 新实验室完整包
 
-把 ZIP 解压到独立目录 `E:\code\guest\qwen_mnist4_full_lab`。实验人员只编辑
+把 ZIP 覆盖解压到统一仓库目录 `E:\code\guest\2026OpticsMoE`。实验人员只编辑
 `experiments\lab_qwen\LAB_CONFIG.yaml`，全部操作从 `COMMANDS.md` 第 0 步顺序执行。
+
+Qwen 主模型是强噪声续训版本：截断偏置高斯 CCD 噪声为干净单帧均值的
+`mean=6%、std=5%、clip=[-4%,16%]`，四个光电融合门的配置下限为 1%。该模型
+固定测试 Top-1 为 82.0%，检查点由训练损失选择，不使用测试集挑选。
 
 包内只面向本次设备：1024×1024、17 µm Meadowlark 高速振幅 SLM；1920×1200、
 8 µm 手动相位 SLM；2048×2048 TUCam CCD。程序根据四个任意像素坐标自动生成合法
