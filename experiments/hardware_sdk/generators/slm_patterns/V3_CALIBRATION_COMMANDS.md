@@ -28,26 +28,29 @@ experiments/hardware_sdk/generators/slm_patterns/generated/
 先用非对称 `large_blocks_c48_x/y`（或已知方向的 quadrant 图、数字 `3`）确定 CCD 相对
 模型坐标唯一且固定的旋转/镜像关系。规则棋盘格可能存在对称歧义，不能单独用来判断方向。
 
-## 532 nm、10 cm 普通菲涅尔 v3
+## 532 nm、10 cm：老师 MATLAB 方窗菲涅尔（当前版本）
 
 ```powershell
-python -m experiments.hardware_sdk.generators.fresnel_square_aperture_array `
-  --config experiments\hardware_sdk\generators\slm_patterns\configs\fresnel_square_aperture_array_17um_8um.yaml
+python -m experiments.hardware_sdk.generators.fresnel_full_panel_array `
+  --config experiments\hardware_sdk\generators\slm_patterns\configs\fresnel_full_panel_17um_8um.yaml
 ```
 
 输出目录：
 
 ```text
 experiments/hardware_sdk/generators/slm_patterns/generated/
-  fresnel_square_aperture_array_532nm_17um_8um_v3/
+  fresnel_full_panel_532nm_17um_8um/
 ```
 
-它生成 `n1/n4/n9 × a48/a64/a96/a128` 共 12 对匹配振幅/相位 BMP，并附理想 CCD、
-数值指标和 SHA manifest。建议先用 `a64`；焦斑太小换 `a48`，光太弱换 `a96`。
+它生成一张全白振幅 `A_WHITE.bmp`，以及 `P1_POINT.bmp`、`P4_POINT.bmp`、
+`P9_POINT.bmp`。相位使用老师 MATLAB 的
+`-k*((p*x)^2+(p*y)^2)/(2*f)` 方窗二次相位，没有圆孔、外围光栅、人为十字或
+quarter/half lens。P4/P9 的方窗为 160×160 相位像素，全部完整落在 1920×1200
+面板内；P1 为 403×403，相当于老师 350×9.2 µm 的物理口径映射到 8 µm SLM。
 
-相位只含普通二次菲涅尔相位，没有画十字或外圈。十字来自方形 pupil 的 sinc 旁瓣。
-相位纵向翻转围绕配置的 `center_y=590` 执行，导出中心仍为 `(980,590)`，不是围绕
-1200 行面板的几何中心翻转。播放端不得再次翻转、缩放或重新居中。
+P4 四个焦点的水平和垂直外间距均为 `478×17/8=1015.75` 个相位像素，直接对应
+正式 ROI 四顶点。相位纵向翻转围绕 `center_y=590` 执行；播放端不得再次翻转、
+缩放或重新居中。相位图黑色仅表示 0 rad，振幅始终全白。
 
 推荐标定顺序固定为：`n1` 找焦面 → 用前述非对称图确定方向 → `n4` 定位四顶点并按已知
 方向赋逻辑 TL/TR/BR/BL → `n9` 用未参与拟合的边中点和中心做独立几何验证。n4 的四个

@@ -2,7 +2,7 @@
 
 > [!IMPORTANT]
 > 当前 17 µm 振幅 SLM / 8 µm 相位 SLM / 10 cm 新光路只使用
-> [V3_CALIBRATION_COMMANDS.md](V3_CALIBRATION_COMMANDS.md) 中的 square-aperture Fresnel v3
+> [V3_CALIBRATION_COMMANDS.md](V3_CALIBRATION_COMMANDS.md) 中老师 MATLAB 方窗 Fresnel
 > 和 `00_k1_ready_to_play`。本文件后面的 `fresnel_roi_vertex_array_..._v2` 只用于复现
 > 已封存的旧 formal ZIP，当前对齐、找焦和 ROI 标定均不要播放 v2 文件。
 
@@ -83,7 +83,7 @@ BMP 合同固定为：振幅 `1024×1024`、8-bit 灰度、仅0/255；相位
 ## 532 nm 菲涅尔阵列修正版：焦点直接位于 ROI 顶点
 
 > **历史封存 v2——当前新光路勿用。** 本节仅保留给旧 formal ZIP 的可追溯复现。
-> 当前实验请返回顶部并按 `V3_CALIBRATION_COMMANDS.md` 生成/播放 full square-aperture v3。
+> 当前实验请返回顶部并按 `V3_CALIBRATION_COMMANDS.md` 生成/播放老师 MATLAB 方窗版本。
 
 从仓库根目录执行：
 

@@ -10,12 +10,12 @@
 当前1024×1024 Meadowlark振幅SLM统一使用正常极性：`255=白/透光`、`0=黑/遮光`。
 带 `inverted` / `_inv` 的旧目录只作历史留档，不用于新实验。
 
-## 当前宽焦斑 Fresnel v3
+## 当前老师 MATLAB 方窗 Fresnel
 
-新光路优先使用 `fresnel_square_aperture_array_17um_8um.yaml` 与
-`experiments.hardware_sdk.generators.fresnel_square_aperture_array`。它以完整独立方孔和
-匹配振幅产生 n1/n4/n9 的 sinc 十字状焦斑，焦距固定 10 cm，并保持相位导出中心
-`(980,590)`。详见上方 v3 命令文档。
+新光路使用 `fresnel_full_panel_17um_8um.yaml` 与
+`experiments.hardware_sdk.generators.fresnel_full_panel_array`。它按老师 MATLAB 的
+方窗二次相位公式生成 P1/P4/P9，振幅固定全白，焦距 10 cm，并保持相位导出中心
+`(980,590)`。P4 外间距严格为 `478×17/8=1015.75` 相位像素。详见上方当前命令文档。
 
 ## 历史 v2 ROI 顶点标定
 

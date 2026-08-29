@@ -26,9 +26,6 @@ REQUIRED_FRESNEL = {
     "P1_POINT.bmp",
     "P4_POINT.bmp",
     "P9_POINT.bmp",
-    "P1_CROSS.bmp",
-    "P4_CROSS.bmp",
-    "P9_CROSS.bmp",
     "manifest.json",
     "targets.csv",
 }
@@ -556,7 +553,9 @@ def create_bundle(
             "mnist4_source_zip_sha256": _sha256_file(mnist_zip),
             "workflow": {
                 "dual_slm_calibration": True,
-                "fresnel_ccd_calibration": "full-white amplitude; point and cross phase sets",
+                "fresnel_ccd_calibration": (
+                    "full-white amplitude; teacher-MATLAB square Fresnel arrays"
+                ),
                 "brightness_calibration": "32 gray levels x 3 frames",
                 "sim_to_real_agreement": True,
                 "last_stage_quick210": True,

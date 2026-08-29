@@ -167,7 +167,9 @@ python -m experiments.hardware_sdk.workflows.acquire_folder `
   --clear-output
 ```
 
-若点太小，可把 `P1/P4/P9_POINT.bmp` 换成同编号的 `CROSS.bmp`；振幅仍为全白。
+当前 P1/P4/P9 均使用老师 MATLAB 的方窗二次菲涅尔公式；不再生成或使用旧
+`CROSS.bmp`。振幅始终为全白。P4 四个焦点对应 478×17 µm 有效场在 8 µm
+相位面上的四个顶点，顶点间距为 1015.75 个相位像素。
 
 ## 4. 32 灰度 × 3 帧亮度/曝光标定
 

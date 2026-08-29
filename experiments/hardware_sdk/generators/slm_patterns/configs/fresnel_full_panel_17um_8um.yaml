@@ -1,4 +1,4 @@
-# Current Fresnel calibration: full-white amplitude and full-panel phase.
+# Current Fresnel calibration: teacher MATLAB square-window quadratic phase.
 output_dir: ../generated/fresnel_full_panel_532nm_17um_8um
 
 wavelength_nm: 532.0
@@ -15,13 +15,20 @@ phase_slm:
   flip_vertical: true
   flip_horizontal: false
 
-# The four outer targets are the exact corners of the formal 478x478 field:
-# half span = 478 * 17 um / 2 = 4063 um = 507.875 phase pixels.
+# The four outer lens centres are the exact corners of the formal 478x478 field:
+# full spacing = 478 * 17 / 8 = 1015.75 phase pixels.
 target_field:
   size_px: 478
   pixel_pitch_um: 17.0
 
-cross_relative_phase_rad: 1.5707963267948966
+# The teacher example uses a 350 px window on a 9.2 um SLM. Its physical
+# width maps to 350*9.2/8 = 402.5 px here, hence n1=403. At the exact ROI
+# vertices, the 1200-row panel permits at most about 164 px without clipping;
+# n4/n9 use 160 px with a small safety margin.
+lens_window_phase_px:
+  1: 403
+  4: 160
+  9: 160
 
 simulation:
   pad_size: 2048
