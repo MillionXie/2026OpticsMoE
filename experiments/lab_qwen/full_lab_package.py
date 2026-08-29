@@ -439,7 +439,9 @@ def _selected_noise_evidence(
         )
 
 
-def _require_session_checkpoint(session_dir: Path, expected_sha256: str) -> None:
+def _require_session_checkpoint(
+    session_dir: Path, expected_sha256: str, *, sequential_four_stage: bool = False
+) -> None:
     """Reject mixed exports whose amplitudes/phases came from another model."""
 
     observed: list[tuple[Path, str]] = []
@@ -456,7 +458,32 @@ def _require_session_checkpoint(session_dir: Path, expected_sha256: str) -> None
             observed.append((agreement, str(value).lower()))
     if not observed:
         raise RuntimeError(f"Session has no checkpoint-bound transport contract: {session_dir}")
-    mismatched = [str(path) for path, digest in observed if digest != expected_sha256]
+    expected_by_stage = {"01_vision_expert": expected_sha256}
+    if sequential_four_stage:
+        for stage, previous in (
+            ("02_vision_global", "vision_expert"),
+            ("03_language_expert", "vision_global"),
+            ("04_language_global", "language_expert"),
+        ):
+            checkpoint = session_dir / "checkpoints" / f"after_{previous}.pt"
+            if (session_dir / stage / "transport_spec.json").is_file():
+                if not checkpoint.is_file():
+                    raise FileNotFoundError(
+                        f"Sequential stage {stage} requires checkpoint {checkpoint}"
+                    )
+                expected_by_stage[stage] = _sha256_file(checkpoint)
+    mismatched: list[str] = []
+    for path, digest in observed:
+        if path.name == "agreement_manifest.json":
+            expected = expected_sha256
+        elif sequential_four_stage:
+            expected = expected_by_stage.get(path.parent.name)
+            if expected is None:
+                raise RuntimeError(f"Unknown four-stage transport directory: {path.parent}")
+        else:
+            expected = expected_sha256
+        if digest != expected:
+            mismatched.append(str(path))
     if mismatched:
         raise RuntimeError(
             "Session was exported from a different checkpoint: "
@@ -693,7 +720,11 @@ def create_bundle(
         _require_session_checkpoint(
             agreement_session.resolve(), selected_checkpoint_sha256
         )
-        _require_session_checkpoint(four_session.resolve(), selected_checkpoint_sha256)
+        _require_session_checkpoint(
+            four_session.resolve(),
+            selected_checkpoint_sha256,
+            sequential_four_stage=True,
+        )
     agreement_ready = _add_ready_bmps_from_compact(
         entries,
         source_session=agreement_session,
