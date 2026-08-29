@@ -6,6 +6,28 @@ amplitude_lut_filename: slm7930_at532_70C.lut
 # 单位：微秒。若亮度标定饱和，只修改这里，然后重新运行 prepare_lab。
 camera_exposure_us: 5000.0
 
+# 正式采集时序。程序先阻塞等待 Meadowlark 的 ImageWriteComplete，再等待
+# formal_slm_settle_delay_ms，最后才向 CCD 请求图像。
+# discard_frames_after_display：每次换 SLM 图后丢弃的相机流旧帧数。
+# camera_warmup_frames：相机刚打开时只执行一次，不会每张图都执行。
+# 曝光时间是 CCD 积分时间，不是额外的软件 sleep。
+capture_timing:
+  formal_slm_settle_delay_ms: 200
+  discard_frames_after_display: 1
+  camera_warmup_frames: 3
+
+# MNIST 时序诊断：5 档等待 × 4 个固定数字 = 20 帧。每个数字都以最长等待帧为
+# 参考；若报告显示 400 ms 仍未稳定，再扩大下面的等待列表。
+timing_diagnostic:
+  settle_delay_ms_values: [0, 50, 100, 200, 400]
+  repeats_per_digit_and_delay: 1
+  discard_frames_after_display: 1
+  minimum_pcc_to_reference: 0.95
+  maximum_gain_aligned_nmae: 0.15
+  maximum_absolute_mean_ratio_error: 0.15
+  maximum_saturation_fraction: 0.001
+  minimum_p99_uint8: 16
+
 # CCD 2048x2048 全传感器坐标，不要求是 4 的倍数。
 # 标签必须按光场逻辑方向填写，不要按相机画面的左右重新命名。
 # 当前光路左右镜像，因此逻辑 top_left 出现在画面右侧是正常的。

@@ -176,8 +176,42 @@ def derive_device_roi(
     return roi
 
 
+def _parse_capture_timing(user: Mapping[str, Any]) -> dict[str, Any]:
+    raw = user.get("capture_timing", {})
+    if not isinstance(raw, Mapping):
+        raise ValueError("LAB_CONFIG.yaml: capture_timing must be a mapping")
+    result = {
+        "formal_slm_settle_delay_ms": float(
+            raw.get("formal_slm_settle_delay_ms", 200.0)
+        ),
+        "discard_frames_after_display": int(
+            raw.get("discard_frames_after_display", 1)
+        ),
+        "camera_warmup_frames": int(raw.get("camera_warmup_frames", 3)),
+    }
+    if (
+        not math.isfinite(result["formal_slm_settle_delay_ms"])
+        or result["formal_slm_settle_delay_ms"] < 0.0
+    ):
+        raise ValueError(
+            "LAB_CONFIG.yaml: formal_slm_settle_delay_ms must be finite and non-negative"
+        )
+    if min(
+        result["discard_frames_after_display"], result["camera_warmup_frames"]
+    ) < 0:
+        raise ValueError("LAB_CONFIG.yaml: camera frame counts cannot be negative")
+    diagnostic = user.get("timing_diagnostic", {})
+    if not isinstance(diagnostic, Mapping):
+        raise ValueError("LAB_CONFIG.yaml: timing_diagnostic must be a mapping")
+    result["timing_diagnostic"] = copy.deepcopy(dict(diagnostic))
+    return result
+
+
 def _runtime_base(
-    template: Mapping[str, Any], lut_filename: str, exposure_us: float
+    template: Mapping[str, Any],
+    lut_filename: str,
+    exposure_us: float,
+    capture_timing: Mapping[str, Any],
 ) -> dict[str, Any]:
     hardware = copy.deepcopy(dict(template))
     hardware["amplitude_slm"]["lut_file"] = (
@@ -185,6 +219,18 @@ def _runtime_base(
         + lut_filename
     )
     hardware["camera"]["exposure_us"] = exposure_us
+    hardware["settle_delay_ms"] = capture_timing[
+        "formal_slm_settle_delay_ms"
+    ]
+    hardware["camera"]["discard_frames_after_display"] = capture_timing[
+        "discard_frames_after_display"
+    ]
+    hardware["camera"]["warmup_frames"] = capture_timing[
+        "camera_warmup_frames"
+    ]
+    hardware["timing_diagnostic"].update(
+        capture_timing["timing_diagnostic"]
+    )
     hardware["exposure_calibration"]["exposure_times_us"] = [exposure_us]
     return hardware
 
@@ -217,9 +263,12 @@ def prepare_lab(
     exposure_us = float(user.get("camera_exposure_us", 0.0))
     if not math.isfinite(exposure_us) or exposure_us <= 0.0:
         raise ValueError("LAB_CONFIG.yaml: camera_exposure_us must be positive")
+    capture_timing = _parse_capture_timing(user)
     corners = _parse_corners(user.get("logical_corners_full_sensor_xy"))
 
-    bootstrap = _runtime_base(template, lut_filename, exposure_us)
+    bootstrap = _runtime_base(
+        template, lut_filename, exposure_us, capture_timing
+    )
     bootstrap_path = generated / "bootstrap_hardware.yaml"
     _write_yaml(bootstrap_path, bootstrap)
 
@@ -229,6 +278,7 @@ def prepare_lab(
         "lut_file": str(lut_file),
         "lut_present": lut_file.is_file(),
         "camera_exposure_us": exposure_us,
+        "capture_timing": capture_timing,
         "bootstrap_config": str(bootstrap_path),
         "corner_coordinates_require_multiple_of_four": False,
         "hardware_roi_alignment_px": {
@@ -277,7 +327,9 @@ def prepare_lab(
             contract_path, expected_file_sha256=contract_report["file_sha256"]
         )
 
-        formal = _runtime_base(template, lut_filename, exposure_us)
+        formal = _runtime_base(
+            template, lut_filename, exposure_us, capture_timing
+        )
         formal_camera = formal["camera"]
         formal_camera["require_device_roi"] = True
         formal_camera["device_roi_xywh"] = roi

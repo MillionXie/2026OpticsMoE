@@ -10,6 +10,18 @@ max_files: null
 require_phase_mask: true
 phase_mask_file: null
 
+# Generated from LAB_CONFIG.yaml.  The timing sweep plays one fixed sample from
+# each digit at every delay, so the default is 5 delays x 4 digits = 20 frames.
+timing_diagnostic:
+  settle_delay_ms_values: [0, 50, 100, 200, 400]
+  repeats_per_digit_and_delay: 1
+  discard_frames_after_display: 1
+  minimum_pcc_to_reference: 0.95
+  maximum_gain_aligned_nmae: 0.15
+  maximum_absolute_mean_ratio_error: 0.15
+  maximum_saturation_fraction: 0.001
+  minimum_p99_uint8: 16
+
 paths:
   masks_dir: ../calib/exposure
   results_dir: ../results/exposure

@@ -276,7 +276,52 @@ python -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2.lab_pipeline `
 quick40 只用于对齐、曝光和选 mask，不能作为论文准确率。可把上述 mask 名和输出目录
 依次换成另外三个候选，多加载几张 mask 比较。
 
-### 5.2 正式 formal400
+### 5.2 先做 20 帧时序与方向诊断
+
+在正式采集 40/400 张之前，建议先运行一次。它固定选择数字 0、1、2、3 各一张，按
+`0/50/100/200/400 ms` 五档等待依次播放，因此总共采集 20 帧。每个数字的 400 ms
+结果作为参考，用 PCC、增益对齐 NMAE 和平均亮度比例判断较短等待是否已经稳定：
+
+```powershell
+python -m experiments.lab_qwen.mnist_timing_diagnostic `
+  --phase all `
+  --stage-dir experiments\lab_qwen\mnist4_sessions\post_robust_best\quick40 `
+  --config experiments\lab_qwen\generated\formal_hardware.yaml `
+  --clear-output
+```
+
+这条命令仍会要求确认相位 SLM 上显示的是该 quick40 目录中的唯一相位 BMP。结果在：
+
+```text
+quick40\timing_diagnostic\timing_summary.json
+quick40\timing_diagnostic\timing_metrics_per_capture.csv
+quick40\timing_diagnostic\timing_summary.png
+quick40\timing_diagnostic\mnist4_detector_regions_overlay.png
+```
+
+重点查看 `recommended_formal_slm_settle_delay_ms`，再把它填回
+`LAB_CONFIG.yaml -> capture_timing.formal_slm_settle_delay_ms`，并重新运行
+`python -m experiments.lab_qwen.prepare_lab`。`mnist4_detector_regions_overlay.png`
+是在四点透视校正后的 478×478 CCD 上画出的四个真实 59×59 判别区，并标出
+`CANONICAL TOP/LEFT/RIGHT/BOTTOM`；它只画框，不改变任何分类像素值。若预测亮区与
+数字标签对应但画面方向文字不符合物理预期，应回到四个逻辑角点的命名检查，而不要在
+后处理里再随意翻转。
+
+需要理解的时序参数只有下面四类：
+
+- `formal_slm_settle_delay_ms`：最主要的等待；从 `ImageWriteComplete` 返回到开始 CCD
+  采集调用之间的时间。
+- `discard_frames_after_display`：每次换图后丢弃 CCD 连续流中的旧帧，默认 1。它也会
+  增加实际耗时，但不是固定毫秒 sleep。
+- `camera_warmup_frames`：相机打开时只丢一次的预热帧，默认 3，不影响逐图设置。
+- `camera_exposure_us`：曝光积分时间。曝光过高看饱和比例，过低看 `p99`；它不是 SLM
+  稳定等待。
+
+时序诊断的 `timing_capture_manifest.csv` 会分别记录 SLM 写入完成、实际 sleep、CCD
+丢帧/采集/透视校正/保存和整周期耗时。时序诊断不会对正式 MNIST 分类增加归一化、
+背景扣除或非线性；增益对齐只用于比较同一个数字在不同等待时间下是否稳定。
+
+### 5.3 正式 formal400
 
 选好 mask 后生成 400 张固定随机样本；下面仍以 `post_robust_best` 为例：
 

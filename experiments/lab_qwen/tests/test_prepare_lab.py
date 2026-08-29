@@ -20,6 +20,15 @@ def _lab_config(path: Path, corners: dict | None = POINTS) -> Path:
     value = {
         "amplitude_lut_filename": "selected-70c.lut",
         "camera_exposure_us": 4321.0,
+        "capture_timing": {
+            "formal_slm_settle_delay_ms": 175,
+            "discard_frames_after_display": 2,
+            "camera_warmup_frames": 4,
+        },
+        "timing_diagnostic": {
+            "settle_delay_ms_values": [0, 75, 175, 350],
+            "discard_frames_after_display": 2,
+        },
         "logical_corners_full_sensor_xy": (
             {label: None for label in POINTS} if corners is None else corners
         ),
@@ -68,6 +77,15 @@ def test_prepare_lab_generates_pinned_formal_runtime(tmp_path: Path) -> None:
     )
     assert formal["camera"]["device_roi_xywh"] == [292, 216, 1408, 1396]
     assert formal["camera"]["exposure_us"] == 4321.0
+    assert formal["settle_delay_ms"] == 175.0
+    assert formal["camera"]["discard_frames_after_display"] == 2
+    assert formal["camera"]["warmup_frames"] == 4
+    assert formal["timing_diagnostic"]["settle_delay_ms_values"] == [
+        0,
+        75,
+        175,
+        350,
+    ]
     assert formal["camera"]["detector_geometry"] == {
         "enabled": True,
         "contract_file": "detector_homography_478.contract.json",

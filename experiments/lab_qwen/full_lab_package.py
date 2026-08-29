@@ -485,6 +485,7 @@ def _current_source_files(repo_root: Path) -> Iterable[Path]:
         "experiments/lab_qwen/__init__.py",
         "experiments/lab_qwen/prepare_lab.py",
         "experiments/lab_qwen/shape_agreement.py",
+        "experiments/lab_qwen/mnist_timing_diagnostic.py",
         "experiments/lab_qwen/COMMANDS.md",
         "experiments/lab_qwen/README.md",
         "experiments/lab_qwen/LAB_CONFIG.yaml",
@@ -742,6 +743,10 @@ def create_bundle(
                 "last_stage_quick210": True,
                 "four_stage": "initial stage included; subsequent stages depend on preceding measured CCD",
                 "mnist4_simple_task": "quick40 diagnostic + formal400 reportable evaluation + played-BMP sim-to-real agreement",
+                "mnist4_timing_diagnostic": (
+                    "5 configurable SLM settle delays x 4 fixed digits; "
+                    "per-stage timing log and canonical four-ROI orientation overlay"
+                ),
             },
             "file_count_excluding_manifest": len(records),
             "files": records,
@@ -776,6 +781,7 @@ def verify_bundle(path: Path) -> dict[str, Any]:
             f"{ARCHIVE_ROOT}/internal/hardware_template.yaml",
             f"{ARCHIVE_ROOT}/prepare_lab.py",
             f"{ARCHIVE_ROOT}/shape_agreement.py",
+            f"{ARCHIVE_ROOT}/mnist_timing_diagnostic.py",
             f"{ARCHIVE_ROOT}/calib/fresnel/A_WHITE.bmp",
             f"{ARCHIVE_ROOT}/calib/fresnel/P1_POINT.bmp",
             f"{ARCHIVE_ROOT}/calib/fresnel/P4_POINT.bmp",
