@@ -22,3 +22,15 @@ python experiments\hardware_sdk\artifacts\calibration\fresnel_30cm\generate_fres
 
 or run `generate_fresnel_2x2_30cm.m` in MATLAB. Both implement the same centered
 pixel-coordinate formula and output filename.
+
+## 10 cm version
+
+The otherwise identical 10 cm mask is generated with:
+
+```powershell
+python experiments\hardware_sdk\artifacts\calibration\fresnel_30cm\generate_fresnel_2x2_10cm.py
+```
+
+or by running `generate_fresnel_2x2_10cm.m` in MATLAB. It writes
+`fresnel_2x2_f100mm_w350_center980_590_1920x1200.bmp` and keeps the same SLM
+center, tile size, array footprint, wavelength, and pixel pitch.
