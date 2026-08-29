@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "generator": "generate_fresnel_2x2_30cm.py",
+  "matlab_equivalent": "generate_fresnel_2x2_30cm.m",
+  "output_bmp": "fresnel_2x2_f300mm_w350_center980_590_1920x1200.bmp",
+  "output_sha256": "cd4eae6108521024f72a21afa719f5e669d9f4ab30825ab7a8dccb77c36fac4d",
+  "output_mode": "L",
+  "output_bit_depth": 8,
+  "slm_size_wh": [
+    1920,
+    1200
+  ],
+  "phase_center_edge_xy": [
+    980.0,
+    590.0
+  ],
+  "pixel_pitch_um": 8.0,
+  "wavelength_nm": 532.0,
+  "focal_length_cm": 30.0,
+  "array_shape_rc": [
+    2,
+    2
+  ],
+  "tile_size_wh": [
+    350,
+    350
+  ],
+  "footprint_half_open_xyxy_zero_based": [
+    630,
+    240,
+    1330,
+    940
+  ],
+  "footprint_matlab_1_based_inclusive_xyxy": [
+    631,
+    241,
+    1330,
+    940
+  ],
+  "lens_centers_edge_xy": [
+    [
+      805.0,
+      415.0
+    ],
+    [
+      1155.0,
+      415.0
+    ],
+    [
+      805.0,
+      765.0
+    ],
+    [
+      1155.0,
+      765.0
+    ]
+  ],
+  "phase_formula": "mod(-k*(x^2+y^2)/(2*f), 2*pi)",
+  "outside_value_uint8": 0,
+  "outside_semantics": "zero phase, not an amplitude stop",
+  "flip_applied": false
+}
