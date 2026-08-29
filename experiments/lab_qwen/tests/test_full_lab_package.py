@@ -9,6 +9,8 @@ import numpy as np
 from PIL import Image
 
 from experiments.lab_qwen.full_lab_package import (
+    CALTECH101_CATEGORIES,
+    _add_caltech101_local_finetune_data,
     _add_ready_bmps_from_compact,
     _require_session_checkpoint,
 )
@@ -84,3 +86,23 @@ def test_four_stage_checkpoint_audit_follows_sequential_chain(tmp_path: Path) ->
 
     with pytest.raises(RuntimeError, match="different checkpoint"):
         _require_session_checkpoint(session, expected, sequential_four_stage=True)
+
+
+def test_local_finetune_package_embeds_complete_target10_categories(
+    tmp_path: Path,
+) -> None:
+    categories = tmp_path / "data/Caltech101/caltech-101/101_ObjectCategories"
+    for category in CALTECH101_CATEGORIES:
+        directory = categories / category
+        directory.mkdir(parents=True)
+        (directory / "image_0001.jpg").write_bytes(category.encode("ascii"))
+        (directory / "image_0002.jpg").write_bytes(category.encode("ascii") + b"2")
+    entries = {}
+
+    counts = _add_caltech101_local_finetune_data(entries, tmp_path)
+
+    assert counts == {category: 2 for category in CALTECH101_CATEGORIES}
+    assert "data/Caltech101/BUNDLED_TARGET10.json" in entries
+    for category in CALTECH101_CATEGORIES:
+        prefix = f"data/Caltech101/101_ObjectCategories/{category}/"
+        assert sum(name.startswith(prefix) for name in entries) == 2

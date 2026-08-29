@@ -5,6 +5,7 @@ import random
 import shutil
 import tarfile
 import tempfile
+import time
 import urllib.request
 import zipfile
 from collections import Counter
@@ -25,6 +26,7 @@ from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.settings impo
 
 ARCHIVE_MD5 = "3138e1922a9193bfa496528edbbc45d0"
 BACKGROUND_CATEGORY = "BACKGROUND_Google"
+DOWNLOAD_ATTEMPTS = 4
 
 
 def prepare_caltech101_subset(
@@ -174,6 +176,16 @@ def _ensure_dataset(settings: Settings) -> Path:
     found = _find_categories_root(settings.dataset_root)
     if found is not None:
         return found
+
+    # A laboratory bundle may carry Caltech's inner tarball instead of the
+    # outer ZIP.  Use it before touching the network.  Older code only looked
+    # for this tarball *after* downloading the ZIP, which made an otherwise
+    # complete offline bundle attempt a redundant download.
+    for archive in settings.dataset_root.rglob("101_ObjectCategories.tar.gz"):
+        _safe_extract_tar(archive, archive.parent)
+    found = _find_categories_root(settings.dataset_root)
+    if found is not None:
+        return found
     if not settings.download:
         raise FileNotFoundError(
             f"Caltech101 101_ObjectCategories was not found below {settings.dataset_root}"
@@ -183,16 +195,7 @@ def _ensure_dataset(settings: Settings) -> Path:
     settings.dataset_root.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(dir=settings.dataset_root.parent) as temporary:
         archive_path = Path(temporary) / "caltech-101.zip"
-        request = urllib.request.Request(
-            settings.download_url,
-            headers={"User-Agent": "2026OpticsMoE-Caltech101Retrieval/1.0"},
-        )
-        with urllib.request.urlopen(request, timeout=180) as response, archive_path.open(
-            "wb"
-        ) as target:
-            shutil.copyfileobj(response, target)
-        if _md5(archive_path) != ARCHIVE_MD5:
-            raise RuntimeError("Caltech101 archive MD5 mismatch")
+        _download_verified_archive(settings.download_url, archive_path)
         _safe_extract_zip(archive_path, settings.dataset_root)
 
     found = _find_categories_root(settings.dataset_root)
@@ -203,6 +206,52 @@ def _ensure_dataset(settings: Settings) -> Path:
     if found is None:
         raise RuntimeError("Downloaded Caltech101 archive has no 101_ObjectCategories")
     return found
+
+
+def _download_verified_archive(url: str, destination: Path) -> None:
+    """Download the official ZIP with retries and an actionable checksum error.
+
+    The Caltech endpoint occasionally closes a 130 MB transfer early.  The old
+    implementation silently accepted that short file and only reported a bare
+    MD5 mismatch, so rerunning gave users no indication that the network—not
+    their dataset—was at fault.
+    """
+
+    failures: list[str] = []
+    for attempt in range(1, DOWNLOAD_ATTEMPTS + 1):
+        destination.unlink(missing_ok=True)
+        try:
+            request = urllib.request.Request(
+                url,
+                headers={"User-Agent": "2026OpticsMoE-Caltech101Retrieval/1.0"},
+            )
+            with urllib.request.urlopen(request, timeout=300) as response:
+                expected = response.headers.get("Content-Length")
+                with destination.open("wb") as target:
+                    shutil.copyfileobj(response, target, length=1024 * 1024)
+            observed_size = destination.stat().st_size
+            observed_md5 = _md5(destination)
+            if expected is not None and observed_size != int(expected):
+                failures.append(
+                    f"attempt {attempt}: truncated download "
+                    f"({observed_size}/{int(expected)} bytes)"
+                )
+            elif observed_md5 != ARCHIVE_MD5:
+                failures.append(
+                    f"attempt {attempt}: MD5 {observed_md5}, "
+                    f"expected {ARCHIVE_MD5} ({observed_size} bytes)"
+                )
+            else:
+                return
+        except Exception as error:  # urllib exposes several transient types.
+            failures.append(f"attempt {attempt}: {type(error).__name__}: {error}")
+        if attempt < DOWNLOAD_ATTEMPTS:
+            time.sleep(float(attempt))
+    destination.unlink(missing_ok=True)
+    raise RuntimeError(
+        "Caltech101 official archive could not be downloaded intact after "
+        f"{DOWNLOAD_ATTEMPTS} attempts. " + " | ".join(failures)
+    )
 
 
 def _find_categories_root(root: Path) -> Path | None:

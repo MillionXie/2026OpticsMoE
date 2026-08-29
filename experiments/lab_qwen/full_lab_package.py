@@ -31,6 +31,18 @@ REQUIRED_FRESNEL = {
     "manifest.json",
     "targets.csv",
 }
+CALTECH101_CATEGORIES = (
+    "airplanes",
+    "Motorbikes",
+    "Faces",
+    "Leopards",
+    "accordion",
+    "grand_piano",
+    "scorpion",
+    "sunflower",
+    "watch",
+    "yin_yang",
+)
 
 
 @dataclass(frozen=True)
@@ -178,6 +190,86 @@ def _map_directory(
             ),
             replace=replace,
         )
+
+
+def _caltech101_categories_root(repo_root: Path) -> Path:
+    candidates = (
+        repo_root / "data/Caltech101/101_ObjectCategories",
+        repo_root / "data/Caltech101/caltech-101/101_ObjectCategories",
+    )
+    for candidate in candidates:
+        if candidate.is_dir():
+            return candidate
+    nested = next(
+        (
+            path
+            for path in (repo_root / "data/Caltech101").rglob(
+                "101_ObjectCategories"
+            )
+            if path.is_dir()
+        ),
+        None,
+    )
+    if nested is None:
+        raise FileNotFoundError(
+            "The full local-finetune ZIP requires extracted Caltech101 images "
+            f"below {repo_root / 'data/Caltech101'}"
+        )
+    return nested
+
+
+def _add_caltech101_local_finetune_data(
+    entries: dict[str, Entry], repo_root: Path
+) -> dict[str, int]:
+    """Embed every source JPG for the selected ten classes.
+
+    Keeping the complete class directories is intentional: the deterministic
+    split shuffles the complete sorted category list.  Packaging only the 210
+    selected files would reshuffle them and break the captured sample IDs.
+    """
+
+    source_root = _caltech101_categories_root(repo_root)
+    counts: dict[str, int] = {}
+    for category in CALTECH101_CATEGORIES:
+        source = source_root / category
+        files = sorted(source.glob("*.jpg")) if source.is_dir() else []
+        if not files:
+            raise FileNotFoundError(
+                f"Caltech101 category required for local fine-tuning is missing: {source}"
+            )
+        counts[category] = len(files)
+        for path in files:
+            _put(
+                entries,
+                Entry(
+                    "data/Caltech101/101_ObjectCategories/"
+                    f"{category}/{path.name}",
+                    "caltech101_target10_local_finetune",
+                    source_path=path,
+                ),
+            )
+    provenance = {
+        "schema_version": 1,
+        "dataset": "Caltech101",
+        "source": "https://data.caltech.edu/records/mzrjq-6wc02",
+        "purpose": "offline local four-stage Qwen hardware fine-tuning",
+        "categories": counts,
+        "split_note": (
+            "Complete selected-category directories are included so the seeded "
+            "split and captured sample IDs remain unchanged."
+        ),
+    }
+    _put(
+        entries,
+        Entry(
+            "data/Caltech101/BUNDLED_TARGET10.json",
+            "caltech101_target10_local_finetune",
+            literal=(
+                json.dumps(provenance, ensure_ascii=False, indent=2) + "\n"
+            ).encode("utf-8"),
+        ),
+    )
+    return counts
 
 
 def _add_ready_bmps_from_compact(
@@ -750,6 +842,8 @@ def create_bundle(
             replace=True,
         )
 
+    caltech101_counts = _add_caltech101_local_finetune_data(entries, root)
+
     # The all-white frame must be physically all 255, not merely named so.
     try:
         from PIL import Image
@@ -818,6 +912,11 @@ def create_bundle(
                     "initial stage included; all four measured-CCD fine-tunes and "
                     "next-stage exports can run locally with development-selected checkpoints"
                 ),
+                "caltech101_local_data": {
+                    "included": True,
+                    "categories": caltech101_counts,
+                    "network_download_required": False,
+                },
                 "mnist4_simple_task": "quick40 diagnostic + formal400 reportable evaluation + played-BMP sim-to-real agreement",
                 "mnist4_timing_diagnostic": (
                     "5 configurable SLM settle delays x 4 fixed digits; "
@@ -881,6 +980,7 @@ def verify_bundle(path: Path) -> dict[str, Any]:
             "experiments/hardware_sdk/vendor_sdk/amplitude_meadowlark/LUT Files/slm7930_at532_30C.lut",
             "experiments/hardware_sdk/vendor_sdk/amplitude_meadowlark/LUT Files/slm7930_at532_70C.lut",
             "experiments/hardware_sdk/vendor_sdk/amplitude_meadowlark/LUT Files/slm7930_at532-70c-pixel-2.lut",
+            "data/Caltech101/BUNDLED_TARGET10.json",
         }
         selected_model = manifest.get("selected_model", {})
         if selected_model.get("kind") == (
@@ -898,6 +998,25 @@ def verify_bundle(path: Path) -> dict[str, Any]:
         missing = required.difference(names)
         if missing:
             raise RuntimeError(f"ZIP required-data check failed: {sorted(missing)}")
+        bundled_dataset = json.loads(
+            archive.read("data/Caltech101/BUNDLED_TARGET10.json")
+        )
+        observed_categories = set(bundled_dataset.get("categories", {}))
+        if observed_categories != set(CALTECH101_CATEGORIES):
+            raise RuntimeError(
+                "ZIP Caltech101 target10 categories do not match the model config"
+            )
+        for category, expected_count in bundled_dataset["categories"].items():
+            prefix = f"data/Caltech101/101_ObjectCategories/{category}/"
+            observed_count = sum(
+                name.startswith(prefix) and name.lower().endswith(".jpg")
+                for name in names
+            )
+            if observed_count != int(expected_count):
+                raise RuntimeError(
+                    f"ZIP Caltech101 category {category} is incomplete: "
+                    f"{observed_count}/{expected_count}"
+                )
         if selected_model.get("kind") == (
             "strong_truncated_biased_gaussian_ccd_noise"
         ):
@@ -1027,6 +1146,11 @@ def verify_bundle(path: Path) -> dict[str, Any]:
         "four_stage_amplitude_bmps": len(four_amplitudes),
         "mnist4_compact_amplitudes": len(mnist_amplitudes),
         "mnist4_phase_masks": len(mnist_masks),
+        "caltech101_images": sum(
+            name.startswith("data/Caltech101/101_ObjectCategories/")
+            and name.lower().endswith(".jpg")
+            for name in names
+        ),
     }
 
 

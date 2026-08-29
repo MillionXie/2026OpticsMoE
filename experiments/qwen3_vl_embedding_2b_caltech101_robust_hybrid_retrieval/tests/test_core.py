@@ -1,5 +1,7 @@
 from pathlib import Path
 from types import SimpleNamespace
+import io
+import tarfile
 
 import torch
 from PIL import Image
@@ -12,6 +14,7 @@ from experiments.qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval.catego
 )
 from experiments.qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval.prepare_caltech101_retrieval import (
     BACKGROUND_CATEGORY,
+    _ensure_dataset,
     prepare_caltech101_subset,
 )
 from experiments.qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval.settings import (
@@ -110,6 +113,25 @@ def test_seeded_caltech_split_is_capped_disjoint_and_reproducible(tmp_path: Path
     assert paths[1].isdisjoint(paths[2])
     assert first.manifest_digest == second.manifest_digest
     assert BACKGROUND_CATEGORY not in first.class_names
+
+
+def test_existing_inner_tar_is_extracted_before_network_download(tmp_path: Path) -> None:
+    archive = tmp_path / "caltech-101/101_ObjectCategories.tar.gz"
+    archive.parent.mkdir(parents=True)
+    payload = b"offline-image"
+    with tarfile.open(archive, "w:gz") as target:
+        info = tarfile.TarInfo("101_ObjectCategories/airplanes/image_0001.jpg")
+        info.size = len(payload)
+        target.addfile(info, io.BytesIO(payload))
+    settings = SimpleNamespace(
+        dataset_root=tmp_path,
+        download=False,
+    )
+
+    categories = _ensure_dataset(settings)
+
+    assert categories == archive.parent / "101_ObjectCategories"
+    assert (categories / "airplanes/image_0001.jpg").read_bytes() == payload
 
 
 def test_target_cache_is_sliced_from_all_class_cache_without_teacher_forward(
