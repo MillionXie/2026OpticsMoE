@@ -1,0 +1,19 @@
+base_config: common.yaml
+
+continuation:
+  variant: strong_mu0p06_sigma0p05_phase0p03
+
+training:
+  phase_dc: {enabled: true, weight: 0.015, start_epoch: 1}
+
+language_optical:
+  perturbation:
+    ccd_noise:
+      distribution: truncated_biased_gaussian
+      mean_fraction: 0.06
+      std_fraction: 0.05
+      min_fraction: -0.04
+      max_fraction: 0.16
+
+output_dir: ../../runs/noise_strong_mu0p06_sigma0p05_phase0p03
+

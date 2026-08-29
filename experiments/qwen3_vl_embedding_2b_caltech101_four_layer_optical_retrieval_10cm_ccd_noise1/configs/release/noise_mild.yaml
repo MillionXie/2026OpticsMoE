@@ -1,0 +1,16 @@
+base_config: common.yaml
+
+continuation:
+  variant: mild_mu0p01_sigma0p01_phase0p03
+
+language_optical:
+  perturbation:
+    ccd_noise:
+      distribution: truncated_biased_gaussian
+      mean_fraction: 0.01
+      std_fraction: 0.01
+      min_fraction: -0.01
+      max_fraction: 0.03
+
+output_dir: ../../runs/noise_mild_mu0p01_sigma0p01_phase0p03
+

@@ -1,0 +1,7 @@
+base_config: common.yaml
+
+continuation:
+  variant: medium_mu0p03_sigma0p025_phase0p03
+
+output_dir: ../../runs/noise_medium_mu0p03_sigma0p025_phase0p03
+

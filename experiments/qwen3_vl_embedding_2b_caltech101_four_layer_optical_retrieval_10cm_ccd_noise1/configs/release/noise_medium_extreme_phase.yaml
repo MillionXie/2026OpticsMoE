@@ -1,0 +1,13 @@
+base_config: common.yaml
+
+continuation:
+  variant: medium_mu0p03_sigma0p025_phase0p08_dc0p03
+
+training:
+  # Deliberately extreme arm: 13.3x the former 0.006 phase LR, with a stronger
+  # zero-order suppression loss.  Gradient clipping contains numerical spikes.
+  phase_learning_rate: 0.08
+  phase_dc: {enabled: true, weight: 0.03, start_epoch: 1}
+
+output_dir: ../../runs/noise_medium_mu0p03_sigma0p025_phase0p08_dc0p03
+

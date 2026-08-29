@@ -130,6 +130,24 @@ def load_settings(path: str | Path) -> Any:
     settings.language_optical_read_noise_fraction = float(
         d("language_optical.perturbation.read_noise_fraction", 0.01)
     )
+    settings.language_optical_ccd_noise_distribution = str(
+        d(
+            "language_optical.perturbation.ccd_noise.distribution",
+            "legacy_uniform_offset_gaussian",
+        )
+    )
+    settings.language_optical_ccd_noise_mean_fraction = float(
+        d("language_optical.perturbation.ccd_noise.mean_fraction", 0.0)
+    )
+    settings.language_optical_ccd_noise_std_fraction = float(
+        d("language_optical.perturbation.ccd_noise.std_fraction", 0.0)
+    )
+    settings.language_optical_ccd_noise_min_fraction = float(
+        d("language_optical.perturbation.ccd_noise.min_fraction", -0.10)
+    )
+    settings.language_optical_ccd_noise_max_fraction = float(
+        d("language_optical.perturbation.ccd_noise.max_fraction", 0.20)
+    )
     settings.hardware_phase_flip_vertical = bool(
         d("hardware.phase_mask.flip_vertical", True)
     )
@@ -245,6 +263,27 @@ def load_settings(path: str | Path) -> Any:
         raise ValueError("The robust project requires exactly 10 cm propagation")
     if settings.lambda_ccd_operating_point < 0.0:
         raise ValueError("lambda_ccd_operating_point must be nonnegative")
+    if settings.language_optical_ccd_noise_distribution not in {
+        "legacy_uniform_offset_gaussian",
+        "truncated_biased_gaussian",
+    }:
+        raise ValueError(
+            "language_optical.perturbation.ccd_noise.distribution must be "
+            "legacy_uniform_offset_gaussian or truncated_biased_gaussian"
+        )
+    if settings.language_optical_ccd_noise_std_fraction < 0.0:
+        raise ValueError("CCD truncated-Gaussian std_fraction must be nonnegative")
+    if not (
+        settings.language_optical_ccd_noise_min_fraction
+        < settings.language_optical_ccd_noise_max_fraction
+    ):
+        raise ValueError("CCD truncated-Gaussian min_fraction must be below max_fraction")
+    if not (
+        settings.language_optical_ccd_noise_min_fraction
+        <= settings.language_optical_ccd_noise_mean_fraction
+        <= settings.language_optical_ccd_noise_max_fraction
+    ):
+        raise ValueError("CCD truncated-Gaussian mean_fraction must lie inside its bounds")
     if (
         settings.language_optical_max_shift_pixels < 0
         or settings.language_optical_phase_shift_pixels < 0
@@ -391,6 +430,15 @@ def save_resolved_config(settings: Any) -> None:
             "gain_max": settings.language_optical_gain_max,
             "offset_fraction": settings.language_optical_offset_fraction,
             "read_noise_fraction": settings.language_optical_read_noise_fraction,
+            "ccd_noise": {
+                "distribution": settings.language_optical_ccd_noise_distribution,
+                "mean_fraction": settings.language_optical_ccd_noise_mean_fraction,
+                "std_fraction": settings.language_optical_ccd_noise_std_fraction,
+                "min_fraction": settings.language_optical_ccd_noise_min_fraction,
+                "max_fraction": settings.language_optical_ccd_noise_max_fraction,
+                "reference": "per_frame_clean_mean_intensity",
+                "application": "training_only_before_shared_ccd_normalization",
+            },
         },
         "normalization": {
             "type": "frame_mean_then_log_then_pool_row_layernorm",

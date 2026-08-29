@@ -54,6 +54,37 @@ def _sample_integer_shift(maximum: int, *, training: bool) -> tuple[int, int]:
     )
 
 
+def _sample_truncated_normal_like(
+    reference: torch.Tensor,
+    *,
+    mean: float,
+    std: float,
+    minimum: float,
+    maximum: float,
+) -> torch.Tensor:
+    """Sample a bounded Gaussian by rejection, with no clipped boundary atoms."""
+
+    if not minimum < maximum:
+        raise ValueError("truncated-normal minimum must be below maximum")
+    if not minimum <= mean <= maximum:
+        raise ValueError("truncated-normal mean must lie inside its bounds")
+    if std < 0.0:
+        raise ValueError("truncated-normal std must be nonnegative")
+    if std == 0.0:
+        return torch.full_like(reference, float(mean))
+    result = torch.empty_like(reference).normal_(float(mean), float(std))
+    invalid = (result < float(minimum)) | (result > float(maximum))
+    # The release configurations keep both bounds at least two sigma from the
+    # mean, so rejection converges quickly.  The loop remains exact rather
+    # than converting the distribution into a censored/clipped Gaussian.
+    while bool(invalid.any()):
+        result[invalid] = torch.empty(
+            int(invalid.sum().item()), device=result.device, dtype=result.dtype
+        ).normal_(float(mean), float(std))
+        invalid = (result < float(minimum)) | (result > float(maximum))
+    return result
+
+
 def _shift_full_detector_then_crop(
     full_intensity: torch.Tensor,
     *,
@@ -140,6 +171,21 @@ class MoE4LanguageTwoBlockOpticalPath(nn.Module):
         self.offset_fraction = float(settings.language_optical_offset_fraction)
         self.read_noise_fraction = float(
             settings.language_optical_read_noise_fraction
+        )
+        self.ccd_noise_distribution = str(
+            settings.language_optical_ccd_noise_distribution
+        )
+        self.ccd_noise_mean_fraction = float(
+            settings.language_optical_ccd_noise_mean_fraction
+        )
+        self.ccd_noise_std_fraction = float(
+            settings.language_optical_ccd_noise_std_fraction
+        )
+        self.ccd_noise_min_fraction = float(
+            settings.language_optical_ccd_noise_min_fraction
+        )
+        self.ccd_noise_max_fraction = float(
+            settings.language_optical_ccd_noise_max_fraction
         )
         self.ccd_normalizer = RobustCCDNormalizer(settings)
         # The two optical blocks use the same readout architecture but own
@@ -263,6 +309,15 @@ class MoE4LanguageTwoBlockOpticalPath(nn.Module):
             self.gain_min, self.gain_max
         )
         reference = intensity.mean(dim=(-2, -1), keepdim=True).detach()
+        if self.ccd_noise_distribution == "truncated_biased_gaussian":
+            noise_fraction = _sample_truncated_normal_like(
+                intensity,
+                mean=self.ccd_noise_mean_fraction,
+                std=self.ccd_noise_std_fraction,
+                minimum=self.ccd_noise_min_fraction,
+                maximum=self.ccd_noise_max_fraction,
+            )
+            return (gain * intensity + noise_fraction * reference).clamp_min(0.0)
         offset = torch.empty_like(gain).uniform_(0.0, self.offset_fraction) * reference
         noise = torch.randn_like(intensity) * self.read_noise_fraction * reference
         return (gain * intensity + offset + noise).clamp_min(0.0)
