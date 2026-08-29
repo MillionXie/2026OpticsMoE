@@ -29,6 +29,12 @@ def _lab_config(path: Path, corners: dict | None = POINTS) -> Path:
             "settle_delay_ms_values": [0, 75, 175, 350],
             "discard_frames_after_display": 2,
         },
+        "amplitude_lut_calibration": {
+            "gray_point_count": 96,
+            "frames_per_gray": 3,
+            "target_transfer": "field_amplitude",
+            "output_lut_filename": "selected-linearized.lut",
+        },
         "logical_corners_full_sensor_xy": (
             {label: None for label in POINTS} if corners is None else corners
         ),
@@ -86,6 +92,13 @@ def test_prepare_lab_generates_pinned_formal_runtime(tmp_path: Path) -> None:
         175,
         350,
     ]
+    assert formal["amplitude_lut_calibration"]["gray_point_count"] == 96
+    assert formal["amplitude_lut_calibration"]["target_transfer"] == (
+        "field_amplitude"
+    )
+    assert formal["amplitude_lut_calibration"]["output_lut_filename"] == (
+        "selected-linearized.lut"
+    )
     assert formal["camera"]["detector_geometry"] == {
         "enabled": True,
         "contract_file": "detector_homography_478.contract.json",

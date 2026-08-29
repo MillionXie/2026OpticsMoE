@@ -1,7 +1,21 @@
 # 实验人员唯一需要编辑的配置文件。
 # LUT 只写文件名；文件放在：
 # experiments/hardware_sdk/vendor_sdk/amplitude_meadowlark/LUT Files/
-amplitude_lut_filename: slm7930_at532_70C.lut
+amplitude_lut_filename: slm7930_at532-70c-pixel-2.lut
+
+# 新 LUT 标定。默认 64 灰度 × 3 帧采集旧 LUT，再用生成的新 LUT 重复 64×3 验证。
+# field_amplitude 表示网络 BMP 灰度是光场振幅，因此目标 CCD 强度为 (gray/255)^2。
+# 如仅想让 CCD 强度随灰度线性变化，可显式改成 linear_intensity 做对照。
+# output_lut_filename 必须与当前 amplitude_lut_filename 不同，程序绝不会覆盖旧 LUT。
+amplitude_lut_calibration:
+  gray_point_count: 64
+  frames_per_gray: 3
+  target_transfer: field_amplitude
+  output_lut_filename: slm7930_at532-70c-pixel-2_linearized-amplitude.lut
+  maximum_verification_intensity_rmse: 0.10
+  maximum_verification_field_amplitude_rmse: 0.08
+  maximum_verification_monotonic_violations: 2
+  maximum_saturation_fraction: 0.001
 
 # 单位：微秒。若亮度标定饱和，只修改这里，然后重新运行 prepare_lab。
 camera_exposure_us: 5000.0

@@ -207,11 +207,56 @@ def _parse_capture_timing(user: Mapping[str, Any]) -> dict[str, Any]:
     return result
 
 
+def _parse_lut_calibration(user: Mapping[str, Any]) -> dict[str, Any]:
+    raw = user.get("amplitude_lut_calibration", {})
+    if not isinstance(raw, Mapping):
+        raise ValueError(
+            "LAB_CONFIG.yaml: amplitude_lut_calibration must be a mapping"
+        )
+    value = copy.deepcopy(dict(raw))
+    count = int(value.get("gray_point_count", 64))
+    frames = int(value.get("frames_per_gray", 3))
+    transfer = str(value.get("target_transfer", "field_amplitude"))
+    filename = str(
+        value.get(
+            "output_lut_filename",
+            "slm7930_at532_70C_linearized_field_amplitude.lut",
+        )
+    ).strip()
+    if not 32 <= count <= 256:
+        raise ValueError(
+            "LAB_CONFIG.yaml: LUT gray_point_count must be in 32..256"
+        )
+    if frames != 3:
+        raise ValueError(
+            "LAB_CONFIG.yaml: audited LUT calibration requires frames_per_gray=3"
+        )
+    if transfer not in {"field_amplitude", "linear_intensity"}:
+        raise ValueError(
+            "LAB_CONFIG.yaml: target_transfer must be field_amplitude or "
+            "linear_intensity"
+        )
+    if Path(filename).name != filename or Path(filename).suffix.lower() != ".lut":
+        raise ValueError(
+            "LAB_CONFIG.yaml: output_lut_filename must be one plain .lut file name"
+        )
+    value.update(
+        {
+            "gray_point_count": count,
+            "frames_per_gray": frames,
+            "target_transfer": transfer,
+            "output_lut_filename": filename,
+        }
+    )
+    return value
+
+
 def _runtime_base(
     template: Mapping[str, Any],
     lut_filename: str,
     exposure_us: float,
     capture_timing: Mapping[str, Any],
+    lut_calibration: Mapping[str, Any],
 ) -> dict[str, Any]:
     hardware = copy.deepcopy(dict(template))
     hardware["amplitude_slm"]["lut_file"] = (
@@ -231,6 +276,7 @@ def _runtime_base(
     hardware["timing_diagnostic"].update(
         capture_timing["timing_diagnostic"]
     )
+    hardware["amplitude_lut_calibration"].update(lut_calibration)
     hardware["exposure_calibration"]["exposure_times_us"] = [exposure_us]
     return hardware
 
@@ -264,10 +310,11 @@ def prepare_lab(
     if not math.isfinite(exposure_us) or exposure_us <= 0.0:
         raise ValueError("LAB_CONFIG.yaml: camera_exposure_us must be positive")
     capture_timing = _parse_capture_timing(user)
+    lut_calibration = _parse_lut_calibration(user)
     corners = _parse_corners(user.get("logical_corners_full_sensor_xy"))
 
     bootstrap = _runtime_base(
-        template, lut_filename, exposure_us, capture_timing
+        template, lut_filename, exposure_us, capture_timing, lut_calibration
     )
     bootstrap_path = generated / "bootstrap_hardware.yaml"
     _write_yaml(bootstrap_path, bootstrap)
@@ -279,6 +326,7 @@ def prepare_lab(
         "lut_present": lut_file.is_file(),
         "camera_exposure_us": exposure_us,
         "capture_timing": capture_timing,
+        "amplitude_lut_calibration": lut_calibration,
         "bootstrap_config": str(bootstrap_path),
         "corner_coordinates_require_multiple_of_four": False,
         "hardware_roi_alignment_px": {
@@ -328,7 +376,7 @@ def prepare_lab(
         )
 
         formal = _runtime_base(
-            template, lut_filename, exposure_us, capture_timing
+            template, lut_filename, exposure_us, capture_timing, lut_calibration
         )
         formal_camera = formal["camera"]
         formal_camera["require_device_roi"] = True

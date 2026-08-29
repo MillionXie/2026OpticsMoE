@@ -474,6 +474,7 @@ def _current_source_files(repo_root: Path) -> Iterable[Path]:
         "experiments/hardware_sdk/drivers/tucam_camera.py",
         "experiments/hardware_sdk/workflows/__init__.py",
         "experiments/hardware_sdk/workflows/acquire_folder.py",
+        "experiments/hardware_sdk/workflows/amplitude_lut_calibration.py",
         "experiments/hardware_sdk/workflows/calibration_common.py",
         "experiments/hardware_sdk/workflows/detector_homography.py",
         "experiments/hardware_sdk/workflows/reconstruct_slm.py",
@@ -482,6 +483,7 @@ def _current_source_files(repo_root: Path) -> Iterable[Path]:
         "experiments/hardware_sdk/demos/phase_slm_demo.py",
         "experiments/hardware_sdk/vendor_sdk/amplitude_meadowlark/LUT Files/slm7930_at532_30C.lut",
         "experiments/hardware_sdk/vendor_sdk/amplitude_meadowlark/LUT Files/slm7930_at532_70C.lut",
+        "experiments/hardware_sdk/vendor_sdk/amplitude_meadowlark/LUT Files/slm7930_at532-70c-pixel-2.lut",
         "experiments/lab_qwen/__init__.py",
         "experiments/lab_qwen/prepare_lab.py",
         "experiments/lab_qwen/shape_agreement.py",
@@ -739,6 +741,10 @@ def create_bundle(
                     "full-white amplitude; teacher-MATLAB square Fresnel arrays"
                 ),
                 "brightness_calibration": "32 gray levels x 3 frames",
+                "amplitude_lut_recalibration": (
+                    "64 gray levels x 3 frames for base and generated LUT; "
+                    "isotonic monotonic-branch fit plus piecewise-linear inverse"
+                ),
                 "sim_to_real_agreement": True,
                 "last_stage_quick210": True,
                 "four_stage": "initial stage included; subsequent stages depend on preceding measured CCD",
@@ -798,8 +804,10 @@ def verify_bundle(path: Path) -> dict[str, Any]:
             f"{ARCHIVE_ROOT}/mnist4/payload/phase_masks/phase_masks.json",
             "experiments/d2nn_mnist4_single_layer_17um_10cm_v2/simulation_agreement.py",
             "experiments/hardware_sdk/workflows/reconstruct_slm.py",
+            "experiments/hardware_sdk/workflows/amplitude_lut_calibration.py",
             "experiments/hardware_sdk/vendor_sdk/amplitude_meadowlark/LUT Files/slm7930_at532_30C.lut",
             "experiments/hardware_sdk/vendor_sdk/amplitude_meadowlark/LUT Files/slm7930_at532_70C.lut",
+            "experiments/hardware_sdk/vendor_sdk/amplitude_meadowlark/LUT Files/slm7930_at532-70c-pixel-2.lut",
         }
         selected_model = manifest.get("selected_model", {})
         if selected_model.get("kind") == (

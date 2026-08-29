@@ -43,7 +43,7 @@ notepad experiments\lab_qwen\LAB_CONFIG.yaml
 只需填写 LUT 文件名、曝光时间和四个逻辑角点：
 
 ```yaml
-amplitude_lut_filename: slm7930_at532_70C.lut
+amplitude_lut_filename: slm7930_at532-70c-pixel-2.lut
 camera_exposure_us: 5000.0
 logical_corners_full_sensor_xy:
   top_left: [1626, 281]
@@ -56,9 +56,9 @@ logical_corners_full_sensor_xy:
 方位；当前系统左右镜像，所以逻辑左上角出现在相机画面右侧是正常的。若换光路且还没
 测量四点，先把四项全部改成 `null`，不能只留部分为 `null`。
 
-包内同时提供厂商的 `slm7930_at532_30C.lut` 和 `slm7930_at532_70C.lut`。默认使用
-70°C版本；若实验室另有这块设备专属的 `slm7930_at532-70c-pixel-2.lut`，把它复制到
-同一 `LUT Files` 目录后，只把上面的文件名改成该名称。
+包内同时提供厂商 30°C/70°C LUT 和本次设备正在使用的
+`slm7930_at532-70c-pixel-2.lut`。当前默认使用 `pixel-2`；若切换设备或温度，必须先
+换回该设备对应的原始 LUT，并重新做下面的 LUT 标定，不能沿用另一台设备生成的结果。
 
 每次修改后只运行：
 
@@ -198,6 +198,92 @@ python -m experiments.hardware_sdk.workflows.roi_calibration exposure `
 
 结果在 `experiments\lab_qwen\results\exposure`。若饱和，只改 `LAB_CONFIG.yaml` 中的
 曝光，再运行 `prepare_lab` 和本步骤。
+
+### 4.1 用密集 CCD 响应重新标定振幅 LUT
+
+普通 32 点曲线用于快速检查曝光，不直接生成 LUT。当前 `pixel-2` 曲线在灰度约 80
+附近出现真正暗态，0→80 与 80→255 属于两条不同的光强调制支路；把整条 U 形曲线
+直接做普通三次样条会产生错误的多值反函数。本工具默认采集 64 个灰度、每灰度 3 帧，
+自动选择“暗态→较亮端点”中动态范围更大的单调支路，先用 PAVA 保序拟合抑制小噪声，
+再做分段线性反插值，最终仍生成厂商可加载的 256 行 `gray DAC` LUT。
+
+网络输入 BMP 表示光场振幅，因此默认：
+
+```text
+目标场振幅 A = gray / 255
+目标 CCD 强度 I = A²
+```
+
+不要为了让图上的 CCD 强度成为直线而误用线性强度 LUT；只有做单独对照时才把
+`target_transfer` 改成 `linear_intensity`。
+
+先确认 `LAB_CONFIG.yaml` 当前选择的是要作为基准的旧 LUT：
+
+```yaml
+amplitude_lut_filename: slm7930_at532-70c-pixel-2.lut
+amplitude_lut_calibration:
+  gray_point_count: 64
+  frames_per_gray: 3
+  target_transfer: field_amplitude
+  output_lut_filename: slm7930_at532-70c-pixel-2_linearized-amplitude.lut
+```
+
+运行 `prepare_lab` 后，在相位 SLM 上固定加载并始终保持：
+
+```text
+experiments\lab_qwen\calib\exposure\phase\phase_zero.bmp
+```
+
+相位 WFC/额外相位修正必须关闭，自动曝光必须关闭。然后一条命令完成旧 LUT 密集扫描、
+新 LUT 拟合、新 LUT 重新加载和第二次密集验证：
+
+```powershell
+python -m experiments.hardware_sdk.workflows.amplitude_lut_calibration all `
+  --config experiments\lab_qwen\generated\formal_hardware.yaml
+```
+
+默认共采集 `64×3×2=384` 帧。程序会在两次硬件扫描前显示当前 LUT 和相位零图确认，
+按提示确认即可。不要加 `--yes` 跳过第一次正式设备确认。
+
+结果位于：
+
+```text
+experiments\lab_qwen\results\lut_calibration\slm7930_at532-70c-pixel-2_linearized-amplitude\
+  base_scan\slm_response.csv
+  verification_scan\slm_response.csv
+  lut_mapping.csv
+  lut_fit_report.json
+  final_lut_report.json
+  lut_calibration.png
+  lut_calibration.svg
+```
+
+新 LUT 位于：
+
+```text
+experiments\hardware_sdk\vendor_sdk\amplitude_meadowlark\LUT Files\slm7930_at532-70c-pixel-2_linearized-amplitude.lut
+```
+
+拟合中的 `(I-I_dark)/(I_bright-I_dark)` 只用于建立 LUT 反函数和验证误差，不会加入
+Qwen/MNIST 的 CCD 后处理；正式网络帧仍按原有固定范围保存和读取。
+
+程序绝不会覆盖旧 LUT。只有 `final_lut_report.json` 中
+`recommended_for_use=true` 时，才把 `LAB_CONFIG.yaml` 的
+`amplitude_lut_filename` 改为新文件名并重新运行 `prepare_lab`。如果验证未通过，继续
+使用 `slm7930_at532-70c-pixel-2.lut`，先检查曝光、偏振器、相位零图和光路稳定性。
+
+若硬件扫描已经完成但拟合阶段中断，可分别恢复：
+
+```powershell
+python -m experiments.hardware_sdk.workflows.amplitude_lut_calibration fit `
+  --config experiments\lab_qwen\generated\formal_hardware.yaml
+
+python -m experiments.hardware_sdk.workflows.amplitude_lut_calibration verify `
+  --config experiments\lab_qwen\generated\formal_hardware.yaml
+```
+
+确实需要重做并替换同名“生成 LUT”时，显式增加 `--overwrite-generated-lut`；该参数也
+不会覆盖当前基准旧 LUT。
 
 ## 5. MNIST-4 简单任务：先 quick40，再 formal400
 

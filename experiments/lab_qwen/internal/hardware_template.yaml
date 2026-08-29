@@ -22,6 +22,18 @@ timing_diagnostic:
   maximum_saturation_fraction: 0.001
   minimum_p99_uint8: 16
 
+# Dense global LUT calibration.  field_amplitude is the optical-network
+# contract: requested gray g targets CCD intensity (g/255)^2.
+amplitude_lut_calibration:
+  gray_point_count: 64
+  frames_per_gray: 3
+  target_transfer: field_amplitude
+  output_lut_filename: slm7930_at532-70c-pixel-2_linearized-amplitude.lut
+  maximum_verification_intensity_rmse: 0.10
+  maximum_verification_field_amplitude_rmse: 0.08
+  maximum_verification_monotonic_violations: 2
+  maximum_saturation_fraction: 0.001
+
 paths:
   masks_dir: ../calib/exposure
   results_dir: ../results/exposure
