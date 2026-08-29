@@ -26,7 +26,7 @@ python -c "import torch; print(torch.__version__, torch.cuda.is_available())"
 确认下面两个实验室专用文件确实存在：
 
 ```text
-experiments\hardware_sdk\vendor_sdk\amplitude_meadowlark\LUT Files\slm7930_at532-70c-pixel-2.lut
+experiments\hardware_sdk\vendor_sdk\amplitude_meadowlark\LUT Files\slm7930_at532_70C.lut
 experiments\hardware_sdk\vendor_sdk\camera_tucam_mosaic\TUCam.dll
 ```
 
@@ -43,7 +43,7 @@ notepad experiments\lab_qwen\LAB_CONFIG.yaml
 只需填写 LUT 文件名、曝光时间和四个逻辑角点：
 
 ```yaml
-amplitude_lut_filename: slm7930_at532-70c-pixel-2.lut
+amplitude_lut_filename: slm7930_at532_70C.lut
 camera_exposure_us: 5000.0
 logical_corners_full_sensor_xy:
   top_left: [1626, 281]
@@ -55,6 +55,10 @@ logical_corners_full_sensor_xy:
 四点是 CCD 的 2048×2048 全传感器坐标，不要求是 4 的倍数。标签表示光场的逻辑
 方位；当前系统左右镜像，所以逻辑左上角出现在相机画面右侧是正常的。若换光路且还没
 测量四点，先把四项全部改成 `null`，不能只留部分为 `null`。
+
+包内同时提供厂商的 `slm7930_at532_30C.lut` 和 `slm7930_at532_70C.lut`。默认使用
+70°C版本；若实验室另有这块设备专属的 `slm7930_at532-70c-pixel-2.lut`，把它复制到
+同一 `LUT Files` 目录后，只把上面的文件名改成该名称。
 
 每次修改后只运行：
 

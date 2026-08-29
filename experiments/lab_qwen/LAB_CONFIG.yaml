@@ -1,7 +1,7 @@
 # 实验人员唯一需要编辑的配置文件。
 # LUT 只写文件名；文件放在：
 # experiments/hardware_sdk/vendor_sdk/amplitude_meadowlark/LUT Files/
-amplitude_lut_filename: slm7930_at532-70c-pixel-2.lut
+amplitude_lut_filename: slm7930_at532_70C.lut
 
 # 单位：微秒。若亮度标定饱和，只修改这里，然后重新运行 prepare_lab。
 camera_exposure_us: 5000.0

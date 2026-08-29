@@ -480,6 +480,8 @@ def _current_source_files(repo_root: Path) -> Iterable[Path]:
         "experiments/hardware_sdk/workflows/roi_calibration.py",
         "experiments/hardware_sdk/demos/__init__.py",
         "experiments/hardware_sdk/demos/phase_slm_demo.py",
+        "experiments/hardware_sdk/vendor_sdk/amplitude_meadowlark/LUT Files/slm7930_at532_30C.lut",
+        "experiments/hardware_sdk/vendor_sdk/amplitude_meadowlark/LUT Files/slm7930_at532_70C.lut",
         "experiments/lab_qwen/__init__.py",
         "experiments/lab_qwen/prepare_lab.py",
         "experiments/lab_qwen/shape_agreement.py",
@@ -790,6 +792,8 @@ def verify_bundle(path: Path) -> dict[str, Any]:
             f"{ARCHIVE_ROOT}/mnist4/payload/phase_masks/phase_masks.json",
             "experiments/d2nn_mnist4_single_layer_17um_10cm_v2/simulation_agreement.py",
             "experiments/hardware_sdk/workflows/reconstruct_slm.py",
+            "experiments/hardware_sdk/vendor_sdk/amplitude_meadowlark/LUT Files/slm7930_at532_30C.lut",
+            "experiments/hardware_sdk/vendor_sdk/amplitude_meadowlark/LUT Files/slm7930_at532_70C.lut",
         }
         selected_model = manifest.get("selected_model", {})
         if selected_model.get("kind") == (
