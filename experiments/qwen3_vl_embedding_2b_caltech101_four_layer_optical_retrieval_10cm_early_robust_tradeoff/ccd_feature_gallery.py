@@ -34,6 +34,26 @@ REFERENCE_COLUMNS = {
     "transport_quantized": "transport_reference_file",
 }
 
+STAGE_DISPLAY_NAMES = {
+    "vision_expert": "01 Vision expert (MoE4)",
+    "vision_global": "02 Vision global",
+    "language_expert": "03 Language expert (MoE4)",
+    "language_global": "04 Language global",
+}
+
+# Compact approximation of matplotlib's perceptually ordered viridis map.  The
+# scientific arrays are never colorized; this LUT is used only for PNG display.
+VIRIDIS_ANCHORS = np.asarray(
+    [
+        (68, 1, 84),
+        (59, 82, 139),
+        (33, 145, 140),
+        (94, 201, 98),
+        (253, 231, 37),
+    ],
+    dtype=np.float64,
+)
+
 
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
@@ -72,6 +92,22 @@ def _save_l(path: Path, value: np.ndarray) -> str:
     return _sha256(path)
 
 
+def _viridis(value: np.ndarray) -> np.ndarray:
+    gray = np.asarray(value, dtype=np.float64).clip(0.0, 255.0) / 255.0
+    position = gray * (len(VIRIDIS_ANCHORS) - 1)
+    lower = np.floor(position).astype(np.int64)
+    upper = np.minimum(lower + 1, len(VIRIDIS_ANCHORS) - 1)
+    fraction = (position - lower)[..., None]
+    rgb = VIRIDIS_ANCHORS[lower] * (1.0 - fraction) + VIRIDIS_ANCHORS[upper] * fraction
+    return np.rint(rgb).clip(0, 255).astype(np.uint8)
+
+
+def _save_rgb(path: Path, value: np.ndarray) -> str:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    Image.fromarray(np.asarray(value, dtype=np.uint8), mode="RGB").save(path)
+    return _sha256(path)
+
+
 def _display_linear(value: np.ndarray, relative_clip: float) -> np.ndarray:
     source = np.clip(np.asarray(value, dtype=np.float64), 0.0, None)
     mean = max(float(source.mean()), 1.0e-12)
@@ -91,18 +127,70 @@ def _contact_sheet(
         return None
     tile, label_height = 224, 28
     rows = int(math.ceil(len(paths) / columns))
-    sheet = Image.new("L", (columns * tile, rows * (tile + label_height)), color=0)
+    sheet = Image.new("RGB", (columns * tile, rows * (tile + label_height)), color=(0, 0, 0))
     draw = ImageDraw.Draw(sheet)
     for index, (path, label) in enumerate(paths):
         with Image.open(path) as opened:
-            image = opened.convert("L").resize((tile, tile), Image.Resampling.BILINEAR)
+            image = opened.convert("RGB").resize((tile, tile), Image.Resampling.BILINEAR)
         x = (index % columns) * tile
         y = (index // columns) * (tile + label_height)
         sheet.paste(image, (x, y))
-        draw.text((x + 3, y + tile + 3), label[:34], fill=255)
+        draw.text((x + 3, y + tile + 3), label[:34], fill=(255, 255, 255))
     destination.parent.mkdir(parents=True, exist_ok=True)
     sheet.save(destination)
     return _sha256(destination)
+
+
+def _four_stage_sheet(
+    keys: list[str],
+    stage_images: dict[str, dict[str, Path]],
+    destination: Path,
+) -> str | None:
+    """Lay the same capture keys out as rows and the four optical stages as columns."""
+    stages = [stage for stage in STAGES if stage in stage_images]
+    keys = [key for key in keys if all(key in stage_images[stage] for stage in stages)]
+    if not stages or not keys:
+        return None
+    tile, header, row_label = 224, 36, 190
+    sheet = Image.new(
+        "RGB",
+        (row_label + len(stages) * tile, header + len(keys) * tile),
+        color=(0, 0, 0),
+    )
+    draw = ImageDraw.Draw(sheet)
+    for column, stage in enumerate(stages):
+        draw.text(
+            (row_label + column * tile + 5, 11),
+            STAGE_DISPLAY_NAMES.get(stage, stage),
+            fill=(255, 255, 255),
+        )
+    for row, key in enumerate(keys):
+        y = header + row * tile
+        draw.text((5, y + 8), key[:29], fill=(255, 255, 255))
+        for column, stage in enumerate(stages):
+            with Image.open(stage_images[stage][key]) as opened:
+                image = opened.convert("RGB").resize(
+                    (tile, tile), Image.Resampling.BILINEAR
+                )
+            sheet.paste(image, (row_label + column * tile, y))
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    sheet.save(destination)
+    return _sha256(destination)
+
+
+def _representative_keys(rows: list[dict[str, str]]) -> tuple[list[str], list[str]]:
+    designed = [row["capture_key"] for row in rows if row["source_kind"] == "designed"]
+    # One fixed test example per class produces a compact, unbiased visual index.
+    model: list[str] = []
+    observed_skus: set[str] = set()
+    for row in rows:
+        if row["source_kind"] == "designed":
+            continue
+        sku = row.get("sku_index", "")
+        if sku not in observed_skus:
+            observed_skus.add(sku)
+            model.append(row["capture_key"])
+    return designed[:8], model[:10]
 
 
 def _mean_metric(rows: list[dict[str, Any]], key: str) -> float | None:
@@ -117,6 +205,11 @@ def export_gallery(session_dir: str | Path) -> dict[str, Any]:
     session = Path(session_dir).expanduser().resolve()
     root_contract = read_json(session / "agreement_manifest.json")
     reports: list[dict[str, Any]] = []
+    easy_view = session / "VIEW_THEORETICAL_CCD"
+    easy_view.mkdir(parents=True, exist_ok=True)
+    stage_images: dict[str, dict[str, Path]] = {}
+    representative_designed: list[str] = []
+    representative_model: list[str] = []
     for stage in STAGES:
         stage_dir = stage_directory(session, stage)
         if not (stage_dir / "probe_manifest.csv").is_file():
@@ -130,6 +223,17 @@ def export_gallery(session_dir: str | Path) -> dict[str, Any]:
         quantization_rows: list[dict[str, Any]] = []
         sheets: list[dict[str, Any]] = []
         source_rows = _read_csv(stage_dir / "probe_manifest.csv")
+        designed_keys, model_keys = _representative_keys(source_rows)
+        if not representative_designed:
+            representative_designed = designed_keys
+        if not representative_model:
+            representative_model = model_keys
+        easy_stage = easy_view / STAGE_DISPLAY_NAMES.get(stage, stage)
+        stage_images[stage] = {}
+        all_easy_tiles: dict[str, list[tuple[Path, str]]] = {
+            "designed": [],
+            "model": [],
+        }
         for reference_kind, column in REFERENCE_COLUMNS.items():
             designed_tiles: list[tuple[Path, str]] = []
             model_tiles: list[tuple[Path, str]] = []
@@ -154,6 +258,20 @@ def export_gallery(session_dir: str | Path) -> dict[str, Any]:
                     network_png,
                     _display_network(network, relative_clip, log_compression),
                 )
+                if reference_kind == "transport_quantized":
+                    linear_display = _display_linear(intensity, relative_clip)
+                    network_display = _display_network(
+                        network, relative_clip, log_compression
+                    )
+                    easy_gray = easy_stage / "01_linear_gray_478" / f"{key}.png"
+                    easy_color = easy_stage / "02_linear_color_478" / f"{key}.png"
+                    easy_network = easy_stage / "03_network_input_color_224" / f"{key}.png"
+                    _save_l(easy_gray, linear_display)
+                    _save_rgb(easy_color, _viridis(linear_display))
+                    _save_rgb(easy_network, _viridis(network_display))
+                    stage_images[stage][key] = easy_color
+                    kind = "designed" if source["source_kind"] == "designed" else "model"
+                    all_easy_tiles[kind].append((easy_color, key))
                 rows.append(
                     {
                         "stage": stage,
@@ -248,6 +366,12 @@ def export_gallery(session_dir: str | Path) -> dict[str, Any]:
             "background subtraction or per-frame min-max enters the network.\n",
             encoding="utf-8",
         )
+        for kind, tiles in all_easy_tiles.items():
+            _contact_sheet(
+                tiles,
+                easy_stage / f"OPEN_ALL_{kind.upper()}_LINEAR_COLOR.png",
+                columns=5,
+            )
         reports.append(
             {
                 "stage": stage,
@@ -262,11 +386,40 @@ def export_gallery(session_dir: str | Path) -> dict[str, Any]:
                 "transport_vs_ideal_summary": quantization_summary,
             }
         )
+    open_first = {
+        "designed": _four_stage_sheet(
+            representative_designed,
+            stage_images,
+            easy_view / "OPEN_ME_FIRST_DESIGNED_PROBES.png",
+        ),
+        "test": _four_stage_sheet(
+            representative_model,
+            stage_images,
+            easy_view / "OPEN_ME_FIRST_TEST_ONE_PER_CLASS.png",
+        ),
+    }
+    (easy_view / "README_先看这里.md").write_text(
+        "# Qwen 四层理论 CCD：肉眼查看入口\n\n"
+        "先打开 `OPEN_ME_FIRST_TEST_ONE_PER_CLASS.png` 和 "
+        "`OPEN_ME_FIRST_DESIGNED_PROBES.png`。每一行是同一个输入，每一列依次是 "
+        "vision expert、vision global、language expert、language global。\n\n"
+        "各层文件夹内：\n\n"
+        "- `01_linear_gray_478`：478×478，单帧均值归一化后按固定相对强度上限显示的灰度图；\n"
+        "- `02_linear_color_478`：与上一项数值完全相同，仅套 viridis 色表，方便看弱结构；\n"
+        "- `03_network_input_color_224`：网络在归一化、截断、log1p 和 224×224 池化后实际读取的形状；\n"
+        "- `OPEN_ALL_*.png`：该层所有样本的联系表。\n\n"
+        "显示 PNG 只用于主观观察，不能用于 PCC/SSIM。正式指标仍读取 "
+        "`theoretical_ccd/transport_quantized/*.npz`，实测图也必须走相同的网络映射。"
+        "伪彩图的紫色表示低强度，黄色表示高强度。\n",
+        encoding="utf-8",
+    )
     report = {
         "schema_version": 1,
         "session": str(session),
         "agreement_manifest_checkpoint_sha256": root_contract["checkpoint_sha256"],
         "stages": reports,
+        "easy_view_directory": str(easy_view),
+        "open_first_sha256": open_first,
     }
     (session / "ccd_feature_gallery_report.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"

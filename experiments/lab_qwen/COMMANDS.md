@@ -544,8 +544,16 @@ python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrie
   --output-dir experiments\lab_qwen\results\agreement_accuracy_first_full
 ```
 
-仿真 feature 的联系图位于每层
-`ccd_feature_visualization\CONTACT_SHEET_*.png`。网络域正式流程为：非负截断 →
+肉眼查看时不要进入只有 `.npz` 的 `theoretical_ccd`。直接打开：
+
+```text
+experiments\lab_qwen\qwen_theoretical_ccd_accuracy_first_full\VIEW_THEORETICAL_CCD\OPEN_ME_FIRST_TEST_ONE_PER_CLASS.png
+experiments\lab_qwen\qwen_theoretical_ccd_accuracy_first_full\VIEW_THEORETICAL_CCD\OPEN_ME_FIRST_DESIGNED_PROBES.png
+```
+
+每层的全部灰度图、伪彩图和联系表也在 `VIEW_THEORETICAL_CCD` 的四个层目录内。原始
+`theoretical_ccd/*.npz` 是给正式 PCC/SSIM 计算的 FP32 强度，不是给人眼直接打开的。
+网络域正式流程为：非负截断 →
 单帧均值归一化 → 相对强度截断 → log1p → AdaptiveAvgPool 到 224×224；不扣背景，
 不做每帧 min-max。评估同时报告 linear 与 network-input 域的 PCC、SSIM、
 shape-NRMSE、能量比、质心误差和饱和率。

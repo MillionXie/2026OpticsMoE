@@ -42,6 +42,22 @@ experiments/lab_qwen/qwen_theoretical_ccd_accuracy_first_full
   feature；
 - `CONTACT_SHEET_*.png`：只用于观看。
 
+为了避免实验人员在 `.npz` 目录中逐个找图，会话根目录还会生成：
+
+```text
+VIEW_THEORETICAL_CCD/
+├── OPEN_ME_FIRST_TEST_ONE_PER_CLASS.png
+├── OPEN_ME_FIRST_DESIGNED_PROBES.png
+├── 01 Vision expert (MoE4)/
+├── 02 Vision global/
+├── 03 Language expert (MoE4)/
+└── 04 Language global/
+```
+
+前两张总览图最适合直接查看：每一行是同一个输入，每一列是一个光学层。每层目录还包含
+全部样本的灰度图、viridis 伪彩图、网络实际读入的 224×224 伪彩图和联系表。紫色为低强度，
+黄色为高强度。PNG 的归一化仅用于显示，正式 PCC/SSIM 仍读取 `.npz`。
+
 网络映射固定为：
 
 ```text
