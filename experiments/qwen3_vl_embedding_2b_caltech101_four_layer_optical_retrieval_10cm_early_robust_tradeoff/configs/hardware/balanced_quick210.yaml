@@ -1,0 +1,14 @@
+base_config: ../release/balanced_floor0p5.yaml
+
+dataset:
+  gallery_images_per_sku: 1
+  train_limit_per_sku: 10
+  test_limit_per_sku: 10
+  reserve_test_before_train: true
+
+hardware:
+  ccd:
+    flip_vertical: false
+    flip_horizontal: false
+
+output_dir: ../../runs/balanced_quick210_metadata

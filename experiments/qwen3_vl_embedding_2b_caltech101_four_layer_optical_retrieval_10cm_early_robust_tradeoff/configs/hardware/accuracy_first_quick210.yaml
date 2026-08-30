@@ -1,0 +1,18 @@
+base_config: ../release/accuracy_first_floor0p1.yaml
+
+# Laboratory acquisition profile only. The checkpoint was trained with all
+# available training images; this deterministic subset limits physical capture
+# to 10 train + 1 gallery + 10 sealed-test images per class (210 total).
+dataset:
+  gallery_images_per_sku: 1
+  train_limit_per_sku: 10
+  test_limit_per_sku: 10
+  reserve_test_before_train: true
+
+hardware:
+  ccd:
+    # Four-point homography already returns canonical model coordinates.
+    flip_vertical: false
+    flip_horizontal: false
+
+output_dir: ../../runs/accuracy_first_quick210_metadata

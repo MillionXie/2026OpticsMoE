@@ -8,8 +8,8 @@
 |---|---:|---|
 | 纯电子、同一 Qwen/2D Mixer 骨干 | 87.0% | 可达到的电子参考上限 |
 | 已训练 strong-noise、四门实际约 1.52% | 82.0% | 现有鲁棒优先方案 |
-| 本工程 accuracy-first | 训练完成后填写 | 首选实测，目标是提高 78% 达标概率 |
-| 本工程 balanced | 训练完成后填写 | 更强光路扰动容忍度的备选 |
+| 本工程 accuracy-first | 85.0% | 首选实测，目标是提高 78% 达标概率 |
+| 本工程 balanced | 85.0% | 更强光路扰动容忍度的备选 |
 
 82% 是 `noise_strong_mu0p06_sigma0p05_phase0p03` 的 sealed-test
 Top-1，不是光路实测值。旧 LUT 四层实测结果 70%→69%→71%→71% 仅作历史
@@ -80,6 +80,11 @@ CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_
 
 ## 5. 四层闭环命令模板
 
+硬件采集必须使用 210 帧配置，不能直接拿训练配置导出全部 2855 张：
+
+- accuracy-first：`configs/hardware/accuracy_first_quick210.yaml`
+- balanced：`configs/hardware/balanced_quick210.yaml`
+
 下面把 `<CONFIG>`、`<CHECKPOINT>`、`<SESSION_DIR>` 替换为同一个方案的路径。
 不要把不同方案拼在一条链中。
 
@@ -97,6 +102,9 @@ CCD。完成后本地执行该层微调并导出下一层；依次对四个 stag
 实测 checkpoint 选择使用固定 development 子集，不使用 test。最多 100 epoch，
 连续 15 epoch development 无提升可提前停止；最后对 100 张 sealed test 只评一次。
 
+首层已经在服务器预导出时，可直接下载对应目录；如果 checkpoint 或配置有任何
+改动，必须重新运行 `export`，不能沿用旧目录。
+
 ## 6. 判定与 trade-off 记录
 
 每层都记录：当前层后 sealed-test Top-1、PCC、SSIM、gain-aligned NMAE、饱和
@@ -104,3 +112,20 @@ CCD。完成后本地执行该层微调并导出下一层；依次对四个 stag
 这不是仿真能够保证的数值；若 accuracy-first 新 LUT 实测仍低于 78%，先检查
 PCC/SSIM 与方向、曝光、ROI 合同，再决定是否继续降低门值，不能用 test 反复
 挑 epoch。
+
+## 7. 已完成训练结果（2026-08-30）
+
+| 项目 | accuracy-first | balanced |
+|---|---:|---:|
+| selected checkpoint epoch | 33 | 33 |
+| sealed-test Top-1 | 85.0% | 85.0% |
+| sealed-test Top-3 | 94.5% | 94.5% |
+| MRR | 0.9063 | 0.9067 |
+| checkpoint train loss | 1.82185 | 1.84323 |
+| 实际四门融合系数（约） | 0.626% | 1.024% |
+| 最终 phase 相对本次起点 RMS | 0.701 rad | 0.851 rad |
+| 最终 phase 物理标准差 | 0.712 rad | 0.861 rad |
+
+两套测试各只执行一次，test 未参与 checkpoint 选择。accuracy-first 与 balanced
+在干净仿真上打平，因此第一轮硬件优先 accuracy-first：它的电子残差占比更高，
+更可能守住 78%；balanced 的价值是环境变化时更依赖被充分训练的光学分支。

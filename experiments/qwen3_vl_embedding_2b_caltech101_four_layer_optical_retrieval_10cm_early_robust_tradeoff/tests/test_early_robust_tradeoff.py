@@ -69,3 +69,16 @@ def test_checkpoint_topology_is_the_audited_stage_a_contract() -> None:
     assert EarlyRobustTradeoffReplacement.checkpoint_architecture == (
         STAGE_ARCHITECTURES["optical_calibration"]
     )
+
+
+@pytest.mark.parametrize(
+    "filename", ["accuracy_first_quick210.yaml", "balanced_quick210.yaml"]
+)
+def test_hardware_configs_are_exact_quick210_contracts(filename: str) -> None:
+    settings = load_settings(ROOT / "configs" / "hardware" / filename)
+    assert settings.gallery_images_per_sku == 1
+    assert settings.train_limit_per_sku == 10
+    assert settings.test_limit_per_sku == 10
+    assert settings.reserve_test_before_train is True
+    assert settings.hardware_ccd_flip_vertical is False
+    assert settings.hardware_ccd_flip_horizontal is False
