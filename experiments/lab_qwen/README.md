@@ -3,7 +3,9 @@
 把 ZIP 覆盖解压到统一仓库目录 `E:\code\guest\2026OpticsMoE`。实验人员只编辑
 `experiments\lab_qwen\LAB_CONFIG.yaml`，全部操作从 `COMMANDS.md` 第 0 步顺序执行。
 
-Qwen 主模型固定为 `accuracy_first_full`：四层各有独立相位 mask，训练时联合采样
+Qwen 主模型固定为 `accuracy_first_full`：共有四个依次播放的硬件 phase BMP；两个
+expert BMP 内各自是 2×2 四专家相位，两个 global BMP 各是一张全局相位，因此模型
+实际含 4+1+4+1=10 个逻辑 phase plane，并非只训练一张 mask。训练时联合采样
 ±16 像素输入/phase/CCD 位移、0.4–2.5 倍强度增益、0–5% 振幅与相位 0 级泄漏、
 phase dropout、k 空间截止，以及相对干净单帧均值的截断偏置高斯 CCD 噪声
 `mean=2%、std=2%、clip=[-2%,6%]`。四个光电融合门的配置下限为 0.1%，实际学习

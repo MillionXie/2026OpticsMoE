@@ -2,12 +2,17 @@
 
 ## 1. 当前 Qwen 到底训练了什么
 
-`accuracy_first_full` 不是一张 phase mask，也不是多组噪声消融。模型包含四张彼此
-独立的可训练相位 mask：
+`accuracy_first_full` 不是一张 phase mask，也不是多组噪声消融。实验时依次播放四张
+硬件 BMP：
 
 ```text
 vision_expert -> vision_global -> language_expert -> language_global
 ```
+
+其中两个 expert BMP 都在同一物理画面内排布 2×2 四个专家相位，两个 global BMP
+各含一张全局相位，所以 checkpoint 实际训练的是 `4+1+4+1=10` 个逻辑 phase
+plane；日志中的 `phase_dc_plane_count=10` 也与此一致。之所以实验室一次只看到一张
+BMP，是因为四层必须逐层播放和采集，而不是模型只有一张 mask。
 
 它是一组“联合硬件噪声包络”：每个训练 step 重新随机采样 ±16 像素输入/phase/CCD
 位移、0.4–2.5 倍强度增益、0–5% 振幅与相位 0 级泄漏、phase dropout、k 空间截止，
