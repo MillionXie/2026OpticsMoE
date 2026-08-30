@@ -1,0 +1,59 @@
+# 新实验电脑只编辑这一份文件。所有 null 都必须通过该实验台实测后填写。
+amplitude_lut_filename: null
+camera_exposure_us: null
+
+capture_timing:
+  formal_slm_settle_delay_ms: 100
+  discard_frames_after_display: 1
+  camera_warmup_frames: 3
+
+timing_diagnostic:
+  settle_delay_ms_values: [0, 50, 100, 200, 400]
+  repeats_per_digit_and_delay: 1
+  discard_frames_after_display: 1
+  minimum_pcc_to_reference: 0.95
+  maximum_gain_aligned_nmae: 0.15
+  maximum_absolute_mean_ratio_error: 0.15
+  maximum_saturation_fraction: 0.001
+  minimum_p99_uint8: 16
+
+# 全传感器坐标。标签是模型的逻辑方向，不是相机画面排序。
+logical_corners_full_sensor_xy:
+  top_left: null
+  top_right: null
+  bottom_right: null
+  bottom_left: null
+
+roi_margin_px: 64
+
+amplitude_slm:
+  driver: meadowlark_pcie
+  sdk_relative_path: experiments/hardware_sdk/vendor_sdk/amplitude_meadowlark
+  resolution_wh: [1024, 1024]
+  pixel_pitch_um: 17.0
+  board_number: 1
+
+phase_slm:
+  driver: manual
+  resolution_wh: [1920, 1200]
+  pixel_pitch_um: 8.0
+  center_xy: null
+
+camera:
+  driver: tucam
+  sdk_relative_path: experiments/hardware_sdk/vendor_sdk/camera_tucam_mosaic
+  camera_index: 0
+  saved_frame_size_wh: [478, 478]
+  saved_frame_bit_depth: 8
+  saved_frame_input_range: [0, 65535]
+
+# LUT 标定输出文件名不得覆盖厂商原 LUT。
+amplitude_lut_calibration:
+  gray_point_count: 64
+  frames_per_gray: 3
+  target_transfer: field_amplitude
+  output_lut_filename: null
+  maximum_verification_intensity_rmse: 0.10
+  maximum_verification_field_amplitude_rmse: 0.08
+  maximum_verification_monotonic_violations: 2
+  maximum_saturation_fraction: 0.01

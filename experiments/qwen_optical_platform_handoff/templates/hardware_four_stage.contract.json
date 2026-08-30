@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "project": {
+    "name": "replace_with_new_hardware_task",
+    "reference_experiment": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_early_robust_tradeoff"
+  },
+  "task": {
+    "kind": "retrieval",
+    "losses": ["supervised_contrastive", "episodic_prototype"],
+    "metrics": ["top1", "recall_at_k", "map"]
+  },
+  "data": {
+    "train_split": "train",
+    "development_split": "development",
+    "test_split": "test"
+  },
+  "optics": {
+    "stages": ["vision_expert", "vision_global", "language_expert", "language_global"],
+    "wavelength_nm": 532.0,
+    "propagation_distance_m": 0.1,
+    "logical_pixel_pitch_um": 17.0,
+    "active_size": 478,
+    "experts": 4,
+    "robustness": {
+      "shared_simulation_and_measurement_normalization": true,
+      "pixel_shift_augmentation": true,
+      "k_space_filter_augmentation": true,
+      "zero_order_augmentation": true,
+      "truncated_biased_gaussian_ccd_noise": true
+    }
+  },
+  "training": {
+    "selection_split": "development",
+    "sealed_test_once_after_selection": true,
+    "freeze_qwen_backbone": true
+  },
+  "hardware": {
+    "enabled": true,
+    "amplitude_slm": {
+      "driver": "meadowlark_pcie",
+      "resolution_wh": [1024, 1024],
+      "pixel_pitch_um": 17.0,
+      "lut_must_be_recalibrated_on_new_platform": true
+    },
+    "phase_slm": {
+      "driver": "manual_or_meadowlark",
+      "resolution_wh": [1920, 1200],
+      "pixel_pitch_um": 8.0,
+      "center_xy_must_be_measured": true
+    },
+    "detector": {
+      "driver": "tucam",
+      "saved_size_wh": [478, 478],
+      "saved_bit_depth": 8,
+      "per_frame_minmax_normalization": false,
+      "background_subtraction": false,
+      "measured_background_source": ""
+    },
+    "freeze_measured_upstream_stages": true
+  }
+}

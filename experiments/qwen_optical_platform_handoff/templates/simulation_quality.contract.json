@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "project": {
+    "name": "replace_with_new_quality_task",
+    "reference_experiment": "experiments/qwen3_vl_2b_kadid10k_mos_multimodal_electronic_router_moe16_224"
+  },
+  "task": {
+    "kind": "quality_regression",
+    "losses": ["huber", "pairwise_rank"],
+    "metrics": ["srcc", "plcc", "rmse", "mae"]
+  },
+  "data": {
+    "train_split": "train",
+    "development_split": "development",
+    "test_split": "test"
+  },
+  "optics": {
+    "stages": ["vision_expert", "vision_global"],
+    "wavelength_nm": 532.0,
+    "propagation_distance_m": 0.1,
+    "logical_pixel_pitch_um": 17.0,
+    "active_size": 478,
+    "experts": 4,
+    "robustness": {
+      "shared_simulation_and_measurement_normalization": true,
+      "pixel_shift_augmentation": true,
+      "k_space_filter_augmentation": true,
+      "zero_order_augmentation": true,
+      "truncated_biased_gaussian_ccd_noise": true
+    }
+  },
+  "training": {
+    "selection_split": "development",
+    "sealed_test_once_after_selection": true,
+    "freeze_qwen_backbone": true
+  },
+  "hardware": {
+    "enabled": false
+  }
+}
