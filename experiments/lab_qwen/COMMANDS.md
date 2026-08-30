@@ -473,6 +473,9 @@ formal400\simulation_agreement\simulation_binary_8bit
 ±2 像素输入/phase/CCD 位移、5% block phase dropout、0–5% 两级 0 级泄漏、
 0.8–1.2 增益和截断偏置高斯噪声 `N(+1%,1%) clipped to [-1%,3%]`。模型仍没有
 任何 CCD 后归一化、非线性或背景扣除，仍按四个原始 59×59 ROI 能量 argmax。
+服务器选中的 epoch=6；clean validation=88.08%，robust validation=87.49%，完整
+4,157 张 sealed test=88.67%，8-bit BMP 固定 formal400 仿真=89.0%。训练证据、
+checkpoint 和 40 张可视化位于 `experiments\lab_qwen\mnist4_robust_candidate`。
 
 先用同一 quick40 查看 baseline 与 robust mask 的 CCD feature：
 

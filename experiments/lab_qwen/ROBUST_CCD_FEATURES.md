@@ -60,3 +60,7 @@ epoch 中按固定种子 robust validation 选择，不能把 warmup 初始 mask
 
 同一 quick40/formal400 输入分别播放两张 mask 后，才可以公平比较准确率、PCC、SSIM、
 shape-NRMSE、余弦、能量比和质心误差。
+
+本次最终结果为：best epoch=6，clean validation=88.08%，三次固定种子 robust
+validation=87.49%，完整 4,157 张 sealed test=88.67%，实际 8-bit BMP 重仿真的
+固定 formal400=89.0%。quick40 固定诊断子集为 82.5%，不得写成正式准确率。
