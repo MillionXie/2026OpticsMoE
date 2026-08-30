@@ -80,10 +80,11 @@ the four feedback methods.
 
 ## 4. The only four method groups
 
-For each task and matched seed, first train a task head with the complete P11
-backbone frozen and save a `common_start.pt`. The four methods use exactly this
-same checkpoint, split, batches, augmentation stream, optimizer definition and
-training budget.
+For each task and matched seed, first train a task head for exactly 50 epochs
+with the complete P11 backbone frozen and save the validation-selected
+`common_start.pt`. This 50-epoch head-only endpoint is the NoFT result. The
+three updating methods then use exactly this same checkpoint, split, batches,
+augmentation stream, optimizer definition and 50-epoch adaptation budget.
 
 | Method | Current downstream forward | Backbone update | Optical connector sent to the preceding stage |
 |---|---|---|---|
@@ -120,8 +121,8 @@ or an isotropic 2-D propagation operator is invalid feedback for P11.
 
 ### 5.2 Head warm-up and adaptation
 
-1. Train only the task head until the validation metric stops improving; save
-   the seed-specific common start and evaluate it as NoFT.
+1. Train only the task head for 50 epochs; select by validation, save the
+   seed-specific common start and evaluate it as NoFT.
 2. Tune the shared adaptation recipe using BP-current on one development seed
    only. No FA method receives method-specific hyperparameter tuning.
 3. Start BP-current, FA-pretrained and FA-random from byte-identical model and
@@ -135,11 +136,10 @@ does not improve over NoFT, repeat the BP pilot once with phase LR `7e-3`; after
 that choice, freeze the recipe for all methods. This preserves a meaningful
 phase update while avoiding per-method tuning.
 
-Suggested first budgets are 30 adaptation epochs for Caltech-101 and 50 for
-ISIC/LSP, with early stopping used only through the shared validation rule. The
-exact batch sizes are chosen by GPU memory smoke tests and then fixed within a
-task; global batch and scheduler step count must match across the three updating
-methods.
+Every task uses exactly 50 adaptation epochs. Validation chooses the reported
+checkpoint but does not terminate a run early. The exact batch sizes are chosen
+by GPU memory smoke tests and then fixed within a task; global batch and
+scheduler step count must match across the three updating methods.
 
 ### 5.3 Paired repetition
 
@@ -239,3 +239,22 @@ material and never become extra feedback-method groups.
 Launch, smoke, watch, resume and summarize commands will be added under the new
 experiment's `commands/` directory when implementation begins. No formal
 training command should exist before its config and smoke test are executable.
+
+## 10. 2026-08-31 execution lock
+
+The user authorized implementation and training and required all formal
+budgets to be unified at 50 epochs. The locked interpretation is:
+
+```text
+50 head-only epochs -> NoFT/common_start
+common_start -> 50 BP-current adaptation epochs
+common_start -> 50 FA-pretrained adaptation epochs
+common_start -> 50 FA-random adaptation epochs
+```
+
+Five safe idle GPUs should be consumed through a dependency-aware queue rather
+than by placing several methods in one process. GPU ownership and compute
+processes must be rechecked at launch time; a GPU that becomes occupied by
+another user is not treated as available merely because its instantaneous
+utilization is low. Every run owns one GPU, run directory, log and PID, and a
+released slot immediately takes the next dependency-ready task.
