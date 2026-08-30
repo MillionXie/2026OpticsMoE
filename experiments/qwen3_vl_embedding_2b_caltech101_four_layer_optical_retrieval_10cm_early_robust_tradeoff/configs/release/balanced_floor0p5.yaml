@@ -1,0 +1,30 @@
+base_config: common_early.yaml
+
+hybrid:
+  minimum_optical_fusion: 0.005
+  initial_fusion: 0.010
+
+continuation:
+  variant: balanced_floor0p5_leak2to8
+
+training:
+  phase_learning_rate: 0.04
+  phase_dc: {enabled: true, weight: 0.02, start_epoch: 1}
+
+language_optical:
+  perturbation:
+    ccd_noise:
+      distribution: truncated_biased_gaussian
+      mean_fraction: 0.04
+      std_fraction: 0.035
+      min_fraction: -0.03
+      max_fraction: 0.12
+    zero_order:
+      enabled: true
+      amplitude_intensity_fraction_min: 0.02
+      amplitude_intensity_fraction_max: 0.08
+      phase_intensity_fraction_min: 0.02
+      phase_intensity_fraction_max: 0.08
+      random_relative_phase: true
+
+output_dir: ../../runs/balanced_floor0p5_leak2to8

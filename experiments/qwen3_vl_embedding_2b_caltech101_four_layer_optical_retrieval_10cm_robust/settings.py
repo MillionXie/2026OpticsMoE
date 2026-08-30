@@ -148,6 +148,39 @@ def load_settings(path: str | Path) -> Any:
     settings.language_optical_ccd_noise_max_fraction = float(
         d("language_optical.perturbation.ccd_noise.max_fraction", 0.20)
     )
+    settings.language_optical_zero_order_enabled = bool(
+        d("language_optical.perturbation.zero_order.enabled", False)
+    )
+    settings.language_optical_amplitude_zero_order_intensity_min = float(
+        d(
+            "language_optical.perturbation.zero_order.amplitude_intensity_fraction_min",
+            0.0,
+        )
+    )
+    settings.language_optical_amplitude_zero_order_intensity_max = float(
+        d(
+            "language_optical.perturbation.zero_order.amplitude_intensity_fraction_max",
+            0.0,
+        )
+    )
+    settings.language_optical_phase_zero_order_intensity_min = float(
+        d(
+            "language_optical.perturbation.zero_order.phase_intensity_fraction_min",
+            0.0,
+        )
+    )
+    settings.language_optical_phase_zero_order_intensity_max = float(
+        d(
+            "language_optical.perturbation.zero_order.phase_intensity_fraction_max",
+            0.0,
+        )
+    )
+    settings.language_optical_zero_order_random_relative_phase = bool(
+        d(
+            "language_optical.perturbation.zero_order.random_relative_phase",
+            True,
+        )
+    )
     settings.hardware_phase_flip_vertical = bool(
         d("hardware.phase_mask.flip_vertical", True)
     )
@@ -284,6 +317,35 @@ def load_settings(path: str | Path) -> Any:
         <= settings.language_optical_ccd_noise_max_fraction
     ):
         raise ValueError("CCD truncated-Gaussian mean_fraction must lie inside its bounds")
+    for name, minimum, maximum in (
+        (
+            "amplitude",
+            settings.language_optical_amplitude_zero_order_intensity_min,
+            settings.language_optical_amplitude_zero_order_intensity_max,
+        ),
+        (
+            "phase",
+            settings.language_optical_phase_zero_order_intensity_min,
+            settings.language_optical_phase_zero_order_intensity_max,
+        ),
+    ):
+        if not 0.0 <= minimum <= maximum < 1.0:
+            raise ValueError(
+                f"{name} zero-order intensity fractions must satisfy "
+                "0 <= min <= max < 1"
+            )
+    if not settings.language_optical_zero_order_enabled and any(
+        value != 0.0
+        for value in (
+            settings.language_optical_amplitude_zero_order_intensity_min,
+            settings.language_optical_amplitude_zero_order_intensity_max,
+            settings.language_optical_phase_zero_order_intensity_min,
+            settings.language_optical_phase_zero_order_intensity_max,
+        )
+    ):
+        raise ValueError(
+            "zero_order.enabled=false requires all zero-order fractions to be zero"
+        )
     if (
         settings.language_optical_max_shift_pixels < 0
         or settings.language_optical_phase_shift_pixels < 0
@@ -438,6 +500,29 @@ def save_resolved_config(settings: Any) -> None:
                 "max_fraction": settings.language_optical_ccd_noise_max_fraction,
                 "reference": "per_frame_clean_mean_intensity",
                 "application": "training_only_before_shared_ccd_normalization",
+            },
+            "zero_order": {
+                "enabled": settings.language_optical_zero_order_enabled,
+                "amplitude_intensity_fraction_min": (
+                    settings.language_optical_amplitude_zero_order_intensity_min
+                ),
+                "amplitude_intensity_fraction_max": (
+                    settings.language_optical_amplitude_zero_order_intensity_max
+                ),
+                "phase_intensity_fraction_min": (
+                    settings.language_optical_phase_zero_order_intensity_min
+                ),
+                "phase_intensity_fraction_max": (
+                    settings.language_optical_phase_zero_order_intensity_max
+                ),
+                "random_relative_phase": (
+                    settings.language_optical_zero_order_random_relative_phase
+                ),
+                "semantics": (
+                    "coherent unmodulated field; configured fractions are "
+                    "intensity fractions and are square-rooted before field mixing"
+                ),
+                "application": "training_only_before_10cm_propagation",
             },
         },
         "normalization": {

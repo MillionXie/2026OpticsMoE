@@ -1,0 +1,19 @@
+base_config: common_early.yaml
+
+hybrid:
+  minimum_optical_fusion: 0.001
+  initial_fusion: 0.006
+
+continuation:
+  variant: accuracy_first_floor0p1_leak0to5
+
+language_optical:
+  perturbation:
+    ccd_noise:
+      distribution: truncated_biased_gaussian
+      mean_fraction: 0.02
+      std_fraction: 0.02
+      min_fraction: -0.02
+      max_fraction: 0.06
+
+output_dir: ../../runs/accuracy_first_floor0p1_leak0to5

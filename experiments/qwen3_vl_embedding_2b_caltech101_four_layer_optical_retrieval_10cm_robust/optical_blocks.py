@@ -187,6 +187,24 @@ class MoE4LanguageTwoBlockOpticalPath(nn.Module):
         self.ccd_noise_max_fraction = float(
             settings.language_optical_ccd_noise_max_fraction
         )
+        self.zero_order_enabled = bool(
+            settings.language_optical_zero_order_enabled
+        )
+        self.amplitude_zero_order_intensity_min = float(
+            settings.language_optical_amplitude_zero_order_intensity_min
+        )
+        self.amplitude_zero_order_intensity_max = float(
+            settings.language_optical_amplitude_zero_order_intensity_max
+        )
+        self.phase_zero_order_intensity_min = float(
+            settings.language_optical_phase_zero_order_intensity_min
+        )
+        self.phase_zero_order_intensity_max = float(
+            settings.language_optical_phase_zero_order_intensity_max
+        )
+        self.zero_order_random_relative_phase = bool(
+            settings.language_optical_zero_order_random_relative_phase
+        )
         self.ccd_normalizer = RobustCCDNormalizer(settings)
         # The two optical blocks use the same readout architecture but own
         # independent weights.  Hardware fine-tuning Block 2 must not silently
@@ -275,8 +293,14 @@ class MoE4LanguageTwoBlockOpticalPath(nn.Module):
         field: torch.Tensor,
         modulation: torch.Tensor,
         shifts: dict[str, tuple[int, int]],
+        *,
+        phase_support: str | None = None,
     ) -> torch.Tensor:
         """Shift the phase map, propagate, then shift the full CCD before ROI crop."""
+
+        field, modulation = self._apply_coherent_zero_order(
+            field, modulation, phase_support=phase_support
+        )
 
         phase_y, phase_x = shifts["phase"]
         shifted_modulation = _translate_with_fill(
@@ -300,6 +324,82 @@ class MoE4LanguageTwoBlockOpticalPath(nn.Module):
             x0=active.x0,
             x1=active.x1,
         )
+
+    def _sample_zero_order_fraction(
+        self,
+        value: torch.Tensor,
+        minimum: float,
+        maximum: float,
+    ) -> torch.Tensor:
+        shape = (value.shape[0], 1, 1)
+        if maximum == minimum:
+            return value.real.new_full(shape, minimum)
+        return value.real.new_empty(shape).uniform_(minimum, maximum)
+
+    def _sample_zero_order_phasor(self, value: torch.Tensor) -> torch.Tensor:
+        shape = (value.shape[0], 1, 1)
+        if not self.zero_order_random_relative_phase:
+            return value.new_ones(shape)
+        angle = value.real.new_empty(shape).uniform_(-torch.pi, torch.pi)
+        return torch.exp(1j * angle).to(value.dtype)
+
+    def _phase_support_mask(
+        self, value: torch.Tensor, phase_support: str | None
+    ) -> torch.Tensor:
+        mask = torch.zeros_like(value.real, dtype=torch.bool)
+        if phase_support == "expert":
+            for aperture in self.core.geometry.expert_apertures:
+                mask[
+                    :,
+                    aperture.y0 : aperture.y1,
+                    aperture.x0 : aperture.x1,
+                ] = True
+            return mask
+        if phase_support == "global":
+            active = self.core.geometry.active_aperture
+            mask[:, active.y0 : active.y1, active.x0 : active.x1] = True
+            return mask
+        if phase_support is None:
+            return torch.ones_like(mask)
+        raise ValueError(f"Unknown phase support {phase_support!r}")
+
+    def _apply_coherent_zero_order(
+        self,
+        field: torch.Tensor,
+        modulation: torch.Tensor,
+        *,
+        phase_support: str | None,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Mix coherent unmodulated fields using intensity-fraction semantics."""
+
+        if not self.training or not self.zero_order_enabled:
+            return field, modulation
+        amplitude_eta = self._sample_zero_order_fraction(
+            field,
+            self.amplitude_zero_order_intensity_min,
+            self.amplitude_zero_order_intensity_max,
+        )
+        phase_eta = self._sample_zero_order_fraction(
+            modulation,
+            self.phase_zero_order_intensity_min,
+            self.phase_zero_order_intensity_max,
+        )
+        active = self.core.geometry.active_aperture
+        incident = torch.zeros_like(field)
+        incident[
+            :, active.y0 : active.y1, active.x0 : active.x1
+        ] = self.input_rms * self._sample_zero_order_phasor(field)
+        mixed_field = (
+            torch.sqrt(1.0 - amplitude_eta) * field
+            + torch.sqrt(amplitude_eta) * incident
+        )
+        phase_leakage = self._sample_zero_order_phasor(modulation)
+        mixed_modulation = (
+            torch.sqrt(1.0 - phase_eta) * modulation
+            + torch.sqrt(phase_eta) * phase_leakage
+        )
+        support = self._phase_support_mask(modulation, phase_support)
+        return mixed_field, torch.where(support, mixed_modulation, modulation)
 
     def _perturb_ccd(self, intensity: torch.Tensor) -> torch.Tensor:
         if not self.training:
@@ -393,6 +493,7 @@ class MoE4LanguageTwoBlockOpticalPath(nn.Module):
                 field,
                 self._expert_phase_modulation(field),
                 shifts,
+                phase_support="expert",
             )
         else:
             raw_ccd = self.measured_expert_ccd.to(field.device).float()
@@ -445,6 +546,7 @@ class MoE4LanguageTwoBlockOpticalPath(nn.Module):
                 field,
                 self._global_phase_modulation(field),
                 shifts,
+                phase_support="global",
             )
         else:
             raw_ccd = self.measured_global_ccd.to(field.device).float()

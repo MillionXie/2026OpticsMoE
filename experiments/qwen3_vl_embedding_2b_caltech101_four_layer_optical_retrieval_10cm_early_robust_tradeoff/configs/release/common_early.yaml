@@ -1,0 +1,44 @@
+base_config: ../../../qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/configs/release/common.yaml
+
+continuation:
+  checkpoint: ../../../qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/runs/caltech101_warmstart5_stage1_optical_calibration/ema_best_train_loss_checkpoint.pt
+  sha256: 02d8d0f24f005604fcbe7f77b6240c70573ca9bd496b1f6c3f645d5cc1ac0edd
+  variant: override_in_variant
+
+training:
+  # Stage-A ends at epoch 4. These are 32 additional epochs (5..36), with
+  # displacement, brightness, CCD and coherent-zero-order noise active from 5.
+  epochs: 32
+  learning_rate: 0.00002
+  adapter_learning_rate: 0.00001
+  readout_learning_rate: 0.00001
+  phase_learning_rate: 0.03
+  router_learning_rate: 0.0001
+  gradient_clip_norm: 1.0
+  phase_dc: {enabled: true, weight: 0.015, start_epoch: 1}
+  phase_focus: {enabled: true, warmup_epochs: 0, interval_epochs: 2}
+  evaluate_test_each_epoch: false
+  resume_optimizer_state: false
+
+batching:
+  batch_size: 30
+  pk_skus_per_batch: 10
+  pk_images_per_sku: 3
+  optimizer_steps_per_epoch: 12
+
+language_optical:
+  perturbation:
+    max_shift_pixels: 16
+    phase_shift_pixels: 16
+    ccd_shift_pixels: 16
+    gain_min: 0.4
+    gain_max: 2.5
+    zero_order:
+      enabled: true
+      amplitude_intensity_fraction_min: 0.0
+      amplitude_intensity_fraction_max: 0.05
+      phase_intensity_fraction_min: 0.0
+      phase_intensity_fraction_max: 0.05
+      random_relative_phase: true
+
+output_dir: ../../runs/override_in_variant

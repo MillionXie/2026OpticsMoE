@@ -52,6 +52,9 @@ def test_release_contract_is_explicitly_10cm_and_robust() -> None:
     assert settings.language_optical_max_shift_pixels == 16
     assert settings.language_optical_phase_shift_pixels == 16
     assert settings.language_optical_ccd_shift_pixels == 16
+    assert settings.language_optical_zero_order_enabled is False
+    assert settings.language_optical_amplitude_zero_order_intensity_max == 0.0
+    assert settings.language_optical_phase_zero_order_intensity_max == 0.0
     assert settings.batch_size == 30
     assert settings.pk_skus_per_batch == 10
     assert settings.pk_images_per_sku == 3
@@ -229,3 +232,57 @@ def test_ccd_translation_occurs_on_full_canvas_before_active_crop() -> None:
     )
     assert tuple(cropped.shape) == (1, 3, 3)
     assert cropped[0, 0, 1] == 7.0
+
+
+def test_coherent_zero_order_uses_intensity_fraction_and_phase_support() -> None:
+    path = object.__new__(MoE4LanguageTwoBlockOpticalPath)
+    torch.nn.Module.__init__(path)
+    path.zero_order_enabled = True
+    path.amplitude_zero_order_intensity_min = 0.04
+    path.amplitude_zero_order_intensity_max = 0.04
+    path.phase_zero_order_intensity_min = 0.09
+    path.phase_zero_order_intensity_max = 0.09
+    path.zero_order_random_relative_phase = False
+    path.input_rms = 0.5
+    path.core = SimpleNamespace(
+        geometry=SimpleNamespace(
+            active_aperture=SimpleNamespace(y0=1, y1=3, x0=1, x1=3),
+            expert_apertures=[SimpleNamespace(y0=1, y1=2, x0=1, x1=2)],
+        )
+    )
+    path.train()
+    field = torch.zeros(1, 4, 4, dtype=torch.complex64)
+    modulation = torch.ones_like(field)
+    modulation[:, 1, 1] = -1.0 + 0.0j
+
+    mixed_field, mixed_modulation = path._apply_coherent_zero_order(
+        field, modulation, phase_support="expert"
+    )
+
+    # Four percent intensity leakage is 0.2 in field amplitude; multiplied by
+    # the calibrated 0.5 incident RMS it produces 0.1 in the active aperture.
+    torch.testing.assert_close(
+        mixed_field[:, 1:3, 1:3].real,
+        torch.full((1, 2, 2), 0.1),
+    )
+    assert torch.count_nonzero(mixed_field[:, 0, :]) == 0
+    expected_phase = -(0.91**0.5) + 0.3
+    torch.testing.assert_close(
+        mixed_modulation[:, 1, 1].real,
+        torch.tensor([expected_phase]),
+    )
+    assert mixed_modulation[0, 2, 2] == 1.0 + 0.0j
+
+
+def test_coherent_zero_order_is_training_only() -> None:
+    path = object.__new__(MoE4LanguageTwoBlockOpticalPath)
+    torch.nn.Module.__init__(path)
+    path.zero_order_enabled = True
+    path.eval()
+    field = torch.randn(2, 3, 3, dtype=torch.complex64)
+    modulation = torch.exp(1j * torch.randn(2, 3, 3))
+    output_field, output_modulation = path._apply_coherent_zero_order(
+        field, modulation, phase_support=None
+    )
+    assert output_field is field
+    assert output_modulation is modulation
