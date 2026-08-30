@@ -1,6 +1,8 @@
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
+
 from experiments.lab_qwen.local_four_stage import (
     PROFILES,
     _configure_local_backbone,
@@ -30,6 +32,17 @@ def test_local_four_stage_prefers_complete_offline_snapshot(tmp_path: Path) -> N
     assert settings.model_id == str(model.resolve())
     assert settings.cache_dir is None
     assert settings.local_files_only is True
+
+
+def test_local_four_stage_never_falls_back_to_huggingface(tmp_path: Path) -> None:
+    settings = SimpleNamespace(
+        model_id="Qwen/Qwen3-VL-Embedding-2B",
+        cache_dir=None,
+        local_files_only=False,
+    )
+
+    with pytest.raises(FileNotFoundError, match="network fallback is forbidden"):
+        _configure_local_backbone(settings, tmp_path, None)
 
 
 def test_tradeoff_profiles_never_share_session_paths(

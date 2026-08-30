@@ -103,6 +103,10 @@ def _paths(root: Path, stage: str, profile: str) -> tuple[Path, Path, Path]:
 def _configure_local_backbone(
     settings: object, root: Path, model_dir: str | Path | None
 ) -> dict[str, object]:
+    # The laboratory workflow is deliberately offline.  Set these before any
+    # validation so a missing bundle can never silently fall back to the Hub.
+    os.environ["HF_HUB_OFFLINE"] = "1"
+    os.environ["TRANSFORMERS_OFFLINE"] = "1"
     candidate = (
         Path(model_dir).expanduser()
         if model_dir is not None
@@ -113,22 +117,14 @@ def _configure_local_backbone(
     candidate = candidate.resolve()
     missing = [name for name in OFFLINE_MODEL_REQUIRED_FILES if not (candidate / name).is_file()]
     if missing:
-        if model_dir is not None:
-            raise FileNotFoundError(
-                f"Offline Qwen model directory is incomplete: {candidate}; missing={missing}"
-            )
-        return {
-            "mode": "configured_model_id",
-            "model_id": str(settings.model_id),
-            "local_files_only": bool(settings.local_files_only),
-            "offline_candidate": str(candidate),
-            "offline_candidate_present": False,
-        }
+        raise FileNotFoundError(
+            "Offline Qwen model directory is incomplete and network fallback "
+            f"is forbidden: {candidate}; missing={missing}. Copy the complete "
+            "Qwen3-VL-Embedding-2B snapshot into models/Qwen3-VL-Embedding-2B."
+        )
     settings.model_id = str(candidate)
     settings.cache_dir = None
     settings.local_files_only = True
-    os.environ["HF_HUB_OFFLINE"] = "1"
-    os.environ["TRANSFORMERS_OFFLINE"] = "1"
     return {
         "mode": "bundled_local_snapshot",
         "model_id": str(candidate),
@@ -271,7 +267,7 @@ def main() -> int:
     parser.add_argument(
         "--profile",
         choices=sorted(PROFILES),
-        default="strong_noise",
+        default="accuracy_first_full",
         help=(
             "Must match both the initial checkpoint and capture population. "
             "Use accuracy_first_full for the full-data physical experiment; "
