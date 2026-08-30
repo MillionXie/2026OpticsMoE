@@ -128,7 +128,7 @@ FA-random 四组。
 
 | Task | Seed | NoFT 50e/common | BP 50e | FA-pretrained 50e | FA-random 50e | 备注 |
 |---|---:|---|---|---|---|---|
-| Caltech-101 | 2026 | — | — | — | — | 未在本记录中写入正式结果 |
+| Caltech-101 | 2026 | complete (50/50; test Top-1 0.78644) | — | — | — | NoFT common SHA `27aed054...c9ec` |
 | Caltech-101 | 2027 | — | — | — | — | 未在本记录中写入正式结果 |
 | Caltech-101 | 2028 | — | — | — | — | 未在本记录中写入正式结果 |
 | ISIC 2016 | 2026 | — | — | — | — | 未在本记录中写入正式结果 |
@@ -284,3 +284,27 @@ bash /DATA/DATA1/guest3/2026OpticsMoE_p12_e305e0b/experiments/qwen3_vl_patch_ste
 上述数字都是启动健康检查的中间值，不是密封 test 结果。只有
 `result.json(status=complete)`、50 行完整 history、可加载 best/last checkpoint
 及全部身份哈希一致后，才会在本日志将单个 run 标记为 complete。
+
+### 2026-08-31 01:12 +08:00 — Caltech-101/NoFT/seed_2026
+
+- 状态：`complete`；head-only 预算完成 `50/50`，`history.json` 为 50 个完整
+  epoch；无 resume/OOM/NaN，`result.status=complete`。
+- 身份：训练 commit `e305e0b0b20f37757d44136c158efa92cec7f4cc`；
+  config digest
+  `df55bfc102d76c2bbf8c24b7ff6284e4c58e310d0282f2b58e31084b7d1b584b`；
+  implementation SHA 与上述启动记录一致。
+- 运行：物理 GPU 3 / `GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd`；worker
+  PID `929723`；batch 96；峰值 CUDA 显存 `2.024 GiB`。
+- 验证选择：epoch 38，Top-1 `0.770297`。
+- sealed test normal：Top-1 `0.786435`，balanced accuracy `0.746909`；
+  validation-gallery/test-query retrieval mAP `0.564418`，Recall@1 `0.658403`。
+- 破坏性消融 Top-1：optical-off `0.194440`，phase-random `0.024084`，
+  electronic-skip-off `0.006552`。这说明当前 NoFT 结果并非只靠临时电子头绕过
+  光学骨干；不说明后续 BP/FA 排序。
+- common-start SHA-256：
+  `27aed054d3c6aea85b437f557a7be4d99c08712be10e9d0bf1bd22957072c9ec`；
+  frozen stem state SHA-256：
+  `ce6d35e62e5a497b8416e3876000f254acc427d1bfe46652411b9b42946c81279`。
+- checkpoint 健康：`best.pt` 可加载且 epoch=38，`last.pt` 可加载且
+  epoch=50；两者 task/method 身份均为 `caltech101/noft`。NoFT 冻结骨干，
+  因此 phase 相对源模型的数值级变化约为浮点往返误差，不解释为相位学习。
