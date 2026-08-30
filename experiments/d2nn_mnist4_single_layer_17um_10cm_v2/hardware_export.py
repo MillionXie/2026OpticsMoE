@@ -245,6 +245,35 @@ def _write_lab_model_config(output_dir: Path, settings: V2Settings) -> None:
             "input_shift_max_px": settings.input_shift_max_px,
             "phase_shift_max_px": settings.phase_shift_max_px,
             "pre_ccd_shift_max_px": settings.pre_ccd_shift_max_px,
+            "phase_dropout": {
+                "p": settings.phase_dropout_p,
+                "block_size": settings.phase_dropout_block_size,
+            },
+            "zero_order": {
+                "enabled": settings.zero_order_enabled,
+                "amplitude_intensity_fraction_min": (
+                    settings.amplitude_zero_order_intensity_min
+                ),
+                "amplitude_intensity_fraction_max": (
+                    settings.amplitude_zero_order_intensity_max
+                ),
+                "phase_intensity_fraction_min": (
+                    settings.phase_zero_order_intensity_min
+                ),
+                "phase_intensity_fraction_max": (
+                    settings.phase_zero_order_intensity_max
+                ),
+                "random_relative_phase": settings.zero_order_random_relative_phase,
+            },
+            "detector_gain_min": settings.detector_gain_min,
+            "detector_gain_max": settings.detector_gain_max,
+            "ccd_noise": {
+                "distribution": settings.ccd_noise_distribution,
+                "mean_fraction": settings.ccd_noise_mean_fraction,
+                "std_fraction": settings.ccd_noise_std_fraction,
+                "min_fraction": settings.ccd_noise_min_fraction,
+                "max_fraction": settings.ccd_noise_max_fraction,
+            },
         },
         "loss": {
             "mode": settings.loss_mode,

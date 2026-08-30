@@ -36,6 +36,25 @@ class V2Settings(BaseSettings):
     phase_shift_max_px: int
     pre_ccd_shift_max_px: int
 
+    phase_dropout_p: float
+    phase_dropout_block_size: int
+    zero_order_enabled: bool
+    amplitude_zero_order_intensity_min: float
+    amplitude_zero_order_intensity_max: float
+    phase_zero_order_intensity_min: float
+    phase_zero_order_intensity_max: float
+    zero_order_random_relative_phase: bool
+    detector_gain_min: float
+    detector_gain_max: float
+    ccd_noise_distribution: str
+    ccd_noise_mean_fraction: float
+    ccd_noise_std_fraction: float
+    ccd_noise_min_fraction: float
+    ccd_noise_max_fraction: float
+    robust_validation_trials: int
+    require_robust_update_for_selection: bool
+    continuation_checkpoint: Path | None
+
     loss_mode: str
     notebook_full_plane_mse_scale: float
     target_region_mse_weight: float
@@ -162,6 +181,37 @@ class V2Settings(BaseSettings):
             self.pre_ccd_shift_max_px,
         ) == 0:
             raise ValueError("Enabled robustness requires at least one nonzero shift")
+        if not 0.0 <= self.phase_dropout_p < 1.0:
+            raise ValueError("robustness.phase_dropout.p must lie in [0,1)")
+        if self.phase_dropout_block_size <= 0:
+            raise ValueError("robustness.phase_dropout.block_size must be positive")
+        for name, minimum, maximum in (
+            (
+                "amplitude zero-order",
+                self.amplitude_zero_order_intensity_min,
+                self.amplitude_zero_order_intensity_max,
+            ),
+            (
+                "phase zero-order",
+                self.phase_zero_order_intensity_min,
+                self.phase_zero_order_intensity_max,
+            ),
+        ):
+            if not 0.0 <= minimum <= maximum < 1.0:
+                raise ValueError(f"{name} intensity fractions must satisfy 0<=min<=max<1")
+        if not 0.0 < self.detector_gain_min <= self.detector_gain_max:
+            raise ValueError("detector gain range must be positive and ordered")
+        if self.ccd_noise_distribution not in {"none", "truncated_biased_gaussian"}:
+            raise ValueError(
+                "robustness.ccd_noise.distribution must be none or "
+                "truncated_biased_gaussian"
+            )
+        if self.ccd_noise_std_fraction < 0.0:
+            raise ValueError("CCD noise standard deviation must be nonnegative")
+        if self.ccd_noise_min_fraction > self.ccd_noise_max_fraction:
+            raise ValueError("CCD noise truncation bounds are reversed")
+        if self.robust_validation_trials <= 0:
+            raise ValueError("training.robust_validation_trials must be positive")
         if self.loss_mode not in {
             "notebook_full_plane_mse",
             "legacy_balanced_region_mse",
@@ -188,6 +238,11 @@ class V2Settings(BaseSettings):
         result["detector_bounds_xyxy"] = [
             list(value) for value in self.detector_bounds()
         ]
+        result["continuation_checkpoint"] = (
+            None
+            if self.continuation_checkpoint is None
+            else str(self.continuation_checkpoint)
+        )
         return result
 
 
@@ -201,6 +256,12 @@ def load_settings(path: str | Path) -> V2Settings:
         (int(value[0]), int(value[1]))
         for value in d("detector.reference_intervals", [[75, 125], [275, 325]])
     )
+    checkpoint_value = d("continuation.checkpoint", None)
+    continuation_checkpoint = None
+    if checkpoint_value is not None:
+        continuation_checkpoint = Path(str(checkpoint_value)).expanduser()
+        if not continuation_checkpoint.is_absolute():
+            continuation_checkpoint = (config_path.parent / continuation_checkpoint).resolve()
     settings = V2Settings(
         **base_values,
         input_content_size=int(d("optics.input_content_size", 336)),
@@ -223,6 +284,48 @@ def load_settings(path: str | Path) -> V2Settings:
         input_shift_max_px=int(d("robustness.input_shift_max_px", 2)),
         phase_shift_max_px=int(d("robustness.phase_shift_max_px", 2)),
         pre_ccd_shift_max_px=int(d("robustness.pre_ccd_shift_max_px", 2)),
+        phase_dropout_p=float(d("robustness.phase_dropout.p", 0.0)),
+        phase_dropout_block_size=int(
+            d("robustness.phase_dropout.block_size", 8)
+        ),
+        zero_order_enabled=bool(d("robustness.zero_order.enabled", False)),
+        amplitude_zero_order_intensity_min=float(
+            d("robustness.zero_order.amplitude_intensity_fraction_min", 0.0)
+        ),
+        amplitude_zero_order_intensity_max=float(
+            d("robustness.zero_order.amplitude_intensity_fraction_max", 0.0)
+        ),
+        phase_zero_order_intensity_min=float(
+            d("robustness.zero_order.phase_intensity_fraction_min", 0.0)
+        ),
+        phase_zero_order_intensity_max=float(
+            d("robustness.zero_order.phase_intensity_fraction_max", 0.0)
+        ),
+        zero_order_random_relative_phase=bool(
+            d("robustness.zero_order.random_relative_phase", True)
+        ),
+        detector_gain_min=float(d("robustness.detector_gain_min", 1.0)),
+        detector_gain_max=float(d("robustness.detector_gain_max", 1.0)),
+        ccd_noise_distribution=str(
+            d("robustness.ccd_noise.distribution", "none")
+        ),
+        ccd_noise_mean_fraction=float(
+            d("robustness.ccd_noise.mean_fraction", 0.0)
+        ),
+        ccd_noise_std_fraction=float(
+            d("robustness.ccd_noise.std_fraction", 0.0)
+        ),
+        ccd_noise_min_fraction=float(
+            d("robustness.ccd_noise.min_fraction", 0.0)
+        ),
+        ccd_noise_max_fraction=float(
+            d("robustness.ccd_noise.max_fraction", 0.0)
+        ),
+        robust_validation_trials=int(d("training.robust_validation_trials", 3)),
+        require_robust_update_for_selection=bool(
+            d("training.require_robust_update_for_selection", False)
+        ),
+        continuation_checkpoint=continuation_checkpoint,
         loss_mode=str(d("loss.mode", "legacy_balanced_region_mse")),
         notebook_full_plane_mse_scale=float(
             d("loss.notebook_full_plane_mse_scale", 100.0)

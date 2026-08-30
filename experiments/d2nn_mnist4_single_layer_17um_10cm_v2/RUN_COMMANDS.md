@@ -70,3 +70,38 @@ formal400 默认对近黑、严重饱和或四 ROI 几乎无差异的帧执行�
 
 详细合同、配置注意事项、图表输出和安全说明见 `README_FIRST.md`（仓库中为
 `LAB_BUNDLE.md`）。
+# Robust CCD/zero-order continuation (recommended sim-to-real mask)
+
+This continuation starts from the audited angle-ROI mask and trains only the
+478x478 phase tensor.  It adds training-only independent ±2-pixel input/phase/
+pre-CCD shifts, 5% block phase bypass, coherent 0--5% amplitude/phase zero-order
+intensity, 0.8--1.2 detector gain and truncated biased CCD noise
+N(+1%,1%) in [-1%,+3%].  Evaluation and hardware CCD remain untouched raw
+linear intensity; classification remains four raw ROI sums followed by argmax.
+The checkpoint is selected by three fixed-seed stochastic validation trials;
+clean validation breaks ties and the sealed test split is evaluated only after
+selection.  The robust candidate is forced to come from an epoch after the
+perturbation sampler has been enabled; the continuation checkpoint remains an
+explicit baseline rather than being relabelled as a newly trained robust mask.
+
+```bash
+CUDA_VISIBLE_DEVICES=3 python -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2 \
+  --config experiments/d2nn_mnist4_single_layer_17um_10cm_v2/configs/release/mnist4_single_layer_17um_10cm_v2_angle_roi_ccd_robust.yaml \
+  --phase all
+```
+
+The exported `formal400` amplitudes, selected phase BMP, theoretical grayscale/
+binary CCDs and later measured comparison must come from this same run.  Do not
+mix an older phase candidate with the new simulation references.
+
+Export the exact clean CCD feature produced by the actual 8-bit amplitude and
+phase BMPs (both `demo_topk` and the unbiased formal profile):
+
+```bash
+CUDA_VISIBLE_DEVICES=3 python -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2.ccd_feature_export \
+  --export-dir experiments/d2nn_mnist4_single_layer_17um_10cm_v2/runs/mnist4_single_layer_17um_10cm_v2_angle_roi_ccd_robust_rv3/hardware_export_10cm_v2_angle_roi_ccd_robust_rv3 \
+  --device cuda --batch-size 16
+```
+
+Use `raw_linear_fp32/*.npz` for numerical sim-to-real comparison.  The
+grayscale, viridis, binary, ROI overlays and contact sheet are display-only.

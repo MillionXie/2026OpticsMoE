@@ -467,33 +467,85 @@ formal400\simulation_agreement\simulation_binary_8bit
 理论信号区外能量比例、饱和率、仿真/实测预测一致率。相似度中的形状归一化只用于分析，
 不会进入 MNIST 分类。
 
+### 5.3 新鲁棒 mask：与原 mask 同输入配对比较
+
+`ccd_robust_rv3` 从原 `post_robust_best` 热启动，只训练 478×478 相位。训练期联合使用
+±2 像素输入/phase/CCD 位移、5% block phase dropout、0–5% 两级 0 级泄漏、
+0.8–1.2 增益和截断偏置高斯噪声 `N(+1%,1%) clipped to [-1%,3%]`。模型仍没有
+任何 CCD 后归一化、非线性或背景扣除，仍按四个原始 59×59 ROI 能量 argmax。
+
+先用同一 quick40 查看 baseline 与 robust mask 的 CCD feature：
+
+```powershell
+python -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2.lab_session `
+  --profile quick40 --mask ccd_robust_rv3 `
+  --output-dir experiments\lab_qwen\mnist4_sessions\ccd_robust_rv3\quick40
+
+python -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2.simulation_agreement `
+  --stage-dir experiments\lab_qwen\mnist4_sessions\ccd_robust_rv3\quick40 `
+  --bundle-root experiments\lab_qwen\mnist4 `
+  --export-simulation-only --device cuda
+```
+
+查看：
+
+```text
+experiments\lab_qwen\mnist4_sessions\ccd_robust_rv3\quick40\simulation_reference_monochrome\simulation_grayscale_contact_sheet.png
+```
+
+确认相位 SLM 已加载新会话 `phase_to_play` 中唯一 BMP 后采集和比较：
+
+```powershell
+python -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2.lab_pipeline `
+  --phase all `
+  --stage-dir experiments\lab_qwen\mnist4_sessions\ccd_robust_rv3\quick40 `
+  --allow-quick40-diagnostic --clear-output
+```
+
+quick40 只做诊断。最终准确率必须重新创建 `formal400`，并与 baseline 使用完全相同的
+400 个 sample key；不能从 40 张图报告正式准确率。
+
 ## 6. Qwen 仿真—实测光场一致性
 
-完整包已经在每个 `amplitude_to_play` 中提供与 BMP 哈希绑定的
-`reconstruction_manifest.csv`；不要删除该文件，也不需要再次运行
-`reconstruct_slm`。
+当前正式会话固定为：
 
-相位 SLM 加载 `agree\04_language_global\phase_to_play` 中唯一 BMP：
+```text
+experiments\lab_qwen\qwen_theoretical_ccd_accuracy_first_full
+```
+
+四层各含 8 个确定性人工探针、每类 5 个固定 test 输入，以及少量重复帧。每个输入
+同时保存：连续 phase/振幅的 `ideal_model_fp32`、实际 8-bit BMP 的
+`transport_quantized`、网络真正读取的 `network_input_224`，以及仅供观看的 PNG。
+正式比较必须读取 NPZ，不能从显示 PNG 反推数值。
+
+依次采集需要检查的阶段。以下以第四层为例；相位 SLM 先加载该目录
+`phase_to_play` 中唯一 BMP：
 
 ```powershell
 python -m experiments.hardware_sdk.workflows.acquire_folder `
   --config experiments\lab_qwen\generated\formal_hardware.yaml `
-  --stage-dir experiments\lab_qwen\agree\04_language_global `
+  --stage-dir experiments\lab_qwen\qwen_theoretical_ccd_accuracy_first_full\04_language_global `
   --validate-only
 
 python -m experiments.hardware_sdk.workflows.acquire_folder `
   --config experiments\lab_qwen\generated\formal_hardware.yaml `
-  --stage-dir experiments\lab_qwen\agree\04_language_global `
+  --stage-dir experiments\lab_qwen\qwen_theoretical_ccd_accuracy_first_full\04_language_global `
   --clear-output
 
-python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1.agreement_evaluate `
-  --session-dir experiments\lab_qwen\agree `
+python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_early_robust_tradeoff.agreement_evaluate `
+  --session-dir experiments\lab_qwen\qwen_theoretical_ccd_accuracy_first_full `
   --stages language_global
 
-python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1.agreement_report `
-  --evaluation-dir experiments\lab_qwen\agree\agreement_evaluation `
-  --output-dir experiments\lab_qwen\results\agreement
+python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_early_robust_tradeoff.agreement_report `
+  --evaluation-dir experiments\lab_qwen\qwen_theoretical_ccd_accuracy_first_full\agreement_evaluation `
+  --output-dir experiments\lab_qwen\results\agreement_accuracy_first_full
 ```
+
+仿真 feature 的联系图位于每层
+`ccd_feature_visualization\CONTACT_SHEET_*.png`。网络域正式流程为：非负截断 →
+单帧均值归一化 → 相对强度截断 → log1p → AdaptiveAvgPool 到 224×224；不扣背景，
+不做每帧 min-max。评估同时报告 linear 与 network-input 域的 PCC、SSIM、
+shape-NRMSE、能量比、质心误差和饱和率。
 
 ### 6.1 形状输入 × 形状相位 mask：独立仿真—光路一致性
 

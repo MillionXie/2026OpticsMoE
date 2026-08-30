@@ -54,6 +54,10 @@ def main(argv: list[str] | None = None) -> int:
     train_loader, validation_loader, test_loader = build_loaders(bundle, settings)
     device = _device(settings.device)
     model = RobustRawCCDMNIST4D2NN(settings).to(device)
+    initialization = "raw_phase_zero"
+    if args.phase in {"train", "all"} and settings.continuation_checkpoint is not None:
+        load_checkpoint(settings.continuation_checkpoint, model, device)
+        initialization = f"continuation:{settings.continuation_checkpoint}"
     write_json(
         settings.output_dir / "model.json",
         {
@@ -64,6 +68,7 @@ def main(argv: list[str] | None = None) -> int:
             "electronic_trainable_parameters": 0,
             "optical_trainable_parameters": model.raw_phase.numel(),
             "raw_phase_initialization": 0.0,
+            "effective_initialization": initialization,
             "initial_actual_phase_rad": float(torch.pi),
             "phase_parameterization": "2*pi*sigmoid(raw_phase)",
             "detector_bounds_xyxy": [
@@ -101,6 +106,30 @@ def main(argv: list[str] | None = None) -> int:
                 "input_shift_max_px": settings.input_shift_max_px,
                 "phase_shift_max_px": settings.phase_shift_max_px,
                 "pre_ccd_shift_max_px": settings.pre_ccd_shift_max_px,
+                "phase_dropout_p": settings.phase_dropout_p,
+                "phase_dropout_block_size": settings.phase_dropout_block_size,
+                "coherent_zero_order_enabled": settings.zero_order_enabled,
+                "amplitude_zero_order_intensity_fraction": [
+                    settings.amplitude_zero_order_intensity_min,
+                    settings.amplitude_zero_order_intensity_max,
+                ],
+                "phase_zero_order_intensity_fraction": [
+                    settings.phase_zero_order_intensity_min,
+                    settings.phase_zero_order_intensity_max,
+                ],
+                "detector_gain": [
+                    settings.detector_gain_min,
+                    settings.detector_gain_max,
+                ],
+                "ccd_noise": {
+                    "distribution": settings.ccd_noise_distribution,
+                    "mean_fraction": settings.ccd_noise_mean_fraction,
+                    "std_fraction": settings.ccd_noise_std_fraction,
+                    "bounds_fraction": [
+                        settings.ccd_noise_min_fraction,
+                        settings.ccd_noise_max_fraction,
+                    ],
+                },
             },
         },
     )

@@ -176,6 +176,72 @@ def evaluate(
     }
 
 
+@torch.no_grad()
+def evaluate_robust_validation(
+    model: RobustRawCCDMNIST4D2NN,
+    loader: torch.utils.data.DataLoader,
+    device: torch.device,
+    *,
+    trials: int,
+    seed: int,
+) -> dict[str, float | int]:
+    """Evaluate fixed-seed stochastic hardware perturbations on validation only.
+
+    The function deliberately does not call ``evaluate`` because that function
+    switches to eval mode and therefore disables the training-only optical
+    perturbation sampler.  There are no train-mode electronic layers in this
+    model; train mode here only activates the explicitly modelled hardware
+    disturbances.
+    """
+
+    if trials <= 0:
+        raise ValueError("Robust validation trials must be positive")
+    previous_training = model.training
+    previous_robustness = model.robustness_training_active
+    device_indexes: list[int] = []
+    if device.type == "cuda":
+        device_indexes = [
+            torch.cuda.current_device() if device.index is None else int(device.index)
+        ]
+    trial_accuracies: list[float] = []
+    trial_losses: list[float] = []
+    try:
+        with torch.random.fork_rng(devices=device_indexes):
+            for trial in range(int(trials)):
+                trial_seed = int(seed) + trial
+                torch.manual_seed(trial_seed)
+                if device.type == "cuda":
+                    torch.cuda.manual_seed_all(trial_seed)
+                model.train()
+                model.set_robustness_training_active(True)
+                correct = 0
+                samples = 0
+                loss_sum = 0.0
+                for images, targets in loader:
+                    images = images.to(device, non_blocking=True)
+                    targets = targets.to(device, non_blocking=True)
+                    output = model(images)
+                    loss, _, _, _, batch_correct, _, _ = _batch_metrics(
+                        model, output, targets
+                    )
+                    batch = len(targets)
+                    correct += batch_correct
+                    samples += batch
+                    loss_sum += float(loss) * batch
+                trial_accuracies.append(correct / samples)
+                trial_losses.append(loss_sum / samples)
+    finally:
+        model.set_robustness_training_active(previous_robustness)
+        model.train(previous_training)
+    return {
+        "accuracy_mean": float(np.mean(trial_accuracies)),
+        "accuracy_min": float(np.min(trial_accuracies)),
+        "accuracy_std": float(np.std(trial_accuracies)),
+        "loss_mean": float(np.mean(trial_losses)),
+        "trials": int(trials),
+    }
+
+
 def save_checkpoint(
     path: Path,
     model: RobustRawCCDMNIST4D2NN,
@@ -230,6 +296,7 @@ def train_model(
     )
     save_phase_preview(settings.output_dir / "phase_initial.png", model)
     rows: list[dict[str, Any]] = []
+    best_robust_accuracy = -1.0
     best_accuracy = -1.0
     best_loss = float("inf")
     best_epoch = 0
@@ -241,6 +308,23 @@ def train_model(
         model.set_robustness_training_active(robustness_active)
         train_metrics = train_epoch(model, train_loader, optimizer, settings, device)
         validation_metrics = evaluate(model, validation_loader, device)
+        robust_validation = (
+            evaluate_robust_validation(
+                model,
+                validation_loader,
+                device,
+                trials=settings.robust_validation_trials,
+                seed=settings.random_seed + 100_000,
+            )
+            if settings.robustness_enabled
+            else {
+                "accuracy_mean": validation_metrics["accuracy"],
+                "accuracy_min": validation_metrics["accuracy"],
+                "accuracy_std": 0.0,
+                "loss_mean": validation_metrics["loss"],
+                "trials": 1,
+            }
+        )
         phase_stats = model.phase_statistics()
         row = {
             "epoch": epoch,
@@ -252,6 +336,7 @@ def train_model(
                 for key, value in validation_metrics.items()
                 if key not in {"confusion_matrix", "samples"}
             },
+            **{f"robust_validation_{key}": value for key, value in robust_validation.items()},
             **phase_stats,
         }
         rows.append(row)
@@ -264,11 +349,24 @@ def train_model(
             row,
             settings,
         )
-        improved = validation_metrics["accuracy"] > best_accuracy or (
-            validation_metrics["accuracy"] == best_accuracy
-            and validation_metrics["loss"] < best_loss
+        robust_accuracy = float(robust_validation["accuracy_mean"])
+        improved = (
+            robust_accuracy > best_robust_accuracy
+            or (
+                robust_accuracy == best_robust_accuracy
+                and validation_metrics["accuracy"] > best_accuracy
+            )
+            or (
+                robust_accuracy == best_robust_accuracy
+                and validation_metrics["accuracy"] == best_accuracy
+                and validation_metrics["loss"] < best_loss
+            )
         )
-        if improved:
+        selection_eligible = bool(
+            not settings.require_robust_update_for_selection or robustness_active
+        )
+        if improved and selection_eligible:
+            best_robust_accuracy = robust_accuracy
             best_accuracy = float(validation_metrics["accuracy"])
             best_loss = float(validation_metrics["loss"])
             best_epoch = epoch
@@ -285,6 +383,8 @@ def train_model(
             f"epoch {epoch:03d} train_loss={train_metrics['loss']:.5f} "
             f"train_acc={train_metrics['accuracy']:.4f} "
             f"val_acc={validation_metrics['accuracy']:.4f} "
+            f"robust_val={robust_accuracy:.4f} "
+            f"selection_eligible={'yes' if selection_eligible else 'baseline-only'} "
             f"robustness={'on' if robustness_active else 'warmup'} "
             f"phase_std={phase_stats['phase_std_rad']:.4f}rad "
             f"grad={train_metrics['phase_grad_rms']:.3e}",
@@ -294,6 +394,11 @@ def train_model(
     load_checkpoint(settings.output_dir / "checkpoints" / "best.pt", model, device)
     summary = {
         "best_epoch": best_epoch,
+        "selection_metric": "fixed_seed_robust_validation_accuracy_mean",
+        "selection_requires_robust_update": (
+            settings.require_robust_update_for_selection
+        ),
+        "best_robust_validation_accuracy": best_robust_accuracy,
         "best_validation_accuracy": best_accuracy,
         "best_validation_loss": best_loss,
         "phase_statistics": model.phase_statistics(),

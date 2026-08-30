@@ -189,6 +189,122 @@ class RobustRawCCDMNIST4D2NN(nn.Module):
             ),
         }
 
+    def _robustness_active(self) -> bool:
+        return bool(
+            self.training
+            and self.settings.robustness_enabled
+            and self.robustness_training_active
+        )
+
+    @staticmethod
+    def _sample_fraction(
+        reference: torch.Tensor, minimum: float, maximum: float
+    ) -> torch.Tensor:
+        shape = (reference.shape[0], 1, 1)
+        if minimum == maximum:
+            return reference.real.new_full(shape, float(minimum))
+        return reference.real.new_empty(shape).uniform_(float(minimum), float(maximum))
+
+    def _sample_phasor(self, reference: torch.Tensor) -> torch.Tensor:
+        if not bool(getattr(self.settings, "zero_order_random_relative_phase", True)):
+            return reference.new_ones((reference.shape[0], 1, 1))
+        angle = reference.real.new_empty((reference.shape[0], 1, 1)).uniform_(
+            -torch.pi, torch.pi
+        )
+        return torch.exp(1j * angle).to(reference.dtype)
+
+    def _phase_dropout(self, modulation: torch.Tensor) -> torch.Tensor:
+        probability = float(getattr(self.settings, "phase_dropout_p", 0.0))
+        if not self._robustness_active() or probability <= 0.0:
+            return modulation
+        block = int(getattr(self.settings, "phase_dropout_block_size", 8))
+        height, width = modulation.shape[-2:]
+        coarse_h = int(math.ceil(height / block))
+        coarse_w = int(math.ceil(width / block))
+        bypass = torch.rand(
+            modulation.shape[0], 1, coarse_h, coarse_w,
+            device=modulation.device,
+        ) < probability
+        bypass = F.interpolate(
+            bypass.float(), size=(height, width), mode="nearest"
+        )[:, 0].bool()
+        return torch.where(bypass, torch.ones_like(modulation), modulation)
+
+    def _coherent_zero_order(
+        self, amplitude_field: torch.Tensor, phase_modulation: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        if not self._robustness_active() or not bool(
+            getattr(self.settings, "zero_order_enabled", False)
+        ):
+            return amplitude_field, phase_modulation
+        amplitude_eta = self._sample_fraction(
+            amplitude_field,
+            float(getattr(self.settings, "amplitude_zero_order_intensity_min", 0.0)),
+            float(getattr(self.settings, "amplitude_zero_order_intensity_max", 0.0)),
+        )
+        phase_eta = self._sample_fraction(
+            phase_modulation,
+            float(getattr(self.settings, "phase_zero_order_intensity_min", 0.0)),
+            float(getattr(self.settings, "phase_zero_order_intensity_max", 0.0)),
+        )
+        rms = amplitude_field.abs().square().mean(dim=(-2, -1), keepdim=True).sqrt()
+        incident = rms * self._sample_phasor(amplitude_field)
+        mixed_amplitude = (
+            torch.sqrt(1.0 - amplitude_eta) * amplitude_field
+            + torch.sqrt(amplitude_eta) * incident
+        )
+        leakage = self._sample_phasor(phase_modulation)
+        mixed_phase = (
+            torch.sqrt(1.0 - phase_eta) * phase_modulation
+            + torch.sqrt(phase_eta) * leakage
+        )
+        return mixed_amplitude, mixed_phase
+
+    @staticmethod
+    def _truncated_normal_like(
+        reference: torch.Tensor,
+        *,
+        mean: float,
+        std: float,
+        minimum: float,
+        maximum: float,
+    ) -> torch.Tensor:
+        if std <= 0.0:
+            return torch.full_like(reference, min(max(mean, minimum), maximum))
+        sqrt_two = math.sqrt(2.0)
+        low = 0.5 * (1.0 + math.erf((minimum - mean) / (std * sqrt_two)))
+        high = 0.5 * (1.0 + math.erf((maximum - mean) / (std * sqrt_two)))
+        if not high > low:
+            raise ValueError("Truncated Gaussian has no probability mass")
+        epsilon = torch.finfo(reference.dtype).eps
+        uniform = torch.empty_like(reference).uniform_(
+            max(low, epsilon), min(high, 1.0 - epsilon)
+        )
+        standard = sqrt_two * torch.erfinv(2.0 * uniform - 1.0)
+        return standard * float(std) + float(mean)
+
+    def _perturb_ccd(self, clean: torch.Tensor) -> torch.Tensor:
+        if not self._robustness_active():
+            return clean
+        gain = clean.new_empty((clean.shape[0], 1, 1)).uniform_(
+            float(getattr(self.settings, "detector_gain_min", 1.0)),
+            float(getattr(self.settings, "detector_gain_max", 1.0)),
+        )
+        value = gain * clean
+        if getattr(self.settings, "ccd_noise_distribution", "none") == (
+            "truncated_biased_gaussian"
+        ):
+            reference = clean.mean(dim=(-2, -1), keepdim=True).detach()
+            noise = self._truncated_normal_like(
+                clean,
+                mean=float(getattr(self.settings, "ccd_noise_mean_fraction", 0.0)),
+                std=float(getattr(self.settings, "ccd_noise_std_fraction", 0.0)),
+                minimum=float(getattr(self.settings, "ccd_noise_min_fraction", 0.0)),
+                maximum=float(getattr(self.settings, "ccd_noise_max_fraction", 0.0)),
+            )
+            value = value + noise * reference
+        return value.clamp_min(0.0)
+
     def forward(
         self,
         images: torch.Tensor,
@@ -203,9 +319,20 @@ class RobustRawCCDMNIST4D2NN(nn.Module):
         physical_phase = translate_zero_fill(
             self.phase(), dy=shifts["phase"][0], dx=shifts["phase"][1]
         )
-        modulated = active_amplitude.to(torch.complex64) * torch.exp(
-            1j * physical_phase
-        ).to(torch.complex64)
+        amplitude_field = active_amplitude.to(torch.complex64)
+        phase_modulation = torch.exp(1j * physical_phase).to(torch.complex64)
+        # The learned mask is shared by the batch.  Materialize only a view of
+        # that mask along the batch axis before drawing per-sample hardware
+        # perturbations; without this, a 2-D phase tensor would be mistaken for
+        # a batch whose size equals the active image height.
+        phase_modulation = phase_modulation.unsqueeze(0).expand(
+            amplitude_field.shape[0], -1, -1
+        )
+        phase_modulation = self._phase_dropout(phase_modulation)
+        amplitude_field, phase_modulation = self._coherent_zero_order(
+            amplitude_field, phase_modulation
+        )
+        modulated = amplitude_field * phase_modulation
         canvas_guard = self.settings.canvas_guard
         canvas_field = F.pad(
             modulated, (canvas_guard, canvas_guard, canvas_guard, canvas_guard)
@@ -237,7 +364,8 @@ class RobustRawCCDMNIST4D2NN(nn.Module):
         # |E|^2 is the CCD photodetection itself. From this point onward no
         # activation, normalization, log compression, clipping, or background
         # subtraction is applied.
-        ccd_intensity = raw_ccd_field.abs().square().float()
+        clean_ccd_intensity = raw_ccd_field.abs().square().float()
+        ccd_intensity = self._perturb_ccd(clean_ccd_intensity)
         detector_energy = torch.einsum(
             "bhw,chw->bc", ccd_intensity, self.detector_masks
         )

@@ -3,9 +3,12 @@
 把 ZIP 覆盖解压到统一仓库目录 `E:\code\guest\2026OpticsMoE`。实验人员只编辑
 `experiments\lab_qwen\LAB_CONFIG.yaml`，全部操作从 `COMMANDS.md` 第 0 步顺序执行。
 
-Qwen 主模型是强噪声续训版本：截断偏置高斯 CCD 噪声为干净单帧均值的
-`mean=6%、std=5%、clip=[-4%,16%]`，四个光电融合门的配置下限为 1%。该模型
-固定测试 Top-1 为 82.0%，检查点由训练损失选择，不使用测试集挑选。
+Qwen 主模型固定为 `accuracy_first_full`：四层各有独立相位 mask，训练时联合采样
+±16 像素输入/phase/CCD 位移、0.4–2.5 倍强度增益、0–5% 振幅与相位 0 级泄漏、
+phase dropout、k 空间截止，以及相对干净单帧均值的截断偏置高斯 CCD 噪声
+`mean=2%、std=2%、clip=[-2%,6%]`。四个光电融合门的配置下限为 0.1%，实际学习
+门约为 0.626%。固定 200-query 测试 Top-1 为 85.0%，检查点由训练损失选择，
+测试集不参与挑选。
 
 四层实测 CCD 微调现在可完全在实验室电脑执行。每层最多 100 epoch，从原训练采集
 中固定留出 development 子集选 checkpoint，sealed test 只在选模结束后评估一次；
@@ -24,6 +27,10 @@ LUT 重标定：自动寻找实测暗态，选择动态范围较大的单调支�
 一致性、Qwen 最后一层和四层逐层流程，以及 MNIST-4 的 4 个已训练 mask、quick40、
 formal400、原始四 ROI 分类、PCC/SSIM/NRMSE/余弦/能量/质心等一致性分析和 Arial
 7 pt 的 PDF/SVG/600 dpi PNG 图表。
+
+`qwen_theoretical_ccd_accuracy_first_full` 另保存四层的连续 FP32 理想仿真、实际
+8-bit BMP 量化仿真，以及网络真正读取的 224×224 feature。原始 NPZ 用于正式数值
+比较，PNG/contact sheet 只用于肉眼查看。
 
 MNIST quick40 还带有独立的 20 帧时序诊断：5 档 SLM 完成后等待时间 × 4 个数字，
 逐帧记录 SLM 写入、实际等待、CCD 丢帧/采集/透视/保存耗时，并输出 478×478 CCD

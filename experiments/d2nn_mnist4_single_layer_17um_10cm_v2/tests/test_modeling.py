@@ -26,6 +26,23 @@ def _tiny_settings() -> SimpleNamespace:
         input_shift_max_px=2,
         phase_shift_max_px=2,
         pre_ccd_shift_max_px=2,
+        phase_dropout_p=0.0,
+        phase_dropout_block_size=4,
+        zero_order_enabled=False,
+        amplitude_zero_order_intensity_min=0.0,
+        amplitude_zero_order_intensity_max=0.0,
+        phase_zero_order_intensity_min=0.0,
+        phase_zero_order_intensity_max=0.0,
+        zero_order_random_relative_phase=True,
+        detector_gain_min=1.0,
+        detector_gain_max=1.0,
+        ccd_noise_distribution="none",
+        ccd_noise_mean_fraction=0.0,
+        ccd_noise_std_fraction=0.0,
+        ccd_noise_min_fraction=0.0,
+        ccd_noise_max_fraction=0.0,
+        robust_validation_trials=3,
+        require_robust_update_for_selection=False,
         loss_mode="notebook_full_plane_mse",
         notebook_full_plane_mse_scale=100.0,
         target_region_mse_weight=1.0,
@@ -140,3 +157,44 @@ def test_forced_pre_ccd_shifts_are_cardinal_and_phase_gradient_survives() -> Non
     assert model.raw_phase.grad is not None
     assert torch.isfinite(model.raw_phase.grad).all()
     assert bool(torch.any(model.raw_phase.grad != 0))
+
+
+def test_truncated_ccd_noise_and_zero_order_are_training_only() -> None:
+    settings = _tiny_settings()
+    settings.phase_dropout_p = 0.2
+    settings.zero_order_enabled = True
+    settings.amplitude_zero_order_intensity_max = 0.05
+    settings.phase_zero_order_intensity_max = 0.05
+    settings.detector_gain_min = 0.8
+    settings.detector_gain_max = 1.2
+    settings.ccd_noise_distribution = "truncated_biased_gaussian"
+    settings.ccd_noise_mean_fraction = 0.01
+    settings.ccd_noise_std_fraction = 0.01
+    settings.ccd_noise_min_fraction = -0.01
+    settings.ccd_noise_max_fraction = 0.03
+    model = RobustRawCCDMNIST4D2NN(settings)
+    image = torch.rand(2, 1, 12, 12)
+    zero = {"input": (0, 0), "phase": (0, 0), "pre_ccd": (0, 0)}
+    model.eval()
+    clean_a = model(image, forced_shifts=zero)["ccd_intensity"]
+    clean_b = model(image, forced_shifts=zero)["ccd_intensity"]
+    torch.testing.assert_close(clean_a, clean_b)
+    model.train()
+    torch.manual_seed(10)
+    perturbed = model(image, forced_shifts=zero)["ccd_intensity"]
+    assert torch.isfinite(perturbed).all()
+    assert bool(torch.all(perturbed >= 0))
+    assert not torch.allclose(clean_a, perturbed)
+
+
+def test_inverse_cdf_truncated_gaussian_stays_inside_open_support() -> None:
+    reference = torch.empty(100_000)
+    sample = RobustRawCCDMNIST4D2NN._truncated_normal_like(
+        reference,
+        mean=0.01,
+        std=0.01,
+        minimum=-0.01,
+        maximum=0.03,
+    )
+    assert float(sample.min()) > -0.01
+    assert float(sample.max()) < 0.03

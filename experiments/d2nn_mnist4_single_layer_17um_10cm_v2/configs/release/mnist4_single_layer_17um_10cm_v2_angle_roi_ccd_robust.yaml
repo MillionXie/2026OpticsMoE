@@ -1,0 +1,59 @@
+base_config: mnist4_single_layer_17um_10cm_v2_notebook_mse_angle_roi.yaml
+
+# Continue from the strongest already-audited angle-ROI mask instead of
+# relearning focusing geometry during scarce laboratory time.
+continuation:
+  checkpoint: ../../runs/mnist4_single_layer_17um_10cm_v2_angle_roi/mask_candidates/checkpoints/post_robust_best.pt
+
+optics:
+  k_space:
+    enabled: true
+    theta_max_deg: 1.10
+
+robustness:
+  enabled: true
+  probability: 0.75
+  warmup_epochs: 2
+  input_shift_max_px: 2
+  phase_shift_max_px: 2
+  pre_ccd_shift_max_px: 2
+  phase_dropout:
+    p: 0.05
+    block_size: 8
+  zero_order:
+    enabled: true
+    amplitude_intensity_fraction_min: 0.00
+    amplitude_intensity_fraction_max: 0.05
+    phase_intensity_fraction_min: 0.00
+    phase_intensity_fraction_max: 0.05
+    random_relative_phase: true
+  detector_gain_min: 0.80
+  detector_gain_max: 1.20
+  ccd_noise:
+    distribution: truncated_biased_gaussian
+    mean_fraction: 0.01
+    std_fraction: 0.01
+    min_fraction: -0.01
+    max_fraction: 0.03
+
+loss:
+  # A small raw-ROI CE term preserves four-way separation under noisy MSE.
+  # It is training-only; hardware inference remains four raw sums + argmax.
+  detector_ce_weight: 0.05
+
+training:
+  phase_learning_rate: 0.008
+  min_learning_rate: 0.001
+  epochs: 40
+  batch_size: 64
+  inference_batch_size: 64
+  # Fixed-seed stochastic validation selects a genuinely robust phase mask;
+  # the sealed test split is never used for checkpoint selection.
+  robust_validation_trials: 3
+  require_robust_update_for_selection: true
+  log_interval_batches: 50
+
+hardware:
+  export_subdir: hardware_export_10cm_v2_angle_roi_ccd_robust_rv3
+
+output_dir: ../../runs/mnist4_single_layer_17um_10cm_v2_angle_roi_ccd_robust_rv3
