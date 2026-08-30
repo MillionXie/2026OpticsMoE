@@ -558,7 +558,19 @@ experiments\lab_qwen\qwen_theoretical_ccd_accuracy_first_full\VIEW_THEORETICAL_C
 不做每帧 min-max。评估同时报告 linear 与 network-input 域的 PCC、SSIM、
 shape-NRMSE、能量比、质心误差和饱和率。
 
-### 6.1 形状输入 × 形状相位 mask：独立仿真—光路一致性
+### 6.1 单张 CCD 的固定图样/漏光诊断
+
+当实测 CCD 中能看到四个 expert 方框、十字边界或底边漏光时，先阅读：
+
+```text
+experiments\lab_qwen\CCD_FIXED_PATTERN_DIAGNOSTIC.md
+```
+
+诊断工具不会改动正式网络输入，也不会用理论纹理生成实测内容。它利用同一 mask 下的
+其他实测帧估计固定图样，并为 2×2 expert 层额外输出共模抑制结果。正式使用背景校正前，
+仍须补采同一 phase mask 下的激光暗场、振幅灰度 0 漏光场和均匀场。
+
+### 6.2 形状输入 × 形状相位 mask：独立仿真—光路一致性
 
 这一步不依赖 Qwen checkpoint，也不评价分类准确率。它固定使用 532 nm、17 µm
 逻辑像素、518×518 传播画布、478×478 有效区、10 cm 和 0.65° k 空间截止，生成
