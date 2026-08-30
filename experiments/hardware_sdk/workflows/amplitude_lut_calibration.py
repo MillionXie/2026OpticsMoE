@@ -364,6 +364,11 @@ def _scan_config(
 ) -> dict[str, Any]:
     config = copy.deepcopy(dict(source))
     config["amplitude_slm"]["lut_file"] = str(lut_file)
+    # Calibration deliberately switches from the pinned base LUT to a newly
+    # generated candidate during verification.  Keep the normal hardware
+    # identity guard active by pinning each controlled scan to the exact file
+    # it is about to load, rather than carrying the base LUT hash forward.
+    config["amplitude_slm"]["expected_lut_sha256"] = _sha256(lut_file)
     config.setdefault("paths", {})["masks_dir"] = str(root / "masks")
     config["paths"]["results_dir"] = str(root / scan_name)
     exposure = config.setdefault("exposure_calibration", {})

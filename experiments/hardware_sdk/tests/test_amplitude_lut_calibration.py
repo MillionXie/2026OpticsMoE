@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 
 import numpy as np
 
 from experiments.hardware_sdk.workflows.amplitude_lut_calibration import (
+    _scan_config,
     fit_linearized_lut,
     isotonic_non_decreasing,
     read_global_lut,
@@ -65,3 +67,32 @@ def test_field_amplitude_fit_selects_dark_to_255_branch() -> None:
     assert abs(rows[-1]["mapped_base_gray"] - 255.0) < 1.0
     # Mid-gray is half field amplitude, hence one quarter target intensity.
     assert abs(rows[128]["target_normalized_intensity"] - 0.252) < 0.005
+
+
+def test_controlled_scan_pins_the_lut_it_will_load(tmp_path: Path) -> None:
+    candidate = tmp_path / "candidate.lut"
+    candidate.write_bytes(b"candidate")
+    source = {
+        "amplitude_slm": {
+            "lut_file": "base.lut",
+            "expected_lut_sha256": "0" * 64,
+        },
+        "paths": {},
+        "exposure_calibration": {},
+    }
+    configured = _scan_config(
+        source,
+        root=tmp_path / "run",
+        scan_name="verification_scan",
+        lut_file=candidate,
+        settings={
+            "gray_point_count": 128,
+            "frames_per_gray": 3,
+            "maximum_saturation_fraction": 0.01,
+        },
+    )
+
+    assert configured["amplitude_slm"]["lut_file"] == str(candidate)
+    assert configured["amplitude_slm"]["expected_lut_sha256"] == hashlib.sha256(
+        b"candidate"
+    ).hexdigest()
