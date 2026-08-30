@@ -198,7 +198,89 @@ scheduler；不得只给某个方法减 batch。若代码或配置有科学含�
 本文档创建时没有因“写文档”而启动或伪造任何正式训练。之后每次代码、
 配置、启动方式或训练状态变化，都应在本文件追加有时间戳的事实记录。
 
-当前机器汇总器为 v1：它可以审计完成数、逐 run 主指标、相对 NoFT 差值
-以及 mean/sample std。配对 bootstrap CI、BP-gain recovery、次指标、
-逐层梯度/门/破坏性消融的 paper-facing 聚合仍是最终报告前的明确待办，
-不能把 v1 的 `summary.json` 误称为已经完成全部统计检验。
+当前机器汇总器为 v2：它可以审计完成数、逐 run 主/次指标、
+相对 NoFT 的配对差值、mean/sample std、配对 bootstrap CI、BP-gain
+recovery，以及梯度几何、相位、门控、吞吐和破坏性消融汇总。缺失值
+保持 `null`，三个 seed 完成前不将少样本 CI 或中间值写成论文结论。
+
+## 2026-08-31 01:05--01:08 +08:00：服务器验收与正式启动
+
+### Git/worktree 证据
+
+- 本地 `main`、`origin/main` 与本次训练源码均锁定到
+  `e305e0b0b20f37757d44136c158efa92cec7f4cc`
+  (`Build P11 downstream fixed-feedback transfer suite`)。
+- 服务器原工作树 `main=113061a` 存在未推送的分叉提交，并有其他项目的
+  tracked/untracked dirty 文件；`git pull --ff-only` 因非 fast-forward 拒绝。未使用
+  reset/checkout/stash，未覆盖或纳入这些无关变更。
+- 正式训练在服务器独立 detached worktree
+  `/DATA/DATA1/guest3/2026OpticsMoE_p12_e305e0b` 运行，HEAD 精确为上述已推送
+  commit。只软链接两个 ignored checkpoint 文件和三个数据目录，没有链接
+  dirty 源码或旧 P12 run。
+- 共享配置文件 SHA-256：
+  `357ee089be6857240e09801580fc38b64044ab2d5072ee340e01572b784c9bfa`；
+  implementation SHA-256：
+  `c61ee3bbbabe6937f574987bb48452c0bb7d74502ef839628e55c698910d6fbd`。
+- P11 source SHA-256：
+  `c3ad0b780dfbb3e5f8e1f7b7850c06fcb5c6d977e106f351b4602fcaadf210d2`；
+  frozen stem checkpoint SHA-256：
+  `e3b12b274211d29f928eee95fdfc60b32d10751f1bbdc98cd63f0cccd0792485`。
+
+### 服务器测试与隔离 smoke
+
+- Python：`/home/guest3/miniconda3/envs/xml/bin/python`；主机：`100right`。
+- P12 服务器测试：`59 passed in 8.72s`；Linux 启动脚本 `bash -n`通过；
+  `run --help`、`queue --help`、`summarize --help` 全部正常退出。
+- smoke 根目录为
+  `/DATA/DATA1/guest3/2026OpticsMoE_p12_e305e0b/experiments/qwen3_vl_patch_stem_8stage_separable_optical_downstream_fa/runs/p12_smoke_e305e0b_20260831`，
+  与正式 root 隔离。所有更新组只在各自 smoke root 使用
+  `synthetic_common_start_only=true` 的临时 common。
+
+| Task | Method | 配置 batch | 峰值 CUDA GiB | 单批验收耗时 s | gradient cosine(1--7) | 结果 |
+|---|---|---:|---:|---:|---:|---|
+| Caltech-101 | NoFT | 96 | 2.022 | 5.452 | 不适用 | passed |
+| Caltech-101 | BP-current | 96 | 8.293 | 7.322 | 1.000000 | passed |
+| Caltech-101 | FA-pretrained | 96 | 7.578 | 7.629 | 1.000000 | passed |
+| Caltech-101 | FA-random | 96 | 7.579 | 6.217 | 0.716147 | passed |
+| ISIC 2016 | BP-current | 32 | 7.590 | 34.294 | 1.000000 | passed |
+| ISIC 2016 | FA-pretrained | 32 | 7.288 | 54.874 | 1.000000 | passed |
+| LSP | BP-current | 32 | 3.262 | 12.989 | 1.000000 | passed |
+
+Caltech/ISIC/LSP manifest SHA 分别为
+`7824b8dd4e2cd9f969205d62e298f1e26d10c86f274859b54fe7f3bdf991a5cf`、
+`325727b9a5fdf11bc12c932a6da95f64a78e5be772bf039e391829de81d95421`、
+`de8b559f16761fa60a34208d978e7f8d184ae3e808d542dbd5c2e29b5ceeb016`。三个任务
+的实测 split 数与锁定值 `2525/505/5647`、`720/180/379`、
+`9385/1043/1000` 一致，split leakage 为 0。上表只是工程验收，其验证
+指标不具备性能结论含义。
+
+### 正式 queue 与 GPU 所有权
+
+实际启动命令：
+
+```bash
+P12_GPU_LIST=0,1,3,4,5 \
+P12_REPO_ROOT=/DATA/DATA1/guest3/2026OpticsMoE_p12_e305e0b \
+P12_POLL_SECONDS=20 P12_MAX_RETRIES=2 \
+bash /DATA/DATA1/guest3/2026OpticsMoE_p12_e305e0b/experiments/qwen3_vl_patch_stem_8stage_separable_optical_downstream_fa/commands/p12_downstream_fa_50e.sh launch
+```
+
+- launcher/manager PID：`929693`；候选物理 GPU：`0,1,3,4,5`；common seeds：
+  `2026,2027,2028`；adaptation seeds：`2026`；首轮共 18 run（9 个
+  NoFT/common + 9 个 seed-2026 adaptation）。
+- 01:05 启动时，GPU 0、1、4 已分别有 `guest0`/`hmh`/`lxy` 等其他用户
+  compute-app；GPU 2 也被 `hmh` 占用且未列入候选。因此未强行叠加作业；
+  队列首先合法使用当时唯一空闲的 GPU 3、5，并在每次派发前重新检查
+  UUID/PID。候选中的占用卡释放后，队列会自动扩展，最多同时使用
+  5 张卡。
+- 01:06 队列快照：`running=2, pending=7, blocked=9, complete=0,
+  failed=0`。blocked 为正常的 common-start 依赖，不是失败。
+
+| Run | 物理 GPU / UUID | worker PID | 配置 digest | 01:08 中间进度 |
+|---|---|---:|---|---|
+| Caltech-101/NoFT/2026 | 3 / `GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd` | 929723 | `df55bfc102d76c2bbf8c24b7ff6284e4c58e310d0282f2b58e31084b7d1b584b` | 16/50，val Top-1 最佳 0.74257@15 |
+| ISIC2016/NoFT/2026 | 5 / `GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb` | 929790 | `c02bc09f171df2c70ffe09de6cd00e338aebf0ce55f81cb840ed0c310a3652248` | 2/50，val mean IoU 最佳 0.67688@2 |
+
+上述数字都是启动健康检查的中间值，不是密封 test 结果。只有
+`result.json(status=complete)`、50 行完整 history、可加载 best/last checkpoint
+及全部身份哈希一致后，才会在本日志将单个 run 标记为 complete。
