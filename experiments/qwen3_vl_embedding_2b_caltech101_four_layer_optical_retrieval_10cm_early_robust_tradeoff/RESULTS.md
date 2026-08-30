@@ -20,6 +20,20 @@ The gate percentage is the learned residual mixing coefficient, not measured
 optical power. The coherent-leakage percentages in the configuration are
 intensity fractions and are square-rooted before field mixing.
 
+## Pinned artifacts
+
+| Artifact | SHA-256 |
+|---|---|
+| accuracy-first EMA checkpoint | `8cc41ac48ef66385e612be33f6cdb4c7be4675e62daaf66712f77e5b36b8a4fe1` |
+| accuracy-first `vision_expert.bmp` | `14fa29ec902ffc394b30a481b86e87b4f70c930f2e654bb813ca990ffbfa2bc8f` |
+| balanced EMA checkpoint | `7a5c891cc8eba030a674100511a003de340d28a72d919efb897d56ae91d02f86c` |
+| balanced `vision_expert.bmp` | `0dc71fe420d485c82e3d966b3d77486bb490cd315c2af738ccd185ebadcc53fdb` |
+
+Each first-stage session contains exactly 210 manifest rows, 210 compact PNGs,
+and 210 ready-to-play 1024×1024 BMPs. The delta ZIP is 128 MB and passed
+`unzip -t`; its SHA-256 is
+`1452f343f0abca4fc0b420c4234f863e634c3860b312df0af46ff873b5caa1bf0`.
+
 ## Hardware decision policy
 
 1. Acquire and four-stage fine-tune accuracy-first using only frames captured
