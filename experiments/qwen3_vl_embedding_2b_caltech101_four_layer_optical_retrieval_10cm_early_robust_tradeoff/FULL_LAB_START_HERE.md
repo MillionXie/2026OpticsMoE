@@ -1,60 +1,84 @@
-# 完整实验包：从这里开始
+# 实验室完整流程：全数据逐层微调
 
-本文件对应 `qwen_mnist4_early_robust_tradeoff_local_finetune_full_lab.zip`。
-该 ZIP 是独立完整包，不需要先下载或覆盖旧包。请解压到短路径，例如
-`E:\code\guest\qwen_early_robust_full_lab`，所有命令都在该根目录执行。
+本工程有两种互不混用的数据口径：
 
-## 1. 只编辑实验配置
+- `accuracy_first_full`：正式全数据流程。每类保留 3 张 gallery、20 张 sealed test，其他图像全部用于训练和 development 选模。
+- `accuracy_first`：仅用于快速检查的 210 帧流程，每类 10 train、1 gallery、10 test。
 
-确认 `experiments\lab_qwen\LAB_CONFIG.yaml` 中仍是已经实测通过的 3500 μs
-曝光、新线性 LUT、当前四顶点。然后运行：
+正式实验使用 `accuracy_first_full`。仿真 sealed-test Top-1 为 85.0%；该数值不是实测保证值，四层实测目标为最终 Top-1 不低于 78%。
+
+## 1. 全量微调的准确含义
+
+每采完一层，该层之后的全部紧凑电子网络、尚未采集的光学分支参数和 retrieval readout 都参与训练。已经采集的上游层必须冻结，否则下一层已经播放的输入会失效。
+
+Qwen3-VL-Embedding-2B 的冻结视觉/语言骨干不解冻。实验室 RTX 5060 不适合对 2B 骨干做全参数训练；Caltech101-10 数据规模也不足以安全微调 2B 参数。这不是只训练最后一个 MLP。
+
+checkpoint 按固定 development Top-1 选择，同分再比较 development CE。sealed test 不参与选模，只在恢复最佳 checkpoint 后评估一次。
+
+## 2. 旧工程参数迁移
+
+新工程放在独立目录，不覆盖旧工程。下列经过实测的硬件参数必须迁移：
+
+- `LAB_CONFIG.yaml` 中的 3500 μs 曝光；
+- `slm7930_at532-70c-pixel-2_linearized-amplitude-3500us.lut`；
+- CCD 四个逻辑角点、ROI margin、60 ms settle delay、丢帧数和 warmup 帧数；
+- Meadowlark、TUCam SDK 和设备编号。
+
+迁移后在新工程根目录执行：
 
 ```powershell
 conda activate xml
 python -m experiments.lab_qwen.prepare_lab
 ```
 
-不要用本包覆盖实验室已验证的 LUT 文件。`prepare_lab` 输出必须明确显示所选
-LUT 存在、曝光为 3500 μs、homography contract 已生成。
+检查输出中的 LUT 文件、`camera_exposure_us: 3500.0`、四点 homography 和输出 478×478 均正确。不要复制旧的 `generated` 文件；它们应由新工程重新生成。
 
-## 2. 首选 accuracy-first（仿真 Top-1 85%）
+## 3. 第一层采集
 
-当前相位 SLM 可以继续保持全零，直到准备正式采第一层。正式采集时手动加载：
+第一层目录：
 
-`experiments\lab_qwen\four_accuracy_first\01_vision_expert\phase_to_play\vision_expert.bmp`
+`experiments\lab_qwen\four_accuracy_first_full\01_vision_expert`
 
-确认相位屏显示的是这张文件，再运行：
+先确认 `amplitude_to_play` 已存在并包含全部 BMP。手动把相位 SLM 从纯黑改为：
 
-```powershell
-python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\lab_qwen\generated\formal_hardware.yaml --stage-dir experiments\lab_qwen\four_accuracy_first\01_vision_expert --clear-output
-```
+`phase_to_play\vision_expert.bmp`
 
-该目录已经包含 210 张可直接播放的 1024×1024 振幅 BMP，不需要重建。采完后：
+确认相位图确实加载后执行：
 
 ```powershell
-python -m experiments.lab_qwen.local_four_stage --profile accuracy_first --stage vision_expert --epochs 100
+python -m experiments.hardware_sdk.workflows.acquire_folder `
+  --config experiments\lab_qwen\generated\formal_hardware.yaml `
+  --stage-dir experiments\lab_qwen\four_accuracy_first_full\01_vision_expert `
+  --clear-output
 ```
 
-程序按 development Top-1、同分再按 CE 选择 checkpoint；100 张 sealed test
-只在选模后评一次。随后自动生成并重建第二层。第二次实验依次加载并采集：
+采完后执行本地全数据微调：
 
-`experiments\lab_qwen\four_accuracy_first\02_vision_global\phase_to_play\vision_global.bmp`
+```powershell
+python -m experiments.lab_qwen.local_four_stage `
+  --profile accuracy_first_full `
+  --stage vision_expert `
+  --epochs 100
+```
 
-然后把命令中的 stage 改为 `vision_global`。后两层依次为
-`language_expert`、`language_global`。
+程序最多训练 100 epoch，development 连续 15 epoch 无提升会提前停止，恢复 development 最优 checkpoint 后只评一次 sealed test，并自动导出、重建第二层输入。
 
-## 3. balanced 备选
+## 4. 后三层
 
-只有 accuracy-first 对环境变化敏感或需要论文 trade-off 时才完整采 balanced。
-目录改为 `four_balanced`，本地命令必须改为 `--profile balanced`。两个 profile
-的 checkpoint 和会话目录完全隔离，禁止交叉加载。
+依次重复“加载本层 phase BMP → 采 CCD → 本地微调”：
 
-## 4. 结果判定
+1. `vision_global`
+2. `language_expert`
+3. `language_global`
 
-最终要求是四层后 sealed-test Top-1 ≥78%。建议的停止检查和全部服务器仿真
-结果见：
+命令只替换 `--stage`。各层目录依次为 `02_vision_global`、`03_language_expert`、`04_language_global`。不得跨 profile 复制 checkpoint 或 CCD。
 
-- `experiments\qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_early_robust_tradeoff\RESULTS.md`
-- `experiments\qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_early_robust_tradeoff\RUN_COMMANDS.md`
+## 5. 结果位置
 
-若 PCC/SSIM、方向或 ROI 不合格，先修光路/配置，不要靠增加微调 epoch 掩盖。
+每层指标：`<stage_dir>\finetune_metrics.json`
+
+逐层 checkpoint：`experiments\lab_qwen\four_accuracy_first_full\checkpoints\after_<stage>.pt`
+
+最后以第四层 `finetune_metrics.json` 中的 `sealed_test` 为正式实测结果。若低于 78%，先检查 PCC/SSIM、方向、ROI、饱和率和 LUT；不要反复观察 test 后挑 epoch。
+
+`balanced_full` 是第二套鲁棒性 trade-off，流程相同，但 profile 和目录必须全部改为 `balanced_full` / `four_balanced_full`。先完成 accuracy-first，暂不要求采 balanced。

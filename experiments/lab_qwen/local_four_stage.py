@@ -46,6 +46,15 @@ PROFILES = {
         "initial_checkpoint": "accuracy_first_ema.pt",
         "session": "four_accuracy_first",
     },
+    "accuracy_first_full": {
+        "project": (
+            "qwen3_vl_embedding_2b_caltech101_four_layer_"
+            "optical_retrieval_10cm_early_robust_tradeoff"
+        ),
+        "config": "configs/hardware/accuracy_first_full.yaml",
+        "initial_checkpoint": "accuracy_first_ema.pt",
+        "session": "four_accuracy_first_full",
+    },
     "balanced": {
         "project": (
             "qwen3_vl_embedding_2b_caltech101_four_layer_"
@@ -54,6 +63,15 @@ PROFILES = {
         "config": "configs/hardware/balanced_quick210.yaml",
         "initial_checkpoint": "balanced_ema.pt",
         "session": "four_balanced",
+    },
+    "balanced_full": {
+        "project": (
+            "qwen3_vl_embedding_2b_caltech101_four_layer_"
+            "optical_retrieval_10cm_early_robust_tradeoff"
+        ),
+        "config": "configs/hardware/balanced_full.yaml",
+        "initial_checkpoint": "balanced_ema.pt",
+        "session": "four_balanced_full",
     },
 }
 
@@ -180,7 +198,7 @@ def run(
         raise FileNotFoundError(
             f"Previous-stage checkpoint is missing: {checkpoint}\n"
             "If you are switching from a server run midway, download that exact "
-            "after_<previous-stage>.pt file into experiments/lab_qwen/four/checkpoints/."
+            f"after_<previous-stage>.pt file into {session / 'checkpoints'}."
         )
 
     bridge.build_hybrid_student = build_hybrid_student
@@ -255,9 +273,9 @@ def main() -> int:
         choices=sorted(PROFILES),
         default="strong_noise",
         help=(
-            "Must match the initial checkpoint. New 85%% simulation runs use "
-            "accuracy_first or balanced; do not reinterpret their fusion floor "
-            "with the legacy strong_noise profile."
+            "Must match both the initial checkpoint and capture population. "
+            "Use accuracy_first_full for the full-data physical experiment; "
+            "accuracy_first is the quick210 diagnostic only."
         ),
     )
     parser.add_argument(

@@ -1,0 +1,18 @@
+base_config: ../release/accuracy_first_floor0p1.yaml
+
+# Full physical-capture population. The test pool is reserved before the
+# training pool, so the sealed test identities are stable and never leak into
+# fitting even though every remaining training image is retained.
+dataset:
+  gallery_images_per_sku: 3
+  train_limit_per_sku: null
+  test_limit_per_sku: 20
+  reserve_test_before_train: true
+
+hardware:
+  ccd:
+    # The detector homography already produces canonical model coordinates.
+    flip_vertical: false
+    flip_horizontal: false
+
+output_dir: ../../runs/accuracy_first_full_metadata

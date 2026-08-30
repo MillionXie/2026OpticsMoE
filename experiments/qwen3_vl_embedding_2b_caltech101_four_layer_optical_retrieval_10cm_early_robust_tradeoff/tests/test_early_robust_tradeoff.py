@@ -82,3 +82,16 @@ def test_hardware_configs_are_exact_quick210_contracts(filename: str) -> None:
     assert settings.reserve_test_before_train is True
     assert settings.hardware_ccd_flip_vertical is False
     assert settings.hardware_ccd_flip_horizontal is False
+
+
+@pytest.mark.parametrize(
+    "filename", ["accuracy_first_full.yaml", "balanced_full.yaml"]
+)
+def test_full_hardware_configs_keep_all_training_images(filename: str) -> None:
+    settings = load_settings(ROOT / "configs" / "hardware" / filename)
+    assert settings.gallery_images_per_sku == 3
+    assert settings.train_limit_per_sku is None
+    assert settings.test_limit_per_sku == 20
+    assert settings.reserve_test_before_train is True
+    assert settings.hardware_ccd_flip_vertical is False
+    assert settings.hardware_ccd_flip_horizontal is False

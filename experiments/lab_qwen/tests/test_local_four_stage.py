@@ -32,7 +32,7 @@ def test_local_four_stage_prefers_complete_offline_snapshot(tmp_path: Path) -> N
     assert settings.local_files_only is True
 
 
-def test_tradeoff_profiles_never_share_checkpoint_or_session_paths(
+def test_tradeoff_profiles_never_share_session_paths(
     tmp_path: Path,
 ) -> None:
     outputs = {
@@ -40,6 +40,21 @@ def test_tradeoff_profiles_never_share_checkpoint_or_session_paths(
         for profile in PROFILES
     }
     assert len({str(paths[1]) for paths in outputs.values()}) == len(PROFILES)
-    assert len({str(paths[2]) for paths in outputs.values()}) == len(PROFILES)
     assert outputs["accuracy_first"][2].name == "accuracy_first_ema.pt"
+    assert outputs["accuracy_first_full"][2] == outputs["accuracy_first"][2]
     assert outputs["balanced"][2].name == "balanced_ema.pt"
+    assert outputs["balanced_full"][2] == outputs["balanced"][2]
+
+
+def test_full_profiles_use_dedicated_configs_and_sessions(tmp_path: Path) -> None:
+    accuracy_config, accuracy_session, _ = _paths(
+        tmp_path, "vision_expert", "accuracy_first_full"
+    )
+    balanced_config, balanced_session, _ = _paths(
+        tmp_path, "vision_expert", "balanced_full"
+    )
+
+    assert accuracy_config.name == "accuracy_first_full.yaml"
+    assert balanced_config.name == "balanced_full.yaml"
+    assert accuracy_session.name == "four_accuracy_first_full"
+    assert balanced_session.name == "four_balanced_full"
