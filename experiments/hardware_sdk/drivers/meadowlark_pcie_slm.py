@@ -106,17 +106,9 @@ class MeadowlarkPCIeSLM(SLMDriver):
         self.temperature_c: float | None = None
 
     def validate_runtime(self) -> None:
-        if not sys.platform.startswith("win"):
-            raise DeviceError("Meadowlark Blink PCIe SDK is Windows-only")
-        if ctypes.sizeof(ctypes.c_void_p) != 8:
-            raise DeviceError("The supplied Meadowlark PCIe SDK requires 64-bit Python")
-        missing = [
-            str(self.sdk_dir / name)
-            for name in self.REQUIRED_DLLS
-            if not (self.sdk_dir / name).is_file()
-        ]
-        if missing:
-            raise DeviceError(f"Meadowlark PCIe SDK is incomplete; missing: {missing}")
+        # The LUT contract is platform-independent and must fail before any
+        # platform, SDK, DLL, or hardware initialization checks.  This also
+        # makes accidental LUT replacement diagnosable on non-Windows hosts.
         if not self.lut_file.is_file():
             raise DeviceError(
                 f"Meadowlark LUT is missing: {self.lut_file}. Select the calibrated "
@@ -132,6 +124,17 @@ class MeadowlarkPCIeSLM(SLMDriver):
                 f"file={self.lut_file}, actual={self.lut_sha256}, "
                 f"expected={self.expected_lut_sha256}"
             )
+        if not sys.platform.startswith("win"):
+            raise DeviceError("Meadowlark Blink PCIe SDK is Windows-only")
+        if ctypes.sizeof(ctypes.c_void_p) != 8:
+            raise DeviceError("The supplied Meadowlark PCIe SDK requires 64-bit Python")
+        missing = [
+            str(self.sdk_dir / name)
+            for name in self.REQUIRED_DLLS
+            if not (self.sdk_dir / name).is_file()
+        ]
+        if missing:
+            raise DeviceError(f"Meadowlark PCIe SDK is incomplete; missing: {missing}")
         if self.board_number <= 0:
             raise DeviceError("Meadowlark board_number is one-based and must be positive")
         if self.timeout_ms <= 0:
