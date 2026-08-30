@@ -571,6 +571,17 @@ python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrie
 
 ## 8. Qwen 四层逐层采集与微调
 
+本次正式全数据工程固定在：
+
+```powershell
+Set-Location E:\code\guest\qwen_mnist4_early_robust_full_data_lab
+conda activate xml
+```
+
+正式 profile 固定为 `accuracy_first_full`，阶段目录固定为
+`experiments\lab_qwen\four_accuracy_first_full`。旧的 `four` 目录只保留作
+210 帧快速诊断，不得与正式 CCD、checkpoint 混用。
+
 固定顺序：
 
 ```text
@@ -578,52 +589,42 @@ python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrie
 ```
 
 每一层都在实验室电脑完成同一闭环：采当前层 → 本地微调 → 本地导出并重建下一层
-BMP → 再采集。第一次本地运行会自动下载 Qwen3-VL-Embedding-2B 和 Caltech101；以后
-复用缓存。不能预先同时采完四层，因为下一层输入依赖上一层实测 CCD。
+BMP → 再采集。最终离线包已经包含 Qwen3-VL-Embedding-2B 和 Caltech101；程序强制
+离线加载，模型缺失或不完整时直接报错，不会访问 Hugging Face。不能预先同时采完
+四层，因为下一层输入依赖上一层实测 CCD。
 
-本地微调最多跑 100 epoch，每类 10 张 `train` 采集中固定留 2 张 development，按
-`development Top-1` 选 checkpoint；Top-1 相同时选 development CE 更低者。100 张
-sealed test 不参与选模，只在恢复最佳 checkpoint 后评估一次。默认 patience=15，若
-连续 15 epoch 没有改进会提前停止。RTX 5060 默认 3 类×2 图，推理 batch=2；若显存
-仍不足，把命令附加 `--pk-classes 2 --inference-batch-size 1`。
+本地微调最多跑 100 epoch。每类固定保留 3 张 gallery、20 张 sealed test，其余数据
+用于训练及固定 development 选模。checkpoint 按 `development Top-1` 选择；Top-1
+相同时选 development CE 更低者。sealed test 不参与选模，只在恢复最佳 checkpoint
+后评估一次。默认 patience=15，若连续 15 epoch 没有改进会提前停止。RTX 5060 默认
+3 类×2 图，推理 batch=2；若显存仍不足，把命令附加
+`--pk-classes 2 --inference-batch-size 1`。
 
 每层先确认相位 SLM 已加载该层 `phase_to_play` 中唯一 BMP，再执行：
 
 ```powershell
-python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\lab_qwen\generated\formal_hardware.yaml --stage-dir experiments\lab_qwen\four\01_vision_expert --clear-output
-python -m experiments.lab_qwen.local_four_stage --stage vision_expert --epochs 100
+python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\lab_qwen\generated\formal_hardware.yaml --stage-dir experiments\lab_qwen\four_accuracy_first_full\01_vision_expert --clear-output
+python -m experiments.lab_qwen.local_four_stage --profile accuracy_first_full --stage vision_expert --epochs 100
 
-python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\lab_qwen\generated\formal_hardware.yaml --stage-dir experiments\lab_qwen\four\02_vision_global --clear-output
-python -m experiments.lab_qwen.local_four_stage --stage vision_global --epochs 100
+python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\lab_qwen\generated\formal_hardware.yaml --stage-dir experiments\lab_qwen\four_accuracy_first_full\02_vision_global --clear-output
+python -m experiments.lab_qwen.local_four_stage --profile accuracy_first_full --stage vision_global --epochs 100
 
-python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\lab_qwen\generated\formal_hardware.yaml --stage-dir experiments\lab_qwen\four\03_language_expert --clear-output
-python -m experiments.lab_qwen.local_four_stage --stage language_expert --epochs 100
+python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\lab_qwen\generated\formal_hardware.yaml --stage-dir experiments\lab_qwen\four_accuracy_first_full\03_language_expert --clear-output
+python -m experiments.lab_qwen.local_four_stage --profile accuracy_first_full --stage language_expert --epochs 100
 
-python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\lab_qwen\generated\formal_hardware.yaml --stage-dir experiments\lab_qwen\four\04_language_global --clear-output
-python -m experiments.lab_qwen.local_four_stage --stage language_global --epochs 100
+python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\lab_qwen\generated\formal_hardware.yaml --stage-dir experiments\lab_qwen\four_accuracy_first_full\04_language_global --clear-output
+python -m experiments.lab_qwen.local_four_stage --profile accuracy_first_full --stage language_global --epochs 100
 ```
 
 每次 `local_four_stage` 都保存当前层最佳 checkpoint，并自动导出、重建下一层。每层
 结果在该层的 `finetune_metrics.json` 和 `finetune_train_log.csv`。最终 checkpoint：
 
 ```text
-experiments\lab_qwen\four\checkpoints\after_language_global.pt
+experiments\lab_qwen\four_accuracy_first_full\checkpoints\after_language_global.pt
 ```
 
-如果像本次一样已经在服务器完成第一层微调并下载了第二层，还必须把与第二层输入严格
-匹配的上一层 checkpoint 下载到本地，然后从第二层接着跑：
-
-```powershell
-New-Item -ItemType Directory -Force experiments\lab_qwen\four\checkpoints | Out-Null
-scp -P 24096 guest3@202.120.62.181:/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1/hardware_sessions/four210_run1/checkpoints/after_vision_expert.pt experiments\lab_qwen\four\checkpoints\
-
-python -m experiments.hardware_sdk.workflows.reconstruct_slm --stage-dir experiments\lab_qwen\four\02_vision_global --payload amplitude --hardware-profile meadowlark_17um
-python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\lab_qwen\generated\formal_hardware.yaml --stage-dir experiments\lab_qwen\four\02_vision_global --clear-output
-python -m experiments.lab_qwen.local_four_stage --stage vision_global --epochs 100
-```
-
-新版 `acquire_folder --stage-dir` 检测到只有 `compact_amplitude` 时也会自动执行上述
-17 μm 1:1 重建；显式重建命令保留用于人工检查。
+新版 `acquire_folder --stage-dir` 检测到只有 `compact_amplitude` 时会自动执行
+17 μm 1:1 重建；一般不需要再手工运行 `reconstruct_slm`。
 
 ## 9. 明确不再使用的旧流程
 

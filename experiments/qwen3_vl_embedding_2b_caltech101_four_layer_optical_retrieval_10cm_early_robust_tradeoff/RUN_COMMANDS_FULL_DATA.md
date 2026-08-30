@@ -1,11 +1,18 @@
 # 全数据实验命令
 
-所有命令均在新实验包根目录执行。正式 profile 固定为 `accuracy_first_full`，目录固定为 `four_accuracy_first_full`。
+所有命令均在下列实验包根目录执行。正式 profile 固定为
+`accuracy_first_full`，目录固定为 `four_accuracy_first_full`。
+
+```powershell
+Set-Location E:\code\guest\qwen_mnist4_early_robust_full_data_lab
+conda activate xml
+```
+
+不要在 `2026OpticsMoE` 或旧实验包中混跑这些命令。
 
 ## 0. 只需首次执行
 
 ```powershell
-conda activate xml
 python -m experiments.lab_qwen.prepare_lab
 ```
 

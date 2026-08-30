@@ -1,5 +1,15 @@
 # 实验室完整流程：全数据逐层微调
 
+本次实验室工程根目录固定为：
+
+```powershell
+Set-Location E:\code\guest\qwen_mnist4_early_robust_full_data_lab
+conda activate xml
+```
+
+下文所有命令都从这个目录执行。不要切换到 `2026OpticsMoE`、旧的
+`qwen_mnist4_strong_noise_*` 或其他历史解压目录。
+
 本工程有两种互不混用的数据口径：
 
 - `accuracy_first_full`：正式全数据流程。每类保留 3 张 gallery、20 张 sealed test，其他图像全部用于训练和 development 选模。
@@ -27,6 +37,7 @@ checkpoint 按固定 development Top-1 选择，同分再比较 development CE�
 迁移后在新工程根目录执行：
 
 ```powershell
+Set-Location E:\code\guest\qwen_mnist4_early_robust_full_data_lab
 conda activate xml
 python -m experiments.lab_qwen.prepare_lab
 ```
