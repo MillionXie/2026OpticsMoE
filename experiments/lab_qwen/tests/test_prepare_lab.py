@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import hashlib
 
 import yaml
 
@@ -17,8 +18,10 @@ POINTS = {
 
 
 def _lab_config(path: Path, corners: dict | None = POINTS) -> Path:
+    lut_digest = hashlib.sha256(b"test LUT").hexdigest()
     value = {
         "amplitude_lut_filename": "selected-70c.lut",
+        "amplitude_lut_expected_sha256": lut_digest,
         "camera_exposure_us": 4321.0,
         "capture_timing": {
             "formal_slm_settle_delay_ms": 175,
@@ -105,6 +108,32 @@ def test_prepare_lab_generates_pinned_formal_runtime(tmp_path: Path) -> None:
         "expected_file_sha256": report["contract_sha256"],
     }
     assert formal["amplitude_slm"]["lut_file"].endswith("selected-70c.lut")
+    assert formal["amplitude_slm"]["expected_lut_sha256"] == hashlib.sha256(
+        b"test LUT"
+    ).hexdigest()
+    assert report["lut_sha256"] == formal["amplitude_slm"]["expected_lut_sha256"]
+
+
+def test_prepare_lab_rejects_changed_pinned_lut(tmp_path: Path) -> None:
+    root = Path(__file__).resolve().parents[1]
+    config = _lab_config(tmp_path / "LAB_CONFIG.yaml")
+    repository = _fake_repo(tmp_path)
+    lut = (
+        repository
+        / "experiments/hardware_sdk/vendor_sdk/amplitude_meadowlark/LUT Files"
+        / "selected-70c.lut"
+    )
+    lut.write_bytes(b"changed LUT")
+
+    import pytest
+
+    with pytest.raises(RuntimeError, match="LUT hash mismatch"):
+        prepare_lab(
+            config,
+            template_path=root / "internal/hardware_template.yaml",
+            output_dir=tmp_path / "generated",
+            repo_root=repository,
+        )
 
 
 def test_prepare_lab_allows_bootstrap_before_points_are_known(tmp_path: Path) -> None:

@@ -8,6 +8,7 @@ performs no resize, flip, normalization, wavefront correction, or LUT fitting.
 from __future__ import annotations
 
 import ctypes
+import hashlib
 import os
 import sys
 from pathlib import Path
@@ -68,6 +69,7 @@ class MeadowlarkPCIeSLM(SLMDriver):
         output_pulse: bool = False,
         preload: bool = False,
         blank_on_close: bool = True,
+        expected_lut_sha256: str | None = None,
     ) -> None:
         self.sdk_path = Path(sdk_path).expanduser().resolve()
         self.sdk_dir = (
@@ -86,6 +88,11 @@ class MeadowlarkPCIeSLM(SLMDriver):
         self.output_pulse = bool(output_pulse)
         self.preload = bool(preload)
         self.blank_on_close = bool(blank_on_close)
+        self.expected_lut_sha256 = (
+            None
+            if expected_lut_sha256 is None
+            else str(expected_lut_sha256).strip().lower()
+        )
         self._library: Any = None
         self._sdk_created = False
         self._dll_directories: list[Any] = []
@@ -114,6 +121,16 @@ class MeadowlarkPCIeSLM(SLMDriver):
             raise DeviceError(
                 f"Meadowlark LUT is missing: {self.lut_file}. Select the calibrated "
                 "LUT for this SLM/temperature; do not substitute image scaling."
+            )
+        self.lut_sha256 = hashlib.sha256(self.lut_file.read_bytes()).hexdigest()
+        if (
+            self.expected_lut_sha256 is not None
+            and self.lut_sha256 != self.expected_lut_sha256
+        ):
+            raise DeviceError(
+                "Meadowlark LUT SHA256 mismatch; refusing to open hardware. "
+                f"file={self.lut_file}, actual={self.lut_sha256}, "
+                f"expected={self.expected_lut_sha256}"
             )
         if self.board_number <= 0:
             raise DeviceError("Meadowlark board_number is one-based and must be positive")
@@ -388,6 +405,8 @@ class MeadowlarkPCIeSLM(SLMDriver):
             "sdk_path": str(self.sdk_path),
             "sdk_dir": str(self.sdk_dir),
             "lut_file": str(self.lut_file),
+            "lut_sha256": getattr(self, "lut_sha256", None),
+            "expected_lut_sha256": self.expected_lut_sha256,
             "board_number": self.board_number,
             "board_count": self.board_count,
             "serial_number": self.serial_number,

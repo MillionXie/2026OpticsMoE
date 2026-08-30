@@ -199,6 +199,19 @@ def test_factory_builds_board_indexed_meadowlark_pcie_slm(tmp_path: Path) -> Non
     assert slm.lut_file == (tmp_path / "lut" / "device.lut").resolve()
 
 
+def test_meadowlark_rejects_changed_pinned_lut_before_dll_open(tmp_path: Path) -> None:
+    lut = tmp_path / "device.lut"
+    lut.write_bytes(b"actual")
+    slm = MeadowlarkPCIeSLM(
+        tmp_path,
+        lut,
+        expected_lut_sha256="0" * 64,
+    )
+
+    with pytest.raises(DeviceError, match="LUT SHA256 mismatch"):
+        slm.validate_runtime()
+
+
 def test_meadowlark_frame_requires_exact_8bit_grayscale_bmp(
     tmp_path: Path,
 ) -> None:

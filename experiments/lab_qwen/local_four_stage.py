@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 
 
@@ -17,6 +18,13 @@ STAGES = (
     "vision_global",
     "language_expert",
     "language_global",
+)
+OFFLINE_MODEL_RELATIVE = Path("models/Qwen3-VL-Embedding-2B")
+OFFLINE_MODEL_REQUIRED_FILES = (
+    "config.json",
+    "model.safetensors",
+    "preprocessor_config.json",
+    "tokenizer.json",
 )
 
 
@@ -38,6 +46,43 @@ def _paths(root: Path, stage: str) -> tuple[Path, Path, Path]:
         else session / "checkpoints" / f"after_{STAGES[index - 1]}.pt"
     )
     return config, session, checkpoint
+
+
+def _configure_local_backbone(
+    settings: object, root: Path, model_dir: str | Path | None
+) -> dict[str, object]:
+    candidate = (
+        Path(model_dir).expanduser()
+        if model_dir is not None
+        else root / OFFLINE_MODEL_RELATIVE
+    )
+    if not candidate.is_absolute():
+        candidate = root / candidate
+    candidate = candidate.resolve()
+    missing = [name for name in OFFLINE_MODEL_REQUIRED_FILES if not (candidate / name).is_file()]
+    if missing:
+        if model_dir is not None:
+            raise FileNotFoundError(
+                f"Offline Qwen model directory is incomplete: {candidate}; missing={missing}"
+            )
+        return {
+            "mode": "configured_model_id",
+            "model_id": str(settings.model_id),
+            "local_files_only": bool(settings.local_files_only),
+            "offline_candidate": str(candidate),
+            "offline_candidate_present": False,
+        }
+    settings.model_id = str(candidate)
+    settings.cache_dir = None
+    settings.local_files_only = True
+    os.environ["HF_HUB_OFFLINE"] = "1"
+    os.environ["TRANSFORMERS_OFFLINE"] = "1"
+    return {
+        "mode": "bundled_local_snapshot",
+        "model_id": str(candidate),
+        "local_files_only": True,
+        "offline_candidate_present": True,
+    }
 
 
 def _reconstruct_amplitude(stage_dir: Path, settings: object) -> dict[str, object]:
@@ -72,6 +117,7 @@ def run(
     inference_batch_size: int,
     early_stopping_patience: int,
     finetune_only: bool,
+    model_dir: str | Path | None = None,
 ) -> dict[str, object]:
     # Heavy Qwen/Torch imports occur only for this explicit local-training command.
     from experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1.modeling import (
@@ -105,6 +151,7 @@ def run(
     bridge.load_backbone = load_backbone
     bridge.load_settings = load_settings
     settings = load_settings(config)
+    backbone = _configure_local_backbone(settings, root, model_dir)
     seed_everything(settings.random_seed)
     bridge.finetune_stage(
         settings,
@@ -131,6 +178,7 @@ def run(
             / "finetune_metrics.json"
         ),
         "selection": "development_top1_then_ce; sealed_test_once_after_selection",
+        "backbone": backbone,
     }
     stage_index = STAGES.index(stage)
     if not finetune_only and stage_index + 1 < len(STAGES):
@@ -165,6 +213,14 @@ def main() -> int:
     parser.add_argument("--inference-batch-size", type=int, default=2)
     parser.add_argument("--early-stopping-patience", type=int, default=15)
     parser.add_argument("--finetune-only", action="store_true")
+    parser.add_argument(
+        "--model-dir",
+        default=None,
+        help=(
+            "Offline Qwen snapshot directory. By default the wrapper auto-detects "
+            "models/Qwen3-VL-Embedding-2B below the extracted laboratory bundle."
+        ),
+    )
     args = parser.parse_args()
     report = run(
         stage=args.stage,
@@ -175,6 +231,7 @@ def main() -> int:
         inference_batch_size=args.inference_batch_size,
         early_stopping_patience=args.early_stopping_patience,
         finetune_only=args.finetune_only,
+        model_dir=args.model_dir,
     )
     print(json.dumps(report, ensure_ascii=False, indent=2))
     return 0

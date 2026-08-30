@@ -1095,6 +1095,7 @@ def build_slm(config: dict[str, Any], base: Path) -> SLMDriver:
             output_pulse=bool(config.get("output_pulse", False)),
             preload=bool(config.get("preload", False)),
             blank_on_close=bool(config.get("blank_on_close", True)),
+            expected_lut_sha256=config.get("expected_lut_sha256"),
         )
     raise ValueError(
         f"Unknown SLM driver {driver!r}; supported: manual, holoeye, meadowlark_pcie"

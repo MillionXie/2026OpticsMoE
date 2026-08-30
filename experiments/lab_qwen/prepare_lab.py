@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import hashlib
 import json
 import math
 from pathlib import Path
@@ -65,6 +66,23 @@ def _validate_lut_filename(value: Any) -> str:
     if Path(filename).suffix.lower() != ".lut":
         raise ValueError("LAB_CONFIG.yaml: amplitude_lut_filename must end in .lut")
     return filename
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def _validate_optional_sha256(value: Any, *, label: str) -> str | None:
+    if value is None or str(value).strip() == "":
+        return None
+    digest = str(value).strip().lower()
+    if len(digest) != 64 or any(character not in "0123456789abcdef" for character in digest):
+        raise ValueError(f"LAB_CONFIG.yaml: {label} must be one 64-character SHA256")
+    return digest
 
 
 def _parse_corners(value: Any) -> dict[str, list[float]] | None:
@@ -257,12 +275,14 @@ def _runtime_base(
     exposure_us: float,
     capture_timing: Mapping[str, Any],
     lut_calibration: Mapping[str, Any],
+    lut_sha256: str | None,
 ) -> dict[str, Any]:
     hardware = copy.deepcopy(dict(template))
     hardware["amplitude_slm"]["lut_file"] = (
         "../../hardware_sdk/vendor_sdk/amplitude_meadowlark/LUT Files/"
         + lut_filename
     )
+    hardware["amplitude_slm"]["expected_lut_sha256"] = lut_sha256
     hardware["camera"]["exposure_us"] = exposure_us
     hardware["settle_delay_ms"] = capture_timing[
         "formal_slm_settle_delay_ms"
@@ -306,6 +326,20 @@ def prepare_lab(
             "Copy that exact .lut file into the directory above, then rerun the "
             "same prepare_lab command."
         )
+    expected_lut_sha256 = _validate_optional_sha256(
+        user.get("amplitude_lut_expected_sha256"),
+        label="amplitude_lut_expected_sha256",
+    )
+    actual_lut_sha256 = _sha256(lut_file) if lut_file.is_file() else None
+    if (
+        expected_lut_sha256 is not None
+        and actual_lut_sha256 != expected_lut_sha256
+    ):
+        raise RuntimeError(
+            "Selected Meadowlark LUT hash mismatch; refusing to generate runtime "
+            f"configs. file={lut_file}, actual={actual_lut_sha256}, "
+            f"expected={expected_lut_sha256}"
+        )
     exposure_us = float(user.get("camera_exposure_us", 0.0))
     if not math.isfinite(exposure_us) or exposure_us <= 0.0:
         raise ValueError("LAB_CONFIG.yaml: camera_exposure_us must be positive")
@@ -314,7 +348,12 @@ def prepare_lab(
     corners = _parse_corners(user.get("logical_corners_full_sensor_xy"))
 
     bootstrap = _runtime_base(
-        template, lut_filename, exposure_us, capture_timing, lut_calibration
+        template,
+        lut_filename,
+        exposure_us,
+        capture_timing,
+        lut_calibration,
+        expected_lut_sha256,
     )
     bootstrap_path = generated / "bootstrap_hardware.yaml"
     _write_yaml(bootstrap_path, bootstrap)
@@ -324,6 +363,8 @@ def prepare_lab(
         "edit_only_this_file": str(lab_config_file),
         "lut_file": str(lut_file),
         "lut_present": lut_file.is_file(),
+        "lut_sha256": actual_lut_sha256,
+        "lut_expected_sha256": expected_lut_sha256,
         "camera_exposure_us": exposure_us,
         "capture_timing": capture_timing,
         "amplitude_lut_calibration": lut_calibration,
@@ -376,7 +417,12 @@ def prepare_lab(
         )
 
         formal = _runtime_base(
-            template, lut_filename, exposure_us, capture_timing, lut_calibration
+            template,
+            lut_filename,
+            exposure_us,
+            capture_timing,
+            lut_calibration,
+            expected_lut_sha256,
         )
         formal_camera = formal["camera"]
         formal_camera["require_device_roi"] = True

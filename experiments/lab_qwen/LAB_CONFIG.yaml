@@ -2,6 +2,9 @@
 # LUT 只写文件名；文件放在：
 # experiments/hardware_sdk/vendor_sdk/amplitude_meadowlark/LUT Files/
 amplitude_lut_filename: slm7930_at532-70c-pixel-2.lut
+# Optional but strongly recommended after calibration. prepare_lab and every
+# hardware open reject the LUT if its bytes no longer match this SHA256.
+amplitude_lut_expected_sha256: null
 
 # 新 LUT 标定。默认 64 灰度 × 3 帧采集旧 LUT，再用生成的新 LUT 重复 64×3 验证。
 # field_amplitude 表示网络 BMP 灰度是光场振幅，因此目标 CCD 强度为 (gray/255)^2。

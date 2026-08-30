@@ -54,6 +54,7 @@ amplitude_slm:
   preload: false
   blank_on_close: true
   lut_file: null
+  expected_lut_sha256: null
 
 phase_slm:
   driver: manual
