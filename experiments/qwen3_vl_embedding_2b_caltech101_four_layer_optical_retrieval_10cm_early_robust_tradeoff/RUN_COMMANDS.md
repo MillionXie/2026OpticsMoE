@@ -80,6 +80,16 @@ CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_
 
 ## 4.1 在现有完整实验包上安装本次增量
 
+新电脑或不确定旧包版本时，**优先下载独立完整包**：
+
+```powershell
+scp -P 24096 guest3@202.120.62.181:/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_early_robust_tradeoff/lab_exports/qwen_mnist4_early_robust_tradeoff_local_finetune_full_lab.zip .
+```
+
+完整包大小约 692 MB，SHA-256：
+`55f6628ccae8691307f2c9bf2573814c92dbde0f9f292de41d934e9ab40782b5`。
+解压后只看根目录 `FULL_LAB_START_HERE.md`，无需先安装任何旧 ZIP。
+
 本次服务器已生成一个 128 MB 增量 ZIP，包含两套 checkpoint、两套 210 帧
 第一层输入（BMP 已完成 17 μm→17 μm 的 1:1 重建）、两张第一层 phase BMP、
 新工程代码和本地 profile 入口。它不会覆盖 `LAB_CONFIG.yaml` 或你已经标定的
