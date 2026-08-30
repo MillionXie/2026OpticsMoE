@@ -37,3 +37,22 @@ No simulation result guarantees the final hardware accuracy. The new LUT,
 homography/orientation contract, normalization parity, and per-layer local
 development-set checkpoint selection are all required to interpret the hardware
 result.
+
+## Engineering acceptance bands for the 78% objective
+
+These are go/no-go bands for scheduling scarce laboratory time, not claimed
+predictions:
+
+| Completed measured stages | Healthy target band | Stop and diagnose below |
+|---|---:|---:|
+| simulation only | 85% observed | n/a |
+| vision expert | 82–85% | 80% |
+| + vision global | 80–84% | 79% |
+| + language expert | 79–83% | 78% |
+| + language global | 78–82% | 78% final requirement |
+
+If PCC/SSIM and orientation are poor, do not spend epochs compensating for a
+geometry or LUT error. If agreement metrics are healthy but development and
+sealed-test retrieval fall together, then the model/noise schedule is the
+appropriate lever. The 85% simulation checkpoint leaves seven percentage
+points of margin, compared with only four points for the former 82% model.

@@ -78,6 +78,25 @@ CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_
 6. 先完整采 accuracy-first；只有它对扰动过敏或老师需要鲁棒性 trade-off 时，
    再完整采 balanced。现有 strong-noise 作为第三个鲁棒优先对照，不必重训。
 
+## 4.1 在现有完整实验包上安装本次增量
+
+本次服务器已生成一个 128 MB 增量 ZIP，包含两套 checkpoint、两套 210 帧
+第一层输入（BMP 已完成 17 μm→17 μm 的 1:1 重建）、两张第一层 phase BMP、
+新工程代码和本地 profile 入口。它不会覆盖 `LAB_CONFIG.yaml` 或你已经标定的
+3500 μs LUT。
+
+在实验室 PowerShell 执行：
+
+```powershell
+scp -P 24096 guest3@202.120.62.181:/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_early_robust_tradeoff/lab_exports/qwen_early_robust_tradeoff_quick210_lab_delta.zip .
+Expand-Archive .\qwen_early_robust_tradeoff_quick210_lab_delta.zip -DestinationPath . -Force
+```
+
+ZIP SHA-256：
+`1452f343f0abca4fc0b420c4234f863e634c3860b312df0af46ff873b5caa1bf0`。
+必须在已有 `qwen_mnist4_strong_noise_local_finetune_full_lab_v2` 工程根目录覆盖
+解压；它是完整包的增量，不是独立环境。
+
 ## 5. 四层闭环命令模板
 
 硬件采集必须使用 210 帧配置，不能直接拿训练配置导出全部 2855 张：
@@ -93,6 +112,18 @@ CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_
 ```powershell
 python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_early_robust_tradeoff.hardware_bridge --config <CONFIG> --checkpoint <CHECKPOINT> --session-dir <SESSION_DIR> --stage vision_expert --phase export
 ```
+
+服务器已经完成 accuracy-first 第一层导出，因此第一次实验不需要再执行上面的
+导出命令。此时才把相位 SLM 从当前全零改为手动加载：
+`experiments\lab_qwen\four_accuracy_first\01_vision_expert\phase_to_play\vision_expert.bmp`。
+确认屏幕上确实是这一张后采集：
+
+```powershell
+python -m experiments.hardware_sdk.workflows.acquire_folder --config experiments\lab_qwen\generated\formal_hardware.yaml --stage-dir experiments\lab_qwen\four_accuracy_first\01_vision_expert --clear-output
+```
+
+采集结束立即执行 accuracy-first 的本地微调命令。它会自动导出并重建下一层；
+下一次实验只加载新生成的 `02_vision_global\phase_to_play\vision_global.bmp`。
 
 然后按实验室总流程重建 `amplitude_to_play`、手动加载该层 phase BMP、采集
 CCD。完成后本地执行该层微调并导出下一层；依次对四个 stage 重复。若使用
