@@ -74,7 +74,7 @@ def save_resolved_config(settings: Any) -> None:
         "checkpoint": str(settings.continuation_checkpoint),
         "sha256": settings.continuation_sha256,
         "optimizer_state": "reset",
-        "noise_start": "first continuation epoch after Stage-A epoch 4",
+        "noise_start": "absolute epoch 4 after selected Stage-A epoch 3",
         "selection_policy": "minimum training loss; sealed test evaluated once",
     }
     path.write_text(

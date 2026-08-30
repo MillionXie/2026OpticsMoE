@@ -6,8 +6,9 @@ continuation:
   variant: override_in_variant
 
 training:
-  # Stage-A ends at epoch 4. These are 32 additional epochs (5..36), with
-  # displacement, brightness, CCD and coherent-zero-order noise active from 5.
+  # The pinned Stage-A EMA checkpoint was selected at epoch 3. These are 32
+  # additional epochs (absolute epochs 4..35), with every optical perturbation
+  # active from the first continuation update.
   epochs: 32
   learning_rate: 0.00002
   adapter_learning_rate: 0.00001

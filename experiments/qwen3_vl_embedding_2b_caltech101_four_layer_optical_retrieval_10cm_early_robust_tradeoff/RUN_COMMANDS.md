@@ -49,8 +49,9 @@ CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_
 CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_early_robust_tradeoff --config experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_early_robust_tradeoff/configs/release/balanced_floor0p5.yaml --phase train
 ```
 
-两组都从 Stage-A 第 4 epoch 的固定 SHA checkpoint 开始，噪声从第一个续训
-epoch 就生效，优化器状态重置。每组额外训练 32 epoch，每 epoch 12 个均衡
+两组都从 Stage-A 训练中按 train loss 选出的第 3 epoch 固定 SHA checkpoint
+开始；噪声从绝对 epoch 4 的第一个续训 update 就生效，优化器状态重置。
+每组额外训练 32 epoch（绝对 epoch 4–35），每 epoch 12 个均衡
 batch。训练期间 test 完全封存，checkpoint 只由 train loss 选择。
 
 ## 3. 仿真测试（训练完成后各执行一次）

@@ -43,7 +43,7 @@ class EarlyRobustTradeoffReplacement(FourLayerOpticalReplacement):
             {
                 "type": self.training_architecture_label,
                 "checkpoint_architecture": self.checkpoint_architecture,
-                "initialization": "strict_resume_from_warmstart5_stage_a_epoch4",
+                "initialization": "strict_resume_from_warmstart5_stage_a_selected_epoch3",
                 "tradeoff_variant": settings.tradeoff_variant,
                 "minimum_optical_fusion_coefficient": (
                     settings.optical_fusion_minimum
