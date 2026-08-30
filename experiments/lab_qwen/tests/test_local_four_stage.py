@@ -1,7 +1,11 @@
 from pathlib import Path
 from types import SimpleNamespace
 
-from experiments.lab_qwen.local_four_stage import _configure_local_backbone
+from experiments.lab_qwen.local_four_stage import (
+    PROFILES,
+    _configure_local_backbone,
+    _paths,
+)
 
 
 def test_local_four_stage_prefers_complete_offline_snapshot(tmp_path: Path) -> None:
@@ -26,3 +30,16 @@ def test_local_four_stage_prefers_complete_offline_snapshot(tmp_path: Path) -> N
     assert settings.model_id == str(model.resolve())
     assert settings.cache_dir is None
     assert settings.local_files_only is True
+
+
+def test_tradeoff_profiles_never_share_checkpoint_or_session_paths(
+    tmp_path: Path,
+) -> None:
+    outputs = {
+        profile: _paths(tmp_path, "vision_expert", profile)
+        for profile in PROFILES
+    }
+    assert len({str(paths[1]) for paths in outputs.values()}) == len(PROFILES)
+    assert len({str(paths[2]) for paths in outputs.values()}) == len(PROFILES)
+    assert outputs["accuracy_first"][2].name == "accuracy_first_ema.pt"
+    assert outputs["balanced"][2].name == "balanced_ema.pt"

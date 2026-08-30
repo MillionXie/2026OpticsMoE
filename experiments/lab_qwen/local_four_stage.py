@@ -8,6 +8,7 @@ after the selected checkpoint has been restored.
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 import os
 from pathlib import Path
@@ -26,22 +27,55 @@ OFFLINE_MODEL_REQUIRED_FILES = (
     "preprocessor_config.json",
     "tokenizer.json",
 )
+PROFILES = {
+    "strong_noise": {
+        "project": (
+            "qwen3_vl_embedding_2b_caltech101_four_layer_"
+            "optical_retrieval_10cm_ccd_noise1"
+        ),
+        "config": "configs/release/stage_hardware_canonical_ccd.yaml",
+        "initial_checkpoint": "ema.pt",
+        "session": "four",
+    },
+    "accuracy_first": {
+        "project": (
+            "qwen3_vl_embedding_2b_caltech101_four_layer_"
+            "optical_retrieval_10cm_early_robust_tradeoff"
+        ),
+        "config": "configs/hardware/accuracy_first_quick210.yaml",
+        "initial_checkpoint": "accuracy_first_ema.pt",
+        "session": "four_accuracy_first",
+    },
+    "balanced": {
+        "project": (
+            "qwen3_vl_embedding_2b_caltech101_four_layer_"
+            "optical_retrieval_10cm_early_robust_tradeoff"
+        ),
+        "config": "configs/hardware/balanced_quick210.yaml",
+        "initial_checkpoint": "balanced_ema.pt",
+        "session": "four_balanced",
+    },
+}
 
 
 def _repo_root() -> Path:
     return Path(__file__).resolve().parents[2]
 
 
-def _paths(root: Path, stage: str) -> tuple[Path, Path, Path]:
-    project = root / (
-        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_"
-        "optical_retrieval_10cm_ccd_noise1"
-    )
-    config = project / "configs/release/stage_hardware_canonical_ccd.yaml"
-    session = root / "experiments/lab_qwen/four"
+def _paths(root: Path, stage: str, profile: str) -> tuple[Path, Path, Path]:
+    if profile not in PROFILES:
+        raise ValueError(f"Unknown local four-stage profile {profile!r}")
+    contract = PROFILES[profile]
+    project = root / "experiments" / str(contract["project"])
+    config = project / str(contract["config"])
+    session = root / "experiments" / "lab_qwen" / str(contract["session"])
     index = STAGES.index(stage)
     checkpoint = (
-        root / "experiments/lab_qwen/model/ema.pt"
+        root
+        / "experiments"
+        / "lab_qwen"
+        / "model"
+        / str(contract["initial_checkpoint"])
         if index == 0
         else session / "checkpoints" / f"after_{STAGES[index - 1]}.pt"
     )
@@ -117,16 +151,10 @@ def run(
     inference_batch_size: int,
     early_stopping_patience: int,
     finetune_only: bool,
+    profile: str = "strong_noise",
     model_dir: str | Path | None = None,
 ) -> dict[str, object]:
     # Heavy Qwen/Torch imports occur only for this explicit local-training command.
-    from experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1.modeling import (
-        build_hybrid_student,
-        load_backbone,
-    )
-    from experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_ccd_noise1.settings import (
-        load_settings,
-    )
     from experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust import (
         hardware_bridge as bridge,
     )
@@ -136,8 +164,16 @@ def run(
 
     if stage not in STAGES:
         raise ValueError(f"Unknown stage {stage!r}")
+    if profile not in PROFILES:
+        raise ValueError(f"Unknown local four-stage profile {profile!r}")
+    project_module = str(PROFILES[profile]["project"])
+    modeling = importlib.import_module(f"experiments.{project_module}.modeling")
+    settings_module = importlib.import_module(f"experiments.{project_module}.settings")
+    build_hybrid_student = modeling.build_hybrid_student
+    load_backbone = modeling.load_backbone
+    load_settings = settings_module.load_settings
     root = _repo_root()
-    config, session, checkpoint = _paths(root, stage)
+    config, session, checkpoint = _paths(root, stage, profile)
     if not config.is_file():
         raise FileNotFoundError(f"Local four-stage config is missing: {config}")
     if not checkpoint.is_file():
@@ -170,6 +206,7 @@ def run(
     selected = session / "checkpoints" / f"after_{stage}.pt"
     result: dict[str, object] = {
         "status": "fine_tuned",
+        "profile": profile,
         "stage": stage,
         "checkpoint": str(selected),
         "metrics": str(
@@ -214,6 +251,16 @@ def main() -> int:
     parser.add_argument("--early-stopping-patience", type=int, default=15)
     parser.add_argument("--finetune-only", action="store_true")
     parser.add_argument(
+        "--profile",
+        choices=sorted(PROFILES),
+        default="strong_noise",
+        help=(
+            "Must match the initial checkpoint. New 85%% simulation runs use "
+            "accuracy_first or balanced; do not reinterpret their fusion floor "
+            "with the legacy strong_noise profile."
+        ),
+    )
+    parser.add_argument(
         "--model-dir",
         default=None,
         help=(
@@ -231,6 +278,7 @@ def main() -> int:
         inference_batch_size=args.inference_batch_size,
         early_stopping_patience=args.early_stopping_patience,
         finetune_only=args.finetune_only,
+        profile=args.profile,
         model_dir=args.model_dir,
     )
     print(json.dumps(report, ensure_ascii=False, indent=2))

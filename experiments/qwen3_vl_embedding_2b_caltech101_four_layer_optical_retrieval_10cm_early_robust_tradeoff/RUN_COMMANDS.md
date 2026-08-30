@@ -99,6 +99,17 @@ CCD。完成后本地执行该层微调并导出下一层；依次对四个 stag
 实验室 ZIP，优先运行其中 `experiments.lab_qwen.local_four_stage` 的短命令，
 它会完成“校验输入 → 本地微调 → development 最优选模 → 导出下一层”。
 
+accuracy-first 每层采完后的本地命令（stage 名依次替换）：
+
+```powershell
+python -m experiments.lab_qwen.local_four_stage --profile accuracy_first --stage vision_expert --epochs 100
+```
+
+balanced 必须显式改成 `--profile balanced`。两个 profile 的初始 checkpoint
+分别固定为 `experiments/lab_qwen/model/accuracy_first_ema.pt` 和
+`balanced_ema.pt`，后续链分别写入 `four_accuracy_first`、`four_balanced`，
+因此不会互相覆盖。旧模型才使用 `--profile strong_noise`。
+
 实测 checkpoint 选择使用固定 development 子集，不使用 test。最多 100 epoch，
 连续 15 epoch development 无提升可提前停止；最后对 100 张 sealed test 只评一次。
 
