@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 import json
 import os
@@ -35,6 +36,13 @@ NOFT_SCOPE = "head_only"
 PANEL_RUNTIME_FILES = (
     "experiments/qwen3_vl_patch_stem_8stage_separable_optical_downstream_fa/phase_only.py",
 )
+# The only difference in this historical panel implementation is the stricter
+# head-gradient equality check that rejected normal CUDA reduction noise. Keep
+# this exact digest allow-listed so already completed 50-epoch head-only runs
+# remain usable without weakening any other run-identity field.
+LEGACY_NUMERIC_AUDIT_PANEL_SHA256 = (
+    "0f4e9916b00d69e4978b2fc38260f19e4c4821357718896d04c435ad681d4ff88"
+)
 
 
 def _sha256_file(path: Path) -> str:
@@ -62,6 +70,81 @@ def panel_implementation_sha256() -> str:
         digest.update(relative.encode("utf-8"))
         digest.update(path.read_bytes())
     return digest.hexdigest()
+
+
+def _noft_identity_candidates(
+    noft_settings: "PhaseOnlySettings",
+) -> tuple[dict[str, Any], ...]:
+    """Return the exact current and explicitly compatible NoFT identities."""
+
+    current_settings = noft_settings.to_dict()
+    current_panel = noft_settings.protocol.to_dict(method="noft")
+
+    legacy_settings = copy.deepcopy(current_settings)
+    legacy_panel = copy.deepcopy(current_panel)
+    legacy_settings["phase_only_panel"]["panel_implementation_sha256"] = (
+        LEGACY_NUMERIC_AUDIT_PANEL_SHA256
+    )
+    legacy_panel["panel_implementation_sha256"] = LEGACY_NUMERIC_AUDIT_PANEL_SHA256
+
+    common = {
+        "status": "complete",
+        "task": noft_settings.task,
+        "method": "noft",
+        "seed": noft_settings.seed,
+        "implementation_sha256": implementation_sha256(),
+    }
+    return (
+        {
+            **common,
+            "identity_version": "current",
+            "config_digest": training.sha256_json(
+                {
+                    "settings": current_settings,
+                    "implementation_sha256": implementation_sha256(),
+                }
+            ),
+            "phase_only_panel": current_panel,
+        },
+        {
+            **common,
+            "identity_version": "legacy_numeric_audit_v1",
+            "config_digest": training.sha256_json(
+                {
+                    "settings": legacy_settings,
+                    "implementation_sha256": implementation_sha256(),
+                }
+            ),
+            "phase_only_panel": legacy_panel,
+        },
+    )
+
+
+def _match_noft_identity(
+    noft_result: Mapping[str, Any], noft_settings: "PhaseOnlySettings"
+) -> str:
+    """Require one complete, exact identity; return its compatibility label."""
+
+    mismatches_by_version: dict[str, dict[str, tuple[Any, Any]]] = {}
+    for candidate in _noft_identity_candidates(noft_settings):
+        version = str(candidate["identity_version"])
+        expected = {
+            key: value
+            for key, value in candidate.items()
+            if key != "identity_version"
+        }
+        mismatches = {
+            key: (noft_result.get(key), value)
+            for key, value in expected.items()
+            if noft_result.get(key) != value
+        }
+        if not mismatches:
+            return version
+        mismatches_by_version[version] = mismatches
+    raise RuntimeError(
+        "Phase-only head-only result identity mismatch: "
+        f"{mismatches_by_version}"
+    )
 
 
 @dataclass(frozen=True)
@@ -608,6 +691,7 @@ def run_phase_only(
 ) -> dict[str, Any]:
     if not isinstance(settings, PhaseOnlySettings):
         raise TypeError("run_phase_only requires PhaseOnlySettings")
+    noft_identity_version: str | None = None
     if settings.method != "noft":
         noft_settings = load_phase_only_settings(
             settings.protocol.panel_config,
@@ -624,32 +708,7 @@ def run_phase_only(
                 "Phase-only adaptation requires its own completed head-only result: "
                 f"{noft_result_path}"
             ) from error
-        expected_noft_digest = training.sha256_json(
-            {
-                "settings": noft_settings.to_dict(),
-                "implementation_sha256": implementation_sha256(),
-            }
-        )
-        expected_noft_panel = noft_settings.protocol.to_dict(method="noft")
-        expected_noft = {
-            "status": "complete",
-            "task": settings.task,
-            "method": "noft",
-            "seed": settings.seed,
-            "config_digest": expected_noft_digest,
-            "implementation_sha256": implementation_sha256(),
-            "phase_only_panel": expected_noft_panel,
-        }
-        mismatches = {
-            key: (noft_result.get(key), expected)
-            for key, expected in expected_noft.items()
-            if noft_result.get(key) != expected
-        }
-        if mismatches:
-            raise RuntimeError(
-                "Phase-only head-only result identity mismatch: "
-                f"{mismatches}"
-            )
+        noft_identity_version = _match_noft_identity(noft_result, noft_settings)
     with phase_only_runtime():
         result = training.run_training(settings, resume=resume)
     tag = settings.protocol.to_dict(method=settings.method)
@@ -657,6 +716,8 @@ def run_phase_only(
     if existing is not None and existing != tag:
         raise RuntimeError("Existing result has a different phase-only panel identity")
     result["phase_only_panel"] = tag
+    if noft_identity_version is not None:
+        result["phase_only_noft_identity"] = noft_identity_version
     training.write_json(settings.output_dir / "result.json", result)
     return result
 

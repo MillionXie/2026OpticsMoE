@@ -13,6 +13,8 @@ from experiments.qwen3_vl_patch_stem_8stage_separable_optical_downstream_fa.phas
     PANEL_FORMAT,
     PhaseOnlySettings,
     _head_gradient_comparison,
+    _match_noft_identity,
+    _noft_identity_candidates,
     add_phase_only_arguments,
     load_phase_only_settings,
     load_phase_only_settings_from_args,
@@ -165,6 +167,27 @@ def test_direct_adaptation_requires_panel_identified_noft_result(tmp_path: Path)
     )
     with pytest.raises(RuntimeError, match="own completed head-only result"):
         run_phase_only(settings)
+
+
+def test_noft_identity_allows_only_exact_current_or_known_numeric_audit(
+    tmp_path: Path,
+) -> None:
+    settings = load_phase_only_settings(
+        CONFIG,
+        task="isic2016",
+        method="noft",
+        seed=2026,
+        output_root=tmp_path / "isolated",
+    )
+    current, legacy = _noft_identity_candidates(settings)
+    current_result = {key: value for key, value in current.items() if key != "identity_version"}
+    legacy_result = {key: value for key, value in legacy.items() if key != "identity_version"}
+    assert _match_noft_identity(current_result, settings) == "current"
+    assert _match_noft_identity(legacy_result, settings) == "legacy_numeric_audit_v1"
+
+    legacy_result["seed"] = 2027
+    with pytest.raises(RuntimeError, match="identity mismatch"):
+        _match_noft_identity(legacy_result, settings)
 
 
 @pytest.mark.parametrize(
