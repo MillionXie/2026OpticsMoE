@@ -274,3 +274,19 @@ P13 训练器在服务器通过 52 项测试。真实 ImageNet smoke 已完成�
 4. 100 层先完成一条完整 chain 作为 headline-scale demonstration；64 层再补三条独立 growth/优化 seeds。若三条都从同一个 P11 epoch-88 起点出发，只能估计 growth 随机性，不能称为三个独立预训练 backbone 初始化。
 
 电子模块暂时保持 exact BP。研究痛点是深光路的当前物理伴随算子难以逐层获得，而轻量电子 mixer、gate、norm 与任务头的梯度在数字域可直接得到。若将电子模块也改成随机反馈，回答的会变成“全混合网络是否完全不需要 BP”这一不同问题。当前更干净的归因证据是 phase-only 四格与 P/E/H transplant/Shapley 审计；论文口径应写成 `fixed optical feedback with exact optimization of lightweight electronic modules`，不能写“整个网络不需要 BP”。
+
+### P13 正式训练已启动
+
+四卡真实 DDP smoke 随后已在物理 GPU 0/3/4/5 通过：world size 4、每 rank batch 24、gradient accumulation 2、有效 global batch 192，四个 rank 完成同一个 optimizer update，状态为 `complete`，无 OOM、NCCL 或 sampler 错误。
+
+在此基础上已经启动正式 `8→16` FA-source growth：
+
+- 服务器 PID：`3527459`；
+- GPU：物理 `0,3,4,5`，均通过 UUID 映射，未使用 GPU 6 的 A100；
+- 训练：20 epoch，前 10 epoch 将新增 8 层从 `alpha=0.02` 升到 1，后 10 epoch 全深度训练；
+- batch：`24 × 4 ranks × accumulation 2 = 192`；
+- 学习率：新增 phase `7e-3`，carried phase `3.5e-3`，新增/已有电子分别 `3.5e-4` / `2e-4`，临时 ImageNet head `5e-4`，均经过 warmup/cosine schedule；
+- 首次监督时已经到 epoch 1、micro-batch 100/13345、optimizer step 50，四卡均有真实计算负载；
+- 日志：`experiments/qwen3_vl_patch_stem_progressive_64stage_optical_imagenet_backbone/logs/p13_growth16_fa_source_20e_gb192.latest.log`。
+
+这条 run 使用增长起点捕获的新层反馈，因此当前严格称为 `source-init feedback`。只有完成 16→32→64/100 的 ImageNet 训练，再将完整深层算子冻结用于下游，才能称为 `pretrained deep feedback`。
