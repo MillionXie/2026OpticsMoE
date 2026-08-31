@@ -29,7 +29,7 @@ P12_PHASE_ONLY_METHOD=bp \
 bash experiments/qwen3_vl_patch_stem_8stage_separable_optical_downstream_fa/commands/p12_phase_only_fa_50e.sh smoke
 ```
 
-## Formal multi-GPU launch (do not run until approved)
+## Formal multi-GPU launch
 
 ```bash
 P12_PHASE_ONLY_REPO_ROOT=/DATA/DATA1/guest3/2026OpticsMoE_p12_phase_only_e305 \
@@ -41,6 +41,28 @@ bash experiments/qwen3_vl_patch_stem_8stage_separable_optical_downstream_fa/comm
 
 The queue first produces the panel's own head-only/common start for every task and seed, then launches BP, FA-source/pretrained and FA-random from the byte-identical common start.
 
+## ISIC numeric-audit retry (2026-09-01)
+
+The first ISIC adaptation attempts stopped before epoch 1 because a bitwise
+head-gradient repeat check rejected ordinary CUDA reduction noise. After the
+audited tolerance fix, restart only the three missing adaptation methods (and
+never the completed NoFT/Caltech/LSP results) with:
+
+```bash
+P12_PHASE_ONLY_ISIC_RETRY_GPUS=0,3,5 \
+  bash experiments/qwen3_vl_patch_stem_8stage_separable_optical_downstream_fa/commands/p12_phase_only_isic_numeric_retry.sh launch
+```
+
+Status and logs:
+
+```bash
+bash experiments/qwen3_vl_patch_stem_8stage_separable_optical_downstream_fa/commands/p12_phase_only_isic_numeric_retry.sh status
+bash experiments/qwen3_vl_patch_stem_8stage_separable_optical_downstream_fa/commands/p12_phase_only_isic_numeric_retry.sh tail
+```
+
+This launcher refuses to overwrite an existing `result.json`. Each method has
+its own PID and `logs/retry_after_numeric_fix.log`.
+
 ## Identity and e305 compatibility
 
 `phase_only.py`, its queue/smoke wrappers, this config and these tests are add-on files. They are intentionally not added to `settings.py::IMPLEMENTATION_FILES`, so the locked e305 P12 implementation digest remains unchanged and its strict common-start loader stays usable. This does **not** hide the new behavior:
@@ -51,4 +73,9 @@ The queue first produces the panel's own head-only/common start for every task a
 - `result.json` includes the full phase-only identity;
 - output is isolated under `runs/p12_phase_only_fa_50e`.
 
-For a formal run, create a worktree directly from locked commit `e305e0b`, apply only these new add-on files, and verify `implementation_sha256()` equals the completed P12 artifact before launching. Do not run this panel from a worktree where any file in `IMPLEMENTATION_FILES` differs from e305.
+The 2026-09-01 retry permits exactly one historical base digest and one panel
+digest. The only base diff adds optional source-provenance return fields; it
+does not change tensor loading, forward, loss, or optimization. Both the old
+NoFT result and its common-start checkpoint must still match task, seed,
+dataset manifest, source checkpoint, completed epoch count, and the exact
+allow-listed digests. No general implementation-hash bypass is used.
