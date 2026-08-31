@@ -654,12 +654,16 @@ def test_p11_to_16_initializer_requires_two_epoch88_sources(
         "p11_epoch88_matched_continue_20e_gb192.yaml",
     ],
 )
-def test_formal_configs_pin_canonical_p11_backbone_sha(name: str) -> None:
+def test_formal_configs_pin_canonical_p11_source_shas(name: str) -> None:
     config_path = Path(train.__file__).with_name("configs") / name
     initialization = train.load_config(config_path)["initialization"]
     assert (
         initialization["expected_p11_backbone_sha256"]
         == train.OFFICIAL_P11_BACKBONE_SHA256
+    )
+    assert (
+        initialization["expected_p11_training_sha256"]
+        == train.OFFICIAL_P11_TRAINING_SHA256
     )
 
 
