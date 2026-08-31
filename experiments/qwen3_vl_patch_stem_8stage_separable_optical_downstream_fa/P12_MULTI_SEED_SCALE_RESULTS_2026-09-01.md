@@ -161,3 +161,72 @@ RTX 4090、batch=1、post-adapter 合成光场、activation checkpoint、一次 
 - `e7ae69e7`：phase-only 四组面板。
 
 所有新启动命令均位于各自实验的 `commands/` 目录；正式训练、控制实验与机制审计使用互不覆盖的输出目录。
+
+## 10. 2026-09-01 追加执行与百层论证边界
+
+### 多 run 与 No-ImageNet body
+
+No-ImageNet body 对照已经从下游 seed 2026 扩展到 2027、2028。三次下游
+run 共用同一个 `init_seed=2026` 随机 body，因此这一批估计的是“给定同一
+随机 backbone 起点时，数据划分、任务头初始化与训练随机性”的方差，不把
+不同随机 backbone 初始化混进同一个误差条。服务器队列为 36 个状态：原
+seed 2026 的 12 个结果保持只读复用，新增 seed 2027/2028 的 24 个结果使用
+GPU 1/2 继续训练。若正文需要把“随机 backbone 初始化方差”也作为独立结论，
+再另建 `init_seed=2027/2028` 两个 source panel；不要把两类随机性混称为普通
+三 seed。
+
+### phase-only 数值审计与续跑
+
+phase-only seed 2026 中 Caltech、LSP 以及三个任务的 NoFT 共 9/12 项已经
+完成。最初 ISIC 的三个适配任务在 epoch 1 前被重复 CUDA reduction 的
+bitwise-equality 检查拒绝；该失败不是训练发散。首次修复后的 FA-source 在
+epoch 9 又出现最大绝对差 `1.715e-4`，但相对 L2 仅 `2.164e-4`、余弦为
+`0.99999999`，因此把单元素绝对门限校准为 `<=5e-4`；相对 L2 仍要求
+`<=1e-3`、余弦仍要求 `>=0.99999`，并逐 tensor 记录。旧
+NoFT/common-start 只通过一组明确 allow-list 的基础实现 SHA、面板 SHA、配置
+摘要、task/seed、数据 manifest、source checkpoint 和完成 epoch 联合校验，
+没有一般性的跳过身份检查。ISIC 的 BP、FA-source、FA-random 已分别在 GPU
+0/3/5 重启并真实进入 epoch 1；专用入口为
+`commands/p12_phase_only_isic_numeric_retry.sh`，拒绝覆盖任何已有
+`result.json`。
+
+### 为什么电子仍然使用 exact BP
+
+当前论文问题不是证明“所有电子与光学模块都不需要反向传播”，而是避免为
+深光路逐次获取、标定并实现当前物理伴随算子。因此正式定义保持：
+
+- 光学 stage 之间的反馈连接比较 current BP、source-fixed 与 random-fixed；
+- adapter、轻量 mixer、归一化、门控和读出头仍使用普通电子 BP；
+- phase-only 面板冻结电子 backbone，专门判断高总分是否来自电子补偿；
+- P/E/H 交换审计判断真正可运输的是 phase 还是 electronics/head。
+
+把电子模块也强制改用随机反馈会引入另一个研究问题，而且不能更直接回答
+“光学伴随传播难以部署”的痛点。更合适的强化方式是提高光学占比，而不是
+故意削弱容易获得精确梯度的电子部分。
+
+### 百层验证必须满足的四个证据层级
+
+百层/1505 万相位参数可以成为抓眼的规模验证，但不能只靠构造模型或单批
+反传。按以下层级报告，避免把工程可运行性写成语义有效性：
+
+1. **函数保持迁移**：8→16→32→64→100 每次在新增 `alpha=0` 时，旧模型
+   feature/logit 位级一致；这保证“继续加参数”不会先毁掉已有语义。
+2. **alpha=1 全深度梯度**：在 BP、FA-source、FA-random 下，所有 carried
+   与 new phase 都必须有 finite、non-zero 梯度，同时输入 amplitude 梯度
+   存在；`alpha=0.01` 结果只算显存/吞吐工程点。
+3. **ImageNet 继续预训练**：每次 growth 前 10 epoch 把新增层升到 1，后
+   10 epoch 训练真正全深模型；同时运行相同样本/更新预算的 8 层 continuation。
+4. **语义与迁移贡献**：报告 ImageNet Top-1、分层 phase motion、drop/reset
+   新增层造成的精度下降，并在 Caltech/ISIC/LSP 四组下游协议中验证。只有
+   这一层成立，才能称为“百层有效通用光学 backbone”。
+
+还要严格区分两种 `FA-source`：growth 时新插入层尚未预训练，其固定反馈只能
+称为 `source-init feedback`；只有先把完整 64/100 层 backbone 训练好，再冻结
+其全深度算子用于下游适配，才是 `pretrained deep feedback`。正文关于“大模型
+预训练算子复用”的主证据应来自后者。前者可以作为“扩深期间也不需要追踪最新
+光学伴随算子”的附加实验，不能混为同一结论。
+
+P13 的首次代码审查还要求正式 checkpoint 锁定 train/model/migration/optics
+实现哈希、独立 DataLoader RNG、防止任一 stage 静默退回 BP，并为每一段
+growth 提供只接受上一深度 `best_full_depth.pt` 的启动门。上述保护全部通过
+CPU测试和真实 CUDA smoke 之前，不启动长时间 ImageNet 训练。

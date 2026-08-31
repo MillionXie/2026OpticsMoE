@@ -10,10 +10,13 @@ from torch import nn
 from experiments.qwen3_vl_patch_stem_8stage_separable_optical_downstream_fa import training
 from experiments.qwen3_vl_patch_stem_8stage_separable_optical_downstream_fa.phase_only import (
     ADAPTATION_SCOPE,
+    HEAD_GRADIENT_MAX_ABSOLUTE_DIFFERENCE,
+    LEGACY_ABS1E4_ADAPTATION_PANEL_SHA256,
     LEGACY_PHASE_ONLY_BASE_IMPLEMENTATION_SHA256,
     PANEL_FORMAT,
     PhaseOnlySettings,
     _head_gradient_comparison,
+    _config_digest_with_panel_sha,
     _match_noft_identity,
     _noft_identity_candidates,
     add_phase_only_arguments,
@@ -92,13 +95,16 @@ class _Model(nn.Module):
 def test_head_gradient_audit_accepts_cuda_scale_repeat_noise() -> None:
     exact = (torch.linspace(-0.5, 0.5, 257), torch.tensor([0.2, -0.1]))
     candidate = (
-        exact[0] + 2.0e-5 * torch.sin(torch.arange(257, dtype=torch.float32)),
+        exact[0] + 2.0e-4 * torch.sin(torch.arange(257, dtype=torch.float32)),
         exact[1] + torch.tensor([1.0e-6, -1.0e-6]),
     )
     rows, summary = _head_gradient_comparison(exact, candidate)
     assert summary["all_passed"] is True
     assert all(row["passed"] for row in rows)
-    assert summary["maximum_absolute_difference"] < 1.0e-4
+    assert 1.0e-4 < summary["maximum_absolute_difference"]
+    assert summary["maximum_absolute_difference"] < (
+        HEAD_GRADIENT_MAX_ABSOLUTE_DIFFERENCE
+    )
 
 
 def test_head_gradient_audit_rejects_direction_or_scale_change() -> None:
@@ -197,6 +203,36 @@ def test_noft_identity_allows_only_exact_current_or_known_numeric_audit(
         _match_noft_identity(legacy_result, settings)
 
 
+def test_prior_abs1e4_adaptation_digest_is_exact_and_method_specific(
+    tmp_path: Path,
+) -> None:
+    bp = load_phase_only_settings(
+        CONFIG,
+        task="isic2016",
+        method="bp",
+        seed=2026,
+        output_root=tmp_path / "isolated",
+    )
+    fa = load_phase_only_settings(
+        CONFIG,
+        task="isic2016",
+        method="fa_pretrained",
+        seed=2026,
+        output_root=tmp_path / "isolated",
+    )
+    bp_digest = _config_digest_with_panel_sha(
+        bp,
+        LEGACY_ABS1E4_ADAPTATION_PANEL_SHA256,
+    )
+    fa_digest = _config_digest_with_panel_sha(
+        fa,
+        LEGACY_ABS1E4_ADAPTATION_PANEL_SHA256,
+    )
+    assert len(bp_digest) == 64
+    assert len(fa_digest) == 64
+    assert bp_digest != fa_digest
+
+
 @pytest.mark.parametrize(
     ("method", "expected_groups", "expected_phase_trainable"),
     [
@@ -241,15 +277,21 @@ def test_runtime_patch_is_process_local_and_holds_frozen_backbone_in_eval() -> N
     original_set = training.P11DownstreamModel.set_backbone_trainable
     original_train = training.P11DownstreamModel.train
     original_load_common_start = training._load_common_start
+    original_validate_checkpoint = training._validate_checkpoint_identity
     with phase_only_runtime():
         assert training._trainable_groups is phase_only_trainable_groups
         assert training.P11DownstreamModel.set_backbone_trainable is not original_set
         assert training.P11DownstreamModel.train is not original_train
         assert training._load_common_start is not original_load_common_start
+        assert (
+            training._validate_checkpoint_identity
+            is not original_validate_checkpoint
+        )
     assert training._trainable_groups is original_groups
     assert training.P11DownstreamModel.set_backbone_trainable is original_set
     assert training.P11DownstreamModel.train is original_train
     assert training._load_common_start is original_load_common_start
+    assert training._validate_checkpoint_identity is original_validate_checkpoint
 
 
 def test_add_on_does_not_enter_or_change_locked_base_digest() -> None:

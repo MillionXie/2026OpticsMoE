@@ -50,6 +50,16 @@ LEGACY_NUMERIC_AUDIT_PANEL_SHA256 = (
 LEGACY_PHASE_ONLY_BASE_IMPLEMENTATION_SHA256 = (
     "c61ee3bbbabe6937f574987bb48452c0bb7d74502ef839628e55c698910d6fbd"
 )
+# Adaptation checkpoints written after the first CUDA-noise fix used this
+# panel digest. The next fix only raises the absolute guard from 1e-4 to
+# 5e-4 after an epoch-9 tensor showed 1.715e-4 absolute error while retaining
+# 2.164e-4 relative L2 and 0.99999999 cosine agreement.
+LEGACY_ABS1E4_ADAPTATION_PANEL_SHA256 = (
+    "b1f5bcc6524c5159c3392cbf78c4a7b911a821654dc2405d4f3c8eefe7bb1567"
+)
+HEAD_GRADIENT_MAX_ABSOLUTE_DIFFERENCE = 5.0e-4
+HEAD_GRADIENT_MAX_RELATIVE_L2_DIFFERENCE = 1.0e-3
+HEAD_GRADIENT_MINIMUM_COSINE = 0.99999
 
 
 def _sha256_file(path: Path) -> str:
@@ -137,6 +147,24 @@ def _noft_identity_candidates(
             ),
             "phase_only_panel": legacy_panel,
         },
+    )
+
+
+def _config_digest_with_panel_sha(
+    settings: "PhaseOnlySettings",
+    panel_sha256: str,
+    *,
+    base_implementation_sha256: str | None = None,
+) -> str:
+    resolved = copy.deepcopy(settings.to_dict())
+    base_digest = base_implementation_sha256 or implementation_sha256()
+    resolved["phase_only_panel"]["panel_implementation_sha256"] = panel_sha256
+    resolved["phase_only_panel"]["base_implementation_sha256"] = base_digest
+    return training.sha256_json(
+        {
+            "settings": resolved,
+            "implementation_sha256": base_digest,
+        }
     )
 
 
@@ -543,9 +571,12 @@ def _head_gradient_comparison(
             and float(candidate_double.norm()) <= 1.0e-10
         )
         passed = bool(
-            maximum <= 1.0e-4
-            and (near_zero or relative_l2 <= 1.0e-3)
-            and (near_zero or cosine >= 0.99999)
+            maximum <= HEAD_GRADIENT_MAX_ABSOLUTE_DIFFERENCE
+            and (
+                near_zero
+                or relative_l2 <= HEAD_GRADIENT_MAX_RELATIVE_L2_DIFFERENCE
+            )
+            and (near_zero or cosine >= HEAD_GRADIENT_MINIMUM_COSINE)
         )
         rows.append(
             {
@@ -657,9 +688,11 @@ def phase_only_gradient_diagnostic(
         "task_head_bp_vs_connector": {
             **head_summary,
             "numeric_tolerance": {
-                "max_absolute_difference": 1.0e-4,
-                "max_relative_l2_difference": 1.0e-3,
-                "minimum_cosine": 0.99999,
+                "max_absolute_difference": HEAD_GRADIENT_MAX_ABSOLUTE_DIFFERENCE,
+                "max_relative_l2_difference": (
+                    HEAD_GRADIENT_MAX_RELATIVE_L2_DIFFERENCE
+                ),
+                "minimum_cosine": HEAD_GRADIENT_MINIMUM_COSINE,
                 "reason": "repeat CUDA head reductions are not bitwise deterministic",
             },
             "per_tensor": head_rows,
@@ -681,6 +714,7 @@ def phase_only_runtime() -> Iterator[None]:
     original_groups = training._trainable_groups
     original_diagnostic = training.gradient_diagnostic
     original_load_common_start = training._load_common_start
+    original_validate_checkpoint_identity = training._validate_checkpoint_identity
 
     def set_trainable(model: P11DownstreamModel, enabled: bool) -> None:
         set_phase_only_backbone_trainable(model, enabled)
@@ -728,11 +762,66 @@ def phase_only_runtime() -> Iterator[None]:
                     f"current={current_error}; legacy={legacy_error}"
                 ) from legacy_error
 
+    def validate_checkpoint_identity(
+        payload: Mapping[str, Any],
+        runtime_settings: Settings,
+        *,
+        manifest_sha256: str,
+        config_digest: str | None = None,
+        implementation_digest: str | None = None,
+        source_checkpoint_sha256: str | None = None,
+        common_start_sha256: str | None = None,
+        source_phase_sha256: str | None = None,
+        feedback_manifest: Mapping[str, Any] | None = None,
+        frozen_stem_digest: str | None = None,
+    ) -> None:
+        arguments = {
+            "manifest_sha256": manifest_sha256,
+            "config_digest": config_digest,
+            "implementation_digest": implementation_digest,
+            "source_checkpoint_sha256": source_checkpoint_sha256,
+            "common_start_sha256": common_start_sha256,
+            "source_phase_sha256": source_phase_sha256,
+            "feedback_manifest": feedback_manifest,
+            "frozen_stem_digest": frozen_stem_digest,
+        }
+        try:
+            original_validate_checkpoint_identity(
+                payload,
+                runtime_settings,
+                **arguments,
+            )
+            return
+        except RuntimeError as current_error:
+            if not isinstance(runtime_settings, PhaseOnlySettings):
+                raise
+            legacy_digest = _config_digest_with_panel_sha(
+                runtime_settings,
+                LEGACY_ABS1E4_ADAPTATION_PANEL_SHA256,
+            )
+            if payload.get("config_digest") != legacy_digest:
+                raise
+            legacy_arguments = dict(arguments)
+            legacy_arguments["config_digest"] = legacy_digest
+            try:
+                original_validate_checkpoint_identity(
+                    payload,
+                    runtime_settings,
+                    **legacy_arguments,
+                )
+            except RuntimeError as legacy_error:
+                raise RuntimeError(
+                    "Checkpoint matched neither the current identity nor the "
+                    "single allow-listed abs-1e-4 phase-only identity; "
+                    f"current={current_error}; legacy={legacy_error}"
+                ) from legacy_error
+
     P11DownstreamModel.set_backbone_trainable = set_trainable  # type: ignore[method-assign]
     P11DownstreamModel.train = train_mode  # type: ignore[method-assign]
     training._trainable_groups = phase_only_trainable_groups
     training.gradient_diagnostic = phase_only_gradient_diagnostic
     training._load_common_start = load_common_start
+    training._validate_checkpoint_identity = validate_checkpoint_identity
     try:
         yield
     finally:
@@ -741,6 +830,7 @@ def phase_only_runtime() -> Iterator[None]:
         training._trainable_groups = original_groups
         training.gradient_diagnostic = original_diagnostic
         training._load_common_start = original_load_common_start
+        training._validate_checkpoint_identity = original_validate_checkpoint_identity
 
 
 def run_phase_only(
@@ -749,6 +839,19 @@ def run_phase_only(
     if not isinstance(settings, PhaseOnlySettings):
         raise TypeError("run_phase_only requires PhaseOnlySettings")
     noft_identity_version: str | None = None
+    resume_identity_version: str | None = None
+    last_path = settings.output_dir / "checkpoints" / "last.pt"
+    if resume and settings.method != "noft" and last_path.is_file():
+        checkpoint_identity = torch.load(
+            last_path,
+            map_location="cpu",
+            weights_only=False,
+        ).get("config_digest")
+        if checkpoint_identity == _config_digest_with_panel_sha(
+            settings,
+            LEGACY_ABS1E4_ADAPTATION_PANEL_SHA256,
+        ):
+            resume_identity_version = "legacy_abs1e4_numeric_audit"
     if settings.method != "noft":
         noft_settings = load_phase_only_settings(
             settings.protocol.panel_config,
@@ -776,6 +879,8 @@ def run_phase_only(
     if noft_identity_version is not None:
         result["phase_only_noft_identity"] = noft_identity_version
         result["phase_only_common_start_identity"] = noft_identity_version
+    if resume_identity_version is not None:
+        result["phase_only_resume_identity"] = resume_identity_version
     training.write_json(settings.output_dir / "result.json", result)
     return result
 
