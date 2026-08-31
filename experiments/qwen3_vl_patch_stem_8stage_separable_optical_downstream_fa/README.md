@@ -213,3 +213,26 @@ P11 架构、任务头和 `50 epoch head-only + 50 epoch adaptation` 协议，�
 `source_regime`、`init_seed`、stem SHA 和 model report 的 source，再把真实文件
 SHA 写入隔离目录中的正式 resolved config。完整命令与解释边界见
 `commands/P12_SCRATCH_DOWNSTREAM_50E_COMMANDS.md`。
+
+## 10. FA-random 机制审计（不扩展主表）
+
+为了回答“FA-random 为什么仍可能较强”，新增独立的零训练机制审计。它只读取
+正式四组已经完成的 `common_start.pt` 与 BP/FA-pretrained/FA-random 的
+`best.pt` 或 `last.pt`，不增加第五个训练组，也不修改任何正式 checkpoint。
+每次反事实评估都从新的 P11 模型实例开始，只替换明确分区的参数：八层物理相位
+`P`、可复用电子 adapter/mixer/门控 `E`、临时任务头 `H`。冻结 Qwen stem、
+传播算子、source phases、反馈相位与所有其他 buffer 始终来自 fresh source，
+绝不随 donor checkpoint 交换。
+
+每个 task/seed/endpoint 共缓存并评估 40 个唯一状态，覆盖三种更新方法各自完整的
+`2^3` 个 P/E/H factorial、BP/FAP/FAR 定向 phase/electronics swap，以及
+“仅保留 stage 1--7 相位更新”和“仅保留 stage 8 相位更新”。输出包括精确
+三因子 Shapley、donor transport ratio、stage 1--7/stage 8 recovery 和非线性
+interaction。默认 pilot 为 Caltech101 + ISIC2016、seed 2026、best endpoint；
+其后才扩展 best-vs-last、LSP 和三 seed。
+
+该审计的科学边界不变：P12 的 fixed feedback 只替换光学 stage 之间的误差连接；
+当前物理相位的局部梯度、电子残差和任务头都使用 exact BP。这符合可数字化电子
+支路能够正常反传、而光学逆传播难以实现的混合部署设定，但不能表述为“全模型
+所有参数都使用 FA”。完整命令、身份门禁、结果字段和解释规则见
+`commands/P12_MECHANISM_AUDIT_COMMANDS.md`。

@@ -336,3 +336,28 @@ bash /DATA/DATA1/guest3/2026OpticsMoE_p12_e305e0b/experiments/qwen3_vl_patch_ste
   `commands/P12_SCRATCH_DOWNSTREAM_50E_COMMANDS.md`。
 - 本条仅记录本地实现和待执行方案；尚未生成服务器 source、resolved config 或
   启动正式训练，因此没有填写任何 Scratch 性能数字。
+
+## 2026-09-01：P/E/H 零训练机制审计实现
+
+- 目的：在不扩展正式四组的前提下，区分 FA-random 的性能究竟主要来自已学习的
+  光学相位、exact-BP 电子骨干还是临时头，并检查结论是否依赖 best checkpoint
+  的验证选择。
+- 新增 `mechanism.py`：对 BP、FA-pretrained、FA-random 分别执行完整 8 状态
+  P/E/H factorial，计算 phase/electronics/head Shapley；同时执行三方法之间的
+  定向 phase/electronics donor swap，以及 stage 1--7 / stage 8 phase reset。
+- 隔离性：每个唯一状态都 deepcopy fresh source 模型，只交换 `requires_grad`
+  的 P/E/H 参数；冻结 Qwen stem 参数和所有 persistent buffer 均保留 fresh 值。
+  代码对 P/E/H 做 exact-cover 断言，并锁定恰好八个 `raw_phase` stage。
+- 身份门禁：运行前重新构建数据 manifest，并核对 task、seed、source checkpoint
+  SHA、source phase SHA、common-start SHA、frozen stem digest、P11 signature、
+  feedback manifest、config digest、implementation digest、checkpoint epoch 及完整
+  key/shape/dtype。任一不一致即拒绝生成机制结果。
+- 统计产物：独立 mechanism 目录内写入 `states.csv`、`shapley.csv`、
+  `directed_swaps.csv`、`phase_depth.csv` 和包含完整 link/identity 的 JSON。
+  loss 的原始差值保持原符号，只有显式命名的 `benefit_*` 字段翻转方向；分母近零
+  时 transport/recovery ratio 记录为 null，不制造无穷大。
+- 默认最小矩阵：Caltech101 + ISIC2016 × seed 2026 × best，共 80 次完整 test
+  evaluation；先运行独立 one-batch smoke，再执行 pilot。通过后可扩展 best/last、
+  LSP 与三 seed。命令见 `commands/P12_MECHANISM_AUDIT_COMMANDS.md`。
+- 本条仅记录本地代码、测试与待执行方案；没有启动服务器评估，也没有填写机制
+  数值。机制反事实只能作为功能归因证据，不能证明非线性网络中的唯一因果分解。
