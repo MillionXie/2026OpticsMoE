@@ -43,6 +43,13 @@ PANEL_RUNTIME_FILES = (
 LEGACY_NUMERIC_AUDIT_PANEL_SHA256 = (
     "0f4e9916b00d69e4978b2fc38260f19e4c4821357718896d04c435ad681d4ff88"
 )
+# The legacy phase-only campaign used the same executable P12 model.  The only
+# base-file diff is four optional source-provenance fields returned by
+# load_strict_p11_backbone; tensor loading, forward, loss and optimization are
+# unchanged.  Pair this digest only with the legacy panel digest above.
+LEGACY_PHASE_ONLY_BASE_IMPLEMENTATION_SHA256 = (
+    "c61ee3bbbabe6937f574987bb48452c0bb7d74502ef839628e55c698910d6fbd"
+)
 
 
 def _sha256_file(path: Path) -> str:
@@ -85,7 +92,13 @@ def _noft_identity_candidates(
     legacy_settings["phase_only_panel"]["panel_implementation_sha256"] = (
         LEGACY_NUMERIC_AUDIT_PANEL_SHA256
     )
+    legacy_settings["phase_only_panel"]["base_implementation_sha256"] = (
+        LEGACY_PHASE_ONLY_BASE_IMPLEMENTATION_SHA256
+    )
     legacy_panel["panel_implementation_sha256"] = LEGACY_NUMERIC_AUDIT_PANEL_SHA256
+    legacy_panel["base_implementation_sha256"] = (
+        LEGACY_PHASE_ONLY_BASE_IMPLEMENTATION_SHA256
+    )
 
     common = {
         "status": "complete",
@@ -107,12 +120,19 @@ def _noft_identity_candidates(
             "phase_only_panel": current_panel,
         },
         {
-            **common,
+            **{
+                **common,
+                "implementation_sha256": (
+                    LEGACY_PHASE_ONLY_BASE_IMPLEMENTATION_SHA256
+                ),
+            },
             "identity_version": "legacy_numeric_audit_v1",
             "config_digest": training.sha256_json(
                 {
                     "settings": legacy_settings,
-                    "implementation_sha256": implementation_sha256(),
+                    "implementation_sha256": (
+                        LEGACY_PHASE_ONLY_BASE_IMPLEMENTATION_SHA256
+                    ),
                 }
             ),
             "phase_only_panel": legacy_panel,
@@ -660,6 +680,7 @@ def phase_only_runtime() -> Iterator[None]:
     original_train = P11DownstreamModel.train
     original_groups = training._trainable_groups
     original_diagnostic = training.gradient_diagnostic
+    original_load_common_start = training._load_common_start
 
     def set_trainable(model: P11DownstreamModel, enabled: bool) -> None:
         set_phase_only_backbone_trainable(model, enabled)
@@ -673,10 +694,45 @@ def phase_only_runtime() -> Iterator[None]:
             model.head.train(True)
         return result
 
+    def load_common_start(
+        model: P11DownstreamModel,
+        settings: Settings,
+        manifest_sha256: str,
+        implementation_digest: str,
+        *,
+        require_completed_noft: bool = True,
+    ) -> str | None:
+        try:
+            return original_load_common_start(
+                model,
+                settings,
+                manifest_sha256,
+                implementation_digest,
+                require_completed_noft=require_completed_noft,
+            )
+        except RuntimeError as current_error:
+            if settings.method == "noft":
+                raise
+            try:
+                return original_load_common_start(
+                    model,
+                    settings,
+                    manifest_sha256,
+                    LEGACY_PHASE_ONLY_BASE_IMPLEMENTATION_SHA256,
+                    require_completed_noft=require_completed_noft,
+                )
+            except (FileNotFoundError, RuntimeError) as legacy_error:
+                raise RuntimeError(
+                    "Common start matched neither the current identity nor the "
+                    "single allow-listed phase-only legacy identity; "
+                    f"current={current_error}; legacy={legacy_error}"
+                ) from legacy_error
+
     P11DownstreamModel.set_backbone_trainable = set_trainable  # type: ignore[method-assign]
     P11DownstreamModel.train = train_mode  # type: ignore[method-assign]
     training._trainable_groups = phase_only_trainable_groups
     training.gradient_diagnostic = phase_only_gradient_diagnostic
+    training._load_common_start = load_common_start
     try:
         yield
     finally:
@@ -684,6 +740,7 @@ def phase_only_runtime() -> Iterator[None]:
         P11DownstreamModel.train = original_train  # type: ignore[method-assign]
         training._trainable_groups = original_groups
         training.gradient_diagnostic = original_diagnostic
+        training._load_common_start = original_load_common_start
 
 
 def run_phase_only(
@@ -718,6 +775,7 @@ def run_phase_only(
     result["phase_only_panel"] = tag
     if noft_identity_version is not None:
         result["phase_only_noft_identity"] = noft_identity_version
+        result["phase_only_common_start_identity"] = noft_identity_version
     training.write_json(settings.output_dir / "result.json", result)
     return result
 

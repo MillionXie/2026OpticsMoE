@@ -10,6 +10,7 @@ from torch import nn
 from experiments.qwen3_vl_patch_stem_8stage_separable_optical_downstream_fa import training
 from experiments.qwen3_vl_patch_stem_8stage_separable_optical_downstream_fa.phase_only import (
     ADAPTATION_SCOPE,
+    LEGACY_PHASE_ONLY_BASE_IMPLEMENTATION_SHA256,
     PANEL_FORMAT,
     PhaseOnlySettings,
     _head_gradient_comparison,
@@ -182,6 +183,12 @@ def test_noft_identity_allows_only_exact_current_or_known_numeric_audit(
     current, legacy = _noft_identity_candidates(settings)
     current_result = {key: value for key, value in current.items() if key != "identity_version"}
     legacy_result = {key: value for key, value in legacy.items() if key != "identity_version"}
+    assert legacy_result["implementation_sha256"] == (
+        LEGACY_PHASE_ONLY_BASE_IMPLEMENTATION_SHA256
+    )
+    assert legacy_result["phase_only_panel"]["base_implementation_sha256"] == (
+        LEGACY_PHASE_ONLY_BASE_IMPLEMENTATION_SHA256
+    )
     assert _match_noft_identity(current_result, settings) == "current"
     assert _match_noft_identity(legacy_result, settings) == "legacy_numeric_audit_v1"
 
@@ -233,13 +240,16 @@ def test_runtime_patch_is_process_local_and_holds_frozen_backbone_in_eval() -> N
     original_groups = training._trainable_groups
     original_set = training.P11DownstreamModel.set_backbone_trainable
     original_train = training.P11DownstreamModel.train
+    original_load_common_start = training._load_common_start
     with phase_only_runtime():
         assert training._trainable_groups is phase_only_trainable_groups
         assert training.P11DownstreamModel.set_backbone_trainable is not original_set
         assert training.P11DownstreamModel.train is not original_train
+        assert training._load_common_start is not original_load_common_start
     assert training._trainable_groups is original_groups
     assert training.P11DownstreamModel.set_backbone_trainable is original_set
     assert training.P11DownstreamModel.train is original_train
+    assert training._load_common_start is original_load_common_start
 
 
 def test_add_on_does_not_enter_or_change_locked_base_digest() -> None:
