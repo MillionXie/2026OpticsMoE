@@ -92,7 +92,14 @@ phase-only 实现已经完成，并在锁定的 e305 P12 基底通过 69 项测�
 - 6 个定向 electronics 交换；
 - 前 7 层与第 8 层 phase reset。
 
-Caltech 与 ISIC、seed 2026 的一批 smoke 已完整通过，每个任务均得到 40 个状态、6 行 Shapley、48 行定向交换和 6 行深度重置结果。完整测试集 pilot 已启动；smoke 数值不作为论文结果。
+Caltech 与 ISIC、seed 2026 的一批 smoke 已完整通过，每个任务均得到 40 个状态、6 行 Shapley、48 行定向交换和 6 行深度重置结果。完整测试集 pilot 随后也已结束，得到以下关键结果：
+
+- Caltech 的 FA-random 总增益为约 +0.94 个百分点，其中 phase Shapley 约 +0.26，electronics 约 +0.27，head 约 +0.41；该种子的异常高分并非主要来自随机反馈训练出的 phase。
+- ISIC 的 BP / FA-source / FA-random phase Shapley 分别只有约 +0.19 / +0.19 / +0.12 个 mIoU 点，而 electronics Shapley 约为 +3.33 / +3.30 / +3.47 个点，确认该任务当前主要由电子适配驱动。
+- 在固定 BP electronics/head 的情况下，移植 FA-source phase 可恢复 BP 自身 phase 收益的 95.0%（Caltech）和 98.5%（ISIC）；FA-random phase 只恢复 45.0% 和 29.6%。这是比最终总分更直接的 source-feedback 有效证据。
+- phase-depth reset 表明前 7 层通常恢复接近全部 phase 收益，而第 8 层只占很小部分。因此结果不是只依赖“最后一层相位天然仍使用 exact local gradient”。
+
+上述 pilot 仍只有一个种子。三任务、三种子、best endpoint 的完整 360-state 审计已经启动，最终统计以完整审计为准。
 
 ## 7. 百层 / 千万相位参数工程验证
 
