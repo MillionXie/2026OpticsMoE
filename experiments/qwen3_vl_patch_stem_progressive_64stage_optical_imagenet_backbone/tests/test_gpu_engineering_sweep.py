@@ -242,9 +242,18 @@ def test_one_step_audits_all_phases_and_input_amplitude() -> None:
 
 def test_full_depth_feedback_command_locks_engineering_matrix() -> None:
     experiment = Path(__file__).resolve().parents[1]
+    sweep_command = (
+        experiment / "commands" / "03_gpu_engineering_sweep_bs1.sh"
+    ).read_text(encoding="utf-8")
     command = (
         experiment / "commands" / "05_gpu_full_depth_feedback_cuda_audit_bs1.sh"
     ).read_text(encoding="utf-8")
+    assert 'source "$(dirname "$0")/_training_common.sh"' in sweep_command
+    assert (
+        'CUDA_VISIBLE_DEVICES="$(visible_gpu_uuids "${P13_GPU}")"'
+        in sweep_command
+    )
+    assert 'CUDA_VISIBLE_DEVICES="${P13_GPU}"' not in sweep_command
     assert 'DEPTHS="${DEPTHS:-64,100}"' in command
     assert (
         'FEEDBACK_METHODS="${FEEDBACK_METHODS:-bp_current,fa_source,fa_random}"'

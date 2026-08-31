@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-source "$(dirname "$0")/_common.sh"
+source "$(dirname "$0")/_training_common.sh"
 
 # This command is an engineering-only synthetic optical-field resource and
 # gradient audit. It is deliberately not a formal ImageNet training launcher.
@@ -14,7 +14,7 @@ ALPHA_MODE="${ALPHA_MODE:-epsilon_probe}"
 ALPHA_EPSILON="${ALPHA_EPSILON:-0.01}"
 P13_GPU="${P13_GPU:-0}"
 OUTPUT_DIRECTORY="${OUTPUT_DIRECTORY:-${EXPERIMENT}/runs/p13_gpu_engineering_sweep_bs1}"
-export CUDA_VISIBLE_DEVICES="${P13_GPU}"
+export CUDA_VISIBLE_DEVICES="$(visible_gpu_uuids "${P13_GPU}")"
 
 RESUME_ARGUMENTS=()
 if [[ "${RESUME_EXISTING:-0}" == "1" ]]; then
