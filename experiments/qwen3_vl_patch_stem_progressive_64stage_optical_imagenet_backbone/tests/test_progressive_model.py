@@ -157,6 +157,17 @@ def test_strict_p11_migration_is_function_preserving_at_alpha_zero(
         "target_anchor_phase_sequence_sha256"
     ]
     assert manifest["source_imagenet_head_migrated"] is False
+    feedback_source = manifest["full_depth_feedback_source"]
+    assert feedback_source["connector_count"] == 64
+    assert feedback_source["internal_interstage_connector_count"] == 63
+    assert len(feedback_source["per_connector_phase_sha256"]) == 64
+    assert feedback_source["persistent_in_backbone_state_dict"] is True
+    torch.testing.assert_close(
+        target.feedback_source_snapshot(),
+        target.phase_snapshot(),
+        rtol=0.0,
+        atol=0.0,
+    )
     assert target.depth_alpha_report()["all_exact_bypass"] is True
 
 

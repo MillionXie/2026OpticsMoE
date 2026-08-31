@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import hashlib
+import math
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, Mapping
 
 import torch
 from torch import nn
@@ -35,10 +37,54 @@ Ablation = Literal[
     "phase_random",
     "electronic_skip_off",
 ]
+FeedbackMethod = Literal["bp_current", "fa_source", "fa_random"]
 
 P13_SUPPORTED_DEPTHS = (16, 32, 64, 100)
 P11_SOURCE_STAGE_COUNT = 8
 P11_SOURCE_PAIR_COUNT = P11_SOURCE_STAGE_COUNT // 2
+P13_FEEDBACK_FORMAT = "p13-full-depth-optical-feedback-v1"
+
+
+def _sha256_tensor(value: torch.Tensor) -> str:
+    """Hash one tensor without depending on its current device."""
+
+    tensor = value.detach().cpu().contiguous()
+    digest = hashlib.sha256()
+    digest.update(f"{tensor.dtype}:{tuple(tensor.shape)}:".encode("utf-8"))
+    digest.update(tensor.numpy().tobytes(order="C"))
+    return digest.hexdigest()
+
+
+def _phase_sequence_sha256(phases: torch.Tensor) -> str:
+    if phases.ndim != 4:
+        raise ValueError("A feedback phase sequence must have shape [D,C,H,W]")
+    digest = hashlib.sha256()
+    for index, phase in enumerate(phases):
+        value = phase.detach().cpu().contiguous()
+        digest.update(f"{index}:{value.dtype}:{tuple(value.shape)}:".encode("utf-8"))
+        digest.update(value.numpy().tobytes(order="C"))
+    return digest.hexdigest()
+
+
+def _connector_random_seed(
+    *,
+    base_seed: int,
+    num_stages: int,
+    stage_index: int,
+    axis: OpticalAxis,
+) -> int:
+    """Derive an auditable independent PRNG substream for one connector."""
+
+    payload = (
+        f"{P13_FEEDBACK_FORMAT}|base={int(base_seed)}|depth={int(num_stages)}|"
+        f"stage={int(stage_index)}|axis={axis}"
+    ).encode("utf-8")
+    # torch.Generator.manual_seed accepts signed 64-bit seeds. Cryptographic
+    # derivation avoids coupling feedback masks to model-initialization RNG
+    # consumption or to the number/order of other connectors.
+    return int.from_bytes(hashlib.sha256(payload).digest()[:8], "big") & (
+        (1 << 63) - 1
+    )
 
 
 def anchor_stage_indices(num_stages: int) -> tuple[int, ...]:
@@ -296,6 +342,28 @@ class QwenStemProgressiveOpticalImageNetBackbone(nn.Module):
             torch.tensor(self.anchor_indices, dtype=torch.int64),
             persistent=True,
         )
+        # A complete source connector requires one frozen physical phase for
+        # every target-depth stage. This is deliberately not an eight-stage
+        # P11 sequence repeated through the deeper model. The source snapshot
+        # is persistent because it is required to reconstruct FA after resume;
+        # each stage's active ``feedback_phase`` remains runtime-only in the
+        # inherited OpticalOEOStage and is excluded from state_dict.
+        self.register_buffer(
+            "feedback_source_phases",
+            torch.stack(
+                [slot.stage.phase().detach().clone() for slot in self.slots]
+            ),
+            persistent=True,
+        )
+        self.feedback_source_provenance: dict[str, Any] = {
+            "capture": "p13_deterministic_initialization",
+            "model_initialization_seed": int(config.get("seed", 2026)),
+        }
+        self.feedback_method: FeedbackMethod = "bp_current"
+        self.feedback_random_base_seed: int | None = None
+        self.feedback_connector_seeds: tuple[int, ...] = ()
+        self.configure_feedback("bp_current")
+        self.register_load_state_dict_post_hook(self._feedback_state_dict_loaded)
         self.migration_manifest: dict[str, Any] | None = None
 
     def _make_stage(
@@ -375,6 +443,264 @@ class QwenStemProgressiveOpticalImageNetBackbone(nn.Module):
 
     def anchor_slots(self) -> tuple[ProgressiveOpticalStageSlot, ...]:
         return tuple(slot for slot in self.slots if slot.is_anchor)
+
+    def _feedback_state_dict_loaded(
+        self,
+        module: nn.Module,
+        incompatible_keys: Any,
+    ) -> None:
+        """Make the runtime-only connector contract explicit after resume."""
+
+        del incompatible_keys
+        if module is not self:
+            raise RuntimeError("P13 feedback post-load hook received another module")
+        self.feedback_source_provenance = {
+            "capture": "loaded_from_persistent_state_dict",
+            "original_provenance": "read_the_external_checkpoint_manifest",
+        }
+        # Runtime feedback phases and Python modes are intentionally absent
+        # from state_dict. A resumed model therefore starts in current-BP mode
+        # until the training controller explicitly reconstructs FA.
+        self.configure_feedback("bp_current")
+
+    def _validate_feedback_phases(
+        self,
+        phases: torch.Tensor,
+        *,
+        name: str,
+    ) -> torch.Tensor:
+        expected = (
+            self.num_stages,
+            self.optical_channels,
+            self.canvas_size,
+            self.canvas_size,
+        )
+        if not isinstance(phases, torch.Tensor) or tuple(phases.shape) != expected:
+            raise ValueError(f"{name} must have shape {expected}")
+        value = phases.detach().float()
+        if not bool(torch.isfinite(value).all()):
+            raise ValueError(f"{name} contains a non-finite value")
+        tolerance = 16.0 * torch.finfo(value.dtype).eps
+        if bool((value < -tolerance).any()) or bool(
+            (value > 2.0 * math.pi + tolerance).any()
+        ):
+            raise ValueError(f"{name} must contain physical phases in [0,2pi]")
+        return value
+
+    def capture_feedback_source(
+        self,
+        phases: torch.Tensor | None = None,
+        *,
+        provenance: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Freeze one distinct source connector for every target-depth stage.
+
+        This operation is intended immediately after strict P11 migration or
+        after a future deep-source pretraining run. It never expands/repeats
+        the eight P11 anchor phases: all added-stage phases are captured from
+        their own target slots in their own physical layouts.
+        """
+
+        selected = self.phase_snapshot() if phases is None else phases
+        value = self._validate_feedback_phases(
+            selected,
+            name="feedback source phases",
+        )
+        self.feedback_source_phases.copy_(
+            value.to(
+                device=self.feedback_source_phases.device,
+                dtype=self.feedback_source_phases.dtype,
+            )
+        )
+        self.feedback_source_provenance = dict(provenance or {})
+        self.feedback_source_provenance.setdefault(
+            "capture", "explicit_current_full_depth_snapshot"
+        )
+        # Invalidate any old FA runtime copy. The caller must explicitly choose
+        # fa_source/fa_random after the new source has been frozen.
+        self.configure_feedback("bp_current")
+        return self.feedback_source_manifest()
+
+    def feedback_source_snapshot(self) -> torch.Tensor:
+        return self.feedback_source_phases.detach().cpu().clone()
+
+    def feedback_source_manifest(self) -> dict[str, Any]:
+        phases = self.feedback_source_snapshot()
+        return {
+            "format": P13_FEEDBACK_FORMAT,
+            "depth": self.num_stages,
+            "connector_count": self.num_stages,
+            "internal_interstage_connector_count": self.num_stages - 1,
+            "adapter_input_connector_count": 1,
+            "phase_shape": list(phases.shape),
+            "phase_sequence_sha256": _phase_sequence_sha256(phases),
+            "per_connector_phase_sha256": [
+                _sha256_tensor(phase) for phase in phases
+            ],
+            "persistent_in_backbone_state_dict": True,
+            "requires_grad": bool(self.feedback_source_phases.requires_grad),
+            "provenance": dict(self.feedback_source_provenance),
+        }
+
+    def configure_feedback(
+        self,
+        method: FeedbackMethod,
+        *,
+        random_seed: int = 0,
+    ) -> None:
+        """Configure full-depth optical feedback without changing the forward.
+
+        ``bp_current`` uses the current optical Jacobian. ``fa_source`` freezes
+        every stage-input optical connector at the full-depth source snapshot.
+        ``fa_random`` uses one separately seeded unit-modulus phase mask per
+        stage. Since the complex-field connector is
+        ``H_i diag(exp(j*phi_i))`` and the diagonal factor is unitary, every
+        random connector has exactly the same complex-linear singular values
+        and Frobenius norm as the corresponding source connector using the same
+        propagation operator ``H_i``. The trainable amplitude is real-valued,
+        so this must not be over-stated as an unconditional equality of the
+        singular spectrum of every downstream real Jacobian.
+        """
+
+        if method not in {"bp_current", "fa_source", "fa_random"}:
+            raise ValueError(f"Unsupported P13 feedback method: {method}")
+
+        connector_seeds: list[int] = []
+        if method == "bp_current":
+            for slot in self.slots:
+                slot.stage.set_feedback("bp")
+            base_seed: int | None = None
+        elif method == "fa_source":
+            source = self._validate_feedback_phases(
+                self.feedback_source_phases,
+                name="persistent feedback source phases",
+            )
+            for index, slot in enumerate(self.slots):
+                slot.stage.set_feedback("fa_pretrained", source[index])
+            base_seed = None
+        else:
+            base_seed = int(random_seed)
+            for index, slot in enumerate(self.slots):
+                seed = _connector_random_seed(
+                    base_seed=base_seed,
+                    num_stages=self.num_stages,
+                    stage_index=index,
+                    axis=slot.stage.optical_axis,
+                )
+                connector_seeds.append(seed)
+                generator = torch.Generator(device="cpu").manual_seed(seed)
+                random_phase = 2.0 * math.pi * torch.rand(
+                    (
+                        self.optical_channels,
+                        self.canvas_size,
+                        self.canvas_size,
+                    ),
+                    generator=generator,
+                    dtype=torch.float32,
+                )
+                slot.stage.set_feedback("fa_random", random_phase)
+
+        self.feedback_method = method
+        self.feedback_random_base_seed = base_seed
+        self.feedback_connector_seeds = tuple(connector_seeds)
+
+    def feedback_snapshot(self) -> torch.Tensor:
+        if self.feedback_method == "bp_current":
+            # The stage runtime buffers are irrelevant/stale in exact BP mode;
+            # report the dynamic physical forward phases instead.
+            return self.phase_snapshot()
+        return torch.stack(
+            [
+                slot.stage.feedback_phase.detach().cpu().clone()
+                for slot in self.slots
+            ]
+        )
+
+    def feedback_manifest(self) -> dict[str, Any]:
+        phases = self.feedback_snapshot()
+        source = self.feedback_source_snapshot()
+        connections: list[dict[str, Any]] = []
+        for index, slot in enumerate(self.slots):
+            phase = phases[index]
+            source_phase = source[index]
+            random_seed = (
+                self.feedback_connector_seeds[index]
+                if self.feedback_method == "fa_random"
+                else None
+            )
+            connections.append(
+                {
+                    "connector_index_zero_based": index,
+                    "connector_role": (
+                        "adapter_to_stage_input"
+                        if index == 0
+                        else "inter_stage_output_to_next_stage_input"
+                    ),
+                    "source_node": (
+                        "adapter_output" if index == 0 else f"stage_{index - 1}_output"
+                    ),
+                    "target_optical_operator": f"stage_{index}_optical_branch",
+                    "axis": slot.stage.optical_axis,
+                    "is_p11_anchor_stage": slot.is_anchor,
+                    "p11_source_stage_zero_based": slot.source_stage_index,
+                    "frozen": self.feedback_method != "bp_current",
+                    "runtime_buffer_used": self.feedback_method != "bp_current",
+                    "feedback_phase_sha256": _sha256_tensor(phase),
+                    "source_phase_sha256": _sha256_tensor(source_phase),
+                    "propagation_transfer_sha256": _sha256_tensor(
+                        slot.stage.propagator.transfer_function
+                    ),
+                    "random_substream_seed": random_seed,
+                    "random_substream_is_stage_specific": random_seed is not None,
+                    "modulation_elementwise_magnitude": 1.0,
+                    "connector_scale_control": (
+                        "exact_same_connector"
+                        if self.feedback_method == "fa_source"
+                        else "exact_complex_linear_spectrum_and_frobenius_norm_by_unitary_right_factor"
+                        if self.feedback_method == "fa_random"
+                        else "dynamic_current_connector"
+                    ),
+                    "real_amplitude_jacobian_spectrum_claimed_equal": False,
+                }
+            )
+
+        feedback_equals_current = torch.equal(phases, self.phase_snapshot())
+        return {
+            "format": P13_FEEDBACK_FORMAT,
+            "method": self.feedback_method,
+            "depth": self.num_stages,
+            "connector_count": len(connections),
+            "internal_interstage_connector_count": self.num_stages - 1,
+            "adapter_input_connector_count": 1,
+            "feedback_phase_sequence_sha256": _phase_sequence_sha256(phases),
+            "source": self.feedback_source_manifest(),
+            "random_base_seed": self.feedback_random_base_seed,
+            "random_connector_seeds_are_unique": (
+                len(set(self.feedback_connector_seeds))
+                == len(self.feedback_connector_seeds)
+                if self.feedback_method == "fa_random"
+                else None
+            ),
+            "feedback_equals_current_forward_phase": feedback_equals_current,
+            "source_match_is_exact_at_undrifted_capture": (
+                self.feedback_method == "fa_source" and feedback_equals_current
+            ),
+            "runtime_feedback_phase_persistent": False,
+            "runtime_feedback_phase_requires_grad": False,
+            "resume_contract": (
+                "state_dict restores the persistent full-depth source snapshot; "
+                "runtime mode/buffers reset to bp_current and the controller must "
+                "call configure_feedback after load"
+            ),
+            "fixed_gradient_scope": (
+                "only each optical complex-field connector to the preceding "
+                "stage/input amplitude"
+            ),
+            "current_local_phase_gradient": "exact_autograd",
+            "detector_normalization_residual_electronics_gradient": "exact_autograd",
+            "outer_depth_blend_gradient": "exact_autograd",
+            "connections": connections,
+        }
 
     def set_new_stage_alpha(self, value: float) -> None:
         for slot in self.new_slots():
@@ -610,5 +936,16 @@ class QwenStemProgressiveOpticalImageNetBackbone(nn.Module):
             "minimum_optical_gate": min(self.optical_gates()),
             "depth_alpha": self.depth_alpha_report(),
             "activation_checkpointing": self.activation_checkpointing,
+            "feedback_contract": {
+                "format": P13_FEEDBACK_FORMAT,
+                "method": self.feedback_method,
+                "full_depth_connector_count": self.num_stages,
+                "source_phase_sequence_sha256": _phase_sequence_sha256(
+                    self.feedback_source_phases
+                ),
+                "source_snapshot_persistent": True,
+                "runtime_feedback_persistent": False,
+                "local_phase_and_electronics_gradients": "exact_autograd",
+            },
             "migration_manifest": self.migration_manifest,
         }

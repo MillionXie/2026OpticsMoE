@@ -114,6 +114,7 @@ def migrate_strict_p11_checkpoint(
 
     source_path, payload, state = _official_backbone_payload(checkpoint)
     _validate_p11_identity(target, payload, state)
+    source_checkpoint_sha256 = sha256_file(source_path)
 
     # Load into an actual P11 instance first. This makes missing, unexpected or
     # shape-incompatible tensors fail before the target is modified.
@@ -160,10 +161,24 @@ def migrate_strict_p11_checkpoint(
     if source_phase_hash != target_anchor_phase_hash:
         raise RuntimeError("Migrated P13 anchor phases do not hash-match P11")
 
+    # Freeze one full-depth source connector after migration. The eight P11
+    # anchors now contain their actual source phases, while every added stage
+    # contributes its own deterministic target phase exactly once. Nothing is
+    # tiled or recycled from the eight-stage connector sequence.
+    feedback_source = target.capture_feedback_source(
+        provenance={
+            "capture": "immediately_after_strict_p11_to_p13_migration",
+            "p11_source_checkpoint": str(source_path),
+            "p11_source_checkpoint_sha256": source_checkpoint_sha256,
+            "new_stage_phase_initialization": "deterministic_target_seed_schedule",
+            "full_target_depth_captured": target.num_stages,
+        }
+    )
+
     manifest: dict[str, Any] = {
         "format": MIGRATION_FORMAT,
         "source_checkpoint": str(source_path),
-        "source_checkpoint_sha256": sha256_file(source_path),
+        "source_checkpoint_sha256": source_checkpoint_sha256,
         "source_stem_checkpoint_sha256": payload["stem_checkpoint_sha256"],
         "source_architecture_signature": list(P11_SIGNATURE),
         "target_architecture_signature": [13, 1, 2, target.num_stages],
@@ -181,6 +196,7 @@ def migrate_strict_p11_checkpoint(
         "new_stage_phase_initialization": "deterministic target seed schedule",
         "new_stage_identity_skip_parameters": 0,
         "new_stage_depth_alpha": target.depth_alpha_report(),
+        "full_depth_feedback_source": feedback_source,
         "source_best_epoch": payload.get("best_epoch"),
         "source_config_digest": payload.get("config_digest"),
     }
@@ -206,6 +222,7 @@ def save_migrated_prototype(
             "backbone": target.backbone_state_dict(),
             "config": target.config,
             "migration_manifest": manifest,
+            "feedback_manifest": target.feedback_manifest(),
             "model_report": report,
         },
         checkpoint_path,
