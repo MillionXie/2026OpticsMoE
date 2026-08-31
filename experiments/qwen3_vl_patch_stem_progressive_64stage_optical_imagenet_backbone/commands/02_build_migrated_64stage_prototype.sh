@@ -23,4 +23,3 @@ fi
   --new-stage-alpha-epsilon 0.01 \
   --new-stage-ramp-epochs 10 \
   --activation-checkpointing
-

@@ -65,4 +65,3 @@ PY
 迁移模块支持 `--num-stages 16|32|64|100`。每个深度都从同一个 P11 source
 独立迁移；当前没有实现 16→32→64 checkpoint 级继续增生。不要把原型迁移
 命令描述成训练，也不要在没有 GPU memory smoke 的情况下添加正式 launch。
-
