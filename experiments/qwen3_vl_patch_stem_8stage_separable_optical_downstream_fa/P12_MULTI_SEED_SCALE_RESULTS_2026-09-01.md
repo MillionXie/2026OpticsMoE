@@ -247,7 +247,7 @@ CPU测试和真实 CUDA smoke 之前，不启动长时间 ImageNet 训练。
 
 ### No-ImageNet 多 run 队列
 
-固定同一个 `init_seed=2026` 随机 body、改变下游 seed 的 36 项队列当前完成 21 项、运行 2 项、等待 13 项、失败 0 项，GPU 1/2 继续执行。它估计的是给定同一个随机 body 时的数据划分、任务头与优化方差，不是独立 backbone 初始化方差。正文若要报告“随机初始化 backbone 的均值方差”，还必须另建 `init_seed=2027/2028` 两个独立 body panel。
+固定同一个 `init_seed=2026` 随机 body、改变下游 seed 的 36 项队列在 2026-09-01 最新监督时完成 22 项、运行 2 项、等待 12 项、失败 0 项，GPU 1/2 继续执行。它估计的是给定同一个随机 body 时的数据划分、任务头与优化方差，不是独立 backbone 初始化方差。正文若要报告“随机初始化 backbone 的均值方差”，还必须另建 `init_seed=2027/2028` 两个独立 body panel。
 
 ### P13 百层路径的真实 CUDA 验证
 
@@ -286,7 +286,14 @@ P13 训练器在服务器通过 52 项测试。真实 ImageNet smoke 已完成�
 - 训练：20 epoch，前 10 epoch 将新增 8 层从 `alpha=0.02` 升到 1，后 10 epoch 全深度训练；
 - batch：`24 × 4 ranks × accumulation 2 = 192`；
 - 学习率：新增 phase `7e-3`，carried phase `3.5e-3`，新增/已有电子分别 `3.5e-4` / `2e-4`，临时 ImageNet head `5e-4`，均经过 warmup/cosine schedule；
-- 首次监督时已经到 epoch 1、micro-batch 100/13345、optimizer step 50，四卡均有真实计算负载；
+- 首次监督时到 epoch 1、micro-batch 100/13345、optimizer step 50；约 9 分钟后的复核已推进到 micro-batch 1700/13345、optimizer step 850，进程仍存活，GPU 0/3/4/5 均有真实计算负载；
 - 日志：`experiments/qwen3_vl_patch_stem_progressive_64stage_optical_imagenet_backbone/logs/p13_growth16_fa_source_20e_gb192.latest.log`。
 
 这条 run 使用增长起点捕获的新层反馈，因此当前严格称为 `source-init feedback`。只有完成 16→32→64/100 的 ImageNet 训练，再将完整深层算子冻结用于下游，才能称为 `pretrained deep feedback`。
+
+### 本轮实验设计冻结项
+
+1. `No-ImageNet body initialization` 保留同一个冻结的预训练 Qwen Patch/Position stem，只随机初始化 adapter、phase、mixer、norm 与 gate；它不是“全模型从零训练”。先报告固定 body 的下游运行方差，再补独立 `init_seed`，两者不得混作同一种多 run。
+2. 主问题是物理光路当前伴随算子难以获得，因此电子 mixer、gate、norm 与任务头继续使用 exact BP。专门解释 FA-random 的最小四格为 Joint-BP、Joint-FA-random、Phase-only-BP、Phase-only-FA-random，任务头四组都使用 exact BP；核心量是 `(FA-random-BP)_joint-(FA-random-BP)_phase-only`。
+3. 百层 headline 不能只靠参数计数或单批梯度。必须依次具备函数保持增长、`alpha=1` 全深度梯度、完整 ImageNet 训练、相同数据预算的 8-layer continuation、block reset/drop、新增层 phase motion，以及完整深层 checkpoint 的下游迁移。
+4. 100 层第一条完整 chain 只作为 headline-scale demonstration；若要声称稳定性，再补独立 growth seeds。即便多个 run 都从同一个 P11 checkpoint 出发，也只能估计增长与优化随机性，不能称为独立 backbone 预训练初始化。
