@@ -134,12 +134,10 @@ def test_scratch_source_is_reproducible_fresh_and_strictly_loadable(
     assert not torch.equal(
         first_state["stages.0.raw_phase"], other_state["stages.0.raw_phase"]
     )
-    mixer_key = next(
-        name
-        for name in first_state
-        if name.startswith("stages.0.electronic_skip.")
-        and name.endswith("weight")
-    )
+    # Select a genuinely random mixer matrix. A generic ``*.weight`` search
+    # can pick LayerNorm's deterministic all-ones affine vector instead.
+    mixer_key = "stages.0.electronic_skip.input_adapter.weight"
+    assert mixer_key in first_state
     assert not torch.equal(first_state[mixer_key], other_state[mixer_key])
 
     downstream = P11DownstreamModel(
