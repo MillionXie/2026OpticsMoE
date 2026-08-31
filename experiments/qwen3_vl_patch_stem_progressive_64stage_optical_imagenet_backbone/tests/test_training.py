@@ -559,6 +559,20 @@ def test_p11_to_16_initializer_requires_two_epoch88_sources(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    locked_identities = (
+        train.OFFICIAL_P11_BACKBONE_SHA256,
+        train.OFFICIAL_P11_TRAINING_SHA256,
+        train.OFFICIAL_P11_CONFIG_DIGEST,
+    )
+    assert all(len(value) == 64 for value in locked_identities)
+    assert all(int(value, 16) >= 0 for value in locked_identities)
+    with pytest.raises(RuntimeError, match="not a SHA-256"):
+        train._locked_sha256(
+            {"identity": "0" * 64},
+            "identity",
+            "0" * 65,
+        )
+
     backbone = tmp_path / "backbone.pt"
     training = tmp_path / "best.pt"
     torch.save(
@@ -630,6 +644,23 @@ def test_p11_to_16_initializer_requires_two_epoch88_sources(
     )
     with pytest.raises(RuntimeError, match="epoch-88"):
         train.initialize_p13_fresh(model, config)
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "gpu_smoke_full_image.yaml",
+        "growth16_fa_source_20e_gb192.yaml",
+        "p11_epoch88_matched_continue_20e_gb192.yaml",
+    ],
+)
+def test_formal_configs_pin_canonical_p11_backbone_sha(name: str) -> None:
+    config_path = Path(train.__file__).with_name("configs") / name
+    initialization = train.load_config(config_path)["initialization"]
+    assert (
+        initialization["expected_p11_backbone_sha256"]
+        == train.OFFICIAL_P11_BACKBONE_SHA256
+    )
 
 
 def test_migration_provenance_restore_rejects_wrong_target() -> None:

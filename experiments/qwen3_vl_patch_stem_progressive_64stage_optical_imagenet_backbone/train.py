@@ -50,7 +50,7 @@ BACKBONE_EXPORT_FORMAT = "p13-progressive-imagenet-backbone-v1"
 P13_PROGRESSIVE_TRANSITIONS = {(16, 32), (32, 64), (64, 100)}
 IMPLEMENTATION_MANIFEST_FORMAT = "p13-training-implementation-v1"
 OFFICIAL_P11_BACKBONE_SHA256 = (
-    "c3ad0b780dfbb3e5f8e1f7b7850c06fcb5c6d977e106f351b4b4602fcaadf210d2"
+    "c3ad0b780dfbb3e5f8e1f7b7850c06fcb5c6d977e106f351b4602fcaadf210d2"
 )
 OFFICIAL_P11_TRAINING_SHA256 = (
     "a30d5c06b61a635bb3dc379aeaca4c371c1d27e6b862c5ffd49777ce738b33034"
@@ -223,8 +223,16 @@ def _locked_sha256(
     field: str,
     official: str,
 ) -> str:
+    canonical_hex = set("0123456789abcdef")
+    if len(official) != 64 or any(char not in canonical_hex for char in official):
+        raise RuntimeError(f"Internal locked identity for {field} is not a SHA-256")
     value = initialization.get(field)
-    if not isinstance(value, str) or value.lower() != official:
+    if (
+        not isinstance(value, str)
+        or len(value) != 64
+        or any(char not in canonical_hex for char in value.lower())
+        or value.lower() != official
+    ):
         raise RuntimeError(f"{field} must equal the locked official identity")
     return value.lower()
 
