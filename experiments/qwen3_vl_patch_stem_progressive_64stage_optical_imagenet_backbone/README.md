@@ -2,7 +2,8 @@
 
 ## 1. 当前状态与边界
 
-P13 是一个**只完成本地架构与迁移验证、尚未启动正式训练**的独立原型。
+P13 已完成本地架构、严格迁移、正式训练器与 guarded launcher；当前文档不据此宣称
+32/64/100 层已经完成正式训练，实际状态仍必须读取相应 run 产物。
 首要配置将 P11 的 8 个光学 stage 扩展为 64 个，使可训练相位从
 `1,204,224` 增至 `9,633,792`（约 9.63M）。同一实现还支持
 16/32/100 层，便于做深度与参数规模消融。
@@ -65,20 +66,22 @@ GPU forward 使用同步的 Python alpha 副本判断 bypass，不会为每个�
 
 ## 4. P11 -> P13 严格迁移
 
-`migration.py` 只接受正式 P11 `backbone.pt` 格式，并验证：
+`migration.py` 的正式 continuation 路径同时读取 P11 `backbone.pt` 与 epoch-88
+`best.pt`，并验证：
 
 - `p11_separable_architecture_signature == [11,1,2,4]`；
 - `model_report.optical_mixer_variant == separable_token_channel_axis`；
 - source 恰好为 8 stage；
 - P11 与 P13 的冻结 Qwen stem SHA-256 完全一致；
-- reusable state 没有 ImageNet task head，且除 head 外无 missing/unexpected key；
+- backbone 与 best 的 config digest、epoch、非 head key/value 完全一致；
+- 正式配置锁定两份 source 的官方 SHA-256 与官方 config digest；
 - 8 个 source `raw_phase` 与迁移后 8 个 anchor `raw_phase`（含顺序、dtype、
   shape）的 SHA-256 相同。
 
-迁移内容包括冻结 stem buffers、1024->224 adapter 和 8 个完整 P11
-光学/mixer stage。新增 phase 保持目标 seed 的确定性初始化。P11 的临时
-ImageNet head 按 backbone export 契约不迁移，因此 alpha=0 保证的是
-**最终光学 feature 逐元素等价**，不是随机新 head 的 logits 等价。
+迁移内容包括冻结 stem buffers、1024->224 adapter、8 个完整 P11 光学/mixer stage，
+以及 `best.pt` 中匹配的 ImageNet readout。新增 phase 保持目标 seed 的确定性初始化，
+因此 alpha=0 同时保证最终光学 feature 与 logits 逐元素等价。仅供 reusable-body
+工程原型使用的旧 `backbone.pt` 单文件 API 仍会排除 task head。
 
 迁移器生成：
 
@@ -112,9 +115,8 @@ ImageNet head 按 backbone export 契约不迁移，因此 alpha=0 保证的是
   alpha 状态与 migration manifest；
 - `backbone_state_dict()` 明确排除临时 ImageNet head。
 
-逐 stage checkpoint 只是 stage 内部重计算，**尚不能视为已解决 64/100 层显存**。
-正式训练前必须在目标 GPU 实测峰值显存与吞吐，并根据结果增加 2--4 stage
-segment checkpoint 或其他分段策略。
+逐 stage checkpoint 只是 stage 内部重计算；64/100 层能否采用生成配置中的 batch，
+仍须先运行精确 alpha=1 的目标 GPU 显存/梯度 audit，不能从代码存在直接推断。
 
 ## 7. 自动验收
 
@@ -125,11 +127,14 @@ segment checkpoint 或其他分段策略。
    电子 backbone 预算；
 3. 用正式 export 结构构造 P11 source，严格迁移到 64 层后在 eval 模式下验证
    alpha=0 feature **bitwise equality**；
-4. 16 层 alpha>0 全链反传时，每个新增 phase 的梯度均 finite 且 norm>0；
-5. epsilon/ramp 端点与 state-dict reload 后 Python alpha 同步。
+4. 16 层 alpha>0 全链反传以及 64/100 层审计契约会检查全部 carried+new phase 与
+   输入 amplitude 梯度；
+5. epsilon/ramp 端点与 state-dict reload 后 Python alpha 同步；
+6. P11→16 及 16→32→64→100 的 monotone pair migration 在 alpha=0 下保持 feature/logit；
+7. progressive 配置只能由上一深度正式 `best_full_depth.pt` guarded 渲染。
 
-执行命令见 [commands/COMMANDS.md](commands/COMMANDS.md)。命令只运行测试或
-构造迁移初始化，不含正式训练 launcher。
+执行命令见 [commands/COMMANDS.md](commands/COMMANDS.md)。其中工程命令与正式训练
+launcher 有明确边界，不能把 synthetic sweep 写成 ImageNet 训练结果。
 
 ## 8. 正式训练前仍需完成
 
@@ -143,11 +148,12 @@ segment checkpoint 或其他分段策略。
 - 64 个逻辑 OEO stage 在 alpha=1 时表示 64 次相位/传播/探测/重载，并不自动
   等价于已搭建的 64 个无源物理平面。外部 depth blend 在 alpha<1 时也是训练期
   电子路径；部署主张应以 alpha=1 为准；
-- fixed-feedback 训练必须先获得完整深层 source connector，不能循环复用 P11
-  的 8 个反馈 phase。这不属于当前初始化原型。
+- fixed-feedback 使用目标深度每个 stage 的独立 source connector，不能循环复用 P11
+  的 8 个反馈 phase；正式结论仍需依赖训练结果而不是接口测试。
 
 工程 sweep 模块已经实现，但尚未在服务器执行。它会针对 16/32/64/100 层严格迁移
 真实 P11 source，以 batch=1 合成光场测量 forward/backward/SGD step 的峰值显存、
-吞吐和所有新增 phase 的梯度健康度；OOM 会记录后清理并继续下一深度。该结果只用于
-锁定可运行配置，不能作为 ImageNet 或 backbone 性能结果。命令见
+吞吐和全部 carried+new phase/输入 amplitude 的梯度健康度；OOM 会记录后清理并继续
+下一深度。`.01` alpha 模式只叫 engineering gradient probe，64/100 专项命令则固定
+精确 alpha=1。该结果只用于锁定可运行配置，不能作为 ImageNet 或 backbone 性能结果。命令见
 [commands/GPU_ENGINEERING_SWEEP.md](commands/GPU_ENGINEERING_SWEEP.md)。

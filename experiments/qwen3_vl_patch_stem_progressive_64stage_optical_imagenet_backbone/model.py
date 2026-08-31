@@ -116,7 +116,15 @@ def anchor_stage_indices(num_stages: int) -> tuple[int, ...]:
 
 
 class ProgressiveOpticalStageSlot(nn.Module):
-    """One optical stage plus a non-trainable function-preserving depth gate."""
+    """One optical stage plus explicit structural and growth provenance.
+
+    ``is_p11_mixer_anchor`` is an immutable architecture property: exactly
+    eight slots own the width-96 P11 electronic mixers.  In contrast,
+    ``is_carried_from_parent``/``is_newly_inserted`` describe the *current*
+    growth transition.  Keeping these concepts separate is essential after
+    the first P11->P13 migration, because an identity-electronic stage learned
+    at depth 16 is carried (and must execute at alpha one) when growing to 32.
+    """
 
     def __init__(
         self,
@@ -132,11 +140,19 @@ class ProgressiveOpticalStageSlot(nn.Module):
             raise ValueError("Depth alpha must lie in [0,1]")
         self.stage = stage
         self.stage_index = int(stage_index)
-        self.source_stage_index = (
+        self.p11_source_stage_index = (
             None if source_stage_index is None else int(source_stage_index)
         )
-        self.is_anchor = self.source_stage_index is not None
-        if self.is_anchor and alpha != 1.0:
+        # Backward-compatible aliases are retained for the already published
+        # P13 prototype/feedback diagnostics. New code must use the explicit
+        # names above and below.
+        self.source_stage_index = self.p11_source_stage_index
+        self.is_p11_mixer_anchor = self.p11_source_stage_index is not None
+        self.is_anchor = self.is_p11_mixer_anchor
+        self.growth_parent_stage_index = self.p11_source_stage_index
+        self.is_carried_from_parent = self.growth_parent_stage_index is not None
+        self.is_newly_inserted = not self.is_carried_from_parent
+        if self.is_carried_from_parent and alpha != 1.0:
             raise ValueError("Migrated P11 anchor stages must have alpha=1")
         self.register_buffer(
             "depth_alpha",
@@ -146,7 +162,10 @@ class ProgressiveOpticalStageSlot(nn.Module):
         # The growth schedule is controller state, not a learned scalar. Keep
         # a synchronized Python value so a deep CUDA forward does not incur a
         # device-to-host synchronization at every added stage.
-        self._alpha_value = alpha
+        # Use the value that is actually persisted in the float32 buffer.
+        # Keeping a higher-precision Python input here would make a resumed
+        # run differ slightly from the pre-checkpoint forward controller.
+        self._alpha_value = float(self.depth_alpha)
 
     @property
     def alpha_value(self) -> float:
@@ -175,12 +194,23 @@ class ProgressiveOpticalStageSlot(nn.Module):
 
     def set_alpha(self, value: float) -> None:
         alpha = float(value)
-        if self.is_anchor and alpha != 1.0:
-            raise ValueError("P11 anchor alpha is locked to one")
+        if self.is_carried_from_parent and alpha != 1.0:
+            raise ValueError("A parent-carried stage alpha is locked to one")
         if not 0.0 <= alpha <= 1.0:
             raise ValueError("Depth alpha must lie in [0,1]")
-        self.depth_alpha.fill_(alpha)
-        self._alpha_value = alpha
+        persisted_alpha = float(torch.tensor(alpha, dtype=self.depth_alpha.dtype))
+        self.depth_alpha.fill_(persisted_alpha)
+        self._alpha_value = persisted_alpha
+
+    def set_growth_parent_stage_index(self, value: int | None) -> None:
+        parent = None if value is None else int(value)
+        if parent is not None and parent < 0:
+            raise ValueError("A growth parent stage index must be non-negative")
+        if self.is_p11_mixer_anchor and parent is None:
+            raise ValueError("A P11 mixer anchor cannot be a newly inserted stage")
+        self.growth_parent_stage_index = parent
+        self.is_carried_from_parent = parent is not None
+        self.is_newly_inserted = parent is None
 
     def forward(
         self,
@@ -190,7 +220,12 @@ class ProgressiveOpticalStageSlot(nn.Module):
         optical_off: bool = False,
         disable_electronic_skip: bool = False,
     ) -> torch.Tensor:
-        if self.is_anchor:
+        # At either a carried stage or the alpha-one endpoint, execute the
+        # physical stage directly. Besides removing the training-only outer
+        # blend at deployment, this avoids a numerically non-identity
+        # ``x + 1 * (Stage(x) - x)`` round-trip and makes progressive migration
+        # bitwise function preserving.
+        if self.is_carried_from_parent or self._alpha_value == 1.0:
             return self.stage(
                 amplitude,
                 phase_override=phase_override,
@@ -342,6 +377,24 @@ class QwenStemProgressiveOpticalImageNetBackbone(nn.Module):
             torch.tensor(self.anchor_indices, dtype=torch.int64),
             persistent=True,
         )
+        # One entry per target stage. A non-negative value is the ordered
+        # parent-stage index copied into this slot; -1 marks a stage inserted
+        # by the current growth transition. The initial P11->P13 topology
+        # carries only the eight P11 mixer anchors. Later P13->P13 migration
+        # replaces this vector with a complete embedding of the parent depth.
+        self.register_buffer(
+            "growth_parent_stage_indices",
+            torch.tensor(
+                [
+                    -1
+                    if slot.growth_parent_stage_index is None
+                    else slot.growth_parent_stage_index
+                    for slot in self.slots
+                ],
+                dtype=torch.int64,
+            ),
+            persistent=True,
+        )
         # A complete source connector requires one frozen physical phase for
         # every target-depth stage. This is deliberately not an eight-stage
         # P11 sequence repeated through the deeper model. The source snapshot
@@ -438,11 +491,92 @@ class QwenStemProgressiveOpticalImageNetBackbone(nn.Module):
     def optical_stages(self) -> tuple[AxisOpticalOEOStage, ...]:
         return tuple(slot.stage for slot in self.slots)
 
+    def mixer_anchor_slots(self) -> tuple[ProgressiveOpticalStageSlot, ...]:
+        return tuple(slot for slot in self.slots if slot.is_p11_mixer_anchor)
+
+    def carried_slots(self) -> tuple[ProgressiveOpticalStageSlot, ...]:
+        return tuple(slot for slot in self.slots if slot.is_carried_from_parent)
+
     def new_slots(self) -> tuple[ProgressiveOpticalStageSlot, ...]:
-        return tuple(slot for slot in self.slots if not slot.is_anchor)
+        return tuple(slot for slot in self.slots if slot.is_newly_inserted)
 
     def anchor_slots(self) -> tuple[ProgressiveOpticalStageSlot, ...]:
-        return tuple(slot for slot in self.slots if slot.is_anchor)
+        """Compatibility alias for the immutable P11 mixer anchors."""
+
+        return self.mixer_anchor_slots()
+
+    @property
+    def growth_parent_depth(self) -> int:
+        parents = [
+            slot.growth_parent_stage_index
+            for slot in self.carried_slots()
+        ]
+        return 0 if not parents else max(int(value) for value in parents) + 1
+
+    @staticmethod
+    def _validated_growth_parent_indices(
+        values: torch.Tensor | list[int] | tuple[int, ...],
+        *,
+        num_stages: int,
+    ) -> tuple[int, ...]:
+        tensor = torch.as_tensor(values, dtype=torch.int64).detach().cpu()
+        if tuple(tensor.shape) != (int(num_stages),):
+            raise ValueError(
+                f"growth_parent_stage_indices must have shape [{num_stages}]"
+            )
+        indices = tuple(int(value) for value in tensor.tolist())
+        if any(value < -1 for value in indices):
+            raise ValueError("Growth parent indices may only use -1 or non-negative values")
+        carried = [value for value in indices if value >= 0]
+        if carried != list(range(len(carried))):
+            raise ValueError(
+                "Carried parent stages must appear once each in exact source order"
+            )
+        return indices
+
+    def _sync_growth_provenance_from_buffer(self) -> None:
+        indices = self._validated_growth_parent_indices(
+            self.growth_parent_stage_indices,
+            num_stages=self.num_stages,
+        )
+        for slot, parent in zip(self.slots, indices):
+            slot.set_growth_parent_stage_index(None if parent < 0 else parent)
+        invalid = [
+            slot.stage_index
+            for slot in self.carried_slots()
+            if slot.alpha_value != 1.0
+        ]
+        if invalid:
+            raise RuntimeError(
+                f"Parent-carried stages must load with alpha one: {invalid}"
+            )
+
+    def set_growth_parent_stage_indices(
+        self,
+        values: torch.Tensor | list[int] | tuple[int, ...],
+        *,
+        new_stage_alpha: float | None = None,
+    ) -> None:
+        """Install one strict parent embedding and update slot controller state."""
+
+        indices = self._validated_growth_parent_indices(
+            values,
+            num_stages=self.num_stages,
+        )
+        for slot, parent in zip(self.slots, indices):
+            slot.set_growth_parent_stage_index(None if parent < 0 else parent)
+        for slot in self.carried_slots():
+            slot.set_alpha(1.0)
+        if new_stage_alpha is not None:
+            for slot in self.new_slots():
+                slot.set_alpha(float(new_stage_alpha))
+        self.growth_parent_stage_indices.copy_(
+            torch.tensor(
+                indices,
+                dtype=self.growth_parent_stage_indices.dtype,
+                device=self.growth_parent_stage_indices.device,
+            )
+        )
 
     def _feedback_state_dict_loaded(
         self,
@@ -454,6 +588,7 @@ class QwenStemProgressiveOpticalImageNetBackbone(nn.Module):
         del incompatible_keys
         if module is not self:
             raise RuntimeError("P13 feedback post-load hook received another module")
+        self._sync_growth_provenance_from_buffer()
         self.feedback_source_provenance = {
             "capture": "loaded_from_persistent_state_dict",
             "original_provenance": "read_the_external_checkpoint_manifest",
@@ -641,9 +776,16 @@ class QwenStemProgressiveOpticalImageNetBackbone(nn.Module):
                     ),
                     "target_optical_operator": f"stage_{index}_optical_branch",
                     "axis": slot.stage.optical_axis,
-                    "is_p11_anchor_stage": slot.is_anchor,
-                    "p11_source_stage_zero_based": slot.source_stage_index,
+                    "is_p11_anchor_stage": slot.is_p11_mixer_anchor,
+                    "is_p11_mixer_anchor": slot.is_p11_mixer_anchor,
+                    "p11_source_stage_zero_based": slot.p11_source_stage_index,
+                    "is_carried_from_parent": slot.is_carried_from_parent,
+                    "is_newly_inserted": slot.is_newly_inserted,
+                    "growth_parent_stage_zero_based": (
+                        slot.growth_parent_stage_index
+                    ),
                     "frozen": self.feedback_method != "bp_current",
+                    "actual_stage_feedback_mode": slot.stage.feedback_mode,
                     "runtime_buffer_used": self.feedback_method != "bp_current",
                     "feedback_phase_sha256": _sha256_tensor(phase),
                     "source_phase_sha256": _sha256_tensor(source_phase),
@@ -732,11 +874,16 @@ class QwenStemProgressiveOpticalImageNetBackbone(nn.Module):
 
     def depth_alpha_report(self) -> dict[str, Any]:
         values = [slot.alpha_value for slot in self.new_slots()]
+        minimum = min(values) if values else 1.0
+        maximum = max(values) if values else 1.0
+        mean = sum(values) / len(values) if values else 1.0
         return {
+            "growth_parent_depth": self.growth_parent_depth,
+            "carried_stage_count": len(self.carried_slots()),
             "new_stage_count": len(values),
-            "minimum": min(values),
-            "maximum": max(values),
-            "mean": sum(values) / len(values),
+            "minimum": minimum,
+            "maximum": maximum,
+            "mean": mean,
             "all_full_depth": all(value == 1.0 for value in values),
             "all_exact_bypass": all(value == 0.0 for value in values),
         }
@@ -795,7 +942,7 @@ class QwenStemProgressiveOpticalImageNetBackbone(nn.Module):
                 self.activation_checkpointing
                 and self.training
                 and amplitude.requires_grad
-                and (slot.is_anchor or slot.alpha_value != 0.0)
+                and (slot.is_carried_from_parent or slot.alpha_value != 0.0)
             ):
                 # Bind the slot now: non-reentrant checkpoint recomputes this
                 # closure during backward, after the Python loop has advanced.
@@ -847,6 +994,14 @@ class QwenStemProgressiveOpticalImageNetBackbone(nn.Module):
         for slot in self.slots:
             yield slot.stage.raw_phase
 
+    def carried_phase_parameters(self):
+        for slot in self.carried_slots():
+            yield slot.stage.raw_phase
+
+    def new_phase_parameters(self):
+        for slot in self.new_slots():
+            yield slot.stage.raw_phase
+
     def adapter_parameters(self):
         yield from self.adapter.parameters()
 
@@ -856,6 +1011,24 @@ class QwenStemProgressiveOpticalImageNetBackbone(nn.Module):
             for parameter in slot.stage.parameters():
                 if id(parameter) not in phase_ids:
                     yield parameter
+
+    @staticmethod
+    def _slot_electronic_parameters(
+        slots: tuple[ProgressiveOpticalStageSlot, ...],
+    ):
+        for slot in slots:
+            for parameter in slot.stage.parameters():
+                if parameter is not slot.stage.raw_phase:
+                    yield parameter
+
+    def carried_electronic_parameters(self):
+        # The adapter is inherited at every growth transition and belongs to
+        # the reusable electronic backbone, not to the temporary task head.
+        yield from self.adapter.parameters()
+        yield from self._slot_electronic_parameters(self.carried_slots())
+
+    def new_electronic_parameters(self):
+        yield from self._slot_electronic_parameters(self.new_slots())
 
     def head_parameters(self):
         yield from self.readout.parameters()
@@ -874,6 +1047,32 @@ class QwenStemProgressiveOpticalImageNetBackbone(nn.Module):
             [slot.stage.phase().detach().cpu() for slot in self.slots]
         )
 
+    def phase_motion(self, initial: torch.Tensor) -> dict[str, Any]:
+        """Report circular physical-phase displacement for every stage."""
+
+        current = self.phase_snapshot()
+        if tuple(current.shape) != tuple(initial.shape):
+            raise ValueError("Initial phase snapshot shape mismatch")
+        displacement = torch.atan2(
+            torch.sin(current - initial),
+            torch.cos(current - initial),
+        ).abs()
+        per_stage = displacement.flatten(1)
+        return {
+            "mean_absolute_rad": float(displacement.mean()),
+            "median_absolute_rad": float(displacement.median()),
+            "fraction_over_0p1_rad": float(
+                (displacement > 0.1).float().mean()
+            ),
+            "per_stage_mean_absolute_rad": [
+                float(value) for value in per_stage.mean(dim=1)
+            ],
+            "per_stage_rms_rad": [
+                float(value)
+                for value in per_stage.square().mean(dim=1).sqrt()
+            ],
+        }
+
     def optical_gates(self) -> list[float]:
         return [
             float(slot.stage.residual.main_weight().detach().cpu())
@@ -883,19 +1082,21 @@ class QwenStemProgressiveOpticalImageNetBackbone(nn.Module):
     def parameter_report(self) -> dict[str, Any]:
         optical = sum(parameter.numel() for parameter in self.phase_parameters())
         adapter = sum(parameter.numel() for parameter in self.adapter_parameters())
-        anchor_electronic = sum(
+        mixer_anchor_electronic = sum(
             parameter.numel()
-            for slot in self.anchor_slots()
+            for slot in self.mixer_anchor_slots()
             for parameter in slot.stage.parameters()
             if parameter is not slot.stage.raw_phase
+        )
+        carried_stage_electronic = sum(
+            parameter.numel()
+            for parameter in self._slot_electronic_parameters(self.carried_slots())
         )
         new_electronic = sum(
-            parameter.numel()
-            for slot in self.new_slots()
-            for parameter in slot.stage.parameters()
-            if parameter is not slot.stage.raw_phase
+            parameter.numel() for parameter in self.new_electronic_parameters()
         )
-        residual = anchor_electronic + new_electronic
+        residual = carried_stage_electronic + new_electronic
+        carried_electronic = adapter + carried_stage_electronic
         head = sum(parameter.numel() for parameter in self.head_parameters())
         electronic_backbone = adapter + residual
         backbone = optical + electronic_backbone
@@ -912,18 +1113,32 @@ class QwenStemProgressiveOpticalImageNetBackbone(nn.Module):
             "p11_anchor_stage_indices_zero_based": list(self.anchor_indices),
             "p11_anchor_mapping_zero_based": [
                 {
-                    "source": int(slot.source_stage_index),
+                    "source": int(slot.p11_source_stage_index),
                     "target": slot.stage_index,
                 }
-                for slot in self.anchor_slots()
+                for slot in self.mixer_anchor_slots()
             ],
-            "unique_width96_mixer_instances": len(self.anchor_slots()),
+            "unique_width96_mixer_instances": len(self.mixer_anchor_slots()),
+            "growth_parent_depth": self.growth_parent_depth,
+            "growth_parent_stage_indices_zero_based": [
+                int(value)
+                for value in self.growth_parent_stage_indices.detach().cpu().tolist()
+            ],
+            "carried_stage_count": len(self.carried_slots()),
             "new_stage_count": len(self.new_slots()),
             "new_stage_identity_skip_parameters": identity_skip_parameters,
             "outer_depth_gate_trainable_parameters": 0,
             "optical_phase_parameters": optical,
+            "carried_phase_parameters": sum(
+                parameter.numel() for parameter in self.carried_phase_parameters()
+            ),
+            "new_phase_parameters": sum(
+                parameter.numel() for parameter in self.new_phase_parameters()
+            ),
             "adapter_electronic_parameters": adapter,
-            "anchor_stage_electronic_parameters": anchor_electronic,
+            "anchor_stage_electronic_parameters": mixer_anchor_electronic,
+            "carried_stage_electronic_parameters": carried_stage_electronic,
+            "carried_electronic_parameters_including_adapter": carried_electronic,
             "new_stage_electronic_parameters": new_electronic,
             "residual_electronic_parameters": residual,
             "electronic_backbone_parameters": electronic_backbone,

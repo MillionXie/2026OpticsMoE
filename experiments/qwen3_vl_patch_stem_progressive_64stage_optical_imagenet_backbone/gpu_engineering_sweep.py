@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import gc
+import hashlib
 import json
 import math
 import os
@@ -20,9 +21,11 @@ from .model import (
 )
 
 
-SWEEP_FORMAT = "p13-gpu-engineering-sweep-v1"
-RESULT_FORMAT = "p13-gpu-engineering-depth-result-v1"
+SWEEP_FORMAT = "p13-gpu-engineering-feedback-sweep-v3"
+RESULT_FORMAT = "p13-gpu-engineering-feedback-result-v3"
 CLAIM_SCOPE = "engineering_only_not_accuracy_or_backbone_performance"
+P13_FEEDBACK_METHODS = ("bp_current", "fa_source", "fa_random")
+ALPHA_MODES = ("epsilon_probe", "full_depth")
 
 
 def utc_now() -> str:
@@ -50,6 +53,131 @@ def parse_depths(value: str) -> tuple[int, ...]:
     return tuple(dict.fromkeys(parsed))
 
 
+def parse_feedback_methods(value: str) -> tuple[str, ...]:
+    """Parse one feedback method or a stable comma-separated method sweep."""
+
+    fields = [field.strip() for field in value.split(",")]
+    if not fields or any(not field for field in fields):
+        raise argparse.ArgumentTypeError(
+            "feedback methods must be one name or a comma-separated name list"
+        )
+    unsupported = [field for field in fields if field not in P13_FEEDBACK_METHODS]
+    if unsupported:
+        raise argparse.ArgumentTypeError(
+            f"unsupported feedback methods {unsupported}; choose from "
+            f"{P13_FEEDBACK_METHODS}"
+        )
+    return tuple(dict.fromkeys(fields))
+
+
+def canonical_json_sha256(payload: Mapping[str, Any]) -> str:
+    encoded = json.dumps(
+        payload,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+        allow_nan=False,
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def implementation_manifest() -> dict[str, Any]:
+    """Hash this audit and every local module on its optical execution path."""
+
+    repository = Path(__file__).resolve().parents[2]
+    relative_files = (
+        "experiments/"
+        "qwen3_vl_patch_stem_progressive_64stage_optical_imagenet_backbone/"
+        "gpu_engineering_sweep.py",
+        "experiments/"
+        "qwen3_vl_patch_stem_progressive_64stage_optical_imagenet_backbone/"
+        "model.py",
+        "experiments/"
+        "qwen3_vl_patch_stem_progressive_64stage_optical_imagenet_backbone/"
+        "migration.py",
+        "experiments/"
+        "qwen3_vl_patch_stem_8stage_separable_optical_imagenet_backbone/"
+        "model.py",
+        "experiments/qwen3_vl_patch_stem_8stage_slim_mixer_imagenet_backbone/model.py",
+        "experiments/qwen3_vl_patch_stem_8stage_optical_imagenet_backbone/model.py",
+        "experiments/qwen3_vl_patch_stem_8stage_optical_imagenet_backbone/stem.py",
+        "experiments/d2nn_cifar10_high_performance_optical_backbone/optics.py",
+    )
+    files = {
+        relative: sha256_file(repository / relative) for relative in relative_files
+    }
+    return {
+        "files": files,
+        "combined_sha256": canonical_json_sha256(files),
+    }
+
+
+def build_campaign_contract(
+    *,
+    args: argparse.Namespace,
+    source_sha256: str,
+    stem_sha256: str,
+    gpu_uuid: str,
+    implementation_sha256: str,
+    torch_version: str,
+    torch_cuda_version: str | None,
+) -> dict[str, Any]:
+    """Return every field that must agree before a partial sweep is resumed."""
+
+    return {
+        "format": SWEEP_FORMAT,
+        "claim_scope": CLAIM_SCOPE,
+        "depths": list(args.depths),
+        "feedback_methods": list(args.feedback_methods),
+        "feedback_random_seed": args.feedback_random_seed,
+        "p11_checkpoint_sha256": source_sha256,
+        "stem_checkpoint_sha256": stem_sha256,
+        "gpu_uuid": gpu_uuid,
+        "implementation_sha256": implementation_sha256,
+        "torch_version": torch_version,
+        "torch_cuda_version": torch_cuda_version,
+        "batch_size": args.batch_size,
+        "warmup_steps": args.warmup_steps,
+        "measurement_steps": args.measurement_steps,
+        "alpha_mode": args.alpha_mode,
+        "alpha_epsilon": args.alpha_epsilon,
+        "effective_new_stage_alpha": effective_new_stage_alpha(args),
+        "activation_checkpointing": args.activation_checkpointing,
+        "phase_learning_rate": args.phase_learning_rate,
+        "electronic_learning_rate": args.electronic_learning_rate,
+        "model_seed": args.seed,
+        "synthetic_input": "post-adapter_optical_field_3x224x224_float32",
+    }
+
+
+def combination_identity(
+    *,
+    campaign_sha256: str,
+    depth: int,
+    feedback_method: str,
+    feedback_random_seed: int,
+) -> dict[str, Any]:
+    payload = {
+        "campaign_sha256": campaign_sha256,
+        "depth": int(depth),
+        "feedback_method": feedback_method,
+        "feedback_random_seed": (
+            int(feedback_random_seed) if feedback_method == "fa_random" else None
+        ),
+    }
+    return {**payload, "combination_sha256": canonical_json_sha256(payload)}
+
+
+def result_relative_path(depth: int, feedback_method: str) -> Path:
+    if feedback_method not in P13_FEEDBACK_METHODS:
+        raise ValueError(f"Unsupported feedback method: {feedback_method}")
+    return (
+        Path(f"depth_{int(depth):03d}")
+        / f"feedback_{feedback_method}"
+        / "result.json"
+    )
+
+
 def atomic_write_json(path: str | Path, payload: Mapping[str, Any]) -> None:
     """Write JSON through an adjacent temporary file and atomic replace."""
 
@@ -68,6 +196,28 @@ def atomic_write_json(path: str | Path, payload: Mapping[str, Any]) -> None:
     finally:
         if temporary.exists():
             temporary.unlink()
+
+
+def load_matching_result(
+    path: str | Path,
+    *,
+    expected_combination_sha256: str,
+) -> dict[str, Any]:
+    """Load one resumable result and reject cross-method/source contamination."""
+
+    source = Path(path)
+    payload = json.loads(source.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise RuntimeError(f"Existing result is not a JSON object: {source}")
+    validate_result_fields(payload)
+    observed = payload["combination"]["combination_sha256"]
+    if observed != expected_combination_sha256:
+        raise RuntimeError(
+            "Refusing to resume a result with another combination identity: "
+            f"path={source}, expected={expected_combination_sha256}, "
+            f"observed={observed}"
+        )
+    return payload
 
 
 def _finite_number(value: float) -> bool:
@@ -98,7 +248,7 @@ def summarize_phase_gradients(
         present_entries.append((name, gradient))
     # Queue one reduction kernel per phase but perform only one device-to-host
     # transfer for each reduction family. A per-phase .item() would inject up
-    # to 92 CUDA synchronizations and invalidate the throughput measurement.
+    # to 100 CUDA synchronizations and invalidate the throughput measurement.
     finite_values = (
         torch.stack([torch.isfinite(gradient).all() for _, gradient in present_entries])
         .detach()
@@ -109,7 +259,7 @@ def summarize_phase_gradients(
     )
     norm_values = (
         torch.stack(
-            [gradient.detach().float().norm() for _, gradient in present_entries]
+            [gradient.detach().double().norm() for _, gradient in present_entries]
         )
         .cpu()
         .tolist()
@@ -130,7 +280,8 @@ def summarize_phase_gradients(
         else:
             zero_names.append(name)
     return {
-        "new_phase_count": total,
+        "scope": "all_phase_parameters_carried_and_new",
+        "phase_parameter_count": total,
         "gradient_present_count": present,
         "gradient_finite_count": finite,
         "gradient_nonzero_count": nonzero,
@@ -145,6 +296,37 @@ def summarize_phase_gradients(
     }
 
 
+def summarize_input_amplitude_gradient(amplitude: torch.Tensor) -> dict[str, Any]:
+    """Audit whether the loss differentiates through the complete optical body."""
+
+    gradient = amplitude.grad
+    if gradient is None:
+        return {
+            "name": "input_amplitude",
+            "gradient_present": False,
+            "gradient_finite": False,
+            "gradient_nonzero": False,
+            "gradient_norm": None,
+        }
+    finite = bool(torch.isfinite(gradient).all().detach().cpu())
+    norm = float(gradient.detach().double().norm().cpu()) if finite else None
+    return {
+        "name": "input_amplitude",
+        "gradient_present": True,
+        "gradient_finite": finite,
+        "gradient_nonzero": bool(finite and norm is not None and norm > 0.0),
+        "gradient_norm": norm,
+    }
+
+
+def effective_new_stage_alpha(args: argparse.Namespace) -> float:
+    if args.alpha_mode == "full_depth":
+        return 1.0
+    if args.alpha_mode == "epsilon_probe":
+        return float(args.alpha_epsilon)
+    raise ValueError(f"Unsupported alpha mode: {args.alpha_mode}")
+
+
 def validate_result_fields(payload: Mapping[str, Any]) -> None:
     """Validate the stable, machine-readable contract used by sweep results."""
 
@@ -154,6 +336,8 @@ def validate_result_fields(payload: Mapping[str, Any]) -> None:
         "claim_scope",
         "formal_training_started",
         "depth",
+        "combination",
+        "feedback",
         "configuration",
         "source",
         "device",
@@ -180,9 +364,73 @@ def validate_result_fields(payload: Mapping[str, Any]) -> None:
         raise ValueError("engineering result must report the stem SHA-256")
     if not isinstance(device, Mapping) or not device.get("gpu_uuid"):
         raise ValueError("engineering result must report the GPU UUID")
+    combination = payload["combination"]
+    feedback = payload["feedback"]
+    if not isinstance(combination, Mapping) or not combination.get(
+        "combination_sha256"
+    ):
+        raise ValueError("engineering result must report its combination identity")
+    if not isinstance(feedback, Mapping) or feedback.get(
+        "method"
+    ) not in P13_FEEDBACK_METHODS:
+        raise ValueError("engineering result must report a supported feedback method")
+    if feedback["method"] != combination.get("feedback_method"):
+        raise ValueError("feedback method and combination identity disagree")
+    if payload["depth"] != combination.get("depth"):
+        raise ValueError("result depth and combination identity disagree")
+    expected_seed = (
+        feedback.get("random_seed") if feedback["method"] == "fa_random" else None
+    )
+    if expected_seed != combination.get("feedback_random_seed"):
+        raise ValueError("feedback seed and combination identity disagree")
+    alpha = payload["alpha"]
+    configuration = payload["configuration"]
+    if not isinstance(configuration, Mapping):
+        raise ValueError("engineering result configuration must be a mapping")
+    if not isinstance(alpha, Mapping) or alpha.get("mode") not in ALPHA_MODES:
+        raise ValueError("engineering result must report a supported alpha mode")
+    configured_alpha = alpha.get("configured_new_stage_alpha")
+    if not isinstance(configured_alpha, (int, float)) or not _finite_number(
+        configured_alpha
+    ):
+        raise ValueError("engineering result must report its finite stage alpha")
+    if configuration.get("alpha_mode") != alpha["mode"] or configuration.get(
+        "effective_new_stage_alpha"
+    ) != configured_alpha:
+        raise ValueError("alpha result disagrees with the campaign configuration")
+    if alpha["mode"] == "full_depth":
+        if float(configured_alpha) != 1.0:
+            raise ValueError("full-depth audit requires configured alpha exactly one")
+    elif alpha.get("interpretation") != (
+        "engineering_gradient_probe_only_not_training_stability"
+    ):
+        raise ValueError("epsilon probe must reject a training-stability interpretation")
+    identity_payload = {
+        "campaign_sha256": combination.get("campaign_sha256"),
+        "depth": combination.get("depth"),
+        "feedback_method": combination.get("feedback_method"),
+        "feedback_random_seed": combination.get("feedback_random_seed"),
+    }
+    if combination["combination_sha256"] != canonical_json_sha256(identity_payload):
+        raise ValueError("combination SHA-256 does not match its identity fields")
     if payload["status"] == "passed_engineering":
+        alpha_report = alpha.get("report")
+        if not isinstance(alpha_report, Mapping):
+            raise ValueError("passed engineering result has no alpha report")
+        if alpha["mode"] == "full_depth" and alpha.get(
+            "all_stages_exactly_one"
+        ) is not True:
+            raise ValueError("full-depth audit must execute every stage at alpha one")
+        if alpha["mode"] == "full_depth" and (
+            alpha_report.get("all_full_depth") is not True
+            or alpha_report.get("minimum") != 1.0
+            or alpha_report.get("maximum") != 1.0
+        ):
+            raise ValueError("full-depth alpha report is not exactly one")
         passed_requirements = {
-            "alpha.configured_epsilon": payload["alpha"].get("configured_epsilon"),
+            "alpha.mode": alpha.get("mode"),
+            "alpha.configured_new_stage_alpha": configured_alpha,
+            "alpha.report": alpha.get("report"),
             "migration.source_checkpoint_sha256": payload["migration"].get(
                 "source_checkpoint_sha256"
             ),
@@ -198,12 +446,49 @@ def validate_result_fields(payload: Mapping[str, Any]) -> None:
             "measurement.samples_per_second": payload["measurement"].get(
                 "samples_per_second"
             ),
+            "feedback.initial_manifest_sha256": feedback.get(
+                "initial_manifest_sha256"
+            ),
+            "feedback.final_manifest_sha256": feedback.get(
+                "final_manifest_sha256"
+            ),
         }
         absent = sorted(
             name for name, value in passed_requirements.items() if value is None
         )
         if absent:
             raise ValueError(f"passed engineering result is missing fields: {absent}")
+        required_true = {
+            "feedback.method_unchanged_during_run": feedback.get(
+                "method_unchanged_during_run"
+            ),
+            "checks.loss_finite_every_step": payload["checks"].get(
+                "loss_finite_every_step"
+            ),
+            "checks.every_phase_gradient_present": payload["checks"].get(
+                "every_phase_gradient_present"
+            ),
+            "checks.every_phase_gradient_finite": payload["checks"].get(
+                "every_phase_gradient_finite"
+            ),
+            "checks.every_phase_gradient_nonzero": payload["checks"].get(
+                "every_phase_gradient_nonzero"
+            ),
+            "checks.input_amplitude_gradient_present": payload["checks"].get(
+                "input_amplitude_gradient_present"
+            ),
+            "checks.input_amplitude_gradient_finite": payload["checks"].get(
+                "input_amplitude_gradient_finite"
+            ),
+            "checks.input_amplitude_gradient_nonzero": payload["checks"].get(
+                "input_amplitude_gradient_nonzero"
+            ),
+        }
+        failed = sorted(
+            name for name, value in required_true.items() if value is not True
+        )
+        if failed:
+            raise ValueError(f"passed engineering result failed checks: {failed}")
 
 
 def _gpu_uuid(device: torch.device) -> str:
@@ -347,8 +632,13 @@ def _one_step(
     model: QwenStemProgressiveOpticalImageNetBackbone,
     optimizer: torch.optim.Optimizer,
     field_template: torch.Tensor,
-    audit_new_phase_gradients: bool,
-) -> tuple[float, dict[str, Any] | None, bool]:
+    audit_gradients: bool,
+) -> tuple[
+    float,
+    dict[str, Any] | None,
+    dict[str, Any] | None,
+    bool,
+]:
     optimizer.zero_grad(set_to_none=True)
     # P13 enables checkpointing only when the optical field requires a gradient.
     field = field_template.detach().requires_grad_(True)
@@ -360,25 +650,39 @@ def _one_step(
             f"non-finite synthetic optical-field loss: {loss_value}"
         )
     loss.backward()
-    gradient_report: dict[str, Any] | None = None
+    phase_gradient_report: dict[str, Any] | None = None
+    input_gradient_report: dict[str, Any] | None = None
     optimizer_step_performed = True
-    if audit_new_phase_gradients:
-        new_phase_parameters = [
+    if audit_gradients:
+        all_phase_parameters = [
             (f"slots.{slot.stage_index}.stage.raw_phase", slot.stage.raw_phase)
-            for slot in model.new_slots()
+            for slot in model.slots
         ]
-        gradient_report = summarize_phase_gradients(new_phase_parameters)
-        if not gradient_report["every_gradient_finite"]:
+        phase_gradient_report = summarize_phase_gradients(all_phase_parameters)
+        input_gradient_report = summarize_input_amplitude_gradient(field)
+        if not (
+            phase_gradient_report["every_gradient_present"]
+            and phase_gradient_report["every_gradient_finite"]
+            and input_gradient_report["gradient_present"]
+            and input_gradient_report["gradient_finite"]
+        ):
             # Do not write non-finite values into the migrated source state.
             optimizer_step_performed = False
     if optimizer_step_performed:
         optimizer.step()
-    return loss_value, gradient_report, optimizer_step_performed
+    return (
+        loss_value,
+        phase_gradient_report,
+        input_gradient_report,
+        optimizer_step_performed,
+    )
 
 
 def _empty_result(
     *,
     depth: int,
+    feedback_method: str,
+    combination: Mapping[str, Any],
     args: argparse.Namespace,
     source_sha256: str,
     stem_sha256: str,
@@ -392,15 +696,36 @@ def _empty_result(
         "created_at_utc": utc_now(),
         "completed_at_utc": None,
         "depth": depth,
+        "combination": dict(combination),
+        "feedback": {
+            "method": feedback_method,
+            "random_seed": (
+                args.feedback_random_seed
+                if feedback_method == "fa_random"
+                else None
+            ),
+            "initial_manifest": {},
+            "initial_manifest_sha256": None,
+            "final_manifest": {},
+            "final_manifest_sha256": None,
+        },
         "configuration": {
             "batch_size": args.batch_size,
             "warmup_steps": args.warmup_steps,
             "measurement_steps": args.measurement_steps,
+            "alpha_mode": args.alpha_mode,
             "alpha_epsilon": args.alpha_epsilon,
+            "effective_new_stage_alpha": effective_new_stage_alpha(args),
             "activation_checkpointing": args.activation_checkpointing,
             "phase_learning_rate": args.phase_learning_rate,
             "electronic_learning_rate": args.electronic_learning_rate,
             "seed": args.seed,
+            "feedback_method": feedback_method,
+            "feedback_random_seed": (
+                args.feedback_random_seed
+                if feedback_method == "fa_random"
+                else None
+            ),
             "synthetic_input": "post-adapter_optical_field_3x224x224_float32",
             "optimizer": "SGD(momentum=0,weight_decay=0)",
             "optimizer_scope": "optical_body_phases_and_stage_electronics_only",
@@ -412,7 +737,21 @@ def _empty_result(
             "stem_checkpoint_sha256": stem_sha256,
         },
         "device": dict(device_report),
-        "alpha": {},
+        "alpha": {
+            "mode": args.alpha_mode,
+            "configured_new_stage_alpha": effective_new_stage_alpha(args),
+            "configured_epsilon": (
+                args.alpha_epsilon if args.alpha_mode == "epsilon_probe" else None
+            ),
+            "carried_stage_alpha": 1.0,
+            "report": None,
+            "all_stages_exactly_one": None,
+            "interpretation": (
+                "full_depth_backward_connectivity_audit"
+                if args.alpha_mode == "full_depth"
+                else "engineering_gradient_probe_only_not_training_stability"
+            ),
+        },
         "migration": {},
         "parameters": {},
         "checks": {},
@@ -420,9 +759,11 @@ def _empty_result(
     }
 
 
-def run_depth(
+def run_combination(
     *,
     depth: int,
+    feedback_method: str,
+    combination: Mapping[str, Any],
     args: argparse.Namespace,
     device: torch.device,
     device_report: Mapping[str, Any],
@@ -431,6 +772,8 @@ def run_depth(
 ) -> dict[str, Any]:
     result = _empty_result(
         depth=depth,
+        feedback_method=feedback_method,
+        combination=combination,
         args=args,
         source_sha256=source_sha256,
         stem_sha256=stem_sha256,
@@ -440,6 +783,7 @@ def run_depth(
     optimizer: torch.optim.Optimizer | None = None
     field: torch.Tensor | None = None
     try:
+        configured_alpha = effective_new_stage_alpha(args)
         torch.cuda.reset_peak_memory_stats(device)
         torch.manual_seed(args.seed + depth)
         torch.cuda.manual_seed_all(args.seed + depth)
@@ -448,7 +792,7 @@ def run_depth(
             {
                 "num_stages": depth,
                 "seed": args.seed,
-                "new_stage_alpha_init": args.alpha_epsilon,
+                "new_stage_alpha_init": configured_alpha,
                 "new_stage_alpha_epsilon": args.alpha_epsilon,
                 "new_stage_ramp_epochs": 10,
                 "activation_checkpointing": args.activation_checkpointing,
@@ -458,15 +802,59 @@ def run_depth(
         if migration["source_checkpoint_sha256"] != source_sha256:
             raise RuntimeError(
                 "P11 source changed while the engineering sweep was running"
-            )
-        model.set_new_stage_alpha(args.alpha_epsilon)
+        )
+        model.set_new_stage_alpha(configured_alpha)
+        model.configure_feedback(
+            feedback_method,
+            random_seed=args.feedback_random_seed,
+        )
+        initial_feedback_manifest = model.feedback_manifest()
+        if initial_feedback_manifest.get("method") != feedback_method:
+            raise RuntimeError("Configured feedback method does not match its manifest")
+        expected_random_seed = (
+            args.feedback_random_seed if feedback_method == "fa_random" else None
+        )
+        if initial_feedback_manifest.get("random_base_seed") != expected_random_seed:
+            raise RuntimeError("Feedback random seed does not match its manifest")
+        result["feedback"].update(
+            {
+                "initial_manifest": initial_feedback_manifest,
+                "initial_manifest_sha256": canonical_json_sha256(
+                    initial_feedback_manifest
+                ),
+                "active_phase_sequence_sha256": initial_feedback_manifest.get(
+                    "feedback_phase_sequence_sha256"
+                ),
+                "source_phase_sequence_sha256": initial_feedback_manifest.get(
+                    "source", {}
+                ).get("phase_sequence_sha256"),
+                "source_manifest_sha256": canonical_json_sha256(
+                    initial_feedback_manifest.get("source", {})
+                ),
+            }
+        )
         model.train()
         result["migration"] = migration
+        alpha_report = model.depth_alpha_report()
+        all_stages_exactly_one = all(
+            slot.alpha_value == 1.0 for slot in model.slots
+        )
+        if args.alpha_mode == "full_depth" and not all_stages_exactly_one:
+            raise RuntimeError("full-depth audit failed to set every stage alpha to one")
         result["alpha"] = {
-            "configured_epsilon": args.alpha_epsilon,
-            "report": model.depth_alpha_report(),
-            "anchor_alpha": 1.0,
-            "new_phase_gradient_gate_is_positive": args.alpha_epsilon > 0.0,
+            "mode": args.alpha_mode,
+            "configured_new_stage_alpha": configured_alpha,
+            "configured_epsilon": (
+                args.alpha_epsilon if args.alpha_mode == "epsilon_probe" else None
+            ),
+            "carried_stage_alpha": 1.0,
+            "report": alpha_report,
+            "all_stages_exactly_one": all_stages_exactly_one,
+            "interpretation": (
+                "full_depth_backward_connectivity_audit"
+                if args.alpha_mode == "full_depth"
+                else "engineering_gradient_probe_only_not_training_stability"
+            ),
         }
         model_report = model.parameter_report()
         # Avoid duplicating the full migration manifest in two places.
@@ -491,25 +879,30 @@ def run_depth(
 
         warmup_losses: list[float] = []
         for _ in range(args.warmup_steps):
-            loss, _, _ = _one_step(
+            loss, _, _, _ = _one_step(
                 model=model,
                 optimizer=optimizer,
                 field_template=field,
-                audit_new_phase_gradients=False,
+                audit_gradients=False,
             )
             warmup_losses.append(loss)
 
         # Run one dedicated untimed gradient audit. Keeping phase reductions
         # outside the timed loop makes samples/s describe an optimizer step,
         # not the diagnostics overhead.
-        audit_loss, gradient_audit, audit_optimizer_step = _one_step(
+        (
+            audit_loss,
+            phase_gradient_audit,
+            input_gradient_audit,
+            audit_optimizer_step,
+        ) = _one_step(
             model=model,
             optimizer=optimizer,
             field_template=field,
-            audit_new_phase_gradients=True,
+            audit_gradients=True,
         )
-        if gradient_audit is None:
-            raise RuntimeError("internal error: the dedicated phase audit was omitted")
+        if phase_gradient_audit is None or input_gradient_audit is None:
+            raise RuntimeError("internal error: the dedicated gradient audit was omitted")
         torch.cuda.synchronize(device)
         torch.cuda.reset_peak_memory_stats(device)
         measurement_start_allocated = torch.cuda.memory_allocated(device)
@@ -520,28 +913,35 @@ def run_depth(
         for _ in range(args.measurement_steps):
             torch.cuda.synchronize(device)
             started = time.perf_counter()
-            loss, _, _ = _one_step(
+            loss, _, _, _ = _one_step(
                 model=model,
                 optimizer=optimizer,
                 field_template=field,
-                audit_new_phase_gradients=False,
+                audit_gradients=False,
             )
             torch.cuda.synchronize(device)
             step_seconds.append(time.perf_counter() - started)
             measured_losses.append(loss)
 
         all_losses = warmup_losses + [audit_loss] + measured_losses
-        every_present = gradient_audit["every_gradient_present"]
-        every_finite = gradient_audit["every_gradient_finite"]
-        every_nonzero = gradient_audit["every_gradient_nonzero"]
+        every_present = phase_gradient_audit["every_gradient_present"]
+        every_finite = phase_gradient_audit["every_gradient_finite"]
+        every_nonzero = phase_gradient_audit["every_gradient_nonzero"]
+        input_present = input_gradient_audit["gradient_present"]
+        input_finite = input_gradient_audit["gradient_finite"]
+        input_nonzero = input_gradient_audit["gradient_nonzero"]
         losses_finite = all(_finite_number(value) for value in all_losses)
         result["checks"] = {
             "loss_finite_every_step": losses_finite,
-            "every_new_phase_gradient_present": every_present,
-            "every_new_phase_gradient_finite": every_finite,
-            "every_new_phase_gradient_nonzero": every_nonzero,
+            "every_phase_gradient_present": every_present,
+            "every_phase_gradient_finite": every_finite,
+            "every_phase_gradient_nonzero": every_nonzero,
+            "input_amplitude_gradient_present": input_present,
+            "input_amplitude_gradient_finite": input_finite,
+            "input_amplitude_gradient_nonzero": input_nonzero,
             "gradient_audit_optimizer_step_performed": audit_optimizer_step,
-            "gradient_audit_report": gradient_audit,
+            "phase_gradient_audit_report": phase_gradient_audit,
+            "input_amplitude_gradient_audit_report": input_gradient_audit,
         }
         total_seconds = sum(step_seconds)
         peak_allocated = torch.cuda.max_memory_allocated(device)
@@ -569,7 +969,27 @@ def run_depth(
             ),
             "timing_excludes_dedicated_gradient_audit": True,
         }
-        passed = losses_finite and every_present and every_finite and every_nonzero
+        final_feedback_manifest = model.feedback_manifest()
+        if final_feedback_manifest.get("method") != feedback_method:
+            raise RuntimeError("Feedback method changed during the engineering run")
+        result["feedback"].update(
+            {
+                "final_manifest": final_feedback_manifest,
+                "final_manifest_sha256": canonical_json_sha256(
+                    final_feedback_manifest
+                ),
+                "method_unchanged_during_run": True,
+            }
+        )
+        passed = (
+            losses_finite
+            and every_present
+            and every_finite
+            and every_nonzero
+            and input_present
+            and input_finite
+            and input_nonzero
+        )
         result["status"] = "passed_engineering" if passed else "failed_checks"
     except torch.cuda.OutOfMemoryError as error:
         result["status"] = "failed_oom"
@@ -624,14 +1044,38 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--depths", type=parse_depths, default=parse_depths("16,32,64,100")
     )
+    parser.add_argument(
+        "--feedback-methods",
+        type=parse_feedback_methods,
+        default=parse_feedback_methods("bp_current,fa_source,fa_random"),
+    )
+    parser.add_argument("--feedback-random-seed", type=int, default=20260901)
     parser.add_argument("--batch-size", type=int, default=1)
     parser.add_argument("--warmup-steps", type=int, default=1)
     parser.add_argument("--measurement-steps", type=int, default=2)
+    parser.add_argument(
+        "--alpha-mode",
+        choices=ALPHA_MODES,
+        default="epsilon_probe",
+        help=(
+            "full_depth executes every stage at alpha=1; epsilon_probe retains "
+            "the small-alpha engineering gradient probe and is not evidence of "
+            "training stability"
+        ),
+    )
     parser.add_argument("--alpha-epsilon", type=float, default=0.01)
     parser.add_argument("--phase-learning-rate", type=float, default=1.0e-2)
     parser.add_argument("--electronic-learning-rate", type=float, default=1.0e-3)
     parser.add_argument("--seed", type=int, default=2026)
     parser.add_argument("--device", default="cuda:0")
+    parser.add_argument(
+        "--resume-existing",
+        action="store_true",
+        help=(
+            "reuse only passed results whose campaign/combination hashes match; "
+            "mismatched outputs are a hard error"
+        ),
+    )
     parser.add_argument(
         "--activation-checkpointing",
         action=argparse.BooleanOptionalAction,
@@ -650,6 +1094,8 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         raise ValueError("measurement_steps must be positive")
     if not 0.0 < args.alpha_epsilon <= 1.0:
         raise ValueError("alpha_epsilon must lie in (0,1]")
+    if args.alpha_mode == "epsilon_probe" and args.alpha_epsilon >= 1.0:
+        raise ValueError("epsilon_probe requires alpha_epsilon strictly below one")
     if args.phase_learning_rate <= 0.0 or args.electronic_learning_rate <= 0.0:
         raise ValueError("learning rates must be positive")
     return args
@@ -666,47 +1112,152 @@ def main(argv: Sequence[str] | None = None) -> int:
     source_sha256 = sha256_file(args.p11_checkpoint)
     stem_sha256 = sha256_file(args.stem_checkpoint)
     device_report = _device_report(device)
+    if str(device_report["gpu_uuid"]).startswith("unresolved-for-"):
+        raise RuntimeError(
+            "GPU UUID is unresolved; refusing an ambiguous resource audit"
+        )
     output = args.output_directory.expanduser().resolve()
     output.mkdir(parents=True, exist_ok=True)
+    code_manifest = implementation_manifest()
+    campaign_contract = build_campaign_contract(
+        args=args,
+        source_sha256=source_sha256,
+        stem_sha256=stem_sha256,
+        gpu_uuid=device_report["gpu_uuid"],
+        implementation_sha256=code_manifest["combined_sha256"],
+        torch_version=torch.__version__,
+        torch_cuda_version=torch.version.cuda,
+    )
+    campaign_sha256 = canonical_json_sha256(campaign_contract)
+    combinations = [
+        (
+            depth,
+            feedback_method,
+            combination_identity(
+                campaign_sha256=campaign_sha256,
+                depth=depth,
+                feedback_method=feedback_method,
+                feedback_random_seed=args.feedback_random_seed,
+            ),
+        )
+        for depth in args.depths
+        for feedback_method in args.feedback_methods
+    ]
+    summary_path = output / "sweep_summary.json"
+    result_paths = [
+        output / result_relative_path(depth, method)
+        for depth, method, _ in combinations
+    ]
+    if not args.resume_existing:
+        occupied = [path for path in [summary_path, *result_paths] if path.exists()]
+        if occupied:
+            raise FileExistsError(
+                "Refusing to overwrite an engineering campaign. Use a new output "
+                "directory or --resume-existing after verifying the identity: "
+                + ", ".join(str(path) for path in occupied)
+            )
+
+    previous_summary: Mapping[str, Any] | None = None
+    if summary_path.exists():
+        loaded_summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        if not isinstance(loaded_summary, Mapping):
+            raise RuntimeError("Existing sweep summary is not a JSON object")
+        if loaded_summary.get("format") != SWEEP_FORMAT:
+            raise RuntimeError("Existing sweep summary uses another format")
+        if loaded_summary.get("campaign_sha256") != campaign_sha256:
+            raise RuntimeError(
+                "Refusing to resume a campaign with another source/config/GPU hash"
+            )
+        loaded_contract = loaded_summary.get("campaign_contract")
+        if not isinstance(loaded_contract, Mapping) or canonical_json_sha256(
+            loaded_contract
+        ) != campaign_sha256:
+            raise RuntimeError("Existing campaign contract does not match its SHA-256")
+        previous_summary = loaded_summary
 
     summary: dict[str, Any] = {
         "format": SWEEP_FORMAT,
         "claim_scope": CLAIM_SCOPE,
         "formal_training_started": False,
-        "created_at_utc": utc_now(),
+        "created_at_utc": (
+            previous_summary.get("created_at_utc", utc_now())
+            if previous_summary is not None
+            else utc_now()
+        ),
         "completed_at_utc": None,
+        "campaign_contract": campaign_contract,
+        "campaign_sha256": campaign_sha256,
+        "implementation_manifest": code_manifest,
+        "resume_existing": args.resume_existing,
         "requested_depths": list(args.depths),
+        "requested_feedback_methods": list(args.feedback_methods),
+        "feedback_random_seed": args.feedback_random_seed,
         "source_p11_checkpoint_sha256": source_sha256,
         "source_stem_checkpoint_sha256": stem_sha256,
         "gpu_uuid": device_report["gpu_uuid"],
         "results": [],
     }
-    atomic_write_json(output / "sweep_summary.json", summary)
-    for depth in args.depths:
-        result = run_depth(
-            depth=depth,
-            args=args,
-            device=device,
-            device_report=device_report,
-            source_sha256=source_sha256,
-            stem_sha256=stem_sha256,
-        )
-        result_path = output / f"depth_{depth:03d}" / "result.json"
-        atomic_write_json(result_path, result)
+    atomic_write_json(summary_path, summary)
+    for depth, feedback_method, combination in combinations:
+        result_path = output / result_relative_path(depth, feedback_method)
+        reused_existing = False
+        previous_status: str | None = None
+        if result_path.exists():
+            if not args.resume_existing:
+                raise RuntimeError(f"Unexpected occupied result path: {result_path}")
+            existing = load_matching_result(
+                result_path,
+                expected_combination_sha256=combination["combination_sha256"],
+            )
+            previous_status = str(existing["status"])
+            if existing["status"] == "passed_engineering":
+                result = existing
+                reused_existing = True
+            else:
+                result = run_combination(
+                    depth=depth,
+                    feedback_method=feedback_method,
+                    combination=combination,
+                    args=args,
+                    device=device,
+                    device_report=device_report,
+                    source_sha256=source_sha256,
+                    stem_sha256=stem_sha256,
+                )
+                atomic_write_json(result_path, result)
+        else:
+            result = run_combination(
+                depth=depth,
+                feedback_method=feedback_method,
+                combination=combination,
+                args=args,
+                device=device,
+                device_report=device_report,
+                source_sha256=source_sha256,
+                stem_sha256=stem_sha256,
+            )
+            atomic_write_json(result_path, result)
         summary["results"].append(
             {
                 "depth": depth,
+                "feedback_method": feedback_method,
+                "feedback_random_seed": combination["feedback_random_seed"],
+                "combination_sha256": combination["combination_sha256"],
                 "status": result["status"],
                 "result_json": str(result_path),
+                "reused_existing_passed_result": reused_existing,
+                "previous_status_before_rerun": previous_status,
             }
         )
         summary["completed_at_utc"] = utc_now()
-        atomic_write_json(output / "sweep_summary.json", summary)
+        atomic_write_json(summary_path, summary)
         print(
             json.dumps(
                 {
                     "depth": depth,
+                    "feedback_method": feedback_method,
                     "status": result["status"],
+                    "reused_existing": reused_existing,
                     "result_json": str(result_path),
                 },
                 sort_keys=True,

@@ -1,6 +1,7 @@
-# P13 prototype commands
+# P13 engineering and guarded training commands
 
-本目录当前只有自动测试和严格迁移初始化命令，**没有正式训练 launcher**。
+本目录同时包含自动测试、严格迁移/工程审计，以及正式 ImageNet 训练 launcher。
+launcher 的存在不代表训练已经运行；正式状态必须以对应 run 的 checkpoint/result 为准。
 
 ## 1. 本地/服务器代码验收
 
@@ -60,11 +61,12 @@ PY
 `optical_phase_parameters=9633792`、`electronic_backbone_parameters=965176`、
 `formal_training_started=false`。
 
-## 3. 其他深度
+## 3. 两种不同的深度路径
 
-迁移模块支持 `--num-stages 16|32|64|100`。每个深度都从同一个 P11 source
-独立迁移；当前没有实现 16→32→64 checkpoint 级继续增生。不要把原型迁移
-命令描述成训练，也不要在没有 GPU memory smoke 的情况下添加正式 launch。
+`02` 原型命令仍支持把同一个 P11 source 独立迁移到 `16|32|64|100`，只用于架构与资源
+审计。正式训练采用另一条已实现的严格链：`P11 epoch-88 -> 16 -> 32 -> 64 -> 100`。
+每一步完整迁移上一深度的 stage、adapter 和 ImageNet readout；新增 stage 以 alpha=0
+保持函数不变，再由正式训练 schedule 拉到 1。两条路径不能混写为同一个实验结果。
 
 ## 4. GPU 工程 sweep（batch=1，非正式训练）
 
@@ -79,3 +81,36 @@ P13_GPU=1 bash experiments/qwen3_vl_patch_stem_progressive_64stage_optical_image
 forward/backward/optimizer step，并严格读取正式 P11 source；不读取 ImageNet，
 不保存训练 checkpoint，也不能解释为性能实验。完整参数、输出字段与 OOM 行为见
 [GPU_ENGINEERING_SWEEP.md](GPU_ENGINEERING_SWEEP.md)。
+
+## 5. 64/100 层 full-depth feedback CUDA audit
+
+```bash
+P13_GPU=1 bash experiments/qwen3_vl_patch_stem_progressive_64stage_optical_imagenet_backbone/commands/05_gpu_full_depth_feedback_cuda_audit_bs1.sh
+```
+
+该命令只做合成光场工程审计：64/100 层在精确 `alpha=1` 下分别运行 `bp_current`、
+`fa_source`、`fa_random`，记录逐组合 manifest hash、全部 carried+new phase 及输入
+amplitude 梯度健康、峰值显存和 step time。
+不读取 ImageNet、不保存训练 checkpoint、不构成性能实验。中断恢复和结果目录契约见
+[FULL_DEPTH_FEEDBACK_CUDA_AUDIT.md](FULL_DEPTH_FEEDBACK_CUDA_AUDIT.md)。
+
+## 6. 正式 16 层训练与逐级 guarded growth
+
+P11→16 的正式 smoke、训练、状态命令以及 P11 matched continuation control 见
+[GROWTH_TRAINING_COMMANDS.md](GROWTH_TRAINING_COMMANDS.md)。只有 16 层产生正式
+`best_full_depth.pt` 后，才能渲染 32 层配置；64 与 100 层同理：
+
+```bash
+TARGET_DEPTH=32 \
+bash experiments/qwen3_vl_patch_stem_progressive_64stage_optical_imagenet_backbone/commands/12_render_or_verify_progressive_growth.sh
+
+TARGET_DEPTH=32 PHYSICAL_GPU_INDICES=0,1,3,4 P13_ACTION=fresh \
+bash experiments/qwen3_vl_patch_stem_progressive_64stage_optical_imagenet_backbone/commands/13_launch_progressive_growth.sh
+```
+
+将 `TARGET_DEPTH` 依次改为 `64`、`100`。脚本内部固定上一深度 run，不接受占位 source；
+每次渲染和启动都会重新检查 `best_full_depth` 的 role、depth、alpha、architecture、
+migration、feedback manifest 及文件 SHA。配置写入 `configs/generated/`；若已有配置与
+当前 source identity 不一致会拒绝覆盖。四卡 per-rank batch/accumulation 分别为
+`12/4`、`6/8`、`4/12`，三档 effective global batch 均为 192。
+完整 guard 与逐级操作见 [PROGRESSIVE_GROWTH_CHAIN.md](PROGRESSIVE_GROWTH_CHAIN.md)。
