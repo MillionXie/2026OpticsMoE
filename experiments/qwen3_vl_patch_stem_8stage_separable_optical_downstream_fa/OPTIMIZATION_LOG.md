@@ -308,3 +308,31 @@ bash /DATA/DATA1/guest3/2026OpticsMoE_p12_e305e0b/experiments/qwen3_vl_patch_ste
 - checkpoint 健康：`best.pt` 可加载且 epoch=38，`last.pt` 可加载且
   epoch=50；两者 task/method 身份均为 `caltech101/noft`。NoFT 冻结骨干，
   因此 phase 相对源模型的数值级变化约为浮点往返误差，不解释为相位学习。
+
+## 2026-09-01：Scratch-P11-body 预训练价值控制实现
+
+- 目的：回答 P11 ImageNet-1K 90-epoch body 预训练究竟贡献多少，而不改变
+  下游任务、数据 split、临时头、优化器或 50+50 epoch 预算。
+- 锁定边界：继续使用相同冻结 Qwen patch/position stem；不读取 P11 ImageNet
+  backbone checkpoint。adapter、8 个光学相位面、8 个 Slim Spatial Token
+  Mixer 和融合门均在 `init_seed=2026` 下全新构造。因此本控制称为“no ImageNet
+  optical-body pretraining”，不能称作完全 from-scratch。
+- 可复现 source：`scratch_source.py` 在隔离 RNG 域内构造 P11，通过标准
+  `backbone_state_dict()` 导出，并记录 `source_regime`、`init_seed`、stem 文件
+  SHA-256、完整/仅 stem/非 stem semantic tensor SHA-256、P11 架构签名和 model
+  report。已存在 source 只有在这些身份全部一致时才复用，否则拒绝覆盖。
+- 两阶段配置：source 序列化完成后才把它的真实文件 SHA-256 写入 resolved
+  config；未提交虚假或占位 SHA。source、config 和结果统一隔离在
+  `runs/p12_scratch_*` 下。
+- 初始矩阵：3 tasks × downstream seed 2026 × 4 groups，共 12 runs；通过后可
+  扩为 seeds `2026,2027,2028`。Scratch 控制里的 `fa_pretrained` 代码键必须在
+  图表中改写为 `FA-source-init`，因为它固定的是随机 source 初相位。
+- 公平比较：按 task/method/downstream seed 将主 P12 与 Scratch P12 配对。
+  `noft` 给出随机特征探针，`bp` 给出同等下游预算能否从随机 body 学起；不能把
+  Scratch 的较差成绩归因于 stem，因为两边 stem artifact 完全相同。
+- 命令：先执行
+  `commands/p12_scratch_downstream_50e.sh prepare`，再执行 `launch`；完整多 seed、
+  status、tail 与 summarize 指令见
+  `commands/P12_SCRATCH_DOWNSTREAM_50E_COMMANDS.md`。
+- 本条仅记录本地实现和待执行方案；尚未生成服务器 source、resolved config 或
+  启动正式训练，因此没有填写任何 Scratch 性能数字。

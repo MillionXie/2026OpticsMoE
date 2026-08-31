@@ -137,6 +137,14 @@ def load_strict_p11_backbone(
         "sha256": _sha256_file(path),
         "model_report": dict(report) if isinstance(report, Mapping) else None,
         "stem_checkpoint_sha256": model.stem.checkpoint_sha256,
+        # Optional source-regime fields are absent from the original P11
+        # ImageNet export and present in the deterministic scratch control.
+        # Passing them through keeps downstream result/checkpoint provenance
+        # explicit without weakening the strict tensor/architecture checks.
+        "source_regime": metadata.get("source_regime"),
+        "init_seed": metadata.get("init_seed"),
+        "backbone_state_sha256": metadata.get("backbone_state_sha256"),
+        "non_stem_state_sha256": metadata.get("non_stem_state_sha256"),
     }
 
 

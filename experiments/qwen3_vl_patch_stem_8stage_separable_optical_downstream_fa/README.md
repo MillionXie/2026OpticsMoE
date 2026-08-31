@@ -192,3 +192,24 @@ runs/p12_downstream_fa_50e/<task>/common/seed_<seed>/common_start.pt
 正式数值只能由 `result.json` 和跨 seed 汇总器写入
 `OPTIMIZATION_LOG.md` 的结果模板。P11 的 ImageNet 源成绩不得抄成 P12
 的 NoFT 或迁移成绩。
+
+## 9. 无 ImageNet 光学骨干预训练辅助控制
+
+为了把“P11 ImageNet 预训练收益”与“下游训练器本身的收益”分开，新增
+Scratch-P11-body 辅助控制。它保留完全相同的冻结 Qwen patch/position stem、
+P11 架构、任务头和 `50 epoch head-only + 50 epoch adaptation` 协议，但不会读取
+任何 P11 ImageNet backbone checkpoint；adapter、8 个相位面、8 个电子 mixer
+及门控均由指定 seed 一次性全新初始化。准确名称是“无 ImageNet 光学 body
+预训练”，而不是全模型从零训练，因为 Qwen stem 仍来自同一个冻结 artifact。
+
+该控制复用原有四个 method key。此时 `fa_pretrained` 只为保持队列和表格接口
+一致，其论文标签必须写成 `FA-source-init`：固定反馈来自随机 source 的初始
+相位，而不是 ImageNet 预训练相位。默认先跑 3 tasks × seed 2026 × 4 groups，
+通过后可原样扩展到 downstream seeds `2026,2027,2028`。所有产物使用独立
+`p12_scratch_*` 目录，不能与主表的预训练 P12 结果混合。
+
+由于 source 文件 SHA 只有序列化后才存在，仓库不提交伪 SHA 配置。
+`commands/p12_scratch_downstream_50e.sh prepare` 先生成带 semantic tensor digest、
+`source_regime`、`init_seed`、stem SHA 和 model report 的 source，再把真实文件
+SHA 写入隔离目录中的正式 resolved config。完整命令与解释边界见
+`commands/P12_SCRATCH_DOWNSTREAM_50E_COMMANDS.md`。
