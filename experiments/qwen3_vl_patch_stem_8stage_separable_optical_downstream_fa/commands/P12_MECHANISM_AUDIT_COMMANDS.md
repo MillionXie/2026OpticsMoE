@@ -33,6 +33,19 @@ P12_MECHANISM_GPU=4 \
 best endpoints. Each task/seed/endpoint has 40 unique fresh-model states, so the
 pilot performs 80 full test-set evaluations.
 
+If formal training was executed from a locked worktree but the audit code is in
+a separate derived worktree, keep the two roots explicit:
+
+```bash
+P12_REPO_ROOT=/path/to/derived-audit-worktree \
+P12_FORMAL_REPO_ROOT=/path/to/locked-training-worktree \
+P12_MECHANISM_GPU=4 \
+  bash /path/to/derived-audit-worktree/experiments/qwen3_vl_patch_stem_8stage_separable_optical_downstream_fa/commands/p12_mechanism_audit.sh smoke
+```
+
+`P12_FORMAL_REPO_ROOT` reconstructs the original absolute Settings and
+implementation digest. The formal checkpoint/result tree remains read-only.
+
 Only after the pilot is interpretable:
 
 ```bash
