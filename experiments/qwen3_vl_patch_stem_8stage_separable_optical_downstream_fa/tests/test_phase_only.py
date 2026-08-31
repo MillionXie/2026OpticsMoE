@@ -12,6 +12,7 @@ from experiments.qwen3_vl_patch_stem_8stage_separable_optical_downstream_fa.phas
     ADAPTATION_SCOPE,
     PANEL_FORMAT,
     PhaseOnlySettings,
+    _head_gradient_comparison,
     add_phase_only_arguments,
     load_phase_only_settings,
     load_phase_only_settings_from_args,
@@ -83,6 +84,27 @@ class _Model(nn.Module):
 
     def head_parameters(self):
         yield from self.head.parameters()
+
+
+def test_head_gradient_audit_accepts_cuda_scale_repeat_noise() -> None:
+    exact = (torch.linspace(-0.5, 0.5, 257), torch.tensor([0.2, -0.1]))
+    candidate = (
+        exact[0] + 2.0e-5 * torch.sin(torch.arange(257, dtype=torch.float32)),
+        exact[1] + torch.tensor([1.0e-6, -1.0e-6]),
+    )
+    rows, summary = _head_gradient_comparison(exact, candidate)
+    assert summary["all_passed"] is True
+    assert all(row["passed"] for row in rows)
+    assert summary["maximum_absolute_difference"] < 1.0e-4
+
+
+def test_head_gradient_audit_rejects_direction_or_scale_change() -> None:
+    exact = (torch.linspace(-0.5, 0.5, 257),)
+    candidate = (-exact[0],)
+    rows, summary = _head_gradient_comparison(exact, candidate)
+    assert summary["all_passed"] is False
+    assert rows[0]["passed"] is False
+    assert summary["minimum_cosine"] < 0.0
 
 
 def test_panel_config_is_explicit_isolated_and_identity_bearing() -> None:

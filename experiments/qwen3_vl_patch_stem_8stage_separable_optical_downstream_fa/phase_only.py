@@ -400,6 +400,74 @@ def _head_gradients(model: P11DownstreamModel) -> tuple[torch.Tensor, ...]:
     return tuple(values)
 
 
+def _head_gradient_comparison(
+    exact_head: tuple[torch.Tensor, ...],
+    candidate_head: tuple[torch.Tensor, ...],
+) -> tuple[list[dict[str, float | int | bool]], dict[str, float | bool]]:
+    """Audit mathematical head-gradient invariance with GPU-safe tolerances.
+
+    The feedback connector is upstream of the task head, so the head gradient
+    is mathematically unchanged. Re-evaluating the same segmentation head on
+    CUDA is nevertheless not bitwise deterministic: cuDNN reductions produced
+    repeat-to-repeat absolute differences around 1e-5 even for BP versus BP.
+    Require agreement in absolute scale, relative L2 error and direction so a
+    genuine connector leak still fails, without treating reduction noise as a
+    failed scientific run.
+    """
+
+    rows: list[dict[str, float | int | bool]] = []
+    for index, (exact, candidate) in enumerate(
+        zip(exact_head, candidate_head, strict=True), start=1
+    ):
+        difference = (exact - candidate).double()
+        exact_double = exact.double()
+        candidate_double = candidate.double()
+        maximum = float(difference.abs().max())
+        reference_maximum = float(exact_double.abs().max())
+        reference_norm = float(exact_double.norm())
+        difference_norm = float(difference.norm())
+        relative_l2 = difference_norm / max(reference_norm, 1.0e-12)
+        cosine = float(
+            F.cosine_similarity(
+                exact_double.flatten(),
+                candidate_double.flatten(),
+                dim=0,
+                eps=1.0e-20,
+            )
+        )
+        near_zero = (
+            reference_norm <= 1.0e-10
+            and float(candidate_double.norm()) <= 1.0e-10
+        )
+        passed = bool(
+            maximum <= 1.0e-4
+            and (near_zero or relative_l2 <= 1.0e-3)
+            and (near_zero or cosine >= 0.99999)
+        )
+        rows.append(
+            {
+                "tensor": index,
+                "max_absolute_difference": maximum,
+                "reference_max_absolute": reference_maximum,
+                "relative_l2_difference": relative_l2,
+                "cosine": cosine,
+                "near_zero_pair": near_zero,
+                "passed": passed,
+            }
+        )
+    summary: dict[str, float | bool] = {
+        "maximum_absolute_difference": max(
+            float(row["max_absolute_difference"]) for row in rows
+        ),
+        "maximum_relative_l2_difference": max(
+            float(row["relative_l2_difference"]) for row in rows
+        ),
+        "minimum_cosine": min(float(row["cosine"]) for row in rows),
+        "all_passed": all(bool(row["passed"]) for row in rows),
+    }
+    return rows, summary
+
+
 def _assert_frozen_electronics_have_no_grad(model: P11DownstreamModel) -> dict[str, int]:
     groups = {
         "adapter": tuple(model.adapter_parameters()),
@@ -453,24 +521,13 @@ def phase_only_gradient_diagnostic(
         training._feedback_method(settings)
     )
     phase_rows = training._gradient_comparison(exact_phase, candidate_phase)
-    head_rows = []
-    for index, (exact, candidate) in enumerate(
-        zip(exact_head, candidate_head, strict=True), start=1
-    ):
-        maximum = float((exact - candidate).abs().max())
-        cosine = float(
-            F.cosine_similarity(
-                exact.flatten().double(), candidate.flatten().double(), dim=0, eps=1.0e-20
-            )
-        )
-        head_rows.append(
-            {"tensor": index, "max_absolute_difference": maximum, "cosine": cosine}
-        )
-    max_head_difference = max(row["max_absolute_difference"] for row in head_rows)
-    if max_head_difference > 1.0e-7:
+    head_rows, head_summary = _head_gradient_comparison(exact_head, candidate_head)
+    if not bool(head_summary["all_passed"]):
         raise RuntimeError(
             "Task-head gradient changed between BP and optical-FA connector: "
-            f"max_abs={max_head_difference:.3e}"
+            f"max_abs={head_summary['maximum_absolute_difference']:.3e}, "
+            f"max_relative_l2={head_summary['maximum_relative_l2_difference']:.3e}, "
+            f"min_cosine={head_summary['minimum_cosine']:.8f}"
         )
     model.zero_grad(set_to_none=True)
     training.configure_runtime_feedback(model, settings)
@@ -495,7 +552,13 @@ def phase_only_gradient_diagnostic(
         "last_stage_expected_exact_local_gradient": True,
         "task_head_gradient_is_exact_bp": True,
         "task_head_bp_vs_connector": {
-            "maximum_absolute_difference": max_head_difference,
+            **head_summary,
+            "numeric_tolerance": {
+                "max_absolute_difference": 1.0e-4,
+                "max_relative_l2_difference": 1.0e-3,
+                "minimum_cosine": 0.99999,
+                "reason": "repeat CUDA head reductions are not bitwise deterministic",
+            },
             "per_tensor": head_rows,
         },
         "frozen_electronic_backbone": frozen,
