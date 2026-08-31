@@ -86,3 +86,25 @@ phase LR / electronic LR / head LR:
 first finite-gradient audit for every new phase:
 result status and checkpoint path:
 ```
+
+## 2026-09-01：GPU 工程 sweep 实现（未在服务器执行）
+
+新增独立 `gpu_engineering_sweep.py`，用于在正式训练前审计 16/32/64/100 层：
+
+- 每个深度都重新构造 P13，并通过既有严格迁移器读取真实 P11 `backbone.pt`；
+- 新增层 outer alpha 使用可配置正 epsilon（默认 0.01），batch 默认 1；
+- 用合成 post-adapter `3 x 224 x 224` 光场执行 warmup、一次独立梯度 audit 和
+  若干计时 forward/backward/SGD step；
+- 独立 audit 检查每个新增 `raw_phase.grad` 都存在、finite 且 norm>0；计时步骤
+  不包含逐 phase 规约，避免污染 step time 和 samples/s；
+- 记录 source/stem SHA-256、完整 migration manifest、参数预算、alpha、GPU UUID、
+  peak allocated/reserved、step time 与吞吐；
+- 每个 depth JSON 和总 summary 均原子写入；OOM 标记为 `failed_oom`，删除模型、
+  执行 GC/CUDA cache 清理后继续下一深度；
+- 默认开启 non-reentrant activation checkpoint，同时保留 CLI 关闭开关；
+- commands 中提供一张卡顺序 sweep 以及四张卡分深度 wrapper，后者输出目录隔离。
+
+新增 CPU 单测覆盖单深度/逗号 depth CLI、batch/checkpoint 默认值、梯度汇总、结果
+字段契约和 JSON 原子替换。本地 `py_compile`、`bash -n`、`git diff --check` 通过，
+P13 全套测试结果为 `11 passed in 5.64s`。没有访问服务器、没有运行 CUDA，也没有
+生成可被误读为性能的 checkpoint 或结果。

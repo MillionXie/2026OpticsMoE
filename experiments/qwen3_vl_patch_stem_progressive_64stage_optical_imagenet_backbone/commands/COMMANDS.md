@@ -65,3 +65,17 @@ PY
 迁移模块支持 `--num-stages 16|32|64|100`。每个深度都从同一个 P11 source
 独立迁移；当前没有实现 16→32→64 checkpoint 级继续增生。不要把原型迁移
 命令描述成训练，也不要在没有 GPU memory smoke 的情况下添加正式 launch。
+
+## 4. GPU 工程 sweep（batch=1，非正式训练）
+
+16/32/64/100 层的单卡顺序 sweep：
+
+```bash
+P13_GPU=1 bash experiments/qwen3_vl_patch_stem_progressive_64stage_optical_imagenet_backbone/commands/03_gpu_engineering_sweep_bs1.sh
+```
+
+也可以用 `03a`、`03b`、`03c`、`03d` 四个 wrapper 在不同 GPU 上分别测
+16/32/64/100 层。它们只使用合成 post-adapter 光场做 warmup 和少量
+forward/backward/optimizer step，并严格读取正式 P11 source；不读取 ImageNet，
+不保存训练 checkpoint，也不能解释为性能实验。完整参数、输出字段与 OOM 行为见
+[GPU_ENGINEERING_SWEEP.md](GPU_ENGINEERING_SWEEP.md)。

@@ -145,3 +145,9 @@ segment checkpoint 或其他分段策略。
   电子路径；部署主张应以 alpha=1 为准；
 - fixed-feedback 训练必须先获得完整深层 source connector，不能循环复用 P11
   的 8 个反馈 phase。这不属于当前初始化原型。
+
+工程 sweep 模块已经实现，但尚未在服务器执行。它会针对 16/32/64/100 层严格迁移
+真实 P11 source，以 batch=1 合成光场测量 forward/backward/SGD step 的峰值显存、
+吞吐和所有新增 phase 的梯度健康度；OOM 会记录后清理并继续下一深度。该结果只用于
+锁定可运行配置，不能作为 ImageNet 或 backbone 性能结果。命令见
+[commands/GPU_ENGINEERING_SWEEP.md](commands/GPU_ENGINEERING_SWEEP.md)。
