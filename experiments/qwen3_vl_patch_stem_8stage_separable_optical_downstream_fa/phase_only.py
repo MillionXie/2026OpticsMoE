@@ -41,7 +41,7 @@ PANEL_RUNTIME_FILES = (
 # this exact digest allow-listed so already completed 50-epoch head-only runs
 # remain usable without weakening any other run-identity field.
 LEGACY_NUMERIC_AUDIT_PANEL_SHA256 = (
-    "0f4e9916b00d69e4978b2fc38260f19e4c4821357718896d04c435ad681d4ff88"
+    "0f4e9916b00d69e4978b2fc38260f19e4c482135771896d04c435ad681d4ff88"
 )
 # The legacy phase-only campaign used the same executable P12 model.  The only
 # base-file diff is four optional source-provenance fields returned by
