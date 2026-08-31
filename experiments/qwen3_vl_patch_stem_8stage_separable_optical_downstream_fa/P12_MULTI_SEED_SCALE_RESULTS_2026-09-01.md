@@ -230,3 +230,47 @@ P13 的首次代码审查还要求正式 checkpoint 锁定 train/model/migration
 实现哈希、独立 DataLoader RNG、防止任一 stage 静默退回 BP，并为每一段
 growth 提供只接受上一深度 `best_full_depth.pt` 的启动门。上述保护全部通过
 CPU测试和真实 CUDA smoke 之前，不启动长时间 ImageNet 训练。
+
+## 11. 2026-09-01 最新执行状态
+
+### phase-only 四组已经全部完成
+
+这里冻结 965,120 个电子 backbone 参数，只训练 1,204,224 个光学 phase 与任务头；任务头继续使用 exact BP。seed 2026 的 12/12 个结果如下：
+
+| 任务 | Head-only / NoFT | BP | FA-source | FA-random |
+|---|---:|---:|---:|---:|
+| Caltech-101 Top-1 | **78.64%** | 78.59% | 78.52% | 78.31% |
+| ISIC2016 mIoU | 81.71% | **82.45%** | **82.45%** | 82.33% |
+| LSP PCK@0.1 | 50.29% | 61.71% | **61.71%** | 59.96% |
+
+这个面板比 joint adaptation 更直接：电子 backbone 冻结后，FA-source 在 ISIC 与 LSP 仍分别只落后 BP 0.0007 和领先 0.007 个百分点；FA-random 在 LSP 低 1.74 个百分点。Caltech 的 phase 更新没有优于 head-only，说明该任务的当前协议对相位适配不敏感，不应拿它单独夸大算法收益。
+
+### No-ImageNet 多 run 队列
+
+固定同一个 `init_seed=2026` 随机 body、改变下游 seed 的 36 项队列当前完成 21 项、运行 2 项、等待 13 项、失败 0 项，GPU 1/2 继续执行。它估计的是给定同一个随机 body 时的数据划分、任务头与优化方差，不是独立 backbone 初始化方差。正文若要报告“随机初始化 backbone 的均值方差”，还必须另建 `init_seed=2027/2028` 两个独立 body panel。
+
+### P13 百层路径的真实 CUDA 验证
+
+P13 训练器在服务器通过 52 项测试。真实 ImageNet smoke 已完成官方 P11 epoch-88 双 checkpoint SHA 校验、在线冻结 Qwen stem、8→16 严格迁移、224×224 ImageNet、FA-source、两次 micro-batch、一次 optimizer update、验证及 alpha=1 backbone export。该 smoke 的 Top-1 因只看一个验证 batch 而没有性能意义。
+
+在物理 GPU 4（RTX 4090，按 UUID 锁定）上，64/100 层、三种反馈方式均完成精确 `alpha=1` 全深度审计：
+
+| 深度 | 方法 | 非零 phase 梯度 | 输入 amplitude 梯度 | 峰值 allocated | 平均 step |
+|---:|---|---:|---|---:|---:|
+| 64 | BP | 64/64 | finite、non-zero | 0.247 GiB | 0.387 s |
+| 64 | FA-source | 64/64 | finite、non-zero | 0.250 GiB | 0.367 s |
+| 64 | FA-random | 64/64 | finite、non-zero | 0.250 GiB | 0.374 s |
+| 100 | BP | 100/100 | finite、non-zero | 0.362 GiB | 0.528 s |
+| 100 | FA-source | 100/100 | finite、non-zero | 0.365 GiB | 0.536 s |
+| 100 | FA-random | 100/100 | finite、non-zero | 0.365 GiB | 0.510 s |
+
+这已经把结论从“小 alpha 探针”推进到“完整百层计算图可反传”，但仍只是合成 post-adapter 光场的工程证据。它不能替代 alpha=1 ImageNet 继续预训练、层贡献 reset/drop 和下游迁移。旧工程脚本还曾暴露 CUDA 逻辑序号与 `nvidia-smi` 物理序号不一致的问题；现已改为 GPU UUID 锁卡，上表只采用修复后在真实 RTX 4090-4 上重跑的结果。
+
+### 当前正式推进顺序
+
+1. 先用四张空卡完成 world-size=4、每 rank batch=24、累积 2 次的真实 DDP smoke，验证 global batch 192 的显存、NCCL、sampler 与在线 stem；
+2. smoke 通过后启动 8→16 的 20-epoch FA-source growth，并同步运行等数据预算的 8-layer BP continuation；资源不足时优先 growth，随后补 control；
+3. 16 层只能由 `best_full_depth.pt` 继续到 32，再依次到 64/100；
+4. 100 层先完成一条完整 chain 作为 headline-scale demonstration；64 层再补三条独立 growth/优化 seeds。若三条都从同一个 P11 epoch-88 起点出发，只能估计 growth 随机性，不能称为三个独立预训练 backbone 初始化。
+
+电子模块暂时保持 exact BP。研究痛点是深光路的当前物理伴随算子难以逐层获得，而轻量电子 mixer、gate、norm 与任务头的梯度在数字域可直接得到。若将电子模块也改成随机反馈，回答的会变成“全混合网络是否完全不需要 BP”这一不同问题。当前更干净的归因证据是 phase-only 四格与 P/E/H transplant/Shapley 审计；论文口径应写成 `fixed optical feedback with exact optimization of lightweight electronic modules`，不能写“整个网络不需要 BP”。

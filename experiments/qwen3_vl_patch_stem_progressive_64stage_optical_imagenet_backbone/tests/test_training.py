@@ -650,6 +650,7 @@ def test_p11_to_16_initializer_requires_two_epoch88_sources(
     "name",
     [
         "gpu_smoke_full_image.yaml",
+        "gpu_smoke_full_image_4rank_gb192.yaml",
         "growth16_fa_source_20e_gb192.yaml",
         "p11_epoch88_matched_continue_20e_gb192.yaml",
     ],
@@ -665,6 +666,45 @@ def test_formal_configs_pin_canonical_p11_source_shas(name: str) -> None:
         initialization["expected_p11_training_sha256"]
         == train.OFFICIAL_P11_TRAINING_SHA256
     )
+
+
+def test_four_rank_full_image_smoke_matches_formal_global_batch_contract() -> None:
+    experiment = Path(train.__file__).resolve().parent
+    config = train.load_config(
+        experiment / "configs" / "gpu_smoke_full_image_4rank_gb192.yaml"
+    )
+    training = config["training"]
+
+    assert config["output_dir"].endswith(
+        "p13_growth16_full_image_4rank_gb192_gpu_smoke"
+    )
+    assert config["model"]["canvas_size"] == 224
+    assert training["epochs"] == 1
+    assert training["batch_size"] == 24
+    assert training["gradient_accumulation_steps"] == 2
+    assert training["expected_world_size"] == 4
+    assert training["expected_effective_global_batch"] == 192
+    assert training["max_train_batches"] == 2
+    assert training["max_validation_batches"] == 1
+
+
+def test_four_rank_full_image_smoke_launcher_is_foreground_and_guarded() -> None:
+    experiment = Path(train.__file__).resolve().parent
+    script = (
+        experiment
+        / "commands"
+        / "05b_gpu_smoke_full_image_4rank_gb192.sh"
+    ).read_text(encoding="utf-8")
+
+    assert "PHYSICAL_GPU_INDICES" in script
+    assert '"${#indices[@]}" -ne 4' in script
+    assert 'visible_gpu_uuids "${PHYSICAL_GPU_INDICES}"' in script
+    assert "gpu_smoke_full_image_4rank_gb192.yaml" in script
+    assert script.index("acquire_launch_lock") < script.index(
+        "training_mode_argument"
+    )
+    assert 'exec "${TORCHRUN_BIN}" --standalone --nproc_per_node=4' in script
+    assert "nohup" not in script
 
 
 def test_migration_provenance_restore_rejects_wrong_target() -> None:
