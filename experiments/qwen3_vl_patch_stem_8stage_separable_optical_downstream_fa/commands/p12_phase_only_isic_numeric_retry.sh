@@ -45,8 +45,8 @@ case "${action}" in
       log_file="${run_dir}/logs/retry_after_numeric_fix.log"
       mkdir -p "${run_dir}/logs"
       if [[ -f "${result_file}" ]]; then
-        echo "Refusing to overwrite completed ${method}: ${result_file}" >&2
-        exit 1
+        echo "Skipping completed ${method}: ${result_file}"
+        continue
       fi
       if [[ -f "${pid_file}" ]]; then
         old_pid="$(tr -dc '0-9' < "${pid_file}")"
@@ -54,6 +54,11 @@ case "${action}" in
           echo "${method} already runs as PID ${old_pid}" >&2
           exit 1
         fi
+      fi
+      if [[ -s "${log_file}" ]]; then
+        archived_log="${log_file%.log}.before_$(date -u +%Y%m%dT%H%M%SZ).log"
+        mv "${log_file}" "${archived_log}"
+        echo "Archived prior ${method} log as ${archived_log}."
       fi
       nohup env CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES="${gpu}" \
         P12_PHASE_ONLY_TASK=isic2016 P12_PHASE_ONLY_METHOD="${method}" \

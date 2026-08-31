@@ -60,8 +60,10 @@ bash experiments/qwen3_vl_patch_stem_8stage_separable_optical_downstream_fa/comm
 bash experiments/qwen3_vl_patch_stem_8stage_separable_optical_downstream_fa/commands/p12_phase_only_isic_numeric_retry.sh tail
 ```
 
-This launcher refuses to overwrite an existing `result.json`. Each method has
-its own PID and `logs/retry_after_numeric_fix.log`.
+This launcher skips (and never overwrites) a method with an existing
+`result.json`. Before a genuine resume it timestamps and archives the prior log,
+so an epoch-9 failure trace remains available. Each active method has its own
+PID and `logs/retry_after_numeric_fix.log`.
 
 The final head-gradient audit requires, per tensor, maximum absolute difference
 `<=5e-4`, relative L2 difference `<=1e-3`, and cosine `>=0.99999`. The absolute
