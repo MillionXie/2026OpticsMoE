@@ -5,7 +5,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 EXPERIMENT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 REPO_ROOT="${P12_REPO_ROOT:-$(cd "${EXPERIMENT_DIR}/../.." && pwd)}"
 PYTHON_BIN="${P12_PYTHON_BIN:-/home/guest3/miniconda3/envs/xml/bin/python}"
-CONFIG="${P12_CONFIG:-${EXPERIMENT_DIR}/configs/base_50e.yaml}"
+FORMAL_REPO_ROOT="${P12_FORMAL_REPO_ROOT:-}"
+if [[ -n "${FORMAL_REPO_ROOT}" ]]; then
+  DEFAULT_CONFIG="${FORMAL_REPO_ROOT}/experiments/qwen3_vl_patch_stem_8stage_separable_optical_downstream_fa/configs/base_50e.yaml"
+else
+  DEFAULT_CONFIG="${EXPERIMENT_DIR}/configs/base_50e.yaml"
+fi
+CONFIG="${P12_CONFIG:-${DEFAULT_CONFIG}}"
 GPU="${P12_MECHANISM_GPU:-0}"
 SPLIT="${P12_MECHANISM_SPLIT:-test}"
 MODULE="experiments.qwen3_vl_patch_stem_8stage_separable_optical_downstream_fa.mechanism"
@@ -31,12 +37,16 @@ Environment overrides:
   P12_MECHANISM_GPU=4
   P12_PYTHON_BIN=/home/guest3/miniconda3/envs/xml/bin/python
   P12_REPO_ROOT=/path/to/the/exact/formal-training-worktree
+  P12_FORMAL_REPO_ROOT=/path/to/the/exact/formal-training-worktree
   P12_CONFIG=/path/to/configs/base_50e.yaml
   P12_MECHANISM_SPLIT=test
   P12_MECHANISM_OUTPUT_ROOT=/path/to/independent/mechanism/root
 
 This command never trains. It strictly requires completed formal NoFT, BP,
 FA-pretrained and FA-random artifacts with matching source/config/code identity.
+When the audit code is in a derived worktree, set P12_FORMAL_REPO_ROOT to the
+locked training worktree; this restores the original absolute-path digest while
+leaving the formal worktree untouched.
 EOF
 }
 
@@ -104,6 +114,14 @@ case "${action}" in
 esac
 
 require_assets
+formal_repo_args=()
+if [[ -n "${FORMAL_REPO_ROOT}" ]]; then
+  if [[ ! -d "${FORMAL_REPO_ROOT}" ]]; then
+    echo "Formal training repo root not found: ${FORMAL_REPO_ROOT}" >&2
+    exit 1
+  fi
+  formal_repo_args=(--formal-repo-root "${FORMAL_REPO_ROOT}")
+fi
 echo "Mechanism audit is evaluation-only; preflight GPU snapshot:"
 nvidia-smi --query-gpu=index,uuid,name,memory.used,utilization.gpu --format=csv,noheader
 echo "action=${action} tasks=${tasks} seeds=${seeds} endpoints=${endpoints} GPU=${GPU}"
@@ -113,6 +131,7 @@ export CUDA_VISIBLE_DEVICES="${GPU}"
 export PYTHONUNBUFFERED=1
 exec "${PYTHON_BIN}" -m "${MODULE}" \
   --config "${CONFIG}" \
+  "${formal_repo_args[@]}" \
   --tasks "${tasks}" \
   --seeds "${seeds}" \
   --endpoints "${endpoints}" \

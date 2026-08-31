@@ -17,6 +17,7 @@ import numpy as np
 import torch
 from torch import nn
 
+from . import settings as settings_module
 from .queue import completion_reason
 from .settings import TASKS, Settings, implementation_sha256, load_settings
 from .training import (
@@ -1050,6 +1051,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument(
+        "--formal-repo-root",
+        type=Path,
+        help=(
+            "absolute root of the locked training worktree; use this when the "
+            "audit code lives in a derived worktree so settings/config digests "
+            "are reconstructed with the original absolute paths"
+        ),
+    )
+    parser.add_argument(
         "--tasks",
         default="caltech101,isic2016",
         help="comma list; pilot default covers classification and dense prediction",
@@ -1070,6 +1080,25 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    formal_repo_root: Path | None = None
+    if args.formal_repo_root is not None:
+        formal_repo_root = args.formal_repo_root.expanduser().resolve()
+        missing = [
+            relative
+            for relative in settings_module.IMPLEMENTATION_FILES
+            if not (formal_repo_root / relative).is_file()
+        ]
+        if missing:
+            raise FileNotFoundError(
+                "Formal repo root does not contain the locked P12 implementation; "
+                f"first missing file: {missing[0]}"
+            )
+        # ``load_settings`` and ``implementation_sha256`` are imported function
+        # objects whose globals remain in ``settings_module``. Updating this one
+        # module-level root therefore reconstructs both the absolute Settings
+        # paths and implementation hash exactly as they were during training,
+        # while mechanism.py itself can remain in an isolated derived worktree.
+        settings_module.REPO_ROOT = formal_repo_root
     tasks = _parse_csv_choices(args.tasks, TASKS, name="tasks")
     endpoints = _parse_csv_choices(args.endpoints, ("best", "last"), name="endpoints")
     if args.max_eval_batches is not None and args.max_eval_batches <= 0:
@@ -1113,6 +1142,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "format": MECHANISM_FORMAT,
         "status": "complete",
         "config": str(config),
+        "formal_repo_root": str(formal_repo_root) if formal_repo_root else None,
         "tasks": list(tasks),
         "seeds": list(args.seeds),
         "endpoints": list(endpoints),

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from pathlib import Path
 
 import torch
 from torch import nn
@@ -10,11 +11,27 @@ from experiments.qwen3_vl_patch_stem_8stage_separable_optical_downstream_fa.mech
     UPDATE_METHODS,
     _phase_depth_rows,
     _swap_rows,
+    build_parser,
     build_mechanism_plan,
     compose_parameter_state,
     partition_parameter_names,
     shapley_values,
 )
+
+
+def test_parser_accepts_locked_formal_repo_root() -> None:
+    parser = build_parser()
+    args = parser.parse_args(
+        [
+            "--config",
+            "formal.yaml",
+            "--formal-repo-root",
+            "/locked/p12",
+        ]
+    )
+
+    assert args.config == Path("formal.yaml")
+    assert args.formal_repo_root == Path("/locked/p12")
 
 
 class _ToyStage(nn.Module):
