@@ -1,0 +1,12 @@
+base_config: common.yaml
+
+router_experiment:
+  backend: optical
+  top_k: 2
+
+training:
+  # Router phases are intentionally much faster than the 788-parameter
+  # electronic gate.  Feature phases keep their independent 0.006 LR.
+  router_learning_rate: 0.01
+
+output_dir: ../../runs/optical_power_topk2
