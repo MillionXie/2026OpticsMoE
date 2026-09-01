@@ -1,0 +1,88 @@
+output_dir: FixedFeedbackSFT/runs/qwen3_vl_patch_stem_8stage_separable_optical_imagenet_backbone/p11_large_recipe_proxy_5e_phase7e3_2gpu_gb384
+imagenet_config: experiments/optical_mlp_mixer_moe9_imagenet1k_clip_distill/configs/imagenet1k.json
+stem_checkpoint: FixedFeedbackSFT/runs/_assets/8stage/dependencies/qwen3_vl_static_stem_224.pt
+objective:
+  mode: supervised_imagenet1k
+model:
+  canvas_size: 224
+  optical_channels: 3
+  num_stages: 8
+  token_dim: 224
+  num_classes: 1000
+  head_hidden_dim: 448
+  wavelength_m: 5.32e-7
+  pixel_size_m: 1.6e-5
+  propagation_distance_m: 0.05
+  token_axis_propagation_distance_m: 0.05
+  channel_axis_propagation_distance_m: 0.05
+  phase_init_std: 0.10
+  layernorm_eps: 1.0e-5
+  optical_gate_init: 0.60
+  optical_gate_min: 0.50
+  mixer_width: 96
+  mixer_expansion: 2.0
+  mixer_kernel_size: 3
+  mixer_dropout: 0.10
+  mixer_spatial_gate_init: 0.10
+  mixer_channel_gate_init: 0.10
+  residual_scale_init: 0.10
+  residual_scale_max: 0.25
+  minimum_optical_parameter_fraction: 0.50
+  stage_drop_path_rate: 0.05
+initialization:
+  mode: p11_epoch88_matched_control
+  p11_backbone_checkpoint: FixedFeedbackSFT/runs/_assets/8stage/checkpoints/backbone.pt
+  p11_training_checkpoint: FixedFeedbackSFT/runs/_assets/8stage/checkpoints/best.pt
+  expected_p11_best_epoch: 88
+  expected_p11_backbone_sha256: c3ad0b780dfbb3e5f8e1f7b7850c06fcb5c6d977e106f351b4602fcaadf210d2
+  expected_p11_training_sha256: a30d5c06b61a635bb3dc379aeaca4c371c1d27e6b862c5ffd4977ce738b33034
+  expected_p11_config_digest: c588b9ead9661b5bc513f00349681895979729d8c46b08bba72a109b6d5c74fa
+optimizer:
+  phase_learning_rate: 7.0e-3
+  electronic_learning_rate: 2.5e-4
+  adapter_learning_rate: 2.5e-4
+  head_learning_rate: 5.0e-4
+  layer_decay: 0.92
+  weight_decay: 0.02
+  betas: [0.9, 0.999]
+  eps: 1.0e-8
+  warmup_epochs: 1
+  minimum_learning_rate_ratio: 0.10
+  phase_gradient_clip_norm: 2.0
+  electronic_gradient_clip_norm: 5.0
+loss:
+  mode: bce_soft_targets
+  label_smoothing: 0.0
+  mixup_alpha: 0.80
+  cutmix_alpha: 1.0
+  batch_mix_probability: 1.0
+augmentation:
+  random_erasing_probability: 0.0
+  random_erasing_area: [0.02, 0.20]
+  random_erasing_ratio: [0.30, 3.333333]
+ema:
+  decay: 0.9998
+  warmup_updates: 100
+training:
+  seed: 2026
+  epochs: 5
+  train_samples_per_class: null
+  validation_samples_per_class: null
+  batch_size: 96
+  validation_batch_size: 192
+  gradient_accumulation_steps: 2
+  expected_world_size: 2
+  expected_effective_global_batch: 384
+  num_workers: 8
+  persistent_workers: true
+  pin_memory: true
+  prefetch_factor: 2
+  shuffle_block_size: 4096
+  use_amp: true
+  amp_initial_scale: 256
+  amp_growth_interval: 100000
+  log_interval_batches: 100
+  checkpoint_interval_epochs: 1
+  max_train_batches: null
+  max_validation_batches: null
+  run_final_ablations: false
