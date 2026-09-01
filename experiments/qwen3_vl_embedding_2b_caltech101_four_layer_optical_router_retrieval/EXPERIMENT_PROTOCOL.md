@@ -218,8 +218,9 @@ shared optimizer 优先调用 `replacement.router_parameters()`。电子 Router 
 - `raw_router_phase` 不会被这次名称扫描重复收集；
 - `replacement.router_parameters()` 返回两张 `raw_router_phase`，令它们进入 `routers`
   参数组并使用独立的 router LR；
-- `phase_parameter_groups()` 仍将它们分别登记为 `vision_router`、`language_router`，这只
-  用于 phase gradient、运动量和缺失梯度诊断，不改变 optimizer 所有权；
+- `phase_parameter_groups()` 保持 shared CSV 已审计的四个 feature-phase 组，不登记
+  Router phase；Router phase 的训练证据由单元梯度测试、自定义 snapshot/preview 和
+  checkpoint 初值差异审计提供；
 - 如果误把它重新命名为 `raw_phase`，它会同时出现在 router/phase 两组，shared trainer
   应立即以参数组重叠报错；
 - phase-focus 必须关闭，否则“等 optimizer step”不等于“等 Router 更新步数”。
@@ -232,9 +233,9 @@ shared optimizer 优先调用 `replacement.router_parameters()`。电子 Router 
 
 ```text
 所有 requires_grad tensor 恰好进入一个 optimizer group
-phase IDs 与 router IDs 无交集
+feature phase IDs 与 router IDs 无交集
 电子 Router gate gradient 非零且有限
-光学 Router raw_router_phase gradient 非零且有限
+光学 Router raw_router_phase 在独立梯度测试中非零且有限
 ```
 
 ### 4.3 Phase artifact 与 capture loss
@@ -249,8 +250,9 @@ shared phase snapshot 默认只认识原四张 expert/global phase；本工程�
 - snapshot JSON 中两张 Router phase 的 tensor 统计量；
 - preview 的 Vision/Language Router phase 面板。
 
-相对 run 初值的位移和梯度不属于 snapshot JSON：它们由 shared phase diagnostics 根据
-`phase_parameter_groups()` 中的 `vision_router/language_router` 计算并写入 train log。
+相对 run 初值的位移和梯度不属于 snapshot JSON。由于 shared CSV 的列合同固定为四个
+feature-phase 组，本工程用“确定性初值重新构建后与 checkpoint 比较”的独立审计计算
+Router phase 位移；梯度可达性由 `tests/test_router.py` 的非零有限梯度测试证明。
 `phase_parameters.pt`、最终导出 BMP 的 SHA 也必须由独立 audit/result manifest 计算，
 不能误称为 snapshot 已经自动提供。
 

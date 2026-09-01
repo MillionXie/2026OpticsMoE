@@ -171,7 +171,8 @@ power_l2、STE、数据划分、训练步数和下游损失。训练开始时检
 - CCD Router 输出为 478×478；
 - detector intervals 为 `[162,221)` 和 `[257,316)`；
 - 四区 `capture_fraction`、Router entropy、load、margin 有记录；
-- Router phase gradient 非零且有限；
+- 启动前单元测试证明 Router phase 梯度非零且有限；训练后 snapshot/preview 证明其相对
+  确定性初值发生了变化；
 - feature optics 仍为 Vision Expert/Global、Language Expert/Global 四层。
 
 训练结束后显式执行一次测试：
@@ -235,6 +236,18 @@ python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_router
 
 最终播放 `routed_expert_amplitudes/amplitude_to_play/*.bmp`。manifest 会逐样本记录四个
 振幅权重和 `sum(weight²)`，正式 power_l2 运行应接近 1。
+
+### 6.4 审计 Router 相位是否真正移动
+
+```text
+python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval.audit_router_checkpoint \
+  --config experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/configs/release/optical_power_topk2.yaml \
+  --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/runs/optical_power_topk2/ema_best_train_loss_checkpoint.pt \
+  --output experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/runs/optical_power_topk2/router_phase_audit.json
+```
+
+它从配置重新构建确定性的四束初值，再以相位圆周差计算 Vision/Language 两张 mask 的
+RMS 位移、最大位移及移动超过 0.01 rad 的像素比例，并记录 checkpoint SHA。
 
 ## 7. 结果检查顺序
 

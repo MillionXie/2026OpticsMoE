@@ -78,19 +78,12 @@ class RouterAblationReplacement(RobustFourLayerOpticalReplacement):
         ]
 
     def phase_parameter_groups(self) -> dict[str, list[torch.nn.Parameter]]:
-        groups = super().phase_parameter_groups()
-        if self.router_backend == "optical":
-            groups.update(
-                {
-                    "vision_router": [
-                        self.vision_surrogate.core.optical_branch.core.router.raw_router_phase
-                    ],
-                    "language_router": [
-                        self.language_surrogate.core.optical_branch.core.router.raw_router_phase
-                    ],
-                }
-            )
-        return groups
+        # Keep the shared phase CSV schema on its audited four feature groups.
+        # Router phase belongs to the independent router optimizer group and
+        # is saved by our custom phase snapshots/previews.  Adding new group
+        # names here would make the legacy fixed-column CSV writer reject the
+        # extra diagnostic fields after a completed epoch.
+        return super().phase_parameter_groups()
 
     def student_architecture_report(self) -> dict[str, Any]:
         report = super().student_architecture_report()
