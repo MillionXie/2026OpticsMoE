@@ -49,12 +49,23 @@ def audit(config: Path, checkpoint: Path, output: Path | None) -> dict[str, obje
     )
     initial_router = OpticalDetectorTopKRouter(geometry, settings)
     initial = initial_router.phase().detach().float()
+    coordinates = torch.linspace(-1.0, 1.0, settings.expert_size)
+    yy, xx = torch.meshgrid(coordinates, coordinates, indexing="ij")
+    probe = (
+        0.25
+        + 0.65 * torch.exp(-((xx + 0.25) ** 2 + (yy - 0.15) ** 2) / 0.20)
+        + 0.10 * (xx + 1.0)
+    ).unsqueeze(0)
     stacks: dict[str, object] = {}
     key = "core.optical_branch.core.router.raw_router_phase"
     for name in ("vision", "language"):
         raw = payload[f"{name}_optical"][key].float()
         current = 2.0 * torch.pi * torch.sigmoid(raw)
         difference = _wrapped_difference(current, initial)
+        router = OpticalDetectorTopKRouter(geometry, settings).eval()
+        with torch.no_grad():
+            router.raw_router_phase.copy_(raw)
+            response = router(probe)
         stacks[name] = {
             "phase_size": list(current.shape),
             "phase_mean_rad": float(current.mean()),
@@ -69,6 +80,15 @@ def audit(config: Path, checkpoint: Path, output: Path | None) -> dict[str, obje
                 (difference.abs() > 0.01).float().mean()
             ),
             "finite": bool(torch.isfinite(current).all()),
+            "deterministic_probe": {
+                "definition": "asymmetric_positive_224x224_fixed_v1",
+                "capture_fraction": float(response["capture_fraction"][0]),
+                "detector_energy_fraction_tl_tr_bl_br": (
+                    response["detector_energy_fraction"][0].tolist()
+                ),
+                "probabilities_tl_tr_bl_br": response["probabilities"][0].tolist(),
+                "selected_indices": response["selected_indices"][0].tolist(),
+            },
         }
     report = {
         "schema_version": 1,
@@ -78,6 +98,8 @@ def audit(config: Path, checkpoint: Path, output: Path | None) -> dict[str, obje
         "checkpoint_architecture": actual_architecture,
         "checkpoint_epoch": int(payload["epoch"]),
         "router_learning_rate": settings.router_learning_rate,
+        "router_contract_sha256": settings.router_contract_sha256,
+        "router_contract": settings.router_contract,
         "initialization": "deterministic_four_spot_phase_hologram",
         "stacks": stacks,
     }

@@ -28,6 +28,44 @@ def _router_phases(replacement: Any) -> dict[str, torch.Tensor]:
     }
 
 
+def _last_batch_router_diagnostics(replacement: Any) -> dict[str, Any]:
+    """Snapshot the final live training batch without pretending it is epoch-wide."""
+
+    output: dict[str, Any] = {
+        "scope": "last_training_batch_live_forward_not_epoch_aggregate"
+    }
+    for name, surrogate in (
+        ("vision", replacement.vision_surrogate),
+        ("language", replacement.language_surrogate),
+    ):
+        routing = surrogate.core.optical_branch.core.last_routing
+        if not routing:
+            continue
+        values: dict[str, Any] = {}
+        for key in (
+            "capture_fraction",
+            "detector_energy_fraction",
+            "probabilities",
+            "load",
+            "importance",
+        ):
+            value = routing.get(key)
+            if not isinstance(value, torch.Tensor):
+                continue
+            value = value.detach().cpu().float()
+            values[key] = {
+                "shape": list(value.shape),
+                "mean": float(value.mean()),
+                "min": float(value.min()),
+                "max": float(value.max()),
+                "per_expert_mean": (
+                    value.mean(dim=0).tolist() if value.ndim == 2 else None
+                ),
+            }
+        output[name] = values
+    return output
+
+
 def save_phase_snapshot(
     replacement: Any,
     output_dir: Path,
@@ -52,6 +90,9 @@ def save_phase_snapshot(
         "vision": feature["vision"],
         "language": feature["language"],
         "router_physical_phase_rad": routers,
+        "last_batch_router_diagnostics": _last_batch_router_diagnostics(
+            replacement
+        ),
     }
     destination = output_dir / "phase_parameters.pt"
     temporary = destination.with_suffix(".pt.tmp")
@@ -71,6 +112,9 @@ def save_phase_snapshot(
         "router_phases": {
             name: tensor_stats(value) for name, value in routers.items()
         },
+        "last_batch_router_diagnostics": _last_batch_router_diagnostics(
+            replacement
+        ),
     }
     (output_dir / "phase_parameters.json").write_text(
         json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8"

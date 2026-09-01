@@ -50,3 +50,11 @@ batching:
   pk_skus_per_batch: 10
   pk_images_per_sku: 3
   optimizer_steps_per_epoch: 12
+
+# The detector homography already emits canonical model coordinates.  All six
+# measured CCD stages must therefore bypass the legacy post-load flips; applying
+# them here a second time would rotate the physical response by 180 degrees.
+hardware:
+  ccd:
+    flip_vertical: false
+    flip_horizontal: false

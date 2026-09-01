@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib
 from pathlib import Path
 
 import torch
@@ -26,6 +27,10 @@ from .modeling import (
     load_backbone,
     load_warmstart5_initialization,
 )
+from .artifacts import (
+    save_phase_preview as save_router_phase_preview,
+    save_phase_snapshot as save_router_phase_snapshot,
+)
 from .settings import load_settings, save_resolved_config
 
 
@@ -35,6 +40,17 @@ PHASES = {
     "train",
     "evaluate",
 }
+
+
+def _install_router_artifact_hooks() -> None:
+    """Make the shared trainer persist the two additional Router masks."""
+
+    trainer = importlib.import_module(
+        "experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval."
+        "train_optical_retrieval"
+    )
+    trainer.save_phase_snapshot = save_router_phase_snapshot
+    trainer.save_phase_preview = save_router_phase_preview
 
 
 def _device(settings: object) -> torch.device:
@@ -84,6 +100,7 @@ def main() -> int:
             replacement.student_architecture_report(),
         )
         if args.phase == "train":
+            _install_router_artifact_hooks()
             if args.resume_checkpoint is None:
                 report = load_warmstart5_initialization(
                     settings, replacement, readout
