@@ -178,7 +178,7 @@ state:        modified + untracked files
 - [x] 新 run 输出根可写、被 Git 忽略，P11/P12/P13 旧 run 已用非覆盖 symlink 接入；
 - [x] `git diff --check` 无空白错误，提交只包含 FA 整理范围。
 
-验收环境：`/DATA/DATA1/guest3/2026OpticsMoE_fixedfeedback`，代码基线 `1dedeb6d397f5d9cfdef8e4ef72d886e421366a0`，2026-09-02 CST；其后的 registry-only 提交不改变该测试结论。
+验收环境：`/DATA/DATA1/guest3/2026OpticsMoE/FixedFeedbackSFT/runs/_worktrees/fa_reorg`，代码基线 `1dedeb6d397f5d9cfdef8e4ef72d886e421366a0`，2026-09-02 CST；其后的 registry-only 提交不改变该测试结论。新 worktree、传输文件和运行目录都必须创建在 `/DATA/DATA1/guest3/2026OpticsMoE/` 内，不得在其同级或上级路径新增本项目目录。
 
 ## 10. 回滚与故障定位
 

@@ -154,7 +154,7 @@ P13 实际目录却是：
 | `/DATA/DATA1/guest3/2026OpticsMoE_p13_488f9d48` | 已完成的 P13 8→16 growth | 保留 pinned commit 与原 runs；不得用新布局原地 resume |
 | `/DATA/DATA1/guest3/2026OpticsMoE_report_646f847e` | 老师汇报/图表生成 | 报告源码已纳入 `FixedFeedbackSFT/reports`；服务器产物按 checksum 登记 |
 | `/DATA/DATA1/guest3/2026OpticsMoE_scratch_2981fe23` | scratch / No-ImageNet body 等隔离实验 | 不与正式 P12 runs 混合 |
-| `/DATA/DATA1/guest3/2026OpticsMoE_fixedfeedback` | 新布局 clean deployment | 验收代码基线 `1dedeb6d`；只在此目录验证/启动 new-layout run，旧产物以 ignored symlink 接入 |
+| `/DATA/DATA1/guest3/2026OpticsMoE/FixedFeedbackSFT/runs/_worktrees/fa_reorg` | 新布局 clean deployment | 项目内部 ignored worktree；验收代码基线 `1dedeb6d`；旧产物以 ignored symlink 接入 |
 
 ### 旧主工作树 Git 状态
 
@@ -175,7 +175,7 @@ worktree:    modified and untracked files present
 2026-09-02 的部署与验证结果：
 
 ```text
-path:        /DATA/DATA1/guest3/2026OpticsMoE_fixedfeedback
+path:        /DATA/DATA1/guest3/2026OpticsMoE/FixedFeedbackSFT/runs/_worktrees/fa_reorg
 branch:      codex/fa-reorg
 validated:   1dedeb6d397f5d9cfdef8e4ef72d886e421366a0
 worktree:    clean（仅有 Git 忽略的 run/stem symlink）
@@ -186,6 +186,8 @@ shell:       161 bash scripts passed bash -n
 PowerShell:  2 scripts parsed with 0 errors
 P13 load:    best_full_depth.pt and backbone_full_depth.pt compatible
 ```
+
+目录边界：新部署必须位于 `/DATA/DATA1/guest3/2026OpticsMoE/` 内。曾误建的同级目录 `/DATA/DATA1/guest3/2026OpticsMoE_fixedfeedback` 已在 2026-09-02 迁回上述内部路径并确认不存在；临时 `/DATA/DATA1/guest3/.codex_transfer` 也已删除。历史 P12/P13 pinned worktree 是既有 run 的 provenance，不作为新部署目录，也不原地移动。
 
 不同工程中同名的 `test_core.py` 会被 pytest 默认导入模式视为同一顶层模块，因此全套测试使用 `--import-mode=importlib`；逐工程执行不受影响。这是测试收集命名问题，不是源码导入冲突。
 

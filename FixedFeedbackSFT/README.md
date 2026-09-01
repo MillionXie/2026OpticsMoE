@@ -10,7 +10,7 @@
 - 最佳完整深度 checkpoint 出现在 epoch 19：Top-1 `51.428%`、Top-5 `75.752%`；epoch 20 为 `51.352%/75.762%`。同一训练器重新评估的 8-stage P11 起点为 `51.346%/75.560%`，最佳差值仅 `+0.082/+0.192 pp`。
 - 16 个 phase 张量均 finite、non-zero 且有梯度，最佳模型平均绝对相位移动 `0.7567 rad`；16-stage 光学参数 `2,408,448`，电子 backbone 参数 `965,128`，可训练 backbone 的光学参数占比 `71.39%`。
 - 这说明 16 层确实参与学习且可完整导出，但当前只恢复到与 8 层几乎相同的性能；在同预算 8-stage continuation 完成前，不能宣称扩深带来有效或显著性能收益。
-- 新布局已部署到 clean server worktree `/DATA/DATA1/guest3/2026OpticsMoE_fixedfeedback`（验收代码基线 `1dedeb6d`）：213 项项目测试、9/9 CLI、161 个 shell 和 2 个 PowerShell 语法检查通过；旧 P13 training checkpoint 与 backbone export 均已用新布局模型类严格加载。
+- 新布局 clean worktree 位于项目内部 `/DATA/DATA1/guest3/2026OpticsMoE/FixedFeedbackSFT/runs/_worktrees/fa_reorg`（验收代码基线 `1dedeb6d`）：213 项项目测试、9/9 CLI、161 个 shell 和 2 个 PowerShell 语法检查通过；旧 P13 training checkpoint 与 backbone export 均已用新布局模型类严格加载。不得再在 `/DATA/DATA1/guest3/2026OpticsMoE` 外新建本项目的部署目录。
 
 精确日志、run、checkpoint、SHA-256 和精选终态 JSON 见 [`RUN_REGISTRY.md`](RUN_REGISTRY.md) 与 [`evidence/p13_growth16_fa_source_20e_gb192/`](evidence/p13_growth16_fa_source_20e_gb192/)。
 
