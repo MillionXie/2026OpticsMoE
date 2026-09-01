@@ -11,6 +11,7 @@ from experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retr
 )
 from experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval.settings import (
     load_settings,
+    router_contract_sha256,
 )
 
 
@@ -44,6 +45,23 @@ def test_release_configs_have_distinct_strict_architectures() -> None:
         [164, 223],
         [255, 314],
     ]
+
+
+def test_measurement_quality_gates_do_not_change_checkpoint_architecture() -> None:
+    settings = load_settings(CONFIG_ROOT / "optical_power_topk2.yaml")
+    original_hash = settings.router_contract_sha256
+    original_label = architecture_label(settings)
+
+    settings.optical_router_maximum_saturated_pixel_fraction = 0.75
+    settings.optical_router_minimum_p99_uint8 = 200.0
+    settings.optical_router_minimum_dynamic_range_uint8 = 100.0
+    settings.optical_router_minimum_topk_probability_margin = 0.20
+
+    recomputed_hash = router_contract_sha256(settings)
+    assert recomputed_hash == original_hash
+    settings.router_contract_sha256 = recomputed_hash
+    assert architecture_label(settings) == original_label
+    assert "hardware_quality" not in settings.router_contract["optical"]
 
 
 def test_strict_electronic_transplant_loads_every_tensor() -> None:

@@ -21,7 +21,8 @@ conda activate xml
 nvidia-smi
 ```
 
-本实验固定使用下面五份 release 配置：
+本实验有下面五种基础口径；四种正式口径各另有 `_seed43`、`_seed44` 配置，组成三
+随机种子矩阵：
 
 ```text
 experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/configs/release/electronic_legacy_topk2_anchor.yaml
@@ -112,11 +113,42 @@ CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_
 训练日志必须至少确认：
 
 - 实际 `router_implementation` 为 electronic；
-- 实际 k 分别是 2、1、2、4；
+- 三组实际 k 分别是 1、2、4；
 - power 三组启用了 `power_l2` 和 STE，legacy 组没有被误改；
 - Qwen 仍冻结；
 - 每组 output directory 不相同；
 - Router entropy、四专家 load、margin 和 phase 梯度均为有限值。
+
+### 4.1 三随机种子正式矩阵
+
+单个 seed 只能作探索。正式结果对每种设置固定运行 seed 42/43/44；无后缀配置是
+seed 42：
+
+```text
+electronic_power_topk1
+electronic_power_topk1_seed43
+electronic_power_topk1_seed44
+electronic_power_topk2
+electronic_power_topk2_seed43
+electronic_power_topk2_seed44
+electronic_power_topk4
+electronic_power_topk4_seed43
+electronic_power_topk4_seed44
+optical_power_topk2
+optical_power_topk2_seed43
+optical_power_topk2_seed44
+```
+
+每个 `<RUN>` 用一块空闲 GPU 执行同一命令模板：
+
+```text
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=<GPU> python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval \
+  --config experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/configs/release/<RUN>.yaml \
+  --phase train
+```
+
+三个 seed 只改变 Router/光学扰动优化随机种子；数据划分和 PK batch seed 均固定为 42。
+不得根据某个 seed 的 test 结果再改训练轮数或选择 checkpoint。
 
 ## 5. 电子 Router：显式 sealed-test evaluate
 
@@ -153,6 +185,16 @@ CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_
 比较 k=1/2/4 时只使用三份 `electronic_power_topk*` 结果。Legacy anchor 单独报告为
 “原 warmstart5 口径复现”。
 
+对 seed43/44 也用相同模板显式评估一次，把 `<RUN>` 同时替换到 config 和 checkpoint
+路径中：
+
+```text
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=<GPU> python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval \
+  --config experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/configs/release/<RUN>.yaml \
+  --phase evaluate \
+  --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/runs/<RUN>/ema_best_train_loss_checkpoint.pt
+```
+
 ## 6. 光学 Router Top-2 训练
 
 它可以与三组电子消融并行；下例使用当前空闲的 GPU 5：
@@ -163,14 +205,16 @@ CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=5 python -m experiments.qwen3_
   --phase train
 ```
 
-光 Router 必须从与电子 power Top-2 相同的 warmstart5 起点开始，并保留完全相同的
-power_l2、STE、数据划分、训练步数和下游损失。训练开始时检查日志：
+光 Router 必须从与电子 power Top-2 相同的 warmstart5 起点开始，并保持相同的
+power_l2、STE、数据划分、训练步数和检索主损失；光学实现另外需要相位扰动和 capture
+辅助损失，属于系统级比较而非严格单算子对照。训练开始时检查日志：
 
 - `router_implementation=phase_only_detector_energy_topk`；
 - Vision/Language 各有一张 224×224 Router phase；
 - CCD Router 输出为 478×478；
-- detector intervals 为 `[162,221)` 和 `[257,316)`；
-- 四区 `capture_fraction`、Router entropy、load、margin 有记录；
+- detector intervals 为 `[164,223)` 和 `[255,314)`；
+- 仿真记录物理 `capture_fraction`；实测未扣暗场时只记录
+  `raw_capture_fraction`，不得将其解释为光学捕获效率；
 - 启动前单元测试证明 Router phase 梯度非零且有限；训练后 snapshot/preview 证明其相对
   确定性初值发生了变化；
 - feature optics 仍为 Vision Expert/Global、Language Expert/Global 四层。
@@ -223,8 +267,10 @@ python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_router
 
 ### 6.3 把实测权重重新装载成原 2×2 Expert 振幅
 
-`central_router_inputs` 中必须是和 Router 曝光逐文件对应的 224×224 灰度振幅；输出
-恢复为原 MoE4 的 478×478 布局，并重建为 Meadowlark 1024×1024 BMP：
+下面是底层单步排错工具。正式六阶段流程不要求人工准备
+`central_router_inputs`：`hardware_bridge --phase export` 会从模型边界自动导出逐样本
+224×224 Router 输入并在 Router CCD 评分后生成原 MoE4 振幅。只有独立检查 routing
+CSV 时，才手工执行：
 
 ```text
 python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval.build_routed_amplitudes \
@@ -250,6 +296,16 @@ python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_router
 RMS 位移、最大位移及移动超过 0.01 rad 的像素比例，并记录 checkpoint SHA。
 
 ## 7. 结果检查顺序
+
+全部 13 个 run（12 个正式重复 + 1 个 legacy anchor）评估完成后生成统一报告：
+
+```text
+python -m experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval.formal_results \
+  --require-complete
+```
+
+输出位于 `formal_results/`，并更新 `FORMAL_RESULTS.md`。其中包含 mean±sample SD、固定
+seed bootstrap 95% CI、每类指标、逐 seed 配对 McNemar 与 checkpoint/test 使用审计。
 
 先检查训练协议，再看准确率：
 
@@ -289,14 +345,15 @@ RMS 位移、最大位移及移动超过 0.01 rad 的像素比例，并记录 ch
 - Language Global 复用 Language Router 的 route；
 - 四个 feature CCD 阶段仍沿用原 readout 和逐层微调逻辑。
 
-当前已实现 Router phase 导出和 canonical Router CCD 四区评分；完整六阶段自动 bridge
-仍需在仿真结果确认后，把“中心振幅导出→实测路由权重→2×2条件振幅生成”接入原四阶段
-逐层微调。不要直接套用 warmstart5 的四阶段 `hardware_bridge`：它不知道两次 Router
-CCD，也无法根据实测四区结果生成条件 amplitude。
+完整六阶段状态机已经实现，包括中心 Router 输入自动导出、实测 routing 注入、Global
+复用 route、四个 feature CCD 的逐层微调、checkpoint 链和全套 SHA/manifest 校验。
+逐条可复制命令及 `<CURRENT.pt>` 更新规则见 [HARDWARE_SIX_STAGE.md](HARDWARE_SIX_STAGE.md)。
+不要直接套用 warmstart5 的四阶段 `hardware_bridge`：它不知道两次 Router CCD，也无法
+根据实测四区结果生成条件 amplitude。
 
 ## 9. 常见错误
 
-- 不要将 detector 区间写成包含右端点；`[162,221)` 的最后一个像素是 220。
+- 不要将 detector 区间写成包含右端点；`[164,223)` 的最后一个像素是 222。
 - 不要把四个 detector 小区误认为新的 CCD crop；正式 ROI 仍是 478×478。
 - 不要对已经 canonical 的 CCD 再次翻转。
 - 不要用 k=1 的普通 hard top-k 训练并声称 Router 得到了任务梯度。

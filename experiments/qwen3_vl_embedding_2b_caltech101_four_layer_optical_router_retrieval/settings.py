@@ -174,6 +174,27 @@ def load_settings(path: str | Path) -> Any:
     settings.optical_router_capture_loss_scale = float(
         d("router_experiment.optical.capture_loss_scale", 0.10)
     )
+    settings.optical_router_maximum_saturated_pixel_fraction = float(
+        d(
+            "router_experiment.optical.hardware_quality.maximum_saturated_pixel_fraction",
+            0.02,
+        )
+    )
+    settings.optical_router_minimum_p99_uint8 = float(
+        d("router_experiment.optical.hardware_quality.minimum_p99_uint8", 8.0)
+    )
+    settings.optical_router_minimum_dynamic_range_uint8 = float(
+        d(
+            "router_experiment.optical.hardware_quality.minimum_dynamic_range_uint8",
+            4.0,
+        )
+    )
+    settings.optical_router_minimum_topk_probability_margin = float(
+        d(
+            "router_experiment.optical.hardware_quality.minimum_topk_probability_margin",
+            0.01,
+        )
+    )
     settings.optical_router_phase_dropout_p = float(
         d("router_experiment.optical.phase_dropout_p", 0.05)
     )
@@ -246,6 +267,20 @@ def load_settings(path: str | Path) -> Any:
         raise ValueError("optical router energy_eps must be positive")
     if settings.optical_router_capture_loss_scale < 0.0:
         raise ValueError("optical router capture_loss_scale must be nonnegative")
+    if not 0.0 <= settings.optical_router_maximum_saturated_pixel_fraction <= 1.0:
+        raise ValueError(
+            "optical router maximum_saturated_pixel_fraction must be in [0,1]"
+        )
+    if not 0.0 <= settings.optical_router_minimum_p99_uint8 <= 255.0:
+        raise ValueError("optical router minimum_p99_uint8 must be in [0,255]")
+    if not 0.0 <= settings.optical_router_minimum_dynamic_range_uint8 <= 255.0:
+        raise ValueError(
+            "optical router minimum_dynamic_range_uint8 must be in [0,255]"
+        )
+    if not 0.0 <= settings.optical_router_minimum_topk_probability_margin < 1.0:
+        raise ValueError(
+            "optical router minimum_topk_probability_margin must be in [0,1)"
+        )
     if not 0.0 <= settings.optical_router_phase_dropout_p < 1.0:
         raise ValueError("optical router phase_dropout_p must be in [0,1)")
     if settings.optical_router_phase_dropout_block_size <= 0:
@@ -362,6 +397,26 @@ def save_resolved_config(settings: Any) -> None:
     values["language_optical"]["layout"] = (
         f"MoE4_2x2_topk{settings.top_k}_{settings.router_backend}_router"
     )
+    # These are acquisition acceptance thresholds, not trainable-model
+    # numerics. Keep them outside the checkpoint Router contract so changing a
+    # laboratory quality gate never changes architecture_label/checkpoint SHA
+    # compatibility; the six-stage session seals the full resolved config.
+    values["router_hardware_measurement"] = {
+        "background_subtraction": False,
+        "uncalibrated_capture_metric": "raw_capture_fraction",
+        "quality_gates": {
+            "maximum_saturated_pixel_fraction": (
+                settings.optical_router_maximum_saturated_pixel_fraction
+            ),
+            "minimum_p99_uint8": settings.optical_router_minimum_p99_uint8,
+            "minimum_dynamic_range_uint8": (
+                settings.optical_router_minimum_dynamic_range_uint8
+            ),
+            "minimum_topk_probability_margin": (
+                settings.optical_router_minimum_topk_probability_margin
+            ),
+        },
+    }
     path.write_text(
         yaml.safe_dump(values, sort_keys=False, allow_unicode=True), encoding="utf-8"
     )

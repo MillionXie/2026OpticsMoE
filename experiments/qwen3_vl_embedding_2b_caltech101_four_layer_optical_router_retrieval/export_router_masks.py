@@ -17,6 +17,7 @@ from experiments.hardware_sdk.workflows.reconstruct_slm import (
 )
 
 from .modeling import architecture_label
+from .hardware_contract import require_empty_directory
 from .settings import load_settings
 
 
@@ -42,7 +43,7 @@ def export_masks(config: Path, checkpoint: Path, output_dir: Path) -> dict[str, 
         raise RuntimeError(
             f"Checkpoint architecture mismatch: expected={expected!r}, actual={actual!r}"
         )
-    output_dir = output_dir.expanduser().resolve()
+    output_dir = require_empty_directory(output_dir, label="Router phase export")
     compact = output_dir / "compact_phase"
     compact.mkdir(parents=True, exist_ok=True)
     margin = (settings.active_size - settings.expert_size) // 2

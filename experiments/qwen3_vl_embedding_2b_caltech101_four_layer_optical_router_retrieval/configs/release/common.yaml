@@ -21,6 +21,14 @@ router_experiment:
     score_normalization: standardized_region_energy
     energy_eps: 1.0e-8
     capture_loss_scale: 0.10
+    # Formal hardware Router frames are rejected before a route is sealed when
+    # exposure/contrast is not trustworthy. These tests use canonical uint8
+    # CCD values after homography; no dark frame is invented or subtracted.
+    hardware_quality:
+      maximum_saturated_pixel_fraction: 0.02
+      minimum_p99_uint8: 8.0
+      minimum_dynamic_range_uint8: 4.0
+      minimum_topk_probability_margin: 0.01
     phase_dropout_p: 0.05
     phase_dropout_block_size: 8
     input_shift_pixels: 16

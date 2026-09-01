@@ -44,6 +44,7 @@ def _last_batch_router_diagnostics(replacement: Any) -> dict[str, Any]:
         values: dict[str, Any] = {}
         for key in (
             "capture_fraction",
+            "raw_capture_fraction",
             "detector_energy_fraction",
             "probabilities",
             "load",

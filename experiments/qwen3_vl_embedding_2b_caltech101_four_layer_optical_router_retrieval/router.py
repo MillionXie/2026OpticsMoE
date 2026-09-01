@@ -217,6 +217,7 @@ class OpticalDetectorTopKRouter(nn.Module):
         self.last_detector_intensity: torch.Tensor | None = None
         self.last_detector_energy: torch.Tensor | None = None
         self.last_capture_fraction: torch.Tensor | None = None
+        self.last_raw_capture_fraction: torch.Tensor | None = None
         self.last_shifts: dict[str, tuple[int, int]] = {}
         self._measured_routing: dict[str, torch.Tensor] | None = None
 
@@ -244,7 +245,7 @@ class OpticalDetectorTopKRouter(nn.Module):
         optional = {
             "detector_energy",
             "detector_energy_fraction",
-            "capture_fraction",
+            "raw_capture_fraction",
         }
         missing = required.difference(payload)
         unexpected = set(payload).difference(required | optional)
@@ -357,13 +358,13 @@ class OpticalDetectorTopKRouter(nn.Module):
         energy_fraction = self._measured_routing.get(
             "detector_energy_fraction", probabilities
         ).to(device=device, dtype=dtype)
-        captured = self._measured_routing.get(
-            "capture_fraction", torch.ones(batch)
-        ).to(device=device, dtype=dtype)
+        raw_captured = self._measured_routing.get("raw_capture_fraction")
+        if raw_captured is not None:
+            raw_captured = raw_captured.to(device=device, dtype=dtype)
         if tuple(energy.shape) != expected or tuple(energy_fraction.shape) != expected:
             raise ValueError("Measured detector energy tensors must have shape [B,4]")
-        if tuple(captured.shape) != (batch,):
-            raise ValueError("Measured capture_fraction must have shape [B]")
+        if raw_captured is not None and tuple(raw_captured.shape) != (batch,):
+            raise ValueError("Measured raw_capture_fraction must have shape [B]")
         if not bool(torch.isfinite(energy).all()) or bool((energy < 0.0).any()):
             raise ValueError("Measured detector_energy must be finite and nonnegative")
         if not bool(torch.isfinite(energy_fraction).all()) or bool(
@@ -372,10 +373,13 @@ class OpticalDetectorTopKRouter(nn.Module):
             raise ValueError(
                 "Measured detector_energy_fraction must be finite and nonnegative"
             )
-        if not bool(torch.isfinite(captured).all()) or bool(
-            ((captured < 0.0) | (captured > 1.0)).any()
+        if raw_captured is not None and (
+            not bool(torch.isfinite(raw_captured).all())
+            or bool(((raw_captured < 0.0) | (raw_captured > 1.0)).any())
         ):
-            raise ValueError("Measured capture_fraction must be finite and in [0,1]")
+            raise ValueError(
+                "Measured raw_capture_fraction must be finite and in [0,1]"
+            )
         torch.testing.assert_close(
             energy_fraction.sum(dim=-1),
             torch.ones(batch, device=device, dtype=dtype),
@@ -384,9 +388,15 @@ class OpticalDetectorTopKRouter(nn.Module):
             msg="Measured detector energy fractions must sum to one",
         )
         self.last_detector_energy = energy.detach()
-        self.last_capture_fraction = captured.detach()
+        # A canonical uint8 hardware frame has camera offset/leakage but no
+        # measured dark-frame contract here. Keep this diagnostic separate from
+        # the calibrated simulation-only optical capture fraction.
+        self.last_capture_fraction = None
+        self.last_raw_capture_fraction = (
+            None if raw_captured is None else raw_captured.detach()
+        )
         self.last_detector_intensity = None
-        return {
+        result: dict[str, torch.Tensor | str | bool] = {
             "logits": probabilities.clamp_min(self.eps).log() * self.temperature,
             "probabilities": probabilities,
             "weights": weights,
@@ -400,8 +410,8 @@ class OpticalDetectorTopKRouter(nn.Module):
             "load": load,
             "detector_energy": energy,
             "detector_energy_fraction": energy_fraction,
-            "capture_fraction": captured,
-            "capture_loss": (1.0 - captured).mean(),
+            "capture_loss": input_fields.new_zeros(()),
+            "capture_loss_available": False,
             "capture_loss_scale": input_fields.new_tensor(self.capture_loss_scale),
             "weight_normalization": self.weight_normalization,
             "straight_through": False,
@@ -411,6 +421,9 @@ class OpticalDetectorTopKRouter(nn.Module):
             "amplitude_phase_relay": "measured_router_manifest",
             "measured_routing": True,
         }
+        if raw_captured is not None:
+            result["raw_capture_fraction"] = raw_captured
+        return result
 
     def _four_spot_initial_phase(
         self, intervals: tuple[tuple[int, int], tuple[int, int]]
@@ -571,6 +584,7 @@ class OpticalDetectorTopKRouter(nn.Module):
         balance_with_capture = balance + self.capture_loss_scale * capture_loss
         self.last_detector_energy = energy.detach()
         self.last_capture_fraction = captured.detach()
+        self.last_raw_capture_fraction = None
         return {
             "logits": logits,
             "probabilities": probabilities,

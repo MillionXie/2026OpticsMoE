@@ -322,7 +322,7 @@ def test_optical_router_accepts_strict_measured_routing_contract() -> None:
             "selected_indices": indices,
             "detector_energy": 10.0 * probabilities,
             "detector_energy_fraction": probabilities,
-            "capture_fraction": torch.tensor([0.30, 0.45]),
+            "raw_capture_fraction": torch.tensor([0.30, 0.45]),
         }
     )
     output = router(_input_fields(batch=2))
@@ -332,8 +332,10 @@ def test_optical_router_accepts_strict_measured_routing_contract() -> None:
     torch.testing.assert_close(output["weights"], hard)
     torch.testing.assert_close(output["detector_energy"], 10.0 * probabilities)
     torch.testing.assert_close(
-        output["capture_fraction"], torch.tensor([0.30, 0.45])
+        output["raw_capture_fraction"], torch.tensor([0.30, 0.45])
     )
+    assert "capture_fraction" not in output
+    assert output["capture_loss_available"] is False
     assert torch.equal(output["selected_mask"], selected)
     router.set_measured_routing(None)
     assert router._measured_routing is None
