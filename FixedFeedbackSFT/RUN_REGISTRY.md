@@ -100,7 +100,7 @@ best epoch 19 审计显示：16 个 phase tensors 均存在、finite、non-zero 
 - [x] torchrun/worker 已退出，日志关键词扫描无 traceback、NCCL failure、OOM、killed 或 terminated；
 - [x] 关键 JSON 已下载到 [`evidence/p13_growth16_fa_source_20e_gb192/`](evidence/p13_growth16_fa_source_20e_gb192/) 并复核 SHA-256；
 - [ ] 同预算 8-stage continuation 尚未完成，因此深度收益归因仍保持开放；
-- [ ] 新布局 strict checkpoint-load 审计将在 clean server worktree 建立后补登记。
+- [x] 2026-09-02 在新布局 commit `1dedeb6d` 实际重建 16-stage 模型：training checkpoint 严格加载为 0 missing/0 unexpected；backbone export 仅缺预期的临时 ImageNet readout 7 个键，0 unexpected；两者 depth-alpha 与静态 stem SHA 均匹配。
 
 | 服务器文件 | SHA-256 |
 |---|---|
@@ -112,6 +112,13 @@ best epoch 19 审计显示：16 个 phase tensors 均存在、finite、non-zero 
 | `checkpoints/best_any.pt` | `bb4600ec65ae583c0a050f52fc2302f32ec7eb22b8693aeea7efb6a3ed74f3b5` |
 | `checkpoints/last.pt` | `771625a0775a253e0a74a887d116adb85c7e695ea0faa884700a7936d9aaa598` |
 | `checkpoints/backbone_full_depth.pt` | `80b9b7b0f4415fd789bf46312dc23ccaf3600b5c4df9885c2972ce465dc9129d` |
+
+P11 source 也已通过 PyTorch 只读加载、finite/non-empty tensor 与 SHA-256 审计：
+
+| P11 文件 | epoch | SHA-256 |
+|---|---:|---|
+| `checkpoints/backbone.pt` | 88 | `c3ad0b780dfbb3e5f8e1f7b7850c06fcb5c6d977e106f351b4602fcaadf210d2` |
+| `checkpoints/best.pt` | 88 | `a30d5c06b61a635bb3dc379aeaca4c371c1d27e6b862c5ffd4977ce738b33034` |
 
 ## 2. 为什么普通服务器目录里没有这个 run
 
@@ -147,6 +154,7 @@ P13 实际目录却是：
 | `/DATA/DATA1/guest3/2026OpticsMoE_p13_488f9d48` | 已完成的 P13 8→16 growth | 保留 pinned commit 与原 runs；不得用新布局原地 resume |
 | `/DATA/DATA1/guest3/2026OpticsMoE_report_646f847e` | 老师汇报/图表生成 | 报告源码已纳入 `FixedFeedbackSFT/reports`；服务器产物按 checksum 登记 |
 | `/DATA/DATA1/guest3/2026OpticsMoE_scratch_2981fe23` | scratch / No-ImageNet body 等隔离实验 | 不与正式 P12 runs 混合 |
+| `/DATA/DATA1/guest3/2026OpticsMoE_fixedfeedback` | 新布局 clean deployment | 验收代码基线 `1dedeb6d`；只在此目录验证/启动 new-layout run，旧产物以 ignored symlink 接入 |
 
 ### 旧主工作树 Git 状态
 
@@ -161,6 +169,25 @@ worktree:    modified and untracked files present
 ```
 
 因此同步新布局时应建立 clean worktree。不能对这个目录直接 `git pull`，也不能用 `git reset --hard` 或 `git clean` 消除分叉；这些动作可能删除服务器独有提交和用户文件。
+
+### 新布局 clean worktree 验收
+
+2026-09-02 的部署与验证结果：
+
+```text
+path:        /DATA/DATA1/guest3/2026OpticsMoE_fixedfeedback
+branch:      codex/fa-reorg
+validated:   1dedeb6d397f5d9cfdef8e4ef72d886e421366a0
+worktree:    clean（仅有 Git 忽略的 run/stem symlink）
+layout:      3 passed
+projects:    213 passed（pytest --import-mode=importlib）
+CLI:         9/9 --help entrypoints passed
+shell:       161 bash scripts passed bash -n
+PowerShell:  2 scripts parsed with 0 errors
+P13 load:    best_full_depth.pt and backbone_full_depth.pt compatible
+```
+
+不同工程中同名的 `test_core.py` 会被 pytest 默认导入模式视为同一顶层模块，因此全套测试使用 `--import-mode=importlib`；逐工程执行不受影响。这是测试收集命名问题，不是源码导入冲突。
 
 ## 4. 旧结果与新结果的统一登记策略
 
@@ -188,6 +215,21 @@ FixedFeedbackSFT/runs/<project>/<run>/
 也可用 `FIXED_FEEDBACK_RUNS_ROOT` 将 `FixedFeedbackSFT/runs` 映射到服务器大容量盘。该目录仍被 Git 忽略；本 registry 才是进入 Git 的索引。
 
 新布局不得 resume 旧布局 run。迁移旧权重时，应启动新 run 并记录 `parent_checkpoint_path`、`parent_checkpoint_sha256`、旧 Git SHA、新 Git SHA、旧/新 config digest 和 migration report。
+
+### 已建立的统一入口（服务器符号链接）
+
+这些链接位于 clean worktree 的 ignored `FixedFeedbackSFT/runs/`，不复制 checkpoint，也不改变原始 provenance：
+
+| 中央 run 名 | 原始物理位置 |
+|---|---|
+| P11 `p11_imagenet1k_pretrain_bs96_90e` | 旧主树 P11 `runs/p11_imagenet1k_pretrain_bs96_90e` |
+| P12 `p12_downstream_fa_50e` | `/DATA/DATA1/guest3/2026OpticsMoE_p12_e305e0b/.../runs/p12_downstream_fa_50e` |
+| P12 `p12_downstream_fa_50e_mechanism` | `/DATA/DATA1/guest3/2026OpticsMoE_p12_mechanism_e305/.../runs/p12_downstream_fa_50e_mechanism` |
+| P12 `p12_phase_only_fa_50e` | `/DATA/DATA1/guest3/2026OpticsMoE_p12_phase_only_e7ae69e7/.../runs/p12_phase_only_fa_50e` |
+| P12 `p12_scratch_p11_body_seed_2026_50e` | `/DATA/DATA1/guest3/2026OpticsMoE_scratch_2981fe23/.../runs/p12_scratch_p11_body_seed_2026_50e` |
+| P13 `p13_growth16_fa_source_20e_gb192` | `/DATA/DATA1/guest3/2026OpticsMoE_p13_488f9d48/.../runs/p13_growth16_fa_source_20e_gb192` |
+
+静态 stem 也以 ignored symlink 接到新 P08 `assets/qwen3_vl_static_stem_224.pt`；SHA-256 为 `e3b12b274211d29f928eee95fdfc60b32d10751f1bbdc98cd63f0cccd0792485`。
 
 ## 5. 新增 run 的登记模板
 
@@ -232,9 +274,9 @@ tail -n 80 <absolute-log-path>
 ## 7. 待补登记
 
 - [x] P13 epoch 20、最终消融终态与关键 SHA-256；
-- [ ] P11 source `backbone.pt` 与 epoch-88 `best.pt` 的绝对路径/SHA-256；
-- [ ] P12 formal、No-ImageNet body、phase-only 和 mechanism 的 run roots 与 terminal summaries；
-- [ ] 新布局 clean server worktree 的路径与部署 commit；
+- [x] P11 source `backbone.pt` 与 epoch-88 `best.pt` 的绝对路径/SHA-256；
+- [x] P12 formal、No-ImageNet body、phase-only 和 mechanism 的 run roots 已接入统一入口；终态指标见 `PROJECTS.md` 与老师报告；
+- [x] 新布局 clean server worktree 的路径、部署 commit、测试和 strict checkpoint load；
 - [ ] 需要同步到本地的精选 checkpoint 清单及本地校验结果。
 
-最后更新：2026-09-01；P13 终态审计时间：2026-09-01 23:36 CST。
+最后更新：2026-09-02；P13 终态审计时间：2026-09-01 23:36 CST；新布局验收时间：2026-09-02 CST。

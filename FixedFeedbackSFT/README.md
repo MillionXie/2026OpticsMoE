@@ -10,6 +10,7 @@
 - 最佳完整深度 checkpoint 出现在 epoch 19：Top-1 `51.428%`、Top-5 `75.752%`；epoch 20 为 `51.352%/75.762%`。同一训练器重新评估的 8-stage P11 起点为 `51.346%/75.560%`，最佳差值仅 `+0.082/+0.192 pp`。
 - 16 个 phase 张量均 finite、non-zero 且有梯度，最佳模型平均绝对相位移动 `0.7567 rad`；16-stage 光学参数 `2,408,448`，电子 backbone 参数 `965,128`，可训练 backbone 的光学参数占比 `71.39%`。
 - 这说明 16 层确实参与学习且可完整导出，但当前只恢复到与 8 层几乎相同的性能；在同预算 8-stage continuation 完成前，不能宣称扩深带来有效或显著性能收益。
+- 新布局已部署到 clean server worktree `/DATA/DATA1/guest3/2026OpticsMoE_fixedfeedback`（验收代码基线 `1dedeb6d`）：213 项项目测试、9/9 CLI、161 个 shell 和 2 个 PowerShell 语法检查通过；旧 P13 training checkpoint 与 backbone export 均已用新布局模型类严格加载。
 
 精确日志、run、checkpoint、SHA-256 和精选终态 JSON 见 [`RUN_REGISTRY.md`](RUN_REGISTRY.md) 与 [`evidence/p13_growth16_fa_source_20e_gb192/`](evidence/p13_growth16_fa_source_20e_gb192/)。
 
@@ -60,7 +61,7 @@ python -m experiments.<project_name> ...
 - 脚本/config 的**物理路径**：`FixedFeedbackSFT/projects/...`；
 - Python 的**模块路径**：`experiments....`。
 
-迁移尚未通过全部验收前，不要用新布局恢复旧 formal run。详细原因和检查项见 [`MIGRATION.md`](MIGRATION.md)。
+迁移代码验收已通过，但仍不要把新布局当成旧 formal run 的原地 resume。旧 run 的 config digest 与 implementation manifest 必须保持不变；新实验应以旧 checkpoint 为受检 parent，建立新的 run 身份。详细原因和检查项见 [`MIGRATION.md`](MIGRATION.md)。
 
 ## 为什么服务器上找不到 runs
 
@@ -117,4 +118,4 @@ FA-pretrained 固定的是预训练结束时各光学层的**层间反馈算子*
 - 修改后必须通过旧模块名 import、CLI、测试、shell 语法、checkpoint load 和 P13 migration/gradient 验收后，才能称为“整理完成”。
 - 不使用 `git add -A` 混入用户的其他实验、数据集、传输 bundle 或生成数据。
 
-本入口更新：2026-09-01。
+本入口更新：2026-09-02。

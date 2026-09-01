@@ -81,7 +81,7 @@ P12 不再增加 ImageNet 架构。每个任务只保留 NoFT/head-only、BP-cur
 
 P13 用 `y=x+alpha(Stage(x)-x)` 从 P11 渐进扩深。8 个 P11 anchor 保留 mixer；新增 stage 使用无参数 identity electronic skip，只增加 phase 和融合标量。因此 64/100 stage 分别有约 `9.63M/15.05M` phase 参数，而电子 body 仍约 `0.965M`。
 
-当前已证明的是：迁移等价、全深度 feedback connector、64/100-stage CUDA 梯度覆盖。尚需由完成后的 ImageNet metrics、8-stage matched continuation 和新增层 drop/reset 共同判断深度是否带来语义增益。
+当前已证明的是：迁移等价、全深度 feedback connector、64/100-stage CUDA 梯度覆盖，以及 16-stage ImageNet 训练可完整收口。16 层 best 只比同 run 的 8-stage 起点高 `0.082 pp` Top-1；仍需 8-stage matched continuation 和新增层 drop/reset 才能判断深度是否带来可归因的语义增益。
 
 ## 仍保留在根 `experiments/` 的共享依赖
 

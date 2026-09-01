@@ -164,19 +164,21 @@ state:        modified + untracked files
 
 以下项目全部通过后，才允许合并整理分支并启动 new-layout formal run：
 
-- [ ] 九个工程均能通过旧名称 `import experiments.<project>` 导入；
-- [ ] 关键 class 只对应一个 module identity，不存在双命名加载；
-- [ ] V1/V2/高性能骨干/P08–P13 的测试套件通过；
-- [ ] `python -m experiments.<project>` 的 smoke/CLI 仍可启动；
-- [ ] 所有 shell 脚本通过 `bash -n`，PowerShell 脚本通过 parse；
-- [ ] 活动命令的物理路径全部指向 `FixedFeedbackSFT/projects/...`；
-- [ ] 全仓扫描后，仅历史报告、旧 provenance 或明确 legacy 示例保留旧物理路径；
-- [ ] P09/P10/P11 的 strict checkpoint load 和架构签名拒错行为不变；
-- [ ] P12 的 source checkpoint、dataset manifest 和四组公平性检查通过；
-- [ ] P13 P11→16 migration、alpha=0 等价、full-depth feedback 和 phase gradient 测试通过；
-- [ ] 旧 `3e639199` 配置可在 pinned worktree 原样读取，新布局 config digest 明确不同；
-- [ ] 新 run 输出根可写且被 Git 忽略，registry 模板可完整填写；
-- [ ] `git diff --check` 无空白错误，提交只包含 FA 整理范围。
+- [x] 九个工程均能通过旧名称 `import experiments.<project>` 导入；
+- [x] 关键 class 只对应一个 module identity，不存在 `FixedFeedbackSFT.projects.*` 双命名加载；
+- [x] V1/V2/高性能骨干/P08–P13 共 213 项项目测试通过；
+- [x] 9 个工程的正式 package/submodule CLI `--help` 均可启动；
+- [x] 161 个 shell 脚本通过 `bash -n`，2 个 PowerShell 脚本通过 parse；
+- [x] 活动命令的物理路径全部指向 `FixedFeedbackSFT/projects/...`；
+- [x] 扫描后，活动文件仅 P12 mechanism audit 保留一个明确的旧 formal-worktree fallback；
+- [x] P09/P10/P11 架构签名与 strict-load 拒错单元测试通过；可用 P11 source checkpoint 另通过 PyTorch finite/hash 审计；
+- [x] P12 的 source checkpoint、dataset manifest 和四组公平性检查通过；
+- [x] P13 P11→16 migration、alpha=0 等价、full-depth feedback 和 phase gradient 测试通过；真实 P13 training/export checkpoint 也已由新布局类加载；
+- [x] 旧 `3e639199` 配置保留于 pinned worktree；新布局 config/path 身份明确独立，不跨布局原地 resume；
+- [x] 新 run 输出根可写、被 Git 忽略，P11/P12/P13 旧 run 已用非覆盖 symlink 接入；
+- [x] `git diff --check` 无空白错误，提交只包含 FA 整理范围。
+
+验收环境：`/DATA/DATA1/guest3/2026OpticsMoE_fixedfeedback`，代码基线 `1dedeb6d397f5d9cfdef8e4ef72d886e421366a0`，2026-09-02 CST；其后的 registry-only 提交不改变该测试结论。
 
 ## 10. 回滚与故障定位
 
