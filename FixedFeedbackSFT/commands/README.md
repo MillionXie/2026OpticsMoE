@@ -30,6 +30,14 @@ PYTHON_BIN=/path/to/python bash FixedFeedbackSFT/commands/01_verify_v2_results.s
 python FixedFeedbackSFT/commands/03_audit_checkpoint.py /absolute/path/to/checkpoint.pt
 ```
 
+P13 可额外传入静态 Qwen stem，实际重建新布局中的模型类并执行严格 state-dict 验收：
+
+```bash
+python FixedFeedbackSFT/commands/03_audit_checkpoint.py \
+  /absolute/path/to/checkpoint.pt \
+  --p13-stem /absolute/path/to/qwen3_vl_static_stem_224.pt
+```
+
 将 pinned 旧 worktree 的 run 以符号链接登记到新布局（不复制、不覆盖原产物）：
 
 ```bash
