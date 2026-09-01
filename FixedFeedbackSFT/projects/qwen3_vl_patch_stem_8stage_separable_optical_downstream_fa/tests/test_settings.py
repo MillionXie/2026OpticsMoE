@@ -89,8 +89,8 @@ def test_paths_are_resolved_relative_to_repository_not_config_directory() -> Non
     assert settings.paths.source_backbone.is_absolute()
     assert settings.paths.source_backbone == (
         REPO_ROOT
-        / "FixedFeedbackSFT/projects/qwen3_vl_patch_stem_8stage_separable_optical_imagenet_backbone"
-        / "runs/p11_imagenet1k_pretrain_bs96_90e/checkpoints/backbone.pt"
+        / "FixedFeedbackSFT/runs/qwen3_vl_patch_stem_8stage_separable_optical_imagenet_backbone"
+        / "p11_imagenet1k_pretrain_bs96_90e/checkpoints/backbone.pt"
     ).resolve()
     assert settings.data_root == (REPO_ROOT / "data/ISIC2016").resolve()
 
