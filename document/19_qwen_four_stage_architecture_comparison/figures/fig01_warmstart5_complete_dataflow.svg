@@ -1,0 +1,167 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="920" viewBox="0 0 1600 920">
+  <defs>
+    <style>
+      text { font-family: Arial, "Microsoft YaHei", sans-serif; fill: #17202a; }
+      .title { font-size: 27px; font-weight: 700; }
+      .subtitle { font-size: 15px; fill: #455a64; }
+      .head { font-size: 18px; font-weight: 700; }
+      .body { font-size: 14px; }
+      .small { font-size: 12px; fill: #455a64; }
+      .qwen { fill: #e8f1fb; stroke: #3975a8; stroke-width: 2; }
+      .elec { fill: #fff1de; stroke: #d67b18; stroke-width: 2; }
+      .optic { fill: #e7f5eb; stroke: #27844f; stroke-width: 2; }
+      .fusion { fill: #f5eafa; stroke: #8e55a2; stroke-width: 2; }
+      .output { fill: #fce8e6; stroke: #c54c43; stroke-width: 2; }
+      .note { fill: #f7f8fa; stroke: #9aa5ad; stroke-width: 1.5; }
+      .arrow { stroke: #33434d; stroke-width: 2.2; fill: none; marker-end: url(#arrow); }
+      .parallel { stroke: #718792; stroke-width: 1.8; fill: none; marker-end: url(#arrow); }
+    </style>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#33434d"/>
+    </marker>
+  </defs>
+
+  <rect width="1600" height="920" fill="white"/>
+  <text x="800" y="38" text-anchor="middle" class="title">Warmstart5 四级 Qwen 光电融合检索网络</text>
+  <text x="800" y="64" text-anchor="middle" class="subtitle">蓝：冻结 Qwen　橙：可训练电子　绿：物理/仿真光路　紫：残差融合　红：检索输出</text>
+
+  <rect x="30" y="105" rx="10" ry="10" width="160" height="95" class="qwen"/>
+  <text x="110" y="134" text-anchor="middle" class="head">输入</text>
+  <text x="110" y="160" text-anchor="middle" class="body">RGB 224×224</text>
+  <text x="110" y="183" text-anchor="middle" class="small">instruction + image</text>
+
+  <rect x="230" y="95" rx="10" ry="10" width="230" height="115" class="qwen"/>
+  <text x="345" y="124" text-anchor="middle" class="head">冻结 Qwen Vision 前端</text>
+  <text x="345" y="150" text-anchor="middle" class="body">Conv3D patch embedding</text>
+  <text x="345" y="173" text-anchor="middle" class="body">位置 embedding</text>
+  <text x="345" y="196" text-anchor="middle" class="small">[196,1024]（14×14 token）</text>
+  <path d="M190,152 L230,152" class="arrow"/>
+
+  <rect x="505" y="82" rx="12" ry="12" width="610" height="285" class="note"/>
+  <text x="810" y="111" text-anchor="middle" class="head">Vision 两级光电替换（原 24 个 Vision Transformer block 不执行）</text>
+
+  <rect x="535" y="132" rx="8" ry="8" width="190" height="70" class="elec"/>
+  <text x="630" y="157" text-anchor="middle" class="body">Linear 1024→192 + LN</text>
+  <text x="630" y="183" text-anchor="middle" class="small">[196,192]</text>
+  <path d="M460,152 L535,166" class="arrow"/>
+
+  <rect x="755" y="128" rx="8" ry="8" width="145" height="78" class="elec"/>
+  <text x="827" y="153" text-anchor="middle" class="body">2D Mixer 1</text>
+  <text x="827" y="176" text-anchor="middle" class="small">DWConv 3×3</text>
+  <text x="827" y="194" text-anchor="middle" class="small">+ MLP 192→384→192</text>
+  <rect x="755" y="229" rx="8" ry="8" width="145" height="92" class="optic"/>
+  <text x="827" y="253" text-anchor="middle" class="body">Vision expert</text>
+  <text x="827" y="275" text-anchor="middle" class="small">192→224×224</text>
+  <text x="827" y="294" text-anchor="middle" class="small">MoE4 top-2 → CCD</text>
+  <text x="827" y="313" text-anchor="middle" class="small">478→224→192</text>
+  <path d="M725,160 L755,160" class="parallel"/>
+  <path d="M725,177 C740,190 740,270 755,270" class="parallel"/>
+
+  <rect x="930" y="157" rx="8" ry="8" width="150" height="75" class="fusion"/>
+  <text x="1005" y="183" text-anchor="middle" class="body">融合 Fv1</text>
+  <text x="1005" y="205" text-anchor="middle" class="small">E1 + αv1 × O1</text>
+  <text x="1005" y="222" text-anchor="middle" class="small">[196,192]</text>
+  <path d="M900,166 L930,181" class="parallel"/>
+  <path d="M900,275 L930,210" class="parallel"/>
+
+  <rect x="535" y="255" rx="8" ry="8" width="170" height="76" class="elec"/>
+  <text x="620" y="280" text-anchor="middle" class="body">2D Mixer 2</text>
+  <text x="620" y="302" text-anchor="middle" class="small">Fv1 → Ev2</text>
+  <rect x="930" y="263" rx="8" ry="8" width="150" height="75" class="optic"/>
+  <text x="1005" y="287" text-anchor="middle" class="body">Vision global</text>
+  <text x="1005" y="309" text-anchor="middle" class="small">478 phase → CCD</text>
+  <text x="1005" y="328" text-anchor="middle" class="small">→ Ov2 [196,192]</text>
+  <path d="M970,232 C910,245 745,252 705,282" class="parallel"/>
+  <path d="M1005,232 L1005,263" class="parallel"/>
+
+  <rect x="735" y="266" rx="8" ry="8" width="165" height="70" class="fusion"/>
+  <text x="817" y="290" text-anchor="middle" class="body">融合 + 输出 LN</text>
+  <text x="817" y="312" text-anchor="middle" class="small">Ev2 + αv2×Ov2</text>
+  <text x="817" y="330" text-anchor="middle" class="small">Zv [196,192]</text>
+  <path d="M705,300 L735,300" class="parallel"/>
+  <path d="M930,304 L900,304" class="parallel"/>
+
+  <rect x="1155" y="105" rx="10" ry="10" width="215" height="105" class="elec"/>
+  <text x="1262" y="133" text-anchor="middle" class="head">恢复 Qwen 接口</text>
+  <text x="1262" y="159" text-anchor="middle" class="body">Linear 192→1024</text>
+  <text x="1262" y="182" text-anchor="middle" class="small">gated residual + 原输入</text>
+  <text x="1262" y="201" text-anchor="middle" class="small">[196,1024]</text>
+  <path d="M1115,193 L1155,160" class="arrow"/>
+
+  <rect x="1405" y="95" rx="10" ry="10" width="165" height="125" class="qwen"/>
+  <text x="1487" y="124" text-anchor="middle" class="head">Qwen 主 merger</text>
+  <text x="1487" y="150" text-anchor="middle" class="body">2×2 token 拼接</text>
+  <text x="1487" y="173" text-anchor="middle" class="small">196×1024</text>
+  <text x="1487" y="194" text-anchor="middle" class="small">→ 49×2048</text>
+  <text x="1487" y="213" text-anchor="middle" class="small">DeepStack=off</text>
+  <path d="M1370,157 L1405,157" class="arrow"/>
+
+  <rect x="70" y="415" rx="10" ry="10" width="275" height="110" class="qwen"/>
+  <text x="207" y="445" text-anchor="middle" class="head">冻结 Qwen Language 输入</text>
+  <text x="207" y="472" text-anchor="middle" class="body">文本 token embedding：2048</text>
+  <text x="207" y="496" text-anchor="middle" class="body">+ 49 个 merger image token</text>
+  <text x="207" y="518" text-anchor="middle" class="small">H0 [B,L,2048]，L≤224</text>
+  <path d="M1487,220 C1487,390 335,370 300,415" class="arrow"/>
+
+  <rect x="390" y="397" rx="12" ry="12" width="840" height="325" class="note"/>
+  <text x="810" y="428" text-anchor="middle" class="head">Language 两级光电替换（只占 layer 0–1；原 28 个 decoder attention/FFN 不执行）</text>
+
+  <rect x="425" y="455" rx="8" ry="8" width="185" height="70" class="elec"/>
+  <text x="517" y="480" text-anchor="middle" class="body">Linear 2048→192 + LN</text>
+  <text x="517" y="506" text-anchor="middle" class="small">Xl [B,L,192]</text>
+  <path d="M345,472 L425,488" class="arrow"/>
+
+  <rect x="645" y="451" rx="8" ry="8" width="165" height="82" class="elec"/>
+  <text x="727" y="476" text-anchor="middle" class="body">causal 1D Mixer 1</text>
+  <text x="727" y="498" text-anchor="middle" class="small">DWConv k=5</text>
+  <text x="727" y="517" text-anchor="middle" class="small">+ MLP 192→384→192</text>
+  <rect x="645" y="564" rx="8" ry="8" width="165" height="94" class="optic"/>
+  <text x="727" y="588" text-anchor="middle" class="body">Language expert</text>
+  <text x="727" y="610" text-anchor="middle" class="small">MoE4 top-2 → CCD</text>
+  <text x="727" y="630" text-anchor="middle" class="small">478→224→192</text>
+  <path d="M610,484 L645,484" class="parallel"/>
+  <path d="M610,501 C628,525 627,607 645,607" class="parallel"/>
+
+  <rect x="850" y="488" rx="8" ry="8" width="155" height="73" class="fusion"/>
+  <text x="927" y="513" text-anchor="middle" class="body">融合 Fl1</text>
+  <text x="927" y="535" text-anchor="middle" class="small">El1 + αl1 × Ol1</text>
+  <text x="927" y="554" text-anchor="middle" class="small">[B,L,192]</text>
+  <path d="M810,491 L850,510" class="parallel"/>
+  <path d="M810,610 L850,542" class="parallel"/>
+
+  <rect x="1045" y="451" rx="8" ry="8" width="155" height="82" class="elec"/>
+  <text x="1122" y="476" text-anchor="middle" class="body">causal 1D Mixer 2</text>
+  <text x="1122" y="498" text-anchor="middle" class="small">Fl1 → El2</text>
+  <rect x="1045" y="564" rx="8" ry="8" width="155" height="94" class="optic"/>
+  <text x="1122" y="588" text-anchor="middle" class="body">Language global</text>
+  <text x="1122" y="610" text-anchor="middle" class="small">478 phase → CCD</text>
+  <text x="1122" y="630" text-anchor="middle" class="small">→ Ol2 [B,L,192]</text>
+  <path d="M1005,524 L1045,487" class="parallel"/>
+  <path d="M1005,535 C1022,555 1025,608 1045,608" class="parallel"/>
+
+  <rect x="815" y="629" rx="8" ry="8" width="190" height="70" class="fusion"/>
+  <text x="910" y="653" text-anchor="middle" class="body">Zl = LN(El2 + αl2×Ol2)</text>
+  <text x="910" y="678" text-anchor="middle" class="small">[B,L,192]</text>
+  <path d="M1080,533 C1045,585 1025,644 1005,655" class="parallel"/>
+  <path d="M1080,658 L1005,672" class="parallel"/>
+
+  <rect x="1275" y="425" rx="10" ry="10" width="285" height="120" class="output"/>
+  <text x="1417" y="454" text-anchor="middle" class="head">检索 head</text>
+  <text x="1417" y="481" text-anchor="middle" class="body">token mean [192] + max [192]</text>
+  <text x="1417" y="506" text-anchor="middle" class="body">→ [384] → LN → Linear 384→64</text>
+  <text x="1417" y="530" text-anchor="middle" class="small">→ L2-normalized embedding [64]</text>
+  <path d="M1230,660 C1290,640 1270,540 1320,545" class="arrow"/>
+
+  <rect x="1275" y="585" rx="10" ry="10" width="285" height="115" class="output"/>
+  <text x="1417" y="615" text-anchor="middle" class="head">类别检索</text>
+  <text x="1417" y="642" text-anchor="middle" class="body">每类 3 gallery embedding 求均值</text>
+  <text x="1417" y="666" text-anchor="middle" class="body">→ L2 prototype → cosine ranking</text>
+  <text x="1417" y="689" text-anchor="middle" class="small">Top-1 / Top-3 / MRR</text>
+  <path d="M1417,545 L1417,585" class="arrow"/>
+
+  <rect x="70" y="760" rx="10" ry="10" width="1490" height="125" class="note"/>
+  <text x="95" y="790" class="head">一个光学阶段内部（四级共用同一数据合同、参数彼此独立）</text>
+  <text x="95" y="820" class="body">[tokens,192] → Linear 192→224 + LN + Softplus → 补齐为 224×224 振幅 → RMS=0.5 → phase exp(iφ)</text>
+  <text x="95" y="846" class="body">→ angular-spectrum 10 cm（532 nm，17 μm，k-space 0.65°）→ |field|² → CCD 478×478</text>
+  <text x="95" y="872" class="body">→ frame-mean normalization → clip 12 → log1p → pool 224×224 → row LN + ReLU → Linear 224→192 → optical delta</text>
+</svg>

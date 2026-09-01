@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="650" viewBox="0 0 1500 650">
+  <defs>
+    <style>
+      text { font-family: Arial, "Microsoft YaHei", sans-serif; fill: #17202a; }
+      .title { font-size: 27px; font-weight: 700; }
+      .head { font-size: 18px; font-weight: 700; }
+      .body { font-size: 14px; }
+      .small { font-size: 12px; fill: #455a64; }
+      .shared { fill: #e7f5eb; stroke: #27844f; stroke-width: 2; }
+      .ours { fill: #e8f1fb; stroke: #3975a8; stroke-width: 2; }
+      .sister { fill: #fff1de; stroke: #d67b18; stroke-width: 2; }
+      .score { fill: #f5eafa; stroke: #8e55a2; stroke-width: 2; }
+      .arrow { stroke: #33434d; stroke-width: 2.2; fill: none; marker-end: url(#arrow); }
+    </style>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#33434d"/>
+    </marker>
+  </defs>
+  <rect width="1500" height="650" fill="white"/>
+  <text x="750" y="42" text-anchor="middle" class="title">我们的 warmstart5 与师姐 inference：相同主体，不同任务头</text>
+
+  <rect x="45" y="105" rx="12" ry="12" width="250" height="120" class="ours"/>
+  <text x="170" y="136" text-anchor="middle" class="head">我们的输入</text>
+  <text x="170" y="165" text-anchor="middle" class="body">Caltech101 图像</text>
+  <text x="170" y="190" text-anchor="middle" class="small">224×224，image-to-image</text>
+  <text x="170" y="211" text-anchor="middle" class="small">10 类</text>
+
+  <rect x="360" y="82" rx="12" ry="12" width="650" height="165" class="shared"/>
+  <text x="685" y="116" text-anchor="middle" class="head">共享四级光电主体</text>
+  <text x="685" y="150" text-anchor="middle" class="body">Qwen patch/position → Vision expert → Vision global → main merger</text>
+  <text x="685" y="180" text-anchor="middle" class="body">→ Language expert → Language global → mean+max [384]</text>
+  <text x="685" y="210" text-anchor="middle" class="small">同一 MoE4 top-2、10 cm propagation、CCD 478→224→192、四个有界 gate</text>
+  <path d="M295,165 L360,165" class="arrow"/>
+
+  <rect x="1075" y="95" rx="12" ry="12" width="380" height="140" class="ours"/>
+  <text x="1265" y="126" text-anchor="middle" class="head">我们的 retrieval head</text>
+  <text x="1265" y="157" text-anchor="middle" class="body">LN(384) → Linear(384,64) → L2</text>
+  <text x="1265" y="184" text-anchor="middle" class="body">3 gallery/class → 10 prototypes</text>
+  <text x="1265" y="211" text-anchor="middle" class="small">200 query；Top-1 81.00%</text>
+  <path d="M1010,165 L1075,165" class="arrow"/>
+
+  <rect x="45" y="355" rx="12" ry="12" width="250" height="160" class="sister"/>
+  <text x="170" y="387" text-anchor="middle" class="head">师姐的两种输入</text>
+  <text x="170" y="420" text-anchor="middle" class="body">2400 商品图像</text>
+  <text x="170" y="449" text-anchor="middle" class="body">100 官方英文标题</text>
+  <text x="170" y="480" text-anchor="middle" class="small">image-to-title easy100</text>
+  <text x="170" y="503" text-anchor="middle" class="small">标题跳过 Vision 两级</text>
+
+  <rect x="360" y="340" rx="12" ry="12" width="650" height="190" class="shared"/>
+  <text x="685" y="374" text-anchor="middle" class="head">仍复用共享主体</text>
+  <text x="685" y="407" text-anchor="middle" class="body">图像：执行 Vision + Language 四级</text>
+  <text x="685" y="438" text-anchor="middle" class="body">标题：token embedding → 只执行 Language 两级</text>
+  <text x="685" y="469" text-anchor="middle" class="body">两者都得到 [L,192] → mean+max [384]</text>
+  <text x="685" y="502" text-anchor="middle" class="small">当前 teams/inference 仅加载冻结权重，不提供训练入口</text>
+  <path d="M295,435 L360,435" class="arrow"/>
+
+  <rect x="1075" y="328" rx="12" ry="12" width="380" height="215" class="sister"/>
+  <text x="1265" y="361" text-anchor="middle" class="head">师姐的跨模态 head</text>
+  <text x="1265" y="394" text-anchor="middle" class="body">LN384 → Linear128 → GELU → Linear64 → L2</text>
+  <text x="1265" y="427" text-anchor="middle" class="body">image rank-32 residual adapter</text>
+  <text x="1265" y="456" text-anchor="middle" class="body">text rank-32 residual adapter</text>
+  <text x="1265" y="487" text-anchor="middle" class="body">2400×100 cosine score matrix</text>
+  <text x="1265" y="520" text-anchor="middle" class="small">README 声明完整集 R@1=83.21%</text>
+  <path d="M1010,435 L1075,435" class="arrow"/>
+
+  <rect x="360" y="575" rx="10" ry="10" width="730" height="48" class="score"/>
+  <text x="725" y="606" text-anchor="middle" class="body">比较结论：差异主要在数据任务与 64D 后处理；四级光学骨干及 token 数据合同相同</text>
+</svg>
