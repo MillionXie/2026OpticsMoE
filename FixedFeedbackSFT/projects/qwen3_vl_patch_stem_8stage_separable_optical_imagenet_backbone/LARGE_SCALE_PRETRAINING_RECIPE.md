@@ -43,6 +43,9 @@ gain is only a tuning signal.
 ## Run order
 
 ```bash
+IMAGENET1K_SOURCE=/path/to/existing/data/imagenet1k \
+  bash FixedFeedbackSFT/commands/05_register_imagenet1k_cache.sh
+
 PHYSICAL_GPU_INDEX=<idle> bash FixedFeedbackSFT/projects/qwen3_vl_patch_stem_8stage_separable_optical_imagenet_backbone/commands/05_gpu_smoke_large_scale_continue.sh
 
 P11_PROXY_LOW_GPUS=<g0,g1> P11_PROXY_HIGH_GPUS=<g2,g3> \

@@ -39,6 +39,11 @@
 资产副本统一放在 `FixedFeedbackSFT/runs/_assets/`，不在 `2026OpticsMoE`
 工程外建立目录。
 
+服务器使用 linked worktree 时，不复制 312 GiB ImageNet 数据；通过
+`FixedFeedbackSFT/commands/05_register_imagenet1k_cache.sh` 把当前工作树的
+`data/imagenet1k` 安全登记到既有数据目录。脚本只会移除失败加载产生的空目录，遇到任何
+非空目标都会拒绝覆盖。
+
 ### Stage B：八层监督式 continued pretraining
 
 从 P11 epoch-88 最佳 checkpoint 启动新的 optimizer 和 cosine schedule。第一轮采用两个
