@@ -5,11 +5,17 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import sys
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
 import torch
+
+
+REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+if str(REPOSITORY_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPOSITORY_ROOT))
 
 
 def sha256_file(path: Path) -> str:
