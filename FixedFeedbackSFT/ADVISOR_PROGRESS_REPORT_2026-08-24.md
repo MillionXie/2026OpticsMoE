@@ -474,17 +474,17 @@ BP--FA non-inferiority margin。主表仍只出现四组，任务专用 head 均
 - 准确方法定义：[METHOD.md](METHOD.md)
 - 早期 V1/V2：[EXPERIMENTS.md](EXPERIMENTS.md)
 - A13、P01、P02 正式记录：
-  [FORMAL_EXPERIMENT_LOG.md](../experiments/d2nn_cifar10_high_performance_optical_backbone/FORMAL_EXPERIMENT_LOG.md)
+  [FORMAL_EXPERIMENT_LOG.md](../FixedFeedbackSFT/projects/d2nn_cifar10_high_performance_optical_backbone/FORMAL_EXPERIMENT_LOG.md)
 - 骨干优化与运行记录：
-  [OPTIMIZATION_LOG.md](../experiments/d2nn_cifar10_high_performance_optical_backbone/OPTIMIZATION_LOG.md)
+  [OPTIMIZATION_LOG.md](../FixedFeedbackSFT/projects/d2nn_cifar10_high_performance_optical_backbone/OPTIMIZATION_LOG.md)
 - P03 正式部署鲁棒性：
-  [DEPLOYMENT_ROBUSTNESS_PLAN.md](../experiments/d2nn_cifar10_high_performance_optical_backbone/DEPLOYMENT_ROBUSTNESS_PLAN.md)
+  [DEPLOYMENT_ROBUSTNESS_PLAN.md](../FixedFeedbackSFT/projects/d2nn_cifar10_high_performance_optical_backbone/DEPLOYMENT_ROBUSTNESS_PLAN.md)
 - P04 部署适配：
-  [P04_DEPLOYMENT_ADAPTATION_PLAN.md](../experiments/d2nn_cifar10_high_performance_optical_backbone/P04_DEPLOYMENT_ADAPTATION_PLAN.md)
+  [P04_DEPLOYMENT_ADAPTATION_PLAN.md](../FixedFeedbackSFT/projects/d2nn_cifar10_high_performance_optical_backbone/P04_DEPLOYMENT_ADAPTATION_PLAN.md)
 - P05 错位疫苗化：
-  [P05_MISALIGNMENT_VACCINATION_PLAN.md](../experiments/d2nn_cifar10_high_performance_optical_backbone/P05_MISALIGNMENT_VACCINATION_PLAN.md)
+  [P05_MISALIGNMENT_VACCINATION_PLAN.md](../FixedFeedbackSFT/projects/d2nn_cifar10_high_performance_optical_backbone/P05_MISALIGNMENT_VACCINATION_PLAN.md)
 - 全部历史启动命令：
-  [commands/COMMANDS.md](../experiments/d2nn_cifar10_high_performance_optical_backbone/commands/COMMANDS.md)
+  [commands/COMMANDS.md](../FixedFeedbackSFT/projects/d2nn_cifar10_high_performance_optical_backbone/commands/COMMANDS.md)
 
 本文中的 P02/P03 数值来自对应正式汇总；P04/P05 数值来自 validation pilot 汇总；P09/P11
 状态来自 2026-08-24 服务器运行快照。后续若正式运行继续推进，应更新本文件的日期和状态，

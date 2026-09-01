@@ -5,9 +5,10 @@ REPO_ROOT="$(git rev-parse --show-toplevel)"
 cd "${REPO_ROOT}"
 
 MODULE="experiments.d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400"
-EXPERIMENT_DIR="experiments/d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400"
+EXPERIMENT_DIR="FixedFeedbackSFT/projects/d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400"
 CONFIG="${EXPERIMENT_DIR}/configs/main.yaml"
-RESULT_DIR="${EXPERIMENT_DIR}/runs/main/comparison"
+RUNS_DIR="${REPO_ROOT}/FixedFeedbackSFT/runs/d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400"
+RESULT_DIR="${RUNS_DIR}/main/comparison"
 
 if [[ -n "${PYTHON_BIN:-}" ]]; then
     :

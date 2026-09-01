@@ -6,7 +6,7 @@
 ## 2026-08-18 gate 状态
 
 性能优先实验已经实现并完成，目录为
-`experiments/d2nn_cifar10_high_performance_optical_backbone`：
+`FixedFeedbackSFT/projects/d2nn_cifar10_high_performance_optical_backbone`：
 
 - G1 性能已通过：A05 CIFAR-10 full test 为 61.02%；
 - G2 光学依赖已通过：A05 normalized dependence 为 91.10%；

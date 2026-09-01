@@ -1,9 +1,0 @@
-format: p12-phase-only-adaptation-panel-v1
-base_config: experiments/qwen3_vl_patch_stem_8stage_separable_optical_downstream_fa/configs/base_50e.yaml
-output_root: experiments/qwen3_vl_patch_stem_8stage_separable_optical_downstream_fa/runs/p12_phase_only_fa_50e
-
-phase_only_panel:
-  adaptation_scope: phase_and_head
-  noft_scope: head_only
-  frozen_electronic_backbone_mode: eval
-  task_head_gradient: exact_bp

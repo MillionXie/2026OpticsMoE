@@ -1,0 +1,62 @@
+# Screen A: direct whole-backbone BP with the existing projected linear readout.
+output_dir: FixedFeedbackSFT/runs/d2nn_cifar10_high_performance_optical_backbone/p06_imagenet_8x224_screen_projected
+imagenet_config: experiments/optical_mlp_mixer_moe9_imagenet1k_clip_distill/configs/imagenet1k.json
+architecture_config: FixedFeedbackSFT/projects/d2nn_cifar10_high_performance_optical_backbone/configs/imagenet_capacity_8x224.yaml
+source_checkpoint: FixedFeedbackSFT/runs/d2nn_cifar10_high_performance_optical_backbone/p05_misalignment_vaccination/seed_2026/best.pt
+source_checkpoint_sha256: 5bd7889700f16eae112776f622b10cd52e59c064384558d85ae7be999b1aa8aa
+source_checkpoint_load_mode: integrity_only
+initial_checkpoint: FixedFeedbackSFT/runs/d2nn_cifar10_high_performance_optical_backbone/p06_imagenet_full_stage1/checkpoints/best.pt
+initial_checkpoint_sha256: 08366dd0010fc74168e870f8750cffcb9e8ee037174a026e8bddb11c8f6dea5d
+initial_checkpoint_load_mode: expanded
+model: &model
+  selected_stage_indices: [1, 3, 5, 7]
+  pool_size: 4
+  projection_dim: 512
+  num_classes: 1000
+  classifier_mode: projected_linear
+  classifier_hidden_dim: 512
+  classifier_dropout: 0.0
+loss: &loss
+  supervised_ce_weight: 2.0
+  feature_cosine_weight: 0.5
+  clip_logit_kd_weight: 0.25
+  contrastive_weight: 0.05
+  contrastive_temperature: 0.07
+  distill_temperature: 2.0
+  label_smoothing: 0.1
+optimizer: &optimizer
+  phase_learning_rate: 2.0e-5
+  residual_learning_rate: 1.0e-5
+  head_learning_rate: 2.0e-4
+  weight_decay: 1.0e-4
+  betas: [0.9, 0.999]
+  eps: 1.0e-8
+  gradient_clip_norm: 5.0
+  warmup_steps: 500
+  minimum_learning_rate_ratio: 0.2
+training: &training
+  seed: 2026
+  head_warmup_epochs: 0
+  joint_epochs: 3
+  train_samples_per_class: 100
+  validation_samples_per_class: 10
+  batch_size: 32
+  validation_batch_size: 64
+  num_workers: 6
+  persistent_workers: true
+  pin_memory: true
+  prefetch_factor: 2
+  shuffle_block_size: 4096
+  use_amp: true
+  amp_initial_scale: 256
+  amp_growth_interval: 100000
+  log_interval_batches: 100
+  checkpoint_interval_epochs: 1
+  max_train_batches: null
+  max_validation_batches: null
+  run_final_ablations: false
+gates: &gates
+  validation_top1_min: 0.0
+  clip_cosine_min: -1.0
+  optical_gate_min: 0.5
+  optical_disruption_relative_drop_min: 0.0

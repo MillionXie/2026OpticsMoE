@@ -27,18 +27,18 @@ FixedFeedbackSFT/commands/02_performance_first_runbook.md
 单元测试：
 
 ```bash
-python -m pytest experiments/d2nn_cifar100c10_fixed_feedback_20stage400/tests -q
+python -m pytest FixedFeedbackSFT/projects/d2nn_cifar100c10_fixed_feedback_20stage400/tests -q
 ```
 
 重新聚合已有结果：
 
 ```bash
-python -m experiments.d2nn_cifar100c10_fixed_feedback_20stage400 --config experiments/d2nn_cifar100c10_fixed_feedback_20stage400/configs/main.yaml --phase compare
+python -m experiments.d2nn_cifar100c10_fixed_feedback_20stage400 --config FixedFeedbackSFT/projects/d2nn_cifar100c10_fixed_feedback_20stage400/configs/main.yaml --phase compare
 ```
 
 完整分组命令见：
 
-`experiments/d2nn_cifar100c10_fixed_feedback_20stage400/commands/COMMANDS.md`
+`FixedFeedbackSFT/projects/d2nn_cifar100c10_fixed_feedback_20stage400/commands/COMMANDS.md`
 
 ## V2：CIFAR-100 → CIFAR-10 对比迁移
 
@@ -48,7 +48,7 @@ python -m experiments.d2nn_cifar100c10_fixed_feedback_20stage400 --config experi
 单元测试：
 
 ```bash
-python -m pytest experiments/d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400/tests -q
+python -m pytest FixedFeedbackSFT/projects/d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400/tests -q
 ```
 
 轻量 smoke：
@@ -60,49 +60,49 @@ python -m experiments.d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage40
 正式尺寸单 batch CUDA 检查：
 
 ```bash
-CUDA_VISIBLE_DEVICES=3 python -m experiments.d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400 --config experiments/d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400/configs/main.yaml --phase formal_smoke
+CUDA_VISIBLE_DEVICES=3 python -m experiments.d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400 --config FixedFeedbackSFT/projects/d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400/configs/main.yaml --phase formal_smoke
 ```
 
 准备数据：
 
 ```bash
-python -m experiments.d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400 --config experiments/d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400/configs/main.yaml --phase prepare_data
+python -m experiments.d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400 --config FixedFeedbackSFT/projects/d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400/configs/main.yaml --phase prepare_data
 ```
 
 共享 CIFAR-100 对比预训练：
 
 ```bash
-CUDA_VISIBLE_DEVICES=3 python -m experiments.d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400 --config experiments/d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400/configs/main.yaml --phase pretrain
+CUDA_VISIBLE_DEVICES=3 python -m experiments.d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400 --config FixedFeedbackSFT/projects/d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400/configs/main.yaml --phase pretrain
 ```
 
 NoFT：
 
 ```bash
-CUDA_VISIBLE_DEVICES=2 python -m experiments.d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400 --config experiments/d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400/configs/main.yaml --phase no_finetune
+CUDA_VISIBLE_DEVICES=2 python -m experiments.d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400 --config FixedFeedbackSFT/projects/d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400/configs/main.yaml --phase no_finetune
 ```
 
 BP：
 
 ```bash
-CUDA_VISIBLE_DEVICES=2 python -m experiments.d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400 --config experiments/d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400/configs/main.yaml --phase finetune --method bp
+CUDA_VISIBLE_DEVICES=2 python -m experiments.d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400 --config FixedFeedbackSFT/projects/d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400/configs/main.yaml --phase finetune --method bp
 ```
 
 FA-pretrained：
 
 ```bash
-CUDA_VISIBLE_DEVICES=2 python -m experiments.d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400 --config experiments/d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400/configs/main.yaml --phase finetune --method fa_pretrained
+CUDA_VISIBLE_DEVICES=2 python -m experiments.d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400 --config FixedFeedbackSFT/projects/d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400/configs/main.yaml --phase finetune --method fa_pretrained
 ```
 
 FA-random：
 
 ```bash
-CUDA_VISIBLE_DEVICES=2 python -m experiments.d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400 --config experiments/d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400/configs/main.yaml --phase finetune --method fa_random
+CUDA_VISIBLE_DEVICES=2 python -m experiments.d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400 --config FixedFeedbackSFT/projects/d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400/configs/main.yaml --phase finetune --method fa_random
 ```
 
 聚合比较：
 
 ```bash
-python -m experiments.d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400 --config experiments/d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400/configs/main.yaml --phase compare
+python -m experiments.d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400 --config FixedFeedbackSFT/projects/d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400/configs/main.yaml --phase compare
 ```
 
 单个诊断 seed 可在微调命令末尾追加：

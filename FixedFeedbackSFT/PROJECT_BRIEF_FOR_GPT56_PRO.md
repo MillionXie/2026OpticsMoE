@@ -575,11 +575,11 @@ Pareto front，而不是只追求 CIFAR-10 单点最高准确率。
 - 旧实验与边界：`FixedFeedbackSFT/EXPERIMENTS.md`
 - 既有研究计划：`FixedFeedbackSFT/RESEARCH_PLAN.md`
 - 高性能优化复盘：
-  `experiments/d2nn_cifar10_high_performance_optical_backbone/OPTIMIZATION_LOG.md`
+  `FixedFeedbackSFT/projects/d2nn_cifar10_high_performance_optical_backbone/OPTIMIZATION_LOG.md`
 - P01 四组正式日志：
-  `experiments/d2nn_cifar10_high_performance_optical_backbone/FORMAL_EXPERIMENT_LOG.md`
+  `FixedFeedbackSFT/projects/d2nn_cifar10_high_performance_optical_backbone/FORMAL_EXPERIMENT_LOG.md`
 - 高性能实验命令：
-  `experiments/d2nn_cifar10_high_performance_optical_backbone/commands/COMMANDS.md`
+  `FixedFeedbackSFT/projects/d2nn_cifar10_high_performance_optical_backbone/commands/COMMANDS.md`
 
 关键 checkpoint：
 

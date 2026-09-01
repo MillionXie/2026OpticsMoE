@@ -1,0 +1,78 @@
+# Independent contrastive-transfer experiment. Completed classification runs are untouched.
+output_dir: FixedFeedbackSFT/runs/d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400/main
+
+optical:
+  canvas_size: 400
+  num_stages: 20
+  wavelength_m: 5.32e-7
+  pixel_size_m: 1.6e-5
+  propagation_distance_m: 0.05
+  phase_parameterization: sigmoid
+  # raw_phase=0 -> physical phase=pi.
+  phase_init: zeros
+  layernorm_eps: 1.0e-5
+  residual:
+    # Both weights remain trainable through a two-way softmax at every stage.
+    # The old 0.10/0.90 initialization made it too easy to bypass optics.
+    main_init: 0.35
+    skip_init: 0.65
+  readout:
+    pool_size: 20
+    embedding_dim: 128
+    # Electronic embedding dropout only; no phase dropout is used.
+    dropout: 0.10
+
+data:
+  root: data/cifar_contrastive_fixed_feedback
+  # Reuse the already downloaded CIFAR-100 directory; torchvision adds CIFAR-10
+  # beside it without duplicating CIFAR-100.
+  torchvision_root: data/cifar100_fixed_feedback/torchvision
+  num_workers: 8
+  pin_memory: true
+  cifar100_validation_per_class: 50
+  cifar10:
+    # These labeled training images form prototypes but receive no gradient.
+    support_per_class: 100
+    validation_per_class: 200
+  split_seed: 42
+  augmentation:
+    crop_padding: 4
+    horizontal_flip: true
+
+loss:
+  contrastive_temperature: 0.10
+  prototype_temperature: 0.10
+  pretrain_supcon_weight: 1.0
+  finetune_supcon_weight: 1.0
+  finetune_prototype_weight: 0.5
+
+optimizer:
+  pretrain_phase_learning_rate: 0.01
+  # Lower than pretraining to keep fixed pretrained feedback in a small-drift regime.
+  finetune_phase_learning_rate: 0.003
+  electronic_learning_rate: 0.001
+  weight_decay: 0.0
+  betas: [0.9, 0.999]
+  eps: 1.0e-8
+
+training:
+  pretrain_epochs: 120
+  finetune_epochs: 30
+  pretrain_seed: 42
+  finetune_seeds: [1234, 2345, 3456]
+  pretrain_batch:
+    classes_per_batch: 16
+    images_per_class: 4
+    views_per_image: 2
+    batches_per_epoch: 125
+  finetune_batch:
+    classes_per_batch: 10
+    images_per_class: 6
+    views_per_image: 2
+    batches_per_epoch: 50
+  validation_batches: 20
+  evaluation_batch_size: 128
+  log_interval_batches: 25
+  checkpoint_interval_epochs: 10
+  diagnostic_epochs: [0, 1, 5, 10, 20, 30]
+  use_amp: false

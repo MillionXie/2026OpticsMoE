@@ -1,59 +1,120 @@
-# FA-pretrained 光学神经网络微调专题
+# FixedFeedbackSFT：固定光学反馈与通用光电骨干
 
-本目录是 `2026OpticsMoE` 中 fixed pretrained feedback（简称
-FA-pretrained）研究的统一入口，用于把研究动机、数学定义、现有实现、
-已完成结果和下一步计划交接给后续会话或其他合作者。
+`FixedFeedbackSFT` 是本仓库中 fixed-feedback（文中简称 FA）课题的统一工程入口。与旧布局不同，FA 主线源码现集中在 [`projects/`](projects/)；服务器已有命令仍可使用 `experiments.<project>` Python 名称，旧 checkpoint 和历史运行也不会因本次整理被搬动。
 
-## 最重要的结论
+## 当前状态快照
 
-FA-pretrained 固定的是**预训练结束时各光学层对应的反馈算子**，不是某个
-样本或某个 batch 的误差信号。微调时：
+> 以下状态在 **2026-09-01 23:36 CST** 依据进程、terminal JSON、20 条 history、日志和 SHA-256 复核。
 
-- 前向传播始终使用正在更新的当前相位；
-- 当前模型每一步都重新计算 loss 和 output error；
-- 返回前一层的光学误差连接器使用预训练时保存的相位；
-- 当前层相位参数的局部梯度仍使用当前输入、当前相位和当前误差；
-- CCD、LayerNorm、ReLU、残差权重和电子读出仍使用普通 BP。
+- P13 的 8→16-stage ImageNet growth 已于 `23:24 CST` 正常完成训练、最终验证和三项破坏性消融；它位于独立 worktree `/DATA/DATA1/guest3/2026OpticsMoE_p13_488f9d48`，而不是常用目录 `/DATA/DATA1/guest3/2026OpticsMoE`。
+- 最佳完整深度 checkpoint 出现在 epoch 19：Top-1 `51.428%`、Top-5 `75.752%`；epoch 20 为 `51.352%/75.762%`。同一训练器重新评估的 8-stage P11 起点为 `51.346%/75.560%`，最佳差值仅 `+0.082/+0.192 pp`。
+- 16 个 phase 张量均 finite、non-zero 且有梯度，最佳模型平均绝对相位移动 `0.7567 rad`；16-stage 光学参数 `2,408,448`，电子 backbone 参数 `965,128`，可训练 backbone 的光学参数占比 `71.39%`。
+- 这说明 16 层确实参与学习且可完整导出，但当前只恢复到与 8 层几乎相同的性能；在同预算 8-stage continuation 完成前，不能宣称扩深带来有效或显著性能收益。
 
-因此，它研究的是：在小漂移微调中，能否复用预训练光学网络的固定反馈
-连接器，减少真实光路中反向误差场生成和测量的需求。
+精确日志、run、checkpoint、SHA-256 和精选终态 JSON 见 [`RUN_REGISTRY.md`](RUN_REGISTRY.md) 与 [`evidence/p13_growth16_fa_source_20e_gb192/`](evidence/p13_growth16_fa_source_20e_gb192/)。
 
-## 阅读顺序
+## 目录结构
 
-1. [PROJECT_BRIEF_FOR_GPT56_PRO.md](PROJECT_BRIEF_FOR_GPT56_PRO.md)：截至 2026-08-19 的完整事实简报、证据边界、顶刊实验缺口与大模型规划问题。
-2. [HANDOFF.md](HANDOFF.md)：早期两代实验的完整背景和交接状态。
-3. [METHOD.md](METHOD.md)：数学定义、光学数据流和代码中的准确实现。
-4. [EXPERIMENTS.md](EXPERIMENTS.md)：两代实验、已有结果和已知问题。
-5. [RESEARCH_PLAN.md](RESEARCH_PLAN.md)：性能优化开始前制定的完整实验架构。
-6. [NEXT_STEPS.md](NEXT_STEPS.md)：最近一轮的执行优先级。
-7. [CODE_INDEX.md](CODE_INDEX.md)：源码、配置、结果和测试入口。
-8. [COMMANDS.md](COMMANDS.md)：可直接执行的命令。
+```text
+FixedFeedbackSFT/
+├── projects/                  # 9 个 FA 主线工程的物理源码位置
+├── commands/                  # 专题级检查/汇总入口
+├── reports/                   # 架构对比、老师汇报和可追溯图表
+├── literature/                # 论文与研究背景
+├── README.md                  # 当前入口
+├── PROJECTS.md                # 项目编号、关系、状态和结果
+├── MIGRATION.md               # 本次搬迁的兼容约束与验收流程
+├── RUN_REGISTRY.md            # 服务器 worktree 与非 Git 产物登记
+└── paths.py                   # 不依赖父目录层数的仓库路径发现
+```
 
-## 为什么没有把源码物理移动到本目录
+九个主线工程的完整目录映射见 [`PROJECTS.md`](PROJECTS.md)。最重要的 P08–P13 关系是：
 
-两套源码是可导入的 Python 实验包，已有服务器命令、checkpoint 和结果文件
-均使用 `experiments.<module>` 路径。直接移动会破坏：
+```text
+P08 冻结 Qwen Patch/Position Stem + 8-stage 基线
+  └─ P09 width-96 Slim Spatial Token Mixer
+      ├─ P10 局部/全局双尺度光学传播
+      └─ P11 token/feature 交替轴向光学传播（当前 source backbone）
+          ├─ P12 分类/分割/姿态的四组 FA 下游迁移
+          └─ P13 8→16→32→64→100 函数保持式扩深
+```
 
-- `python -m experiments...` 启动方式；
-- checkpoint 中记录的配置与输出路径；
-- 结果生成脚本使用的相对目录；
-- 现有测试和服务器复现实验。
+## 路径变了，但 Python 接口不变
 
-所以本目录作为稳定的专题入口，源码继续保留在 `experiments/`。后续若确实
-要重构，应新建第三代实验，而不是移动或覆盖已经完成的实验。
+物理路径现在是：
 
-## 当前两套实现
+```text
+FixedFeedbackSFT/projects/<project_name>/
+```
 
-| 代次 | 实验 | 状态 | 用途 |
-|---|---|---|---|
-| V1 | `d2nn_cifar100c10_fixed_feedback_20stage400` | 已完成三随机种子正式实验 | 验证反馈方向与参数漂移 |
-| V2 | `d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400` | 预训练、四组正式实验和三随机种子聚合均已完成 | 验证真实跨数据集迁移，并暴露 optical bypass 问题 |
+但公共 Python 名称继续保持：
 
-V2 固定 epoch 30 的 test accuracy 为 BP 31.00 +/- 0.52%、FA-pretrained
-31.02 +/- 0.52%、FA-random 28.19 +/- 2.24%、NoFT 27.56%。这说明主性能关系
-已经成立，但绝对性能和光学依赖均不足：预训练后平均 optical residual weight 只有
-约 0.07。当前路线已调整为先在 BP 下建立 full-test accuracy >= 60% 的 CIFAR-10
-backbone，再通过 optical-off/phase-random 等因果消融把光学依赖度提高到预注册门槛，
-最后才恢复 fixed-feedback 主实验。
+```bash
+python -m experiments.<project_name> ...
+```
 
-本专题最后整理日期：2026-08-18。
+`experiments/__init__.py` 会把 `FixedFeedbackSFT/projects` 加入 `experiments.__path__`，所以既有 import、`python -m experiments...` 和 checkpoint 中使用的模块名不需要改变。不要同时使用 `FixedFeedbackSFT.projects.<project_name>` 导入同一份源码；两个模块名可能让 Python 把同一个 class 加载两次，破坏类型判断和 checkpoint 兼容。
+
+命令中必须区分两类路径：
+
+- 脚本/config 的**物理路径**：`FixedFeedbackSFT/projects/...`；
+- Python 的**模块路径**：`experiments....`。
+
+迁移尚未通过全部验收前，不要用新布局恢复旧 formal run。详细原因和检查项见 [`MIGRATION.md`](MIGRATION.md)。
+
+## 为什么服务器上找不到 runs
+
+这不是“没有启动”的充分证据，主要有两个原因：
+
+1. 服务器长期任务使用独立、固定 commit 的 Git worktree。P13 当前产物在 `/DATA/DATA1/guest3/2026OpticsMoE_p13_488f9d48/.../runs/`，不在常用主目录。
+2. 仓库根 `.gitignore` 明确忽略 `runs`、`results`、`*.pt` 等大体积/生成产物。Git 只同步源码、配置、命令和小型报告，不会通过 `git pull` 把 checkpoint、history 或日志带到另一端。
+
+因此，两端同步分成两条通道：
+
+- **Git 通道**：源码、配置、命令、测试、Markdown、精选 source data；
+- **产物通道**：用显式路径和 checksum 单独归档日志、metrics、checkpoint，并把位置登记到 [`RUN_REGISTRY.md`](RUN_REGISTRY.md)。
+
+不要把整个 `runs/` 强行提交 Git，也不要仅凭普通主目录里没有 `runs/` 就判断任务没有执行。
+
+## 当前最清楚的科学主线
+
+FA-pretrained 固定的是预训练结束时各光学层的**层间反馈算子**，不是某个样本或 batch 的误差信号。微调时：
+
+- 前向始终使用正在更新的当前相位；
+- loss 和 output error 每个 batch 重新计算；
+- 本层 phase 局部导数仍使用当前输入和当前相位；
+- 只有跨光学 stage 的误差连接复用 source operator；
+- adapter、电子 mixer、归一化、门控和任务头仍使用普通 BP。
+
+所以准确术语是“混合光电计算中的固定层间光学反馈”，不是“整个网络不做 BP”，也不是“混合精度计算”。
+
+当前证据应分四层阅读：
+
+| 证据层 | 当前代表实验 | 能支持的结论 |
+|---|---|---|
+| Backbone 性能 | P09/P10/P11 ImageNet | P11 在单 pretraining seed 的受控筛选中最好，Top-1 `51.348%` |
+| 下游反馈 | P12 三任务、四组、3 seeds | FA-source 在分类/分割/姿态上达到 exact BP 的描述性性能水平 |
+| 机制解释 | P12 梯度余弦、phase-only、P/E/H 归因 | FA-random 总分可被电子支路补偿，不能只看最终任务分数判断光学更新质量 |
+| 规模工程 | P13 16/64/100-stage | 全深度计算图和反馈连接可反传；16 层已收口，但当前只与 8 层起点基本持平，尚无可归因的深度收益 |
+
+## 推荐阅读顺序
+
+1. [`PROJECTS.md`](PROJECTS.md)：先建立 P08–P13 与早期 V1/V2 的对应关系。
+2. [`RUN_REGISTRY.md`](RUN_REGISTRY.md)：确认当前服务器任务究竟在哪个 worktree、哪些产物只在服务器。
+3. [`reports/teacher_report_2026-09-01/README.md`](reports/teacher_report_2026-09-01/README.md)：论文中心思想、已有结果、创新点和图表。
+4. [`METHOD.md`](METHOD.md)：fixed-feedback 的数学定义和准确边界。
+5. [`MIGRATION.md`](MIGRATION.md)：修改命令、恢复 checkpoint 或同步服务器前必读。
+6. [`reports/P09_P10_P11_IMAGENET_BACKBONE_COMPARISON_2026-08-29.md`](reports/P09_P10_P11_IMAGENET_BACKBONE_COMPARISON_2026-08-29.md)：三种 8-stage 架构的受控 ImageNet 对比。
+
+历史背景仍保留在 [`HANDOFF.md`](HANDOFF.md)、[`EXPERIMENTS.md`](EXPERIMENTS.md)、[`RESEARCH_PLAN.md`](RESEARCH_PLAN.md) 和 [`PROJECT_BRIEF_FOR_GPT56_PRO.md`](PROJECT_BRIEF_FOR_GPT56_PRO.md)。这些早期文档中的 `experiments/<FA project>` 物理路径可能是迁移前写法；新工作以本页、`PROJECTS.md` 和 `MIGRATION.md` 为准。
+
+## 维护原则
+
+- 运行中的 worktree 不移动、不 pull、不 rebase、不切 commit。
+- 已完成 run 的 config、digest、implementation manifest 和 checkpoint 不原位改写。
+- 源码迁移尽量使用 `git mv`，保留历史；同一次提交不做架构语义重命名。
+- 新 run 使用新物理路径；旧 run 继续在原 worktree 复现，通过 registry 连接两代布局。
+- 修改后必须通过旧模块名 import、CLI、测试、shell 语法、checkpoint load 和 P13 migration/gradient 验收后，才能称为“整理完成”。
+- 不使用 `git add -A` 混入用户的其他实验、数据集、传输 bundle 或生成数据。
+
+本入口更新：2026-09-01。

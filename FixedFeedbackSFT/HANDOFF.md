@@ -105,7 +105,7 @@ a_next = w_optical * activated_CCD + w_skip * a_previous
 ## 5. V1 已完成实验
 
 源码：
-`experiments/d2nn_cifar100c10_fixed_feedback_20stage400`
+`FixedFeedbackSFT/projects/d2nn_cifar100c10_fixed_feedback_20stage400`
 
 协议：
 
@@ -146,7 +146,7 @@ V1 的正确解读：
 ## 6. V2 改进实验
 
 源码：
-`experiments/d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400`
+`FixedFeedbackSFT/projects/d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400`
 
 目的：去掉预训练固定 100-way 分类头带来的类别坐标绑定，测试真正的跨数据集
 迁移。

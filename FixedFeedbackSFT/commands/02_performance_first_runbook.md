@@ -5,30 +5,30 @@
 建议新实验模块名：
 
 ```text
-experiments/d2nn_cifar10_high_performance_optical_backbone
+FixedFeedbackSFT/projects/d2nn_cifar10_high_performance_optical_backbone
 ```
 
 必须实现统一 CLI：
 
 ```bash
 python -m experiments.d2nn_cifar10_high_performance_optical_backbone \
-  --config experiments/d2nn_cifar10_high_performance_optical_backbone/configs/main.yaml \
+  --config FixedFeedbackSFT/projects/d2nn_cifar10_high_performance_optical_backbone/configs/main.yaml \
   --phase prepare_data
 
 python -m experiments.d2nn_cifar10_high_performance_optical_backbone \
-  --config experiments/d2nn_cifar10_high_performance_optical_backbone/configs/main.yaml \
+  --config FixedFeedbackSFT/projects/d2nn_cifar10_high_performance_optical_backbone/configs/main.yaml \
   --phase smoke
 
 python -m experiments.d2nn_cifar10_high_performance_optical_backbone \
-  --config experiments/d2nn_cifar10_high_performance_optical_backbone/configs/main.yaml \
+  --config FixedFeedbackSFT/projects/d2nn_cifar10_high_performance_optical_backbone/configs/main.yaml \
   --phase train --seed 1234
 
 python -m experiments.d2nn_cifar10_high_performance_optical_backbone \
-  --config experiments/d2nn_cifar10_high_performance_optical_backbone/configs/main.yaml \
+  --config FixedFeedbackSFT/projects/d2nn_cifar10_high_performance_optical_backbone/configs/main.yaml \
   --phase evaluate_optical_dependence --seed 1234
 
 python -m experiments.d2nn_cifar10_high_performance_optical_backbone \
-  --config experiments/d2nn_cifar10_high_performance_optical_backbone/configs/main.yaml \
+  --config FixedFeedbackSFT/projects/d2nn_cifar10_high_performance_optical_backbone/configs/main.yaml \
   --phase compare
 ```
 

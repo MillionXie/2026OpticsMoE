@@ -4,7 +4,7 @@
 
 根目录：
 
-`experiments/d2nn_cifar100c10_fixed_feedback_20stage400`
+`FixedFeedbackSFT/projects/d2nn_cifar100c10_fixed_feedback_20stage400`
 
 | 文件 | 作用 |
 |---|---|
@@ -21,7 +21,7 @@
 
 正式结果：
 
-`experiments/d2nn_cifar100c10_fixed_feedback_20stage400/results/main`
+`FixedFeedbackSFT/runs/d2nn_cifar100c10_fixed_feedback_20stage400/main`
 
 关键 source data：
 
@@ -35,7 +35,7 @@
 
 根目录：
 
-`experiments/d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400`
+`FixedFeedbackSFT/projects/d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400`
 
 | 文件 | 作用 |
 |---|---|
@@ -51,7 +51,7 @@
 
 服务器正式结果目录：
 
-`experiments/d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400/runs/main`
+`FixedFeedbackSFT/runs/d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400/main`
 
 关键结果：
 
@@ -66,7 +66,7 @@
 
 性能优先实验已经实现：
 
-`experiments/d2nn_cifar10_high_performance_optical_backbone`
+`FixedFeedbackSFT/projects/d2nn_cifar10_high_performance_optical_backbone`
 
 - `OPTIMIZATION_LOG.md`：A00-A05 的动作、失败、阶段结果和最终结论；
 - `optics.py` / `model.py`：RGB 八层 OEO 骨干、受约束残差和光学消融；

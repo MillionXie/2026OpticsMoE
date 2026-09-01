@@ -133,7 +133,7 @@ source pretraining，而不是只延长现有训练。
 
 V1 结果原始表位于：
 
-- `experiments/d2nn_cifar100c10_fixed_feedback_20stage400/results/main/source_data/`
+- `FixedFeedbackSFT/runs/d2nn_cifar100c10_fixed_feedback_20stage400/main/source_data/`
 - `aggregate_performance.csv`
 - `aggregate_geometry.csv`
 - `checkpoint_performance.csv`
@@ -142,7 +142,7 @@ V1 结果原始表位于：
 
 V2 服务器结果位于：
 
-- `experiments/d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400/runs/main/comparison/`
+- `FixedFeedbackSFT/runs/d2nn_cifar100_cifar10_fixed_feedback_contrastive_20stage400/main/comparison/`
 - `aggregate.csv`
 - `task_metrics.csv`
 - `endpoint_geometry.csv`
