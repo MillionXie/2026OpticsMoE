@@ -1,0 +1,4 @@
+model,description,pretraining_seed,val_top1,notes
+P09,standard 2D optical mixing,2026,0.49812,single source-pretraining run
+P10,multiscale optical mixing,2026,0.50888,single source-pretraining run
+P11,alternating token/feature-axis optical mixing,2026,0.51348,best epoch 88; top5 0.75552

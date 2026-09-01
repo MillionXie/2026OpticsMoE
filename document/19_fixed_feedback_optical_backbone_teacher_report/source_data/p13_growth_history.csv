@@ -1,0 +1,7 @@
+epoch,alpha,val_top1,val_top5,phase_motion_mean_abs_rad,new_phase_nonzero,carried_phase_nonzero,status
+0,0.0,0.51346,0.75560,0.0,0,0,P13 re-evaluation of P11 source checkpoint
+1,0.02,0.49886,0.74384,0.15581,8,8,interim growth
+2,0.1288889,0.49250,0.73836,0.35965,8,8,interim growth
+3,0.2377778,0.49874,0.74174,0.45827,8,8,interim growth
+4,0.3466667,0.49728,0.74322,0.52720,8,8,interim growth
+5,0.4555556,0.49616,0.74318,0.58076,8,8,interim growth

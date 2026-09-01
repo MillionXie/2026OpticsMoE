@@ -1,0 +1,73 @@
+body_regime,task,metric,method,seed,value,body_init_seed,notes
+imagenet_pretrained,caltech101,top1,noft,2026,0.7864352753674517,,P11 epoch-88 body
+imagenet_pretrained,caltech101,top1,noft,2027,0.7485390472817425,,P11 epoch-88 body
+imagenet_pretrained,caltech101,top1,noft,2028,0.7738622277315389,,P11 epoch-88 body
+imagenet_pretrained,caltech101,top1,bp_current,2026,0.7901540641048345,,P11 epoch-88 body
+imagenet_pretrained,caltech101,top1,bp_current,2027,0.7834248273419515,,P11 epoch-88 body
+imagenet_pretrained,caltech101,top1,bp_current,2028,0.8002479192491588,,P11 epoch-88 body
+imagenet_pretrained,caltech101,top1,fa_source,2026,0.7892686382149814,,P11 epoch-88 body
+imagenet_pretrained,caltech101,top1,fa_source,2027,0.7830706569860103,,P11 epoch-88 body
+imagenet_pretrained,caltech101,top1,fa_source,2028,0.8115813706392775,,P11 epoch-88 body
+imagenet_pretrained,caltech101,top1,fa_random,2026,0.7958207897998938,,P11 epoch-88 body
+imagenet_pretrained,caltech101,top1,fa_random,2027,0.7825394014520984,,P11 epoch-88 body
+imagenet_pretrained,caltech101,top1,fa_random,2028,0.7866123605454224,,P11 epoch-88 body
+imagenet_pretrained,isic2016,miou,noft,2026,0.8177751708182317,,P11 epoch-88 body
+imagenet_pretrained,isic2016,miou,noft,2027,0.8106871861755592,,P11 epoch-88 body
+imagenet_pretrained,isic2016,miou,noft,2028,0.8120493492121393,,P11 epoch-88 body
+imagenet_pretrained,isic2016,miou,bp_current,2026,0.8410472869971339,,P11 epoch-88 body
+imagenet_pretrained,isic2016,miou,bp_current,2027,0.8385276990355358,,P11 epoch-88 body
+imagenet_pretrained,isic2016,miou,bp_current,2028,0.8410512121851337,,P11 epoch-88 body
+imagenet_pretrained,isic2016,miou,fa_source,2026,0.8409644508535303,,P11 epoch-88 body
+imagenet_pretrained,isic2016,miou,fa_source,2027,0.8381817353678017,,P11 epoch-88 body
+imagenet_pretrained,isic2016,miou,fa_source,2028,0.8406257922331112,,P11 epoch-88 body
+imagenet_pretrained,isic2016,miou,fa_random,2026,0.8427424615698726,,P11 epoch-88 body
+imagenet_pretrained,isic2016,miou,fa_random,2027,0.8439842276029427,,P11 epoch-88 body
+imagenet_pretrained,isic2016,miou,fa_random,2028,0.8416094242749947,,P11 epoch-88 body
+imagenet_pretrained,lsp,pck_torso_0p2,noft,2026,0.5036428571428572,,P11 epoch-88 body
+imagenet_pretrained,lsp,pck_torso_0p2,noft,2027,0.49907142857142855,,P11 epoch-88 body
+imagenet_pretrained,lsp,pck_torso_0p2,noft,2028,0.5072857142857143,,P11 epoch-88 body
+imagenet_pretrained,lsp,pck_torso_0p2,bp_current,2026,0.7082857142857143,,P11 epoch-88 body
+imagenet_pretrained,lsp,pck_torso_0p2,bp_current,2027,0.7117142857142857,,P11 epoch-88 body
+imagenet_pretrained,lsp,pck_torso_0p2,bp_current,2028,0.7151428571428572,,P11 epoch-88 body
+imagenet_pretrained,lsp,pck_torso_0p2,fa_source,2026,0.7112857142857143,,P11 epoch-88 body
+imagenet_pretrained,lsp,pck_torso_0p2,fa_source,2027,0.712,,P11 epoch-88 body
+imagenet_pretrained,lsp,pck_torso_0p2,fa_source,2028,0.7128571428571429,,P11 epoch-88 body
+imagenet_pretrained,lsp,pck_torso_0p2,fa_random,2026,0.7057857142857142,,P11 epoch-88 body
+imagenet_pretrained,lsp,pck_torso_0p2,fa_random,2027,0.7069285714285715,,P11 epoch-88 body
+imagenet_pretrained,lsp,pck_torso_0p2,fa_random,2028,0.7097857142857142,,P11 epoch-88 body
+no_imagenet_body,caltech101,top1,noft,2026,0.22383566495484328,2026,Frozen pretrained Qwen stem retained
+no_imagenet_body,caltech101,top1,noft,2027,0.2197627058615194,2026,Frozen pretrained Qwen stem retained
+no_imagenet_body,caltech101,top1,noft,2028,0.2156897467681955,2026,Frozen pretrained Qwen stem retained
+no_imagenet_body,caltech101,top1,bp_current,2026,0.347795289534266,2026,Frozen pretrained Qwen stem retained
+no_imagenet_body,caltech101,top1,bp_current,2027,0.36373295555162033,2026,Frozen pretrained Qwen stem retained
+no_imagenet_body,caltech101,top1,bp_current,2028,0.384451921374181,2026,Frozen pretrained Qwen stem retained
+no_imagenet_body,caltech101,top1,fa_source,2026,0.3357534974322649,2026,Source-init feedback from the same random body
+no_imagenet_body,caltech101,top1,fa_source,2027,0.36656631839915,2026,Source-init feedback from the same random body
+no_imagenet_body,caltech101,top1,fa_source,2028,0.3837435806622986,2026,Source-init feedback from the same random body
+no_imagenet_body,caltech101,top1,fa_random,2026,0.26456525588808216,2026,Frozen pretrained Qwen stem retained
+no_imagenet_body,caltech101,top1,fa_random,2027,0.25447140074375774,2026,Frozen pretrained Qwen stem retained
+no_imagenet_body,caltech101,top1,fa_random,2028,0.3019302284398796,2026,Frozen pretrained Qwen stem retained
+no_imagenet_body,isic2016,miou,noft,2026,0.6883940180336029,2026,Frozen pretrained Qwen stem retained
+no_imagenet_body,isic2016,miou,noft,2027,0.6874531938210326,2026,Frozen pretrained Qwen stem retained
+no_imagenet_body,isic2016,miou,noft,2028,0.6853795524460502,2026,Frozen pretrained Qwen stem retained
+no_imagenet_body,isic2016,miou,bp_current,2026,0.8169046766855718,2026,Frozen pretrained Qwen stem retained
+no_imagenet_body,isic2016,miou,bp_current,2027,0.8196431158361146,2026,Frozen pretrained Qwen stem retained
+no_imagenet_body,isic2016,miou,bp_current,2028,0.8192334857064061,2026,Frozen pretrained Qwen stem retained
+no_imagenet_body,isic2016,miou,fa_source,2026,0.8182841892413166,2026,Source-init feedback from the same random body
+no_imagenet_body,isic2016,miou,fa_source,2027,0.821607109228036,2026,Source-init feedback from the same random body
+no_imagenet_body,isic2016,miou,fa_source,2028,0.819849105802485,2026,Source-init feedback from the same random body
+no_imagenet_body,isic2016,miou,fa_random,2026,0.7858786777977765,2026,Frozen pretrained Qwen stem retained
+no_imagenet_body,isic2016,miou,fa_random,2027,0.771849774692876,2026,Frozen pretrained Qwen stem retained
+no_imagenet_body,isic2016,miou,fa_random,2028,0.7651181184910336,2026,Frozen pretrained Qwen stem retained
+no_imagenet_body,lsp,pck_torso_0p2,noft,2026,0.31357142857142856,2026,Frozen pretrained Qwen stem retained
+no_imagenet_body,lsp,pck_torso_0p2,noft,2027,0.305,2026,Frozen pretrained Qwen stem retained
+no_imagenet_body,lsp,pck_torso_0p2,noft,2028,0.31707142857142856,2026,Frozen pretrained Qwen stem retained
+no_imagenet_body,lsp,pck_torso_0p2,bp_current,2026,0.477,2026,Frozen pretrained Qwen stem retained
+no_imagenet_body,lsp,pck_torso_0p2,bp_current,2027,0.4732142857142857,2026,Frozen pretrained Qwen stem retained
+no_imagenet_body,lsp,pck_torso_0p2,bp_current,2028,0.4694285714285714,2026,Frozen pretrained Qwen stem retained
+no_imagenet_body,lsp,pck_torso_0p2,fa_source,2026,0.48064285714285715,2026,Source-init feedback from the same random body
+no_imagenet_body,lsp,pck_torso_0p2,fa_source,2027,0.46985714285714286,2026,Source-init feedback from the same random body
+no_imagenet_body,lsp,pck_torso_0p2,fa_source,2028,0.47,2026,Source-init feedback from the same random body
+no_imagenet_body,lsp,pck_torso_0p2,fa_random,2026,0.4032857142857143,2026,Frozen pretrained Qwen stem retained
+no_imagenet_body,lsp,pck_torso_0p2,fa_random,2027,0.4147142857142857,2026,Frozen pretrained Qwen stem retained
+no_imagenet_body,lsp,pck_torso_0p2,fa_random,2028,0.3935,2026,Frozen pretrained Qwen stem retained
