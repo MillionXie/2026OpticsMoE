@@ -19,6 +19,11 @@ DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "formal_results"
 DEFAULT_MARKDOWN = PROJECT_ROOT / "FORMAL_RESULTS.md"
 BOOTSTRAP_SEED = 20260902
 BOOTSTRAP_RESAMPLES = 10_000
+# Metrics are accumulated in torch.float32, while CSV prediction means are
+# recomputed in Python float64.  One float32 ULP around [0,1] is ~1e-7, so the
+# artifact-consistency check must tolerate representation error without being
+# loose enough to hide even one changed query (1/200 = 5e-3).
+METRIC_ATOL = 1.0e-6
 
 METRICS = (
     "top1_retrieval_accuracy",
@@ -371,7 +376,7 @@ def _inspect_run(spec: RunSpec, runs_dir: Path) -> dict[str, Any]:
                 weighted,
                 record["metrics"][overall_metric],
                 rel_tol=0.0,
-                abs_tol=1.0e-7,
+                abs_tol=METRIC_ATOL,
             ):
                 raise ValueError(
                     f"Weighted per_sku {class_metric} disagrees with {overall_metric}"
@@ -438,7 +443,7 @@ def _inspect_run(spec: RunSpec, runs_dir: Path) -> dict[str, Any]:
                 observed_top1,
                 record["metrics"]["top1_retrieval_accuracy"],
                 rel_tol=0.0,
-                abs_tol=1.0e-8,
+                abs_tol=METRIC_ATOL,
             ):
                 raise ValueError(
                     "retrieval_results Top-1 disagrees with student_metrics"
@@ -451,7 +456,7 @@ def _inspect_run(spec: RunSpec, runs_dir: Path) -> dict[str, Any]:
                     observed_top3,
                     record["metrics"]["top3_retrieval_accuracy"],
                     rel_tol=0.0,
-                    abs_tol=1.0e-8,
+                    abs_tol=METRIC_ATOL,
                 ):
                     raise ValueError(
                         "retrieval_results Top-3 disagrees with student_metrics"
@@ -464,7 +469,7 @@ def _inspect_run(spec: RunSpec, runs_dir: Path) -> dict[str, Any]:
                     observed_mrr,
                     record["metrics"]["mrr"],
                     rel_tol=0.0,
-                    abs_tol=1.0e-7,
+                    abs_tol=METRIC_ATOL,
                 ):
                     raise ValueError("retrieval_results MRR disagrees with student_metrics")
     except Exception as exc:  # Preserve other completed runs in a partial report.
