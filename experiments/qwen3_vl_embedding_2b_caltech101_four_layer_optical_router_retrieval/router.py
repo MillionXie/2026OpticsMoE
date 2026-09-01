@@ -241,8 +241,13 @@ class OpticalDetectorTopKRouter(nn.Module):
             "selected_mask",
             "selected_indices",
         }
+        optional = {
+            "detector_energy",
+            "detector_energy_fraction",
+            "capture_fraction",
+        }
         missing = required.difference(payload)
-        unexpected = set(payload).difference(required)
+        unexpected = set(payload).difference(required | optional)
         if missing or unexpected:
             raise ValueError(
                 "Measured routing payload keys mismatch: "
@@ -250,7 +255,7 @@ class OpticalDetectorTopKRouter(nn.Module):
             )
         self._measured_routing = {
             key: torch.as_tensor(payload[key]).detach().cpu().clone()
-            for key in sorted(required)
+            for key in sorted(payload)
         }
 
     def _measured_forward(
@@ -304,6 +309,11 @@ class OpticalDetectorTopKRouter(nn.Module):
             )
         if not bool((selected.sum(dim=-1) == self.top_k).all()):
             raise ValueError("Measured routing does not select exactly top_k experts")
+        expected_indices = torch.topk(probabilities, self.top_k, dim=-1).indices
+        if not torch.equal(indices, expected_indices):
+            raise ValueError(
+                "Measured selected_indices are not the deterministic top-k of probabilities"
+            )
         if bool((weights.masked_select(~selected).abs() > 1.0e-7).any()):
             raise ValueError("Measured unselected expert weights must be zero")
         if self.weight_normalization == "legacy_l1":
@@ -317,6 +327,20 @@ class OpticalDetectorTopKRouter(nn.Module):
             atol=1.0e-5,
             msg="Measured routing weights violate the configured normalization",
         )
+        expected_weights, _, _ = sparsify_probabilities(
+            probabilities,
+            self.top_k,
+            normalization=self.weight_normalization,
+            straight_through=False,
+            eps=self.eps,
+        )
+        torch.testing.assert_close(
+            weights,
+            expected_weights,
+            rtol=1.0e-4,
+            atol=1.0e-5,
+            msg="Measured weights do not match probabilities/top-k/normalization",
+        )
 
         importance = probabilities.mean(dim=0)
         load = selected.float().mean(dim=0) / float(self.top_k)
@@ -327,8 +351,38 @@ class OpticalDetectorTopKRouter(nn.Module):
         entropy = -(
             probabilities.clamp_min(self.eps).log() * probabilities
         ).sum(dim=-1).mean() / math.log(float(self.num_experts))
-        energy = probabilities
-        captured = torch.ones(batch, device=device, dtype=dtype)
+        energy = self._measured_routing.get("detector_energy", probabilities).to(
+            device=device, dtype=dtype
+        )
+        energy_fraction = self._measured_routing.get(
+            "detector_energy_fraction", probabilities
+        ).to(device=device, dtype=dtype)
+        captured = self._measured_routing.get(
+            "capture_fraction", torch.ones(batch)
+        ).to(device=device, dtype=dtype)
+        if tuple(energy.shape) != expected or tuple(energy_fraction.shape) != expected:
+            raise ValueError("Measured detector energy tensors must have shape [B,4]")
+        if tuple(captured.shape) != (batch,):
+            raise ValueError("Measured capture_fraction must have shape [B]")
+        if not bool(torch.isfinite(energy).all()) or bool((energy < 0.0).any()):
+            raise ValueError("Measured detector_energy must be finite and nonnegative")
+        if not bool(torch.isfinite(energy_fraction).all()) or bool(
+            (energy_fraction < 0.0).any()
+        ):
+            raise ValueError(
+                "Measured detector_energy_fraction must be finite and nonnegative"
+            )
+        if not bool(torch.isfinite(captured).all()) or bool(
+            ((captured < 0.0) | (captured > 1.0)).any()
+        ):
+            raise ValueError("Measured capture_fraction must be finite and in [0,1]")
+        torch.testing.assert_close(
+            energy_fraction.sum(dim=-1),
+            torch.ones(batch, device=device, dtype=dtype),
+            rtol=1.0e-4,
+            atol=1.0e-5,
+            msg="Measured detector energy fractions must sum to one",
+        )
         self.last_detector_energy = energy.detach()
         self.last_capture_fraction = captured.detach()
         self.last_detector_intensity = None
@@ -345,9 +399,9 @@ class OpticalDetectorTopKRouter(nn.Module):
             "importance": importance,
             "load": load,
             "detector_energy": energy,
-            "detector_energy_fraction": probabilities,
+            "detector_energy_fraction": energy_fraction,
             "capture_fraction": captured,
-            "capture_loss": input_fields.new_zeros(()),
+            "capture_loss": (1.0 - captured).mean(),
             "capture_loss_scale": input_fields.new_tensor(self.capture_loss_scale),
             "weight_normalization": self.weight_normalization,
             "straight_through": False,

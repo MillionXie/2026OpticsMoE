@@ -50,7 +50,7 @@ def router_contract_payload(settings: Any) -> dict[str, Any]:
             "pool_size": settings.router_pool_size,
             "input_layernorm_enabled": settings.router_input_layernorm_enabled,
             "input_layernorm_eps": settings.router_input_layernorm_eps,
-            "gate_init_std": settings.router_gate_init_std,
+            "gate_init_std": getattr(settings, "router_gate_init_std", 0.01),
             "train_logit_noise_std": settings.router_noise_std,
         }
     else:
