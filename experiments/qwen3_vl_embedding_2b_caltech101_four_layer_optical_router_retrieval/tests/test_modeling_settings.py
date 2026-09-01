@@ -33,6 +33,15 @@ def test_release_configs_have_distinct_strict_architectures() -> None:
     assert all(value.router_reset_parameters for value in settings[1:])
     assert all(value.router_straight_through for value in settings[1:])
     assert all(value.phase_focus_enabled is False for value in settings)
+    assert all(value.weight_decay == 0.0 for value in settings)
+    optical = settings[-1]
+    assert optical.optical_router_detector_intervals == ((164, 223), (255, 314))
+    assert optical.optical_router_required_center_angle_deg < 0.65
+    assert len(optical.router_contract_sha256) == 64
+    assert optical.router_contract["optical"]["detector_intervals"] == [
+        [164, 223],
+        [255, 314],
+    ]
 
 
 def test_strict_electronic_transplant_loads_every_tensor() -> None:

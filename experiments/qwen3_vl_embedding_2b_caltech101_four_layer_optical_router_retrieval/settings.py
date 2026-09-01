@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import hashlib
+import json
+import math
 from pathlib import Path
 from typing import Any
 
@@ -19,6 +22,79 @@ from .router import ROUTING_NORMALIZATIONS
 
 ROUTER_BACKENDS = {"electronic", "optical"}
 SCORE_NORMALIZATIONS = {"standardized_region_energy", "log_energy_fraction"}
+
+
+def router_contract_payload(settings: Any) -> dict[str, Any]:
+    """Return every setting that changes router numerics or hardware meaning."""
+
+    common: dict[str, Any] = {
+        "schema_version": 1,
+        "backend": settings.router_backend,
+        "top_k": settings.top_k,
+        "temperature": settings.router_temperature,
+        "weight_normalization": settings.router_weight_normalization,
+        "straight_through": settings.router_straight_through,
+        "amplitude_weight_domain": settings.amplitude_slm_weight_domain,
+        "geometry": {
+            "canvas_size": settings.canvas_size,
+            "active_size": settings.active_size,
+            "expert_size": settings.expert_size,
+            "expert_pitch": settings.expert_pitch,
+            "num_experts": settings.num_experts,
+            "grid_rows": settings.expert_grid_rows,
+            "grid_cols": settings.expert_grid_cols,
+        },
+    }
+    if settings.router_backend == "electronic":
+        common["electronic"] = {
+            "pool_size": settings.router_pool_size,
+            "input_layernorm_enabled": settings.router_input_layernorm_enabled,
+            "input_layernorm_eps": settings.router_input_layernorm_eps,
+            "gate_init_std": settings.router_gate_init_std,
+            "train_logit_noise_std": settings.router_noise_std,
+        }
+    else:
+        common["optical"] = {
+            "detector_intervals": [
+                list(value) for value in settings.optical_router_detector_intervals
+            ],
+            "score_normalization": settings.optical_router_score_normalization,
+            "energy_eps": settings.optical_router_energy_eps,
+            "capture_loss_scale": settings.optical_router_capture_loss_scale,
+            "phase_dropout_p": settings.optical_router_phase_dropout_p,
+            "phase_dropout_block_size": settings.optical_router_phase_dropout_block_size,
+            "input_shift_pixels": settings.optical_router_input_shift_pixels,
+            "phase_shift_pixels": settings.optical_router_phase_shift_pixels,
+            "ccd_shift_pixels": settings.optical_router_ccd_shift_pixels,
+            "wavelength_nm": settings.language_optical_wavelength_nm,
+            "logical_pixel_pitch_um": settings.language_optical_pixel_pitch_um,
+            "distance_m": settings.language_optical_distance_m,
+            "k_space_enabled": settings.language_optical_k_space_enabled,
+            "theta_max_deg": settings.language_optical_theta_max_deg,
+            "phase_parameterization": "2pi_sigmoid",
+            "phase_slm": {
+                "width": settings.hardware_phase_slm_width,
+                "height": settings.hardware_phase_slm_height,
+                "pixel_pitch_um": settings.hardware_phase_slm_pixel_pitch_um,
+                "center_xy": [
+                    settings.hardware_phase_slm_center_x,
+                    settings.hardware_phase_slm_center_y,
+                ],
+                "flip_vertical": settings.hardware_phase_flip_vertical,
+                "flip_horizontal": settings.hardware_phase_flip_horizontal,
+            },
+        }
+    return common
+
+
+def router_contract_sha256(settings: Any) -> str:
+    encoded = json.dumps(
+        router_contract_payload(settings),
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
 
 
 def _required_path(value: Any, config_path: Path, label: str) -> Path:
@@ -189,6 +265,37 @@ def load_settings(path: str | Path) -> Any:
         previous_end = end
     if (intervals[0][1] - intervals[0][0]) != (intervals[1][1] - intervals[1][0]):
         raise ValueError("all optical router detector windows must have equal area")
+    detector_center = 0.5 * (settings.active_size - 1)
+    interval_centers = [0.5 * (start + end - 1) for start, end in intervals]
+    radial_pixels = max(
+        math.hypot(x - detector_center, y - detector_center)
+        for x in interval_centers
+        for y in interval_centers
+    )
+    transverse_ratio = (
+        radial_pixels
+        * settings.language_optical_pixel_pitch_um
+        * 1.0e-6
+        / settings.language_optical_distance_m
+    )
+    if transverse_ratio >= 1.0:
+        raise ValueError("optical router detector target is not physically reachable")
+    settings.optical_router_required_center_angle_deg = math.degrees(
+        math.asin(transverse_ratio)
+    )
+    if (
+        settings.router_backend == "optical"
+        and settings.language_optical_k_space_enabled
+        and settings.optical_router_required_center_angle_deg
+        > settings.language_optical_theta_max_deg
+    ):
+        raise ValueError(
+            "Optical-router detector centres require "
+            f"{settings.optical_router_required_center_angle_deg:.6f} deg but the "
+            f"radial k-space cutoff is {settings.language_optical_theta_max_deg:.6f} deg"
+        )
+    settings.router_contract = router_contract_payload(settings)
+    settings.router_contract_sha256 = router_contract_sha256(settings)
     return settings
 
 
@@ -206,6 +313,8 @@ def save_resolved_config(settings: Any) -> None:
         "source_checkpoint": str(settings.router_source_checkpoint),
         "source_sha256": settings.router_source_sha256,
         "source_test_used_for_selection": False,
+        "contract": settings.router_contract,
+        "contract_sha256": settings.router_contract_sha256,
         "global_reuses_expert_routing": True,
         "optical": {
             "extra_router_exposures_per_sample": (
@@ -238,6 +347,9 @@ def save_resolved_config(settings: Any) -> None:
             "wavelength_nm": settings.language_optical_wavelength_nm,
             "logical_pixel_pitch_um": settings.language_optical_pixel_pitch_um,
             "learned_electronic_head_after_ccd": False,
+            "required_detector_center_angle_deg": (
+                settings.optical_router_required_center_angle_deg
+            ),
         },
     }
     values["language_optical"]["layout"] = (
@@ -252,5 +364,7 @@ __all__ = [
     "ROUTER_BACKENDS",
     "SCORE_NORMALIZATIONS",
     "load_settings",
+    "router_contract_payload",
+    "router_contract_sha256",
     "save_resolved_config",
 ]

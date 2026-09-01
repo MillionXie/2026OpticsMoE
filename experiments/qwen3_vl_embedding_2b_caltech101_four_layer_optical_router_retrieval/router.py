@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from typing import Any
+from typing import Any, Mapping
 
 import torch
 from torch import nn
@@ -61,7 +61,11 @@ def sparsify_probabilities(
         dense = probabilities / probabilities.square().sum(
             dim=-1, keepdim=True
         ).sqrt().clamp_min(eps)
-    weights = hard + (dense - dense.detach()) if straight_through else hard
+    # Standard straight-through estimator: the numerical forward is exactly
+    # ``hard`` while the backward Jacobian is exactly that of ``dense``.
+    # Writing ``hard + dense - dense.detach()`` would incorrectly retain the
+    # hard-branch gradient as well (and doubles the k=4 dense gradient).
+    weights = hard.detach() + dense - dense.detach() if straight_through else hard
     return weights, selected, indices
 
 
@@ -214,6 +218,145 @@ class OpticalDetectorTopKRouter(nn.Module):
         self.last_detector_energy: torch.Tensor | None = None
         self.last_capture_fraction: torch.Tensor | None = None
         self.last_shifts: dict[str, tuple[int, int]] = {}
+        self._measured_routing: dict[str, torch.Tensor] | None = None
+
+    def set_measured_routing(
+        self, payload: Mapping[str, torch.Tensor] | None
+    ) -> None:
+        """Install an explicit batch-aligned hardware routing decision.
+
+        This is intentionally a routing contract rather than a measured CCD
+        setter: the hardware bridge rectifies the CCD to canonical 478x478,
+        integrates the four audited windows and records the resulting routing
+        manifest before injecting these four tensors.  ``None`` restores the
+        differentiable optical simulation.
+        """
+
+        if payload is None:
+            self._measured_routing = None
+            return
+        required = {
+            "probabilities",
+            "weights",
+            "selected_mask",
+            "selected_indices",
+        }
+        missing = required.difference(payload)
+        unexpected = set(payload).difference(required)
+        if missing or unexpected:
+            raise ValueError(
+                "Measured routing payload keys mismatch: "
+                f"missing={sorted(missing)} unexpected={sorted(unexpected)}"
+            )
+        self._measured_routing = {
+            key: torch.as_tensor(payload[key]).detach().cpu().clone()
+            for key in sorted(required)
+        }
+
+    def _measured_forward(
+        self, input_fields: torch.Tensor
+    ) -> dict[str, torch.Tensor | str | bool]:
+        if self._measured_routing is None:
+            raise RuntimeError("No measured routing payload is installed")
+        batch = len(input_fields)
+        device = input_fields.device
+        dtype = input_fields.dtype
+        probabilities = self._measured_routing["probabilities"].to(
+            device=device, dtype=dtype
+        )
+        weights = self._measured_routing["weights"].to(device=device, dtype=dtype)
+        selected = self._measured_routing["selected_mask"].to(
+            device=device, dtype=torch.bool
+        )
+        indices = self._measured_routing["selected_indices"].to(
+            device=device, dtype=torch.long
+        )
+        expected = (batch, self.num_experts)
+        if tuple(probabilities.shape) != expected or tuple(weights.shape) != expected:
+            raise ValueError(
+                f"Measured probabilities/weights must both be {expected}, got "
+                f"{tuple(probabilities.shape)} and {tuple(weights.shape)}"
+            )
+        if tuple(selected.shape) != expected or tuple(indices.shape) != (
+            batch,
+            self.top_k,
+        ):
+            raise ValueError(
+                "Measured selected_mask/selected_indices shape mismatch for "
+                f"batch={batch}, top_k={self.top_k}"
+            )
+        for label, value in (("probabilities", probabilities), ("weights", weights)):
+            if not bool(torch.isfinite(value).all()):
+                raise ValueError(f"Measured routing {label} contains non-finite values")
+            if bool((value < 0.0).any()):
+                raise ValueError(f"Measured routing {label} must be nonnegative")
+        torch.testing.assert_close(
+            probabilities.sum(dim=-1),
+            torch.ones(batch, device=device, dtype=dtype),
+            rtol=1.0e-4,
+            atol=1.0e-5,
+            msg="Measured routing probabilities must sum to one",
+        )
+        reconstructed_mask = torch.zeros_like(selected).scatter(1, indices, True)
+        if not torch.equal(selected, reconstructed_mask):
+            raise ValueError(
+                "Measured selected_indices do not encode the supplied selected_mask"
+            )
+        if not bool((selected.sum(dim=-1) == self.top_k).all()):
+            raise ValueError("Measured routing does not select exactly top_k experts")
+        if bool((weights.masked_select(~selected).abs() > 1.0e-7).any()):
+            raise ValueError("Measured unselected expert weights must be zero")
+        if self.weight_normalization == "legacy_l1":
+            norm = weights.sum(dim=-1)
+        else:
+            norm = weights.square().sum(dim=-1).sqrt()
+        torch.testing.assert_close(
+            norm,
+            torch.ones_like(norm),
+            rtol=1.0e-4,
+            atol=1.0e-5,
+            msg="Measured routing weights violate the configured normalization",
+        )
+
+        importance = probabilities.mean(dim=0)
+        load = selected.float().mean(dim=0) / float(self.top_k)
+        balance = float(self.num_experts) * torch.sum(importance * load)
+        importance_loss = (
+            float(self.num_experts) * torch.sum(importance.square()) - 1.0
+        )
+        entropy = -(
+            probabilities.clamp_min(self.eps).log() * probabilities
+        ).sum(dim=-1).mean() / math.log(float(self.num_experts))
+        energy = probabilities
+        captured = torch.ones(batch, device=device, dtype=dtype)
+        self.last_detector_energy = energy.detach()
+        self.last_capture_fraction = captured.detach()
+        self.last_detector_intensity = None
+        return {
+            "logits": probabilities.clamp_min(self.eps).log() * self.temperature,
+            "probabilities": probabilities,
+            "weights": weights,
+            "selected_mask": selected,
+            "selected_indices": indices,
+            "balance_loss": balance,
+            "load_balance_loss": balance,
+            "importance_loss": importance_loss,
+            "normalized_entropy": entropy,
+            "importance": importance,
+            "load": load,
+            "detector_energy": energy,
+            "detector_energy_fraction": probabilities,
+            "capture_fraction": captured,
+            "capture_loss": input_fields.new_zeros(()),
+            "capture_loss_scale": input_fields.new_tensor(self.capture_loss_scale),
+            "weight_normalization": self.weight_normalization,
+            "straight_through": False,
+            "score_normalization": "precomputed_from_measured_router_ccd",
+            "router_implementation": self.implementation_name,
+            "phase_prompt_used": True,
+            "amplitude_phase_relay": "measured_router_manifest",
+            "measured_routing": True,
+        }
 
     def _four_spot_initial_phase(
         self, intervals: tuple[tuple[int, int], tuple[int, int]]
@@ -332,6 +475,8 @@ class OpticalDetectorTopKRouter(nn.Module):
                 f"Optical router input must be [B,{self.input_size},{self.input_size}], "
                 f"got {tuple(input_fields.shape)}"
             )
+        if self._measured_routing is not None:
+            return self._measured_forward(input_fields)
         intensity = self._simulate(input_fields)
         energy = torch.einsum("bhw,ehw->be", intensity, self.detector_masks)
         total_energy = intensity.sum(dim=(-2, -1)).clamp_min(self.eps)

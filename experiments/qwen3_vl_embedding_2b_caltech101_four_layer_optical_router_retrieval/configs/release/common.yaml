@@ -10,7 +10,10 @@ router_experiment:
   weight_normalization: power_l2
   straight_through: true
   optical:
-    detector_intervals: [[162, 221], [257, 316]]
+    # 59x59 windows remain inside the unchanged 478 CCD ROI.  Their centres
+    # are +/-45.5 px per axis, requiring 0.627 deg at 17 um / 10 cm and thus
+    # staying inside the formal 0.65-deg radial k-space cutoff.
+    detector_intervals: [[164, 223], [255, 314]]
     score_normalization: standardized_region_energy
     energy_eps: 1.0e-8
     capture_loss_scale: 0.10
@@ -22,6 +25,10 @@ router_experiment:
 
 training:
   epochs: 12
+  # Raw phase logits must not drift toward zero (physical pi) merely because
+  # AdamW decay is multiplied by the much larger Router-phase LR.  All four
+  # matched variants therefore disable weight decay explicitly.
+  weight_decay: 0.0
   learning_rate: 0.00002
   adapter_learning_rate: 0.000005
   readout_learning_rate: 0.00001

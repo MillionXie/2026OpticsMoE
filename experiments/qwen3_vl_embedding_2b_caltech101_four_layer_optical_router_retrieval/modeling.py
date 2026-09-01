@@ -39,7 +39,8 @@ def architecture_label(settings: Any) -> str:
     return (
         "vision2_language2_moe4_10cm_router_ablation_"
         f"{settings.router_backend}_k{settings.top_k}_"
-        f"{settings.router_weight_normalization}_{ste}_v1"
+        f"{settings.router_weight_normalization}_{ste}_"
+        f"c{settings.router_contract_sha256[:12]}_v2"
     )
 
 

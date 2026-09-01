@@ -12,6 +12,7 @@ from experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retr
 )
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.optics.geometry import (
     Aperture,
+    MoEGeometry,
 )
 
 
@@ -147,6 +148,36 @@ def test_top1_straight_through_keeps_sparse_forward_and_dense_gradient() -> None
 
 @pytest.mark.parametrize("top_k", [1, 2, 4])
 @pytest.mark.parametrize("normalization", ["legacy_l1", "power_l2"])
+def test_straight_through_backward_is_exactly_dense_surrogate(
+    top_k: int, normalization: str
+) -> None:
+    base = torch.tensor([[0.10, 0.40, 0.20, 0.30]], dtype=torch.float64)
+    coefficients = torch.tensor(
+        [[0.2, -0.7, 1.4, 0.5]], dtype=torch.float64
+    )
+    probabilities = base.clone().requires_grad_(True)
+    weights, _, _ = sparsify_probabilities(
+        probabilities,
+        top_k,
+        normalization=normalization,
+        straight_through=True,
+    )
+    (weights * coefficients).sum().backward()
+    actual = probabilities.grad.detach().clone()
+
+    dense_input = base.clone().requires_grad_(True)
+    if normalization == "legacy_l1":
+        dense = dense_input / dense_input.sum(dim=-1, keepdim=True)
+    else:
+        dense = dense_input / dense_input.square().sum(
+            dim=-1, keepdim=True
+        ).sqrt()
+    (dense * coefficients).sum().backward()
+    torch.testing.assert_close(actual, dense_input.grad, rtol=1.0e-10, atol=1.0e-12)
+
+
+@pytest.mark.parametrize("top_k", [1, 2, 4])
+@pytest.mark.parametrize("normalization", ["legacy_l1", "power_l2"])
 def test_fair_electronic_router_obeys_topk_and_weight_norm(
     top_k: int, normalization: str
 ) -> None:
@@ -269,6 +300,58 @@ def test_optical_router_top1_task_gradient_reaches_router_phase() -> None:
     assert float(gradient.abs().sum()) > 0.0
 
 
+def test_optical_router_accepts_strict_measured_routing_contract() -> None:
+    router = OpticalDetectorTopKRouter(
+        _TinyGeometry(),
+        _settings(top_k=2, normalization="power_l2", straight_through=True),
+    ).eval()
+    probabilities = torch.tensor(
+        [[0.1, 0.4, 0.2, 0.3], [0.5, 0.1, 0.3, 0.1]]
+    )
+    hard, selected, indices = sparsify_probabilities(
+        probabilities,
+        2,
+        normalization="power_l2",
+        straight_through=False,
+    )
+    router.set_measured_routing(
+        {
+            "probabilities": probabilities,
+            "weights": hard,
+            "selected_mask": selected,
+            "selected_indices": indices,
+        }
+    )
+    output = router(_input_fields(batch=2))
+    assert output["measured_routing"] is True
+    assert router.last_detector_intensity is None
+    torch.testing.assert_close(output["probabilities"], probabilities)
+    torch.testing.assert_close(output["weights"], hard)
+    assert torch.equal(output["selected_mask"], selected)
+    router.set_measured_routing(None)
+    assert router._measured_routing is None
+
+
+def test_optical_router_rejects_inconsistent_measured_routing() -> None:
+    router = OpticalDetectorTopKRouter(
+        _TinyGeometry(), _settings(top_k=2, normalization="power_l2")
+    ).eval()
+    probabilities = torch.full((2, 4), 0.25)
+    weights = torch.zeros(2, 4)
+    selected = torch.zeros(2, 4, dtype=torch.bool)
+    indices = torch.tensor([[0, 1], [0, 1]])
+    router.set_measured_routing(
+        {
+            "probabilities": probabilities,
+            "weights": weights,
+            "selected_mask": selected,
+            "selected_indices": indices,
+        }
+    )
+    with pytest.raises((ValueError, AssertionError)):
+        router(_input_fields(batch=2))
+
+
 @pytest.mark.parametrize(
     "score_normalization",
     ["log_energy_fraction", "standardized_region_energy"],
@@ -306,3 +389,46 @@ def test_optical_router_is_invariant_to_global_amplitude_gain(
         atol=1.0e-6,
     )
     assert torch.equal(amplified["selected_mask"], reference["selected_mask"])
+
+
+def test_formal_geometry_four_spot_initialization_survives_kspace_cutoff() -> None:
+    from experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval.settings import (
+        load_settings,
+    )
+
+    config = (
+        __import__("pathlib").Path(__file__).parents[1]
+        / "configs"
+        / "release"
+        / "optical_power_topk2.yaml"
+    )
+    settings = load_settings(config)
+    assert settings.optical_router_required_center_angle_deg < 0.65
+    geometry = MoEGeometry(
+        settings.canvas_size,
+        settings.active_size,
+        settings.expert_size,
+        settings.expert_pitch,
+        settings.num_experts,
+        settings.expert_grid_rows,
+        settings.expert_grid_cols,
+    )
+    router = OpticalDetectorTopKRouter(geometry, settings).train()
+    yy, xx = torch.meshgrid(
+        torch.linspace(-1.0, 1.0, settings.expert_size),
+        torch.linspace(-1.0, 1.0, settings.expert_size),
+        indexing="ij",
+    )
+    field = (
+        0.25
+        + 0.65 * torch.exp(-((xx + 0.25) ** 2 + (yy - 0.15) ** 2) / 0.20)
+        + 0.10 * (xx + 1.0)
+    ).unsqueeze(0)
+    output = router(field)
+    assert bool((output["detector_energy"] > 0.0).all())
+    assert float(output["capture_fraction"].min()) > 1.0e-4
+    output["capture_loss"].backward()
+    gradient = router.raw_router_phase.grad
+    assert gradient is not None
+    assert bool(torch.isfinite(gradient).all())
+    assert float(gradient.abs().sum()) > 0.0
