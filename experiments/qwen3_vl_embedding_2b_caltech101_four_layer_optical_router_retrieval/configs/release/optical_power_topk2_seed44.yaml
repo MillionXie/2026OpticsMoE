@@ -1,0 +1,3 @@
+base_config: optical_power_topk2.yaml
+router_experiment: {optimization_seed: 44}
+output_dir: ../../runs/optical_power_topk2_seed44

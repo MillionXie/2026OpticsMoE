@@ -127,6 +127,9 @@ def load_settings(path: str | Path) -> Any:
     d = lambda key, default=None: _nested(raw, key, default)
 
     settings.router_backend = str(d("router_experiment.backend", "electronic"))
+    settings.router_optimization_seed = int(
+        d("router_experiment.optimization_seed", settings.random_seed)
+    )
     settings.top_k = int(d("router_experiment.top_k", 2))
     settings.router_weight_normalization = str(
         d("router_experiment.weight_normalization", "power_l2")
@@ -189,6 +192,8 @@ def load_settings(path: str | Path) -> Any:
 
     if settings.router_backend not in ROUTER_BACKENDS:
         raise ValueError(f"router backend must be one of {sorted(ROUTER_BACKENDS)}")
+    if settings.router_optimization_seed < 0:
+        raise ValueError("router_experiment.optimization_seed must be nonnegative")
     if settings.top_k not in {1, 2, 4}:
         raise ValueError("router_experiment.top_k must be one of 1, 2, 4")
     if settings.router_weight_normalization not in ROUTING_NORMALIZATIONS:
@@ -305,6 +310,8 @@ def save_resolved_config(settings: Any) -> None:
     values = yaml.safe_load(path.read_text(encoding="utf-8"))
     values["router_experiment"] = {
         "backend": settings.router_backend,
+        "optimization_seed": settings.router_optimization_seed,
+        "dataset_and_batch_seed": settings.random_seed,
         "top_k": settings.top_k,
         "weight_normalization": settings.router_weight_normalization,
         "straight_through": settings.router_straight_through,

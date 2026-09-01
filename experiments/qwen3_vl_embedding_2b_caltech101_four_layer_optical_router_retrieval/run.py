@@ -57,7 +57,9 @@ def main() -> int:
     args = parser.parse_args()
 
     settings = load_settings(args.config)
-    seed_everything(settings.random_seed)
+    # Keep the dataset split and PK batches paired through settings.random_seed,
+    # while allowing independent repeated Router/perturbation seeds.
+    seed_everything(settings.router_optimization_seed)
     settings.output_dir.mkdir(parents=True, exist_ok=True)
     save_resolved_config(settings)
     write_json(settings.output_dir / "environment.json", environment_report())

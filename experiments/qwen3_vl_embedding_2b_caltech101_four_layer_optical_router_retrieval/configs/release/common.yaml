@@ -3,6 +3,10 @@ base_config: ../../../qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrie
 # Every adaptation variant starts from this exact EMA Stage-B body.  The
 # sealed test did not select it; minimum training total loss did.
 router_experiment:
+  # This seed controls fresh Router initialization and stochastic optical
+  # perturbations only. The inherited training.random_seed=42 continues to
+  # lock the Caltech split and PK batch order across repeated seeds.
+  optimization_seed: 42
   source_checkpoint: ../../../qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/runs/caltech101_warmstart5_stage2_joint_sealed_test/ema_best_train_loss_checkpoint.pt
   source_sha256: 6a27f54d8c869cce46150583383a127b0ba47b3d34503f5753aa23974ac1e55d
   protocol: equal_budget_adaptation

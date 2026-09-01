@@ -250,6 +250,8 @@ def load_warmstart5_initialization(
         "top_k": settings.top_k,
         "weight_normalization": settings.router_weight_normalization,
         "straight_through": settings.router_straight_through,
+        "router_optimization_seed": settings.router_optimization_seed,
+        "dataset_and_batch_seed": settings.random_seed,
         "router_parameters_reset_from_fixed_seed": settings.router_reset_parameters,
         "surrogates": reports,
         "test_metrics_used_for_initialization_selection": False,

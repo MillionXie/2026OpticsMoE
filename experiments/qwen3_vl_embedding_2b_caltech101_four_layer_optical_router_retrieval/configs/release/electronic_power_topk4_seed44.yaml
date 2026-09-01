@@ -1,0 +1,3 @@
+base_config: electronic_power_topk4.yaml
+router_experiment: {optimization_seed: 44}
+output_dir: ../../runs/electronic_power_topk4_seed44

@@ -34,6 +34,8 @@ def test_release_configs_have_distinct_strict_architectures() -> None:
     assert all(value.router_straight_through for value in settings[1:])
     assert all(value.phase_focus_enabled is False for value in settings)
     assert all(value.weight_decay == 0.0 for value in settings)
+    assert all(value.random_seed == 42 for value in settings)
+    assert all(value.router_optimization_seed == 42 for value in settings)
     optical = settings[-1]
     assert optical.optical_router_detector_intervals == ((164, 223), (255, 314))
     assert optical.optical_router_required_center_angle_deg < 0.65
@@ -51,6 +53,25 @@ def test_strict_electronic_transplant_loads_every_tensor() -> None:
     assert torch.equal(loaded["body"], torch.ones(2))
     assert torch.equal(loaded[f"{ROUTER_PREFIX}router.gate.weight"], torch.ones(1))
     assert report["new_router_tensor_count"] == 0
+
+
+def test_repeated_seed_configs_keep_dataset_and_architecture_paired() -> None:
+    for stem in (
+        "electronic_power_topk1",
+        "electronic_power_topk2",
+        "electronic_power_topk4",
+        "optical_power_topk2",
+    ):
+        values = [
+            load_settings(CONFIG_ROOT / f"{stem}.yaml"),
+            load_settings(CONFIG_ROOT / f"{stem}_seed43.yaml"),
+            load_settings(CONFIG_ROOT / f"{stem}_seed44.yaml"),
+        ]
+        assert [item.router_optimization_seed for item in values] == [42, 43, 44]
+        assert {item.random_seed for item in values} == {42}
+        assert len({architecture_label(item) for item in values}) == 1
+        assert len({item.router_contract_sha256 for item in values}) == 1
+        assert len({item.output_dir for item in values}) == 3
 
 
 def test_fair_reset_transplant_keeps_new_router_and_loads_common_body() -> None:
