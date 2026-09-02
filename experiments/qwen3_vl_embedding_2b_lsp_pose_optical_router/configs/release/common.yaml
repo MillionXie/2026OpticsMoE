@@ -1,0 +1,99 @@
+base_config: ../../../qwen3_vl_embedding_2b_lsp_pose_optical_moe16/configs/lsp_pose_vision2_hybrid.yaml
+
+dataset:
+  data_root: ../../../../data/lsp_pose
+  download: true
+  train_limit: null
+  test_limit: null
+
+qwen:
+  cache_dir: ../../../../cache/qwen
+  local_files_only: true
+  device: cuda
+
+batching:
+  student_batch_size: 8
+  inference_batch_size: 16
+  num_workers: 4
+
+training:
+  student_epochs: 100
+  student_learning_rate: 0.0001
+  phase_learning_rate: 0.006
+  router_learning_rate: 0.0002
+  weight_decay: 0.0
+  ema_decay: 0.995
+  random_seed: 42
+  amp_enabled: true
+  log_interval_batches: 100
+
+loss:
+  heatmap_weight: 1.0
+  coordinate_weight: 0.1
+  router_balance_weight: 0.05
+  router_importance_weight: 0.005
+  ccd_operating_point_weight: 0.02
+  phase_dc_weight: 0.0
+  teacher_distill_weight: 0.0
+  router_response_consistency_weight: 0.0
+
+protocol:
+  initialization_seed: 42
+  development_seed: 42
+  development_count: 200
+  common_initialization_checkpoint: ../../runs/shared_untrained_initialization.pt
+
+robust_vision:
+  # Exact physical geometry used by the current Caltech Router project.
+  pixel_pitch_um: 17.0
+  distance_m: 0.10
+  minimum_optical_fusion: 0.05
+  initial_optical_fusion: 0.055
+  k_space: {enabled: true, theta_max_deg: 0.65}
+  phase: {dropout_p: 0.08, dropout_block_size: 8}
+  normalization:
+    input_rms: 0.50
+    ccd_target_mean: 0.25
+    relative_clip: 12.0
+    log_compression: 1.0
+  perturbation:
+    input_shift_pixels: 16
+    phase_shift_pixels: 16
+    ccd_shift_pixels: 16
+    gain_min: 0.4
+    gain_max: 2.5
+    offset_fraction: 0.05
+    read_noise_fraction: 0.015
+    ccd_noise:
+      distribution: legacy_uniform_offset_gaussian
+      mean_fraction: 0.0
+      std_fraction: 0.0
+      min_fraction: -0.10
+      max_fraction: 0.20
+    zero_order:
+      enabled: false
+      amplitude_intensity_fraction_min: 0.0
+      amplitude_intensity_fraction_max: 0.0
+      phase_intensity_fraction_min: 0.0
+      phase_intensity_fraction_max: 0.0
+      random_relative_phase: true
+
+router_experiment:
+  weight_normalization: power_l2
+  straight_through: true
+  train_logit_noise_std: 0.10
+  electronic:
+    gate_init_std: 0.01
+  optical:
+    detector_intervals: [[164, 223], [255, 314]]
+    score_normalization: standardized_region_energy
+    energy_eps: 1.0e-8
+    capture_loss_scale: 0.10
+    phase_dropout_p: 0.05
+    phase_dropout_block_size: 8
+    input_shift_pixels: 16
+    phase_shift_pixels: 16
+    ccd_shift_pixels: 16
+
+inference:
+  tta_enabled: false

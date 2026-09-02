@@ -1,0 +1,92 @@
+# LSP Vision-only optical Router ablation
+
+This project checks whether the Caltech101 Router result transfers to a dense
+human-pose task. It is a new experiment; it does **not** modify or silently
+reinterpret `qwen3_vl_embedding_2b_lsp_pose_optical_moe16`.
+
+## Model contract
+
+Only the Vision path is executed:
+
+```text
+224x224 person crop
+  -> frozen Qwen3-VL patch embedding
+  -> packed Vision tokens [sum(T),1024]
+  -> image_grid_thw restores the 2-D token topology
+  -> input adapter 1024 -> 192
+  -> Block 1: 2-D electronic Mixer || MoE4 optical expert plane
+  -> learned bounded fusion (optical fraction >= 5%)
+  -> Block 2: 2-D electronic Mixer || global optical plane
+  -> learned bounded fusion (optical fraction >= 5%)
+  -> spatial 192-D feature map
+  -> progressive 14-joint heatmap decoder, 56x56
+```
+
+The optical body is instantiated directly from
+`qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust`.
+It is not the older 16-um `vision2_hybrid_dense` core. The fixed physical
+contract is 17 um, 10 cm, 518x518 simulation canvas, canonical 478x478 CCD,
+224x224 expert tile, 2x2 MoE4, 16-pixel input/phase/CCD displacement bounds,
+and a 192-wide 2-D depthwise Mixer.
+
+Position handling needs one precise qualification. Qwen still constructs the
+packed token order and `image_grid_thw`, but all native Vision attention blocks
+are replaced. The rotary-position kwargs that Qwen would pass into native
+attention are accepted and ignored by the capture/bypass block; they are not
+an extra positional neural layer in this student. Spatial position is retained
+mainly by reconstructing the Qwen block-major token order into its 2-D grid and
+then applying the 2-D Mixer/pose decoder on that topology.
+
+Electronic E1/E2/E4 and optical O2 all use `power_l2`: the selected amplitude
+weights have unit L2 norm, so changing `k` does not silently change routed
+optical power. The corrected straight-through expression is
+`hard.detach() + dense - dense.detach()`.
+
+The optical Router adds one time-multiplexed exposure before the two Vision
+feature exposures:
+
+```text
+central 224x224 amplitude + learned Router phase
+  -> 10 cm propagation
+  -> same canonical 478x478 CCD
+  -> four fixed 59x59 energy windows
+  -> standardize four energies -> softmax -> hard Top-2
+```
+
+Softmax and Top-k remain electronic. No additional optical path or CCD crop is
+introduced. The Vision-global plane reuses the decision from Vision-expert.
+
+## Leakage-safe data and checkpoint protocol
+
+The original dataset loader provides HR-LSPET 9,428 + the first 1,000 LSP
+images as training, and the last 1,000 LSP images as the official test. This
+project deterministically ranks the first 1,000 LSP samples by
+`SHA256("42:" + sample_id)`:
+
+- all 9,428 HR-LSPET + 800 LSP: training;
+- 200 LSP: development;
+- official last 1,000 LSP: sealed test.
+
+Every epoch evaluates **development only** using EMA weights. The checkpoint
+is selected by maximum development PCK@0.2-torso, then lower torso NME, lower
+development loss, and finally the earlier epoch. Test is a separate explicit
+command and the run refuses to overwrite an existing sealed-test report.
+
+All four variants load one shared, untrained trainable-body/pose-head
+initialization. No old LSP checkpoint is used because the older runs observed
+their test split every epoch. Router state is deliberately absent from the
+shared initialization.
+
+## Important limitations
+
+- This is currently one optimization/data seed (42). It is a transfer check,
+  not evidence that variance has been eliminated. Repeat seeds should follow
+  only after this first matrix is complete.
+- Person cropping is computed from ground-truth joints, following the existing
+  LSP experiment. Therefore the result evaluates pose estimation within a
+  supplied person crop; it is not an end-to-end person detection benchmark.
+- Although the official test is sealed during each training run, evaluating
+  four predeclared variants on it does not authorize choosing new
+  hyperparameters from their test ranking.
+
+See `RUN_COMMANDS.md` for the exact order.

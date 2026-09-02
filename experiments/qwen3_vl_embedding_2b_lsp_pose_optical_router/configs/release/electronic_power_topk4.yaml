@@ -1,0 +1,7 @@
+base_config: common.yaml
+
+router_experiment:
+  backend: electronic
+  top_k: 4
+
+output_dir: ../../runs/electronic_power_topk4
