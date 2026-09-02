@@ -152,6 +152,16 @@ def run_preflight(settings: ExperimentSettings, *, require_cache: bool = True) -
                 f"Formal cache feature_contract must be {expected_contract!r}; "
                 f"got {payload.get('feature_contract')!r}"
             )
+        expected_model_id = "Qwen/Qwen3-VL-2B-Instruct"
+        if payload.get("qwen_model_id") != expected_model_id:
+            raise ValueError(
+                "Formal cache must come from the pure Qwen3-VL-2B-Instruct "
+                f"checkpoint, got {payload.get('qwen_model_id')!r}"
+            )
+        if payload.get("vision_main_merger_used") is not True:
+            raise ValueError("Formal cache must include the learned Vision main merger")
+        if payload.get("deepstack_used") is not False:
+            raise ValueError("Formal cache must explicitly disable DeepStack")
         if payload.get("qwen_prompt") != settings.prompt:
             raise ValueError("Canonical cache prompt differs from the fixed formal prompt")
         if settings.manifest_path is not None and settings.manifest_path.exists():
@@ -181,5 +191,4 @@ def run_preflight(settings: ExperimentSettings, *, require_cache: bool = True) -
 
 
 __all__ = ["run_preflight"]
-
 
