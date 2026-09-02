@@ -4,4 +4,4 @@ router_experiment:
   backend: optical
   top_k: 2
 
-output_dir: ../../runs/optical_power_topk2
+output_dir: ../../runs/optical_power_topk2_periodic_test5

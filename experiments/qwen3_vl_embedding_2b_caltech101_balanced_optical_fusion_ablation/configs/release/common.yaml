@@ -1,0 +1,57 @@
+base_config: ../../../qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust/configs/release/caltech101_four_layer_optical_joint_17um_10cm_robust.yaml
+
+# All variants begin from the exact fixed 81.00% warmstart5 EMA checkpoint.
+# Non-gate tensors are loaded with exact key/shape checks; optimizer state is
+# deliberately not loaded. The four gates are reset by each variant config.
+initialization:
+  checkpoint: ../../../qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/runs/caltech101_warmstart5_stage2_joint_sealed_test/ema_best_train_loss_checkpoint.pt
+  sha256: 6a27f54d8c869cce46150583383a127b0ba47b3d34503f5753aa23974ac1e55d
+
+hybrid:
+  initial_electronic_checkpoint: null
+  freeze_electronic: false
+  # Retained only so the inherited robust constructor is checkpoint-compatible;
+  # balanced_fusion below is authoritative for the new forward equation.
+  minimum_optical_fusion: 0.05
+  initial_fusion: 0.055
+
+balanced_fusion:
+  mode: scale_matched_convex
+  alpha_min: 0.01
+  alpha_max: 0.95
+  alpha_initial: 0.055
+  rms_epsilon: 0.000001
+  # Formal runs fix this to true. RMS is calibration, not a trainable shortcut.
+  detach_scale_statistics: true
+
+training:
+  epochs: 30
+  learning_rate: 0.00005
+  adapter_learning_rate: 0.00002
+  readout_learning_rate: 0.00003
+  phase_learning_rate: 0.006
+  router_learning_rate: 0.0001
+  lambda_kd: 0.0
+  lambda_relational_kd: 0.0
+  lambda_ret: 1.0
+  lambda_gallery: 1.0
+  lambda_teacher_gallery: 0.0
+  lambda_router_balance: 0.05
+  lambda_router_importance: 0.005
+  lambda_ccd_operating_point: 0.02
+  ema_decay: 0.995
+  evaluate_test_each_epoch: true
+  # The test set is intentionally inspected and used for selection at the
+  # user's request. Both live and EMA best-observed-test checkpoints are saved.
+  test_evaluation_interval_epochs: 5
+  resume_optimizer_state: false
+  phase_focus: {enabled: false, warmup_epochs: 0, interval_epochs: 2}
+
+batching:
+  batch_size: 30
+  pk_skus_per_batch: 10
+  pk_images_per_sku: 3
+  # Use the natural step count ceil(N/(P*K)), not a shortened step budget.
+  # Because P=all 10 classes and K=3, PK sampling is class-balanced: it does
+  # not mean every individual image appears exactly once in each epoch.
+  optimizer_steps_per_epoch: null

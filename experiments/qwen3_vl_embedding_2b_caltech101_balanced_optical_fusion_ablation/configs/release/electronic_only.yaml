@@ -1,0 +1,18 @@
+base_config: common.yaml
+
+# Independently fine-tuned electronic capacity control. Optical propagation,
+# phases, optical readouts, routers and fusion gates are frozen and bypassed.
+balanced_fusion:
+  mode: electronic_only
+  alpha_min: 0.05
+  alpha_max: 0.49
+  alpha_initial: 0.055
+
+training:
+  phase_focus: {enabled: false, warmup_epochs: 0, interval_epochs: 2}
+  lambda_router_balance: 0.0
+  lambda_router_importance: 0.0
+  lambda_ccd_operating_point: 0.0
+
+output_dir: ../../runs/electronic_only_retrained
+

@@ -35,7 +35,38 @@ def evaluate_all_systems(
         or settings.output_dir / "best_train_loss_checkpoint.pt"
     )
     checkpoint = load_checkpoint(checkpoint_path, replacement, readout)
-    observed_test_selected = "observed_test" in checkpoint_path.name
+    fusion_core = getattr(
+        getattr(replacement, "vision_surrogate", None), "core", None
+    )
+    fusion_ablation = str(
+        getattr(fusion_core, "fusion_ablation_mode", "none")
+    )
+    has_optical_phases = bool(
+        getattr(replacement, "has_optical_phases", True)
+    )
+    if fusion_ablation == "remove_optical":
+        student_system_prefix = "hybrid_checkpoint_remove_optical_electronic"
+        student_kind = "Hybrid remove-optical"
+    elif fusion_ablation == "remove_electronic":
+        student_system_prefix = "hybrid_checkpoint_remove_electronic_optical"
+        student_kind = "Hybrid remove-electronic"
+    elif has_optical_phases:
+        student_system_prefix = "optical_student"
+        student_kind = "Optical"
+    else:
+        student_system_prefix = "electronic_student"
+        student_kind = "Electronic"
+    checkpoint_metadata = dict(checkpoint.get("metadata", {}))
+    # New checkpoints state their selection policy explicitly. Keep the
+    # filename fallback only for legacy artifacts written before that field
+    # existed, so renamed files cannot silently change the scientific label.
+    observed_test_selected = bool(
+        checkpoint_metadata.get(
+            "test_metrics_used_for_selection",
+            "observed_test" in checkpoint_path.name,
+        )
+    )
+    selection_criterion = checkpoint_metadata.get("selection_criterion")
     student_gallery = encode_student_samples(
         loaded, replacement, readout, bundle.gallery_samples, settings
     )
@@ -51,9 +82,8 @@ def evaluate_all_systems(
             bundle.class_names,
             settings.gallery_aggregation,
             system_name=(
-                "optical_student_query_vs_optical_student_gallery"
-                if getattr(replacement, "has_optical_phases", True)
-                else "electronic_student_query_vs_electronic_student_gallery"
+                f"{student_system_prefix}_query_vs_"
+                f"{student_system_prefix}_gallery"
             ),
         ),
     }
@@ -78,9 +108,8 @@ def evaluate_all_systems(
             bundle.class_names,
             settings.gallery_aggregation,
             system_name=(
-                "optical_student_query_vs_frozen_teacher_gallery_diagnostic"
-                if getattr(replacement, "has_optical_phases", True)
-                else "electronic_student_query_vs_frozen_teacher_gallery_diagnostic"
+                f"{student_system_prefix}_query_vs_"
+                "frozen_teacher_gallery_diagnostic"
             ),
         )
         teacher_metrics = {
@@ -104,11 +133,19 @@ def evaluate_all_systems(
         "checkpoint": str(checkpoint_path),
         "checkpoint_epoch": checkpoint.get("epoch"),
         "checkpoint_selection": (
-            "maximum repeatedly observed test Top-1; selection-biased diagnostic"
+            f"{selection_criterion or 'test-metric-selected checkpoint'}; "
+            "selection-biased diagnostic"
             if observed_test_selected
-            else "minimum training total loss or fixed final epoch; test was not used"
+            else (
+                selection_criterion
+                or "minimum training total loss or fixed final epoch; test was not used"
+            )
         ),
         "selection_biased": observed_test_selected,
+        "fusion_ablation": fusion_ablation,
+        "optical_propagation_active": (
+            has_optical_phases and fusion_ablation != "remove_optical"
+        ),
         "student_detector_output_shape": [
             len(bundle.test_samples),
             settings.detector_output_size,
@@ -139,11 +176,7 @@ def evaluate_all_systems(
         systems["student"].confusion,
         bundle.class_names,
         settings.output_dir / "confusion_matrix.png",
-        student_kind=(
-            "Optical"
-            if getattr(replacement, "has_optical_phases", True)
-            else "Electronic"
-        ),
+        student_kind=student_kind,
     )
     write_json(
         settings.output_dir / "metrics" / "evaluation_summary.json",
