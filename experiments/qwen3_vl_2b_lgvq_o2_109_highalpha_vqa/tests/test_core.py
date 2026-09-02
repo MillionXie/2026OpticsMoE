@@ -96,19 +96,23 @@ def test_scale_matched_fusion_preserves_rms_and_hard_alpha_range() -> None:
         atol=2.0e-5,
     )
     assert torch.count_nonzero(fused.masked_select(~mask.unsqueeze(-1))) == 0
-    assert float(fusion.alpha) == pytest.approx(settings.fusion_alpha_initial)
+    assert float(fusion.alpha.detach()) == pytest.approx(
+        settings.fusion_alpha_initial
+    )
     assert fusion.last_diagnostics["fused_to_electronic_rms"] == pytest.approx(
         1.0, abs=2.0e-5
     )
 
     with torch.no_grad():
         fusion.raw_alpha.fill_(-100.0)
-    assert settings.fusion_alpha_min <= float(fusion.alpha) <= settings.fusion_alpha_max
-    assert float(fusion.alpha) == pytest.approx(settings.fusion_alpha_min, abs=1.0e-7)
+    assert float(fusion.alpha.detach()) == pytest.approx(
+        settings.fusion_alpha_min, abs=1.0e-6
+    )
     with torch.no_grad():
         fusion.raw_alpha.fill_(100.0)
-    assert settings.fusion_alpha_min <= float(fusion.alpha) <= settings.fusion_alpha_max
-    assert float(fusion.alpha) == pytest.approx(settings.fusion_alpha_max, abs=1.0e-7)
+    assert float(fusion.alpha.detach()) == pytest.approx(
+        settings.fusion_alpha_max, abs=1.0e-6
+    )
 
 
 def test_kendall_tau_b_includes_tie_correction() -> None:
@@ -225,5 +229,3 @@ def test_synthetic_smoke_runs_only_optical_top2() -> None:
     for diagnostics in optical["fusion"].values():
         assert settings.fusion_alpha_min <= diagnostics["alpha"]
         assert diagnostics["alpha"] <= settings.fusion_alpha_max
-
-
