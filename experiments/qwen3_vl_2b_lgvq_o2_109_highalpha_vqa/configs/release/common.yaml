@@ -1,0 +1,100 @@
+random_seed: 42
+device: cuda
+
+task:
+  target: spatiotemporal
+  prompt: "Please evaluate the quality of this video and rate it using one of the following five levels: Excellent, Good, Fair, Poor, or Bad."
+
+data:
+  manifest: ../../../qwen3_vl_2b_lgvq_spatiotemporal_optical_router_vqa/artifacts/lgvq_prompt_group_split.csv
+  cache: ../../artifacts/qwen3vl_instruct_full_main_merger_196x2048.pt
+  source_feature_cache: null
+  source_language_cache: null
+  feature_contract: qwen3vl_full_visual_main_merger_196x2048_v1
+
+initialization:
+  # Migrates compatible optical/electronic weights from the finished 224-pixel
+  # O2 run. Phase maps and 224-row optical adapters are resampled to 109.
+  checkpoint: ../../../qwen3_vl_2b_lgvq_spatiotemporal_optical_router_vqa/runs/lgvq_o2/best_observed_test_checkpoint.pt
+  sister_checkpoint: null
+  qwen_model_path: null
+
+geometry:
+  canvas_size: 518
+  active_size: 478
+  quadrant_size: 232
+  expert_size: 109
+  expert_pitch: 123
+
+model:
+  frame_count: 4
+  token_count: 196
+  token_grid_height: 14
+  token_grid_width: 14
+  input_width: 2048
+  language_input_width: 2048
+  language_token_count: 64
+  width: 192
+  detector_projection_size: 196
+  mixer_expansion: 2.0
+  dropout: 0.10
+  quality_head_width: 256
+  quality_head_dropout: 0.15
+
+router:
+  backend: optical
+  top_k: 2
+  pool_size: 14
+  temperature: 1.0
+  noise_std: 0.05
+  weight_normalization: power_l2
+  straight_through: true
+  # Vision: lane-local coordinates in each 232x232 frame lane.
+  detector_intervals: [[79, 108], [124, 153]]
+  # Language: coordinates in the single full 478x478 active field.
+  language_detector_intervals: [[164, 223], [255, 314]]
+  input_shift_pixels: 8
+  phase_shift_pixels: 8
+  ccd_shift_pixels: 8
+  phase_dropout_block_size: 4
+  energy_eps: 0.00000001
+  score_normalization: standardized_region_energy
+  capture_loss_scale: 0.10
+
+optics:
+  wavelength_nm: 532.0
+  pixel_pitch_um: 17.0
+  distance_m: 0.10
+  k_space_enabled: true
+  theta_max_deg: 1.0
+  phase_parameterization: sigmoid
+  phase_init_std: 0.15
+  phase_dropout_p: 0.05
+  ccd_relative_clip: 8.0
+  ccd_log_compression: 1.0
+
+fusion:
+  # RMS-normalized E and O branches are mixed as (1-alpha)E + alpha O.
+  rms_epsilon: 0.000001
+
+loss:
+  ranking_weight: 0.20
+  correlation_weight: 0.30
+  optical_alignment_weight: 0.10
+  router_balance_weight: 0.02
+  router_importance_weight: 0.002
+
+training:
+  epochs: 60
+  batch_size: 8
+  num_workers: 2
+  learning_rate: 0.00020
+  phase_learning_rate: 0.008
+  router_learning_rate: 0.001
+  optical_router_phase_learning_rate: 0.012
+  weight_decay: 0.0001
+  # No validation: observe the fixed test split every five epochs and retain
+  # the best mean(SRCC_spatial, SRCC_temporal), per the requested protocol.
+  test_interval_epochs: 5
+
+

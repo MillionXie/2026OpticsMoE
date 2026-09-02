@@ -1,0 +1,8 @@
+base_config: common.yaml
+fusion:
+  alpha_min: 0.50
+  alpha_max: 0.90
+  alpha_initial: 0.57
+output_dir: ../../runs/o2_109_alpha50
+
+

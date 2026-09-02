@@ -1,0 +1,8 @@
+artifacts/*.pt
+artifacts/*.pt.*
+runs/
+logs/
+__pycache__/
+tests/__pycache__/
+
+
