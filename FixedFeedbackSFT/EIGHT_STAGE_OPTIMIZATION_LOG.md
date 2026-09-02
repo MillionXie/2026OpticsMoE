@@ -127,7 +127,9 @@ epoch 5 的平均相位位移是 0.0277205 rad，为 0.002 配方的约 3.14 倍
 第 1 个 epoch 已完成：raw Top-1/Top-5 为 47.856%/72.600%，EMA Top-1/Top-5 为
 50.350%/74.732%。这与 5-epoch 代理的首轮跌落一致，尚未到 epoch-10 决策点，也没有产生
 新最佳。第 2 个 epoch 的 raw Top-1 为 47.752%，EMA Top-1 为 50.146%，暂未表现出恢复
-斜率；任务已进入 epoch 3，仍按预注册的 epoch-10 门检查，不能凭前两轮提前声称成功。
+斜率。第 3 个 epoch 的 raw Top-1 回升至 48.298%，EMA Top-1 为 49.714%；前三轮 raw
+线性斜率为每 epoch +0.221 percentage point，但仍比起点低 3.052 percentage points。
+只读门判定为 `wait_for_epoch_10`，不能把这一次回升提前解释为配方成功。
 
 1. epoch 10：raw Top-1 至少 49.0%，且最近斜率为正；
 2. epoch 20：raw Top-1 至少 50.5%，且最近斜率为正；
@@ -182,3 +184,21 @@ ImageNet-22K 路线则必须先固定数据版本、类别 manifest 和样本 ma
 和磁盘预算；当前缺数据时必须 hard fail。下一步需要把授权数据挂载到容量充足的共享盘，优先
 建议使用已处理的 MIIL-P Fall11，然后先做 1 epoch 真实数据 pilot，再进入 80-epoch 配方和
 30-epoch ImageNet-1K 回迁对照。
+
+## 10. 提交与服务器验证
+
+本轮实现提交为 `66cdfe79`，已通过增量 Git bundle fast-forward 到服务器工作树；同步没有
+修改当前长程训练的任何 implementation-manifest 依赖文件。服务器验证结果：
+
+- 新增早停、clean-recovery 和 ImageNet-large tests：`25 passed in 4.68s`；
+- 7 个新增/相关 shell 入口全部通过 `bash -n`；
+- 原始 Fall11 formal preflight 在缺少索引时按预期抛出 `FileNotFoundError`；之后确认没有
+  创建输出目录或遗留训练进程；
+- ImageNet-large plumbing 的 CPU preflight 已通过，明确返回
+  `publishable_result=false`、`preflight_created_output=false`；
+- 当时 GPU 5 被其他用户占用（约 2.35 GiB，利用率 62--79%），plumbing 与
+  clean-recovery 两个启动器都被空卡门拒绝，且没有留下 run artifacts。
+
+因此，当前可以确认“代码、身份锁、失败安全和启动接口”有效；还不能确认真实 21K/22K
+训练性能，也不能声称 plumbing GPU forward/backward 已完成。后两项分别等待授权数据挂载和
+GPU 5 真正空闲。
