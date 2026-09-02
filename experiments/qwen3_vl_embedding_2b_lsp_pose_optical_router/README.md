@@ -56,26 +56,30 @@ central 224x224 amplitude + learned Router phase
 Softmax and Top-k remain electronic. No additional optical path or CCD crop is
 introduced. The Vision-global plane reuses the decision from Vision-expert.
 
-## Leakage-safe data and checkpoint protocol
+## Data and periodic-test checkpoint protocol
 
 The original dataset loader provides HR-LSPET 9,428 + the first 1,000 LSP
-images as training, and the last 1,000 LSP images as the official test. This
-project deterministically ranks the first 1,000 LSP samples by
-`SHA256("42:" + sample_id)`:
+images as training, and the last 1,000 LSP images as test. The lab protocol
+keeps this split unchanged:
 
-- all 9,428 HR-LSPET + 800 LSP: training;
-- 200 LSP: development;
-- official last 1,000 LSP: sealed test.
+- all 9,428 HR-LSPET + first 1,000 LSP: training (10,428 total);
+- no validation split;
+- final 1,000 LSP: periodic test and checkpoint-selection split.
 
-Every epoch evaluates **development only** using EMA weights. The checkpoint
-is selected by maximum development PCK@0.2-torso, then lower torso NME, lower
-development loss, and finally the earlier epoch. Test is a separate explicit
-command and the run refuses to overwrite an existing sealed-test report.
+EMA weights are tested at epoch 1, every 5 epochs, and the final epoch. The
+checkpoint is selected directly by maximum test PCK@0.2-torso, then lower
+test torso NME, lower test loss, and finally the earlier epoch. Intermediate
+epochs do not run test. The optional explicit `evaluate` command reloads the
+selected checkpoint and saves detailed per-sample outputs.
+
+This protocol deliberately uses test for model selection, as requested for
+the current laboratory comparison. Its reported test score is therefore a
+best-observed/model-selection result rather than a leakage-free estimate of
+future generalization.
 
 All four variants load one shared, untrained trainable-body/pose-head
-initialization. No old LSP checkpoint is used because the older runs observed
-their test split every epoch. Router state is deliberately absent from the
-shared initialization.
+initialization. Router state is deliberately absent from the shared
+initialization.
 
 ## Important limitations
 
@@ -85,8 +89,7 @@ shared initialization.
 - Person cropping is computed from ground-truth joints, following the existing
   LSP experiment. Therefore the result evaluates pose estimation within a
   supplied person crop; it is not an end-to-end person detection benchmark.
-- Although the official test is sealed during each training run, evaluating
-  four predeclared variants on it does not authorize choosing new
-  hyperparameters from their test ranking.
+- Test is visible every five epochs and selects the checkpoint. Quote this
+  protocol next to the result; do not describe it as a sealed-test score.
 
 See `RUN_COMMANDS.md` for the exact order.

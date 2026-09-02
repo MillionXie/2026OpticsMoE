@@ -163,6 +163,17 @@ def _selection_key(metrics: dict[str, Any], epoch: int) -> tuple[float, float, f
     return (-pck, nme, float(metrics["loss"]), int(epoch))
 
 
+def should_evaluate_periodic_test(epoch: int, total_epochs: int, interval: int) -> bool:
+    """Evaluate epoch 1, every ``interval`` epochs, and the final epoch."""
+
+    epoch = int(epoch)
+    total_epochs = int(total_epochs)
+    interval = int(interval)
+    if interval < 1 or total_epochs < 1 or not 1 <= epoch <= total_epochs:
+        raise ValueError("Invalid periodic-test schedule")
+    return epoch == 1 or epoch == total_epochs or epoch % interval == 0
+
+
 def _write_history(path: Path, rows: list[dict[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     if not rows:
@@ -185,7 +196,7 @@ def _save_checkpoint(
     *,
     epoch: int,
     train_metrics: dict[str, Any],
-    development_metrics: dict[str, Any],
+    periodic_test_metrics: dict[str, Any],
     initialization_report: dict[str, Any],
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -199,17 +210,17 @@ def _save_checkpoint(
             "top_k": int(settings.top_k),
             "weight_variant": "ema",
             "selection": {
-                "split": "development_first_LSP1000_fixed_200",
+                "split": "periodic_test_last_LSP1000",
                 "primary": "max_pck_at_0.2_torso",
                 "ties": [
                     "min_normalized_mean_error_torso",
-                    "min_development_loss",
+                    "min_periodic_test_loss",
                     "earliest_epoch",
                 ],
-                "sealed_test_used": False,
+                "test_used_for_selection": True,
             },
             "train_metrics": train_metrics,
-            "development_metrics": development_metrics,
+            "periodic_test_metrics": periodic_test_metrics,
             "common_initialization": initialization_report,
             "core": model.core.state_dict(),
             "head": model.head.state_dict(),
@@ -224,7 +235,7 @@ def train(
     settings: Any,
 ) -> dict[str, Any]:
     train_loader = _loader(bundle.train, settings, training=True)
-    development_loader = _loader(bundle.development, settings, training=False)
+    test_loader = _loader(bundle.test, settings, training=False)
     model = build_router_student(loaded, settings)
     initialization = load_common_initialization(model, settings)
     report = trainable_parameter_report(model, "student")
@@ -252,12 +263,13 @@ def train(
     optimizer = _optimizer(model, settings)
     ema = ModelEMA(model.core, model.head, settings.ema_decay)
     # PhaseLayer keeps an explicit safety switch in addition to .training.
-    # Enable it for training; model.eval() still disables dropout on dev/test.
+    # Enable it for training; model.eval() still disables dropout on test.
     model.core.set_phase_dropout_active(True)
     best_key: tuple[float, float, float, int] | None = None
     best_epoch = -1
     history: list[dict[str, Any]] = []
-    checkpoint = settings.output_dir / "checkpoints" / "ema_best_development_pck.pt"
+    checkpoint = settings.output_dir / "checkpoints" / "ema_best_periodic_test_pck.pt"
+    evaluation_epochs: list[int] = []
     try:
         for epoch in range(1, settings.student_epochs + 1):
             if settings.router_noise_std > 0.0:
@@ -279,36 +291,56 @@ def train(
                 teacher_cache=None,
                 ema=ema,
             )
-            with ema.applied():
-                development_metrics, _ = evaluate_model(
-                    model,
-                    "student",
-                    development_loader,
-                    loaded.processor,
-                    loaded.device,
-                    settings,
-                    phase="development_selection",
-                    epoch=epoch,
-                    save_outputs=False,
-                    tta=False,
-                )
-                key = _selection_key(development_metrics, epoch)
-                if best_key is None or key < best_key:
-                    best_key = key
-                    best_epoch = epoch
-                    _save_checkpoint(
-                        checkpoint,
+            test_metrics: dict[str, Any] | None = None
+            if should_evaluate_periodic_test(
+                epoch,
+                settings.student_epochs,
+                settings.periodic_test_interval_epochs,
+            ):
+                evaluation_epochs.append(epoch)
+                with ema.applied():
+                    test_metrics, _ = evaluate_model(
                         model,
+                        "student",
+                        test_loader,
+                        loaded.processor,
+                        loaded.device,
                         settings,
+                        phase="periodic_test_selection",
                         epoch=epoch,
-                        train_metrics=train_metrics,
-                        development_metrics=development_metrics,
-                        initialization_report=initialization,
+                        save_outputs=False,
+                        tta=False,
                     )
+                    key = _selection_key(test_metrics, epoch)
+                    if best_key is None or key < best_key:
+                        best_key = key
+                        best_epoch = epoch
+                        _save_checkpoint(
+                            checkpoint,
+                            model,
+                            settings,
+                            epoch=epoch,
+                            train_metrics=train_metrics,
+                            periodic_test_metrics=test_metrics,
+                            initialization_report=initialization,
+                        )
+                metric_path = (
+                    settings.output_dir
+                    / "metrics"
+                    / f"periodic_test_epoch_{epoch:04d}.json"
+                )
+                metric_path.parent.mkdir(parents=True, exist_ok=True)
+                metric_path.write_text(
+                    json.dumps(test_metrics, indent=2, ensure_ascii=False) + "\n",
+                    encoding="utf-8",
+                )
             row: dict[str, Any] = {
                 "epoch": epoch,
                 "epoch_time_sec": time.perf_counter() - started,
-                "new_best_development_at_epoch": epoch == best_epoch,
+                "periodic_test_evaluated": test_metrics is not None,
+                "new_best_periodic_test_at_epoch": (
+                    test_metrics is not None and epoch == best_epoch
+                ),
                 "final_selected_checkpoint": False,
             }
             row.update(
@@ -318,23 +350,32 @@ def train(
                     if not isinstance(value, dict)
                 }
             )
-            row.update(
-                {
-                    f"development_{key}": value
-                    for key, value in development_metrics.items()
-                    if not isinstance(value, dict)
-                }
-            )
+            if test_metrics is not None:
+                row.update(
+                    {
+                        f"test_{key}": value
+                        for key, value in test_metrics.items()
+                        if not isinstance(value, dict)
+                    }
+                )
             history.append(row)
             _write_history(settings.output_dir / "metrics" / "training_history.csv", history)
-            print(
-                f"epoch {epoch:03d} train_loss={train_metrics['loss']:.5f} "
-                f"dev_PCK={development_metrics['pck_at_0.2_torso']:.4f} "
-                f"dev_PCKh={development_metrics['pckh_at_0.5_head']:.4f} "
-                f"dev_NME={development_metrics['normalized_mean_error_torso']:.4f} "
-                f"best_epoch={best_epoch} test=SEALED",
-                flush=True,
-            )
+            if test_metrics is None:
+                print(
+                    f"epoch {epoch:03d} train_loss={train_metrics['loss']:.5f} "
+                    f"test=SKIPPED(interval={settings.periodic_test_interval_epochs}) "
+                    f"best_test_epoch={best_epoch}",
+                    flush=True,
+                )
+            else:
+                print(
+                    f"epoch {epoch:03d} train_loss={train_metrics['loss']:.5f} "
+                    f"test_PCK={test_metrics['pck_at_0.2_torso']:.4f} "
+                    f"test_PCKh={test_metrics['pckh_at_0.5_head']:.4f} "
+                    f"test_NME={test_metrics['normalized_mean_error_torso']:.4f} "
+                    f"best_test_epoch={best_epoch}",
+                    flush=True,
+                )
     finally:
         model.core.set_phase_dropout_active(False)
         model.restore_native()
@@ -347,8 +388,11 @@ def train(
         "checkpoint": str(checkpoint),
         "checkpoint_sha256": sha256_file(checkpoint),
         "best_epoch": best_epoch,
-        "development_selection_key": list(best_key) if best_key else None,
-        "sealed_test_evaluations": 0,
+        "periodic_test_selection_key": list(best_key) if best_key else None,
+        "periodic_test_interval_epochs": settings.periodic_test_interval_epochs,
+        "periodic_test_evaluation_epochs": evaluation_epochs,
+        "periodic_test_evaluations": len(evaluation_epochs),
+        "test_used_for_checkpoint_selection": True,
     }
     (settings.output_dir / "training_report.json").write_text(
         json.dumps(result, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
@@ -356,23 +400,23 @@ def train(
     return result
 
 
-def evaluate_sealed_test(
+def evaluate_selected_checkpoint(
     loaded: Any,
     bundle: PoseProtocolBundle,
     settings: Any,
     checkpoint: Path,
 ) -> dict[str, Any]:
-    report_path = settings.output_dir / "sealed_test_evaluation.json"
-    if report_path.exists():
-        raise FileExistsError(
-            f"Sealed test was already evaluated for this run: {report_path}"
-        )
+    report_path = settings.output_dir / "selected_checkpoint_test_evaluation.json"
     checkpoint = checkpoint.expanduser().resolve()
     payload = torch.load(checkpoint, map_location=loaded.device, weights_only=False)
     if payload.get("checkpoint_architecture") != architecture_label(settings):
         raise RuntimeError("Checkpoint architecture does not match this Router variant")
     if payload.get("router_contract_sha256") != settings.router_contract_sha256:
         raise RuntimeError("Checkpoint Router contract does not match the config")
+    if payload.get("weight_variant") != "ema":
+        raise RuntimeError("Selected-checkpoint evaluation requires EMA weights")
+    if payload.get("selection", {}).get("split") != "periodic_test_last_LSP1000":
+        raise RuntimeError("Checkpoint was not selected by the periodic-test protocol")
     model = build_router_student(loaded, settings)
     model.core.load_state_dict(payload["core"], strict=True)
     model.head.load_state_dict(payload["head"], strict=True)
@@ -385,7 +429,7 @@ def evaluate_sealed_test(
             loaded.processor,
             loaded.device,
             settings,
-            phase="sealed_test",
+            phase="selected_checkpoint_test",
             epoch=int(payload["epoch"]),
             save_outputs=True,
             tta=settings.tta_enabled,
@@ -396,9 +440,9 @@ def evaluate_sealed_test(
         "checkpoint": str(checkpoint),
         "checkpoint_sha256": sha256_file(checkpoint),
         "selected_epoch": int(payload["epoch"]),
-        "selection_split": "development",
-        "test_used_for_selection": False,
-        "sealed_test_samples": len(bundle.test),
+        "selection_split": "periodic_test",
+        "test_used_for_selection": True,
+        "test_samples": len(bundle.test),
         "metrics": metrics,
     }
     report_path.write_text(
@@ -408,4 +452,9 @@ def evaluate_sealed_test(
     return report
 
 
-__all__ = ["ModelEMA", "evaluate_sealed_test", "train"]
+__all__ = [
+    "ModelEMA",
+    "evaluate_selected_checkpoint",
+    "should_evaluate_periodic_test",
+    "train",
+]

@@ -20,10 +20,14 @@ from experiments.qwen3_vl_embedding_2b_lsp_pose_optical_router.modeling import (
     _new_router,
 )
 from experiments.qwen3_vl_embedding_2b_lsp_pose_optical_router.protocol import (
-    split_train_development,
+    build_periodic_test_protocol,
 )
 from experiments.qwen3_vl_embedding_2b_lsp_pose_optical_router.settings import (
     load_settings,
+)
+from experiments.qwen3_vl_embedding_2b_lsp_pose_optical_router.training import (
+    ModelEMA,
+    should_evaluate_periodic_test,
 )
 
 
@@ -42,7 +46,7 @@ def _record(source: str, index: int, split: str) -> PoseRecord:
     )
 
 
-def test_fixed_protocol_is_exact_and_deterministic() -> None:
+def test_periodic_test_protocol_keeps_full_canonical_training_split() -> None:
     official = DatasetBundle(
         train=[
             *[_record("lspet", index, "train") for index in range(9428)],
@@ -51,19 +55,49 @@ def test_fixed_protocol_is_exact_and_deterministic() -> None:
         test=[_record("lsp", index + 1000, "test") for index in range(1000)],
         metadata={"protocol": "synthetic"},
     )
-    first = split_train_development(official, development_count=200, seed=42)
-    second = split_train_development(official, development_count=200, seed=42)
-    assert (len(first.train), len(first.development), len(first.test)) == (
-        10228,
-        200,
-        1000,
-    )
-    assert sum(record.source == "lspet" for record in first.train) == 9428
-    assert sum(record.source == "lsp" for record in first.train) == 800
-    assert [record.sample_id for record in first.development] == [
-        record.sample_id for record in second.development
+    result = build_periodic_test_protocol(official)
+    assert (len(result.train), len(result.test)) == (10428, 1000)
+    assert sum(record.source == "lspet" for record in result.train) == 9428
+    assert sum(record.source == "lsp" for record in result.train) == 1000
+    assert result.metadata["validation_samples"] == 0
+    assert result.metadata["test_visible_during_training"] is True
+    assert result.metadata["test_used_for_checkpoint_selection"] is True
+    assert not ({record.sample_id for record in result.train} & {record.sample_id for record in result.test})
+
+
+def test_periodic_test_schedule_is_epoch1_every5_and_final() -> None:
+    observed = [
+        epoch
+        for epoch in range(1, 99)
+        if should_evaluate_periodic_test(epoch, total_epochs=98, interval=5)
     ]
-    assert not ({record.sample_id for record in first.development} & {record.sample_id for record in first.test})
+    assert observed == [1, *range(5, 96, 5), 98]
+
+
+def test_ema_context_is_saved_as_ema_and_restores_live_weights(tmp_path: Path) -> None:
+    core = torch.nn.Linear(1, 1, bias=False)
+    head = torch.nn.Linear(1, 1, bias=False)
+    with torch.no_grad():
+        core.weight.fill_(1.0)
+        head.weight.fill_(2.0)
+    ema = ModelEMA(core, head, decay=0.5)
+    with torch.no_grad():
+        core.weight.fill_(5.0)
+        head.weight.fill_(6.0)
+    ema.update()
+
+    checkpoint = tmp_path / "ema_state.pt"
+    with ema.applied():
+        torch.testing.assert_close(core.weight, torch.full_like(core.weight, 3.0))
+        torch.testing.assert_close(head.weight, torch.full_like(head.weight, 4.0))
+        torch.save({"core": core.state_dict(), "head": head.state_dict()}, checkpoint)
+
+    # Exiting the context restores the live optimizer weights.
+    torch.testing.assert_close(core.weight, torch.full_like(core.weight, 5.0))
+    torch.testing.assert_close(head.weight, torch.full_like(head.weight, 6.0))
+    saved = torch.load(checkpoint, map_location="cpu", weights_only=True)
+    torch.testing.assert_close(saved["core"]["weight"], torch.full((1, 1), 3.0))
+    torch.testing.assert_close(saved["head"]["weight"], torch.full((1, 1), 4.0))
 
 
 @pytest.mark.parametrize("top_k", [1, 2, 4])
@@ -98,6 +132,7 @@ def test_correct_ste_gives_top1_router_gradient() -> None:
 
 
 def test_release_configs_share_exact_robust_contract() -> None:
+    repository_root = ROOT.parents[1]
     rows = []
     for name in (
         "electronic_power_topk1.yaml",
@@ -120,6 +155,16 @@ def test_release_configs_share_exact_robust_contract() -> None:
         assert settings.router_weight_normalization == "power_l2"
         assert settings.router_straight_through is True
         assert settings.evaluate_test_each_epoch is False
+        assert settings.periodic_test_interval_epochs == 5
+        assert settings.periodic_test_at_epoch_one is True
+        assert settings.periodic_test_at_final_epoch is True
+        assert settings.output_dir.name.endswith("_periodic_test5")
+        assert settings.data_root == repository_root / "data" / "lsp_pose"
+        assert settings.cache_dir == repository_root / "cache" / "qwen"
+        assert settings.output_dir.parent == ROOT / "runs"
+        assert settings.common_initialization_checkpoint == (
+            ROOT / "runs" / "shared_untrained_initialization.pt"
+        )
     assert [settings.top_k for settings in rows] == [1, 2, 4, 2]
     assert [settings.router_backend for settings in rows] == [
         "electronic",

@@ -39,8 +39,11 @@ loss:
 
 protocol:
   initialization_seed: 42
-  development_seed: 42
-  development_count: 200
+  # No validation split. Test is evaluated at epoch 1, every five epochs, and
+  # the final epoch; the best EMA checkpoint is selected directly on test PCK.
+  test_interval_epochs: 5
+  test_at_epoch_one: true
+  test_at_final_epoch: true
   common_initialization_checkpoint: ../../runs/shared_untrained_initialization.pt
 
 robust_vision:

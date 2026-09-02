@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import csv
-import hashlib
 import json
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -16,83 +15,53 @@ from experiments.qwen3_vl_embedding_2b_lsp_pose_optical_moe16.datasets import (
 @dataclass(frozen=True)
 class PoseProtocolBundle:
     train: list[PoseRecord]
-    development: list[PoseRecord]
     test: list[PoseRecord]
     metadata: dict[str, Any]
 
 
-def _rank(record: PoseRecord, seed: int) -> tuple[str, str]:
-    digest = hashlib.sha256(f"{int(seed)}:{record.sample_id}".encode("utf-8"))
-    return digest.hexdigest(), record.sample_id
+def build_periodic_test_protocol(bundle: DatasetBundle) -> PoseProtocolBundle:
+    """Keep the canonical LSP train/test split without a development split.
 
-
-def split_train_development(
-    bundle: DatasetBundle,
-    *,
-    development_count: int = 200,
-    seed: int = 42,
-) -> PoseProtocolBundle:
-    """Seal LSP test and take development only from the first LSP 1000.
-
-    ``prepare_lsp`` already implements the official protocol: all HR-LSPET and
-    the first 1000 LSP images are training data; the last 1000 LSP images are
-    test data.  We deterministically rank only the first-1000 LSP records and
-    move exactly ``development_count`` of them to development.  HR-LSPET never
-    enters development and the official last-1000 test is never touched.
+    The existing loader defines the project protocol as 9,428 HR-LSPET plus
+    the first 1,000 LSP samples for training, and the final 1,000 LSP samples
+    for test. This function validates and records that split verbatim. Test is
+    intentionally visible during training in the lab-requested experiment: it
+    is evaluated periodically and is also the checkpoint-selection split.
     """
 
-    development_count = int(development_count)
-    candidates = [record for record in bundle.train if record.source == "lsp"]
-    if len(candidates) != 1000:
+    train = [replace(record, split="train") for record in bundle.train]
+    test = [replace(record, split="periodic_test") for record in bundle.test]
+    train_ids = {record.sample_id for record in train}
+    test_ids = {record.sample_id for record in test}
+    if train_ids & test_ids:
+        raise RuntimeError("Train/test sample identifiers overlap")
+    if len(train) != 10428:
         raise RuntimeError(
-            "The sealed Router protocol requires exactly the canonical first "
-            f"1000 LSP records in bundle.train, got {len(candidates)}"
+            "Periodic-test protocol requires 9,428 HR-LSPET + 1,000 LSP "
+            f"training samples, got {len(train)}"
         )
-    if not 1 <= development_count < len(candidates):
-        raise ValueError("development_count must be in [1,999]")
-    selected_ids = {
-        record.sample_id
-        for record in sorted(candidates, key=lambda record: _rank(record, seed))[
-            :development_count
-        ]
-    }
-    development = [
-        replace(record, split="development")
-        for record in bundle.train
-        if record.sample_id in selected_ids
-    ]
-    train = [
-        replace(record, split="train")
-        for record in bundle.train
-        if record.sample_id not in selected_ids
-    ]
-    test = [replace(record, split="sealed_test") for record in bundle.test]
-    identifiers = [
-        {record.sample_id for record in records}
-        for records in (train, development, test)
-    ]
-    if identifiers[0] & identifiers[1] or identifiers[0] & identifiers[2] or identifiers[1] & identifiers[2]:
-        raise RuntimeError("Train/development/test sample identifiers overlap")
+    if sum(record.source == "lspet" for record in train) != 9428:
+        raise RuntimeError("Training must contain exactly 9,428 HR-LSPET samples")
+    if sum(record.source == "lsp" for record in train) != 1000:
+        raise RuntimeError("Training must contain exactly the first 1,000 LSP samples")
     if len(test) != 1000 or any(record.source != "lsp" for record in test):
-        raise RuntimeError("Sealed test must be exactly the canonical last 1000 LSP images")
+        raise RuntimeError("Test must be exactly the final 1,000 LSP samples")
     metadata = {
         **bundle.metadata,
         "selection_protocol": (
-            "HR-LSPET9428 + 800 LSP train; deterministic 200/first-LSP1000 "
-            "development; last-LSP1000 sealed test"
+            "HR-LSPET9428 + first-LSP1000 train; last-LSP1000 periodic test; "
+            "no validation split"
         ),
-        "development_selection": "ascending_sha256(f'{seed}:{sample_id}')",
-        "development_seed": int(seed),
         "train_samples": len(train),
         "train_lspet": sum(record.source == "lspet" for record in train),
         "train_lsp": sum(record.source == "lsp" for record in train),
-        "development_samples": len(development),
-        "development_lsp": sum(record.source == "lsp" for record in development),
-        "sealed_test_samples": len(test),
-        "sealed_test_lsp": sum(record.source == "lsp" for record in test),
-        "test_visible_during_training": False,
+        "validation_samples": 0,
+        "test_samples": len(test),
+        "test_lsp": sum(record.source == "lsp" for record in test),
+        "test_visible_during_training": True,
+        "test_used_for_checkpoint_selection": True,
     }
-    return PoseProtocolBundle(train, development, test, metadata)
+    return PoseProtocolBundle(train, test, metadata)
 
 
 def persist_protocol(bundle: PoseProtocolBundle, output_dir: Path) -> None:
@@ -109,7 +78,7 @@ def persist_protocol(bundle: PoseProtocolBundle, output_dir: Path) -> None:
             fieldnames=("sample_id", "source", "split", "source_index", "image_path"),
         )
         writer.writeheader()
-        for record in (*bundle.train, *bundle.development, *bundle.test):
+        for record in (*bundle.train, *bundle.test):
             writer.writerow(
                 {
                     "sample_id": record.sample_id,
@@ -121,4 +90,4 @@ def persist_protocol(bundle: PoseProtocolBundle, output_dir: Path) -> None:
             )
 
 
-__all__ = ["PoseProtocolBundle", "persist_protocol", "split_train_development"]
+__all__ = ["PoseProtocolBundle", "build_periodic_test_protocol", "persist_protocol"]

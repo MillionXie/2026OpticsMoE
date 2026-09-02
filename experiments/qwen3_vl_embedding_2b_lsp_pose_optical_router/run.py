@@ -17,9 +17,9 @@ from .modeling import (
     load_vision_backbone,
     materialize_common_initialization,
 )
-from .protocol import persist_protocol, split_train_development
+from .protocol import build_periodic_test_protocol, persist_protocol
 from .settings import load_settings, save_resolved_config
-from .training import evaluate_sealed_test, train
+from .training import evaluate_selected_checkpoint, train
 
 
 PHASES = ("prepare_data", "materialize_initialization", "train", "evaluate")
@@ -60,19 +60,14 @@ def main(argv: list[str] | None = None) -> int:
     settings = load_settings(args.config)
     seed_everything(settings.initialization_seed)
     save_resolved_config(settings)
-    # Do not persist the legacy two-way train/test CSV: this experiment owns a
-    # three-way train/development/sealed-test contract and writes only that
-    # authoritative manifest below.
+    # Persist the experiment-owned canonical train/test manifest. There is no
+    # validation split in the requested periodic-test protocol.
     official = prepare_lsp(settings, persist=False)
-    bundle = split_train_development(
-        official,
-        development_count=settings.development_count,
-        seed=settings.development_seed,
-    )
+    bundle = build_periodic_test_protocol(official)
     persist_protocol(bundle, settings.output_dir)
     print(
-        f"LSP Router train={len(bundle.train):,} dev={len(bundle.development):,} "
-        f"sealed_test={len(bundle.test):,} backend={settings.router_backend} "
+        f"LSP Router train={len(bundle.train):,} validation=0 "
+        f"periodic_test={len(bundle.test):,} backend={settings.router_backend} "
         f"top_k={settings.top_k}",
         flush=True,
     )
@@ -98,13 +93,11 @@ def main(argv: list[str] | None = None) -> int:
         report = train(loaded, bundle, settings)
     else:
         print(
-            "[sealed_test] This explicit command evaluates the official last "
-            "1000 LSP images once. Do not use the result to choose another epoch.",
+            "[periodic_test] Re-evaluating the selected checkpoint and saving "
+            "per-sample outputs. Test is the declared selection split.",
             flush=True,
         )
-        report = evaluate_sealed_test(
-            loaded, bundle, settings, args.checkpoint
-        )
+        report = evaluate_selected_checkpoint(loaded, bundle, settings, args.checkpoint)
     print(json.dumps(report, indent=2, ensure_ascii=False), flush=True)
     return 0
 

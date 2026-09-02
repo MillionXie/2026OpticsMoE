@@ -1,0 +1,11 @@
+base_config: common.yaml
+
+# Strictly alpha > 0.5 for every finite raw gate.
+balanced_fusion:
+  mode: scale_matched_convex
+  alpha_min: 0.51
+  alpha_max: 0.95
+  alpha_initial: 0.55
+
+output_dir: ../../runs/alpha_high_gt_0p5
+

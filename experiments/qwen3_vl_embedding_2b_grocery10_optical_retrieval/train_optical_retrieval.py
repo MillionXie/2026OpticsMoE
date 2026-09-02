@@ -593,6 +593,18 @@ def _phase_motion_statistics(
     run_reference: dict[str, list[torch.Tensor]],
     epoch_reference: dict[str, list[torch.Tensor]],
 ) -> dict[str, float | int]:
+    # A genuinely electronic-only replacement deliberately exposes no phase
+    # tensors.  Keep the common trainer usable for that capacity control
+    # instead of passing empty lists to ``torch.cat`` at the end of epoch.
+    if not phase_groups:
+        return {
+            "phase_physical_std_rad": 0.0,
+            "phase_delta_from_pi_rms_rad": 0.0,
+            "phase_delta_run_rms_rad": 0.0,
+            "phase_delta_epoch_rms_rad": 0.0,
+            "phase_raw_abs_mean": 0.0,
+            "phase_sigmoid_saturation_fraction_abs_raw_gt_4": 0.0,
+        }
     report: dict[str, float | int] = {}
     all_current: list[torch.Tensor] = []
     all_run_delta: list[torch.Tensor] = []
@@ -738,6 +750,8 @@ def save_checkpoint(
     settings: Settings,
     *,
     weight_variant: str = "live",
+    selection_criterion: str = "minimum_training_total_loss",
+    test_metrics_used_for_selection: bool = False,
 ) -> None:
     payload = {
         "checkpoint_version": 2,
@@ -763,8 +777,13 @@ def save_checkpoint(
                 "checkpoint_architecture",
                 "one_expert_stage_plus_one_global_phase",
             ),
-            "selection_criterion": "minimum_training_total_loss",
-            "test_metrics_used_for_selection": False,
+            "selection_criterion": str(selection_criterion),
+            "test_metrics_used_for_selection": bool(
+                test_metrics_used_for_selection
+            ),
+            "test_evaluation_interval_epochs": int(
+                getattr(settings, "test_evaluation_interval_epochs", 1)
+            ),
             "weight_variant": weight_variant,
             "training_objective": {
                 "lambda_kd": settings.lambda_kd,
@@ -1525,8 +1544,16 @@ def train_optical_retrieval(
             if retrieval_query_count
             else None
         )
+        test_interval = int(
+            getattr(settings, "test_evaluation_interval_epochs", 1)
+        )
+        if test_interval <= 0:
+            raise ValueError("test_evaluation_interval_epochs must be positive")
+        evaluate_test_now = bool(settings.evaluate_test_each_epoch) and (
+            relative_epoch % test_interval == 0 or epoch == end_epoch
+        )
         test_metrics: dict[str, Any] = {}
-        if settings.evaluate_test_each_epoch:
+        if evaluate_test_now:
             test_metrics = evaluate_student_split(
                 loaded,
                 replacement,
@@ -1537,7 +1564,7 @@ def train_optical_retrieval(
                 settings,
             )
         ema_test_metrics: dict[str, Any] = {}
-        if ema_parameters is not None and settings.evaluate_test_each_epoch:
+        if ema_parameters is not None and evaluate_test_now:
             with use_parameter_ema(parameters, ema_parameters):
                 ema_test_metrics = evaluate_student_split(
                     loaded,
@@ -1623,7 +1650,11 @@ def train_optical_retrieval(
             "ema_test_top1": ema_test_metrics.get("top1_retrieval_accuracy"),
             "ema_test_top3": ema_test_metrics.get("top3_retrieval_accuracy"),
             "ema_test_mrr": ema_test_metrics.get("mrr"),
-            "checkpoint_selected_by": "training_total_loss",
+            "checkpoint_selected_by": (
+                "training_total_loss_and_periodically_observed_test_top1"
+                if evaluate_test_now
+                else "training_total_loss"
+            ),
         }
         rows.append(row)
         _write_history(history_path, rows, fieldnames)
@@ -1714,6 +1745,10 @@ def train_optical_retrieval(
                 average_total,
                 settings,
                 weight_variant="live",
+                selection_criterion=(
+                    "maximum_periodically_observed_test_top1"
+                ),
+                test_metrics_used_for_selection=True,
             )
             write_json(
                 settings.output_dir / "metrics" / "best_observed_test.json",
@@ -1745,6 +1780,10 @@ def train_optical_retrieval(
                     average_total,
                     settings,
                     weight_variant="ema",
+                    selection_criterion=(
+                        "maximum_periodically_observed_test_top1"
+                    ),
+                    test_metrics_used_for_selection=True,
                 )
             write_json(
                 settings.output_dir / "metrics" / "ema_best_observed_test.json",
@@ -1881,7 +1920,12 @@ def train_optical_retrieval(
         "resumed_from_epoch": resumed_from_epoch,
         "best_train_loss": best_train_loss,
         "last_train_loss": rows[-1]["total_loss"],
-        "checkpoint_selection": "minimum training total loss (test not used)",
+        "checkpoint_selection": (
+            "both minimum training total loss and maximum periodically observed "
+            "test Top-1 checkpoints were saved"
+            if settings.evaluate_test_each_epoch
+            else "minimum training total loss (test not used)"
+        ),
     }
 
 

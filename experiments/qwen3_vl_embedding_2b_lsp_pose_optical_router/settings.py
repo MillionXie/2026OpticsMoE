@@ -104,8 +104,15 @@ def load_settings(path: str | Path) -> Any:
     )
 
     settings.initialization_seed = int(d("protocol.initialization_seed", 42))
-    settings.development_seed = int(d("protocol.development_seed", 42))
-    settings.development_count = int(d("protocol.development_count", 200))
+    settings.periodic_test_interval_epochs = int(
+        d("protocol.test_interval_epochs", 5)
+    )
+    settings.periodic_test_at_epoch_one = bool(
+        d("protocol.test_at_epoch_one", True)
+    )
+    settings.periodic_test_at_final_epoch = bool(
+        d("protocol.test_at_final_epoch", True)
+    )
     settings.common_initialization_checkpoint = _path(
         d("protocol.common_initialization_checkpoint"),
         config_path.parent,
@@ -316,8 +323,12 @@ def load_settings(path: str | Path) -> Any:
         raise ValueError("Fair top-k comparison requires power_l2 normalization")
     if not settings.router_straight_through:
         raise ValueError("Fair top-k comparison requires the corrected STE")
-    if settings.development_count != 200 or settings.development_seed != 42:
-        raise ValueError("Formal protocol fixes 200 development LSP images at seed 42")
+    if settings.periodic_test_interval_epochs < 1:
+        raise ValueError("protocol.test_interval_epochs must be >= 1")
+    if not settings.periodic_test_at_epoch_one:
+        raise ValueError("Formal periodic-test protocol evaluates epoch 1")
+    if not settings.periodic_test_at_final_epoch:
+        raise ValueError("Formal periodic-test protocol evaluates the final epoch")
     if settings.initialization_seed != 42 or settings.random_seed != 42:
         raise ValueError("Formal single-seed comparison fixes initialization/data seed 42")
     expected = (518, 478, 224, 254, 4, 2, 2, 1, 192, 2)
@@ -381,16 +392,19 @@ def save_resolved_config(settings: Any) -> None:
         {
             "protocol": {
                 "initialization_seed": settings.initialization_seed,
-                "development_seed": settings.development_seed,
-                "development_count": settings.development_count,
+                "validation_count": 0,
+                "test_interval_epochs": settings.periodic_test_interval_epochs,
+                "test_at_epoch_one": settings.periodic_test_at_epoch_one,
+                "test_at_final_epoch": settings.periodic_test_at_final_epoch,
                 "common_initialization_checkpoint": str(
                     settings.common_initialization_checkpoint
                 ),
                 "checkpoint_selection": (
-                    "max development PCK@0.2 torso; then min torso NME; "
-                    "then min development loss; then earliest epoch"
+                    "max periodic-test PCK@0.2 torso; then min torso NME; "
+                    "then min periodic-test loss; then earliest epoch"
                 ),
-                "sealed_test_evaluated_during_training": False,
+                "test_evaluated_during_training": True,
+                "test_used_for_checkpoint_selection": True,
             },
             "router_experiment": {
                 "contract": settings.router_contract,
