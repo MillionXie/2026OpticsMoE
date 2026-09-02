@@ -1,0 +1,81 @@
+output_dir: FixedFeedbackSFT/runs/qwen3_vl_patch_stem_8stage_separable_optical_imagenet_backbone/p11_clean_recovery_5e_raw_gpu5_gb96
+imagenet_config: FixedFeedbackSFT/projects/qwen3_vl_patch_stem_8stage_separable_optical_imagenet_backbone/configs/imagenet1k_clean_recovery.json
+stem_checkpoint: FixedFeedbackSFT/runs/_assets/8stage/dependencies/qwen3_vl_static_stem_224.pt
+objective:
+  mode: post_strong_pretrain_clean_recovery
+initialization:
+  source_checkpoint: FixedFeedbackSFT/runs/qwen3_vl_patch_stem_8stage_separable_optical_imagenet_backbone/p11_large_recipe_proxy_5e_phase7e3_2gpu_gb384/checkpoints/last.pt
+  source_state_variant: raw
+model:
+  canvas_size: 224
+  optical_channels: 3
+  num_stages: 8
+  token_dim: 224
+  num_classes: 1000
+  head_hidden_dim: 448
+  wavelength_m: 5.32e-7
+  pixel_size_m: 1.6e-5
+  propagation_distance_m: 0.05
+  token_axis_propagation_distance_m: 0.05
+  channel_axis_propagation_distance_m: 0.05
+  phase_init_std: 0.10
+  layernorm_eps: 1.0e-5
+  optical_gate_init: 0.60
+  optical_gate_min: 0.50
+  mixer_width: 96
+  mixer_expansion: 2.0
+  mixer_kernel_size: 3
+  mixer_dropout: 0.10
+  mixer_spatial_gate_init: 0.10
+  mixer_channel_gate_init: 0.10
+  residual_scale_init: 0.10
+  residual_scale_max: 0.25
+  minimum_optical_parameter_fraction: 0.50
+  stage_drop_path_rate: 0.0
+optimizer:
+  phase_learning_rate: 8.0e-4
+  electronic_learning_rate: 2.5e-5
+  adapter_learning_rate: 2.0e-5
+  head_learning_rate: 5.0e-5
+  layer_decay: 0.92
+  weight_decay: 0.01
+  betas: [0.9, 0.999]
+  eps: 1.0e-8
+  warmup_epochs: 1
+  minimum_learning_rate_ratio: 0.10
+  phase_gradient_clip_norm: 2.0
+  electronic_gradient_clip_norm: 5.0
+loss:
+  mode: cross_entropy
+  label_smoothing: 0.0
+  mixup_alpha: 0.0
+  cutmix_alpha: 0.0
+  batch_mix_probability: 0.0
+augmentation:
+  random_erasing_probability: 0.0
+ema:
+  decay: 0.999
+  warmup_updates: 100
+training:
+  seed: 2026
+  epochs: 5
+  train_samples_per_class: null
+  validation_samples_per_class: null
+  batch_size: 96
+  validation_batch_size: 192
+  gradient_accumulation_steps: 1
+  expected_world_size: 1
+  expected_effective_global_batch: 96
+  num_workers: 8
+  persistent_workers: true
+  pin_memory: true
+  prefetch_factor: 2
+  shuffle_block_size: 4096
+  use_amp: true
+  amp_initial_scale: 256
+  amp_growth_interval: 100000
+  log_interval_batches: 100
+  checkpoint_interval_epochs: 1
+  max_train_batches: null
+  max_validation_batches: null
+  run_final_ablations: false

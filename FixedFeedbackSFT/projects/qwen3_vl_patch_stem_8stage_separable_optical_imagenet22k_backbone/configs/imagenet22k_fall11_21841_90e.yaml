@@ -1,0 +1,100 @@
+output_dir: FixedFeedbackSFT/runs/qwen3_vl_patch_stem_8stage_separable_optical_imagenet22k_backbone/fall11_full_21841_90e
+stem_checkpoint: FixedFeedbackSFT/runs/_assets/8stage/dependencies/qwen3_vl_static_stem_224.pt
+
+dataset:
+  mode: indexed_class_folder
+  # Must point to an index built from an authorized source declaration.  The
+  # checked-in server currently has no such dataset, so launch must hard fail.
+  train_index: ${IMAGENET22K_TRAIN_INDEX}
+  validation_index: null
+  variant_id: imagenet-fall11-full
+  release_id: fall11
+  train_split_id: train
+  validation_split_id: null
+  num_classes: 21841
+  expected_train_samples: 14197122
+  expected_validation_samples: null
+
+evaluation:
+  enabled: false
+  # Fall11 full has no official validation split in this contract.  Exports
+  # are named last_raw/last_ema and are never described as "best".
+  max_batches: null
+
+model:
+  canvas_size: 224
+  optical_channels: 3
+  num_stages: 8
+  token_dim: 224
+  num_classes: 21841
+  head_hidden_dim: 448
+  wavelength_m: 5.32e-7
+  pixel_size_m: 1.6e-5
+  propagation_distance_m: 0.05
+  token_axis_propagation_distance_m: 0.05
+  channel_axis_propagation_distance_m: 0.05
+  phase_init_std: 0.10
+  layernorm_eps: 1.0e-5
+  optical_gate_init: 0.60
+  optical_gate_min: 0.50
+  mixer_width: 96
+  mixer_expansion: 2.0
+  mixer_kernel_size: 3
+  mixer_dropout: 0.10
+  mixer_spatial_gate_init: 0.10
+  mixer_channel_gate_init: 0.10
+  residual_scale_init: 0.10
+  residual_scale_max: 0.25
+  minimum_optical_parameter_fraction: 0.50
+
+initialization:
+  mode: strict_frozen_p11_backbone_only
+  backbone_checkpoint: FixedFeedbackSFT/runs/_assets/8stage/checkpoints/backbone.pt
+  expected_backbone_sha256: c3ad0b780dfbb3e5f8e1f7b7850c06fcb5c6d977e106f351b4602fcaadf210d2
+  expected_stem_sha256: e3b12b274211d29f928eee95fdfc60b32d10751f1bbdc98cd63f0cccd0792485
+
+optimizer:
+  phase_learning_rate: 2.0e-3
+  electronic_learning_rate: 2.5e-4
+  adapter_learning_rate: 2.5e-4
+  head_learning_rate: 1.0e-3
+  layer_decay: 0.92
+  weight_decay: 0.05
+  betas: [0.9, 0.999]
+  eps: 1.0e-8
+  warmup_epochs: 5
+  minimum_learning_rate_ratio: 0.01
+  gradient_clip_norm: 5.0
+
+loss:
+  mode: soft_target_cross_entropy
+  label_smoothing: 0.10
+  mixup_alpha: 0.80
+  cutmix_alpha: 1.0
+  batch_mix_probability: 1.0
+
+ema:
+  decay: 0.9999
+  warmup_updates: 1000
+
+training:
+  seed: 2026
+  epochs: 90
+  batch_size: 64
+  validation_batch_size: 128
+  gradient_accumulation_steps: 1
+  expected_world_size: 5
+  expected_effective_global_batch: 320
+  num_workers: 8
+  # Workers restart each epoch so an epoch-boundary resume can reproduce their
+  # RNG seeds from the saved per-rank main-process state.
+  persistent_workers: false
+  pin_memory: true
+  prefetch_factor: 2
+  use_amp: true
+  amp_initial_scale: 256
+  amp_growth_interval: 100000
+  log_interval_batches: 100
+  checkpoint_interval_epochs: 5
+  max_train_batches: null
+  minimum_free_disk_gib: 300

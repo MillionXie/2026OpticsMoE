@@ -71,37 +71,114 @@ Git 提交：
 `FixedFeedbackSFT/commands/05_register_imagenet1k_cache.sh`，只删除本次失败产生的两个空
 目录，并把工作树链接到既有 312 GiB ImageNet cache；第二次 smoke 完整通过。
 
-## 5. 正在运行的代理实验
+## 5. 5-epoch 大配方代理实验结果
 
-启动时间：2026-09-02 01:17（Asia/Shanghai）。两组都使用完整 ImageNet-1K、5 epochs、
-per-rank batch 96、2 GPUs、gradient accumulation 2、global batch 384、seed 2026。
+两组均使用完整 ImageNet-1K、5 epochs、per-rank batch 96、2 GPUs、gradient
+accumulation 2、global batch 384、seed 2026。共同起点是 Top-1 51.350%、Top-5
+75.558%，loss 2.209670。
 
-| 组 | 唯一变化 | 物理 GPU | launcher PID | 初始 Top-1 / Top-5 |
-|---|---:|---|---:|---:|
-| low-phase | phase peak LR 0.002 | 0(4090) + 2(3090) | 978207 | 51.350% / 75.558% |
-| high-phase | phase peak LR 0.007 | 1(4090) + 5(3090) | 978209 | 51.350% / 75.558% |
+### 5.1 phase peak LR 0.002
 
-运行目录：
+| epoch | raw loss | raw Top-1 | raw Top-5 | EMA Top-1 | EMA Top-5 |
+|---:|---:|---:|---:|---:|---:|
+| 1 | 2.473465 | 47.698% | 72.054% | 50.128% | 74.416% |
+| 2 | 2.411436 | 48.082% | 72.616% | 49.682% | 74.118% |
+| 3 | 2.393440 | 48.010% | 72.598% | 49.298% | 73.676% |
+| 4 | 2.386324 | 48.206% | 72.828% | 48.964% | 73.394% |
+| 5 | 2.372605 | 48.272% | 72.844% | 48.790% | 73.206% |
 
-- `FixedFeedbackSFT/runs/qwen3_vl_patch_stem_8stage_separable_optical_imagenet_backbone/p11_large_recipe_proxy_5e_phase2e3_2gpu_gb384`
-- `FixedFeedbackSFT/runs/qwen3_vl_patch_stem_8stage_separable_optical_imagenet_backbone/p11_large_recipe_proxy_5e_phase7e3_2gpu_gb384`
+epoch 5 的平均相位位移是 0.0088239 rad。
 
-日志软链接：
+### 5.2 phase peak LR 0.007
 
-- `.../logs/p11_proxy_phase2e3.latest.log`
-- `.../logs/p11_proxy_phase7e3.latest.log`
+| epoch | raw loss | raw Top-1 | raw Top-5 | EMA Top-1 | EMA Top-5 |
+|---:|---:|---:|---:|---:|---:|
+| 1 | 2.472388 | 47.726% | 72.126% | 50.180% | 74.448% |
+| 2 | 2.411153 | 48.130% | 72.658% | 49.710% | 74.136% |
+| 3 | 2.394255 | 47.990% | 72.564% | 49.294% | 73.684% |
+| 4 | 2.386966 | 48.212% | 72.834% | 49.020% | 73.416% |
+| 5 | 2.373369 | 48.308% | 72.900% | 48.838% | 73.204% |
 
-启动后核验：GPU 0/1/2/5 各占用约 9.2--9.4 GiB，利用率 95--100%；两个 torchrun
-launcher 与四个 DDP rank 均存活。首个 optimizer step 已越过强制的 8/8 层 phase
-finite/non-zero 检查。
+epoch 5 的平均相位位移是 0.0277205 rad，为 0.002 配方的约 3.14 倍。所有 epoch 的
+8/8 层相位梯度均 finite/non-zero，所有光学 gate 均不低于 0.5。
 
-## 6. 下一决策
+### 5.3 严格结论
 
-当前没有启动 100-epoch 正式训练。待两个 5-epoch proxy 完成后：
+- 两组 `best_epoch` 都是 0；任何训练后 epoch 都未超过起点，也未达到 51.448% 的代理晋级线。
+- 强 Mixup/CutMix/RandAugment 破坏了已有分类边界，raw 指标在缓慢恢复，但 EMA 持续下降。
+- 失败不能归因于梯度消失或光学 gate 关闭。
+- 若只比较两种相位学习率，0.007 的相位更新更充分，epoch 5 raw Top-1 高 0.036 percentage
+  point；但这个差距不构成“配方成功”。
 
-1. 比较 raw/EMA Top-1、Top-5、validation loss、phase motion 与 gate；
-2. 达到 51.448% 或呈明确持续上升趋势的配方才可晋级；
-3. 选择一个 phase LR，在确认五张 GPU 空闲后启动独立 100-epoch run；
-4. 正式结果需达到 Top-1 51.648%、Top-5 不低于 75.552% 且 loss 不恶化，才记为突破；
-5. 新最佳必须再做 seeds、linear probe、full fine-tune 与下游迁移，不能只报告 ImageNet
-   单次 Top-1。
+## 6. 探索性长程训练与止损门
+
+由于 0.007 在保持梯度健康的同时产生了更充分的相位运动，2026-09-02 启动一条独立的
+100-epoch **探索性**续训，而不是把它登记为已经通过代理门的正式配方：
+
+- config：`large_recipe_formal_100e_phase7e3_5gpu_gb480.yaml`；
+- output：`p11_large_recipe_formal_100e_phase7e3_5gpu_gb480`；
+- 物理 GPU：0、1、2、3、4；global batch 480；
+- launcher PID：`1232144`；
+- 重新评估起点：Top-1 51.344%、Top-5 75.558%。
+
+任务已通过进程、5 个 DDP rank、GPU 显存和 batch 日志四项核验。它不得仅凭训练 loss 下降
+继续消耗算力，采用以下人工审查门：
+
+第 1 个 epoch 已完成：raw Top-1/Top-5 为 47.856%/72.600%，EMA Top-1/Top-5 为
+50.350%/74.732%。这与 5-epoch 代理的首轮跌落一致，尚未到 epoch-10 决策点，也没有产生
+新最佳。第 2 个 epoch 的 raw Top-1 为 47.752%，EMA Top-1 为 50.146%，暂未表现出恢复
+斜率；任务已进入 epoch 3，仍按预注册的 epoch-10 门检查，不能凭前两轮提前声称成功。
+
+1. epoch 10：raw Top-1 至少 49.0%，且最近斜率为正；
+2. epoch 20：raw Top-1 至少 50.5%，且最近斜率为正；
+3. epoch 30：raw Top-1 至少回到 51.35% 起点，且最近斜率为正；
+4. 未通过时登记为停止候选，由人工结合 raw/EMA、loss 和相位运动决定，不由脚本自动杀进程；
+5. 最终只有 Top-1 达到 51.648%、Top-5 不低于 75.552% 且 loss 不恶化，才记为性能突破。
+
+只读评估工具是 `FixedFeedbackSFT/tools/assess_p11_longrun_gate.py`；它只给出
+`wait_for_epoch_10`、`continue_to_next_gate` 或 `manual_review_stop_candidate` 判定，不发送
+信号、也不删除 checkpoint。
+
+## 7. 并行恢复支线
+
+代理实验说明强增广可能不适合直接接在已收敛的 P11 分类边界上，因此已经实现独立的
+clean-recovery 实验：从 0.007 代理的 epoch-5 **raw** 权重 strict-load，重置 optimizer，
+移除 Mixup/CutMix/RandAugment/random erasing/label smoothing/drop-path，恢复普通交叉熵与
+RRC+flip。注册配方为 5 epochs、单卡 global batch 96、phase LR 8e-4；保留模型内部
+`mixer_dropout=0.10`，并用 5 个确定性视图避免五轮内重复。
+
+源 checkpoint 的 SHA-256、format、role、epoch、config digest 和 stem identity 都被写死；
+源 optimizer/scheduler/scaler 不复用。该实验与探索性长程训练使用独立代码、输出目录、
+checkpoint format 和实现 manifest，不能互相 resume 或覆盖。当前 GPU 5 已被其他用户占用，
+因此只完成本地静态验证，正式启动由空卡门保护，待服务器测试和 GPU 释放后执行。
+
+## 8. 后续证据链
+
+若 ImageNet-1K 指标形成新最佳，还必须补 seeds、linear probe、full fine-tune 与多下游迁移；
+ImageNet-22K 路线则必须先固定数据版本、类别 manifest 和样本 manifest，再执行大类目预训练及
+同配方 ImageNet-1K 回迁对照，不能把一次 22K 训练 loss 当作 backbone 有效性的证据。
+
+## 9. ImageNet-21K/22K 独立训练链路
+
+已新增独立工程
+`FixedFeedbackSFT/projects/qwen3_vl_patch_stem_8stage_separable_optical_imagenet22k_backbone`，
+没有修改当前长程任务实现 manifest 中的任何文件。主要契约如下：
+
+- 原始 Fall11：21,841 类、14,197,122 张、90 epochs、无验证选择，只导出 last raw/EMA；
+- MIIL-P Fall11：11,221 类、训练 11,797,632 张、验证 561,052 张、80 epochs；
+- 一次性生成 TSV + uint64 offsets 磁盘索引，运行时 mmap，避免每个 DDP worker 保存一千多万
+  Python 路径对象；
+- 由 release、WNID 顺序、精确样本数和文件 SHA 共同确定数据身份；
+- 从冻结 P11 只加载 backbone，严格证明 1,000 类旧读出头没有被复制，再新建 10,450、
+  11,221 或 21,841 类临时头；
+- soft-target CE、Mixup/CutMix、AMP、EMA、rank-specific RNG、DDP 与严格 resume；
+- 临时分类头不计入 backbone 光学参数占比，并硬检查光学占比和每层 gate 均不低于 0.5；
+- ImageNet-1K 图片配 21,841 类头的 100-batch 测试只标记为 plumbing/non-publishable，
+  不允许报告为 ImageNet-22K 性能。
+
+服务器审计没有发现 ImageNet-21K/22K 数据或可用访问凭证；`/DATA/DATA1` 约剩 777 GiB，
+而 Fall11 原始包本身约 1.31 TB，不能在当前盘安全地下载、解包并重复缓存。正式启动器会在
+创建输出目录、初始化 CUDA/NCCL 或占用 GPU 之前核验授权数据索引、精确 manifest、资产 SHA
+和磁盘预算；当前缺数据时必须 hard fail。下一步需要把授权数据挂载到容量充足的共享盘，优先
+建议使用已处理的 MIIL-P Fall11，然后先做 1 epoch 真实数据 pilot，再进入 80-epoch 配方和
+30-epoch ImageNet-1K 回迁对照。
