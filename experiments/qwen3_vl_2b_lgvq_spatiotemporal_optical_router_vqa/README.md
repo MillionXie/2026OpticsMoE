@@ -75,7 +75,9 @@ locks the complete sentence as an additional experimental control:
 following five levels: Excellent, Good, Fair, Poor, or Bad.`
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for every tensor shape and
-[RUN_COMMANDS.md](RUN_COMMANDS.md) for the complete runnable sequence.
+[RUN_COMMANDS.md](RUN_COMMANDS.md) for the complete runnable sequence. Formal
+single-seed measurements and their limitations are recorded in
+[RESULTS.md](RESULTS.md).
 
 ## Scope and initialization
 
