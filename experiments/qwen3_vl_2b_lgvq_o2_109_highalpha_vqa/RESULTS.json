@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "status": "complete",
+  "test_count": 558,
+  "validation_used": false,
+  "selection_policy": "highest alpha floor whose selected checkpoint meets all ten Optical 500x500 reference metrics",
+  "selected_alpha_floor": 0.5,
+  "selected_run": "runs/o2_109_alpha50",
+  "selected_checkpoint": "runs/o2_109_alpha50/best_reference_compliant_checkpoint.pt",
+  "selected_checkpoint_sha256": "c143c20eba03fe01e3da652141ac6eb913f45619fc8c4162ba304e31b0fdee26",
+  "reference": {
+    "spatial": {"srcc": 0.6710, "krcc": 0.4909, "plcc": 0.7106, "rmse": 8.197, "mae": 6.493},
+    "temporal": {"srcc": 0.8604, "krcc": 0.6623, "plcc": 0.8784, "rmse": 6.721, "mae": 5.144}
+  },
+  "runs": {
+    "alpha20": {
+      "selected_epoch": 60,
+      "alpha": [0.274214, 0.273962, 0.302629, 0.301454],
+      "spatial": {"srcc": 0.737052, "krcc": 0.550381, "plcc": 0.771909, "rmse": 7.331145, "mae": 5.861957},
+      "temporal": {"srcc": 0.872200, "krcc": 0.674979, "plcc": 0.888212, "rmse": 6.317942, "mae": 4.902462},
+      "reference_passed": true,
+      "checkpoint": "runs/o2_109_alpha20/last_checkpoint.pt",
+      "checkpoint_sha256": "189f5c9fcf4dafdeda43bc7b288fcb487338454f213c162caaa2fd950790d2d2"
+    },
+    "alpha35": {
+      "selected_epoch": 5,
+      "alpha": [0.414517, 0.414332, 0.420352, 0.420168],
+      "spatial": {"srcc": 0.757123, "krcc": 0.567852, "plcc": 0.788754, "rmse": 7.515311, "mae": 6.036093},
+      "temporal": {"srcc": 0.868690, "krcc": 0.673563, "plcc": 0.888135, "rmse": 6.454937, "mae": 4.888725},
+      "reference_passed": true,
+      "checkpoint": "runs/o2_109_alpha35/best_observed_test_checkpoint.pt",
+      "checkpoint_sha256": "8d2dd1c4e06e226924d84c9a444fbd75f4e45beedc03ddc579fce13e1e136d75"
+    },
+    "alpha50": {
+      "selected_epoch": 10,
+      "alpha": [0.559006, 0.559254, 0.570198, 0.570061],
+      "spatial": {"srcc": 0.758564, "krcc": 0.568586, "plcc": 0.785904, "rmse": 7.052762, "mae": 5.675429},
+      "temporal": {"srcc": 0.874087, "krcc": 0.682187, "plcc": 0.889731, "rmse": 6.410657, "mae": 4.827041},
+      "reference_passed": true,
+      "checkpoint": "runs/o2_109_alpha50/best_reference_compliant_checkpoint.pt",
+      "checkpoint_sha256": "c143c20eba03fe01e3da652141ac6eb913f45619fc8c4162ba304e31b0fdee26"
+    },
+    "alpha65": {
+      "selected_epoch": 10,
+      "alpha": [0.690968, 0.691772, 0.699926, 0.700423],
+      "spatial": {"srcc": 0.756172, "krcc": 0.565071, "plcc": 0.779482, "rmse": 7.188352, "mae": 5.814585},
+      "temporal": {"srcc": 0.858585, "krcc": 0.665437, "plcc": 0.871995, "rmse": 6.798051, "mae": 5.130661},
+      "reference_passed": false,
+      "checkpoint": "runs/o2_109_alpha65/best_observed_test_checkpoint.pt",
+      "checkpoint_sha256": "8b1d77b063ca8a16fcbd63d77d9e5ac387261e535d5712c86d9563e1ee8d78b2"
+    }
+  }
+}

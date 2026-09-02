@@ -15,14 +15,18 @@
 
 ## 2. alpha 梯度结果表
 
-当前状态：等待正式训练，以下单元格不得在训练完成前填入估计值。
+当前状态：四档正式训练与完整 test 评估已完成。表中均为 558 个固定 test 视频的实测值，不含 validation。
 
 | alpha 下界 | 最佳 epoch | 四层最终 alpha | Spatial SRCC | KRCC | PLCC | RMSE | MAE | Temporal SRCC | KRCC | PLCC | RMSE | MAE | 是否达到参考 |
 |---:|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| 0.20 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
-| 0.35 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
-| 0.50 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
-| 0.65 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| 0.20 | 60 | 0.2742 / 0.2740 / 0.3026 / 0.3015 | 0.7371 | 0.5504 | 0.7719 | 7.3311 | 5.8620 | 0.8722 | 0.6750 | 0.8882 | 6.3179 | 4.9025 | 是 |
+| 0.35 | 5 | 0.4145 / 0.4143 / 0.4204 / 0.4202 | 0.7571 | 0.5679 | 0.7888 | 7.5153 | 6.0361 | 0.8687 | 0.6736 | 0.8881 | 6.4549 | 4.8887 | 是 |
+| **0.50** | **10** | **0.5590 / 0.5593 / 0.5702 / 0.5701** | **0.7586** | **0.5686** | **0.7859** | **7.0528** | **5.6754** | **0.8741** | **0.6822** | **0.8897** | **6.4107** | **4.8270** | **是，最终选择** |
+| 0.65 | 10 | 0.6910 / 0.6918 / 0.6999 / 0.7004 | 0.7562 | 0.5651 | 0.7795 | 7.1884 | 5.8146 | 0.8586 | 0.6654 | 0.8720 | 6.7981 | 5.1307 | 否 |
+
+四层 alpha 顺序固定为 `Vision expert / Vision global / Language expert / Language global`。0.50 档是当前最高的全面达标版本；0.65 档的 Spatial 仍强，但 Temporal SRCC、PLCC、RMSE、MAE 不合格，因此不能只凭更高 alpha 选它。
+
+0.50 档先完成了一次 60 epoch 全程训练；由于旧逻辑没有保留 epoch 15 的合格权重，随后在相同配置、seed、数据和硬件尺寸下重放。重放在 epoch 10 首次十项全达标后保存 `best_reference_compliant_checkpoint.pt` 并停止，原始完整训练保留在 `o2_109_alpha50_initial_complete/`。
 
 结果必须直接抄自各目录的：
 
@@ -33,6 +37,14 @@ test_metrics.json
 fusion_diagnostics.json
 router_diagnostics.json
 training_summary.json
+RESULTS.json
+```
+
+正式选中 checkpoint：
+
+```text
+runs/o2_109_alpha50/best_reference_compliant_checkpoint.pt
+SHA256 c143c20eba03fe01e3da652141ac6eb913f45619fc8c4162ba304e31b0fdee26
 ```
 
 ## 3. 最终模型选择
@@ -61,4 +73,3 @@ same split, seed, loss, optimizer and dual readout
 ```
 
 因此各 alpha 梯度之间主要反映强制光学融合比例的性能代价，而不是 Router 类型或专家数量变化。
-
