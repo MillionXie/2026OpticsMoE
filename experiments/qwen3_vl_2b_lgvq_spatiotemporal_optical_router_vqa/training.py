@@ -75,19 +75,81 @@ def evaluate(
 ) -> dict[str, Any]:
     model.eval()
     predictions, targets, sample_ids, video_paths = [], [], [], []
+    fusion_sums: dict[str, dict[str, float]] = {}
+    fusion_samples = 0
+    router_sums: dict[str, dict[str, Any]] = {}
     for batch in loader:
         output = model(
             batch["features"].to(device, non_blocking=True),
             batch["language_tokens"].to(device, non_blocking=True),
             batch["language_mask"].to(device, non_blocking=True),
         )
+        batch_size = int(output["prediction"].shape[0])
         predictions.append(output["prediction"].detach().cpu())
         targets.append(batch["target"].detach().cpu())
         sample_ids.extend(batch["sample_id"])
         video_paths.extend(batch["video_path"])
+        fusion_samples += batch_size
+        for stage, values in model.fusion_diagnostics().items():
+            accumulator = fusion_sums.setdefault(stage, {})
+            for key, value in values.items():
+                accumulator[key] = accumulator.get(key, 0.0) + float(value) * batch_size
+        for branch, routing in output["routing"].items():
+            probabilities = routing["probabilities"].detach().float().reshape(-1, 4).cpu()
+            selected = routing["selected_mask"].detach().float().reshape(-1, 4).cpu()
+            count = int(probabilities.shape[0])
+            accumulator = router_sums.setdefault(
+                branch,
+                {
+                    "decision_count": 0,
+                    "probability_sum": torch.zeros(4),
+                    "selected_sum": torch.zeros(4),
+                    "entropy_sum": 0.0,
+                    "capture_sum": 0.0,
+                    "capture_count": 0,
+                    "implementation": str(routing["router_implementation"]),
+                },
+            )
+            accumulator["decision_count"] += count
+            accumulator["probability_sum"] += probabilities.sum(0)
+            accumulator["selected_sum"] += selected.sum(0)
+            entropy = -(
+                probabilities.clamp_min(1.0e-8).log() * probabilities
+            ).sum(-1) / math.log(4.0)
+            accumulator["entropy_sum"] += float(entropy.sum())
+            if "capture_fraction" in routing:
+                capture = routing["capture_fraction"].detach().float().reshape(-1).cpu()
+                accumulator["capture_sum"] += float(capture.sum())
+                accumulator["capture_count"] += int(capture.numel())
     prediction = torch.cat(predictions)
     target = torch.cat(targets)
     metrics = regression_metrics(prediction, target)
+    metrics["fusion_diagnostics"] = {
+        stage: {
+            key: value / max(1, fusion_samples)
+            for key, value in values.items()
+        }
+        for stage, values in fusion_sums.items()
+    }
+    metrics["router_diagnostics"] = {}
+    for branch, values in router_sums.items():
+        count = max(1, int(values["decision_count"]))
+        selected_total = float(values["selected_sum"].sum())
+        metrics["router_diagnostics"][branch] = {
+            "implementation": values["implementation"],
+            "decision_count": int(values["decision_count"]),
+            "mean_probability": (values["probability_sum"] / count).tolist(),
+            "selected_fraction_per_decision": (values["selected_sum"] / count).tolist(),
+            "selected_share_among_active": (
+                values["selected_sum"] / max(1.0, selected_total)
+            ).tolist(),
+            "normalized_entropy": float(values["entropy_sum"]) / count,
+            "capture_fraction_mean": (
+                float(values["capture_sum"]) / int(values["capture_count"])
+                if int(values["capture_count"]) > 0
+                else None
+            ),
+        }
     if prediction_path is not None:
         prediction_path.parent.mkdir(parents=True, exist_ok=True)
         with prediction_path.open("w", encoding="utf-8", newline="") as handle:
@@ -349,7 +411,14 @@ def evaluate_checkpoint(
         prediction_path=settings.output_dir / "test_predictions.csv",
     )
     _write_json(settings.output_dir / "test_metrics.json", metrics)
-    _write_json(settings.output_dir / "fusion_diagnostics.json", model.fusion_diagnostics())
+    _write_json(
+        settings.output_dir / "fusion_diagnostics.json",
+        metrics["fusion_diagnostics"],
+    )
+    _write_json(
+        settings.output_dir / "router_diagnostics.json",
+        metrics["router_diagnostics"],
+    )
     return metrics
 
 

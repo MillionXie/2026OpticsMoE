@@ -2,12 +2,20 @@
 
 Run every command from the `2026OpticsMoE` repository root. Formal server paths
 below match the uploaded LGVQ server; edit them only if that server layout moves.
+On the current single-GPU Seetacloud host, start with:
+
+```bash
+cd /root/autodl-tmp/workspace/opticsmoe
+```
 
 ## 0. One-time environment check
 
+The verified server uses `/root/miniconda3/bin/python` directly (no named conda
+environment is required):
+
 ```bash
-conda activate xml
-python -c "import torch, transformers, cv2; print(torch.__version__, transformers.__version__, torch.cuda.is_available())"
+/root/miniconda3/bin/python -c "import torch, transformers, cv2; print(torch.__version__, transformers.__version__, torch.cuda.is_available())"
+nvidia-smi --query-gpu=index,name,memory.total --format=csv
 ```
 
 The cache path requires a local Qwen model directory. It never downloads from
@@ -68,23 +76,27 @@ uses a tiny CPU plane and is not an accuracy benchmark.
 
 ## 4. Fair router experiments
 
-These four commands differ only in router backend/top-k. Run them on separate
-free GPUs if desired:
+These four commands keep data, feature blocks, fusion range, losses and output
+head fixed while changing the router mechanism/top-k. O2 necessarily adds a
+trainable router phase, detector propagation/capture regularizer and its own
+phase learning rate; those are part of the optical-router mechanism. The
+current server has only GPU 0, so the safest reproducible procedure is to run
+the four commands sequentially:
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_lgvq_spatiotemporal_optical_router_vqa \
   --config experiments/qwen3_vl_2b_lgvq_spatiotemporal_optical_router_vqa/configs/release/e1.yaml \
   --phase train
 
-CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_2b_lgvq_spatiotemporal_optical_router_vqa \
+CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_lgvq_spatiotemporal_optical_router_vqa \
   --config experiments/qwen3_vl_2b_lgvq_spatiotemporal_optical_router_vqa/configs/release/e2.yaml \
   --phase train
 
-CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_2b_lgvq_spatiotemporal_optical_router_vqa \
+CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_lgvq_spatiotemporal_optical_router_vqa \
   --config experiments/qwen3_vl_2b_lgvq_spatiotemporal_optical_router_vqa/configs/release/e4.yaml \
   --phase train
 
-CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_2b_lgvq_spatiotemporal_optical_router_vqa \
+CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_lgvq_spatiotemporal_optical_router_vqa \
   --config experiments/qwen3_vl_2b_lgvq_spatiotemporal_optical_router_vqa/configs/release/o2.yaml \
   --phase train
 ```
@@ -94,12 +106,16 @@ is `runs/lgvq_<variant>/best_observed_test_checkpoint.pt`; the selection metric
 is `mean(SRCC_spatial, SRCC_temporal)`. This is test-guided model selection by
 explicit request, not a held-out generalization estimate.
 
+All four release configs use `alpha∈[0.01,0.49]` (low-optical regime). They do
+not cover `alpha>0.5` or optical-off; add those only as separate fusion
+ablations, never by silently changing one row of the router table.
+
 ## 5. Re-evaluate a selected checkpoint and export predictions
 
 Example for O2:
 
 ```bash
-CUDA_VISIBLE_DEVICES=4 python -m experiments.qwen3_vl_2b_lgvq_spatiotemporal_optical_router_vqa \
+CUDA_VISIBLE_DEVICES=0 python -m experiments.qwen3_vl_2b_lgvq_spatiotemporal_optical_router_vqa \
   --config experiments/qwen3_vl_2b_lgvq_spatiotemporal_optical_router_vqa/configs/release/o2.yaml \
   --phase evaluate \
   --checkpoint experiments/qwen3_vl_2b_lgvq_spatiotemporal_optical_router_vqa/runs/lgvq_o2/best_observed_test_checkpoint.pt
@@ -111,7 +127,8 @@ Important outputs are:
 - `training_summary.json`: best epoch and selection policy;
 - `test_metrics.json`: explicit re-evaluation metrics;
 - `test_predictions.csv`: path-keyed spatial/temporal target and prediction;
-- `fusion_diagnostics.json`: four learned alpha values and E/O RMS diagnostics;
+- `fusion_diagnostics.json`: test-set batch-weighted four-layer alpha/E/O RMS diagnostics;
+- `router_diagnostics.json`: test-set expert probability, selection share, entropy and optical capture;
 - `parameter_breakdown.json`: phase/router/other parameter counts;
 - `resolved_config.json` and `preflight.json`: auditable experiment contract.
 

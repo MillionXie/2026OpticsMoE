@@ -27,6 +27,15 @@ All four variants use corrected straight-through selection and `power_l2`
 weights. O2 replaces only the router: its Vision router produces all four
 frame-wise MoE4 decisions in one 1024-plane propagation, while its Language
 router produces one per-video MoE4 decision on the unchanged 518/478 plane.
+The present router table deliberately uses the **low-optical fusion regime**
+only: every feature layer learns `alpha` in `[0.01,0.49]`, initialized at
+`0.055`. It does not constitute an `alpha>0.5` or optical-off ablation.
+
+O2 keeps the same downstream feature blocks and prediction head, but it is not
+computationally identical to E2: it replaces the electronic score head with a
+trainable router phase, an extra propagation and detector integration, a router
+phase learning rate of `1e-2`, and a capture regularizer. Those differences are
+the mechanism under comparison, not hidden implementation drift.
 
 > **Hardware boundary:** the 1024/986 parallel16 plane is a simulation contract
 > inherited for a fair comparison with the uploaded sister architecture. A
@@ -60,6 +69,10 @@ block-major group is mean-pooled to `[196,1024]`. This deterministic reduction
 does not call the learned Qwen merger. The exact five-level prompt is passed
 through the frozen Qwen language backbone once and stored as singleton
 `[1,L,2048]`, then broadcast without duplicating gigabytes of cache data.
+Although only the final five labels were required to remain fixed, this run
+locks the complete sentence as an additional experimental control:
+`Please evaluate the quality of this video and rate it using one of the
+following five levels: Excellent, Good, Fair, Poor, or Bad.`
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for every tensor shape and
 [RUN_COMMANDS.md](RUN_COMMANDS.md) for the complete runnable sequence.
@@ -90,6 +103,21 @@ O2 forward/backward on CPU. It is a wiring test, not a performance result.
 | Initialization dependency | SPAQ/checkpoint/cache assets referenced but absent on the uploaded server | SPAQ optional; explicit Qwen-boundary orthogonal fallback |
 | Alignment | three-head output includes alignment | alignment hard-disabled end to end |
 | Propagation organization | serial/parallel shortcuts including an eight-propagation path | two parallel Vision feature propagations plus two serial Language feature propagations; O2 adds router propagations |
+
+### What is reused, and what remains independent
+
+| Component | Shared/reused | Independent |
+|---|---|---|
+| Frozen Qwen boundary | one 1024→192 Vision adapter and one 2048→192 Language adapter | input frame/token values differ per video |
+| Four video frames | the same field encoder, CCD readout and electronic frame router are applied to every frame | the 16 Vision-expert phase masks are independent (4 frames × 4 experts) |
+| Vision global optics | one operation processes the four frame lanes in parallel | one trainable 986×986 phase plane covers the complete parallel canvas; it is not four copied masks |
+| Language optics | the verified 518/478 geometry and the same encoder/readout contract are reused | Language expert/global phases are separate from Vision phases |
+| Output electronics | one lightweight temporal head and one regressor are shared by all samples | no generator-specific head or one-hot shortcut exists |
+
+Thus “reuse + shrink + parallel” means parameter sharing in the adapters,
+encoders/readouts and frame router, deterministic 1024→192/784→196 feature
+reduction, and simultaneous four-frame execution. It does not mean that all
+optical phase masks are tied together.
 
 The uploaded sister results cannot currently be independently reproduced from
 the server copy because referenced checkpoint/cache dependencies are missing.
