@@ -1,0 +1,356 @@
+from __future__ import annotations
+
+import csv
+import json
+import math
+from pathlib import Path
+from typing import Any, Mapping
+
+import torch
+from torch import nn
+from torch.nn import functional as F
+from torch.utils.data import DataLoader
+
+from .data import LGVQFeatureDataset
+from .metrics import regression_metrics
+from .modeling import LGVQSpatiotemporalModel
+from .settings import ExperimentSettings, resolved_dict
+
+
+def _write_json(path: Path, value: Any) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    temporary.write_text(
+        json.dumps(value, indent=2, ensure_ascii=False, allow_nan=True) + "\n",
+        encoding="utf-8",
+    )
+    temporary.replace(path)
+
+
+def _loader(
+    payload: Mapping[str, Any],
+    split: str,
+    settings: ExperimentSettings,
+    *,
+    shuffle: bool,
+) -> DataLoader:
+    return DataLoader(
+        LGVQFeatureDataset(payload, split),
+        batch_size=settings.batch_size,
+        shuffle=shuffle,
+        num_workers=settings.num_workers,
+        pin_memory=settings.device.startswith("cuda"),
+        drop_last=False,
+    )
+
+
+def pairwise_ranking_loss(
+    prediction: torch.Tensor,
+    target: torch.Tensor,
+    minimum_difference: float = 0.05,
+) -> torch.Tensor:
+    losses = []
+    for column in range(2):
+        difference = target[:, None, column] - target[None, :, column]
+        predicted_difference = (
+            prediction[:, None, column] - prediction[None, :, column]
+        )
+        upper = torch.triu(
+            torch.ones_like(difference, dtype=torch.bool), diagonal=1
+        )
+        valid = upper & (difference.abs() >= minimum_difference)
+        if bool(valid.any()):
+            sign = difference[valid].sign()
+            losses.append(F.softplus(-sign * predicted_difference[valid]).mean())
+    return torch.stack(losses).mean() if losses else prediction.new_zeros(())
+
+
+@torch.no_grad()
+def evaluate(
+    model: LGVQSpatiotemporalModel,
+    loader: DataLoader,
+    device: torch.device,
+    *,
+    prediction_path: Path | None = None,
+) -> dict[str, Any]:
+    model.eval()
+    predictions, targets, sample_ids, video_paths = [], [], [], []
+    for batch in loader:
+        output = model(
+            batch["features"].to(device, non_blocking=True),
+            batch["language_tokens"].to(device, non_blocking=True),
+            batch["language_mask"].to(device, non_blocking=True),
+        )
+        predictions.append(output["prediction"].detach().cpu())
+        targets.append(batch["target"].detach().cpu())
+        sample_ids.extend(batch["sample_id"])
+        video_paths.extend(batch["video_path"])
+    prediction = torch.cat(predictions)
+    target = torch.cat(targets)
+    metrics = regression_metrics(prediction, target)
+    if prediction_path is not None:
+        prediction_path.parent.mkdir(parents=True, exist_ok=True)
+        with prediction_path.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.writer(handle)
+            writer.writerow(
+                [
+                    "sample_id",
+                    "video_path",
+                    "spatial_target",
+                    "spatial_prediction",
+                    "temporal_target",
+                    "temporal_prediction",
+                ]
+            )
+            for index, sample_id in enumerate(sample_ids):
+                writer.writerow(
+                    [
+                        sample_id,
+                        video_paths[index],
+                        float(target[index, 0]),
+                        float(prediction[index, 0]),
+                        float(target[index, 1]),
+                        float(prediction[index, 1]),
+                    ]
+                )
+    return metrics
+
+
+def _optimizer(model: nn.Module, settings: ExperimentSettings) -> torch.optim.Optimizer:
+    phase, router, router_phase, base = [], [], [], []
+    router_prefixes = ("vision_router.", "language_router.")
+    for name, parameter in model.named_parameters():
+        if not parameter.requires_grad:
+            continue
+        if name.startswith(router_prefixes):
+            if "raw_router_phase" in name:
+                router_phase.append(parameter)
+            else:
+                router.append(parameter)
+        elif "raw_" in name and "phase" in name:
+            phase.append(parameter)
+        else:
+            base.append(parameter)
+    groups = [{"params": base, "lr": settings.learning_rate, "name": "electronic"}]
+    if router:
+        groups.append(
+            {"params": router, "lr": settings.router_learning_rate, "name": "router"}
+        )
+    if router_phase:
+        groups.append(
+            {
+                "params": router_phase,
+                "lr": settings.optical_router_phase_learning_rate,
+                "name": "optical_router_phase",
+            }
+        )
+    if phase:
+        groups.append(
+            {"params": phase, "lr": settings.phase_learning_rate, "name": "phase"}
+        )
+    assigned = {id(parameter) for group in groups for parameter in group["params"]}
+    expected = {id(parameter) for parameter in model.parameters() if parameter.requires_grad}
+    if assigned != expected or sum(len(group["params"]) for group in groups) != len(assigned):
+        raise RuntimeError("Optimizer parameter groups overlap or omit trainable tensors")
+    return torch.optim.AdamW(groups, weight_decay=settings.weight_decay)
+
+
+def _checkpoint(
+    path: Path,
+    model: LGVQSpatiotemporalModel,
+    optimizer: torch.optim.Optimizer,
+    settings: ExperimentSettings,
+    *,
+    epoch: int,
+    metrics: Mapping[str, Any] | None,
+    initialization: Mapping[str, Any],
+) -> None:
+    payload = {
+        "schema_version": 1,
+        "architecture": settings.architecture_label,
+        "epoch": int(epoch),
+        "state_dict": model.state_dict(),
+        "optimizer": optimizer.state_dict(),
+        "metrics": dict(metrics or {}),
+        "settings": resolved_dict(settings),
+        "initialization": dict(initialization),
+        "selection_policy": (
+            "highest periodically observed test mean(SRCC_spatial,SRCC_temporal); "
+            "test leakage explicitly accepted; no validation split"
+        ),
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    torch.save(payload, temporary)
+    temporary.replace(path)
+
+
+def train(
+    model: LGVQSpatiotemporalModel,
+    payload: Mapping[str, Any],
+    settings: ExperimentSettings,
+    device: torch.device,
+    initialization: Mapping[str, Any],
+) -> dict[str, Any]:
+    output = settings.output_dir
+    output.mkdir(parents=True, exist_ok=True)
+    train_loader = _loader(payload, "train", settings, shuffle=True)
+    test_loader = _loader(payload, "test", settings, shuffle=False)
+    train_indices = [
+        index for index, split in enumerate(payload["splits"]) if split == "train"
+    ]
+    train_targets = payload["targets"][train_indices].float()
+    model.set_target_statistics(
+        train_targets.mean(0), train_targets.std(0, unbiased=False).clamp_min(1.0e-6)
+    )
+    model.to(device)
+    optimizer = _optimizer(model, settings)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+        optimizer, T_max=settings.epochs
+    )
+    best_score = float("-inf")
+    best_epoch = 0
+    history: list[dict[str, Any]] = []
+    for epoch in range(1, settings.epochs + 1):
+        model.train()
+        totals = {
+            "loss": 0.0,
+            "regression": 0.0,
+            "ranking": 0.0,
+            "router_balance": 0.0,
+            "router_importance": 0.0,
+            "router_capture": 0.0,
+            "batches": 0,
+        }
+        for batch in train_loader:
+            features = batch["features"].to(device, non_blocking=True)
+            language = batch["language_tokens"].to(device, non_blocking=True)
+            language_mask = batch["language_mask"].to(device, non_blocking=True)
+            target = batch["target"].to(device, non_blocking=True)
+            normalized_target = (target - model.target_mean) / model.target_std
+            optimizer.zero_grad(set_to_none=True)
+            result = model(features, language, language_mask)
+            regression = F.smooth_l1_loss(
+                result["normalized_prediction"], normalized_target
+            )
+            ranking = pairwise_ranking_loss(
+                result["normalized_prediction"], normalized_target
+            )
+            loss = (
+                regression
+                + settings.ranking_loss_weight * ranking
+                + settings.router_balance_weight * result["router_balance_loss"]
+                + settings.router_importance_weight
+                * result["router_importance_loss"]
+            )
+            if not bool(torch.isfinite(loss)):
+                raise RuntimeError("Non-finite LGVQ training loss")
+            loss.backward()
+            bad = [
+                name
+                for name, parameter in model.named_parameters()
+                if parameter.grad is not None and not bool(torch.isfinite(parameter.grad).all())
+            ]
+            if bad:
+                raise RuntimeError(f"Non-finite gradients: {bad}")
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+            optimizer.step()
+            totals["loss"] += float(loss.detach())
+            totals["regression"] += float(regression.detach())
+            totals["ranking"] += float(ranking.detach())
+            totals["router_balance"] += float(result["router_balance_loss"].detach())
+            totals["router_importance"] += float(
+                result["router_importance_loss"].detach()
+            )
+            totals["router_capture"] += float(result["router_capture_loss"].detach())
+            totals["batches"] += 1
+        scheduler.step()
+        count = max(1, totals.pop("batches"))
+        row: dict[str, Any] = {
+            "epoch": epoch,
+            **{key: value / count for key, value in totals.items()},
+            "test_evaluated": False,
+        }
+        should_test = (
+            epoch == 1
+            or epoch % settings.test_interval_epochs == 0
+            or epoch == settings.epochs
+        )
+        if should_test:
+            test_metrics = evaluate(model, test_loader, device)
+            row["test_evaluated"] = True
+            row["test"] = test_metrics
+            score = float(test_metrics["selection_mean_srcc"])
+            if score > best_score:
+                best_score = score
+                best_epoch = epoch
+                _checkpoint(
+                    output / "best_observed_test_checkpoint.pt",
+                    model,
+                    optimizer,
+                    settings,
+                    epoch=epoch,
+                    metrics=test_metrics,
+                    initialization=initialization,
+                )
+                _write_json(output / "metrics_best_observed_test.json", test_metrics)
+        history.append(row)
+        _write_json(output / "train_history.json", history)
+        print(
+            f"epoch {epoch:03d} loss={row['loss']:.6f} "
+            f"router_capture={row['router_capture']:.5f} "
+            + (
+                f"test_mean_srcc={row['test']['selection_mean_srcc']:.4f}"
+                if row["test_evaluated"]
+                else "test=skipped"
+            ),
+            flush=True,
+        )
+    _checkpoint(
+        output / "last_checkpoint.pt",
+        model,
+        optimizer,
+        settings,
+        epoch=settings.epochs,
+        metrics=history[-1].get("test"),
+        initialization=initialization,
+    )
+    report = {
+        "best_epoch": best_epoch,
+        "best_test_mean_srcc": best_score,
+        "test_interval_epochs": settings.test_interval_epochs,
+        "validation_used": False,
+        "test_used_for_selection": True,
+        "checkpoint": str(output / "best_observed_test_checkpoint.pt"),
+    }
+    _write_json(output / "training_summary.json", report)
+    return report
+
+
+def evaluate_checkpoint(
+    model: LGVQSpatiotemporalModel,
+    payload: Mapping[str, Any],
+    settings: ExperimentSettings,
+    device: torch.device,
+    checkpoint: Path,
+) -> dict[str, Any]:
+    saved = torch.load(checkpoint, map_location="cpu", weights_only=False)
+    if saved.get("architecture") != settings.architecture_label:
+        raise RuntimeError(
+            f"Checkpoint architecture mismatch: {saved.get('architecture')!r} != "
+            f"{settings.architecture_label!r}"
+        )
+    model.load_state_dict(saved["state_dict"], strict=True)
+    model.to(device)
+    metrics = evaluate(
+        model,
+        _loader(payload, "test", settings, shuffle=False),
+        device,
+        prediction_path=settings.output_dir / "test_predictions.csv",
+    )
+    _write_json(settings.output_dir / "test_metrics.json", metrics)
+    _write_json(settings.output_dir / "fusion_diagnostics.json", model.fusion_diagnostics())
+    return metrics
+
+
+__all__ = ["evaluate", "evaluate_checkpoint", "pairwise_ranking_loss", "train"]
