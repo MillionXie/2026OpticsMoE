@@ -97,7 +97,19 @@ def prepare_manifest(dataset_root: Path, output: Path, seed: int = 42) -> dict[s
             )
         video = Path(relative)
         if not video.is_absolute():
-            video = dataset_root / video
+            # The uploaded archive stores metadata paths as
+            # ``Gen-2/name.mp4`` but places the actual files below
+            # ``LGVQ/videos/Gen-2/name.mp4``.  Accept the flat layout too so
+            # repacking the dataset does not silently invalidate the manifest.
+            candidates = (dataset_root / video, dataset_root / "videos" / video)
+            existing = [candidate for candidate in candidates if candidate.is_file()]
+            if len(existing) != 1:
+                raise FileNotFoundError(
+                    f"Expected exactly one video for {sample_id!r}; found {existing}"
+                )
+            video = existing[0]
+        elif not video.is_file():
+            raise FileNotFoundError(f"LGVQ video is missing: {video}")
         group = str(item.get("prompt") or item.get("code") or Path(relative).stem)
         row = {
             "sample_id": sample_id,

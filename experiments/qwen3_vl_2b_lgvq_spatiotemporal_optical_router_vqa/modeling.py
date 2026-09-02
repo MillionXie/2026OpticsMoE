@@ -844,7 +844,9 @@ class ScaleMatchedFusion(nn.Module):
             "electronic_rms": float(re.mean()),
             "optical_rms": float(ro.mean()),
             "mixture_rms_before_post_rescale": float(rm.mean()),
-            "fused_to_electronic_rms": float((rms(fused.float()) / re).mean()),
+            "fused_to_electronic_rms": float(
+                (rms(fused.float()) / re).mean().detach()
+            ),
         }
         return fused
 
