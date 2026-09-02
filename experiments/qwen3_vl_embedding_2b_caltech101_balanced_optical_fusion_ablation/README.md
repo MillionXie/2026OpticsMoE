@@ -65,4 +65,5 @@ branch-specific affine、额外 LayerNorm 或逐 token 归一化，因此 token 
 - 按用户指定，不设 validation：每 5 epoch 测一次 test，并保存最高 test Top-1
   的 live/EMA checkpoint。该结果属于 test-selected，不应再宣称为无偏泛化估计。
 
-具体命令见 [RUN_COMMANDS.md](RUN_COMMANDS.md)。
+具体命令见 [RUN_COMMANDS.md](RUN_COMMANDS.md)，本次正式数值与服务器证据路径见
+[RESULTS.md](RESULTS.md)。
