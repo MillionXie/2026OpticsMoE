@@ -1,0 +1,3 @@
+base_config: common.yaml
+router: {backend: electronic, top_k: 2}
+output_dir: ../../runs/lgvq_e2

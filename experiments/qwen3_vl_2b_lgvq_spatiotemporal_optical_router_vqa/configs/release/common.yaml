@@ -1,0 +1,91 @@
+random_seed: 42
+device: cuda
+
+task:
+  target: spatiotemporal
+  prompt: "Please evaluate the quality of this video and rate it using one of the following five levels: Excellent, Good, Fair, Poor, or Bad."
+
+data:
+  manifest: ../../artifacts/lgvq_prompt_group_split.csv
+  cache: ../../artifacts/qwen_inputs_196x1024.pt
+  source_feature_cache: null
+  source_language_cache: null
+
+initialization:
+  # Optional exact-name/shape reuse only. Missing SPAQ assets never block training.
+  sister_checkpoint: null
+  qwen_model_path: null
+
+geometry:
+  canvas_size: 1024
+  active_size: 986
+  quadrant_size: 478
+  expert_size: 224
+  expert_pitch: 254
+
+model:
+  frame_count: 4
+  token_count: 196
+  token_grid_height: 14
+  token_grid_width: 14
+  input_width: 1024
+  language_input_width: 2048
+  language_token_count: 64
+  width: 192
+  detector_projection_size: 196
+  mixer_expansion: 2.0
+  dropout: 0.10
+
+router:
+  backend: electronic
+  top_k: 2
+  pool_size: 14
+  temperature: 1.0
+  noise_std: 0.05
+  weight_normalization: power_l2
+  straight_through: true
+  # The latest Caltech optical-router windows: four 59x59 integrations in
+  # every fixed 478x478 frame lane. Feature CCD readout still uses full lanes.
+  detector_intervals: [[164, 223], [255, 314]]
+  input_shift_pixels: 16
+  phase_shift_pixels: 16
+  ccd_shift_pixels: 16
+  phase_dropout_block_size: 8
+  energy_eps: 0.00000001
+  score_normalization: standardized_region_energy
+  capture_loss_scale: 0.10
+
+optics:
+  wavelength_nm: 532.0
+  pixel_pitch_um: 17.0
+  distance_m: 0.10
+  k_space_enabled: true
+  theta_max_deg: 1.0
+  phase_parameterization: sigmoid
+  phase_init_std: 0.15
+  phase_dropout_p: 0.05
+  ccd_relative_clip: 8.0
+  ccd_log_compression: 1.0
+
+fusion:
+  alpha_min: 0.01
+  alpha_max: 0.49
+  alpha_initial: 0.055
+  rms_epsilon: 0.000001
+
+loss:
+  ranking_weight: 0.20
+  router_balance_weight: 0.02
+  router_importance_weight: 0.002
+
+training:
+  epochs: 50
+  batch_size: 4
+  num_workers: 2
+  learning_rate: 0.00005
+  phase_learning_rate: 0.006
+  router_learning_rate: 0.001
+  optical_router_phase_learning_rate: 0.01
+  weight_decay: 0.0001
+  # No validation. Test 558 is observed at epoch 1/every 5/final and selects ckpt.
+  test_interval_epochs: 5
