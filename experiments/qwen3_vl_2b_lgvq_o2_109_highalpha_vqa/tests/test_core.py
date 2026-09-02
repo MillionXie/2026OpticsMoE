@@ -28,6 +28,9 @@ from experiments.qwen3_vl_2b_lgvq_o2_109_highalpha_vqa.settings import (
     ALLOWED_ROUTERS,
     load_settings,
 )
+from experiments.qwen3_vl_2b_lgvq_o2_109_highalpha_vqa.training import (
+    meets_reference_optical_500,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -39,6 +42,7 @@ def test_release_configs_are_strict_optical_top2_hardware109() -> None:
         "alpha20.yaml": (0.20, 0.90, 0.30),
         "alpha35.yaml": (0.35, 0.90, 0.42),
         "alpha50.yaml": (0.50, 0.90, 0.57),
+        "alpha65.yaml": (0.65, 0.90, 0.70),
     }
     assert {path.name for path in RELEASE.glob("*.yaml")} == {
         "common.yaml",
@@ -66,6 +70,28 @@ def test_release_configs_are_strict_optical_top2_hardware109() -> None:
             "qwen3vl_full_visual_main_merger_196x2048_v1"
         )
         assert settings.input_width == 2048
+
+
+def test_teacher_reference_requires_all_ten_metrics() -> None:
+    metrics = {
+        "spatial": {
+            "srcc": 0.6710,
+            "krcc": 0.4909,
+            "plcc": 0.7106,
+            "rmse": 8.197,
+            "mae": 6.493,
+        },
+        "temporal": {
+            "srcc": 0.8604,
+            "krcc": 0.6623,
+            "plcc": 0.8784,
+            "rmse": 6.721,
+            "mae": 5.144,
+        },
+    }
+    assert meets_reference_optical_500(metrics)
+    metrics["temporal"]["rmse"] = 6.722
+    assert not meets_reference_optical_500(metrics)
 
 
 def _masked_rms(value: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:

@@ -11,9 +11,9 @@
 
 相关系数越高越好，RMSE/MAE 越低越好。新工程的物理合同是 `518 canvas / 478 active / 109 expert`，因此表中 `500×500` 只是性能参照，不能写成新工程的实际光学尺寸。
 
-理想验收条件是十项指标全部不差于上表。若三档均不能全部达到，必须如实报告，并优先比较 Spatial/Temporal SRCC 与 PLCC，不得只报较好的 Temporal 结果。
+理想验收条件是十项指标全部不差于上表。若所有 alpha 梯度均不能全部达到，必须如实报告，并优先比较 Spatial/Temporal SRCC 与 PLCC，不得只报较好的 Temporal 结果。
 
-## 2. 三档结果表
+## 2. alpha 梯度结果表
 
 当前状态：等待正式训练，以下单元格不得在训练完成前填入估计值。
 
@@ -22,11 +22,13 @@
 | 0.20 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 | 0.35 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 | 0.50 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| 0.65 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 
 结果必须直接抄自各目录的：
 
 ```text
 metrics_best_observed_test.json
+metrics_best_reference_compliant.json
 test_metrics.json
 fusion_diagnostics.json
 router_diagnostics.json
@@ -39,7 +41,7 @@ training_summary.json
 
 1. 先筛选达到参考目标的配置；
 2. 在合格配置中选择 alpha 下界最高者；
-3. 若同一 alpha 下界有多个 checkpoint，沿用训练代码的最高 `mean(Spatial SRCC, Temporal SRCC)`；
+3. 同一 alpha 下界优先使用 `best_reference_compliant_checkpoint.pt`，再按最高 `mean(Spatial SRCC, Temporal SRCC)` 排序；
 4. 同时检查四层实际 alpha，不能只用配置下界声称光贡献；
 5. 若没有配置全面达标，报告最高可接受 trade-off，不得宣称达到目标。
 
@@ -47,7 +49,7 @@ training_summary.json
 
 ## 4. 与旧 LGVQ 结果的关系
 
-旧工程的 E1/E2/E4 电子 Router 和旧 O2 仅作为开发历史，不属于本轮正式矩阵。本轮只比较三个 alpha 下界，其他条件固定：
+旧工程的 E1/E2/E4 电子 Router 和旧 O2 仅作为开发历史，不属于本轮正式矩阵。本轮只比较 alpha 下界，其他条件固定：
 
 ```text
 Top-2 optical router
@@ -58,6 +60,5 @@ four optical feature layers
 same split, seed, loss, optimizer and dual readout
 ```
 
-因此三档之间主要反映强制光学融合比例的性能代价，而不是 Router 类型或专家数量变化。
-
+因此各 alpha 梯度之间主要反映强制光学融合比例的性能代价，而不是 Router 类型或专家数量变化。
 

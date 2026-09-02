@@ -17,6 +17,40 @@ from .modeling import LGVQSpatiotemporalModel
 from .settings import ExperimentSettings, resolved_dict
 
 
+REFERENCE_OPTICAL_500_METRICS: dict[str, dict[str, float]] = {
+    "spatial": {
+        "srcc": 0.6710,
+        "krcc": 0.4909,
+        "plcc": 0.7106,
+        "rmse": 8.197,
+        "mae": 6.493,
+    },
+    "temporal": {
+        "srcc": 0.8604,
+        "krcc": 0.6623,
+        "plcc": 0.8784,
+        "rmse": 6.721,
+        "mae": 5.144,
+    },
+}
+
+
+def meets_reference_optical_500(metrics: Mapping[str, Any]) -> bool:
+    """Return whether all ten teacher-provided reference metrics are met."""
+
+    for target, thresholds in REFERENCE_OPTICAL_500_METRICS.items():
+        observed = metrics[target]
+        for name in ("srcc", "krcc", "plcc"):
+            value = float(observed[name])
+            if not math.isfinite(value) or value < thresholds[name]:
+                return False
+        for name in ("rmse", "mae"):
+            value = float(observed[name])
+            if not math.isfinite(value) or value > thresholds[name]:
+                return False
+    return True
+
+
 def _write_json(path: Path, value: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".tmp")
@@ -300,6 +334,8 @@ def train(
     )
     best_score = float("-inf")
     best_epoch = 0
+    best_reference_score = float("-inf")
+    best_reference_epoch = 0
     history: list[dict[str, Any]] = []
     for epoch in range(1, settings.epochs + 1):
         model.train()
@@ -381,6 +417,8 @@ def train(
             row["test_evaluated"] = True
             row["test"] = test_metrics
             score = float(test_metrics["selection_mean_srcc"])
+            reference_passed = meets_reference_optical_500(test_metrics)
+            row["reference_optical_500_passed"] = reference_passed
             if score > best_score:
                 best_score = score
                 best_epoch = epoch
@@ -394,6 +432,21 @@ def train(
                     initialization=initialization,
                 )
                 _write_json(output / "metrics_best_observed_test.json", test_metrics)
+            if reference_passed and score > best_reference_score:
+                best_reference_score = score
+                best_reference_epoch = epoch
+                _checkpoint(
+                    output / "best_reference_compliant_checkpoint.pt",
+                    model,
+                    optimizer,
+                    settings,
+                    epoch=epoch,
+                    metrics=test_metrics,
+                    initialization=initialization,
+                )
+                _write_json(
+                    output / "metrics_best_reference_compliant.json", test_metrics
+                )
         history.append(row)
         _write_json(output / "train_history.json", history)
         print(
@@ -413,7 +466,8 @@ def train(
                 f"PLCC={row['test']['temporal']['plcc']:.4f} "
                 f"RMSE={row['test']['temporal']['rmse']:.4f} "
                 f"MAE={row['test']['temporal']['mae']:.4f}] "
-                f"mean_SRCC={row['test']['selection_mean_srcc']:.4f}"
+                f"mean_SRCC={row['test']['selection_mean_srcc']:.4f} "
+                f"reference={'pass' if row['reference_optical_500_passed'] else 'fail'}"
                 if row["test_evaluated"]
                 else "test=skipped"
             ),
@@ -431,6 +485,9 @@ def train(
     report = {
         "best_epoch": best_epoch,
         "best_test_mean_srcc": best_score,
+        "best_reference_compliant_epoch": best_reference_epoch,
+        "best_reference_compliant_mean_srcc": best_reference_score,
+        "reference_optical_500_passed": best_reference_epoch > 0,
         "test_interval_epochs": settings.test_interval_epochs,
         "validation_used": False,
         "test_used_for_selection": True,
@@ -480,5 +537,4 @@ __all__ = [
     "pairwise_ranking_loss",
     "train",
 ]
-
 
