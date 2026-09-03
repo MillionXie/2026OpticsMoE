@@ -11,8 +11,11 @@ cache、checkpoint 或 mask。
 /DATA/DATA1/lixinyue/xyli/data/LGVQ
 ```
 
-编辑对应 YAML 中的 `initialization.qwen_model_path`，令其指向服务器本地的
-`Qwen3-VL-2B-Instruct` 目录；不允许在正式任务中临时联网下载。
+准备服务器本地的 `Qwen3-VL-2B-Instruct` 绝对目录。缓存命令通过
+`--model-path` 显式接收该目录；不允许在正式任务中临时联网下载。
+
+若使用主服务器的四卡并行方案，优先直接遵循
+[SERVER_RUNBOOK.md](SERVER_RUNBOOK.md)。下面保留逐条命令，便于单步排错。
 
 ## 1. 静态与小尺寸数值检查
 
@@ -63,7 +66,7 @@ python -m experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54 \
 
 只有两个报告均为 `status=ready` 才能训练。
 
-## 5. 两张 GPU 独立训练
+## 5. Spatial 与 Temporal 独立训练
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 python -m \
@@ -78,6 +81,10 @@ CUDA_VISIBLE_DEVICES=1 python -m \
 ```
 
 后台运行时请分别重定向日志，不要让两个目标写入同一 output directory。
+
+主服务器还提供 Spatial seed 43 和 Spatial 强鲁棒候选，但它们只是寻找更稳定
+Spatial 权重的训练候选，不是新的推理结构，也不是 Top-k 消融。四项并行启动命令见
+`SERVER_RUNBOOK.md`。
 
 ## 6. 结果文件
 
@@ -100,3 +107,7 @@ training_summary.json
 
 其中 `test_metrics_optical_off.json` 是同一个最佳光电 checkpoint 旁路四层光得到的
 公平消融，不是单独训练的纯电子模型。
+
+训练结束后使用 [EXPORT_COMMANDS.md](EXPORT_COMMANDS.md) 导出六阶段相位预览、
+1920×1200 相位 SLM BMP 和 1024×1024 振幅布局检查图。正式逐样本振幅不能用布局
+检查图代替。
