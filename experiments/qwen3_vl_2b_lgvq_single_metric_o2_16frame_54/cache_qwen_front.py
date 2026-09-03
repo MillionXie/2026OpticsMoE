@@ -26,7 +26,9 @@ from .settings import (
     LANGUAGE_CONTRACT,
     QUALITY_CONTRACT,
     TARGET_PROMPTS,
+    feature_contract_for_grid,
     load_settings,
+    quality_contract_for_grid,
 )
 
 
@@ -387,8 +389,10 @@ def qwen_patch_with_position(
     return hidden + positional.to(device=hidden.device, dtype=hidden.dtype)
 
 
-def pool_qwen_front_tokens(hidden: torch.Tensor, *, image_count: int) -> torch.Tensor:
-    """Map official 784 patch tokens to a target-neutral 7x7 front cache.
+def pool_qwen_front_tokens(
+    hidden: torch.Tensor, *, image_count: int, output_grid: int = OUTPUT_GRID
+) -> torch.Tensor:
+    """Map official 784 patch tokens to a target-neutral 14x14 or 7x7 cache.
 
     Qwen's processor places each spatial 2x2 merge group contiguously.  The
     first mean therefore maps 784x1024 to the Qwen merger's 14x14 token order,
@@ -402,6 +406,10 @@ def pool_qwen_front_tokens(hidden: torch.Tensor, *, image_count: int) -> torch.T
             f"Expected [{expected},{VISION_WIDTH}] patch+position tokens, got {tuple(hidden.shape)}"
         )
     merged = hidden.reshape(image_count, QWEN_MERGED_TOKENS, 4, VISION_WIDTH).mean(2)
+    if output_grid == QWEN_MERGE_GRID:
+        return merged.contiguous()
+    if output_grid != OUTPUT_GRID:
+        raise ValueError("Qwen front output_grid must be 7 or 14")
     grid = merged.reshape(image_count, QWEN_MERGE_GRID, QWEN_MERGE_GRID, VISION_WIDTH)
     pooled = grid.reshape(
         image_count,
@@ -415,7 +423,8 @@ def pool_qwen_front_tokens(hidden: torch.Tensor, *, image_count: int) -> torch.T
 
 
 def quality_tokens_from_images(
-    images: Sequence[Image.Image], *, video_count: int, frame_count: int = FRAME_COUNT
+    images: Sequence[Image.Image], *, video_count: int, frame_count: int = FRAME_COUNT,
+    output_grid: int = OUTPUT_GRID,
 ) -> torch.Tensor:
     """Create the fixed 14-channel quality side input at the same 7x7 grid.
 
@@ -493,9 +502,12 @@ def quality_tokens_from_images(
     )
     if channels.shape[2] != 14:
         raise RuntimeError(f"Quality bank must have 14 channels, got {channels.shape[2]}")
-    pooled = F.adaptive_avg_pool2d(channels.flatten(0, 1), (OUTPUT_GRID, OUTPUT_GRID))
+    if output_grid not in (7, 14):
+        raise ValueError("Quality output_grid must be 7 or 14")
+    output_tokens = output_grid * output_grid
+    pooled = F.adaptive_avg_pool2d(channels.flatten(0, 1), (output_grid, output_grid))
     return (
-        pooled.reshape(video_count, frame_count, 14, OUTPUT_TOKENS)
+        pooled.reshape(video_count, frame_count, 14, output_tokens)
         .permute(0, 1, 3, 2)
         .half()
         .contiguous()
@@ -611,14 +623,15 @@ def _load_part(
     vision_front_sha256: str,
     front_pair_sha256: str,
     frame_count: int,
+    token_grid: int,
 ) -> tuple[torch.Tensor, torch.Tensor] | None:
     if not path.exists():
         return None
     try:
         payload = torch.load(path, map_location="cpu", weights_only=False)
         if (
-            payload.get("feature_contract") != FEATURE_CONTRACT
-            or payload.get("quality_contract") != QUALITY_CONTRACT
+            payload.get("feature_contract") != feature_contract_for_grid(token_grid)
+            or payload.get("quality_contract") != quality_contract_for_grid(token_grid)
             or int(payload.get("start", -1)) != start
             or int(payload.get("stop", -1)) != stop
             or list(payload.get("sample_ids", [])) != list(sample_ids)
@@ -632,8 +645,9 @@ def _load_part(
             return None
         value = payload.get("vision_tokens")
         quality = payload.get("quality_tokens")
-        shape = (stop - start, frame_count, OUTPUT_TOKENS, VISION_WIDTH)
-        quality_shape = (stop - start, frame_count, OUTPUT_TOKENS, 14)
+        output_tokens = token_grid * token_grid
+        shape = (stop - start, frame_count, output_tokens, VISION_WIDTH)
+        quality_shape = (stop - start, frame_count, output_tokens, 14)
         if not torch.is_tensor(value) or value.dtype != torch.float16 or tuple(value.shape) != shape:
             return None
         if not torch.is_tensor(quality) or quality.dtype != torch.float16 or tuple(quality.shape) != quality_shape:
@@ -686,6 +700,7 @@ def _extract_vision_rows(
     device: torch.device,
     batch_size: int,
     frame_count: int,
+    token_grid: int,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     result: list[torch.Tensor] = []
     quality_result: list[torch.Tensor] = []
@@ -710,7 +725,10 @@ def _extract_vision_rows(
         )
         quality_result.append(
             quality_tokens_from_images(
-                images, video_count=len(batch_rows), frame_count=frame_count
+                images,
+                video_count=len(batch_rows),
+                frame_count=frame_count,
+                output_grid=token_grid,
             )
         )
         pixel_values = processed["pixel_values"].to(device=device, dtype=visual_dtype)
@@ -727,9 +745,13 @@ def _extract_vision_rows(
             enabled=device.type == "cuda",
         ):
             hidden = qwen_patch_with_position(visual, pixel_values, grid_thw)
-            pooled = pool_qwen_front_tokens(hidden, image_count=len(images))
+            pooled = pool_qwen_front_tokens(
+                hidden, image_count=len(images), output_grid=token_grid
+            )
         result.append(
-            pooled.reshape(len(batch_rows), frame_count, OUTPUT_TOKENS, VISION_WIDTH)
+            pooled.reshape(
+                len(batch_rows), frame_count, token_grid * token_grid, VISION_WIDTH
+            )
             .detach()
             .cpu()
             .half()
@@ -812,6 +834,7 @@ def build_cache(
     chunk_rows: int,
     device_name: str,
     frame_count: int = FRAME_COUNT,
+    token_grid: int = OUTPUT_GRID,
     overwrite_vision: bool = False,
     part_start_row: int = 0,
     part_stop_row: int | None = None,
@@ -821,6 +844,11 @@ def build_cache(
         raise ValueError(f"target_name must be one of {sorted(TARGET_PROMPTS)}")
     if batch_size <= 0 or chunk_rows <= 0 or frame_count not in (4, 16):
         raise ValueError("batch/chunk sizes must be positive and frame_count must be 4 or 16")
+    if token_grid not in (7, 14):
+        raise ValueError("token_grid must be 7 or 14")
+    output_tokens = token_grid * token_grid
+    feature_contract = feature_contract_for_grid(token_grid)
+    quality_contract = quality_contract_for_grid(token_grid)
     try:
         import transformers
     except ImportError as error:
@@ -918,12 +946,12 @@ def build_cache(
         try:
             metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
             reusable = (
-                metadata.get("feature_contract") == FEATURE_CONTRACT
+                metadata.get("feature_contract") == feature_contract
                 and metadata.get("manifest_sha256") == manifest_digest
                 and metadata.get("sample_order_sha256") == sample_order_digest
-                and metadata.get("shape") == [len(rows), frame_count, OUTPUT_TOKENS, VISION_WIDTH]
-                and metadata.get("quality_contract") == QUALITY_CONTRACT
-                and metadata.get("quality_shape") == [len(rows), frame_count, OUTPUT_TOKENS, 14]
+                and metadata.get("shape") == [len(rows), frame_count, output_tokens, VISION_WIDTH]
+                and metadata.get("quality_contract") == quality_contract
+                and metadata.get("quality_shape") == [len(rows), frame_count, output_tokens, 14]
                 and int(metadata.get("file_size_bytes", -1)) == vision_output.stat().st_size
                 and metadata.get("qwen_source_identity_sha256")
                 == source_identity["sha256"]
@@ -947,8 +975,8 @@ def build_cache(
         vision_report = {
             "path": str(vision_output),
             "reused": True,
-            "shape": [len(rows), frame_count, OUTPUT_TOKENS, VISION_WIDTH],
-            "quality_shape": [len(rows), frame_count, OUTPUT_TOKENS, 14],
+            "shape": [len(rows), frame_count, output_tokens, VISION_WIDTH],
+            "quality_shape": [len(rows), frame_count, output_tokens, 14],
             "dtype": "torch.float16",
             "qwen_source_identity_sha256": source_identity["sha256"],
             "qwen_vision_front_sha256": vision_fingerprint["sha256"],
@@ -974,6 +1002,7 @@ def build_cache(
                 vision_front_sha256=vision_fingerprint["sha256"],
                 front_pair_sha256=front_pair_identity["sha256"],
                 frame_count=frame_count,
+                token_grid=token_grid,
             )
             if loaded is None:
                 value, quality = _extract_vision_rows(
@@ -983,12 +1012,13 @@ def build_cache(
                     device=device,
                     batch_size=batch_size,
                     frame_count=frame_count,
+                    token_grid=token_grid,
                 )
                 _atomic_torch_save(
                     path,
                     {
                         "schema_version": PART_SCHEMA_VERSION,
-                        "feature_contract": FEATURE_CONTRACT,
+                        "feature_contract": feature_contract,
                         "start": start,
                         "stop": stop,
                         "sample_ids": sample_ids[start:stop],
@@ -998,7 +1028,7 @@ def build_cache(
                         "qwen_front_pair_sha256": front_pair_identity["sha256"],
                         "frame_count": frame_count,
                         "vision_tokens": value,
-                        "quality_contract": QUALITY_CONTRACT,
+                        "quality_contract": quality_contract,
                         "quality_tokens": quality,
                     },
                 )
@@ -1027,10 +1057,10 @@ def build_cache(
         if device.type == "cuda":
             torch.cuda.empty_cache()
         features = torch.empty(
-            len(rows), frame_count, OUTPUT_TOKENS, VISION_WIDTH, dtype=torch.float16
+            len(rows), frame_count, output_tokens, VISION_WIDTH, dtype=torch.float16
         )
         quality_features = torch.empty(
-            len(rows), frame_count, OUTPUT_TOKENS, 14, dtype=torch.float16
+            len(rows), frame_count, output_tokens, 14, dtype=torch.float16
         )
         for path, start, stop in part_specs:
             loaded = _load_part(
@@ -1043,6 +1073,7 @@ def build_cache(
                 vision_front_sha256=vision_fingerprint["sha256"],
                 front_pair_sha256=front_pair_identity["sha256"],
                 frame_count=frame_count,
+                token_grid=token_grid,
             )
             if loaded is None:
                 raise RuntimeError(f"Vision shard became invalid during assembly: {path}")
@@ -1051,8 +1082,8 @@ def build_cache(
             quality_features[start:stop].copy_(quality)
         payload = {
             "schema_version": 1,
-            "feature_contract": FEATURE_CONTRACT,
-            "quality_contract": QUALITY_CONTRACT,
+            "feature_contract": feature_contract,
+            "quality_contract": quality_contract,
             "vision_tokens": features,
             "quality_tokens": quality_features,
             "quality_channel_order": [
@@ -1080,8 +1111,9 @@ def build_cache(
             "preprocessor_intermediate_size": [448, 448],
             "qwen_premerger_grid_thw": [1, 28, 28],
             "pooling": (
-                "Qwen contiguous block-major 2x2 mean: 784->196; then spatial "
-                "2x2 mean: 14x14->7x7=49"
+                "Qwen contiguous block-major 2x2 mean: 784->196"
+                if token_grid == 14
+                else "Qwen contiguous block-major 2x2 mean: 784->196; then spatial 2x2 mean: 14x14->7x7=49"
             ),
             "target_neutral_shared_vision_asset": True,
             "manifest_path": str(manifest),
@@ -1095,8 +1127,8 @@ def build_cache(
         _atomic_torch_save(vision_output, payload)
         metadata = {
             "schema_version": 1,
-            "feature_contract": FEATURE_CONTRACT,
-            "quality_contract": QUALITY_CONTRACT,
+            "feature_contract": feature_contract,
+            "quality_contract": quality_contract,
             "manifest_sha256": manifest_digest,
             "sample_order_sha256": sample_order_digest,
             "shape": list(features.shape),
@@ -1186,6 +1218,7 @@ def main() -> int:
     parser.add_argument("--target", choices=sorted(TARGET_PROMPTS), default=None)
     parser.add_argument("--manifest", type=Path, default=None)
     parser.add_argument("--frame-count", type=int, choices=(4, 16), default=None)
+    parser.add_argument("--token-grid", type=int, choices=(7, 14), default=None)
     parser.add_argument("--batch-size", type=int, default=2, help="Videos per GPU batch")
     parser.add_argument("--chunk-rows", type=int, default=16, help="Videos per resumable shard")
     parser.add_argument("--device", default="cuda")
@@ -1211,6 +1244,7 @@ def main() -> int:
             "--target": args.target,
             "--manifest": args.manifest,
             "--frame-count": args.frame_count,
+            "--token-grid": args.token_grid,
         }
         supplied = [name for name, value in forbidden.items() if value is not None]
         if supplied:
@@ -1234,6 +1268,7 @@ def main() -> int:
         language_output = settings.language_cache_path
         target_name = settings.target_name
         frame_count = settings.frame_count
+        token_grid = settings.token_grid
         model_path = args.model_path or settings.qwen_model_path
         model_path_source = (
             "explicit --model-path override"
@@ -1260,6 +1295,7 @@ def main() -> int:
         language_output = args.language_output
         target_name = args.target
         frame_count = 16 if args.frame_count is None else args.frame_count
+        token_grid = 7 if args.token_grid is None else args.token_grid
         model_path = args.model_path
         model_path_source = "explicit --model-path"
     if model_path is None:
@@ -1282,6 +1318,7 @@ def main() -> int:
         chunk_rows=args.chunk_rows,
         device_name=args.device,
         frame_count=frame_count,
+        token_grid=token_grid,
         overwrite_vision=args.overwrite_vision,
         part_start_row=args.part_start_row,
         part_stop_row=args.part_stop_row,

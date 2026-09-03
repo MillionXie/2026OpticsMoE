@@ -150,6 +150,14 @@ def test_two_stage_qwen_pooling_is_exact() -> None:
     torch.testing.assert_close(pooled[0, 0], expected_first)
 
 
+def test_qwen_native_14x14_grouping_is_exact() -> None:
+    hidden = torch.arange(784, dtype=torch.float32).view(-1, 1).expand(-1, 1024)
+    pooled = pool_qwen_front_tokens(hidden, image_count=1, output_grid=14)
+    assert pooled.shape == (1, 196, 1024)
+    expected = hidden.reshape(196, 4, 1024).mean(1)
+    torch.testing.assert_close(pooled[0], expected)
+
+
 def test_quality_bank_is_14_channel_7x7_and_temporal() -> None:
     images = []
     for index in range(16):
@@ -162,6 +170,14 @@ def test_quality_bank_is_14_channel_7x7_and_temporal() -> None:
     # Channel 10 is the previous-frame luminance absolute difference.
     assert torch.count_nonzero(tokens[0, 0, :, 10]) == 0
     assert float(tokens[0, 1, :, 10].mean()) > 0.0
+
+
+def test_quality_bank_supports_spatial_14x14() -> None:
+    images = [Image.fromarray(np.full((28, 28, 3), 127, dtype=np.uint8)) for _ in range(4)]
+    tokens = quality_tokens_from_images(
+        images, video_count=1, frame_count=4, output_grid=14
+    )
+    assert tokens.shape == (1, 4, 196, 14)
 
 
 def test_chat_template_is_target_bound() -> None:
