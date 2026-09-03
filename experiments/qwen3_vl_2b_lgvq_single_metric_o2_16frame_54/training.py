@@ -15,6 +15,7 @@ from torch.utils.data import DataLoader
 from .data import LGVQSingleMetricDataset
 from .metrics import regression_metrics
 from .modeling import LGVQSingleMetricOEO16
+from .phase_snapshots import save_phase_snapshot
 from .settings import ExperimentSettings, resolved_dict
 
 
@@ -497,6 +498,13 @@ def train(
                 )
         history.append(row)
         _json(settings.output_dir / "train_history.json", history)
+        if epoch % settings.phase_snapshot_interval_epochs == 0:
+            save_phase_snapshot(
+                model,
+                settings,
+                epoch=epoch,
+                metrics=row.get("test_optical_on"),
+            )
         if row["test_evaluated"]:
             print(
                 f"epoch {epoch:03d} loss={row['loss']:.6f} "

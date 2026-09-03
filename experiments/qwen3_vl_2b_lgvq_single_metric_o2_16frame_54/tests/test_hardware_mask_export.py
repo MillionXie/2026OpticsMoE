@@ -19,7 +19,7 @@ def _settings():
         Path(__file__).parents[1]
         / "configs"
         / "release"
-        / "spatial.yaml"
+        / "temporal.yaml"
     )
     return load_settings(config)
 
@@ -66,7 +66,7 @@ def test_export_writes_native_bmps_and_preserves_canonical_orientation(
 ) -> None:
     settings = _settings()
     model = build_model(settings)
-    checkpoint = tmp_path / "spatial.pt"
+    checkpoint = tmp_path / "temporal.pt"
     torch.save(
         {
             "architecture": settings.architecture_label,
@@ -82,7 +82,7 @@ def test_export_writes_native_bmps_and_preserves_canonical_orientation(
     monkeypatch.setattr(exporter, "_save_previews", lambda *_args, **_kwargs: None)
     report = export_hardware_masks(settings, checkpoint, tmp_path / "export")
 
-    assert report["target_name"] == "spatial"
+    assert report["target_name"] == "temporal"
     assert report["checkpoint_epoch"] == 7
     assert report["phase_slm"]["native_active_size_wh"] == [1016, 1016]
     assert report["phase_slm"]["extent_error_um_vs_logical"] == pytest.approx(2.0)
@@ -131,7 +131,9 @@ def test_export_writes_native_bmps_and_preserves_canonical_orientation(
 
 
 def test_spatial_checkpoint_cannot_be_exported_with_temporal_config(tmp_path: Path) -> None:
-    spatial = _settings()
+    spatial = load_settings(
+        Path(__file__).parents[1] / "configs" / "release" / "spatial.yaml"
+    )
     model = build_model(spatial)
     checkpoint = tmp_path / "spatial.pt"
     torch.save(
@@ -148,4 +150,3 @@ def test_spatial_checkpoint_cannot_be_exported_with_temporal_config(tmp_path: Pa
     )
     with pytest.raises(RuntimeError, match="architecture mismatch"):
         exporter._load_checkpoint_model(temporal, checkpoint)
-

@@ -1,0 +1,21 @@
+base_config: temporal.yaml
+
+# Same 16-frame/4x4/54 optical inference graph.  This independent candidate
+# gives the temporal-specific electronic readout and correlation objective
+# more capacity; selection remains highest observed Temporal test SRCC.
+output_dir: ../../runs/lgvq_temporal_qwenfront_o2_16f54_dc20_accuracy
+random_seed: 43
+
+model:
+  head_width: 512
+  dropout: 0.10
+
+training:
+  learning_rate: 0.00030
+  phase_learning_rate: 0.015
+  router_phase_learning_rate: 0.020
+
+loss:
+  ranking_weight: 0.30
+  correlation_weight: 1.00
+  soft_target_weight: 3.00

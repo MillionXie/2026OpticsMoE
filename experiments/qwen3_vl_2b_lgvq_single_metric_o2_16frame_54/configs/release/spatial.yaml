@@ -1,4 +1,4 @@
-output_dir: ../../runs/lgvq_spatial_qwenfront_o2_16f54
+output_dir: ../../runs/lgvq_spatial_qwenfront_o2_4f109_dc20
 device: cuda
 random_seed: 42
 
@@ -9,8 +9,8 @@ task:
 data:
   dataset_root: /DATA/DATA1/lixinyue/xyli/data/LGVQ
   manifest: ../../../lgvq_four_stage_optical_electronic_109_no_attention_vqa/artifacts/lgvq_train2250_test558.csv
-  # This 16-frame Vision+quality cache is intentionally shared by Spatial and Temporal.
-  vision_cache: ../../artifacts/qwen3vl_front_16f_49x1024_quality14.pt
+  # Spatial deliberately retains the earlier four-frame optical layout.
+  vision_cache: ../../artifacts/qwen3vl_front_4f_49x1024_quality14.pt
   language_cache: ../../artifacts/qwen3vl_front_spatial_prompt_2048.pt
   # Existing two-column file is joined by sample_id; only its Spatial column is used.
   training_soft_targets: ../../../lgvq_four_stage_optical_electronic_109_no_attention_vqa/artifacts/training_only_teacher_predictions.pt
@@ -21,21 +21,22 @@ initialization:
 geometry:
   canvas_size: 518
   active_size: 478
-  lane_grid: 4
-  lane_size: 114
-  lane_pitch: 120
-  parallel_expert_size: 54
-  parallel_expert_pitch: 60
+  lane_grid: 2
+  lane_size: 232
+  lane_pitch: 246
+  lane_offset: 0
+  parallel_expert_size: 109
+  parallel_expert_pitch: 123
   serial_expert_size: 109
   serial_expert_pitch: 123
 
 model:
-  frame_count: 16
+  frame_count: 4
   token_grid: 7
   vision_input_width: 1024
   quality_input_width: 14
   language_input_width: 2048
-  # Total sequence limit: 16 frame summaries plus the target-specific prompt.
+  # Total sequence limit: four frame summaries plus the target-specific prompt.
   maximum_language_tokens: 96
   model_width: 192
   detector_projection_size: 96
@@ -46,7 +47,7 @@ router:
   top_k: 2
   temperature: 1.0
   noise_std: 0.03
-  parallel_intervals: [[37, 55], [59, 77]]
+  parallel_intervals: [[79, 108], [124, 153]]
   serial_intervals: [[164, 223], [255, 314]]
 
 optics:
@@ -54,12 +55,13 @@ optics:
   pixel_pitch_um: 17.0
   distance_m: 0.10
   k_space_enabled: true
-  # 4x4 lanes have pitch 120; 0.5 deg bounds the 10-cm lateral spread to
-  # about 51 logical pixels instead of about 103 pixels at 1 deg.
-  theta_max_deg: 0.5
+  theta_max_deg: 1.0
   phase_init_std: 0.25
   ccd_relative_clip: 8.0
   ccd_log_compression: 1.0
+  unmodulated_power_fraction_min: 0.20
+  unmodulated_power_fraction_max: 0.35
+  unmodulated_power_fraction_eval: 0.20
 
 robustness:
   input_shift_pixels: 4
@@ -84,6 +86,7 @@ training:
   weight_decay: 0.0001
   # No validation split: observe the fixed test set periodically as requested.
   test_interval_epochs: 5
+  phase_snapshot_interval_epochs: 5
 
 loss:
   ranking_weight: 0.25

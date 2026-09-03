@@ -10,6 +10,7 @@ Attention。16 帧在 478 有效光场中按 4×4 并行，Vision 单专家为 5
 - 唯一执行顺序：[RUN_COMMANDS.md](RUN_COMMANDS.md)
 - 主服务器缓存、并行训练和监控：[SERVER_RUNBOOK.md](SERVER_RUNBOOK.md)
 - 训练后六阶段相位可视化与硬件 BMP：[EXPORT_COMMANDS.md](EXPORT_COMMANDS.md)
+- 每 5 epoch 相位快照格式与读取：[MASK_EVOLUTION.md](MASK_EVOLUTION.md)
 
 真实 `Qwen3-VL-2B-Instruct` 权重的接口验证结果为：一帧 `448×448` 经官方
 processor 得到 `grid_thw=[1,28,28]`；冻结 patch+position 前端输出

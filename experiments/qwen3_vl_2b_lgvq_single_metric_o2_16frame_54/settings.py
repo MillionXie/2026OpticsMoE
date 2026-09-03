@@ -17,9 +17,9 @@ TARGET_PROMPTS = {
         "one of the following five levels: Excellent, Good, Fair, Poor, or Bad."
     ),
 }
-FEATURE_CONTRACT = "qwen3vl_front_patch_position_16f_784_mean2x2_196_pool7_49x1024_v1"
+FEATURE_CONTRACT = "qwen3vl_front_patch_position_dynamic_frames_784_mean2x2_196_pool7_49x1024_v2"
 LANGUAGE_CONTRACT = "qwen3vl_front_chat_template_embed_tokens_2048_v1"
-QUALITY_CONTRACT = "fixed_quality14_16f_adaptive_pool7x7_v1"
+QUALITY_CONTRACT = "fixed_quality14_dynamic_frames_adaptive_pool7x7_v2"
 
 
 def _merge(base: dict[str, Any], update: dict[str, Any]) -> dict[str, Any]:
@@ -63,10 +63,9 @@ def _path(value: Any, config_path: Path) -> Path | None:
 class Geometry:
     """518 simulation canvas with a centered 478-pixel hardware active field.
 
-    The parallel plane is a 4x4 frame layout.  Every 114-pixel lane has a
-    two-pixel outer edge on the 478 plane and contains a 2x2 layout of
-    54-pixel experts separated by six pixels.  The later serial MoE4 retains
-    the measured 109/123 geometry used by the physical setup.
+    Temporal uses a 4x4 layout of 114-pixel lanes with 54-pixel experts;
+    Spatial retains the earlier 2x2 layout of 232-pixel lanes with 109-pixel
+    experts.  The later serial MoE4 always retains measured 109/123 geometry.
     """
 
     canvas_size: int = 518
@@ -74,6 +73,7 @@ class Geometry:
     lane_grid: int = 4
     lane_size: int = 114
     lane_pitch: int = 120
+    lane_offset: int = 2
     parallel_expert_size: int = 54
     parallel_expert_pitch: int = 60
     serial_expert_size: int = 109
@@ -85,7 +85,10 @@ class Geometry:
 
     @property
     def lane_origins(self) -> tuple[tuple[int, int], ...]:
-        axis = tuple(2 + index * self.lane_pitch for index in range(self.lane_grid))
+        axis = tuple(
+            self.lane_offset + index * self.lane_pitch
+            for index in range(self.lane_grid)
+        )
         return tuple((top, left) for top in axis for left in axis)
 
     @property
@@ -111,32 +114,51 @@ class Geometry:
         return tuple((top, left) for top in axis for left in axis)
 
     def validate(self, *, formal: bool = True) -> None:
-        if min(asdict(self).values()) <= 0:
+        dimensions = {
+            name: value for name, value in asdict(self).items() if name != "lane_offset"
+        }
+        if min(dimensions.values()) <= 0 or self.lane_offset < 0:
             raise ValueError("All geometry dimensions must be positive")
         if self.canvas_size < self.active_size or (self.canvas_size - self.active_size) % 2:
             raise ValueError("The active plane must be centered on the canvas")
         axis = sorted({top for top, _ in self.lane_origins})
-        if len(axis) != self.lane_grid or axis[0] != 2:
-            raise ValueError("Parallel lanes must use the audited two-pixel edge")
-        if axis[-1] + self.lane_size != self.active_size - 2:
-            raise ValueError("The 4x4 parallel lanes must end at active_size-2")
+        if len(axis) != self.lane_grid or axis[0] != self.lane_offset:
+            raise ValueError("Parallel lane offset contract is inconsistent")
+        if axis[-1] + self.lane_size != self.active_size - self.lane_offset:
+            raise ValueError("Parallel lanes are not symmetric inside the active field")
         if self.parallel_expert_pitch + self.parallel_expert_size != self.lane_size:
-            raise ValueError("Two 54-pixel experts plus the six-pixel gap must fill a lane")
+            raise ValueError("Two experts plus their gap must fill one frame lane")
         if 2 * self.serial_expert_pitch + self.serial_expert_size > self.active_size:
             raise ValueError("Serial MoE4 experts exceed the active plane")
-        formal_values = {
+        common = {
             "canvas_size": 518,
             "active_size": 478,
-            "lane_grid": 4,
-            "lane_size": 114,
-            "lane_pitch": 120,
-            "parallel_expert_size": 54,
-            "parallel_expert_pitch": 60,
             "serial_expert_size": 109,
             "serial_expert_pitch": 123,
         }
-        if formal and asdict(self) != formal_values:
-            raise ValueError(f"Formal hardware geometry is locked to {formal_values}")
+        temporal16 = {
+            **common,
+            "lane_grid": 4,
+            "lane_size": 114,
+            "lane_pitch": 120,
+            "lane_offset": 2,
+            "parallel_expert_size": 54,
+            "parallel_expert_pitch": 60,
+        }
+        spatial4 = {
+            **common,
+            "lane_grid": 2,
+            "lane_size": 232,
+            "lane_pitch": 246,
+            "lane_offset": 0,
+            "parallel_expert_size": 109,
+            "parallel_expert_pitch": 123,
+        }
+        if formal and asdict(self) not in (temporal16, spatial4):
+            raise ValueError(
+                "Formal geometry must be either Spatial-4 "
+                f"{spatial4} or Temporal-16 {temporal16}"
+            )
 
 
 # Backward-friendly alias for code that uses the older geometry class name.
@@ -185,6 +207,9 @@ class ExperimentSettings:
     phase_init_std: float = 0.25
     ccd_relative_clip: float = 8.0
     ccd_log_compression: float = 1.0
+    unmodulated_power_fraction_min: float = 0.20
+    unmodulated_power_fraction_max: float = 0.35
+    unmodulated_power_fraction_eval: float = 0.20
     alpha_min: float = 0.50
     alpha_initial: float = 0.57
     alpha_max: float = 0.90
@@ -206,6 +231,7 @@ class ExperimentSettings:
     router_capture_weight: float = 0.02
     soft_target_weight: float = 0.0
     test_interval_epochs: int = 5
+    phase_snapshot_interval_epochs: int = 5
     synthetic: bool = False
 
     @property
@@ -225,7 +251,8 @@ class ExperimentSettings:
     @property
     def architecture_label(self) -> str:
         return (
-            f"qwenfront_{self.target_name}_o2_16f49_vexpert54_"
+            f"qwenfront_{self.target_name}_o2_{self.frame_count}f49_"
+            f"vexpert{self.geometry.parallel_expert_size}_"
             f"alpha{round(self.alpha_min * 100):02d}_no_attention_v1"
         )
 
@@ -238,8 +265,16 @@ class ExperimentSettings:
                 f"The {self.target_name} checkpoint must use its exact target-specific "
                 "five-level prompt; cross-target prompt reuse is forbidden"
             )
-        if self.frame_count != 16:
-            raise ValueError("This experiment requires exactly 16 stratified video frames")
+        if self.frame_count not in (4, 16):
+            raise ValueError("Formal single-target models support 4 or 16 frames")
+        if self.frame_count != self.geometry.lane_grid**2:
+            raise ValueError("frame_count must equal lane_grid squared")
+        if not self.synthetic:
+            expected_frames = 4 if self.target_name == "spatial" else 16
+            if self.frame_count != expected_frames:
+                raise ValueError(
+                    f"{self.target_name} formally requires {expected_frames} frames"
+                )
         if self.token_grid != 7 or self.token_count != 49:
             raise ValueError("Qwen front tokens are fixed to a 7x7=49 grid per frame")
         if (
@@ -251,7 +286,7 @@ class ExperimentSettings:
             raise ValueError("Formal widths are locked to Vision 1024, quality 14, Language 2048, model 192")
         if not self.frame_count < self.maximum_language_tokens <= self.geometry.serial_expert_size:
             raise ValueError(
-                "maximum_language_tokens must leave room for 16 frame tokens and fit the 109-row serial field"
+                "maximum_language_tokens must leave room for all frame tokens and fit the 109-row serial field"
             )
         if self.detector_projection_size <= 0:
             raise ValueError("detector_projection_size must be positive")
@@ -279,8 +314,29 @@ class ExperimentSettings:
             raise ValueError("Formal logical pixel pitch is 17 um")
         if self.wavelength_nm != 532.0 and not self.synthetic:
             raise ValueError("Formal wavelength is 532 nm")
-        if min(self.epochs, self.batch_size, self.num_workers + 1, self.test_interval_epochs) <= 0:
+        if not (
+            0.0
+            <= self.unmodulated_power_fraction_min
+            <= self.unmodulated_power_fraction_eval
+            <= self.unmodulated_power_fraction_max
+            < 1.0
+        ):
+            raise ValueError(
+                "Unmodulated power fractions must satisfy "
+                "0 <= min <= eval <= max < 1"
+            )
+        if not self.synthetic and self.unmodulated_power_fraction_min < 0.20:
+            raise ValueError("Formal runs require at least 20% nominal unmodulated power")
+        if min(
+            self.epochs,
+            self.batch_size,
+            self.num_workers + 1,
+            self.test_interval_epochs,
+            self.phase_snapshot_interval_epochs,
+        ) <= 0:
             raise ValueError("Training counts must be positive (num_workers may be zero)")
+        if not self.synthetic and self.phase_snapshot_interval_epochs != 5:
+            raise ValueError("Formal runs must save phase-only snapshots every 5 epochs")
         if self.soft_target_weight < 0.0:
             raise ValueError("soft_target_weight must be nonnegative")
         if self.soft_target_weight > 0.0 and self.training_soft_targets_path is None:
@@ -331,6 +387,15 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         phase_init_std=float(get("optics", "phase_init_std", 0.25)),
         ccd_relative_clip=float(get("optics", "ccd_relative_clip", 8.0)),
         ccd_log_compression=float(get("optics", "ccd_log_compression", 1.0)),
+        unmodulated_power_fraction_min=float(
+            get("optics", "unmodulated_power_fraction_min", 0.20)
+        ),
+        unmodulated_power_fraction_max=float(
+            get("optics", "unmodulated_power_fraction_max", 0.35)
+        ),
+        unmodulated_power_fraction_eval=float(
+            get("optics", "unmodulated_power_fraction_eval", 0.20)
+        ),
         input_shift_pixels=int(get("robustness", "input_shift_pixels", 8)),
         phase_shift_pixels=int(get("robustness", "phase_shift_pixels", 8)),
         ccd_shift_pixels=int(get("robustness", "ccd_shift_pixels", 8)),
@@ -355,6 +420,9 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         router_capture_weight=float(get("loss", "router_capture_weight", 0.02)),
         soft_target_weight=float(get("loss", "soft_target_weight", 0.0)),
         test_interval_epochs=int(get("training", "test_interval_epochs", 5)),
+        phase_snapshot_interval_epochs=int(
+            get("training", "phase_snapshot_interval_epochs", 5)
+        ),
         synthetic=bool(synthetic),
     )
     if settings.output_dir is None:

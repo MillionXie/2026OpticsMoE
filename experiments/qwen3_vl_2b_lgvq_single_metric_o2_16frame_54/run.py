@@ -79,22 +79,40 @@ def _load_compatible_initialization(
 
 
 def synthetic_smoke(settings: ExperimentSettings) -> dict[str, Any]:
-    small = replace(
-        settings,
-        geometry=Geometry(
+    if settings.frame_count == 4:
+        geometry = Geometry(
+            canvas_size=96,
+            active_size=88,
+            lane_grid=2,
+            lane_size=40,
+            lane_pitch=48,
+            lane_offset=0,
+            parallel_expert_size=18,
+            parallel_expert_pitch=22,
+            serial_expert_size=40,
+            serial_expert_pitch=20,
+        )
+        parallel_intervals = ((8, 16), (24, 32))
+    else:
+        geometry = Geometry(
             canvas_size=96,
             active_size=88,
             lane_grid=4,
             lane_size=18,
             lane_pitch=22,
+            lane_offset=2,
             parallel_expert_size=8,
             parallel_expert_pitch=10,
             serial_expert_size=40,
             serial_expert_pitch=20,
-        ),
+        )
+        parallel_intervals = ((4, 8), (10, 14))
+    small = replace(
+        settings,
+        geometry=geometry,
         maximum_language_tokens=32,
         detector_projection_size=16,
-        parallel_router_intervals=((4, 8), (10, 14)),
+        parallel_router_intervals=parallel_intervals,
         serial_router_intervals=((20, 30), (50, 60)),
         input_shift_pixels=1,
         phase_shift_pixels=1,
@@ -110,8 +128,8 @@ def synthetic_smoke(settings: ExperimentSettings) -> dict[str, Any]:
     small.validate()
     model = build_model(small).train()
     generator = torch.Generator().manual_seed(small.random_seed)
-    vision = torch.randn(2, 16, 49, 1024, generator=generator)
-    quality = torch.randn(2, 16, 49, 14, generator=generator)
+    vision = torch.randn(2, small.frame_count, 49, 1024, generator=generator)
+    quality = torch.randn(2, small.frame_count, 49, 14, generator=generator)
     language = torch.randn(2, 12, 2048, generator=generator)
     mask = torch.ones(2, 12, dtype=torch.bool)
     result = model(vision, quality, language, mask, optical_enabled=True)
@@ -166,7 +184,7 @@ def synthetic_smoke(settings: ExperimentSettings) -> dict[str, Any]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Text-conditioned single-metric 16-frame LGVQ optical-electronic model"
+        description="Text-conditioned 4/16-frame LGVQ optical-electronic model"
     )
     parser.add_argument("--config", required=True)
     parser.add_argument("--phase", required=True, choices=sorted(PHASES))
