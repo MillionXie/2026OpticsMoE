@@ -1,0 +1,20 @@
+base_config: spatial_highres.yaml
+
+# Same inference graph and optics; optimization candidate only.
+output_dir: ../../runs/lgvq_spatial_qwenfront_o2_4f109_dc20_highres14_quality
+random_seed: 43
+
+model:
+  quality_gate_initial: 0.85
+  head_width: 768
+  dropout: 0.15
+
+training:
+  learning_rate: 0.00025
+  phase_learning_rate: 0.012
+  router_phase_learning_rate: 0.018
+
+loss:
+  ranking_weight: 0.25
+  correlation_weight: 0.60
+  soft_target_weight: 3.00
