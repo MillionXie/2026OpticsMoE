@@ -215,3 +215,25 @@ Temporal MOS。两者都没有 attention 或 Transformer。
 - 最终同时报告正常光电与同一 checkpoint 的四层去光结果；
 - SRCC/KRCC/PLCC 越高越好，RMSE/MAE 越低越好；
 - Spatial 与 Temporal 结果不能混成一个平均数掩盖弱项。
+
+## 9. 参数到底放在哪里
+
+真实 `Qwen3-VL-2B-Instruct` 权重核查得到，本工程实际调用的冻结输入前端为：
+
+| 冻结前端 | 形状 | 参数量 |
+|---|---:|---:|
+| Vision Conv3D patch weight+bias | `[1024,3,2,16,16] + [1024]` | 1,573,888 |
+| Vision learned 2D position table | `[2304,1024]` | 2,359,296 |
+| Language token embedding table | `[151936,2048]` | 311,164,928 |
+| 合计 |  | 315,098,112 |
+
+这些参数全部冻结。固定 LGVQ 数据集训练时先把其输出缓存，随后学生训练进程不再常驻
+完整 Qwen，也不把这 3.15 亿参数复制进学生 checkpoint；这与每个 epoch 重算冻结前端
+数值等价。对于新的未缓存视频，仍需调用同一份 patch+position 前端；两个固定 prompt
+则可直接复用各自已经过官方 tokenizer/embedding 得到的缓存。
+
+正式学生可训练参数为 Spatial `3,420,390`、Temporal `3,871,206`。二者差别来自目标
+专属读出头；其中真正可导出到相位 SLM 的六阶段相位参数共 `749,653`：Vision router
+46,656、Vision experts 186,624、Vision global 228,484、Language router 11,881、
+Language experts 47,524、Language global 228,484。其余可训练参数是边界投影、电子
+Mixer、CCD 电读出、凸融合、位置表和目标专属回归头。
