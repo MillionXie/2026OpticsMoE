@@ -813,6 +813,9 @@ def build_cache(
     device_name: str,
     frame_count: int = FRAME_COUNT,
     overwrite_vision: bool = False,
+    part_start_row: int = 0,
+    part_stop_row: int | None = None,
+    parts_only: bool = False,
 ) -> dict[str, Any]:
     if target_name not in TARGET_PROMPTS:
         raise ValueError(f"target_name must be one of {sorted(TARGET_PROMPTS)}")
@@ -831,6 +834,11 @@ def build_cache(
     if not manifest.exists():
         prepare_manifest(dataset_root, manifest)
     rows = read_manifest(manifest)
+    resolved_part_stop = len(rows) if part_stop_row is None else int(part_stop_row)
+    if not 0 <= part_start_row < resolved_part_stop <= len(rows):
+        raise ValueError(
+            f"part row interval must satisfy 0 <= start < stop <= {len(rows)}"
+        )
     sample_ids = [row.sample_id for row in rows]
     manifest_digest = file_sha256(manifest)
     sample_order_digest = _sample_order_sha256(sample_ids)
@@ -953,6 +961,9 @@ def build_cache(
         for start in range(0, len(rows), chunk_rows):
             stop = min(len(rows), start + chunk_rows)
             path = _part_path(parts_dir, start, stop)
+            part_specs.append((path, start, stop))
+            if stop <= part_start_row or start >= resolved_part_stop:
+                continue
             loaded = _load_part(
                 path,
                 start=start,
@@ -994,7 +1005,21 @@ def build_cache(
                 print(f"[qwen-front] saved {stop}/{len(rows)} -> {path.name}", flush=True)
             else:
                 print(f"[qwen-front] resumed {stop}/{len(rows)} <- {path.name}", flush=True)
-            part_specs.append((path, start, stop))
+
+        if parts_only:
+            return {
+                "vision": {
+                    "path": str(vision_output),
+                    "reused": False,
+                    "parts_only": True,
+                    "processed_row_interval": [part_start_row, resolved_part_stop],
+                    "parts_directory": str(parts_dir),
+                },
+                "language": language_report,
+                "target_name": target_name,
+                "frame_count": frame_count,
+                "prompt": TARGET_PROMPTS[target_name],
+            }
 
         # The full Qwen checkpoint is no longer needed.  Release it before the
         # approximately 4.5-GiB contiguous target-neutral cache is assembled.
@@ -1165,6 +1190,18 @@ def main() -> int:
     parser.add_argument("--chunk-rows", type=int, default=16, help="Videos per resumable shard")
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--overwrite-vision", action="store_true")
+    parser.add_argument(
+        "--part-start-row", type=int, default=0,
+        help="First manifest row assigned to this cooperative cache worker",
+    )
+    parser.add_argument(
+        "--part-stop-row", type=int, default=None,
+        help="Exclusive manifest row assigned to this cooperative cache worker",
+    )
+    parser.add_argument(
+        "--parts-only", action="store_true",
+        help="Write assigned resumable shards but do not assemble the final cache",
+    )
     args = parser.parse_args()
     if args.config is not None:
         forbidden = {
@@ -1246,6 +1283,9 @@ def main() -> int:
         device_name=args.device,
         frame_count=frame_count,
         overwrite_vision=args.overwrite_vision,
+        part_start_row=args.part_start_row,
+        part_stop_row=args.part_stop_row,
+        parts_only=args.parts_only,
     )
     report["model_path_source"] = model_path_source
     report["config"] = None if args.config is None else str(args.config.resolve())

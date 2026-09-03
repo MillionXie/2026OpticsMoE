@@ -1,99 +1,107 @@
-# 主服务器：缓存一次，四张 GPU 并行训练
+# 主服务器：DC20 最终三卡实验
 
-本页只负责服务器启动和监控，不改变模型、配置或训练逻辑。四个正式任务是：
+本页对应当前唯一正式口径：Spatial 4 帧一项、Temporal 16 帧两项。三个训练都是
+正常光电模型；“去光”只在各自选中的同一个 checkpoint 上旁路光分支，不另训纯电子
+模型。当前服务器从仓库根目录 `/DATA/DATA1/guest3/2026OpticsMoE` 执行。
 
-1. Spatial 正式鲁棒性；
-2. Spatial 正式鲁棒性、独立 seed 43；
-3. Spatial 强鲁棒性候选；
-4. Temporal 正式鲁棒性。
+## 1. 环境和固定路径
 
-四者均为正常光电训练。程序最终会用各自选中的同一个光电 checkpoint 再执行一次
-`optical_off` 旁路推理，用于衡量光学贡献；不会启动、也不会训练一个独立的纯电子模型。
+```bash
+cd /DATA/DATA1/guest3/2026OpticsMoE
+source /home/guest3/miniconda3/etc/profile.d/conda.sh
+conda activate xml
+export CUDA_DEVICE_ORDER=PCI_BUS_ID
+```
 
-## 前置条件
+固定资源：
 
-- 从仓库根目录操作；
-- 已激活包含 PyTorch、Transformers、OpenCV 等依赖的环境；
-- 数据集固定为 `/DATA/DATA1/lixinyue/xyli/data/LGVQ`；
-- 配置引用的训练集 soft-target 文件必须已经存在；
-- 必须知道服务器本地 `Qwen3-VL-2B-Instruct` 目录。启动器不会猜路径，也不会联网下载；
-- 需要四张空闲 GPU。默认使用 0、1、3、4，可通过参数修改。
+```text
+LGVQ: /DATA/DATA1/lixinyue/xyli/data/LGVQ
+Qwen: /DATA/DATA1/lixinyue/code/adapt2026/video_inf_time/Qwen/Qwen3-VL-2B-Instruct
+```
 
-先检查当前 GPU：
+`CUDA_DEVICE_ORDER=PCI_BUS_ID` 不能省略；省略时 PyTorch 的逻辑 GPU 编号可能不等于
+`nvidia-smi` 左侧编号。
+
+## 2. 两份冻结前端缓存
+
+Spatial 与 Temporal 的抽帧数不同，必须分别生成。缓存按 16 个视频保存一个可恢复
+分片，中断后重复同一命令即可继续。
+
+GPU 5：Spatial 4 帧。
+
+```bash
+CUDA_VISIBLE_DEVICES=5 python -u -m \
+  experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54.cache_qwen_front \
+  --config experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial.yaml \
+  --model-path /DATA/DATA1/lixinyue/code/adapt2026/video_inf_time/Qwen/Qwen3-VL-2B-Instruct \
+  --batch-size 2 --chunk-rows 16 --device cuda
+```
+
+GPU 4：Temporal 16 帧。
+
+```bash
+CUDA_VISIBLE_DEVICES=4 python -u -m \
+  experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54.cache_qwen_front \
+  --config experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/temporal.yaml \
+  --model-path /DATA/DATA1/lixinyue/code/adapt2026/video_inf_time/Qwen/Qwen3-VL-2B-Instruct \
+  --batch-size 2 --chunk-rows 16 --device cuda
+```
+
+## 3. 三项训练
+
+先确认 2、4、5 号卡空闲，然后运行启动器：
 
 ```bash
 nvidia-smi
+bash experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/server/launch_dc20_train.sh
 ```
 
-## 一条命令启动
+| GPU | 任务 | 配置 | 推理结构 |
+|---:|---|---|---|
+| 5 | Spatial | `spatial.yaml` | 4 帧、2×2 lane、109×109、光 Top-2 |
+| 4 | Temporal 基准 | `temporal.yaml` | 16 帧、4×4 lane、54×54、光 Top-2 |
+| 2 | Temporal accuracy | `temporal_accuracy.yaml` | 与基准相同；只加宽最终电子读出头 |
 
-下例中的 Qwen 路径必须替换成服务器上的真实绝对路径：
+训练时每个相位面的未调制功率比例从 `[0.20,0.35]` 均匀采样，测试固定为 `0.20`。
+每 5 epoch 测完整 test、按最高 test SRCC 选权重，同时保存一个 phase-only `.pt`。
 
-```bash
-bash experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/server/launch_four_runs.sh \
-  --qwen-model /ABSOLUTE/PATH/TO/Qwen3-VL-2B-Instruct \
-  --cache-gpu 0 \
-  --spatial-gpu 0 \
-  --spatial-seed43-gpu 1 \
-  --robust-gpu 3 \
-  --temporal-gpu 4
-```
-
-执行顺序是固定的：
-
-1. GPU 0 生成/恢复 16 帧共享 Qwen Vision front 和 Spatial prompt cache；
-2. GPU 0 复用上述 Vision cache，只补 Temporal prompt cache；
-3. 串行检查 Spatial seed 42、Spatial seed 43、Spatial 强鲁棒、Temporal 四份
-   preflight，四份都必须为 `ready`；
-4. 预先确认四张训练 GPU 均空闲，然后用 `nohup` 同时启动四项训练。
-
-缓存结束后，缓存 GPU 可以立即用于 Spatial，因此默认 `cache-gpu` 和 `spatial-gpu` 都为 0。
-四个训练 GPU 参数则必须互不相同。
-
-启动器的安全限制：
-
-- 任意被本工程 PID 文件记录的旧进程仍存活时拒绝重复启动；
-- 任一 GPU 已有计算进程时，在启动任何任务之前拒绝；
-- 四个正式输出目录中任一个已有 checkpoint、训练日志或 summary 时拒绝覆盖；
-- 数据集路径、soft target、配置和缓存/preflight 有一项不符合即停止；
-- 四个任务若有一个启动后立即退出，会明确报错并保留日志。
-
-如果确实要重跑某个已有实验，请先把该配置对应的整个旧输出目录改名归档，不要只删除某个
-checkpoint 来绕过检查。
-
-## 监控
+## 4. 监控
 
 单次查看：
 
 ```bash
-bash experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/server/monitor_four_runs.sh
+bash experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/server/monitor_dc20_runs.sh
 ```
 
-每 30 秒刷新一次：
+每 30 秒刷新：
 
 ```bash
-bash experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/server/monitor_four_runs.sh \
+bash experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/server/monitor_dc20_runs.sh \
   --interval 30
 ```
 
-按 `Ctrl+C` 只会退出监控，不会终止训练。启动合同、缓存日志、preflight 日志、四个 PID
-和四个训练日志位于：
+`Ctrl+C` 只退出监控，不会停止后台训练。
 
-```text
-experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/server_jobs/<UTC时间>/
-```
+## 5. 输出合同
 
-正式训练结果仍分别写入四份配置各自的 `output_dir`。重点文件为：
+每项任务独立生成：
 
 ```text
 best_observed_test_checkpoint.pt
-metrics_best_observed_test_optical_on.json
 test_metrics_optical_on.json
 test_metrics_optical_off.json
 optical_contribution_same_checkpoint.json
+train_history.json
+phase_snapshots/epoch_0005.pt
+phase_snapshots/epoch_0010.pt
+...
+phase_snapshots/manifest.json
 phase_training_diagnostics.json
 training_summary.json
 ```
 
-其中 `test_metrics_optical_off.json` 不是另训的纯电子模型，而是最佳光电权重的四层光学旁路
-结果，因此能够公平回答“拿掉光以后下降多少”。
+相位 `.pt` 的精确字段、公式和读取代码见 [MASK_EVOLUTION.md](MASK_EVOLUTION.md)。
+训练结束后用 `RUN_COMMANDS.md` 最后一条命令生成 Arial 7 pt 的 PNG/PDF 图和 CSV/JSON
+汇总表。只有实测 `test_metrics_optical_on.json` 可用于声明是否达到 Temporal SRCC>0.8
+或 Spatial SRCC≈0.64；配置目标不等同于实验结果。

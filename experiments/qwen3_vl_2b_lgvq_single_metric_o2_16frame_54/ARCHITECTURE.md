@@ -1,4 +1,4 @@
-# LGVQ 单指标、文本条件、16 帧光电网络
+# LGVQ 单指标、文本条件、Spatial-4 / Temporal-16 光电网络
 
 ## 1. 先明确模型在做什么
 
@@ -7,7 +7,8 @@ Spatial 与 Temporal **不是一个模型的两个输出**。它们是两次互�
 - Spatial 模型只读取 Spatial prompt，只回归一个连续 Spatial MOS；
 - Temporal 模型只读取 Temporal prompt，只回归一个连续 Temporal MOS；
 - 两者有各自的训练参数、电子读出头、四层特征相位、两层 Router 相位和 checkpoint；
-- 二者仅共享与任务无关的 16 帧 Qwen Vision 前端缓存。
+- 二者不共享 Vision 缓存：Spatial 抽 4 帧，Temporal 抽 16 帧；文本缓存也因 prompt
+  不同而独立。
 
 采用连续 MOS，而不是把标签硬离散成五分类。`Excellent / Good / Fair / Poor / Bad`
 仍作为 Qwen 文本提示的语义锚点；连续输出与师姐 LGVQ 评价脚本中的
@@ -17,7 +18,7 @@ SRCC/KRCC/PLCC/RMSE/MAE 口径一致。
 
 ```mermaid
 flowchart TD
-    V[视频 16帧] --> Q[Qwen processor + 冻结 patch/position]
+    V[视频：Spatial 4帧 / Temporal 16帧] --> Q[Qwen processor + 冻结 patch/position]
     V --> S[固定14通道质量测量]
     P[Spatial 或 Temporal prompt] --> T[Qwen tokenizer + 冻结 embed_tokens]
     Q --> A[49×1024 → 49×192]
@@ -28,8 +29,8 @@ flowchart TD
     G --> C
     C --> V1[Vision 光Top-2 expert + 电子2D Mixer]
     V1 --> V2[Vision global光 + 电子2D Mixer]
-    V2 --> I[每帧49 token → 1 token，共16个]
-    I --> M[拼接 prompt：S=16+L]
+    V2 --> I[每帧49 token → 1 token，共N个]
+    I --> M[拼接 prompt：S=N+L]
     L --> M
     M --> L1[Language 光Top-2 expert + 电子1D Mixer]
     L1 --> L2[Language global光 + 电子1D Mixer]
@@ -39,34 +40,34 @@ flowchart TD
 
 ```text
 原始视频
-  └─ 10%...90% 时间位置等间隔抽 16 帧
+  └─ 10%...90% 时间位置等间隔抽帧：Spatial 4 帧，Temporal 16 帧
        └─ 每帧中心裁剪短边的 65%，缩放为 RGB 448×448
             │
             ├─ Qwen3-VL 官方 processor
             │    └─ 冻结 patch_embed + 官方二维位置嵌入
-            │         [16, 784, 1024]
+            │         [N, 784, 1024]
             │         └─ 按 Qwen 2×2 merge 顺序做均值：784→196
             │              └─ 再做二维 2×2 均值：14×14→7×7
-            │                   Qwen tokens [16, 49, 1024]
+            │                   Qwen tokens [N, 49, 1024]
             │
             └─ 固定质量测量旁路（无可训练参数）
-                 [16, 49, 14]
+                 [N, 49, 14]
 
 Qwen tokens: LayerNorm + Linear 1024→192
 Quality 14:  LayerNorm + Linear 14→192 + sigmoid 可学习门控
-  └─ 相加并 LayerNorm，得到视觉输入 [B,16,49,192]
+  └─ 相加并 LayerNorm，得到视觉输入 [B,N,49,192]
 
 目标专属文本 prompt
   └─ Qwen chat template → tokenizer → 冻结 embed_tokens
        [B,L,2048] → LayerNorm + Linear 2048→192
        ├─ 无 Attention 的 FiLM 条件调制进入首层视觉输入
-       └─ 后续与 16 个图像摘要 token 拼接
+       └─ 后续与 N 个图像摘要 token 拼接
 
 Vision Layer 1: 电子二维 Mixer 与 Optical Top-2 expert 并行 → RMS 同尺度凸融合
 Vision Layer 2: 电子二维 Mixer 与 Optical global 并行      → RMS 同尺度凸融合
-  └─ 每帧 49 token 的 mean/max 拼接后 Linear，得到 16 个图像 token
+  └─ 每帧 49 token 的 mean/max 拼接后 Linear，得到 N 个图像 token
 
-[16 个图像 token ; L 个 prompt token] → [B,S=16+L,192]，S≤96
+[N 个图像 token ; L 个 prompt token] → [B,S=N+L,192]，S≤96
   └─ 加可学习序列位置参数
 
 Language Layer 1: 电子因果 DWConv1D 与 Optical Top-2 expert 并行 → 融合
@@ -148,40 +149,41 @@ following five levels: Excellent, Good, Fair, Poor, or Bad.
 `[B,L,192]`。它有两条作用路径：
 
 - prompt 汇总生成 scale/shift，在第一层光学传播前调制视觉特征；
-- prompt token 与 16 个图像 token 拼接，完整经过两层 Language 光电处理并进入读出头。
+- prompt token 与 N 个图像 token 拼接，完整经过两层 Language 光电处理并进入读出头。
 
 这里要区分“词 embedding”和“位置编码”：Qwen 语言主干原本在 Attention 内用
 RoPE，但本模型不执行 Attention，所以不会假装调用那一段 RoPE。chat template
-产生的 token 顺序先由因果 depthwise Conv1D 保留；在 16 个图像 token 与 L 个
-文本 token 拼成 `[B,16+L,192]` 后，再加本模型自己的可学习一维位置表
-`[1,96,192]` 的前 `16+L` 行。相加只改变数值，不改变形状。
+产生的 token 顺序先由因果 depthwise Conv1D 保留；在 N 个图像 token 与 L 个
+文本 token 拼成 `[B,N+L,192]` 后，再加本模型自己的可学习一维位置表
+`[1,96,192]` 的前 `N+L` 行。相加只改变数值，不改变形状。
 
 一个需要如实说明的统计事实是：同一个 Spatial 模型内 prompt 对所有视频相同，
 所以它提供“当前要评 Spatial 还是 Temporal”的任务条件，而不是视频之间的额外
-判别信息。真正的视频间排序信息来自 16 帧视觉特征。将两个任务分开训练可避免
+判别信息。真正的视频间排序信息来自 4/16 帧视觉特征。将两个任务分开训练可避免
 共享读出头和共享相位之间的目标冲突。
 
-## 5. 4×4 帧复用与 54×54 专家
+## 5. Spatial 2×2 与 Temporal 4×4 帧复用
 
 物理合同保持：逻辑 canvas `518×518`、有效区 `478×478`、17 µm、传播 10 cm。
 
-并行 Vision 平面：
+并行 Vision 平面有两份固定合同：
 
-- 16 帧按 4×4 排列；
-- 每帧 lane `114×114`，pitch `120`；
-- lane 在有效区内的坐标轴起点为 `2,122,242,362`；
-- 每个 lane 内仍是 2×2 四专家，单专家 `54×54`，pitch `60`，间隔 6；
-- Optical Router 为每帧产生四个区域能量，经 softmax 后只保留 Top-2；
-- 16 帧的 64 张专家相位在一次相位图上并行加载。
+| 目标 | 抽帧 | lane 布局 | 每 lane | 单专家 | 专家总数 |
+|---|---:|---:|---:|---:|---:|
+| Spatial | 4 | 2×2 | 232×232，pitch 246 | 109×109，pitch 123 | 16 |
+| Temporal | 16 | 4×4 | 114×114，pitch 120 | 54×54，pitch 60 | 64 |
 
-由于 4×4 lane pitch 只有 120，10 cm 下若保留 1° 空间频率，理论最大横向传播约
+Optical Router 对每帧产生四个区域能量，经 softmax 后只保留 Top-2。Spatial 的
+4 帧/16 专家与 Temporal 的 16 帧/64 专家都在各自的一次相位加载中并行完成。
+
+Temporal 的 4×4 lane pitch 只有 120，10 cm 下若保留 1° 空间频率，理论最大横向传播约
 103 个逻辑像素，容易串到相邻 lane。正式 16 帧配置把原有 k-space 限制收紧为
 0.5°（约 51 像素），这是对同一光路有效孔径的仿真约束，不改变 518/478、像素
 尺寸、传播距离或 2×2 专家拓扑。
 
-后半段 Language 不再有 16 个独立 lane，保持原有串行 `109×109` 单输入与
-2×2 四专家，pitch `123`。因此“专家减半”只发生在需要把 16 帧同时装入有效区
-的 Vision 两层，不会无理由缩小 Language 两层。
+后半段 Language 不使用逐帧独立 lane，保持串行 `109×109` 单输入与 2×2 四专家，
+pitch `123`。只有 Temporal 为同时装入 16 帧而把 Vision 专家缩到 54×54；Spatial
+仍保留 109×109 Vision 专家。
 
 ## 6. 四层光电融合
 
@@ -198,9 +200,19 @@ F   = rms(E) * M / rms(M)
 带 `(1-alpha)`，光也不会因为数值尺度较小而被淹没。`optical off` 只在同一个
 已训练 checkpoint 上旁路四条光分支，不另训一套纯电子模型。
 
+每个相位调制面还显式加入相干未调制场：
+
+```text
+U = sqrt(1-eta) * exp(i*phase) + sqrt(eta)
+```
+
+`eta` 是名义未调制**功率**比例。训练时 `eta~Uniform(0.20,0.35)`，测试时固定
+`eta=0.20`。由于两路场相干叠加，CCD 某个像素实际看到的强度比例不等于简单的
+20%；这是物理干涉，不是实现错误。
+
 ## 7. 两个读出头为何不同
 
-Spatial 读出关注单帧空间统计：每帧对 49 token 取 mean/std/max，再跨 16 帧取
+Spatial 读出关注单帧空间统计：每帧对 49 token 取 mean/std/max，再跨 4 帧取
 mean/std/max，并和最终 prompt 序列统计拼接，回归一个 Spatial MOS。
 
 Temporal 读出先把每帧压成 mean/max，再用 depthwise Conv1D `k=3` 与 `k=5`
@@ -232,8 +244,10 @@ Temporal MOS。两者都没有 attention 或 Transformer。
 数值等价。对于新的未缓存视频，仍需调用同一份 patch+position 前端；两个固定 prompt
 则可直接复用各自已经过官方 tokenizer/embedding 得到的缓存。
 
-正式学生可训练参数为 Spatial `3,420,390`、Temporal `3,871,206`。二者差别来自目标
-专属读出头；其中真正可导出到相位 SLM 的六阶段相位参数共 `749,653`：Vision router
-46,656、Vision experts 186,624、Vision global 228,484、Language router 11,881、
-Language experts 47,524、Language global 228,484。其余可训练参数是边界投影、电子
+正式学生可训练参数为 Spatial `3,435,791`、Temporal 基准 `3,871,206`；Temporal
+accuracy 候选因电子读出头加宽为 `6,689,382`，但光路完全相同。真正可导出到相位
+SLM 的六阶段相位参数为 Spatial `753,993`、Temporal `749,653`。Spatial 对应：Vision
+router 47,524、Vision experts 190,096、Vision global 228,484、Language router 11,881、
+Language experts 47,524、Language global 228,484。Temporal 对应：Vision router
+46,656、Vision experts 186,624，其余四项相同。其余可训练参数是边界投影、电子
 Mixer、CCD 电读出、凸融合、位置表和目标专属回归头。

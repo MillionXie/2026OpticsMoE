@@ -14,8 +14,8 @@ Spatial 与 Temporal 是两个独立的单指标模型。两者有不同的 prom
 ```powershell
 $PROJECT = "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54"
 $CONFIG = "$PROJECT/configs/release/spatial.yaml"
-$CHECKPOINT = "$PROJECT/runs/lgvq_spatial_qwenfront_o2_16f54/best_observed_test_checkpoint.pt"
-$OUTPUT = "$PROJECT/runs/lgvq_spatial_qwenfront_o2_16f54/hardware_mask_export"
+$CHECKPOINT = "$PROJECT/runs/lgvq_spatial_qwenfront_o2_4f109_dc20/best_observed_test_checkpoint.pt"
+$OUTPUT = "$PROJECT/runs/lgvq_spatial_qwenfront_o2_4f109_dc20/hardware_mask_export"
 
 python -m experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54.export_hardware_masks `
   --config $CONFIG `
@@ -33,8 +33,8 @@ Linux 命令相同，只需把 PowerShell 的反引号换成反斜杠，或写�
 
 ```powershell
 $CONFIG = "$PROJECT/configs/release/temporal.yaml"
-$CHECKPOINT = "$PROJECT/runs/lgvq_temporal_qwenfront_o2_16f54/best_observed_test_checkpoint.pt"
-$OUTPUT = "$PROJECT/runs/lgvq_temporal_qwenfront_o2_16f54/hardware_mask_export"
+$CHECKPOINT = "$PROJECT/runs/lgvq_temporal_qwenfront_o2_16f54_dc20/best_observed_test_checkpoint.pt"
+$OUTPUT = "$PROJECT/runs/lgvq_temporal_qwenfront_o2_16f54_dc20/hardware_mask_export"
 ```
 
 其余命令完全相同。程序会核对 checkpoint 内的 `target_name`、精确 prompt 和
@@ -61,14 +61,16 @@ python -m experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54.export_hardwa
 
 硬件上的六次光学阶段顺序固定为：
 
-1. `vision_router`：16 个 `54×54` router mask 位于 4×4 frame lane 中心；
-2. `vision_expert`：每个 lane 内 2×2 专家，共 64 个 `54×54` mask；
+1. `vision_router`：Spatial 为 4 个 `109×109`/2×2 lane；Temporal 为 16 个
+   `54×54`/4×4 lane；
+2. `vision_expert`：每个 lane 内 2×2 专家；Spatial 共 16 个 `109×109`，Temporal
+   共 64 个 `54×54`；
 3. `vision_global`：一张完整 `478×478` mask；
 4. `language_router`：一张 `109×109` router mask 位于有效场中心；
 5. `language_expert`：沿用原 2×2 位置的四张 `109×109` mask；
 6. `language_global`：一张完整 `478×478` mask。
 
-16 帧是同一光学面上的 4×4 并行布局，不是把相位 SLM 连续播放 16 次。
+4/16 帧都在各自同一光学面上并行布局，不是把相位 SLM 连续播放 4/16 次。
 
 导出目录内容：
 
