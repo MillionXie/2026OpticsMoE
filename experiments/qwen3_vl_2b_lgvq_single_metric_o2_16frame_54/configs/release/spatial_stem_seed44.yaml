@@ -1,0 +1,12 @@
+base_config: spatial_stem_warmstart.yaml
+output_dir: ../../runs/lgvq_spatial_qwenfront_o2_4f109_dc20_stemwarm_seed44
+random_seed: 44
+
+model:
+  quality_gate_initial: 0.65
+
+training:
+  learning_rate: 0.00025
+
+loss:
+  correlation_weight: 0.45
