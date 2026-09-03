@@ -175,6 +175,20 @@ def test_student_contains_no_attention_or_transformer_module(tmp_path: Path) -> 
     assert forbidden == []
 
 
+def test_spatial_grid_readout_preserves_four_frame_contract(tmp_path: Path) -> None:
+    settings = _small_settings(tmp_path)
+    settings.spatial_readout_mode = "spatial_grid"
+    settings.validate()
+    model = LGVQSingleMetricOEO16(settings).eval()
+    with torch.no_grad():
+        result = model(
+            *_inputs(frame_count=4),
+            optical_enabled=False,
+        )
+    assert result["prediction"].shape == (2,)
+    assert settings.architecture_label.endswith("_spatialgrid_v1")
+
+
 def test_eval_dc_component_is_coherent_and_keeps_phase_gradient(tmp_path: Path) -> None:
     settings = _small_settings(tmp_path)
     settings.unmodulated_power_fraction_min = 0.20

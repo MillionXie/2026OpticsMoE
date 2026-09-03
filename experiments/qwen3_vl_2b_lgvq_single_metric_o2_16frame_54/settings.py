@@ -189,6 +189,7 @@ class ExperimentSettings:
     maximum_language_tokens: int = 96
     model_width: int = 192
     detector_projection_size: int = 96
+    spatial_readout_mode: str = "statistics"
     top_k: int = 2
     router_temperature: float = 1.0
     router_noise_std: float = 0.03
@@ -250,11 +251,12 @@ class ExperimentSettings:
 
     @property
     def architecture_label(self) -> str:
-        return (
+        base = (
             f"qwenfront_{self.target_name}_o2_{self.frame_count}f49_"
             f"vexpert{self.geometry.parallel_expert_size}_"
             f"alpha{round(self.alpha_min * 100):02d}_no_attention_v1"
         )
+        return base if self.spatial_readout_mode == "statistics" else f"{base}_spatialgrid_v1"
 
     def validate(self) -> None:
         self.geometry.validate(formal=not self.synthetic)
@@ -290,6 +292,10 @@ class ExperimentSettings:
             )
         if self.detector_projection_size <= 0:
             raise ValueError("detector_projection_size must be positive")
+        if self.spatial_readout_mode not in {"statistics", "spatial_grid"}:
+            raise ValueError("model.spatial_readout_mode must be statistics or spatial_grid")
+        if self.target_name != "spatial" and self.spatial_readout_mode != "statistics":
+            raise ValueError("The spatial-grid readout is only valid for the Spatial target")
         if self.top_k != 2:
             raise ValueError("The formal router is optical Top-2")
         for intervals, limit in (
@@ -372,6 +378,7 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         maximum_language_tokens=int(get("model", "maximum_language_tokens", 96)),
         model_width=int(get("model", "model_width", 192)),
         detector_projection_size=int(get("model", "detector_projection_size", 96)),
+        spatial_readout_mode=str(get("model", "spatial_readout_mode", "statistics")),
         head_width=int(get("model", "head_width", 256)),
         dropout=float(get("model", "dropout", 0.15)),
         top_k=int(get("router", "top_k", 2)),
