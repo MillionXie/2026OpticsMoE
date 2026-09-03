@@ -1,0 +1,91 @@
+output_dir: ../../runs/lgvq_temporal_qwenfront_o2_16f54
+device: cuda
+random_seed: 42
+
+task:
+  target_name: temporal
+  prompt: "Please evaluate the temporal quality of this video and rate it using one of the following five levels: Excellent, Good, Fair, Poor, or Bad."
+
+data:
+  dataset_root: /DATA/DATA1/lixinyue/xyli/data/LGVQ
+  manifest: ../../../lgvq_four_stage_optical_electronic_109_no_attention_vqa/artifacts/lgvq_train2250_test558.csv
+  # Same target-neutral Vision+quality tensor as the Spatial experiment.
+  vision_cache: ../../artifacts/qwen3vl_front_16f_49x1024_quality14.pt
+  language_cache: ../../artifacts/qwen3vl_front_temporal_prompt_2048.pt
+  # Existing two-column file is joined by sample_id; only its Temporal column is used.
+  training_soft_targets: ../../../lgvq_four_stage_optical_electronic_109_no_attention_vqa/artifacts/training_only_teacher_predictions.pt
+
+initialization:
+  qwen_model_path: null
+
+geometry:
+  canvas_size: 518
+  active_size: 478
+  lane_grid: 4
+  lane_size: 114
+  lane_pitch: 120
+  parallel_expert_size: 54
+  parallel_expert_pitch: 60
+  serial_expert_size: 109
+  serial_expert_pitch: 123
+
+model:
+  frame_count: 16
+  token_grid: 7
+  vision_input_width: 1024
+  quality_input_width: 14
+  language_input_width: 2048
+  maximum_language_tokens: 96
+  model_width: 192
+  detector_projection_size: 96
+  head_width: 320
+  dropout: 0.12
+
+router:
+  top_k: 2
+  temperature: 1.0
+  noise_std: 0.03
+  parallel_intervals: [[37, 55], [59, 77]]
+  serial_intervals: [[164, 223], [255, 314]]
+
+optics:
+  wavelength_nm: 532.0
+  pixel_pitch_um: 17.0
+  distance_m: 0.10
+  k_space_enabled: true
+  theta_max_deg: 0.5
+  phase_init_std: 0.25
+  ccd_relative_clip: 8.0
+  ccd_log_compression: 1.0
+
+robustness:
+  input_shift_pixels: 4
+  phase_shift_pixels: 4
+  ccd_shift_pixels: 4
+  phase_dropout_p: 0.05
+  phase_dropout_cell_size: 4
+
+fusion:
+  alpha_min: 0.50
+  alpha_initial: 0.57
+  alpha_max: 0.90
+  epsilon: 0.000001
+
+training:
+  epochs: 100
+  batch_size: 8
+  num_workers: 4
+  learning_rate: 0.00020
+  phase_learning_rate: 0.010
+  router_phase_learning_rate: 0.015
+  weight_decay: 0.0001
+  test_interval_epochs: 5
+
+loss:
+  ranking_weight: 0.20
+  correlation_weight: 0.50
+  optical_alignment_weight: 0.05
+  router_balance_weight: 0.02
+  router_importance_weight: 0.002
+  router_capture_weight: 0.02
+  soft_target_weight: 1.50
