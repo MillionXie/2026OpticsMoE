@@ -1,7 +1,0 @@
-base_config: spatial.yaml
-
-# Same formal inference architecture and robustness as spatial.yaml. This is
-# one independent seed for selecting a stable Spatial checkpoint, not a new
-# baseline or a separately trained optical-off model.
-random_seed: 43
-output_dir: ../../runs/lgvq_spatial_qwenfront_o2_16f54_seed43
