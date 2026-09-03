@@ -13,6 +13,7 @@ from ..training import train
 def _small_settings(tmp_path: Path, *, target_name: str = "spatial") -> ExperimentSettings:
     """Return a fast, non-overlapping optical geometry for CPU contract tests."""
 
+    spatial = target_name == "spatial"
     settings = ExperimentSettings(
         config_path=tmp_path / f"{target_name}.yaml",
         output_dir=tmp_path / f"runs_{target_name}",
@@ -27,14 +28,16 @@ def _small_settings(tmp_path: Path, *, target_name: str = "spatial") -> Experime
         geometry=Geometry(
             canvas_size=96,
             active_size=88,
-            lane_grid=4,
-            lane_size=18,
-            lane_pitch=22,
-            parallel_expert_size=8,
-            parallel_expert_pitch=10,
+            lane_grid=2 if spatial else 4,
+            lane_size=42 if spatial else 18,
+            lane_pitch=46 if spatial else 22,
+            lane_offset=0 if spatial else 2,
+            parallel_expert_size=18 if spatial else 8,
+            parallel_expert_pitch=24 if spatial else 10,
             serial_expert_size=24,
             serial_expert_pitch=32,
         ),
+        frame_count=4 if spatial else 16,
         maximum_language_tokens=24,
         detector_projection_size=8,
         parallel_router_intervals=((4, 8), (10, 14)),
@@ -58,11 +61,11 @@ def _small_settings(tmp_path: Path, *, target_name: str = "spatial") -> Experime
     return settings
 
 
-def _inputs(batch: int = 2) -> tuple[torch.Tensor, ...]:
+def _inputs(batch: int = 2, frame_count: int = 16) -> tuple[torch.Tensor, ...]:
     generator = torch.Generator().manual_seed(11)
     return (
-        torch.randn(batch, 16, 49, 1024, generator=generator),
-        torch.randn(batch, 16, 49, 14, generator=generator),
+        torch.randn(batch, frame_count, 49, 1024, generator=generator),
+        torch.randn(batch, frame_count, 49, 14, generator=generator),
         torch.randn(batch, 4, 2048, generator=generator),
         torch.ones(batch, 4, dtype=torch.bool),
     )
@@ -116,12 +119,16 @@ def test_small_optical_on_and_same_checkpoint_bypass_shapes(
 ) -> None:
     torch.manual_seed(13)
     model = LGVQSingleMetricOEO16(_small_settings(tmp_path, target_name=target_name)).eval()
-    inputs = _inputs()
+    inputs = _inputs(frame_count=model.settings.frame_count)
     with torch.no_grad():
         optical_on = model(*inputs, optical_enabled=True)
         optical_off = model(*inputs, optical_enabled=False)
     assert optical_on["prediction"].shape == optical_off["prediction"].shape == (2,)
-    assert optical_on["routing"]["vision"]["weights"].shape == (2, 16, 4)
+    assert optical_on["routing"]["vision"]["weights"].shape == (
+        2,
+        model.settings.frame_count,
+        4,
+    )
     assert optical_on["routing"]["language"]["weights"].shape == (2, 4)
     assert optical_off["routing"] == {}
     assert optical_on["optical_enabled"] is True
@@ -131,7 +138,7 @@ def test_small_optical_on_and_same_checkpoint_bypass_shapes(
 def test_text_quality_feature_phase_and_router_receive_gradients(tmp_path: Path) -> None:
     torch.manual_seed(17)
     model = LGVQSingleMetricOEO16(_small_settings(tmp_path)).train()
-    vision, quality, language, mask = _inputs()
+    vision, quality, language, mask = _inputs(frame_count=model.settings.frame_count)
     quality.requires_grad_()
     language.requires_grad_()
     result = model(vision, quality, language, mask, optical_enabled=True)
@@ -195,8 +202,8 @@ def test_single_target_training_uses_one_dimensional_target_statistics(
     model = LGVQSingleMetricOEO16(settings)
     generator = torch.Generator().manual_seed(23)
     payload = {
-        "vision_tokens": torch.randn(4, 16, 49, 1024, generator=generator).half(),
-        "quality_tokens": torch.randn(4, 16, 49, 14, generator=generator).half(),
+        "vision_tokens": torch.randn(4, 4, 49, 1024, generator=generator).half(),
+        "quality_tokens": torch.randn(4, 4, 49, 14, generator=generator).half(),
         "language_tokens": torch.randn(1, 4, 2048, generator=generator).half(),
         "language_mask": torch.ones(1, 4, dtype=torch.bool),
         "input_ids": torch.arange(4).view(1, 4),
