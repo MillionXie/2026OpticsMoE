@@ -7,6 +7,10 @@ random_seed: 43
 
 model:
   spatial_readout_mode: spatial_grid
+  quality_adapter_mode: spatial_conv
+  # Keep the official Qwen patch+position front as the main route, but let the
+  # spatial-quality residual enter strongly enough to survive four O/E stages.
+  quality_gate_initial: 0.70
   head_width: 512
   dropout: 0.10
 

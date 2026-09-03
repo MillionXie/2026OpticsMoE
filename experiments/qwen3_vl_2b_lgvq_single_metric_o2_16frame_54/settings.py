@@ -190,6 +190,8 @@ class ExperimentSettings:
     model_width: int = 192
     detector_projection_size: int = 96
     spatial_readout_mode: str = "statistics"
+    quality_adapter_mode: str = "linear"
+    quality_gate_initial: float = 0.25
     top_k: int = 2
     router_temperature: float = 1.0
     router_noise_std: float = 0.03
@@ -256,7 +258,12 @@ class ExperimentSettings:
             f"vexpert{self.geometry.parallel_expert_size}_"
             f"alpha{round(self.alpha_min * 100):02d}_no_attention_v1"
         )
-        return base if self.spatial_readout_mode == "statistics" else f"{base}_spatialgrid_v1"
+        suffixes: list[str] = []
+        if self.spatial_readout_mode != "statistics":
+            suffixes.append("spatialgrid_v1")
+        if self.quality_adapter_mode != "linear":
+            suffixes.append("qualityconv_v1")
+        return base if not suffixes else f"{base}_{'_'.join(suffixes)}"
 
     def validate(self) -> None:
         self.geometry.validate(formal=not self.synthetic)
@@ -294,6 +301,10 @@ class ExperimentSettings:
             raise ValueError("detector_projection_size must be positive")
         if self.spatial_readout_mode not in {"statistics", "spatial_grid"}:
             raise ValueError("model.spatial_readout_mode must be statistics or spatial_grid")
+        if self.quality_adapter_mode not in {"linear", "spatial_conv"}:
+            raise ValueError("model.quality_adapter_mode must be linear or spatial_conv")
+        if not 0.0 < self.quality_gate_initial < 1.0:
+            raise ValueError("model.quality_gate_initial must be within (0,1)")
         if self.target_name != "spatial" and self.spatial_readout_mode != "statistics":
             raise ValueError("The spatial-grid readout is only valid for the Spatial target")
         if self.top_k != 2:
@@ -379,6 +390,8 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         model_width=int(get("model", "model_width", 192)),
         detector_projection_size=int(get("model", "detector_projection_size", 96)),
         spatial_readout_mode=str(get("model", "spatial_readout_mode", "statistics")),
+        quality_adapter_mode=str(get("model", "quality_adapter_mode", "linear")),
+        quality_gate_initial=float(get("model", "quality_gate_initial", 0.25)),
         head_width=int(get("model", "head_width", 256)),
         dropout=float(get("model", "dropout", 0.15)),
         top_k=int(get("router", "top_k", 2)),
