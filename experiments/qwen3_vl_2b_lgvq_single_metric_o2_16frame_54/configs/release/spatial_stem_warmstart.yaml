@@ -1,0 +1,24 @@
+base_config: spatial_highres_balanced.yaml
+
+# Qwen patch+position and target-specific text remain present.  This cache is
+# the frozen output of an earlier trainable conv5 quality input head and is
+# fused before optical stage 1, never directly into the final MOS head.
+output_dir: ../../runs/lgvq_spatial_qwenfront_o2_4f109_dc20_stemwarm
+random_seed: 45
+
+data:
+  quality_feature_cache: ../../artifacts/lgvq_quality_conv5_4f_196x192.pt
+
+model:
+  quality_input_width: 192
+  quality_adapter_mode: linear
+  quality_gate_initial: 0.75
+  spatial_readout_mode: spatial_grid
+  head_width: 512
+
+training:
+  epochs: 120
+  batch_size: 32
+  learning_rate: 0.00020
+  phase_learning_rate: 0.010
+  router_phase_learning_rate: 0.015
