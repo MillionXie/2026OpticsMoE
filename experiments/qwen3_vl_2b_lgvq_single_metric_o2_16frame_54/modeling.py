@@ -43,21 +43,43 @@ def _random_shift(maximum: int, training: bool) -> tuple[int, int]:
 def _phase_modulation(
     raw: torch.Tensor,
     *,
-    probability: float,
-    cell_size: int,
+    settings: ExperimentSettings,
     training: bool,
 ) -> torch.Tensor:
     modulation = torch.exp(1j * _phase(raw)).to(torch.complex64)
-    if not training or probability <= 0.0:
-        return modulation
-    leading = raw.shape[:-2]
-    low_h = math.ceil(raw.shape[-2] / cell_size)
-    low_w = math.ceil(raw.shape[-1] / cell_size)
-    keep = torch.rand(*leading, low_h, low_w, device=raw.device) >= probability
-    keep = keep.repeat_interleave(cell_size, -2).repeat_interleave(cell_size, -1)
-    keep = keep[..., : raw.shape[-2], : raw.shape[-1]].to(torch.complex64)
-    # A dropped phase cell becomes zero phase, not zero optical amplitude.
-    return keep * modulation + (1.0 - keep)
+    if training and settings.phase_dropout_p > 0.0:
+        leading = raw.shape[:-2]
+        cell_size = settings.phase_dropout_cell_size
+        low_h = math.ceil(raw.shape[-2] / cell_size)
+        low_w = math.ceil(raw.shape[-1] / cell_size)
+        keep = (
+            torch.rand(*leading, low_h, low_w, device=raw.device)
+            >= settings.phase_dropout_p
+        )
+        keep = keep.repeat_interleave(cell_size, -2).repeat_interleave(cell_size, -1)
+        keep = keep[..., : raw.shape[-2], : raw.shape[-1]].to(torch.complex64)
+        # A dropped phase cell becomes zero phase, not zero optical amplitude.
+        modulation = keep * modulation + (1.0 - keep)
+
+    if training and (
+        settings.unmodulated_power_fraction_max
+        > settings.unmodulated_power_fraction_min
+    ):
+        fraction = settings.unmodulated_power_fraction_min + (
+            settings.unmodulated_power_fraction_max
+            - settings.unmodulated_power_fraction_min
+        ) * torch.rand((), device=raw.device)
+    else:
+        fraction = raw.new_tensor(settings.unmodulated_power_fraction_eval)
+    # Coherent zero-order leakage: ``fraction`` is the nominal unmodulated
+    # optical-power coefficient, hence its field coefficient is sqrt(fraction).
+    # Propagation remains one physical 10-cm pass because it is linear in the
+    # complex field. Interference makes the observed CCD share position-varying,
+    # as it is in the real setup.
+    return (
+        torch.sqrt(1.0 - fraction) * modulation
+        + torch.sqrt(fraction).to(torch.complex64)
+    )
 
 
 def _initialize_resampler(layer: nn.Linear) -> None:
@@ -212,8 +234,7 @@ class OpticalRouterParallel16(nn.Module):
         shifted_phase = _translate(
             _phase_modulation(
                 self.raw_router_phase,
-                probability=self.settings.phase_dropout_p,
-                cell_size=self.settings.phase_dropout_cell_size,
+                settings=self.settings,
                 training=self.training,
             ),
             *_random_shift(self.settings.phase_shift_pixels, self.training),
@@ -297,8 +318,7 @@ class OpticalRouterSerial(nn.Module):
         phase_canvas[:, offset : offset + size, offset : offset + size] = _translate(
             _phase_modulation(
                 self.raw_router_phase,
-                probability=self.settings.phase_dropout_p,
-                cell_size=self.settings.phase_dropout_cell_size,
+                settings=self.settings,
                 training=self.training,
             ),
             *_random_shift(self.settings.phase_shift_pixels, self.training),
@@ -453,8 +473,7 @@ class ParallelOpticalFeaturePath(nn.Module):
         modulation = _translate(
             _phase_modulation(
                 self.raw_expert_phase,
-                probability=self.settings.phase_dropout_p,
-                cell_size=self.settings.phase_dropout_cell_size,
+                settings=self.settings,
                 training=self.training,
             ),
             *_random_shift(self.settings.phase_shift_pixels, self.training),
@@ -495,8 +514,7 @@ class ParallelOpticalFeaturePath(nn.Module):
         phase = _translate(
             _phase_modulation(
                 self.raw_global_phase,
-                probability=self.settings.phase_dropout_p,
-                cell_size=self.settings.phase_dropout_cell_size,
+                settings=self.settings,
                 training=self.training,
             ),
             *_random_shift(self.settings.phase_shift_pixels, self.training),
@@ -605,8 +623,7 @@ class SerialOpticalFeaturePath(nn.Module):
         phase = _translate(
             _phase_modulation(
                 self.raw_expert_phase,
-                probability=self.settings.phase_dropout_p,
-                cell_size=self.settings.phase_dropout_cell_size,
+                settings=self.settings,
                 training=self.training,
             ),
             *_random_shift(self.settings.phase_shift_pixels, self.training),
@@ -643,8 +660,7 @@ class SerialOpticalFeaturePath(nn.Module):
         phase = _translate(
             _phase_modulation(
                 self.raw_global_phase,
-                probability=self.settings.phase_dropout_p,
-                cell_size=self.settings.phase_dropout_cell_size,
+                settings=self.settings,
                 training=self.training,
             ),
             *_random_shift(self.settings.phase_shift_pixels, self.training),

@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 import torch
 
-from ..modeling import LGVQSingleMetricOEO16
+from ..modeling import LGVQSingleMetricOEO16, _phase, _phase_modulation
 from ..settings import TARGET_PROMPTS, ExperimentSettings, Geometry
 from ..training import train
 
@@ -166,6 +166,26 @@ def test_student_contains_no_attention_or_transformer_module(tmp_path: Path) -> 
         or "transformer" in module.__class__.__name__.lower()
     ]
     assert forbidden == []
+
+
+def test_eval_dc_component_is_coherent_and_keeps_phase_gradient(tmp_path: Path) -> None:
+    settings = _small_settings(tmp_path)
+    settings.unmodulated_power_fraction_min = 0.20
+    settings.unmodulated_power_fraction_max = 0.35
+    settings.unmodulated_power_fraction_eval = 0.20
+    raw = torch.randn(8, 8, requires_grad=True)
+
+    actual = _phase_modulation(raw, settings=settings, training=False)
+    expected = (
+        (1.0 - 0.20) ** 0.5 * torch.exp(1j * _phase(raw))
+        + 0.20**0.5
+    )
+    assert torch.allclose(actual, expected)
+
+    actual.abs().square().mean().backward()
+    assert raw.grad is not None
+    assert torch.isfinite(raw.grad).all()
+    assert float(raw.grad.abs().sum()) > 0.0
 
 
 def test_single_target_training_uses_one_dimensional_target_statistics(

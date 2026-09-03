@@ -31,7 +31,9 @@ from .settings import (
 
 
 FRAME_COUNT = 16
-FRAME_FRACTIONS = tuple(0.10 + index * 0.80 / (FRAME_COUNT - 1) for index in range(FRAME_COUNT))
+FRAME_FRACTIONS = tuple(
+    0.10 + index * 0.80 / (FRAME_COUNT - 1) for index in range(FRAME_COUNT)
+)
 PREMERGER_GRID = 28
 PREMERGER_TOKENS = PREMERGER_GRID * PREMERGER_GRID
 QWEN_MERGE_GRID = 14
@@ -295,19 +297,27 @@ def _front_pair_identity(
     )
 
 
-def _sample_positions(frame_total: int) -> tuple[int, ...]:
-    """Return the fixed 16 temporal landmarks in the central 10--90% span."""
+def frame_fractions(frame_count: int) -> tuple[float, ...]:
+    if frame_count < 2:
+        raise ValueError("frame_count must be at least two")
+    return tuple(
+        0.10 + index * 0.80 / (frame_count - 1) for index in range(frame_count)
+    )
+
+
+def _sample_positions(frame_total: int, frame_count: int = FRAME_COUNT) -> tuple[int, ...]:
+    """Return fixed temporal landmarks in the central 10--90% span."""
 
     if frame_total <= 0:
         raise ValueError("frame_total must be positive")
     return tuple(
         min(frame_total - 1, max(0, round((frame_total - 1) * fraction)))
-        for fraction in FRAME_FRACTIONS
+        for fraction in frame_fractions(frame_count)
     )
 
 
-def decode_sixteen_frames(path: Path) -> list[Image.Image]:
-    """Decode 16 uniformly stratified central-time frames and center crop them.
+def decode_frames(path: Path, frame_count: int) -> list[Image.Image]:
+    """Decode uniformly stratified central-time frames and center crop them.
 
     The 0.10--0.90 landmarks avoid unstable first/last decoder frames.  The
     same deterministic 65% short-side crop used by the audited LGVQ pipeline
@@ -326,7 +336,7 @@ def decode_sixteen_frames(path: Path) -> list[Image.Image]:
         raise RuntimeError(f"Video has no readable frames: {path}")
     frames: list[Image.Image] = []
     try:
-        for position in _sample_positions(count):
+        for position in _sample_positions(count, frame_count):
             capture.set(cv2.CAP_PROP_POS_FRAMES, position)
             ok, bgr = capture.read()
             if not ok:
@@ -343,9 +353,15 @@ def decode_sixteen_frames(path: Path) -> list[Image.Image]:
             frames.append(Image.fromarray(square))
     finally:
         capture.release()
-    if len(frames) != FRAME_COUNT:
-        raise RuntimeError(f"Expected {FRAME_COUNT} decoded frames, got {len(frames)}")
+    if len(frames) != frame_count:
+        raise RuntimeError(f"Expected {frame_count} decoded frames, got {len(frames)}")
     return frames
+
+
+def decode_sixteen_frames(path: Path) -> list[Image.Image]:
+    """Backward-compatible wrapper for the Temporal 16-frame contract."""
+
+    return decode_frames(path, FRAME_COUNT)
 
 
 def qwen_patch_with_position(
@@ -399,7 +415,7 @@ def pool_qwen_front_tokens(hidden: torch.Tensor, *, image_count: int) -> torch.T
 
 
 def quality_tokens_from_images(
-    images: Sequence[Image.Image], *, video_count: int
+    images: Sequence[Image.Image], *, video_count: int, frame_count: int = FRAME_COUNT
 ) -> torch.Tensor:
     """Create the fixed 14-channel quality side input at the same 7x7 grid.
 
@@ -408,8 +424,8 @@ def quality_tokens_from_images(
     training graph does not repeatedly calculate Sobel/local-statistics maps.
     """
 
-    if len(images) != int(video_count) * FRAME_COUNT:
-        raise ValueError("images must contain exactly 16 frames per video")
+    if len(images) != int(video_count) * frame_count:
+        raise ValueError("images do not match video_count * frame_count")
     arrays = [
         torch.from_numpy(np.asarray(image.convert("RGB"), dtype=np.uint8).copy())
         .permute(2, 0, 1)
@@ -420,7 +436,7 @@ def quality_tokens_from_images(
         raise ValueError("All decoded frames must have the same spatial size")
     height, width = next(iter(spatial_shapes))
     frames = torch.stack(arrays).reshape(
-        video_count, FRAME_COUNT, 3, height, width
+        video_count, frame_count, 3, height, width
     )
     rgb = frames.float().div(255.0)
     luminance = (
@@ -445,19 +461,19 @@ def quality_tokens_from_images(
     local_mean = F.avg_pool2d(padded5, 5, stride=1)
     local_square_mean = F.avg_pool2d(padded5.square(), 5, stride=1)
     local_std = (local_square_mean - local_mean.square()).clamp_min(0.0).sqrt()
-    shape = (video_count, FRAME_COUNT, 1, height, width)
+    shape = (video_count, frame_count, 1, height, width)
     saturation = rgb.amax(2, keepdim=True) - rgb.amin(2, keepdim=True)
     temporal = torch.zeros_like(luminance)
     temporal[:, 1:] = (luminance[:, 1:] - luminance[:, :-1]).abs()
     y = torch.linspace(-1.0, 1.0, height).view(1, 1, 1, height, 1).expand(
-        video_count, FRAME_COUNT, 1, height, width
+        video_count, frame_count, 1, height, width
     )
     x = torch.linspace(-1.0, 1.0, width).view(1, 1, 1, 1, width).expand(
-        video_count, FRAME_COUNT, 1, height, width
+        video_count, frame_count, 1, height, width
     )
-    time = torch.linspace(-1.0, 1.0, FRAME_COUNT).view(
-        1, FRAME_COUNT, 1, 1, 1
-    ).expand(video_count, FRAME_COUNT, 1, height, width)
+    time = torch.linspace(-1.0, 1.0, frame_count).view(
+        1, frame_count, 1, 1, 1
+    ).expand(video_count, frame_count, 1, height, width)
     channels = torch.cat(
         (
             rgb,
@@ -479,7 +495,7 @@ def quality_tokens_from_images(
         raise RuntimeError(f"Quality bank must have 14 channels, got {channels.shape[2]}")
     pooled = F.adaptive_avg_pool2d(channels.flatten(0, 1), (OUTPUT_GRID, OUTPUT_GRID))
     return (
-        pooled.reshape(video_count, FRAME_COUNT, 14, OUTPUT_TOKENS)
+        pooled.reshape(video_count, frame_count, 14, OUTPUT_TOKENS)
         .permute(0, 1, 3, 2)
         .half()
         .contiguous()
@@ -594,6 +610,7 @@ def _load_part(
     source_identity_sha256: str,
     vision_front_sha256: str,
     front_pair_sha256: str,
+    frame_count: int,
 ) -> tuple[torch.Tensor, torch.Tensor] | None:
     if not path.exists():
         return None
@@ -610,12 +627,13 @@ def _load_part(
             != source_identity_sha256
             or payload.get("qwen_vision_front_sha256") != vision_front_sha256
             or payload.get("qwen_front_pair_sha256") != front_pair_sha256
+            or int(payload.get("frame_count", -1)) != frame_count
         ):
             return None
         value = payload.get("vision_tokens")
         quality = payload.get("quality_tokens")
-        shape = (stop - start, FRAME_COUNT, OUTPUT_TOKENS, VISION_WIDTH)
-        quality_shape = (stop - start, FRAME_COUNT, OUTPUT_TOKENS, 14)
+        shape = (stop - start, frame_count, OUTPUT_TOKENS, VISION_WIDTH)
+        quality_shape = (stop - start, frame_count, OUTPUT_TOKENS, 14)
         if not torch.is_tensor(value) or value.dtype != torch.float16 or tuple(value.shape) != shape:
             return None
         if not torch.is_tensor(quality) or quality.dtype != torch.float16 or tuple(quality.shape) != quality_shape:
@@ -667,6 +685,7 @@ def _extract_vision_rows(
     visual: torch.nn.Module,
     device: torch.device,
     batch_size: int,
+    frame_count: int,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     result: list[torch.Tensor] = []
     quality_result: list[torch.Tensor] = []
@@ -676,7 +695,7 @@ def _extract_vision_rows(
         images = [
             frame
             for row in batch_rows
-            for frame in decode_sixteen_frames(Path(row.video_path))
+            for frame in decode_frames(Path(row.video_path), frame_count)
         ]
         # This is the same processor boundary used by the audited four-frame
         # Qwen cache.  Qwen3VLProcessor 4.57 requires non-None text during
@@ -690,7 +709,9 @@ def _extract_vision_rows(
             return_tensors="pt",
         )
         quality_result.append(
-            quality_tokens_from_images(images, video_count=len(batch_rows))
+            quality_tokens_from_images(
+                images, video_count=len(batch_rows), frame_count=frame_count
+            )
         )
         pixel_values = processed["pixel_values"].to(device=device, dtype=visual_dtype)
         grid_thw = processed["image_grid_thw"].to(device)
@@ -708,7 +729,7 @@ def _extract_vision_rows(
             hidden = qwen_patch_with_position(visual, pixel_values, grid_thw)
             pooled = pool_qwen_front_tokens(hidden, image_count=len(images))
         result.append(
-            pooled.reshape(len(batch_rows), FRAME_COUNT, OUTPUT_TOKENS, VISION_WIDTH)
+            pooled.reshape(len(batch_rows), frame_count, OUTPUT_TOKENS, VISION_WIDTH)
             .detach()
             .cpu()
             .half()
@@ -790,12 +811,13 @@ def build_cache(
     batch_size: int,
     chunk_rows: int,
     device_name: str,
+    frame_count: int = FRAME_COUNT,
     overwrite_vision: bool = False,
 ) -> dict[str, Any]:
     if target_name not in TARGET_PROMPTS:
         raise ValueError(f"target_name must be one of {sorted(TARGET_PROMPTS)}")
-    if batch_size <= 0 or chunk_rows <= 0:
-        raise ValueError("batch_size and chunk_rows must be positive")
+    if batch_size <= 0 or chunk_rows <= 0 or frame_count not in (4, 16):
+        raise ValueError("batch/chunk sizes must be positive and frame_count must be 4 or 16")
     try:
         import transformers
     except ImportError as error:
@@ -891,9 +913,9 @@ def build_cache(
                 metadata.get("feature_contract") == FEATURE_CONTRACT
                 and metadata.get("manifest_sha256") == manifest_digest
                 and metadata.get("sample_order_sha256") == sample_order_digest
-                and metadata.get("shape") == [len(rows), FRAME_COUNT, OUTPUT_TOKENS, VISION_WIDTH]
+                and metadata.get("shape") == [len(rows), frame_count, OUTPUT_TOKENS, VISION_WIDTH]
                 and metadata.get("quality_contract") == QUALITY_CONTRACT
-                and metadata.get("quality_shape") == [len(rows), FRAME_COUNT, OUTPUT_TOKENS, 14]
+                and metadata.get("quality_shape") == [len(rows), frame_count, OUTPUT_TOKENS, 14]
                 and int(metadata.get("file_size_bytes", -1)) == vision_output.stat().st_size
                 and metadata.get("qwen_source_identity_sha256")
                 == source_identity["sha256"]
@@ -917,8 +939,8 @@ def build_cache(
         vision_report = {
             "path": str(vision_output),
             "reused": True,
-            "shape": [len(rows), FRAME_COUNT, OUTPUT_TOKENS, VISION_WIDTH],
-            "quality_shape": [len(rows), FRAME_COUNT, OUTPUT_TOKENS, 14],
+            "shape": [len(rows), frame_count, OUTPUT_TOKENS, VISION_WIDTH],
+            "quality_shape": [len(rows), frame_count, OUTPUT_TOKENS, 14],
             "dtype": "torch.float16",
             "qwen_source_identity_sha256": source_identity["sha256"],
             "qwen_vision_front_sha256": vision_fingerprint["sha256"],
@@ -940,6 +962,7 @@ def build_cache(
                 source_identity_sha256=source_identity["sha256"],
                 vision_front_sha256=vision_fingerprint["sha256"],
                 front_pair_sha256=front_pair_identity["sha256"],
+                frame_count=frame_count,
             )
             if loaded is None:
                 value, quality = _extract_vision_rows(
@@ -948,6 +971,7 @@ def build_cache(
                     visual=visual,
                     device=device,
                     batch_size=batch_size,
+                    frame_count=frame_count,
                 )
                 _atomic_torch_save(
                     path,
@@ -961,6 +985,7 @@ def build_cache(
                         "qwen_source_identity_sha256": source_identity["sha256"],
                         "qwen_vision_front_sha256": vision_fingerprint["sha256"],
                         "qwen_front_pair_sha256": front_pair_identity["sha256"],
+                        "frame_count": frame_count,
                         "vision_tokens": value,
                         "quality_contract": QUALITY_CONTRACT,
                         "quality_tokens": quality,
@@ -977,10 +1002,10 @@ def build_cache(
         if device.type == "cuda":
             torch.cuda.empty_cache()
         features = torch.empty(
-            len(rows), FRAME_COUNT, OUTPUT_TOKENS, VISION_WIDTH, dtype=torch.float16
+            len(rows), frame_count, OUTPUT_TOKENS, VISION_WIDTH, dtype=torch.float16
         )
         quality_features = torch.empty(
-            len(rows), FRAME_COUNT, OUTPUT_TOKENS, 14, dtype=torch.float16
+            len(rows), frame_count, OUTPUT_TOKENS, 14, dtype=torch.float16
         )
         for path, start, stop in part_specs:
             loaded = _load_part(
@@ -992,6 +1017,7 @@ def build_cache(
                 source_identity_sha256=source_identity["sha256"],
                 vision_front_sha256=vision_fingerprint["sha256"],
                 front_pair_sha256=front_pair_identity["sha256"],
+                frame_count=frame_count,
             )
             if loaded is None:
                 raise RuntimeError(f"Vision shard became invalid during assembly: {path}")
@@ -1023,7 +1049,8 @@ def build_cache(
             "sample_ids": sample_ids,
             "video_paths": [row.video_path for row in rows],
             "splits": [row.split for row in rows],
-            "frame_sampling_fractions": FRAME_FRACTIONS,
+            "frame_count": frame_count,
+            "frame_sampling_fractions": frame_fractions(frame_count),
             "center_crop_short_side_fraction": 0.65,
             "preprocessor_intermediate_size": [448, 448],
             "qwen_premerger_grid_thw": [1, 28, 28],
@@ -1049,6 +1076,7 @@ def build_cache(
             "sample_order_sha256": sample_order_digest,
             "shape": list(features.shape),
             "quality_shape": list(quality_features.shape),
+            "frame_count": frame_count,
             "dtype": str(features.dtype),
             "file_size_bytes": vision_output.stat().st_size,
             "target_neutral_shared_vision_asset": True,
@@ -1075,6 +1103,7 @@ def build_cache(
         "vision": vision_report,
         "language": language_report,
         "target_name": target_name,
+        "frame_count": frame_count,
         "prompt": TARGET_PROMPTS[target_name],
         "counts": {
             split: sum(row.split == split for row in rows)
@@ -1106,7 +1135,7 @@ def build_cache(
 def main() -> int:
     parser = argparse.ArgumentParser(
         description=(
-            "Cache the frozen Qwen3-VL front only: 16-frame Vision patch+position "
+            "Cache the frozen Qwen3-VL front only: 4/16-frame Vision patch+position "
             "tokens and one target-specific chat-template embedding"
         )
     )
@@ -1131,7 +1160,8 @@ def main() -> int:
     parser.add_argument("--language-output", type=Path, default=None)
     parser.add_argument("--target", choices=sorted(TARGET_PROMPTS), default=None)
     parser.add_argument("--manifest", type=Path, default=None)
-    parser.add_argument("--batch-size", type=int, default=2, help="Videos per GPU batch (32 frames at batch=2)")
+    parser.add_argument("--frame-count", type=int, choices=(4, 16), default=None)
+    parser.add_argument("--batch-size", type=int, default=2, help="Videos per GPU batch")
     parser.add_argument("--chunk-rows", type=int, default=16, help="Videos per resumable shard")
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--overwrite-vision", action="store_true")
@@ -1143,6 +1173,7 @@ def main() -> int:
             "--language-output": args.language_output,
             "--target": args.target,
             "--manifest": args.manifest,
+            "--frame-count": args.frame_count,
         }
         supplied = [name for name, value in forbidden.items() if value is not None]
         if supplied:
@@ -1165,6 +1196,7 @@ def main() -> int:
         vision_output = settings.vision_cache_path
         language_output = settings.language_cache_path
         target_name = settings.target_name
+        frame_count = settings.frame_count
         model_path = args.model_path or settings.qwen_model_path
         model_path_source = (
             "explicit --model-path override"
@@ -1190,6 +1222,7 @@ def main() -> int:
         vision_output = args.vision_output
         language_output = args.language_output
         target_name = args.target
+        frame_count = 16 if args.frame_count is None else args.frame_count
         model_path = args.model_path
         model_path_source = "explicit --model-path"
     if model_path is None:
@@ -1211,6 +1244,7 @@ def main() -> int:
         batch_size=args.batch_size,
         chunk_rows=args.chunk_rows,
         device_name=args.device,
+        frame_count=frame_count,
         overwrite_vision=args.overwrite_vision,
     )
     report["model_path_source"] = model_path_source
@@ -1227,6 +1261,8 @@ __all__ = [
     "FRAME_FRACTIONS",
     "build_cache",
     "decode_sixteen_frames",
+    "decode_frames",
+    "frame_fractions",
     "pool_qwen_front_tokens",
     "quality_tokens_from_images",
     "qwen_patch_with_position",

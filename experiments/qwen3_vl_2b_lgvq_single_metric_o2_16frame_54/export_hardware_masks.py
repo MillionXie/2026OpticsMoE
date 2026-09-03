@@ -159,8 +159,6 @@ def build_stage_planes(
 
     geometry = settings.geometry
     geometry.validate(formal=True)
-    if settings.frame_count != 16:
-        raise ValueError("Hardware export requires the formal 16-frame model")
     active = geometry.active_size
 
     lane_center_offset = (geometry.lane_size - geometry.parallel_expert_size) // 2
@@ -528,10 +526,15 @@ def export_hardware_masks(
             "logical_active_field": [478, 478],
             "logical_pixel_pitch_um": 17.0,
             "logical_active_extent_mm": 478 * 17.0 / 1000.0,
-            "parallel_frame_layout": "4x4",
+            "parallel_frame_layout": (
+                f"{settings.geometry.lane_grid}x{settings.geometry.lane_grid}"
+            ),
             "parallel_expert_layout_per_frame": "2x2",
-            "parallel_expert_size": [54, 54],
-            "parallel_expert_count": 64,
+            "parallel_expert_size": [
+                settings.geometry.parallel_expert_size,
+                settings.geometry.parallel_expert_size,
+            ],
+            "parallel_expert_count": settings.frame_count * 4,
             "serial_expert_size": [109, 109],
             "serial_expert_count": 4,
             "router": "optical Top-2",

@@ -54,15 +54,18 @@ def run_preflight(
             "attention_modules": 0,
             "transformer_blocks": 0,
             "frame_count": settings.frame_count,
-            "qwen_vision_token_shape_per_video": [16, 49, 1024],
-            "quality_side_shape_per_video": [16, 49, 14],
+            "qwen_vision_token_shape_per_video": [settings.frame_count, 49, 1024],
+            "quality_side_shape_per_video": [settings.frame_count, 49, 14],
             "quality_channels": list(QUALITY_CHANNELS),
             "internal_width": settings.model_width,
         },
         "geometry": {
             "canvas": settings.geometry.canvas_size,
             "active": settings.geometry.active_size,
-            "parallel_frame_grid": [4, 4],
+            "parallel_frame_grid": [
+                settings.geometry.lane_grid,
+                settings.geometry.lane_grid,
+            ],
             "parallel_lane_size": settings.geometry.lane_size,
             "parallel_lane_pitch": settings.geometry.lane_pitch,
             "parallel_lane_origins_active_yx": [
@@ -77,7 +80,7 @@ def run_preflight(
         "router": {
             "implementation": "optical region-energy router",
             "top_k": settings.top_k,
-            "parallel_decisions_per_video": 16,
+            "parallel_decisions_per_video": settings.frame_count,
             "serial_decisions_per_video": 1,
             "parallel_detector_intervals": [
                 list(value) for value in settings.parallel_router_intervals
@@ -92,6 +95,18 @@ def run_preflight(
             "alpha_range": [settings.alpha_min, settings.alpha_max],
             "alpha_initial": settings.alpha_initial,
             "same_checkpoint_optical_bypass_only": True,
+        },
+        "unmodulated_leakage": {
+            "model": "coherent field mixture",
+            "nominal_power_train_range": [
+                settings.unmodulated_power_fraction_min,
+                settings.unmodulated_power_fraction_max,
+            ],
+            "nominal_power_evaluation": settings.unmodulated_power_fraction_eval,
+        },
+        "phase_snapshots": {
+            "interval_epochs": settings.phase_snapshot_interval_epochs,
+            "format": "optical_phase_evolution_snapshot_v1",
         },
     }
 

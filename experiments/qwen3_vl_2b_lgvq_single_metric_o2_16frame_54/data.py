@@ -255,7 +255,7 @@ def _load_torch(path: Path, *, mmap: bool = False) -> Any:
         return torch.load(path, **kwargs)
 
 
-def load_vision_cache(path: str | Path) -> dict[str, Any]:
+def load_vision_cache(path: str | Path, *, frame_count: int) -> dict[str, Any]:
     source = Path(path).expanduser().resolve()
     payload = _load_torch(source, mmap=True)
     if not isinstance(payload, dict) or int(payload.get("schema_version", -1)) != 1:
@@ -283,7 +283,12 @@ def load_vision_cache(path: str | Path) -> dict[str, Any]:
     tokens = payload["vision_tokens"]
     quality = payload["quality_tokens"]
     count = len(payload["sample_ids"])
-    expected_shape = (count, 16, 49, 1024)
+    if int(payload.get("frame_count", -1)) != frame_count:
+        raise ValueError(
+            f"Vision cache frame_count={payload.get('frame_count')} does not match "
+            f"configured frame_count={frame_count}"
+        )
+    expected_shape = (count, frame_count, 49, 1024)
     if not torch.is_tensor(tokens) or tokens.dtype != torch.float16 or tuple(tokens.shape) != expected_shape:
         raise ValueError(
             f"vision_tokens must be float16 {expected_shape}; got "
@@ -291,7 +296,7 @@ def load_vision_cache(path: str | Path) -> dict[str, Any]:
         )
     if payload["quality_contract"] != QUALITY_CONTRACT:
         raise RuntimeError("Quality-side cache contract does not match this experiment")
-    expected_quality_shape = (count, 16, 49, 14)
+    expected_quality_shape = (count, frame_count, 49, 14)
     if (
         not torch.is_tensor(quality)
         or quality.dtype != torch.float16
@@ -321,6 +326,7 @@ def load_language_cache(
     target_name: str,
     prompt: str,
     maximum_tokens: int,
+    frame_count: int,
 ) -> dict[str, Any]:
     source = Path(path).expanduser().resolve()
     payload = _load_torch(source)
@@ -357,9 +363,9 @@ def load_language_cache(
         raise ValueError("attention_mask and input_ids must both be [1,L]")
     if mask.dtype != torch.bool or input_ids.dtype != torch.int64:
         raise ValueError("attention_mask must be bool and input_ids must be int64")
-    if 16 + tokens.shape[1] > maximum_tokens:
+    if frame_count + tokens.shape[1] > maximum_tokens:
         raise ValueError(
-            f"16 frame tokens + {tokens.shape[1]} prompt tokens exceed the "
+            f"{frame_count} frame tokens + {tokens.shape[1]} prompt tokens exceed the "
             f"configured serial limit {maximum_tokens}"
         )
     if not bool(torch.isfinite(tokens).all()):
@@ -416,12 +422,15 @@ def load_single_metric_cache(settings: ExperimentSettings) -> dict[str, Any]:
     if settings.vision_cache_path is None or settings.language_cache_path is None:
         raise ValueError("data.vision_cache and data.language_cache are required")
     rows = read_manifest(settings.manifest_path)
-    vision = load_vision_cache(settings.vision_cache_path)
+    vision = load_vision_cache(
+        settings.vision_cache_path, frame_count=settings.frame_count
+    )
     language = load_language_cache(
         settings.language_cache_path,
         target_name=settings.target_name,
         prompt=settings.prompt,
         maximum_tokens=settings.maximum_language_tokens,
+        frame_count=settings.frame_count,
     )
     front_identity = _validate_cache_front_identity(vision, language)
     manifest_ids = [row.sample_id for row in rows]

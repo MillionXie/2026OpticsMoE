@@ -112,17 +112,25 @@ def test_release_configs_are_independent_single_targets() -> None:
     assert temporal.target_name == "temporal"
     assert spatial.prompt == TARGET_PROMPTS["spatial"]
     assert temporal.prompt == TARGET_PROMPTS["temporal"]
-    assert spatial.vision_cache_path == temporal.vision_cache_path
+    assert spatial.vision_cache_path != temporal.vision_cache_path
     assert spatial.language_cache_path != temporal.language_cache_path
-    assert spatial.frame_count == temporal.frame_count == 16
+    assert spatial.frame_count == 4
+    assert temporal.frame_count == 16
     assert spatial.token_count == temporal.token_count == 49
     assert spatial.geometry.lane_origins == tuple(
+        (top, left)
+        for top in (0, 246)
+        for left in (0, 246)
+    )
+    assert temporal.geometry.lane_origins == tuple(
         (top, left)
         for top in (2, 122, 242, 362)
         for left in (2, 122, 242, 362)
     )
-    assert spatial.geometry.parallel_expert_size == 54
-    assert spatial.geometry.parallel_expert_pitch == 60
+    assert spatial.geometry.parallel_expert_size == 109
+    assert temporal.geometry.parallel_expert_size == 54
+    assert spatial.geometry.parallel_expert_pitch == 123
+    assert temporal.geometry.parallel_expert_pitch == 60
 
 
 def test_sixteen_frame_fractions_cover_central_span() -> None:
@@ -289,6 +297,7 @@ def test_cache_loader_returns_one_scalar_and_quality_tokens(tmp_path: Path) -> N
         "schema_version": 1,
         "feature_contract": FEATURE_CONTRACT,
         "quality_contract": QUALITY_CONTRACT,
+        "frame_count": 16,
         "vision_tokens": torch.zeros(2, 16, 49, 1024, dtype=torch.float16),
         "quality_tokens": torch.zeros(2, 16, 49, 14, dtype=torch.float16),
         "sample_ids": ["a", "b"],
