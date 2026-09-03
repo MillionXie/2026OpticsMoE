@@ -15,6 +15,28 @@ SRCC/KRCC/PLCC/RMSE/MAE 口径一致。
 
 ## 2. 完整数据流与维度
 
+```mermaid
+flowchart TD
+    V[视频 16帧] --> Q[Qwen processor + 冻结 patch/position]
+    V --> S[固定14通道质量测量]
+    P[Spatial 或 Temporal prompt] --> T[Qwen tokenizer + 冻结 embed_tokens]
+    Q --> A[49×1024 → 49×192]
+    S --> G[49×14 → gate → 49×192]
+    T --> L[L×2048 → L×192]
+    L --> C[文本条件调制]
+    A --> C
+    G --> C
+    C --> V1[Vision 光Top-2 expert + 电子2D Mixer]
+    V1 --> V2[Vision global光 + 电子2D Mixer]
+    V2 --> I[每帧49 token → 1 token，共16个]
+    I --> M[拼接 prompt：S=16+L]
+    L --> M
+    M --> L1[Language 光Top-2 expert + 电子1D Mixer]
+    L1 --> L2[Language global光 + 电子1D Mixer]
+    L2 --> H[目标专属无Attention读出头]
+    H --> O[单个连续MOS]
+```
+
 ```text
 原始视频
   └─ 10%...90% 时间位置等间隔抽 16 帧
@@ -65,6 +87,29 @@ Transformer 或 LM head，也没有任何 self-attention。Qwen 被保留的是�
 
 正式训练前将这些结果缓存一次，训练和光路部署不反复加载完整 2B 模型。
 
+### 2.1 patch 与位置编码具体如何产生
+
+Qwen3-VL-2B-Instruct 的视觉 patch 层是一层冻结的 `Conv3D`：输入通道为 3，
+`kernel=stride=(temporal_patch_size=2, patch_size=16, patch_size=16)`，输出通道
+1024。官方 processor 为每张静态抽样帧形成时间深度 2 的 patch 输入，因此
+448×448 变成 `grid_thw=[1,28,28]`，共有 `1×28×28=784` 个 patch；每个 patch
+由 Conv3D 直接投影成 1024 维。这里只执行这一层，不执行后面的 Vision block。
+
+位置不是手工 x/y 相加。Qwen 自带一个冻结的二维 learned `pos_embed` 表；
+`fast_pos_embed_interpolate([1,28,28])` 在该表中对 28×28 坐标做双线性插值，
+并按 Qwen 后续 2×2 spatial merge 的块顺序重新排列。所得位置张量也是
+`[784,1024]`，与 patch embedding **逐元素相加**，形状不变：
+
+```text
+patch = frozen Conv3D(pixel patches)       [784,1024]
+pos   = frozen interpolated pos_embed      [784,1024]
+front = patch + pos                        [784,1024]
+```
+
+随后仅做无参数均值池化：连续四个同一 2×2 block 的 token 求均值得
+`196×1024`，再按 14×14 网格做一次 2×2 均值得 `49×1024`。因此位置在池化后
+仍已包含在 token 数值内；49 表示 7×7 空间位置，不是凭空生成的 49 个 token。
+
 ## 3. 14 个质量通道到底是什么
 
 它们不是 14 个类别，也不是 Qwen token。对每个 448×448 帧计算后池化到同一
@@ -104,6 +149,12 @@ following five levels: Excellent, Good, Fair, Poor, or Bad.
 
 - prompt 汇总生成 scale/shift，在第一层光学传播前调制视觉特征；
 - prompt token 与 16 个图像 token 拼接，完整经过两层 Language 光电处理并进入读出头。
+
+这里要区分“词 embedding”和“位置编码”：Qwen 语言主干原本在 Attention 内用
+RoPE，但本模型不执行 Attention，所以不会假装调用那一段 RoPE。chat template
+产生的 token 顺序先由因果 depthwise Conv1D 保留；在 16 个图像 token 与 L 个
+文本 token 拼成 `[B,16+L,192]` 后，再加本模型自己的可学习一维位置表
+`[1,96,192]` 的前 `16+L` 行。相加只改变数值，不改变形状。
 
 一个需要如实说明的统计事实是：同一个 Spatial 模型内 prompt 对所有视频相同，
 所以它提供“当前要评 Spatial 还是 Temporal”的任务条件，而不是视频之间的额外
