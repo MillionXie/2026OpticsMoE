@@ -191,6 +191,7 @@ class ExperimentSettings:
     manifest_path: Path | None
     vision_cache_path: Path | None
     language_cache_path: Path | None
+    quality_feature_cache_path: Path | None = None
     training_soft_targets_path: Path | None = None
     initialization_checkpoint: Path | None = None
     qwen_model_path: Path | None = None
@@ -306,13 +307,18 @@ class ExperimentSettings:
             raise ValueError("Qwen front token_grid must be 7 or 14")
         if not self.synthetic and self.target_name == "temporal" and self.token_grid != 7:
             raise ValueError("Formal Temporal-16 retains the 7x7 front for bounded storage")
-        if (
-            self.vision_input_width,
-            self.quality_input_width,
-            self.language_input_width,
-            self.model_width,
-        ) != (1024, 14, 2048, 192):
-            raise ValueError("Formal widths are locked to Vision 1024, quality 14, Language 2048, model 192")
+        if (self.vision_input_width, self.language_input_width, self.model_width) != (
+            1024,
+            2048,
+            192,
+        ):
+            raise ValueError("Formal widths are locked to Vision 1024, Language 2048, model 192")
+        expected_quality_width = 192 if self.quality_feature_cache_path is not None else 14
+        if self.quality_input_width != expected_quality_width:
+            raise ValueError(
+                "quality_input_width must be 14 for the fixed bank or 192 when "
+                "data.quality_feature_cache is configured"
+            )
         if not self.frame_count < self.maximum_language_tokens <= self.geometry.serial_expert_size:
             raise ValueError(
                 "maximum_language_tokens must leave room for all frame tokens and fit the 109-row serial field"
@@ -393,6 +399,9 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         manifest_path=_path(get("data", "manifest"), config_path),
         vision_cache_path=_path(get("data", "vision_cache"), config_path),
         language_cache_path=_path(get("data", "language_cache"), config_path),
+        quality_feature_cache_path=_path(
+            get("data", "quality_feature_cache"), config_path
+        ),
         training_soft_targets_path=_path(get("data", "training_soft_targets"), config_path),
         initialization_checkpoint=_path(get("training", "initialization_checkpoint"), config_path),
         qwen_model_path=_path(get("initialization", "qwen_model_path"), config_path),
@@ -480,6 +489,7 @@ def resolved_dict(settings: ExperimentSettings) -> dict[str, Any]:
         "manifest_path",
         "vision_cache_path",
         "language_cache_path",
+        "quality_feature_cache_path",
         "training_soft_targets_path",
         "initialization_checkpoint",
         "qwen_model_path",
