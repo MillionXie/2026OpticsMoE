@@ -832,6 +832,68 @@ class SpatialReadout(nn.Module):
         return self.output(torch.cat((video, prompt), -1)).squeeze(-1)
 
 
+class SpatialGridReadout(nn.Module):
+    """Attention-free electronic head that preserves the final 7x7 token layout."""
+
+    def __init__(self, settings: ExperimentSettings) -> None:
+        super().__init__()
+        width, hidden = settings.model_width, settings.head_width
+        self.grid = settings.token_grid
+        spatial_width = 64
+        self.token_norm = nn.LayerNorm(width)
+        self.spatial_depthwise = nn.Conv2d(
+            width, width, kernel_size=3, padding=1, groups=width, bias=False
+        )
+        self.spatial_projection = nn.Conv2d(width, spatial_width, kernel_size=1)
+        self.frame = nn.Sequential(
+            nn.LayerNorm(spatial_width * 3 * 3 * 2),
+            nn.Linear(spatial_width * 3 * 3 * 2, hidden),
+            nn.GELU(),
+        )
+        self.language = nn.Sequential(
+            nn.LayerNorm(width * 3),
+            nn.Linear(width * 3, hidden),
+            nn.GELU(),
+        )
+        self.output = nn.Sequential(
+            nn.LayerNorm(hidden * 4),
+            nn.Linear(hidden * 4, hidden * 2),
+            nn.GELU(),
+            nn.Dropout(settings.dropout),
+            nn.Linear(hidden * 2, 1),
+        )
+
+    def forward(
+        self, vision: torch.Tensor, language: torch.Tensor, mask: torch.Tensor
+    ) -> torch.Tensor:
+        batch, frames, tokens, width = vision.shape
+        if tokens != self.grid * self.grid:
+            raise ValueError("Spatial-grid readout requires the formal 7x7 token grid")
+        grid = self.token_norm(vision).reshape(
+            batch * frames, self.grid, self.grid, width
+        ).permute(0, 3, 1, 2)
+        grid = F.gelu(self.spatial_depthwise(grid))
+        grid = F.gelu(self.spatial_projection(grid))
+        pooled = torch.cat(
+            (
+                F.adaptive_avg_pool2d(grid, 3),
+                F.adaptive_max_pool2d(grid, 3),
+            ),
+            1,
+        ).flatten(1)
+        frame = self.frame(pooled).reshape(batch, frames, -1)
+        video = torch.cat(
+            (
+                frame.mean(1),
+                frame.float().std(1, unbiased=False).to(frame.dtype),
+                frame.amax(1),
+            ),
+            -1,
+        )
+        prompt = self.language(_masked_statistics(language, mask))
+        return self.output(torch.cat((video, prompt), -1)).squeeze(-1)
+
+
 class TemporalReadout(nn.Module):
     def __init__(self, settings: ExperimentSettings) -> None:
         super().__init__()
@@ -949,7 +1011,11 @@ class LGVQSingleMetricOEO16(nn.Module):
         nn.init.normal_(self.sequence_position, std=0.02)
         self.readout: nn.Module
         if settings.target_name == "spatial":
-            self.readout = SpatialReadout(settings)
+            self.readout = (
+                SpatialGridReadout(settings)
+                if settings.spatial_readout_mode == "spatial_grid"
+                else SpatialReadout(settings)
+            )
         elif settings.target_name == "temporal":
             self.readout = TemporalReadout(settings)
         else:

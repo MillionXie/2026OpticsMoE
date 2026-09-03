@@ -1,0 +1,22 @@
+base_config: spatial.yaml
+
+# Same four-frame optical inference path. Only the permitted final electronic
+# readout retains a coarse 3x3 summary of the 7x7 spatial token geometry.
+output_dir: ../../runs/lgvq_spatial_qwenfront_o2_4f109_dc20_spatialgrid
+random_seed: 43
+
+model:
+  spatial_readout_mode: spatial_grid
+  head_width: 512
+  dropout: 0.10
+
+training:
+  epochs: 120
+  learning_rate: 0.00030
+  phase_learning_rate: 0.012
+  router_phase_learning_rate: 0.018
+
+loss:
+  ranking_weight: 0.30
+  correlation_weight: 1.00
+  soft_target_weight: 3.00
