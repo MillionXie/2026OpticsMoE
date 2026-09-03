@@ -14,7 +14,7 @@ cache、checkpoint 或 mask。
 准备服务器本地的 `Qwen3-VL-2B-Instruct` 绝对目录。缓存命令通过
 `--model-path` 显式接收该目录；不允许在正式任务中临时联网下载。
 
-若使用主服务器的四卡并行方案，优先直接遵循
+若使用主服务器的三卡并行方案，优先直接遵循
 [SERVER_RUNBOOK.md](SERVER_RUNBOOK.md)。下面保留逐条命令，便于单步排错。
 
 ## 1. 静态与小尺寸数值检查
@@ -25,32 +25,33 @@ python -m experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54 \
   --phase smoke
 ```
 
-## 2. 缓存 Spatial 的 Qwen 前端
+## 2. 缓存 Spatial 4 帧 Qwen 前端
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python -m \
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 python -m \
   experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54.cache_qwen_front \
   --config experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial.yaml \
   --model-path /ABSOLUTE/PATH/TO/Qwen3-VL-2B-Instruct \
   --batch-size 2 --chunk-rows 16 --device cuda
 ```
 
-这一步生成共享 Vision+quality 缓存，以及 Spatial 专属 prompt 缓存。采用可恢复
-分片；中断后重复相同命令会继续。共享 Vision 文件约 4.2 GiB，不要复制第二份。
+这一步生成 Spatial 的 4 帧 Vision+quality 缓存，以及 Spatial 专属 prompt 缓存。
+采用可恢复分片；中断后重复相同命令会继续。它不能与 Temporal 16 帧缓存互换。
 
-## 3. 只生成 Temporal 专属文本缓存
+## 3. 缓存 Temporal 16 帧 Qwen 前端
 
-重复缓存命令并换 Temporal 配置：
+重复缓存命令并换 Temporal 配置。该步骤会独立生成 16 帧 Vision+quality 缓存和
+Temporal prompt 缓存：
 
 ```bash
-CUDA_VISIBLE_DEVICES=1 python -m \
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=1 python -m \
   experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54.cache_qwen_front \
   --config experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/temporal.yaml \
   --model-path /ABSOLUTE/PATH/TO/Qwen3-VL-2B-Instruct \
   --batch-size 2 --chunk-rows 16 --device cuda
 ```
 
-程序会核验并复用完全相同的 Vision 缓存，只重建 target-specific language cache。
+两份缓存都有 `frame_count`、抽帧位置和 SHA 合同；放错时训练会直接停止。
 
 ## 4. 正式 preflight
 
@@ -69,22 +70,30 @@ python -m experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54 \
 ## 5. Spatial 与 Temporal 独立训练
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python -m \
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 python -m \
   experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54 \
   --config experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial.yaml \
   --phase train
 
-CUDA_VISIBLE_DEVICES=1 python -m \
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=1 python -m \
   experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54 \
   --config experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/temporal.yaml \
   --phase train
 ```
 
-后台运行时请分别重定向日志，不要让两个目标写入同一 output directory。
+如果有第三张空卡，可再运行 Temporal accuracy 候选。它只加宽最终电子读出头并调整
+训练超参数，16 帧/4×4/54×54/光 Top-2/四层融合的推理光路与基准 Temporal 完全相同：
 
-主服务器还提供 Spatial seed 43 和 Spatial 强鲁棒候选，但它们只是寻找更稳定
-Spatial 权重的训练候选，不是新的推理结构，也不是 Top-k 消融。四项并行启动命令见
-`SERVER_RUNBOOK.md`。
+```bash
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=2 python -m \
+  experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54 \
+  --config experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/temporal_accuracy.yaml \
+  --phase train
+```
+
+后台运行时请分别重定向日志，不要让不同任务写入同一 output directory。所有 CUDA
+命令必须带 `CUDA_DEVICE_ORDER=PCI_BUS_ID`，否则进程中的编号可能不等于
+`nvidia-smi` 编号。
 
 ## 6. 结果文件
 
@@ -100,6 +109,9 @@ optical_contribution_same_checkpoint.json
 test_predictions_optical_on.csv
 test_predictions_optical_off.csv
 phase_training_diagnostics.json
+phase_snapshots/epoch_0005.pt
+phase_snapshots/epoch_0010.pt
+phase_snapshots/manifest.json
 parameter_breakdown.json
 resolved_config.json
 training_summary.json
@@ -111,3 +123,13 @@ training_summary.json
 训练结束后使用 [EXPORT_COMMANDS.md](EXPORT_COMMANDS.md) 导出六阶段相位预览、
 1920×1200 相位 SLM BMP 和 1024×1024 振幅布局检查图。正式逐样本振幅不能用布局
 检查图代替。
+
+三个训练完成后生成统一数据表、alpha/去光对照图和 mask 演化图：
+
+```bash
+python -m experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54.plot_results \
+  --run-dir experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_qwenfront_o2_4f109_dc20 \
+  --run-dir experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_temporal_qwenfront_o2_16f54_dc20 \
+  --run-dir experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_temporal_qwenfront_o2_16f54_dc20_accuracy \
+  --output-dir experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/dc20_report
+```
