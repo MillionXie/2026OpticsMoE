@@ -18,8 +18,26 @@ TARGET_PROMPTS = {
     ),
 }
 FEATURE_CONTRACT = "qwen3vl_front_patch_position_dynamic_frames_784_mean2x2_196_pool7_49x1024_v2"
+FEATURE_CONTRACT_14 = "qwen3vl_front_patch_position_dynamic_frames_784_mean2x2_196_14x14x1024_v1"
 LANGUAGE_CONTRACT = "qwen3vl_front_chat_template_embed_tokens_2048_v1"
 QUALITY_CONTRACT = "fixed_quality14_dynamic_frames_adaptive_pool7x7_v2"
+QUALITY_CONTRACT_14 = "fixed_quality14_dynamic_frames_adaptive_pool14x14_v1"
+
+
+def feature_contract_for_grid(token_grid: int) -> str:
+    if token_grid == 7:
+        return FEATURE_CONTRACT
+    if token_grid == 14:
+        return FEATURE_CONTRACT_14
+    raise ValueError("Qwen front token_grid must be 7 or 14")
+
+
+def quality_contract_for_grid(token_grid: int) -> str:
+    if token_grid == 7:
+        return QUALITY_CONTRACT
+    if token_grid == 14:
+        return QUALITY_CONTRACT_14
+    raise ValueError("Quality token_grid must be 7 or 14")
 
 
 def _merge(base: dict[str, Any], update: dict[str, Any]) -> dict[str, Any]:
@@ -254,7 +272,7 @@ class ExperimentSettings:
     @property
     def architecture_label(self) -> str:
         base = (
-            f"qwenfront_{self.target_name}_o2_{self.frame_count}f49_"
+            f"qwenfront_{self.target_name}_o2_{self.frame_count}f{self.token_count}_"
             f"vexpert{self.geometry.parallel_expert_size}_"
             f"alpha{round(self.alpha_min * 100):02d}_no_attention_v1"
         )
@@ -284,8 +302,10 @@ class ExperimentSettings:
                 raise ValueError(
                     f"{self.target_name} formally requires {expected_frames} frames"
                 )
-        if self.token_grid != 7 or self.token_count != 49:
-            raise ValueError("Qwen front tokens are fixed to a 7x7=49 grid per frame")
+        if self.token_grid not in (7, 14):
+            raise ValueError("Qwen front token_grid must be 7 or 14")
+        if not self.synthetic and self.target_name == "temporal" and self.token_grid != 7:
+            raise ValueError("Formal Temporal-16 retains the 7x7 front for bounded storage")
         if (
             self.vision_input_width,
             self.quality_input_width,
@@ -470,9 +490,9 @@ def resolved_dict(settings: ExperimentSettings) -> dict[str, Any]:
             "token_count": settings.token_count,
             "serial_vision_token_count": settings.serial_vision_token_count,
             "architecture_label": settings.architecture_label,
-            "feature_contract": FEATURE_CONTRACT,
+            "feature_contract": feature_contract_for_grid(settings.token_grid),
             "language_contract": LANGUAGE_CONTRACT,
-            "quality_contract": QUALITY_CONTRACT,
+            "quality_contract": quality_contract_for_grid(settings.token_grid),
         }
     )
     return result
@@ -481,11 +501,15 @@ def resolved_dict(settings: ExperimentSettings) -> dict[str, Any]:
 __all__ = [
     "ExperimentSettings",
     "FEATURE_CONTRACT",
+    "FEATURE_CONTRACT_14",
     "Geometry",
     "LANGUAGE_CONTRACT",
     "QUALITY_CONTRACT",
+    "QUALITY_CONTRACT_14",
     "OpticalGeometry",
     "TARGET_PROMPTS",
+    "feature_contract_for_grid",
     "load_settings",
+    "quality_contract_for_grid",
     "resolved_dict",
 ]

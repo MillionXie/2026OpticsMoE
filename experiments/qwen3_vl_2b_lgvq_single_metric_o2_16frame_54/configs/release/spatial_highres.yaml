@@ -1,0 +1,30 @@
+base_config: spatial_accuracy.yaml
+
+# Spatial quality depends strongly on local blur/noise/texture.  Retain Qwen's
+# native pre-merger 14x14 grouping instead of applying the optional 7x7 pool.
+# The optical hardware stays exactly 2x2 frames with 109x109 experts.
+output_dir: ../../runs/lgvq_spatial_qwenfront_o2_4f109_dc20_highres14
+random_seed: 44
+
+data:
+  vision_cache: ../../artifacts/qwen3vl_front_4f_196x1024_quality14.pt
+
+initialization:
+  qwen_model_path: /DATA/DATA1/lixinyue/code/adapt2026/video_inf_time/Qwen/Qwen3-VL-2B-Instruct
+
+model:
+  token_grid: 14
+  detector_projection_size: 196
+  spatial_readout_mode: spatial_grid
+  quality_adapter_mode: spatial_conv
+  quality_gate_initial: 0.70
+  head_width: 512
+  dropout: 0.10
+
+training:
+  epochs: 120
+  batch_size: 32
+  learning_rate: 0.00030
+  phase_learning_rate: 0.012
+  router_phase_learning_rate: 0.018
+

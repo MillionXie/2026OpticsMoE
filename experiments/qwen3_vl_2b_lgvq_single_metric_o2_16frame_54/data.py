@@ -15,6 +15,8 @@ from .settings import (
     LANGUAGE_CONTRACT,
     QUALITY_CONTRACT,
     TARGET_PROMPTS,
+    feature_contract_for_grid,
+    quality_contract_for_grid,
     ExperimentSettings,
 )
 
@@ -255,14 +257,18 @@ def _load_torch(path: Path, *, mmap: bool = False) -> Any:
         return torch.load(path, **kwargs)
 
 
-def load_vision_cache(path: str | Path, *, frame_count: int) -> dict[str, Any]:
+def load_vision_cache(
+    path: str | Path, *, frame_count: int, token_grid: int = 7
+) -> dict[str, Any]:
     source = Path(path).expanduser().resolve()
     payload = _load_torch(source, mmap=True)
     if not isinstance(payload, dict) or int(payload.get("schema_version", -1)) != 1:
         raise RuntimeError(f"Unsupported Vision cache schema: {source}")
-    if payload.get("feature_contract") != FEATURE_CONTRACT:
+    expected_feature_contract = feature_contract_for_grid(token_grid)
+    expected_quality_contract = quality_contract_for_grid(token_grid)
+    if payload.get("feature_contract") != expected_feature_contract:
         raise RuntimeError(
-            f"Vision cache contract mismatch: expected {FEATURE_CONTRACT!r}, "
+            f"Vision cache contract mismatch: expected {expected_feature_contract!r}, "
             f"got {payload.get('feature_contract')!r}"
         )
     required = {
@@ -288,15 +294,15 @@ def load_vision_cache(path: str | Path, *, frame_count: int) -> dict[str, Any]:
             f"Vision cache frame_count={payload.get('frame_count')} does not match "
             f"configured frame_count={frame_count}"
         )
-    expected_shape = (count, frame_count, 49, 1024)
+    expected_shape = (count, frame_count, token_grid * token_grid, 1024)
     if not torch.is_tensor(tokens) or tokens.dtype != torch.float16 or tuple(tokens.shape) != expected_shape:
         raise ValueError(
             f"vision_tokens must be float16 {expected_shape}; got "
             f"{getattr(tokens, 'dtype', None)} {getattr(tokens, 'shape', None)}"
         )
-    if payload["quality_contract"] != QUALITY_CONTRACT:
+    if payload["quality_contract"] != expected_quality_contract:
         raise RuntimeError("Quality-side cache contract does not match this experiment")
-    expected_quality_shape = (count, frame_count, 49, 14)
+    expected_quality_shape = (count, frame_count, token_grid * token_grid, 14)
     if (
         not torch.is_tensor(quality)
         or quality.dtype != torch.float16
@@ -423,7 +429,9 @@ def load_single_metric_cache(settings: ExperimentSettings) -> dict[str, Any]:
         raise ValueError("data.vision_cache and data.language_cache are required")
     rows = read_manifest(settings.manifest_path)
     vision = load_vision_cache(
-        settings.vision_cache_path, frame_count=settings.frame_count
+        settings.vision_cache_path,
+        frame_count=settings.frame_count,
+        token_grid=settings.token_grid,
     )
     language = load_language_cache(
         settings.language_cache_path,
