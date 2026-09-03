@@ -379,6 +379,32 @@ def load_language_cache(
     return payload
 
 
+def load_quality_feature_cache(
+    path: str | Path,
+    *,
+    sample_ids: Sequence[str],
+    frame_count: int,
+    token_grid: int,
+    width: int,
+) -> dict[str, Any]:
+    """Load an independently auditable, frozen convolutional input-head cache."""
+
+    source = Path(path).expanduser().resolve()
+    payload = _load_torch(source, mmap=True)
+    if not isinstance(payload, dict) or payload.get("contract") != "lgvq_quality_conv5_feature_cache_v1":
+        raise RuntimeError(f"Unsupported quality-feature cache: {source}")
+    if list(map(str, payload.get("sample_ids", []))) != list(map(str, sample_ids)):
+        raise RuntimeError("Quality-feature cache sample order differs from the manifest")
+    tokens = payload.get("quality_tokens")
+    expected = (len(sample_ids), frame_count, token_grid * token_grid, width)
+    if not torch.is_tensor(tokens) or tokens.dtype != torch.float16 or tuple(tokens.shape) != expected:
+        raise ValueError(f"quality-feature tokens must be float16 {expected}")
+    for start in range(0, len(sample_ids), 16):
+        if not bool(torch.isfinite(tokens[start : start + 16]).all()):
+            raise ValueError(f"Quality-feature cache contains non-finite values near row {start}")
+    return payload
+
+
 def _align_soft_targets(
     path: Path,
     *,
@@ -474,6 +500,25 @@ def load_single_metric_cache(settings: ExperimentSettings) -> dict[str, Any]:
         "language_cache_path": str(settings.language_cache_path),
         "qwen_front_identity": front_identity,
     }
+    if settings.quality_feature_cache_path is not None:
+        auxiliary = load_quality_feature_cache(
+            settings.quality_feature_cache_path,
+            sample_ids=manifest_ids,
+            frame_count=settings.frame_count,
+            token_grid=settings.token_grid,
+            width=settings.quality_input_width,
+        )
+        result["quality_tokens"] = auxiliary["quality_tokens"]
+        result["quality_feature_provenance"] = {
+            key: auxiliary.get(key)
+            for key in (
+                "contract",
+                "source_checkpoint",
+                "source_checkpoint_sha256",
+                "source_frame_cache",
+                "source_frame_cache_sha256",
+            )
+        }
     if settings.training_soft_targets_path is not None:
         soft, present, provenance = _align_soft_targets(
             settings.training_soft_targets_path,
