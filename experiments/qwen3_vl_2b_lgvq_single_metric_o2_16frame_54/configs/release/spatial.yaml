@@ -78,7 +78,7 @@ fusion:
 
 training:
   epochs: 120
-  batch_size: 8
+  batch_size: 64
   num_workers: 4
   learning_rate: 0.00025
   phase_learning_rate: 0.010

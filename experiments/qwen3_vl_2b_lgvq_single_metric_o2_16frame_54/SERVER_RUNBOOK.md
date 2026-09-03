@@ -65,6 +65,8 @@ bash experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/server/launch_dc20
 
 训练时每个相位面的未调制功率比例从 `[0.20,0.35]` 均匀采样，测试固定为 `0.20`。
 每 5 epoch 测完整 test、按最高 test SRCC 选权重，同时保存一个 phase-only `.pt`。
+三项正式配置使用 batch 64；这是在服务器 batch-8 探针仅占约 1 GiB 显存后确定的，
+既提高 GPU 利用率，也让 batch 内排序/相关性损失更稳定。
 
 ## 4. 监控
 
