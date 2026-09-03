@@ -894,6 +894,41 @@ class SpatialGridReadout(nn.Module):
         return self.output(torch.cat((video, prompt), -1)).squeeze(-1)
 
 
+class QualitySpatialAdapter(nn.Module):
+    """Small attention-free 2-D input head for the cached 14 quality maps.
+
+    The cache still comes from the same decoded frames and contains no learned
+    output.  Convolutions here are trainable and run before the first optical
+    layer, so quality evidence cannot bypass the four-stage O/E/O path.
+    """
+
+    def __init__(self, settings: ExperimentSettings) -> None:
+        super().__init__()
+        self.grid = settings.token_grid
+        self.input_width = settings.quality_input_width
+        hidden = 64
+        self.input_norm = nn.GroupNorm(2, self.input_width)
+        self.conv1 = nn.Conv2d(self.input_width, hidden, 3, padding=1)
+        self.norm1 = nn.GroupNorm(8, hidden)
+        self.conv2 = nn.Conv2d(hidden, hidden, 3, padding=1)
+        self.norm2 = nn.GroupNorm(8, hidden)
+        self.project = nn.Conv2d(hidden, settings.model_width, 1)
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        batch, frames, tokens, channels = value.shape
+        if tokens != self.grid * self.grid or channels != self.input_width:
+            raise ValueError("Quality-spatial adapter input contract changed")
+        image = value.reshape(batch * frames, self.grid, self.grid, channels).permute(
+            0, 3, 1, 2
+        )
+        image = F.gelu(self.norm1(self.conv1(self.input_norm(image))))
+        image = F.gelu(self.norm2(self.conv2(image)))
+        image = self.project(image)
+        return image.permute(0, 2, 3, 1).reshape(
+            batch, frames, tokens, self.project.out_channels
+        )
+
+
 class TemporalReadout(nn.Module):
     def __init__(self, settings: ExperimentSettings) -> None:
         super().__init__()
@@ -965,11 +1000,17 @@ class LGVQSingleMetricOEO16(nn.Module):
         # Qwen patch+position tokens remain the primary visual input. The
         # deterministic 14-channel bank is only a quality-sensitive residual
         # (RGB, gradients, local contrast and frame difference).
-        self.quality_adapter = nn.Sequential(
-            nn.LayerNorm(settings.quality_input_width),
-            nn.Linear(settings.quality_input_width, settings.model_width),
+        self.quality_adapter: nn.Module
+        if settings.quality_adapter_mode == "spatial_conv":
+            self.quality_adapter = QualitySpatialAdapter(settings)
+        else:
+            self.quality_adapter = nn.Sequential(
+                nn.LayerNorm(settings.quality_input_width),
+                nn.Linear(settings.quality_input_width, settings.model_width),
+            )
+        self.raw_quality_gate = nn.Parameter(
+            torch.logit(torch.tensor(settings.quality_gate_initial))
         )
-        self.raw_quality_gate = nn.Parameter(torch.logit(torch.tensor(0.25)))
         self.visual_input_norm = nn.LayerNorm(settings.model_width)
         self.language_adapter = nn.Sequential(
             nn.LayerNorm(settings.language_input_width),
