@@ -1,9 +1,9 @@
 """Export, acquire, validate and fine-tune the exact LGVQ single-metric model.
 
-This is the laboratory entry point for both the 9-frame Temporal model and the
-4-frame Spatial model.  It consumes the same cached Qwen-front tensors as the
-simulator and replaces a contiguous prefix of the six optical passes with
-canonical 478x478 CCD captures.  It never loads a Transformer or Attention
+This is the laboratory entry point for the 9/16/36-frame Temporal models and
+the 4-frame Spatial model. It consumes the same cached Qwen-front tensors as
+the simulator and replaces a contiguous prefix of the six optical passes with
+canonical 478x478 CCD captures. It never loads a Transformer or Attention
 module at inference/fine-tuning time.
 """
 
@@ -677,4 +677,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

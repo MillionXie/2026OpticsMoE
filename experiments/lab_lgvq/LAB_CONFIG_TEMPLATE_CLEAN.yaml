@@ -2,7 +2,10 @@
 
 # 仅填写 LUT 文件名；文件必须位于：
 # experiments/hardware_sdk/vendor_sdk/amplitude_meadowlark/LUT Files/
-amplitude_lut_filename: slm7930_at532-70c-pixel-2_linearized-amplitude.lut
+# First boot must use the packaged factory LUT.  Generate and verify a new
+# bench-specific linearized LUT before changing this value; a LUT calibrated on
+# another optical bench/exposure is not portable.
+amplitude_lut_filename: slm7930_at532-70c-pixel-2.lut
 amplitude_lut_expected_sha256: null
 
 # 单位 µs。更换光源、光功率、曝光或 LUT 后必须重做曝光检查。
@@ -46,4 +49,3 @@ timing_diagnostic:
   maximum_absolute_mean_ratio_error: 0.15
   maximum_saturation_fraction: 0.01
   minimum_p99_uint8: 16
-
