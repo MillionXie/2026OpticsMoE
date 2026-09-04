@@ -2,10 +2,8 @@ base_config: spatial_vggcorr_scaled475_final.yaml
 output_dir: ../../runs/lgvq_spatial_balanced_router_b050
 random_seed: 242
 
-initialization:
-  checkpoint: ../../runs/lgvq_spatial_vggcorr_scaled475_final/best_observed_test_calibrated_checkpoint.pt
-
 training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_vggcorr_scaled475_final/best_observed_test_calibrated_checkpoint.pt
   epochs: 40
   trainable_scope: serial_router_and_readout
   learning_rate: 0.00005
