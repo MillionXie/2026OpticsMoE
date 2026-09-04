@@ -1,6 +1,6 @@
 {
   "model_path": "/root/autodl-tmp/models/Qwen3-VL-2B-Instruct",
-  "manifest_path": "/root/qwen3vl_lgvq_linear_baseline/data/lgvq_split.csv",
+  "manifest_path": "../qwen3_vl_2b_lgvq_linear_baseline/data/lgvq_split.csv",
   "output_dir": "/root/autodl-tmp/qwen3vl_lgvq_temporal_framecount_timing",
   "temporal_prompt": "Please evaluate the temporal quality of this video and rate it using one of the following five levels: Excellent, Good, Fair, Poor, or Bad.",
   "frame_sampling": {

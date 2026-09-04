@@ -5,6 +5,7 @@ import csv
 import hashlib
 import json
 import math
+import os
 import random
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -49,6 +50,14 @@ def project_root() -> Path:
 def load_config(path: Path) -> dict[str, Any]:
     path = path.expanduser().resolve()
     raw = json.loads(path.read_text(encoding="utf-8"))
+    environment_overrides = {
+        "model_path": "LGVQ_MODEL_PATH",
+        "manifest_path": "LGVQ_MANIFEST_PATH",
+        "artifacts_dir": "LGVQ_ARTIFACTS_DIR",
+    }
+    for key, environment_name in environment_overrides.items():
+        if os.environ.get(environment_name):
+            raw[key] = os.environ[environment_name]
     root = path.parent
     for key in ("manifest_path", "artifacts_dir", "model_path"):
         value = Path(raw[key]).expanduser()

@@ -1,0 +1,70 @@
+{
+  "formal_checks": [
+    {
+      "name": "lgvq_spatial_balanced_router_std_strong",
+      "path": "runs/lgvq_spatial_balanced_router_std_strong/spatial_balanced_formal_checkpoint.pt",
+      "exists": true,
+      "sha_ok": true
+    },
+    {
+      "name": "lgvq_spatial_identity_q25_a40_clean",
+      "path": "runs/lgvq_spatial_identity_q25_a40_clean/best_observed_test_checkpoint.pt",
+      "exists": true,
+      "sha_ok": true
+    },
+    {
+      "name": "lgvq_temporal_qwenfront_o2_16f54_dc20_accuracy",
+      "path": "runs/lgvq_temporal_qwenfront_o2_16f54_dc20_accuracy/best_observed_test_checkpoint.pt",
+      "exists": true,
+      "sha_ok": true
+    },
+    {
+      "name": "lgvq_temporal_qwenfront_o2_16f54_dc20_balanced_standardized",
+      "path": "runs/lgvq_temporal_qwenfront_o2_16f54_dc20_balanced_standardized/best_observed_test_checkpoint.pt",
+      "exists": true,
+      "sha_ok": true
+    },
+    {
+      "name": "lgvq_temporal_qwenfront_o2_9f77_dc20_zero_order_crop",
+      "path": "runs/lgvq_temporal_qwenfront_o2_9f77_dc20_zero_order_crop/best_observed_test_checkpoint.pt",
+      "exists": true,
+      "sha_ok": true
+    },
+    {
+      "name": "temporal16_balanced_calibrated",
+      "path": "artifacts/temporal16_36_study/models/temporal16_balanced_calibrated.pt",
+      "exists": true,
+      "sha_ok": true
+    },
+    {
+      "name": "temporal36_balanced_calibrated",
+      "path": "artifacts/temporal16_36_study/models/temporal36_balanced_calibrated.pt",
+      "exists": true,
+      "sha_ok": true
+    }
+  ],
+  "all_formal_checks_passed": true,
+  "temporal9_phase_snapshot_count": 20,
+  "temporal9_phase_snapshots": [
+    "runs/lgvq_temporal_qwenfront_o2_9f77_dc20_zero_order_crop/phase_snapshots/epoch_0005.pt",
+    "runs/lgvq_temporal_qwenfront_o2_9f77_dc20_zero_order_crop/phase_snapshots/epoch_0010.pt",
+    "runs/lgvq_temporal_qwenfront_o2_9f77_dc20_zero_order_crop/phase_snapshots/epoch_0015.pt",
+    "runs/lgvq_temporal_qwenfront_o2_9f77_dc20_zero_order_crop/phase_snapshots/epoch_0020.pt",
+    "runs/lgvq_temporal_qwenfront_o2_9f77_dc20_zero_order_crop/phase_snapshots/epoch_0025.pt",
+    "runs/lgvq_temporal_qwenfront_o2_9f77_dc20_zero_order_crop/phase_snapshots/epoch_0030.pt",
+    "runs/lgvq_temporal_qwenfront_o2_9f77_dc20_zero_order_crop/phase_snapshots/epoch_0035.pt",
+    "runs/lgvq_temporal_qwenfront_o2_9f77_dc20_zero_order_crop/phase_snapshots/epoch_0040.pt",
+    "runs/lgvq_temporal_qwenfront_o2_9f77_dc20_zero_order_crop/phase_snapshots/epoch_0045.pt",
+    "runs/lgvq_temporal_qwenfront_o2_9f77_dc20_zero_order_crop/phase_snapshots/epoch_0050.pt",
+    "runs/lgvq_temporal_qwenfront_o2_9f77_dc20_zero_order_crop/phase_snapshots/epoch_0055.pt",
+    "runs/lgvq_temporal_qwenfront_o2_9f77_dc20_zero_order_crop/phase_snapshots/epoch_0060.pt",
+    "runs/lgvq_temporal_qwenfront_o2_9f77_dc20_zero_order_crop/phase_snapshots/epoch_0065.pt",
+    "runs/lgvq_temporal_qwenfront_o2_9f77_dc20_zero_order_crop/phase_snapshots/epoch_0070.pt",
+    "runs/lgvq_temporal_qwenfront_o2_9f77_dc20_zero_order_crop/phase_snapshots/epoch_0075.pt",
+    "runs/lgvq_temporal_qwenfront_o2_9f77_dc20_zero_order_crop/phase_snapshots/epoch_0080.pt",
+    "runs/lgvq_temporal_qwenfront_o2_9f77_dc20_zero_order_crop/phase_snapshots/epoch_0085.pt",
+    "runs/lgvq_temporal_qwenfront_o2_9f77_dc20_zero_order_crop/phase_snapshots/epoch_0090.pt",
+    "runs/lgvq_temporal_qwenfront_o2_9f77_dc20_zero_order_crop/phase_snapshots/epoch_0095.pt",
+    "runs/lgvq_temporal_qwenfront_o2_9f77_dc20_zero_order_crop/phase_snapshots/epoch_0100.pt"
+  ]
+}

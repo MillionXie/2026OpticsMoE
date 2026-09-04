@@ -19,3 +19,11 @@ processor 得到 `grid_thw=[1,28,28]`；冻结 patch+position 前端输出
 `[784,1024]`，无参数池化后为 `[49,1024]`；当前 Spatial prompt 加入完整 user / 
 assistant chat template 后为 38 个 token，冻结词表输出 `[1,38,2048]`。这些维度
 不是用假张量推测出来的。
+
+## 运行产物索引（2026-09-04）
+
+- [`all_run_index.csv`](all_run_index.csv) 登记全部 187 个历史 run 和 2 个正式模型产物，包括结构、指标、router 分布、checkpoint 与当前保留状态。
+- [`artifacts/storage_cleanup_20260904/retained_checkpoint_closure.csv`](artifacts/storage_cleanup_20260904/retained_checkpoint_closure.csv) 给出 spatial-4、temporal-9/16/36 的 7-run 可复现依赖闭包。
+- 闭包外只删除了探索性 `.pt`；相应配置、日志、CSV/JSON 与图表仍留在原 run 中。完整逐文件 SHA256 和删前大小见 `checkpoint_prune_manifest.csv`。
+- temporal-9 的 20 个每 5 epoch phase snapshot 已保留；正式 checkpoint 的删后 SHA256 复核见 `post_prune_verification.json`。
+- `lab_bundles/` 保留当前 spatial-4、temporal-9/16/36 实验包和单独的 temporal-9 mask-evolution 包；`lab_bundle_index.csv` 记录其 SHA256 与取舍。

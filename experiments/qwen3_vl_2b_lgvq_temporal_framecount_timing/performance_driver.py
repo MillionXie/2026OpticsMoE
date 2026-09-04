@@ -8,7 +8,7 @@ from typing import Any
 
 import torch
 
-from server_projects.qwen3vl_lgvq_linear_baseline import baseline
+from experiments.qwen3_vl_2b_lgvq_linear_baseline import baseline
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent

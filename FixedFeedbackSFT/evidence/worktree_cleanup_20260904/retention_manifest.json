@@ -1,0 +1,133 @@
+{
+  "schema_version": 1,
+  "generated_at_unix": 1788529171.5346186,
+  "policy": "Keep non-PT evidence plus only task/formal-selected checkpoints; all hashes verified before worktree removal.",
+  "checkpoint_files": [
+    {
+      "name": "p12_formal_caltech101",
+      "source_path": "/DATA/DATA1/guest3/2026OpticsMoE_p12_e305e0b/experiments/qwen3_vl_patch_stem_8stage_separable_optical_downstream_fa/runs/p12_downstream_fa_50e/caltech101/fa_pretrained/seed_2028/checkpoints/best.pt",
+      "retained_path": "/DATA/DATA1/guest3/2026OpticsMoE/FixedFeedbackSFT/evidence/p12_downstream_fa_50e/selected_checkpoints/caltech101/best.pt",
+      "size_bytes": 44862038,
+      "sha256": "1d0f1797da84a27d2e56a2e29b0dcb8f15ec5d080b0c7a7de4c93baed0751393",
+      "best_test_primary_metric": 0.8115813706392775,
+      "verified_equal_to_source": true
+    },
+    {
+      "name": "p12_formal_isic2016",
+      "source_path": "/DATA/DATA1/guest3/2026OpticsMoE_p12_e305e0b/experiments/qwen3_vl_patch_stem_8stage_separable_optical_downstream_fa/runs/p12_downstream_fa_50e/isic2016/fa_random/seed_2027/checkpoints/best.pt",
+      "retained_path": "/DATA/DATA1/guest3/2026OpticsMoE/FixedFeedbackSFT/evidence/p12_downstream_fa_50e/selected_checkpoints/isic2016/best.pt",
+      "size_bytes": 44601694,
+      "sha256": "da4334789d4cb2b5a225deccb2d577c11031b1210ea04178f09a82aecabccb21",
+      "best_test_primary_metric": 0.8439842276029427,
+      "verified_equal_to_source": true
+    },
+    {
+      "name": "p12_formal_lsp",
+      "source_path": "/DATA/DATA1/guest3/2026OpticsMoE_p12_e305e0b/experiments/qwen3_vl_patch_stem_8stage_separable_optical_downstream_fa/runs/p12_downstream_fa_50e/lsp/bp/seed_2028/checkpoints/best.pt",
+      "retained_path": "/DATA/DATA1/guest3/2026OpticsMoE/FixedFeedbackSFT/evidence/p12_downstream_fa_50e/selected_checkpoints/lsp/best.pt",
+      "size_bytes": 44407358,
+      "sha256": "9eecc69892f83a387537bbbf509b824f27890c2b389c8145d93c1095e6b4db7c",
+      "best_test_primary_metric": 0.7151428571428572,
+      "verified_equal_to_source": true
+    },
+    {
+      "name": "p12_phase_caltech101",
+      "source_path": "/DATA/DATA1/guest3/2026OpticsMoE_p12_phase_only_e7ae69e7/experiments/qwen3_vl_patch_stem_8stage_separable_optical_downstream_fa/runs/p12_phase_only_fa_50e/caltech101/noft/seed_2026/checkpoints/best.pt",
+      "retained_path": "/DATA/DATA1/guest3/2026OpticsMoE/FixedFeedbackSFT/evidence/p12_phase_only_fa_50e/selected_checkpoints/caltech101/best.pt",
+      "size_bytes": 27332846,
+      "sha256": "3201d3c18acca6b96355b22cdf3dba39f7325264b664e36e2d54de29521d75b2",
+      "best_test_primary_metric": 0.7864352753674517,
+      "verified_equal_to_source": true
+    },
+    {
+      "name": "p12_phase_isic2016",
+      "source_path": "/DATA/DATA1/guest3/2026OpticsMoE_p12_phase_only_e7ae69e7/experiments/qwen3_vl_patch_stem_8stage_separable_optical_downstream_fa/runs/p12_phase_only_fa_50e/isic2016/bp/seed_2026/checkpoints/best.pt",
+      "retained_path": "/DATA/DATA1/guest3/2026OpticsMoE/FixedFeedbackSFT/evidence/p12_phase_only_fa_50e/selected_checkpoints/isic2016/best.pt",
+      "size_bytes": 36750086,
+      "sha256": "5f06096b32155be856023bb75eae8b36c7db0745c7501505b1b28a2da729272b",
+      "best_test_primary_metric": 0.82453493923342,
+      "verified_equal_to_source": true
+    },
+    {
+      "name": "p12_phase_lsp",
+      "source_path": "/DATA/DATA1/guest3/2026OpticsMoE_p12_phase_only_e7ae69e7/experiments/qwen3_vl_patch_stem_8stage_separable_optical_downstream_fa/runs/p12_phase_only_fa_50e/lsp/fa_pretrained/seed_2026/checkpoints/best.pt",
+      "retained_path": "/DATA/DATA1/guest3/2026OpticsMoE/FixedFeedbackSFT/evidence/p12_phase_only_fa_50e/selected_checkpoints/lsp/best.pt",
+      "size_bytes": 36523622,
+      "sha256": "ef9533021397fd0eb9def50955b2fa895631bff81ea17004f60b1e339b49cbd5",
+      "best_test_primary_metric": 0.6171428571428571,
+      "verified_equal_to_source": true
+    },
+    {
+      "name": "p13_best_full_depth",
+      "source_path": "/DATA/DATA1/guest3/2026OpticsMoE_p13_488f9d48/experiments/qwen3_vl_patch_stem_progressive_64stage_optical_imagenet_backbone/runs/p13_growth16_fa_source_20e_gb192/checkpoints/best_full_depth.pt",
+      "retained_path": "/DATA/DATA1/guest3/2026OpticsMoE/FixedFeedbackSFT/evidence/p13_growth16_fa_source_20e_gb192/selected_checkpoints/best_full_depth.pt",
+      "size_bytes": 78330483,
+      "sha256": "97ae579e9b33a2fc5825debde2fbad8d4fbddcbf91df5e39584036eb125ed6ec",
+      "best_test_primary_metric": 0.51428,
+      "verified_equal_to_source": true
+    },
+    {
+      "name": "p13_backbone_full_depth",
+      "source_path": "/DATA/DATA1/guest3/2026OpticsMoE_p13_488f9d48/experiments/qwen3_vl_patch_stem_progressive_64stage_optical_imagenet_backbone/runs/p13_growth16_fa_source_20e_gb192/checkpoints/backbone_full_depth.pt",
+      "retained_path": "/DATA/DATA1/guest3/2026OpticsMoE/FixedFeedbackSFT/evidence/p13_growth16_fa_source_20e_gb192/selected_checkpoints/backbone_full_depth.pt",
+      "size_bytes": 43253655,
+      "sha256": "80b9b7b0f4415fd789bf46312dc23ccaf3600b5c4df9885c2972ce465dc9129d",
+      "best_test_primary_metric": null,
+      "verified_equal_to_source": true
+    },
+    {
+      "name": "p13_migrated_initialization",
+      "source_path": "/DATA/DATA1/guest3/2026OpticsMoE_p13_488f9d48/experiments/qwen3_vl_patch_stem_progressive_64stage_optical_imagenet_backbone/runs/p13_migrated_64stage_initialization/p13_migrated_initialization.pt",
+      "retained_path": "/DATA/DATA1/guest3/2026OpticsMoE/FixedFeedbackSFT/evidence/p13_growth16_fa_source_20e_gb192/selected_checkpoints/migrated_initialization.pt",
+      "size_bytes": 110743784,
+      "sha256": "ced2600cbf97ffcfdbda740ee4a3aaaf6e0920027fb23981aebbea7569dbd1de",
+      "best_test_primary_metric": null,
+      "verified_equal_to_source": true
+    },
+    {
+      "name": "fa_reorg_8stage_asset",
+      "source_path": "/DATA/DATA1/guest3/2026OpticsMoE/FixedFeedbackSFT/runs/_worktrees/fa_reorg/FixedFeedbackSFT/runs/_assets/8stage/checkpoints/best.pt",
+      "retained_path": "/DATA/DATA1/guest3/2026OpticsMoE/FixedFeedbackSFT/evidence/fa_reorg_runs_20260904/selected_checkpoints/8stage/best.pt",
+      "size_bytes": 46174894,
+      "sha256": "a30d5c06b61a635bb3dc379aeaca4c371c1d27e6b862c5ffd4977ce738b33034",
+      "best_test_primary_metric": null,
+      "verified_equal_to_source": true
+    },
+    {
+      "name": "fa_reorg_16stage_asset",
+      "source_path": "/DATA/DATA1/guest3/2026OpticsMoE/FixedFeedbackSFT/runs/_worktrees/fa_reorg/FixedFeedbackSFT/runs/_assets/16stage/checkpoints/best_full_depth.pt",
+      "retained_path": "/DATA/DATA1/guest3/2026OpticsMoE/FixedFeedbackSFT/evidence/fa_reorg_runs_20260904/selected_checkpoints/16stage/best_full_depth.pt",
+      "size_bytes": 78330483,
+      "sha256": "97ae579e9b33a2fc5825debde2fbad8d4fbddcbf91df5e39584036eb125ed6ec",
+      "best_test_primary_metric": null,
+      "verified_equal_to_source": true
+    },
+    {
+      "name": "fa_reorg_p11_formal_best_ema",
+      "source_path": "/DATA/DATA1/guest3/2026OpticsMoE/FixedFeedbackSFT/runs/_worktrees/fa_reorg/FixedFeedbackSFT/runs/qwen3_vl_patch_stem_8stage_separable_optical_imagenet_backbone/p11_large_recipe_formal_100e_phase7e3_5gpu_gb480/checkpoints/best_ema.pt",
+      "retained_path": "/DATA/DATA1/guest3/2026OpticsMoE/FixedFeedbackSFT/evidence/fa_reorg_runs_20260904/selected_checkpoints/p11_formal/best_ema.pt",
+      "size_bytes": 34775534,
+      "sha256": "b1c7883906b72729099a4acac2c04598fa8ba32da9a8b67cdf48d195726f1649",
+      "best_test_primary_metric": null,
+      "verified_equal_to_source": true
+    }
+  ],
+  "source_worktree_commits": {
+    "/DATA/DATA1/guest3/2026OpticsMoE_p12_e305e0b": "e305e0b0b20f37757d44136c158efa92cec7f4cc",
+    "/DATA/DATA1/guest3/2026OpticsMoE_p12_mechanism_e305": "5b6220ca9f897b2fd689efe54d171ffdf1f3f03c",
+    "/DATA/DATA1/guest3/2026OpticsMoE_p12_phase_only_e7ae69e7": "9c1f17ca8a4190131f2ff17e01788e00d6e37cfa",
+    "/DATA/DATA1/guest3/2026OpticsMoE_p12_phase_only_test": "e305e0b0b20f37757d44136c158efa92cec7f4cc",
+    "/DATA/DATA1/guest3/2026OpticsMoE_p13_488f9d48": "a5628e5406b9fe1e6b9b170a571e292bbd28b000",
+    "/DATA/DATA1/guest3/2026OpticsMoE_report_646f847e": "646f847e55d50c5d6d3c19bf9861925d0ffeae9c",
+    "/DATA/DATA1/guest3/2026OpticsMoE_scratch_2981fe23": "ed5a3621fa765ca75cd10615a65dfc40446ba326",
+    "/DATA/DATA1/guest3/2026OpticsMoE/FixedFeedbackSFT/runs/_worktrees/fa_reorg": "046588b445ca86419a1d2bba74926d4a63f631ba"
+  },
+  "evidence_directories": [
+    "p12_downstream_fa_50e",
+    "p12_downstream_fa_50e_mechanism",
+    "p12_phase_only_fa_50e",
+    "p12_scratch_control",
+    "p13_growth16_fa_source_20e_gb192",
+    "fa_reorg_runs_20260904"
+  ]
+}
