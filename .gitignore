@@ -52,6 +52,33 @@ teams
 **/artifacts/local_only/
 /experiments/qwen_optical_platform_handoff/lab_bundles/
 
+# Machine-local experiment products. Source, configs, tests, and curated small
+# manifests remain versioned; bulky/generated outputs stay beside their owner
+# on the machine that produced them and are indexed before any cleanup.
+/experiments/**/runs/
+/experiments/**/logs/
+/experiments/**/lab_bundles/
+/experiments/**/lab_full_bundles/
+/experiments/**/validation_bundles/
+/experiments/**/hardware_sessions/
+/experiments/**/lab_runs/
+/experiments/**/exports/
+/experiments/**/artifacts/
+/experiments/**/evidence/
+/experiments/**/comparison/
+/experiments/**/mask_candidates/
+/experiments/**/deployment/hardware_assets/
+/experiments/**/deployment/simulation_report/
+/experiments/lab_*/LAB_CONFIG.yaml
+/experiments/lab_*/generated/
+/experiments/lab_*/calib/
+/experiments/lab_*/shape_agreement/
+/experiments/qwen3_vl_2b_openmoji_instruction_four_stage_optical_editing/assets/
+/FixedFeedbackSFT/evidence/
+
+# Temporary worktrees used for audited reconciliation are not project source.
+/maintenance/.reconcile_worktree_*/
+
 # Hardware SDKs are intentionally versioned under hardware_sdk/vendor_sdk so
 # the bench-control project can be cloned onto another laboratory computer.
 /experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/sdk/
