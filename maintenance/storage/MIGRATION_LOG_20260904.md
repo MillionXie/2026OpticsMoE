@@ -40,5 +40,24 @@ post-cleanup state.
 - Root and `.git` bundle files whose heads were verified reachable or
   patch-equivalent to `origin/main` before deletion.
 - Root `.pytest_cache`, `.tmp_results`, `__pycache__`, and `cache/_smoke`.
+- Two clean local `%TEMP%` worktrees and the one-turn publication worktree were
+  unregistered and removed. The otherwise unreachable spatial warm-start
+  commit chain is retained by Git tag
+  `archive/local-worktree-spatial-warmstart-20260904`.
+- The superseded 2026-09-03 temporal-16 lab ZIP was removed after the current
+  balanced 2026-09-04 package and sidecar were confirmed present.
+
+## LGVQ checkpoint pruning
+
+- `all_run_index.csv` now covers 187 run directories plus two formal calibrated
+  models.
+- Seven run directories form the retained spatial-4 and temporal-9/16/36
+  dependency closure. Their 124 checkpoint/snapshot files total
+  1,760,646,908 bytes.
+- 1,571 exploratory checkpoint files outside that closure were removed,
+  releasing 17,672,923,796 bytes. Non-PT configuration, log, metric, and figure
+  evidence remains in the original run directories.
+- All indexed formal checkpoints passed post-prune SHA256 verification, and all
+  20 temporal-9 phase-evolution snapshots remain available.
 
 All Windows deletions in this pass were sent to the Recycle Bin.
