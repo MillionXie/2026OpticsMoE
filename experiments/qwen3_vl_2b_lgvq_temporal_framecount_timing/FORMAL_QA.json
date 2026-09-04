@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "formal_device": "NVIDIA GeForce RTX 5090 D",
+  "frame_counts": [
+    4,
+    9,
+    16,
+    25,
+    36,
+    49
+  ],
+  "same_fixed_test_ids_across_all_counts": true,
+  "timing_and_performance_test_videos_per_count": 558,
+  "performance_epochs_per_count": 50,
+  "per_count": {
+    "4": {
+      "timing_unique_videos": 558,
+      "performance_unique_videos": 558,
+      "best_epoch": 50,
+      "temporal_metrics_recomputed": {
+        "srcc": 0.7439735206463389,
+        "krcc": 0.548739054139448,
+        "plcc": 0.7548564708511707,
+        "rmse": 9.113212201818811,
+        "mae": 7.418269119809605
+      },
+      "maximum_metric_absolute_error": 4.3923709558413293e-07
+    },
+    "9": {
+      "timing_unique_videos": 558,
+      "performance_unique_videos": 558,
+      "best_epoch": 50,
+      "temporal_metrics_recomputed": {
+        "srcc": 0.7513768803591877,
+        "krcc": 0.5546241731270858,
+        "plcc": 0.7586435630620215,
+        "rmse": 8.97359117705603,
+        "mae": 7.276450885239468
+      },
+      "maximum_metric_absolute_error": 6.274483652646268e-07
+    },
+    "16": {
+      "timing_unique_videos": 558,
+      "performance_unique_videos": 558,
+      "best_epoch": 49,
+      "temporal_metrics_recomputed": {
+        "srcc": 0.7635553891289037,
+        "krcc": 0.5635484345240945,
+        "plcc": 0.769552545718739,
+        "rmse": 8.791771211230948,
+        "mae": 7.124547989137711
+      },
+      "maximum_metric_absolute_error": 5.076008458004821e-07
+    },
+    "25": {
+      "timing_unique_videos": 558,
+      "performance_unique_videos": 558,
+      "best_epoch": 50,
+      "temporal_metrics_recomputed": {
+        "srcc": 0.7731521360933207,
+        "krcc": 0.5725499622535449,
+        "plcc": 0.7761352562859827,
+        "rmse": 8.65653322558982,
+        "mae": 6.958344962007256
+      },
+      "maximum_metric_absolute_error": 2.5636406775220166e-08
+    },
+    "36": {
+      "timing_unique_videos": 558,
+      "performance_unique_videos": 558,
+      "best_epoch": 50,
+      "temporal_metrics_recomputed": {
+        "srcc": 0.7820351938769257,
+        "krcc": 0.5791819891214518,
+        "plcc": 0.7841505125694458,
+        "rmse": 8.512925546314568,
+        "mae": 6.892020994617093
+      },
+      "maximum_metric_absolute_error": 3.983043139754727e-07
+    },
+    "49": {
+      "timing_unique_videos": 558,
+      "performance_unique_videos": 558,
+      "best_epoch": 49,
+      "temporal_metrics_recomputed": {
+        "srcc": 0.7835890164323341,
+        "krcc": 0.5823067102648604,
+        "plcc": 0.7829337601160203,
+        "rmse": 8.531095512902013,
+        "mae": 6.883073680289757
+      },
+      "maximum_metric_absolute_error": 1.2647293790024605e-07
+    }
+  }
+}

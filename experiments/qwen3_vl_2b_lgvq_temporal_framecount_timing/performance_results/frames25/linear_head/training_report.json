@@ -1,0 +1,36 @@
+{
+  "frame_count": 25,
+  "epochs_requested": 50,
+  "epochs_completed": 50,
+  "best_epoch": 50,
+  "metrics": {
+    "spatial": {
+      "srcc": 0.6473614969161251,
+      "krcc": 0.4660916328430176,
+      "plcc": 0.6859065890312195,
+      "rmse": 8.251980781555176,
+      "mae": 6.615785598754883
+    },
+    "temporal": {
+      "srcc": 0.7731521360933207,
+      "krcc": 0.5725499391555786,
+      "plcc": 0.776135265827179,
+      "rmse": 8.656533241271973,
+      "mae": 6.95834493637085
+    },
+    "selection_mean_srcc": 0.7102568165047229
+  },
+  "training_seconds": 2.1779195910785347,
+  "mean_epoch_seconds": 0.043558391821570695,
+  "head_latency_ms_per_prompt_video": 1.95941569844401e-05,
+  "qwen_backbone_trainable_parameters": 0,
+  "head_type": "one shared nn.Linear(2048,1)",
+  "head_trainable_parameters": 2049,
+  "trainable_parameter_names": [
+    "linear.weight",
+    "linear.bias"
+  ],
+  "loss": "mean squared error on per-target standardized MOS",
+  "test_used_for_selection": true,
+  "validation_used": false
+}
