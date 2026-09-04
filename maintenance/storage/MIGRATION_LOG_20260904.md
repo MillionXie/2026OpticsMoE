@@ -61,3 +61,18 @@ post-cleanup state.
   20 temporal-9 phase-evolution snapshots remain available.
 
 All Windows deletions in this pass were sent to the Recycle Bin.
+
+## 2026-09-05 reconciliation and low-risk cleanup
+
+- Reconciled local, guest3 server, and GitHub source histories at commit
+  `1c3b0c16fa7c45645cbdb035bdac80901ef8e2c5`; both working trees have clean
+  tracked source.
+- Preserved pre-reconciliation tags and patch/untracked-file inventories before
+  resetting either working tree.
+- Deleted the user-approved `data/bench2drive` copy after confirming no active
+  process: 16,828,527,478 bytes across 497,315 files. CARLA was already absent.
+- Moved the 1.5 GiB P08 ImageNet `assets`, `logs`, and `runs` from its obsolete
+  top-level experiment directory into the canonical FixedFeedbackSFT project.
+  Only disposable bytecode caches and empty legacy directories were removed.
+- Added a global read-only run index generator. Large-result pruning remains a
+  separate, manifest-driven step.
