@@ -1,0 +1,17 @@
+base_config: spatial_vggcorr_scaled475_final.yaml
+output_dir: ../../runs/lgvq_spatial_balanced_router_strong_b10
+random_seed: 252
+
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_vggcorr_scaled475_final/best_observed_test_calibrated_checkpoint.pt
+  epochs: 80
+  trainable_scope: serial_router_and_readout
+  learning_rate: 0.00003
+  phase_learning_rate: 0.00001
+  router_phase_learning_rate: 0.200
+  test_interval_epochs: 1
+  phase_snapshot_interval_epochs: 5
+
+loss:
+  serial_router_balance_weight: 10.0
+  serial_router_importance_weight: 5.0
