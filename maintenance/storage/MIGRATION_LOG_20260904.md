@@ -77,5 +77,12 @@ All Windows deletions in this pass were sent to the Recycle Bin.
 - Removed 21,928,989,320 bytes of Optical MLP per-sample/per-layer debug tensor
   dumps. Formal checkpoints, metrics, summary figures, phase masks, and the
   reusable CLIP feature cache were retained.
-- Added a global read-only run index generator. Large-result pruning remains a
-  separate, manifest-driven step.
+- Added a global read-only run index generator and regenerated it after cleanup.
+- Removed 351 periodic checkpoints only from directories that retained both a
+  named `best*` checkpoint and `last`/`latest`. This released 16,473,945,705
+  bytes. The committed `checkpoint_prune_manifest_20260905.csv` records every
+  deleted path and its preserved siblings; post-delete verification found zero
+  missing preserved files.
+- Final measured guest3 usage is 955,507,471,149 bytes (889.886 GiB), with
+  925,223,442,356 bytes (861.681 GiB) under the repository and about 800 GiB
+  free on `/DATA/DATA1`.
