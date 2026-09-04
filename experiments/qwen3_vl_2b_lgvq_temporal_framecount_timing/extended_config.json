@@ -1,0 +1,12 @@
+{
+  "base_config": "config.json",
+  "primary_frame_count": 36,
+  "conditional_frame_count": 49,
+  "conditional_threshold_mean_total_ms": 910.0,
+  "sampling_start_fraction": 0.10,
+  "sampling_end_fraction": 0.90,
+  "measure_all_test_videos": true,
+  "warmup_videos_per_frame_count": 2,
+  "seed": 20260904
+}
+

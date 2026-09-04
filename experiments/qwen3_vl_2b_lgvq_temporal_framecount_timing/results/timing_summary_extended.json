@@ -1,0 +1,555 @@
+{
+  "schema_version": 1,
+  "contract": "qwen3vl_lgvq_temporal_36_then_conditional_49_random_seek_v1",
+  "scope": "one raw video, one Temporal prompt, one scalar",
+  "model_path": "/root/autodl-tmp/models/Qwen3-VL-2B-Instruct",
+  "model_load_seconds_this_extension": 1.2178100780583918,
+  "model_total_parameters": 2127532032,
+  "model_trainable_parameters": 0,
+  "linear_readout_parameters": 2049,
+  "batch_size_videos": 1,
+  "results": {
+    "4": {
+      "measured_video_evaluations": 558,
+      "unique_videos": 558,
+      "trials": 3,
+      "frame_fractions": [
+        0.1,
+        0.37,
+        0.63,
+        0.9
+      ],
+      "sequence_lengths": [
+        446
+      ],
+      "mean_source_video_frames": 32.666666666666664,
+      "source_video_frame_count_distribution": {
+        "8": 93,
+        "16": 186,
+        "24": 93,
+        "36": 93,
+        "96": 93
+      },
+      "mean_unique_selected_frame_positions": 4.0,
+      "latency_ms_per_video": {
+        "decode_ms": {
+          "mean": 89.36357894648654,
+          "median": 53.63718408625573,
+          "std": 100.68799482384809,
+          "p05": 9.452642872929573,
+          "p95": 317.0844517066143,
+          "min": 7.963671116158366,
+          "max": 570.2274169307202
+        },
+        "processor_ms": {
+          "mean": 4.917215750766351,
+          "median": 4.2319283820688725,
+          "std": 1.931551012358458,
+          "p05": 3.1058729044161737,
+          "p95": 8.909502380993217,
+          "min": 2.9153358191251755,
+          "max": 11.004030937328935
+        },
+        "host_to_device_ms": {
+          "mean": 1.6569991727062505,
+          "median": 1.5881770523265004,
+          "std": 0.298407186053629,
+          "p05": 1.262999977916479,
+          "p95": 2.271439239848405,
+          "min": 1.1181540321558714,
+          "max": 2.434156136587262
+        },
+        "qwen_backbone_ms": {
+          "mean": 37.89547173303008,
+          "median": 34.88110506441444,
+          "std": 6.491311297153688,
+          "p05": 31.45574057707563,
+          "p95": 52.319010649807744,
+          "min": 31.30331402644515,
+          "max": 58.124337112531066
+        },
+        "pool_and_linear_ms": {
+          "mean": 0.21372391470110438,
+          "median": 0.21197949536144733,
+          "std": 0.012523398255400987,
+          "p05": 0.1951692160218954,
+          "p95": 0.2362300525419414,
+          "min": 0.19031483680009842,
+          "max": 0.25469507090747356
+        },
+        "total_raw_video_to_scalar_ms": {
+          "mean": 134.05764603730304,
+          "median": 95.00909294001758,
+          "std": 107.1483798505998,
+          "p05": 48.10135590378195,
+          "p95": 378.9282013080082,
+          "min": 43.637481052428484,
+          "max": 635.9194819815457
+        }
+      },
+      "videos_per_second_from_raw_video_to_scalar": 7.4594775423830635,
+      "peak_cuda_allocated_bytes": 4351102976,
+      "peak_cuda_allocated_gib": 4.052280426025391,
+      "example_selected_positions": [
+        2,
+        9,
+        14,
+        21
+      ],
+      "example_input_shapes": {
+        "input_ids": [
+          1,
+          446
+        ],
+        "attention_mask": [
+          1,
+          446
+        ],
+        "pixel_values_videos": [
+          1568,
+          1536
+        ],
+        "video_grid_thw": [
+          1,
+          3
+        ]
+      }
+    },
+    "9": {
+      "measured_video_evaluations": 558,
+      "unique_videos": 558,
+      "trials": 3,
+      "frame_fractions": [
+        0.1,
+        0.2,
+        0.3,
+        0.4,
+        0.5,
+        0.6,
+        0.7,
+        0.8,
+        0.9
+      ],
+      "sequence_lengths": [
+        1058
+      ],
+      "mean_source_video_frames": 32.666666666666664,
+      "source_video_frame_count_distribution": {
+        "8": 93,
+        "16": 186,
+        "24": 93,
+        "36": 93,
+        "96": 93
+      },
+      "mean_unique_selected_frame_positions": 8.5,
+      "latency_ms_per_video": {
+        "decode_ms": {
+          "mean": 188.41212374153196,
+          "median": 113.62928291782737,
+          "std": 211.7857932093903,
+          "p05": 15.255720424465835,
+          "p95": 638.9431953197343,
+          "min": 13.217030093073845,
+          "max": 1364.0376469120383
+        },
+        "processor_ms": {
+          "mean": 21.984719807752757,
+          "median": 21.434092428535223,
+          "std": 3.903639762866253,
+          "p05": 16.609426797367632,
+          "p95": 28.1365328701213,
+          "min": 15.168654033914208,
+          "max": 36.13415895961225
+        },
+        "host_to_device_ms": {
+          "mean": 10.450716826006584,
+          "median": 9.927140432409942,
+          "std": 2.2649642148010445,
+          "p05": 7.333188108168542,
+          "p95": 14.435656217392532,
+          "min": 6.910605123266578,
+          "max": 17.755510983988643
+        },
+        "qwen_backbone_ms": {
+          "mean": 57.45825622736486,
+          "median": 57.04732006415725,
+          "std": 1.0640314240811488,
+          "p05": 56.302233424503356,
+          "p95": 59.25825498998165,
+          "min": 56.098260218277574,
+          "max": 63.376063015311956
+        },
+        "pool_and_linear_ms": {
+          "mean": 0.2424112549485592,
+          "median": 0.24125596974045038,
+          "std": 0.019357771994331842,
+          "p05": 0.22313789231702685,
+          "p95": 0.26291812537238,
+          "min": 0.21850201301276684,
+          "max": 0.46339305117726326
+        },
+        "total_raw_video_to_scalar_ms": {
+          "mean": 278.55911936926384,
+          "median": 204.35185206588358,
+          "std": 215.9395466219078,
+          "p05": 97.68185219727457,
+          "p95": 737.5443116645325,
+          "min": 92.90244802832603,
+          "max": 1464.0434021130204
+        }
+      },
+      "videos_per_second_from_raw_video_to_scalar": 3.589902216320475,
+      "peak_cuda_allocated_bytes": 4476108800,
+      "peak_cuda_allocated_gib": 4.168701171875,
+      "example_selected_positions": [
+        2,
+        5,
+        7,
+        9,
+        12,
+        14,
+        16,
+        18,
+        21,
+        21
+      ],
+      "example_input_shapes": {
+        "input_ids": [
+          1,
+          1058
+        ],
+        "attention_mask": [
+          1,
+          1058
+        ],
+        "pixel_values_videos": [
+          3920,
+          1536
+        ],
+        "video_grid_thw": [
+          1,
+          3
+        ]
+      }
+    },
+    "16": {
+      "measured_video_evaluations": 558,
+      "unique_videos": 558,
+      "trials": 3,
+      "frame_fractions": [
+        0.1,
+        0.15333333333333335,
+        0.20666666666666667,
+        0.26,
+        0.31333333333333335,
+        0.3666666666666667,
+        0.42,
+        0.4733333333333334,
+        0.5266666666666667,
+        0.5800000000000001,
+        0.6333333333333334,
+        0.6866666666666668,
+        0.7400000000000001,
+        0.7933333333333334,
+        0.8466666666666667,
+        0.9
+      ],
+      "sequence_lengths": [
+        1670
+      ],
+      "mean_source_video_frames": 32.666666666666664,
+      "source_video_frame_count_distribution": {
+        "8": 93,
+        "16": 186,
+        "24": 93,
+        "36": 93,
+        "96": 93
+      },
+      "mean_unique_selected_frame_positions": 13.333333333333334,
+      "latency_ms_per_video": {
+        "decode_ms": {
+          "mean": 348.60328950428516,
+          "median": 216.10795601736754,
+          "std": 378.2487581025976,
+          "p05": 24.99696766026318,
+          "p95": 1142.216136364732,
+          "min": 20.27022885158658,
+          "max": 2430.2520530764014
+        },
+        "processor_ms": {
+          "mean": 36.534519771391054,
+          "median": 37.4923039926216,
+          "std": 6.978557248074328,
+          "p05": 26.48080252110958,
+          "p95": 45.10138186160475,
+          "min": 24.632285116240382,
+          "max": 62.74670991115272
+        },
+        "host_to_device_ms": {
+          "mean": 8.137106410174306,
+          "median": 8.078432991169393,
+          "std": 0.93767005076937,
+          "p05": 6.897884130012244,
+          "p95": 9.304471174255013,
+          "min": 5.882784957066178,
+          "max": 20.546537125483155
+        },
+        "qwen_backbone_ms": {
+          "mean": 83.05434045827477,
+          "median": 82.93793455231935,
+          "std": 0.754142522482919,
+          "p05": 82.29963399935514,
+          "p95": 84.71605206141248,
+          "min": 82.08147389814258,
+          "max": 88.15091103315353
+        },
+        "pool_and_linear_ms": {
+          "mean": 0.2519640863762908,
+          "median": 0.24783750995993614,
+          "std": 0.04323208614039602,
+          "p05": 0.22532540606334805,
+          "p95": 0.28763164300471544,
+          "min": 0.2155869733542204,
+          "max": 0.9573060087859631
+        },
+        "total_raw_video_to_scalar_ms": {
+          "mean": 476.59064063261593,
+          "median": 344.4826415507123,
+          "std": 382.56162624875253,
+          "p05": 143.283639207948,
+          "p95": 1277.8096582042053,
+          "min": 136.4080081693828,
+          "max": 2564.9233118165284
+        }
+      },
+      "videos_per_second_from_raw_video_to_scalar": 2.0982367565435656,
+      "peak_cuda_allocated_bytes": 4599353344,
+      "peak_cuda_allocated_gib": 4.283481597900391,
+      "example_selected_positions": [
+        2,
+        4,
+        5,
+        6,
+        7,
+        8,
+        10,
+        11,
+        12,
+        13,
+        15,
+        16,
+        17,
+        18,
+        19,
+        21
+      ],
+      "example_input_shapes": {
+        "input_ids": [
+          1,
+          1670
+        ],
+        "attention_mask": [
+          1,
+          1670
+        ],
+        "pixel_values_videos": [
+          6272,
+          1536
+        ],
+        "video_grid_thw": [
+          1,
+          3
+        ]
+      }
+    },
+    "36": {
+      "measured_video_evaluations": 558,
+      "unique_videos": 558,
+      "trials": 1,
+      "frame_fractions": [
+        0.1,
+        0.12285714285714286,
+        0.1457142857142857,
+        0.1685714285714286,
+        0.19142857142857145,
+        0.2142857142857143,
+        0.23714285714285716,
+        0.26,
+        0.28285714285714286,
+        0.3057142857142857,
+        0.32857142857142857,
+        0.3514285714285714,
+        0.37428571428571433,
+        0.39714285714285713,
+        0.42000000000000004,
+        0.44285714285714284,
+        0.46571428571428575,
+        0.48857142857142866,
+        0.5114285714285715,
+        0.5342857142857144,
+        0.5571428571428572,
+        0.5800000000000001,
+        0.6028571428571429,
+        0.6257142857142858,
+        0.6485714285714286,
+        0.6714285714285714,
+        0.6942857142857143,
+        0.7171428571428572,
+        0.74,
+        0.7628571428571429,
+        0.7857142857142857,
+        0.8085714285714286,
+        0.8314285714285714,
+        0.8542857142857143,
+        0.8771428571428572,
+        0.9
+      ],
+      "sequence_lengths": [
+        3710
+      ],
+      "mean_source_video_frames": 32.666666666666664,
+      "source_video_frame_count_distribution": {
+        "8": 93,
+        "16": 186,
+        "24": 93,
+        "36": 93,
+        "96": 93
+      },
+      "mean_unique_selected_frame_positions": 19.5,
+      "latency_ms_per_video": {
+        "decode_ms": {
+          "mean": 853.0293223602483,
+          "median": 558.6246903985739,
+          "std": 849.9608419654365,
+          "p05": 51.16210402920842,
+          "p95": 2494.9862663401286,
+          "min": 43.106577126309276,
+          "max": 5124.699848005548
+        },
+        "processor_ms": {
+          "mean": 81.34210857105404,
+          "median": 83.13428447581828,
+          "std": 11.772182488407749,
+          "p05": 61.67365836445242,
+          "p95": 97.64030373189598,
+          "min": 50.662657944485545,
+          "max": 107.27647505700588
+        },
+        "host_to_device_ms": {
+          "mean": 14.105283971925978,
+          "median": 13.966917525976896,
+          "std": 1.5395934885920757,
+          "p05": 13.375275465659797,
+          "p95": 14.666560827754438,
+          "min": 12.397619895637035,
+          "max": 42.11502801626921
+        },
+        "qwen_backbone_ms": {
+          "mean": 184.74604083119982,
+          "median": 184.5497889444232,
+          "std": 0.8274781230434196,
+          "p05": 183.88066634070128,
+          "p95": 186.59170743776485,
+          "min": 183.53535304777324,
+          "max": 189.96465299278498
+        },
+        "pool_and_linear_ms": {
+          "mean": 0.25920462118641985,
+          "median": 0.24628255050629377,
+          "std": 0.0941579625192558,
+          "p05": 0.2304032794199884,
+          "p95": 0.3090302227064967,
+          "min": 0.2259761095046997,
+          "max": 2.267970936372876
+        },
+        "total_raw_video_to_scalar_ms": {
+          "mean": 1133.4935383075067,
+          "median": 832.3884303681552,
+          "std": 854.0110459595569,
+          "p05": 315.28502805158496,
+          "p95": 2776.558447058778,
+          "min": 298.79971290938556,
+          "max": 5415.218752110377
+        }
+      },
+      "videos_per_second_from_raw_video_to_scalar": 0.882228231749045,
+      "peak_cuda_allocated_bytes": 5022952448,
+      "peak_cuda_allocated_gib": 4.6779890060424805,
+      "example_selected_positions": [
+        2,
+        3,
+        3,
+        4,
+        4,
+        5,
+        5,
+        6,
+        7,
+        7,
+        8,
+        8,
+        9,
+        9,
+        10,
+        10,
+        11,
+        11,
+        12,
+        12,
+        13,
+        13,
+        14,
+        14,
+        15,
+        15,
+        16,
+        16,
+        17,
+        18,
+        18,
+        19,
+        19,
+        20,
+        20,
+        21
+      ],
+      "example_input_shapes": {
+        "input_ids": [
+          1,
+          3710
+        ],
+        "attention_mask": [
+          1,
+          3710
+        ],
+        "pixel_values_videos": [
+          14112,
+          1536
+        ],
+        "video_grid_thw": [
+          1,
+          3
+        ]
+      }
+    }
+  },
+  "conditional_49_decision": {
+    "threshold_metric": "mean total raw-video-to-scalar latency",
+    "threshold_mean_total_ms": 910.0,
+    "observed_36_mean_total_ms": 1133.4935383075067,
+    "condition": "measure 49 frames only when observed_36_mean_total_ms <= threshold",
+    "status": "skipped because the 36-frame mean exceeded 910 ms"
+  },
+  "sample_count_definition": "N=558 unique fixed-split LGVQ test videos, measured once per executed frame count",
+  "p95_definition": "95th percentile across the 558 videos; 95% finish at or below this latency",
+  "decode_contract": "one cv2.VideoCapture per evaluation; CAP_PROP_POS_FRAMES + read for every sampled position, matching the original LGVQ project loaders",
+  "deliberately_disabled_accelerations": [
+    "sequential full-clip decoding",
+    "parallel video decoding",
+    "decoded-frame cache",
+    "Qwen feature cache",
+    "torch.compile",
+    "quantization",
+    "FlashAttention override"
+  ]
+}
