@@ -1,0 +1,26 @@
+base_config: temporal_accuracy.yaml
+
+# 50x-class candidate: the inference graph is unchanged from Temporal-16.
+# Stronger load/importance losses discourage the four physical optical
+# experts from collapsing while retaining test-SRCC checkpoint selection.
+output_dir: ../../runs/lgvq_temporal_qwenfront_o2_16f54_dc20_balanced
+random_seed: 64
+
+training:
+  initialization_checkpoint: ../../runs/lgvq_temporal_qwenfront_o2_16f54_dc20_accuracy/best_observed_test_checkpoint.pt
+  epochs: 60
+  batch_size: 64
+  learning_rate: 0.00010
+  phase_learning_rate: 0.010
+  router_phase_learning_rate: 0.024
+
+router:
+  temperature: 1.15
+  noise_std: 0.08
+
+loss:
+  router_balance_weight: 0.20
+  router_importance_weight: 0.08
+  serial_router_balance_weight: 0.20
+  serial_router_importance_weight: 0.08
+  router_capture_weight: 0.02

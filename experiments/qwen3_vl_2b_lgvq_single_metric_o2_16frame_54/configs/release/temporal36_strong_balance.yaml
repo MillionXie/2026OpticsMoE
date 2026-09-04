@@ -1,0 +1,21 @@
+base_config: temporal36.yaml
+
+# Balance-leaning 36-frame candidate. It provides a fallback if the
+# accuracy-oriented candidate concentrates its hard Top-2 selections.
+output_dir: ../../runs/lgvq_temporal_qwenfront_o2_36f37_dc20_strong_balance
+random_seed: 72
+
+router:
+  temperature: 1.20
+  noise_std: 0.10
+
+training:
+  learning_rate: 0.00020
+  phase_learning_rate: 0.022
+  router_phase_learning_rate: 0.036
+
+loss:
+  router_balance_weight: 0.30
+  router_importance_weight: 0.12
+  serial_router_balance_weight: 0.30
+  serial_router_importance_weight: 0.12

@@ -1,0 +1,21 @@
+base_config: temporal36.yaml
+
+# Accuracy-leaning 36-frame candidate. The physical graph is identical; only
+# training-time router regularization and optimizer settings differ.
+output_dir: ../../runs/lgvq_temporal_qwenfront_o2_36f37_dc20_accuracy
+random_seed: 71
+
+router:
+  temperature: 1.10
+  noise_std: 0.05
+
+training:
+  learning_rate: 0.00030
+  phase_learning_rate: 0.018
+  router_phase_learning_rate: 0.028
+
+loss:
+  router_balance_weight: 0.08
+  router_importance_weight: 0.03
+  serial_router_balance_weight: 0.10
+  serial_router_importance_weight: 0.04

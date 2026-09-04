@@ -214,7 +214,7 @@ def synthetic_smoke(settings: ExperimentSettings) -> dict[str, Any]:
             serial_expert_pitch=20,
         )
         parallel_intervals = ((6, 12), (16, 22))
-    else:
+    elif settings.frame_count == 16:
         geometry = Geometry(
             canvas_size=96,
             active_size=88,
@@ -228,10 +228,26 @@ def synthetic_smoke(settings: ExperimentSettings) -> dict[str, Any]:
             serial_expert_pitch=20,
         )
         parallel_intervals = ((4, 8), (10, 14))
+    else:
+        # Keep the smoke canvas bounded while exercising the 6x6 packing and
+        # all 36 independently routed frame lanes.
+        geometry = Geometry(
+            canvas_size=128,
+            active_size=120,
+            lane_grid=6,
+            lane_size=18,
+            lane_pitch=20,
+            lane_offset=1,
+            parallel_expert_size=8,
+            parallel_expert_pitch=10,
+            serial_expert_size=64,
+            serial_expert_pitch=28,
+        )
+        parallel_intervals = ((4, 8), (10, 14))
     small = replace(
         settings,
         geometry=geometry,
-        maximum_language_tokens=32,
+        maximum_language_tokens=56 if settings.frame_count == 36 else 32,
         detector_projection_size=16,
         parallel_router_intervals=parallel_intervals,
         serial_router_intervals=((20, 30), (50, 60)),

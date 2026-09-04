@@ -150,6 +150,23 @@ def test_formal_temporal9_geometry_fills_same_active_field_compactly() -> None:
     assert geometry.parallel_expert_pitch - geometry.parallel_expert_size == 2
 
 
+def test_formal_temporal36_geometry_fills_same_active_field_compactly() -> None:
+    geometry = Geometry(
+        lane_grid=6,
+        lane_size=77,
+        lane_pitch=79,
+        lane_offset=3,
+        parallel_expert_size=37,
+        parallel_expert_pitch=40,
+    )
+    geometry.validate(formal=True)
+    assert len(geometry.lane_origins) == 36
+    assert geometry.lane_origins[0] == (3, 3)
+    assert geometry.lane_origins[-1] == (398, 398)
+    assert geometry.lane_origins[-1][0] + geometry.lane_size == 475
+    assert geometry.parallel_expert_pitch - geometry.parallel_expert_size == 3
+
+
 def test_spatial_and_temporal_prompts_are_exact_and_distinct(tmp_path: Path) -> None:
     spatial = _small_settings(tmp_path, target_name="spatial")
     temporal = _small_settings(tmp_path, target_name="temporal")

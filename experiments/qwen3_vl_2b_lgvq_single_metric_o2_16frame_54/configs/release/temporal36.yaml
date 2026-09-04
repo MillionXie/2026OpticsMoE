@@ -1,0 +1,55 @@
+base_config: temporal_accuracy.yaml
+
+# 100x-class candidate: 36 temporal landmarks are packed into the same
+# centered 478x478 active field as every other formal experiment. Six lanes
+# per axis use a 79-pixel pitch; each 77x77 lane holds four 37x37 experts with
+# a 3-pixel internal gap. The later serial 109x109 optical stages are unchanged.
+output_dir: ../../runs/lgvq_temporal_qwenfront_o2_36f37_dc20
+random_seed: 70
+
+data:
+  vision_cache: ../../artifacts/qwen3vl_front_36f_49x1024_quality14.pt
+
+geometry:
+  canvas_size: 518
+  active_size: 478
+  lane_grid: 6
+  lane_size: 77
+  lane_pitch: 79
+  lane_offset: 3
+  parallel_expert_size: 37
+  parallel_expert_pitch: 40
+  serial_expert_size: 109
+  serial_expert_pitch: 123
+
+model:
+  frame_count: 36
+  maximum_language_tokens: 96
+
+router:
+  # Twelve-pixel bands preserve a five-pixel center gap inside each 77 lane.
+  parallel_intervals: [[24, 36], [41, 53]]
+  temperature: 1.15
+  noise_std: 0.08
+  # Non-affine detector calibration only; no trainable electronic router is
+  # introduced. It prevents fixed four-region gain offsets from forcing the
+  # sequence router onto the same two experts for every video.
+  serial_flatfield_calibration: true
+  serial_channel_standardization: true
+
+training:
+  initialization_checkpoint: ../../runs/lgvq_temporal_qwenfront_o2_16f54_dc20_accuracy/best_observed_test_checkpoint.pt
+  epochs: 100
+  batch_size: 48
+  learning_rate: 0.00025
+  phase_learning_rate: 0.020
+  router_phase_learning_rate: 0.032
+  test_interval_epochs: 5
+  phase_snapshot_interval_epochs: 5
+
+loss:
+  router_balance_weight: 0.15
+  router_importance_weight: 0.06
+  serial_router_balance_weight: 0.15
+  serial_router_importance_weight: 0.06
+  router_capture_weight: 0.02

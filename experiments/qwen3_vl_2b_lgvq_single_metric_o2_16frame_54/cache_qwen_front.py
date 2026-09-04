@@ -851,9 +851,9 @@ def build_cache(
 ) -> dict[str, Any]:
     if target_name not in TARGET_PROMPTS:
         raise ValueError(f"target_name must be one of {sorted(TARGET_PROMPTS)}")
-    if batch_size <= 0 or chunk_rows <= 0 or frame_count not in (4, 9, 16):
+    if batch_size <= 0 or chunk_rows <= 0 or frame_count not in (4, 9, 16, 36):
         raise ValueError(
-            "batch/chunk sizes must be positive and frame_count must be 4, 9, or 16"
+            "batch/chunk sizes must be positive and frame_count must be 4, 9, 16, or 36"
         )
     if token_grid not in (7, 14):
         raise ValueError("token_grid must be 7 or 14")
@@ -1228,7 +1228,7 @@ def main() -> int:
     parser.add_argument("--language-output", type=Path, default=None)
     parser.add_argument("--target", choices=sorted(TARGET_PROMPTS), default=None)
     parser.add_argument("--manifest", type=Path, default=None)
-    parser.add_argument("--frame-count", type=int, choices=(4, 9, 16), default=None)
+    parser.add_argument("--frame-count", type=int, choices=(4, 9, 16, 36), default=None)
     parser.add_argument("--token-grid", type=int, choices=(7, 14), default=None)
     parser.add_argument("--batch-size", type=int, default=2, help="Videos per GPU batch")
     parser.add_argument("--chunk-rows", type=int, default=16, help="Videos per resumable shard")
