@@ -1,0 +1,7 @@
+{
+  "deleted_files": 1571,
+  "deleted_bytes": 17672923796,
+  "manifest": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/artifacts/storage_cleanup_20260904/checkpoint_prune_manifest.csv",
+  "retained_files": 124,
+  "status": "complete"
+}

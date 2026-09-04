@@ -2,7 +2,7 @@
 
 本文件解决两个问题：
 
-1. 长任务实际运行在哪个 server worktree；
+1. 长任务实际运行在哪个服务器项目目录或历史 Git tag；
 2. 被 Git 忽略的 log、metrics 和 checkpoint 在哪里、是否已完整收口。
 
 它是可提交的**索引**，不是产物本身。所有“运行中”状态都必须带审计时间；没有 terminal manifest、完整 metrics 和 checksum 时，不得因为 GPU 进程消失就写成“训练完成”。
@@ -17,7 +17,8 @@
 | run name | `p13_growth16_fa_source_20e_gb192` |
 | 目的 | 从正式 P11 epoch-88 source 函数保持式增长到 16 stages，20 epoch，full-depth `fa_source` |
 | 服务器 | `guest3@202.120.62.181:24096` |
-| 独立 worktree | `/DATA/DATA1/guest3/2026OpticsMoE_p13_488f9d48` |
+| 历史源码身份 | Git tag `archive/worktree-p13-20260904`（原 worktree 已注销） |
+| 当前精选产物 | `/DATA/DATA1/guest3/2026OpticsMoE/FixedFeedbackSFT/evidence/p13_growth16_fa_source_20e_gb192` |
 | Git 状态 | detached commit `a5628e5` |
 | 审计时间 | **2026-09-01 23:36 CST** |
 | 审计状态 | **completed：20/20 history、最终 normal/三项消融、backbone export 与 terminal `result.json` 均已完成** |
@@ -31,7 +32,7 @@ PID 只用于定位该次审计，进程重启后可能变化。判断终态应�
 
 ### 精确路径
 
-实验根：
+原始实验根（历史路径，2026-09-04 后已不存在）：
 
 ```text
 /DATA/DATA1/guest3/2026OpticsMoE_p13_488f9d48/
@@ -67,7 +68,7 @@ metrics/history.json
 result.json
 ```
 
-这些路径仍是**旧 pinned worktree 的旧布局**。本次仓库整理不会、也不应在训练中改写它们。
+这些是审计时记录的**历史路径**。精选 checkpoint 和终态 JSON 已按 SHA-256 迁至主仓库 `FixedFeedbackSFT/evidence/`；完整来源映射见 `evidence/worktree_cleanup_20260904/retention_manifest.json`。
 
 ### 终态结果
 
@@ -120,7 +121,7 @@ P11 source 也已通过 PyTorch 只读加载、finite/non-empty tensor 与 SHA-2
 | `checkpoints/backbone.pt` | 88 | `c3ad0b780dfbb3e5f8e1f7b7850c06fcb5c6d977e106f351b4602fcaadf210d2` |
 | `checkpoints/best.pt` | 88 | `a30d5c06b61a635bb3dc379aeaca4c371c1d27e6b862c5ffd4977ce738b33034` |
 
-## 2. 为什么普通服务器目录里没有这个 run
+## 2. 2026-09-04 归档后的查找方式
 
 常用主目录是：
 
@@ -128,33 +129,32 @@ P11 source 也已通过 PyTorch 只读加载、finite/non-empty tensor 与 SHA-2
 /DATA/DATA1/guest3/2026OpticsMoE
 ```
 
-P13 实际目录却是：
+P13 的当前精选产物目录是：
 
 ```text
-/DATA/DATA1/guest3/2026OpticsMoE_p13_488f9d48
+/DATA/DATA1/guest3/2026OpticsMoE/FixedFeedbackSFT/evidence/p13_growth16_fa_source_20e_gb192
 ```
 
-二者是不同 Git worktree。其次，根 `.gitignore` 忽略 `runs`、`results` 和 `*.pt`，所以：
+原 worktree 已注销，源码历史由 `archive/worktree-p13-20260904` 保存。根 `.gitignore` 忽略 `runs`、`results` 和 `*.pt`，所以：
 
 - 在普通主目录 `git pull` 不会出现 P13 checkpoint；
 - 本地 clone/pull 也不会出现服务器 history/log；
 - `git status` 看不到 ignored run，不代表磁盘上没有；
-- 应从本 registry 的绝对路径或对应 status script 查找。
+- 应从本 registry、`FixedFeedbackSFT/evidence/` 和 retention manifest 查找。
 
-## 3. 2026-09-01 服务器 worktree 清单
+## 3. 历史 worktree 归档清单
 
-以下是同一次审计看到的工作目录。除 P13 外，suffix 可帮助定位历史用途，但每次复现前仍需重新核对 `git rev-parse HEAD`、dirty state 和 run manifest。
+以下目录曾用于隔离实验，已于 2026-09-04 完成精选产物迁移并注销。不要再把这些路径写入新命令。
 
-| 目录 | 用途 | 处理原则 |
+| 原用途 | 当前来源身份 | 当前产物位置 |
 |---|---|---|
-| `/DATA/DATA1/guest3/2026OpticsMoE` | 旧服务器主工作树 | 已分叉且脏；不可直接 pull/reset/rebase |
-| `/DATA/DATA1/guest3/2026OpticsMoE_p12_e305e0b` | P12 正式下游任务 | 保留原 commit 与原 runs；只读登记 |
-| `/DATA/DATA1/guest3/2026OpticsMoE_p12_mechanism_e305` | P12 机制/P-E-H 审计 | 保留机制产物 provenance |
-| `/DATA/DATA1/guest3/2026OpticsMoE_p12_phase_only_e7ae69e7` | P12 phase-only 面板 | 保留冻结电子 body 协议与结果 |
-| `/DATA/DATA1/guest3/2026OpticsMoE_p13_488f9d48` | 已完成的 P13 8→16 growth | 保留 pinned commit 与原 runs；不得用新布局原地 resume |
-| `/DATA/DATA1/guest3/2026OpticsMoE_report_646f847e` | 老师汇报/图表生成 | 报告源码已纳入 `FixedFeedbackSFT/reports`；服务器产物按 checksum 登记 |
-| `/DATA/DATA1/guest3/2026OpticsMoE_scratch_2981fe23` | scratch / No-ImageNet body 等隔离实验 | 不与正式 P12 runs 混合 |
-| `/DATA/DATA1/guest3/2026OpticsMoE/FixedFeedbackSFT/runs/_worktrees/fa_reorg` | 新布局 clean deployment | 项目内部 ignored worktree；验收代码基线 `1dedeb6d`；旧产物以 ignored symlink 接入 |
+| P12 正式下游 | `archive/worktree-p12-formal-20260904` | `FixedFeedbackSFT/evidence/p12_downstream_fa_50e/` |
+| P12 机制/P-E-H | `archive/worktree-p12-mechanism-20260904` | `FixedFeedbackSFT/evidence/p12_downstream_fa_50e_mechanism/` |
+| P12 phase-only | `archive/worktree-p12-phase-only-20260904` | `FixedFeedbackSFT/evidence/p12_phase_only_fa_50e/` |
+| P12 scratch/control | `archive/worktree-p12-scratch-20260904` | `FixedFeedbackSFT/evidence/p12_scratch_control/` |
+| P13 8→16 growth | `archive/worktree-p13-20260904` | `FixedFeedbackSFT/evidence/p13_growth16_fa_source_20e_gb192/` |
+| 老师报告 | `archive/worktree-report-20260904` | `FixedFeedbackSFT/reports/` |
+| 新布局验收 | `archive/worktree-fa-reorg-20260904` | `FixedFeedbackSFT/evidence/fa_reorg_runs_20260904/` |
 
 ### 旧主工作树 Git 状态
 
@@ -168,9 +168,9 @@ ahead/behind: 11 / 48
 worktree:    modified and untracked files present
 ```
 
-因此同步新布局时应建立 clean worktree。不能对这个目录直接 `git pull`，也不能用 `git reset --hard` 或 `git clean` 消除分叉；这些动作可能删除服务器独有提交和用户文件。
+以上是历史快照。当前仍不能在脏主仓库上直接执行破坏性的 `reset --hard` 或 `clean`；同步前应先检查状态并只提交/迁移明确属于本任务的文件。新隔离工作如确有必要，可在仓库内部建立临时 worktree，验收后必须归位产物并注销。
 
-### 新布局 clean worktree 验收
+### 新布局临时 clean worktree 验收（已注销）
 
 2026-09-02 的部署与验证结果：
 
@@ -187,7 +187,7 @@ PowerShell:  2 scripts parsed with 0 errors
 P13 load:    best_full_depth.pt and backbone_full_depth.pt compatible
 ```
 
-目录边界：新部署必须位于 `/DATA/DATA1/guest3/2026OpticsMoE/` 内。曾误建的同级目录 `/DATA/DATA1/guest3/2026OpticsMoE_fixedfeedback` 已在 2026-09-02 迁回上述内部路径并确认不存在；临时 `/DATA/DATA1/guest3/.codex_transfer` 也已删除。历史 P12/P13 pinned worktree 是既有 run 的 provenance，不作为新部署目录，也不原地移动。
+目录边界：新部署必须位于 `/DATA/DATA1/guest3/2026OpticsMoE/` 内。曾误建的同级目录、7 个历史 worktree 和项目内部验收 worktree 均已在 2026-09-04 注销；`.codex_transfer` 仅作临时传输并已清空。历史身份由归档 tag 和 retention manifest 提供。
 
 不同工程中同名的 `test_core.py` 会被 pytest 默认导入模式视为同一顶层模块，因此全套测试使用 `--import-mode=importlib`；逐工程执行不受影响。这是测试收集命名问题，不是源码导入冲突。
 
@@ -195,9 +195,9 @@ P13 load:    best_full_depth.pt and backbone_full_depth.pt compatible
 
 ### 旧 run
 
-- 物理文件继续留在其 pinned worktree 的 `experiments/<project>/runs/...`；
+- 精选物理文件位于主仓库 `FixedFeedbackSFT/evidence/...`；
 - 旧 config、digest、implementation manifest 与 checkpoint 不改；
-- registry 记录绝对路径、Git SHA 和关键 SHA-256；
+- registry 和 retention manifest 记录旧路径、归档 tag、Git SHA 与关键 SHA-256；
 - 如需复制，只创建已校验的只读归档，不删除原件。
 
 ### 新 run
@@ -218,20 +218,20 @@ FixedFeedbackSFT/runs/<project>/<run>/
 
 新布局不得 resume 旧布局 run。迁移旧权重时，应启动新 run 并记录 `parent_checkpoint_path`、`parent_checkpoint_sha256`、旧 Git SHA、新 Git SHA、旧/新 config digest 和 migration report。
 
-### 已建立的统一入口（服务器符号链接）
+### 当前统一入口
 
-这些链接位于 clean worktree 的 ignored `FixedFeedbackSFT/runs/`，不复制 checkpoint，也不改变原始 provenance：
+旧符号链接随临时 worktree 一并注销；当前统一入口如下：
 
 | 中央 run 名 | 原始物理位置 |
 |---|---|
-| P11 `p11_imagenet1k_pretrain_bs96_90e` | 旧主树 P11 `runs/p11_imagenet1k_pretrain_bs96_90e` |
-| P12 `p12_downstream_fa_50e` | `/DATA/DATA1/guest3/2026OpticsMoE_p12_e305e0b/.../runs/p12_downstream_fa_50e` |
-| P12 `p12_downstream_fa_50e_mechanism` | `/DATA/DATA1/guest3/2026OpticsMoE_p12_mechanism_e305/.../runs/p12_downstream_fa_50e_mechanism` |
-| P12 `p12_phase_only_fa_50e` | `/DATA/DATA1/guest3/2026OpticsMoE_p12_phase_only_e7ae69e7/.../runs/p12_phase_only_fa_50e` |
-| P12 `p12_scratch_p11_body_seed_2026_50e` | `/DATA/DATA1/guest3/2026OpticsMoE_scratch_2981fe23/.../runs/p12_scratch_p11_body_seed_2026_50e` |
-| P13 `p13_growth16_fa_source_20e_gb192` | `/DATA/DATA1/guest3/2026OpticsMoE_p13_488f9d48/.../runs/p13_growth16_fa_source_20e_gb192` |
+| P11/P08 selected assets | `FixedFeedbackSFT/evidence/fa_reorg_runs_20260904/selected_checkpoints/` |
+| P12 `p12_downstream_fa_50e` | `FixedFeedbackSFT/evidence/p12_downstream_fa_50e/` |
+| P12 mechanism | `FixedFeedbackSFT/evidence/p12_downstream_fa_50e_mechanism/` |
+| P12 phase-only | `FixedFeedbackSFT/evidence/p12_phase_only_fa_50e/` |
+| P12 scratch/control | `FixedFeedbackSFT/evidence/p12_scratch_control/` |
+| P13 `p13_growth16_fa_source_20e_gb192` | `FixedFeedbackSFT/evidence/p13_growth16_fa_source_20e_gb192/` |
 
-静态 stem 也以 ignored symlink 接到新 P08 `assets/qwen3_vl_static_stem_224.pt`；SHA-256 为 `e3b12b274211d29f928eee95fdfc60b32d10751f1bbdc98cd63f0cccd0792485`。
+静态 stem 的规范路径是 `FixedFeedbackSFT/projects/qwen3_vl_patch_stem_8stage_optical_imagenet_backbone/assets/qwen3_vl_static_stem_224.pt`；SHA-256 为 `e3b12b274211d29f928eee95fdfc60b32d10751f1bbdc98cd63f0cccd0792485`。
 
 ## 5. 新增 run 的登记模板
 

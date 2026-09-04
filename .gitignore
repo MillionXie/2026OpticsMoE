@@ -28,6 +28,30 @@ _offline_packages
 
 .github
 
+teams
+
+# Codex/SSH transfer staging and test caches are disposable. Durable evidence
+# must be moved into its owning experiment's artifacts/ directory first.
+/.codex_transfer/
+/.pytest_cache/
+/.tmp_results/
+
+# Git transport packages are indexed before removal and are not source files.
+*.bundle
+*.tgz
+*.tar
+*.tar.gz
+
+# The archive directory may contain intentionally retained, non-versioned
+# snapshots. Its policy file remains tracked.
+/archive/*
+!/archive/README.md
+
+# Machine-local research evidence is kept beside its owning experiment without
+# being uploaded to GitHub. Each such directory should retain a manifest.
+**/artifacts/local_only/
+/experiments/qwen_optical_platform_handoff/lab_bundles/
+
 # Hardware SDKs are intentionally versioned under hardware_sdk/vendor_sdk so
 # the bench-control project can be cloned onto another laboratory computer.
 /experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/sdk/
@@ -55,6 +79,10 @@ _offline_packages
 
 /experiments/qwen_vl_cifar10/data
 /experiments/bdd100k_weather4_optical5_mlp/data/
+
+# Generated OpenMoji editing datasets and training artifacts stay inside the experiment.
+/experiments/qwen3_vl_2b_openmoji_instruction_four_stage_optical_editing/data/
+/experiments/qwen3_vl_2b_openmoji_instruction_four_stage_optical_editing/runs/
 
 # Local experiment-review documents and copied server evidence.
 /document/

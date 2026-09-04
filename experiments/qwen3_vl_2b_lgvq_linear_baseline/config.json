@@ -1,7 +1,7 @@
 {
-  "model_path": "/root/autodl-tmp/models/Qwen3-VL-2B-Instruct",
+  "model_path": "../../models/Qwen3-VL-2B-Instruct",
   "manifest_path": "data/lgvq_split.csv",
-  "artifacts_dir": "/root/autodl-tmp/qwen3vl_lgvq_linear_baseline_artifacts",
+  "artifacts_dir": "artifacts",
   "frame_counts": [4, 16],
   "frame_sampling": {
     "4": [0.10, 0.37, 0.63, 0.90],

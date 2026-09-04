@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "formal_run_dependency_closure": {
+    "lgvq_spatial_identity_q25_a40_clean": "spatial initialization root",
+    "lgvq_spatial_vggcorr_scaled475_final": "spatial calibrated upstream",
+    "lgvq_spatial_balanced_router_std_strong": "formal spatial-4 source",
+    "lgvq_temporal_qwenfront_o2_16f54_dc20_accuracy": "temporal initialization root",
+    "lgvq_temporal_qwenfront_o2_16f54_dc20_balanced_standardized": "formal temporal-16 source",
+    "lgvq_temporal_qwenfront_o2_36f37_dc20": "formal temporal-36 source",
+    "lgvq_temporal_qwenfront_o2_9f77_dc20_zero_order_crop": "formal temporal-9 source and every-5-epoch phase snapshots"
+  },
+  "checkpoint_files_before": 1695,
+  "retained_files": 124,
+  "retained_bytes": 1760646908,
+  "delete_files": 1571,
+  "delete_bytes": 17672923796,
+  "policy": "Only .pt files outside the seven-run formal dependency closure are removed. Non-PT metrics/configs/logs/figures remain in each run directory."
+}

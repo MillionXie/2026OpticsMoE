@@ -1,16 +1,16 @@
 # FixedFeedbackSFT：固定光学反馈与通用光电骨干
 
-`FixedFeedbackSFT` 是本仓库中 fixed-feedback（文中简称 FA）课题的统一工程入口。与旧布局不同，FA 主线源码现集中在 [`projects/`](projects/)；服务器已有命令仍可使用 `experiments.<project>` Python 名称，旧 checkpoint 和历史运行也不会因本次整理被搬动。
+`FixedFeedbackSFT` 是本仓库中 fixed-feedback（文中简称 FA）课题的统一工程入口。FA 主线源码集中在 [`projects/`](projects/)；服务器命令仍使用 `experiments.<project>` Python 名称。2026-09-04 已注销全部临时 worktree，把精选 checkpoint、终态指标和 provenance 清单收拢到服务器主仓库的 `FixedFeedbackSFT/evidence/`，历史提交则由 `archive/worktree-*` Git tag 保留。
 
 ## 当前状态快照
 
 > 以下状态在 **2026-09-01 23:36 CST** 依据进程、terminal JSON、20 条 history、日志和 SHA-256 复核。
 
-- P13 的 8→16-stage ImageNet growth 已于 `23:24 CST` 正常完成训练、最终验证和三项破坏性消融；它位于独立 worktree `/DATA/DATA1/guest3/2026OpticsMoE_p13_488f9d48`，而不是常用目录 `/DATA/DATA1/guest3/2026OpticsMoE`。
+- P13 的 8→16-stage ImageNet growth 已于 `23:24 CST` 正常完成训练、最终验证和三项破坏性消融；精选终态结果现位于主仓库 `FixedFeedbackSFT/evidence/p13_growth16_fa_source_20e_gb192/`，原 worktree 已注销。
 - 最佳完整深度 checkpoint 出现在 epoch 19：Top-1 `51.428%`、Top-5 `75.752%`；epoch 20 为 `51.352%/75.762%`。同一训练器重新评估的 8-stage P11 起点为 `51.346%/75.560%`，最佳差值仅 `+0.082/+0.192 pp`。
 - 16 个 phase 张量均 finite、non-zero 且有梯度，最佳模型平均绝对相位移动 `0.7567 rad`；16-stage 光学参数 `2,408,448`，电子 backbone 参数 `965,128`，可训练 backbone 的光学参数占比 `71.39%`。
 - 这说明 16 层确实参与学习且可完整导出，但当前只恢复到与 8 层几乎相同的性能；在同预算 8-stage continuation 完成前，不能宣称扩深带来有效或显著性能收益。
-- 新布局 clean worktree 位于项目内部 `/DATA/DATA1/guest3/2026OpticsMoE/FixedFeedbackSFT/runs/_worktrees/fa_reorg`（验收代码基线 `1dedeb6d`）：213 项项目测试、9/9 CLI、161 个 shell 和 2 个 PowerShell 语法检查通过；旧 P13 training checkpoint 与 backbone export 均已用新布局模型类严格加载。不得再在 `/DATA/DATA1/guest3/2026OpticsMoE` 外新建本项目的部署目录。
+- 新布局曾在 commit `1dedeb6d` 的临时 clean worktree 完成验收：213 项项目测试、9/9 CLI、161 个 shell 和 2 个 PowerShell 语法检查通过；P13 training checkpoint 与 backbone export 均严格加载。该 worktree 已于 2026-09-04 注销，后续只使用 `/DATA/DATA1/guest3/2026OpticsMoE` 主仓库。
 
 精确日志、run、checkpoint、SHA-256 和精选终态 JSON 见 [`RUN_REGISTRY.md`](RUN_REGISTRY.md) 与 [`evidence/p13_growth16_fa_source_20e_gb192/`](evidence/p13_growth16_fa_source_20e_gb192/)。
 
@@ -25,7 +25,7 @@ FixedFeedbackSFT/
 ├── README.md                  # 当前入口
 ├── PROJECTS.md                # 项目编号、关系、状态和结果
 ├── MIGRATION.md               # 本次搬迁的兼容约束与验收流程
-├── RUN_REGISTRY.md            # 服务器 worktree 与非 Git 产物登记
+├── RUN_REGISTRY.md            # 服务器产物、归档 tag 与非 Git checkpoint 登记
 └── paths.py                   # 不依赖父目录层数的仓库路径发现
 ```
 
@@ -63,12 +63,12 @@ python -m experiments.<project_name> ...
 
 迁移代码验收已通过，但仍不要把新布局当成旧 formal run 的原地 resume。旧 run 的 config digest 与 implementation manifest 必须保持不变；新实验应以旧 checkpoint 为受检 parent，建立新的 run 身份。详细原因和检查项见 [`MIGRATION.md`](MIGRATION.md)。
 
-## 为什么服务器上找不到 runs
+## 为什么 GitHub 上找不到 runs
 
 这不是“没有启动”的充分证据，主要有两个原因：
 
-1. 服务器长期任务使用独立、固定 commit 的 Git worktree。P13 当前产物在 `/DATA/DATA1/guest3/2026OpticsMoE_p13_488f9d48/.../runs/`，不在常用主目录。
-2. 仓库根 `.gitignore` 明确忽略 `runs`、`results`、`*.pt` 等大体积/生成产物。Git 只同步源码、配置、命令和小型报告，不会通过 `git pull` 把 checkpoint、history 或日志带到另一端。
+1. 仓库根 `.gitignore` 明确忽略 `runs`、`results`、`*.pt` 等大体积/生成产物。Git 只同步源码、配置、命令和小型报告，不会通过 `git pull` 把 checkpoint、history 或日志带到另一端。
+2. 精选 P12/P13 checkpoint 位于服务器主仓库 `FixedFeedbackSFT/evidence/`；文件级 SHA-256 和原 worktree/commit 见 `evidence/worktree_cleanup_20260904/retention_manifest.json`。旧 worktree 路径仅是历史 provenance，现已不存在。
 
 因此，两端同步分成两条通道：
 
@@ -111,11 +111,11 @@ FA-pretrained 固定的是预训练结束时各光学层的**层间反馈算子*
 
 ## 维护原则
 
-- 运行中的 worktree 不移动、不 pull、不 rebase、不切 commit。
-- 已完成 run 的 config、digest、implementation manifest 和 checkpoint 不原位改写。
+- 新任务不再在 `2026OpticsMoE` 外创建 worktree；隔离测试结束后必须将结果归位并注销临时 worktree。
+- 已完成 run 的 config、digest、implementation manifest 和精选 checkpoint 不原位改写。
 - 源码迁移尽量使用 `git mv`，保留历史；同一次提交不做架构语义重命名。
-- 新 run 使用新物理路径；旧 run 继续在原 worktree 复现，通过 registry 连接两代布局。
+- 新 run 使用所属项目的 `runs/`；旧 run 通过 `archive/worktree-*` tag、retention manifest 与 `evidence/` 复现。
 - 修改后必须通过旧模块名 import、CLI、测试、shell 语法、checkpoint load 和 P13 migration/gradient 验收后，才能称为“整理完成”。
 - 不使用 `git add -A` 混入用户的其他实验、数据集、传输 bundle 或生成数据。
 
-本入口更新：2026-09-02。
+本入口更新：2026-09-04。

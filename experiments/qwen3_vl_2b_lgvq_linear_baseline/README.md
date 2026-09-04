@@ -22,11 +22,17 @@ assistant-generation prefix after Qwen's final normalization. This is still the
 unmodified Qwen multimodal backbone output; avoiding the unused 151,936-way
 language logits saves memory without adding a model component.
 
-Large caches and results are written to:
+The canonical source location is:
 
 ```text
-/root/autodl-tmp/qwen3vl_lgvq_linear_baseline_artifacts
+experiments/qwen3_vl_2b_lgvq_linear_baseline
 ```
+
+By default, large caches and results are written to this project's
+`artifacts/` directory. The local Qwen model and dataset manifest can be set
+without editing code through `LGVQ_MODEL_PATH`, `LGVQ_MANIFEST_PATH`, and
+`LGVQ_ARTIFACTS_DIR`. Historical paths in `EXPERIMENT_RECORD.md` document the
+original AutoDL run and are not active source locations.
 
 See `COMMANDS.md` for the exact execution order and `EXPERIMENT_RECORD.md` for
 the completed 2026-09-03 results, timing protocol, and evidence paths.
