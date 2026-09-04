@@ -1,0 +1,24 @@
+{
+  "schema_version": 2,
+  "updated_at_utc": "2026-09-04T15:10:00+00:00",
+  "project_root": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54",
+  "csv": "all_run_index.csv",
+  "row_count": 189,
+  "run_count": 187,
+  "formal_artifact_count": 2,
+  "retention_class_counts": {
+    "metrics_only": 180,
+    "keep_formal_dependency": 7,
+    "keep_formal_checkpoint": 2
+  },
+  "run_bytes_after_prune": 1802525576,
+  "run_checkpoint_bytes_after_prune": 1760646908,
+  "checkpoint_prune": {
+    "status": "complete",
+    "deleted_files": 1571,
+    "deleted_bytes": 17672923796,
+    "manifest": "artifacts/storage_cleanup_20260904/checkpoint_prune_manifest.csv",
+    "post_prune_verification": "artifacts/storage_cleanup_20260904/post_prune_verification.json"
+  },
+  "note": "All non-PT run evidence remains in place. Formal dependency checkpoints and requested temporal-9 phase snapshots were retained and verified."
+}
