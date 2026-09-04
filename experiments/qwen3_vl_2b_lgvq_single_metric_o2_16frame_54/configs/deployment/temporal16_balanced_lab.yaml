@@ -1,0 +1,23 @@
+base_config: ../release/temporal16_balanced_standardized.yaml
+
+# Self-contained paths used by the balanced Temporal-16 laboratory ZIP.
+# Keep this file and the deployment/ directory in their extracted locations.
+output_dir: ../../lab_runs/temporal16_balanced
+
+data:
+  dataset_root: null
+  manifest: ../../deployment/data/lgvq_train2250_test558.csv
+  vision_cache: ../../deployment/data/qwen3vl_front_16f_49x1024_quality14.pt
+  language_cache: ../../deployment/data/qwen3vl_front_temporal_prompt_2048.pt
+  quality_feature_cache: null
+  raw_frame_cache: null
+  vgg_feature_cache: null
+  training_soft_targets: ../../deployment/data/training_only_teacher_predictions.pt
+
+training:
+  # The hardware bridge receives the packaged checkpoint explicitly.
+  initialization_checkpoint: null
+
+initialization:
+  qwen_model_path: null
+  reset_serial_router_phase: false

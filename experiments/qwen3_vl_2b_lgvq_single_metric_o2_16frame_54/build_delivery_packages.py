@@ -153,6 +153,30 @@ def build_lab(root: Path, config: Path, checkpoint: Path, output: Path, guide: P
         path = root / PROJECT / name
         if path.is_file():
             selected[path.relative_to(root).as_posix()] = path
+    study_document = root / PROJECT / "TEMPORAL_16_36_SPEED_QUALITY_STUDY.md"
+    if settings.target_name == "temporal" and study_document.is_file():
+        selected[study_document.relative_to(root).as_posix()] = study_document
+    if settings.target_name == "temporal" and settings.frame_count in (16, 36):
+        study_root = root / PROJECT / "artifacts/temporal16_36_study"
+        report = study_root / "models" / (
+            f"temporal{settings.frame_count}_balanced_calibrated_report.json"
+        )
+        if report.is_file():
+            selected[
+                f"{PROJECT}/deployment/evidence/formal_metrics_report.json"
+            ] = report
+        for relative in (
+            "tradeoff",
+            f"temporal{settings.frame_count}_optical_fields",
+        ):
+            directory = study_root / relative
+            if directory.is_dir():
+                for path in directory.rglob("*"):
+                    if path.is_file():
+                        selected[
+                            f"{PROJECT}/deployment/evidence/{relative}/"
+                            f"{path.relative_to(directory).as_posix()}"
+                        ] = path
     figures = root / PROJECT / "artifacts/temporal9_final_figures"
     if settings.target_name == "temporal" and figures.is_dir():
         _add_tree(selected, root, f"{PROJECT}/artifacts/temporal9_final_figures")
