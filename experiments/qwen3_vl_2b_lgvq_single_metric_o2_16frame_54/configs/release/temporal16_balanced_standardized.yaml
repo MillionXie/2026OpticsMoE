@@ -1,0 +1,18 @@
+base_config: temporal16_balanced.yaml
+
+# Same 16-frame physical graph, with fixed non-affine four-detector channel
+# calibration on the sequence router. This is calibration of measured optical
+# energies, not a learned electronic routing network.
+output_dir: ../../runs/lgvq_temporal_qwenfront_o2_16f54_dc20_balanced_standardized
+random_seed: 65
+
+router:
+  serial_flatfield_calibration: true
+  serial_channel_standardization: true
+
+training:
+  epochs: 60
+
+loss:
+  serial_router_balance_weight: 0.35
+  serial_router_importance_weight: 0.15

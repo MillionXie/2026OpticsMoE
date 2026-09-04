@@ -81,10 +81,11 @@ def _path(value: Any, config_path: Path) -> Path | None:
 class Geometry:
     """518 simulation canvas with a centered 478-pixel hardware active field.
 
-    Temporal supports either a 4x4 layout of 114-pixel lanes with 54-pixel
-    experts or a compact 3x3 layout of 156-pixel lanes with 77-pixel experts.
-    Spatial retains the earlier 2x2 layout of 232-pixel lanes with 109-pixel
-    experts.  The later serial MoE4 always retains measured 109/123 geometry.
+    Temporal supports 4x4 lanes with 54-pixel experts, compact 3x3 lanes with
+    77-pixel experts, or 6x6 lanes with 37-pixel experts. Spatial retains the
+    earlier 2x2 layout of 232-pixel lanes with 109-pixel experts. The later
+    serial MoE4 always retains measured 109/123 geometry. Every formal layout
+    uses the same centered 478-pixel active field on the 518-pixel canvas.
     """
 
     canvas_size: int = 518
@@ -173,6 +174,15 @@ class Geometry:
             "parallel_expert_size": 77,
             "parallel_expert_pitch": 79,
         }
+        temporal36 = {
+            **common,
+            "lane_grid": 6,
+            "lane_size": 77,
+            "lane_pitch": 79,
+            "lane_offset": 3,
+            "parallel_expert_size": 37,
+            "parallel_expert_pitch": 40,
+        }
         spatial4 = {
             **common,
             "lane_grid": 2,
@@ -182,10 +192,16 @@ class Geometry:
             "parallel_expert_size": 109,
             "parallel_expert_pitch": 123,
         }
-        if formal and asdict(self) not in (temporal16, temporal9, spatial4):
+        if formal and asdict(self) not in (
+            temporal16,
+            temporal9,
+            temporal36,
+            spatial4,
+        ):
             raise ValueError(
                 "Formal geometry must be either Spatial-4 "
-                f"{spatial4}, Temporal-9 {temporal9}, or Temporal-16 {temporal16}"
+                f"{spatial4}, Temporal-9 {temporal9}, Temporal-16 {temporal16}, "
+                f"or Temporal-36 {temporal36}"
             )
 
 
@@ -365,12 +381,12 @@ class ExperimentSettings:
                 f"The {self.target_name} checkpoint must use its exact target-specific "
                 "five-level prompt; cross-target prompt reuse is forbidden"
             )
-        if self.frame_count not in (4, 9, 16):
-            raise ValueError("Formal single-target models support 4, 9, or 16 frames")
+        if self.frame_count not in (4, 9, 16, 36):
+            raise ValueError("Formal single-target models support 4, 9, 16, or 36 frames")
         if self.frame_count != self.geometry.lane_grid**2:
             raise ValueError("frame_count must equal lane_grid squared")
         if not self.synthetic:
-            allowed_frames = (4,) if self.target_name == "spatial" else (9, 16)
+            allowed_frames = (4,) if self.target_name == "spatial" else (9, 16, 36)
             if self.frame_count not in allowed_frames:
                 raise ValueError(
                     f"{self.target_name} formally requires one of {allowed_frames} frames"

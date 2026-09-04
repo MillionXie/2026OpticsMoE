@@ -133,6 +133,17 @@ def test_release_configs_are_independent_single_targets() -> None:
     assert temporal.geometry.parallel_expert_pitch == 60
 
 
+def test_temporal36_release_config_keeps_the_same_active_field() -> None:
+    temporal = load_settings(ROOT / "configs/release/temporal36.yaml")
+    assert temporal.target_name == "temporal"
+    assert temporal.frame_count == 36
+    assert temporal.geometry.canvas_size == 518
+    assert temporal.geometry.active_size == 478
+    assert temporal.geometry.lane_grid == 6
+    assert temporal.geometry.parallel_expert_size == 37
+    assert len(temporal.geometry.lane_origins) == 36
+
+
 def test_sixteen_frame_fractions_cover_central_span() -> None:
     assert len(FRAME_FRACTIONS) == 16
     assert FRAME_FRACTIONS[0] == pytest.approx(0.10)
