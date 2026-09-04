@@ -161,6 +161,13 @@ def _apply_trainable_scope(
                     "frame_merger.",
                 )
             )
+        elif scope == "serial_router_and_readout":
+            # Rebalance the language-stage optical router without perturbing
+            # either feature-producing optical path.  The readout remains
+            # trainable so a changed Top-k mixture can be re-calibrated.
+            trainable = name.startswith("serial_router.") or name.startswith(
+                "readout."
+            )
         else:  # Settings validation should make this unreachable.
             raise ValueError(f"Unsupported trainable scope: {scope}")
         parameter.requires_grad_(trainable)
