@@ -1,0 +1,10 @@
+d2nn_mnist4_single_layer_17um_10cm_v2,7
+document,14
+FixedFeedbackSFT,1
+.gitignore,1
+lab_lgvq,1
+lab_qwen,2
+qwen3_vl_2b_lgvq_single_metric_o2_16frame_54,195
+qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_early_robust_tradeoff,2
+qwen3_vl_embedding_2b_grocery10_optical_retrieval,3
+qwen3_vl_embedding_2b_lsp_pose_optical_router,12

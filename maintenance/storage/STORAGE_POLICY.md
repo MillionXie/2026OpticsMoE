@@ -40,3 +40,14 @@ It writes `storage_inventory.csv`, `transfer_inventory.csv`, and
 `bundle_index.csv` beside this document. The indexes contain sizes, timestamps,
 and SHA256 values where appropriate, so later users and AI agents can identify
 what was moved or removed.
+
+For three-location source reconciliation, also run:
+
+```powershell
+python maintenance/storage/build_sync_audit.py
+```
+
+The resulting `experiment_sync_audit_20260905.csv` records local/server/GitHub
+presence and direct inter-experiment Python imports. Follow
+`SYNC_RECONCILIATION_PLAN_20260905.md` before resetting either working tree or
+removing an apparently old experiment directory.
