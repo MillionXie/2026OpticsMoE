@@ -14,8 +14,11 @@ data:
   vgg_feature_cache: null
   training_soft_targets: ../../deployment/data/training_only_teacher_predictions.pt
 
+training:
+  # The laboratory bridge always receives the packaged checkpoint explicitly.
+  # Clear the source-server warm-start path inherited from the release config.
+  initialization_checkpoint: null
+
 initialization:
-  checkpoint: null
   qwen_model_path: null
   reset_serial_router_phase: false
-

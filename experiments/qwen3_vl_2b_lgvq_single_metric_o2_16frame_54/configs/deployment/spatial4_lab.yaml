@@ -1,0 +1,22 @@
+base_config: ../release/spatial_balanced_router_strong_b5.yaml
+
+# Self-contained paths used by the Spatial-4 laboratory ZIP. Keep these paths
+# unchanged after extracting the archive.
+output_dir: ../../lab_runs/spatial4
+
+data:
+  dataset_root: null
+  manifest: ../../deployment/data/lgvq_train2250_test558.csv
+  vision_cache: ../../deployment/data/qwen3vl_front_4f_196x1024_quality14.pt
+  language_cache: ../../deployment/data/qwen3vl_front_spatial_prompt_2048.pt
+  quality_feature_cache: ../../deployment/data/lgvq_quality_conv5_4f_196x192.pt
+  raw_frame_cache: null
+  vgg_feature_cache: ../../deployment/data/lgvq_vgg16_4f_196x512.pt
+  training_soft_targets: ../../deployment/data/training_only_teacher_predictions.pt
+
+training:
+  initialization_checkpoint: null
+
+initialization:
+  qwen_model_path: null
+  reset_serial_router_phase: false
