@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import inspect
 import json
+import os
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -562,16 +563,24 @@ def _sample_order_sha256(sample_ids: Sequence[str]) -> str:
 
 def _atomic_json(path: Path, payload: Mapping[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".tmp")
-    temporary.write_text(json.dumps(dict(payload), indent=2, sort_keys=True), encoding="utf-8")
-    temporary.replace(path)
+    temporary = path.with_name(f"{path.name}.{os.getpid()}.tmp")
+    try:
+        temporary.write_text(
+            json.dumps(dict(payload), indent=2, sort_keys=True), encoding="utf-8"
+        )
+        temporary.replace(path)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def _atomic_torch_save(path: Path, payload: Mapping[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".tmp")
-    torch.save(dict(payload), temporary)
-    temporary.replace(path)
+    temporary = path.with_name(f"{path.name}.{os.getpid()}.tmp")
+    try:
+        torch.save(dict(payload), temporary)
+        temporary.replace(path)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def _model_contract(model: torch.nn.Module, visual: torch.nn.Module, model_path: Path) -> dict[str, Any]:
@@ -842,8 +851,10 @@ def build_cache(
 ) -> dict[str, Any]:
     if target_name not in TARGET_PROMPTS:
         raise ValueError(f"target_name must be one of {sorted(TARGET_PROMPTS)}")
-    if batch_size <= 0 or chunk_rows <= 0 or frame_count not in (4, 16):
-        raise ValueError("batch/chunk sizes must be positive and frame_count must be 4 or 16")
+    if batch_size <= 0 or chunk_rows <= 0 or frame_count not in (4, 9, 16):
+        raise ValueError(
+            "batch/chunk sizes must be positive and frame_count must be 4, 9, or 16"
+        )
     if token_grid not in (7, 14):
         raise ValueError("token_grid must be 7 or 14")
     output_tokens = token_grid * token_grid
@@ -1217,7 +1228,7 @@ def main() -> int:
     parser.add_argument("--language-output", type=Path, default=None)
     parser.add_argument("--target", choices=sorted(TARGET_PROMPTS), default=None)
     parser.add_argument("--manifest", type=Path, default=None)
-    parser.add_argument("--frame-count", type=int, choices=(4, 16), default=None)
+    parser.add_argument("--frame-count", type=int, choices=(4, 9, 16), default=None)
     parser.add_argument("--token-grid", type=int, choices=(7, 14), default=None)
     parser.add_argument("--batch-size", type=int, default=2, help="Videos per GPU batch")
     parser.add_argument("--chunk-rows", type=int, default=16, help="Videos per resumable shard")

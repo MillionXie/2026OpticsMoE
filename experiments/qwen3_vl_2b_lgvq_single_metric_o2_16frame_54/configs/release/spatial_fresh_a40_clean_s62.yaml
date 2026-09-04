@@ -1,0 +1,8 @@
+base_config: spatial_fresh_a50_clean_s60.yaml
+output_dir: ../../runs/lgvq_spatial_fresh_a40_clean_s62
+random_seed: 62
+fusion:
+  alpha_min: 0.40
+  alpha_initial: 0.52
+  alpha_max: 0.90
+

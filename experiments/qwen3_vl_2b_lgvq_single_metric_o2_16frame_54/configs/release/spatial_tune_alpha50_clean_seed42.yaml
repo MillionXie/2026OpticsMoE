@@ -1,0 +1,29 @@
+base_config: spatial_stem_seed42.yaml
+
+output_dir: ../../runs/lgvq_spatial_tune_alpha50_clean_seed42
+random_seed: 742
+
+robustness:
+  input_shift_pixels: 0
+  phase_shift_pixels: 0
+  ccd_shift_pixels: 0
+  phase_dropout_p: 0.00
+  phase_dropout_cell_size: 4
+
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_qwenfront_o2_4f109_dc20_stemwarm_seed42/best_observed_test_checkpoint.pt
+  epochs: 70
+  batch_size: 32
+  learning_rate: 0.00005
+  phase_learning_rate: 0.003
+  router_phase_learning_rate: 0.004
+  test_interval_epochs: 1
+
+loss:
+  ranking_weight: 1.00
+  correlation_weight: 2.00
+  optical_alignment_weight: 0.00
+  router_balance_weight: 0.01
+  router_importance_weight: 0.001
+  router_capture_weight: 0.01
+  soft_target_weight: 0.00

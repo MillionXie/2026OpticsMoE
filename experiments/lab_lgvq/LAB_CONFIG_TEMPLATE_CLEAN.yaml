@@ -1,0 +1,49 @@
+# 实验人员唯一需要编辑的文件。prepare_lab 会据此生成 generated/*.yaml。
+
+# 仅填写 LUT 文件名；文件必须位于：
+# experiments/hardware_sdk/vendor_sdk/amplitude_meadowlark/LUT Files/
+amplitude_lut_filename: slm7930_at532-70c-pixel-2_linearized-amplitude.lut
+amplitude_lut_expected_sha256: null
+
+# 单位 µs。更换光源、光功率、曝光或 LUT 后必须重做曝光检查。
+camera_exposure_us: 3500.0
+
+phase_slm:
+  center_xy: [980.0, 590.0]
+  flip_vertical_before_raster: true
+  flip_horizontal_before_raster: false
+
+# ImageWriteComplete 返回后再等待该时间，然后请求 CCD 图像。
+capture_timing:
+  formal_slm_settle_delay_ms: 60
+  discard_frames_after_display: 1
+  camera_warmup_frames: 3
+
+# CCD 2048×2048 全传感器坐标，不要求是 4 的倍数。
+# 必须按模型光场的逻辑 TL/TR/BR/BL 标注；未测时四项全部保持 null。
+logical_corners_full_sensor_xy:
+  top_left: null
+  top_right: null
+  bottom_right: null
+  bottom_left: null
+
+amplitude_lut_calibration:
+  gray_point_count: 128
+  frames_per_gray: 3
+  target_transfer: field_amplitude
+  output_lut_filename: newly_linearized_amplitude.lut
+  maximum_verification_intensity_rmse: 0.10
+  maximum_verification_field_amplitude_rmse: 0.08
+  maximum_verification_monotonic_violations: 2
+  maximum_saturation_fraction: 0.01
+
+timing_diagnostic:
+  settle_delay_ms_values: [0, 50, 100, 200, 400]
+  repeats_per_digit_and_delay: 1
+  discard_frames_after_display: 1
+  minimum_pcc_to_reference: 0.95
+  maximum_gain_aligned_nmae: 0.15
+  maximum_absolute_mean_ratio_error: 0.15
+  maximum_saturation_fraction: 0.01
+  minimum_p99_uint8: 16
+

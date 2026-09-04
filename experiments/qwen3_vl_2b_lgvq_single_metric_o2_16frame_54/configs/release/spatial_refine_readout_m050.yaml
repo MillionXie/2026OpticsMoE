@@ -1,0 +1,10 @@
+base_config: spatial_refine_only_m025.yaml
+output_dir: ../../runs/lgvq_spatial_refine_readout_m050
+random_seed: 2342
+model:
+  quality_refiner_enabled: true
+  quality_refiner_max: 0.50
+training:
+  trainable_scope: quality_refiner_readout
+  learning_rate: 0.00002
+

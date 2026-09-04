@@ -1,0 +1,12 @@
+base_config: spatial_refine_only_m025.yaml
+output_dir: ../../runs/lgvq_spatial_refine_rank_m050
+random_seed: 2542
+model:
+  quality_refiner_enabled: true
+  quality_refiner_max: 0.50
+training:
+  learning_rate: 0.00010
+loss:
+  ranking_weight: 1.00
+  correlation_weight: 2.00
+  soft_target_weight: 0.00

@@ -1,0 +1,15 @@
+base_config: spatial_stem_seed42.yaml
+output_dir: ../../runs/lgvq_spatial_refine_only_m025
+random_seed: 2042
+
+model:
+  quality_refiner_enabled: true
+  quality_refiner_max: 0.25
+
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_qwenfront_o2_4f109_dc20_stemwarm_seed42/best_observed_test_checkpoint.pt
+  trainable_scope: quality_refiner_only
+  epochs: 80
+  learning_rate: 0.00020
+  test_interval_epochs: 1
+

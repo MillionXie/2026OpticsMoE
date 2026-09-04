@@ -1,0 +1,16 @@
+base_config: temporal9_compact_flatfield.yaml
+
+# Adds non-trainable four-channel running mean/variance calibration after the
+# optical detector energies.  There is still no electronic router network:
+# physical energies -> fixed calibration -> softmax -> hard Top-2.
+output_dir: ../../runs/lgvq_temporal_qwenfront_o2_9f77_dc20_detector_standardized
+random_seed: 54
+
+router:
+  serial_channel_standardization: true
+  temperature: 1.10
+  noise_std: 0.08
+
+loss:
+  serial_router_balance_weight: 0.35
+  serial_router_importance_weight: 0.25

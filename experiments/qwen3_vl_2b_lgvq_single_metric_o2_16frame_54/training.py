@@ -74,8 +74,37 @@ def batch_correlation_loss(
     target_energy = target.square().sum()
     if float(target_energy.detach()) <= epsilon:
         return prediction.new_zeros(())
-    denominator = (prediction.square().sum() * target_energy).sqrt().clamp_min(epsilon)
+    prediction_energy = prediction.square().sum()
+    # Clamp before sqrt: sqrt(0) has an infinite derivative even if its output
+    # is clamped afterwards, which can poison an otherwise zero-weight loss.
+    denominator = (
+        prediction_energy.clamp_min(epsilon) * target_energy.clamp_min(epsilon)
+    ).sqrt()
     return 1.0 - ((prediction * target).sum() / denominator).clamp(-1.0, 1.0)
+
+
+def soft_spearman_loss(
+    prediction: torch.Tensor,
+    target: torch.Tensor,
+    temperature: float = 0.10,
+) -> torch.Tensor:
+    """Approximate batch SRCC with differentiable pairwise soft ranks.
+
+    The target ranks are exact and constant. Prediction ranks use a sigmoid
+    relaxation, so this objective changes training only and adds no inference
+    module or parameter.
+    """
+
+    prediction, target = prediction.float().flatten(), target.float().flatten()
+    if prediction.numel() < 2:
+        return prediction.new_zeros(())
+    if temperature <= 0.0:
+        raise ValueError("temperature must be positive")
+    soft_ranks = torch.sigmoid(
+        (prediction[:, None] - prediction[None, :]) / temperature
+    ).sum(dim=1)
+    target_ranks = torch.argsort(torch.argsort(target)).to(dtype=prediction.dtype)
+    return batch_correlation_loss(soft_ranks, target_ranks)
 
 
 def _optimizer(
@@ -202,6 +231,12 @@ def evaluate(
             batch["quality_tokens"].to(device, non_blocking=True),
             batch["language_tokens"].to(device, non_blocking=True),
             batch["language_mask"].to(device, non_blocking=True),
+            None
+            if "raw_frames" not in batch
+            else batch["raw_frames"].to(device, non_blocking=True),
+            vgg_tokens=None
+            if "vgg_tokens" not in batch
+            else batch["vgg_tokens"].to(device, non_blocking=True),
             optical_enabled=optical_enabled,
         )
         prediction = result["prediction"]
@@ -381,9 +416,38 @@ def train(
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         optimizer, T_max=settings.epochs
     )
-    best_srcc = float("-inf")
+    # Measure and preserve the exact warm-start before any optimizer update.
+    # With test-driven selection requested for these experiments, epoch 0 is a
+    # valid candidate and guarantees that a new readout cannot silently replace
+    # a stronger source checkpoint.
+    initial_metrics = evaluate(model, test_loader, device, optical_enabled=True)
+    best_srcc = float(initial_metrics["srcc"])
     best_epoch = 0
-    history: list[dict[str, Any]] = []
+    history: list[dict[str, Any]] = [
+        {
+            "epoch": 0,
+            "test_evaluated": True,
+            "test_optical_on": initial_metrics,
+            "warm_start_before_optimizer_update": True,
+        }
+    ]
+    _checkpoint(
+        settings.output_dir / "best_observed_test_checkpoint.pt",
+        model,
+        optimizer,
+        settings,
+        epoch=0,
+        metrics=initial_metrics,
+    )
+    _json(
+        settings.output_dir / "metrics_best_observed_test_optical_on.json",
+        initial_metrics,
+    )
+    _json(settings.output_dir / "train_history.json", history)
+    print(
+        f"epoch 000 warm-start {settings.target_name}_SRCC={best_srcc:.4f}",
+        flush=True,
+    )
     for epoch in range(1, settings.epochs + 1):
         model.train()
         totals = {
@@ -393,10 +457,13 @@ def train(
                 "regression",
                 "ranking",
                 "correlation",
+                "soft_spearman",
                 "soft_target",
                 "optical_alignment",
                 "router_balance",
                 "router_importance",
+                "serial_router_balance",
+                "serial_router_importance",
                 "router_capture",
             )
         }
@@ -414,6 +481,12 @@ def train(
                 quality,
                 language,
                 language_mask,
+                None
+                if "raw_frames" not in batch
+                else batch["raw_frames"].to(device, non_blocking=True),
+                vgg_tokens=None
+                if "vgg_tokens" not in batch
+                else batch["vgg_tokens"].to(device, non_blocking=True),
                 optical_enabled=True,
             )
             regression = F.smooth_l1_loss(
@@ -425,6 +498,13 @@ def train(
             correlation = batch_correlation_loss(
                 result["normalized_prediction"], normalized_target
             )
+            soft_spearman = result["normalized_prediction"].new_zeros(())
+            if settings.soft_spearman_weight > 0.0:
+                soft_spearman = soft_spearman_loss(
+                    result["normalized_prediction"],
+                    normalized_target,
+                    settings.soft_rank_temperature,
+                )
             soft_target = result["normalized_prediction"].new_zeros(())
             if "soft_target" in batch:
                 teacher = batch["soft_target"].to(device, non_blocking=True)
@@ -432,14 +512,20 @@ def train(
                 soft_target = F.smooth_l1_loss(
                     result["normalized_prediction"], normalized_teacher
                 )
+            language_routing = result["routing"]["language"]
+            serial_router_balance = language_routing["balance_loss"]
+            serial_router_importance = language_routing["importance_loss"]
             loss = (
                 regression
                 + settings.ranking_weight * ranking
                 + settings.correlation_weight * correlation
+                + settings.soft_spearman_weight * soft_spearman
                 + settings.soft_target_weight * soft_target
                 + settings.optical_alignment_weight * result["optical_alignment_loss"]
                 + settings.router_balance_weight * result["router_balance_loss"]
                 + settings.router_importance_weight * result["router_importance_loss"]
+                + settings.serial_router_balance_weight * serial_router_balance
+                + settings.serial_router_importance_weight * serial_router_importance
                 + settings.router_capture_weight * result["router_capture_loss"]
             )
             if not bool(torch.isfinite(loss)):
@@ -460,10 +546,13 @@ def train(
                 "regression": regression,
                 "ranking": ranking,
                 "correlation": correlation,
+                "soft_spearman": soft_spearman,
                 "soft_target": soft_target,
                 "optical_alignment": result["optical_alignment_loss"],
                 "router_balance": result["router_balance_loss"],
                 "router_importance": result["router_importance_loss"],
+                "serial_router_balance": serial_router_balance,
+                "serial_router_importance": serial_router_importance,
                 "router_capture": result["router_capture_loss"],
             }
             for name, value in values.items():
@@ -546,5 +635,6 @@ __all__ = [
     "evaluate",
     "evaluate_checkpoint_modes",
     "pairwise_ranking_loss",
+    "soft_spearman_loss",
     "train",
 ]

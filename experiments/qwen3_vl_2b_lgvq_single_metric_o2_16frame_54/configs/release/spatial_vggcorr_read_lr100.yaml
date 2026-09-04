@@ -1,0 +1,6 @@
+base_config: spatial_vggcorr_read_lr050.yaml
+output_dir: ../../runs/lgvq_spatial_vggcorr_read_lr100
+model:
+  vgg_correction_max: 0.50
+training:
+  learning_rate: 0.00010

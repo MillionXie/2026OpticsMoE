@@ -1,0 +1,6 @@
+base_config: temporal9_compact_zero_order_aware.yaml
+
+# Corrected compact-router contract: crop the actual 47 valid sequence rows
+# before the fixed 45x45 resampling, rather than resampling padded zeros.
+output_dir: ../../runs/lgvq_temporal_qwenfront_o2_9f77_dc20_zero_order_crop
+random_seed: 50

@@ -1,0 +1,5 @@
+base_config: spatial_vggcorr_s75_read_lr010.yaml
+output_dir: ../../runs/lgvq_spatial_vggcorr_s75_read_lr030
+random_seed: 111
+training:
+  learning_rate: 0.00003

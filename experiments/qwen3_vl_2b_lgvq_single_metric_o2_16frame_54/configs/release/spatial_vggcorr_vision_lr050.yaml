@@ -1,0 +1,8 @@
+base_config: spatial_vggcorr_only_lr1000.yaml
+output_dir: ../../runs/lgvq_spatial_vggcorr_vision_lr050
+random_seed: 80
+training:
+  trainable_scope: vgg_correction_and_vision_path
+  learning_rate: 0.00005
+  phase_learning_rate: 0.00030
+  router_phase_learning_rate: 0.00050

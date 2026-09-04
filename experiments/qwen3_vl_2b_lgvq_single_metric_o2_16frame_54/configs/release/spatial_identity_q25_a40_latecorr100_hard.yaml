@@ -1,0 +1,6 @@
+base_config: spatial_identity_q25_a40_latecorr100.yaml
+output_dir: ../../runs/lgvq_spatial_identity_q25_a40_latecorr100_hard
+random_seed: 96
+loss:
+  soft_target_weight: 0.00
+

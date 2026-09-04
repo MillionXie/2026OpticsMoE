@@ -1,0 +1,16 @@
+base_config: spatial_stem_warmstart.yaml
+output_dir: ../../runs/lgvq_spatial_fresh_a50_clean_s60
+random_seed: 60
+
+robustness:
+  input_shift_pixels: 0
+  phase_shift_pixels: 0
+  ccd_shift_pixels: 0
+  phase_dropout_p: 0.00
+  phase_dropout_cell_size: 4
+
+training:
+  epochs: 160
+  batch_size: 32
+  test_interval_epochs: 2
+

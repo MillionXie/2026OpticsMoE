@@ -1,0 +1,7 @@
+base_config: spatial_deep_residual_r050.yaml
+output_dir: ../../runs/lgvq_spatial_deep_residual_r100
+random_seed: 3142
+model:
+  spatial_readout_mode: spatial_deep_residual
+  spatial_residual_max: 1.00
+

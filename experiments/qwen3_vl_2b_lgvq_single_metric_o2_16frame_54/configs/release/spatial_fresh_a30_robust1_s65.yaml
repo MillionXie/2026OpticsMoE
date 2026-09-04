@@ -1,0 +1,13 @@
+base_config: spatial_fresh_a50_clean_s60.yaml
+output_dir: ../../runs/lgvq_spatial_fresh_a30_robust1_s65
+random_seed: 65
+fusion:
+  alpha_min: 0.30
+  alpha_initial: 0.48
+  alpha_max: 0.90
+robustness:
+  input_shift_pixels: 1
+  phase_shift_pixels: 1
+  ccd_shift_pixels: 1
+  phase_dropout_p: 0.01
+  phase_dropout_cell_size: 4

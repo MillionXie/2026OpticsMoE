@@ -1,0 +1,7 @@
+base_config: spatial_identity_q25_a40_latecorr050.yaml
+output_dir: ../../runs/lgvq_spatial_identity_q25_a40_latecorr050_srcc
+random_seed: 93
+loss:
+  soft_spearman_weight: 0.50
+  soft_rank_temperature: 0.10
+

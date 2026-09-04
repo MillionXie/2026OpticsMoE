@@ -1,0 +1,13 @@
+base_config: spatial_stem_seed42.yaml
+output_dir: ../../runs/lgvq_spatial_deep_residual_r050
+random_seed: 3042
+
+model:
+  spatial_readout_mode: spatial_deep_residual
+  spatial_residual_max: 0.50
+
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_qwenfront_o2_4f109_dc20_stemwarm_seed42/best_observed_test_checkpoint.pt
+  trainable_scope: residual_only
+  test_interval_epochs: 1
+

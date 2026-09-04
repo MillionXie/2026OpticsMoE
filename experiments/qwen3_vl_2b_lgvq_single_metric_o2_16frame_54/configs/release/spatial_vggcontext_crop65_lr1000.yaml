@@ -1,0 +1,5 @@
+base_config: spatial_vggcontext_full_lr1000.yaml
+output_dir: ../../runs/lgvq_spatial_vggcontext_crop65_lr1000
+random_seed: 102
+data:
+  vgg_feature_cache: ../../artifacts/lgvq_vgg16_crop65_4f_196x512.pt

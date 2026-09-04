@@ -1,0 +1,18 @@
+base_config: spatial_residual_warm_best.yaml
+
+# A conservative companion run: optimize the complete readout while keeping
+# all four optical/electronic stages, optical routers and fusion gates fixed.
+output_dir: ../../runs/lgvq_spatial_qwenfront_o2_4f109_dc20_readout_only_r008_best
+
+model:
+  spatial_residual_max: 0.08
+
+training:
+  trainable_scope: readout_only
+  epochs: 80
+  learning_rate: 0.000025
+
+loss:
+  ranking_weight: 0.20
+  correlation_weight: 0.40
+  soft_target_weight: 2.00

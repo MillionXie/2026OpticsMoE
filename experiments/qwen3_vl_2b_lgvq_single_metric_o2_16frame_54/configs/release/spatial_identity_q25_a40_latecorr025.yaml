@@ -1,0 +1,14 @@
+base_config: spatial_identity_q25_a40_clean.yaml
+output_dir: ../../runs/lgvq_spatial_identity_q25_a40_latecorr025
+random_seed: 90
+model:
+  late_input_correction_enabled: true
+  late_input_correction_max: 0.25
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_identity_q25_a40_clean/best_observed_test_checkpoint.pt
+  trainable_scope: late_input_correction_only
+  epochs: 100
+  batch_size: 128
+  learning_rate: 0.00050
+  test_interval_epochs: 1
+

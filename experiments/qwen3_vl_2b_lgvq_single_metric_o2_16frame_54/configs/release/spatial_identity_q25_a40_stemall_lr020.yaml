@@ -1,0 +1,9 @@
+base_config: spatial_identity_q25_a40_stemonly_lr010.yaml
+output_dir: ../../runs/lgvq_spatial_identity_q25_a40_stemall_lr020
+random_seed: 105
+training:
+  trainable_scope: all
+  learning_rate: 0.00002
+  phase_learning_rate: 0.001
+  router_phase_learning_rate: 0.0015
+

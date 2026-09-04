@@ -1,0 +1,17 @@
+base_config: spatial_stem_seed42.yaml
+output_dir: ../../runs/lgvq_spatial_skip_b000_seed42
+random_seed: 842
+
+model:
+  electronic_skip_enabled: true
+  electronic_skip_initial: 0.00
+  electronic_skip_max: 1.00
+
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_qwenfront_o2_4f109_dc20_stemwarm_seed42/best_observed_test_checkpoint.pt
+  epochs: 60
+  learning_rate: 0.00005
+  phase_learning_rate: 0.002
+  router_phase_learning_rate: 0.003
+  test_interval_epochs: 1
+

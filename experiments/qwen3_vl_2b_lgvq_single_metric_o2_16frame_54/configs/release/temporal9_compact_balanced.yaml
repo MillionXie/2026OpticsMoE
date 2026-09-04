@@ -1,0 +1,14 @@
+base_config: temporal9_compact.yaml
+
+# Stronger anti-collapse candidate. The hard Top-2 forward decision is still
+# unchanged; only its differentiable load/importance training loss is stronger.
+output_dir: ../../runs/lgvq_temporal_qwenfront_o2_9f77_dc20_balanced
+random_seed: 46
+
+router:
+  temperature: 1.1
+  noise_std: 0.05
+
+loss:
+  router_balance_weight: 0.15
+  router_importance_weight: 0.06

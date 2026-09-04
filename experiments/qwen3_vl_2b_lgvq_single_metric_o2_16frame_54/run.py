@@ -57,10 +57,14 @@ def _load_compatible_initialization(
     if not isinstance(source, dict):
         raise ValueError("Initialization checkpoint has no state_dict mapping")
     destination = model.state_dict()
+    skipped_by_policy = []
+    if settings.reset_serial_router_phase_on_initialization:
+        skipped_by_policy.append("serial_router.raw_router_phase")
     compatible = {
         name: value
         for name, value in source.items()
         if name in destination
+        and name not in skipped_by_policy
         and torch.is_tensor(value)
         and tuple(value.shape) == tuple(destination[name].shape)
     }
@@ -74,7 +78,103 @@ def _load_compatible_initialization(
         "loaded_parameters": sum(value.numel() for value in compatible.values()),
         "missing_tensors": len(result.missing_keys),
         "unexpected_tensors": list(result.unexpected_keys),
+        "skipped_by_policy": skipped_by_policy,
         "policy": "exact-name and exact-shape only; no silent resizing",
+    }
+
+
+def _load_frame_stem_initialization(
+    model: LGVQSingleMetricOEO16, settings: ExperimentSettings
+) -> dict[str, Any]:
+    if model.frame_stem is None:
+        return {"used": False, "reason": "frame stem disabled"}
+    path = settings.frame_stem_checkpoint
+    if path is None or not path.is_file():
+        raise FileNotFoundError(f"Frame-stem checkpoint is missing: {path}")
+    raw = torch.load(path, map_location="cpu", weights_only=False)
+    state = raw.get("state_dict", raw.get("model", raw))
+    if not isinstance(state, dict):
+        raise ValueError("Frame-stem checkpoint has no state_dict mapping")
+    prefix = "frame_stem."
+    stem_state = {
+        name[len(prefix) :]: value
+        for name, value in state.items()
+        if name.startswith(prefix)
+    }
+    if not stem_state:
+        raise RuntimeError("Frame-stem checkpoint contains no frame_stem tensors")
+    model.frame_stem.load_state_dict(stem_state, strict=True)
+    return {
+        "used": True,
+        "path": str(path),
+        "loaded_tensors": len(stem_state),
+        "loaded_parameters": sum(value.numel() for value in stem_state.values()),
+        "policy": "exact conv5 stem restore; no resizing",
+    }
+
+
+def _apply_trainable_scope(
+    model: LGVQSingleMetricOEO16, settings: ExperimentSettings
+) -> dict[str, Any]:
+    """Apply an explicit fine-tuning scope after warm-start initialization.
+
+    ``residual_only`` is deliberately strict: the proven predictor, optical
+    masks, routers and fusion gates remain bit-identical while the zero-start
+    residual readout learns a correction.  This prevents the first optimizer
+    step from erasing the warm-start result.
+    """
+    scope = settings.trainable_scope
+    trainable_names: list[str] = []
+    frozen_names: list[str] = []
+    for name, parameter in model.named_parameters():
+        if scope == "all":
+            trainable = True
+        elif scope == "readout_only":
+            trainable = name.startswith("readout.")
+        elif scope == "residual_only":
+            trainable = name.startswith("readout.residual_")
+        elif scope == "quality_refiner_only":
+            trainable = name.startswith("quality_refiner.")
+        elif scope == "quality_refiner_readout":
+            trainable = name.startswith("quality_refiner.") or name.startswith(
+                "readout."
+            )
+        elif scope == "late_input_correction_only":
+            trainable = name.startswith("late_input_correction.")
+        elif scope == "frame_stem_only":
+            trainable = name.startswith("frame_stem.")
+        elif scope == "frame_stem_and_readout":
+            trainable = name.startswith("frame_stem.") or name.startswith("readout.")
+        elif scope == "vgg_correction_only":
+            trainable = name.startswith("vgg_correction.")
+        elif scope == "vgg_correction_and_readout":
+            trainable = name.startswith("vgg_correction.") or name.startswith("readout.")
+        elif scope == "vgg_correction_and_vision_path":
+            trainable = name.startswith(
+                (
+                    "vgg_correction.",
+                    "vision_routes.",
+                    "parallel_optics.",
+                    "parallel_router.",
+                    "fusions.0.",
+                    "fusions.1.",
+                    "frame_merger.",
+                )
+            )
+        else:  # Settings validation should make this unreachable.
+            raise ValueError(f"Unsupported trainable scope: {scope}")
+        parameter.requires_grad_(trainable)
+        (trainable_names if trainable else frozen_names).append(name)
+    if not trainable_names:
+        raise RuntimeError(f"Training scope {scope!r} selected no parameters")
+    named = dict(model.named_parameters())
+    return {
+        "scope": scope,
+        "trainable_tensors": len(trainable_names),
+        "trainable_parameters": sum(named[name].numel() for name in trainable_names),
+        "frozen_tensors": len(frozen_names),
+        "frozen_parameters": sum(named[name].numel() for name in frozen_names),
+        "trainable_names": trainable_names,
     }
 
 
@@ -93,6 +193,20 @@ def synthetic_smoke(settings: ExperimentSettings) -> dict[str, Any]:
             serial_expert_pitch=20,
         )
         parallel_intervals = ((8, 16), (24, 32))
+    elif settings.frame_count == 9:
+        geometry = Geometry(
+            canvas_size=96,
+            active_size=88,
+            lane_grid=3,
+            lane_size=28,
+            lane_pitch=30,
+            lane_offset=0,
+            parallel_expert_size=13,
+            parallel_expert_pitch=15,
+            serial_expert_size=40,
+            serial_expert_pitch=20,
+        )
+        parallel_intervals = ((6, 12), (16, 22))
     else:
         geometry = Geometry(
             canvas_size=96,
@@ -119,6 +233,12 @@ def synthetic_smoke(settings: ExperimentSettings) -> dict[str, Any]:
         ccd_shift_pixels=1,
         phase_dropout_cell_size=2,
         k_space_enabled=False,
+        trainable_frame_stem_enabled=False,
+        raw_frame_cache_path=None,
+        frame_stem_checkpoint=None,
+        vgg_feature_cache_path=None,
+        serial_router_input_size=min(24, geometry.serial_expert_size),
+        trainable_scope="all",
         batch_size=2,
         num_workers=0,
         initialization_checkpoint=None,
@@ -128,8 +248,16 @@ def synthetic_smoke(settings: ExperimentSettings) -> dict[str, Any]:
     small.validate()
     model = build_model(small).train()
     generator = torch.Generator().manual_seed(small.random_seed)
-    vision = torch.randn(2, small.frame_count, 49, 1024, generator=generator)
-    quality = torch.randn(2, small.frame_count, 49, 14, generator=generator)
+    vision = torch.randn(
+        2, small.frame_count, small.token_count, 1024, generator=generator
+    )
+    quality = torch.randn(
+        2,
+        small.frame_count,
+        small.token_count,
+        small.quality_input_width,
+        generator=generator,
+    )
     language = torch.randn(2, 12, 2048, generator=generator)
     mask = torch.ones(2, 12, dtype=torch.bool)
     result = model(vision, quality, language, mask, optical_enabled=True)
@@ -213,6 +341,13 @@ def main() -> int:
     model = build_model(settings)
     initialization = _load_compatible_initialization(model, settings)
     _json(settings.output_dir / "initialization_report.json", initialization)
+    stem_initialization = _load_frame_stem_initialization(model, settings)
+    _json(
+        settings.output_dir / "frame_stem_initialization_report.json",
+        stem_initialization,
+    )
+    training_scope = _apply_trainable_scope(model, settings)
+    _json(settings.output_dir / "trainable_scope_report.json", training_scope)
     _json(settings.output_dir / "parameter_breakdown.json", model.parameter_breakdown())
     device = _device(settings)
     if args.phase == "train":
@@ -232,3 +367,7 @@ def main() -> int:
 
 
 __all__ = ["main", "synthetic_smoke"]
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

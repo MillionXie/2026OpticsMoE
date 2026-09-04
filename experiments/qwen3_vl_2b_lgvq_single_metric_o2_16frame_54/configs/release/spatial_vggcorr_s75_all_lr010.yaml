@@ -1,0 +1,8 @@
+base_config: spatial_vggcorr_s75_read_lr010.yaml
+output_dir: ../../runs/lgvq_spatial_vggcorr_s75_all_lr010
+random_seed: 112
+training:
+  trainable_scope: all
+  learning_rate: 0.00001
+  phase_learning_rate: 0.00010
+  router_phase_learning_rate: 0.00010

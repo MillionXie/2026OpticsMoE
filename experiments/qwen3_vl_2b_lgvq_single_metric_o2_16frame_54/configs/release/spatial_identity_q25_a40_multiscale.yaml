@@ -1,0 +1,6 @@
+base_config: spatial_identity_q25_a40_clean.yaml
+output_dir: ../../runs/lgvq_spatial_identity_q25_a40_multiscale
+random_seed: 74
+model:
+  spatial_readout_mode: spatial_multiscale
+

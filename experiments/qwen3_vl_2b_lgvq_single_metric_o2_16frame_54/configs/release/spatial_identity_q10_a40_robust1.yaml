@@ -1,0 +1,9 @@
+base_config: spatial_identity_q10_a40_clean.yaml
+output_dir: ../../runs/lgvq_spatial_identity_q10_a40_robust1
+random_seed: 75
+robustness:
+  input_shift_pixels: 1
+  phase_shift_pixels: 1
+  ccd_shift_pixels: 1
+  phase_dropout_p: 0.01
+  phase_dropout_cell_size: 4

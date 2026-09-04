@@ -76,6 +76,7 @@ def run_preflight(
             "parallel_expert_pitch": settings.geometry.parallel_expert_pitch,
             "serial_expert_size": settings.geometry.serial_expert_size,
             "serial_expert_pitch": settings.geometry.serial_expert_pitch,
+            "serial_router_input_size": settings.serial_router_input_size,
         },
         "router": {
             "implementation": "optical region-energy router",
@@ -88,6 +89,19 @@ def run_preflight(
             "serial_detector_intervals": [
                 list(value) for value in settings.serial_router_intervals
             ],
+            "serial_detector_flatfield_calibration": (
+                settings.serial_router_flatfield_calibration
+            ),
+            "serial_detector_channel_standardization": (
+                settings.serial_router_channel_standardization
+            ),
+            "serial_zero_order_handling": (
+                "crop valid token rows, resample to a centered square, and keep "
+                "the detector windows outside the central guard band"
+                if settings.serial_router_input_size
+                != settings.geometry.serial_expert_size
+                else "full serial feature field"
+            ),
         },
         "fusion": {
             "equation": "F=rE*((1-alpha)*E/rE + alpha*O/rO)/rms(mixture)",

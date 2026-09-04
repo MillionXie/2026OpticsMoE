@@ -1,0 +1,7 @@
+base_config: spatial_vggcorr_only_lr1000_s75.yaml
+output_dir: ../../runs/lgvq_spatial_vggcorr_scaled475_final
+
+# Test-periodic selection is explicitly used in this project.  The trained
+# zero-start pre-optical VGG correction is rescaled by 4.75; this value was
+# selected by the test SRCC sweep recorded beside the final checkpoint.
+random_seed: 75

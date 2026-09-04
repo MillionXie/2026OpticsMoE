@@ -1,0 +1,18 @@
+base_config: temporal9_compact_zero_order_rebalance.yaml
+
+# Deliberately stronger anti-collapse endpoint.  This is a trade-off candidate:
+# it is selected only if expert utilization improves without materially
+# reducing Temporal SRCC versus the moderate rebalance configuration.
+output_dir: ../../runs/lgvq_temporal_qwenfront_o2_9f77_dc20_zero_order_strong_balance
+random_seed: 52
+
+router:
+  temperature: 1.30
+  noise_std: 0.15
+
+training:
+  router_phase_learning_rate: 0.070
+
+loss:
+  serial_router_balance_weight: 1.50
+  serial_router_importance_weight: 1.00

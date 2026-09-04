@@ -405,6 +405,58 @@ def load_quality_feature_cache(
     return payload
 
 
+def load_raw_frame_cache(
+    path: str | Path, *, sample_ids: Sequence[str], frame_count: int
+) -> dict[str, Any]:
+    """Load the exact uint8 frames used to train the optional conv5 stem."""
+
+    source = Path(path).expanduser().resolve()
+    payload = _load_torch(source, mmap=True)
+    if not isinstance(payload, dict) or payload.get("schema_version") != 1:
+        raise RuntimeError(f"Unsupported raw-frame cache: {source}")
+    if list(map(str, payload.get("sample_ids", []))) != list(map(str, sample_ids)):
+        raise RuntimeError("Raw-frame cache sample order differs from the manifest")
+    frames = payload.get("frames")
+    expected_prefix = (len(sample_ids), frame_count, 3)
+    if (
+        not torch.is_tensor(frames)
+        or frames.dtype != torch.uint8
+        or frames.ndim != 5
+        or tuple(frames.shape[:3]) != expected_prefix
+        or tuple(frames.shape[-2:]) != (224, 224)
+    ):
+        raise ValueError(
+            f"raw frames must be uint8 [N,{frame_count},3,224,224], got "
+            f"{None if not torch.is_tensor(frames) else tuple(frames.shape)}"
+        )
+    return payload
+
+
+def load_vgg_feature_cache(
+    path: str | Path, *, sample_ids: Sequence[str], frame_count: int, token_grid: int
+) -> dict[str, Any]:
+    """Load frozen plain-VGG16 Conv/ReLU/Pool tokens in manifest order."""
+
+    source = Path(path).expanduser().resolve()
+    payload = _load_torch(source, mmap=True)
+    expected_contract = "lgvq_frozen_plain_vgg16_4f_14x14x512_v1"
+    if not isinstance(payload, dict) or payload.get("contract") != expected_contract:
+        raise RuntimeError(f"Unsupported plain-VGG feature cache: {source}")
+    if list(map(str, payload.get("sample_ids", []))) != list(map(str, sample_ids)):
+        raise RuntimeError("Plain-VGG feature cache sample order differs from the manifest")
+    tokens = payload.get("tokens")
+    expected = (len(sample_ids), frame_count, token_grid * token_grid, 512)
+    if not torch.is_tensor(tokens) or tokens.dtype != torch.float16 or tuple(tokens.shape) != expected:
+        raise ValueError(f"plain-VGG tokens must be float16 {expected}")
+    # The cache builder validates every generated batch before persisting it.
+    # Touching all ~2.1 GB here once per parallel trial causes severe CPU/I/O
+    # contention, so loading performs representative boundary/midpoint checks.
+    probe_indices = sorted({0, len(sample_ids) // 2, len(sample_ids) - 1})
+    if any(not bool(torch.isfinite(tokens[index]).all()) for index in probe_indices):
+        raise ValueError("Plain-VGG cache contains non-finite values in a probe sample")
+    return payload
+
+
 def _align_soft_targets(
     path: Path,
     *,
@@ -519,6 +571,25 @@ def load_single_metric_cache(settings: ExperimentSettings) -> dict[str, Any]:
                 "source_frame_cache_sha256",
             )
         }
+    if settings.raw_frame_cache_path is not None:
+        raw_frames = load_raw_frame_cache(
+            settings.raw_frame_cache_path,
+            sample_ids=manifest_ids,
+            frame_count=settings.frame_count,
+        )
+        result["raw_frames"] = raw_frames["frames"]
+        result["raw_frame_cache_path"] = str(settings.raw_frame_cache_path)
+        result["raw_frame_cache_sha256"] = file_sha256(settings.raw_frame_cache_path)
+    if settings.vgg_feature_cache_path is not None:
+        vgg = load_vgg_feature_cache(
+            settings.vgg_feature_cache_path,
+            sample_ids=manifest_ids,
+            frame_count=settings.frame_count,
+            token_grid=settings.token_grid,
+        )
+        result["vgg_tokens"] = vgg["tokens"]
+        result["vgg_feature_cache_path"] = str(settings.vgg_feature_cache_path)
+        result["vgg_feature_cache_sha256"] = file_sha256(settings.vgg_feature_cache_path)
     if settings.training_soft_targets_path is not None:
         soft, present, provenance = _align_soft_targets(
             settings.training_soft_targets_path,
@@ -539,6 +610,12 @@ def cache_report(payload: Mapping[str, Any]) -> dict[str, Any]:
         "vision_dtype": str(tokens.dtype),
         "language_shape": list(payload["language_tokens"].shape),
         "quality_shape": list(payload["quality_tokens"].shape),
+        "raw_frame_shape": None
+        if "raw_frames" not in payload
+        else list(payload["raw_frames"].shape),
+        "vgg_shape": None
+        if "vgg_tokens" not in payload
+        else list(payload["vgg_tokens"].shape),
         "language_dtype": str(payload["language_tokens"].dtype),
         "input_ids_shape": list(payload["input_ids"].shape),
         "split_counts": {
@@ -589,6 +666,10 @@ class LGVQSingleMetricDataset(Dataset[dict[str, Any]]):
         }
         if "soft_target_present" in self.payload and bool(self.payload["soft_target_present"][source]):
             item["soft_target"] = self.payload["soft_targets"][source].float()
+        if "raw_frames" in self.payload:
+            item["raw_frames"] = self.payload["raw_frames"][source]
+        if "vgg_tokens" in self.payload:
+            item["vgg_tokens"] = self.payload["vgg_tokens"][source].float()
         return item
 
 
@@ -598,6 +679,8 @@ __all__ = [
     "cache_report",
     "file_sha256",
     "load_language_cache",
+    "load_raw_frame_cache",
+    "load_vgg_feature_cache",
     "load_single_metric_cache",
     "load_vision_cache",
     "read_manifest",

@@ -1,0 +1,17 @@
+base_config: spatial_identity_q25_a40_clean.yaml
+output_dir: ../../runs/lgvq_spatial_identity_q25_a40_stemonly_lr010
+random_seed: 100
+data:
+  raw_frame_cache: ../../../lgvq_four_stage_optical_electronic_109_no_attention_vqa/artifacts/lgvq_four_frames_center100_224_uint8.pt
+initialization:
+  frame_stem_checkpoint: ../../../lgvq_four_stage_optical_electronic_109_no_attention_vqa/runs/lgvq_oeo109_alpha50_kd300_center100_v3/best_observed_test_checkpoint.pt
+model:
+  trainable_frame_stem_enabled: true
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_identity_q25_a40_clean/best_observed_test_checkpoint.pt
+  trainable_scope: frame_stem_only
+  epochs: 60
+  batch_size: 16
+  learning_rate: 0.00001
+  test_interval_epochs: 1
+

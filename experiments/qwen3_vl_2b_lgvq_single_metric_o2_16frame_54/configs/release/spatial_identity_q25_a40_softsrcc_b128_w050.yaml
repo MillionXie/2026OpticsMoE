@@ -1,0 +1,9 @@
+base_config: spatial_identity_q25_a40_clean.yaml
+output_dir: ../../runs/lgvq_spatial_identity_q25_a40_softsrcc_b128_w050
+random_seed: 74
+training:
+  batch_size: 128
+loss:
+  soft_spearman_weight: 0.50
+  soft_rank_temperature: 0.10
+

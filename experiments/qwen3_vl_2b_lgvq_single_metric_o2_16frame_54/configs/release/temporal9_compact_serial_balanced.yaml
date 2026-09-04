@@ -1,0 +1,17 @@
+base_config: temporal9_compact.yaml
+
+# Explicitly discourages the final serial optical router from reusing the same
+# two experts for almost every video. These terms affect training only; formal
+# inference remains a physical optical energy measurement followed by Top-2.
+output_dir: ../../runs/lgvq_temporal_qwenfront_o2_9f77_dc20_serial_balanced
+random_seed: 47
+
+router:
+  temperature: 1.15
+  noise_std: 0.06
+
+loss:
+  router_balance_weight: 0.10
+  router_importance_weight: 0.04
+  serial_router_balance_weight: 0.25
+  serial_router_importance_weight: 0.20
