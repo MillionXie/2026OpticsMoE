@@ -523,13 +523,15 @@ class ExperimentSettings:
             "vgg_correction_only",
             "vgg_correction_and_readout",
             "vgg_correction_and_vision_path",
+            "serial_router_and_readout",
         }:
             raise ValueError(
                 "training.trainable_scope must be all, readout_only, residual_only, "
                 "quality_refiner_only, quality_refiner_readout, or "
                 "late_input_correction_only, frame_stem_only, or "
                 "frame_stem_and_readout, vgg_correction_only, or "
-                "vgg_correction_and_readout, or vgg_correction_and_vision_path"
+                "vgg_correction_and_readout, vgg_correction_and_vision_path, or "
+                "serial_router_and_readout"
             )
         if self.trainable_scope == "late_input_correction_only" and not (
             self.late_input_correction_enabled
