@@ -198,7 +198,11 @@ def serial_router_from_ccd(
         probabilities,
         energy,
         active.sum((-2, -1)),
-        "measured_optical_serial_energy_top2",
+        (
+            "measured_optical_serial_energy_channel_standardized_top2"
+            if model.serial_router.channel_standardizer is not None
+            else "measured_optical_serial_energy_top2"
+        ),
     )
 
 

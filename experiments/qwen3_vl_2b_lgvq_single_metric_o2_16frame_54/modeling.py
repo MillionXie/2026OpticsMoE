@@ -441,7 +441,11 @@ class OpticalRouterSerial(nn.Module):
                 else (
                     "optical_serial_energy_flatfield_top2"
                     if self.settings.serial_router_flatfield_calibration
-                    else "optical_serial_energy_top2"
+                    else (
+                        "optical_serial_energy_channel_standardized_top2"
+                        if self.settings.serial_router_channel_standardization
+                        else "optical_serial_energy_top2"
+                    )
                 )
             ),
             **_routing_statistics(probabilities, selected),

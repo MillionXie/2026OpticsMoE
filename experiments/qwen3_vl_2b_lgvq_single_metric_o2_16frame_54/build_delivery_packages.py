@@ -145,7 +145,10 @@ def build_lab(root: Path, config: Path, checkpoint: Path, output: Path, guide: P
         "temporal9_compact_result.json",
         "SPATIAL_OPTIMIZATION_RESULT.md",
         "spatial_optimization_result.json",
+        "SPATIAL_BALANCED_FORMAL_RESULT.md",
+        "spatial_balanced_formal_result.json",
         "LAB_TEMPORAL9_GUIDE.md",
+        "LAB_SPATIAL4_GUIDE.md",
     ):
         path = root / PROJECT / name
         if path.is_file():
@@ -153,6 +156,9 @@ def build_lab(root: Path, config: Path, checkpoint: Path, output: Path, guide: P
     figures = root / PROJECT / "artifacts/temporal9_final_figures"
     if settings.target_name == "temporal" and figures.is_dir():
         _add_tree(selected, root, f"{PROJECT}/artifacts/temporal9_final_figures")
+    spatial_figures = root / PROJECT / "artifacts/spatial_balanced_final_figures"
+    if settings.target_name == "spatial" and spatial_figures.is_dir():
+        _add_tree(selected, root, f"{PROJECT}/artifacts/spatial_balanced_final_figures")
     with tempfile.TemporaryDirectory(prefix="lgvq_masks_") as temporary:
         mask_root = Path(temporary) / "hardware_masks"
         export_hardware_masks(settings, checkpoint, mask_root)
