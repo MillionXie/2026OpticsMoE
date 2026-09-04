@@ -74,5 +74,8 @@ All Windows deletions in this pass were sent to the Recycle Bin.
 - Moved the 1.5 GiB P08 ImageNet `assets`, `logs`, and `runs` from its obsolete
   top-level experiment directory into the canonical FixedFeedbackSFT project.
   Only disposable bytecode caches and empty legacy directories were removed.
+- Removed 21,928,989,320 bytes of Optical MLP per-sample/per-layer debug tensor
+  dumps. Formal checkpoints, metrics, summary figures, phase masks, and the
+  reusable CLIP feature cache were retained.
 - Added a global read-only run index generator. Large-result pruning remains a
   separate, manifest-driven step.

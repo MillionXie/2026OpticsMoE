@@ -32,6 +32,9 @@
 - CARLA was already absent when checked.
 - Deleted the explicitly approved `data/bench2drive` dataset after verifying
   there was no active process: 16,828,527,478 bytes and 497,315 files.
+- Deleted 21,928,989,320 bytes of per-sample/per-layer `debug_examples` from
+  the Optical MLP run. The formal `best.pt`, `last.pt`, metrics, training
+  curves, phase masks, and reusable CLIP cache remain in place.
 - Rehomed the remaining 1.5 GiB P08 ImageNet run directory from the obsolete
   top-level `experiments/qwen3_vl_patch_stem_8stage_optical_imagenet_backbone`
   path into its canonical owner at
@@ -52,3 +55,8 @@ whole server onto GitHub or the local machine.
 sizes, checkpoint counts, recognizable best checkpoints, metric/config
 presence, and a conservative retention recommendation. The index is evidence
 for later pruning; it is not itself authorization to delete a run.
+
+`prune_redundant_checkpoints.py` is conservative by construction: it only
+lists periodic `epoch_*`/`step_*` checkpoints when the same directory contains
+both a recognizable `best` checkpoint and `last`/`latest`. It defaults to a
+dry run and writes a manifest before `--apply` removes anything.
