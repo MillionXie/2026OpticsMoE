@@ -72,3 +72,20 @@
 - 正确的 gallery 类别排名越靠前，Top-k 和 MRR 越高。
 
 正式 checkpoint 为 `total_loss` 最小的 epoch 54，raw Top-1 `0.88500`，同 epoch EMA Top-1 `0.89000`。虽然 `test_*` 有完整逐轮记录，但它们没有参与该 checkpoint 选择；观察到的 raw Top-1 最大值 `0.89000` 只能作为 monitored-test 诊断。另需同时报告 `phase_learning_rate=0` 和 `phase_delta_run_rms_rad=0`，否则“光学 phase 可训练”的表述会与证据不符。
+
+<!-- OPENMOJI_METRICS_BEGIN -->
+## OpenMoji instruction editing
+
+| 字段 | 含义 | 方向 |
+|---|---|---:|
+| `cell_accuracy` | 6x6 全部网格单元的类别正确率（背景为第 0 类） | ↑ |
+| `changed_cell_accuracy` | 仅在 ground-truth 发生编辑的单元上计算类别正确率 | ↑ |
+| `foreground_category_accuracy` | 仅在 target 前景对象单元上计算类别正确率 | ↑ |
+| `preserved_cell_accuracy` | ground-truth 应保持不变的单元正确率 | ↑ |
+| `edit_grid_iou` | 预测编辑位置与真实编辑位置的 IoU | ↑ |
+| `object_f1` | 以 `(category,row,column)` 为对象身份的精确匹配 F1 | ↑ |
+| `scene_exact_match` | 整个 6x6 输出网格与 target 完全一致记为 1，否则为 0 | ↑ |
+| `task_accuracy` | add/replace/move/remove 指令类型分类正确率 | ↑ |
+
+正式结果使用 epoch 20 最终 EMA。测试集与训练集同分布但随机种子不重叠；没有独立 validation 和 unseen split。move 操作包含“删除旧位置+生成新位置”的联合约束，明显比 replace/remove 更难，应单独报告四类操作结果。
+<!-- OPENMOJI_METRICS_END -->

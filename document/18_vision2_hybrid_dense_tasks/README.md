@@ -110,3 +110,13 @@ CUDA_VISIBLE_DEVICES=3 python -m experiments.qwen3_vl_embedding_2b_caltech101_fo
 6. Caltech101 本次仅为仿真，不含 CCD 实测；相位虽有非零梯度，但 LR 为 0、run-level phase displacement 为 0，因此不能声称 phase mask 被优化。
 7. 四个任务的指标定义和量纲不同，禁止把 CC、IoU、PCK、Top-1 直接放在同一纵轴上比较高低。
 8. 当前结果能证明该架构在四个任务上的单次运行可行性，但尚不能证明统计显著性；正式论文仍需要多 seed 和匹配参数量的电子 baseline。
+
+<!-- FIVE_TASK_SAMPLE_ATLAS_BEGIN -->
+## 五任务逐样本可视化图谱（2026-08-18 补充）
+
+OpenMoji instruction editing 已作为第五项仿真任务纳入 `evidence/openmoji/`。完整逐样本图谱位于 `visualization_gallery_20260818/sample_atlas/index.html`，共 `880` 张带指标案例图：SALICON `160`、ISIC 2016 `160`、LSP `160`、Caltech101-10 `200`、OpenMoji `200`。
+
+每张图内已写入该样本的核心指标，任务页支持按样本/类别/操作搜索、按 strong/typical/weak 筛选和按主指标排序。分层标签只表示图集内部的相对分位，不能当作新的模型评价指标。`sample_atlas/ATLAS_INDEX.csv` 是统一选图索引，各任务 `manifest.csv` 保存未四舍五入的逐样本数值。
+
+OpenMoji 正式口径为 epoch 20 最终 EMA：test `n=1000`，scene exact match `0.6640`、object F1 `0.9016`、edit-grid IoU `0.7629`。该 test 每轮仅监控、没有参与 checkpoint 选择；数据没有单独 validation 或 unseen-distribution split，因此不能把结果写成跨分布泛化性能。
+<!-- FIVE_TASK_SAMPLE_ATLAS_END -->

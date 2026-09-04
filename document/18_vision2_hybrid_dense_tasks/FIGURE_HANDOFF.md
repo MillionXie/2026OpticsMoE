@@ -74,3 +74,13 @@
 3. 优先打开 SVG 编辑排版；
 4. 修改图注时同步检查 `METRIC_DEFINITIONS.md` 和 `evidence/summary.json`；
 5. 若替换证据文件，先更新 `SOURCE_MANIFEST.csv` 并保留旧快照，不直接覆盖本次结果。
+
+<!-- SAMPLE_ATLAS_HANDOFF_BEGIN -->
+## 逐样本选图图谱
+
+- 浏览入口：`visualization_gallery_20260818/sample_atlas/index.html`（共 `880` 例）。
+- 精确索引：`sample_atlas/ATLAS_INDEX.csv`；任务级索引：各任务目录内的 `manifest.csv`。
+- 每个任务都覆盖 strong/typical/weak 相对分位，建议论文定稿时同时选代表性成功、一般和失败案例，避免只挑最好样本。
+- 单图 PNG 已包含样本 ID、面板含义和逐样本指标；论文重新排版时应从 manifest 读取精确值，不要从像素图反推。
+- OpenMoji 按四种 operation 各 50 例；Caltech101 保留全部 200 个 test query（每类 20 个）。
+<!-- SAMPLE_ATLAS_HANDOFF_END -->

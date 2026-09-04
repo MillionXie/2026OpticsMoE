@@ -1,0 +1,6 @@
+numpy
+Pillow
+PyYAML
+safetensors
+torch>=2.6
+transformers>=4.57
