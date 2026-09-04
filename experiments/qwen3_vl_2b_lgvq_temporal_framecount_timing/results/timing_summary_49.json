@@ -1,0 +1,243 @@
+{
+  "schema_version": 1,
+  "contract": "qwen3vl_lgvq_temporal_raw_to_scalar_random_seek_v1",
+  "created_at_local": "2026-09-04 11:44:50 +0800",
+  "scope": "temporal prompt only; one raw video produces one scalar",
+  "timed_boundary": "open MP4 -> repeated random seeks for all requested frames -> 65% center crop -> 448x448 resize -> official Qwen processor/tokenizer -> host-to-device copy -> complete frozen Qwen3-VL vision+merger+language backbone -> final-token pool -> Linear(2048,1) -> CPU scalar",
+  "excluded_from_per_video_latency": [
+    "Python/model loading",
+    "one-time prompt chat-template rendering",
+    "warmup evaluations"
+  ],
+  "deliberately_disabled_accelerations": [
+    "sequential full-clip decoding",
+    "parallel video decoding",
+    "decoded-frame cache",
+    "Qwen feature cache",
+    "torch.compile",
+    "quantization",
+    "FlashAttention override"
+  ],
+  "decode_contract": "one cv2.VideoCapture per evaluation; CAP_PROP_POS_FRAMES + read for every sampled position, matching the original LGVQ project loaders",
+  "batch_size_videos": 1,
+  "temporal_prompt": "Please evaluate the temporal quality of this video and rate it using one of the following five levels: Excellent, Good, Fair, Poor, or Bad.",
+  "measurement_orders": [
+    [
+      49
+    ]
+  ],
+  "warmup_videos_per_frame_count": 2,
+  "model_path": "/root/autodl-tmp/models/Qwen3-VL-2B-Instruct",
+  "model_load_seconds": 0.0,
+  "model_total_parameters": 2127532032,
+  "model_trainable_parameters": 0,
+  "linear_readout_parameters": 2049,
+  "model_dtype": "bfloat16",
+  "attention_implementation": "sdpa",
+  "gpu": "NVIDIA GeForce RTX 5090 D",
+  "software": {
+    "python": "3.12.3",
+    "torch": "2.8.0+cu128",
+    "cuda": "12.8",
+    "opencv": "5.0.0"
+  },
+  "results": {
+    "49": {
+      "measured_video_evaluations": 558,
+      "unique_videos": 558,
+      "trials": 1,
+      "frame_fractions": [
+        0.1,
+        0.11666666666666667,
+        0.13333333333333333,
+        0.15000000000000002,
+        0.16666666666666669,
+        0.18333333333333335,
+        0.2,
+        0.21666666666666667,
+        0.23333333333333334,
+        0.25,
+        0.26666666666666666,
+        0.2833333333333333,
+        0.30000000000000004,
+        0.31666666666666665,
+        0.33333333333333337,
+        0.35,
+        0.3666666666666667,
+        0.3833333333333334,
+        0.4,
+        0.41666666666666674,
+        0.43333333333333335,
+        0.45000000000000007,
+        0.4666666666666667,
+        0.4833333333333334,
+        0.5000000000000001,
+        0.5166666666666667,
+        0.5333333333333333,
+        0.55,
+        0.5666666666666668,
+        0.5833333333333334,
+        0.6,
+        0.6166666666666667,
+        0.6333333333333333,
+        0.65,
+        0.6666666666666667,
+        0.6833333333333333,
+        0.7,
+        0.7166666666666667,
+        0.7333333333333334,
+        0.75,
+        0.7666666666666666,
+        0.7833333333333334,
+        0.8,
+        0.8166666666666667,
+        0.8333333333333334,
+        0.85,
+        0.8666666666666667,
+        0.8833333333333333,
+        0.9000000000000001
+      ],
+      "sequence_lengths": [
+        5138
+      ],
+      "mean_source_video_frames": 32.666666666666664,
+      "source_video_frame_count_distribution": {
+        "8": 93,
+        "16": 186,
+        "24": 93,
+        "36": 93,
+        "96": 93
+      },
+      "mean_unique_selected_frame_positions": 21.666666666666668,
+      "latency_ms_per_video": {
+        "decode_ms": {
+          "mean": 1154.196026820546,
+          "median": 765.2361724758521,
+          "std": 1130.083104661477,
+          "p05": 70.00520542496815,
+          "p95": 3347.245839168317,
+          "min": 57.184331119060516,
+          "max": 6784.358802018687
+        },
+        "processor_ms": {
+          "mean": 106.0856153773758,
+          "median": 105.3433334454894,
+          "std": 14.044395203186742,
+          "p05": 83.92990347929299,
+          "p95": 129.93089584633708,
+          "min": 75.02232794649899,
+          "max": 142.5491739064455
+        },
+        "host_to_device_ms": {
+          "mean": 18.664426122721967,
+          "median": 18.310615909285843,
+          "std": 1.0570672168470976,
+          "p05": 17.665548564400524,
+          "p95": 20.435262902174145,
+          "min": 17.08015985786915,
+          "max": 26.456724852323532
+        },
+        "qwen_backbone_ms": {
+          "mean": 252.98458323054564,
+          "median": 252.8946059755981,
+          "std": 0.5525697130324592,
+          "p05": 252.52546413103119,
+          "p95": 253.51924982387573,
+          "min": 252.08785198628902,
+          "max": 258.56694416143
+        },
+        "pool_and_linear_ms": {
+          "mean": 0.24285332231338413,
+          "median": 0.23537653032690287,
+          "std": 0.02594673477612992,
+          "p05": 0.2247318741865456,
+          "p95": 0.2952759969048202,
+          "min": 0.22008689120411873,
+          "max": 0.5552158690989017
+        },
+        "total_raw_video_to_scalar_ms": {
+          "mean": 1532.186026925281,
+          "median": 1144.7092520538718,
+          "std": 1135.389250648985,
+          "p05": 432.5637662434019,
+          "p95": 3732.2204396594316,
+          "min": 415.14087398536503,
+          "max": 7188.9796438626945
+        }
+      },
+      "videos_per_second_from_raw_video_to_scalar": 0.652662263215357,
+      "peak_cuda_allocated_bytes": 5310142464,
+      "peak_cuda_allocated_gib": 4.945455551147461,
+      "example_selected_positions": [
+        2,
+        3,
+        3,
+        3,
+        4,
+        4,
+        5,
+        5,
+        5,
+        6,
+        6,
+        7,
+        7,
+        7,
+        8,
+        8,
+        8,
+        9,
+        9,
+        10,
+        10,
+        10,
+        11,
+        11,
+        12,
+        12,
+        12,
+        13,
+        13,
+        13,
+        14,
+        14,
+        15,
+        15,
+        15,
+        16,
+        16,
+        16,
+        17,
+        17,
+        18,
+        18,
+        18,
+        19,
+        19,
+        20,
+        20,
+        20,
+        21,
+        21
+      ],
+      "example_input_shapes": {
+        "input_ids": [
+          1,
+          5138
+        ],
+        "attention_mask": [
+          1,
+          5138
+        ],
+        "pixel_values_videos": [
+          19600,
+          1536
+        ],
+        "video_grid_thw": [
+          1,
+          3
+        ]
+      }
+    }
+  }
+}
