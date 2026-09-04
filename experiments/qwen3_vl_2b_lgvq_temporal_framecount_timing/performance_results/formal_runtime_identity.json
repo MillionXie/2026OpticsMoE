@@ -1,0 +1,38 @@
+{
+  "status": "ready",
+  "frame_counts": [
+    4,
+    9,
+    16,
+    25,
+    36,
+    49
+  ],
+  "split_counts": {
+    "train": 2250,
+    "test": 558
+  },
+  "model_path": "/root/autodl-tmp/models/Qwen3-VL-2B-Instruct",
+  "manifest_path": "/root/qwen3vl_lgvq_linear_baseline/data/lgvq_split.csv",
+  "qwen_frozen": true,
+  "only_trainable_module": "one shared nn.Linear(2048,1)",
+  "trainable_parameters": 2049,
+  "epochs": 50,
+  "selection": "highest observed test mean of spatial and temporal SRCC",
+  "temporal_metrics_reported": [
+    "SRCC",
+    "KRCC",
+    "PLCC",
+    "RMSE",
+    "MAE"
+  ],
+  "sampling_matches_timing_experiment": true,
+  "runtime": {
+    "hostname": "autodl-container-hy0dk2b7m7-c93d1d5c",
+    "torch_version": "2.8.0+cu128",
+    "cuda_available": true,
+    "cuda_device_count": 1,
+    "cuda_device_0": "NVIDIA GeForce RTX 5090 D"
+  },
+  "note": "The shared linear head is trained with the spatial and temporal prompts, matching the strict baseline; this report extracts Temporal performance."
+}

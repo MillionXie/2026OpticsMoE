@@ -37,3 +37,8 @@
 
 36 帧条件实验由 `benchmark_extended.py` 执行；后来明确追加的 25/49 帧由
 `benchmark_additional.py` 执行。完整统计解释见 [TIMING_REPORT.md](TIMING_REPORT.md)。
+
+六档对应的 Temporal 性能、9.084 ms 六层光学传播参照、50×/100×参考线和逐帧数倍率
+见 `PERFORMANCE_TIMING_REPORT.md`；正式性能复现命令见
+[PERFORMANCE_COMMANDS.md](PERFORMANCE_COMMANDS.md)。速度与性能的正式数值均来自同一台
+RTX 5090 D，实验室服务器只保存最终副本。

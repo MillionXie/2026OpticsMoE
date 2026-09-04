@@ -1,0 +1,6 @@
+torch>=2.8
+transformers==4.57.6
+opencv-python
+Pillow
+numpy
+scipy

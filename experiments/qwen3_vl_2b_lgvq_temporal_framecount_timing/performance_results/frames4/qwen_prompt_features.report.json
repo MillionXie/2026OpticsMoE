@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "feature_contract": "full_qwen3vl_native_video_last_assistant_token_2048_v1",
+  "model_path": "/root/autodl-tmp/models/Qwen3-VL-2B-Instruct",
+  "frame_count": 4,
+  "frame_fractions": [
+    0.1,
+    0.37,
+    0.63,
+    0.9
+  ],
+  "sample_count": 2808,
+  "sample_order_sha256": "a093a55733aaa873e579d09a60c1cade2cfa92b47c5845ba2ed1987abd2900b7",
+  "prompts": {
+    "spatial": "Please evaluate the spatial quality of this video and rate it using one of the following five levels: Excellent, Good, Fair, Poor, or Bad.",
+    "temporal": "Please evaluate the temporal quality of this video and rate it using one of the following five levels: Excellent, Good, Fair, Poor, or Bad."
+  },
+  "prompt_sha256": "201b648ee40e589ac90cafc5d91f8203e9c70ab0bb84a0c88ba4c985593cd9bf",
+  "center_crop_short_side_fraction": 0.65,
+  "processor_pixels": 200704,
+  "pooling": "last valid assistant-generation-prefix hidden state after final Qwen norm",
+  "native_video_token": true,
+  "qwen_lm_head_executed": false,
+  "output": "/root/autodl-tmp/qwen3vl_lgvq_temporal_framecount_timing_performance/frames4/qwen_prompt_features.pt",
+  "qwen_total_parameters": 2127532032,
+  "qwen_trainable_parameters": 0,
+  "linear_head_not_executed_during_cache": true,
+  "batch_size_videos": 8,
+  "prompt_examples_per_video": 2,
+  "batch_count": 351,
+  "decode_seconds": 40.64425025996752,
+  "processor_seconds": 39.08107992634177,
+  "qwen_forward_seconds": 119.48325498192571,
+  "wall_seconds_this_invocation": 209.75001152209006,
+  "mean_qwen_forward_ms_per_prompt_video": 21.275508365727514,
+  "mean_pipeline_ms_per_unique_video_for_both_prompts": 70.94322833626603,
+  "peak_cuda_bytes": 5604789760,
+  "peak_cuda_gib": 5.21986722946167,
+  "split_counts": {
+    "train": 2250,
+    "test": 558
+  }
+}
