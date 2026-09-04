@@ -1,0 +1,7 @@
+base_config: formal_alpha50_kd150_center100_stats.yaml
+
+output_dir: ../../runs/lgvq_oeo109_alpha50_kd150_center100_v4stats_spatial2
+
+loss:
+  spatial_target_weight: 2.0
+  temporal_target_weight: 1.0

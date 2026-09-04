@@ -1,0 +1,6 @@
+base_config: formal_alpha50_kd075.yaml
+
+output_dir: ../../runs/lgvq_oeo109_alpha50_kd075_v3_warmv1
+
+training:
+  initialization_checkpoint: ../../runs/lgvq_oeo109_alpha50_kd075/best_observed_test_checkpoint.pt

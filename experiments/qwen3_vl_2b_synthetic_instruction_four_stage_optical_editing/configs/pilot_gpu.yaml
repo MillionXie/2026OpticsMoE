@@ -1,0 +1,60 @@
+seed: 42
+
+dataset:
+  data_dir: data/synthetic_instruction_four_stage_optical_editing/pilot_gpu
+  image_size: 224
+  train_samples: 512
+  test_samples: 128
+  grid_size: 7
+  object_half_size: 11
+  prompt_templates_per_operation: 3
+
+qwen:
+  model_id: Qwen/Qwen3-VL-2B-Instruct
+  checkpoint: auto
+  prompt_cache: prompt_hidden.pt
+  prompt_cache_batch_size: 16
+  prompt_max_tokens: 64
+
+model:
+  optical_enabled: true
+  electronic_width: 192
+  max_language_tokens: 64
+  palette_classes: 8
+  optical_fusion_initial: 0.05
+  optical_shift_pixels: 1
+  phase_dropout_p: 0.05
+  optical_base_config: experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/configs/release/caltech101_four_layer_optical_joint.yaml
+
+training:
+  epochs: 10
+  batch_size: 4
+  num_workers: 2
+  learning_rate: 0.0001
+  adapter_learning_rate: 0.0001
+  phase_learning_rate: 0.0001
+  router_learning_rate: 0.00005
+  readout_learning_rate: 0.00005
+  decoder_learning_rate: 0.0003
+  weight_decay: 0.01
+  warmup_electronic_epochs: 2
+  gradient_clip_norm: 1.0
+  ema_decay: 0.995
+  amp_enabled: true
+  resume: false
+
+loss:
+  changed_pixel_weight: 4.0
+  palette: 1.0
+  edit_mask: 1.0
+  preservation: 0.25
+  task: 0.1
+  edge: 0.25
+  ccd: 0.02
+  router_balance: 0.005
+
+logging:
+  interval_batches: 10
+  visualization_samples: 12
+
+output_dir: experiments/qwen3_vl_2b_synthetic_instruction_four_stage_optical_editing/runs/pilot_gpu

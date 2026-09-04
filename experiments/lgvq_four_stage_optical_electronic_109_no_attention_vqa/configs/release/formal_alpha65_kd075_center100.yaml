@@ -1,0 +1,8 @@
+base_config: formal_alpha50_kd075_center100.yaml
+
+output_dir: ../../runs/lgvq_oeo109_alpha65_kd075_center100_v3
+
+fusion:
+  alpha_min: 0.65
+  alpha_initial: 0.70
+  alpha_max: 0.90

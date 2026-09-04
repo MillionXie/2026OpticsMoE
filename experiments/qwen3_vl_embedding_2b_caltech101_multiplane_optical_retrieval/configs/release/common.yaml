@@ -1,0 +1,46 @@
+base_config: ../../../qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/configs/release/caltech101_four_layer_optical_joint.yaml
+
+training:
+  # Four-way trend comparison budget: measured full epochs took 7.5--8.6 min.
+  # GPU-5 benchmark: 1,300 samples + test evaluation took 297.4 s.  Twenty-eight
+  # epochs leave margin for all four variants inside the 10-hour hard budget.
+  epochs: 28
+  learning_rate: 0.0001
+  adapter_learning_rate: 0.0001
+  readout_learning_rate: 0.0002
+  phase_learning_rate: 0.0005
+  router_learning_rate: 0.0002
+  lambda_router_balance: 0.02
+  lambda_router_importance: 0.005
+  lambda_ccd_operating_point: 0.0
+  phase_focus: {enabled: false, warmup_epochs: 0, interval_epochs: 1}
+
+batching:
+  # Every batch includes all ten classes and two positive views per class.
+  batch_size: 20
+  pk_skus_per_batch: 10
+  pk_images_per_sku: 2
+  optimizer_steps_per_epoch: 65
+  sampling_mode: cyclic_balanced
+
+language_optical:
+  phase:
+    parameterization: sigmoid
+    init: small_normal
+    init_std: 0.02
+    dropout_mode: block_phase_bypass
+    dropout_p: 0.05
+    dropout_block_size: 8
+
+multiplane:
+  expert_planes: 4
+  d2nn_planes: 5
+  global_planes: 1
+  interplane_distance_m: 0.10
+  detector_distance_m: 0.10
+  static_expert_apertures: true
+  save_stage_diagnostics: true
+  oeo:
+    eps: 1.0e-5
+    sigmoid_gain: 1.0
+    layernorm_affine: false

@@ -1,0 +1,27 @@
+output_dir: ../calib/dual_slm_k1
+
+logical:
+  active_size: 478
+  pixel_pitch_um: 17.0
+  grating_period_px: 8
+
+amplitude_slm:
+  size_wh: [1024, 1024]
+  pixel_pitch_um: 17.0
+  center_xy: [512.0, 512.0]
+  # Current corrected hardware polarity: 255 is white/bright/transmissive.
+  invert_before_export: false
+
+phase_slm:
+  size_wh: [1920, 1200]
+  pixel_pitch_um: 8.0
+  center_xy: [980.0, 590.0]
+  flip_vertical: true
+  flip_horizontal: false
+
+# Only k=1 is packaged. Generate a separate sweep only if the new 4F relay
+# shows a measurable magnification error.
+phase_scale_sweep:
+  # Generator also emits the exact k=1 file first. The two tiny neighbours are
+  # retained only as a quick diagnostic and do not change the formal model.
+  absolute_deltas: [0.0005]

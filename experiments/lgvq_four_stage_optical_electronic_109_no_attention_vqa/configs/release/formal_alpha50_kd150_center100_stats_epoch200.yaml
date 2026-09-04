@@ -1,0 +1,6 @@
+base_config: formal_alpha50_kd150_center100_stats.yaml
+
+output_dir: ../../runs/lgvq_oeo109_alpha50_kd150_center100_v4stats_epoch200
+
+training:
+  epochs: 200

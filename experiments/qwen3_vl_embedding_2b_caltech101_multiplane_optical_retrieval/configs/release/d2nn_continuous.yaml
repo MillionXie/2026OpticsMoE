@@ -1,0 +1,5 @@
+base_config: common.yaml
+multiplane:
+  variant: d2nn_continuous
+output_dir: ../../runs/d2nn_continuous
+

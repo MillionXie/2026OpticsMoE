@@ -1,0 +1,4 @@
+base_config: formal_alpha50_kd075_center100_warm_v1.yaml
+
+output_dir: ../../runs/lgvq_oeo109_alpha50_kd075_center100_v3_warmv1_seed43
+random_seed: 43

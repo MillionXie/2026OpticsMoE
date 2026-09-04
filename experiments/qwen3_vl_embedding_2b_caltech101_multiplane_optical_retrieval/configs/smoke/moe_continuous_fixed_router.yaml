@@ -1,0 +1,4 @@
+base_config: common.yaml
+multiplane: {variant: moe_continuous_fixed_router}
+output_dir: ../../runs/smoke_moe_continuous_fixed_router
+

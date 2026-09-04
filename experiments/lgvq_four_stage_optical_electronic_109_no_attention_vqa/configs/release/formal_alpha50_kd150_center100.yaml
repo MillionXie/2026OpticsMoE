@@ -1,0 +1,6 @@
+base_config: formal_alpha50_kd075_center100.yaml
+
+output_dir: ../../runs/lgvq_oeo109_alpha50_kd150_center100_v3
+
+loss:
+  soft_target_weight: 1.50

@@ -1,0 +1,9 @@
+base_config: formal_alpha50_kd.yaml
+
+output_dir: ../../runs/lgvq_oeo109_alpha50_kd035_center100_v3
+
+data:
+  frame_cache: ../../artifacts/lgvq_four_frames_center100_224_uint8.pt
+
+model:
+  crop_fraction: 1.0

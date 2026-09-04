@@ -1,0 +1,5 @@
+base_config: common.yaml
+multiplane:
+  variant: moe_oeo_fixed_router
+output_dir: ../../runs/moe_oeo_fixed_router
+

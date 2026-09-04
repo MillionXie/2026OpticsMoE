@@ -1,0 +1,4 @@
+base_config: common.yaml
+multiplane:
+  variant: d2nn_oeo_sigmoid
+output_dir: ../../runs/d2nn_oeo_sigmoid

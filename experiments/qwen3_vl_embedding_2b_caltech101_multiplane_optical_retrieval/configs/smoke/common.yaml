@@ -1,0 +1,14 @@
+base_config: ../release/common.yaml
+dataset:
+  train_limit_per_sku: 4
+  test_limit_per_sku: 1
+training:
+  epochs: 1
+  evaluate_test_each_epoch: false
+  log_interval_batches: 1
+batching:
+  batch_size: 4
+  pk_skus_per_batch: 2
+  pk_images_per_sku: 2
+  optimizer_steps_per_epoch: 1
+  sampling_mode: epoch_random

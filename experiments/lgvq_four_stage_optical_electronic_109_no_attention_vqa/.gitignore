@@ -1,0 +1,5 @@
+artifacts/
+runs/
+logs/
+*.pt
+__pycache__/

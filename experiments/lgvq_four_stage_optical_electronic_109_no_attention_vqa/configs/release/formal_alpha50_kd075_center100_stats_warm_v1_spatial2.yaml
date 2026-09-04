@@ -1,0 +1,9 @@
+base_config: formal_alpha50_kd075_center100_stats_warm_v1.yaml
+
+output_dir: ../../runs/lgvq_oeo109_alpha50_kd075_center100_v4stats_warmv1_spatial2
+
+loss:
+  # Normalize [2,1] to mean one inside every supervised output loss.  This
+  # prioritizes Spatial without doubling the total optimizer-step scale.
+  spatial_target_weight: 2.0
+  temporal_target_weight: 1.0

@@ -57,11 +57,11 @@ CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_caltech101_ro
 ## 5. 固定评估10类模型
 
 ```bash
-CUDA_VISIBLE_DEVICES=5 python -m experiments.qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval --config experiments/qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval/configs/release/caltech101_target10_finetune.yaml --phase evaluate --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval/runs/caltech101_target10_finetune_epoch60/ema_last_checkpoint.pt
+CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval --config experiments/qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval/configs/release/caltech101_target10_finetune.yaml --phase evaluate --checkpoint experiments/qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval/runs/caltech101_target10_finetune_epoch60/ema_last_checkpoint.pt
 ```
 
 ```bash
-CUDA_VISIBLE_DEVICES=5 python -m experiments.qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval --config experiments/qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval/configs/release/caltech101_target10_finetune.yaml --phase visualize
+CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval --config experiments/qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval/configs/release/caltech101_target10_finetune.yaml --phase visualize
 ```
 
 ## 6. 先做四平面纯模拟回放
@@ -69,7 +69,7 @@ CUDA_VISIBLE_DEVICES=5 python -m experiments.qwen3_vl_embedding_2b_caltech101_ro
 在上光路之前验证 checkpoint、四层桥接和10类检索是否贯通：
 
 ```bash
-CUDA_VISIBLE_DEVICES=5 python -m experiments.qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval.hardware_pipeline --config experiments/qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval/configs/hardware/caltech101_target10_hardware.yaml --phase all_simulation --use-simulation
+CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval.hardware_pipeline --config experiments/qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval/configs/hardware/caltech101_target10_hardware.yaml --phase all_simulation --use-simulation
 ```
 
 ## 7. 生成实际光路文件
@@ -77,7 +77,7 @@ CUDA_VISIBLE_DEVICES=5 python -m experiments.qwen3_vl_embedding_2b_caltech101_ro
 生成固定 gallery/query manifest、逐层 amplitude BMP、四张共享 phase BMP 和理论 CCD：
 
 ```bash
-CUDA_VISIBLE_DEVICES=5 python -m experiments.qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval.hardware_pipeline --config experiments/qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval/configs/hardware/caltech101_target10_hardware.yaml --phase prepare --artifact-profile full
+CUDA_VISIBLE_DEVICES=1 python -m experiments.qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval.hardware_pipeline --config experiments/qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval/configs/hardware/caltech101_target10_hardware.yaml --phase prepare --artifact-profile full
 ```
 
 默认选择每类3张 gallery 和10张固定 test query，共130张；首次光路测试不必播放全部

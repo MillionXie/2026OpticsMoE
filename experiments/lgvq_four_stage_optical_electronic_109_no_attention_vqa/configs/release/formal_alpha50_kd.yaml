@@ -1,0 +1,11 @@
+base_config: formal_alpha50.yaml
+
+output_dir: ../../runs/lgvq_oeo109_alpha50_kd_v3
+
+data:
+  # Scalar [spatial, temporal] predictions for the 2250 training samples only.
+  # The full teacher is never loaded by this project or by deployed inference.
+  training_soft_targets: ../../artifacts/training_only_teacher_predictions.pt
+
+loss:
+  soft_target_weight: 0.35

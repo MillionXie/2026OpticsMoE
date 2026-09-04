@@ -1,0 +1,62 @@
+seed: 73
+
+dataset:
+  data_dir: experiments/qwen3_vl_2b_openmoji_instruction_four_stage_optical_editing/data/pilot_gpu
+  asset_dir: experiments/qwen3_vl_2b_openmoji_instruction_four_stage_optical_editing/assets/openmoji-17.0.0-72-color
+  image_size: 224
+  grid_size: 6
+  icon_size: 30
+  icon_classes: 16
+  train_samples: 5000
+  test_samples: 1000
+  prompt_templates_per_operation: 3
+
+qwen:
+  model_id: Qwen/Qwen3-VL-2B-Instruct
+  checkpoint: auto
+  prompt_cache: prompt_hidden.pt
+  prompt_cache_batch_size: 16
+  prompt_max_tokens: 64
+
+model:
+  optical_enabled: true
+  electronic_width: 192
+  max_language_tokens: 64
+  optical_fusion_initial: 0.05
+  optical_shift_pixels: 1
+  phase_dropout_p: 0.05
+  optical_base_config: experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/configs/release/caltech101_four_layer_optical_joint.yaml
+
+training:
+  epochs: 20
+  batch_size: 16
+  num_workers: 4
+  learning_rate: 0.0001
+  adapter_learning_rate: 0.0001
+  phase_learning_rate: 0.0001
+  router_learning_rate: 0.00005
+  readout_learning_rate: 0.00005
+  decoder_learning_rate: 0.0003
+  weight_decay: 0.01
+  warmup_electronic_epochs: 2
+  gradient_clip_norm: 1.0
+  ema_decay: 0.995
+  amp_enabled: true
+  resume: true
+
+loss:
+  changed_cell_weight: 8.0
+  foreground_cell_weight: 2.0
+  category: 1.0
+  edit: 1.0
+  preservation: 0.2
+  task: 0.1
+  ccd: 0.02
+  router_balance: 0.005
+
+logging:
+  interval_batches: 20
+  visualization_samples_per_task: 4
+
+output_dir: experiments/qwen3_vl_2b_openmoji_instruction_four_stage_optical_editing/runs/pilot_gpu
+

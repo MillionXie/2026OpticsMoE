@@ -1,0 +1,4 @@
+base_config: common.yaml
+multiplane: {variant: moe_oeo_dynamic_router}
+output_dir: ../../runs/smoke_moe_oeo_dynamic_router
+

@@ -1,0 +1,106 @@
+# INTERNAL TEMPLATE. Do not edit; run experiments.lab_lgvq.prepare_lab.
+input_dir: ../work/amplitude
+output_dir: ../work/ccd
+log_dir: ../work/log
+output_extension: .png
+settle_delay_ms: 60
+confirm_before_start: true
+max_files: null
+require_phase_mask: true
+phase_mask_file: null
+
+timing_diagnostic:
+  settle_delay_ms_values: [0, 50, 100, 200, 400]
+  repeats_per_digit_and_delay: 1
+  discard_frames_after_display: 1
+  minimum_pcc_to_reference: 0.95
+  maximum_gain_aligned_nmae: 0.15
+  maximum_absolute_mean_ratio_error: 0.15
+  maximum_saturation_fraction: 0.01
+  minimum_p99_uint8: 16
+
+amplitude_lut_calibration:
+  gray_point_count: 128
+  frames_per_gray: 3
+  target_transfer: field_amplitude
+  output_lut_filename: slm7930_at532-70c-pixel-2_linearized-amplitude.lut
+  maximum_verification_intensity_rmse: 0.10
+  maximum_verification_field_amplitude_rmse: 0.08
+  maximum_verification_monotonic_violations: 2
+  maximum_saturation_fraction: 0.01
+
+paths:
+  masks_dir: ../calib/exposure
+  results_dir: ../results/exposure
+
+amplitude_slm:
+  driver: meadowlark_pcie
+  sdk_path: ../../hardware_sdk/vendor_sdk/amplitude_meadowlark
+  board_number: 1
+  expected_resolution_wh: [1024, 1024]
+  width: 1024
+  height: 1024
+  expected_bit_depth: 8
+  pixel_pitch_um: 17.0
+  timeout_ms: 5000
+  wait_for_trigger: false
+  flip_immediate: false
+  output_pulse: false
+  preload: false
+  blank_on_close: true
+  lut_file: null
+  expected_lut_sha256: null
+
+phase_slm:
+  driver: manual
+  width: 1920
+  height: 1200
+  expected_resolution_wh: [1920, 1200]
+  pixel_pitch_um: 8.0
+  center_xy: [980.0, 590.0]
+
+amplitude_roi:
+  width: 478
+  height: 478
+  center_x: 511.5
+  center_y: 511.5
+
+camera:
+  driver: tucam
+  sdk_path: ../../hardware_sdk/vendor_sdk/camera_tucam_mosaic
+  camera_index: 0
+  timeout_ms: 10000
+  config_file: null
+  auto_exposure: false
+  exposure_us: null
+  analog_gain: null
+  anti_flicker_hz: null
+  resolution_mode: null
+  require_device_roi: false
+  device_roi_xywh: null
+  saved_frame_size_wh: null
+  saved_frame_resize_mode: none
+  saved_frame_bit_depth: 8
+  saved_frame_input_range: [0, 65535]
+  warmup_frames: 3
+  discard_frames_after_display: 1
+  detector_geometry:
+    enabled: false
+    contract_file: null
+    expected_file_sha256: null
+
+calibration:
+  marker_size_px: 40
+  marker_sigma_px: 9
+  roi_outline_width_px: 3
+
+exposure_calibration:
+  exposure_times_us: []
+  gray_point_count: 32
+  frames_per_gray: 3
+  preview_gray_values: [0, 128, 255]
+  patch_size_px: 400
+  patch_inner_size_px: 320
+  edge_taper_px: 40
+  measurement_window_size_px: 256
+  saturation_fraction_warning: 0.01

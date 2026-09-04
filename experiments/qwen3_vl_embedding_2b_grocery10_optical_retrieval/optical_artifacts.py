@@ -88,6 +88,14 @@ def save_phase_snapshot(
     train_loss: float,
     weight_variant: str,
 ) -> dict[str, Any]:
+    custom = getattr(replacement, "save_multiplane_phase_snapshot", None)
+    if callable(custom):
+        return custom(
+            Path(output_dir),
+            epoch=int(epoch),
+            train_loss=float(train_loss),
+            weight_variant=str(weight_variant),
+        )
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     stacks = {
@@ -134,6 +142,11 @@ def save_phase_preview(replacement: Any, path: Path, *, title: str) -> None:
     four panels.  Absolute mean and standard deviation remain in every title.
     Exported masks and saved tensors are unchanged.
     """
+    custom = getattr(replacement, "save_multiplane_phase_preview", None)
+    if callable(custom):
+        custom(Path(path), title=str(title))
+        return
+
     import matplotlib.pyplot as plt
 
     stacks = {

@@ -1,0 +1,4 @@
+base_config: formal_alpha50_kd075.yaml
+
+output_dir: ../../runs/lgvq_oeo109_alpha50_kd075_seed43_v3
+random_seed: 43

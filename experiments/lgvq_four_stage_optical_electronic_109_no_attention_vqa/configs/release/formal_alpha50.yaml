@@ -1,0 +1,79 @@
+output_dir: ../../runs/lgvq_oeo109_alpha50_v3
+device: cuda
+random_seed: 42
+
+data:
+  dataset_root: /DATA/DATA1/lixinyue/xyli/data/LGVQ
+  manifest: ../../artifacts/lgvq_train2250_test558.csv
+  frame_cache: ../../artifacts/lgvq_four_frames_224_uint8.pt
+  training_soft_targets: null
+
+geometry:
+  canvas_size: 518
+  active_size: 478
+  quadrant_size: 232
+  expert_size: 109
+  expert_pitch: 123
+
+model:
+  frame_count: 4
+  frame_size: 224
+  crop_fraction: 0.65
+  token_grid: 14
+  width: 192
+  bridge_pool: 4
+  head_width: 256
+  dropout: 0.15
+
+router:
+  top_k: 2
+  temperature: 1.0
+  noise_std: 0.03
+  parallel_detector_intervals: [[79, 108], [124, 153]]
+  serial_detector_intervals: [[164, 223], [255, 314]]
+
+optics:
+  wavelength_nm: 532.0
+  pixel_pitch_um: 17.0
+  distance_m: 0.10
+  k_space_enabled: true
+  theta_max_deg: 1.0
+  phase_init_std: 0.25
+  detector_projection_size: 196
+  ccd_relative_clip: 8.0
+  ccd_log_compression: 1.0
+
+robustness:
+  input_shift_pixels: 8
+  phase_shift_pixels: 8
+  ccd_shift_pixels: 8
+  phase_dropout_p: 0.05
+  phase_dropout_cell_size: 4
+
+fusion:
+  alpha_min: 0.50
+  alpha_initial: 0.57
+  alpha_max: 0.90
+  epsilon: 1.0e-6
+
+training:
+  epochs: 100
+  # A measured formal forward+backward uses about 5.4 GiB at batch 64 on a
+  # 4090/3090.  This fills the GPU much better than the earlier batch 8 while
+  # preserving enough optimizer steps for phase learning.
+  batch_size: 64
+  num_workers: 4
+  learning_rate: 0.0002
+  phase_learning_rate: 0.008
+  router_phase_learning_rate: 0.012
+  weight_decay: 0.0001
+  test_interval_epochs: 5
+
+loss:
+  ranking_weight: 0.20
+  correlation_weight: 0.30
+  optical_alignment_weight: 0.05
+  router_balance_weight: 0.02
+  router_importance_weight: 0.002
+  router_capture_weight: 0.02
+  soft_target_weight: 0.0
