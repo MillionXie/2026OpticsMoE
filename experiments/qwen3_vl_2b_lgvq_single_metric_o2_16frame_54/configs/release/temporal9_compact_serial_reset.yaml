@@ -1,0 +1,10 @@
+base_config: temporal9_compact_serial_balanced.yaml
+
+# The 16-frame checkpoint's final router had already collapsed to experts 1+2.
+# Keep every other compatible weight but restart this one physical phase plane
+# from the symmetric four-focus optical initialization.
+output_dir: ../../runs/lgvq_temporal_qwenfront_o2_9f77_dc20_serial_reset
+random_seed: 48
+
+initialization:
+  reset_serial_router_phase: true

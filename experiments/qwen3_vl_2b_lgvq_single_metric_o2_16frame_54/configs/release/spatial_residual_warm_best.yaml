@@ -1,0 +1,26 @@
+base_config: spatial_stem_warmstart.yaml
+
+# Preserve every shape-compatible tensor of the current best predictor,
+# including the full spatial_grid readout, and learn only a zero-start local
+# correction plus conservative end-to-end updates. Optical inference is
+# unchanged: four frames, 109-pixel experts, optical Top-2, four fusions.
+output_dir: ../../runs/lgvq_spatial_qwenfront_o2_4f109_dc20_residual_warm_best
+random_seed: 46
+
+model:
+  spatial_readout_mode: spatial_grid_residual
+  head_width: 512
+  dropout: 0.12
+
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_qwenfront_o2_4f109_dc20_stemwarm/best_observed_test_checkpoint.pt
+  epochs: 60
+  batch_size: 32
+  learning_rate: 0.00008
+  phase_learning_rate: 0.004
+  router_phase_learning_rate: 0.006
+
+loss:
+  ranking_weight: 0.20
+  correlation_weight: 0.30
+  soft_target_weight: 2.00

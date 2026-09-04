@@ -1,0 +1,17 @@
+base_config: spatial_residual_warm_seed42.yaml
+
+output_dir: ../../runs/lgvq_spatial_qwenfront_o2_4f109_dc20_residual_rank_r100_seed42
+
+model:
+  spatial_residual_max: 1.00
+
+training:
+  trainable_scope: residual_only
+  epochs: 100
+  batch_size: 64
+  learning_rate: 0.00001
+
+loss:
+  ranking_weight: 0.60
+  correlation_weight: 2.00
+  soft_target_weight: 0.00

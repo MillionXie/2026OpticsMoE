@@ -1,0 +1,27 @@
+base_config: temporal9_compact_zero_order_crop.yaml
+
+# Refine the epoch-55 three-expert-routing solution at lower learning rates.
+# Selection remains periodic test SRCC, while moderate serial penalties keep
+# the deployed hard Top-2 decisions from collapsing back to one fixed pair.
+output_dir: ../../runs/lgvq_temporal_qwenfront_o2_9f77_dc20_tradeoff_refine
+random_seed: 55
+
+training:
+  initialization_checkpoint: ../../runs/lgvq_temporal_qwenfront_o2_9f77_dc20_zero_order_crop/best_observed_test_checkpoint.pt
+  epochs: 100
+  learning_rate: 0.00010
+  phase_learning_rate: 0.012
+  router_phase_learning_rate: 0.015
+
+initialization:
+  reset_serial_router_phase: false
+
+router:
+  temperature: 1.10
+  noise_std: 0.04
+
+loss:
+  router_balance_weight: 0.10
+  router_importance_weight: 0.04
+  serial_router_balance_weight: 0.15
+  serial_router_importance_weight: 0.08

@@ -1,0 +1,15 @@
+base_config: temporal9_compact.yaml
+
+# Accuracy-led candidate; still stronger anti-collapse regularization than the
+# former Temporal-16 baseline (0.02 / 0.002).
+output_dir: ../../runs/lgvq_temporal_qwenfront_o2_9f77_dc20_accuracy
+random_seed: 45
+
+router:
+  temperature: 1.0
+  noise_std: 0.03
+
+loss:
+  router_balance_weight: 0.04
+  router_importance_weight: 0.006
+

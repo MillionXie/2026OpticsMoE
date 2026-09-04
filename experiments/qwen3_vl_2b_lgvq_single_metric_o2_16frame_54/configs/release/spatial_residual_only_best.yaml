@@ -1,0 +1,19 @@
+base_config: spatial_residual_warm_best.yaml
+
+# Freeze the already validated predictor and optics.  Only the zero-start
+# local spatial correction is optimized, so epoch 0 exactly preserves the
+# source checkpoint instead of damaging it on the first update.
+output_dir: ../../runs/lgvq_spatial_qwenfront_o2_4f109_dc20_residual_only_r008_best
+
+model:
+  spatial_residual_max: 0.08
+
+training:
+  trainable_scope: residual_only
+  epochs: 80
+  learning_rate: 0.00030
+
+loss:
+  ranking_weight: 0.20
+  correlation_weight: 0.40
+  soft_target_weight: 2.00

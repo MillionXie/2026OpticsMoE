@@ -1,0 +1,9 @@
+base_config: spatial_tune_alpha40_robust2_seed42.yaml
+
+output_dir: ../../runs/lgvq_spatial_tune_alpha40_distill_seed42
+random_seed: 642
+
+loss:
+  ranking_weight: 0.50
+  correlation_weight: 1.00
+  soft_target_weight: 1.00

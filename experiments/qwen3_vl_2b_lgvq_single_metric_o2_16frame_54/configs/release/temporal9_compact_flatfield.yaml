@@ -1,0 +1,19 @@
+base_config: temporal9_compact_zero_order_rebalance.yaml
+
+# Fixed four-channel detector flat-field correction. In hardware the gains are
+# measured once with a uniform 45x45 amplitude field after loading the router
+# phase; there is no learned electronic routing network.
+output_dir: ../../runs/lgvq_temporal_qwenfront_o2_9f77_dc20_flatfield
+random_seed: 53
+
+router:
+  serial_flatfield_calibration: true
+  temperature: 1.10
+  noise_std: 0.08
+
+training:
+  router_phase_learning_rate: 0.050
+
+loss:
+  serial_router_balance_weight: 0.35
+  serial_router_importance_weight: 0.25

@@ -1,0 +1,27 @@
+base_config: temporal9_compact_zero_order_crop.yaml
+
+# Continue from the strongest 9-frame feature model, but rebuild the serial
+# optical router around the zero-order-aware 45x45 central input.  The router
+# penalties are deliberately stronger than the accuracy-only candidate so the
+# final Top-2 choices do not collapse onto one fixed pair of experts.
+output_dir: ../../runs/lgvq_temporal_qwenfront_o2_9f77_dc20_zero_order_rebalance
+random_seed: 51
+
+training:
+  initialization_checkpoint: ../../runs/lgvq_temporal_qwenfront_o2_9f77_dc20_balanced/best_observed_test_checkpoint.pt
+  epochs: 100
+  router_phase_learning_rate: 0.050
+
+initialization:
+  reset_serial_router_phase: true
+
+router:
+  temperature: 1.20
+  noise_std: 0.10
+
+loss:
+  router_balance_weight: 0.15
+  router_importance_weight: 0.06
+  serial_router_balance_weight: 0.60
+  serial_router_importance_weight: 0.40
+

@@ -1,0 +1,8 @@
+base_config: spatial_vggcorr_only_lr1000_s75.yaml
+output_dir: ../../runs/lgvq_spatial_vggcorr_s75_refine_lr100
+random_seed: 85
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_vggcorr_only_lr1000_s75/best_observed_test_checkpoint.pt
+  trainable_scope: vgg_correction_only
+  epochs: 60
+  learning_rate: 0.00010

@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "status": "complete",
+  "selected_policy": "routing_tradeoff",
+  "geometry": {
+    "canvas_size": 518,
+    "active_size": 478,
+    "frame_count": 9,
+    "frame_grid": [3, 3],
+    "lane_size": 156,
+    "lane_pitch": 160,
+    "inter_lane_gap": 4,
+    "parallel_expert_size": 77,
+    "parallel_expert_pitch": 79,
+    "intra_lane_expert_gap": 2,
+    "parallel_expert_area_fraction": 0.9341748218693651,
+    "serial_expert_size": 109,
+    "serial_router_input_size": 45,
+    "serial_router_detector_intervals": [[161, 216], [261, 316]]
+  },
+  "sampling_fractions": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
+  "recommended": {
+    "config": "configs/release/temporal9_compact_zero_order_crop.yaml",
+    "run": "runs/lgvq_temporal_qwenfront_o2_9f77_dc20_zero_order_crop",
+    "checkpoint": "runs/lgvq_temporal_qwenfront_o2_9f77_dc20_zero_order_crop/best_observed_test_checkpoint.pt",
+    "checkpoint_epoch": 55,
+    "checkpoint_sha256": "2cb43fdfeb90aa626e9730485d1ea1ae56a9a4dae2c2a057b3519cfb70951bffc",
+    "optical_on": {
+      "srcc": 0.8107397547712601,
+      "krcc": 0.5980993628475785,
+      "plcc": 0.8217628882870391,
+      "rmse": 7.960493087768555,
+      "mae": 6.101398468017578
+    },
+    "same_checkpoint_optics_off": {
+      "srcc": 0.49812244767507374,
+      "krcc": 0.3417683049724577,
+      "plcc": 0.458938599911452,
+      "rmse": 14.007397651672363,
+      "mae": 11.977374076843262
+    },
+    "vision_router_selected_share": [0.2220230996608734, 0.19982078671455383, 0.2777777910232544, 0.30037832260131836],
+    "language_router_selected_share": [0.34139785170555115, 0.20430107414722443, 0.0, 0.4543010890483856],
+    "fusion_alpha": [0.5606621503829956, 0.5597617626190186, 0.5689155459403992, 0.5708991885185242]
+  },
+  "maximum_accuracy_9frame": {
+    "checkpoint_epoch": 35,
+    "checkpoint_sha256": "56039361f9ab776b26ebbfd585b4e2a8addbe396681ae57985b94cd1d7ef95ebb",
+    "srcc": 0.8175819294851641,
+    "language_router_selected_share": [0.5, 0.5, 0.0, 0.0]
+  },
+  "temporal16_reference_srcc": 0.8405909979243616,
+  "cache": {
+    "path": "artifacts/qwen3vl_front_9f_49x1024_quality14.pt",
+    "bytes": 2571361590,
+    "sha256": "48b0d916da8959c063a13bfd4f57546b57e72e945105b6af5bf84be4aac9156d"
+  },
+  "test_protocol": {
+    "validation_used": false,
+    "test_interval_epochs": 5,
+    "selection_metric": "test_srcc",
+    "test_count": 558
+  },
+  "verification": {
+    "smoke_passed": true,
+    "required_gradients_present": true,
+    "attention_or_transformer_modules": [],
+    "pytest": "32 passed"
+  }
+}

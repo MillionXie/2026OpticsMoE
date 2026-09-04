@@ -1,0 +1,23 @@
+base_config: temporal9_compact_serial_balanced.yaml
+
+# The old serial detector windows overlap the coherent zero-order footprint.
+# A fixed central 45x45 router input leaves a central guard band; the four
+# 55x55 energy windows remain inside the same 478x478 CCD ROI and 0.5 degree
+# simulation bandwidth. Full 109x109 fields are still used by feature stages.
+output_dir: ../../runs/lgvq_temporal_qwenfront_o2_9f77_dc20_zero_order_aware
+random_seed: 49
+
+initialization:
+  reset_serial_router_phase: true
+
+router:
+  serial_input_size: 45
+  serial_intervals: [[161, 216], [261, 316]]
+  temperature: 1.10
+  noise_std: 0.05
+
+loss:
+  router_balance_weight: 0.10
+  router_importance_weight: 0.04
+  serial_router_balance_weight: 0.18
+  serial_router_importance_weight: 0.12

@@ -1,0 +1,17 @@
+base_config: spatial_residual_warm_seed42.yaml
+output_dir: ../../runs/lgvq_spatial_qwenfront_o2_4f109_dc20_pyramid_r075_fast
+
+model:
+  spatial_readout_mode: spatial_pyramid_residual
+  spatial_residual_max: 0.75
+
+training:
+  trainable_scope: residual_only
+  epochs: 80
+  batch_size: 32
+  learning_rate: 0.00010
+
+loss:
+  ranking_weight: 0.30
+  correlation_weight: 0.50
+  soft_target_weight: 0.00

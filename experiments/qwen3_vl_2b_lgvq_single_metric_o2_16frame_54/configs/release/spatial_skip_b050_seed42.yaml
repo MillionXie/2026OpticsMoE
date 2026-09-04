@@ -1,0 +1,7 @@
+base_config: spatial_skip_b000_seed42.yaml
+output_dir: ../../runs/lgvq_spatial_skip_b050_seed42
+random_seed: 1342
+model:
+  electronic_skip_enabled: true
+  electronic_skip_initial: 0.50
+  electronic_skip_max: 1.00

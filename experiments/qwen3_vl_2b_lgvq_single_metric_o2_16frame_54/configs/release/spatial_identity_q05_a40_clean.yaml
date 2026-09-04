@@ -1,0 +1,9 @@
+base_config: spatial_identity_q10_a40_clean.yaml
+output_dir: ../../runs/lgvq_spatial_identity_q05_a40_clean
+random_seed: 73
+model:
+  quality_adapter_mode: identity
+  quality_gate_initial: 0.95
+  qwen_gate_enabled: true
+  qwen_gate_initial: 0.05
+

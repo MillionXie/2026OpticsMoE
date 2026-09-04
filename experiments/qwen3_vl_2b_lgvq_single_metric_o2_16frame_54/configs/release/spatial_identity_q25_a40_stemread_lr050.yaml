@@ -1,0 +1,7 @@
+base_config: spatial_identity_q25_a40_stemonly_lr010.yaml
+output_dir: ../../runs/lgvq_spatial_identity_q25_a40_stemread_lr050
+random_seed: 104
+training:
+  trainable_scope: frame_stem_and_readout
+  learning_rate: 0.00005
+

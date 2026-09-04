@@ -1,0 +1,5 @@
+base_config: spatial_vggcontext_full_lr300.yaml
+output_dir: ../../runs/lgvq_spatial_vggcontext_full_lr1000
+random_seed: 101
+training:
+  learning_rate: 0.00100

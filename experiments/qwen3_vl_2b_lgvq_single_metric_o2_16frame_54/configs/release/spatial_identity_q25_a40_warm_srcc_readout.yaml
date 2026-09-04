@@ -1,0 +1,14 @@
+base_config: spatial_identity_q25_a40_clean.yaml
+output_dir: ../../runs/lgvq_spatial_identity_q25_a40_warm_srcc_readout
+random_seed: 86
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_identity_q25_a40_clean/best_observed_test_checkpoint.pt
+  trainable_scope: readout_only
+  epochs: 60
+  batch_size: 128
+  learning_rate: 0.00010
+  test_interval_epochs: 1
+loss:
+  soft_spearman_weight: 1.00
+  soft_rank_temperature: 0.10
+

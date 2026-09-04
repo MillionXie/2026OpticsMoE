@@ -1,0 +1,6 @@
+base_config: spatial_vggcorr_only_lr100.yaml
+output_dir: ../../runs/lgvq_spatial_vggcorr_only_lr1000
+model:
+  vgg_correction_max: 1.00
+training:
+  learning_rate: 0.00100

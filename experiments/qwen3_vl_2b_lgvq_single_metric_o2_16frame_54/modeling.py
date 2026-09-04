@@ -280,7 +280,9 @@ class OpticalRouterParallel16(nn.Module):
             "selected_mask": selected,
             "selected_indices": indices,
             "capture_fraction": captured,
-            "router_implementation": "optical_parallel16_energy_top2",
+            "router_implementation": (
+                f"optical_parallel{self.settings.frame_count}_energy_top2"
+            ),
             **_routing_statistics(probabilities, selected),
         }
 
@@ -299,23 +301,54 @@ class OpticalRouterSerial(nn.Module):
             )
         )
         self.propagation = AngularSpectrum(settings)
+        self.channel_standardizer = (
+            nn.BatchNorm1d(4, affine=False, momentum=0.05)
+            if settings.serial_router_channel_standardization
+            else None
+        )
 
-    def forward(self, field: torch.Tensor) -> dict[str, Any]:
+    def forward(
+        self, field: torch.Tensor, token_count: int | None = None
+    ) -> dict[str, Any]:
         size = self.geometry.serial_expert_size
         if tuple(field.shape[1:]) != (size, size):
             raise ValueError(f"Serial router expects [B,{size},{size}]")
-        offset = (self.geometry.canvas_size - size) // 2
+        router_input_size = self.settings.serial_router_input_size
+        router_field = field
+        if router_input_size != size:
+            if token_count is None or not 0 < token_count <= size:
+                raise ValueError(
+                    "Compact serial router requires the actual sequence length"
+                )
+            # The serial field stores valid tokens in its first rows and pads
+            # the rest with zeros. Crop those valid rows before resampling so
+            # the 20% coherent zero-order footprint is centered rather than
+            # biased toward the upper two detector windows.
+            router_field = field[:, :token_count]
+            router_field = F.adaptive_avg_pool2d(
+                router_field.unsqueeze(1), (router_input_size, router_input_size)
+            ).squeeze(1)
+        input_offset = (self.geometry.canvas_size - router_input_size) // 2
+        phase_offset = (self.geometry.canvas_size - size) // 2
         shifted = _translate(
-            field,
+            router_field,
             *_random_shift(self.settings.input_shift_pixels, self.training),
             fill=0.0,
         )
         canvas = F.pad(
             shifted,
-            (offset, self.geometry.canvas_size - size - offset) * 2,
+            (
+                input_offset,
+                self.geometry.canvas_size - router_input_size - input_offset,
+            )
+            * 2,
         ).to(torch.complex64)
         phase_canvas = torch.ones_like(canvas)
-        phase_canvas[:, offset : offset + size, offset : offset + size] = _translate(
+        phase_canvas[
+            :,
+            phase_offset : phase_offset + size,
+            phase_offset : phase_offset + size,
+        ] = _translate(
             _phase_modulation(
                 self.raw_router_phase,
                 settings=self.settings,
@@ -334,7 +367,7 @@ class OpticalRouterSerial(nn.Module):
         active = detector[
             :, margin : margin + self.geometry.active_size, margin : margin + self.geometry.active_size
         ]
-        energy = torch.stack(
+        raw_energy = torch.stack(
             [
                 active[:, y0:y1, x0:x1].sum((-2, -1))
                 for y0, y1 in self.settings.serial_router_intervals
@@ -342,7 +375,51 @@ class OpticalRouterSerial(nn.Module):
             ],
             -1,
         )
-        centered = energy - energy.mean(-1, keepdim=True)
+        energy = raw_energy
+        if self.settings.serial_router_flatfield_calibration:
+            # A real setup obtains these four scalar gains once after loading
+            # the router phase by displaying a spatially uniform amplitude
+            # reference.  Recomputing that reference here keeps the simulated
+            # gains consistent while the phase mask is still trainable.  This
+            # is detector flat-field calibration, not an electronic router:
+            # the sample-dependent routing signal remains the four measured
+            # optical region energies.
+            reference_canvas = torch.zeros_like(canvas[:1])
+            reference_canvas[
+                :,
+                input_offset : input_offset + router_input_size,
+                input_offset : input_offset + router_input_size,
+            ] = 1.0
+            reference_detector = self.propagation(
+                reference_canvas * phase_canvas[:1]
+            ).abs().square().float()
+            reference_active = reference_detector[
+                :,
+                margin : margin + self.geometry.active_size,
+                margin : margin + self.geometry.active_size,
+            ]
+            reference_energy = torch.stack(
+                [
+                    reference_active[:, y0:y1, x0:x1].sum((-2, -1))
+                    for y0, y1 in self.settings.serial_router_intervals
+                    for x0, x1 in self.settings.serial_router_intervals
+                ],
+                -1,
+            )
+            relative_gain = reference_energy / reference_energy.mean(
+                -1, keepdim=True
+            ).clamp_min(1.0e-8)
+            energy = raw_energy / relative_gain.clamp_min(1.0e-4)
+        router_signal = energy
+        if self.channel_standardizer is not None:
+            # Four-channel detector calibration only: no affine/trainable
+            # parameters and no sample-dependent electronic routing network.
+            # Running moments are stored with the checkpoint; on hardware they
+            # can be re-estimated from a small calibration subset.
+            router_signal = self.channel_standardizer(
+                torch.log(energy.clamp_min(1.0e-8))
+            )
+        centered = router_signal - router_signal.mean(-1, keepdim=True)
         logits = centered / centered.square().mean(-1, keepdim=True).add(1.0e-8).sqrt()
         if self.training and self.settings.router_noise_std > 0.0:
             logits = logits + torch.randn_like(logits) * self.settings.router_noise_std
@@ -350,14 +427,23 @@ class OpticalRouterSerial(nn.Module):
             logits / self.settings.router_temperature, dim=-1
         )
         weights, selected, indices = _sparse_top2(probabilities)
-        captured = energy.sum(-1) / active.sum((-2, -1)).clamp_min(1.0e-8)
+        captured = raw_energy.sum(-1) / active.sum((-2, -1)).clamp_min(1.0e-8)
         return {
             "probabilities": probabilities,
             "weights": weights,
             "selected_mask": selected,
             "selected_indices": indices,
             "capture_fraction": captured,
-            "router_implementation": "optical_serial_energy_top2",
+            "router_implementation": (
+                "optical_serial_energy_flatfield_standardized_top2"
+                if self.settings.serial_router_flatfield_calibration
+                and self.settings.serial_router_channel_standardization
+                else (
+                    "optical_serial_energy_flatfield_top2"
+                    if self.settings.serial_router_flatfield_calibration
+                    else "optical_serial_energy_top2"
+                )
+            ),
             **_routing_statistics(probabilities, selected),
         }
 
@@ -691,6 +777,15 @@ class VisionElectronicRoute(nn.Module):
             width, width, 5, padding=2, groups=width, bias=False
         )
         self.pointwise = nn.Conv2d(width, width, 1)
+        self.skip_max = float(settings.electronic_skip_max)
+        if settings.electronic_skip_enabled:
+            ratio = settings.electronic_skip_initial / self.skip_max
+            self.raw_skip = nn.Parameter(torch.atanh(torch.tensor(ratio)))
+
+    @property
+    def skip(self) -> torch.Tensor | None:
+        raw = getattr(self, "raw_skip", None)
+        return None if raw is None else self.skip_max * torch.tanh(raw)
 
     def forward(self, value: torch.Tensor) -> torch.Tensor:
         batch, frames, tokens, width = value.shape
@@ -700,22 +795,43 @@ class VisionElectronicRoute(nn.Module):
             batch * frames, self.grid, self.grid, width
         ).permute(0, 3, 1, 2)
         output = self.pointwise(F.gelu(self.depthwise(image)))
-        return output.permute(0, 2, 3, 1).reshape(batch, frames, tokens, width)
+        output = output.permute(0, 2, 3, 1).reshape(batch, frames, tokens, width)
+        skip = self.skip
+        return output if skip is None else output + skip * value
 
 
 class LanguageElectronicRoute(nn.Module):
     """One explicit causal depthwise/pointwise Conv1D route; no attention."""
 
-    def __init__(self, width: int) -> None:
+    def __init__(
+        self,
+        width: int,
+        *,
+        skip_enabled: bool = False,
+        skip_initial: float = 0.0,
+        skip_max: float = 1.0,
+    ) -> None:
         super().__init__()
         self.norm = nn.LayerNorm(width)
         self.depthwise = nn.Conv1d(width, width, 5, groups=width, bias=False)
         self.pointwise = nn.Conv1d(width, width, 1)
+        self.skip_max = float(skip_max)
+        if skip_enabled:
+            ratio = float(skip_initial) / self.skip_max
+            self.raw_skip = nn.Parameter(torch.atanh(torch.tensor(ratio)))
+
+    @property
+    def skip(self) -> torch.Tensor | None:
+        raw = getattr(self, "raw_skip", None)
+        return None if raw is None else self.skip_max * torch.tanh(raw)
 
     def forward(self, value: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
         sequence = self.norm(value).masked_fill(~mask.unsqueeze(-1), 0.0).transpose(1, 2)
         sequence = F.pad(sequence, (4, 0))
         output = self.pointwise(F.gelu(self.depthwise(sequence))).transpose(1, 2)
+        skip = self.skip
+        if skip is not None:
+            output = output + skip * value
         return output.masked_fill(~mask.unsqueeze(-1), 0.0)
 
 
@@ -894,6 +1010,344 @@ class SpatialGridReadout(nn.Module):
         return self.output(torch.cat((video, prompt), -1)).squeeze(-1)
 
 
+class SpatialMultiscaleReadout(nn.Module):
+    """Attention-free multi-scale readout of the post-optical 2-D token field.
+
+    The input remains the result of all four optical/electronic fusion stages.
+    This head adds only depthwise convolutions, fixed local differences, pooling,
+    and MLP layers after the optical graph; it cannot bypass any optical stage.
+    """
+
+    def __init__(self, settings: ExperimentSettings) -> None:
+        super().__init__()
+        width, hidden = settings.model_width, settings.head_width
+        self.grid = settings.token_grid
+        spatial_width = 96
+        self.token_norm = nn.LayerNorm(width)
+        self.depthwise3 = nn.Conv2d(
+            width, width, kernel_size=3, padding=1, groups=width, bias=False
+        )
+        self.depthwise5 = nn.Conv2d(
+            width, width, kernel_size=5, padding=2, groups=width, bias=False
+        )
+        self.spatial_projection = nn.Conv2d(width * 4, spatial_width, kernel_size=1)
+        # Average and maximum summaries retain both global content and local
+        # extrema at 1x1, 2x2, and 4x4 scales.
+        pooled_width = spatial_width * 2 * (1 + 4 + 16)
+        self.frame = nn.Sequential(
+            nn.LayerNorm(pooled_width),
+            nn.Linear(pooled_width, hidden * 2),
+            nn.GELU(),
+            nn.Dropout(settings.dropout),
+            nn.Linear(hidden * 2, hidden),
+            nn.GELU(),
+        )
+        self.language = nn.Sequential(
+            nn.LayerNorm(width * 3),
+            nn.Linear(width * 3, hidden),
+            nn.GELU(),
+        )
+        self.output = nn.Sequential(
+            nn.LayerNorm(hidden * 7),
+            nn.Linear(hidden * 7, hidden * 2),
+            nn.GELU(),
+            nn.Dropout(settings.dropout),
+            nn.Linear(hidden * 2, hidden),
+            nn.GELU(),
+            nn.Linear(hidden, 1),
+        )
+
+    def forward(
+        self, vision: torch.Tensor, language: torch.Tensor, mask: torch.Tensor
+    ) -> torch.Tensor:
+        batch, frames, tokens, width = vision.shape
+        if tokens != self.grid * self.grid:
+            raise ValueError("Spatial multi-scale readout requires a square token grid")
+        grid = self.token_norm(vision).reshape(
+            batch * frames, self.grid, self.grid, width
+        ).permute(0, 3, 1, 2)
+        smooth = F.avg_pool2d(grid, kernel_size=3, stride=1, padding=1)
+        local_residual = grid - smooth
+        features = torch.cat(
+            (
+                grid,
+                F.gelu(self.depthwise3(grid)),
+                F.gelu(self.depthwise5(grid)),
+                local_residual,
+            ),
+            1,
+        )
+        features = F.gelu(self.spatial_projection(features))
+        pooled = torch.cat(
+            tuple(
+                pool(features, size).flatten(1)
+                for size in (1, 2, 4)
+                for pool in (F.adaptive_avg_pool2d, F.adaptive_max_pool2d)
+            ),
+            1,
+        )
+        frame = self.frame(pooled).reshape(batch, frames, -1)
+        frame_difference = (frame[:, 1:] - frame[:, :-1]).abs()
+        video = torch.cat(
+            (
+                frame.mean(1),
+                frame.float().std(1, unbiased=False).to(frame.dtype),
+                frame.amax(1),
+                frame.amin(1),
+                frame_difference.mean(1),
+                frame_difference.amax(1),
+            ),
+            -1,
+        )
+        prompt = self.language(_masked_statistics(language, mask))
+        return self.output(torch.cat((video, prompt), -1)).squeeze(-1)
+
+
+class SpatialGridResidualReadout(SpatialGridReadout):
+    """Existing trained grid readout plus a zero-start local correction.
+
+    Attribute names and shapes inherited from :class:`SpatialGridReadout` are
+    intentionally unchanged, so exact-name/shape warm start restores the full
+    established predictor. The new branch starts at zero and can only learn a
+    post-optical correction; no pre-optical feature bypass is introduced.
+    """
+
+    def __init__(self, settings: ExperimentSettings) -> None:
+        super().__init__(settings)
+        width, hidden = settings.model_width, settings.head_width
+        self.residual_max = float(settings.spatial_residual_max)
+        residual_width = 64
+        self.residual_projection = nn.Conv2d(width * 3, residual_width, 1)
+        self.residual_frame = nn.Sequential(
+            nn.LayerNorm(residual_width * 3 + width * 3),
+            nn.Linear(residual_width * 3 + width * 3, hidden),
+            nn.GELU(),
+            nn.Dropout(settings.dropout),
+        )
+        self.residual_output = nn.Sequential(
+            nn.LayerNorm(hidden * 4),
+            nn.Linear(hidden * 4, hidden),
+            nn.GELU(),
+            nn.Dropout(settings.dropout),
+            nn.Linear(hidden, 1),
+        )
+        nn.init.zeros_(self.residual_output[-1].weight)
+        nn.init.zeros_(self.residual_output[-1].bias)
+
+    def forward(
+        self, vision: torch.Tensor, language: torch.Tensor, mask: torch.Tensor
+    ) -> torch.Tensor:
+        base_prediction = super().forward(vision, language, mask)
+        batch, frames, tokens, width = vision.shape
+        grid = self.token_norm(vision).reshape(
+            batch * frames, self.grid, self.grid, width
+        ).permute(0, 3, 1, 2)
+        smooth = F.avg_pool2d(grid, kernel_size=3, stride=1, padding=1)
+        local = grid - smooth
+        gradient_x = F.pad(grid[..., 1:] - grid[..., :-1], (0, 1, 0, 0))
+        detail = F.gelu(
+            self.residual_projection(torch.cat((local, gradient_x, grid), 1))
+        )
+        frame_summary = torch.cat(
+            (
+                detail.mean((-2, -1)),
+                detail.float().std((-2, -1), unbiased=False).to(detail.dtype),
+                detail.amax((-2, -1)),
+                local.square().mean((-2, -1)).sqrt(),
+                gradient_x.abs().mean((-2, -1)),
+                gradient_x.abs().amax((-2, -1)),
+            ),
+            -1,
+        )
+        frame = self.residual_frame(frame_summary).reshape(batch, frames, -1)
+        video = torch.cat(
+            (
+                frame.mean(1),
+                frame.float().std(1, unbiased=False).to(frame.dtype),
+                frame.amax(1),
+            ),
+            -1,
+        )
+        prompt = self.language(_masked_statistics(language, mask))
+        correction = self.residual_output(torch.cat((video, prompt), -1)).squeeze(-1)
+        bounded_correction = self.residual_max * torch.tanh(
+            correction / self.residual_max
+        )
+        return base_prediction + bounded_correction
+
+
+class SpatialPyramidResidualReadout(SpatialGridReadout):
+    """Warm-start grid predictor plus a richer post-optical local correction.
+
+    The branch receives only the Vision output after the first two O/E/O
+    stages and the multimodal sequence after all four stages.  It therefore
+    cannot bypass the optical network.  Operations are limited to depthwise
+    convolution, pointwise projection, fixed pooling and MLPs.
+    """
+
+    def __init__(self, settings: ExperimentSettings) -> None:
+        super().__init__(settings)
+        width, hidden = settings.model_width, settings.head_width
+        self.residual_max = float(settings.spatial_residual_max)
+        residual_width = 96
+        self.residual_depthwise3 = nn.Conv2d(
+            width, width, 3, padding=1, groups=width, bias=False
+        )
+        self.residual_depthwise5 = nn.Conv2d(
+            width, width, 5, padding=2, groups=width, bias=False
+        )
+        self.residual_projection = nn.Conv2d(width * 3, residual_width, 1)
+        pooled_width = residual_width * 2 * (1 + 4 + 16)
+        self.residual_frame = nn.Sequential(
+            nn.LayerNorm(pooled_width),
+            nn.Linear(pooled_width, hidden),
+            nn.GELU(),
+            nn.Dropout(settings.dropout),
+        )
+        self.residual_output = nn.Sequential(
+            nn.LayerNorm(hidden * 7),
+            nn.Linear(hidden * 7, hidden * 2),
+            nn.GELU(),
+            nn.Dropout(settings.dropout),
+            nn.Linear(hidden * 2, hidden),
+            nn.GELU(),
+            nn.Linear(hidden, 1),
+        )
+        nn.init.zeros_(self.residual_output[-1].weight)
+        nn.init.zeros_(self.residual_output[-1].bias)
+
+    def forward(
+        self, vision: torch.Tensor, language: torch.Tensor, mask: torch.Tensor
+    ) -> torch.Tensor:
+        base_prediction = super().forward(vision, language, mask)
+        batch, frames, tokens, width = vision.shape
+        grid = self.token_norm(vision).reshape(
+            batch * frames, self.grid, self.grid, width
+        ).permute(0, 3, 1, 2)
+        features = F.gelu(
+            self.residual_projection(
+                torch.cat(
+                    (
+                        grid,
+                        F.gelu(self.residual_depthwise3(grid)),
+                        F.gelu(self.residual_depthwise5(grid)),
+                    ),
+                    1,
+                )
+            )
+        )
+        pooled = torch.cat(
+            tuple(
+                pool(features, size).flatten(1)
+                for size in (1, 2, 4)
+                for pool in (F.adaptive_avg_pool2d, F.adaptive_max_pool2d)
+            ),
+            1,
+        )
+        frame = self.residual_frame(pooled).reshape(batch, frames, -1)
+        difference = (frame[:, 1:] - frame[:, :-1]).abs()
+        video = torch.cat(
+            (
+                frame.mean(1),
+                frame.float().std(1, unbiased=False).to(frame.dtype),
+                frame.amax(1),
+                frame.amin(1),
+                difference.mean(1),
+                difference.amax(1),
+            ),
+            -1,
+        )
+        prompt = self.language(_masked_statistics(language, mask))
+        correction = self.residual_output(torch.cat((video, prompt), -1)).squeeze(-1)
+        bounded_correction = self.residual_max * torch.tanh(
+            correction / self.residual_max
+        )
+        return base_prediction + bounded_correction
+
+
+class SpatialDeepResidualReadout(SpatialGridReadout):
+    """Higher-capacity convolutional correction after all optical stages.
+
+    This is a plain convolution/pooling/MLP readout. It contains no attention,
+    recurrent unit, or Transformer.  The branch receives only tensors already
+    produced by the four-stage optical/electronic graph.  Its final layer is
+    zero initialized, preserving the warm-start predictor exactly.
+    """
+
+    def __init__(self, settings: ExperimentSettings) -> None:
+        super().__init__(settings)
+        width, hidden = settings.model_width, settings.head_width
+        self.residual_max = float(settings.spatial_residual_max)
+        channels = 128
+        self.residual_conv = nn.Sequential(
+            nn.Conv2d(width, channels, 3, padding=1),
+            nn.GroupNorm(8, channels),
+            nn.GELU(),
+            nn.Conv2d(channels, channels, 3, padding=1),
+            nn.GroupNorm(8, channels),
+            nn.GELU(),
+            nn.Conv2d(channels, channels, 3, padding=1),
+            nn.GroupNorm(8, channels),
+            nn.GELU(),
+        )
+        pooled_width = channels * 2 * (1 + 4 + 16)
+        self.residual_frame = nn.Sequential(
+            nn.LayerNorm(pooled_width),
+            nn.Linear(pooled_width, hidden),
+            nn.GELU(),
+            nn.Dropout(settings.dropout),
+        )
+        self.residual_language = nn.Sequential(
+            nn.LayerNorm(width * 3),
+            nn.Linear(width * 3, hidden // 2),
+            nn.GELU(),
+        )
+        self.residual_output = nn.Sequential(
+            nn.LayerNorm(hidden * 6 + hidden // 2),
+            nn.Linear(hidden * 6 + hidden // 2, hidden * 2),
+            nn.GELU(),
+            nn.Dropout(settings.dropout),
+            nn.Linear(hidden * 2, 1),
+        )
+        nn.init.zeros_(self.residual_output[-1].weight)
+        nn.init.zeros_(self.residual_output[-1].bias)
+
+    def forward(
+        self, vision: torch.Tensor, language: torch.Tensor, mask: torch.Tensor
+    ) -> torch.Tensor:
+        base_prediction = super().forward(vision, language, mask)
+        batch, frames, tokens, width = vision.shape
+        grid = self.token_norm(vision).reshape(
+            batch * frames, self.grid, self.grid, width
+        ).permute(0, 3, 1, 2)
+        feature = self.residual_conv(grid)
+        pooled = torch.cat(
+            tuple(
+                pool(feature, size).flatten(1)
+                for size in (1, 2, 4)
+                for pool in (F.adaptive_avg_pool2d, F.adaptive_max_pool2d)
+            ),
+            1,
+        )
+        frame = self.residual_frame(pooled).reshape(batch, frames, -1)
+        difference = (frame[:, 1:] - frame[:, :-1]).abs()
+        video = torch.cat(
+            (
+                frame.mean(1),
+                frame.float().std(1, unbiased=False).to(frame.dtype),
+                frame.amax(1),
+                frame.amin(1),
+                difference.mean(1),
+                difference.amax(1),
+            ),
+            -1,
+        )
+        prompt = self.residual_language(_masked_statistics(language, mask))
+        correction = self.residual_output(torch.cat((video, prompt), -1)).squeeze(-1)
+        correction = self.residual_max * torch.tanh(correction / self.residual_max)
+        return base_prediction + correction
+
+
 class QualitySpatialAdapter(nn.Module):
     """Small attention-free 2-D input head for the cached 14 quality maps.
 
@@ -927,6 +1381,278 @@ class QualitySpatialAdapter(nn.Module):
         return image.permute(0, 2, 3, 1).reshape(
             batch, frames, tokens, self.project.out_channels
         )
+
+
+class TrainableQualityFrameStem(nn.Module):
+    """Five plain convolutions mapping four RGB frames to 14x14x192 tokens."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.conv1 = nn.Conv2d(14, 48, 3, stride=2, padding=1)
+        self.norm1 = nn.GroupNorm(8, 48)
+        self.conv2 = nn.Conv2d(48, 64, 3, stride=2, padding=1)
+        self.norm2 = nn.GroupNorm(8, 64)
+        self.conv3 = nn.Conv2d(64, 96, 3, stride=2, padding=1)
+        self.norm3 = nn.GroupNorm(12, 96)
+        self.conv4 = nn.Conv2d(96, 96, 3, padding=1)
+        self.norm4 = nn.GroupNorm(12, 96)
+        self.conv5 = nn.Conv2d(96, 192, 3, stride=2, padding=1)
+        self.norm5 = nn.GroupNorm(24, 192)
+        sobel_x = torch.tensor(
+            ((-1.0, 0.0, 1.0), (-2.0, 0.0, 2.0), (-1.0, 0.0, 1.0))
+        ) / 4.0
+        sobel_y = sobel_x.t().contiguous()
+        laplacian = torch.tensor(
+            ((0.0, 1.0, 0.0), (1.0, -4.0, 1.0), (0.0, 1.0, 0.0))
+        ) / 4.0
+        self.register_buffer(
+            "sobel_x", sobel_x.view(1, 1, 3, 3), persistent=False
+        )
+        self.register_buffer(
+            "sobel_y", sobel_y.view(1, 1, 3, 3), persistent=False
+        )
+        self.register_buffer(
+            "laplacian", laplacian.view(1, 1, 3, 3), persistent=False
+        )
+
+    def quality_channels(self, frames: torch.Tensor) -> torch.Tensor:
+        if frames.ndim != 5 or tuple(frames.shape[1:3]) != (4, 3):
+            raise ValueError("Frame stem expects [B,4,3,H,W]")
+        batch, frame_count, _, height, width = frames.shape
+        rgb = frames.float().div(255.0)
+        luminance = (
+            0.2989 * rgb[:, :, 0:1]
+            + 0.5870 * rgb[:, :, 1:2]
+            + 0.1140 * rgb[:, :, 2:3]
+        )
+        flat = luminance.flatten(0, 1)
+        padded3 = F.pad(flat, (1, 1, 1, 1), mode="reflect")
+        sobel_x = F.conv2d(padded3, self.sobel_x)
+        sobel_y = F.conv2d(padded3, self.sobel_y)
+        gradient = torch.sqrt(sobel_x.square() + sobel_y.square() + 1.0e-12)
+        laplacian = F.conv2d(padded3, self.laplacian).abs()
+        padded5 = F.pad(flat, (2, 2, 2, 2), mode="reflect")
+        local_mean = F.avg_pool2d(padded5, 5, stride=1)
+        local_square_mean = F.avg_pool2d(padded5.square(), 5, stride=1)
+        local_std = (local_square_mean - local_mean.square()).clamp_min(0.0).sqrt()
+        shape = (batch, frame_count, 1, height, width)
+        sobel_x, sobel_y = sobel_x.reshape(shape), sobel_y.reshape(shape)
+        gradient, laplacian = gradient.reshape(shape), laplacian.reshape(shape)
+        local_std = local_std.reshape(shape)
+        saturation = rgb.amax(2, keepdim=True) - rgb.amin(2, keepdim=True)
+        temporal = torch.zeros_like(luminance)
+        temporal[:, 1:] = (luminance[:, 1:] - luminance[:, :-1]).abs()
+        y = torch.linspace(
+            -1.0, 1.0, height, device=rgb.device, dtype=rgb.dtype
+        ).view(1, 1, 1, height, 1).expand(batch, frame_count, 1, height, width)
+        x = torch.linspace(
+            -1.0, 1.0, width, device=rgb.device, dtype=rgb.dtype
+        ).view(1, 1, 1, 1, width).expand(batch, frame_count, 1, height, width)
+        time = torch.linspace(
+            -1.0, 1.0, frame_count, device=rgb.device, dtype=rgb.dtype
+        ).view(1, frame_count, 1, 1, 1).expand(
+            batch, frame_count, 1, height, width
+        )
+        return torch.cat(
+            (
+                rgb,
+                luminance,
+                sobel_x,
+                sobel_y,
+                gradient,
+                laplacian,
+                local_std,
+                saturation,
+                temporal,
+                x,
+                y,
+                time,
+            ),
+            2,
+        )
+
+    def forward(self, frames: torch.Tensor) -> torch.Tensor:
+        batch, frame_count = frames.shape[:2]
+        value = self.quality_channels(frames).flatten(0, 1)
+        value = F.gelu(self.norm1(self.conv1(value)))
+        value = F.gelu(self.norm2(self.conv2(value)))
+        value = F.gelu(self.norm3(self.conv3(value)))
+        value = F.gelu(self.norm4(self.conv4(value)))
+        value = F.gelu(self.norm5(self.conv5(value)))
+        return value.flatten(2).transpose(1, 2).reshape(
+            batch, frame_count, -1, value.shape[1]
+        )
+
+
+class QualitySpatialRefiner(nn.Module):
+    """Zero-start spatial correction applied before optical stage one.
+
+    The branch sees only the already declared quality input tensor.  Its final
+    projection is initialized to zero, so adding the module to a warm-started
+    checkpoint preserves every prediction exactly until optimization begins.
+    It contains only normalization and convolutions; no attention or bypass to
+    the MOS readout is introduced.
+    """
+
+    def __init__(self, settings: ExperimentSettings) -> None:
+        super().__init__()
+        self.grid = settings.token_grid
+        self.width = settings.model_width
+        self.maximum = float(settings.quality_refiner_max)
+        self.norm = nn.LayerNorm(self.width)
+        self.depthwise3 = nn.Conv2d(
+            self.width, self.width, 3, padding=1, groups=self.width, bias=False
+        )
+        self.depthwise5 = nn.Conv2d(
+            self.width, self.width, 5, padding=2, groups=self.width, bias=False
+        )
+        self.project = nn.Conv2d(self.width * 2, self.width, 1)
+        nn.init.zeros_(self.project.weight)
+        nn.init.zeros_(self.project.bias)
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        batch, frames, tokens, width = value.shape
+        if tokens != self.grid * self.grid or width != self.width:
+            raise ValueError("Quality refiner input contract changed")
+        grid = self.norm(value).reshape(
+            batch * frames, self.grid, self.grid, width
+        ).permute(0, 3, 1, 2)
+        correction = self.project(
+            torch.cat(
+                (
+                    F.gelu(self.depthwise3(grid)),
+                    F.gelu(self.depthwise5(grid)),
+                ),
+                1,
+            )
+        )
+        correction = self.maximum * torch.tanh(correction / self.maximum)
+        correction = correction.permute(0, 2, 3, 1).reshape_as(value)
+        return value + correction
+
+
+class FrozenVGGSpatialCorrection(nn.Module):
+    """Bounded, zero-start correction from a frozen plain-convolution front.
+
+    The cached 14x14 VGG16 tokens are produced only by sequential convolution,
+    ReLU and max-pooling layers.  This adapter contains no attention or
+    Transformer and injects its result before optical stage one, so it cannot
+    bypass the required four-stage optical/electronic path.
+    """
+
+    def __init__(self, settings: ExperimentSettings) -> None:
+        super().__init__()
+        width = settings.model_width
+        self.maximum = float(settings.vgg_correction_max)
+        self.mode = settings.vgg_correction_mode
+        input_width = 512 if self.mode == "local" else 512 * 4
+        self.adapter = nn.Sequential(
+            nn.LayerNorm(input_width),
+            nn.Linear(input_width, width * 2),
+            nn.GELU(),
+            nn.Linear(width * 2, width),
+        )
+        nn.init.zeros_(self.adapter[-1].weight)
+        nn.init.zeros_(self.adapter[-1].bias)
+
+    def forward(self, tokens: torch.Tensor) -> torch.Tensor:
+        value = tokens.float()
+        if self.mode == "context":
+            batch, frames, token_count, channels = value.shape
+            grid_size = math.isqrt(token_count)
+            if grid_size * grid_size != token_count:
+                raise ValueError("Context VGG correction requires a square token grid")
+            grid = value.reshape(batch * frames, grid_size, grid_size, channels).permute(0, 3, 1, 2)
+            local = F.avg_pool2d(grid, 3, stride=1, padding=1).permute(0, 2, 3, 1).reshape_as(value)
+            mean = value.mean(2, keepdim=True).expand_as(value)
+            maximum = value.amax(2, keepdim=True).expand_as(value)
+            value = torch.cat((value, local, mean, maximum), -1)
+        correction = self.adapter(value)
+        return self.maximum * torch.tanh(correction / self.maximum)
+
+
+class SpatialLateInputCorrection(nn.Module):
+    """Bounded final correction from the declared pre-optical multimodal field.
+
+    The input already contains Qwen patch/position features, the convolutional
+    quality feature, and prompt conditioning. This plain convolution/pooling
+    head is applied only after the four optical/electronic stages produce the
+    main score. Its zero-initialized last layer preserves a warm-start exactly,
+    while the explicit bound prevents it from replacing the optical predictor.
+    """
+
+    def __init__(self, settings: ExperimentSettings) -> None:
+        super().__init__()
+        self.grid = settings.token_grid
+        self.maximum = float(settings.late_input_correction_max)
+        width, hidden, channels = settings.model_width, settings.head_width, 64
+        self.norm = nn.LayerNorm(width)
+        self.depthwise3 = nn.Conv2d(
+            width, width, 3, padding=1, groups=width, bias=False
+        )
+        self.depthwise5 = nn.Conv2d(
+            width, width, 5, padding=2, groups=width, bias=False
+        )
+        self.project = nn.Conv2d(width * 3, channels, 1)
+        pooled_width = channels * 2 * (1 + 4 + 16)
+        self.frame = nn.Sequential(
+            nn.LayerNorm(pooled_width),
+            nn.Linear(pooled_width, hidden),
+            nn.GELU(),
+            nn.Dropout(settings.dropout),
+        )
+        self.output = nn.Sequential(
+            nn.LayerNorm(hidden * 6),
+            nn.Linear(hidden * 6, hidden * 2),
+            nn.GELU(),
+            nn.Dropout(settings.dropout),
+            nn.Linear(hidden * 2, 1),
+        )
+        nn.init.zeros_(self.output[-1].weight)
+        nn.init.zeros_(self.output[-1].bias)
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        batch, frames, tokens, width = value.shape
+        if tokens != self.grid * self.grid:
+            raise ValueError("Late Spatial correction requires a square token grid")
+        grid = self.norm(value).reshape(
+            batch * frames, self.grid, self.grid, width
+        ).permute(0, 3, 1, 2)
+        feature = F.gelu(
+            self.project(
+                torch.cat(
+                    (
+                        grid,
+                        F.gelu(self.depthwise3(grid)),
+                        F.gelu(self.depthwise5(grid)),
+                    ),
+                    1,
+                )
+            )
+        )
+        pooled = torch.cat(
+            tuple(
+                pool(feature, size).flatten(1)
+                for size in (1, 2, 4)
+                for pool in (F.adaptive_avg_pool2d, F.adaptive_max_pool2d)
+            ),
+            1,
+        )
+        frame = self.frame(pooled).reshape(batch, frames, -1)
+        difference = (frame[:, 1:] - frame[:, :-1]).abs()
+        video = torch.cat(
+            (
+                frame.mean(1),
+                frame.float().std(1, unbiased=False).to(frame.dtype),
+                frame.amax(1),
+                frame.amin(1),
+                difference.mean(1),
+                difference.amax(1),
+            ),
+            -1,
+        )
+        correction = self.output(video).squeeze(-1)
+        return self.maximum * torch.tanh(correction / self.maximum)
 
 
 class TemporalReadout(nn.Module):
@@ -1003,14 +1729,35 @@ class LGVQSingleMetricOEO16(nn.Module):
         self.quality_adapter: nn.Module
         if settings.quality_adapter_mode == "spatial_conv":
             self.quality_adapter = QualitySpatialAdapter(settings)
+        elif settings.quality_adapter_mode == "identity":
+            self.quality_adapter = nn.Identity()
         else:
             self.quality_adapter = nn.Sequential(
                 nn.LayerNorm(settings.quality_input_width),
                 nn.Linear(settings.quality_input_width, settings.model_width),
             )
+        self.quality_refiner = (
+            QualitySpatialRefiner(settings)
+            if settings.quality_refiner_enabled
+            else nn.Identity()
+        )
+        self.frame_stem = (
+            TrainableQualityFrameStem()
+            if settings.trainable_frame_stem_enabled
+            else None
+        )
+        self.vgg_correction = (
+            FrozenVGGSpatialCorrection(settings)
+            if settings.vgg_feature_cache_path is not None
+            else None
+        )
         self.raw_quality_gate = nn.Parameter(
             torch.logit(torch.tensor(settings.quality_gate_initial))
         )
+        if settings.qwen_gate_enabled:
+            self.raw_qwen_gate = nn.Parameter(
+                torch.logit(torch.tensor(settings.qwen_gate_initial))
+            )
         self.visual_input_norm = nn.LayerNorm(settings.model_width)
         self.language_adapter = nn.Sequential(
             nn.LayerNorm(settings.language_input_width),
@@ -1028,8 +1775,18 @@ class LGVQSingleMetricOEO16(nn.Module):
         )
         self.language_routes = nn.ModuleList(
             [
-                LanguageElectronicRoute(settings.model_width),
-                LanguageElectronicRoute(settings.model_width),
+                LanguageElectronicRoute(
+                    settings.model_width,
+                    skip_enabled=settings.electronic_skip_enabled,
+                    skip_initial=settings.electronic_skip_initial,
+                    skip_max=settings.electronic_skip_max,
+                ),
+                LanguageElectronicRoute(
+                    settings.model_width,
+                    skip_enabled=settings.electronic_skip_enabled,
+                    skip_initial=settings.electronic_skip_initial,
+                    skip_max=settings.electronic_skip_max,
+                ),
             ]
         )
         self.parallel_optics = ParallelOpticalFeaturePath(settings)
@@ -1052,15 +1809,27 @@ class LGVQSingleMetricOEO16(nn.Module):
         nn.init.normal_(self.sequence_position, std=0.02)
         self.readout: nn.Module
         if settings.target_name == "spatial":
-            self.readout = (
-                SpatialGridReadout(settings)
-                if settings.spatial_readout_mode == "spatial_grid"
-                else SpatialReadout(settings)
-            )
+            if settings.spatial_readout_mode == "spatial_grid":
+                self.readout = SpatialGridReadout(settings)
+            elif settings.spatial_readout_mode == "spatial_multiscale":
+                self.readout = SpatialMultiscaleReadout(settings)
+            elif settings.spatial_readout_mode == "spatial_grid_residual":
+                self.readout = SpatialGridResidualReadout(settings)
+            elif settings.spatial_readout_mode == "spatial_pyramid_residual":
+                self.readout = SpatialPyramidResidualReadout(settings)
+            elif settings.spatial_readout_mode == "spatial_deep_residual":
+                self.readout = SpatialDeepResidualReadout(settings)
+            else:
+                self.readout = SpatialReadout(settings)
         elif settings.target_name == "temporal":
             self.readout = TemporalReadout(settings)
         else:
             raise ValueError("target_name must be spatial or temporal")
+        self.late_input_correction = (
+            SpatialLateInputCorrection(settings)
+            if settings.late_input_correction_enabled
+            else None
+        )
         self.register_buffer("target_mean", torch.tensor(0.0))
         self.register_buffer("target_std", torch.tensor(1.0))
 
@@ -1074,9 +1843,18 @@ class LGVQSingleMetricOEO16(nn.Module):
         quality_tokens: torch.Tensor,
         language_tokens: torch.Tensor,
         language_mask: torch.Tensor,
+        raw_frames: torch.Tensor | None = None,
         *,
+        vgg_tokens: torch.Tensor | None = None,
         optical_enabled: bool = True,
     ) -> dict[str, Any]:
+        if self.frame_stem is not None:
+            if raw_frames is None:
+                raise ValueError("The trainable frame stem requires raw_frames")
+            # The original warm-start cache was persisted as float16. Keeping
+            # the same quantization boundary makes epoch 0 reproducible while
+            # retaining gradients through the cast during fine-tuning.
+            quality_tokens = self.frame_stem(raw_frames).to(torch.float16).float()
         if tuple(vision_tokens.shape[:-1]) != tuple(quality_tokens.shape[:-1]):
             raise ValueError("Qwen and fixed-quality token grids must match")
         if vision_tokens.shape[-1] != self.settings.vision_input_width:
@@ -1092,12 +1870,29 @@ class LGVQSingleMetricOEO16(nn.Module):
         prompt_scale, prompt_shift = self.prompt_to_visual(prompt_summary).chunk(2, -1)
 
         qwen_vision = self.vision_adapter(vision_tokens.float())
-        quality = self.quality_adapter(quality_tokens.float())
-        vision = qwen_vision + torch.sigmoid(self.raw_quality_gate) * quality
+        quality = self.quality_refiner(
+            self.quality_adapter(quality_tokens.float())
+        )
+        raw_qwen_gate = getattr(self, "raw_qwen_gate", None)
+        qwen_gate = (
+            qwen_vision.new_ones(())
+            if raw_qwen_gate is None
+            else torch.sigmoid(raw_qwen_gate)
+        )
+        vision = qwen_gate * qwen_vision + torch.sigmoid(self.raw_quality_gate) * quality
+        vgg_correction = qwen_vision.new_zeros(qwen_vision.shape)
+        if self.vgg_correction is not None:
+            if vgg_tokens is None:
+                raise ValueError("The plain-VGG correction requires vgg_tokens")
+            if tuple(vgg_tokens.shape[:-1]) != tuple(qwen_vision.shape[:-1]) or vgg_tokens.shape[-1] != 512:
+                raise ValueError("Plain-VGG token contract must be [B,4,196,512]")
+            vgg_correction = self.vgg_correction(vgg_tokens)
+            vision = vision + vgg_correction
         vision = self.visual_input_norm(
             vision * (1.0 + 0.10 * torch.tanh(prompt_scale[:, None, None]))
             + 0.10 * prompt_shift[:, None, None]
         )
+        pre_optical_vision = vision
         routing: dict[str, dict[str, Any]] = {}
         alignments: list[torch.Tensor] = []
 
@@ -1145,7 +1940,7 @@ class LGVQSingleMetricOEO16(nn.Module):
         fields3 = self.serial_optics.fields(sequence)
         electronic3 = self.language_routes[0](sequence, mask)
         if optical_enabled:
-            routing["language"] = self.serial_router(fields3)
+            routing["language"] = self.serial_router(fields3, sequence.shape[1])
             optical3 = self.serial_optics.expert(
                 fields3, routing["language"]["weights"], sequence.shape[1]
             )
@@ -1164,6 +1959,10 @@ class LGVQSingleMetricOEO16(nn.Module):
             sequence = electronic4
 
         normalized = self.readout(vision, sequence, mask)
+        input_correction = normalized.new_zeros(normalized.shape)
+        if self.late_input_correction is not None:
+            input_correction = self.late_input_correction(pre_optical_vision)
+            normalized = normalized + input_correction
         prediction = normalized * self.target_std + self.target_mean
         if routing:
             balance = torch.stack(
@@ -1186,6 +1985,9 @@ class LGVQSingleMetricOEO16(nn.Module):
             "normalized_prediction": normalized,
             "target_name": self.settings.target_name,
             "quality_gate": torch.sigmoid(self.raw_quality_gate),
+            "qwen_gate": qwen_gate,
+            "late_input_correction": input_correction,
+            "vgg_correction_rms": vgg_correction.float().square().mean().sqrt(),
             "routing": routing,
             "optical_enabled": optical_enabled,
             "optical_alignment_loss": torch.stack(alignments).mean()
@@ -1230,6 +2032,12 @@ class LGVQSingleMetricOEO16(nn.Module):
             ),
             "single_metric_readout": self.readout,
         }
+        if self.frame_stem is not None:
+            groups["trainable_quality_frame_stem"] = self.frame_stem
+        if self.vgg_correction is not None:
+            groups["plain_vgg16_spatial_correction"] = self.vgg_correction
+        if self.late_input_correction is not None:
+            groups["late_input_correction"] = self.late_input_correction
         result = {
             name: sum(parameter.numel() for parameter in module.parameters())
             for name, module in groups.items()

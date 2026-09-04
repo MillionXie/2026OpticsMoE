@@ -1,0 +1,3 @@
+base_config: spatial_vggcorr_crop65_lr1000.yaml
+output_dir: ../../runs/lgvq_spatial_vggcorr_crop65_lr1000_s93
+random_seed: 93

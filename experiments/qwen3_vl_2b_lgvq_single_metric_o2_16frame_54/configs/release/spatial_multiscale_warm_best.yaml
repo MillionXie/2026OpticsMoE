@@ -1,0 +1,26 @@
+base_config: spatial_stem_warmstart.yaml
+
+# The four optical stages, optical Top-2 routers, 2x2-frame/109-pixel geometry,
+# prompt path, RMS convex fusion, and 20% evaluation DC are unchanged. Only the
+# final post-optical electronic readout is replaced by an attention-free
+# multi-scale convolution/statistics head.
+output_dir: ../../runs/lgvq_spatial_qwenfront_o2_4f109_dc20_multiscale_warm_best
+random_seed: 46
+
+model:
+  spatial_readout_mode: spatial_multiscale
+  head_width: 512
+  dropout: 0.16
+
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_qwenfront_o2_4f109_dc20_stemwarm/best_observed_test_checkpoint.pt
+  epochs: 80
+  batch_size: 32
+  learning_rate: 0.00012
+  phase_learning_rate: 0.006
+  router_phase_learning_rate: 0.009
+
+loss:
+  ranking_weight: 0.25
+  correlation_weight: 0.70
+  soft_target_weight: 2.00

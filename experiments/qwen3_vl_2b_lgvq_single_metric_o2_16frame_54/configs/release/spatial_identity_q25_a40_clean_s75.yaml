@@ -1,0 +1,3 @@
+base_config: spatial_identity_q25_a40_clean.yaml
+output_dir: ../../runs/lgvq_spatial_identity_q25_a40_clean_s75
+random_seed: 75

@@ -1,0 +1,45 @@
+base_config: temporal_accuracy.yaml
+
+# Nine temporal landmarks are placed as a compact 3x3 optical field. The
+# active 478x478 contract and all later 109x109 serial stages are unchanged.
+output_dir: ../../runs/lgvq_temporal_qwenfront_o2_9f77_dc20_compact
+random_seed: 44
+
+data:
+  vision_cache: ../../artifacts/qwen3vl_front_9f_49x1024_quality14.pt
+
+geometry:
+  canvas_size: 518
+  active_size: 478
+  lane_grid: 3
+  lane_size: 156
+  lane_pitch: 160
+  lane_offset: 1
+  parallel_expert_size: 77
+  parallel_expert_pitch: 79
+  serial_expert_size: 109
+  serial_expert_pitch: 123
+
+model:
+  frame_count: 9
+
+router:
+  # Two 30-pixel detector bands with only an 8-pixel central gap.
+  parallel_intervals: [[44, 74], [82, 112]]
+  noise_std: 0.025
+
+training:
+  initialization_checkpoint: ../../runs/lgvq_temporal_qwenfront_o2_16f54_dc20_accuracy/best_observed_test_checkpoint.pt
+  epochs: 100
+  batch_size: 64
+  learning_rate: 0.00020
+  phase_learning_rate: 0.018
+  router_phase_learning_rate: 0.028
+  test_interval_epochs: 5
+  phase_snapshot_interval_epochs: 5
+
+loss:
+  # Moderate rather than forced-uniform routing: hard Top-2 is preserved.
+  router_balance_weight: 0.06
+  router_importance_weight: 0.01
+  router_capture_weight: 0.02

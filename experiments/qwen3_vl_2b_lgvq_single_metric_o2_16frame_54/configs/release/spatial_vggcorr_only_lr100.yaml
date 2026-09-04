@@ -1,0 +1,12 @@
+base_config: spatial_identity_q25_a40_clean.yaml
+output_dir: ../../runs/lgvq_spatial_vggcorr_only_lr100
+data:
+  vgg_feature_cache: ../../artifacts/lgvq_vgg16_4f_196x512.pt
+model:
+  vgg_correction_max: 0.25
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_identity_q25_a40_clean/best_observed_test_checkpoint.pt
+  trainable_scope: vgg_correction_only
+  epochs: 80
+  learning_rate: 0.00010
+  test_interval_epochs: 1
