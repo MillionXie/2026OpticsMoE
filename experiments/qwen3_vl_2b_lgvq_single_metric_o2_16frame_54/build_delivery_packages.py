@@ -173,9 +173,11 @@ def build_evolution(root: Path, config: Path, checkpoint: Path, snapshots: Path,
     selected: dict[str, Path] = {}
     _project_code(selected, root)
     selected["best_observed_test_checkpoint.pt"] = checkpoint
-    for path in snapshots.glob("*"):
-        if path.is_file() and (path.suffix in {".pt", ".json", ".csv"}):
-            selected[f"phase_snapshots/{path.name}"] = path
+    for path in snapshots.rglob("*"):
+        if path.is_file() and path.suffix.lower() in {
+            ".pt", ".json", ".csv", ".npy", ".png", ".pdf"
+        }:
+            selected[f"phase_snapshots/{path.relative_to(snapshots).as_posix()}"] = path
     if not any(name.startswith("phase_snapshots/epoch_") for name in selected):
         raise FileNotFoundError(f"No epoch snapshots under {snapshots}")
     readme = root / PROJECT / "MASK_EVOLUTION_HANDOFF.md"
@@ -212,4 +214,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
