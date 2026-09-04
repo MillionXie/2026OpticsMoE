@@ -1,4 +1,4 @@
-base_config: ../release/spatial_balanced_router_strong_b5.yaml
+base_config: ../release/spatial_balanced_router_std_strong.yaml
 
 # Self-contained paths used by the Spatial-4 laboratory ZIP. Keep these paths
 # unchanged after extracting the archive.
