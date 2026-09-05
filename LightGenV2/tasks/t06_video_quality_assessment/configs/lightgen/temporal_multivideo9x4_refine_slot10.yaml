@@ -1,0 +1,16 @@
+base_config: temporal_multivideo9x4_base.yaml
+output_dir: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo9x4_refine_slot10_s101
+random_seed: 101
+router:
+  temperature: 0.90
+training:
+  initialization_checkpoint: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo9x4_balanced_s92/best_observed_test_checkpoint.pt
+  epochs: 60
+  learning_rate: 0.00012
+  phase_learning_rate: 0.008
+  router_phase_learning_rate: 0.014
+loss:
+  router_balance_weight: 0.12
+  router_importance_weight: 0.04
+  slot_consistency_weight: 0.10
+  slot_consistency_interval: 1

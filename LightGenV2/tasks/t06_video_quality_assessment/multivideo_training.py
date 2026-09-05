@@ -236,11 +236,27 @@ def evaluate(
                 selected = diagnostics["selected_mask"].detach().float().reshape(-1, 4)
                 row = router.setdefault(
                     name,
-                    {"probability": torch.zeros(4, device=device), "selected": torch.zeros(4, device=device), "count": 0, "implementation": diagnostics["router_implementation"]},
+                    {
+                        "probability": torch.zeros(4, device=device),
+                        "selected": torch.zeros(4, device=device),
+                        "count": 0,
+                        "implementation": diagnostics["router_implementation"],
+                        "diagnostic_batches": 0,
+                        "conditional_probability_std": 0.0,
+                        "selection_variation_fraction": 0.0,
+                        "unique_selection_patterns_mean": 0.0,
+                    },
                 )
                 row["probability"] += probability.sum(0)
                 row["selected"] += selected.sum(0)
                 row["count"] += probability.shape[0]
+                row["diagnostic_batches"] += 1
+                for diagnostic in (
+                    "conditional_probability_std",
+                    "selection_variation_fraction",
+                    "unique_selection_patterns_mean",
+                ):
+                    row[diagnostic] += float(diagnostics[diagnostic])
     prediction = torch.cat(predictions)
     target = torch.cat(targets)
     source = torch.cat(indices)
@@ -274,6 +290,9 @@ def evaluate(
                 "selected_share": selected_share.tolist(),
                 "maximum_selected_share": float(selected_share.max()),
                 "effective_experts_probability": float(torch.exp(-(probability * probability.clamp_min(1e-8).log()).sum())),
+                "conditional_probability_std": values["conditional_probability_std"] / max(1, values["diagnostic_batches"]),
+                "selection_variation_fraction": values["selection_variation_fraction"] / max(1, values["diagnostic_batches"]),
+                "unique_selection_patterns_mean": values["unique_selection_patterns_mean"] / max(1, values["diagnostic_batches"]),
             }
     if prediction_path is not None:
         prediction_path.parent.mkdir(parents=True, exist_ok=True)

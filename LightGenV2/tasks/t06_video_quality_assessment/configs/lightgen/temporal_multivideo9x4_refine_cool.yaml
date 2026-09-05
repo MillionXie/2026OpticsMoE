@@ -1,0 +1,8 @@
+base_config: temporal_multivideo9x4_refine_slot20.yaml
+output_dir: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo9x4_refine_cool_s106
+random_seed: 106
+router:
+  temperature: 0.70
+training:
+  phase_learning_rate: 0.006
+  router_phase_learning_rate: 0.010

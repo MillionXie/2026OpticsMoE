@@ -1,0 +1,6 @@
+base_config: temporal_multivideo9x4_refine_slot20.yaml
+output_dir: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo9x4_refine_balance_s105
+random_seed: 105
+loss:
+  router_balance_weight: 0.22
+  router_importance_weight: 0.08

@@ -26,13 +26,47 @@ from experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54.modeling import (
     _initialize_resampler,
     _phase_modulation,
     _random_shift,
-    _routing_statistics,
     _sparse_top2,
     _spot_phase,
     _translate,
 )
 
 from ..multivideo_settings import MultiVideoSettings
+
+
+def _slotwise_routing_statistics(
+    probabilities: torch.Tensor, selected: torch.Tensor
+) -> dict[str, torch.Tensor]:
+    """Balance every physical lane across samples, not only the whole field.
+
+    A global average can be perfectly uniform when slot 0 always chooses
+    experts 0/1 and slot 1 always chooses 2/3.  Averaging over the batch while
+    preserving the physical decision index prevents that false balance.
+    """
+
+    flat_p = probabilities.reshape(probabilities.shape[0], -1, 4)
+    flat_s = selected.float().reshape(selected.shape[0], -1, 4)
+    importance = flat_p.mean(0)
+    load = flat_s.mean(0) / 2.0
+    entropy = -(
+        flat_p.clamp_min(1.0e-8).log() * flat_p
+    ).sum(-1).mean() / math.log(4.0)
+    codes = (flat_s * flat_s.new_tensor((1.0, 2.0, 4.0, 8.0))).sum(-1).long()
+    counts = torch.stack(
+        [(codes == code).sum(0) for code in range(16)], 0
+    )
+    modal_fraction = counts.amax(0).float() / max(1, codes.shape[0])
+    unique_patterns = (counts > 0).sum(0).float()
+    return {
+        "importance": importance.mean(0),
+        "load": load.mean(0),
+        "balance_loss": (4.0 * (importance * load).sum(-1)).mean(),
+        "importance_loss": (4.0 * importance.square().sum(-1) - 1.0).mean(),
+        "normalized_entropy": entropy,
+        "conditional_probability_std": flat_p.std(0, unbiased=False).mean(),
+        "selection_variation_fraction": (1.0 - modal_fraction).mean(),
+        "unique_selection_patterns_mean": unique_patterns.mean(),
+    }
 
 
 def _standardized_router(
@@ -49,7 +83,7 @@ def _standardized_router(
         "weights": weights,
         "selected_mask": selected,
         "selected_indices": indices,
-        **_routing_statistics(probabilities, selected),
+        **_slotwise_routing_statistics(probabilities, selected),
     }
 
 
