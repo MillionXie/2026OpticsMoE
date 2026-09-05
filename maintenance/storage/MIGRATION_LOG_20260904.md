@@ -83,8 +83,9 @@ All Windows deletions in this pass were sent to the Recycle Bin.
   bytes. The committed `checkpoint_prune_manifest_20260905.csv` records every
   deleted path and its preserved siblings; post-delete verification found zero
   missing preserved files.
-- Final measured guest3 usage is 955,507,471,149 bytes (889.886 GiB), with
-  925,223,442,356 bytes (861.681 GiB) under the repository and about 800 GiB
+- Final measured guest3 usage after the subsequent FA rehome is
+  955,505,769,798 bytes (889.884 GiB), with 925,221,741,005 bytes (861.680 GiB)
+  under the repository and about 800 GiB
   free on `/DATA/DATA1`.
 
 ## 2026-09-05 fixed-feedback artifact correction

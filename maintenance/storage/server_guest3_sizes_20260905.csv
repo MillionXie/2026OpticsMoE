@@ -1,11 +1,11 @@
 scope,bytes,gib,note
-guest3_total,955507471149,889.886,All content owned under /DATA/DATA1/guest3
-2026OpticsMoE,925223442356,861.681,Repository source plus server-resident datasets and artifacts
+guest3_total,955505769798,889.884,All content owned under /DATA/DATA1/guest3
+2026OpticsMoE,925221741005,861.680,Repository source plus server-resident datasets and artifacts
 2026OpticsMoE/data,701405386595,653.235,Retained datasets; Bench2Drive removed
-2026OpticsMoE/experiments,216181591756,201.335,Experiment code runs caches and delivery artifacts
+2026OpticsMoE/experiments,205924855372,191.782,Non-FA experiment code runs caches and delivery artifacts
+2026OpticsMoE/FixedFeedbackSFT,12015680835,11.190,FA source central runs selected evidence and reports
 guest3/.cache,27210759800,25.342,Reusable user caches retained
 2026OpticsMoE/opticalmoe,3455610227,3.218,Core opticalmoe tree
-2026OpticsMoE/FixedFeedbackSFT,1760328507,1.639,Includes rehomed P08 evidence and runs
 2026OpticsMoE/opticalmoe_experiments,1635816665,1.523,OpticalMoE experiment tree
 guest3/.conda,1687560500,1.572,Conda metadata retained
 guest3/third_party,1385704397,1.291,Third-party dependencies retained

@@ -46,11 +46,12 @@
   (15.343 GiB). A post-delete scan found zero remaining candidates. All 142
   distinct `best*` and `last`/`latest` checkpoints named by the manifest were
   verified present after deletion.
-- After the approved dataset/debug/checkpoint cleanup, the guest3 account uses
-  955,507,471,149 bytes (889.886 GiB), including 925,223,442,356 bytes
-  (861.681 GiB) under `2026OpticsMoE`. The shared volume reports about 800 GiB
+- After the approved cleanup and FA artifact rehome, the guest3 account uses
+  955,505,769,798 bytes (889.884 GiB), including 925,221,741,005 bytes
+  (861.680 GiB) under `2026OpticsMoE`. The shared volume reports about 800 GiB
   free. The largest retained areas are `data` at 653.235 GiB,
-  `experiments` at 201.335 GiB, and the user cache at 25.342 GiB.
+  `experiments` at 191.782 GiB, `FixedFeedbackSFT` at 11.190 GiB, and the user
+  cache at 25.342 GiB.
 
 ## Artifact policy
 
@@ -71,7 +72,7 @@ lists periodic `epoch_*`/`step_*` checkpoints when the same directory contains
 both a recognizable `best` checkpoint and `last`/`latest`. It defaults to a
 dry run and writes a manifest before `--apply` removes anything.
 
-The regenerated `all_run_index.csv` covers 532 run directories. After cleanup,
-the indexed runs total 68.386 GiB, of which 48.698 GiB is checkpoints. The
+The corrected `all_run_index.csv` covers 528 actual run directories. After
+cleanup, the indexed runs total 68.384 GiB, of which 48.698 GiB is checkpoints. The
 remaining 100 runs classified as `checkpoint_without_clear_best` require manual
 project-level review and were intentionally not modified.
