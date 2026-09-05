@@ -1,0 +1,105 @@
+# T06: nine unrelated videos, four frames each, in one 478x478 optical field.
+# Six coherent 10-cm propagations produce nine independent Temporal MOS values.
+output_dir: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo9x4_base
+device: cuda
+random_seed: 91
+
+task:
+  target_name: temporal
+  prompt: "Please evaluate the temporal quality of this video and rate it using one of the following five levels: Excellent, Good, Fair, Poor, or Bad."
+
+data:
+  dataset_root: /DATA/DATA1/lixinyue/xyli/data/LGVQ
+  manifest: experiments/lgvq_four_stage_optical_electronic_109_no_attention_vqa/artifacts/lgvq_train2250_test558.csv
+  vision_cache: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/artifacts/qwen3vl_front_4f_49x1024_quality14.pt
+  language_cache: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/artifacts/qwen3vl_front_temporal_prompt_2048.pt
+  training_soft_targets: experiments/lgvq_four_stage_optical_electronic_109_no_attention_vqa/artifacts/training_only_teacher_predictions.pt
+
+geometry:
+  canvas_size: 518
+  active_size: 478
+  video_grid: 3
+  video_count: 9
+  video_tile_size: 154
+  video_tile_pitch: 159
+  video_tile_offset: 3
+  frame_grid: 2
+  frames_per_video: 4
+  frame_lane_size: 75
+  frame_lane_pitch: 79
+  frame_expert_size: 36
+  frame_expert_pitch: 39
+  video_field_size: 72
+  video_expert_pitch: 82
+  video_phase_tile_size: 150
+
+model:
+  videos_per_field: 9
+  frame_count: 4
+  token_grid: 7
+  vision_input_width: 1024
+  quality_input_width: 14
+  language_input_width: 2048
+  maximum_language_tokens: 64
+  model_width: 192
+  detector_projection_size: 96
+  head_width: 512
+  dropout: 0.10
+  quality_gate_initial: 0.25
+
+router:
+  top_k: 2
+  temperature: 1.10
+  noise_std: 0.06
+  frame_intervals: [[17, 34], [41, 58]]
+  video_intervals: [[31, 67], [87, 123]]
+
+optics:
+  wavelength_nm: 532.0
+  pixel_pitch_um: 17.0
+  distance_m: 0.10
+  k_space_enabled: true
+  theta_max_deg: 0.5
+  phase_init_std: 0.25
+  ccd_relative_clip: 8.0
+  ccd_log_compression: 1.0
+  unmodulated_power_fraction_min: 0.20
+  unmodulated_power_fraction_max: 0.35
+  unmodulated_power_fraction_eval: 0.20
+
+robustness:
+  input_shift_pixels: 4
+  phase_shift_pixels: 4
+  ccd_shift_pixels: 4
+  phase_dropout_p: 0.05
+  phase_dropout_cell_size: 4
+
+fusion:
+  alpha_min: 0.50
+  alpha_initial: 0.57
+  alpha_max: 0.90
+  epsilon: 0.000001
+
+training:
+  initialization_checkpoint: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/artifacts/temporal16_36_study/models/temporal16_balanced_calibrated.pt
+  epochs: 100
+  batch_size: 6
+  num_workers: 2
+  learning_rate: 0.00030
+  phase_learning_rate: 0.020
+  router_phase_learning_rate: 0.032
+  weight_decay: 0.0001
+  test_interval_epochs: 5
+  phase_snapshot_interval_epochs: 5
+
+loss:
+  ranking_weight: 0.30
+  correlation_weight: 1.00
+  optical_alignment_weight: 0.05
+  router_balance_weight: 0.12
+  router_importance_weight: 0.04
+  router_capture_weight: 0.02
+  guard_energy_weight: 0.04
+  slot_consistency_weight: 0.03
+  slot_consistency_interval: 4
+  soft_target_weight: 3.00

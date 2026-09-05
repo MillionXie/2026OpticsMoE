@@ -1,0 +1,6 @@
+base_config: temporal_multivideo9x4_base.yaml
+output_dir: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo9x4_phasehigh_s94
+random_seed: 94
+training:
+  phase_learning_rate: 0.030
+  router_phase_learning_rate: 0.045

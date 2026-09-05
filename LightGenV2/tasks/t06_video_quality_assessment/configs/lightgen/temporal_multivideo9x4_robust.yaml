@@ -1,0 +1,12 @@
+base_config: temporal_multivideo9x4_base.yaml
+output_dir: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo9x4_robust_s93
+random_seed: 93
+robustness:
+  input_shift_pixels: 5
+  phase_shift_pixels: 5
+  ccd_shift_pixels: 5
+  phase_dropout_p: 0.07
+loss:
+  guard_energy_weight: 0.08
+  slot_consistency_weight: 0.05
+  slot_consistency_interval: 3

@@ -1,0 +1,8 @@
+base_config: temporal_multivideo9x4_base.yaml
+output_dir: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo9x4_strongbalance_s95
+random_seed: 95
+loss:
+  router_balance_weight: 0.20
+  router_importance_weight: 0.08
+  guard_energy_weight: 0.05
+  slot_consistency_weight: 0.04

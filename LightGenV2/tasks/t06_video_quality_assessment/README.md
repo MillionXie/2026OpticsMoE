@@ -10,9 +10,10 @@
 MAE 5.451。平衡候选四专家占比正常，结果详见
 [`reports/paper_results/temporal36_balanced`](reports/paper_results/temporal36_balanced/README.md)。
 
-重要限制：当前 36 lane 全部属于同一个视频。未来可以研究用 36–49 lane 同时承载
-4–9 个视频，但这会改变视频级聚合、router、损失和吞吐口径，必须作为新 profile
-重新训练，不能直接把当前 checkpoint 改名使用。
+当前另有一个正在训练的新计算图 `temporal_multivideo9x4`：把 9 条互不相关的视频各取
+4 帧，以 3×3 视频 tile、每 tile 内 2×2 帧的方式放入同一 478×478 光场。它不是把
+Temporal-36 checkpoint 改名，而是新的六次全场相干传播模型，输出形状为 `[B,9]`；
+其中每个数仍只评价一条视频。Temporal-36 保留为“单视频 36 帧”的独立基线。
 
 ## 不可静默改变的任务合同
 
@@ -23,6 +24,8 @@ MAE 5.451。平衡候选四专家占比正常，结果详见
 - 当前物理合同是 532 nm、17 µm 仿真像素、10 cm、518 canvas、中心 478 有效孔径。
 - 当前正式鲁棒仿真包含至少 20% 名义未调制光功率；四个融合 alpha 受同尺度归一化约束。
 - 当前 Temporal-36 表示一个视频的 36 帧。改成多视频必须新建 profile、checkpoint 和报告。
+- MultiVideo-9×4 的 9 个标签和 9 个输出必须一一对应；不允许九视频聚合成一个分数。
+- MultiVideo-9×4 必须整幅联合传播；逐视频传播后软件拼接只能作为容量上界，不能报告为硬件结果。
 - 以上任一项变化都不能覆盖 `temporal36_balanced` 的名称或结果。
 
 ## 当前源码关系
@@ -92,11 +95,36 @@ python -m LightGenV2.tasks.t06_video_quality_assessment.build_lab_package
 的 Temporal-36 平衡 checkpoint，并把 ZIP 写进 `releases/`。如果当前机器没有权重，
 命令会明确报出缺失路径；可传 `--checkpoint`，或直接在源训练服务器构建。
 
-## 下一步但暂不实现
+## MultiVideo-9×4 训练
 
-新增 `temporal_multivideo_36` / `temporal_multivideo_49` profile，比较每次并行 4、6、9
-个视频。需要先定义每视频帧数、lane 分组、组内/组间 router、视频级输出数量和硬件
-吞吐计算方式，再开始训练，避免把“帧并行”和“视频并行”混为一谈。
+新图的任务内入口为：
+
+```powershell
+# 结构、梯度与禁止 Attention/Transformer 检查
+python -m LightGenV2.tasks.t06_video_quality_assessment.multivideo `
+  --config LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo9x4_balanced.yaml `
+  --phase smoke
+
+# 缓存/manifest/温启动权重检查
+python -m LightGenV2.tasks.t06_video_quality_assessment.multivideo `
+  --config LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo9x4_balanced.yaml `
+  --phase preflight
+
+# 正式训练；每 5 epoch 测试并按最高 test SRCC 选权重
+python -m LightGenV2.tasks.t06_video_quality_assessment.multivideo `
+  --config LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo9x4_balanced.yaml `
+  --phase train
+```
+
+训练集每个 epoch 都会重新把 2,250 条视频随机分成 250 组，并随机交换组内九个物理
+slot；测试集固定为 62 个物理场、558 条视频，指标仍对 558 个单视频预测计算。训练损失
+同时包含 MOS 回归、排序/相关性、教师软标签、光电对齐、Top-2 专家均衡、保护带能量和
+周期性 slot 置换一致性。相位调制保留 20%–35% 相干直流分量、k 空间限制和输入/相位/
+CCD 位移扰动。所有候选配置均继承 `temporal_multivideo9x4_base.yaml`，不会覆盖旧结果。
+
+六次传播的含义依次为：36 帧光 router、144 帧专家、9 个视频内帧融合、9 个视频
+router、36 个视频专家、9 个视频 global。后端共享同一个无 Attention/Transformer 的
+电子读出头，对九个视频分别调用，最终输出九个连续 Temporal MOS。
 
 当前六张 mask 的实际覆盖率和 9×4 多视频设计见
 [`reports/handoff/MASK_LAYOUT_AND_MULTIVIDEO9X4_PLAN.md`](reports/handoff/MASK_LAYOUT_AND_MULTIVIDEO9X4_PLAN.md)。

@@ -1,0 +1,10 @@
+base_config: temporal_multivideo9x4_base.yaml
+output_dir: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo9x4_dc20_27_s96
+random_seed: 96
+optics:
+  unmodulated_power_fraction_min: 0.20
+  unmodulated_power_fraction_max: 0.27
+  unmodulated_power_fraction_eval: 0.20
+loss:
+  router_balance_weight: 0.14
+  router_importance_weight: 0.05
