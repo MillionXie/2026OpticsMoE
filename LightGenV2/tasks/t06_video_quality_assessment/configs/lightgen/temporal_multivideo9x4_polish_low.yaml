@@ -1,0 +1,7 @@
+base_config: temporal_multivideo9x4_polish_base.yaml
+output_dir: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo9x4_polish_low_s126
+random_seed: 126
+training:
+  learning_rate: 0.00004
+  phase_learning_rate: 0.003
+  router_phase_learning_rate: 0.006

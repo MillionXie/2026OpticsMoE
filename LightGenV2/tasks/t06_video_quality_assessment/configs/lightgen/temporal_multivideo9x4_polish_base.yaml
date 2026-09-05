@@ -1,0 +1,10 @@
+base_config: temporal_multivideo9x4_contentroute_d30.yaml
+training:
+  initialization_checkpoint: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo9x4_contentroute_d30_s114/best_observed_test_checkpoint.pt
+  epochs: 40
+  learning_rate: 0.00008
+  phase_learning_rate: 0.006
+  router_phase_learning_rate: 0.010
+loss:
+  router_diversity_weight: 0.25
+  slot_consistency_weight: 0.50

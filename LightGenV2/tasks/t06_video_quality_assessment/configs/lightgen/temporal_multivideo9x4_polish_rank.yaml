@@ -1,0 +1,6 @@
+base_config: temporal_multivideo9x4_polish_base.yaml
+output_dir: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo9x4_polish_rank_s123
+random_seed: 123
+loss:
+  ranking_weight: 0.45
+  correlation_weight: 1.25
