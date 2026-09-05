@@ -54,11 +54,13 @@ def _compose(name: str, phase: np.ndarray, geometry) -> np.ndarray:
         size = geometry.video_phase_tile_size
         for index, (top, left) in enumerate(geometry.video_origins):
             canvas[top + offset : top + offset + size, left + offset : left + offset + size] = phase[index]
+        index = len(geometry.video_origins)
     elif name == "video_router":
         offset = geometry.video_field_offset
         size = geometry.video_field_size
         for index, (top, left) in enumerate(geometry.video_origins):
             canvas[top + offset : top + offset + size, left + offset : left + offset + size] = phase[index]
+        index = len(geometry.video_origins)
     elif name == "video_experts":
         index = 0
         size = geometry.video_field_size
