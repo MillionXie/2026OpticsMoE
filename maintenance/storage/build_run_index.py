@@ -16,6 +16,7 @@ SKIP_DIRS = {
     "datasets",
     "vendor_sdk",
 }
+SKIP_RUN_NAMES = {"_assets", "_transfer", "_worktrees", "logs", "results"}
 CHECKPOINT_SUFFIXES = {".pt", ".pth", ".ckpt", ".safetensors"}
 METRIC_NAMES = {
     "metrics.json",
@@ -42,6 +43,7 @@ def utc_iso(timestamp: float) -> str:
 
 def find_run_roots(root: Path) -> list[Path]:
     found: list[Path] = []
+    central_fa_runs = root / "FixedFeedbackSFT" / "runs"
     for owner_name in OWNER_ROOTS:
         owner = root / owner_name
         if not owner.is_dir():
@@ -50,7 +52,14 @@ def find_run_roots(root: Path) -> list[Path]:
             dirnames[:] = [name for name in dirnames if name not in SKIP_DIRS]
             current = Path(directory)
             if current.name == "runs":
-                found.append(current)
+                if current == central_fa_runs:
+                    found.extend(
+                        child
+                        for child in current.iterdir()
+                        if child.is_dir() and child.name not in SKIP_RUN_NAMES
+                    )
+                else:
+                    found.append(current)
                 dirnames[:] = []
     return sorted(set(found), key=lambda item: item.as_posix().lower())
 
@@ -104,7 +113,13 @@ def summarize_run(root: Path, run_root: Path, run: Path) -> dict[str, object]:
         recommendation = "manual review"
 
     relative_run_root = run_root.relative_to(root).as_posix()
-    owner = run_root.parent.relative_to(root).as_posix()
+    central_fa_runs = root / "FixedFeedbackSFT" / "runs"
+    try:
+        project_name = run_root.relative_to(central_fa_runs).parts[0]
+    except ValueError:
+        owner = run_root.parent.relative_to(root).as_posix()
+    else:
+        owner = f"FixedFeedbackSFT/projects/{project_name}"
     return {
         "owner": owner,
         "runs_root": relative_run_root,
@@ -130,7 +145,7 @@ def build_rows(root: Path) -> list[dict[str, object]]:
     for run_root in find_run_roots(root):
         children = sorted(run_root.iterdir(), key=lambda item: item.name.lower())
         for child in children:
-            if child.is_dir():
+            if child.is_dir() and child.name not in SKIP_RUN_NAMES:
                 rows.append(summarize_run(root, run_root, child))
     return rows
 

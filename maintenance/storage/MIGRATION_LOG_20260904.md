@@ -86,3 +86,16 @@ All Windows deletions in this pass were sent to the Recycle Bin.
 - Final measured guest3 usage is 955,507,471,149 bytes (889.886 GiB), with
   925,223,442,356 bytes (861.681 GiB) under the repository and about 800 GiB
   free on `/DATA/DATA1`.
+
+## 2026-09-05 fixed-feedback artifact correction
+
+- Corrected the distinction between synchronized source and server-only
+  artifacts. FA source remains exclusively under `FixedFeedbackSFT/projects`;
+  11,245,085,851 bytes across 1,131 runtime files were moved without rewriting
+  into the central `FixedFeedbackSFT/runs/<project>` hierarchy.
+- Removed six obsolete server `experiments/<FA project>` artifact shells after
+  verifying that their only remaining content was Python/pytest cache data.
+- Removed bytecode from six local BDD cache-only remnants. Only the two
+  Git-tracked BDD projects are real synchronized source projects.
+- Updated the global run indexer so central FA runs are indexed at the actual
+  run level rather than treating each project directory as one run.
