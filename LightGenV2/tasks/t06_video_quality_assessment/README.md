@@ -143,3 +143,7 @@ python -m LightGenV2.tasks.t06_video_quality_assessment.multivideo_audit `
 `slot_cycle_audit.json` 是正式比较依据；只报告九个槽位合并后的全局专家占比不够，因为不同槽位固定选择
 不同专家也可能伪装成“均衡”。视频级 router 的 `selection_variation_fraction` 必须大于零，才能说明
 Top-2 选择确实随视频内容改变。
+
+若路由的全局占比均衡但 `selection_variation_fraction=0`，应使用 `contentroute` 配置继续训练。
+它最小化 `H(expert|sample)-H(expert)`：一方面让单条视频的 Top-2 选择明确，另一方面让同一物理槽位
+上的不同视频使用不同专家。固定选同一对专家、或者对四个专家始终犹豫不决，都不会被误判为有效均衡。

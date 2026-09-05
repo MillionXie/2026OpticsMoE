@@ -48,8 +48,11 @@ def _slotwise_routing_statistics(
     flat_s = selected.float().reshape(selected.shape[0], -1, 4)
     importance = flat_p.mean(0)
     load = flat_s.mean(0) / 2.0
-    entropy = -(
+    conditional_entropy = -(
         flat_p.clamp_min(1.0e-8).log() * flat_p
+    ).sum(-1).mean() / math.log(4.0)
+    marginal_entropy = -(
+        importance.clamp_min(1.0e-8).log() * importance
     ).sum(-1).mean() / math.log(4.0)
     codes = (flat_s * flat_s.new_tensor((1.0, 2.0, 4.0, 8.0))).sum(-1).long()
     counts = torch.stack(
@@ -62,7 +65,13 @@ def _slotwise_routing_statistics(
         "load": load.mean(0),
         "balance_loss": (4.0 * (importance * load).sum(-1)).mean(),
         "importance_loss": (4.0 * importance.square().sum(-1) - 1.0).mean(),
-        "normalized_entropy": entropy,
+        "normalized_entropy": conditional_entropy,
+        "marginal_entropy": marginal_entropy,
+        # Minimise H(expert | sample) - H(expert) = -I(sample; expert).
+        # The optimum is a confident but sample-dependent, balanced router;
+        # a fixed expert pair and a uniformly indecisive router both have
+        # approximately zero mutual information and receive no false credit.
+        "diversity_loss": conditional_entropy - marginal_entropy,
         "conditional_probability_std": flat_p.std(0, unbiased=False).mean(),
         "selection_variation_fraction": (1.0 - modal_fraction).mean(),
         "unique_selection_patterns_mean": unique_patterns.mean(),
@@ -827,6 +836,7 @@ class MultiVideo9x4OpticalVQA(nn.Module):
         if routing:
             balance = torch.stack([v["balance_loss"] for v in routing.values()]).mean()
             importance = torch.stack([v["importance_loss"] for v in routing.values()]).mean()
+            diversity = torch.stack([v["diversity_loss"] for v in routing.values()]).mean()
             capture = torch.stack(
                 [
                     (1 - v["capture_fraction"].clamp(0, 1)).mean()
@@ -835,7 +845,7 @@ class MultiVideo9x4OpticalVQA(nn.Module):
             ).mean()
             guard = torch.stack(guard_losses).mean()
         else:
-            balance = importance = capture = guard = normalized.new_zeros(())
+            balance = importance = diversity = capture = guard = normalized.new_zeros(())
         return {
             "prediction": prediction,
             "normalized_prediction": normalized,
@@ -847,6 +857,7 @@ class MultiVideo9x4OpticalVQA(nn.Module):
             else normalized.new_zeros(()),
             "router_balance_loss": balance,
             "router_importance_loss": importance,
+            "router_diversity_loss": diversity,
             "router_capture_loss": capture,
             "guard_energy_loss": guard,
         }

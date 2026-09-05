@@ -196,6 +196,7 @@ class MultiVideoSettings:
     optical_alignment_weight: float = 0.05
     router_balance_weight: float = 0.12
     router_importance_weight: float = 0.04
+    router_diversity_weight: float = 0.0
     router_capture_weight: float = 0.02
     guard_energy_weight: float = 0.04
     slot_consistency_weight: float = 0.03
@@ -242,6 +243,8 @@ class MultiVideoSettings:
             raise ValueError("Training counts must be positive")
         if self.num_workers < 0:
             raise ValueError("num_workers cannot be negative")
+        if self.router_diversity_weight < 0:
+            raise ValueError("router_diversity_weight cannot be negative")
         for intervals, limit in (
             (self.frame_router_intervals, self.geometry.frame_lane_size),
             (self.video_router_intervals, self.geometry.video_tile_size),

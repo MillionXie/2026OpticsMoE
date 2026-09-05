@@ -1,0 +1,7 @@
+base_config: temporal_multivideo9x4_contentroute_d20.yaml
+output_dir: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo9x4_contentroute_sharp_s116
+random_seed: 116
+router:
+  temperature: 0.50
+training:
+  router_phase_learning_rate: 0.008

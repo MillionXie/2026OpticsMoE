@@ -431,6 +431,7 @@ def train(
                 + settings.optical_alignment_weight * result["optical_alignment_loss"]
                 + settings.router_balance_weight * result["router_balance_loss"]
                 + settings.router_importance_weight * result["router_importance_loss"]
+                + settings.router_diversity_weight * result["router_diversity_loss"]
                 + settings.router_capture_weight * result["router_capture_loss"]
                 + settings.guard_energy_weight * result["guard_energy_loss"]
                 + settings.slot_consistency_weight * slot_consistency
@@ -449,6 +450,7 @@ def train(
                 "optical_alignment": result["optical_alignment_loss"],
                 "router_balance": result["router_balance_loss"],
                 "router_importance": result["router_importance_loss"],
+                "router_diversity": result["router_diversity_loss"],
                 "router_capture": result["router_capture_loss"],
                 "guard_energy": result["guard_energy_loss"],
                 "slot_consistency": slot_consistency,
