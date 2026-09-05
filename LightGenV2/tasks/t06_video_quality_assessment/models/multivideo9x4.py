@@ -36,11 +36,11 @@ from ..multivideo_settings import MultiVideoSettings
 
 
 def _standardized_router(
-    energy: torch.Tensor, settings: MultiVideoSettings
+    energy: torch.Tensor, settings: MultiVideoSettings, *, training: bool
 ) -> dict[str, Any]:
     centered = energy - energy.mean(-1, keepdim=True)
     logits = centered / centered.square().mean(-1, keepdim=True).add(1.0e-8).sqrt()
-    if settings.router_noise_std > 0 and torch.is_grad_enabled():
+    if settings.router_noise_std > 0 and training:
         logits = logits + settings.router_noise_std * torch.randn_like(logits)
     probabilities = torch.softmax(logits / settings.router_temperature, dim=-1)
     weights, selected, indices = _sparse_top2(probabilities)
@@ -178,7 +178,7 @@ class FrameOpticalRouter(_FullFieldBase):
             rows.append(torch.stack(video_rows, 1))
             lane_totals.append(torch.stack(video_totals, 1))
         energy = torch.stack(rows, 1)
-        result = _standardized_router(energy, self.settings)
+        result = _standardized_router(energy, self.settings, training=self.training)
         result.update(
             {
                 "capture_fraction": energy.sum(-1)
@@ -395,7 +395,7 @@ class VideoOpticalRouter(_FullFieldBase):
                 )
             )
         energy = torch.stack(rows, 1)
-        result = _standardized_router(energy, self.settings)
+        result = _standardized_router(energy, self.settings, training=self.training)
         result.update(
             {
                 "capture_fraction": energy.sum(-1)

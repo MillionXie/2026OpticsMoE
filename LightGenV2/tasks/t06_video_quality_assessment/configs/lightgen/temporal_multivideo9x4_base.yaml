@@ -83,7 +83,10 @@ fusion:
 training:
   initialization_checkpoint: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/artifacts/temporal16_36_study/models/temporal16_balanced_calibrated.pt
   epochs: 100
-  batch_size: 6
+  # One physical sample contains nine videos. Batch 64 therefore supervises
+  # 576 independent video MOS values per optimizer step (about 13 GiB even
+  # when the periodic slot-consistency second forward is retained).
+  batch_size: 64
   num_workers: 2
   learning_rate: 0.00030
   phase_learning_rate: 0.020

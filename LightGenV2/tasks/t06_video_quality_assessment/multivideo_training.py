@@ -303,6 +303,7 @@ def train(
     history = [{"epoch": 0, "test_evaluated": True, "test_optical_on": initial}]
     best_path = settings.output_dir / "best_observed_test_checkpoint.pt"
     _checkpoint(best_path, model, optimizer, settings, epoch=0, metrics=initial)
+    _json(settings.output_dir / "metrics_best_observed_test_optical_on.json", initial)
     print(f"epoch 000 warm-start temporal_SRCC={best_srcc:.4f}", flush=True)
     slot_generator = torch.Generator().manual_seed(settings.random_seed + 100000)
     for epoch in range(1, settings.epochs + 1):
@@ -400,6 +401,14 @@ def train(
             print(f"epoch {epoch:03d} loss={row['loss']:.6f} temporal_SRCC={row['test_optical_on']['srcc']:.4f}", flush=True)
         else:
             print(f"epoch {epoch:03d} loss={row['loss']:.6f} test=skipped", flush=True)
+    _checkpoint(
+        settings.output_dir / "last_checkpoint.pt",
+        model,
+        optimizer,
+        settings,
+        epoch=settings.epochs,
+        metrics=history[-1].get("test_optical_on"),
+    )
     saved = torch.load(best_path, map_location="cpu", weights_only=False)
     model.load_state_dict(saved["state_dict"], strict=True)
     model.to(device)

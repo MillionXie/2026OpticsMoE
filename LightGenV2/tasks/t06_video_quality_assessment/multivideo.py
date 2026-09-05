@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import random
+import subprocess
+import sys
 from dataclasses import replace
 from pathlib import Path
 
@@ -27,6 +30,13 @@ def _seed(value: int) -> None:
     torch.manual_seed(value)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(value)
+
+
+def _git_commit() -> str | None:
+    completed = subprocess.run(
+        ["git", "rev-parse", "HEAD"], text=True, capture_output=True
+    )
+    return completed.stdout.strip() if completed.returncode == 0 else None
 
 
 def synthetic_smoke(settings):
@@ -107,6 +117,26 @@ def main() -> int:
     _seed(settings.random_seed)
     settings.output_dir.mkdir(parents=True, exist_ok=True)
     _json(settings.output_dir / "resolved_config.json", resolved_dict(settings))
+    _json(
+        settings.output_dir / "run_manifest.json",
+        {
+            "schema_version": 1,
+            "architecture": settings.architecture_label,
+            "phase": args.phase,
+            "git_commit": _git_commit(),
+            "command": sys.argv,
+            "python": sys.version,
+            "torch": torch.__version__,
+            "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
+            "cuda_available": torch.cuda.is_available(),
+            "frame_semantics": "nine unrelated videos x four frames",
+            "output_contract": "[physical_batch,9], one Temporal MOS per video",
+        },
+    )
+    (settings.output_dir / "command.txt").write_text(
+        subprocess.list2cmdline([sys.executable, "-m", __package__ + ".multivideo", *sys.argv[1:]]) + "\n",
+        encoding="utf-8",
+    )
     if args.phase == "smoke":
         report = synthetic_smoke(settings)
         _json(settings.output_dir / "synthetic_smoke.json", report)

@@ -185,7 +185,7 @@ class MultiVideoSettings:
     alpha_max: float = 0.90
     fusion_epsilon: float = 1.0e-6
     epochs: int = 100
-    batch_size: int = 6
+    batch_size: int = 64
     num_workers: int = 2
     learning_rate: float = 3.0e-4
     phase_learning_rate: float = 2.0e-2
