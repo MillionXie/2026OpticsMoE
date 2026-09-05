@@ -222,6 +222,7 @@ def evaluate(
     *,
     optical_enabled: bool,
     prediction_path: Path | None = None,
+    slot_shift: int = 0,
 ) -> dict[str, Any]:
     model.eval()
     loader = _loader(
@@ -238,6 +239,30 @@ def evaluate(
     guard_sum = 0.0
     valid_count = 0
     for batch in loader:
+        # A cyclic shift is an evaluation-only physical-slot audit.  Targets,
+        # sample identities and every per-video tensor move together, so one
+        # video still has exactly one label and one prediction.  The prompt is
+        # shared by the physical field and therefore intentionally does not
+        # move.
+        shift = int(slot_shift) % settings.videos_per_field
+        if shift:
+            batch = dict(batch)
+            for name in (
+                "vision_tokens",
+                "quality_tokens",
+                "target",
+                "source_indices",
+                "valid",
+                "soft_target",
+                "soft_target_present",
+            ):
+                value = batch.get(name)
+                if (
+                    torch.is_tensor(value)
+                    and value.ndim >= 2
+                    and value.shape[1] == settings.videos_per_field
+                ):
+                    batch[name] = torch.roll(value, shifts=shift, dims=1)
         batch = _to_device(batch, device)
         result = model(
             batch["vision_tokens"],
@@ -295,6 +320,7 @@ def evaluate(
     metrics["video_count"] = int(prediction.numel())
     metrics["physical_field_count"] = math.ceil(prediction.numel() / settings.videos_per_field)
     metrics["output_contract"] = "one scalar Temporal MOS per video"
+    metrics["physical_slot_cyclic_shift"] = int(slot_shift) % settings.videos_per_field
     metrics["slot_diagnostics"] = {
         str(index): {
             "count": int((slot == index).sum()),

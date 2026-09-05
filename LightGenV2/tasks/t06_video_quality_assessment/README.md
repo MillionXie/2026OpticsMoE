@@ -130,3 +130,16 @@ router、36 个视频专家、9 个视频 global。视频 router 只读取每视
 
 当前六张 mask 的实际覆盖率和 9×4 多视频设计见
 [`reports/handoff/MASK_LAYOUT_AND_MULTIVIDEO9X4_PLAN.md`](reports/handoff/MASK_LAYOUT_AND_MULTIVIDEO9X4_PLAN.md)。
+
+正式候选训练完成后，必须做 9 次循环换位审计。该审计把同一批视频依次放入九个物理槽位，
+同时检查路由是否随样本变化、预测对槽位是否稳定，以及在**不重新训练**的条件下关闭光支路会下降多少：
+
+```powershell
+python -m LightGenV2.tasks.t06_video_quality_assessment.multivideo_audit `
+  --config LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo9x4_refine_slot20.yaml `
+  --checkpoint LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/<run_id>/best_observed_test_checkpoint.pt
+```
+
+`slot_cycle_audit.json` 是正式比较依据；只报告九个槽位合并后的全局专家占比不够，因为不同槽位固定选择
+不同专家也可能伪装成“均衡”。视频级 router 的 `selection_variation_fraction` 必须大于零，才能说明
+Top-2 选择确实随视频内容改变。
