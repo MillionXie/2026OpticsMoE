@@ -65,6 +65,12 @@ notepad LightGenV2\paths.local.yaml
 
 详细约束见 [`AI_RULES.md`](AI_RULES.md)。
 
+## 八任务进展总表
+
+老师查看整体进展、性能、速度、功耗和待办时，统一使用
+[`PROJECT_SCORECARD.md`](PROJECT_SCORECARD.md)。该表固定每个任务一行；没有可追溯证据的
+字段保持 `—`，不得凭印象补数值。
+
 ## Git 同步规则
 
 代码修改完成后必须测试、commit 并 push GitHub；服务器和实验室电脑只通过 Git 拉取
