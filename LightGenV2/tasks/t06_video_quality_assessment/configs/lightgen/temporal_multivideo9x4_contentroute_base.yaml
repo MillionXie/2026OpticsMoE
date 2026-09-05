@@ -1,0 +1,8 @@
+base_config: temporal_multivideo9x4_refine_slot35.yaml
+training:
+  # Continue from the first V2 candidate that already showed genuine
+  # sample-dependent video routing (31.9% selection variation).  The
+  # checkpoint is a server run artifact and is intentionally not in Git.
+  initialization_checkpoint: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo9x4_visualrouter_refine_slot35_s103/best_observed_test_checkpoint.pt
+loss:
+  slot_consistency_weight: 0.35
