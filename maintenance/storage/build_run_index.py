@@ -184,7 +184,7 @@ def main() -> int:
         "retention_recommendation",
     ]
     with output.open("w", newline="", encoding="utf-8-sig") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fields)
+        writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
     print({"root": str(root), "run_count": len(rows), "output": str(output)})
