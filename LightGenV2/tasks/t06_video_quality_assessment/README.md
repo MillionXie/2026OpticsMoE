@@ -10,10 +10,14 @@
 MAE 5.451。平衡候选四专家占比正常，结果详见
 [`reports/paper_results/temporal36_balanced`](reports/paper_results/temporal36_balanced/README.md)。
 
-当前另有一个正在训练的新计算图 `temporal_multivideo9x4`：把 9 条互不相关的视频各取
-4 帧，以 3×3 视频 tile、每 tile 内 2×2 帧的方式放入同一 478×478 光场。它不是把
-Temporal-36 checkpoint 改名，而是新的六次全场相干传播模型，输出形状为 `[B,9]`；
-其中每个数仍只评价一条视频。Temporal-36 保留为“单视频 36 帧”的独立基线。
+新的正式仿真候选 `temporal_multivideo9x4` 把 9 条互不相关的视频各取 4 帧，以 3×3 视频
+tile、每 tile 内 2×2 帧的方式放入同一 478×478 光场。它不是把 Temporal-36 checkpoint
+改名，而是新的六次全场相干传播模型，输出形状为 `[B,9]`；其中每个数仍只评价一条视频。
+正式单 seed 结果为 SRCC 0.8082、KRCC 0.5999、PLCC 0.8131、RMSE 8.226、MAE 6.109；
+视频路由最大专家占比 28.0%，跨样本选择变化率 55.7%，九槽位循环审计平均 SRCC 0.8019。
+完整证据见
+[`reports/paper_results/temporal_multivideo9x4_contentroute`](reports/paper_results/temporal_multivideo9x4_contentroute/README.md)。
+Temporal-36 保留为“单视频 36 帧”的独立基线，二者不能混报。
 
 ## 不可静默改变的任务合同
 

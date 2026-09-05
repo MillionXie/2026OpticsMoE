@@ -1,0 +1,6 @@
+# Frozen evaluation profile for the selected nine-video x four-frame candidate.
+# Pass the recorded checkpoint explicitly with --checkpoint.
+base_config: temporal_multivideo9x4_contentroute_d30.yaml
+output_dir: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo9x4_formal_evaluation
+training:
+  initialization_checkpoint: null

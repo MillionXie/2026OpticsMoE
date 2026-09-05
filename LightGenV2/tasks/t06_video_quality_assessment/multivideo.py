@@ -153,7 +153,14 @@ def main() -> int:
         raise FileNotFoundError(f"Preflight missing inputs: {missing}")
     payload = load_single_metric_cache(settings)
     model = build_model(settings)
-    initialization = compatible_warm_start(model, settings)
+    initialization = (
+        compatible_warm_start(model, settings)
+        if args.phase == "train"
+        else {
+            "used": False,
+            "reason": "evaluation loads the requested checkpoint strictly; no training initialization is required",
+        }
+    )
     _json(settings.output_dir / "initialization_report.json", initialization)
     _json(settings.output_dir / "parameter_breakdown.json", model.parameter_breakdown())
     device = torch.device(settings.device)

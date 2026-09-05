@@ -10,7 +10,7 @@
 
 | 优先级 | 任务 | 当前数据/协议 | 主指标 | 我们的仿真性能 | 我们的实测性能 | 我们的速度 | Baseline 性能 | Baseline 速度 | 功耗与能耗 | 仿真—实测一致性 | 当前状态与下一闭环 |
 |---:|---|---|---|---|---|---|---|---|---|---|---|
-| P1 | **T06 视频质量评价** | LGVQ；Spatial 4 帧与 Temporal 36 帧是两个独立模型；test 558 | SRCC↑；同时报 KRCC/PLCC↑、RMSE/MAE↓ | **Temporal-36 正式：SRCC 0.8454，KRCC 0.6394，PLCC 0.8650，RMSE 7.183，MAE 5.451**；Spatial-4 候选：SRCC 0.6371，PLCC 0.6694，RMSE 8.711。相同 checkpoint 去光 SRCC：Temporal 0.2333、Spatial 0.5474 | — | 六次理想光传播 **9.084 ms/视频**，仅为仿真核心时间；实验台端到端延迟/吞吐 **未测** | 匹配的冻结 Qwen3-VL-2B + 线性头：Temporal-36 SRCC 0.7820；Spatial-4 SRCC 0.6440 | RTX 5090D、batch 1、原 MP4 到标量：Temporal-36 均值 **1133.494 ms/视频**；Spatial-4 **134.058 ms/视频** | — | —；需报 PCC、SSIM、gain-aligned NMAE、强度比与饱和率 | **Temporal 仿真已完成；Spatial 仿真候选已完成；硬件闭环为最高优先级。**先测端到端速度、功耗和逐级 CCD 一致性，再做实测微调与最终性能 |
+| P1 | **T06 视频质量评价** | LGVQ；Spatial-4、Temporal-36、九视频×四帧是三个独立协议；test 558 | SRCC↑；同时报 KRCC/PLCC↑、RMSE/MAE↓ | **Temporal-36 正式：SRCC 0.8454，KRCC 0.6394，PLCC 0.8650，RMSE 7.183，MAE 5.451**；**九视频×四帧全场并行：SRCC 0.8082，KRCC 0.5999，PLCC 0.8131，RMSE 8.226，MAE 6.109**；Spatial-4 候选：SRCC 0.6371，PLCC 0.6694 | — | 九视频×四帧仍为六次整场传播、一次产生 9 个 MOS；实验台端到端延迟/吞吐 **未测** | 匹配的冻结 Qwen3-VL-2B + 线性头：Temporal-36 SRCC 0.7820；Spatial-4 SRCC 0.6440 | RTX 5090D、batch 1、原 MP4 到标量：Temporal-36 均值 **1133.494 ms/视频**；Spatial-4 **134.058 ms/视频** | — | 九槽位仿真循环审计 SRCC 均值 0.8019；实测仍需 PCC、SSIM、gain-aligned NMAE、强度比与饱和率 | **Temporal-36 与九视频×四帧仿真完成；Spatial 候选完成；硬件闭环为最高优先级。**先测九视频串扰矩阵、端到端速度/功耗和逐级 CCD 一致性，再做实测微调 |
 | P2 | **T07 商品检索（图搜图）** | ABO；正式子集、gallery/query 划分尚未冻结 | Top-1/Top-5/Top-10、MRR、Recall@K↑ | — | — | — | — | — | — | — | **尚未运行。**先冻结可发表的数据协议和电子 baseline，再做同协议光电模型；不能引用仓库中旧 ABO 文件作为本任务结果 |
 | P3 | **T08 商品检索（图搜文）** | ABO；文本字段、候选库和负样本协议尚未冻结 | R@1/R@5/R@10、MRR、median rank↓ | — | — | — | — | — | — | — | **尚未运行。**先明确 image→text 检索单位、prompt 和候选库，再跑电子 baseline 与光电版本 |
 | P4 | T01 物品检索 | Caltech101-10 历史协议：train 2625、gallery 30、query 200 | Top-1/Top-3、MRR↑ | 历史可部署鲁棒候选：Top-1 **85.0%**、Top-3 94.5%、MRR 0.9063；尚未迁移为 LightGenV2 正式 run | — | — | 历史纯电子参考：Top-1 **87.0%**、Top-3 96.0%、MRR 0.9159 | — | — | 局部 CCD/仿真对照曾做探索，但没有冻结成任务级正式汇总 | 迁移 accuracy-first 鲁棒 checkpoint、配置和证据；复核 phase 可训练、数据 split 与选模口径后，再补硬件四阶段结果 |
@@ -62,6 +62,8 @@
 
 - T06 Temporal-36：
   `tasks/t06_video_quality_assessment/reports/paper_results/temporal36_balanced/result.json`
+- T06 九视频×四帧：
+  `tasks/t06_video_quality_assessment/reports/paper_results/temporal_multivideo9x4_contentroute/result.json`
 - T06 Spatial 历史候选：
   `../experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/SPATIAL_OPTIMIZATION_RESULT.md`
 - T06 baseline 时间：
@@ -71,4 +73,3 @@
 - T02/T03 历史冻结证据：`../document/18_vision2_hybrid_dense_tasks/README.md`
 - T04 历史 pilot：
   `../experiments/qwen3_vl_2b_openmoji_instruction_four_stage_optical_editing/README.md`
-
