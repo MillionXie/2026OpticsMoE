@@ -26,7 +26,6 @@ from PIL import Image
 
 
 PROJECT_PACKAGE = "d2nn_mnist4_single_layer_17um_10cm_v2"
-BASE_PROJECT_PACKAGE = "d2nn_mnist4_single_layer_17um_10cm"
 FORMAL_PROFILE_SOURCE = "formal_fixed_random_100_per_class"
 FORMAL_PROFILE = "formal400"
 QUICK_PROFILE = "quick40"
@@ -423,11 +422,11 @@ def _compact_amplitudes(
 
 def _runtime_files(repo_root: Path, include_vendor_sdk: bool) -> Iterable[BundleEntry]:
     project = f"experiments/{PROJECT_PACKAGE}"
-    base_project = f"experiments/{BASE_PROJECT_PACKAGE}"
     relative_files = (
         "experiments/__init__.py",
         f"{project}/__init__.py",
         f"{project}/ccd_evaluate.py",
+        f"{project}/base_settings.py",
         f"{project}/io_utils.py",
         f"{project}/settings.py",
         f"{project}/lab_session.py",
@@ -435,10 +434,6 @@ def _runtime_files(repo_root: Path, include_vendor_sdk: bool) -> Iterable[Bundle
         f"{project}/paper_evaluation.py",
         f"{project}/lab_hardware_config.yaml",
         f"{project}/requirements-lab.txt",
-        f"{base_project}/__init__.py",
-        f"{base_project}/ccd_evaluate.py",
-        f"{base_project}/io_utils.py",
-        f"{base_project}/settings.py",
         "experiments/hardware_sdk/__init__.py",
         "experiments/hardware_sdk/devices.py",
         "experiments/hardware_sdk/workflows/__init__.py",

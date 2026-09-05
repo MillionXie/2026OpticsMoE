@@ -76,3 +76,15 @@ The corrected `all_run_index.csv` covers 528 actual run directories. After
 cleanup, the indexed runs total 68.384 GiB, of which 48.698 GiB is checkpoints. The
 remaining 100 runs classified as `checkpoint_without_clear_best` require manual
 project-level review and were intentionally not modified.
+
+## Post-cleanup user deletion sync
+
+The later user cleanup removed the legacy
+`d2nn_mnist4_single_layer_17um` (5 cm) and
+`d2nn_mnist4_single_layer_17um_10cm` projects on the server. The retained
+`d2nn_mnist4_single_layer_17um_10cm_v2` package still imported five runtime
+contracts from the old 10 cm tree, so committing the deletion verbatim would
+have broken training, export, bundle creation, and CCD evaluation. Those
+contracts were made local to v2 before the two legacy source trees were
+removed from Git. Its dataset default now uses the shared
+`experiments/cache/mnist` location rather than a deleted project's directory.

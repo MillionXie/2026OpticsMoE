@@ -12,11 +12,6 @@ from typing import Any
 import numpy as np
 from PIL import Image, ImageOps
 
-from experiments.d2nn_mnist4_single_layer_17um_10cm.ccd_evaluate import (
-    _read_stage_contract,
-    _validate_capture_manifest,
-)
-
 from .io_utils import write_csv, write_json
 from .settings import load_settings
 
@@ -30,6 +25,113 @@ QC_MIN_ROI_RELATIVE_SPREAD = 0.02
 def _read_csv(path: Path) -> list[dict[str, str]]:
     with path.open("r", encoding="utf-8", newline="") as handle:
         return list(csv.DictReader(handle))
+
+
+def _read_stage_contract(
+    manifest: Path, explicit_path: Path | None
+) -> tuple[Path, dict[str, Any]]:
+    contract_path = (
+        explicit_path.expanduser().resolve()
+        if explicit_path is not None
+        else (manifest.parent / "stage_contract.json").resolve()
+    )
+    if not contract_path.is_file():
+        raise FileNotFoundError(
+            "Hardware evaluation requires stage_contract.json beside samples.csv; "
+            f"missing: {contract_path}"
+        )
+    contract = json.loads(contract_path.read_text(encoding="utf-8"))
+    if not isinstance(contract, dict):
+        raise ValueError(f"Stage contract must be a JSON object: {contract_path}")
+    if not isinstance(contract.get("suitable_for_accuracy_reporting"), bool):
+        raise ValueError(
+            "stage_contract.json must contain boolean "
+            "suitable_for_accuracy_reporting"
+        )
+    return contract_path, contract
+
+
+def _validate_capture_manifest(
+    *,
+    stage_rows: list[dict[str, str]],
+    capture_manifest: Path,
+    ccd_dir: Path,
+    expected_phase_sha256: str,
+    expected_phase_file: str,
+) -> dict[str, Any]:
+    capture_rows = _read_csv(capture_manifest)
+    expected_count = len(stage_rows)
+    if len(capture_rows) != expected_count:
+        raise RuntimeError(
+            "Capture play count does not match samples.csv: "
+            f"expected={expected_count}, captured={len(capture_rows)}"
+        )
+    try:
+        play_indices = [int(row["play_index"]) for row in capture_rows]
+    except (KeyError, TypeError, ValueError) as error:
+        raise RuntimeError(
+            "capture_manifest.csv has invalid or missing play_index values"
+        ) from error
+    if play_indices != list(range(expected_count)):
+        raise RuntimeError(
+            "capture_manifest.csv play_index must be the uninterrupted sequence "
+            f"0..{expected_count - 1}; got={play_indices[:10]}"
+        )
+    expected_amplitudes = sorted(
+        row.get("amplitude_file") or f"{row['key']}.bmp" for row in stage_rows
+    )
+    captured_amplitudes = [row.get("amplitude_bmp", "") for row in capture_rows]
+    if captured_amplitudes != expected_amplitudes:
+        raise RuntimeError(
+            "Capture amplitude sequence does not match the sorted formal stage "
+            "file set"
+        )
+    capture_names = [row.get("ccd_capture", "") for row in capture_rows]
+    if any(not name for name in capture_names) or len(capture_names) != len(
+        set(capture_names)
+    ):
+        raise RuntimeError(
+            "capture_manifest.csv must contain unique, non-empty ccd_capture names"
+        )
+    expected_keys = {row["key"] for row in stage_rows}
+    captured_keys = {Path(name).stem for name in capture_names}
+    if captured_keys != expected_keys:
+        raise RuntimeError(
+            "Capture filenames do not match samples.csv keys: "
+            f"missing={sorted(expected_keys - captured_keys)[:5]}, "
+            f"extra={sorted(captured_keys - expected_keys)[:5]}"
+        )
+    actual_capture_names = {
+        path.name
+        for path in ccd_dir.iterdir()
+        if path.is_file() and path.suffix.lower() in CAPTURE_SUFFIXES
+    }
+    manifested_capture_names = set(capture_names)
+    if actual_capture_names != manifested_capture_names:
+        raise RuntimeError(
+            "CCD directory does not exactly match capture_manifest.csv: "
+            f"missing={sorted(manifested_capture_names - actual_capture_names)[:5]}, "
+            f"extra={sorted(actual_capture_names - manifested_capture_names)[:5]}"
+        )
+    phase_hashes = {row.get("phase_mask_sha256", "") for row in capture_rows}
+    if phase_hashes != {expected_phase_sha256}:
+        raise RuntimeError(
+            "Captured phase SHA-256 does not match stage_contract.json: "
+            f"expected={expected_phase_sha256}, observed={sorted(phase_hashes)}"
+        )
+    phase_names = {row.get("phase_mask", "") for row in capture_rows}
+    if phase_names != {Path(expected_phase_file).name}:
+        raise RuntimeError(
+            "Captured phase filename does not match stage_contract.json: "
+            f"expected={Path(expected_phase_file).name}, observed={sorted(phase_names)}"
+        )
+    return {
+        "verified": True,
+        "path": str(capture_manifest),
+        "play_count": len(capture_rows),
+        "phase_sha256": expected_phase_sha256,
+        "exact_file_set": True,
+    }
 
 
 def _find_capture(directory: Path, key: str) -> Path:

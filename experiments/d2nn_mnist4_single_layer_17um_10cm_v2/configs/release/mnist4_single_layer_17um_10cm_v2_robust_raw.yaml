@@ -1,5 +1,5 @@
 dataset:
-  root: ../../../d2nn_mnist4_single_layer_17um/cache/mnist
+  root: ../../../cache/mnist
   classes: [0, 1, 2, 3]
   download: true
   val_fraction: 0.10

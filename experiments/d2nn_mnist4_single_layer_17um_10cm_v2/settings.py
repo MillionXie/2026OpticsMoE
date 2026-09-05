@@ -5,14 +5,14 @@ from dataclasses import dataclass, fields
 from pathlib import Path
 from typing import Any
 
-from experiments.d2nn_mnist4_single_layer_17um_10cm.settings import (
+from .base_settings import (
     Settings as BaseSettings,
 )
-from experiments.d2nn_mnist4_single_layer_17um_10cm.settings import (
+from .base_settings import (
     _nested,
     _read_config,
 )
-from experiments.d2nn_mnist4_single_layer_17um_10cm.settings import (
+from .base_settings import (
     load_settings as load_base_settings,
 )
 

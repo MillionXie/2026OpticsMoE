@@ -5,7 +5,7 @@ from __future__ import annotations
 from torch.utils.data import Subset
 from torchvision import datasets, transforms
 
-from experiments.d2nn_mnist4_single_layer_17um_10cm.data import (
+from .base_data import (
     DatasetBundle,
     _balanced_limit,
     _class_indices,

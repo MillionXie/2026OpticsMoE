@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 from typing import Any
 
@@ -9,11 +10,7 @@ import torch
 from PIL import Image
 from torch.utils.data import DataLoader
 
-from experiments.d2nn_mnist4_single_layer_17um_10cm.hardware_export import (
-    _full_amplitude_frame,
-    _save_checked_bmp,
-)
-from experiments.d2nn_mnist4_single_layer_17um_10cm.hardware_profiles import (
+from .hardware_profiles import (
     DEMO_PROFILE,
     formal_profile_name,
     select_demo_topk,
@@ -25,12 +22,51 @@ from experiments.hardware_sdk.workflows.reconstruct_slm import (
     place_at_center,
 )
 
-from .io_utils import write_csv, write_json
+from .io_utils import sha256, write_csv, write_json
 from .modeling import RobustRawCCDMNIST4D2NN
 from .settings import V2Settings
 
 
 PHASE_FILENAME = "mnist4_single_layer_17um_10cm_v2.bmp"
+
+
+def _save_checked_bmp(
+    array: np.ndarray, path: Path, size_wh: tuple[int, int]
+) -> str:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    Image.fromarray(np.asarray(array, dtype=np.uint8), mode="L").save(
+        path, format="BMP"
+    )
+    with Image.open(path) as image:
+        if image.format != "BMP" or image.mode != "L" or image.size != size_wh:
+            raise RuntimeError(
+                f"Invalid BMP contract for {path}: "
+                f"{image.format}/{image.mode}/{image.size}"
+            )
+    return sha256(path)
+
+
+def _full_amplitude_frame(
+    active_amplitude: np.ndarray, settings: V2Settings
+) -> tuple[np.ndarray, tuple[int, int, int, int]]:
+    optical = np.rint(np.clip(active_amplitude, 0.0, 1.0) * 255.0).astype(
+        np.uint8
+    )
+    encoded = 255 - optical if settings.amplitude_invert_before_export else optical
+    width, height = settings.amplitude_slm_size_wh
+    background = 255 if settings.amplitude_invert_before_export else 0
+    canvas = Image.new("L", (width, height), color=background)
+    active = Image.fromarray(encoded, mode="L")
+    requested_x, requested_y = settings.amplitude_slm_center_xy
+    left = int(math.floor(requested_x - active.width / 2.0 + 0.5))
+    top = int(math.floor(requested_y - active.height / 2.0 + 0.5))
+    bounds = (left, top, left + active.width, top + active.height)
+    if left < 0 or top < 0 or bounds[2] > width or bounds[3] > height:
+        raise ValueError(
+            f"Amplitude active bounds {bounds} exceed SLM {(width, height)}"
+        )
+    canvas.paste(active, (left, top))
+    return np.asarray(canvas, dtype=np.uint8), bounds
 
 
 def _clear_bmps(directory: Path) -> None:

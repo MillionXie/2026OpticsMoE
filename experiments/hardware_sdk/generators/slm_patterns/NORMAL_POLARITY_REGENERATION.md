@@ -70,22 +70,22 @@ python -m experiments.hardware_sdk.workflows.roi_calibration generate --config e
 `hardware_sessions/_calibration_17um/`。数字前景为255、背景为0；曝光标定按命令灰度
 0→255递增，不做反相。它们是硬件/曝光检查，不是MNIST4分类模型输入。
 
-## 5. MNIST4已训练模型重新导出
+## 5. MNIST4 已训练模型
 
-极性修正只影响振幅BMP编码，不改变训练时的光场振幅，也不需要重新训练。服务器上从
-已有 `best.pt` 导出：
+旧的 5 cm 和早期 10 cm 工程已移除。当前保留的 10 cm v2 工程已经自包含；训练、
+导出和实验室采集命令以它自己的 `RUN_COMMANDS.md` 为准：
 
 ```powershell
-CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=4 python -m experiments.d2nn_mnist4_single_layer_17um --config experiments/d2nn_mnist4_single_layer_17um/configs/release/mnist4_single_layer_17um_5cm.yaml --phase export --checkpoint experiments/d2nn_mnist4_single_layer_17um/runs/mnist4_single_layer_17um_5cm/checkpoints/best.pt
+python -m experiments.d2nn_mnist4_single_layer_17um_10cm_v2.lab_session --help
 ```
 
-输出：
+工程位置：
 
 ```text
-experiments/d2nn_mnist4_single_layer_17um/runs/mnist4_single_layer_17um_5cm/hardware_export_normal_polarity/
+experiments/d2nn_mnist4_single_layer_17um_10cm_v2/
 ```
 
-其中40张输入振幅图为正常极性；训练得到的相位BMP应与旧导出逐字节相同。
+不要再使用旧工程名生成新包。
 
 ## 6. 当前服务器打包产物
 
@@ -104,6 +104,4 @@ SHA256 9214b8ad7da582554b66ca11fb816bed6a8a9f417f2db9d770a37e1a903cdf81
 qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/hardware_sessions/calibration_17um_normal_polarity.zip
 SHA256 981d2bd633f8f2c57d8b57a0d8d7399fe7d97ef30b0843d000f14359ff1b6431
 
-d2nn_mnist4_single_layer_17um/runs/mnist4_single_layer_17um_5cm/mnist4_single_layer_17um_5cm_hardware_bundle_normal_polarity.zip
-SHA256 7067f1bd9cf0d4fe3cee0bc3f857007a0b24fd04fa65396cd8cc9923ef63673c
 ```

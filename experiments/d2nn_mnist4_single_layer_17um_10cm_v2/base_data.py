@@ -6,7 +6,7 @@ import torch
 from torch.utils.data import DataLoader, Dataset, Subset
 from torchvision import datasets, transforms
 
-from .settings import Settings
+from .base_settings import Settings
 
 
 @dataclass
