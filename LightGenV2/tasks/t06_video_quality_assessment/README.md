@@ -147,3 +147,14 @@ Top-2 选择确实随视频内容改变。
 若路由的全局占比均衡但 `selection_variation_fraction=0`，应使用 `contentroute` 配置继续训练。
 它最小化 `H(expert|sample)-H(expert)`：一方面让单条视频的 Top-2 选择明确，另一方面让同一物理槽位
 上的不同视频使用不同专家。固定选同一对专家、或者对四个专家始终犹豫不决，都不会被误判为有效均衡。
+
+最佳 checkpoint 的六次相位排布可按论文常用的 Arial 7 pt 生成两张 18 cm × 5 cm 图：
+
+```powershell
+python -m LightGenV2.tasks.t06_video_quality_assessment.visualize_multivideo_masks `
+  --config LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/<formal_profile>.yaml `
+  --checkpoint LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/<run_id>/best_observed_test_checkpoint.pt
+```
+
+黑色只表示该次传播中没有可训练相位的保护区，不代表实际 SLM 必须在该处吸收光。输出同时包含 PNG、
+嵌入字体的 PDF 和每次传播的占用率/相位统计 JSON。
