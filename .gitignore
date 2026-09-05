@@ -124,3 +124,14 @@ teams
 # Local experiment-review documents and copied server evidence.
 /document/
 hardware_sessions
+
+# LightGenV2 keeps source, configs and curated reports in Git.  Machine-local
+# paths, training products, hardware captures and release archives stay local.
+/LightGenV2/paths.local.yaml
+/LightGenV2/tasks/*/runs/*
+!/LightGenV2/tasks/*/runs/
+!/LightGenV2/tasks/*/runs/README.md
+/LightGenV2/tasks/*/releases/*
+!/LightGenV2/tasks/*/releases/README.md
+!/LightGenV2/tasks/*/reports/figures/
+!/LightGenV2/tasks/*/reports/figures/**

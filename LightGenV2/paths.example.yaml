@@ -1,0 +1,11 @@
+# 复制为 LightGenV2/paths.local.yaml 后按当前机器修改。
+# null 表示继续使用正式 profile/旧后端中的路径；相对路径从仓库根目录解析。
+# paths.local.yaml 不提交 Git，换电脑时只需要修改这一处。
+t06:
+  dataset_root: null
+  manifest: null
+  vision_cache: null
+  language_cache: null
+  training_soft_targets: null
+  initialization_checkpoint: null
+  qwen_model_path: null

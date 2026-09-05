@@ -1,0 +1,8 @@
+# Install PyTorch for the machine CUDA version separately.
+numpy
+pillow
+pyyaml
+scipy
+matplotlib
+pandas
+transformers

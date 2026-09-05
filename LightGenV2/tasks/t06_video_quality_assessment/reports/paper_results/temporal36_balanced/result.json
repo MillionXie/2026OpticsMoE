@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "profile": "temporal36_balanced",
+  "selection_reason": "balanced formal candidate; preserves quality and avoids expert collapse",
+  "split": {
+    "train": 2250,
+    "test": 558,
+    "validation": 0,
+    "test_interval_epochs": 5
+  },
+  "verified_student_graph": {
+    "frame_router_shape": [2, 36, 4],
+    "sequence_router_shape": [2, 4],
+    "trainable_parameters": 5914746,
+    "attention_or_transformer_modules": [],
+    "all_required_optical_gradients_present": true
+  },
+  "normal_optical_electronic": {
+    "srcc": 0.8454429861580077,
+    "krcc": 0.639359584371411,
+    "plcc": 0.8649914427305789,
+    "rmse": 7.183235168457031,
+    "mae": 5.450646877288818
+  },
+  "same_checkpoint_optics_bypassed": {
+    "srcc": 0.23328097794290076,
+    "krcc": 0.15663817244230258,
+    "plcc": 0.24178296935407217,
+    "rmse": 14.936792373657227,
+    "mae": 12.6448392868042
+  },
+  "router_selected_share": {
+    "vision": [0.2630425989627838, 0.2999054193496704, 0.19907407462596893, 0.23797789216041565],
+    "sequence": [0.259856641292572, 0.2455197125673294, 0.2526881694793701, 0.24193547666072845]
+  },
+  "fusion_alpha": {
+    "vision_expert": 0.5606237649917603,
+    "vision_global": 0.5593380331993103,
+    "language_expert": 0.5678236484527588,
+    "language_global": 0.571190595626831
+  },
+  "timing": {
+    "qwen_5090d_ms": 1133.494,
+    "six_optical_propagations_ms": 9.084,
+    "ideal_compute_speedup_x": 124.77917217084985,
+    "scope_warning": "Excludes SLM refresh, settle, CCD exposure/readout, transfer and electronic tail."
+  },
+  "checkpoint_sha256": "159b1d8cd31aa5f817d274f2930129601d4f0a365f01c430a8fefcc5989c8730"
+}

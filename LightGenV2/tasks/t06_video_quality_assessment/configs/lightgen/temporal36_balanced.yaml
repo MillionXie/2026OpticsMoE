@@ -1,0 +1,30 @@
+schema_version: 1
+name: temporal36_balanced
+status: current_formal_candidate
+
+backend:
+  package: experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54
+  config: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/temporal36.yaml
+  config_sha256: bcbe33eb994890e8bd75ee132031132f0554ee82d38bbb2e52f3409b6d54aa31
+  lab_guide: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/LAB_TEMPORAL36_BALANCED_GUIDE.md
+  source_sha256:
+    modeling.py: 3230670b3ce1e59b2401f7e5b14501bcbc6bb34d2ec8b9a78f6bce6e0039954b
+    settings.py: f24260628b2572577cd97cc77ed516122a30bb4f5538175404244c9b0e233c98
+    training.py: 95c4a780389b7728933c8db0afac8f3d37dd2a48fc9b54e2ca0a9bf3e9bb712c
+    run.py: b755b85c9f09191fd01e63b54a5c4f80c2f605f8998f6d7df079297f2485d8f4
+    data.py: 5fe3d85a247758f94beeabbeb3b8b94fd61d5e929acffd50a66e30b8e1b44599
+    hardware_bridge.py: 9b36ab6f202014be200d2d27cd0730a0651b7aa5429147c8ffcc12ceb165219b
+    export_hardware_masks.py: 049a74dbab71c84325edf9979602a303d120b9e5b1f6a3b8aa946ed8cc072ff9
+
+artifacts:
+  canonical_checkpoint: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/artifacts/temporal16_36_study/models/temporal36_balanced_calibrated.pt
+  canonical_checkpoint_sha256: 159b1d8cd31aa5f817d274f2930129601d4f0a365f01c430a8fefcc5989c8730
+  canonical_report: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/artifacts/temporal16_36_study/models/temporal36_balanced_calibrated_report.json
+
+frame_semantics:
+  current: one_video_uniform_36_frames
+  lane_layout: 6x6
+  warning: >-
+    This checkpoint evaluates one video with 36 uniformly sampled frames. It must
+    not be described as 4-9 videos processed together. Multi-video packing is a
+    future architecture and requires new aggregation, routing, training and tests.

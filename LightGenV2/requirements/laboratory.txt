@@ -1,0 +1,3 @@
+-r simulation.txt
+opencv-python
+tifffile
