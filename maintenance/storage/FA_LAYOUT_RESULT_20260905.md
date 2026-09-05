@@ -38,6 +38,12 @@ empty directories and stale `__pycache__/*.pyc`. Their bytecode files were
 removed. Windows OneDrive ACLs may leave zero-file placeholder directories in
 the local checkout; these are neither projects nor Git content.
 
+Current source identity is recorded in `source_project_index.csv`. That file is
+built only from Git blobs. `all_run_index.csv` separately describes runtime
+artifacts, so an ignored server run can no longer be mistaken for server-only
+source, and an empty local folder can no longer be mistaken for a local-only
+project.
+
 ## Verification
 
 - Physical layout regression: 3 passed.

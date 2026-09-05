@@ -44,10 +44,13 @@ what was moved or removed.
 For three-location source reconciliation, also run:
 
 ```powershell
-python maintenance/storage/build_sync_audit.py
+python maintenance/storage/build_source_project_index.py
 ```
 
-The resulting `experiment_sync_audit_20260905.csv` records local/server/GitHub
-presence and direct inter-experiment Python imports. Follow
-`SYNC_RECONCILIATION_PLAN_20260905.md` before resetting either working tree or
-removing an apparently old experiment directory.
+The resulting `source_project_index.csv` is the current Git-tracked source
+contract. Runtime artifacts are indexed separately in `all_run_index.csv`.
+The historical `experiment_sync_audit_pre_reconciliation_20260905.csv` records
+local/server/GitHub presence and direct inter-experiment Python imports before
+the 2026-09-05 reconciliation; it must not be used as a current sync report.
+Follow `SYNC_RECONCILIATION_PLAN_20260905.md` before resetting either working
+tree or removing an apparently old experiment directory.

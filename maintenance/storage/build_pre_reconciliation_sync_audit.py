@@ -1,4 +1,4 @@
-"""Build a non-destructive three-location experiment reconciliation index.
+"""Rebuild the historical pre-reconciliation experiment audit.
 
 The output describes project presence, storage, local Git state, and direct
 Python dependencies.  It deliberately does not delete or move anything.
@@ -16,7 +16,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 EXPERIMENTS = ROOT / "experiments"
-OUT = ROOT / "maintenance" / "storage" / "experiment_sync_audit_20260905.csv"
+OUT = (
+    ROOT
+    / "maintenance"
+    / "storage"
+    / "experiment_sync_audit_pre_reconciliation_20260905.csv"
+)
 SERVER_SIZES = ROOT / "maintenance" / "storage" / "server_experiment_sizes_20260904.csv"
 SERVER_TRACKED = ROOT / "maintenance" / "storage" / "server_tracked_counts.csv"
 SERVER_UNTRACKED = ROOT / "maintenance" / "storage" / "server_untracked_counts.csv"

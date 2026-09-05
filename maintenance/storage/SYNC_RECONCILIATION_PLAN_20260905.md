@@ -46,7 +46,9 @@
 
 详细清单：
 
-- `experiment_sync_audit_20260905.csv`：工程存在位置、大小、Git 状态和 Python 工程间依赖。
+- `source_project_index.csv`：当前 Git 源码工程的权威清单；只依据 Git blob，不把服务器运行产物或本地空目录误认为源码工程。
+- `all_run_index.csv`：服务器运行产物的权威清单；不用于判断源码是否同步。
+- `experiment_sync_audit_pre_reconciliation_20260905.csv`：整理前的工程存在位置、大小、Git 状态和 Python 工程间依赖快照。
 - `maintained_code_diff_20260904.csv`：本地与服务器维护型文件的 SHA 差异。
 - `local_experiments_size_20260904.csv`、`server_experiment_sizes_20260904.csv`：两端工程体量。
 
@@ -93,7 +95,7 @@
 
 ## 5. `experiments` 的整理策略
 
-`experiment_sync_audit_20260905.csv` 已给出 84 个工程的初步角色。所有行的 `safe_to_delete_whole_project_now` 目前均为 `no`。
+`experiment_sync_audit_pre_reconciliation_20260905.csv` 给出了整理前 84 个工程的初步角色。它是历史快照，不再代表当前目录状态。
 
 ### 直接保留并优先发布
 
