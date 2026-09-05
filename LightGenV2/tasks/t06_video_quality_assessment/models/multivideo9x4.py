@@ -375,6 +375,13 @@ class FrameOpticalPath(_FullFieldBase):
 class VideoOpticalRouter(_FullFieldBase):
     def __init__(self, settings: MultiVideoSettings) -> None:
         super().__init__(settings)
+        self.width_to_field = nn.Linear(
+            settings.model_width, self.geometry.video_field_size
+        )
+        self.tokens_to_field = nn.Linear(
+            self.geometry.frames_per_video, self.geometry.video_field_size
+        )
+        _initialize_resampler(self.tokens_to_field)
         initial = _spot_phase(
             self.geometry.video_field_size,
             self.geometry.video_tile_size,
@@ -384,6 +391,20 @@ class VideoOpticalRouter(_FullFieldBase):
         self.raw_router_phase = nn.Parameter(
             initial.unsqueeze(0).repeat(self.geometry.video_count, 1, 1)
         )
+
+    def fields(self, image_tokens: torch.Tensor) -> torch.Tensor:
+        expected = (
+            self.geometry.video_count,
+            self.geometry.frames_per_video,
+            self.settings.model_width,
+        )
+        if tuple(image_tokens.shape[1:]) != expected:
+            raise ValueError(f"Video router tokens must be [B,{expected}]")
+        encoded = F.softplus(self.width_to_field(image_tokens.float()))
+        field = F.softplus(
+            self.tokens_to_field(encoded.transpose(-2, -1))
+        ).transpose(-2, -1)
+        return field / field.square().mean((-2, -1), keepdim=True).sqrt().clamp_min(1.0e-6)
 
     def forward(self, fields: torch.Tensor) -> dict[str, Any]:
         size = self.geometry.video_field_size
@@ -773,7 +794,13 @@ class MultiVideo9x4OpticalVQA(nn.Module):
         fields3 = self.serial_optics.fields(sequence)
         electronic3 = self._language_route(self.language_routes[0], sequence, mask)
         if optical_enabled:
-            routing["video"] = self.serial_router(fields3)
+            # Route from the four post-optical frame summaries, not from the
+            # full 4+38 token sequence. The repeated prompt is still present
+            # in visual conditioning and in the expert/global paths, but can
+            # no longer swamp sample-dependent video routing energy.
+            routing["video"] = self.serial_router(
+                self.serial_router.fields(image_tokens)
+            )
             optical3, guard3 = self.serial_optics.expert(
                 fields3, routing["video"]["weights"], sequence.shape[2]
             )

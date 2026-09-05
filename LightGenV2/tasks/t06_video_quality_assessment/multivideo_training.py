@@ -81,24 +81,53 @@ def compatible_warm_start(
     saved = torch.load(path, map_location="cpu", weights_only=False)
     source = saved.get("state_dict", saved.get("model", saved))
     destination = model.state_dict()
+    source_architecture = saved.get("architecture")
+    skipped = set()
+    if source_architecture != settings.architecture_label:
+        # V1 routed the full visual+prompt sequence. Its phase learned a
+        # slot-fixed bias and is not a valid initialization for the V2 visual
+        # router, which consumes only four post-optical frame summaries.
+        skipped.add("serial_router.raw_router_phase")
     compatible = {
         name: value
         for name, value in source.items()
         if name in destination
+        and name not in skipped
         and torch.is_tensor(value)
         and tuple(value.shape) == tuple(destination[name].shape)
     }
+    # The new visual router uses the same 192->72 physical field projection as
+    # the established video expert path. Reuse that exact projection while
+    # leaving the new 4->72 frame-axis resampler at its deterministic start.
+    router_projection = "serial_router.width_to_field.weight"
+    source_projection = "serial_optics.width_to_field.weight"
+    if (
+        router_projection not in compatible
+        and source_projection in source
+        and tuple(source[source_projection].shape) == tuple(destination[router_projection].shape)
+    ):
+        compatible[router_projection] = source[source_projection]
+    for suffix in ("bias",):
+        destination_name = f"serial_router.width_to_field.{suffix}"
+        source_name = f"serial_optics.width_to_field.{suffix}"
+        if (
+            destination_name not in compatible
+            and source_name in source
+            and tuple(source[source_name].shape) == tuple(destination[destination_name].shape)
+        ):
+            compatible[destination_name] = source[source_name]
     loaded = model.load_state_dict(compatible, strict=False)
     return {
         "used": True,
         "path": str(path),
         "sha256": _sha256(path),
-        "source_architecture": saved.get("architecture"),
+        "source_architecture": source_architecture,
         "source_epoch": saved.get("epoch"),
         "loaded_tensors": len(compatible),
         "loaded_parameters": sum(value.numel() for value in compatible.values()),
         "missing_tensors": list(loaded.missing_keys),
-        "policy": "exact-name and exact-shape only; new 9x4 optical masks are never resized",
+        "skipped_for_changed_router_contract": sorted(skipped),
+        "policy": "exact-name and exact-shape only; V1 video-router phase is reset; new masks are never resized",
     }
 
 

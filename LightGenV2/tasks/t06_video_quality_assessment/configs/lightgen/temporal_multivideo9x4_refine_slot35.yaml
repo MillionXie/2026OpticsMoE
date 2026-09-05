@@ -1,5 +1,5 @@
 base_config: temporal_multivideo9x4_refine_slot10.yaml
-output_dir: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo9x4_refine_slot35_s103
+output_dir: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo9x4_visualrouter_refine_slot35_s103
 random_seed: 103
 loss:
   slot_consistency_weight: 0.35

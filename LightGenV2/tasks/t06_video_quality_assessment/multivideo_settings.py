@@ -211,7 +211,7 @@ class MultiVideoSettings:
 
     @property
     def architecture_label(self) -> str:
-        return "lightgenv2_t06_temporal_multivideo9x4_o6_top2_no_attention_v1"
+        return "lightgenv2_t06_temporal_multivideo9x4_visualrouter_o6_top2_no_attention_v2"
 
     # Compatibility attributes consumed by the audited frozen-cache loader.
     @property

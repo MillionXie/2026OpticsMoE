@@ -123,7 +123,9 @@ slot；测试集固定为 62 个物理场、558 条视频，指标仍对 558 个
 CCD 位移扰动。所有候选配置均继承 `temporal_multivideo9x4_base.yaml`，不会覆盖旧结果。
 
 六次传播的含义依次为：36 帧光 router、144 帧专家、9 个视频内帧融合、9 个视频
-router、36 个视频专家、9 个视频 global。后端共享同一个无 Attention/Transformer 的
+router、36 个视频专家、9 个视频 global。视频 router 只读取每视频 4 个已受 prompt
+条件化的帧摘要；完整的 4 个图像 token 与 38 个文本 token 仍进入后两级专家/global，
+避免公共 prompt 能量把不同视频的路由差异淹没。后端共享同一个无 Attention/Transformer 的
 电子读出头，对九个视频分别调用，最终输出九个连续 Temporal MOS。
 
 当前六张 mask 的实际覆盖率和 9×4 多视频设计见
