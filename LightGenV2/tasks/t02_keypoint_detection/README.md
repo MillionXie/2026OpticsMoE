@@ -38,6 +38,15 @@ CUDA_VISIBLE_DEVICES=0 python -m LightGenV2.tasks.t02_keypoint_detection.run \
   --profile main_dc20_no_shift --phase all
 ```
 
+若从随机公共初始化训练的无位移版本仍明显低于历史模型，可运行兼容 warm start。
+它复用旧 0.7131 模型中形状完全一致的二维 mixer、姿态头及 feature/global phase，
+但不会加载旧电子 gate；光 Router 相位始终重新初始化并训练，物理光路和 DC20 条件不变：
+
+```bash
+CUDA_VISIBLE_DEVICES=1 python -m LightGenV2.tasks.t02_keypoint_detection.run \
+  --profile main_dc20_no_shift_warmstart --phase all
+```
+
 每个正式 run 只保留：
 
 - `best_checkpoint.pt`：周期性 test PCK@0.2 最佳的 EMA 权重；

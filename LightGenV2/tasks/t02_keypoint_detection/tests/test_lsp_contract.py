@@ -21,6 +21,7 @@ TASK_DIR = Path(__file__).resolve().parents[1]
     (
         ("moe_optical_router_scale_matched_dc20.yaml", "optical_router_scale_matched_moe"),
         ("moe_optical_router_scale_matched_dc20_no_shift.yaml", "optical_router_scale_matched_moe"),
+        ("moe_optical_router_scale_matched_dc20_no_shift_warmstart.yaml", "optical_router_scale_matched_moe"),
         ("d2nn_active_expert_matched_dc20.yaml", "d2nn_active_expert_matched"),
     ),
 )
@@ -58,6 +59,17 @@ def test_no_shift_ablation_only_disables_pixel_translations() -> None:
     assert settings.language_optical_zero_order_enabled is True
     assert settings.language_optical_amplitude_zero_order_intensity_min == pytest.approx(0.20)
     assert settings.language_optical_ccd_noise_distribution == "truncated_biased_gaussian"
+
+
+def test_warmstart_keeps_optical_router_and_names_compatible_source() -> None:
+    settings = load_settings(
+        TASK_DIR / "configs" / "moe_optical_router_scale_matched_dc20_no_shift_warmstart.yaml"
+    )
+    assert settings.lightgen_initialization_mode == "compatible_trained_lsp"
+    assert settings.router_backend == "optical"
+    assert settings.top_k == 2
+    assert settings.common_initialization_checkpoint.name == "student_best_train_loss.pt"
+    assert settings.fusion_alpha_initial == pytest.approx(0.08)
 
 
 def test_visualizer_reads_canonical_lsp_checkpoint(tmp_path: Path) -> None:

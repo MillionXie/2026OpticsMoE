@@ -1,0 +1,15 @@
+base_config: moe_optical_router_scale_matched_dc20_no_shift.yaml
+
+# Reuse the compatible 0.7131 Vision2 mixer, pose head and feature/global
+# phases.  The electronic gate is never loaded: the physical optical Router
+# phase remains freshly initialized and is trained for all 100 epochs.
+protocol:
+  common_initialization_checkpoint: ../../../../experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/runs/lsp_pose_vision2_hybrid/checkpoints/student_best_train_loss.pt
+
+initialization:
+  mode: compatible_trained_lsp
+
+balanced_fusion:
+  alpha_initial: 0.08
+
+output_dir: ../runs/simulation/moe_router_scale_dc20_no_shift_warmstart0713_seed42

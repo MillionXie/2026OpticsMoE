@@ -21,6 +21,10 @@ MODEL_VARIANTS = {
     "optical_router_scale_matched_moe",
     "d2nn_active_expert_matched",
 }
+INITIALIZATION_MODES = {
+    "shared_untrained",
+    "compatible_trained_lsp",
+}
 
 
 def load_settings(path: str | Path) -> Any:
@@ -34,6 +38,9 @@ def load_settings(path: str | Path) -> Any:
     )
     settings.lightgen_primary_checkpoint = str(
         d("lightgen.selection.primary_checkpoint", "best_checkpoint.pt")
+    )
+    settings.lightgen_initialization_mode = str(
+        d("initialization.mode", "shared_untrained")
     )
     settings.fusion_mode = str(d("balanced_fusion.mode", "scale_matched_convex"))
     settings.fusion_alpha_min = float(d("balanced_fusion.alpha_min", 0.01))
@@ -49,6 +56,11 @@ def load_settings(path: str | Path) -> Any:
 
     if settings.lightgen_model_variant not in MODEL_VARIANTS:
         raise ValueError(f"Unknown LightGen T02 model variant: {settings.lightgen_model_variant}")
+    if settings.lightgen_initialization_mode not in INITIALIZATION_MODES:
+        raise ValueError(
+            "Unknown LightGen T02 initialization mode: "
+            f"{settings.lightgen_initialization_mode}"
+        )
     if settings.router_backend != "optical" or settings.top_k != 2:
         raise ValueError("T02 formal comparison is fixed to optical Top-2 routing")
     if settings.fusion_mode != "scale_matched_convex":
@@ -83,6 +95,8 @@ def save_resolved_config(settings: Any) -> None:
         "model_variant": settings.lightgen_model_variant,
         "primary_checkpoint": settings.lightgen_primary_checkpoint,
         "checkpoint_retention": ["best_checkpoint.pt", "last_checkpoint.pt"],
+        "initialization_mode": settings.lightgen_initialization_mode,
+        "initialization_checkpoint": str(settings.common_initialization_checkpoint),
     }
     values["balanced_fusion"] = {
         "mode": settings.fusion_mode,
@@ -104,4 +118,9 @@ def save_resolved_config(settings: Any) -> None:
     )
 
 
-__all__ = ["MODEL_VARIANTS", "load_settings", "save_resolved_config"]
+__all__ = [
+    "INITIALIZATION_MODES",
+    "MODEL_VARIANTS",
+    "load_settings",
+    "save_resolved_config",
+]

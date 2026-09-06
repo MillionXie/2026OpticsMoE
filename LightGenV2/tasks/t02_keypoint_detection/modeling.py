@@ -106,10 +106,17 @@ def build_student(loaded: Any, settings: Any) -> LightGenVision2PoseStudent:
 def initialize_student(model: LightGenVision2PoseStudent, settings: Any) -> dict[str, Any]:
     path = settings.common_initialization_checkpoint
     payload = torch.load(path, map_location="cpu", weights_only=False)
-    if payload.get("type") != "untrained_lsp_vision2_body_and_pose_head_without_router":
-        raise RuntimeError("LSP common initialization has the wrong type")
+    mode = str(getattr(settings, "lightgen_initialization_mode", "shared_untrained"))
+    if mode == "shared_untrained":
+        if payload.get("type") != "untrained_lsp_vision2_body_and_pose_head_without_router":
+            raise RuntimeError("LSP common initialization has the wrong type")
+    elif mode == "compatible_trained_lsp":
+        if not isinstance(payload.get("core"), dict) or not isinstance(payload.get("head"), dict):
+            raise RuntimeError("Compatible trained LSP initialization requires core and head states")
+    else:
+        raise RuntimeError(f"Unsupported LSP initialization mode: {mode}")
     target = model.core.state_dict()
-    source = payload["core_body"]
+    source = payload["core_body"] if mode == "shared_untrained" else payload["core"]
     merged = {key: value.detach().clone() for key, value in target.items()}
     is_d2nn = settings.lightgen_model_variant == "d2nn_active_expert_matched"
     fresh = {
@@ -137,6 +144,8 @@ def initialize_student(model: LightGenVision2PoseStudent, settings: Any) -> dict
     return {
         "path": str(path),
         "sha256": sha256_file(path),
+        "mode": mode,
+        "source_epoch": payload.get("epoch"),
         "loaded_common_tensors": len(loaded_keys),
         "fresh_phase_tensors": len(fresh),
         "fresh_router": not is_d2nn,
