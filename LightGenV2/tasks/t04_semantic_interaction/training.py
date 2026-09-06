@@ -330,11 +330,17 @@ def evaluate_selected(settings: Settings, device: torch.device, checkpoint: Path
         model.architecture_report(),
     )
     router_counts: dict[str, torch.Tensor] = {}
+    router_energy_sums: dict[str, torch.Tensor] = {}
+    router_probability_sums: dict[str, torch.Tensor] = {}
+    router_sample_counts: dict[str, int] = {}
     handles = []
     if model.router_backend == "optical":
         for label, path in zip(("language", "vision"), model._optical_paths()):
             counts = torch.zeros(4, dtype=torch.long)
             router_counts[label] = counts
+            router_energy_sums[label] = torch.zeros(4, dtype=torch.float64)
+            router_probability_sums[label] = torch.zeros(4, dtype=torch.float64)
+            router_sample_counts[label] = 0
 
             def collect_selection(
                 _module: Any,
@@ -342,9 +348,23 @@ def evaluate_selected(settings: Settings, device: torch.device, checkpoint: Path
                 output: dict[str, Any],
                 *,
                 destination: torch.Tensor = counts,
+                route_label: str = label,
             ) -> None:
                 destination.add_(
                     output["selected_mask"].detach().sum(dim=0).cpu()
+                )
+                router_energy_sums[route_label].add_(
+                    output["detector_energy_fraction"]
+                    .detach()
+                    .double()
+                    .sum(dim=0)
+                    .cpu()
+                )
+                router_probability_sums[route_label].add_(
+                    output["probabilities"].detach().double().sum(dim=0).cpu()
+                )
+                router_sample_counts[route_label] += int(
+                    output["selected_mask"].shape[0]
                 )
 
             handles.append(
@@ -366,7 +386,22 @@ def evaluate_selected(settings: Settings, device: torch.device, checkpoint: Path
         "metrics": metrics,
         "router_audit": (
             {
-                label: _selection_report(counts)
+                label: {
+                    **_selection_report(counts),
+                    "samples": router_sample_counts[label],
+                    "mean_detector_energy_fraction": [
+                        float(value)
+                        for value in (
+                            router_energy_sums[label] / router_sample_counts[label]
+                        ).tolist()
+                    ],
+                    "mean_router_probability": [
+                        float(value)
+                        for value in (
+                            router_probability_sums[label] / router_sample_counts[label]
+                        ).tolist()
+                    ],
+                }
                 for label, counts in router_counts.items()
             }
             if router_counts

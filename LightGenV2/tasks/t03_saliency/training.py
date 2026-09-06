@@ -169,6 +169,9 @@ def evaluate_selected_checkpoint(
     model.head.load_state_dict(payload["saliency_head"], strict=True)
     _, loader = legacy.build_loaders(bundle, settings, training=False)
     router_counts = torch.zeros(4, dtype=torch.long)
+    router_energy_sum = torch.zeros(4, dtype=torch.float64)
+    router_probability_sum = torch.zeros(4, dtype=torch.float64)
+    router_samples = 0
     handle = None
     if settings.lightgen_model_variant != "d2nn_active_expert_matched":
         router = model.core.optical_branch.core.router
@@ -176,9 +179,21 @@ def evaluate_selected_checkpoint(
         def collect_selection(
             _module: Any, _inputs: Any, output: dict[str, Any]
         ) -> None:
+            nonlocal router_samples
             router_counts.add_(
                 output["selected_mask"].detach().sum(dim=0).cpu()
             )
+            router_energy_sum.add_(
+                output["detector_energy_fraction"]
+                .detach()
+                .double()
+                .sum(dim=0)
+                .cpu()
+            )
+            router_probability_sum.add_(
+                output["probabilities"].detach().double().sum(dim=0).cpu()
+            )
+            router_samples += int(output["selected_mask"].shape[0])
 
         handle = router.register_forward_hook(collect_selection)
     try:
@@ -198,9 +213,17 @@ def evaluate_selected_checkpoint(
             "checkpoint": str(checkpoint),
             "selection_biased": True,
             "metrics": metrics,
-            "router_audit": (
-                None if handle is None else _selection_report(router_counts)
-            ),
+            "router_audit": None if handle is None else {
+                **_selection_report(router_counts),
+                "samples": router_samples,
+                "mean_detector_energy_fraction": [
+                    float(value) for value in (router_energy_sum / router_samples).tolist()
+                ],
+                "mean_router_probability": [
+                    float(value)
+                    for value in (router_probability_sum / router_samples).tolist()
+                ],
+            },
         }
         _write_json(settings.output_dir / "selected_checkpoint_test_evaluation.json", result)
         save_examples(
