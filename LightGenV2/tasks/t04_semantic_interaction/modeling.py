@@ -77,14 +77,24 @@ class LightGenOpenMojiEditor(OpenMojiOpticalEditor):
         self.router_top_k = None if is_d2nn else 2
         self.checkpoint_architecture = (
             f"lightgen_t04_{settings.lightgen_model_variant}_language2_vision2_"
-            f"17um_10cm_dc20_scale_matched_{'semanticcode_v2' if not is_d2nn else 'v1'}"
+            f"17um_10cm_dc20_scale_matched_{'detectorenergy_v3' if not is_d2nn else 'v1'}"
         )
         self.to(next(self.vision_stem.parameters()).device)
 
     def router_importance_loss(self) -> torch.Tensor:
         if self.router_backend != "optical":
             return next(self.parameters()).new_zeros(())
-        values = [path.core.router_losses()[1] for path in self._optical_paths()]
+        # Balance the actual CCD energy before score standardization.  This is
+        # the physical quantity available at deployment and gives the Router
+        # phase a substantially stronger gradient than post-softmax
+        # importance alone.
+        values = []
+        for path in self._optical_paths():
+            energy_fraction = path.core.last_routing[
+                "detector_energy_fraction"
+            ].float()
+            mean_energy = energy_fraction.mean(dim=0)
+            values.append(4.0 * mean_energy.square().sum() - 1.0)
         return torch.stack(values).mean()
 
     def router_hard_load_balance_loss(self) -> torch.Tensor:
@@ -129,6 +139,7 @@ class LightGenOpenMojiEditor(OpenMojiOpticalEditor):
                     }
                 ),
                 "semantic_code_loss_weight": self.settings.router_semantic_code_weight,
+                "balance_quantity": "pre-normalization CCD detector-energy fraction",
                 "inference_uses_task_label": False,
             },
             "fusion": {

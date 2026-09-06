@@ -71,17 +71,27 @@ _SEMANTIC_TOP2_CODES = {
 
 
 def _semantic_router_code_loss(model: Any, tasks: list[str]) -> torch.Tensor:
+    """Supervise the *physical detector energy* used by the language Router.
+
+    The standardized four-way softmax is useful for deterministic Top-2
+    selection, but its normalization makes phase gradients very small when a
+    single detector initially owns nearly all captured power.  Training the
+    pre-normalization detector-energy fractions both matches the quantity
+    measured on the CCD and supplies a usable gradient to the phase mask.
+    Task labels are used only for this training loss; inference receives only
+    the optical detector measurements.
+    """
     if model.router_backend != "optical":
         return next(model.parameters()).new_zeros(())
-    probabilities = model.language_core.optical_branch.core.last_routing[
-        "probabilities"
+    energy_fraction = model.language_core.optical_branch.core.last_routing[
+        "detector_energy_fraction"
     ]
-    target = torch.zeros_like(probabilities)
+    target = torch.zeros_like(energy_fraction)
     for row, task in enumerate(tasks):
         pair = _SEMANTIC_TOP2_CODES[str(task)]
         target[row, pair[0]] = 0.5
         target[row, pair[1]] = 0.5
-    return -(target * probabilities.clamp_min(1.0e-8).log()).sum(dim=-1).mean()
+    return -(target * energy_fraction.clamp_min(1.0e-8).log()).sum(dim=-1).mean()
 
 
 def _checkpoint(

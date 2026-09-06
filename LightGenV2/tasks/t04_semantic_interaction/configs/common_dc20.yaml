@@ -50,12 +50,13 @@ loss:
   task: 0.1
   ccd: 0.02
   router_balance: 0.08
-  router_importance: 0.02
+  # Physical CCD-energy balance, before Router score standardization.
+  router_importance: 0.10
   router_hard_load_balance: 0.50
   # Balanced two-expert optical codes for add/replace/move/remove.  This is a
   # training-only supervision signal; inference still integrates Router CCD
   # energy and performs Top-2 without receiving the task label.
-  router_semantic_code: 0.35
+  router_semantic_code: 0.05
   phase_dc: 0.005
 
 protocol:
