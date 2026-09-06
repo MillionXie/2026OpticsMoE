@@ -70,28 +70,60 @@ _SEMANTIC_TOP2_CODES = {
 }
 
 
-def _semantic_router_code_loss(model: Any, tasks: list[str]) -> torch.Tensor:
-    """Supervise the *physical detector energy* used by the language Router.
+def _semantic_router_code_loss(
+    model: Any,
+    tasks: list[str],
+    source_image: torch.Tensor,
+) -> torch.Tensor:
+    """Supervise physical Router energies without changing inference.
 
     The standardized four-way softmax is useful for deterministic Top-2
     selection, but its normalization makes phase gradients very small when a
     single detector initially owns nearly all captured power.  Training the
     pre-normalization detector-energy fractions both matches the quantity
     measured on the CCD and supplies a usable gradient to the phase mask.
-    Task labels are used only for this training loss; inference receives only
-    the optical detector measurements.
+    The language Router receives balanced operation codes.  The vision Router
+    receives a content code: its two target detectors are the two image
+    quadrants with the highest input energy.  Both signals are training-only;
+    inference receives only the same optical detector measurements.
     """
     if model.router_backend != "optical":
         return next(model.parameters()).new_zeros(())
-    energy_fraction = model.language_core.optical_branch.core.last_routing[
+    language_energy = model.language_core.optical_branch.core.last_routing[
         "detector_energy_fraction"
     ]
-    target = torch.zeros_like(energy_fraction)
+    language_target = torch.zeros_like(language_energy)
     for row, task in enumerate(tasks):
         pair = _SEMANTIC_TOP2_CODES[str(task)]
-        target[row, pair[0]] = 0.5
-        target[row, pair[1]] = 0.5
-    return -(target * energy_fraction.clamp_min(1.0e-8).log()).sum(dim=-1).mean()
+        language_target[row, pair[0]] = 0.5
+        language_target[row, pair[1]] = 0.5
+    language_loss = -(
+        language_target * language_energy.clamp_min(1.0e-8).log()
+    ).sum(dim=-1).mean()
+
+    vision_energy = model.vision_core.optical_branch.core.last_routing[
+        "detector_energy_fraction"
+    ]
+    image_energy = source_image.float().square().mean(dim=1)
+    height_mid = image_energy.shape[-2] // 2
+    width_mid = image_energy.shape[-1] // 2
+    quadrant_energy = torch.stack(
+        (
+            image_energy[:, :height_mid, :width_mid].mean(dim=(-2, -1)),
+            image_energy[:, :height_mid, width_mid:].mean(dim=(-2, -1)),
+            image_energy[:, height_mid:, :width_mid].mean(dim=(-2, -1)),
+            image_energy[:, height_mid:, width_mid:].mean(dim=(-2, -1)),
+        ),
+        dim=-1,
+    )
+    vision_indices = torch.topk(quadrant_energy, k=2, dim=-1).indices
+    vision_target = torch.zeros_like(vision_energy).scatter(
+        1, vision_indices, 0.5
+    )
+    vision_loss = -(
+        vision_target * vision_energy.clamp_min(1.0e-8).log()
+    ).sum(dim=-1).mean()
+    return 0.5 * (language_loss + vision_loss)
 
 
 def _checkpoint(
@@ -170,7 +202,11 @@ def train(settings: Settings, device: torch.device) -> dict[str, Any]:
                 losses = editing_objective(outputs, batch, settings)
                 importance = model.router_importance_loss()
                 hard_load = model.router_hard_load_balance_loss()
-                semantic_code = _semantic_router_code_loss(model, batch["task"])
+                semantic_code = _semantic_router_code_loss(
+                    model,
+                    batch["task"],
+                    batch["source_image"],
+                )
                 dc = phase_dc_loss(model)
                 losses["total"] = (
                     losses["total"]

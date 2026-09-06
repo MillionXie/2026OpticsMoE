@@ -20,7 +20,8 @@ def test_optical_router_profile_contract() -> None:
     assert settings.test_samples == 1000
     assert settings.router_hard_load_balance_weight == 0.50
     assert settings.router_importance_weight == 0.10
-    assert settings.router_semantic_code_weight == 0.05
+    assert settings.adapter_learning_rate == 0.001
+    assert settings.router_semantic_code_weight == 0.25
     assert settings.phase_dc_weight == 0.005
 
 
@@ -33,6 +34,7 @@ def test_d2nn_profile_has_no_router_penalty() -> None:
     assert settings.router_importance_weight == 0.0
     assert settings.router_hard_load_balance_weight == 0.0
     assert settings.router_semantic_code_weight == 0.0
+    assert settings.adapter_learning_rate == 0.0001
 
 
 def test_no_validation_split() -> None:
@@ -59,11 +61,18 @@ def test_semantic_router_code_uses_physical_detector_energy() -> None:
     class Language:
         optical_branch = Branch()
 
+    class Vision:
+        optical_branch = Branch()
+
     class Model:
         router_backend = "optical"
         language_core = Language()
+        vision_core = Vision()
 
-    loss = _semantic_router_code_loss(Model(), ["add", "replace"])
+    source = torch.zeros(2, 3, 4, 4)
+    source[0, :, :2, :] = 1.0
+    source[1, :, :, :2] = 1.0
+    loss = _semantic_router_code_loss(Model(), ["add", "replace"], source)
     expected = -torch.log(torch.tensor(0.45))
     torch.testing.assert_close(loss, expected)
     loss.backward()

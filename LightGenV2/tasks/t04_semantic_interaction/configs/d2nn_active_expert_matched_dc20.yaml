@@ -3,6 +3,10 @@ base_config: common_dc20.yaml
 lightgen:
   model_variant: d2nn_active_expert_matched
 
+training:
+  # Preserve the already completed matched-D2NN optimization contract.
+  adapter_learning_rate: 0.0001
+
 loss:
   router_balance: 0.0
   router_importance: 0.0

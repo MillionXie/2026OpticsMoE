@@ -77,7 +77,7 @@ class LightGenOpenMojiEditor(OpenMojiOpticalEditor):
         self.router_top_k = None if is_d2nn else 2
         self.checkpoint_architecture = (
             f"lightgen_t04_{settings.lightgen_model_variant}_language2_vision2_"
-            f"17um_10cm_dc20_scale_matched_{'detectorenergy_v3' if not is_d2nn else 'v1'}"
+            f"17um_10cm_dc20_scale_matched_{'contentenergy_v4' if not is_d2nn else 'v1'}"
         )
         self.to(next(self.vision_stem.parameters()).device)
 
@@ -137,6 +137,11 @@ class LightGenOpenMojiEditor(OpenMojiOpticalEditor):
                         "move": [1, 3],
                         "remove": [2, 3],
                     }
+                ),
+                "training_vision_top2_code": (
+                    None
+                    if self.router_backend == "none"
+                    else "two highest-energy input-image quadrants"
                 ),
                 "semantic_code_loss_weight": self.settings.router_semantic_code_weight,
                 "balance_quantity": "pre-normalization CCD detector-energy fraction",
