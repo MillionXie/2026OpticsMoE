@@ -131,6 +131,7 @@ hardware_sessions
 /LightGenV2/tasks/*/runs/*
 !/LightGenV2/tasks/*/runs/
 !/LightGenV2/tasks/*/runs/README.md
+/LightGenV2/tasks/*/logs/
 /LightGenV2/tasks/*/releases/*
 !/LightGenV2/tasks/*/releases/README.md
 !/LightGenV2/tasks/*/reports/figures/

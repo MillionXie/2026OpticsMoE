@@ -40,3 +40,11 @@ CUDA_VISIBLE_DEVICES=1 python -m LightGenV2.tasks.t02_keypoint_detection.run \
 
 不要在正式 run 内保存每 5 epoch 的 PT。若以后研究相位演化，应另建明确标为
 analysis 的 run。
+
+训练完成后生成汇总表和论文图：
+
+```bash
+python -m LightGenV2.tasks.t02_keypoint_detection.report \
+  --main LightGenV2/tasks/t02_keypoint_detection/runs/simulation/moe_router_scale_dc20_seed42 \
+  --d2nn LightGenV2/tasks/t02_keypoint_detection/runs/simulation/d2nn_matched_dc20_seed42
+```
