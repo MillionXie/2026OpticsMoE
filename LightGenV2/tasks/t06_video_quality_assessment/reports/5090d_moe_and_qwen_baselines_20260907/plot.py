@@ -109,7 +109,6 @@ def moe_qwen_comparison(rows: list[dict[str, str]]) -> None:
     axes[0].set_ylabel("Task-specific primary metric")
     axes[0].set_title("a  Performance")
     axes[0].legend(frameon=False, loc="upper left")
-    axes[0].text(3, 0.08, "not same\nmetric", ha="center", va="bottom", fontsize=6, color="#555555")
 
     axes[1].bar(positions - width / 2, ours_time, width, color=ours_color, label="Optical MoE graph")
     axes[1].bar(positions + width / 2, qwen_time, width, color=qwen_color, label="Qwen core")
@@ -130,7 +129,7 @@ def moe_qwen_comparison(rows: list[dict[str, str]]) -> None:
         axis.grid(axis="y", color="#D9D9D9", linewidth=0.45)
         axis.set_axisbelow(True)
         axis.spines[["top", "right"]].set_visible(False)
-    figure.text(0.07, 0.105, "Metrics are task-specific; T04 endpoints differ and are not comparable.", fontsize=6)
+    figure.text(0.07, 0.105, "Metrics are task-specific; each within-task pair uses the same primary metric.", fontsize=6)
     figure.text(0.07, 0.045, "Hatched MoE energy excludes GPU electronics; it is not full-system energy.", fontsize=6)
     _finish(figure, "moe_qwen_comparison")
 

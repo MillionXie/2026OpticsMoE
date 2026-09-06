@@ -15,5 +15,15 @@
     "openmoji": "LightGenV2/tasks/t04_semantic_interaction/runs/simulation/qwen_frozen_5090d_20260906",
     "lgvq_spatial": "LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/qwen3vl_spatial_quality_tokens_4f_r448_dataset_once_5090d_20260906",
     "lgvq_temporal_power": "LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/qwen3vl_temporal_quality_tokens_4f_power_5090d_20260906_clean"
+  },
+  "correction_20260907": {
+    "git_commit": "50294388b4c59a881083a1b3460d475a4bc4834d",
+    "reason": "Replace the under-capacity LSP bilinear-head run and the OpenMoji zero-shot JSON diagnostic with normal frozen-Qwen task baselines.",
+    "server_archive": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/baseline_corrections_5090d_20260907/qwen_baseline_corrections_20260907.tar.gz",
+    "sha256": "c30114e1580a3bf5a66497edcbb86bf18a4e064a98df1b19bbf901b679968a4f",
+    "runs": {
+      "lsp": "LightGenV2/tasks/t02_keypoint_detection/runs/simulation/qwen_frozen_deconv_5090d_20260907_v2",
+      "openmoji": "LightGenV2/tasks/t04_semantic_interaction/runs/simulation/qwen_structured_native_visual_5090d_20260907"
+    }
   }
 }

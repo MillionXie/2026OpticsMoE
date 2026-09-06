@@ -43,3 +43,7 @@ python -m LightGenV2.tasks.t04_semantic_interaction.baseline_structured_5090d al
   --cache-dir LightGenV2/tasks/t04_semantic_interaction/runs/simulation/qwen_structured_5090d/cache \
   --run-dir LightGenV2/tasks/t04_semantic_interaction/runs/simulation/qwen_structured_5090d
 ```
+
+正式 5090 D run ID：`qwen_structured_native_visual_5090d_20260907`。1000 test 的
+changed-cell accuracy 为 0.5475，mean/median/P95 为 27.166/26.628/30.280 ms；
+完整结果和功率以 run 内 `baseline_report.json` 为准。

@@ -13,10 +13,17 @@
     "raw_manifest_sha256": "17f37167db6fb73d26a50b3493d988bb21384b5d9810ec6cf4bd96f758d467d7"
   },
   "qwen_baseline": {
-    "git_commit": "6795a8237769728e597536777a4f4dbcc9ed2b48",
+    "original_git_commit": "6795a8237769728e597536777a4f4dbcc9ed2b48",
+    "corrected_lsp_openmoji_git_commit": "50294388b4c59a881083a1b3460d475a4bc4834d",
     "report": "../qwen5090d_cross_task_baselines_20260906/README.md",
     "summary": "../qwen5090d_cross_task_baselines_20260906/summary.csv",
-    "raw_archive": "qwen5090d_baselines_key_20260906.tar.gz",
-    "raw_archive_sha256": "f593f8eac267e5743b728c24efb7428bd8a08e252ce444ef85f489962a890365"
+    "original_raw_archive": "qwen5090d_baselines_key_20260906.tar.gz",
+    "original_raw_archive_sha256": "f593f8eac267e5743b728c24efb7428bd8a08e252ce444ef85f489962a890365",
+    "correction_archive_server_path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/baseline_corrections_5090d_20260907/qwen_baseline_corrections_20260907.tar.gz",
+    "correction_archive_sha256": "c30114e1580a3bf5a66497edcbb86bf18a4e064a98df1b19bbf901b679968a4f",
+    "correction_runs": {
+      "lsp": "LightGenV2/tasks/t02_keypoint_detection/runs/simulation/qwen_frozen_deconv_5090d_20260907_v2",
+      "openmoji": "LightGenV2/tasks/t04_semantic_interaction/runs/simulation/qwen_structured_native_visual_5090d_20260907"
+    }
   }
 }

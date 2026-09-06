@@ -13,7 +13,7 @@ block 不执行。两种正式方法共享数据划分、电子 mixer、同尺�
 
 该直接大模型 baseline 已在 RTX 5090 D 上用完整 1000 张官方 test 重测：PCK@0.2
 **0.7217**、PCKh@0.5 **0.8846**、NME **0.2084**。从第一个原生 Vision block 到
-14 张 56×56 热图的 mean/median/P95 为 **9.623/9.425/10.284 ms/image**；读出头为
+14 张 56×56 热图的 mean/median/P95 为 **9.504/9.470/9.632 ms/image**；读出头为
 `DeconvPoseHead`，1,102,990 个可训练参数，Qwen 参数全部冻结。
 
 ## 两个正式 profile

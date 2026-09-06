@@ -82,12 +82,13 @@ T05、T07、T08 当前没有已经冻结并可运行的正式光学 MoE 计算�
 | 任务 | Ours 性能 | Qwen baseline 性能 | Ours 当前计算图时间 | Qwen 模型核心时间 | Qwen 实测平均功率 / 能量 |
 |---|---|---|---:|---:|---:|
 | T01 | Top-1 0.9000 | Top-1 0.9950 | 10.061 ms/query | 26.407 ms/query | 151.252 W / 3.994 J |
-| T02 | PCK@0.2 0.5773 | **PCK@0.2 0.7217；PCKh@0.5 0.8846** | 5.537 ms/image | **9.623 ms/image** | 127.064 W / 1.223 J |
+| T02 | PCK@0.2 0.5773 | **PCK@0.2 0.7217；PCKh@0.5 0.8846** | 5.537 ms/image | **9.504 ms/image** | 140.128 W / 1.332 J |
 | T03 | CC 0.8291 | CC 0.8811 | 5.654 ms/image | 10.176 ms/image | 117.837 W / 1.199 J |
-| T04 | changed-cell 0.9800 | scene exact 0；parse failure 100% | 10.862 ms/sample | 3172.412 ms/sample | 168.544 W / 534.693 J |
+| T04 | changed-cell 0.9800 | **changed-cell 0.5475；exact 0.0160** | 10.862 ms/sample | **27.166 ms/sample** | 171.370 W / 4.656 J |
 | T06 temporal | SRCC 0.8044 | SRCC 0.7693 | 28.744 ms/16 videos | **1046.928 ms/16 sequential videos** | **115.271 W（由能量/时间反算）/ 120.680 J** |
 
-T04 两列不是同一个主指标，不能据此画性能提升结论。T06 的 Qwen 数字是单视频模型执行
+T04 现在使用同一个 changed-cell 指标，可直接比较；旧的 3172 ms / exact 0 是零样本
+自回归 JSON 诊断，不再放在正常 baseline 行。T06 的 Qwen 数字是单视频模型执行
 16 次之和；Ours 是一幅物理场同时承载 16 个视频。对照的负载数量一致，但并行方式不同，
 必须随表注明。T06 的 120.680 J 为原始实测证据；对应平均功率
 `120.680 J / 1.046928 s = 115.271 W`，575 W 额定上界为 601.984 J。

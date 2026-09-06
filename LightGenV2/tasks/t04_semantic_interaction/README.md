@@ -31,6 +31,15 @@ python -m LightGenV2.tasks.t04_semantic_interaction.run --profile qwen_pending -
 Vision/Language Transformer，只训练普通结构化任务读出头；旧的自由生成 JSON 结果只作为
 zero-shot diagnostic，不写入论文 baseline 行。
 
+RTX 5090 D 正常 baseline 已完成：输入 224×224 图像和完整指令，完整执行冻结的原生
+Vision/Language blocks，只训练 1,212,434 参数的结构化任务头。5000 train 训练 50 epoch，
+每 5 epoch 测一次完整 1000 test，并按 changed-cell accuracy 选择 epoch 20。正式结果为
+changed-cell **0.5475**、foreground category **0.2168**、edit IoU **0.2909**、object F1
+**0.1666**、scene exact **0.0160**；第一个 Vision block 到 `6×6` 两个输出的
+mean/median/P95 为 **27.166/26.628/30.280 ms/sample**。四任务 changed-cell 分别为
+add 0.224、replace 0.336、move 0.650、remove 0.980。该结果没有 LoRA、没有主干微调、
+没有自回归生成，也没有为抬数值加入额外 loss 或增强。
+
 ## 正式单次结果（seed 73）
 
 - 光 Router Top-2：selected checkpoint 正式复评 changed-cell accuracy 0.9800、
