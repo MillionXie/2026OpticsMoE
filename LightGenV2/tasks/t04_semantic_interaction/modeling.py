@@ -126,7 +126,10 @@ class LightGenOpenMojiEditor(OpenMojiOpticalEditor):
             },
             "optics": {
                 "phase_parameters": phase_parameters,
-                "active_expert_phase_budget": 4 * 2 * 224**2,
+                # Two modalities each activate Top-2 expert masks.  The second
+                # block in each branch is the shared/global mask, so it is not
+                # part of the activated expert budget used for D2NN matching.
+                "active_expert_phase_budget": 2 * 2 * 224**2,
                 "feature_captures": 4,
                 "router_captures": 0 if self.router_backend == "none" else 2,
                 "pixel_pitch_um": 17.0,
