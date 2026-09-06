@@ -26,7 +26,10 @@ python -m LightGenV2.tasks.t04_semantic_interaction.run --profile d2nn_dc20 --ph
 python -m LightGenV2.tasks.t04_semantic_interaction.run --profile qwen_pending --phase all
 ```
 
-大模型待测边界、计时和功耗口径见 [BASELINE_5090D_TODO.md](BASELINE_5090D_TODO.md)。
+大模型 baseline、零样本生成诊断、计时和功耗口径见
+[BASELINE_5090D_TODO.md](BASELINE_5090D_TODO.md)。正式 baseline 冻结 Qwen 原生
+Vision/Language Transformer，只训练普通结构化任务读出头；旧的自由生成 JSON 结果只作为
+zero-shot diagnostic，不写入论文 baseline 行。
 
 ## 正式单次结果（seed 73）
 

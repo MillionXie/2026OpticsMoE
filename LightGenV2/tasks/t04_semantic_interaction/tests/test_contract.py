@@ -6,6 +6,10 @@ from LightGenV2.tasks.t04_semantic_interaction.settings import load_settings
 from LightGenV2.tasks.t04_semantic_interaction.training import (
     _semantic_router_code_loss,
 )
+from LightGenV2.tasks.t04_semantic_interaction.baseline_structured_5090d import (
+    StructuredOpenMojiHead,
+    _loss,
+)
 
 
 TASK = Path(__file__).resolve().parents[1]
@@ -92,3 +96,19 @@ def test_semantic_router_code_uses_physical_detector_energy() -> None:
     assert VisionCore.last_routing["detector_energy_fraction"].grad is not None
     assert LanguageCore.last_routing["probabilities"].grad is None
     assert VisionCore.last_routing["probabilities"].grad is None
+
+
+def test_structured_qwen_baseline_head_contract() -> None:
+    head = StructuredOpenMojiHead(hidden_size=32, width=16)
+    output = head(torch.randn(2, 64, 32), torch.randn(2, 32))
+    assert output["category_logits"].shape == (2, 17, 6, 6)
+    assert output["edit_logits"].shape == (2, 6, 6)
+
+    target = torch.randint(0, 17, (2, 6, 6))
+    edit = torch.zeros(2, 6, 6)
+    edit[:, 2, 3] = 1.0
+    loss = _loss(output, target, edit)
+    assert loss.ndim == 0
+    loss.backward()
+    assert head.category.weight.grad is not None
+    assert head.edit.weight.grad is not None
