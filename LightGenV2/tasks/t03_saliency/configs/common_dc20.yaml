@@ -9,9 +9,11 @@ dataset:
   density_sigma_px: 19.0
 
 batching:
-  student_batch_size: 12
-  inference_batch_size: 24
-  num_workers: 4
+  # A 24 GiB 4090 has ample headroom for the 518 px optical canvas.  The
+  # larger batch avoids leaving the GPU idle behind PIL/Qwen preprocessing.
+  student_batch_size: 64
+  inference_batch_size: 96
+  num_workers: 8
 
 training:
   student_epochs: 60
