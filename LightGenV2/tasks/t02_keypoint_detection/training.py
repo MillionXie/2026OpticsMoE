@@ -7,7 +7,13 @@ from typing import Any
 
 from experiments.qwen3_vl_embedding_2b_lsp_pose_optical_router import training as _base
 
-from .modeling import architecture_label, build_student, initialize_student, optimizer
+from .modeling import (
+    architecture_label,
+    architecture_report,
+    build_student,
+    initialize_student,
+    optimizer,
+)
 
 
 def _bind() -> None:
@@ -18,6 +24,7 @@ def _bind() -> None:
     _base.build_router_student = build_student
     _base.load_common_initialization = initialize_student
     _base._optimizer = optimizer
+    _base.student_architecture_report = architecture_report
 
 
 def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:

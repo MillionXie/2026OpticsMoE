@@ -208,7 +208,7 @@ def _save_checkpoint(
             "epoch": int(epoch),
             "checkpoint_architecture": architecture_label(settings),
             "router_contract_sha256": settings.router_contract_sha256,
-            "router_backend": settings.router_backend,
+            "router_backend": getattr(model, "router_backend", settings.router_backend),
             "top_k": int(settings.top_k),
             "weight_variant": str(weight_variant),
             "selection": {
