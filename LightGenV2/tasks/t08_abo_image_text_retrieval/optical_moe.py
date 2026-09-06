@@ -634,7 +634,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "checkpoint_selection": "maximum periodic EMA test R@1",
             "selection_biased": True, "embedding_dim": EMBEDDING_DIM,
             "full_qwen_2048d_reference_recall_at_1": 0.7370833333333333,
-            "matched_qwen_64d_reference": teacher_metrics,
+            "hardware_matched_fixed_field_qwen_64d_reference": teacher_metrics,
+            "dynamic_shape_qwen_64d_reference_recall_at_1": 0.5979166666666667,
         })
         training = train(loaded, replacement, readout, contract, cache, settings, options)
         load_checkpoint(settings.output_dir / "best_checkpoint.pt", replacement, readout)
@@ -650,7 +651,14 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "method": "LightGen optical Router Top-2 MoE DC20 scale-matched fusion",
             "test_samples": len(contract.test), "title_candidates": len(contract.titles),
             "embedding_dim": EMBEDDING_DIM, "best_epoch": training["best_epoch"],
-            "student": final_metrics, "matched_frozen_qwen_64d": teacher_metrics,
+            "student": final_metrics,
+            "hardware_matched_fixed_field_frozen_qwen_64d": teacher_metrics,
+            "dynamic_shape_frozen_qwen_64d_reference": {
+                "recall_at_1": 0.5979166666666667,
+                "recall_at_5": 0.8516666666666667,
+                "recall_at_10": 0.90625,
+                "mrr": 0.7150933891267973,
+            },
             "frozen_qwen_2048d_reference": {
                 "recall_at_1": 0.7370833333333333, "recall_at_5": 0.93375,
                 "recall_at_10": 0.9604166666666667, "mrr": 0.8230330539977374,

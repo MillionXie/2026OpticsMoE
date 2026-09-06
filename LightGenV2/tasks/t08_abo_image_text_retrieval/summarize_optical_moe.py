@@ -15,8 +15,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-MATCHED_QWEN = {"recall_at_1": 0.5979166667, "recall_at_5": 0.8516666667,
-                "recall_at_10": 0.90625, "mrr": 0.7150933891}
+HARDWARE_MATCHED_QWEN = {
+    "recall_at_1": 0.5358333333, "recall_at_5": 0.7958333333,
+    "recall_at_10": 0.8458333333, "mrr": 0.6558960417,
+}
+DIMENSION_ONLY_QWEN = {
+    "recall_at_1": 0.5979166667, "recall_at_5": 0.8516666667,
+    "recall_at_10": 0.90625, "mrr": 0.7150933891,
+}
 FULL_QWEN = {"recall_at_1": 0.7370833333, "recall_at_5": 0.93375,
              "recall_at_10": 0.9604166667, "mrr": 0.8230330540}
 
@@ -51,8 +57,10 @@ def summarize(runs: list[Path], output: Path) -> dict[str, Any]:
         axes[0].plot([int(row["epoch"]) for row in measured],
                      [float(row["test_recall_at_1"]) for row in measured],
                      marker="o", label=name.replace("optical_router_moe_", ""))
-    axes[0].axhline(MATCHED_QWEN["recall_at_1"], color="#777777", linestyle="--",
-                    label="Frozen Qwen 64-D")
+    axes[0].axhline(HARDWARE_MATCHED_QWEN["recall_at_1"], color="#999999", linestyle="--",
+                    label="Qwen fixed-field 64-D")
+    axes[0].axhline(DIMENSION_ONLY_QWEN["recall_at_1"], color="#666666", linestyle="-.",
+                    label="Qwen dynamic-shape 64-D")
     axes[0].axhline(FULL_QWEN["recall_at_1"], color="#222222", linestyle=":",
                     label="Frozen Qwen 2048-D")
     axes[0].set(xlabel="Epoch", ylabel="Test R@1", title="a  Periodic test retrieval")
@@ -61,11 +69,13 @@ def summarize(runs: list[Path], output: Path) -> dict[str, Any]:
     keys = ("recall_at_1", "recall_at_5", "recall_at_10", "mrr")
     labels = ("R@1", "R@5", "R@10", "MRR")
     x = np.arange(len(keys))
-    axes[1].bar(x - 0.25, [MATCHED_QWEN[key] for key in keys], 0.25,
-                label="Qwen 64-D", color="#9e9e9e")
-    axes[1].bar(x, [FULL_QWEN[key] for key in keys], 0.25,
+    axes[1].bar(x - 0.3, [HARDWARE_MATCHED_QWEN[key] for key in keys], 0.2,
+                label="Qwen fixed-field 64-D", color="#bdbdbd")
+    axes[1].bar(x - 0.1, [DIMENSION_ONLY_QWEN[key] for key in keys], 0.2,
+                label="Qwen dynamic-shape 64-D", color="#7f7f7f")
+    axes[1].bar(x + 0.1, [FULL_QWEN[key] for key in keys], 0.2,
                 label="Qwen 2048-D", color="#4c78a8")
-    axes[1].bar(x + 0.25, [float(selected[f"test_{key}"]) for key in keys], 0.25,
+    axes[1].bar(x + 0.3, [float(selected[f"test_{key}"]) for key in keys], 0.2,
                 label="Optical MoE", color="#f58518")
     axes[1].set_xticks(x, labels)
     axes[1].set_ylim(0.5, 1.0)
@@ -90,7 +100,8 @@ def summarize(runs: list[Path], output: Path) -> dict[str, Any]:
     plt.close(figure)
 
     records = []
-    for name, metrics in (("frozen_qwen_64d", MATCHED_QWEN),
+    for name, metrics in (("frozen_qwen_fixed_field_64d", HARDWARE_MATCHED_QWEN),
+                          ("frozen_qwen_dynamic_shape_64d", DIMENSION_ONLY_QWEN),
                           ("frozen_qwen_2048d", FULL_QWEN)):
         records.append({"method": name, "selected_epoch": "", **metrics})
     records.append({
