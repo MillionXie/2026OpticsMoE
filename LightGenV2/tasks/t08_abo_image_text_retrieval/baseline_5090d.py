@@ -175,6 +175,30 @@ def _metrics(ranks: np.ndarray) -> dict[str, float]:
     }
 
 
+def _balanced_timing_queries(queries: list[Query], count: int) -> list[Query]:
+    """Select a deterministic, label-balanced timing subset without duplicates."""
+    if count <= 0:
+        raise ValueError("--timing-samples must be positive")
+    by_label: dict[int, list[Query]] = {}
+    for query in queries:
+        by_label.setdefault(query.label, []).append(query)
+    selected: list[Query] = []
+    offset = 0
+    while len(selected) < min(count, len(queries)):
+        added = False
+        for label in sorted(by_label):
+            candidates = by_label[label]
+            if offset < len(candidates):
+                selected.append(candidates[offset])
+                added = True
+                if len(selected) == min(count, len(queries)):
+                    break
+        if not added:
+            break
+        offset += 1
+    return selected
+
+
 def _plot(run_dir: Path, report: dict[str, Any], ranks: np.ndarray,
           power_samples: list[Any]) -> None:
     import matplotlib
@@ -217,6 +241,8 @@ def _plot(run_dir: Path, report: dict[str, Any], ranks: np.ndarray,
 def run(args: argparse.Namespace) -> dict[str, Any]:
     if not torch.cuda.is_available() or "5090" not in torch.cuda.get_device_name(0):
         raise RuntimeError("Formal speed/power measurement requires RTX 5090 D")
+    if args.warmup_forwards < 0:
+        raise ValueError("--warmup-forwards cannot be negative")
     data_root = args.data_root.expanduser().resolve()
     run_dir = args.run_dir.expanduser().resolve()
     model_path = args.model.expanduser().resolve()
@@ -254,60 +280,103 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         run_dir / "title_embeddings.pt",
     )
 
+    predictions: list[dict[str, Any]] = []
+    image_embeddings: list[torch.Tensor] = []
+    ranks: list[int] = []
+    # Performance is evaluated on every official test query.  It is deliberately
+    # separate from the controlled timing pass below.
+    for index, query in enumerate(queries):
+        with Image.open(query.image_path) as source:
+            image = ImageOps.exif_transpose(source).convert("RGB")
+        inputs = move_inputs(
+            _inputs(loaded.processor, image=image, instruction=QUERY_INSTRUCTION),
+            loaded.device,
+        )
+        embedding = teacher_embeddings(loaded.model, inputs, EMBEDDING_DIM)[0]
+        scores = embedding.float() @ title_embeddings.float().T
+        order = scores.argsort(descending=True)
+        matching = torch.nonzero(order.eq(query.label), as_tuple=False)
+        if matching.numel() != 1:
+            raise RuntimeError("True title did not occur exactly once in ranking")
+        rank = int(matching.item()) + 1
+        top10 = order[:10].detach().cpu().tolist()
+        ranks.append(rank)
+        image_embeddings.append(embedding.detach().cpu().to(torch.float16))
+        predictions.append(
+            {
+                "sample_id": query.sample_id,
+                "true_product_id": query.product_id,
+                "true_label": query.label,
+                "true_rank": rank,
+                "predicted_product_id": titles[top10[0]].product_id,
+                "predicted_label": top10[0],
+                "top10_labels": json.dumps(top10),
+                "top10_product_ids": json.dumps(
+                    [titles[value].product_id for value in top10]
+                ),
+                "top10_scores": json.dumps([float(scores[value]) for value in top10]),
+            }
+        )
+        if (index + 1) % 100 == 0:
+            print(f"[performance] {index + 1}/{len(queries)}", flush=True)
+
+    # The paper timing protocol uses a deterministic class-balanced subset.  For
+    # the formal 2400-query set this selects two images from every product.
+    timing_queries = _balanced_timing_queries(queries, int(args.timing_samples))
     first_block = loaded.model.model.visual.blocks[0]
-    timer = FirstBlockTimer(first_block)
-    # The online window is about 25--35 ms/image on a 5090 D, so 20 Hz would
-    # undersample individual forwards.  Request 100 Hz and retain every raw
-    # sample; nvidia-smi may still be limited by the board sensor update rate.
     sampler = NvidiaSmiPowerSampler(interval_ms=POWER_SAMPLE_INTERVAL_MS)
     active_phase: dict[str, str | None] = {"value": None}
     power_hook = first_block.register_forward_pre_hook(
         lambda _module, _args: sampler.set_phase(active_phase["value"])
     )
+    measurements: list[dict[str, Any]] = []
     torch.cuda.synchronize()
     time.sleep(float(args.cooldown_seconds))
     sampler.start()
     sampler.set_phase("idle")
     time.sleep(float(args.idle_seconds))
     sampler.set_phase(None)
-    measurements: list[dict[str, Any]] = []
-    predictions: list[dict[str, Any]] = []
-    image_embeddings: list[torch.Tensor] = []
-    ranks: list[int] = []
+    timer: FirstBlockTimer | None = None
     try:
-        for index, query in enumerate(queries):
+        for index in range(int(args.warmup_forwards)):
+            query = timing_queries[index % len(timing_queries)]
             with Image.open(query.image_path) as source:
                 image = ImageOps.exif_transpose(source).convert("RGB")
-            inputs = _inputs(
-                loaded.processor,
-                image=image,
-                instruction=QUERY_INSTRUCTION,
+            inputs = move_inputs(
+                _inputs(loaded.processor, image=image, instruction=QUERY_INSTRUCTION),
+                loaded.device,
             )
-            inputs = move_inputs(inputs, loaded.device)
+            embedding = teacher_embeddings(loaded.model, inputs, EMBEDDING_DIM)[0]
+            scores = embedding.float() @ title_embeddings.float().T
+            scores.argsort(descending=True)
+        torch.cuda.synchronize()
+        # Attach the timer only after warm-up so warm-up forwards cannot be
+        # mistaken for measured samples and do not require initialized events.
+        timer = FirstBlockTimer(first_block)
+
+        for index, query in enumerate(timing_queries):
+            with Image.open(query.image_path) as source:
+                image = ImageOps.exif_transpose(source).convert("RGB")
+            inputs = move_inputs(
+                _inputs(loaded.processor, image=image, instruction=QUERY_INSTRUCTION),
+                loaded.device,
+            )
             timer.reset()
             active_phase["value"] = f"active:{index}"
             try:
-                embedding = teacher_embeddings(
-                    loaded.model, inputs, EMBEDDING_DIM
-                )[0]
+                embedding = teacher_embeddings(loaded.model, inputs, EMBEDDING_DIM)[0]
                 scores = embedding.float() @ title_embeddings.float().T
-                order = scores.argsort(descending=True)
+                scores.argsort(descending=True)
                 timing = timer.finish()
             finally:
                 sampler.set_phase(None)
                 active_phase["value"] = None
-            matching = torch.nonzero(order.eq(query.label), as_tuple=False)
-            if matching.numel() != 1:
-                raise RuntimeError("True title did not occur exactly once in ranking")
-            rank = int(matching.item()) + 1
-            top10 = order[:10].detach().cpu().tolist()
-            ranks.append(rank)
-            image_embeddings.append(embedding.detach().cpu().to(torch.float16))
             measurements.append(
                 {
                     "sample_index": index,
                     "sample_id": query.sample_id,
                     "product_id": query.product_id,
+                    "label": query.label,
                     "cuda_ms": timing["cuda_ms"],
                     "host_ms": timing["host_ms"],
                     "first_block_calls": timing["first_block_calls"],
@@ -316,28 +385,12 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                     ),
                 }
             )
-            predictions.append(
-                {
-                    "sample_id": query.sample_id,
-                    "true_product_id": query.product_id,
-                    "true_label": query.label,
-                    "true_rank": rank,
-                    "predicted_product_id": titles[top10[0]].product_id,
-                    "predicted_label": top10[0],
-                    "top10_labels": json.dumps(top10),
-                    "top10_product_ids": json.dumps(
-                        [titles[value].product_id for value in top10]
-                    ),
-                    "top10_scores": json.dumps(
-                        [float(scores[value]) for value in top10]
-                    ),
-                }
-            )
-            if (index + 1) % 100 == 0:
-                print(f"[query] {index + 1}/{len(queries)}", flush=True)
+            if (index + 1) % 50 == 0:
+                print(f"[timing] {index + 1}/{len(timing_queries)}", flush=True)
     finally:
         power_hook.remove()
-        timer.close()
+        if timer is not None:
+            timer.close()
         power_samples = sampler.stop()
 
     rank_array = np.asarray(ranks, dtype=np.int64)
@@ -376,8 +429,10 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "document_instruction": DOCUMENT_INSTRUCTION,
         "candidate_titles_precomputed": len(titles),
         "test_samples": len(queries),
-        "first_test_sample_included_in_timing": True,
-        "explicit_warmup_forwards": 0,
+        "timing_samples": len(timing_queries),
+        "timing_subset": "deterministic round-robin by product label",
+        "first_measured_sample_included_in_statistics": True,
+        "explicit_warmup_forwards": int(args.warmup_forwards),
         "timing_boundary": (
             "native Vision Transformer block 0 input through all native Vision/"
             "Language blocks, final valid-token 2048-D normalization, cosine "
@@ -437,6 +492,8 @@ def main() -> int:
     parser.add_argument("--data-root", type=Path, required=True)
     parser.add_argument("--run-dir", type=Path, required=True)
     parser.add_argument("--max-queries", type=int)
+    parser.add_argument("--warmup-forwards", type=int, default=50)
+    parser.add_argument("--timing-samples", type=int, default=200)
     parser.add_argument("--cooldown-seconds", type=float, default=5.0)
     parser.add_argument("--idle-seconds", type=float, default=3.0)
     args = parser.parse_args()

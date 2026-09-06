@@ -18,8 +18,10 @@ SALICON 与 OpenMoji 的具体命令和输出格式分别见任务目录中的 `
 | T03 SALICON 显著性 | `Qwen3-VL-Embedding-2B` + 轻量显著性读出头 | CC、KLD、SIM、NSS、AUC-Judd、MAE；Qwen 不微调 | 5090 D 待测 |
 | T04 OpenMoji 语义交互 | `Qwen3-VL-2B-Instruct`，完整图像与文本指令 | 解析 6×6 语义/编辑网格；Changed、Category、IoU、F1、Exact、解析失败率 | 5090 D 待测 |
 | T06 LGVQ 视频质量 | `Qwen3-VL-2B-Instruct`，任务对应 prompt | 单一 Spatial 或 Temporal MOS；SRCC/KRCC/PLCC/RMSE/MAE | 既有值保留为历史证据，最终表需按本文边界复测 |
+| T08 ABO 图搜文 | `Qwen3-VL-Embedding-2B`，完整 2048 维归一化 embedding | 100 个固定标题候选；R@1/R@5/R@10/MRR/rank | **已按 5090D 统一协议完成** |
 
-ABO 的 T07/T08 按当前要求暂不纳入；T05 数据协议未冻结，不先造 baseline 数字。
+ABO T07 图搜图仍未冻结；T08 已冻结为 easy100 image-to-title 协议。T05 数据协议未冻结，
+不先造 baseline 数字。
 
 ## 速度边界
 
@@ -96,6 +98,13 @@ python -m LightGenV2.tasks.t04_semantic_interaction.baseline_5090d \
 python -m LightGenV2.tasks.t06_video_quality_assessment.quality_token_resolution \
   --config LightGenV2/tasks/t06_video_quality_assessment/configs/baselines/qwen3vl_spatial_quality_tokens_4f_r448.yaml \
   --phase all --model /path/Qwen3-VL-2B-Instruct --manifest /path/lgvq_split.csv
+
+# T08 ABO easy100：单图检索 100 个固定英文商品标题
+python -m LightGenV2.tasks.t08_abo_image_text_retrieval.baseline_5090d \
+  --model /root/autodl-tmp/models/Qwen3-VL-Embedding-2B \
+  --data-root /root/autodl-tmp/datasets/abo_easy100_dataset_20260906 \
+  --run-dir LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation/qwen_frozen_5090d_easy100_controlled \
+  --warmup-forwards 50 --timing-samples 200
 ```
 
 每个报告同时给出实测 `active_mean_w` 和 RTX 5090 D 的 575 W 额定上界，并由同一
