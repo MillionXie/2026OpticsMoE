@@ -63,13 +63,15 @@ def _selection_report(counts: torch.Tensor) -> dict[str, Any]:
 
 
 _SEMANTIC_TOP2_CODES = {
-    # The first slot follows the prompt families' naturally separable optical
-    # lobe (add/move -> 1, replace/remove -> 0); the second slot supplies a
-    # balanced complementary code.  Every expert still appears twice.
-    "add": (1, 2),
+    # The prompt amplitude is optically separable into two stable coarse
+    # families.  Give each family a disjoint Top-2 pair; since the dataset has
+    # equal operation counts, every expert receives exactly 25% of all slots.
+    # The downstream text-conditioned decoder still distinguishes all four
+    # operations from the full prompt features.
+    "add": (1, 3),
     "replace": (0, 2),
     "move": (1, 3),
-    "remove": (0, 3),
+    "remove": (0, 2),
 }
 
 
