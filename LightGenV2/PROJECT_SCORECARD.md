@@ -1,6 +1,6 @@
 # LightGenV2 八任务总清单
 
-更新时间：2026-09-05
+更新时间：2026-09-06
 
 本表是老师查看整体进展时的唯一跨任务入口。每个任务固定一行；详细事实和证据仍放在
 对应任务目录。`—` 表示尚无合格证据，不表示数值为零。旧工程结果统一标为“历史候选”，
@@ -10,10 +10,10 @@
 
 | 优先级 | 任务 | 当前数据/协议 | 主指标 | 我们的仿真性能 | 我们的实测性能 | 我们的速度 | Baseline 性能 | Baseline 速度 | 功耗与能耗 | 仿真—实测一致性 | 当前状态与下一闭环 |
 |---:|---|---|---|---|---|---|---|---|---|---|---|
-| P1 | **T06 视频质量评价** | LGVQ；Spatial-4、Temporal-36、九视频×四帧是三个独立协议；test 558 | SRCC↑；同时报 KRCC/PLCC↑、RMSE/MAE↓ | **Temporal-36 正式：SRCC 0.8454，KRCC 0.6394，PLCC 0.8650，RMSE 7.183，MAE 5.451**；**九视频×四帧全场并行：SRCC 0.8082，KRCC 0.5999，PLCC 0.8131，RMSE 8.226，MAE 6.109**；Spatial-4 候选：SRCC 0.6371，PLCC 0.6694 | — | 九视频×四帧仍为六次整场传播、一次产生 9 个 MOS；实验台端到端延迟/吞吐 **未测** | 匹配的冻结 Qwen3-VL-2B + 线性头：Temporal-36 SRCC 0.7820；Spatial-4 SRCC 0.6440 | RTX 5090D、batch 1、原 MP4 到标量：Temporal-36 均值 **1133.494 ms/视频**；Spatial-4 **134.058 ms/视频** | — | 九槽位仿真循环审计 SRCC 均值 0.8019；实测仍需 PCC、SSIM、gain-aligned NMAE、强度比与饱和率 | **Temporal-36 与九视频×四帧仿真完成；Spatial 候选完成；硬件闭环为最高优先级。**先测九视频串扰矩阵、端到端速度/功耗和逐级 CCD 一致性，再做实测微调 |
+| P1 | **T06 视频质量评价** | LGVQ；Spatial-4、Temporal-36、9视频×4帧、16视频×4帧为独立协议；test 558 | SRCC↑；同时报 KRCC/PLCC↑、RMSE/MAE↓ | **Temporal-36：SRCC 0.8454**；**9×4：SRCC 0.8082、PLCC 0.8131**；**16×4：SRCC 0.8044、PLCC 0.8180**；Spatial-4 候选 SRCC 0.6371 | — | 9×4/16×4 均为六次整场传播，一幅场分别输出 9/16 个 MOS；实验台端到端延迟/吞吐 **未测** | 匹配的冻结 Qwen3-VL-2B + 线性头：Temporal-36 SRCC 0.7820；Spatial-4 SRCC 0.6440 | RTX 5090D、batch 1、原 MP4 到标量：Temporal-36 均值 **1133.494 ms/视频**；Spatial-4 **134.058 ms/视频** | — | 16×4 无全局专家坍缩，但帧路由样本变化率仅 8.2%；实测仍需 PCC、SSIM、gain-aligned NMAE、强度比与饱和率 | **16×4 已完成但未达到 0.81（实测 0.8044）；不再堆 polish run。**下一步优先做硬件串扰、端到端速度/功耗和逐级 CCD 一致性 |
 | P2 | **T07 商品检索（图搜图）** | ABO；正式子集、gallery/query 划分尚未冻结 | Top-1/Top-5/Top-10、MRR、Recall@K↑ | — | — | — | — | — | — | — | **尚未运行。**先冻结可发表的数据协议和电子 baseline，再做同协议光电模型；不能引用仓库中旧 ABO 文件作为本任务结果 |
 | P3 | **T08 商品检索（图搜文）** | ABO；文本字段、候选库和负样本协议尚未冻结 | R@1/R@5/R@10、MRR、median rank↓ | — | — | — | — | — | — | — | **尚未运行。**先明确 image→text 检索单位、prompt 和候选库，再跑电子 baseline 与光电版本 |
-| P4 | T01 物品检索 | Caltech101-10 历史协议：train 2625、gallery 30、query 200 | Top-1/Top-3、MRR↑ | 历史可部署鲁棒候选：Top-1 **85.0%**、Top-3 94.5%、MRR 0.9063；尚未迁移为 LightGenV2 正式 run | — | — | 历史纯电子参考：Top-1 **87.0%**、Top-3 96.0%、MRR 0.9159 | — | — | 局部 CCD/仿真对照曾做探索，但没有冻结成任务级正式汇总 | 迁移 accuracy-first 鲁棒 checkpoint、配置和证据；复核 phase 可训练、数据 split 与选模口径后，再补硬件四阶段结果 |
+| P4 | T01 物品检索 | Caltech101 target-10：train 2625、gallery 30、query 200；单 seed | Top-1/Top-3、MRR↑ | **光学 Router + Top-2 MoE + 同尺度融合：Top-1 91.0%、Top-3 96.5%、MRR 0.9411**；激活专家相位预算匹配 D2NN：90.5% | — | — | 冻结 Qwen3-VL-Embedding-2B：Top-1 99.5%；D2NN：90.5% | — | — | 尚未做统一硬件实测 | 当前 91.0% 仅有 soft balance，Language Router 集中，且未启用 20% 直流仿真；不能标为严格均衡/DC-robust。正式 run 已只保留 best+last |
 | P5 | T02 关键点检测 | LSP；固定 test 1000 | PCK@0.2、PCKh@0.5↑；MPE/NME↓ | 历史单次候选：PCK **0.7130**、PCKh **0.8375**、MPE 15.951 px；尚未迁移 | — | — | 历史 teacher 证据与当前候选不完全匹配，暂不作公平 baseline | — | — | — | 先迁移并锁定同参数/同输入 baseline；再决定是否继续，因为当前论文优先级低于 T06/T07/T08 |
 | P6 | T03 显著性分析 | SALICON 官方公开 validation 5000 | CC/SIM/NSS/AUC-Judd↑；KLD/MAE↓ | 历史单次候选：CC **0.86274**、AUC-Judd 0.77000、SIM 0.82411、NSS 0.97200；尚未迁移 | — | — | 历史 teacher 约 CC 0.87972、AUC-Judd 0.77263；需复核是否同协议 | — | — | — | 迁移冻结证据；补同协议电子 baseline、速度和硬件可行性评估 |
 | P7 | T04 语义交互 | OpenMoji，add/replace/move/remove；test 1000 | changed-cell accuracy、edit-grid IoU、object F1、scene exact match↑ | 历史 pilot：changed-cell **0.8765**、IoU 0.7629、object F1 0.9016、scene exact 0.6640；尚未迁移 | — | — | — | — | — | — | 先补严格 baseline；数据版权/可发表性确认后再决定是否投入硬件实验 |
@@ -64,12 +64,14 @@
   `tasks/t06_video_quality_assessment/reports/paper_results/temporal36_balanced/result.json`
 - T06 九视频×四帧：
   `tasks/t06_video_quality_assessment/reports/paper_results/temporal_multivideo9x4_contentroute/result.json`
+- T06 十六视频×四帧：
+  `tasks/t06_video_quality_assessment/reports/paper_results/temporal_multivideo16x4/result.json`
 - T06 Spatial 历史候选：
   `../experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/SPATIAL_OPTIMIZATION_RESULT.md`
 - T06 baseline 时间：
   `../experiments/qwen3_vl_2b_lgvq_temporal_framecount_timing/PERFORMANCE_TIMING_REPORT.md`
-- T01 历史鲁棒候选：
-  `../experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_early_robust_tradeoff/RESULTS.md`
+- T01 Caltech101 正式单次对照：
+  `tasks/t01_object_retrieval/reports/FORMAL_RESULTS.md`
 - T02/T03 历史冻结证据：`../document/18_vision2_hybrid_dense_tasks/README.md`
 - T04 历史 pilot：
   `../experiments/qwen3_vl_2b_openmoji_instruction_four_stage_optical_editing/README.md`

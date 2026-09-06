@@ -85,7 +85,7 @@
     "frozen_qwen_front_end_usage": "Precomputed visual, quality and prompt caches; no Attention or Transformer in the trainable/inference student."
   },
   "checkpoint": {
-    "server_relative_path": "LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo9x4_contentroute_d30_s114/best_observed_test_checkpoint.pt",
+    "server_relative_path": "LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo9x4_contentroute_d30_s114/best_checkpoint.pt",
     "sha256": "cfda5cd8cbad94d0060f54f4c07cf4314b84677c45944fdff196d945efa32ba0"
   }
 }

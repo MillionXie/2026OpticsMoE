@@ -19,6 +19,12 @@ tile、每 tile 内 2×2 帧的方式放入同一 478×478 光场。它不是把
 [`reports/paper_results/temporal_multivideo9x4_contentroute`](reports/paper_results/temporal_multivideo9x4_contentroute/README.md)。
 Temporal-36 保留为“单视频 36 帧”的独立基线，二者不能混报。
 
+最新吞吐优先候选 `temporal_multivideo16x4` 在同一光场同时处理 16 条视频、每条 4 帧，
+输出 `[B,16]`。正式单 seed 结果为 SRCC 0.8044、KRCC 0.5968、PLCC 0.8180、
+RMSE 7.991、MAE 5.992；没有达到预设 SRCC≥0.81，但一次光场输出数相对 9×4 增加
+77.8%，且没有发生全局专家坍缩。正式配置和诚实的限制说明见
+[`reports/paper_results/temporal_multivideo16x4`](reports/paper_results/temporal_multivideo16x4/README.md)。
+
 ## 不可静默改变的任务合同
 
 - Spatial 与 Temporal 是两个独立单指标模型；当前 profile 只输出一个 Temporal MOS。
@@ -30,6 +36,7 @@ Temporal-36 保留为“单视频 36 帧”的独立基线，二者不能混报�
 - 当前 Temporal-36 表示一个视频的 36 帧。改成多视频必须新建 profile、checkpoint 和报告。
 - MultiVideo-9×4 的 9 个标签和 9 个输出必须一一对应；不允许九视频聚合成一个分数。
 - MultiVideo-9×4 必须整幅联合传播；逐视频传播后软件拼接只能作为容量上界，不能报告为硬件结果。
+- MultiVideo-16×4 同理输出 16 个独立 MOS；64 帧只共享光传播，不共享标签或读出结果。
 - 以上任一项变化都不能覆盖 `temporal36_balanced` 的名称或结果。
 
 ## 当前源码关系
@@ -157,7 +164,7 @@ Top-2 选择确实随视频内容改变。
 ```powershell
 python -m LightGenV2.tasks.t06_video_quality_assessment.visualize_multivideo_masks `
   --config LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/<formal_profile>.yaml `
-  --checkpoint LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/<run_id>/best_observed_test_checkpoint.pt
+  --checkpoint LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/<run_id>/best_checkpoint.pt
 ```
 
 黑色只表示该次传播中没有可训练相位的保护区，不代表实际 SLM 必须在该处吸收光。输出同时包含 PNG、
@@ -174,19 +181,11 @@ python -m LightGenV2.tasks.t06_video_quality_assessment.visualize_multivideo_mas
 8×8、共 64 帧并行。帧专家为 27×27、内部间隔 2 pixel；视频级专家为 56×56、内部
 间隔 3 pixel；global 相位为每视频 111×111。有效孔径尺寸和光路均未改变。
 
-三个候选只改变损失权重，方便在 SRCC 与物理槽位专家均衡之间选择：
+探索候选已经完成并清理。今后复现只使用唯一正式配置：
 
 ```powershell
 python -m LightGenV2.tasks.t06_video_quality_assessment.multivideo `
-  --config LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_accuracy.yaml `
-  --phase train
-
-python -m LightGenV2.tasks.t06_video_quality_assessment.multivideo `
-  --config LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_balanced.yaml `
-  --phase train
-
-python -m LightGenV2.tasks.t06_video_quality_assessment.multivideo `
-  --config LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_rank.yaml `
+  --config LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_formal.yaml `
   --phase train
 ```
 

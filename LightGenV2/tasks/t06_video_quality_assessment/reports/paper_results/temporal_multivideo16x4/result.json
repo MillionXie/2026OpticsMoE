@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "status": "formal_simulation_candidate_single_seed",
+  "task": "LGVQ Temporal VQA",
+  "run_id": "multivideo16x4_rank_s163",
+  "selection": {
+    "test_used_for_selection": true,
+    "validation_used": false,
+    "best_epoch": 30,
+    "target_srcc": 0.81,
+    "target_reached": false,
+    "reason": "Highest single-placement SRCC among the audited 16x4 candidates while avoiding global expert collapse; six subsequent polish runs did not improve the initialization."
+  },
+  "data": {
+    "train_videos": 2250,
+    "test_videos": 558,
+    "test_physical_fields": 35,
+    "videos_per_physical_field": 16,
+    "frames_per_video": 4,
+    "frames_per_physical_field": 64,
+    "output_contract": "[physical_batch,16], one scalar Temporal MOS per video"
+  },
+  "geometry": {
+    "propagation_canvas_px": [518, 518],
+    "active_field_px": [478, 478],
+    "video_grid": [4, 4],
+    "video_tile_px": [115, 115],
+    "video_pitch_px": 119,
+    "inter_video_gap_px": 4,
+    "frame_grid_per_video": [2, 2],
+    "frame_lane_px": [56, 56],
+    "frame_lane_pitch_px": 59,
+    "frame_expert_px": [27, 27],
+    "frame_expert_pitch_px": 29,
+    "wavelength_nm": 532.0,
+    "pixel_pitch_um": 17.0,
+    "distance_m": 0.1,
+    "coherent_full_field_propagations": 6
+  },
+  "test_metrics_optical_on": {
+    "srcc": 0.804372636109386,
+    "krcc": 0.5967987129181443,
+    "plcc": 0.8180317792494805,
+    "rmse": 7.991103649139404,
+    "mae": 5.992080211639404
+  },
+  "same_checkpoint_optics_bypassed_without_retraining": {
+    "srcc": -0.08609610464211369,
+    "krcc": -0.0590507945685188,
+    "plcc": -0.01989855337827708,
+    "rmse": 15.284659385681152,
+    "mae": 12.90620231628418
+  },
+  "router": {
+    "type": "two optical Top-2 routers, four experts each",
+    "frame_selected_share": [0.35736608505249023, 0.21004463732242584, 0.2997767925262451, 0.1328125],
+    "frame_effective_experts": 3.7840588092803955,
+    "frame_selection_variation_fraction": 0.08214285969734192,
+    "video_selected_share": [0.3187499940395355, 0.20357142388820648, 0.24285714328289032, 0.23482142388820648],
+    "video_effective_experts": 3.9586644172668457,
+    "video_selection_variation_fraction": 0.6035714149475098,
+    "global_expert_collapse_observed": false,
+    "caveat": "Frame-level routing is share-balanced but weakly sample-adaptive."
+  },
+  "fusion_alpha": {
+    "frame_expert": 0.5611353516578674,
+    "frame_global": 0.5599836111068726,
+    "video_expert": 0.5678973197937012,
+    "video_global": 0.5695072412490845,
+    "interpretation": "Optical coefficient after per-branch RMS scale matching; electronic coefficient is 1-alpha."
+  },
+  "robustness": {
+    "unmodulated_power_fraction_train": [0.2, 0.35],
+    "unmodulated_power_fraction_eval": 0.2,
+    "input_phase_ccd_shift_px": 4,
+    "phase_dropout_probability": 0.05,
+    "k_space_theta_max_deg": 0.5,
+    "guard_energy_fraction_mean": 0.03312673792243004
+  },
+  "parameters": {
+    "student_trainable": 6804011,
+    "optical_feature_paths": 874233,
+    "optical_routers": 107920,
+    "frozen_qwen_front_end_in_student": 0,
+    "frozen_qwen_front_end_usage": "Precomputed vision, quality and prompt caches; no Attention or Transformer in the student graph."
+  },
+  "comparison_to_9x4": {
+    "srcc_delta": -0.00377882984335624,
+    "plcc_delta": 0.0049722503648992,
+    "parallel_video_count_increase_fraction": 0.7777777777777778
+  },
+  "checkpoint": {
+    "server_relative_path": "LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo16x4_rank_s163/best_checkpoint.pt",
+    "retained_files": ["best_checkpoint.pt", "last_checkpoint.pt"],
+    "sha256": "5303b574b200e14bf943af21c60a246720be453b9cf8847cd93c0eaaa243a77c"
+  }
+}

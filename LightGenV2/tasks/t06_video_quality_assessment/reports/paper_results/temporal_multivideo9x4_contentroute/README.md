@@ -45,9 +45,9 @@ LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/
   multivideo9x4_contentroute_d30_s114/
 ```
 
-关键文件为 `best_observed_test_checkpoint.pt`、`training_summary.json`、
+关键文件为 `best_checkpoint.pt`、`last_checkpoint.pt`、`training_summary.json`、
 `optical_contribution_same_checkpoint.json`、`slot_cycle_audit/slot_cycle_audit.json` 和
-`mask_visualization/`。checkpoint SHA256 为
+`best_visualization/`。checkpoint SHA256 为
 `cfda5cd8cbad94d0060f54f4c07cf4314b84677c45944fdff196d945efa32ba0`，训练代码 commit 为
 `f446273d41dc57f08faac1340f401432ef17509c`。完整机器可读结果见 [result.json](result.json)。
 

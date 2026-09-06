@@ -33,7 +33,7 @@ class MultiVideoSettingsTest(unittest.TestCase):
             Path(__file__).parents[1]
             / "configs"
             / "lightgen"
-            / "temporal_multivideo16x4_accuracy.yaml"
+            / "temporal_multivideo16x4_formal.yaml"
         )
         settings = load_settings(path)
         geometry = settings.geometry
