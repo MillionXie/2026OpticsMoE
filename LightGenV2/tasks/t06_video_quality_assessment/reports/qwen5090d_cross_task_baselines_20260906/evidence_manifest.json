@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-06",
+  "gpu": "NVIDIA GeForce RTX 5090 D",
+  "git_commit": "6795a8237769728e597536777a4f4dbcc9ed2b48",
+  "raw_evidence_archive": {
+    "filename": "qwen5090d_baselines_key_20260906.tar.gz",
+    "sha256": "f593f8eac267e5743b728c24efb7428bd8a08e252ce444ef85f489962a890365",
+    "server_path": "/root/autodl-tmp/qwen5090d_baselines_key_20260906.tar.gz"
+  },
+  "runs": {
+    "caltech101": "LightGenV2/tasks/t01_object_retrieval/runs/simulation/qwen_frozen_5090d_20260906",
+    "lsp": "LightGenV2/tasks/t02_keypoint_detection/runs/simulation/qwen_frozen_5090d_20260906",
+    "salicon": "LightGenV2/tasks/t03_saliency/runs/simulation/qwen_frozen_5090d_20260906",
+    "openmoji": "LightGenV2/tasks/t04_semantic_interaction/runs/simulation/qwen_frozen_5090d_20260906",
+    "lgvq_spatial": "LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/qwen3vl_spatial_quality_tokens_4f_r448_dataset_once_5090d_20260906",
+    "lgvq_temporal_power": "LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/qwen3vl_temporal_quality_tokens_4f_power_5090d_20260906_clean"
+  }
+}
