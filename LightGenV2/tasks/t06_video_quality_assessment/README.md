@@ -232,3 +232,6 @@ python -m LightGenV2.tasks.t06_video_quality_assessment.quality_token_resolution
 如果中途终止，可把 `--phase all` 换为 `extract`、`train` 或 `benchmark`，并用
 `--frames 4|9|16` 只续跑一组。正式结果进入 T06 自己的 `runs/simulation/<run_id>`；
 论文图和紧凑结论进入 `reports/paper_results/`，大特征、checkpoint 和逐视频 CSV 不提交 Git。
+
+当前 5090D 的 448×448 正式结果、完整指标表、token 几何、计时边界和论文图见
+[`reports/paper_results/qwen3vl_quality_token_baseline_r448`](reports/paper_results/qwen3vl_quality_token_baseline_r448/README.md)。

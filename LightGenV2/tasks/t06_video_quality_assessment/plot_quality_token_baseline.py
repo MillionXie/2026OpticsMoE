@@ -11,7 +11,7 @@ from typing import Any
 import matplotlib.pyplot as plt
 import numpy as np
 
-from .project import sha256
+from .project import REPO_ROOT, sha256
 
 
 FRAMES = (4, 9, 16)
@@ -121,7 +121,7 @@ def main() -> int:
             srcc,
             width,
             color=COLORS[scheme],
-            label=LABELS[scheme] + " SRCC",
+            label=("S1" if scheme == SCHEMES[0] else "S2") + " SRCC",
         )
         axes[1].bar(
             positions + offset + width,
@@ -130,14 +130,21 @@ def main() -> int:
             facecolor="none",
             edgecolor=COLORS[scheme],
             linewidth=0.9,
-            label=LABELS[scheme] + " PLCC",
+            label=("S1" if scheme == SCHEMES[0] else "S2") + " PLCC",
         )
     axes[1].set_xticks(positions, tuple(str(value) for value in FRAMES))
     axes[1].set_xlabel("sampled frames / video")
     axes[1].set_ylabel("correlation")
     axes[1].set_ylim(0.70, 0.82)
     axes[1].set_title("b  Temporal quality", loc="left", fontweight="bold")
-    axes[1].legend(frameon=False, fontsize=6, ncol=2, columnspacing=0.7, handlelength=1.2)
+    axes[1].legend(
+        frameon=False,
+        fontsize=5.7,
+        ncol=2,
+        loc="lower right",
+        columnspacing=0.7,
+        handlelength=1.2,
+    )
 
     scheme = SCHEMES[1]
     model_mean = [rows[count, scheme]["model_mean_ms"] for count in FRAMES]
@@ -199,6 +206,7 @@ def main() -> int:
                 label=LABELS[scheme],
             )
         axis.set_xlabel("model latency (ms/video)")
+        axis.set_xscale("log")
         axis.set_ylim(0, 1.01)
         axis.set_title(f"{chr(97 + index)}  {count} frames", loc="left", fontweight="bold")
     axes[0].set_ylabel("empirical CDF")
@@ -222,7 +230,7 @@ def main() -> int:
         "timing_scope": summary["timing_scope"],
         "visual_geometry": visual_geometry,
         "rows": [rows[count, scheme] for count in FRAMES for scheme in SCHEMES],
-        "source_summary": str(summary_path),
+        "source_summary": str(summary_path.relative_to(REPO_ROOT)).replace("\\", "/"),
         "source_summary_sha256": sha256(summary_path),
         "figures": [
             "framecount_latency_performance.png",

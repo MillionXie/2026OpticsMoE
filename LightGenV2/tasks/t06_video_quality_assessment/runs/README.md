@@ -3,7 +3,9 @@
 本目录只保留说明，实际产物被 Git 忽略。服务器当前正式仿真只保留：
 
 1. `simulation/multivideo9x4_contentroute_d30_s114`：9 个视频 × 4 帧；
-2. `simulation/multivideo16x4_rank_s163`：16 个视频 × 4 帧。
+2. `simulation/multivideo16x4_rank_s163`：16 个视频 × 4 帧；
+3. `simulation/qwen3vl_quality_tokens_r448_dataset_once_5090d_20260906`：冻结
+   Qwen3-VL 的 448×448 纯电子 baseline，4/9/16 帧、两种输出头的逐视频性能与计时。
 
 每个正式 run 的 PT 权重只允许有 `best_checkpoint.pt` 和
 `last_checkpoint.pt`。指标、实际配置、命令和相位可视化仍保留；探索候选、周期 PT、
