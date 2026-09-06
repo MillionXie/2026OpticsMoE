@@ -10,7 +10,7 @@
 
 | 优先级 | 任务 | 当前数据/协议 | 主指标 | 我们的仿真性能 | 我们的实测性能 | 我们的速度 | Baseline 性能 | Baseline 速度 | 功耗与能耗 | 仿真—实测一致性 | 当前状态与下一闭环 |
 |---:|---|---|---|---|---|---|---|---|---|---|---|
-| P1 | **T06 视频质量评价** | LGVQ；Spatial-4、Temporal-36、9视频×4帧、16视频×4帧为独立协议；test 558 | SRCC↑；同时报 KRCC/PLCC↑、RMSE/MAE↓ | **Temporal-36：SRCC 0.8454**；**9×4：SRCC 0.8082、PLCC 0.8131**；**16×4：SRCC 0.8044、PLCC 0.8180**；Spatial-4 候选 SRCC 0.6371 | — | 9×4/16×4 均为六次整场传播，一幅场分别输出 9/16 个 MOS；实验台端到端延迟/吞吐 **未测** | 冻结 Qwen3-VL-2B：Temporal-36 线性头 SRCC 0.7820；448px 五质量词 4/9/16 帧 SRCC **0.7693/0.7745/0.7787**；Spatial-4 SRCC 0.6440 | RTX 5090D、batch 1：原 MP4 到标量 Temporal-36 均值 **1133.494 ms/视频**；448px 五质量词从 Vision block 0 到分数为 **65.433/65.133/86.078 ms**（4/9/16 帧，无显式 warmup、首条计入）；Spatial-4 端到端 **134.058 ms/视频** | — | 16×4 无全局专家坍缩，但帧路由样本变化率仅 8.2%；实测仍需 PCC、SSIM、gain-aligned NMAE、强度比与饱和率 | **16×4 已完成但未达到 0.81（实测 0.8044）；448px 五质量词 baseline 已形成可追溯性能/速度证据。**下一步优先做硬件串扰、端到端速度/功耗和逐级 CCD 一致性 |
+| P1 | **T06 视频质量评价** | LGVQ；Spatial-4、Temporal-36、9视频×4帧、16视频×4帧为独立协议；test 558 | SRCC↑；同时报 KRCC/PLCC↑、RMSE/MAE↓ | **Temporal-36：SRCC 0.8454**；**9×4：SRCC 0.8082、PLCC 0.8131**；**16×4：SRCC 0.8044、PLCC 0.8180**；**单视频 Spatial-4：SRCC 0.6393、PLCC 0.6743** | — | 以上光电模型均为六次整场传播；9×4/16×4 一幅场分别输出 9/16 个 MOS，实验台端到端延迟/吞吐 **未测** | 冻结 Qwen3-VL-2B：Temporal-36 线性头 SRCC 0.7820；448px 五质量词 4/9/16 帧 SRCC **0.7693/0.7745/0.7787**；Spatial-4 SRCC 0.6440 | RTX 5090D、batch 1：原 MP4 到标量 Temporal-36 均值 **1133.494 ms/视频**；448px 五质量词从 Vision block 0 到分数为 **65.433/65.133/86.078 ms**（4/9/16 帧，无显式 warmup、首条计入）；Spatial-4 端到端 **134.058 ms/视频** | — | 16×4 无全局专家坍缩，但帧路由样本变化率仅 8.2%；实测仍需 PCC、SSIM、gain-aligned NMAE、强度比与饱和率 | **单视频 Spatial-4 已归档；16×4 已完成但未达到 0.81（实测 0.8044）。**下一步优先做硬件串扰、端到端速度/功耗和逐级 CCD 一致性 |
 | P2 | **T07 商品检索（图搜图）** | ABO；正式子集、gallery/query 划分尚未冻结 | Top-1/Top-5/Top-10、MRR、Recall@K↑ | — | — | — | — | — | — | — | **尚未运行。**先冻结可发表的数据协议和电子 baseline，再做同协议光电模型；不能引用仓库中旧 ABO 文件作为本任务结果 |
 | P3 | **T08 商品检索（图搜文）** | ABO；文本字段、候选库和负样本协议尚未冻结 | R@1/R@5/R@10、MRR、median rank↓ | — | — | — | — | — | — | — | **尚未运行。**先明确 image→text 检索单位、prompt 和候选库，再跑电子 baseline 与光电版本 |
 | P4 | T01 物品检索 | Caltech101 target-10：train 2625、gallery 30、query 200；单 seed；周期 test 选模 | Top-1/Top-3、MRR↑ | **DC20 光 Router Top-2：Top-1 90.0%、Top-3 96.5%、MRR 0.9344** | — | — | 同协议/激活相位预算匹配 D2NN：Top-1 89.5%；冻结 Qwen embedding：99.5% | — | — | 尚未做统一硬件实测 | **正式复跑完成。**含 20%–30% 未调制分量、偏置 CCD 噪声、±16 px、k 空间/phase-DC；hard-load 0.50 消除未使用专家，但 Language 仍集中；只保留 best+last |
@@ -68,8 +68,8 @@
   `tasks/t06_video_quality_assessment/reports/paper_results/temporal_multivideo16x4/result.json`
 - T06 448px 五质量词电子 baseline：
   `tasks/t06_video_quality_assessment/reports/paper_results/qwen3vl_quality_token_baseline_r448/result.json`
-- T06 Spatial 历史候选：
-  `../experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/SPATIAL_OPTIMIZATION_RESULT.md`
+- T06 单视频 Spatial-4 正式归档：
+  `tasks/t06_video_quality_assessment/reports/paper_results/spatial_single_video4_balanced/result.json`
 - T06 baseline 时间：
   `../experiments/qwen3_vl_2b_lgvq_temporal_framecount_timing/PERFORMANCE_TIMING_REPORT.md`
 - T01 Caltech101 正式单次对照：

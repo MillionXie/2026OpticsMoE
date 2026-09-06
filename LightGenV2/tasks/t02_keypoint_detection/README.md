@@ -54,6 +54,10 @@ python -m LightGenV2.tasks.t02_keypoint_detection.report \
 100 epoch、seed 42 的 DC20 单次复跑已经完成。两组都在 epoch 100 取得最高
 周期 test PCK@0.2：光 Router Top-2 主方法为 **57.73%**（PCKh 73.63%，NME
 0.3488），参数匹配的普通 D2NN 为 **67.51%**（PCKh 80.54%，NME 0.2736）。
+
+历史目录中还能看到 PCK 0.6024 和 0.7131；它们分别缺少当前 DC20 条件，或使用旧
+8 µm/16 专家 Top-4/电子 gate 架构，不能替代当前正式结果。完整核查见
+[`reports/LSP_METRIC_AUDIT.md`](reports/LSP_METRIC_AUDIT.md)。
 因此本次 LSP 协议下，普通 D2NN 明确优于光 Router MoE 9.78 个百分点；不能把
 历史不同协议的 71.3% 候选混入本表。结果表、论文图和最佳相位总览见
 [`reports/dc20_comparison/RESULTS.md`](reports/dc20_comparison/RESULTS.md)。

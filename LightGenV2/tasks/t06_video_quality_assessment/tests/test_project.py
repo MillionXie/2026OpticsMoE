@@ -36,6 +36,28 @@ class Temporal36ProjectContractTest(unittest.TestCase):
                 "experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54",
             )
 
+    def test_spatial_single_video4_profile_is_not_multivideo_reuse(self) -> None:
+        profile = "spatial_single_video4_balanced"
+        report = inspect_profile(profile)
+        self.assertTrue(report["backend_config_present"])
+        self.assertEqual(
+            report["canonical_checkpoint_expected_sha256"],
+            "aa1e28d42995d2187b9c949a49d7c6d37891435f1eb3b7d2fe1ecef5b35d50e8",
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            run = Path(temporary) / "spatial_run"
+            raw_profile, config, package = materialize_launch_config(profile, run)
+            raw = yaml.safe_load(config.read_text(encoding="utf-8"))
+            self.assertEqual(raw["task"]["target_name"], "spatial")
+            self.assertEqual(raw["model"]["frame_count"], 4)
+            self.assertEqual(raw["geometry"]["lane_grid"], 2)
+            self.assertEqual(raw["router"]["top_k"], 2)
+            self.assertFalse(raw_profile["frame_semantics"]["multi_video_reuse"])
+            self.assertEqual(
+                package,
+                "experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54",
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

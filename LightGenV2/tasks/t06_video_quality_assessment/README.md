@@ -2,6 +2,12 @@
 
 ## 当前结论
 
+Spatial 的当前正式归档是 `spatial_single_video4_balanced`：一条视频均匀取 4 帧并排成
+2×2，**没有多视频复用**。它使用两套物理光 Router Top-2、六次光传播和 20% 名义
+未调制分量，在 558 条 test 视频上达到 SRCC 0.6393、KRCC 0.4642、PLCC 0.6743、
+RMSE 8.452、MAE 6.646。入口、checkpoint SHA 和光关闭对照见
+[`reports/paper_results/spatial_single_video4_balanced`](reports/paper_results/spatial_single_video4_balanced/README.md)。
+
 当前主版本是 `temporal36_balanced`：一个视频均匀取 36 帧，以 6×6 lane 放进同一个
 478×478 有效光场。四专家光学 Top-2 router、六次光传播、20% 名义未调制直流分量、
 鲁棒位移/相位/CCD 扰动和目标专属电子读出头保持不变。
@@ -79,6 +85,14 @@ python -m LightGenV2.tasks.t06_video_quality_assessment --phase train
 
 # 5. 用正式平衡 checkpoint 评估
 python -m LightGenV2.tasks.t06_video_quality_assessment --phase evaluate
+```
+
+上面未显式指定 `--profile` 时默认运行 Temporal-36。运行单视频 Spatial-4 时必须显式写：
+
+```powershell
+python -m LightGenV2.tasks.t06_video_quality_assessment `
+  --profile spatial_single_video4_balanced `
+  --phase evaluate
 ```
 
 指定 checkpoint 或输出位置时使用：
