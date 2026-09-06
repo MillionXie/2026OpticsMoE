@@ -103,6 +103,11 @@ class StructuredOpenMojiHead(nn.Module):
             raise ValueError(
                 f"Image-token count must form a square grid, got {image_hidden.shape[1]}"
             )
+        # Frozen Qwen features are cached/staged as bfloat16 while the ordinary
+        # trainable task head intentionally remains float32.
+        head_dtype = self.image_projection[1].weight.dtype
+        image_hidden = image_hidden.to(dtype=head_dtype)
+        condition_hidden = condition_hidden.to(dtype=head_dtype)
         spatial = self.image_projection(image_hidden)
         spatial = spatial.transpose(1, 2).reshape(-1, self.width, side, side)
         condition = self.condition_projection(condition_hidden)
