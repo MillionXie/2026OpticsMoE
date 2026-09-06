@@ -50,7 +50,7 @@ def test_semantic_router_code_uses_physical_detector_energy() -> None:
         last_routing = {
             "probabilities": torch.full((2, 4), 0.25),
             "detector_energy_fraction": torch.tensor(
-                [[0.05, 0.45, 0.05, 0.45], [0.45, 0.05, 0.45, 0.05]],
+                [[0.45, 0.45, 0.05, 0.05], [0.45, 0.05, 0.45, 0.05]],
                 requires_grad=True,
             ),
         }

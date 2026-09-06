@@ -10,8 +10,8 @@
 |---|---|---|---|---|
 | T01 | 物品检索 | Caltech101（可替换） | DC20 正式复跑完成 | `tasks/t01_object_retrieval` |
 | T02 | 关键点检测 | LSP（可替换） | DC20 正式复跑完成 | `tasks/t02_keypoint_detection` |
-| T03 | 显著性分析 | SALICON（可替换） | 待迁移 | `tasks/t03_saliency` |
-| T04 | 语义交互 | OpenMoji（可替换） | 待迁移 | `tasks/t04_semantic_interaction` |
+| T03 | 显著性分析 | SALICON（可替换） | DC20 仿真三组协议完成；Qwen 待5090D | `tasks/t03_saliency` |
+| T04 | 语义交互 | OpenMoji（可替换） | DC20 仿真三组协议完成；Qwen 待5090D | `tasks/t04_semantic_interaction` |
 | T05 | 视频分类 | 未确定 | 规划中 | `tasks/t05_video_classification` |
 | T06 | 视频质量评价 | LGVQ（可替换） | **当前主任务** | `tasks/t06_video_quality_assessment` |
 | T07 | 商品图搜图 | ABO（可替换） | 待迁移 | `tasks/t07_abo_image_retrieval` |
@@ -75,6 +75,8 @@ notepad LightGenV2\paths.local.yaml
 [`DATA_SPLIT_AND_ROUTER_PROTOCOL.md`](DATA_SPLIT_AND_ROUTER_PROTOCOL.md)；冻结 Qwen 在 RTX
 5090 D 上的统一性能、速度和功耗测量边界见
 [`RTX5090D_QWEN_BASELINE_PROTOCOL.md`](RTX5090D_QWEN_BASELINE_PROTOCOL.md)。
+论文总表如何同时呈现 Ours、D2NN 和 Frozen Qwen 三组，见
+[`PAPER_TABLE_GUIDE.md`](PAPER_TABLE_GUIDE.md)。
 
 ## Git 同步规则
 

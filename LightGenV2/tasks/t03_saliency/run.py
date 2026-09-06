@@ -90,13 +90,20 @@ def _write_protocol(settings: Any, profile: str, seed: int) -> None:
 
 def _pending_qwen(settings: Any) -> dict[str, Any]:
     report = {
+        "schema_version": 1,
         "status": "pending_5090d_measurement",
         "model": "Qwen/Qwen3-VL-Embedding-2B",
         "frozen": True,
         "performance": None,
         "speed_ms": None,
-        "power_w": None,
+        "power": {
+            "idle_w": None,
+            "active_mean_w": None,
+            "peak_w": None,
+            "incremental_j_per_sample": None,
+        },
         "timing_boundary": "input to first native Vision Transformer block -> saliency output",
+        "timing_protocol": "batch=1; 50 warm-up forwards; 200 measured test samples",
         "hardware": "NVIDIA GeForce RTX 5090 D",
         "reason": "deliberately not measured on the shared training server",
     }

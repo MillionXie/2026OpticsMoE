@@ -15,8 +15,8 @@
 | P3 | **T08 商品检索（图搜文）** | ABO；文本字段、候选库和负样本协议尚未冻结 | R@1/R@5/R@10、MRR、median rank↓ | — | — | — | — | — | — | — | **尚未运行。**先明确 image→text 检索单位、prompt 和候选库，再跑电子 baseline 与光电版本 |
 | P4 | T01 物品检索 | Caltech101 target-10：train 2625、gallery 30、query 200；单 seed；周期 test 选模 | Top-1/Top-3、MRR↑ | **DC20 光 Router Top-2：Top-1 90.0%、Top-3 96.5%、MRR 0.9344** | — | — | 同协议/激活相位预算匹配 D2NN：Top-1 89.5%；冻结 Qwen embedding：99.5% | — | — | 尚未做统一硬件实测 | **正式复跑完成。**含 20%–30% 未调制分量、偏置 CCD 噪声、±16 px、k 空间/phase-DC；hard-load 0.50 消除未使用专家，但 Language 仍集中；只保留 best+last |
 | P5 | T02 关键点检测 | LSP；固定 test 1000；单 seed；周期 test 选模 | PCK@0.2、PCKh@0.5↑；MPE/NME↓ | **DC20 光 Router Top-2：PCK 0.5773、PCKh 0.7363、NME 0.3488** | — | — | 同协议、激活相位预算匹配 D2NN：PCK 0.6751、PCKh 0.8054、NME 0.2736 | — | — | — | **正式复跑完成。**主方法低于 D2NN 0.0978 PCK；当前不继续为低优先级任务堆 run，保留该负结果和最佳相位证据 |
-| P6 | T03 显著性分析 | SALICON 官方公开 validation 5000 | CC/SIM/NSS/AUC-Judd↑；KLD/MAE↓ | 历史单次候选：CC **0.86274**、AUC-Judd 0.77000、SIM 0.82411、NSS 0.97200；尚未迁移 | — | — | 历史 teacher 约 CC 0.87972、AUC-Judd 0.77263；需复核是否同协议 | — | — | — | 迁移冻结证据；补同协议电子 baseline、速度和硬件可行性评估 |
-| P7 | T04 语义交互 | OpenMoji，add/replace/move/remove；test 1000 | changed-cell accuracy、edit-grid IoU、object F1、scene exact match↑ | 历史 pilot：changed-cell **0.8765**、IoU 0.7629、object F1 0.9016、scene exact 0.6640；尚未迁移 | — | — | — | — | — | — | 先补严格 baseline；数据版权/可发表性确认后再决定是否投入硬件实验 |
+| P6 | T03 显著性分析 | SALICON train2014 10000；val2014 5000 作 public test；无 validation | CC/SIM/NSS/AUC-Judd↑；KLD/MAE↓ | **DC20 光 Router Top-2：CC 0.8291、SIM 0.8063、NSS 0.9283、AUC-Judd 0.7631** | — | — | 参数匹配 D2NN：CC **0.8346**；Frozen Qwen 待5090D | Frozen Qwen 待5090D | Frozen Qwen 待5090D | — | **正式仿真完成。**四专家选择均衡（23.54%/26.80%/23.38%/26.28%），但 D2NN 的 CC 高 0.0055；只保留 best+last 和正式报告 |
+| P7 | T04 语义交互 | OpenMoji train 5000/test 1000；四操作各自均衡；无 validation | changed-cell accuracy、edit-grid IoU、object F1、scene exact match↑ | **DC20 光 Router Top-2：changed 0.9795、IoU 0.9340、F1 0.9833、exact 0.8930** | — | — | 参数匹配 D2NN：changed **0.9895**、IoU 0.9813；Frozen Qwen 待5090D | Frozen Qwen 待5090D | Frozen Qwen 待5090D | — | **正式仿真完成。**语言/视觉 Router 均使用 3/4 专家，第4专家未进入 Top-2；该限制已如实记录，D2NN 主指标高 0.0100 |
 | P8 | T05 视频分类 | 数据集与论文问题尚未确定 | Top-1/Top-5 或 mAP（待协议确定） | — | — | — | — | — | — | — | **未开始。**在数据集确定前不建空模型、不产生 runs |
 
 ## “做完一行”的最低标准
@@ -76,6 +76,5 @@
   `tasks/t01_object_retrieval/reports/DC20_RESULTS.md`
 - T02 LSP 正式单次对照：
   `tasks/t02_keypoint_detection/reports/dc20_comparison/RESULTS.md`
-- T03 历史冻结证据：`../document/18_vision2_hybrid_dense_tasks/README.md`
-- T04 历史 pilot：
-  `../experiments/qwen3_vl_2b_openmoji_instruction_four_stage_optical_editing/README.md`
+- T03 正式对照：`tasks/t03_saliency/reports/dc20_comparison/RESULTS.md`
+- T04 正式对照：`tasks/t04_semantic_interaction/reports/dc20_comparison/RESULTS.md`

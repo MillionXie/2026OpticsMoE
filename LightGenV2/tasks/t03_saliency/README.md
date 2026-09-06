@@ -26,3 +26,15 @@ python -m LightGenV2.tasks.t03_saliency.run --profile qwen_pending --phase all
 ```
 
 大模型待测边界、计时和功耗口径见 [BASELINE_5090D_TODO.md](BASELINE_5090D_TODO.md)。
+
+## 正式单次结果（seed 42）
+
+- 光 Router Top-2：CC 0.8291、KLD 0.1330、SIM 0.8063、NSS 0.9283、
+  AUC-Judd 0.7631、MAE 0.0890。
+- 参数匹配 D2NN：CC 0.8346、KLD 0.1296、SIM 0.8092、NSS 0.9344、
+  AUC-Judd 0.7643、MAE 0.0884。
+- 光 Router 四专家选择占比为 23.54% / 26.80% / 23.38% / 26.28%，有效专家数
+  3.985/4，无未使用专家。
+
+本次单 seed 下 D2NN 的 CC 高 0.0055，必须作为真实负差距保留。机器可读指标、相位图和
+样例见 `reports/dc20_comparison/`；Frozen Qwen 的三类数值保持待 5090D 实测。
