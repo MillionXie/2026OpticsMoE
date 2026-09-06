@@ -71,6 +71,11 @@ notepad LightGenV2\paths.local.yaml
 [`PROJECT_SCORECARD.md`](PROJECT_SCORECARD.md)。该表固定每个任务一行；没有可追溯证据的
 字段保持 `—`，不得凭印象补数值。
 
+所有任务的 train/test、无 validation 选模方式和 Router 口径见
+[`DATA_SPLIT_AND_ROUTER_PROTOCOL.md`](DATA_SPLIT_AND_ROUTER_PROTOCOL.md)；冻结 Qwen 在 RTX
+5090 D 上的统一性能、速度和功耗测量边界见
+[`RTX5090D_QWEN_BASELINE_PROTOCOL.md`](RTX5090D_QWEN_BASELINE_PROTOCOL.md)。
+
 ## Git 同步规则
 
 代码修改完成后必须测试、commit 并 push GitHub；服务器和实验室电脑只通过 Git 拉取
