@@ -764,7 +764,9 @@ def _standard_task(task: str, device: torch.device, warmup: int, repeats: int) -
 
 def _t06_task(device: torch.device, warmup: int, repeats: int) -> dict[str, Any]:
     spec = SPECS["t06"]
-    detector = torch.rand(1, 478, 478, device=device)
+    # The full-field simulator keeps the 20-pixel guard around the 478 active
+    # aperture; its CCD boundary is therefore 518x518 before per-lane crops.
+    detector = torch.rand(1, 518, 518, device=device)
     vision = torch.randn(1, 16, 4, 49, 192, device=device)
     sequence = torch.randn(1, 16, 42, 192, device=device)
     sequence_mask = torch.ones(1, 16, 42, dtype=torch.bool, device=device)
@@ -803,12 +805,12 @@ def _t06_task(device: torch.device, warmup: int, repeats: int) -> dict[str, Any]
         return video_reload(video_fused())
 
     calls = [
-        ("frame_router_ccd_to_expert_slm", lambda: frame_router(detector, frame_fields), "CCD [1,478,478] -> 64x4 energies/Top-2 -> frame expert amplitude [1,518,518]"),
+        ("frame_router_ccd_to_expert_slm", lambda: frame_router(detector, frame_fields), "full-field CCD [1,518,518] (478 active+guard) -> 64x4 energies/Top-2 -> frame expert amplitude [1,518,518]"),
         ("frame_ccd_to_fusion", frame_fused, "CCD -> 64 lanes -> [1,16,4,49,192] -> RMS fusion"),
         ("frame_ccd_to_next_slm", frame_next, "frame CCD/fusion -> 64 encoded 27x27 fields -> [1,518,518]"),
         ("frame_parallel_residual", lambda: vision_residual(vision.flatten(0, 1)), "16 videos x 4 frames x 49 tokens x 192; Conv2D k5"),
         ("frame_to_video_bridge", lambda: bridge(vision, prompt, prompt_mask), "[1,16,4,49,192]+38 prompt tokens -> 16 sequences of 42 tokens and router/feature fields"),
-        ("video_router_ccd_to_expert_slm", lambda: video_router(detector, video_fields), "CCD [1,478,478] -> 16x4 energies/Top-2 -> video expert amplitude [1,518,518]"),
+        ("video_router_ccd_to_expert_slm", lambda: video_router(detector, video_fields), "full-field CCD [1,518,518] (478 active+guard) -> 16x4 energies/Top-2 -> video expert amplitude [1,518,518]"),
         ("video_ccd_to_fusion", video_fused, "CCD -> 16 macro tiles -> [1,16,42,192] -> RMS fusion"),
         ("video_ccd_to_next_slm", video_next, "video CCD/fusion -> 16 encoded 56x56 fields -> [1,518,518]"),
         ("video_parallel_residual", lambda: language_residual(sequence.flatten(0, 1), flat_sequence_mask), "16 videos x 42 sequence tokens x 192; causal Conv1D k5"),
