@@ -47,6 +47,21 @@ def _csv(path: Path, rows: list[dict[str, Any]]) -> None:
         writer.writerows(rows)
 
 
+def _selection_report(counts: torch.Tensor) -> dict[str, Any]:
+    total = float(counts.sum())
+    share = counts.float() / max(total, 1.0)
+    return {
+        "selected_slots": [int(value) for value in counts.tolist()],
+        "selection_share": [float(value) for value in share.tolist()],
+        "effective_experts_inverse_simpson": float(
+            1.0 / share.square().sum().clamp_min(1.0e-12)
+        ),
+        "unused_experts": [
+            index for index, value in enumerate(counts.tolist()) if value == 0
+        ],
+    }
+
+
 def _checkpoint(
     path: Path,
     model: Any,
@@ -234,7 +249,38 @@ def evaluate_selected(settings: Settings, device: torch.device, checkpoint: Path
     model.load_state_dict(payload["model"], strict=True)
     model.eval()
     _set_phase_dropout(model, False)
-    metrics, predictions, galleries = legacy._evaluate(model, loader, settings, device)
+    _json(
+        settings.output_dir / "student_architecture.json",
+        model.architecture_report(),
+    )
+    router_counts: dict[str, torch.Tensor] = {}
+    handles = []
+    if model.router_backend == "optical":
+        for label, path in zip(("language", "vision"), model._optical_paths()):
+            counts = torch.zeros(4, dtype=torch.long)
+            router_counts[label] = counts
+
+            def collect_selection(
+                _module: Any,
+                _inputs: Any,
+                output: dict[str, Any],
+                *,
+                destination: torch.Tensor = counts,
+            ) -> None:
+                destination.add_(
+                    output["selected_mask"].detach().sum(dim=0).cpu()
+                )
+
+            handles.append(
+                path.core.router.register_forward_hook(collect_selection)
+            )
+    try:
+        metrics, predictions, galleries = legacy._evaluate(
+            model, loader, settings, device
+        )
+    finally:
+        for handle in handles:
+            handle.remove()
     result = {
         "checkpoint": str(checkpoint.resolve()),
         "selected_epoch": int(payload["epoch"]),
@@ -242,6 +288,14 @@ def evaluate_selected(settings: Settings, device: torch.device, checkpoint: Path
         "test_samples": settings.test_samples,
         "selection_biased": True,
         "metrics": metrics,
+        "router_audit": (
+            {
+                label: _selection_report(counts)
+                for label, counts in router_counts.items()
+            }
+            if router_counts
+            else None
+        ),
     }
     _json(settings.output_dir / "selected_checkpoint_test_evaluation.json", result)
     with (settings.output_dir / "test_predictions.jsonl").open("w", encoding="utf-8") as handle:

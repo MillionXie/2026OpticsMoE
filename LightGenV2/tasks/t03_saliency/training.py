@@ -38,6 +38,21 @@ def _write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
         writer.writerows(rows)
 
 
+def _selection_report(counts: torch.Tensor) -> dict[str, Any]:
+    total = float(counts.sum())
+    share = counts.float() / max(total, 1.0)
+    return {
+        "selected_slots": [int(value) for value in counts.tolist()],
+        "selection_share": [float(value) for value in share.tolist()],
+        "effective_experts_inverse_simpson": float(
+            1.0 / share.square().sum().clamp_min(1.0e-12)
+        ),
+        "unused_experts": [
+            index for index, value in enumerate(counts.tolist()) if value == 0
+        ],
+    }
+
+
 def _checkpoint(
     path: Path,
     model: Any,
@@ -153,6 +168,19 @@ def evaluate_selected_checkpoint(
     model.core.load_state_dict(payload["core"], strict=True)
     model.head.load_state_dict(payload["saliency_head"], strict=True)
     _, loader = legacy.build_loaders(bundle, settings, training=False)
+    router_counts = torch.zeros(4, dtype=torch.long)
+    handle = None
+    if settings.lightgen_model_variant != "d2nn_active_expert_matched":
+        router = model.core.optical_branch.core.router
+
+        def collect_selection(
+            _module: Any, _inputs: Any, output: dict[str, Any]
+        ) -> None:
+            router_counts.add_(
+                output["selected_mask"].detach().sum(dim=0).cpu()
+            )
+
+        handle = router.register_forward_hook(collect_selection)
     try:
         model.core.set_phase_dropout_active(False)
         metrics, examples = legacy.evaluate_model(
@@ -170,6 +198,9 @@ def evaluate_selected_checkpoint(
             "checkpoint": str(checkpoint),
             "selection_biased": True,
             "metrics": metrics,
+            "router_audit": (
+                None if handle is None else _selection_report(router_counts)
+            ),
         }
         _write_json(settings.output_dir / "selected_checkpoint_test_evaluation.json", result)
         save_examples(
@@ -179,6 +210,8 @@ def evaluate_selected_checkpoint(
         )
         return result
     finally:
+        if handle is not None:
+            handle.remove()
         model.restore_native()
 
 

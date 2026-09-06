@@ -46,6 +46,7 @@ def _row(method: str, run_dir: Path) -> dict[str, Any]:
         "scene_exact_match": metrics["scene_exact_match"],
         "router": architecture["router"]["backend"],
         "top_k": architecture["router"].get("top_k"),
+        "router_audit": result.get("router_audit"),
         "best_checkpoint_sha256": _sha(run_dir / "best_checkpoint.pt"),
         "speed_ms_5090d": None,
         "power_w_5090d": None,
@@ -84,7 +85,7 @@ def main() -> int:
     main_dir, d2nn_dir = Path(args.main), Path(args.d2nn)
     measured = [_row("Optical Router Top-2", main_dir), _row("Matched D2NN", d2nn_dir)]
     pending = _json(Path(args.qwen_pending))
-    qwen = {"method": "Frozen Qwen", "status": pending["status"], "changed_cell_accuracy": None, "foreground_category_accuracy": None, "edit_grid_iou": None, "object_f1": None, "scene_exact_match": None, "router": "none", "top_k": None, "speed_ms_5090d": None, "power_w_5090d": None}
+    qwen = {"method": "Frozen Qwen", "status": pending["status"], "changed_cell_accuracy": None, "foreground_category_accuracy": None, "edit_grid_iou": None, "object_f1": None, "scene_exact_match": None, "router": "none", "top_k": None, "router_audit": None, "speed_ms_5090d": None, "power_w_5090d": None}
     rows = [*measured, qwen]
     output = Path(args.output_dir).resolve()
     output.mkdir(parents=True, exist_ok=True)

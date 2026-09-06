@@ -47,6 +47,7 @@ def _row(method: str, run_dir: Path) -> dict[str, Any]:
         "mae": metrics["mae"],
         "router": architecture["router"]["backend"],
         "top_k": architecture["router"].get("top_k"),
+        "router_audit": result.get("router_audit"),
         "best_checkpoint_sha256": _sha(run_dir / "best_checkpoint.pt"),
         "speed_ms_5090d": None,
         "power_w_5090d": None,
@@ -99,6 +100,7 @@ def main() -> int:
         "status": pending["status"],
         "cc": None, "kld": None, "sim": None, "nss": None,
         "auc_judd": None, "mae": None, "router": "none", "top_k": None,
+        "router_audit": None,
         "speed_ms_5090d": None, "power_w_5090d": None,
     }
     output = Path(args.output_dir).resolve()
