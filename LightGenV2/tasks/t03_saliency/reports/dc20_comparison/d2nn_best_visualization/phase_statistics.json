@@ -1,0 +1,27 @@
+{
+  "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t03_saliency/runs/simulation/d2nn_matched_dc20_seed42/best_checkpoint.pt",
+  "epoch": 60,
+  "plane_count": 2,
+  "planes": [
+    {
+      "name": "hybrid.optical_branch.phase1.raw_phase",
+      "shape": [
+        224,
+        224
+      ],
+      "circular_residual_std_rad": 0.03599582985043526,
+      "physical_phase_min_rad": 2.992811679840088,
+      "physical_phase_max_rad": 3.277369499206543
+    },
+    {
+      "name": "hybrid.optical_branch.phase2.raw_phase",
+      "shape": [
+        224,
+        224
+      ],
+      "circular_residual_std_rad": 0.03601299598813057,
+      "physical_phase_min_rad": 2.9900429248809814,
+      "physical_phase_max_rad": 3.3037662506103516
+    }
+  ]
+}

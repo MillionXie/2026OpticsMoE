@@ -1,0 +1,118 @@
+{
+  "schema_version": 1,
+  "no_validation": true,
+  "test_used_for_selection": true,
+  "runs": [
+    {
+      "method": "Optical Router Top-2",
+      "status": "measured_simulation",
+      "test_samples": 1000,
+      "selected_epoch": 20,
+      "changed_cell_accuracy": 0.98,
+      "foreground_category_accuracy": 0.9894500002264977,
+      "edit_grid_iou": 0.9349999999999988,
+      "object_f1": 0.9836751803751809,
+      "scene_exact_match": 0.895,
+      "router": "optical",
+      "top_k": 2,
+      "router_audit": {
+        "language": {
+          "selected_slots": [
+            1000,
+            500,
+            500,
+            0
+          ],
+          "selection_share": [
+            0.5,
+            0.25,
+            0.25,
+            0.0
+          ],
+          "effective_experts_inverse_simpson": 2.6666667461395264,
+          "unused_experts": [
+            3
+          ],
+          "samples": 1000,
+          "mean_detector_energy_fraction": [
+            0.4014548476040363,
+            0.4589434014707804,
+            0.11124140899442136,
+            0.02836034192331135
+          ],
+          "mean_router_probability": [
+            0.3440836447328329,
+            0.33696693439781666,
+            0.17358545476198198,
+            0.14536396871507168
+          ]
+        },
+        "vision": {
+          "selected_slots": [
+            406,
+            916,
+            678,
+            0
+          ],
+          "selection_share": [
+            0.2029999941587448,
+            0.4580000042915344,
+            0.33899998664855957,
+            0.0
+          ],
+          "effective_experts_inverse_simpson": 2.7330322265625,
+          "unused_experts": [
+            3
+          ],
+          "samples": 1000,
+          "mean_detector_energy_fraction": [
+            0.28518704867362976,
+            0.28830466243624686,
+            0.2877132303714752,
+            0.13879506421089172
+          ],
+          "mean_router_probability": [
+            0.29723041439056397,
+            0.3045732983648777,
+            0.3030964471101761,
+            0.095099843300879
+          ]
+        }
+      },
+      "best_checkpoint_sha256": "b3e7a005a7b29e8a52a733d79dcf48f85d2fee2f7cb1edc64db151de1d4e33e4",
+      "speed_ms_5090d": null,
+      "power_w_5090d": null
+    },
+    {
+      "method": "Matched D2NN",
+      "status": "measured_simulation",
+      "test_samples": 1000,
+      "selected_epoch": 25,
+      "changed_cell_accuracy": 0.9895,
+      "foreground_category_accuracy": 0.9944000001549721,
+      "edit_grid_iou": 0.981333333333333,
+      "object_f1": 0.9949482683982687,
+      "scene_exact_match": 0.965,
+      "router": "none",
+      "top_k": null,
+      "router_audit": null,
+      "best_checkpoint_sha256": "3b935e8f7ae68fdab233b662605ba4e988b3780f9b117f5c56c752cb08e33baf",
+      "speed_ms_5090d": null,
+      "power_w_5090d": null
+    },
+    {
+      "method": "Frozen Qwen",
+      "status": "pending_5090d_measurement",
+      "changed_cell_accuracy": null,
+      "foreground_category_accuracy": null,
+      "edit_grid_iou": null,
+      "object_f1": null,
+      "scene_exact_match": null,
+      "router": "none",
+      "top_k": null,
+      "router_audit": null,
+      "speed_ms_5090d": null,
+      "power_w_5090d": null
+    }
+  ]
+}

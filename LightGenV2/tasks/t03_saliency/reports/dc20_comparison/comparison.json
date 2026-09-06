@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "no_validation": true,
+  "test_used_for_selection": true,
+  "runs": [
+    {
+      "method": "Optical Router Top-2",
+      "status": "measured_simulation",
+      "test_samples": 5000,
+      "selected_epoch": 60,
+      "cc": 0.8290598318099975,
+      "kld": 0.1330318801522255,
+      "sim": 0.8063427537918091,
+      "nss": 0.9283460097312928,
+      "auc_judd": 0.7631218443386832,
+      "mae": 0.08897069873809814,
+      "router": "optical",
+      "top_k": 2,
+      "router_audit": {
+        "selected_slots": [
+          2354,
+          2680,
+          2338,
+          2628
+        ],
+        "selection_share": [
+          0.2354000061750412,
+          0.2680000066757202,
+          0.2337999939918518,
+          0.262800008058548
+        ],
+        "effective_experts_inverse_simpson": 3.9846439361572266,
+        "unused_experts": [],
+        "samples": 5000,
+        "mean_detector_energy_fraction": [
+          0.2530365833744407,
+          0.2631138999581337,
+          0.2357958838544786,
+          0.2480536327585578
+        ],
+        "mean_router_probability": [
+          0.2742563924878836,
+          0.2983778193794191,
+          0.19797514584362508,
+          0.22939064249843358
+        ]
+      },
+      "best_checkpoint_sha256": "fae78751fb4876c176d57ffc081aae806d30c91d7e0ad741902360483a7430b4",
+      "speed_ms_5090d": null,
+      "power_w_5090d": null
+    },
+    {
+      "method": "Matched D2NN",
+      "status": "measured_simulation",
+      "test_samples": 5000,
+      "selected_epoch": 60,
+      "cc": 0.8345608600616455,
+      "kld": 0.12963873579502105,
+      "sim": 0.8091944139480591,
+      "nss": 0.9343926630020142,
+      "auc_judd": 0.764269953955406,
+      "mae": 0.08839073679447174,
+      "router": "none",
+      "top_k": null,
+      "router_audit": null,
+      "best_checkpoint_sha256": "dbd5b40c029404a7fdc734f4f9b5057a963120a60868310d4f402bfa01a47ef1",
+      "speed_ms_5090d": null,
+      "power_w_5090d": null
+    },
+    {
+      "method": "Frozen Qwen",
+      "status": "pending_5090d_measurement",
+      "cc": null,
+      "kld": null,
+      "sim": null,
+      "nss": null,
+      "auc_judd": null,
+      "mae": null,
+      "router": "none",
+      "top_k": null,
+      "router_audit": null,
+      "speed_ms_5090d": null,
+      "power_w_5090d": null
+    }
+  ]
+}

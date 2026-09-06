@@ -1,0 +1,47 @@
+{
+  "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t04_semantic_interaction/runs/simulation/d2nn_matched_dc20_seed73/best_checkpoint.pt",
+  "epoch": 25,
+  "plane_count": 4,
+  "planes": [
+    {
+      "name": "language_core.optical_branch.phase1.raw_phase",
+      "shape": [
+        224,
+        224
+      ],
+      "circular_residual_std_rad": 1.870502233505249,
+      "physical_phase_min_rad": 0.14853739738464355,
+      "physical_phase_max_rad": 6.112448692321777
+    },
+    {
+      "name": "language_core.optical_branch.phase2.raw_phase",
+      "shape": [
+        224,
+        224
+      ],
+      "circular_residual_std_rad": 1.8767621517181396,
+      "physical_phase_min_rad": 0.17234832048416138,
+      "physical_phase_max_rad": 6.129158020019531
+    },
+    {
+      "name": "vision_core.optical_branch.phase1.raw_phase",
+      "shape": [
+        224,
+        224
+      ],
+      "circular_residual_std_rad": 0.6965281963348389,
+      "physical_phase_min_rad": 1.0583581924438477,
+      "physical_phase_max_rad": 5.2435197830200195
+    },
+    {
+      "name": "vision_core.optical_branch.phase2.raw_phase",
+      "shape": [
+        224,
+        224
+      ],
+      "circular_residual_std_rad": 0.6635421514511108,
+      "physical_phase_min_rad": 1.083109974861145,
+      "physical_phase_max_rad": 5.083902835845947
+    }
+  ]
+}

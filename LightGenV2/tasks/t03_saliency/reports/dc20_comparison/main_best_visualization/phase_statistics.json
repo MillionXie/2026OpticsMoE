@@ -1,0 +1,67 @@
+{
+  "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t03_saliency/runs/simulation/moe_router_scale_dc20_seed42/best_checkpoint.pt",
+  "epoch": 60,
+  "plane_count": 6,
+  "planes": [
+    {
+      "name": "hybrid.optical_branch.core.router.raw_router_phase",
+      "shape": [
+        224,
+        224
+      ],
+      "circular_residual_std_rad": 1.7763264179229736,
+      "physical_phase_min_rad": 0.0005866338033229113,
+      "physical_phase_max_rad": 6.282594680786133
+    },
+    {
+      "name": "hybrid.optical_branch.core.expert_layers.0.experts.0.raw_phase",
+      "shape": [
+        224,
+        224
+      ],
+      "circular_residual_std_rad": 0.0342109315097332,
+      "physical_phase_min_rad": 2.9721171855926514,
+      "physical_phase_max_rad": 3.268867015838623
+    },
+    {
+      "name": "hybrid.optical_branch.core.expert_layers.0.experts.1.raw_phase",
+      "shape": [
+        224,
+        224
+      ],
+      "circular_residual_std_rad": 0.034307464957237244,
+      "physical_phase_min_rad": 2.980881690979004,
+      "physical_phase_max_rad": 3.287151575088501
+    },
+    {
+      "name": "hybrid.optical_branch.core.expert_layers.0.experts.2.raw_phase",
+      "shape": [
+        224,
+        224
+      ],
+      "circular_residual_std_rad": 0.04032193124294281,
+      "physical_phase_min_rad": 2.7856080532073975,
+      "physical_phase_max_rad": 3.3091583251953125
+    },
+    {
+      "name": "hybrid.optical_branch.core.expert_layers.0.experts.3.raw_phase",
+      "shape": [
+        224,
+        224
+      ],
+      "circular_residual_std_rad": 0.04040926322340965,
+      "physical_phase_min_rad": 2.823218584060669,
+      "physical_phase_max_rad": 3.299414873123169
+    },
+    {
+      "name": "hybrid.optical_branch.core.global_phase.phase.raw_phase",
+      "shape": [
+        478,
+        478
+      ],
+      "circular_residual_std_rad": 0.03402281925082207,
+      "physical_phase_min_rad": 2.8644134998321533,
+      "physical_phase_max_rad": 3.285053253173828
+    }
+  ]
+}
