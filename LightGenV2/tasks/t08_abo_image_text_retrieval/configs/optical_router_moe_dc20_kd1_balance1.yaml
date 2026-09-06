@@ -1,0 +1,15 @@
+base_config: optical_router_moe_dc20.yaml
+
+# Same inference graph as the formal DC20 candidate.  Only training-time
+# regularization is stronger so that ABO supervision does not erase the
+# frozen-Qwen 64-D geometry and the deterministic Top-2 Router does not
+# concentrate on two Language experts.
+training:
+  lambda_router_balance: 0.15
+  lambda_router_importance: 0.04
+  lambda_router_hard_load_balance: 1.0
+
+abo_image_text:
+  teacher_kd_weight: 1.0
+
+output_dir: ../runs/simulation/optical_router_moe_dc20_kd1_balance1_seed42
