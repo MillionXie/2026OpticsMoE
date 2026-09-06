@@ -30,7 +30,7 @@ training:
   learning_rate: 0.0001
   adapter_learning_rate: 0.0001
   phase_learning_rate: 0.006
-  router_learning_rate: 0.0005
+  router_learning_rate: 0.006
   readout_learning_rate: 0.00005
   decoder_learning_rate: 0.0003
   weight_decay: 0.01
@@ -51,6 +51,10 @@ loss:
   router_balance: 0.08
   router_importance: 0.02
   router_hard_load_balance: 0.50
+  # Balanced two-expert optical codes for add/replace/move/remove.  This is a
+  # training-only supervision signal; inference still integrates Router CCD
+  # energy and performs Top-2 without receiving the task label.
+  router_semantic_code: 0.35
   phase_dc: 0.005
 
 protocol:

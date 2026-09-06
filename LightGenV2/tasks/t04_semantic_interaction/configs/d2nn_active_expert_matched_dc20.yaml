@@ -7,5 +7,6 @@ loss:
   router_balance: 0.0
   router_importance: 0.0
   router_hard_load_balance: 0.0
+  router_semantic_code: 0.0
 
 output_dir: ../runs/simulation/d2nn_matched_dc20_seed73

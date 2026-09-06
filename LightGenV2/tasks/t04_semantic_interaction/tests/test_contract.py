@@ -14,6 +14,7 @@ def test_optical_router_profile_contract() -> None:
     assert settings.train_samples == 5000
     assert settings.test_samples == 1000
     assert settings.router_hard_load_balance_weight == 0.50
+    assert settings.router_semantic_code_weight == 0.35
     assert settings.phase_dc_weight == 0.005
 
 
@@ -25,6 +26,7 @@ def test_d2nn_profile_has_no_router_penalty() -> None:
     assert settings.router_balance_weight == 0.0
     assert settings.router_importance_weight == 0.0
     assert settings.router_hard_load_balance_weight == 0.0
+    assert settings.router_semantic_code_weight == 0.0
 
 
 def test_no_validation_split() -> None:

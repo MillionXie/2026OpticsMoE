@@ -77,7 +77,7 @@ class LightGenOpenMojiEditor(OpenMojiOpticalEditor):
         self.router_top_k = None if is_d2nn else 2
         self.checkpoint_architecture = (
             f"lightgen_t04_{settings.lightgen_model_variant}_language2_vision2_"
-            "17um_10cm_dc20_scale_matched_v1"
+            f"17um_10cm_dc20_scale_matched_{'semanticcode_v2' if not is_d2nn else 'v1'}"
         )
         self.to(next(self.vision_stem.parameters()).device)
 
@@ -118,6 +118,18 @@ class LightGenOpenMojiEditor(OpenMojiOpticalEditor):
                 "backend": self.router_backend,
                 "top_k": self.router_top_k,
                 "experts": 4 if self.router_backend == "optical" else None,
+                "training_semantic_top2_codes": (
+                    None
+                    if self.router_backend == "none"
+                    else {
+                        "add": [0, 1],
+                        "replace": [0, 2],
+                        "move": [1, 3],
+                        "remove": [2, 3],
+                    }
+                ),
+                "semantic_code_loss_weight": settings.router_semantic_code_weight,
+                "inference_uses_task_label": False,
             },
             "fusion": {
                 "equation": "scale-matched (1-alpha)E + alpha O",

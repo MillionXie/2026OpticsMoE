@@ -62,6 +62,28 @@ def _selection_report(counts: torch.Tensor) -> dict[str, Any]:
     }
 
 
+_SEMANTIC_TOP2_CODES = {
+    "add": (0, 1),
+    "replace": (0, 2),
+    "move": (1, 3),
+    "remove": (2, 3),
+}
+
+
+def _semantic_router_code_loss(model: Any, tasks: list[str]) -> torch.Tensor:
+    if model.router_backend != "optical":
+        return next(model.parameters()).new_zeros(())
+    probabilities = model.language_core.optical_branch.core.last_routing[
+        "probabilities"
+    ]
+    target = torch.zeros_like(probabilities)
+    for row, task in enumerate(tasks):
+        pair = _SEMANTIC_TOP2_CODES[str(task)]
+        target[row, pair[0]] = 0.5
+        target[row, pair[1]] = 0.5
+    return -(target * probabilities.clamp_min(1.0e-8).log()).sum(dim=-1).mean()
+
+
 def _checkpoint(
     path: Path,
     model: Any,
@@ -138,15 +160,18 @@ def train(settings: Settings, device: torch.device) -> dict[str, Any]:
                 losses = editing_objective(outputs, batch, settings)
                 importance = model.router_importance_loss()
                 hard_load = model.router_hard_load_balance_loss()
+                semantic_code = _semantic_router_code_loss(model, batch["task"])
                 dc = phase_dc_loss(model)
                 losses["total"] = (
                     losses["total"]
                     + settings.router_importance_weight * importance
                     + settings.router_hard_load_balance_weight * hard_load
+                    + settings.router_semantic_code_weight * semantic_code
                     + settings.phase_dc_weight * dc
                 )
                 losses["router_importance"] = importance
                 losses["router_hard_load"] = hard_load
+                losses["router_semantic_code"] = semantic_code
                 losses["phase_dc"] = dc
             losses["total"].backward()
             grad_norm = torch.nn.utils.clip_grad_norm_(

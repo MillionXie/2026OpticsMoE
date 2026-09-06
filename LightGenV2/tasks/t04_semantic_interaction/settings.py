@@ -94,6 +94,9 @@ class Settings:
         self.router_hard_load_balance_weight = float(
             d("loss.router_hard_load_balance", 0.50)
         )
+        self.router_semantic_code_weight = float(
+            d("loss.router_semantic_code", 0.35)
+        )
         self.phase_dc_weight = float(d("loss.phase_dc", 0.005))
         self.test_interval_epochs = int(d("protocol.test_interval_epochs", 5))
         self.legacy_warmstart_checkpoint = _resolve(
@@ -113,6 +116,8 @@ class Settings:
         if self.lightgen_model_variant == "optical_router_scale_matched_moe":
             if self.router_hard_load_balance_weight <= 0:
                 raise ValueError("T04 optical Router requires hard-load regularization")
+            if self.router_semantic_code_weight <= 0:
+                raise ValueError("T04 optical Router requires semantic-code supervision")
 
     @property
     def train_manifest(self) -> Path:
