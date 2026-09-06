@@ -13,6 +13,7 @@ teacher_cache:
 
 training:
   epochs: 40
+  teacher_enabled: true
   learning_rate: 0.00005
   adapter_learning_rate: 0.00002
   readout_learning_rate: 0.00005
@@ -39,6 +40,13 @@ batching:
   teacher_batch_size: 8
   num_workers: 4
   optimizer_steps_per_epoch: null
+
+augmentation:
+  enabled: true
+  crop_scale_min: 0.9
+  brightness_jitter: 0.1
+  contrast_jitter: 0.1
+  rotation_degrees: 5.0
 
 lightgen:
   model_variant: optical_router_scale_matched_moe

@@ -382,10 +382,10 @@ def train(loaded: Any, replacement: Any, readout: Any, contract: Contract,
           cache: dict[str, Any], settings: Any, run_options: dict[str, Any]) -> dict[str, Any]:
     dataset = GroceryRetrievalDataset(
         contract.train, settings.image_size, augment=settings.augmentation_enabled,
-        crop_scale_min=settings.augmentation_crop_scale_min,
-        brightness_jitter=settings.augmentation_brightness_jitter,
-        contrast_jitter=settings.augmentation_contrast_jitter,
-        rotation_degrees=settings.augmentation_rotation_degrees,
+        crop_scale_min=run_options["crop_scale_min"],
+        brightness_jitter=run_options["brightness_jitter"],
+        contrast_jitter=run_options["contrast_jitter"],
+        rotation_degrees=run_options["rotation_degrees"],
     )
     sampler = PKBatchSampler(
         contract.train, settings.pk_skus_per_batch, settings.pk_images_per_sku,
@@ -413,8 +413,8 @@ def train(loaded: Any, replacement: Any, readout: Any, contract: Contract,
         readout.train()
         totals: defaultdict[str, float] = defaultdict(float)
         router_counts = {
-            "vision": torch.zeros(settings.num_experts, dtype=torch.long),
-            "language": torch.zeros(settings.num_experts, dtype=torch.long),
+            name: torch.zeros(settings.num_experts, dtype=torch.long)
+            for name in ("vision_image", "language_image", "language_title")
         }
         started = time.perf_counter()
         for batch_index, batch in enumerate(loader, 1):
@@ -436,9 +436,32 @@ def train(loaded: Any, replacement: Any, readout: Any, contract: Contract,
                     loaded.model, replacement, readout,
                     move_inputs(image_inputs, loaded.device),
                 )
+                image_router = replacement.router_losses()
+                image_hard = replacement.router_hard_load_balance_loss()
+                image_operating = [
+                    replacement.vision_surrogate.core.optical_branch.current_operating_loss,
+                    replacement.language_surrogate.core.optical_branch.current_operating_loss,
+                ]
+                for name, surrogate in (
+                    ("vision_image", replacement.vision_surrogate),
+                    ("language_image", replacement.language_surrogate),
+                ):
+                    router_counts[name] += (
+                        surrogate.core.last_routing["selected_mask"]
+                        .detach().sum(0).cpu()
+                    )
                 title_embeddings, _ = student_embeddings(
                     loaded.model, replacement, readout,
                     move_inputs(title_inputs, loaded.device),
+                )
+                title_router = replacement.router_losses()
+                title_hard = replacement.router_hard_load_balance_loss()
+                title_operating = (
+                    replacement.language_surrogate.core.optical_branch.current_operating_loss
+                )
+                router_counts["language_title"] += (
+                    replacement.language_surrogate.core.last_routing["selected_mask"]
+                    .detach().sum(0).cpu()
                 )
                 label_to_local = {int(label): index for index, label in enumerate(unique_labels)}
                 targets = torch.tensor(
@@ -456,13 +479,29 @@ def train(loaded: Any, replacement: Any, readout: Any, contract: Contract,
                     (1.0 - F.cosine_similarity(image_embeddings.float(), teacher_image, dim=-1)).mean()
                     + (1.0 - F.cosine_similarity(title_embeddings.float(), teacher_title, dim=-1)).mean()
                 )
-                router = replacement.router_losses()
-                balance = 0.5 * (router["vision_balance"] + router["language_balance"])
-                importance = 0.5 * (router["vision_importance"] + router["language_importance"])
-                hard_parts = replacement.router_hard_load_balance_loss()
-                hard = 0.5 * (hard_parts["vision"] + hard_parts["language"])
+                # Do not let the subsequent title forward overwrite the image
+                # Language Router statistics.  All three actually executed
+                # routes receive equal anti-collapse weight.
+                balance = torch.stack([
+                    image_router["vision_balance"],
+                    image_router["language_balance"],
+                    title_router["language_balance"],
+                ]).mean()
+                importance = torch.stack([
+                    image_router["vision_importance"],
+                    image_router["language_importance"],
+                    title_router["language_importance"],
+                ]).mean()
+                hard = torch.stack([
+                    image_hard["vision"],
+                    image_hard["language"],
+                    title_hard["language"],
+                ]).mean()
                 dc = phase_dc_loss(replacement)
-                operating = replacement.auxiliary_losses()["ccd_operating_point"]
+                operating = torch.stack([
+                    value for value in (*image_operating, title_operating)
+                    if value is not None
+                ]).mean()
                 total = (
                     settings.lambda_gallery * cross_modal
                     + run_options["symmetric_weight"] * symmetric
@@ -489,11 +528,6 @@ def train(loaded: Any, replacement: Any, readout: Any, contract: Contract,
                 totals[name] += float(value.detach()) * count
             totals["correct"] += float(logits.argmax(dim=1).eq(targets).sum())
             totals["samples"] += count
-            for name, surrogate in (
-                ("vision", replacement.vision_surrogate),
-                ("language", replacement.language_surrogate),
-            ):
-                router_counts[name] += surrogate.core.last_routing["selected_mask"].detach().sum(0).cpu()
             if batch_index % 40 == 0:
                 print(f"epoch={epoch:03d} batch={batch_index:03d}/{len(loader)} loss={totals['loss']/totals['samples']:.4f} trainR1={totals['correct']/totals['samples']:.4f}", flush=True)
         row: dict[str, Any] = {
@@ -504,8 +538,9 @@ def train(loaded: Any, replacement: Any, readout: Any, contract: Contract,
             )},
             "train_batch_recall_at_1": totals["correct"] / totals["samples"],
             "elapsed_seconds": time.perf_counter() - started,
-            "vision_router_counts": json.dumps(router_counts["vision"].tolist()),
-            "language_router_counts": json.dumps(router_counts["language"].tolist()),
+            "vision_image_router_counts": json.dumps(router_counts["vision_image"].tolist()),
+            "language_image_router_counts": json.dumps(router_counts["language_image"].tolist()),
+            "language_title_router_counts": json.dumps(router_counts["language_title"].tolist()),
         }
         evaluate_now = epoch % settings.test_evaluation_interval_epochs == 0 or epoch == settings.epochs
         if evaluate_now:
@@ -563,6 +598,10 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "temperature": float(_nested(raw, "abo_image_text.temperature", 0.07)),
         "symmetric_weight": float(_nested(raw, "abo_image_text.symmetric_title_to_image_weight", 0.25)),
         "kd_weight": float(_nested(raw, "abo_image_text.teacher_kd_weight", 0.30)),
+        "crop_scale_min": float(_nested(raw, "augmentation.crop_scale_min", 0.9)),
+        "brightness_jitter": float(_nested(raw, "augmentation.brightness_jitter", 0.1)),
+        "contrast_jitter": float(_nested(raw, "augmentation.contrast_jitter", 0.1)),
+        "rotation_degrees": float(_nested(raw, "augmentation.rotation_degrees", 5.0)),
     }
     if settings.embedding_dim != EMBEDDING_DIM:
         raise ValueError("The current optical hardware contract requires 64-D retrieval")
