@@ -25,7 +25,7 @@ training:
   epochs: 40
   lambda_router_balance: 0.08
   lambda_router_importance: 0.02
-  lambda_router_hard_load_balance: 0.08
+  lambda_router_hard_load_balance: 0.50
   router_load_bias_update_rate: 0.0
   phase_dc: {enabled: true, weight: 0.005, start_epoch: 1}
   phase_diagnostics:

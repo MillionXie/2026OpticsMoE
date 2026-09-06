@@ -63,7 +63,7 @@ def test_dc20_profiles_model_coherent_leakage_and_robustness(filename: str) -> N
     assert settings.phase_dc_enabled is True
     assert settings.lambda_phase_dc == pytest.approx(0.005)
     if filename.startswith("moe_"):
-        assert settings.lambda_router_hard_load_balance == pytest.approx(0.08)
+        assert settings.lambda_router_hard_load_balance == pytest.approx(0.50)
 
 
 def test_d2nn_exactly_matches_top2_activated_expert_phase_budget() -> None:
