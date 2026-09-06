@@ -102,11 +102,21 @@ python -m LightGenV2.tasks.t01_object_retrieval.report `
 - `run_manifest.json`、`environment.json`：命令、seed、Git commit、环境；
 - `parameter_fairness_contract.json`、`student_architecture.json`：参数口径和计算图；
 - `train_log.csv`、`metrics/ema_best_observed_test.json`：训练与选权重依据；
-- `ema_best_observed_test_checkpoint.pt`：正式学生权重；
+- `best_checkpoint.pt`：按周期 EMA test Top-1 选中的正式学生权重；
+- `last_checkpoint.pt`：最后一个 epoch 的 live 权重；
 - `student_metrics.json`、`retrieval_results.csv`、`confusion_matrix.png`：最终结果；
-- `best_optical_artifacts/` 与周期相位快照：相位变化证据。
+- `best_visualization/phase_preview.png`：直接由正式 best 权重生成的相位预览。
+
+正式 run 不再保留每 5 epoch 的相位 PT，也不保留多套 train-loss/live/EMA checkpoint
+别名；完整训练轨迹保存在 CSV，模型权重只保留 `best_checkpoint.pt` 和
+`last_checkpoint.pt`。若研究 mask 演化，必须另建明确命名的分析 run，不能混入正式结果。
 
 当前正式单次结果（seed 42）：主方法 Top-1 91.0%，激活专家相位参数匹配 D2NN 90.5%，
 冻结 Qwen3-VL-Embedding-2B 99.5%。完整协议、参数口径、alpha、路由集中度、权重 SHA
 及限制见 [`reports/FORMAL_RESULTS.md`](reports/FORMAL_RESULTS.md)。在补齐独立重复前必须
 标为 single run，不得混用历史目录中协议不同的 81%、83% 或 90.5% 数字。
+
+需要特别注意：该 91.0% run 使用 soft Router balance=0.05 和 importance=0.005，但没有
+硬负载均衡；20% 未调制直流分量仿真及 phase-DC 抑制正则也均未启用。现有 Language
+Router 的硬选择明显集中，因此该结果不能标记为“专家严格均衡”或“DC-robust”。若启用
+这些条件，必须建立新 profile 并重新训练，不能修改本结果的配置或结论。

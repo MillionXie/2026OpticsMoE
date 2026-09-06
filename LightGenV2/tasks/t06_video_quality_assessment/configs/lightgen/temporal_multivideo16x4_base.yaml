@@ -1,0 +1,49 @@
+# T06: sixteen unrelated videos, four frames each, in one 478x478 field.
+# Four-by-four video macros contain two-by-two frame lanes, so all 64 frames
+# share each of the six coherent 10-cm propagations. One MOS is emitted for
+# every video; videos are never averaged into one label.
+base_config: temporal_multivideo9x4_base.yaml
+
+output_dir: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo16x4_base
+random_seed: 161
+
+geometry:
+  canvas_size: 518
+  active_size: 478
+  video_grid: 4
+  video_count: 16
+  video_tile_size: 115
+  video_tile_pitch: 119
+  video_tile_offset: 3
+  frame_grid: 2
+  frames_per_video: 4
+  frame_lane_size: 56
+  frame_lane_pitch: 59
+  frame_expert_size: 27
+  frame_expert_pitch: 29
+  video_field_size: 56
+  video_expert_pitch: 59
+  video_phase_tile_size: 111
+
+model:
+  videos_per_field: 16
+  frame_count: 4
+
+router:
+  # Four equal detector windows inside every 56x56 frame lane and 115x115
+  # video macro. The 4-pixel/15-pixel central separations remain resolvable at
+  # 17 um and 10 cm without changing the physical ROI.
+  frame_intervals: [[12, 26], [30, 44]]
+  video_intervals: [[23, 50], [65, 92]]
+
+training:
+  # Reuse shape-compatible electronics/readouts from the formal 9x4 model;
+  # every geometry-dependent phase tensor is initialized afresh.
+  initialization_checkpoint: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo9x4_contentroute_d30_s114/best_checkpoint.pt
+  epochs: 100
+  batch_size: 48
+  phase_snapshot_interval_epochs: 0
+
+loss:
+  slot_consistency_weight: 0.35
+  router_diversity_weight: 0.30

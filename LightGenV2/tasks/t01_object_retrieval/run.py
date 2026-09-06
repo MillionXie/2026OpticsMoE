@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import shutil
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -35,6 +36,7 @@ from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.retrieval_met
     evaluate_embeddings,
 )
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.train_optical_retrieval import (
+    load_checkpoint,
     train_optical_retrieval,
 )
 
@@ -183,6 +185,69 @@ def _preferred_checkpoint(settings: Any, explicit: str | None) -> Path:
     return path
 
 
+def _curate_student_artifacts(
+    settings: Any, replacement: Any, readout: Any
+) -> dict[str, Any]:
+    """Retain one selected checkpoint, one last checkpoint and readable plots.
+
+    The compatibility trainer creates several live/EMA/train-loss variants and
+    periodic phase-only PT files.  T01 has one explicit selection contract, so
+    keeping all of those aliases makes the formal result harder to identify.
+    The original metrics JSON remains, but its checkpoint path is updated to
+    the canonical ``best_checkpoint.pt``.
+    """
+
+    output = settings.output_dir
+    selected_source = output / "ema_best_observed_test_checkpoint.pt"
+    if not selected_source.is_file():
+        raise FileNotFoundError(
+            "The configured EMA test-selected checkpoint was not produced: "
+            f"{selected_source}"
+        )
+    payload = load_checkpoint(selected_source, replacement, readout)
+    best = output / "best_checkpoint.pt"
+    shutil.copy2(selected_source, best)
+    visualization = output / "best_visualization"
+    visualization.mkdir(parents=True, exist_ok=True)
+    replacement.save_multiplane_phase_preview(
+        visualization / "phase_preview.png",
+        title=(
+            "Selected best optical phase "
+            f"(epoch {int(payload.get('epoch', -1))})"
+        ),
+    )
+    selection_path = output / "metrics" / "ema_best_observed_test.json"
+    if selection_path.is_file():
+        selection = json.loads(selection_path.read_text(encoding="utf-8"))
+        selection["checkpoint"] = str(best)
+        write_json(selection_path, selection)
+
+    removed: list[str] = []
+    for directory in (output / "phase_training", output / "best_optical_artifacts"):
+        if directory.is_dir():
+            shutil.rmtree(directory)
+            removed.append(str(directory.relative_to(output)))
+    keep = {"best_checkpoint.pt", "last_checkpoint.pt"}
+    for candidate in output.glob("*.pt"):
+        if candidate.name not in keep:
+            candidate.unlink()
+            removed.append(candidate.name)
+    report = {
+        "schema_version": 1,
+        "policy": "retain canonical best and live last model checkpoints only",
+        "best_checkpoint": str(best),
+        "best_epoch": int(payload.get("epoch", -1)),
+        "last_checkpoint": str(output / "last_checkpoint.pt"),
+        "periodic_phase_pt_retained": False,
+        "best_phase_visualization": str(
+            visualization / "phase_preview.png"
+        ),
+        "removed": removed,
+    }
+    write_json(output / "artifact_retention.json", report)
+    return report
+
+
 def run(args: argparse.Namespace) -> dict[str, Any]:
     config = TASK_DIR / "configs" / PROFILES[args.profile]
     settings = load_settings(config)
@@ -230,6 +295,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                     else None
                 ),
             )
+            _curate_student_artifacts(settings, replacement, readout)
             if args.phase == "train":
                 return {"status": "trained", "output_dir": str(settings.output_dir)}
         checkpoint = _preferred_checkpoint(settings, args.checkpoint)

@@ -1,4 +1,4 @@
-"""CLI for the LightGenV2 T06 true full-field 9-video x 4-frame graph."""
+"""CLI for LightGenV2 T06 true full-field multi-video x four-frame graphs."""
 
 from __future__ import annotations
 
@@ -40,11 +40,13 @@ def _git_commit() -> str | None:
 
 
 def synthetic_smoke(settings):
+    grid = settings.geometry.video_grid
+    active_size = 2 + 28 + (grid - 1) * 29
     geometry = MultiVideoGeometry(
-        canvas_size=96,
-        active_size=88,
-        video_grid=3,
-        video_count=9,
+        canvas_size=active_size + 4,
+        active_size=active_size,
+        video_grid=grid,
+        video_count=grid**2,
         video_tile_size=28,
         video_tile_pitch=29,
         video_tile_offset=1,
@@ -83,8 +85,8 @@ def synthetic_smoke(settings):
     )
     small.validate()
     model = build_model(small).train()
-    vision = torch.randn(1, 9, 4, 49, 32)
-    quality = torch.randn(1, 9, 4, 49, 6)
+    vision = torch.randn(1, grid**2, 4, 49, 32)
+    quality = torch.randn(1, grid**2, 4, 49, 6)
     language = torch.randn(1, 8, 40)
     mask = torch.ones(1, 8, dtype=torch.bool)
     result = model(vision, quality, language, mask, optical_enabled=True)
@@ -95,8 +97,8 @@ def synthetic_smoke(settings):
         for name, parameter in model.named_parameters()
         if "phase" in name
     }
-    if result["prediction"].shape != (1, 9) or not all(phase_gradients.values()):
-        raise RuntimeError("9x4 smoke contract failed")
+    if result["prediction"].shape != (1, grid**2) or not all(phase_gradients.values()):
+        raise RuntimeError("multivideo smoke contract failed")
     return {
         "status": "passed",
         "prediction_shape": list(result["prediction"].shape),
@@ -129,8 +131,14 @@ def main() -> int:
             "torch": torch.__version__,
             "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
             "cuda_available": torch.cuda.is_available(),
-            "frame_semantics": "nine unrelated videos x four frames",
-            "output_contract": "[physical_batch,9], one Temporal MOS per video",
+            "frame_semantics": (
+                f"{settings.videos_per_field} unrelated videos x "
+                f"{settings.frame_count} frames"
+            ),
+            "output_contract": (
+                f"[physical_batch,{settings.videos_per_field}], one Temporal "
+                "MOS per video"
+            ),
         },
     )
     (settings.output_dir / "command.txt").write_text(

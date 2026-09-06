@@ -54,7 +54,10 @@ training:
   resume_optimizer_state: false
   phase_focus: {enabled: false, warmup_epochs: 0, interval_epochs: 2}
   phase_diagnostics:
-    preview_interval_epochs: 5
+    # Compatibility trainer still draws one final preview, then the LightGen
+    # curator removes all phase-only PT snapshots and keeps a PNG derived from
+    # the selected best checkpoint.
+    preview_interval_epochs: 30
 
 batching:
   batch_size: 30
@@ -67,7 +70,7 @@ lightgen:
   selection:
     use_periodic_test: true
     test_interval_epochs: 5
-    primary_checkpoint: ema_best_observed_test_checkpoint.pt
+    primary_checkpoint: best_checkpoint.pt
 
 d2nn:
   phase_size: 224

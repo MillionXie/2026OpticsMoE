@@ -26,7 +26,36 @@ class MultiVideoSettingsTest(unittest.TestCase):
         self.assertEqual(settings.frame_count, 4)
         self.assertEqual(settings.geometry.active_size, 478)
         self.assertGreaterEqual(settings.unmodulated_power_fraction_min, 0.20)
-        self.assertEqual(settings.phase_snapshot_interval_epochs, 5)
+        self.assertEqual(settings.phase_snapshot_interval_epochs, 0)
+
+    def test_sixteen_by_four_layout_exactly_fills_same_active_field(self) -> None:
+        path = (
+            Path(__file__).parents[1]
+            / "configs"
+            / "lightgen"
+            / "temporal_multivideo16x4_accuracy.yaml"
+        )
+        settings = load_settings(path)
+        geometry = settings.geometry
+        self.assertEqual(settings.videos_per_field, 16)
+        self.assertEqual(settings.frame_count, 4)
+        self.assertEqual(geometry.active_size, 478)
+        self.assertEqual(geometry.video_origins[0], (3, 3))
+        self.assertEqual(geometry.video_origins[-1], (360, 360))
+        self.assertEqual(
+            geometry.frame_origins_local,
+            ((0, 0), (0, 59), (59, 0), (59, 59)),
+        )
+        self.assertEqual(
+            geometry.frame_expert_origins_local,
+            ((0, 0), (0, 29), (29, 0), (29, 29)),
+        )
+        self.assertEqual(
+            geometry.video_expert_origins_local,
+            ((0, 0), (0, 59), (59, 0), (59, 59)),
+        )
+        self.assertEqual(settings.phase_snapshot_interval_epochs, 0)
+        self.assertIn("16x4", settings.architecture_label)
 
 
 if __name__ == "__main__":

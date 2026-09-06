@@ -63,9 +63,9 @@ Language block-1 0.05400、Language block-2 0.05412；对应电子系数约为 0
 
 训练时 Git commit：`692e8534a17518bc0b8ef63fb9110cfd2e5ed989`。
 
-- 主方法 checkpoint SHA256：
+- 主方法 `best_checkpoint.pt` SHA256：
   `77946d90079d560ee99c0249950162715916f799a24eff8ddf1beaf1a2e49ace`
-- D2NN checkpoint SHA256：
+- D2NN `best_checkpoint.pt` SHA256：
   `492f38f3b9a305adcc84672137d59c2e7281caaf780d790ca6f9c3c34d2028a2`
 - warmstart5 Stage-B EMA 源 checkpoint SHA256：
   `6a27f54d8c869cce46150583383a127b0ba47b3d34503f5753aa23974ac1e55d`

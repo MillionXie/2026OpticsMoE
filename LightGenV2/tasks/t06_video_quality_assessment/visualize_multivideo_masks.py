@@ -1,4 +1,4 @@
-"""Render the six learned 9-video x 4-frame phase-mask layouts."""
+"""Render six learned full-field multi-video phase-mask layouts."""
 
 from __future__ import annotations
 
@@ -140,7 +140,10 @@ def main() -> int:
         "checkpoint_epoch": saved.get("epoch"),
         "architecture": saved.get("architecture"),
         "active_field_size": settings.geometry.active_size,
-        "physical_semantics": "nine unrelated videos x four frames; six whole-field coherent passes",
+        "physical_semantics": (
+            f"{settings.videos_per_field} unrelated videos x "
+            f"{settings.frame_count} frames; six whole-field coherent passes"
+        ),
         "masks": statistics,
     }
     (output / "phase_mask_statistics.json").write_text(

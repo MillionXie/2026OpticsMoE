@@ -1,0 +1,12 @@
+base_config: temporal_multivideo16x4_base.yaml
+output_dir: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo16x4_accuracy_s161
+random_seed: 161
+
+# Accuracy-oriented candidate: preserve content-dependent routing without
+# letting the auxiliary balance losses dominate MOS/rank supervision.
+loss:
+  router_balance_weight: 0.10
+  router_importance_weight: 0.03
+  router_diversity_weight: 0.20
+  slot_consistency_weight: 0.25
+

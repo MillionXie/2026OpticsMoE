@@ -64,7 +64,7 @@ def load_settings(path: str | Path) -> Any:
     settings.lightgen_primary_checkpoint = str(
         d(
             "lightgen.selection.primary_checkpoint",
-            "ema_best_observed_test_checkpoint.pt",
+            "best_checkpoint.pt",
         )
     )
     settings.lightgen_test_selected = bool(settings.evaluate_test_each_epoch)

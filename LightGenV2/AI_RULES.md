@@ -38,6 +38,9 @@
 23. 八任务跨项目进度只汇总到根目录 `PROJECT_SCORECARD.md`，每个任务固定一行。任何性能、
     速度或功耗数字必须附可追溯证据；仿真核心时间、实验台端到端时间和估算时间必须分栏，
     不得互相替代。任务细节仍以对应任务 README 和正式 run 为事实来源。
+24. 正式训练 run 的模型权重默认只保留 `best_checkpoint.pt` 和 `last_checkpoint.pt`；周期
+    测试只覆盖更新 best，不生成每 5 epoch 的 phase/checkpoint PT。只有目录名和配置明确
+    标为 `mask_evolution` 的分析实验可以保留周期相位 PT，且不得混入正式性能 run。
 
 ## T06 当前兼容策略
 

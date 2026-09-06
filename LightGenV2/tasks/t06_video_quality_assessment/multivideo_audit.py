@@ -1,4 +1,4 @@
-"""Audit physical-slot invariance and optical contribution for MultiVideo-9x4."""
+"""Audit physical-slot invariance and optical contribution for multi-video VQA."""
 
 from __future__ import annotations
 
@@ -104,7 +104,10 @@ def main() -> int:
         "checkpoint": str(checkpoint),
         "checkpoint_epoch": saved.get("epoch"),
         "architecture": saved.get("architecture"),
-        "contract": "nine unrelated videos x four frames; one MOS per video",
+        "contract": (
+            f"{settings.videos_per_field} unrelated videos x "
+            f"{settings.frame_count} frames; one MOS per video"
+        ),
         "cycles": cycles,
         "cycle_srcc": {
             "mean": float(srcc.mean()),
@@ -115,7 +118,7 @@ def main() -> int:
             "mean_mos": float(per_video_slot_std.mean()),
             "p95_mos": float(torch.quantile(per_video_slot_std, 0.95)),
         },
-        "nine_cycle_ensemble": ensemble,
+        "slot_cycle_ensemble": ensemble,
         "optical_off_without_retraining": optical_off,
     }
     _json(output / "slot_cycle_audit.json", report)

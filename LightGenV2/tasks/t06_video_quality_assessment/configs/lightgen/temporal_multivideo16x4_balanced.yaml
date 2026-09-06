@@ -1,0 +1,12 @@
+base_config: temporal_multivideo16x4_base.yaml
+output_dir: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo16x4_balanced_s162
+random_seed: 162
+
+# Balance-oriented candidate. Selection still uses Temporal SRCC, so this run
+# is accepted only if its routing improvement does not erase task accuracy.
+loss:
+  router_balance_weight: 0.18
+  router_importance_weight: 0.06
+  router_diversity_weight: 0.32
+  slot_consistency_weight: 0.35
+

@@ -1,4 +1,4 @@
-"""Nine-video physical-field grouping for T06 Temporal VQA."""
+"""Multi-video physical-field grouping for T06 Temporal VQA."""
 
 from __future__ import annotations
 
@@ -8,12 +8,12 @@ import torch
 from torch.utils.data import Dataset
 
 
-class NineVideoFieldDataset(Dataset[dict[str, Any]]):
-    """Groups unrelated videos into one physical 3x3 optical field.
+class MultiVideoFieldDataset(Dataset[dict[str, Any]]):
+    """Groups unrelated videos into one full-field optical exposure.
 
     Group membership is regenerated from ``grouping_seed`` every epoch.  A
-    validity mask makes the general contract safe when a future dataset is not
-    divisible by nine; the current 2250/558 LGVQ splits require no padding.
+    validity mask excludes padding when a split is not divisible by the number
+    of physical video slots.
     """
 
     def __init__(
@@ -68,7 +68,7 @@ class NineVideoFieldDataset(Dataset[dict[str, Any]]):
 def permute_video_slots(
     batch: Mapping[str, Any], *, generator: torch.Generator | None = None
 ) -> tuple[dict[str, Any], torch.Tensor]:
-    """Independently permute the nine optical slots of each physical field."""
+    """Independently permute all optical video slots of each physical field."""
 
     size = int(batch["target"].shape[1])
     permutations = torch.stack(
@@ -95,4 +95,13 @@ def permute_video_slots(
     return result, inverse
 
 
-__all__ = ["NineVideoFieldDataset", "permute_video_slots"]
+# Compatibility name for older 9x4 imports.  New code should use the semantic
+# name because the same implementation also owns the 16x4 contract.
+NineVideoFieldDataset = MultiVideoFieldDataset
+
+
+__all__ = [
+    "MultiVideoFieldDataset",
+    "NineVideoFieldDataset",
+    "permute_video_slots",
+]

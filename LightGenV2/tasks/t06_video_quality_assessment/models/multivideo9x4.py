@@ -1,6 +1,6 @@
-"""True full-field 9-video x 4-frame optical Temporal-VQA model.
+"""True full-field multi-video x four-frame optical Temporal-VQA model.
 
-All nine videos share each of six 518x518 coherent propagations.  Optical
+All video slots share each of six 518x518 coherent propagations.  Optical
 results are cropped and normalized per video before a shared electronic
 readout emits one scalar MOS for each video.  There is no attention or
 Transformer module in the trainable student.
@@ -227,7 +227,10 @@ class FrameOpticalRouter(_FullFieldBase):
                 "capture_fraction": energy.sum(-1)
                 / torch.stack(lane_totals, 1).clamp_min(1.0e-8),
                 "guard_energy_fraction": guard,
-                "router_implementation": "optical_fullfield_9video_4frame_energy_top2",
+                "router_implementation": (
+                    f"optical_fullfield_{self.geometry.video_count}video_"
+                    f"{self.geometry.frames_per_video}frame_energy_top2"
+                ),
             }
         )
         return result
@@ -465,7 +468,9 @@ class VideoOpticalRouter(_FullFieldBase):
                 "capture_fraction": energy.sum(-1)
                 / torch.stack(totals, 1).clamp_min(1.0e-8),
                 "guard_energy_fraction": guard,
-                "router_implementation": "optical_fullfield_9video_energy_top2",
+                "router_implementation": (
+                    f"optical_fullfield_{self.geometry.video_count}video_energy_top2"
+                ),
             }
         )
         return result
@@ -502,7 +507,10 @@ class VideoOpticalPath(_FullFieldBase):
 
     def fields(self, tokens: torch.Tensor) -> torch.Tensor:
         if tokens.ndim != 4 or tokens.shape[1] != self.geometry.video_count:
-            raise ValueError("Video sequence tokens must be [B,9,S,192]")
+            raise ValueError(
+                "Video sequence tokens must be "
+                f"[B,{self.geometry.video_count},S,{self.settings.model_width}]"
+            )
         if tokens.shape[2] > self.geometry.video_field_size:
             raise ValueError("Video sequence exceeds the 72-row optical field")
         encoded = F.softplus(self.width_to_field(tokens.float()))
@@ -621,7 +629,11 @@ class VideoOpticalPath(_FullFieldBase):
 
 
 class MultiVideo9x4OpticalVQA(nn.Module):
-    """Six-pass O/E/O student producing one Temporal MOS per video slot."""
+    """Six-pass O/E/O student producing one Temporal MOS per video slot.
+
+    The historical class name is retained for checkpoint/import compatibility;
+    geometry and output count are configuration-driven for both 9x4 and 16x4.
+    """
 
     def __init__(self, settings: MultiVideoSettings) -> None:
         super().__init__()
@@ -795,7 +807,7 @@ class MultiVideo9x4OpticalVQA(nn.Module):
             2,
         )
         if sequence.shape[2] > self.settings.maximum_language_tokens:
-            raise ValueError("Image+prompt tokens exceed the 72-pixel video field")
+            raise ValueError("Image+prompt tokens exceed the configured sequence limit")
         sequence = (
             sequence + self.sequence_position[:, None, : sequence.shape[2]]
         ).masked_fill(~mask.unsqueeze(-1), 0.0)

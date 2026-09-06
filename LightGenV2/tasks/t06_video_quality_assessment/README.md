@@ -162,3 +162,34 @@ python -m LightGenV2.tasks.t06_video_quality_assessment.visualize_multivideo_mas
 
 黑色只表示该次传播中没有可训练相位的保护区，不代表实际 SLM 必须在该处吸收光。输出同时包含 PNG、
 嵌入字体的 PDF 和每次传播的占用率/相位统计 JSON。
+
+## MultiVideo-16×4：16 个视频并行
+
+该 profile 在相同的 518 仿真 canvas、478×478 有效孔径、10 cm 距离和六次全场传播下，
+同时评价 16 个互不相关的视频，每个视频固定取 4 帧。输出为 `[B,16]`，每个槽位仍对应
+一个视频的连续 Temporal MOS，不会把 16 个标签聚合成一个结果。
+
+精确排布为：4×4 个 115×115 视频 macro tile，起点为 `[3,122,241,360]`，相邻视频间
+4 pixel；每个视频内部为 2×2 个 56×56 frame lane，相邻帧间 3 pixel。因此第一部分是
+8×8、共 64 帧并行。帧专家为 27×27、内部间隔 2 pixel；视频级专家为 56×56、内部
+间隔 3 pixel；global 相位为每视频 111×111。有效孔径尺寸和光路均未改变。
+
+三个候选只改变损失权重，方便在 SRCC 与物理槽位专家均衡之间选择：
+
+```powershell
+python -m LightGenV2.tasks.t06_video_quality_assessment.multivideo `
+  --config LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_accuracy.yaml `
+  --phase train
+
+python -m LightGenV2.tasks.t06_video_quality_assessment.multivideo `
+  --config LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_balanced.yaml `
+  --phase train
+
+python -m LightGenV2.tasks.t06_video_quality_assessment.multivideo `
+  --config LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_rank.yaml `
+  --phase train
+```
+
+新正式训练默认只保留 `best_checkpoint.pt` 和 `last_checkpoint.pt`。每 5 epoch 仍测试并
+更新同一个 best 文件，但不再生成周期相位 PT。只有独立命名的 mask-evolution 研究才可
+把 `phase_snapshot_interval_epochs` 改为正数。

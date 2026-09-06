@@ -1,4 +1,4 @@
-"""Configuration contract for the 9-video x 4-frame optical VQA graph."""
+"""Configuration contract for full-field multi-video x four-frame optical VQA."""
 
 from __future__ import annotations
 
@@ -110,10 +110,18 @@ class MultiVideoGeometry:
             raise ValueError("frames_per_video must equal frame_grid squared")
         if self.canvas_size < self.active_size or (self.canvas_size - self.active_size) % 2:
             raise ValueError("The active field must be centered on the propagation canvas")
-        used = 2 * self.video_tile_offset + self.video_tile_size + 2 * self.video_tile_pitch
+        used = (
+            2 * self.video_tile_offset
+            + self.video_tile_size
+            + (self.video_grid - 1) * self.video_tile_pitch
+        )
         if used != self.active_size:
-            raise ValueError("The 3x3 video layout must exactly span the 478-pixel field")
-        if self.frame_lane_size + self.frame_lane_pitch != self.video_tile_size:
+            raise ValueError("The video layout must exactly span the active field")
+        frame_used = (
+            self.frame_lane_size
+            + (self.frame_grid - 1) * self.frame_lane_pitch
+        )
+        if frame_used != self.video_tile_size:
             raise ValueError("The 2x2 frame lanes must exactly fill each video tile")
         if self.frame_expert_size + self.frame_expert_pitch != self.frame_lane_size:
             raise ValueError("The four frame experts must exactly fill each frame lane")
@@ -121,8 +129,42 @@ class MultiVideoGeometry:
             raise ValueError("The four video experts must exactly fill each video tile")
         if self.video_phase_tile_size > self.video_tile_size:
             raise ValueError("The video phase tile exceeds its optical slot")
-        if not synthetic and asdict(self) != asdict(MultiVideoGeometry()):
-            raise ValueError("Formal multivideo geometry is fixed at the audited 478-pixel layout")
+        if min(
+            self.video_tile_pitch - self.video_tile_size,
+            self.frame_lane_pitch - self.frame_lane_size,
+            self.frame_expert_pitch - self.frame_expert_size,
+            self.video_expert_pitch - self.video_field_size,
+        ) < 0:
+            raise ValueError("Optical tiles may touch but must not overlap")
+        formal_signatures = {
+            # 9 videos x 4 frames: 3x3 video macros, 6x6 frame lanes.
+            (3, 9, 154, 159, 3, 75, 79, 36, 39, 72, 82, 150),
+            # 16 videos x 4 frames: 4x4 video macros, 8x8 frame lanes.
+            (4, 16, 115, 119, 3, 56, 59, 27, 29, 56, 59, 111),
+        }
+        signature = (
+            self.video_grid,
+            self.video_count,
+            self.video_tile_size,
+            self.video_tile_pitch,
+            self.video_tile_offset,
+            self.frame_lane_size,
+            self.frame_lane_pitch,
+            self.frame_expert_size,
+            self.frame_expert_pitch,
+            self.video_field_size,
+            self.video_expert_pitch,
+            self.video_phase_tile_size,
+        )
+        if not synthetic and (
+            self.canvas_size != 518
+            or self.active_size != 478
+            or signature not in formal_signatures
+        ):
+            raise ValueError(
+                "Formal multivideo geometry must be an audited 9x4 or 16x4 "
+                "layout on the 518/478 optical contract"
+            )
 
 
 @dataclass
@@ -203,7 +245,9 @@ class MultiVideoSettings:
     slot_consistency_interval: int = 4
     soft_target_weight: float = 3.0
     test_interval_epochs: int = 5
-    phase_snapshot_interval_epochs: int = 5
+    # Zero is the formal default: model checkpoints retain only best and last.
+    # A positive value is reserved for an explicitly named mask-evolution study.
+    phase_snapshot_interval_epochs: int = 0
     synthetic: bool = False
 
     @property
@@ -212,7 +256,11 @@ class MultiVideoSettings:
 
     @property
     def architecture_label(self) -> str:
-        return "lightgenv2_t06_temporal_multivideo9x4_visualrouter_o6_top2_no_attention_v2"
+        return (
+            "lightgenv2_t06_temporal_multivideo"
+            f"{self.videos_per_field}x{self.frame_count}_visualrouter_"
+            "o6_top2_no_attention_v3"
+        )
 
     # Compatibility attributes consumed by the audited frozen-cache loader.
     @property
@@ -222,13 +270,21 @@ class MultiVideoSettings:
     def validate(self) -> None:
         self.geometry.validate(synthetic=self.synthetic)
         if self.target_name != "temporal":
-            raise ValueError("The 9x4 graph is a Temporal single-metric model")
-        if self.videos_per_field != 9 or self.frame_count != 4:
-            raise ValueError("Formal semantics are exactly 9 videos x 4 frames")
+            raise ValueError("The multivideo graph is a Temporal single-metric model")
+        if (
+            self.videos_per_field != self.geometry.video_count
+            or self.frame_count != self.geometry.frames_per_video
+        ):
+            raise ValueError("Model video/frame counts must match the optical geometry")
+        if not self.synthetic and (self.videos_per_field, self.frame_count) not in {
+            (9, 4),
+            (16, 4),
+        }:
+            raise ValueError("Formal semantics must be 9x4 or 16x4")
         if self.top_k != 2:
             raise ValueError("The formal optical router is Top-2")
-        if self.maximum_language_tokens > self.geometry.video_field_size:
-            raise ValueError("Image+prompt token sequence must fit the 72-row video field")
+        if self.frame_count >= self.geometry.video_field_size:
+            raise ValueError("The video field cannot hold the frame summary tokens")
         if not 0 <= self.alpha_min < self.alpha_initial < self.alpha_max < 1:
             raise ValueError("Fusion alpha must satisfy min < initial < max < 1")
         if not (
@@ -241,6 +297,8 @@ class MultiVideoSettings:
             raise ValueError("Formal runs retain at least 20% nominal DC power")
         if min(self.epochs, self.batch_size, self.test_interval_epochs, self.slot_consistency_interval) <= 0:
             raise ValueError("Training counts must be positive")
+        if self.phase_snapshot_interval_epochs < 0:
+            raise ValueError("phase_snapshot_interval_epochs cannot be negative")
         if self.num_workers < 0:
             raise ValueError("num_workers cannot be negative")
         if self.router_diversity_weight < 0:

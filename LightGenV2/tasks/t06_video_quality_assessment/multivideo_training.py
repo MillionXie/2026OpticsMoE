@@ -21,7 +21,7 @@ from experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54.training import (
 )
 
 from .models.multivideo9x4 import MultiVideo9x4OpticalVQA
-from .multivideo_data import NineVideoFieldDataset, permute_video_slots
+from .multivideo_data import MultiVideoFieldDataset, permute_video_slots
 from .multivideo_settings import MultiVideoSettings, resolved_dict
 
 
@@ -52,7 +52,7 @@ def _loader(
     shuffle_membership: bool,
     shuffle_groups: bool,
 ) -> DataLoader:
-    dataset = NineVideoFieldDataset(
+    dataset = MultiVideoFieldDataset(
         payload,
         split,
         videos_per_field=settings.videos_per_field,
@@ -162,8 +162,14 @@ def _checkpoint(
     payload = {
         "schema_version": 1,
         "architecture": settings.architecture_label,
-        "frame_semantics": "nine_independent_videos_each_four_frames",
-        "output_contract": "prediction[B,9], one continuous Temporal MOS per video",
+        "frame_semantics": (
+            f"{settings.videos_per_field}_independent_videos_each_"
+            f"{settings.frame_count}_frames"
+        ),
+        "output_contract": (
+            f"prediction[B,{settings.videos_per_field}], one continuous "
+            "Temporal MOS per video"
+        ),
         "epoch": int(epoch),
         "state_dict": model.state_dict(),
         "optimizer": optimizer.state_dict(),
@@ -375,7 +381,7 @@ def train(
     initial = evaluate(model, payload, settings, device, optical_enabled=True)
     best_srcc, best_epoch = float(initial["srcc"]), 0
     history = [{"epoch": 0, "test_evaluated": True, "test_optical_on": initial}]
-    best_path = settings.output_dir / "best_observed_test_checkpoint.pt"
+    best_path = settings.output_dir / "best_checkpoint.pt"
     _checkpoint(best_path, model, optimizer, settings, epoch=0, metrics=initial)
     _json(settings.output_dir / "metrics_best_observed_test_optical_on.json", initial)
     print(f"epoch 000 warm-start temporal_SRCC={best_srcc:.4f}", flush=True)
@@ -471,7 +477,10 @@ def train(
                 _json(settings.output_dir / "metrics_best_observed_test_optical_on.json", metrics)
         history.append(row)
         _json(settings.output_dir / "train_history.json", history)
-        if epoch % settings.phase_snapshot_interval_epochs == 0:
+        if (
+            settings.phase_snapshot_interval_epochs > 0
+            and epoch % settings.phase_snapshot_interval_epochs == 0
+        ):
             _phase_snapshot(model, settings, epoch=epoch, metrics=row.get("test_optical_on"))
         if row["test_evaluated"]:
             print(f"epoch {epoch:03d} loss={row['loss']:.6f} temporal_SRCC={row['test_optical_on']['srcc']:.4f}", flush=True)
@@ -511,10 +520,29 @@ def train(
         "checkpoint_sha256": _sha256(best_path),
         "test_used_for_selection": True,
         "validation_used": False,
-        "output_contract": "[physical_batch,9], one scalar Temporal MOS per video",
+        "output_contract": (
+            f"[physical_batch,{settings.videos_per_field}], one scalar "
+            "Temporal MOS per video"
+        ),
         "comparison": comparison,
     }
     _json(settings.output_dir / "training_summary.json", summary)
+    _json(
+        settings.output_dir / "artifact_retention.json",
+        {
+            "schema_version": 1,
+            "policy": "retain best and last model checkpoints only",
+            "best_checkpoint": str(best_path),
+            "last_checkpoint": str(settings.output_dir / "last_checkpoint.pt"),
+            "periodic_phase_pt_retained": bool(
+                settings.phase_snapshot_interval_epochs > 0
+            ),
+            "mask_evolution_exception": (
+                "positive phase_snapshot_interval_epochs is allowed only for "
+                "an explicitly named mask-evolution study"
+            ),
+        },
+    )
     return summary
 
 
