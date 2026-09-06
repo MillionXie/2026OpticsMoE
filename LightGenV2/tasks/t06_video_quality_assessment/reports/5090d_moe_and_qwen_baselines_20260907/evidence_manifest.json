@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-07",
+  "gpu": "NVIDIA GeForce RTX 5090 D",
+  "optical_electronics_profile": {
+    "git_commit": "2c8666b2955490519fd21bdcc8d7f1e843396b7c",
+    "command": "python LightGenV2/scripts/profile_optical_electronics_5090d.py --tasks t01 t02 t03 t04 t06 --warmup 50 --repeats 1000 --output-dir /root/autodl-tmp/workspace/lightgenv2_electronics_runs/formal_v2_20260907",
+    "server_run_dir": "/root/autodl-tmp/workspace/lightgenv2_electronics_runs/formal_v2_20260907",
+    "raw_archive": "/root/autodl-tmp/workspace/lightgenv2_electronics_runs/optical_moe_electronics_5090d_formal_v2_20260907.tar.gz",
+    "raw_archive_sha256": "58b42897892df34dd6603c99fd417820839eab0967b1626e43fb4ff4b70ee21a",
+    "raw_json_sha256": "215fd9c47146fcf1263f0c2b76075e2edb097f5881229ea6ebc7a62c10c2bb2b",
+    "raw_csv_sha256": "0d3665f9d16577028278835c4513e968b8556f8adcd93d0efc0476932916de76",
+    "raw_manifest_sha256": "17f37167db6fb73d26a50b3493d988bb21384b5d9810ec6cf4bd96f758d467d7"
+  },
+  "qwen_baseline": {
+    "git_commit": "6795a8237769728e597536777a4f4dbcc9ed2b48",
+    "report": "../qwen5090d_cross_task_baselines_20260906/README.md",
+    "summary": "../qwen5090d_cross_task_baselines_20260906/summary.csv",
+    "raw_archive": "qwen5090d_baselines_key_20260906.tar.gz",
+    "raw_archive_sha256": "f593f8eac267e5743b728c24efb7428bd8a08e252ce444ef85f489962a890365"
+  }
+}

@@ -1,6 +1,6 @@
 # LightGenV2 八任务总清单
 
-更新时间：2026-09-06
+更新时间：2026-09-07
 
 本表是老师查看整体进展时的唯一跨任务入口。每个任务固定一行；详细事实和证据仍放在
 对应任务目录。`—` 表示尚无合格证据，不表示数值为零。旧工程结果统一标为“历史候选”，
@@ -10,13 +10,13 @@
 
 | 优先级 | 任务 | 当前数据/协议 | 主指标 | 我们的仿真性能 | 我们的实测性能 | 我们的速度 | Baseline 性能 | Baseline 速度 | 功耗与能耗 | 仿真—实测一致性 | 当前状态与下一闭环 |
 |---:|---|---|---|---|---|---|---|---|---|---|---|
-| P1 | **T06 视频质量评价** | LGVQ；Spatial-4、Temporal-36、9视频×4帧、16视频×4帧为独立协议；test 558 | SRCC↑；同时报 KRCC/PLCC↑、RMSE/MAE↓ | **Temporal-36：SRCC 0.8454**；**9×4：SRCC 0.8082、PLCC 0.8131**；**16×4：SRCC 0.8044、PLCC 0.8180**；**单视频 Spatial-4：SRCC 0.6393、PLCC 0.6743** | — | 以上光电模型均为六次整场传播；9×4/16×4 一幅场分别输出 9/16 个 MOS，实验台端到端延迟/吞吐 **未测** | 冻结 Qwen3-VL-2B：Temporal-36 线性头 SRCC 0.7820；448px 五质量词 4/9/16 帧 SRCC **0.7693/0.7745/0.7787**；Spatial-4 SRCC 0.6440 | RTX 5090D、batch 1：原 MP4 到标量 Temporal-36 均值 **1133.494 ms/视频**；448px 五质量词从 Vision block 0 到分数为 **65.433/65.133/86.078 ms**（4/9/16 帧，无显式 warmup、首条计入）；Spatial-4 端到端 **134.058 ms/视频** | — | 16×4 无全局专家坍缩，但帧路由样本变化率仅 8.2%；实测仍需 PCC、SSIM、gain-aligned NMAE、强度比与饱和率 | **单视频 Spatial-4 已归档；16×4 已完成但未达到 0.81（实测 0.8044）。**下一步优先做硬件串扰、端到端速度/功耗和逐级 CCD 一致性 |
+| P1 | **T06 视频质量评价** | LGVQ；Spatial-4、Temporal-36、9视频×4帧、16视频×4帧为独立协议；test 558 | SRCC↑；同时报 KRCC/PLCC↑、RMSE/MAE↓ | **Temporal-36：SRCC 0.8454**；**9×4：SRCC 0.8082、PLCC 0.8131**；**16×4：SRCC 0.8044、PLCC 0.8180**；**单视频 Spatial-4：SRCC 0.6393、PLCC 0.6743** | — | RTX 5090D 计算图估算：16×4 一幅场 **28.744 ms/16视频**（1.796 ms/video 折算）；含 6 次物理光场、CCD 后串行电处理、bridge 与任务头；实验台端到端仍未测 | 冻结 Qwen3-VL-2B：Temporal-36 线性头 SRCC 0.7820；448px 五质量词 4/9/16 帧 SRCC **0.7693/0.7745/0.7787**；Spatial-4 SRCC 0.6440 | RTX 5090D：4帧方案二 558 test 均值 **61.606 ms/video**；16视频顺序 **985.691 ms**；另有无显式 warmup帧数表 65.433/65.133/86.078 ms（4/9/16） | 光学 80.388 W：6 次物理光场 **0.634 J/field**；全临界路径持续上电代理 **2.311 J/16视频**；GPU 电处理平均功率未测，不是完整光电能耗。Qwen 16视频实测 116.909 W、115.237 J | 16×4 无全局专家坍缩，但帧路由样本变化率仅 8.2%；实测仍需 PCC、SSIM、gain-aligned NMAE、强度比与饱和率 | **单视频 Spatial-4 已归档；16×4 已完成但未达到 0.81（实测 0.8044）。**分段计时每分量 1000 次、共 16,000 video workload；下一步测实验台端到端和 GPU/整机功率 |
 | P2 | **T07 商品检索（图搜图）** | ABO；正式子集、gallery/query 划分尚未冻结 | Top-1/Top-5/Top-10、MRR、Recall@K↑ | — | — | — | — | — | — | — | **尚未运行。**先冻结可发表的数据协议和电子 baseline，再做同协议光电模型；不能引用仓库中旧 ABO 文件作为本任务结果 |
 | P3 | **T08 商品检索（图搜文）** | ABO easy100；100 商品；train 4800/test 2400；100 个官方英文标题为固定候选库；冻结 Qwen 不使用 train | R@1/R@5/R@10、MRR、median rank↓ | — | — | — | Frozen `Qwen3-VL-Embedding-2B`：**R@1 0.7371、R@5 0.9337、R@10 0.9604、MRR 0.8230** | RTX 5090D、batch 1；首个 Vision block→2048D 归一化→100 标题完整排序：**26.052 ms/图** | active mean **152.50 W**；peak 156.84 W；idle-subtracted **2.209 J/图** | — | **电子 baseline 已完成。**模型参数全部冻结、trainable=0；性能用全部 2400 test，速度/功耗用 50 次预热后每类 2 张的均衡 200 test；下一步才是同协议光电版本 |
-| P4 | T01 物品检索 | Caltech101 target-10：train 2625、gallery 30、query 200；单 seed；周期 test 选模 | Top-1/Top-3、MRR↑ | **DC20 光 Router Top-2：Top-1 90.0%、Top-3 96.5%、MRR 0.9344** | — | — | 同协议/激活相位预算匹配 D2NN：Top-1 89.5%；冻结 Qwen embedding：99.5% | — | — | 尚未做统一硬件实测 | **正式复跑完成。**含 20%–30% 未调制分量、偏置 CCD 噪声、±16 px、k 空间/phase-DC；hard-load 0.50 消除未使用专家，但 Language 仍集中；只保留 best+last |
-| P5 | T02 关键点检测 | LSP；固定 test 1000；单 seed；周期 test 选模 | PCK@0.2、PCKh@0.5↑；MPE/NME↓ | **DC20 光 Router Top-2：PCK 0.5773、PCKh 0.7363、NME 0.3488** | — | — | 同协议、激活相位预算匹配 D2NN：PCK 0.6751、PCKh 0.8054、NME 0.2736 | — | — | — | **正式复跑完成。**主方法低于 D2NN 0.0978 PCK；当前不继续为低优先级任务堆 run，保留该负结果和最佳相位证据 |
-| P6 | T03 显著性分析 | SALICON train2014 10000；val2014 5000 作 public test；无 validation | CC/SIM/NSS/AUC-Judd↑；KLD/MAE↓ | **DC20 光 Router Top-2：CC 0.8291、SIM 0.8063、NSS 0.9283、AUC-Judd 0.7631** | — | — | 参数匹配 D2NN：CC **0.8346**；Frozen Qwen 待5090D | Frozen Qwen 待5090D | Frozen Qwen 待5090D | — | **正式仿真完成。**四专家选择均衡（23.54%/26.80%/23.38%/26.28%），但 D2NN 的 CC 高 0.0055；只保留 best+last 和正式报告 |
-| P7 | T04 语义交互 | OpenMoji train 5000/test 1000；四操作各自均衡；无 validation | changed-cell accuracy、edit-grid IoU、object F1、scene exact match↑ | **DC20 光 Router Top-2：changed 0.9800、IoU 0.9350、F1 0.9837、exact 0.8950** | — | — | 参数匹配 D2NN：changed **0.9895**、IoU 0.9813；Frozen Qwen 待5090D | Frozen Qwen 待5090D | Frozen Qwen 待5090D | — | **正式仿真完成。**语言/视觉 Router 均使用 3/4 专家，第4专家未进入 Top-2；该限制已如实记录，D2NN 主指标高 0.0095 |
+| P4 | T01 物品检索 | Caltech101 target-10：train 2625、gallery 30、query 200；单 seed；周期 test 选模 | Top-1/Top-3、MRR↑ | **DC20 光 Router Top-2：Top-1 90.0%、Top-3 96.5%、MRR 0.9344** | — | RTX 5090D 计算图估算 **10.061 ms/query**；4 特征 + 2 router | 同协议/激活相位预算匹配 D2NN：Top-1 89.5%；冻结 Qwen embedding：Top-1 **99.5%** | 冻结 Qwen：mean/median/P95 **26.407/25.731/28.985 ms/query** | 光学物理/墙上代理 **0.634/0.809 J/query**；Qwen 实测 **151.252 W、3.994 J/query** | 尚未做统一硬件实测 | **正式复跑完成。**分段计时每分量 1000 次，电残差 0.275 ms 均值可被 1.314 ms 光路覆盖；硬件端到端未测 |
+| P5 | T02 关键点检测 | LSP；固定 test 1000；单 seed；周期 test 选模 | PCK@0.2、PCKh@0.5↑；MPE/NME↓ | **DC20 光 Router Top-2：PCK 0.5773、PCKh 0.7363、NME 0.3488** | — | RTX 5090D 计算图估算 **5.537 ms/image**；2 特征 + 1 router | 同协议、激活相位预算匹配 D2NN：PCK 0.6751；冻结 Qwen+头：PCK **0.5114**、PCKh 0.7959 | 冻结 Qwen+头：mean/median/P95 **10.340/9.510/16.483 ms/image** | 光学物理/墙上代理 **0.317/0.445 J/image**；Qwen 实测 **117.930 W、1.219 J/image** | — | **正式复跑完成。**分段计时每分量 1000 次；任务头 0.548 ms；主方法仍低于 D2NN 0.0978 PCK |
+| P6 | T03 显著性分析 | SALICON train2014 10000；val2014 5000 作 public test；无 validation | CC/SIM/NSS/AUC-Judd↑；KLD/MAE↓ | **DC20 光 Router Top-2：CC 0.8291、SIM 0.8063、NSS 0.9283、AUC-Judd 0.7631** | — | RTX 5090D 计算图估算 **5.654 ms/image**；2 特征 + 1 router | 参数匹配 D2NN：CC **0.8346**；Frozen Qwen+头：CC **0.8811**、SIM 0.8327 | 冻结 Qwen+头：mean/median/P95 **10.176/9.687/12.544 ms/image** | 光学物理/墙上代理 **0.317/0.455 J/image**；Qwen 实测 **117.837 W、1.199 J/image** | — | **正式仿真完成。**分段计时每分量 1000 次；任务头 0.693 ms；硬件端到端未测 |
+| P7 | T04 语义交互 | OpenMoji train 5000/test 1000；四操作各自均衡；无 validation | changed-cell accuracy、edit-grid IoU、object F1、scene exact match↑ | **DC20 光 Router Top-2：changed 0.9800、IoU 0.9350、F1 0.9837、exact 0.8950** | — | RTX 5090D 计算图估算 **10.862 ms/sample**；4 特征 + 2 router，含 bridge/head | 参数匹配 D2NN：changed **0.9895**；Frozen Qwen 零样本：scene exact 0、parse failure 100% | Frozen Qwen 自回归+CPU解析：mean/median/P95 **3172.412/3168.780/3282.391 ms/sample** | 光学物理/墙上代理 **0.634/0.873 J/sample**；Qwen 实测 **168.544 W、534.693 J/sample** | — | **正式仿真完成。**两侧主指标定义不同，不作性能提升宣称；任务 bridge 0.132 ms、head 0.815 ms |
 | P8 | T05 视频分类 | 数据集与论文问题尚未确定 | Top-1/Top-5 或 mAP（待协议确定） | — | — | — | — | — | — | — | **未开始。**在数据集确定前不建空模型、不产生 runs |
 
 ## “做完一行”的最低标准
@@ -60,6 +60,8 @@
 
 ## 当前证据入口
 
+- RTX 5090D 跨任务光学 MoE 分段电处理与冻结 Qwen 汇总：
+  `tasks/t06_video_quality_assessment/reports/5090d_moe_and_qwen_baselines_20260907/README.md`
 - T06 Temporal-36：
   `tasks/t06_video_quality_assessment/reports/paper_results/temporal36_balanced/result.json`
 - T06 九视频×四帧：

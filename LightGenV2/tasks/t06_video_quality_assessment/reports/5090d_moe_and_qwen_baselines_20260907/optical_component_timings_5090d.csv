@@ -1,0 +1,38 @@
+task_id,component,shape_contract,warmup_calls,measured_calls,logical_samples_measured,physical_fields_measured,cuda_median_ms,cuda_p95_ms,wall_median_ms,wall_p95_ms
+T01,vision_ccd_to_fusion,"CCD [1,478,478] + E [1,196,192] -> fused [1,196,192]",50,1000,1000,1000,0.328736,0.347923,0.339905,0.359195
+T01,vision_ccd_to_next_slm,"CCD -> fused tokens -> routed amplitude [1,518,518]; 196 valid rows",50,1000,1000,1000,0.466000,0.494986,0.477762,0.507223
+T01,vision_parallel_residual,"E [1,196,192], block-major Conv2D k3 + MLP 192-384-192",50,1000,1000,1000,0.273216,0.285635,0.284411,0.297098
+T01,language_ccd_to_fusion,"CCD [1,478,478] + E [1,76,192] -> fused [1,76,192]",50,1000,1000,1000,0.328400,0.344674,0.339584,0.356541
+T01,language_ccd_to_next_slm,"CCD -> fused tokens -> routed amplitude [1,518,518]; 76 valid rows",50,1000,1000,1000,0.469088,0.499083,0.480811,0.511016
+T01,language_parallel_residual,"E [1,76,192], causal Conv1D k5 + MLP 192-384-192",50,1000,1000,1000,0.255296,0.276678,0.266384,0.288220
+T01,router_ccd_to_expert_slm,"CCD [1,478,478] -> four ROI energies -> Top-2 power-L2 -> [1,518,518] expert amplitude",50,1000,1000,1000,0.220688,0.228133,0.231687,0.239519
+T01,task_head,"select last valid row from [1,224,224] -> LN -> Linear 64 -> L2 embedding",50,1000,1000,1000,0.064832,0.066528,0.075264,0.077198
+T02,vision_ccd_to_fusion,"CCD [1,478,478] + E [1,196,192] -> fused [1,196,192]",50,1000,1000,1000,0.327328,0.337382,0.338325,0.348622
+T02,vision_ccd_to_next_slm,"CCD -> fused tokens -> routed amplitude [1,518,518]; 196 valid rows",50,1000,1000,1000,0.465856,0.476482,0.477296,0.487942
+T02,vision_parallel_residual,"E [1,196,192], block-major Conv2D k3 + MLP 192-384-192",50,1000,1000,1000,0.270272,0.277602,0.281186,0.288601
+T02,router_ccd_to_expert_slm,"CCD [1,478,478] -> four ROI energies -> Top-2 power-L2 -> [1,518,518] expert amplitude",50,1000,1000,1000,0.219888,0.228672,0.230771,0.239876
+T02,task_head,"restore block-major [1,196,192] -> [1,192,14,14] -> progressive decoder -> [1,14,56,56]",50,1000,1000,1000,0.536480,0.553366,0.548347,0.565345
+T03,vision_ccd_to_fusion,"CCD [1,478,478] + E [1,196,192] -> fused [1,196,192]",50,1000,1000,1000,0.318112,0.327744,0.329142,0.338940
+T03,vision_ccd_to_next_slm,"CCD -> fused tokens -> routed amplitude [1,518,518]; 196 valid rows",50,1000,1000,1000,0.453536,0.678445,0.464917,0.695074
+T03,vision_parallel_residual,"E [1,196,192], block-major Conv2D k3 + MLP 192-384-192",50,1000,1000,1000,0.263840,0.273234,0.274789,0.284545
+T03,router_ccd_to_expert_slm,"CCD [1,478,478] -> four ROI energies -> Top-2 power-L2 -> [1,518,518] expert amplitude",50,1000,1000,1000,0.213984,0.221891,0.224914,0.233033
+T03,task_head,"restore block-major [1,196,192] -> [1,192,14,14] -> progressive decoder -> [1,1,224,224]",50,1000,1000,1000,0.681056,0.700656,0.692983,0.712692
+T04,vision_ccd_to_fusion,"CCD [1,478,478] + E [1,196,192] -> fused [1,196,192]",50,1000,1000,1000,0.316432,0.325763,0.327350,0.336672
+T04,vision_ccd_to_next_slm,"CCD -> fused tokens -> routed amplitude [1,518,518]; 196 valid rows",50,1000,1000,1000,0.450880,0.471637,0.462276,0.484122
+T04,vision_parallel_residual,"E [1,196,192], block-major Conv2D k3 + MLP 192-384-192",50,1000,1000,1000,0.263520,0.269984,0.274471,0.280848
+T04,language_ccd_to_fusion,"CCD [1,478,478] + E [1,64,192] -> fused [1,64,192]",50,1000,1000,1000,0.316320,0.322858,0.327218,0.333904
+T04,language_ccd_to_next_slm,"CCD -> fused tokens -> routed amplitude [1,518,518]; 64 valid rows",50,1000,1000,1000,0.449056,0.459237,0.460507,0.470821
+T04,language_parallel_residual,"E [1,64,192], causal Conv1D k5 + MLP 192-384-192",50,1000,1000,1000,0.247296,0.253602,0.258100,0.264572
+T04,router_ccd_to_expert_slm,"CCD [1,478,478] -> four ROI energies -> Top-2 power-L2 -> [1,518,518] expert amplitude",50,1000,1000,1000,0.215760,0.278722,0.226841,0.292175
+T04,language_to_vision_bridge,"Language [1,64,192] mean/max -> condition [1,192] -> visual bias [1,196,1024]",50,1000,1000,1000,0.121824,0.125696,0.132298,0.136203
+T04,task_head,"restore [1,196,192] -> [1,192,14,14]+condition -> 3 residual blocks -> category [1,17,6,6], edit [1,6,6], task [1,4]",50,1000,1000,1000,0.802160,1.030368,0.814504,1.045863
+T06,frame_router_ccd_to_expert_slm,"full-field CCD [1,518,518] (478 active+guard) -> 64x4 energies/Top-2 -> frame expert amplitude [1,518,518]",50,1000,16000,1000,8.975648,9.026298,8.987560,9.042060
+T06,frame_ccd_to_fusion,"CCD -> 64 lanes -> [1,16,4,49,192] -> RMS fusion",50,1000,16000,1000,2.904208,2.942102,2.916080,2.954990
+T06,frame_ccd_to_next_slm,"frame CCD/fusion -> 64 encoded 27x27 fields -> [1,518,518]",50,1000,16000,1000,3.678928,5.854967,3.691540,5.877261
+T06,frame_parallel_residual,"16 videos x 4 frames x 49 tokens x 192; Conv2D k5",50,1000,16000,1000,0.069824,0.072192,0.080089,0.083050
+T06,frame_to_video_bridge,"[1,16,4,49,192]+38 prompt tokens -> 16 sequences of 42 tokens and router/feature fields",50,1000,16000,1000,0.260480,0.270944,0.271607,0.282677
+T06,video_router_ccd_to_expert_slm,"full-field CCD [1,518,518] (478 active+guard) -> 16x4 energies/Top-2 -> video expert amplitude [1,518,518]",50,1000,16000,1000,2.296944,2.345512,2.308409,2.356724
+T06,video_ccd_to_fusion,"CCD -> 16 macro tiles -> [1,16,42,192] -> RMS fusion",50,1000,16000,1000,0.948448,0.978480,0.960104,0.990304
+T06,video_ccd_to_next_slm,"video CCD/fusion -> 16 encoded 56x56 fields -> [1,518,518]",50,1000,16000,1000,1.193248,1.239445,1.205204,1.252264
+T06,video_parallel_residual,"16 videos x 42 sequence tokens x 192; causal Conv1D k5",50,1000,16000,1000,0.138048,0.149670,0.148674,0.160439
+T06,task_head,"16 videos: vision [16,4,49,192]+sequence [16,42,192] -> 16 MOS",50,1000,16000,1000,0.507328,0.550666,0.519215,0.563011

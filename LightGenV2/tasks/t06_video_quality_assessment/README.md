@@ -255,3 +255,15 @@ python -m LightGenV2.tasks.t06_video_quality_assessment.quality_token_resolution
 
 当前 5090D 的 448×448 正式结果、完整指标表、token 几何、计时边界和论文图见
 [`reports/paper_results/qwen3vl_quality_token_baseline_r448`](reports/paper_results/qwen3vl_quality_token_baseline_r448/README.md)。
+
+## RTX 5090 D 光学 MoE 分段计时
+
+T01–T04 与 T06 的 CCD 后串行电子处理、并行残差、跨层 SLM 场重建、bridge 和任务头已经
+在同一块 RTX 5090 D 上按计算图边界正式测量。每个分量 50 次预热、1000 次正式同步调用；
+T06 每次调用是一幅同时承载 16 个视频×4帧的物理场。任务级临界路径、能量口径、冻结
+Qwen 对照和论文图统一见
+[`reports/5090d_moe_and_qwen_baselines_20260907`](reports/5090d_moe_and_qwen_baselines_20260907/README.md)。
+
+该报告明确区分物理光场时间、可被光路覆盖的并行残差、必须串行的 CCD 后处理和任务尾部。
+其中 80.388 W 只能计算光学设备能量代理；在没有同步采集电子处理 GPU 功率前，不把它写成
+完整光电系统能耗。
