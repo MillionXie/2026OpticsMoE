@@ -5,7 +5,7 @@
 | 任务 | 训练集 | 测试集 | validation | checkpoint 选择 | 我们的方法 |
 | --- | ---: | ---: | --- | --- | --- |
 | T01 Caltech101 物品检索 | 2,625 | gallery 30 + query 200 | 无 | 每 5 epoch 测 test，按 Top-1 最高 | 光 Router，4 专家 Top-2 |
-| T02 LSP 关键点检测 | 10,428（LSPET 9,428 + LSP 前 1,000） | LSP 后 1,000 | 无 | 每 5 epoch 测 test，按 PCKh 最高 | 光 Router，4 专家 Top-2 |
+| T02 LSP 关键点检测 | 10,428（LSPET 9,428 + LSP 前 1,000） | LSP 后 1,000 | 无 | 每 5 epoch 测 test，按 PCK@0.2 最高（同分依次看 NME、loss、较早 epoch） | 光 Router，4 专家 Top-2 |
 | T03 SALICON 显著性 | 官方 train 10,000 | 官方 val 5,000 作为 public test | 无 | 每 5 epoch 测 public test，按 CC 最高 | 光 Router，4 专家 Top-2 |
 | T04 OpenMoji 语义交互 | 5,000 | 1,000 | 无 | 每 5 epoch 测 test，按 changed-cell accuracy 最高 | 视觉/语言光 Router，各 4 专家 Top-2 |
 | T05 视频分类 | 尚未建立正式数据 | — | — | — | — |
