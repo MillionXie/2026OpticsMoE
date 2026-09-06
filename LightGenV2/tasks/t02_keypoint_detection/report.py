@@ -80,6 +80,42 @@ def _plot(rows: list[dict[str, Any]], destination: Path) -> None:
     plt.close(figure)
 
 
+def _write_markdown(rows: list[dict[str, Any]], destination: Path) -> None:
+    main, d2nn = rows
+    lines = [
+        "# LSP：光 Router 与普通 D2NN 的 DC20 正式复跑",
+        "",
+        "主方法固定使用物理光学 Router Top-2/4；普通 D2NN 基线按定义不含 Router。",
+        "两者使用相同的数据划分、读出头、同尺度凸融合、10 cm/17 µm 光路和鲁棒训练条件。",
+        "",
+        "| 方法 | Router | PCK@0.2 | PCKh@0.5 | NME | 平均像素误差 | 选中 epoch |",
+        "|---|---|---:|---:|---:|---:|---:|",
+        (
+            f"| {main['method']} | 光学，Top-2/4 | "
+            f"{100 * main['pck_at_0.2_torso']:.2f}% | "
+            f"{100 * main['pckh_at_0.5_head']:.2f}% | "
+            f"{main['normalized_mean_error_torso']:.4f} | "
+            f"{main['mean_pixel_error']:.2f} | {main['selected_epoch']} |"
+        ),
+        (
+            f"| {d2nn['method']} | 无 Router | "
+            f"{100 * d2nn['pck_at_0.2_torso']:.2f}% | "
+            f"{100 * d2nn['pckh_at_0.5_head']:.2f}% | "
+            f"{d2nn['normalized_mean_error_torso']:.4f} | "
+            f"{d2nn['mean_pixel_error']:.2f} | {d2nn['selected_epoch']} |"
+        ),
+        "",
+        "## 口径",
+        "",
+        "- 训练阶段注入 20%–30% 强度占比的振幅/相位 SLM 相干未调制分量，并加入截断偏置高斯 CCD 噪声、最大 ±16 pixel 位移、k 空间限制、phase dropout 和 phase-DC 正则。",
+        "- 主方法包含一次 Router CCD、一次 expert CCD 和一次 global CCD；D2NN 为两张 dense phase，并使 phase 参数量严格匹配 Top-2 激活专家的 100,352 个相位参数。",
+        "- epoch 1、每 5 epoch 和最终 epoch 测试一次，按最高 test PCK@0.2 选 best；这是项目指定的 test 选模口径，不属于独立封存测试。",
+        "- 每个正式 run 只保留 `best_checkpoint.pt` 与 `last_checkpoint.pt`；SHA256 见 `comparison.json`。",
+        "",
+    ]
+    destination.write_text("\n".join(lines), encoding="utf-8")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--main", required=True)
@@ -104,6 +140,7 @@ def main() -> int:
         writer.writeheader()
         writer.writerows(rows)
     _plot(rows, output / "lsp_pose_comparison")
+    _write_markdown(rows, output / "RESULTS.md")
     print(output)
     return 0
 
