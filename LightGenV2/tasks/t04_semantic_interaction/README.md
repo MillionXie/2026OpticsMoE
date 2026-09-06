@@ -30,12 +30,12 @@ python -m LightGenV2.tasks.t04_semantic_interaction.run --profile qwen_pending -
 
 ## 正式单次结果（seed 73）
 
-- 光 Router Top-2：changed-cell accuracy 0.9795、foreground category 0.9894、
-  edit IoU 0.9340、object F1 0.9833、scene exact match 0.8930。
+- 光 Router Top-2：selected checkpoint 正式复评 changed-cell accuracy 0.9800、
+  foreground category 0.9895、edit IoU 0.9350、object F1 0.9837、scene exact match 0.8950。
 - 参数匹配 D2NN：changed-cell accuracy 0.9895、foreground category 0.9944、
   edit IoU 0.9813、object F1 0.9949、scene exact match 0.9650。
 - 主方法语言 Router 使用 3/4 专家，选择占比 50.00% / 25.00% / 25.00% / 0%；
-  视觉 Router 也使用 3/4，选择占比 19.95% / 45.90% / 34.15% / 0%。
+  视觉 Router 也使用 3/4，选择占比 20.30% / 45.80% / 33.90% / 0%。
 
 因此该结果满足“物理光 Router、Top-2”的结构要求，但不能宣称四专家完全均衡；D2NN 的
 主指标高 1.00 个百分点。机器可读结果和可视化见 `reports/dc20_comparison/`。
