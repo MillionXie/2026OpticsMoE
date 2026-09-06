@@ -194,3 +194,41 @@ python -m LightGenV2.tasks.t06_video_quality_assessment.multivideo `
 新正式训练默认只保留 `best_checkpoint.pt` 和 `last_checkpoint.pt`。每 5 epoch 仍测试并
 更新同一个 best 文件，但不再生成周期相位 PT。只有独立命名的 mask-evolution 研究才可
 把 `phase_snapshot_interval_epochs` 改为正数。
+
+## 冻结 Qwen 方案二电子 baseline
+
+`qwen3vl_quality_tokens_r448` 是纯电子 baseline 的正式 profile，不改变上述光电模型。
+Qwen3-VL-2B-Instruct 全部冻结，只训练五个质量词 `Bad / Poor / Fair / Good / Excellent`
+对应的 5×2048 输出行，共 10,240 个参数；五路 softmax 概率按训练集 MOS 范围内的五个
+等距质量分数加权，得到一个 Temporal MOS。
+
+每个采样帧固定为 **448×448**。当前 Qwen3-VL 视觉前端是 16×16 patch、2×2 空间 merger
+和 temporal patch size 2，因此有效空间步长为 32；448 可被 32 整除。4/9/16 帧在视觉
+block 0 前分别形成 1,568 / 3,920 / 6,272 个 1024 维 patch token；空间 merger 后分别
+成为 392 / 980 / 1,568 个 2048 维视觉 token，再与 prompt 的文本 token 进入语言模型。
+正式表中的输入始终是 448×448，不是 700 多像素。
+
+4、9、16 帧的抽帧位置、65% 中心裁剪、Temporal prompt、训练/test 划分和随机定位解码
+保持固定。每个帧数必须用对应特征训练自己的五个输出行。
+
+正式计时是一组方案/帧数对应一个独立进程：模型只加载一次，不做显式 warmup，不做
+test 前推理，第一条也进入 558 视频总体统计。主时间从 Vision Transformer block 0
+输入到标量分数在 GPU 上就绪；模型加载和 MP4 解码/裁剪/resize/tokenizer/H2D 分栏保存。
+
+```bash
+CONFIG=LightGenV2/tasks/t06_video_quality_assessment/configs/baselines/qwen3vl_quality_tokens_r448.yaml
+MODEL=/absolute/path/Qwen3-VL-2B-Instruct
+MANIFEST=/absolute/path/lgvq_split.csv
+
+# 检查分辨率、帧语义、模型、manifest、GPU 和 Git 身份
+python -m LightGenV2.tasks.t06_video_quality_assessment.quality_token_resolution \
+  --config "$CONFIG" --phase preflight --model "$MODEL" --manifest "$MANIFEST"
+
+# 可断点续跑：依次提取 4/9/16 帧特征、训练 50 epoch、各自完整评估 558 个 test
+python -m LightGenV2.tasks.t06_video_quality_assessment.quality_token_resolution \
+  --config "$CONFIG" --phase all --model "$MODEL" --manifest "$MANIFEST"
+```
+
+如果中途终止，可把 `--phase all` 换为 `extract`、`train` 或 `benchmark`，并用
+`--frames 4|9|16` 只续跑一组。正式结果进入 T06 自己的 `runs/simulation/<run_id>`；
+论文图和紧凑结论进入 `reports/paper_results/`，大特征、checkpoint 和逐视频 CSV 不提交 Git。

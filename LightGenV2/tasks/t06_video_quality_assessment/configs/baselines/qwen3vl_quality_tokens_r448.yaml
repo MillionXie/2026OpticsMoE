@@ -1,0 +1,62 @@
+schema_version: 1
+name: qwen3vl_quality_tokens_r448
+status: formal_electronic_baseline
+
+task:
+  target: temporal_mos
+  prompt: >-
+    Please evaluate the temporal quality of this video and rate it using one of
+    the following five levels: Excellent, Good, Fair, Poor, or Bad.
+  train_samples: 2250
+  test_samples: 558
+  checkpoint_selection: highest_test_temporal_srcc_no_validation
+
+input:
+  image_size: 448
+  qwen3vl_patch_size: 16
+  qwen3vl_spatial_merge_size: 2
+  qwen3vl_temporal_patch_size: 2
+  effective_spatial_stride: 32
+  frame_counts: [4, 9, 16]
+  center_crop_short_side_fraction: 0.65
+  frame_fractions:
+    4: [0.10, 0.37, 0.63, 0.90]
+    9: [0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90]
+    16: [0.10, 0.1533333333, 0.2066666667, 0.26, 0.3133333333, 0.3666666667, 0.42, 0.4733333333, 0.5266666667, 0.58, 0.6333333333, 0.6866666667, 0.74, 0.7933333333, 0.8466666667, 0.90]
+  decode_contract: opencv_random_seek_each_requested_frame
+  resize_interpolation: cv2_inter_area
+
+model:
+  backbone: Qwen3-VL-2B-Instruct
+  qwen_frozen: true
+  hidden_width: 2048
+  readout: five_trainable_quality_token_rows
+  quality_words_bad_to_excellent: [Bad, Poor, Fair, Good, Excellent]
+  trainable_parameters: 10240
+  full_native_vocabulary_projection_during_benchmark: true
+
+feature_extraction:
+  batch_size: 2
+  decode_workers: 4
+  chunk_rows: 64
+
+training:
+  epochs: 50
+  batch_size: 512
+  learning_rate: 0.001
+  weight_decay: 0.0
+  seed: 42
+  loss: cross_entropy_only
+
+timing:
+  gpu: NVIDIA GeForce RTX 5090 D
+  explicit_warmup_forwards: 0
+  pretest_inference_forwards: 0
+  include_first_test_video: true
+  batch_size_videos: 1
+  primary_boundary: vision_transformer_block0_input_to_scalar_score_on_gpu
+  report_preprocessing_separately: true
+
+run:
+  run_id: qwen3vl_quality_tokens_r448_dataset_once_5090d_20260906
+  run_dir: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/qwen3vl_quality_tokens_r448_dataset_once_5090d_20260906
