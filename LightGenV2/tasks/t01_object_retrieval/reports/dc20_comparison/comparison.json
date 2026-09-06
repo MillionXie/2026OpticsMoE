@@ -4,18 +4,23 @@
     {
       "key": "main",
       "method": "Optical Router + MoE",
-      "run_dir": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t01_object_retrieval/runs/simulation/moe_router_scale_dc20_seed42",
-      "git_commit": "bea692fe5bdab79a21b9834ae8025c3df9b20f4d",
+      "run_dir": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t01_object_retrieval/runs/simulation/moe_router_scale_dc20_strict_seed42",
+      "git_commit": "f9bcf8261b9e89cce10469b6ab0a972da752cc9c",
       "seed": 42,
-      "top1": 0.9049999713897705,
+      "top1": 0.8999999761581421,
       "top3": 0.9649999737739563,
-      "mrr": 0.9377976059913635,
+      "mrr": 0.934374988079071,
       "query_count": 200,
       "selected_epoch": 25,
       "selection_biased": true,
       "active_expert_phase_parameters": 200704,
       "d2nn_phase_parameters": 200704,
       "physical_capture_count": 6,
+      "final_router_hard_load_balance_loss": 0.29522736776958813,
+      "final_vision_router_selection_min": 1302,
+      "final_vision_router_selection_max": 1340,
+      "final_language_router_selection_min": 360,
+      "final_language_router_selection_max": 2640,
       "fusion": {
         "mode": "scale_matched_convex",
         "ablation": "none",
@@ -25,50 +30,50 @@
         ],
         "vision": {
           "block1": {
-            "alpha": 0.054419755935668945,
-            "electronic_coefficient": 0.945580244064331,
-            "optical_coefficient": 0.054419755935668945,
-            "electronic_rms_before": 1.0146634578704834,
-            "optical_rms_before": 0.4542860686779022,
-            "pre_optical_to_electronic_rms_ratio": 0.4471609592437744,
+            "alpha": 0.054419249296188354,
+            "electronic_coefficient": 0.9455807209014893,
+            "optical_coefficient": 0.054419249296188354,
+            "electronic_rms_before": 1.0130478143692017,
+            "optical_rms_before": 0.4891570210456848,
+            "pre_optical_to_electronic_rms_ratio": 0.48294851183891296,
             "post_optical_to_electronic_rms_ratio": 1.0,
             "fused_to_electronic_rms_ratio": 1.0,
-            "branch_cosine": 0.027451803907752037
+            "branch_cosine": 0.03628839552402496
           },
           "block2": {
-            "alpha": 0.055103980004787445,
-            "electronic_coefficient": 0.9448960423469543,
-            "optical_coefficient": 0.055103980004787445,
-            "electronic_rms_before": 1.1258153915405273,
-            "optical_rms_before": 0.44377246499061584,
-            "pre_optical_to_electronic_rms_ratio": 0.3944413661956787,
+            "alpha": 0.05509130656719208,
+            "electronic_coefficient": 0.9449086785316467,
+            "optical_coefficient": 0.05509130656719208,
+            "electronic_rms_before": 1.1258866786956787,
+            "optical_rms_before": 0.48017776012420654,
+            "pre_optical_to_electronic_rms_ratio": 0.4278435707092285,
             "post_optical_to_electronic_rms_ratio": 1.0,
             "fused_to_electronic_rms_ratio": 1.0,
-            "branch_cosine": 0.08431574702262878
+            "branch_cosine": 0.09597186744213104
           }
         },
         "language": {
           "block1": {
-            "alpha": 0.05353550612926483,
-            "electronic_coefficient": 0.946464478969574,
-            "optical_coefficient": 0.05353550612926483,
-            "electronic_rms_before": 1.018187403678894,
-            "optical_rms_before": 0.430095911026001,
-            "pre_optical_to_electronic_rms_ratio": 0.42241400480270386,
+            "alpha": 0.053575992584228516,
+            "electronic_coefficient": 0.9464240074157715,
+            "optical_coefficient": 0.053575992584228516,
+            "electronic_rms_before": 1.0180392265319824,
+            "optical_rms_before": 0.4433423578739166,
+            "pre_optical_to_electronic_rms_ratio": 0.43548768758773804,
             "post_optical_to_electronic_rms_ratio": 1.0,
             "fused_to_electronic_rms_ratio": 1.0,
-            "branch_cosine": 0.02140067145228386
+            "branch_cosine": 0.014196954667568207
           },
           "block2": {
-            "alpha": 0.053678303956985474,
-            "electronic_coefficient": 0.9463217258453369,
-            "optical_coefficient": 0.053678303956985474,
-            "electronic_rms_before": 1.0482513904571533,
-            "optical_rms_before": 0.4347081482410431,
-            "pre_optical_to_electronic_rms_ratio": 0.4147019386291504,
+            "alpha": 0.05373741686344147,
+            "electronic_coefficient": 0.9462625980377197,
+            "optical_coefficient": 0.05373741686344147,
+            "electronic_rms_before": 1.047520637512207,
+            "optical_rms_before": 0.4461175203323364,
+            "pre_optical_to_electronic_rms_ratio": 0.4258788526058197,
             "post_optical_to_electronic_rms_ratio": 1.0,
             "fused_to_electronic_rms_ratio": 1.0,
-            "branch_cosine": 0.06280525028705597
+            "branch_cosine": 0.05119197815656662
           }
         }
       }
@@ -88,6 +93,11 @@
       "active_expert_phase_parameters": 200704,
       "d2nn_phase_parameters": 200704,
       "physical_capture_count": 4,
+      "final_router_hard_load_balance_loss": null,
+      "final_vision_router_selection_min": 2640,
+      "final_vision_router_selection_max": 2640,
+      "final_language_router_selection_min": 2640,
+      "final_language_router_selection_max": 2640,
       "fusion": {
         "mode": "scale_matched_convex",
         "ablation": "none",
@@ -160,6 +170,11 @@
       "active_expert_phase_parameters": 200704,
       "d2nn_phase_parameters": 200704,
       "physical_capture_count": 0,
+      "final_router_hard_load_balance_loss": null,
+      "final_vision_router_selection_min": null,
+      "final_vision_router_selection_max": null,
+      "final_language_router_selection_min": null,
+      "final_language_router_selection_max": null,
       "fusion": null
     }
   ],
@@ -168,12 +183,12 @@
       "key": "main",
       "method": "Optical Router + MoE",
       "run_count": 1,
-      "top1_mean": 0.9049999713897705,
+      "top1_mean": 0.8999999761581421,
       "top1_std": 0.0,
-      "top1_min": 0.9049999713897705,
-      "top1_max": 0.9049999713897705,
+      "top1_min": 0.8999999761581421,
+      "top1_max": 0.8999999761581421,
       "top3_mean": 0.9649999737739563,
-      "mrr_mean": 0.9377976059913635
+      "mrr_mean": 0.934374988079071
     },
     {
       "key": "d2nn",
