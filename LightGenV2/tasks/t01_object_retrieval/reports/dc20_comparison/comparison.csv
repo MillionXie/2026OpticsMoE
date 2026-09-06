@@ -1,0 +1,4 @@
+key,method,run_dir,git_commit,seed,top1,top3,mrr,query_count,selected_epoch,selection_biased,active_expert_phase_parameters,d2nn_phase_parameters,physical_capture_count
+main,Optical Router + MoE,/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t01_object_retrieval/runs/simulation/moe_router_scale_dc20_seed42,bea692fe5bdab79a21b9834ae8025c3df9b20f4d,42,0.9049999713897705,0.9649999737739563,0.9377976059913635,200,25,True,200704,200704,6
+d2nn,Dense D2NN,/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t01_object_retrieval/runs/simulation/d2nn_matched_dc20_seed42,f6a3d7ed5579a4979d0646dc434930a2ff567155,42,0.8949999809265137,0.9700000286102295,0.9348809719085693,200,15,True,200704,200704,4
+qwen,Frozen Qwen embedding,/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t01_object_retrieval/runs/simulation/qwen_frozen,692e8534a17518bc0b8ef63fb9110cfd2e5ed989,42,0.9950000047683716,1.0,0.9975000023841858,200,,False,200704,200704,0

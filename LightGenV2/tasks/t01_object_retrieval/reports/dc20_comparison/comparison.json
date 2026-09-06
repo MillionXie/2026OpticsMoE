@@ -1,0 +1,201 @@
+{
+  "schema_version": 1,
+  "runs": [
+    {
+      "key": "main",
+      "method": "Optical Router + MoE",
+      "run_dir": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t01_object_retrieval/runs/simulation/moe_router_scale_dc20_seed42",
+      "git_commit": "bea692fe5bdab79a21b9834ae8025c3df9b20f4d",
+      "seed": 42,
+      "top1": 0.9049999713897705,
+      "top3": 0.9649999737739563,
+      "mrr": 0.9377976059913635,
+      "query_count": 200,
+      "selected_epoch": 25,
+      "selection_biased": true,
+      "active_expert_phase_parameters": 200704,
+      "d2nn_phase_parameters": 200704,
+      "physical_capture_count": 6,
+      "fusion": {
+        "mode": "scale_matched_convex",
+        "ablation": "none",
+        "alpha_range": [
+          0.01,
+          0.95
+        ],
+        "vision": {
+          "block1": {
+            "alpha": 0.054419755935668945,
+            "electronic_coefficient": 0.945580244064331,
+            "optical_coefficient": 0.054419755935668945,
+            "electronic_rms_before": 1.0146634578704834,
+            "optical_rms_before": 0.4542860686779022,
+            "pre_optical_to_electronic_rms_ratio": 0.4471609592437744,
+            "post_optical_to_electronic_rms_ratio": 1.0,
+            "fused_to_electronic_rms_ratio": 1.0,
+            "branch_cosine": 0.027451803907752037
+          },
+          "block2": {
+            "alpha": 0.055103980004787445,
+            "electronic_coefficient": 0.9448960423469543,
+            "optical_coefficient": 0.055103980004787445,
+            "electronic_rms_before": 1.1258153915405273,
+            "optical_rms_before": 0.44377246499061584,
+            "pre_optical_to_electronic_rms_ratio": 0.3944413661956787,
+            "post_optical_to_electronic_rms_ratio": 1.0,
+            "fused_to_electronic_rms_ratio": 1.0,
+            "branch_cosine": 0.08431574702262878
+          }
+        },
+        "language": {
+          "block1": {
+            "alpha": 0.05353550612926483,
+            "electronic_coefficient": 0.946464478969574,
+            "optical_coefficient": 0.05353550612926483,
+            "electronic_rms_before": 1.018187403678894,
+            "optical_rms_before": 0.430095911026001,
+            "pre_optical_to_electronic_rms_ratio": 0.42241400480270386,
+            "post_optical_to_electronic_rms_ratio": 1.0,
+            "fused_to_electronic_rms_ratio": 1.0,
+            "branch_cosine": 0.02140067145228386
+          },
+          "block2": {
+            "alpha": 0.053678303956985474,
+            "electronic_coefficient": 0.9463217258453369,
+            "optical_coefficient": 0.053678303956985474,
+            "electronic_rms_before": 1.0482513904571533,
+            "optical_rms_before": 0.4347081482410431,
+            "pre_optical_to_electronic_rms_ratio": 0.4147019386291504,
+            "post_optical_to_electronic_rms_ratio": 1.0,
+            "fused_to_electronic_rms_ratio": 1.0,
+            "branch_cosine": 0.06280525028705597
+          }
+        }
+      }
+    },
+    {
+      "key": "d2nn",
+      "method": "Dense D2NN",
+      "run_dir": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t01_object_retrieval/runs/simulation/d2nn_matched_dc20_seed42",
+      "git_commit": "f6a3d7ed5579a4979d0646dc434930a2ff567155",
+      "seed": 42,
+      "top1": 0.8949999809265137,
+      "top3": 0.9700000286102295,
+      "mrr": 0.9348809719085693,
+      "query_count": 200,
+      "selected_epoch": 15,
+      "selection_biased": true,
+      "active_expert_phase_parameters": 200704,
+      "d2nn_phase_parameters": 200704,
+      "physical_capture_count": 4,
+      "fusion": {
+        "mode": "scale_matched_convex",
+        "ablation": "none",
+        "alpha_range": [
+          0.01,
+          0.95
+        ],
+        "vision": {
+          "block1": {
+            "alpha": 0.0544968843460083,
+            "electronic_coefficient": 0.9455031156539917,
+            "optical_coefficient": 0.0544968843460083,
+            "electronic_rms_before": 1.0174474716186523,
+            "optical_rms_before": 0.43968960642814636,
+            "pre_optical_to_electronic_rms_ratio": 0.4324822723865509,
+            "post_optical_to_electronic_rms_ratio": 1.0,
+            "fused_to_electronic_rms_ratio": 1.0,
+            "branch_cosine": 0.06176132336258888
+          },
+          "block2": {
+            "alpha": 0.05514683574438095,
+            "electronic_coefficient": 0.9448531866073608,
+            "optical_coefficient": 0.05514683574438095,
+            "electronic_rms_before": 1.1434530019760132,
+            "optical_rms_before": 0.4335007667541504,
+            "pre_optical_to_electronic_rms_ratio": 0.3813628852367401,
+            "post_optical_to_electronic_rms_ratio": 1.0,
+            "fused_to_electronic_rms_ratio": 1.0,
+            "branch_cosine": 0.1018504947423935
+          }
+        },
+        "language": {
+          "block1": {
+            "alpha": 0.054044127464294434,
+            "electronic_coefficient": 0.9459558725357056,
+            "optical_coefficient": 0.054044127464294434,
+            "electronic_rms_before": 1.0184354782104492,
+            "optical_rms_before": 0.37308356165885925,
+            "pre_optical_to_electronic_rms_ratio": 0.36633074283599854,
+            "post_optical_to_electronic_rms_ratio": 1.0,
+            "fused_to_electronic_rms_ratio": 1.0,
+            "branch_cosine": 0.03591325506567955
+          },
+          "block2": {
+            "alpha": 0.05414261668920517,
+            "electronic_coefficient": 0.9458574056625366,
+            "optical_coefficient": 0.05414261668920517,
+            "electronic_rms_before": 1.0500493049621582,
+            "optical_rms_before": 0.3680533170700073,
+            "pre_optical_to_electronic_rms_ratio": 0.3505168557167053,
+            "post_optical_to_electronic_rms_ratio": 1.0,
+            "fused_to_electronic_rms_ratio": 1.0,
+            "branch_cosine": 0.06433653831481934
+          }
+        }
+      }
+    },
+    {
+      "key": "qwen",
+      "method": "Frozen Qwen embedding",
+      "run_dir": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t01_object_retrieval/runs/simulation/qwen_frozen",
+      "git_commit": "692e8534a17518bc0b8ef63fb9110cfd2e5ed989",
+      "seed": 42,
+      "top1": 0.9950000047683716,
+      "top3": 1.0,
+      "mrr": 0.9975000023841858,
+      "query_count": 200,
+      "selected_epoch": null,
+      "selection_biased": false,
+      "active_expert_phase_parameters": 200704,
+      "d2nn_phase_parameters": 200704,
+      "physical_capture_count": 0,
+      "fusion": null
+    }
+  ],
+  "aggregates": [
+    {
+      "key": "main",
+      "method": "Optical Router + MoE",
+      "run_count": 1,
+      "top1_mean": 0.9049999713897705,
+      "top1_std": 0.0,
+      "top1_min": 0.9049999713897705,
+      "top1_max": 0.9049999713897705,
+      "top3_mean": 0.9649999737739563,
+      "mrr_mean": 0.9377976059913635
+    },
+    {
+      "key": "d2nn",
+      "method": "Dense D2NN",
+      "run_count": 1,
+      "top1_mean": 0.8949999809265137,
+      "top1_std": 0.0,
+      "top1_min": 0.8949999809265137,
+      "top1_max": 0.8949999809265137,
+      "top3_mean": 0.9700000286102295,
+      "mrr_mean": 0.9348809719085693
+    },
+    {
+      "key": "qwen",
+      "method": "Frozen Qwen embedding",
+      "run_count": 1,
+      "top1_mean": 0.9950000047683716,
+      "top1_std": 0.0,
+      "top1_min": 0.9950000047683716,
+      "top1_max": 0.9950000047683716,
+      "top3_mean": 1.0,
+      "mrr_mean": 0.9975000023841858
+    }
+  ]
+}
