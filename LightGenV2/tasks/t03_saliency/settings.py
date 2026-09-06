@@ -27,6 +27,13 @@ def load_settings(path: str | Path) -> Any:
     raw = _read_config(config)
     d = lambda key, default=None: _nested(raw, key, default)
 
+    # The shared server keeps Hugging Face snapshots beside the repository,
+    # while portable configs point at a repository-local cache.  Resolve the
+    # former only when the configured cache is absent; this remains offline.
+    adjacent_hf_cache = config.parents[5] / ".cache" / "huggingface" / "hub"
+    if settings.cache_dir is not None and not settings.cache_dir.exists() and adjacent_hf_cache.is_dir():
+        settings.cache_dir = adjacent_hf_cache.resolve()
+
     settings.validation_limit = d("dataset.validation_limit")
     if settings.validation_limit is not None:
         settings.validation_limit = int(settings.validation_limit)
