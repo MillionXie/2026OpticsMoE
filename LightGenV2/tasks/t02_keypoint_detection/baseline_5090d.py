@@ -1,4 +1,4 @@
-"""Frozen Qwen Vision plus the historical lightweight LSP pose head on 5090 D."""
+"""Frozen Qwen Vision plus the configured LSP pose head on RTX 5090 D."""
 
 from __future__ import annotations
 
@@ -168,7 +168,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "task": "LSP keypoint detection",
         "model": settings.model_id,
         "qwen_frozen": True,
-        "readout": "LightweightPoseHead -> 14x56x56 heatmaps",
+        "readout": f"{type(model.head).__name__} -> 14x56x56 heatmaps",
+        "pose_head_mode": settings.pose_head_mode,
         "readout_trainable_parameters": trainable,
         "test_samples": len(test),
         "timing_samples": len(measurements),
@@ -176,7 +177,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "first_test_sample_included": False,
         "timing_boundary": (
             "input to native Vision Transformer block 0 through all native Vision "
-            "blocks and the trained lightweight pose head to 14 heatmaps"
+            "blocks and the configured trained pose head to 14 heatmaps"
         ),
         "performance": performance,
         "latency_cuda_ms": summarize(latencies),

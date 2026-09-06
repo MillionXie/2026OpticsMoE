@@ -360,47 +360,64 @@ def _metrics(
     source: torch.Tensor,
     target: torch.Tensor,
     true_edit: torch.Tensor,
-) -> dict[str, float]:
+) -> list[dict[str, float]]:
     generated = output["category_logits"].argmax(dim=1)
     predicted_edit = output["edit_logits"].sigmoid().ge(0.5)
     prediction = torch.where(predicted_edit, generated, source)
-    changed = true_edit.bool()
-    foreground = target.gt(0)
-    correct = prediction.eq(target)
-    intersection = (predicted_edit & changed).sum().item()
-    union = (predicted_edit | changed).sum().item()
-    object_true_positive = (correct & foreground).sum().item()
-    predicted_foreground = prediction.gt(0).sum().item()
-    target_foreground = foreground.sum().item()
-    precision = object_true_positive / max(1, predicted_foreground)
-    recall = object_true_positive / max(1, target_foreground)
-    return {
-        "changed_cell_accuracy": float(correct[changed].float().mean().item()),
-        "foreground_category_accuracy": float(correct[foreground].float().mean().item()),
-        "edit_grid_iou": float(intersection / union if union else 1.0),
-        "object_f1": float(
-            2.0 * precision * recall / (precision + recall)
-            if precision + recall
-            else 0.0
-        ),
-        "scene_exact_match": float(correct.flatten(1).all(dim=1).float().mean().item()),
-    }
+    rows: list[dict[str, float]] = []
+    for index in range(len(prediction)):
+        changed = true_edit[index].bool()
+        foreground = target[index].gt(0)
+        correct = prediction[index].eq(target[index])
+        intersection = (predicted_edit[index] & changed).sum().item()
+        union = (predicted_edit[index] | changed).sum().item()
+        predicted_objects = {
+            (int(prediction[index, row, col]), int(row), int(col))
+            for row, col in zip(*prediction[index].gt(0).nonzero(as_tuple=True))
+        }
+        target_objects = {
+            (int(target[index, row, col]), int(row), int(col))
+            for row, col in zip(*target[index].gt(0).nonzero(as_tuple=True))
+        }
+        matched = len(predicted_objects & target_objects)
+        precision = matched / max(1, len(predicted_objects))
+        recall = matched / max(1, len(target_objects))
+        rows.append(
+            {
+                "changed_cell_accuracy": float(correct[changed].float().mean().item()),
+                "foreground_category_accuracy": float(
+                    correct[foreground].float().mean().item() if foreground.any() else 1.0
+                ),
+                "edit_grid_iou": float(intersection / union if union else 1.0),
+                "object_f1": float(
+                    2.0 * precision * recall / (precision + recall)
+                    if precision + recall
+                    else 0.0
+                ),
+                "scene_exact_match": float(correct.all().item()),
+            }
+        )
+    return rows
 
 
 @torch.inference_mode()
 def _evaluate_cache(
     head: nn.Module, payload: dict[str, Any], batch_size: int
-) -> dict[str, float]:
+) -> dict[str, Any]:
     dataset = TensorDataset(
         payload["image_hidden"],
         payload["condition_hidden"],
         payload["source_grid"],
         payload["target_grid"],
         payload["edit_grid"],
+        payload["task_index"],
     )
-    totals: dict[str, float] = {}
+    names = ("add", "replace", "move", "remove")
+    groups: dict[str, dict[str, float]] = {
+        name: {"samples": 0.0} for name in ("overall", *names)
+    }
     samples = 0
-    for image, condition, source, target, edit in DataLoader(
+    for image, condition, source, target, edit, task_index in DataLoader(
         dataset, batch_size=batch_size, shuffle=False
     ):
         image = image.to("cuda:0")
@@ -409,12 +426,27 @@ def _evaluate_cache(
         target = target.to("cuda:0")
         edit = edit.to("cuda:0")
         output = head(image, condition)
-        values = _metrics(output, source, target, edit)
-        count = len(image)
-        samples += count
-        for name, value in values.items():
-            totals[name] = totals.get(name, 0.0) + value * count
-    return {"samples": samples, **{name: value / samples for name, value in totals.items()}}
+        rows = _metrics(output, source, target, edit)
+        for row, task in zip(rows, task_index.tolist()):
+            samples += 1
+            for group_name in ("overall", names[int(task)]):
+                groups[group_name]["samples"] += 1.0
+                for metric_name, value in row.items():
+                    groups[group_name][metric_name] = (
+                        groups[group_name].get(metric_name, 0.0) + value
+                    )
+    result: dict[str, Any] = {}
+    for group_name, totals in groups.items():
+        count = int(totals["samples"])
+        result[group_name] = {
+            "samples": count,
+            **{
+                metric_name: value / count
+                for metric_name, value in totals.items()
+                if metric_name != "samples"
+            },
+        }
+    return {**result["overall"], "by_task": {name: result[name] for name in names}}
 
 
 def train_head(args: argparse.Namespace) -> dict[str, Any]:

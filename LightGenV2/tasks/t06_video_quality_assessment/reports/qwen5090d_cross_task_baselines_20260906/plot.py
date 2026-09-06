@@ -111,10 +111,10 @@ def baseline_overview(rows: list[dict[str, str]]) -> None:
 
 def temporal_power_comparison() -> None:
     labels = ["Optical\n16 parallel", "Qwen\n16 sequential"]
-    time_ms = [9.084, 985.6908418935688]
-    average_w = [80.388, 116.90940491591203]
-    energy_j = [0.730244592, 115.23652975684146]
-    upper_j = [np.nan, 566.7722340888021]
+    time_ms = [9.084, 1046.928]
+    average_w = [80.388, 120.680 / 1.046928]
+    energy_j = [0.730244592, 120.680]
+    upper_j = [np.nan, 575.0 * 1.046928]
     figure, axes = plt.subplots(
         1, 3, figsize=(18.0 / 2.54, 5.0 / 2.54), constrained_layout=True
     )
@@ -143,7 +143,7 @@ def temporal_power_comparison() -> None:
     axes[1].set_ylim(min(average_w) * 0.92, max(average_w) * 1.25)
     axes[2].set_ylim(min(energy_j) * 0.70, upper_j[1] * 1.65)
     axes[2].scatter([1], [upper_j[1]], marker="_", s=170, color="#222222", zorder=3)
-    axes[2].text(1, upper_j[1] * 1.12, "566.77 rated upper", ha="center", va="bottom", fontsize=6)
+    axes[2].text(1, upper_j[1] * 1.12, "601.98 rated upper", ha="center", va="bottom", fontsize=6)
     base = HERE / "temporal16_power_comparison"
     figure.savefig(base.with_suffix(".png"), dpi=300, bbox_inches="tight")
     figure.savefig(base.with_suffix(".pdf"), bbox_inches="tight")

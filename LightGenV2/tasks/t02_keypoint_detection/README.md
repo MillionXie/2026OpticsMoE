@@ -5,6 +5,17 @@ Qwen3-VL-Embedding-2B 仅执行 patch embedding；原生 Vision Transformer
 block 不执行。两种正式方法共享数据划分、电子 mixer、同尺度融合、姿态读出头、
 10 cm/17 μm 传播、k 空间约束、位移/增益/偏置/读噪声和 20%–30% 相干 0 级分量。
 
+上述说明只针对两种光学仿真方法。论文中的大模型 baseline 是另一条直接路径：输入
+224×224 图像后完整执行冻结 Qwen 的所有原生 Vision Transformer blocks，取最后一层
+原生视觉 token 恢复为 14×14 空间图，再接 `lsp_pose_opt2.yaml` 已训练的
+`DeconvPoseHead`（14→28→56 两级可学习反卷积），输出 14 张 56×56 关键点热图。
+它不是只拿 patch embedding，也没有绕过 Qwen Vision。
+
+该直接大模型 baseline 已在 RTX 5090 D 上用完整 1000 张官方 test 重测：PCK@0.2
+**0.7217**、PCKh@0.5 **0.8846**、NME **0.2084**。从第一个原生 Vision block 到
+14 张 56×56 热图的 mean/median/P95 为 **9.623/9.425/10.284 ms/image**；读出头为
+`DeconvPoseHead`，1,102,990 个可训练参数，Qwen 参数全部冻结。
+
 ## 两个正式 profile
 
 - `main_dc20`：一次光 Router CCD 把样本送给 Top-2/4 个 224×224 专家；
