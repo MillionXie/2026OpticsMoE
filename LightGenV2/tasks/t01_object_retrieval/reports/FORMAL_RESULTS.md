@@ -84,6 +84,10 @@ LightGenV2/tasks/t01_object_retrieval/runs/simulation/qwen_frozen
 LightGenV2/tasks/t01_object_retrieval/reports/formal_comparison/
 ```
 
+其中 `comparison_top1.png/.pdf` 是三系统的直接对比图，`comparison.json` 和两份 CSV
+保留完整机器可读指标；正式主方法与 D2NN 的相位图则位于对应服务器 run 的
+`best_visualization/best_phase_overview.png`。
+
 早期自动生成的 `student_architecture.json` 继承了历史报告中的初始化文字，错误写成
 “from scratch”；D2NN 子字段也残留了 MoE 描述。真实初始化由每个 run 的
 `initialization_report.json`、严格权重检查及上述源 SHA 证明。此问题只影响说明字段，
