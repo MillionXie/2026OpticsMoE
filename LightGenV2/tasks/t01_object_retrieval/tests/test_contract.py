@@ -13,6 +13,7 @@ from LightGenV2.tasks.t01_object_retrieval.modeling import (
 from LightGenV2.tasks.t01_object_retrieval.report import _aggregate
 from LightGenV2.tasks.t01_object_retrieval.settings import load_settings
 from LightGenV2.tasks.t01_object_retrieval.visualize import render
+from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.optics.physical import phase_dc_loss
 
 
 TASK_DIR = Path(__file__).resolve().parents[1]
@@ -87,6 +88,7 @@ def test_dense_phase_is_2pi_sigmoid_and_receives_gradient() -> None:
     loss.backward()
     assert plane.raw_phase.grad is not None
     assert torch.isfinite(plane.raw_phase.grad).all()
+    assert torch.isfinite(phase_dc_loss(plane))
 
 
 def test_report_uses_sample_standard_deviation_for_repeated_runs() -> None:

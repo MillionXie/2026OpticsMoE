@@ -43,6 +43,9 @@ from experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retr
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.modeling import (
     LoadedBackbone,
 )
+from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.optics.physical import (
+    PhaseLayer,
+)
 
 
 def checkpoint_architecture(settings: Any) -> str:
@@ -117,11 +120,13 @@ class OpticalRouterScaleMatchedReplacement(BalancedFusionReplacement):
         save_router_phase_preview(self, path, title=title)
 
 
-class DensePhasePlane(nn.Module):
+class DensePhasePlane(PhaseLayer):
     """One fully trainable 224x224 phase-only plane."""
 
     def __init__(self, size: int, settings: Any) -> None:
-        super().__init__()
+        # The dense baseline owns a different modulation implementation, but
+        # remains a PhaseLayer for the shared phase-DC loss and diagnostics.
+        nn.Module.__init__(self)
         self.size = int(size)
         self.parameterization = "sigmoid"
         std = float(settings.language_optical_phase_init_std)
@@ -135,6 +140,9 @@ class DensePhasePlane(nn.Module):
 
     def physical_phase(self) -> torch.Tensor:
         return 2.0 * math.pi * torch.sigmoid(self.raw_phase)
+
+    def phase(self) -> torch.Tensor:
+        return self.physical_phase()
 
     def modulation(self, batch: int) -> torch.Tensor:
         phase = self.physical_phase().unsqueeze(0).expand(batch, -1, -1)
