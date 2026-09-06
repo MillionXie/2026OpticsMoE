@@ -1,0 +1,6 @@
+base_config: common_dc20.yaml
+
+lightgen:
+  model_variant: optical_router_scale_matched_moe
+
+output_dir: ../runs/simulation/moe_router_scale_dc20_seed42

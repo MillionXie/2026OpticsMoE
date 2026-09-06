@@ -120,3 +120,18 @@ python -m LightGenV2.tasks.t01_object_retrieval.report `
 硬负载均衡；20% 未调制直流分量仿真及 phase-DC 抑制正则也均未启用。现有 Language
 Router 的硬选择明显集中，因此该结果不能标记为“专家严格均衡”或“DC-robust”。若启用
 这些条件，必须建立新 profile 并重新训练，不能修改本结果的配置或结论。
+
+## 5. DC20 鲁棒复跑
+
+`main_dc20` 与 `d2nn_dc20` 是新的正式复跑 profile。两者均加入训练时
+20%–30% 振幅 SLM 和相位 SLM 相干未调制强度、截断偏置高斯 CCD 噪声、原有
+±16 pixel 输入/相位/CCD 位移、0.65° k 空间约束及相位 dropout。主方法仍为
+光 Router Top-2；D2NN 没有 Router（否则不再是普通 D2NN）。两者都采用相同的
+同尺度凸融合和 phase-DC 约束。
+
+```bash
+CUDA_VISIBLE_DEVICES=2 python -m LightGenV2.tasks.t01_object_retrieval.run \
+  --profile main_dc20 --phase all
+CUDA_VISIBLE_DEVICES=3 python -m LightGenV2.tasks.t01_object_retrieval.run \
+  --profile d2nn_dc20 --phase all
+```

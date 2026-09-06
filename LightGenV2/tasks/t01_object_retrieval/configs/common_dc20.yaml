@@ -1,0 +1,40 @@
+base_config: common.yaml
+
+# Formal laboratory-robust rerun.  The zero-order values are INTENSITY
+# fractions; the simulator converts them to field amplitudes with sqrt(eta)
+# before coherent mixing.  They are sampled only during training.  Evaluation
+# remains the deterministic ideal optical system so it is directly comparable
+# with the earlier formal run.
+language_optical:
+  perturbation:
+    ccd_noise:
+      distribution: truncated_biased_gaussian
+      mean_fraction: 0.03
+      std_fraction: 0.03
+      min_fraction: -0.03
+      max_fraction: 0.12
+    zero_order:
+      enabled: true
+      amplitude_intensity_fraction_min: 0.20
+      amplitude_intensity_fraction_max: 0.30
+      phase_intensity_fraction_min: 0.20
+      phase_intensity_fraction_max: 0.30
+      random_relative_phase: true
+
+training:
+  epochs: 40
+  lambda_router_balance: 0.08
+  lambda_router_importance: 0.02
+  lambda_router_hard_load_balance: 0.02
+  router_load_bias_update_rate: 0.0
+  phase_dc: {enabled: true, weight: 0.005, start_epoch: 1}
+  phase_diagnostics:
+    preview_interval_epochs: 40
+
+lightgen:
+  robustness_contract:
+    displacement_pixels: 16
+    k_space_theta_max_deg: 0.65
+    coherent_zero_order_intensity_range: [0.20, 0.30]
+    ccd_noise: truncated_biased_gaussian
+    evaluation: deterministic_ideal_optics

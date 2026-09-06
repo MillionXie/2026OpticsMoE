@@ -53,6 +53,8 @@ TASK_DIR = Path(__file__).resolve().parent
 PROFILES = {
     "main": "moe_optical_router_scale_matched.yaml",
     "d2nn": "d2nn_active_expert_matched.yaml",
+    "main_dc20": "moe_optical_router_scale_matched_dc20.yaml",
+    "d2nn_dc20": "d2nn_active_expert_matched_dc20.yaml",
     "qwen": "qwen_frozen_embedding.yaml",
 }
 PHASES = {"prepare", "train", "evaluate", "all"}

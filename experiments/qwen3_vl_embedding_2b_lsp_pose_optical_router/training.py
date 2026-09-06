@@ -198,6 +198,8 @@ def _save_checkpoint(
     train_metrics: dict[str, Any],
     periodic_test_metrics: dict[str, Any],
     initialization_report: dict[str, Any],
+    weight_variant: str = "ema",
+    selected_by_periodic_test: bool = True,
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(
@@ -208,16 +210,24 @@ def _save_checkpoint(
             "router_contract_sha256": settings.router_contract_sha256,
             "router_backend": settings.router_backend,
             "top_k": int(settings.top_k),
-            "weight_variant": "ema",
+            "weight_variant": str(weight_variant),
             "selection": {
-                "split": "periodic_test_last_LSP1000",
-                "primary": "max_pck_at_0.2_torso",
+                "split": (
+                    "periodic_test_last_LSP1000"
+                    if selected_by_periodic_test
+                    else "not_selected_live_last"
+                ),
+                "primary": (
+                    "max_pck_at_0.2_torso"
+                    if selected_by_periodic_test
+                    else "none"
+                ),
                 "ties": [
                     "min_normalized_mean_error_torso",
                     "min_periodic_test_loss",
                     "earliest_epoch",
                 ],
-                "test_used_for_selection": True,
+                "test_used_for_selection": bool(selected_by_periodic_test),
             },
             "train_metrics": train_metrics,
             "periodic_test_metrics": periodic_test_metrics,
@@ -376,6 +386,19 @@ def train(
                     f"best_test_epoch={best_epoch}",
                     flush=True,
                 )
+        if test_metrics is None:
+            raise RuntimeError("The final LSP epoch must have a periodic-test evaluation")
+        _save_checkpoint(
+            settings.output_dir / "last_checkpoint.pt",
+            model,
+            settings,
+            epoch=settings.student_epochs,
+            train_metrics=train_metrics,
+            periodic_test_metrics=test_metrics,
+            initialization_report=initialization,
+            weight_variant="live_last",
+            selected_by_periodic_test=False,
+        )
     finally:
         model.core.set_phase_dropout_active(False)
         model.restore_native()

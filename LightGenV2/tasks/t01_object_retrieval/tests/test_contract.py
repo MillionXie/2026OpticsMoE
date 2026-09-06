@@ -23,6 +23,8 @@ TASK_DIR = Path(__file__).resolve().parents[1]
     (
         ("moe_optical_router_scale_matched.yaml", "optical_router_scale_matched_moe"),
         ("d2nn_active_expert_matched.yaml", "d2nn_active_expert_matched"),
+        ("moe_optical_router_scale_matched_dc20.yaml", "optical_router_scale_matched_moe"),
+        ("d2nn_active_expert_matched_dc20.yaml", "d2nn_active_expert_matched"),
         ("qwen_frozen_embedding.yaml", "frozen_qwen_embedding"),
     ),
 )
@@ -39,6 +41,25 @@ def test_formal_profiles_share_the_audited_contract(
     assert settings.optimizer_steps_per_epoch is None
     assert settings.language_optical_distance_m == pytest.approx(0.10)
     assert settings.language_optical_pixel_pitch_um == pytest.approx(17.0)
+
+
+@pytest.mark.parametrize(
+    "filename",
+    (
+        "moe_optical_router_scale_matched_dc20.yaml",
+        "d2nn_active_expert_matched_dc20.yaml",
+    ),
+)
+def test_dc20_profiles_model_coherent_leakage_and_robustness(filename: str) -> None:
+    settings = load_settings(TASK_DIR / "configs" / filename)
+    assert settings.language_optical_zero_order_enabled is True
+    assert settings.language_optical_amplitude_zero_order_intensity_min == pytest.approx(0.20)
+    assert settings.language_optical_amplitude_zero_order_intensity_max == pytest.approx(0.30)
+    assert settings.language_optical_phase_zero_order_intensity_min == pytest.approx(0.20)
+    assert settings.language_optical_phase_zero_order_intensity_max == pytest.approx(0.30)
+    assert settings.language_optical_ccd_noise_distribution == "truncated_biased_gaussian"
+    assert settings.phase_dc_enabled is True
+    assert settings.lambda_phase_dc == pytest.approx(0.005)
 
 
 def test_d2nn_exactly_matches_top2_activated_expert_phase_budget() -> None:

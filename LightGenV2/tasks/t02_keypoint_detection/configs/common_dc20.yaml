@@ -1,0 +1,113 @@
+base_config: ../../../../experiments/qwen3_vl_embedding_2b_lsp_pose_optical_router/configs/release/optical_power_topk2.yaml
+
+dataset:
+  data_root: ../../../../data/lsp_pose
+  download: true
+  train_limit: null
+  test_limit: null
+
+qwen:
+  cache_dir: ../../../../cache/qwen
+  local_files_only: true
+  device: cuda
+
+batching:
+  student_batch_size: 12
+  inference_batch_size: 24
+  num_workers: 4
+
+training:
+  student_epochs: 100
+  student_learning_rate: 0.0001
+  phase_learning_rate: 0.006
+  router_learning_rate: 0.0005
+  weight_decay: 0.0
+  ema_decay: 0.995
+  random_seed: 42
+  amp_enabled: true
+  log_interval_batches: 100
+
+loss:
+  heatmap_weight: 1.0
+  coordinate_weight: 0.1
+  router_balance_weight: 0.08
+  router_importance_weight: 0.02
+  ccd_operating_point_weight: 0.02
+  phase_dc_weight: 0.005
+
+protocol:
+  initialization_seed: 42
+  test_interval_epochs: 5
+  test_at_epoch_one: true
+  test_at_final_epoch: true
+  common_initialization_checkpoint: ../../../../experiments/qwen3_vl_embedding_2b_lsp_pose_optical_router/runs/shared_untrained_initialization.pt
+
+robust_vision:
+  pixel_pitch_um: 17.0
+  distance_m: 0.10
+  minimum_optical_fusion: 0.05
+  initial_optical_fusion: 0.055
+  k_space: {enabled: true, theta_max_deg: 0.65}
+  phase: {dropout_p: 0.08, dropout_block_size: 8}
+  normalization:
+    input_rms: 0.50
+    ccd_target_mean: 0.25
+    relative_clip: 12.0
+    log_compression: 1.0
+  perturbation:
+    input_shift_pixels: 16
+    phase_shift_pixels: 16
+    ccd_shift_pixels: 16
+    gain_min: 0.4
+    gain_max: 2.5
+    offset_fraction: 0.05
+    read_noise_fraction: 0.015
+    ccd_noise:
+      distribution: truncated_biased_gaussian
+      mean_fraction: 0.03
+      std_fraction: 0.03
+      min_fraction: -0.03
+      max_fraction: 0.12
+    zero_order:
+      enabled: true
+      amplitude_intensity_fraction_min: 0.20
+      amplitude_intensity_fraction_max: 0.30
+      phase_intensity_fraction_min: 0.20
+      phase_intensity_fraction_max: 0.30
+      random_relative_phase: true
+
+router_experiment:
+  backend: optical
+  top_k: 2
+  weight_normalization: power_l2
+  straight_through: true
+  train_logit_noise_std: 0.10
+  optical:
+    detector_intervals: [[164, 223], [255, 314]]
+    score_normalization: standardized_region_energy
+    energy_eps: 1.0e-8
+    capture_loss_scale: 0.10
+    phase_dropout_p: 0.05
+    phase_dropout_block_size: 8
+    input_shift_pixels: 16
+    phase_shift_pixels: 16
+    ccd_shift_pixels: 16
+
+balanced_fusion:
+  mode: scale_matched_convex
+  alpha_min: 0.01
+  alpha_max: 0.95
+  alpha_initial: 0.055
+  rms_epsilon: 0.000001
+  detach_scale_statistics: true
+
+lightgen:
+  model_variant: optical_router_scale_matched_moe
+  selection:
+    primary_checkpoint: best_checkpoint.pt
+
+d2nn:
+  phase_size: 224
+  phase_layers: 2
+
+output_dir: ../runs/simulation/placeholder
