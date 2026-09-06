@@ -1,0 +1,19 @@
+base_config: temporal_multivideo16x4_rank.yaml
+output_dir: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo16x4_polish_route_s183
+random_seed: 183
+
+training:
+  initialization_checkpoint: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo16x4_rank_s163/best_checkpoint.pt
+  epochs: 60
+  learning_rate: 0.00008
+  phase_learning_rate: 0.006
+  router_phase_learning_rate: 0.012
+
+loss:
+  ranking_weight: 0.50
+  correlation_weight: 1.50
+  soft_target_weight: 1.50
+  router_balance_weight: 0.16
+  router_importance_weight: 0.06
+  router_diversity_weight: 0.32
+  slot_consistency_weight: 0.20
