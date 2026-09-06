@@ -63,10 +63,13 @@ def _selection_report(counts: torch.Tensor) -> dict[str, Any]:
 
 
 _SEMANTIC_TOP2_CODES = {
-    "add": (0, 1),
+    # The first slot follows the prompt families' naturally separable optical
+    # lobe (add/move -> 1, replace/remove -> 0); the second slot supplies a
+    # balanced complementary code.  Every expert still appears twice.
+    "add": (1, 2),
     "replace": (0, 2),
     "move": (1, 3),
-    "remove": (2, 3),
+    "remove": (0, 3),
 }
 
 

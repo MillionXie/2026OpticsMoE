@@ -46,7 +46,16 @@ def test_no_validation_split() -> None:
 
 
 def test_semantic_router_code_uses_physical_detector_energy() -> None:
-    class Core:
+    class LanguageCore:
+        last_routing = {
+            "probabilities": torch.full((2, 4), 0.25),
+            "detector_energy_fraction": torch.tensor(
+                [[0.05, 0.45, 0.45, 0.05], [0.45, 0.05, 0.45, 0.05]],
+                requires_grad=True,
+            ),
+        }
+
+    class VisionCore:
         last_routing = {
             "probabilities": torch.full((2, 4), 0.25),
             "detector_energy_fraction": torch.tensor(
@@ -55,14 +64,17 @@ def test_semantic_router_code_uses_physical_detector_energy() -> None:
             ),
         }
 
-    class Branch:
-        core = Core()
+    class LanguageBranch:
+        core = LanguageCore()
+
+    class VisionBranch:
+        core = VisionCore()
 
     class Language:
-        optical_branch = Branch()
+        optical_branch = LanguageBranch()
 
     class Vision:
-        optical_branch = Branch()
+        optical_branch = VisionBranch()
 
     class Model:
         router_backend = "optical"
@@ -76,5 +88,7 @@ def test_semantic_router_code_uses_physical_detector_energy() -> None:
     expected = -torch.log(torch.tensor(0.45))
     torch.testing.assert_close(loss, expected)
     loss.backward()
-    assert Core.last_routing["detector_energy_fraction"].grad is not None
-    assert Core.last_routing["probabilities"].grad is None
+    assert LanguageCore.last_routing["detector_energy_fraction"].grad is not None
+    assert VisionCore.last_routing["detector_energy_fraction"].grad is not None
+    assert LanguageCore.last_routing["probabilities"].grad is None
+    assert VisionCore.last_routing["probabilities"].grad is None
