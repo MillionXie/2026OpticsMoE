@@ -58,6 +58,9 @@ def load_settings(path: str | Path) -> Any:
     settings.test_evaluation_interval_epochs = int(
         d("lightgen.selection.test_interval_epochs", 5)
     )
+    settings.lambda_router_hard_load_balance = float(
+        d("training.lambda_router_hard_load_balance", 0.0)
+    )
     settings.evaluate_test_each_epoch = bool(
         d("lightgen.selection.use_periodic_test", True)
     )
@@ -98,6 +101,8 @@ def load_settings(path: str | Path) -> Any:
         raise ValueError("This comparison explicitly selects by periodic test Top-1")
     if settings.test_evaluation_interval_epochs <= 0:
         raise ValueError("test_interval_epochs must be positive")
+    if settings.lambda_router_hard_load_balance < 0.0:
+        raise ValueError("lambda_router_hard_load_balance must be non-negative")
     if settings.d2nn_phase_size != settings.expert_size:
         raise ValueError("The requested D2NN match requires 224x224 phase planes")
     if settings.d2nn_phase_layers_per_modality != settings.top_k:
@@ -144,6 +149,9 @@ def save_resolved_config(settings: Any) -> None:
         ),
         "matching_target": "top_k * expert_size^2 per modality",
     }
+    values.setdefault("training", {})["lambda_router_hard_load_balance"] = (
+        settings.lambda_router_hard_load_balance
+    )
     path.write_text(
         yaml.safe_dump(values, sort_keys=False, allow_unicode=True),
         encoding="utf-8",

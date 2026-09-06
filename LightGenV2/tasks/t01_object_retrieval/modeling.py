@@ -64,6 +64,24 @@ def _install_optical_router(surrogate: nn.Module, settings: Any) -> None:
     core.router = OpticalDetectorTopKRouter(core.geometry, settings)
 
 
+def hard_topk_load_balance_loss(
+    routing: Mapping[str, torch.Tensor], *, num_experts: int, top_k: int
+) -> torch.Tensor:
+    """Penalize deterministic Top-k collapse with a soft-gradient surrogate.
+
+    The forward value is computed from the actual hard expert selections.  Its
+    gradient follows the optical detector probabilities, so it can train the
+    phase-only Router even though ``topk`` itself is discrete.
+    """
+
+    selected = routing["selected_mask"].float()
+    probabilities = routing["probabilities"].float()
+    hard_load = selected.mean(dim=0) / float(top_k)
+    soft_load = probabilities.mean(dim=0)
+    load_st = hard_load + soft_load - soft_load.detach()
+    return float(num_experts) * load_st.square().sum() - 1.0
+
+
 class OpticalRouterScaleMatchedReplacement(BalancedFusionReplacement):
     training_architecture_label = "lightgen_t01_optical_router_scale_matched_moe"
 
@@ -118,6 +136,19 @@ class OpticalRouterScaleMatchedReplacement(BalancedFusionReplacement):
 
     def save_multiplane_phase_preview(self, path: Path, *, title: str) -> None:
         save_router_phase_preview(self, path, title=title)
+
+    def router_hard_load_balance_loss(self) -> dict[str, torch.Tensor]:
+        return {
+            name: hard_topk_load_balance_loss(
+                surrogate.core.last_routing,
+                num_experts=4,
+                top_k=self.router_top_k,
+            )
+            for name, surrogate in (
+                ("vision", self.vision_surrogate),
+                ("language", self.language_surrogate),
+            )
+        }
 
 
 class DensePhasePlane(PhaseLayer):
@@ -414,6 +445,10 @@ class D2NNMatchedReplacement(BalancedFusionReplacement):
             "language_balance": zero,
             "language_importance": zero,
         }
+
+    def router_hard_load_balance_loss(self) -> dict[str, torch.Tensor]:
+        zero = self.vision_surrogate.core.block1_optical_fusion_logit.new_zeros(())
+        return {"vision": zero, "language": zero}
 
     def phase_parameter_groups(self) -> dict[str, list[nn.Parameter]]:
         vision = self.vision_surrogate.core.optical_branch

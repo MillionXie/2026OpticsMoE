@@ -1030,6 +1030,8 @@ def train_optical_retrieval(
         "teacher_gallery_loss",
         "router_balance_loss",
         "router_importance_loss",
+        "router_hard_load_balance_loss",
+        "router_hard_load_balance_weighted_loss",
         "router_response_consistency_loss",
         "phase_dc_loss",
         "phase_dc_weighted_loss",
@@ -1169,6 +1171,7 @@ def train_optical_retrieval(
             "teacher_gallery": 0.0,
             "balance": 0.0,
             "importance": 0.0,
+            "hard_load_balance": 0.0,
             "router_response": 0.0,
             "phase_dc": 0.0,
             "ccd_operating": 0.0,
@@ -1332,6 +1335,25 @@ def train_optical_retrieval(
                     router_losses["vision_importance"]
                     + router_losses["language_importance"]
                 )
+                hard_load_weight = float(
+                    getattr(settings, "lambda_router_hard_load_balance", 0.0)
+                )
+                hard_load_method = getattr(
+                    replacement, "router_hard_load_balance_loss", None
+                )
+                if hard_load_weight > 0.0:
+                    if not callable(hard_load_method):
+                        raise RuntimeError(
+                            "lambda_router_hard_load_balance is positive, but the "
+                            "replacement does not expose a hard-load loss"
+                        )
+                    hard_load_losses = hard_load_method()
+                    hard_load_balance = 0.5 * (
+                        hard_load_losses["vision"]
+                        + hard_load_losses["language"]
+                    )
+                else:
+                    hard_load_balance = student.new_zeros(())
                 router_response = (
                     replacement.router_response_consistency_loss()
                     if settings.lambda_router_response_consistency > 0.0
@@ -1367,6 +1389,7 @@ def train_optical_retrieval(
                     + settings.lambda_teacher_gallery * teacher_gallery
                     + settings.lambda_router_balance * balance
                     + settings.lambda_router_importance * importance
+                    + hard_load_weight * hard_load_balance
                     + settings.lambda_router_response_consistency
                     * router_response
                     + settings.lambda_phase_dc * dc
@@ -1379,6 +1402,7 @@ def train_optical_retrieval(
                     f"relational_kd={relational_kd}, gallery={gallery}, "
                     f"teacher_gallery={teacher_gallery}, balance={balance}, "
                     f"importance={importance}, phase_dc={dc}, "
+                    f"hard_load_balance={hard_load_balance}, "
                     f"ccd_operating={ccd_operating}"
                 )
             total.backward()
@@ -1420,6 +1444,9 @@ def train_optical_retrieval(
             totals["teacher_gallery"] += float(teacher_gallery.detach()) * count
             totals["balance"] += float(balance.detach()) * count
             totals["importance"] += float(importance.detach()) * count
+            totals["hard_load_balance"] += (
+                float(hard_load_balance.detach()) * count
+            )
             totals["router_response"] += float(router_response.detach()) * count
             totals["phase_dc"] += float(dc.detach()) * count
             totals["ccd_operating"] += float(ccd_operating.detach()) * count
@@ -1481,6 +1508,8 @@ def train_optical_retrieval(
                     f"{totals['top1_correct']/max(1, totals['retrieval_queries']):.4f} "
                     f"balance={totals['balance']/totals['samples']:.5f} "
                     f"importance={totals['importance']/totals['samples']:.5f} "
+                    f"hard_load="
+                    f"{totals['hard_load_balance']/totals['samples']:.5f} "
                     f"router_response="
                     f"{totals['router_response']/totals['samples']:.5f} "
                     f"phase_dc={totals['phase_dc']/totals['samples']:.5f} "
@@ -1608,6 +1637,14 @@ def train_optical_retrieval(
             "teacher_gallery_loss": totals["teacher_gallery"] / sample_count,
             "router_balance_loss": totals["balance"] / sample_count,
             "router_importance_loss": totals["importance"] / sample_count,
+            "router_hard_load_balance_loss": (
+                totals["hard_load_balance"] / sample_count
+            ),
+            "router_hard_load_balance_weighted_loss": (
+                float(getattr(settings, "lambda_router_hard_load_balance", 0.0))
+                * totals["hard_load_balance"]
+                / sample_count
+            ),
             "router_response_consistency_loss": (
                 totals["router_response"] / sample_count
             ),

@@ -8,6 +8,7 @@ import torch
 
 from LightGenV2.tasks.t01_object_retrieval.modeling import (
     DensePhasePlane,
+    hard_topk_load_balance_loss,
     parameter_fairness_contract,
 )
 from LightGenV2.tasks.t01_object_retrieval.report import _aggregate
@@ -61,6 +62,8 @@ def test_dc20_profiles_model_coherent_leakage_and_robustness(filename: str) -> N
     assert settings.language_optical_ccd_noise_distribution == "truncated_biased_gaussian"
     assert settings.phase_dc_enabled is True
     assert settings.lambda_phase_dc == pytest.approx(0.005)
+    if filename.startswith("moe_"):
+        assert settings.lambda_router_hard_load_balance == pytest.approx(0.08)
 
 
 def test_d2nn_exactly_matches_top2_activated_expert_phase_budget() -> None:
@@ -89,6 +92,25 @@ def test_dense_phase_is_2pi_sigmoid_and_receives_gradient() -> None:
     assert plane.raw_phase.grad is not None
     assert torch.isfinite(plane.raw_phase.grad).all()
     assert torch.isfinite(phase_dc_loss(plane))
+
+
+def test_optical_router_hard_load_loss_uses_hard_value_and_soft_gradient() -> None:
+    logits = torch.tensor(
+        [[0.0, 0.1, 0.2, -0.1]] * 8, requires_grad=True
+    )
+    probabilities = torch.softmax(logits, dim=-1)
+    selected = torch.zeros_like(probabilities, dtype=torch.bool)
+    selected[:, 1:3] = True
+    loss = hard_topk_load_balance_loss(
+        {"probabilities": probabilities, "selected_mask": selected},
+        num_experts=4,
+        top_k=2,
+    )
+    assert float(loss.detach()) == pytest.approx(1.0)
+    loss.backward()
+    assert logits.grad is not None
+    assert torch.isfinite(logits.grad).all()
+    assert float(logits.grad.abs().sum()) > 0.0
 
 
 def test_report_uses_sample_standard_deviation_for_repeated_runs() -> None:
