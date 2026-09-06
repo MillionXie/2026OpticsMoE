@@ -28,6 +28,7 @@ def sha256_ids(rows: list[dict[str, Any]]) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--frames", type=int, required=True, choices=core.COUNTS)
+    parser.add_argument("--target", choices=sorted(core.PROMPTS), default="temporal")
     parser.add_argument("--image-size", type=int, default=448)
     parser.add_argument("--batch-size", type=int, default=2)
     parser.add_argument("--decode-workers", type=int, default=4)
@@ -55,7 +56,7 @@ def main() -> int:
         local_files_only=True,
         trust_remote_code=True,
     )
-    prompt = core.render_prompt(processor)
+    prompt = core.render_prompt(processor, args.target)
     model = (
         Qwen3VLForConditionalGeneration.from_pretrained(
             str(model_path),
@@ -71,14 +72,15 @@ def main() -> int:
     )
     identity = {
         "schema_version": 1,
-        "feature_contract": "frozen_qwen3vl_temporal_last_valid_hidden_2048_v1",
+        "feature_contract": f"frozen_qwen3vl_{args.target}_last_valid_hidden_2048_v1",
         "model": str(model_path),
         "frame_count": args.frames,
         "frame_fractions": core.FRAME_FRACTIONS[args.frames],
         "image_size_wh": [args.image_size, args.image_size],
         "processor_pixels_per_frame": args.image_size * args.image_size,
         "center_crop_short_side_fraction": 0.65,
-        "prompt": core.PROMPT,
+        "target": args.target,
+        "prompt": core.PROMPTS[args.target],
         "sample_count": len(rows),
         "sample_order_sha256": sha256_ids(rows),
         "qwen_trainable_parameters": 0,
@@ -153,7 +155,7 @@ def main() -> int:
         "identity": identity,
         "sample_ids": [row["sample_id"] for row in rows],
         "splits": [row["split"] for row in rows],
-        "targets": torch.tensor([row["temporal"] for row in rows], dtype=torch.float32),
+        "targets": torch.tensor([row[args.target] for row in rows], dtype=torch.float32),
         "features": all_features,
     }
     atomic_save(output, payload)

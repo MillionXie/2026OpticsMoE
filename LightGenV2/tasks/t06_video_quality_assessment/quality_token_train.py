@@ -140,15 +140,23 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
 
     cache_path = args.feature_root / f"frames{args.frames}" / "qwen_prompt_features.pt"
     payload = torch.load(cache_path, map_location="cpu", weights_only=False)
+    target_name = str(args.target)
+    identity_target = str(payload.get("identity", {}).get("target", "temporal"))
+    if identity_target != target_name:
+        raise RuntimeError(
+            f"Feature target {identity_target!r} does not match requested {target_name!r}"
+        )
     feature_shape = tuple(payload["features"].shape)
     if feature_shape == (2808, 2, 2048):
         features = payload["features"][:, 1, :].float().contiguous()
         targets = payload["targets"][:, 1].float().contiguous()
+        if target_name != "temporal":
+            raise RuntimeError("Legacy two-prompt cache is only valid for temporal")
         feature_task_selection = "temporal index 1 from two-prompt cache"
     elif feature_shape == (2808, 2048):
         features = payload["features"].float().contiguous()
         targets = payload["targets"].float().contiguous()
-        feature_task_selection = "temporal-only cache"
+        feature_task_selection = f"{target_name}-only cache"
     else:
         raise RuntimeError(f"Unexpected cache shape: {feature_shape}")
     splits = payload["splits"]
@@ -281,7 +289,7 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
         "best_epoch": best_epoch,
         "metrics": final_metrics,
         "feature_identity": payload["identity"],
-        "selection_policy": "highest test Temporal SRCC; no validation",
+        "selection_policy": f"highest test {target_name.title()} SRCC; no validation",
         "loss": "plain five-class cross entropy with hard equidistant train-range levels",
         "all_qwen_parameters_frozen": True,
         "trainable_parameters": 10240,
@@ -331,7 +339,8 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
         "best_test_metrics": final_metrics,
         "training_seconds": training_seconds,
         "loss": "cross_entropy_only",
-        "quality_level_rule": "five equal-width intervals over train Temporal MOS min/max",
+        "target": target_name,
+        "quality_level_rule": f"five equal-width intervals over train {target_name.title()} MOS min/max",
         "train_score_min": train_min,
         "train_score_max": train_max,
         "boundaries": boundaries.tolist(),
@@ -365,6 +374,7 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--frames", type=int, required=True)
+    parser.add_argument("--target", choices=("spatial", "temporal"), default="temporal")
     parser.add_argument("--epochs", type=int, default=50)
     parser.add_argument("--batch-size", type=int, default=512)
     parser.add_argument("--learning-rate", type=float, default=1.0e-3)

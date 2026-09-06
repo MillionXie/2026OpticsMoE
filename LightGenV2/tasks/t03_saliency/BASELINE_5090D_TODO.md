@@ -15,7 +15,9 @@
 - 计时起点：输入进入第一个原生 Vision Transformer block 之前。
 - 计时终点：`224×224` 显著性图已经输出之后。
 - 不计文件读取、JPEG 解码和 block 之前的 patch/token embedding；不得只计单个 block。
-- batch=1，先 warm-up 50 次，再用 CUDA Event + `torch.cuda.synchronize()` 测 200 次；报告 mean、median、P5、P95（ms/样本）。
+- batch=1，模型只加载一次，完整 test 连续运行；不显式 warm-up，第一条 test 也进入
+  统计。用 CUDA Event + `torch.cuda.synchronize()` 报告 mean、median、P5、P95
+  （ms/样本）。
 
 ## 功耗
 
@@ -24,4 +26,3 @@
 - 不能用 TDP 代替实测功率，也不能把主方法的光学 9.084 ms 当作 GPU 功耗结果。
 
 待填字段：`performance=null`、`speed_ms=null`、`power_w=null`，完成 5090D 实测后再替换。
-

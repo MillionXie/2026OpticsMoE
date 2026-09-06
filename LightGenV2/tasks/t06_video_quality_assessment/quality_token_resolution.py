@@ -16,7 +16,7 @@ import torch
 import yaml
 
 from .project import REPO_ROOT, TASK_DIR, sha256
-from .quality_token_common import FRAME_FRACTIONS, PROMPT
+from .quality_token_common import FRAME_FRACTIONS, PROMPTS
 
 
 MODULE_ROOT = "LightGenV2.tasks.t06_video_quality_assessment"
@@ -73,8 +73,12 @@ def _validate(raw: dict[str, Any], model: Path, manifest: Path) -> None:
         or int(input_contract["effective_spatial_stride"]) != 32
     ):
         raise ValueError("Qwen3-VL patch/merge geometry contract changed")
-    if frames != (4, 9, 16):
-        raise ValueError(f"Formal frame-count contract changed: {frames}")
+    target = str(raw["task"]["target"]).removesuffix("_mos")
+    expected_frames = (4, 9, 16) if target == "temporal" else (4,)
+    if frames != expected_frames:
+        raise ValueError(
+            f"Formal {target} frame-count contract must be {expected_frames}, got {frames}"
+        )
     if not model.is_dir():
         raise FileNotFoundError(f"Qwen model directory is missing: {model}")
     if not manifest.is_file():
@@ -85,8 +89,8 @@ def _validate(raw: dict[str, Any], model: Path, manifest: Path) -> None:
         raise ValueError("This profile forbids pre-test inference")
     if raw["model"]["qwen_frozen"] is not True:
         raise ValueError("Qwen must remain frozen")
-    if raw["task"]["prompt"] != PROMPT:
-        raise ValueError("Formal Temporal prompt differs from the executable contract")
+    if target not in PROMPTS or raw["task"]["prompt"] != PROMPTS[target]:
+        raise ValueError(f"Formal {target} prompt differs from the executable contract")
     configured_fractions = raw["input"]["frame_fractions"]
     for count in frames:
         values = configured_fractions.get(count, configured_fractions.get(str(count)))
@@ -210,6 +214,7 @@ def main() -> int:
 
     python = sys.executable
     image_size = str(raw["input"]["image_size"])
+    target = str(raw["task"]["target"]).removesuffix("_mos")
     feature_root = run_dir / "features"
     checkpoint_root = run_dir / "checkpoints"
     evaluation_root = run_dir / "evaluation"
@@ -227,6 +232,8 @@ def main() -> int:
                         MODULE_ROOT + ".quality_token_extract",
                         "--frames",
                         str(count),
+                        "--target",
+                        target,
                         "--image-size",
                         image_size,
                         "--batch-size",
@@ -249,6 +256,8 @@ def main() -> int:
                         MODULE_ROOT + ".quality_token_train",
                         "--frames",
                         str(count),
+                        "--target",
+                        target,
                         "--epochs",
                         str(raw["training"]["epochs"]),
                         "--batch-size",
@@ -271,6 +280,8 @@ def main() -> int:
                         MODULE_ROOT + ".quality_token_dataset_once",
                         "--frames",
                         str(count),
+                        "--target",
+                        target,
                         "--scheme",
                         "scheme2_five_quality_tokens",
                         "--image-size",

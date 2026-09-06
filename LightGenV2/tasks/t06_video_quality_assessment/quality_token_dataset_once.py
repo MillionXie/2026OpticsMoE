@@ -13,6 +13,11 @@ import numpy as np
 import torch
 from torch import nn
 
+from LightGenV2.common.baseline_measurement import (
+    NvidiaSmiPowerSampler,
+    power_report,
+    save_power_samples,
+)
 from . import quality_token_common as core
 
 
@@ -89,6 +94,7 @@ def forward_once(
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--frames", type=int, required=True, choices=(4, 9, 16))
+    parser.add_argument("--target", choices=sorted(core.PROMPTS), default="temporal")
     parser.add_argument("--scheme", required=True, choices=(SCHEME1, SCHEME2))
     parser.add_argument("--image-size", type=int, required=True)
     parser.add_argument("--model", type=Path, required=True)
@@ -160,8 +166,13 @@ def main() -> int:
         quality_head = core.FiveNativeTokenRows(payload["state_dict"]["weight"]).to(device).eval()
         quality_scores = payload["level_scores"].float().to(device)
 
-    prompt = core.render_prompt(processor)
+    prompt = core.render_prompt(processor, args.target)
     timer = core.BoundaryTimer(model)
+    sampler = NvidiaSmiPowerSampler(gpu_index=0, interval_ms=50)
+    sampler.start()
+    sampler.set_phase("idle")
+    time.sleep(2.0)
+    sampler.set_phase(None)
     fractions = core.FRAME_FRACTIONS[args.frames]
     records: list[dict[str, Any]] = []
     loop_started = time.perf_counter()
@@ -172,22 +183,26 @@ def main() -> int:
         )
         torch.cuda.synchronize()
         preprocessing_ms = 1000.0 * (time.perf_counter() - preprocessing_started)
-        latency, prediction, timing = forward_once(
-            inputs=inputs,
-            model=model,
-            timer=timer,
-            scheme=args.scheme,
-            scalar_head=scalar_head,
-            target_mean=target_mean,
-            target_std=target_std,
-            quality_head=quality_head,
-            quality_scores=quality_scores,
-        )
+        sampler.set_phase(f"active:{index}")
+        try:
+            latency, prediction, timing = forward_once(
+                inputs=inputs,
+                model=model,
+                timer=timer,
+                scheme=args.scheme,
+                scalar_head=scalar_head,
+                target_mean=target_mean,
+                target_std=target_std,
+                quality_head=quality_head,
+                quality_scores=quality_scores,
+            )
+        finally:
+            sampler.set_phase(None)
         records.append(
             {
                 "sample_index": index,
                 "sample_id": row["sample_id"],
-                "target_temporal_mos": float(row["temporal"]),
+                "target_mos": float(row[args.target]),
                 "prediction": prediction,
                 "model_internal_cuda_ms": latency,
                 "preprocessing_ms": preprocessing_ms,
@@ -205,8 +220,9 @@ def main() -> int:
             )
     loop_wall_seconds = time.perf_counter() - loop_started
     timer.close()
+    power_samples = sampler.stop()
 
-    targets = np.asarray([record["target_temporal_mos"] for record in records], dtype=np.float64)
+    targets = np.asarray([record["target_mos"] for record in records], dtype=np.float64)
     predictions = np.asarray([record["prediction"] for record in records], dtype=np.float64)
     latencies = [record["model_internal_cuda_ms"] for record in records]
     report = {
@@ -215,6 +231,8 @@ def main() -> int:
         "protocol": "one_process_one_model_load_full_test_no_explicit_warmup",
         "scheme": args.scheme,
         "frame_count": args.frames,
+        "target": args.target,
+        "prompt": core.PROMPTS[args.target],
         "image_size_wh": [args.image_size, args.image_size],
         "test_videos": len(records),
         "explicit_warmup_forwards": 0,
@@ -237,7 +255,9 @@ def main() -> int:
         "model_internal_cuda_ms_all_558_first_included": summarize(latencies),
         "first_measured_video_cuda_ms": latencies[0],
         "preprocessing_ms": summarize([record["preprocessing_ms"] for record in records]),
-        "temporal_performance": core.metrics(targets, predictions),
+        "performance": core.metrics(targets, predictions),
+        f"{args.target}_performance": core.metrics(targets, predictions),
+        "power": power_report(power_samples, latencies),
         "processor_load_seconds": processor_load_seconds,
         "model_load_seconds": model_load_seconds,
         "test_loop_wall_seconds": loop_wall_seconds,
@@ -260,6 +280,7 @@ def main() -> int:
         / args.scheme
     )
     output.mkdir(parents=True, exist_ok=True)
+    save_power_samples(output / "power_samples.csv", power_samples)
     core.write_json(output / "report.json", report)
     with (output / "per_video_predictions_and_timing.csv").open(
         "w", encoding="utf-8", newline=""

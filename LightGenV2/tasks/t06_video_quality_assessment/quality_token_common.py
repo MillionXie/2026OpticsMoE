@@ -30,10 +30,17 @@ FRAME_FRACTIONS = {
     36: np.linspace(0.10, 0.90, 36).tolist(),
     49: np.linspace(0.10, 0.90, 49).tolist(),
 }
-PROMPT = (
-    "Please evaluate the temporal quality of this video and rate it using one of "
-    "the following five levels: Excellent, Good, Fair, Poor, or Bad."
-)
+PROMPTS = {
+    "temporal": (
+        "Please evaluate the temporal quality of this video and rate it using one of "
+        "the following five levels: Excellent, Good, Fair, Poor, or Bad."
+    ),
+    "spatial": (
+        "Please evaluate the spatial quality of this video and rate it using one of "
+        "the following five levels: Excellent, Good, Fair, Poor, or Bad."
+    ),
+}
+PROMPT = PROMPTS["temporal"]
 
 
 def sha256_file(path: Path) -> str:
@@ -64,6 +71,7 @@ def read_manifest(path: Path) -> list[dict[str, Any]]:
                 "sample_id": row["sample_id"],
                 "video_path": str(video.resolve()),
                 "split": row["split"],
+                "spatial": float(row["spatial"]),
                 "temporal": float(row["temporal"]),
             }
         )
@@ -114,11 +122,16 @@ def decode_random_seek(
     return frames, metadata, positions
 
 
-def render_prompt(processor: Any) -> str:
+def render_prompt(processor: Any, target: str = "temporal") -> str:
+    if target not in PROMPTS:
+        raise ValueError(f"target must be one of {sorted(PROMPTS)}, got {target!r}")
     messages = [
         {
             "role": "user",
-            "content": [{"type": "video"}, {"type": "text", "text": PROMPT}],
+            "content": [
+                {"type": "video"},
+                {"type": "text", "text": PROMPTS[target]},
+            ],
         }
     ]
     return processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)

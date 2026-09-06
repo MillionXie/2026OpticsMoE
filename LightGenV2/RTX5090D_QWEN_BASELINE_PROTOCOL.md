@@ -27,12 +27,17 @@ ABO 的 T07/T08 按当前要求暂不纳入；T05 数据协议未冻结，不先
 - 起点：已经形成 block 输入 hidden states，即将进入第一个原生 Transformer block。
 - 终点：任务结果已经形成。检索任务包含 query embedding 归一化以及对预先固定 gallery embedding 的相似度与 Top-K；像素任务包含读出头；生成任务包含生成和结构化解析。
 - 不计文件读取、图像/视频解码、tokenizer、patch/token embedding 以及第一个 block 之前的工作。
-- 先 warm-up 50 次，再用 CUDA Event 和显式同步测量 200 次；报告 mean、median、P5、P95，单位统一为 `ms/sample`。
+- 论文表的主口径采用“一次启动、模型只加载一次、连续评估完整 test”的 dataset-once
+  测量：不做显式 warm-up、不在 test 前偷跑推理，第一条 test 也进入统计。报告 mean、
+  median、P5、P95，单位统一为 `ms/sample`。这样不会把模型加载时间计入，也不会只挑
+  完全热稳态的理想值。若另做 50 次 warm-up/200 次重复的 controlled benchmark，必须
+  单列，不能覆盖 dataset-once 主结果。
 - 不允许把单个 block 的耗时、模型加载时间或跨任务旧日志填入该列。
 
 ## 功耗边界
 
-- 与速度在同一批推理中测量，NVML 采样频率至少 20 Hz。
+- 与速度在同一批推理中测量，板卡 `power.draw` 采样频率至少 20 Hz；采样只在模型
+  推理窗口内记为 active，图像/视频解码间隙不得稀释 active mean。
 - 先记录稳定 idle 功率，再报告 active mean、peak 和扣除 idle 后的 `J/sample`：
   `energy/sample = integral(P_active - P_idle) dt / N`。
 - 不得用 TDP 代替实测，不得把共享服务器或不同型号 GPU 的结果换算成 5090 D 数值。
@@ -59,3 +64,41 @@ ABO 的 T07/T08 按当前要求暂不纳入；T05 数据协议未冻结，不先
 ```
 
 结果落盘时必须同时保存 train/test split SHA256、命令、Git commit、checkpoint SHA256 和原始逐次时间/功率记录，表格里的每个数值都应能回溯到这些证据。
+
+## 5090 D 正式入口
+
+下列命令均为 `batch=1`，并要求输出目录位于对应任务自己的
+`runs/simulation/<run_id>`。路径根据 5090 D 数据盘实际位置替换：
+
+```bash
+# T01 Caltech101：单图检索
+python -m LightGenV2.tasks.t01_object_retrieval.baseline_5090d \
+  --model /path/Qwen3-VL-Embedding-2B --data-root /path/data/Caltech101 \
+  --run-dir LightGenV2/tasks/t01_object_retrieval/runs/simulation/qwen_frozen_5090d
+
+# T02 LSP：单图关键点
+python -m LightGenV2.tasks.t02_keypoint_detection.baseline_5090d \
+  --model /path/Qwen3-VL-Embedding-2B --data-root /path/data/lsp_pose \
+  --config /path/lsp/resolved_config.yaml --checkpoint /path/lsp/teacher_best_train_loss.pt \
+  --run-dir LightGenV2/tasks/t02_keypoint_detection/runs/simulation/qwen_frozen_5090d
+
+# T03 SALICON：单图显著性
+python -m LightGenV2.tasks.t03_saliency.baseline_5090d \
+  --model /path/Qwen3-VL-Embedding-2B --data-root /path/data/SALICON \
+  --config /path/salicon/resolved_config.json --checkpoint /path/salicon/teacher_best.pt \
+  --run-dir LightGenV2/tasks/t03_saliency/runs/simulation/qwen_frozen_5090d
+
+# T04 OpenMoji：单图 + 文本指令，自回归输出两个 6x6 网格
+python -m LightGenV2.tasks.t04_semantic_interaction.baseline_5090d \
+  --model /path/Qwen3-VL-2B-Instruct --data-root /path/openmoji/pilot_gpu \
+  --run-dir LightGenV2/tasks/t04_semantic_interaction/runs/simulation/qwen_frozen_5090d
+
+# T06 LGVQ Spatial：每视频 4 帧、五质量词读出头
+python -m LightGenV2.tasks.t06_video_quality_assessment.quality_token_resolution \
+  --config LightGenV2/tasks/t06_video_quality_assessment/configs/baselines/qwen3vl_spatial_quality_tokens_4f_r448.yaml \
+  --phase all --model /path/Qwen3-VL-2B-Instruct --manifest /path/lgvq_split.csv
+```
+
+每个报告同时给出实测 `active_mean_w` 和 RTX 5090 D 的 575 W 额定上界，并由同一
+任务的平均时延分别换算实测能量与额定上界能量。额定值只能标为 theoretical upper
+bound，不能写成平均功率。

@@ -9,6 +9,12 @@ import yaml
 
 TASK_DIR = Path(__file__).parents[1]
 CONFIG = TASK_DIR / "configs" / "baselines" / "qwen3vl_quality_tokens_r448.yaml"
+SPATIAL_CONFIG = (
+    TASK_DIR
+    / "configs"
+    / "baselines"
+    / "qwen3vl_spatial_quality_tokens_4f_r448.yaml"
+)
 EXPECTED_PROMPT = (
     "Please evaluate the temporal quality of this video and rate it using one of "
     "the following five levels: Excellent, Good, Fair, Poor, or Bad."
@@ -49,6 +55,14 @@ class QualityTokenResolutionContractTest(unittest.TestCase):
         self.assertIn("rows.shape != (5, 2048)", source)
         self.assertIn("value.float() @ self.weight.t()", source)
         self.assertEqual(5 * 2048, 10240)
+
+    def test_spatial_baseline_is_four_frame_and_not_temporal_prompt(self) -> None:
+        raw = yaml.safe_load(SPATIAL_CONFIG.read_text(encoding="utf-8"))
+        self.assertEqual(raw["task"]["target"], "spatial_mos")
+        self.assertEqual(raw["input"]["frame_counts"], [4])
+        self.assertIn("spatial quality", raw["task"]["prompt"])
+        self.assertNotIn("temporal quality", raw["task"]["prompt"])
+        self.assertEqual(raw["model"]["trainable_parameters"], 10240)
 
     def test_dataset_once_source_has_no_warmup_loop(self) -> None:
         path = TASK_DIR / "quality_token_dataset_once.py"

@@ -15,7 +15,9 @@
 - 计时起点：图像/文本 hidden state 即将进入第一个原生 Transformer block。
 - 计时终点：可解析的 `6×6` 语义/编辑结果输出；包含全部 Transformer blocks 和生成/读出过程。
 - 不计文件读取、PNG 解码、tokenizer 和 block 之前的 embedding。
-- batch=1，warm-up 50 次；CUDA Event + 同步测 200 次，报告 mean、median、P5、P95（ms/样本）。
+- batch=1，模型只加载一次，完整 test 连续运行；不显式 warm-up，第一条 test 也进入
+  统计。CUDA Event 与同步 host 计时均保留；因终点包含 CPU JSON 解析，论文速度采用
+  host mean，并同时报告 CUDA mean、median、P5、P95。
 
 ## 功耗
 
@@ -23,4 +25,3 @@
 - 报告 idle、mean、peak，以及扣除 idle 后的 `J/sample`；不能使用 TDP 代替实测值。
 
 待填字段：`performance=null`、`speed_ms=null`、`power_w=null`，完成 5090D 实测后再替换。
-

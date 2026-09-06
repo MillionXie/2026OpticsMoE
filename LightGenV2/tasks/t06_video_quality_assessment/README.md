@@ -25,6 +25,12 @@ RMSE 7.991、MAE 5.992；没有达到预设 SRCC≥0.81，但一次光场输出�
 77.8%，且没有发生全局专家坍缩。正式配置和诚实的限制说明见
 [`reports/paper_results/temporal_multivideo16x4`](reports/paper_results/temporal_multivideo16x4/README.md)。
 
+论文“大模型 baseline”的 Spatial 行不是 Temporal 结果复用。它固定每视频 4 帧、
+448×448 输入、冻结 `Qwen3-VL-2B-Instruct`，只训练 5×2048 个质量词输出行。正式配置为
+`configs/baselines/qwen3vl_spatial_quality_tokens_4f_r448.yaml`，执行命令见仓库根目录
+`RTX5090D_QWEN_BASELINE_PROTOCOL.md`；性能、单视频速度和板卡功率必须在同一 RTX 5090 D
+dataset-once run 中产生。
+
 ## 不可静默改变的任务合同
 
 - Spatial 与 Temporal 是两个独立单指标模型；当前 profile 只输出一个 Temporal MOS。
