@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import shutil
 import statistics
 from pathlib import Path
 from typing import Any
@@ -159,6 +160,25 @@ def _plot(rows: list[dict[str, Any]], path: Path) -> None:
     plt.close(figure)
 
 
+def _copy_best_visualizations(
+    paths: dict[str, list[Path]], output: Path
+) -> None:
+    for key in ("main", "d2nn"):
+        # A multi-seed aggregate has no unique mask; copy only when the report
+        # was built from one formal run for that method.
+        if len(paths[key]) != 1:
+            continue
+        source = paths[key][0] / "best_visualization"
+        for filename, suffix in (
+            ("best_phase_overview.png", "best_phase_overview.png"),
+            ("best_phase_overview.pdf", "best_phase_overview.pdf"),
+            ("phase_statistics.json", "phase_statistics.json"),
+        ):
+            candidate = source / filename
+            if candidate.is_file():
+                shutil.copy2(candidate, output / f"{key}_{suffix}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Build the formal T01 comparison")
     parser.add_argument("--main", required=True, nargs="+")
@@ -219,6 +239,7 @@ def main() -> int:
         writer.writeheader()
         writer.writerows(aggregates)
     _plot(aggregates, output / "comparison_top1")
+    _copy_best_visualizations(paths, output)
     print(output)
     return 0
 

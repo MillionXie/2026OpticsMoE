@@ -43,6 +43,9 @@ epoch 1、每 5 epoch 及最终 epoch 周期性测试，并按最高 EMA test To
 - 平铺表格：`dc20_comparison/comparison.csv`
 - 汇总表格：`dc20_comparison/comparison_aggregate.csv`
 - 论文图：`dc20_comparison/comparison_top1.png` 和 `.pdf`
+- 最佳权重相位总览：`dc20_comparison/main_best_phase_overview.png` 与
+  `d2nn_best_phase_overview.png`；同名前缀的 `.pdf` 和
+  `*_phase_statistics.json` 用于论文重绘与数值复核。
 - 服务器正式权重：
   `LightGenV2/tasks/t01_object_retrieval/runs/simulation/moe_router_scale_dc20_strict_seed42/`
   与 `d2nn_matched_dc20_seed42/`。每个目录仅保留 `best_checkpoint.pt` 和

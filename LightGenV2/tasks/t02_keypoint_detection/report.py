@@ -6,6 +6,7 @@ import argparse
 import csv
 import hashlib
 import json
+import shutil
 from pathlib import Path
 from typing import Any
 
@@ -111,6 +112,7 @@ def _write_markdown(rows: list[dict[str, Any]], destination: Path) -> None:
         "- 主方法包含一次 Router CCD、一次 expert CCD 和一次 global CCD；D2NN 为两张 dense phase，并使 phase 参数量严格匹配 Top-2 激活专家的 100,352 个相位参数。",
         "- epoch 1、每 5 epoch 和最终 epoch 测试一次，按最高 test PCK@0.2 选 best；这是项目指定的 test 选模口径，不属于独立封存测试。",
         "- 每个正式 run 只保留 `best_checkpoint.pt` 与 `last_checkpoint.pt`；SHA256 见 `comparison.json`。",
+        "- 最佳权重相位总览已复制为 `main_best_phase_overview.*` 和 `d2nn_best_phase_overview.*`，对应数值见同名前缀的 `*_phase_statistics.json`。",
         "",
     ]
     destination.write_text("\n".join(lines), encoding="utf-8")
@@ -140,6 +142,19 @@ def main() -> int:
         writer.writeheader()
         writer.writerows(rows)
     _plot(rows, output / "lsp_pose_comparison")
+    for key, run_dir in (
+        ("main", Path(args.main)),
+        ("d2nn", Path(args.d2nn)),
+    ):
+        source = run_dir / "best_visualization"
+        for filename, suffix in (
+            ("best_phase_overview.png", "best_phase_overview.png"),
+            ("best_phase_overview.pdf", "best_phase_overview.pdf"),
+            ("phase_statistics.json", "phase_statistics.json"),
+        ):
+            candidate = source / filename
+            if candidate.is_file():
+                shutil.copy2(candidate, output / f"{key}_{suffix}")
     _write_markdown(rows, output / "RESULTS.md")
     print(output)
     return 0
