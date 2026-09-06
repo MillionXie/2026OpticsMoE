@@ -40,6 +40,10 @@ def _row(key: str, label: str, run_dir: Path) -> dict[str, Any]:
     architecture = (
         _read_json(architecture_path) if architecture_path.is_file() else {}
     )
+    training_latest_path = run_dir / "metrics" / "training_latest.json"
+    training_latest = (
+        _read_json(training_latest_path) if training_latest_path.is_file() else {}
+    )
     alpha: dict[str, Any] | None = None
     diagnostics_path = run_dir / "fusion_diagnostics_last_batch.json"
     if diagnostics_path.is_file():
@@ -65,6 +69,21 @@ def _row(key: str, label: str, run_dir: Path) -> dict[str, Any]:
         "physical_capture_count": architecture.get(
             "physical_capture_count_with_router",
             architecture.get("physical_capture_count", 0 if key == "qwen" else None),
+        ),
+        "final_router_hard_load_balance_loss": training_latest.get(
+            "router_hard_load_balance_loss"
+        ),
+        "final_vision_router_selection_min": training_latest.get(
+            "vision_router_min_selection_count"
+        ),
+        "final_vision_router_selection_max": training_latest.get(
+            "vision_router_max_selection_count"
+        ),
+        "final_language_router_selection_min": training_latest.get(
+            "language_router_min_selection_count"
+        ),
+        "final_language_router_selection_max": training_latest.get(
+            "language_router_max_selection_count"
         ),
         "fusion": alpha,
     }
@@ -177,6 +196,11 @@ def main() -> int:
         "mrr", "query_count", "selected_epoch", "selection_biased",
         "active_expert_phase_parameters", "d2nn_phase_parameters",
         "physical_capture_count",
+        "final_router_hard_load_balance_loss",
+        "final_vision_router_selection_min",
+        "final_vision_router_selection_max",
+        "final_language_router_selection_min",
+        "final_language_router_selection_max",
     ]
     with (output / "comparison.csv").open(
         "w", encoding="utf-8", newline=""
