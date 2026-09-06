@@ -167,6 +167,37 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     sampler.set_phase(None)
     records: list[dict[str, Any]] = []
     try:
+        for index in range(args.warmup_forwards):
+            row = rows[index % len(rows)]
+            relative = Path(str(row["relative_dir"]))
+            image_path = data_root / relative / str(row["files"]["source"])
+            with Image.open(image_path) as source:
+                image = source.convert("RGB")
+            messages = [{"role": "user", "content": [
+                {"type": "image", "image": image},
+                {"type": "text", "text": _prompt(str(row["instruction"]))},
+            ]}]
+            text = processor.apply_chat_template(
+                messages, tokenize=False, add_generation_prompt=True
+            )
+            inputs = processor(
+                text=[text], images=[image], padding=True, return_tensors="pt"
+            )
+            inputs = {key: value.to("cuda:0") for key, value in inputs.items()}
+            timer.reset()
+            generated = model.generate(
+                **inputs,
+                do_sample=False,
+                max_new_tokens=args.max_new_tokens,
+                use_cache=True,
+            )
+            new_tokens = generated[:, inputs["input_ids"].shape[1] :]
+            response = processor.batch_decode(new_tokens, skip_special_tokens=True)[0]
+            try:
+                _parse(response)
+            except Exception:
+                pass
+            timer.finish()
         for index, row in enumerate(rows):
             relative = Path(str(row["relative_dir"]))
             image_path = data_root / relative / str(row["files"]["source"])
@@ -267,8 +298,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "qwen_frozen": True,
         "trainable_parameters": 0,
         "test_samples": len(records),
-        "explicit_warmup_forwards": 0,
-        "first_test_sample_included": True,
+        "timing_samples": len(records),
+        "explicit_warmup_forwards": args.warmup_forwards,
+        "first_test_sample_included": False,
         "timing_boundary": (
             "input to native Vision Transformer block 0 through all native Vision/"
             "Language blocks, autoregressive compact-grid generation and CPU JSON parse"
@@ -304,6 +336,7 @@ def main() -> int:
     parser.add_argument("--run-dir", type=Path, required=True)
     parser.add_argument("--image-size", type=int, default=224)
     parser.add_argument("--max-new-tokens", type=int, default=192)
+    parser.add_argument("--warmup-forwards", type=int, default=50)
     run(parser.parse_args())
     return 0
 

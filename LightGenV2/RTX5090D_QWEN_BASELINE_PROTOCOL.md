@@ -27,11 +27,10 @@ ABO 的 T07/T08 按当前要求暂不纳入；T05 数据协议未冻结，不先
 - 起点：已经形成 block 输入 hidden states，即将进入第一个原生 Transformer block。
 - 终点：任务结果已经形成。检索任务包含 query embedding 归一化以及对预先固定 gallery embedding 的相似度与 Top-K；像素任务包含读出头；生成任务包含生成和结构化解析。
 - 不计文件读取、图像/视频解码、tokenizer、patch/token embedding 以及第一个 block 之前的工作。
-- 论文表的主口径采用“一次启动、模型只加载一次、连续评估完整 test”的 dataset-once
-  测量：不做显式 warm-up、不在 test 前偷跑推理，第一条 test 也进入统计。报告 mean、
-  median、P5、P95，单位统一为 `ms/sample`。这样不会把模型加载时间计入，也不会只挑
-  完全热稳态的理想值。若另做 50 次 warm-up/200 次重复的 controlled benchmark，必须
-  单列，不能覆盖 dataset-once 主结果。
+- 论文表统一采用受控热稳态口径：模型只加载一次，显式 warm-up 50 次且不统计，然后
+  连续测量 200 条 test；若任务完整 test 本身只有约 1,000 条且性能依赖同一次自回归
+  生成（如 OpenMoji），则 warm-up 后连续测完整 test。报告 mean、median、P5、P95，
+  单位统一为 `ms/sample`，不得剔除首条计时样本或其他慢样本。
 - 不允许把单个 block 的耗时、模型加载时间或跨任务旧日志填入该列。
 
 ## 功耗边界

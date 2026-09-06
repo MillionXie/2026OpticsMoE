@@ -15,8 +15,8 @@
 - 计时起点：图像/文本 hidden state 即将进入第一个原生 Transformer block。
 - 计时终点：可解析的 `6×6` 语义/编辑结果输出；包含全部 Transformer blocks 和生成/读出过程。
 - 不计文件读取、PNG 解码、tokenizer 和 block 之前的 embedding。
-- batch=1，模型只加载一次，完整 test 连续运行；不显式 warm-up，第一条 test 也进入
-  统计。CUDA Event 与同步 host 计时均保留；因终点包含 CPU JSON 解析，论文速度采用
+- batch=1，模型只加载一次；先显式 warm-up 50 次且不统计，再对完整 1,000 条 test
+  连续计时。CUDA Event 与同步 host 计时均保留；因终点包含 CPU JSON 解析，论文速度采用
   host mean，并同时报告 CUDA mean、median、P5、P95。
 
 ## 功耗

@@ -117,6 +117,20 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     sampler.set_phase(None)
     measurements: list[dict[str, Any]] = []
     try:
+        for index in range(args.warmup_forwards):
+            item = dataset[index % len(dataset)]
+            inputs = preprocess_images(
+                loaded.processor, [item["image"]], settings.instruction
+            )
+            validate_token_budgets(inputs, settings)
+            inputs = move_inputs(inputs, loaded.device)
+            timer.reset()
+            embedding = teacher_embeddings(
+                loaded.model, inputs, settings.embedding_dim
+            )
+            scores = embedding @ prototypes_gpu.T
+            _ranking = scores.argsort(dim=-1, descending=True)
+            timer.finish()
         for index in range(min(args.timing_samples, len(dataset))):
             item = dataset[index]
             inputs = preprocess_images(
@@ -161,8 +175,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "trainable_parameters": 0,
         "test_samples": len(bundle.test_samples),
         "timing_samples": len(measurements),
-        "explicit_warmup_forwards": 0,
-        "first_test_sample_included": True,
+        "explicit_warmup_forwards": args.warmup_forwards,
+        "first_test_sample_included": False,
         "timing_boundary": (
             "input to native Vision Transformer block 0 through all native Vision/"
             "Language blocks, 64-D Matryoshka normalization, fixed-gallery similarity "
@@ -196,6 +210,7 @@ def main() -> int:
     parser.add_argument("--data-root", type=Path, required=True)
     parser.add_argument("--run-dir", type=Path, required=True)
     parser.add_argument("--timing-samples", type=int, default=200)
+    parser.add_argument("--warmup-forwards", type=int, default=50)
     parser.add_argument("--embedding-batch-size", type=int, default=16)
     parser.add_argument("--num-workers", type=int, default=4)
     args = parser.parse_args()

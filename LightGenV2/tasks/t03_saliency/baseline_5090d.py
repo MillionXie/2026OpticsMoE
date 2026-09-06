@@ -143,6 +143,15 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     sampler.set_phase(None)
     measurements: list[dict[str, Any]] = []
     try:
+        for index in range(args.warmup_forwards):
+            item = dataset[index % len(dataset)]
+            inputs = preprocess_vision(loaded.processor, [item["image"]], loaded.device)
+            timer.reset()
+            logits, _spatial = model(
+                inputs["pixel_values"], inputs["image_grid_thw"]
+            )
+            _density = logits.flatten(1).softmax(-1)
+            timer.finish()
         for index in range(min(args.timing_samples, len(dataset))):
             item = dataset[index]
             inputs = preprocess_vision(loaded.processor, [item["image"]], loaded.device)
@@ -188,8 +197,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         ),
         "test_samples": len(bundle.validation_records),
         "timing_samples": len(measurements),
-        "explicit_warmup_forwards": 0,
-        "first_test_sample_included": True,
+        "explicit_warmup_forwards": args.warmup_forwards,
+        "first_test_sample_included": False,
         "timing_boundary": (
             "input to native Vision Transformer block 0 through all native Vision "
             "blocks and the trained lightweight saliency head to a 224x224 map"
@@ -224,6 +233,7 @@ def main() -> int:
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--run-dir", type=Path, required=True)
     parser.add_argument("--timing-samples", type=int, default=200)
+    parser.add_argument("--warmup-forwards", type=int, default=50)
     parser.add_argument("--performance-batch-size", type=int, default=8)
     parser.add_argument("--num-workers", type=int, default=4)
     run(parser.parse_args())
