@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t01_object_retrieval/runs/simulation/moe_router_scale_dc20_strict_seed42/best_checkpoint.pt",
+  "checkpoint_epoch": 25,
+  "weight_variant": "ema",
+  "physical_parameterization": "phase_rad = 2*pi*sigmoid(raw_phase)",
+  "plane_count": 10,
+  "planes": {
+    "Vision · expert 0": {
+      "checkpoint_key": "vision_optical.core.optical_branch.core.expert_layers.0.experts.0.raw_phase",
+      "shape_hw": [
+        224,
+        224
+      ],
+      "mean_rad": 3.14125657081604,
+      "std_rad": 0.31735146045684814,
+      "minimum_rad": 1.8766624927520752,
+      "maximum_rad": 4.383485794067383
+    },
+    "Vision · expert 1": {
+      "checkpoint_key": "vision_optical.core.optical_branch.core.expert_layers.0.experts.1.raw_phase",
+      "shape_hw": [
+        224,
+        224
+      ],
+      "mean_rad": 3.1425130367279053,
+      "std_rad": 0.3113088309764862,
+      "minimum_rad": 1.9903292655944824,
+      "maximum_rad": 4.31685209274292
+    },
+    "Vision · expert 2": {
+      "checkpoint_key": "vision_optical.core.optical_branch.core.expert_layers.0.experts.2.raw_phase",
+      "shape_hw": [
+        224,
+        224
+      ],
+      "mean_rad": 3.145156145095825,
+      "std_rad": 0.31430569291114807,
+      "minimum_rad": 1.7300028800964355,
+      "maximum_rad": 4.340424537658691
+    },
+    "Vision · expert 3": {
+      "checkpoint_key": "vision_optical.core.optical_branch.core.expert_layers.0.experts.3.raw_phase",
+      "shape_hw": [
+        224,
+        224
+      ],
+      "mean_rad": 3.1384284496307373,
+      "std_rad": 0.3127034306526184,
+      "minimum_rad": 2.0189831256866455,
+      "maximum_rad": 4.485856533050537
+    },
+    "Vision · global": {
+      "checkpoint_key": "vision_optical.core.optical_branch.core.global_phase.phase.raw_phase",
+      "shape_hw": [
+        478,
+        478
+      ],
+      "mean_rad": 3.141637086868286,
+      "std_rad": 0.3172858655452728,
+      "minimum_rad": 1.8306527137756348,
+      "maximum_rad": 4.424206256866455
+    },
+    "Language · expert 0": {
+      "checkpoint_key": "language_optical.core.optical_branch.core.expert_layers.0.experts.0.raw_phase",
+      "shape_hw": [
+        224,
+        224
+      ],
+      "mean_rad": 3.140960931777954,
+      "std_rad": 0.3319759666919708,
+      "minimum_rad": 1.6540610790252686,
+      "maximum_rad": 4.3972487449646
+    },
+    "Language · expert 1": {
+      "checkpoint_key": "language_optical.core.optical_branch.core.expert_layers.0.experts.1.raw_phase",
+      "shape_hw": [
+        224,
+        224
+      ],
+      "mean_rad": 3.1434664726257324,
+      "std_rad": 0.3020491600036621,
+      "minimum_rad": 1.9365359544754028,
+      "maximum_rad": 4.415044784545898
+    },
+    "Language · expert 2": {
+      "checkpoint_key": "language_optical.core.optical_branch.core.expert_layers.0.experts.2.raw_phase",
+      "shape_hw": [
+        224,
+        224
+      ],
+      "mean_rad": 3.1281304359436035,
+      "std_rad": 0.3199229836463928,
+      "minimum_rad": 1.8778599500656128,
+      "maximum_rad": 4.413094997406006
+    },
+    "Language · expert 3": {
+      "checkpoint_key": "language_optical.core.optical_branch.core.expert_layers.0.experts.3.raw_phase",
+      "shape_hw": [
+        224,
+        224
+      ],
+      "mean_rad": 3.127699613571167,
+      "std_rad": 0.30920857191085815,
+      "minimum_rad": 1.9859687089920044,
+      "maximum_rad": 4.308070182800293
+    },
+    "Language · global": {
+      "checkpoint_key": "language_optical.core.optical_branch.core.global_phase.phase.raw_phase",
+      "shape_hw": [
+        478,
+        478
+      ],
+      "mean_rad": 3.147019386291504,
+      "std_rad": 0.30316129326820374,
+      "minimum_rad": 1.799236536026001,
+      "maximum_rad": 4.378329753875732
+    }
+  }
+}

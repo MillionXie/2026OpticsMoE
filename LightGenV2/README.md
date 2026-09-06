@@ -8,8 +8,8 @@
 
 | 编号 | 任务 | 当前数据集 | 状态 | 入口 |
 |---|---|---|---|---|
-| T01 | 物品检索 | Caltech101（可替换） | 待迁移 | `tasks/t01_object_retrieval` |
-| T02 | 关键点检测 | LSP（可替换） | 待迁移 | `tasks/t02_keypoint_detection` |
+| T01 | 物品检索 | Caltech101（可替换） | DC20 正式复跑完成 | `tasks/t01_object_retrieval` |
+| T02 | 关键点检测 | LSP（可替换） | DC20 正式复跑完成 | `tasks/t02_keypoint_detection` |
 | T03 | 显著性分析 | SALICON（可替换） | 待迁移 | `tasks/t03_saliency` |
 | T04 | 语义交互 | OpenMoji（可替换） | 待迁移 | `tasks/t04_semantic_interaction` |
 | T05 | 视频分类 | 未确定 | 规划中 | `tasks/t05_video_classification` |

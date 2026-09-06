@@ -1,0 +1,68 @@
+{
+  "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t02_keypoint_detection/runs/simulation/moe_router_scale_dc20_seed42/best_checkpoint.pt",
+  "epoch": 100,
+  "weight_variant": "ema",
+  "plane_count": 6,
+  "planes": [
+    {
+      "name": "hybrid.optical_branch.core.router.raw_router_phase",
+      "shape": [
+        224,
+        224
+      ],
+      "circular_residual_std_rad": 1.5922484397888184,
+      "physical_phase_min_rad": 0.0005482729757204652,
+      "physical_phase_max_rad": 6.282630443572998
+    },
+    {
+      "name": "hybrid.optical_branch.core.expert_layers.0.experts.0.raw_phase",
+      "shape": [
+        224,
+        224
+      ],
+      "circular_residual_std_rad": 1.7628154754638672,
+      "physical_phase_min_rad": 0.17719446122646332,
+      "physical_phase_max_rad": 6.10027551651001
+    },
+    {
+      "name": "hybrid.optical_branch.core.expert_layers.0.experts.1.raw_phase",
+      "shape": [
+        224,
+        224
+      ],
+      "circular_residual_std_rad": 1.779593586921692,
+      "physical_phase_min_rad": 0.11919143795967102,
+      "physical_phase_max_rad": 6.143111705780029
+    },
+    {
+      "name": "hybrid.optical_branch.core.expert_layers.0.experts.2.raw_phase",
+      "shape": [
+        224,
+        224
+      ],
+      "circular_residual_std_rad": 1.753410816192627,
+      "physical_phase_min_rad": 0.11887065321207047,
+      "physical_phase_max_rad": 6.130337715148926
+    },
+    {
+      "name": "hybrid.optical_branch.core.expert_layers.0.experts.3.raw_phase",
+      "shape": [
+        224,
+        224
+      ],
+      "circular_residual_std_rad": 1.7605401277542114,
+      "physical_phase_min_rad": 0.16176965832710266,
+      "physical_phase_max_rad": 6.129557132720947
+    },
+    {
+      "name": "hybrid.optical_branch.core.global_phase.phase.raw_phase",
+      "shape": [
+        478,
+        478
+      ],
+      "circular_residual_std_rad": 1.728515386581421,
+      "physical_phase_min_rad": 0.2009114921092987,
+      "physical_phase_max_rad": 6.092648506164551
+    }
+  ]
+}

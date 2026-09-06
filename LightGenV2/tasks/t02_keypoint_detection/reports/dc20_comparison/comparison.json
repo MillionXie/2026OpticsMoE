@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "runs": [
+    {
+      "method": "Optical Router + MoE",
+      "run_dir": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t02_keypoint_detection/runs/simulation/moe_router_scale_dc20_seed42",
+      "selected_epoch": 100,
+      "test_samples": 1000,
+      "pck_at_0.2_torso": 0.5772857142857143,
+      "pckh_at_0.5_head": 0.7362857142857143,
+      "normalized_mean_error_torso": 0.34881073747384106,
+      "mean_pixel_error": 22.97134779262037,
+      "best_checkpoint_sha256": "e905d1f8a9e6196dd1bd69b1cda93f7ea1b1ad8964d0e246892c5e3e9d6a9873",
+      "last_checkpoint_sha256": "d2dff41d9b95c054570bd258eebe8b6233e19fbf1b4ef6f8d58d992d442bbaaf",
+      "phase_parameters": 429188,
+      "router_backend": "optical"
+    },
+    {
+      "method": "Matched D2NN",
+      "run_dir": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t02_keypoint_detection/runs/simulation/d2nn_matched_dc20_seed42",
+      "selected_epoch": 100,
+      "test_samples": 1000,
+      "pck_at_0.2_torso": 0.6751428571428572,
+      "pckh_at_0.5_head": 0.8054285714285714,
+      "normalized_mean_error_torso": 0.27357154779542153,
+      "mean_pixel_error": 18.020445114303648,
+      "best_checkpoint_sha256": "8b2ab497c24ec2c097ff896d9889aaafbedbb1d04dff4e92c7b146339d76cb4e",
+      "last_checkpoint_sha256": "fd20b7d6cb71bad4c2fbcd78386e96f234057b725ecba77666195002e2d96db7",
+      "phase_parameters": 100352,
+      "router_backend": "none"
+    }
+  ]
+}

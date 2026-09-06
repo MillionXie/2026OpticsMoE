@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t01_object_retrieval/runs/simulation/d2nn_matched_dc20_seed42/best_checkpoint.pt",
+  "checkpoint_epoch": 15,
+  "weight_variant": "ema",
+  "physical_parameterization": "phase_rad = 2*pi*sigmoid(raw_phase)",
+  "plane_count": 4,
+  "planes": {
+    "Vision · dense stage 1": {
+      "checkpoint_key": "vision_optical.core.optical_branch.phase1.raw_phase",
+      "shape_hw": [
+        224,
+        224
+      ],
+      "mean_rad": 3.144184112548828,
+      "std_rad": 0.24649296700954437,
+      "minimum_rad": 1.9959802627563477,
+      "maximum_rad": 4.0908942222595215
+    },
+    "Vision · dense stage 2": {
+      "checkpoint_key": "vision_optical.core.optical_branch.phase2.raw_phase",
+      "shape_hw": [
+        224,
+        224
+      ],
+      "mean_rad": 3.143676519393921,
+      "std_rad": 0.2662246823310852,
+      "minimum_rad": 2.0952579975128174,
+      "maximum_rad": 4.1237640380859375
+    },
+    "Language · dense stage 1": {
+      "checkpoint_key": "language_optical.core.optical_branch.phase1.raw_phase",
+      "shape_hw": [
+        224,
+        224
+      ],
+      "mean_rad": 3.144566059112549,
+      "std_rad": 0.2836572527885437,
+      "minimum_rad": 2.046382188796997,
+      "maximum_rad": 4.230346202850342
+    },
+    "Language · dense stage 2": {
+      "checkpoint_key": "language_optical.core.optical_branch.phase2.raw_phase",
+      "shape_hw": [
+        224,
+        224
+      ],
+      "mean_rad": 3.140012264251709,
+      "std_rad": 0.27668896317481995,
+      "minimum_rad": 2.0014355182647705,
+      "maximum_rad": 4.262429237365723
+    }
+  }
+}

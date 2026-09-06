@@ -135,3 +135,10 @@ CUDA_VISIBLE_DEVICES=2 python -m LightGenV2.tasks.t01_object_retrieval.run \
 CUDA_VISIBLE_DEVICES=3 python -m LightGenV2.tasks.t01_object_retrieval.run \
   --profile d2nn_dc20 --phase all
 ```
+
+完成的 DC20 正式单次复跑（seed 42）采用实际进入 loss 的 0.50 hard-load
+约束。光 Router Top-2 主方法 Top-1 为 **90.0%**、Top-3 为 96.5%、MRR 为
+0.9344；参数匹配 D2NN 为 **89.5%**，冻结 Qwen baseline 为 **99.5%**。
+Vision 专家选择范围为 1302–1340；Language 为 360–2640，已消除未使用专家但
+仍有集中，不能表述为完全均匀。完整证据与相位总览见
+[`reports/DC20_RESULTS.md`](reports/DC20_RESULTS.md)。
