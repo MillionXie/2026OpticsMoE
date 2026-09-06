@@ -106,5 +106,7 @@ python -m LightGenV2.tasks.t01_object_retrieval.report `
 - `student_metrics.json`、`retrieval_results.csv`、`confusion_matrix.png`：最终结果；
 - `best_optical_artifacts/` 与周期相位快照：相位变化证据。
 
-当前正式结果状态：等待本次三组统一协议训练完成后写入；不得引用历史目录中协议不同的
-81%、83% 或 90.5% 数字作为本次结果。
+当前正式单次结果（seed 42）：主方法 Top-1 91.0%，激活专家相位参数匹配 D2NN 90.5%，
+冻结 Qwen3-VL-Embedding-2B 99.5%。完整协议、参数口径、alpha、路由集中度、权重 SHA
+及限制见 [`reports/FORMAL_RESULTS.md`](reports/FORMAL_RESULTS.md)。在补齐独立重复前必须
+标为 single run，不得混用历史目录中协议不同的 81%、83% 或 90.5% 数字。

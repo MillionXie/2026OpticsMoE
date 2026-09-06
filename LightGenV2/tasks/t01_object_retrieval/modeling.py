@@ -79,6 +79,10 @@ class OpticalRouterScaleMatchedReplacement(BalancedFusionReplacement):
             {
                 "type": self.training_architecture_label,
                 "checkpoint_architecture": self.checkpoint_architecture,
+                "initialization": (
+                    "strict warmstart5 Stage-B EMA body; fresh optical Router "
+                    "phases; fusion gates reset"
+                ),
                 "router": {
                     "backend": "optical_detector_energy",
                     "top_k": self.router_top_k,
@@ -416,10 +420,22 @@ class D2NNMatchedReplacement(BalancedFusionReplacement):
     def student_architecture_report(self) -> dict[str, Any]:
         report = super().student_architecture_report()
         per_plane = self.vision_surrogate.core.optical_branch.phase1.raw_phase.numel()
+        optical_description = (
+            "two dense 224x224 phase stages with CCD/electronic reload; "
+            "no Router or experts"
+        )
+        for modality in ("vision", "language"):
+            if isinstance(report.get(modality), dict):
+                report[modality]["optical"] = optical_description
+                report[modality]["router"] = "none"
         report.update(
             {
                 "type": self.training_architecture_label,
                 "checkpoint_architecture": self.checkpoint_architecture,
+                "initialization": (
+                    "strict warmstart5 common electronics/readouts; fresh dense "
+                    "D2NN phases; fusion gates reset"
+                ),
                 "router": {"backend": "none", "trainable_parameters": 0},
                 "d2nn": {
                     "phase_layers_per_modality": 2,
