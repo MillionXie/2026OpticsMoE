@@ -37,6 +37,10 @@ total        = all router passes + all feature passes + bridge (if any) + task h
 
 T06 的 28.744 ms 是当前严格 16×4 整幅场软件图的结果，不是光学传播变慢：其中 frame router 需要处理 64 个 frame lane，video router 处理 16 个 video lane；当前 eager 实现的两个 router 后处理分别约 8.988 ms 和 2.308 ms。这个数值反映当前软件实现，可以优化，但本报告没有用理想并行或预拼接替换它。
 
+因此，对 16 个视频的时间比应从旧的 `985.691 / 9.084 = 108.51×` 修正为当前完整计算图的
+`985.691 / 28.744 = 34.29×`。108.51×只比较冻结 Qwen 与旧六层光学硬件总时长，遗漏了
+router、CCD 后处理、场重建和任务头，不能作为完整模型加速比。
+
 ## 测量边界与数据量
 
 - GPU：NVIDIA GeForce RTX 5090 D，33,670,758,400 bytes 显存；PyTorch 2.8.0+cu128，CUDA 12.8。
