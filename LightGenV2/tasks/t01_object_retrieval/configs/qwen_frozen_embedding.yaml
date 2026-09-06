@@ -1,0 +1,6 @@
+base_config: common.yaml
+
+lightgen:
+  model_variant: frozen_qwen_embedding
+
+output_dir: ../runs/simulation/frozen_qwen_embedding

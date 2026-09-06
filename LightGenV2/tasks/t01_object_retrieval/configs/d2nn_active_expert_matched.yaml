@@ -1,0 +1,12 @@
+base_config: common.yaml
+
+lightgen:
+  model_variant: d2nn_active_expert_matched
+
+# D2NN has no router, so this value is ignored by its parameter groups.
+training:
+  router_learning_rate: 0.0
+  lambda_router_balance: 0.0
+  lambda_router_importance: 0.0
+
+output_dir: ../runs/simulation/d2nn_active_expert_matched_seed42

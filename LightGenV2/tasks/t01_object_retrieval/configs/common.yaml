@@ -1,0 +1,76 @@
+base_config: ../../../../experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/configs/release/optical_power_topk2.yaml
+
+dataset:
+  dataset_root: ../../../../data/Caltech101
+  download: true
+  train_limit_per_sku: null
+  test_limit_per_sku: 20
+  gallery_images_per_sku: 3
+  reserve_test_before_train: true
+
+teacher_cache:
+  directory: ../runs/shared/caltech101_target10_teacher
+  derive_from: null
+
+router_experiment:
+  backend: optical
+  top_k: 2
+  optimization_seed: 42
+  source_checkpoint: ../../../../experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/runs/caltech101_warmstart5_stage2_joint_sealed_test/ema_best_train_loss_checkpoint.pt
+  source_sha256: 6a27f54d8c869cce46150583383a127b0ba47b3d34503f5753aa23974ac1e55d
+  protocol: equal_budget_adaptation
+  reset_router_parameters: true
+  weight_normalization: power_l2
+  straight_through: true
+
+balanced_fusion:
+  mode: scale_matched_convex
+  alpha_min: 0.01
+  alpha_max: 0.95
+  alpha_initial: 0.055
+  rms_epsilon: 0.000001
+  detach_scale_statistics: true
+
+training:
+  epochs: 30
+  learning_rate: 0.00005
+  adapter_learning_rate: 0.00002
+  readout_learning_rate: 0.00003
+  phase_learning_rate: 0.006
+  router_learning_rate: 0.01
+  weight_decay: 0.0
+  lambda_kd: 0.0
+  lambda_relational_kd: 0.0
+  lambda_ret: 1.0
+  lambda_gallery: 1.0
+  lambda_teacher_gallery: 0.0
+  lambda_router_balance: 0.05
+  lambda_router_importance: 0.005
+  lambda_ccd_operating_point: 0.02
+  ema_decay: 0.995
+  # Must remain false while the inherited sealed-router contract is parsed.
+  # LightGen's selection namespace below turns periodic testing on afterwards.
+  evaluate_test_each_epoch: false
+  resume_optimizer_state: false
+  phase_focus: {enabled: false, warmup_epochs: 0, interval_epochs: 2}
+  phase_diagnostics:
+    preview_interval_epochs: 5
+
+batching:
+  batch_size: 30
+  pk_skus_per_batch: 10
+  pk_images_per_sku: 3
+  optimizer_steps_per_epoch: null
+
+lightgen:
+  model_variant: optical_router_scale_matched_moe
+  selection:
+    use_periodic_test: true
+    test_interval_epochs: 5
+    primary_checkpoint: ema_best_observed_test_checkpoint.pt
+
+d2nn:
+  phase_size: 224
+  phase_layers_per_modality: 2
+
+output_dir: ../runs/simulation/placeholder

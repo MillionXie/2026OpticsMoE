@@ -1,0 +1,6 @@
+base_config: common.yaml
+
+lightgen:
+  model_variant: optical_router_scale_matched_moe
+
+output_dir: ../runs/simulation/moe_optical_router_scale_matched_seed42
