@@ -1,0 +1,11 @@
+base_config: common_dc20.yaml
+
+lightgen:
+  model_variant: d2nn_active_expert_matched
+
+loss:
+  router_balance: 0.0
+  router_importance: 0.0
+  router_hard_load_balance: 0.0
+
+output_dir: ../runs/simulation/d2nn_matched_dc20_seed73
