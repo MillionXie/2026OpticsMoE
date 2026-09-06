@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import statistics
 from pathlib import Path
 from typing import Any
 
@@ -69,6 +70,29 @@ def _row(key: str, label: str, run_dir: Path) -> dict[str, Any]:
     }
 
 
+def _aggregate(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    output: list[dict[str, Any]] = []
+    for key, label in METHODS:
+        selected = [row for row in rows if row["key"] == key]
+        if not selected:
+            raise RuntimeError(f"No completed run was supplied for {key}")
+        values = [float(row["top1"]) for row in selected]
+        output.append(
+            {
+                "key": key,
+                "method": label,
+                "run_count": len(selected),
+                "top1_mean": statistics.fmean(values),
+                "top1_std": statistics.stdev(values) if len(values) > 1 else 0.0,
+                "top1_min": min(values),
+                "top1_max": max(values),
+                "top3_mean": statistics.fmean(float(row["top3"]) for row in selected),
+                "mrr_mean": statistics.fmean(float(row["mrr"]) for row in selected),
+            }
+        )
+    return output
+
+
 def _plot(rows: list[dict[str, Any]], path: Path) -> None:
     plt.rcParams.update(
         {
@@ -85,9 +109,17 @@ def _plot(rows: list[dict[str, Any]], path: Path) -> None:
     )
     figure, axis = plt.subplots(figsize=(3.45, 1.97), constrained_layout=True)
     labels = [row["method"] for row in rows]
-    values = [100.0 * float(row["top1"]) for row in rows]
+    values = [100.0 * float(row["top1_mean"]) for row in rows]
+    errors = [100.0 * float(row["top1_std"]) for row in rows]
     colors = ["#2F7E79", "#7A7A7A", "#CF7B31"]
-    bars = axis.bar(range(len(rows)), values, color=colors, width=0.68)
+    bars = axis.bar(
+        range(len(rows)),
+        values,
+        yerr=errors,
+        capsize=2.0,
+        color=colors,
+        width=0.68,
+    )
     axis.set_ylabel("Top-1 retrieval accuracy (%)")
     axis.set_xticks(range(len(rows)), labels, rotation=15, ha="right")
     axis.set_ylim(0.0, max(100.0, max(values) * 1.12))
@@ -110,24 +142,33 @@ def _plot(rows: list[dict[str, Any]], path: Path) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Build the formal T01 comparison")
-    parser.add_argument("--main", required=True)
-    parser.add_argument("--d2nn", required=True)
-    parser.add_argument("--qwen", required=True)
+    parser.add_argument("--main", required=True, nargs="+")
+    parser.add_argument("--d2nn", required=True, nargs="+")
+    parser.add_argument("--qwen", required=True, nargs="+")
     parser.add_argument(
         "--output-dir",
         default=str(Path(__file__).resolve().parent / "reports" / "formal_comparison"),
     )
     args = parser.parse_args()
     paths = {
-        "main": Path(args.main).expanduser(),
-        "d2nn": Path(args.d2nn).expanduser(),
-        "qwen": Path(args.qwen).expanduser(),
+        "main": [Path(value).expanduser() for value in args.main],
+        "d2nn": [Path(value).expanduser() for value in args.d2nn],
+        "qwen": [Path(value).expanduser() for value in args.qwen],
     }
-    rows = [_row(key, label, paths[key]) for key, label in METHODS]
+    rows = [
+        _row(key, label, run_dir)
+        for key, label in METHODS
+        for run_dir in paths[key]
+    ]
+    aggregates = _aggregate(rows)
     output = Path(args.output_dir).expanduser().resolve()
     output.mkdir(parents=True, exist_ok=True)
     (output / "comparison.json").write_text(
-        json.dumps({"schema_version": 1, "systems": rows}, indent=2, ensure_ascii=False)
+        json.dumps(
+            {"schema_version": 1, "runs": rows, "aggregates": aggregates},
+            indent=2,
+            ensure_ascii=False,
+        )
         + "\n",
         encoding="utf-8",
     )
@@ -143,7 +184,17 @@ def main() -> int:
         writer = csv.DictWriter(handle, fieldnames=flat_fields)
         writer.writeheader()
         writer.writerows([{key: row.get(key) for key in flat_fields} for row in rows])
-    _plot(rows, output / "comparison_top1")
+    aggregate_fields = [
+        "key", "method", "run_count", "top1_mean", "top1_std", "top1_min",
+        "top1_max", "top3_mean", "mrr_mean",
+    ]
+    with (output / "comparison_aggregate.csv").open(
+        "w", encoding="utf-8", newline=""
+    ) as handle:
+        writer = csv.DictWriter(handle, fieldnames=aggregate_fields)
+        writer.writeheader()
+        writer.writerows(aggregates)
+    _plot(aggregates, output / "comparison_top1")
     print(output)
     return 0
 

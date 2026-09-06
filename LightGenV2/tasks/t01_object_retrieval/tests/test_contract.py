@@ -10,6 +10,7 @@ from LightGenV2.tasks.t01_object_retrieval.modeling import (
     DensePhasePlane,
     parameter_fairness_contract,
 )
+from LightGenV2.tasks.t01_object_retrieval.report import _aggregate
 from LightGenV2.tasks.t01_object_retrieval.settings import load_settings
 
 
@@ -64,3 +65,20 @@ def test_dense_phase_is_2pi_sigmoid_and_receives_gradient() -> None:
     loss.backward()
     assert plane.raw_phase.grad is not None
     assert torch.isfinite(plane.raw_phase.grad).all()
+
+
+def test_report_uses_sample_standard_deviation_for_repeated_runs() -> None:
+    rows = []
+    for key, values in (
+        ("main", [0.80, 0.82, 0.84]),
+        ("d2nn", [0.70, 0.72, 0.74]),
+        ("qwen", [0.995]),
+    ):
+        rows.extend(
+            {"key": key, "top1": value, "top3": value, "mrr": value}
+            for value in values
+        )
+    output = {row["key"]: row for row in _aggregate(rows)}
+    assert output["main"]["top1_mean"] == pytest.approx(0.82)
+    assert output["main"]["top1_std"] == pytest.approx(0.02)
+    assert output["qwen"]["top1_std"] == 0.0

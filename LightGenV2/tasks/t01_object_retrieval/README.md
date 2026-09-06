@@ -88,10 +88,13 @@ python -m LightGenV2.tasks.t01_object_retrieval.run `
 
 ```powershell
 python -m LightGenV2.tasks.t01_object_retrieval.report `
-  --main LightGenV2/tasks/t01_object_retrieval/runs/simulation/moe_router_scale_seed42 `
-  --d2nn LightGenV2/tasks/t01_object_retrieval/runs/simulation/d2nn_matched_seed42 `
+  --main LightGenV2/tasks/t01_object_retrieval/runs/simulation/moe_router_scale_seed42 LightGenV2/tasks/t01_object_retrieval/runs/simulation/moe_router_scale_seed43 LightGenV2/tasks/t01_object_retrieval/runs/simulation/moe_router_scale_seed44 `
+  --d2nn LightGenV2/tasks/t01_object_retrieval/runs/simulation/d2nn_matched_seed42 LightGenV2/tasks/t01_object_retrieval/runs/simulation/d2nn_matched_seed43 LightGenV2/tasks/t01_object_retrieval/runs/simulation/d2nn_matched_seed44 `
   --qwen LightGenV2/tasks/t01_object_retrieval/runs/simulation/qwen_frozen
 ```
+
+汇总器逐 run 保留原始值，并给主方法和 D2NN 输出三次重复的 mean±sample std；冻结 Qwen
+是确定性单次基线，标准差记为 0。
 
 ## 4. 每个 run 必须保留的证据
 
