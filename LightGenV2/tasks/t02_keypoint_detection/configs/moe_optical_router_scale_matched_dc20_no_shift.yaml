@@ -1,0 +1,21 @@
+base_config: common_dc20.yaml
+
+# Pixel-registration ablation: retain DC20, CCD gain/offset/read noise,
+# phase dropout, k-space filtering, optical Top-2 routing and scale-matched
+# fusion, but remove every simulated input/phase/detector translation.
+robust_vision:
+  perturbation:
+    input_shift_pixels: 0
+    phase_shift_pixels: 0
+    ccd_shift_pixels: 0
+
+router_experiment:
+  optical:
+    input_shift_pixels: 0
+    phase_shift_pixels: 0
+    ccd_shift_pixels: 0
+
+lightgen:
+  model_variant: optical_router_scale_matched_moe
+
+output_dir: ../runs/simulation/moe_router_scale_dc20_no_shift_seed42

@@ -29,6 +29,7 @@ from .visualize import render
 TASK_DIR = Path(__file__).resolve().parent
 PROFILES = {
     "main_dc20": "moe_optical_router_scale_matched_dc20.yaml",
+    "main_dc20_no_shift": "moe_optical_router_scale_matched_dc20_no_shift.yaml",
     "d2nn_dc20": "d2nn_active_expert_matched_dc20.yaml",
 }
 PHASES = {"prepare", "train", "evaluate", "all"}

@@ -20,6 +20,7 @@ TASK_DIR = Path(__file__).resolve().parents[1]
     ("filename", "variant"),
     (
         ("moe_optical_router_scale_matched_dc20.yaml", "optical_router_scale_matched_moe"),
+        ("moe_optical_router_scale_matched_dc20_no_shift.yaml", "optical_router_scale_matched_moe"),
         ("d2nn_active_expert_matched_dc20.yaml", "d2nn_active_expert_matched"),
     ),
 )
@@ -42,6 +43,21 @@ def test_formal_profiles_share_dc_robust_contract(filename: str, variant: str) -
 def test_d2nn_phase_budget_matches_top2_experts() -> None:
     settings = load_settings(TASK_DIR / "configs" / "d2nn_active_expert_matched_dc20.yaml")
     assert settings.d2nn_phase_layers * settings.d2nn_phase_size**2 == settings.top_k * settings.expert_size**2
+
+
+def test_no_shift_ablation_only_disables_pixel_translations() -> None:
+    settings = load_settings(
+        TASK_DIR / "configs" / "moe_optical_router_scale_matched_dc20_no_shift.yaml"
+    )
+    assert settings.language_optical_max_shift_pixels == 0
+    assert settings.language_optical_phase_shift_pixels == 0
+    assert settings.language_optical_ccd_shift_pixels == 0
+    assert settings.optical_router_input_shift_pixels == 0
+    assert settings.optical_router_phase_shift_pixels == 0
+    assert settings.optical_router_ccd_shift_pixels == 0
+    assert settings.language_optical_zero_order_enabled is True
+    assert settings.language_optical_amplitude_zero_order_intensity_min == pytest.approx(0.20)
+    assert settings.language_optical_ccd_noise_distribution == "truncated_biased_gaussian"
 
 
 def test_visualizer_reads_canonical_lsp_checkpoint(tmp_path: Path) -> None:

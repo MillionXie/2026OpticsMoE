@@ -30,6 +30,14 @@ CUDA_VISIBLE_DEVICES=1 python -m LightGenV2.tasks.t02_keypoint_detection.run \
   --profile d2nn_dc20 --phase all
 ```
 
+仅关闭输入、相位与 CCD 三类像素平移扰动，同时保留光 Router、DC20、强度噪声、
+phase dropout、k-space 和同尺度融合的 100-epoch 定位误差消融：
+
+```bash
+CUDA_VISIBLE_DEVICES=0 python -m LightGenV2.tasks.t02_keypoint_detection.run \
+  --profile main_dc20_no_shift --phase all
+```
+
 每个正式 run 只保留：
 
 - `best_checkpoint.pt`：周期性 test PCK@0.2 最佳的 EMA 权重；
