@@ -93,8 +93,8 @@ training:
   router_phase_learning_rate: 0.032
   weight_decay: 0.0001
   test_interval_epochs: 5
-  # Formal runs retain only best_observed_test_checkpoint.pt and
-  # last_checkpoint.pt. Set a positive interval only for a separately named
+  # Formal runs retain only best_checkpoint.pt and last_checkpoint.pt.
+  # Set a positive interval only for a separately named
   # mask-evolution study.
   phase_snapshot_interval_epochs: 0
 

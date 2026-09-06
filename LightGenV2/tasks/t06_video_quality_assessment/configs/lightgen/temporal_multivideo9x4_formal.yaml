@@ -1,6 +1,24 @@
 # Frozen evaluation profile for the selected nine-video x four-frame candidate.
-# Pass the recorded checkpoint explicitly with --checkpoint.
-base_config: temporal_multivideo9x4_contentroute_d30.yaml
+# Pass the recorded checkpoint explicitly with --checkpoint. The exploratory
+# staged-training profiles were removed after selection so that future agents
+# cannot accidentally initialize from deleted intermediate checkpoints.
+base_config: temporal_multivideo9x4_base.yaml
 output_dir: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo9x4_formal_evaluation
+random_seed: 114
+
+router:
+  temperature: 0.90
+
 training:
   initialization_checkpoint: null
+  epochs: 60
+  learning_rate: 0.00012
+  phase_learning_rate: 0.008
+  router_phase_learning_rate: 0.014
+
+loss:
+  router_balance_weight: 0.12
+  router_importance_weight: 0.04
+  router_diversity_weight: 0.30
+  slot_consistency_weight: 0.35
+  slot_consistency_interval: 1

@@ -19,8 +19,8 @@ class MultiVideoSettingsTest(unittest.TestCase):
         self.assertEqual(geometry.frame_expert_origins_local, ((0, 0), (0, 39), (39, 0), (39, 39)))
         self.assertEqual(geometry.video_expert_origins_local, ((0, 0), (0, 82), (82, 0), (82, 82)))
 
-    def test_layered_candidate_preserves_nine_by_four_semantics(self) -> None:
-        path = Path(__file__).parents[1] / "configs" / "lightgen" / "temporal_multivideo9x4_balanced.yaml"
+    def test_formal_candidate_preserves_nine_by_four_semantics(self) -> None:
+        path = Path(__file__).parents[1] / "configs" / "lightgen" / "temporal_multivideo9x4_formal.yaml"
         settings = load_settings(path)
         self.assertEqual(settings.videos_per_field, 9)
         self.assertEqual(settings.frame_count, 4)

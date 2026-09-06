@@ -113,25 +113,27 @@ python -m LightGenV2.tasks.t06_video_quality_assessment.build_lab_package
 ```powershell
 # 结构、梯度与禁止 Attention/Transformer 检查
 python -m LightGenV2.tasks.t06_video_quality_assessment.multivideo `
-  --config LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo9x4_balanced.yaml `
+  --config LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo9x4_formal.yaml `
   --phase smoke
 
-# 缓存/manifest/温启动权重检查
+# 缓存/manifest 检查
 python -m LightGenV2.tasks.t06_video_quality_assessment.multivideo `
-  --config LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo9x4_balanced.yaml `
+  --config LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo9x4_formal.yaml `
   --phase preflight
 
-# 正式训练；每 5 epoch 测试并按最高 test SRCC 选权重
+# 评估已经选定的正式权重
 python -m LightGenV2.tasks.t06_video_quality_assessment.multivideo `
-  --config LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo9x4_balanced.yaml `
-  --phase train
+  --config LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo9x4_formal.yaml `
+  --phase evaluate `
+  --checkpoint LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo9x4_contentroute_d30_s114/best_checkpoint.pt
 ```
 
 训练集每个 epoch 都会重新把 2,250 条视频随机分成 250 组，并随机交换组内九个物理
 slot；测试集固定为 62 个物理场、558 条视频，指标仍对 558 个单视频预测计算。训练损失
 同时包含 MOS 回归、排序/相关性、教师软标签、光电对齐、Top-2 专家均衡、保护带能量和
 周期性 slot 置换一致性。相位调制保留 20%–35% 相干直流分量、k 空间限制和输入/相位/
-CCD 位移扰动。所有候选配置均继承 `temporal_multivideo9x4_base.yaml`，不会覆盖旧结果。
+CCD 位移扰动。配置目录只保留 `base` 与 `formal`；历史 sweep 参数已经写进正式报告，
+不会再以一批失效 YAML 干扰后续操作。
 
 六次传播的含义依次为：36 帧光 router、144 帧专家、9 个视频内帧融合、9 个视频
 router、36 个视频专家、9 个视频 global。视频 router 只读取每视频 4 个已受 prompt
@@ -147,17 +149,17 @@ router、36 个视频专家、9 个视频 global。视频 router 只读取每视
 
 ```powershell
 python -m LightGenV2.tasks.t06_video_quality_assessment.multivideo_audit `
-  --config LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo9x4_refine_slot20.yaml `
-  --checkpoint LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/<run_id>/best_observed_test_checkpoint.pt
+  --config LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo9x4_formal.yaml `
+  --checkpoint LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo9x4_contentroute_d30_s114/best_checkpoint.pt
 ```
 
 `slot_cycle_audit.json` 是正式比较依据；只报告九个槽位合并后的全局专家占比不够，因为不同槽位固定选择
 不同专家也可能伪装成“均衡”。视频级 router 的 `selection_variation_fraction` 必须大于零，才能说明
 Top-2 选择确实随视频内容改变。
 
-若路由的全局占比均衡但 `selection_variation_fraction=0`，应使用 `contentroute` 配置继续训练。
-它最小化 `H(expert|sample)-H(expert)`：一方面让单条视频的 Top-2 选择明确，另一方面让同一物理槽位
-上的不同视频使用不同专家。固定选同一对专家、或者对四个专家始终犹豫不决，都不会被误判为有效均衡。
+正式损失中的路由 diversity 项最小化 `H(expert|sample)-H(expert)`：一方面让单条视频的
+Top-2 选择明确，另一方面让同一物理槽位上的不同视频使用不同专家。固定选同一对专家、
+或者对四个专家始终犹豫不决，都不会被误判为有效均衡。
 
 最佳 checkpoint 的六次相位排布可按论文常用的 Arial 7 pt 生成两张 18 cm × 5 cm 图：
 
