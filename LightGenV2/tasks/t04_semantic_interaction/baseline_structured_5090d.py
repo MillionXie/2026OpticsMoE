@@ -81,15 +81,10 @@ class StructuredOpenMojiHead(nn.Module):
         self.film = nn.Linear(width, width * 2)
         nn.init.zeros_(self.film.weight)
         nn.init.zeros_(self.film.bias)
-        self.spatial = nn.Sequential(
-            nn.Conv2d(width, width, 3, padding=1, bias=False),
-            nn.GroupNorm(8, width),
-            nn.GELU(),
-            nn.Conv2d(width, width, 3, padding=1, bias=False),
-            nn.GroupNorm(8, width),
-            nn.GELU(),
+        self.coordinate_projection = nn.Conv2d(2, width, 1)
+        self.spatial = nn.ModuleList(
+            [ConditionedReadoutBlock(width, dilation) for dilation in (1, 2, 4)]
         )
-        self.pool = nn.AdaptiveAvgPool2d((6, 6))
         self.category = nn.Conv2d(width, 17, 1)
         self.edit = nn.Conv2d(width, 1, 1)
 
@@ -110,15 +105,50 @@ class StructuredOpenMojiHead(nn.Module):
         condition_hidden = condition_hidden.to(dtype=head_dtype)
         spatial = self.image_projection(image_hidden)
         spatial = spatial.transpose(1, 2).reshape(-1, self.width, side, side)
+        spatial = F.interpolate(
+            spatial, size=(6, 6), mode="bilinear", align_corners=False
+        )
         condition = self.condition_projection(condition_hidden)
         gamma, beta = self.film(condition).chunk(2, dim=-1)
         spatial = spatial * (1.0 + torch.tanh(gamma)[:, :, None, None])
         spatial = spatial + beta[:, :, None, None]
-        spatial = self.pool(self.spatial(spatial))
+        axis = torch.linspace(-1.0, 1.0, 6, device=spatial.device, dtype=spatial.dtype)
+        yy, xx = torch.meshgrid(axis, axis, indexing="ij")
+        coordinates = torch.stack((xx, yy), dim=0).unsqueeze(0)
+        spatial = spatial + self.coordinate_projection(coordinates)
+        for block in self.spatial:
+            spatial = block(spatial, condition)
         return {
             "category_logits": self.category(spatial),
             "edit_logits": self.edit(spatial).squeeze(1),
         }
+
+
+class ConditionedReadoutBlock(nn.Module):
+    """Ordinary conditioned residual block inside the task readout head."""
+
+    def __init__(self, width: int, dilation: int) -> None:
+        super().__init__()
+        self.norm = nn.GroupNorm(8, width)
+        self.depthwise = nn.Conv2d(
+            width,
+            width,
+            3,
+            padding=dilation,
+            dilation=dilation,
+            groups=width,
+            bias=False,
+        )
+        self.pointwise = nn.Conv2d(width, width, 1, bias=False)
+        self.condition = nn.Linear(width, width * 2)
+
+    def forward(self, value: torch.Tensor, condition: torch.Tensor) -> torch.Tensor:
+        gamma, beta = self.condition(condition).chunk(2, dim=-1)
+        hidden = self.norm(value)
+        hidden = hidden * (1.0 + torch.tanh(gamma)[:, :, None, None])
+        hidden = hidden + beta[:, :, None, None]
+        hidden = self.pointwise(F.gelu(self.depthwise(hidden)))
+        return value + hidden
 
 
 def _trainable_parameters(module: nn.Module) -> int:
@@ -162,20 +192,45 @@ def _joint_hidden(
     inputs: dict[str, torch.Tensor],
     image_token_id: int,
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    outputs = model(
-        **inputs,
-        output_hidden_states=True,
-        use_cache=False,
-        return_dict=True,
-    )
+    visual_outputs: list[Any] = []
+
+    def capture_visual(_module: nn.Module, _inputs: Any, output: Any) -> None:
+        visual_outputs.append(output)
+
+    handle = model.model.visual.register_forward_hook(capture_visual)
+    try:
+        outputs = model(
+            **inputs,
+            output_hidden_states=True,
+            use_cache=False,
+            return_dict=True,
+        )
+    finally:
+        handle.remove()
     hidden = outputs.hidden_states[-1]
     image_mask = inputs["input_ids"].eq(image_token_id)
     image_counts = image_mask.sum(dim=1)
     if not torch.equal(image_counts, image_counts[:1].expand_as(image_counts)):
         raise RuntimeError(f"Inconsistent image-token counts: {image_counts.tolist()}")
-    image_hidden = torch.stack(
-        [hidden[index][image_mask[index]] for index in range(hidden.shape[0])]
-    )
+    if len(visual_outputs) != 1:
+        raise RuntimeError(f"Expected one native visual output, got {len(visual_outputs)}")
+    visual = visual_outputs[0]
+    while isinstance(visual, (tuple, list)):
+        visual = visual[0]
+    if not isinstance(visual, torch.Tensor):
+        raise RuntimeError(f"Unsupported native visual output type: {type(visual)!r}")
+    tokens_per_sample = int(image_counts[0])
+    if visual.ndim == 2:
+        image_hidden = visual.reshape(hidden.shape[0], tokens_per_sample, -1)
+    elif visual.ndim == 3:
+        image_hidden = visual
+    else:
+        raise RuntimeError(f"Unsupported native visual output shape: {list(visual.shape)}")
+    if image_hidden.shape[1] != tokens_per_sample:
+        raise RuntimeError(
+            "Native visual token count does not match language image placeholders: "
+            f"{list(image_hidden.shape)} versus {tokens_per_sample}"
+        )
     last_indices = inputs["attention_mask"].long().sum(dim=1).sub(1)
     condition_hidden = hidden[
         torch.arange(hidden.shape[0], device=hidden.device), last_indices
@@ -252,6 +307,7 @@ def extract_features(args: argparse.Namespace) -> dict[str, Any]:
             "prompt_contract": _prompt("<instruction>"),
             "image_size": args.image_size,
             "image_token_id": image_token_id,
+            "image_feature_source": "native Qwen visual output before language-token insertion",
             "image_hidden": torch.stack(image_features),
             "condition_hidden": torch.stack(condition_features),
             "source_grid": torch.stack(source_grids),
