@@ -1,0 +1,57 @@
+base_config: ../../t01_object_retrieval/configs/common_dc20.yaml
+
+dataset:
+  dataset_root: ../../../../data/abo_easy100_dataset_20260906
+  download: false
+
+qwen:
+  instruction: Retrieve the product title that best describes this product image.
+  local_files_only: true
+
+teacher_cache:
+  directory: ../runs/shared/abo_easy100_qwen64
+
+training:
+  epochs: 40
+  learning_rate: 0.00005
+  adapter_learning_rate: 0.00002
+  readout_learning_rate: 0.00005
+  phase_learning_rate: 0.006
+  router_learning_rate: 0.01
+  lambda_kd: 0.30
+  lambda_relational_kd: 0.0
+  lambda_ret: 0.25
+  lambda_gallery: 1.0
+  lambda_teacher_gallery: 0.0
+  lambda_router_balance: 0.08
+  lambda_router_importance: 0.02
+  lambda_router_hard_load_balance: 0.50
+  lambda_ccd_operating_point: 0.02
+  ema_decay: 0.995
+  phase_focus: {enabled: false, warmup_epochs: 0, interval_epochs: 2}
+  phase_diagnostics: {preview_interval_epochs: 40}
+
+batching:
+  batch_size: 30
+  pk_skus_per_batch: 10
+  pk_images_per_sku: 3
+  inference_batch_size: 4
+  teacher_batch_size: 8
+  num_workers: 4
+  optimizer_steps_per_epoch: null
+
+lightgen:
+  model_variant: optical_router_scale_matched_moe
+  selection:
+    use_periodic_test: true
+    test_interval_epochs: 5
+    primary_checkpoint: best_checkpoint.pt
+
+abo_image_text:
+  title_instruction: Represent the user's input.
+  temperature: 0.07
+  symmetric_title_to_image_weight: 0.25
+  teacher_kd_weight: 0.30
+  cache_file: ../runs/shared/abo_easy100_qwen64/teacher_image_title_embeddings.pt
+
+output_dir: ../runs/simulation/optical_router_moe_dc20_seed42
