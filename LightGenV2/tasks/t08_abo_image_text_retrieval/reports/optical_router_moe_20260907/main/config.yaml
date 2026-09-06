@@ -1,0 +1,352 @@
+dataset:
+  dataset_root: /DATA/DATA1/guest3/2026OpticsMoE/data/abo_easy100_dataset_20260906
+  download: false
+  download_url: https://data.caltech.edu/records/mzrjq-6wc02/files/caltech-101.zip?download=1
+  selected_skus:
+  - airplanes
+  - Motorbikes
+  - Faces
+  - Leopards
+  - accordion
+  - grand_piano
+  - scorpion
+  - sunflower
+  - watch
+  - yin_yang
+  merge_official_validation_into_train: false
+  train_limit_per_sku: null
+  test_limit_per_sku: 20
+  gallery_images_per_sku: 3
+  use_all_categories: false
+qwen:
+  model_id: Qwen/Qwen3-VL-Embedding-2B
+  cache_dir: null
+  local_files_only: true
+  instruction: Retrieve the product title that best describes this product image.
+  processor_min_pixels: 50176
+  processor_max_pixels: 50176
+  dtype: bfloat16
+  attn_implementation: sdpa
+  device: cuda
+  resolved_architecture:
+    vision_depth: 24
+    vision_hidden_size: 1024
+    text_depth: 28
+    text_hidden_size: 2048
+    deepstack_visual_indexes:
+    - 5
+    - 11
+    - 17
+retrieval:
+  image_size: 224
+  embedding_dim: 64
+  gallery_aggregation: mean_prototype
+batching:
+  teacher_batch_size: 8
+  batch_size: 30
+  pk_skus_per_batch: 10
+  pk_images_per_sku: 3
+  inference_batch_size: 4
+  num_workers: 4
+  optimizer_steps_per_epoch: null
+training:
+  epochs: 40
+  learning_rate: 5.0e-05
+  adapter_learning_rate: 2.0e-05
+  readout_learning_rate: 5.0e-05
+  weight_decay: 0.0
+  lambda_kd: 0.3
+  lambda_relational_kd: 0.0
+  lambda_ret: 0.25
+  lambda_gallery: 1.0
+  lambda_teacher_gallery: 0.0
+  lambda_router_balance: 0.08
+  lambda_router_importance: 0.02
+  lambda_router_response_consistency: 0.0
+  phase_dc:
+    enabled: true
+    weight: 0.005
+    start_epoch: 1
+  lambda_phase_dc: 0.005
+  phase_dc_start_epoch: 1
+  temperature: 0.07
+  gallery_temperature: 0.15
+  gallery_prototype_stop_gradient: true
+  router_learning_rate: 0.01
+  phase_learning_rate: 0.006
+  gradient_clip_norm: 1.0
+  phase_focus:
+    enabled: false
+    warmup_epochs: 0
+    interval_epochs: 2
+  phase_diagnostics:
+    gradient_measure_interval_batches: 10
+    motion_warning_epoch: 4
+    motion_warning_threshold_rad: 0.08
+    preview_interval_epochs: 40
+  ema_decay: 0.995
+  resume_optimizer_state: false
+  random_seed: 42
+  amp_enabled: true
+  evaluate_test_each_epoch: true
+  log_interval_batches: 5
+  teacher_used: true
+  episodic_prototype_loss: true
+  learning_rate_schedule: cosine
+  learning_rate_warmup_ratio: 0.05
+  lambda_router_hard_load_balance: 0.5
+augmentation:
+  enabled: true
+  crop_scale_min: 0.9
+  brightness_jitter: 0.1
+  contrast_jitter: 0.1
+  rotation_degrees: 5.0
+visualization_sample_count: 8
+output_dir: /DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation/optical_router_moe_dc20_seed42
+teacher_cache:
+  directory: /DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t08_abo_image_text_retrieval/runs/shared/abo_easy100_qwen64
+  path: /DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t08_abo_image_text_retrieval/runs/shared/abo_easy100_qwen64/teacher_embeddings.pt
+  derive_from: null
+student_initialization:
+  student_checkpoint: null
+  all101_pretraining: false
+  base_qwen_pretrained: true
+  base_qwen_frozen: true
+  teacher_embedding_supervision: true
+electronic:
+  type: depthwise_token_mixer_residual_mlp
+  optical_enabled: false
+  moe_enabled: false
+  width: 192
+  layers: 2
+  attention_enabled: false
+  token_mixing_enabled: true
+  token_mixer:
+    vision_type: depthwise_conv2d
+    language_type: depthwise_conv1d
+    vision_kernel_size: 3
+    language_kernel_size: 5
+    language_padding: causal_left
+    vision_padding: symmetric
+  deepstack_enabled: false
+  deepstack_auxiliary_count: 0
+  expansion: 2.0
+  dropout: 0.1
+  initial_residual_weight: 0.1
+  pooling: mean_max
+  embedding_head: LayerNorm(384) -> Linear(384,64) -> L2Normalize
+hybrid:
+  type: vision2_language2_moe4_10cm_robust_bounded_fusion
+  initial_electronic_checkpoint: null
+  freeze_electronic: false
+  initial_fusion:
+    block1: 0.055
+    block2: 0.055
+  minimum_optical_fusion: 0.05
+  fusion_parameterization: minimum + (1-minimum)*sigmoid(raw_gate)
+  router_enabled: true
+  router_train_noise_std: 0.1
+  router_loss_enabled: true
+language_optical:
+  layout: MoE4_2x2_topk2_optical_router
+  expert_size: 224
+  active_size: 478
+  canvas_size: 518
+  wavelength_nm: 532.0
+  pixel_pitch_um: 17.0
+  distance_m: 0.1
+  k_space:
+    enabled: true
+    theta_max_deg: 0.65
+  phase:
+    parameterization: sigmoid
+    init: small_normal
+    init_std: 0.02
+    dropout_mode: block_phase_bypass
+    dropout_p: 0.08
+    dropout_block_size: 8
+    activated_during_joint_training: true
+  perturbation:
+    input_shift_pixels: 16
+    phase_mask_shift_pixels: 16
+    ccd_roi_shift_pixels: 16
+    sampling: three_independent_batch_shared_integer_translations_per_stage
+    input_translation_domain: complex_field_on_full_518_canvas_before_phase
+    phase_translation_domain: complex_phase_modulation_on_full_518_canvas_with_identity_fill
+    ccd_translation_domain: intensity_on_full_518_canvas_before_478_roi_crop
+    gain_min: 0.4
+    gain_max: 2.5
+    offset_fraction: 0.05
+    read_noise_fraction: 0.015
+    ccd_noise:
+      distribution: truncated_biased_gaussian
+      mean_fraction: 0.03
+      std_fraction: 0.03
+      min_fraction: -0.03
+      max_fraction: 0.12
+      reference: per_frame_clean_mean_intensity
+      application: training_only_before_shared_ccd_normalization
+    zero_order:
+      enabled: true
+      amplitude_intensity_fraction_min: 0.2
+      amplitude_intensity_fraction_max: 0.3
+      phase_intensity_fraction_min: 0.2
+      phase_intensity_fraction_max: 0.3
+      random_relative_phase: true
+      semantics: coherent unmodulated field; configured fractions are intensity fractions
+        and are square-rooted before field mixing
+      application: training_only_before_10cm_propagation
+  normalization:
+    type: frame_mean_then_log_then_pool_row_layernorm
+    background_subtraction: false
+    relative_clip: 12.0
+  ccd_operating_point_loss_weight: 0.02
+hardware:
+  amplitude_slm:
+    width: 1024
+    height: 1024
+    pixel_pitch_um: 17.0
+    center_x: 512.0
+    center_y: 512.0
+    bright_value_uint8: 255
+    dark_value_uint8: 0
+    invert_before_export: false
+    mapping: one_to_one
+  phase_mask:
+    flip_vertical: true
+    flip_horizontal: false
+    width: 1920
+    height: 1200
+    pixel_pitch_um: 8.0
+    center_x: 980.0
+    center_y: 590.0
+    mapping: physical_pitch_nearest
+  ccd:
+    flip_vertical: false
+    flip_horizontal: false
+    physical_binning_factor: 1
+    target_size: 478
+    transport_size: 478
+router_experiment:
+  backend: optical
+  optimization_seed: 42
+  dataset_and_batch_seed: 42
+  top_k: 2
+  weight_normalization: power_l2
+  straight_through: true
+  reset_router_parameters: true
+  protocol: equal_budget_adaptation
+  source_checkpoint: /DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/runs/caltech101_warmstart5_stage2_joint_sealed_test/ema_best_train_loss_checkpoint.pt
+  source_sha256: 6a27f54d8c869cce46150583383a127b0ba47b3d34503f5753aa23974ac1e55d
+  source_test_used_for_selection: false
+  contract:
+    schema_version: 1
+    backend: optical
+    top_k: 2
+    temperature: 2.0
+    weight_normalization: power_l2
+    straight_through: true
+    amplitude_weight_domain: amplitude
+    geometry:
+      canvas_size: 518
+      active_size: 478
+      expert_size: 224
+      expert_pitch: 254
+      num_experts: 4
+      grid_rows: 2
+      grid_cols: 2
+    optical:
+      detector_intervals:
+      - - 164
+        - 223
+      - - 255
+        - 314
+      score_normalization: standardized_region_energy
+      energy_eps: 1.0e-08
+      capture_loss_scale: 0.1
+      phase_dropout_p: 0.05
+      phase_dropout_block_size: 8
+      input_shift_pixels: 16
+      phase_shift_pixels: 16
+      ccd_shift_pixels: 16
+      wavelength_nm: 532.0
+      logical_pixel_pitch_um: 17.0
+      distance_m: 0.1
+      k_space_enabled: true
+      theta_max_deg: 0.65
+      phase_parameterization: 2pi_sigmoid
+      phase_slm:
+        width: 1920
+        height: 1200
+        pixel_pitch_um: 8.0
+        center_xy:
+        - 980.0
+        - 590.0
+        flip_vertical: true
+        flip_horizontal: false
+  contract_sha256: 736891c7a55f4a2b33c3b8e7152e481af44c3a8fd991f09c11a5b321bc67201e
+  global_reuses_expert_routing: true
+  optical:
+    extra_router_exposures_per_sample: 2
+    detector_intervals:
+    - - 164
+      - 223
+    - - 255
+      - 314
+    detector_window_order:
+    - expert_0_top_left
+    - expert_1_top_right
+    - expert_2_bottom_left
+    - expert_3_bottom_right
+    score_normalization: standardized_region_energy
+    capture_loss_scale_inside_balance_loss: 0.1
+    phase_dropout_p: 0.05
+    phase_dropout_block_size: 8
+    input_shift_pixels: 16
+    phase_shift_pixels: 16
+    ccd_shift_pixels: 16
+    canvas_size: 518
+    ccd_roi_size: 478
+    input_size: 224
+    distance_m: 0.1
+    wavelength_nm: 532.0
+    logical_pixel_pitch_um: 17.0
+    learned_electronic_head_after_ccd: false
+    required_detector_center_angle_deg: 0.626767703800836
+router_hardware_measurement:
+  background_subtraction: false
+  uncalibrated_capture_metric: raw_capture_fraction
+  quality_gates:
+    maximum_saturated_pixel_fraction: 0.02
+    minimum_p99_uint8: 8.0
+    minimum_dynamic_range_uint8: 4.0
+    minimum_topk_probability_margin: 0.01
+lightgen:
+  task: t08_abo_image_text_retrieval
+  model_variant: optical_router_scale_matched_moe
+  selection:
+    use_periodic_test: true
+    test_interval_epochs: 5
+    primary_checkpoint: best_checkpoint.pt
+    criterion: maximum periodically observed EMA test Top-1
+    test_metrics_used_for_selection: true
+balanced_fusion:
+  mode: scale_matched_convex
+  equation: rE*((1-alpha)*E/rE + alpha*O/rO)/rms(mixture); RMS statistics are detached
+    per sample over all valid tokens and channels
+  alpha_min: 0.01
+  alpha_max: 0.95
+  alpha_initial: 0.055
+  rms_epsilon: 1.0e-06
+  detach_scale_statistics: true
+d2nn:
+  phase_size: 224
+  phase_layers_per_modality: 2
+  trainable_phase_parameters_per_modality: 100352
+  matching_target: top_k * expert_size^2 per modality
+abo_image_text:
+  protocol: single image query to 100 fixed English title candidates
+  dataset_config: /DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t08_abo_image_text_retrieval/configs/optical_router_moe_dc20.yaml
+  embedding_dim: 64
+  query_instruction: Retrieve the product title that best describes this product image.
+  document_instruction: Represent the user's input.

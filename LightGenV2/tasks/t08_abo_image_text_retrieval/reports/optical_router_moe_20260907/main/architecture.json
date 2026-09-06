@@ -1,0 +1,61 @@
+{
+  "type": "lightgen_t01_optical_router_scale_matched_moe",
+  "checkpoint_architecture": "lightgen_t01_optical_router_scale_matched_moe_10cm_17um_scale_matched_0p010_0p950_c736891c7a55f_v1",
+  "initialization": "strict warmstart5 Stage-B EMA body; fresh optical Router phases; fusion gates reset",
+  "original_qwen_frozen": true,
+  "electronic_and_optical_jointly_trainable": true,
+  "deepstack_enabled": false,
+  "physical_stage_order": [
+    "vision_expert",
+    "vision_global",
+    "language_expert",
+    "language_global"
+  ],
+  "vision": {
+    "input_hidden": 1024,
+    "width": 192,
+    "electronic": "2x depthwise_conv2d residual MLP",
+    "optical": "MoE4 expert CCD then global CCD",
+    "fusion": "scale-matched convex fusion with explicit coefficients (1-alpha, alpha) and common post-fusion RMS restoration",
+    "alpha_range": [
+      0.01,
+      0.95
+    ]
+  },
+  "language": {
+    "input_hidden": 2048,
+    "width": 192,
+    "electronic": "2x causal depthwise_conv1d residual MLP",
+    "optical": "MoE4 expert CCD then global CCD",
+    "fusion": "scale-matched convex fusion with explicit coefficients (1-alpha, alpha) and common post-fusion RMS restoration",
+    "qwen_replacement_indexes": [
+      0,
+      1
+    ],
+    "alpha_range": [
+      0.01,
+      0.95
+    ]
+  },
+  "ccd_readout": "no background subtraction; frame-mean scaling, clip/log1p, 478-to-224 pooling and independent per-stage readout",
+  "fusion_mode": "scale_matched_convex",
+  "fusion_equation": "En=E/stopgrad(rE); On=O/stopgrad(rO); M=(1-alpha)En+alpha*On; F=stopgrad(rE)*M/stopgrad(rms(M))",
+  "alpha_range": [
+    0.01,
+    0.95
+  ],
+  "alpha_initial": 0.055,
+  "scale_statistics_detached": true,
+  "scale_matching_scope": "per_sample_over_all_valid_tokens_and_channels",
+  "alpha_zero_is_exact_electronic_identity": true,
+  "router": {
+    "backend": "optical_detector_energy",
+    "top_k": 2,
+    "weight_normalization": "power_l2",
+    "straight_through_gradient": true,
+    "trainable_phase_parameters": 100352,
+    "extra_ccd_exposures": 2
+  },
+  "physical_feature_stage_count": 4,
+  "physical_capture_count_with_router": 6
+}

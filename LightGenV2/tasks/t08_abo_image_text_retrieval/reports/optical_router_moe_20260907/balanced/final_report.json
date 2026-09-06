@@ -1,0 +1,96 @@
+{
+  "status": "complete",
+  "task": "ABO easy100 image-to-title",
+  "method": "LightGen optical Router Top-2 MoE DC20 scale-matched fusion",
+  "test_samples": 2400,
+  "title_candidates": 100,
+  "embedding_dim": 64,
+  "best_epoch": 40,
+  "student": {
+    "recall_at_1": 0.7983333333333333,
+    "recall_at_5": 0.95375,
+    "recall_at_10": 0.9858333333333333,
+    "mrr": 0.867616268422718,
+    "mean_rank": 1.7195833333333332,
+    "median_rank": 1.0
+  },
+  "matched_frozen_qwen_64d": {
+    "recall_at_1": 0.5358333333333334,
+    "recall_at_5": 0.7958333333333333,
+    "recall_at_10": 0.8458333333333333,
+    "mrr": 0.6558960417140881,
+    "mean_rank": 6.44625,
+    "median_rank": 1.0
+  },
+  "frozen_qwen_2048d_reference": {
+    "recall_at_1": 0.7370833333333333,
+    "recall_at_5": 0.93375,
+    "recall_at_10": 0.9604166666666667,
+    "mrr": 0.8230330539977374
+  },
+  "fusion": {
+    "mode": "scale_matched_convex",
+    "ablation": "none",
+    "alpha_range": [
+      0.01,
+      0.95
+    ],
+    "vision": {
+      "block1": {
+        "alpha": 0.05461888760328293,
+        "electronic_coefficient": 0.9453811049461365,
+        "optical_coefficient": 0.05461888760328293,
+        "electronic_rms_before": 1.0349342823028564,
+        "optical_rms_before": 0.5427676439285278,
+        "pre_optical_to_electronic_rms_ratio": 0.5249395370483398,
+        "post_optical_to_electronic_rms_ratio": 1.0,
+        "fused_to_electronic_rms_ratio": 1.0,
+        "branch_cosine": 0.04455999657511711
+      },
+      "block2": {
+        "alpha": 0.05513568967580795,
+        "electronic_coefficient": 0.9448643326759338,
+        "optical_coefficient": 0.05513568967580795,
+        "electronic_rms_before": 1.3170770406723022,
+        "optical_rms_before": 0.6048302054405212,
+        "pre_optical_to_electronic_rms_ratio": 0.4602864682674408,
+        "post_optical_to_electronic_rms_ratio": 1.0,
+        "fused_to_electronic_rms_ratio": 1.0,
+        "branch_cosine": -0.03336012363433838
+      }
+    },
+    "language": {
+      "block1": {
+        "alpha": 0.04766978323459625,
+        "electronic_coefficient": 0.9523302316665649,
+        "optical_coefficient": 0.04766978323459625,
+        "electronic_rms_before": 1.0120608806610107,
+        "optical_rms_before": 0.4660865366458893,
+        "pre_optical_to_electronic_rms_ratio": 0.4605313539505005,
+        "post_optical_to_electronic_rms_ratio": 1.0,
+        "fused_to_electronic_rms_ratio": 1.0,
+        "branch_cosine": 0.20992983877658844
+      },
+      "block2": {
+        "alpha": 0.0475832000374794,
+        "electronic_coefficient": 0.9524167776107788,
+        "optical_coefficient": 0.0475832000374794,
+        "electronic_rms_before": 1.037641167640686,
+        "optical_rms_before": 0.4688709080219269,
+        "pre_optical_to_electronic_rms_ratio": 0.45186299085617065,
+        "post_optical_to_electronic_rms_ratio": 1.0,
+        "fused_to_electronic_rms_ratio": 1.0,
+        "branch_cosine": 0.26452624797821045
+      }
+    }
+  },
+  "selection_biased": true,
+  "selection": "best periodic EMA test R@1; test checked every 5 epochs",
+  "dataset_sha256": {
+    "train_csv": "f742fc9e2314b7fb2858ad486505c943f7b7e37493e5d601d8dcbf7740b5707b",
+    "test_csv": "4ca5834abf4bb4d614b41f05b5b2481b3d41720dd78c1c37b05923c97657dfb8",
+    "titles_csv": "c97e8da3c6c608a706f2cc0d284aeafb873fc6cc17d04a7c9f9f66b2135846c1",
+    "manifest_csv": "880b4f34a411df1bfbd98adc91b1c19651480323ee43e62ae4b84c36ca06c543"
+  },
+  "checkpoint_sha256": "b64689eb792da483486f721d4adf879f0a083107d7cbee63ad8ed7718c8b7144"
+}
