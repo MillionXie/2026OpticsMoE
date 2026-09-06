@@ -227,6 +227,29 @@ class StandardReload(nn.Module):
         return canvas.reshape(tokens.shape[0], 518, 518)
 
 
+class StandardFanout(nn.Module):
+    """Apply newly measured Router weights to an already encoded 224x224 field."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        indices = []
+        for top in (20, 274):
+            for left in (20, 274):
+                yy, xx = torch.meshgrid(
+                    torch.arange(top, top + 224),
+                    torch.arange(left, left + 224),
+                    indexing="ij",
+                )
+                indices.append((yy * 518 + xx).reshape(-1))
+        self.register_buffer("indices", torch.stack(indices), persistent=False)
+
+    def forward(self, field: torch.Tensor, weights: torch.Tensor) -> torch.Tensor:
+        values = (field[:, None] * weights[:, :, None, None]).reshape(field.shape[0], -1)
+        canvas = field.new_zeros(field.shape[0], 518 * 518)
+        canvas.scatter_(1, self.indices.reshape(1, -1).expand(field.shape[0], -1), values)
+        return canvas.reshape(field.shape[0], 518, 518)
+
+
 class StandardRouterPost(nn.Module):
     def __init__(self) -> None:
         super().__init__()
@@ -702,11 +725,11 @@ def _standard_task(task: str, device: torch.device, warmup: int, repeats: int) -
     vision = measure_modality("vision", spec.vision_tokens, False, 3)
     language = measure_modality("language", spec.language_tokens, True, 5) if spec.language else None
     router = StandardRouterPost().to(device).eval()
-    router_reload = StandardReload(196 if not spec.language else spec.vision_tokens).to(device).eval()
-    router_tokens = torch.randn(1, 196 if not spec.language else spec.vision_tokens, 192, device=device)
+    router_fanout = StandardFanout().to(device).eval()
+    router_field = torch.rand(1, 224, 224, device=device)
 
     def router_to_expert() -> torch.Tensor:
-        return router_reload(router_tokens, router(detector))
+        return router_fanout(router_field, router(detector))
 
     results.append(benchmark("router_ccd_to_expert_slm", router_to_expert, warmup=warmup, repeats=repeats, logical_samples_per_call=1, physical_fields_per_call=1, shape_contract="CCD [1,478,478] -> four ROI energies -> Top-2 power-L2 -> [1,518,518] expert amplitude"))
     router_ms = results[-1]["synchronized_wall_ms"]["median"]
@@ -714,16 +737,26 @@ def _standard_task(task: str, device: torch.device, warmup: int, repeats: int) -
     bridge_ms = 0.0
     if task == "t01":
         head = RetrievalHead().to(device).eval()
-        feature = torch.rand(1, 224, device=device)
-        results.append(benchmark("task_head", lambda: head(feature), warmup=warmup, repeats=repeats, logical_samples_per_call=1, physical_fields_per_call=1, shape_contract="last valid CCD row [1,224] -> LN -> Linear 64 -> L2 embedding"))
+        detector_rows = torch.rand(1, 224, 224, device=device)
+        results.append(benchmark("task_head", lambda: head(detector_rows[:, spec.language_tokens - 1]), warmup=warmup, repeats=repeats, logical_samples_per_call=1, physical_fields_per_call=1, shape_contract="select last valid row from [1,224,224] -> LN -> Linear 64 -> L2 embedding"))
     elif task == "t02":
         head = PoseHead().to(device).eval()
-        spatial = torch.randn(1, 192, 14, 14, device=device)
-        results.append(benchmark("task_head", lambda: head(spatial), warmup=warmup, repeats=repeats, logical_samples_per_call=1, physical_fields_per_call=1, shape_contract="[1,192,14,14] -> progressive decoder -> [1,14,56,56]"))
+        tokens = torch.randn(1, 196, 192, device=device)
+
+        def pose_head() -> torch.Tensor:
+            spatial = tokens.view(1, 7, 7, 2, 2, 192).permute(0, 5, 1, 3, 2, 4).reshape(1, 192, 14, 14)
+            return head(spatial)
+
+        results.append(benchmark("task_head", pose_head, warmup=warmup, repeats=repeats, logical_samples_per_call=1, physical_fields_per_call=1, shape_contract="restore block-major [1,196,192] -> [1,192,14,14] -> progressive decoder -> [1,14,56,56]"))
     elif task == "t03":
         head = SaliencyHead().to(device).eval()
-        spatial = torch.randn(1, 192, 14, 14, device=device)
-        results.append(benchmark("task_head", lambda: head(spatial), warmup=warmup, repeats=repeats, logical_samples_per_call=1, physical_fields_per_call=1, shape_contract="[1,192,14,14] -> progressive decoder -> [1,1,224,224]"))
+        tokens = torch.randn(1, 196, 192, device=device)
+
+        def saliency_head() -> torch.Tensor:
+            spatial = tokens.view(1, 7, 7, 2, 2, 192).permute(0, 5, 1, 3, 2, 4).reshape(1, 192, 14, 14)
+            return head(spatial)
+
+        results.append(benchmark("task_head", saliency_head, warmup=warmup, repeats=repeats, logical_samples_per_call=1, physical_fields_per_call=1, shape_contract="restore block-major [1,196,192] -> [1,192,14,14] -> progressive decoder -> [1,1,224,224]"))
     else:
         bridge = OpenMojiBridge().to(device).eval()
         language_value = torch.randn(1, 64, 192, device=device)
@@ -732,8 +765,13 @@ def _standard_task(task: str, device: torch.device, warmup: int, repeats: int) -
         results.append(benchmark("language_to_vision_bridge", lambda: bridge(language_value, vision_value), warmup=warmup, repeats=repeats, logical_samples_per_call=1, physical_fields_per_call=1, shape_contract="Language [1,64,192] mean/max -> condition [1,192] -> visual bias [1,196,1024]"))
         bridge_ms = results[-1]["synchronized_wall_ms"]["median"]
         head = OpenMojiHead().to(device).eval()
-        spatial = torch.randn(1, 192, 14, 14, device=device)
-        results.append(benchmark("task_head", lambda: head(spatial, condition), warmup=warmup, repeats=repeats, logical_samples_per_call=1, physical_fields_per_call=1, shape_contract="[1,192,14,14]+condition -> 3 residual blocks -> category [1,17,6,6], edit [1,6,6], task [1,4]"))
+        tokens = torch.randn(1, 196, 192, device=device)
+
+        def openmoji_head() -> tuple[torch.Tensor, ...]:
+            spatial = tokens.view(1, 7, 7, 2, 2, 192).permute(0, 5, 1, 3, 2, 4).reshape(1, 192, 14, 14)
+            return head(spatial, condition)
+
+        results.append(benchmark("task_head", openmoji_head, warmup=warmup, repeats=repeats, logical_samples_per_call=1, physical_fields_per_call=1, shape_contract="restore [1,196,192] -> [1,192,14,14]+condition -> 3 residual blocks -> category [1,17,6,6], edit [1,6,6], task [1,4]"))
 
     head_ms = results[-1]["synchronized_wall_ms"]["median"]
     physical = PHYSICAL_PASS_MS
