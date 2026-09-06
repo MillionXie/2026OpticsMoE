@@ -20,6 +20,7 @@ def test_formal_profiles(name: str, variant: str) -> None:
     assert settings.lightgen_model_variant == variant
     assert settings.router_backend == "optical"
     assert settings.top_k == 2
+    assert settings.gradient_clip_norm == 1.0
     assert settings.pixel_pitch_um == pytest.approx(17.0)
     assert settings.global_to_detector_distance_m == pytest.approx(0.10)
     assert settings.language_optical_zero_order_enabled is True

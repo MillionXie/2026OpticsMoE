@@ -19,6 +19,7 @@ training:
   phase_learning_rate: 0.006
   router_learning_rate: 0.0005
   weight_decay: 0.0
+  gradient_clip_norm: 1.0
   amp_enabled: true
   random_seed: 42
   log_interval_batches: 100

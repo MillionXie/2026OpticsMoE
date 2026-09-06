@@ -71,6 +71,7 @@ def load_settings(path: str | Path) -> Any:
     settings.map_kd_weight = 0.0
     settings.map_kd_temperature = 1.0
     settings.teacher_checkpoint = None
+    settings.gradient_clip_norm = float(d("training.gradient_clip_norm", 1.0))
     settings.router_hard_load_balance_weight = float(
         d("loss.router_hard_load_balance_weight", 0.50)
     )
