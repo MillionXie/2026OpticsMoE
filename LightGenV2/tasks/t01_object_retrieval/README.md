@@ -105,7 +105,7 @@ python -m LightGenV2.tasks.t01_object_retrieval.report `
 - `best_checkpoint.pt`：按周期 EMA test Top-1 选中的正式学生权重；
 - `last_checkpoint.pt`：最后一个 epoch 的 live 权重；
 - `student_metrics.json`、`retrieval_results.csv`、`confusion_matrix.png`：最终结果；
-- `best_visualization/phase_preview.png`：直接由正式 best 权重生成的相位预览。
+- `best_visualization/best_phase_overview.png`：直接由正式 best 权重生成的相位预览。
 
 正式 run 不再保留每 5 epoch 的相位 PT，也不保留多套 train-loss/live/EMA checkpoint
 别名；完整训练轨迹保存在 CSV，模型权重只保留 `best_checkpoint.pt` 和

@@ -12,6 +12,7 @@ from LightGenV2.tasks.t01_object_retrieval.modeling import (
 )
 from LightGenV2.tasks.t01_object_retrieval.report import _aggregate
 from LightGenV2.tasks.t01_object_retrieval.settings import load_settings
+from LightGenV2.tasks.t01_object_retrieval.visualize import render
 
 
 TASK_DIR = Path(__file__).resolve().parents[1]
@@ -82,3 +83,29 @@ def test_report_uses_sample_standard_deviation_for_repeated_runs() -> None:
     assert output["main"]["top1_mean"] == pytest.approx(0.82)
     assert output["main"]["top1_std"] == pytest.approx(0.02)
     assert output["qwen"]["top1_std"] == 0.0
+
+
+def test_checkpoint_phase_renderer_is_direct_and_self_describing(
+    tmp_path: Path,
+) -> None:
+    checkpoint = tmp_path / "best_checkpoint.pt"
+    torch.save(
+        {
+            "epoch": 7,
+            "metadata": {"weight_variant": "ema"},
+            "vision_optical": {
+                "core.optical_branch.phase1.raw_phase": torch.zeros(8, 8)
+            },
+            "language_optical": {
+                "core.optical_branch.phase1.raw_phase": torch.ones(8, 8)
+            },
+        },
+        checkpoint,
+    )
+    output = tmp_path / "visualization"
+    report = render(checkpoint, output)
+    assert report["checkpoint_epoch"] == 7
+    assert report["plane_count"] == 2
+    assert (output / "best_phase_overview.png").is_file()
+    assert (output / "best_phase_overview.pdf").is_file()
+    assert (output / "phase_statistics.json").is_file()

@@ -209,13 +209,11 @@ def _curate_student_artifacts(
     shutil.copy2(selected_source, best)
     visualization = output / "best_visualization"
     visualization.mkdir(parents=True, exist_ok=True)
-    replacement.save_multiplane_phase_preview(
-        visualization / "phase_preview.png",
-        title=(
-            "Selected best optical phase "
-            f"(epoch {int(payload.get('epoch', -1))})"
-        ),
-    )
+    # The task-level renderer reads the canonical checkpoint directly and is
+    # also usable after moving the run to another machine.
+    from .visualize import render as render_phase_checkpoint
+
+    render_phase_checkpoint(best, visualization)
     selection_path = output / "metrics" / "ema_best_observed_test.json"
     if selection_path.is_file():
         selection = json.loads(selection_path.read_text(encoding="utf-8"))
@@ -240,7 +238,7 @@ def _curate_student_artifacts(
         "last_checkpoint": str(output / "last_checkpoint.pt"),
         "periodic_phase_pt_retained": False,
         "best_phase_visualization": str(
-            visualization / "phase_preview.png"
+            visualization / "best_phase_overview.png"
         ),
         "removed": removed,
     }
