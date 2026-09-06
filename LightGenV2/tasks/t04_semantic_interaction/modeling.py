@@ -128,7 +128,7 @@ class LightGenOpenMojiEditor(OpenMojiOpticalEditor):
                         "remove": [2, 3],
                     }
                 ),
-                "semantic_code_loss_weight": settings.router_semantic_code_weight,
+                "semantic_code_loss_weight": self.settings.router_semantic_code_weight,
                 "inference_uses_task_label": False,
             },
             "fusion": {
