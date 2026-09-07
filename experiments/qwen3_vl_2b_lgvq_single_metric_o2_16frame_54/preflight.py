@@ -54,7 +54,11 @@ def run_preflight(
             "attention_modules": 0,
             "transformer_blocks": 0,
             "frame_count": settings.frame_count,
-            "qwen_vision_token_shape_per_video": [settings.frame_count, 49, 1024],
+            "qwen_vision_token_shape_per_video": [
+                settings.frame_count,
+                settings.token_grid * settings.token_grid,
+                settings.vision_input_width,
+            ],
             "quality_side_shape_per_video": [
                 settings.frame_count,
                 settings.token_grid * settings.token_grid,
