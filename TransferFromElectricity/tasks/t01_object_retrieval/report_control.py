@@ -194,7 +194,7 @@ def training_diagnostics(runs, dev_runs, output):
         for group,color in colors.items():
             selected=[r for r in subset if r['group']==group and r['relative_l2']>0]
             ax.plot([r['epoch'] for r in selected],[r['relative_l2'] for r in selected],color=color,label=group)
-        ax.set_yscale('log');ax.set_title(run.name.replace('20260907_v3_','').replace('_s42',''),fontsize=10)
+        ax.set_yscale('log');ax.set_title(run.name.split('_devdet_')[-1].replace('_s42',''),fontsize=10)
         ax.set_xlabel('Epoch');ax.set_ylabel('First-step ||update|| / ||parameter||')
         for boundary in (2.5,6.5):ax.axvline(boundary,color='#cccccc',linestyle='--',lw=.7)
     fig.legend(*axes[0,0].get_legend_handles_labels(),loc='outside lower center',ncol=4,fontsize=9)
@@ -205,7 +205,7 @@ def training_diagnostics(runs, dev_runs, output):
         fig,axes=plt.subplots(1,3,figsize=(15,4.5),layout='constrained')
         for run in group_runs:
             cfg=read(run/'protocol.json');history=read(run/'history.json');epochs=[h['epoch'] for h in history]
-            label=run.name.replace('20260907_v3_','').replace('_s42','') if name=='development' else LABELS[cfg['method']]
+            label=run.name.split('_devdet_')[-1].replace('_s42','') if name=='development' else LABELS[cfg['method']]
             axes[0].plot(epochs,[h['mean_task_loss'] for h in history],label=label)
             axes[1].plot(epochs,[100*h['live_validation']['top1_retrieval_accuracy'] for h in history])
             axes[2].plot(epochs,[h['expert_phase']['rms_change_rad'] for h in history])

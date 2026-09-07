@@ -669,3 +669,11 @@ best/last checkpoint 保留在服务器原 run，未复制进 Git。
 本任务 `deterministic_ops.py` 保留原生池化前向，将反向替换为相同平均池化线性映射的分离矩阵转置；
 针对重叠、整除、上采样输出尺寸验证原生前向完全一致、CPU float64 梯度在 1e-12 容差内一致。
 这是本训练进程内的可选替换，不修改 LightGenV2 / experiments 光学传播源码。
+
+2026-09-08 正式设置锁定：确定性开发网格源码 `14eb8e8d`，四组均 RTX 4090、640 更新，仅评估 validation。
+最后三轮 validation Top-1 均值依次为 base 37.33%、slow_e 36.83%、high_g 35.83%、slow_e_high_g 34.50%。
+按既定规则选择 base：电子/读出 LR=1e-4、LoRA LR=1e-4、decoder LR=3e-4。
+高 LoRA LR 的相位干预幅度约为 0.0556–0.0572 rad，基准约为 0.00816 rad；变动更大并未带来本次验证集提升。
+该差异不能证明所有低电子 LR 都无效；开发预算较短、只有一个 seed、验证集仅 200 张。
+`configs/control_v3/formal_{caltech,cifar,imagenette}.yaml` 在正式 test 评估前锁定上述选择，
+见 [开发选择原始记录](reports/control_v3_20260907/development_selection.json)。两项机制诊断继续执行，不参与改选 LR。
