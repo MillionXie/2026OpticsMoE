@@ -13,3 +13,7 @@
 - 禁止删除用户已有 run、缓存或未提交改动。
 - 用户明确要求不得占用 A100。启动前查询 GPU 型号和占用情况，显式设置 CUDA_VISIBLE_DEVICES，
   只使用非 A100 的可用设备；不能因空闲而改用 A100。
+- 必须按 nvidia-smi 返回的完整 GPU UUID 绑定设备，不能把显示序号当成 CUDA 序号。
+  启动前核验 UUID 对应型号，启动后核验 PyTorch 实际 device name 和进程所在 UUID。
+- 多任务共享服务器时，训练从独立、固定 GitHub commit 的 worktree 启动；只共享数据与 runs 产物路径，
+  不在其他任务运行的 checkout 上切换源码。

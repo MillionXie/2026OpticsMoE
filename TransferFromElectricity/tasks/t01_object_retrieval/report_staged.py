@@ -43,6 +43,7 @@ def summarize(runs, output):
         contracts.append((result['git_sha'],result['split_sha256'],json.dumps(comparable_cfg,sort_keys=True)))
         histories[method] = history
         rows.append({'method':method,'label':LABELS[method],'run_id':run.name,
+            'device':read(run/'environment.json')['device'],
             'selected_epoch':result['selected_epoch'],'selected_live_test':result['selected_live_test'],
             'final_ema_test':result['final_ema_test'],'selected_validation':history[result['selected_epoch']-1]['live_validation'],
             'selected_phase_rms_rad':result['selected_expert_phase']['rms_change_rad'],

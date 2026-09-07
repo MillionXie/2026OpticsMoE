@@ -301,7 +301,8 @@ CUDA_VISIBLE_DEVICES=0 python -m TransferFromElectricity.tasks.t01_object_retrie
 ### alpha40 强扰动分阶段对照结果
 
 四组均完成 20 轮。run ID：`20260907_alpha40_{fixed,direct,qwen_frozen,qwen_lora}_s42`，
-训练源码 `76db29f0`；使用 GPU 0/1/3/4（均为 RTX 4090），没有使用 A100。
+训练源码 `76db29f0`；设备更正：前三组实际为 RTX 4090，qwen_lora 误用了 A100。
+CUDA 数字枚举与 nvidia-smi 索引不同；原始 environment.json 保留真实型号，不能宣称全程未使用 A100。
 选择按本轮 validation；表内 test 仅作这轮机制对照。光学系数四处均保持约 0.5，满足 >=0.4。
 
 | 方法 | 所选 epoch | 所选 live test Top-1 | 最终 EMA test Top-1 | 所选专家相位 RMS 变化 / rad | 换回初始 expert 的 test Top-1 |
@@ -337,14 +338,27 @@ Vision Router 在后期覆盖四专家；Language Router 仍固定选择前两�
 `runs/smoke/20260907_caltech30_{direct,qwen_lora}_check`，已验证 30 类划分与导出一致性。
 
 完整三十类四组：`runs/simulation/20260907_caltech30_ideal_{fixed,direct,qwen_frozen,qwen_lora}_s42`，
-使用 GPU 0/1/3/4 的 RTX 4090，20 轮 / 2,320 batch，按共同 ideal profile。
+20 轮 / 2,320 batch，按共同 ideal profile。前三组为 RTX 4090；LoRA 原 run 误用 A100，
+发现后终止并保留。替代 run 为 `20260907_caltech30_ideal_qwen_lora_rtx_s42`，以完整 UUID 绑定 RTX 4090 从头训练。
 随机种子复验：`runs/simulation/20260907_ideal400_repeat_{direct,qwen_lora}_s{42,43,44}`，
-统一在 GPU 2/5 的 RTX 3090 上各自顺序运行三个种子，每组 400 次更新。seed=42 也重跑，
-使复验表内 GPU 型号一致；前面的 RTX 4090 诊断不混入三种子均值。
+原 direct 队列实际为 RTX 4090，原 LoRA 队列为 RTX 3090，不能宣称设备匹配。
+补跑 `20260907_ideal400_repeat_direct_rtx3090_s{42,43,44}`，与 LoRA 三组共同构成 RTX 3090 对照。
+每组 400 次更新；此前 RTX 4090 结果保留，不混入三种子主表。
 数据划分固定，三个种子重复使用相同 200 个 test query，不能当作 600 个独立测试样本。
-所有这些 run 固定执行 GitHub 上的 `8c354986`；报告工具的新版本不改变其训练源码。
+训练基准源码为 GitHub `8c354986`。共享 checkout 被其他 LGVQ 工作切换后，原 direct seed44 记录为
+`791299dc`、LoRA seed43 为 `8fc78530`；301 个相关 Python/config 文件的 Git blob 完全一致。
+报告记录各 run 实际 SHA，并校验源码指纹。后续训练移至独立 detached worktree
+`/DATA/DATA1/guest3/worktrees/2026OpticsMoE_static_experts_8c354986`，只用符号链接共享数据、历史初始化和本任务 runs。
 `report_suite.py` 分别汇总三种子稳定性与三十类结果，不把 400-step 和 2,320-batch 预算混为同一实验。
 
 不同任务的后续候选是 LightGenV2 T08 ABO easy100 图搜文：图像查询面对 100 个固定标题，
 文本候选也经过 Language 光学支路，能补充当前 Caltech 类别原型检索对真实文本处理的覆盖。
 该任务尚未在 TransferFromElectricity 启动；迁移时需重新约定验证划分，不能照搬其历史按 test 选模的口径。
+
+### GPU 绑定纠正
+
+2026-09-07 逐进程 UUID 审计发现 CUDA 序号 4 实际对应 nvidia-smi 6 的 A100。
+误用涉及 alpha40 LoRA smoke、alpha40 LoRA 正式 run、caltech30 LoRA smoke、caltech30 LoRA 正式 run。
+当时仍运行的最后一项已终止释放显存，前三项已经完成；没有删除或改写原始环境证据。
+此后不再用数字序号绑定，使用完整 GPU UUID，启动前后核验型号。`launch_rtx.py` 提供 RTX 专用入口，
+在导入训练器、加载模型前拒绝数字序号、A100 和 CUDA 型号不一致。

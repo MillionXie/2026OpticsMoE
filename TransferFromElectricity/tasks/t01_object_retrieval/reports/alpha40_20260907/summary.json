@@ -54,9 +54,2414 @@
   },
   "rows": [
     {
+      "method": "fixed",
+      "label": "Fixed experts",
+      "run_id": "20260907_alpha40_fixed_s42",
+      "device": "NVIDIA GeForce RTX 4090",
+      "selected_epoch": 20,
+      "selected_live_test": {
+        "system": "optical_student_query_vs_optical_student_gallery",
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 200,
+        "gallery_image_count": 30,
+        "sku_count": 10,
+        "top1_retrieval_accuracy": 0.6000000238418579,
+        "top3_retrieval_accuracy": 0.8199999928474426,
+        "mrr": 0.7353333830833435,
+        "per_sku": {
+          "airplanes": {
+            "query_count": 20,
+            "top1_accuracy": 0.75,
+            "top3_accuracy": 0.800000011920929
+          },
+          "Motorbikes": {
+            "query_count": 20,
+            "top1_accuracy": 0.20000000298023224,
+            "top3_accuracy": 0.75
+          },
+          "Faces": {
+            "query_count": 20,
+            "top1_accuracy": 0.8999999761581421,
+            "top3_accuracy": 0.949999988079071
+          },
+          "Leopards": {
+            "query_count": 20,
+            "top1_accuracy": 1.0,
+            "top3_accuracy": 1.0
+          },
+          "accordion": {
+            "query_count": 20,
+            "top1_accuracy": 0.30000001192092896,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "grand_piano": {
+            "query_count": 20,
+            "top1_accuracy": 0.44999998807907104,
+            "top3_accuracy": 0.8500000238418579
+          },
+          "scorpion": {
+            "query_count": 20,
+            "top1_accuracy": 0.25,
+            "top3_accuracy": 0.3499999940395355
+          },
+          "sunflower": {
+            "query_count": 20,
+            "top1_accuracy": 0.949999988079071,
+            "top3_accuracy": 1.0
+          },
+          "watch": {
+            "query_count": 20,
+            "top1_accuracy": 0.550000011920929,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "yin_yang": {
+            "query_count": 20,
+            "top1_accuracy": 0.6499999761581421,
+            "top3_accuracy": 0.699999988079071
+          }
+        },
+        "confusion_matrix": [
+          [
+            15,
+            0,
+            0,
+            0,
+            1,
+            0,
+            2,
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            4,
+            0,
+            0,
+            0,
+            3,
+            3,
+            0,
+            10,
+            0
+          ],
+          [
+            0,
+            0,
+            18,
+            0,
+            0,
+            1,
+            0,
+            0,
+            1,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            20,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            6,
+            0,
+            12,
+            2,
+            0,
+            0
+          ],
+          [
+            0,
+            2,
+            0,
+            0,
+            0,
+            9,
+            5,
+            0,
+            4,
+            0
+          ],
+          [
+            1,
+            2,
+            0,
+            3,
+            2,
+            1,
+            5,
+            0,
+            6,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            19,
+            0,
+            0
+          ],
+          [
+            1,
+            1,
+            1,
+            0,
+            3,
+            1,
+            2,
+            0,
+            11,
+            0
+          ],
+          [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            0,
+            4,
+            13
+          ]
+        ]
+      },
+      "final_ema_test": {
+        "system": "optical_student_query_vs_optical_student_gallery",
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 200,
+        "gallery_image_count": 30,
+        "sku_count": 10,
+        "top1_retrieval_accuracy": 0.6050000190734863,
+        "top3_retrieval_accuracy": 0.8199999928474426,
+        "mrr": 0.7386667132377625,
+        "per_sku": {
+          "airplanes": {
+            "query_count": 20,
+            "top1_accuracy": 0.75,
+            "top3_accuracy": 0.800000011920929
+          },
+          "Motorbikes": {
+            "query_count": 20,
+            "top1_accuracy": 0.25,
+            "top3_accuracy": 0.75
+          },
+          "Faces": {
+            "query_count": 20,
+            "top1_accuracy": 0.8999999761581421,
+            "top3_accuracy": 0.949999988079071
+          },
+          "Leopards": {
+            "query_count": 20,
+            "top1_accuracy": 0.949999988079071,
+            "top3_accuracy": 1.0
+          },
+          "accordion": {
+            "query_count": 20,
+            "top1_accuracy": 0.3499999940395355,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "grand_piano": {
+            "query_count": 20,
+            "top1_accuracy": 0.44999998807907104,
+            "top3_accuracy": 0.800000011920929
+          },
+          "scorpion": {
+            "query_count": 20,
+            "top1_accuracy": 0.25,
+            "top3_accuracy": 0.3499999940395355
+          },
+          "sunflower": {
+            "query_count": 20,
+            "top1_accuracy": 0.949999988079071,
+            "top3_accuracy": 1.0
+          },
+          "watch": {
+            "query_count": 20,
+            "top1_accuracy": 0.550000011920929,
+            "top3_accuracy": 0.949999988079071
+          },
+          "yin_yang": {
+            "query_count": 20,
+            "top1_accuracy": 0.6499999761581421,
+            "top3_accuracy": 0.699999988079071
+          }
+        },
+        "confusion_matrix": [
+          [
+            15,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            0,
+            3,
+            0
+          ],
+          [
+            0,
+            5,
+            0,
+            0,
+            0,
+            3,
+            3,
+            0,
+            9,
+            0
+          ],
+          [
+            0,
+            0,
+            18,
+            0,
+            0,
+            1,
+            0,
+            0,
+            1,
+            0
+          ],
+          [
+            1,
+            0,
+            0,
+            19,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            7,
+            0,
+            11,
+            2,
+            0,
+            0
+          ],
+          [
+            0,
+            2,
+            0,
+            0,
+            0,
+            9,
+            5,
+            0,
+            4,
+            0
+          ],
+          [
+            2,
+            2,
+            0,
+            2,
+            2,
+            1,
+            5,
+            0,
+            6,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            19,
+            0,
+            0
+          ],
+          [
+            1,
+            1,
+            1,
+            0,
+            3,
+            1,
+            2,
+            0,
+            11,
+            0
+          ],
+          [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            0,
+            4,
+            13
+          ]
+        ]
+      },
+      "selected_validation": {
+        "system": "optical_student_query_vs_optical_student_gallery",
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 100,
+        "gallery_image_count": 30,
+        "sku_count": 10,
+        "top1_retrieval_accuracy": 0.550000011920929,
+        "top3_retrieval_accuracy": 0.7900000214576721,
+        "mrr": 0.6957182288169861,
+        "per_sku": {
+          "airplanes": {
+            "query_count": 10,
+            "top1_accuracy": 0.699999988079071,
+            "top3_accuracy": 0.800000011920929
+          },
+          "Motorbikes": {
+            "query_count": 10,
+            "top1_accuracy": 0.10000000149011612,
+            "top3_accuracy": 0.800000011920929
+          },
+          "Faces": {
+            "query_count": 10,
+            "top1_accuracy": 1.0,
+            "top3_accuracy": 1.0
+          },
+          "Leopards": {
+            "query_count": 10,
+            "top1_accuracy": 0.8999999761581421,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "accordion": {
+            "query_count": 10,
+            "top1_accuracy": 0.6000000238418579,
+            "top3_accuracy": 1.0
+          },
+          "grand_piano": {
+            "query_count": 10,
+            "top1_accuracy": 0.10000000149011612,
+            "top3_accuracy": 0.5
+          },
+          "scorpion": {
+            "query_count": 10,
+            "top1_accuracy": 0.30000001192092896,
+            "top3_accuracy": 0.30000001192092896
+          },
+          "sunflower": {
+            "query_count": 10,
+            "top1_accuracy": 0.8999999761581421,
+            "top3_accuracy": 1.0
+          },
+          "watch": {
+            "query_count": 10,
+            "top1_accuracy": 0.4000000059604645,
+            "top3_accuracy": 1.0
+          },
+          "yin_yang": {
+            "query_count": 10,
+            "top1_accuracy": 0.5,
+            "top3_accuracy": 0.6000000238418579
+          }
+        },
+        "confusion_matrix": [
+          [
+            7,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            1,
+            1,
+            0
+          ],
+          [
+            0,
+            1,
+            0,
+            0,
+            1,
+            0,
+            1,
+            0,
+            7,
+            0
+          ],
+          [
+            0,
+            0,
+            10,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            9,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            6,
+            0,
+            3,
+            1,
+            0,
+            0
+          ],
+          [
+            1,
+            1,
+            0,
+            0,
+            0,
+            1,
+            5,
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            1,
+            0,
+            3,
+            1,
+            4,
+            0
+          ],
+          [
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            9,
+            0,
+            0
+          ],
+          [
+            3,
+            1,
+            0,
+            0,
+            2,
+            0,
+            0,
+            0,
+            4,
+            0
+          ],
+          [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            3,
+            5
+          ]
+        ]
+      },
+      "selected_phase_rms_rad": 0.0,
+      "selected_phase_piston_removed_rms_rad": 1.227318477958761e-07,
+      "mean_cross_expert_update_correlation": null,
+      "last_phase_rms_rad": 0.0,
+      "fusion": {
+        "vision": [
+          0.4975410997867584,
+          0.49782446026802063
+        ],
+        "language": [
+          0.49651461839675903,
+          0.49650344252586365
+        ]
+      },
+      "ablations": {
+        "initial_experts": {
+          "system": "optical_student_query_vs_optical_student_gallery",
+          "gallery_aggregation": "mean_prototype",
+          "query_count": 200,
+          "gallery_image_count": 30,
+          "sku_count": 10,
+          "top1_retrieval_accuracy": 0.6000000238418579,
+          "top3_retrieval_accuracy": 0.8199999928474426,
+          "mrr": 0.7353333830833435,
+          "per_sku": {
+            "airplanes": {
+              "query_count": 20,
+              "top1_accuracy": 0.75,
+              "top3_accuracy": 0.800000011920929
+            },
+            "Motorbikes": {
+              "query_count": 20,
+              "top1_accuracy": 0.20000000298023224,
+              "top3_accuracy": 0.75
+            },
+            "Faces": {
+              "query_count": 20,
+              "top1_accuracy": 0.8999999761581421,
+              "top3_accuracy": 0.949999988079071
+            },
+            "Leopards": {
+              "query_count": 20,
+              "top1_accuracy": 1.0,
+              "top3_accuracy": 1.0
+            },
+            "accordion": {
+              "query_count": 20,
+              "top1_accuracy": 0.30000001192092896,
+              "top3_accuracy": 0.8999999761581421
+            },
+            "grand_piano": {
+              "query_count": 20,
+              "top1_accuracy": 0.44999998807907104,
+              "top3_accuracy": 0.8500000238418579
+            },
+            "scorpion": {
+              "query_count": 20,
+              "top1_accuracy": 0.25,
+              "top3_accuracy": 0.3499999940395355
+            },
+            "sunflower": {
+              "query_count": 20,
+              "top1_accuracy": 0.949999988079071,
+              "top3_accuracy": 1.0
+            },
+            "watch": {
+              "query_count": 20,
+              "top1_accuracy": 0.550000011920929,
+              "top3_accuracy": 0.8999999761581421
+            },
+            "yin_yang": {
+              "query_count": 20,
+              "top1_accuracy": 0.6499999761581421,
+              "top3_accuracy": 0.699999988079071
+            }
+          },
+          "confusion_matrix": [
+            [
+              15,
+              0,
+              0,
+              0,
+              1,
+              0,
+              2,
+              0,
+              2,
+              0
+            ],
+            [
+              0,
+              4,
+              0,
+              0,
+              0,
+              3,
+              3,
+              0,
+              10,
+              0
+            ],
+            [
+              0,
+              0,
+              18,
+              0,
+              0,
+              1,
+              0,
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              20,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              6,
+              0,
+              12,
+              2,
+              0,
+              0
+            ],
+            [
+              0,
+              2,
+              0,
+              0,
+              0,
+              9,
+              5,
+              0,
+              4,
+              0
+            ],
+            [
+              1,
+              2,
+              0,
+              3,
+              2,
+              1,
+              5,
+              0,
+              6,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              19,
+              0,
+              0
+            ],
+            [
+              1,
+              1,
+              1,
+              0,
+              3,
+              1,
+              2,
+              0,
+              11,
+              0
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              4,
+              13
+            ]
+          ]
+        },
+        "flat_pi_experts": {
+          "system": "optical_student_query_vs_optical_student_gallery",
+          "gallery_aggregation": "mean_prototype",
+          "query_count": 200,
+          "gallery_image_count": 30,
+          "sku_count": 10,
+          "top1_retrieval_accuracy": 0.5649999976158142,
+          "top3_retrieval_accuracy": 0.824999988079071,
+          "mrr": 0.7169762253761292,
+          "per_sku": {
+            "airplanes": {
+              "query_count": 20,
+              "top1_accuracy": 0.75,
+              "top3_accuracy": 0.800000011920929
+            },
+            "Motorbikes": {
+              "query_count": 20,
+              "top1_accuracy": 0.550000011920929,
+              "top3_accuracy": 1.0
+            },
+            "Faces": {
+              "query_count": 20,
+              "top1_accuracy": 0.800000011920929,
+              "top3_accuracy": 0.8500000238418579
+            },
+            "Leopards": {
+              "query_count": 20,
+              "top1_accuracy": 0.8500000238418579,
+              "top3_accuracy": 0.949999988079071
+            },
+            "accordion": {
+              "query_count": 20,
+              "top1_accuracy": 0.25,
+              "top3_accuracy": 0.8999999761581421
+            },
+            "grand_piano": {
+              "query_count": 20,
+              "top1_accuracy": 0.20000000298023224,
+              "top3_accuracy": 0.75
+            },
+            "scorpion": {
+              "query_count": 20,
+              "top1_accuracy": 0.30000001192092896,
+              "top3_accuracy": 0.5
+            },
+            "sunflower": {
+              "query_count": 20,
+              "top1_accuracy": 1.0,
+              "top3_accuracy": 1.0
+            },
+            "watch": {
+              "query_count": 20,
+              "top1_accuracy": 0.44999998807907104,
+              "top3_accuracy": 0.699999988079071
+            },
+            "yin_yang": {
+              "query_count": 20,
+              "top1_accuracy": 0.5,
+              "top3_accuracy": 0.800000011920929
+            }
+          },
+          "confusion_matrix": [
+            [
+              15,
+              2,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              2,
+              0
+            ],
+            [
+              0,
+              11,
+              0,
+              0,
+              0,
+              3,
+              1,
+              0,
+              4,
+              1
+            ],
+            [
+              0,
+              0,
+              16,
+              0,
+              1,
+              0,
+              1,
+              0,
+              2,
+              0
+            ],
+            [
+              1,
+              0,
+              0,
+              17,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              5,
+              0,
+              14,
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              7,
+              0,
+              0,
+              0,
+              4,
+              7,
+              0,
+              2,
+              0
+            ],
+            [
+              1,
+              7,
+              0,
+              1,
+              0,
+              0,
+              6,
+              1,
+              4,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              20,
+              0,
+              0
+            ],
+            [
+              0,
+              6,
+              0,
+              0,
+              0,
+              2,
+              2,
+              1,
+              9,
+              0
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              7,
+              10
+            ]
+          ]
+        }
+      },
+      "counts": {
+        "train": 2525,
+        "validation": 100,
+        "gallery": 30,
+        "test": 200
+      },
+      "optimizer_updates": 1360,
+      "batch_opportunities": 1700,
+      "initial_validation": {
+        "system": "optical_student_query_vs_optical_student_gallery",
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 100,
+        "gallery_image_count": 30,
+        "sku_count": 10,
+        "top1_retrieval_accuracy": 0.41999998688697815,
+        "top3_retrieval_accuracy": 0.7400000095367432,
+        "mrr": 0.6146071553230286,
+        "per_sku": {
+          "airplanes": {
+            "query_count": 10,
+            "top1_accuracy": 0.30000001192092896,
+            "top3_accuracy": 0.6000000238418579
+          },
+          "Motorbikes": {
+            "query_count": 10,
+            "top1_accuracy": 0.20000000298023224,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "Faces": {
+            "query_count": 10,
+            "top1_accuracy": 0.699999988079071,
+            "top3_accuracy": 0.800000011920929
+          },
+          "Leopards": {
+            "query_count": 10,
+            "top1_accuracy": 0.8999999761581421,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "accordion": {
+            "query_count": 10,
+            "top1_accuracy": 0.4000000059604645,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "grand_piano": {
+            "query_count": 10,
+            "top1_accuracy": 0.0,
+            "top3_accuracy": 0.4000000059604645
+          },
+          "scorpion": {
+            "query_count": 10,
+            "top1_accuracy": 0.30000001192092896,
+            "top3_accuracy": 0.4000000059604645
+          },
+          "sunflower": {
+            "query_count": 10,
+            "top1_accuracy": 0.8999999761581421,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "watch": {
+            "query_count": 10,
+            "top1_accuracy": 0.20000000298023224,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "yin_yang": {
+            "query_count": 10,
+            "top1_accuracy": 0.30000001192092896,
+            "top3_accuracy": 0.699999988079071
+          }
+        },
+        "confusion_matrix": [
+          [
+            3,
+            0,
+            0,
+            4,
+            0,
+            0,
+            0,
+            1,
+            2,
+            0
+          ],
+          [
+            0,
+            2,
+            0,
+            0,
+            0,
+            3,
+            0,
+            0,
+            5,
+            0
+          ],
+          [
+            0,
+            0,
+            7,
+            1,
+            0,
+            0,
+            0,
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            9,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            4,
+            0,
+            6,
+            0,
+            0,
+            0
+          ],
+          [
+            1,
+            4,
+            1,
+            0,
+            1,
+            0,
+            2,
+            0,
+            1,
+            0
+          ],
+          [
+            0,
+            1,
+            0,
+            1,
+            1,
+            0,
+            3,
+            0,
+            4,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            9,
+            0,
+            0
+          ],
+          [
+            1,
+            4,
+            0,
+            2,
+            0,
+            0,
+            1,
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            0,
+            1,
+            3,
+            0,
+            2,
+            3
+          ]
+        ]
+      },
+      "stage_ends": [
+        {
+          "epoch": 4,
+          "stage": "experts",
+          "mean_task_loss": 5.157901853673598,
+          "live_validation": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 100,
+            "gallery_image_count": 30,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.41999998688697815,
+            "top3_retrieval_accuracy": 0.7400000095367432,
+            "mrr": 0.6146071553230286,
+            "per_sku": {
+              "airplanes": {
+                "query_count": 10,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "Motorbikes": {
+                "query_count": 10,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "Faces": {
+                "query_count": 10,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 0.800000011920929
+              },
+              "Leopards": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "accordion": {
+                "query_count": 10,
+                "top1_accuracy": 0.4000000059604645,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "grand_piano": {
+                "query_count": 10,
+                "top1_accuracy": 0.0,
+                "top3_accuracy": 0.4000000059604645
+              },
+              "scorpion": {
+                "query_count": 10,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.4000000059604645
+              },
+              "sunflower": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "watch": {
+                "query_count": 10,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "yin_yang": {
+                "query_count": 10,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.699999988079071
+              }
+            },
+            "confusion_matrix": [
+              [
+                3,
+                0,
+                0,
+                4,
+                0,
+                0,
+                0,
+                1,
+                2,
+                0
+              ],
+              [
+                0,
+                2,
+                0,
+                0,
+                0,
+                3,
+                0,
+                0,
+                5,
+                0
+              ],
+              [
+                0,
+                0,
+                7,
+                1,
+                0,
+                0,
+                0,
+                0,
+                2,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                9,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                4,
+                0,
+                6,
+                0,
+                0,
+                0
+              ],
+              [
+                1,
+                4,
+                1,
+                0,
+                1,
+                0,
+                2,
+                0,
+                1,
+                0
+              ],
+              [
+                0,
+                1,
+                0,
+                1,
+                1,
+                0,
+                3,
+                0,
+                4,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                1,
+                9,
+                0,
+                0
+              ],
+              [
+                1,
+                4,
+                0,
+                2,
+                0,
+                0,
+                1,
+                0,
+                2,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                1,
+                0,
+                1,
+                3,
+                0,
+                2,
+                3
+              ]
+            ]
+          },
+          "stage_end_validation_with_initial_experts": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 100,
+            "gallery_image_count": 30,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.41999998688697815,
+            "top3_retrieval_accuracy": 0.7400000095367432,
+            "mrr": 0.6146071553230286,
+            "per_sku": {
+              "airplanes": {
+                "query_count": 10,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "Motorbikes": {
+                "query_count": 10,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "Faces": {
+                "query_count": 10,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 0.800000011920929
+              },
+              "Leopards": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "accordion": {
+                "query_count": 10,
+                "top1_accuracy": 0.4000000059604645,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "grand_piano": {
+                "query_count": 10,
+                "top1_accuracy": 0.0,
+                "top3_accuracy": 0.4000000059604645
+              },
+              "scorpion": {
+                "query_count": 10,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.4000000059604645
+              },
+              "sunflower": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "watch": {
+                "query_count": 10,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "yin_yang": {
+                "query_count": 10,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.699999988079071
+              }
+            },
+            "confusion_matrix": [
+              [
+                3,
+                0,
+                0,
+                4,
+                0,
+                0,
+                0,
+                1,
+                2,
+                0
+              ],
+              [
+                0,
+                2,
+                0,
+                0,
+                0,
+                3,
+                0,
+                0,
+                5,
+                0
+              ],
+              [
+                0,
+                0,
+                7,
+                1,
+                0,
+                0,
+                0,
+                0,
+                2,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                9,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                4,
+                0,
+                6,
+                0,
+                0,
+                0
+              ],
+              [
+                1,
+                4,
+                1,
+                0,
+                1,
+                0,
+                2,
+                0,
+                1,
+                0
+              ],
+              [
+                0,
+                1,
+                0,
+                1,
+                1,
+                0,
+                3,
+                0,
+                4,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                1,
+                9,
+                0,
+                0
+              ],
+              [
+                1,
+                4,
+                0,
+                2,
+                0,
+                0,
+                1,
+                0,
+                2,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                1,
+                0,
+                1,
+                3,
+                0,
+                2,
+                3
+              ]
+            ]
+          },
+          "expert_phase": {
+            "rms_change_rad": 0.0,
+            "per_expert_rms_change_rad": [
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ],
+            "max_change_rad": 0.0,
+            "dc_power": [
+              [
+                0.24910388886928558,
+                0.24939949810504913,
+                0.2483147829771042,
+                0.25149816274642944
+              ],
+              [
+                0.2472953498363495,
+                0.25173166394233704,
+                0.24999062716960907,
+                0.2499273419380188
+              ]
+            ],
+            "sigmoid_saturated_fraction": 0.0
+          },
+          "expert_selection_counts": {
+            "vision": [
+              2545,
+              2550,
+              0,
+              5
+            ],
+            "language": [
+              2550,
+              2550,
+              0,
+              0
+            ]
+          },
+          "task_gradient_chain": {}
+        },
+        {
+          "epoch": 12,
+          "stage": "optics",
+          "mean_task_loss": 5.41417745141422,
+          "live_validation": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 100,
+            "gallery_image_count": 30,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.46000000834465027,
+            "top3_retrieval_accuracy": 0.7300000190734863,
+            "mrr": 0.6393412947654724,
+            "per_sku": {
+              "airplanes": {
+                "query_count": 10,
+                "top1_accuracy": 0.5,
+                "top3_accuracy": 0.699999988079071
+              },
+              "Motorbikes": {
+                "query_count": 10,
+                "top1_accuracy": 0.10000000149011612,
+                "top3_accuracy": 0.800000011920929
+              },
+              "Faces": {
+                "query_count": 10,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "Leopards": {
+                "query_count": 10,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "accordion": {
+                "query_count": 10,
+                "top1_accuracy": 0.6000000238418579,
+                "top3_accuracy": 1.0
+              },
+              "grand_piano": {
+                "query_count": 10,
+                "top1_accuracy": 0.0,
+                "top3_accuracy": 0.20000000298023224
+              },
+              "scorpion": {
+                "query_count": 10,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.5
+              },
+              "sunflower": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "watch": {
+                "query_count": 10,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.699999988079071
+              },
+              "yin_yang": {
+                "query_count": 10,
+                "top1_accuracy": 0.4000000059604645,
+                "top3_accuracy": 0.699999988079071
+              }
+            },
+            "confusion_matrix": [
+              [
+                5,
+                0,
+                0,
+                2,
+                0,
+                0,
+                0,
+                1,
+                2,
+                0
+              ],
+              [
+                0,
+                1,
+                0,
+                0,
+                1,
+                3,
+                0,
+                0,
+                5,
+                0
+              ],
+              [
+                0,
+                0,
+                8,
+                0,
+                0,
+                0,
+                0,
+                0,
+                2,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                8,
+                0,
+                0,
+                1,
+                0,
+                1,
+                0
+              ],
+              [
+                0,
+                0,
+                3,
+                0,
+                6,
+                0,
+                1,
+                0,
+                0,
+                0
+              ],
+              [
+                1,
+                2,
+                1,
+                0,
+                1,
+                0,
+                3,
+                0,
+                2,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                3,
+                1,
+                2,
+                1,
+                3,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                1,
+                9,
+                0,
+                0
+              ],
+              [
+                0,
+                3,
+                0,
+                2,
+                0,
+                1,
+                1,
+                0,
+                3,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                2,
+                1,
+                2,
+                4
+              ]
+            ]
+          },
+          "stage_end_validation_with_initial_experts": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 100,
+            "gallery_image_count": 30,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.46000000834465027,
+            "top3_retrieval_accuracy": 0.7300000190734863,
+            "mrr": 0.6393412947654724,
+            "per_sku": {
+              "airplanes": {
+                "query_count": 10,
+                "top1_accuracy": 0.5,
+                "top3_accuracy": 0.699999988079071
+              },
+              "Motorbikes": {
+                "query_count": 10,
+                "top1_accuracy": 0.10000000149011612,
+                "top3_accuracy": 0.800000011920929
+              },
+              "Faces": {
+                "query_count": 10,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "Leopards": {
+                "query_count": 10,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "accordion": {
+                "query_count": 10,
+                "top1_accuracy": 0.6000000238418579,
+                "top3_accuracy": 1.0
+              },
+              "grand_piano": {
+                "query_count": 10,
+                "top1_accuracy": 0.0,
+                "top3_accuracy": 0.20000000298023224
+              },
+              "scorpion": {
+                "query_count": 10,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.5
+              },
+              "sunflower": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "watch": {
+                "query_count": 10,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.699999988079071
+              },
+              "yin_yang": {
+                "query_count": 10,
+                "top1_accuracy": 0.4000000059604645,
+                "top3_accuracy": 0.699999988079071
+              }
+            },
+            "confusion_matrix": [
+              [
+                5,
+                0,
+                0,
+                2,
+                0,
+                0,
+                0,
+                1,
+                2,
+                0
+              ],
+              [
+                0,
+                1,
+                0,
+                0,
+                1,
+                3,
+                0,
+                0,
+                5,
+                0
+              ],
+              [
+                0,
+                0,
+                8,
+                0,
+                0,
+                0,
+                0,
+                0,
+                2,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                8,
+                0,
+                0,
+                1,
+                0,
+                1,
+                0
+              ],
+              [
+                0,
+                0,
+                3,
+                0,
+                6,
+                0,
+                1,
+                0,
+                0,
+                0
+              ],
+              [
+                1,
+                2,
+                1,
+                0,
+                1,
+                0,
+                3,
+                0,
+                2,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                3,
+                1,
+                2,
+                1,
+                3,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                1,
+                9,
+                0,
+                0
+              ],
+              [
+                0,
+                3,
+                0,
+                2,
+                0,
+                1,
+                1,
+                0,
+                3,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                2,
+                1,
+                2,
+                4
+              ]
+            ]
+          },
+          "expert_phase": {
+            "rms_change_rad": 0.0,
+            "per_expert_rms_change_rad": [
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ],
+            "max_change_rad": 0.0,
+            "dc_power": [
+              [
+                0.24910388886928558,
+                0.24939949810504913,
+                0.2483147829771042,
+                0.25149816274642944
+              ],
+              [
+                0.2472953498363495,
+                0.25173166394233704,
+                0.24999062716960907,
+                0.2499273419380188
+              ]
+            ],
+            "sigmoid_saturated_fraction": 0.0
+          },
+          "expert_selection_counts": {
+            "vision": [
+              1604,
+              1696,
+              1573,
+              227
+            ],
+            "language": [
+              2550,
+              2550,
+              0,
+              0
+            ]
+          },
+          "task_gradient_chain": {}
+        },
+        {
+          "epoch": 20,
+          "stage": "joint",
+          "mean_task_loss": 4.3053544128642365,
+          "live_validation": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 100,
+            "gallery_image_count": 30,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.550000011920929,
+            "top3_retrieval_accuracy": 0.7900000214576721,
+            "mrr": 0.6957182288169861,
+            "per_sku": {
+              "airplanes": {
+                "query_count": 10,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 0.800000011920929
+              },
+              "Motorbikes": {
+                "query_count": 10,
+                "top1_accuracy": 0.10000000149011612,
+                "top3_accuracy": 0.800000011920929
+              },
+              "Faces": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "Leopards": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "accordion": {
+                "query_count": 10,
+                "top1_accuracy": 0.6000000238418579,
+                "top3_accuracy": 1.0
+              },
+              "grand_piano": {
+                "query_count": 10,
+                "top1_accuracy": 0.10000000149011612,
+                "top3_accuracy": 0.5
+              },
+              "scorpion": {
+                "query_count": 10,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.30000001192092896
+              },
+              "sunflower": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 1.0
+              },
+              "watch": {
+                "query_count": 10,
+                "top1_accuracy": 0.4000000059604645,
+                "top3_accuracy": 1.0
+              },
+              "yin_yang": {
+                "query_count": 10,
+                "top1_accuracy": 0.5,
+                "top3_accuracy": 0.6000000238418579
+              }
+            },
+            "confusion_matrix": [
+              [
+                7,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                1,
+                1,
+                0
+              ],
+              [
+                0,
+                1,
+                0,
+                0,
+                1,
+                0,
+                1,
+                0,
+                7,
+                0
+              ],
+              [
+                0,
+                0,
+                10,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                9,
+                1,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                6,
+                0,
+                3,
+                1,
+                0,
+                0
+              ],
+              [
+                1,
+                1,
+                0,
+                0,
+                0,
+                1,
+                5,
+                0,
+                2,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                1,
+                1,
+                0,
+                3,
+                1,
+                4,
+                0
+              ],
+              [
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                0,
+                9,
+                0,
+                0
+              ],
+              [
+                3,
+                1,
+                0,
+                0,
+                2,
+                0,
+                0,
+                0,
+                4,
+                0
+              ],
+              [
+                1,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                1,
+                3,
+                5
+              ]
+            ]
+          },
+          "stage_end_validation_with_initial_experts": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 100,
+            "gallery_image_count": 30,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.550000011920929,
+            "top3_retrieval_accuracy": 0.7900000214576721,
+            "mrr": 0.6957182288169861,
+            "per_sku": {
+              "airplanes": {
+                "query_count": 10,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 0.800000011920929
+              },
+              "Motorbikes": {
+                "query_count": 10,
+                "top1_accuracy": 0.10000000149011612,
+                "top3_accuracy": 0.800000011920929
+              },
+              "Faces": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "Leopards": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "accordion": {
+                "query_count": 10,
+                "top1_accuracy": 0.6000000238418579,
+                "top3_accuracy": 1.0
+              },
+              "grand_piano": {
+                "query_count": 10,
+                "top1_accuracy": 0.10000000149011612,
+                "top3_accuracy": 0.5
+              },
+              "scorpion": {
+                "query_count": 10,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.30000001192092896
+              },
+              "sunflower": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 1.0
+              },
+              "watch": {
+                "query_count": 10,
+                "top1_accuracy": 0.4000000059604645,
+                "top3_accuracy": 1.0
+              },
+              "yin_yang": {
+                "query_count": 10,
+                "top1_accuracy": 0.5,
+                "top3_accuracy": 0.6000000238418579
+              }
+            },
+            "confusion_matrix": [
+              [
+                7,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                1,
+                1,
+                0
+              ],
+              [
+                0,
+                1,
+                0,
+                0,
+                1,
+                0,
+                1,
+                0,
+                7,
+                0
+              ],
+              [
+                0,
+                0,
+                10,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                9,
+                1,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                6,
+                0,
+                3,
+                1,
+                0,
+                0
+              ],
+              [
+                1,
+                1,
+                0,
+                0,
+                0,
+                1,
+                5,
+                0,
+                2,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                1,
+                1,
+                0,
+                3,
+                1,
+                4,
+                0
+              ],
+              [
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                0,
+                9,
+                0,
+                0
+              ],
+              [
+                3,
+                1,
+                0,
+                0,
+                2,
+                0,
+                0,
+                0,
+                4,
+                0
+              ],
+              [
+                1,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                1,
+                3,
+                5
+              ]
+            ]
+          },
+          "expert_phase": {
+            "rms_change_rad": 0.0,
+            "per_expert_rms_change_rad": [
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ],
+            "max_change_rad": 0.0,
+            "dc_power": [
+              [
+                0.24910388886928558,
+                0.24939949810504913,
+                0.2483147829771042,
+                0.25149816274642944
+              ],
+              [
+                0.2472953498363495,
+                0.25173166394233704,
+                0.24999062716960907,
+                0.2499273419380188
+              ]
+            ],
+            "sigmoid_saturated_fraction": 0.0
+          },
+          "expert_selection_counts": {
+            "vision": [
+              1291,
+              1239,
+              1375,
+              1195
+            ],
+            "language": [
+              2550,
+              2550,
+              0,
+              0
+            ]
+          },
+          "task_gradient_chain": {}
+        }
+      ],
+      "export_max_error": 0.0,
+      "generator_trainable": 0,
+      "peak_memory_gib": 7.2011260986328125,
+      "elapsed_seconds": 838.7959062084556
+    },
+    {
       "method": "direct",
       "label": "Direct phase optimization",
       "run_id": "20260907_alpha40_direct_s42",
+      "device": "NVIDIA GeForce RTX 4090",
       "selected_epoch": 3,
       "selected_live_test": {
         "system": "optical_student_query_vs_optical_student_gallery",
@@ -2463,2412 +4868,10 @@
       "elapsed_seconds": 940.733128786087
     },
     {
-      "method": "fixed",
-      "label": "Fixed experts",
-      "run_id": "20260907_alpha40_fixed_s42",
-      "selected_epoch": 20,
-      "selected_live_test": {
-        "system": "optical_student_query_vs_optical_student_gallery",
-        "gallery_aggregation": "mean_prototype",
-        "query_count": 200,
-        "gallery_image_count": 30,
-        "sku_count": 10,
-        "top1_retrieval_accuracy": 0.6000000238418579,
-        "top3_retrieval_accuracy": 0.8199999928474426,
-        "mrr": 0.7353333830833435,
-        "per_sku": {
-          "airplanes": {
-            "query_count": 20,
-            "top1_accuracy": 0.75,
-            "top3_accuracy": 0.800000011920929
-          },
-          "Motorbikes": {
-            "query_count": 20,
-            "top1_accuracy": 0.20000000298023224,
-            "top3_accuracy": 0.75
-          },
-          "Faces": {
-            "query_count": 20,
-            "top1_accuracy": 0.8999999761581421,
-            "top3_accuracy": 0.949999988079071
-          },
-          "Leopards": {
-            "query_count": 20,
-            "top1_accuracy": 1.0,
-            "top3_accuracy": 1.0
-          },
-          "accordion": {
-            "query_count": 20,
-            "top1_accuracy": 0.30000001192092896,
-            "top3_accuracy": 0.8999999761581421
-          },
-          "grand_piano": {
-            "query_count": 20,
-            "top1_accuracy": 0.44999998807907104,
-            "top3_accuracy": 0.8500000238418579
-          },
-          "scorpion": {
-            "query_count": 20,
-            "top1_accuracy": 0.25,
-            "top3_accuracy": 0.3499999940395355
-          },
-          "sunflower": {
-            "query_count": 20,
-            "top1_accuracy": 0.949999988079071,
-            "top3_accuracy": 1.0
-          },
-          "watch": {
-            "query_count": 20,
-            "top1_accuracy": 0.550000011920929,
-            "top3_accuracy": 0.8999999761581421
-          },
-          "yin_yang": {
-            "query_count": 20,
-            "top1_accuracy": 0.6499999761581421,
-            "top3_accuracy": 0.699999988079071
-          }
-        },
-        "confusion_matrix": [
-          [
-            15,
-            0,
-            0,
-            0,
-            1,
-            0,
-            2,
-            0,
-            2,
-            0
-          ],
-          [
-            0,
-            4,
-            0,
-            0,
-            0,
-            3,
-            3,
-            0,
-            10,
-            0
-          ],
-          [
-            0,
-            0,
-            18,
-            0,
-            0,
-            1,
-            0,
-            0,
-            1,
-            0
-          ],
-          [
-            0,
-            0,
-            0,
-            20,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-          ],
-          [
-            0,
-            0,
-            0,
-            0,
-            6,
-            0,
-            12,
-            2,
-            0,
-            0
-          ],
-          [
-            0,
-            2,
-            0,
-            0,
-            0,
-            9,
-            5,
-            0,
-            4,
-            0
-          ],
-          [
-            1,
-            2,
-            0,
-            3,
-            2,
-            1,
-            5,
-            0,
-            6,
-            0
-          ],
-          [
-            0,
-            0,
-            0,
-            1,
-            0,
-            0,
-            0,
-            19,
-            0,
-            0
-          ],
-          [
-            1,
-            1,
-            1,
-            0,
-            3,
-            1,
-            2,
-            0,
-            11,
-            0
-          ],
-          [
-            1,
-            0,
-            0,
-            0,
-            0,
-            0,
-            2,
-            0,
-            4,
-            13
-          ]
-        ]
-      },
-      "final_ema_test": {
-        "system": "optical_student_query_vs_optical_student_gallery",
-        "gallery_aggregation": "mean_prototype",
-        "query_count": 200,
-        "gallery_image_count": 30,
-        "sku_count": 10,
-        "top1_retrieval_accuracy": 0.6050000190734863,
-        "top3_retrieval_accuracy": 0.8199999928474426,
-        "mrr": 0.7386667132377625,
-        "per_sku": {
-          "airplanes": {
-            "query_count": 20,
-            "top1_accuracy": 0.75,
-            "top3_accuracy": 0.800000011920929
-          },
-          "Motorbikes": {
-            "query_count": 20,
-            "top1_accuracy": 0.25,
-            "top3_accuracy": 0.75
-          },
-          "Faces": {
-            "query_count": 20,
-            "top1_accuracy": 0.8999999761581421,
-            "top3_accuracy": 0.949999988079071
-          },
-          "Leopards": {
-            "query_count": 20,
-            "top1_accuracy": 0.949999988079071,
-            "top3_accuracy": 1.0
-          },
-          "accordion": {
-            "query_count": 20,
-            "top1_accuracy": 0.3499999940395355,
-            "top3_accuracy": 0.8999999761581421
-          },
-          "grand_piano": {
-            "query_count": 20,
-            "top1_accuracy": 0.44999998807907104,
-            "top3_accuracy": 0.800000011920929
-          },
-          "scorpion": {
-            "query_count": 20,
-            "top1_accuracy": 0.25,
-            "top3_accuracy": 0.3499999940395355
-          },
-          "sunflower": {
-            "query_count": 20,
-            "top1_accuracy": 0.949999988079071,
-            "top3_accuracy": 1.0
-          },
-          "watch": {
-            "query_count": 20,
-            "top1_accuracy": 0.550000011920929,
-            "top3_accuracy": 0.949999988079071
-          },
-          "yin_yang": {
-            "query_count": 20,
-            "top1_accuracy": 0.6499999761581421,
-            "top3_accuracy": 0.699999988079071
-          }
-        },
-        "confusion_matrix": [
-          [
-            15,
-            0,
-            0,
-            0,
-            0,
-            0,
-            2,
-            0,
-            3,
-            0
-          ],
-          [
-            0,
-            5,
-            0,
-            0,
-            0,
-            3,
-            3,
-            0,
-            9,
-            0
-          ],
-          [
-            0,
-            0,
-            18,
-            0,
-            0,
-            1,
-            0,
-            0,
-            1,
-            0
-          ],
-          [
-            1,
-            0,
-            0,
-            19,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-          ],
-          [
-            0,
-            0,
-            0,
-            0,
-            7,
-            0,
-            11,
-            2,
-            0,
-            0
-          ],
-          [
-            0,
-            2,
-            0,
-            0,
-            0,
-            9,
-            5,
-            0,
-            4,
-            0
-          ],
-          [
-            2,
-            2,
-            0,
-            2,
-            2,
-            1,
-            5,
-            0,
-            6,
-            0
-          ],
-          [
-            0,
-            0,
-            0,
-            1,
-            0,
-            0,
-            0,
-            19,
-            0,
-            0
-          ],
-          [
-            1,
-            1,
-            1,
-            0,
-            3,
-            1,
-            2,
-            0,
-            11,
-            0
-          ],
-          [
-            1,
-            0,
-            0,
-            0,
-            0,
-            0,
-            2,
-            0,
-            4,
-            13
-          ]
-        ]
-      },
-      "selected_validation": {
-        "system": "optical_student_query_vs_optical_student_gallery",
-        "gallery_aggregation": "mean_prototype",
-        "query_count": 100,
-        "gallery_image_count": 30,
-        "sku_count": 10,
-        "top1_retrieval_accuracy": 0.550000011920929,
-        "top3_retrieval_accuracy": 0.7900000214576721,
-        "mrr": 0.6957182288169861,
-        "per_sku": {
-          "airplanes": {
-            "query_count": 10,
-            "top1_accuracy": 0.699999988079071,
-            "top3_accuracy": 0.800000011920929
-          },
-          "Motorbikes": {
-            "query_count": 10,
-            "top1_accuracy": 0.10000000149011612,
-            "top3_accuracy": 0.800000011920929
-          },
-          "Faces": {
-            "query_count": 10,
-            "top1_accuracy": 1.0,
-            "top3_accuracy": 1.0
-          },
-          "Leopards": {
-            "query_count": 10,
-            "top1_accuracy": 0.8999999761581421,
-            "top3_accuracy": 0.8999999761581421
-          },
-          "accordion": {
-            "query_count": 10,
-            "top1_accuracy": 0.6000000238418579,
-            "top3_accuracy": 1.0
-          },
-          "grand_piano": {
-            "query_count": 10,
-            "top1_accuracy": 0.10000000149011612,
-            "top3_accuracy": 0.5
-          },
-          "scorpion": {
-            "query_count": 10,
-            "top1_accuracy": 0.30000001192092896,
-            "top3_accuracy": 0.30000001192092896
-          },
-          "sunflower": {
-            "query_count": 10,
-            "top1_accuracy": 0.8999999761581421,
-            "top3_accuracy": 1.0
-          },
-          "watch": {
-            "query_count": 10,
-            "top1_accuracy": 0.4000000059604645,
-            "top3_accuracy": 1.0
-          },
-          "yin_yang": {
-            "query_count": 10,
-            "top1_accuracy": 0.5,
-            "top3_accuracy": 0.6000000238418579
-          }
-        },
-        "confusion_matrix": [
-          [
-            7,
-            0,
-            0,
-            0,
-            1,
-            0,
-            0,
-            1,
-            1,
-            0
-          ],
-          [
-            0,
-            1,
-            0,
-            0,
-            1,
-            0,
-            1,
-            0,
-            7,
-            0
-          ],
-          [
-            0,
-            0,
-            10,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-          ],
-          [
-            0,
-            0,
-            0,
-            9,
-            1,
-            0,
-            0,
-            0,
-            0,
-            0
-          ],
-          [
-            0,
-            0,
-            0,
-            0,
-            6,
-            0,
-            3,
-            1,
-            0,
-            0
-          ],
-          [
-            1,
-            1,
-            0,
-            0,
-            0,
-            1,
-            5,
-            0,
-            2,
-            0
-          ],
-          [
-            0,
-            0,
-            0,
-            1,
-            1,
-            0,
-            3,
-            1,
-            4,
-            0
-          ],
-          [
-            0,
-            1,
-            0,
-            0,
-            0,
-            0,
-            0,
-            9,
-            0,
-            0
-          ],
-          [
-            3,
-            1,
-            0,
-            0,
-            2,
-            0,
-            0,
-            0,
-            4,
-            0
-          ],
-          [
-            1,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            1,
-            3,
-            5
-          ]
-        ]
-      },
-      "selected_phase_rms_rad": 0.0,
-      "selected_phase_piston_removed_rms_rad": 1.227318477958761e-07,
-      "mean_cross_expert_update_correlation": null,
-      "last_phase_rms_rad": 0.0,
-      "fusion": {
-        "vision": [
-          0.4975410997867584,
-          0.49782446026802063
-        ],
-        "language": [
-          0.49651461839675903,
-          0.49650344252586365
-        ]
-      },
-      "ablations": {
-        "initial_experts": {
-          "system": "optical_student_query_vs_optical_student_gallery",
-          "gallery_aggregation": "mean_prototype",
-          "query_count": 200,
-          "gallery_image_count": 30,
-          "sku_count": 10,
-          "top1_retrieval_accuracy": 0.6000000238418579,
-          "top3_retrieval_accuracy": 0.8199999928474426,
-          "mrr": 0.7353333830833435,
-          "per_sku": {
-            "airplanes": {
-              "query_count": 20,
-              "top1_accuracy": 0.75,
-              "top3_accuracy": 0.800000011920929
-            },
-            "Motorbikes": {
-              "query_count": 20,
-              "top1_accuracy": 0.20000000298023224,
-              "top3_accuracy": 0.75
-            },
-            "Faces": {
-              "query_count": 20,
-              "top1_accuracy": 0.8999999761581421,
-              "top3_accuracy": 0.949999988079071
-            },
-            "Leopards": {
-              "query_count": 20,
-              "top1_accuracy": 1.0,
-              "top3_accuracy": 1.0
-            },
-            "accordion": {
-              "query_count": 20,
-              "top1_accuracy": 0.30000001192092896,
-              "top3_accuracy": 0.8999999761581421
-            },
-            "grand_piano": {
-              "query_count": 20,
-              "top1_accuracy": 0.44999998807907104,
-              "top3_accuracy": 0.8500000238418579
-            },
-            "scorpion": {
-              "query_count": 20,
-              "top1_accuracy": 0.25,
-              "top3_accuracy": 0.3499999940395355
-            },
-            "sunflower": {
-              "query_count": 20,
-              "top1_accuracy": 0.949999988079071,
-              "top3_accuracy": 1.0
-            },
-            "watch": {
-              "query_count": 20,
-              "top1_accuracy": 0.550000011920929,
-              "top3_accuracy": 0.8999999761581421
-            },
-            "yin_yang": {
-              "query_count": 20,
-              "top1_accuracy": 0.6499999761581421,
-              "top3_accuracy": 0.699999988079071
-            }
-          },
-          "confusion_matrix": [
-            [
-              15,
-              0,
-              0,
-              0,
-              1,
-              0,
-              2,
-              0,
-              2,
-              0
-            ],
-            [
-              0,
-              4,
-              0,
-              0,
-              0,
-              3,
-              3,
-              0,
-              10,
-              0
-            ],
-            [
-              0,
-              0,
-              18,
-              0,
-              0,
-              1,
-              0,
-              0,
-              1,
-              0
-            ],
-            [
-              0,
-              0,
-              0,
-              20,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0
-            ],
-            [
-              0,
-              0,
-              0,
-              0,
-              6,
-              0,
-              12,
-              2,
-              0,
-              0
-            ],
-            [
-              0,
-              2,
-              0,
-              0,
-              0,
-              9,
-              5,
-              0,
-              4,
-              0
-            ],
-            [
-              1,
-              2,
-              0,
-              3,
-              2,
-              1,
-              5,
-              0,
-              6,
-              0
-            ],
-            [
-              0,
-              0,
-              0,
-              1,
-              0,
-              0,
-              0,
-              19,
-              0,
-              0
-            ],
-            [
-              1,
-              1,
-              1,
-              0,
-              3,
-              1,
-              2,
-              0,
-              11,
-              0
-            ],
-            [
-              1,
-              0,
-              0,
-              0,
-              0,
-              0,
-              2,
-              0,
-              4,
-              13
-            ]
-          ]
-        },
-        "flat_pi_experts": {
-          "system": "optical_student_query_vs_optical_student_gallery",
-          "gallery_aggregation": "mean_prototype",
-          "query_count": 200,
-          "gallery_image_count": 30,
-          "sku_count": 10,
-          "top1_retrieval_accuracy": 0.5649999976158142,
-          "top3_retrieval_accuracy": 0.824999988079071,
-          "mrr": 0.7169762253761292,
-          "per_sku": {
-            "airplanes": {
-              "query_count": 20,
-              "top1_accuracy": 0.75,
-              "top3_accuracy": 0.800000011920929
-            },
-            "Motorbikes": {
-              "query_count": 20,
-              "top1_accuracy": 0.550000011920929,
-              "top3_accuracy": 1.0
-            },
-            "Faces": {
-              "query_count": 20,
-              "top1_accuracy": 0.800000011920929,
-              "top3_accuracy": 0.8500000238418579
-            },
-            "Leopards": {
-              "query_count": 20,
-              "top1_accuracy": 0.8500000238418579,
-              "top3_accuracy": 0.949999988079071
-            },
-            "accordion": {
-              "query_count": 20,
-              "top1_accuracy": 0.25,
-              "top3_accuracy": 0.8999999761581421
-            },
-            "grand_piano": {
-              "query_count": 20,
-              "top1_accuracy": 0.20000000298023224,
-              "top3_accuracy": 0.75
-            },
-            "scorpion": {
-              "query_count": 20,
-              "top1_accuracy": 0.30000001192092896,
-              "top3_accuracy": 0.5
-            },
-            "sunflower": {
-              "query_count": 20,
-              "top1_accuracy": 1.0,
-              "top3_accuracy": 1.0
-            },
-            "watch": {
-              "query_count": 20,
-              "top1_accuracy": 0.44999998807907104,
-              "top3_accuracy": 0.699999988079071
-            },
-            "yin_yang": {
-              "query_count": 20,
-              "top1_accuracy": 0.5,
-              "top3_accuracy": 0.800000011920929
-            }
-          },
-          "confusion_matrix": [
-            [
-              15,
-              2,
-              0,
-              0,
-              0,
-              0,
-              1,
-              0,
-              2,
-              0
-            ],
-            [
-              0,
-              11,
-              0,
-              0,
-              0,
-              3,
-              1,
-              0,
-              4,
-              1
-            ],
-            [
-              0,
-              0,
-              16,
-              0,
-              1,
-              0,
-              1,
-              0,
-              2,
-              0
-            ],
-            [
-              1,
-              0,
-              0,
-              17,
-              0,
-              0,
-              0,
-              2,
-              0,
-              0
-            ],
-            [
-              0,
-              0,
-              0,
-              0,
-              5,
-              0,
-              14,
-              1,
-              0,
-              0
-            ],
-            [
-              0,
-              7,
-              0,
-              0,
-              0,
-              4,
-              7,
-              0,
-              2,
-              0
-            ],
-            [
-              1,
-              7,
-              0,
-              1,
-              0,
-              0,
-              6,
-              1,
-              4,
-              0
-            ],
-            [
-              0,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0,
-              20,
-              0,
-              0
-            ],
-            [
-              0,
-              6,
-              0,
-              0,
-              0,
-              2,
-              2,
-              1,
-              9,
-              0
-            ],
-            [
-              1,
-              0,
-              0,
-              0,
-              0,
-              0,
-              2,
-              0,
-              7,
-              10
-            ]
-          ]
-        }
-      },
-      "counts": {
-        "train": 2525,
-        "validation": 100,
-        "gallery": 30,
-        "test": 200
-      },
-      "optimizer_updates": 1360,
-      "batch_opportunities": 1700,
-      "initial_validation": {
-        "system": "optical_student_query_vs_optical_student_gallery",
-        "gallery_aggregation": "mean_prototype",
-        "query_count": 100,
-        "gallery_image_count": 30,
-        "sku_count": 10,
-        "top1_retrieval_accuracy": 0.41999998688697815,
-        "top3_retrieval_accuracy": 0.7400000095367432,
-        "mrr": 0.6146071553230286,
-        "per_sku": {
-          "airplanes": {
-            "query_count": 10,
-            "top1_accuracy": 0.30000001192092896,
-            "top3_accuracy": 0.6000000238418579
-          },
-          "Motorbikes": {
-            "query_count": 10,
-            "top1_accuracy": 0.20000000298023224,
-            "top3_accuracy": 0.8999999761581421
-          },
-          "Faces": {
-            "query_count": 10,
-            "top1_accuracy": 0.699999988079071,
-            "top3_accuracy": 0.800000011920929
-          },
-          "Leopards": {
-            "query_count": 10,
-            "top1_accuracy": 0.8999999761581421,
-            "top3_accuracy": 0.8999999761581421
-          },
-          "accordion": {
-            "query_count": 10,
-            "top1_accuracy": 0.4000000059604645,
-            "top3_accuracy": 0.8999999761581421
-          },
-          "grand_piano": {
-            "query_count": 10,
-            "top1_accuracy": 0.0,
-            "top3_accuracy": 0.4000000059604645
-          },
-          "scorpion": {
-            "query_count": 10,
-            "top1_accuracy": 0.30000001192092896,
-            "top3_accuracy": 0.4000000059604645
-          },
-          "sunflower": {
-            "query_count": 10,
-            "top1_accuracy": 0.8999999761581421,
-            "top3_accuracy": 0.8999999761581421
-          },
-          "watch": {
-            "query_count": 10,
-            "top1_accuracy": 0.20000000298023224,
-            "top3_accuracy": 0.8999999761581421
-          },
-          "yin_yang": {
-            "query_count": 10,
-            "top1_accuracy": 0.30000001192092896,
-            "top3_accuracy": 0.699999988079071
-          }
-        },
-        "confusion_matrix": [
-          [
-            3,
-            0,
-            0,
-            4,
-            0,
-            0,
-            0,
-            1,
-            2,
-            0
-          ],
-          [
-            0,
-            2,
-            0,
-            0,
-            0,
-            3,
-            0,
-            0,
-            5,
-            0
-          ],
-          [
-            0,
-            0,
-            7,
-            1,
-            0,
-            0,
-            0,
-            0,
-            2,
-            0
-          ],
-          [
-            0,
-            0,
-            0,
-            9,
-            0,
-            0,
-            0,
-            1,
-            0,
-            0
-          ],
-          [
-            0,
-            0,
-            0,
-            0,
-            4,
-            0,
-            6,
-            0,
-            0,
-            0
-          ],
-          [
-            1,
-            4,
-            1,
-            0,
-            1,
-            0,
-            2,
-            0,
-            1,
-            0
-          ],
-          [
-            0,
-            1,
-            0,
-            1,
-            1,
-            0,
-            3,
-            0,
-            4,
-            0
-          ],
-          [
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            1,
-            9,
-            0,
-            0
-          ],
-          [
-            1,
-            4,
-            0,
-            2,
-            0,
-            0,
-            1,
-            0,
-            2,
-            0
-          ],
-          [
-            0,
-            0,
-            0,
-            1,
-            0,
-            1,
-            3,
-            0,
-            2,
-            3
-          ]
-        ]
-      },
-      "stage_ends": [
-        {
-          "epoch": 4,
-          "stage": "experts",
-          "mean_task_loss": 5.157901853673598,
-          "live_validation": {
-            "system": "optical_student_query_vs_optical_student_gallery",
-            "gallery_aggregation": "mean_prototype",
-            "query_count": 100,
-            "gallery_image_count": 30,
-            "sku_count": 10,
-            "top1_retrieval_accuracy": 0.41999998688697815,
-            "top3_retrieval_accuracy": 0.7400000095367432,
-            "mrr": 0.6146071553230286,
-            "per_sku": {
-              "airplanes": {
-                "query_count": 10,
-                "top1_accuracy": 0.30000001192092896,
-                "top3_accuracy": 0.6000000238418579
-              },
-              "Motorbikes": {
-                "query_count": 10,
-                "top1_accuracy": 0.20000000298023224,
-                "top3_accuracy": 0.8999999761581421
-              },
-              "Faces": {
-                "query_count": 10,
-                "top1_accuracy": 0.699999988079071,
-                "top3_accuracy": 0.800000011920929
-              },
-              "Leopards": {
-                "query_count": 10,
-                "top1_accuracy": 0.8999999761581421,
-                "top3_accuracy": 0.8999999761581421
-              },
-              "accordion": {
-                "query_count": 10,
-                "top1_accuracy": 0.4000000059604645,
-                "top3_accuracy": 0.8999999761581421
-              },
-              "grand_piano": {
-                "query_count": 10,
-                "top1_accuracy": 0.0,
-                "top3_accuracy": 0.4000000059604645
-              },
-              "scorpion": {
-                "query_count": 10,
-                "top1_accuracy": 0.30000001192092896,
-                "top3_accuracy": 0.4000000059604645
-              },
-              "sunflower": {
-                "query_count": 10,
-                "top1_accuracy": 0.8999999761581421,
-                "top3_accuracy": 0.8999999761581421
-              },
-              "watch": {
-                "query_count": 10,
-                "top1_accuracy": 0.20000000298023224,
-                "top3_accuracy": 0.8999999761581421
-              },
-              "yin_yang": {
-                "query_count": 10,
-                "top1_accuracy": 0.30000001192092896,
-                "top3_accuracy": 0.699999988079071
-              }
-            },
-            "confusion_matrix": [
-              [
-                3,
-                0,
-                0,
-                4,
-                0,
-                0,
-                0,
-                1,
-                2,
-                0
-              ],
-              [
-                0,
-                2,
-                0,
-                0,
-                0,
-                3,
-                0,
-                0,
-                5,
-                0
-              ],
-              [
-                0,
-                0,
-                7,
-                1,
-                0,
-                0,
-                0,
-                0,
-                2,
-                0
-              ],
-              [
-                0,
-                0,
-                0,
-                9,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0
-              ],
-              [
-                0,
-                0,
-                0,
-                0,
-                4,
-                0,
-                6,
-                0,
-                0,
-                0
-              ],
-              [
-                1,
-                4,
-                1,
-                0,
-                1,
-                0,
-                2,
-                0,
-                1,
-                0
-              ],
-              [
-                0,
-                1,
-                0,
-                1,
-                1,
-                0,
-                3,
-                0,
-                4,
-                0
-              ],
-              [
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                9,
-                0,
-                0
-              ],
-              [
-                1,
-                4,
-                0,
-                2,
-                0,
-                0,
-                1,
-                0,
-                2,
-                0
-              ],
-              [
-                0,
-                0,
-                0,
-                1,
-                0,
-                1,
-                3,
-                0,
-                2,
-                3
-              ]
-            ]
-          },
-          "stage_end_validation_with_initial_experts": {
-            "system": "optical_student_query_vs_optical_student_gallery",
-            "gallery_aggregation": "mean_prototype",
-            "query_count": 100,
-            "gallery_image_count": 30,
-            "sku_count": 10,
-            "top1_retrieval_accuracy": 0.41999998688697815,
-            "top3_retrieval_accuracy": 0.7400000095367432,
-            "mrr": 0.6146071553230286,
-            "per_sku": {
-              "airplanes": {
-                "query_count": 10,
-                "top1_accuracy": 0.30000001192092896,
-                "top3_accuracy": 0.6000000238418579
-              },
-              "Motorbikes": {
-                "query_count": 10,
-                "top1_accuracy": 0.20000000298023224,
-                "top3_accuracy": 0.8999999761581421
-              },
-              "Faces": {
-                "query_count": 10,
-                "top1_accuracy": 0.699999988079071,
-                "top3_accuracy": 0.800000011920929
-              },
-              "Leopards": {
-                "query_count": 10,
-                "top1_accuracy": 0.8999999761581421,
-                "top3_accuracy": 0.8999999761581421
-              },
-              "accordion": {
-                "query_count": 10,
-                "top1_accuracy": 0.4000000059604645,
-                "top3_accuracy": 0.8999999761581421
-              },
-              "grand_piano": {
-                "query_count": 10,
-                "top1_accuracy": 0.0,
-                "top3_accuracy": 0.4000000059604645
-              },
-              "scorpion": {
-                "query_count": 10,
-                "top1_accuracy": 0.30000001192092896,
-                "top3_accuracy": 0.4000000059604645
-              },
-              "sunflower": {
-                "query_count": 10,
-                "top1_accuracy": 0.8999999761581421,
-                "top3_accuracy": 0.8999999761581421
-              },
-              "watch": {
-                "query_count": 10,
-                "top1_accuracy": 0.20000000298023224,
-                "top3_accuracy": 0.8999999761581421
-              },
-              "yin_yang": {
-                "query_count": 10,
-                "top1_accuracy": 0.30000001192092896,
-                "top3_accuracy": 0.699999988079071
-              }
-            },
-            "confusion_matrix": [
-              [
-                3,
-                0,
-                0,
-                4,
-                0,
-                0,
-                0,
-                1,
-                2,
-                0
-              ],
-              [
-                0,
-                2,
-                0,
-                0,
-                0,
-                3,
-                0,
-                0,
-                5,
-                0
-              ],
-              [
-                0,
-                0,
-                7,
-                1,
-                0,
-                0,
-                0,
-                0,
-                2,
-                0
-              ],
-              [
-                0,
-                0,
-                0,
-                9,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0
-              ],
-              [
-                0,
-                0,
-                0,
-                0,
-                4,
-                0,
-                6,
-                0,
-                0,
-                0
-              ],
-              [
-                1,
-                4,
-                1,
-                0,
-                1,
-                0,
-                2,
-                0,
-                1,
-                0
-              ],
-              [
-                0,
-                1,
-                0,
-                1,
-                1,
-                0,
-                3,
-                0,
-                4,
-                0
-              ],
-              [
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                9,
-                0,
-                0
-              ],
-              [
-                1,
-                4,
-                0,
-                2,
-                0,
-                0,
-                1,
-                0,
-                2,
-                0
-              ],
-              [
-                0,
-                0,
-                0,
-                1,
-                0,
-                1,
-                3,
-                0,
-                2,
-                3
-              ]
-            ]
-          },
-          "expert_phase": {
-            "rms_change_rad": 0.0,
-            "per_expert_rms_change_rad": [
-              [
-                0.0,
-                0.0,
-                0.0,
-                0.0
-              ],
-              [
-                0.0,
-                0.0,
-                0.0,
-                0.0
-              ]
-            ],
-            "max_change_rad": 0.0,
-            "dc_power": [
-              [
-                0.24910388886928558,
-                0.24939949810504913,
-                0.2483147829771042,
-                0.25149816274642944
-              ],
-              [
-                0.2472953498363495,
-                0.25173166394233704,
-                0.24999062716960907,
-                0.2499273419380188
-              ]
-            ],
-            "sigmoid_saturated_fraction": 0.0
-          },
-          "expert_selection_counts": {
-            "vision": [
-              2545,
-              2550,
-              0,
-              5
-            ],
-            "language": [
-              2550,
-              2550,
-              0,
-              0
-            ]
-          },
-          "task_gradient_chain": {}
-        },
-        {
-          "epoch": 12,
-          "stage": "optics",
-          "mean_task_loss": 5.41417745141422,
-          "live_validation": {
-            "system": "optical_student_query_vs_optical_student_gallery",
-            "gallery_aggregation": "mean_prototype",
-            "query_count": 100,
-            "gallery_image_count": 30,
-            "sku_count": 10,
-            "top1_retrieval_accuracy": 0.46000000834465027,
-            "top3_retrieval_accuracy": 0.7300000190734863,
-            "mrr": 0.6393412947654724,
-            "per_sku": {
-              "airplanes": {
-                "query_count": 10,
-                "top1_accuracy": 0.5,
-                "top3_accuracy": 0.699999988079071
-              },
-              "Motorbikes": {
-                "query_count": 10,
-                "top1_accuracy": 0.10000000149011612,
-                "top3_accuracy": 0.800000011920929
-              },
-              "Faces": {
-                "query_count": 10,
-                "top1_accuracy": 0.800000011920929,
-                "top3_accuracy": 0.8999999761581421
-              },
-              "Leopards": {
-                "query_count": 10,
-                "top1_accuracy": 0.800000011920929,
-                "top3_accuracy": 0.8999999761581421
-              },
-              "accordion": {
-                "query_count": 10,
-                "top1_accuracy": 0.6000000238418579,
-                "top3_accuracy": 1.0
-              },
-              "grand_piano": {
-                "query_count": 10,
-                "top1_accuracy": 0.0,
-                "top3_accuracy": 0.20000000298023224
-              },
-              "scorpion": {
-                "query_count": 10,
-                "top1_accuracy": 0.20000000298023224,
-                "top3_accuracy": 0.5
-              },
-              "sunflower": {
-                "query_count": 10,
-                "top1_accuracy": 0.8999999761581421,
-                "top3_accuracy": 0.8999999761581421
-              },
-              "watch": {
-                "query_count": 10,
-                "top1_accuracy": 0.30000001192092896,
-                "top3_accuracy": 0.699999988079071
-              },
-              "yin_yang": {
-                "query_count": 10,
-                "top1_accuracy": 0.4000000059604645,
-                "top3_accuracy": 0.699999988079071
-              }
-            },
-            "confusion_matrix": [
-              [
-                5,
-                0,
-                0,
-                2,
-                0,
-                0,
-                0,
-                1,
-                2,
-                0
-              ],
-              [
-                0,
-                1,
-                0,
-                0,
-                1,
-                3,
-                0,
-                0,
-                5,
-                0
-              ],
-              [
-                0,
-                0,
-                8,
-                0,
-                0,
-                0,
-                0,
-                0,
-                2,
-                0
-              ],
-              [
-                0,
-                0,
-                0,
-                8,
-                0,
-                0,
-                1,
-                0,
-                1,
-                0
-              ],
-              [
-                0,
-                0,
-                3,
-                0,
-                6,
-                0,
-                1,
-                0,
-                0,
-                0
-              ],
-              [
-                1,
-                2,
-                1,
-                0,
-                1,
-                0,
-                3,
-                0,
-                2,
-                0
-              ],
-              [
-                0,
-                0,
-                0,
-                0,
-                3,
-                1,
-                2,
-                1,
-                3,
-                0
-              ],
-              [
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                9,
-                0,
-                0
-              ],
-              [
-                0,
-                3,
-                0,
-                2,
-                0,
-                1,
-                1,
-                0,
-                3,
-                0
-              ],
-              [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                2,
-                1,
-                2,
-                4
-              ]
-            ]
-          },
-          "stage_end_validation_with_initial_experts": {
-            "system": "optical_student_query_vs_optical_student_gallery",
-            "gallery_aggregation": "mean_prototype",
-            "query_count": 100,
-            "gallery_image_count": 30,
-            "sku_count": 10,
-            "top1_retrieval_accuracy": 0.46000000834465027,
-            "top3_retrieval_accuracy": 0.7300000190734863,
-            "mrr": 0.6393412947654724,
-            "per_sku": {
-              "airplanes": {
-                "query_count": 10,
-                "top1_accuracy": 0.5,
-                "top3_accuracy": 0.699999988079071
-              },
-              "Motorbikes": {
-                "query_count": 10,
-                "top1_accuracy": 0.10000000149011612,
-                "top3_accuracy": 0.800000011920929
-              },
-              "Faces": {
-                "query_count": 10,
-                "top1_accuracy": 0.800000011920929,
-                "top3_accuracy": 0.8999999761581421
-              },
-              "Leopards": {
-                "query_count": 10,
-                "top1_accuracy": 0.800000011920929,
-                "top3_accuracy": 0.8999999761581421
-              },
-              "accordion": {
-                "query_count": 10,
-                "top1_accuracy": 0.6000000238418579,
-                "top3_accuracy": 1.0
-              },
-              "grand_piano": {
-                "query_count": 10,
-                "top1_accuracy": 0.0,
-                "top3_accuracy": 0.20000000298023224
-              },
-              "scorpion": {
-                "query_count": 10,
-                "top1_accuracy": 0.20000000298023224,
-                "top3_accuracy": 0.5
-              },
-              "sunflower": {
-                "query_count": 10,
-                "top1_accuracy": 0.8999999761581421,
-                "top3_accuracy": 0.8999999761581421
-              },
-              "watch": {
-                "query_count": 10,
-                "top1_accuracy": 0.30000001192092896,
-                "top3_accuracy": 0.699999988079071
-              },
-              "yin_yang": {
-                "query_count": 10,
-                "top1_accuracy": 0.4000000059604645,
-                "top3_accuracy": 0.699999988079071
-              }
-            },
-            "confusion_matrix": [
-              [
-                5,
-                0,
-                0,
-                2,
-                0,
-                0,
-                0,
-                1,
-                2,
-                0
-              ],
-              [
-                0,
-                1,
-                0,
-                0,
-                1,
-                3,
-                0,
-                0,
-                5,
-                0
-              ],
-              [
-                0,
-                0,
-                8,
-                0,
-                0,
-                0,
-                0,
-                0,
-                2,
-                0
-              ],
-              [
-                0,
-                0,
-                0,
-                8,
-                0,
-                0,
-                1,
-                0,
-                1,
-                0
-              ],
-              [
-                0,
-                0,
-                3,
-                0,
-                6,
-                0,
-                1,
-                0,
-                0,
-                0
-              ],
-              [
-                1,
-                2,
-                1,
-                0,
-                1,
-                0,
-                3,
-                0,
-                2,
-                0
-              ],
-              [
-                0,
-                0,
-                0,
-                0,
-                3,
-                1,
-                2,
-                1,
-                3,
-                0
-              ],
-              [
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                9,
-                0,
-                0
-              ],
-              [
-                0,
-                3,
-                0,
-                2,
-                0,
-                1,
-                1,
-                0,
-                3,
-                0
-              ],
-              [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                2,
-                1,
-                2,
-                4
-              ]
-            ]
-          },
-          "expert_phase": {
-            "rms_change_rad": 0.0,
-            "per_expert_rms_change_rad": [
-              [
-                0.0,
-                0.0,
-                0.0,
-                0.0
-              ],
-              [
-                0.0,
-                0.0,
-                0.0,
-                0.0
-              ]
-            ],
-            "max_change_rad": 0.0,
-            "dc_power": [
-              [
-                0.24910388886928558,
-                0.24939949810504913,
-                0.2483147829771042,
-                0.25149816274642944
-              ],
-              [
-                0.2472953498363495,
-                0.25173166394233704,
-                0.24999062716960907,
-                0.2499273419380188
-              ]
-            ],
-            "sigmoid_saturated_fraction": 0.0
-          },
-          "expert_selection_counts": {
-            "vision": [
-              1604,
-              1696,
-              1573,
-              227
-            ],
-            "language": [
-              2550,
-              2550,
-              0,
-              0
-            ]
-          },
-          "task_gradient_chain": {}
-        },
-        {
-          "epoch": 20,
-          "stage": "joint",
-          "mean_task_loss": 4.3053544128642365,
-          "live_validation": {
-            "system": "optical_student_query_vs_optical_student_gallery",
-            "gallery_aggregation": "mean_prototype",
-            "query_count": 100,
-            "gallery_image_count": 30,
-            "sku_count": 10,
-            "top1_retrieval_accuracy": 0.550000011920929,
-            "top3_retrieval_accuracy": 0.7900000214576721,
-            "mrr": 0.6957182288169861,
-            "per_sku": {
-              "airplanes": {
-                "query_count": 10,
-                "top1_accuracy": 0.699999988079071,
-                "top3_accuracy": 0.800000011920929
-              },
-              "Motorbikes": {
-                "query_count": 10,
-                "top1_accuracy": 0.10000000149011612,
-                "top3_accuracy": 0.800000011920929
-              },
-              "Faces": {
-                "query_count": 10,
-                "top1_accuracy": 1.0,
-                "top3_accuracy": 1.0
-              },
-              "Leopards": {
-                "query_count": 10,
-                "top1_accuracy": 0.8999999761581421,
-                "top3_accuracy": 0.8999999761581421
-              },
-              "accordion": {
-                "query_count": 10,
-                "top1_accuracy": 0.6000000238418579,
-                "top3_accuracy": 1.0
-              },
-              "grand_piano": {
-                "query_count": 10,
-                "top1_accuracy": 0.10000000149011612,
-                "top3_accuracy": 0.5
-              },
-              "scorpion": {
-                "query_count": 10,
-                "top1_accuracy": 0.30000001192092896,
-                "top3_accuracy": 0.30000001192092896
-              },
-              "sunflower": {
-                "query_count": 10,
-                "top1_accuracy": 0.8999999761581421,
-                "top3_accuracy": 1.0
-              },
-              "watch": {
-                "query_count": 10,
-                "top1_accuracy": 0.4000000059604645,
-                "top3_accuracy": 1.0
-              },
-              "yin_yang": {
-                "query_count": 10,
-                "top1_accuracy": 0.5,
-                "top3_accuracy": 0.6000000238418579
-              }
-            },
-            "confusion_matrix": [
-              [
-                7,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1,
-                1,
-                0
-              ],
-              [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                1,
-                0,
-                7,
-                0
-              ],
-              [
-                0,
-                0,
-                10,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0
-              ],
-              [
-                0,
-                0,
-                0,
-                9,
-                1,
-                0,
-                0,
-                0,
-                0,
-                0
-              ],
-              [
-                0,
-                0,
-                0,
-                0,
-                6,
-                0,
-                3,
-                1,
-                0,
-                0
-              ],
-              [
-                1,
-                1,
-                0,
-                0,
-                0,
-                1,
-                5,
-                0,
-                2,
-                0
-              ],
-              [
-                0,
-                0,
-                0,
-                1,
-                1,
-                0,
-                3,
-                1,
-                4,
-                0
-              ],
-              [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                0,
-                9,
-                0,
-                0
-              ],
-              [
-                3,
-                1,
-                0,
-                0,
-                2,
-                0,
-                0,
-                0,
-                4,
-                0
-              ],
-              [
-                1,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                3,
-                5
-              ]
-            ]
-          },
-          "stage_end_validation_with_initial_experts": {
-            "system": "optical_student_query_vs_optical_student_gallery",
-            "gallery_aggregation": "mean_prototype",
-            "query_count": 100,
-            "gallery_image_count": 30,
-            "sku_count": 10,
-            "top1_retrieval_accuracy": 0.550000011920929,
-            "top3_retrieval_accuracy": 0.7900000214576721,
-            "mrr": 0.6957182288169861,
-            "per_sku": {
-              "airplanes": {
-                "query_count": 10,
-                "top1_accuracy": 0.699999988079071,
-                "top3_accuracy": 0.800000011920929
-              },
-              "Motorbikes": {
-                "query_count": 10,
-                "top1_accuracy": 0.10000000149011612,
-                "top3_accuracy": 0.800000011920929
-              },
-              "Faces": {
-                "query_count": 10,
-                "top1_accuracy": 1.0,
-                "top3_accuracy": 1.0
-              },
-              "Leopards": {
-                "query_count": 10,
-                "top1_accuracy": 0.8999999761581421,
-                "top3_accuracy": 0.8999999761581421
-              },
-              "accordion": {
-                "query_count": 10,
-                "top1_accuracy": 0.6000000238418579,
-                "top3_accuracy": 1.0
-              },
-              "grand_piano": {
-                "query_count": 10,
-                "top1_accuracy": 0.10000000149011612,
-                "top3_accuracy": 0.5
-              },
-              "scorpion": {
-                "query_count": 10,
-                "top1_accuracy": 0.30000001192092896,
-                "top3_accuracy": 0.30000001192092896
-              },
-              "sunflower": {
-                "query_count": 10,
-                "top1_accuracy": 0.8999999761581421,
-                "top3_accuracy": 1.0
-              },
-              "watch": {
-                "query_count": 10,
-                "top1_accuracy": 0.4000000059604645,
-                "top3_accuracy": 1.0
-              },
-              "yin_yang": {
-                "query_count": 10,
-                "top1_accuracy": 0.5,
-                "top3_accuracy": 0.6000000238418579
-              }
-            },
-            "confusion_matrix": [
-              [
-                7,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1,
-                1,
-                0
-              ],
-              [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                1,
-                0,
-                7,
-                0
-              ],
-              [
-                0,
-                0,
-                10,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0
-              ],
-              [
-                0,
-                0,
-                0,
-                9,
-                1,
-                0,
-                0,
-                0,
-                0,
-                0
-              ],
-              [
-                0,
-                0,
-                0,
-                0,
-                6,
-                0,
-                3,
-                1,
-                0,
-                0
-              ],
-              [
-                1,
-                1,
-                0,
-                0,
-                0,
-                1,
-                5,
-                0,
-                2,
-                0
-              ],
-              [
-                0,
-                0,
-                0,
-                1,
-                1,
-                0,
-                3,
-                1,
-                4,
-                0
-              ],
-              [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                0,
-                9,
-                0,
-                0
-              ],
-              [
-                3,
-                1,
-                0,
-                0,
-                2,
-                0,
-                0,
-                0,
-                4,
-                0
-              ],
-              [
-                1,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                3,
-                5
-              ]
-            ]
-          },
-          "expert_phase": {
-            "rms_change_rad": 0.0,
-            "per_expert_rms_change_rad": [
-              [
-                0.0,
-                0.0,
-                0.0,
-                0.0
-              ],
-              [
-                0.0,
-                0.0,
-                0.0,
-                0.0
-              ]
-            ],
-            "max_change_rad": 0.0,
-            "dc_power": [
-              [
-                0.24910388886928558,
-                0.24939949810504913,
-                0.2483147829771042,
-                0.25149816274642944
-              ],
-              [
-                0.2472953498363495,
-                0.25173166394233704,
-                0.24999062716960907,
-                0.2499273419380188
-              ]
-            ],
-            "sigmoid_saturated_fraction": 0.0
-          },
-          "expert_selection_counts": {
-            "vision": [
-              1291,
-              1239,
-              1375,
-              1195
-            ],
-            "language": [
-              2550,
-              2550,
-              0,
-              0
-            ]
-          },
-          "task_gradient_chain": {}
-        }
-      ],
-      "export_max_error": 0.0,
-      "generator_trainable": 0,
-      "peak_memory_gib": 7.2011260986328125,
-      "elapsed_seconds": 838.7959062084556
-    },
-    {
       "method": "qwen_frozen",
       "label": "Frozen Qwen + decoder",
       "run_id": "20260907_alpha40_qwen_frozen_s42",
+      "device": "NVIDIA GeForce RTX 4090",
       "selected_epoch": 2,
       "selected_live_test": {
         "system": "optical_student_query_vs_optical_student_gallery",
@@ -7278,6 +7281,7 @@
       "method": "qwen_lora",
       "label": "Qwen LoRA + decoder",
       "run_id": "20260907_alpha40_qwen_lora_s42",
+      "device": "NVIDIA A100-PCIE-40GB",
       "selected_epoch": 3,
       "selected_live_test": {
         "system": "optical_student_query_vs_optical_student_gallery",

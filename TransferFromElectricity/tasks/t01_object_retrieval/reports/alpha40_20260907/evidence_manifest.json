@@ -1,89 +1,5 @@
 [
   {
-    "run_id": "20260907_alpha40_direct_s42",
-    "file": "architecture.json",
-    "bytes": 10682,
-    "sha256": "e28aabeef9aed59e4bc1f20ca85406d482bd1bbaeab7b7df8fe882d28de02d05"
-  },
-  {
-    "run_id": "20260907_alpha40_direct_s42",
-    "file": "config.yaml",
-    "bytes": 10702,
-    "sha256": "dd52e4092a55ae6006c8792ca16f883bcf841be8e0e9bc2e8a20f29965095364"
-  },
-  {
-    "run_id": "20260907_alpha40_direct_s42",
-    "file": "data_hashes.json",
-    "bytes": 511858,
-    "sha256": "b7654cc0f96a3b8c627f1221299fa716b09b2c3d16ededd82ca633c8464888e8"
-  },
-  {
-    "run_id": "20260907_alpha40_direct_s42",
-    "file": "dataset.json",
-    "bytes": 1492,
-    "sha256": "526dc6246a9c152237a1c8bdee07aac4e035ec8cf3da1c0411861f6d78429422"
-  },
-  {
-    "run_id": "20260907_alpha40_direct_s42",
-    "file": "environment.json",
-    "bytes": 796,
-    "sha256": "43536dd01aa0c564e27de11181991751a6671b199b3c2489a4ab2c53f0151cd4"
-  },
-  {
-    "run_id": "20260907_alpha40_direct_s42",
-    "file": "final_report.json",
-    "bytes": 14429,
-    "sha256": "66ab738fcbe07d3c4625ab1fb0558714ba02b512a33232d4d54d2b1a8b5c4d86"
-  },
-  {
-    "run_id": "20260907_alpha40_direct_s42",
-    "file": "history.json",
-    "bytes": 174485,
-    "sha256": "8d82d870d6cf8e880b689c4a7f0de5813ebaf17ac072537c3aec92143023e788"
-  },
-  {
-    "run_id": "20260907_alpha40_direct_s42",
-    "file": "initial_validation.json",
-    "bytes": 2713,
-    "sha256": "80764f3e6c6c4c2426be10cf5c669de60f748cc892ee32fbc3ed7d821d6e08c0"
-  },
-  {
-    "run_id": "20260907_alpha40_direct_s42",
-    "file": "initialization.json",
-    "bytes": 1864,
-    "sha256": "e30059e3f9ab4f4133243efad32ee010dfd9d1014301719013cacc2c1ad489fb"
-  },
-  {
-    "run_id": "20260907_alpha40_direct_s42",
-    "file": "protocol.json",
-    "bytes": 1157,
-    "sha256": "f18932193d27a29e1610ff372425b137d7552a01fe0cadae83e870f156c94cbd"
-  },
-  {
-    "run_id": "20260907_alpha40_direct_s42",
-    "file": "split.json",
-    "bytes": 1013107,
-    "sha256": "d8d21a4c2085c725dd6f25dae7b70030a13f2be6229581cc6a49c0c2c3868d11"
-  },
-  {
-    "run_id": "20260907_alpha40_direct_s42",
-    "file": "status.json",
-    "bytes": 26,
-    "sha256": "34c8f74408bc4183b49f04a8136d278cf1d85c3415647a3e734dc82d5dd7e5c0"
-  },
-  {
-    "run_id": "20260907_alpha40_direct_s42",
-    "file": "steps.json",
-    "bytes": 852889,
-    "sha256": "26bff68a15d532a7f34a341ed1cb35b421f44496a93097399a015ec73cd86a69"
-  },
-  {
-    "run_id": "20260907_alpha40_direct_s42",
-    "file": "transfer_manifest.json",
-    "bytes": 4295,
-    "sha256": "013a169e679b528c8124648e2cdff5793fb65f3c3b6a483b04696d1e5f672276"
-  },
-  {
     "run_id": "20260907_alpha40_fixed_s42",
     "file": "architecture.json",
     "bytes": 9662,
@@ -166,6 +82,90 @@
     "file": "transfer_manifest.json",
     "bytes": 4280,
     "sha256": "89e217275e7bc2befe28f38d8ce6001ac52db845d596b72ffeda393a986f5c2f"
+  },
+  {
+    "run_id": "20260907_alpha40_direct_s42",
+    "file": "architecture.json",
+    "bytes": 10682,
+    "sha256": "e28aabeef9aed59e4bc1f20ca85406d482bd1bbaeab7b7df8fe882d28de02d05"
+  },
+  {
+    "run_id": "20260907_alpha40_direct_s42",
+    "file": "config.yaml",
+    "bytes": 10702,
+    "sha256": "dd52e4092a55ae6006c8792ca16f883bcf841be8e0e9bc2e8a20f29965095364"
+  },
+  {
+    "run_id": "20260907_alpha40_direct_s42",
+    "file": "data_hashes.json",
+    "bytes": 511858,
+    "sha256": "b7654cc0f96a3b8c627f1221299fa716b09b2c3d16ededd82ca633c8464888e8"
+  },
+  {
+    "run_id": "20260907_alpha40_direct_s42",
+    "file": "dataset.json",
+    "bytes": 1492,
+    "sha256": "526dc6246a9c152237a1c8bdee07aac4e035ec8cf3da1c0411861f6d78429422"
+  },
+  {
+    "run_id": "20260907_alpha40_direct_s42",
+    "file": "environment.json",
+    "bytes": 796,
+    "sha256": "43536dd01aa0c564e27de11181991751a6671b199b3c2489a4ab2c53f0151cd4"
+  },
+  {
+    "run_id": "20260907_alpha40_direct_s42",
+    "file": "final_report.json",
+    "bytes": 14429,
+    "sha256": "66ab738fcbe07d3c4625ab1fb0558714ba02b512a33232d4d54d2b1a8b5c4d86"
+  },
+  {
+    "run_id": "20260907_alpha40_direct_s42",
+    "file": "history.json",
+    "bytes": 174485,
+    "sha256": "8d82d870d6cf8e880b689c4a7f0de5813ebaf17ac072537c3aec92143023e788"
+  },
+  {
+    "run_id": "20260907_alpha40_direct_s42",
+    "file": "initial_validation.json",
+    "bytes": 2713,
+    "sha256": "80764f3e6c6c4c2426be10cf5c669de60f748cc892ee32fbc3ed7d821d6e08c0"
+  },
+  {
+    "run_id": "20260907_alpha40_direct_s42",
+    "file": "initialization.json",
+    "bytes": 1864,
+    "sha256": "e30059e3f9ab4f4133243efad32ee010dfd9d1014301719013cacc2c1ad489fb"
+  },
+  {
+    "run_id": "20260907_alpha40_direct_s42",
+    "file": "protocol.json",
+    "bytes": 1157,
+    "sha256": "f18932193d27a29e1610ff372425b137d7552a01fe0cadae83e870f156c94cbd"
+  },
+  {
+    "run_id": "20260907_alpha40_direct_s42",
+    "file": "split.json",
+    "bytes": 1013107,
+    "sha256": "d8d21a4c2085c725dd6f25dae7b70030a13f2be6229581cc6a49c0c2c3868d11"
+  },
+  {
+    "run_id": "20260907_alpha40_direct_s42",
+    "file": "status.json",
+    "bytes": 26,
+    "sha256": "34c8f74408bc4183b49f04a8136d278cf1d85c3415647a3e734dc82d5dd7e5c0"
+  },
+  {
+    "run_id": "20260907_alpha40_direct_s42",
+    "file": "steps.json",
+    "bytes": 852889,
+    "sha256": "26bff68a15d532a7f34a341ed1cb35b421f44496a93097399a015ec73cd86a69"
+  },
+  {
+    "run_id": "20260907_alpha40_direct_s42",
+    "file": "transfer_manifest.json",
+    "bytes": 4295,
+    "sha256": "013a169e679b528c8124648e2cdff5793fb65f3c3b6a483b04696d1e5f672276"
   },
   {
     "run_id": "20260907_alpha40_qwen_frozen_s42",
