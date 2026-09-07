@@ -71,6 +71,9 @@ SPECS = {
     "t03": TaskSpec("t03", "SALICON saliency", False, 1, 1, 2, 1, 196, 0),
     "t04": TaskSpec("t04", "OpenMoji interaction", True, 1, 1, 4, 2, 196, 64),
     "t06": TaskSpec("t06", "LGVQ MultiVideo-16x4", True, 1, 16, 4, 2, 196, 42),
+    "t06_spatial": TaskSpec(
+        "t06_spatial", "LGVQ spatial single-video4", True, 1, 1, 4, 2, 196, 42
+    ),
     "t08": TaskSpec("t08", "ABO image-to-title retrieval", True, 1, 1, 4, 2, 196, 76),
 }
 
@@ -718,6 +721,130 @@ class T06Head(nn.Module):
         return self.output(torch.cat((summary, prompt), -1)).squeeze(-1)
 
 
+class T06SpatialVisionReadout(nn.Module):
+    """One 518 CCD field -> four 14x14 frame-token grids."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.pool = nn.AdaptiveAvgPool2d((196, 96))
+        self.norm = nn.LayerNorm(96)
+        self.output = nn.Linear(96, 192)
+        self.origins = ((0, 0), (0, 246), (246, 0), (246, 246))
+
+    def forward(self, detector: torch.Tensor) -> torch.Tensor:
+        lanes = [
+            _normalize_patch(detector[:, 20 + top : 252 + top, 20 + left : 252 + left])
+            for top, left in self.origins
+        ]
+        stacked = torch.stack(lanes, 1).flatten(0, 1)
+        pooled = self.pool(stacked.unsqueeze(1)).squeeze(1)
+        value = self.output(F.softplus(self.norm(pooled)))
+        return value.reshape(detector.shape[0], 4, 196, 192)
+
+
+class T06SpatialLanguageReadout(nn.Module):
+    """Full active CCD aperture -> the 42 valid multimodal sequence rows."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.norm = nn.LayerNorm(96)
+        self.output = nn.Linear(96, 192)
+
+    def forward(self, detector: torch.Tensor) -> torch.Tensor:
+        active = _normalize_patch(detector[:, 20:498, 20:498])
+        pooled = F.adaptive_avg_pool2d(active.unsqueeze(1), (42, 96)).squeeze(1)
+        return self.output(F.softplus(self.norm(pooled)))
+
+
+class T06SpatialVisionResidual(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.norm = nn.LayerNorm(192)
+        self.depthwise = nn.Conv2d(192, 192, 5, padding=2, groups=192, bias=False)
+        self.pointwise = nn.Conv2d(192, 192, 1)
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        batch, frames, tokens, width = value.shape
+        image = self.norm(value).reshape(batch * frames, 14, 14, width).permute(0, 3, 1, 2)
+        output = self.pointwise(F.gelu(self.depthwise(image)))
+        return output.permute(0, 2, 3, 1).reshape(batch, frames, tokens, width)
+
+
+class T06SpatialBridge(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.frame_merger = nn.Sequential(
+            nn.LayerNorm(384), nn.Linear(384, 192), nn.GELU()
+        )
+        self.frame_position = nn.Parameter(torch.zeros(1, 4, 192))
+        self.sequence_position = nn.Parameter(torch.zeros(1, 96, 192))
+
+    def forward(
+        self, vision: torch.Tensor, prompt: torch.Tensor, prompt_mask: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        image = self.frame_merger(torch.cat((vision.mean(2), vision.amax(2)), -1))
+        image = image + self.frame_position
+        mask = torch.cat(
+            (
+                torch.ones(vision.shape[0], 4, dtype=torch.bool, device=vision.device),
+                prompt_mask,
+            ),
+            1,
+        )
+        sequence = torch.cat((image, prompt), 1)
+        sequence = (sequence + self.sequence_position[:, : sequence.shape[1]]).masked_fill(
+            ~mask.unsqueeze(-1), 0.0
+        )
+        return sequence, mask
+
+
+class T06SpatialHead(nn.Module):
+    """Formal attention-free SpatialGridReadout (14x14, width 192, head 512)."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.token_norm = nn.LayerNorm(192)
+        self.spatial_depthwise = nn.Conv2d(
+            192, 192, kernel_size=3, padding=1, groups=192, bias=False
+        )
+        self.spatial_projection = nn.Conv2d(192, 64, kernel_size=1)
+        self.frame = nn.Sequential(
+            nn.LayerNorm(64 * 3 * 3 * 2), nn.Linear(64 * 3 * 3 * 2, 512), nn.GELU()
+        )
+        self.language = nn.Sequential(
+            nn.LayerNorm(192 * 3), nn.Linear(192 * 3, 512), nn.GELU()
+        )
+        self.output = nn.Sequential(
+            nn.LayerNorm(512 * 4),
+            nn.Linear(512 * 4, 1024),
+            nn.GELU(),
+            nn.Dropout(0.12),
+            nn.Linear(1024, 1),
+        )
+
+    def forward(
+        self, vision: torch.Tensor, language: torch.Tensor, mask: torch.Tensor
+    ) -> torch.Tensor:
+        batch, frames, tokens, width = vision.shape
+        grid = self.token_norm(vision).reshape(batch * frames, 14, 14, width)
+        grid = grid.permute(0, 3, 1, 2)
+        grid = F.gelu(self.spatial_projection(F.gelu(self.spatial_depthwise(grid))))
+        pooled = torch.cat(
+            (F.adaptive_avg_pool2d(grid, 3), F.adaptive_max_pool2d(grid, 3)), 1
+        ).flatten(1)
+        frame = self.frame(pooled).reshape(batch, frames, -1)
+        video = torch.cat(
+            (
+                frame.mean(1),
+                frame.float().std(1, unbiased=False).to(frame.dtype),
+                frame.amax(1),
+            ),
+            -1,
+        )
+        prompt = self.language(_masked_statistics(language, mask))
+        return self.output(torch.cat((video, prompt), -1)).squeeze(-1)
+
+
 def _standard_task(task: str, device: torch.device, warmup: int, repeats: int) -> dict[str, Any]:
     spec = SPECS[task]
     detector = torch.rand(1, 478, 478, device=device)
@@ -868,6 +995,134 @@ def _standard_task(task: str, device: torch.device, warmup: int, repeats: int) -
             "estimated_wall_ms_per_logical_sample": paper_total / spec.logical_samples_per_call,
             "all_parallel_residuals_covered": all_residual_covered,
             "optical_rig_energy_proxy_j_per_call": OPTICAL_POWER_W * paper_total / 1000.0,
+        },
+    }
+
+
+def _t06_spatial_task(
+    device: torch.device, warmup: int, repeats: int
+) -> dict[str, Any]:
+    spec = SPECS["t06_spatial"]
+    detector = torch.rand(1, 518, 518, device=device)
+    vision = torch.randn(1, 4, 196, 192, device=device)
+    vision_mask = torch.ones(1, 4, 196, dtype=torch.bool, device=device)
+    prompt = torch.randn(1, 38, 192, device=device)
+    prompt_mask = torch.ones(1, 38, dtype=torch.bool, device=device)
+    bridge = T06SpatialBridge().to(device).eval()
+    sequence, sequence_mask = bridge(vision, prompt, prompt_mask)
+    vision_readout = T06SpatialVisionReadout().to(device).eval()
+    language_readout = T06SpatialLanguageReadout().to(device).eval()
+    fusion = ScaleMatchedFusion().to(device).eval()
+    vision_residual = T06SpatialVisionResidual().to(device).eval()
+    language_residual = T06LanguageResidual().to(device).eval()
+    head = T06SpatialHead().to(device).eval()
+    results = []
+
+    results.append(
+        benchmark(
+            "spatial_vision_ccd_to_fusion",
+            lambda: fusion(vision, vision_readout(detector), vision_mask),
+            warmup=warmup,
+            repeats=repeats,
+            logical_samples_per_call=1,
+            physical_fields_per_call=1,
+            shape_contract="CCD [1,518,518] -> four lanes [1,4,196,192] -> scale-matched fusion",
+        )
+    )
+    vision_fused = results[-1]["synchronized_wall_ms"]["median"]
+    results.append(
+        benchmark(
+            "spatial_vision_parallel_residual",
+            lambda: vision_residual(vision),
+            warmup=warmup,
+            repeats=repeats,
+            logical_samples_per_call=1,
+            physical_fields_per_call=1,
+            shape_contract="E [1,4,196,192] -> four 14x14 depthwise/pointwise residual grids",
+        )
+    )
+    vision_residual_ms = results[-1]["synchronized_wall_ms"]["median"]
+    results.append(
+        benchmark(
+            "spatial_frame_to_sequence_bridge",
+            lambda: bridge(vision, prompt, prompt_mask),
+            warmup=warmup,
+            repeats=repeats,
+            logical_samples_per_call=1,
+            physical_fields_per_call=1,
+            shape_contract="[1,4,196,192] frame mean/max + 38 prompt rows -> [1,42,192]",
+        )
+    )
+    bridge_ms = results[-1]["synchronized_wall_ms"]["median"]
+    results.append(
+        benchmark(
+            "spatial_language_ccd_to_fusion",
+            lambda: fusion(sequence, language_readout(detector), sequence_mask),
+            warmup=warmup,
+            repeats=repeats,
+            logical_samples_per_call=1,
+            physical_fields_per_call=1,
+            shape_contract="CCD [1,518,518] active crop -> [1,42,192] -> scale-matched fusion",
+        )
+    )
+    language_fused = results[-1]["synchronized_wall_ms"]["median"]
+    results.append(
+        benchmark(
+            "spatial_language_parallel_residual",
+            lambda: language_residual(sequence, sequence_mask),
+            warmup=warmup,
+            repeats=repeats,
+            logical_samples_per_call=1,
+            physical_fields_per_call=1,
+            shape_contract="E [1,42,192] -> causal depthwise/pointwise sequence residual",
+        )
+    )
+    language_residual_ms = results[-1]["synchronized_wall_ms"]["median"]
+    results.append(
+        benchmark(
+            "spatial_task_head",
+            lambda: head(vision, sequence, sequence_mask),
+            warmup=warmup,
+            repeats=repeats,
+            logical_samples_per_call=1,
+            physical_fields_per_call=1,
+            shape_contract="four 14x14 frame grids + 42 language rows -> SpatialGridReadout -> MOS",
+        )
+    )
+    head_ms = results[-1]["synchronized_wall_ms"]["median"]
+    paper_electronic = 2.0 * vision_fused + bridge_ms + 2.0 * language_fused + head_ms
+    paper_total = 6.0 * PHYSICAL_PASS_MS + paper_electronic
+    covered = (
+        vision_residual_ms <= PHYSICAL_PASS_MS
+        and language_residual_ms <= PHYSICAL_PASS_MS
+    )
+    return {
+        "specification": asdict(spec),
+        "components": results,
+        "paper_serial_path": {
+            "timing_boundary": "six measured physical passes plus exact single-video4 vision/language CCD normalization and fusion, required frame-to-sequence bridge, and SpatialGridReadout; router post, next-SLM rebuild and parallel residual are diagnostic-only",
+            "physical_passes": 6,
+            "physical_time_ms_per_call": 6.0 * PHYSICAL_PASS_MS,
+            "serial_electronic_wall_ms_per_call": paper_electronic,
+            "component_occurrences_per_call": {
+                "spatial_vision_ccd_to_fusion": 2,
+                "spatial_frame_to_sequence_bridge": 1,
+                "spatial_language_ccd_to_fusion": 2,
+                "spatial_task_head": 1,
+            },
+            "estimated_wall_ms_per_call": paper_total,
+            "logical_samples_per_call": 1,
+            "estimated_wall_ms_per_logical_sample": paper_total,
+            "all_parallel_residuals_covered": covered,
+            "optical_rig_energy_proxy_j_per_call": OPTICAL_POWER_W * paper_total / 1000.0,
+        },
+        "critical_path": {
+            "physical_pass_ms": PHYSICAL_PASS_MS,
+            "all_parallel_residuals_covered": covered,
+            "estimated_wall_ms_per_call": paper_total,
+            "logical_samples_per_call": 1,
+            "estimated_wall_ms_per_logical_sample": paper_total,
+            "method": "paper serial boundary; spatial router post/reload excluded by requested contract",
         },
     }
 
@@ -1136,7 +1391,12 @@ def main() -> int:
         for task in args.tasks:
             _POWER_TASK = task
             print(f"[profile] {task}: {SPECS[task].label}", flush=True)
-            tasks[task] = _t06_task(device, args.warmup, args.repeats) if task == "t06" else _standard_task(task, device, args.warmup, args.repeats)
+            if task == "t06":
+                tasks[task] = _t06_task(device, args.warmup, args.repeats)
+            elif task == "t06_spatial":
+                tasks[task] = _t06_spatial_task(device, args.warmup, args.repeats)
+            else:
+                tasks[task] = _standard_task(task, device, args.warmup, args.repeats)
     finally:
         _POWER_TASK = None
         _POWER_SAMPLER = None
