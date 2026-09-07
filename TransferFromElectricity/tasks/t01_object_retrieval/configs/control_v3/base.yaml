@@ -1,0 +1,20 @@
+base_config: ../separate_heads_ideal.yaml
+# Same 512-dimensional decoder input for Qwen and CLIP; no trainable bridge.
+generator:
+  context_width: 512
+  clip_source: data/static_bank_models/clip-vit-b16-text
+fusion: {minimum: 0.4, initial: 0.6, maximum: 0.95}
+freeze_groups: [fusion]
+audit_updates: true
+branch_interventions: true
+evaluate_ema: false
+validation_only: false
+learning_rates:
+  generator_context: 0.0001
+  generator_decoder: 0.0003
+  electronic: 0.0001
+  readout: 0.0001
+stages:
+  - {name: experts, epochs: 4}
+  - {name: optics, epochs: 8}
+  - {name: joint, epochs: 18}

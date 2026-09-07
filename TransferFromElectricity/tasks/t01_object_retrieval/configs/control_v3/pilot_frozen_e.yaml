@@ -1,0 +1,2 @@
+base_config: pilot_high_g.yaml
+freeze_electronic: true

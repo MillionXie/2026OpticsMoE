@@ -30,7 +30,8 @@ from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.settings impo
 def create_generator(method, source, cfg, device):
     generator = StaticGenerator(method, source, device, cfg['generator']['rank'], seed=cfg['seed'],
                                 task_description=cfg['generator'].get('task_description'),
-                                expert_specific_heads=cfg['generator'].get('expert_specific_heads',False))
+                                expert_specific_heads=cfg['generator'].get('expert_specific_heads',False),
+                                context_width=cfg['generator'].get('context_width'))
     # Identical decoder weights for frozen-Qwen and LoRA-Qwen, independent of
     # random numbers consumed while constructing LoRA matrices.
     seed_everything(cfg['seed'] + 71)
@@ -108,15 +109,18 @@ def execute(args, cfg, output):
     settings.lightgen_test_selected = False
     if any((settings.lambda_kd, settings.lambda_relational_kd, settings.lambda_teacher_gallery)):
         raise ValueError('This experiment does not use a teacher loss')
-    if cfg.get('dataset',{}).get('name') == 'cifar100':
-        from .datasets import prepare_cifar100
+    dataset_name = cfg.get('dataset',{}).get('name')
+    if dataset_name in {'cifar100', 'imagenette'}:
+        from .datasets import prepare_cifar100, prepare_imagenette
         settings.dataset_root = (ROOT / cfg['dataset']['root']).resolve()
         settings.gallery_images_per_sku = cfg['dataset']['gallery_per_class']
         settings.download = False
-        settings.download_url = 'https://cave.cs.toronto.edu/kriz/cifar-100-python.tar.gz'
+        settings.download_url = ('https://cave.cs.toronto.edu/kriz/cifar-100-python.tar.gz' if dataset_name == 'cifar100'
+                                 else 'https://s3.amazonaws.com/fast-ai-imageclas/imagenette2-160.tgz')
         settings.use_all_categories = not bool(cfg['dataset'].get('class_ids'))
-        settings.instruction = 'Represent this image for CIFAR-100 image-to-image retrieval.'
-        bundle = prepare_cifar100(cfg['dataset'], ROOT, output, cfg.get('data_seed',42))
+        settings.instruction = f'Represent this image for {dataset_name} image-to-image retrieval.'
+        prepare = prepare_cifar100 if dataset_name == 'cifar100' else prepare_imagenette
+        bundle = prepare(cfg['dataset'], ROOT, output, cfg.get('data_seed',42))
         settings.selected_skus = bundle.class_names
     else:
         bundle = prepare_caltech101_subset(settings, persist=True)
@@ -137,8 +141,8 @@ def execute(args, cfg, output):
     resolved = yaml.safe_load((output/'config.yaml').read_text())
     resolved['lightgen']['selection'] = {'use_periodic_test':False, 'criterion':cfg['selection'], 'test_metrics_used_for_selection':False}
     resolved['static_expert_protocol'] = cfg
-    if cfg.get('dataset',{}).get('name') == 'cifar100':
-        resolved['dataset'].update(name='CIFAR-100', official_test_only=True,
+    if dataset_name in {'cifar100', 'imagenette'}:
+        resolved['dataset'].update(name=dataset_name, held_out_official_split=True,
                                    validation_per_class=cfg['validation_per_class'])
     (output/'config.yaml').write_text(yaml.safe_dump(resolved,sort_keys=False), encoding='utf-8')
     planes = expert_planes(replacement)
@@ -147,8 +151,9 @@ def execute(args, cfg, output):
         for plane,raw in zip(planes,initial.flatten(0,1)):
             plane.raw_phase.copy_(raw)
     generator = injection = None
-    if args.method.startswith('qwen'):
-        source = args.generator_source or resolve_cached_model_source(cfg['generator']['model_id'],settings.cache_dir)
+    if args.method.startswith(('qwen', 'clip')):
+        source = args.generator_source or (str(ROOT / cfg['generator']['clip_source']) if args.method.startswith('clip')
+                 else resolve_cached_model_source(cfg['generator']['model_id'],settings.cache_dir))
         generator = create_generator(args.method,source,cfg,device)
         injection = ExpertInjection(planes)
         source_path = Path(source)
@@ -184,6 +189,7 @@ def execute(args, cfg, output):
     sampler = PKBatchSampler(training,settings.pk_skus_per_batch,settings.pk_images_per_sku,cfg['seed'],args.steps_per_epoch)
     loader = DataLoader(dataset,batch_sampler=sampler,num_workers=settings.num_workers,collate_fn=collate_grocery)
     history, step_history, start_epoch, updates = [], [], 1, 0
+    evaluation_samples = validation if cfg.get('validation_only', False) else bundle.test_samples
     best_key = (-1.,-1.)
     started = time.perf_counter()
     def checkpoint(epoch, variant='live'):
@@ -233,7 +239,11 @@ def execute(args, cfg, output):
                 # task dropout random streams relative to the direct control.
                 seed_everything(cfg['seed'] + 10000 + epoch)
             stage,relative_epoch = stage_at(epoch,cfg['stages'])
-            enabled = active_groups(stage['name'])
+            enabled = active_groups(stage['name']) - set(cfg.get('freeze_groups', []))
+            if cfg.get('freeze_electronic', False):
+                enabled -= {'electronic', 'readout', 'fusion'}
+            if epoch > cfg.get('decoder_freeze_after', settings.epochs):
+                enabled.discard('generator_decoder')
             for group in groups:
                 for p in group['params']:
                     p.requires_grad_(group['group_name'] in enabled)
@@ -288,12 +298,14 @@ def execute(args, cfg, output):
                     targets = [raw] if generator else [p.raw_phase for p in planes]
                     grads = torch.autograd.grad(task_loss,targets,retain_graph=True)
                     chain['task_to_expert'] = float(torch.stack([g.float().square().sum() for g in grads]).sum().sqrt())
-                    if args.method == 'qwen_lora':
+                    if args.method.endswith('_lora'):
                         grads = torch.autograd.grad(task_loss,[p for n,p in generator.named_parameters() if n.endswith('lora_b')],retain_graph=True)
                         chain['task_to_lora_b'] = float(torch.stack([g.float().square().sum() for g in grads]).sum().sqrt())
                     if min(chain.values()) <= 0:
                         raise RuntimeError('Broken task gradient chain')
-                norms = {}
+                norms, update_stats = {}, {}
+                before_step = {g['group_name']: [p.detach().clone() for p in g['params']]
+                               for g in groups if step == 0 and cfg.get('audit_updates', False)}
                 if active:
                     loss.backward()
                     for group in groups:
@@ -302,18 +314,30 @@ def execute(args, cfg, output):
                     optimizer.step()
                     updates += 1
                     update_parameter_ema(ema,parameters,cfg['ema_decay'])
+                with torch.no_grad():
+                    for group in groups:
+                        name = group['group_name']
+                        if name in before_step:
+                            before = before_step[name]
+                            change = sum((p.float()-b.float()).square().sum() for p,b in zip(group['params'],before)).sqrt()
+                            reference = sum(b.float().square().sum() for b in before).sqrt()
+                            update_stats[name] = {'l2':float(change), 'relative_l2':float(change/reference.clamp_min(1e-12)), 'lr':group['lr']}
+                del before_step
                 for m,s in [('vision',replacement.vision_surrogate),('language',replacement.language_surrogate)]:
                     selected = s.core.last_routing['selected_mask'].sum(0).cpu().tolist()
                     counts[m] = [a+int(b) for a,b in zip(counts[m],selected)]
                 row = {'epoch':epoch,'stage':stage['name'],'step':step+1,'task_loss':float(task_loss.detach()),
                     'total_loss':float(loss.detach()),'phase_dc_loss':float(dc.detach()),'optimizer_updates':updates,
                     'gradient_norms':norms,'task_gradient_chain':chain,'elapsed_seconds':time.perf_counter()-started}
+                if update_stats: row['parameter_updates'] = update_stats
                 rows.append(row); step_history.append(row)
                 if step == 0 or step+1 == len(loader):
                     print(row,flush=True)
             live_val = metrics(validation)
-            with use_parameter_ema(parameters,ema):
-                ema_val = metrics(validation)
+            ema_val = None
+            if cfg.get('evaluate_ema', True):
+                with use_parameter_ema(parameters,ema):
+                    ema_val = metrics(validation)
             with torch.no_grad():
                 raw = bind()
                 phase = phase_summary(raw,initial)
@@ -341,22 +365,24 @@ def execute(args, cfg, output):
             write_json(output/'steps.json',step_history)
             write_json(output/'status.json',{'status':'running','epoch':epoch,'stage':stage['name'],'epochs':settings.epochs})
             print({'epoch_result':record},flush=True)
-        with use_parameter_ema(parameters,ema):
-            final_ema_test = metrics(bundle.test_samples)
+        final_ema_test = None
+        if cfg.get('evaluate_ema', True):
+            with use_parameter_ema(parameters,ema):
+                final_ema_test = metrics(evaluation_samples)
         payload = torch.load(output/'best_checkpoint.pt',map_location='cpu',weights_only=False)
         load_weights(payload)
         selected_epoch = payload['epoch']
         del payload
-        selected_test = metrics(bundle.test_samples)
+        selected_test = metrics(evaluation_samples)
         with torch.no_grad():
             learned = bind().detach().clone()
             selected_phase = phase_summary(learned,initial)
             def intervention(bank):
                 bind(bank)
-                return evaluate_student_split(loaded,replacement,readout,bundle.test_samples,bundle.gallery_samples,bundle.class_names,settings)
+                return evaluate_student_split(loaded,replacement,readout,evaluation_samples,bundle.gallery_samples,bundle.class_names,settings)
             ablations = {'initial_experts':intervention(initial),'flat_pi_experts':intervention(torch.zeros_like(initial))}
             bind(learned)
-            if generator and args.method=='qwen_lora':
+            if generator and args.method.endswith('_lora'):
                 lora_b = [p for n,p in generator.named_parameters() if n.endswith('lora_b')]
                 backups = [p.clone() for p in lora_b]
                 for p in lora_b: p.zero_()
@@ -364,6 +390,15 @@ def execute(args, cfg, output):
                 ablations['lora_disabled_same_decoder'] = intervention(no_lora)
                 ablations['lora_phase_effect'] = phase_summary(no_lora,learned)
                 for p,b in zip(lora_b,backups): p.copy_(b)
+                bind(learned)
+            if cfg.get('branch_interventions', False):
+                cores = [replacement.vision_surrogate.core, replacement.language_surrogate.core]
+                try:
+                    for mode in ('remove_optical', 'remove_electronic'):
+                        for core in cores: core.set_fusion_ablation(mode)
+                        ablations[mode] = metrics(evaluation_samples)
+                finally:
+                    for core in cores: core.set_fusion_ablation('none')
                 bind(learned)
             torch.save({'raw_phase':learned.cpu(),'phase_rad':physical_phase(learned).cpu(),
                 'selected_epoch':selected_epoch,'git_sha':current_sha},output/'expert_bank.pt')
@@ -380,7 +415,11 @@ def execute(args, cfg, output):
         report = {'method':args.method,'protocol':'staged_alpha40','git_sha':current_sha,'split_sha256':sha256(output/'split.json'),
             'training_optical_perturbations':cfg.get('training_optical_perturbations',True),
             'counts':{n:len(r) for n,r in partitions.items()},'selected_epoch':selected_epoch,'selection':cfg['selection'],
-            'test_used_for_selection':False,'selected_live_test':selected_test,'final_ema_test':final_ema_test,
+            'test_used_for_selection':False,
+            'evaluation_split':'validation' if cfg.get('validation_only',False) else 'test',
+            'selected_metrics':selected_test,
+            'selected_live_test':None if cfg.get('validation_only',False) else selected_test,
+            'final_ema_test':None if cfg.get('validation_only',False) else final_ema_test,
             'selected_expert_phase':selected_phase,'fusion':fusion_values(),'ablations':ablations,
             'optimizer_updates':updates,'training_batch_opportunities':settings.epochs*len(loader),
             'export_max_error':export_error,'expert_bank_sha256':sha256(output/'expert_bank.pt'),
@@ -393,7 +432,7 @@ def execute(args, cfg, output):
 
 def main():
     parser = argparse.ArgumentParser(__doc__)
-    parser.add_argument('--method',required=True,choices=['fixed','direct','qwen_frozen','qwen_lora'])
+    parser.add_argument('--method',required=True,choices=['fixed','direct','qwen_frozen','qwen_lora','clip_frozen','clip_lora'])
     parser.add_argument('--config',default=str(TASK/'configs/staged_alpha40.yaml'))
     parser.add_argument('--run-dir',required=True)
     parser.add_argument('--generator-source')

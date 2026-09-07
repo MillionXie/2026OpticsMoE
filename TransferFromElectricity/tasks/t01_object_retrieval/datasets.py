@@ -6,6 +6,38 @@ from pathlib import Path
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.prepare_grocery_retrieval_subset import GrocerySample, GroceryRetrievalBundle
 
 
+IMAGENETTE_CLASSES = {
+    'n01440764': 'tench', 'n02102040': 'English springer', 'n02979186': 'cassette player',
+    'n03000684': 'chain saw', 'n03028079': 'church', 'n03394916': 'French horn',
+    'n03417042': 'garbage truck', 'n03425413': 'gas pump', 'n03445777': 'golf ball',
+    'n03888257': 'parachute'}
+
+
+def prepare_imagenette(config, root, output, seed):
+    dataset_root = (root / config['root']).resolve()
+    names = tuple(IMAGENETTE_CLASSES.values())
+    records = {'train': [], 'test': [], 'gallery': []}
+    for local_id, (synset, name) in enumerate(IMAGENETTE_CLASSES.items()):
+        train = sorted((dataset_root / 'train' / synset).glob('*.JPEG'))
+        test = sorted((dataset_root / 'val' / synset).glob('*.JPEG'))
+        if len(train) < 100 or len(test) < 100:
+            raise ValueError(f'Incomplete Imagenette class: {synset}')
+        random.Random(f'{seed}:imagenette:{synset}').shuffle(train)
+        count = config['gallery_per_class']
+        for split, paths in [('gallery', train[:count]), ('train', train[count:]), ('test', test)]:
+            for path in paths:
+                official = 'val' if split == 'test' else 'train'
+                sample_id = f'imagenette:{official}:{synset}:{path.name}'
+                records[split].append(GrocerySample(sample_id, path, local_id, name, local_id, split, official, split == 'gallery'))
+    manifest = [s.manifest_record() for rows in records.values() for s in rows]
+    digest = hashlib.sha256(json.dumps(manifest, sort_keys=True).encode()).hexdigest()
+    metadata = {'dataset': 'Imagenette2-160', 'class_names': names, 'data_seed': seed,
+                'manifest_sha256': digest, 'gallery_per_class': config['gallery_per_class'],
+                'policy': 'Official val is held-out test; gallery and adaptation validation come only from official train'}
+    (output / 'dataset.json').write_text(json.dumps(metadata, indent=2), encoding='utf-8')
+    return GroceryRetrievalBundle(tuple(records['train']), tuple(records['test']), tuple(records['gallery']), names, digest, metadata)
+
+
 def class_partition(targets, class_id, seed, gallery_count):
     indices = [i for i, y in enumerate(targets) if int(y) == class_id]
     random.Random(f'{seed}:cifar100:train:{class_id}').shuffle(indices)

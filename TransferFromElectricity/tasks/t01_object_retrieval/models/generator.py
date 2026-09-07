@@ -71,11 +71,15 @@ class PatchDecoder(nn.Module):
 
 
 class StaticGenerator(nn.Module):
-    def __init__(self, method='small_hyper', source=None, device='cpu', rank=8, size=224, patch=16, seed=42, task_description=None, expert_specific_heads=False):
+    def __init__(self, method='small_hyper', source=None, device='cpu', rank=8, size=224, patch=16, seed=42, task_description=None, expert_specific_heads=False, context_width=None):
         super().__init__()
         self.method = method
         self.lora_modules = []
         self.source = str(source)
+        self.context_width = context_width
+        task_description = task_description or 'Caltech101 ten-category image retrieval'
+        prompts = [f'Design a fixed optical expert bank for {task_description}. Modality: {m}. Expert: {e}. Return a continuous design representation.'
+                   for m in ('vision', 'language') for e in range(4)]
         if method == 'small_hyper':
             width = 128
             self.tokens = nn.Parameter(torch.randn(8, 4, width) * 0.02)
@@ -93,20 +97,30 @@ class StaticGenerator(nn.Module):
             if method == 'qwen_lora':
                 self.lora_modules = install_lora(self.encoder, rank)
             tokenizer = AutoTokenizer.from_pretrained(source, local_files_only=True, padding_side='right')
-            task_description = task_description or 'Caltech101 ten-category image retrieval'
-            prompts = [f'Design a fixed optical expert bank for {task_description}. Modality: {m}. Expert: {e}. Return a continuous design representation.'
-                       for m in ('vision', 'language') for e in range(4)]
             encoded = tokenizer(prompts, padding=True, return_tensors='pt')
             self.register_buffer('input_ids', encoded['input_ids'].to(device))
             self.register_buffer('attention_mask', encoded['attention_mask'].to(device))
             width = self.encoder.config.hidden_size
+        elif method in {'clip_frozen', 'clip_lora'}:
+            import clip
+            from transformers import CLIPTextModel
+            self.encoder = CLIPTextModel.from_pretrained(source, local_files_only=True).to(device)
+            self.encoder.requires_grad_(False)
+            if method == 'clip_lora':
+                self.lora_modules = install_lora(self.encoder, rank)
+            ids = clip.tokenize(prompts, truncate=False).to(device)
+            self.register_buffer('input_ids', ids)
+            self.register_buffer('attention_mask', (ids != 0).long())
+            width = self.encoder.config.hidden_size
         else:
             raise ValueError(method)
-        self.decoder = PatchDecoder(width, size, patch, expert_specific_heads=expert_specific_heads).to(device)
+        self.decoder = PatchDecoder(context_width or width, size, patch, expert_specific_heads=expert_specific_heads).to(device)
         self.register_buffer('initial_reference', torch.zeros(2, 4, size, size, device=device))
         rng = torch.Generator().manual_seed(seed)
         self.register_buffer('anchor', (torch.randn(2, 4, size, size, generator=rng) * 0.02).to(device))
         self.to(device)
+        # Stage-specific freezing must never silently drop learned decoder weights.
+        self._trainable_names = {n for n, p in self.named_parameters() if p.requires_grad}
         self.eval()
         with torch.no_grad():
             self.initial_reference.copy_(self.decode_raw())
@@ -115,12 +129,17 @@ class StaticGenerator(nn.Module):
         if self.method == 'small_hyper':
             return self.encoder(self.tokens)[:, -1]
         self.encoder.eval()  # disables dropout, does NOT disable LoRA autograd
+        if self.method.startswith('clip_'):
+            return self.encoder(input_ids=self.input_ids, attention_mask=self.attention_mask, return_dict=True).pooler_output
         result = self.encoder(input_ids=self.input_ids, attention_mask=self.attention_mask, use_cache=False, return_dict=True)
         indexes = self.attention_mask.sum(-1) - 1
         return result.last_hidden_state[torch.arange(8, device=indexes.device), indexes]
 
     def decode_raw(self):
-        return self.decoder(self.context())
+        context = self.context().float()
+        if self.context_width and context.shape[-1] != self.context_width:
+            context = torch.nn.functional.adaptive_avg_pool1d(context[:, None], self.context_width)[:, 0]
+        return self.decoder(context)
 
     def forward(self):
         # Common fixed random anchor ensures exact same optical initialization
@@ -128,12 +147,12 @@ class StaticGenerator(nn.Module):
         return self.anchor + (self.decode_raw() - self.initial_reference)
 
     def compact_state(self):
-        trainable = {n for n, p in self.named_parameters() if p.requires_grad}
+        trainable = self._trainable_names
         return {n: t.detach().cpu().clone() for n, t in self.state_dict().items()
                 if n in trainable or not n.startswith('encoder.')}
 
     def load_compact_state(self, state):
         result = self.load_state_dict(state, strict=False)
-        trainable = {n for n, p in self.named_parameters() if p.requires_grad}
+        trainable = self._trainable_names
         if result.unexpected_keys or any(n in trainable or not n.startswith('encoder.') for n in result.missing_keys):
             raise RuntimeError(f'Invalid compact state: {result}')

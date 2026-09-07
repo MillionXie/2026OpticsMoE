@@ -625,3 +625,36 @@ best/last checkpoint 保留在服务器原 run，未复制进 Git。
 当前适合继续检验的是生成器的贡献来源：同样解码器的小生成器对照可用于区分参数化收益与 Qwen 的作用；
 也需要检查解码器与 LoRA 的更新分工，以及分阶段联合训练和 Language Router 的稳定性。
 这些是后续方向，尚未在本轮执行，不把它们写成已经获得的优势。
+
+## 第四轮控制变量协议
+
+用户要求进一步检查电子学习是否压制光学、生成器学习率是否过低，并加入 CLIP 和 Imagenette。
+本轮先固定下述协议，再看验证结果；保留前轮全部数据，不按 test 改类别或选指标。
+
+- 三个数据集：原 Caltech 十类、原固定 CIFAR-100 十类、[官方 Imagenette2-160](https://github.com/fastai/imagenette)。
+  Imagenette 的官方 val 全部作为 test，仅从官方 train 留出每类 5 张 gallery 和 30 张 adaptation validation。
+- 所有组保持原 LightGenV2 光路、Vision/Language 各四张 expert、Top-2 optical Router 与 global phase。
+  四个融合系数从 0.6 开始并冻结；原范围 [0.4,0.95] 保留。相同阶段训练 Router/global，沿用 ideal 仿真。
+- Qwen 使用此前 Qwen3-VL-2B-Instruct 文本分支；CLIP 使用缓存 OpenAI CLIP ViT-B/16 文本分支，转换为
+  Transformers CLIPTextModel 前校验官方权重 SHA256，并与原 OpenAI encode_text 数值对齐。
+  两者接收完全相同的八条固定任务/模态/expert 提示词，不接收查询或 batch；Qwen context 以无参数平均池化压到 512 维，
+  CLIP context 本身为 512 维，两者接完全同构、同初始化的独立专家输出头。LoRA 均为 q/v、rank=8。
+- 师姐默认方案是冻结 CLIP RN50 图像特征＋mask 解码器，并对 batch masks 求平均。
+  本轮借鉴 CLIP 编码器，不复用 batch 平均；文本条件主对照用于保持 Qwen/CLIP 输入变量一致，
+  不将其描述为对师姐图像特征方案的原样复现。CLIP 也不能按参数规模被称为与 2B Qwen 等大的模型。
+- 先在 CIFAR 十类进行 16 轮 × 40 batch 的开发实验，只评估 validation：电子/读出 LR 为 1e-4 或 1e-5，
+  Qwen LoRA LR 为 1e-4 或 1e-3，构成 2×2 对照，decoder LR 固定 3e-4。
+  两项额外诊断在高 LoRA LR 上分别冻结全部电子/读出，或第 2 轮后冻结 decoder，以区分竞争与解码器代偿。
+  开发阶段为 2 轮 experts、4 轮 optics、10 轮 joint。
+- 正式 LR 从前四个组合中按最后三轮 validation Top-1 均值、再按 MRR 均值选取，后两项仅作机制诊断。
+  固定选定 LR 后，在三个数据集进行 direct / qwen_lora / clip_lora / fixed 四组；
+  CIFAR 另加 qwen_frozen / clip_frozen 编码器更新对照，共 14 个正式 run。
+  正式为 4 轮 experts、8 轮 optics、18 轮 joint，每轮 120 batch，共 3,600 batch，seed=42。
+- 所有最终报告同时列 Top-1、Top-3、MRR；仍按 validation Top-1 再按 MRR 选择 checkpoint，不因 Top-3 更高而改口径。
+  60%–70% 是希望达到的表现，不是允许挑 test、挑类或保证达到的阈值。
+- 记录每轮首步各参数组实际更新范数和相对更新、任务到相位/LoRA 梯度、相位变化及逐专家路由计数。
+  最终对 validation（开发）或 test（正式）做初始 mask、平相位、关闭 LoRA、去掉光学融合输出、去掉电子融合输出干预。
+  融合输出移除是单独反事实评估，训练系数仍为 0.6；“去掉电子输出”保留必要的电子编码、I/O、读出和 RMS 校准，
+  不能称为纯光网络。分数下降检验功能依赖，不能直接解释成百分比贡献。
+
+所有源码仍先测试、commit/push，再从服务器固定 SHA worktree 启动；只绑定核验后的 RTX UUID。

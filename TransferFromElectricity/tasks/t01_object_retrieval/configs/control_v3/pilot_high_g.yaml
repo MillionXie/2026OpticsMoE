@@ -1,0 +1,3 @@
+base_config: pilot_base.yaml
+learning_rates:
+  generator_context: 0.001

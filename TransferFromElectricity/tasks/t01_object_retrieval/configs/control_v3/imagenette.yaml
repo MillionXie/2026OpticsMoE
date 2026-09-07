@@ -1,0 +1,8 @@
+base_config: base.yaml
+dataset:
+  name: imagenette
+  root: data/imagenette_static_experts/imagenette2-160
+  gallery_per_class: 5
+validation_per_class: 30
+generator:
+  task_description: Imagenette ten-category image retrieval
