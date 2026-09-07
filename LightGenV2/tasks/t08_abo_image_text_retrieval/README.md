@@ -1,5 +1,8 @@
 # T08 商品检索（图搜文）
 
+跨机器完整源码、数据、权重交付与不训练的评估入口见 [HANDOFF.md](HANDOFF.md)。
+打包必须使用本任务 `build_lab_package.py`，不能手选直接依赖目录，以免漏掉传递导入。
+
 本任务是 ABO easy100 的单张商品图像到官方英文标题检索，不是图搜图：100 个
 商品、4,800 张 train、2,400 张 test、100 个唯一标题候选。性能均在完整 test
 上计算；训练期间每 5 个 epoch 看一次 test，并按 EMA test R@1 选择 checkpoint。
