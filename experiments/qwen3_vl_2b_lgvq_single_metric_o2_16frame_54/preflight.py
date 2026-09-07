@@ -55,8 +55,22 @@ def run_preflight(
             "transformer_blocks": 0,
             "frame_count": settings.frame_count,
             "qwen_vision_token_shape_per_video": [settings.frame_count, 49, 1024],
-            "quality_side_shape_per_video": [settings.frame_count, 49, 14],
-            "quality_channels": list(QUALITY_CHANNELS),
+            "quality_side_shape_per_video": [
+                settings.frame_count,
+                settings.token_grid * settings.token_grid,
+                settings.quality_input_width,
+            ],
+            "quality_input_role": (
+                "precomputed Conv5 representation contained only inside the "
+                "single electronic residual route"
+                if settings.electronic_quality_residual_enabled
+                else "shared quality input"
+            ),
+            "quality_channels": (
+                None
+                if settings.electronic_quality_residual_enabled
+                else list(QUALITY_CHANNELS)
+            ),
             "internal_width": settings.model_width,
         },
         "geometry": {
