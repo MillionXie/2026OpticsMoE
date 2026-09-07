@@ -2,72 +2,72 @@
   "schema_version": 1,
   "files": [
     {
-      "path": "LightGenV2\\tasks\\t08_abo_image_text_retrieval\\reports\\optical_router_moe_20260907\\balanced\\final_report.json",
+      "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/reports/optical_router_moe_20260907/balanced/final_report.json",
       "bytes": 3540,
       "sha256": "b28d2684ee43e86bdfae39c252836161bde2f4c0f84a638fa07c9b673ad68c79"
     },
     {
-      "path": "LightGenV2\\tasks\\t08_abo_image_text_retrieval\\reports\\5090d_optical_and_qwen_20260907\\optical_moe\\optical_moe_electronics_5090d.json",
+      "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/reports/5090d_optical_and_qwen_20260907/optical_moe/optical_moe_electronics_5090d.json",
       "bytes": 14159,
       "sha256": "d94c3d01b0f9cb00d42fd3a610b259ac6eb4d61a989e731ce4f36a7810afa460"
     },
     {
-      "path": "LightGenV2\\tasks\\t08_abo_image_text_retrieval\\reports\\5090d_optical_and_qwen_20260907\\optical_moe\\optical_moe_electronics_5090d.csv",
+      "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/reports/5090d_optical_and_qwen_20260907/optical_moe/optical_moe_electronics_5090d.csv",
       "bytes": 1758,
       "sha256": "32c9fbf8d8f99d2d632b6dd5734e98106c12de0b2720bd89d561f7dc7c0bba12"
     },
     {
-      "path": "LightGenV2\\tasks\\t08_abo_image_text_retrieval\\reports\\5090d_optical_and_qwen_20260907\\optical_moe\\power_samples.csv",
+      "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/reports/5090d_optical_and_qwen_20260907/optical_moe/power_samples.csv",
       "bytes": 148335,
       "sha256": "ec7ea12d418ee390e748bc0bde43194b8133222a06672038417eec81841f30eb"
     },
     {
-      "path": "LightGenV2\\tasks\\t08_abo_image_text_retrieval\\reports\\5090d_optical_and_qwen_20260907\\qwen_baseline\\baseline_report.json",
+      "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/reports/5090d_optical_and_qwen_20260907/qwen_baseline/baseline_report.json",
       "bytes": 3505,
       "sha256": "1ddb51dfb47531158b5917e396ca29d051cff3daa607f043885bdfbe01b6fd94"
     },
     {
-      "path": "LightGenV2\\tasks\\t08_abo_image_text_retrieval\\reports\\5090d_optical_and_qwen_20260907\\qwen_baseline\\timing_per_sample.csv",
+      "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/reports/5090d_optical_and_qwen_20260907/qwen_baseline/timing_per_sample.csv",
       "bytes": 17802,
       "sha256": "85beb04c40f0e6b1b4a72b08ba311b8866890d32b368ec76c7ecc281aa57b039"
     },
     {
-      "path": "LightGenV2\\tasks\\t08_abo_image_text_retrieval\\reports\\5090d_optical_and_qwen_20260907\\qwen_baseline\\power_samples.csv",
+      "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/reports/5090d_optical_and_qwen_20260907/qwen_baseline/power_samples.csv",
       "bytes": 42440,
       "sha256": "563642d3bda93b5e320c2d383601a339a36d363c72f29300d850edbbf190443d"
     },
     {
-      "path": "LightGenV2\\tasks\\t08_abo_image_text_retrieval\\reports\\5090d_optical_and_qwen_20260907\\qwen_baseline\\retrieval_predictions.csv",
+      "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/reports/5090d_optical_and_qwen_20260907/qwen_baseline/retrieval_predictions.csv",
       "bytes": 1101329,
       "sha256": "513007fb2c7f97aa9b5d4821f0d759c3d3a7e59f15261b575de88145265b556c"
     },
     {
-      "path": "LightGenV2\\tasks\\t08_abo_image_text_retrieval\\reports\\5090d_optical_and_qwen_20260907\\summary.json",
+      "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/reports/5090d_optical_and_qwen_20260907/summary.json",
       "bytes": 2701,
       "sha256": "fa93154ba81969987987a65482baaea1103aeb69eb2c5e2bd0bbe391742654ce"
     },
     {
-      "path": "LightGenV2\\tasks\\t08_abo_image_text_retrieval\\reports\\5090d_optical_and_qwen_20260907\\comparison_summary.csv",
+      "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/reports/5090d_optical_and_qwen_20260907/comparison_summary.csv",
       "bytes": 548,
       "sha256": "dd74c6ce96ef0723374a89ffd4db36e0b95bfd6cd09ad981b8f1ced535b68558"
     },
     {
-      "path": "LightGenV2\\tasks\\t08_abo_image_text_retrieval\\reports\\5090d_optical_and_qwen_20260907\\abo_5090d_comparison.png",
+      "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/reports/5090d_optical_and_qwen_20260907/abo_5090d_comparison.png",
       "bytes": 140217,
       "sha256": "bd8ec0e5400a49e9eb70e6fcc32853f51fc194a4bd4f424c68eb11f51065605b"
     },
     {
-      "path": "LightGenV2\\tasks\\t08_abo_image_text_retrieval\\reports\\5090d_optical_and_qwen_20260907\\abo_5090d_comparison.pdf",
+      "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/reports/5090d_optical_and_qwen_20260907/abo_5090d_comparison.pdf",
       "bytes": 47245,
-      "sha256": "83da47d09676563c27403c209acac1396bbacc410b0c05413f31a024e44b718e"
+      "sha256": "fabb10e186873eda3e39f315220606b615e81ddc81ee8c92310e06ace01aec29"
     },
     {
-      "path": "LightGenV2\\scripts\\profile_optical_electronics_5090d.py",
+      "path": "LightGenV2/scripts/profile_optical_electronics_5090d.py",
       "bytes": 54833,
       "sha256": "a0bd3048acbbda21a29fc9d7b5ffd037206b476848d36e6f1ec593d7bbc4be4c"
     },
     {
-      "path": "LightGenV2\\tasks\\t08_abo_image_text_retrieval\\baseline_5090d.py",
+      "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/baseline_5090d.py",
       "bytes": 20229,
       "sha256": "812a9da0571727ebcf9a59b87ad638d800fd2191db984575e560a60a5a7c4568"
     }

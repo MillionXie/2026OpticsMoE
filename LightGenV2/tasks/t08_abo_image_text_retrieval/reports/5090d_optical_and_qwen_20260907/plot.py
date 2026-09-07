@@ -184,7 +184,7 @@ def main() -> int:
     manifest = {
         "schema_version": 1,
         "files": [
-            {"path": str(path.relative_to(REPO_ROOT)), "bytes": path.stat().st_size, "sha256": _sha256(path)}
+            {"path": path.relative_to(REPO_ROOT).as_posix(), "bytes": path.stat().st_size, "sha256": _sha256(path)}
             for path in evidence
         ],
     }
