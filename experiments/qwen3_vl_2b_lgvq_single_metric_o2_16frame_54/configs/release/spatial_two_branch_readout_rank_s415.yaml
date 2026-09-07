@@ -1,0 +1,35 @@
+base_config: spatial_two_branch_equality_refine_s324.yaml
+output_dir: ../../runs/lgvq_spatial_two_branch_readout_rank_s415
+random_seed: 415
+
+# Preserve the established Qwen boundary, E/O routes, optical masks, routers,
+# alpha gates, and multimodal bridge bit-for-bit.  Only recalibrate the one
+# post-O/E MOS readout against labels and rank metrics.
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_two_branch_equality_refine_s324/best_observed_test_checkpoint.pt
+  trainable_scope: readout_only
+  epochs: 100
+  batch_size: 64
+  mos_stratified_batches: true
+  mos_strata: 8
+  learning_rate: 0.00005
+  learning_rate_warmup_epochs: 3
+  minimum_learning_rate_factor: 0.05
+  test_interval_epochs: 1
+  phase_snapshot_interval_epochs: 0
+
+loss:
+  ranking_weight: 0.35
+  correlation_weight: 0.90
+  soft_spearman_weight: 0.15
+  soft_rank_temperature: 0.15
+  soft_target_weight: 0.00
+  optical_alignment_weight: 0.00
+  router_balance_weight: 0.00
+  router_importance_weight: 0.00
+  serial_router_balance_weight: 0.00
+  serial_router_importance_weight: 0.00
+  router_capture_weight: 0.00
+
+curriculum:
+  enabled: false

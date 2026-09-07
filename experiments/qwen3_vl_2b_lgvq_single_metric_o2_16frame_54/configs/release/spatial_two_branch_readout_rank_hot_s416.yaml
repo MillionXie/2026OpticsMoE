@@ -1,0 +1,9 @@
+base_config: spatial_two_branch_readout_rank_s415.yaml
+output_dir: ../../runs/lgvq_spatial_two_branch_readout_rank_hot_s416
+random_seed: 416
+
+# Same frozen feature graph as s415, with a faster readout optimizer.  This is
+# an optimizer ablation, not a new inference branch.
+training:
+  learning_rate: 0.00020
+  learning_rate_warmup_epochs: 5
