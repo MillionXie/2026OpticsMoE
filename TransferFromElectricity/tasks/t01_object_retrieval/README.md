@@ -502,7 +502,7 @@ run ID：`20260907_caltech10_heads_{fixed,direct,qwen_frozen,qwen_lora}_s42`。
 | 冻结 Qwen＋训练解码器 | 12 | 81.0% | 1.20237 | 66.5% | 10.43 |
 | Qwen LoRA＋训练解码器 | 20 | 84.5% | 1.27077 | 70.0% | 11.14 |
 
-LoRA 比 direct 多答对 2/200 个查询，先按小幅候选收益处理，等待配对种子复验。
+LoRA 比 direct 多答对 2/200 个查询；后续配对种子结果见下文，不能只依据此 seed 判断优势。
 生成专家被换回初始值时明显退化，说明训练后的系统使用了学到的 mask。
 但在所选 LoRA 模型中关闭 LoRA、保留已训练的解码器，Top-1 仍为 84.5%；相位只改变 0.00457 rad。
 这不否认 LoRA 在训练轨迹中的作用，但当前结果没有证明部署 mask 依赖 LoRA，也不能证明 Qwen 预训练知识带来收益。
@@ -555,3 +555,30 @@ Qwen LoRA＋解码器共 2,178,048 个。性能、参数与开销需要共同评
 [训练曲线](reports/cifar100ten_heads_20260907/training_comparison.png)、
 [相位变化图](reports/cifar100ten_heads_20260907/selected_phase_changes.png)。
 轻量产物已逐文件核验 SHA256 回传；此结果不代表 CIFAR-100 全百类成绩，也不是标准分类头榜单结果。
+
+### 独立输出头：Caltech 十类三种子复验
+
+全部六个 run 使用 `8063ed16`、RTX 4090、相同数据划分、每 run 1,200 更新。
+run ID：`20260907_caltech10_heads_{direct,qwen_lora}_s{42,43,44}`。
+未混入此前共享输出头的 400-step 三种子实验。
+
+| 优化 seed | direct Top-1 | Qwen LoRA Top-1 | LoRA − direct / 百分点 |
+|---|---:|---:|---:|
+| 42 | 83.5% | 84.5% | +1.0 |
+| 43 | 84.0% | 81.5% | −2.5 |
+| 44 | 76.0% | 80.0% | +4.0 |
+| 均值 ± 样本标准差 | 81.17% ± 4.48% | 82.00% ± 2.29% | +0.83 |
+
+三个种子的排序并不一致。当前平均提升很小，无法据此证明稳定优势；观察到的较小标准差也不足以建立普遍稳定性结论。
+direct seed=44 所选 checkpoint 为 expert-only 第 4 轮，LoRA seed=44 为 optics 第 11 轮，
+说明联合阶段没有稳定提高验证选模结果。不能改用 test 更好的其他 checkpoint 来修饰此表。
+
+direct 的所选相位变化为 0.609–0.847 rad，LoRA 为 1.138–1.271 rad；六组导出检查误差均为 0。
+三个 LoRA checkpoint 分别关闭 LoRA、保留解码器，Top-1 都保持不变。
+因此目前可以确认生成式参数化可训练，不能把微小平均差距解释为 Qwen 参数更新的明确收益。
+固定提示词、单任务训练、仅八张 mask 的设定也不能直接检验大模型的跨任务设计知识。
+
+这三次仍复用同一批 200 张 test 和 100 张 adaptation validation；历史 warmstart/测试暴露限制仍然存在。
+导出一致性是每个 run 在 3 张样本上对 materialize 前后 embedding 的检查，未进行全测试集逐元素一致性审计。
+见 [三种子完整指标](reports/caltech10_heads_seeds_20260907/summary.json) 和
+[种子对比图](reports/caltech10_heads_seeds_20260907/paired_seeds.png)。
