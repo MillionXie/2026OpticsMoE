@@ -1,4 +1,5 @@
 base_config: ../separate_heads_ideal.yaml
+deterministic_algorithms: true
 # Same 512-dimensional decoder input for Qwen and CLIP; no trainable bridge.
 generator:
   context_width: 512

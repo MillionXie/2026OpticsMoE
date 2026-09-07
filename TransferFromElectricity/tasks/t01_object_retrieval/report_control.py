@@ -51,7 +51,7 @@ def development(runs):
         if candidate:
             common = json.loads(json.dumps(cfg))
             for key in ('electronic','readout','generator_context'): common['learning_rates'].pop(key)
-            contracts.add((result['git_sha'], result['split_sha256'], json.dumps(common,sort_keys=True)))
+            contracts.add((result['git_sha'], result['split_sha256'], env['device'], json.dumps(common,sort_keys=True)))
             expected.add((row['electronic_lr'], row['generator_lr']))
     if len(contracts) != 1 or expected != {(e,g) for e in (1e-4,1e-5) for g in (1e-4,1e-3)}:
         raise ValueError('The complete paired 2x2 learning-rate grid is required')
@@ -69,7 +69,7 @@ def summarize(runs, dev_runs, output):
         key = (dataset, result['method'])
         if key in contracts: raise ValueError(f'Duplicate {key}')
         comparable = {k:v for k,v in cfg.items() if k != 'method'}
-        contracts[key] = (result['git_sha'], result['split_sha256'], json.dumps(comparable,sort_keys=True))
+        contracts[key] = (result['git_sha'], result['split_sha256'], env['device'], json.dumps(comparable,sort_keys=True))
         m = result['selected_metrics']
         ablations = {k:{name:v[name] for name in ('top1_retrieval_accuracy','top3_retrieval_accuracy','mrr')}
                      for k,v in result['ablations'].items() if 'top1_retrieval_accuracy' in v}

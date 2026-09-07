@@ -90,6 +90,10 @@ def parameter_groups(replacement, readout, generator, method, cfg):
 
 
 def execute(args, cfg, output):
+    if cfg.get('deterministic_algorithms', False):
+        os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
+        torch.use_deterministic_algorithms(True)
+        torch.backends.cudnn.benchmark = False
     seed_everything(cfg['seed'])
     torch.set_num_threads(4)
     device = torch.device('cuda')
@@ -181,7 +185,10 @@ def execute(args, cfg, output):
     current_sha = git('rev-parse','HEAD')
     write_json(output/'environment.json', {**environment_report(),'git_sha':current_sha,'git_status':git('status','--short'),
         'command':sys.argv,'device':torch.cuda.get_device_name(),'cuda_visible_devices':os.environ.get('CUDA_VISIBLE_DEVICES'),
-        'cuda_device_order':os.environ.get('CUDA_DEVICE_ORDER'),'config_sha256':sha256(args.config),'split_sha256':sha256(output/'split.json')})
+        'cuda_device_order':os.environ.get('CUDA_DEVICE_ORDER'),
+        'deterministic_algorithms':torch.are_deterministic_algorithms_enabled(),
+        'cublas_workspace_config':os.environ.get('CUBLAS_WORKSPACE_CONFIG'),
+        'config_sha256':sha256(args.config),'split_sha256':sha256(output/'split.json')})
     seed_everything(cfg['seed']+1000)
     dataset = GroceryRetrievalDataset(training, settings.image_size, augment=settings.augmentation_enabled,
         crop_scale_min=settings.crop_scale_min,brightness_jitter=settings.brightness_jitter,
