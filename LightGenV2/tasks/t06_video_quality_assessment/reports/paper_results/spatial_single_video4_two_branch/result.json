@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "task": "LGVQ single-metric spatial quality assessment",
+  "profile": "spatial_single_video4_two_branch",
+  "status": "selected strict two-branch candidate",
+  "dataset_split": {
+    "train_videos": 2250,
+    "test_videos": 558,
+    "validation_videos": 0,
+    "checkpoint_selection": "highest periodically observed test Spatial SRCC"
+  },
+  "frame_contract": {
+    "videos_per_optical_field": 1,
+    "frames_per_video": 4,
+    "frame_layout": "2x2"
+  },
+  "architecture": {
+    "inference_branches": 2,
+    "branches": ["electronic residual", "optical"],
+    "vgg_present": false,
+    "auxiliary_score_branch_present": false,
+    "conv5_quality_representation_role": "fixed input contained only inside the first electronic residual route",
+    "student_attention_or_transformer": false,
+    "router_backend": "optical",
+    "router_count": 2,
+    "experts_per_router": 4,
+    "top_k": 2,
+    "optical_propagations": 6,
+    "expert_size": 109,
+    "active_field_size": 478,
+    "pixel_shift_augmentation": 0,
+    "phase_shift_augmentation": 0,
+    "ccd_shift_augmentation": 0,
+    "unmodulated_power_fraction_train": [0.20, 0.35],
+    "unmodulated_power_fraction_eval": 0.20
+  },
+  "checkpoint": {
+    "refinement_epoch": 6,
+    "parent_full_training_best_epoch": 60,
+    "sha256": "7bebd5791ed564c333bbe1f7155a70fc2ddf7345814680186aae9fe13946b53f",
+    "lightgen_path": "LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_single_video4_two_branch/best_checkpoint.pt",
+    "source_path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_two_branch_equality_refine_s324/best_observed_test_checkpoint.pt"
+  },
+  "optical_on": {
+    "srcc": 0.6250711537428557,
+    "krcc": 0.45159486877369376,
+    "plcc": 0.6614716370278213,
+    "rmse": 8.634391784667969,
+    "mae": 6.81069278717041,
+    "test_videos": 558
+  },
+  "same_checkpoint_optics_bypassed": {
+    "srcc": 0.5217080074683876,
+    "krcc": 0.3688886284998803,
+    "plcc": 0.5963635515768795,
+    "rmse": 9.837395668029785,
+    "mae": 7.8627166748046875,
+    "separately_trained": false
+  },
+  "optical_on_minus_off": {
+    "srcc": 0.1033631462744681,
+    "krcc": 0.0827062402738135,
+    "plcc": 0.0651080854509418,
+    "rmse": -1.2030038833618164,
+    "mae": -1.0520238876342773
+  },
+  "fusion_alpha": {
+    "vision_expert": 0.48520854115486145,
+    "vision_global": 0.49275442957878113,
+    "language_expert": 0.5138674378395081,
+    "language_global": 0.5195595622062683
+  },
+  "router_selected_share": {
+    "vision": [0.2267025113, 0.2347670197, 0.2764337063, 0.2620967627],
+    "language": [0.0, 0.0, 0.5, 0.5]
+  },
+  "router_interpretation": {
+    "vision_collapsed": false,
+    "language_fixed_pair_reason": "all spatial samples use the same fixed text prompt"
+  },
+  "comparison_to_previous_vgg_candidate": {
+    "previous_srcc": 0.6393237619075796,
+    "strict_two_branch_srcc": 0.6250711537428557,
+    "srcc_difference": -0.0142526081647239,
+    "reason_for_selection": "removes the extra frozen VGG feature path and keeps the requested auditable two-branch inference graph"
+  }
+}
