@@ -251,6 +251,8 @@ class ExperimentSettings:
     electronic_skip_max: float = 1.0
     electronic_route_variant: str = "legacy"
     electronic_route_depth: int = 1
+    electronic_quality_residual_enabled: bool = False
+    electronic_quality_residual_initial: float = 0.70
     quality_refiner_enabled: bool = False
     quality_refiner_max: float = 0.50
     late_input_correction_enabled: bool = False
@@ -364,6 +366,9 @@ class ExperimentSettings:
             suffixes.append(
                 f"{self.electronic_route_variant}{self.electronic_route_depth}_v1"
             )
+        if self.electronic_quality_residual_enabled:
+            quality_tag = int(round(self.electronic_quality_residual_initial * 100.0))
+            suffixes.append(f"electronicqualityresidual{quality_tag:02d}_v1")
         if self.quality_refiner_enabled:
             suffixes.append("qualityrefine_v1")
         if self.late_input_correction_enabled:
@@ -450,11 +455,25 @@ class ExperimentSettings:
             )
         if not 1 <= self.electronic_route_depth <= 4:
             raise ValueError("model.electronic_route_depth must be within [1,4]")
+        if not 0.0 < self.electronic_quality_residual_initial < 1.0:
+            raise ValueError(
+                "model.electronic_quality_residual_initial must be within (0,1)"
+            )
+        if self.electronic_quality_residual_enabled and (
+            self.quality_feature_cache_path is None
+            or self.quality_input_width != self.model_width
+        ):
+            raise ValueError(
+                "The electronic quality residual requires a model-width quality cache"
+            )
         if self.strict_two_branch:
             invalid = []
             if self.quality_branch_enabled:
                 invalid.append("quality_branch_enabled")
-            if self.quality_feature_cache_path is not None:
+            if (
+                self.quality_feature_cache_path is not None
+                and not self.electronic_quality_residual_enabled
+            ):
                 invalid.append("data.quality_feature_cache")
             if self.vgg_feature_cache_path is not None:
                 invalid.append("data.vgg_feature_cache")
@@ -690,6 +709,12 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
             get("model", "electronic_route_variant", "legacy")
         ),
         electronic_route_depth=int(get("model", "electronic_route_depth", 1)),
+        electronic_quality_residual_enabled=bool(
+            get("model", "electronic_quality_residual_enabled", False)
+        ),
+        electronic_quality_residual_initial=float(
+            get("model", "electronic_quality_residual_initial", 0.70)
+        ),
         quality_refiner_enabled=bool(get("model", "quality_refiner_enabled", False)),
         quality_refiner_max=float(get("model", "quality_refiner_max", 0.50)),
         late_input_correction_enabled=bool(

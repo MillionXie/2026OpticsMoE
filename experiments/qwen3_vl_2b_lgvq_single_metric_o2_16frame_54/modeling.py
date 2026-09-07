@@ -863,17 +863,41 @@ class _VisionResidualConvBlock(nn.Module):
 
 
 class VisionElectronicResidualRoute(nn.Module):
-    """A stronger single electronic residual route; no side input or attention."""
+    """One electronic route with a checkpoint-compatible convolutional stem."""
 
     def __init__(self, settings: ExperimentSettings) -> None:
         super().__init__()
         self.grid = settings.token_grid
+        self.width = settings.model_width
+        # Keep these names and tensor shapes identical to VisionElectronicRoute.
+        # The formal two-branch model can therefore inherit the already trained
+        # electronic transform instead of silently randomizing the whole E path.
+        self.norm = nn.LayerNorm(self.width)
+        self.depthwise = nn.Conv2d(
+            self.width,
+            self.width,
+            5,
+            padding=2,
+            groups=self.width,
+            bias=False,
+        )
+        self.pointwise = nn.Conv2d(self.width, self.width, 1)
         self.blocks = nn.ModuleList(
-            _VisionResidualConvBlock(settings.model_width)
-            for _ in range(settings.electronic_route_depth)
+            _VisionResidualConvBlock(self.width)
+            for _ in range(settings.electronic_route_depth - 1)
         )
 
     def forward(self, value: torch.Tensor) -> torch.Tensor:
+        batch, frames, tokens, width = value.shape
+        if tokens != self.grid * self.grid or width != self.width:
+            raise ValueError("Vision electronic grid contract changed")
+        image = self.norm(value).reshape(
+            batch * frames, self.grid, self.grid, width
+        ).permute(0, 3, 1, 2)
+        value = self.pointwise(F.gelu(self.depthwise(image)))
+        value = value.permute(0, 2, 3, 1).reshape(
+            batch, frames, tokens, width
+        )
         for block in self.blocks:
             value = block(value, self.grid)
         return value
@@ -899,16 +923,30 @@ class _LanguageResidualConvBlock(nn.Module):
 
 
 class LanguageElectronicResidualRoute(nn.Module):
-    """A stronger single causal electronic residual route; no attention."""
+    """One causal electronic route with a compatible convolutional stem."""
 
     def __init__(self, settings: ExperimentSettings) -> None:
         super().__init__()
+        self.width = settings.model_width
+        # These three modules exactly match LanguageElectronicRoute so the
+        # warm-start keeps the trained causal electronic transform.
+        self.norm = nn.LayerNorm(self.width)
+        self.depthwise = nn.Conv1d(
+            self.width, self.width, 5, groups=self.width, bias=False
+        )
+        self.pointwise = nn.Conv1d(self.width, self.width, 1)
         self.blocks = nn.ModuleList(
-            _LanguageResidualConvBlock(settings.model_width)
-            for _ in range(settings.electronic_route_depth)
+            _LanguageResidualConvBlock(self.width)
+            for _ in range(settings.electronic_route_depth - 1)
         )
 
     def forward(self, value: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+        sequence = self.norm(value).masked_fill(
+            ~mask.unsqueeze(-1), 0.0
+        ).transpose(1, 2)
+        sequence = F.pad(sequence, (4, 0))
+        value = self.pointwise(F.gelu(self.depthwise(sequence))).transpose(1, 2)
+        value = value.masked_fill(~mask.unsqueeze(-1), 0.0)
         for block in self.blocks:
             value = block(value, mask)
         return value
@@ -1884,6 +1922,17 @@ class LGVQSingleMetricOEO16(nn.Module):
                     ),
                 ]
             )
+        self.electronic_quality_norm = (
+            nn.LayerNorm(settings.quality_input_width)
+            if settings.electronic_quality_residual_enabled
+            else None
+        )
+        if settings.electronic_quality_residual_enabled:
+            self.raw_electronic_quality_scale = nn.Parameter(
+                torch.logit(
+                    torch.tensor(settings.electronic_quality_residual_initial)
+                )
+            )
         self.parallel_optics = ParallelOpticalFeaturePath(settings)
         self.serial_optics = SerialOpticalFeaturePath(settings)
         self.parallel_router = OpticalRouterParallel16(settings)
@@ -1950,17 +1999,21 @@ class LGVQSingleMetricOEO16(nn.Module):
             # the same quantization boundary makes epoch 0 reproducible while
             # retaining gradients through the cast during fine-tuning.
             quality_tokens = self.frame_stem(raw_frames).to(torch.float16).float()
-        if self.settings.quality_branch_enabled and tuple(
+        quality_is_used = (
+            self.settings.quality_branch_enabled
+            or self.settings.electronic_quality_residual_enabled
+        )
+        if quality_is_used and tuple(
             vision_tokens.shape[:-1]
         ) != tuple(quality_tokens.shape[:-1]):
             raise ValueError("Qwen and fixed-quality token grids must match")
         if vision_tokens.shape[-1] != self.settings.vision_input_width:
             raise ValueError("Qwen Vision front width must be 1024")
         if (
-            self.settings.quality_branch_enabled
+            quality_is_used
             and quality_tokens.shape[-1] != self.settings.quality_input_width
         ):
-            raise ValueError("Fixed quality side-input width must be 14")
+            raise ValueError("Quality token width differs from the configured width")
         if tuple(language_mask.shape) != tuple(language_tokens.shape[:-1]):
             raise ValueError("Language mask must match the prompt token sequence")
 
@@ -2002,6 +2055,14 @@ class LGVQSingleMetricOEO16(nn.Module):
 
         fields1 = self.parallel_optics.fields(vision)
         electronic1 = self.vision_routes[0](vision)
+        electronic_quality_scale = electronic1.new_zeros(())
+        if self.electronic_quality_norm is not None:
+            electronic_quality_scale = torch.sigmoid(
+                self.raw_electronic_quality_scale
+            )
+            electronic1 = electronic1 + electronic_quality_scale * (
+                self.electronic_quality_norm(quality_tokens.float())
+            )
         if optical_enabled:
             routing["vision"] = self.parallel_router(fields1)
             optical1 = self.parallel_optics.expert(fields1, routing["vision"]["weights"])
@@ -2089,6 +2150,7 @@ class LGVQSingleMetricOEO16(nn.Module):
             "normalized_prediction": normalized,
             "target_name": self.settings.target_name,
             "quality_gate": quality_gate,
+            "electronic_quality_residual_scale": electronic_quality_scale,
             "qwen_gate": qwen_gate,
             "late_input_correction": input_correction,
             "vgg_correction_rms": vgg_correction.float().square().mean().sqrt(),
@@ -2137,6 +2199,10 @@ class LGVQSingleMetricOEO16(nn.Module):
         }
         if self.quality_adapter is not None:
             groups["quality_input_adapter"] = self.quality_adapter
+        if self.electronic_quality_norm is not None:
+            groups["electronic_quality_residual"] = nn.ModuleList(
+                [self.electronic_quality_norm]
+            )
         if self.frame_stem is not None:
             groups["trainable_quality_frame_stem"] = self.frame_stem
         if self.vgg_correction is not None:
@@ -2147,6 +2213,10 @@ class LGVQSingleMetricOEO16(nn.Module):
             name: sum(parameter.numel() for parameter in module.parameters())
             for name, module in groups.items()
         }
+        if hasattr(self, "raw_electronic_quality_scale"):
+            result["electronic_quality_residual"] += (
+                self.raw_electronic_quality_scale.numel()
+            )
         result["total_trainable"] = sum(
             parameter.numel() for parameter in self.parameters() if parameter.requires_grad
         )

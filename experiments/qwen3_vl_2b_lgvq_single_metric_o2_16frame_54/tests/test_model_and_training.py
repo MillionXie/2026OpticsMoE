@@ -297,6 +297,79 @@ def test_strict_two_branch_contract_rejects_hidden_vgg_side_input(
         settings.validate()
 
 
+def test_strict_two_branch_allows_quality_only_inside_electronic_route(
+    tmp_path: Path,
+) -> None:
+    settings = replace(
+        _small_settings(tmp_path),
+        strict_two_branch=True,
+        quality_branch_enabled=False,
+        quality_feature_cache_path=tmp_path / "quality_cache.pt",
+        quality_input_width=192,
+        qwen_gate_enabled=False,
+        electronic_route_variant="residual_conv",
+        electronic_route_depth=2,
+        electronic_quality_residual_enabled=True,
+        electronic_quality_residual_initial=0.70,
+        phase_snapshot_interval_epochs=0,
+    )
+    settings.validate()
+    model = LGVQSingleMetricOEO16(settings).eval()
+    assert model.quality_adapter is None
+    assert model.vgg_correction is None
+    assert model.electronic_quality_norm is not None
+    assert not any(
+        token in module.__class__.__name__.lower()
+        for module in model.modules()
+        for token in ("attention", "transformer", "lstm", "gru")
+    )
+    generator = torch.Generator().manual_seed(704)
+    inputs = [
+        torch.randn(2, 4, 49, 1024, generator=generator),
+        torch.randn(2, 4, 49, 192, generator=generator),
+        torch.randn(2, 4, 2048, generator=generator),
+        torch.ones(2, 4, dtype=torch.bool),
+    ]
+    with torch.no_grad():
+        first = model(*inputs, optical_enabled=False)["prediction"]
+        inputs[1] = inputs[1] + 3.0 * torch.randn(
+            inputs[1].shape, generator=generator
+        )
+        second = model(*inputs, optical_enabled=False)["prediction"]
+    assert not torch.equal(first, second)
+
+
+def test_residual_electronic_route_warm_starts_legacy_stem(
+    tmp_path: Path,
+) -> None:
+    source_settings = _small_settings(tmp_path)
+    torch.manual_seed(705)
+    source = LGVQSingleMetricOEO16(source_settings).eval()
+    checkpoint = tmp_path / "legacy_route.pt"
+    torch.save({"state_dict": source.state_dict()}, checkpoint)
+    destination_settings = replace(
+        source_settings,
+        electronic_route_variant="residual_conv",
+        electronic_route_depth=2,
+        initialization_checkpoint=checkpoint,
+    )
+    destination_settings.validate()
+    destination = LGVQSingleMetricOEO16(destination_settings).eval()
+    report = _load_compatible_initialization(destination, destination_settings)
+    assert report["used"] is True
+    for route_name in ("vision_routes", "language_routes"):
+        for route_index in (0, 1):
+            for suffix in (
+                "norm.weight",
+                "norm.bias",
+                "depthwise.weight",
+                "pointwise.weight",
+                "pointwise.bias",
+            ):
+                name = f"{route_name}.{route_index}.{suffix}"
+                assert torch.equal(source.state_dict()[name], destination.state_dict()[name])
+
+
 def test_spatial_grid_readout_preserves_four_frame_contract(tmp_path: Path) -> None:
     settings = _small_settings(tmp_path)
     settings.spatial_readout_mode = "spatial_grid"
