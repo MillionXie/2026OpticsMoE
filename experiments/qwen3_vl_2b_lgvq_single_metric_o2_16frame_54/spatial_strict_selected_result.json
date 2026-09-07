@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "selected_on": "2026-09-08",
+  "selection_policy": "highest periodically observed test SRCC; no validation split by project convention",
+  "status": "strict_two_branch_robust_candidate",
+  "config": "configs/release/spatial_two_branch_weighted_multiview_hot_s414.yaml",
+  "server_run_dir": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_two_branch_weighted_multiview_hot_s414",
+  "best_checkpoint": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_two_branch_weighted_multiview_hot_s414/best_observed_test_checkpoint.pt",
+  "best_checkpoint_sha256": "2e9ae3ff54c09104e104c89b236c03ada9da6b6acd65ca5eff0f8cd83e0d4678",
+  "best_epoch": 3,
+  "metrics_optical_on": {
+    "srcc": 0.6252910685707558,
+    "plcc": 0.6619815235184012,
+    "krcc": 0.45217422444187094,
+    "rmse": 8.659558296203613,
+    "mae": 6.839261054992676
+  },
+  "same_checkpoint_optics_bypassed": {
+    "srcc": 0.517722776434337
+  },
+  "optical_on_minus_off_srcc": 0.10756829213641883,
+  "training_view_probabilities": [0.9, 0.05, 0.05],
+  "inference_frame_view": "primary unshifted four-frame view only",
+  "material_improvement_over_s324": false,
+  "stable_reference": {
+    "config": "configs/release/spatial_two_branch_equality_refine_s324.yaml",
+    "srcc": 0.6250711537428557,
+    "plcc": 0.6614716370278213
+  }
+}
