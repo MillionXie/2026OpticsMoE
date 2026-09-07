@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import argparse
-from contextlib import nullcontext
 import csv
 import hashlib
 import json
@@ -86,7 +85,6 @@ def main():
         raise ValueError('Resume configuration differs from original run')
     write_json(output / 'pilot_config.json', cfg)
     write_json(output / 'status.json', {'status': 'running'})
-    replacement = None
     try:
         execute(args, cfg, output)
         write_json(output / 'status.json', {'status': 'complete'})
@@ -122,6 +120,8 @@ def execute(args, cfg, output):
                 'gallery': [s.manifest_record() for s in bundle.gallery_samples],
                 'test': [s.manifest_record() for s in bundle.test_samples]}
     write_json(output / 'pilot_split.json', manifest)
+    write_json(output / 'data_hashes.json', {str(s.image_path): sha256(s.image_path)
+        for s in (*selected, *bundle.gallery_samples, *bundle.test_samples)})
     loaded = load_backbone(settings, device)
     replacement, readout = build_student(loaded, settings)
     write_json(output / 'initialization.json', initialize_student(settings, replacement, readout))
@@ -133,6 +133,12 @@ def execute(args, cfg, output):
     if args.method != 'direct':
         source = args.generator_source or resolve_cached_model_source(cfg['generator']['model_id'], settings.cache_dir)
         generator = StaticGenerator(args.method, source, device, cfg['generator']['rank'], seed=cfg['seed'])
+        if args.method.startswith('qwen'):
+            source_path = Path(source)
+            write_json(output / 'generator_source_manifest.json', {
+                'path': str(source_path), 'snapshot': source_path.name,
+                'files': {p.name: sha256(p) for p in sorted(source_path.iterdir())
+                          if p.is_file() and (p.suffix in {'.json', '.safetensors'})}})
         injection = ExpertInjection(planes)
         initial = generator.anchor
     else:
@@ -182,6 +188,7 @@ def execute(args, cfg, output):
     ema = initialize_parameter_ema(parameters)
     start_epoch = 1
     history = []
+    route_counts = {'vision': [0]*4, 'language': [0]*4}
     if args.resume:
         payload = torch.load(output / 'last_checkpoint.pt', map_location=device, weights_only=False)
         if payload['git_sha'] != git('rev-parse', 'HEAD'):
@@ -195,6 +202,7 @@ def execute(args, cfg, output):
         ema = [t.to(device) for t in payload['ema']]
         start_epoch = payload['epoch'] + 1
         history = payload['history']
+        route_counts = payload['route_counts']
         random.setstate(payload['rng_python'])
         np.random.set_state(payload['rng_numpy'])
         torch.set_rng_state(payload['rng_torch'].cpu())
@@ -206,6 +214,7 @@ def execute(args, cfg, output):
             'readout': cpu_state(readout), 'generator': generator.compact_state() if generator else None,
             'generator_source': generator.source if generator else None,
             'optimizer': optimizer.state_dict(), 'ema': [t.cpu() for t in ema], 'history': history,
+            'route_counts': route_counts,
             'rng_python': random.getstate(), 'rng_numpy': np.random.get_state(),
             'rng_torch': torch.get_rng_state(), 'rng_cuda': torch.cuda.get_rng_state_all()}
     audit_inputs = None
@@ -239,6 +248,9 @@ def execute(args, cfg, output):
                     total = total + settings.lambda_ccd_operating_point * ccd + settings.lambda_phase_dc * phase_dc_loss(replacement)
                 if not torch.isfinite(total):
                     raise RuntimeError('Nonfinite loss')
+                for name, surrogate in [('vision', replacement.vision_surrogate), ('language', replacement.language_surrogate)]:
+                    counts = surrogate.core.last_routing['selected_mask'].sum(0).cpu().tolist()
+                    route_counts[name] = [a+int(b) for a,b in zip(route_counts[name], counts)]
                 if not history:
                     targets = [p.raw_phase for p in planes] if generator is None else [raw]
                     task_grads = torch.autograd.grad(task_loss, targets, retain_graph=True)
@@ -276,6 +288,7 @@ def execute(args, cfg, output):
             torch.save(best, output / 'best_checkpoint.pt')
             bank = {'raw_phase': raw.cpu(), 'phase_rad': (2*torch.pi*torch.sigmoid(raw)).cpu(), 'shape': list(raw.shape)}
             torch.save(bank, output / 'expert_bank.pt')
+            phase_motion = float((2*torch.pi*(torch.sigmoid(raw)-torch.sigmoid(initial))).square().mean().sqrt())
             # Export agreement: consume plain phase Parameters with no generator.
             replacement.vision_surrogate.eval(); replacement.language_surrogate.eval(); readout.eval()
             if audit_inputs is None:
@@ -290,6 +303,20 @@ def execute(args, cfg, output):
             export_error = float((actual-expected).abs().max())
             if export_error > 1e-5:
                 raise RuntimeError(f'Export disagreement: {export_error}')
+            # Real task batch-independence check using separately processed images.
+            check_images = [dataset[i]['image'] for i in range(3)]
+            def audit_encode(images):
+                x = move_inputs(preprocess_images(loaded.processor, images, settings.instruction), device)
+                with torch.autocast('cuda', dtype=torch.bfloat16, enabled=settings.amp_enabled):
+                    return student_embeddings(loaded.model, replacement, readout, x)[0].clone()
+            together = audit_encode(check_images)
+            alone = audit_encode(check_images[:1])
+            reversed_embeddings = audit_encode(check_images[::-1])
+            batch_error = float((together[:1]-alone).abs().max())
+            order_error = float((together-reversed_embeddings.flip(0)).abs().max())
+            # BF16 task adapters can differ slightly with GEMM batch shape.
+            if max(batch_error, order_error) > 5e-3:
+                raise RuntimeError(f'Batch-dependence audit failed: {batch_error}, {order_error}')
             route_report = {}
             for name, surrogate in [('vision', replacement.vision_surrogate), ('language', replacement.language_surrogate)]:
                 routing = surrogate.core.last_routing
@@ -298,6 +325,9 @@ def execute(args, cfg, output):
                 'selection': cfg['selection'], 'test_used_for_selection': False,
                 'train_samples': len(selected), 'test_samples': len(bundle.test_samples), 'gallery_samples': len(bundle.gallery_samples),
                 'optimizer_steps': len(history), 'export_max_error': export_error,
+                'batch_max_error': batch_error, 'order_max_error': order_error,
+                'physical_phase_rms_change_rad': phase_motion,
+                'train_expert_selection_counts': route_counts,
                 'last_audit_batch_expert_counts': route_report,
                 'expert_bank_sha256': sha256(output/'expert_bank.pt'),
                 'peak_memory_gib': torch.cuda.max_memory_allocated()/1024**3,
