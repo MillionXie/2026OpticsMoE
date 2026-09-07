@@ -650,6 +650,8 @@ best/last checkpoint 保留在服务器原 run，未复制进 Git。
 - 师姐默认方案是冻结 CLIP RN50 图像特征＋mask 解码器，并对 batch masks 求平均。
   本轮借鉴 CLIP 编码器，不复用 batch 平均；文本条件主对照用于保持 Qwen/CLIP 输入变量一致，
   不将其描述为对师姐图像特征方案的原样复现。CLIP 也不能按参数规模被称为与 2B Qwen 等大的模型。
+  冻结生成器基座的数值精度也不同：Qwen 为 BF16，CLIP 为 FP32；LoRA 和 decoder 均为 FP32。
+  因此这是共享任务、训练协议与解码器的具体方法配置对照，不能把差距唯一归因于预训练知识或模型家族。
 - 先在 CIFAR 十类进行 16 轮 × 40 batch 的开发实验，只评估 validation：电子/读出 LR 为 1e-4 或 1e-5，
   Qwen LoRA LR 为 1e-4 或 1e-3，构成 2×2 对照，decoder LR 固定 3e-4。
   两项额外诊断在高 LoRA LR 上分别冻结全部电子/读出，或第 2 轮后冻结 decoder，以区分竞争与解码器代偿。

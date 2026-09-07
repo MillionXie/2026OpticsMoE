@@ -83,6 +83,7 @@ def summarize(runs, dev_runs, output):
         comparable = {k:v for k,v in cfg.items() if k != 'method'}
         contracts[key] = (result['git_sha'], result['split_sha256'], env['device'], json.dumps(comparable,sort_keys=True))
         m = result['selected_metrics']
+        architecture=read(run/'architecture.json')
         ablations = {k:{name:v[name] for name in ('top1_retrieval_accuracy','top3_retrieval_accuracy','mrr')}
                      for k,v in result['ablations'].items() if 'top1_retrieval_accuracy' in v}
         minimum = min(v for h in history for a in h['fusion'].values() for v in a)
@@ -98,13 +99,18 @@ def summarize(runs, dev_runs, output):
                'vision_optical_removal_top1_drop_pp': 100*(m['top1_retrieval_accuracy']-ablations['remove_vision_optical']['top1_retrieval_accuracy']),
                'language_optical_removal_top1_drop_pp': 100*(m['top1_retrieval_accuracy']-ablations['remove_language_optical']['top1_retrieval_accuracy']),
                'counts': result['counts'], 'ablations': ablations,
+               'train_images': result['counts']['train'], 'validation_images': result['counts']['validation'],
+               'gallery_images': result['counts']['gallery'], 'test_queries': result['counts']['test'],
+               'generator_backbone_dtype': 'BF16' if result['method'].startswith('qwen') else 'FP32' if result['method'].startswith('clip') else 'not_applicable',
+               'generator_trainable_parameters': architecture['generator_trainable'],
+               'joint_stage_trainable_parameters': sum(g['parameter_count'] for g in architecture['optimizer_groups'] if g['group_name']!='fusion'),
                'lora_phase_effect_rad': result['ablations'].get('lora_phase_effect',{}).get('rms_change_rad'),
                'peak_memory_gib': result['peak_memory_gib'], 'elapsed_seconds': result['elapsed_seconds'],
                'device': env['device'], 'gpu_uuid': env['cuda_visible_devices'],
                'git_sha': result['git_sha'], 'updates': result['optimizer_updates'],
                'initialization_sha256': initialization['sha256'],
                'alpha_min': minimum, 'export_max_error': result['export_max_error'],
-               'trainable_parameter_counts': {g['group_name']:g['parameter_count'] for g in read(run/'architecture.json')['optimizer_groups']},
+               'trainable_parameter_counts': {g['group_name']:g['parameter_count'] for g in architecture['optimizer_groups']},
                'last_routing_counts': history[-1]['expert_selection_counts']}
         rows.append(row)
     for dataset in {k[0] for k in contracts}:
@@ -125,7 +131,21 @@ def summarize(runs, dev_runs, output):
                               'Class-prototype retrieval with held-out official evaluation images; not classifier-head benchmark accuracy',
                               'Branch removals are post-training interventions, not independently trained pure optical/electronic models',
                               'Ideal optical simulation; no hardware robustness guarantee',
-                              'Different pretrained encoder sizes and trainable parameter counts; timing on a shared server']}
+                              'Different pretrained encoder sizes and trainable parameter counts; timing on a shared server',
+                              'Frozen generator backbone precision differs: Qwen BF16, CLIP FP32; both use FP32 adapters and decoder',
+                              'elapsed_seconds includes training, validation, final interventions and checkpoint I/O; excludes model loading and source hashing',
+                              'peak_memory_gib is peak PyTorch allocated memory, not total process VRAM']}
+    lookup={(r['dataset'],r['method']):r for r in rows}
+    result['comparisons']=[]
+    for row in rows:
+        if row['method'] not in {'qwen_lora','clip_lora'}:continue
+        for baseline in ('direct',row['method'].replace('_lora','_frozen')):
+            reference=lookup.get((row['dataset'],baseline))
+            if reference:
+                result['comparisons'].append({'dataset':row['dataset'],'candidate':row['method'],'reference':baseline,
+                    'top1_difference_pp':row['top1_percent']-reference['top1_percent'],
+                    'top3_difference_pp':row['top3_percent']-reference['top3_percent'],
+                    'mrr_difference':row['mrr']-reference['mrr']})
     (output/'summary.json').write_text(json.dumps(result,indent=2),encoding='utf-8')
     (output/'evidence_manifest.json').write_text(json.dumps(evidence,indent=2),encoding='utf-8')
     if rows:
@@ -149,6 +169,11 @@ def write_results_markdown(result,output):
            '|---|---|---:|---:|---:|---:|---:|']
     for r in result['formal']:
         lines.append(f"| {names[r['dataset']]} | {LABELS[r['method']]} | {r['top1_percent']:.2f}% | {r['top3_percent']:.2f}% | {r['mrr']:.4f} | {r['selected_epoch']} | {r['phase_rms_rad']:.4f} |")
+    lines+=['','## 相同协议的方法差值','',
+            '| 数据集 | 候选方法 | 对照 | Top-1 差 / pp | Top-3 差 / pp |',
+            '|---|---|---|---:|---:|']
+    for r in result['comparisons']:
+        lines.append(f"| {names[r['dataset']]} | {LABELS[r['candidate']]} | {LABELS[r['reference']]} | {r['top1_difference_pp']:+.2f} | {r['top3_difference_pp']:+.2f} |")
     lines+=['','## 相同 checkpoint 的光电干预','',
             '以下是正常 Top-1 减去干预 Top-1，单位为百分点。负数表示移除后反而提高；不能解释为可加和的贡献比例。','',
             '| 数据集 | 方法 | 移除全部光学 | 仅移除 Vision 光学 | 仅移除 Language 光学 | 移除电子融合输出 | 光学下降≥5 pp |',
@@ -228,6 +253,8 @@ def training_diagnostics(runs, dev_runs, output):
     import matplotlib.pyplot as plt
     colors = {'electronic':'#2176ae','readout':'#70a7c8','generator_context':'#a13277',
               'generator_decoder':'#cf891c','router':'#468b39','global':'#777777','expert':'#6b50a0'}
+    method_colors={'fixed':'#777777','direct':'#1976b5','qwen_frozen':'#d48910',
+                   'qwen_lora':'#ad3375','clip_frozen':'#419eaa','clip_lora':'#32843b'}
     updates=[]
     for run in runs+dev_runs:
         for step in read(run/'steps.json'):
@@ -256,16 +283,20 @@ def training_diagnostics(runs, dev_runs, output):
         for run in group_runs:
             cfg=read(run/'protocol.json');history=read(run/'history.json');epochs=[h['epoch'] for h in history]
             label=run.name.split('_devdet_')[-1].replace('_s42','') if name=='development' else LABELS[cfg['method']]
-            axes[0].plot(epochs,[h['mean_task_loss'] for h in history],label=label)
-            axes[1].plot(epochs,[100*h['live_validation']['top1_retrieval_accuracy'] for h in history])
-            axes[2].plot(epochs,[h['expert_phase']['rms_change_rad'] for h in history])
+            line=axes[0].plot(epochs,[h['mean_task_loss'] for h in history],label=label,
+                              **({'color':method_colors[cfg['method']]} if name!='development' else {}))[0]
+            color=line.get_color()
+            axes[1].plot(epochs,[100*h['live_validation']['top1_retrieval_accuracy'] for h in history],color=color)
+            axes[2].plot(epochs,[h['expert_phase']['rms_change_rad'] for h in history],color=color)
+            selected=read(run/'final_report.json')['selected_epoch']
+            axes[1].scatter([selected],[100*history[selected-1]['live_validation']['top1_retrieval_accuracy']],marker='*',s=70,color=color,zorder=3)
         for ax,title,ylabel in zip(axes,('Training task loss','Validation Top-1','Expert phase movement'),('Loss','Accuracy (%)','Circular RMS (rad)')):
             ax.set_title(title);ax.set_xlabel('Epoch');ax.set_ylabel(ylabel)
             for i,h in enumerate(history):
                 if i and h['stage']!=history[i-1]['stage']:
                     ax.axvline(h['epoch']-.5,color='#cccccc',linestyle='--',lw=.7)
         fig.legend(*axes[0].get_legend_handles_labels(),loc='outside lower center',ncol=3,fontsize=9)
-        fig.suptitle(name);fig.savefig(output/(name+'_training.png'),dpi=160);plt.close(fig)
+        fig.suptitle(name+' | stars mark validation-selected checkpoints');fig.savefig(output/(name+'_training.png'),dpi=160);plt.close(fig)
 
 
 def plot(rows,output):
@@ -289,6 +320,21 @@ def plot(rows,output):
         for ax in axes[:,column]:ax.set_xticks(x,labels,rotation=30,ha='right')
     axes[0,0].legend();axes[1,0].legend(fontsize=8)
     fig.savefig(output/'retrieval_and_branch_contribution.png',dpi=170);plt.close(fig)
+    fig,ax=plt.subplots(figsize=(11,8),layout='constrained')
+    matrix=[]
+    for row in rows:
+        counts=row['last_routing_counts']
+        matrix.append([100*v/max(sum(counts[m]),1) for m in ('vision','language') for v in counts[m]])
+    matrix=np.asarray(matrix)
+    im=ax.imshow(matrix,cmap='Blues',vmin=0,vmax=50,aspect='auto')
+    for i in range(len(rows)):
+        for j in range(8):ax.text(j,i,f'{matrix[i,j]:.1f}',ha='center',va='center',fontsize=8,color='white' if matrix[i,j]>28 else 'black')
+    ax.set_xticks(range(8),['V'+str(i) for i in range(4)]+['L'+str(i) for i in range(4)])
+    ax.set_yticks(range(len(rows)),[r['dataset']+' / '+LABELS[r['method']] for r in rows],fontsize=9)
+    ax.axvline(3.5,color='#777777',lw=1)
+    ax.set_title('Final training epoch routing shares (%)\nMay differ from the validation-selected checkpoint')
+    fig.colorbar(im,ax=ax,label='Share of selections within modality (%)',shrink=.8)
+    fig.savefig(output/'final_epoch_routing.png',dpi=160);plt.close(fig)
 
 
 if __name__ == '__main__':
