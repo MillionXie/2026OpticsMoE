@@ -4,6 +4,10 @@
 
 当前工作已进入高光学系数分阶段对照与类别扩展；前面的“首轮协议/首轮结果”为历史 pilot。
 参见下文“第二轮”“高光学系数下的扰动诊断”及对应结果，不把不同协议混成一张成绩表。
+已完成的最新结果见文末“十类三种子复验结果”和“三十类完整对照结果”；
+[种子与类别对比图](reports/stability_expansion_20260907/stability_and_expansion.png)、
+[三十类训练曲线](reports/caltech30_ideal_20260907/training_comparison.png) 和
+[三十类相位变化图](reports/caltech30_ideal_20260907/selected_phase_changes.png) 可直接查看。
 
 ## 当前架构与四组含义
 
@@ -402,3 +406,47 @@ Vision Router 在后期覆盖四专家；Language Router 仍固定选择前两�
 所选相位相对各自共同初始库的圆周 RMS：direct 为 0.605–0.669 rad，LoRA 为 0.747–0.958 rad。
 这说明相位确实更新；当前结果没有显示 LoRA 的稳定性能优势，也不能从三个种子推出广泛统计结论。
 这六次仍使用同一批 200 个 test query，不等于 1,200 个独立测试样本。
+
+### 三十类完整对照结果（RTX 4090）
+
+四组均完成 20 轮、2,320 个 batch；fixed 实际 1,856 次 optimizer update，其余均为 2,320 次。
+正式表使用 `20260907_caltech30_ideal_{fixed,direct,qwen_frozen}_s42` 与
+`20260907_caltech30_ideal_qwen_lora_rtx_s42`，全部 environment.json 为 RTX 4090。
+模型按本轮 validation Top-1、再按 MRR 选择，之后统一评估 test；不按 test 挑 live/EMA。
+训练 3,467、validation 300、gallery 90、test 600；全部查询面对同一个三十类 gallery。
+
+| 方法 | 所选 epoch | 全部 test Top-1 | 原十类 query | 新增二十类 query | final EMA Top-1 | 相位 RMS 变化 / rad |
+|---|---:|---:|---:|---:|---:|---:|
+| fixed | 19 | 34.17% | 64.50% | 19.00% | 33.50% | 0 |
+| direct | 17 | 34.17% | 54.50% | 24.00% | 36.67% | 0.91531 |
+| qwen_frozen | 10 | 29.17% | 53.00% | 17.25% | 31.17% | 1.27085 |
+| qwen_lora | 17 | 31.33% | 56.50% | 18.75% | 33.67% | 1.06736 |
+
+fixed 与 direct 的总体准确率相同，但原类/新类的表现不同，不能称为相同输出或没有学习。
+将所选模型的 expert 换回初始库，direct 从 34.17% 降到 25.83%，LoRA 从 31.33% 降到 25.67%。
+这说明当前模型使用了学到的专家；它是对同一个训练后模型的干预，不等同于独立训练的 fixed 组。
+在 LoRA 模型中只关闭 LoRA、保留训练后的解码器，Top-1 为 32.00%，未显示 LoRA 在该 checkpoint 上的正向收益。
+不能把十类强扰动旧 run 的 LoRA 干预收益直接推广到三十类。
+
+direct 与 LoRA 的所选 mask 之间圆周 RMS 差为 1.36103 rad；扣除每张 mask 的常数相移后仍为 1.35948 rad。
+差异确实包含空间结构，而非只是整体相移。expert 更新的平均跨专家相关系数：direct 约 −0.000009，
+冻结 Qwen 0.83050，LoRA 0.90716。此统计衡量相对共同初始库的更新，不是最终完整 mask 的相似度。
+共享解码器下的更新较为相似，值得进一步检查；单凭相关系数不能证明它是性能下降的原因。
+Language Router 在三十类四组最后一轮均为 `[3480,3480,0,0]`，仍只选择前两个专家；
+Vision 四专家均被使用。因此总体相位移动不能替代逐专家任务利用率检查。
+
+所有正式复验/扩展 run 均满足光学融合下限、冻结参数无变化和固定 mask 导出一致性检查。
+十类三种子全程最低融合系数为 0.49940，三十类四组为 0.49802；十个 run 的导出最大误差均为 0。
+这轮结论是：生成器端到端可训练、相位显著变化，但尚未显示优于直接优化的稳定收益。
+新增二十类整体较弱，且三十类目前只有一个优化 seed；原十类存在历史 warmstart/评估暴露，
+三种子复验也只是固定测试样本上的优化稳定性检查。当前 ideal 仿真不代表强硬件扰动鲁棒性。
+
+完整三十类指标、阶段干预与跨方法相位差见 [三十类 summary](reports/caltech30_ideal_20260907/summary.json)；
+种子/新旧类别汇总见 [suite summary](reports/stability_expansion_20260907/summary.json)，
+源码等价核验见 [source audit](reports/stability_expansion_20260907/source_audit.json)。
+两套报告均附原始文件哈希清单；轻量日志与 expert_bank 已经 SFTP 回传并逐文件核验 SHA256，best/last 留在服务器。
+
+后续优先检查 Language Router 集中和生成器的专家条件区分能力，再迁移到
+[LightGenV2 T08 ABO easy100 图搜文](../../../LightGenV2/tasks/t08_abo_image_text_retrieval/README.md)。
+迁移时保留固定专家库与至少 0.4 的融合合同，单独留出 validation，重新比较 direct/LoRA；
+当前四组能检验专家学习和 LoRA 更新的作用，尚不能单独证明 Qwen 预训练知识带来收益。

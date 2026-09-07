@@ -1,0 +1,249 @@
+{
+  "seed_comparison": {
+    "rows": [
+      {
+        "seed": 42,
+        "direct": {
+          "run_id": "20260907_ideal400_repeat_direct_rtx3090_s42",
+          "top1": 0.7699999809265137,
+          "training_git_sha": "8c35498660b874b257a33ae7d376de0c328a6139",
+          "device": "NVIDIA GeForce RTX 3090",
+          "final_ema_top1": 0.7649999856948853,
+          "selected_epoch": 18,
+          "phase_rms_rad": 0.6686832308769226
+        },
+        "qwen_lora": {
+          "run_id": "20260907_ideal400_repeat_qwen_lora_s42",
+          "top1": 0.7300000190734863,
+          "training_git_sha": "8c35498660b874b257a33ae7d376de0c328a6139",
+          "device": "NVIDIA GeForce RTX 3090",
+          "final_ema_top1": 0.7450000047683716,
+          "selected_epoch": 18,
+          "phase_rms_rad": 0.9577669501304626
+        },
+        "qwen_minus_direct_pp": -3.9999961853027344
+      },
+      {
+        "seed": 43,
+        "direct": {
+          "run_id": "20260907_ideal400_repeat_direct_rtx3090_s43",
+          "top1": 0.7850000262260437,
+          "training_git_sha": "8c35498660b874b257a33ae7d376de0c328a6139",
+          "device": "NVIDIA GeForce RTX 3090",
+          "final_ema_top1": 0.7749999761581421,
+          "selected_epoch": 13,
+          "phase_rms_rad": 0.6054272055625916
+        },
+        "qwen_lora": {
+          "run_id": "20260907_ideal400_repeat_qwen_lora_s43",
+          "top1": 0.7549999952316284,
+          "training_git_sha": "8fc78530e98f9376d94f36d25e46d1ac50d11b84",
+          "device": "NVIDIA GeForce RTX 3090",
+          "final_ema_top1": 0.75,
+          "selected_epoch": 20,
+          "phase_rms_rad": 0.7473793625831604
+        },
+        "qwen_minus_direct_pp": -3.0000030994415283
+      },
+      {
+        "seed": 44,
+        "direct": {
+          "run_id": "20260907_ideal400_repeat_direct_rtx3090_s44",
+          "top1": 0.7549999952316284,
+          "training_git_sha": "8c35498660b874b257a33ae7d376de0c328a6139",
+          "device": "NVIDIA GeForce RTX 3090",
+          "final_ema_top1": 0.7450000047683716,
+          "selected_epoch": 19,
+          "phase_rms_rad": 0.6661707758903503
+        },
+        "qwen_lora": {
+          "run_id": "20260907_ideal400_repeat_qwen_lora_s44",
+          "top1": 0.7649999856948853,
+          "training_git_sha": "8c35498660b874b257a33ae7d376de0c328a6139",
+          "device": "NVIDIA GeForce RTX 3090",
+          "final_ema_top1": 0.7350000143051147,
+          "selected_epoch": 17,
+          "phase_rms_rad": 0.9532855749130249
+        },
+        "qwen_minus_direct_pp": 0.9999990463256836
+      }
+    ],
+    "summary": {
+      "direct": {
+        "mean_top1": 0.7700000007947286,
+        "sample_std_top1": 0.01500001549721751
+      },
+      "qwen_lora": {
+        "mean_top1": 0.75,
+        "sample_std_top1": 0.01802773918471171
+      }
+    },
+    "queries_per_seed": 200,
+    "note": "same 200 queries reused across seeds; do not treat them as 600 independent queries",
+    "training_steps": 400,
+    "runtime_fingerprint": "83deb72798316501332231c1b563be0cd0deda7d27b7a66aa96be7994bb32ee7"
+  },
+  "category_expansion": {
+    "rows": [
+      {
+        "method": "fixed",
+        "run_id": "20260907_caltech30_ideal_fixed_s42",
+        "training_git_sha": "8c35498660b874b257a33ae7d376de0c328a6139",
+        "device": "NVIDIA GeForce RTX 4090",
+        "all_queries": {
+          "queries": 600,
+          "top1": 0.34166666865348816,
+          "top3": 0.5299999713897705,
+          "mrr": 0.48316171765327454
+        },
+        "original_ten_queries": {
+          "queries": 200,
+          "top1": 0.6449999928474426,
+          "top3": 0.775
+        },
+        "added_twenty_queries": {
+          "queries": 400,
+          "top1": 0.19000000208616258,
+          "top3": 0.40750000104308126
+        },
+        "selected_epoch": 19,
+        "phase_rms_rad": 0.0,
+        "initial_experts_top1": 0.34166666865348816,
+        "final_ema_top1": 0.33500000834465027,
+        "fusion": {
+          "vision": [
+            0.4991297721862793,
+            0.5000952482223511
+          ],
+          "language": [
+            0.49836236238479614,
+            0.49871471524238586
+          ]
+        },
+        "lora_disabled_top1": null
+      },
+      {
+        "method": "direct",
+        "run_id": "20260907_caltech30_ideal_direct_s42",
+        "training_git_sha": "8c35498660b874b257a33ae7d376de0c328a6139",
+        "device": "NVIDIA GeForce RTX 4090",
+        "all_queries": {
+          "queries": 600,
+          "top1": 0.34166666865348816,
+          "top3": 0.528333306312561,
+          "mrr": 0.48264938592910767
+        },
+        "original_ten_queries": {
+          "queries": 200,
+          "top1": 0.5450000047683716,
+          "top3": 0.7299999892711639
+        },
+        "added_twenty_queries": {
+          "queries": 400,
+          "top1": 0.2400000024586916,
+          "top3": 0.4275000037625432
+        },
+        "selected_epoch": 17,
+        "phase_rms_rad": 0.9153119921684265,
+        "initial_experts_top1": 0.25833332538604736,
+        "final_ema_top1": 0.36666667461395264,
+        "fusion": {
+          "vision": [
+            0.49935203790664673,
+            0.49885308742523193
+          ],
+          "language": [
+            0.4989989101886749,
+            0.4991054832935333
+          ]
+        },
+        "lora_disabled_top1": null
+      },
+      {
+        "method": "qwen_frozen",
+        "run_id": "20260907_caltech30_ideal_qwen_frozen_s42",
+        "training_git_sha": "8c35498660b874b257a33ae7d376de0c328a6139",
+        "device": "NVIDIA GeForce RTX 4090",
+        "all_queries": {
+          "queries": 600,
+          "top1": 0.2916666567325592,
+          "top3": 0.4866666793823242,
+          "mrr": 0.4368790090084076
+        },
+        "original_ten_queries": {
+          "queries": 200,
+          "top1": 0.5299999959766865,
+          "top3": 0.7050000011920929
+        },
+        "added_twenty_queries": {
+          "queries": 400,
+          "top1": 0.17250000052154063,
+          "top3": 0.37750000283122065
+        },
+        "selected_epoch": 10,
+        "phase_rms_rad": 1.2708522081375122,
+        "initial_experts_top1": 0.25999999046325684,
+        "final_ema_top1": 0.31166666746139526,
+        "fusion": {
+          "vision": [
+            0.5,
+            0.5
+          ],
+          "language": [
+            0.5,
+            0.5
+          ]
+        },
+        "lora_disabled_top1": null
+      },
+      {
+        "method": "qwen_lora",
+        "run_id": "20260907_caltech30_ideal_qwen_lora_rtx_s42",
+        "training_git_sha": "8c35498660b874b257a33ae7d376de0c328a6139",
+        "device": "NVIDIA GeForce RTX 4090",
+        "all_queries": {
+          "queries": 600,
+          "top1": 0.31333333253860474,
+          "top3": 0.5049999952316284,
+          "mrr": 0.4610985815525055
+        },
+        "original_ten_queries": {
+          "queries": 200,
+          "top1": 0.5649999994784594,
+          "top3": 0.7499999880790711
+        },
+        "added_twenty_queries": {
+          "queries": 400,
+          "top1": 0.1875000037252903,
+          "top3": 0.38250000588595867
+        },
+        "selected_epoch": 17,
+        "phase_rms_rad": 1.0673599243164062,
+        "initial_experts_top1": 0.2566666603088379,
+        "final_ema_top1": 0.33666667342185974,
+        "fusion": {
+          "vision": [
+            0.49911874532699585,
+            0.49974295496940613
+          ],
+          "language": [
+            0.4983034133911133,
+            0.4989199936389923
+          ]
+        },
+        "lora_disabled_top1": 0.3199999928474426
+      }
+    ],
+    "training_batch_opportunities": 2320,
+    "seed": 42,
+    "runtime_fingerprint": "83deb72798316501332231c1b563be0cd0deda7d27b7a66aa96be7994bb32ee7",
+    "note": "all cohorts retrieve against the same 30-category gallery; added classes have supervised training examples"
+  },
+  "limits": [
+    "400-step seed study and 2320-batch expansion are separate experiments",
+    "original-ten adaptation validation was seen by warmstart; original-ten test was previously inspected",
+    "ideal optical simulation does not establish robustness to the strong hardware perturbations",
+    "sample identities and augmentation settings match; random augmentation draws are not paired bit-for-bit across methods",
+    "three seeds provide an initial stability check, not a broad statistical guarantee"
+  ]
+}

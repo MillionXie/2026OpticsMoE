@@ -1,0 +1,252 @@
+[
+  {
+    "run_id": "20260907_ideal400_repeat_direct_rtx3090_s42",
+    "file": "final_report.json",
+    "sha256": "0eba3bb33713207ab1469472b4da2ebe9ceb12476ed5ab943671106438c410c2"
+  },
+  {
+    "run_id": "20260907_ideal400_repeat_direct_rtx3090_s42",
+    "file": "protocol.json",
+    "sha256": "3d2ece1598a857ac0e39c3838200630d065be7d320ccffb615514042a05b8eb2"
+  },
+  {
+    "run_id": "20260907_ideal400_repeat_direct_rtx3090_s42",
+    "file": "environment.json",
+    "sha256": "724cd5b91c52ad3b36d4cd61936254d639c091708f5a629d8800a6a9585d84bc"
+  },
+  {
+    "run_id": "20260907_ideal400_repeat_direct_rtx3090_s42",
+    "file": "history.json",
+    "sha256": "080d1f405859e618f9e001194390d6cdfee01ea851112618701f9c1eda81832d"
+  },
+  {
+    "run_id": "20260907_ideal400_repeat_direct_rtx3090_s42",
+    "file": "transfer_manifest.json",
+    "sha256": "cf3130bdb3d1d20cf694d96f35bae1ead59875def1c4b24f2d460bb01766a686"
+  },
+  {
+    "run_id": "20260907_ideal400_repeat_direct_rtx3090_s43",
+    "file": "final_report.json",
+    "sha256": "0f22f476f34d0a069580c033a3fb263c9a7a98dbbbdc1b501f85fa6a99d15593"
+  },
+  {
+    "run_id": "20260907_ideal400_repeat_direct_rtx3090_s43",
+    "file": "protocol.json",
+    "sha256": "f72dc36124d909426d2e58e3b4e78be24d259bc12c05dc26753bb4f7e21175ce"
+  },
+  {
+    "run_id": "20260907_ideal400_repeat_direct_rtx3090_s43",
+    "file": "environment.json",
+    "sha256": "8c9ce2e442c24632e2325a81d94283e4dd162107146f9bff210b3b4e704ef62c"
+  },
+  {
+    "run_id": "20260907_ideal400_repeat_direct_rtx3090_s43",
+    "file": "history.json",
+    "sha256": "c62dab1dc72d45b0aabea0dea0ba78a86657ed64ba5f19d8c62f3d10484786b7"
+  },
+  {
+    "run_id": "20260907_ideal400_repeat_direct_rtx3090_s43",
+    "file": "transfer_manifest.json",
+    "sha256": "69f0163c8de27ebd78108610bc7a11ec2b67917a6f87717bd52ce6891a8954e8"
+  },
+  {
+    "run_id": "20260907_ideal400_repeat_direct_rtx3090_s44",
+    "file": "final_report.json",
+    "sha256": "e8b73738577bfd86683f5968459284ecae7916cd141b6114b74adb4c0290d6ea"
+  },
+  {
+    "run_id": "20260907_ideal400_repeat_direct_rtx3090_s44",
+    "file": "protocol.json",
+    "sha256": "1f20d02fbdbe894c97a5f9c787e1272cd43296158d31e831bc5d79c3b1732de7"
+  },
+  {
+    "run_id": "20260907_ideal400_repeat_direct_rtx3090_s44",
+    "file": "environment.json",
+    "sha256": "036ae1c47863903ebf5be86558ec983cd8ea2b43bf601ad383b7980bec360cf3"
+  },
+  {
+    "run_id": "20260907_ideal400_repeat_direct_rtx3090_s44",
+    "file": "history.json",
+    "sha256": "0838999ceef173e1e6511b60c4c799b9d9acebcaf0980928a9194e5bf8c36def"
+  },
+  {
+    "run_id": "20260907_ideal400_repeat_direct_rtx3090_s44",
+    "file": "transfer_manifest.json",
+    "sha256": "a3d5e2825747bc8666e7a73dd4ffb62c2f87ade497eaa42e04a0761c02761150"
+  },
+  {
+    "run_id": "20260907_ideal400_repeat_qwen_lora_s42",
+    "file": "final_report.json",
+    "sha256": "36149b9939d71a1c20317456bf1bff7569dd1b20fb5baa75339eeca82a64880b"
+  },
+  {
+    "run_id": "20260907_ideal400_repeat_qwen_lora_s42",
+    "file": "protocol.json",
+    "sha256": "3c0614f021817baf31a6316609a89e4174b68db57e8b9caeecebfeb115518509"
+  },
+  {
+    "run_id": "20260907_ideal400_repeat_qwen_lora_s42",
+    "file": "environment.json",
+    "sha256": "d76ea689e608a22cd1364057e854b3eef0f97a8200be0025a8f9586159a7f619"
+  },
+  {
+    "run_id": "20260907_ideal400_repeat_qwen_lora_s42",
+    "file": "history.json",
+    "sha256": "860db9f28ffce8fef8f3aecadc3ea9db5ced607042d2b5c3320894b43561d90f"
+  },
+  {
+    "run_id": "20260907_ideal400_repeat_qwen_lora_s42",
+    "file": "transfer_manifest.json",
+    "sha256": "9074066cea7da32f71ed72e46602f320b527464cba9025ac4d7f96947d62a3d2"
+  },
+  {
+    "run_id": "20260907_ideal400_repeat_qwen_lora_s43",
+    "file": "final_report.json",
+    "sha256": "07d610f5e465617dadf361b6cfae3fe954ad2e2a3d615ffe61e1a20191b09096"
+  },
+  {
+    "run_id": "20260907_ideal400_repeat_qwen_lora_s43",
+    "file": "protocol.json",
+    "sha256": "e94f0e131b57136c3093169e6164c6fa5f9cb2ca74c64d4e005b02fa6d854224"
+  },
+  {
+    "run_id": "20260907_ideal400_repeat_qwen_lora_s43",
+    "file": "environment.json",
+    "sha256": "f33bb423234dc3dad4478c6698f540f9631ce33b46848edde05da6e77fdb254a"
+  },
+  {
+    "run_id": "20260907_ideal400_repeat_qwen_lora_s43",
+    "file": "history.json",
+    "sha256": "e2793aeece4b201334fb4f6d4f01a07d6a04fa5fdc3e1a19e0c4b381c7aa06e3"
+  },
+  {
+    "run_id": "20260907_ideal400_repeat_qwen_lora_s43",
+    "file": "transfer_manifest.json",
+    "sha256": "524edcab758de963a565285087758837cfba3a37b12353ca2edc4e538aa7e4ba"
+  },
+  {
+    "run_id": "20260907_ideal400_repeat_qwen_lora_s44",
+    "file": "final_report.json",
+    "sha256": "c07396a7e2d1ebeae7f354303368a6818c72d94e0b2bf7e3d128b7634b6a2881"
+  },
+  {
+    "run_id": "20260907_ideal400_repeat_qwen_lora_s44",
+    "file": "protocol.json",
+    "sha256": "5d85566a3e8d19580b18b278ddfbc3d14edefdc1a968a460a5719775a17ba18c"
+  },
+  {
+    "run_id": "20260907_ideal400_repeat_qwen_lora_s44",
+    "file": "environment.json",
+    "sha256": "c13b8ab0a033ccf7351943fe41c4dc10dbf907e85c1123c54aa28cd6023ffc50"
+  },
+  {
+    "run_id": "20260907_ideal400_repeat_qwen_lora_s44",
+    "file": "history.json",
+    "sha256": "33c5782409de9c29afc56523e9c742f7cb01d1ccb436df64d411b4d22aaf0320"
+  },
+  {
+    "run_id": "20260907_ideal400_repeat_qwen_lora_s44",
+    "file": "transfer_manifest.json",
+    "sha256": "02f81812393e3ae6d8cd7da707af605773e2298782cb4a07e88148178436318e"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_fixed_s42",
+    "file": "final_report.json",
+    "sha256": "e01ae4580a0ff26c96eb647fd6ac8b2a0a40dc3d7fb4c1b265e8a6ecc461dfbf"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_fixed_s42",
+    "file": "protocol.json",
+    "sha256": "bd6d3ffcd21a7c82914f3c47acdfb79c4e21f64d47c8bcc24138cf77efe88d4d"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_fixed_s42",
+    "file": "environment.json",
+    "sha256": "5ec63a231d578a942884a754c2a44e3b5c275b63f1b5c6b8e9ed98dbb9daf699"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_fixed_s42",
+    "file": "history.json",
+    "sha256": "2daea3b746428c9f76601449387e1ff9a6501e4c6749747c48831db4312ab744"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_fixed_s42",
+    "file": "transfer_manifest.json",
+    "sha256": "184f62717def4c6b0b56872062ebaa4568da92e34e8c11296d4433ee7b50cf75"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_direct_s42",
+    "file": "final_report.json",
+    "sha256": "a74a88b64357bc9391b6a5b3bfc434f7554eb61daf30701f7b0f3042b3448414"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_direct_s42",
+    "file": "protocol.json",
+    "sha256": "0048a2639aa1f32d43c6d9344cb472b2553d79111f2eaba5d282344b80f2b5a9"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_direct_s42",
+    "file": "environment.json",
+    "sha256": "8328c55460e3c7ab5df2fd72208d13a07c9b5395ccf95914128115681a2ace5e"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_direct_s42",
+    "file": "history.json",
+    "sha256": "846b31c4cab75a8624b0f9c4b54e3fc252c11ffc0f636ee41922dc3162bc6f52"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_direct_s42",
+    "file": "transfer_manifest.json",
+    "sha256": "e120af989ab2f1f7dcc9e0937cb136efd919902b7c42b90e1054288dce8c0781"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_frozen_s42",
+    "file": "final_report.json",
+    "sha256": "f5ff8321db08dde1818891c5f60739de412d19e798664cfe6d71c3ede9b05634"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_frozen_s42",
+    "file": "protocol.json",
+    "sha256": "a95fe343ea3966ca39c2b2c323cd0d60b6e0a72330b95a9a2a35628a59f69abe"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_frozen_s42",
+    "file": "environment.json",
+    "sha256": "b9240845745a9431b68f43fbb89c927a15c62396f72279894fbad1ac3837fcfd"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_frozen_s42",
+    "file": "history.json",
+    "sha256": "1ae1670278882b70e7d2953bafe94e4e2a57319c1c24517eb61505e57c5654cc"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_frozen_s42",
+    "file": "transfer_manifest.json",
+    "sha256": "45a10dc886b5a308429c4927f5d98e1d96fc512af5d175d79c8d69243028792f"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_lora_rtx_s42",
+    "file": "final_report.json",
+    "sha256": "ec7365cbbf40c9ebd70d7c39f288eae4432196e462e557e2c19ebd3aae30fca6"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_lora_rtx_s42",
+    "file": "protocol.json",
+    "sha256": "b9a8878267b682ed48b28158406a579cd1e8a77430ca1de1501ed558761716c4"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_lora_rtx_s42",
+    "file": "environment.json",
+    "sha256": "2ad7620e5ee2b80216cb8ff24e9db4470ed7739c387bcb0367e865b3473ee854"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_lora_rtx_s42",
+    "file": "history.json",
+    "sha256": "2d740313d73571b862efbcf5ca7134f689f0ed1b346139912ee93d4bb28750af"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_lora_rtx_s42",
+    "file": "transfer_manifest.json",
+    "sha256": "4fdaa65e2a006b50ac0851934e1927c83b3d3ea13c470aeb0a58767ef68f9ed9"
+  }
+]

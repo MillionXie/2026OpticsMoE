@@ -1,0 +1,350 @@
+[
+  {
+    "run_id": "20260907_caltech30_ideal_fixed_s42",
+    "file": "architecture.json",
+    "bytes": 9662,
+    "sha256": "05141447b8ac1ea6544ab108c1ed074dfe1b4668e730920db9a8b531ce31f6b7"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_fixed_s42",
+    "file": "config.yaml",
+    "bytes": 11636,
+    "sha256": "cf3b6566e425aa17ba73be8dd41c22b5e14bedec918da7b30f1a201a41164ccb"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_fixed_s42",
+    "file": "data_hashes.json",
+    "bytes": 797543,
+    "sha256": "7966f3c6ccc2c9ebf050717cd343e98d7a27a1c5d7b766ef358b307c65b62d2d"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_fixed_s42",
+    "file": "dataset.json",
+    "bytes": 3065,
+    "sha256": "319caf7a0411457e1d2efba28b2cc884ece6bb5fc81040e0f2f443eb2a51c989"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_fixed_s42",
+    "file": "environment.json",
+    "bytes": 920,
+    "sha256": "5ec63a231d578a942884a754c2a44e3b5c275b63f1b5c6b8e9ed98dbb9daf699"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_fixed_s42",
+    "file": "final_report.json",
+    "bytes": 65813,
+    "sha256": "e01ae4580a0ff26c96eb647fd6ac8b2a0a40dc3d7fb4c1b265e8a6ecc461dfbf"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_fixed_s42",
+    "file": "history.json",
+    "bytes": 763964,
+    "sha256": "2daea3b746428c9f76601449387e1ff9a6501e4c6749747c48831db4312ab744"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_fixed_s42",
+    "file": "initial_validation.json",
+    "bytes": 12531,
+    "sha256": "e12ec819a28c87cced539bfbfed03773c7e35f36b2b1b811f2e94b1f274f0beb"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_fixed_s42",
+    "file": "initialization.json",
+    "bytes": 1864,
+    "sha256": "e30059e3f9ab4f4133243efad32ee010dfd9d1014301719013cacc2c1ad489fb"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_fixed_s42",
+    "file": "protocol.json",
+    "bytes": 1983,
+    "sha256": "bd6d3ffcd21a7c82914f3c47acdfb79c4e21f64d47c8bcc24138cf77efe88d4d"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_fixed_s42",
+    "file": "split.json",
+    "bytes": 1579860,
+    "sha256": "cb1e0d4e2d7fb3e6a55fe9813d062ebe3da38d93ca2a391b0f2da16a147c2750"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_fixed_s42",
+    "file": "status.json",
+    "bytes": 26,
+    "sha256": "34c8f74408bc4183b49f04a8136d278cf1d85c3415647a3e734dc82d5dd7e5c0"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_fixed_s42",
+    "file": "steps.json",
+    "bytes": 1022605,
+    "sha256": "bf6796cb70d6b7d482afad8586b6f9b1a7d1ef69ea1582ba39872028a3e0154e"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_fixed_s42",
+    "file": "transfer_manifest.json",
+    "bytes": 4394,
+    "sha256": "184f62717def4c6b0b56872062ebaa4568da92e34e8c11296d4433ee7b50cf75"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_direct_s42",
+    "file": "architecture.json",
+    "bytes": 10682,
+    "sha256": "e28aabeef9aed59e4bc1f20ca85406d482bd1bbaeab7b7df8fe882d28de02d05"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_direct_s42",
+    "file": "config.yaml",
+    "bytes": 11638,
+    "sha256": "50e36086ddac8e732278d76549d81e0ec7766d92095ef48bd306c6a4e0e6d43a"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_direct_s42",
+    "file": "data_hashes.json",
+    "bytes": 797543,
+    "sha256": "7966f3c6ccc2c9ebf050717cd343e98d7a27a1c5d7b766ef358b307c65b62d2d"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_direct_s42",
+    "file": "dataset.json",
+    "bytes": 3065,
+    "sha256": "319caf7a0411457e1d2efba28b2cc884ece6bb5fc81040e0f2f443eb2a51c989"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_direct_s42",
+    "file": "environment.json",
+    "bytes": 922,
+    "sha256": "8328c55460e3c7ab5df2fd72208d13a07c9b5395ccf95914128115681a2ace5e"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_direct_s42",
+    "file": "final_report.json",
+    "bytes": 66205,
+    "sha256": "a74a88b64357bc9391b6a5b3bfc434f7554eb61daf30701f7b0f3042b3448414"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_direct_s42",
+    "file": "history.json",
+    "bytes": 767608,
+    "sha256": "846b31c4cab75a8624b0f9c4b54e3fc252c11ffc0f636ee41922dc3162bc6f52"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_direct_s42",
+    "file": "initial_validation.json",
+    "bytes": 12531,
+    "sha256": "e12ec819a28c87cced539bfbfed03773c7e35f36b2b1b811f2e94b1f274f0beb"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_direct_s42",
+    "file": "initialization.json",
+    "bytes": 1864,
+    "sha256": "e30059e3f9ab4f4133243efad32ee010dfd9d1014301719013cacc2c1ad489fb"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_direct_s42",
+    "file": "protocol.json",
+    "bytes": 1984,
+    "sha256": "0048a2639aa1f32d43c6d9344cb472b2553d79111f2eaba5d282344b80f2b5a9"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_direct_s42",
+    "file": "split.json",
+    "bytes": 1579860,
+    "sha256": "cb1e0d4e2d7fb3e6a55fe9813d062ebe3da38d93ca2a391b0f2da16a147c2750"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_direct_s42",
+    "file": "status.json",
+    "bytes": 26,
+    "sha256": "34c8f74408bc4183b49f04a8136d278cf1d85c3415647a3e734dc82d5dd7e5c0"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_direct_s42",
+    "file": "steps.json",
+    "bytes": 1163205,
+    "sha256": "93e20736cff8b8c880b4d1ac652bfa7e02e299dd544d3ebd517e27f1ff4f6775"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_direct_s42",
+    "file": "transfer_manifest.json",
+    "bytes": 4409,
+    "sha256": "e120af989ab2f1f7dcc9e0937cb136efd919902b7c42b90e1054288dce8c0781"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_frozen_s42",
+    "file": "architecture.json",
+    "bytes": 10555,
+    "sha256": "47b3fc5bc76e29ace038ea24debda8e122b02ea05be328d88df68be9600b8a64"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_frozen_s42",
+    "file": "config.yaml",
+    "bytes": 11648,
+    "sha256": "60aae3d7b40906ef3f4bdf35d2465b644ad164ac6264d8b3cfb25ed3fff1d837"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_frozen_s42",
+    "file": "data_hashes.json",
+    "bytes": 797543,
+    "sha256": "7966f3c6ccc2c9ebf050717cd343e98d7a27a1c5d7b766ef358b307c65b62d2d"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_frozen_s42",
+    "file": "dataset.json",
+    "bytes": 3065,
+    "sha256": "319caf7a0411457e1d2efba28b2cc884ece6bb5fc81040e0f2f443eb2a51c989"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_frozen_s42",
+    "file": "environment.json",
+    "bytes": 932,
+    "sha256": "b9240845745a9431b68f43fbb89c927a15c62396f72279894fbad1ac3837fcfd"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_frozen_s42",
+    "file": "final_report.json",
+    "bytes": 66047,
+    "sha256": "f5ff8321db08dde1818891c5f60739de412d19e798664cfe6d71c3ede9b05634"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_frozen_s42",
+    "file": "generator_source_manifest.json",
+    "bytes": 1069,
+    "sha256": "2bd7af7339d264f1c7800c4b9c30763eaf2e6bfc3108739c0398b5590e29f744"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_frozen_s42",
+    "file": "history.json",
+    "bytes": 768518,
+    "sha256": "1ae1670278882b70e7d2953bafe94e4e2a57319c1c24517eb61505e57c5654cc"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_frozen_s42",
+    "file": "initial_validation.json",
+    "bytes": 12531,
+    "sha256": "e12ec819a28c87cced539bfbfed03773c7e35f36b2b1b811f2e94b1f274f0beb"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_frozen_s42",
+    "file": "initialization.json",
+    "bytes": 1864,
+    "sha256": "e30059e3f9ab4f4133243efad32ee010dfd9d1014301719013cacc2c1ad489fb"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_frozen_s42",
+    "file": "protocol.json",
+    "bytes": 1989,
+    "sha256": "a95fe343ea3966ca39c2b2c323cd0d60b6e0a72330b95a9a2a35628a59f69abe"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_frozen_s42",
+    "file": "split.json",
+    "bytes": 1579860,
+    "sha256": "cb1e0d4e2d7fb3e6a55fe9813d062ebe3da38d93ca2a391b0f2da16a147c2750"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_frozen_s42",
+    "file": "status.json",
+    "bytes": 26,
+    "sha256": "34c8f74408bc4183b49f04a8136d278cf1d85c3415647a3e734dc82d5dd7e5c0"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_frozen_s42",
+    "file": "steps.json",
+    "bytes": 1185501,
+    "sha256": "ae91b11e6a726cbd1705bfe4eea377069953761ff18185b1181c912e6e9fd09b"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_frozen_s42",
+    "file": "transfer_manifest.json",
+    "bytes": 4829,
+    "sha256": "45a10dc886b5a308429c4927f5d98e1d96fc512af5d175d79c8d69243028792f"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_lora_rtx_s42",
+    "file": "architecture.json",
+    "bytes": 19849,
+    "sha256": "bb131a712e5037e01555dbfed57e855aa6792f1ee1e5b41b9d3f6201a3ee23f2"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_lora_rtx_s42",
+    "file": "config.yaml",
+    "bytes": 11648,
+    "sha256": "3a376ab88fdb2a118596fce14fe7d3ac938512636e028716e103f3659700a066"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_lora_rtx_s42",
+    "file": "data_hashes.json",
+    "bytes": 797543,
+    "sha256": "7966f3c6ccc2c9ebf050717cd343e98d7a27a1c5d7b766ef358b307c65b62d2d"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_lora_rtx_s42",
+    "file": "dataset.json",
+    "bytes": 3065,
+    "sha256": "319caf7a0411457e1d2efba28b2cc884ece6bb5fc81040e0f2f443eb2a51c989"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_lora_rtx_s42",
+    "file": "environment.json",
+    "bytes": 997,
+    "sha256": "2ad7620e5ee2b80216cb8ff24e9db4470ed7739c387bcb0367e865b3473ee854"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_lora_rtx_s42",
+    "file": "final_report.json",
+    "bytes": 84176,
+    "sha256": "ec7365cbbf40c9ebd70d7c39f288eae4432196e462e557e2c19ebd3aae30fca6"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_lora_rtx_s42",
+    "file": "generator_source_manifest.json",
+    "bytes": 1069,
+    "sha256": "2bd7af7339d264f1c7800c4b9c30763eaf2e6bfc3108739c0398b5590e29f744"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_lora_rtx_s42",
+    "file": "history.json",
+    "bytes": 768124,
+    "sha256": "2d740313d73571b862efbcf5ca7134f689f0ed1b346139912ee93d4bb28750af"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_lora_rtx_s42",
+    "file": "initial_validation.json",
+    "bytes": 12531,
+    "sha256": "e12ec819a28c87cced539bfbfed03773c7e35f36b2b1b811f2e94b1f274f0beb"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_lora_rtx_s42",
+    "file": "initialization.json",
+    "bytes": 1864,
+    "sha256": "e30059e3f9ab4f4133243efad32ee010dfd9d1014301719013cacc2c1ad489fb"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_lora_rtx_s42",
+    "file": "protocol.json",
+    "bytes": 1987,
+    "sha256": "b9a8878267b682ed48b28158406a579cd1e8a77430ca1de1501ed558761716c4"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_lora_rtx_s42",
+    "file": "split.json",
+    "bytes": 1579860,
+    "sha256": "cb1e0d4e2d7fb3e6a55fe9813d062ebe3da38d93ca2a391b0f2da16a147c2750"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_lora_rtx_s42",
+    "file": "status.json",
+    "bytes": 26,
+    "sha256": "34c8f74408bc4183b49f04a8136d278cf1d85c3415647a3e734dc82d5dd7e5c0"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_lora_rtx_s42",
+    "file": "steps.json",
+    "bytes": 1298341,
+    "sha256": "8bb43e4a1103c8630b50dc85caec1167346f0b59f914ba7a1587aaa10222906b"
+  },
+  {
+    "run_id": "20260907_caltech30_ideal_qwen_lora_rtx_s42",
+    "file": "transfer_manifest.json",
+    "bytes": 4859,
+    "sha256": "4fdaa65e2a006b50ac0851934e1927c83b3d3ea13c470aeb0a58767ef68f9ed9"
+  }
+]
