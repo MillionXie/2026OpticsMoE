@@ -1,0 +1,12 @@
+base_config: spatial_two_branch_equality_refine_s324.yaml
+output_dir: ../../runs/lgvq_spatial_two_branch_eval_late4_s412
+random_seed: 412
+
+# Inference still uses exactly four frames.  This evaluation-only contract
+# moves all four uniform sampling points 5% later to test frame-placement
+# sensitivity without changing the model graph or adding an inference branch.
+data:
+  vision_cache: ../../artifacts/multiview/qwen3vl_front_4f_196x1024_view_p005.pt
+  quality_feature_cache: ../../artifacts/multiview/lgvq_quality_conv5_4f_196x192_view_p005.pt
+  vision_cache_views: []
+  quality_feature_cache_views: []

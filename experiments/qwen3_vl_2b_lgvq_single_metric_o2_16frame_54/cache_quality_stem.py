@@ -1,8 +1,10 @@
 """Cache a frozen, target-trained five-convolution quality input head.
 
-This is a warm-start asset, not a hidden inference bypass: the cached tokens
-are fused with the official Qwen patch+position tokens before optical stage 1
-and therefore traverse all four O/E fusion stages in the deployed model.
+This is an auxiliary input asset, not an independent prediction branch.  In
+the current strict two-branch Spatial model the official Qwen patch+position
+tokens remain the shared visual input.  These cached tokens are injected only
+inside the first electronic residual E1, immediately before the E1/O1 fusion;
+they are never fed directly to O1 or to the final MOS readout.
 """
 
 from __future__ import annotations
@@ -91,8 +93,9 @@ def build_cache(
         "source_frame_cache": str(frame_cache),
         "source_frame_cache_sha256": _sha256(frame_cache),
         "interpretation": (
-            "Frozen five-convolution quality input head; fused with Qwen tokens "
-            "before optical stage 1; never connected directly to the MOS readout"
+            "Frozen five-convolution quality input head; in the strict two-branch "
+            "Spatial model it is injected only into electronic residual E1 before "
+            "the E1/O1 fusion, never directly into O1 or the MOS readout"
         ),
     }
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -124,4 +127,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
