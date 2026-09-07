@@ -4,13 +4,14 @@ import csv
 import hashlib
 import json
 import math
+import random
 from pathlib import Path
 from typing import Any, Mapping
 
 import torch
 from torch import nn
 from torch.nn import functional as F
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Sampler
 
 from .data import LGVQSingleMetricDataset
 from .metrics import regression_metrics
@@ -29,6 +30,62 @@ def _json(path: Path, value: Any) -> None:
     temporary.replace(path)
 
 
+class MosStratifiedBatchSampler(Sampler[list[int]]):
+    """Use every sample once while spreading the MOS range across each batch."""
+
+    def __init__(
+        self,
+        targets: torch.Tensor,
+        *,
+        batch_size: int,
+        strata: int,
+        seed: int,
+    ) -> None:
+        values = torch.as_tensor(targets, dtype=torch.float32).flatten()
+        if values.numel() == 0 or not bool(torch.isfinite(values).all()):
+            raise ValueError("MOS sampler requires finite, non-empty targets")
+        if batch_size <= 0 or strata < 2:
+            raise ValueError("MOS sampler requires batch_size>0 and strata>=2")
+        order = sorted(range(values.numel()), key=lambda index: float(values[index]))
+        self.bins: list[list[int]] = [[] for _ in range(min(strata, len(order)))]
+        for rank, index in enumerate(order):
+            bin_index = min(len(self.bins) - 1, rank * len(self.bins) // len(order))
+            self.bins[bin_index].append(index)
+        self.sample_count = len(order)
+        self.batch_size = int(batch_size)
+        self.seed = int(seed)
+        self.epoch = 0
+
+    def __len__(self) -> int:
+        return math.ceil(self.sample_count / self.batch_size)
+
+    def __iter__(self):
+        generator = random.Random(self.seed + self.epoch)
+        self.epoch += 1
+        bins = [list(values) for values in self.bins]
+        for values in bins:
+            generator.shuffle(values)
+        # Round-robin over score strata, with a new starting stratum each epoch.
+        # Consecutive chunks therefore span the MOS range without replacement.
+        interleaved: list[int] = []
+        start = generator.randrange(len(bins))
+        offsets = [0 for _ in bins]
+        remaining = self.sample_count
+        while remaining:
+            progressed = False
+            for step in range(len(bins)):
+                bin_index = (start + step) % len(bins)
+                if offsets[bin_index] < len(bins[bin_index]):
+                    interleaved.append(bins[bin_index][offsets[bin_index]])
+                    offsets[bin_index] += 1
+                    remaining -= 1
+                    progressed = True
+            if not progressed:
+                raise RuntimeError("MOS-stratified sampler failed to make progress")
+        for left in range(0, len(interleaved), self.batch_size):
+            yield interleaved[left : left + self.batch_size]
+
+
 def _loader(
     payload: Mapping[str, Any],
     split: str,
@@ -36,15 +93,104 @@ def _loader(
     *,
     shuffle: bool,
 ) -> DataLoader:
+    dataset = LGVQSingleMetricDataset(payload, split)
+    common = {
+        "num_workers": settings.num_workers,
+        "pin_memory": settings.device.startswith("cuda"),
+        "persistent_workers": settings.num_workers > 0,
+    }
+    if split == "train" and settings.mos_stratified_batches:
+        targets = torch.stack(
+            [payload["targets"][source].float() for source in dataset.indices]
+        )
+        sampler = MosStratifiedBatchSampler(
+            targets,
+            batch_size=settings.batch_size,
+            strata=settings.mos_strata,
+            seed=settings.random_seed,
+        )
+        return DataLoader(dataset, batch_sampler=sampler, **common)
     return DataLoader(
-        LGVQSingleMetricDataset(payload, split),
+        dataset,
         batch_size=settings.batch_size,
         shuffle=shuffle,
-        num_workers=settings.num_workers,
-        pin_memory=settings.device.startswith("cuda"),
-        persistent_workers=settings.num_workers > 0,
         drop_last=False,
+        **common,
     )
+
+
+def curriculum_values(
+    settings: ExperimentSettings, epoch: int
+) -> dict[str, float]:
+    """Return training-only schedules without changing the inference graph."""
+
+    if not settings.curriculum_enabled:
+        progress = 0.0
+    elif epoch <= settings.curriculum_start_epoch:
+        progress = 0.0
+    elif epoch >= settings.curriculum_end_epoch:
+        progress = 1.0
+    else:
+        progress = (epoch - settings.curriculum_start_epoch) / (
+            settings.curriculum_end_epoch - settings.curriculum_start_epoch
+        )
+
+    def blend(start: float, end: float) -> float:
+        return float(start + progress * (end - start))
+
+    return {
+        "progress": float(progress),
+        "ranking_weight": blend(
+            settings.ranking_weight, settings.curriculum_ranking_weight_final
+        ),
+        "correlation_weight": blend(
+            settings.correlation_weight,
+            settings.curriculum_correlation_weight_final,
+        ),
+        "soft_spearman_weight": blend(
+            settings.soft_spearman_weight,
+            settings.curriculum_soft_spearman_weight_final,
+        ),
+        "soft_target_weight": blend(
+            settings.soft_target_weight,
+            settings.curriculum_soft_target_weight_final,
+        ),
+        "router_balance_weight": blend(
+            settings.router_balance_weight,
+            settings.curriculum_router_balance_weight_final,
+        ),
+        "router_importance_weight": blend(
+            settings.router_importance_weight,
+            settings.curriculum_router_importance_weight_final,
+        ),
+        "serial_router_balance_weight": blend(
+            settings.serial_router_balance_weight,
+            settings.curriculum_serial_router_balance_weight_final,
+        ),
+        "serial_router_importance_weight": blend(
+            settings.serial_router_importance_weight,
+            settings.curriculum_serial_router_importance_weight_final,
+        ),
+        "router_noise_std": blend(
+            settings.router_noise_std, settings.curriculum_router_noise_std_final
+        ),
+        "unmodulated_power_fraction_max": blend(
+            settings.curriculum_unmodulated_power_fraction_max_initial,
+            settings.unmodulated_power_fraction_max,
+        ),
+    }
+
+
+def _learning_rate_factor(settings: ExperimentSettings, epoch: int) -> float:
+    warmup = settings.learning_rate_warmup_epochs
+    if warmup and epoch <= warmup:
+        return max(settings.minimum_learning_rate_factor, epoch / warmup)
+    span = max(1, settings.epochs - warmup - 1)
+    progress = min(1.0, max(0.0, (epoch - warmup - 1) / span))
+    cosine = 0.5 * (1.0 + math.cos(math.pi * progress))
+    return settings.minimum_learning_rate_factor + (
+        1.0 - settings.minimum_learning_rate_factor
+    ) * cosine
 
 
 def pairwise_ranking_loss(
@@ -413,8 +559,12 @@ def train(
         if "raw_" in name and "phase" in name
     }
     optimizer = _optimizer(model, settings)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-        optimizer, T_max=settings.epochs
+    base_learning_rates = {
+        str(group["name"]): float(group["lr"]) for group in optimizer.param_groups
+    }
+    base_router_noise_std = float(settings.router_noise_std)
+    base_unmodulated_power_fraction_max = float(
+        settings.unmodulated_power_fraction_max
     )
     # Measure and preserve the exact warm-start before any optimizer update.
     # With test-driven selection requested for these experiments, epoch 0 is a
@@ -449,6 +599,17 @@ def train(
         flush=True,
     )
     for epoch in range(1, settings.epochs + 1):
+        curriculum = curriculum_values(settings, epoch)
+        # These two values are read by the physical forward model. They affect
+        # training-time robustness only; evaluation continues to use the fixed
+        # configured unmodulated_power_fraction_eval and no router noise.
+        settings.router_noise_std = curriculum["router_noise_std"]
+        settings.unmodulated_power_fraction_max = curriculum[
+            "unmodulated_power_fraction_max"
+        ]
+        learning_rate_factor = _learning_rate_factor(settings, epoch)
+        for group in optimizer.param_groups:
+            group["lr"] = base_learning_rates[str(group["name"])] * learning_rate_factor
         model.train()
         totals = {
             name: 0.0
@@ -499,7 +660,7 @@ def train(
                 result["normalized_prediction"], normalized_target
             )
             soft_spearman = result["normalized_prediction"].new_zeros(())
-            if settings.soft_spearman_weight > 0.0:
+            if curriculum["soft_spearman_weight"] > 0.0:
                 soft_spearman = soft_spearman_loss(
                     result["normalized_prediction"],
                     normalized_target,
@@ -517,15 +678,15 @@ def train(
             serial_router_importance = language_routing["importance_loss"]
             loss = (
                 regression
-                + settings.ranking_weight * ranking
-                + settings.correlation_weight * correlation
-                + settings.soft_spearman_weight * soft_spearman
-                + settings.soft_target_weight * soft_target
+                + curriculum["ranking_weight"] * ranking
+                + curriculum["correlation_weight"] * correlation
+                + curriculum["soft_spearman_weight"] * soft_spearman
+                + curriculum["soft_target_weight"] * soft_target
                 + settings.optical_alignment_weight * result["optical_alignment_loss"]
-                + settings.router_balance_weight * result["router_balance_loss"]
-                + settings.router_importance_weight * result["router_importance_loss"]
-                + settings.serial_router_balance_weight * serial_router_balance
-                + settings.serial_router_importance_weight * serial_router_importance
+                + curriculum["router_balance_weight"] * result["router_balance_loss"]
+                + curriculum["router_importance_weight"] * result["router_importance_loss"]
+                + curriculum["serial_router_balance_weight"] * serial_router_balance
+                + curriculum["serial_router_importance_weight"] * serial_router_importance
                 + settings.router_capture_weight * result["router_capture_loss"]
             )
             if not bool(torch.isfinite(loss)):
@@ -558,10 +719,21 @@ def train(
             for name, value in values.items():
                 totals[name] += float(value.detach())
             batches += 1
-        scheduler.step()
+        # Do not let runtime curriculum values leak into checkpoint/config
+        # identity or become the next epoch's interpolation endpoints.
+        settings.router_noise_std = base_router_noise_std
+        settings.unmodulated_power_fraction_max = (
+            base_unmodulated_power_fraction_max
+        )
         row: dict[str, Any] = {
             "epoch": epoch,
             **{name: value / max(1, batches) for name, value in totals.items()},
+            "learning_rate_factor": learning_rate_factor,
+            "learning_rates": {
+                str(group["name"]): float(group["lr"])
+                for group in optimizer.param_groups
+            },
+            "curriculum": dict(curriculum),
             "test_evaluated": False,
         }
         if epoch == 1 or epoch % settings.test_interval_epochs == 0 or epoch == settings.epochs:
@@ -626,6 +798,14 @@ def train(
         "validation_used": False,
         "test_used_for_selection": True,
         "periodic_test_interval": settings.test_interval_epochs,
+        "mos_stratified_batches": settings.mos_stratified_batches,
+        "mos_strata": settings.mos_strata,
+        "curriculum": {
+            "enabled": settings.curriculum_enabled,
+            "start_epoch": settings.curriculum_start_epoch,
+            "end_epoch": settings.curriculum_end_epoch,
+            "final": curriculum_values(settings, settings.curriculum_end_epoch),
+        },
         "same_checkpoint_optical_ablation": comparison,
         "phase_training_diagnostics": phase,
     }
@@ -634,7 +814,9 @@ def train(
 
 
 __all__ = [
+    "MosStratifiedBatchSampler",
     "batch_correlation_loss",
+    "curriculum_values",
     "evaluate",
     "evaluate_checkpoint_modes",
     "pairwise_ranking_loss",

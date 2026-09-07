@@ -70,10 +70,12 @@ def run_preflight(
                 if settings.electronic_quality_residual_enabled
                 else "shared quality input"
             ),
-            "quality_channels": (
-                None
+            "quality_feature_source_channels": list(QUALITY_CHANNELS),
+            "quality_feature_preprocessor": (
+                "frozen offline Conv5 cache; it does not produce an independent "
+                "prediction and is injected only into E1"
                 if settings.electronic_quality_residual_enabled
-                else list(QUALITY_CHANNELS)
+                else "shared raw quality representation"
             ),
             "internal_width": settings.model_width,
         },
@@ -139,6 +141,20 @@ def run_preflight(
         "phase_snapshots": {
             "interval_epochs": settings.phase_snapshot_interval_epochs,
             "format": "optical_phase_evolution_snapshot_v1",
+        },
+        "optimization": {
+            "mos_stratified_batches": settings.mos_stratified_batches,
+            "mos_strata": settings.mos_strata,
+            "learning_rate_warmup_epochs": settings.learning_rate_warmup_epochs,
+            "minimum_learning_rate_factor": settings.minimum_learning_rate_factor,
+            "curriculum_enabled": settings.curriculum_enabled,
+            "curriculum_epoch_range": [
+                settings.curriculum_start_epoch,
+                settings.curriculum_end_epoch,
+            ],
+            "curriculum_changes_inference_graph": False,
+            "phase_learning_rate": settings.phase_learning_rate,
+            "router_phase_learning_rate": settings.router_phase_learning_rate,
         },
     }
 

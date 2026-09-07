@@ -309,6 +309,23 @@ class ExperimentSettings:
     serial_router_importance_weight: float = 0.0
     router_capture_weight: float = 0.02
     soft_target_weight: float = 0.0
+    mos_stratified_batches: bool = False
+    mos_strata: int = 8
+    learning_rate_warmup_epochs: int = 0
+    minimum_learning_rate_factor: float = 0.0
+    curriculum_enabled: bool = False
+    curriculum_start_epoch: int = 1
+    curriculum_end_epoch: int = 100
+    curriculum_ranking_weight_final: float = 0.20
+    curriculum_correlation_weight_final: float = 0.30
+    curriculum_soft_spearman_weight_final: float = 0.0
+    curriculum_soft_target_weight_final: float = 0.0
+    curriculum_router_balance_weight_final: float = 0.02
+    curriculum_router_importance_weight_final: float = 0.002
+    curriculum_serial_router_balance_weight_final: float = 0.0
+    curriculum_serial_router_importance_weight_final: float = 0.0
+    curriculum_router_noise_std_final: float = 0.03
+    curriculum_unmodulated_power_fraction_max_initial: float = 0.35
     test_interval_epochs: int = 5
     phase_snapshot_interval_epochs: int = 5
     synthetic: bool = False
@@ -591,6 +608,44 @@ class ExperimentSettings:
                 "Training counts must be positive; num_workers and the optional "
                 "phase snapshot interval may be zero"
             )
+        if self.mos_strata < 2:
+            raise ValueError("training.mos_strata must be at least two")
+        if not 0 <= self.learning_rate_warmup_epochs < self.epochs:
+            raise ValueError(
+                "training.learning_rate_warmup_epochs must be within [0, epochs)"
+            )
+        if not 0.0 <= self.minimum_learning_rate_factor <= 1.0:
+            raise ValueError(
+                "training.minimum_learning_rate_factor must be within [0,1]"
+            )
+        if self.curriculum_enabled and not (
+            1 <= self.curriculum_start_epoch <= self.curriculum_end_epoch <= self.epochs
+        ):
+            raise ValueError(
+                "curriculum start/end epochs must satisfy 1 <= start <= end <= epochs"
+            )
+        curriculum_weights = (
+            self.curriculum_ranking_weight_final,
+            self.curriculum_correlation_weight_final,
+            self.curriculum_soft_spearman_weight_final,
+            self.curriculum_soft_target_weight_final,
+            self.curriculum_router_balance_weight_final,
+            self.curriculum_router_importance_weight_final,
+            self.curriculum_serial_router_balance_weight_final,
+            self.curriculum_serial_router_importance_weight_final,
+            self.curriculum_router_noise_std_final,
+        )
+        if min(curriculum_weights) < 0.0:
+            raise ValueError("curriculum final weights/noise must be non-negative")
+        if self.curriculum_enabled and not (
+            self.unmodulated_power_fraction_min
+            <= self.curriculum_unmodulated_power_fraction_max_initial
+            <= self.unmodulated_power_fraction_max
+        ):
+            raise ValueError(
+                "curriculum.unmodulated_power_fraction_max_initial must lie "
+                "between the optical train minimum and maximum"
+            )
         if self.trainable_scope not in {
             "all",
             "readout_only",
@@ -793,6 +848,55 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         ),
         router_capture_weight=float(get("loss", "router_capture_weight", 0.02)),
         soft_target_weight=float(get("loss", "soft_target_weight", 0.0)),
+        mos_stratified_batches=bool(
+            get("training", "mos_stratified_batches", False)
+        ),
+        mos_strata=int(get("training", "mos_strata", 8)),
+        learning_rate_warmup_epochs=int(
+            get("training", "learning_rate_warmup_epochs", 0)
+        ),
+        minimum_learning_rate_factor=float(
+            get("training", "minimum_learning_rate_factor", 0.0)
+        ),
+        curriculum_enabled=bool(get("curriculum", "enabled", False)),
+        curriculum_start_epoch=int(get("curriculum", "start_epoch", 1)),
+        curriculum_end_epoch=int(
+            get("curriculum", "end_epoch", get("training", "epochs", 100))
+        ),
+        curriculum_ranking_weight_final=float(
+            get("curriculum", "ranking_weight_final", get("loss", "ranking_weight", 0.20))
+        ),
+        curriculum_correlation_weight_final=float(
+            get("curriculum", "correlation_weight_final", get("loss", "correlation_weight", 0.30))
+        ),
+        curriculum_soft_spearman_weight_final=float(
+            get("curriculum", "soft_spearman_weight_final", get("loss", "soft_spearman_weight", 0.0))
+        ),
+        curriculum_soft_target_weight_final=float(
+            get("curriculum", "soft_target_weight_final", get("loss", "soft_target_weight", 0.0))
+        ),
+        curriculum_router_balance_weight_final=float(
+            get("curriculum", "router_balance_weight_final", get("loss", "router_balance_weight", 0.02))
+        ),
+        curriculum_router_importance_weight_final=float(
+            get("curriculum", "router_importance_weight_final", get("loss", "router_importance_weight", 0.002))
+        ),
+        curriculum_serial_router_balance_weight_final=float(
+            get("curriculum", "serial_router_balance_weight_final", get("loss", "serial_router_balance_weight", 0.0))
+        ),
+        curriculum_serial_router_importance_weight_final=float(
+            get("curriculum", "serial_router_importance_weight_final", get("loss", "serial_router_importance_weight", 0.0))
+        ),
+        curriculum_router_noise_std_final=float(
+            get("curriculum", "router_noise_std_final", get("router", "noise_std", 0.03))
+        ),
+        curriculum_unmodulated_power_fraction_max_initial=float(
+            get(
+                "curriculum",
+                "unmodulated_power_fraction_max_initial",
+                get("optics", "unmodulated_power_fraction_max", 0.35),
+            )
+        ),
         test_interval_epochs=int(get("training", "test_interval_epochs", 5)),
         phase_snapshot_interval_epochs=int(
             get("training", "phase_snapshot_interval_epochs", 5)

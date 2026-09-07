@@ -14,7 +14,12 @@ from ..modeling import (
 )
 from ..run import _apply_trainable_scope, _load_compatible_initialization
 from ..settings import TARGET_PROMPTS, ExperimentSettings, Geometry
-from ..training import soft_spearman_loss, train
+from ..training import (
+    MosStratifiedBatchSampler,
+    curriculum_values,
+    soft_spearman_loss,
+    train,
+)
 
 
 def _small_settings(tmp_path: Path, *, target_name: str = "spatial") -> ExperimentSettings:
@@ -90,6 +95,46 @@ def test_soft_spearman_loss_tracks_rank_order_and_backpropagates() -> None:
     good.backward()
     assert ordered.grad is not None
     assert bool(torch.isfinite(ordered.grad).all())
+
+
+def test_mos_stratified_sampler_uses_each_item_once_and_spans_scores() -> None:
+    targets = torch.arange(64, dtype=torch.float32)
+    sampler = MosStratifiedBatchSampler(
+        targets, batch_size=16, strata=8, seed=91
+    )
+    batches = list(iter(sampler))
+    flat = [index for batch in batches for index in batch]
+    assert sorted(flat) == list(range(64))
+    assert all(max(batch) - min(batch) >= 49 for batch in batches)
+
+
+def test_curriculum_interpolates_training_only_weights(tmp_path: Path) -> None:
+    settings = replace(
+        _small_settings(tmp_path),
+        epochs=100,
+        curriculum_enabled=True,
+        curriculum_start_epoch=10,
+        curriculum_end_epoch=90,
+        soft_target_weight=3.0,
+        curriculum_soft_target_weight_final=0.25,
+        soft_spearman_weight=0.0,
+        curriculum_soft_spearman_weight_final=0.12,
+        router_noise_std=0.08,
+        curriculum_router_noise_std_final=0.01,
+        unmodulated_power_fraction_max=0.35,
+        curriculum_unmodulated_power_fraction_max_initial=0.20,
+    )
+    settings.validate()
+    start = curriculum_values(settings, 10)
+    middle = curriculum_values(settings, 50)
+    final = curriculum_values(settings, 90)
+    assert start["soft_target_weight"] == pytest.approx(3.0)
+    assert middle["soft_target_weight"] == pytest.approx(1.625)
+    assert final["soft_target_weight"] == pytest.approx(0.25)
+    assert start["soft_spearman_weight"] == pytest.approx(0.0)
+    assert final["soft_spearman_weight"] == pytest.approx(0.12)
+    assert start["unmodulated_power_fraction_max"] == pytest.approx(0.20)
+    assert final["unmodulated_power_fraction_max"] == pytest.approx(0.35)
 
 
 def test_trainable_frame_stem_exactly_matches_cache_source_implementation() -> None:

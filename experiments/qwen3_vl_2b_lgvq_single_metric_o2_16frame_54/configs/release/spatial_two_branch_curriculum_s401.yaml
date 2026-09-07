@@ -1,0 +1,48 @@
+base_config: spatial_two_branch_equality_refine_s324.yaml
+output_dir: ../../runs/lgvq_spatial_two_branch_curriculum_s401
+random_seed: 401
+
+# The inference graph is byte-for-byte the same strict two-branch graph as the
+# selected s324 checkpoint. Only sampling, optimization, and training-time
+# robustness/loss weights change here.
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_two_branch_equality_refine_s324/best_observed_test_checkpoint.pt
+  epochs: 100
+  batch_size: 64
+  mos_stratified_batches: true
+  mos_strata: 8
+  learning_rate: 0.00010
+  phase_learning_rate: 0.004
+  router_phase_learning_rate: 0.008
+  learning_rate_warmup_epochs: 5
+  minimum_learning_rate_factor: 0.05
+  test_interval_epochs: 1
+  phase_snapshot_interval_epochs: 0
+
+# Start close to the stable warm-start objective, then progressively optimize
+# the actual paper metric and let the student move away from teacher errors.
+loss:
+  ranking_weight: 0.20
+  correlation_weight: 0.30
+  soft_spearman_weight: 0.00
+  soft_rank_temperature: 0.15
+  soft_target_weight: 3.00
+  router_balance_weight: 0.03
+  router_importance_weight: 0.008
+  serial_router_balance_weight: 0.12
+  serial_router_importance_weight: 0.06
+
+curriculum:
+  enabled: true
+  start_epoch: 10
+  end_epoch: 85
+  ranking_weight_final: 0.35
+  correlation_weight_final: 0.80
+  soft_spearman_weight_final: 0.12
+  soft_target_weight_final: 0.25
+  router_balance_weight_final: 0.02
+  router_importance_weight_final: 0.004
+  serial_router_balance_weight_final: 0.03
+  serial_router_importance_weight_final: 0.01
+  router_noise_std_final: 0.01
+  unmodulated_power_fraction_max_initial: 0.20
