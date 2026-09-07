@@ -111,6 +111,10 @@ def execute(args, cfg, output):
     if cfg.get('dataset',{}).get('name') == 'cifar100':
         from .datasets import prepare_cifar100
         settings.dataset_root = (ROOT / cfg['dataset']['root']).resolve()
+        settings.gallery_images_per_sku = cfg['dataset']['gallery_per_class']
+        settings.download = False
+        settings.download_url = 'https://cave.cs.toronto.edu/kriz/cifar-100-python.tar.gz'
+        settings.use_all_categories = not bool(cfg['dataset'].get('class_ids'))
         settings.instruction = 'Represent this image for CIFAR-100 image-to-image retrieval.'
         bundle = prepare_cifar100(cfg['dataset'], ROOT, output, cfg.get('data_seed',42))
         settings.selected_skus = bundle.class_names
@@ -133,6 +137,9 @@ def execute(args, cfg, output):
     resolved = yaml.safe_load((output/'config.yaml').read_text())
     resolved['lightgen']['selection'] = {'use_periodic_test':False, 'criterion':cfg['selection'], 'test_metrics_used_for_selection':False}
     resolved['static_expert_protocol'] = cfg
+    if cfg.get('dataset',{}).get('name') == 'cifar100':
+        resolved['dataset'].update(name='CIFAR-100', official_test_only=True,
+                                   validation_per_class=cfg['validation_per_class'])
     (output/'config.yaml').write_text(yaml.safe_dump(resolved,sort_keys=False), encoding='utf-8')
     planes = expert_planes(replacement)
     initial = common_anchor(cfg['seed'],dc_power=cfg['initial_expert_dc_power']).to(device)
