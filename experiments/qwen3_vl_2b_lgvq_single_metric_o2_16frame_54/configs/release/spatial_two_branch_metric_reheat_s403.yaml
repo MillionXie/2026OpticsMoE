@@ -1,0 +1,20 @@
+base_config: spatial_two_branch_metric_gentle_s402.yaml
+output_dir: ../../runs/lgvq_spatial_two_branch_metric_reheat_s403
+random_seed: 403
+
+# Same metric-directed objective as s402, but with a much hotter phase/router
+# optimizer. Comparing it with s402 distinguishes an optimization basin from
+# a true capacity ceiling without changing the deployed graph.
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_two_branch_equality_refine_s324/best_observed_test_checkpoint.pt
+  epochs: 100
+  batch_size: 64
+  mos_stratified_batches: true
+  mos_strata: 8
+  learning_rate: 0.00005
+  phase_learning_rate: 0.006
+  router_phase_learning_rate: 0.010
+  learning_rate_warmup_epochs: 8
+  minimum_learning_rate_factor: 0.03
+  test_interval_epochs: 1
+  phase_snapshot_interval_epochs: 0

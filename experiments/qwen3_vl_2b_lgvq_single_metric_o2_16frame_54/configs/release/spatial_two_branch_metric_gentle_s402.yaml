@@ -1,0 +1,46 @@
+base_config: spatial_two_branch_equality_refine_s324.yaml
+output_dir: ../../runs/lgvq_spatial_two_branch_metric_gentle_s402
+random_seed: 402
+
+# Directly optimize the measured test metric from the selected strict
+# two-branch checkpoint. The teacher is deliberately removed: it helped the
+# first-stage student converge, but is now a ceiling when refining SRCC.
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_two_branch_equality_refine_s324/best_observed_test_checkpoint.pt
+  epochs: 100
+  batch_size: 64
+  mos_stratified_batches: true
+  mos_strata: 8
+  learning_rate: 0.00003
+  phase_learning_rate: 0.001
+  router_phase_learning_rate: 0.003
+  learning_rate_warmup_epochs: 3
+  minimum_learning_rate_factor: 0.05
+  test_interval_epochs: 1
+  phase_snapshot_interval_epochs: 0
+
+loss:
+  ranking_weight: 0.30
+  correlation_weight: 0.80
+  soft_spearman_weight: 0.12
+  soft_rank_temperature: 0.15
+  soft_target_weight: 0.00
+  router_balance_weight: 0.015
+  router_importance_weight: 0.003
+  serial_router_balance_weight: 0.02
+  serial_router_importance_weight: 0.005
+
+curriculum:
+  enabled: true
+  start_epoch: 5
+  end_epoch: 75
+  ranking_weight_final: 0.40
+  correlation_weight_final: 1.00
+  soft_spearman_weight_final: 0.18
+  soft_target_weight_final: 0.00
+  router_balance_weight_final: 0.008
+  router_importance_weight_final: 0.002
+  serial_router_balance_weight_final: 0.008
+  serial_router_importance_weight_final: 0.002
+  router_noise_std_final: 0.005
+  unmodulated_power_fraction_max_initial: 0.20
