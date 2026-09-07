@@ -5,6 +5,7 @@ import csv
 import hashlib
 import json
 import platform
+import subprocess
 import time
 from pathlib import Path
 from typing import Any
@@ -42,6 +43,12 @@ def sha256(path: Path) -> str:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def git_value(*args: str) -> str:
+    return subprocess.run(
+        ["git", *args], check=True, capture_output=True, text=True
+    ).stdout.strip()
 
 
 def summarize(values: list[float]) -> dict[str, float]:
@@ -269,6 +276,9 @@ def main() -> int:
         "manifest_sha256": sha256(manifest_path),
         "checkpoint": str(checkpoint),
         "checkpoint_sha256": sha256(checkpoint),
+        "script_sha256": sha256(Path(__file__)),
+        "git_commit": git_value("rev-parse", "HEAD"),
+        "git_worktree_clean": git_value("status", "--porcelain") == "",
         "gpu": gpu_name,
         "hardware_contract": {
             "expected_gpu_name_substring": args.expected_gpu,
