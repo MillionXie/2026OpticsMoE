@@ -30,7 +30,8 @@ qwen_frozen 的 mask 仍会改变，因为解码器在更新。qwen_lora 则把�
 不是全量更新 2B 基座参数。推理时导出八张 mask 即可移除生成器。
 生成器不接收当前图片、标签或 batch，也不通过离散文本采样生成 mask。
 
-训练步骤固定为 4 轮只训练 expert/生成器，8 轮加入 Router/global，8 轮低学习率联合电子部分。
+Caltech 训练为 4 轮只训练 expert/生成器，8 轮加入 Router/global，8 轮低学习率联合电子部分；
+CIFAR 改为 2/2/16 轮，具体预算见文末协议。
 先前强扰动训练出现退化；当前扩大类别与种子复验使用单独的 ideal 配置，关闭采样光学扰动，
 仍通过完整可微光学传播训练。它验证学习机制，尚未证明硬件扰动鲁棒性。
 
@@ -475,6 +476,9 @@ Vision 四专家均被使用。因此总体相位移动不能替代逐专家任�
   Caltech 十类与 CIFAR 十类使用 fixed / direct / qwen_frozen / qwen_lora 四组。
   百类此预算不到完整官方训练集的一次等量样本遍历，仅作可学习性筛查，不能据此宣布方法的性能上限。
   十类子集是单独的诊断任务，不能将其准确率替代或伪装成 CIFAR-100 全百类成绩。
+  PK batch 为 10 类 × 3 张，1,200 batch 共 36,000 次样本抽取（允许重复）；
+  等量样本遍历约为 Caltech 十类 14.26 次、CIFAR 十类 7.58 次、CIFAR 百类 0.76 次。
+  此处 epoch 是指定数量的抽样 batch，不代表完整遍历训练集。
 
 全部仍是固定八张专家 mask、光学融合下限 0.4、ideal 光学传播；只按 validation 选模。
 先做独立 smoke，检查新输出头的梯度和 CIFAR 划分，再启动正式 run；仍使用 GitHub 固定 SHA worktree 与 RTX UUID。
@@ -518,3 +522,36 @@ Language Router 末轮仍为 `[1800,1800,0,0]`；Vision 为四专家均被使用
 [训练曲线](reports/caltech10_heads_20260907/training_comparison.png)、
 [相位变化图](reports/caltech10_heads_20260907/selected_phase_changes.png)。
 轻量日志和导出专家已回传并逐文件核验 SHA256；best/last checkpoint 留在服务器原 run。
+
+### 独立输出头：CIFAR-100 固定十类结果
+
+使用训练 commit `6ce31e05`，seed=42，全部 RTX 4090；run ID 为
+`20260907_cifar100ten_heads_{fixed,direct,qwen_frozen,qwen_lora}_s42`。
+类别为 bear、bus、butterfly、castle、cup、elephant、girl、streetcar、telephone、wardrobe。
+4,750 train / 200 validation / 50 gallery / 1,000 official test；每个 test 类均为 100 张，
+全部 query 面对相同十类 gallery 的均值原型。20 轮、1,200 batch，fixed 为 1,080 次实际更新。
+
+| 方法 | 所选 epoch | test Top-1 | 相位变化 RMS / rad | 换回初始专家后的 Top-1 |
+|---|---:|---:|---:|---:|
+| 固定初始专家 | 17 | 41.9% | 0 | 41.9% |
+| 直接优化相位 | 20 | 42.6% | 0.78572 | 39.1% |
+| 冻结 Qwen＋训练解码器 | 20 | 42.2% | 0.84709 | 40.1% |
+| Qwen LoRA＋训练解码器 | 20 | 41.3% | 0.95679 | 38.6% |
+
+此子集未观察到生成方案的准确率优势。生成专家在其训练后的系统中有作用，但与独立训练的 fixed 组差距很小；
+不能把相位变化幅度当作性能收益。只关闭 LoRA、保留解码器，Top-1 为 41.4%，相位变化 0.00355 rad。
+LoRA 末轮任务梯度到 LoRA B 的范数为 0.01134，链路连通，但其最终相位影响仍小。
+Language Router 末轮：前三组均 `[1800,1800,0,0]`，LoRA 为 `[1800,1081,719,0]`，仍未充分使用四个专家。
+生成器的跨专家更新相关系数为 frozen 0.00187、LoRA 0.00658。
+
+四组导出误差均为 0，冻结参数检查通过，融合系数满足 0.4 下限。
+直接优化 / LoRA 峰值显存为 7.22 / 11.22 GiB；包括训练与评估的实测耗时为 825 / 1,024 秒，
+仅作这次仿真运行记录，不是独占设备下的严格速度基准。生成器推理时可移除，但 direct 同样只需八张 mask，
+所以此协议没有产生相对 direct 的额外推理速度优势。
+
+八张直接相位共 401,408 个参数；冻结 Qwen 的解码器为 572,416 个可训练参数，
+Qwen LoRA＋解码器共 2,178,048 个。性能、参数与开销需要共同评估。
+见 [CIFAR 十类完整指标](reports/cifar100ten_heads_20260907/summary.json)、
+[训练曲线](reports/cifar100ten_heads_20260907/training_comparison.png)、
+[相位变化图](reports/cifar100ten_heads_20260907/selected_phase_changes.png)。
+轻量产物已逐文件核验 SHA256 回传；此结果不代表 CIFAR-100 全百类成绩，也不是标准分类头榜单结果。

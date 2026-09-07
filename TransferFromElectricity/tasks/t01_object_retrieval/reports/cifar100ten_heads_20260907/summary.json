@@ -1,0 +1,4028 @@
+{
+  "protocol": "staged_alpha40",
+  "training_git_sha": "6ce31e0514f90efbb11f548b5f024dcd28a07896",
+  "split_sha256": "039d16ca675201a6ef9d8a8559df2621e96516b659fcc0b16fa23dade44d34aa",
+  "resolved_protocol": {
+    "backend_profile": "LightGenV2/tasks/t01_object_retrieval/configs/moe_optical_router_scale_matched_dc20.yaml",
+    "seed": 42,
+    "validation_per_class": 20,
+    "num_workers": 0,
+    "fusion": {
+      "minimum": 0.4,
+      "initial": 0.5,
+      "maximum": 0.95
+    },
+    "initial_expert_dc_power": 0.25,
+    "stages": [
+      {
+        "name": "experts",
+        "epochs": 2
+      },
+      {
+        "name": "optics",
+        "epochs": 2
+      },
+      {
+        "name": "joint",
+        "epochs": 16
+      }
+    ],
+    "learning_rates": {
+      "expert": 0.02,
+      "global": 0.006,
+      "router": 0.01,
+      "generator_context": 0.0001,
+      "generator_decoder": 0.0003,
+      "electronic": 0.0003,
+      "readout": 0.0003,
+      "fusion": 0.0001
+    },
+    "stage_cosine_minimum": 0.2,
+    "warmup_steps": 20,
+    "gradient_clip_per_group": 1.0,
+    "ema_decay": 0.95,
+    "generator": {
+      "model_id": "Qwen/Qwen3-VL-2B-Instruct",
+      "rank": 8,
+      "lora_dtype": "float32",
+      "decoder_final_init_std": 0.02,
+      "expert_specific_heads": true,
+      "task_description": "CIFAR-100 fixed ten-category subset image retrieval"
+    },
+    "selection": "maximum_live_validation_top1_then_mrr",
+    "test_policy": "once_after_training_for_validation_selected_live_and_final_ema",
+    "training_optical_perturbations": false,
+    "data_seed": 42,
+    "paired_epoch_rng": true,
+    "dataset": {
+      "name": "cifar100",
+      "root": "data/cifar100_static_experts",
+      "gallery_per_class": 5,
+      "class_ids": [
+        3,
+        13,
+        14,
+        17,
+        28,
+        31,
+        35,
+        81,
+        86,
+        94
+      ]
+    },
+    "smoke": false,
+    "steps_per_epoch": 60
+  },
+  "rows": [
+    {
+      "method": "fixed",
+      "label": "Fixed experts",
+      "run_id": "20260907_cifar100ten_heads_fixed_s42",
+      "device": "NVIDIA GeForce RTX 4090",
+      "selected_epoch": 17,
+      "selected_live_test": {
+        "system": "optical_student_query_vs_optical_student_gallery",
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 1000,
+        "gallery_image_count": 50,
+        "sku_count": 10,
+        "top1_retrieval_accuracy": 0.4189999997615814,
+        "top3_retrieval_accuracy": 0.753000020980835,
+        "mrr": 0.6100047826766968,
+        "per_sku": {
+          "bear": {
+            "query_count": 100,
+            "top1_accuracy": 0.20999999344348907,
+            "top3_accuracy": 0.7300000190734863
+          },
+          "bus": {
+            "query_count": 100,
+            "top1_accuracy": 0.1899999976158142,
+            "top3_accuracy": 0.6800000071525574
+          },
+          "butterfly": {
+            "query_count": 100,
+            "top1_accuracy": 0.5199999809265137,
+            "top3_accuracy": 0.5699999928474426
+          },
+          "castle": {
+            "query_count": 100,
+            "top1_accuracy": 0.8500000238418579,
+            "top3_accuracy": 0.8899999856948853
+          },
+          "cup": {
+            "query_count": 100,
+            "top1_accuracy": 0.3400000035762787,
+            "top3_accuracy": 0.75
+          },
+          "elephant": {
+            "query_count": 100,
+            "top1_accuracy": 0.23999999463558197,
+            "top3_accuracy": 0.6700000166893005
+          },
+          "girl": {
+            "query_count": 100,
+            "top1_accuracy": 0.5400000214576721,
+            "top3_accuracy": 0.8399999737739563
+          },
+          "streetcar": {
+            "query_count": 100,
+            "top1_accuracy": 0.12999999523162842,
+            "top3_accuracy": 0.6899999976158142
+          },
+          "telephone": {
+            "query_count": 100,
+            "top1_accuracy": 0.6200000047683716,
+            "top3_accuracy": 0.7900000214576721
+          },
+          "wardrobe": {
+            "query_count": 100,
+            "top1_accuracy": 0.550000011920929,
+            "top3_accuracy": 0.9200000166893005
+          }
+        }
+      },
+      "final_ema_test": {
+        "system": "optical_student_query_vs_optical_student_gallery",
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 1000,
+        "gallery_image_count": 50,
+        "sku_count": 10,
+        "top1_retrieval_accuracy": 0.4449999928474426,
+        "top3_retrieval_accuracy": 0.7639999985694885,
+        "mrr": 0.627278208732605,
+        "per_sku": {
+          "bear": {
+            "query_count": 100,
+            "top1_accuracy": 0.3700000047683716,
+            "top3_accuracy": 0.7699999809265137
+          },
+          "bus": {
+            "query_count": 100,
+            "top1_accuracy": 0.1899999976158142,
+            "top3_accuracy": 0.8199999928474426
+          },
+          "butterfly": {
+            "query_count": 100,
+            "top1_accuracy": 0.44999998807907104,
+            "top3_accuracy": 0.6000000238418579
+          },
+          "castle": {
+            "query_count": 100,
+            "top1_accuracy": 0.8600000143051147,
+            "top3_accuracy": 0.8600000143051147
+          },
+          "cup": {
+            "query_count": 100,
+            "top1_accuracy": 0.4000000059604645,
+            "top3_accuracy": 0.7699999809265137
+          },
+          "elephant": {
+            "query_count": 100,
+            "top1_accuracy": 0.38999998569488525,
+            "top3_accuracy": 0.7200000286102295
+          },
+          "girl": {
+            "query_count": 100,
+            "top1_accuracy": 0.5600000023841858,
+            "top3_accuracy": 0.7799999713897705
+          },
+          "streetcar": {
+            "query_count": 100,
+            "top1_accuracy": 0.07999999821186066,
+            "top3_accuracy": 0.5699999928474426
+          },
+          "telephone": {
+            "query_count": 100,
+            "top1_accuracy": 0.5600000023841858,
+            "top3_accuracy": 0.8399999737739563
+          },
+          "wardrobe": {
+            "query_count": 100,
+            "top1_accuracy": 0.5899999737739563,
+            "top3_accuracy": 0.9100000262260437
+          }
+        }
+      },
+      "selected_validation": {
+        "system": "optical_student_query_vs_optical_student_gallery",
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 200,
+        "gallery_image_count": 50,
+        "sku_count": 10,
+        "top1_retrieval_accuracy": 0.4399999976158142,
+        "top3_retrieval_accuracy": 0.7599999904632568,
+        "mrr": 0.6260496377944946,
+        "per_sku": {
+          "bear": {
+            "query_count": 20,
+            "top1_accuracy": 0.3499999940395355,
+            "top3_accuracy": 0.800000011920929
+          },
+          "bus": {
+            "query_count": 20,
+            "top1_accuracy": 0.15000000596046448,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "butterfly": {
+            "query_count": 20,
+            "top1_accuracy": 0.6000000238418579,
+            "top3_accuracy": 0.699999988079071
+          },
+          "castle": {
+            "query_count": 20,
+            "top1_accuracy": 0.8500000238418579,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "cup": {
+            "query_count": 20,
+            "top1_accuracy": 0.30000001192092896,
+            "top3_accuracy": 0.699999988079071
+          },
+          "elephant": {
+            "query_count": 20,
+            "top1_accuracy": 0.25,
+            "top3_accuracy": 0.6000000238418579
+          },
+          "girl": {
+            "query_count": 20,
+            "top1_accuracy": 0.44999998807907104,
+            "top3_accuracy": 0.75
+          },
+          "streetcar": {
+            "query_count": 20,
+            "top1_accuracy": 0.30000001192092896,
+            "top3_accuracy": 0.75
+          },
+          "telephone": {
+            "query_count": 20,
+            "top1_accuracy": 0.6499999761581421,
+            "top3_accuracy": 0.75
+          },
+          "wardrobe": {
+            "query_count": 20,
+            "top1_accuracy": 0.5,
+            "top3_accuracy": 0.75
+          }
+        }
+      },
+      "selected_phase_rms_rad": 0.0,
+      "selected_phase_piston_removed_rms_rad": 1.227318477958761e-07,
+      "mean_cross_expert_update_correlation": null,
+      "last_phase_rms_rad": 0.0,
+      "fusion": {
+        "vision": [
+          0.49921560287475586,
+          0.49956032633781433
+        ],
+        "language": [
+          0.5002655982971191,
+          0.5003690123558044
+        ]
+      },
+      "ablations": {
+        "initial_experts": {
+          "system": "optical_student_query_vs_optical_student_gallery",
+          "gallery_aggregation": "mean_prototype",
+          "query_count": 1000,
+          "gallery_image_count": 50,
+          "sku_count": 10,
+          "top1_retrieval_accuracy": 0.4189999997615814,
+          "top3_retrieval_accuracy": 0.753000020980835,
+          "mrr": 0.6100047826766968,
+          "per_sku": {
+            "bear": {
+              "query_count": 100,
+              "top1_accuracy": 0.20999999344348907,
+              "top3_accuracy": 0.7300000190734863
+            },
+            "bus": {
+              "query_count": 100,
+              "top1_accuracy": 0.1899999976158142,
+              "top3_accuracy": 0.6800000071525574
+            },
+            "butterfly": {
+              "query_count": 100,
+              "top1_accuracy": 0.5199999809265137,
+              "top3_accuracy": 0.5699999928474426
+            },
+            "castle": {
+              "query_count": 100,
+              "top1_accuracy": 0.8500000238418579,
+              "top3_accuracy": 0.8899999856948853
+            },
+            "cup": {
+              "query_count": 100,
+              "top1_accuracy": 0.3400000035762787,
+              "top3_accuracy": 0.75
+            },
+            "elephant": {
+              "query_count": 100,
+              "top1_accuracy": 0.23999999463558197,
+              "top3_accuracy": 0.6700000166893005
+            },
+            "girl": {
+              "query_count": 100,
+              "top1_accuracy": 0.5400000214576721,
+              "top3_accuracy": 0.8399999737739563
+            },
+            "streetcar": {
+              "query_count": 100,
+              "top1_accuracy": 0.12999999523162842,
+              "top3_accuracy": 0.6899999976158142
+            },
+            "telephone": {
+              "query_count": 100,
+              "top1_accuracy": 0.6200000047683716,
+              "top3_accuracy": 0.7900000214576721
+            },
+            "wardrobe": {
+              "query_count": 100,
+              "top1_accuracy": 0.550000011920929,
+              "top3_accuracy": 0.9200000166893005
+            }
+          }
+        },
+        "flat_pi_experts": {
+          "system": "optical_student_query_vs_optical_student_gallery",
+          "gallery_aggregation": "mean_prototype",
+          "query_count": 1000,
+          "gallery_image_count": 50,
+          "sku_count": 10,
+          "top1_retrieval_accuracy": 0.4009999930858612,
+          "top3_retrieval_accuracy": 0.7459999918937683,
+          "mrr": 0.5962828993797302,
+          "per_sku": {
+            "bear": {
+              "query_count": 100,
+              "top1_accuracy": 0.18000000715255737,
+              "top3_accuracy": 0.7300000190734863
+            },
+            "bus": {
+              "query_count": 100,
+              "top1_accuracy": 0.1899999976158142,
+              "top3_accuracy": 0.8199999928474426
+            },
+            "butterfly": {
+              "query_count": 100,
+              "top1_accuracy": 0.4099999964237213,
+              "top3_accuracy": 0.5199999809265137
+            },
+            "castle": {
+              "query_count": 100,
+              "top1_accuracy": 0.800000011920929,
+              "top3_accuracy": 0.8500000238418579
+            },
+            "cup": {
+              "query_count": 100,
+              "top1_accuracy": 0.3400000035762787,
+              "top3_accuracy": 0.699999988079071
+            },
+            "elephant": {
+              "query_count": 100,
+              "top1_accuracy": 0.20000000298023224,
+              "top3_accuracy": 0.5699999928474426
+            },
+            "girl": {
+              "query_count": 100,
+              "top1_accuracy": 0.3799999952316284,
+              "top3_accuracy": 0.8299999833106995
+            },
+            "streetcar": {
+              "query_count": 100,
+              "top1_accuracy": 0.11999999731779099,
+              "top3_accuracy": 0.7699999809265137
+            },
+            "telephone": {
+              "query_count": 100,
+              "top1_accuracy": 0.6399999856948853,
+              "top3_accuracy": 0.7300000190734863
+            },
+            "wardrobe": {
+              "query_count": 100,
+              "top1_accuracy": 0.75,
+              "top3_accuracy": 0.9399999976158142
+            }
+          }
+        }
+      },
+      "counts": {
+        "train": 4750,
+        "validation": 200,
+        "gallery": 50,
+        "test": 1000
+      },
+      "optimizer_updates": 1080,
+      "batch_opportunities": 1200,
+      "initial_validation": {
+        "system": "optical_student_query_vs_optical_student_gallery",
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 200,
+        "gallery_image_count": 50,
+        "sku_count": 10,
+        "top1_retrieval_accuracy": 0.17499999701976776,
+        "top3_retrieval_accuracy": 0.4449999928474426,
+        "mrr": 0.3782361149787903,
+        "per_sku": {
+          "bear": {
+            "query_count": 20,
+            "top1_accuracy": 0.05000000074505806,
+            "top3_accuracy": 0.44999998807907104
+          },
+          "bus": {
+            "query_count": 20,
+            "top1_accuracy": 0.15000000596046448,
+            "top3_accuracy": 0.5
+          },
+          "butterfly": {
+            "query_count": 20,
+            "top1_accuracy": 0.20000000298023224,
+            "top3_accuracy": 0.3499999940395355
+          },
+          "castle": {
+            "query_count": 20,
+            "top1_accuracy": 0.44999998807907104,
+            "top3_accuracy": 0.5
+          },
+          "cup": {
+            "query_count": 20,
+            "top1_accuracy": 0.15000000596046448,
+            "top3_accuracy": 0.44999998807907104
+          },
+          "elephant": {
+            "query_count": 20,
+            "top1_accuracy": 0.20000000298023224,
+            "top3_accuracy": 0.6000000238418579
+          },
+          "girl": {
+            "query_count": 20,
+            "top1_accuracy": 0.15000000596046448,
+            "top3_accuracy": 0.25
+          },
+          "streetcar": {
+            "query_count": 20,
+            "top1_accuracy": 0.15000000596046448,
+            "top3_accuracy": 0.4000000059604645
+          },
+          "telephone": {
+            "query_count": 20,
+            "top1_accuracy": 0.15000000596046448,
+            "top3_accuracy": 0.6000000238418579
+          },
+          "wardrobe": {
+            "query_count": 20,
+            "top1_accuracy": 0.10000000149011612,
+            "top3_accuracy": 0.3499999940395355
+          }
+        }
+      },
+      "stage_ends": [
+        {
+          "epoch": 2,
+          "stage": "experts",
+          "mean_task_loss": 5.684191234906515,
+          "live_validation": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 200,
+            "gallery_image_count": 50,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.17499999701976776,
+            "top3_retrieval_accuracy": 0.4449999928474426,
+            "mrr": 0.3782361149787903,
+            "per_sku": {
+              "bear": {
+                "query_count": 20,
+                "top1_accuracy": 0.05000000074505806,
+                "top3_accuracy": 0.44999998807907104
+              },
+              "bus": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.5
+              },
+              "butterfly": {
+                "query_count": 20,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.3499999940395355
+              },
+              "castle": {
+                "query_count": 20,
+                "top1_accuracy": 0.44999998807907104,
+                "top3_accuracy": 0.5
+              },
+              "cup": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.44999998807907104
+              },
+              "elephant": {
+                "query_count": 20,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "girl": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.25
+              },
+              "streetcar": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.4000000059604645
+              },
+              "telephone": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "wardrobe": {
+                "query_count": 20,
+                "top1_accuracy": 0.10000000149011612,
+                "top3_accuracy": 0.3499999940395355
+              }
+            }
+          },
+          "stage_end_validation_with_initial_experts": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 200,
+            "gallery_image_count": 50,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.17499999701976776,
+            "top3_retrieval_accuracy": 0.4449999928474426,
+            "mrr": 0.3782361149787903,
+            "per_sku": {
+              "bear": {
+                "query_count": 20,
+                "top1_accuracy": 0.05000000074505806,
+                "top3_accuracy": 0.44999998807907104
+              },
+              "bus": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.5
+              },
+              "butterfly": {
+                "query_count": 20,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.3499999940395355
+              },
+              "castle": {
+                "query_count": 20,
+                "top1_accuracy": 0.44999998807907104,
+                "top3_accuracy": 0.5
+              },
+              "cup": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.44999998807907104
+              },
+              "elephant": {
+                "query_count": 20,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "girl": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.25
+              },
+              "streetcar": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.4000000059604645
+              },
+              "telephone": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "wardrobe": {
+                "query_count": 20,
+                "top1_accuracy": 0.10000000149011612,
+                "top3_accuracy": 0.3499999940395355
+              }
+            }
+          },
+          "expert_phase": {
+            "rms_change_rad": 0.0,
+            "per_expert_rms_change_rad": [
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ],
+            "max_change_rad": 0.0,
+            "dc_power": [
+              [
+                0.24910388886928558,
+                0.24939949810504913,
+                0.2483147829771042,
+                0.25149816274642944
+              ],
+              [
+                0.2472953498363495,
+                0.25173166394233704,
+                0.24999062716960907,
+                0.2499273419380188
+              ]
+            ],
+            "sigmoid_saturated_fraction": 0.0
+          },
+          "expert_selection_counts": {
+            "vision": [
+              1786,
+              1800,
+              0,
+              14
+            ],
+            "language": [
+              1800,
+              1800,
+              0,
+              0
+            ]
+          },
+          "task_gradient_chain": {}
+        },
+        {
+          "epoch": 4,
+          "stage": "optics",
+          "mean_task_loss": 5.435409140586853,
+          "live_validation": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 200,
+            "gallery_image_count": 50,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.2849999964237213,
+            "top3_retrieval_accuracy": 0.6100000143051147,
+            "mrr": 0.48946627974510193,
+            "per_sku": {
+              "bear": {
+                "query_count": 20,
+                "top1_accuracy": 0.10000000149011612,
+                "top3_accuracy": 0.5
+              },
+              "bus": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.6499999761581421
+              },
+              "butterfly": {
+                "query_count": 20,
+                "top1_accuracy": 0.4000000059604645,
+                "top3_accuracy": 0.550000011920929
+              },
+              "castle": {
+                "query_count": 20,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 0.8500000238418579
+              },
+              "cup": {
+                "query_count": 20,
+                "top1_accuracy": 0.25,
+                "top3_accuracy": 0.75
+              },
+              "elephant": {
+                "query_count": 20,
+                "top1_accuracy": 0.3499999940395355,
+                "top3_accuracy": 0.44999998807907104
+              },
+              "girl": {
+                "query_count": 20,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.44999998807907104
+              },
+              "streetcar": {
+                "query_count": 20,
+                "top1_accuracy": 0.10000000149011612,
+                "top3_accuracy": 0.6499999761581421
+              },
+              "telephone": {
+                "query_count": 20,
+                "top1_accuracy": 0.4000000059604645,
+                "top3_accuracy": 0.550000011920929
+              },
+              "wardrobe": {
+                "query_count": 20,
+                "top1_accuracy": 0.10000000149011612,
+                "top3_accuracy": 0.699999988079071
+              }
+            }
+          },
+          "stage_end_validation_with_initial_experts": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 200,
+            "gallery_image_count": 50,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.2849999964237213,
+            "top3_retrieval_accuracy": 0.6100000143051147,
+            "mrr": 0.48946627974510193,
+            "per_sku": {
+              "bear": {
+                "query_count": 20,
+                "top1_accuracy": 0.10000000149011612,
+                "top3_accuracy": 0.5
+              },
+              "bus": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.6499999761581421
+              },
+              "butterfly": {
+                "query_count": 20,
+                "top1_accuracy": 0.4000000059604645,
+                "top3_accuracy": 0.550000011920929
+              },
+              "castle": {
+                "query_count": 20,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 0.8500000238418579
+              },
+              "cup": {
+                "query_count": 20,
+                "top1_accuracy": 0.25,
+                "top3_accuracy": 0.75
+              },
+              "elephant": {
+                "query_count": 20,
+                "top1_accuracy": 0.3499999940395355,
+                "top3_accuracy": 0.44999998807907104
+              },
+              "girl": {
+                "query_count": 20,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.44999998807907104
+              },
+              "streetcar": {
+                "query_count": 20,
+                "top1_accuracy": 0.10000000149011612,
+                "top3_accuracy": 0.6499999761581421
+              },
+              "telephone": {
+                "query_count": 20,
+                "top1_accuracy": 0.4000000059604645,
+                "top3_accuracy": 0.550000011920929
+              },
+              "wardrobe": {
+                "query_count": 20,
+                "top1_accuracy": 0.10000000149011612,
+                "top3_accuracy": 0.699999988079071
+              }
+            }
+          },
+          "expert_phase": {
+            "rms_change_rad": 0.0,
+            "per_expert_rms_change_rad": [
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ],
+            "max_change_rad": 0.0,
+            "dc_power": [
+              [
+                0.24910388886928558,
+                0.24939949810504913,
+                0.2483147829771042,
+                0.25149816274642944
+              ],
+              [
+                0.2472953498363495,
+                0.25173166394233704,
+                0.24999062716960907,
+                0.2499273419380188
+              ]
+            ],
+            "sigmoid_saturated_fraction": 0.0
+          },
+          "expert_selection_counts": {
+            "vision": [
+              1139,
+              1222,
+              1124,
+              115
+            ],
+            "language": [
+              1800,
+              1800,
+              0,
+              0
+            ]
+          },
+          "task_gradient_chain": {}
+        },
+        {
+          "epoch": 20,
+          "stage": "joint",
+          "mean_task_loss": 4.954784417152405,
+          "live_validation": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 200,
+            "gallery_image_count": 50,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.4399999976158142,
+            "top3_retrieval_accuracy": 0.75,
+            "mrr": 0.6201646327972412,
+            "per_sku": {
+              "bear": {
+                "query_count": 20,
+                "top1_accuracy": 0.4000000059604645,
+                "top3_accuracy": 0.699999988079071
+              },
+              "bus": {
+                "query_count": 20,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.8500000238418579
+              },
+              "butterfly": {
+                "query_count": 20,
+                "top1_accuracy": 0.550000011920929,
+                "top3_accuracy": 0.75
+              },
+              "castle": {
+                "query_count": 20,
+                "top1_accuracy": 0.8500000238418579,
+                "top3_accuracy": 0.8500000238418579
+              },
+              "cup": {
+                "query_count": 20,
+                "top1_accuracy": 0.4000000059604645,
+                "top3_accuracy": 0.699999988079071
+              },
+              "elephant": {
+                "query_count": 20,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.800000011920929
+              },
+              "girl": {
+                "query_count": 20,
+                "top1_accuracy": 0.44999998807907104,
+                "top3_accuracy": 0.75
+              },
+              "streetcar": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "telephone": {
+                "query_count": 20,
+                "top1_accuracy": 0.550000011920929,
+                "top3_accuracy": 0.75
+              },
+              "wardrobe": {
+                "query_count": 20,
+                "top1_accuracy": 0.44999998807907104,
+                "top3_accuracy": 0.75
+              }
+            }
+          },
+          "stage_end_validation_with_initial_experts": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 200,
+            "gallery_image_count": 50,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.4399999976158142,
+            "top3_retrieval_accuracy": 0.75,
+            "mrr": 0.6201646327972412,
+            "per_sku": {
+              "bear": {
+                "query_count": 20,
+                "top1_accuracy": 0.4000000059604645,
+                "top3_accuracy": 0.699999988079071
+              },
+              "bus": {
+                "query_count": 20,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.8500000238418579
+              },
+              "butterfly": {
+                "query_count": 20,
+                "top1_accuracy": 0.550000011920929,
+                "top3_accuracy": 0.75
+              },
+              "castle": {
+                "query_count": 20,
+                "top1_accuracy": 0.8500000238418579,
+                "top3_accuracy": 0.8500000238418579
+              },
+              "cup": {
+                "query_count": 20,
+                "top1_accuracy": 0.4000000059604645,
+                "top3_accuracy": 0.699999988079071
+              },
+              "elephant": {
+                "query_count": 20,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.800000011920929
+              },
+              "girl": {
+                "query_count": 20,
+                "top1_accuracy": 0.44999998807907104,
+                "top3_accuracy": 0.75
+              },
+              "streetcar": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "telephone": {
+                "query_count": 20,
+                "top1_accuracy": 0.550000011920929,
+                "top3_accuracy": 0.75
+              },
+              "wardrobe": {
+                "query_count": 20,
+                "top1_accuracy": 0.44999998807907104,
+                "top3_accuracy": 0.75
+              }
+            }
+          },
+          "expert_phase": {
+            "rms_change_rad": 0.0,
+            "per_expert_rms_change_rad": [
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ],
+            "max_change_rad": 0.0,
+            "dc_power": [
+              [
+                0.24910388886928558,
+                0.24939949810504913,
+                0.2483147829771042,
+                0.25149816274642944
+              ],
+              [
+                0.2472953498363495,
+                0.25173166394233704,
+                0.24999062716960907,
+                0.2499273419380188
+              ]
+            ],
+            "sigmoid_saturated_fraction": 0.0
+          },
+          "expert_selection_counts": {
+            "vision": [
+              887,
+              892,
+              990,
+              831
+            ],
+            "language": [
+              1800,
+              1800,
+              0,
+              0
+            ]
+          },
+          "task_gradient_chain": {}
+        }
+      ],
+      "export_max_error": 0.0,
+      "generator_trainable": 0,
+      "peak_memory_gib": 6.96543550491333,
+      "elapsed_seconds": 796.9975050836802
+    },
+    {
+      "method": "direct",
+      "label": "Direct phase optimization",
+      "run_id": "20260907_cifar100ten_heads_direct_s42",
+      "device": "NVIDIA GeForce RTX 4090",
+      "selected_epoch": 20,
+      "selected_live_test": {
+        "system": "optical_student_query_vs_optical_student_gallery",
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 1000,
+        "gallery_image_count": 50,
+        "sku_count": 10,
+        "top1_retrieval_accuracy": 0.4259999990463257,
+        "top3_retrieval_accuracy": 0.7680000066757202,
+        "mrr": 0.6168630719184875,
+        "per_sku": {
+          "bear": {
+            "query_count": 100,
+            "top1_accuracy": 0.3700000047683716,
+            "top3_accuracy": 0.75
+          },
+          "bus": {
+            "query_count": 100,
+            "top1_accuracy": 0.20999999344348907,
+            "top3_accuracy": 0.7699999809265137
+          },
+          "butterfly": {
+            "query_count": 100,
+            "top1_accuracy": 0.46000000834465027,
+            "top3_accuracy": 0.5799999833106995
+          },
+          "castle": {
+            "query_count": 100,
+            "top1_accuracy": 0.8299999833106995,
+            "top3_accuracy": 0.8799999952316284
+          },
+          "cup": {
+            "query_count": 100,
+            "top1_accuracy": 0.38999998569488525,
+            "top3_accuracy": 0.7799999713897705
+          },
+          "elephant": {
+            "query_count": 100,
+            "top1_accuracy": 0.3700000047683716,
+            "top3_accuracy": 0.6899999976158142
+          },
+          "girl": {
+            "query_count": 100,
+            "top1_accuracy": 0.5299999713897705,
+            "top3_accuracy": 0.8199999928474426
+          },
+          "streetcar": {
+            "query_count": 100,
+            "top1_accuracy": 0.10000000149011612,
+            "top3_accuracy": 0.6600000262260437
+          },
+          "telephone": {
+            "query_count": 100,
+            "top1_accuracy": 0.6200000047683716,
+            "top3_accuracy": 0.8500000238418579
+          },
+          "wardrobe": {
+            "query_count": 100,
+            "top1_accuracy": 0.3799999952316284,
+            "top3_accuracy": 0.8999999761581421
+          }
+        }
+      },
+      "final_ema_test": {
+        "system": "optical_student_query_vs_optical_student_gallery",
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 1000,
+        "gallery_image_count": 50,
+        "sku_count": 10,
+        "top1_retrieval_accuracy": 0.42899999022483826,
+        "top3_retrieval_accuracy": 0.7760000228881836,
+        "mrr": 0.619480550289154,
+        "per_sku": {
+          "bear": {
+            "query_count": 100,
+            "top1_accuracy": 0.3499999940395355,
+            "top3_accuracy": 0.7799999713897705
+          },
+          "bus": {
+            "query_count": 100,
+            "top1_accuracy": 0.17000000178813934,
+            "top3_accuracy": 0.7599999904632568
+          },
+          "butterfly": {
+            "query_count": 100,
+            "top1_accuracy": 0.41999998688697815,
+            "top3_accuracy": 0.5600000023841858
+          },
+          "castle": {
+            "query_count": 100,
+            "top1_accuracy": 0.8600000143051147,
+            "top3_accuracy": 0.8799999952316284
+          },
+          "cup": {
+            "query_count": 100,
+            "top1_accuracy": 0.4399999976158142,
+            "top3_accuracy": 0.800000011920929
+          },
+          "elephant": {
+            "query_count": 100,
+            "top1_accuracy": 0.36000001430511475,
+            "top3_accuracy": 0.699999988079071
+          },
+          "girl": {
+            "query_count": 100,
+            "top1_accuracy": 0.5799999833106995,
+            "top3_accuracy": 0.800000011920929
+          },
+          "streetcar": {
+            "query_count": 100,
+            "top1_accuracy": 0.09000000357627869,
+            "top3_accuracy": 0.6800000071525574
+          },
+          "telephone": {
+            "query_count": 100,
+            "top1_accuracy": 0.6299999952316284,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "wardrobe": {
+            "query_count": 100,
+            "top1_accuracy": 0.38999998569488525,
+            "top3_accuracy": 0.8999999761581421
+          }
+        }
+      },
+      "selected_validation": {
+        "system": "optical_student_query_vs_optical_student_gallery",
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 200,
+        "gallery_image_count": 50,
+        "sku_count": 10,
+        "top1_retrieval_accuracy": 0.45500001311302185,
+        "top3_retrieval_accuracy": 0.800000011920929,
+        "mrr": 0.6402460336685181,
+        "per_sku": {
+          "bear": {
+            "query_count": 20,
+            "top1_accuracy": 0.550000011920929,
+            "top3_accuracy": 0.800000011920929
+          },
+          "bus": {
+            "query_count": 20,
+            "top1_accuracy": 0.25,
+            "top3_accuracy": 0.8500000238418579
+          },
+          "butterfly": {
+            "query_count": 20,
+            "top1_accuracy": 0.6499999761581421,
+            "top3_accuracy": 0.800000011920929
+          },
+          "castle": {
+            "query_count": 20,
+            "top1_accuracy": 0.8999999761581421,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "cup": {
+            "query_count": 20,
+            "top1_accuracy": 0.44999998807907104,
+            "top3_accuracy": 0.75
+          },
+          "elephant": {
+            "query_count": 20,
+            "top1_accuracy": 0.30000001192092896,
+            "top3_accuracy": 0.699999988079071
+          },
+          "girl": {
+            "query_count": 20,
+            "top1_accuracy": 0.3499999940395355,
+            "top3_accuracy": 0.699999988079071
+          },
+          "streetcar": {
+            "query_count": 20,
+            "top1_accuracy": 0.10000000149011612,
+            "top3_accuracy": 0.75
+          },
+          "telephone": {
+            "query_count": 20,
+            "top1_accuracy": 0.6499999761581421,
+            "top3_accuracy": 0.800000011920929
+          },
+          "wardrobe": {
+            "query_count": 20,
+            "top1_accuracy": 0.3499999940395355,
+            "top3_accuracy": 0.949999988079071
+          }
+        }
+      },
+      "selected_phase_rms_rad": 0.7857167720794678,
+      "selected_phase_piston_removed_rms_rad": 0.7857134342193604,
+      "mean_cross_expert_update_correlation": 0.0014319728361442685,
+      "last_phase_rms_rad": 0.7857167720794678,
+      "fusion": {
+        "vision": [
+          0.4994581937789917,
+          0.4993561804294586
+        ],
+        "language": [
+          0.5003047585487366,
+          0.500308096408844
+        ]
+      },
+      "ablations": {
+        "initial_experts": {
+          "system": "optical_student_query_vs_optical_student_gallery",
+          "gallery_aggregation": "mean_prototype",
+          "query_count": 1000,
+          "gallery_image_count": 50,
+          "sku_count": 10,
+          "top1_retrieval_accuracy": 0.39100000262260437,
+          "top3_retrieval_accuracy": 0.7480000257492065,
+          "mrr": 0.5920439958572388,
+          "per_sku": {
+            "bear": {
+              "query_count": 100,
+              "top1_accuracy": 0.23999999463558197,
+              "top3_accuracy": 0.7900000214576721
+            },
+            "bus": {
+              "query_count": 100,
+              "top1_accuracy": 0.14000000059604645,
+              "top3_accuracy": 0.7599999904632568
+            },
+            "butterfly": {
+              "query_count": 100,
+              "top1_accuracy": 0.49000000953674316,
+              "top3_accuracy": 0.6000000238418579
+            },
+            "castle": {
+              "query_count": 100,
+              "top1_accuracy": 0.8500000238418579,
+              "top3_accuracy": 0.9100000262260437
+            },
+            "cup": {
+              "query_count": 100,
+              "top1_accuracy": 0.27000001072883606,
+              "top3_accuracy": 0.7400000095367432
+            },
+            "elephant": {
+              "query_count": 100,
+              "top1_accuracy": 0.3199999928474426,
+              "top3_accuracy": 0.6299999952316284
+            },
+            "girl": {
+              "query_count": 100,
+              "top1_accuracy": 0.5600000023841858,
+              "top3_accuracy": 0.7699999809265137
+            },
+            "streetcar": {
+              "query_count": 100,
+              "top1_accuracy": 0.14000000059604645,
+              "top3_accuracy": 0.6200000047683716
+            },
+            "telephone": {
+              "query_count": 100,
+              "top1_accuracy": 0.6200000047683716,
+              "top3_accuracy": 0.7900000214576721
+            },
+            "wardrobe": {
+              "query_count": 100,
+              "top1_accuracy": 0.2800000011920929,
+              "top3_accuracy": 0.8700000047683716
+            }
+          }
+        },
+        "flat_pi_experts": {
+          "system": "optical_student_query_vs_optical_student_gallery",
+          "gallery_aggregation": "mean_prototype",
+          "query_count": 1000,
+          "gallery_image_count": 50,
+          "sku_count": 10,
+          "top1_retrieval_accuracy": 0.36800000071525574,
+          "top3_retrieval_accuracy": 0.7149999737739563,
+          "mrr": 0.5714579224586487,
+          "per_sku": {
+            "bear": {
+              "query_count": 100,
+              "top1_accuracy": 0.23999999463558197,
+              "top3_accuracy": 0.75
+            },
+            "bus": {
+              "query_count": 100,
+              "top1_accuracy": 0.1599999964237213,
+              "top3_accuracy": 0.75
+            },
+            "butterfly": {
+              "query_count": 100,
+              "top1_accuracy": 0.41999998688697815,
+              "top3_accuracy": 0.5
+            },
+            "castle": {
+              "query_count": 100,
+              "top1_accuracy": 0.8199999928474426,
+              "top3_accuracy": 0.8999999761581421
+            },
+            "cup": {
+              "query_count": 100,
+              "top1_accuracy": 0.23999999463558197,
+              "top3_accuracy": 0.7200000286102295
+            },
+            "elephant": {
+              "query_count": 100,
+              "top1_accuracy": 0.27000001072883606,
+              "top3_accuracy": 0.5899999737739563
+            },
+            "girl": {
+              "query_count": 100,
+              "top1_accuracy": 0.5299999713897705,
+              "top3_accuracy": 0.699999988079071
+            },
+            "streetcar": {
+              "query_count": 100,
+              "top1_accuracy": 0.11999999731779099,
+              "top3_accuracy": 0.5299999713897705
+            },
+            "telephone": {
+              "query_count": 100,
+              "top1_accuracy": 0.6200000047683716,
+              "top3_accuracy": 0.8299999833106995
+            },
+            "wardrobe": {
+              "query_count": 100,
+              "top1_accuracy": 0.25999999046325684,
+              "top3_accuracy": 0.8799999952316284
+            }
+          }
+        }
+      },
+      "counts": {
+        "train": 4750,
+        "validation": 200,
+        "gallery": 50,
+        "test": 1000
+      },
+      "optimizer_updates": 1200,
+      "batch_opportunities": 1200,
+      "initial_validation": {
+        "system": "optical_student_query_vs_optical_student_gallery",
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 200,
+        "gallery_image_count": 50,
+        "sku_count": 10,
+        "top1_retrieval_accuracy": 0.17499999701976776,
+        "top3_retrieval_accuracy": 0.4449999928474426,
+        "mrr": 0.3782361149787903,
+        "per_sku": {
+          "bear": {
+            "query_count": 20,
+            "top1_accuracy": 0.05000000074505806,
+            "top3_accuracy": 0.44999998807907104
+          },
+          "bus": {
+            "query_count": 20,
+            "top1_accuracy": 0.15000000596046448,
+            "top3_accuracy": 0.5
+          },
+          "butterfly": {
+            "query_count": 20,
+            "top1_accuracy": 0.20000000298023224,
+            "top3_accuracy": 0.3499999940395355
+          },
+          "castle": {
+            "query_count": 20,
+            "top1_accuracy": 0.44999998807907104,
+            "top3_accuracy": 0.5
+          },
+          "cup": {
+            "query_count": 20,
+            "top1_accuracy": 0.15000000596046448,
+            "top3_accuracy": 0.44999998807907104
+          },
+          "elephant": {
+            "query_count": 20,
+            "top1_accuracy": 0.20000000298023224,
+            "top3_accuracy": 0.6000000238418579
+          },
+          "girl": {
+            "query_count": 20,
+            "top1_accuracy": 0.15000000596046448,
+            "top3_accuracy": 0.25
+          },
+          "streetcar": {
+            "query_count": 20,
+            "top1_accuracy": 0.15000000596046448,
+            "top3_accuracy": 0.4000000059604645
+          },
+          "telephone": {
+            "query_count": 20,
+            "top1_accuracy": 0.15000000596046448,
+            "top3_accuracy": 0.6000000238418579
+          },
+          "wardrobe": {
+            "query_count": 20,
+            "top1_accuracy": 0.10000000149011612,
+            "top3_accuracy": 0.3499999940395355
+          }
+        }
+      },
+      "stage_ends": [
+        {
+          "epoch": 2,
+          "stage": "experts",
+          "mean_task_loss": 5.338195562362671,
+          "live_validation": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 200,
+            "gallery_image_count": 50,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.33000001311302185,
+            "top3_retrieval_accuracy": 0.6549999713897705,
+            "mrr": 0.5282757878303528,
+            "per_sku": {
+              "bear": {
+                "query_count": 20,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.550000011920929
+              },
+              "bus": {
+                "query_count": 20,
+                "top1_accuracy": 0.05000000074505806,
+                "top3_accuracy": 0.6499999761581421
+              },
+              "butterfly": {
+                "query_count": 20,
+                "top1_accuracy": 0.3499999940395355,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "castle": {
+                "query_count": 20,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "cup": {
+                "query_count": 20,
+                "top1_accuracy": 0.5,
+                "top3_accuracy": 0.75
+              },
+              "elephant": {
+                "query_count": 20,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.550000011920929
+              },
+              "girl": {
+                "query_count": 20,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "streetcar": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.6499999761581421
+              },
+              "telephone": {
+                "query_count": 20,
+                "top1_accuracy": 0.6000000238418579,
+                "top3_accuracy": 0.699999988079071
+              },
+              "wardrobe": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.6000000238418579
+              }
+            }
+          },
+          "stage_end_validation_with_initial_experts": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 200,
+            "gallery_image_count": 50,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.17499999701976776,
+            "top3_retrieval_accuracy": 0.4449999928474426,
+            "mrr": 0.3782361149787903,
+            "per_sku": {
+              "bear": {
+                "query_count": 20,
+                "top1_accuracy": 0.05000000074505806,
+                "top3_accuracy": 0.44999998807907104
+              },
+              "bus": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.5
+              },
+              "butterfly": {
+                "query_count": 20,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.3499999940395355
+              },
+              "castle": {
+                "query_count": 20,
+                "top1_accuracy": 0.44999998807907104,
+                "top3_accuracy": 0.5
+              },
+              "cup": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.44999998807907104
+              },
+              "elephant": {
+                "query_count": 20,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "girl": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.25
+              },
+              "streetcar": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.4000000059604645
+              },
+              "telephone": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "wardrobe": {
+                "query_count": 20,
+                "top1_accuracy": 0.10000000149011612,
+                "top3_accuracy": 0.3499999940395355
+              }
+            }
+          },
+          "expert_phase": {
+            "rms_change_rad": 0.44010287523269653,
+            "per_expert_rms_change_rad": [
+              [
+                0.31739968061447144,
+                0.3253132402896881,
+                0.50791335105896,
+                0.2913448214530945
+              ],
+              [
+                0.4889962375164032,
+                0.49212646484375,
+                0.5095587372779846,
+                0.5090574026107788
+              ]
+            ],
+            "max_change_rad": 0.9539621472358704,
+            "dc_power": [
+              [
+                0.17480804026126862,
+                0.17270095646381378,
+                0.008642328903079033,
+                0.173429474234581
+              ],
+              [
+                0.035284314304590225,
+                0.036195967346429825,
+                0.00879396591335535,
+                0.008897664956748486
+              ]
+            ],
+            "sigmoid_saturated_fraction": 0.0
+          },
+          "expert_selection_counts": {
+            "vision": [
+              1786,
+              1800,
+              0,
+              14
+            ],
+            "language": [
+              1800,
+              1800,
+              0,
+              0
+            ]
+          },
+          "task_gradient_chain": {
+            "task_to_expert": 0.36417126655578613
+          }
+        },
+        {
+          "epoch": 4,
+          "stage": "optics",
+          "mean_task_loss": 5.331569671630859,
+          "live_validation": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 200,
+            "gallery_image_count": 50,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.3100000023841858,
+            "top3_retrieval_accuracy": 0.699999988079071,
+            "mrr": 0.5261111259460449,
+            "per_sku": {
+              "bear": {
+                "query_count": 20,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.699999988079071
+              },
+              "bus": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.800000011920929
+              },
+              "butterfly": {
+                "query_count": 20,
+                "top1_accuracy": 0.44999998807907104,
+                "top3_accuracy": 0.6499999761581421
+              },
+              "castle": {
+                "query_count": 20,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "cup": {
+                "query_count": 20,
+                "top1_accuracy": 0.10000000149011612,
+                "top3_accuracy": 0.8500000238418579
+              },
+              "elephant": {
+                "query_count": 20,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "girl": {
+                "query_count": 20,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.6499999761581421
+              },
+              "streetcar": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.5
+              },
+              "telephone": {
+                "query_count": 20,
+                "top1_accuracy": 0.6000000238418579,
+                "top3_accuracy": 0.699999988079071
+              },
+              "wardrobe": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.6499999761581421
+              }
+            }
+          },
+          "stage_end_validation_with_initial_experts": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 200,
+            "gallery_image_count": 50,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.25,
+            "top3_retrieval_accuracy": 0.5099999904632568,
+            "mrr": 0.44258537888526917,
+            "per_sku": {
+              "bear": {
+                "query_count": 20,
+                "top1_accuracy": 0.25,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "bus": {
+                "query_count": 20,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "butterfly": {
+                "query_count": 20,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.4000000059604645
+              },
+              "castle": {
+                "query_count": 20,
+                "top1_accuracy": 0.550000011920929,
+                "top3_accuracy": 0.75
+              },
+              "cup": {
+                "query_count": 20,
+                "top1_accuracy": 0.10000000149011612,
+                "top3_accuracy": 0.550000011920929
+              },
+              "elephant": {
+                "query_count": 20,
+                "top1_accuracy": 0.25,
+                "top3_accuracy": 0.6499999761581421
+              },
+              "girl": {
+                "query_count": 20,
+                "top1_accuracy": 0.10000000149011612,
+                "top3_accuracy": 0.20000000298023224
+              },
+              "streetcar": {
+                "query_count": 20,
+                "top1_accuracy": 0.25,
+                "top3_accuracy": 0.4000000059604645
+              },
+              "telephone": {
+                "query_count": 20,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.4000000059604645
+              },
+              "wardrobe": {
+                "query_count": 20,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.550000011920929
+              }
+            }
+          },
+          "expert_phase": {
+            "rms_change_rad": 0.5882985591888428,
+            "per_expert_rms_change_rad": [
+              [
+                0.48909083008766174,
+                0.49481651186943054,
+                0.6290452480316162,
+                0.4803119897842407
+              ],
+              [
+                0.6744871735572815,
+                0.6797507405281067,
+                0.6087847352027893,
+                0.6088496446609497
+              ]
+            ],
+            "max_change_rad": 1.7938975095748901,
+            "dc_power": [
+              [
+                0.1315034180879593,
+                0.12888672947883606,
+                0.0030069530475884676,
+                0.12661194801330566
+              ],
+              [
+                0.003631424158811569,
+                0.0036998651921749115,
+                9.521373431198299e-05,
+                9.860059071797878e-05
+              ]
+            ],
+            "sigmoid_saturated_fraction": 0.0
+          },
+          "expert_selection_counts": {
+            "vision": [
+              1141,
+              1185,
+              1114,
+              160
+            ],
+            "language": [
+              1800,
+              1800,
+              0,
+              0
+            ]
+          },
+          "task_gradient_chain": {
+            "task_to_expert": 0.3015086352825165
+          }
+        },
+        {
+          "epoch": 20,
+          "stage": "joint",
+          "mean_task_loss": 4.926170102755228,
+          "live_validation": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 200,
+            "gallery_image_count": 50,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.45500001311302185,
+            "top3_retrieval_accuracy": 0.800000011920929,
+            "mrr": 0.6402460336685181,
+            "per_sku": {
+              "bear": {
+                "query_count": 20,
+                "top1_accuracy": 0.550000011920929,
+                "top3_accuracy": 0.800000011920929
+              },
+              "bus": {
+                "query_count": 20,
+                "top1_accuracy": 0.25,
+                "top3_accuracy": 0.8500000238418579
+              },
+              "butterfly": {
+                "query_count": 20,
+                "top1_accuracy": 0.6499999761581421,
+                "top3_accuracy": 0.800000011920929
+              },
+              "castle": {
+                "query_count": 20,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "cup": {
+                "query_count": 20,
+                "top1_accuracy": 0.44999998807907104,
+                "top3_accuracy": 0.75
+              },
+              "elephant": {
+                "query_count": 20,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.699999988079071
+              },
+              "girl": {
+                "query_count": 20,
+                "top1_accuracy": 0.3499999940395355,
+                "top3_accuracy": 0.699999988079071
+              },
+              "streetcar": {
+                "query_count": 20,
+                "top1_accuracy": 0.10000000149011612,
+                "top3_accuracy": 0.75
+              },
+              "telephone": {
+                "query_count": 20,
+                "top1_accuracy": 0.6499999761581421,
+                "top3_accuracy": 0.800000011920929
+              },
+              "wardrobe": {
+                "query_count": 20,
+                "top1_accuracy": 0.3499999940395355,
+                "top3_accuracy": 0.949999988079071
+              }
+            }
+          },
+          "stage_end_validation_with_initial_experts": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 200,
+            "gallery_image_count": 50,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.39500001072883606,
+            "top3_retrieval_accuracy": 0.7549999952316284,
+            "mrr": 0.5970991849899292,
+            "per_sku": {
+              "bear": {
+                "query_count": 20,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.800000011920929
+              },
+              "bus": {
+                "query_count": 20,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.75
+              },
+              "butterfly": {
+                "query_count": 20,
+                "top1_accuracy": 0.6000000238418579,
+                "top3_accuracy": 0.800000011920929
+              },
+              "castle": {
+                "query_count": 20,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "cup": {
+                "query_count": 20,
+                "top1_accuracy": 0.3499999940395355,
+                "top3_accuracy": 0.699999988079071
+              },
+              "elephant": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "girl": {
+                "query_count": 20,
+                "top1_accuracy": 0.3499999940395355,
+                "top3_accuracy": 0.800000011920929
+              },
+              "streetcar": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.699999988079071
+              },
+              "telephone": {
+                "query_count": 20,
+                "top1_accuracy": 0.6000000238418579,
+                "top3_accuracy": 0.8500000238418579
+              },
+              "wardrobe": {
+                "query_count": 20,
+                "top1_accuracy": 0.25,
+                "top3_accuracy": 0.6499999761581421
+              }
+            }
+          },
+          "expert_phase": {
+            "rms_change_rad": 0.7857167720794678,
+            "per_expert_rms_change_rad": [
+              [
+                0.8049333691596985,
+                0.810569167137146,
+                0.8115727305412292,
+                0.9981325268745422
+              ],
+              [
+                0.7750183939933777,
+                0.7801311612129211,
+                0.6202117204666138,
+                0.6205056309700012
+              ]
+            ],
+            "max_change_rad": 3.136481523513794,
+            "dc_power": [
+              [
+                0.07843640446662903,
+                0.07567865401506424,
+                1.342011455562897e-05,
+                0.039700187742710114
+              ],
+              [
+                1.6047761164372787e-06,
+                1.457521818792884e-07,
+                6.854739215481076e-13,
+                3.3141257750265996e-13
+              ]
+            ],
+            "sigmoid_saturated_fraction": 0.0
+          },
+          "expert_selection_counts": {
+            "vision": [
+              909,
+              862,
+              986,
+              843
+            ],
+            "language": [
+              1800,
+              1800,
+              0,
+              0
+            ]
+          },
+          "task_gradient_chain": {
+            "task_to_expert": 0.10576844215393066
+          }
+        }
+      ],
+      "export_max_error": 0.0,
+      "generator_trainable": 0,
+      "peak_memory_gib": 7.215925693511963,
+      "elapsed_seconds": 824.9689923077822
+    },
+    {
+      "method": "qwen_frozen",
+      "label": "Frozen Qwen + decoder",
+      "run_id": "20260907_cifar100ten_heads_qwen_frozen_s42",
+      "device": "NVIDIA GeForce RTX 4090",
+      "selected_epoch": 20,
+      "selected_live_test": {
+        "system": "optical_student_query_vs_optical_student_gallery",
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 1000,
+        "gallery_image_count": 50,
+        "sku_count": 10,
+        "top1_retrieval_accuracy": 0.421999990940094,
+        "top3_retrieval_accuracy": 0.7590000033378601,
+        "mrr": 0.6144745945930481,
+        "per_sku": {
+          "bear": {
+            "query_count": 100,
+            "top1_accuracy": 0.3100000023841858,
+            "top3_accuracy": 0.7300000190734863
+          },
+          "bus": {
+            "query_count": 100,
+            "top1_accuracy": 0.18000000715255737,
+            "top3_accuracy": 0.8500000238418579
+          },
+          "butterfly": {
+            "query_count": 100,
+            "top1_accuracy": 0.4099999964237213,
+            "top3_accuracy": 0.5699999928474426
+          },
+          "castle": {
+            "query_count": 100,
+            "top1_accuracy": 0.8500000238418579,
+            "top3_accuracy": 0.8899999856948853
+          },
+          "cup": {
+            "query_count": 100,
+            "top1_accuracy": 0.3700000047683716,
+            "top3_accuracy": 0.7200000286102295
+          },
+          "elephant": {
+            "query_count": 100,
+            "top1_accuracy": 0.3799999952316284,
+            "top3_accuracy": 0.699999988079071
+          },
+          "girl": {
+            "query_count": 100,
+            "top1_accuracy": 0.5799999833106995,
+            "top3_accuracy": 0.7799999713897705
+          },
+          "streetcar": {
+            "query_count": 100,
+            "top1_accuracy": 0.15000000596046448,
+            "top3_accuracy": 0.6399999856948853
+          },
+          "telephone": {
+            "query_count": 100,
+            "top1_accuracy": 0.6499999761581421,
+            "top3_accuracy": 0.7900000214576721
+          },
+          "wardrobe": {
+            "query_count": 100,
+            "top1_accuracy": 0.3400000035762787,
+            "top3_accuracy": 0.9200000166893005
+          }
+        }
+      },
+      "final_ema_test": {
+        "system": "optical_student_query_vs_optical_student_gallery",
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 1000,
+        "gallery_image_count": 50,
+        "sku_count": 10,
+        "top1_retrieval_accuracy": 0.414000004529953,
+        "top3_retrieval_accuracy": 0.7630000114440918,
+        "mrr": 0.6111273169517517,
+        "per_sku": {
+          "bear": {
+            "query_count": 100,
+            "top1_accuracy": 0.28999999165534973,
+            "top3_accuracy": 0.7300000190734863
+          },
+          "bus": {
+            "query_count": 100,
+            "top1_accuracy": 0.20000000298023224,
+            "top3_accuracy": 0.8799999952316284
+          },
+          "butterfly": {
+            "query_count": 100,
+            "top1_accuracy": 0.4000000059604645,
+            "top3_accuracy": 0.5199999809265137
+          },
+          "castle": {
+            "query_count": 100,
+            "top1_accuracy": 0.8500000238418579,
+            "top3_accuracy": 0.9100000262260437
+          },
+          "cup": {
+            "query_count": 100,
+            "top1_accuracy": 0.4000000059604645,
+            "top3_accuracy": 0.7599999904632568
+          },
+          "elephant": {
+            "query_count": 100,
+            "top1_accuracy": 0.3799999952316284,
+            "top3_accuracy": 0.7400000095367432
+          },
+          "girl": {
+            "query_count": 100,
+            "top1_accuracy": 0.550000011920929,
+            "top3_accuracy": 0.7699999809265137
+          },
+          "streetcar": {
+            "query_count": 100,
+            "top1_accuracy": 0.14000000059604645,
+            "top3_accuracy": 0.6200000047683716
+          },
+          "telephone": {
+            "query_count": 100,
+            "top1_accuracy": 0.6299999952316284,
+            "top3_accuracy": 0.8100000023841858
+          },
+          "wardrobe": {
+            "query_count": 100,
+            "top1_accuracy": 0.30000001192092896,
+            "top3_accuracy": 0.8899999856948853
+          }
+        }
+      },
+      "selected_validation": {
+        "system": "optical_student_query_vs_optical_student_gallery",
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 200,
+        "gallery_image_count": 50,
+        "sku_count": 10,
+        "top1_retrieval_accuracy": 0.4350000023841858,
+        "top3_retrieval_accuracy": 0.7450000047683716,
+        "mrr": 0.6243809461593628,
+        "per_sku": {
+          "bear": {
+            "query_count": 20,
+            "top1_accuracy": 0.5,
+            "top3_accuracy": 0.75
+          },
+          "bus": {
+            "query_count": 20,
+            "top1_accuracy": 0.20000000298023224,
+            "top3_accuracy": 0.800000011920929
+          },
+          "butterfly": {
+            "query_count": 20,
+            "top1_accuracy": 0.6499999761581421,
+            "top3_accuracy": 0.75
+          },
+          "castle": {
+            "query_count": 20,
+            "top1_accuracy": 0.8999999761581421,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "cup": {
+            "query_count": 20,
+            "top1_accuracy": 0.4000000059604645,
+            "top3_accuracy": 0.699999988079071
+          },
+          "elephant": {
+            "query_count": 20,
+            "top1_accuracy": 0.20000000298023224,
+            "top3_accuracy": 0.800000011920929
+          },
+          "girl": {
+            "query_count": 20,
+            "top1_accuracy": 0.44999998807907104,
+            "top3_accuracy": 0.550000011920929
+          },
+          "streetcar": {
+            "query_count": 20,
+            "top1_accuracy": 0.20000000298023224,
+            "top3_accuracy": 0.699999988079071
+          },
+          "telephone": {
+            "query_count": 20,
+            "top1_accuracy": 0.550000011920929,
+            "top3_accuracy": 0.75
+          },
+          "wardrobe": {
+            "query_count": 20,
+            "top1_accuracy": 0.30000001192092896,
+            "top3_accuracy": 0.75
+          }
+        }
+      },
+      "selected_phase_rms_rad": 0.8470945358276367,
+      "selected_phase_piston_removed_rms_rad": 0.8497940301895142,
+      "mean_cross_expert_update_correlation": 0.0018659027991816401,
+      "last_phase_rms_rad": 0.8470945358276367,
+      "fusion": {
+        "vision": [
+          0.499324232339859,
+          0.4995800256729126
+        ],
+        "language": [
+          0.5000424981117249,
+          0.5003389120101929
+        ]
+      },
+      "ablations": {
+        "initial_experts": {
+          "system": "optical_student_query_vs_optical_student_gallery",
+          "gallery_aggregation": "mean_prototype",
+          "query_count": 1000,
+          "gallery_image_count": 50,
+          "sku_count": 10,
+          "top1_retrieval_accuracy": 0.4009999930858612,
+          "top3_retrieval_accuracy": 0.765999972820282,
+          "mrr": 0.604566216468811,
+          "per_sku": {
+            "bear": {
+              "query_count": 100,
+              "top1_accuracy": 0.25999999046325684,
+              "top3_accuracy": 0.7300000190734863
+            },
+            "bus": {
+              "query_count": 100,
+              "top1_accuracy": 0.1899999976158142,
+              "top3_accuracy": 0.8299999833106995
+            },
+            "butterfly": {
+              "query_count": 100,
+              "top1_accuracy": 0.4300000071525574,
+              "top3_accuracy": 0.5699999928474426
+            },
+            "castle": {
+              "query_count": 100,
+              "top1_accuracy": 0.8299999833106995,
+              "top3_accuracy": 0.8899999856948853
+            },
+            "cup": {
+              "query_count": 100,
+              "top1_accuracy": 0.3199999928474426,
+              "top3_accuracy": 0.7400000095367432
+            },
+            "elephant": {
+              "query_count": 100,
+              "top1_accuracy": 0.3100000023841858,
+              "top3_accuracy": 0.7400000095367432
+            },
+            "girl": {
+              "query_count": 100,
+              "top1_accuracy": 0.5699999928474426,
+              "top3_accuracy": 0.8199999928474426
+            },
+            "streetcar": {
+              "query_count": 100,
+              "top1_accuracy": 0.14000000059604645,
+              "top3_accuracy": 0.6000000238418579
+            },
+            "telephone": {
+              "query_count": 100,
+              "top1_accuracy": 0.6499999761581421,
+              "top3_accuracy": 0.8100000023841858
+            },
+            "wardrobe": {
+              "query_count": 100,
+              "top1_accuracy": 0.3100000023841858,
+              "top3_accuracy": 0.9300000071525574
+            }
+          }
+        },
+        "flat_pi_experts": {
+          "system": "optical_student_query_vs_optical_student_gallery",
+          "gallery_aggregation": "mean_prototype",
+          "query_count": 1000,
+          "gallery_image_count": 50,
+          "sku_count": 10,
+          "top1_retrieval_accuracy": 0.40400001406669617,
+          "top3_retrieval_accuracy": 0.7269999980926514,
+          "mrr": 0.5944996476173401,
+          "per_sku": {
+            "bear": {
+              "query_count": 100,
+              "top1_accuracy": 0.23000000417232513,
+              "top3_accuracy": 0.7400000095367432
+            },
+            "bus": {
+              "query_count": 100,
+              "top1_accuracy": 0.25999999046325684,
+              "top3_accuracy": 0.7099999785423279
+            },
+            "butterfly": {
+              "query_count": 100,
+              "top1_accuracy": 0.4300000071525574,
+              "top3_accuracy": 0.5299999713897705
+            },
+            "castle": {
+              "query_count": 100,
+              "top1_accuracy": 0.8399999737739563,
+              "top3_accuracy": 0.8899999856948853
+            },
+            "cup": {
+              "query_count": 100,
+              "top1_accuracy": 0.3700000047683716,
+              "top3_accuracy": 0.7099999785423279
+            },
+            "elephant": {
+              "query_count": 100,
+              "top1_accuracy": 0.28999999165534973,
+              "top3_accuracy": 0.6899999976158142
+            },
+            "girl": {
+              "query_count": 100,
+              "top1_accuracy": 0.5099999904632568,
+              "top3_accuracy": 0.8199999928474426
+            },
+            "streetcar": {
+              "query_count": 100,
+              "top1_accuracy": 0.11999999731779099,
+              "top3_accuracy": 0.5799999833106995
+            },
+            "telephone": {
+              "query_count": 100,
+              "top1_accuracy": 0.6100000143051147,
+              "top3_accuracy": 0.7200000286102295
+            },
+            "wardrobe": {
+              "query_count": 100,
+              "top1_accuracy": 0.3799999952316284,
+              "top3_accuracy": 0.8799999952316284
+            }
+          }
+        }
+      },
+      "counts": {
+        "train": 4750,
+        "validation": 200,
+        "gallery": 50,
+        "test": 1000
+      },
+      "optimizer_updates": 1200,
+      "batch_opportunities": 1200,
+      "initial_validation": {
+        "system": "optical_student_query_vs_optical_student_gallery",
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 200,
+        "gallery_image_count": 50,
+        "sku_count": 10,
+        "top1_retrieval_accuracy": 0.17499999701976776,
+        "top3_retrieval_accuracy": 0.4449999928474426,
+        "mrr": 0.3782361149787903,
+        "per_sku": {
+          "bear": {
+            "query_count": 20,
+            "top1_accuracy": 0.05000000074505806,
+            "top3_accuracy": 0.44999998807907104
+          },
+          "bus": {
+            "query_count": 20,
+            "top1_accuracy": 0.15000000596046448,
+            "top3_accuracy": 0.5
+          },
+          "butterfly": {
+            "query_count": 20,
+            "top1_accuracy": 0.20000000298023224,
+            "top3_accuracy": 0.3499999940395355
+          },
+          "castle": {
+            "query_count": 20,
+            "top1_accuracy": 0.44999998807907104,
+            "top3_accuracy": 0.5
+          },
+          "cup": {
+            "query_count": 20,
+            "top1_accuracy": 0.15000000596046448,
+            "top3_accuracy": 0.44999998807907104
+          },
+          "elephant": {
+            "query_count": 20,
+            "top1_accuracy": 0.20000000298023224,
+            "top3_accuracy": 0.6000000238418579
+          },
+          "girl": {
+            "query_count": 20,
+            "top1_accuracy": 0.15000000596046448,
+            "top3_accuracy": 0.25
+          },
+          "streetcar": {
+            "query_count": 20,
+            "top1_accuracy": 0.15000000596046448,
+            "top3_accuracy": 0.4000000059604645
+          },
+          "telephone": {
+            "query_count": 20,
+            "top1_accuracy": 0.15000000596046448,
+            "top3_accuracy": 0.6000000238418579
+          },
+          "wardrobe": {
+            "query_count": 20,
+            "top1_accuracy": 0.10000000149011612,
+            "top3_accuracy": 0.3499999940395355
+          }
+        }
+      },
+      "stage_ends": [
+        {
+          "epoch": 2,
+          "stage": "experts",
+          "mean_task_loss": 5.565311050415039,
+          "live_validation": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 200,
+            "gallery_image_count": 50,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.2199999988079071,
+            "top3_retrieval_accuracy": 0.5450000166893005,
+            "mrr": 0.4341210424900055,
+            "per_sku": {
+              "bear": {
+                "query_count": 20,
+                "top1_accuracy": 0.0,
+                "top3_accuracy": 0.3499999940395355
+              },
+              "bus": {
+                "query_count": 20,
+                "top1_accuracy": 0.25,
+                "top3_accuracy": 0.6499999761581421
+              },
+              "butterfly": {
+                "query_count": 20,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.44999998807907104
+              },
+              "castle": {
+                "query_count": 20,
+                "top1_accuracy": 0.6000000238418579,
+                "top3_accuracy": 0.699999988079071
+              },
+              "cup": {
+                "query_count": 20,
+                "top1_accuracy": 0.10000000149011612,
+                "top3_accuracy": 0.5
+              },
+              "elephant": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.6499999761581421
+              },
+              "girl": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.4000000059604645
+              },
+              "streetcar": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.5
+              },
+              "telephone": {
+                "query_count": 20,
+                "top1_accuracy": 0.4000000059604645,
+                "top3_accuracy": 0.6499999761581421
+              },
+              "wardrobe": {
+                "query_count": 20,
+                "top1_accuracy": 0.10000000149011612,
+                "top3_accuracy": 0.6000000238418579
+              }
+            }
+          },
+          "stage_end_validation_with_initial_experts": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 200,
+            "gallery_image_count": 50,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.17499999701976776,
+            "top3_retrieval_accuracy": 0.4449999928474426,
+            "mrr": 0.3782361149787903,
+            "per_sku": {
+              "bear": {
+                "query_count": 20,
+                "top1_accuracy": 0.05000000074505806,
+                "top3_accuracy": 0.44999998807907104
+              },
+              "bus": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.5
+              },
+              "butterfly": {
+                "query_count": 20,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.3499999940395355
+              },
+              "castle": {
+                "query_count": 20,
+                "top1_accuracy": 0.44999998807907104,
+                "top3_accuracy": 0.5
+              },
+              "cup": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.44999998807907104
+              },
+              "elephant": {
+                "query_count": 20,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "girl": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.25
+              },
+              "streetcar": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.4000000059604645
+              },
+              "telephone": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "wardrobe": {
+                "query_count": 20,
+                "top1_accuracy": 0.10000000149011612,
+                "top3_accuracy": 0.3499999940395355
+              }
+            }
+          },
+          "expert_phase": {
+            "rms_change_rad": 0.9050956964492798,
+            "per_expert_rms_change_rad": [
+              [
+                0.325499564409256,
+                0.31955403089523315,
+                1.4220463037490845,
+                0.26347988843917847
+              ],
+              [
+                0.38903772830963135,
+                0.3410734534263611,
+                1.411608338356018,
+                1.4119365215301514
+              ]
+            ],
+            "max_change_rad": 2.517332077026367,
+            "dc_power": [
+              [
+                0.22761039435863495,
+                0.22806544601917267,
+                0.0023532425984740257,
+                0.23562175035476685
+              ],
+              [
+                0.21738950908184052,
+                0.2278924435377121,
+                0.0017669370863586664,
+                0.0021666460670530796
+              ]
+            ],
+            "sigmoid_saturated_fraction": 0.0
+          },
+          "expert_selection_counts": {
+            "vision": [
+              1786,
+              1800,
+              0,
+              14
+            ],
+            "language": [
+              1800,
+              1800,
+              0,
+              0
+            ]
+          },
+          "task_gradient_chain": {
+            "task_to_expert": 0.3292425274848938
+          }
+        },
+        {
+          "epoch": 4,
+          "stage": "optics",
+          "mean_task_loss": 5.4093114296595255,
+          "live_validation": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 200,
+            "gallery_image_count": 50,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.3100000023841858,
+            "top3_retrieval_accuracy": 0.6399999856948853,
+            "mrr": 0.5192241072654724,
+            "per_sku": {
+              "bear": {
+                "query_count": 20,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "bus": {
+                "query_count": 20,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.75
+              },
+              "butterfly": {
+                "query_count": 20,
+                "top1_accuracy": 0.5,
+                "top3_accuracy": 0.550000011920929
+              },
+              "castle": {
+                "query_count": 20,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 0.8500000238418579
+              },
+              "cup": {
+                "query_count": 20,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.8500000238418579
+              },
+              "elephant": {
+                "query_count": 20,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.550000011920929
+              },
+              "girl": {
+                "query_count": 20,
+                "top1_accuracy": 0.25,
+                "top3_accuracy": 0.5
+              },
+              "streetcar": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.550000011920929
+              },
+              "telephone": {
+                "query_count": 20,
+                "top1_accuracy": 0.550000011920929,
+                "top3_accuracy": 0.699999988079071
+              },
+              "wardrobe": {
+                "query_count": 20,
+                "top1_accuracy": 0.05000000074505806,
+                "top3_accuracy": 0.5
+              }
+            }
+          },
+          "stage_end_validation_with_initial_experts": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 200,
+            "gallery_image_count": 50,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.32499998807907104,
+            "top3_retrieval_accuracy": 0.5950000286102295,
+            "mrr": 0.4979444444179535,
+            "per_sku": {
+              "bear": {
+                "query_count": 20,
+                "top1_accuracy": 0.10000000149011612,
+                "top3_accuracy": 0.75
+              },
+              "bus": {
+                "query_count": 20,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.699999988079071
+              },
+              "butterfly": {
+                "query_count": 20,
+                "top1_accuracy": 0.3499999940395355,
+                "top3_accuracy": 0.550000011920929
+              },
+              "castle": {
+                "query_count": 20,
+                "top1_accuracy": 0.75,
+                "top3_accuracy": 0.75
+              },
+              "cup": {
+                "query_count": 20,
+                "top1_accuracy": 0.25,
+                "top3_accuracy": 0.6499999761581421
+              },
+              "elephant": {
+                "query_count": 20,
+                "top1_accuracy": 0.3499999940395355,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "girl": {
+                "query_count": 20,
+                "top1_accuracy": 0.25,
+                "top3_accuracy": 0.30000001192092896
+              },
+              "streetcar": {
+                "query_count": 20,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.4000000059604645
+              },
+              "telephone": {
+                "query_count": 20,
+                "top1_accuracy": 0.5,
+                "top3_accuracy": 0.75
+              },
+              "wardrobe": {
+                "query_count": 20,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.5
+              }
+            }
+          },
+          "expert_phase": {
+            "rms_change_rad": 0.941512942314148,
+            "per_expert_rms_change_rad": [
+              [
+                0.34929144382476807,
+                0.40962886810302734,
+                1.3683055639266968,
+                0.4198625981807709
+              ],
+              [
+                0.4315364956855774,
+                0.39918413758277893,
+                1.481868863105774,
+                1.4871855974197388
+              ]
+            ],
+            "max_change_rad": 3.140246868133545,
+            "dc_power": [
+              [
+                0.22377310693264008,
+                0.2157505601644516,
+                0.006431665271520615,
+                0.21435832977294922
+              ],
+              [
+                0.2108404040336609,
+                0.21839959919452667,
+                4.847400759899756e-06,
+                3.536899384926073e-05
+              ]
+            ],
+            "sigmoid_saturated_fraction": 0.0
+          },
+          "expert_selection_counts": {
+            "vision": [
+              977,
+              1141,
+              1136,
+              346
+            ],
+            "language": [
+              1800,
+              1800,
+              0,
+              0
+            ]
+          },
+          "task_gradient_chain": {
+            "task_to_expert": 0.41635432839393616
+          }
+        },
+        {
+          "epoch": 20,
+          "stage": "joint",
+          "mean_task_loss": 4.954067985216777,
+          "live_validation": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 200,
+            "gallery_image_count": 50,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.4350000023841858,
+            "top3_retrieval_accuracy": 0.7450000047683716,
+            "mrr": 0.6243809461593628,
+            "per_sku": {
+              "bear": {
+                "query_count": 20,
+                "top1_accuracy": 0.5,
+                "top3_accuracy": 0.75
+              },
+              "bus": {
+                "query_count": 20,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.800000011920929
+              },
+              "butterfly": {
+                "query_count": 20,
+                "top1_accuracy": 0.6499999761581421,
+                "top3_accuracy": 0.75
+              },
+              "castle": {
+                "query_count": 20,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "cup": {
+                "query_count": 20,
+                "top1_accuracy": 0.4000000059604645,
+                "top3_accuracy": 0.699999988079071
+              },
+              "elephant": {
+                "query_count": 20,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.800000011920929
+              },
+              "girl": {
+                "query_count": 20,
+                "top1_accuracy": 0.44999998807907104,
+                "top3_accuracy": 0.550000011920929
+              },
+              "streetcar": {
+                "query_count": 20,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.699999988079071
+              },
+              "telephone": {
+                "query_count": 20,
+                "top1_accuracy": 0.550000011920929,
+                "top3_accuracy": 0.75
+              },
+              "wardrobe": {
+                "query_count": 20,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.75
+              }
+            }
+          },
+          "stage_end_validation_with_initial_experts": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 200,
+            "gallery_image_count": 50,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.4300000071525574,
+            "top3_retrieval_accuracy": 0.7400000095367432,
+            "mrr": 0.6208571791648865,
+            "per_sku": {
+              "bear": {
+                "query_count": 20,
+                "top1_accuracy": 0.4000000059604645,
+                "top3_accuracy": 0.75
+              },
+              "bus": {
+                "query_count": 20,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.800000011920929
+              },
+              "butterfly": {
+                "query_count": 20,
+                "top1_accuracy": 0.6499999761581421,
+                "top3_accuracy": 0.75
+              },
+              "castle": {
+                "query_count": 20,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "cup": {
+                "query_count": 20,
+                "top1_accuracy": 0.5,
+                "top3_accuracy": 0.75
+              },
+              "elephant": {
+                "query_count": 20,
+                "top1_accuracy": 0.25,
+                "top3_accuracy": 0.699999988079071
+              },
+              "girl": {
+                "query_count": 20,
+                "top1_accuracy": 0.4000000059604645,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "streetcar": {
+                "query_count": 20,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.6499999761581421
+              },
+              "telephone": {
+                "query_count": 20,
+                "top1_accuracy": 0.6000000238418579,
+                "top3_accuracy": 0.75
+              },
+              "wardrobe": {
+                "query_count": 20,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.75
+              }
+            }
+          },
+          "expert_phase": {
+            "rms_change_rad": 0.8470945358276367,
+            "per_expert_rms_change_rad": [
+              [
+                0.396816611289978,
+                0.441005140542984,
+                0.74449223279953,
+                0.5445887446403503
+              ],
+              [
+                0.3752953112125397,
+                0.4068668782711029,
+                1.4510008096694946,
+                1.458070158958435
+              ]
+            ],
+            "max_change_rad": 2.2720556259155273,
+            "dc_power": [
+              [
+                0.2172057181596756,
+                0.2124021202325821,
+                0.1334618180990219,
+                0.19221131503582
+              ],
+              [
+                0.21905556321144104,
+                0.2172105610370636,
+                0.0003284752310719341,
+                0.0003282302350271493
+              ]
+            ],
+            "sigmoid_saturated_fraction": 0.0
+          },
+          "expert_selection_counts": {
+            "vision": [
+              841,
+              923,
+              878,
+              958
+            ],
+            "language": [
+              1800,
+              1800,
+              0,
+              0
+            ]
+          },
+          "task_gradient_chain": {
+            "task_to_expert": 0.18337471783161163
+          }
+        }
+      ],
+      "export_max_error": 0.0,
+      "generator_trainable": 572416,
+      "peak_memory_gib": 10.43099069595337,
+      "elapsed_seconds": 846.2500587925315
+    },
+    {
+      "method": "qwen_lora",
+      "label": "Qwen LoRA + decoder",
+      "run_id": "20260907_cifar100ten_heads_qwen_lora_s42",
+      "device": "NVIDIA GeForce RTX 4090",
+      "selected_epoch": 20,
+      "selected_live_test": {
+        "system": "optical_student_query_vs_optical_student_gallery",
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 1000,
+        "gallery_image_count": 50,
+        "sku_count": 10,
+        "top1_retrieval_accuracy": 0.4129999876022339,
+        "top3_retrieval_accuracy": 0.7390000224113464,
+        "mrr": 0.6016948223114014,
+        "per_sku": {
+          "bear": {
+            "query_count": 100,
+            "top1_accuracy": 0.3100000023841858,
+            "top3_accuracy": 0.7200000286102295
+          },
+          "bus": {
+            "query_count": 100,
+            "top1_accuracy": 0.1599999964237213,
+            "top3_accuracy": 0.75
+          },
+          "butterfly": {
+            "query_count": 100,
+            "top1_accuracy": 0.46000000834465027,
+            "top3_accuracy": 0.5600000023841858
+          },
+          "castle": {
+            "query_count": 100,
+            "top1_accuracy": 0.8100000023841858,
+            "top3_accuracy": 0.8500000238418579
+          },
+          "cup": {
+            "query_count": 100,
+            "top1_accuracy": 0.3499999940395355,
+            "top3_accuracy": 0.75
+          },
+          "elephant": {
+            "query_count": 100,
+            "top1_accuracy": 0.4099999964237213,
+            "top3_accuracy": 0.699999988079071
+          },
+          "girl": {
+            "query_count": 100,
+            "top1_accuracy": 0.5,
+            "top3_accuracy": 0.8299999833106995
+          },
+          "streetcar": {
+            "query_count": 100,
+            "top1_accuracy": 0.1599999964237213,
+            "top3_accuracy": 0.550000011920929
+          },
+          "telephone": {
+            "query_count": 100,
+            "top1_accuracy": 0.6600000262260437,
+            "top3_accuracy": 0.8100000023841858
+          },
+          "wardrobe": {
+            "query_count": 100,
+            "top1_accuracy": 0.3100000023841858,
+            "top3_accuracy": 0.8700000047683716
+          }
+        }
+      },
+      "final_ema_test": {
+        "system": "optical_student_query_vs_optical_student_gallery",
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 1000,
+        "gallery_image_count": 50,
+        "sku_count": 10,
+        "top1_retrieval_accuracy": 0.40700000524520874,
+        "top3_retrieval_accuracy": 0.7490000128746033,
+        "mrr": 0.6025757789611816,
+        "per_sku": {
+          "bear": {
+            "query_count": 100,
+            "top1_accuracy": 0.23000000417232513,
+            "top3_accuracy": 0.7200000286102295
+          },
+          "bus": {
+            "query_count": 100,
+            "top1_accuracy": 0.14000000059604645,
+            "top3_accuracy": 0.7699999809265137
+          },
+          "butterfly": {
+            "query_count": 100,
+            "top1_accuracy": 0.4300000071525574,
+            "top3_accuracy": 0.5799999833106995
+          },
+          "castle": {
+            "query_count": 100,
+            "top1_accuracy": 0.8199999928474426,
+            "top3_accuracy": 0.8600000143051147
+          },
+          "cup": {
+            "query_count": 100,
+            "top1_accuracy": 0.3700000047683716,
+            "top3_accuracy": 0.7400000095367432
+          },
+          "elephant": {
+            "query_count": 100,
+            "top1_accuracy": 0.4099999964237213,
+            "top3_accuracy": 0.7200000286102295
+          },
+          "girl": {
+            "query_count": 100,
+            "top1_accuracy": 0.5099999904632568,
+            "top3_accuracy": 0.7900000214576721
+          },
+          "streetcar": {
+            "query_count": 100,
+            "top1_accuracy": 0.2199999988079071,
+            "top3_accuracy": 0.5699999928474426
+          },
+          "telephone": {
+            "query_count": 100,
+            "top1_accuracy": 0.6600000262260437,
+            "top3_accuracy": 0.8299999833106995
+          },
+          "wardrobe": {
+            "query_count": 100,
+            "top1_accuracy": 0.2800000011920929,
+            "top3_accuracy": 0.9100000262260437
+          }
+        }
+      },
+      "selected_validation": {
+        "system": "optical_student_query_vs_optical_student_gallery",
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 200,
+        "gallery_image_count": 50,
+        "sku_count": 10,
+        "top1_retrieval_accuracy": 0.3799999952316284,
+        "top3_retrieval_accuracy": 0.7099999785423279,
+        "mrr": 0.5845931768417358,
+        "per_sku": {
+          "bear": {
+            "query_count": 20,
+            "top1_accuracy": 0.44999998807907104,
+            "top3_accuracy": 0.699999988079071
+          },
+          "bus": {
+            "query_count": 20,
+            "top1_accuracy": 0.05000000074505806,
+            "top3_accuracy": 0.699999988079071
+          },
+          "butterfly": {
+            "query_count": 20,
+            "top1_accuracy": 0.550000011920929,
+            "top3_accuracy": 0.800000011920929
+          },
+          "castle": {
+            "query_count": 20,
+            "top1_accuracy": 0.8500000238418579,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "cup": {
+            "query_count": 20,
+            "top1_accuracy": 0.4000000059604645,
+            "top3_accuracy": 0.699999988079071
+          },
+          "elephant": {
+            "query_count": 20,
+            "top1_accuracy": 0.25,
+            "top3_accuracy": 0.6000000238418579
+          },
+          "girl": {
+            "query_count": 20,
+            "top1_accuracy": 0.3499999940395355,
+            "top3_accuracy": 0.699999988079071
+          },
+          "streetcar": {
+            "query_count": 20,
+            "top1_accuracy": 0.15000000596046448,
+            "top3_accuracy": 0.6000000238418579
+          },
+          "telephone": {
+            "query_count": 20,
+            "top1_accuracy": 0.6000000238418579,
+            "top3_accuracy": 0.699999988079071
+          },
+          "wardrobe": {
+            "query_count": 20,
+            "top1_accuracy": 0.15000000596046448,
+            "top3_accuracy": 0.699999988079071
+          }
+        }
+      },
+      "selected_phase_rms_rad": 0.9567946195602417,
+      "selected_phase_piston_removed_rms_rad": 0.9565675854682922,
+      "mean_cross_expert_update_correlation": 0.0065796212293207645,
+      "last_phase_rms_rad": 0.9567946195602417,
+      "fusion": {
+        "vision": [
+          0.49933406710624695,
+          0.49963465332984924
+        ],
+        "language": [
+          0.500257134437561,
+          0.5004297494888306
+        ]
+      },
+      "ablations": {
+        "initial_experts": {
+          "system": "optical_student_query_vs_optical_student_gallery",
+          "gallery_aggregation": "mean_prototype",
+          "query_count": 1000,
+          "gallery_image_count": 50,
+          "sku_count": 10,
+          "top1_retrieval_accuracy": 0.38600000739097595,
+          "top3_retrieval_accuracy": 0.7300000190734863,
+          "mrr": 0.5845876932144165,
+          "per_sku": {
+            "bear": {
+              "query_count": 100,
+              "top1_accuracy": 0.23000000417232513,
+              "top3_accuracy": 0.7099999785423279
+            },
+            "bus": {
+              "query_count": 100,
+              "top1_accuracy": 0.14000000059604645,
+              "top3_accuracy": 0.7300000190734863
+            },
+            "butterfly": {
+              "query_count": 100,
+              "top1_accuracy": 0.46000000834465027,
+              "top3_accuracy": 0.5600000023841858
+            },
+            "castle": {
+              "query_count": 100,
+              "top1_accuracy": 0.800000011920929,
+              "top3_accuracy": 0.8399999737739563
+            },
+            "cup": {
+              "query_count": 100,
+              "top1_accuracy": 0.25,
+              "top3_accuracy": 0.7300000190734863
+            },
+            "elephant": {
+              "query_count": 100,
+              "top1_accuracy": 0.38999998569488525,
+              "top3_accuracy": 0.7099999785423279
+            },
+            "girl": {
+              "query_count": 100,
+              "top1_accuracy": 0.4300000071525574,
+              "top3_accuracy": 0.7900000214576721
+            },
+            "streetcar": {
+              "query_count": 100,
+              "top1_accuracy": 0.15000000596046448,
+              "top3_accuracy": 0.5600000023841858
+            },
+            "telephone": {
+              "query_count": 100,
+              "top1_accuracy": 0.6600000262260437,
+              "top3_accuracy": 0.7699999809265137
+            },
+            "wardrobe": {
+              "query_count": 100,
+              "top1_accuracy": 0.3499999940395355,
+              "top3_accuracy": 0.8999999761581421
+            }
+          }
+        },
+        "flat_pi_experts": {
+          "system": "optical_student_query_vs_optical_student_gallery",
+          "gallery_aggregation": "mean_prototype",
+          "query_count": 1000,
+          "gallery_image_count": 50,
+          "sku_count": 10,
+          "top1_retrieval_accuracy": 0.3779999911785126,
+          "top3_retrieval_accuracy": 0.7279999852180481,
+          "mrr": 0.5730206370353699,
+          "per_sku": {
+            "bear": {
+              "query_count": 100,
+              "top1_accuracy": 0.1599999964237213,
+              "top3_accuracy": 0.7099999785423279
+            },
+            "bus": {
+              "query_count": 100,
+              "top1_accuracy": 0.12999999523162842,
+              "top3_accuracy": 0.7400000095367432
+            },
+            "butterfly": {
+              "query_count": 100,
+              "top1_accuracy": 0.4399999976158142,
+              "top3_accuracy": 0.5699999928474426
+            },
+            "castle": {
+              "query_count": 100,
+              "top1_accuracy": 0.800000011920929,
+              "top3_accuracy": 0.8399999737739563
+            },
+            "cup": {
+              "query_count": 100,
+              "top1_accuracy": 0.33000001311302185,
+              "top3_accuracy": 0.7200000286102295
+            },
+            "elephant": {
+              "query_count": 100,
+              "top1_accuracy": 0.28999999165534973,
+              "top3_accuracy": 0.6899999976158142
+            },
+            "girl": {
+              "query_count": 100,
+              "top1_accuracy": 0.5099999904632568,
+              "top3_accuracy": 0.7200000286102295
+            },
+            "streetcar": {
+              "query_count": 100,
+              "top1_accuracy": 0.18000000715255737,
+              "top3_accuracy": 0.6000000238418579
+            },
+            "telephone": {
+              "query_count": 100,
+              "top1_accuracy": 0.6299999952316284,
+              "top3_accuracy": 0.7699999809265137
+            },
+            "wardrobe": {
+              "query_count": 100,
+              "top1_accuracy": 0.3100000023841858,
+              "top3_accuracy": 0.9200000166893005
+            }
+          }
+        },
+        "lora_disabled_same_decoder": {
+          "system": "optical_student_query_vs_optical_student_gallery",
+          "gallery_aggregation": "mean_prototype",
+          "query_count": 1000,
+          "gallery_image_count": 50,
+          "sku_count": 10,
+          "top1_retrieval_accuracy": 0.414000004529953,
+          "top3_retrieval_accuracy": 0.7390000224113464,
+          "mrr": 0.601564347743988,
+          "per_sku": {
+            "bear": {
+              "query_count": 100,
+              "top1_accuracy": 0.3100000023841858,
+              "top3_accuracy": 0.7200000286102295
+            },
+            "bus": {
+              "query_count": 100,
+              "top1_accuracy": 0.1599999964237213,
+              "top3_accuracy": 0.7400000095367432
+            },
+            "butterfly": {
+              "query_count": 100,
+              "top1_accuracy": 0.46000000834465027,
+              "top3_accuracy": 0.5600000023841858
+            },
+            "castle": {
+              "query_count": 100,
+              "top1_accuracy": 0.8100000023841858,
+              "top3_accuracy": 0.8500000238418579
+            },
+            "cup": {
+              "query_count": 100,
+              "top1_accuracy": 0.3499999940395355,
+              "top3_accuracy": 0.75
+            },
+            "elephant": {
+              "query_count": 100,
+              "top1_accuracy": 0.4099999964237213,
+              "top3_accuracy": 0.7099999785423279
+            },
+            "girl": {
+              "query_count": 100,
+              "top1_accuracy": 0.5,
+              "top3_accuracy": 0.8299999833106995
+            },
+            "streetcar": {
+              "query_count": 100,
+              "top1_accuracy": 0.17000000178813934,
+              "top3_accuracy": 0.550000011920929
+            },
+            "telephone": {
+              "query_count": 100,
+              "top1_accuracy": 0.6600000262260437,
+              "top3_accuracy": 0.8100000023841858
+            },
+            "wardrobe": {
+              "query_count": 100,
+              "top1_accuracy": 0.3100000023841858,
+              "top3_accuracy": 0.8700000047683716
+            }
+          }
+        },
+        "lora_phase_effect": {
+          "rms_change_rad": 0.0035480435471981764,
+          "per_expert_rms_change_rad": [
+            [
+              0.003640237729996443,
+              0.002867143601179123,
+              0.0037022896576672792,
+              0.003936117980629206
+            ],
+            [
+              0.0031529150437563658,
+              0.003172478172928095,
+              0.0037759379483759403,
+              0.0039716362953186035
+            ]
+          ],
+          "max_change_rad": 0.01666450686752796,
+          "dc_power": [
+            [
+              0.18959613144397736,
+              0.17604613304138184,
+              0.03536277636885643,
+              0.14124424755573273
+            ],
+            [
+              0.18717598915100098,
+              0.2181372344493866,
+              0.0027697288896888494,
+              4.1818424506345764e-05
+            ]
+          ],
+          "sigmoid_saturated_fraction": 0.0
+        }
+      },
+      "counts": {
+        "train": 4750,
+        "validation": 200,
+        "gallery": 50,
+        "test": 1000
+      },
+      "optimizer_updates": 1200,
+      "batch_opportunities": 1200,
+      "initial_validation": {
+        "system": "optical_student_query_vs_optical_student_gallery",
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 200,
+        "gallery_image_count": 50,
+        "sku_count": 10,
+        "top1_retrieval_accuracy": 0.17499999701976776,
+        "top3_retrieval_accuracy": 0.4449999928474426,
+        "mrr": 0.3782361149787903,
+        "per_sku": {
+          "bear": {
+            "query_count": 20,
+            "top1_accuracy": 0.05000000074505806,
+            "top3_accuracy": 0.44999998807907104
+          },
+          "bus": {
+            "query_count": 20,
+            "top1_accuracy": 0.15000000596046448,
+            "top3_accuracy": 0.5
+          },
+          "butterfly": {
+            "query_count": 20,
+            "top1_accuracy": 0.20000000298023224,
+            "top3_accuracy": 0.3499999940395355
+          },
+          "castle": {
+            "query_count": 20,
+            "top1_accuracy": 0.44999998807907104,
+            "top3_accuracy": 0.5
+          },
+          "cup": {
+            "query_count": 20,
+            "top1_accuracy": 0.15000000596046448,
+            "top3_accuracy": 0.44999998807907104
+          },
+          "elephant": {
+            "query_count": 20,
+            "top1_accuracy": 0.20000000298023224,
+            "top3_accuracy": 0.6000000238418579
+          },
+          "girl": {
+            "query_count": 20,
+            "top1_accuracy": 0.15000000596046448,
+            "top3_accuracy": 0.25
+          },
+          "streetcar": {
+            "query_count": 20,
+            "top1_accuracy": 0.15000000596046448,
+            "top3_accuracy": 0.4000000059604645
+          },
+          "telephone": {
+            "query_count": 20,
+            "top1_accuracy": 0.15000000596046448,
+            "top3_accuracy": 0.6000000238418579
+          },
+          "wardrobe": {
+            "query_count": 20,
+            "top1_accuracy": 0.10000000149011612,
+            "top3_accuracy": 0.3499999940395355
+          }
+        }
+      },
+      "stage_ends": [
+        {
+          "epoch": 2,
+          "stage": "experts",
+          "mean_task_loss": 5.558187619845072,
+          "live_validation": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 200,
+            "gallery_image_count": 50,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.20499999821186066,
+            "top3_retrieval_accuracy": 0.5249999761581421,
+            "mrr": 0.4274643063545227,
+            "per_sku": {
+              "bear": {
+                "query_count": 20,
+                "top1_accuracy": 0.0,
+                "top3_accuracy": 0.550000011920929
+              },
+              "bus": {
+                "query_count": 20,
+                "top1_accuracy": 0.25,
+                "top3_accuracy": 0.550000011920929
+              },
+              "butterfly": {
+                "query_count": 20,
+                "top1_accuracy": 0.4000000059604645,
+                "top3_accuracy": 0.4000000059604645
+              },
+              "castle": {
+                "query_count": 20,
+                "top1_accuracy": 0.5,
+                "top3_accuracy": 0.6499999761581421
+              },
+              "cup": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.5
+              },
+              "elephant": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.550000011920929
+              },
+              "girl": {
+                "query_count": 20,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.44999998807907104
+              },
+              "streetcar": {
+                "query_count": 20,
+                "top1_accuracy": 0.0,
+                "top3_accuracy": 0.44999998807907104
+              },
+              "telephone": {
+                "query_count": 20,
+                "top1_accuracy": 0.25,
+                "top3_accuracy": 0.550000011920929
+              },
+              "wardrobe": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.6000000238418579
+              }
+            }
+          },
+          "stage_end_validation_with_initial_experts": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 200,
+            "gallery_image_count": 50,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.17499999701976776,
+            "top3_retrieval_accuracy": 0.4449999928474426,
+            "mrr": 0.3782361149787903,
+            "per_sku": {
+              "bear": {
+                "query_count": 20,
+                "top1_accuracy": 0.05000000074505806,
+                "top3_accuracy": 0.44999998807907104
+              },
+              "bus": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.5
+              },
+              "butterfly": {
+                "query_count": 20,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.3499999940395355
+              },
+              "castle": {
+                "query_count": 20,
+                "top1_accuracy": 0.44999998807907104,
+                "top3_accuracy": 0.5
+              },
+              "cup": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.44999998807907104
+              },
+              "elephant": {
+                "query_count": 20,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "girl": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.25
+              },
+              "streetcar": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.4000000059604645
+              },
+              "telephone": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "wardrobe": {
+                "query_count": 20,
+                "top1_accuracy": 0.10000000149011612,
+                "top3_accuracy": 0.3499999940395355
+              }
+            }
+          },
+          "expert_phase": {
+            "rms_change_rad": 0.8458932042121887,
+            "per_expert_rms_change_rad": [
+              [
+                0.29918172955513,
+                0.31191620230674744,
+                1.3261587619781494,
+                0.2530996799468994
+              ],
+              [
+                0.35586363077163696,
+                0.32381588220596313,
+                1.317183256149292,
+                1.3222163915634155
+              ]
+            ],
+            "max_change_rad": 2.2265608310699463,
+            "dc_power": [
+              [
+                0.23115193843841553,
+                0.22941194474697113,
+                0.010076506063342094,
+                0.23692569136619568
+              ],
+              [
+                0.22234685719013214,
+                0.22984492778778076,
+                0.009730805642902851,
+                0.009274124167859554
+              ]
+            ],
+            "sigmoid_saturated_fraction": 0.0
+          },
+          "expert_selection_counts": {
+            "vision": [
+              1786,
+              1800,
+              0,
+              14
+            ],
+            "language": [
+              1800,
+              1800,
+              0,
+              0
+            ]
+          },
+          "task_gradient_chain": {
+            "task_to_expert": 0.33456870913505554,
+            "task_to_lora_b": 0.06277894228696823
+          }
+        },
+        {
+          "epoch": 4,
+          "stage": "optics",
+          "mean_task_loss": 5.3975331544876095,
+          "live_validation": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 200,
+            "gallery_image_count": 50,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.3100000023841858,
+            "top3_retrieval_accuracy": 0.6700000166893005,
+            "mrr": 0.5211527347564697,
+            "per_sku": {
+              "bear": {
+                "query_count": 20,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.75
+              },
+              "bus": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.75
+              },
+              "butterfly": {
+                "query_count": 20,
+                "top1_accuracy": 0.44999998807907104,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "castle": {
+                "query_count": 20,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 0.800000011920929
+              },
+              "cup": {
+                "query_count": 20,
+                "top1_accuracy": 0.10000000149011612,
+                "top3_accuracy": 0.699999988079071
+              },
+              "elephant": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.699999988079071
+              },
+              "girl": {
+                "query_count": 20,
+                "top1_accuracy": 0.4000000059604645,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "streetcar": {
+                "query_count": 20,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.6499999761581421
+              },
+              "telephone": {
+                "query_count": 20,
+                "top1_accuracy": 0.44999998807907104,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "wardrobe": {
+                "query_count": 20,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.550000011920929
+              }
+            }
+          },
+          "stage_end_validation_with_initial_experts": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 200,
+            "gallery_image_count": 50,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.28999999165534973,
+            "top3_retrieval_accuracy": 0.5649999976158142,
+            "mrr": 0.4802698791027069,
+            "per_sku": {
+              "bear": {
+                "query_count": 20,
+                "top1_accuracy": 0.10000000149011612,
+                "top3_accuracy": 0.550000011920929
+              },
+              "bus": {
+                "query_count": 20,
+                "top1_accuracy": 0.05000000074505806,
+                "top3_accuracy": 0.5
+              },
+              "butterfly": {
+                "query_count": 20,
+                "top1_accuracy": 0.44999998807907104,
+                "top3_accuracy": 0.44999998807907104
+              },
+              "castle": {
+                "query_count": 20,
+                "top1_accuracy": 0.6499999761581421,
+                "top3_accuracy": 0.800000011920929
+              },
+              "cup": {
+                "query_count": 20,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.6499999761581421
+              },
+              "elephant": {
+                "query_count": 20,
+                "top1_accuracy": 0.25,
+                "top3_accuracy": 0.550000011920929
+              },
+              "girl": {
+                "query_count": 20,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.25
+              },
+              "streetcar": {
+                "query_count": 20,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.550000011920929
+              },
+              "telephone": {
+                "query_count": 20,
+                "top1_accuracy": 0.4000000059604645,
+                "top3_accuracy": 0.6499999761581421
+              },
+              "wardrobe": {
+                "query_count": 20,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.699999988079071
+              }
+            }
+          },
+          "expert_phase": {
+            "rms_change_rad": 0.9729840159416199,
+            "per_expert_rms_change_rad": [
+              [
+                0.36264923214912415,
+                0.4211098253726959,
+                1.482034683227539,
+                0.324006050825119
+              ],
+              [
+                0.4281105697154999,
+                0.41867464780807495,
+                1.5161799192428589,
+                1.5185385942459106
+              ]
+            ],
+            "max_change_rad": 2.9775595664978027,
+            "dc_power": [
+              [
+                0.22166436910629272,
+                0.21324560046195984,
+                0.0008105008164420724,
+                0.22869959473609924
+              ],
+              [
+                0.21161606907844543,
+                0.214860200881958,
+                0.00038132740883156657,
+                0.000408171268645674
+              ]
+            ],
+            "sigmoid_saturated_fraction": 0.0
+          },
+          "expert_selection_counts": {
+            "vision": [
+              1126,
+              1258,
+              1185,
+              31
+            ],
+            "language": [
+              1800,
+              1800,
+              0,
+              0
+            ]
+          },
+          "task_gradient_chain": {
+            "task_to_expert": 0.3480941951274872,
+            "task_to_lora_b": 0.035339679569005966
+          }
+        },
+        {
+          "epoch": 20,
+          "stage": "joint",
+          "mean_task_loss": 5.039491025606791,
+          "live_validation": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 200,
+            "gallery_image_count": 50,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.3799999952316284,
+            "top3_retrieval_accuracy": 0.7099999785423279,
+            "mrr": 0.5845931768417358,
+            "per_sku": {
+              "bear": {
+                "query_count": 20,
+                "top1_accuracy": 0.44999998807907104,
+                "top3_accuracy": 0.699999988079071
+              },
+              "bus": {
+                "query_count": 20,
+                "top1_accuracy": 0.05000000074505806,
+                "top3_accuracy": 0.699999988079071
+              },
+              "butterfly": {
+                "query_count": 20,
+                "top1_accuracy": 0.550000011920929,
+                "top3_accuracy": 0.800000011920929
+              },
+              "castle": {
+                "query_count": 20,
+                "top1_accuracy": 0.8500000238418579,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "cup": {
+                "query_count": 20,
+                "top1_accuracy": 0.4000000059604645,
+                "top3_accuracy": 0.699999988079071
+              },
+              "elephant": {
+                "query_count": 20,
+                "top1_accuracy": 0.25,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "girl": {
+                "query_count": 20,
+                "top1_accuracy": 0.3499999940395355,
+                "top3_accuracy": 0.699999988079071
+              },
+              "streetcar": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "telephone": {
+                "query_count": 20,
+                "top1_accuracy": 0.6000000238418579,
+                "top3_accuracy": 0.699999988079071
+              },
+              "wardrobe": {
+                "query_count": 20,
+                "top1_accuracy": 0.15000000596046448,
+                "top3_accuracy": 0.699999988079071
+              }
+            }
+          },
+          "stage_end_validation_with_initial_experts": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 200,
+            "gallery_image_count": 50,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.39500001072883606,
+            "top3_retrieval_accuracy": 0.7250000238418579,
+            "mrr": 0.5878492593765259,
+            "per_sku": {
+              "bear": {
+                "query_count": 20,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.6499999761581421
+              },
+              "bus": {
+                "query_count": 20,
+                "top1_accuracy": 0.10000000149011612,
+                "top3_accuracy": 0.699999988079071
+              },
+              "butterfly": {
+                "query_count": 20,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 0.75
+              },
+              "castle": {
+                "query_count": 20,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "cup": {
+                "query_count": 20,
+                "top1_accuracy": 0.4000000059604645,
+                "top3_accuracy": 0.8500000238418579
+              },
+              "elephant": {
+                "query_count": 20,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.550000011920929
+              },
+              "girl": {
+                "query_count": 20,
+                "top1_accuracy": 0.3499999940395355,
+                "top3_accuracy": 0.699999988079071
+              },
+              "streetcar": {
+                "query_count": 20,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.6499999761581421
+              },
+              "telephone": {
+                "query_count": 20,
+                "top1_accuracy": 0.6000000238418579,
+                "top3_accuracy": 0.699999988079071
+              },
+              "wardrobe": {
+                "query_count": 20,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.800000011920929
+              }
+            }
+          },
+          "expert_phase": {
+            "rms_change_rad": 0.9567946195602417,
+            "per_expert_rms_change_rad": [
+              [
+                0.5416202545166016,
+                0.6241880059242249,
+                1.1819220781326294,
+                0.7810031771659851
+              ],
+              [
+                0.5608437657356262,
+                0.3987080454826355,
+                1.4074186086654663,
+                1.4762916564941406
+              ]
+            ],
+            "max_change_rad": 3.081688165664673,
+            "dc_power": [
+              [
+                0.189551442861557,
+                0.17571277916431427,
+                0.03514043614268303,
+                0.14109721779823303
+              ],
+              [
+                0.18700668215751648,
+                0.21789060533046722,
+                0.00258970120921731,
+                3.421179280849174e-05
+              ]
+            ],
+            "sigmoid_saturated_fraction": 0.0
+          },
+          "expert_selection_counts": {
+            "vision": [
+              852,
+              937,
+              889,
+              922
+            ],
+            "language": [
+              1800,
+              1081,
+              719,
+              0
+            ]
+          },
+          "task_gradient_chain": {
+            "task_to_expert": 0.14190804958343506,
+            "task_to_lora_b": 0.011337335221469402
+          }
+        }
+      ],
+      "export_max_error": 0.0,
+      "generator_trainable": 2178048,
+      "peak_memory_gib": 11.219248294830322,
+      "elapsed_seconds": 1024.2638639211655
+    }
+  ],
+  "selection": "live adaptation-validation Top-1 then MRR; no test selection",
+  "limitations": [
+    "one optimization seed",
+    "fixed update budget, not a convergence claim",
+    "Caltech task warmstart; no CIFAR-specific task warmstart",
+    "class-prototype retrieval, not standard supervised classifier-head accuracy",
+    "different parameter counts and computation costs"
+  ],
+  "time_boundary": "training, checkpoint I/O and evaluation; excludes model loading and source hashing; CUDA simulation only",
+  "dataset": "CIFAR-100",
+  "cross_method_selected_phase": [
+    {
+      "left": "direct",
+      "right": "fixed",
+      "circular_rms_rad": 0.7857167720794678,
+      "piston_removed_rms_rad": 0.7857134342193604,
+      "per_modality_rms_rad": [
+        0.8602120280265808,
+        0.7033754587173462
+      ]
+    },
+    {
+      "left": "direct",
+      "right": "qwen_frozen",
+      "circular_rms_rad": 1.174690842628479,
+      "piston_removed_rms_rad": 1.1780366897583008,
+      "per_modality_rms_rad": [
+        1.0177404880523682,
+        1.3130123615264893
+      ]
+    },
+    {
+      "left": "direct",
+      "right": "qwen_lora",
+      "circular_rms_rad": 1.2493497133255005,
+      "piston_removed_rms_rad": 1.2492866516113281,
+      "per_modality_rms_rad": [
+        1.1715278625488281,
+        1.3226003646850586
+      ]
+    },
+    {
+      "left": "fixed",
+      "right": "qwen_frozen",
+      "circular_rms_rad": 0.8470945358276367,
+      "piston_removed_rms_rad": 0.8497940301895142,
+      "per_modality_rms_rad": [
+        0.5483599305152893,
+        1.0651007890701294
+      ]
+    },
+    {
+      "left": "fixed",
+      "right": "qwen_lora",
+      "circular_rms_rad": 0.9567946195602417,
+      "piston_removed_rms_rad": 0.9565675258636475,
+      "per_modality_rms_rad": [
+        0.8200410008430481,
+        1.076310634613037
+      ]
+    },
+    {
+      "left": "qwen_frozen",
+      "right": "qwen_lora",
+      "circular_rms_rad": 0.6514831781387329,
+      "piston_removed_rms_rad": 0.6507121920585632,
+      "per_modality_rms_rad": [
+        0.6799042224884033,
+        0.6217643618583679
+      ]
+    }
+  ],
+  "detailed_confusion_matrices": "Preserved in the referenced run metrics; omitted here to avoid repeating large matrices."
+}
