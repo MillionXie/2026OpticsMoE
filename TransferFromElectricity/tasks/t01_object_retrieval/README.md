@@ -283,3 +283,14 @@ CUDA_VISIBLE_DEVICES=0 python -m TransferFromElectricity.tasks.t01_object_retrie
 报告工具同时支持四组完整表和 direct/qwen_lora 配对表。
 
 这些属于当前工作的扩展安排；具体已完成和运行状态以每个 run 的 status.json 为准。
+
+### 高光学系数下的扰动诊断
+
+第一批 alpha40 在第 5 轮恢复完整训练扰动后，验证表现明显下降，训练 task loss 接近随机检索水平。
+这与相位更新小是不同问题。新增 `staged_alpha40_ideal.yaml` 和
+`staged_alpha40_caltech30_ideal.yaml`，仅将光学分支设为 eval 模式以关闭训练时采样的
+位移、零级光、CCD 噪声等扰动；梯度依旧回传，Router/global 和生成器按原阶段正常学习。
+光学几何、可微传播、探测、相位参数化、融合系数区间不变，训练图像增强仍按阶段保留。
+这些 run 必须在 ID 中包含 `ideal`，不能宣称获得了原强扰动的鲁棒性。
+先以 direct/qwen_lora 的每轮 20 batch、20 轮诊断核对效果；确认后再用共同 ideal 协议做完整规模对比。
+历史带扰动 run 全部保留，不能覆盖或合并其成绩。硬件扰动训练策略需另行验证。

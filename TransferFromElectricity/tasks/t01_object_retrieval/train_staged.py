@@ -226,6 +226,11 @@ def execute(args, cfg, output):
             else:
                 replacement.set_student_train_mode()
                 readout.train(stage['name']=='joint')
+                if not cfg.get('training_optical_perturbations',True):
+                    # eval disables sampled optical perturbations, not autograd.
+                    # Router/global and generated expert masks still learn.
+                    replacement.vision_surrogate.core.optical_branch.eval()
+                    replacement.language_surrogate.core.optical_branch.eval()
             if generator:
                 generator.eval()
             counts = {'vision':[0]*4,'language':[0]*4}
@@ -352,6 +357,7 @@ def execute(args, cfg, output):
             export_error = float((before-after).abs().max())
             if export_error > 1e-5: raise RuntimeError('Materialization changed outputs')
         report = {'method':args.method,'protocol':'staged_alpha40','git_sha':current_sha,'split_sha256':sha256(output/'split.json'),
+            'training_optical_perturbations':cfg.get('training_optical_perturbations',True),
             'counts':{n:len(r) for n,r in partitions.items()},'selected_epoch':selected_epoch,'selection':cfg['selection'],
             'test_used_for_selection':False,'selected_live_test':selected_test,'final_ema_test':final_ema_test,
             'selected_expert_phase':selected_phase,'fusion':fusion_values(),'ablations':ablations,
