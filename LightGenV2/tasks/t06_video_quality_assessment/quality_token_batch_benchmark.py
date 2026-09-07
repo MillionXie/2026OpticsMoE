@@ -424,6 +424,32 @@ def run_formal(args: argparse.Namespace, runtime: tuple[Any, ...], gpu_name: str
     processor, model, head, scores, rows, prompt = runtime
     batch_size = args.formal_batch
     timer = core.BoundaryTimer(model)
+    prepared_batches: list[dict[str, Any]] = []
+    preprocessing_phase_started = time.perf_counter()
+    for batch_index, start in enumerate(range(0, len(rows), batch_size)):
+        selected = rows[start : start + batch_size]
+        preprocessing_started = time.perf_counter()
+        cpu_inputs, positions = prepare_batch(
+            selected, processor, prompt, torch.device("cpu"), args.image_size
+        )
+        preprocessing_ms = 1000.0 * (time.perf_counter() - preprocessing_started)
+        prepared_batches.append(
+            {
+                "batch_index": batch_index,
+                "start": start,
+                "selected": selected,
+                "inputs": cpu_inputs,
+                "positions": positions,
+                "preprocessing_ms": preprocessing_ms,
+            }
+        )
+        if batch_index == 0 or (batch_index + 1) % 10 == 0:
+            print(
+                f"[preprocess batch={batch_size}] {min(start + batch_size, len(rows))}/{len(rows)} "
+                f"cpu={preprocessing_ms:.1f}ms",
+                flush=True,
+            )
+    preprocessing_phase_wall_seconds = time.perf_counter() - preprocessing_phase_started
     sampler = TelemetrySampler()
     sampler.start()
     sampler.set_phase("idle")
@@ -431,28 +457,33 @@ def run_formal(args: argparse.Namespace, runtime: tuple[Any, ...], gpu_name: str
     sampler.set_phase(None)
     records: list[dict[str, Any]] = []
     batch_records: list[dict[str, Any]] = []
-    wall_started = time.perf_counter()
-    for batch_index, start in enumerate(range(0, len(rows), batch_size)):
-        selected = rows[start : start + batch_size]
-        preprocessing_started = time.perf_counter()
-        inputs, positions = prepare_batch(
-            selected, processor, prompt, torch.device("cuda:0"), args.image_size
-        )
+    inference_phase_started = time.perf_counter()
+    for prepared in prepared_batches:
+        batch_index = int(prepared["batch_index"])
+        start = int(prepared["start"])
+        selected = prepared["selected"]
+        positions = prepared["positions"]
+        transfer_started = time.perf_counter()
+        inputs = {key: value.to("cuda:0") for key, value in prepared["inputs"].items()}
+        prepared["inputs"] = {}
         torch.cuda.synchronize()
-        preprocessing_ms = 1000.0 * (time.perf_counter() - preprocessing_started)
+        transfer_ms = 1000.0 * (time.perf_counter() - transfer_started)
+        preprocessing_ms = float(prepared["preprocessing_ms"])
         sampler.set_phase(f"active:batch{batch_index}:size{len(selected)}")
         try:
             latency, predictions, timing = forward_batch(inputs, model, head, scores, timer)
         finally:
             sampler.set_phase(None)
-        host_end_to_end_ms = 1000.0 * (time.perf_counter() - preprocessing_started)
         batch_records.append(
             {
                 "batch_index": batch_index,
                 "batch_size_videos": len(selected),
                 "model_boundary_cuda_ms": latency,
                 "preprocessing_ms": preprocessing_ms,
-                "host_end_to_end_ms": host_end_to_end_ms,
+                "host_to_device_ms": transfer_ms,
+                "component_sum_decode_processor_transfer_model_ms": (
+                    preprocessing_ms + transfer_ms + latency
+                ),
                 "vision_block0_input_shape": timing["vision_first_block_input_shape"],
                 "language_block0_input_shape": timing["language_first_block_input_shape"],
             }
@@ -476,7 +507,7 @@ def run_formal(args: argparse.Namespace, runtime: tuple[Any, ...], gpu_name: str
                 f"model={latency:.3f}ms preprocess={preprocessing_ms:.1f}ms",
                 flush=True,
             )
-    wall_seconds = time.perf_counter() - wall_started
+    inference_phase_wall_seconds = time.perf_counter() - inference_phase_started
     timer.close()
     samples = sampler.stop()
     full_batches = [row for row in batch_records if row["batch_size_videos"] == batch_size]
@@ -520,8 +551,14 @@ def run_formal(args: argparse.Namespace, runtime: tuple[Any, ...], gpu_name: str
         "preprocessing_full_batch_ms": summary(
             [float(row["preprocessing_ms"]) for row in full_batches]
         ),
-        "host_end_to_end_full_batch_ms": summary(
-            [float(row["host_end_to_end_ms"]) for row in full_batches]
+        "host_to_device_full_batch_ms": summary(
+            [float(row["host_to_device_ms"]) for row in full_batches]
+        ),
+        "component_sum_decode_processor_transfer_model_full_batch_ms": summary(
+            [
+                float(row["component_sum_decode_processor_transfer_model_ms"])
+                for row in full_batches
+            ]
         ),
         "model_throughput_videos_per_second": 1000.0 * batch_size / mean_batch_ms,
         "same_workload_16_video_model_ms": comparable_16_ms,
@@ -536,7 +573,12 @@ def run_formal(args: argparse.Namespace, runtime: tuple[Any, ...], gpu_name: str
             telemetry["rated_upper_bound_energy_j_per_batch"] * batches_for_16
         ),
         "telemetry": telemetry,
-        "test_loop_wall_seconds_including_decode_processor_and_model": wall_seconds,
+        "preprocessing_phase_wall_seconds": preprocessing_phase_wall_seconds,
+        "continuous_inference_phase_wall_seconds": inference_phase_wall_seconds,
+        "formal_execution_order": (
+            "all CPU decode/processor batches first, then all GPU batches consecutively; "
+            "this prevents excluded decode gaps from down-clocking the model-active power sample"
+        ),
         **provenance(args, gpu_name),
     }
     output = args.output / "formal" / f"batch_{batch_size:02d}"
