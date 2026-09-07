@@ -1,0 +1,4 @@
+# Preserve the exact CSV bytes emitted by the Linux measurement processes.
+**/*.csv -text
+comparison_summary.csv -text
+summary.json -text
