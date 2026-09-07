@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "status": "complete",
+  "task_id": "T08",
+  "task": "ABO easy100 image-to-title retrieval",
+  "retrieval_direction": "image_query_to_fixed_title_candidates",
+  "model": "/root/autodl-tmp/models/Qwen3-VL-Embedding-2B",
+  "model_family": "Qwen3-VL-Embedding-2B",
+  "qwen_frozen": true,
+  "optimization": "none; no fine-tuning and no trained readout head",
+  "model_parameters": 2127532032,
+  "trainable_parameters": 0,
+  "batch_size": 1,
+  "embedding_dim": 2048,
+  "image_size": [
+    224,
+    224
+  ],
+  "query_instruction": "Retrieve the product title that best describes this product image.",
+  "document_instruction": "Represent the user's input.",
+  "candidate_titles_precomputed": 100,
+  "test_samples": 2400,
+  "timing_samples": 200,
+  "timing_subset": "deterministic round-robin by product label",
+  "first_measured_sample_included_in_statistics": true,
+  "explicit_warmup_forwards": 50,
+  "timing_boundary": "native Vision Transformer block 0 input through all native Vision/Language blocks, final valid-token 2048-D normalization, cosine similarity against 100 precomputed title embeddings, and full ranking",
+  "excluded_from_online_timing": "file I/O, image decode, processor/tokenizer, patch embedding, title-bank precomputation, and model loading",
+  "performance": {
+    "recall_at_1": 0.7370833333333333,
+    "recall_at_5": 0.93375,
+    "recall_at_10": 0.9604166666666667,
+    "mrr": 0.8230330539977374,
+    "mean_rank": 2.6654166666666668,
+    "median_rank": 1.0
+  },
+  "latency_cuda_ms": {
+    "mean": 25.690505142211915,
+    "median": 25.074864387512207,
+    "std": 2.5246655209876336,
+    "p05": 24.82677354812622,
+    "p95": 27.657407855987536,
+    "min": 24.650623321533203,
+    "max": 42.22604751586914
+  },
+  "latency_host_ms": {
+    "mean": 25.696387877687812,
+    "median": 25.080426828935742,
+    "std": 2.5246637315412825,
+    "p05": 24.833010882139206,
+    "p95": 27.6628607418388,
+    "min": 24.656927678734064,
+    "max": 42.23218699917197
+  },
+  "power": {
+    "sampler": "nvidia-smi board power.draw",
+    "sampling_interval_ms": 10,
+    "idle_samples": 294,
+    "active_samples": 511,
+    "idle_mean_w": 67.65108843537415,
+    "active_mean_w": 154.20146771037184,
+    "active_peak_w": 158.05,
+    "rated_power_limit_w": 575.0,
+    "measured_active_energy_j_per_sample": 3.9615135991499324,
+    "idle_subtracted_energy_j_per_sample": 2.2235229638247196,
+    "rated_upper_bound_energy_j_per_sample": 14.772040456771851,
+    "energy_basis": "board power sampled only while model inference was active; energy uses the measured first-block-to-task-output mean latency",
+    "pre_idle_cooldown_seconds": 5.0
+  },
+  "dataset_sha256": {
+    "test_csv": "4ca5834abf4bb4d614b41f05b5b2481b3d41720dd78c1c37b05923c97657dfb8",
+    "titles_csv": "c97e8da3c6c608a706f2cc0d284aeafb873fc6cc17d04a7c9f9f66b2135846c1",
+    "manifest_csv": "880b4f34a411df1bfbd98adc91b1c19651480323ee43e62ae4b84c36ca06c543"
+  },
+  "model_safetensors_sha256": "c73fa9caeddeb3ff831d46c085a7a5708343248ca777e90f2d486964464509c1",
+  "script_sha256": "812a9da0571727ebcf9a59b87ad638d800fd2191db984575e560a60a5a7c4568",
+  "git_commit": "50294388b4c59a881083a1b3460d475a4bc4834d",
+  "git_worktree_clean": false,
+  "environment": {
+    "python": "3.12.3",
+    "torch": "2.8.0+cu128",
+    "cuda": "12.8",
+    "gpu": "NVIDIA GeForce RTX 5090 D",
+    "gpu_index": 0,
+    "dtype": "bfloat16",
+    "batch_size": 1,
+    "rated_power_limit_w": 575.0
+  },
+  "model_load_seconds": 1.029479687102139
+}

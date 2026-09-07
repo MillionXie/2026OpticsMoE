@@ -87,4 +87,7 @@ python -m LightGenV2.tasks.t08_abo_image_text_retrieval.baseline_5090d \
 embedding、汇总图和全部文件 SHA256。
 
 冻结 Qwen 的 5090D 正式速度/功耗结果与测量说明见
-`reports/QWEN5090D_BASELINE.md`；光学 MoE 的仿真结果不冒充硬件功耗测量。
+`reports/QWEN5090D_BASELINE.md`。强均衡光学 MoE 的六次光场临界路径、CCD 后电子
+处理、5090D 分量功率，以及与冻结 Qwen 的同协议对照见
+`reports/5090d_optical_and_qwen_20260907/README.md`。其中光学 MoE 能耗明确标为“80.388 W
+光学设备 + 5090D 分量实测”的组合代理，不冒充实验台整机功率计实测。

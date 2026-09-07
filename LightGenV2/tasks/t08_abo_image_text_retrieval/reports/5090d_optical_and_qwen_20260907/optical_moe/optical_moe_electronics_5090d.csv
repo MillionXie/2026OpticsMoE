@@ -1,0 +1,9 @@
+﻿task,task_label,component,shape_contract,warmup_calls,measured_calls,logical_samples_measured,physical_fields_measured,cuda_median_ms,cuda_p95_ms,wall_median_ms,wall_p95_ms
+t08,ABO image-to-title retrieval,vision_ccd_to_fusion,"CCD [1,478,478] + E [1,196,192] -> fused [1,196,192]",50,1000,1000,1000,0.34118399024009705,0.3543631941080093,0.3529785,0.3672694
+t08,ABO image-to-title retrieval,vision_ccd_to_next_slm,"CCD -> fused tokens -> routed amplitude [1,518,518]; 196 valid rows",50,1000,1000,1000,0.4833599925041199,0.5034575968980789,0.4957635,0.5161225
+t08,ABO image-to-title retrieval,vision_parallel_residual,"E [1,196,192], block-major Conv2D k3 + MLP 192-384-192",50,1000,1000,1000,0.2816320061683655,0.2969936043024063,0.293469,0.3085385
+t08,ABO image-to-title retrieval,language_ccd_to_fusion,"CCD [1,478,478] + E [1,76,192] -> fused [1,76,192]",50,1000,1000,1000,0.3407999873161316,0.3524479866027832,0.352484,0.3647062
+t08,ABO image-to-title retrieval,language_ccd_to_next_slm,"CCD -> fused tokens -> routed amplitude [1,518,518]; 76 valid rows",50,1000,1000,1000,0.4811680018901825,0.5007712066173554,0.4934445,0.5132883
+t08,ABO image-to-title retrieval,language_parallel_residual,"E [1,76,192], causal Conv1D k5 + MLP 192-384-192",50,1000,1000,1000,0.2656320035457611,0.27562879025936127,0.277284,0.28827345
+t08,ABO image-to-title retrieval,router_ccd_to_expert_slm,"CCD [1,478,478] -> four ROI energies -> Top-2 power-L2 -> [1,518,518] expert amplitude",50,1000,1000,1000,0.22864000499248505,0.23792480081319808,0.240169,0.2495605
+t08,ABO image-to-title retrieval,task_head,"select last valid row from [1,224,224] -> LN -> Linear 64 -> L2 embedding",50,1000,1000,1000,0.06835199892520905,0.07068800181150436,0.079113,0.0818405

@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "files": [
+    {
+      "path": "optical_moe_electronics_5090d.json",
+      "sha256": "d94c3d01b0f9cb00d42fd3a610b259ac6eb4d61a989e731ce4f36a7810afa460",
+      "bytes": 14159
+    },
+    {
+      "path": "optical_moe_electronics_5090d.csv",
+      "sha256": "32c9fbf8d8f99d2d632b6dd5734e98106c12de0b2720bd89d561f7dc7c0bba12",
+      "bytes": 1758
+    },
+    {
+      "path": "power_samples.csv",
+      "sha256": "ec7ea12d418ee390e748bc0bde43194b8133222a06672038417eec81841f30eb",
+      "bytes": 148335
+    }
+  ]
+}

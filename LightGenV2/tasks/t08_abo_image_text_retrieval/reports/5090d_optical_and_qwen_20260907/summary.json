@@ -1,0 +1,70 @@
+{
+  "task": "ABO easy100 image-query-to-fixed-title retrieval",
+  "test_queries": 2400,
+  "candidate_titles": 100,
+  "optical_moe": {
+    "method": "strong-balance optical-router Top-2 MoE",
+    "performance": {
+      "recall_at_1": 0.7983333333333333,
+      "recall_at_5": 0.95375,
+      "recall_at_10": 0.9858333333333333,
+      "mrr": 0.867616268422718,
+      "mean_rank": 1.7195833333333332,
+      "median_rank": 1.0
+    },
+    "latency_estimated_ms_per_query": 10.1381215,
+    "electronic_compute_ms_per_query": 3.3956275000000002,
+    "optical_rig_power_w": 80.388,
+    "gpu_idle_mean_w": 15.920469387755102,
+    "gpu_component_active_mean_w": 101.28409743910056,
+    "gpu_component_active_peak_w": 107.72,
+    "hybrid_average_power_proxy_w": 125.19329878978361,
+    "physical_only_optical_energy_j_per_query": 0.633778992,
+    "optical_rig_wall_energy_proxy_j_per_query": 0.8149833111420001,
+    "gpu_board_critical_path_energy_proxy_j_per_query": 0.45424156297462914,
+    "hybrid_energy_proxy_j_per_query": 1.2692248741166292,
+    "hybrid_absolute_rated_upper_j_per_query": 6.644403173642
+  },
+  "frozen_qwen": {
+    "model": "Qwen3-VL-Embedding-2B",
+    "parameters": 2127532032,
+    "trainable_parameters": 0,
+    "performance": {
+      "recall_at_1": 0.7370833333333333,
+      "recall_at_5": 0.93375,
+      "recall_at_10": 0.9604166666666667,
+      "mrr": 0.8230330539977374,
+      "mean_rank": 2.6654166666666668,
+      "median_rank": 1.0
+    },
+    "latency_cuda_ms": {
+      "mean": 25.690505142211915,
+      "median": 25.074864387512207,
+      "std": 2.5246655209876336,
+      "p05": 24.82677354812622,
+      "p95": 27.657407855987536,
+      "min": 24.650623321533203,
+      "max": 42.22604751586914
+    },
+    "power": {
+      "sampler": "nvidia-smi board power.draw",
+      "sampling_interval_ms": 10,
+      "idle_samples": 294,
+      "active_samples": 511,
+      "idle_mean_w": 67.65108843537415,
+      "active_mean_w": 154.20146771037184,
+      "active_peak_w": 158.05,
+      "rated_power_limit_w": 575.0,
+      "measured_active_energy_j_per_sample": 3.9615135991499324,
+      "idle_subtracted_energy_j_per_sample": 2.2235229638247196,
+      "rated_upper_bound_energy_j_per_sample": 14.772040456771851,
+      "energy_basis": "board power sampled only while model inference was active; energy uses the measured first-block-to-task-output mean latency",
+      "pre_idle_cooldown_seconds": 5.0
+    }
+  },
+  "comparison": {
+    "optical_r1_gain_percentage_points": 6.125000000000003,
+    "qwen_to_optical_latency_ratio": 2.5340498377546483,
+    "qwen_measured_to_optical_hybrid_energy_ratio": 3.12120702953219
+  }
+}

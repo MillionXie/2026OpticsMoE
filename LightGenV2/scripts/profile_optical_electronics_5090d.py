@@ -35,6 +35,12 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+from LightGenV2.common.baseline_measurement import (
+    NvidiaSmiPowerSampler,
+    PowerSample,
+    save_power_samples,
+)
+
 
 PHYSICAL_PROPAGATION_MS = 0.714
 PHASE_SLM_MS = 0.100
@@ -63,7 +69,13 @@ SPECS = {
     "t03": TaskSpec("t03", "SALICON saliency", False, 1, 1, 2, 1, 196, 0),
     "t04": TaskSpec("t04", "OpenMoji interaction", True, 1, 1, 4, 2, 196, 64),
     "t06": TaskSpec("t06", "LGVQ MultiVideo-16x4", True, 1, 16, 4, 2, 196, 42),
+    "t08": TaskSpec("t08", "ABO image-to-title retrieval", True, 1, 1, 4, 2, 196, 76),
 }
+
+
+_POWER_SAMPLER: NvidiaSmiPowerSampler | None = None
+_POWER_TASK: str | None = None
+_POWER_DWELL_SECONDS: float = 0.0
 
 
 def _git_value(*args: str) -> str | None:
@@ -120,6 +132,18 @@ def benchmark(
         end.synchronize()
         wall_ms.append((time.perf_counter_ns() - wall_start) / 1.0e6)
         cuda_ms.append(float(start.elapsed_time(end)))
+    if _POWER_SAMPLER is not None:
+        if _POWER_TASK is None:
+            raise RuntimeError("Power sampler is active without a task label")
+        _POWER_SAMPLER.set_phase(f"active:{_POWER_TASK}:{name}")
+        deadline = time.monotonic() + _POWER_DWELL_SECONDS
+        try:
+            while time.monotonic() < deadline:
+                for _ in range(128):
+                    function()
+                torch.cuda.synchronize()
+        finally:
+            _POWER_SAMPLER.set_phase(None)
     return {
         "component": name,
         "shape_contract": shape_contract,
@@ -735,7 +759,7 @@ def _standard_task(task: str, device: torch.device, warmup: int, repeats: int) -
     router_ms = results[-1]["synchronized_wall_ms"]["median"]
 
     bridge_ms = 0.0
-    if task == "t01":
+    if task in {"t01", "t08"}:
         head = RetrievalHead().to(device).eval()
         detector_rows = torch.rand(1, 224, 224, device=device)
         results.append(benchmark("task_head", lambda: head(detector_rows[:, spec.language_tokens - 1]), warmup=warmup, repeats=repeats, logical_samples_per_call=1, physical_fields_per_call=1, shape_contract="select last valid row from [1,224,224] -> LN -> Linear 64 -> L2 embedding"))
@@ -783,6 +807,26 @@ def _standard_task(task: str, device: torch.device, warmup: int, repeats: int) -
         critical += max(physical, language["residual"]) + language["fused"]
     critical += bridge_ms + head_ms
     all_residual_covered = vision["residual"] <= physical and (language is None or language["residual"] <= physical)
+    electronic_compute = spec.router_passes * router_ms
+    electronic_compute += vision["next"] + vision["fused"] + 2.0 * vision["residual"]
+    if language is not None:
+        electronic_compute += language["next"] + language["fused"] + 2.0 * language["residual"]
+    electronic_compute += bridge_ms + head_ms
+    occurrences = {
+        "vision_ccd_to_fusion": 1,
+        "vision_ccd_to_next_slm": 1,
+        "vision_parallel_residual": 2,
+        "router_ccd_to_expert_slm": spec.router_passes,
+        "task_head": 1,
+    }
+    if language is not None:
+        occurrences.update({
+            "language_ccd_to_fusion": 1,
+            "language_ccd_to_next_slm": 1,
+            "language_parallel_residual": 2,
+        })
+    if bridge_ms:
+        occurrences["language_to_vision_bridge"] = 1
     return {
         "specification": asdict(spec),
         "components": results,
@@ -792,6 +836,8 @@ def _standard_task(task: str, device: torch.device, warmup: int, repeats: int) -
             "estimated_wall_ms_per_call": critical,
             "logical_samples_per_call": spec.logical_samples_per_call,
             "estimated_wall_ms_per_logical_sample": critical / spec.logical_samples_per_call,
+            "electronic_compute_wall_ms_per_call": electronic_compute,
+            "component_occurrences_per_call": occurrences,
             "optical_rig_wall_energy_proxy_j_per_call": OPTICAL_POWER_W * critical / 1000.0,
             "physical_only_optical_energy_j_per_call": OPTICAL_POWER_W * (spec.feature_passes + spec.router_passes) * physical / 1000.0,
             "legacy_six_pass_9p084ms_energy_j": OPTICAL_POWER_W * 9.084 / 1000.0 if spec.feature_passes + spec.router_passes == 6 else None,
@@ -903,6 +949,82 @@ def _environment(device: torch.device) -> dict[str, Any]:
     }
 
 
+def _power_summary(samples: list[PowerSample]) -> dict[str, Any]:
+    idle = [sample.watts for sample in samples if sample.phase == "idle"]
+    active = [sample.watts for sample in samples if sample.phase.startswith("active:")]
+    if not idle or not active:
+        raise RuntimeError("Power measurement requires both idle and active samples")
+    per_component: dict[str, dict[str, float | int]] = {}
+    for phase in sorted({sample.phase for sample in samples if sample.phase.startswith("active:")}):
+        values = [sample.watts for sample in samples if sample.phase == phase]
+        per_component[phase.removeprefix("active:")] = {
+            "samples": len(values),
+            "mean_w": statistics.fmean(values),
+            "peak_w": max(values),
+        }
+    return {
+        "sampler": "nvidia-smi board power.draw",
+        "sampling_interval_ms": 10,
+        "idle_samples": len(idle),
+        "active_samples": len(active),
+        "idle_mean_w": statistics.fmean(idle),
+        "active_mean_w": statistics.fmean(active),
+        "active_peak_w": max(active),
+        "rated_power_limit_w": GPU_RATED_POWER_W,
+        "per_component": per_component,
+    }
+
+
+def _attach_energy_proxies(tasks: dict[str, Any], power: dict[str, Any]) -> None:
+    idle_w = float(power["idle_mean_w"])
+    active_w = float(power["active_mean_w"])
+    per_component_power = power["per_component"]
+    for task, payload in tasks.items():
+        critical = payload["critical_path"]
+        wall_ms = float(critical["estimated_wall_ms_per_call"])
+        electronic_ms = float(critical.get("electronic_compute_wall_ms_per_call", 0.0))
+        optical_wall_j = float(critical["optical_rig_wall_energy_proxy_j_per_call"])
+        component_medians = {
+            row["component"]: float(row["synchronized_wall_ms"]["median"])
+            for row in payload["components"]
+        }
+        active_electronic_j = 0.0
+        for component, occurrences in critical.get("component_occurrences_per_call", {}).items():
+            phase = f"{task}:{component}"
+            component_power_w = float(per_component_power.get(phase, {}).get("mean_w", active_w))
+            active_electronic_j += (
+                component_power_w
+                * component_medians[component]
+                * float(occurrences)
+                / 1000.0
+            )
+        gpu_critical_j = active_electronic_j + idle_w * max(0.0, wall_ms - electronic_ms) / 1000.0
+        hybrid_j = optical_wall_j + gpu_critical_j
+        critical["measured_active_gpu_electronic_energy_proxy_j_per_call"] = active_electronic_j
+        critical["gpu_board_critical_path_energy_proxy_j_per_call"] = gpu_critical_j
+        critical["hybrid_optical_plus_gpu_energy_proxy_j_per_call"] = hybrid_j
+        critical["hybrid_average_power_proxy_w"] = hybrid_j / (wall_ms / 1000.0)
+        critical["rated_gpu_electronic_energy_upper_j_per_call"] = (
+            GPU_RATED_POWER_W * electronic_ms / 1000.0
+        )
+        critical["hybrid_rated_electronic_upper_j_per_call"] = (
+            optical_wall_j + GPU_RATED_POWER_W * electronic_ms / 1000.0
+        )
+        critical["hybrid_absolute_rated_upper_j_per_call"] = (
+            optical_wall_j + GPU_RATED_POWER_W * wall_ms / 1000.0
+        )
+        critical["hybrid_absolute_rated_power_upper_w"] = (
+            OPTICAL_POWER_W + GPU_RATED_POWER_W
+        )
+        critical["energy_proxy_note"] = (
+            "Optical rig uses 80.388 W across the critical path. GPU power is sampled "
+            "over sustained exact-shape component loops; critical-path GPU energy uses "
+            "idle power during optical waits plus measured incremental active power during "
+            "the summed electronic compute time. This is a composed proxy, not a wired "
+            "end-to-end laboratory power-meter measurement."
+        )
+
+
 def write_csv(path: Path, report: dict[str, Any]) -> None:
     rows = []
     for task, payload in report["tasks"].items():
@@ -928,11 +1050,15 @@ def write_csv(path: Path, report: dict[str, Any]) -> None:
 
 
 def main() -> int:
+    global _POWER_DWELL_SECONDS, _POWER_SAMPLER, _POWER_TASK
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--tasks", nargs="+", choices=sorted(SPECS), default=sorted(SPECS))
     parser.add_argument("--warmup", type=int, default=50)
     parser.add_argument("--repeats", type=int, default=1000)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--measure-power", action="store_true")
+    parser.add_argument("--idle-sample-seconds", type=float, default=5.0)
+    parser.add_argument("--power-dwell-seconds", type=float, default=2.0)
     args = parser.parse_args()
     if not torch.cuda.is_available():
         raise RuntimeError("CUDA is required for the formal RTX 5090 D benchmark")
@@ -942,9 +1068,31 @@ def main() -> int:
     torch.manual_seed(20260907)
     torch.cuda.manual_seed_all(20260907)
     tasks = {}
-    for task in args.tasks:
-        print(f"[profile] {task}: {SPECS[task].label}", flush=True)
-        tasks[task] = _t06_task(device, args.warmup, args.repeats) if task == "t06" else _standard_task(task, device, args.warmup, args.repeats)
+    power_samples: list[PowerSample] = []
+    sampler = NvidiaSmiPowerSampler(interval_ms=10) if args.measure_power else None
+    if sampler is not None:
+        if args.power_dwell_seconds < 1.0:
+            raise ValueError("--power-dwell-seconds must be at least 1.0")
+        _POWER_DWELL_SECONDS = float(args.power_dwell_seconds)
+        sampler.start()
+        sampler.set_phase("idle")
+        time.sleep(max(1.0, float(args.idle_sample_seconds)))
+        sampler.set_phase(None)
+        _POWER_SAMPLER = sampler
+    try:
+        for task in args.tasks:
+            _POWER_TASK = task
+            print(f"[profile] {task}: {SPECS[task].label}", flush=True)
+            tasks[task] = _t06_task(device, args.warmup, args.repeats) if task == "t06" else _standard_task(task, device, args.warmup, args.repeats)
+    finally:
+        _POWER_TASK = None
+        _POWER_SAMPLER = None
+        _POWER_DWELL_SECONDS = 0.0
+        if sampler is not None:
+            power_samples = sampler.stop()
+    power = _power_summary(power_samples) if power_samples else None
+    if power is not None:
+        _attach_energy_proxies(tasks, power)
     output = args.output_dir.resolve()
     output.mkdir(parents=True, exist_ok=True)
     report = {
@@ -959,17 +1107,19 @@ def main() -> int:
             "gpu_rated_power_w": GPU_RATED_POWER_W,
         },
         "environment": _environment(device),
+        "power_measurement": power,
         "tasks": tasks,
         "not_measured": {
             "t05": "planned task; no runnable formal optical MoE graph",
             "t07": "placeholder/migration task; no runnable formal optical MoE graph",
-            "t08": "placeholder/migration task; no runnable formal optical MoE graph",
         },
     }
     json_path = output / "optical_moe_electronics_5090d.json"
     csv_path = output / "optical_moe_electronics_5090d.csv"
     json_path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     write_csv(csv_path, report)
+    if power_samples:
+        save_power_samples(output / "power_samples.csv", power_samples)
     manifest = {
         "schema_version": 1,
         "files": [
@@ -977,6 +1127,11 @@ def main() -> int:
             {"path": csv_path.name, "sha256": _file_sha256(csv_path), "bytes": csv_path.stat().st_size},
         ],
     }
+    if power_samples:
+        power_path = output / "power_samples.csv"
+        manifest["files"].append(
+            {"path": power_path.name, "sha256": _file_sha256(power_path), "bytes": power_path.stat().st_size}
+        )
     (output / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({"status": "complete", "output_dir": str(output), "tasks": list(tasks)}, ensure_ascii=False, indent=2))
     return 0

@@ -1,0 +1,1 @@
+/root/miniconda3/bin/python -m LightGenV2.tasks.t08_abo_image_text_retrieval.baseline_5090d --model /root/autodl-tmp/models/Qwen3-VL-Embedding-2B --data-root /root/autodl-tmp/datasets/abo_easy100_dataset_20260906 --run-dir /root/autodl-tmp/abo_qwen_frozen_5090d_repeat_20260907 --warmup-forwards 50 --timing-samples 200
