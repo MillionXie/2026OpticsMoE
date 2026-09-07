@@ -192,3 +192,72 @@ LoRA B 从零更新到范数 0.192866，结合先前任务梯度记录，排除�
 上述冻结 Router/global 是定位问题的临时干预，不改变主方案让它们直接梯度下降的设计。
 本轮 test 已用于机制诊断，后续调参只使用固定验证集，正式泛化评估另行预先约定，
 不把本次干预中较高的 test 数字作为新方法成绩。
+
+## 第二轮：光学系数至少 0.4 的分阶段对照
+
+用户已批准执行。配置为 [staged_alpha40.yaml](configs/staged_alpha40.yaml)，
+入口为 `python -m TransferFromElectricity.tasks.t01_object_retrieval.train_staged`。
+这是独立的新协议，不能将其与 50-step pilot 的差异单独归因于某一个改动。
+
+| 命令 method | 含义 | expert 相关的可训练参数 | 对照目的 |
+|---|---|---|---|
+| fixed | 专家存在，但始终保持共同初始相位 | 无 | 其他部件能否在不学习 expert 时完成任务 |
+| direct | 直接优化每个 expert 像素 | expert raw phase | 传统方法主基线 |
+| qwen_frozen | Qwen 输出固定特征，经解码器产生 expert | 相位解码器 | 只训练生成器末端能达到什么效果 |
+| qwen_lora | 微调 Qwen 内部 LoRA，并训练解码器 | LoRA 与相位解码器 | 用户提出的大模型参与学习方案 |
+
+第 3/4 组使用同一 Qwen3-VL-2B-Instruct 语言模型、相同固定描述和完全配对的解码器初始化。
+Qwen 原始权重均冻结；第 4 组的 q_proj/v_proj LoRA rank=8，训练参数改为 FP32，
+冻结基座仍是 BF16。解码器末层初始化标准差由 0.002 改为 0.02，增强上下文到相位的初始梯度；
+固定 reference 抵消初始生成值，因此不改变四组相同的初始专家库。
+不再将上一轮 small_hyper 纳入这次主表。
+
+师姐的 `d2nn_pack` 使用离线 CLIP 特征（提取脚本默认 RN50），后接从头初始化的四层
+Transformer/MLP；优化器只更新后面的生成器，不微调 CLIP。其 mask 在 batch 内求均值，
+与本任务输入样本无关的固定专家库合同不同。此说明基于实际代码，不依据注释中的 sigmoid 描述。
+
+### 共同设置与阶段
+
+- Vision/Language 的 expert/global 四个融合位置全部采用 alpha 下限 0.4、初值 0.5、上限 0.95。
+  前两阶段冻结门值 0.5；最后阶段允许在该区间内学习，逐轮断言不低于 0.4。
+- 每类从原 train 留出 10 张用于本轮适配验证，其余全部参与训练；保持原 gallery/test。
+  原 warmstart 曾使用原 train，所以该验证集仅对本轮更新留出，不是整个训练历史的未见样本。
+  原 test 也曾用于上一轮诊断；这轮仍是机制对照，正式泛化结论需要新的类别/数据评估。
+- 专家物理相位从 `pi + Uniform(-a,a)` 初始化，其中 `(sin(a)/a)^2=0.25`，再逆 sigmoid
+  映射回 raw。四组共用 seed 对应的同一张随机库，远离 sigmoid 饱和与常数屏。
+  0.25 是初始化的 mask DC 统计目标，不是将光路中 20–30% 零级噪声参数改成相位初始化。
+- 光学几何、传播、Top-2/4、CCD、任务损失继续复用原 backend。阶段 1 用确定性光学；
+  阶段 2/3 恢复 backend 的训练扰动。每组都保存具体 resolved config。
+
+| 阶段 | 轮数 | 更新的部件 | 冻结的部件 |
+|---|---:|---|---|
+| experts | 4 | expert 或其生成器；fixed 组不更新 | Router、global、电子模块、适配器、读出、融合门 |
+| optics | 8 | 上述部件加 Router/global | 电子模块、适配器、读出、融合门 |
+| joint | 8 | 上述部件加低学习率电子部分和融合门 | 原预训练任务嵌入/merger、生成器 Qwen 基座 |
+
+PK=10×3；原 train 2,625 张中留出 100 张，训练 2,525 张，每轮 85 batch，20 轮共 1,700 batch。
+fixed 组前 340 batch 无可训练部件，实际 optimizer update 为 1,360；其余三组为 1,700。
+同一 seed 的四组共享样本顺序、划分、相位与任务模型起点，固定专家组保留为干预对照。
+各方法的参数量、显存和训练成本仍不相等，不声称算力预算严格匹配。
+
+学习率：expert 0.02、Router 0.01、global 0.006、LoRA 0.0005、解码器 0.001；
+电子部分 0.00001、读出 0.00002、融合门 0.0001。每阶段单独 warmup 20 step，再 cosine
+下降至该阶段峰值的 20%；按参数组分别 clip norm=1，避免所有部件共享一次梯度裁剪。
+EMA decay=0.95；每轮报告 live/EMA 验证指标，主 checkpoint 固定按 live validation Top-1、
+再按 MRR 选择。最终统一评估 validation-selected live 和 final EMA，不用 test 挑权重。
+
+逐轮记录任务 loss、相位 RMS/DC/饱和比例、task→expert/LoRA 梯度、路由使用次数、融合系数，
+并验证冻结参数没有变化。每阶段结束，在验证集换回初始 expert 检查专家学习贡献。
+最终对所选模型做初始 expert、均匀相位、关闭 LoRA 的干预，并校验固化 mask 后输出一致。
+只保存 best/last checkpoint 和独立部署 expert_bank；不生成周期权重文件。
+
+```bash
+python -m unittest discover -s TransferFromElectricity/tasks/t01_object_retrieval/tests -v
+CUDA_VISIBLE_DEVICES=0 python -m TransferFromElectricity.tasks.t01_object_retrieval.train_staged \
+  --method direct --run-dir TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/YYYYMMDD_alpha40_direct_s42
+```
+
+先用独立 `runs/smoke` 加 `--smoke` 检查全部阶段，再运行上面的完整协议。
+`--resume` 要求相同 config 与代码 SHA，恢复 last 的优化器、EMA、阶段、日志和 RNG。
+扩展顺序：先完成共同协议下的四组，再复查主比较的随机种子和新类别；类别扩大与新任务
+必须使用独立配置及数据 manifest，不混入本表。新增类别是否被 warmstart 见过要明确记录。

@@ -17,7 +17,13 @@ class LoRALinear(nn.Module):
         nn.init.kaiming_uniform_(self.lora_a, a=math.sqrt(5))
 
     def forward(self, x):
-        return self.base(x) + ((x @ self.lora_a.T) @ self.lora_b.T) * self.scale
+        if x.dtype == self.lora_a.dtype:
+            return self.base(x) + ((x @ self.lora_a.T) @ self.lora_b.T) * self.scale
+        # Optional FP32 trainable adapters on a frozen BF16 backbone.
+        base = self.base(x)
+        with torch.autocast(x.device.type, enabled=False):
+            delta = ((x.float() @ self.lora_a.T) @ self.lora_b.T) * self.scale
+        return base + delta.to(base.dtype)
 
 
 def install_lora(model: nn.Module, rank: int):
