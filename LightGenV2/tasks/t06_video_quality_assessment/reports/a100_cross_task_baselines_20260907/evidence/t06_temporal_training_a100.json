@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "status": "complete",
+  "frame_count": 4,
+  "train_samples": 2250,
+  "test_samples": 558,
+  "epochs": 50,
+  "best_epoch": 45,
+  "best_test_metrics": {
+    "srcc": 0.7663860194968655,
+    "krcc": 0.5658746840297778,
+    "plcc": 0.7768476939533856,
+    "rmse": 8.773358439767755,
+    "mae": 6.81646241765723,
+    "five_level_accuracy": 0.5591397881507874,
+    "cross_entropy": 1.129860520362854
+  },
+  "training_seconds": 2.1295517086982727,
+  "loss": "cross_entropy_only",
+  "target": "temporal",
+  "quality_level_rule": "five equal-width intervals over train Temporal MOS min/max",
+  "train_score_min": 28.6200008392334,
+  "train_score_max": 77.30000305175781,
+  "boundaries": [
+    38.35600280761719,
+    48.092002868652344,
+    57.8280029296875,
+    67.56400299072266
+  ],
+  "level_scores": [
+    28.6200008392334,
+    40.790000915527344,
+    52.96000289916992,
+    65.1300048828125,
+    77.30000305175781
+  ],
+  "quality_words_bad_to_excellent": [
+    "Bad",
+    "Poor",
+    "Fair",
+    "Good",
+    "Excellent"
+  ],
+  "quality_token_ids": [
+    17082,
+    84103,
+    60795,
+    15216,
+    49655
+  ],
+  "train_class_counts_bad_to_excellent": [
+    690,
+    418,
+    440,
+    406,
+    296
+  ],
+  "qwen_trainable_parameters": 0,
+  "quality_output_row_trainable_parameters": 10240,
+  "optimizer": "AdamW",
+  "learning_rate": 0.001,
+  "weight_decay": 0.0,
+  "scheduler": "CosineAnnealingLR",
+  "batch_size": 512,
+  "random_seed": 42,
+  "model": "/DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-2B-Instruct/snapshots/89644892e4d85e24eaac8bacfd4f463576704203",
+  "gpu": "NVIDIA A100-PCIE-40GB",
+  "expected_gpu_name_substring": "NVIDIA A100-PCIE-40GB",
+  "feature_cache": "/DATA/DATA1/guest3/2026OpticsMoE_a100_formal/LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/qwen3vl_quality_tokens_r448_dataset_once_a100_20260907/features/frames4/qwen_prompt_features.pt",
+  "feature_cache_sha256": "5df90a87ff1d82d4ec52eb31151beedabe93fc061fb4a381f56b03ab9ac3d534",
+  "feature_task_selection": "temporal-only cache",
+  "token_metadata": {
+    "quality_words_bad_to_excellent": [
+      "Bad",
+      "Poor",
+      "Fair",
+      "Good",
+      "Excellent"
+    ],
+    "quality_token_ids": [
+      17082,
+      84103,
+      60795,
+      15216,
+      49655
+    ],
+    "full_vocabulary_size": 151936,
+    "hidden_width": 2048,
+    "original_lm_head_and_input_embedding_tied": true,
+    "native_rows_sha256": "efab5f18d5eaa38adb621eae32cc860b985e9fcb8c65b89e3e4f5a5131bacece"
+  },
+  "initial_native_rows_sha256": "efab5f18d5eaa38adb621eae32cc860b985e9fcb8c65b89e3e4f5a5131bacece",
+  "trained_rows_sha256": "8f07f71afad0e49c6382885c869929b21695664be35152987836d4430c499e8d",
+  "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE_a100_formal/LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/qwen3vl_quality_tokens_r448_dataset_once_a100_20260907/checkpoints/frames4/best_checkpoint.pt",
+  "last_checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE_a100_formal/LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/qwen3vl_quality_tokens_r448_dataset_once_a100_20260907/checkpoints/frames4/last_checkpoint.pt"
+}

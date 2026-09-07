@@ -1,0 +1,1087 @@
+{
+  "schema_version": 1,
+  "benchmark_scope": "post-CCD electronics, parallel residual routes, inter-stage reloads, task heads; optical propagation excluded and inserted from measured constants",
+  "constants": {
+    "propagation_ms_per_pass": 0.714,
+    "phase_slm_ms_per_pass": 0.1,
+    "ccd_exposure_ms_per_pass": 0.5,
+    "physical_pass_ms": 1.314,
+    "optical_power_w": 80.388,
+    "gpu_rated_power_w": 250.0
+  },
+  "environment": {
+    "generated_at_utc": "2026-09-07T11:40:08.161230+00:00",
+    "python": "3.11.15 (main, Jun 11 2026, 15:20:16) [GCC 14.3.0]",
+    "platform": "Linux-5.15.0-136-generic-x86_64-with-glibc2.31",
+    "torch": "2.6.0+cu124",
+    "cuda_runtime": "12.4",
+    "device": "NVIDIA A100-PCIE-40GB",
+    "device_total_memory_bytes": 42285268992,
+    "gpu_rated_power_w": 250.0,
+    "optical_power_w": 80.388,
+    "git_commit": "b9a4be689f198f55ee0caaf4e5bcddd4dfc80200",
+    "git_status_porcelain": "",
+    "precision": "float32",
+    "execution": "eager torch.inference_mode; no torch.compile; synchronized each measured call"
+  },
+  "power_measurement": {
+    "sampler": "nvidia-smi board power.draw",
+    "sampling_interval_ms": 10,
+    "idle_samples": 489,
+    "active_samples": 5832,
+    "idle_mean_w": 60.07950920245399,
+    "active_mean_w": 70.49324417009602,
+    "active_peak_w": 111.11,
+    "rated_power_limit_w": 250.0,
+    "per_component": {
+      "t02:router_ccd_to_expert_slm": {
+        "samples": 199,
+        "mean_w": 65.37241206030151,
+        "peak_w": 69.12
+      },
+      "t02:task_head": {
+        "samples": 200,
+        "mean_w": 70.37115,
+        "peak_w": 74.15
+      },
+      "t02:vision_ccd_to_fusion": {
+        "samples": 202,
+        "mean_w": 69.55737623762376,
+        "peak_w": 69.81
+      },
+      "t02:vision_ccd_to_next_slm": {
+        "samples": 201,
+        "mean_w": 68.42432835820895,
+        "peak_w": 70.01
+      },
+      "t02:vision_parallel_residual": {
+        "samples": 202,
+        "mean_w": 67.82811881188118,
+        "peak_w": 68.31
+      },
+      "t03:router_ccd_to_expert_slm": {
+        "samples": 200,
+        "mean_w": 66.81465,
+        "peak_w": 68.71
+      },
+      "t03:task_head": {
+        "samples": 203,
+        "mean_w": 83.84418719211823,
+        "peak_w": 84.91
+      },
+      "t03:vision_ccd_to_fusion": {
+        "samples": 200,
+        "mean_w": 69.47865,
+        "peak_w": 71.79
+      },
+      "t03:vision_ccd_to_next_slm": {
+        "samples": 205,
+        "mean_w": 69.67424390243902,
+        "peak_w": 72.08
+      },
+      "t03:vision_parallel_residual": {
+        "samples": 197,
+        "mean_w": 70.0136040609137,
+        "peak_w": 71.89
+      },
+      "t06:frame_ccd_to_fusion": {
+        "samples": 208,
+        "mean_w": 68.80562499999999,
+        "peak_w": 69.51
+      },
+      "t06:frame_ccd_to_next_slm": {
+        "samples": 263,
+        "mean_w": 68.21882129277566,
+        "peak_w": 68.73
+      },
+      "t06:frame_parallel_residual": {
+        "samples": 197,
+        "mean_w": 109.24319796954315,
+        "peak_w": 111.11
+      },
+      "t06:frame_router_ccd_to_expert_slm": {
+        "samples": 342,
+        "mean_w": 64.46444444444444,
+        "peak_w": 67.72
+      },
+      "t06:frame_to_video_bridge": {
+        "samples": 200,
+        "mean_w": 69.0971,
+        "peak_w": 72.56
+      },
+      "t06:task_head": {
+        "samples": 198,
+        "mean_w": 76.09469696969697,
+        "peak_w": 77.81
+      },
+      "t06:video_ccd_to_fusion": {
+        "samples": 207,
+        "mean_w": 68.5171497584541,
+        "peak_w": 68.82
+      },
+      "t06:video_ccd_to_next_slm": {
+        "samples": 198,
+        "mean_w": 68.21060606060605,
+        "peak_w": 70.3
+      },
+      "t06:video_parallel_residual": {
+        "samples": 199,
+        "mean_w": 73.6943216080402,
+        "peak_w": 77.41
+      },
+      "t06:video_router_ccd_to_expert_slm": {
+        "samples": 217,
+        "mean_w": 65.013732718894,
+        "peak_w": 68.02
+      },
+      "t08:language_ccd_to_fusion": {
+        "samples": 202,
+        "mean_w": 69.33346534653465,
+        "peak_w": 71.2
+      },
+      "t08:language_ccd_to_next_slm": {
+        "samples": 198,
+        "mean_w": 68.71121212121211,
+        "peak_w": 71.09
+      },
+      "t08:language_parallel_residual": {
+        "samples": 201,
+        "mean_w": 67.97661691542288,
+        "peak_w": 71.19
+      },
+      "t08:router_ccd_to_expert_slm": {
+        "samples": 202,
+        "mean_w": 67.08915841584158,
+        "peak_w": 68.21
+      },
+      "t08:task_head": {
+        "samples": 197,
+        "mean_w": 63.79766497461929,
+        "peak_w": 65.35
+      },
+      "t08:vision_ccd_to_fusion": {
+        "samples": 198,
+        "mean_w": 70.41949494949495,
+        "peak_w": 72.16
+      },
+      "t08:vision_ccd_to_next_slm": {
+        "samples": 197,
+        "mean_w": 69.9320304568528,
+        "peak_w": 72.37
+      },
+      "t08:vision_parallel_residual": {
+        "samples": 199,
+        "mean_w": 69.80366834170854,
+        "peak_w": 72.26
+      }
+    }
+  },
+  "tasks": {
+    "t02": {
+      "specification": {
+        "task": "t02",
+        "label": "LSP keypoint",
+        "language": false,
+        "physical_fields_per_call": 1,
+        "logical_samples_per_call": 1,
+        "feature_passes": 2,
+        "router_passes": 1,
+        "vision_tokens": 196,
+        "language_tokens": 0
+      },
+      "components": [
+        {
+          "component": "vision_ccd_to_fusion",
+          "shape_contract": "CCD [1,478,478] + E [1,196,192] -> fused [1,196,192]",
+          "warmup_calls": 50,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 1,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 1000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 0.5141145612001419,
+            "median": 0.5099520087242126,
+            "p95": 0.5601279735565186,
+            "minimum": 0.49663999676704407,
+            "maximum": 0.634880006313324
+          },
+          "synchronized_wall_ms": {
+            "mean": 0.5322827109999999,
+            "median": 0.527765,
+            "p95": 0.5791642,
+            "minimum": 0.5145,
+            "maximum": 0.654267
+          }
+        },
+        {
+          "component": "vision_ccd_to_next_slm",
+          "shape_contract": "CCD -> fused tokens -> routed amplitude [1,518,518]; 196 valid rows",
+          "warmup_calls": 50,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 1,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 1000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 0.7513518059253692,
+            "median": 0.7423999905586243,
+            "p95": 0.8069120049476624,
+            "minimum": 0.7270399928092957,
+            "maximum": 2.5436160564422607
+          },
+          "synchronized_wall_ms": {
+            "mean": 0.769804828,
+            "median": 0.7609455,
+            "p95": 0.82561165,
+            "minimum": 0.744787,
+            "maximum": 2.561743
+          }
+        },
+        {
+          "component": "vision_parallel_residual",
+          "shape_contract": "E [1,196,192], block-major Conv2D k3 + MLP 192-384-192",
+          "warmup_calls": 50,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 1,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 1000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 0.6125117437839508,
+            "median": 0.6062080264091492,
+            "p95": 0.6615039706230164,
+            "minimum": 0.5908480286598206,
+            "maximum": 2.0787200927734375
+          },
+          "synchronized_wall_ms": {
+            "mean": 0.6326860759999999,
+            "median": 0.6263575,
+            "p95": 0.6824331,
+            "minimum": 0.610046,
+            "maximum": 2.099352
+          }
+        },
+        {
+          "component": "router_ccd_to_expert_slm",
+          "shape_contract": "CCD [1,478,478] -> four ROI energies -> Top-2 power-L2 -> [1,518,518] expert amplitude",
+          "warmup_calls": 50,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 1,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 1000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 0.43628339263796806,
+            "median": 0.3829759955406189,
+            "p95": 0.605184018611908,
+            "minimum": 0.3676159977912903,
+            "maximum": 2.075648069381714
+          },
+          "synchronized_wall_ms": {
+            "mean": 0.455492975,
+            "median": 0.40059750000000005,
+            "p95": 0.63075845,
+            "minimum": 0.38508,
+            "maximum": 2.148233
+          }
+        },
+        {
+          "component": "task_head",
+          "shape_contract": "restore block-major [1,196,192] -> [1,192,14,14] -> progressive decoder -> [1,14,56,56]",
+          "warmup_calls": 50,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 1,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 1000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 1.2562963489294052,
+            "median": 1.2410880327224731,
+            "p95": 1.382963234186172,
+            "minimum": 1.2072960138320923,
+            "maximum": 1.7940479516983032
+          },
+          "synchronized_wall_ms": {
+            "mean": 1.2770645790000001,
+            "median": 1.2612075,
+            "p95": 1.4046805499999997,
+            "minimum": 1.2279,
+            "maximum": 1.814688
+          }
+        }
+      ],
+      "critical_path": {
+        "physical_pass_ms": 1.314,
+        "all_parallel_residuals_covered": true,
+        "estimated_wall_ms_per_call": 6.892515500000001,
+        "logical_samples_per_call": 1,
+        "estimated_wall_ms_per_logical_sample": 6.892515500000001,
+        "electronic_compute_wall_ms_per_call": 4.2032305,
+        "component_occurrences_per_call": {
+          "vision_ccd_to_fusion": 1,
+          "vision_ccd_to_next_slm": 1,
+          "vision_parallel_residual": 2,
+          "router_ccd_to_expert_slm": 1,
+          "task_head": 1
+        },
+        "optical_rig_wall_energy_proxy_j_per_call": 0.5540755360140002,
+        "physical_only_optical_energy_j_per_call": 0.316889496,
+        "legacy_six_pass_9p084ms_energy_j": null,
+        "method": "router passes: physical+router post; feature passes: max(physical,residual)+serialized CCD/fusion/reload; then bridge and task head",
+        "measured_active_gpu_electronic_energy_proxy_j_per_call": 0.2886870822861284,
+        "gpu_board_critical_path_energy_proxy_j_per_call": 0.45025800519164993,
+        "hybrid_optical_plus_gpu_energy_proxy_j_per_call": 1.00433354120565,
+        "hybrid_average_power_proxy_w": 145.71364274852192,
+        "rated_gpu_electronic_energy_upper_j_per_call": 1.050807625,
+        "hybrid_rated_electronic_upper_j_per_call": 1.6048831610140002,
+        "hybrid_absolute_rated_upper_j_per_call": 2.2772044110140004,
+        "hybrid_absolute_rated_power_upper_w": 330.38800000000003,
+        "energy_proxy_note": "Optical rig uses 80.388 W across the critical path. GPU power is sampled over sustained exact-shape component loops; critical-path GPU energy uses idle power during optical waits plus measured incremental active power during the summed electronic compute time. This is a composed proxy, not a wired end-to-end laboratory power-meter measurement."
+      },
+      "paper_serial_path": {
+        "timing_boundary": "six/three measured physical passes plus CCD readout-normalize-fusion to each feature-block output and the final task head; router post, next-SLM rebuild and parallel residual are diagnostic-only",
+        "physical_passes": 3,
+        "physical_time_ms_per_call": 3.942,
+        "serial_electronic_wall_ms_per_call": 2.3167375000000003,
+        "component_occurrences_per_call": {
+          "vision_ccd_to_fusion": 2,
+          "task_head": 1
+        },
+        "estimated_wall_ms_per_call": 6.2587375000000005,
+        "logical_samples_per_call": 1,
+        "estimated_wall_ms_per_logical_sample": 6.2587375000000005,
+        "all_parallel_residuals_covered": true,
+        "optical_rig_energy_proxy_j_per_call": 0.5031273901500001
+      }
+    },
+    "t03": {
+      "specification": {
+        "task": "t03",
+        "label": "SALICON saliency",
+        "language": false,
+        "physical_fields_per_call": 1,
+        "logical_samples_per_call": 1,
+        "feature_passes": 2,
+        "router_passes": 1,
+        "vision_tokens": 196,
+        "language_tokens": 0
+      },
+      "components": [
+        {
+          "component": "vision_ccd_to_fusion",
+          "shape_contract": "CCD [1,478,478] + E [1,196,192] -> fused [1,196,192]",
+          "warmup_calls": 50,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 1,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 1000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 0.5475010578334332,
+            "median": 0.517632007598877,
+            "p95": 0.6758400201797485,
+            "minimum": 0.4935680031776428,
+            "maximum": 0.7536640167236328
+          },
+          "synchronized_wall_ms": {
+            "mean": 0.56682431,
+            "median": 0.5366135000000001,
+            "p95": 0.6996449,
+            "minimum": 0.511286,
+            "maximum": 0.771521
+          }
+        },
+        {
+          "component": "vision_ccd_to_next_slm",
+          "shape_contract": "CCD -> fused tokens -> routed amplitude [1,518,518]; 196 valid rows",
+          "warmup_calls": 50,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 1,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 1000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 0.7461365772485733,
+            "median": 0.7413759827613831,
+            "p95": 0.7997952103614807,
+            "minimum": 0.719871997833252,
+            "maximum": 0.8765439987182617
+          },
+          "synchronized_wall_ms": {
+            "mean": 0.764384352,
+            "median": 0.759253,
+            "p95": 0.8185977,
+            "minimum": 0.737687,
+            "maximum": 0.895103
+          }
+        },
+        {
+          "component": "vision_parallel_residual",
+          "shape_contract": "E [1,196,192], block-major Conv2D k3 + MLP 192-384-192",
+          "warmup_calls": 50,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 1,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 1000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 0.48142233592271805,
+            "median": 0.4710400104522705,
+            "p95": 0.5171200037002563,
+            "minimum": 0.4638719856739044,
+            "maximum": 2.4227840900421143
+          },
+          "synchronized_wall_ms": {
+            "mean": 0.4994778,
+            "median": 0.488502,
+            "p95": 0.53692675,
+            "minimum": 0.481487,
+            "maximum": 2.43989
+          }
+        },
+        {
+          "component": "router_ccd_to_expert_slm",
+          "shape_contract": "CCD [1,478,478] -> four ROI energies -> Top-2 power-L2 -> [1,518,518] expert amplitude",
+          "warmup_calls": 50,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 1,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 1000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 0.4237178874015808,
+            "median": 0.3850240111351013,
+            "p95": 0.6021119952201843,
+            "minimum": 0.37273600697517395,
+            "maximum": 1.6578559875488281
+          },
+          "synchronized_wall_ms": {
+            "mean": 0.442999167,
+            "median": 0.402816,
+            "p95": 0.6268346,
+            "minimum": 0.390521,
+            "maximum": 1.687048
+          }
+        },
+        {
+          "component": "task_head",
+          "shape_contract": "restore block-major [1,196,192] -> [1,192,14,14] -> progressive decoder -> [1,1,224,224]",
+          "warmup_calls": 50,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 1,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 1000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 1.2790353927612306,
+            "median": 1.274880051612854,
+            "p95": 1.3332480192184448,
+            "minimum": 1.2349439859390259,
+            "maximum": 1.4008320569992065
+          },
+          "synchronized_wall_ms": {
+            "mean": 1.297814049,
+            "median": 1.293886,
+            "p95": 1.35197115,
+            "minimum": 1.254001,
+            "maximum": 1.418505
+          }
+        }
+      ],
+      "critical_path": {
+        "physical_pass_ms": 1.314,
+        "all_parallel_residuals_covered": true,
+        "estimated_wall_ms_per_call": 6.934568500000001,
+        "logical_samples_per_call": 1,
+        "estimated_wall_ms_per_logical_sample": 6.934568500000001,
+        "electronic_compute_wall_ms_per_call": 3.9695725,
+        "component_occurrences_per_call": {
+          "vision_ccd_to_fusion": 1,
+          "vision_ccd_to_next_slm": 1,
+          "vision_parallel_residual": 2,
+          "router_ccd_to_expert_slm": 1,
+          "task_head": 1
+        },
+        "optical_rig_wall_energy_proxy_j_per_call": 0.5574560925780001,
+        "physical_only_optical_energy_j_per_call": 0.316889496,
+        "legacy_six_pass_9p084ms_energy_j": null,
+        "method": "router passes: physical+router post; feature passes: max(physical,residual)+serialized CCD/fusion/reload; then bridge and task head",
+        "measured_active_gpu_electronic_energy_proxy_j_per_call": 0.2939859615230236,
+        "gpu_board_critical_path_energy_proxy_j_per_call": 0.47212146599026295,
+        "hybrid_optical_plus_gpu_energy_proxy_j_per_call": 1.029577558568263,
+        "hybrid_average_power_proxy_w": 148.47031341146356,
+        "rated_gpu_electronic_energy_upper_j_per_call": 0.992393125,
+        "hybrid_rated_electronic_upper_j_per_call": 1.549849217578,
+        "hybrid_absolute_rated_upper_j_per_call": 2.2910982175780004,
+        "hybrid_absolute_rated_power_upper_w": 330.38800000000003,
+        "energy_proxy_note": "Optical rig uses 80.388 W across the critical path. GPU power is sampled over sustained exact-shape component loops; critical-path GPU energy uses idle power during optical waits plus measured incremental active power during the summed electronic compute time. This is a composed proxy, not a wired end-to-end laboratory power-meter measurement."
+      },
+      "paper_serial_path": {
+        "timing_boundary": "six/three measured physical passes plus CCD readout-normalize-fusion to each feature-block output and the final task head; router post, next-SLM rebuild and parallel residual are diagnostic-only",
+        "physical_passes": 3,
+        "physical_time_ms_per_call": 3.942,
+        "serial_electronic_wall_ms_per_call": 2.3671130000000002,
+        "component_occurrences_per_call": {
+          "vision_ccd_to_fusion": 2,
+          "task_head": 1
+        },
+        "estimated_wall_ms_per_call": 6.309113,
+        "logical_samples_per_call": 1,
+        "estimated_wall_ms_per_logical_sample": 6.309113,
+        "all_parallel_residuals_covered": true,
+        "optical_rig_energy_proxy_j_per_call": 0.507176975844
+      }
+    },
+    "t06": {
+      "specification": {
+        "task": "t06",
+        "label": "LGVQ MultiVideo-16x4",
+        "language": true,
+        "physical_fields_per_call": 1,
+        "logical_samples_per_call": 16,
+        "feature_passes": 4,
+        "router_passes": 2,
+        "vision_tokens": 196,
+        "language_tokens": 42
+      },
+      "components": [
+        {
+          "component": "frame_router_ccd_to_expert_slm",
+          "shape_contract": "full-field CCD [1,518,518] (478 active+guard) -> 64x4 energies/Top-2 -> frame expert amplitude [1,518,518]",
+          "warmup_calls": 50,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 16,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 16000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 14.071759887695313,
+            "median": 13.439487934112549,
+            "p95": 17.34154262542725,
+            "minimum": 13.108223915100098,
+            "maximum": 26.56051254272461
+          },
+          "synchronized_wall_ms": {
+            "mean": 14.091258147000001,
+            "median": 13.4580235,
+            "p95": 17.363944049999997,
+            "minimum": 13.127496,
+            "maximum": 26.590755
+          }
+        },
+        {
+          "component": "frame_ccd_to_fusion",
+          "shape_contract": "CCD -> 64 lanes -> [1,16,4,49,192] -> RMS fusion",
+          "warmup_calls": 50,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 16,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 16000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 4.118884351730347,
+            "median": 4.109312057495117,
+            "p95": 4.2292221784591675,
+            "minimum": 4.016128063201904,
+            "maximum": 4.990975856781006
+          },
+          "synchronized_wall_ms": {
+            "mean": 4.1375995869999995,
+            "median": 4.128191,
+            "p95": 4.24939745,
+            "minimum": 4.035001,
+            "maximum": 5.009471
+          }
+        },
+        {
+          "component": "frame_ccd_to_next_slm",
+          "shape_contract": "frame CCD/fusion -> 64 encoded 27x27 fields -> [1,518,518]",
+          "warmup_calls": 50,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 16,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 16000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 5.284183038234711,
+            "median": 5.264383792877197,
+            "p95": 5.436518549919128,
+            "minimum": 5.105663776397705,
+            "maximum": 6.11737585067749
+          },
+          "synchronized_wall_ms": {
+            "mean": 5.3031318359999995,
+            "median": 5.284166,
+            "p95": 5.4567501,
+            "minimum": 5.124792,
+            "maximum": 6.16127
+          }
+        },
+        {
+          "component": "frame_parallel_residual",
+          "shape_contract": "16 videos x 4 frames x 49 tokens x 192; Conv2D k5",
+          "warmup_calls": 50,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 16,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 16000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 0.15816908855736256,
+            "median": 0.15564799308776855,
+            "p95": 0.17520640641450871,
+            "minimum": 0.15052799880504608,
+            "maximum": 0.23654399812221527
+          },
+          "synchronized_wall_ms": {
+            "mean": 0.17554641,
+            "median": 0.1723475,
+            "p95": 0.19608865,
+            "minimum": 0.167432,
+            "maximum": 0.263388
+          }
+        },
+        {
+          "component": "frame_to_video_bridge",
+          "shape_contract": "[1,16,4,49,192]+38 prompt tokens -> 16 sequences of 42 tokens and router/feature fields",
+          "warmup_calls": 50,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 16,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 16000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 0.49535078382492065,
+            "median": 0.48742398619651794,
+            "p95": 0.5396479964256287,
+            "minimum": 0.47206398844718933,
+            "maximum": 1.087488055229187
+          },
+          "synchronized_wall_ms": {
+            "mean": 0.513694706,
+            "median": 0.5056940000000001,
+            "p95": 0.557968,
+            "minimum": 0.491352,
+            "maximum": 1.129232
+          }
+        },
+        {
+          "component": "video_router_ccd_to_expert_slm",
+          "shape_contract": "full-field CCD [1,518,518] (478 active+guard) -> 16x4 energies/Top-2 -> video expert amplitude [1,518,518]",
+          "warmup_calls": 50,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 16,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 16000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 3.475308448076248,
+            "median": 3.462143898010254,
+            "p95": 3.5850753068923953,
+            "minimum": 3.3669118881225586,
+            "maximum": 4.099071979522705
+          },
+          "synchronized_wall_ms": {
+            "mean": 3.493935214,
+            "median": 3.4807935,
+            "p95": 3.60328795,
+            "minimum": 3.384652,
+            "maximum": 4.117027
+          }
+        },
+        {
+          "component": "video_ccd_to_fusion",
+          "shape_contract": "CCD -> 16 macro tiles -> [1,16,42,192] -> RMS fusion",
+          "warmup_calls": 50,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 16,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 16000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 1.4146846699714661,
+            "median": 1.4054399728775024,
+            "p95": 1.4888960123062134,
+            "minimum": 1.3660160303115845,
+            "maximum": 1.6906239986419678
+          },
+          "synchronized_wall_ms": {
+            "mean": 1.433304797,
+            "median": 1.4241395,
+            "p95": 1.5080615000000002,
+            "minimum": 1.384436,
+            "maximum": 1.709455
+          }
+        },
+        {
+          "component": "video_ccd_to_next_slm",
+          "shape_contract": "video CCD/fusion -> 16 encoded 56x56 fields -> [1,518,518]",
+          "warmup_calls": 50,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 16,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 16000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 1.822033920764923,
+            "median": 1.793023943901062,
+            "p95": 2.013644862174987,
+            "minimum": 1.7305599451065063,
+            "maximum": 2.73305606842041
+          },
+          "synchronized_wall_ms": {
+            "mean": 1.840973637,
+            "median": 1.811731,
+            "p95": 2.0330969999999997,
+            "minimum": 1.74864,
+            "maximum": 2.757104
+          }
+        },
+        {
+          "component": "video_parallel_residual",
+          "shape_contract": "16 videos x 42 sequence tokens x 192; causal Conv1D k5",
+          "warmup_calls": 50,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 16,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 16000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 0.2664611841440201,
+            "median": 0.26214399933815,
+            "p95": 0.2908160090446472,
+            "minimum": 0.25804799795150757,
+            "maximum": 0.3696640133857727
+          },
+          "synchronized_wall_ms": {
+            "mean": 0.28414988599999996,
+            "median": 0.27920900000000004,
+            "p95": 0.3091302,
+            "minimum": 0.275474,
+            "maximum": 0.402811
+          }
+        },
+        {
+          "component": "task_head",
+          "shape_contract": "16 videos: vision [16,4,49,192]+sequence [16,42,192] -> 16 MOS",
+          "warmup_calls": 50,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 16,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 16000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 0.8752875507473946,
+            "median": 0.869376003742218,
+            "p95": 0.92876797914505,
+            "minimum": 0.8458240032196045,
+            "maximum": 1.4223359823226929
+          },
+          "synchronized_wall_ms": {
+            "mean": 0.89415445,
+            "median": 0.8879334999999999,
+            "p95": 0.9478168,
+            "minimum": 0.864844,
+            "maximum": 1.442122
+          }
+        }
+      ],
+      "critical_path": {
+        "physical_pass_ms": 1.314,
+        "all_parallel_residuals_covered": true,
+        "estimated_wall_ms_per_call": 38.864672000000006,
+        "logical_samples_per_call": 16,
+        "estimated_wall_ms_per_logical_sample": 2.4290420000000004,
+        "optical_rig_wall_energy_proxy_j_per_call": 3.124253252736001,
+        "physical_only_optical_energy_j_per_call": 0.633778992,
+        "legacy_six_pass_9p084ms_energy_j": 0.730244592,
+        "method": "exact six-pass 16-video graph: two optical routers, four feature stages, frame-to-video bridge and TemporalReadout",
+        "measured_active_gpu_electronic_energy_proxy_j_per_call": 0.0,
+        "gpu_board_critical_path_energy_proxy_j_per_call": 2.3349704190743563,
+        "hybrid_optical_plus_gpu_energy_proxy_j_per_call": 5.459223671810357,
+        "hybrid_average_power_proxy_w": 140.467509202454,
+        "rated_gpu_electronic_energy_upper_j_per_call": 0.0,
+        "hybrid_rated_electronic_upper_j_per_call": 3.124253252736001,
+        "hybrid_absolute_rated_upper_j_per_call": 12.840421252736002,
+        "hybrid_absolute_rated_power_upper_w": 330.38800000000003,
+        "energy_proxy_note": "Optical rig uses 80.388 W across the critical path. GPU power is sampled over sustained exact-shape component loops; critical-path GPU energy uses idle power during optical waits plus measured incremental active power during the summed electronic compute time. This is a composed proxy, not a wired end-to-end laboratory power-meter measurement."
+      },
+      "paper_serial_path": {
+        "timing_boundary": "six measured physical passes plus CCD readout-normalize-fusion to each feature-block output, the required frame-to-video bridge and final temporal head; router post, next-SLM rebuild and parallel residual are diagnostic-only",
+        "physical_passes": 6,
+        "physical_time_ms_per_call": 7.884,
+        "serial_electronic_wall_ms_per_call": 12.498288500000001,
+        "component_occurrences_per_call": {
+          "frame_ccd_to_fusion": 2,
+          "frame_to_video_bridge": 1,
+          "video_ccd_to_fusion": 2,
+          "task_head": 1
+        },
+        "estimated_wall_ms_per_call": 20.3822885,
+        "logical_samples_per_call": 16,
+        "estimated_wall_ms_per_logical_sample": 1.27389303125,
+        "all_parallel_residuals_covered": true,
+        "optical_rig_energy_proxy_j_per_call": 1.6384914079380002
+      }
+    },
+    "t08": {
+      "specification": {
+        "task": "t08",
+        "label": "ABO image-to-title retrieval",
+        "language": true,
+        "physical_fields_per_call": 1,
+        "logical_samples_per_call": 1,
+        "feature_passes": 4,
+        "router_passes": 2,
+        "vision_tokens": 196,
+        "language_tokens": 76
+      },
+      "components": [
+        {
+          "component": "vision_ccd_to_fusion",
+          "shape_contract": "CCD [1,478,478] + E [1,196,192] -> fused [1,196,192]",
+          "warmup_calls": 50,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 1,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 1000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 0.5602590727210045,
+            "median": 0.5171200037002563,
+            "p95": 0.8366079926490784,
+            "minimum": 0.4986880123615265,
+            "maximum": 2.170880079269409
+          },
+          "synchronized_wall_ms": {
+            "mean": 0.579825231,
+            "median": 0.535147,
+            "p95": 0.8621972999999999,
+            "minimum": 0.516245,
+            "maximum": 2.23304
+          }
+        },
+        {
+          "component": "vision_ccd_to_next_slm",
+          "shape_contract": "CCD -> fused tokens -> routed amplitude [1,518,518]; 196 valid rows",
+          "warmup_calls": 50,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 1,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 1000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 0.7544248319268226,
+            "median": 0.7475200295448303,
+            "p95": 0.8018432229757309,
+            "minimum": 0.7301120162010193,
+            "maximum": 0.9338880181312561
+          },
+          "synchronized_wall_ms": {
+            "mean": 0.7728231950000001,
+            "median": 0.76644,
+            "p95": 0.8217395,
+            "minimum": 0.748172,
+            "maximum": 0.953352
+          }
+        },
+        {
+          "component": "vision_parallel_residual",
+          "shape_contract": "E [1,196,192], block-major Conv2D k3 + MLP 192-384-192",
+          "warmup_calls": 50,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 1,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 1000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 0.49065369722247126,
+            "median": 0.4843519926071167,
+            "p95": 0.5345280170440674,
+            "minimum": 0.4710400104522705,
+            "maximum": 0.5908480286598206
+          },
+          "synchronized_wall_ms": {
+            "mean": 0.508822529,
+            "median": 0.5024645,
+            "p95": 0.55382335,
+            "minimum": 0.488613,
+            "maximum": 0.612228
+          }
+        },
+        {
+          "component": "language_ccd_to_fusion",
+          "shape_contract": "CCD [1,478,478] + E [1,76,192] -> fused [1,76,192]",
+          "warmup_calls": 50,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 1,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 1000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 0.5204981777668,
+            "median": 0.5140479803085327,
+            "p95": 0.5601279735565186,
+            "minimum": 0.4976640045642853,
+            "maximum": 0.6195200085639954
+          },
+          "synchronized_wall_ms": {
+            "mean": 0.539001205,
+            "median": 0.5322344999999999,
+            "p95": 0.57834185,
+            "minimum": 0.514485,
+            "maximum": 0.660992
+          }
+        },
+        {
+          "component": "language_ccd_to_next_slm",
+          "shape_contract": "CCD -> fused tokens -> routed amplitude [1,518,518]; 76 valid rows",
+          "warmup_calls": 50,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 1,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 1000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 0.759572480559349,
+            "median": 0.7511039972305298,
+            "p95": 0.8120319843292236,
+            "minimum": 0.7249919772148132,
+            "maximum": 0.9318400025367737
+          },
+          "synchronized_wall_ms": {
+            "mean": 0.778305027,
+            "median": 0.7701955,
+            "p95": 0.8306602499999999,
+            "minimum": 0.743029,
+            "maximum": 0.949919
+          }
+        },
+        {
+          "component": "language_parallel_residual",
+          "shape_contract": "E [1,76,192], causal Conv1D k5 + MLP 192-384-192",
+          "warmup_calls": 50,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 1,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 1000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 0.4701091836094856,
+            "median": 0.4638719856739044,
+            "p95": 0.5099520087242126,
+            "minimum": 0.449535995721817,
+            "maximum": 0.6809599995613098
+          },
+          "synchronized_wall_ms": {
+            "mean": 0.488235544,
+            "median": 0.4821375,
+            "p95": 0.5281015,
+            "minimum": 0.466911,
+            "maximum": 0.699408
+          }
+        },
+        {
+          "component": "router_ccd_to_expert_slm",
+          "shape_contract": "CCD [1,478,478] -> four ROI energies -> Top-2 power-L2 -> [1,518,518] expert amplitude",
+          "warmup_calls": 50,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 1,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 1000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 0.39237632086873053,
+            "median": 0.3891200125217438,
+            "p95": 0.42291200160980225,
+            "minimum": 0.3768320083618164,
+            "maximum": 0.5048320293426514
+          },
+          "synchronized_wall_ms": {
+            "mean": 0.41070008,
+            "median": 0.406968,
+            "p95": 0.44190350000000006,
+            "minimum": 0.394092,
+            "maximum": 0.523234
+          }
+        },
+        {
+          "component": "task_head",
+          "shape_contract": "select last valid row from [1,224,224] -> LN -> Linear 64 -> L2 embedding",
+          "warmup_calls": 50,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 1,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 1000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 0.14176153491437435,
+            "median": 0.13926400244235992,
+            "p95": 0.15769599378108978,
+            "minimum": 0.13516800105571747,
+            "maximum": 0.2242559939622879
+          },
+          "synchronized_wall_ms": {
+            "mean": 0.159033102,
+            "median": 0.1566485,
+            "p95": 0.176305,
+            "minimum": 0.151999,
+            "maximum": 0.242026
+          }
+        }
+      ],
+      "critical_path": {
+        "physical_pass_ms": 1.314,
+        "all_parallel_residuals_covered": true,
+        "estimated_wall_ms_per_call": 11.458601499999999,
+        "logical_samples_per_call": 1,
+        "estimated_wall_ms_per_logical_sample": 11.458601499999999,
+        "electronic_compute_wall_ms_per_call": 5.5438055,
+        "component_occurrences_per_call": {
+          "vision_ccd_to_fusion": 1,
+          "vision_ccd_to_next_slm": 1,
+          "vision_parallel_residual": 2,
+          "router_ccd_to_expert_slm": 2,
+          "task_head": 1,
+          "language_ccd_to_fusion": 1,
+          "language_ccd_to_next_slm": 1,
+          "language_parallel_residual": 2
+        },
+        "optical_rig_wall_energy_proxy_j_per_call": 0.9211340573819999,
+        "physical_only_optical_energy_j_per_call": 0.633778992,
+        "legacy_six_pass_9p084ms_energy_j": 0.730244592,
+        "method": "router passes: physical+router post; feature passes: max(physical,residual)+serialized CCD/fusion/reload; then bridge and task head",
+        "measured_active_gpu_electronic_energy_proxy_j_per_call": 0.3814021881895881,
+        "gpu_board_critical_path_energy_proxy_j_per_call": 0.736760228902226,
+        "hybrid_optical_plus_gpu_energy_proxy_j_per_call": 1.6578942862842259,
+        "hybrid_average_power_proxy_w": 144.6855697254352,
+        "rated_gpu_electronic_energy_upper_j_per_call": 1.385951375,
+        "hybrid_rated_electronic_upper_j_per_call": 2.3070854323820003,
+        "hybrid_absolute_rated_upper_j_per_call": 3.7857844323819996,
+        "hybrid_absolute_rated_power_upper_w": 330.38800000000003,
+        "energy_proxy_note": "Optical rig uses 80.388 W across the critical path. GPU power is sampled over sustained exact-shape component loops; critical-path GPU energy uses idle power during optical waits plus measured incremental active power during the summed electronic compute time. This is a composed proxy, not a wired end-to-end laboratory power-meter measurement."
+      },
+      "paper_serial_path": {
+        "timing_boundary": "six/three measured physical passes plus CCD readout-normalize-fusion to each feature-block output and the final task head; router post, next-SLM rebuild and parallel residual are diagnostic-only",
+        "physical_passes": 6,
+        "physical_time_ms_per_call": 7.884,
+        "serial_electronic_wall_ms_per_call": 2.2914114999999997,
+        "component_occurrences_per_call": {
+          "vision_ccd_to_fusion": 2,
+          "task_head": 1,
+          "language_ccd_to_fusion": 2
+        },
+        "estimated_wall_ms_per_call": 10.1754115,
+        "logical_samples_per_call": 1,
+        "estimated_wall_ms_per_logical_sample": 10.1754115,
+        "all_parallel_residuals_covered": true,
+        "optical_rig_energy_proxy_j_per_call": 0.817980979662
+      }
+    }
+  },
+  "not_measured": {
+    "t05": "planned task; no runnable formal optical MoE graph",
+    "t07": "placeholder/migration task; no runnable formal optical MoE graph"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "optical_moe_electronics_a100.json": {
+    "sha256": "2f06b3c05fe7aae547dcfa366787cc11be98bde4afab98ce24b13b3c0431dc83",
+    "bytes": 41443
+  },
+  "optical_moe_spatial_electronics_a100.json": {
+    "sha256": "126eae5ac8742dc47a740149ec96940541cd81aab99558acebbb6f018cec3bd1",
+    "bytes": 10923
+  },
+  "t02_lsp_qwen_a100.json": {
+    "sha256": "4a3b57679f2786839dceadf33775b240498c1c5d838b426e1aa032443988746b",
+    "bytes": 4073
+  },
+  "t03_salicon_qwen_a100.json": {
+    "sha256": "2ea20f5914f423e0d2123354c2c6ae2323ade71f8a376caeb7f2cfc35951eb61",
+    "bytes": 2796
+  },
+  "t06_spatial_qwen_a100.json": {
+    "sha256": "d97e648dc0905b5e88e409572b4355436ce8c0857347a696b2b7c874f8a57f09",
+    "bytes": 3909
+  },
+  "t06_spatial_training_a100.json": {
+    "sha256": "8f334683b4d7e6f810371464aa57683ae24de5f1fdcfcde2473858fea576880b",
+    "bytes": 3187
+  },
+  "t06_temporal_qwen_a100.json": {
+    "sha256": "f8383db324d855db668e9cd70b282f15b507bfe15d97b1b32b40a496180cc53a",
+    "bytes": 3913
+  },
+  "t06_temporal_training_a100.json": {
+    "sha256": "9e878d4b48c8aaa2729fa709b93ba8dc8ea9e219fa9245ac9fdf8b397374df0a",
+    "bytes": 3157
+  },
+  "t08_abo_qwen_a100.json": {
+    "sha256": "dc1cc8d23895bc35ff9fcbbac0ceae4f95efd8495395b169565d4ea9ac0198ba",
+    "bytes": 3750
+  }
+}

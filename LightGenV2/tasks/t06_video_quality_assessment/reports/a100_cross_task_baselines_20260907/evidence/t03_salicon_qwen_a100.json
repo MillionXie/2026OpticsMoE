@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "status": "complete",
+  "task": "SALICON saliency prediction",
+  "model": "/DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-Embedding-2B/snapshots/9f2f7e710d6d81056aa5c0a4f04764fec6bb7bda",
+  "qwen_frozen": true,
+  "readout": "ContinuousSaliencyHead -> 1x224x224 map",
+  "readout_trainable_parameters": 230257,
+  "test_samples": 5000,
+  "timing_samples": 200,
+  "explicit_warmup_forwards": 50,
+  "first_test_sample_included": false,
+  "timing_boundary": "input to native Vision Transformer block 0 through all native Vision blocks and the trained lightweight saliency head to a 224x224 map",
+  "performance": {
+    "samples": 5000,
+    "kld": 0.10342501114606857,
+    "cc": 0.8810337488174439,
+    "sim": 0.8327108745574952,
+    "nss": 0.9902887137413025,
+    "auc_judd": 0.7730451663675354,
+    "mae": 0.06806666994094848
+  },
+  "latency_cuda_ms": {
+    "mean": 19.14109441757202,
+    "median": 19.75347137451172,
+    "std": 3.130411520839458,
+    "p05": 16.317952251434328,
+    "p95": 25.645874977111816,
+    "min": 15.925248146057129,
+    "max": 32.26009750366211
+  },
+  "latency_host_ms": {
+    "mean": 19.151611663401127,
+    "median": 19.7627991437912,
+    "std": 3.1312067070585754,
+    "p05": 16.32785312831402,
+    "p95": 25.656242668628693,
+    "min": 15.93385636806488,
+    "max": 32.27660059928894
+  },
+  "power": {
+    "sampler": "nvidia-smi board power.draw",
+    "sampling_interval_ms": 50,
+    "idle_samples": 39,
+    "active_samples": 89,
+    "idle_mean_w": 69.54076923076923,
+    "active_mean_w": 81.0532584269663,
+    "active_peak_w": 93.3,
+    "rated_power_limit_w": 250.0,
+    "measured_active_energy_j_per_sample": 1.5514480724024267,
+    "idle_subtracted_energy_j_per_sample": 0.22036164268568587,
+    "rated_upper_bound_energy_j_per_sample": 4.785273604393005,
+    "energy_basis": "board power sampled only while model inference was active; energy uses the measured first-block-to-task-output mean latency"
+  },
+  "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_salicon_vision_optical_saliency/runs/salicon_vision_optical_saliency/checkpoints/teacher_best.pt",
+  "checkpoint_sha256": "aefd5c6cab81c4d720ada9e93935cf90b16d8653771f081bf933a62aba6bc644",
+  "git_commit": "b9a4be689f198f55ee0caaf4e5bcddd4dfc80200",
+  "git_worktree_clean": true,
+  "environment": {
+    "python": "3.11.15",
+    "torch": "2.6.0+cu124",
+    "cuda": "12.4",
+    "gpu": "NVIDIA A100-PCIE-40GB",
+    "gpu_index": 0,
+    "nvidia_smi_physical_gpu_id": "6",
+    "dtype": "bfloat16",
+    "batch_size": 1,
+    "rated_power_limit_w": 250.0
+  },
+  "hardware_contract": {
+    "expected_gpu_name_substring": "NVIDIA A100-PCIE-40GB",
+    "actual_gpu_name": "NVIDIA A100-PCIE-40GB"
+  },
+  "model_load_seconds": 0.5358329862356186
+}
