@@ -48,6 +48,38 @@ def main() -> int:
     qwen_metrics = qwen["performance"]
     critical = optical_profile["tasks"]["t08"]["critical_path"]
     optical_power = optical_profile["power_measurement"]
+    components = {
+        row["component"]: row for row in optical_profile["tasks"]["t08"]["components"]
+    }
+    vision_post_ms = float(components["vision_ccd_to_fusion"]["synchronized_wall_ms"]["median"])
+    language_post_ms = float(components["language_ccd_to_fusion"]["synchronized_wall_ms"]["median"])
+    head_ms = float(components["task_head"]["synchronized_wall_ms"]["median"])
+    block_post_ms = 2.0 * vision_post_ms + 2.0 * language_post_ms
+    counted_electronic_ms = block_post_ms + head_ms
+    physical_passes = 6
+    physical_ms = physical_passes * float(optical_profile["constants"]["physical_pass_ms"])
+    reported_latency_ms = physical_ms + counted_electronic_ms
+    per_power = optical_power["per_component"]
+    gpu_active_electronics_j = (
+        2.0 * vision_post_ms * float(per_power["t08:vision_ccd_to_fusion"]["mean_w"])
+        + 2.0 * language_post_ms * float(per_power["t08:language_ccd_to_fusion"]["mean_w"])
+        + head_ms * float(per_power["t08:task_head"]["mean_w"])
+    ) / 1000.0
+    gpu_board_j = gpu_active_electronics_j + (
+        float(optical_power["idle_mean_w"]) * physical_ms / 1000.0
+    )
+    optical_rig_j = (
+        float(optical_profile["constants"]["optical_power_w"])
+        * reported_latency_ms
+        / 1000.0
+    )
+    hybrid_j = optical_rig_j + gpu_board_j
+    hybrid_average_w = hybrid_j / (reported_latency_ms / 1000.0)
+    hybrid_absolute_upper_j = optical_rig_j + (
+        float(optical_profile["constants"]["gpu_rated_power_w"])
+        * reported_latency_ms
+        / 1000.0
+    )
 
     summary = {
         "task": "ABO easy100 image-query-to-fixed-title retrieval",
@@ -56,18 +88,30 @@ def main() -> int:
         "optical_moe": {
             "method": "strong-balance optical-router Top-2 MoE",
             "performance": optical_metrics,
-            "latency_estimated_ms_per_query": critical["estimated_wall_ms_per_call"],
-            "electronic_compute_ms_per_query": critical["electronic_compute_wall_ms_per_call"],
+            "reported_latency_ms_per_query": reported_latency_ms,
+            "timing_contract": "6 physical passes + four CCD-to-fusion block endings + one task head",
+            "physical_six_pass_ms_per_query": physical_ms,
+            "vision_ccd_to_block_end_ms": vision_post_ms,
+            "language_ccd_to_block_end_ms": language_post_ms,
+            "mean_ccd_to_block_end_ms": (vision_post_ms + language_post_ms) / 2.0,
+            "four_block_post_ccd_ms_per_query": block_post_ms,
+            "task_head_ms_per_query": head_ms,
+            "counted_electronic_ms_per_query": counted_electronic_ms,
+            "excluded_parallel_residual": True,
+            "excluded_next_slm_reconstruction": True,
+            "excluded_router_electronic_postprocessing": True,
+            "extended_diagnostic_path_ms_not_used_for_headline": critical["estimated_wall_ms_per_call"],
             "optical_rig_power_w": optical_profile["constants"]["optical_power_w"],
             "gpu_idle_mean_w": optical_power["idle_mean_w"],
             "gpu_component_active_mean_w": optical_power["active_mean_w"],
             "gpu_component_active_peak_w": optical_power["active_peak_w"],
-            "hybrid_average_power_proxy_w": critical["hybrid_average_power_proxy_w"],
+            "hybrid_average_power_proxy_w": hybrid_average_w,
             "physical_only_optical_energy_j_per_query": critical["physical_only_optical_energy_j_per_call"],
-            "optical_rig_wall_energy_proxy_j_per_query": critical["optical_rig_wall_energy_proxy_j_per_call"],
-            "gpu_board_critical_path_energy_proxy_j_per_query": critical["gpu_board_critical_path_energy_proxy_j_per_call"],
-            "hybrid_energy_proxy_j_per_query": critical["hybrid_optical_plus_gpu_energy_proxy_j_per_call"],
-            "hybrid_absolute_rated_upper_j_per_query": critical["hybrid_absolute_rated_upper_j_per_call"],
+            "optical_rig_wall_energy_proxy_j_per_query": optical_rig_j,
+            "gpu_active_counted_electronics_energy_proxy_j_per_query": gpu_active_electronics_j,
+            "gpu_board_energy_proxy_j_per_query": gpu_board_j,
+            "hybrid_energy_proxy_j_per_query": hybrid_j,
+            "hybrid_absolute_rated_upper_j_per_query": hybrid_absolute_upper_j,
         },
         "frozen_qwen": {
             "model": qwen["model_family"],
@@ -83,11 +127,11 @@ def main() -> int:
             optical_metrics["recall_at_1"] - qwen_metrics["recall_at_1"]
         ),
         "qwen_to_optical_latency_ratio": (
-            qwen["latency_cuda_ms"]["mean"] / critical["estimated_wall_ms_per_call"]
+            qwen["latency_cuda_ms"]["mean"] / reported_latency_ms
         ),
         "qwen_measured_to_optical_hybrid_energy_ratio": (
             qwen["power"]["measured_active_energy_j_per_sample"]
-            / critical["hybrid_optical_plus_gpu_energy_proxy_j_per_call"]
+            / hybrid_j
         ),
     }
     (HERE / "summary.json").write_text(
@@ -101,10 +145,10 @@ def main() -> int:
             "r_at_5": optical_metrics["recall_at_5"],
             "r_at_10": optical_metrics["recall_at_10"],
             "mrr": optical_metrics["mrr"],
-            "latency_ms_per_query": critical["estimated_wall_ms_per_call"],
-            "power_w": critical["hybrid_average_power_proxy_w"],
-            "energy_j_per_query": critical["hybrid_optical_plus_gpu_energy_proxy_j_per_call"],
-            "rated_upper_energy_j_per_query": critical["hybrid_absolute_rated_upper_j_per_call"],
+            "latency_ms_per_query": reported_latency_ms,
+            "power_w": hybrid_average_w,
+            "energy_j_per_query": hybrid_j,
+            "rated_upper_energy_j_per_query": hybrid_absolute_upper_j,
             "measurement_kind": "composed physical-plus-measured-electronics proxy",
         },
         {
@@ -149,15 +193,15 @@ def main() -> int:
     axes[0].legend(frameon=False, fontsize=6, loc="upper left")
     axes[0].set_title("a  Full-test performance", loc="left", fontweight="bold")
 
-    latencies = [critical["estimated_wall_ms_per_call"], qwen["latency_cuda_ms"]["mean"]]
+    latencies = [reported_latency_ms, qwen["latency_cuda_ms"]["mean"]]
     axes[1].bar([0, 1], latencies, color=[blue, orange], width=0.58)
     axes[1].set_xticks([0, 1], ["Optical\nMoE", "Frozen\nQwen"])
     axes[1].set_ylabel("Latency (ms/query)")
     axes[1].set_title("b  Model-core latency", loc="left", fontweight="bold")
     axes[1].text(0.5, max(latencies) * 0.92, f"{summary['comparison']['qwen_to_optical_latency_ratio']:.2f}×", ha="center", va="top")
 
-    energies = [critical["hybrid_optical_plus_gpu_energy_proxy_j_per_call"], qwen["power"]["measured_active_energy_j_per_sample"]]
-    uppers = [critical["hybrid_absolute_rated_upper_j_per_call"], qwen["power"]["rated_upper_bound_energy_j_per_sample"]]
+    energies = [hybrid_j, qwen["power"]["measured_active_energy_j_per_sample"]]
+    uppers = [hybrid_absolute_upper_j, qwen["power"]["rated_upper_bound_energy_j_per_sample"]]
     axes[2].bar([0, 1], energies, color=[blue, orange], width=0.58, label="Measured/proxy")
     axes[2].scatter([0, 1], uppers, marker="_", s=180, color="#333333", linewidths=1.2, label="Rated upper")
     axes[2].set_xticks([0, 1], ["Optical\nMoE", "Frozen\nQwen"])

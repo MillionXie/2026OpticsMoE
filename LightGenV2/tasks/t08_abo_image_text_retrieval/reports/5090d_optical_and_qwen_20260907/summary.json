@@ -12,18 +12,30 @@
       "mean_rank": 1.7195833333333332,
       "median_rank": 1.0
     },
-    "latency_estimated_ms_per_query": 10.1381215,
-    "electronic_compute_ms_per_query": 3.3956275000000002,
+    "reported_latency_ms_per_query": 9.374038,
+    "timing_contract": "6 physical passes + four CCD-to-fusion block endings + one task head",
+    "physical_six_pass_ms_per_query": 7.884,
+    "vision_ccd_to_block_end_ms": 0.3529785,
+    "language_ccd_to_block_end_ms": 0.352484,
+    "mean_ccd_to_block_end_ms": 0.35273125,
+    "four_block_post_ccd_ms_per_query": 1.410925,
+    "task_head_ms_per_query": 0.079113,
+    "counted_electronic_ms_per_query": 1.490038,
+    "excluded_parallel_residual": true,
+    "excluded_next_slm_reconstruction": true,
+    "excluded_router_electronic_postprocessing": true,
+    "extended_diagnostic_path_ms_not_used_for_headline": 10.1381215,
     "optical_rig_power_w": 80.388,
     "gpu_idle_mean_w": 15.920469387755102,
     "gpu_component_active_mean_w": 101.28409743910056,
     "gpu_component_active_peak_w": 107.72,
-    "hybrid_average_power_proxy_w": 125.19329878978361,
+    "hybrid_average_power_proxy_w": 109.37045577924869,
     "physical_only_optical_energy_j_per_query": 0.633778992,
-    "optical_rig_wall_energy_proxy_j_per_query": 0.8149833111420001,
-    "gpu_board_critical_path_energy_proxy_j_per_query": 0.45424156297462914,
-    "hybrid_energy_proxy_j_per_query": 1.2692248741166292,
-    "hybrid_absolute_rated_upper_j_per_query": 6.644403173642
+    "optical_rig_wall_energy_proxy_j_per_query": 0.7535601667440001,
+    "gpu_active_counted_electronics_energy_proxy_j_per_query": 0.14616566115493557,
+    "gpu_board_energy_proxy_j_per_query": 0.2716826418079968,
+    "hybrid_energy_proxy_j_per_query": 1.025242808551997,
+    "hybrid_absolute_rated_upper_j_per_query": 6.143632016744
   },
   "frozen_qwen": {
     "model": "Qwen3-VL-Embedding-2B",
@@ -64,7 +76,7 @@
   },
   "comparison": {
     "optical_r1_gain_percentage_points": 6.125000000000003,
-    "qwen_to_optical_latency_ratio": 2.5340498377546483,
-    "qwen_measured_to_optical_hybrid_energy_ratio": 3.12120702953219
+    "qwen_to_optical_latency_ratio": 2.7406017707856436,
+    "qwen_measured_to_optical_hybrid_energy_ratio": 3.863975992911359
   }
 }

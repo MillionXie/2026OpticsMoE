@@ -44,23 +44,23 @@
     },
     {
       "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/reports/5090d_optical_and_qwen_20260907/summary.json",
-      "canonical_bytes": 2631,
-      "sha256": "154c9687c217e5145aa8e680ce19ed2fa8e98df1dbbf99db80704662f6e03453"
+      "canonical_bytes": 3262,
+      "sha256": "7c4ec68ae962e82b7e1f83a37b8234078027ecce72e3e44088f8d152af7d03df"
     },
     {
       "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/reports/5090d_optical_and_qwen_20260907/comparison_summary.csv",
-      "canonical_bytes": 545,
-      "sha256": "b0b51d174ae1ccda27a0607dafa172a52f56ecb75cbdb574a4a4ca9bba87b036"
+      "canonical_bytes": 542,
+      "sha256": "0fb5e271c60bf13302fdbdba923944b1113590dd2bf5d9e8ef3bef2e4b55d5c2"
     },
     {
       "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/reports/5090d_optical_and_qwen_20260907/abo_5090d_comparison.png",
-      "canonical_bytes": 140217,
-      "sha256": "bd8ec0e5400a49e9eb70e6fcc32853f51fc194a4bd4f424c68eb11f51065605b"
+      "canonical_bytes": 139422,
+      "sha256": "a8b7626233f1d2bd72e095f805d1fb11f2df9e95a740d77da7c416d9bceb367f"
     },
     {
       "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/reports/5090d_optical_and_qwen_20260907/abo_5090d_comparison.pdf",
-      "canonical_bytes": 47245,
-      "sha256": "c482501a2bcb91acfc3e8dd295169bc5a04c94896b024c818d346b547d331245"
+      "canonical_bytes": 46637,
+      "sha256": "41da1b0f9e10f01a56f87cdf6f4101a393dc67bc075341435750c7d6f47343f0"
     },
     {
       "path": "LightGenV2/scripts/profile_optical_electronics_5090d.py",
