@@ -15,8 +15,10 @@ from torch import nn
 
 from LightGenV2.common.baseline_measurement import (
     NvidiaSmiPowerSampler,
+    gpu_power_limit_w,
     power_report,
     save_power_samples,
+    validate_cuda_device,
 )
 from . import quality_token_common as core
 
@@ -101,9 +103,10 @@ def main() -> int:
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--expected-gpu", default="NVIDIA GeForce RTX 5090 D")
     args = parser.parse_args()
-    if not torch.cuda.is_available():
-        raise RuntimeError("CUDA is required")
+    gpu_name = validate_cuda_device(args.expected_gpu)
+    rated_power_w = gpu_power_limit_w()
     from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
 
     device = torch.device("cuda:0")
@@ -257,7 +260,7 @@ def main() -> int:
         "preprocessing_ms": summarize([record["preprocessing_ms"] for record in records]),
         "performance": core.metrics(targets, predictions),
         f"{args.target}_performance": core.metrics(targets, predictions),
-        "power": power_report(power_samples, latencies),
+        "power": power_report(power_samples, latencies, power_limit_w=rated_power_w),
         "processor_load_seconds": processor_load_seconds,
         "model_load_seconds": model_load_seconds,
         "test_loop_wall_seconds": loop_wall_seconds,
@@ -266,7 +269,12 @@ def main() -> int:
         "manifest_sha256": sha256(manifest_path),
         "checkpoint": str(checkpoint),
         "checkpoint_sha256": sha256(checkpoint),
-        "gpu": torch.cuda.get_device_name(0),
+        "gpu": gpu_name,
+        "hardware_contract": {
+            "expected_gpu_name_substring": args.expected_gpu,
+            "actual_gpu_name": gpu_name,
+            "rated_power_limit_w": rated_power_w,
+        },
         "software": {
             "python": platform.python_version(),
             "torch": torch.__version__,

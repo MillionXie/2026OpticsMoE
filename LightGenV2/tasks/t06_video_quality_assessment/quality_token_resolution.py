@@ -98,12 +98,9 @@ def _validate(raw: dict[str, Any], model: Path, manifest: Path) -> None:
             raise ValueError(f"Missing {count}-frame sampling fractions")
         if any(abs(float(left) - float(right)) > 1e-8 for left, right in zip(values, FRAME_FRACTIONS[count])):
             raise ValueError(f"Configured {count}-frame fractions differ from executable contract")
-    if not torch.cuda.is_available():
-        raise RuntimeError("Formal resolution ablation requires CUDA")
-    if "5090" not in torch.cuda.get_device_name(0):
-        raise RuntimeError(
-            f"Formal resolution ablation requires RTX 5090 D, got {torch.cuda.get_device_name(0)}"
-        )
+    from LightGenV2.common.baseline_measurement import validate_cuda_device
+
+    validate_cuda_device(str(raw["timing"]["gpu"]))
 
 
 def _command_text(command: list[str]) -> str:
@@ -268,6 +265,8 @@ def main() -> int:
                         str(raw["training"]["seed"]),
                         "--model",
                         str(model),
+                        "--expected-gpu",
+                        str(raw["timing"]["gpu"]),
                         "--feature-root",
                         str(feature_root),
                         "--output",
@@ -294,6 +293,8 @@ def main() -> int:
                         str(checkpoint_root / f"frames{count}" / "best_checkpoint.pt"),
                         "--output",
                         str(evaluation_root),
+                        "--expected-gpu",
+                        str(raw["timing"]["gpu"]),
                     ]
                 else:
                     raise AssertionError(phase)

@@ -38,7 +38,9 @@ from torch.nn import functional as F
 from LightGenV2.common.baseline_measurement import (
     NvidiaSmiPowerSampler,
     PowerSample,
+    gpu_power_limit_w,
     save_power_samples,
+    validate_cuda_device,
 )
 
 
@@ -827,6 +829,18 @@ def _standard_task(task: str, device: torch.device, warmup: int, repeats: int) -
         })
     if bridge_ms:
         occurrences["language_to_vision_bridge"] = 1
+    paper_occurrences = {
+        "vision_ccd_to_fusion": 2,
+        "task_head": 1,
+    }
+    paper_electronic = 2.0 * vision["fused"] + head_ms
+    if language is not None:
+        paper_occurrences["language_ccd_to_fusion"] = 2
+        paper_electronic += 2.0 * language["fused"]
+    if bridge_ms:
+        paper_occurrences["language_to_vision_bridge"] = 1
+        paper_electronic += bridge_ms
+    paper_total = (spec.feature_passes + spec.router_passes) * physical + paper_electronic
     return {
         "specification": asdict(spec),
         "components": results,
@@ -842,6 +856,18 @@ def _standard_task(task: str, device: torch.device, warmup: int, repeats: int) -
             "physical_only_optical_energy_j_per_call": OPTICAL_POWER_W * (spec.feature_passes + spec.router_passes) * physical / 1000.0,
             "legacy_six_pass_9p084ms_energy_j": OPTICAL_POWER_W * 9.084 / 1000.0 if spec.feature_passes + spec.router_passes == 6 else None,
             "method": "router passes: physical+router post; feature passes: max(physical,residual)+serialized CCD/fusion/reload; then bridge and task head",
+        },
+        "paper_serial_path": {
+            "timing_boundary": "six/three measured physical passes plus CCD readout-normalize-fusion to each feature-block output and the final task head; router post, next-SLM rebuild and parallel residual are diagnostic-only",
+            "physical_passes": spec.feature_passes + spec.router_passes,
+            "physical_time_ms_per_call": (spec.feature_passes + spec.router_passes) * physical,
+            "serial_electronic_wall_ms_per_call": paper_electronic,
+            "component_occurrences_per_call": paper_occurrences,
+            "estimated_wall_ms_per_call": paper_total,
+            "logical_samples_per_call": spec.logical_samples_per_call,
+            "estimated_wall_ms_per_logical_sample": paper_total / spec.logical_samples_per_call,
+            "all_parallel_residuals_covered": all_residual_covered,
+            "optical_rig_energy_proxy_j_per_call": OPTICAL_POWER_W * paper_total / 1000.0,
         },
     }
 
@@ -913,6 +939,19 @@ def _t06_task(device: torch.device, warmup: int, repeats: int) -> dict[str, Any]
     critical += max(physical, times["video_parallel_residual"]) + times["video_ccd_to_fusion"]
     critical += times["task_head"]
     covered = times["frame_parallel_residual"] <= physical and times["video_parallel_residual"] <= physical
+    paper_occurrences = {
+        "frame_ccd_to_fusion": 2,
+        "frame_to_video_bridge": 1,
+        "video_ccd_to_fusion": 2,
+        "task_head": 1,
+    }
+    paper_electronic = (
+        2.0 * times["frame_ccd_to_fusion"]
+        + times["frame_to_video_bridge"]
+        + 2.0 * times["video_ccd_to_fusion"]
+        + times["task_head"]
+    )
+    paper_total = 6.0 * physical + paper_electronic
     return {
         "specification": asdict(spec),
         "components": results,
@@ -926,6 +965,18 @@ def _t06_task(device: torch.device, warmup: int, repeats: int) -> dict[str, Any]
             "physical_only_optical_energy_j_per_call": OPTICAL_POWER_W * 6 * physical / 1000.0,
             "legacy_six_pass_9p084ms_energy_j": OPTICAL_POWER_W * 9.084 / 1000.0,
             "method": "exact six-pass 16-video graph: two optical routers, four feature stages, frame-to-video bridge and TemporalReadout",
+        },
+        "paper_serial_path": {
+            "timing_boundary": "six measured physical passes plus CCD readout-normalize-fusion to each feature-block output, the required frame-to-video bridge and final temporal head; router post, next-SLM rebuild and parallel residual are diagnostic-only",
+            "physical_passes": 6,
+            "physical_time_ms_per_call": 6.0 * physical,
+            "serial_electronic_wall_ms_per_call": paper_electronic,
+            "component_occurrences_per_call": paper_occurrences,
+            "estimated_wall_ms_per_call": paper_total,
+            "logical_samples_per_call": 16,
+            "estimated_wall_ms_per_logical_sample": paper_total / 16.0,
+            "all_parallel_residuals_covered": covered,
+            "optical_rig_energy_proxy_j_per_call": OPTICAL_POWER_W * paper_total / 1000.0,
         },
     }
 
@@ -1050,7 +1101,7 @@ def write_csv(path: Path, report: dict[str, Any]) -> None:
 
 
 def main() -> int:
-    global _POWER_DWELL_SECONDS, _POWER_SAMPLER, _POWER_TASK
+    global GPU_RATED_POWER_W, _POWER_DWELL_SECONDS, _POWER_SAMPLER, _POWER_TASK
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--tasks", nargs="+", choices=sorted(SPECS), default=sorted(SPECS))
     parser.add_argument("--warmup", type=int, default=50)
@@ -1059,9 +1110,11 @@ def main() -> int:
     parser.add_argument("--measure-power", action="store_true")
     parser.add_argument("--idle-sample-seconds", type=float, default=5.0)
     parser.add_argument("--power-dwell-seconds", type=float, default=2.0)
+    parser.add_argument("--expected-gpu", default="NVIDIA GeForce RTX 5090 D")
+    parser.add_argument("--output-stem", default="optical_moe_electronics_5090d")
     args = parser.parse_args()
-    if not torch.cuda.is_available():
-        raise RuntimeError("CUDA is required for the formal RTX 5090 D benchmark")
+    validate_cuda_device(args.expected_gpu)
+    GPU_RATED_POWER_W = gpu_power_limit_w()
     if args.warmup < 0 or args.repeats < 20:
         raise ValueError("warmup must be nonnegative and repeats must be at least 20")
     device = torch.device("cuda:0")
@@ -1114,8 +1167,8 @@ def main() -> int:
             "t07": "placeholder/migration task; no runnable formal optical MoE graph",
         },
     }
-    json_path = output / "optical_moe_electronics_5090d.json"
-    csv_path = output / "optical_moe_electronics_5090d.csv"
+    json_path = output / f"{args.output_stem}.json"
+    csv_path = output / f"{args.output_stem}.csv"
     json_path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     write_csv(csv_path, report)
     if power_samples:

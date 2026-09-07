@@ -1,4 +1,4 @@
-"""Frozen Qwen Vision plus the historical SALICON readout on RTX 5090 D."""
+"""Frozen Qwen Vision plus the historical SALICON readout on a selected GPU."""
 
 from __future__ import annotations
 
@@ -17,10 +17,12 @@ from LightGenV2.common.baseline_measurement import (
     FirstBlockTimer,
     NvidiaSmiPowerSampler,
     environment_report,
+    gpu_power_limit_w,
     power_report,
     save_power_samples,
     sha256_file,
     summarize,
+    validate_cuda_device,
     write_json,
 )
 from experiments.qwen3_vl_embedding_2b_salicon_vision_optical_saliency.datasets import (
@@ -108,8 +110,8 @@ def _write_rows(path: Path, rows: list[dict[str, Any]]) -> None:
 
 @torch.inference_mode()
 def run(args: argparse.Namespace) -> dict[str, Any]:
-    if not torch.cuda.is_available() or "5090" not in torch.cuda.get_device_name(0):
-        raise RuntimeError("This formal baseline requires NVIDIA GeForce RTX 5090 D")
+    gpu_name = validate_cuda_device(args.expected_gpu)
+    rated_power_w = gpu_power_limit_w()
     settings = load_settings(args.config.expanduser().resolve())
     settings.data_root = args.data_root.expanduser().resolve()
     settings.model_id = str(args.model.expanduser().resolve())
@@ -206,12 +208,16 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "performance": performance,
         "latency_cuda_ms": summarize(latencies),
         "latency_host_ms": summarize([row["host_ms"] for row in measurements]),
-        "power": power_report(power_samples, latencies),
+        "power": power_report(power_samples, latencies, power_limit_w=rated_power_w),
         "checkpoint": str(checkpoint),
         "checkpoint_sha256": sha256_file(checkpoint),
         "git_commit": _git("rev-parse", "HEAD"),
         "git_worktree_clean": _git("status", "--porcelain") == "",
-        "environment": environment_report(),
+        "environment": environment_report(power_limit_w=rated_power_w),
+        "hardware_contract": {
+            "expected_gpu_name_substring": args.expected_gpu,
+            "actual_gpu_name": gpu_name,
+        },
         "model_load_seconds": loaded.load_time_sec,
     }
     write_json(settings.output_dir / "baseline_report.json", report)
@@ -236,6 +242,7 @@ def main() -> int:
     parser.add_argument("--warmup-forwards", type=int, default=50)
     parser.add_argument("--performance-batch-size", type=int, default=8)
     parser.add_argument("--num-workers", type=int, default=4)
+    parser.add_argument("--expected-gpu", default="NVIDIA GeForce RTX 5090 D")
     run(parser.parse_args())
     return 0
 

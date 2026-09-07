@@ -1,4 +1,4 @@
-"""Frozen Qwen3-VL-Embedding-2B ABO image-to-title baseline on RTX 5090 D.
+"""Frozen Qwen3-VL-Embedding-2B ABO image-to-title baseline on a selected GPU.
 
 The model is never fine-tuned.  All image and title embeddings are produced by
 the original frozen checkpoint with batch size one.  Online latency starts at
@@ -27,10 +27,12 @@ from LightGenV2.common.baseline_measurement import (
     FirstBlockTimer,
     NvidiaSmiPowerSampler,
     environment_report,
+    gpu_power_limit_w,
     power_report,
     save_power_samples,
     sha256_file,
     summarize,
+    validate_cuda_device,
     write_json,
 )
 from LightGenV2.tasks.t01_object_retrieval.modeling import load_backbone
@@ -232,15 +234,17 @@ def _plot(run_dir: Path, report: dict[str, Any], ranks: np.ndarray,
         )
     axes[2].set_xlabel("active-window time (s)")
     axes[2].set_ylabel("GPU board power (W)")
-    axes[2].set_title("c  RTX 5090 D power", loc="left", fontweight="bold")
+    axes[2].set_title(
+        f"c  {report['environment']['gpu']} power", loc="left", fontweight="bold"
+    )
     figure.savefig(run_dir / "baseline_overview.png", dpi=220)
     plt.close(figure)
 
 
 @torch.inference_mode()
 def run(args: argparse.Namespace) -> dict[str, Any]:
-    if not torch.cuda.is_available() or "5090" not in torch.cuda.get_device_name(0):
-        raise RuntimeError("Formal speed/power measurement requires RTX 5090 D")
+    gpu_name = validate_cuda_device(args.expected_gpu)
+    rated_power_w = gpu_power_limit_w()
     if args.warmup_forwards < 0:
         raise ValueError("--warmup-forwards cannot be negative")
     data_root = args.data_root.expanduser().resolve()
@@ -407,7 +411,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                  "queries": int(selected.size), **_metrics(selected)}
             )
     model_file = model_path / "model.safetensors"
-    measured_power = power_report(power_samples, latency_cuda)
+    measured_power = power_report(
+        power_samples, latency_cuda, power_limit_w=rated_power_w
+    )
     measured_power["sampling_interval_ms"] = POWER_SAMPLE_INTERVAL_MS
     measured_power["pre_idle_cooldown_seconds"] = float(args.cooldown_seconds)
     report = {
@@ -459,7 +465,11 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "script_sha256": sha256_file(Path(__file__)),
         "git_commit": _git("rev-parse", "HEAD"),
         "git_worktree_clean": _git("status", "--porcelain") == "",
-        "environment": environment_report(),
+        "environment": environment_report(power_limit_w=rated_power_w),
+        "hardware_contract": {
+            "expected_gpu_name_substring": args.expected_gpu,
+            "actual_gpu_name": gpu_name,
+        },
         "model_load_seconds": loaded.load_time_sec,
     }
     write_json(run_dir / "baseline_report.json", report)
@@ -496,6 +506,7 @@ def main() -> int:
     parser.add_argument("--timing-samples", type=int, default=200)
     parser.add_argument("--cooldown-seconds", type=float, default=5.0)
     parser.add_argument("--idle-seconds", type=float, default=3.0)
+    parser.add_argument("--expected-gpu", default="NVIDIA GeForce RTX 5090 D")
     args = parser.parse_args()
     run(args)
     return 0

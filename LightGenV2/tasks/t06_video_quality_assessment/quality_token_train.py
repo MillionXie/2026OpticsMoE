@@ -131,12 +131,10 @@ def load_native_rows(model_path: Path) -> tuple[torch.Tensor, list[int], dict[st
 def train(args: argparse.Namespace) -> dict[str, Any]:
     if args.frames not in COUNTS:
         raise ValueError(f"frames must be one of {COUNTS}")
-    if not torch.cuda.is_available():
-        raise RuntimeError("CUDA is required")
+    from LightGenV2.common.baseline_measurement import validate_cuda_device
+
+    gpu = validate_cuda_device(args.expected_gpu)
     device = torch.device("cuda:0")
-    gpu = torch.cuda.get_device_name(device)
-    if "5090" not in gpu:
-        raise RuntimeError(f"Formal run requires RTX 5090 D, got {gpu}")
 
     cache_path = args.feature_root / f"frames{args.frames}" / "qwen_prompt_features.pt"
     payload = torch.load(cache_path, map_location="cpu", weights_only=False)
@@ -357,6 +355,8 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
         "batch_size": args.batch_size,
         "random_seed": seed,
         "model": str(args.model),
+        "gpu": gpu,
+        "expected_gpu_name_substring": args.expected_gpu,
         "feature_cache": str(cache_path),
         "feature_cache_sha256": sha256_file(cache_path),
         "feature_task_selection": feature_task_selection,
@@ -379,6 +379,7 @@ def main() -> int:
     parser.add_argument("--batch-size", type=int, default=512)
     parser.add_argument("--learning-rate", type=float, default=1.0e-3)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--expected-gpu", default="NVIDIA GeForce RTX 5090 D")
     parser.add_argument("--model", type=Path, required=True)
     parser.add_argument(
         "--feature-root",
