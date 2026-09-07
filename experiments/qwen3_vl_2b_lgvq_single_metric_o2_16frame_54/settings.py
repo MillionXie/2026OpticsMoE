@@ -77,6 +77,17 @@ def _path(value: Any, config_path: Path) -> Path | None:
     return result.resolve()
 
 
+def _paths(value: Any, config_path: Path) -> tuple[Path, ...]:
+    if value in (None, ""):
+        return ()
+    if not isinstance(value, (list, tuple)):
+        raise ValueError("A multi-view cache field must be a YAML list")
+    result = tuple(_path(item, config_path) for item in value)
+    if any(path is None for path in result):
+        raise ValueError("A multi-view cache list cannot contain null paths")
+    return tuple(path for path in result if path is not None)
+
+
 @dataclass(frozen=True)
 class Geometry:
     """518 simulation canvas with a centered 478-pixel hardware active field.
@@ -217,6 +228,8 @@ class ExperimentSettings:
     manifest_path: Path | None
     vision_cache_path: Path | None
     language_cache_path: Path | None
+    vision_cache_view_paths: tuple[Path, ...] = ()
+    quality_feature_cache_view_paths: tuple[Path, ...] = ()
     quality_feature_cache_path: Path | None = None
     raw_frame_cache_path: Path | None = None
     vgg_feature_cache_path: Path | None = None
@@ -483,6 +496,27 @@ class ExperimentSettings:
             raise ValueError(
                 "The electronic quality residual requires a model-width quality cache"
             )
+        if self.vision_cache_view_paths and (
+            self.target_name != "spatial" or self.frame_count != 4
+        ):
+            raise ValueError(
+                "Additional temporal-sampling views are currently formalized only "
+                "for the four-frame Spatial model"
+            )
+        if self.electronic_quality_residual_enabled and len(
+            self.quality_feature_cache_view_paths
+        ) != len(self.vision_cache_view_paths):
+            raise ValueError(
+                "Every additional Vision sampling view requires its matching "
+                "Conv5 quality-feature view"
+            )
+        if (
+            not self.electronic_quality_residual_enabled
+            and self.quality_feature_cache_view_paths
+        ):
+            raise ValueError(
+                "Conv5 quality-feature views require the electronic quality residual"
+            )
         if self.strict_two_branch:
             invalid = []
             if self.quality_branch_enabled:
@@ -722,6 +756,12 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         manifest_path=_path(get("data", "manifest"), config_path),
         vision_cache_path=_path(get("data", "vision_cache"), config_path),
         language_cache_path=_path(get("data", "language_cache"), config_path),
+        vision_cache_view_paths=_paths(
+            get("data", "vision_cache_views"), config_path
+        ),
+        quality_feature_cache_view_paths=_paths(
+            get("data", "quality_feature_cache_views"), config_path
+        ),
         quality_feature_cache_path=_path(
             get("data", "quality_feature_cache"), config_path
         ),
@@ -927,6 +967,11 @@ def resolved_dict(settings: ExperimentSettings) -> dict[str, Any]:
         "qwen_model_path",
     ):
         result[key] = None if result[key] is None else str(result[key])
+    for key in (
+        "vision_cache_view_paths",
+        "quality_feature_cache_view_paths",
+    ):
+        result[key] = [str(path) for path in result[key]]
     result.update(
         {
             "token_count": settings.token_count,

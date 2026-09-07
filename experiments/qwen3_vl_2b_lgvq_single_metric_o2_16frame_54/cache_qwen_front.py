@@ -300,26 +300,49 @@ def _front_pair_identity(
     )
 
 
-def frame_fractions(frame_count: int) -> tuple[float, ...]:
+def frame_fractions(
+    frame_count: int, *, sampling_offset: float = 0.0
+) -> tuple[float, ...]:
     if frame_count < 2:
         raise ValueError("frame_count must be at least two")
-    return tuple(
-        0.10 + index * 0.80 / (frame_count - 1) for index in range(frame_count)
+    fractions = tuple(
+        0.10
+        + float(sampling_offset)
+        + index * 0.80 / (frame_count - 1)
+        for index in range(frame_count)
     )
+    if fractions[0] < 0.0 or fractions[-1] > 1.0:
+        raise ValueError(
+            "frame sampling offset moves a temporal landmark outside [0,1]"
+        )
+    return fractions
 
 
-def _sample_positions(frame_total: int, frame_count: int = FRAME_COUNT) -> tuple[int, ...]:
+def _sample_positions(
+    frame_total: int,
+    frame_count: int = FRAME_COUNT,
+    *,
+    sampling_offset: float = 0.0,
+) -> tuple[int, ...]:
     """Return fixed temporal landmarks in the central 10--90% span."""
 
     if frame_total <= 0:
         raise ValueError("frame_total must be positive")
     return tuple(
         min(frame_total - 1, max(0, round((frame_total - 1) * fraction)))
-        for fraction in frame_fractions(frame_count)
+        for fraction in frame_fractions(
+            frame_count, sampling_offset=sampling_offset
+        )
     )
 
 
-def decode_frames(path: Path, frame_count: int) -> list[Image.Image]:
+def decode_frames(
+    path: Path,
+    frame_count: int,
+    *,
+    sampling_offset: float = 0.0,
+    output_size: int = 448,
+) -> list[Image.Image]:
     """Decode uniformly stratified central-time frames and center crop them.
 
     The 0.10--0.90 landmarks avoid unstable first/last decoder frames.  The
@@ -339,7 +362,9 @@ def decode_frames(path: Path, frame_count: int) -> list[Image.Image]:
         raise RuntimeError(f"Video has no readable frames: {path}")
     frames: list[Image.Image] = []
     try:
-        for position in _sample_positions(count, frame_count):
+        for position in _sample_positions(
+            count, frame_count, sampling_offset=sampling_offset
+        ):
             capture.set(cv2.CAP_PROP_POS_FRAMES, position)
             ok, bgr = capture.read()
             if not ok:
@@ -350,7 +375,7 @@ def decode_frames(path: Path, frame_count: int) -> list[Image.Image]:
             top, left = (height - side) // 2, (width - side) // 2
             square = cv2.resize(
                 rgb[top : top + side, left : left + side],
-                (448, 448),
+                (output_size, output_size),
                 interpolation=cv2.INTER_AREA,
             )
             frames.append(Image.fromarray(square))
@@ -633,6 +658,7 @@ def _load_part(
     front_pair_sha256: str,
     frame_count: int,
     token_grid: int,
+    frame_sampling_offset: float,
 ) -> tuple[torch.Tensor, torch.Tensor] | None:
     if not path.exists():
         return None
@@ -650,6 +676,8 @@ def _load_part(
             or payload.get("qwen_vision_front_sha256") != vision_front_sha256
             or payload.get("qwen_front_pair_sha256") != front_pair_sha256
             or int(payload.get("frame_count", -1)) != frame_count
+            or float(payload.get("frame_sampling_offset", 0.0))
+            != float(frame_sampling_offset)
         ):
             return None
         value = payload.get("vision_tokens")
@@ -710,6 +738,7 @@ def _extract_vision_rows(
     batch_size: int,
     frame_count: int,
     token_grid: int,
+    frame_sampling_offset: float,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     result: list[torch.Tensor] = []
     quality_result: list[torch.Tensor] = []
@@ -719,7 +748,11 @@ def _extract_vision_rows(
         images = [
             frame
             for row in batch_rows
-            for frame in decode_frames(Path(row.video_path), frame_count)
+            for frame in decode_frames(
+                Path(row.video_path),
+                frame_count,
+                sampling_offset=frame_sampling_offset,
+            )
         ]
         # This is the same processor boundary used by the audited four-frame
         # Qwen cache.  Qwen3VLProcessor 4.57 requires non-None text during
@@ -844,6 +877,7 @@ def build_cache(
     device_name: str,
     frame_count: int = FRAME_COUNT,
     token_grid: int = OUTPUT_GRID,
+    frame_sampling_offset: float = 0.0,
     overwrite_vision: bool = False,
     part_start_row: int = 0,
     part_stop_row: int | None = None,
@@ -857,6 +891,7 @@ def build_cache(
         )
     if token_grid not in (7, 14):
         raise ValueError("token_grid must be 7 or 14")
+    frame_fractions(frame_count, sampling_offset=frame_sampling_offset)
     output_tokens = token_grid * token_grid
     feature_contract = feature_contract_for_grid(token_grid)
     quality_contract = quality_contract_for_grid(token_grid)
@@ -963,6 +998,8 @@ def build_cache(
                 and metadata.get("shape") == [len(rows), frame_count, output_tokens, VISION_WIDTH]
                 and metadata.get("quality_contract") == quality_contract
                 and metadata.get("quality_shape") == [len(rows), frame_count, output_tokens, 14]
+                and float(metadata.get("frame_sampling_offset", 0.0))
+                == float(frame_sampling_offset)
                 and int(metadata.get("file_size_bytes", -1)) == vision_output.stat().st_size
                 and metadata.get("qwen_source_identity_sha256")
                 == source_identity["sha256"]
@@ -989,6 +1026,7 @@ def build_cache(
             "shape": [len(rows), frame_count, output_tokens, VISION_WIDTH],
             "quality_shape": [len(rows), frame_count, output_tokens, 14],
             "dtype": "torch.float16",
+            "frame_sampling_offset": frame_sampling_offset,
             "qwen_source_identity_sha256": source_identity["sha256"],
             "qwen_vision_front_sha256": vision_fingerprint["sha256"],
             "qwen_front_pair_sha256": front_pair_identity["sha256"],
@@ -1014,6 +1052,7 @@ def build_cache(
                 front_pair_sha256=front_pair_identity["sha256"],
                 frame_count=frame_count,
                 token_grid=token_grid,
+                frame_sampling_offset=frame_sampling_offset,
             )
             if loaded is None:
                 value, quality = _extract_vision_rows(
@@ -1024,6 +1063,7 @@ def build_cache(
                     batch_size=batch_size,
                     frame_count=frame_count,
                     token_grid=token_grid,
+                    frame_sampling_offset=frame_sampling_offset,
                 )
                 _atomic_torch_save(
                     path,
@@ -1038,6 +1078,7 @@ def build_cache(
                         "qwen_vision_front_sha256": vision_fingerprint["sha256"],
                         "qwen_front_pair_sha256": front_pair_identity["sha256"],
                         "frame_count": frame_count,
+                        "frame_sampling_offset": frame_sampling_offset,
                         "vision_tokens": value,
                         "quality_contract": quality_contract,
                         "quality_tokens": quality,
@@ -1055,6 +1096,7 @@ def build_cache(
                     "parts_only": True,
                     "processed_row_interval": [part_start_row, resolved_part_stop],
                     "parts_directory": str(parts_dir),
+                    "frame_sampling_offset": frame_sampling_offset,
                 },
                 "language": language_report,
                 "target_name": target_name,
@@ -1085,6 +1127,7 @@ def build_cache(
                 front_pair_sha256=front_pair_identity["sha256"],
                 frame_count=frame_count,
                 token_grid=token_grid,
+                frame_sampling_offset=frame_sampling_offset,
             )
             if loaded is None:
                 raise RuntimeError(f"Vision shard became invalid during assembly: {path}")
@@ -1117,7 +1160,10 @@ def build_cache(
             "video_paths": [row.video_path for row in rows],
             "splits": [row.split for row in rows],
             "frame_count": frame_count,
-            "frame_sampling_fractions": frame_fractions(frame_count),
+            "frame_sampling_fractions": frame_fractions(
+                frame_count, sampling_offset=frame_sampling_offset
+            ),
+            "frame_sampling_offset": frame_sampling_offset,
             "center_crop_short_side_fraction": 0.65,
             "preprocessor_intermediate_size": [448, 448],
             "qwen_premerger_grid_thw": [1, 28, 28],
@@ -1145,6 +1191,7 @@ def build_cache(
             "shape": list(features.shape),
             "quality_shape": list(quality_features.shape),
             "frame_count": frame_count,
+            "frame_sampling_offset": frame_sampling_offset,
             "dtype": str(features.dtype),
             "file_size_bytes": vision_output.stat().st_size,
             "target_neutral_shared_vision_asset": True,
@@ -1161,6 +1208,7 @@ def build_cache(
             "shape": list(features.shape),
             "quality_shape": list(quality_features.shape),
             "dtype": str(features.dtype),
+            "frame_sampling_offset": frame_sampling_offset,
             "parts_directory": str(parts_dir),
             "qwen_source_identity_sha256": source_identity["sha256"],
             "qwen_vision_front_sha256": vision_fingerprint["sha256"],
@@ -1172,6 +1220,7 @@ def build_cache(
         "language": language_report,
         "target_name": target_name,
         "frame_count": frame_count,
+        "frame_sampling_offset": frame_sampling_offset,
         "prompt": TARGET_PROMPTS[target_name],
         "counts": {
             split: sum(row.split == split for row in rows)
@@ -1213,8 +1262,8 @@ def main() -> int:
         default=None,
         help=(
             "Use target/dataset/manifest/Vision-cache/Language-cache paths from an "
-            "audited release config. When set, only --model-path may override a "
-            "config value; data-path overrides are rejected."
+            "audited release config. --vision-output may name an additional "
+            "sampling-view cache; other data-path overrides are rejected."
         ),
     )
     parser.add_argument("--dataset-root", type=Path, default=None)
@@ -1229,6 +1278,15 @@ def main() -> int:
     parser.add_argument("--target", choices=sorted(TARGET_PROMPTS), default=None)
     parser.add_argument("--manifest", type=Path, default=None)
     parser.add_argument("--frame-count", type=int, choices=(4, 9, 16, 36), default=None)
+    parser.add_argument(
+        "--frame-sampling-offset",
+        type=float,
+        default=0.0,
+        help=(
+            "Shift every uniform temporal landmark by this fraction. Spatial "
+            "multi-view caches use -0.05, 0.00, and +0.05."
+        ),
+    )
     parser.add_argument("--token-grid", type=int, choices=(7, 14), default=None)
     parser.add_argument("--batch-size", type=int, default=2, help="Videos per GPU batch")
     parser.add_argument("--chunk-rows", type=int, default=16, help="Videos per resumable shard")
@@ -1250,7 +1308,6 @@ def main() -> int:
     if args.config is not None:
         forbidden = {
             "--dataset-root": args.dataset_root,
-            "--vision-output": args.vision_output,
             "--language-output": args.language_output,
             "--target": args.target,
             "--manifest": args.manifest,
@@ -1275,7 +1332,7 @@ def main() -> int:
             parser.error(f"Config is missing required cache fields: {missing}")
         dataset_root = settings.dataset_root
         manifest = settings.manifest_path
-        vision_output = settings.vision_cache_path
+        vision_output = args.vision_output or settings.vision_cache_path
         language_output = settings.language_cache_path
         target_name = settings.target_name
         frame_count = settings.frame_count
@@ -1330,6 +1387,7 @@ def main() -> int:
         device_name=args.device,
         frame_count=frame_count,
         token_grid=token_grid,
+        frame_sampling_offset=args.frame_sampling_offset,
         overwrite_vision=args.overwrite_vision,
         part_start_row=args.part_start_row,
         part_stop_row=args.part_stop_row,

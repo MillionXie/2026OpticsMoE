@@ -179,6 +179,16 @@ def run_preflight(
     cache_paths = {
         "vision": settings.vision_cache_path,
         "language": settings.language_cache_path,
+        **{
+            f"vision_view_{index + 1}": path
+            for index, path in enumerate(settings.vision_cache_view_paths)
+        },
+        **{
+            f"quality_view_{index + 1}": path
+            for index, path in enumerate(
+                settings.quality_feature_cache_view_paths
+            )
+        },
     }
     missing = [name for name, path in cache_paths.items() if path is None or not path.is_file()]
     if missing and require_cache and not settings.synthetic:

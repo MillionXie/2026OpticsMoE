@@ -528,6 +528,36 @@ def load_single_metric_cache(settings: ExperimentSettings) -> dict[str, Any]:
     manifest_splits = [row.split for row in rows]
     if manifest_splits != list(vision["splits"]):
         raise RuntimeError("Manifest and Vision cache split assignments differ")
+    vision_views = [vision]
+    vision_view_paths = [settings.vision_cache_path]
+    for view_path in settings.vision_cache_view_paths:
+        view = load_vision_cache(
+            view_path,
+            frame_count=settings.frame_count,
+            token_grid=settings.token_grid,
+        )
+        view_identity = _validate_cache_front_identity(view, language)
+        if view_identity["pair"] != front_identity["pair"]:
+            raise RuntimeError(
+                "All temporal-sampling views must use the same frozen Qwen front"
+            )
+        if [str(value) for value in view["sample_ids"]] != manifest_ids:
+            raise RuntimeError(
+                "A temporal-sampling Vision view has a different sample order"
+            )
+        if list(view["splits"]) != manifest_splits:
+            raise RuntimeError(
+                "A temporal-sampling Vision view has different split assignments"
+            )
+        vision_views.append(view)
+        vision_view_paths.append(view_path)
+    frame_sampling_offsets = [
+        float(view.get("frame_sampling_offset", 0.0)) for view in vision_views
+    ]
+    if len(set(frame_sampling_offsets)) != len(frame_sampling_offsets):
+        raise RuntimeError(
+            "Temporal-sampling Vision views must have distinct offsets"
+        )
     targets = torch.tensor(
         [row.target(settings.target_name) for row in rows], dtype=torch.float32
     )
@@ -539,6 +569,12 @@ def load_single_metric_cache(settings: ExperimentSettings) -> dict[str, Any]:
         "prompt": settings.prompt,
         "vision_tokens": vision["vision_tokens"],
         "quality_tokens": vision["quality_tokens"],
+        "vision_token_views": tuple(
+            view["vision_tokens"] for view in vision_views
+        ),
+        "quality_token_views": tuple(
+            view["quality_tokens"] for view in vision_views
+        ),
         "language_tokens": language["language_tokens"],
         "language_mask": language["attention_mask"],
         "input_ids": language["input_ids"],
@@ -549,6 +585,8 @@ def load_single_metric_cache(settings: ExperimentSettings) -> dict[str, Any]:
         "manifest_path": str(settings.manifest_path),
         "manifest_sha256": file_sha256(settings.manifest_path),
         "vision_cache_path": str(settings.vision_cache_path),
+        "vision_cache_view_paths": [str(path) for path in vision_view_paths],
+        "frame_sampling_offsets": frame_sampling_offsets,
         "language_cache_path": str(settings.language_cache_path),
         "qwen_front_identity": front_identity,
     }
@@ -561,6 +599,28 @@ def load_single_metric_cache(settings: ExperimentSettings) -> dict[str, Any]:
             width=settings.quality_input_width,
         )
         result["quality_tokens"] = auxiliary["quality_tokens"]
+        quality_views = [auxiliary["quality_tokens"]]
+        for view_path in settings.quality_feature_cache_view_paths:
+            quality_view = load_quality_feature_cache(
+                view_path,
+                sample_ids=manifest_ids,
+                frame_count=settings.frame_count,
+                token_grid=settings.token_grid,
+                width=settings.quality_input_width,
+            )
+            expected_offset = frame_sampling_offsets[len(quality_views)]
+            actual_offset = float(quality_view.get("frame_sampling_offset", 0.0))
+            if actual_offset != expected_offset:
+                raise RuntimeError(
+                    "A Conv5 quality view does not match its Vision sampling offset: "
+                    f"expected {expected_offset}, got {actual_offset}"
+                )
+            quality_views.append(quality_view["quality_tokens"])
+        if len(quality_views) != len(vision_views):
+            raise RuntimeError(
+                "Vision and Conv5 temporal-sampling view counts differ"
+            )
+        result["quality_token_views"] = tuple(quality_views)
         result["quality_feature_provenance"] = {
             key: auxiliary.get(key)
             for key in (
@@ -608,6 +668,10 @@ def cache_report(payload: Mapping[str, Any]) -> dict[str, Any]:
         "target_name": payload["target_name"],
         "vision_shape": list(tokens.shape),
         "vision_dtype": str(tokens.dtype),
+        "temporal_sampling_view_count": len(
+            payload.get("vision_token_views", (tokens,))
+        ),
+        "frame_sampling_offsets": list(payload.get("frame_sampling_offsets", [0.0])),
         "language_shape": list(payload["language_tokens"].shape),
         "quality_shape": list(payload["quality_tokens"].shape),
         "raw_frame_shape": None
@@ -642,6 +706,7 @@ class LGVQSingleMetricDataset(Dataset[dict[str, Any]]):
         if split not in {"train", "validation", "test"}:
             raise ValueError(f"Unknown split {split!r}")
         self.payload = payload
+        self.split = split
         self.indices = [
             index for index, value in enumerate(payload["splits"]) if value == split
         ]
@@ -653,9 +718,22 @@ class LGVQSingleMetricDataset(Dataset[dict[str, Any]]):
 
     def __getitem__(self, index: int) -> dict[str, Any]:
         source = self.indices[index]
+        vision_views = self.payload.get(
+            "vision_token_views", (self.payload["vision_tokens"],)
+        )
+        quality_views = self.payload.get(
+            "quality_token_views", (self.payload["quality_tokens"],)
+        )
+        if len(vision_views) != len(quality_views):
+            raise RuntimeError("Vision and quality sampling-view counts differ")
+        view_index = (
+            int(torch.randint(len(vision_views), ()).item())
+            if self.split == "train" and len(vision_views) > 1
+            else 0
+        )
         item: dict[str, Any] = {
-            "vision_tokens": self.payload["vision_tokens"][source].float(),
-            "quality_tokens": self.payload["quality_tokens"][source].float(),
+            "vision_tokens": vision_views[view_index][source].float(),
+            "quality_tokens": quality_views[view_index][source].float(),
             "language_tokens": self.payload["language_tokens"][0].float(),
             "language_mask": self.payload["language_mask"][0].bool(),
             "input_ids": self.payload["input_ids"][0].long(),
@@ -663,6 +741,7 @@ class LGVQSingleMetricDataset(Dataset[dict[str, Any]]):
             "target_name": self.payload["target_name"],
             "sample_id": self.payload["sample_ids"][source],
             "video_path": self.payload["video_paths"][source],
+            "sampling_view_index": view_index,
         }
         if "soft_target_present" in self.payload and bool(self.payload["soft_target_present"][source]):
             item["soft_target"] = self.payload["soft_targets"][source].float()

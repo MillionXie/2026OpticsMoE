@@ -16,6 +16,7 @@ from ..cache_qwen_front import (
     _language_embedding_fingerprint,
     _tensor_stream_sha256,
     _vision_front_fingerprint,
+    frame_fractions,
     pool_qwen_front_tokens,
     quality_tokens_from_images,
     render_prompt,
@@ -150,6 +151,19 @@ def test_sixteen_frame_fractions_cover_central_span() -> None:
     assert FRAME_FRACTIONS[-1] == pytest.approx(0.90)
     differences = np.diff(FRAME_FRACTIONS)
     assert np.allclose(differences, differences[0])
+
+
+def test_shifted_four_frame_views_remain_uniform_and_in_bounds() -> None:
+    early = frame_fractions(4, sampling_offset=-0.05)
+    late = frame_fractions(4, sampling_offset=0.05)
+    assert early[0] == pytest.approx(0.05)
+    assert early[-1] == pytest.approx(0.85)
+    assert late[0] == pytest.approx(0.15)
+    assert late[-1] == pytest.approx(0.95)
+    assert np.allclose(np.diff(early), np.diff(early)[0])
+    assert np.allclose(np.diff(late), np.diff(late)[0])
+    with pytest.raises(ValueError, match="outside"):
+        frame_fractions(4, sampling_offset=0.11)
 
 
 def test_two_stage_qwen_pooling_is_exact() -> None:
@@ -370,3 +384,32 @@ def test_cache_loader_returns_one_scalar_and_quality_tokens(tmp_path: Path) -> N
     assert item["quality_tokens"].shape == (16, 49, 14)
     assert item["target"].ndim == 0
     assert payload["qwen_front_identity"]["pair"]["sha256"] == identity["pair"]["sha256"]
+
+
+def test_dataset_uses_extra_sampling_views_only_for_training(monkeypatch) -> None:
+    primary_vision = torch.zeros(2, 4, 3, 5)
+    alternate_vision = torch.ones_like(primary_vision)
+    primary_quality = torch.zeros(2, 4, 3, 2)
+    alternate_quality = torch.ones_like(primary_quality)
+    payload = {
+        "vision_tokens": primary_vision,
+        "quality_tokens": primary_quality,
+        "vision_token_views": (primary_vision, alternate_vision),
+        "quality_token_views": (primary_quality, alternate_quality),
+        "language_tokens": torch.zeros(1, 2, 7),
+        "language_mask": torch.ones(1, 2, dtype=torch.bool),
+        "input_ids": torch.zeros(1, 2, dtype=torch.long),
+        "targets": torch.tensor([1.0, 2.0]),
+        "target_name": "spatial",
+        "sample_ids": ["train", "test"],
+        "video_paths": ["train.mp4", "test.mp4"],
+        "splits": ["train", "test"],
+    }
+    monkeypatch.setattr(torch, "randint", lambda *args, **kwargs: torch.tensor(1))
+    train_item = LGVQSingleMetricDataset(payload, "train")[0]
+    test_item = LGVQSingleMetricDataset(payload, "test")[0]
+    assert train_item["sampling_view_index"] == 1
+    assert bool(torch.all(train_item["vision_tokens"] == 1))
+    assert bool(torch.all(train_item["quality_tokens"] == 1))
+    assert test_item["sampling_view_index"] == 0
+    assert bool(torch.all(test_item["vision_tokens"] == 0))
