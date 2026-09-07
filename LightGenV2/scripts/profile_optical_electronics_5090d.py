@@ -1122,6 +1122,26 @@ def _t06_spatial_task(
             "estimated_wall_ms_per_call": paper_total,
             "logical_samples_per_call": 1,
             "estimated_wall_ms_per_logical_sample": paper_total,
+            "electronic_compute_wall_ms_per_call": (
+                paper_electronic
+                + 2.0 * vision_residual_ms
+                + 2.0 * language_residual_ms
+            ),
+            "component_occurrences_per_call": {
+                "spatial_vision_ccd_to_fusion": 2,
+                "spatial_vision_parallel_residual": 2,
+                "spatial_frame_to_sequence_bridge": 1,
+                "spatial_language_ccd_to_fusion": 2,
+                "spatial_language_parallel_residual": 2,
+                "spatial_task_head": 1,
+            },
+            "optical_rig_wall_energy_proxy_j_per_call": (
+                OPTICAL_POWER_W * paper_total / 1000.0
+            ),
+            "physical_only_optical_energy_j_per_call": (
+                OPTICAL_POWER_W * 6.0 * PHYSICAL_PASS_MS / 1000.0
+            ),
+            "legacy_six_pass_9p084ms_energy_j": OPTICAL_POWER_W * 9.084 / 1000.0,
             "method": "paper serial boundary; spatial router post/reload excluded by requested contract",
         },
     }
