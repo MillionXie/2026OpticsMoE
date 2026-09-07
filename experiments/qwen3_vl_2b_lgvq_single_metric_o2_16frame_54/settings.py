@@ -240,6 +240,8 @@ class ExperimentSettings:
     detector_projection_size: int = 96
     spatial_readout_mode: str = "statistics"
     spatial_residual_max: float = 0.10
+    strict_two_branch: bool = False
+    quality_branch_enabled: bool = True
     quality_adapter_mode: str = "linear"
     quality_gate_initial: float = 0.25
     qwen_gate_enabled: bool = False
@@ -247,6 +249,8 @@ class ExperimentSettings:
     electronic_skip_enabled: bool = False
     electronic_skip_initial: float = 0.0
     electronic_skip_max: float = 1.0
+    electronic_route_variant: str = "legacy"
+    electronic_route_depth: int = 1
     quality_refiner_enabled: bool = False
     quality_refiner_max: float = 0.50
     late_input_correction_enabled: bool = False
@@ -342,16 +346,24 @@ class ExperimentSettings:
         elif self.spatial_readout_mode == "spatial_deep_residual":
             residual_tag = int(round(self.spatial_residual_max * 1000.0))
             suffixes.append(f"spatialdeepresidual_rmax{residual_tag:03d}_v1")
-        if self.quality_adapter_mode == "spatial_conv":
+        if not self.quality_branch_enabled:
+            suffixes.append("qwenonly_v1")
+        elif self.quality_adapter_mode == "spatial_conv":
             suffixes.append("qualityconv_v1")
         elif self.quality_adapter_mode == "identity":
             suffixes.append("qualityidentity_v1")
+        if self.strict_two_branch:
+            suffixes.append("strict2branch_v1")
         if self.qwen_gate_enabled:
             qwen_tag = int(round(self.qwen_gate_initial * 100.0))
             suffixes.append(f"qwentrim{qwen_tag:02d}_v1")
         if self.electronic_skip_enabled:
             skip_tag = int(round(self.electronic_skip_initial * 100.0))
             suffixes.append(f"eskip{skip_tag:02d}_v1")
+        if self.electronic_route_variant != "legacy":
+            suffixes.append(
+                f"{self.electronic_route_variant}{self.electronic_route_depth}_v1"
+            )
         if self.quality_refiner_enabled:
             suffixes.append("qualityrefine_v1")
         if self.late_input_correction_enabled:
@@ -432,7 +444,38 @@ class ExperimentSettings:
             raise ValueError(
                 "model.quality_adapter_mode must be linear, spatial_conv, or identity"
             )
+        if self.electronic_route_variant not in {"legacy", "residual_conv"}:
+            raise ValueError(
+                "model.electronic_route_variant must be legacy or residual_conv"
+            )
+        if not 1 <= self.electronic_route_depth <= 4:
+            raise ValueError("model.electronic_route_depth must be within [1,4]")
+        if self.strict_two_branch:
+            invalid = []
+            if self.quality_branch_enabled:
+                invalid.append("quality_branch_enabled")
+            if self.quality_feature_cache_path is not None:
+                invalid.append("data.quality_feature_cache")
+            if self.vgg_feature_cache_path is not None:
+                invalid.append("data.vgg_feature_cache")
+            if self.quality_refiner_enabled:
+                invalid.append("quality_refiner_enabled")
+            if self.trainable_frame_stem_enabled:
+                invalid.append("trainable_frame_stem_enabled")
+            if self.late_input_correction_enabled:
+                invalid.append("late_input_correction_enabled")
+            if self.qwen_gate_enabled:
+                invalid.append("qwen_gate_enabled")
+            if self.electronic_route_variant != "residual_conv":
+                invalid.append("electronic_route_variant")
+            if invalid:
+                raise ValueError(
+                    "strict two-branch inference forbids auxiliary/bypass branches: "
+                    + ", ".join(invalid)
+                )
         if (
+            self.quality_branch_enabled
+            and
             self.quality_adapter_mode == "identity"
             and self.quality_input_width != self.model_width
         ):
@@ -524,9 +567,11 @@ class ExperimentSettings:
             self.batch_size,
             self.num_workers + 1,
             self.test_interval_epochs,
-            self.phase_snapshot_interval_epochs,
-        ) <= 0:
-            raise ValueError("Training counts must be positive (num_workers may be zero)")
+        ) <= 0 or self.phase_snapshot_interval_epochs < 0:
+            raise ValueError(
+                "Training counts must be positive; num_workers and the optional "
+                "phase snapshot interval may be zero"
+            )
         if self.trainable_scope not in {
             "all",
             "readout_only",
@@ -576,8 +621,6 @@ class ExperimentSettings:
             raise ValueError(
                 "training.trainable_scope=residual_only requires a residual spatial readout"
             )
-        if not self.synthetic and self.phase_snapshot_interval_epochs != 5:
-            raise ValueError("Formal runs must save phase-only snapshots every 5 epochs")
         if self.soft_target_weight < 0.0:
             raise ValueError("soft_target_weight must be nonnegative")
         if self.serial_router_balance_weight < 0.0:
@@ -634,6 +677,8 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         detector_projection_size=int(get("model", "detector_projection_size", 96)),
         spatial_readout_mode=str(get("model", "spatial_readout_mode", "statistics")),
         spatial_residual_max=float(get("model", "spatial_residual_max", 0.10)),
+        strict_two_branch=bool(get("model", "strict_two_branch", False)),
+        quality_branch_enabled=bool(get("model", "quality_branch_enabled", True)),
         quality_adapter_mode=str(get("model", "quality_adapter_mode", "linear")),
         quality_gate_initial=float(get("model", "quality_gate_initial", 0.25)),
         qwen_gate_enabled=bool(get("model", "qwen_gate_enabled", False)),
@@ -641,6 +686,10 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         electronic_skip_enabled=bool(get("model", "electronic_skip_enabled", False)),
         electronic_skip_initial=float(get("model", "electronic_skip_initial", 0.0)),
         electronic_skip_max=float(get("model", "electronic_skip_max", 1.0)),
+        electronic_route_variant=str(
+            get("model", "electronic_route_variant", "legacy")
+        ),
+        electronic_route_depth=int(get("model", "electronic_route_depth", 1)),
         quality_refiner_enabled=bool(get("model", "quality_refiner_enabled", False)),
         quality_refiner_max=float(get("model", "quality_refiner_max", 0.50)),
         late_input_correction_enabled=bool(

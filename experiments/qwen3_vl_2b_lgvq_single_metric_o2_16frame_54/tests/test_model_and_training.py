@@ -246,6 +246,57 @@ def test_student_contains_no_attention_or_transformer_module(tmp_path: Path) -> 
     assert forbidden == []
 
 
+def test_strict_two_branch_profile_has_only_qwen_shared_input_and_two_routes(
+    tmp_path: Path,
+) -> None:
+    settings = replace(
+        _small_settings(tmp_path),
+        strict_two_branch=True,
+        quality_branch_enabled=False,
+        qwen_gate_enabled=False,
+        electronic_route_variant="residual_conv",
+        electronic_route_depth=2,
+        phase_snapshot_interval_epochs=0,
+    )
+    settings.validate()
+    model = LGVQSingleMetricOEO16(settings).eval()
+    assert model.quality_adapter is None
+    assert model.vgg_correction is None
+    assert model.frame_stem is None
+    assert model.late_input_correction is None
+    assert not any(
+        key.startswith(("quality_adapter.", "vgg_correction.", "frame_stem."))
+        for key in model.state_dict()
+    )
+    assert not any(
+        token in module.__class__.__name__.lower()
+        for module in model.modules()
+        for token in ("attention", "transformer", "lstm", "gru")
+    )
+    inputs = list(_inputs(frame_count=4))
+    with torch.no_grad():
+        first = model(*inputs, optical_enabled=False)["prediction"]
+        inputs[1] = torch.randn_like(inputs[1]) * 1000.0
+        second = model(*inputs, optical_enabled=False)["prediction"]
+    torch.testing.assert_close(first, second, rtol=0.0, atol=0.0)
+    assert "strict2branch_v1" in settings.architecture_label
+
+
+def test_strict_two_branch_contract_rejects_hidden_vgg_side_input(
+    tmp_path: Path,
+) -> None:
+    settings = replace(
+        _small_settings(tmp_path),
+        strict_two_branch=True,
+        quality_branch_enabled=False,
+        qwen_gate_enabled=False,
+        electronic_route_variant="residual_conv",
+        vgg_feature_cache_path=tmp_path / "forbidden.pt",
+    )
+    with pytest.raises(ValueError, match="strict two-branch"):
+        settings.validate()
+
+
 def test_spatial_grid_readout_preserves_four_frame_contract(tmp_path: Path) -> None:
     settings = _small_settings(tmp_path)
     settings.spatial_readout_mode = "spatial_grid"

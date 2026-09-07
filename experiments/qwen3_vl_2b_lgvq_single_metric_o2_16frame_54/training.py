@@ -587,7 +587,10 @@ def train(
                 )
         history.append(row)
         _json(settings.output_dir / "train_history.json", history)
-        if epoch % settings.phase_snapshot_interval_epochs == 0:
+        if (
+            settings.phase_snapshot_interval_epochs > 0
+            and epoch % settings.phase_snapshot_interval_epochs == 0
+        ):
             save_phase_snapshot(
                 model,
                 settings,

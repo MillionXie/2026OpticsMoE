@@ -839,6 +839,81 @@ class LanguageElectronicRoute(nn.Module):
         return output.masked_fill(~mask.unsqueeze(-1), 0.0)
 
 
+class _VisionResidualConvBlock(nn.Module):
+    """One sequential attention-free block inside the sole electronic route."""
+
+    def __init__(self, width: int) -> None:
+        super().__init__()
+        self.norm = nn.LayerNorm(width)
+        self.depthwise = nn.Conv2d(
+            width, width, 5, padding=2, groups=width, bias=False
+        )
+        self.expand = nn.Conv2d(width, width * 2, 1)
+        self.project = nn.Conv2d(width * 2, width, 1)
+        self.raw_scale = nn.Parameter(torch.tensor(-2.0))
+
+    def forward(self, value: torch.Tensor, grid: int) -> torch.Tensor:
+        batch, frames, _, width = value.shape
+        image = self.norm(value).reshape(
+            batch * frames, grid, grid, width
+        ).permute(0, 3, 1, 2)
+        residual = self.project(F.gelu(self.expand(self.depthwise(image))))
+        residual = residual.permute(0, 2, 3, 1).reshape_as(value)
+        return value + torch.sigmoid(self.raw_scale) * residual
+
+
+class VisionElectronicResidualRoute(nn.Module):
+    """A stronger single electronic residual route; no side input or attention."""
+
+    def __init__(self, settings: ExperimentSettings) -> None:
+        super().__init__()
+        self.grid = settings.token_grid
+        self.blocks = nn.ModuleList(
+            _VisionResidualConvBlock(settings.model_width)
+            for _ in range(settings.electronic_route_depth)
+        )
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        for block in self.blocks:
+            value = block(value, self.grid)
+        return value
+
+
+class _LanguageResidualConvBlock(nn.Module):
+    """One sequential causal block inside the sole sequence electronic route."""
+
+    def __init__(self, width: int) -> None:
+        super().__init__()
+        self.norm = nn.LayerNorm(width)
+        self.depthwise = nn.Conv1d(width, width, 5, groups=width, bias=False)
+        self.expand = nn.Conv1d(width, width * 2, 1)
+        self.project = nn.Conv1d(width * 2, width, 1)
+        self.raw_scale = nn.Parameter(torch.tensor(-2.0))
+
+    def forward(self, value: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+        sequence = self.norm(value).masked_fill(~mask.unsqueeze(-1), 0.0)
+        sequence = F.pad(sequence.transpose(1, 2), (4, 0))
+        residual = self.project(F.gelu(self.expand(self.depthwise(sequence))))
+        result = value + torch.sigmoid(self.raw_scale) * residual.transpose(1, 2)
+        return result.masked_fill(~mask.unsqueeze(-1), 0.0)
+
+
+class LanguageElectronicResidualRoute(nn.Module):
+    """A stronger single causal electronic residual route; no attention."""
+
+    def __init__(self, settings: ExperimentSettings) -> None:
+        super().__init__()
+        self.blocks = nn.ModuleList(
+            _LanguageResidualConvBlock(settings.model_width)
+            for _ in range(settings.electronic_route_depth)
+        )
+
+    def forward(self, value: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+        for block in self.blocks:
+            value = block(value, mask)
+        return value
+
+
 class RmsConvexFusion(nn.Module):
     def __init__(self, settings: ExperimentSettings) -> None:
         super().__init__()
@@ -1727,11 +1802,12 @@ class LGVQSingleMetricOEO16(nn.Module):
             nn.LayerNorm(settings.vision_input_width),
             nn.Linear(settings.vision_input_width, settings.model_width),
         )
-        # Qwen patch+position tokens remain the primary visual input. The
-        # deterministic 14-channel bank is only a quality-sensitive residual
-        # (RGB, gradients, local contrast and frame difference).
-        self.quality_adapter: nn.Module
-        if settings.quality_adapter_mode == "spatial_conv":
+        # The formal two-branch profile disables every auxiliary visual source:
+        # Qwen patch+position is then the one shared input to the E and O paths.
+        self.quality_adapter: nn.Module | None
+        if not settings.quality_branch_enabled:
+            self.quality_adapter = None
+        elif settings.quality_adapter_mode == "spatial_conv":
             self.quality_adapter = QualitySpatialAdapter(settings)
         elif settings.quality_adapter_mode == "identity":
             self.quality_adapter = nn.Identity()
@@ -1755,9 +1831,10 @@ class LGVQSingleMetricOEO16(nn.Module):
             if settings.vgg_feature_cache_path is not None
             else None
         )
-        self.raw_quality_gate = nn.Parameter(
-            torch.logit(torch.tensor(settings.quality_gate_initial))
-        )
+        if settings.quality_branch_enabled:
+            self.raw_quality_gate = nn.Parameter(
+                torch.logit(torch.tensor(settings.quality_gate_initial))
+            )
         if settings.qwen_gate_enabled:
             self.raw_qwen_gate = nn.Parameter(
                 torch.logit(torch.tensor(settings.qwen_gate_initial))
@@ -1774,25 +1851,39 @@ class LGVQSingleMetricOEO16(nn.Module):
             nn.LayerNorm(settings.model_width),
             nn.Linear(settings.model_width, settings.model_width * 2),
         )
-        self.vision_routes = nn.ModuleList(
-            [VisionElectronicRoute(settings), VisionElectronicRoute(settings)]
-        )
-        self.language_routes = nn.ModuleList(
-            [
-                LanguageElectronicRoute(
-                    settings.model_width,
-                    skip_enabled=settings.electronic_skip_enabled,
-                    skip_initial=settings.electronic_skip_initial,
-                    skip_max=settings.electronic_skip_max,
-                ),
-                LanguageElectronicRoute(
-                    settings.model_width,
-                    skip_enabled=settings.electronic_skip_enabled,
-                    skip_initial=settings.electronic_skip_initial,
-                    skip_max=settings.electronic_skip_max,
-                ),
-            ]
-        )
+        if settings.electronic_route_variant == "residual_conv":
+            self.vision_routes = nn.ModuleList(
+                [
+                    VisionElectronicResidualRoute(settings),
+                    VisionElectronicResidualRoute(settings),
+                ]
+            )
+            self.language_routes = nn.ModuleList(
+                [
+                    LanguageElectronicResidualRoute(settings),
+                    LanguageElectronicResidualRoute(settings),
+                ]
+            )
+        else:
+            self.vision_routes = nn.ModuleList(
+                [VisionElectronicRoute(settings), VisionElectronicRoute(settings)]
+            )
+            self.language_routes = nn.ModuleList(
+                [
+                    LanguageElectronicRoute(
+                        settings.model_width,
+                        skip_enabled=settings.electronic_skip_enabled,
+                        skip_initial=settings.electronic_skip_initial,
+                        skip_max=settings.electronic_skip_max,
+                    ),
+                    LanguageElectronicRoute(
+                        settings.model_width,
+                        skip_enabled=settings.electronic_skip_enabled,
+                        skip_initial=settings.electronic_skip_initial,
+                        skip_max=settings.electronic_skip_max,
+                    ),
+                ]
+            )
         self.parallel_optics = ParallelOpticalFeaturePath(settings)
         self.serial_optics = SerialOpticalFeaturePath(settings)
         self.parallel_router = OpticalRouterParallel16(settings)
@@ -1859,11 +1950,16 @@ class LGVQSingleMetricOEO16(nn.Module):
             # the same quantization boundary makes epoch 0 reproducible while
             # retaining gradients through the cast during fine-tuning.
             quality_tokens = self.frame_stem(raw_frames).to(torch.float16).float()
-        if tuple(vision_tokens.shape[:-1]) != tuple(quality_tokens.shape[:-1]):
+        if self.settings.quality_branch_enabled and tuple(
+            vision_tokens.shape[:-1]
+        ) != tuple(quality_tokens.shape[:-1]):
             raise ValueError("Qwen and fixed-quality token grids must match")
         if vision_tokens.shape[-1] != self.settings.vision_input_width:
             raise ValueError("Qwen Vision front width must be 1024")
-        if quality_tokens.shape[-1] != self.settings.quality_input_width:
+        if (
+            self.settings.quality_branch_enabled
+            and quality_tokens.shape[-1] != self.settings.quality_input_width
+        ):
             raise ValueError("Fixed quality side-input width must be 14")
         if tuple(language_mask.shape) != tuple(language_tokens.shape[:-1]):
             raise ValueError("Language mask must match the prompt token sequence")
@@ -1874,16 +1970,20 @@ class LGVQSingleMetricOEO16(nn.Module):
         prompt_scale, prompt_shift = self.prompt_to_visual(prompt_summary).chunk(2, -1)
 
         qwen_vision = self.vision_adapter(vision_tokens.float())
-        quality = self.quality_refiner(
-            self.quality_adapter(quality_tokens.float())
-        )
+        quality_gate = qwen_vision.new_zeros(())
+        quality = qwen_vision.new_zeros(qwen_vision.shape)
+        if self.quality_adapter is not None:
+            quality = self.quality_refiner(
+                self.quality_adapter(quality_tokens.float())
+            )
+            quality_gate = torch.sigmoid(self.raw_quality_gate)
         raw_qwen_gate = getattr(self, "raw_qwen_gate", None)
         qwen_gate = (
             qwen_vision.new_ones(())
             if raw_qwen_gate is None
             else torch.sigmoid(raw_qwen_gate)
         )
-        vision = qwen_gate * qwen_vision + torch.sigmoid(self.raw_quality_gate) * quality
+        vision = qwen_gate * qwen_vision + quality_gate * quality
         vgg_correction = qwen_vision.new_zeros(qwen_vision.shape)
         if self.vgg_correction is not None:
             if vgg_tokens is None:
@@ -1988,7 +2088,7 @@ class LGVQSingleMetricOEO16(nn.Module):
             "prediction": prediction,
             "normalized_prediction": normalized,
             "target_name": self.settings.target_name,
-            "quality_gate": torch.sigmoid(self.raw_quality_gate),
+            "quality_gate": quality_gate,
             "qwen_gate": qwen_gate,
             "late_input_correction": input_correction,
             "vgg_correction_rms": vgg_correction.float().square().mean().sqrt(),
@@ -2014,7 +2114,6 @@ class LGVQSingleMetricOEO16(nn.Module):
             "qwen_boundary_adapters": nn.ModuleList(
                 [
                     self.vision_adapter,
-                    self.quality_adapter,
                     self.visual_input_norm,
                     self.language_adapter,
                     self.prompt_to_visual,
@@ -2036,6 +2135,8 @@ class LGVQSingleMetricOEO16(nn.Module):
             ),
             "single_metric_readout": self.readout,
         }
+        if self.quality_adapter is not None:
+            groups["quality_input_adapter"] = self.quality_adapter
         if self.frame_stem is not None:
             groups["trainable_quality_frame_stem"] = self.frame_stem
         if self.vgg_correction is not None:

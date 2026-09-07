@@ -1,0 +1,12 @@
+base_config: spatial_two_branch_residual_d2_s310.yaml
+output_dir: ../../runs/lgvq_spatial_two_branch_residual_d3_s311
+random_seed: 311
+
+model:
+  electronic_route_depth: 3
+
+training:
+  learning_rate: 0.00020
+  phase_learning_rate: 0.005
+  router_phase_learning_rate: 0.012
+
