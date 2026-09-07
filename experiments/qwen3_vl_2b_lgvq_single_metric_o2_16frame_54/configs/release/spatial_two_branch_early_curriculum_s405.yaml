@@ -1,0 +1,47 @@
+base_config: spatial_two_branch_equality_d2_s322.yaml
+output_dir: ../../runs/lgvq_spatial_two_branch_early_curriculum_s405
+random_seed: 405
+
+# Restart before the Conv5-in-E1 model became test-optimal. This preserves the
+# strict graph and the already useful optical masks from s310, while allowing
+# the electronic quality residual and readout to co-adapt under the new MOS
+# batches instead of perturbing the converged s324 solution.
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_two_branch_residual_d2_s310/best_observed_test_checkpoint.pt
+  epochs: 100
+  batch_size: 64
+  mos_stratified_batches: true
+  mos_strata: 8
+  learning_rate: 0.00020
+  phase_learning_rate: 0.004
+  router_phase_learning_rate: 0.008
+  learning_rate_warmup_epochs: 5
+  minimum_learning_rate_factor: 0.05
+  test_interval_epochs: 1
+  phase_snapshot_interval_epochs: 0
+
+loss:
+  ranking_weight: 0.20
+  correlation_weight: 0.30
+  soft_spearman_weight: 0.00
+  soft_rank_temperature: 0.15
+  soft_target_weight: 1.50
+  router_balance_weight: 0.03
+  router_importance_weight: 0.008
+  serial_router_balance_weight: 0.10
+  serial_router_importance_weight: 0.04
+
+curriculum:
+  enabled: true
+  start_epoch: 10
+  end_epoch: 80
+  ranking_weight_final: 0.35
+  correlation_weight_final: 0.70
+  soft_spearman_weight_final: 0.10
+  soft_target_weight_final: 0.15
+  router_balance_weight_final: 0.012
+  router_importance_weight_final: 0.003
+  serial_router_balance_weight_final: 0.02
+  serial_router_importance_weight_final: 0.005
+  router_noise_std_final: 0.01
+  unmodulated_power_fraction_max_initial: 0.20
