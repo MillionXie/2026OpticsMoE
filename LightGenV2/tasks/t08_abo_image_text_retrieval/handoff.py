@@ -46,8 +46,19 @@ def main():
         # Fixed placement preserves the inherited relative-path contract.
         if args.config.resolve().parent != TASK / "configs":
             raise ValueError("Place handoff config inside the task configs directory")
+        # Model ID is checkpoint identity, not a machine-specific path. Reuse
+        # the backend's HF-cache resolver without relaxing metadata validation.
+        cache = ROOT / ".handoff_hf"
+        snapshot = cache / "models--Qwen--Qwen3-VL-Embedding-2B/snapshots/local"
+        snapshot.parent.mkdir(parents=True, exist_ok=True)
+        if snapshot.exists() or snapshot.is_symlink():
+            if snapshot.resolve() != model:
+                raise ValueError("Existing handoff model link points to a different model")
+        else:
+            snapshot.symlink_to(model, target_is_directory=True)
         config = {"base_config": "optical_router_moe_dc20_kd1_balance1.yaml",
-                  "qwen": {"model_id": str(model), "local_files_only": True},
+                  "qwen": {"model_id": "Qwen/Qwen3-VL-Embedding-2B",
+                           "cache_dir": str(cache), "local_files_only": True},
                   "batching": {"num_workers": 0},
                   "output_dir": "../runs/simulation/handoff_retrain"}
         with args.config.open("x", encoding="utf-8") as stream:
@@ -60,14 +71,16 @@ def main():
     raw = task._read_config(args.config.resolve())
     contract = task.load_contract(task._resolve_from_config(args.config.resolve(),
                                                           str(task._nested(raw, "dataset.dataset_root"))))
-    if not Path(settings.model_id).is_dir():
-        raise FileNotFoundError(f"Local Qwen model missing: {settings.model_id}")
+    from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.modeling import resolve_cached_model_source
+    source = resolve_cached_model_source(settings.model_id, settings.cache_dir)
+    if not Path(source).is_dir():
+        raise FileNotFoundError(f"Local Qwen model missing: {source}")
     if not settings.router_source_checkpoint.is_file():
         raise FileNotFoundError(settings.router_source_checkpoint)
     if not args.checkpoint.is_file():
         raise FileNotFoundError(args.checkpoint)
     report = {"train": len(contract.train), "test": len(contract.test),
-              "titles": len(contract.titles), "model": settings.model_id,
+              "titles": len(contract.titles), "model": settings.model_id, "model_source": source,
               "checkpoint": str(args.checkpoint), "phase": args.phase}
     if args.phase == "check":
         print(json.dumps(report, indent=2))

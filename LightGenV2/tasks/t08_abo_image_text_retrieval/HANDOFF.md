@@ -16,6 +16,8 @@ PyTorch（服务器已有 2.8.0+cu128）；不要为了安装下面的依赖覆�
 不要直接用 Transformers 5.x 冒充原实验环境；底层 Qwen 接口可能不同。
 
 ```bash
+# 本次已在师姐服务器建立独立环境；不修改原 base 环境。
+source /root/autodl-tmp/abo_handoff_deps_20260907/env/bin/activate
 export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
 python -m LightGenV2.tasks.t08_abo_image_text_retrieval.handoff verify
 python -m LightGenV2.tasks.t08_abo_image_text_retrieval.handoff prepare --model-path /root/autodl-tmp/0_xyli/abo/Qwen3-VL-Embedding-2B
@@ -23,7 +25,9 @@ python -m LightGenV2.tasks.t08_abo_image_text_retrieval.handoff check
 ```
 
 `prepare` 只首次运行，生成 `configs/handoff_balance.yaml`；重复运行会拒绝覆盖。
-后续换路径直接编辑该文件 `qwen.model_id`。所有模型/光路设置继续继承正式强均衡配置。
+`qwen.model_id` 必须保留官方名称，它参与 checkpoint 身份校验，不应改成本地路径。
+prepare 会在包根 `.handoff_hf/` 建立只引用已有模型目录的符号链接，不复制或修改大模型。
+搬到其他机器后需重新生成该配置与链接。所有模型/光路设置继承正式强均衡配置。
 
 ## 2. 已训练模型核对（不训练）
 
