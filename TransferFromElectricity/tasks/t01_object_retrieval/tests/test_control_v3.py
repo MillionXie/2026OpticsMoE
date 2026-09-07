@@ -35,7 +35,7 @@ class ControlTests(unittest.TestCase):
                         'export_max_error':0,'git_sha':'same','split_sha256':'same',
                         'selected_expert_phase':{'rms_change_rad':.5},'ablations':{'lora_phase_effect':{'rms_change_rad':.2}}}
                 history=[{'frozen_parameter_max_change':0,'live_validation':metric}]*3
-                for name,value in {'protocol':cfg,'final_report':result,'environment':{'device':'RTX test','deterministic_algorithms':True},
+                for name,value in {'protocol':cfg,'final_report':result,'environment':{'device':'NVIDIA GeForce RTX 4090','deterministic_algorithms':True},
                                    'history':history,'status':{'status':'complete'}}.items():
                     (path/(name+'.json')).write_text(json.dumps(value))
             self.assertEqual(development(runs)['chosen']['run_id'],'3')

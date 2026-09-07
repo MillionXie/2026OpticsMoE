@@ -20,8 +20,8 @@ def load(run):
         raise ValueError(f'Incomplete run: {run}')
     cfg, result = read(run / 'protocol.json'), read(run / 'final_report.json')
     env, history = read(run / 'environment.json'), read(run / 'history.json')
-    if 'RTX' not in env['device'] or 'A100' in env['device']:
-        raise ValueError('This comparison requires RTX runs')
+    if 'RTX 4090' not in env['device'] or 'A100' in env['device']:
+        raise ValueError('This comparison requires RTX 4090 runs')
     if result['export_max_error'] != 0 or any(h['frozen_parameter_max_change'] != 0 for h in history):
         raise ValueError('Export or freezing audit failed')
     return cfg, result, env, history
@@ -68,6 +68,15 @@ def summarize(runs, dev_runs, output):
         cfg, result, env, history = load(run)
         if result['evaluation_split'] != 'test': raise ValueError('Formal report requires test evaluation')
         if not env.get('deterministic_algorithms', False): raise ValueError('Deterministic formal runs are required')
+        initialization = read(run/'initialization.json')
+        if initialization['sha256'] != '6a27f54d8c869cce46150583383a127b0ba47b3d34503f5753aa23974ac1e55d':
+            raise ValueError('Unexpected common student initialization')
+        if hashlib.sha256((run/'expert_bank.pt').read_bytes()).hexdigest()!=result['expert_bank_sha256']:
+            raise ValueError('Expert-bank hash does not match the run report')
+        expected_batches = cfg['steps_per_epoch']*sum(s['epochs'] for s in cfg['stages'])
+        expected_updates = expected_batches-(cfg['steps_per_epoch']*cfg['stages'][0]['epochs'] if cfg['method']=='fixed' else 0)
+        if result['training_batch_opportunities']!=expected_batches or result['optimizer_updates']!=expected_updates:
+            raise ValueError('Training budget mismatch')
         dataset = cfg.get('dataset', {}).get('name', 'caltech')
         key = (dataset, result['method'])
         if key in contracts: raise ValueError(f'Duplicate {key}')
@@ -93,6 +102,7 @@ def summarize(runs, dev_runs, output):
                'peak_memory_gib': result['peak_memory_gib'], 'elapsed_seconds': result['elapsed_seconds'],
                'device': env['device'], 'gpu_uuid': env['cuda_visible_devices'],
                'git_sha': result['git_sha'], 'updates': result['optimizer_updates'],
+               'initialization_sha256': initialization['sha256'],
                'alpha_min': minimum, 'export_max_error': result['export_max_error'],
                'trainable_parameter_counts': {g['group_name']:g['parameter_count'] for g in read(run/'architecture.json')['optimizer_groups']},
                'last_routing_counts': history[-1]['expert_selection_counts']}
