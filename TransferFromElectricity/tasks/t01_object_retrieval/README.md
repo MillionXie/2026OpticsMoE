@@ -1,16 +1,26 @@
-# Caltech101：固定专家库生成
+# 固定专家库生成：Caltech101 与 CIFAR-100 检索
 
 当前主线恢复 Caltech 十类；三十类保留为规模诊断。新增 CIFAR-100 与预先固定的十类子集，
 沿用类别原型检索，不能直接当作带 100 类分类头的标准 CIFAR 分类榜单成绩。
 
 用户已批准首轮固定专家库实验。实现与结果只在本任务维护，不写回 LightGenV2 的正式对照表。
 
-当前工作已进入高光学系数分阶段对照与类别扩展；前面的“首轮协议/首轮结果”为历史 pilot。
-参见下文“第二轮”“高光学系数下的扰动诊断”及对应结果，不把不同协议混成一张成绩表。
-新增独立专家输出头的结果见文末“独立输出头：Caltech 十类结果”；此前结果见“十类三种子复验结果”和“三十类完整对照结果”。
-[种子与类别对比图](reports/stability_expansion_20260907/stability_and_expansion.png)、
-[三十类训练曲线](reports/caltech30_ideal_20260907/training_comparison.png) 和
-[三十类相位变化图](reports/caltech30_ideal_20260907/selected_phase_changes.png) 可直接查看。
+独立专家输出头的新一轮共 14 个正式 run，均已完成，全部使用 RTX。
+结论：生成 mask 的可微链路成立，专家确实更新并影响检索；尚未证明 Qwen 生成优于直接优化的稳定优势。
+
+| 新一轮任务 | 直接优化 Top-1 | Qwen LoRA＋解码器 Top-1 | 统计口径 |
+|---|---:|---:|---|
+| Caltech 十类 | 81.17% ± 4.48% | 82.00% ± 2.29% | 三个优化 seed，均值 ± 样本标准差 |
+| CIFAR-100 固定十类 | 42.6% | 41.3% | seed=42，1,000 test query |
+| CIFAR-100 全百类 | 7.44% | 7.46% | seed=42，10,000 test query，有限预算筛查 |
+
+三行是各自任务内的对照，不能合并平均。Caltech 的测试查询复用和历史 warmstart 限制仍然存在；
+百类仅约 0.76 次训练集大小的等量抽样，不能作为收敛上限或标准分类榜单成绩。
+最新 [Caltech 四组](reports/caltech10_heads_20260907/summary.json)、
+[Caltech 三种子](reports/caltech10_heads_seeds_20260907/paired_seeds.png)、
+[CIFAR 十类](reports/cifar100ten_heads_20260907/summary.json)、
+[CIFAR 百类](reports/cifar100_heads_20260907/summary.json) 的完整协议、干预与限制见文末。
+前面的首轮 pilot、强扰动诊断、共享头三种子与三十类扩展均保留为历史实验，不混入这次结果。
 
 ## 当前架构与四组含义
 
@@ -582,3 +592,36 @@ direct 的所选相位变化为 0.609–0.847 rad，LoRA 为 1.138–1.271 rad�
 导出一致性是每个 run 在 3 张样本上对 materialize 前后 embedding 的检查，未进行全测试集逐元素一致性审计。
 见 [三种子完整指标](reports/caltech10_heads_seeds_20260907/summary.json) 和
 [种子对比图](reports/caltech10_heads_seeds_20260907/paired_seeds.png)。
+
+### 独立输出头：CIFAR-100 全百类筛查
+
+训练 commit `6ce31e05`，seed=42，两组均 RTX 3090，1,200 更新。
+run ID：`20260907_cifar100_heads_{direct,qwen_lora}_s42`。
+47,500 train / 2,000 validation / 500 gallery / 10,000 official test；全部一百类参与检索。
+
+| 方法 | 所选 epoch | test Top-1 | 相位变化 RMS / rad | 换回初始专家后的 Top-1 |
+|---|---:|---:|---:|---:|
+| 直接优化相位 | 18 | 7.44% | 0.75156 | 6.92% |
+| Qwen LoRA＋训练解码器 | 17 | 7.46% | 0.88383 | 7.33% |
+
+LoRA 仅多答对 2/10,000 个查询，不能据此宣称优势。只关闭 LoRA、保留解码器时为 7.51%，
+也未显示 LoRA 更新对当前 checkpoint 的正向检索收益。此轮只有两组主对照，未在百类训练 fixed/frozen 组。
+官方百类成绩低，因此十类子集作为另外一个任务诊断；没有按这些 test 结果挑选十类，百类结果也完整保留。
+有限预算、Caltech 初始化、低分辨率图像放大以及类别原型检索协议均需与标准 CIFAR 分类实验区分。
+
+见 [完整百类指标](reports/cifar100_heads_20260907/summary.json)、
+[训练曲线](reports/cifar100_heads_20260907/training_comparison.png)、
+[相位变化图](reports/cifar100_heads_20260907/selected_phase_changes.png)。
+
+### 本轮交付与后续判断
+
+本轮 14 个正式 run 均完成，所有 environment.json 为 RTX 4090 或 RTX 3090，使用完整 UUID 绑定，未使用 A100。
+逐 run 审计：共同初始化 checkpoint 的 SHA256 一致，冻结参数最大变化为 0，mask 导出检查误差为 0；
+全程最低四路光学融合系数为 0.49837，满足至少 0.4 的合同。理想仿真结果不等同于硬件鲁棒性验证。
+任务代码与报告通过 GitHub 同步；Caltech 训练源码固定在 `8063ed16`，CIFAR 固定在 `6ce31e05`，
+从独立 worktree 运行，未覆盖其他任务的源文件。轻量结果和 expert_bank 按 manifest 校验 SHA256 回传，
+best/last checkpoint 保留在服务器原 run，未复制进 Git。
+
+当前适合继续检验的是生成器的贡献来源：同样解码器的小生成器对照可用于区分参数化收益与 Qwen 的作用；
+也需要检查解码器与 LoRA 的更新分工，以及分阶段联合训练和 Language Router 的稳定性。
+这些是后续方向，尚未在本轮执行，不把它们写成已经获得的优势。
