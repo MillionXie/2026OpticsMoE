@@ -14,6 +14,8 @@ def read(path):
 
 
 def summarize(runs, output):
+    import torch
+    from .protocol import common_anchor,physical_phase
     output.mkdir(parents=True,exist_ok=True)
     rows, evidence, histories, contracts = [], [], {}, []
     for run in runs:
@@ -23,6 +25,11 @@ def summarize(runs, output):
         cfg = read(run/'protocol.json')
         history = read(run/'history.json')
         architecture = read(run/'architecture.json')
+        phase_bank = torch.load(run/'expert_bank.pt',map_location='cpu',weights_only=True)['phase_rad']
+        delta = phase_bank-physical_phase(common_anchor(cfg['seed'],dc_power=cfg['initial_expert_dc_power']))
+        piston = torch.atan2(delta.sin().mean((-2,-1)),delta.cos().mean((-2,-1)))
+        centered = delta-piston[...,None,None]
+        centered = torch.atan2(centered.sin(),centered.cos())
         method = result['method']
         comparable_cfg = {k:v for k,v in cfg.items() if k!='method'}
         contracts.append((result['git_sha'],result['split_sha256'],json.dumps(comparable_cfg,sort_keys=True)))
@@ -31,6 +38,7 @@ def summarize(runs, output):
             'selected_epoch':result['selected_epoch'],'selected_live_test':result['selected_live_test'],
             'final_ema_test':result['final_ema_test'],'selected_validation':history[result['selected_epoch']-1]['live_validation'],
             'selected_phase_rms_rad':result['selected_expert_phase']['rms_change_rad'],
+            'selected_phase_piston_removed_rms_rad':float(centered.square().mean().sqrt()),
             'last_phase_rms_rad':history[-1]['expert_phase']['rms_change_rad'],
             'fusion':result['fusion'],'ablations':result['ablations'],'counts':result['counts'],
             'optimizer_updates':result['optimizer_updates'],'batch_opportunities':result['training_batch_opportunities'],
