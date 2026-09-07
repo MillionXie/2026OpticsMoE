@@ -126,7 +126,46 @@ def summarize(runs, dev_runs, output):
             writer=csv.DictWriter(stream,fieldnames=list(flat[0]));writer.writeheader();writer.writerows(flat)
         plot(rows,output)
     training_diagnostics(runs, dev_runs, output)
+    if rows:
+        write_results_markdown(result,output)
     return result
+
+
+def write_results_markdown(result,output):
+    names={'caltech':'Caltech 十类','cifar100':'CIFAR-100 固定十类','imagenette':'Imagenette 十类'}
+    lines=['# 三数据集固定专家库：完整结果','',
+           '由完整 run 自动生成。Top-1 / Top-3 为类别原型检索，checkpoint 只按验证集选择；本轮每组一个优化 seed。','',
+           '| 数据集 | 方法 | Top-1 | Top-3 | MRR | 所选轮次 | 相位 RMS / rad |',
+           '|---|---|---:|---:|---:|---:|---:|']
+    for r in result['formal']:
+        lines.append(f"| {names[r['dataset']]} | {LABELS[r['method']]} | {r['top1_percent']:.2f}% | {r['top3_percent']:.2f}% | {r['mrr']:.4f} | {r['selected_epoch']} | {r['phase_rms_rad']:.4f} |")
+    lines+=['','## 相同 checkpoint 的光电干预','',
+            '以下是正常 Top-1 减去干预 Top-1，单位为百分点。负数表示移除后反而提高；不能解释为可加和的贡献比例。','',
+            '| 数据集 | 方法 | 移除全部光学 | 仅移除 Vision 光学 | 仅移除 Language 光学 | 移除电子融合输出 | 光学下降≥5 pp |',
+            '|---|---|---:|---:|---:|---:|---|']
+    for r in result['formal']:
+        values=[r[k] for k in ('optical_removal_top1_drop_pp','vision_optical_removal_top1_drop_pp','language_optical_removal_top1_drop_pp','electronic_removal_top1_drop_pp')]
+        lines.append(f"| {names[r['dataset']]} | {LABELS[r['method']]} | "+' | '.join(f'{v:+.2f}' for v in values)+(' | 通过 |' if r['optical_dependency_5pp_pass'] else ' | 未通过 |'))
+    lines+=['','## 生成器是否影响 mask 与检索','',
+            '| 数据集 | 方法 | 关闭 LoRA 的相位差 / rad | 关闭 LoRA 的 Top-1 下降 / pp | 换回初始专家的 Top-1 下降 / pp |',
+            '|---|---|---:|---:|---:|']
+    for r in result['formal']:
+        if not r['method'].endswith('_lora'):continue
+        a=r['ablations']
+        lines.append(f"| {names[r['dataset']]} | {LABELS[r['method']]} | {r['lora_phase_effect_rad']:.5f} | {r['top1_percent']-100*a['lora_disabled_same_decoder']['top1_retrieval_accuracy']:+.2f} | {r['top1_percent']-100*a['initial_experts']['top1_retrieval_accuracy']:+.2f} |")
+    lines+=['','所有“下降”统一采用正常值减去干预值：正数表示移除后退化，负数表示移除后改善。','',
+            '## 开发阶段：只使用验证集','',
+            '| 组 | 电子 LR | LoRA LR | 最后三轮验证 Top-1 均值 | 所选验证 Top-1 | LoRA 相位影响 / rad |',
+            '|---|---:|---:|---:|---:|---:|']
+    for r in result['development']['rows']:
+        lines.append(f"| {r['run_id'].split('_devdet_')[-1].replace('_s42','')} | {r['electronic_lr']:g} | {r['generator_lr']:g} | {100*r['last3_validation_top1']:.2f}% | {100*r['selected_validation_top1']:.2f}% | {r['lora_phase_effect_rad']:.5f} |")
+    lines+=['','frozen_e 的配置 LR 保留原值，但全部电子/读出参数冻结，实际更新 LR 为 0。encoder_focus 在第 2 轮后冻结 decoder。两组均不参与选 LR。','',
+            '## 证据与限制','',
+            '- 数字及 run ID：[summary.json](summary.json)，机器可读表：[metrics.csv](metrics.csv)。',
+            '- 实际更新量：[parameter_updates.csv](parameter_updates.csv)，证据哈希：[evidence_manifest.json](evidence_manifest.json)。',
+            '- 光学系数固定 0.6；本轮全部 RTX 4090，固定源码与严格确定性设置，未使用 A100。',
+            '- 单优化 seed；Caltech 历史 warmstart 和测试暴露；理想仿真；不同编码器规模与训练参数量。不能据单次高分宣称稳定优势。','']
+    (output/'完整结果.md').write_text('\n'.join(lines),encoding='utf-8')
 
 
 def phase_diagnostics(runs,output):
@@ -188,11 +227,12 @@ def training_diagnostics(runs, dev_runs, output):
     if updates:
         with (output/'parameter_updates.csv').open('w',newline='',encoding='utf-8-sig') as stream:
             writer=csv.DictWriter(stream,fieldnames=list(updates[0]));writer.writeheader();writer.writerows(updates)
-    fig,axes=plt.subplots(2,3,figsize=(15,8),layout='constrained')
+    fig,axes=plt.subplots(2,3,figsize=(15,8),sharey=True,layout='constrained')
     for ax,run in zip(axes.flat,dev_runs):
         subset=[r for r in updates if r['run_id']==run.name]
         for group,color in colors.items():
             selected=[r for r in subset if r['group']==group and r['relative_l2']>0]
+            if not selected:continue
             ax.plot([r['epoch'] for r in selected],[r['relative_l2'] for r in selected],color=color,label=group)
         ax.set_yscale('log');ax.set_title(run.name.split('_devdet_')[-1].replace('_s42',''),fontsize=10)
         ax.set_xlabel('Epoch');ax.set_ylabel('First-step ||update|| / ||parameter||')
@@ -211,6 +251,9 @@ def training_diagnostics(runs, dev_runs, output):
             axes[2].plot(epochs,[h['expert_phase']['rms_change_rad'] for h in history])
         for ax,title,ylabel in zip(axes,('Training task loss','Validation Top-1','Expert phase movement'),('Loss','Accuracy (%)','Circular RMS (rad)')):
             ax.set_title(title);ax.set_xlabel('Epoch');ax.set_ylabel(ylabel)
+            for i,h in enumerate(history):
+                if i and h['stage']!=history[i-1]['stage']:
+                    ax.axvline(h['epoch']-.5,color='#cccccc',linestyle='--',lw=.7)
         fig.legend(*axes[0].get_legend_handles_labels(),loc='outside lower center',ncol=3,fontsize=9)
         fig.suptitle(name);fig.savefig(output/(name+'_training.png'),dpi=160);plt.close(fig)
 
