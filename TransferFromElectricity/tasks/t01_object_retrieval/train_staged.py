@@ -91,6 +91,8 @@ def parameter_groups(replacement, readout, generator, method, cfg):
 
 def execute(args, cfg, output):
     if cfg.get('deterministic_algorithms', False):
+        from .deterministic_ops import install_deterministic_pooling
+        install_deterministic_pooling()
         os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
         torch.use_deterministic_algorithms(True)
         torch.backends.cudnn.benchmark = False

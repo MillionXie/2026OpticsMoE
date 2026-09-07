@@ -35,6 +35,8 @@ def development(runs):
             raise ValueError('Development must not inspect test metrics')
         if cfg['method'] != 'qwen_lora':
             raise ValueError('Development grid is Qwen only')
+        if not env.get('deterministic_algorithms', False):
+            raise ValueError('Deterministic development runs are required')
         last = history[-3:]
         candidate = not cfg.get('freeze_electronic', False) and 'decoder_freeze_after' not in cfg
         row = {'run_id': run.name, 'candidate': candidate,
@@ -65,6 +67,7 @@ def summarize(runs, dev_runs, output):
     for run in runs:
         cfg, result, env, history = load(run)
         if result['evaluation_split'] != 'test': raise ValueError('Formal report requires test evaluation')
+        if not env.get('deterministic_algorithms', False): raise ValueError('Deterministic formal runs are required')
         dataset = cfg.get('dataset', {}).get('name', 'caltech')
         key = (dataset, result['method'])
         if key in contracts: raise ValueError(f'Duplicate {key}')
@@ -91,6 +94,7 @@ def summarize(runs, dev_runs, output):
                'device': env['device'], 'gpu_uuid': env['cuda_visible_devices'],
                'git_sha': result['git_sha'], 'updates': result['optimizer_updates'],
                'alpha_min': minimum, 'export_max_error': result['export_max_error'],
+               'trainable_parameter_counts': {g['group_name']:g['parameter_count'] for g in read(run/'architecture.json')['optimizer_groups']},
                'last_routing_counts': history[-1]['expert_selection_counts']}
         rows.append(row)
     for dataset in {k[0] for k in contracts}:
@@ -102,7 +106,7 @@ def summarize(runs, dev_runs, output):
     if runs and {k[0] for k in contracts} != {'caltech','cifar100','imagenette'}:
         raise ValueError('All three datasets are required')
     for run in runs + dev_runs:
-        for name in ('protocol.json','final_report.json','environment.json','history.json','steps.json','initialization.json','transfer_manifest.json'):
+        for name in ('protocol.json','final_report.json','environment.json','history.json','steps.json','initialization.json','architecture.json','expert_bank.pt','transfer_manifest.json'):
             path=run/name
             if path.exists(): evidence.append({'run_id':run.name,'file':name,'sha256':hashlib.sha256(path.read_bytes()).hexdigest()})
     result = {'formal': rows, 'development': development(dev_runs),
@@ -115,11 +119,100 @@ def summarize(runs, dev_runs, output):
     (output/'summary.json').write_text(json.dumps(result,indent=2),encoding='utf-8')
     (output/'evidence_manifest.json').write_text(json.dumps(evidence,indent=2),encoding='utf-8')
     if rows:
-        flat = [{k:v for k,v in row.items() if k not in {'counts','ablations','last_routing_counts'}} for row in rows]
+        result['phase_diagnostics'] = phase_diagnostics(runs,output)
+        (output/'summary.json').write_text(json.dumps(result,indent=2),encoding='utf-8')
+        flat = [{k:v for k,v in row.items() if k not in {'counts','ablations','last_routing_counts','trainable_parameter_counts'}} for row in rows]
         with (output/'metrics.csv').open('w',newline='',encoding='utf-8-sig') as stream:
             writer=csv.DictWriter(stream,fieldnames=list(flat[0]));writer.writeheader();writer.writerows(flat)
         plot(rows,output)
+    training_diagnostics(runs, dev_runs, output)
     return result
+
+
+def phase_diagnostics(runs,output):
+    import torch
+    from .protocol import common_anchor, physical_phase
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    rows=[]
+    for dataset in ('caltech','cifar100','imagenette'):
+        banks={}
+        for run in runs:
+            cfg=read(run/'protocol.json')
+            if cfg.get('dataset',{}).get('name','caltech')!=dataset:continue
+            bank=torch.load(run/'expert_bank.pt',map_location='cpu',weights_only=True)['phase_rad']
+            banks[cfg['method']]=bank
+            initial=physical_phase(common_anchor(cfg['seed'],dc_power=cfg['initial_expert_dc_power']))
+        for left in banks:
+            delta=banks[left]-initial
+            piston=torch.atan2(delta.sin().mean((-2,-1)),delta.cos().mean((-2,-1)))
+            centered=delta-piston[...,None,None]
+            centered=torch.atan2(centered.sin(),centered.cos())
+            rows.append({'dataset':dataset,'left':left,'right':'initial',
+                         'piston_removed_rms_rad':float(centered.square().mean().sqrt()),
+                         'per_expert_piston_removed_rms_rad':centered.square().mean((-2,-1)).sqrt().tolist()})
+            for right in banks:
+                if left>=right:continue
+                diff=banks[left]-banks[right];diff=torch.atan2(diff.sin(),diff.cos())
+                rows.append({'dataset':dataset,'left':left,'right':right,'circular_rms_rad':float(diff.square().mean().sqrt())})
+        methods=('direct','qwen_lora','clip_lora')
+        changes={m:torch.atan2((banks[m]-initial).sin(),(banks[m]-initial).cos()) for m in methods}
+        limit=max(float(d.abs().quantile(.995)) for d in changes.values()) or 1.
+        fig,axes=plt.subplots(3,8,figsize=(16,7),layout='constrained')
+        for i,method in enumerate(methods):
+            for j in range(8):
+                im=axes[i,j].imshow(changes[method].flatten(0,1)[j],cmap='RdBu_r',vmin=-limit,vmax=limit)
+                axes[i,j].set_xticks([]);axes[i,j].set_yticks([])
+                if i==0:axes[i,j].set_title(('V' if j<4 else 'L')+str(j%4))
+                if j==0:axes[i,j].set_ylabel(LABELS[method])
+        fig.colorbar(im,ax=axes,label='Circular change from common initial phase (rad)',shrink=.8)
+        fig.suptitle(dataset+' | all eight exported experts; shared 99.5% color range')
+        fig.savefig(output/(dataset+'_expert_phase_changes.png'),dpi=150);plt.close(fig)
+    return rows
+
+
+def training_diagnostics(runs, dev_runs, output):
+    """Keep raw update magnitudes separate from functional branch interventions."""
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    colors = {'electronic':'#2176ae','readout':'#70a7c8','generator_context':'#a13277',
+              'generator_decoder':'#cf891c','router':'#468b39','global':'#777777','expert':'#6b50a0'}
+    updates=[]
+    for run in runs+dev_runs:
+        for step in read(run/'steps.json'):
+            for group,value in step.get('parameter_updates',{}).items():
+                updates.append({'run_id':run.name,'epoch':step['epoch'],'stage':step['stage'],
+                                'group':group,**value,'gradient_norm':step.get('gradient_norms',{}).get(group,0)})
+    if updates:
+        with (output/'parameter_updates.csv').open('w',newline='',encoding='utf-8-sig') as stream:
+            writer=csv.DictWriter(stream,fieldnames=list(updates[0]));writer.writeheader();writer.writerows(updates)
+    fig,axes=plt.subplots(2,3,figsize=(15,8),layout='constrained')
+    for ax,run in zip(axes.flat,dev_runs):
+        subset=[r for r in updates if r['run_id']==run.name]
+        for group,color in colors.items():
+            selected=[r for r in subset if r['group']==group and r['relative_l2']>0]
+            ax.plot([r['epoch'] for r in selected],[r['relative_l2'] for r in selected],color=color,label=group)
+        ax.set_yscale('log');ax.set_title(run.name.replace('20260907_v3_','').replace('_s42',''),fontsize=10)
+        ax.set_xlabel('Epoch');ax.set_ylabel('First-step ||update|| / ||parameter||')
+        for boundary in (2.5,6.5):ax.axvline(boundary,color='#cccccc',linestyle='--',lw=.7)
+    fig.legend(*axes[0,0].get_legend_handles_labels(),loc='outside lower center',ncol=4,fontsize=9)
+    fig.savefig(output/'development_parameter_updates.png',dpi=160);plt.close(fig)
+    all_sets=[('development',dev_runs)] + [(d,[r for r in runs if read(r/'protocol.json').get('dataset',{}).get('name','caltech')==d]) for d in ('caltech','cifar100','imagenette')]
+    for name,group_runs in all_sets:
+        if not group_runs:continue
+        fig,axes=plt.subplots(1,3,figsize=(15,4.5),layout='constrained')
+        for run in group_runs:
+            cfg=read(run/'protocol.json');history=read(run/'history.json');epochs=[h['epoch'] for h in history]
+            label=run.name.replace('20260907_v3_','').replace('_s42','') if name=='development' else LABELS[cfg['method']]
+            axes[0].plot(epochs,[h['mean_task_loss'] for h in history],label=label)
+            axes[1].plot(epochs,[100*h['live_validation']['top1_retrieval_accuracy'] for h in history])
+            axes[2].plot(epochs,[h['expert_phase']['rms_change_rad'] for h in history])
+        for ax,title,ylabel in zip(axes,('Training task loss','Validation Top-1','Expert phase movement'),('Loss','Accuracy (%)','Circular RMS (rad)')):
+            ax.set_title(title);ax.set_xlabel('Epoch');ax.set_ylabel(ylabel)
+        fig.legend(*axes[0].get_legend_handles_labels(),loc='outside lower center',ncol=3,fontsize=9)
+        fig.suptitle(name);fig.savefig(output/(name+'_training.png'),dpi=160);plt.close(fig)
 
 
 def plot(rows,output):

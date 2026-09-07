@@ -9,6 +9,20 @@ from TransferFromElectricity.tasks.t01_object_retrieval.protocol import split_tr
 
 
 class ControlTests(unittest.TestCase):
+    def test_deterministic_pool_adjoint_matches_native(self):
+        from TransferFromElectricity.tasks.t01_object_retrieval import deterministic_ops as ops
+        for shape, output in [((2,3,7),4), ((2,3,8),4), ((2,3,3),5),
+                              ((2,3,7,9),(4,5)), ((2,3,8,8),(4,4)), ((3,3,4),(5,6))]:
+            dimensions = 1 if isinstance(output,int) else 2
+            native = ops._pool1d if dimensions == 1 else ops._pool2d
+            custom = ops.adaptive_avg_pool1d if dimensions == 1 else ops.adaptive_avg_pool2d
+            x=torch.randn(shape,dtype=torch.float64,requires_grad=True)
+            a,b=native(x,output),custom(x,output)
+            torch.testing.assert_close(a,b,rtol=0,atol=0)
+            gradient=torch.randn_like(a)
+            ga=torch.autograd.grad(a,x,gradient)[0];gb=torch.autograd.grad(b,x,gradient)[0]
+            torch.testing.assert_close(ga,gb,rtol=1e-12,atol=1e-12)
+
     def test_development_selection_uses_complete_validation_grid(self):
         from TransferFromElectricity.tasks.t01_object_retrieval.report_control import development
         with tempfile.TemporaryDirectory() as temporary:
@@ -21,7 +35,7 @@ class ControlTests(unittest.TestCase):
                         'export_max_error':0,'git_sha':'same','split_sha256':'same',
                         'selected_expert_phase':{'rms_change_rad':.5},'ablations':{'lora_phase_effect':{'rms_change_rad':.2}}}
                 history=[{'frozen_parameter_max_change':0,'live_validation':metric}]*3
-                for name,value in {'protocol':cfg,'final_report':result,'environment':{'device':'RTX test'},
+                for name,value in {'protocol':cfg,'final_report':result,'environment':{'device':'RTX test','deterministic_algorithms':True},
                                    'history':history,'status':{'status':'complete'}}.items():
                     (path/(name+'.json')).write_text(json.dumps(value))
             self.assertEqual(development(runs)['chosen']['run_id'],'3')
