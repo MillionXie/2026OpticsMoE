@@ -1,0 +1,13 @@
+# All four methods use this same optical/task/budget profile.
+backend_profile: LightGenV2/tasks/t01_object_retrieval/configs/moe_optical_router_scale_matched_dc20.yaml
+epochs: 5
+train_per_class: 30
+seed: 42
+num_workers: 0
+generator:
+  model_id: Qwen/Qwen3-VL-2B-Instruct
+  rank: 8
+  learning_rate: 0.0001
+  decoder_learning_rate: 0.0003
+selection: final_epoch_only_pilot
+ema_decay: 0.995

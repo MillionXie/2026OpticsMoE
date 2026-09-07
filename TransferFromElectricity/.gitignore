@@ -1,0 +1,11 @@
+paths.local.yaml
+**/runs/
+**/cache/
+**/artifacts/
+**/data_mnist_clip_features/
+*.npy
+*.npz
+*.safetensors
+*.pt
+*.log
+__pycache__/
