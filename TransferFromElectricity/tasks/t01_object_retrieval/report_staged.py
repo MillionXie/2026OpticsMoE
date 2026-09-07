@@ -67,6 +67,7 @@ def summarize(runs, output):
     if len(rows)!=len(methods) or methods not in (set(LABELS),{'direct','qwen_lora'}):
         raise ValueError('Expected all four methods or the direct/Qwen-LoRA primary pair')
     report = {'protocol':'staged_alpha40','training_git_sha':contracts[0][0],'split_sha256':contracts[0][1],
+        'resolved_protocol':comparable_cfg,
         'rows':rows,'selection':'live adaptation-validation Top-1 then MRR; no test selection',
         'limitations':['one optimization seed per comparison','original-ten validation was seen by the historical warmstart',
             'original-ten test was exposed in the earlier pilot diagnosis','different parameter counts and computation costs'],
@@ -96,7 +97,8 @@ def plot(histories,runs,output):
              ('Expert movement from common initialization','Circular phase RMS (rad)'),('Minimum of four optical fusion coefficients','Coefficient')]
     for ax,(title,ylabel) in zip(axes.flat,names):
         ax.set_title(title); ax.set_xlabel('Epoch'); ax.set_ylabel(ylabel)
-        for stage_boundary in (4.5,12.5): ax.axvline(stage_boundary,color='#bbbbbb',lw=.8,linestyle='--')
+        boundaries = [r['epoch']-.5 for i,r in enumerate(history) if i and r['stage']!=history[i-1]['stage']]
+        for stage_boundary in boundaries: ax.axvline(stage_boundary,color='#bbbbbb',lw=.8,linestyle='--')
     axes[1,1].axhline(.4,color='#444444',linestyle=':',lw=1,label='Required floor')
     axes[1,1].set_ylim(.39,.56)
     fig.legend(*axes[0,0].get_legend_handles_labels(),loc='outside lower center',ncol=2)
