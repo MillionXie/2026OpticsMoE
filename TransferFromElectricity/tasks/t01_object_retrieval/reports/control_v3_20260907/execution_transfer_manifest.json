@@ -1,0 +1,14 @@
+[
+  {
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v3_formal_queue.json",
+    "file": "20260908_v3_formal_queue.json",
+    "bytes": 14172,
+    "sha256": "e89de86b18be865589d5aae78b87d25bc5f8d7e7d9a92b60593c888a5912bb37"
+  },
+  {
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v3_rtx_process_audit.json",
+    "file": "20260908_v3_rtx_process_audit.json",
+    "bytes": 4581,
+    "sha256": "f4b13a020907738e1e916e18cb85a5aa1cc62d2346a010e16eacc07176ae3459"
+  }
+]

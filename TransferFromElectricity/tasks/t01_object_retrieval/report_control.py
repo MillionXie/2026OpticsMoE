@@ -9,6 +9,8 @@ import statistics
 
 LABELS = {'fixed': 'Fixed experts', 'direct': 'Direct phase', 'qwen_frozen': 'Frozen Qwen',
           'qwen_lora': 'Qwen LoRA', 'clip_frozen': 'Frozen CLIP', 'clip_lora': 'CLIP LoRA'}
+DATASET_LABELS = {'caltech':'Caltech101 (10 classes)', 'cifar100':'CIFAR-100 (fixed 10 classes)',
+                  'imagenette':'Imagenette (10 classes)'}
 
 
 def read(path):
@@ -63,7 +65,7 @@ def development(runs):
 
 def summarize(runs, dev_runs, output):
     output.mkdir(parents=True, exist_ok=True)
-    evidence, rows, contracts = [], [], {}
+    evidence, rows, contracts, per_class = [], [], {}, []
     for run in runs:
         cfg, result, env, history = load(run)
         if result['evaluation_split'] != 'test': raise ValueError('Formal report requires test evaluation')
@@ -83,6 +85,18 @@ def summarize(runs, dev_runs, output):
         comparable = {k:v for k,v in cfg.items() if k != 'method'}
         contracts[key] = (result['git_sha'], result['split_sha256'], env['device'], json.dumps(comparable,sort_keys=True))
         m = result['selected_metrics']
+        class_metrics = m['per_sku']
+        if sum(v['query_count'] for v in class_metrics.values()) != m['query_count']:
+            raise ValueError('Per-class query counts do not match evaluation')
+        for top in (1, 3):
+            reconstructed = sum(v['query_count']*v[f'top{top}_accuracy'] for v in class_metrics.values())/m['query_count']
+            if abs(reconstructed-m[f'top{top}_retrieval_accuracy']) > 2e-7:
+                raise ValueError('Per-class metrics do not reconstruct overall retrieval')
+        for label, values in class_metrics.items():
+            per_class.append({'dataset':dataset, 'method':result['method'], 'run_id':run.name,
+                              'class':label, 'test_queries':values['query_count'],
+                              'top1_percent':100*values['top1_accuracy'],
+                              'top3_percent':100*values['top3_accuracy']})
         architecture=read(run/'architecture.json')
         ablations = {k:{name:v[name] for name in ('top1_retrieval_accuracy','top3_retrieval_accuracy','mrr')}
                      for k,v in result['ablations'].items() if 'top1_retrieval_accuracy' in v}
@@ -90,9 +104,16 @@ def summarize(runs, dev_runs, output):
         maximum = max(v for h in history for a in h['fusion'].values() for v in a)
         if not .59999 < minimum <= maximum < .60001: raise ValueError('Expected frozen alpha=0.6')
         optical_drop = 100*(m['top1_retrieval_accuracy']-ablations['remove_optical']['top1_retrieval_accuracy'])
+        selected_counts=history[result['selected_epoch']-1]['expert_selection_counts']
+        usage=[*selected_counts['vision'],*selected_counts['language']]
+        expert_motion=sum(result['selected_expert_phase']['per_expert_rms_change_rad'],[])
+        weighted_motion=(sum(c*v*v for c,v in zip(usage,expert_motion))/max(sum(usage),1))**.5
         row = {'dataset': dataset, 'method': result['method'], 'run_id': run.name,
                'top1_percent': 100*m['top1_retrieval_accuracy'], 'top3_percent': 100*m['top3_retrieval_accuracy'], 'mrr': m['mrr'],
                'selected_epoch': result['selected_epoch'], 'phase_rms_rad': result['selected_expert_phase']['rms_change_rad'],
+               'selected_epoch_usage_weighted_phase_rms_rad': weighted_motion,
+               'selected_epoch_vision_experts_used': sum(v>0 for v in selected_counts['vision']),
+               'selected_epoch_language_experts_used': sum(v>0 for v in selected_counts['language']),
                'optical_removal_top1_drop_pp': optical_drop,
                'optical_dependency_5pp_pass': optical_drop >= 5.,
                'electronic_removal_top1_drop_pp': 100*(m['top1_retrieval_accuracy']-ablations['remove_electronic']['top1_retrieval_accuracy']),
@@ -111,6 +132,7 @@ def summarize(runs, dev_runs, output):
                'initialization_sha256': initialization['sha256'],
                'alpha_min': minimum, 'export_max_error': result['export_max_error'],
                'trainable_parameter_counts': {g['group_name']:g['parameter_count'] for g in architecture['optimizer_groups']},
+               'selected_epoch_routing_counts': selected_counts,
                'last_routing_counts': history[-1]['expert_selection_counts']}
         rows.append(row)
     for dataset in {k[0] for k in contracts}:
@@ -138,8 +160,9 @@ def summarize(runs, dev_runs, output):
     lookup={(r['dataset'],r['method']):r for r in rows}
     result['comparisons']=[]
     for row in rows:
-        if row['method'] not in {'qwen_lora','clip_lora'}:continue
-        for baseline in ('direct',row['method'].replace('_lora','_frozen')):
+        if row['method'] not in {'direct','qwen_lora','clip_lora'}:continue
+        baselines=('fixed',) if row['method']=='direct' else ('fixed','direct',row['method'].replace('_lora','_frozen'))
+        for baseline in baselines:
             reference=lookup.get((row['dataset'],baseline))
             if reference:
                 result['comparisons'].append({'dataset':row['dataset'],'candidate':row['method'],'reference':baseline,
@@ -151,9 +174,11 @@ def summarize(runs, dev_runs, output):
     if rows:
         result['phase_diagnostics'] = phase_diagnostics(runs,output)
         (output/'summary.json').write_text(json.dumps(result,indent=2),encoding='utf-8')
-        flat = [{k:v for k,v in row.items() if k not in {'counts','ablations','last_routing_counts','trainable_parameter_counts'}} for row in rows]
+        flat = [{k:v for k,v in row.items() if k not in {'counts','ablations','last_routing_counts','selected_epoch_routing_counts','trainable_parameter_counts'}} for row in rows]
         with (output/'metrics.csv').open('w',newline='',encoding='utf-8-sig') as stream:
             writer=csv.DictWriter(stream,fieldnames=list(flat[0]));writer.writeheader();writer.writerows(flat)
+        with (output/'per_class_metrics.csv').open('w',newline='',encoding='utf-8-sig') as stream:
+            writer=csv.DictWriter(stream,fieldnames=list(per_class[0]));writer.writeheader();writer.writerows(per_class)
         plot(rows,output)
     training_diagnostics(runs, dev_runs, output)
     if rows:
@@ -174,6 +199,13 @@ def write_results_markdown(result,output):
             '|---|---|---|---:|---:|']
     for r in result['comparisons']:
         lines.append(f"| {names[r['dataset']]} | {LABELS[r['candidate']]} | {LABELS[r['reference']]} | {r['top1_difference_pp']:+.2f} | {r['top3_difference_pp']:+.2f} |")
+    lines+=['','## 导出 mask 是否相同','',
+            '按相同专家编号比较八张导出 mask，报告环形相位差 RMS；数值包含未选中的专家，不能直接当成功能收益。','',
+            '| 数据集 | 方法 A | 方法 B | 相位差 RMS / rad |',
+            '|---|---|---|---:|']
+    for r in result['phase_diagnostics']:
+        if r['left'] in {'direct','qwen_lora','clip_lora'} and r['right'] in {'direct','qwen_lora','clip_lora'}:
+            lines.append(f"| {names[r['dataset']]} | {LABELS[r['left']]} | {LABELS[r['right']]} | {r['circular_rms_rad']:.5f} |")
     lines+=['','## 相同 checkpoint 的光电干预','',
             '以下是正常 Top-1 减去干预 Top-1，单位为百分点。负数表示移除后反而提高；不能解释为可加和的贡献比例。','',
             '| 数据集 | 方法 | 移除全部光学 | 仅移除 Vision 光学 | 仅移除 Language 光学 | 移除电子融合输出 | 光学下降≥5 pp |',
@@ -189,6 +221,12 @@ def write_results_markdown(result,output):
         a=r['ablations']
         lines.append(f"| {names[r['dataset']]} | {LABELS[r['method']]} | {r['lora_phase_effect_rad']:.5f} | {r['top1_percent']-100*a['lora_disabled_same_decoder']['top1_retrieval_accuracy']:+.2f} | {r['top1_percent']-100*a['initial_experts']['top1_retrieval_accuracy']:+.2f} |")
     lines+=['','所有“下降”统一采用正常值减去干预值：正数表示移除后退化，负数表示移除后改善。','',
+            '## 专家使用情况','',
+            '| 数据集 | 方法 | Vision 有选择记录 / 4 | Language 有选择记录 / 4 | 按选择次数加权的相位 RMS / rad |',
+            '|---|---|---:|---:|---:|']
+    for r in result['formal']:
+        lines.append(f"| {names[r['dataset']]} | {LABELS[r['method']]} | {r['selected_epoch_vision_experts_used']} | {r['selected_epoch_language_experts_used']} | {r['selected_epoch_usage_weighted_phase_rms_rad']:.4f} |")
+    lines+=['','计数来自所选轮次的训练 batch，期间参数仍在更新；不是测试集路由统计。有选择记录不等于使用均衡。未被任务选中的专家也可能因 DC 正则或共享 decoder 而变化，因此不能只用全部相位的 RMS 推断任务贡献。','',
             '## 开发阶段：只使用验证集','',
             '| 组 | 电子 LR | LoRA LR | 最后三轮验证 Top-1 均值 | 所选验证 Top-1 | LoRA 相位影响 / rad |',
             '|---|---:|---:|---:|---:|---:|']
@@ -211,12 +249,15 @@ def phase_diagnostics(runs,output):
     import matplotlib.pyplot as plt
     rows=[]
     for dataset in ('caltech','cifar100','imagenette'):
-        banks={}
+        banks, selections = {}, {}
         for run in runs:
             cfg=read(run/'protocol.json')
             if cfg.get('dataset',{}).get('name','caltech')!=dataset:continue
             bank=torch.load(run/'expert_bank.pt',map_location='cpu',weights_only=True)['phase_rad']
             banks[cfg['method']]=bank
+            selected_epoch=read(run/'final_report.json')['selected_epoch']
+            counts=read(run/'history.json')[selected_epoch-1]['expert_selection_counts']
+            selections[cfg['method']]=counts['vision']+counts['language']
             initial=physical_phase(common_anchor(cfg['seed'],dc_power=cfg['initial_expert_dc_power']))
         for left in banks:
             delta=banks[left]-initial
@@ -238,10 +279,13 @@ def phase_diagnostics(runs,output):
             for j in range(8):
                 im=axes[i,j].imshow(changes[method].flatten(0,1)[j],cmap='RdBu_r',vmin=-limit,vmax=limit)
                 axes[i,j].set_xticks([]);axes[i,j].set_yticks([])
+                if selections[method][j]==0:
+                    axes[i,j].text(.5,.025,'0 training selections*',transform=axes[i,j].transAxes,
+                                   ha='center',va='bottom',fontsize=7,bbox={'facecolor':'white','alpha':.9,'edgecolor':'none'})
                 if i==0:axes[i,j].set_title(('V' if j<4 else 'L')+str(j%4))
                 if j==0:axes[i,j].set_ylabel(LABELS[method])
         fig.colorbar(im,ax=axes,label='Circular change from common initial phase (rad)',shrink=.8)
-        fig.suptitle(dataset+' | all eight exported experts; shared 99.5% color range')
+        fig.suptitle(DATASET_LABELS[dataset]+' | all eight exported experts; shared 99.5% color range\n* Counts in the selected training epoch; not test routing')
         fig.savefig(output/(dataset+'_expert_phase_changes.png'),dpi=150);plt.close(fig)
     return rows
 
@@ -296,7 +340,7 @@ def training_diagnostics(runs, dev_runs, output):
                 if i and h['stage']!=history[i-1]['stage']:
                     ax.axvline(h['epoch']-.5,color='#cccccc',linestyle='--',lw=.7)
         fig.legend(*axes[0].get_legend_handles_labels(),loc='outside lower center',ncol=3,fontsize=9)
-        fig.suptitle(name+' | stars mark validation-selected checkpoints');fig.savefig(output/(name+'_training.png'),dpi=160);plt.close(fig)
+        fig.suptitle(DATASET_LABELS.get(name,'CIFAR-100 fixed 10 | development')+' | stars mark validation-selected checkpoints');fig.savefig(output/(name+'_training.png'),dpi=160);plt.close(fig)
 
 
 def plot(rows,output):
@@ -304,7 +348,7 @@ def plot(rows,output):
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     import numpy as np
-    fig,axes=plt.subplots(2,3,figsize=(15,8),layout='constrained')
+    fig,axes=plt.subplots(2,3,figsize=(15,8.5),sharey='row',layout='constrained')
     for column,dataset in enumerate(('caltech','cifar100','imagenette')):
         subset=sorted((r for r in rows if r['dataset']==dataset),key=lambda r:list(LABELS).index(r['method']))
         x=np.arange(len(subset));labels=[LABELS[r['method']] for r in subset]
@@ -312,18 +356,19 @@ def plot(rows,output):
             axes[0,column].bar(x+offset,[r[key] for r in subset],width=.38,label=label,color=color)
         for offset,key,label,color in [(-.19,'optical_removal_top1_drop_pp','Remove optical','#1976b5'),(.19,'electronic_removal_top1_drop_pp','Remove electronic','#ad3375')]:
             axes[1,column].bar(x+offset,[r[key] for r in subset],width=.38,label=label,color=color)
-        axes[0,column].set_title(dataset+' | held-out retrieval')
+        axes[0,column].set_title(DATASET_LABELS[dataset]+'\nHeld-out class-prototype retrieval')
         axes[0,column].set_ylim(0,105);axes[0,column].set_ylabel('Accuracy (%)')
         axes[1,column].set_ylabel('Top-1 drop (percentage points)')
         axes[1,column].axhline(5,color='#777777',linestyle=':',label='Optical dependency reference')
         axes[1,column].axhline(0,color='black',lw=.6)
         for ax in axes[:,column]:ax.set_xticks(x,labels,rotation=30,ha='right')
-    axes[0,0].legend();axes[1,0].legend(fontsize=8)
+    fig.legend(*axes[0,0].get_legend_handles_labels(),loc='outside upper center',ncol=2)
+    fig.legend(*axes[1,0].get_legend_handles_labels(),loc='outside lower center',ncol=3,fontsize=9)
     fig.savefig(output/'retrieval_and_branch_contribution.png',dpi=170);plt.close(fig)
     fig,ax=plt.subplots(figsize=(11,8),layout='constrained')
     matrix=[]
     for row in rows:
-        counts=row['last_routing_counts']
+        counts=row['selected_epoch_routing_counts']
         matrix.append([100*v/max(sum(counts[m]),1) for m in ('vision','language') for v in counts[m]])
     matrix=np.asarray(matrix)
     im=ax.imshow(matrix,cmap='Blues',vmin=0,vmax=50,aspect='auto')
@@ -332,9 +377,9 @@ def plot(rows,output):
     ax.set_xticks(range(8),['V'+str(i) for i in range(4)]+['L'+str(i) for i in range(4)])
     ax.set_yticks(range(len(rows)),[r['dataset']+' / '+LABELS[r['method']] for r in rows],fontsize=9)
     ax.axvline(3.5,color='#777777',lw=1)
-    ax.set_title('Final training epoch routing shares (%)\nMay differ from the validation-selected checkpoint')
+    ax.set_title('Training routing shares in the selected epoch (%)\nWeights evolve within that epoch; these are not test routing counts')
     fig.colorbar(im,ax=ax,label='Share of selections within modality (%)',shrink=.8)
-    fig.savefig(output/'final_epoch_routing.png',dpi=160);plt.close(fig)
+    fig.savefig(output/'selected_epoch_routing.png',dpi=160);plt.close(fig)
 
 
 if __name__ == '__main__':

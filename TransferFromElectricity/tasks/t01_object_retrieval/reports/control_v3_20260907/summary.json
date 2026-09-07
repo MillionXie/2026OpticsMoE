@@ -1,0 +1,2322 @@
+{
+  "formal": [
+    {
+      "dataset": "caltech",
+      "method": "fixed",
+      "run_id": "20260908_v3_formal_caltech_fixed_s42",
+      "top1_percent": 79.50000166893005,
+      "top3_percent": 91.50000214576721,
+      "mrr": 0.8640872240066528,
+      "selected_epoch": 26,
+      "phase_rms_rad": 0.0,
+      "selected_epoch_usage_weighted_phase_rms_rad": 0.0,
+      "selected_epoch_vision_experts_used": 4,
+      "selected_epoch_language_experts_used": 2,
+      "optical_removal_top1_drop_pp": 31.50000274181366,
+      "optical_dependency_5pp_pass": true,
+      "electronic_removal_top1_drop_pp": 29.500001668930054,
+      "vision_optical_removal_top1_drop_pp": 8.000004291534424,
+      "language_optical_removal_top1_drop_pp": 19.999998807907104,
+      "counts": {
+        "train": 2525,
+        "validation": 100,
+        "gallery": 30,
+        "test": 200
+      },
+      "ablations": {
+        "initial_experts": {
+          "top1_retrieval_accuracy": 0.7950000166893005,
+          "top3_retrieval_accuracy": 0.9150000214576721,
+          "mrr": 0.8640872240066528
+        },
+        "flat_pi_experts": {
+          "top1_retrieval_accuracy": 0.5600000023841858,
+          "top3_retrieval_accuracy": 0.824999988079071,
+          "mrr": 0.7135019898414612
+        },
+        "remove_optical": {
+          "top1_retrieval_accuracy": 0.47999998927116394,
+          "top3_retrieval_accuracy": 0.699999988079071,
+          "mrr": 0.6352598667144775
+        },
+        "remove_electronic": {
+          "top1_retrieval_accuracy": 0.5,
+          "top3_retrieval_accuracy": 0.7699999809265137,
+          "mrr": 0.6568630337715149
+        },
+        "remove_vision_optical": {
+          "top1_retrieval_accuracy": 0.7149999737739563,
+          "top3_retrieval_accuracy": 0.8700000047683716,
+          "mrr": 0.8057975769042969
+        },
+        "remove_language_optical": {
+          "top1_retrieval_accuracy": 0.5950000286102295,
+          "top3_retrieval_accuracy": 0.824999988079071,
+          "mrr": 0.7318333387374878
+        }
+      },
+      "train_images": 2525,
+      "validation_images": 100,
+      "gallery_images": 30,
+      "test_queries": 200,
+      "generator_backbone_dtype": "not_applicable",
+      "generator_trainable_parameters": 0,
+      "joint_stage_trainable_parameters": 2381073,
+      "lora_phase_effect_rad": null,
+      "peak_memory_gib": 6.906029224395752,
+      "elapsed_seconds": 2018.6947218105197,
+      "device": "NVIDIA GeForce RTX 4090",
+      "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+      "git_sha": "dee34f07aa2f8aadbcfbc2600d49bd76783abb41",
+      "updates": 3120,
+      "initialization_sha256": "6a27f54d8c869cce46150583383a127b0ba47b3d34503f5753aa23974ac1e55d",
+      "alpha_min": 0.6000000238418579,
+      "export_max_error": 0.0,
+      "trainable_parameter_counts": {
+        "electronic": 1798345,
+        "fusion": 4,
+        "router": 100352,
+        "global": 456968,
+        "readout": 25408
+      },
+      "selected_epoch_routing_counts": {
+        "vision": [
+          1918,
+          1745,
+          1807,
+          1730
+        ],
+        "language": [
+          3600,
+          3600,
+          0,
+          0
+        ]
+      },
+      "last_routing_counts": {
+        "vision": [
+          1945,
+          1701,
+          1851,
+          1703
+        ],
+        "language": [
+          3600,
+          3600,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "dataset": "caltech",
+      "method": "direct",
+      "run_id": "20260908_v3_formal_caltech_direct_s42",
+      "top1_percent": 81.49999976158142,
+      "top3_percent": 94.49999928474426,
+      "mrr": 0.8828471899032593,
+      "selected_epoch": 23,
+      "phase_rms_rad": 0.9849497079849243,
+      "selected_epoch_usage_weighted_phase_rms_rad": 1.0228313399524196,
+      "selected_epoch_vision_experts_used": 4,
+      "selected_epoch_language_experts_used": 2,
+      "optical_removal_top1_drop_pp": 35.999998450279236,
+      "optical_dependency_5pp_pass": true,
+      "electronic_removal_top1_drop_pp": 32.499998807907104,
+      "vision_optical_removal_top1_drop_pp": 8.99999737739563,
+      "language_optical_removal_top1_drop_pp": 20.999997854232788,
+      "counts": {
+        "train": 2525,
+        "validation": 100,
+        "gallery": 30,
+        "test": 200
+      },
+      "ablations": {
+        "initial_experts": {
+          "top1_retrieval_accuracy": 0.6150000095367432,
+          "top3_retrieval_accuracy": 0.8199999928474426,
+          "mrr": 0.7352479696273804
+        },
+        "flat_pi_experts": {
+          "top1_retrieval_accuracy": 0.6150000095367432,
+          "top3_retrieval_accuracy": 0.7950000166893005,
+          "mrr": 0.7280595302581787
+        },
+        "remove_optical": {
+          "top1_retrieval_accuracy": 0.45500001311302185,
+          "top3_retrieval_accuracy": 0.675000011920929,
+          "mrr": 0.612908661365509
+        },
+        "remove_electronic": {
+          "top1_retrieval_accuracy": 0.49000000953674316,
+          "top3_retrieval_accuracy": 0.6949999928474426,
+          "mrr": 0.6421209573745728
+        },
+        "remove_vision_optical": {
+          "top1_retrieval_accuracy": 0.7250000238418579,
+          "top3_retrieval_accuracy": 0.8849999904632568,
+          "mrr": 0.8173789978027344
+        },
+        "remove_language_optical": {
+          "top1_retrieval_accuracy": 0.6050000190734863,
+          "top3_retrieval_accuracy": 0.8399999737739563,
+          "mrr": 0.7361924648284912
+        }
+      },
+      "train_images": 2525,
+      "validation_images": 100,
+      "gallery_images": 30,
+      "test_queries": 200,
+      "generator_backbone_dtype": "not_applicable",
+      "generator_trainable_parameters": 0,
+      "joint_stage_trainable_parameters": 2782481,
+      "lora_phase_effect_rad": null,
+      "peak_memory_gib": 7.131551265716553,
+      "elapsed_seconds": 2077.824792228639,
+      "device": "NVIDIA GeForce RTX 4090",
+      "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+      "git_sha": "dee34f07aa2f8aadbcfbc2600d49bd76783abb41",
+      "updates": 3600,
+      "initialization_sha256": "6a27f54d8c869cce46150583383a127b0ba47b3d34503f5753aa23974ac1e55d",
+      "alpha_min": 0.6000000238418579,
+      "export_max_error": 0.0,
+      "trainable_parameter_counts": {
+        "electronic": 1798345,
+        "fusion": 4,
+        "router": 100352,
+        "expert": 401408,
+        "global": 456968,
+        "readout": 25408
+      },
+      "selected_epoch_routing_counts": {
+        "vision": [
+          1889,
+          2040,
+          1445,
+          1826
+        ],
+        "language": [
+          3600,
+          3600,
+          0,
+          0
+        ]
+      },
+      "last_routing_counts": {
+        "vision": [
+          1898,
+          1647,
+          1949,
+          1706
+        ],
+        "language": [
+          3600,
+          3600,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "dataset": "caltech",
+      "method": "qwen_lora",
+      "run_id": "20260908_v3_formal_caltech_qwen_lora_s42",
+      "top1_percent": 81.00000023841858,
+      "top3_percent": 93.99999976158142,
+      "mrr": 0.876380980014801,
+      "selected_epoch": 29,
+      "phase_rms_rad": 1.261916995048523,
+      "selected_epoch_usage_weighted_phase_rms_rad": 1.1017832018923577,
+      "selected_epoch_vision_experts_used": 4,
+      "selected_epoch_language_experts_used": 2,
+      "optical_removal_top1_drop_pp": 32.499998807907104,
+      "optical_dependency_5pp_pass": true,
+      "electronic_removal_top1_drop_pp": 29.500001668930054,
+      "vision_optical_removal_top1_drop_pp": 8.499997854232788,
+      "language_optical_removal_top1_drop_pp": 15.500003099441528,
+      "counts": {
+        "train": 2525,
+        "validation": 100,
+        "gallery": 30,
+        "test": 200
+      },
+      "ablations": {
+        "initial_experts": {
+          "top1_retrieval_accuracy": 0.7300000190734863,
+          "top3_retrieval_accuracy": 0.8949999809265137,
+          "mrr": 0.8221786618232727
+        },
+        "flat_pi_experts": {
+          "top1_retrieval_accuracy": 0.6150000095367432,
+          "top3_retrieval_accuracy": 0.8650000095367432,
+          "mrr": 0.7546250224113464
+        },
+        "lora_disabled_same_decoder": {
+          "top1_retrieval_accuracy": 0.8149999976158142,
+          "top3_retrieval_accuracy": 0.9399999976158142,
+          "mrr": 0.8805477023124695
+        },
+        "remove_optical": {
+          "top1_retrieval_accuracy": 0.48500001430511475,
+          "top3_retrieval_accuracy": 0.7350000143051147,
+          "mrr": 0.6424067616462708
+        },
+        "remove_electronic": {
+          "top1_retrieval_accuracy": 0.5149999856948853,
+          "top3_retrieval_accuracy": 0.7300000190734863,
+          "mrr": 0.6557559967041016
+        },
+        "remove_vision_optical": {
+          "top1_retrieval_accuracy": 0.7250000238418579,
+          "top3_retrieval_accuracy": 0.8949999809265137,
+          "mrr": 0.8200298547744751
+        },
+        "remove_language_optical": {
+          "top1_retrieval_accuracy": 0.6549999713897705,
+          "top3_retrieval_accuracy": 0.8650000095367432,
+          "mrr": 0.7730555534362793
+        }
+      },
+      "train_images": 2525,
+      "validation_images": 100,
+      "gallery_images": 30,
+      "test_queries": 200,
+      "generator_backbone_dtype": "BF16",
+      "generator_trainable_parameters": 1978368,
+      "joint_stage_trainable_parameters": 4359441,
+      "lora_phase_effect_rad": 0.005739928688853979,
+      "peak_memory_gib": 11.063555240631104,
+      "elapsed_seconds": 2958.352398082614,
+      "device": "NVIDIA GeForce RTX 4090",
+      "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "git_sha": "dee34f07aa2f8aadbcfbc2600d49bd76783abb41",
+      "updates": 3600,
+      "initialization_sha256": "6a27f54d8c869cce46150583383a127b0ba47b3d34503f5753aa23974ac1e55d",
+      "alpha_min": 0.6000000238418579,
+      "export_max_error": 0.0,
+      "trainable_parameter_counts": {
+        "electronic": 1798345,
+        "fusion": 4,
+        "router": 100352,
+        "global": 456968,
+        "readout": 25408,
+        "generator_context": 1605632,
+        "generator_decoder": 372736
+      },
+      "selected_epoch_routing_counts": {
+        "vision": [
+          1781,
+          1838,
+          1758,
+          1823
+        ],
+        "language": [
+          3600,
+          3600,
+          0,
+          0
+        ]
+      },
+      "last_routing_counts": {
+        "vision": [
+          1735,
+          1949,
+          1630,
+          1886
+        ],
+        "language": [
+          3600,
+          3600,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "dataset": "caltech",
+      "method": "clip_lora",
+      "run_id": "20260908_v3_formal_caltech_clip_lora_s42",
+      "top1_percent": 81.00000023841858,
+      "top3_percent": 94.49999928474426,
+      "mrr": 0.8813452124595642,
+      "selected_epoch": 27,
+      "phase_rms_rad": 1.2622631788253784,
+      "selected_epoch_usage_weighted_phase_rms_rad": 1.0958628147345764,
+      "selected_epoch_vision_experts_used": 4,
+      "selected_epoch_language_experts_used": 2,
+      "optical_removal_top1_drop_pp": 29.000002145767212,
+      "optical_dependency_5pp_pass": true,
+      "electronic_removal_top1_drop_pp": 35.499998927116394,
+      "vision_optical_removal_top1_drop_pp": 9.50000286102295,
+      "language_optical_removal_top1_drop_pp": 22.50000238418579,
+      "counts": {
+        "train": 2525,
+        "validation": 100,
+        "gallery": 30,
+        "test": 200
+      },
+      "ablations": {
+        "initial_experts": {
+          "top1_retrieval_accuracy": 0.6449999809265137,
+          "top3_retrieval_accuracy": 0.824999988079071,
+          "mrr": 0.7617479562759399
+        },
+        "flat_pi_experts": {
+          "top1_retrieval_accuracy": 0.5899999737739563,
+          "top3_retrieval_accuracy": 0.7950000166893005,
+          "mrr": 0.7184383869171143
+        },
+        "lora_disabled_same_decoder": {
+          "top1_retrieval_accuracy": 0.8100000023841858,
+          "top3_retrieval_accuracy": 0.9449999928474426,
+          "mrr": 0.8807975649833679
+        },
+        "remove_optical": {
+          "top1_retrieval_accuracy": 0.5199999809265137,
+          "top3_retrieval_accuracy": 0.7350000143051147,
+          "mrr": 0.6601687073707581
+        },
+        "remove_electronic": {
+          "top1_retrieval_accuracy": 0.45500001311302185,
+          "top3_retrieval_accuracy": 0.6899999976158142,
+          "mrr": 0.6110674738883972
+        },
+        "remove_vision_optical": {
+          "top1_retrieval_accuracy": 0.7149999737739563,
+          "top3_retrieval_accuracy": 0.875,
+          "mrr": 0.8122043013572693
+        },
+        "remove_language_optical": {
+          "top1_retrieval_accuracy": 0.5849999785423279,
+          "top3_retrieval_accuracy": 0.800000011920929,
+          "mrr": 0.7183352708816528
+        }
+      },
+      "train_images": 2525,
+      "validation_images": 100,
+      "gallery_images": 30,
+      "test_queries": 200,
+      "generator_backbone_dtype": "FP32",
+      "generator_trainable_parameters": 569344,
+      "joint_stage_trainable_parameters": 2950417,
+      "lora_phase_effect_rad": 0.0046804798766970634,
+      "peak_memory_gib": 7.600351810455322,
+      "elapsed_seconds": 2442.8606814220548,
+      "device": "NVIDIA GeForce RTX 4090",
+      "gpu_uuid": "GPU-afc19890-6209-ee4d-622d-e619da5bd5b2",
+      "git_sha": "dee34f07aa2f8aadbcfbc2600d49bd76783abb41",
+      "updates": 3600,
+      "initialization_sha256": "6a27f54d8c869cce46150583383a127b0ba47b3d34503f5753aa23974ac1e55d",
+      "alpha_min": 0.6000000238418579,
+      "export_max_error": 0.0,
+      "trainable_parameter_counts": {
+        "electronic": 1798345,
+        "fusion": 4,
+        "router": 100352,
+        "global": 456968,
+        "readout": 25408,
+        "generator_context": 196608,
+        "generator_decoder": 372736
+      },
+      "selected_epoch_routing_counts": {
+        "vision": [
+          1862,
+          1943,
+          1927,
+          1468
+        ],
+        "language": [
+          3600,
+          3600,
+          0,
+          0
+        ]
+      },
+      "last_routing_counts": {
+        "vision": [
+          1855,
+          1940,
+          1567,
+          1838
+        ],
+        "language": [
+          3600,
+          3600,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "dataset": "cifar100",
+      "method": "fixed",
+      "run_id": "20260908_v3_formal_cifar_fixed_s42",
+      "top1_percent": 50.0,
+      "top3_percent": 81.09999895095825,
+      "mrr": 0.6718682646751404,
+      "selected_epoch": 30,
+      "phase_rms_rad": 0.0,
+      "selected_epoch_usage_weighted_phase_rms_rad": 0.0,
+      "selected_epoch_vision_experts_used": 4,
+      "selected_epoch_language_experts_used": 2,
+      "optical_removal_top1_drop_pp": 26.000000536441803,
+      "optical_dependency_5pp_pass": true,
+      "electronic_removal_top1_drop_pp": 12.799999117851257,
+      "vision_optical_removal_top1_drop_pp": 8.19999873638153,
+      "language_optical_removal_top1_drop_pp": 22.90000021457672,
+      "counts": {
+        "train": 4750,
+        "validation": 200,
+        "gallery": 50,
+        "test": 1000
+      },
+      "ablations": {
+        "initial_experts": {
+          "top1_retrieval_accuracy": 0.5,
+          "top3_retrieval_accuracy": 0.8109999895095825,
+          "mrr": 0.6718682646751404
+        },
+        "flat_pi_experts": {
+          "top1_retrieval_accuracy": 0.38100001215934753,
+          "top3_retrieval_accuracy": 0.6800000071525574,
+          "mrr": 0.5701876878738403
+        },
+        "remove_optical": {
+          "top1_retrieval_accuracy": 0.23999999463558197,
+          "top3_retrieval_accuracy": 0.4869999885559082,
+          "mrr": 0.4333745837211609
+        },
+        "remove_electronic": {
+          "top1_retrieval_accuracy": 0.3720000088214874,
+          "top3_retrieval_accuracy": 0.671999990940094,
+          "mrr": 0.5578765869140625
+        },
+        "remove_vision_optical": {
+          "top1_retrieval_accuracy": 0.4180000126361847,
+          "top3_retrieval_accuracy": 0.7450000047683716,
+          "mrr": 0.6059444546699524
+        },
+        "remove_language_optical": {
+          "top1_retrieval_accuracy": 0.2709999978542328,
+          "top3_retrieval_accuracy": 0.550000011920929,
+          "mrr": 0.4658539593219757
+        }
+      },
+      "train_images": 4750,
+      "validation_images": 200,
+      "gallery_images": 50,
+      "test_queries": 1000,
+      "generator_backbone_dtype": "not_applicable",
+      "generator_trainable_parameters": 0,
+      "joint_stage_trainable_parameters": 2381073,
+      "lora_phase_effect_rad": null,
+      "peak_memory_gib": 6.910493850708008,
+      "elapsed_seconds": 2061.0741552636027,
+      "device": "NVIDIA GeForce RTX 4090",
+      "gpu_uuid": "GPU-1b963983-7909-af6e-0528-f0f0661ab549",
+      "git_sha": "dee34f07aa2f8aadbcfbc2600d49bd76783abb41",
+      "updates": 3120,
+      "initialization_sha256": "6a27f54d8c869cce46150583383a127b0ba47b3d34503f5753aa23974ac1e55d",
+      "alpha_min": 0.6000000238418579,
+      "export_max_error": 0.0,
+      "trainable_parameter_counts": {
+        "electronic": 1798345,
+        "fusion": 4,
+        "router": 100352,
+        "global": 456968,
+        "readout": 25408
+      },
+      "selected_epoch_routing_counts": {
+        "vision": [
+          1723,
+          1903,
+          1586,
+          1988
+        ],
+        "language": [
+          3600,
+          3600,
+          0,
+          0
+        ]
+      },
+      "last_routing_counts": {
+        "vision": [
+          1723,
+          1903,
+          1586,
+          1988
+        ],
+        "language": [
+          3600,
+          3600,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "dataset": "cifar100",
+      "method": "direct",
+      "run_id": "20260908_v3_formal_cifar_direct_s42",
+      "top1_percent": 50.300002098083496,
+      "top3_percent": 83.09999704360962,
+      "mrr": 0.6827384233474731,
+      "selected_epoch": 30,
+      "phase_rms_rad": 1.0103305578231812,
+      "selected_epoch_usage_weighted_phase_rms_rad": 1.0462732338365868,
+      "selected_epoch_vision_experts_used": 4,
+      "selected_epoch_language_experts_used": 2,
+      "optical_removal_top1_drop_pp": 23.70000183582306,
+      "optical_dependency_5pp_pass": true,
+      "electronic_removal_top1_drop_pp": 19.80000138282776,
+      "vision_optical_removal_top1_drop_pp": 9.200000762939453,
+      "language_optical_removal_top1_drop_pp": 21.60000205039978,
+      "counts": {
+        "train": 4750,
+        "validation": 200,
+        "gallery": 50,
+        "test": 1000
+      },
+      "ablations": {
+        "initial_experts": {
+          "top1_retrieval_accuracy": 0.3409999907016754,
+          "top3_retrieval_accuracy": 0.6589999794960022,
+          "mrr": 0.5415008068084717
+        },
+        "flat_pi_experts": {
+          "top1_retrieval_accuracy": 0.2840000092983246,
+          "top3_retrieval_accuracy": 0.621999979019165,
+          "mrr": 0.4921742081642151
+        },
+        "remove_optical": {
+          "top1_retrieval_accuracy": 0.26600000262260437,
+          "top3_retrieval_accuracy": 0.5289999842643738,
+          "mrr": 0.4564376771450043
+        },
+        "remove_electronic": {
+          "top1_retrieval_accuracy": 0.3050000071525574,
+          "top3_retrieval_accuracy": 0.6000000238418579,
+          "mrr": 0.505353569984436
+        },
+        "remove_vision_optical": {
+          "top1_retrieval_accuracy": 0.41100001335144043,
+          "top3_retrieval_accuracy": 0.7039999961853027,
+          "mrr": 0.5899432301521301
+        },
+        "remove_language_optical": {
+          "top1_retrieval_accuracy": 0.28700000047683716,
+          "top3_retrieval_accuracy": 0.6029999852180481,
+          "mrr": 0.49476149678230286
+        }
+      },
+      "train_images": 4750,
+      "validation_images": 200,
+      "gallery_images": 50,
+      "test_queries": 1000,
+      "generator_backbone_dtype": "not_applicable",
+      "generator_trainable_parameters": 0,
+      "joint_stage_trainable_parameters": 2782481,
+      "lora_phase_effect_rad": null,
+      "peak_memory_gib": 7.135334014892578,
+      "elapsed_seconds": 2093.1995786204934,
+      "device": "NVIDIA GeForce RTX 4090",
+      "gpu_uuid": "GPU-1b963983-7909-af6e-0528-f0f0661ab549",
+      "git_sha": "dee34f07aa2f8aadbcfbc2600d49bd76783abb41",
+      "updates": 3600,
+      "initialization_sha256": "6a27f54d8c869cce46150583383a127b0ba47b3d34503f5753aa23974ac1e55d",
+      "alpha_min": 0.6000000238418579,
+      "export_max_error": 0.0,
+      "trainable_parameter_counts": {
+        "electronic": 1798345,
+        "fusion": 4,
+        "router": 100352,
+        "expert": 401408,
+        "global": 456968,
+        "readout": 25408
+      },
+      "selected_epoch_routing_counts": {
+        "vision": [
+          2042,
+          1624,
+          1686,
+          1848
+        ],
+        "language": [
+          3600,
+          3600,
+          0,
+          0
+        ]
+      },
+      "last_routing_counts": {
+        "vision": [
+          2042,
+          1624,
+          1686,
+          1848
+        ],
+        "language": [
+          3600,
+          3600,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "dataset": "cifar100",
+      "method": "qwen_frozen",
+      "run_id": "20260908_v3_formal_cifar_qwen_frozen_s42",
+      "top1_percent": 48.60000014305115,
+      "top3_percent": 80.0000011920929,
+      "mrr": 0.6622123122215271,
+      "selected_epoch": 29,
+      "phase_rms_rad": 1.0967296361923218,
+      "selected_epoch_usage_weighted_phase_rms_rad": 0.847597496434057,
+      "selected_epoch_vision_experts_used": 4,
+      "selected_epoch_language_experts_used": 2,
+      "optical_removal_top1_drop_pp": 24.500000476837158,
+      "optical_dependency_5pp_pass": true,
+      "electronic_removal_top1_drop_pp": 18.09999942779541,
+      "vision_optical_removal_top1_drop_pp": 11.300000548362732,
+      "language_optical_removal_top1_drop_pp": 23.600000143051147,
+      "counts": {
+        "train": 4750,
+        "validation": 200,
+        "gallery": 50,
+        "test": 1000
+      },
+      "ablations": {
+        "initial_experts": {
+          "top1_retrieval_accuracy": 0.4440000057220459,
+          "top3_retrieval_accuracy": 0.7739999890327454,
+          "mrr": 0.6293226480484009
+        },
+        "flat_pi_experts": {
+          "top1_retrieval_accuracy": 0.3540000021457672,
+          "top3_retrieval_accuracy": 0.7049999833106995,
+          "mrr": 0.5586150884628296
+        },
+        "remove_optical": {
+          "top1_retrieval_accuracy": 0.2409999966621399,
+          "top3_retrieval_accuracy": 0.5249999761581421,
+          "mrr": 0.44145914912223816
+        },
+        "remove_electronic": {
+          "top1_retrieval_accuracy": 0.3050000071525574,
+          "top3_retrieval_accuracy": 0.6069999933242798,
+          "mrr": 0.5068075656890869
+        },
+        "remove_vision_optical": {
+          "top1_retrieval_accuracy": 0.37299999594688416,
+          "top3_retrieval_accuracy": 0.703000009059906,
+          "mrr": 0.5732242465019226
+        },
+        "remove_language_optical": {
+          "top1_retrieval_accuracy": 0.25,
+          "top3_retrieval_accuracy": 0.5249999761581421,
+          "mrr": 0.4497249722480774
+        }
+      },
+      "train_images": 4750,
+      "validation_images": 200,
+      "gallery_images": 50,
+      "test_queries": 1000,
+      "generator_backbone_dtype": "BF16",
+      "generator_trainable_parameters": 372736,
+      "joint_stage_trainable_parameters": 2753809,
+      "lora_phase_effect_rad": null,
+      "peak_memory_gib": 10.3495512008667,
+      "elapsed_seconds": 2177.880545653403,
+      "device": "NVIDIA GeForce RTX 4090",
+      "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+      "git_sha": "dee34f07aa2f8aadbcfbc2600d49bd76783abb41",
+      "updates": 3600,
+      "initialization_sha256": "6a27f54d8c869cce46150583383a127b0ba47b3d34503f5753aa23974ac1e55d",
+      "alpha_min": 0.6000000238418579,
+      "export_max_error": 0.0,
+      "trainable_parameter_counts": {
+        "electronic": 1798345,
+        "fusion": 4,
+        "router": 100352,
+        "global": 456968,
+        "readout": 25408,
+        "generator_decoder": 372736
+      },
+      "selected_epoch_routing_counts": {
+        "vision": [
+          1791,
+          1902,
+          1503,
+          2004
+        ],
+        "language": [
+          3600,
+          3600,
+          0,
+          0
+        ]
+      },
+      "last_routing_counts": {
+        "vision": [
+          1987,
+          1689,
+          1680,
+          1844
+        ],
+        "language": [
+          3600,
+          3600,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "dataset": "cifar100",
+      "method": "qwen_lora",
+      "run_id": "20260908_v3_formal_cifar_qwen_lora_s42",
+      "top1_percent": 50.09999871253967,
+      "top3_percent": 80.59999942779541,
+      "mrr": 0.6735095381736755,
+      "selected_epoch": 30,
+      "phase_rms_rad": 1.0462185144424438,
+      "selected_epoch_usage_weighted_phase_rms_rad": 0.7729856404534513,
+      "selected_epoch_vision_experts_used": 4,
+      "selected_epoch_language_experts_used": 2,
+      "optical_removal_top1_drop_pp": 25.499998033046722,
+      "optical_dependency_5pp_pass": true,
+      "electronic_removal_top1_drop_pp": 18.699997663497925,
+      "vision_optical_removal_top1_drop_pp": 9.699997305870056,
+      "language_optical_removal_top1_drop_pp": 24.300000071525574,
+      "counts": {
+        "train": 4750,
+        "validation": 200,
+        "gallery": 50,
+        "test": 1000
+      },
+      "ablations": {
+        "initial_experts": {
+          "top1_retrieval_accuracy": 0.46700000762939453,
+          "top3_retrieval_accuracy": 0.7799999713897705,
+          "mrr": 0.6458500027656555
+        },
+        "flat_pi_experts": {
+          "top1_retrieval_accuracy": 0.35100001096725464,
+          "top3_retrieval_accuracy": 0.6869999766349792,
+          "mrr": 0.5518460273742676
+        },
+        "lora_disabled_same_decoder": {
+          "top1_retrieval_accuracy": 0.49799999594688416,
+          "top3_retrieval_accuracy": 0.8080000281333923,
+          "mrr": 0.672301173210144
+        },
+        "remove_optical": {
+          "top1_retrieval_accuracy": 0.2460000067949295,
+          "top3_retrieval_accuracy": 0.515999972820282,
+          "mrr": 0.4444924592971802
+        },
+        "remove_electronic": {
+          "top1_retrieval_accuracy": 0.3140000104904175,
+          "top3_retrieval_accuracy": 0.6389999985694885,
+          "mrr": 0.5177773833274841
+        },
+        "remove_vision_optical": {
+          "top1_retrieval_accuracy": 0.40400001406669617,
+          "top3_retrieval_accuracy": 0.7200000286102295,
+          "mrr": 0.5911388397216797
+        },
+        "remove_language_optical": {
+          "top1_retrieval_accuracy": 0.257999986410141,
+          "top3_retrieval_accuracy": 0.5619999766349792,
+          "mrr": 0.46934881806373596
+        }
+      },
+      "train_images": 4750,
+      "validation_images": 200,
+      "gallery_images": 50,
+      "test_queries": 1000,
+      "generator_backbone_dtype": "BF16",
+      "generator_trainable_parameters": 1978368,
+      "joint_stage_trainable_parameters": 4359441,
+      "lora_phase_effect_rad": 0.004633212462067604,
+      "peak_memory_gib": 11.1416015625,
+      "elapsed_seconds": 3463.911527529359,
+      "device": "NVIDIA GeForce RTX 4090",
+      "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+      "git_sha": "dee34f07aa2f8aadbcfbc2600d49bd76783abb41",
+      "updates": 3600,
+      "initialization_sha256": "6a27f54d8c869cce46150583383a127b0ba47b3d34503f5753aa23974ac1e55d",
+      "alpha_min": 0.6000000238418579,
+      "export_max_error": 0.0,
+      "trainable_parameter_counts": {
+        "electronic": 1798345,
+        "fusion": 4,
+        "router": 100352,
+        "global": 456968,
+        "readout": 25408,
+        "generator_context": 1605632,
+        "generator_decoder": 372736
+      },
+      "selected_epoch_routing_counts": {
+        "vision": [
+          1766,
+          1942,
+          1589,
+          1903
+        ],
+        "language": [
+          3600,
+          3600,
+          0,
+          0
+        ]
+      },
+      "last_routing_counts": {
+        "vision": [
+          1766,
+          1942,
+          1589,
+          1903
+        ],
+        "language": [
+          3600,
+          3600,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "dataset": "cifar100",
+      "method": "clip_frozen",
+      "run_id": "20260908_v3_formal_cifar_clip_frozen_s42",
+      "top1_percent": 50.80000162124634,
+      "top3_percent": 80.80000281333923,
+      "mrr": 0.675430178642273,
+      "selected_epoch": 30,
+      "phase_rms_rad": 1.0332156419754028,
+      "selected_epoch_usage_weighted_phase_rms_rad": 0.7816690677044208,
+      "selected_epoch_vision_experts_used": 4,
+      "selected_epoch_language_experts_used": 2,
+      "optical_removal_top1_drop_pp": 27.500002086162567,
+      "optical_dependency_5pp_pass": true,
+      "electronic_removal_top1_drop_pp": 19.00000274181366,
+      "vision_optical_removal_top1_drop_pp": 8.600002527236938,
+      "language_optical_removal_top1_drop_pp": 22.90000021457672,
+      "counts": {
+        "train": 4750,
+        "validation": 200,
+        "gallery": 50,
+        "test": 1000
+      },
+      "ablations": {
+        "initial_experts": {
+          "top1_retrieval_accuracy": 0.46000000834465027,
+          "top3_retrieval_accuracy": 0.7770000100135803,
+          "mrr": 0.6413840651512146
+        },
+        "flat_pi_experts": {
+          "top1_retrieval_accuracy": 0.3959999978542328,
+          "top3_retrieval_accuracy": 0.6869999766349792,
+          "mrr": 0.5765682458877563
+        },
+        "remove_optical": {
+          "top1_retrieval_accuracy": 0.2329999953508377,
+          "top3_retrieval_accuracy": 0.5,
+          "mrr": 0.4302908778190613
+        },
+        "remove_electronic": {
+          "top1_retrieval_accuracy": 0.3179999887943268,
+          "top3_retrieval_accuracy": 0.5929999947547913,
+          "mrr": 0.5104432106018066
+        },
+        "remove_vision_optical": {
+          "top1_retrieval_accuracy": 0.421999990940094,
+          "top3_retrieval_accuracy": 0.7070000171661377,
+          "mrr": 0.5996420979499817
+        },
+        "remove_language_optical": {
+          "top1_retrieval_accuracy": 0.27900001406669617,
+          "top3_retrieval_accuracy": 0.5870000123977661,
+          "mrr": 0.48014163970947266
+        }
+      },
+      "train_images": 4750,
+      "validation_images": 200,
+      "gallery_images": 50,
+      "test_queries": 1000,
+      "generator_backbone_dtype": "FP32",
+      "generator_trainable_parameters": 372736,
+      "joint_stage_trainable_parameters": 2753809,
+      "lora_phase_effect_rad": null,
+      "peak_memory_gib": 7.3758769035339355,
+      "elapsed_seconds": 2067.9172479063272,
+      "device": "NVIDIA GeForce RTX 4090",
+      "gpu_uuid": "GPU-1b963983-7909-af6e-0528-f0f0661ab549",
+      "git_sha": "dee34f07aa2f8aadbcfbc2600d49bd76783abb41",
+      "updates": 3600,
+      "initialization_sha256": "6a27f54d8c869cce46150583383a127b0ba47b3d34503f5753aa23974ac1e55d",
+      "alpha_min": 0.6000000238418579,
+      "export_max_error": 0.0,
+      "trainable_parameter_counts": {
+        "electronic": 1798345,
+        "fusion": 4,
+        "router": 100352,
+        "global": 456968,
+        "readout": 25408,
+        "generator_decoder": 372736
+      },
+      "selected_epoch_routing_counts": {
+        "vision": [
+          1619,
+          1982,
+          1692,
+          1907
+        ],
+        "language": [
+          3600,
+          3600,
+          0,
+          0
+        ]
+      },
+      "last_routing_counts": {
+        "vision": [
+          1619,
+          1982,
+          1692,
+          1907
+        ],
+        "language": [
+          3600,
+          3600,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "dataset": "cifar100",
+      "method": "clip_lora",
+      "run_id": "20260908_v3_formal_cifar_clip_lora_s42",
+      "top1_percent": 52.30000019073486,
+      "top3_percent": 81.69999718666077,
+      "mrr": 0.6854821443557739,
+      "selected_epoch": 30,
+      "phase_rms_rad": 1.1194385290145874,
+      "selected_epoch_usage_weighted_phase_rms_rad": 0.8713881482897627,
+      "selected_epoch_vision_experts_used": 4,
+      "selected_epoch_language_experts_used": 2,
+      "optical_removal_top1_drop_pp": 28.800000250339508,
+      "optical_dependency_5pp_pass": true,
+      "electronic_removal_top1_drop_pp": 19.600000977516174,
+      "vision_optical_removal_top1_drop_pp": 11.59999966621399,
+      "language_optical_removal_top1_drop_pp": 20.899999141693115,
+      "counts": {
+        "train": 4750,
+        "validation": 200,
+        "gallery": 50,
+        "test": 1000
+      },
+      "ablations": {
+        "initial_experts": {
+          "top1_retrieval_accuracy": 0.47600001096725464,
+          "top3_retrieval_accuracy": 0.7889999747276306,
+          "mrr": 0.6533127427101135
+        },
+        "flat_pi_experts": {
+          "top1_retrieval_accuracy": 0.3630000054836273,
+          "top3_retrieval_accuracy": 0.7459999918937683,
+          "mrr": 0.5752007961273193
+        },
+        "lora_disabled_same_decoder": {
+          "top1_retrieval_accuracy": 0.5189999938011169,
+          "top3_retrieval_accuracy": 0.8119999766349792,
+          "mrr": 0.6832666397094727
+        },
+        "remove_optical": {
+          "top1_retrieval_accuracy": 0.23499999940395355,
+          "top3_retrieval_accuracy": 0.5019999742507935,
+          "mrr": 0.4331234097480774
+        },
+        "remove_electronic": {
+          "top1_retrieval_accuracy": 0.3269999921321869,
+          "top3_retrieval_accuracy": 0.6489999890327454,
+          "mrr": 0.528533399105072
+        },
+        "remove_vision_optical": {
+          "top1_retrieval_accuracy": 0.40700000524520874,
+          "top3_retrieval_accuracy": 0.7110000252723694,
+          "mrr": 0.5920364856719971
+        },
+        "remove_language_optical": {
+          "top1_retrieval_accuracy": 0.3140000104904175,
+          "top3_retrieval_accuracy": 0.6079999804496765,
+          "mrr": 0.5103583335876465
+        }
+      },
+      "train_images": 4750,
+      "validation_images": 200,
+      "gallery_images": 50,
+      "test_queries": 1000,
+      "generator_backbone_dtype": "FP32",
+      "generator_trainable_parameters": 569344,
+      "joint_stage_trainable_parameters": 2950417,
+      "lora_phase_effect_rad": 0.03550779074430466,
+      "peak_memory_gib": 7.605692386627197,
+      "elapsed_seconds": 2440.9409453496337,
+      "device": "NVIDIA GeForce RTX 4090",
+      "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "git_sha": "dee34f07aa2f8aadbcfbc2600d49bd76783abb41",
+      "updates": 3600,
+      "initialization_sha256": "6a27f54d8c869cce46150583383a127b0ba47b3d34503f5753aa23974ac1e55d",
+      "alpha_min": 0.6000000238418579,
+      "export_max_error": 0.0,
+      "trainable_parameter_counts": {
+        "electronic": 1798345,
+        "fusion": 4,
+        "router": 100352,
+        "global": 456968,
+        "readout": 25408,
+        "generator_context": 196608,
+        "generator_decoder": 372736
+      },
+      "selected_epoch_routing_counts": {
+        "vision": [
+          1782,
+          1930,
+          1607,
+          1881
+        ],
+        "language": [
+          3600,
+          3600,
+          0,
+          0
+        ]
+      },
+      "last_routing_counts": {
+        "vision": [
+          1782,
+          1930,
+          1607,
+          1881
+        ],
+        "language": [
+          3600,
+          3600,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "dataset": "imagenette",
+      "method": "fixed",
+      "run_id": "20260908_v3_formal_imagenette_fixed_s42",
+      "top1_percent": 39.97452259063721,
+      "top3_percent": 68.43312382698059,
+      "mrr": 0.580069363117218,
+      "selected_epoch": 25,
+      "phase_rms_rad": 0.0,
+      "selected_epoch_usage_weighted_phase_rms_rad": 0.0,
+      "selected_epoch_vision_experts_used": 4,
+      "selected_epoch_language_experts_used": 2,
+      "optical_removal_top1_drop_pp": 18.42038184404373,
+      "optical_dependency_5pp_pass": true,
+      "electronic_removal_top1_drop_pp": 15.464968979358673,
+      "vision_optical_removal_top1_drop_pp": 8.993631601333618,
+      "language_optical_removal_top1_drop_pp": 13.936305046081543,
+      "counts": {
+        "train": 9119,
+        "validation": 300,
+        "gallery": 50,
+        "test": 3925
+      },
+      "ablations": {
+        "initial_experts": {
+          "top1_retrieval_accuracy": 0.39974522590637207,
+          "top3_retrieval_accuracy": 0.6843312382698059,
+          "mrr": 0.580069363117218
+        },
+        "flat_pi_experts": {
+          "top1_retrieval_accuracy": 0.3131210207939148,
+          "top3_retrieval_accuracy": 0.5984713435173035,
+          "mrr": 0.5076122283935547
+        },
+        "remove_optical": {
+          "top1_retrieval_accuracy": 0.21554140746593475,
+          "top3_retrieval_accuracy": 0.5095541477203369,
+          "mrr": 0.4261406362056732
+        },
+        "remove_electronic": {
+          "top1_retrieval_accuracy": 0.24509553611278534,
+          "top3_retrieval_accuracy": 0.49273884296417236,
+          "mrr": 0.4355410933494568
+        },
+        "remove_vision_optical": {
+          "top1_retrieval_accuracy": 0.3098089098930359,
+          "top3_retrieval_accuracy": 0.5898089408874512,
+          "mrr": 0.5014968514442444
+        },
+        "remove_language_optical": {
+          "top1_retrieval_accuracy": 0.26038217544555664,
+          "top3_retrieval_accuracy": 0.5429299473762512,
+          "mrr": 0.4625781774520874
+        }
+      },
+      "train_images": 9119,
+      "validation_images": 300,
+      "gallery_images": 50,
+      "test_queries": 3925,
+      "generator_backbone_dtype": "not_applicable",
+      "generator_trainable_parameters": 0,
+      "joint_stage_trainable_parameters": 2381073,
+      "lora_phase_effect_rad": null,
+      "peak_memory_gib": 6.907041072845459,
+      "elapsed_seconds": 2420.957211084664,
+      "device": "NVIDIA GeForce RTX 4090",
+      "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "git_sha": "dee34f07aa2f8aadbcfbc2600d49bd76783abb41",
+      "updates": 3120,
+      "initialization_sha256": "6a27f54d8c869cce46150583383a127b0ba47b3d34503f5753aa23974ac1e55d",
+      "alpha_min": 0.6000000238418579,
+      "export_max_error": 0.0,
+      "trainable_parameter_counts": {
+        "electronic": 1798345,
+        "fusion": 4,
+        "router": 100352,
+        "global": 456968,
+        "readout": 25408
+      },
+      "selected_epoch_routing_counts": {
+        "vision": [
+          1989,
+          1588,
+          1870,
+          1753
+        ],
+        "language": [
+          3600,
+          3600,
+          0,
+          0
+        ]
+      },
+      "last_routing_counts": {
+        "vision": [
+          1937,
+          1660,
+          1809,
+          1794
+        ],
+        "language": [
+          3600,
+          3600,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "dataset": "imagenette",
+      "method": "direct",
+      "run_id": "20260908_v3_formal_imagenette_direct_s42",
+      "top1_percent": 37.68152892589569,
+      "top3_percent": 66.39490723609924,
+      "mrr": 0.5640925168991089,
+      "selected_epoch": 25,
+      "phase_rms_rad": 0.9951551556587219,
+      "selected_epoch_usage_weighted_phase_rms_rad": 1.0285567775937474,
+      "selected_epoch_vision_experts_used": 4,
+      "selected_epoch_language_experts_used": 2,
+      "optical_removal_top1_drop_pp": 13.987261056900024,
+      "optical_dependency_5pp_pass": true,
+      "electronic_removal_top1_drop_pp": 13.528662919998169,
+      "vision_optical_removal_top1_drop_pp": 5.808916687965393,
+      "language_optical_removal_top1_drop_pp": 11.337581276893616,
+      "counts": {
+        "train": 9119,
+        "validation": 300,
+        "gallery": 50,
+        "test": 3925
+      },
+      "ablations": {
+        "initial_experts": {
+          "top1_retrieval_accuracy": 0.2713375687599182,
+          "top3_retrieval_accuracy": 0.549808919429779,
+          "mrr": 0.46130624413490295
+        },
+        "flat_pi_experts": {
+          "top1_retrieval_accuracy": 0.26675158739089966,
+          "top3_retrieval_accuracy": 0.5510827898979187,
+          "mrr": 0.46206650137901306
+        },
+        "remove_optical": {
+          "top1_retrieval_accuracy": 0.23694267868995667,
+          "top3_retrieval_accuracy": 0.5110828280448914,
+          "mrr": 0.4346216917037964
+        },
+        "remove_electronic": {
+          "top1_retrieval_accuracy": 0.24152866005897522,
+          "top3_retrieval_accuracy": 0.4784713387489319,
+          "mrr": 0.43135789036750793
+        },
+        "remove_vision_optical": {
+          "top1_retrieval_accuracy": 0.318726122379303,
+          "top3_retrieval_accuracy": 0.5778343677520752,
+          "mrr": 0.5026339292526245
+        },
+        "remove_language_optical": {
+          "top1_retrieval_accuracy": 0.26343947649002075,
+          "top3_retrieval_accuracy": 0.5411465167999268,
+          "mrr": 0.45803752541542053
+        }
+      },
+      "train_images": 9119,
+      "validation_images": 300,
+      "gallery_images": 50,
+      "test_queries": 3925,
+      "generator_backbone_dtype": "not_applicable",
+      "generator_trainable_parameters": 0,
+      "joint_stage_trainable_parameters": 2782481,
+      "lora_phase_effect_rad": null,
+      "peak_memory_gib": 7.132935047149658,
+      "elapsed_seconds": 2406.305687993765,
+      "device": "NVIDIA GeForce RTX 4090",
+      "gpu_uuid": "GPU-afc19890-6209-ee4d-622d-e619da5bd5b2",
+      "git_sha": "dee34f07aa2f8aadbcfbc2600d49bd76783abb41",
+      "updates": 3600,
+      "initialization_sha256": "6a27f54d8c869cce46150583383a127b0ba47b3d34503f5753aa23974ac1e55d",
+      "alpha_min": 0.6000000238418579,
+      "export_max_error": 0.0,
+      "trainable_parameter_counts": {
+        "electronic": 1798345,
+        "fusion": 4,
+        "router": 100352,
+        "expert": 401408,
+        "global": 456968,
+        "readout": 25408
+      },
+      "selected_epoch_routing_counts": {
+        "vision": [
+          1761,
+          1815,
+          1820,
+          1804
+        ],
+        "language": [
+          3600,
+          3600,
+          0,
+          0
+        ]
+      },
+      "last_routing_counts": {
+        "vision": [
+          1877,
+          1803,
+          1749,
+          1771
+        ],
+        "language": [
+          3600,
+          3600,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "dataset": "imagenette",
+      "method": "qwen_lora",
+      "run_id": "20260908_v3_formal_imagenette_qwen_lora_s42",
+      "top1_percent": 40.96815288066864,
+      "top3_percent": 67.43949055671692,
+      "mrr": 0.5837960839271545,
+      "selected_epoch": 30,
+      "phase_rms_rad": 1.0445420742034912,
+      "selected_epoch_usage_weighted_phase_rms_rad": 0.8046488318253079,
+      "selected_epoch_vision_experts_used": 4,
+      "selected_epoch_language_experts_used": 2,
+      "optical_removal_top1_drop_pp": 17.299363017082214,
+      "optical_dependency_5pp_pass": true,
+      "electronic_removal_top1_drop_pp": 14.853504300117493,
+      "vision_optical_removal_top1_drop_pp": 7.414013147354126,
+      "language_optical_removal_top1_drop_pp": 18.64968091249466,
+      "counts": {
+        "train": 9119,
+        "validation": 300,
+        "gallery": 50,
+        "test": 3925
+      },
+      "ablations": {
+        "initial_experts": {
+          "top1_retrieval_accuracy": 0.3737579584121704,
+          "top3_retrieval_accuracy": 0.649936318397522,
+          "mrr": 0.5569315552711487
+        },
+        "flat_pi_experts": {
+          "top1_retrieval_accuracy": 0.32713374495506287,
+          "top3_retrieval_accuracy": 0.6257324814796448,
+          "mrr": 0.5230554938316345
+        },
+        "lora_disabled_same_decoder": {
+          "top1_retrieval_accuracy": 0.4071337580680847,
+          "top3_retrieval_accuracy": 0.6746496558189392,
+          "mrr": 0.5822365880012512
+        },
+        "remove_optical": {
+          "top1_retrieval_accuracy": 0.23668789863586426,
+          "top3_retrieval_accuracy": 0.5210191011428833,
+          "mrr": 0.438180536031723
+        },
+        "remove_electronic": {
+          "top1_retrieval_accuracy": 0.2611464858055115,
+          "top3_retrieval_accuracy": 0.49503183364868164,
+          "mrr": 0.4452417194843292
+        },
+        "remove_vision_optical": {
+          "top1_retrieval_accuracy": 0.33554139733314514,
+          "top3_retrieval_accuracy": 0.6198726296424866,
+          "mrr": 0.5247153639793396
+        },
+        "remove_language_optical": {
+          "top1_retrieval_accuracy": 0.2231847196817398,
+          "top3_retrieval_accuracy": 0.5034394860267639,
+          "mrr": 0.4291810691356659
+        }
+      },
+      "train_images": 9119,
+      "validation_images": 300,
+      "gallery_images": 50,
+      "test_queries": 3925,
+      "generator_backbone_dtype": "BF16",
+      "generator_trainable_parameters": 1978368,
+      "joint_stage_trainable_parameters": 4359441,
+      "lora_phase_effect_rad": 0.07516543567180634,
+      "peak_memory_gib": 11.004571914672852,
+      "elapsed_seconds": 3614.2174197882414,
+      "device": "NVIDIA GeForce RTX 4090",
+      "gpu_uuid": "GPU-1b963983-7909-af6e-0528-f0f0661ab549",
+      "git_sha": "dee34f07aa2f8aadbcfbc2600d49bd76783abb41",
+      "updates": 3600,
+      "initialization_sha256": "6a27f54d8c869cce46150583383a127b0ba47b3d34503f5753aa23974ac1e55d",
+      "alpha_min": 0.6000000238418579,
+      "export_max_error": 0.0,
+      "trainable_parameter_counts": {
+        "electronic": 1798345,
+        "fusion": 4,
+        "router": 100352,
+        "global": 456968,
+        "readout": 25408,
+        "generator_context": 1605632,
+        "generator_decoder": 372736
+      },
+      "selected_epoch_routing_counts": {
+        "vision": [
+          1911,
+          1707,
+          1717,
+          1865
+        ],
+        "language": [
+          3600,
+          3600,
+          0,
+          0
+        ]
+      },
+      "last_routing_counts": {
+        "vision": [
+          1911,
+          1707,
+          1717,
+          1865
+        ],
+        "language": [
+          3600,
+          3600,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "dataset": "imagenette",
+      "method": "clip_lora",
+      "run_id": "20260908_v3_formal_imagenette_clip_lora_s42",
+      "top1_percent": 37.8343939781189,
+      "top3_percent": 66.64968132972717,
+      "mrr": 0.5627304911613464,
+      "selected_epoch": 25,
+      "phase_rms_rad": 1.0419704914093018,
+      "selected_epoch_usage_weighted_phase_rms_rad": 0.7730395993154099,
+      "selected_epoch_vision_experts_used": 4,
+      "selected_epoch_language_experts_used": 2,
+      "optical_removal_top1_drop_pp": 13.961783051490784,
+      "optical_dependency_5pp_pass": true,
+      "electronic_removal_top1_drop_pp": 15.847133100032806,
+      "vision_optical_removal_top1_drop_pp": 7.5668781995773315,
+      "language_optical_removal_top1_drop_pp": 14.75159078836441,
+      "counts": {
+        "train": 9119,
+        "validation": 300,
+        "gallery": 50,
+        "test": 3925
+      },
+      "ablations": {
+        "initial_experts": {
+          "top1_retrieval_accuracy": 0.3526114523410797,
+          "top3_retrieval_accuracy": 0.6537579894065857,
+          "mrr": 0.5448068976402283
+        },
+        "flat_pi_experts": {
+          "top1_retrieval_accuracy": 0.31464967131614685,
+          "top3_retrieval_accuracy": 0.5977070331573486,
+          "mrr": 0.5078341960906982
+        },
+        "lora_disabled_same_decoder": {
+          "top1_retrieval_accuracy": 0.3788534998893738,
+          "top3_retrieval_accuracy": 0.6664968132972717,
+          "mrr": 0.5630851984024048
+        },
+        "remove_optical": {
+          "top1_retrieval_accuracy": 0.23872610926628113,
+          "top3_retrieval_accuracy": 0.5149044394493103,
+          "mrr": 0.44041207432746887
+        },
+        "remove_electronic": {
+          "top1_retrieval_accuracy": 0.2198726087808609,
+          "top3_retrieval_accuracy": 0.45044586062431335,
+          "mrr": 0.40994879603385925
+        },
+        "remove_vision_optical": {
+          "top1_retrieval_accuracy": 0.30267515778541565,
+          "top3_retrieval_accuracy": 0.5689172148704529,
+          "mrr": 0.4924902319908142
+        },
+        "remove_language_optical": {
+          "top1_retrieval_accuracy": 0.23082803189754486,
+          "top3_retrieval_accuracy": 0.5044586062431335,
+          "mrr": 0.4308862090110779
+        }
+      },
+      "train_images": 9119,
+      "validation_images": 300,
+      "gallery_images": 50,
+      "test_queries": 3925,
+      "generator_backbone_dtype": "FP32",
+      "generator_trainable_parameters": 569344,
+      "joint_stage_trainable_parameters": 2950417,
+      "lora_phase_effect_rad": 0.0047485376708209515,
+      "peak_memory_gib": 7.603373050689697,
+      "elapsed_seconds": 2868.642665579915,
+      "device": "NVIDIA GeForce RTX 4090",
+      "gpu_uuid": "GPU-afc19890-6209-ee4d-622d-e619da5bd5b2",
+      "git_sha": "dee34f07aa2f8aadbcfbc2600d49bd76783abb41",
+      "updates": 3600,
+      "initialization_sha256": "6a27f54d8c869cce46150583383a127b0ba47b3d34503f5753aa23974ac1e55d",
+      "alpha_min": 0.6000000238418579,
+      "export_max_error": 0.0,
+      "trainable_parameter_counts": {
+        "electronic": 1798345,
+        "fusion": 4,
+        "router": 100352,
+        "global": 456968,
+        "readout": 25408,
+        "generator_context": 196608,
+        "generator_decoder": 372736
+      },
+      "selected_epoch_routing_counts": {
+        "vision": [
+          1997,
+          1524,
+          1871,
+          1808
+        ],
+        "language": [
+          3600,
+          3600,
+          0,
+          0
+        ]
+      },
+      "last_routing_counts": {
+        "vision": [
+          1975,
+          1701,
+          1947,
+          1577
+        ],
+        "language": [
+          3600,
+          3600,
+          0,
+          0
+        ]
+      }
+    }
+  ],
+  "development": {
+    "rows": [
+      {
+        "run_id": "20260908_v3_devdet_base_s42",
+        "candidate": true,
+        "electronic_lr": 0.0001,
+        "generator_lr": 0.0001,
+        "freeze_electronic": false,
+        "decoder_freeze_after": null,
+        "last3_validation_top1": 0.37333332498868305,
+        "last3_validation_mrr": 0.5671144127845764,
+        "selected_validation_top1": 0.38499999046325684,
+        "selected_validation_top3": 0.6800000071525574,
+        "phase_rms_rad": 0.8254509568214417,
+        "lora_phase_effect_rad": 0.00815524347126484,
+        "ablations": {
+          "initial_experts": 0.3700000047683716,
+          "flat_pi_experts": 0.28999999165534973,
+          "lora_disabled_same_decoder": 0.38999998569488525,
+          "remove_optical": 0.2750000059604645,
+          "remove_electronic": 0.28999999165534973,
+          "remove_vision_optical": 0.33000001311302185,
+          "remove_language_optical": 0.33000001311302185
+        }
+      },
+      {
+        "run_id": "20260908_v3_devdet_slow_e_s42",
+        "candidate": true,
+        "electronic_lr": 1e-05,
+        "generator_lr": 0.0001,
+        "freeze_electronic": false,
+        "decoder_freeze_after": null,
+        "last3_validation_top1": 0.36833332975705463,
+        "last3_validation_mrr": 0.5697982708613077,
+        "selected_validation_top1": 0.39500001072883606,
+        "selected_validation_top3": 0.6850000023841858,
+        "phase_rms_rad": 0.8524935841560364,
+        "lora_phase_effect_rad": 0.00789306778460741,
+        "ablations": {
+          "initial_experts": 0.35499998927116394,
+          "flat_pi_experts": 0.2849999964237213,
+          "lora_disabled_same_decoder": 0.3799999952316284,
+          "remove_optical": 0.20000000298023224,
+          "remove_electronic": 0.26499998569488525,
+          "remove_vision_optical": 0.38499999046325684,
+          "remove_language_optical": 0.3050000071525574
+        }
+      },
+      {
+        "run_id": "20260908_v3_devdet_high_g_s42",
+        "candidate": true,
+        "electronic_lr": 0.0001,
+        "generator_lr": 0.001,
+        "freeze_electronic": false,
+        "decoder_freeze_after": null,
+        "last3_validation_top1": 0.3583333392937978,
+        "last3_validation_mrr": 0.5579364895820618,
+        "selected_validation_top1": 0.36500000953674316,
+        "selected_validation_top3": 0.7099999785423279,
+        "phase_rms_rad": 0.8443684577941895,
+        "lora_phase_effect_rad": 0.05585714057087898,
+        "ablations": {
+          "initial_experts": 0.36500000953674316,
+          "flat_pi_experts": 0.2750000059604645,
+          "lora_disabled_same_decoder": 0.36500000953674316,
+          "remove_optical": 0.2750000059604645,
+          "remove_electronic": 0.24500000476837158,
+          "remove_vision_optical": 0.33000001311302185,
+          "remove_language_optical": 0.29499998688697815
+        }
+      },
+      {
+        "run_id": "20260908_v3_devdet_slow_e_high_g_s42",
+        "candidate": true,
+        "electronic_lr": 1e-05,
+        "generator_lr": 0.001,
+        "freeze_electronic": false,
+        "decoder_freeze_after": null,
+        "last3_validation_top1": 0.3449999988079071,
+        "last3_validation_mrr": 0.551922599474589,
+        "selected_validation_top1": 0.3799999952316284,
+        "selected_validation_top3": 0.6650000214576721,
+        "phase_rms_rad": 0.8485390543937683,
+        "lora_phase_effect_rad": 0.057216010987758636,
+        "ablations": {
+          "initial_experts": 0.35499998927116394,
+          "flat_pi_experts": 0.2849999964237213,
+          "lora_disabled_same_decoder": 0.3700000047683716,
+          "remove_optical": 0.2199999988079071,
+          "remove_electronic": 0.3050000071525574,
+          "remove_vision_optical": 0.33500000834465027,
+          "remove_language_optical": 0.28999999165534973
+        }
+      },
+      {
+        "run_id": "20260908_v3_devdet_frozen_e_s42",
+        "candidate": false,
+        "electronic_lr": 0.0001,
+        "generator_lr": 0.001,
+        "freeze_electronic": true,
+        "decoder_freeze_after": null,
+        "last3_validation_top1": 0.3616666793823242,
+        "last3_validation_mrr": 0.5581329266230265,
+        "selected_validation_top1": 0.36500000953674316,
+        "selected_validation_top3": 0.6949999928474426,
+        "phase_rms_rad": 0.8343927264213562,
+        "lora_phase_effect_rad": 0.04899853840470314,
+        "ablations": {
+          "initial_experts": 0.3199999928474426,
+          "flat_pi_experts": 0.3050000071525574,
+          "lora_disabled_same_decoder": 0.36500000953674316,
+          "remove_optical": 0.1850000023841858,
+          "remove_electronic": 0.3100000023841858,
+          "remove_vision_optical": 0.32499998807907104,
+          "remove_language_optical": 0.3199999928474426
+        }
+      },
+      {
+        "run_id": "20260908_v3_devdet_encoder_focus_s42",
+        "candidate": false,
+        "electronic_lr": 0.0001,
+        "generator_lr": 0.001,
+        "freeze_electronic": false,
+        "decoder_freeze_after": 2,
+        "last3_validation_top1": 0.37166666984558105,
+        "last3_validation_mrr": 0.5680985450744629,
+        "selected_validation_top1": 0.375,
+        "selected_validation_top3": 0.7049999833106995,
+        "phase_rms_rad": 0.3520078957080841,
+        "lora_phase_effect_rad": 0.16148805618286133,
+        "ablations": {
+          "initial_experts": 0.38999998569488525,
+          "flat_pi_experts": 0.2849999964237213,
+          "lora_disabled_same_decoder": 0.3700000047683716,
+          "remove_optical": 0.2549999952316284,
+          "remove_electronic": 0.28999999165534973,
+          "remove_vision_optical": 0.3400000035762787,
+          "remove_language_optical": 0.3149999976158142
+        }
+      }
+    ],
+    "chosen": {
+      "run_id": "20260908_v3_devdet_base_s42",
+      "candidate": true,
+      "electronic_lr": 0.0001,
+      "generator_lr": 0.0001,
+      "freeze_electronic": false,
+      "decoder_freeze_after": null,
+      "last3_validation_top1": 0.37333332498868305,
+      "last3_validation_mrr": 0.5671144127845764,
+      "selected_validation_top1": 0.38499999046325684,
+      "selected_validation_top3": 0.6800000071525574,
+      "phase_rms_rad": 0.8254509568214417,
+      "lora_phase_effect_rad": 0.00815524347126484,
+      "ablations": {
+        "initial_experts": 0.3700000047683716,
+        "flat_pi_experts": 0.28999999165534973,
+        "lora_disabled_same_decoder": 0.38999998569488525,
+        "remove_optical": 0.2750000059604645,
+        "remove_electronic": 0.28999999165534973,
+        "remove_vision_optical": 0.33000001311302185,
+        "remove_language_optical": 0.33000001311302185
+      }
+    },
+    "selection": "last-three validation Top-1 mean then MRR mean; no test evaluation"
+  },
+  "limitations": [
+    "One optimization seed for this protocol; no statistical significance claim",
+    "Caltech historical warmstart and prior test exposure",
+    "Class-prototype retrieval with held-out official evaluation images; not classifier-head benchmark accuracy",
+    "Branch removals are post-training interventions, not independently trained pure optical/electronic models",
+    "Ideal optical simulation; no hardware robustness guarantee",
+    "Different pretrained encoder sizes and trainable parameter counts; timing on a shared server",
+    "Frozen generator backbone precision differs: Qwen BF16, CLIP FP32; both use FP32 adapters and decoder",
+    "elapsed_seconds includes training, validation, final interventions and checkpoint I/O; excludes model loading and source hashing",
+    "peak_memory_gib is peak PyTorch allocated memory, not total process VRAM"
+  ],
+  "comparisons": [
+    {
+      "dataset": "caltech",
+      "candidate": "direct",
+      "reference": "fixed",
+      "top1_difference_pp": 1.9999980926513672,
+      "top3_difference_pp": 2.999997138977051,
+      "mrr_difference": 0.018759965896606445
+    },
+    {
+      "dataset": "caltech",
+      "candidate": "qwen_lora",
+      "reference": "fixed",
+      "top1_difference_pp": 1.4999985694885254,
+      "top3_difference_pp": 2.499997615814209,
+      "mrr_difference": 0.012293756008148193
+    },
+    {
+      "dataset": "caltech",
+      "candidate": "qwen_lora",
+      "reference": "direct",
+      "top1_difference_pp": -0.4999995231628418,
+      "top3_difference_pp": -0.4999995231628418,
+      "mrr_difference": -0.006466209888458252
+    },
+    {
+      "dataset": "caltech",
+      "candidate": "clip_lora",
+      "reference": "fixed",
+      "top1_difference_pp": 1.4999985694885254,
+      "top3_difference_pp": 2.999997138977051,
+      "mrr_difference": 0.017257988452911377
+    },
+    {
+      "dataset": "caltech",
+      "candidate": "clip_lora",
+      "reference": "direct",
+      "top1_difference_pp": -0.4999995231628418,
+      "top3_difference_pp": 0.0,
+      "mrr_difference": -0.0015019774436950684
+    },
+    {
+      "dataset": "cifar100",
+      "candidate": "direct",
+      "reference": "fixed",
+      "top1_difference_pp": 0.3000020980834961,
+      "top3_difference_pp": 1.9999980926513672,
+      "mrr_difference": 0.010870158672332764
+    },
+    {
+      "dataset": "cifar100",
+      "candidate": "qwen_lora",
+      "reference": "fixed",
+      "top1_difference_pp": 0.09999871253967285,
+      "top3_difference_pp": -0.4999995231628418,
+      "mrr_difference": 0.0016412734985351562
+    },
+    {
+      "dataset": "cifar100",
+      "candidate": "qwen_lora",
+      "reference": "direct",
+      "top1_difference_pp": -0.20000338554382324,
+      "top3_difference_pp": -2.499997615814209,
+      "mrr_difference": -0.009228885173797607
+    },
+    {
+      "dataset": "cifar100",
+      "candidate": "qwen_lora",
+      "reference": "qwen_frozen",
+      "top1_difference_pp": 1.4999985694885254,
+      "top3_difference_pp": 0.5999982357025146,
+      "mrr_difference": 0.011297225952148438
+    },
+    {
+      "dataset": "cifar100",
+      "candidate": "clip_lora",
+      "reference": "fixed",
+      "top1_difference_pp": 2.3000001907348633,
+      "top3_difference_pp": 0.5999982357025146,
+      "mrr_difference": 0.013613879680633545
+    },
+    {
+      "dataset": "cifar100",
+      "candidate": "clip_lora",
+      "reference": "direct",
+      "top1_difference_pp": 1.9999980926513672,
+      "top3_difference_pp": -1.3999998569488525,
+      "mrr_difference": 0.0027437210083007812
+    },
+    {
+      "dataset": "cifar100",
+      "candidate": "clip_lora",
+      "reference": "clip_frozen",
+      "top1_difference_pp": 1.4999985694885254,
+      "top3_difference_pp": 0.8999943733215332,
+      "mrr_difference": 0.010051965713500977
+    },
+    {
+      "dataset": "imagenette",
+      "candidate": "direct",
+      "reference": "fixed",
+      "top1_difference_pp": -2.292993664741516,
+      "top3_difference_pp": -2.0382165908813477,
+      "mrr_difference": -0.01597684621810913
+    },
+    {
+      "dataset": "imagenette",
+      "candidate": "qwen_lora",
+      "reference": "fixed",
+      "top1_difference_pp": 0.9936302900314331,
+      "top3_difference_pp": -0.9936332702636719,
+      "mrr_difference": 0.0037267208099365234
+    },
+    {
+      "dataset": "imagenette",
+      "candidate": "qwen_lora",
+      "reference": "direct",
+      "top1_difference_pp": 3.286623954772949,
+      "top3_difference_pp": 1.0445833206176758,
+      "mrr_difference": 0.019703567028045654
+    },
+    {
+      "dataset": "imagenette",
+      "candidate": "clip_lora",
+      "reference": "fixed",
+      "top1_difference_pp": -2.1401286125183105,
+      "top3_difference_pp": -1.783442497253418,
+      "mrr_difference": -0.017338871955871582
+    },
+    {
+      "dataset": "imagenette",
+      "candidate": "clip_lora",
+      "reference": "direct",
+      "top1_difference_pp": 0.15286505222320557,
+      "top3_difference_pp": 0.2547740936279297,
+      "mrr_difference": -0.0013620257377624512
+    }
+  ],
+  "phase_diagnostics": [
+    {
+      "dataset": "caltech",
+      "left": "fixed",
+      "right": "initial",
+      "piston_removed_rms_rad": 1.227318477958761e-07,
+      "per_expert_piston_removed_rms_rad": [
+        [
+          1.2449500275124592e-07,
+          1.2385963543692924e-07,
+          1.2113289926674042e-07,
+          1.2173381946922746e-07
+        ],
+        [
+          1.2234477253514342e-07,
+          1.2204723986997124e-07,
+          1.2287807749089552e-07,
+          1.2332696996963932e-07
+        ]
+      ]
+    },
+    {
+      "dataset": "caltech",
+      "left": "fixed",
+      "right": "qwen_lora",
+      "circular_rms_rad": 1.261916995048523
+    },
+    {
+      "dataset": "caltech",
+      "left": "direct",
+      "right": "initial",
+      "piston_removed_rms_rad": 0.9849476218223572,
+      "per_expert_piston_removed_rms_rad": [
+        [
+          1.157112717628479,
+          1.1400994062423706,
+          1.0416620969772339,
+          1.3948651552200317
+        ],
+        [
+          0.8086726069450378,
+          0.8180648684501648,
+          0.6196680665016174,
+          0.619966983795166
+        ]
+      ]
+    },
+    {
+      "dataset": "caltech",
+      "left": "direct",
+      "right": "fixed",
+      "circular_rms_rad": 0.9849496483802795
+    },
+    {
+      "dataset": "caltech",
+      "left": "direct",
+      "right": "qwen_lora",
+      "circular_rms_rad": 1.518462896347046
+    },
+    {
+      "dataset": "caltech",
+      "left": "qwen_lora",
+      "right": "initial",
+      "piston_removed_rms_rad": 1.2617285251617432,
+      "per_expert_piston_removed_rms_rad": [
+        [
+          1.1991069316864014,
+          1.0995042324066162,
+          1.5318995714187622,
+          1.343741774559021
+        ],
+        [
+          0.8135997653007507,
+          0.8937174081802368,
+          1.4930164813995361,
+          1.4989243745803833
+        ]
+      ]
+    },
+    {
+      "dataset": "caltech",
+      "left": "clip_lora",
+      "right": "initial",
+      "piston_removed_rms_rad": 1.2621852159500122,
+      "per_expert_piston_removed_rms_rad": [
+        [
+          1.1150697469711304,
+          1.1540738344192505,
+          1.477989673614502,
+          1.493087887763977
+        ],
+        [
+          0.8250104784965515,
+          0.825163722038269,
+          1.4783923625946045,
+          1.4861632585525513
+        ]
+      ]
+    },
+    {
+      "dataset": "caltech",
+      "left": "clip_lora",
+      "right": "fixed",
+      "circular_rms_rad": 1.2622631788253784
+    },
+    {
+      "dataset": "caltech",
+      "left": "clip_lora",
+      "right": "direct",
+      "circular_rms_rad": 1.5076501369476318
+    },
+    {
+      "dataset": "caltech",
+      "left": "clip_lora",
+      "right": "qwen_lora",
+      "circular_rms_rad": 1.2023035287857056
+    },
+    {
+      "dataset": "cifar100",
+      "left": "fixed",
+      "right": "initial",
+      "piston_removed_rms_rad": 1.227318477958761e-07,
+      "per_expert_piston_removed_rms_rad": [
+        [
+          1.2449500275124592e-07,
+          1.2385963543692924e-07,
+          1.2113289926674042e-07,
+          1.2173381946922746e-07
+        ],
+        [
+          1.2234477253514342e-07,
+          1.2204723986997124e-07,
+          1.2287807749089552e-07,
+          1.2332696996963932e-07
+        ]
+      ]
+    },
+    {
+      "dataset": "cifar100",
+      "left": "fixed",
+      "right": "qwen_frozen",
+      "circular_rms_rad": 1.0967296361923218
+    },
+    {
+      "dataset": "cifar100",
+      "left": "fixed",
+      "right": "qwen_lora",
+      "circular_rms_rad": 1.0462186336517334
+    },
+    {
+      "dataset": "cifar100",
+      "left": "direct",
+      "right": "initial",
+      "piston_removed_rms_rad": 1.0103254318237305,
+      "per_expert_piston_removed_rms_rad": [
+        [
+          1.183849811553955,
+          1.182691216468811,
+          1.1737793684005737,
+          1.3690831661224365
+        ],
+        [
+          0.8163763880729675,
+          0.8239201903343201,
+          0.6196645498275757,
+          0.6199634671211243
+        ]
+      ]
+    },
+    {
+      "dataset": "cifar100",
+      "left": "direct",
+      "right": "fixed",
+      "circular_rms_rad": 1.0103305578231812
+    },
+    {
+      "dataset": "cifar100",
+      "left": "direct",
+      "right": "qwen_frozen",
+      "circular_rms_rad": 1.448290467262268
+    },
+    {
+      "dataset": "cifar100",
+      "left": "direct",
+      "right": "qwen_lora",
+      "circular_rms_rad": 1.4195289611816406
+    },
+    {
+      "dataset": "cifar100",
+      "left": "qwen_frozen",
+      "right": "initial",
+      "piston_removed_rms_rad": 1.0999300479888916,
+      "per_expert_piston_removed_rms_rad": [
+        [
+          0.8353171348571777,
+          0.8593239784240723,
+          1.3216632604599,
+          1.0449120998382568
+        ],
+        [
+          0.66888028383255,
+          0.5932453870773315,
+          1.5185916423797607,
+          1.516074538230896
+        ]
+      ]
+    },
+    {
+      "dataset": "cifar100",
+      "left": "qwen_frozen",
+      "right": "qwen_lora",
+      "circular_rms_rad": 0.7822335958480835
+    },
+    {
+      "dataset": "cifar100",
+      "left": "qwen_lora",
+      "right": "initial",
+      "piston_removed_rms_rad": 1.0503321886062622,
+      "per_expert_piston_removed_rms_rad": [
+        [
+          0.7436160445213318,
+          0.8050586581230164,
+          1.3032532930374146,
+          0.8868929147720337
+        ],
+        [
+          0.5574468374252319,
+          0.5413442254066467,
+          1.5011608600616455,
+          1.5106837749481201
+        ]
+      ]
+    },
+    {
+      "dataset": "cifar100",
+      "left": "clip_frozen",
+      "right": "initial",
+      "piston_removed_rms_rad": 1.033512830734253,
+      "per_expert_piston_removed_rms_rad": [
+        [
+          0.7376053333282471,
+          0.8312329053878784,
+          1.180481195449829,
+          1.0115984678268433
+        ],
+        [
+          0.5648512840270996,
+          0.5506207346916199,
+          1.4600553512573242,
+          1.4626388549804688
+        ]
+      ]
+    },
+    {
+      "dataset": "cifar100",
+      "left": "clip_frozen",
+      "right": "fixed",
+      "circular_rms_rad": 1.0332156419754028
+    },
+    {
+      "dataset": "cifar100",
+      "left": "clip_frozen",
+      "right": "direct",
+      "circular_rms_rad": 1.4126150608062744
+    },
+    {
+      "dataset": "cifar100",
+      "left": "clip_frozen",
+      "right": "qwen_frozen",
+      "circular_rms_rad": 0.9950219988822937
+    },
+    {
+      "dataset": "cifar100",
+      "left": "clip_frozen",
+      "right": "qwen_lora",
+      "circular_rms_rad": 0.9504213929176331
+    },
+    {
+      "dataset": "cifar100",
+      "left": "clip_frozen",
+      "right": "clip_lora",
+      "circular_rms_rad": 0.844172477722168
+    },
+    {
+      "dataset": "cifar100",
+      "left": "clip_lora",
+      "right": "initial",
+      "piston_removed_rms_rad": 1.1201869249343872,
+      "per_expert_piston_removed_rms_rad": [
+        [
+          0.9118021726608276,
+          0.9839973449707031,
+          1.4033600091934204,
+          1.0487992763519287
+        ],
+        [
+          0.5984795689582825,
+          0.5438324213027954,
+          1.500106692314148,
+          1.5050798654556274
+        ]
+      ]
+    },
+    {
+      "dataset": "cifar100",
+      "left": "clip_lora",
+      "right": "fixed",
+      "circular_rms_rad": 1.1194385290145874
+    },
+    {
+      "dataset": "cifar100",
+      "left": "clip_lora",
+      "right": "direct",
+      "circular_rms_rad": 1.452262043952942
+    },
+    {
+      "dataset": "cifar100",
+      "left": "clip_lora",
+      "right": "qwen_frozen",
+      "circular_rms_rad": 1.007580041885376
+    },
+    {
+      "dataset": "cifar100",
+      "left": "clip_lora",
+      "right": "qwen_lora",
+      "circular_rms_rad": 0.9805159568786621
+    },
+    {
+      "dataset": "imagenette",
+      "left": "fixed",
+      "right": "initial",
+      "piston_removed_rms_rad": 1.227318477958761e-07,
+      "per_expert_piston_removed_rms_rad": [
+        [
+          1.2449500275124592e-07,
+          1.2385963543692924e-07,
+          1.2113289926674042e-07,
+          1.2173381946922746e-07
+        ],
+        [
+          1.2234477253514342e-07,
+          1.2204723986997124e-07,
+          1.2287807749089552e-07,
+          1.2332696996963932e-07
+        ]
+      ]
+    },
+    {
+      "dataset": "imagenette",
+      "left": "fixed",
+      "right": "qwen_lora",
+      "circular_rms_rad": 1.0445420742034912
+    },
+    {
+      "dataset": "imagenette",
+      "left": "direct",
+      "right": "initial",
+      "piston_removed_rms_rad": 0.9951543211936951,
+      "per_expert_piston_removed_rms_rad": [
+        [
+          1.1230217218399048,
+          1.157873511314392,
+          1.1770873069763184,
+          1.3642634153366089
+        ],
+        [
+          0.7855806350708008,
+          0.8298083543777466,
+          0.6196645498275757,
+          0.6199634671211243
+        ]
+      ]
+    },
+    {
+      "dataset": "imagenette",
+      "left": "direct",
+      "right": "fixed",
+      "circular_rms_rad": 0.9951551556587219
+    },
+    {
+      "dataset": "imagenette",
+      "left": "direct",
+      "right": "qwen_lora",
+      "circular_rms_rad": 1.3994317054748535
+    },
+    {
+      "dataset": "imagenette",
+      "left": "qwen_lora",
+      "right": "initial",
+      "piston_removed_rms_rad": 1.0449514389038086,
+      "per_expert_piston_removed_rms_rad": [
+        [
+          0.8506377339363098,
+          0.6193228960037231,
+          1.3063899278640747,
+          1.0747917890548706
+        ],
+        [
+          0.5914210081100464,
+          0.5108523368835449,
+          1.4397794008255005,
+          1.4431556463241577
+        ]
+      ]
+    },
+    {
+      "dataset": "imagenette",
+      "left": "clip_lora",
+      "right": "initial",
+      "piston_removed_rms_rad": 1.0428944826126099,
+      "per_expert_piston_removed_rms_rad": [
+        [
+          0.68767911195755,
+          0.6802111864089966,
+          1.2673991918563843,
+          1.020867943763733
+        ],
+        [
+          0.48042774200439453,
+          0.5856260061264038,
+          1.5061219930648804,
+          1.5082430839538574
+        ]
+      ]
+    },
+    {
+      "dataset": "imagenette",
+      "left": "clip_lora",
+      "right": "fixed",
+      "circular_rms_rad": 1.0419703722000122
+    },
+    {
+      "dataset": "imagenette",
+      "left": "clip_lora",
+      "right": "direct",
+      "circular_rms_rad": 1.4098085165023804
+    },
+    {
+      "dataset": "imagenette",
+      "left": "clip_lora",
+      "right": "qwen_lora",
+      "circular_rms_rad": 0.9811331629753113
+    }
+  ]
+}
