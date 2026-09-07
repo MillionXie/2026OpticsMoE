@@ -26,10 +26,18 @@ def _load(path: Path) -> dict:
 
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for block in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(block)
+    payload = path.read_bytes()
+    if path.suffix.lower() in {".csv", ".json", ".py", ".txt", ".md"}:
+        payload = payload.replace(b"\r\n", b"\n")
+    digest.update(payload)
     return digest.hexdigest()
+
+
+def _canonical_size(path: Path) -> int:
+    payload = path.read_bytes()
+    if path.suffix.lower() in {".csv", ".json", ".py", ".txt", ".md"}:
+        payload = payload.replace(b"\r\n", b"\n")
+    return len(payload)
 
 
 def main() -> int:
@@ -183,8 +191,9 @@ def main() -> int:
     ]
     manifest = {
         "schema_version": 1,
+        "text_hash_mode": "SHA256 after CRLF-to-LF normalization; binary files unchanged",
         "files": [
-            {"path": path.relative_to(REPO_ROOT).as_posix(), "bytes": path.stat().st_size, "sha256": _sha256(path)}
+            {"path": path.relative_to(REPO_ROOT).as_posix(), "canonical_bytes": _canonical_size(path), "sha256": _sha256(path)}
             for path in evidence
         ],
     }
