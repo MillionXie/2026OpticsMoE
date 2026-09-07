@@ -2,6 +2,9 @@
 
 用户已批准首轮固定专家库实验。实现与结果只在本任务维护，不写回 LightGenV2 的正式对照表。
 
+当前工作已进入高光学系数分阶段对照与类别扩展；前面的“首轮协议/首轮结果”为历史 pilot。
+参见下文“第二轮”“高光学系数下的扰动诊断”及对应结果，不把不同协议混成一张成绩表。
+
 ## 首轮协议
 
 - 光路直接复用 LightGenV2 T01 main_dc20；vision/language 各四专家 Top-2，Router/global 正常直接优化。
@@ -294,3 +297,35 @@ CUDA_VISIBLE_DEVICES=0 python -m TransferFromElectricity.tasks.t01_object_retrie
 这些 run 必须在 ID 中包含 `ideal`，不能宣称获得了原强扰动的鲁棒性。
 先以 direct/qwen_lora 的每轮 20 batch、20 轮诊断核对效果；确认后再用共同 ideal 协议做完整规模对比。
 历史带扰动 run 全部保留，不能覆盖或合并其成绩。硬件扰动训练策略需另行验证。
+
+### alpha40 强扰动分阶段对照结果
+
+四组均完成 20 轮。run ID：`20260907_alpha40_{fixed,direct,qwen_frozen,qwen_lora}_s42`，
+训练源码 `76db29f0`；使用 GPU 0/1/3/4（均为 RTX 4090），没有使用 A100。
+选择按本轮 validation；表内 test 仅作这轮机制对照。光学系数四处均保持约 0.5，满足 >=0.4。
+
+| 方法 | 所选 epoch | 所选 live test Top-1 | 最终 EMA test Top-1 | 所选专家相位 RMS 变化 / rad | 换回初始 expert 的 test Top-1 |
+|---|---:|---:|---:|---:|---:|
+| fixed | 20 | 60.0% | 60.5% | 0 | 60.0% |
+| direct | 3 | 81.0% | 66.0% | 0.64469 | 51.0% |
+| qwen_frozen | 2 | 71.0% | 63.0% | 0.97564 | 51.0% |
+| qwen_lora | 3 | 72.0% | 65.5% | 1.15048 | 51.5% |
+
+三种可学习专家组的最佳模型均在强扰动阶段前；选择过程没有用 test，不能把 final EMA 与
+所选 live 的差距只归因于 EMA，因为两者还来自不同 epoch。
+前四轮仅更新 expert/生成器，恢复初始 expert 会使验证指标从 direct 83% 回到 42%、
+qwen_frozen 63% 回到 42%、qwen_lora 68% 回到 41%。专家学习的作用已能被干预观察到。
+
+在 D 所选模型内，仅关闭 LoRA、保持解码器不变，test 从 72% 降到 61%，相位 RMS 差
+为 0.58062 rad。这证明大模型内部更新已参与结果；不等同于“LoRA 比单独训练的冻结 Qwen 组
+高 11 个百分点”（后者为 71%）。当前单 seed 尚未证明大模型生成优于直接优化。
+相位去除每张整体常数偏移后的 RMS 仍约 direct 0.64469、C 0.97560、D 1.15025 rad，
+因此差异不只是无空间结构的整体相移。
+
+Vision Router 在后期覆盖四专家；Language Router 仍固定选择前两个，未解决。
+完整数值、逐阶段干预与原文件哈希见 [summary.json](reports/alpha40_20260907/summary.json)、
+[evidence_manifest.json](reports/alpha40_20260907/evidence_manifest.json)。
+图见 [训练过程](reports/alpha40_20260907/training_comparison.png) 和
+[所选相位变化](reports/alpha40_20260907/selected_phase_changes.png)。
+下载脚本 `collect_results.py` 只读取已完成 run 的轻量产物/部署相位，逐文件对照服务器 SHA256，
+不传源码与 best/last checkpoint；凭证仅交互输入、不落盘。

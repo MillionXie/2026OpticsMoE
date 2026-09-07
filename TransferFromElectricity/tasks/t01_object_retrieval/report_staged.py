@@ -32,7 +32,7 @@ def summarize(runs, output):
         centered = torch.atan2(centered.sin(),centered.cos())
         update_rows = centered.flatten(0,1).flatten(1)
         update_rows = update_rows-update_rows.mean(1,keepdim=True)
-        if float(update_rows.norm(dim=1).min()) > 1e-8:
+        if result['selected_expert_phase']['rms_change_rad'] > 1e-6 and float(update_rows.norm(dim=1).min()) > 1e-8:
             normalized = torch.nn.functional.normalize(update_rows,dim=1)
             correlations = normalized@normalized.T
             update_correlation = float(correlations[~torch.eye(8,dtype=torch.bool)].mean())
