@@ -28,7 +28,8 @@ from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.settings impo
 
 def create_generator(method, source, cfg, device):
     generator = StaticGenerator(method, source, device, cfg['generator']['rank'], seed=cfg['seed'],
-                                task_description=cfg['generator'].get('task_description'))
+                                task_description=cfg['generator'].get('task_description'),
+                                expert_specific_heads=cfg['generator'].get('expert_specific_heads',False))
     # Identical decoder weights for frozen-Qwen and LoRA-Qwen, independent of
     # random numbers consumed while constructing LoRA matrices.
     seed_everything(cfg['seed'] + 71)
@@ -106,7 +107,14 @@ def execute(args, cfg, output):
     settings.lightgen_test_selected = False
     if any((settings.lambda_kd, settings.lambda_relational_kd, settings.lambda_teacher_gallery)):
         raise ValueError('This experiment does not use a teacher loss')
-    bundle = prepare_caltech101_subset(settings, persist=True)
+    if cfg.get('dataset',{}).get('name') == 'cifar100':
+        from .datasets import prepare_cifar100
+        settings.dataset_root = (ROOT / cfg['dataset']['root']).resolve()
+        settings.instruction = 'Represent this image for CIFAR-100 image-to-image retrieval.'
+        bundle = prepare_cifar100(cfg['dataset'], ROOT, output, cfg.get('data_seed',42))
+        settings.selected_skus = bundle.class_names
+    else:
+        bundle = prepare_caltech101_subset(settings, persist=True)
     training, validation = split_train_validation(bundle.train_samples, cfg.get('data_seed',42), cfg['validation_per_class'])
     partitions = {'train':training, 'validation':validation, 'gallery':bundle.gallery_samples, 'test':bundle.test_samples}
     idsets = [set(s.sample_id for s in rows) for rows in partitions.values()]
@@ -211,6 +219,10 @@ def execute(args, cfg, output):
         if not args.resume:
             write_json(output/'initial_validation.json',metrics(validation))
         for epoch in range(start_epoch,settings.epochs+1):
+            if cfg.get('paired_epoch_rng',False):
+                # Generator construction must not shift image augmentation or
+                # task dropout random streams relative to the direct control.
+                seed_everything(cfg['seed'] + 10000 + epoch)
             stage,relative_epoch = stage_at(epoch,cfg['stages'])
             enabled = active_groups(stage['name'])
             for group in groups:

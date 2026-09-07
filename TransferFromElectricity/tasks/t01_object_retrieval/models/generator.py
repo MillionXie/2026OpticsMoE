@@ -38,15 +38,29 @@ def install_lora(model: nn.Module, rank: int):
     return names
 
 
+class ExpertLinear(nn.Module):
+    """Separate output projections for the eight fixed expert identities."""
+    def __init__(self, width, outputs):
+        super().__init__()
+        self.weight = nn.Parameter(torch.empty(8, outputs, width))
+        self.bias = nn.Parameter(torch.zeros(8, outputs))
+        for weight in self.weight:
+            nn.init.kaiming_uniform_(weight, a=math.sqrt(5))
+
+    def forward(self, x):
+        return torch.einsum('epi,eoi->epo', x, self.weight) + self.bias[:, None]
+
+
 class PatchDecoder(nn.Module):
-    def __init__(self, context_dim, size=224, patch=16, width=128):
+    def __init__(self, context_dim, size=224, patch=16, width=128, expert_specific_heads=False):
         super().__init__()
         if size % patch:
             raise ValueError('size must be divisible by patch')
         self.size, self.patch, self.grid = size, patch, size // patch
         self.condition = nn.Sequential(nn.LayerNorm(context_dim), nn.Linear(context_dim, width))
         self.positions = nn.Parameter(torch.randn(self.grid**2, width) * 0.02)
-        self.decode = nn.Sequential(nn.LayerNorm(width), nn.Linear(width, width), nn.GELU(), nn.Linear(width, patch**2))
+        head = ExpertLinear(width, patch**2) if expert_specific_heads else nn.Linear(width, patch**2)
+        self.decode = nn.Sequential(nn.LayerNorm(width), nn.Linear(width, width), nn.GELU(), head)
         nn.init.normal_(self.decode[-1].weight, std=0.002)
         nn.init.zeros_(self.decode[-1].bias)
 
@@ -57,7 +71,7 @@ class PatchDecoder(nn.Module):
 
 
 class StaticGenerator(nn.Module):
-    def __init__(self, method='small_hyper', source=None, device='cpu', rank=8, size=224, patch=16, seed=42, task_description=None):
+    def __init__(self, method='small_hyper', source=None, device='cpu', rank=8, size=224, patch=16, seed=42, task_description=None, expert_specific_heads=False):
         super().__init__()
         self.method = method
         self.lora_modules = []
@@ -88,7 +102,7 @@ class StaticGenerator(nn.Module):
             width = self.encoder.config.hidden_size
         else:
             raise ValueError(method)
-        self.decoder = PatchDecoder(width, size, patch).to(device)
+        self.decoder = PatchDecoder(width, size, patch, expert_specific_heads=expert_specific_heads).to(device)
         self.register_buffer('initial_reference', torch.zeros(2, 4, size, size, device=device))
         rng = torch.Generator().manual_seed(seed)
         self.register_buffer('anchor', (torch.randn(2, 4, size, size, generator=rng) * 0.02).to(device))

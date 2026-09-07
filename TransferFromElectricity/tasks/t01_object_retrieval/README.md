@@ -1,5 +1,8 @@
 # Caltech101：固定专家库生成
 
+当前主线恢复 Caltech 十类；三十类保留为规模诊断。新增 CIFAR-100 与预先固定的十类子集，
+沿用类别原型检索，不能直接当作带 100 类分类头的标准 CIFAR 分类榜单成绩。
+
 用户已批准首轮固定专家库实验。实现与结果只在本任务维护，不写回 LightGenV2 的正式对照表。
 
 当前工作已进入高光学系数分阶段对照与类别扩展；前面的“首轮协议/首轮结果”为历史 pilot。
@@ -450,3 +453,28 @@ Vision 四专家均被使用。因此总体相位移动不能替代逐专家任�
 [LightGenV2 T08 ABO easy100 图搜文](../../../LightGenV2/tasks/t08_abo_image_text_retrieval/README.md)。
 迁移时保留固定专家库与至少 0.4 的融合合同，单独留出 validation，重新比较 direct/LoRA；
 当前四组能检验专家学习和 LoRA 更新的作用，尚不能单独证明 Qwen 预训练知识带来收益。
+
+### Caltech 十类主线与 CIFAR-100 新一轮
+
+用户要求以十类为主，并尝试 CIFAR-100；若百类困难，再查看十类。历史三十类结果仍保留。
+本轮先固定协议，再查看结果，不按照 test 表现挑类别、挑 seed 或隐藏不利结果。
+
+- `separate_heads_ideal.yaml`：Caltech 十类，增加八个独立 expert 输出投影，仍共享 Qwen 与中间解码层。
+  所有生成器组使用相同解码架构；初始生成值仍由 reference 抵消，初始 mask 与 direct 完全一致。
+  LoRA LR 改为 0.0001，decoder LR 改为 0.0003，减轻早期大幅更新。
+  每轮重新设置任务随机流，使生成器构建不改变方法之间的图像增强/任务 dropout 抽样。
+- CIFAR-100 使用 [官方数据](https://cave.cs.toronto.edu/kriz/cifar.html)，每类官方 train 留出 5 张 gallery、
+  20 张 validation，其余 475 张训练；选中类别的官方 test 全部保留。32×32 RGB 稳定导出后由原管线放大至 224×224。
+  百类为 47,500 train / 2,000 validation / 500 gallery / 10,000 test。
+- 十类子集预先定义为 `sorted(random.Random(42).sample(range(100),10))`：
+  `[3,13,14,17,28,31,35,81,86,94]`，不是 CIFAR-10 数据集。对应 4,750 / 200 / 50 / 1,000 张。
+- CIFAR 两个规模共用 2 轮 expert、2 轮 optics、16 轮 joint；电子和读出 LR 为 0.0003。
+  仍从相同历史 Caltech warmstart 初始化，没有使用 CIFAR test-selected checkpoint。
+  较早开放电子部分是为了适应新数据，而非把 Caltech 的低学习率诊断协议直接当作 CIFAR 收敛训练。
+- 首次预算为每轮 60 batch、20 轮，即 1,200 个 batch。百类主比较 direct / qwen_lora；
+  Caltech 十类与 CIFAR 十类使用 fixed / direct / qwen_frozen / qwen_lora 四组。
+  百类此预算不到完整官方训练集的一次等量样本遍历，仅作可学习性筛查，不能据此宣布方法的性能上限。
+  十类子集是单独的诊断任务，不能将其准确率替代或伪装成 CIFAR-100 全百类成绩。
+
+全部仍是固定八张专家 mask、光学融合下限 0.4、ideal 光学传播；只按 validation 选模。
+先做独立 smoke，检查新输出头的梯度和 CIFAR 划分，再启动正式 run；仍使用 GitHub 固定 SHA worktree 与 RTX UUID。
