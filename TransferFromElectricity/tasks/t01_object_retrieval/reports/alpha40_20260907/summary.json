@@ -9913,7 +9913,70 @@
     "one optimization seed per comparison",
     "original-ten validation was seen by the historical warmstart",
     "original-ten test was exposed in the earlier pilot diagnosis",
-    "different parameter counts and computation costs"
+    "different parameter counts and computation costs",
+    "GPU models differ; this is not a matched-device performance or timing comparison"
   ],
-  "time_boundary": "training, checkpoint I/O and evaluation; excludes model loading and source hashing; CUDA simulation only"
+  "time_boundary": "training, checkpoint I/O and evaluation; excludes model loading and source hashing; CUDA simulation only",
+  "cross_method_selected_phase": [
+    {
+      "left": "direct",
+      "right": "fixed",
+      "circular_rms_rad": 0.644688606262207,
+      "piston_removed_rms_rad": 0.6446855664253235,
+      "per_modality_rms_rad": [
+        0.6088565587997437,
+        0.6786313056945801
+      ]
+    },
+    {
+      "left": "direct",
+      "right": "qwen_frozen",
+      "circular_rms_rad": 1.1874524354934692,
+      "piston_removed_rms_rad": 1.1874327659606934,
+      "per_modality_rms_rad": [
+        1.155615210533142,
+        1.2184580564498901
+      ]
+    },
+    {
+      "left": "direct",
+      "right": "qwen_lora",
+      "circular_rms_rad": 1.3180724382400513,
+      "piston_removed_rms_rad": 1.317431926727295,
+      "per_modality_rms_rad": [
+        1.2891128063201904,
+        1.3464090824127197
+      ]
+    },
+    {
+      "left": "fixed",
+      "right": "qwen_frozen",
+      "circular_rms_rad": 0.9756426215171814,
+      "piston_removed_rms_rad": 0.9755977392196655,
+      "per_modality_rms_rad": [
+        0.9767314791679382,
+        0.9745524525642395
+      ]
+    },
+    {
+      "left": "fixed",
+      "right": "qwen_lora",
+      "circular_rms_rad": 1.1504809856414795,
+      "piston_removed_rms_rad": 1.1502482891082764,
+      "per_modality_rms_rad": [
+        1.1507538557052612,
+        1.1502078771591187
+      ]
+    },
+    {
+      "left": "qwen_frozen",
+      "right": "qwen_lora",
+      "circular_rms_rad": 1.0784326791763306,
+      "piston_removed_rms_rad": 1.0786411762237549,
+      "per_modality_rms_rad": [
+        1.078689694404602,
+        1.078175663948059
+      ]
+    }
+  ]
 }

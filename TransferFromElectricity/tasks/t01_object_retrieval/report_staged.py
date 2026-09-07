@@ -17,7 +17,7 @@ def summarize(runs, output):
     import torch
     from .protocol import common_anchor,physical_phase
     output.mkdir(parents=True,exist_ok=True)
-    rows, evidence, histories, contracts = [], [], {}, []
+    rows, evidence, histories, contracts, banks = [], [], {}, [], {}
     for run in runs:
         if read(run/'status.json')['status'] != 'complete':
             raise ValueError(f'Incomplete run: {run}')
@@ -39,6 +39,7 @@ def summarize(runs, output):
         else:
             update_correlation = None
         method = result['method']
+        banks[method] = phase_bank
         comparable_cfg = {k:v for k,v in cfg.items() if k!='method'}
         contracts.append((result['git_sha'],result['split_sha256'],json.dumps(comparable_cfg,sort_keys=True)))
         histories[method] = history
@@ -73,6 +74,20 @@ def summarize(runs, output):
         'limitations':['one optimization seed per comparison','original-ten validation was seen by the historical warmstart',
             'original-ten test was exposed in the earlier pilot diagnosis','different parameter counts and computation costs'],
         'time_boundary':'training, checkpoint I/O and evaluation; excludes model loading and source hashing; CUDA simulation only'}
+    if len({row['device'] for row in rows}) > 1:
+        report['limitations'].append('GPU models differ; this is not a matched-device performance or timing comparison')
+    phase_pairs = []
+    for i, left in enumerate(sorted(banks)):
+        for right in sorted(banks)[i+1:]:
+            delta = banks[left]-banks[right]
+            delta = torch.atan2(delta.sin(),delta.cos())
+            piston = torch.atan2(delta.sin().mean((-2,-1)),delta.cos().mean((-2,-1)))
+            centered = delta-piston[...,None,None]
+            centered = torch.atan2(centered.sin(),centered.cos())
+            phase_pairs.append({'left':left,'right':right,'circular_rms_rad':float(delta.square().mean().sqrt()),
+                'piston_removed_rms_rad':float(centered.square().mean().sqrt()),
+                'per_modality_rms_rad':delta.square().mean((1,2,3)).sqrt().tolist()})
+    report['cross_method_selected_phase'] = phase_pairs
     (output/'summary.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
     (output/'evidence_manifest.json').write_text(json.dumps(evidence,indent=2),encoding='utf-8')
     plot(histories,runs,output)

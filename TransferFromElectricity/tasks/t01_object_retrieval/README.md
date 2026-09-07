@@ -5,6 +5,28 @@
 当前工作已进入高光学系数分阶段对照与类别扩展；前面的“首轮协议/首轮结果”为历史 pilot。
 参见下文“第二轮”“高光学系数下的扰动诊断”及对应结果，不把不同协议混成一张成绩表。
 
+## 当前架构与四组含义
+
+所有样本共用 Vision 四张、Language 四张 224×224 expert mask；训练中更新，导出后固定。
+每一侧都是 optical Router（Top-2/4）+ experts + global phase，与电子模块融合。
+四处光学融合系数均从 0.5 开始，并限制在 [0.4, 0.95]。该系数不等于准确率贡献比例。
+
+| 当前方法 | 专家 mask 如何得到 | 生成器哪些部分更新 |
+|---|---|---|
+| fixed | 固定的初始随机专家库 | 没有生成器；expert 完全冻结 |
+| direct | 把相位像素作为参数直接优化 | 没有生成器 |
+| qwen_frozen | 固定提示词 → 冻结 Qwen → 可训练连续相位解码器 | 只更新解码器 |
+| qwen_lora | 固定提示词 → Qwen（含 LoRA）→ 连续相位解码器 | 同时更新 Qwen 内的 LoRA 和解码器 |
+
+fixed 仍有光学专家，只是不训练它们；Router/global 和后期电子部分与其他组按相同阶段训练。
+qwen_frozen 的 mask 仍会改变，因为解码器在更新。qwen_lora 则把任务梯度继续传进 Qwen 的 LoRA，
+不是全量更新 2B 基座参数。推理时导出八张 mask 即可移除生成器。
+生成器不接收当前图片、标签或 batch，也不通过离散文本采样生成 mask。
+
+训练步骤固定为 4 轮只训练 expert/生成器，8 轮加入 Router/global，8 轮低学习率联合电子部分。
+先前强扰动训练出现退化；当前扩大类别与种子复验使用单独的 ideal 配置，关闭采样光学扰动，
+仍通过完整可微光学传播训练。它验证学习机制，尚未证明硬件扰动鲁棒性。
+
 ## 首轮协议
 
 - 光路直接复用 LightGenV2 T01 main_dc20；vision/language 各四专家 Top-2，Router/global 正常直接优化。
@@ -28,7 +50,7 @@
 
 ```bash
 python -m unittest discover -s TransferFromElectricity/tasks/t01_object_retrieval/tests -v
-CUDA_VISIBLE_DEVICES=3 python -m TransferFromElectricity.tasks.t01_object_retrieval.run \
+CUDA_VISIBLE_DEVICES=GPU-<verified-RTX-UUID> python -m TransferFromElectricity.tasks.t01_object_retrieval.run \
   --method qwen_lora \
   --run-dir TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/YYYYMMDD_static_qwen_lora_pilot_s42
 ```
@@ -108,7 +130,7 @@ Vision 和 Language 顺序连接；每个模块内部有两个阶段，且都有
    global phase、传播与 CCD、读出，再融合。因此 expert→global 之间存在探测和电子重载。
 
 两阶段均先匹配光电特征尺度，再按约 `(1-alpha)*E + alpha*O` 融合并归一化，外围还有适配器和残差。
-当前四个 alpha 从 0.055 起步，50 步后仍在 0.054957–0.055038 左右；这是特征融合系数，
+历史 50-step pilot 的四个 alpha 从 0.055 起步，50 步后仍在 0.054957–0.055038 左右；这是特征融合系数，
 不能解释为光学分支贡献了 5.5% 的准确率或物理能量。
 Vision 的电子 block 使用二维局部混合，Language 使用因果一维局部混合；内部宽度 192。
 
@@ -242,6 +264,8 @@ PK=10×3；原 train 2,625 张中留出 100 张，训练 2,525 张，每轮 85 b
 fixed 组前 340 batch 无可训练部件，实际 optimizer update 为 1,360；其余三组为 1,700。
 同一 seed 的四组共享样本顺序、划分、相位与任务模型起点，固定专家组保留为干预对照。
 各方法的参数量、显存和训练成本仍不相等，不声称算力预算严格匹配。
+样本身份/顺序和增强配置一致，但生成器初始化会消耗及重设 RNG，因此各方法的数据增强随机抽样不是逐位配对。
+当前按同分布增强与多种子复验比较，不能宣称每一步输入像素完全相同。
 
 学习率：expert 0.02、Router 0.01、global 0.006、LoRA 0.0005、解码器 0.001；
 电子部分 0.00001、读出 0.00002、融合门 0.0001。每阶段单独 warmup 20 step，再 cosine
@@ -256,7 +280,7 @@ EMA decay=0.95；每轮报告 live/EMA 验证指标，主 checkpoint 固定按 l
 
 ```bash
 python -m unittest discover -s TransferFromElectricity/tasks/t01_object_retrieval/tests -v
-CUDA_VISIBLE_DEVICES=0 python -m TransferFromElectricity.tasks.t01_object_retrieval.train_staged \
+python -m TransferFromElectricity.tasks.t01_object_retrieval.launch_rtx --gpu-uuid GPU-<verified-RTX-UUID> \
   --method direct --run-dir TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/YYYYMMDD_alpha40_direct_s42
 ```
 
@@ -362,3 +386,19 @@ Vision Router 在后期覆盖四专家；Language Router 仍固定选择前两�
 当时仍运行的最后一项已终止释放显存，前三项已经完成；没有删除或改写原始环境证据。
 此后不再用数字序号绑定，使用完整 GPU UUID，启动前后核验型号。`launch_rtx.py` 提供 RTX 专用入口，
 在导入训练器、加载模型前拒绝数字序号、A100 和 CUDA 型号不一致。
+
+### 十类三种子复验结果（RTX 3090）
+
+六组均完成 20 轮、每轮 20 batch，共 400 次更新。使用同一数据划分与 ideal 光学配置，
+全部 environment.json 确认 NVIDIA GeForce RTX 3090；仅本节六组进入均值，不混入此前 RTX 4090 结果。
+
+| 优化 seed | direct Top-1 | Qwen＋LoRA Top-1 | LoRA − direct / 百分点 |
+|---|---:|---:|---:|
+| 42 | 77.0% | 73.0% | −4.0 |
+| 43 | 78.5% | 75.5% | −3.0 |
+| 44 | 75.5% | 76.5% | +1.0 |
+| 均值 ± 样本标准差 | 77.00% ± 1.50% | 75.00% ± 1.80% | −2.0 |
+
+所选相位相对各自共同初始库的圆周 RMS：direct 为 0.605–0.669 rad，LoRA 为 0.747–0.958 rad。
+这说明相位确实更新；当前结果没有显示 LoRA 的稳定性能优势，也不能从三个种子推出广泛统计结论。
+这六次仍使用同一批 200 个 test query，不等于 1,200 个独立测试样本。

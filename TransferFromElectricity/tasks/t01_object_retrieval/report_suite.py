@@ -87,6 +87,7 @@ def main():
         'limits':['400-step seed study and 2320-batch expansion are separate experiments',
             'original-ten adaptation validation was seen by warmstart; original-ten test was previously inspected',
             'ideal optical simulation does not establish robustness to the strong hardware perturbations',
+            'sample identities and augmentation settings match; random augmentation draws are not paired bit-for-bit across methods',
             'three seeds provide an initial stability check, not a broad statistical guarantee']}
     (output/'summary.json').write_text(json.dumps(result,indent=2),encoding='utf-8')
     (output/'evidence_manifest.json').write_text(json.dumps(evidence,indent=2),encoding='utf-8')
