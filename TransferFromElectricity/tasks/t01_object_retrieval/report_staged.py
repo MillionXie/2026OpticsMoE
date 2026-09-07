@@ -13,6 +13,14 @@ def read(path):
     return json.loads(path.read_text(encoding='utf-8'))
 
 
+def compact_metrics(value):
+    if isinstance(value,dict):
+        return {k:compact_metrics(v) for k,v in value.items() if k!='confusion_matrix'}
+    if isinstance(value,list):
+        return [compact_metrics(v) for v in value]
+    return value
+
+
 def summarize(runs, output):
     import torch
     from .protocol import common_anchor,physical_phase
@@ -76,6 +84,12 @@ def summarize(runs, output):
         'time_boundary':'training, checkpoint I/O and evaluation; excludes model loading and source hashing; CUDA simulation only'}
     if len({row['device'] for row in rows}) > 1:
         report['limitations'].append('GPU models differ; this is not a matched-device performance or timing comparison')
+    if comparable_cfg.get('dataset',{}).get('name')=='cifar100':
+        report['dataset']='CIFAR-100'
+        report['limitations']=['one optimization seed','fixed update budget, not a convergence claim',
+            'Caltech task warmstart; no CIFAR-specific task warmstart',
+            'class-prototype retrieval, not standard supervised classifier-head accuracy',
+            'different parameter counts and computation costs']
     phase_pairs = []
     for i, left in enumerate(sorted(banks)):
         for right in sorted(banks)[i+1:]:
@@ -88,6 +102,8 @@ def summarize(runs, output):
                 'piston_removed_rms_rad':float(centered.square().mean().sqrt()),
                 'per_modality_rms_rad':delta.square().mean((1,2,3)).sqrt().tolist()})
     report['cross_method_selected_phase'] = phase_pairs
+    report=compact_metrics(report)
+    report['detailed_confusion_matrices']='Preserved in the referenced run metrics; omitted here to avoid repeating large matrices.'
     (output/'summary.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
     (output/'evidence_manifest.json').write_text(json.dumps(evidence,indent=2),encoding='utf-8')
     plot(histories,runs,output)

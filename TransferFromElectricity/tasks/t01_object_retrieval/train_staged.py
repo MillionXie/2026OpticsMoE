@@ -2,6 +2,7 @@
 from __future__ import annotations
 import argparse
 import math
+import os
 import random
 import sys
 import time
@@ -167,7 +168,8 @@ def execute(args, cfg, output):
         'optimizer_groups':[{**{k:v for k,v in g.items() if k!='params'},'parameter_count':sum(p.numel() for p in g['params'])} for g in groups]})
     current_sha = git('rev-parse','HEAD')
     write_json(output/'environment.json', {**environment_report(),'git_sha':current_sha,'git_status':git('status','--short'),
-        'command':sys.argv,'device':torch.cuda.get_device_name(),'config_sha256':sha256(args.config),'split_sha256':sha256(output/'split.json')})
+        'command':sys.argv,'device':torch.cuda.get_device_name(),'cuda_visible_devices':os.environ.get('CUDA_VISIBLE_DEVICES'),
+        'cuda_device_order':os.environ.get('CUDA_DEVICE_ORDER'),'config_sha256':sha256(args.config),'split_sha256':sha256(output/'split.json')})
     seed_everything(cfg['seed']+1000)
     dataset = GroceryRetrievalDataset(training, settings.image_size, augment=settings.augmentation_enabled,
         crop_scale_min=settings.crop_scale_min,brightness_jitter=settings.brightness_jitter,
