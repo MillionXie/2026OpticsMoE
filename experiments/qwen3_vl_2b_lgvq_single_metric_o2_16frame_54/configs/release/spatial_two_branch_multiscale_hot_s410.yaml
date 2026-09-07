@@ -1,0 +1,32 @@
+base_config: spatial_two_branch_multiscale_readout_s409.yaml
+output_dir: ../../runs/lgvq_spatial_two_branch_multiscale_hot_s410
+random_seed: 410
+
+# Higher phase mobility and the established multiscale-head objective. This
+# remains the same strict E/O graph as s409; only optimizer/loss values differ.
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_two_branch_equality_refine_s324/best_observed_test_checkpoint.pt
+  epochs: 100
+  batch_size: 32
+  mos_stratified_batches: true
+  mos_strata: 8
+  learning_rate: 0.00012
+  phase_learning_rate: 0.006
+  router_phase_learning_rate: 0.009
+  learning_rate_warmup_epochs: 5
+  minimum_learning_rate_factor: 0.05
+  test_interval_epochs: 1
+  phase_snapshot_interval_epochs: 0
+
+loss:
+  ranking_weight: 0.25
+  correlation_weight: 0.70
+  soft_spearman_weight: 0.00
+  soft_target_weight: 2.00
+  router_balance_weight: 0.02
+  router_importance_weight: 0.004
+  serial_router_balance_weight: 0.04
+  serial_router_importance_weight: 0.01
+
+curriculum:
+  enabled: false
