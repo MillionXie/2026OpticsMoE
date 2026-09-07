@@ -171,7 +171,7 @@ def main() -> int:
 
     prompt = core.render_prompt(processor, args.target)
     timer = core.BoundaryTimer(model)
-    sampler = NvidiaSmiPowerSampler(gpu_index=0, interval_ms=50)
+    sampler = NvidiaSmiPowerSampler(interval_ms=50)
     sampler.start()
     sampler.set_phase("idle")
     time.sleep(2.0)
