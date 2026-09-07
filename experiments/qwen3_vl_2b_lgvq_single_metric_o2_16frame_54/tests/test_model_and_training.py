@@ -112,6 +112,7 @@ def test_curriculum_interpolates_training_only_weights(tmp_path: Path) -> None:
     settings = replace(
         _small_settings(tmp_path),
         epochs=100,
+        training_soft_targets_path=tmp_path / "teacher.pt",
         curriculum_enabled=True,
         curriculum_start_epoch=10,
         curriculum_end_epoch=90,
