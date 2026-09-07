@@ -397,6 +397,10 @@ def execute(args, cfg, output):
                     for mode in ('remove_optical', 'remove_electronic'):
                         for core in cores: core.set_fusion_ablation(mode)
                         ablations[mode] = metrics(evaluation_samples)
+                    for index, modality in enumerate(('vision', 'language')):
+                        for i, core in enumerate(cores):
+                            core.set_fusion_ablation('remove_optical' if i == index else 'none')
+                        ablations[f'remove_{modality}_optical'] = metrics(evaluation_samples)
                 finally:
                     for core in cores: core.set_fusion_ablation('none')
                 bind(learned)

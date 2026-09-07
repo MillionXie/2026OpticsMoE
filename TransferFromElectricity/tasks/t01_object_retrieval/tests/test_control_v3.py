@@ -1,4 +1,5 @@
 import tempfile
+import json
 import unittest
 from pathlib import Path
 import torch
@@ -8,6 +9,27 @@ from TransferFromElectricity.tasks.t01_object_retrieval.protocol import split_tr
 
 
 class ControlTests(unittest.TestCase):
+    def test_development_selection_uses_complete_validation_grid(self):
+        from TransferFromElectricity.tasks.t01_object_retrieval.report_control import development
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);runs=[]
+            for i,(e,g) in enumerate(( (e,g) for e in (1e-4,1e-5) for g in (1e-4,1e-3) )):
+                path=root/str(i);path.mkdir();runs.append(path)
+                cfg={'method':'qwen_lora','learning_rates':{'electronic':e,'readout':e,'generator_context':g}}
+                metric={'top1_retrieval_accuracy':.2+i*.1,'top3_retrieval_accuracy':.7,'mrr':.5}
+                result={'evaluation_split':'validation','selected_live_test':None,'selected_metrics':metric,
+                        'export_max_error':0,'git_sha':'same','split_sha256':'same',
+                        'selected_expert_phase':{'rms_change_rad':.5},'ablations':{'lora_phase_effect':{'rms_change_rad':.2}}}
+                history=[{'frozen_parameter_max_change':0,'live_validation':metric}]*3
+                for name,value in {'protocol':cfg,'final_report':result,'environment':{'device':'RTX test'},
+                                   'history':history,'status':{'status':'complete'}}.items():
+                    (path/(name+'.json')).write_text(json.dumps(value))
+            self.assertEqual(development(runs)['chosen']['run_id'],'3')
+            with self.assertRaisesRegex(ValueError,'complete paired'):development(runs[:-1])
+            result['evaluation_split']='test'
+            (runs[-1]/'final_report.json').write_text(json.dumps(result))
+            with self.assertRaisesRegex(ValueError,'must not inspect test'):development(runs)
+
     def test_frozen_decoder_is_preserved_in_checkpoint(self):
         generator = StaticGenerator(size=8, patch=4, context_width=32, expert_specific_heads=True)
         with torch.no_grad(): generator.decoder.positions.add_(.3)
