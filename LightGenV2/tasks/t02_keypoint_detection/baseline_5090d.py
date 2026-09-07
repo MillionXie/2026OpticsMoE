@@ -107,7 +107,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         loaded.processor,
         loaded.device,
         settings,
-        phase="qwen_5090d_baseline",
+        phase="qwen_gpu_baseline",
         epoch=int(payload.get("epoch", -1)),
         save_outputs=False,
     )
