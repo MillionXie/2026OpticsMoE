@@ -329,3 +329,22 @@ Vision Router 在后期覆盖四专家；Language Router 仍固定选择前两�
 [所选相位变化](reports/alpha40_20260907/selected_phase_changes.png)。
 下载脚本 `collect_results.py` 只读取已完成 run 的轻量产物/部署相位，逐文件对照服务器 SHA256，
 不传源码与 best/last checkpoint；凭证仅交互输入、不落盘。
+
+### 当前扩展运行合同
+
+确定性光学 400-step 诊断：`runs/smoke/20260907_ideal400_{direct,qwen_lora}_s42`。
+相同 20 轮、每轮 20 batch；三十类接口检查用
+`runs/smoke/20260907_caltech30_{direct,qwen_lora}_check`，已验证 30 类划分与导出一致性。
+
+完整三十类四组：`runs/simulation/20260907_caltech30_ideal_{fixed,direct,qwen_frozen,qwen_lora}_s42`，
+使用 GPU 0/1/3/4 的 RTX 4090，20 轮 / 2,320 batch，按共同 ideal profile。
+随机种子复验：`runs/simulation/20260907_ideal400_repeat_{direct,qwen_lora}_s{42,43,44}`，
+统一在 GPU 2/5 的 RTX 3090 上各自顺序运行三个种子，每组 400 次更新。seed=42 也重跑，
+使复验表内 GPU 型号一致；前面的 RTX 4090 诊断不混入三种子均值。
+数据划分固定，三个种子重复使用相同 200 个 test query，不能当作 600 个独立测试样本。
+所有这些 run 固定执行 GitHub 上的 `8c354986`；报告工具的新版本不改变其训练源码。
+`report_suite.py` 分别汇总三种子稳定性与三十类结果，不把 400-step 和 2,320-batch 预算混为同一实验。
+
+不同任务的后续候选是 LightGenV2 T08 ABO easy100 图搜文：图像查询面对 100 个固定标题，
+文本候选也经过 Language 光学支路，能补充当前 Caltech 类别原型检索对真实文本处理的覆盖。
+该任务尚未在 TransferFromElectricity 启动；迁移时需重新约定验证划分，不能照搬其历史按 test 选模的口径。
