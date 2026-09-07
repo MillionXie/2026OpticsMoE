@@ -30,6 +30,14 @@ def summarize(runs, output):
         piston = torch.atan2(delta.sin().mean((-2,-1)),delta.cos().mean((-2,-1)))
         centered = delta-piston[...,None,None]
         centered = torch.atan2(centered.sin(),centered.cos())
+        update_rows = centered.flatten(0,1).flatten(1)
+        update_rows = update_rows-update_rows.mean(1,keepdim=True)
+        if float(update_rows.norm(dim=1).min()) > 1e-8:
+            normalized = torch.nn.functional.normalize(update_rows,dim=1)
+            correlations = normalized@normalized.T
+            update_correlation = float(correlations[~torch.eye(8,dtype=torch.bool)].mean())
+        else:
+            update_correlation = None
         method = result['method']
         comparable_cfg = {k:v for k,v in cfg.items() if k!='method'}
         contracts.append((result['git_sha'],result['split_sha256'],json.dumps(comparable_cfg,sort_keys=True)))
@@ -39,6 +47,7 @@ def summarize(runs, output):
             'final_ema_test':result['final_ema_test'],'selected_validation':history[result['selected_epoch']-1]['live_validation'],
             'selected_phase_rms_rad':result['selected_expert_phase']['rms_change_rad'],
             'selected_phase_piston_removed_rms_rad':float(centered.square().mean().sqrt()),
+            'mean_cross_expert_update_correlation':update_correlation,
             'last_phase_rms_rad':history[-1]['expert_phase']['rms_change_rad'],
             'fusion':result['fusion'],'ablations':result['ablations'],'counts':result['counts'],
             'optimizer_updates':result['optimizer_updates'],'batch_opportunities':result['training_batch_opportunities'],
