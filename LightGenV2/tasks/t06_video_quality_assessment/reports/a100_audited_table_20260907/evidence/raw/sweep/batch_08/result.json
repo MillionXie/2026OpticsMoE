@@ -1,0 +1,39 @@
+{
+  "batch_size_videos": 8,
+  "frames_per_video": 4,
+  "distinct_videos_per_batch": true,
+  "sweep_warmup_forwards": 3,
+  "timed_forwards": 30,
+  "preprocessing_ms_once_not_in_primary_latency": 3662.75691986084,
+  "model_boundary_batch_cuda_ms": {
+    "mean": 209.96693420410156,
+    "median": 209.54778289794922,
+    "std": 1.3335924867999458,
+    "p05": 208.76728515625,
+    "p95": 212.88996047973632,
+    "min": 208.6860809326172,
+    "max": 214.0528564453125
+  },
+  "throughput_videos_per_second": 38.101237370182666,
+  "torch_peak_allocated_mib": 4712.8681640625,
+  "torch_peak_reserved_mib": 5114.0,
+  "telemetry": {
+    "sampling_interval_ms": 50,
+    "idle_samples": 32,
+    "active_samples": 96,
+    "idle_mean_w": 68.319375,
+    "active_mean_w": 238.89364583333335,
+    "active_peak_w": 274.64,
+    "active_mean_gpu_utilization_percent": 86.83333333333333,
+    "active_peak_gpu_utilization_percent": 95.0,
+    "active_peak_memory_used_mib": 5647.0,
+    "rated_power_limit_w": 250.0,
+    "active_mean_fraction_of_power_limit": 0.9555745833333334,
+    "active_peak_fraction_of_power_limit": 1.09856,
+    "measured_active_energy_j_per_batch": 50.15976641646545,
+    "measured_active_energy_j_per_video": 6.2699708020581815,
+    "idle_subtracted_energy_j_per_batch": 35.8149567009751,
+    "rated_upper_bound_energy_j_per_batch": 52.49173355102539
+  },
+  "status": "complete"
+}

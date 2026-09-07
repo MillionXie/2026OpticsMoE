@@ -1,0 +1,568 @@
+{
+  "schema_version": 1,
+  "status": "complete",
+  "generated_from_archived_evidence": true,
+  "gpu": "NVIDIA A100-PCIE-40GB",
+  "physical_gpu_id": 6,
+  "rated_power_limit_w": 250.0,
+  "optical_power_proxy_w": 80.388,
+  "rows": [
+    {
+      "task_id": "T06-temporal",
+      "task": "LGVQ temporal quality",
+      "metric": "SRCC",
+      "ours_performance": 0.8044,
+      "qwen_performance": 0.7688444800414204,
+      "workload": "16 videos × 4 frames",
+      "test_samples": 558,
+      "qwen_latency_mean_ms": 405.3076629638672,
+      "qwen_latency_median_ms": 397.07188415527344,
+      "qwen_latency_p95_ms": 398.77331085205077,
+      "qwen_active_power_mean_w": 238.18172043010753,
+      "qwen_active_power_peak_w": 274.62,
+      "qwen_energy_measured_j": 96.53687646824007,
+      "qwen_energy_idle_subtracted_j": 70.63433924099091,
+      "qwen_energy_rated_upper_j": 101.3269157409668,
+      "qwen_energy_power_basis": "batch16 steady-compute active mean from sweep",
+      "ours_latency_ms": 20.3822885,
+      "ours_physical_time_ms": 7.884,
+      "ours_serial_electronic_ms": 12.498288500000001,
+      "ours_energy_proxy_j": 1.6384914079380002,
+      "speedup_qwen_over_ours": 19.88528731520345,
+      "energy_ratio_measured_qwen_over_ours": 58.91814629026909,
+      "energy_ratio_rated_upper_qwen_over_ours": 61.84159114296739
+    },
+    {
+      "task_id": "T06-spatial",
+      "task": "LGVQ spatial quality",
+      "metric": "SRCC",
+      "ours_performance": 0.6393237619075796,
+      "qwen_performance": 0.6907725734336255,
+      "workload": "1 video × 4 frames",
+      "test_samples": 558,
+      "qwen_latency_mean_ms": 74.43764681115373,
+      "qwen_latency_median_ms": 75.32083129882812,
+      "qwen_latency_p95_ms": 78.3602195739746,
+      "qwen_active_power_mean_w": 83.85514840182648,
+      "qwen_active_power_peak_w": 182.0,
+      "qwen_energy_measured_j": 6.241979920032041,
+      "qwen_energy_idle_subtracted_j": 1.7174922621447932,
+      "qwen_energy_rated_upper_j": 18.60941170278843,
+      "qwen_energy_power_basis": "model-active board-power samples",
+      "ours_latency_ms": 11.558334,
+      "ours_physical_time_ms": 7.884,
+      "ours_serial_electronic_ms": 3.674334,
+      "ours_energy_proxy_j": 0.9291513535920001,
+      "speedup_qwen_over_ours": 6.440170946016417,
+      "energy_ratio_measured_qwen_over_ours": 6.717936637450091,
+      "energy_ratio_rated_upper_qwen_over_ours": 20.02839648335702
+    },
+    {
+      "task_id": "T08",
+      "task": "ABO image-to-title retrieval",
+      "metric": "R@1",
+      "ours_performance": 0.7983333333333333,
+      "qwen_performance": 0.7358333333333333,
+      "workload": "1 image query × 100 fixed titles",
+      "test_samples": 2400,
+      "qwen_latency_mean_ms": 43.963330574035645,
+      "qwen_latency_median_ms": 42.09868812561035,
+      "qwen_latency_p95_ms": 57.06030120849608,
+      "qwen_active_power_mean_w": 86.25726744186046,
+      "qwen_active_power_peak_w": 103.7,
+      "qwen_energy_measured_j": 3.792156762959513,
+      "qwen_energy_idle_subtracted_j": 1.0865038019890456,
+      "qwen_energy_rated_upper_j": 10.990832643508911,
+      "qwen_energy_power_basis": "model-active board-power samples",
+      "ours_latency_ms": 10.1754115,
+      "ours_physical_time_ms": 7.884,
+      "ours_serial_electronic_ms": 2.2914114999999997,
+      "ours_energy_proxy_j": 0.817980979662,
+      "speedup_qwen_over_ours": 4.320545716901537,
+      "energy_ratio_measured_qwen_over_ours": 4.6359962606055705,
+      "energy_ratio_rated_upper_qwen_over_ours": 13.436538155264271
+    },
+    {
+      "task_id": "T07",
+      "task": "ABO similarity-10 image-to-image retrieval",
+      "metric": "R@1",
+      "ours_performance": null,
+      "qwen_performance": 0.9520833333333333,
+      "workload": "1 image query × 120 train-product centroids",
+      "test_samples": 480,
+      "qwen_latency_mean_ms": 49.17415945053101,
+      "qwen_latency_median_ms": 46.15731239318848,
+      "qwen_latency_p95_ms": 68.92723007202149,
+      "qwen_active_power_mean_w": 82.9602383419689,
+      "qwen_active_power_peak_w": 101.11,
+      "qwen_energy_measured_j": 4.079499988282035,
+      "qwen_energy_idle_subtracted_j": 1.0566316876732178,
+      "qwen_energy_rated_upper_j": 12.293539862632752,
+      "qwen_energy_power_basis": "model-active board-power samples",
+      "ours_latency_ms": null,
+      "ours_physical_time_ms": null,
+      "ours_serial_electronic_ms": null,
+      "ours_energy_proxy_j": null,
+      "speedup_qwen_over_ours": null,
+      "energy_ratio_measured_qwen_over_ours": null,
+      "energy_ratio_rated_upper_qwen_over_ours": null
+    },
+    {
+      "task_id": "T02",
+      "task": "LSP keypoint detection",
+      "metric": "PCK@0.2",
+      "ours_performance": 0.5773,
+      "qwen_performance": 0.7225714285714285,
+      "workload": "1 image",
+      "test_samples": 1000,
+      "qwen_latency_mean_ms": 18.015795187950133,
+      "qwen_latency_median_ms": 17.009663581848145,
+      "qwen_latency_p95_ms": 25.41752338409424,
+      "qwen_active_power_mean_w": 80.61964285714286,
+      "qwen_active_power_peak_w": 87.83,
+      "qwen_energy_measured_j": 1.4524269738399729,
+      "qwen_energy_idle_subtracted_j": 0.3235249113203724,
+      "qwen_energy_rated_upper_j": 4.503948796987533,
+      "qwen_energy_power_basis": "model-active board-power samples",
+      "ours_latency_ms": 6.2587375000000005,
+      "ours_physical_time_ms": 3.942,
+      "ours_serial_electronic_ms": 2.3167375000000003,
+      "ours_energy_proxy_j": 0.5031273901500001,
+      "speedup_qwen_over_ours": 2.8785030827623195,
+      "energy_ratio_measured_qwen_over_ours": 2.886797662530265,
+      "energy_ratio_rated_upper_qwen_over_ours": 8.951905392478725
+    },
+    {
+      "task_id": "T03",
+      "task": "SALICON saliency",
+      "metric": "CC",
+      "ours_performance": 0.8291,
+      "qwen_performance": 0.8810337488174439,
+      "workload": "1 image",
+      "test_samples": 5000,
+      "qwen_latency_mean_ms": 19.14109441757202,
+      "qwen_latency_median_ms": 19.75347137451172,
+      "qwen_latency_p95_ms": 25.645874977111816,
+      "qwen_active_power_mean_w": 81.0532584269663,
+      "qwen_active_power_peak_w": 93.3,
+      "qwen_energy_measured_j": 1.5514480724024267,
+      "qwen_energy_idle_subtracted_j": 0.22036164268568587,
+      "qwen_energy_rated_upper_j": 4.785273604393005,
+      "qwen_energy_power_basis": "model-active board-power samples",
+      "ours_latency_ms": 6.309113,
+      "ours_physical_time_ms": 3.942,
+      "ours_serial_electronic_ms": 2.3671130000000002,
+      "ours_energy_proxy_j": 0.507176975844,
+      "speedup_qwen_over_ours": 3.0338804230597898,
+      "energy_ratio_measured_qwen_over_ours": 3.0589875847984644,
+      "energy_ratio_rated_upper_qwen_over_ours": 9.435116009416175
+    }
+  ],
+  "temporal_batch_selection": {
+    "selected_batch": 16,
+    "near_full_power_first_reached_at_batch": 8,
+    "selection_reason": "batch 8 reached 95.56% mean rated power; batch 16 stayed on the same power plateau and increased throughput only 4.60%, while exactly matching the 16-video optical workload",
+    "sweep": [
+      {
+        "batch_size_videos": 1,
+        "frames_per_video": 4,
+        "distinct_videos_per_batch": true,
+        "sweep_warmup_forwards": 3,
+        "timed_forwards": 30,
+        "preprocessing_ms_once_not_in_primary_latency": 494.8955625295639,
+        "model_boundary_batch_cuda_ms": {
+          "mean": 51.15644594828288,
+          "median": 49.86623954772949,
+          "std": 5.575171035755782,
+          "p05": 47.725721549987796,
+          "p95": 55.77809886932372,
+          "min": 47.287296295166016,
+          "max": 78.69235229492188
+        },
+        "throughput_videos_per_second": 19.547878697651512,
+        "torch_peak_allocated_mib": 4147.59716796875,
+        "torch_peak_reserved_mib": 4172.0,
+        "telemetry": {
+          "sampling_interval_ms": 50,
+          "idle_samples": 30,
+          "active_samples": 26,
+          "idle_mean_w": 62.096333333333334,
+          "active_mean_w": 170.95076923076925,
+          "active_peak_w": 195.45,
+          "active_mean_gpu_utilization_percent": 52.38461538461539,
+          "active_peak_gpu_utilization_percent": 65.0,
+          "active_peak_memory_used_mib": 4705.0,
+          "rated_power_limit_w": 250.0,
+          "active_mean_fraction_of_power_limit": 0.6838030769230771,
+          "active_peak_fraction_of_power_limit": 0.7817999999999999,
+          "measured_active_energy_j_per_batch": 8.745233785971228,
+          "measured_active_energy_j_per_video": 8.745233785971228,
+          "idle_subtracted_energy_j_per_batch": 5.568606066218004,
+          "rated_upper_bound_energy_j_per_batch": 12.78911148707072
+        },
+        "status": "complete"
+      },
+      {
+        "batch_size_videos": 2,
+        "frames_per_video": 4,
+        "distinct_videos_per_batch": true,
+        "sweep_warmup_forwards": 3,
+        "timed_forwards": 30,
+        "preprocessing_ms_once_not_in_primary_latency": 840.9397527575493,
+        "model_boundary_batch_cuda_ms": {
+          "mean": 63.9846741994222,
+          "median": 61.540863037109375,
+          "std": 8.759901353885857,
+          "p05": 60.41149368286133,
+          "p95": 77.47051773071283,
+          "min": 60.40371322631836,
+          "max": 103.33491516113281
+        },
+        "throughput_videos_per_second": 31.257485093486036,
+        "torch_peak_allocated_mib": 4226.4287109375,
+        "torch_peak_reserved_mib": 4350.0,
+        "telemetry": {
+          "sampling_interval_ms": 50,
+          "idle_samples": 26,
+          "active_samples": 34,
+          "idle_mean_w": 62.45615384615385,
+          "active_mean_w": 210.65617647058824,
+          "active_peak_w": 250.76,
+          "active_mean_gpu_utilization_percent": 64.47058823529412,
+          "active_peak_gpu_utilization_percent": 84.0,
+          "active_peak_memory_used_mib": 4883.0,
+          "rated_power_limit_w": 250.0,
+          "active_mean_fraction_of_power_limit": 0.8426247058823529,
+          "active_peak_fraction_of_power_limit": 1.00304,
+          "measured_active_energy_j_per_batch": 13.478766819566577,
+          "measured_active_energy_j_per_video": 6.739383409783288,
+          "idle_subtracted_energy_j_per_batch": 9.482530163971433,
+          "rated_upper_bound_energy_j_per_batch": 15.99616854985555
+        },
+        "status": "complete"
+      },
+      {
+        "batch_size_videos": 4,
+        "frames_per_video": 4,
+        "distinct_videos_per_batch": true,
+        "sweep_warmup_forwards": 3,
+        "timed_forwards": 30,
+        "preprocessing_ms_once_not_in_primary_latency": 1652.5704339146614,
+        "model_boundary_batch_cuda_ms": {
+          "mean": 110.91124877929687,
+          "median": 110.65292739868164,
+          "std": 1.2221230366353122,
+          "p05": 109.88021659851074,
+          "p95": 112.39562110900879,
+          "min": 109.80659484863281,
+          "max": 116.55680084228516
+        },
+        "throughput_videos_per_second": 36.064872084883206,
+        "torch_peak_allocated_mib": 4387.5126953125,
+        "torch_peak_reserved_mib": 4588.0,
+        "telemetry": {
+          "sampling_interval_ms": 50,
+          "idle_samples": 32,
+          "active_samples": 52,
+          "idle_mean_w": 67.5990625,
+          "active_mean_w": 228.52519230769227,
+          "active_peak_w": 260.67,
+          "active_mean_gpu_utilization_percent": 83.38461538461539,
+          "active_peak_gpu_utilization_percent": 91.0,
+          "active_peak_memory_used_mib": 5121.0,
+          "rated_power_limit_w": 250.0,
+          "active_mean_fraction_of_power_limit": 0.9141007692307691,
+          "active_peak_fraction_of_power_limit": 1.04268,
+          "measured_active_energy_j_per_batch": 25.346014456375116,
+          "measured_active_energy_j_per_video": 6.336503614093779,
+          "idle_subtracted_energy_j_per_batch": 17.84851801819038,
+          "rated_upper_bound_energy_j_per_batch": 27.727812194824217
+        },
+        "status": "complete"
+      },
+      {
+        "batch_size_videos": 8,
+        "frames_per_video": 4,
+        "distinct_videos_per_batch": true,
+        "sweep_warmup_forwards": 3,
+        "timed_forwards": 30,
+        "preprocessing_ms_once_not_in_primary_latency": 3662.75691986084,
+        "model_boundary_batch_cuda_ms": {
+          "mean": 209.96693420410156,
+          "median": 209.54778289794922,
+          "std": 1.3335924867999458,
+          "p05": 208.76728515625,
+          "p95": 212.88996047973632,
+          "min": 208.6860809326172,
+          "max": 214.0528564453125
+        },
+        "throughput_videos_per_second": 38.101237370182666,
+        "torch_peak_allocated_mib": 4712.8681640625,
+        "torch_peak_reserved_mib": 5114.0,
+        "telemetry": {
+          "sampling_interval_ms": 50,
+          "idle_samples": 32,
+          "active_samples": 96,
+          "idle_mean_w": 68.319375,
+          "active_mean_w": 238.89364583333335,
+          "active_peak_w": 274.64,
+          "active_mean_gpu_utilization_percent": 86.83333333333333,
+          "active_peak_gpu_utilization_percent": 95.0,
+          "active_peak_memory_used_mib": 5647.0,
+          "rated_power_limit_w": 250.0,
+          "active_mean_fraction_of_power_limit": 0.9555745833333334,
+          "active_peak_fraction_of_power_limit": 1.09856,
+          "measured_active_energy_j_per_batch": 50.15976641646545,
+          "measured_active_energy_j_per_video": 6.2699708020581815,
+          "idle_subtracted_energy_j_per_batch": 35.8149567009751,
+          "rated_upper_bound_energy_j_per_batch": 52.49173355102539
+        },
+        "status": "complete"
+      },
+      {
+        "batch_size_videos": 16,
+        "frames_per_video": 4,
+        "distinct_videos_per_batch": true,
+        "sweep_warmup_forwards": 3,
+        "timed_forwards": 30,
+        "preprocessing_ms_once_not_in_primary_latency": 7151.452653110027,
+        "model_boundary_batch_cuda_ms": {
+          "mean": 401.4613861083984,
+          "median": 401.86265563964844,
+          "std": 1.1922456430498662,
+          "p05": 399.60965728759766,
+          "p95": 402.9096939086914,
+          "min": 398.5039367675781,
+          "max": 403.5287170410156
+        },
+        "throughput_videos_per_second": 39.85439335797004,
+        "torch_peak_allocated_mib": 5345.1728515625,
+        "torch_peak_reserved_mib": 6064.0,
+        "telemetry": {
+          "sampling_interval_ms": 50,
+          "idle_samples": 30,
+          "active_samples": 186,
+          "idle_mean_w": 63.908333333333324,
+          "active_mean_w": 238.18172043010753,
+          "active_peak_w": 274.62,
+          "active_mean_gpu_utilization_percent": 88.55376344086021,
+          "active_peak_gpu_utilization_percent": 96.0,
+          "active_peak_memory_used_mib": 6597.0,
+          "rated_power_limit_w": 250.0,
+          "active_mean_fraction_of_power_limit": 0.9527268817204301,
+          "active_peak_fraction_of_power_limit": 1.0984800000000001,
+          "measured_active_energy_j_per_batch": 95.620763629554,
+          "measured_active_energy_j_per_video": 5.976297726847125,
+          "idle_subtracted_energy_j_per_batch": 69.96403554567645,
+          "rated_upper_bound_energy_j_per_batch": 100.3653465270996
+        },
+        "status": "complete"
+      }
+    ]
+  },
+  "temporal_performance": {
+    "ours": {
+      "srcc": 0.8044,
+      "plcc": 0.818,
+      "rmse": 7.991,
+      "mae": 5.992
+    },
+    "qwen_batch16": {
+      "srcc": 0.7688444800414204,
+      "krcc": 0.5682101699147398,
+      "plcc": 0.7793985140844971,
+      "rmse": 8.72708227586439,
+      "mae": 6.768176594942702
+    },
+    "qwen_old_batch1": {
+      "srcc": 0.7663428036522781,
+      "krcc": 0.5654543373909883,
+      "plcc": 0.7760533108597412,
+      "rmse": 8.790511375871079,
+      "mae": 6.838433311079565
+    }
+  },
+  "performance_detail": {
+    "lgvq_spatial": {
+      "ours": {
+        "srcc": 0.6393237619075796,
+        "plcc": 0.6743486500135264,
+        "rmse": 8.451935768127441,
+        "mae": 6.646285533905029
+      },
+      "qwen": {
+        "srcc": 0.6907725734336255,
+        "krcc": 0.5004924871678462,
+        "plcc": 0.706544604939309,
+        "rmse": 8.151601984949698,
+        "mae": 6.402272304411857
+      }
+    },
+    "abo_image_to_title_t08": {
+      "ours": {
+        "recall_at_1": 0.7983333333333333,
+        "recall_at_5": 0.95375,
+        "recall_at_10": 0.9858333333333333,
+        "mrr": 0.867616268422718
+      },
+      "qwen": {
+        "recall_at_1": 0.7358333333333333,
+        "recall_at_5": 0.9329166666666666,
+        "recall_at_10": 0.9583333333333334,
+        "mrr": 0.8223632376976404,
+        "mean_rank": 2.67625,
+        "median_rank": 1.0
+      }
+    },
+    "abo_similarity10_t07": {
+      "ours": null,
+      "qwen": {
+        "precision_at_1": 0.9520833333333333,
+        "positive_recall_at_1": 0.07934027777777777,
+        "hit_at_1": 0.9520833333333333,
+        "r_at_1": 0.9520833333333333,
+        "precision_at_5": 0.9208333333333333,
+        "positive_recall_at_5": 0.3836805555555556,
+        "hit_at_5": 0.9875,
+        "r_at_5": 0.9875,
+        "precision_at_10": 0.8547916666666668,
+        "positive_recall_at_10": 0.7123263888888889,
+        "hit_at_10": 0.9979166666666667,
+        "r_at_10": 0.9979166666666667,
+        "map_at_10": 0.8325332341269842,
+        "ndcg_at_10": 0.8806687491617079,
+        "query_count": 480,
+        "candidate_count": 120,
+        "relevant_candidates_per_query": 12.0,
+        "category_route_accuracy": 0.9208333333333333,
+        "unrestricted_top1_category_accuracy": 0.9520833333333333
+      }
+    },
+    "lsp": {
+      "ours": {
+        "pck_at_0.2_torso": 0.5773,
+        "pckh_at_0.5_head": 0.7363
+      },
+      "qwen": {
+        "loss": 0.02723358404636383,
+        "heatmap_loss": 0.0022107640989124776,
+        "coordinate_loss": 0.2502281951904297,
+        "pck_at_0.2_torso": 0.7225714285714285,
+        "pckh_at_0.5_head": 0.8849285714285714,
+        "mean_pixel_error": 13.522607204948685,
+        "normalized_mean_error_torso": 0.2084007133174199,
+        "evaluated_joints": 14000,
+        "pck_evaluated_joints": 14000,
+        "pckh_evaluated_joints": 14000,
+        "per_joint_pck_at_0.2_torso": {
+          "right_ankle": 0.698,
+          "right_knee": 0.703,
+          "right_hip": 0.774,
+          "left_hip": 0.748,
+          "left_knee": 0.693,
+          "left_ankle": 0.696,
+          "right_wrist": 0.593,
+          "right_elbow": 0.642,
+          "right_shoulder": 0.803,
+          "left_shoulder": 0.791,
+          "left_elbow": 0.621,
+          "left_wrist": 0.559,
+          "neck": 0.897,
+          "head_top": 0.898
+        },
+        "per_joint_counts": {
+          "right_ankle": 1000,
+          "right_knee": 1000,
+          "right_hip": 1000,
+          "left_hip": 1000,
+          "left_knee": 1000,
+          "left_ankle": 1000,
+          "right_wrist": 1000,
+          "right_elbow": 1000,
+          "right_shoulder": 1000,
+          "left_shoulder": 1000,
+          "left_elbow": 1000,
+          "left_wrist": 1000,
+          "neck": 1000,
+          "head_top": 1000
+        },
+        "normalization": {
+          "PCK": "mean distance of the two shoulder-to-opposite-hip torso diagonals",
+          "PCKh": "2 * distance(neck, head_top)"
+        },
+        "samples": 1000,
+        "phase": "qwen_gpu_baseline",
+        "epoch": 37,
+        "model": "teacher"
+      }
+    },
+    "salicon": {
+      "ours": {
+        "cc": 0.8291,
+        "sim": 0.8063,
+        "nss": 0.9283,
+        "auc_judd": 0.7631,
+        "kld": 0.133,
+        "mae": 0.089
+      },
+      "qwen": {
+        "samples": 5000,
+        "kld": 0.10342501114606857,
+        "cc": 0.8810337488174439,
+        "sim": 0.8327108745574952,
+        "nss": 0.9902887137413025,
+        "auc_judd": 0.7730451663675354,
+        "mae": 0.06806666994094848
+      }
+    }
+  },
+  "timing_contract": {
+    "primary_start": "pre-hook at the first native Vision Transformer block input",
+    "primary_end": "task score/retrieval result ready on GPU",
+    "primary_excludes": [
+      "model and processor loading",
+      "disk I/O / MP4 random-seek decode",
+      "crop and resize",
+      "processor/tokenizer",
+      "host-to-device copy",
+      "vision patch embedding before block 0"
+    ],
+    "temporal_formal_protocol": "preprocess all 558 videos on CPU, then execute 34 full batch-16 calls plus one batch-14 call consecutively; zero explicit warm-up and include first batch",
+    "temporal_power_protocol": "use batch-16 steady-compute sweep power for energy at the formal batch-16 mean latency; also archive the distinct-batch active-window reading separately"
+  },
+  "audit_corrections": [
+    {
+      "incorrect_or_mixed": "1046.928 ms / 16 videos",
+      "correct": 405.3076629638672,
+      "reason": "1046.928 ms was a 5090D-derived sequential value, not this A100 batch-16 run"
+    },
+    {
+      "incorrect_or_mixed": "1200.053 ms / 16 videos",
+      "correct": 405.3076629638672,
+      "reason": "1200.053 ms is A100 batch-1 mean ×16; valid historical evidence, but not the new near-full-power batch-16 protocol"
+    },
+    {
+      "incorrect_or_mixed": "9.384 ms and 0.754 J for temporal optical",
+      "correct": {
+        "latency_ms": 20.3822885,
+        "energy_j": 1.6384914079380002
+      },
+      "reason": "9.384 ms omitted measured post-CCD fusion, frame-to-video bridge, and final temporal head"
+    },
+    {
+      "incorrect_or_mixed": "LSP baseline 73.71%",
+      "correct": 0.7225714285714285,
+      "reason": "73.71% belonged to a different ABO row; full LSP test gives PCK@0.2=72.257%"
+    },
+    {
+      "incorrect_or_mixed": "ABO similarity-10 labelled text-to-image",
+      "correct": "image query to train-product image centroids",
+      "reason": "the delivered archive and formal baseline contain images/categories but no text-query contract"
+    },
+    {
+      "incorrect_or_mixed": "one fixed 0.730 J optical energy for every task",
+      "correct": "task-specific 80.388 W × complete task critical-path latency",
+      "reason": "tasks use different optical pass counts and different measured serial electronic tails"
+    }
+  ]
+}
