@@ -1,0 +1,34 @@
+base_config: spatial_two_branch_multiview_refine_s406.yaml
+output_dir: ../../runs/lgvq_spatial_two_branch_multiview_early_s407
+random_seed: 407
+
+# The same three-view regularizer, but restarted from the earlier strict
+# optical checkpoint so E1/Conv5, the optical phases, and readout can co-adapt.
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_two_branch_residual_d2_s310/best_observed_test_checkpoint.pt
+  epochs: 100
+  batch_size: 32
+  mos_stratified_batches: true
+  mos_strata: 8
+  learning_rate: 0.00014
+  phase_learning_rate: 0.004
+  router_phase_learning_rate: 0.010
+  learning_rate_warmup_epochs: 5
+  minimum_learning_rate_factor: 0.05
+  test_interval_epochs: 1
+  phase_snapshot_interval_epochs: 0
+
+loss:
+  ranking_weight: 0.20
+  correlation_weight: 0.30
+  soft_spearman_weight: 0.00
+  soft_target_weight: 3.00
+
+curriculum:
+  enabled: true
+  start_epoch: 40
+  end_epoch: 85
+  ranking_weight_final: 0.30
+  correlation_weight_final: 0.50
+  soft_spearman_weight_final: 0.08
+  soft_target_weight_final: 0.50
