@@ -1,0 +1,448 @@
+{
+  "schema_version": 1,
+  "timing_boundary": "already acquired CCD intensity through required normalization, pooling, learned electronic readout/nonlinearity and scale-matched fusion with an already-computed parallel electronic residual",
+  "excluded": [
+    "CCD/SLM driver and exposure",
+    "file I/O and image decode",
+    "ROI/tile cropping, stacking and canvas layout",
+    "router post-processing and expert fan-out",
+    "next-SLM field reconstruction or packing",
+    "parallel electronic residual computation",
+    "inter-modal/frame-to-sequence bridges",
+    "final task head or decoder",
+    "optical propagation"
+  ],
+  "measurement_policy": "CUDA-event median is the lower pure-GPU neural estimate; synchronized wall median is the auditable host-observed value. Minimum samples are not used.",
+  "environment": {
+    "generated_at_utc": "2026-09-07T19:06:18.813166+00:00",
+    "python": "3.11.15 (main, Jun 11 2026, 15:20:16) [GCC 14.3.0]",
+    "platform": "Linux-5.15.0-136-generic-x86_64-with-glibc2.31",
+    "torch": "2.6.0+cu124",
+    "cuda_runtime": "12.4",
+    "device": "NVIDIA A100-PCIE-40GB",
+    "precision": "float32",
+    "warmup_calls_per_component": 100,
+    "measured_calls_per_component": 1000
+  },
+  "tasks": {
+    "t01": {
+      "label": "Caltech101 retrieval",
+      "components": [
+        {
+          "component": "vision_neural_ccd_to_fusion",
+          "shape_contract": "CCD [1,478,478] -> normalize/pool/LN/Linear/ReLU -> [1,196,192] -> scale-matched residual fusion",
+          "warmup_calls": 100,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 1,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 1000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 0.4899184640645981,
+            "median": 0.47513601183891296,
+            "p95": 0.5089280009269714,
+            "minimum": 0.4689919948577881,
+            "maximum": 4.733952045440674
+          },
+          "synchronized_wall_ms": {
+            "mean": 0.5071806480000001,
+            "median": 0.492407,
+            "p95": 0.5267607499999999,
+            "minimum": 0.485692,
+            "maximum": 4.778123
+          }
+        },
+        {
+          "component": "language_neural_ccd_to_fusion",
+          "shape_contract": "CCD [1,478,478] -> normalize/pool/LN/Linear/ReLU -> [1,76,192] -> scale-matched residual fusion",
+          "warmup_calls": 100,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 1,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 1000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 0.48786739242076876,
+            "median": 0.48947200179100037,
+            "p95": 0.5181440114974976,
+            "minimum": 0.46694400906562805,
+            "maximum": 0.6154239773750305
+          },
+          "synchronized_wall_ms": {
+            "mean": 0.50499759,
+            "median": 0.5063975000000001,
+            "p95": 0.5360555,
+            "minimum": 0.484179,
+            "maximum": 0.632245
+          }
+        }
+      ],
+      "fusion_only_summary": {
+        "component_occurrences_per_call": {
+          "vision_neural_ccd_to_fusion": 2,
+          "language_neural_ccd_to_fusion": 2
+        },
+        "feature_blocks_per_call": 4,
+        "cuda_event_median_sum_ms_per_call": 1.9292160272598267,
+        "synchronized_wall_median_sum_ms_per_call": 1.9976090000000002,
+        "cuda_event_median_average_ms_per_feature_block": 0.48230400681495667,
+        "synchronized_wall_median_average_ms_per_feature_block": 0.49940225000000005,
+        "logical_samples_per_call": 1,
+        "cuda_event_median_sum_ms_per_logical_sample": 1.9292160272598267,
+        "synchronized_wall_median_sum_ms_per_logical_sample": 1.9976090000000002
+      }
+    },
+    "t02": {
+      "label": "LSP keypoint",
+      "components": [
+        {
+          "component": "vision_neural_ccd_to_fusion",
+          "shape_contract": "CCD [1,478,478] -> normalize/pool/LN/Linear/ReLU -> [1,196,192] -> scale-matched residual fusion",
+          "warmup_calls": 100,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 1,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 1000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 0.48147455978393555,
+            "median": 0.47411200404167175,
+            "p95": 0.5099520087242126,
+            "minimum": 0.46694400906562805,
+            "maximum": 0.9082880020141602
+          },
+          "synchronized_wall_ms": {
+            "mean": 0.498613634,
+            "median": 0.4909175,
+            "p95": 0.52709335,
+            "minimum": 0.484229,
+            "maximum": 0.924982
+          }
+        }
+      ],
+      "fusion_only_summary": {
+        "component_occurrences_per_call": {
+          "vision_neural_ccd_to_fusion": 2
+        },
+        "feature_blocks_per_call": 2,
+        "cuda_event_median_sum_ms_per_call": 0.9482240080833435,
+        "synchronized_wall_median_sum_ms_per_call": 0.981835,
+        "cuda_event_median_average_ms_per_feature_block": 0.47411200404167175,
+        "synchronized_wall_median_average_ms_per_feature_block": 0.4909175,
+        "logical_samples_per_call": 1,
+        "cuda_event_median_sum_ms_per_logical_sample": 0.9482240080833435,
+        "synchronized_wall_median_sum_ms_per_logical_sample": 0.981835
+      }
+    },
+    "t03": {
+      "label": "SALICON saliency",
+      "components": [
+        {
+          "component": "vision_neural_ccd_to_fusion",
+          "shape_contract": "CCD [1,478,478] -> normalize/pool/LN/Linear/ReLU -> [1,196,192] -> scale-matched residual fusion",
+          "warmup_calls": 100,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 1,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 1000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 0.4873205762207508,
+            "median": 0.4756480008363724,
+            "p95": 0.5192192196846008,
+            "minimum": 0.46694400906562805,
+            "maximum": 1.772544026374817
+          },
+          "synchronized_wall_ms": {
+            "mean": 0.50455669,
+            "median": 0.493027,
+            "p95": 0.53813925,
+            "minimum": 0.48363,
+            "maximum": 1.788579
+          }
+        }
+      ],
+      "fusion_only_summary": {
+        "component_occurrences_per_call": {
+          "vision_neural_ccd_to_fusion": 2
+        },
+        "feature_blocks_per_call": 2,
+        "cuda_event_median_sum_ms_per_call": 0.9512960016727448,
+        "synchronized_wall_median_sum_ms_per_call": 0.986054,
+        "cuda_event_median_average_ms_per_feature_block": 0.4756480008363724,
+        "synchronized_wall_median_average_ms_per_feature_block": 0.493027,
+        "logical_samples_per_call": 1,
+        "cuda_event_median_sum_ms_per_logical_sample": 0.9512960016727448,
+        "synchronized_wall_median_sum_ms_per_logical_sample": 0.986054
+      }
+    },
+    "t04": {
+      "label": "OpenMoji interaction",
+      "components": [
+        {
+          "component": "vision_neural_ccd_to_fusion",
+          "shape_contract": "CCD [1,478,478] -> normalize/pool/LN/Linear/ReLU -> [1,196,192] -> scale-matched residual fusion",
+          "warmup_calls": 100,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 1,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 1000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 0.4883712320625782,
+            "median": 0.4864000082015991,
+            "p95": 0.5140479803085327,
+            "minimum": 0.4679679870605469,
+            "maximum": 2.1729280948638916
+          },
+          "synchronized_wall_ms": {
+            "mean": 0.505535734,
+            "median": 0.503171,
+            "p95": 0.5320940000000001,
+            "minimum": 0.485211,
+            "maximum": 2.204704
+          }
+        },
+        {
+          "component": "language_neural_ccd_to_fusion",
+          "shape_contract": "CCD [1,478,478] -> normalize/pool/LN/Linear/ReLU -> [1,64,192] -> scale-matched residual fusion",
+          "warmup_calls": 100,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 1,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 1000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 0.48601702389121054,
+            "median": 0.47513601183891296,
+            "p95": 0.5191680192947388,
+            "minimum": 0.46694400906562805,
+            "maximum": 1.0618879795074463
+          },
+          "synchronized_wall_ms": {
+            "mean": 0.503268696,
+            "median": 0.49231400000000003,
+            "p95": 0.5371800999999999,
+            "minimum": 0.484282,
+            "maximum": 1.098866
+          }
+        }
+      ],
+      "fusion_only_summary": {
+        "component_occurrences_per_call": {
+          "vision_neural_ccd_to_fusion": 2,
+          "language_neural_ccd_to_fusion": 2
+        },
+        "feature_blocks_per_call": 4,
+        "cuda_event_median_sum_ms_per_call": 1.9230720400810242,
+        "synchronized_wall_median_sum_ms_per_call": 1.9909700000000001,
+        "cuda_event_median_average_ms_per_feature_block": 0.48076801002025604,
+        "synchronized_wall_median_average_ms_per_feature_block": 0.49774250000000003,
+        "logical_samples_per_call": 1,
+        "cuda_event_median_sum_ms_per_logical_sample": 1.9230720400810242,
+        "synchronized_wall_median_sum_ms_per_logical_sample": 1.9909700000000001
+      }
+    },
+    "t06": {
+      "label": "LGVQ MultiVideo-16x4",
+      "components": [
+        {
+          "component": "frame_neural_ccd_to_fusion",
+          "shape_contract": "pre-extracted CCD patches [64,56,56] -> normalize/pool/LN/Linear/softplus -> [16,4,49,192] -> scale-matched residual fusion",
+          "warmup_calls": 100,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 16,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 16000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 0.49025331157445906,
+            "median": 0.48844799399375916,
+            "p95": 0.5191680192947388,
+            "minimum": 0.4618239998817444,
+            "maximum": 1.5267839431762695
+          },
+          "synchronized_wall_ms": {
+            "mean": 0.507866107,
+            "median": 0.506313,
+            "p95": 0.53756255,
+            "minimum": 0.478098,
+            "maximum": 1.545931
+          }
+        },
+        {
+          "component": "video_neural_ccd_to_fusion",
+          "shape_contract": "pre-extracted CCD patches [16,115,115] -> normalize/pool/LN/Linear/softplus -> [16,42,192] -> scale-matched residual fusion",
+          "warmup_calls": 100,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 16,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 16000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 0.4660162571370602,
+            "median": 0.45772799849510193,
+            "p95": 0.4966911971569061,
+            "minimum": 0.45158401131629944,
+            "maximum": 0.567296028137207
+          },
+          "synchronized_wall_ms": {
+            "mean": 0.483022678,
+            "median": 0.4742225,
+            "p95": 0.5144517999999999,
+            "minimum": 0.467875,
+            "maximum": 0.583483
+          }
+        }
+      ],
+      "fusion_only_summary": {
+        "component_occurrences_per_call": {
+          "frame_neural_ccd_to_fusion": 2,
+          "video_neural_ccd_to_fusion": 2
+        },
+        "feature_blocks_per_call": 4,
+        "cuda_event_median_sum_ms_per_call": 1.8923519849777222,
+        "synchronized_wall_median_sum_ms_per_call": 1.961071,
+        "cuda_event_median_average_ms_per_feature_block": 0.47308799624443054,
+        "synchronized_wall_median_average_ms_per_feature_block": 0.49026775,
+        "logical_samples_per_call": 16,
+        "cuda_event_median_sum_ms_per_logical_sample": 0.11827199906110764,
+        "synchronized_wall_median_sum_ms_per_logical_sample": 0.1225669375
+      }
+    },
+    "t06_spatial": {
+      "label": "LGVQ spatial single-video4",
+      "components": [
+        {
+          "component": "spatial_vision_neural_ccd_to_fusion",
+          "shape_contract": "pre-extracted CCD lanes [4,232,232] -> normalize/pool/LN/Linear/softplus -> [1,4,196,192] -> scale-matched residual fusion",
+          "warmup_calls": 100,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 1,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 1000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 0.4932505628168583,
+            "median": 0.4833280146121979,
+            "p95": 0.5242879986763,
+            "minimum": 0.47411200404167175,
+            "maximum": 1.0547200441360474
+          },
+          "synchronized_wall_ms": {
+            "mean": 0.510582152,
+            "median": 0.5001675,
+            "p95": 0.54139925,
+            "minimum": 0.490868,
+            "maximum": 1.090683
+          }
+        },
+        {
+          "component": "spatial_language_neural_ccd_to_fusion",
+          "shape_contract": "active CCD [1,478,478] -> normalize/pool/LN/Linear/softplus -> [1,42,192] -> scale-matched residual fusion",
+          "warmup_calls": 100,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 1,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 1000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 0.4726968333721161,
+            "median": 0.4628480076789856,
+            "p95": 0.5017600059509277,
+            "minimum": 0.4536319971084595,
+            "maximum": 1.5196160078048706
+          },
+          "synchronized_wall_ms": {
+            "mean": 0.489859215,
+            "median": 0.4802575,
+            "p95": 0.5194386999999999,
+            "minimum": 0.471458,
+            "maximum": 1.539839
+          }
+        }
+      ],
+      "fusion_only_summary": {
+        "component_occurrences_per_call": {
+          "spatial_vision_neural_ccd_to_fusion": 2,
+          "spatial_language_neural_ccd_to_fusion": 2
+        },
+        "feature_blocks_per_call": 4,
+        "cuda_event_median_sum_ms_per_call": 1.892352044582367,
+        "synchronized_wall_median_sum_ms_per_call": 1.96085,
+        "cuda_event_median_average_ms_per_feature_block": 0.47308801114559174,
+        "synchronized_wall_median_average_ms_per_feature_block": 0.4902125,
+        "logical_samples_per_call": 1,
+        "cuda_event_median_sum_ms_per_logical_sample": 1.892352044582367,
+        "synchronized_wall_median_sum_ms_per_logical_sample": 1.96085
+      }
+    },
+    "t08": {
+      "label": "ABO image-to-title retrieval",
+      "components": [
+        {
+          "component": "vision_neural_ccd_to_fusion",
+          "shape_contract": "CCD [1,478,478] -> normalize/pool/LN/Linear/ReLU -> [1,196,192] -> scale-matched residual fusion",
+          "warmup_calls": 100,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 1,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 1000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 0.48972492855787275,
+            "median": 0.48844799399375916,
+            "p95": 0.5222399830818176,
+            "minimum": 0.4679679870605469,
+            "maximum": 0.5457919836044312
+          },
+          "synchronized_wall_ms": {
+            "mean": 0.507011311,
+            "median": 0.505969,
+            "p95": 0.53984145,
+            "minimum": 0.484641,
+            "maximum": 0.564627
+          }
+        },
+        {
+          "component": "language_neural_ccd_to_fusion",
+          "shape_contract": "CCD [1,478,478] -> normalize/pool/LN/Linear/ReLU -> [1,76,192] -> scale-matched residual fusion",
+          "warmup_calls": 100,
+          "measured_calls": 1000,
+          "logical_samples_per_call": 1,
+          "physical_fields_per_call": 1,
+          "logical_samples_measured": 1000,
+          "physical_fields_measured": 1000,
+          "cuda_event_ms": {
+            "mean": 0.48134553587436674,
+            "median": 0.47308799624443054,
+            "p95": 0.5099520087242126,
+            "minimum": 0.46694400906562805,
+            "maximum": 0.7362560033798218
+          },
+          "synchronized_wall_ms": {
+            "mean": 0.49893052899999996,
+            "median": 0.49020549999999996,
+            "p95": 0.5274403000000001,
+            "minimum": 0.484277,
+            "maximum": 0.815046
+          }
+        }
+      ],
+      "fusion_only_summary": {
+        "component_occurrences_per_call": {
+          "vision_neural_ccd_to_fusion": 2,
+          "language_neural_ccd_to_fusion": 2
+        },
+        "feature_blocks_per_call": 4,
+        "cuda_event_median_sum_ms_per_call": 1.9230719804763794,
+        "synchronized_wall_median_sum_ms_per_call": 1.992349,
+        "cuda_event_median_average_ms_per_feature_block": 0.48076799511909485,
+        "synchronized_wall_median_average_ms_per_feature_block": 0.49808725,
+        "logical_samples_per_call": 1,
+        "cuda_event_median_sum_ms_per_logical_sample": 1.9230719804763794,
+        "synchronized_wall_median_sum_ms_per_logical_sample": 1.992349
+      }
+    }
+  }
+}
