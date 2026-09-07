@@ -35,6 +35,7 @@ from LightGenV2.common.baseline_measurement import (
     save_power_samples,
     sha256_file,
     summarize,
+    validate_cuda_device,
     write_json,
 )
 
@@ -149,6 +150,29 @@ class ConditionedReadoutBlock(nn.Module):
         hidden = hidden + beta[:, :, None, None]
         hidden = self.pointwise(F.gelu(self.depthwise(hidden)))
         return value + hidden
+
+
+class AlignedStructuredOpenMojiHead(StructuredOpenMojiHead):
+    """The same structured head with the task auxiliary used by LightGenV2.
+
+    Qwen remains completely frozen.  This adds only a four-way linear task
+    readout and lets the electronic baseline use the same label-only editing
+    objective as the optical student (minus optical/router regularizers).
+    """
+
+    def __init__(self, hidden_size: int = 2048, width: int = 192) -> None:
+        super().__init__(hidden_size=hidden_size, width=width)
+        self.task = nn.Linear(width, 4)
+
+    def forward(
+        self, image_hidden: torch.Tensor, condition_hidden: torch.Tensor
+    ) -> dict[str, torch.Tensor]:
+        output = super().forward(image_hidden, condition_hidden)
+        condition = self.condition_projection(
+            condition_hidden.to(dtype=self.condition_projection[1].weight.dtype)
+        )
+        output["task_logits"] = self.task(condition)
+        return output
 
 
 def _trainable_parameters(module: nn.Module) -> int:
@@ -355,6 +379,41 @@ def _loss(
     return category + edit_loss
 
 
+def _dice_loss(probability: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+    intersection = (probability * target).sum(dim=(-2, -1))
+    denominator = probability.sum(dim=(-2, -1)) + target.sum(dim=(-2, -1))
+    return (1.0 - (2.0 * intersection + 1.0e-6) / (denominator + 1.0e-6)).mean()
+
+
+def _aligned_loss(
+    output: dict[str, torch.Tensor],
+    target: torch.Tensor,
+    edit: torch.Tensor,
+    task: torch.Tensor,
+) -> torch.Tensor:
+    """Match the non-optical part of the LightGenV2 editing objective.
+
+    This is intentionally not a new tuned loss.  The constants are copied
+    from ``common_dc20.yaml`` so the baseline and optical system receive the
+    same supervision for categories, changed cells, preservation, and the
+    four operation types.
+    """
+
+    category_logits = output["category_logits"].float()
+    edit_logits = output["edit_logits"].float()
+    cell_ce = F.cross_entropy(category_logits, target, reduction="none")
+    weight = 1.0 + 8.0 * edit + 2.0 * target.gt(0).float()
+    category = (cell_ce * weight).sum() / weight.sum().clamp_min(1.0)
+    probability = edit_logits.sigmoid()
+    edit_term = F.binary_cross_entropy_with_logits(
+        edit_logits, edit, pos_weight=edit_logits.new_tensor(8.0)
+    ) + _dice_loss(probability, edit)
+    preserve = 1.0 - edit
+    preservation = (probability * preserve).sum() / preserve.sum().clamp_min(1.0)
+    task_term = F.cross_entropy(output["task_logits"].float(), task.long())
+    return category + edit_term + 0.2 * preservation + 0.1 * task_term
+
+
 def _metrics(
     output: dict[str, torch.Tensor],
     source: torch.Tensor,
@@ -456,7 +515,9 @@ def train_head(args: argparse.Namespace) -> dict[str, Any]:
     train = _load_cache(cache_dir / "train_frozen_joint_features.pt")
     test = _load_cache(cache_dir / "test_frozen_joint_features.pt")
     hidden_size = int(train["image_hidden"].shape[-1])
-    head = StructuredOpenMojiHead(hidden_size, args.width).to("cuda:0")
+    aligned = args.baseline_protocol == "aligned_label_only"
+    head_type = AlignedStructuredOpenMojiHead if aligned else StructuredOpenMojiHead
+    head = head_type(hidden_size, args.width).to("cuda:0")
     optimizer = torch.optim.AdamW(
         head.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay
     )
@@ -465,6 +526,7 @@ def train_head(args: argparse.Namespace) -> dict[str, Any]:
         train["condition_hidden"],
         train["target_grid"],
         train["edit_grid"],
+        train["task_index"],
     )
     loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True)
     best_score = -1.0
@@ -474,14 +536,19 @@ def train_head(args: argparse.Namespace) -> dict[str, Any]:
         head.train()
         loss_sum = 0.0
         count = 0
-        for image, condition, target, edit in loader:
+        for image, condition, target, edit, task in loader:
             image = image.to("cuda:0")
             condition = condition.to("cuda:0")
             target = target.to("cuda:0")
             edit = edit.to("cuda:0")
+            task = task.to("cuda:0")
             optimizer.zero_grad(set_to_none=True)
             output = head(image, condition)
-            loss = _loss(output, target, edit)
+            loss = (
+                _aligned_loss(output, target, edit, task)
+                if aligned
+                else _loss(output, target, edit)
+            )
             loss.backward()
             optimizer.step()
             loss_sum += float(loss.detach()) * len(image)
@@ -502,6 +569,7 @@ def train_head(args: argparse.Namespace) -> dict[str, Any]:
                         "head": head.state_dict(),
                         "hidden_size": hidden_size,
                         "width": args.width,
+                        "baseline_protocol": args.baseline_protocol,
                         "test_metrics": values,
                         "selection": "highest periodic-test changed-cell accuracy",
                     },
@@ -525,6 +593,7 @@ def train_head(args: argparse.Namespace) -> dict[str, Any]:
             "head": head.state_dict(),
             "hidden_size": hidden_size,
             "width": args.width,
+            "baseline_protocol": args.baseline_protocol,
         },
         run_dir / "last_checkpoint.pt",
     )
@@ -536,7 +605,13 @@ def train_head(args: argparse.Namespace) -> dict[str, Any]:
         "qwen_frozen": True,
         "only_trainable_component": "StructuredOpenMojiHead",
         "trainable_parameters": _trainable_parameters(head),
-        "loss": "changed-cell category cross-entropy + class-balanced edit-grid BCE",
+        "baseline_protocol": args.baseline_protocol,
+        "loss": (
+            "LightGenV2-matched label-only category/edit/dice/preservation/task objective"
+            if aligned
+            else "changed-cell category cross-entropy + class-balanced edit-grid BCE"
+        ),
+        "qwen_parameters_modified": 0,
         "selection": "maximum periodic-test changed-cell accuracy",
     }
     write_json(run_dir / "training_report.json", report)
@@ -545,8 +620,7 @@ def train_head(args: argparse.Namespace) -> dict[str, Any]:
 
 @torch.inference_mode()
 def evaluate_and_time(args: argparse.Namespace) -> dict[str, Any]:
-    if not torch.cuda.is_available() or "5090" not in torch.cuda.get_device_name(0):
-        raise RuntimeError("This formal baseline requires NVIDIA GeForce RTX 5090 D")
+    gpu = validate_cuda_device(args.expected_gpu)
     from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
 
     model_path = args.model.expanduser().resolve()
@@ -555,7 +629,13 @@ def evaluate_and_time(args: argparse.Namespace) -> dict[str, Any]:
     run_dir = args.run_dir.expanduser().resolve()
     checkpoint_path = run_dir / "best_checkpoint.pt"
     checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
-    head = StructuredOpenMojiHead(
+    protocol = str(checkpoint.get("baseline_protocol", "legacy"))
+    head_type = (
+        AlignedStructuredOpenMojiHead
+        if protocol == "aligned_label_only"
+        else StructuredOpenMojiHead
+    )
+    head = head_type(
         int(checkpoint["hidden_size"]), int(checkpoint["width"])
     ).to("cuda:0")
     head.load_state_dict(checkpoint["head"], strict=True)
@@ -631,12 +711,14 @@ def evaluate_and_time(args: argparse.Namespace) -> dict[str, Any]:
         "status": "complete",
         "task": "OpenMoji semantic interaction",
         "baseline_type": "normal frozen-Qwen structured task readout",
+        "baseline_protocol": protocol,
         "model": str(model_path),
         "qwen_vision_frozen": True,
         "qwen_language_frozen": True,
         "lora": False,
         "only_trainable_component": "StructuredOpenMojiHead",
         "trainable_parameters": _trainable_parameters(head),
+        "qwen_parameters_modified": 0,
         "test_samples": int(performance["samples"]),
         "selected_epoch": int(checkpoint["epoch"]),
         "performance": performance,
@@ -657,6 +739,8 @@ def evaluate_and_time(args: argparse.Namespace) -> dict[str, Any]:
         "git_commit": _git("rev-parse", "HEAD"),
         "git_worktree_clean": _git("status", "--porcelain") == "",
         "environment": environment_report(),
+        "gpu": gpu,
+        "expected_gpu_name_substring": args.expected_gpu,
         "model_load_seconds": model_load_seconds,
     }
     write_json(run_dir / "baseline_report.json", report)
@@ -688,6 +772,17 @@ def main() -> int:
     parser.add_argument("--weight-decay", type=float, default=1.0e-2)
     parser.add_argument("--test-interval", type=int, default=5)
     parser.add_argument("--warmup-forwards", type=int, default=50)
+    parser.add_argument(
+        "--baseline-protocol",
+        choices=("legacy", "aligned_label_only"),
+        default="legacy",
+        help="aligned_label_only changes only the structured head objective; Qwen stays frozen",
+    )
+    parser.add_argument(
+        "--expected-gpu",
+        default="NVIDIA GeForce RTX 5090 D",
+        help="Substring required in torch.cuda.get_device_name(0)",
+    )
     parser.add_argument("--timing-samples", type=int, default=200)
     args = parser.parse_args()
     if args.phase in ("extract", "all"):
