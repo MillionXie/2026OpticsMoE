@@ -439,9 +439,12 @@ def main():
     parser.add_argument('--steps-per-epoch',type=int)
     parser.add_argument('--seed',type=int)
     parser.add_argument('--smoke',action='store_true')
+    parser.add_argument('--validation-only',action='store_true')
     parser.add_argument('--resume',action='store_true')
     args = parser.parse_args()
     cfg = _read_config(Path(args.config))
+    if args.validation_only:
+        cfg['validation_only'] = True
     if args.seed is not None:
         cfg['seed'] = args.seed
     cfg.update(method=args.method,smoke=args.smoke,steps_per_epoch=args.steps_per_epoch)
