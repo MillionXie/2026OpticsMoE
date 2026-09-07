@@ -540,7 +540,10 @@ class ExperimentSettings:
                 invalid.append("data.quality_feature_cache")
             if self.vgg_feature_cache_path is not None:
                 invalid.append("data.vgg_feature_cache")
-            if self.quality_refiner_enabled:
+            if (
+                self.quality_refiner_enabled
+                and not self.electronic_quality_residual_enabled
+            ):
                 invalid.append("quality_refiner_enabled")
             if self.trainable_frame_stem_enabled:
                 invalid.append("trainable_frame_stem_enabled")

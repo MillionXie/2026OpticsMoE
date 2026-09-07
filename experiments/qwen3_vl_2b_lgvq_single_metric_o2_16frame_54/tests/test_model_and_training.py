@@ -385,6 +385,54 @@ def test_strict_two_branch_allows_quality_only_inside_electronic_route(
     assert not torch.equal(first, second)
 
 
+def test_strict_e1_quality_refiner_is_zero_start_and_has_no_bypass(
+    tmp_path: Path,
+) -> None:
+    base_settings = replace(
+        _small_settings(tmp_path),
+        strict_two_branch=True,
+        quality_branch_enabled=False,
+        quality_feature_cache_path=tmp_path / "quality_cache.pt",
+        quality_input_width=192,
+        qwen_gate_enabled=False,
+        electronic_route_variant="residual_conv",
+        electronic_route_depth=2,
+        electronic_quality_residual_enabled=True,
+        quality_refiner_enabled=False,
+        phase_snapshot_interval_epochs=0,
+    )
+    base_settings.validate()
+    base = LGVQSingleMetricOEO16(base_settings).eval()
+    checkpoint = tmp_path / "strict_e1_base.pt"
+    torch.save({"state_dict": base.state_dict()}, checkpoint)
+
+    refined_settings = replace(
+        base_settings,
+        quality_refiner_enabled=True,
+        initialization_checkpoint=checkpoint,
+    )
+    refined_settings.validate()
+    refined = LGVQSingleMetricOEO16(refined_settings).eval()
+    _load_compatible_initialization(refined, refined_settings)
+    assert refined.quality_adapter is None
+    assert not any(
+        token in module.__class__.__name__.lower()
+        for module in refined.modules()
+        for token in ("attention", "transformer", "lstm", "gru")
+    )
+    generator = torch.Generator().manual_seed(706)
+    inputs = (
+        torch.randn(2, 4, 49, 1024, generator=generator),
+        torch.randn(2, 4, 49, 192, generator=generator),
+        torch.randn(2, 4, 2048, generator=generator),
+        torch.ones(2, 4, dtype=torch.bool),
+    )
+    with torch.no_grad():
+        expected = base(*inputs, optical_enabled=False)["prediction"]
+        actual = refined(*inputs, optical_enabled=False)["prediction"]
+    torch.testing.assert_close(actual, expected, rtol=0.0, atol=0.0)
+
+
 def test_residual_electronic_route_warm_starts_legacy_stem(
     tmp_path: Path,
 ) -> None:

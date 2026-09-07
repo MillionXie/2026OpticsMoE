@@ -1602,13 +1602,14 @@ class TrainableQualityFrameStem(nn.Module):
 
 
 class QualitySpatialRefiner(nn.Module):
-    """Zero-start spatial correction applied before optical stage one.
+    """Zero-start spatial correction for a declared quality tensor.
 
-    The branch sees only the already declared quality input tensor.  Its final
-    projection is initialized to zero, so adding the module to a warm-started
-    checkpoint preserves every prediction exactly until optimization begins.
-    It contains only normalization and convolutions; no attention or bypass to
-    the MOS readout is introduced.
+    In the strict two-branch profile this module lives entirely inside E1 and
+    refines only the existing electronic quality residual.  Its final
+    projection is initialized to zero, so adding it to a warm-started checkpoint
+    preserves every prediction exactly until optimization begins.  It contains
+    only normalization and convolutions; no attention or MOS-readout bypass is
+    introduced.
     """
 
     def __init__(self, settings: ExperimentSettings) -> None:
@@ -2060,8 +2061,16 @@ class LGVQSingleMetricOEO16(nn.Module):
             electronic_quality_scale = torch.sigmoid(
                 self.raw_electronic_quality_scale
             )
-            electronic1 = electronic1 + electronic_quality_scale * (
-                self.electronic_quality_norm(quality_tokens.float())
+            electronic_quality = self.electronic_quality_norm(
+                quality_tokens.float()
+            )
+            if (
+                self.settings.quality_refiner_enabled
+                and self.quality_adapter is None
+            ):
+                electronic_quality = self.quality_refiner(electronic_quality)
+            electronic1 = (
+                electronic1 + electronic_quality_scale * electronic_quality
             )
         if optical_enabled:
             routing["vision"] = self.parallel_router(fields1)
@@ -2200,9 +2209,18 @@ class LGVQSingleMetricOEO16(nn.Module):
         if self.quality_adapter is not None:
             groups["quality_input_adapter"] = self.quality_adapter
         if self.electronic_quality_norm is not None:
-            groups["electronic_quality_residual"] = nn.ModuleList(
-                [self.electronic_quality_norm]
-            )
+            components = [self.electronic_quality_norm]
+            if (
+                self.settings.quality_refiner_enabled
+                and self.quality_adapter is None
+            ):
+                components.append(self.quality_refiner)
+            groups["electronic_quality_residual"] = nn.ModuleList(components)
+        if (
+            self.settings.quality_refiner_enabled
+            and self.quality_adapter is not None
+        ):
+            groups["quality_input_refiner"] = self.quality_refiner
         if self.frame_stem is not None:
             groups["trainable_quality_frame_stem"] = self.frame_stem
         if self.vgg_correction is not None:

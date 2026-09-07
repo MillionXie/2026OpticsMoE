@@ -1,0 +1,40 @@
+base_config: spatial_two_branch_equality_refine_s324.yaml
+output_dir: ../../runs/lgvq_spatial_two_branch_e1_quality_refine_s417
+random_seed: 417
+
+# One zero-start 3x3/5x5 depthwise correction is contained inside E1.  It sees
+# only the already-declared Conv5 quality tensor and has no independent score
+# output.  O1, all four fusion stages, optical routers, and phase masks remain
+# bit-identical while this E1/readout-only trial runs.
+model:
+  quality_refiner_enabled: true
+  quality_refiner_max: 0.25
+
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_two_branch_equality_refine_s324/best_observed_test_checkpoint.pt
+  trainable_scope: quality_refiner_readout
+  epochs: 100
+  batch_size: 32
+  mos_stratified_batches: true
+  mos_strata: 8
+  learning_rate: 0.00008
+  learning_rate_warmup_epochs: 5
+  minimum_learning_rate_factor: 0.05
+  test_interval_epochs: 1
+  phase_snapshot_interval_epochs: 0
+
+loss:
+  ranking_weight: 0.30
+  correlation_weight: 0.70
+  soft_spearman_weight: 0.10
+  soft_rank_temperature: 0.15
+  soft_target_weight: 0.25
+  optical_alignment_weight: 0.00
+  router_balance_weight: 0.00
+  router_importance_weight: 0.00
+  serial_router_balance_weight: 0.00
+  serial_router_importance_weight: 0.00
+  router_capture_weight: 0.00
+
+curriculum:
+  enabled: false
