@@ -1,0 +1,1641 @@
+{
+  "diagnostic_git_sha": "f44979cede66f252e3bfa29d6826709b862482fc",
+  "initialization": {
+    "mode": "warmstart5_stage_b_ema_router_ablation",
+    "path": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/runs/caltech101_warmstart5_stage2_joint_sealed_test/ema_best_train_loss_checkpoint.pt",
+    "sha256": "6a27f54d8c869cce46150583383a127b0ba47b3d34503f5753aa23974ac1e55d",
+    "source_epoch": 8,
+    "source_train_loss": 2.230072796344757,
+    "source_checkpoint_architecture": "vision2_language2_moe4_10cm_warmstart5_stage_b_v1",
+    "target_checkpoint_architecture": "lightgen_t01_optical_router_scale_matched_moe_10cm_17um_scale_matched_0p010_0p950_c736891c7a55f_v1",
+    "router_backend": "optical",
+    "top_k": 2,
+    "weight_normalization": "power_l2",
+    "straight_through": true,
+    "router_optimization_seed": 42,
+    "dataset_and_batch_seed": 42,
+    "router_parameters_reset_from_fixed_seed": true,
+    "surrogates": {
+      "vision": {
+        "loaded_tensor_count": 50,
+        "new_router_tensor_count": 1,
+        "new_router_tensor_keys": [
+          "core.optical_branch.core.router.raw_router_phase"
+        ],
+        "discarded_source_router_tensor_count": 2,
+        "discarded_source_router_tensor_keys": [
+          "core.optical_branch.core.router.router.gate.bias",
+          "core.optical_branch.core.router.router.gate.weight"
+        ]
+      },
+      "language": {
+        "loaded_tensor_count": 50,
+        "new_router_tensor_count": 1,
+        "new_router_tensor_keys": [
+          "core.optical_branch.core.router.raw_router_phase"
+        ],
+        "discarded_source_router_tensor_count": 2,
+        "discarded_source_router_tensor_keys": [
+          "core.optical_branch.core.router.router.gate.bias",
+          "core.optical_branch.core.router.router.gate.weight"
+        ]
+      }
+    },
+    "test_metrics_used_for_initialization_selection": false,
+    "scale_matched_fusion_logits_reset": true,
+    "alpha_initial": 0.055
+  },
+  "initial_metrics": {
+    "top1_retrieval_accuracy": 0.8100000023841858,
+    "top3_retrieval_accuracy": 0.925000011920929,
+    "mrr": 0.8772498965263367
+  },
+  "ema_initial_weight_after_50_steps": 0.7783125570686419,
+  "methods": {
+    "direct": {
+      "live": {
+        "metrics": {
+          "top1_retrieval_accuracy": 0.8550000190734863,
+          "top3_retrieval_accuracy": 0.949999988079071,
+          "mrr": 0.9105674624443054
+        },
+        "phase_motion": {
+          "rms_rad": 0.046406976878643036,
+          "per_expert_rms_rad": [
+            [
+              0.04904073104262352,
+              0.048433948308229446,
+              0.046897727996110916,
+              0.04672781378030777
+            ],
+            [
+              0.050396744161844254,
+              0.04920220002532005,
+              0.03975861892104149,
+              0.03941700607538223
+            ]
+          ],
+          "piston_removed_rms_rad": 0.046405237168073654,
+          "per_expert_piston_removed_rms_rad": [
+            [
+              0.04903507977724075,
+              0.04842988774180412,
+              0.04689769074320793,
+              0.04672519117593765
+            ],
+            [
+              0.05039597302675247,
+              0.04920216277241707,
+              0.0397585965692997,
+              0.03941681981086731
+            ]
+          ],
+          "max_abs_rad": 0.17593169212341309
+        },
+        "phase_dc_power_per_expert": [
+          [
+            0.9966012835502625,
+            0.9966464638710022,
+            0.9968342781066895,
+            0.9968172907829285
+          ],
+          [
+            0.9964821338653564,
+            0.9966100454330444,
+            0.9974436163902283,
+            0.9974601864814758
+          ]
+        ],
+        "nonexpert_parameter_motion": {
+          "vision": {
+            "electronics_and_fusion": {
+              "rms_change": 0.00033726803519689813,
+              "relative_l2_change": 0.005844387257179301,
+              "element_count": 900455,
+              "changed_elements": 900452
+            },
+            "router": {
+              "rms_change": 0.045293828498485116,
+              "relative_l2_change": 0.006954796092371003,
+              "element_count": 50176,
+              "changed_elements": 49878
+            },
+            "global_phase": {
+              "rms_change": 0.03005874171377721,
+              "relative_l2_change": 0.4559087560356642,
+              "element_count": 228484,
+              "changed_elements": 228484
+            }
+          },
+          "language": {
+            "electronics_and_fusion": {
+              "rms_change": 0.0002194888088158548,
+              "relative_l2_change": 0.004470833295453605,
+              "element_count": 1293159,
+              "changed_elements": 897888
+            },
+            "router": {
+              "rms_change": 0.021850056196581955,
+              "relative_l2_change": 0.0033550417461212733,
+              "element_count": 50176,
+              "changed_elements": 23388
+            },
+            "global_phase": {
+              "rms_change": 0.02865856562544206,
+              "relative_l2_change": 0.5897779590829584,
+              "element_count": 228484,
+              "changed_elements": 228484
+            }
+          },
+          "readout": {
+            "electronics_and_fusion": {
+              "rms_change": 0.00020142444458349108,
+              "relative_l2_change": 0.0016113588322368825,
+              "element_count": 25408,
+              "changed_elements": 25408
+            }
+          }
+        },
+        "fusion_diagnostics_last_batch": {
+          "mode": "scale_matched_convex",
+          "ablation": "none",
+          "alpha_range": [
+            0.01,
+            0.95
+          ],
+          "vision": {
+            "block1": {
+              "alpha": 0.05495686084032059,
+              "electronic_coefficient": 0.94504314661026,
+              "optical_coefficient": 0.05495686084032059,
+              "electronic_rms_before": 0.9936556816101074,
+              "optical_rms_before": 0.33463534712791443,
+              "pre_optical_to_electronic_rms_ratio": 0.33702343702316284,
+              "post_optical_to_electronic_rms_ratio": 1.0,
+              "fused_to_electronic_rms_ratio": 1.0,
+              "branch_cosine": 0.0377444364130497
+            },
+            "block2": {
+              "alpha": 0.05503755062818527,
+              "electronic_coefficient": 0.9449624419212341,
+              "optical_coefficient": 0.05503755062818527,
+              "electronic_rms_before": 1.2737575769424438,
+              "optical_rms_before": 0.3376339077949524,
+              "pre_optical_to_electronic_rms_ratio": 0.26793232560157776,
+              "post_optical_to_electronic_rms_ratio": 1.0,
+              "fused_to_electronic_rms_ratio": 1.0,
+              "branch_cosine": 0.07665036618709564
+            }
+          },
+          "language": {
+            "block1": {
+              "alpha": 0.05496201664209366,
+              "electronic_coefficient": 0.9450379610061646,
+              "optical_coefficient": 0.05496201664209366,
+              "electronic_rms_before": 1.0313957929611206,
+              "optical_rms_before": 0.38902759552001953,
+              "pre_optical_to_electronic_rms_ratio": 0.3771815896034241,
+              "post_optical_to_electronic_rms_ratio": 1.0,
+              "fused_to_electronic_rms_ratio": 1.0,
+              "branch_cosine": 0.016536302864551544
+            },
+            "block2": {
+              "alpha": 0.05497977137565613,
+              "electronic_coefficient": 0.9450201988220215,
+              "optical_coefficient": 0.05497977137565613,
+              "electronic_rms_before": 1.0754461288452148,
+              "optical_rms_before": 0.3890551030635834,
+              "pre_optical_to_electronic_rms_ratio": 0.3617536425590515,
+              "post_optical_to_electronic_rms_ratio": 1.0,
+              "fused_to_electronic_rms_ratio": 1.0,
+              "branch_cosine": 0.061170220375061035
+            }
+          }
+        },
+        "ablations": {
+          "initial_experts": {
+            "top1_retrieval_accuracy": 0.8550000190734863,
+            "top3_retrieval_accuracy": 0.949999988079071,
+            "mrr": 0.9114008545875549,
+            "query_embedding_rms_difference": 0.0019945157691836357,
+            "changed_top1_predictions": 0
+          },
+          "flat_pi_experts": {
+            "top1_retrieval_accuracy": 0.8600000143051147,
+            "top3_retrieval_accuracy": 0.949999988079071,
+            "mrr": 0.9130674600601196,
+            "query_embedding_rms_difference": 0.002104424871504307,
+            "changed_top1_predictions": 1
+          },
+          "remove_optical": {
+            "top1_retrieval_accuracy": 0.8399999737739563,
+            "top3_retrieval_accuracy": 0.9599999785423279,
+            "mrr": 0.9011151194572449,
+            "query_embedding_rms_difference": 0.021029042080044746,
+            "changed_top1_predictions": 10
+          }
+        }
+      },
+      "ema": {
+        "metrics": {
+          "top1_retrieval_accuracy": 0.8199999928474426,
+          "top3_retrieval_accuracy": 0.9300000071525574,
+          "mrr": 0.8860138654708862
+        },
+        "phase_motion": {
+          "rms_rad": 0.008392552845180035,
+          "per_expert_rms_rad": [
+            [
+              0.008844838477671146,
+              0.008777988143265247,
+              0.008432338945567608,
+              0.008496632799506187
+            ],
+            [
+              0.009139860048890114,
+              0.008910663425922394,
+              0.007157726213335991,
+              0.007122378330677748
+            ]
+          ],
+          "piston_removed_rms_rad": 0.008392208255827427,
+          "per_expert_piston_removed_rms_rad": [
+            [
+              0.00884369295090437,
+              0.008777208626270294,
+              0.008432338014245033,
+              0.008496125228703022
+            ],
+            [
+              0.009139674715697765,
+              0.008910654112696648,
+              0.007157726213335991,
+              0.00712235551327467
+            ]
+          ],
+          "max_abs_rad": 0.03030848503112793
+        },
+        "phase_dc_power_per_expert": [
+          [
+            0.9989212155342102,
+            0.9989243149757385,
+            0.9989385008811951,
+            0.9989385008811951
+          ],
+          [
+            0.9989339709281921,
+            0.9989328980445862,
+            0.9989687204360962,
+            0.9989615082740784
+          ]
+        ],
+        "nonexpert_parameter_motion": {
+          "vision": {
+            "electronics_and_fusion": {
+              "rms_change": 5.8598753726027864e-05,
+              "relative_l2_change": 0.001015435125250005,
+              "element_count": 900455,
+              "changed_elements": 900439
+            },
+            "router": {
+              "rms_change": 0.007883642052818225,
+              "relative_l2_change": 0.0012105208316498504,
+              "element_count": 50176,
+              "changed_elements": 49393
+            },
+            "global_phase": {
+              "rms_change": 0.005447575228138381,
+              "relative_l2_change": 0.08262479079531561,
+              "element_count": 228484,
+              "changed_elements": 228483
+            }
+          },
+          "language": {
+            "electronics_and_fusion": {
+              "rms_change": 3.8487810224958386e-05,
+              "relative_l2_change": 0.0007839697356379018,
+              "element_count": 1293159,
+              "changed_elements": 897878
+            },
+            "router": {
+              "rms_change": 0.003909894522746641,
+              "relative_l2_change": 0.0006003581514265371,
+              "element_count": 50176,
+              "changed_elements": 23081
+            },
+            "global_phase": {
+              "rms_change": 0.005186576977711711,
+              "relative_l2_change": 0.1067369813451467,
+              "element_count": 228484,
+              "changed_elements": 228484
+            }
+          },
+          "readout": {
+            "electronics_and_fusion": {
+              "rms_change": 3.610092410672406e-05,
+              "relative_l2_change": 0.0002888008108031342,
+              "element_count": 25408,
+              "changed_elements": 25406
+            }
+          }
+        },
+        "fusion_diagnostics_last_batch": {
+          "mode": "scale_matched_convex",
+          "ablation": "none",
+          "alpha_range": [
+            0.01,
+            0.95
+          ],
+          "vision": {
+            "block1": {
+              "alpha": 0.05499280244112015,
+              "electronic_coefficient": 0.9450072050094604,
+              "optical_coefficient": 0.05499280244112015,
+              "electronic_rms_before": 0.9931779503822327,
+              "optical_rms_before": 0.3277645707130432,
+              "pre_optical_to_electronic_rms_ratio": 0.3300589919090271,
+              "post_optical_to_electronic_rms_ratio": 1.0,
+              "fused_to_electronic_rms_ratio": 1.0,
+              "branch_cosine": 0.030563680455088615
+            },
+            "block2": {
+              "alpha": 0.05500595271587372,
+              "electronic_coefficient": 0.9449940323829651,
+              "optical_coefficient": 0.05500595271587372,
+              "electronic_rms_before": 1.3455276489257812,
+              "optical_rms_before": 0.3293605446815491,
+              "pre_optical_to_electronic_rms_ratio": 0.2455175817012787,
+              "post_optical_to_electronic_rms_ratio": 1.0,
+              "fused_to_electronic_rms_ratio": 1.0,
+              "branch_cosine": 0.06458233296871185
+            }
+          },
+          "language": {
+            "block1": {
+              "alpha": 0.05499394237995148,
+              "electronic_coefficient": 0.9450060725212097,
+              "optical_coefficient": 0.05499394237995148,
+              "electronic_rms_before": 1.0369020700454712,
+              "optical_rms_before": 0.3863646984100342,
+              "pre_optical_to_electronic_rms_ratio": 0.37261196970939636,
+              "post_optical_to_electronic_rms_ratio": 1.0,
+              "fused_to_electronic_rms_ratio": 1.0,
+              "branch_cosine": 0.012947503477334976
+            },
+            "block2": {
+              "alpha": 0.05499698966741562,
+              "electronic_coefficient": 0.9450030326843262,
+              "optical_coefficient": 0.05499698966741562,
+              "electronic_rms_before": 1.0845670700073242,
+              "optical_rms_before": 0.3865041136741638,
+              "pre_optical_to_electronic_rms_ratio": 0.35636234283447266,
+              "post_optical_to_electronic_rms_ratio": 1.0,
+              "fused_to_electronic_rms_ratio": 1.0,
+              "branch_cosine": 0.06203513965010643
+            }
+          }
+        },
+        "ablations": {
+          "initial_experts": {
+            "top1_retrieval_accuracy": 0.8199999928474426,
+            "top3_retrieval_accuracy": 0.9300000071525574,
+            "mrr": 0.8868471384048462,
+            "query_embedding_rms_difference": 0.0008841922390274704,
+            "changed_top1_predictions": 0
+          },
+          "flat_pi_experts": {
+            "top1_retrieval_accuracy": 0.8199999928474426,
+            "top3_retrieval_accuracy": 0.9300000071525574,
+            "mrr": 0.8860138654708862,
+            "query_embedding_rms_difference": 0.0012629956472665071,
+            "changed_top1_predictions": 0
+          },
+          "remove_optical": {
+            "top1_retrieval_accuracy": 0.8199999928474426,
+            "top3_retrieval_accuracy": 0.9350000023841858,
+            "mrr": 0.8855417370796204,
+            "query_embedding_rms_difference": 0.02020629122853279,
+            "changed_top1_predictions": 6
+          }
+        }
+      }
+    },
+    "small_hyper": {
+      "live": {
+        "metrics": {
+          "top1_retrieval_accuracy": 0.8500000238418579,
+          "top3_retrieval_accuracy": 0.949999988079071,
+          "mrr": 0.9072341322898865
+        },
+        "phase_motion": {
+          "rms_rad": 0.04426265135407448,
+          "per_expert_rms_rad": [
+            [
+              0.0420987531542778,
+              0.05244701728224754,
+              0.017801187932491302,
+              0.02495606616139412
+            ],
+            [
+              0.06473955512046814,
+              0.06913375109434128,
+              0.021286848932504654,
+              0.02805284410715103
+            ]
+          ],
+          "piston_removed_rms_rad": 0.0442175455391407,
+          "per_expert_piston_removed_rms_rad": [
+            [
+              0.0420771986246109,
+              0.05242331326007843,
+              0.017790114507079124,
+              0.02474546618759632
+            ],
+            [
+              0.06473442912101746,
+              0.06903209537267685,
+              0.021260429173707962,
+              0.028036201372742653
+            ]
+          ],
+          "max_abs_rad": 0.1819772720336914
+        },
+        "phase_dc_power_per_expert": [
+          [
+            0.9972565174102783,
+            0.9962635636329651,
+            0.9986936450004578,
+            0.9983891844749451
+          ],
+          [
+            0.9948658347129822,
+            0.9942572712898254,
+            0.9985668063163757,
+            0.998232901096344
+          ]
+        ],
+        "nonexpert_parameter_motion": {
+          "vision": {
+            "electronics_and_fusion": {
+              "rms_change": 0.0003374810034321569,
+              "relative_l2_change": 0.005848077701308119,
+              "element_count": 900455,
+              "changed_elements": 900454
+            },
+            "router": {
+              "rms_change": 0.04541381928313194,
+              "relative_l2_change": 0.006973220488538136,
+              "element_count": 50176,
+              "changed_elements": 49876
+            },
+            "global_phase": {
+              "rms_change": 0.03005940600707217,
+              "relative_l2_change": 0.4559188315448998,
+              "element_count": 228484,
+              "changed_elements": 228484
+            }
+          },
+          "language": {
+            "electronics_and_fusion": {
+              "rms_change": 0.00021903653407659367,
+              "relative_l2_change": 0.004461620775809026,
+              "element_count": 1293159,
+              "changed_elements": 897891
+            },
+            "router": {
+              "rms_change": 0.02152942206068215,
+              "relative_l2_change": 0.0033058088790980916,
+              "element_count": 50176,
+              "changed_elements": 23369
+            },
+            "global_phase": {
+              "rms_change": 0.028546505471760953,
+              "relative_l2_change": 0.5874718210299815,
+              "element_count": 228484,
+              "changed_elements": 228484
+            }
+          },
+          "readout": {
+            "electronics_and_fusion": {
+              "rms_change": 0.0002012240886626238,
+              "relative_l2_change": 0.001609756021399558,
+              "element_count": 25408,
+              "changed_elements": 25408
+            }
+          }
+        },
+        "fusion_diagnostics_last_batch": {
+          "mode": "scale_matched_convex",
+          "ablation": "none",
+          "alpha_range": [
+            0.01,
+            0.95
+          ],
+          "vision": {
+            "block1": {
+              "alpha": 0.05495718866586685,
+              "electronic_coefficient": 0.9450427889823914,
+              "optical_coefficient": 0.05495718866586685,
+              "electronic_rms_before": 0.993868350982666,
+              "optical_rms_before": 0.3358927369117737,
+              "pre_optical_to_electronic_rms_ratio": 0.33824896812438965,
+              "post_optical_to_electronic_rms_ratio": 1.0,
+              "fused_to_electronic_rms_ratio": 1.0,
+              "branch_cosine": 0.03729499131441116
+            },
+            "block2": {
+              "alpha": 0.055037304759025574,
+              "electronic_coefficient": 0.9449626803398132,
+              "optical_coefficient": 0.055037304759025574,
+              "electronic_rms_before": 1.2736098766326904,
+              "optical_rms_before": 0.33814072608947754,
+              "pre_optical_to_electronic_rms_ratio": 0.2684541642665863,
+              "post_optical_to_electronic_rms_ratio": 1.0,
+              "fused_to_electronic_rms_ratio": 1.0,
+              "branch_cosine": 0.07676870375871658
+            }
+          },
+          "language": {
+            "block1": {
+              "alpha": 0.05496225506067276,
+              "electronic_coefficient": 0.9450377225875854,
+              "optical_coefficient": 0.05496225506067276,
+              "electronic_rms_before": 1.0313785076141357,
+              "optical_rms_before": 0.3892156183719635,
+              "pre_optical_to_electronic_rms_ratio": 0.3773682713508606,
+              "post_optical_to_electronic_rms_ratio": 1.0,
+              "fused_to_electronic_rms_ratio": 1.0,
+              "branch_cosine": 0.01861787587404251
+            },
+            "block2": {
+              "alpha": 0.054979950189590454,
+              "electronic_coefficient": 0.9450200796127319,
+              "optical_coefficient": 0.054979950189590454,
+              "electronic_rms_before": 1.07545804977417,
+              "optical_rms_before": 0.39010050892829895,
+              "pre_optical_to_electronic_rms_ratio": 0.36272186040878296,
+              "post_optical_to_electronic_rms_ratio": 1.0,
+              "fused_to_electronic_rms_ratio": 1.0,
+              "branch_cosine": 0.061246003955602646
+            }
+          }
+        }
+      },
+      "ema": {
+        "metrics": {
+          "top1_retrieval_accuracy": 0.8199999928474426,
+          "top3_retrieval_accuracy": 0.9300000071525574,
+          "mrr": 0.8868471384048462
+        },
+        "phase_motion": {
+          "rms_rad": 0.007774373982101679,
+          "per_expert_rms_rad": [
+            [
+              0.006658745463937521,
+              0.006394555326551199,
+              0.0027481424622237682,
+              0.004158942494541407
+            ],
+            [
+              0.014146385714411736,
+              0.011774212121963501,
+              0.0039115604013204575,
+              0.00440410990267992
+            ]
+          ],
+          "piston_removed_rms_rad": 0.007766025140881538,
+          "per_expert_piston_removed_rms_rad": [
+            [
+              0.006639933213591576,
+              0.0063926782459020615,
+              0.002741670934483409,
+              0.004128031432628632
+            ],
+            [
+              0.01413534302264452,
+              0.011770958080887794,
+              0.003903899807482958,
+              0.004401461221277714
+            ]
+          ],
+          "max_abs_rad": 0.038488149642944336
+        },
+        "phase_dc_power_per_expert": [
+          [
+            0.9989585280418396,
+            0.9989650249481201,
+            0.9989997148513794,
+            0.9989948272705078
+          ],
+          [
+            0.9988229274749756,
+            0.9988715052604675,
+            0.9990043640136719,
+            0.9989938735961914
+          ]
+        ],
+        "nonexpert_parameter_motion": {
+          "vision": {
+            "electronics_and_fusion": {
+              "rms_change": 5.8691299721008596e-05,
+              "relative_l2_change": 0.0010170388189811722,
+              "element_count": 900455,
+              "changed_elements": 900439
+            },
+            "router": {
+              "rms_change": 0.007899994424866575,
+              "relative_l2_change": 0.0012130317126460696,
+              "element_count": 50176,
+              "changed_elements": 49384
+            },
+            "global_phase": {
+              "rms_change": 0.005448921271860858,
+              "relative_l2_change": 0.0826452065906582,
+              "element_count": 228484,
+              "changed_elements": 228484
+            }
+          },
+          "language": {
+            "electronics_and_fusion": {
+              "rms_change": 3.843600813464202e-05,
+              "relative_l2_change": 0.0007829145633427401,
+              "element_count": 1293159,
+              "changed_elements": 897871
+            },
+            "router": {
+              "rms_change": 0.0038627892353166695,
+              "relative_l2_change": 0.0005931252086657162,
+              "element_count": 50176,
+              "changed_elements": 23100
+            },
+            "global_phase": {
+              "rms_change": 0.005169349755937008,
+              "relative_l2_change": 0.10638245433106842,
+              "element_count": 228484,
+              "changed_elements": 228484
+            }
+          },
+          "readout": {
+            "electronics_and_fusion": {
+              "rms_change": 3.606501100745695e-05,
+              "relative_l2_change": 0.00028851351255680305,
+              "element_count": 25408,
+              "changed_elements": 25408
+            }
+          }
+        },
+        "fusion_diagnostics_last_batch": {
+          "mode": "scale_matched_convex",
+          "ablation": "none",
+          "alpha_range": [
+            0.01,
+            0.95
+          ],
+          "vision": {
+            "block1": {
+              "alpha": 0.05499282479286194,
+              "electronic_coefficient": 0.9450072050094604,
+              "optical_coefficient": 0.05499282479286194,
+              "electronic_rms_before": 0.9932363033294678,
+              "optical_rms_before": 0.32790613174438477,
+              "pre_optical_to_electronic_rms_ratio": 0.3301825523376465,
+              "post_optical_to_electronic_rms_ratio": 1.0,
+              "fused_to_electronic_rms_ratio": 1.0,
+              "branch_cosine": 0.030450209975242615
+            },
+            "block2": {
+              "alpha": 0.05500596761703491,
+              "electronic_coefficient": 0.9449940323829651,
+              "optical_coefficient": 0.05500596761703491,
+              "electronic_rms_before": 1.3456772565841675,
+              "optical_rms_before": 0.3293764591217041,
+              "pre_optical_to_electronic_rms_ratio": 0.24550390243530273,
+              "post_optical_to_electronic_rms_ratio": 1.0,
+              "fused_to_electronic_rms_ratio": 1.0,
+              "branch_cosine": 0.06464214622974396
+            }
+          },
+          "language": {
+            "block1": {
+              "alpha": 0.054993994534015656,
+              "electronic_coefficient": 0.9450060129165649,
+              "optical_coefficient": 0.054993994534015656,
+              "electronic_rms_before": 1.0369102954864502,
+              "optical_rms_before": 0.3862878680229187,
+              "pre_optical_to_electronic_rms_ratio": 0.3725346028804779,
+              "post_optical_to_electronic_rms_ratio": 1.0,
+              "fused_to_electronic_rms_ratio": 1.0,
+              "branch_cosine": 0.013196337968111038
+            },
+            "block2": {
+              "alpha": 0.05499701201915741,
+              "electronic_coefficient": 0.9450029730796814,
+              "optical_coefficient": 0.05499701201915741,
+              "electronic_rms_before": 1.0845823287963867,
+              "optical_rms_before": 0.38659539818763733,
+              "pre_optical_to_electronic_rms_ratio": 0.356441468000412,
+              "post_optical_to_electronic_rms_ratio": 1.0,
+              "fused_to_electronic_rms_ratio": 1.0,
+              "branch_cosine": 0.06204034388065338
+            }
+          }
+        }
+      }
+    },
+    "qwen_frozen": {
+      "live": {
+        "metrics": {
+          "top1_retrieval_accuracy": 0.8550000190734863,
+          "top3_retrieval_accuracy": 0.949999988079071,
+          "mrr": 0.9105674624443054
+        },
+        "phase_motion": {
+          "rms_rad": 0.07183454930782318,
+          "per_expert_rms_rad": [
+            [
+              0.07140161842107773,
+              0.07339885830879211,
+              0.07121192663908005,
+              0.07119955122470856
+            ],
+            [
+              0.0714436024427414,
+              0.0734890028834343,
+              0.07127704471349716,
+              0.07120590656995773
+            ]
+          ],
+          "piston_removed_rms_rad": 0.07182428240776062,
+          "per_expert_piston_removed_rms_rad": [
+            [
+              0.07139183580875397,
+              0.07338687777519226,
+              0.07120229303836823,
+              0.07118996977806091
+            ],
+            [
+              0.07143354415893555,
+              0.07347714900970459,
+              0.07126748561859131,
+              0.07119633257389069
+            ]
+          ],
+          "max_abs_rad": 0.1980130672454834
+        },
+        "phase_dc_power_per_expert": [
+          [
+            0.9939448833465576,
+            0.9936473369598389,
+            0.9939471483230591,
+            0.9939446449279785
+          ],
+          [
+            0.993928849697113,
+            0.9936320185661316,
+            0.9939271807670593,
+            0.9939753413200378
+          ]
+        ],
+        "nonexpert_parameter_motion": {
+          "vision": {
+            "electronics_and_fusion": {
+              "rms_change": 0.00033624641760572176,
+              "relative_l2_change": 0.005826684041313926,
+              "element_count": 900455,
+              "changed_elements": 900453
+            },
+            "router": {
+              "rms_change": 0.04532017183155684,
+              "relative_l2_change": 0.006958841069710761,
+              "element_count": 50176,
+              "changed_elements": 49884
+            },
+            "global_phase": {
+              "rms_change": 0.030072710998539247,
+              "relative_l2_change": 0.45612063181207596,
+              "element_count": 228484,
+              "changed_elements": 228484
+            }
+          },
+          "language": {
+            "electronics_and_fusion": {
+              "rms_change": 0.00021897715045689835,
+              "relative_l2_change": 0.0044604111730708685,
+              "element_count": 1293159,
+              "changed_elements": 897892
+            },
+            "router": {
+              "rms_change": 0.021806400199814346,
+              "relative_l2_change": 0.003348338436513915,
+              "element_count": 50176,
+              "changed_elements": 23407
+            },
+            "global_phase": {
+              "rms_change": 0.028665773468732145,
+              "relative_l2_change": 0.5899262926443996,
+              "element_count": 228484,
+              "changed_elements": 228484
+            }
+          },
+          "readout": {
+            "electronics_and_fusion": {
+              "rms_change": 0.00020147595906124544,
+              "relative_l2_change": 0.0016117709386666119,
+              "element_count": 25408,
+              "changed_elements": 25408
+            }
+          }
+        },
+        "fusion_diagnostics_last_batch": {
+          "mode": "scale_matched_convex",
+          "ablation": "none",
+          "alpha_range": [
+            0.01,
+            0.95
+          ],
+          "vision": {
+            "block1": {
+              "alpha": 0.05495741218328476,
+              "electronic_coefficient": 0.945042610168457,
+              "optical_coefficient": 0.05495741218328476,
+              "electronic_rms_before": 0.9940654039382935,
+              "optical_rms_before": 0.33658716082572937,
+              "pre_optical_to_electronic_rms_ratio": 0.33885544538497925,
+              "post_optical_to_electronic_rms_ratio": 1.0,
+              "fused_to_electronic_rms_ratio": 1.0,
+              "branch_cosine": 0.03782423585653305
+            },
+            "block2": {
+              "alpha": 0.05503712594509125,
+              "electronic_coefficient": 0.9449628591537476,
+              "optical_coefficient": 0.05503712594509125,
+              "electronic_rms_before": 1.2748435735702515,
+              "optical_rms_before": 0.33849552273750305,
+              "pre_optical_to_electronic_rms_ratio": 0.2684643864631653,
+              "post_optical_to_electronic_rms_ratio": 1.0,
+              "fused_to_electronic_rms_ratio": 1.0,
+              "branch_cosine": 0.07624092698097229
+            }
+          },
+          "language": {
+            "block1": {
+              "alpha": 0.05496223270893097,
+              "electronic_coefficient": 0.9450377821922302,
+              "optical_coefficient": 0.05496223270893097,
+              "electronic_rms_before": 1.0313892364501953,
+              "optical_rms_before": 0.3900257349014282,
+              "pre_optical_to_electronic_rms_ratio": 0.3781512379646301,
+              "post_optical_to_electronic_rms_ratio": 1.0,
+              "fused_to_electronic_rms_ratio": 1.0,
+              "branch_cosine": 0.016256824135780334
+            },
+            "block2": {
+              "alpha": 0.05497875064611435,
+              "electronic_coefficient": 0.9450212717056274,
+              "optical_coefficient": 0.05497875064611435,
+              "electronic_rms_before": 1.075448989868164,
+              "optical_rms_before": 0.3897280693054199,
+              "pre_optical_to_electronic_rms_ratio": 0.36237818002700806,
+              "post_optical_to_electronic_rms_ratio": 1.0,
+              "fused_to_electronic_rms_ratio": 1.0,
+              "branch_cosine": 0.06133239343762398
+            }
+          }
+        }
+      },
+      "ema": {
+        "metrics": {
+          "top1_retrieval_accuracy": 0.8149999976158142,
+          "top3_retrieval_accuracy": 0.9300000071525574,
+          "mrr": 0.884347140789032
+        },
+        "phase_motion": {
+          "rms_rad": 0.014127532951533794,
+          "per_expert_rms_rad": [
+            [
+              0.014092990197241306,
+              0.014117101207375526,
+              0.014118209481239319,
+              0.014110189862549305
+            ],
+            [
+              0.014114899560809135,
+              0.014173922128975391,
+              0.014147788286209106,
+              0.01414499431848526
+            ]
+          ],
+          "piston_removed_rms_rad": 0.014122726395726204,
+          "per_expert_piston_removed_rms_rad": [
+            [
+              0.014088124968111515,
+              0.014112284407019615,
+              0.014113337732851505,
+              0.014105526730418205
+            ],
+            [
+              0.014109891839325428,
+              0.014169275760650635,
+              0.014142916537821293,
+              0.014140279032289982
+            ]
+          ],
+          "max_abs_rad": 0.04054713249206543
+        },
+        "phase_dc_power_per_expert": [
+          [
+            0.998802900314331,
+            0.9988116025924683,
+            0.9988081455230713,
+            0.9988151788711548
+          ],
+          [
+            0.9988172054290771,
+            0.9988069534301758,
+            0.9988164901733398,
+            0.9988162517547607
+          ]
+        ],
+        "nonexpert_parameter_motion": {
+          "vision": {
+            "electronics_and_fusion": {
+              "rms_change": 5.847822741465079e-05,
+              "relative_l2_change": 0.0010133465714445553,
+              "element_count": 900455,
+              "changed_elements": 900426
+            },
+            "router": {
+              "rms_change": 0.00787951443498755,
+              "relative_l2_change": 0.0012098870424270972,
+              "element_count": 50176,
+              "changed_elements": 49413
+            },
+            "global_phase": {
+              "rms_change": 0.005449964667454143,
+              "relative_l2_change": 0.08266103204308456,
+              "element_count": 228484,
+              "changed_elements": 228484
+            }
+          },
+          "language": {
+            "electronics_and_fusion": {
+              "rms_change": 3.843378173826261e-05,
+              "relative_l2_change": 0.0007828692132079627,
+              "element_count": 1293159,
+              "changed_elements": 897876
+            },
+            "router": {
+              "rms_change": 0.00390683155815369,
+              "relative_l2_change": 0.0005998878380331167,
+              "element_count": 50176,
+              "changed_elements": 23093
+            },
+            "global_phase": {
+              "rms_change": 0.005186309993502914,
+              "relative_l2_change": 0.10673148695286518,
+              "element_count": 228484,
+              "changed_elements": 228484
+            }
+          },
+          "readout": {
+            "electronics_and_fusion": {
+              "rms_change": 3.6100500645836396e-05,
+              "relative_l2_change": 0.0002887974231932398,
+              "element_count": 25408,
+              "changed_elements": 25406
+            }
+          }
+        },
+        "fusion_diagnostics_last_batch": {
+          "mode": "scale_matched_convex",
+          "ablation": "none",
+          "alpha_range": [
+            0.01,
+            0.95
+          ],
+          "vision": {
+            "block1": {
+              "alpha": 0.05499284714460373,
+              "electronic_coefficient": 0.9450071454048157,
+              "optical_coefficient": 0.05499284714460373,
+              "electronic_rms_before": 0.9932507872581482,
+              "optical_rms_before": 0.32773149013519287,
+              "pre_optical_to_electronic_rms_ratio": 0.3299899697303772,
+              "post_optical_to_electronic_rms_ratio": 1.0,
+              "fused_to_electronic_rms_ratio": 1.0,
+              "branch_cosine": 0.03046991303563118
+            },
+            "block2": {
+              "alpha": 0.05500590801239014,
+              "electronic_coefficient": 0.9449940919876099,
+              "optical_coefficient": 0.05500590801239014,
+              "electronic_rms_before": 1.3457667827606201,
+              "optical_rms_before": 0.3291115164756775,
+              "pre_optical_to_electronic_rms_ratio": 0.24526996910572052,
+              "post_optical_to_electronic_rms_ratio": 1.0,
+              "fused_to_electronic_rms_ratio": 1.0,
+              "branch_cosine": 0.06445050239562988
+            }
+          },
+          "language": {
+            "block1": {
+              "alpha": 0.05499398708343506,
+              "electronic_coefficient": 0.9450060129165649,
+              "optical_coefficient": 0.05499398708343506,
+              "electronic_rms_before": 1.0369186401367188,
+              "optical_rms_before": 0.3865734338760376,
+              "pre_optical_to_electronic_rms_ratio": 0.3728070855140686,
+              "post_optical_to_electronic_rms_ratio": 1.0,
+              "fused_to_electronic_rms_ratio": 1.0,
+              "branch_cosine": 0.012985734269022942
+            },
+            "block2": {
+              "alpha": 0.05499681830406189,
+              "electronic_coefficient": 0.9450031518936157,
+              "optical_coefficient": 0.05499681830406189,
+              "electronic_rms_before": 1.0845941305160522,
+              "optical_rms_before": 0.3865800201892853,
+              "pre_optical_to_electronic_rms_ratio": 0.35642343759536743,
+              "post_optical_to_electronic_rms_ratio": 1.0,
+              "fused_to_electronic_rms_ratio": 1.0,
+              "branch_cosine": 0.06199229136109352
+            }
+          }
+        }
+      }
+    },
+    "qwen_lora": {
+      "live": {
+        "metrics": {
+          "top1_retrieval_accuracy": 0.8550000190734863,
+          "top3_retrieval_accuracy": 0.949999988079071,
+          "mrr": 0.9105674624443054
+        },
+        "phase_motion": {
+          "rms_rad": 0.05950511619448662,
+          "per_expert_rms_rad": [
+            [
+              0.05907018855214119,
+              0.061158183962106705,
+              0.05889745429158211,
+              0.0588066503405571
+            ],
+            [
+              0.05917826667428017,
+              0.061240069568157196,
+              0.05884403735399246,
+              0.05878004431724548
+            ]
+          ],
+          "piston_removed_rms_rad": 0.05950456112623215,
+          "per_expert_piston_removed_rms_rad": [
+            [
+              0.05906987562775612,
+              0.06115686148405075,
+              0.058897171169519424,
+              0.058806393295526505
+            ],
+            [
+              0.05917787179350853,
+              0.06123870611190796,
+              0.05884380266070366,
+              0.058779824525117874
+            ]
+          ],
+          "max_abs_rad": 0.15680837631225586
+        },
+        "phase_dc_power_per_expert": [
+          [
+            0.9955436587333679,
+            0.9952793121337891,
+            0.9955378770828247,
+            0.9955580830574036
+          ],
+          [
+            0.9955264329910278,
+            0.9952685832977295,
+            0.9955369234085083,
+            0.995578408241272
+          ]
+        ],
+        "nonexpert_parameter_motion": {
+          "vision": {
+            "electronics_and_fusion": {
+              "rms_change": 0.00033747040812722557,
+              "relative_l2_change": 0.0058478940993694105,
+              "element_count": 900455,
+              "changed_elements": 900449
+            },
+            "router": {
+              "rms_change": 0.04532245993629681,
+              "relative_l2_change": 0.0069591924045930625,
+              "element_count": 50176,
+              "changed_elements": 49888
+            },
+            "global_phase": {
+              "rms_change": 0.03007572879095008,
+              "relative_l2_change": 0.45616640345471815,
+              "element_count": 228484,
+              "changed_elements": 228484
+            }
+          },
+          "language": {
+            "electronics_and_fusion": {
+              "rms_change": 0.00021880460948085092,
+              "relative_l2_change": 0.004456896634244472,
+              "element_count": 1293159,
+              "changed_elements": 897892
+            },
+            "router": {
+              "rms_change": 0.021840089628334836,
+              "relative_l2_change": 0.0033535113952501447,
+              "element_count": 50176,
+              "changed_elements": 23410
+            },
+            "global_phase": {
+              "rms_change": 0.02860832716162269,
+              "relative_l2_change": 0.5887440783561245,
+              "element_count": 228484,
+              "changed_elements": 228484
+            }
+          },
+          "readout": {
+            "electronics_and_fusion": {
+              "rms_change": 0.00020227654920919197,
+              "relative_l2_change": 0.0016181755138837016,
+              "element_count": 25408,
+              "changed_elements": 25408
+            }
+          }
+        },
+        "fusion_diagnostics_last_batch": {
+          "mode": "scale_matched_convex",
+          "ablation": "none",
+          "alpha_range": [
+            0.01,
+            0.95
+          ],
+          "vision": {
+            "block1": {
+              "alpha": 0.05495699495077133,
+              "electronic_coefficient": 0.9450430274009705,
+              "optical_coefficient": 0.05495699495077133,
+              "electronic_rms_before": 0.9944712519645691,
+              "optical_rms_before": 0.3356131613254547,
+              "pre_optical_to_electronic_rms_ratio": 0.3377312421798706,
+              "post_optical_to_electronic_rms_ratio": 1.0,
+              "fused_to_electronic_rms_ratio": 1.0,
+              "branch_cosine": 0.03789219260215759
+            },
+            "block2": {
+              "alpha": 0.055036984384059906,
+              "electronic_coefficient": 0.9449630379676819,
+              "optical_coefficient": 0.055036984384059906,
+              "electronic_rms_before": 1.2752188444137573,
+              "optical_rms_before": 0.3377533555030823,
+              "pre_optical_to_electronic_rms_ratio": 0.2678270936012268,
+              "post_optical_to_electronic_rms_ratio": 1.0,
+              "fused_to_electronic_rms_ratio": 1.0,
+              "branch_cosine": 0.07671508193016052
+            }
+          },
+          "language": {
+            "block1": {
+              "alpha": 0.05496278405189514,
+              "electronic_coefficient": 0.9450372457504272,
+              "optical_coefficient": 0.05496278405189514,
+              "electronic_rms_before": 1.0313982963562012,
+              "optical_rms_before": 0.3897246718406677,
+              "pre_optical_to_electronic_rms_ratio": 0.37785595655441284,
+              "post_optical_to_electronic_rms_ratio": 1.0,
+              "fused_to_electronic_rms_ratio": 1.0,
+              "branch_cosine": 0.01637743040919304
+            },
+            "block2": {
+              "alpha": 0.05498077720403671,
+              "electronic_coefficient": 0.9450192451477051,
+              "optical_coefficient": 0.05498077720403671,
+              "electronic_rms_before": 1.0754982233047485,
+              "optical_rms_before": 0.38961297273635864,
+              "pre_optical_to_electronic_rms_ratio": 0.36225461959838867,
+              "post_optical_to_electronic_rms_ratio": 1.0,
+              "fused_to_electronic_rms_ratio": 1.0,
+              "branch_cosine": 0.06159421429038048
+            }
+          }
+        },
+        "lora": {
+          "b_parameter_norm": 0.19286619126796722,
+          "mask_change_if_lora_disabled": {
+            "rms_rad": 0.0004832534759771079,
+            "per_expert_rms_rad": [
+              [
+                0.00041272593080066144,
+                0.0005446542054414749,
+                0.00041070993756875396,
+                0.00048594645340926945
+              ],
+              [
+                0.00030431163031607866,
+                0.000511603313498199,
+                0.0005623210454359651,
+                0.0005708811804652214
+              ]
+            ],
+            "piston_removed_rms_rad": 0.00048191254609264433,
+            "per_expert_piston_removed_rms_rad": [
+              [
+                0.0004113572940696031,
+                0.0005438867374323308,
+                0.000409460422815755,
+                0.00048448334564454854
+              ],
+              [
+                0.0003030223597306758,
+                0.0005112507496960461,
+                0.000560252636205405,
+                0.0005687049124389887
+              ]
+            ],
+            "max_abs_rad": 0.0019791126251220703
+          }
+        },
+        "ablations": {
+          "initial_experts": {
+            "top1_retrieval_accuracy": 0.8600000143051147,
+            "top3_retrieval_accuracy": 0.949999988079071,
+            "mrr": 0.9130674600601196,
+            "query_embedding_rms_difference": 0.0017739005852490664,
+            "changed_top1_predictions": 1
+          },
+          "flat_pi_experts": {
+            "top1_retrieval_accuracy": 0.8550000190734863,
+            "top3_retrieval_accuracy": 0.949999988079071,
+            "mrr": 0.9105674624443054,
+            "query_embedding_rms_difference": 0.0019991002045571804,
+            "changed_top1_predictions": 0
+          },
+          "lora_disabled_same_head": {
+            "top1_retrieval_accuracy": 0.8550000190734863,
+            "top3_retrieval_accuracy": 0.949999988079071,
+            "mrr": 0.9105674624443054,
+            "query_embedding_rms_difference": 0.0007870636763982475,
+            "changed_top1_predictions": 0
+          },
+          "remove_optical": {
+            "top1_retrieval_accuracy": 0.8450000286102295,
+            "top3_retrieval_accuracy": 0.9549999833106995,
+            "mrr": 0.9031984210014343,
+            "query_embedding_rms_difference": 0.021007096394896507,
+            "changed_top1_predictions": 11
+          }
+        }
+      },
+      "ema": {
+        "metrics": {
+          "top1_retrieval_accuracy": 0.8149999976158142,
+          "top3_retrieval_accuracy": 0.9300000071525574,
+          "mrr": 0.883513867855072
+        },
+        "phase_motion": {
+          "rms_rad": 0.013308852910995483,
+          "per_expert_rms_rad": [
+            [
+              0.0132712097838521,
+              0.013361909426748753,
+              0.013297834433615208,
+              0.01324310339987278
+            ],
+            [
+              0.013279776088893414,
+              0.013385312631726265,
+              0.013293196447193623,
+              0.013337862677872181
+            ]
+          ],
+          "piston_removed_rms_rad": 0.013306272216141224,
+          "per_expert_piston_removed_rms_rad": [
+            [
+              0.013268480077385902,
+              0.01335899531841278,
+              0.013295434415340424,
+              0.013240821659564972
+            ],
+            [
+              0.013276997022330761,
+              0.013382435776293278,
+              0.013290837407112122,
+              0.013335565105080605
+            ]
+          ],
+          "max_abs_rad": 0.03833937644958496
+        },
+        "phase_dc_power_per_expert": [
+          [
+            0.9988261461257935,
+            0.9988312721252441,
+            0.9988299608230591,
+            0.9988399744033813
+          ],
+          [
+            0.9988411664962769,
+            0.9988284111022949,
+            0.9988402128219604,
+            0.9988380670547485
+          ]
+        ],
+        "nonexpert_parameter_motion": {
+          "vision": {
+            "electronics_and_fusion": {
+              "rms_change": 5.866353267739055e-05,
+              "relative_l2_change": 0.0010165576546283272,
+              "element_count": 900455,
+              "changed_elements": 900437
+            },
+            "router": {
+              "rms_change": 0.00788105836225452,
+              "relative_l2_change": 0.0012101241100294436,
+              "element_count": 50176,
+              "changed_elements": 49390
+            },
+            "global_phase": {
+              "rms_change": 0.00545164241318244,
+              "relative_l2_change": 0.08268647884904921,
+              "element_count": 228484,
+              "changed_elements": 228484
+            }
+          },
+          "language": {
+            "electronics_and_fusion": {
+              "rms_change": 3.841004073177661e-05,
+              "relative_l2_change": 0.000782385625535143,
+              "element_count": 1293159,
+              "changed_elements": 897873
+            },
+            "router": {
+              "rms_change": 0.003926077524195649,
+              "relative_l2_change": 0.000602843025833746,
+              "element_count": 50176,
+              "changed_elements": 23082
+            },
+            "global_phase": {
+              "rms_change": 0.005177649595844271,
+              "relative_l2_change": 0.1065532605990861,
+              "element_count": 228484,
+              "changed_elements": 228484
+            }
+          },
+          "readout": {
+            "electronics_and_fusion": {
+              "rms_change": 3.622467513360332e-05,
+              "relative_l2_change": 0.0002897907964554348,
+              "element_count": 25408,
+              "changed_elements": 25406
+            }
+          }
+        },
+        "fusion_diagnostics_last_batch": {
+          "mode": "scale_matched_convex",
+          "ablation": "none",
+          "alpha_range": [
+            0.01,
+            0.95
+          ],
+          "vision": {
+            "block1": {
+              "alpha": 0.05499282479286194,
+              "electronic_coefficient": 0.9450072050094604,
+              "optical_coefficient": 0.05499282479286194,
+              "electronic_rms_before": 0.9933026432991028,
+              "optical_rms_before": 0.32796651124954224,
+              "pre_optical_to_electronic_rms_ratio": 0.33021700382232666,
+              "post_optical_to_electronic_rms_ratio": 1.0,
+              "fused_to_electronic_rms_ratio": 1.0,
+              "branch_cosine": 0.030413564294576645
+            },
+            "block2": {
+              "alpha": 0.055005915462970734,
+              "electronic_coefficient": 0.9449940919876099,
+              "optical_coefficient": 0.055005915462970734,
+              "electronic_rms_before": 1.3458843231201172,
+              "optical_rms_before": 0.32937735319137573,
+              "pre_optical_to_electronic_rms_ratio": 0.24547022581100464,
+              "post_optical_to_electronic_rms_ratio": 1.0,
+              "fused_to_electronic_rms_ratio": 1.0,
+              "branch_cosine": 0.06458422541618347
+            }
+          },
+          "language": {
+            "block1": {
+              "alpha": 0.054994136095047,
+              "electronic_coefficient": 0.9450058937072754,
+              "optical_coefficient": 0.054994136095047,
+              "electronic_rms_before": 1.0369268655776978,
+              "optical_rms_before": 0.38652580976486206,
+              "pre_optical_to_electronic_rms_ratio": 0.37275826930999756,
+              "post_optical_to_electronic_rms_ratio": 1.0,
+              "fused_to_electronic_rms_ratio": 1.0,
+              "branch_cosine": 0.012953045777976513
+            },
+            "block2": {
+              "alpha": 0.054997168481349945,
+              "electronic_coefficient": 0.9450028538703918,
+              "optical_coefficient": 0.054997168481349945,
+              "electronic_rms_before": 1.084612250328064,
+              "optical_rms_before": 0.38655251264572144,
+              "pre_optical_to_electronic_rms_ratio": 0.3563920259475708,
+              "post_optical_to_electronic_rms_ratio": 1.0,
+              "fused_to_electronic_rms_ratio": 1.0,
+              "branch_cosine": 0.06206827238202095
+            }
+          }
+        },
+        "lora": {
+          "b_parameter_norm": 0.03617138788104057,
+          "mask_change_if_lora_disabled": {
+            "rms_rad": 0.00014553529035765678,
+            "per_expert_rms_rad": [
+              [
+                0.000122098732390441,
+                0.00012488717038650066,
+                0.00014390479191206396,
+                0.00018380023539066315
+              ],
+              [
+                0.00010640915570547804,
+                0.00010686765745049343,
+                0.0001517667988082394,
+                0.0001966503623407334
+              ]
+            ],
+            "piston_removed_rms_rad": 0.0001453305740142241,
+            "per_expert_piston_removed_rms_rad": [
+              [
+                0.00012184661318315193,
+                0.00012471614172682166,
+                0.00014368190022651106,
+                0.00018366679432801902
+              ],
+              [
+                0.00010634466161718592,
+                0.00010680939885787666,
+                0.00015127382357604802,
+                0.0001964380353456363
+              ]
+            ],
+            "max_abs_rad": 0.0006344317807815969
+          }
+        },
+        "ablations": {
+          "initial_experts": {
+            "top1_retrieval_accuracy": 0.8199999928474426,
+            "top3_retrieval_accuracy": 0.9300000071525574,
+            "mrr": 0.8860138654708862,
+            "query_embedding_rms_difference": 0.000895579403731972,
+            "changed_top1_predictions": 1
+          },
+          "flat_pi_experts": {
+            "top1_retrieval_accuracy": 0.8199999928474426,
+            "top3_retrieval_accuracy": 0.9300000071525574,
+            "mrr": 0.8860138654708862,
+            "query_embedding_rms_difference": 0.0012946956558153033,
+            "changed_top1_predictions": 1
+          },
+          "lora_disabled_same_head": {
+            "top1_retrieval_accuracy": 0.8149999976158142,
+            "top3_retrieval_accuracy": 0.9300000071525574,
+            "mrr": 0.883513867855072,
+            "query_embedding_rms_difference": 0.0007437267922796309,
+            "changed_top1_predictions": 0
+          },
+          "remove_optical": {
+            "top1_retrieval_accuracy": 0.8199999928474426,
+            "top3_retrieval_accuracy": 0.9300000071525574,
+            "mrr": 0.8848751187324524,
+            "query_embedding_rms_difference": 0.02022934891283512,
+            "changed_top1_predictions": 7
+          }
+        }
+      }
+    }
+  },
+  "source_checkpoints": [
+    {
+      "run_id": "20260907_static_direct_pilot_s42",
+      "file": "last_checkpoint.pt",
+      "sha256": "f757e83e5a8aedf61ca9d7f0ba6d8897a81613afe9ae26da2316692a36ab2bc0"
+    },
+    {
+      "run_id": "20260907_static_direct_pilot_s42",
+      "file": "best_checkpoint.pt",
+      "sha256": "ac744d0a0f3ce542c6f21072bab59c3f046e598fb5e6a2d2571c5ceb0939211f"
+    },
+    {
+      "run_id": "20260907_static_small_hyper_pilot_s42",
+      "file": "last_checkpoint.pt",
+      "sha256": "a3d900bbab4b886babf4184d3e8d5d97a6035fb1ea330fa5667847630e0a3509"
+    },
+    {
+      "run_id": "20260907_static_small_hyper_pilot_s42",
+      "file": "best_checkpoint.pt",
+      "sha256": "aee9fc6f1e9d194942701592fea75a3430ce9c687d191581d69897705cb0b692"
+    },
+    {
+      "run_id": "20260907_static_qwen_frozen_pilot_s42",
+      "file": "last_checkpoint.pt",
+      "sha256": "c404217a79b49b4f783865b820b65c91397640305a0d8fb08df251e35c2709bc"
+    },
+    {
+      "run_id": "20260907_static_qwen_frozen_pilot_s42",
+      "file": "best_checkpoint.pt",
+      "sha256": "9820edec4a2ecdfb122bc2463593b5e494e4e64fb336897c5b518952dc42d847"
+    },
+    {
+      "run_id": "20260907_static_qwen_lora_pilot_s42",
+      "file": "last_checkpoint.pt",
+      "sha256": "e12b9a38feb5149297580d88ff5b675e397c87fed37f5ce2d360a170e350900c"
+    },
+    {
+      "run_id": "20260907_static_qwen_lora_pilot_s42",
+      "file": "best_checkpoint.pt",
+      "sha256": "f6b01f3239d7a4e543a0ea7bd141589510eb80c625df9f2337787a5f0e240088"
+    }
+  ],
+  "scope": "read-only diagnosis; no training or checkpoint selection",
+  "pairwise": {
+    "live": {
+      "qwen_vs_direct_phase": {
+        "rms_rad": 0.07517103850841522,
+        "per_expert_rms_rad": [
+          [
+            0.07665169984102249,
+            0.07853483408689499,
+            0.07493513077497482,
+            0.07546225935220718
+          ],
+          [
+            0.07630293816328049,
+            0.07747918367385864,
+            0.07101500034332275,
+            0.0705985501408577
+          ]
+        ],
+        "piston_removed_rms_rad": 0.07516959309577942,
+        "per_expert_piston_removed_rms_rad": [
+          [
+            0.07664971053600311,
+            0.07852807641029358,
+            0.07493502646684647,
+            0.07546156644821167
+          ],
+          [
+            0.0763029083609581,
+            0.07747840136289597,
+            0.07101468741893768,
+            0.07059798389673233
+          ]
+        ],
+        "max_abs_rad": 0.2849142849445343
+      },
+      "query_embedding_rms_difference": 0.0031522982753813267,
+      "changed_top1_predictions": 2
+    },
+    "ema": {
+      "qwen_vs_direct_phase": {
+        "rms_rad": 0.015678072348237038,
+        "per_expert_rms_rad": [
+          [
+            0.01590566337108612,
+            0.01603112183511257,
+            0.015683559700846672,
+            0.015782412141561508
+          ],
+          [
+            0.01591821387410164,
+            0.015871619805693626,
+            0.015109625644981861,
+            0.0150920944288373
+          ]
+        ],
+        "piston_removed_rms_rad": 0.015676043927669525,
+        "per_expert_piston_removed_rms_rad": [
+          [
+            0.01590515673160553,
+            0.01602623239159584,
+            0.015681549906730652,
+            0.015781670808792114
+          ],
+          [
+            0.01591678336262703,
+            0.01586941070854664,
+            0.01510752271860838,
+            0.015089760534465313
+          ]
+        ],
+        "max_abs_rad": 0.06264781951904297
+      },
+      "query_embedding_rms_difference": 0.0011007930152118206,
+      "changed_top1_predictions": 1
+    }
+  }
+}
