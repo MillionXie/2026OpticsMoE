@@ -587,6 +587,7 @@ def load_single_metric_cache(settings: ExperimentSettings) -> dict[str, Any]:
         "vision_cache_path": str(settings.vision_cache_path),
         "vision_cache_view_paths": [str(path) for path in vision_view_paths],
         "frame_sampling_offsets": frame_sampling_offsets,
+        "training_view_probabilities": settings.training_view_probabilities,
         "language_cache_path": str(settings.language_cache_path),
         "qwen_front_identity": front_identity,
     }
@@ -726,11 +727,18 @@ class LGVQSingleMetricDataset(Dataset[dict[str, Any]]):
         )
         if len(vision_views) != len(quality_views):
             raise RuntimeError("Vision and quality sampling-view counts differ")
-        view_index = (
-            int(torch.randint(len(vision_views), ()).item())
-            if self.split == "train" and len(vision_views) > 1
-            else 0
-        )
+        view_index = 0
+        if self.split == "train" and len(vision_views) > 1:
+            probabilities = self.payload.get("training_view_probabilities", ())
+            if probabilities:
+                weights = torch.as_tensor(probabilities, dtype=torch.float32)
+                if weights.numel() != len(vision_views):
+                    raise RuntimeError(
+                        "Training sampling weights do not match the loaded views"
+                    )
+                view_index = int(torch.multinomial(weights, 1).item())
+            else:
+                view_index = int(torch.randint(len(vision_views), ()).item())
         item: dict[str, Any] = {
             "vision_tokens": vision_views[view_index][source].float(),
             "quality_tokens": quality_views[view_index][source].float(),

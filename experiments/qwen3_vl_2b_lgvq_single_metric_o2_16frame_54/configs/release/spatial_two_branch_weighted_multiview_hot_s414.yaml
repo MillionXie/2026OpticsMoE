@@ -1,0 +1,14 @@
+base_config: spatial_two_branch_multiview_refine_s406.yaml
+output_dir: ../../runs/lgvq_spatial_two_branch_weighted_multiview_hot_s414
+random_seed: 414
+
+# A second optimizer point with a still conservative 90/5/5 view mixture.  The
+# inference graph and formal unshifted four-frame evaluation are unchanged.
+data:
+  training_view_probabilities: [0.90, 0.05, 0.05]
+
+training:
+  epochs: 100
+  learning_rate: 0.00006
+  phase_learning_rate: 0.003
+  router_phase_learning_rate: 0.006

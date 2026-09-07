@@ -230,6 +230,7 @@ class ExperimentSettings:
     language_cache_path: Path | None
     vision_cache_view_paths: tuple[Path, ...] = ()
     quality_feature_cache_view_paths: tuple[Path, ...] = ()
+    training_view_probabilities: tuple[float, ...] = ()
     quality_feature_cache_path: Path | None = None
     raw_frame_cache_path: Path | None = None
     vgg_feature_cache_path: Path | None = None
@@ -503,6 +504,17 @@ class ExperimentSettings:
                 "Additional temporal-sampling views are currently formalized only "
                 "for the four-frame Spatial model"
             )
+        if self.training_view_probabilities:
+            expected = 1 + len(self.vision_cache_view_paths)
+            if len(self.training_view_probabilities) != expected:
+                raise ValueError(
+                    "data.training_view_probabilities must contain one weight for "
+                    "the primary cache plus one for every additional view"
+                )
+            if any(value < 0.0 for value in self.training_view_probabilities):
+                raise ValueError("data.training_view_probabilities must be nonnegative")
+            if sum(self.training_view_probabilities) <= 0.0:
+                raise ValueError("data.training_view_probabilities must have positive sum")
         if self.electronic_quality_residual_enabled and len(
             self.quality_feature_cache_view_paths
         ) != len(self.vision_cache_view_paths):
@@ -761,6 +773,10 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         ),
         quality_feature_cache_view_paths=_paths(
             get("data", "quality_feature_cache_views"), config_path
+        ),
+        training_view_probabilities=tuple(
+            float(value)
+            for value in (get("data", "training_view_probabilities", ()) or ())
         ),
         quality_feature_cache_path=_path(
             get("data", "quality_feature_cache"), config_path

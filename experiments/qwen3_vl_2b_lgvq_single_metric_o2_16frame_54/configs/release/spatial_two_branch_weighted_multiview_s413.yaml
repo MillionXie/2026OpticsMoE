@@ -1,0 +1,16 @@
+base_config: spatial_two_branch_multiview_refine_s406.yaml
+output_dir: ../../runs/lgvq_spatial_two_branch_weighted_multiview_s413
+random_seed: 413
+
+# The unshifted four-frame sequence remains the dominant training view because
+# it is also the formal inference contract.  Earlier/later views provide mild
+# temporal robustness without replacing two thirds of training batches as in
+# the uniform-view s406 experiment.
+data:
+  training_view_probabilities: [0.80, 0.10, 0.10]
+
+training:
+  epochs: 100
+  learning_rate: 0.00003
+  phase_learning_rate: 0.0015
+  router_phase_learning_rate: 0.003

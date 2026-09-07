@@ -413,3 +413,37 @@ def test_dataset_uses_extra_sampling_views_only_for_training(monkeypatch) -> Non
     assert bool(torch.all(train_item["quality_tokens"] == 1))
     assert test_item["sampling_view_index"] == 0
     assert bool(torch.all(test_item["vision_tokens"] == 0))
+
+
+def test_dataset_honors_weighted_training_view_sampling(monkeypatch) -> None:
+    views = tuple(torch.full((2, 4, 3, 5), value) for value in range(3))
+    qualities = tuple(torch.full((2, 4, 3, 2), value) for value in range(3))
+    payload = {
+        "vision_tokens": views[0],
+        "quality_tokens": qualities[0],
+        "vision_token_views": views,
+        "quality_token_views": qualities,
+        "training_view_probabilities": (0.8, 0.1, 0.1),
+        "language_tokens": torch.zeros(1, 2, 7),
+        "language_mask": torch.ones(1, 2, dtype=torch.bool),
+        "input_ids": torch.zeros(1, 2, dtype=torch.long),
+        "targets": torch.tensor([1.0, 2.0]),
+        "target_name": "spatial",
+        "sample_ids": ["train", "test"],
+        "video_paths": ["train.mp4", "test.mp4"],
+        "splits": ["train", "test"],
+    }
+    observed = {}
+
+    def choose(weights: torch.Tensor, _: int) -> torch.Tensor:
+        observed["weights"] = weights.clone()
+        return torch.tensor([2])
+
+    monkeypatch.setattr(torch, "multinomial", choose)
+    train_item = LGVQSingleMetricDataset(payload, "train")[0]
+    test_item = LGVQSingleMetricDataset(payload, "test")[0]
+    assert torch.allclose(observed["weights"], torch.tensor([0.8, 0.1, 0.1]))
+    assert train_item["sampling_view_index"] == 2
+    assert bool(torch.all(train_item["vision_tokens"] == 2))
+    assert bool(torch.all(train_item["quality_tokens"] == 2))
+    assert test_item["sampling_view_index"] == 0
