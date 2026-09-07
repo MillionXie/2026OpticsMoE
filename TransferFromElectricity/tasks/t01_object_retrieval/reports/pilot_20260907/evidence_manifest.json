@@ -1,0 +1,302 @@
+[
+  {
+    "run_id": "20260907_static_direct_pilot_s42",
+    "file": "architecture.json",
+    "sha256": "74f6e3981066b04edab8515e2f0a53455704be0cf11a1105db33041cc9c6bf49",
+    "bytes": 4337
+  },
+  {
+    "run_id": "20260907_static_direct_pilot_s42",
+    "file": "config.yaml",
+    "sha256": "3858fbf51723c32eee242470eb99a2f7e8157c3d982ad2eac23015bf908ea5fa",
+    "bytes": 9804
+  },
+  {
+    "run_id": "20260907_static_direct_pilot_s42",
+    "file": "data_hashes.json",
+    "sha256": "3d17f186391c10c139460f883961067d6a65349ace2d3cea18768481b1c880ce",
+    "bytes": 94978
+  },
+  {
+    "run_id": "20260907_static_direct_pilot_s42",
+    "file": "dataset.json",
+    "sha256": "526dc6246a9c152237a1c8bdee07aac4e035ec8cf3da1c0411861f6d78429422",
+    "bytes": 1492
+  },
+  {
+    "run_id": "20260907_static_direct_pilot_s42",
+    "file": "environment.json",
+    "sha256": "6c5c00520a88d21acb38397bc7c95b0917fe1358618dee27800338926b3351cd",
+    "bytes": 799
+  },
+  {
+    "run_id": "20260907_static_direct_pilot_s42",
+    "file": "final_report.json",
+    "sha256": "c6eb0a5afe5b33022bbb30e611ca729246c5948feda78ab8c1cb4d4fc3017bd1",
+    "bytes": 3891
+  },
+  {
+    "run_id": "20260907_static_direct_pilot_s42",
+    "file": "gradient_chain.json",
+    "sha256": "d96c8837775ae2a9d46d3ed95cf34fef10bc57b741d54dad2bbfdb8b80e1854c",
+    "bytes": 54
+  },
+  {
+    "run_id": "20260907_static_direct_pilot_s42",
+    "file": "initialization.json",
+    "sha256": "2945d3e6e323611dc934ae30582b7833c28b89edd07a1530606aeb3ce9a4cb86",
+    "bytes": 1866
+  },
+  {
+    "run_id": "20260907_static_direct_pilot_s42",
+    "file": "pilot_config.json",
+    "sha256": "f5ac5708ee9367c5719d89a8b8e8be61fb4ede94fac40afb68a56b0ea78eda81",
+    "bytes": 448
+  },
+  {
+    "run_id": "20260907_static_direct_pilot_s42",
+    "file": "pilot_split.json",
+    "sha256": "edd18b958c25799f6bdf46ca1523f0f13b88a7ec285021b884e8a91b2a493508",
+    "bytes": 187920
+  },
+  {
+    "run_id": "20260907_static_direct_pilot_s42",
+    "file": "status.json",
+    "sha256": "34c8f74408bc4183b49f04a8136d278cf1d85c3415647a3e734dc82d5dd7e5c0",
+    "bytes": 26
+  },
+  {
+    "run_id": "20260907_static_direct_pilot_s42",
+    "file": "train_log.csv",
+    "sha256": "e8ab7e4876a9b22b14da06e2ecaf02487fed8a576d637df6ccbf135e077e1fd7",
+    "bytes": 4912
+  },
+  {
+    "run_id": "20260907_static_small_hyper_pilot_s42",
+    "file": "architecture.json",
+    "sha256": "f73f6a7e945f235d66695aa8ffd3339a467f6ffba02a9aeb58c860adc72cfc1b",
+    "bytes": 5182
+  },
+  {
+    "run_id": "20260907_static_small_hyper_pilot_s42",
+    "file": "config.yaml",
+    "sha256": "d0c082508d21c69f1f4b5a32fba2a36424a6cf5062e22bc936afd923cf99583a",
+    "bytes": 9809
+  },
+  {
+    "run_id": "20260907_static_small_hyper_pilot_s42",
+    "file": "data_hashes.json",
+    "sha256": "3d17f186391c10c139460f883961067d6a65349ace2d3cea18768481b1c880ce",
+    "bytes": 94978
+  },
+  {
+    "run_id": "20260907_static_small_hyper_pilot_s42",
+    "file": "dataset.json",
+    "sha256": "526dc6246a9c152237a1c8bdee07aac4e035ec8cf3da1c0411861f6d78429422",
+    "bytes": 1492
+  },
+  {
+    "run_id": "20260907_static_small_hyper_pilot_s42",
+    "file": "environment.json",
+    "sha256": "f6cb5d9d8add3fbdc153b27086fab99e32f781adbe049feff4b1f8159a229f97",
+    "bytes": 809
+  },
+  {
+    "run_id": "20260907_static_small_hyper_pilot_s42",
+    "file": "final_report.json",
+    "sha256": "9aa9d26a573669dad01669dbbe97083c1a447b796e878f7a3f0b80757d42d16a",
+    "bytes": 3896
+  },
+  {
+    "run_id": "20260907_static_small_hyper_pilot_s42",
+    "file": "gradient_chain.json",
+    "sha256": "fe8a59b0ece9e9a4668f364f635ebcff4a4e190875d5e9a7a41375ec1de75265",
+    "bytes": 54
+  },
+  {
+    "run_id": "20260907_static_small_hyper_pilot_s42",
+    "file": "initialization.json",
+    "sha256": "2945d3e6e323611dc934ae30582b7833c28b89edd07a1530606aeb3ce9a4cb86",
+    "bytes": 1866
+  },
+  {
+    "run_id": "20260907_static_small_hyper_pilot_s42",
+    "file": "pilot_config.json",
+    "sha256": "9c7c143c20ff84cb01c7709039001cbc1ee0c408e95dea00eb1ed9c560f73e5f",
+    "bytes": 453
+  },
+  {
+    "run_id": "20260907_static_small_hyper_pilot_s42",
+    "file": "pilot_split.json",
+    "sha256": "edd18b958c25799f6bdf46ca1523f0f13b88a7ec285021b884e8a91b2a493508",
+    "bytes": 187920
+  },
+  {
+    "run_id": "20260907_static_small_hyper_pilot_s42",
+    "file": "status.json",
+    "sha256": "34c8f74408bc4183b49f04a8136d278cf1d85c3415647a3e734dc82d5dd7e5c0",
+    "bytes": 26
+  },
+  {
+    "run_id": "20260907_static_small_hyper_pilot_s42",
+    "file": "train_log.csv",
+    "sha256": "471d28cb8f1967640919b161264e20199b548328617d2a7d598c6adf765de38b",
+    "bytes": 4926
+  },
+  {
+    "run_id": "20260907_static_qwen_frozen_pilot_s42",
+    "file": "architecture.json",
+    "sha256": "b0c6260d1abd2a0abad0f6ab58b0b09db5ae398e03599e79ee51263abd1294c4",
+    "bytes": 4827
+  },
+  {
+    "run_id": "20260907_static_qwen_frozen_pilot_s42",
+    "file": "config.yaml",
+    "sha256": "ba8dc51f41257a419a991566a9e0fd74dbb92ba3285542b63bc0870edc42d697",
+    "bytes": 9809
+  },
+  {
+    "run_id": "20260907_static_qwen_frozen_pilot_s42",
+    "file": "data_hashes.json",
+    "sha256": "3d17f186391c10c139460f883961067d6a65349ace2d3cea18768481b1c880ce",
+    "bytes": 94978
+  },
+  {
+    "run_id": "20260907_static_qwen_frozen_pilot_s42",
+    "file": "dataset.json",
+    "sha256": "526dc6246a9c152237a1c8bdee07aac4e035ec8cf3da1c0411861f6d78429422",
+    "bytes": 1492
+  },
+  {
+    "run_id": "20260907_static_qwen_frozen_pilot_s42",
+    "file": "environment.json",
+    "sha256": "3439c012abdc84dd291e21faa4e692e417487218362e947afaa3927ced54da97",
+    "bytes": 809
+  },
+  {
+    "run_id": "20260907_static_qwen_frozen_pilot_s42",
+    "file": "final_report.json",
+    "sha256": "57e659e71cfc70b086fc8e32798f42e8f1bb270cc9f9b0d9cc147845b75d22e6",
+    "bytes": 3909
+  },
+  {
+    "run_id": "20260907_static_qwen_frozen_pilot_s42",
+    "file": "generator_source_manifest.json",
+    "sha256": "2bd7af7339d264f1c7800c4b9c30763eaf2e6bfc3108739c0398b5590e29f744",
+    "bytes": 1069
+  },
+  {
+    "run_id": "20260907_static_qwen_frozen_pilot_s42",
+    "file": "gradient_chain.json",
+    "sha256": "a6af509d5db7d6a9d670c3a57062cf8fd8b36b53b288b0a2c52ee368f66ad778",
+    "bytes": 54
+  },
+  {
+    "run_id": "20260907_static_qwen_frozen_pilot_s42",
+    "file": "initialization.json",
+    "sha256": "2945d3e6e323611dc934ae30582b7833c28b89edd07a1530606aeb3ce9a4cb86",
+    "bytes": 1866
+  },
+  {
+    "run_id": "20260907_static_qwen_frozen_pilot_s42",
+    "file": "pilot_config.json",
+    "sha256": "9afa86dd2dc1d77d4709c9ac757a039f4c1b23a26c256778e670b89d81f4e8cb",
+    "bytes": 453
+  },
+  {
+    "run_id": "20260907_static_qwen_frozen_pilot_s42",
+    "file": "pilot_split.json",
+    "sha256": "edd18b958c25799f6bdf46ca1523f0f13b88a7ec285021b884e8a91b2a493508",
+    "bytes": 187920
+  },
+  {
+    "run_id": "20260907_static_qwen_frozen_pilot_s42",
+    "file": "status.json",
+    "sha256": "34c8f74408bc4183b49f04a8136d278cf1d85c3415647a3e734dc82d5dd7e5c0",
+    "bytes": 26
+  },
+  {
+    "run_id": "20260907_static_qwen_frozen_pilot_s42",
+    "file": "train_log.csv",
+    "sha256": "d74bcf80706c8dbb6b2bf7c056b4f3cfe1d9a3d6d707aaa2e466789f7149d068",
+    "bytes": 4978
+  },
+  {
+    "run_id": "20260907_static_qwen_lora_pilot_s42",
+    "file": "architecture.json",
+    "sha256": "e7ad5a40d67b7ea17d7abc6bd13838741204c122e3084e2b89b6870171e8580d",
+    "bytes": 7067
+  },
+  {
+    "run_id": "20260907_static_qwen_lora_pilot_s42",
+    "file": "config.yaml",
+    "sha256": "955fe50f25361712b30b77a540893b2f2387323e9077c7e07856721018afdf53",
+    "bytes": 9807
+  },
+  {
+    "run_id": "20260907_static_qwen_lora_pilot_s42",
+    "file": "data_hashes.json",
+    "sha256": "3d17f186391c10c139460f883961067d6a65349ace2d3cea18768481b1c880ce",
+    "bytes": 94978
+  },
+  {
+    "run_id": "20260907_static_qwen_lora_pilot_s42",
+    "file": "dataset.json",
+    "sha256": "526dc6246a9c152237a1c8bdee07aac4e035ec8cf3da1c0411861f6d78429422",
+    "bytes": 1492
+  },
+  {
+    "run_id": "20260907_static_qwen_lora_pilot_s42",
+    "file": "environment.json",
+    "sha256": "c08e590f42d084cfc10e09e87d4f27c3732b60696ab93f32a5d36f68d3de191a",
+    "bytes": 805
+  },
+  {
+    "run_id": "20260907_static_qwen_lora_pilot_s42",
+    "file": "final_report.json",
+    "sha256": "4434f356bb11b493bb8b19ee147b1934cd0cdda9141a1d7a2952871d2c61bc16",
+    "bytes": 3907
+  },
+  {
+    "run_id": "20260907_static_qwen_lora_pilot_s42",
+    "file": "generator_source_manifest.json",
+    "sha256": "2bd7af7339d264f1c7800c4b9c30763eaf2e6bfc3108739c0398b5590e29f744",
+    "bytes": 1069
+  },
+  {
+    "run_id": "20260907_static_qwen_lora_pilot_s42",
+    "file": "gradient_chain.json",
+    "sha256": "931ab62ffc14b05ce809b76bf0082b28d89326bb34490e1136327b84e5b16cdd",
+    "bytes": 106
+  },
+  {
+    "run_id": "20260907_static_qwen_lora_pilot_s42",
+    "file": "initialization.json",
+    "sha256": "2945d3e6e323611dc934ae30582b7833c28b89edd07a1530606aeb3ce9a4cb86",
+    "bytes": 1866
+  },
+  {
+    "run_id": "20260907_static_qwen_lora_pilot_s42",
+    "file": "pilot_config.json",
+    "sha256": "a3b382fabdc51a7a18ed67da39033794c4a98654cb6460c086c8b458b3e882a2",
+    "bytes": 451
+  },
+  {
+    "run_id": "20260907_static_qwen_lora_pilot_s42",
+    "file": "pilot_split.json",
+    "sha256": "edd18b958c25799f6bdf46ca1523f0f13b88a7ec285021b884e8a91b2a493508",
+    "bytes": 187920
+  },
+  {
+    "run_id": "20260907_static_qwen_lora_pilot_s42",
+    "file": "status.json",
+    "sha256": "34c8f74408bc4183b49f04a8136d278cf1d85c3415647a3e734dc82d5dd7e5c0",
+    "bytes": 26
+  },
+  {
+    "run_id": "20260907_static_qwen_lora_pilot_s42",
+    "file": "train_log.csv",
+    "sha256": "9c679115d02cd41c8bcc56cf7d4bdba5390d8178c44ba5951b236c1a5fce2b12",
+    "bytes": 4982
+  }
+]

@@ -44,4 +44,33 @@ CUDA_VISIBLE_DEVICES=3 python -m TransferFromElectricity.tasks.t01_object_retrie
 CUDA 仿真耗时不是物理光路延时；生成器仅在训练和导出使用。
 真实 SLM/CCD 闭环不属于本轮。
 
-尚未完成真实数据实验；后续结果在本节和 reports/ 中补充。
+## 2026-09-07 首轮结果
+
+四组均已完成：300 train、30 gallery、200 test，seed=42，5 epoch / 50 updates，最终 EMA。
+训练 commit：`56d7e6b66b9d820b64ad476ceccb5bff56f55947`；运行在服务器 GPU 3（RTX 4090）。
+源码、数据划分和预算一致；本地轻量文件从服务器经 SFTP 同步并逐文件校验 SHA256。
+
+| 方法 | Top-1 | Top-3 | MRR | 峰值显存 GiB |
+|---|---:|---:|---:|---:|
+| direct | 82.0% | 93.0% | 0.8860 | 7.43 |
+| small_hyper | 82.0% | 93.0% | 0.8868 | 7.44 |
+| qwen_frozen | 81.5% | 93.0% | 0.8843 | 10.64 |
+| qwen_lora | 81.5% | 93.0% | 0.8835 | 11.25 |
+
+机制验证通过：D 的任务 loss→expert 梯度范数 0.05483，任务 loss→LoRA B 梯度范数
+0.0008387；最终 EMA expert 相位相对起点的 RMS 变化 0.01331 rad。
+四组固化 expert 后输出误差均为 0，样本逆序误差为 0；单样本与 batch 推理最大 embedding
+绝对差为 0.00223–0.00298（BF16 路径，低于预设 0.005 容差），不能表述为逐位一致。
+
+结论仅为链路可训练、可导出；本轮没有观察到大模型生成优于直接优化。
+D 与 A 的 Top-1 差距仅 1/200 个查询，单 seed 短训练不能据此判断方法优劣。
+Language Router 四组均只使用前两个专家（训练选择次数 1500/1500/0/0），尚未解决路由集中。
+相位变化较小且四组 loss 曲线非常接近，不能将 loss 下降全部归因于生成器。
+小生成器首 batch task loss 与 A 相差约 0.00154，虽初始无梯度相位校验误差为 0，
+该端到端微小差异尚未逐算子定位；B 保留为辅助对照。
+
+完整数值、run ID 和证据哈希见 [summary.json](reports/pilot_20260907/summary.json)、
+[evidence_manifest.json](reports/pilot_20260907/evidence_manifest.json)；
+[对照图](reports/pilot_20260907/pilot_comparison.png) 给出每 epoch 平均 task loss 与最终 Top-1。
+原始日志、配置和 sample manifest 在任务 runs 下；checkpoint 留在服务器同名 run。
+后续优先诊断 Language Router 集中及生成相位的实际贡献，再考虑延长训练和多 seed。
