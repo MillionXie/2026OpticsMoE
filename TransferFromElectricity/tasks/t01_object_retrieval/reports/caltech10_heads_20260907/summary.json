@@ -1,0 +1,4008 @@
+{
+  "protocol": "staged_alpha40",
+  "training_git_sha": "8063ed16bac540758f7ba226dbeadac005def8d6",
+  "split_sha256": "d8d21a4c2085c725dd6f25dae7b70030a13f2be6229581cc6a49c0c2c3868d11",
+  "resolved_protocol": {
+    "backend_profile": "LightGenV2/tasks/t01_object_retrieval/configs/moe_optical_router_scale_matched_dc20.yaml",
+    "seed": 42,
+    "validation_per_class": 10,
+    "num_workers": 0,
+    "fusion": {
+      "minimum": 0.4,
+      "initial": 0.5,
+      "maximum": 0.95
+    },
+    "initial_expert_dc_power": 0.25,
+    "stages": [
+      {
+        "name": "experts",
+        "epochs": 4
+      },
+      {
+        "name": "optics",
+        "epochs": 8
+      },
+      {
+        "name": "joint",
+        "epochs": 8
+      }
+    ],
+    "learning_rates": {
+      "expert": 0.02,
+      "global": 0.006,
+      "router": 0.01,
+      "generator_context": 0.0001,
+      "generator_decoder": 0.0003,
+      "electronic": 1e-05,
+      "readout": 2e-05,
+      "fusion": 0.0001
+    },
+    "stage_cosine_minimum": 0.2,
+    "warmup_steps": 20,
+    "gradient_clip_per_group": 1.0,
+    "ema_decay": 0.95,
+    "generator": {
+      "model_id": "Qwen/Qwen3-VL-2B-Instruct",
+      "rank": 8,
+      "lora_dtype": "float32",
+      "decoder_final_init_std": 0.02,
+      "expert_specific_heads": true
+    },
+    "selection": "maximum_live_validation_top1_then_mrr",
+    "test_policy": "once_after_training_for_validation_selected_live_and_final_ema",
+    "training_optical_perturbations": false,
+    "data_seed": 42,
+    "paired_epoch_rng": true,
+    "smoke": false,
+    "steps_per_epoch": 60
+  },
+  "rows": [
+    {
+      "method": "fixed",
+      "label": "Fixed experts",
+      "run_id": "20260907_caltech10_heads_fixed_s42",
+      "device": "NVIDIA GeForce RTX 4090",
+      "selected_epoch": 19,
+      "selected_live_test": {
+        "system": "optical_student_query_vs_optical_student_gallery",
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 200,
+        "gallery_image_count": 30,
+        "sku_count": 10,
+        "top1_retrieval_accuracy": 0.7850000262260437,
+        "top3_retrieval_accuracy": 0.9399999976158142,
+        "mrr": 0.8675476312637329,
+        "per_sku": {
+          "airplanes": {
+            "query_count": 20,
+            "top1_accuracy": 0.75,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "Motorbikes": {
+            "query_count": 20,
+            "top1_accuracy": 0.800000011920929,
+            "top3_accuracy": 1.0
+          },
+          "Faces": {
+            "query_count": 20,
+            "top1_accuracy": 1.0,
+            "top3_accuracy": 1.0
+          },
+          "Leopards": {
+            "query_count": 20,
+            "top1_accuracy": 1.0,
+            "top3_accuracy": 1.0
+          },
+          "accordion": {
+            "query_count": 20,
+            "top1_accuracy": 0.75,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "grand_piano": {
+            "query_count": 20,
+            "top1_accuracy": 0.6000000238418579,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "scorpion": {
+            "query_count": 20,
+            "top1_accuracy": 0.550000011920929,
+            "top3_accuracy": 0.800000011920929
+          },
+          "sunflower": {
+            "query_count": 20,
+            "top1_accuracy": 1.0,
+            "top3_accuracy": 1.0
+          },
+          "watch": {
+            "query_count": 20,
+            "top1_accuracy": 0.699999988079071,
+            "top3_accuracy": 1.0
+          },
+          "yin_yang": {
+            "query_count": 20,
+            "top1_accuracy": 0.699999988079071,
+            "top3_accuracy": 0.8999999761581421
+          }
+        }
+      },
+      "final_ema_test": {
+        "system": "optical_student_query_vs_optical_student_gallery",
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 200,
+        "gallery_image_count": 30,
+        "sku_count": 10,
+        "top1_retrieval_accuracy": 0.7900000214576721,
+        "top3_retrieval_accuracy": 0.9350000023841858,
+        "mrr": 0.8680952191352844,
+        "per_sku": {
+          "airplanes": {
+            "query_count": 20,
+            "top1_accuracy": 0.800000011920929,
+            "top3_accuracy": 0.949999988079071
+          },
+          "Motorbikes": {
+            "query_count": 20,
+            "top1_accuracy": 0.699999988079071,
+            "top3_accuracy": 1.0
+          },
+          "Faces": {
+            "query_count": 20,
+            "top1_accuracy": 1.0,
+            "top3_accuracy": 1.0
+          },
+          "Leopards": {
+            "query_count": 20,
+            "top1_accuracy": 1.0,
+            "top3_accuracy": 1.0
+          },
+          "accordion": {
+            "query_count": 20,
+            "top1_accuracy": 0.75,
+            "top3_accuracy": 0.8500000238418579
+          },
+          "grand_piano": {
+            "query_count": 20,
+            "top1_accuracy": 0.6499999761581421,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "scorpion": {
+            "query_count": 20,
+            "top1_accuracy": 0.550000011920929,
+            "top3_accuracy": 0.75
+          },
+          "sunflower": {
+            "query_count": 20,
+            "top1_accuracy": 0.949999988079071,
+            "top3_accuracy": 1.0
+          },
+          "watch": {
+            "query_count": 20,
+            "top1_accuracy": 0.800000011920929,
+            "top3_accuracy": 1.0
+          },
+          "yin_yang": {
+            "query_count": 20,
+            "top1_accuracy": 0.699999988079071,
+            "top3_accuracy": 0.8999999761581421
+          }
+        }
+      },
+      "selected_validation": {
+        "system": "optical_student_query_vs_optical_student_gallery",
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 100,
+        "gallery_image_count": 30,
+        "sku_count": 10,
+        "top1_retrieval_accuracy": 0.8399999737739563,
+        "top3_retrieval_accuracy": 0.9399999976158142,
+        "mrr": 0.8987619280815125,
+        "per_sku": {
+          "airplanes": {
+            "query_count": 10,
+            "top1_accuracy": 0.800000011920929,
+            "top3_accuracy": 0.800000011920929
+          },
+          "Motorbikes": {
+            "query_count": 10,
+            "top1_accuracy": 0.8999999761581421,
+            "top3_accuracy": 1.0
+          },
+          "Faces": {
+            "query_count": 10,
+            "top1_accuracy": 1.0,
+            "top3_accuracy": 1.0
+          },
+          "Leopards": {
+            "query_count": 10,
+            "top1_accuracy": 1.0,
+            "top3_accuracy": 1.0
+          },
+          "accordion": {
+            "query_count": 10,
+            "top1_accuracy": 0.8999999761581421,
+            "top3_accuracy": 1.0
+          },
+          "grand_piano": {
+            "query_count": 10,
+            "top1_accuracy": 0.6000000238418579,
+            "top3_accuracy": 0.800000011920929
+          },
+          "scorpion": {
+            "query_count": 10,
+            "top1_accuracy": 0.699999988079071,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "sunflower": {
+            "query_count": 10,
+            "top1_accuracy": 0.8999999761581421,
+            "top3_accuracy": 1.0
+          },
+          "watch": {
+            "query_count": 10,
+            "top1_accuracy": 0.800000011920929,
+            "top3_accuracy": 1.0
+          },
+          "yin_yang": {
+            "query_count": 10,
+            "top1_accuracy": 0.800000011920929,
+            "top3_accuracy": 0.8999999761581421
+          }
+        }
+      },
+      "selected_phase_rms_rad": 0.0,
+      "selected_phase_piston_removed_rms_rad": 1.227318477958761e-07,
+      "mean_cross_expert_update_correlation": null,
+      "last_phase_rms_rad": 0.0,
+      "fusion": {
+        "vision": [
+          0.49924105405807495,
+          0.4996218979358673
+        ],
+        "language": [
+          0.4984676241874695,
+          0.4989507794380188
+        ]
+      },
+      "ablations": {
+        "initial_experts": {
+          "system": "optical_student_query_vs_optical_student_gallery",
+          "gallery_aggregation": "mean_prototype",
+          "query_count": 200,
+          "gallery_image_count": 30,
+          "sku_count": 10,
+          "top1_retrieval_accuracy": 0.7850000262260437,
+          "top3_retrieval_accuracy": 0.9399999976158142,
+          "mrr": 0.8675476312637329,
+          "per_sku": {
+            "airplanes": {
+              "query_count": 20,
+              "top1_accuracy": 0.75,
+              "top3_accuracy": 0.8999999761581421
+            },
+            "Motorbikes": {
+              "query_count": 20,
+              "top1_accuracy": 0.800000011920929,
+              "top3_accuracy": 1.0
+            },
+            "Faces": {
+              "query_count": 20,
+              "top1_accuracy": 1.0,
+              "top3_accuracy": 1.0
+            },
+            "Leopards": {
+              "query_count": 20,
+              "top1_accuracy": 1.0,
+              "top3_accuracy": 1.0
+            },
+            "accordion": {
+              "query_count": 20,
+              "top1_accuracy": 0.75,
+              "top3_accuracy": 0.8999999761581421
+            },
+            "grand_piano": {
+              "query_count": 20,
+              "top1_accuracy": 0.6000000238418579,
+              "top3_accuracy": 0.8999999761581421
+            },
+            "scorpion": {
+              "query_count": 20,
+              "top1_accuracy": 0.550000011920929,
+              "top3_accuracy": 0.800000011920929
+            },
+            "sunflower": {
+              "query_count": 20,
+              "top1_accuracy": 1.0,
+              "top3_accuracy": 1.0
+            },
+            "watch": {
+              "query_count": 20,
+              "top1_accuracy": 0.699999988079071,
+              "top3_accuracy": 1.0
+            },
+            "yin_yang": {
+              "query_count": 20,
+              "top1_accuracy": 0.699999988079071,
+              "top3_accuracy": 0.8999999761581421
+            }
+          }
+        },
+        "flat_pi_experts": {
+          "system": "optical_student_query_vs_optical_student_gallery",
+          "gallery_aggregation": "mean_prototype",
+          "query_count": 200,
+          "gallery_image_count": 30,
+          "sku_count": 10,
+          "top1_retrieval_accuracy": 0.5699999928474426,
+          "top3_retrieval_accuracy": 0.7850000262260437,
+          "mrr": 0.7065674066543579,
+          "per_sku": {
+            "airplanes": {
+              "query_count": 20,
+              "top1_accuracy": 0.550000011920929,
+              "top3_accuracy": 0.75
+            },
+            "Motorbikes": {
+              "query_count": 20,
+              "top1_accuracy": 0.3499999940395355,
+              "top3_accuracy": 0.75
+            },
+            "Faces": {
+              "query_count": 20,
+              "top1_accuracy": 0.800000011920929,
+              "top3_accuracy": 0.949999988079071
+            },
+            "Leopards": {
+              "query_count": 20,
+              "top1_accuracy": 1.0,
+              "top3_accuracy": 1.0
+            },
+            "accordion": {
+              "query_count": 20,
+              "top1_accuracy": 0.4000000059604645,
+              "top3_accuracy": 0.699999988079071
+            },
+            "grand_piano": {
+              "query_count": 20,
+              "top1_accuracy": 0.6000000238418579,
+              "top3_accuracy": 0.8500000238418579
+            },
+            "scorpion": {
+              "query_count": 20,
+              "top1_accuracy": 0.15000000596046448,
+              "top3_accuracy": 0.4000000059604645
+            },
+            "sunflower": {
+              "query_count": 20,
+              "top1_accuracy": 0.949999988079071,
+              "top3_accuracy": 0.949999988079071
+            },
+            "watch": {
+              "query_count": 20,
+              "top1_accuracy": 0.3499999940395355,
+              "top3_accuracy": 0.800000011920929
+            },
+            "yin_yang": {
+              "query_count": 20,
+              "top1_accuracy": 0.550000011920929,
+              "top3_accuracy": 0.699999988079071
+            }
+          }
+        }
+      },
+      "counts": {
+        "train": 2525,
+        "validation": 100,
+        "gallery": 30,
+        "test": 200
+      },
+      "optimizer_updates": 960,
+      "batch_opportunities": 1200,
+      "initial_validation": {
+        "system": "optical_student_query_vs_optical_student_gallery",
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 100,
+        "gallery_image_count": 30,
+        "sku_count": 10,
+        "top1_retrieval_accuracy": 0.41999998688697815,
+        "top3_retrieval_accuracy": 0.7400000095367432,
+        "mrr": 0.6146071553230286,
+        "per_sku": {
+          "airplanes": {
+            "query_count": 10,
+            "top1_accuracy": 0.30000001192092896,
+            "top3_accuracy": 0.6000000238418579
+          },
+          "Motorbikes": {
+            "query_count": 10,
+            "top1_accuracy": 0.20000000298023224,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "Faces": {
+            "query_count": 10,
+            "top1_accuracy": 0.699999988079071,
+            "top3_accuracy": 0.800000011920929
+          },
+          "Leopards": {
+            "query_count": 10,
+            "top1_accuracy": 0.8999999761581421,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "accordion": {
+            "query_count": 10,
+            "top1_accuracy": 0.4000000059604645,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "grand_piano": {
+            "query_count": 10,
+            "top1_accuracy": 0.0,
+            "top3_accuracy": 0.4000000059604645
+          },
+          "scorpion": {
+            "query_count": 10,
+            "top1_accuracy": 0.30000001192092896,
+            "top3_accuracy": 0.4000000059604645
+          },
+          "sunflower": {
+            "query_count": 10,
+            "top1_accuracy": 0.8999999761581421,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "watch": {
+            "query_count": 10,
+            "top1_accuracy": 0.20000000298023224,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "yin_yang": {
+            "query_count": 10,
+            "top1_accuracy": 0.30000001192092896,
+            "top3_accuracy": 0.699999988079071
+          }
+        }
+      },
+      "stage_ends": [
+        {
+          "epoch": 4,
+          "stage": "experts",
+          "mean_task_loss": 5.162764350573222,
+          "live_validation": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 100,
+            "gallery_image_count": 30,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.41999998688697815,
+            "top3_retrieval_accuracy": 0.7400000095367432,
+            "mrr": 0.6146071553230286,
+            "per_sku": {
+              "airplanes": {
+                "query_count": 10,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "Motorbikes": {
+                "query_count": 10,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "Faces": {
+                "query_count": 10,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 0.800000011920929
+              },
+              "Leopards": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "accordion": {
+                "query_count": 10,
+                "top1_accuracy": 0.4000000059604645,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "grand_piano": {
+                "query_count": 10,
+                "top1_accuracy": 0.0,
+                "top3_accuracy": 0.4000000059604645
+              },
+              "scorpion": {
+                "query_count": 10,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.4000000059604645
+              },
+              "sunflower": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "watch": {
+                "query_count": 10,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "yin_yang": {
+                "query_count": 10,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.699999988079071
+              }
+            }
+          },
+          "stage_end_validation_with_initial_experts": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 100,
+            "gallery_image_count": 30,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.41999998688697815,
+            "top3_retrieval_accuracy": 0.7400000095367432,
+            "mrr": 0.6146071553230286,
+            "per_sku": {
+              "airplanes": {
+                "query_count": 10,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "Motorbikes": {
+                "query_count": 10,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "Faces": {
+                "query_count": 10,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 0.800000011920929
+              },
+              "Leopards": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "accordion": {
+                "query_count": 10,
+                "top1_accuracy": 0.4000000059604645,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "grand_piano": {
+                "query_count": 10,
+                "top1_accuracy": 0.0,
+                "top3_accuracy": 0.4000000059604645
+              },
+              "scorpion": {
+                "query_count": 10,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.4000000059604645
+              },
+              "sunflower": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "watch": {
+                "query_count": 10,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "yin_yang": {
+                "query_count": 10,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.699999988079071
+              }
+            }
+          },
+          "expert_phase": {
+            "rms_change_rad": 0.0,
+            "per_expert_rms_change_rad": [
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ],
+            "max_change_rad": 0.0,
+            "dc_power": [
+              [
+                0.24910388886928558,
+                0.24939949810504913,
+                0.2483147829771042,
+                0.25149816274642944
+              ],
+              [
+                0.2472953498363495,
+                0.25173166394233704,
+                0.24999062716960907,
+                0.2499273419380188
+              ]
+            ],
+            "sigmoid_saturated_fraction": 0.0
+          },
+          "expert_selection_counts": {
+            "vision": [
+              1797,
+              1800,
+              0,
+              3
+            ],
+            "language": [
+              1800,
+              1800,
+              0,
+              0
+            ]
+          },
+          "task_gradient_chain": {}
+        },
+        {
+          "epoch": 12,
+          "stage": "optics",
+          "mean_task_loss": 2.548355891307195,
+          "live_validation": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 100,
+            "gallery_image_count": 30,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.7900000214576721,
+            "top3_retrieval_accuracy": 0.9200000166893005,
+            "mrr": 0.8563452959060669,
+            "per_sku": {
+              "airplanes": {
+                "query_count": 10,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 0.800000011920929
+              },
+              "Motorbikes": {
+                "query_count": 10,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 1.0
+              },
+              "Faces": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "Leopards": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "accordion": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 1.0
+              },
+              "grand_piano": {
+                "query_count": 10,
+                "top1_accuracy": 0.6000000238418579,
+                "top3_accuracy": 0.800000011920929
+              },
+              "scorpion": {
+                "query_count": 10,
+                "top1_accuracy": 0.4000000059604645,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "sunflower": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "watch": {
+                "query_count": 10,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 1.0
+              },
+              "yin_yang": {
+                "query_count": 10,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 0.800000011920929
+              }
+            }
+          },
+          "stage_end_validation_with_initial_experts": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 100,
+            "gallery_image_count": 30,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.7900000214576721,
+            "top3_retrieval_accuracy": 0.9200000166893005,
+            "mrr": 0.8563452959060669,
+            "per_sku": {
+              "airplanes": {
+                "query_count": 10,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 0.800000011920929
+              },
+              "Motorbikes": {
+                "query_count": 10,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 1.0
+              },
+              "Faces": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "Leopards": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "accordion": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 1.0
+              },
+              "grand_piano": {
+                "query_count": 10,
+                "top1_accuracy": 0.6000000238418579,
+                "top3_accuracy": 0.800000011920929
+              },
+              "scorpion": {
+                "query_count": 10,
+                "top1_accuracy": 0.4000000059604645,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "sunflower": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "watch": {
+                "query_count": 10,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 1.0
+              },
+              "yin_yang": {
+                "query_count": 10,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 0.800000011920929
+              }
+            }
+          },
+          "expert_phase": {
+            "rms_change_rad": 0.0,
+            "per_expert_rms_change_rad": [
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ],
+            "max_change_rad": 0.0,
+            "dc_power": [
+              [
+                0.24910388886928558,
+                0.24939949810504913,
+                0.2483147829771042,
+                0.25149816274642944
+              ],
+              [
+                0.2472953498363495,
+                0.25173166394233704,
+                0.24999062716960907,
+                0.2499273419380188
+              ]
+            ],
+            "sigmoid_saturated_fraction": 0.0
+          },
+          "expert_selection_counts": {
+            "vision": [
+              1019,
+              868,
+              866,
+              847
+            ],
+            "language": [
+              1800,
+              1800,
+              0,
+              0
+            ]
+          },
+          "task_gradient_chain": {}
+        },
+        {
+          "epoch": 20,
+          "stage": "joint",
+          "mean_task_loss": 2.0632938623428343,
+          "live_validation": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 100,
+            "gallery_image_count": 30,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.8299999833106995,
+            "top3_retrieval_accuracy": 0.9399999976158142,
+            "mrr": 0.8900952339172363,
+            "per_sku": {
+              "airplanes": {
+                "query_count": 10,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 0.800000011920929
+              },
+              "Motorbikes": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 1.0
+              },
+              "Faces": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "Leopards": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "accordion": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 1.0
+              },
+              "grand_piano": {
+                "query_count": 10,
+                "top1_accuracy": 0.6000000238418579,
+                "top3_accuracy": 0.800000011920929
+              },
+              "scorpion": {
+                "query_count": 10,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "sunflower": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 1.0
+              },
+              "watch": {
+                "query_count": 10,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 1.0
+              },
+              "yin_yang": {
+                "query_count": 10,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 0.8999999761581421
+              }
+            }
+          },
+          "stage_end_validation_with_initial_experts": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 100,
+            "gallery_image_count": 30,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.8299999833106995,
+            "top3_retrieval_accuracy": 0.9399999976158142,
+            "mrr": 0.8900952339172363,
+            "per_sku": {
+              "airplanes": {
+                "query_count": 10,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 0.800000011920929
+              },
+              "Motorbikes": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 1.0
+              },
+              "Faces": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "Leopards": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "accordion": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 1.0
+              },
+              "grand_piano": {
+                "query_count": 10,
+                "top1_accuracy": 0.6000000238418579,
+                "top3_accuracy": 0.800000011920929
+              },
+              "scorpion": {
+                "query_count": 10,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "sunflower": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 1.0
+              },
+              "watch": {
+                "query_count": 10,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 1.0
+              },
+              "yin_yang": {
+                "query_count": 10,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 0.8999999761581421
+              }
+            }
+          },
+          "expert_phase": {
+            "rms_change_rad": 0.0,
+            "per_expert_rms_change_rad": [
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ],
+            "max_change_rad": 0.0,
+            "dc_power": [
+              [
+                0.24910388886928558,
+                0.24939949810504913,
+                0.2483147829771042,
+                0.25149816274642944
+              ],
+              [
+                0.2472953498363495,
+                0.25173166394233704,
+                0.24999062716960907,
+                0.2499273419380188
+              ]
+            ],
+            "sigmoid_saturated_fraction": 0.0
+          },
+          "expert_selection_counts": {
+            "vision": [
+              864,
+              979,
+              923,
+              834
+            ],
+            "language": [
+              1800,
+              1800,
+              0,
+              0
+            ]
+          },
+          "task_gradient_chain": {}
+        }
+      ],
+      "export_max_error": 0.0,
+      "generator_trainable": 0,
+      "peak_memory_gib": 6.960212707519531,
+      "elapsed_seconds": 671.0638006031513
+    },
+    {
+      "method": "direct",
+      "label": "Direct phase optimization",
+      "run_id": "20260907_caltech10_heads_direct_s42",
+      "device": "NVIDIA GeForce RTX 4090",
+      "selected_epoch": 20,
+      "selected_live_test": {
+        "system": "optical_student_query_vs_optical_student_gallery",
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 200,
+        "gallery_image_count": 30,
+        "sku_count": 10,
+        "top1_retrieval_accuracy": 0.8349999785423279,
+        "top3_retrieval_accuracy": 0.9350000023841858,
+        "mrr": 0.8944225907325745,
+        "per_sku": {
+          "airplanes": {
+            "query_count": 20,
+            "top1_accuracy": 0.8999999761581421,
+            "top3_accuracy": 0.949999988079071
+          },
+          "Motorbikes": {
+            "query_count": 20,
+            "top1_accuracy": 0.8999999761581421,
+            "top3_accuracy": 1.0
+          },
+          "Faces": {
+            "query_count": 20,
+            "top1_accuracy": 1.0,
+            "top3_accuracy": 1.0
+          },
+          "Leopards": {
+            "query_count": 20,
+            "top1_accuracy": 1.0,
+            "top3_accuracy": 1.0
+          },
+          "accordion": {
+            "query_count": 20,
+            "top1_accuracy": 0.75,
+            "top3_accuracy": 0.8500000238418579
+          },
+          "grand_piano": {
+            "query_count": 20,
+            "top1_accuracy": 0.8500000238418579,
+            "top3_accuracy": 0.949999988079071
+          },
+          "scorpion": {
+            "query_count": 20,
+            "top1_accuracy": 0.44999998807907104,
+            "top3_accuracy": 0.800000011920929
+          },
+          "sunflower": {
+            "query_count": 20,
+            "top1_accuracy": 0.949999988079071,
+            "top3_accuracy": 1.0
+          },
+          "watch": {
+            "query_count": 20,
+            "top1_accuracy": 0.75,
+            "top3_accuracy": 1.0
+          },
+          "yin_yang": {
+            "query_count": 20,
+            "top1_accuracy": 0.800000011920929,
+            "top3_accuracy": 0.800000011920929
+          }
+        }
+      },
+      "final_ema_test": {
+        "system": "optical_student_query_vs_optical_student_gallery",
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 200,
+        "gallery_image_count": 30,
+        "sku_count": 10,
+        "top1_retrieval_accuracy": 0.8399999737739563,
+        "top3_retrieval_accuracy": 0.9449999928474426,
+        "mrr": 0.8994007706642151,
+        "per_sku": {
+          "airplanes": {
+            "query_count": 20,
+            "top1_accuracy": 0.8999999761581421,
+            "top3_accuracy": 1.0
+          },
+          "Motorbikes": {
+            "query_count": 20,
+            "top1_accuracy": 0.8999999761581421,
+            "top3_accuracy": 1.0
+          },
+          "Faces": {
+            "query_count": 20,
+            "top1_accuracy": 1.0,
+            "top3_accuracy": 1.0
+          },
+          "Leopards": {
+            "query_count": 20,
+            "top1_accuracy": 1.0,
+            "top3_accuracy": 1.0
+          },
+          "accordion": {
+            "query_count": 20,
+            "top1_accuracy": 0.699999988079071,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "grand_piano": {
+            "query_count": 20,
+            "top1_accuracy": 0.8500000238418579,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "scorpion": {
+            "query_count": 20,
+            "top1_accuracy": 0.44999998807907104,
+            "top3_accuracy": 0.800000011920929
+          },
+          "sunflower": {
+            "query_count": 20,
+            "top1_accuracy": 1.0,
+            "top3_accuracy": 1.0
+          },
+          "watch": {
+            "query_count": 20,
+            "top1_accuracy": 0.800000011920929,
+            "top3_accuracy": 1.0
+          },
+          "yin_yang": {
+            "query_count": 20,
+            "top1_accuracy": 0.800000011920929,
+            "top3_accuracy": 0.8500000238418579
+          }
+        }
+      },
+      "selected_validation": {
+        "system": "optical_student_query_vs_optical_student_gallery",
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 100,
+        "gallery_image_count": 30,
+        "sku_count": 10,
+        "top1_retrieval_accuracy": 0.8700000047683716,
+        "top3_retrieval_accuracy": 0.9599999785423279,
+        "mrr": 0.9149166941642761,
+        "per_sku": {
+          "airplanes": {
+            "query_count": 10,
+            "top1_accuracy": 0.800000011920929,
+            "top3_accuracy": 0.800000011920929
+          },
+          "Motorbikes": {
+            "query_count": 10,
+            "top1_accuracy": 1.0,
+            "top3_accuracy": 1.0
+          },
+          "Faces": {
+            "query_count": 10,
+            "top1_accuracy": 1.0,
+            "top3_accuracy": 1.0
+          },
+          "Leopards": {
+            "query_count": 10,
+            "top1_accuracy": 1.0,
+            "top3_accuracy": 1.0
+          },
+          "accordion": {
+            "query_count": 10,
+            "top1_accuracy": 0.8999999761581421,
+            "top3_accuracy": 1.0
+          },
+          "grand_piano": {
+            "query_count": 10,
+            "top1_accuracy": 0.699999988079071,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "scorpion": {
+            "query_count": 10,
+            "top1_accuracy": 0.699999988079071,
+            "top3_accuracy": 1.0
+          },
+          "sunflower": {
+            "query_count": 10,
+            "top1_accuracy": 0.8999999761581421,
+            "top3_accuracy": 1.0
+          },
+          "watch": {
+            "query_count": 10,
+            "top1_accuracy": 0.8999999761581421,
+            "top3_accuracy": 1.0
+          },
+          "yin_yang": {
+            "query_count": 10,
+            "top1_accuracy": 0.800000011920929,
+            "top3_accuracy": 0.8999999761581421
+          }
+        }
+      },
+      "selected_phase_rms_rad": 0.8468729257583618,
+      "selected_phase_piston_removed_rms_rad": 0.8468628525733948,
+      "mean_cross_expert_update_correlation": 0.0007682998548261821,
+      "last_phase_rms_rad": 0.8468729257583618,
+      "fusion": {
+        "vision": [
+          0.49928730726242065,
+          0.49906665086746216
+        ],
+        "language": [
+          0.4987344741821289,
+          0.498665452003479
+        ]
+      },
+      "ablations": {
+        "initial_experts": {
+          "system": "optical_student_query_vs_optical_student_gallery",
+          "gallery_aggregation": "mean_prototype",
+          "query_count": 200,
+          "gallery_image_count": 30,
+          "sku_count": 10,
+          "top1_retrieval_accuracy": 0.6449999809265137,
+          "top3_retrieval_accuracy": 0.8450000286102295,
+          "mrr": 0.7639960646629333,
+          "per_sku": {
+            "airplanes": {
+              "query_count": 20,
+              "top1_accuracy": 0.699999988079071,
+              "top3_accuracy": 0.8500000238418579
+            },
+            "Motorbikes": {
+              "query_count": 20,
+              "top1_accuracy": 0.6499999761581421,
+              "top3_accuracy": 1.0
+            },
+            "Faces": {
+              "query_count": 20,
+              "top1_accuracy": 0.800000011920929,
+              "top3_accuracy": 0.8500000238418579
+            },
+            "Leopards": {
+              "query_count": 20,
+              "top1_accuracy": 1.0,
+              "top3_accuracy": 1.0
+            },
+            "accordion": {
+              "query_count": 20,
+              "top1_accuracy": 0.6000000238418579,
+              "top3_accuracy": 0.949999988079071
+            },
+            "grand_piano": {
+              "query_count": 20,
+              "top1_accuracy": 0.550000011920929,
+              "top3_accuracy": 0.800000011920929
+            },
+            "scorpion": {
+              "query_count": 20,
+              "top1_accuracy": 0.3499999940395355,
+              "top3_accuracy": 0.550000011920929
+            },
+            "sunflower": {
+              "query_count": 20,
+              "top1_accuracy": 0.8999999761581421,
+              "top3_accuracy": 1.0
+            },
+            "watch": {
+              "query_count": 20,
+              "top1_accuracy": 0.30000001192092896,
+              "top3_accuracy": 0.800000011920929
+            },
+            "yin_yang": {
+              "query_count": 20,
+              "top1_accuracy": 0.6000000238418579,
+              "top3_accuracy": 0.6499999761581421
+            }
+          }
+        },
+        "flat_pi_experts": {
+          "system": "optical_student_query_vs_optical_student_gallery",
+          "gallery_aggregation": "mean_prototype",
+          "query_count": 200,
+          "gallery_image_count": 30,
+          "sku_count": 10,
+          "top1_retrieval_accuracy": 0.5849999785423279,
+          "top3_retrieval_accuracy": 0.8050000071525574,
+          "mrr": 0.7156627178192139,
+          "per_sku": {
+            "airplanes": {
+              "query_count": 20,
+              "top1_accuracy": 0.75,
+              "top3_accuracy": 0.75
+            },
+            "Motorbikes": {
+              "query_count": 20,
+              "top1_accuracy": 0.4000000059604645,
+              "top3_accuracy": 1.0
+            },
+            "Faces": {
+              "query_count": 20,
+              "top1_accuracy": 0.800000011920929,
+              "top3_accuracy": 0.8500000238418579
+            },
+            "Leopards": {
+              "query_count": 20,
+              "top1_accuracy": 0.8999999761581421,
+              "top3_accuracy": 0.949999988079071
+            },
+            "accordion": {
+              "query_count": 20,
+              "top1_accuracy": 0.3499999940395355,
+              "top3_accuracy": 0.800000011920929
+            },
+            "grand_piano": {
+              "query_count": 20,
+              "top1_accuracy": 0.5,
+              "top3_accuracy": 0.8999999761581421
+            },
+            "scorpion": {
+              "query_count": 20,
+              "top1_accuracy": 0.30000001192092896,
+              "top3_accuracy": 0.3499999940395355
+            },
+            "sunflower": {
+              "query_count": 20,
+              "top1_accuracy": 0.8500000238418579,
+              "top3_accuracy": 0.8999999761581421
+            },
+            "watch": {
+              "query_count": 20,
+              "top1_accuracy": 0.5,
+              "top3_accuracy": 0.949999988079071
+            },
+            "yin_yang": {
+              "query_count": 20,
+              "top1_accuracy": 0.5,
+              "top3_accuracy": 0.6000000238418579
+            }
+          }
+        }
+      },
+      "counts": {
+        "train": 2525,
+        "validation": 100,
+        "gallery": 30,
+        "test": 200
+      },
+      "optimizer_updates": 1200,
+      "batch_opportunities": 1200,
+      "initial_validation": {
+        "system": "optical_student_query_vs_optical_student_gallery",
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 100,
+        "gallery_image_count": 30,
+        "sku_count": 10,
+        "top1_retrieval_accuracy": 0.41999998688697815,
+        "top3_retrieval_accuracy": 0.7400000095367432,
+        "mrr": 0.6146071553230286,
+        "per_sku": {
+          "airplanes": {
+            "query_count": 10,
+            "top1_accuracy": 0.30000001192092896,
+            "top3_accuracy": 0.6000000238418579
+          },
+          "Motorbikes": {
+            "query_count": 10,
+            "top1_accuracy": 0.20000000298023224,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "Faces": {
+            "query_count": 10,
+            "top1_accuracy": 0.699999988079071,
+            "top3_accuracy": 0.800000011920929
+          },
+          "Leopards": {
+            "query_count": 10,
+            "top1_accuracy": 0.8999999761581421,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "accordion": {
+            "query_count": 10,
+            "top1_accuracy": 0.4000000059604645,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "grand_piano": {
+            "query_count": 10,
+            "top1_accuracy": 0.0,
+            "top3_accuracy": 0.4000000059604645
+          },
+          "scorpion": {
+            "query_count": 10,
+            "top1_accuracy": 0.30000001192092896,
+            "top3_accuracy": 0.4000000059604645
+          },
+          "sunflower": {
+            "query_count": 10,
+            "top1_accuracy": 0.8999999761581421,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "watch": {
+            "query_count": 10,
+            "top1_accuracy": 0.20000000298023224,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "yin_yang": {
+            "query_count": 10,
+            "top1_accuracy": 0.30000001192092896,
+            "top3_accuracy": 0.699999988079071
+          }
+        }
+      },
+      "stage_ends": [
+        {
+          "epoch": 4,
+          "stage": "experts",
+          "mean_task_loss": 1.7124810675779978,
+          "live_validation": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 100,
+            "gallery_image_count": 30,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.8399999737739563,
+            "top3_retrieval_accuracy": 0.9399999976158142,
+            "mrr": 0.8976666331291199,
+            "per_sku": {
+              "airplanes": {
+                "query_count": 10,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 0.800000011920929
+              },
+              "Motorbikes": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "Faces": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "Leopards": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "accordion": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "grand_piano": {
+                "query_count": 10,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 0.699999988079071
+              },
+              "scorpion": {
+                "query_count": 10,
+                "top1_accuracy": 0.5,
+                "top3_accuracy": 1.0
+              },
+              "sunflower": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 1.0
+              },
+              "watch": {
+                "query_count": 10,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 1.0
+              },
+              "yin_yang": {
+                "query_count": 10,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 0.8999999761581421
+              }
+            }
+          },
+          "stage_end_validation_with_initial_experts": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 100,
+            "gallery_image_count": 30,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.41999998688697815,
+            "top3_retrieval_accuracy": 0.7400000095367432,
+            "mrr": 0.6146071553230286,
+            "per_sku": {
+              "airplanes": {
+                "query_count": 10,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "Motorbikes": {
+                "query_count": 10,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "Faces": {
+                "query_count": 10,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 0.800000011920929
+              },
+              "Leopards": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "accordion": {
+                "query_count": 10,
+                "top1_accuracy": 0.4000000059604645,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "grand_piano": {
+                "query_count": 10,
+                "top1_accuracy": 0.0,
+                "top3_accuracy": 0.4000000059604645
+              },
+              "scorpion": {
+                "query_count": 10,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.4000000059604645
+              },
+              "sunflower": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "watch": {
+                "query_count": 10,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "yin_yang": {
+                "query_count": 10,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.699999988079071
+              }
+            }
+          },
+          "expert_phase": {
+            "rms_change_rad": 0.6059632897377014,
+            "per_expert_rms_change_rad": [
+              [
+                0.5473381876945496,
+                0.5442168712615967,
+                0.6090264916419983,
+                0.5077800154685974
+              ],
+              [
+                0.6913999915122986,
+                0.6977745294570923,
+                0.6115416288375854,
+                0.6116542220115662
+              ]
+            ],
+            "max_change_rad": 1.7226934432983398,
+            "dc_power": [
+              [
+                0.11615654826164246,
+                0.12076199799776077,
+                4.874600926996209e-05,
+                0.11424081027507782
+              ],
+              [
+                0.0020447734277695417,
+                0.0021205602679401636,
+                5.0036291213473305e-05,
+                5.194508412387222e-05
+              ]
+            ],
+            "sigmoid_saturated_fraction": 0.0
+          },
+          "expert_selection_counts": {
+            "vision": [
+              1797,
+              1800,
+              0,
+              3
+            ],
+            "language": [
+              1800,
+              1800,
+              0,
+              0
+            ]
+          },
+          "task_gradient_chain": {
+            "task_to_expert": 0.5588605999946594
+          }
+        },
+        {
+          "epoch": 12,
+          "stage": "optics",
+          "mean_task_loss": 2.100679002205531,
+          "live_validation": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 100,
+            "gallery_image_count": 30,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.8399999737739563,
+            "top3_retrieval_accuracy": 0.9100000262260437,
+            "mrr": 0.8929286003112793,
+            "per_sku": {
+              "airplanes": {
+                "query_count": 10,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 0.800000011920929
+              },
+              "Motorbikes": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "Faces": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "Leopards": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "accordion": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 1.0
+              },
+              "grand_piano": {
+                "query_count": 10,
+                "top1_accuracy": 0.6000000238418579,
+                "top3_accuracy": 0.699999988079071
+              },
+              "scorpion": {
+                "query_count": 10,
+                "top1_accuracy": 0.6000000238418579,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "sunflower": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "watch": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 1.0
+              },
+              "yin_yang": {
+                "query_count": 10,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 0.800000011920929
+              }
+            }
+          },
+          "stage_end_validation_with_initial_experts": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 100,
+            "gallery_image_count": 30,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.6000000238418579,
+            "top3_retrieval_accuracy": 0.8399999737739563,
+            "mrr": 0.732452392578125,
+            "per_sku": {
+              "airplanes": {
+                "query_count": 10,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "Motorbikes": {
+                "query_count": 10,
+                "top1_accuracy": 0.4000000059604645,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "Faces": {
+                "query_count": 10,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 1.0
+              },
+              "Leopards": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 1.0
+              },
+              "accordion": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "grand_piano": {
+                "query_count": 10,
+                "top1_accuracy": 0.10000000149011612,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "scorpion": {
+                "query_count": 10,
+                "top1_accuracy": 0.5,
+                "top3_accuracy": 0.800000011920929
+              },
+              "sunflower": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 1.0
+              },
+              "watch": {
+                "query_count": 10,
+                "top1_accuracy": 0.6000000238418579,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "yin_yang": {
+                "query_count": 10,
+                "top1_accuracy": 0.6000000238418579,
+                "top3_accuracy": 0.6000000238418579
+              }
+            }
+          },
+          "expert_phase": {
+            "rms_change_rad": 0.7597267627716064,
+            "per_expert_rms_change_rad": [
+              [
+                0.800546407699585,
+                0.7895081639289856,
+                0.617194414138794,
+                1.0067507028579712
+              ],
+              [
+                0.7668874859809875,
+                0.7758585214614868,
+                0.6198254823684692,
+                0.6201198697090149
+              ]
+            ],
+            "max_change_rad": 3.1412031650543213,
+            "dc_power": [
+              [
+                0.0667022317647934,
+                0.07496363669633865,
+                2.244440189258512e-10,
+                0.026863807812333107
+              ],
+              [
+                1.8517492890168796e-06,
+                1.2593901601576363e-06,
+                1.7887302750096978e-10,
+                5.351203508086044e-11
+              ]
+            ],
+            "sigmoid_saturated_fraction": 0.0
+          },
+          "expert_selection_counts": {
+            "vision": [
+              1120,
+              1161,
+              0,
+              1319
+            ],
+            "language": [
+              1800,
+              1800,
+              0,
+              0
+            ]
+          },
+          "task_gradient_chain": {
+            "task_to_expert": 0.736045241355896
+          }
+        },
+        {
+          "epoch": 20,
+          "stage": "joint",
+          "mean_task_loss": 1.813942587375641,
+          "live_validation": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 100,
+            "gallery_image_count": 30,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.8700000047683716,
+            "top3_retrieval_accuracy": 0.9599999785423279,
+            "mrr": 0.9149166941642761,
+            "per_sku": {
+              "airplanes": {
+                "query_count": 10,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 0.800000011920929
+              },
+              "Motorbikes": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "Faces": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "Leopards": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "accordion": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 1.0
+              },
+              "grand_piano": {
+                "query_count": 10,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "scorpion": {
+                "query_count": 10,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 1.0
+              },
+              "sunflower": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 1.0
+              },
+              "watch": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 1.0
+              },
+              "yin_yang": {
+                "query_count": 10,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 0.8999999761581421
+              }
+            }
+          },
+          "stage_end_validation_with_initial_experts": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 100,
+            "gallery_image_count": 30,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.6899999976158142,
+            "top3_retrieval_accuracy": 0.8399999737739563,
+            "mrr": 0.788789689540863,
+            "per_sku": {
+              "airplanes": {
+                "query_count": 10,
+                "top1_accuracy": 0.5,
+                "top3_accuracy": 0.699999988079071
+              },
+              "Motorbikes": {
+                "query_count": 10,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 1.0
+              },
+              "Faces": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "Leopards": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 1.0
+              },
+              "accordion": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "grand_piano": {
+                "query_count": 10,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "scorpion": {
+                "query_count": 10,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "sunflower": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "watch": {
+                "query_count": 10,
+                "top1_accuracy": 0.5,
+                "top3_accuracy": 0.800000011920929
+              },
+              "yin_yang": {
+                "query_count": 10,
+                "top1_accuracy": 0.6000000238418579,
+                "top3_accuracy": 0.6000000238418579
+              }
+            }
+          },
+          "expert_phase": {
+            "rms_change_rad": 0.8468729257583618,
+            "per_expert_rms_change_rad": [
+              [
+                0.8960971236228943,
+                0.8821043968200684,
+                0.9892770051956177,
+                1.09292471408844
+              ],
+              [
+                0.774919331073761,
+                0.783623993396759,
+                0.6198256015777588,
+                0.6201199293136597
+              ]
+            ],
+            "max_change_rad": 3.1366372108459473,
+            "dc_power": [
+              [
+                0.050071168690919876,
+                0.060167230665683746,
+                0.00027865261654369533,
+                0.016902558505535126
+              ],
+              [
+                8.419578421126062e-07,
+                6.291226668508898e-07,
+                4.071127387029333e-13,
+                2.136729649552388e-13
+              ]
+            ],
+            "sigmoid_saturated_fraction": 0.0
+          },
+          "expert_selection_counts": {
+            "vision": [
+              921,
+              933,
+              840,
+              906
+            ],
+            "language": [
+              1800,
+              1800,
+              0,
+              0
+            ]
+          },
+          "task_gradient_chain": {
+            "task_to_expert": 0.6541514992713928
+          }
+        }
+      ],
+      "export_max_error": 0.0,
+      "generator_trainable": 0,
+      "peak_memory_gib": 7.212334632873535,
+      "elapsed_seconds": 691.9133057445288
+    },
+    {
+      "method": "qwen_frozen",
+      "label": "Frozen Qwen + decoder",
+      "run_id": "20260907_caltech10_heads_qwen_frozen_s42",
+      "device": "NVIDIA GeForce RTX 4090",
+      "selected_epoch": 12,
+      "selected_live_test": {
+        "system": "optical_student_query_vs_optical_student_gallery",
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 200,
+        "gallery_image_count": 30,
+        "sku_count": 10,
+        "top1_retrieval_accuracy": 0.8100000023841858,
+        "top3_retrieval_accuracy": 0.9200000166893005,
+        "mrr": 0.8775535821914673,
+        "per_sku": {
+          "airplanes": {
+            "query_count": 20,
+            "top1_accuracy": 0.8500000238418579,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "Motorbikes": {
+            "query_count": 20,
+            "top1_accuracy": 0.75,
+            "top3_accuracy": 0.949999988079071
+          },
+          "Faces": {
+            "query_count": 20,
+            "top1_accuracy": 0.949999988079071,
+            "top3_accuracy": 0.949999988079071
+          },
+          "Leopards": {
+            "query_count": 20,
+            "top1_accuracy": 1.0,
+            "top3_accuracy": 1.0
+          },
+          "accordion": {
+            "query_count": 20,
+            "top1_accuracy": 0.8500000238418579,
+            "top3_accuracy": 0.949999988079071
+          },
+          "grand_piano": {
+            "query_count": 20,
+            "top1_accuracy": 0.699999988079071,
+            "top3_accuracy": 1.0
+          },
+          "scorpion": {
+            "query_count": 20,
+            "top1_accuracy": 0.3499999940395355,
+            "top3_accuracy": 0.699999988079071
+          },
+          "sunflower": {
+            "query_count": 20,
+            "top1_accuracy": 1.0,
+            "top3_accuracy": 1.0
+          },
+          "watch": {
+            "query_count": 20,
+            "top1_accuracy": 0.8500000238418579,
+            "top3_accuracy": 0.949999988079071
+          },
+          "yin_yang": {
+            "query_count": 20,
+            "top1_accuracy": 0.800000011920929,
+            "top3_accuracy": 0.800000011920929
+          }
+        }
+      },
+      "final_ema_test": {
+        "system": "optical_student_query_vs_optical_student_gallery",
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 200,
+        "gallery_image_count": 30,
+        "sku_count": 10,
+        "top1_retrieval_accuracy": 0.7950000166893005,
+        "top3_retrieval_accuracy": 0.9449999928474426,
+        "mrr": 0.875,
+        "per_sku": {
+          "airplanes": {
+            "query_count": 20,
+            "top1_accuracy": 0.800000011920929,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "Motorbikes": {
+            "query_count": 20,
+            "top1_accuracy": 0.6499999761581421,
+            "top3_accuracy": 1.0
+          },
+          "Faces": {
+            "query_count": 20,
+            "top1_accuracy": 0.949999988079071,
+            "top3_accuracy": 1.0
+          },
+          "Leopards": {
+            "query_count": 20,
+            "top1_accuracy": 1.0,
+            "top3_accuracy": 1.0
+          },
+          "accordion": {
+            "query_count": 20,
+            "top1_accuracy": 0.6499999761581421,
+            "top3_accuracy": 0.949999988079071
+          },
+          "grand_piano": {
+            "query_count": 20,
+            "top1_accuracy": 0.800000011920929,
+            "top3_accuracy": 1.0
+          },
+          "scorpion": {
+            "query_count": 20,
+            "top1_accuracy": 0.5,
+            "top3_accuracy": 0.75
+          },
+          "sunflower": {
+            "query_count": 20,
+            "top1_accuracy": 1.0,
+            "top3_accuracy": 1.0
+          },
+          "watch": {
+            "query_count": 20,
+            "top1_accuracy": 0.75,
+            "top3_accuracy": 1.0
+          },
+          "yin_yang": {
+            "query_count": 20,
+            "top1_accuracy": 0.8500000238418579,
+            "top3_accuracy": 0.8500000238418579
+          }
+        }
+      },
+      "selected_validation": {
+        "system": "optical_student_query_vs_optical_student_gallery",
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 100,
+        "gallery_image_count": 30,
+        "sku_count": 10,
+        "top1_retrieval_accuracy": 0.8199999928474426,
+        "top3_retrieval_accuracy": 0.9300000071525574,
+        "mrr": 0.881845235824585,
+        "per_sku": {
+          "airplanes": {
+            "query_count": 10,
+            "top1_accuracy": 0.800000011920929,
+            "top3_accuracy": 0.800000011920929
+          },
+          "Motorbikes": {
+            "query_count": 10,
+            "top1_accuracy": 0.699999988079071,
+            "top3_accuracy": 1.0
+          },
+          "Faces": {
+            "query_count": 10,
+            "top1_accuracy": 1.0,
+            "top3_accuracy": 1.0
+          },
+          "Leopards": {
+            "query_count": 10,
+            "top1_accuracy": 1.0,
+            "top3_accuracy": 1.0
+          },
+          "accordion": {
+            "query_count": 10,
+            "top1_accuracy": 1.0,
+            "top3_accuracy": 1.0
+          },
+          "grand_piano": {
+            "query_count": 10,
+            "top1_accuracy": 0.6000000238418579,
+            "top3_accuracy": 0.800000011920929
+          },
+          "scorpion": {
+            "query_count": 10,
+            "top1_accuracy": 0.5,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "sunflower": {
+            "query_count": 10,
+            "top1_accuracy": 0.8999999761581421,
+            "top3_accuracy": 1.0
+          },
+          "watch": {
+            "query_count": 10,
+            "top1_accuracy": 0.8999999761581421,
+            "top3_accuracy": 1.0
+          },
+          "yin_yang": {
+            "query_count": 10,
+            "top1_accuracy": 0.800000011920929,
+            "top3_accuracy": 0.800000011920929
+          }
+        }
+      },
+      "selected_phase_rms_rad": 1.2023723125457764,
+      "selected_phase_piston_removed_rms_rad": 1.202317476272583,
+      "mean_cross_expert_update_correlation": 0.01522442139685154,
+      "last_phase_rms_rad": 1.1919841766357422,
+      "fusion": {
+        "vision": [
+          0.5,
+          0.5
+        ],
+        "language": [
+          0.5,
+          0.5
+        ]
+      },
+      "ablations": {
+        "initial_experts": {
+          "system": "optical_student_query_vs_optical_student_gallery",
+          "gallery_aggregation": "mean_prototype",
+          "query_count": 200,
+          "gallery_image_count": 30,
+          "sku_count": 10,
+          "top1_retrieval_accuracy": 0.6650000214576721,
+          "top3_retrieval_accuracy": 0.8450000286102295,
+          "mrr": 0.7759939432144165,
+          "per_sku": {
+            "airplanes": {
+              "query_count": 20,
+              "top1_accuracy": 0.6499999761581421,
+              "top3_accuracy": 0.75
+            },
+            "Motorbikes": {
+              "query_count": 20,
+              "top1_accuracy": 0.6499999761581421,
+              "top3_accuracy": 0.949999988079071
+            },
+            "Faces": {
+              "query_count": 20,
+              "top1_accuracy": 0.8999999761581421,
+              "top3_accuracy": 0.949999988079071
+            },
+            "Leopards": {
+              "query_count": 20,
+              "top1_accuracy": 1.0,
+              "top3_accuracy": 1.0
+            },
+            "accordion": {
+              "query_count": 20,
+              "top1_accuracy": 0.5,
+              "top3_accuracy": 0.800000011920929
+            },
+            "grand_piano": {
+              "query_count": 20,
+              "top1_accuracy": 0.4000000059604645,
+              "top3_accuracy": 1.0
+            },
+            "scorpion": {
+              "query_count": 20,
+              "top1_accuracy": 0.25,
+              "top3_accuracy": 0.44999998807907104
+            },
+            "sunflower": {
+              "query_count": 20,
+              "top1_accuracy": 0.949999988079071,
+              "top3_accuracy": 1.0
+            },
+            "watch": {
+              "query_count": 20,
+              "top1_accuracy": 0.699999988079071,
+              "top3_accuracy": 0.8999999761581421
+            },
+            "yin_yang": {
+              "query_count": 20,
+              "top1_accuracy": 0.6499999761581421,
+              "top3_accuracy": 0.6499999761581421
+            }
+          }
+        },
+        "flat_pi_experts": {
+          "system": "optical_student_query_vs_optical_student_gallery",
+          "gallery_aggregation": "mean_prototype",
+          "query_count": 200,
+          "gallery_image_count": 30,
+          "sku_count": 10,
+          "top1_retrieval_accuracy": 0.5849999785423279,
+          "top3_retrieval_accuracy": 0.800000011920929,
+          "mrr": 0.7134841680526733,
+          "per_sku": {
+            "airplanes": {
+              "query_count": 20,
+              "top1_accuracy": 0.75,
+              "top3_accuracy": 0.75
+            },
+            "Motorbikes": {
+              "query_count": 20,
+              "top1_accuracy": 0.6000000238418579,
+              "top3_accuracy": 0.8500000238418579
+            },
+            "Faces": {
+              "query_count": 20,
+              "top1_accuracy": 0.75,
+              "top3_accuracy": 0.8500000238418579
+            },
+            "Leopards": {
+              "query_count": 20,
+              "top1_accuracy": 1.0,
+              "top3_accuracy": 1.0
+            },
+            "accordion": {
+              "query_count": 20,
+              "top1_accuracy": 0.3499999940395355,
+              "top3_accuracy": 0.699999988079071
+            },
+            "grand_piano": {
+              "query_count": 20,
+              "top1_accuracy": 0.4000000059604645,
+              "top3_accuracy": 0.8999999761581421
+            },
+            "scorpion": {
+              "query_count": 20,
+              "top1_accuracy": 0.10000000149011612,
+              "top3_accuracy": 0.6000000238418579
+            },
+            "sunflower": {
+              "query_count": 20,
+              "top1_accuracy": 0.8999999761581421,
+              "top3_accuracy": 0.8999999761581421
+            },
+            "watch": {
+              "query_count": 20,
+              "top1_accuracy": 0.5,
+              "top3_accuracy": 0.8500000238418579
+            },
+            "yin_yang": {
+              "query_count": 20,
+              "top1_accuracy": 0.5,
+              "top3_accuracy": 0.6000000238418579
+            }
+          }
+        }
+      },
+      "counts": {
+        "train": 2525,
+        "validation": 100,
+        "gallery": 30,
+        "test": 200
+      },
+      "optimizer_updates": 1200,
+      "batch_opportunities": 1200,
+      "initial_validation": {
+        "system": "optical_student_query_vs_optical_student_gallery",
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 100,
+        "gallery_image_count": 30,
+        "sku_count": 10,
+        "top1_retrieval_accuracy": 0.41999998688697815,
+        "top3_retrieval_accuracy": 0.7400000095367432,
+        "mrr": 0.6146071553230286,
+        "per_sku": {
+          "airplanes": {
+            "query_count": 10,
+            "top1_accuracy": 0.30000001192092896,
+            "top3_accuracy": 0.6000000238418579
+          },
+          "Motorbikes": {
+            "query_count": 10,
+            "top1_accuracy": 0.20000000298023224,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "Faces": {
+            "query_count": 10,
+            "top1_accuracy": 0.699999988079071,
+            "top3_accuracy": 0.800000011920929
+          },
+          "Leopards": {
+            "query_count": 10,
+            "top1_accuracy": 0.8999999761581421,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "accordion": {
+            "query_count": 10,
+            "top1_accuracy": 0.4000000059604645,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "grand_piano": {
+            "query_count": 10,
+            "top1_accuracy": 0.0,
+            "top3_accuracy": 0.4000000059604645
+          },
+          "scorpion": {
+            "query_count": 10,
+            "top1_accuracy": 0.30000001192092896,
+            "top3_accuracy": 0.4000000059604645
+          },
+          "sunflower": {
+            "query_count": 10,
+            "top1_accuracy": 0.8999999761581421,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "watch": {
+            "query_count": 10,
+            "top1_accuracy": 0.20000000298023224,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "yin_yang": {
+            "query_count": 10,
+            "top1_accuracy": 0.30000001192092896,
+            "top3_accuracy": 0.699999988079071
+          }
+        }
+      },
+      "stage_ends": [
+        {
+          "epoch": 4,
+          "stage": "experts",
+          "mean_task_loss": 3.270888113975525,
+          "live_validation": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 100,
+            "gallery_image_count": 30,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.699999988079071,
+            "top3_retrieval_accuracy": 0.8600000143051147,
+            "mrr": 0.7969722151756287,
+            "per_sku": {
+              "airplanes": {
+                "query_count": 10,
+                "top1_accuracy": 0.6000000238418579,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "Motorbikes": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "Faces": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "Leopards": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "accordion": {
+                "query_count": 10,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 1.0
+              },
+              "grand_piano": {
+                "query_count": 10,
+                "top1_accuracy": 0.10000000149011612,
+                "top3_accuracy": 0.5
+              },
+              "scorpion": {
+                "query_count": 10,
+                "top1_accuracy": 0.4000000059604645,
+                "top3_accuracy": 0.5
+              },
+              "sunflower": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "watch": {
+                "query_count": 10,
+                "top1_accuracy": 0.5,
+                "top3_accuracy": 1.0
+              },
+              "yin_yang": {
+                "query_count": 10,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 0.800000011920929
+              }
+            }
+          },
+          "stage_end_validation_with_initial_experts": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 100,
+            "gallery_image_count": 30,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.41999998688697815,
+            "top3_retrieval_accuracy": 0.7400000095367432,
+            "mrr": 0.6146071553230286,
+            "per_sku": {
+              "airplanes": {
+                "query_count": 10,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "Motorbikes": {
+                "query_count": 10,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "Faces": {
+                "query_count": 10,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 0.800000011920929
+              },
+              "Leopards": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "accordion": {
+                "query_count": 10,
+                "top1_accuracy": 0.4000000059604645,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "grand_piano": {
+                "query_count": 10,
+                "top1_accuracy": 0.0,
+                "top3_accuracy": 0.4000000059604645
+              },
+              "scorpion": {
+                "query_count": 10,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.4000000059604645
+              },
+              "sunflower": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "watch": {
+                "query_count": 10,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "yin_yang": {
+                "query_count": 10,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.699999988079071
+              }
+            }
+          },
+          "expert_phase": {
+            "rms_change_rad": 1.115868091583252,
+            "per_expert_rms_change_rad": [
+              [
+                0.9310527443885803,
+                0.7954441905021667,
+                1.5053606033325195,
+                0.6756511926651001
+              ],
+              [
+                0.7694741487503052,
+                0.7728027701377869,
+                1.505070686340332,
+                1.511467695236206
+              ]
+            ],
+            "max_change_rad": 2.797903299331665,
+            "dc_power": [
+              [
+                0.09886974841356277,
+                0.13483752310276031,
+                5.8770943724084646e-05,
+                0.16341577470302582
+              ],
+              [
+                0.14088740944862366,
+                0.13960957527160645,
+                5.5291264288825914e-05,
+                6.486844358732924e-05
+              ]
+            ],
+            "sigmoid_saturated_fraction": 0.0
+          },
+          "expert_selection_counts": {
+            "vision": [
+              1797,
+              1800,
+              0,
+              3
+            ],
+            "language": [
+              1800,
+              1800,
+              0,
+              0
+            ]
+          },
+          "task_gradient_chain": {
+            "task_to_expert": 0.7078823447227478
+          }
+        },
+        {
+          "epoch": 12,
+          "stage": "optics",
+          "mean_task_loss": 2.357777053117752,
+          "live_validation": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 100,
+            "gallery_image_count": 30,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.8199999928474426,
+            "top3_retrieval_accuracy": 0.9300000071525574,
+            "mrr": 0.881845235824585,
+            "per_sku": {
+              "airplanes": {
+                "query_count": 10,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 0.800000011920929
+              },
+              "Motorbikes": {
+                "query_count": 10,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 1.0
+              },
+              "Faces": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "Leopards": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "accordion": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "grand_piano": {
+                "query_count": 10,
+                "top1_accuracy": 0.6000000238418579,
+                "top3_accuracy": 0.800000011920929
+              },
+              "scorpion": {
+                "query_count": 10,
+                "top1_accuracy": 0.5,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "sunflower": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 1.0
+              },
+              "watch": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 1.0
+              },
+              "yin_yang": {
+                "query_count": 10,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 0.800000011920929
+              }
+            }
+          },
+          "stage_end_validation_with_initial_experts": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 100,
+            "gallery_image_count": 30,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.6600000262260437,
+            "top3_retrieval_accuracy": 0.8600000143051147,
+            "mrr": 0.7731190323829651,
+            "per_sku": {
+              "airplanes": {
+                "query_count": 10,
+                "top1_accuracy": 0.5,
+                "top3_accuracy": 0.699999988079071
+              },
+              "Motorbikes": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 1.0
+              },
+              "Faces": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "Leopards": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "accordion": {
+                "query_count": 10,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 1.0
+              },
+              "grand_piano": {
+                "query_count": 10,
+                "top1_accuracy": 0.10000000149011612,
+                "top3_accuracy": 0.800000011920929
+              },
+              "scorpion": {
+                "query_count": 10,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "sunflower": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "watch": {
+                "query_count": 10,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 1.0
+              },
+              "yin_yang": {
+                "query_count": 10,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 0.699999988079071
+              }
+            }
+          },
+          "expert_phase": {
+            "rms_change_rad": 1.2023723125457764,
+            "per_expert_rms_change_rad": [
+              [
+                1.0185821056365967,
+                0.9026170969009399,
+                1.5489786863327026,
+                1.1735687255859375
+              ],
+              [
+                0.8448919057846069,
+                0.8652820587158203,
+                1.4918901920318604,
+                1.4994919300079346
+              ]
+            ],
+            "max_change_rad": 3.141134262084961,
+            "dc_power": [
+              [
+                0.07765447348356247,
+                0.11003199964761734,
+                0.0007421418558806181,
+                0.04411403089761734
+              ],
+              [
+                0.12293346226215363,
+                0.1154865100979805,
+                1.254482953072511e-07,
+                9.671556426837924e-07
+              ]
+            ],
+            "sigmoid_saturated_fraction": 0.0002765266108326614
+          },
+          "expert_selection_counts": {
+            "vision": [
+              838,
+              1262,
+              630,
+              870
+            ],
+            "language": [
+              1800,
+              1800,
+              0,
+              0
+            ]
+          },
+          "task_gradient_chain": {
+            "task_to_expert": 1.1266753673553467
+          }
+        },
+        {
+          "epoch": 20,
+          "stage": "joint",
+          "mean_task_loss": 2.005835815270742,
+          "live_validation": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 100,
+            "gallery_image_count": 30,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.800000011920929,
+            "top3_retrieval_accuracy": 0.9200000166893005,
+            "mrr": 0.8693452477455139,
+            "per_sku": {
+              "airplanes": {
+                "query_count": 10,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 0.800000011920929
+              },
+              "Motorbikes": {
+                "query_count": 10,
+                "top1_accuracy": 0.5,
+                "top3_accuracy": 1.0
+              },
+              "Faces": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "Leopards": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "accordion": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "grand_piano": {
+                "query_count": 10,
+                "top1_accuracy": 0.5,
+                "top3_accuracy": 0.800000011920929
+              },
+              "scorpion": {
+                "query_count": 10,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "sunflower": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "watch": {
+                "query_count": 10,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 1.0
+              },
+              "yin_yang": {
+                "query_count": 10,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 0.800000011920929
+              }
+            }
+          },
+          "stage_end_validation_with_initial_experts": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 100,
+            "gallery_image_count": 30,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.7400000095367432,
+            "top3_retrieval_accuracy": 0.8899999856948853,
+            "mrr": 0.8263729810714722,
+            "per_sku": {
+              "airplanes": {
+                "query_count": 10,
+                "top1_accuracy": 0.6000000238418579,
+                "top3_accuracy": 0.699999988079071
+              },
+              "Motorbikes": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "Faces": {
+                "query_count": 10,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "Leopards": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "accordion": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 1.0
+              },
+              "grand_piano": {
+                "query_count": 10,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.800000011920929
+              },
+              "scorpion": {
+                "query_count": 10,
+                "top1_accuracy": 0.5,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "sunflower": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 1.0
+              },
+              "watch": {
+                "query_count": 10,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "yin_yang": {
+                "query_count": 10,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 0.699999988079071
+              }
+            }
+          },
+          "expert_phase": {
+            "rms_change_rad": 1.1919841766357422,
+            "per_expert_rms_change_rad": [
+              [
+                1.0254384279251099,
+                0.8591353297233582,
+                1.4887138605117798,
+                1.2215107679367065
+              ],
+              [
+                0.8326554894447327,
+                0.8795685768127441,
+                1.4796099662780762,
+                1.4874179363250732
+              ]
+            ],
+            "max_change_rad": 3.1415529251098633,
+            "dc_power": [
+              [
+                0.07633081078529358,
+                0.12070920318365097,
+                0.0005899121752008796,
+                0.03526360169053078
+              ],
+              [
+                0.12671276926994324,
+                0.11189761012792587,
+                4.221512426738627e-05,
+                3.977389496867545e-05
+              ]
+            ],
+            "sigmoid_saturated_fraction": 0.0003437898412812501
+          },
+          "expert_selection_counts": {
+            "vision": [
+              920,
+              850,
+              914,
+              916
+            ],
+            "language": [
+              1800,
+              1800,
+              0,
+              0
+            ]
+          },
+          "task_gradient_chain": {
+            "task_to_expert": 1.3207567930221558
+          }
+        }
+      ],
+      "export_max_error": 0.0,
+      "generator_trainable": 572416,
+      "peak_memory_gib": 10.425568580627441,
+      "elapsed_seconds": 816.979070276022
+    },
+    {
+      "method": "qwen_lora",
+      "label": "Qwen LoRA + decoder",
+      "run_id": "20260907_caltech10_heads_qwen_lora_s42",
+      "device": "NVIDIA GeForce RTX 4090",
+      "selected_epoch": 20,
+      "selected_live_test": {
+        "system": "optical_student_query_vs_optical_student_gallery",
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 200,
+        "gallery_image_count": 30,
+        "sku_count": 10,
+        "top1_retrieval_accuracy": 0.8450000286102295,
+        "top3_retrieval_accuracy": 0.9649999737739563,
+        "mrr": 0.9024285674095154,
+        "per_sku": {
+          "airplanes": {
+            "query_count": 20,
+            "top1_accuracy": 0.949999988079071,
+            "top3_accuracy": 1.0
+          },
+          "Motorbikes": {
+            "query_count": 20,
+            "top1_accuracy": 0.800000011920929,
+            "top3_accuracy": 1.0
+          },
+          "Faces": {
+            "query_count": 20,
+            "top1_accuracy": 1.0,
+            "top3_accuracy": 1.0
+          },
+          "Leopards": {
+            "query_count": 20,
+            "top1_accuracy": 1.0,
+            "top3_accuracy": 1.0
+          },
+          "accordion": {
+            "query_count": 20,
+            "top1_accuracy": 0.8999999761581421,
+            "top3_accuracy": 0.949999988079071
+          },
+          "grand_piano": {
+            "query_count": 20,
+            "top1_accuracy": 0.800000011920929,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "scorpion": {
+            "query_count": 20,
+            "top1_accuracy": 0.4000000059604645,
+            "top3_accuracy": 0.949999988079071
+          },
+          "sunflower": {
+            "query_count": 20,
+            "top1_accuracy": 0.949999988079071,
+            "top3_accuracy": 1.0
+          },
+          "watch": {
+            "query_count": 20,
+            "top1_accuracy": 0.800000011920929,
+            "top3_accuracy": 1.0
+          },
+          "yin_yang": {
+            "query_count": 20,
+            "top1_accuracy": 0.8500000238418579,
+            "top3_accuracy": 0.8500000238418579
+          }
+        }
+      },
+      "final_ema_test": {
+        "system": "optical_student_query_vs_optical_student_gallery",
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 200,
+        "gallery_image_count": 30,
+        "sku_count": 10,
+        "top1_retrieval_accuracy": 0.8349999785423279,
+        "top3_retrieval_accuracy": 0.9549999833106995,
+        "mrr": 0.8962975144386292,
+        "per_sku": {
+          "airplanes": {
+            "query_count": 20,
+            "top1_accuracy": 0.8999999761581421,
+            "top3_accuracy": 0.949999988079071
+          },
+          "Motorbikes": {
+            "query_count": 20,
+            "top1_accuracy": 0.800000011920929,
+            "top3_accuracy": 1.0
+          },
+          "Faces": {
+            "query_count": 20,
+            "top1_accuracy": 1.0,
+            "top3_accuracy": 1.0
+          },
+          "Leopards": {
+            "query_count": 20,
+            "top1_accuracy": 1.0,
+            "top3_accuracy": 1.0
+          },
+          "accordion": {
+            "query_count": 20,
+            "top1_accuracy": 0.8999999761581421,
+            "top3_accuracy": 0.949999988079071
+          },
+          "grand_piano": {
+            "query_count": 20,
+            "top1_accuracy": 0.75,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "scorpion": {
+            "query_count": 20,
+            "top1_accuracy": 0.4000000059604645,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "sunflower": {
+            "query_count": 20,
+            "top1_accuracy": 0.949999988079071,
+            "top3_accuracy": 1.0
+          },
+          "watch": {
+            "query_count": 20,
+            "top1_accuracy": 0.800000011920929,
+            "top3_accuracy": 1.0
+          },
+          "yin_yang": {
+            "query_count": 20,
+            "top1_accuracy": 0.8500000238418579,
+            "top3_accuracy": 0.8500000238418579
+          }
+        }
+      },
+      "selected_validation": {
+        "system": "optical_student_query_vs_optical_student_gallery",
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 100,
+        "gallery_image_count": 30,
+        "sku_count": 10,
+        "top1_retrieval_accuracy": 0.8600000143051147,
+        "top3_retrieval_accuracy": 0.9200000166893005,
+        "mrr": 0.903083324432373,
+        "per_sku": {
+          "airplanes": {
+            "query_count": 10,
+            "top1_accuracy": 0.800000011920929,
+            "top3_accuracy": 0.800000011920929
+          },
+          "Motorbikes": {
+            "query_count": 10,
+            "top1_accuracy": 1.0,
+            "top3_accuracy": 1.0
+          },
+          "Faces": {
+            "query_count": 10,
+            "top1_accuracy": 1.0,
+            "top3_accuracy": 1.0
+          },
+          "Leopards": {
+            "query_count": 10,
+            "top1_accuracy": 1.0,
+            "top3_accuracy": 1.0
+          },
+          "accordion": {
+            "query_count": 10,
+            "top1_accuracy": 1.0,
+            "top3_accuracy": 1.0
+          },
+          "grand_piano": {
+            "query_count": 10,
+            "top1_accuracy": 0.6000000238418579,
+            "top3_accuracy": 0.800000011920929
+          },
+          "scorpion": {
+            "query_count": 10,
+            "top1_accuracy": 0.699999988079071,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "sunflower": {
+            "query_count": 10,
+            "top1_accuracy": 0.8999999761581421,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "watch": {
+            "query_count": 10,
+            "top1_accuracy": 0.800000011920929,
+            "top3_accuracy": 1.0
+          },
+          "yin_yang": {
+            "query_count": 10,
+            "top1_accuracy": 0.800000011920929,
+            "top3_accuracy": 0.800000011920929
+          }
+        }
+      },
+      "selected_phase_rms_rad": 1.270769476890564,
+      "selected_phase_piston_removed_rms_rad": 1.2706749439239502,
+      "mean_cross_expert_update_correlation": 0.035095538944005966,
+      "last_phase_rms_rad": 1.270769476890564,
+      "fusion": {
+        "vision": [
+          0.49911290407180786,
+          0.4993881583213806
+        ],
+        "language": [
+          0.49849042296409607,
+          0.4986923038959503
+        ]
+      },
+      "ablations": {
+        "initial_experts": {
+          "system": "optical_student_query_vs_optical_student_gallery",
+          "gallery_aggregation": "mean_prototype",
+          "query_count": 200,
+          "gallery_image_count": 30,
+          "sku_count": 10,
+          "top1_retrieval_accuracy": 0.699999988079071,
+          "top3_retrieval_accuracy": 0.8500000238418579,
+          "mrr": 0.7968630790710449,
+          "per_sku": {
+            "airplanes": {
+              "query_count": 20,
+              "top1_accuracy": 0.699999988079071,
+              "top3_accuracy": 0.75
+            },
+            "Motorbikes": {
+              "query_count": 20,
+              "top1_accuracy": 0.75,
+              "top3_accuracy": 1.0
+            },
+            "Faces": {
+              "query_count": 20,
+              "top1_accuracy": 0.8999999761581421,
+              "top3_accuracy": 0.8999999761581421
+            },
+            "Leopards": {
+              "query_count": 20,
+              "top1_accuracy": 0.949999988079071,
+              "top3_accuracy": 1.0
+            },
+            "accordion": {
+              "query_count": 20,
+              "top1_accuracy": 0.699999988079071,
+              "top3_accuracy": 0.8999999761581421
+            },
+            "grand_piano": {
+              "query_count": 20,
+              "top1_accuracy": 0.6499999761581421,
+              "top3_accuracy": 0.8500000238418579
+            },
+            "scorpion": {
+              "query_count": 20,
+              "top1_accuracy": 0.25,
+              "top3_accuracy": 0.550000011920929
+            },
+            "sunflower": {
+              "query_count": 20,
+              "top1_accuracy": 0.949999988079071,
+              "top3_accuracy": 0.949999988079071
+            },
+            "watch": {
+              "query_count": 20,
+              "top1_accuracy": 0.550000011920929,
+              "top3_accuracy": 0.8999999761581421
+            },
+            "yin_yang": {
+              "query_count": 20,
+              "top1_accuracy": 0.6000000238418579,
+              "top3_accuracy": 0.699999988079071
+            }
+          }
+        },
+        "flat_pi_experts": {
+          "system": "optical_student_query_vs_optical_student_gallery",
+          "gallery_aggregation": "mean_prototype",
+          "query_count": 200,
+          "gallery_image_count": 30,
+          "sku_count": 10,
+          "top1_retrieval_accuracy": 0.6100000143051147,
+          "top3_retrieval_accuracy": 0.824999988079071,
+          "mrr": 0.7439622282981873,
+          "per_sku": {
+            "airplanes": {
+              "query_count": 20,
+              "top1_accuracy": 0.75,
+              "top3_accuracy": 0.75
+            },
+            "Motorbikes": {
+              "query_count": 20,
+              "top1_accuracy": 0.75,
+              "top3_accuracy": 1.0
+            },
+            "Faces": {
+              "query_count": 20,
+              "top1_accuracy": 0.699999988079071,
+              "top3_accuracy": 0.8500000238418579
+            },
+            "Leopards": {
+              "query_count": 20,
+              "top1_accuracy": 0.949999988079071,
+              "top3_accuracy": 1.0
+            },
+            "accordion": {
+              "query_count": 20,
+              "top1_accuracy": 0.30000001192092896,
+              "top3_accuracy": 0.8500000238418579
+            },
+            "grand_piano": {
+              "query_count": 20,
+              "top1_accuracy": 0.4000000059604645,
+              "top3_accuracy": 0.699999988079071
+            },
+            "scorpion": {
+              "query_count": 20,
+              "top1_accuracy": 0.25,
+              "top3_accuracy": 0.44999998807907104
+            },
+            "sunflower": {
+              "query_count": 20,
+              "top1_accuracy": 0.8999999761581421,
+              "top3_accuracy": 0.949999988079071
+            },
+            "watch": {
+              "query_count": 20,
+              "top1_accuracy": 0.6000000238418579,
+              "top3_accuracy": 1.0
+            },
+            "yin_yang": {
+              "query_count": 20,
+              "top1_accuracy": 0.5,
+              "top3_accuracy": 0.699999988079071
+            }
+          }
+        },
+        "lora_disabled_same_decoder": {
+          "system": "optical_student_query_vs_optical_student_gallery",
+          "gallery_aggregation": "mean_prototype",
+          "query_count": 200,
+          "gallery_image_count": 30,
+          "sku_count": 10,
+          "top1_retrieval_accuracy": 0.8450000286102295,
+          "top3_retrieval_accuracy": 0.9649999737739563,
+          "mrr": 0.9032618999481201,
+          "per_sku": {
+            "airplanes": {
+              "query_count": 20,
+              "top1_accuracy": 0.949999988079071,
+              "top3_accuracy": 1.0
+            },
+            "Motorbikes": {
+              "query_count": 20,
+              "top1_accuracy": 0.800000011920929,
+              "top3_accuracy": 1.0
+            },
+            "Faces": {
+              "query_count": 20,
+              "top1_accuracy": 1.0,
+              "top3_accuracy": 1.0
+            },
+            "Leopards": {
+              "query_count": 20,
+              "top1_accuracy": 1.0,
+              "top3_accuracy": 1.0
+            },
+            "accordion": {
+              "query_count": 20,
+              "top1_accuracy": 0.8999999761581421,
+              "top3_accuracy": 0.949999988079071
+            },
+            "grand_piano": {
+              "query_count": 20,
+              "top1_accuracy": 0.800000011920929,
+              "top3_accuracy": 0.8999999761581421
+            },
+            "scorpion": {
+              "query_count": 20,
+              "top1_accuracy": 0.4000000059604645,
+              "top3_accuracy": 0.949999988079071
+            },
+            "sunflower": {
+              "query_count": 20,
+              "top1_accuracy": 0.949999988079071,
+              "top3_accuracy": 1.0
+            },
+            "watch": {
+              "query_count": 20,
+              "top1_accuracy": 0.800000011920929,
+              "top3_accuracy": 1.0
+            },
+            "yin_yang": {
+              "query_count": 20,
+              "top1_accuracy": 0.8500000238418579,
+              "top3_accuracy": 0.8500000238418579
+            }
+          }
+        },
+        "lora_phase_effect": {
+          "rms_change_rad": 0.004566120449453592,
+          "per_expert_rms_change_rad": [
+            [
+              0.005808231886476278,
+              0.0018660440109670162,
+              0.0032683033496141434,
+              0.005093180108815432
+            ],
+            [
+              0.006574918050318956,
+              0.0021676437463611364,
+              0.004013209603726864,
+              0.005377881694585085
+            ]
+          ],
+          "max_change_rad": 0.024107933044433594,
+          "dc_power": [
+            [
+              0.07277422398328781,
+              0.07920081168413162,
+              0.008416603319346905,
+              0.01784403808414936
+            ],
+            [
+              0.10821830481290817,
+              0.1082981750369072,
+              0.00021513992396648973,
+              0.0002226882497780025
+            ]
+          ],
+          "sigmoid_saturated_fraction": 0.00041105307172983885
+        }
+      },
+      "counts": {
+        "train": 2525,
+        "validation": 100,
+        "gallery": 30,
+        "test": 200
+      },
+      "optimizer_updates": 1200,
+      "batch_opportunities": 1200,
+      "initial_validation": {
+        "system": "optical_student_query_vs_optical_student_gallery",
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 100,
+        "gallery_image_count": 30,
+        "sku_count": 10,
+        "top1_retrieval_accuracy": 0.41999998688697815,
+        "top3_retrieval_accuracy": 0.7400000095367432,
+        "mrr": 0.6146071553230286,
+        "per_sku": {
+          "airplanes": {
+            "query_count": 10,
+            "top1_accuracy": 0.30000001192092896,
+            "top3_accuracy": 0.6000000238418579
+          },
+          "Motorbikes": {
+            "query_count": 10,
+            "top1_accuracy": 0.20000000298023224,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "Faces": {
+            "query_count": 10,
+            "top1_accuracy": 0.699999988079071,
+            "top3_accuracy": 0.800000011920929
+          },
+          "Leopards": {
+            "query_count": 10,
+            "top1_accuracy": 0.8999999761581421,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "accordion": {
+            "query_count": 10,
+            "top1_accuracy": 0.4000000059604645,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "grand_piano": {
+            "query_count": 10,
+            "top1_accuracy": 0.0,
+            "top3_accuracy": 0.4000000059604645
+          },
+          "scorpion": {
+            "query_count": 10,
+            "top1_accuracy": 0.30000001192092896,
+            "top3_accuracy": 0.4000000059604645
+          },
+          "sunflower": {
+            "query_count": 10,
+            "top1_accuracy": 0.8999999761581421,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "watch": {
+            "query_count": 10,
+            "top1_accuracy": 0.20000000298023224,
+            "top3_accuracy": 0.8999999761581421
+          },
+          "yin_yang": {
+            "query_count": 10,
+            "top1_accuracy": 0.30000001192092896,
+            "top3_accuracy": 0.699999988079071
+          }
+        }
+      },
+      "stage_ends": [
+        {
+          "epoch": 4,
+          "stage": "experts",
+          "mean_task_loss": 3.20437931617101,
+          "live_validation": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 100,
+            "gallery_image_count": 30,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.7099999785423279,
+            "top3_retrieval_accuracy": 0.8799999952316284,
+            "mrr": 0.8069682121276855,
+            "per_sku": {
+              "airplanes": {
+                "query_count": 10,
+                "top1_accuracy": 0.6000000238418579,
+                "top3_accuracy": 0.800000011920929
+              },
+              "Motorbikes": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 1.0
+              },
+              "Faces": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "Leopards": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "accordion": {
+                "query_count": 10,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 1.0
+              },
+              "grand_piano": {
+                "query_count": 10,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "scorpion": {
+                "query_count": 10,
+                "top1_accuracy": 0.5,
+                "top3_accuracy": 0.800000011920929
+              },
+              "sunflower": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "watch": {
+                "query_count": 10,
+                "top1_accuracy": 0.4000000059604645,
+                "top3_accuracy": 1.0
+              },
+              "yin_yang": {
+                "query_count": 10,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 0.699999988079071
+              }
+            }
+          },
+          "stage_end_validation_with_initial_experts": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 100,
+            "gallery_image_count": 30,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.41999998688697815,
+            "top3_retrieval_accuracy": 0.7400000095367432,
+            "mrr": 0.6146071553230286,
+            "per_sku": {
+              "airplanes": {
+                "query_count": 10,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "Motorbikes": {
+                "query_count": 10,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "Faces": {
+                "query_count": 10,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 0.800000011920929
+              },
+              "Leopards": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "accordion": {
+                "query_count": 10,
+                "top1_accuracy": 0.4000000059604645,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "grand_piano": {
+                "query_count": 10,
+                "top1_accuracy": 0.0,
+                "top3_accuracy": 0.4000000059604645
+              },
+              "scorpion": {
+                "query_count": 10,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.4000000059604645
+              },
+              "sunflower": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "watch": {
+                "query_count": 10,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "yin_yang": {
+                "query_count": 10,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.699999988079071
+              }
+            }
+          },
+          "expert_phase": {
+            "rms_change_rad": 1.1145374774932861,
+            "per_expert_rms_change_rad": [
+              [
+                0.8981714248657227,
+                0.842369556427002,
+                1.5032498836517334,
+                0.6812203526496887
+              ],
+              [
+                0.7803052067756653,
+                0.7505517601966858,
+                1.499388575553894,
+                1.5089930295944214
+              ]
+            ],
+            "max_change_rad": 2.784775972366333,
+            "dc_power": [
+              [
+                0.10722249001264572,
+                0.12407390028238297,
+                2.9082455512252636e-05,
+                0.16240224242210388
+              ],
+              [
+                0.13721348345279694,
+                0.1445590704679489,
+                1.3881331142329145e-05,
+                3.7480334867723286e-05
+              ]
+            ],
+            "sigmoid_saturated_fraction": 0.0
+          },
+          "expert_selection_counts": {
+            "vision": [
+              1797,
+              1800,
+              0,
+              3
+            ],
+            "language": [
+              1800,
+              1800,
+              0,
+              0
+            ]
+          },
+          "task_gradient_chain": {
+            "task_to_expert": 0.6886651515960693,
+            "task_to_lora_b": 0.10268548130989075
+          }
+        },
+        {
+          "epoch": 12,
+          "stage": "optics",
+          "mean_task_loss": 2.310839213927587,
+          "live_validation": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 100,
+            "gallery_image_count": 30,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.8199999928474426,
+            "top3_retrieval_accuracy": 0.9200000166893005,
+            "mrr": 0.879611074924469,
+            "per_sku": {
+              "airplanes": {
+                "query_count": 10,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 0.800000011920929
+              },
+              "Motorbikes": {
+                "query_count": 10,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 1.0
+              },
+              "Faces": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "Leopards": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "accordion": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "grand_piano": {
+                "query_count": 10,
+                "top1_accuracy": 0.6000000238418579,
+                "top3_accuracy": 0.699999988079071
+              },
+              "scorpion": {
+                "query_count": 10,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "sunflower": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 1.0
+              },
+              "watch": {
+                "query_count": 10,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 1.0
+              },
+              "yin_yang": {
+                "query_count": 10,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 0.800000011920929
+              }
+            }
+          },
+          "stage_end_validation_with_initial_experts": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 100,
+            "gallery_image_count": 30,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.6100000143051147,
+            "top3_retrieval_accuracy": 0.8600000143051147,
+            "mrr": 0.7524444460868835,
+            "per_sku": {
+              "airplanes": {
+                "query_count": 10,
+                "top1_accuracy": 0.4000000059604645,
+                "top3_accuracy": 0.699999988079071
+              },
+              "Motorbikes": {
+                "query_count": 10,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "Faces": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 1.0
+              },
+              "Leopards": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 1.0
+              },
+              "accordion": {
+                "query_count": 10,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 1.0
+              },
+              "grand_piano": {
+                "query_count": 10,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.699999988079071
+              },
+              "scorpion": {
+                "query_count": 10,
+                "top1_accuracy": 0.5,
+                "top3_accuracy": 0.800000011920929
+              },
+              "sunflower": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "watch": {
+                "query_count": 10,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "yin_yang": {
+                "query_count": 10,
+                "top1_accuracy": 0.5,
+                "top3_accuracy": 0.699999988079071
+              }
+            }
+          },
+          "expert_phase": {
+            "rms_change_rad": 1.2117975950241089,
+            "per_expert_rms_change_rad": [
+              [
+                1.0696028470993042,
+                1.0086336135864258,
+                1.6879280805587769,
+                0.8218315839767456
+              ],
+              [
+                0.8975656032562256,
+                0.8835532069206238,
+                1.4933425188064575,
+                1.498453974723816
+              ]
+            ],
+            "max_change_rad": 3.141584873199463,
+            "dc_power": [
+              [
+                0.06658423691987991,
+                0.0837501510977745,
+                0.013687524944543839,
+                0.12731915712356567
+              ],
+              [
+                0.10884526371955872,
+                0.11264091730117798,
+                3.603645026828417e-08,
+                7.408324620428175e-08
+              ]
+            ],
+            "sigmoid_saturated_fraction": 0.0005281409248709679
+          },
+          "expert_selection_counts": {
+            "vision": [
+              1176,
+              1125,
+              1298,
+              1
+            ],
+            "language": [
+              1800,
+              1800,
+              0,
+              0
+            ]
+          },
+          "task_gradient_chain": {
+            "task_to_expert": 1.0144351720809937,
+            "task_to_lora_b": 0.02845195308327675
+          }
+        },
+        {
+          "epoch": 20,
+          "stage": "joint",
+          "mean_task_loss": 1.957974797487259,
+          "live_validation": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 100,
+            "gallery_image_count": 30,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.8600000143051147,
+            "top3_retrieval_accuracy": 0.9200000166893005,
+            "mrr": 0.903083324432373,
+            "per_sku": {
+              "airplanes": {
+                "query_count": 10,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 0.800000011920929
+              },
+              "Motorbikes": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "Faces": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "Leopards": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "accordion": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "grand_piano": {
+                "query_count": 10,
+                "top1_accuracy": 0.6000000238418579,
+                "top3_accuracy": 0.800000011920929
+              },
+              "scorpion": {
+                "query_count": 10,
+                "top1_accuracy": 0.699999988079071,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "sunflower": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "watch": {
+                "query_count": 10,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 1.0
+              },
+              "yin_yang": {
+                "query_count": 10,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 0.800000011920929
+              }
+            }
+          },
+          "stage_end_validation_with_initial_experts": {
+            "system": "optical_student_query_vs_optical_student_gallery",
+            "gallery_aggregation": "mean_prototype",
+            "query_count": 100,
+            "gallery_image_count": 30,
+            "sku_count": 10,
+            "top1_retrieval_accuracy": 0.6399999856948853,
+            "top3_retrieval_accuracy": 0.8600000143051147,
+            "mrr": 0.7578571438789368,
+            "per_sku": {
+              "airplanes": {
+                "query_count": 10,
+                "top1_accuracy": 0.5,
+                "top3_accuracy": 0.699999988079071
+              },
+              "Motorbikes": {
+                "query_count": 10,
+                "top1_accuracy": 1.0,
+                "top3_accuracy": 1.0
+              },
+              "Faces": {
+                "query_count": 10,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "Leopards": {
+                "query_count": 10,
+                "top1_accuracy": 0.800000011920929,
+                "top3_accuracy": 1.0
+              },
+              "accordion": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 1.0
+              },
+              "grand_piano": {
+                "query_count": 10,
+                "top1_accuracy": 0.20000000298023224,
+                "top3_accuracy": 0.6000000238418579
+              },
+              "scorpion": {
+                "query_count": 10,
+                "top1_accuracy": 0.30000001192092896,
+                "top3_accuracy": 0.800000011920929
+              },
+              "sunflower": {
+                "query_count": 10,
+                "top1_accuracy": 0.8999999761581421,
+                "top3_accuracy": 0.8999999761581421
+              },
+              "watch": {
+                "query_count": 10,
+                "top1_accuracy": 0.5,
+                "top3_accuracy": 1.0
+              },
+              "yin_yang": {
+                "query_count": 10,
+                "top1_accuracy": 0.5,
+                "top3_accuracy": 0.699999988079071
+              }
+            }
+          },
+          "expert_phase": {
+            "rms_change_rad": 1.270769476890564,
+            "per_expert_rms_change_rad": [
+              [
+                1.0449711084365845,
+                1.029019832611084,
+                1.6543880701065063,
+                1.3379325866699219
+              ],
+              [
+                0.9021123647689819,
+                0.9056501984596252,
+                1.5148334503173828,
+                1.520592451095581
+              ]
+            ],
+            "max_change_rad": 3.1415910720825195,
+            "dc_power": [
+              [
+                0.07285948097705841,
+                0.07903851568698883,
+                0.008372800424695015,
+                0.017917923629283905
+              ],
+              [
+                0.10803962498903275,
+                0.10811534523963928,
+                0.00021044249297119677,
+                0.00020815813331864774
+              ]
+            ],
+            "sigmoid_saturated_fraction": 0.00040607061237096786
+          },
+          "expert_selection_counts": {
+            "vision": [
+              871,
+              1003,
+              869,
+              857
+            ],
+            "language": [
+              1800,
+              1800,
+              0,
+              0
+            ]
+          },
+          "task_gradient_chain": {
+            "task_to_expert": 0.926569402217865,
+            "task_to_lora_b": 0.031228693202137947
+          }
+        }
+      ],
+      "export_max_error": 0.0,
+      "generator_trainable": 2178048,
+      "peak_memory_gib": 11.137079238891602,
+      "elapsed_seconds": 1008.3540239930153
+    }
+  ],
+  "selection": "live adaptation-validation Top-1 then MRR; no test selection",
+  "limitations": [
+    "one optimization seed per comparison",
+    "original-ten validation was seen by the historical warmstart",
+    "original-ten test was exposed in the earlier pilot diagnosis",
+    "different parameter counts and computation costs"
+  ],
+  "time_boundary": "training, checkpoint I/O and evaluation; excludes model loading and source hashing; CUDA simulation only",
+  "cross_method_selected_phase": [
+    {
+      "left": "direct",
+      "right": "fixed",
+      "circular_rms_rad": 0.8468729853630066,
+      "piston_removed_rms_rad": 0.84686279296875,
+      "per_modality_rms_rad": [
+        0.9687945246696472,
+        0.7041482925415039
+      ]
+    },
+    {
+      "left": "direct",
+      "right": "qwen_frozen",
+      "circular_rms_rad": 1.4401421546936035,
+      "piston_removed_rms_rad": 1.439886450767517,
+      "per_modality_rms_rad": [
+        1.4314137697219849,
+        1.4488179683685303
+      ]
+    },
+    {
+      "left": "direct",
+      "right": "qwen_lora",
+      "circular_rms_rad": 1.4733400344848633,
+      "piston_removed_rms_rad": 1.4733723402023315,
+      "per_modality_rms_rad": [
+        1.4726577997207642,
+        1.4740219116210938
+      ]
+    },
+    {
+      "left": "fixed",
+      "right": "qwen_frozen",
+      "circular_rms_rad": 1.2023723125457764,
+      "piston_removed_rms_rad": 1.202317476272583,
+      "per_modality_rms_rad": [
+        1.1862573623657227,
+        1.2182742357254028
+      ]
+    },
+    {
+      "left": "fixed",
+      "right": "qwen_lora",
+      "circular_rms_rad": 1.270769476890564,
+      "piston_removed_rms_rad": 1.2706749439239502,
+      "per_modality_rms_rad": [
+        1.2920825481414795,
+        1.249092698097229
+      ]
+    },
+    {
+      "left": "qwen_frozen",
+      "right": "qwen_lora",
+      "circular_rms_rad": 0.8270288109779358,
+      "piston_removed_rms_rad": 0.8265305161476135,
+      "per_modality_rms_rad": [
+        1.0587496757507324,
+        0.4969930946826935
+      ]
+    }
+  ],
+  "detailed_confusion_matrices": "Preserved in the referenced run metrics; omitted here to avoid repeating large matrices."
+}

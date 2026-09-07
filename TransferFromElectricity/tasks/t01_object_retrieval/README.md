@@ -7,7 +7,7 @@
 
 当前工作已进入高光学系数分阶段对照与类别扩展；前面的“首轮协议/首轮结果”为历史 pilot。
 参见下文“第二轮”“高光学系数下的扰动诊断”及对应结果，不把不同协议混成一张成绩表。
-已完成的最新结果见文末“十类三种子复验结果”和“三十类完整对照结果”；
+新增独立专家输出头的结果见文末“独立输出头：Caltech 十类结果”；此前结果见“十类三种子复验结果”和“三十类完整对照结果”。
 [种子与类别对比图](reports/stability_expansion_20260907/stability_and_expansion.png)、
 [三十类训练曲线](reports/caltech30_ideal_20260907/training_comparison.png) 和
 [三十类相位变化图](reports/caltech30_ideal_20260907/selected_phase_changes.png) 可直接查看。
@@ -478,3 +478,43 @@ Vision 四专家均被使用。因此总体相位移动不能替代逐专家任�
 
 全部仍是固定八张专家 mask、光学融合下限 0.4、ideal 光学传播；只按 validation 选模。
 先做独立 smoke，检查新输出头的梯度和 CIFAR 划分，再启动正式 run；仍使用 GitHub 固定 SHA worktree 与 RTX UUID。
+
+Caltech 新结构 seed=42 的小幅领先需要复验，追加事先固定的优化 seed=43、44；
+保持数据 seed=42、每 run 1,200 更新以及相同 RTX 4090 型号。
+三种子共同报告，不能只保留表现最好的 seed；`report_seeds.py` 校验每个种子同时有 direct/LoRA，
+且源码、数据划分、设备型号、预算及其余配置一致。它检验优化稳定性，测试查询仍是同一批 200 张。
+
+### 独立输出头：Caltech 十类结果
+
+四组使用训练 commit `8063ed16`、seed=42、RTX 4090，20 轮、每轮 60 batch。
+direct / frozen / LoRA 均为 1,200 次更新；fixed 第一阶段无可训练参数，实际为 960 次更新。
+run ID：`20260907_caltech10_heads_{fixed,direct,qwen_frozen,qwen_lora}_s42`。
+仍按 validation Top-1、再按 MRR 选 live checkpoint，test 200 张。
+
+| 方法 | 所选 epoch | test Top-1 | 相位变化 RMS / rad | 换回初始专家后的 Top-1 | 峰值显存 GiB |
+|---|---:|---:|---:|---:|---:|
+| 固定初始专家 | 19 | 78.5% | 0 | 78.5% | 6.96 |
+| 直接优化相位 | 20 | 83.5% | 0.84687 | 64.5% | 7.21 |
+| 冻结 Qwen＋训练解码器 | 12 | 81.0% | 1.20237 | 66.5% | 10.43 |
+| Qwen LoRA＋训练解码器 | 20 | 84.5% | 1.27077 | 70.0% | 11.14 |
+
+LoRA 比 direct 多答对 2/200 个查询，先按小幅候选收益处理，等待配对种子复验。
+生成专家被换回初始值时明显退化，说明训练后的系统使用了学到的 mask。
+但在所选 LoRA 模型中关闭 LoRA、保留已训练的解码器，Top-1 仍为 84.5%；相位只改变 0.00457 rad。
+这不否认 LoRA 在训练轨迹中的作用，但当前结果没有证明部署 mask 依赖 LoRA，也不能证明 Qwen 预训练知识带来收益。
+
+独立输出头下，冻结 Qwen / LoRA 的平均跨专家更新相关系数分别为 0.01522 / 0.03510；
+此前共享头三十类的 0.83 / 0.91 仅是设计动机，因数据和学习率也改变，不能把两轮差异当作单因素因果实验。
+direct 与 LoRA 的 mask 圆周 RMS 差为 1.47334 rad，扣除每张 mask 的整体相移后仍为 1.47337 rad。
+Language Router 末轮仍为 `[1800,1800,0,0]`；Vision 为四专家均被使用，语言路由集中问题尚未解决。
+四组导出固定 mask 后最大 embedding 差均为 0，LoRA 末轮任务梯度到 LoRA B 的范数为 0.03123。
+四处融合系数始终不低于 0.4；LoRA 所选值为 0.49849–0.49939。
+
+本次包括训练、验证、checkpoint I/O 和最终干预评估的耗时：direct 692 秒、LoRA 1,008 秒；
+不同物理卡且可能存在共享服务器负载，仅记录实际开销，不能作为严格速度基准。
+冻结 Qwen 的当前实现每步重算固定 context，尚未做缓存优化，其耗时也不是这一路线不可降低的成本。
+
+见 [完整四组指标](reports/caltech10_heads_20260907/summary.json)、
+[训练曲线](reports/caltech10_heads_20260907/training_comparison.png)、
+[相位变化图](reports/caltech10_heads_20260907/selected_phase_changes.png)。
+轻量日志和导出专家已回传并逐文件核验 SHA256；best/last checkpoint 留在服务器原 run。

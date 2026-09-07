@@ -1,10 +1,10 @@
 # TransferFromElectricity：大模型生成光学专家相位
 
-状态：**用户已批准固定专家库与 Caltech101 首轮尝试，正在实施**（2026-09-07）。
+状态：**已完成固定专家库的端到端训练验证，当前比较 Caltech 十类与 CIFAR-100**（2026-09-07）。
 当前实现和实验事实以 [任务 README](tasks/t01_object_retrieval/README.md) 为准；下文保留原设计草案。
 `d2nn_pack/` 是用户提供的参考包，保留原样。
 审阅基于本地 commit `b1285f0e0ecbfa21b3acbf797d643f5d52aaf36e`。
-本次 `git fetch origin` 因 GitHub HTTPS 连接失败而未成功，不能据此确认远端最新版本。
+初次审阅时 GitHub HTTPS 连接失败；此后源码已按任务规则 commit/push，服务器使用固定 SHA worktree。
 
 ## 1. 研究问题与边界
 
