@@ -311,7 +311,12 @@ def train(settings: Settings, device: torch.device) -> dict[str, Any]:
 
 
 @torch.inference_mode()
-def evaluate_selected(settings: Settings, device: torch.device, checkpoint: Path) -> dict[str, Any]:
+def evaluate_selected(
+    settings: Settings,
+    device: torch.device,
+    checkpoint: Path,
+    fusion_ablation: str = "none",
+) -> dict[str, Any]:
     _, loader = legacy.build_loaders(settings)
     model = build_model(settings, device)
     payload = torch.load(checkpoint, map_location="cpu", weights_only=False)
@@ -319,6 +324,8 @@ def evaluate_selected(settings: Settings, device: torch.device, checkpoint: Path
         raise RuntimeError("T04 checkpoint architecture mismatch")
     model.load_state_dict(payload["model"], strict=True)
     model.eval()
+    for core in (model.language_core, model.vision_core):
+        core.set_fusion_ablation(fusion_ablation)
     _set_phase_dropout(model, False)
     _json(
         settings.output_dir / "student_architecture.json",
@@ -329,7 +336,7 @@ def evaluate_selected(settings: Settings, device: torch.device, checkpoint: Path
     router_probability_sums: dict[str, torch.Tensor] = {}
     router_sample_counts: dict[str, int] = {}
     handles = []
-    if model.router_backend == "optical":
+    if model.router_backend == "optical" and fusion_ablation != "remove_optical":
         for label, path in zip(("language", "vision"), model._optical_paths()):
             counts = torch.zeros(4, dtype=torch.long)
             router_counts[label] = counts
@@ -378,6 +385,7 @@ def evaluate_selected(settings: Settings, device: torch.device, checkpoint: Path
         "split": "deterministic disjoint test",
         "test_samples": settings.test_samples,
         "selection_biased": True,
+        "fusion_ablation": fusion_ablation,
         "metrics": metrics,
         "router_audit": (
             {
@@ -403,8 +411,12 @@ def evaluate_selected(settings: Settings, device: torch.device, checkpoint: Path
             else None
         ),
     }
-    _json(settings.output_dir / "selected_checkpoint_test_evaluation.json", result)
-    with (settings.output_dir / "test_predictions.jsonl").open("w", encoding="utf-8") as handle:
+    suffix = "" if fusion_ablation == "none" else f"_{fusion_ablation}"
+    _json(
+        settings.output_dir / f"selected_checkpoint_test_evaluation{suffix}.json",
+        result,
+    )
+    with (settings.output_dir / f"test_predictions{suffix}.jsonl").open("w", encoding="utf-8") as handle:
         for row in predictions:
             handle.write(json.dumps(row, ensure_ascii=False) + "\n")
     legacy._save_gallery(settings.output_dir / "best_visualization" / "test_examples", galleries, settings)

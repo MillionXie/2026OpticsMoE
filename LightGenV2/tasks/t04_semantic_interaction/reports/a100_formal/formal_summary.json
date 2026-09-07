@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-08",
+  "task": "T04 OpenMoji semantic interaction",
+  "split": {"train": 5000, "test": 1000, "validation": 0},
+  "performance": {
+    "hybrid_optical_router_top2": {
+      "changed_cell_accuracy": 0.98,
+      "foreground_category_accuracy": 0.9894500002264977,
+      "edit_grid_iou": 0.9349999999999988,
+      "object_f1": 0.9836751803751809,
+      "scene_exact_match": 0.895
+    },
+    "same_checkpoint_remove_optical": {
+      "changed_cell_accuracy": 0.985,
+      "foreground_category_accuracy": 0.9916333335042,
+      "edit_grid_iou": 0.9218166666666652,
+      "object_f1": 0.9809067099567104,
+      "scene_exact_match": 0.876
+    },
+    "same_checkpoint_remove_electronic": {
+      "changed_cell_accuracy": 0.0,
+      "foreground_category_accuracy": 0.7054333381652832,
+      "edit_grid_iou": 0.0,
+      "object_f1": 0.6798817460317453,
+      "scene_exact_match": 0.0
+    },
+    "frozen_qwen_structured_head": {
+      "changed_cell_accuracy": 0.5415,
+      "foreground_category_accuracy": 0.1721166684925556,
+      "edit_grid_iou": 0.2713362443112443,
+      "object_f1": 0.1278188745894631,
+      "scene_exact_match": 0.009
+    },
+    "qwen_derived_matched_electronic_control": {
+      "changed_cell_accuracy": 0.9965,
+      "foreground_category_accuracy": 0.9966666668057441,
+      "edit_grid_iou": 0.993833333333333,
+      "object_f1": 0.9969817460317458,
+      "scene_exact_match": 0.983,
+      "same_every_5_epoch_selection_changed_cell_accuracy": 0.9955
+    }
+  },
+  "a100_measurement": {
+    "frozen_qwen_structured_head": {
+      "samples": 1000,
+      "mean_ms": 49.053312212228775,
+      "median_ms": 46.89423367381096,
+      "p95_ms": 64.8576647043228,
+      "active_mean_w": 91.25707678075855,
+      "active_peak_w": 117.33,
+      "energy_j_per_sample": 4.476461878901882,
+      "idle_subtracted_j_per_sample": 1.4984730278145606,
+      "rated_upper_j_per_sample": 12.263328053057194
+    },
+    "matched_electronic_control": {
+      "samples": 1000,
+      "mean_ms": 6.535123773,
+      "median_ms": 5.9135285,
+      "p95_ms": 7.891842549999999,
+      "active_mean_w": 68.49964285714286,
+      "active_peak_w": 73.43,
+      "energy_j_per_sample": 0.4476536444777239,
+      "idle_subtracted_j_per_sample": 0.05188444068040103,
+      "rated_upper_j_per_sample": 1.63378094325
+    },
+    "hybrid_optical_paper_serial_path": {
+      "physical_passes": 6,
+      "physical_time_ms": 7.884,
+      "serial_electronic_ms": 3.9242645,
+      "total_ms": 11.8082645,
+      "optical_rig_power_w": 80.388,
+      "optical_rig_energy_j": 0.949242766626,
+      "optical_plus_a100_composed_energy_j": 1.6967838263799224
+    }
+  },
+  "fusion_alpha": {
+    "language_block_1": 0.05340985357761383,
+    "language_block_2": 0.05300482101738453,
+    "vision_block_1": 0.051119603067636486,
+    "vision_block_2": 0.05087425835430622
+  }
+}

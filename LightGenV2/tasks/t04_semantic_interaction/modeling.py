@@ -82,7 +82,7 @@ class LightGenOpenMojiEditor(OpenMojiOpticalEditor):
         self.to(next(self.vision_stem.parameters()).device)
 
     def router_importance_loss(self) -> torch.Tensor:
-        if self.router_backend != "optical":
+        if self.router_backend != "optical" or self._optics_are_ablated():
             return next(self.parameters()).new_zeros(())
         # Balance the actual CCD energy before score standardization.  This is
         # the physical quantity available at deployment and gives the Router
@@ -98,7 +98,7 @@ class LightGenOpenMojiEditor(OpenMojiOpticalEditor):
         return torch.stack(values).mean()
 
     def router_hard_load_balance_loss(self) -> torch.Tensor:
-        if self.router_backend != "optical":
+        if self.router_backend != "optical" or self._optics_are_ablated():
             return next(self.parameters()).new_zeros(())
         values = [
             hard_topk_load_balance_loss(
@@ -109,6 +109,17 @@ class LightGenOpenMojiEditor(OpenMojiOpticalEditor):
             for path in self._optical_paths()
         ]
         return torch.stack(values).mean()
+
+    def _optics_are_ablated(self) -> bool:
+        return any(
+            getattr(core, "fusion_ablation_mode", "none") == "remove_optical"
+            for core in (self.language_core, self.vision_core)
+        )
+
+    def router_balance_loss(self) -> torch.Tensor:
+        if self.router_backend != "optical" or self._optics_are_ablated():
+            return next(self.parameters()).new_zeros(())
+        return super().router_balance_loss()
 
     def architecture_report(self) -> dict[str, Any]:
         compact = self.compact_optical_settings

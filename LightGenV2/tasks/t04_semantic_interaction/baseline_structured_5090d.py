@@ -674,11 +674,13 @@ def evaluate_and_time(args: argparse.Namespace) -> dict[str, Any]:
     time.sleep(2.0)
     sampler.set_phase(None)
 
-    def forward(row: dict[str, Any]) -> dict[str, Any]:
-        inputs = {
+    def prepare(row: dict[str, Any]) -> dict[str, torch.Tensor]:
+        return {
             key: value.to("cuda:0")
             for key, value in _prepare_one(processor, row, data_root).items()
         }
+
+    def forward(inputs: dict[str, torch.Tensor]) -> dict[str, Any]:
         image_hidden, condition_hidden = _joint_hidden(model, inputs, image_token_id)
         output = head(image_hidden, condition_hidden)
         # Materialize the normal task output.  No generation or CPU JSON parsing.
@@ -689,14 +691,18 @@ def evaluate_and_time(args: argparse.Namespace) -> dict[str, Any]:
     timing_rows: list[dict[str, Any]] = []
     try:
         for index in range(args.warmup_forwards):
+            inputs = prepare(rows[index % len(rows)])
             timer.reset()
-            forward(rows[index % len(rows)])
+            forward(inputs)
             timer.finish()
         for index in range(args.timing_samples):
+            # File I/O, PIL decoding, processor work, and host-to-device copies
+            # are deliberately completed before the timed/power-active region.
+            inputs = prepare(rows[index % len(rows)])
             timer.reset()
             sampler.set_phase(f"active:{index}")
             try:
-                forward(rows[index % len(rows)])
+                forward(inputs)
                 value = timer.finish()
             finally:
                 sampler.set_phase(None)

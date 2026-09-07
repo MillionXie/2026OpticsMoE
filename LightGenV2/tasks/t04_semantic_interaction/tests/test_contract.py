@@ -1,7 +1,12 @@
 from pathlib import Path
 
+import numpy as np
 import torch
 
+from LightGenV2.tasks.t04_semantic_interaction.baseline_5090d import (
+    _parse as parse_native_generation,
+    _prompt as native_generation_prompt,
+)
 from LightGenV2.tasks.t04_semantic_interaction.settings import load_settings
 from LightGenV2.tasks.t04_semantic_interaction.training import (
     _semantic_router_code_loss,
@@ -132,3 +137,19 @@ def test_aligned_qwen_baseline_changes_only_head_and_label_objective() -> None:
     assert head.category.weight.grad is not None
     assert head.edit.weight.grad is not None
     assert head.task.weight.grad is not None
+
+
+def test_native_qwen_sparse_change_contract_is_short_and_deterministic() -> None:
+    source = np.zeros((6, 6), dtype=np.int64)
+    source[1, 2] = 4
+    prediction, edit = parse_native_generation(
+        '{"changes":[[1,2,0],[3,4,7]]}',
+        source_grid=source,
+        output_contract="sparse_changes",
+    )
+    assert prediction[1, 2] == 0
+    assert prediction[3, 4] == 7
+    assert int(edit.sum()) == 2
+    prompt = native_generation_prompt("Move tree below house", "sparse_changes")
+    assert "zero-based" in prompt
+    assert '"changes"' in prompt

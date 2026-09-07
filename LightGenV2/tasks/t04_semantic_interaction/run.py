@@ -130,7 +130,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         if args.checkpoint
         else settings.output_dir / "best_checkpoint.pt"
     )
-    return evaluate_selected(settings, device, checkpoint)
+    return evaluate_selected(
+        settings, device, checkpoint, fusion_ablation=args.fusion_ablation
+    )
 
 
 def main() -> int:
@@ -140,6 +142,11 @@ def main() -> int:
     parser.add_argument("--device", default=None)
     parser.add_argument("--run-dir", default=None)
     parser.add_argument("--checkpoint", default=None)
+    parser.add_argument(
+        "--fusion-ablation",
+        choices=("none", "remove_optical", "remove_electronic"),
+        default="none",
+    )
     args = parser.parse_args()
     print(json.dumps(run(args), ensure_ascii=False, indent=2), flush=True)
     return 0

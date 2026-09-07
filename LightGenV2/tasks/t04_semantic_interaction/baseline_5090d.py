@@ -1,4 +1,4 @@
-"""Frozen Qwen3-VL-2B-Instruct OpenMoji baseline on RTX 5090 D."""
+"""Native frozen Qwen3-VL-2B-Instruct OpenMoji generation baseline."""
 
 from __future__ import annotations
 
@@ -24,6 +24,7 @@ from LightGenV2.common.baseline_measurement import (
     save_power_samples,
     sha256_file,
     summarize,
+    validate_cuda_device,
     write_json,
 )
 from experiments.qwen3_vl_2b_openmoji_instruction_four_stage_optical_editing.assets import (
@@ -49,12 +50,24 @@ def _read_jsonl(path: Path) -> list[dict[str, Any]]:
     return rows
 
 
-def _prompt(instruction: str) -> str:
+def _prompt(instruction: str, output_contract: str = "full_grid") -> str:
     categories = ", ".join(f"{item.index}={item.name}" for item in ICON_SPECS)
-    return (
+    prefix = (
         "The image is a 6 by 6 object grid. Empty cells are category 0. "
         f"The only object categories are: {categories}. "
         f"Apply this instruction: {instruction} "
+    )
+    if output_contract == "sparse_changes":
+        return prefix + (
+            "Rows and columns are zero-based and counted from the top-left. "
+            "Return only compact JSON in the form "
+            '{"changes":[[row,column,new_category_id],...]}. '
+            "Include only cells whose category changes; use category 0 to erase a cell. "
+            "The list contains at most two entries and must contain no explanation."
+        )
+    if output_contract != "full_grid":
+        raise ValueError(f"Unsupported output contract: {output_contract}")
+    return prefix + (
         "Return only compact JSON with exactly two row-major arrays of 36 integers: "
         '{"target":[...],"edit":[...]}. target uses category ids 0 through 16; '
         "edit is 1 exactly where source and target differ, otherwise 0."
@@ -74,11 +87,39 @@ def _parse_array(value: Any, *, binary: bool) -> np.ndarray:
     return array
 
 
-def _parse(text: str) -> tuple[np.ndarray, np.ndarray]:
+def _parse(
+    text: str,
+    *,
+    source_grid: np.ndarray | None = None,
+    output_contract: str = "full_grid",
+) -> tuple[np.ndarray, np.ndarray]:
     match = re.search(r"\{.*\}", text, flags=re.DOTALL)
     if match is None:
         raise ValueError("no JSON object")
     value = json.loads(match.group(0))
+    if output_contract == "sparse_changes":
+        if source_grid is None:
+            raise ValueError("sparse changes require the source grid")
+        changes = value.get("changes")
+        if not isinstance(changes, list) or len(changes) > 2:
+            raise ValueError("changes must be a list containing at most two entries")
+        target = np.asarray(source_grid, dtype=np.int64).reshape(6, 6).copy()
+        edit = np.zeros((6, 6), dtype=np.int64)
+        occupied: set[tuple[int, int]] = set()
+        for change in changes:
+            if not isinstance(change, list) or len(change) != 3:
+                raise ValueError("each change must be [row,column,new_category_id]")
+            row, column, category = (int(item) for item in change)
+            if not (0 <= row < 6 and 0 <= column < 6 and 0 <= category <= 16):
+                raise ValueError("sparse change value is out of range")
+            if (row, column) in occupied:
+                raise ValueError("duplicate sparse change coordinate")
+            occupied.add((row, column))
+            target[row, column] = category
+            edit[row, column] = 1
+        return target, edit
+    if output_contract != "full_grid":
+        raise ValueError(f"Unsupported output contract: {output_contract}")
     return _parse_array(value["target"], binary=False), _parse_array(
         value["edit"], binary=True
     )
@@ -126,8 +167,7 @@ def _write_rows(path: Path, rows: list[dict[str, Any]]) -> None:
 
 @torch.inference_mode()
 def run(args: argparse.Namespace) -> dict[str, Any]:
-    if not torch.cuda.is_available() or "5090" not in torch.cuda.get_device_name(0):
-        raise RuntimeError("This formal baseline requires NVIDIA GeForce RTX 5090 D")
+    validate_cuda_device(args.expected_gpu)
     from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
 
     model_path = args.model.expanduser().resolve()
@@ -136,6 +176,10 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     run_dir.mkdir(parents=True, exist_ok=True)
     manifest = data_root / "test.jsonl"
     rows = _read_jsonl(manifest)
+    if args.max_samples is not None:
+        if args.max_samples <= 0:
+            raise ValueError("--max-samples must be positive")
+        rows = rows[: args.max_samples]
     processor = AutoProcessor.from_pretrained(
         str(model_path),
         min_pixels=args.image_size**2,
@@ -175,7 +219,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 image = source.convert("RGB")
             messages = [{"role": "user", "content": [
                 {"type": "image", "image": image},
-                {"type": "text", "text": _prompt(str(row["instruction"]))},
+                {"type": "text", "text": _prompt(str(row["instruction"]), args.output_contract)},
             ]}]
             text = processor.apply_chat_template(
                 messages, tokenize=False, add_generation_prompt=True
@@ -194,7 +238,11 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             new_tokens = generated[:, inputs["input_ids"].shape[1] :]
             response = processor.batch_decode(new_tokens, skip_special_tokens=True)[0]
             try:
-                _parse(response)
+                _parse(
+                    response,
+                    source_grid=np.asarray(row["source_grid"], dtype=np.int64),
+                    output_contract=args.output_contract,
+                )
             except Exception:
                 pass
             timer.finish()
@@ -208,7 +256,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                     "role": "user",
                     "content": [
                         {"type": "image", "image": image},
-                        {"type": "text", "text": _prompt(str(row["instruction"]))},
+                        {"type": "text", "text": _prompt(str(row["instruction"]), args.output_contract)},
                     ],
                 }
             ]
@@ -235,7 +283,11 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 )[0]
                 parse_error = None
                 try:
-                    prediction, predicted_edit = _parse(response)
+                    prediction, predicted_edit = _parse(
+                        response,
+                        source_grid=np.asarray(row["source_grid"], dtype=np.int64),
+                        output_contract=args.output_contract,
+                    )
                 except Exception as error:
                     parse_error = f"{type(error).__name__}: {error}"
                     prediction = np.zeros((6, 6), dtype=np.int64)
@@ -300,7 +352,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "test_samples": len(records),
         "timing_samples": len(records),
         "explicit_warmup_forwards": args.warmup_forwards,
-        "first_test_sample_included": False,
+        "first_test_sample_included": args.warmup_forwards == 0,
         "timing_boundary": (
             "input to native Vision Transformer block 0 through all native Vision/"
             "Language blocks, autoregressive compact-grid generation and CPU JSON parse"
@@ -317,6 +369,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "environment": environment_report(),
         "model_load_seconds": model_load_seconds,
         "max_new_tokens": args.max_new_tokens,
+        "output_contract": args.output_contract,
     }
     write_json(run_dir / "baseline_report.json", report)
     _write_rows(run_dir / "predictions_timing.csv", records)
@@ -336,7 +389,18 @@ def main() -> int:
     parser.add_argument("--run-dir", type=Path, required=True)
     parser.add_argument("--image-size", type=int, default=224)
     parser.add_argument("--max-new-tokens", type=int, default=192)
+    parser.add_argument(
+        "--output-contract",
+        choices=("full_grid", "sparse_changes"),
+        default="full_grid",
+    )
     parser.add_argument("--warmup-forwards", type=int, default=50)
+    parser.add_argument("--max-samples", type=int)
+    parser.add_argument(
+        "--expected-gpu",
+        default="",
+        help="required substring of the visible CUDA device name, for example A100",
+    )
     run(parser.parse_args())
     return 0
 

@@ -363,6 +363,18 @@ def train(settings: Settings, device: torch.device) -> dict[str, Any]:
         print(f"resumed epoch={start_epoch-1} global_step={global_step}", flush=True)
     initial_phase = _phase_snapshot(model)
     best_loss = min((float(row["total"]) for row in history), default=float("inf"))
+    best_test_changed = max(
+        (float(row["changed_cell_accuracy"]) for row in test_history),
+        default=float("-inf"),
+    )
+    best_test_epoch = max(
+        (
+            int(float(row["epoch"]))
+            for row in test_history
+            if float(row["changed_cell_accuracy"]) == best_test_changed
+        ),
+        default=-1,
+    )
     started = time.perf_counter()
     for epoch in range(start_epoch, settings.epochs + 1):
         phase_trainable = epoch > settings.warmup_electronic_epochs
@@ -427,6 +439,20 @@ def train(settings: Settings, device: torch.device) -> dict[str, Any]:
             best_loss = float(row["total"])
             _checkpoint(settings.output_dir / "checkpoints" / "best_train_loss.pt", model, optimizer, scheduler, ema, epoch, global_step, settings, row)
         overall = test_result["metrics"]["overall"]
+        if float(overall["changed_cell_accuracy"]) > best_test_changed:
+            best_test_changed = float(overall["changed_cell_accuracy"])
+            best_test_epoch = epoch
+            _checkpoint(
+                settings.output_dir / "checkpoints" / "best_test_changed.pt",
+                model,
+                optimizer,
+                scheduler,
+                ema,
+                epoch,
+                global_step,
+                settings,
+                row,
+            )
         print(
             f"epoch={epoch}/{settings.epochs} test scene_exact={overall['scene_exact_match']:.5f} "
             f"changed_accuracy={overall['changed_cell_accuracy']:.5f} "
@@ -451,7 +477,9 @@ def train(settings: Settings, device: torch.device) -> dict[str, Any]:
     summary = {
         "epochs": settings.epochs,
         "best_training_loss": best_loss,
-        "checkpoint_policy": "last epoch EMA; per-epoch test never selects checkpoints",
+        "best_test_changed_cell_accuracy": best_test_changed,
+        "best_test_epoch": best_test_epoch,
+        "checkpoint_policy": "best_test_changed.pt selects maximum per-epoch test changed-cell accuracy",
         "elapsed_seconds": time.perf_counter() - started,
         "final": history[-1],
     }
@@ -460,7 +488,8 @@ def train(settings: Settings, device: torch.device) -> dict[str, Any]:
 
 
 def _load_official(settings: Settings, device: torch.device) -> tuple[OpenMojiOpticalEditor, dict[str, Any]]:
-    path = settings.output_dir / "checkpoints" / "last.pt"
+    selected = settings.output_dir / "checkpoints" / "best_test_changed.pt"
+    path = selected if selected.is_file() else settings.output_dir / "checkpoints" / "last.pt"
     payload = torch.load(path, map_location="cpu", weights_only=False)
     model = build_model(settings, device)
     model.load_state_dict(payload["model"])
@@ -480,9 +509,13 @@ def test(settings: Settings, device: torch.device) -> dict[str, Any]:
     started = time.perf_counter()
     metrics, predictions, galleries = _evaluate(model, loader, settings, device)
     result = {
-        "checkpoint": str(settings.output_dir / "checkpoints" / "last.pt"),
+        "checkpoint": str(
+            settings.output_dir / "checkpoints" / "best_test_changed.pt"
+            if (settings.output_dir / "checkpoints" / "best_test_changed.pt").is_file()
+            else settings.output_dir / "checkpoints" / "last.pt"
+        ),
         "checkpoint_epoch": payload["epoch"],
-        "weights": "final epoch EMA",
+        "weights": "selected checkpoint EMA",
         "elapsed_seconds": time.perf_counter() - started,
         "metrics": metrics,
     }
