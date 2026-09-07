@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "status": "complete",
+  "task_id": "T07",
+  "task": "ABO similarity-10 image-to-similar-product retrieval",
+  "run_id": "qwen_frozen_a100_20260907",
+  "source_commit": "354c53e54b9d26b1d7835a3ba51b60929425baa8",
+  "test_queries": 480,
+  "gallery_products": 120,
+  "relevant_gallery_products_per_query": 12,
+  "performance": {
+    "r_at_1": 0.9520833333333333,
+    "r_at_5": 0.9875,
+    "r_at_10": 0.9979166666666667,
+    "precision_at_5": 0.9208333333333333,
+    "precision_at_10": 0.8547916666666668,
+    "positive_recall_at_5": 0.3836805555555556,
+    "positive_recall_at_10": 0.7123263888888889,
+    "map_at_10": 0.8325332341269842,
+    "ndcg_at_10": 0.8806687491617079,
+    "category_route_accuracy": 0.9208333333333333
+  },
+  "a100": {
+    "physical_gpu_id": 6,
+    "gpu": "NVIDIA A100-PCIE-40GB",
+    "timing_samples": 200,
+    "explicit_warmup_forwards": 50,
+    "latency_mean_ms": 49.17415945053101,
+    "latency_median_ms": 46.15731239318848,
+    "latency_p95_ms": 68.92723007202149,
+    "idle_power_w": 61.472698961937716,
+    "active_mean_power_w": 82.9602383419689,
+    "active_peak_power_w": 101.11,
+    "active_energy_j_per_query": 4.079499988282035,
+    "idle_subtracted_energy_j_per_query": 1.0566316876732178,
+    "rated_250w_upper_energy_j_per_query": 12.293539862632752
+  },
+  "dataset_archive_sha256": "c8f0f79cbd8ceb3c42162092136254a1f44f6d13b3329e0e3b1c5dfc458c1485",
+  "baseline_report_sha256": "18d2d71d8b072d4e0e3d778a7bae4be4acc7d2a0018ee8c73ecf57ad537816176"
+}

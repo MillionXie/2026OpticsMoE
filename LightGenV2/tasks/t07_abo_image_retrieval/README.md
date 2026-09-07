@@ -37,3 +37,11 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.baseline_a100 \
 
 运行目录保存实际命令、Git commit、环境、数据哈希、480 条预测、200 条计时、原始功率采样、
 gallery index、JSON 总报告和概览图。原始数据、模型与生成的 run 不提交 Git。
+
+## A100 正式结果
+
+完整 frozen-Qwen baseline 已完成：unrestricted R@1/R@5/R@10 为
+**0.9521/0.9875/0.9979**，category-prototype route accuracy 为 **0.9208**；核心时延
+mean/median/P95 为 **49.174/46.157/68.927 ms/query**，active mean/peak 为
+**82.96/101.11 W**，active 能耗为 **4.079 J/query**。完整口径与证据见
+`reports/a100_frozen_qwen_20260907/README.md`。

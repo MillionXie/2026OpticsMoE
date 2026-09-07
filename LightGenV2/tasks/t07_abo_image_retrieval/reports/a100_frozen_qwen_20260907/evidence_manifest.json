@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "evidence/baseline_report.json": {
+    "sha256": "18d2d71d8b072d4e0e3d778a7bae4be4acc7d2a0018ee8c73ecf57ad537816176"
+  },
+  "evidence/per_category_metrics.csv": {
+    "sha256": "a1a3a56cb16238c8c29f6a7be554274ffcb05f8ec9f303d30311a7777156ea5f"
+  },
+  "a100_baseline_overview.png": {
+    "sha256": "8d0bbde45aece55f195ae6d142861fb911ecca2323ba9fedce6c5c8eaaa3c992"
+  },
+  "a100_baseline_overview.pdf": {
+    "sha256": "07b5577fb371787f92f6f18b0d167e54e22d41c79fa00c1ba790162080e59f65"
+  }
+}
