@@ -261,3 +261,25 @@ CUDA_VISIBLE_DEVICES=0 python -m TransferFromElectricity.tasks.t01_object_retrie
 `--resume` 要求相同 config 与代码 SHA，恢复 last 的优化器、EMA、阶段、日志和 RNG。
 扩展顺序：先完成共同协议下的四组，再复查主比较的随机种子和新类别；类别扩大与新任务
 必须使用独立配置及数据 manifest，不混入本表。新增类别是否被 warmstart 见过要明确记录。
+
+### 类别规模与随机种子扩展
+
+用户进一步授权扩大任务检查偶然性。新增 [staged_alpha40_caltech30.yaml](configs/staged_alpha40_caltech30.yaml)
+继承相同阶段/光路配置，只将检索类别扩大到 30，并将生成器的固定任务描述改为 thirty-category。
+完整数据有 101 类、8,677 张前景图像；原十类之外，按名称排序后从至少 60 张图像的类别中，
+用 random.Random(42) 抽取二十类。排除 BACKGROUND_Google 和 Faces_easy，避免引入 Faces 的明显重复版本。
+类别由数据数量和固定随机规则选择，没有参考模型成绩。
+
+二十个新增类共 1,602 张图像，与原十类合计 4,457 张；每类 gallery=3、test=20、
+本轮 validation=10，预计 train=3,467、validation=300、gallery=90、test=600。
+每轮仍按 PK=10×3，从三十类中抽取十类，116 batch/epoch，20 轮共 2,320 batch。
+除改任务描述外，生成器容量、专家数量、光学系数与训练学习率保持不变。
+在三十类共同 gallery 上分别统计原十类查询和新增二十类查询；新增类在本轮有训练样本，
+因此属于监督适配，不是零样本识别。
+
+主比较 direct / qwen_lora 计划增加 seed=43、44，与 seed=42 一起报告。
+`--seed` 改优化初始化、训练采样与扰动，validation 划分使用固定 data_seed=42，原 gallery/test
+仍使用 backend 固定划分；不能将每个种子的测试样本换一批再混算。
+报告工具同时支持四组完整表和 direct/qwen_lora 配对表。
+
+这些属于当前工作的扩展安排；具体已完成和运行状态以每个 run 的 status.json 为准。

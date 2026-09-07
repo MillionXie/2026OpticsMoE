@@ -57,7 +57,7 @@ class PatchDecoder(nn.Module):
 
 
 class StaticGenerator(nn.Module):
-    def __init__(self, method='small_hyper', source=None, device='cpu', rank=8, size=224, patch=16, seed=42):
+    def __init__(self, method='small_hyper', source=None, device='cpu', rank=8, size=224, patch=16, seed=42, task_description=None):
         super().__init__()
         self.method = method
         self.lora_modules = []
@@ -79,7 +79,8 @@ class StaticGenerator(nn.Module):
             if method == 'qwen_lora':
                 self.lora_modules = install_lora(self.encoder, rank)
             tokenizer = AutoTokenizer.from_pretrained(source, local_files_only=True, padding_side='right')
-            prompts = [f'Design a fixed optical expert bank for Caltech101 ten-category image retrieval. Modality: {m}. Expert: {e}. Return a continuous design representation.'
+            task_description = task_description or 'Caltech101 ten-category image retrieval'
+            prompts = [f'Design a fixed optical expert bank for {task_description}. Modality: {m}. Expert: {e}. Return a continuous design representation.'
                        for m in ('vision', 'language') for e in range(4)]
             encoded = tokenizer(prompts, padding=True, return_tensors='pt')
             self.register_buffer('input_ids', encoded['input_ids'].to(device))

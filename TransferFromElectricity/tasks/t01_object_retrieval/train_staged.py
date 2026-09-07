@@ -23,10 +23,12 @@ from .run import (ROOT, TASK, write_json, sha256, git, cpu_state, grad_norm,
 from .models.generator import StaticGenerator, LoRALinear
 from .models.injection import ExpertInjection, expert_planes
 from .protocol import common_anchor, split_train_validation, stage_at, active_groups, phase_summary, physical_phase
+from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.settings import _read_config
 
 
 def create_generator(method, source, cfg, device):
-    generator = StaticGenerator(method, source, device, cfg['generator']['rank'], seed=cfg['seed'])
+    generator = StaticGenerator(method, source, device, cfg['generator']['rank'], seed=cfg['seed'],
+                                task_description=cfg['generator'].get('task_description'))
     # Identical decoder weights for frozen-Qwen and LoRA-Qwen, independent of
     # random numbers consumed while constructing LoRA matrices.
     seed_everything(cfg['seed'] + 71)
@@ -92,6 +94,8 @@ def execute(args, cfg, output):
     settings.output_dir = output
     settings.num_workers = cfg['num_workers']
     settings.router_optimization_seed = cfg['seed']
+    if cfg.get('selected_categories'):
+        settings.selected_skus = tuple(cfg['selected_categories'])
     settings.fusion_alpha_min = cfg['fusion']['minimum']
     settings.fusion_alpha_initial = cfg['fusion']['initial']
     settings.fusion_alpha_max = cfg['fusion']['maximum']
@@ -103,7 +107,7 @@ def execute(args, cfg, output):
     if any((settings.lambda_kd, settings.lambda_relational_kd, settings.lambda_teacher_gallery)):
         raise ValueError('This experiment does not use a teacher loss')
     bundle = prepare_caltech101_subset(settings, persist=True)
-    training, validation = split_train_validation(bundle.train_samples, cfg['seed'], cfg['validation_per_class'])
+    training, validation = split_train_validation(bundle.train_samples, cfg.get('data_seed',42), cfg['validation_per_class'])
     partitions = {'train':training, 'validation':validation, 'gallery':bundle.gallery_samples, 'test':bundle.test_samples}
     idsets = [set(s.sample_id for s in rows) for rows in partitions.values()]
     if any(idsets[i] & idsets[j] for i in range(4) for j in range(i)):
@@ -367,10 +371,13 @@ def main():
     parser.add_argument('--run-dir',required=True)
     parser.add_argument('--generator-source')
     parser.add_argument('--steps-per-epoch',type=int)
+    parser.add_argument('--seed',type=int)
     parser.add_argument('--smoke',action='store_true')
     parser.add_argument('--resume',action='store_true')
     args = parser.parse_args()
-    cfg = yaml.safe_load(Path(args.config).read_text(encoding='utf-8'))
+    cfg = _read_config(Path(args.config))
+    if args.seed is not None:
+        cfg['seed'] = args.seed
     cfg.update(method=args.method,smoke=args.smoke,steps_per_epoch=args.steps_per_epoch)
     if args.smoke:
         cfg['stages'] = [{'name':name,'epochs':1} for name in ('experts','optics','joint')]

@@ -1,0 +1,49 @@
+base_config: staged_alpha40.yaml
+data_seed: 42
+generator:
+  task_description: Caltech101 thirty-category image retrieval
+# Original ten plus twenty categories sampled with random.Random(42) from
+# sorted categories with >=60 images, excluding original ten and Faces_easy.
+# Selection was made from image counts, before any expanded-task training.
+warmstart_categories:
+  - Faces
+  - Leopards
+  - Motorbikes
+  - accordion
+  - airplanes
+  - grand_piano
+  - scorpion
+  - sunflower
+  - watch
+  - yin_yang
+selected_categories:
+  - Faces
+  - Leopards
+  - Motorbikes
+  - accordion
+  - airplanes
+  - grand_piano
+  - scorpion
+  - sunflower
+  - watch
+  - yin_yang
+  - bonsai
+  - brain
+  - buddha
+  - chandelier
+  - cougar_face
+  - crab
+  - electric_guitar
+  - elephant
+  - euphonium
+  - ewer
+  - ferry
+  - flamingo
+  - ibis
+  - kangaroo
+  - laptop
+  - lotus
+  - revolver
+  - stop_sign
+  - trilobite
+  - umbrella
