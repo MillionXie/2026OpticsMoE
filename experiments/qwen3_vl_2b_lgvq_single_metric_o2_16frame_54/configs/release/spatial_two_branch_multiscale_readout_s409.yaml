@@ -1,0 +1,49 @@
+base_config: spatial_two_branch_equality_d2_s322.yaml
+output_dir: ../../runs/lgvq_spatial_two_branch_multiscale_readout_s409
+random_seed: 409
+
+# Replace only the final single readout with an attention-free multi-scale
+# convolution/pooling head. The four O/E stages and strict two-branch graph are
+# unchanged; this is not an auxiliary predictor or input bypass.
+model:
+  spatial_readout_mode: spatial_multiscale
+
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_two_branch_equality_refine_s324/best_observed_test_checkpoint.pt
+  epochs: 100
+  batch_size: 64
+  mos_stratified_batches: true
+  mos_strata: 8
+  learning_rate: 0.00020
+  phase_learning_rate: 0.001
+  router_phase_learning_rate: 0.003
+  learning_rate_warmup_epochs: 5
+  minimum_learning_rate_factor: 0.05
+  test_interval_epochs: 1
+  phase_snapshot_interval_epochs: 0
+
+loss:
+  ranking_weight: 0.20
+  correlation_weight: 0.30
+  soft_spearman_weight: 0.00
+  soft_rank_temperature: 0.15
+  soft_target_weight: 3.00
+  router_balance_weight: 0.02
+  router_importance_weight: 0.004
+  serial_router_balance_weight: 0.04
+  serial_router_importance_weight: 0.01
+
+curriculum:
+  enabled: true
+  start_epoch: 20
+  end_epoch: 85
+  ranking_weight_final: 0.35
+  correlation_weight_final: 0.65
+  soft_spearman_weight_final: 0.10
+  soft_target_weight_final: 0.25
+  router_balance_weight_final: 0.010
+  router_importance_weight_final: 0.002
+  serial_router_balance_weight_final: 0.010
+  serial_router_importance_weight_final: 0.002
+  router_noise_std_final: 0.01
+  unmodulated_power_fraction_max_initial: 0.20
