@@ -17,7 +17,7 @@ def main():
     device = torch.device(args.device)
     model = build_model(cfg, device)
     model.train()
-    image = torch.rand(2, 3, 224, 224, device=device) * 2 - 1
+    image = torch.rand(2, 3, 224, 224, device=device)
     tokens = [torch.randn(12, 2048, device=device), torch.randn(17, 2048, device=device)]
     output = model(image, tokens)
     loss = output['category_logits'].square().mean() + output['edit_logits'].square().mean()

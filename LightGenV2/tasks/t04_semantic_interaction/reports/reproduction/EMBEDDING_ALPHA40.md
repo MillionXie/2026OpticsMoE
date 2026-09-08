@@ -62,3 +62,23 @@ python -m LightGenV2.tasks.t04_semantic_interaction.smoke_embedding --profile em
 
 每个正式run记录 `run_manifest.json` 中Git commit、`resolved_config.json`、`split_contract.json`、
 `student_architecture.json`、初始策略、best/last、训练及router审计；原始逐样本指标留在对应run，不在报告复制一份权重。
+
+## 本次已启动的训练
+
+训练源码：`5298f296699851950b59f49583c53eb660768a84`，已同步GitHub。
+服务器主仓库含其他任务未提交修改，因此使用本仓库内的隔离Git工作区：
+`/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t04_semantic_interaction/runs/smoke/source_6d7c4299`。
+目录后缀是建立工作区时的版本；实际运行commit以各run manifest为准（5298f296）。
+数据/素材用链接指向主仓库原位置；训练输出显式写回主仓库任务目录，不在隔离工作区复制一套runs。
+
+三个结果目录均位于主仓库 `LightGenV2/tasks/t04_semantic_interaction/runs/simulation/`：
+
+- `embedding_alpha40_s73`：主模型，启动PID4021882。
+- `embedding_alpha40_lean_s73`：精简末端卷积候选，启动PID4021885。
+- `embedding_d2nn_alpha40_s73`：普通D2NN，启动PID4021888。
+
+2026-09-08 12:40 UTC检查：主模型完成3轮，四alpha为0.59755/0.59729/0.59466/0.59446
+（language1/2、vision1/2）；12块物理相位的周期差RMS范围0.02928–0.11993 rad。
+这是训练更新证据，**不是光学有效贡献证据或最终精度**。三组计划100轮，尚未完成。
+结束后自动生成正常全量test结果、专家选择统计、相位图及 `same_checkpoint_remove_optical.json`，
+后者是原权重去光，不是另行训练纯电子模型。
