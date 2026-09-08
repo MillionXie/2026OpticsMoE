@@ -54,6 +54,11 @@ TASKS = {
             ("video_neural_ccd_to_fusion", "video_ccd_to_fusion", 2),
         ],
         "serial_extra": [
+            (
+                "LGVQ temporal, 16 videos parallel",
+                "required_frame_to_video_bridge",
+                "frame_to_video_bridge",
+            ),
             ("LGVQ temporal, 16 videos parallel", "task_head", "task_head"),
         ],
         "residual": [("frame_parallel_residual", 2), ("video_parallel_residual", 2)],
@@ -68,6 +73,11 @@ TASKS = {
             ("spatial_language_neural_ccd_to_fusion", "spatial_language_ccd_to_fusion", 2),
         ],
         "serial_extra": [
+            (
+                "LGVQ spatial, single video 4 frames",
+                "required_frame_to_sequence_bridge",
+                "spatial_frame_to_sequence_bridge",
+            ),
             ("LGVQ spatial, single video 4 frames", "task_head", "spatial_task_head"),
         ],
         "residual": [
@@ -115,6 +125,11 @@ TASKS = {
             ("language_neural_ccd_to_fusion", "language_ccd_to_fusion", 2),
         ],
         "serial_extra": [
+            (
+                "OpenMoji interaction",
+                "required_language_to_vision_bridge",
+                "language_to_vision_bridge",
+            ),
             ("OpenMoji interaction", "task_head", "task_head"),
         ],
         "residual": [("vision_parallel_residual", 2), ("language_parallel_residual", 2)],
@@ -150,6 +165,7 @@ for task_id, spec in TASKS.items():
                 "name": power_name,
                 "occurrences": occurrences,
                 "cuda_median_ms": float(row["cuda_event_ms"]["median"]),
+                "wall_median_ms": float(row["synchronized_wall_ms"]["median"]),
                 "active_mean_w": power(source, profile, power_name),
             }
         )
@@ -160,6 +176,7 @@ for task_id, spec in TASKS.items():
                 "name": power_name,
                 "occurrences": 1,
                 "cuda_median_ms": float(row["cuda_median_ms"]),
+                "wall_median_ms": float(row["wall_median_ms"]),
                 "active_mean_w": power(source, profile, power_name),
             }
         )
@@ -171,11 +188,16 @@ for task_id, spec in TASKS.items():
                 "name": name,
                 "occurrences": occurrences,
                 "cuda_median_ms": float(row["cuda_event_ms"]["median"]),
+                "wall_median_ms": float(row["synchronized_wall_ms"]["median"]),
                 "active_mean_w": power(source, profile, name),
             }
         )
     serial_ms = sum(row["cuda_median_ms"] * row["occurrences"] for row in serial)
+    serial_wall_ms = sum(
+        row["wall_median_ms"] * row["occurrences"] for row in serial
+    )
     canonical_ms = physical_ms + serial_ms
+    diagnostic_wall_ms = physical_ms + serial_wall_ms
     optical_j = OPTICAL_POWER_W * canonical_ms / 1000.0
     gpu_idle_j = idle_w * canonical_ms / 1000.0
     serial_increment_j = sum(
@@ -201,7 +223,9 @@ for task_id, spec in TASKS.items():
             "physical_passes": spec["physical_passes"],
             "physical_ms": physical_ms,
             "serial_electronic_cuda_ms": serial_ms,
+            "serial_electronic_synchronized_wall_ms": serial_wall_ms,
             "canonical_table_latency_ms": canonical_ms,
+            "diagnostic_synchronized_wall_latency_ms": diagnostic_wall_ms,
             "optical_rig_power_w": OPTICAL_POWER_W,
             "optical_rig_energy_j": optical_j,
             "a100_idle_power_w": idle_w,
@@ -215,7 +239,7 @@ for task_id, spec in TASKS.items():
             + GPU_RATED_POWER_W * canonical_ms / 1000.0,
             "serial_components": serial,
             "parallel_residual_components": residual,
-            "excluded_from_latency": "parallel residual, required bridge, router post, next-SLM layout/rebuild, file/image processing",
+            "excluded_from_latency": "parallel residual, router post, next-SLM layout/rebuild, file/image processing",
         }
     )
 
@@ -253,7 +277,8 @@ for row in energy_rows:
 summary = {
     "schema_version": 1,
     "canonical_contract": {
-        "ours_timing": "six/three physical 1.314ms passes + CUDA-event CCD-to-fusion + CUDA-event complete task head; no bridge",
+        "ours_timing": "six/three physical 1.314ms passes + CUDA-event CCD-to-fusion + every required serial bridge + CUDA-event complete task head",
+        "wall_diagnostic": "the same serial graph recomputed from synchronized host-wall medians; diagnostic only and never mixed into the CUDA primary table",
         "ours_energy": "80.388W optical rig plus measured A100 board-power proxy over the same CUDA table boundary; parallel residual contributes incremental energy but no latency",
         "qwen_formal": "performance, latency, and energy must come from the same full-558 formal run; sweep power is occupancy evidence only",
         "authoritative_ours_times_ms": {

@@ -1,8 +1,10 @@
 """A100 batch-scaling and formal LGVQ temporal-quality benchmark.
 
-Each batch contains distinct videos.  Video decoding and processor work are
-measured separately; the primary CUDA boundary starts at the first native
-Vision Transformer block and ends when the scalar quality score is ready.
+Each batch contains distinct videos. Video decoding, processor work and H2D
+transfer are measured separately. The primary model-only CUDA boundary starts
+after all input tensors are resident on the GPU, immediately before the full
+Qwen model forward, and ends when the scalar quality score is ready. The older
+first-native-Vision-block boundary is retained as a secondary diagnostic.
 """
 
 from __future__ import annotations
@@ -21,6 +23,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Sequence
 
+import cv2
 import numpy as np
 import torch
 from torch import nn
@@ -223,17 +226,45 @@ def prepare_batch(
     prompt: str,
     device: torch.device,
     image_size: int,
-) -> tuple[dict[str, torch.Tensor], list[list[int]]]:
+) -> tuple[dict[str, torch.Tensor], list[list[int]], list[dict[str, Any]]]:
     videos: list[Any] = []
     metadata: list[Any] = []
     positions: list[list[int]] = []
+    traces: list[dict[str, Any]] = []
     for row in rows:
+        video_path = Path(row["video_path"])
+        capture = cv2.VideoCapture(str(video_path))
+        source_width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+        source_height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        source_frames = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
+        source_fps = float(capture.get(cv2.CAP_PROP_FPS))
+        capture.release()
+        nominal_crop_side = max(2, round(min(source_height, source_width) * 0.65))
         frames, video_metadata, frame_positions = core.decode_random_seek(
-            Path(row["video_path"]), core.FRAME_FRACTIONS[4], image_size
+            video_path, core.FRAME_FRACTIONS[4], image_size
         )
         videos.append(frames)
         metadata.append(video_metadata)
         positions.append(frame_positions)
+        traces.append(
+            {
+                "sample_id": row["sample_id"],
+                "video_path": str(video_path),
+                "source_file_bytes": video_path.stat().st_size,
+                "source_video_size_wh": [source_width, source_height],
+                "source_frame_count": source_frames,
+                "source_fps": source_fps,
+                "selected_frame_positions": frame_positions,
+                "center_crop_fraction_of_short_side": 0.65,
+                "nominal_center_crop_size_wh": [nominal_crop_side, nominal_crop_side],
+                "resize_output_size_wh": [image_size, image_size],
+                "resize_interpolation": "OpenCV INTER_AREA",
+                "processor_pixel_constraint": {
+                    "min_pixels": image_size**2,
+                    "max_pixels": image_size**2,
+                },
+            }
+        )
     inputs = processor(
         text=[prompt] * len(rows),
         videos=videos,
@@ -242,7 +273,7 @@ def prepare_batch(
         return_tensors="pt",
         do_sample_frames=False,
     )
-    return {key: value.to(device) for key, value in inputs.items()}, positions
+    return {key: value.to(device) for key, value in inputs.items()}, positions, traces
 
 
 @torch.inference_mode()
@@ -254,6 +285,10 @@ def forward_batch(
     timer: core.BoundaryTimer,
 ) -> tuple[float, list[float], dict[str, Any]]:
     torch.cuda.synchronize()
+    full_host_started = time.perf_counter()
+    full_start_event = torch.cuda.Event(enable_timing=True)
+    full_end_event = torch.cuda.Event(enable_timing=True)
+    full_start_event.record()
     timer.reset(expected_calls=1)
     with torch.autocast("cuda", dtype=torch.bfloat16):
         hidden = model.model(**inputs, return_dict=True, use_cache=False).last_hidden_state
@@ -265,9 +300,17 @@ def forward_batch(
     # scheme-2 baseline before selecting the five trainable quality rows.
     _native_full_logits = model.lm_head(pooled.to(model.lm_head.weight.dtype))
     prediction = head(pooled).softmax(-1) @ scores
+    full_end_event.record()
     timing = timer.finish()
+    full_host_ended = time.perf_counter()
+    timing["full_gpu_input_to_score_cuda_ms"] = float(
+        full_start_event.elapsed_time(full_end_event)
+    )
+    timing["full_gpu_input_to_score_synchronized_wall_ms"] = 1000.0 * (
+        full_host_ended - full_host_started
+    )
     return (
-        float(timing["vision_first_block_to_score_cuda_ms"]),
+        float(timing["full_gpu_input_to_score_cuda_ms"]),
         [float(value) for value in prediction.detach().cpu().tolist()],
         timing,
     )
@@ -342,7 +385,7 @@ def run_sweep(args: argparse.Namespace, runtime: tuple[Any, ...], gpu_name: str)
         torch.cuda.reset_peak_memory_stats()
         started = time.perf_counter()
         try:
-            inputs, _ = prepare_batch(
+            inputs, _, _ = prepare_batch(
                 rows[:batch_size], processor, prompt, torch.device("cuda:0"), args.image_size
             )
             preprocessing_ms = 1000.0 * (time.perf_counter() - started)
@@ -354,13 +397,21 @@ def run_sweep(args: argparse.Namespace, runtime: tuple[Any, ...], gpu_name: str)
             time.sleep(2.0)
             sampler.set_phase(None)
             latencies: list[float] = []
+            wall_latencies: list[float] = []
+            legacy_latencies: list[float] = []
             for trial in range(args.sweep_trials):
                 sampler.set_phase(f"active:b{batch_size}:trial{trial}")
                 try:
-                    latency, _, _ = forward_batch(inputs, model, head, scores, timer)
+                    latency, _, timing = forward_batch(inputs, model, head, scores, timer)
                 finally:
                     sampler.set_phase(None)
                 latencies.append(latency)
+                wall_latencies.append(
+                    float(timing["full_gpu_input_to_score_synchronized_wall_ms"])
+                )
+                legacy_latencies.append(
+                    float(timing["vision_first_block_to_score_cuda_ms"])
+                )
             samples = sampler.stop()
             latency_report = summary(latencies)
             telemetry = telemetry_summary(samples, latencies, batch_size)
@@ -371,7 +422,13 @@ def run_sweep(args: argparse.Namespace, runtime: tuple[Any, ...], gpu_name: str)
                 "sweep_warmup_forwards": args.sweep_warmup,
                 "timed_forwards": args.sweep_trials,
                 "preprocessing_ms_once_not_in_primary_latency": preprocessing_ms,
-                "model_boundary_batch_cuda_ms": latency_report,
+                "full_gpu_input_to_score_batch_cuda_ms": latency_report,
+                "full_gpu_input_to_score_batch_synchronized_wall_ms": summary(
+                    wall_latencies
+                ),
+                "legacy_vision_block0_to_score_batch_cuda_ms": summary(
+                    legacy_latencies
+                ),
                 "throughput_videos_per_second": 1000.0 * batch_size / latency_report["mean"],
                 "torch_peak_allocated_mib": torch.cuda.max_memory_allocated() / 2**20,
                 "torch_peak_reserved_mib": torch.cuda.max_memory_reserved() / 2**20,
@@ -400,15 +457,20 @@ def run_sweep(args: argparse.Namespace, runtime: tuple[Any, ...], gpu_name: str)
         "status": "complete",
         "mode": "batch_power_sweep",
         "workload": "LGVQ temporal quality, four distinct 448x448 frames per video",
-        "timing_boundary": "first native Vision Transformer block input to scalar score ready on GPU",
+        "timing_boundary": (
+            "all input tensors resident on GPU, immediately before the full Qwen forward, "
+            "through the complete native vocabulary projection and five-quality-token score"
+        ),
         "timing_excludes": [
             "model/processor load",
             "MP4 open and random-seek decode",
             "center crop/resize",
             "processor/tokenizer",
             "host-to-device copy",
-            "vision patch embedding before block 0",
         ],
+        "secondary_timing_boundary": (
+            "first native Vision Transformer block input to scalar score ready on GPU"
+        ),
         "selection_rule": (
             "Select the largest feasible batch at or before the throughput/power plateau; "
             "report measured power fraction instead of claiming the 250 W limit was reached."
@@ -429,7 +491,7 @@ def run_formal(args: argparse.Namespace, runtime: tuple[Any, ...], gpu_name: str
     for batch_index, start in enumerate(range(0, len(rows), batch_size)):
         selected = rows[start : start + batch_size]
         preprocessing_started = time.perf_counter()
-        cpu_inputs, positions = prepare_batch(
+        cpu_inputs, positions, preprocessing_traces = prepare_batch(
             selected, processor, prompt, torch.device("cpu"), args.image_size
         )
         preprocessing_ms = 1000.0 * (time.perf_counter() - preprocessing_started)
@@ -440,6 +502,7 @@ def run_formal(args: argparse.Namespace, runtime: tuple[Any, ...], gpu_name: str
                 "selected": selected,
                 "inputs": cpu_inputs,
                 "positions": positions,
+                "preprocessing_traces": preprocessing_traces,
                 "preprocessing_ms": preprocessing_ms,
             }
         )
@@ -463,6 +526,7 @@ def run_formal(args: argparse.Namespace, runtime: tuple[Any, ...], gpu_name: str
         start = int(prepared["start"])
         selected = prepared["selected"]
         positions = prepared["positions"]
+        preprocessing_traces = prepared["preprocessing_traces"]
         transfer_started = time.perf_counter()
         inputs = {key: value.to("cuda:0") for key, value in prepared["inputs"].items()}
         prepared["inputs"] = {}
@@ -478,11 +542,31 @@ def run_formal(args: argparse.Namespace, runtime: tuple[Any, ...], gpu_name: str
             {
                 "batch_index": batch_index,
                 "batch_size_videos": len(selected),
-                "model_boundary_cuda_ms": latency,
+                "full_gpu_input_to_score_cuda_ms": latency,
+                "full_gpu_input_to_score_synchronized_wall_ms": float(
+                    timing["full_gpu_input_to_score_synchronized_wall_ms"]
+                ),
+                "legacy_vision_block0_to_score_cuda_ms": float(
+                    timing["vision_first_block_to_score_cuda_ms"]
+                ),
+                "legacy_vision_block0_to_score_synchronized_wall_ms": float(
+                    timing["vision_first_block_to_score_host_ms"]
+                ),
                 "preprocessing_ms": preprocessing_ms,
                 "host_to_device_ms": transfer_ms,
                 "component_sum_decode_processor_transfer_model_ms": (
                     preprocessing_ms + transfer_ms + latency
+                ),
+                "input_tensor_contract": json.dumps(
+                    {
+                        key: {
+                            "shape": list(value.shape),
+                            "dtype": str(value.dtype),
+                            "device": str(value.device),
+                        }
+                        for key, value in inputs.items()
+                    },
+                    sort_keys=True,
                 ),
                 "vision_block0_input_shape": timing["vision_first_block_input_shape"],
                 "language_block0_input_shape": timing["language_first_block_input_shape"],
@@ -498,6 +582,7 @@ def run_formal(args: argparse.Namespace, runtime: tuple[Any, ...], gpu_name: str
                     "batch_index": batch_index,
                     "batch_size_videos": len(selected),
                     "selected_frame_positions": positions[offset],
+                    "preprocessing_trace": preprocessing_traces[offset],
                 }
             )
         del inputs
@@ -511,8 +596,20 @@ def run_formal(args: argparse.Namespace, runtime: tuple[Any, ...], gpu_name: str
     timer.close()
     samples = sampler.stop()
     full_batches = [row for row in batch_records if row["batch_size_videos"] == batch_size]
-    full_latencies = [float(row["model_boundary_cuda_ms"]) for row in full_batches]
-    all_latencies = [float(row["model_boundary_cuda_ms"]) for row in batch_records]
+    full_latencies = [
+        float(row["full_gpu_input_to_score_cuda_ms"]) for row in full_batches
+    ]
+    all_latencies = [
+        float(row["full_gpu_input_to_score_cuda_ms"]) for row in batch_records
+    ]
+    full_wall_latencies = [
+        float(row["full_gpu_input_to_score_synchronized_wall_ms"])
+        for row in full_batches
+    ]
+    full_legacy_latencies = [
+        float(row["legacy_vision_block0_to_score_cuda_ms"])
+        for row in full_batches
+    ]
     targets = np.asarray([row["target_mos"] for row in records], dtype=np.float64)
     predictions = np.asarray([row["prediction"] for row in records], dtype=np.float64)
     telemetry = telemetry_summary(
@@ -537,17 +634,28 @@ def run_formal(args: argparse.Namespace, runtime: tuple[Any, ...], gpu_name: str
         "explicit_warmup_forwards": 0,
         "first_test_batch_included_in_aggregate": True,
         "performance": core.metrics(targets, predictions),
-        "timing_boundary": "first native Vision Transformer block input to scalar score ready on GPU",
+        "timing_boundary": (
+            "all input tensors resident on GPU, immediately before the full Qwen forward, "
+            "through the complete native vocabulary projection and five-quality-token score"
+        ),
         "timing_excludes": [
             "model/processor load",
             "MP4 open and random-seek decode",
             "center crop/resize",
             "processor/tokenizer",
             "host-to-device copy",
-            "vision patch embedding before block 0",
         ],
-        "model_boundary_full_batch_cuda_ms": summary(full_latencies),
-        "model_boundary_all_batches_cuda_ms": summary(all_latencies),
+        "secondary_timing_boundary": (
+            "first native Vision Transformer block input to scalar score ready on GPU"
+        ),
+        "full_gpu_input_to_score_full_batch_cuda_ms": summary(full_latencies),
+        "full_gpu_input_to_score_full_batch_synchronized_wall_ms": summary(
+            full_wall_latencies
+        ),
+        "legacy_vision_block0_to_score_full_batch_cuda_ms": summary(
+            full_legacy_latencies
+        ),
+        "full_gpu_input_to_score_all_batches_cuda_ms": summary(all_latencies),
         "preprocessing_full_batch_ms": summary(
             [float(row["preprocessing_ms"]) for row in full_batches]
         ),
@@ -579,6 +687,21 @@ def run_formal(args: argparse.Namespace, runtime: tuple[Any, ...], gpu_name: str
             "all CPU decode/processor batches first, then all GPU batches consecutively; "
             "this prevents excluded decode gaps from down-clocking the model-active power sample"
         ),
+        "preprocessing_contract": {
+            "source_sampling": "four deterministic positions at FRAME_FRACTIONS[4]",
+            "frame_fractions": list(core.FRAME_FRACTIONS[4]),
+            "per_decoded_frame": (
+                "center crop to round(0.65 * min(source width, source height)), "
+                "then OpenCV INTER_AREA resize to 448x448 RGB"
+            ),
+            "processor": (
+                "Qwen3-VL AutoProcessor, min_pixels=max_pixels=448^2, padding enabled, "
+                "do_sample_frames=False"
+            ),
+            "prompt_template": prompt,
+            "raw_per_sample_trace": "sample_preprocessing.jsonl",
+            "raw_per_batch_tensor_shapes": "batch_timing.csv:input_tensor_contract",
+        },
         **provenance(args, gpu_name),
     }
     output = args.output / "formal" / f"batch_{batch_size:02d}"
@@ -598,7 +721,17 @@ def run_formal(args: argparse.Namespace, runtime: tuple[Any, ...], gpu_name: str
         for row in records:
             value = dict(row)
             value["selected_frame_positions"] = json.dumps(value["selected_frame_positions"])
+            value["preprocessing_trace"] = json.dumps(
+                value["preprocessing_trace"], sort_keys=True
+            )
             writer.writerow(value)
+    with (output / "sample_preprocessing.jsonl").open(
+        "w", encoding="utf-8", newline="\n"
+    ) as stream:
+        for row in records:
+            stream.write(
+                json.dumps(row["preprocessing_trace"], sort_keys=True) + "\n"
+            )
     print(json.dumps(report, indent=2), flush=True)
     return report
 
