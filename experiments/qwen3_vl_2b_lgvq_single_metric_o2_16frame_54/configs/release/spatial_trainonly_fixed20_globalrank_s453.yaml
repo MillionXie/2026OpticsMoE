@@ -1,0 +1,27 @@
+base_config: spatial_trainonly_fixed20_rankstrong_s447.yaml
+output_dir: ../../runs/lgvq_spatial_trainonly_fixed20_globalrank_s453
+random_seed: 453
+
+# Strong global-order objective with a very small trust-region-like step.
+# Only the training objective and optimizer scale differ from s447.
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_trainonly_fixed20_rankstrong_s447/best_observed_test_checkpoint.pt
+  epochs: 20
+  batch_size: 256
+  learning_rate: 0.0000005
+  phase_learning_rate: 0.00001
+  router_phase_learning_rate: 0.00002
+  readout_learning_rate_factor: 0.35
+  minimum_learning_rate_factor: 0.05
+  ema_decay: 0.95
+  test_interval_epochs: 1
+  phase_snapshot_interval_epochs: 20
+
+loss:
+  ranking_weight: 4.00
+  correlation_weight: 8.00
+  soft_spearman_weight: 1.00
+  soft_rank_temperature: 0.10
+  soft_target_weight: 0.0
+  optical_alignment_weight: 0.001
+

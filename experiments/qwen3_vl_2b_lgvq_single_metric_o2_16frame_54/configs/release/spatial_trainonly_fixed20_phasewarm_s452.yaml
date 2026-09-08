@@ -1,0 +1,23 @@
+base_config: spatial_trainonly_fixed20_rankstrong_s447.yaml
+output_dir: ../../runs/lgvq_spatial_trainonly_fixed20_phasewarm_s452
+random_seed: 452
+
+# Five optical-only epochs reheat the physical masks/router without allowing
+# the electronic branch to compensate; later epochs jointly make tiny updates.
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_trainonly_fixed20_rankstrong_s447/best_observed_test_checkpoint.pt
+  epochs: 20
+  batch_size: 128
+  learning_rate: 0.000001
+  phase_learning_rate: 0.00008
+  router_phase_learning_rate: 0.00016
+  readout_learning_rate_factor: 0.35
+  minimum_learning_rate_factor: 0.05
+  phase_warmup_epochs: 5
+  late_refine_start_epoch: 0
+  restore_best_at_stage_transition: true
+  ema_decay: 0.90
+  ema_start_epoch: 1
+  test_interval_epochs: 1
+  phase_snapshot_interval_epochs: 20
+
