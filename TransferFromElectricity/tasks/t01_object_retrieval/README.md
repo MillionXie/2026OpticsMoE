@@ -1,6 +1,24 @@
 # 固定专家库生成：三数据集检索
 
-## 第五轮：零初值、视觉空间特征与生成 global（执行中）
+## 第五轮：零初值、视觉空间特征与生成 global（已完成）
+
+正式15组、450个epoch，以及同卡五组短计时复测均已完成。正式训练固定源码 `c024b9280433f6e7fe31fc0122a1b8aadf342b38`；Caltech使用GPU3 RTX4090，CIFAR使用GPU5 RTX3090，Imagenette-160使用GPU1 RTX4090。短计时固定源码 `c558fd03054c9abc6e5db245a1017106a2549a1b`，五组均使用GPU3 RTX4090。未使用A100。
+
+下表为本轮 **Top-1 / Top-3（%）**，每组seed42，按validation选模。任务是图像到十个类别原型的检索。
+
+| 方法 | Caltech十类 | CIFAR-100固定十类 | Imagenette-160 |
+|---|---:|---:|---:|
+| 直接优化相位 | 82.00 / 94.50 | 50.60 / 81.70 | 39.16 / 67.08 |
+| CLIP视觉空间生成 | 83.50 / 94.00 | 48.40 / 79.30 | 38.42 / 65.55 |
+| Qwen视觉池化消融 | 80.50 / 93.00 | 50.00 / 81.20 | 39.13 / 66.96 |
+| Qwen视觉空间生成 | 80.00 / 93.50 | 49.90 / 79.80 | 37.25 / 66.14 |
+| Qwen空间生成expert和global | 80.50 / 92.50 | 47.10 / 78.10 | 36.36 / 64.56 |
+
+本轮证实零初值下生成链路可以训练，mask和任务输出确实变化；尚未显示稳定的准确率或训练速度优势。空间生成相对池化的Top-1在三套数据上均未提高，生成global也没有一致收益。同卡短计时的联合阶段训练循环分别为 **64.34 / 71.42 / 110.62 / 110.70 / 110.20秒**（按表中方法顺序）；CLIP约多用11%，Qwen约多用71%–72%。这不是完整正式epoch均值，全部逐轮分项另列。
+
+重要限制：现有光学输入坐标是token索引×特征通道，保留Qwen图像二维特征并不等于端到端原图坐标对齐；Language在所选epoch只使用两个专家。正式训练部分run遇到后来进入同卡的外部进程，耗时已整组标记；五组短计时的GPU采样均未发现外部计算PID。单seed、历史测试集复用及Caltech同域warmstart限制仍须保留。
+
+阅读 [结构、初始化与训练说明](reports/spatial_v4_20260908/空间生成结构与训练说明.md)、[15组完整成绩与平均epoch时间](reports/spatial_v4_20260908/完整结果.md)、[450轮分项时间](reports/spatial_v4_20260908/epoch_times.csv)、[同卡短计时](reports/spatial_v4_20260908/同卡短计时复测.md)。完整相位拼图和审计在同一报告目录；复现操作统一从 [复现入口](reports/reproduction/README.md) 开始。
 
 用户明确要求初始化的 **raw phase 必须全零，sigmoid约束后为π**。本轮使用独立 `configs/spatial_v4/{caltech,cifar,imagenette}.yaml`，
 将两侧 expert、global 和 optical Router 的全部 raw phase 重置为零，并保存逐层初始化审计。非相位电子参数仍沿用共同 warmstart。
@@ -55,7 +73,7 @@ Top-3 达到约 66%–95%，CIFAR/Imagenette 的 Top-1 仍未达到 60%。
 及开发选择、设备与同步审计均归档于同一报告目录。
 第四轮详细协议和开发选择保留在文末。
 
-## 2026-09-08 计时与完整专家层
+## 第四轮补充：2026-09-08 计时与完整专家层（历史）
 
 新增计时检查使用 `configs/control_v3/timing_cifar.yaml`：direct、Qwen LoRA、CLIP LoRA 在同一空闲 RTX 4090 上顺序运行，每阶段两轮、每轮 120 batch，保留相同 PK batch=30、初值、精度与损失。只使用验证集，不能并入正式成绩表。CUDA 同步后分别记录阶段设置、训练循环、验证/审计、checkpoint/主日志耗时；计时文件自身写入、模型加载、初始验证和训练后的干预不计入 epoch。每阶段第二轮用于稳态比较，六轮原值全部保留。旧日志的记录间隔与这次精确计时分开报告。
 
@@ -65,15 +83,15 @@ Top-3 达到约 66%–95%，CIFAR/Imagenette 的 Top-1 仍未达到 60%。
 [18 个 epoch 的分项实测](reports/timing_and_masks_20260908/measured_epoch_timing.csv) 与 [旧九组正式 run 的270轮记录](reports/timing_and_masks_20260908/historical_epoch_timing.csv) 分别保留。
 
 计时结果、初始化数值、生成头逐层形状和 global 生成扩展设计见 [计时与 Mask 生成说明](reports/timing_and_masks_20260908/计时与Mask生成说明.md)。
-当前 direct/Qwen/CLIP 使用相同随机物理初相位，实际范围 1.24610–5.03708 rad；不是 direct 从零开始。
-生成组用 `anchor + G(theta) - G(theta_initial)` 保持共同起点；global 仍沿用 warmstart 后直接训练，尚未启用生成 global。
+该历史补充的 direct/Qwen/CLIP 使用相同随机物理初相位，实际范围 1.24610–5.03708 rad；不是 direct 从零开始。
+该轮生成组用 `anchor + G(theta) - G(theta_initial)` 保持共同起点；global 沿用 warmstart 后直接训练，当时尚未启用生成 global。
 三数据集正式专家已按真实 2×2 aperture 拼成 Vision/Language 两张 518×518 完整层，保留30像素间隙和20像素保护区；
 见 [Caltech](reports/timing_and_masks_20260908/caltech_assembled_expert_layers.png)、[CIFAR](reports/timing_and_masks_20260908/cifar_assembled_expert_layers.png)、[Imagenette](reports/timing_and_masks_20260908/imagenette_assembled_expert_layers.png)。
 精确相位张量在 `runs/smoke/20260908_v3_assembled_masks/`，切片重建误差为零，不覆盖旧 bank。
 
 ## 第三轮历史摘要
 
-本节及后续第三轮指标、0.5 起点描述均属于历史；当前第四轮结果和计时以本文开头为准。
+本节及后续第三轮指标、0.5 起点描述均属于历史；最新第五轮以本文开头为准，第四轮结果和计时已另列为历史。
 
 当前主线恢复 Caltech 十类；三十类保留为规模诊断。新增 CIFAR-100 与预先固定的十类子集，
 沿用类别原型检索，不能直接当作带 100 类分类头的标准 CIFAR 分类榜单成绩。
@@ -97,7 +115,7 @@ Top-3 达到约 66%–95%，CIFAR/Imagenette 的 Top-1 仍未达到 60%。
 [CIFAR 百类](reports/cifar100_heads_20260907/summary.json) 的完整协议、干预与限制见文末。
 前面的首轮 pilot、强扰动诊断、共享头三种子与三十类扩展均保留为历史实验，不混入这次结果。
 
-## 当前架构与四组含义
+## 历史方案的架构与四组含义
 
 所有样本共用 Vision 四张、Language 四张 224×224 expert mask；训练中更新，导出后固定。
 每一侧都是 optical Router（Top-2/4）+ experts + global phase，与电子模块融合。
@@ -193,7 +211,7 @@ Language Router 四组均只使用前两个专家（训练选择次数 1500/1500
 原始日志、配置和 sample manifest 在任务 runs 下；checkpoint 留在服务器同名 run。
 后续优先诊断 Language Router 集中及生成相位的实际贡献，再考虑延长训练和多 seed。
 
-## 当前实际计算图
+## 历史文本生成方案的实际计算图
 
 本任务复用的是光电混合 student。原任务 Qwen3-VL-Embedding 的图像 patch/位置嵌入、
 视觉 merger、文本 token embedding 等冻结组件保留；原 Vision/Language Transformer 主干
@@ -293,7 +311,7 @@ LoRA B 从零更新到范数 0.192866，结合先前任务梯度记录，排除�
 [live/EMA 相位变化图](reports/diagnosis_20260907/phase_changes.png) 使用共同色标，显示每模态 expert 0；
 [D 的全部八张相位变化图](reports/diagnosis_20260907/qwen_all_expert_changes.png) 同样按共同色标展示。
 
-### 下一阶段建议（尚未执行）
+### 2026-09-07 当时的下一阶段建议（历史记录）
 
 先验证“只靠 expert 更新，能否学到任务”，再扩大方法比较。保持固定专家库与本任务数据身份：
 
@@ -448,7 +466,7 @@ Vision Router 在后期覆盖四专家；Language Router 仍固定选择前两�
 下载脚本 `collect_results.py` 只读取已完成 run 的轻量产物/部署相位，逐文件对照服务器 SHA256，
 不传源码与 best/last checkpoint；凭证仅交互输入、不落盘。
 
-### 当前扩展运行合同
+### 第二轮扩展运行合同
 
 确定性光学 400-step 诊断：`runs/smoke/20260907_ideal400_{direct,qwen_lora}_s42`。
 相同 20 轮、每轮 20 batch；三十类接口检查用

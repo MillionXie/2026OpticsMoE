@@ -1,0 +1,61 @@
+﻿dataset,method,validation_top1_threshold_percent,gpu_uuid,gpu_model,run_foreign_gpu_pids,reached,first_epoch,cumulative_epoch_seconds
+caltech,direct,50,GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd,NVIDIA GeForce RTX 4090,[],True,1,53.805675625801086
+caltech,direct,60,GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd,NVIDIA GeForce RTX 4090,[],True,1,53.805675625801086
+caltech,direct,70,GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd,NVIDIA GeForce RTX 4090,[],True,2,104.94417525827885
+caltech,direct,80,GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd,NVIDIA GeForce RTX 4090,[],True,11,725.8873726800084
+caltech,clip_vision_lora,50,GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd,NVIDIA GeForce RTX 4090,[],True,1,64.30152191966772
+caltech,clip_vision_lora,60,GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd,NVIDIA GeForce RTX 4090,[],True,3,192.68578737974167
+caltech,clip_vision_lora,70,GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd,NVIDIA GeForce RTX 4090,[],True,9,688.7479332759976
+caltech,clip_vision_lora,80,GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd,NVIDIA GeForce RTX 4090,[],True,27,2255.5732662826777
+caltech,qwen_vision_pooled_lora,50,GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd,NVIDIA GeForce RTX 4090,[],True,3,317.23173136264086
+caltech,qwen_vision_pooled_lora,60,GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd,NVIDIA GeForce RTX 4090,[],True,6,676.1030763536692
+caltech,qwen_vision_pooled_lora,70,GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd,NVIDIA GeForce RTX 4090,[],True,11,1300.6070337966084
+caltech,qwen_vision_pooled_lora,80,GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd,NVIDIA GeForce RTX 4090,[],True,24,2998.9428718984127
+caltech,qwen_vision_lora,50,GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd,NVIDIA GeForce RTX 4090,"[3754332, 3878765, 3978128]",True,2,239.8499350324273
+caltech,qwen_vision_lora,60,GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd,NVIDIA GeForce RTX 4090,"[3754332, 3878765, 3978128]",True,3,354.9253627061844
+caltech,qwen_vision_lora,70,GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd,NVIDIA GeForce RTX 4090,"[3754332, 3878765, 3978128]",True,8,1007.8668337985873
+caltech,qwen_vision_lora,80,GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd,NVIDIA GeForce RTX 4090,"[3754332, 3878765, 3978128]",False,,
+caltech,qwen_vision_global_lora,50,GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd,NVIDIA GeForce RTX 4090,[4011409],True,2,300.09679981321096
+caltech,qwen_vision_global_lora,60,GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd,NVIDIA GeForce RTX 4090,[4011409],True,3,462.6294016242027
+caltech,qwen_vision_global_lora,70,GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd,NVIDIA GeForce RTX 4090,[4011409],True,10,1439.928231537342
+caltech,qwen_vision_global_lora,80,GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd,NVIDIA GeForce RTX 4090,[4011409],True,27,3662.194706939161
+cifar,direct,50,GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb,NVIDIA GeForce RTX 3090,[],True,25,1855.1495734453201
+cifar,direct,60,GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb,NVIDIA GeForce RTX 3090,[],False,,
+cifar,direct,70,GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb,NVIDIA GeForce RTX 3090,[],False,,
+cifar,direct,80,GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb,NVIDIA GeForce RTX 3090,[],False,,
+cifar,clip_vision_lora,50,GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb,NVIDIA GeForce RTX 3090,[],False,,
+cifar,clip_vision_lora,60,GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb,NVIDIA GeForce RTX 3090,[],False,,
+cifar,clip_vision_lora,70,GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb,NVIDIA GeForce RTX 3090,[],False,,
+cifar,clip_vision_lora,80,GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb,NVIDIA GeForce RTX 3090,[],False,,
+cifar,qwen_vision_pooled_lora,50,GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb,NVIDIA GeForce RTX 3090,"[3332960, 3333065, 3366428, 3366481, 3375866, 3421406, 3421451]",True,29,3902.796276204288
+cifar,qwen_vision_pooled_lora,60,GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb,NVIDIA GeForce RTX 3090,"[3332960, 3333065, 3366428, 3366481, 3375866, 3421406, 3421451]",False,,
+cifar,qwen_vision_pooled_lora,70,GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb,NVIDIA GeForce RTX 3090,"[3332960, 3333065, 3366428, 3366481, 3375866, 3421406, 3421451]",False,,
+cifar,qwen_vision_pooled_lora,80,GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb,NVIDIA GeForce RTX 3090,"[3332960, 3333065, 3366428, 3366481, 3375866, 3421406, 3421451]",False,,
+cifar,qwen_vision_lora,50,GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb,NVIDIA GeForce RTX 3090,[],True,30,4253.397797368467
+cifar,qwen_vision_lora,60,GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb,NVIDIA GeForce RTX 3090,[],False,,
+cifar,qwen_vision_lora,70,GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb,NVIDIA GeForce RTX 3090,[],False,,
+cifar,qwen_vision_lora,80,GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb,NVIDIA GeForce RTX 3090,[],False,,
+cifar,qwen_vision_global_lora,50,GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb,NVIDIA GeForce RTX 3090,[4021888],True,30,4675.043740443885
+cifar,qwen_vision_global_lora,60,GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb,NVIDIA GeForce RTX 3090,[4021888],False,,
+cifar,qwen_vision_global_lora,70,GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb,NVIDIA GeForce RTX 3090,[4021888],False,,
+cifar,qwen_vision_global_lora,80,GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb,NVIDIA GeForce RTX 3090,[4021888],False,,
+imagenette,direct,50,GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d,NVIDIA GeForce RTX 4090,[],False,,
+imagenette,direct,60,GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d,NVIDIA GeForce RTX 4090,[],False,,
+imagenette,direct,70,GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d,NVIDIA GeForce RTX 4090,[],False,,
+imagenette,direct,80,GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d,NVIDIA GeForce RTX 4090,[],False,,
+imagenette,clip_vision_lora,50,GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d,NVIDIA GeForce RTX 4090,[],False,,
+imagenette,clip_vision_lora,60,GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d,NVIDIA GeForce RTX 4090,[],False,,
+imagenette,clip_vision_lora,70,GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d,NVIDIA GeForce RTX 4090,[],False,,
+imagenette,clip_vision_lora,80,GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d,NVIDIA GeForce RTX 4090,[],False,,
+imagenette,qwen_vision_pooled_lora,50,GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d,NVIDIA GeForce RTX 4090,[],False,,
+imagenette,qwen_vision_pooled_lora,60,GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d,NVIDIA GeForce RTX 4090,[],False,,
+imagenette,qwen_vision_pooled_lora,70,GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d,NVIDIA GeForce RTX 4090,[],False,,
+imagenette,qwen_vision_pooled_lora,80,GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d,NVIDIA GeForce RTX 4090,[],False,,
+imagenette,qwen_vision_lora,50,GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d,NVIDIA GeForce RTX 4090,"[3593969, 3614251, 3832278]",False,,
+imagenette,qwen_vision_lora,60,GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d,NVIDIA GeForce RTX 4090,"[3593969, 3614251, 3832278]",False,,
+imagenette,qwen_vision_lora,70,GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d,NVIDIA GeForce RTX 4090,"[3593969, 3614251, 3832278]",False,,
+imagenette,qwen_vision_lora,80,GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d,NVIDIA GeForce RTX 4090,"[3593969, 3614251, 3832278]",False,,
+imagenette,qwen_vision_global_lora,50,GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d,NVIDIA GeForce RTX 4090,[],False,,
+imagenette,qwen_vision_global_lora,60,GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d,NVIDIA GeForce RTX 4090,[],False,,
+imagenette,qwen_vision_global_lora,70,GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d,NVIDIA GeForce RTX 4090,[],False,,
+imagenette,qwen_vision_global_lora,80,GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d,NVIDIA GeForce RTX 4090,[],False,,

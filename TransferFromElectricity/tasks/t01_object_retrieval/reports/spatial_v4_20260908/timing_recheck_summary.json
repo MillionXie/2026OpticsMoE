@@ -1,0 +1,181 @@
+{
+  "git_sha": "c558fd03054c9abc6e5db245a1017106a2549a1b",
+  "policy": "Validation only, six epochs, report the second epoch of each stage; retain all 30 epoch records",
+  "initial_validation_percent": {
+    "timing_validation": {
+      "top1_retrieval_accuracy": 20.000000298023224,
+      "top3_retrieval_accuracy": 43.99999976158142
+    },
+    "formal_validation": {
+      "top1_retrieval_accuracy": 20.499999821186066,
+      "top3_retrieval_accuracy": 44.999998807907104
+    }
+  },
+  "rows": [
+    {
+      "method": "direct",
+      "stage": "experts",
+      "epoch": 2,
+      "train_loop_seconds": 49.47854495048523,
+      "epoch_wall_seconds": 59.97163990139961,
+      "gpu_model": "NVIDIA GeForce RTX 4090",
+      "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+      "foreign_gpu_pids": "[]",
+      "train_ratio_to_direct": 1.0
+    },
+    {
+      "method": "direct",
+      "stage": "optics",
+      "epoch": 4,
+      "train_loop_seconds": 63.21830713748932,
+      "epoch_wall_seconds": 71.35518769919872,
+      "gpu_model": "NVIDIA GeForce RTX 4090",
+      "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+      "foreign_gpu_pids": "[]",
+      "train_ratio_to_direct": 1.0
+    },
+    {
+      "method": "direct",
+      "stage": "joint",
+      "epoch": 6,
+      "train_loop_seconds": 64.33992521464825,
+      "epoch_wall_seconds": 72.45852000266314,
+      "gpu_model": "NVIDIA GeForce RTX 4090",
+      "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+      "foreign_gpu_pids": "[]",
+      "train_ratio_to_direct": 1.0
+    },
+    {
+      "method": "clip_vision_lora",
+      "stage": "experts",
+      "epoch": 2,
+      "train_loop_seconds": 53.16171830892563,
+      "epoch_wall_seconds": 61.59715333580971,
+      "gpu_model": "NVIDIA GeForce RTX 4090",
+      "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+      "foreign_gpu_pids": "[]",
+      "train_ratio_to_direct": 1.07443980743828
+    },
+    {
+      "method": "clip_vision_lora",
+      "stage": "optics",
+      "epoch": 4,
+      "train_loop_seconds": 68.68493346869946,
+      "epoch_wall_seconds": 76.88969646394253,
+      "gpu_model": "NVIDIA GeForce RTX 4090",
+      "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+      "foreign_gpu_pids": "[]",
+      "train_ratio_to_direct": 1.0864722036817773
+    },
+    {
+      "method": "clip_vision_lora",
+      "stage": "joint",
+      "epoch": 6,
+      "train_loop_seconds": 71.42376638948917,
+      "epoch_wall_seconds": 79.5572119653225,
+      "gpu_model": "NVIDIA GeForce RTX 4090",
+      "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+      "foreign_gpu_pids": "[]",
+      "train_ratio_to_direct": 1.1101002394890591
+    },
+    {
+      "method": "qwen_vision_pooled_lora",
+      "stage": "experts",
+      "epoch": 2,
+      "train_loop_seconds": 89.3987041041255,
+      "epoch_wall_seconds": 98.4206240773201,
+      "gpu_model": "NVIDIA GeForce RTX 4090",
+      "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+      "foreign_gpu_pids": "[]",
+      "train_ratio_to_direct": 1.8068175649382912
+    },
+    {
+      "method": "qwen_vision_pooled_lora",
+      "stage": "optics",
+      "epoch": 4,
+      "train_loop_seconds": 106.09083820134401,
+      "epoch_wall_seconds": 115.28919577598572,
+      "gpu_model": "NVIDIA GeForce RTX 4090",
+      "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+      "foreign_gpu_pids": "[]",
+      "train_ratio_to_direct": 1.67816638890083
+    },
+    {
+      "method": "qwen_vision_pooled_lora",
+      "stage": "joint",
+      "epoch": 6,
+      "train_loop_seconds": 110.62305573374033,
+      "epoch_wall_seconds": 119.26560995727777,
+      "gpu_model": "NVIDIA GeForce RTX 4090",
+      "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+      "foreign_gpu_pids": "[]",
+      "train_ratio_to_direct": 1.7193531911124265
+    },
+    {
+      "method": "qwen_vision_lora",
+      "stage": "experts",
+      "epoch": 2,
+      "train_loop_seconds": 89.19009947031736,
+      "epoch_wall_seconds": 97.90643224865198,
+      "gpu_model": "NVIDIA GeForce RTX 4090",
+      "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+      "foreign_gpu_pids": "[]",
+      "train_ratio_to_direct": 1.8026015025214013
+    },
+    {
+      "method": "qwen_vision_lora",
+      "stage": "optics",
+      "epoch": 4,
+      "train_loop_seconds": 106.26535537093878,
+      "epoch_wall_seconds": 115.348293825984,
+      "gpu_model": "NVIDIA GeForce RTX 4090",
+      "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+      "foreign_gpu_pids": "[]",
+      "train_ratio_to_direct": 1.6809269368733535
+    },
+    {
+      "method": "qwen_vision_lora",
+      "stage": "joint",
+      "epoch": 6,
+      "train_loop_seconds": 110.69617332518101,
+      "epoch_wall_seconds": 119.62811264395714,
+      "gpu_model": "NVIDIA GeForce RTX 4090",
+      "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+      "foreign_gpu_pids": "[]",
+      "train_ratio_to_direct": 1.7204896175412223
+    },
+    {
+      "method": "qwen_vision_global_lora",
+      "stage": "experts",
+      "epoch": 2,
+      "train_loop_seconds": 89.76392401009798,
+      "epoch_wall_seconds": 98.76851914823055,
+      "gpu_model": "NVIDIA GeForce RTX 4090",
+      "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+      "foreign_gpu_pids": "[]",
+      "train_ratio_to_direct": 1.8141989442075879
+    },
+    {
+      "method": "qwen_vision_global_lora",
+      "stage": "optics",
+      "epoch": 4,
+      "train_loop_seconds": 106.41771438717842,
+      "epoch_wall_seconds": 115.86141419410706,
+      "gpu_model": "NVIDIA GeForce RTX 4090",
+      "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+      "foreign_gpu_pids": "[]",
+      "train_ratio_to_direct": 1.6833369826834743
+    },
+    {
+      "method": "qwen_vision_global_lora",
+      "stage": "joint",
+      "epoch": 6,
+      "train_loop_seconds": 110.19578627496958,
+      "epoch_wall_seconds": 118.43009857088327,
+      "gpu_model": "NVIDIA GeForce RTX 4090",
+      "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+      "foreign_gpu_pids": "[]",
+      "train_ratio_to_direct": 1.7127123773821444
+    }
+  ]
+}

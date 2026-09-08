@@ -1,0 +1,151 @@
+﻿dataset,method,class,query_count,top1_percent,top3_percent
+caltech,direct,airplanes,20,94.9999988079071,100.0
+caltech,direct,Motorbikes,20,80.0000011920929,100.0
+caltech,direct,Faces,20,94.9999988079071,100.0
+caltech,direct,Leopards,20,100.0,100.0
+caltech,direct,accordion,20,80.0000011920929,85.00000238418579
+caltech,direct,grand_piano,20,85.00000238418579,94.9999988079071
+caltech,direct,scorpion,20,20.000000298023224,85.00000238418579
+caltech,direct,sunflower,20,94.9999988079071,94.9999988079071
+caltech,direct,watch,20,89.99999761581421,100.0
+caltech,direct,yin_yang,20,80.0000011920929,85.00000238418579
+caltech,clip_vision_lora,airplanes,20,89.99999761581421,100.0
+caltech,clip_vision_lora,Motorbikes,20,69.9999988079071,100.0
+caltech,clip_vision_lora,Faces,20,100.0,100.0
+caltech,clip_vision_lora,Leopards,20,100.0,100.0
+caltech,clip_vision_lora,accordion,20,80.0000011920929,85.00000238418579
+caltech,clip_vision_lora,grand_piano,20,80.0000011920929,89.99999761581421
+caltech,clip_vision_lora,scorpion,20,44.999998807907104,80.0000011920929
+caltech,clip_vision_lora,sunflower,20,94.9999988079071,94.9999988079071
+caltech,clip_vision_lora,watch,20,94.9999988079071,100.0
+caltech,clip_vision_lora,yin_yang,20,80.0000011920929,89.99999761581421
+caltech,qwen_vision_pooled_lora,airplanes,20,89.99999761581421,94.9999988079071
+caltech,qwen_vision_pooled_lora,Motorbikes,20,85.00000238418579,100.0
+caltech,qwen_vision_pooled_lora,Faces,20,89.99999761581421,94.9999988079071
+caltech,qwen_vision_pooled_lora,Leopards,20,100.0,100.0
+caltech,qwen_vision_pooled_lora,accordion,20,64.99999761581421,100.0
+caltech,qwen_vision_pooled_lora,grand_piano,20,69.9999988079071,85.00000238418579
+caltech,qwen_vision_pooled_lora,scorpion,20,44.999998807907104,80.0000011920929
+caltech,qwen_vision_pooled_lora,sunflower,20,94.9999988079071,94.9999988079071
+caltech,qwen_vision_pooled_lora,watch,20,89.99999761581421,100.0
+caltech,qwen_vision_pooled_lora,yin_yang,20,75.0,80.0000011920929
+caltech,qwen_vision_lora,airplanes,20,89.99999761581421,94.9999988079071
+caltech,qwen_vision_lora,Motorbikes,20,89.99999761581421,100.0
+caltech,qwen_vision_lora,Faces,20,100.0,100.0
+caltech,qwen_vision_lora,Leopards,20,100.0,100.0
+caltech,qwen_vision_lora,accordion,20,69.9999988079071,85.00000238418579
+caltech,qwen_vision_lora,grand_piano,20,75.0,94.9999988079071
+caltech,qwen_vision_lora,scorpion,20,15.000000596046448,80.0000011920929
+caltech,qwen_vision_lora,sunflower,20,94.9999988079071,94.9999988079071
+caltech,qwen_vision_lora,watch,20,85.00000238418579,100.0
+caltech,qwen_vision_lora,yin_yang,20,80.0000011920929,85.00000238418579
+caltech,qwen_vision_global_lora,airplanes,20,94.9999988079071,100.0
+caltech,qwen_vision_global_lora,Motorbikes,20,64.99999761581421,94.9999988079071
+caltech,qwen_vision_global_lora,Faces,20,94.9999988079071,94.9999988079071
+caltech,qwen_vision_global_lora,Leopards,20,100.0,100.0
+caltech,qwen_vision_global_lora,accordion,20,75.0,89.99999761581421
+caltech,qwen_vision_global_lora,grand_piano,20,75.0,89.99999761581421
+caltech,qwen_vision_global_lora,scorpion,20,40.00000059604645,69.9999988079071
+caltech,qwen_vision_global_lora,sunflower,20,94.9999988079071,94.9999988079071
+caltech,qwen_vision_global_lora,watch,20,85.00000238418579,100.0
+caltech,qwen_vision_global_lora,yin_yang,20,80.0000011920929,89.99999761581421
+cifar,direct,bear,100,36.000001430511475,81.00000023841858
+cifar,direct,bus,100,18.000000715255737,91.00000262260437
+cifar,direct,butterfly,100,47.999998927116394,62.99999952316284
+cifar,direct,castle,100,87.99999952316284,93.99999976158142
+cifar,direct,cup,100,50.999999046325684,81.00000023841858
+cifar,direct,elephant,100,37.99999952316284,76.99999809265137
+cifar,direct,girl,100,57.999998331069946,85.00000238418579
+cifar,direct,streetcar,100,25.999999046325684,60.00000238418579
+cifar,direct,telephone,100,67.00000166893005,91.00000262260437
+cifar,direct,wardrobe,100,75.99999904632568,93.99999976158142
+cifar,clip_vision_lora,bear,100,37.00000047683716,81.99999928474426
+cifar,clip_vision_lora,bus,100,27.000001072883606,82.99999833106995
+cifar,clip_vision_lora,butterfly,100,46.99999988079071,57.999998331069946
+cifar,clip_vision_lora,castle,100,86.00000143051147,89.99999761581421
+cifar,clip_vision_lora,cup,100,41.999998688697815,75.99999904632568
+cifar,clip_vision_lora,elephant,100,43.99999976158142,82.99999833106995
+cifar,clip_vision_lora,girl,100,54.00000214576721,80.0000011920929
+cifar,clip_vision_lora,streetcar,100,12.999999523162842,62.99999952316284
+cifar,clip_vision_lora,telephone,100,64.99999761581421,87.00000047683716
+cifar,clip_vision_lora,wardrobe,100,68.99999976158142,91.00000262260437
+cifar,qwen_vision_pooled_lora,bear,100,34.00000035762787,81.00000023841858
+cifar,qwen_vision_pooled_lora,bus,100,20.999999344348907,92.00000166893005
+cifar,qwen_vision_pooled_lora,butterfly,100,51.99999809265137,72.00000286102295
+cifar,qwen_vision_pooled_lora,castle,100,88.99999856948853,91.00000262260437
+cifar,qwen_vision_pooled_lora,cup,100,38.999998569488525,76.99999809265137
+cifar,qwen_vision_pooled_lora,elephant,100,44.999998807907104,80.0000011920929
+cifar,qwen_vision_pooled_lora,girl,100,60.00000238418579,80.0000011920929
+cifar,qwen_vision_pooled_lora,streetcar,100,18.99999976158142,58.99999737739563
+cifar,qwen_vision_pooled_lora,telephone,100,66.00000262260437,87.00000047683716
+cifar,qwen_vision_pooled_lora,wardrobe,100,75.0,93.00000071525574
+cifar,qwen_vision_lora,bear,100,37.99999952316284,82.99999833106995
+cifar,qwen_vision_lora,bus,100,18.99999976158142,91.00000262260437
+cifar,qwen_vision_lora,butterfly,100,50.999999046325684,62.00000047683716
+cifar,qwen_vision_lora,castle,100,87.99999952316284,88.99999856948853
+cifar,qwen_vision_lora,cup,100,46.00000083446503,77.99999713897705
+cifar,qwen_vision_lora,elephant,100,44.999998807907104,77.99999713897705
+cifar,qwen_vision_lora,girl,100,58.99999737739563,82.99999833106995
+cifar,qwen_vision_lora,streetcar,100,15.999999642372131,54.00000214576721
+cifar,qwen_vision_lora,telephone,100,66.00000262260437,88.99999856948853
+cifar,qwen_vision_lora,wardrobe,100,70.99999785423279,91.00000262260437
+cifar,qwen_vision_global_lora,bear,100,31.00000023841858,75.99999904632568
+cifar,qwen_vision_global_lora,bus,100,34.99999940395355,81.99999928474426
+cifar,qwen_vision_global_lora,butterfly,100,51.99999809265137,67.00000166893005
+cifar,qwen_vision_global_lora,castle,100,87.00000047683716,87.99999952316284
+cifar,qwen_vision_global_lora,cup,100,40.00000059604645,72.00000286102295
+cifar,qwen_vision_global_lora,elephant,100,31.00000023841858,75.99999904632568
+cifar,qwen_vision_global_lora,girl,100,56.99999928474426,81.00000023841858
+cifar,qwen_vision_global_lora,streetcar,100,18.99999976158142,68.99999976158142
+cifar,qwen_vision_global_lora,telephone,100,62.99999952316284,77.99999713897705
+cifar,qwen_vision_global_lora,wardrobe,100,56.00000023841858,92.00000166893005
+imagenette,direct,tench,387,82.42893815040588,92.76486039161682
+imagenette,direct,English springer,395,29.620254039764404,56.20253086090088
+imagenette,direct,cassette player,357,49.57983195781708,78.15126180648804
+imagenette,direct,chain saw,386,8.549223095178604,60.6217622756958
+imagenette,direct,church,409,47.677260637283325,74.3276298046112
+imagenette,direct,French horn,394,28.42639684677124,61.16751432418823
+imagenette,direct,garbage truck,389,49.357327818870544,77.89202928543091
+imagenette,direct,gas pump,419,12.887828052043915,40.572792291641235
+imagenette,direct,golf ball,399,36.09022498130798,56.14035129547119
+imagenette,direct,parachute,390,49.743589758872986,76.15384459495544
+imagenette,clip_vision_lora,tench,387,79.58656549453735,91.21447205543518
+imagenette,clip_vision_lora,English springer,395,34.430378675460815,63.797467947006226
+imagenette,clip_vision_lora,cassette player,357,53.78151535987854,75.0700294971466
+imagenette,clip_vision_lora,chain saw,386,9.84455943107605,48.18652868270874
+imagenette,clip_vision_lora,church,409,47.18826413154602,68.4596598148346
+imagenette,clip_vision_lora,French horn,394,28.42639684677124,69.2893385887146
+imagenette,clip_vision_lora,garbage truck,389,39.84575867652893,80.20565509796143
+imagenette,clip_vision_lora,gas pump,419,12.649165093898773,42.72076487541199
+imagenette,clip_vision_lora,golf ball,399,26.566416025161743,46.867167949676514
+imagenette,clip_vision_lora,parachute,390,55.12820482254028,72.56410121917725
+imagenette,qwen_vision_pooled_lora,tench,387,72.09302186965942,87.85529732704163
+imagenette,qwen_vision_pooled_lora,English springer,395,37.7215176820755,66.58228039741516
+imagenette,qwen_vision_pooled_lora,cassette player,357,53.50140333175659,72.82913327217102
+imagenette,qwen_vision_pooled_lora,chain saw,386,13.989637792110443,52.59067416191101
+imagenette,qwen_vision_pooled_lora,church,409,49.877750873565674,70.9046483039856
+imagenette,qwen_vision_pooled_lora,French horn,394,21.065989136695862,78.17258834838867
+imagenette,qwen_vision_pooled_lora,garbage truck,389,44.215938448905945,74.0359902381897
+imagenette,qwen_vision_pooled_lora,gas pump,419,11.93317398428917,37.231504917144775
+imagenette,qwen_vision_pooled_lora,golf ball,399,33.834585547447205,55.137842893600464
+imagenette,qwen_vision_pooled_lora,parachute,390,56.15384578704834,76.92307829856873
+imagenette,qwen_vision_lora,tench,387,80.1033616065979,90.95607399940491
+imagenette,qwen_vision_lora,English springer,395,24.303796887397766,61.51898503303528
+imagenette,qwen_vision_lora,cassette player,357,39.21568691730499,71.70868515968323
+imagenette,qwen_vision_lora,chain saw,386,6.994818896055222,46.891191601753235
+imagenette,qwen_vision_lora,church,409,47.677260637283325,72.12713956832886
+imagenette,qwen_vision_lora,French horn,394,28.172588348388672,77.9187798500061
+imagenette,qwen_vision_lora,garbage truck,389,47.30077087879181,76.606684923172
+imagenette,qwen_vision_lora,gas pump,419,12.410501390695572,35.79952120780945
+imagenette,qwen_vision_lora,golf ball,399,38.0952388048172,55.388468503952026
+imagenette,qwen_vision_lora,parachute,390,50.0,75.12820363044739
+imagenette,qwen_vision_global_lora,tench,387,74.41860437393188,86.82170510292053
+imagenette,qwen_vision_global_lora,English springer,395,27.848100662231445,58.73417854309082
+imagenette,qwen_vision_global_lora,cassette player,357,48.179271817207336,70.58823704719543
+imagenette,qwen_vision_global_lora,chain saw,386,7.772020995616913,42.74611473083496
+imagenette,qwen_vision_global_lora,church,409,45.476773381233215,71.3936448097229
+imagenette,qwen_vision_global_lora,French horn,394,24.619288742542267,73.85786771774292
+imagenette,qwen_vision_global_lora,garbage truck,389,38.81748020648956,74.29305911064148
+imagenette,qwen_vision_global_lora,gas pump,419,10.739856958389282,39.85680043697357
+imagenette,qwen_vision_global_lora,golf ball,399,34.085214138031006,55.388468503952026
+imagenette,qwen_vision_global_lora,parachute,390,54.35897707939148,74.10256266593933

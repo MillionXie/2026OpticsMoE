@@ -1,0 +1,478 @@
+{
+  "source_git_sha": "c024b9280433f6e7fe31fc0122a1b8aadf342b38",
+  "metrics": [
+    {
+      "dataset": "caltech",
+      "method": "direct",
+      "run_id": "20260908_v4_formal_caltech_direct_s42",
+      "selected_epoch": 28,
+      "top1_percent": 81.99999928474426,
+      "top3_percent": 94.49999928474426,
+      "mrr": 0.888936460018158,
+      "train_seconds_mean": 71.44664693226417,
+      "epoch_seconds_mean": 74.56822305843234,
+      "train_seconds_total": 2143.399407967925,
+      "epoch_seconds_total": 2237.04669175297,
+      "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+      "gpu_model": "NVIDIA GeForce RTX 4090",
+      "run_wall_seconds": 2293.0933470726013,
+      "foreign_gpu_pids": "[]",
+      "peak_memory_gib": 7.130349636077881,
+      "expert_rms_rad": 1.6485555171966553,
+      "global_rms_rad": 0.3216029107570648,
+      "vision_experts_used_selected_epoch": 4,
+      "language_experts_used_selected_epoch": 2,
+      "generator_trainable_parameters": 0
+    },
+    {
+      "dataset": "caltech",
+      "method": "clip_vision_lora",
+      "run_id": "20260908_v4_formal_caltech_clip_vision_lora_s42",
+      "selected_epoch": 27,
+      "top1_percent": 83.49999785423279,
+      "top3_percent": 93.99999976158142,
+      "mrr": 0.8912757635116577,
+      "train_seconds_mean": 80.19140582829714,
+      "epoch_seconds_mean": 83.72740714401007,
+      "train_seconds_total": 2405.742174848914,
+      "epoch_seconds_total": 2511.822214320302,
+      "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+      "gpu_model": "NVIDIA GeForce RTX 4090",
+      "run_wall_seconds": 2570.318058490753,
+      "foreign_gpu_pids": "[]",
+      "peak_memory_gib": 8.67781686782837,
+      "expert_rms_rad": 0.9763863682746887,
+      "global_rms_rad": 0.3736141324043274,
+      "vision_experts_used_selected_epoch": 4,
+      "language_experts_used_selected_epoch": 2,
+      "generator_trainable_parameters": 766616
+    },
+    {
+      "dataset": "caltech",
+      "method": "qwen_vision_pooled_lora",
+      "run_id": "20260908_v4_formal_caltech_qwen_vision_pooled_lora_s42",
+      "selected_epoch": 28,
+      "top1_percent": 80.50000071525574,
+      "top3_percent": 93.00000071525574,
+      "mrr": 0.871644914150238,
+      "train_seconds_mean": 124.39576588993272,
+      "epoch_seconds_mean": 128.5854956097901,
+      "train_seconds_total": 3731.8729766979814,
+      "epoch_seconds_total": 3857.5648682937026,
+      "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+      "gpu_model": "NVIDIA GeForce RTX 4090",
+      "run_wall_seconds": 3927.2256138324738,
+      "foreign_gpu_pids": "[]",
+      "peak_memory_gib": 10.038297653198242,
+      "expert_rms_rad": 0.9447685480117798,
+      "global_rms_rad": 0.38500404357910156,
+      "vision_experts_used_selected_epoch": 4,
+      "language_experts_used_selected_epoch": 2,
+      "generator_trainable_parameters": 1258136
+    },
+    {
+      "dataset": "caltech",
+      "method": "qwen_vision_lora",
+      "run_id": "20260908_v4_formal_caltech_qwen_vision_lora_s42",
+      "selected_epoch": 28,
+      "top1_percent": 80.0000011920929,
+      "top3_percent": 93.50000023841858,
+      "mrr": 0.8728750348091125,
+      "train_seconds_mean": 149.80071118945878,
+      "epoch_seconds_mean": 154.9084454183777,
+      "train_seconds_total": 4494.021335683763,
+      "epoch_seconds_total": 4647.2533625513315,
+      "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+      "gpu_model": "NVIDIA GeForce RTX 4090",
+      "run_wall_seconds": 4740.342615842819,
+      "foreign_gpu_pids": "[3754332, 3878765, 3978128]",
+      "peak_memory_gib": 10.035579204559326,
+      "expert_rms_rad": 0.950096607208252,
+      "global_rms_rad": 0.4280097186565399,
+      "vision_experts_used_selected_epoch": 4,
+      "language_experts_used_selected_epoch": 2,
+      "generator_trainable_parameters": 1258136
+    },
+    {
+      "dataset": "caltech",
+      "method": "qwen_vision_global_lora",
+      "run_id": "20260908_v4_formal_caltech_qwen_vision_global_lora_s42",
+      "selected_epoch": 30,
+      "top1_percent": 80.50000071525574,
+      "top3_percent": 92.5000011920929,
+      "mrr": 0.8744364380836487,
+      "train_seconds_mean": 130.51495795423787,
+      "epoch_seconds_mean": 135.1272127551337,
+      "train_seconds_total": 3915.4487386271358,
+      "epoch_seconds_total": 4053.8163826540112,
+      "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+      "gpu_model": "NVIDIA GeForce RTX 4090",
+      "run_wall_seconds": 4137.471666097641,
+      "foreign_gpu_pids": "[4011409]",
+      "peak_memory_gib": 10.100281238555908,
+      "expert_rms_rad": 1.0457662343978882,
+      "global_rms_rad": 0.2948237359523773,
+      "vision_experts_used_selected_epoch": 4,
+      "language_experts_used_selected_epoch": 2,
+      "generator_trainable_parameters": 1732354
+    },
+    {
+      "dataset": "cifar",
+      "method": "direct",
+      "run_id": "20260908_v4_formal_cifar_direct_s42",
+      "selected_epoch": 30,
+      "top1_percent": 50.599998235702515,
+      "top3_percent": 81.69999718666077,
+      "mrr": 0.6788337230682373,
+      "train_seconds_mean": 70.07015456383427,
+      "epoch_seconds_mean": 75.48094435234864,
+      "train_seconds_total": 2102.104636915028,
+      "epoch_seconds_total": 2264.4283305704594,
+      "gpu_uuid": "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+      "gpu_model": "NVIDIA GeForce RTX 3090",
+      "run_wall_seconds": 2416.3760862350464,
+      "foreign_gpu_pids": "[]",
+      "peak_memory_gib": 7.13559627532959,
+      "expert_rms_rad": 1.6227900981903076,
+      "global_rms_rad": 0.26331204175949097,
+      "vision_experts_used_selected_epoch": 4,
+      "language_experts_used_selected_epoch": 2,
+      "generator_trainable_parameters": 0
+    },
+    {
+      "dataset": "cifar",
+      "method": "clip_vision_lora",
+      "run_id": "20260908_v4_formal_cifar_clip_vision_lora_s42",
+      "selected_epoch": 30,
+      "top1_percent": 48.39999973773956,
+      "top3_percent": 79.29999828338623,
+      "mrr": 0.65692138671875,
+      "train_seconds_mean": 79.03310121546188,
+      "epoch_seconds_mean": 84.76681362266342,
+      "train_seconds_total": 2370.9930364638567,
+      "epoch_seconds_total": 2543.0044086799026,
+      "gpu_uuid": "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+      "gpu_model": "NVIDIA GeForce RTX 3090",
+      "run_wall_seconds": 2710.451110601425,
+      "foreign_gpu_pids": "[]",
+      "peak_memory_gib": 8.678401947021484,
+      "expert_rms_rad": 0.9877256155014038,
+      "global_rms_rad": 0.5283867120742798,
+      "vision_experts_used_selected_epoch": 4,
+      "language_experts_used_selected_epoch": 2,
+      "generator_trainable_parameters": 766616
+    },
+    {
+      "dataset": "cifar",
+      "method": "qwen_vision_pooled_lora",
+      "run_id": "20260908_v4_formal_cifar_qwen_vision_pooled_lora_s42",
+      "selected_epoch": 29,
+      "top1_percent": 50.0,
+      "top3_percent": 81.19999766349792,
+      "mrr": 0.6741535663604736,
+      "train_seconds_mean": 128.71545791278282,
+      "epoch_seconds_mean": 135.24968274484078,
+      "train_seconds_total": 3861.463737383485,
+      "epoch_seconds_total": 4057.4904823452234,
+      "gpu_uuid": "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+      "gpu_model": "NVIDIA GeForce RTX 3090",
+      "run_wall_seconds": 4248.984216928482,
+      "foreign_gpu_pids": "[3332960, 3333065, 3366428, 3366481, 3375866, 3421406, 3421451]",
+      "peak_memory_gib": 10.03608751296997,
+      "expert_rms_rad": 0.992600679397583,
+      "global_rms_rad": 0.5783701539039612,
+      "vision_experts_used_selected_epoch": 4,
+      "language_experts_used_selected_epoch": 2,
+      "generator_trainable_parameters": 1258136
+    },
+    {
+      "dataset": "cifar",
+      "method": "qwen_vision_lora",
+      "run_id": "20260908_v4_formal_cifar_qwen_vision_lora_s42",
+      "selected_epoch": 30,
+      "top1_percent": 49.90000128746033,
+      "top3_percent": 79.79999780654907,
+      "mrr": 0.6662004590034485,
+      "train_seconds_mean": 134.89425965497892,
+      "epoch_seconds_mean": 141.7799265789489,
+      "train_seconds_total": 4046.8277896493673,
+      "epoch_seconds_total": 4253.397797368467,
+      "gpu_uuid": "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+      "gpu_model": "NVIDIA GeForce RTX 3090",
+      "run_wall_seconds": 4448.989863157272,
+      "foreign_gpu_pids": "[]",
+      "peak_memory_gib": 10.034877300262451,
+      "expert_rms_rad": 0.9254715442657471,
+      "global_rms_rad": 0.43741580843925476,
+      "vision_experts_used_selected_epoch": 4,
+      "language_experts_used_selected_epoch": 2,
+      "generator_trainable_parameters": 1258136
+    },
+    {
+      "dataset": "cifar",
+      "method": "qwen_vision_global_lora",
+      "run_id": "20260908_v4_formal_cifar_qwen_vision_global_lora_s42",
+      "selected_epoch": 30,
+      "top1_percent": 47.09999859333038,
+      "top3_percent": 78.1000018119812,
+      "mrr": 0.6482433080673218,
+      "train_seconds_mean": 147.45715379317602,
+      "epoch_seconds_mean": 155.8347913481295,
+      "train_seconds_total": 4423.7146137952805,
+      "epoch_seconds_total": 4675.043740443885,
+      "gpu_uuid": "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+      "gpu_model": "NVIDIA GeForce RTX 3090",
+      "run_wall_seconds": 4832.544630289078,
+      "foreign_gpu_pids": "[4021888]",
+      "peak_memory_gib": 10.104243755340576,
+      "expert_rms_rad": 1.0130218267440796,
+      "global_rms_rad": 0.28473198413848877,
+      "vision_experts_used_selected_epoch": 4,
+      "language_experts_used_selected_epoch": 2,
+      "generator_trainable_parameters": 1732354
+    },
+    {
+      "dataset": "imagenette",
+      "method": "direct",
+      "run_id": "20260908_v4_formal_imagenette_direct_s42",
+      "selected_epoch": 25,
+      "top1_percent": 39.15923535823822,
+      "top3_percent": 67.08280444145203,
+      "mrr": 0.5729703903198242,
+      "train_seconds_mean": 59.28998986209432,
+      "epoch_seconds_mean": 65.20149690012137,
+      "train_seconds_total": 1778.6996958628297,
+      "epoch_seconds_total": 1956.0449070036411,
+      "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "gpu_model": "NVIDIA GeForce RTX 4090",
+      "run_wall_seconds": 2337.869884252548,
+      "foreign_gpu_pids": "[]",
+      "peak_memory_gib": 7.133255481719971,
+      "expert_rms_rad": 1.608721137046814,
+      "global_rms_rad": 0.32358112931251526,
+      "vision_experts_used_selected_epoch": 4,
+      "language_experts_used_selected_epoch": 2,
+      "generator_trainable_parameters": 0
+    },
+    {
+      "dataset": "imagenette",
+      "method": "clip_vision_lora",
+      "run_id": "20260908_v4_formal_imagenette_clip_vision_lora_s42",
+      "selected_epoch": 26,
+      "top1_percent": 38.420382142066956,
+      "top3_percent": 65.55414199829102,
+      "mrr": 0.5632867813110352,
+      "train_seconds_mean": 70.08087110295892,
+      "epoch_seconds_mean": 76.61931775162617,
+      "train_seconds_total": 2102.4261330887675,
+      "epoch_seconds_total": 2298.579532548785,
+      "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "gpu_model": "NVIDIA GeForce RTX 4090",
+      "run_wall_seconds": 2797.512306213379,
+      "foreign_gpu_pids": "[]",
+      "peak_memory_gib": 8.677299499511719,
+      "expert_rms_rad": 0.9977387189865112,
+      "global_rms_rad": 0.3701331615447998,
+      "vision_experts_used_selected_epoch": 4,
+      "language_experts_used_selected_epoch": 2,
+      "generator_trainable_parameters": 766616
+    },
+    {
+      "dataset": "imagenette",
+      "method": "qwen_vision_pooled_lora",
+      "run_id": "20260908_v4_formal_imagenette_qwen_vision_pooled_lora_s42",
+      "selected_epoch": 30,
+      "top1_percent": 39.13375735282898,
+      "top3_percent": 66.95541143417358,
+      "mrr": 0.5724244713783264,
+      "train_seconds_mean": 122.01842627078295,
+      "epoch_seconds_mean": 130.27426991984248,
+      "train_seconds_total": 3660.5527881234884,
+      "epoch_seconds_total": 3908.2280975952744,
+      "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "gpu_model": "NVIDIA GeForce RTX 4090",
+      "run_wall_seconds": 4590.4384765625,
+      "foreign_gpu_pids": "[]",
+      "peak_memory_gib": 10.03552532196045,
+      "expert_rms_rad": 0.9338487982749939,
+      "global_rms_rad": 0.45504117012023926,
+      "vision_experts_used_selected_epoch": 4,
+      "language_experts_used_selected_epoch": 2,
+      "generator_trainable_parameters": 1258136
+    },
+    {
+      "dataset": "imagenette",
+      "method": "qwen_vision_lora",
+      "run_id": "20260908_v4_formal_imagenette_qwen_vision_lora_s42",
+      "selected_epoch": 25,
+      "top1_percent": 37.248408794403076,
+      "top3_percent": 66.14012718200684,
+      "mrr": 0.5588074326515198,
+      "train_seconds_mean": 147.6940962250034,
+      "epoch_seconds_mean": 159.59728143339356,
+      "train_seconds_total": 4430.822886750102,
+      "epoch_seconds_total": 4787.918443001807,
+      "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "gpu_model": "NVIDIA GeForce RTX 4090",
+      "run_wall_seconds": 5399.9368488788605,
+      "foreign_gpu_pids": "[3593969, 3614251, 3832278]",
+      "peak_memory_gib": 10.031140327453613,
+      "expert_rms_rad": 0.9257634878158569,
+      "global_rms_rad": 0.3959762454032898,
+      "vision_experts_used_selected_epoch": 4,
+      "language_experts_used_selected_epoch": 2,
+      "generator_trainable_parameters": 1258136
+    },
+    {
+      "dataset": "imagenette",
+      "method": "qwen_vision_global_lora",
+      "run_id": "20260908_v4_formal_imagenette_qwen_vision_global_lora_s42",
+      "selected_epoch": 25,
+      "top1_percent": 36.35668754577637,
+      "top3_percent": 64.56050872802734,
+      "mrr": 0.5500228404998779,
+      "train_seconds_mean": 124.00036849876246,
+      "epoch_seconds_mean": 132.3753711896638,
+      "train_seconds_total": 3720.0110549628735,
+      "epoch_seconds_total": 3971.261135689914,
+      "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "gpu_model": "NVIDIA GeForce RTX 4090",
+      "run_wall_seconds": 4516.0155618190765,
+      "foreign_gpu_pids": "[]",
+      "peak_memory_gib": 10.104370594024658,
+      "expert_rms_rad": 0.935694694519043,
+      "global_rms_rad": 0.22465582191944122,
+      "vision_experts_used_selected_epoch": 4,
+      "language_experts_used_selected_epoch": 2,
+      "generator_trainable_parameters": 1732354
+    }
+  ],
+  "fixed_reference_contracts": {
+    "caltech": [
+      [
+        "caltech101:airplanes:image_0520",
+        "cbfbc7f28395774475a4273484aa8d8babd897e22a4a6f0a6b5c19e44d948f1d"
+      ],
+      [
+        "caltech101:Motorbikes:image_0686",
+        "0bff1baebf3480deedaf6fc352684a1fa6b315fbd07dae8dac8bd401722b0d8b"
+      ],
+      [
+        "caltech101:Faces:image_0306",
+        "c060b1c2c2c97fcc95cdb75b8a63e5bb35299b2dc57fe9157cd27e9eb3f95bd1"
+      ],
+      [
+        "caltech101:Leopards:image_0046",
+        "1990c6dcde4d380a31f65a0d74d0ad98d5f4cec3d0926a97ac765bd53d1b1b88"
+      ],
+      [
+        "caltech101:accordion:image_0048",
+        "3b0cb43a214fff8bbe265302270d3b4092ca493133925c7f82abc92bcfe2ea85"
+      ],
+      [
+        "caltech101:grand_piano:image_0023",
+        "eff48260675c6755724916b368434d7408c1b338e8a56b820a219cf5f796605c"
+      ],
+      [
+        "caltech101:scorpion:image_0037",
+        "e59fdb55400115b01919eec9b1c41e17ecebc1aa618d5cd9632131c072867580"
+      ],
+      [
+        "caltech101:sunflower:image_0041",
+        "ddd4b23cda3553e6bc15ee5d56aa518463838b056625e83ca8bcec95d0d98c6f"
+      ],
+      [
+        "caltech101:watch:image_0224",
+        "b137135f24bb4f0a7476373ccfc068420810a90cd83b69eb7798ee58366777c6"
+      ],
+      [
+        "caltech101:yin_yang:image_0024",
+        "2b148473d4327d6d813bfd85d1a42ca8a7c6343a950e200a9ec9e2e31a275c88"
+      ]
+    ],
+    "cifar": [
+      [
+        "cifar100:official_train:26531",
+        "9f0d6216439b6fd2d6c5fb92622e294ba41329664356b41468f73aed8f91ca46"
+      ],
+      [
+        "cifar100:official_train:35534",
+        "a88a17e9cb65a43cbcd0a40bed01e99beffdc5b1f27994ee1d321ea10133cbcd"
+      ],
+      [
+        "cifar100:official_train:28895",
+        "1b5e824591d7b25949b4121d67054b2eedd1e9dc4883c48dae9c1a56419d9ad7"
+      ],
+      [
+        "cifar100:official_train:10768",
+        "4acc0f083b2aba5c537a3f077162be56e506360fa0800c4a78c7bac5178684e7"
+      ],
+      [
+        "cifar100:official_train:46280",
+        "ba29bd1107898f086b677d642693dbbd6b27fac952c2a5c94f271de6be0f7168"
+      ],
+      [
+        "cifar100:official_train:05691",
+        "d57cd90f6a6aad25e7743d8cc81efc470b67b93b1082fb12ff0deeb4467e534b"
+      ],
+      [
+        "cifar100:official_train:15757",
+        "093cb939127aae5af0e3431e9867a5c2976a72f8437e74d54bd445a26e5a88d7"
+      ],
+      [
+        "cifar100:official_train:22191",
+        "19873ada88612379dc55e0fd62fc0dd71a44f94ed3f405abd5247c297cc1161f"
+      ],
+      [
+        "cifar100:official_train:41360",
+        "64260ca8954e276c31c5457d8dbcb876b7079afbcdf78b959e441c4fcbe140d4"
+      ],
+      [
+        "cifar100:official_train:16050",
+        "504d3635bb431471211b4c972d53438ec87ee1826bedad5d424cb86af26a64a9"
+      ]
+    ],
+    "imagenette": [
+      [
+        "imagenette:train:n01440764:n01440764_3259.JPEG",
+        "4a771b5b4dc9d8f07f343de8aa8aeefccc1daac9e6340ba9623c035904d7f34f"
+      ],
+      [
+        "imagenette:train:n02102040:n02102040_604.JPEG",
+        "4e02d3e64a8e8242d73daca14673b76f06d9130e2f9bb98326729c053ec659f0"
+      ],
+      [
+        "imagenette:train:n02979186:n02979186_2467.JPEG",
+        "2cac59cf21be09e8795d602411e35c4d47a5899f921977b2ddc895eb9d2f456a"
+      ],
+      [
+        "imagenette:train:n03000684:n03000684_13365.JPEG",
+        "4f70123352d2cbaa43efc6dc44a6b5c0434448e4d1f18db3e90ad97e0e294a74"
+      ],
+      [
+        "imagenette:train:n03028079:n03028079_956.JPEG",
+        "3f11d1d3633f9418b5e98f79ea1540ad51927d91062a64e7e18e1e75acb946a2"
+      ],
+      [
+        "imagenette:train:n03394916:n03394916_18846.JPEG",
+        "8cc18e5a3acf64f8da7ea8f3a4b4a9edb23f110ca296dad98112ba3d53a45309"
+      ],
+      [
+        "imagenette:train:n03417042:n03417042_19076.JPEG",
+        "1a193cc820f67f0c963ac1d7c9a51e83074694c8da178cd373d26f7ed74f4903"
+      ],
+      [
+        "imagenette:train:n03425413:n03425413_1846.JPEG",
+        "aa0dabbe8abcb8ab009589b6f3902d2845b6c48db7754d3fe98c4ea54779e094"
+      ],
+      [
+        "imagenette:train:n03445777:n03445777_7758.JPEG",
+        "5ddd333cdc03dc5b79afa44092889a91baaf1fe616547dcbf5caf98f2b7e3133"
+      ],
+      [
+        "imagenette:train:n03888257:n03888257_2033.JPEG",
+        "eb00d5d65c12f67faee4462505b16014ef8555ec326684b7bbf96baa7582b348"
+      ]
+    ]
+  }
+}
