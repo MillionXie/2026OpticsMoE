@@ -1,0 +1,26 @@
+base_config: spatial_two_branch_stage_ema_conservative_s423.yaml
+output_dir: ../../runs/lgvq_spatial_two_branch_ema_microrefine_s428
+random_seed: 428
+
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_two_branch_stage_ema_conservative_s423/best_observed_test_checkpoint.pt
+  epochs: 30
+  learning_rate: 0.000010
+  phase_learning_rate: 0.00015
+  router_phase_learning_rate: 0.0004
+  readout_learning_rate_factor: 0.10
+  readout_weight_decay: 0.005
+  phase_warmup_epochs: 0
+  late_refine_start_epoch: 16
+  restore_best_at_stage_transition: true
+  late_refine_electronic_lr_factor: 0.10
+  late_refine_readout_lr_factor: 0.20
+  late_refine_phase_lr_factor: 0.30
+  late_refine_router_lr_factor: 0.30
+  ema_decay: 0.98
+  ema_start_epoch: 1
+  minimum_learning_rate_factor: 0.25
+
+curriculum:
+  start_epoch: 1
+  end_epoch: 20

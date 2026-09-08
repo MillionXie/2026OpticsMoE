@@ -1,0 +1,31 @@
+base_config: spatial_two_branch_ema_microrefine_s428.yaml
+output_dir: ../../runs/lgvq_spatial_two_branch_router_rebalance_s429
+random_seed: 429
+
+router:
+  serial_visual_token_gain: 2.0
+
+training:
+  trainable_scope: serial_router_and_readout
+  epochs: 40
+  learning_rate: 0.000015
+  router_phase_learning_rate: 0.001
+  readout_learning_rate_factor: 0.25
+  late_refine_start_epoch: 21
+  ema_decay: 0.99
+
+loss:
+  # Strong only in this explicit balance/performance trade-off run. The
+  # differentiable marginal and mutual-information terms can actually move
+  # samples between experts; the historical hard-load term alone could not.
+  router_balance_weight: 0.0
+  router_importance_weight: 0.0
+  serial_router_balance_weight: 0.20
+  serial_router_importance_weight: 0.12
+  serial_router_diversity_weight: 0.10
+
+curriculum:
+  end_epoch: 28
+  serial_router_balance_weight_final: 0.05
+  serial_router_importance_weight_final: 0.03
+  serial_router_diversity_weight_final: 0.025
