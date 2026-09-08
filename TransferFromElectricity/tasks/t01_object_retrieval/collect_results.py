@@ -38,6 +38,7 @@ def main():
     parser.add_argument('--runs',nargs='+',required=True,help='Paths relative to this task directory')
     parser.add_argument('--wait-seconds',type=int,default=0,help='Poll incomplete runs every 1-60 seconds; zero fails immediately')
     parser.add_argument('--require-gpu-audit',action='store_true')
+    parser.add_argument('--checkpoint-hashes',action='store_true',help='Record remote best/last SHA256 without downloading their weights')
     args=parser.parse_args()
     if not 0<=args.wait_seconds<=60:raise ValueError('wait-seconds must be between zero and 60')
     task=Path(__file__).resolve().parent
@@ -75,15 +76,30 @@ def main():
                 checksum=stdout.read().decode().split()[0]
                 if stdout.channel.recv_exit_status()!=0:
                     raise RuntimeError(stderr.read().decode())
-                with sftp.open(source,'rb') as f: content=f.read()
-                if hashlib.sha256(content).hexdigest()!=checksum:
-                    raise RuntimeError(f'Transfer checksum mismatch: {source}')
                 target=destination/filename
-                if target.exists() and hashlib.sha256(target.read_bytes()).hexdigest()!=checksum:
-                    raise FileExistsError(f'Refusing to replace different artifact: {target}')
-                target.write_bytes(content)
+                if target.exists():
+                    content=target.read_bytes()
+                    if hashlib.sha256(content).hexdigest()!=checksum:
+                        raise FileExistsError(f'Refusing to replace different artifact: {target}')
+                else:
+                    with sftp.open(source,'rb') as f:content=f.read()
+                    if hashlib.sha256(content).hexdigest()!=checksum:
+                        raise RuntimeError(f'Transfer checksum mismatch: {source}')
+                    target.write_bytes(content)
                 receipt.append({'source':source,'file':filename,'sha256':checksum,'bytes':len(content)})
             (destination/'transfer_manifest.json').write_text(json.dumps(receipt,indent=2),encoding='utf-8')
+            if args.checkpoint_hashes:
+                weights=[]
+                for filename in ('best_checkpoint.pt','last_checkpoint.pt'):
+                    source=str(remote/filename)
+                    _,stdout,stderr=client.exec_command('sha256sum -- '+shlex.quote(source))
+                    checksum=stdout.read().decode().split()[0]
+                    if stdout.channel.recv_exit_status()!=0:raise RuntimeError(stderr.read().decode())
+                    weights.append({'source':source,'file':filename,'sha256':checksum,'bytes':sftp.stat(source).st_size,'downloaded':False})
+                target=destination/'checkpoint_hashes.json'
+                if target.exists() and json.loads(target.read_text())!=weights:
+                    raise FileExistsError(f'Remote checkpoints differ from previous hashes: {target}')
+                target.write_text(json.dumps(weights,indent=2),encoding='utf-8')
             print(f'{relative}: {len(receipt)} artifacts verified',flush=True)
             pending.remove(relative)
           if pending:time.sleep(args.wait_seconds)
