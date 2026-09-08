@@ -8,8 +8,25 @@ import getpass
 import hashlib
 import json
 import shlex
+import time
 from pathlib import Path, PurePosixPath
 import paramiko
+
+
+def remote_state(sftp, remote, require_gpu_audit):
+    def read(name):
+        with sftp.open(str(remote/name),'rb') as stream:return json.loads(stream.read())
+    try:status=read('status.json')['status']
+    except (FileNotFoundError,json.JSONDecodeError):return 'waiting',0
+    if status=='failed':raise RuntimeError(f'Remote training failed: {remote}')
+    try:epoch=len(read('history.json'))
+    except (FileNotFoundError,json.JSONDecodeError):epoch=0
+    if status=='complete' and require_gpu_audit:
+        try:audit=read('gpu_execution.json')
+        except (FileNotFoundError,json.JSONDecodeError):return 'waiting_gpu_audit',epoch
+        if audit['status']!='complete' or audit['returncode']!=0:
+            raise RuntimeError(f'Remote GPU execution failed: {remote}')
+    return status,epoch
 
 
 def main():
@@ -19,22 +36,34 @@ def main():
     parser.add_argument('--user',required=True)
     parser.add_argument('--remote-root',required=True)
     parser.add_argument('--runs',nargs='+',required=True,help='Paths relative to this task directory')
+    parser.add_argument('--wait-seconds',type=int,default=0,help='Poll incomplete runs every 1-60 seconds; zero fails immediately')
+    parser.add_argument('--require-gpu-audit',action='store_true')
     args=parser.parse_args()
+    if not 0<=args.wait_seconds<=60:raise ValueError('wait-seconds must be between zero and 60')
     task=Path(__file__).resolve().parent
     remote_task=PurePosixPath(args.remote_root)/'TransferFromElectricity/tasks/t01_object_retrieval'
     client=paramiko.SSHClient()
     client.load_system_host_keys()
     client.connect(args.host,port=args.port,username=args.user,password=getpass.getpass('SSH password: '))
+    client.get_transport().set_keepalive(30)
     try:
         sftp=client.open_sftp()
-        for name in args.runs:
+        pending=[]
+        for name in dict.fromkeys(args.runs):
             relative=PurePosixPath(name)
             if relative.is_absolute() or '..' in relative.parts or relative.parts[0]!='runs':
                 raise ValueError('Only task-relative runs paths are supported')
+            pending.append(relative)
+        previous={}
+        while pending:
+          for relative in list(pending):
             remote=remote_task/relative
-            with sftp.open(str(remote/'status.json'),'rb') as f:
-                if json.loads(f.read())['status']!='complete':
-                    raise ValueError(f'Incomplete run: {relative}')
+            state=remote_state(sftp,remote,args.require_gpu_audit)
+            if state!=previous.get(relative):
+                print(f'{relative}: {state[0]}, epoch {state[1]}',flush=True);previous[relative]=state
+            if state[0]!='complete':
+                if not args.wait_seconds:raise ValueError(f'Incomplete run: {relative}')
+                continue
             destination=task/Path(*relative.parts)
             destination.mkdir(parents=True,exist_ok=True)
             receipt=[]
@@ -56,6 +85,8 @@ def main():
                 receipt.append({'source':source,'file':filename,'sha256':checksum,'bytes':len(content)})
             (destination/'transfer_manifest.json').write_text(json.dumps(receipt,indent=2),encoding='utf-8')
             print(f'{relative}: {len(receipt)} artifacts verified',flush=True)
+            pending.remove(relative)
+          if pending:time.sleep(args.wait_seconds)
         sftp.close()
     finally:
         client.close()
