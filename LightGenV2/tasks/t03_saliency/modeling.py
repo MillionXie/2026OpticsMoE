@@ -30,10 +30,29 @@ from experiments.vision2_hybrid_dense.modeling import SaliencyDensityDecoder
 
 
 def architecture_label(settings: Any) -> str:
-    return (
+    label = (
         f"lightgen_t03_{settings.lightgen_model_variant}_vision2_17um_10cm_"
         "dc20_scale_matched_top2_v1"
     )
+    return label + ("_mean_only" if settings.ccd_normalization == "mean_only" else "")
+
+
+class MeanOnlyCCDNormalizer(nn.Module):
+    """Task-local intensity normalization: no log, gamma, or upper clipping."""
+    def __init__(self, active_size: int) -> None:
+        super().__init__()
+        self.active_size = active_size
+
+    def forward(self, intensity: torch.Tensor) -> torch.Tensor:
+        if intensity.ndim != 3 or tuple(intensity.shape[-2:]) != (self.active_size, self.active_size):
+            raise ValueError("CCD geometry mismatch")
+        if not torch.isfinite(intensity).all():
+            raise ValueError("Nonfinite CCD intensity")
+        # The simulator already produces nonnegative measured intensity.
+        if torch.any(intensity < 0):
+            raise ValueError("Expected nonnegative measured intensity")
+        value = intensity.float()
+        return value / value.mean((-2, -1), keepdim=True).clamp_min(1e-6)
 
 
 class LightGenVision2SaliencyStudent(RobustVision2PoseStudent):
@@ -101,6 +120,8 @@ def build_student(loaded: Any, settings: Any) -> LightGenVision2SaliencyStudent:
             optical_core.geometry, settings
         ).to(loaded.device)
     model.router_backend = "none" if is_d2nn else "optical"
+    if settings.ccd_normalization == "mean_only":
+        model.core.hybrid.optical_branch.ccd_normalizer = MeanOnlyCCDNormalizer(settings.active_size)
     model.checkpoint_architecture = architecture_label(settings)
     return model
 
@@ -123,12 +144,17 @@ def initialize_student(
     warmstart = getattr(settings, "initialization_checkpoint", None)
     if warmstart is not None:
         payload = torch.load(warmstart, map_location="cpu", weights_only=False)
-        if payload.get("architecture") != model.checkpoint_architecture:
+        allowed = {model.checkpoint_architecture}
+        if settings.ccd_normalization == "mean_only":
+            # Explicit parameter-compatible transfer, not exact continuation.
+            allowed.add(model.checkpoint_architecture.removesuffix("_mean_only"))
+        if payload.get("architecture") not in allowed:
             raise RuntimeError("T03 warmstart architecture mismatch")
         model.core.load_state_dict(payload["core"], strict=True)
         model.head.load_state_dict(payload["saliency_head"], strict=True)
         return {"path": str(warmstart), "sha256": sha256_file(warmstart),
-                "mode": "warmstart_weights_with_new_optimizer", "source_epoch": payload["epoch"]}
+                "mode": "warmstart_weights_with_new_optimizer", "source_epoch": payload["epoch"],
+                "source_architecture": payload["architecture"], "target_architecture": model.checkpoint_architecture}
     path = settings.common_initialization_checkpoint
     payload = torch.load(path, map_location="cpu", weights_only=False)
     if payload.get("type") != "untrained_lsp_vision2_body_and_pose_head_without_router":
@@ -221,6 +247,7 @@ def architecture_report(model: LightGenVision2SaliencyStudent, settings: Any) ->
         "type": settings.lightgen_model_variant,
         "checkpoint_architecture": architecture_label(settings),
         "task": "SALICON fixation-density prediction",
+        "ccd_normalization": settings.ccd_normalization,
         "qwen": {"frozen": True, "native_vision_blocks_executed": 0},
         "vision": {
             "hybrid_blocks": 2,

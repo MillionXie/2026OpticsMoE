@@ -71,6 +71,9 @@ def load_settings(path: str | Path) -> Any:
     settings.map_kd_weight = 0.0
     settings.map_kd_temperature = 1.0
     settings.teacher_checkpoint = None
+    settings.ccd_normalization = str(d("lightgen.ccd_normalization", "historical_log1p"))
+    if settings.ccd_normalization not in {"historical_log1p", "mean_only"}:
+        raise ValueError("Unknown T03 CCD normalization")
     warmstart = d("training.initialization_checkpoint")
     settings.initialization_checkpoint = _resolve(warmstart, config.parent) if warmstart else None
     settings.gradient_clip_norm = float(d("training.gradient_clip_norm", 1.0))

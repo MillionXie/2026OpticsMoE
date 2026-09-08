@@ -1,0 +1,4 @@
+base_config: moe_dc20_mean_only_continue.yaml
+loss:
+  cc_weight: 1.0
+output_dir: ../runs/simulation/moe_dc20_mean_only_cc_continue_seed42
