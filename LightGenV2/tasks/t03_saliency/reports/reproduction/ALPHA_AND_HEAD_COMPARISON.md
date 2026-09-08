@@ -3,8 +3,8 @@
 ## 已有实测证据
 
 - 原光电CC：0.8290598。
-- mean_only续训候选：epoch75最佳CC=0.84879587（检查时训练尚未结束）。
-- CC损失权重加倍候选：约0.8476，尚未优于原权重。
+- mean_only续训候选：100epoch已结束，选定权重复评CC=0.84901166。
+- CC损失权重加倍候选：epoch99时历史最佳约0.8494；与上一组差异很小，不能由单seed断言稳定更优。
 - 原Qwen头固定权重复评：0.8810325。
 - 原Qwen头重新初始化训练30epoch：0.87899109，best epoch30；属于新的单seed训练复现，非多seed统计。
   原始证据：[重训复评JSON](evidence/baseline_retrain_20260908.json)。
@@ -75,3 +75,8 @@ python -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config LightGe
 两组alpha候选epoch0均为CC=0.716815，实际alpha均为0.45。相同起点核验通过，
 但比低alpha权重的0.8488低很多；这是权重比例直接改变后的分布变化，不是100epoch训练后的结果。
 新Qwen对照已进入第一轮反向训练，不能填写旧头的0.8810作为其成绩。
+
+后续检查：free已到epoch14，历史最佳约0.8384；ge040已到epoch11，最佳约0.8362（前10轮alpha固定0.45）。
+新Qwen头到epoch12，最佳约0.7557，仍在从头训练；不是最终baseline。
+光电两组运行在不同GPU型号，虽然起点与数据种子相同，仍可能有跨设备数值/随机实现差异；
+小幅分差不要直接解释成约束的稳定效果。11项回归检查已通过，包括alpha旧logit重新编码与区间校验。
