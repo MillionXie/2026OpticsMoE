@@ -633,6 +633,9 @@ def test_phase_quantization_matches_hardware_levels_and_keeps_gradient(
 ) -> None:
     settings = _small_settings(tmp_path)
     settings.phase_quantization_levels = 256
+    settings.unmodulated_power_fraction_min = 0.0
+    settings.unmodulated_power_fraction_max = 0.0
+    settings.unmodulated_power_fraction_eval = 0.0
     raw_leaf = torch.linspace(-3.0, 3.0, 64, requires_grad=True)
     raw = raw_leaf.reshape(8, 8)
     modulation = _phase_modulation(raw, settings=settings, training=True)
