@@ -1,0 +1,11 @@
+base_config: spatial_two_branch_stage_ema_conservative_s423.yaml
+output_dir: ../../runs/lgvq_spatial_two_branch_imagefocus_stage_ema_s426
+random_seed: 426
+
+# Inside the single MOS readout only, learn a zero-start interpolation from
+# statistics of all 42 sequence tokens toward statistics of the four changing
+# image-summary tokens. Text remains active in prompt conditioning and both
+# serial optical passes; this adds no inference branch and no attention.
+model:
+  spatial_readout_image_focus_max: 1.0
+  dropout: 0.20

@@ -1088,6 +1088,13 @@ class SpatialGridReadout(nn.Module):
         super().__init__()
         width, hidden = settings.model_width, settings.head_width
         self.grid = settings.token_grid
+        self.frame_count = settings.frame_count
+        self.image_focus_max = settings.spatial_readout_image_focus_max
+        if self.image_focus_max > 0.0:
+            # Zero gives an exact warm start from the established all-sequence
+            # readout. Fine-tuning may then emphasize the four sample-varying
+            # image tokens without deleting the text-conditioned optical path.
+            self.raw_image_focus = nn.Parameter(torch.zeros(()))
         spatial_width = 64
         self.token_norm = nn.LayerNorm(width)
         self.spatial_depthwise = nn.Conv2d(
@@ -1139,7 +1146,17 @@ class SpatialGridReadout(nn.Module):
             ),
             -1,
         )
-        prompt = self.language(_masked_statistics(language, mask))
+        all_sequence = self.language(_masked_statistics(language, mask))
+        prompt = all_sequence
+        if self.image_focus_max > 0.0:
+            image_sequence = self.language(
+                _masked_statistics(
+                    language[:, : self.frame_count],
+                    mask[:, : self.frame_count],
+                )
+            )
+            image_focus = self.image_focus_max * torch.tanh(self.raw_image_focus)
+            prompt = all_sequence + image_focus * (image_sequence - all_sequence)
         return self.output(torch.cat((video, prompt), -1)).squeeze(-1)
 
 
@@ -2164,6 +2181,12 @@ class LGVQSingleMetricOEO16(nn.Module):
             sequence = electronic4
 
         normalized = self.readout(vision, sequence, mask)
+        readout_image_focus = normalized.new_zeros(())
+        if hasattr(self.readout, "raw_image_focus"):
+            readout_image_focus = (
+                self.settings.spatial_readout_image_focus_max
+                * torch.tanh(self.readout.raw_image_focus)
+            )
         input_correction = normalized.new_zeros(normalized.shape)
         if self.late_input_correction is not None:
             input_correction = self.late_input_correction(pre_optical_vision)
@@ -2193,6 +2216,7 @@ class LGVQSingleMetricOEO16(nn.Module):
             "electronic_quality_residual_scale": electronic_quality_scale,
             "qwen_gate": qwen_gate,
             "late_input_correction": input_correction,
+            "spatial_readout_image_focus": readout_image_focus,
             "vgg_correction_rms": vgg_correction.float().square().mean().sqrt(),
             "routing": routing,
             "optical_enabled": optical_enabled,

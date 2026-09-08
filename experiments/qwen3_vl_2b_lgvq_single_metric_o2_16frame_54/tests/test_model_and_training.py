@@ -482,6 +482,32 @@ def test_spatial_grid_readout_preserves_four_frame_contract(tmp_path: Path) -> N
     assert settings.architecture_label.endswith("_spatialgrid_v1_qualityconv_v1")
 
 
+def test_spatial_grid_image_focus_has_exact_zero_start_and_gradient(
+    tmp_path: Path,
+) -> None:
+    source_settings = _small_settings(tmp_path)
+    source_settings.spatial_readout_mode = "spatial_grid"
+    source = LGVQSingleMetricOEO16(source_settings).eval()
+    checkpoint = tmp_path / "grid_source.pt"
+    torch.save({"state_dict": source.state_dict()}, checkpoint)
+    destination_settings = replace(
+        source_settings,
+        initialization_checkpoint=checkpoint,
+        spatial_readout_image_focus_max=1.0,
+    )
+    destination_settings.validate()
+    destination = LGVQSingleMetricOEO16(destination_settings).eval()
+    _load_compatible_initialization(destination, destination_settings)
+    vision = torch.randn(2, 4, 49, destination_settings.model_width)
+    language = torch.randn(2, 10, destination_settings.model_width)
+    mask = torch.ones(2, 10, dtype=torch.bool)
+    expected = source.readout(vision, language, mask)
+    actual = destination.readout(vision, language, mask)
+    assert torch.equal(expected, actual)
+    actual.sum().backward()
+    assert destination.readout.raw_image_focus.grad is not None
+
+
 def test_late_input_correction_is_zero_start_bounded_and_scope_is_strict(
     tmp_path: Path,
 ) -> None:

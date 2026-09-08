@@ -1,0 +1,10 @@
+base_config: spatial_two_branch_imagefocus_stage_ema_s426.yaml
+output_dir: ../../runs/lgvq_spatial_two_branch_imagefocus_stage_ema_s427
+random_seed: 427
+
+training:
+  learning_rate: 0.000012
+  phase_learning_rate: 0.00025
+  router_phase_learning_rate: 0.0007
+  readout_learning_rate_factor: 0.50
+  readout_weight_decay: 0.006

@@ -254,6 +254,7 @@ class ExperimentSettings:
     detector_projection_size: int = 96
     spatial_readout_mode: str = "statistics"
     spatial_residual_max: float = 0.10
+    spatial_readout_image_focus_max: float = 0.0
     strict_two_branch: bool = False
     quality_branch_enabled: bool = True
     quality_adapter_mode: str = "linear"
@@ -395,6 +396,9 @@ class ExperimentSettings:
         elif self.spatial_readout_mode == "spatial_deep_residual":
             residual_tag = int(round(self.spatial_residual_max * 1000.0))
             suffixes.append(f"spatialdeepresidual_rmax{residual_tag:03d}_v1")
+        if self.spatial_readout_image_focus_max > 0.0:
+            focus_tag = int(round(self.spatial_readout_image_focus_max * 100.0))
+            suffixes.append(f"imagefocus{focus_tag:03d}_v1")
         if not self.quality_branch_enabled:
             suffixes.append("qwenonly_v1")
         elif self.quality_adapter_mode == "spatial_conv":
@@ -631,6 +635,8 @@ class ExperimentSettings:
             raise ValueError("router.serial_visual_token_gain must be positive")
         if self.target_name != "spatial" and self.spatial_readout_mode != "statistics":
             raise ValueError("The spatial-grid readout is only valid for the Spatial target")
+        if not 0.0 <= self.spatial_readout_image_focus_max <= 1.0:
+            raise ValueError("model.spatial_readout_image_focus_max must lie within [0,1]")
         if self.top_k != 2:
             raise ValueError("The formal router is optical Top-2")
         for intervals, limit in (
@@ -864,6 +870,9 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         detector_projection_size=int(get("model", "detector_projection_size", 96)),
         spatial_readout_mode=str(get("model", "spatial_readout_mode", "statistics")),
         spatial_residual_max=float(get("model", "spatial_residual_max", 0.10)),
+        spatial_readout_image_focus_max=float(
+            get("model", "spatial_readout_image_focus_max", 0.0)
+        ),
         strict_two_branch=bool(get("model", "strict_two_branch", False)),
         quality_branch_enabled=bool(get("model", "quality_branch_enabled", True)),
         quality_adapter_mode=str(get("model", "quality_adapter_mode", "linear")),
