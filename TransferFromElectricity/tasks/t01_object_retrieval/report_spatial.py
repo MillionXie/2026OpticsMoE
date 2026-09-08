@@ -13,7 +13,7 @@ from .protocol import phase_summary
 from .run_spatial_suite import METHODS
 
 TASK=Path(__file__).resolve().parent
-DATASETS={'caltech':'Caltech101 ten classes','cifar':'CIFAR-100 fixed ten','imagenette':'Imagenette'}
+DATASETS={'caltech':'Caltech101 ten classes','cifar':'CIFAR-100 fixed ten','imagenette':'Imagenette-160'}
 NAMES={'direct':'Direct','clip_vision_lora':'CLIP vision','qwen_vision_pooled_lora':'Qwen pooled',
        'qwen_vision_lora':'Qwen spatial','qwen_vision_global_lora':'Qwen spatial + global'}
 
@@ -125,10 +125,12 @@ def main():
             for epoch in timer['epochs']:
                 assert epoch['steps']==(2 if args.smoke else 120)
                 assert abs(sum(epoch[k] for k in ('setup_seconds','train_loop_seconds','evaluation_and_audit_seconds','checkpoint_and_logs_seconds'))-epoch['epoch_wall_seconds'])<1e-6
-                timings.append({'dataset':dataset,'method':method,'run_id':run.name,'gpu_uuid':env['cuda_visible_devices'],**epoch})
+                timings.append({'dataset':dataset,'method':method,'run_id':run.name,'gpu_uuid':env['cuda_visible_devices'],
+                    'gpu_model':env['device'],'run_foreign_gpu_pids':json.dumps(gpu['foreign_pids']),**epoch})
             for stage in ('experts','optics','joint'):
                 rows=[x for x in timer['epochs'] if x['stage']==stage]
                 stage_times.append({'dataset':dataset,'method':method,'stage':stage,'epochs':len(rows),
+                    'gpu_uuid':env['cuda_visible_devices'],'gpu_model':env['device'],'run_foreign_gpu_pids':json.dumps(gpu['foreign_pids']),
                     'train_seconds_mean':statistics.mean(x['train_loop_seconds'] for x in rows),'epoch_seconds_mean':statistics.mean(x['epoch_wall_seconds'] for x in rows)})
             # Fixed, explicit thresholds; misses remain misses, with no test-driven selection.
             for threshold in (50,60,70,80):
@@ -139,6 +141,7 @@ def main():
                     seconds+=t['epoch_wall_seconds']
                     if hit is None and h['live_validation']['top1_retrieval_accuracy']*100+1e-5>=threshold:hit=(h['epoch'],seconds)
                 thresholds.append({'dataset':dataset,'method':method,'validation_top1_threshold_percent':threshold,
+                    'gpu_uuid':env['cuda_visible_devices'],'gpu_model':env['device'],'run_foreign_gpu_pids':json.dumps(gpu['foreign_pids']),
                     'reached':hit is not None,'first_epoch':hit[0] if hit else '',
                     'cumulative_epoch_seconds':hit[1] if hit else ''})
         assert len(shared)==1,shared
@@ -176,8 +179,12 @@ def main():
             hist=all_histories[dataset,method]
             line=axes[0,col].plot([x['epoch'] for x in hist],[x['live_validation']['top1_retrieval_accuracy']*100 for x in hist],label=NAMES[method])[0]
             rows=[x for x in timings if x['dataset']==dataset and x['method']==method]
-            axes[1,col].plot([x['epoch'] for x in rows],[x['train_loop_seconds'] for x in rows],color=line.get_color())
+            metric=next(x for x in metrics if x['dataset']==dataset and x['method']==method)
+            axes[1,col].plot([x['epoch'] for x in rows],[x['train_loop_seconds'] for x in rows],color=line.get_color(),
+                linestyle='--' if json.loads(metric['foreign_gpu_pids']) else '-')
         axes[0,col].set_title(DATASETS[dataset]);axes[0,col].set_ylabel('Validation Top-1 (%)')
+        card=next(x['gpu_model'] for x in metrics if x['dataset']==dataset).replace('NVIDIA GeForce ','')
+        axes[1,col].set_title(card+' | dashed: other GPU PIDs recorded',fontsize=9)
         axes[1,col].set_ylabel('Train loop seconds / 120 batches')
         for row in range(2):axes[row,col].set_xlabel('Epoch')
     fig.legend(*axes[0,0].get_legend_handles_labels(),loc='outside lower center',ncol=5)
@@ -200,6 +207,7 @@ def main():
         fig.savefig(output/f'{dataset}_expert_global_layers.png',dpi=180);plt.close(fig)
     lines=['# 零初值空间生成：完整结果','',
            '五组均从相同零 raw 光学相位开始。表中 Top-1/Top-3 是 validation 所选模型的正式 test 结果；时间为全部30轮的算术均值，含各阶段首轮。',
+           'Imagenette使用既有imagenette2-160版本，官方val用作本项目test，选模validation另从官方train划出。完整数据和模型合同见 [结构与训练说明](空间生成结构与训练说明.md)。',
            '训练循环包含数据处理、生成器、光电计算、反传及审计；完整 epoch 还包含阶段设置、验证和保存。模型加载与训练后干预不在 epoch 内。','',
            '| 数据集 | 方法 | 选择轮次 | Top-1 | Top-3 | 训练秒/轮 | 总秒/轮 | 专家 RMS/rad | global RMS/rad |',
            '|---|---|---:|---:|---:|---:|---:|---:|---:|']
@@ -211,6 +219,9 @@ def main():
             '† 表示运行期间检测到同卡外部计算PID，相关时间可能受共享GPU负载影响。PID集合保存在metrics.csv和执行审计中；原始审计没有逐次采样时间戳，无法事后定位具体受影响的epoch，因此整组标记，不挑选看似更快的轮次。',
             '固定validation阈值的首次达到时间见 [validation_time_to_threshold.csv](validation_time_to_threshold.csv)，未达到的阈值不填估算值；累计时间不含加载与初始验证，首次达到不等于稳定保持。',
             '本轮参考图来自训练集且固定，新增了静态视觉条件；与旧文本生成或随机相位初值的成绩不构成单变量比较。']
+    lines+=['','完整expert/global层：[Caltech](caltech_expert_global_layers.png)、[CIFAR](cifar_expert_global_layers.png)、[Imagenette-160](imagenette_expert_global_layers.png)。',
+            '配对准确度与相位差见 [method_comparisons.csv](method_comparisons.csv)，逐类准确度见 [per_class_metrics.csv](per_class_metrics.csv)。',
+            '另见 [同卡短计时复测](同卡短计时复测.md)；所有复现操作从 [唯一复现入口](../reproduction/README.md) 开始。']
     (output/'完整结果.md').write_text('\n'.join(lines)+'\n',encoding='utf-8')
     print(json.dumps(metrics,indent=2))
 
