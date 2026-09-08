@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
-  "input_dir": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/phase_payload_478_hardware_orientation",
-  "output_dir": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/phase_slm_1920x1200",
+  "input_dir": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/hardware_masks/phase_payload_478_hardware_orientation",
+  "output_dir": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/hardware_masks/phase_slm_1920x1200",
   "files": 6,
   "slm_size_wh": [
     1920,

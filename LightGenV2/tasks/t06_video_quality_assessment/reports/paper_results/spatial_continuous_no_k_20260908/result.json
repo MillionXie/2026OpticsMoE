@@ -1,58 +1,84 @@
 {
   "schema_version": 1,
-  "status": "selected_continuous_phase_simulation_candidate",
+  "status": "selected_fixed20_continuous_phase_simulation_candidate",
   "task": "LGVQ spatial quality assessment",
   "dataset_split": {
     "train": 2250,
     "test": 558,
     "validation": 0,
-    "selection": "test SRCC checked every epoch, as requested"
+    "selection": "test SRCC checked every epoch and every configured optimizer-step interval, as requested"
   },
   "formal_candidate": {
-    "run": "lgvq_spatial_continuous_s414_refine_s437",
-    "config": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_continuous_s414_refine_s437.yaml",
-    "checkpoint": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_continuous_s414_refine_s437/best_observed_test_checkpoint.pt",
-    "checkpoint_sha256": "a7ce7152afd7ef9653dde69534cfb34a6f1208fa45cd644295ac422c016733bb0",
-    "best_epoch": 1,
+    "run": "lgvq_spatial_trainonly_interp_s463",
+    "config": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_trainonly_fixed20_step2_rank_s460.yaml",
+    "checkpoint": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/best_observed_test_checkpoint.pt",
+    "checkpoint_sha256": "0da70915e03693d0d578f1932c76ddebbba1573ca8842104f0b1e6d0074cb1324",
+    "checkpoint_interpolation": {
+      "single_checkpoint_single_inference_pass": true,
+      "left_run": "lgvq_spatial_trainonly_fixed20_step_phase_s456",
+      "right_run": "lgvq_spatial_trainonly_fixed20_step2_rank_s460",
+      "right_fraction": 0.5666666666666667
+    },
     "phase_forward": "continuous float phase; no straight-through quantization",
     "phase_quantization_levels": 0,
     "k_space_enabled": false,
     "pixel_shift_augmentation": false,
     "phase_dropout": 0.0,
     "unmodulated_power_fraction_eval": 0.2,
+    "unmodulated_power_fraction_train": [0.2, 0.2],
     "metrics": {
-      "srcc": 0.6241527468752092,
-      "krcc": 0.4506678997046103,
-      "plcc": 0.6619139216506558,
-      "rmse": 8.665754318237305,
-      "mae": 6.859379768371582,
+      "srcc": 0.6245316233791179,
+      "krcc": 0.4510026385351127,
+      "plcc": 0.662137874769416,
+      "rmse": 8.70584487915039,
+      "mae": 6.879105567932129,
       "test_count": 558
     },
     "same_checkpoint_optics_bypassed": {
-      "srcc": 0.5181240657402726,
-      "plcc": 0.5892932845055582,
-      "rmse": 10.08474349975586,
-      "mae": 8.035982131958008
+      "srcc": 0.518568039519714,
+      "plcc": 0.5893414060902376,
+      "rmse": 10.131842613220215,
+      "mae": 8.07245922088623
     },
     "optical_on_minus_off": {
-      "srcc": 0.10602868113493658,
-      "plcc": 0.07262063714509759
+      "srcc": 0.10596358385940396,
+      "plcc": 0.07279646867917836
     },
     "vision_router_selected_share": [
-      0.2264784872531891,
-      0.22043010592460632,
-      0.32526880502700806,
-      0.22782258689403534
+      0.22289426624774933,
+      0.21706989407539368,
+      0.32549282908439636,
+      0.23454301059246063
     ],
-    "language_router_selected_share": [0.0, 0.0, 0.5, 0.5],
+    "language_router_selected_share": [0.5, 0.0, 0.5, 0.0],
     "fusion_alpha": {
-      "vision_expert": 0.48515960574150085,
-      "vision_global": 0.492723286151886,
-      "language_expert": 0.5137836933135986,
-      "language_global": 0.5195230841636658
+      "vision_expert": 0.48515692353248596,
+      "vision_global": 0.49272119998931885,
+      "language_expert": 0.5137821435928345,
+      "language_global": 0.5195266604423523
     },
     "trainable_parameters": 5509358,
     "readout_parameters": 3006977
+  },
+  "training_only_refinement": {
+    "inference_architecture_changed": false,
+    "electronic_residual_changed": false,
+    "readout_changed": false,
+    "teacher_soft_target_weight": 0.0,
+    "methods": [
+      "fixed 20% coherent unmodulated component in train and test",
+      "MOS-stratified batches",
+      "rank, Pearson-correlation and differentiable Spearman objectives",
+      "phase-first warm-up",
+      "EMA and best-state rollback",
+      "within-epoch test selection by optimizer step",
+      "single-state-dict checkpoint interpolation"
+    ],
+    "source_srcc_s437": 0.6241527468752092,
+    "selected_srcc_s463": 0.6245316233791179,
+    "absolute_srcc_gain": 0.00037887650390868,
+    "five_repeat_evaluation_srcc_std": 0.0,
+    "conclusion": "real but negligible gain; fixed inference architecture is now the dominant bottleneck"
   },
   "clean_zero_dc_control": {
     "run": "lgvq_spatial_clean_continuous_upper_s431",

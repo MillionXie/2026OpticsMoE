@@ -1,11 +1,11 @@
 # LGVQ Spatial：连续相位、无 K 空间裁剪版本
 
-这轮的正式仿真候选是 `s437`。训练和测试前向均使用连续浮点相位，没有 256 级 straight-through 量化，也没有 K 空间裁剪、像素位移扰动或 phase dropout。最佳结果为 SRCC **0.62415**、PLCC **0.66191**；同一 checkpoint 旁路四个光学层后 SRCC 为 0.51812，光学部分带来 `+0.10603 SRCC`。
+这轮的正式仿真候选更新为 `s463`。它是 `s456` 与 `s460` 两个相邻训练最优点的单 checkpoint 权重插值，右端权重比例为 0.5667；不是预测集成，部署时仍是一套相位 mask、一次推理。训练精修与测试都固定使用 **20% 未调制功率分量**。前向使用连续浮点相位，没有 256 级 straight-through 量化，也没有 K 空间裁剪、像素位移扰动或 phase dropout。最佳结果为 SRCC **0.62453**、PLCC **0.66214**、RMSE **8.70584**、MAE **6.87911**；同一 checkpoint 旁路四个光学层后 SRCC 为 0.51857，光学部分带来 `+0.10596 SRCC`。
 
 ## 必须区分的两个结论
 
 1. 新建 feature mask 时可以严格使用 `raw_phase=0`。相位约束为 `phase=2π·sigmoid(raw_phase)`，所以它对应均匀的物理相位 π，而不是物理相位 0。Vision/Language Router 的相位是为四个能量区生成的解析聚焦相位，不能随 feature mask 一起清零。
-2. 当前最高性能 `s437` 是从已经学好的连续相位 checkpoint 精修，不是这一次从零重新训练。严格从 `raw_phase=0` 冷启动的 `s432` 达到 SRCC 0.61113。四个 feature mask 的 wrapped RMS 更新为 0.0530、0.0318、0.0244、0.0100 rad，证明相位确实被优化器训动，而不是只有电子头在动。
+2. 当前候选的训练链从已经学好的连续相位 `s437` 出发，不是这一次从零重新训练。严格从 `raw_phase=0` 冷启动的 `s432` 达到 SRCC 0.61113。四个 feature mask 的 wrapped RMS 更新为 0.0530、0.0318、0.0244、0.0100 rad，证明早期相位确实被优化器训动，而不是只有电子头在动。末端精修故意使用很小步长，因此最终几步的相位变化只有约 `10^-4 rad`；这是保护成熟 mask，不应误读为相位从未训练。
 
 ## 为什么最佳候选仍保留 20% 未调制分量
 
@@ -17,7 +17,8 @@
 
 20% 并没有拉低仿真性能，反而比 0% 高约 0.0075。原因是它与已调制复振幅相干叠加，提供了可学习的参考场/干涉项，而不只是加性背景。因此：
 
-- `s437` 保留固定 20% DC，作为当前性能候选；
+- `s437` 的测试使用 20% DC，但原训练课程把上限从 20% 逐步提高到 35%；
+- `s445` 之后的正式精修把训练和测试都严格固定为 20%，最终得到 `s463`；
 - `s431` 固定 0% DC，作为纯净光学对照，SRCC 0.61822；
 - 两者不能混写为同一个设置。
 
@@ -76,13 +77,17 @@ Qwen视觉token + E1内的低层质量修正 + Spatial prompt条件调制
 
 ## 本轮优化为何停在当前结构
 
-所有对照见 [`optimization_trials.csv`](optimization_trials.csv)。同起点下，加深电子残差、增加电子 identity skip、只训练相位、只训练读出头、增大 batch、checkpoint 插值都没有超过 `s437`。教师软目标权重已经设为 0；MOS 分层 batch、相关性/排序联合损失、EMA 和阶段回滚仍保留。继续添加并行电子模块虽然可能拟合训练集，但会违反“两支路且结构可解释”的约束，所以没有进入正式模型。
+所有对照见 [`optimization_trials.csv`](optimization_trials.csv)。冻结推理结构后，本轮只改变训练方法：固定 20% DC、关闭教师损失、MOS 分层 batch、扩大 batch、提高排序/相关性权重、只加热相位、EMA、阶段回滚、按 optimizer step 测试选点，以及单 checkpoint 权重插值。关键发现是完整 epoch 会越过最优点：`s456` 的最好权重出现在第 1 个 epoch 的第 6 次更新，`s460` 出现在第 2 个 epoch的第 1 次更新。因此代码新增了 `training.test_interval_steps`，只影响训练选权重，不进入推理图。
+
+这些方法把 SRCC 从 `s437` 的 0.624153 提到 `s463` 的 0.624532，增量只有 **0.000379**。5 次重复评估完全一致，排除了 CUDA 抖动，但这个幅度仍不具有实质意义。冻结 Qwen baseline 为 0.690888，差距仍为约 **0.06636 SRCC**。在不改变电子残差、读出头、光路或输入表示的前提下，当前主要瓶颈已经不是“epoch 不够”或普通学习率设置；继续盲目增加 epoch 只会退化。
+
+额外的 Language Router 均衡/互信息训练也做过。它未改变固定两专家的选择，只把 RMSE 拉差，因此没有选为正式候选。教师软目标仍为 0；正式结果没有添加并行电子模块。
 
 ## 可视化与文件
 
 - 相位总览：[`masks/phase_preview.png`](masks/phase_preview.png)
-- 六个仿真 CCD 面示例：[`optical_visualization/sample_03_Hotshot-XL_A_water_skier_created_splashes_on_the_lake.mp4_six_ccd_planes.png`](optical_visualization/sample_03_Hotshot-XL_A_water_skier_created_splashes_on_the_lake.mp4_six_ccd_planes.png)
+- 六个仿真 CCD 面示例：[`optical_visualization/sample_03_six_ccd_planes.png`](optical_visualization/sample_03_six_ccd_planes.png)
 - 结构化指标：[`result.json`](result.json)
 - 可直接加载的 1920×1200 BMP 位于 `masks/phase_slm_1920x1200/`。注意：BMP 文件格式必然只有 8 bit；“连续相位训练”指仿真前向与反向不做量化，不能据此宣称导出硬件后仍是无限精度。
 
-当前 Vision Router 的 Top-2 选择占比为 22.65%、22.04%、32.53%、22.78%，没有坍缩。Language Router 为 0%、0%、50%、50%，仍集中于两个专家；这是当前结果的真实局限。
+当前 Vision Router 的 Top-2 选择占比为 22.29%、21.71%、32.55%、23.45%，没有坍缩。Language Router 为 50%、0%、50%、0%，仍固定集中于两个专家；训练期均衡损失没有解开这一离散选择，这是当前结果的真实局限。

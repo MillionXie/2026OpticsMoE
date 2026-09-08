@@ -2,9 +2,9 @@
   "schema_version": 1,
   "target_name": "spatial",
   "prompt": "Please evaluate the spatial quality of this video and rate it using one of the following five levels: Excellent, Good, Fair, Poor, or Bad.",
-  "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_continuous_s414_refine_s437/best_observed_test_checkpoint.pt",
-  "checkpoint_sha256": "a7ce7152afd7ef9653dde69534cfb34a6f1208fa45cd644295ac42c016733bb0",
-  "checkpoint_epoch": 1,
+  "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/best_observed_test_checkpoint.pt",
+  "checkpoint_sha256": "0da70915e03693d0d578f1932c76ddebbba1573ca8842104f0b1e6d074cb1324",
+  "checkpoint_epoch": -1,
   "checkpoint_architecture": "qwenfront_spatial_o2_4f196_vexpert109_alpha40_no_attention_v1_spatialgrid_v1_qwenonly_v1_strict2branch_v1_residual_conv2_v1_electronicqualityresidual85_v1_srouterstandardize_v1",
   "stages_in_physical_order": [
     "vision_router",
@@ -62,8 +62,8 @@
     "extent_error_um_vs_logical": 2.0,
     "reconstruction": {
       "schema_version": 2,
-      "input_dir": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/phase_payload_478_hardware_orientation",
-      "output_dir": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/phase_slm_1920x1200",
+      "input_dir": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/hardware_masks/phase_payload_478_hardware_orientation",
+      "output_dir": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/hardware_masks/phase_slm_1920x1200",
       "files": 6,
       "slm_size_wh": [
         1920,
@@ -116,12 +116,12 @@
       512.0
     ],
     "white_aperture": {
-      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/amplitude_layout_1024x1024/active478_white_aperture_1024x1024.bmp",
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/hardware_masks/amplitude_layout_1024x1024/active478_white_aperture_1024x1024.bmp",
       "sha256": "59da7c023875b86b6cedaf9c900ba763f8266317f3a93ca5e97445510c4912a8"
     },
     "stage_layout_templates": {
       "vision_router": {
-        "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/amplitude_layout_1024x1024/vision_router_layout_1024x1024.bmp",
+        "path": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/hardware_masks/amplitude_layout_1024x1024/vision_router_layout_1024x1024.bmp",
         "sha256": "1d148716d4b8349c156e291f90aeaf7e7932c1a59579ebd590b2b782e2e98ce1",
         "size_wh": [
           1024,
@@ -142,7 +142,7 @@
         "purpose": "layout-only; replace white regions with sample-dependent amplitudes"
       },
       "vision_expert": {
-        "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/amplitude_layout_1024x1024/vision_expert_layout_1024x1024.bmp",
+        "path": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/hardware_masks/amplitude_layout_1024x1024/vision_expert_layout_1024x1024.bmp",
         "sha256": "30c338e54bff86da39f528e1f9328948dc1e42cc8b9ab51181d465904e2e4601",
         "size_wh": [
           1024,
@@ -163,7 +163,7 @@
         "purpose": "layout-only; replace white regions with sample-dependent amplitudes"
       },
       "vision_global": {
-        "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/amplitude_layout_1024x1024/vision_global_layout_1024x1024.bmp",
+        "path": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/hardware_masks/amplitude_layout_1024x1024/vision_global_layout_1024x1024.bmp",
         "sha256": "1d148716d4b8349c156e291f90aeaf7e7932c1a59579ebd590b2b782e2e98ce1",
         "size_wh": [
           1024,
@@ -184,7 +184,7 @@
         "purpose": "layout-only; replace white regions with sample-dependent amplitudes"
       },
       "language_router": {
-        "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/amplitude_layout_1024x1024/language_router_layout_1024x1024.bmp",
+        "path": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/hardware_masks/amplitude_layout_1024x1024/language_router_layout_1024x1024.bmp",
         "sha256": "bb546c310079eaa697b624604227004a2916dc59553e77eb247bab31767dfefc",
         "size_wh": [
           1024,
@@ -205,7 +205,7 @@
         "purpose": "layout-only; replace white regions with sample-dependent amplitudes"
       },
       "language_expert": {
-        "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/amplitude_layout_1024x1024/language_expert_layout_1024x1024.bmp",
+        "path": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/hardware_masks/amplitude_layout_1024x1024/language_expert_layout_1024x1024.bmp",
         "sha256": "fb854f74a9bee2d2794988715c4704f1f3a3f0a4ef4ff63d538d2904af9a539b",
         "size_wh": [
           1024,
@@ -226,7 +226,7 @@
         "purpose": "layout-only; replace white regions with sample-dependent amplitudes"
       },
       "language_global": {
-        "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/amplitude_layout_1024x1024/language_global_layout_1024x1024.bmp",
+        "path": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/hardware_masks/amplitude_layout_1024x1024/language_global_layout_1024x1024.bmp",
         "sha256": "bb546c310079eaa697b624604227004a2916dc59553e77eb247bab31767dfefc",
         "size_wh": [
           1024,
@@ -251,10 +251,10 @@
   },
   "stages": {
     "vision_router": {
-      "logical_phase_png_canonical": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/logical_phase_478_canonical/vision_router.png",
-      "logical_phase_png_canonical_sha256": "dc4bcbcb23894513c34bda915cd075846a5b41962095e06e2333cba811f63377",
-      "phase_payload_png_hardware_orientation": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/phase_payload_478_hardware_orientation/vision_router.png",
-      "phase_payload_png_hardware_orientation_sha256": "0c928754586fae0da0429166c8accb569fa672abc8b2c55f039d9365460431e8",
+      "logical_phase_png_canonical": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/hardware_masks/logical_phase_478_canonical/vision_router.png",
+      "logical_phase_png_canonical_sha256": "464aa457564e540604e7ce552d131a8fea88aa05d903f7fc7214e4fadc61868d",
+      "phase_payload_png_hardware_orientation": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/hardware_masks/phase_payload_478_hardware_orientation/vision_router.png",
+      "phase_payload_png_hardware_orientation_sha256": "b727a90c5e297e92caa135f5cfcde5c2e4b14f0a2275f2afd4679458261d1f3d",
       "learned_tile_count": 4,
       "learned_pixel_count": 47524,
       "learned_fraction_of_active478": 0.2079970588750197,
@@ -311,23 +311,23 @@
         ]
       ],
       "phase_statistics_learned_pixels": {
-        "phase_rad_min": 0.0002314199082320556,
-        "phase_rad_max": 6.282944202423096,
-        "phase_rad_mean_linear": 2.030712300167789,
-        "phase_rad_std_linear": 2.2318019910194593,
-        "phase_rad_circular_mean": 6.226471519573597,
-        "phase_rad_residual_std": 1.4620646704700913,
-        "phase_circular_resultant_length": 0.39223578760748634,
-        "phase_rad_circular_std": 1.3681316610772511
+        "phase_rad_min": 0.00023131555644795299,
+        "phase_rad_max": 6.2829437255859375,
+        "phase_rad_mean_linear": 2.030704529662101,
+        "phase_rad_std_linear": 2.231796865123038,
+        "phase_rad_circular_mean": 6.226469826630255,
+        "phase_rad_residual_std": 1.4620793595836103,
+        "phase_circular_resultant_length": 0.392227436777411,
+        "phase_rad_circular_std": 1.3681472227647693
       },
-      "phase_slm_bmp": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/phase_slm_1920x1200/vision_router.bmp",
-      "phase_slm_bmp_sha256": "01603152f2bc376588913a98b854af2dbc2620db706fe6fc6bddc721fe55e0d0"
+      "phase_slm_bmp": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/hardware_masks/phase_slm_1920x1200/vision_router.bmp",
+      "phase_slm_bmp_sha256": "30979c399641592ea364282cc741d6deb6e49e125aa782ad1ffdd579e32cd977"
     },
     "vision_expert": {
-      "logical_phase_png_canonical": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/logical_phase_478_canonical/vision_expert.png",
-      "logical_phase_png_canonical_sha256": "809c0b401d15e5028ce1c20ddd264a2df5c460ad1cc460879b34ca6578eefdab",
-      "phase_payload_png_hardware_orientation": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/phase_payload_478_hardware_orientation/vision_expert.png",
-      "phase_payload_png_hardware_orientation_sha256": "5ac1186642701197d4b120d27bf19416f4e7adb226ca2067c40d0780690593ec",
+      "logical_phase_png_canonical": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/hardware_masks/logical_phase_478_canonical/vision_expert.png",
+      "logical_phase_png_canonical_sha256": "4231bc0b64e467ba811314d6966534a6efb697abe7c8a02edcd9b37901e738dd",
+      "phase_payload_png_hardware_orientation": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/hardware_masks/phase_payload_478_hardware_orientation/vision_expert.png",
+      "phase_payload_png_hardware_orientation_sha256": "2569088954f2e3e52e7cb1f635d5f258455620b03e3bd89538874c61b2e21a91",
       "learned_tile_count": 16,
       "learned_pixel_count": 190096,
       "learned_fraction_of_active478": 0.8319882355000788,
@@ -528,23 +528,23 @@
         ]
       ],
       "phase_statistics_learned_pixels": {
-        "phase_rad_min": 0.41343364119529724,
-        "phase_rad_max": 5.804188251495361,
-        "phase_rad_mean_linear": 3.139672803670493,
-        "phase_rad_std_linear": 0.7380723323085066,
-        "phase_rad_circular_mean": 3.139399881694975,
-        "phase_rad_residual_std": 0.7380723323085066,
-        "phase_circular_resultant_length": 0.761518094934559,
-        "phase_rad_circular_std": 0.7381616959771712
+        "phase_rad_min": 0.413234680891037,
+        "phase_rad_max": 5.803849697113037,
+        "phase_rad_mean_linear": 3.139672044866391,
+        "phase_rad_std_linear": 0.7380864292022604,
+        "phase_rad_circular_mean": 3.139400812300638,
+        "phase_rad_residual_std": 0.7380864292022604,
+        "phase_circular_resultant_length": 0.7615100816677508,
+        "phase_rad_circular_std": 0.7381759512640581
       },
-      "phase_slm_bmp": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/phase_slm_1920x1200/vision_expert.bmp",
-      "phase_slm_bmp_sha256": "3b4eadbc0de197665929892c2193caac0180082bc74b14aa8c7d9be740ac9e49"
+      "phase_slm_bmp": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/hardware_masks/phase_slm_1920x1200/vision_expert.bmp",
+      "phase_slm_bmp_sha256": "914978c51b0f8fa9218d4f8ed28e4b465198601f86f5bca8a4bfa52c046ef87c"
     },
     "vision_global": {
-      "logical_phase_png_canonical": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/logical_phase_478_canonical/vision_global.png",
-      "logical_phase_png_canonical_sha256": "a607d6a76c3a300a43f9cf2ab366c4dae138127e0932b9a69a2386b69f656ddb",
-      "phase_payload_png_hardware_orientation": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/phase_payload_478_hardware_orientation/vision_global.png",
-      "phase_payload_png_hardware_orientation_sha256": "9d8d939a635f3a54764c81a551637aed3c9c622f546618061463dc060f6bb6cf",
+      "logical_phase_png_canonical": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/hardware_masks/logical_phase_478_canonical/vision_global.png",
+      "logical_phase_png_canonical_sha256": "ee1415069e2d8057600eb5f2909a066c08174e93910e265c23618de5b99544fc",
+      "phase_payload_png_hardware_orientation": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/hardware_masks/phase_payload_478_hardware_orientation/vision_global.png",
+      "phase_payload_png_hardware_orientation_sha256": "b5959b459b51f6732997b8be01a2feee11d36b76538815b7278417ac03b117fc",
       "learned_tile_count": 1,
       "learned_pixel_count": 228484,
       "learned_fraction_of_active478": 1.0,
@@ -583,23 +583,23 @@
         ]
       ],
       "phase_statistics_learned_pixels": {
-        "phase_rad_min": 0.8046450614929199,
-        "phase_rad_max": 5.551333427429199,
-        "phase_rad_mean_linear": 3.141263081074957,
-        "phase_rad_std_linear": 0.4724526105789832,
-        "phase_rad_circular_mean": 3.1415301951063777,
-        "phase_rad_residual_std": 0.4724526105789832,
-        "phase_circular_resultant_length": 0.8960170752683667,
-        "phase_rad_circular_std": 0.46860603702819237
+        "phase_rad_min": 0.8045855760574341,
+        "phase_rad_max": 5.551197052001953,
+        "phase_rad_mean_linear": 3.141262084080551,
+        "phase_rad_std_linear": 0.4724596041376172,
+        "phase_rad_circular_mean": 3.1415290088466707,
+        "phase_rad_residual_std": 0.4724596041376172,
+        "phase_circular_resultant_length": 0.8960142961257008,
+        "phase_rad_circular_std": 0.46861265590476797
       },
-      "phase_slm_bmp": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/phase_slm_1920x1200/vision_global.bmp",
-      "phase_slm_bmp_sha256": "cb6eaea1949a961276677a5328c8e6424cb306c4e9fc0c2b7036983c2953fec4"
+      "phase_slm_bmp": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/hardware_masks/phase_slm_1920x1200/vision_global.bmp",
+      "phase_slm_bmp_sha256": "8041c137452eb44c40426d9e71eb4026db49140f4f98f6da087aa2cdc33f4e7c"
     },
     "language_router": {
-      "logical_phase_png_canonical": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/logical_phase_478_canonical/language_router.png",
-      "logical_phase_png_canonical_sha256": "2c186cf989f436419b9926e033100d26c201c05759dafd17e29c5279565e588d",
-      "phase_payload_png_hardware_orientation": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/phase_payload_478_hardware_orientation/language_router.png",
-      "phase_payload_png_hardware_orientation_sha256": "2fb0b6541d5acb7e4b9d910d19b685a191db94145a83f6d64314b269d2c29544",
+      "logical_phase_png_canonical": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/hardware_masks/logical_phase_478_canonical/language_router.png",
+      "logical_phase_png_canonical_sha256": "ed8298bb1145c7737a3009f901ce73b68f47c3d628a3097e80975dd30d401f6d",
+      "phase_payload_png_hardware_orientation": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/hardware_masks/phase_payload_478_hardware_orientation/language_router.png",
+      "phase_payload_png_hardware_orientation_sha256": "817030671b9ba2ae62dcc8c31e38089f28323602fbd830aefbd1a08ad7a5d920",
       "learned_tile_count": 1,
       "learned_pixel_count": 11881,
       "learned_fraction_of_active478": 0.05199926471875493,
@@ -620,23 +620,23 @@
         ]
       ],
       "phase_statistics_learned_pixels": {
-        "phase_rad_min": 2.329100425413344e-05,
+        "phase_rad_min": 2.3291158868232742e-05,
         "phase_rad_max": 6.283159255981445,
-        "phase_rad_mean_linear": 2.1605445320787244,
-        "phase_rad_std_linear": 2.174761890891926,
-        "phase_rad_circular_mean": 6.262067730376911,
-        "phase_rad_residual_std": 1.6177796593160818,
-        "phase_circular_resultant_length": 0.21445570990247853,
-        "phase_rad_circular_std": 1.7547945991341856
+        "phase_rad_mean_linear": 2.1605503425072845,
+        "phase_rad_std_linear": 2.1747733659151565,
+        "phase_rad_circular_mean": 6.262050469754119,
+        "phase_rad_residual_std": 1.6177468742240368,
+        "phase_circular_resultant_length": 0.21446779812751343,
+        "phase_rad_circular_std": 1.7547624780372133
       },
-      "phase_slm_bmp": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/phase_slm_1920x1200/language_router.bmp",
-      "phase_slm_bmp_sha256": "1d3ea73483204cfd59d8e0049c17c3a9357f8e5752fb8b465a28190dfad8bacf"
+      "phase_slm_bmp": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/hardware_masks/phase_slm_1920x1200/language_router.bmp",
+      "phase_slm_bmp_sha256": "2f5cf625107f8b5de6c0d4b6714f339b07f9313043e44e5b7d520f1ee4a87fae"
     },
     "language_expert": {
-      "logical_phase_png_canonical": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/logical_phase_478_canonical/language_expert.png",
-      "logical_phase_png_canonical_sha256": "6c504879a03efa05e056e45bbddbf0d9f791c305b0eb5e3eef3460823f6cd0a9",
-      "phase_payload_png_hardware_orientation": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/phase_payload_478_hardware_orientation/language_expert.png",
-      "phase_payload_png_hardware_orientation_sha256": "546bc885e6c44d3cf8f94aab43becb7842d6ffc5547422ac1a81d7d05b611663",
+      "logical_phase_png_canonical": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/hardware_masks/logical_phase_478_canonical/language_expert.png",
+      "logical_phase_png_canonical_sha256": "463d320f535571ad1c76a238c3585f2305e98a2489663248e77f8882103951d0",
+      "phase_payload_png_hardware_orientation": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/hardware_masks/phase_payload_478_hardware_orientation/language_expert.png",
+      "phase_payload_png_hardware_orientation_sha256": "b9115e0a2cc75cc92b317d19420c9a3b225ce50738ec772f9c770061683d684f",
       "learned_tile_count": 4,
       "learned_pixel_count": 47524,
       "learned_fraction_of_active478": 0.2079970588750197,
@@ -693,23 +693,23 @@
         ]
       ],
       "phase_statistics_learned_pixels": {
-        "phase_rad_min": 0.6636947393417358,
-        "phase_rad_max": 5.731341361999512,
-        "phase_rad_mean_linear": 3.1403276513794456,
-        "phase_rad_std_linear": 0.4566666205850484,
-        "phase_rad_circular_mean": 3.140634891054662,
-        "phase_rad_residual_std": 0.4566666205850484,
-        "phase_circular_resultant_length": 0.9026870881911541,
-        "phase_rad_circular_std": 0.4525026194928971
+        "phase_rad_min": 0.663237988948822,
+        "phase_rad_max": 5.731235504150391,
+        "phase_rad_mean_linear": 3.1403267994785176,
+        "phase_rad_std_linear": 0.4566703310415365,
+        "phase_rad_circular_mean": 3.140633966836725,
+        "phase_rad_residual_std": 0.4566703310415365,
+        "phase_circular_resultant_length": 0.9026855071909153,
+        "phase_rad_circular_std": 0.4525064900379799
       },
-      "phase_slm_bmp": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/phase_slm_1920x1200/language_expert.bmp",
-      "phase_slm_bmp_sha256": "b12c53578147565275932b20de6ffbd2db624c93380e085df8aeaeaa854c20bf"
+      "phase_slm_bmp": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/hardware_masks/phase_slm_1920x1200/language_expert.bmp",
+      "phase_slm_bmp_sha256": "64db091401b409a85c7ea07bdb7aec276b71e5ea6dd63fbd24061b9a1ed59022"
     },
     "language_global": {
-      "logical_phase_png_canonical": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/logical_phase_478_canonical/language_global.png",
-      "logical_phase_png_canonical_sha256": "ef33c616f2f0d3ed46814814ee6c9c654ea7729cbfa3f287cd07ef4c272ab84b",
-      "phase_payload_png_hardware_orientation": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/phase_payload_478_hardware_orientation/language_global.png",
-      "phase_payload_png_hardware_orientation_sha256": "ba5625d68ef5c829bcb0b276169e187077cb9d94c07ffeeb76e0fbb316046f4d",
+      "logical_phase_png_canonical": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/hardware_masks/logical_phase_478_canonical/language_global.png",
+      "logical_phase_png_canonical_sha256": "86c0dd1f173537489aaae81d42ac7f5a3292886769e2c7dc01ac2bb12b3653c2",
+      "phase_payload_png_hardware_orientation": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/hardware_masks/phase_payload_478_hardware_orientation/language_global.png",
+      "phase_payload_png_hardware_orientation_sha256": "6ad6e22df20b3a19fed503ae26adf6538c49816fd76792803da6360bcbbef2cb",
       "learned_tile_count": 1,
       "learned_pixel_count": 228484,
       "learned_fraction_of_active478": 1.0,
@@ -730,23 +730,23 @@
         ]
       ],
       "phase_statistics_learned_pixels": {
-        "phase_rad_min": 1.386505365371704,
-        "phase_rad_max": 4.894595623016357,
-        "phase_rad_mean_linear": 3.1420750313284675,
-        "phase_rad_std_linear": 0.3900388457682243,
-        "phase_rad_circular_mean": 3.1420909115511204,
-        "phase_rad_residual_std": 0.3900388457682243,
-        "phase_circular_resultant_length": 0.9266716627599311,
-        "phase_rad_circular_std": 0.39027162211092514
+        "phase_rad_min": 1.3887367248535156,
+        "phase_rad_max": 4.896576404571533,
+        "phase_rad_mean_linear": 3.1420745891880766,
+        "phase_rad_std_linear": 0.3900373997793051,
+        "phase_rad_circular_mean": 3.142090708596096,
+        "phase_rad_residual_std": 0.3900373997793051,
+        "phase_circular_resultant_length": 0.9266721362300223,
+        "phase_rad_circular_std": 0.3902703129280633
       },
-      "phase_slm_bmp": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/phase_slm_1920x1200/language_global.bmp",
-      "phase_slm_bmp_sha256": "893339253c63b3bbb32bab344a324632ef2fe1208d7de473f4a8dc73bccc7898"
+      "phase_slm_bmp": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/hardware_masks/phase_slm_1920x1200/language_global.bmp",
+      "phase_slm_bmp_sha256": "fa090926fbf4d7bdb8710f3b470ce26d03418df7b6f4c851ad0dda8d3265ca61"
     }
   },
   "previews": {
-    "combined_phase": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/phase_preview.png",
-    "amplitude_layout": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/amplitude_layout_preview.png",
+    "combined_phase": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/hardware_masks/phase_preview.png",
+    "amplitude_layout": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/hardware_masks/amplitude_layout_preview.png",
     "orientation": "canonical model orientation; hardware phase flip is shown only in payload/BMP files"
   },
-  "statistics_csv": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/statistics/phase_tile_statistics.csv"
+  "statistics_csv": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/hardware_masks/statistics/phase_tile_statistics.csv"
 }

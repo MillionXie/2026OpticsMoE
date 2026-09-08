@@ -1,21 +1,21 @@
 {
   "schema_version": 1,
-  "config": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_continuous_s414_refine_s437.yaml",
-  "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_continuous_s414_refine_s437/best_observed_test_checkpoint.pt",
-  "checkpoint_epoch": 1,
+  "config": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_trainonly_fixed20_step2_rank_s460.yaml",
+  "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/best_observed_test_checkpoint.pt",
+  "checkpoint_epoch": -1,
   "target_name": "spatial",
   "frame_count": 4,
   "sample_count": 4,
   "figures": [
-    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/optical_visualization/sample_01_Tune-A-Video_In_a_rugby_match_players_vied_for_possession_of_the_rugby_ball.mp4_six_ccd_planes.png",
-    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/optical_visualization/sample_01_Tune-A-Video_In_a_rugby_match_players_vied_for_possession_of_the_rugby_ball.mp4_six_ccd_planes.pdf",
-    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/optical_visualization/sample_02_Hotshot-XL_A_group_of_villagers_wash_clothes_by_the_stream.mp4_six_ccd_planes.png",
-    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/optical_visualization/sample_02_Hotshot-XL_A_group_of_villagers_wash_clothes_by_the_stream.mp4_six_ccd_planes.pdf",
-    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/optical_visualization/sample_03_Hotshot-XL_A_water_skier_created_splashes_on_the_lake.mp4_six_ccd_planes.png",
-    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/optical_visualization/sample_03_Hotshot-XL_A_water_skier_created_splashes_on_the_lake.mp4_six_ccd_planes.pdf",
-    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/optical_visualization/sample_04_Gen-2_A_couple_walks_hand_in_hand_on_the_beach_listening_to_the_sound_of_the_waves.mp4_six_ccd_planes.png",
-    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/optical_visualization/sample_04_Gen-2_A_couple_walks_hand_in_hand_on_the_beach_listening_to_the_sound_of_the_waves.mp4_six_ccd_planes.pdf"
+    "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/optical_visualization/sample_01_Tune-A-Video_In_a_rugby_match_players_vied_for_possession_of_the_rugby_ball.mp4_six_ccd_planes.png",
+    "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/optical_visualization/sample_01_Tune-A-Video_In_a_rugby_match_players_vied_for_possession_of_the_rugby_ball.mp4_six_ccd_planes.pdf",
+    "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/optical_visualization/sample_02_Hotshot-XL_A_group_of_villagers_wash_clothes_by_the_stream.mp4_six_ccd_planes.png",
+    "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/optical_visualization/sample_02_Hotshot-XL_A_group_of_villagers_wash_clothes_by_the_stream.mp4_six_ccd_planes.pdf",
+    "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/optical_visualization/sample_03_Hotshot-XL_A_water_skier_created_splashes_on_the_lake.mp4_six_ccd_planes.png",
+    "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/optical_visualization/sample_03_Hotshot-XL_A_water_skier_created_splashes_on_the_lake.mp4_six_ccd_planes.pdf",
+    "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/optical_visualization/sample_04_Gen-2_A_couple_walks_hand_in_hand_on_the_beach_listening_to_the_sound_of_the_waves.mp4_six_ccd_planes.png",
+    "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/optical_visualization/sample_04_Gen-2_A_couple_walks_hand_in_hand_on_the_beach_listening_to_the_sound_of_the_waves.mp4_six_ccd_planes.pdf"
   ],
-  "raw_statistics_csv": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/optical_visualization/raw_ccd_intensity_statistics.csv",
+  "raw_statistics_csv": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_trainonly_interp_s463/optical_visualization/raw_ccd_intensity_statistics.csv",
   "display_only_mapping": "clip at each plane's raw p99.7, then log1p; inference unchanged"
 }
