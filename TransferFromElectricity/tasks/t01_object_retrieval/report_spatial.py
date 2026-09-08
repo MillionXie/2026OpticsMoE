@@ -32,7 +32,7 @@ def main():
     args=parser.parse_args()
     if args.smoke and not args.validate_only:raise ValueError('Smoke evidence is only allowed with --validate-only')
     output=TASK/'reports/spatial_v4_20260908';output.mkdir(parents=True,exist_ok=True)
-    metrics=[];timings=[];stage_times=[];thresholds=[];diagnostics=[];evidence=[];all_histories={};banks={};contracts=set();references={}
+    metrics=[];timings=[];stage_times=[];thresholds=[];diagnostics=[];interventions=[];evidence=[];all_histories={};banks={};contracts=set();references={}
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
@@ -81,6 +81,7 @@ def main():
             banks[dataset,method]=bank;all_histories[dataset,method]=hist
             selected=r['selected_metrics'];training=[e['train_loop_seconds'] for e in timer['epochs']]
             totals=[e['epoch_wall_seconds'] for e in timer['epochs']]
+            selected_history=next(h for h in hist if h['epoch']==r['selected_epoch'])
             metrics.append({'dataset':dataset,'method':method,'run_id':run.name,'selected_epoch':r['selected_epoch'],
                 'top1_percent':100*selected['top1_retrieval_accuracy'],'top3_percent':100*selected['top3_retrieval_accuracy'],'mrr':selected['mrr'],
                 'train_seconds_mean':statistics.mean(training),'epoch_seconds_mean':statistics.mean(totals),
@@ -88,13 +89,22 @@ def main():
                 'run_wall_seconds':gpu['finished']-gpu['started'],
                 'foreign_gpu_pids':json.dumps(gpu['foreign_pids']),'peak_memory_gib':r['peak_memory_gib'],
                 'expert_rms_rad':r['selected_expert_phase']['rms_change_rad'],'global_rms_rad':r['selected_global_phase']['rms_change_rad'],
+                'vision_experts_used_selected_epoch':sum(x>0 for x in selected_history['expert_selection_counts']['vision']),
+                'language_experts_used_selected_epoch':sum(x>0 for x in selected_history['expert_selection_counts']['language']),
                 'generator_trainable_parameters':architecture['generator_trainable']})
+            for name,result in r['ablations'].items():
+                if 'top1_retrieval_accuracy' not in result:continue
+                interventions.append({'dataset':dataset,'method':method,'intervention':name,
+                    'top1_percent':100*result['top1_retrieval_accuracy'],'top3_percent':100*result['top3_retrieval_accuracy'],
+                    'top1_change_pp':100*(result['top1_retrieval_accuracy']-selected['top1_retrieval_accuracy'])})
             for h in hist:
                 chain=h['task_gradient_chain']
                 diagnostics.append({'dataset':dataset,'method':method,'epoch':h['epoch'],'stage':h['stage'],
                     'expert_rms_rad':h['expert_phase']['rms_change_rad'],'global_rms_rad':h['global_phase']['rms_change_rad'],
                     'expert_saturated_fraction':h['expert_phase']['sigmoid_saturated_fraction'],
                     'global_saturated_fraction':h['global_phase']['sigmoid_saturated_fraction'],
+                    'per_expert_rms_rad':json.dumps(h['expert_phase']['per_expert_rms_change_rad']),
+                    'expert_selection_counts':json.dumps(h['expert_selection_counts']),
                     'task_to_expert':chain.get('task_to_expert',''),'task_to_lora_b':chain.get('task_to_lora_b',''),
                     'task_to_global':chain.get('task_to_global','')})
             for epoch in timer['epochs']:
@@ -125,6 +135,7 @@ def main():
     write_csv(output/'metrics.csv',metrics);write_csv(output/'epoch_times.csv',timings);write_csv(output/'stage_times.csv',stage_times)
     write_csv(output/'validation_time_to_threshold.csv',thresholds)
     write_csv(output/'phase_and_gradient_diagnostics.csv',diagnostics)
+    write_csv(output/'component_interventions.csv',interventions)
     write(output/'summary.json',{'source_git_sha':next(iter(contracts))[0],'metrics':metrics,'fixed_reference_contracts':references})
     write(output/'evidence_manifest.json',evidence)
     fig,axes=plt.subplots(2,3,figsize=(16,8),layout='constrained')
