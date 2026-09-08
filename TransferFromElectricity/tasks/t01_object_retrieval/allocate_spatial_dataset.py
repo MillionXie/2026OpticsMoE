@@ -30,6 +30,9 @@ def main():
     parser.add_argument('--dataset',choices=['caltech','cifar','imagenette'],required=True)
     parser.add_argument('--methods',nargs='+',required=True)
     parser.add_argument('--prefix',required=True)
+    parser.add_argument('--reservation-prefix',action='append',help='Also avoid GPUs reserved by these experiment suites')
+    parser.add_argument('--config')
+    parser.add_argument('--run-kind',choices=['simulation','smoke'],default='simulation')
     args=parser.parse_args();root=args.training_root.resolve()
     git=lambda *values:subprocess.check_output(['git',*values],cwd=root,text=True).strip()
     if git('rev-parse','HEAD')!=args.training_sha:raise ValueError('Training checkout differs from locked SHA')
@@ -40,7 +43,9 @@ def main():
         names=[r[1].strip() for r in devices if r[0].strip()==uuid]
         if not uuid.startswith('GPU-') or len(names)!=1 or 'RTX' not in names[0] or 'A100' in names[0]:
             raise ValueError(f'Forbidden or unknown GPU: {uuid}')
-    directory=root/'TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation'
+    runs=root/'TransferFromElectricity/tasks/t01_object_retrieval/runs'
+    directory=runs/args.run_kind;directory.mkdir(parents=True,exist_ok=True)
+    if args.config and not (root/args.config).is_file():raise FileNotFoundError(args.config)
     stem=f'{args.prefix}_{args.dataset}'
     if list(directory.glob(stem+'_*_s42')) or (directory/(stem+'_execution.json')).exists():
         raise FileExistsError('This dataset has already started')
@@ -48,7 +53,9 @@ def main():
     if allocation.exists():raise FileExistsError(allocation)
     previous=None
     while True:
-        reserved=reserved_gpus(directory,args.prefix)
+        reservations=[reserved_gpus(runs/kind,prefix) for kind in ('simulation','smoke')
+                      for prefix in [args.prefix,*(args.reservation_prefix or [])]]
+        reserved=None if any(r is None for r in reservations) else set().union(*reservations)
         rows=list(csv.reader(subprocess.check_output(['nvidia-smi','--query-compute-apps=pid,gpu_uuid','--format=csv,noheader'],text=True).splitlines()))
         busy={u:sorted(int(r[0]) for r in rows if r[1].strip()==u) for u in args.candidate_uuids}
         state=(busy,None if reserved is None else sorted(reserved))
@@ -58,7 +65,8 @@ def main():
         time.sleep(5)
     uuid=eligible[0]
     command=[sys.executable,'-u','-m','TransferFromElectricity.tasks.t01_object_retrieval.run_spatial_suite',
-             '--gpu-uuids',uuid,'--datasets',args.dataset,'--methods',*args.methods,'--prefix',args.prefix,'--wait-for-gpus']
+             '--gpu-uuids',uuid,'--datasets',args.dataset,'--methods',*args.methods,'--prefix',args.prefix,'--wait-for-gpus','--run-kind',args.run_kind]
+    if args.config:command+=['--config',args.config]
     record={'controller_sha':args.controller_sha,'training_sha':args.training_sha,'training_root':str(root),
             'candidate_uuids':args.candidate_uuids,'chosen_uuid':uuid,'command':command,'selected_at':time.time(),
             'policy':'Choose an empty RTX, excluding all GPUs reserved by incomplete paired suites','status':'running'}

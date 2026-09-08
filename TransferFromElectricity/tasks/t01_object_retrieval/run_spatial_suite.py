@@ -34,7 +34,10 @@ def main():
     parser.add_argument('--prefix',required=True)
     parser.add_argument('--smoke',action='store_true')
     parser.add_argument('--wait-for-gpus',action='store_true',help='Wait for the assigned RTX devices to become empty')
+    parser.add_argument('--config',help='Override the config for a single-dataset suite, for example a timing-only protocol')
+    parser.add_argument('--run-kind',choices=['smoke','simulation'],help='Artifact category; does not change the training budget')
     args=parser.parse_args()
+    if args.config and len(args.datasets)!=1:raise ValueError('A config override requires exactly one dataset')
     if len(args.gpu_uuids)>len(args.datasets) or len(set(args.gpu_uuids))!=len(args.gpu_uuids):
         raise ValueError('Use distinct GPU UUIDs, no more than the number of datasets')
     devices=inventory();occupied=processes()
@@ -45,11 +48,11 @@ def main():
         print('WAIT for assigned RTX GPUs', {uuid:sorted(occupied.get(uuid,set())) for uuid in args.gpu_uuids},flush=True)
         time.sleep(5);occupied=processes()
     sha=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
-    kind='smoke' if args.smoke else 'simulation'
+    kind=args.run_kind or ('smoke' if args.smoke else 'simulation')
     directory=TASK/'runs'/kind;directory.mkdir(parents=True,exist_ok=True)
     audit_path=directory/f'{args.prefix}_{"_".join(args.datasets)}_execution.json'
     if audit_path.exists():raise FileExistsError(audit_path)
-    state={'git_sha':sha,'config_family':'spatial_v4','smoke':args.smoke,'records':[],
+    state={'git_sha':sha,'config_family':'spatial_v4','config_override':args.config,'smoke':args.smoke,'records':[],
            'policy':'One serial queue per physical GPU, process inventory sampled every five seconds','complete':False}
     pending={uuid:[] for uuid in args.gpu_uuids}
     for index,dataset in enumerate(args.datasets):
@@ -70,7 +73,7 @@ def main():
                 run_id=f'{args.prefix}_{dataset}_{method}_s42';run=directory/run_id
                 if run.exists():raise FileExistsError(run)
                 command=[sys.executable,'-u','-m','TransferFromElectricity.tasks.t01_object_retrieval.launch_rtx',
-                    '--gpu-uuid',uuid,'--method',method,'--config',f'TransferFromElectricity/tasks/t01_object_retrieval/configs/spatial_v4/{dataset}.yaml',
+                    '--gpu-uuid',uuid,'--method',method,'--config',args.config or f'TransferFromElectricity/tasks/t01_object_retrieval/configs/spatial_v4/{dataset}.yaml',
                     '--steps-per-epoch','120','--run-dir',str(run)]
                 if args.smoke:command+=['--smoke','--validation-only']
                 env={**os.environ,'HF_HUB_OFFLINE':'1','TRANSFORMERS_OFFLINE':'1','PYTHONHASHSEED':'42'}

@@ -1,0 +1,6 @@
+base_config: cifar.yaml
+validation_only: true
+stages:
+  - {name: experts, epochs: 2}
+  - {name: optics, epochs: 2}
+  - {name: joint, epochs: 2}
