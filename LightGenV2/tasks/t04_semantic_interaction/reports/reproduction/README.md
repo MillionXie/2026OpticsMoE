@@ -1,5 +1,7 @@
 # OpenMoji：复现入口与论文口径审计
 
+最新修复与公平baseline：[Router短条带修复、同一个两组卷积读出头](ROUTER_SHARED_HEAD.md)。
+
 **新优化合同**：[embedding-only、双模态光 Router、alpha>0.4](EMBEDDING_ALPHA40.md)。
 该合同单独训练，旧指标不移植为新指标；下文为历史证据。
 

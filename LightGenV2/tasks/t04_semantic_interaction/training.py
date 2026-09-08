@@ -164,10 +164,48 @@ def _set_phase_dropout(model: Any, enabled: bool) -> None:
         path.set_phase_dropout_active(enabled)
 
 
+def build_loaders(settings):
+    if settings.qwen_shared_baseline:
+        from .qwen_shared import build_cached_loaders
+        return build_cached_loaders(settings)
+    return legacy.build_loaders(settings)
+
+
+@torch.inference_mode()
+def evaluate_with_routes(model, loader, settings, device):
+    if not settings.shared_readout_enabled or model.router_backend != 'optical':
+        return legacy._evaluate(model, loader, settings, device)
+    bins = {name: torch.zeros(16, dtype=torch.long) for name in ('language', 'vision')}
+    handles = []
+    for label, path in zip(('language', 'vision'), model._optical_paths()):
+        def record(module, inputs, output, name=label):
+            mask = output['selected_mask'].detach().cpu().long()
+            codes = (mask * torch.tensor([1, 2, 4, 8])[None]).sum(-1)
+            bins[name] += torch.bincount(codes, minlength=16)
+        handles.append(path.core.router.register_forward_hook(record))
+    try:
+        metrics, predictions, galleries = legacy._evaluate(model, loader, settings, device)
+    finally:
+        for handle in handles:
+            handle.remove()
+    audit = {}
+    for label, counts in bins.items():
+        total = int(counts.sum())
+        slots = torch.tensor([sum(int(counts[code]) for code in range(16) if code & (1 << k)) for k in range(4)])
+        share = slots.float() / max(1, 2 * total)
+        largest_pair = float(counts.max()) / max(1, total)
+        audit[label] = {'selection_share': share.tolist(), 'pair_histogram': counts.tolist(), 'samples': total,
+                        'largest_pair_fraction': largest_pair,
+                        'accepted': bool(share.min() >= settings.router_acceptance_min_share
+                                         and share.max() <= settings.router_acceptance_max_share and largest_pair <= .8)}
+    metrics['router_audit'] = audit
+    return metrics, predictions, galleries
+
+
 def train(settings: Settings, device: torch.device) -> dict[str, Any]:
     seed_everything(settings.seed)
     settings.output_dir.mkdir(parents=True, exist_ok=True)
-    train_loader, test_loader = legacy.build_loaders(settings)
+    train_loader, test_loader = build_loaders(settings)
     model = build_model(settings, device)
     initialization = initialize_from_legacy(model, settings)
     _json(settings.output_dir / "initialization_report.json", initialization)
@@ -181,6 +219,7 @@ def train(settings: Settings, device: torch.device) -> dict[str, Any]:
     history: list[dict[str, Any]] = []
     best_score = -math.inf
     best_epoch = -1
+    best_accepted = False
     started = time.perf_counter()
     phase_modules = {name: module for name, module in model.named_modules()
                      if settings.embedding_only and callable(getattr(module, 'phase', None))
@@ -278,11 +317,13 @@ def train(settings: Settings, device: torch.device) -> dict[str, Any]:
             backup = ema.copy_to(model)
             model.eval()
             try:
-                test_metrics, _, _ = legacy._evaluate(model, test_loader, settings, device)
+                test_metrics, _, _ = evaluate_with_routes(model, test_loader, settings, device)
                 score = float(test_metrics["overall"]["changed_cell_accuracy"])
-                if score > best_score:
+                accepted = all(v['accepted'] for v in test_metrics.get('router_audit', {}).values())
+                if (accepted, score) > (best_accepted, best_score):
                     best_score = score
                     best_epoch = epoch
+                    best_accepted = accepted
                     _checkpoint(
                         settings.output_dir / "best_checkpoint.pt",
                         model,
@@ -304,6 +345,10 @@ def train(settings: Settings, device: torch.device) -> dict[str, Any]:
                 else {}
             ),
             "learning_rate": scheduler.get_last_lr()[0],
+            **({'test_router_accepted': all(v['accepted'] for v in test_metrics['router_audit'].values()),
+                **{f'test_{name}_router_max_share': max(v['selection_share']) for name, v in test_metrics['router_audit'].items()},
+                **{f'test_{name}_router_min_share': min(v['selection_share']) for name, v in test_metrics['router_audit'].items()}}
+               if test_metrics and 'router_audit' in test_metrics else {}),
         }
         history.append(row)
         _csv(settings.output_dir / "metrics" / "training_history.csv", history)
@@ -323,12 +368,16 @@ def train(settings: Settings, device: torch.device) -> dict[str, Any]:
             f"best={best_score:.4f}@{best_epoch}",
             flush=True,
         )
-    render(settings.output_dir / "best_checkpoint.pt", settings.output_dir / "best_visualization")
+    if not settings.qwen_shared_baseline:
+        render(settings.output_dir / "best_checkpoint.pt", settings.output_dir / "best_visualization")
     report = {
         "elapsed_seconds": time.perf_counter() - started,
         "selected_epoch": best_epoch,
         "selected_test_changed_cell_accuracy": best_score,
-        "selection": "maximum periodic-test changed-cell accuracy",
+        "selected_router_accepted": best_accepted if model.router_backend == 'optical' and settings.shared_readout_enabled else None,
+        "selection": ('prefer Router-accepted candidates, then maximum periodic-test changed-cell accuracy'
+                      if settings.shared_readout_enabled and model.router_backend == 'optical'
+                      else 'maximum periodic-test changed-cell accuracy'),
         "checkpoint_retention": ["best_checkpoint.pt", "last_checkpoint.pt"],
     }
     _json(settings.output_dir / "training_report.json", report)
@@ -337,7 +386,7 @@ def train(settings: Settings, device: torch.device) -> dict[str, Any]:
 
 @torch.inference_mode()
 def evaluate_selected(settings: Settings, device: torch.device, checkpoint: Path) -> dict[str, Any]:
-    _, loader = legacy.build_loaders(settings)
+    _, loader = build_loaders(settings)
     model = build_model(settings, device)
     payload = torch.load(checkpoint, map_location="cpu", weights_only=False)
     if payload.get("architecture") != model.checkpoint_architecture:
@@ -391,7 +440,7 @@ def evaluate_selected(settings: Settings, device: torch.device, checkpoint: Path
                 path.core.router.register_forward_hook(collect_selection)
             )
     try:
-        metrics, predictions, galleries = legacy._evaluate(
+        metrics, predictions, galleries = evaluate_with_routes(
             model, loader, settings, device
         )
     finally:

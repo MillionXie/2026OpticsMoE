@@ -19,6 +19,7 @@ VARIANTS = {
     "optical_router_scale_matched_moe",
     "d2nn_active_expert_matched",
     "qwen_frozen_pending_5090d",
+    "qwen_frozen_shared_readout",
 }
 
 
@@ -66,6 +67,10 @@ class Settings:
         self.max_language_tokens = int(d("model.max_language_tokens", 64))
         self.optical_fusion_initial = float(d("model.optical_fusion_initial", 0.055))
         self.embedding_only = bool(d("model.embedding_only", False))
+        self.shared_readout_enabled = bool(d('model.shared_readout', False))
+        self.qwen_shared_baseline = str(d('lightgen.model_variant', '')) == 'qwen_frozen_shared_readout'
+        self.router_acceptance_min_share = float(d('protocol.router_min_share', 0.05))
+        self.router_acceptance_max_share = float(d('protocol.router_max_share', 0.45))
         self.fusion_alpha_minimum = float(d("model.fusion_alpha_minimum", 0.01))
         self.fusion_alpha_maximum = float(d("model.fusion_alpha_maximum", 0.95))
         self.editor_depth = int(d("model.editor_depth", 3))

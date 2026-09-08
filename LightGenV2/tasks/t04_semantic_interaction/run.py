@@ -34,6 +34,9 @@ PROFILES = {
     "embedding_alpha40": "embedding_alpha40.yaml",
     "embedding_alpha40_lean": "embedding_alpha40_lean.yaml",
     "embedding_d2nn_alpha40": "embedding_d2nn_alpha40.yaml",
+    "routerfill_shared": "routerfill_shared.yaml",
+    "routerfill_shared_balance": "routerfill_shared_balance.yaml",
+    "qwen_shared": "qwen_shared.yaml",
 }
 PHASES = {"prepare", "train", "evaluate", "all"}
 
@@ -53,6 +56,12 @@ def _git_value(*arguments: str) -> str | None:
 
 
 def _ensure_data(settings: Any, device: torch.device) -> dict[str, Any]:
+    if settings.qwen_shared_baseline:
+        from .embedding_data import prepare_embedding_data
+        from .qwen_shared import prepare_native_cache
+        summary = prepare_embedding_data(settings)
+        prepare_native_cache(settings, device)
+        return summary
     if settings.embedding_only:
         from .embedding_data import prepare_embedding_data
         return prepare_embedding_data(settings)
@@ -94,7 +103,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     if args.run_dir:
         settings.output_dir = Path(args.run_dir).expanduser().resolve()
     settings.output_dir.mkdir(parents=True, exist_ok=True)
-    if settings.embedding_only and args.phase in {'train', 'all'} and any(
+    if (settings.embedding_only or settings.qwen_shared_baseline) and args.phase in {'train', 'all'} and any(
         (settings.output_dir / name).exists() for name in ('best_checkpoint.pt', 'last_checkpoint.pt')
     ):
         raise FileExistsError('Training output already contains weights; use a new --run-dir to preserve the run')
@@ -125,7 +134,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "test": 1000,
             "validation": None,
             "split_rule": ('same distribution; deterministic seeds; deduplicated source-grid/instruction pairs'
-                           if settings.embedding_only else 'same distribution, deterministic disjoint seeds'),
+                           if settings.embedding_only or settings.qwen_shared_baseline else 'same distribution, deterministic disjoint seeds'),
             "task_counts_train": summary["train"]["task_counts"],
             "task_counts_test": summary["test"]["task_counts"],
             "selection_biased": args.profile != "qwen_pending",

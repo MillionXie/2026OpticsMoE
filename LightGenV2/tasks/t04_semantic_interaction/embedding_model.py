@@ -141,7 +141,10 @@ class EmbeddingOnlyEditor(LightGenOpenMojiEditor):
             rms = group.float().square().mean().sqrt().detach().clamp_min(1e-6)
             positioned.append(group + self.settings.position_scale * rms * position_encoding(len(group), 2048, group.device))
         self.language_core.forward_groups(positioned, causal=True)
-        return self.language_pool(self.position_readout(self.language_core.last_latent_groups))
+        return self.summarize_language(self.language_core.last_latent_groups)
+
+    def summarize_language(self, latent_groups):
+        return self.language_pool(self.position_readout(latent_groups))
 
     def assert_contract(self):
         for module in self.modules():
@@ -160,7 +163,7 @@ class EmbeddingOnlyEditor(LightGenOpenMojiEditor):
                       language_summary='input-independent learned positional linear readout after optical global',
                       contextual_cache_allowed=False, native_transformer_blocks=0, attention_modules=0,
                       ccd_preprocessing='I / max(mean(I), epsilon); no pixelwise clip/log/gamma',
-                      legacy_output_adapters=False, editor_depth=len(self.editor),
+                      legacy_output_adapters=False, editor_depth=self.settings.editor_depth,
                       initialization='random task network; no old teacher/decoder warmstart',
                       data_contract='deduplicated grid+instruction v2; source-grid preservation remains explicit')
         return result

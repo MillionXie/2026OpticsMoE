@@ -1,5 +1,24 @@
 # T04 语义交互（OpenMoji）
 
+## 2026-09-08：语言Router铺满孔径 + 公平共享读出头
+
+当前入口为 `routerfill_shared`（两组卷积、光Router）、`routerfill_shared_balance`（同结构、更强均衡正则）和
+`qwen_shared`（完整冻结Qwen、相同读出头）。旧lean已经完成100轮，修改格89.40%，但语言Router固定使用专家0/1，
+不满足专家均衡要求。新旧run不混用；详见[新修复及公平对照合同](reports/reproduction/ROUTER_SHARED_HEAD.md)。
+
+```bash
+# 主模型 / 相同架构的强均衡候选：分别在可用GPU上运行
+python -m LightGenV2.tasks.t04_semantic_interaction.run --profile routerfill_shared --phase all --device cuda
+python -m LightGenV2.tasks.t04_semantic_interaction.run --profile routerfill_shared_balance --phase all --device cuda
+# 完整冻结Qwen baseline：自动提取原生特征，再用同一个训练器训练共享结构的读出头
+python -m LightGenV2.tasks.t04_semantic_interaction.run --profile qwen_shared --phase all --device cuda
+```
+
+三个profile都是5000train/1000test、同一v2清单、100epoch、seed73。后端完全复用 `SharedGridReadout`，
+参数量381976、初始权重逐位一致（训练后各自独立）。主模型仍无TF/attention；**完整Qwen仅作为baseline执行**。
+baseline只增加必要的1024/2048→192线性适配和LayerNorm，无LoRA、额外卷积支路或额外任务prompt。
+本轮只测性能；不把训练服务器的耗时/功耗充作5090D实测。
+
 ## 当前优化入口：2026-09-08 embedding-only / alpha > 0.4
 
 新 profile 为 `embedding_alpha40`（光 Router Top-2）、`embedding_alpha40_lean`（末端卷积由3组减为2组）和

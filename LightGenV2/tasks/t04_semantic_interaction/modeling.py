@@ -178,7 +178,13 @@ class LightGenOpenMojiEditor(OpenMojiOpticalEditor):
 
 
 def build_model(settings: Settings, device: torch.device) -> LightGenOpenMojiEditor:
-    if settings.embedding_only:
+    if settings.qwen_shared_baseline:
+        from .qwen_shared import QwenSharedReadout
+        model = QwenSharedReadout(settings).to(device)
+    elif settings.shared_readout_enabled:
+        from .router_repair import RepairedOpticalEditor
+        model = RepairedOpticalEditor(settings).to(device)
+    elif settings.embedding_only:
         from .embedding_model import EmbeddingOnlyEditor
         model = EmbeddingOnlyEditor(settings).to(device)
     else:
@@ -198,6 +204,8 @@ def _sha256(path: Path) -> str:
 def initialize_from_legacy(
     model: LightGenOpenMojiEditor, settings: Settings
 ) -> dict[str, Any]:
+    if settings.qwen_shared_baseline:
+        return {'mode': 'frozen_complete_qwen_random_adapters_identical_seeded_shared_readout', 'legacy_weights_loaded': False}
     if settings.embedding_only:
         return {'mode': 'random_task_network_frozen_qwen_patch_and_token_embedding',
                 'legacy_weights_loaded': False, 'contextual_teacher_used': False}
