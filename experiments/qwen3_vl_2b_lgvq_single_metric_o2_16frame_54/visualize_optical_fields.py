@@ -151,7 +151,8 @@ def render(
             target = float(item["target"])
             prediction = float(result["prediction"][0])
             figure.suptitle(
-                f"{settings.frame_count}-frame Temporal | {item['sample_id']} | "
+                f"{settings.frame_count}-frame {settings.target_name.capitalize()} | "
+                f"{item['sample_id']} | "
                 f"target {target:.2f}, prediction {prediction:.2f}",
                 fontsize=7,
             )
@@ -178,6 +179,7 @@ def render(
         "config": str(config.resolve()),
         "checkpoint": str(checkpoint.resolve()),
         "checkpoint_epoch": int(saved.get("epoch", -1)),
+        "target_name": settings.target_name,
         "frame_count": settings.frame_count,
         "sample_count": sample_count,
         "figures": figures,
