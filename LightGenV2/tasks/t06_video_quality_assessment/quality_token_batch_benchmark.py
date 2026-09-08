@@ -435,7 +435,7 @@ def run_sweep(args: argparse.Namespace, runtime: tuple[Any, ...], gpu_name: str)
             break
     timer.close()
     report = {
-        "schema_version": 1,
+        "schema_version": 2,
         "status": "complete",
         "mode": "batch_power_sweep",
         "workload": "LGVQ temporal quality, four distinct 448x448 frames per video",
@@ -601,7 +601,7 @@ def run_formal(args: argparse.Namespace, runtime: tuple[Any, ...], gpu_name: str
     batches_for_16 = math.ceil(16 / batch_size)
     comparable_16_ms = mean_batch_ms * batches_for_16
     report = {
-        "schema_version": 1,
+        "schema_version": 2,
         "status": "complete",
         "mode": "formal_full_test_batched",
         "protocol": "one_process_one_model_load_full_558_test_first_batch_included",
