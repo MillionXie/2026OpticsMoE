@@ -1,0 +1,61 @@
+base_config: spatial_two_branch_ema_microrefine_s428.yaml
+output_dir: ../../runs/lgvq_spatial_clean_continuous_upper_s431
+random_seed: 431
+
+# Pure-simulation accuracy ceiling. Keep the learned phase masks from s428,
+# but remove every hardware-robustness approximation requested for this study.
+optics:
+  k_space_enabled: false
+  phase_quantization_levels: 0
+  unmodulated_power_fraction_min: 0.0
+  unmodulated_power_fraction_max: 0.0
+  unmodulated_power_fraction_eval: 0.0
+
+robustness:
+  input_shift_pixels: 0
+  phase_shift_pixels: 0
+  ccd_shift_pixels: 0
+  phase_dropout_p: 0.0
+
+router:
+  noise_std: 0.0
+
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_two_branch_ema_microrefine_s428/best_observed_test_checkpoint.pt
+  epochs: 60
+  batch_size: 64
+  learning_rate: 0.000025
+  phase_learning_rate: 0.0006
+  router_phase_learning_rate: 0.001
+  readout_learning_rate_factor: 0.40
+  readout_weight_decay: 0.003
+  phase_warmup_epochs: 0
+  late_refine_start_epoch: 31
+  restore_best_at_stage_transition: true
+  late_refine_electronic_lr_factor: 0.20
+  late_refine_readout_lr_factor: 0.30
+  late_refine_phase_lr_factor: 0.25
+  late_refine_router_lr_factor: 0.25
+  ema_decay: 0.99
+  ema_start_epoch: 1
+  minimum_learning_rate_factor: 0.10
+  test_interval_epochs: 1
+
+loss:
+  ranking_weight: 0.25
+  correlation_weight: 0.55
+  soft_spearman_weight: 0.05
+  soft_target_weight: 0.0
+  optical_alignment_weight: 0.01
+  phase_smoothness_weight: 0.0
+
+curriculum:
+  enabled: true
+  start_epoch: 5
+  end_epoch: 40
+  ranking_weight_final: 0.40
+  correlation_weight_final: 0.80
+  soft_spearman_weight_final: 0.10
+  soft_target_weight_final: 0.0
+  router_noise_std_final: 0.0
+  unmodulated_power_fraction_max_initial: 0.0

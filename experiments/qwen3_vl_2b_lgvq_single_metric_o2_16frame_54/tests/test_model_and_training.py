@@ -466,6 +466,42 @@ def test_residual_electronic_route_warm_starts_legacy_stem(
                 assert torch.equal(source.state_dict()[name], destination.state_dict()[name])
 
 
+def test_feature_phase_reset_starts_at_raw_zero_and_keeps_router_phase(
+    tmp_path: Path,
+) -> None:
+    source_settings = _small_settings(tmp_path)
+    torch.manual_seed(711)
+    source = LGVQSingleMetricOEO16(source_settings).eval()
+    checkpoint = tmp_path / "trained_phase_source.pt"
+    torch.save({"state_dict": source.state_dict()}, checkpoint)
+
+    destination_settings = replace(
+        source_settings,
+        initialization_checkpoint=checkpoint,
+        reset_feature_phase_on_initialization=True,
+        phase_init_std=0.0,
+    )
+    destination = LGVQSingleMetricOEO16(destination_settings).eval()
+    report = _load_compatible_initialization(destination, destination_settings)
+
+    feature_names = (
+        "parallel_optics.raw_expert_phase",
+        "parallel_optics.raw_global_phase",
+        "serial_optics.raw_expert_phase",
+        "serial_optics.raw_global_phase",
+    )
+    for name in feature_names:
+        raw = destination.state_dict()[name]
+        assert torch.count_nonzero(raw) == 0
+        torch.testing.assert_close(_phase(raw), torch.full_like(raw, torch.pi))
+        assert name in report["skipped_by_policy"]
+    for name in (
+        "parallel_router.raw_router_phase",
+        "serial_router.raw_router_phase",
+    ):
+        assert torch.equal(source.state_dict()[name], destination.state_dict()[name])
+
+
 def test_spatial_grid_readout_preserves_four_frame_contract(tmp_path: Path) -> None:
     settings = _small_settings(tmp_path)
     settings.spatial_readout_mode = "spatial_grid"

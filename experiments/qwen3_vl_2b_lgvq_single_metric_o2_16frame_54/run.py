@@ -60,6 +60,20 @@ def _load_compatible_initialization(
     skipped_by_policy = []
     if settings.reset_serial_router_phase_on_initialization:
         skipped_by_policy.append("serial_router.raw_router_phase")
+    if settings.reset_feature_phase_on_initialization:
+        # Feature-producing masks start from the model constructor. With
+        # optics.phase_init_std=0 this is raw_phase=0 exactly, hence physical
+        # phase=pi under the 2*pi*sigmoid(raw_phase) parameterization. Router
+        # focusing phases are intentionally retained: resetting those to a
+        # flat pi plane would destroy the four-spot optical routing geometry.
+        skipped_by_policy.extend(
+            (
+                "parallel_optics.raw_expert_phase",
+                "parallel_optics.raw_global_phase",
+                "serial_optics.raw_expert_phase",
+                "serial_optics.raw_global_phase",
+            )
+        )
     compatible = {
         name: value
         for name, value in source.items()

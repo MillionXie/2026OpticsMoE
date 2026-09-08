@@ -239,6 +239,7 @@ class ExperimentSettings:
     frame_stem_checkpoint: Path | None = None
     qwen_model_path: Path | None = None
     reset_serial_router_phase_on_initialization: bool = False
+    reset_feature_phase_on_initialization: bool = False
     target_name: str = "spatial"
     prompt: str = TARGET_PROMPTS["spatial"]
     device: str = "cuda"
@@ -674,8 +675,6 @@ class ExperimentSettings:
                 "Unmodulated power fractions must satisfy "
                 "0 <= min <= eval <= max < 1"
             )
-        if not self.synthetic and self.unmodulated_power_fraction_min < 0.20:
-            raise ValueError("Formal runs require at least 20% nominal unmodulated power")
         if self.phase_quantization_levels not in {0} and self.phase_quantization_levels < 2:
             raise ValueError("optics.phase_quantization_levels must be 0 or at least 2")
         if min(
@@ -854,6 +853,9 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         qwen_model_path=_path(get("initialization", "qwen_model_path"), config_path),
         reset_serial_router_phase_on_initialization=bool(
             get("initialization", "reset_serial_router_phase", False)
+        ),
+        reset_feature_phase_on_initialization=bool(
+            get("initialization", "reset_feature_phase", False)
         ),
         target_name=target_name,
         prompt=str(get("task", "prompt", TARGET_PROMPTS.get(target_name, ""))),

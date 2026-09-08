@@ -1,0 +1,32 @@
+base_config: spatial_clean_continuous_upper_s431.yaml
+output_dir: ../../runs/lgvq_spatial_clean_continuous_phasezero_s432
+random_seed: 432
+
+# Keep the trained Qwen adapters, one electronic path, routers, fusion gates
+# and MOS head, but initialize all four feature-producing masks at raw_phase=0
+# (physical phase=pi). Analytic router focusing masks are not reset.
+initialization:
+  reset_feature_phase: true
+
+optics:
+  phase_init_std: 0.0
+
+training:
+  epochs: 100
+  learning_rate: 0.00004
+  phase_learning_rate: 0.006
+  router_phase_learning_rate: 0.0008
+  readout_learning_rate_factor: 0.35
+  phase_warmup_epochs: 10
+  late_refine_start_epoch: 61
+  late_refine_electronic_lr_factor: 0.20
+  late_refine_readout_lr_factor: 0.30
+  late_refine_phase_lr_factor: 0.20
+  late_refine_router_lr_factor: 0.20
+  ema_decay: 0.995
+  ema_start_epoch: 11
+  minimum_learning_rate_factor: 0.08
+
+curriculum:
+  start_epoch: 11
+  end_epoch: 70
