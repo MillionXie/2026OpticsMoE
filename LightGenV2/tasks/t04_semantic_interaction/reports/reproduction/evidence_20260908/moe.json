@@ -1,0 +1,368 @@
+{
+  "method": "main_dc20",
+  "git_commit": "0d4d8490dd788dac7f5113bcb27f2ff9216f1c21",
+  "checkpoint": "LightGenV2/tasks/t04_semantic_interaction/runs/simulation/moe_router_scale_dc20_seed73/best_checkpoint.pt",
+  "checkpoint_sha256": "b3e7a005a7b29e8a52a733d79dcf48f85d2fee2f7cb1edc64db151de1d4e33e4",
+  "manifest_sha256": "0015459c5e6accaede9107dbf3e39b125448da6094a6545ed26b028533cf15b2",
+  "test_used_for_historical_selection": true,
+  "device": "cuda",
+  "gpu": "NVIDIA GeForce RTX 3090",
+  "speed_and_energy": "not measured; this is performance/architecture audit only",
+  "epoch": 20,
+  "architecture": {
+    "type": "optical_router_scale_matched_moe",
+    "checkpoint_architecture": "lightgen_t04_optical_router_scale_matched_moe_language2_vision2_17um_10cm_dc20_scale_matched_contentenergy_v4",
+    "task": "OpenMoji text-conditioned semantic grid editing",
+    "text": "cached frozen Qwen3-VL-2B-Instruct contextual hidden states",
+    "vision": "frozen Qwen patch embedding and position embedding; zero native Transformer blocks",
+    "hybrid_blocks": {
+      "language": 2,
+      "vision": 2
+    },
+    "router": {
+      "backend": "optical",
+      "top_k": 2,
+      "experts": 4,
+      "training_semantic_top2_codes": {
+        "add": [
+          0,
+          1
+        ],
+        "replace": [
+          0,
+          2
+        ],
+        "move": [
+          1,
+          3
+        ],
+        "remove": [
+          2,
+          3
+        ]
+      },
+      "training_vision_top2_code": "two highest-energy input-image quadrants",
+      "semantic_code_loss_weight": 0.25,
+      "balance_quantity": "pre-normalization CCD detector-energy fraction",
+      "inference_uses_task_label": false
+    },
+    "fusion": {
+      "equation": "scale-matched (1-alpha)E + alpha O",
+      "alpha_range": [
+        0.01,
+        0.95
+      ],
+      "alpha_initial": 0.055
+    },
+    "optics": {
+      "phase_parameters": 958728,
+      "active_expert_phase_budget": 200704,
+      "feature_captures": 4,
+      "router_captures": 2,
+      "pixel_pitch_um": 17.0,
+      "distance_m": 0.1,
+      "zero_order_intensity_range": [
+        0.2,
+        0.3
+      ]
+    },
+    "decoder": "electronic 6x6 category and edit heads; no attention/Transformer",
+    "trainable_parameters": 3882608
+  },
+  "alpha": {
+    "language": [
+      0.05340985208749771,
+      0.05300482362508774
+    ],
+    "vision": [
+      0.0511196032166481,
+      0.0508742555975914
+    ]
+  },
+  "trainable_parameters_by_top_level_module": {
+    "prompt_vision_gate": 1,
+    "language_core": 1772523,
+    "vision_core": 1379819,
+    "language_pool": 74688,
+    "prompt_to_vision": 198016,
+    "post_film": 74112,
+    "coordinate_projection": 576,
+    "editor": 339267,
+    "decoder": 42450,
+    "task_head": 1156
+  },
+  "metrics": {
+    "overall": {
+      "samples": 1000,
+      "cell_accuracy": 0.9967777768373489,
+      "changed_cell_accuracy": 0.98,
+      "foreground_category_accuracy": 0.9894500002264977,
+      "preserved_cell_accuracy": 0.997410085618496,
+      "edit_grid_iou": 0.9349999999999988,
+      "object_f1": 0.9836751803751809,
+      "scene_exact_match": 0.895,
+      "task_accuracy": 1.0
+    },
+    "add": {
+      "samples": 250,
+      "cell_accuracy": 0.9949999980926514,
+      "changed_cell_accuracy": 0.948,
+      "foreground_category_accuracy": 0.9888000004291534,
+      "preserved_cell_accuracy": 0.9963428573608398,
+      "edit_grid_iou": 0.888,
+      "object_f1": 0.9794467532467531,
+      "scene_exact_match": 0.828,
+      "task_accuracy": 1.0
+    },
+    "replace": {
+      "samples": 250,
+      "cell_accuracy": 1.0,
+      "changed_cell_accuracy": 1.0,
+      "foreground_category_accuracy": 1.0,
+      "preserved_cell_accuracy": 1.0,
+      "edit_grid_iou": 0.998,
+      "object_f1": 1.0,
+      "scene_exact_match": 1.0,
+      "task_accuracy": 1.0
+    },
+    "move": {
+      "samples": 250,
+      "cell_accuracy": 0.9922222204208374,
+      "changed_cell_accuracy": 0.972,
+      "foreground_category_accuracy": 0.9703333337306976,
+      "preserved_cell_accuracy": 0.9934117708206177,
+      "edit_grid_iou": 0.8559999999999991,
+      "object_f1": 0.9560539682539684,
+      "scene_exact_match": 0.756,
+      "task_accuracy": 1.0
+    },
+    "remove": {
+      "samples": 250,
+      "cell_accuracy": 0.999888888835907,
+      "changed_cell_accuracy": 1.0,
+      "foreground_category_accuracy": 0.9986666667461396,
+      "preserved_cell_accuracy": 0.9998857142925263,
+      "edit_grid_iou": 0.998,
+      "object_f1": 0.9992000000000001,
+      "scene_exact_match": 0.996,
+      "task_accuracy": 1.0
+    }
+  },
+  "remove_optical_metrics": {
+    "overall": {
+      "samples": 1000,
+      "cell_accuracy": 0.9960833324193954,
+      "changed_cell_accuracy": 0.985,
+      "foreground_category_accuracy": 0.9916333335042,
+      "preserved_cell_accuracy": 0.9964815146923065,
+      "edit_grid_iou": 0.9218166666666652,
+      "object_f1": 0.9809067099567104,
+      "scene_exact_match": 0.876,
+      "task_accuracy": 1.0
+    },
+    "add": {
+      "samples": 250,
+      "cell_accuracy": 0.9935555536746978,
+      "changed_cell_accuracy": 0.96,
+      "foreground_category_accuracy": 0.9908666670322418,
+      "preserved_cell_accuracy": 0.9945142860412598,
+      "edit_grid_iou": 0.882,
+      "object_f1": 0.9735887445887444,
+      "scene_exact_match": 0.792,
+      "task_accuracy": 1.0
+    },
+    "replace": {
+      "samples": 250,
+      "cell_accuracy": 1.0,
+      "changed_cell_accuracy": 1.0,
+      "foreground_category_accuracy": 1.0,
+      "preserved_cell_accuracy": 1.0,
+      "edit_grid_iou": 0.99,
+      "object_f1": 1.0,
+      "scene_exact_match": 1.0,
+      "task_accuracy": 1.0
+    },
+    "move": {
+      "samples": 250,
+      "cell_accuracy": 0.9907777760028839,
+      "changed_cell_accuracy": 0.98,
+      "foreground_category_accuracy": 0.9756666669845581,
+      "preserved_cell_accuracy": 0.9914117727279663,
+      "edit_grid_iou": 0.8192666666666654,
+      "object_f1": 0.9500380952380953,
+      "scene_exact_match": 0.712,
+      "task_accuracy": 1.0
+    },
+    "remove": {
+      "samples": 250,
+      "cell_accuracy": 1.0,
+      "changed_cell_accuracy": 1.0,
+      "foreground_category_accuracy": 1.0,
+      "preserved_cell_accuracy": 1.0,
+      "edit_grid_iou": 0.996,
+      "object_f1": 1.0,
+      "scene_exact_match": 1.0,
+      "task_accuracy": 1.0
+    }
+  },
+  "remove_optical_definition": "same weights; E only, coefficient restored to 1; no retraining",
+  "phase_audit": {
+    "language_core.optical_branch.core.router.raw_router_phase": {
+      "elements": 50176,
+      "requires_grad": true,
+      "task_gradient_rms": 1.1009683476004284e-07,
+      "task_gradient_finite": true,
+      "best_spatial_phase_std_rad": 1.7126039266586304,
+      "best_to_last": {
+        "raw_rms": 0.35798555612564087,
+        "wrapped_phase_rms_rad": 0.10844923555850983,
+        "piston_removed_phase_rms_rad": 0.10827011615037918
+      }
+    },
+    "language_core.optical_branch.core.expert_layers.0.experts.0.raw_phase": {
+      "elements": 50176,
+      "requires_grad": true,
+      "task_gradient_rms": 8.172635261871619e-07,
+      "task_gradient_finite": true,
+      "best_spatial_phase_std_rad": 0.6510589122772217,
+      "best_to_last": {
+        "raw_rms": 0.3239954710006714,
+        "wrapped_phase_rms_rad": 0.3568408787250519,
+        "piston_removed_phase_rms_rad": 0.35683387517929077
+      }
+    },
+    "language_core.optical_branch.core.expert_layers.0.experts.1.raw_phase": {
+      "elements": 50176,
+      "requires_grad": true,
+      "task_gradient_rms": 4.5115207285562064e-06,
+      "task_gradient_finite": true,
+      "best_spatial_phase_std_rad": 0.6528746485710144,
+      "best_to_last": {
+        "raw_rms": 0.3193753659725189,
+        "wrapped_phase_rms_rad": 0.3545245826244354,
+        "piston_removed_phase_rms_rad": 0.3545088469982147
+      }
+    },
+    "language_core.optical_branch.core.expert_layers.0.experts.2.raw_phase": {
+      "elements": 50176,
+      "requires_grad": true,
+      "task_gradient_rms": 2.3761692613533114e-09,
+      "task_gradient_finite": true,
+      "best_spatial_phase_std_rad": 1.350606083869934,
+      "best_to_last": {
+        "raw_rms": 0.41690853238105774,
+        "wrapped_phase_rms_rad": 0.4586474299430847,
+        "piston_removed_phase_rms_rad": 0.45859578251838684
+      }
+    },
+    "language_core.optical_branch.core.expert_layers.0.experts.3.raw_phase": {
+      "elements": 50176,
+      "requires_grad": true,
+      "task_gradient_rms": 0.0,
+      "task_gradient_finite": true,
+      "best_spatial_phase_std_rad": 1.3422958850860596,
+      "best_to_last": {
+        "raw_rms": 0.40898388624191284,
+        "wrapped_phase_rms_rad": 0.451174259185791,
+        "piston_removed_phase_rms_rad": 0.45115581154823303
+      }
+    },
+    "language_core.optical_branch.core.global_phase.phase.raw_phase": {
+      "elements": 228484,
+      "requires_grad": true,
+      "task_gradient_rms": 1.7378579286742024e-06,
+      "task_gradient_finite": true,
+      "best_spatial_phase_std_rad": 0.44834214448928833,
+      "best_to_last": {
+        "raw_rms": 0.3847457766532898,
+        "wrapped_phase_rms_rad": 0.5305357575416565,
+        "piston_removed_phase_rms_rad": 0.5303550958633423
+      }
+    },
+    "vision_core.optical_branch.core.router.raw_router_phase": {
+      "elements": 50176,
+      "requires_grad": true,
+      "task_gradient_rms": 5.559857072512386e-07,
+      "task_gradient_finite": true,
+      "best_spatial_phase_std_rad": 1.8843802213668823,
+      "best_to_last": {
+        "raw_rms": 0.18203265964984894,
+        "wrapped_phase_rms_rad": 0.10941797494888306,
+        "piston_removed_phase_rms_rad": 0.10938969999551773
+      }
+    },
+    "vision_core.optical_branch.core.expert_layers.0.experts.0.raw_phase": {
+      "elements": 50176,
+      "requires_grad": true,
+      "task_gradient_rms": 2.5270578589697834e-06,
+      "task_gradient_finite": true,
+      "best_spatial_phase_std_rad": 0.3499082326889038,
+      "best_to_last": {
+        "raw_rms": 0.0749109610915184,
+        "wrapped_phase_rms_rad": 0.11575386673212051,
+        "piston_removed_phase_rms_rad": 0.11575249582529068
+      }
+    },
+    "vision_core.optical_branch.core.expert_layers.0.experts.1.raw_phase": {
+      "elements": 50176,
+      "requires_grad": true,
+      "task_gradient_rms": 5.893212801311165e-06,
+      "task_gradient_finite": true,
+      "best_spatial_phase_std_rad": 0.35317543148994446,
+      "best_to_last": {
+        "raw_rms": 0.07719308137893677,
+        "wrapped_phase_rms_rad": 0.11928018927574158,
+        "piston_removed_phase_rms_rad": 0.11928018182516098
+      }
+    },
+    "vision_core.optical_branch.core.expert_layers.0.experts.2.raw_phase": {
+      "elements": 50176,
+      "requires_grad": true,
+      "task_gradient_rms": 6.383166692103259e-06,
+      "task_gradient_finite": true,
+      "best_spatial_phase_std_rad": 0.3646152913570404,
+      "best_to_last": {
+        "raw_rms": 0.07615900784730911,
+        "wrapped_phase_rms_rad": 0.11732285469770432,
+        "piston_removed_phase_rms_rad": 0.11731922626495361
+      }
+    },
+    "vision_core.optical_branch.core.expert_layers.0.experts.3.raw_phase": {
+      "elements": 50176,
+      "requires_grad": true,
+      "task_gradient_rms": 0.0,
+      "task_gradient_finite": true,
+      "best_spatial_phase_std_rad": 0.3502143323421478,
+      "best_to_last": {
+        "raw_rms": 0.07812583446502686,
+        "wrapped_phase_rms_rad": 0.12037976831197739,
+        "piston_removed_phase_rms_rad": 0.12037697434425354
+      }
+    },
+    "vision_core.optical_branch.core.global_phase.phase.raw_phase": {
+      "elements": 228484,
+      "requires_grad": true,
+      "task_gradient_rms": 5.448275715025375e-06,
+      "task_gradient_finite": true,
+      "best_spatial_phase_std_rad": 0.3418319821357727,
+      "best_to_last": {
+        "raw_rms": 0.07354925572872162,
+        "wrapped_phase_rms_rad": 0.11389303207397461,
+        "piston_removed_phase_rms_rad": 0.11389303207397461
+      }
+    }
+  },
+  "gradient_probe": {
+    "samples": 64,
+    "split": "train",
+    "mode": "eval/no augmentation",
+    "optimizer_steps": 0,
+    "loss": "task losses only; no optical regularizers"
+  },
+  "last_checkpoint": {
+    "path": "LightGenV2/tasks/t04_semantic_interaction/runs/simulation/moe_router_scale_dc20_seed73/last_checkpoint.pt",
+    "sha256": "ebc605e7fc760847f0dc726c5404a1bd63a61748cda744b4460c958e5b073d26",
+    "epoch": 40
+  },
+  "phase_caveat": "best-to-last proves later change, not initial-to-best; no archived initialization assumed"
+}

@@ -1,0 +1,82 @@
+{
+  "method": "qwen",
+  "git_commit": "0d4d8490dd788dac7f5113bcb27f2ff9216f1c21",
+  "checkpoint": "LightGenV2/tasks/t04_semantic_interaction/runs/simulation/audit_threeway_20260908/archived_qwen_best_checkpoint.pt",
+  "checkpoint_sha256": "c55fee413d89f1b340c999732560777841676b8a22643ecb9b92109fb6f13bec",
+  "manifest_sha256": "0015459c5e6accaede9107dbf3e39b125448da6094a6545ed26b028533cf15b2",
+  "test_used_for_historical_selection": true,
+  "device": "cuda",
+  "gpu": "NVIDIA GeForce RTX 3090",
+  "speed_and_energy": "not measured; this is performance/architecture audit only",
+  "epoch": 20,
+  "metrics": {
+    "overall": {
+      "samples": 1000,
+      "cell_accuracy": 0.8753333425521851,
+      "changed_cell_accuracy": 0.539,
+      "foreground_category_accuracy": 0.22393333579599858,
+      "preserved_cell_accuracy": 0.8859605072140694,
+      "edit_grid_iou": 0.29048651626151634,
+      "object_f1": 0.17174949870391076,
+      "scene_exact_match": 0.017,
+      "task_accuracy": null
+    },
+    "add": {
+      "samples": 250,
+      "cell_accuracy": 0.8452222266197205,
+      "changed_cell_accuracy": 0.208,
+      "foreground_category_accuracy": 0.5050666736960411,
+      "preserved_cell_accuracy": 0.8634285795688629,
+      "edit_grid_iou": 0.1651888888888889,
+      "object_f1": 0.353076938094585,
+      "scene_exact_match": 0.0,
+      "task_accuracy": null
+    },
+    "replace": {
+      "samples": 250,
+      "cell_accuracy": 0.9323333466053009,
+      "changed_cell_accuracy": 0.324,
+      "foreground_category_accuracy": 0.206000000834465,
+      "preserved_cell_accuracy": 0.9497142887115478,
+      "edit_grid_iou": 0.44153333333333283,
+      "object_f1": 0.1951365079365079,
+      "scene_exact_match": 0.064,
+      "task_accuracy": null
+    },
+    "move": {
+      "samples": 250,
+      "cell_accuracy": 0.7785555610656738,
+      "changed_cell_accuracy": 0.644,
+      "foreground_category_accuracy": 0.1500000011920929,
+      "preserved_cell_accuracy": 0.7864705858230591,
+      "edit_grid_iou": 0.20942384282384288,
+      "object_f1": 0.09025121545121541,
+      "scene_exact_match": 0.0,
+      "task_accuracy": null
+    },
+    "remove": {
+      "samples": 250,
+      "cell_accuracy": 0.945222235918045,
+      "changed_cell_accuracy": 0.98,
+      "foreground_category_accuracy": 0.03466666746139526,
+      "preserved_cell_accuracy": 0.9442285747528076,
+      "edit_grid_iou": 0.34579999999999994,
+      "object_f1": 0.04853333333333333,
+      "scene_exact_match": 0.004,
+      "task_accuracy": null
+    }
+  },
+  "fresh_online_features": true,
+  "qwen_model": "/DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-2B-Instruct/snapshots/89644892e4d85e24eaac8bacfd4f463576704203",
+  "head_trainable_parameters": 1212434,
+  "image_hidden_shape": [
+    1,
+    49,
+    2048
+  ],
+  "condition_hidden_shape": [
+    1,
+    2048
+  ],
+  "task_accuracy_status": "not applicable: baseline has no auxiliary task classifier"
+}

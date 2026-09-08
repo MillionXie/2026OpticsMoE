@@ -1,0 +1,268 @@
+{
+  "method": "d2nn_dc20",
+  "git_commit": "c1a0caa4c6d80c028cbea121a175a5dc307e800e",
+  "checkpoint": "LightGenV2/tasks/t04_semantic_interaction/runs/simulation/d2nn_matched_dc20_seed73/best_checkpoint.pt",
+  "checkpoint_sha256": "3b935e8f7ae68fdab233b662605ba4e988b3780f9b117f5c56c752cb08e33baf",
+  "manifest_sha256": "0015459c5e6accaede9107dbf3e39b125448da6094a6545ed26b028533cf15b2",
+  "test_used_for_historical_selection": true,
+  "device": "cuda",
+  "gpu": "NVIDIA GeForce RTX 3090",
+  "speed_and_energy": "not measured; this is performance/architecture audit only",
+  "epoch": 25,
+  "architecture": {
+    "type": "d2nn_active_expert_matched",
+    "checkpoint_architecture": "lightgen_t04_d2nn_active_expert_matched_language2_vision2_17um_10cm_dc20_scale_matched_v1",
+    "task": "OpenMoji text-conditioned semantic grid editing",
+    "text": "cached frozen Qwen3-VL-2B-Instruct contextual hidden states",
+    "vision": "frozen Qwen patch embedding and position embedding; zero native Transformer blocks",
+    "hybrid_blocks": {
+      "language": 2,
+      "vision": 2
+    },
+    "router": {
+      "backend": "none",
+      "top_k": null,
+      "experts": null,
+      "training_semantic_top2_codes": null,
+      "training_vision_top2_code": null,
+      "semantic_code_loss_weight": 0.0,
+      "balance_quantity": "pre-normalization CCD detector-energy fraction",
+      "inference_uses_task_label": false
+    },
+    "fusion": {
+      "equation": "scale-matched (1-alpha)E + alpha O",
+      "alpha_range": [
+        0.01,
+        0.95
+      ],
+      "alpha_initial": 0.055
+    },
+    "optics": {
+      "phase_parameters": 200704,
+      "active_expert_phase_budget": 200704,
+      "feature_captures": 4,
+      "router_captures": 0,
+      "pixel_pitch_um": 17.0,
+      "distance_m": 0.1,
+      "zero_order_intensity_range": [
+        0.2,
+        0.3
+      ]
+    },
+    "decoder": "electronic 6x6 category and edit heads; no attention/Transformer",
+    "trainable_parameters": 3124584
+  },
+  "alpha": {
+    "language": [
+      0.05033178627490997,
+      0.04992987960577011
+    ],
+    "vision": [
+      0.047556325793266296,
+      0.046815067529678345
+    ]
+  },
+  "trainable_parameters_by_top_level_module": {
+    "prompt_vision_gate": 1,
+    "language_core": 1393511,
+    "vision_core": 1000807,
+    "language_pool": 74688,
+    "prompt_to_vision": 198016,
+    "post_film": 74112,
+    "coordinate_projection": 576,
+    "editor": 339267,
+    "decoder": 42450,
+    "task_head": 1156
+  },
+  "metrics": {
+    "overall": {
+      "samples": 1000,
+      "cell_accuracy": 0.9989722217917443,
+      "changed_cell_accuracy": 0.989,
+      "foreground_category_accuracy": 0.9944000001549721,
+      "preserved_cell_accuracy": 0.9993579837083817,
+      "edit_grid_iou": 0.9808333333333329,
+      "object_f1": 0.9947482683982686,
+      "scene_exact_match": 0.964,
+      "task_accuracy": 1.0
+    },
+    "add": {
+      "samples": 250,
+      "cell_accuracy": 0.9985555548667908,
+      "changed_cell_accuracy": 0.972,
+      "foreground_category_accuracy": 0.9936000001430512,
+      "preserved_cell_accuracy": 0.9993142857551575,
+      "edit_grid_iou": 0.964,
+      "object_f1": 0.9936089466089466,
+      "scene_exact_match": 0.948,
+      "task_accuracy": 1.0
+    },
+    "replace": {
+      "samples": 250,
+      "cell_accuracy": 1.0,
+      "changed_cell_accuracy": 1.0,
+      "foreground_category_accuracy": 1.0,
+      "preserved_cell_accuracy": 1.0,
+      "edit_grid_iou": 0.996,
+      "object_f1": 1.0,
+      "scene_exact_match": 1.0,
+      "task_accuracy": 1.0
+    },
+    "move": {
+      "samples": 250,
+      "cell_accuracy": 0.9973333323001862,
+      "changed_cell_accuracy": 0.984,
+      "foreground_category_accuracy": 0.9840000004768371,
+      "preserved_cell_accuracy": 0.9981176490783692,
+      "edit_grid_iou": 0.9633333333333329,
+      "object_f1": 0.985384126984127,
+      "scene_exact_match": 0.908,
+      "task_accuracy": 1.0
+    },
+    "remove": {
+      "samples": 250,
+      "cell_accuracy": 1.0,
+      "changed_cell_accuracy": 1.0,
+      "foreground_category_accuracy": 1.0,
+      "preserved_cell_accuracy": 1.0,
+      "edit_grid_iou": 1.0,
+      "object_f1": 1.0,
+      "scene_exact_match": 1.0,
+      "task_accuracy": 1.0
+    }
+  },
+  "remove_optical_metrics": {
+    "overall": {
+      "samples": 1000,
+      "cell_accuracy": 0.9988055551052093,
+      "changed_cell_accuracy": 0.986,
+      "foreground_category_accuracy": 0.9938666667938233,
+      "preserved_cell_accuracy": 0.9993588240146637,
+      "edit_grid_iou": 0.9766666666666662,
+      "object_f1": 0.9937101731601733,
+      "scene_exact_match": 0.959,
+      "task_accuracy": 1.0
+    },
+    "add": {
+      "samples": 250,
+      "cell_accuracy": 0.9984444437026978,
+      "changed_cell_accuracy": 0.972,
+      "foreground_category_accuracy": 0.9938000001907349,
+      "preserved_cell_accuracy": 0.9992000000476837,
+      "edit_grid_iou": 0.958,
+      "object_f1": 0.9935930735930736,
+      "scene_exact_match": 0.944,
+      "task_accuracy": 1.0
+    },
+    "replace": {
+      "samples": 250,
+      "cell_accuracy": 1.0,
+      "changed_cell_accuracy": 1.0,
+      "foreground_category_accuracy": 1.0,
+      "preserved_cell_accuracy": 1.0,
+      "edit_grid_iou": 0.996,
+      "object_f1": 1.0,
+      "scene_exact_match": 1.0,
+      "task_accuracy": 1.0
+    },
+    "move": {
+      "samples": 250,
+      "cell_accuracy": 0.9967777767181396,
+      "changed_cell_accuracy": 0.972,
+      "foreground_category_accuracy": 0.9816666669845581,
+      "preserved_cell_accuracy": 0.998235296010971,
+      "edit_grid_iou": 0.9546666666666664,
+      "object_f1": 0.9812476190476191,
+      "scene_exact_match": 0.892,
+      "task_accuracy": 1.0
+    },
+    "remove": {
+      "samples": 250,
+      "cell_accuracy": 1.0,
+      "changed_cell_accuracy": 1.0,
+      "foreground_category_accuracy": 1.0,
+      "preserved_cell_accuracy": 1.0,
+      "edit_grid_iou": 0.998,
+      "object_f1": 1.0,
+      "scene_exact_match": 1.0,
+      "task_accuracy": 1.0
+    }
+  },
+  "remove_optical_definition": "same weights; E only, coefficient restored to 1; no retraining",
+  "no_task_gradient_parameters": {
+    "language_core.residual_logit": 1,
+    "language_core.output_adapter.weight": 393216,
+    "language_core.output_adapter.bias": 2048,
+    "vision_core.residual_logit": 1,
+    "vision_core.output_adapter.weight": 196608,
+    "vision_core.output_adapter.bias": 1024
+  },
+  "legacy_output_adapter_bypass": {
+    "category_logits": 0.0,
+    "edit_logits": 0.0,
+    "probe_samples": 64
+  },
+  "phase_audit": {
+    "language_core.optical_branch.phase1.raw_phase": {
+      "elements": 50176,
+      "requires_grad": true,
+      "task_gradient_rms": 2.6361274763075926e-07,
+      "task_gradient_finite": true,
+      "best_spatial_phase_std_rad": 1.870502233505249,
+      "best_to_last": {
+        "raw_rms": 0.17160506546497345,
+        "wrapped_phase_rms_rad": 0.1548822671175003,
+        "piston_removed_phase_rms_rad": 0.15484368801116943
+      }
+    },
+    "language_core.optical_branch.phase2.raw_phase": {
+      "elements": 50176,
+      "requires_grad": true,
+      "task_gradient_rms": 3.2766712365628337e-07,
+      "task_gradient_finite": true,
+      "best_spatial_phase_std_rad": 1.8767621517181396,
+      "best_to_last": {
+        "raw_rms": 0.17432419955730438,
+        "wrapped_phase_rms_rad": 0.1583242416381836,
+        "piston_removed_phase_rms_rad": 0.1583172082901001
+      }
+    },
+    "vision_core.optical_branch.phase1.raw_phase": {
+      "elements": 50176,
+      "requires_grad": true,
+      "task_gradient_rms": 1.2650375538214575e-06,
+      "task_gradient_finite": true,
+      "best_spatial_phase_std_rad": 0.6965282559394836,
+      "best_to_last": {
+        "raw_rms": 0.21186432242393494,
+        "wrapped_phase_rms_rad": 0.28520914912223816,
+        "piston_removed_phase_rms_rad": 0.2852056622505188
+      }
+    },
+    "vision_core.optical_branch.phase2.raw_phase": {
+      "elements": 50176,
+      "requires_grad": true,
+      "task_gradient_rms": 1.7282176258959225e-06,
+      "task_gradient_finite": true,
+      "best_spatial_phase_std_rad": 0.6635421514511108,
+      "best_to_last": {
+        "raw_rms": 0.18746112287044525,
+        "wrapped_phase_rms_rad": 0.25579017400741577,
+        "piston_removed_phase_rms_rad": 0.2557901442050934
+      }
+    }
+  },
+  "gradient_probe": {
+    "samples": 64,
+    "split": "train",
+    "mode": "eval/no augmentation",
+    "optimizer_steps": 0,
+    "loss": "task losses only; no optical regularizers"
+  },
+  "last_checkpoint": {
+    "path": "LightGenV2/tasks/t04_semantic_interaction/runs/simulation/d2nn_matched_dc20_seed73/last_checkpoint.pt",
+    "sha256": "0e71388fedb90c5631b624d80f1e50b40bcd10aa09d55f199d0ac2d52d8db808",
+    "epoch": 40
+  },
+  "phase_caveat": "best-to-last proves later change, not initial-to-best; no archived initialization assumed"
+}
