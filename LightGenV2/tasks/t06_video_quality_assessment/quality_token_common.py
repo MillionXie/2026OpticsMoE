@@ -79,13 +79,19 @@ def read_manifest(path: Path) -> list[dict[str, Any]]:
 
 
 def decode_random_seek(
-    path: Path, fractions: Sequence[float], image_size: int
+    path: Path,
+    fractions: Sequence[float],
+    image_size: int,
+    *,
+    audit_trace: dict[str, Any] | None = None,
 ) -> tuple[list[Image.Image], Any, list[int]]:
     from transformers.video_utils import VideoMetadata
 
     capture = cv2.VideoCapture(str(path))
     total = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
     fps = float(capture.get(cv2.CAP_PROP_FPS))
+    container_width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+    container_height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
     if total <= 0:
         capture.release()
         raise RuntimeError(f"Video has no readable frames: {path}")
@@ -93,6 +99,7 @@ def decode_random_seek(
         fps = 24.0
     positions = [min(total - 1, max(0, round((total - 1) * value))) for value in fractions]
     frames: list[Image.Image] = []
+    decoded_frame_traces: list[dict[str, Any]] = []
     for position in positions:
         capture.set(cv2.CAP_PROP_POS_FRAMES, position)
         ok, bgr = capture.read()
@@ -110,6 +117,14 @@ def decode_random_seek(
             interpolation=cv2.INTER_AREA,
         )
         frames.append(Image.fromarray(resized))
+        decoded_frame_traces.append(
+            {
+                "frame_position": position,
+                "decoded_size_wh": [width, height],
+                "center_crop_xywh": [left, top, side, side],
+                "resize_output_size_wh": [image_size, image_size],
+            }
+        )
     capture.release()
     metadata = VideoMetadata(
         total_num_frames=total,
@@ -119,6 +134,21 @@ def decode_random_seek(
         duration=float(total) / fps,
         frames_indices=positions,
     )
+    if audit_trace is not None:
+        audit_trace.update(
+            {
+                "video_path": str(path),
+                "source_file_bytes": path.stat().st_size,
+                "container_reported_size_wh": [container_width, container_height],
+                "source_frame_count": total,
+                "source_fps_used": fps,
+                "requested_frame_fractions": [float(value) for value in fractions],
+                "selected_frame_positions": positions,
+                "center_crop_fraction_of_short_side": 0.65,
+                "resize_interpolation": "OpenCV INTER_AREA",
+                "decoded_frames": decoded_frame_traces,
+            }
+        )
     return frames, metadata, positions
 
 

@@ -23,7 +23,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Sequence
 
-import cv2
 import numpy as np
 import torch
 from torch import nn
@@ -233,38 +232,21 @@ def prepare_batch(
     traces: list[dict[str, Any]] = []
     for row in rows:
         video_path = Path(row["video_path"])
-        capture = cv2.VideoCapture(str(video_path))
-        source_width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
-        source_height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        source_frames = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
-        source_fps = float(capture.get(cv2.CAP_PROP_FPS))
-        capture.release()
-        nominal_crop_side = max(2, round(min(source_height, source_width) * 0.65))
+        trace: dict[str, Any] = {"sample_id": row["sample_id"]}
         frames, video_metadata, frame_positions = core.decode_random_seek(
-            video_path, core.FRAME_FRACTIONS[4], image_size
+            video_path,
+            core.FRAME_FRACTIONS[4],
+            image_size,
+            audit_trace=trace,
         )
         videos.append(frames)
         metadata.append(video_metadata)
         positions.append(frame_positions)
-        traces.append(
-            {
-                "sample_id": row["sample_id"],
-                "video_path": str(video_path),
-                "source_file_bytes": video_path.stat().st_size,
-                "source_video_size_wh": [source_width, source_height],
-                "source_frame_count": source_frames,
-                "source_fps": source_fps,
-                "selected_frame_positions": frame_positions,
-                "center_crop_fraction_of_short_side": 0.65,
-                "nominal_center_crop_size_wh": [nominal_crop_side, nominal_crop_side],
-                "resize_output_size_wh": [image_size, image_size],
-                "resize_interpolation": "OpenCV INTER_AREA",
-                "processor_pixel_constraint": {
-                    "min_pixels": image_size**2,
-                    "max_pixels": image_size**2,
-                },
-            }
-        )
+        trace["processor_pixel_constraint"] = {
+            "min_pixels": image_size**2,
+            "max_pixels": image_size**2,
+        }
+        traces.append(trace)
     inputs = processor(
         text=[prompt] * len(rows),
         videos=videos,
