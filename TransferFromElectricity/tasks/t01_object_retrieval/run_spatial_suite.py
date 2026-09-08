@@ -1,4 +1,4 @@
-"""Run one serial method queue per verified RTX 4090; keep datasets paired by GPU."""
+"""Run serial method queues on idle RTX GPUs; keep each dataset on one physical GPU."""
 import argparse
 import csv
 import json
@@ -34,11 +34,11 @@ def main():
     parser.add_argument('--prefix',required=True)
     parser.add_argument('--smoke',action='store_true')
     args=parser.parse_args()
-    if len(args.gpu_uuids)!=len(args.datasets) or len(set(args.gpu_uuids))!=len(args.gpu_uuids):
-        raise ValueError('One distinct GPU per dataset is required')
+    if len(args.gpu_uuids)>len(args.datasets) or len(set(args.gpu_uuids))!=len(args.gpu_uuids):
+        raise ValueError('Use distinct GPU UUIDs, no more than the number of datasets')
     devices=inventory();occupied=processes()
     for uuid in args.gpu_uuids:
-        if 'RTX 4090' not in validate_device(uuid,devices):raise ValueError('Paired formal suite requires RTX 4090')
+        validate_device(uuid,devices)
         if occupied.get(uuid):raise RuntimeError(f'GPU already occupied: {uuid}: {occupied[uuid]}')
     sha=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
     kind='smoke' if args.smoke else 'simulation'
@@ -47,11 +47,12 @@ def main():
     if audit_path.exists():raise FileExistsError(audit_path)
     state={'git_sha':sha,'config_family':'spatial_v4','smoke':args.smoke,'records':[],
            'policy':'One serial queue per physical GPU, process inventory sampled every five seconds','complete':False}
-    pending={}
-    for index,(dataset,uuid) in enumerate(zip(args.datasets,args.gpu_uuids)):
+    pending={uuid:[] for uuid in args.gpu_uuids}
+    for index,dataset in enumerate(args.datasets):
+        uuid=args.gpu_uuids[index%len(args.gpu_uuids)]
         # Counterbalance method order across datasets without changing method initialization.
         offset=index%len(args.methods);methods=args.methods[offset:]+args.methods[:offset]
-        pending[uuid]=[(dataset,method) for method in methods]
+        pending[uuid].extend((dataset,method) for method in methods)
     active={};failed=False
     def save():audit_path.write_text(json.dumps(state,indent=2),encoding='utf-8')
     while active or any(pending.values()):
