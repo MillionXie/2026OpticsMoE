@@ -1,0 +1,21 @@
+base_config: spatial_two_branch_router_rebalance_s429.yaml
+output_dir: ../../runs/lgvq_spatial_two_branch_router_flatfield_s430
+random_seed: 430
+
+# Hardware-compatible four-window flat-fielding: one uniform optical reference
+# supplies four fixed detector gains. Sample-dependent decisions still come
+# only from measured optical energy; this is not an electronic router.
+router:
+  serial_flatfield_calibration: true
+  serial_channel_standardization: true
+  serial_visual_token_gain: 2.0
+
+loss:
+  serial_router_balance_weight: 0.10
+  serial_router_importance_weight: 0.06
+  serial_router_diversity_weight: 0.05
+
+curriculum:
+  serial_router_balance_weight_final: 0.03
+  serial_router_importance_weight_final: 0.015
+  serial_router_diversity_weight_final: 0.012
