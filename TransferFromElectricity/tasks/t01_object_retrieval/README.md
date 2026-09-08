@@ -1,5 +1,35 @@
 # 固定专家库生成：三数据集检索
 
+## 第五轮：零初值、视觉空间特征与生成 global（执行中）
+
+用户明确要求初始化的 **raw phase 必须全零，sigmoid约束后为π**。本轮使用独立 `configs/spatial_v4/{caltech,cifar,imagenette}.yaml`，
+将两侧 expert、global 和 optical Router 的全部 raw phase 重置为零，并保存逐层初始化审计。非相位电子参数仍沿用共同 warmstart。
+下述旧四轮结果保持原含义，不能视为本轮零初值实验。
+
+在原 Caltech 十类、CIFAR-100 固定十类、Imagenette 上各运行五组：direct、CLIP vision 空间生成、
+Qwen vision 池化消融、Qwen vision 空间生成、Qwen vision 同时生成 expert/global。全部LoRA组仅训练编码器q/v的rank8适配器及解码器。
+Qwen使用视觉Transformer，不运行语言Transformer；取merger前的patch tokens，严格逆转2×2分块顺序，还原14×14二维网格。
+CLIP使用ViT-B/16视觉patch tokens（去掉CLS），保持同一空间解码器；该组与此前CLIP文本生成不是同一个实现。
+
+每个数据集从**训练划分**按固定seed预选每类一张参考图，共10张；中心裁剪到224，全程固定，不输入当前query或batch。
+参考特征只沿参考图维度平均，保留空间xy；通道用无参数平均池化到512。加入显式xy后，经3×3卷积及逐级PixelShuffle/3×3卷积输出八张224相位。
+Qwen池化消融只将同样的空间特征在H/W上平均再广播，其他部分相同，用于单独检验保留空间特征的作用。
+生成值减去固定首次输出，确保初始raw为0；生成头不使用全零末层权重，以保留初始编码器梯度。
+
+生成global组增加独立二维解码分支：特征网格确定性映射到15×15，五次2倍上采样得480×480，中心裁剪为478×478。
+experts阶段global保持零；在optics解锁边界缓存一次global生成参考，避免共享编码器此前更新导致相位突然跳变；之后梯度同时传至两类解码器和编码器LoRA。
+旧global自由像素不再被优化。导出同时包含expert/global，检查物化两级相位前后embedding一致。
+
+固定训练预算仍为4/8/18轮三阶段，每轮120个PK batch（30张图），单seed42；同一数据集的五组绑定同一张空闲RTX4090顺序运行，
+三个数据集可在不同空闲RTX4090上并行。禁止A100，不与正在占卡的任务抢占同一GPU。每轮CUDA同步后记录训练/验证/保存的分项时间。
+完整训练的validation选择规则、Top-1/Top-3/MRR及0.6光学系数不变；先运行独立validation-only smoke验证，再运行正式15组。
+本轮与旧版本改变了初始化及生成结构，只按本轮配对结果判断效果，不将旧高分拼入新表。
+
+实现依据：本地/服务器Transformers4.57.3的Qwen3VL视觉前向与位置排列；[官方Qwen3-VL接口](https://huggingface.co/docs/transformers/model_doc/qwen3_vl)。
+二维token保留空间信息，但不预先保证mask更好；卷积邻域、池化消融、梯度与任务成绩共同验证这一假设。
+
+## 第四轮历史结果
+
 第四轮已完成：六组确定性开发实验、三数据集共 14 个正式 run，全部使用 RTX 4090，未使用 A100，训练进程已退出。
 四路光学融合系数始终为 0.6。所有导出一致性误差与冻结参数变化均为零；204 个回传文件通过 SHA256 校验。
 正式训练源码固定 `dee34f07`；报告更新不改变服务器上的复现实验 worktree。

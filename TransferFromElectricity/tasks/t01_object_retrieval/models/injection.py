@@ -24,6 +24,14 @@ def expert_planes(replacement):
     return planes
 
 
+def global_planes(replacement):
+    planes=[s.core.optical_branch.core.global_phase.phase for s in
+            (replacement.vision_surrogate,replacement.language_surrogate)]
+    if any(tuple(p.raw_phase.shape)!=(478,478) for p in planes):
+        raise RuntimeError('Expected one 478x478 global per modality')
+    return planes
+
+
 class ExpertInjection:
     def __init__(self, planes):
         self.planes = list(planes)
@@ -47,3 +55,10 @@ class ExpertInjection:
         for plane in self.planes:
             parametrize.remove_parametrizations(plane, 'raw_phase', leave_parametrized=True)
             plane.raw_phase.requires_grad_(False)
+
+
+class GlobalInjection(ExpertInjection):
+    def bind(self,raw):
+        if tuple(raw.shape)!=(2,478,478) or len(self.adapters)!=2:
+            raise ValueError('Expected [2,478,478] static global planes')
+        for adapter,value in zip(self.adapters,raw):adapter.current=value

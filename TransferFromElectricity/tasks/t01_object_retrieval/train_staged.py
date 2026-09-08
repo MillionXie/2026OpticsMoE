@@ -22,7 +22,7 @@ from .run import (ROOT, TASK, write_json, sha256, git, cpu_state, grad_norm,
     evaluate_student_split, initialize_parameter_ema, update_parameter_ema, use_parameter_ema,
     phase_dc_loss)
 from .models.generator import StaticGenerator, LoRALinear
-from .models.injection import ExpertInjection, expert_planes
+from .models.injection import ExpertInjection, GlobalInjection, expert_planes, global_planes
 from .protocol import common_anchor, split_train_validation, stage_at, active_groups, phase_summary, physical_phase
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.settings import _read_config
 
@@ -77,7 +77,8 @@ def parameter_groups(replacement, readout, generator, method, cfg):
     if generator:
         for name,p in generator.named_parameters():
             if p.requires_grad:
-                group = 'generator_decoder' if name.startswith('decoder.') else 'generator_context'
+                group = ('generator_global_decoder' if name.startswith('global_decoder.') else
+                         'generator_decoder' if name.startswith('decoder.') else 'generator_context')
                 grouped.setdefault(group, []).append((f'generator.{name}',p))
     groups = [{'params':[p for _,p in rows], 'parameter_names':[n for n,_ in rows],
                'group_name':name, 'lr':cfg['learning_rates'][name],
@@ -152,27 +153,56 @@ def execute(args, cfg, output):
                                    validation_per_class=cfg['validation_per_class'])
     (output/'config.yaml').write_text(yaml.safe_dump(resolved,sort_keys=False), encoding='utf-8')
     planes = expert_planes(replacement)
-    initial = common_anchor(cfg['seed'],dc_power=cfg['initial_expert_dc_power']).to(device)
+    globals_ = global_planes(replacement)
+    zero_phase=cfg.get('phase_initialization')=='zero_raw_all_optical'
+    zero_audit={}
+    if zero_phase:
+        with torch.no_grad():
+            for modality,surrogate in [('vision',replacement.vision_surrogate),('language',replacement.language_surrogate)]:
+                for name,module in surrogate.named_modules():
+                    if hasattr(module,'raw_phase') and isinstance(module.raw_phase,torch.nn.Parameter):
+                        module.raw_phase.zero_()
+                        zero_audit[f'{modality}.{name}']={'shape':list(module.raw_phase.shape),'raw_max_abs':float(module.raw_phase.abs().max()),
+                                                        'physical_phase_rad':float(physical_phase(module.raw_phase).mean())}
+        if len(zero_audit)<10:raise RuntimeError('Missing optical planes in zero initialization audit')
+        write_json(output/'zero_initialization.json',zero_audit)
+    initial = (torch.zeros(2,4,224,224) if zero_phase else common_anchor(cfg['seed'],dc_power=cfg['initial_expert_dc_power'])).to(device)
     with torch.no_grad():
         for plane,raw in zip(planes,initial.flatten(0,1)):
             plane.raw_phase.copy_(raw)
-    generator = injection = None
+    generator = injection = global_injection = None
     if args.method.startswith(('qwen', 'clip')):
-        source = args.generator_source or (str(ROOT / cfg['generator']['clip_source']) if args.method.startswith('clip')
+        spatial='_vision' in args.method
+        source = args.generator_source or (str(ROOT / cfg['generator']['clip_vision_source' if spatial else 'clip_source']) if args.method.startswith('clip')
                  else resolve_cached_model_source(cfg['generator']['model_id'],settings.cache_dir))
-        generator = create_generator(args.method,source,cfg,device)
+        if spatial:
+            if not zero_phase:raise ValueError('Spatial protocol requires all raw optical phases zero initialized')
+            from .models.spatial_generator import SpatialGenerator, reference_images
+            images,references=reference_images(training,cfg.get('data_seed',42))
+            write_json(output/'fixed_references.json',{'policy':'one fixed reference per class, training partition only','references':references})
+            generator=SpatialGenerator(args.method,source,images,device,rank=cfg['generator']['rank'],seed=cfg['seed'])
+            if generator.generates_global:global_injection=GlobalInjection(globals_)
+        else:
+            generator = create_generator(args.method,source,cfg,device)
+            if zero_phase:generator.anchor.zero_()
         injection = ExpertInjection(planes)
         source_path = Path(source)
         write_json(output/'generator_source_manifest.json', {'path':str(source_path), 'snapshot':source_path.name,
             'files':{p.name:sha256(p) for p in sorted(source_path.iterdir()) if p.is_file() and p.suffix in {'.json','.safetensors'}}})
-    def bind(override=None):
-        raw = override if override is not None else generator() if generator else torch.stack([p.raw_phase for p in planes]).reshape_as(initial)
+    def bind(override=None, global_override=None):
+        generated=generator() if generator and (override is None or global_injection) else None
+        raw = override if override is not None else generated if generator else torch.stack([p.raw_phase for p in planes]).reshape_as(initial)
         if injection:
             injection.bind(raw)
         elif override is not None:
             with torch.no_grad():
                 for plane,value in zip(planes,raw.flatten(0,1)):
                     plane.raw_phase.copy_(value)
+        if global_injection:
+            global_injection.bind(generator.current_global if global_override is None else global_override)
+        elif global_override is not None:
+            with torch.no_grad():
+                for plane,value in zip(globals_,global_override):plane.raw_phase.copy_(value)
         return raw
     with torch.no_grad():
         if float((bind()-initial).abs().max()) > 1e-7:
@@ -182,6 +212,11 @@ def execute(args, cfg, output):
     ema = initialize_parameter_ema(parameters)
     write_json(output/'architecture.json', {'method':args.method,'base':replacement.student_architecture_report(),
         'generator_trainable':sum(p.numel() for p in generator.parameters() if p.requires_grad) if generator else 0,
+        'spatial_generator':({'vision_hidden_size':generator.encoder.config.hidden_size,'reference_count':len(images),
+            'restored_grid':[14,14],'decoder_channels':512,'pooled_ablation':generator.pooled,
+            'generates_global':generator.generates_global,'expert_shape':[2,4,224,224],
+            'global_shape':[2,478,478] if generator.generates_global else None,
+            'language_tower_executed':False} if generator and '_vision' in args.method else None),
         'initial_phase':phase_summary(initial,initial),'lora_modules':generator.lora_modules if generator else [],
         'optimizer_groups':[{**{k:v for k,v in g.items() if k!='params'},'parameter_count':sum(p.numel() for p in g['params'])} for g in groups]})
     current_sha = git('rev-parse','HEAD')
@@ -206,7 +241,8 @@ def execute(args, cfg, output):
         return {'schema_version':2,'git_sha':current_sha,'epoch':epoch,'weight_variant':variant,'config':cfg,
             'vision':cpu_state(replacement.vision_surrogate),'language':cpu_state(replacement.language_surrogate),'readout':cpu_state(readout),
             'generator':generator.compact_state() if generator else None,'generator_source':generator.source if generator else None,
-            'expert_raw':bind().detach().cpu(),'optimizer':optimizer.state_dict(),'ema':[x.cpu() for x in ema],
+            'expert_raw':bind().detach().cpu(),'global_raw':torch.stack([p.raw_phase for p in globals_]).detach().cpu(),
+            'optimizer':optimizer.state_dict(),'ema':[x.cpu() for x in ema],
             'history':history,'step_history':step_history,'best_key':best_key,'optimizer_updates':updates,
             'rng_python':random.getstate(),'rng_numpy':np.random.get_state(),'rng_torch':torch.get_rng_state(),'rng_cuda':torch.cuda.get_rng_state_all()}
     def load_weights(payload):
@@ -215,9 +251,13 @@ def execute(args, cfg, output):
         readout.load_state_dict(payload['readout'])
         if generator:
             generator.load_compact_state(payload['generator'])
+            if global_injection:
+                generator.global_enabled=stage_at(payload['epoch'],cfg['stages'])[0]['name']!='experts'
         with torch.no_grad():
             if float((bind().cpu()-payload['expert_raw'].cpu()).abs().max()) > 1e-6:
                 raise RuntimeError('Checkpoint expert reconstruction mismatch')
+            if 'global_raw' in payload and float((torch.stack([p.raw_phase for p in globals_]).cpu()-payload['global_raw']).abs().max())>1e-6:
+                raise RuntimeError('Checkpoint global reconstruction mismatch')
     if args.resume:
         payload = torch.load(output/'last_checkpoint.pt',map_location='cpu',weights_only=False)
         if payload['git_sha'] != current_sha or payload['config'] != cfg:
@@ -266,6 +306,7 @@ def execute(args, cfg, output):
             for group in groups:
                 for p in group['params']:
                     p.requires_grad_(group['group_name'] in enabled)
+            if global_injection:generator.set_global_enabled('global' in enabled)
             active = [p for p in parameters if p.requires_grad]
             frozen_before = [(p,p.detach().clone()) for p in parameters if not p.requires_grad]
             sampler.set_epoch(epoch)
@@ -323,6 +364,9 @@ def execute(args, cfg, output):
                     if args.method.endswith('_lora'):
                         grads = torch.autograd.grad(task_loss,[p for n,p in generator.named_parameters() if n.endswith('lora_b')],retain_graph=True)
                         chain['task_to_lora_b'] = float(torch.stack([g.float().square().sum() for g in grads]).sum().sqrt())
+                    if global_injection and generator.global_enabled:
+                        gradient=torch.autograd.grad(task_loss,generator.current_global,retain_graph=True)[0]
+                        chain['task_to_global']=float(gradient.float().norm())
                     if min(chain.values()) <= 0:
                         raise RuntimeError('Broken task gradient chain')
                 norms, update_stats = {}, {}
@@ -380,6 +424,9 @@ def execute(args, cfg, output):
                 'expert_selection_counts':counts,'task_gradient_chain':rows[0]['task_gradient_chain'],
                 'frozen_parameter_max_change':frozen_delta,'stage_end_validation_with_initial_experts':stage_end_validation,
                 'optimizer_updates':updates,'elapsed_seconds':time.perf_counter()-started}
+            if zero_phase:
+                global_raw=torch.stack([p.raw_phase for p in globals_])
+                record['global_phase']=phase_summary(global_raw,torch.zeros_like(global_raw))
             history.append(record)
             if cfg.get('epoch_timing', False):
                 torch.cuda.synchronize(device)
@@ -446,7 +493,9 @@ def execute(args, cfg, output):
                 finally:
                     for core in cores: core.set_fusion_ablation('none')
                 bind(learned)
+            learned_global=torch.stack([p.raw_phase for p in globals_]).detach().clone()
             torch.save({'raw_phase':learned.cpu(),'phase_rad':physical_phase(learned).cpu(),
+                'global_raw_phase':learned_global.cpu(),'global_phase_rad':physical_phase(learned_global).cpu(),
                 'selected_epoch':selected_epoch,'git_sha':current_sha},output/'expert_bank.pt')
             # Verify deployed materialized masks agree with the generated path.
             audit = collate_grocery([dataset[i] for i in range(3)])
@@ -455,6 +504,7 @@ def execute(args, cfg, output):
             with torch.autocast('cuda',dtype=torch.bfloat16,enabled=settings.amp_enabled):
                 before = student_embeddings(loaded.model,replacement,readout,inp)[0].clone()
                 if injection: injection.materialize()
+                if global_injection:global_injection.materialize()
                 after = student_embeddings(loaded.model,replacement,readout,inp)[0].clone()
             export_error = float((before-after).abs().max())
             if export_error > 1e-5: raise RuntimeError('Materialization changed outputs')
@@ -470,6 +520,10 @@ def execute(args, cfg, output):
             'optimizer_updates':updates,'training_batch_opportunities':settings.epochs*len(loader),
             'export_max_error':export_error,'expert_bank_sha256':sha256(output/'expert_bank.pt'),
             'peak_memory_gib':torch.cuda.max_memory_allocated()/1024**3,'elapsed_seconds':time.perf_counter()-started}
+        if zero_phase:
+            report['selected_global_phase']=phase_summary(learned_global,torch.zeros_like(learned_global))
+            report['phase_initialization']='zero_raw_all_optical'
+            report['generates_global']=bool(global_injection)
         write_json(output/'final_report.json',report)
         print({'final_report':report},flush=True)
     finally:
@@ -478,7 +532,8 @@ def execute(args, cfg, output):
 
 def main():
     parser = argparse.ArgumentParser(__doc__)
-    parser.add_argument('--method',required=True,choices=['fixed','direct','qwen_frozen','qwen_lora','clip_frozen','clip_lora'])
+    parser.add_argument('--method',required=True,choices=['fixed','direct','qwen_frozen','qwen_lora','clip_frozen','clip_lora',
+        'qwen_vision_lora','qwen_vision_pooled_lora','qwen_vision_global_lora','clip_vision_lora'])
     parser.add_argument('--config',default=str(TASK/'configs/staged_alpha40.yaml'))
     parser.add_argument('--run-dir',required=True)
     parser.add_argument('--generator-source')

@@ -52,9 +52,9 @@ def active_groups(stage_name):
     if stage_name == 'experts':
         return experts
     if stage_name == 'optics':
-        return experts | {'router', 'global'}
+        return experts | {'router', 'global', 'generator_global_decoder'}
     if stage_name == 'joint':
-        return experts | {'router', 'global', 'electronic', 'readout', 'fusion'}
+        return experts | {'router', 'global', 'generator_global_decoder', 'electronic', 'readout', 'fusion'}
     raise ValueError(stage_name)
 
 

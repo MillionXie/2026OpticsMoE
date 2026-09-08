@@ -1,0 +1,9 @@
+base_config: ../control_v3/formal_cifar.yaml
+phase_initialization: zero_raw_all_optical
+epoch_timing: true
+generator:
+  clip_vision_source: data/static_bank_models/clip-vit-b16-vision
+  reference_policy: one_training_image_per_class_fixed_seed42
+  spatial_decoder: conv_pixelshuffle_xy
+learning_rates:
+  generator_global_decoder: 0.0003
