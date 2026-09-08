@@ -39,6 +39,7 @@ def run_preflight(
         "separate_spatial_temporal_models": True,
         "validation_used": False,
         "test_selection_interval_epochs": settings.test_interval_epochs,
+        "test_selection_interval_optimizer_steps": settings.test_interval_steps,
         "qwen_front": {
             "checkpoint_family": "Qwen3-VL-2B-Instruct",
             "official_processor": True,

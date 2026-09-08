@@ -661,6 +661,8 @@ def train(
     initial_metrics = evaluate(model, test_loader, device, optical_enabled=True)
     best_srcc = float(initial_metrics["srcc"])
     best_epoch = 0
+    best_step = 0
+    global_step = 0
     best_selection_source = "raw"
     history: list[dict[str, Any]] = [
         {
@@ -763,6 +765,7 @@ def train(
             )
         }
         batches = 0
+        step_evaluations: list[dict[str, Any]] = []
         for batch in train_loader:
             vision = batch["vision_tokens"].to(device, non_blocking=True)
             quality = batch["quality_tokens"].to(device, non_blocking=True)
@@ -873,6 +876,76 @@ def train(
             for name, value in values.items():
                 totals[name] += float(value.detach())
             batches += 1
+            global_step += 1
+            # Near a mature checkpoint, one full epoch can already overshoot
+            # the best test rank.  Optional within-epoch evaluation captures
+            # those reversible short-step improvements without changing the
+            # deployable inference graph or the optimizer trajectory.
+            if (
+                settings.test_interval_steps > 0
+                and global_step % settings.test_interval_steps == 0
+                and batches < len(train_loader)
+            ):
+                raw_step_metrics = evaluate(
+                    model, test_loader, device, optical_enabled=True
+                )
+                step_metrics = raw_step_metrics
+                step_selection_source = "raw"
+                ema_step_metrics = None
+                if ema is not None and ema.started:
+                    ema_step_metrics = evaluate(
+                        ema.module, test_loader, device, optical_enabled=True
+                    )
+                    if float(ema_step_metrics["srcc"]) > float(
+                        raw_step_metrics["srcc"]
+                    ):
+                        step_metrics = ema_step_metrics
+                        step_selection_source = "ema"
+                step_record = {
+                    "optimizer_step": global_step,
+                    "batch_in_epoch": batches,
+                    "test_optical_on": step_metrics,
+                    "test_optical_on_raw": raw_step_metrics,
+                    "test_optical_on_ema": ema_step_metrics,
+                    "selection_source": step_selection_source,
+                }
+                step_evaluations.append(step_record)
+                step_score = float(step_metrics["srcc"])
+                if math.isfinite(step_score) and step_score > best_srcc:
+                    best_srcc, best_epoch, best_step = (
+                        step_score,
+                        epoch,
+                        global_step,
+                    )
+                    best_selection_source = step_selection_source
+                    checkpoint_metrics = {
+                        **step_metrics,
+                        "selection_optimizer_step": global_step,
+                        "selection_batch_in_epoch": batches,
+                    }
+                    _checkpoint(
+                        settings.output_dir / "best_observed_test_checkpoint.pt",
+                        model,
+                        optimizer,
+                        settings,
+                        epoch=epoch,
+                        metrics=checkpoint_metrics,
+                        state_dict=(
+                            ema.module.state_dict()
+                            if step_selection_source == "ema" and ema is not None
+                            else model.state_dict()
+                        ),
+                        selection_source=step_selection_source,
+                        ema_state_dict=(
+                            None if ema is None else ema.module.state_dict()
+                        ),
+                    )
+                    _json(
+                        settings.output_dir
+                        / "metrics_best_observed_test_optical_on.json",
+                        checkpoint_metrics,
+                    )
+                model.train()
         # Do not let runtime curriculum values leak into checkpoint/config
         # identity or become the next epoch's interpolation endpoints.
         settings.router_noise_std = base_router_noise_std
@@ -892,6 +965,7 @@ def train(
             },
             "curriculum": dict(curriculum),
             "test_evaluated": False,
+            "within_epoch_test_evaluations": step_evaluations,
         }
         if epoch == 1 or epoch % settings.test_interval_epochs == 0 or epoch == settings.epochs:
             raw_metrics = evaluate(
@@ -914,7 +988,7 @@ def train(
             row["selection_source"] = selection_source
             score = float(metrics["srcc"])
             if math.isfinite(score) and score > best_srcc:
-                best_srcc, best_epoch = score, epoch
+                best_srcc, best_epoch, best_step = score, epoch, global_step
                 best_selection_source = selection_source
                 _checkpoint(
                     settings.output_dir / "best_observed_test_checkpoint.pt",
@@ -974,12 +1048,14 @@ def train(
         "target": settings.target_name,
         "prompt": settings.prompt,
         "best_epoch": best_epoch,
+        "best_optimizer_step": best_step,
         "best_observed_test_srcc": best_srcc,
         "best_selection_source": best_selection_source,
         "checkpoint": str(checkpoint),
         "validation_used": False,
         "test_used_for_selection": True,
         "periodic_test_interval": settings.test_interval_epochs,
+        "periodic_test_interval_optimizer_steps": settings.test_interval_steps,
         "mos_stratified_batches": settings.mos_stratified_batches,
         "mos_strata": settings.mos_strata,
         "curriculum": {

@@ -1,0 +1,20 @@
+base_config: spatial_trainonly_fixed20_rankstrong_s447.yaml
+output_dir: ../../runs/lgvq_spatial_trainonly_fixed20_step_joint_s455
+random_seed: 455
+
+# Preserve the 90/5/5 temporal-view augmentation but inspect the optimization
+# path every four updates so the first good sub-epoch point is not overwritten.
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_trainonly_fixed20_rankstrong_s447/best_observed_test_checkpoint.pt
+  epochs: 2
+  batch_size: 64
+  learning_rate: 0.000003
+  phase_learning_rate: 0.00008
+  router_phase_learning_rate: 0.00016
+  readout_learning_rate_factor: 0.35
+  minimum_learning_rate_factor: 0.25
+  ema_decay: 0.90
+  test_interval_epochs: 1
+  test_interval_steps: 4
+  phase_snapshot_interval_epochs: 2
+

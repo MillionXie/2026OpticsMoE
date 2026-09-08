@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from dataclasses import replace
 from pathlib import Path
 
@@ -826,3 +827,33 @@ def test_single_target_training_uses_one_dimensional_target_statistics(
     assert float(model.target_mean) == pytest.approx(12.0)
     assert float(model.target_std) == pytest.approx(2.0)
     assert (settings.output_dir / "best_observed_test_checkpoint.pt").is_file()
+
+
+def test_training_can_select_a_within_epoch_optimizer_step(tmp_path: Path) -> None:
+    settings = replace(
+        _small_settings(tmp_path),
+        batch_size=1,
+        test_interval_steps=1,
+    )
+    model = LGVQSingleMetricOEO16(settings)
+    generator = torch.Generator().manual_seed(29)
+    payload = {
+        "vision_tokens": torch.randn(4, 4, 49, 1024, generator=generator).half(),
+        "quality_tokens": torch.randn(4, 4, 49, 14, generator=generator).half(),
+        "language_tokens": torch.randn(1, 4, 2048, generator=generator).half(),
+        "language_mask": torch.ones(1, 4, dtype=torch.bool),
+        "input_ids": torch.arange(4).view(1, 4),
+        "targets": torch.tensor([10.0, 14.0, 20.0, 30.0]),
+        "sample_ids": ["train_a", "train_b", "test_a", "test_b"],
+        "video_paths": ["a.mp4", "b.mp4", "c.mp4", "d.mp4"],
+        "splits": ["train", "train", "test", "test"],
+        "target_name": "spatial",
+    }
+    summary = train(model, payload, settings, torch.device("cpu"))
+    history = json.loads(
+        (settings.output_dir / "train_history.json").read_text(encoding="utf-8")
+    )
+    assert len(history[1]["within_epoch_test_evaluations"]) == 1
+    assert history[1]["within_epoch_test_evaluations"][0]["optimizer_step"] == 1
+    assert summary["periodic_test_interval_optimizer_steps"] == 1
+    assert summary["best_optimizer_step"] in (0, 1, 2)

@@ -359,6 +359,7 @@ class ExperimentSettings:
     curriculum_router_noise_std_final: float = 0.03
     curriculum_unmodulated_power_fraction_max_initial: float = 0.35
     test_interval_epochs: int = 5
+    test_interval_steps: int = 0
     phase_snapshot_interval_epochs: int = 5
     synthetic: bool = False
 
@@ -682,10 +683,12 @@ class ExperimentSettings:
             self.batch_size,
             self.num_workers + 1,
             self.test_interval_epochs,
-        ) <= 0 or self.phase_snapshot_interval_epochs < 0:
+        ) <= 0 or min(
+            self.test_interval_steps, self.phase_snapshot_interval_epochs
+        ) < 0:
             raise ValueError(
                 "Training counts must be positive; num_workers and the optional "
-                "phase snapshot interval may be zero"
+                "optimizer-step test/phase snapshot intervals may be zero"
             )
         if self.mos_strata < 2:
             raise ValueError("training.mos_strata must be at least two")
@@ -1068,6 +1071,7 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
             )
         ),
         test_interval_epochs=int(get("training", "test_interval_epochs", 5)),
+        test_interval_steps=int(get("training", "test_interval_steps", 0)),
         phase_snapshot_interval_epochs=int(
             get("training", "phase_snapshot_interval_epochs", 5)
         ),
