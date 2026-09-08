@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "status": "complete",
+  "mode": "formal_full_test_batched",
+  "protocol": "one_process_one_model_load_full_558_test_first_batch_included",
+  "target": "temporal",
+  "prompt": "Please evaluate the temporal quality of this video and rate it using one of the following five levels: Excellent, Good, Fair, Poor, or Bad.",
+  "image_size_wh": [
+    448,
+    448
+  ],
+  "frames_per_video": 4,
+  "batch_size_videos": 2,
+  "test_videos": 558,
+  "full_batches": 279,
+  "final_partial_batch_videos": 0,
+  "explicit_warmup_forwards": 0,
+  "first_test_batch_included_in_aggregate": true,
+  "performance": {
+    "srcc": 0.7664148425389119,
+    "krcc": 0.5659050576635645,
+    "plcc": 0.776848065725994,
+    "rmse": 8.773355274299062,
+    "mae": 6.816463572731155
+  },
+  "timing_boundary": "first native Vision Transformer block input to scalar score ready on GPU",
+  "timing_excludes": [
+    "model/processor load",
+    "MP4 open and random-seek decode",
+    "center crop/resize",
+    "processor/tokenizer",
+    "host-to-device copy",
+    "vision patch embedding before block 0"
+  ],
+  "model_boundary_full_batch_cuda_ms": {
+    "mean": 62.25851363862287,
+    "median": 60.81331253051758,
+    "std": 18.622907687586576,
+    "p05": 60.28871574401855,
+    "p95": 62.25909652709961,
+    "min": 60.030975341796875,
+    "max": 370.46478271484375
+  },
+  "model_boundary_all_batches_cuda_ms": {
+    "mean": 62.25851363862287,
+    "median": 60.81331253051758,
+    "std": 18.622907687586576,
+    "p05": 60.28871574401855,
+    "p95": 62.25909652709961,
+    "min": 60.030975341796875,
+    "max": 370.46478271484375
+  },
+  "preprocessing_full_batch_ms": {
+    "mean": 347.58571554042106,
+    "median": 260.4319229722023,
+    "std": 297.88622764749465,
+    "p05": 51.999105513095856,
+    "p95": 999.2331542074677,
+    "min": 47.286950051784515,
+    "max": 1483.6696609854698
+  },
+  "host_to_device_full_batch_ms": {
+    "mean": 11.45623338585686,
+    "median": 11.44639402627945,
+    "std": 1.1082374147533118,
+    "p05": 9.661351144313812,
+    "p95": 13.213170319795609,
+    "min": 8.818425238132477,
+    "max": 18.15902441740036
+  },
+  "component_sum_decode_processor_transfer_model_full_batch_ms": {
+    "mean": 421.3004625649008,
+    "median": 333.5160977244377,
+    "std": 299.9298878578593,
+    "p05": 124.47344363331794,
+    "p95": 1078.2970448553558,
+    "min": 119.19815391302109,
+    "max": 1555.2256840467453
+  },
+  "model_throughput_videos_per_second": 32.12412059190687,
+  "same_workload_16_video_model_ms": 498.068109108983,
+  "same_workload_16_video_batch_calls": 8,
+  "same_workload_16_video_measured_active_energy_j": 103.77214188518025,
+  "same_workload_16_video_idle_subtracted_energy_j": 73.47707368376133,
+  "same_workload_16_video_rated_upper_bound_energy_j": 124.51702727724575,
+  "telemetry": {
+    "sampling_interval_ms": 50,
+    "idle_samples": 33,
+    "active_samples": 300,
+    "idle_mean_w": 60.82515151515152,
+    "active_mean_w": 208.34930000000003,
+    "active_peak_w": 270.36,
+    "active_mean_gpu_utilization_percent": 70.20333333333333,
+    "active_peak_gpu_utilization_percent": 79.0,
+    "active_peak_memory_used_mib": 4883.0,
+    "rated_power_limit_w": 250.0,
+    "active_mean_fraction_of_power_limit": 0.8333972000000001,
+    "active_peak_fraction_of_power_limit": 1.08144,
+    "measured_active_energy_j_per_batch": 12.97151773564753,
+    "measured_active_energy_j_per_video": 6.485758867823765,
+    "idle_subtracted_energy_j_per_batch": 9.184634210470167,
+    "rated_upper_bound_energy_j_per_batch": 15.564628409655718
+  },
+  "preprocessing_phase_wall_seconds": 96.9799382686615,
+  "continuous_inference_phase_wall_seconds": 22.11956226825714,
+  "formal_execution_order": "all CPU decode/processor batches first, then all GPU batches consecutively; this prevents excluded decode gaps from down-clocking the model-active power sample",
+  "git_commit": "7d5b05e9b839ff95188d53ca8e06031f2946dd3e",
+  "git_worktree_clean": true,
+  "script_sha256": "19ec2e9500d5712aef1db98cd6866d37f5fd5e91321e724cce781bea9793dd4c",
+  "manifest": "/DATA/DATA1/guest3/2026OpticsMoE_a100_formal/LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/a100_dataset_contract_20260907/lgvq_prompt_group_split.csv",
+  "manifest_sha256": "607c50d20662a47795c23cd2038081b30368ed108ba9be8a1bb8a9d250f8e7fc",
+  "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE_a100_formal/LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/qwen3vl_quality_tokens_r448_dataset_once_a100_20260907/checkpoints/frames4/best_checkpoint.pt",
+  "checkpoint_sha256": "e102adc6a7b33335c8f49ae1cbeea3302a1a10017d282da8d6091a640276d0d2",
+  "model": "/DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-2B-Instruct/snapshots/89644892e4d85e24eaac8bacfd4f463576704203",
+  "gpu": "NVIDIA A100-PCIE-40GB",
+  "physical_gpu_id": "6",
+  "software": {
+    "python": "3.11.15",
+    "torch": "2.6.0+cu124",
+    "cuda": "12.4"
+  }
+}

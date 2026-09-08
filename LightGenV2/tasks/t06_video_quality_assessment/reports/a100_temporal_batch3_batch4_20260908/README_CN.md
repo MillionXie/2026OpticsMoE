@@ -1,43 +1,66 @@
-# A100 时间质量 batch=3/4 与 Ours 能耗复核（2026-09-08）
+# A100 时间质量 batch=2/3/4 与统一 Ours 口径（2026-09-08）
 
 ## 结论
 
-- 正式 `batch=4` 在 LGVQ 全部 558 条 test 上得到：SRCC `0.769496`、PLCC `0.780177`、KRCC `0.567953`、RMSE `8.7130`、MAE `6.7609`。
-- 正式 `batch=4` 的模型区间平均耗时为 `112.714 ms / 4 videos`；换算成与 Ours 相同的 16 视频工作量为 `450.854 ms`。对应实测 A100 板卡能耗为 `22.211 J / 4 videos`，即 `88.846 J / 16 videos`。
-- 在同一种短时 steady-sweep 协议下，`batch=3` 已占 A100 250 W 额定功率的 `90.09%`，`batch=4` 为 `91.41%`。后者仅高 `1.32` 个百分点，因此二者都已接近该工作负载的功率平台。
+- 正式 `batch=2` 在 LGVQ 全部 558 条 test 上得到：SRCC `0.766415`、PLCC `0.776848`；平均 `62.259 ms / 2 videos`，等效 16 视频为 `498.068 ms、103.772 J`。
+- 在相同短时 steady-sweep 协议下，`batch=2/3/4` 分别占 A100 250 W 额定功率的 `84.26% / 90.09% / 91.41%`。从 3 增到 4 只提高 `1.32` 个百分点。
 - 计入承载残差、CCD 融合、必要 bridge 和任务头的 A100 板卡能耗后，LGVQ 时间质量 Ours 的组合能耗由原先只列光学设备的 `0.901 J` 修正为 `1.634 J / 16 videos`。
-- 使用正式 `batch=4` Qwen3-VL 与 Ours 对比：速度优势 `40.23×`，组合能耗优势 `54.37×`。相对同口径正式 `batch=16` 的 `36.17×` 与 `50.22×`，batch=4 下光学优势略增，但不是数量级变化。
+- 使用正式 `batch=2` Qwen3-VL 与统一 Ours 对比：速度优势 `44.44×`，组合能耗优势 `63.51×`。
 
-## batch=3 与 batch=4 功率占用（同协议）
+## batch=2、3、4 功率占用（同协议）
 
 这部分只使用 `3 warm-up + 30 timed forwards` 的 steady-sweep。每个 batch 中均为不同视频，每个视频抽 4 帧；预处理只做一次且不计入下表的模型延迟。
 
 | Batch | 平均耗时/批 | 吞吐率 | A100 平均功率 | 额定功率占比 | 平均 GPU 利用率 | 能耗/批 | 能耗/视频 |
 |---:|---:|---:|---:|---:|---:|---:|---:|
+| 2 | 63.985 ms | 31.257 video/s | 210.656 W | 84.26% | 64.47% | 13.479 J | 6.739 J |
 | 3 | 87.515 ms | 34.280 video/s | 225.221 W | 90.09% | 80.00% | 19.710 J | 6.570 J |
 | 4 | 110.911 ms | 36.065 video/s | 228.525 W | 91.41% | 83.38% | 25.346 J | 6.337 J |
 
 `batch=4` 的每视频能耗比 `batch=3` 低约 `3.55%`，吞吐率高约 `5.21%`。因此若显存允许，batch=4 更合适，但“显卡更满”并不是主要变化。
 
-## 正式 batch=4 结果
+## 正式全 test：batch=2 与 batch=4
 
 正式结果使用单进程、单次模型加载，顺序跑完 558 条 test；不做显式 warm-up，首个 test batch 也计入统计。模型计时边界为“进入第一个原生 Vision Transformer block”到“GPU 上连续质量分数就绪”。模型/processor 加载、MP4 解码、裁剪缩放、processor/tokenizer、H2D 和 block 0 之前的 patch embedding 均不计入主延迟。
 
-| 项目 | 数值 |
-|---|---:|
-| test 视频数 | 558 |
-| 满 batch 数 | 139（另有最后 2 条） |
-| SRCC / PLCC | 0.769496 / 0.780177 |
-| KRCC | 0.567953 |
-| RMSE / MAE | 8.7130 / 6.7609 |
-| 模型平均耗时 | 112.714 ms / 4 videos |
-| 模型中位数 / P95 | 109.909 / 110.893 ms |
-| 折算 16 视频耗时 | 450.854 ms |
-| A100 平均功率 | 197.061 W |
-| A100 能耗 | 22.211 J / 4 videos |
-| 折算 16 视频能耗 | 88.846 J |
+| 项目 | batch=2 | batch=4 |
+|---|---:|---:|
+| test 视频数 | 558 | 558 |
+| SRCC / PLCC | 0.766415 / 0.776848 | 0.769496 / 0.780177 |
+| KRCC | 0.565905 | 0.567953 |
+| RMSE / MAE | 8.7734 / 6.8165 | 8.7130 / 6.7609 |
+| 模型平均耗时/批 | 62.259 ms / 2 | 112.714 ms / 4 |
+| 模型中位数 / P95 | 60.813 / 62.259 ms | 109.909 / 110.893 ms |
+| 等效 16 视频耗时 | **498.068 ms** | 450.854 ms |
+| 正式运行 A100 平均功率 | 208.349 W | 197.061 W |
+| 每批能耗 | 12.972 J | 22.211 J |
+| 等效 16 视频能耗 | **103.772 J** | 88.846 J |
 
-正式全 test 和短时 sweep 的功率窗口不同，因此正式能耗只使用正式运行自身的 `telemetry.csv`；功率占比讨论只在相同 sweep 协议内比较，不能用 sweep 的 228.525 W 替换正式运行的 197.061 W。
+正式全 test 和短时 sweep 的功率窗口不同，因此正式能耗只使用各自正式运行的 `telemetry.csv`；功率占比讨论只在相同 sweep 协议内比较。不能用 sweep 的 210.656/228.525 W 替换正式运行的 208.349/197.061 W。
+
+## Ours 唯一正式时间口径
+
+图中 `10.637、10.600、9.941、5.861、6.125、11.236 ms` 是上一版表格值，早于后来保留证据的“完整任务头”严格同步重测，现标记为 superseded，不再用于论文主表。唯一正式定义为：
+
+```text
+T_ours = N × 1.314 ms 物理光场
+       + 严格同步 CCD→融合
+       + 必要 bridge
+       + 完整任务头
+```
+
+例如 LGVQ 时间质量：
+
+```text
+7.884 ms  = 6 × 1.314 ms 物理光场
+1.961 ms  = 2 × frame fusion + 2 × video fusion
+0.483 ms  = frame→video bridge
+0.879 ms  = 完整 16 视频质量任务头
+-----------------------------------------------
+11.207 ms = 唯一正式 Ours 时间
+```
+
+因此 `10.637 ms` 不是同一边界下的另一次波动，而是旧的不完整聚合值；之后所有倍率和能耗统一使用下表的严格值。
 
 ## Ours：计入 A100 后的修正能耗
 
@@ -67,6 +90,7 @@ E_ours = 80.388 W × T_wall
 
 | 任务 | Qwen3-VL 时间 | Ours 时间 | 加速比 | Qwen3-VL 能耗 | Ours 组合能耗 | 能耗优势 |
 |---|---:|---:|---:|---:|---:|---:|
+| LGVQ 时间质量（16 视频，Qwen batch=2） | 498.068 ms | 11.207 ms | **44.44×** | 103.772 J | 1.634 J | **63.51×** |
 | LGVQ 时间质量（16 视频，Qwen batch=4） | 450.854 ms | 11.207 ms | **40.23×** | 88.846 J | 1.634 J | **54.37×** |
 | LGVQ 空间质量 | 74.438 ms | 10.949 ms | 6.80× | 6.242 J | 1.578 J | 3.96× |
 | ABO 图搜文 | 43.963 ms | 10.027 ms | 4.38× | 3.792 J | 1.446 J | 2.62× |
@@ -78,18 +102,19 @@ ABO 图搜图当前没有对应的 Ours 光学执行图，因此仍应留空，�
 
 ## 数据和复算
 
-- `evidence/formal_batch4/`：batch=4 全 test 的预测、逐 batch 计时和 50 ms 原始功率遥测。
+- `evidence/formal_batch2/`、`evidence/formal_batch4/`：对应全 test 的预测、逐 batch 计时和 50 ms 原始功率遥测。
 - `evidence/sweep_batch3/`：batch=3 的原始逐采样功率遥测与结果。
 - `evidence/t06_temporal_batch_sweep_a100.json`：batch=1/2/4/8/16 的同协议 sweep 参照。
 - `evidence/ccd_fusion_only_a100.*`、`task_heads_a100.json`：Ours 严格串行组件时间。
 - `evidence/optical_moe*_a100.json`、`t04_optical_electronics_power_a100.json`：各组件 A100 功率和并行残差时间。
 - `summary.json`：完整结构化汇总，并记录每个 evidence 文件的 SHA-256 与字节数。
-- `ours_combined_energy.csv`、`comparisons.csv`：可直接填表的数据。
+- `ours_combined_energy.csv`、`comparisons.csv`、`temporal_formal_batch_comparison.csv`：可直接填表的数据。
 - `build_report.py`：可复算脚本；运行 `python build_report.py` 会重建 JSON/CSV。
 
 服务器原始目录：
 
 ```text
 /DATA/DATA1/guest3/2026OpticsMoE_a100_measurements/20260908_temporal_batch3_sweep/
+/DATA/DATA1/guest3/2026OpticsMoE_a100_measurements/20260908_temporal_batch2_formal/
 /DATA/DATA1/guest3/2026OpticsMoE_a100_measurements/20260908_temporal_batch4_formal/
 ```

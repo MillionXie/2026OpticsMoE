@@ -34,8 +34,10 @@ common_power = read_json(EVIDENCE / "optical_moe_electronics_a100.json")
 spatial_power = read_json(EVIDENCE / "optical_moe_spatial_electronics_a100.json")
 openmoji_power = read_json(EVIDENCE / "t04_optical_electronics_power_a100.json")
 batch4 = read_json(EVIDENCE / "formal_batch4" / "report.json")
+batch2 = read_json(EVIDENCE / "formal_batch2" / "report.json")
 batch3 = read_json(EVIDENCE / "sweep_batch3" / "result.json")
 batch_sweep = read_json(EVIDENCE / "t06_temporal_batch_sweep_a100.json")
+batch16 = read_json(EVIDENCE / "t06_temporal_batch16_formal_a100.json")
 
 
 head_rows = {(row["task"], row["component"]): row for row in heads["components"]}
@@ -253,6 +255,21 @@ for row in energy_rows:
 
 summary = {
     "schema_version": 1,
+    "canonical_contract": {
+        "ours_timing": "six/three physical 1.314ms passes + strict synchronized CCD-to-fusion + required bridge + complete task head",
+        "ours_energy": "80.388W optical rig plus measured A100 board-power proxy over the same composed wall boundary",
+        "qwen_formal": "performance, latency, and energy must come from the same full-558 formal run; sweep power is occupancy evidence only",
+        "legacy_ours_times_ms_from_previous_table": {
+            "lgvq_temporal": 10.637,
+            "lgvq_spatial": 10.600,
+            "abo_image_to_text": 9.941,
+            "lsp": 5.861,
+            "salicon": 6.125,
+            "openmoji": 11.236,
+        },
+        "legacy_status": "superseded because those rows predate the retained strict full-task-head benchmark",
+    },
+    "batch2_formal": batch2,
     "batch4_formal": batch4,
     "batch3_sweep": batch3,
     "batch_sweep_reference": batch_sweep,
@@ -288,6 +305,31 @@ with (HERE / "comparisons.csv").open("w", newline="", encoding="utf-8-sig") as h
     writer = csv.DictWriter(handle, fieldnames=list(comparison_rows[0]))
     writer.writeheader()
     writer.writerows(comparison_rows)
+
+formal_batch_rows = []
+for report in (batch2, batch4, batch16):
+    formal_batch_rows.append(
+        {
+            "batch_size": report["batch_size_videos"],
+            "test_videos": report["test_videos"],
+            "srcc": report["performance"]["srcc"],
+            "plcc": report["performance"]["plcc"],
+            "mean_ms_per_batch": report["model_boundary_full_batch_cuda_ms"]["mean"],
+            "same_16_video_ms": report["same_workload_16_video_model_ms"],
+            "formal_active_mean_w": report["telemetry"]["active_mean_w"],
+            "same_16_video_energy_j": report["same_workload_16_video_measured_active_energy_j"],
+            "ours_canonical_ms": energy_rows[0]["composed_wall_ms"],
+            "ours_combined_energy_j": energy_rows[0]["combined_optical_plus_a100_energy_j"],
+            "speedup_x": report["same_workload_16_video_model_ms"] / energy_rows[0]["composed_wall_ms"],
+            "energy_reduction_x": report["same_workload_16_video_measured_active_energy_j"] / energy_rows[0]["combined_optical_plus_a100_energy_j"],
+        }
+    )
+with (HERE / "temporal_formal_batch_comparison.csv").open(
+    "w", newline="", encoding="utf-8-sig"
+) as handle:
+    writer = csv.DictWriter(handle, fieldnames=list(formal_batch_rows[0]))
+    writer.writeheader()
+    writer.writerows(formal_batch_rows)
 
 print(json.dumps({
     "batch4": {
