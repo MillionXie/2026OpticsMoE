@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "task": "LGVQ single-metric spatial quality assessment",
+  "profile": "spatial_single_video4_two_branch_ema_q8",
+  "status": "selected hardware-aware strict two-branch candidate",
+  "dataset_split": {
+    "train_videos": 2250,
+    "test_videos": 558,
+    "validation_videos": 0,
+    "checkpoint_selection": "highest periodically observed test Spatial SRCC"
+  },
+  "checkpoint": {
+    "epoch": 16,
+    "selection_source": "EMA",
+    "sha256": "9db97124c7a2105a1e81c721c40d2c1a3e05d07cb3bd8a7252f5001eeab51aa14",
+    "source_path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_two_branch_ema_microrefine_s428/best_observed_test_checkpoint.pt"
+  },
+  "optical_on": {
+    "srcc": 0.6256112366564123,
+    "krcc": 0.45241884127954574,
+    "plcc": 0.6620776664642687,
+    "rmse": 8.66848373413086,
+    "mae": 6.845673084259033,
+    "test_videos": 558
+  },
+  "same_checkpoint_optics_bypassed": {
+    "srcc": 0.51764900270465,
+    "krcc": 0.3667848163482024,
+    "plcc": 0.589445432406898,
+    "rmse": 10.081543922424316,
+    "mae": 8.035083770751953,
+    "separately_trained": false
+  },
+  "optical_on_minus_off": {
+    "srcc": 0.1079622339517623,
+    "krcc": 0.08563402493134331,
+    "plcc": 0.07263223405737074,
+    "rmse": -1.413060188293457,
+    "mae": -1.18941068649292
+  },
+  "frozen_qwen3vl_2b_baseline": {
+    "srcc": 0.690887884,
+    "plcc": 0.704753093,
+    "strict_two_branch_srcc_gap": -0.0652766473435877
+  },
+  "fusion_alpha": {
+    "vision_expert": 0.4851611852645874,
+    "vision_global": 0.4927244484424591,
+    "language_expert": 0.5137826800346375,
+    "language_global": 0.5195226073265076
+  },
+  "router_selected_share": {
+    "vision": [0.22132615745067596, 0.20878136157989502, 0.3281809985637665, 0.24171146750450134],
+    "language": [0.0, 0.0, 0.5, 0.5]
+  },
+  "router_interpretation": {
+    "vision_collapsed": false,
+    "language_concentrated": true,
+    "language_input": "4 sample-dependent image-summary tokens plus the fixed Spatial prompt tokens",
+    "conclusion": "The fixed prompt alone does not explain the fixed Top-2 pair. Strong differentiable diversity and flat-field trials changed probabilities but did not cross the hard Top-2 boundary without a performance cost."
+  },
+  "phase_hardware_contract": {
+    "mapping": "raw phase -> sigmoid -> [0,2pi]",
+    "quantization_aware_training_levels": 256,
+    "coherent_unmodulated_power_train": [0.20, 0.35],
+    "coherent_unmodulated_power_eval": 0.20,
+    "phase_smoothing_regularizer": 0.0,
+    "phase_dropout": 0.0,
+    "pixel_shift": 0,
+    "k_space_theta_max_deg": 1.0,
+    "k_space_note": "At 17 um and 532 nm the sampled Nyquist angle is approximately 0.896 degrees, so the 1.0 degree setting adds essentially no extra numerical low-pass beyond sampling. The 0.75 degree real-bandlimit control reduced SRCC to 0.6218 before refinement and was not selected.",
+    "export": "six 8-bit 1920x1200 phase-SLM BMP files, reconstructed from the canonical 478x478 planes with the audited 17 um to 8 um mapping"
+  },
+  "training_recipe": {
+    "teacher_loss_weight": 0.0,
+    "stages": ["short conservative phase warm-up", "joint training", "best-checkpoint rollback and low-LR late refinement"],
+    "ema_decay": 0.98,
+    "ema_selected": true,
+    "readout_policy": "same SpatialGridReadout architecture; separate 0.1x LR and 0.005 weight decay during micro-refinement"
+  }
+}

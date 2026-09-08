@@ -76,7 +76,9 @@
   },
   "router_interpretation": {
     "vision_collapsed": false,
-    "language_fixed_pair_reason": "all spatial samples use the same fixed text prompt"
+    "language_concentrated": true,
+    "language_input": "four sample-dependent image-summary tokens concatenated with the fixed Spatial prompt",
+    "correction": "the fixed prompt alone cannot explain the fixed Top-2 pair"
   },
   "comparison_to_previous_vgg_candidate": {
     "previous_srcc": 0.6393237619075796,

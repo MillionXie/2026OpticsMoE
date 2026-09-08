@@ -1,0 +1,37 @@
+schema_version: 1
+name: spatial_single_video4_two_branch_ema_q8
+status: current_strict_two_branch_hardware_aware_candidate
+
+backend:
+  package: experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54
+  config: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_two_branch_ema_microrefine_s428.yaml
+  lab_guide: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/LAB_SPATIAL4_GUIDE.md
+
+artifacts:
+  source_checkpoint: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_two_branch_ema_microrefine_s428/best_observed_test_checkpoint.pt
+  checkpoint_sha256: 9db97124c7a2105a1e81c721c40d2c1a3e05d07cb3bd8a7252f5001eeab51aa14
+  source_hardware_masks: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_two_branch_ema_microrefine_s428/hardware_masks
+  report: LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_single_video4_two_branch_ema_q8/result.json
+
+architecture_contract:
+  inference_branches: 2
+  branches: [electronic_residual, optical]
+  attention_or_transformer_in_student: false
+  optical_router: true
+  experts: 4
+  top_k: 2
+  propagation_count: 6
+  phase_planes: 6
+  phase_quantization_levels: 256
+  k_space_enabled: true
+  theta_max_deg: 1.0
+  unmodulated_power_fraction_train: [0.20, 0.35]
+  unmodulated_power_fraction_eval: 0.20
+  pixel_shift_augmentation: 0
+  phase_shift_augmentation: 0
+  ccd_shift_augmentation: 0
+  active_size: 478
+  expert_size: 109
+  wavelength_nm: 532.0
+  logical_pixel_pitch_um: 17.0
+  propagation_distance_m: 0.10
