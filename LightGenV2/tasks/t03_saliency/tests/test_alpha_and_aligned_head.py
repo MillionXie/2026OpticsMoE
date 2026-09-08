@@ -6,9 +6,9 @@ import torch
 
 from LightGenV2.tasks.t03_saliency.aligned_baseline import AlignedReadout
 from LightGenV2.tasks.t03_saliency.settings import load_settings
-from LightGenV2.tasks.t03_saliency.modeling import architecture_label
+from LightGenV2.tasks.t03_saliency.modeling import architecture_label, initialize_student
 from LightGenV2.tasks.t03_saliency.training import staged_epoch
-from experiments.qwen3_vl_embedding_2b_caltech101_balanced_optical_fusion_ablation.modeling import _range_gate
+from experiments.qwen3_vl_embedding_2b_caltech101_balanced_optical_fusion_ablation.modeling import _range_gate, _ScaleMatchedFusionMixin
 
 TASK = Path(__file__).resolve().parents[1]
 
@@ -46,3 +46,32 @@ def test_stages_have_reproducible_noncompounding_lrs():
     assert end["lr_feature_phase"] == pytest.approx(.0002)
     assert end["hard_balance_weight"] == pytest.approx(.1)
     assert staged_epoch(opt, s, 100) == end
+
+
+def test_warmstart_reencodes_alpha_instead_of_reinterpreting_old_logit(tmp_path):
+    class Fusion(_ScaleMatchedFusionMixin, torch.nn.Module):
+        def __init__(self, settings):
+            super().__init__()
+            self.block1_optical_fusion_logit = torch.nn.Parameter(torch.zeros(()))
+            self.block2_optical_fusion_logit = torch.nn.Parameter(torch.zeros(()))
+            self._configure_balanced_fusion(settings)
+
+    def model(settings):
+        core = torch.nn.Module()
+        core.hybrid = Fusion(settings)
+        return SimpleNamespace(core=core, head=torch.nn.Linear(1, 1), checkpoint_architecture=architecture_label(settings))
+
+    old = load_settings(TASK / "configs/moe_dc20_mean_only_continue.yaml")
+    source = model(old)
+    path = tmp_path / "source.pt"
+    torch.save({"architecture": source.checkpoint_architecture, "epoch": 75,
+                "core": source.core.state_dict(), "saliency_head": source.head.state_dict()}, path)
+    target_settings = load_settings(TASK / "configs/moe_staged_alpha_ge040.yaml")
+    target_settings.initialization_checkpoint = path
+    target = model(target_settings)
+    initialize_student(target, target_settings)
+    assert float(target.core.hybrid.block1_optical_fusion) == pytest.approx(.45)
+    assert float(target.core.hybrid.block2_optical_fusion) == pytest.approx(.45)
+    target_settings.reset_fusion_on_warmstart = False
+    with pytest.raises(RuntimeError, match="architecture mismatch"):
+        initialize_student(target, target_settings)

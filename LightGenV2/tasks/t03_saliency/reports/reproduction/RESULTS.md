@@ -35,9 +35,9 @@
 两方数据、密度生成和CC算法一致，但原生Qwen24层视觉主干/读出头与光电两层/读出头均不同；
 这属于系统对比，不是总参数量或训练预算完全相同的模块消融。
 
-## 正在运行（未完成，不填写预测成绩）
+## 上轮训练状态（新alpha对照见下方链接）
 
-- `baseline_retrain_seed42_20260908`：新初始化显著性头训练30epoch，Qwen保持冻结。
+- `baseline_retrain_seed42_20260908`：已完成；新初始化显著性头训练30epoch，Qwen保持冻结，CC=0.87899109，best epoch30。
 - `moe_dc20_mean_only_continue_seed42`：去掉CCD对数/上限裁剪，关闭16px错位扰动，原best迁移初始化，100epoch。
 - `moe_dc20_mean_only_cc_continue_seed42`：同上，CC loss权重0.5→1.0。
 
@@ -45,8 +45,9 @@
 不增加attention/Transformer/VGG或额外支路。只有best/last，不生成周期PT。
 由于CCD归一化变更，不能拿旧0.8291冒充新候选的初始/最终成绩。新候选应独立查看epoch0和最佳epoch。
 初期退化不能证明最终失败，同样启动训练也不能证明已经改善。
-截至本轮检查：mean_only候选epoch0 CC=0.828469，第一轮约0.8219，尚未改善；
-epoch0已独立保存为新候选best，原0.8291权重未覆盖。两个候选已正常完成前向/反向与第一轮训练。
+最初mean_only候选epoch0 CC=0.828469，第一轮约0.8219；后续已提升至epoch75的0.84879587，
+检查时训练尚未结束。CC加倍候选约0.8476。原0.8291权重未覆盖。
+新的同读出头与alpha≥0.4对照见 [实验说明](ALPHA_AND_HEAD_COMPARISON.md)。
 
 日志统一在 `runs/simulation/launch_reproduction_20260908/`：
 `baseline_retrain.log`、`mean_only.log`、`mean_only_cc.log`。

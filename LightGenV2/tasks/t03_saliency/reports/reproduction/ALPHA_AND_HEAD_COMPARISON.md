@@ -7,6 +7,7 @@
 - CC损失权重加倍候选：约0.8476，尚未优于原权重。
 - 原Qwen头固定权重复评：0.8810325。
 - 原Qwen头重新初始化训练30epoch：0.87899109，best epoch30；属于新的单seed训练复现，非多seed统计。
+  原始证据：[重训复评JSON](evidence/baseline_retrain_20260908.json)。
 
 这些数值均为同一5000张公开test上的CC，有测试选模偏差。新alpha对照尚无最终成绩。
 
@@ -67,3 +68,10 @@ python -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config LightGe
 再更改本机数据/模型路径；禁止引用仍在不断覆盖的另一个run的best作为两组的共同初始权重。
 正式日志位于 `runs/simulation/alpha_comparison_20260908/`；配置命名对应最终run。
 最终查看 `selected_checkpoint_test_evaluation.json`，结合CC、NSS、SIM、两层alpha和专家选择占比选候选。
+
+## 启动核验
+
+三个任务已启动：free在物理GPU0，ge040与新Qwen对照共享空闲A100（物理GPU6）；不停止其他人的进程。
+两组alpha候选epoch0均为CC=0.716815，实际alpha均为0.45。相同起点核验通过，
+但比低alpha权重的0.8488低很多；这是权重比例直接改变后的分布变化，不是100epoch训练后的结果。
+新Qwen对照已进入第一轮反向训练，不能填写旧头的0.8810作为其成绩。
