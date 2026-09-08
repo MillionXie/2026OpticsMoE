@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "device": "NVIDIA A100-PCIE-40GB",
+  "precision": "float32",
+  "execution": "eager torch.inference_mode; no torch.compile; synchronized each measured call",
+  "warmup_calls_per_component": 100,
+  "measured_calls_per_component": 1000,
+  "source_report_on_server": "/DATA/DATA1/guest3/2026OpticsMoE_a100_measurements/20260908_fusion_boundary/optical_moe_electronics_a100_remeasure.json",
+  "components": [
+    {
+      "task": "LGVQ temporal, 16 videos parallel",
+      "component": "task_head",
+      "cuda_median_ms": 0.860160,
+      "cuda_p95_ms": 0.901120,
+      "wall_median_ms": 0.878816,
+      "wall_p95_ms": 0.919776,
+      "shape": "vision [16,4,49,192] + sequence [16,42,192] -> 16 MOS"
+    },
+    {
+      "task": "LGVQ temporal, 16 videos parallel",
+      "component": "required_frame_to_video_bridge",
+      "cuda_median_ms": 0.464896,
+      "cuda_p95_ms": 0.487424,
+      "wall_median_ms": 0.482701,
+      "wall_p95_ms": 0.505503
+    },
+    {
+      "task": "LGVQ spatial, single video 4 frames",
+      "component": "task_head",
+      "cuda_median_ms": 0.823296,
+      "cuda_p95_ms": 0.869376,
+      "wall_median_ms": 0.841088,
+      "wall_p95_ms": 0.887393,
+      "shape": "four 14x14 frame grids + 42 language rows -> MOS"
+    },
+    {
+      "task": "LGVQ spatial, single video 4 frames",
+      "component": "required_frame_to_sequence_bridge",
+      "cuda_median_ms": 0.246784,
+      "cuda_p95_ms": 0.268288,
+      "wall_median_ms": 0.263436,
+      "wall_p95_ms": 0.285816
+    },
+    {
+      "task": "ABO image-to-title T08",
+      "component": "task_head",
+      "cuda_median_ms": 0.134144,
+      "cuda_p95_ms": 0.156672,
+      "wall_median_ms": 0.150472,
+      "wall_p95_ms": 0.174624,
+      "shape": "last valid row [1,224] -> LayerNorm -> Linear 64 -> L2 embedding"
+    },
+    {
+      "task": "LSP keypoint",
+      "component": "task_head",
+      "cuda_median_ms": 0.970752,
+      "cuda_p95_ms": 1.038387,
+      "wall_median_ms": 0.988892,
+      "wall_p95_ms": 1.057505,
+      "shape": "[1,196,192] -> progressive decoder -> [1,14,56,56]"
+    },
+    {
+      "task": "SALICON saliency",
+      "component": "task_head",
+      "cuda_median_ms": 1.231872,
+      "cuda_p95_ms": 1.369190,
+      "wall_median_ms": 1.249554,
+      "wall_p95_ms": 1.389341,
+      "shape": "[1,196,192] -> progressive decoder -> [1,1,224,224]"
+    },
+    {
+      "task": "OpenMoji interaction",
+      "component": "task_head",
+      "cuda_median_ms": 1.428480,
+      "cuda_p95_ms": 1.490995,
+      "wall_median_ms": 1.446668,
+      "wall_p95_ms": 1.509714,
+      "shape": "[1,196,192] + condition -> three residual blocks -> category/edit/task outputs"
+    },
+    {
+      "task": "OpenMoji interaction",
+      "component": "required_language_to_vision_bridge",
+      "cuda_median_ms": 0.223232,
+      "cuda_p95_ms": 0.251904,
+      "wall_median_ms": 0.240391,
+      "wall_p95_ms": 0.268913
+    }
+  ]
+}
