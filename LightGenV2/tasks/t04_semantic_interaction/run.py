@@ -30,6 +30,9 @@ PROFILES = {
     "main_dc20": "moe_optical_router_scale_matched_dc20.yaml",
     "d2nn_dc20": "d2nn_active_expert_matched_dc20.yaml",
     "qwen_pending": "qwen_frozen_pending_5090d.yaml",
+    "embedding_alpha40": "embedding_alpha40.yaml",
+    "embedding_alpha40_lean": "embedding_alpha40_lean.yaml",
+    "embedding_d2nn_alpha40": "embedding_d2nn_alpha40.yaml",
 }
 PHASES = {"prepare", "train", "evaluate", "all"}
 
@@ -49,6 +52,9 @@ def _git_value(*arguments: str) -> str | None:
 
 
 def _ensure_data(settings: Any, device: torch.device) -> dict[str, Any]:
+    if settings.embedding_only:
+        from .embedding_data import prepare_embedding_data
+        return prepare_embedding_data(settings)
     if not settings.train_manifest.is_file() or not settings.test_manifest.is_file():
         summary = prepare_dataset(settings)
     else:
@@ -107,11 +113,12 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     _json(
         settings.output_dir / "split_contract.json",
         {
-            "dataset": "OpenMoji semantic interaction v1",
+            "dataset": summary.get('type', 'OpenMoji semantic interaction v1'),
             "train": 5000,
             "test": 1000,
             "validation": None,
-            "split_rule": "same distribution, deterministic disjoint seeds",
+            "split_rule": ('same distribution; deterministic seeds; deduplicated source-grid/instruction pairs'
+                           if settings.embedding_only else 'same distribution, deterministic disjoint seeds'),
             "task_counts_train": summary["train"]["task_counts"],
             "task_counts_test": summary["test"]["task_counts"],
             "selection_biased": args.profile != "qwen_pending",

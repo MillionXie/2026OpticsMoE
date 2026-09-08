@@ -182,6 +182,11 @@ def train(settings: Settings, device: torch.device) -> dict[str, Any]:
     best_score = -math.inf
     best_epoch = -1
     started = time.perf_counter()
+    phase_modules = {name: module for name, module in model.named_modules()
+                     if settings.embedding_only and callable(getattr(module, 'phase', None))
+                     and ('raw_phase' in module._parameters or 'raw_router_phase' in module._parameters)}
+    phase_initial = {name: module.phase().detach().cpu().float().clone() for name, module in phase_modules.items()}
+    phase_history = []
     for epoch in range(1, settings.epochs + 1):
         model.set_phase_trainable(True)
         _set_phase_dropout(model, True)
@@ -219,6 +224,8 @@ def train(settings: Settings, device: torch.device) -> dict[str, Any]:
                 losses["router_hard_load"] = hard_load
                 losses["router_semantic_code"] = semantic_code
                 losses["phase_dc"] = dc
+            if not bool(torch.isfinite(losses['total'])):
+                raise FloatingPointError('Non-finite training loss')
             losses["total"].backward()
             grad_norm = torch.nn.utils.clip_grad_norm_(
                 [parameter for parameter in model.parameters() if parameter.requires_grad],
@@ -243,6 +250,24 @@ def train(settings: Settings, device: torch.device) -> dict[str, Any]:
         train_metrics = {name: value / count for name, value in totals.items()}
         train_metrics["samples"] = count
         train_metrics["epoch_seconds"] = time.perf_counter() - epoch_started
+        if settings.embedding_only:
+            model.assert_contract()
+            phases = {}
+            for name, module in phase_modules.items():
+                delta = module.phase().detach().cpu().float() - phase_initial[name]
+                wrapped = torch.atan2(torch.sin(delta), torch.cos(delta))
+                value = module._parameters.get('raw_phase', module._parameters.get('raw_router_phase'))
+                phases[name] = {'wrapped_change_rms_rad': float(wrapped.square().mean().sqrt()),
+                                'last_batch_raw_parameter_grad_rms': None if value.grad is None else float(value.grad.float().square().mean().sqrt())}
+            phase_history.append({'epoch': epoch, 'phases': phases})
+            _json(settings.output_dir / 'metrics' / 'phase_training_audit.json', phase_history)
+            for modality in ('language', 'vision'):
+                core = getattr(model, modality + '_core')
+                for stage in (1, 2):
+                    alpha = float(getattr(core, f'block{stage}_optical_fusion').detach())
+                    if not alpha > 0.4:
+                        raise RuntimeError('Fusion alpha contract violated')
+                    train_metrics[f'{modality}_alpha{stage}'] = alpha
         scheduled_test = (
             epoch == 1
             or epoch % settings.test_interval_epochs == 0
@@ -408,6 +433,18 @@ def evaluate_selected(settings: Settings, device: torch.device, checkpoint: Path
         for row in predictions:
             handle.write(json.dumps(row, ensure_ascii=False) + "\n")
     legacy._save_gallery(settings.output_dir / "best_visualization" / "test_examples", galleries, settings)
+    if settings.embedding_only:
+        for core in (model.language_core, model.vision_core):
+            core.set_fusion_ablation('remove_optical')
+        removed, _, _ = legacy._evaluate(model, loader, settings, device)
+        normal_score = float(metrics['overall']['changed_cell_accuracy'])
+        removed_score = float(removed['overall']['changed_cell_accuracy'])
+        _json(settings.output_dir / 'same_checkpoint_remove_optical.json', {
+            'checkpoint': str(checkpoint), 'retrained': False,
+            'protocol': 'remove both optical feature paths; same weights; electronic coefficient restored to one',
+            'normal': metrics, 'remove_optical': removed,
+            'changed_accuracy_drop_percentage_points': 100 * (normal_score - removed_score),
+        })
     return result
 
 

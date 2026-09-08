@@ -1,5 +1,26 @@
 # T04 语义交互（OpenMoji）
 
+## 当前优化入口：2026-09-08 embedding-only / alpha > 0.4
+
+新 profile 为 `embedding_alpha40`（光 Router Top-2）、`embedding_alpha40_lean`（末端卷积由3组减为2组）和
+`embedding_d2nn_alpha40`（普通 D2NN 对照）。**下文98%的历史结果不属于这些新模型。**
+新模型文本只做冻结 Qwen 词表查表和正弦位置编码，不使用语言 TF 缓存；视觉只用冻结 Qwen patch/位置前端。
+两个模态都各有光 Router → expert → global（D2NN 对照没有 Router）；四个光电融合 alpha 均约束在
+`[0.4001, 0.95]`，初始0.60。语言 global 后采用固定位置系数的可学习线性汇总，不使用 mean/max 拼接或 attention。
+新模型随机初始化任务网络，不继承旧语言TF教师或旧任务头。每个光阶段只保留一条电子残差和一条光支路；
+末端仍有指令条件卷积和类别/编辑双输出头。详见[新架构及运行说明](reports/reproduction/EMBEDDING_ALPHA40.md)。
+
+运行（从本仓库根目录，先 prepare 一次，再按可用显卡分别启动）：
+
+```bash
+python -m LightGenV2.tasks.t04_semantic_interaction.run --profile embedding_alpha40 --phase prepare --device cpu
+python -m LightGenV2.tasks.t04_semantic_interaction.run --profile embedding_alpha40 --phase all
+python -m LightGenV2.tasks.t04_semantic_interaction.run --profile embedding_alpha40_lean --phase all
+python -m LightGenV2.tasks.t04_semantic_interaction.run --profile embedding_d2nn_alpha40 --phase all
+```
+
+下面是保留供核对的旧协议。
+
 输入是 `224×224` OpenMoji 场景和文本指令，指令任务为 `add / replace / move / remove`；输出是 `6×6` 类别网格和编辑网格，再由固定 OpenMoji 合成器得到目标图像。
 
 论文口径、baseline差异和复现命令统一见 [reports/reproduction/README.md](reports/reproduction/README.md)。

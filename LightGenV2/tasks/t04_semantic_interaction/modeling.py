@@ -43,6 +43,12 @@ def _compact(settings: Settings) -> Any:
     compact.output_dir = settings.output_dir
     compact.optical_fusion_initial = settings.optical_fusion_initial
     compact.fusion_alpha_initial = settings.optical_fusion_initial
+    if settings.embedding_only:
+        compact.fusion_alpha_min = settings.fusion_alpha_minimum
+        compact.fusion_alpha_max = settings.fusion_alpha_maximum
+        compact.language_optical_max_shift_pixels = 0
+        compact.language_optical_phase_shift_pixels = 0
+        compact.language_optical_ccd_shift_pixels = 0
     return compact
 
 
@@ -172,7 +178,11 @@ class LightGenOpenMojiEditor(OpenMojiOpticalEditor):
 
 
 def build_model(settings: Settings, device: torch.device) -> LightGenOpenMojiEditor:
-    model = LightGenOpenMojiEditor(settings).to(device)
+    if settings.embedding_only:
+        from .embedding_model import EmbeddingOnlyEditor
+        model = EmbeddingOnlyEditor(settings).to(device)
+    else:
+        model = LightGenOpenMojiEditor(settings).to(device)
     model.vision_stem.requires_grad_(False).eval()
     return model
 
@@ -188,6 +198,9 @@ def _sha256(path: Path) -> str:
 def initialize_from_legacy(
     model: LightGenOpenMojiEditor, settings: Settings
 ) -> dict[str, Any]:
+    if settings.embedding_only:
+        return {'mode': 'random_task_network_frozen_qwen_patch_and_token_embedding',
+                'legacy_weights_loaded': False, 'contextual_teacher_used': False}
     path = settings.legacy_warmstart_checkpoint
     payload = torch.load(path, map_location="cpu", weights_only=False)
     source = payload.get("ema_model", payload["model"])

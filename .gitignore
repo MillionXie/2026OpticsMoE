@@ -136,3 +136,5 @@ hardware_sessions
 !/LightGenV2/tasks/*/releases/README.md
 !/LightGenV2/tasks/*/reports/figures/
 !/LightGenV2/tasks/*/reports/figures/**
+# T04 reproducible generated scenes/caches, not source code.
+LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/

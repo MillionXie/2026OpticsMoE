@@ -65,6 +65,18 @@ class Settings:
         self.electronic_width = int(d("model.electronic_width", 192))
         self.max_language_tokens = int(d("model.max_language_tokens", 64))
         self.optical_fusion_initial = float(d("model.optical_fusion_initial", 0.055))
+        self.embedding_only = bool(d("model.embedding_only", False))
+        self.fusion_alpha_minimum = float(d("model.fusion_alpha_minimum", 0.01))
+        self.fusion_alpha_maximum = float(d("model.fusion_alpha_maximum", 0.95))
+        self.editor_depth = int(d("model.editor_depth", 3))
+        self.position_scale = float(d("model.position_scale", 0.1))
+        if self.embedding_only:
+            if not 0.4 < self.fusion_alpha_minimum < self.optical_fusion_initial < self.fusion_alpha_maximum < 1:
+                raise ValueError('Embedding-only contract requires 0.4 < alpha_min < initial < alpha_max < 1')
+            if self.editor_depth not in (1, 2, 3):
+                raise ValueError('editor_depth must be 1, 2, or 3')
+            if self.prompt_cache_path.name == 'prompt_hidden.pt':
+                raise ValueError('Embedding-only profile must not reuse contextual prompt_hidden.pt')
         self.optical_shift_pixels = 16
         self.phase_dropout_p = 0.08
         self.epochs = int(d("training.epochs", 40))
