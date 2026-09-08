@@ -6,6 +6,7 @@ import argparse
 import datetime as dt
 import json
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -93,6 +94,10 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     if args.run_dir:
         settings.output_dir = Path(args.run_dir).expanduser().resolve()
     settings.output_dir.mkdir(parents=True, exist_ok=True)
+    if settings.embedding_only and args.phase in {'train', 'all'} and any(
+        (settings.output_dir / name).exists() for name in ('best_checkpoint.pt', 'last_checkpoint.pt')
+    ):
+        raise FileExistsError('Training output already contains weights; use a new --run-dir to preserve the run')
     device = torch.device(args.device or ("cuda" if torch.cuda.is_available() else "cpu"))
     _json(settings.output_dir / "resolved_config.json", settings.to_dict())
     _json(settings.output_dir / "environment.json", _environment(device))
@@ -106,6 +111,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "seed": settings.seed,
             "git_commit": _git_value("rev-parse", "HEAD"),
             "started_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+            "command": [sys.executable, *sys.argv],
+            "working_directory": str(Path.cwd()),
             "selection": "maximum test changed-cell accuracy at epoch 1/every 5/final",
         },
     )
