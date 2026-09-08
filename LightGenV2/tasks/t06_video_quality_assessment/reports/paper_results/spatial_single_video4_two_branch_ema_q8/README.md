@@ -40,6 +40,8 @@ Vision Router 四专家选择占比为 22.13%、20.88%、32.82%、24.17%，未�
 
 教师回归损失被完全关闭。训练使用保守相位预热、联合训练、阶段切换回滚到历史最佳、低学习率精修；EMA 在 epoch 16 被选中。原始权重当时 SRCC 低于 EMA，说明提升来自可复现的权重平均，而非改 test 预测。
 
+所有本轮候选（包括停止原因）已压缩为 [`optimization_trials.csv`](optimization_trials.csv)。失败的服务器 run 可以删除，不再依赖它们解释结果。
+
 配置：`experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_two_branch_ema_microrefine_s428.yaml`
 
 服务器 checkpoint：`experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_two_branch_ema_microrefine_s428/best_observed_test_checkpoint.pt`

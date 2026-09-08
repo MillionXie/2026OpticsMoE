@@ -1,0 +1,12 @@
+trial,status,best_epoch,best_srcc,selection,conclusion
+s420,stopped,0,0.625095,raw,"0.004/0.007 phase/router LR reheating damaged a mature checkpoint"
+s421,stopped,0,0.625095,raw,"no visual-token gain control reached the same negative conclusion"
+s422,stopped,0,0.621792,raw,"real 0.75-degree k-space bandlimit reduced performance"
+s423,completed,21,0.625568,ema,"rollback-safe conservative three-stage training improved the source"
+s424,completed,21,0.625292,ema,"moderate language-router diversity did not improve the selected model"
+s425,stopped,3,0.613852,raw,"halving the readout width underfit and was rejected"
+s426,completed,21,0.625502,ema,"zero-start image-token-focused readout did not beat the unchanged head"
+s427,completed,21,0.625449,ema,"lower-LR image-token-focused readout also did not beat the unchanged head"
+s428,completed,16,0.625611,ema,"selected low-LR EMA micro-refinement"
+s429,completed,0,0.625581,raw,"strong router diversity changed soft probabilities but not the hard expert pair"
+s430,stopped,0,0.625559,raw,"four-window flat-fielding did not remove language-router concentration"
