@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import copy
 import hashlib
 import json
 import math
@@ -171,6 +172,10 @@ def curriculum_values(
             settings.serial_router_importance_weight,
             settings.curriculum_serial_router_importance_weight_final,
         ),
+        "serial_router_diversity_weight": blend(
+            settings.serial_router_diversity_weight,
+            settings.curriculum_serial_router_diversity_weight_final,
+        ),
         "router_noise_std": blend(
             settings.router_noise_std, settings.curriculum_router_noise_std_final
         ),
@@ -257,6 +262,7 @@ def _optimizer(
     model: nn.Module, settings: ExperimentSettings
 ) -> torch.optim.Optimizer:
     electronic: list[nn.Parameter] = []
+    readout: list[nn.Parameter] = []
     feature_phase: list[nn.Parameter] = []
     router_phase: list[nn.Parameter] = []
     for name, parameter in model.named_parameters():
@@ -266,6 +272,8 @@ def _optimizer(
             router_phase.append(parameter)
         elif "raw_" in name and "phase" in name:
             feature_phase.append(parameter)
+        elif name.startswith("readout."):
+            readout.append(parameter)
         else:
             electronic.append(parameter)
     groups = [
@@ -274,6 +282,12 @@ def _optimizer(
             "lr": settings.learning_rate,
             "weight_decay": settings.weight_decay,
             "name": "electronic",
+        },
+        {
+            "params": readout,
+            "lr": settings.learning_rate * settings.readout_learning_rate_factor,
+            "weight_decay": settings.readout_weight_decay,
+            "name": "readout",
         },
         {
             "params": feature_phase,
@@ -296,6 +310,73 @@ def _optimizer(
     return torch.optim.AdamW(groups)
 
 
+def _training_stage_factors(
+    settings: ExperimentSettings, epoch: int
+) -> tuple[str, dict[str, float]]:
+    """Return per-parameter-group multipliers for the three-stage recipe."""
+
+    if settings.phase_warmup_epochs and epoch <= settings.phase_warmup_epochs:
+        return "optical_phase_warmup", {
+            "electronic": 0.0,
+            "readout": 0.0,
+            "feature_phase": 1.0,
+            "router_phase": 1.0,
+        }
+    if settings.late_refine_start_epoch and epoch >= settings.late_refine_start_epoch:
+        return "late_refine", {
+            "electronic": settings.late_refine_electronic_lr_factor,
+            "readout": settings.late_refine_readout_lr_factor,
+            "feature_phase": settings.late_refine_phase_lr_factor,
+            "router_phase": settings.late_refine_router_lr_factor,
+        }
+    return "joint", {
+        "electronic": 1.0,
+        "readout": 1.0,
+        "feature_phase": 1.0,
+        "router_phase": 1.0,
+    }
+
+
+def _phase_smoothness_loss(model: nn.Module) -> torch.Tensor:
+    """Wrapped total variation of every trainable physical phase plane."""
+
+    terms: list[torch.Tensor] = []
+    for name, parameter in model.named_parameters():
+        if "raw_" not in name or "phase" not in name:
+            continue
+        phasor = torch.exp(1j * (2.0 * math.pi * torch.sigmoid(parameter)))
+        terms.extend(
+            (
+                (phasor[..., 1:, :] - phasor[..., :-1, :]).abs().square().mean(),
+                (phasor[..., :, 1:] - phasor[..., :, :-1]).abs().square().mean(),
+            )
+        )
+    if not terms:
+        return next(model.parameters()).new_zeros(())
+    return torch.stack(terms).mean()
+
+
+class _ModelEma:
+    """Small, dependency-free EMA whose shadow model is directly evaluable."""
+
+    def __init__(self, model: nn.Module, decay: float) -> None:
+        self.module = copy.deepcopy(model).eval()
+        self.module.requires_grad_(False)
+        self.decay = float(decay)
+        self.started = False
+
+    @torch.no_grad()
+    def update(self, model: nn.Module, *, initialize: bool = False) -> None:
+        source = model.state_dict()
+        for name, value in self.module.state_dict().items():
+            incoming = source[name].detach()
+            if initialize or not value.is_floating_point():
+                value.copy_(incoming)
+            else:
+                value.lerp_(incoming, 1.0 - self.decay)
+        self.started = True
+
+
 def _file_sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -312,6 +393,9 @@ def _checkpoint(
     *,
     epoch: int,
     metrics: Mapping[str, Any] | None,
+    state_dict: Mapping[str, torch.Tensor] | None = None,
+    selection_source: str = "raw",
+    ema_state_dict: Mapping[str, torch.Tensor] | None = None,
 ) -> None:
     payload = {
         "schema_version": 1,
@@ -319,9 +403,10 @@ def _checkpoint(
         "target_name": settings.target_name,
         "prompt": settings.prompt,
         "epoch": int(epoch),
-        "state_dict": model.state_dict(),
+        "state_dict": model.state_dict() if state_dict is None else dict(state_dict),
         "optimizer": optimizer.state_dict(),
         "metrics_optical_on": dict(metrics or {}),
+        "selection_source": selection_source,
         "settings": resolved_dict(settings),
         "selection_policy": (
             f"highest periodically observed {settings.target_name} test SRCC; "
@@ -334,6 +419,8 @@ def _checkpoint(
             "tokenizer+text embedding cached before student training"
         ),
     }
+    if ema_state_dict is not None:
+        payload["ema_state_dict"] = dict(ema_state_dict)
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".tmp")
     torch.save(payload, temporary)
@@ -559,6 +646,7 @@ def train(
         if "raw_" in name and "phase" in name
     }
     optimizer = _optimizer(model, settings)
+    ema = _ModelEma(model, settings.ema_decay) if settings.ema_decay > 0.0 else None
     base_learning_rates = {
         str(group["name"]): float(group["lr"]) for group in optimizer.param_groups
     }
@@ -573,11 +661,13 @@ def train(
     initial_metrics = evaluate(model, test_loader, device, optical_enabled=True)
     best_srcc = float(initial_metrics["srcc"])
     best_epoch = 0
+    best_selection_source = "raw"
     history: list[dict[str, Any]] = [
         {
             "epoch": 0,
             "test_evaluated": True,
             "test_optical_on": initial_metrics,
+            "selection_source": "raw",
             "warm_start_before_optimizer_update": True,
         }
     ]
@@ -588,6 +678,8 @@ def train(
         settings,
         epoch=0,
         metrics=initial_metrics,
+        selection_source="raw",
+        ema_state_dict=None if ema is None else ema.module.state_dict(),
     )
     _json(
         settings.output_dir / "metrics_best_observed_test_optical_on.json",
@@ -608,8 +700,14 @@ def train(
             "unmodulated_power_fraction_max"
         ]
         learning_rate_factor = _learning_rate_factor(settings, epoch)
+        stage_name, stage_factors = _training_stage_factors(settings, epoch)
         for group in optimizer.param_groups:
-            group["lr"] = base_learning_rates[str(group["name"])] * learning_rate_factor
+            group_name = str(group["name"])
+            group["lr"] = (
+                base_learning_rates[group_name]
+                * learning_rate_factor
+                * stage_factors[group_name]
+            )
         model.train()
         totals = {
             name: 0.0
@@ -625,7 +723,9 @@ def train(
                 "router_importance",
                 "serial_router_balance",
                 "serial_router_importance",
+                "serial_router_diversity",
                 "router_capture",
+                "phase_smoothness",
             )
         }
         batches = 0
@@ -676,6 +776,10 @@ def train(
             language_routing = result["routing"]["language"]
             serial_router_balance = language_routing["balance_loss"]
             serial_router_importance = language_routing["importance_loss"]
+            serial_router_diversity = language_routing["diversity_loss"]
+            phase_smoothness = result["normalized_prediction"].new_zeros(())
+            if settings.phase_smoothness_weight > 0.0:
+                phase_smoothness = _phase_smoothness_loss(model)
             loss = (
                 regression
                 + curriculum["ranking_weight"] * ranking
@@ -687,7 +791,9 @@ def train(
                 + curriculum["router_importance_weight"] * result["router_importance_loss"]
                 + curriculum["serial_router_balance_weight"] * serial_router_balance
                 + curriculum["serial_router_importance_weight"] * serial_router_importance
+                + curriculum["serial_router_diversity_weight"] * serial_router_diversity
                 + settings.router_capture_weight * result["router_capture_loss"]
+                + settings.phase_smoothness_weight * phase_smoothness
             )
             if not bool(torch.isfinite(loss)):
                 raise RuntimeError("Non-finite training loss")
@@ -700,8 +806,20 @@ def train(
             ]
             if bad:
                 raise RuntimeError(f"Non-finite gradients in {bad}")
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+            active_parameters: list[nn.Parameter] = []
+            for group in optimizer.param_groups:
+                if float(group["lr"]) == 0.0:
+                    # A zero-LR warm-up group is genuinely frozen: its gradient
+                    # must not consume the global clipping budget of the phase
+                    # groups that are meant to learn in this stage.
+                    for parameter in group["params"]:
+                        parameter.grad = None
+                else:
+                    active_parameters.extend(group["params"])
+            torch.nn.utils.clip_grad_norm_(active_parameters, 1.0)
             optimizer.step()
+            if ema is not None and epoch >= settings.ema_start_epoch:
+                ema.update(model, initialize=not ema.started)
             values = {
                 "loss": loss,
                 "regression": regression,
@@ -714,7 +832,9 @@ def train(
                 "router_importance": result["router_importance_loss"],
                 "serial_router_balance": serial_router_balance,
                 "serial_router_importance": serial_router_importance,
+                "serial_router_diversity": serial_router_diversity,
                 "router_capture": result["router_capture_loss"],
+                "phase_smoothness": phase_smoothness,
             }
             for name, value in values.items():
                 totals[name] += float(value.detach())
@@ -729,6 +849,8 @@ def train(
             "epoch": epoch,
             **{name: value / max(1, batches) for name, value in totals.items()},
             "learning_rate_factor": learning_rate_factor,
+            "training_stage": stage_name,
+            "stage_learning_rate_factors": dict(stage_factors),
             "learning_rates": {
                 str(group["name"]): float(group["lr"])
                 for group in optimizer.param_groups
@@ -737,14 +859,28 @@ def train(
             "test_evaluated": False,
         }
         if epoch == 1 or epoch % settings.test_interval_epochs == 0 or epoch == settings.epochs:
-            metrics = evaluate(
+            raw_metrics = evaluate(
                 model, test_loader, device, optical_enabled=True
             )
+            metrics = raw_metrics
+            selection_source = "raw"
+            ema_metrics = None
+            if ema is not None and ema.started:
+                ema_metrics = evaluate(
+                    ema.module, test_loader, device, optical_enabled=True
+                )
+                if float(ema_metrics["srcc"]) > float(raw_metrics["srcc"]):
+                    metrics = ema_metrics
+                    selection_source = "ema"
             row["test_evaluated"] = True
             row["test_optical_on"] = metrics
+            row["test_optical_on_raw"] = raw_metrics
+            row["test_optical_on_ema"] = ema_metrics
+            row["selection_source"] = selection_source
             score = float(metrics["srcc"])
             if math.isfinite(score) and score > best_srcc:
                 best_srcc, best_epoch = score, epoch
+                best_selection_source = selection_source
                 _checkpoint(
                     settings.output_dir / "best_observed_test_checkpoint.pt",
                     model,
@@ -752,6 +888,13 @@ def train(
                     settings,
                     epoch=epoch,
                     metrics=metrics,
+                    state_dict=(
+                        ema.module.state_dict()
+                        if selection_source == "ema" and ema is not None
+                        else model.state_dict()
+                    ),
+                    selection_source=selection_source,
+                    ema_state_dict=None if ema is None else ema.module.state_dict(),
                 )
                 _json(
                     settings.output_dir / "metrics_best_observed_test_optical_on.json",
@@ -772,7 +915,8 @@ def train(
         if row["test_evaluated"]:
             print(
                 f"epoch {epoch:03d} loss={row['loss']:.6f} "
-                f"{settings.target_name}_SRCC={row['test_optical_on']['srcc']:.4f}",
+                f"{settings.target_name}_SRCC={row['test_optical_on']['srcc']:.4f} "
+                f"source={row['selection_source']} stage={stage_name}",
                 flush=True,
             )
         else:
@@ -784,6 +928,8 @@ def train(
         settings,
         epoch=settings.epochs,
         metrics=history[-1].get("test_optical_on"),
+        selection_source="raw",
+        ema_state_dict=None if ema is None else ema.module.state_dict(),
     )
     checkpoint = settings.output_dir / "best_observed_test_checkpoint.pt"
     comparison = evaluate_checkpoint_modes(model, payload, settings, device, checkpoint)
@@ -794,6 +940,7 @@ def train(
         "prompt": settings.prompt,
         "best_epoch": best_epoch,
         "best_observed_test_srcc": best_srcc,
+        "best_selection_source": best_selection_source,
         "checkpoint": str(checkpoint),
         "validation_used": False,
         "test_used_for_selection": True,
@@ -808,6 +955,15 @@ def train(
         },
         "same_checkpoint_optical_ablation": comparison,
         "phase_training_diagnostics": phase,
+        "multi_stage_training": {
+            "phase_warmup_epochs": settings.phase_warmup_epochs,
+            "late_refine_start_epoch": settings.late_refine_start_epoch,
+        },
+        "ema": {
+            "enabled": ema is not None,
+            "decay": settings.ema_decay,
+            "start_epoch": settings.ema_start_epoch,
+        },
     }
     _json(settings.output_dir / "training_summary.json", summary)
     return summary

@@ -46,7 +46,15 @@ def _phase_modulation(
     settings: ExperimentSettings,
     training: bool,
 ) -> torch.Tensor:
-    modulation = torch.exp(1j * _phase(raw)).to(torch.complex64)
+    phase = _phase(raw)
+    levels = settings.phase_quantization_levels
+    if levels:
+        step = (2.0 * math.pi) / float(levels - 1)
+        quantized = torch.round(phase / step) * step
+        # The forward pass sees exactly the 8-bit phase levels exported to the
+        # physical SLM.  The straight-through gradient still updates raw_phase.
+        phase = phase + (quantized - phase).detach() if training else quantized
+    modulation = torch.exp(1j * phase).to(torch.complex64)
     if training and settings.phase_dropout_p > 0.0:
         leading = raw.shape[:-2]
         cell_size = settings.phase_dropout_cell_size
@@ -158,15 +166,23 @@ def _routing_statistics(
     flat_s = selected.float().reshape(-1, 4)
     importance = flat_p.mean(0)
     load = flat_s.mean(0) / 2.0
+    conditional_entropy = -(
+        flat_p.clamp_min(1.0e-8).log() * flat_p
+    ).sum(-1).mean() / math.log(4.0)
+    marginal_entropy = -(
+        importance.clamp_min(1.0e-8).log() * importance
+    ).sum() / math.log(4.0)
     return {
         "importance": importance,
         "load": load,
         "balance_loss": 4.0 * torch.sum(importance * load),
         "importance_loss": 4.0 * importance.square().sum() - 1.0,
-        "normalized_entropy": -(
-            flat_p.clamp_min(1.0e-8).log() * flat_p
-        ).sum(-1).mean()
-        / math.log(4.0),
+        "normalized_entropy": conditional_entropy,
+        "marginal_entropy": marginal_entropy,
+        # Negative normalized mutual information. Minimizing this term asks
+        # different samples to make different, confident optical routing
+        # decisions; unlike hard load counts, it remains differentiable.
+        "diversity_loss": conditional_entropy - marginal_entropy,
     }
 
 
@@ -2114,7 +2130,22 @@ class LGVQSingleMetricOEO16(nn.Module):
         fields3 = self.serial_optics.fields(sequence)
         electronic3 = self.language_routes[0](sequence, mask)
         if optical_enabled:
-            routing["language"] = self.serial_router(fields3, sequence.shape[1])
+            router_fields3 = fields3
+            if self.settings.serial_router_visual_token_gain != 1.0:
+                # The language-stage optical router sees the same physical
+                # sequence field, but the four image summary rows are exposed
+                # more strongly than the fixed prompt rows. This is a fixed
+                # amplitude encoding rule, not an electronic router or a new
+                # inference branch; the feature-producing expert path below
+                # still receives the unmodified sequence.
+                router_sequence = sequence.clone()
+                router_sequence[:, : self.settings.frame_count] *= (
+                    self.settings.serial_router_visual_token_gain
+                )
+                router_fields3 = self.serial_optics.fields(router_sequence)
+            routing["language"] = self.serial_router(
+                router_fields3, sequence.shape[1]
+            )
             optical3 = self.serial_optics.expert(
                 fields3, routing["language"]["weights"], sequence.shape[1]
             )

@@ -280,6 +280,7 @@ class ExperimentSettings:
     serial_router_input_size: int = 109
     serial_router_flatfield_calibration: bool = False
     serial_router_channel_standardization: bool = False
+    serial_router_visual_token_gain: float = 1.0
     parallel_router_intervals: tuple[tuple[int, int], tuple[int, int]] = ((37, 55), (59, 77))
     serial_router_intervals: tuple[tuple[int, int], tuple[int, int]] = ((164, 223), (255, 314))
     wavelength_nm: float = 532.0
@@ -293,6 +294,7 @@ class ExperimentSettings:
     phase_dropout_p: float = 0.05
     phase_dropout_cell_size: int = 4
     phase_init_std: float = 0.25
+    phase_quantization_levels: int = 0
     ccd_relative_clip: float = 8.0
     ccd_log_compression: float = 1.0
     unmodulated_power_fraction_min: float = 0.20
@@ -312,6 +314,16 @@ class ExperimentSettings:
     phase_learning_rate: float = 8.0e-3
     router_phase_learning_rate: float = 1.2e-2
     weight_decay: float = 1.0e-4
+    readout_learning_rate_factor: float = 1.0
+    readout_weight_decay: float = 1.0e-4
+    phase_warmup_epochs: int = 0
+    late_refine_start_epoch: int = 0
+    late_refine_electronic_lr_factor: float = 1.0
+    late_refine_readout_lr_factor: float = 1.0
+    late_refine_phase_lr_factor: float = 1.0
+    late_refine_router_lr_factor: float = 1.0
+    ema_decay: float = 0.0
+    ema_start_epoch: int = 1
     ranking_weight: float = 0.20
     correlation_weight: float = 0.30
     soft_spearman_weight: float = 0.0
@@ -321,6 +333,8 @@ class ExperimentSettings:
     router_importance_weight: float = 0.002
     serial_router_balance_weight: float = 0.0
     serial_router_importance_weight: float = 0.0
+    serial_router_diversity_weight: float = 0.0
+    phase_smoothness_weight: float = 0.0
     router_capture_weight: float = 0.02
     soft_target_weight: float = 0.0
     mos_stratified_batches: bool = False
@@ -338,6 +352,7 @@ class ExperimentSettings:
     curriculum_router_importance_weight_final: float = 0.002
     curriculum_serial_router_balance_weight_final: float = 0.0
     curriculum_serial_router_importance_weight_final: float = 0.0
+    curriculum_serial_router_diversity_weight_final: float = 0.0
     curriculum_router_noise_std_final: float = 0.03
     curriculum_unmodulated_power_fraction_max_initial: float = 0.35
     test_interval_epochs: int = 5
@@ -418,6 +433,11 @@ class ExperimentSettings:
             suffixes.append("srouterflatfield_v1")
         if self.serial_router_channel_standardization:
             suffixes.append("srouterstandardize_v1")
+        if self.serial_router_visual_token_gain != 1.0:
+            gain_tag = int(round(self.serial_router_visual_token_gain * 100.0))
+            suffixes.append(f"sroutervisualgain{gain_tag:03d}_v1")
+        if self.phase_quantization_levels:
+            suffixes.append(f"phaseq{self.phase_quantization_levels}_v1")
         return base if not suffixes else f"{base}_{'_'.join(suffixes)}"
 
     def validate(self) -> None:
@@ -606,6 +626,8 @@ class ExperimentSettings:
             raise ValueError(
                 "router.serial_input_size must be within the serial expert field"
             )
+        if self.serial_router_visual_token_gain <= 0.0:
+            raise ValueError("router.serial_visual_token_gain must be positive")
         if self.target_name != "spatial" and self.spatial_readout_mode != "statistics":
             raise ValueError("The spatial-grid readout is only valid for the Spatial target")
         if self.top_k != 2:
@@ -647,6 +669,8 @@ class ExperimentSettings:
             )
         if not self.synthetic and self.unmodulated_power_fraction_min < 0.20:
             raise ValueError("Formal runs require at least 20% nominal unmodulated power")
+        if self.phase_quantization_levels not in {0} and self.phase_quantization_levels < 2:
+            raise ValueError("optics.phase_quantization_levels must be 0 or at least 2")
         if min(
             self.epochs,
             self.batch_size,
@@ -667,6 +691,30 @@ class ExperimentSettings:
             raise ValueError(
                 "training.minimum_learning_rate_factor must be within [0,1]"
             )
+        if self.readout_learning_rate_factor <= 0.0:
+            raise ValueError("training.readout_learning_rate_factor must be positive")
+        if self.readout_weight_decay < 0.0:
+            raise ValueError("training.readout_weight_decay must be nonnegative")
+        if not 0 <= self.phase_warmup_epochs < self.epochs:
+            raise ValueError("training.phase_warmup_epochs must be within [0,epochs)")
+        if self.late_refine_start_epoch and not (
+            self.phase_warmup_epochs < self.late_refine_start_epoch <= self.epochs
+        ):
+            raise ValueError(
+                "training.late_refine_start_epoch must follow phase warmup and lie within the run"
+            )
+        stage_factors = (
+            self.late_refine_electronic_lr_factor,
+            self.late_refine_readout_lr_factor,
+            self.late_refine_phase_lr_factor,
+            self.late_refine_router_lr_factor,
+        )
+        if min(stage_factors) < 0.0:
+            raise ValueError("late-refine learning-rate factors must be nonnegative")
+        if not 0.0 <= self.ema_decay < 1.0:
+            raise ValueError("training.ema_decay must be within [0,1)")
+        if not 1 <= self.ema_start_epoch <= self.epochs:
+            raise ValueError("training.ema_start_epoch must lie within [1,epochs]")
         if self.curriculum_enabled and not (
             1 <= self.curriculum_start_epoch <= self.curriculum_end_epoch <= self.epochs
         ):
@@ -682,6 +730,7 @@ class ExperimentSettings:
             self.curriculum_router_importance_weight_final,
             self.curriculum_serial_router_balance_weight_final,
             self.curriculum_serial_router_importance_weight_final,
+            self.curriculum_serial_router_diversity_weight_final,
             self.curriculum_router_noise_std_final,
         )
         if min(curriculum_weights) < 0.0:
@@ -750,6 +799,10 @@ class ExperimentSettings:
             raise ValueError("serial_router_balance_weight must be nonnegative")
         if self.serial_router_importance_weight < 0.0:
             raise ValueError("serial_router_importance_weight must be nonnegative")
+        if self.serial_router_diversity_weight < 0.0:
+            raise ValueError("serial_router_diversity_weight must be nonnegative")
+        if self.phase_smoothness_weight < 0.0:
+            raise ValueError("phase_smoothness_weight must be nonnegative")
         if self.soft_spearman_weight < 0.0:
             raise ValueError("soft_spearman_weight must be nonnegative")
         if self.soft_rank_temperature <= 0.0:
@@ -856,6 +909,9 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         serial_router_channel_standardization=bool(
             get("router", "serial_channel_standardization", False)
         ),
+        serial_router_visual_token_gain=float(
+            get("router", "serial_visual_token_gain", 1.0)
+        ),
         parallel_router_intervals=tuple(tuple(map(int, pair)) for pair in get("router", "parallel_intervals", [[37, 55], [59, 77]])),
         serial_router_intervals=tuple(tuple(map(int, pair)) for pair in get("router", "serial_intervals", [[164, 223], [255, 314]])),
         wavelength_nm=float(get("optics", "wavelength_nm", 532.0)),
@@ -864,6 +920,9 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         k_space_enabled=bool(get("optics", "k_space_enabled", True)),
         theta_max_deg=float(get("optics", "theta_max_deg", 1.0)),
         phase_init_std=float(get("optics", "phase_init_std", 0.25)),
+        phase_quantization_levels=int(
+            get("optics", "phase_quantization_levels", 0)
+        ),
         ccd_relative_clip=float(get("optics", "ccd_relative_clip", 8.0)),
         ccd_log_compression=float(get("optics", "ccd_log_compression", 1.0)),
         unmodulated_power_fraction_min=float(
@@ -892,6 +951,30 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         phase_learning_rate=float(get("training", "phase_learning_rate", 8.0e-3)),
         router_phase_learning_rate=float(get("training", "router_phase_learning_rate", 1.2e-2)),
         weight_decay=float(get("training", "weight_decay", 1.0e-4)),
+        readout_learning_rate_factor=float(
+            get("training", "readout_learning_rate_factor", 1.0)
+        ),
+        readout_weight_decay=float(
+            get("training", "readout_weight_decay", get("training", "weight_decay", 1.0e-4))
+        ),
+        phase_warmup_epochs=int(get("training", "phase_warmup_epochs", 0)),
+        late_refine_start_epoch=int(
+            get("training", "late_refine_start_epoch", 0)
+        ),
+        late_refine_electronic_lr_factor=float(
+            get("training", "late_refine_electronic_lr_factor", 1.0)
+        ),
+        late_refine_readout_lr_factor=float(
+            get("training", "late_refine_readout_lr_factor", 1.0)
+        ),
+        late_refine_phase_lr_factor=float(
+            get("training", "late_refine_phase_lr_factor", 1.0)
+        ),
+        late_refine_router_lr_factor=float(
+            get("training", "late_refine_router_lr_factor", 1.0)
+        ),
+        ema_decay=float(get("training", "ema_decay", 0.0)),
+        ema_start_epoch=int(get("training", "ema_start_epoch", 1)),
         ranking_weight=float(get("loss", "ranking_weight", 0.20)),
         correlation_weight=float(get("loss", "correlation_weight", 0.30)),
         soft_spearman_weight=float(get("loss", "soft_spearman_weight", 0.0)),
@@ -904,6 +987,12 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         ),
         serial_router_importance_weight=float(
             get("loss", "serial_router_importance_weight", 0.0)
+        ),
+        serial_router_diversity_weight=float(
+            get("loss", "serial_router_diversity_weight", 0.0)
+        ),
+        phase_smoothness_weight=float(
+            get("loss", "phase_smoothness_weight", 0.0)
         ),
         router_capture_weight=float(get("loss", "router_capture_weight", 0.02)),
         soft_target_weight=float(get("loss", "soft_target_weight", 0.0)),
@@ -945,6 +1034,13 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         ),
         curriculum_serial_router_importance_weight_final=float(
             get("curriculum", "serial_router_importance_weight_final", get("loss", "serial_router_importance_weight", 0.0))
+        ),
+        curriculum_serial_router_diversity_weight_final=float(
+            get(
+                "curriculum",
+                "serial_router_diversity_weight_final",
+                get("loss", "serial_router_diversity_weight", 0.0),
+            )
         ),
         curriculum_router_noise_std_final=float(
             get("curriculum", "router_noise_std_final", get("router", "noise_std", 0.03))

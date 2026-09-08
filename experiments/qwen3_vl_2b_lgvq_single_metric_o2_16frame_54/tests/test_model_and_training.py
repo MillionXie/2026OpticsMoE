@@ -11,11 +11,13 @@ from ..modeling import (
     TrainableQualityFrameStem,
     _phase,
     _phase_modulation,
+    _routing_statistics,
 )
 from ..run import _apply_trainable_scope, _load_compatible_initialization
 from ..settings import TARGET_PROMPTS, ExperimentSettings, Geometry
 from ..training import (
     MosStratifiedBatchSampler,
+    _training_stage_factors,
     curriculum_values,
     soft_spearman_loss,
     train,
@@ -624,6 +626,57 @@ def test_eval_dc_component_is_coherent_and_keeps_phase_gradient(tmp_path: Path) 
     assert raw.grad is not None
     assert torch.isfinite(raw.grad).all()
     assert float(raw.grad.abs().sum()) > 0.0
+
+
+def test_phase_quantization_matches_hardware_levels_and_keeps_gradient(
+    tmp_path: Path,
+) -> None:
+    settings = _small_settings(tmp_path)
+    settings.phase_quantization_levels = 256
+    raw_leaf = torch.linspace(-3.0, 3.0, 64, requires_grad=True)
+    raw = raw_leaf.reshape(8, 8)
+    modulation = _phase_modulation(raw, settings=settings, training=True)
+    phase_units = torch.remainder(torch.angle(modulation), 2.0 * torch.pi)
+    phase_units = phase_units / (2.0 * torch.pi / 255.0)
+    assert torch.allclose(phase_units, phase_units.round(), atol=2.0e-4)
+    modulation.real.mean().backward()
+    assert raw_leaf.grad is not None
+    assert float(raw_leaf.grad.abs().sum()) > 0.0
+
+
+def test_router_diversity_loss_rewards_sample_dependent_choices() -> None:
+    fixed = torch.tensor([[0.70, 0.20, 0.08, 0.02]]).repeat(4, 1)
+    diverse = torch.tensor(
+        [
+            [0.70, 0.20, 0.08, 0.02],
+            [0.02, 0.70, 0.20, 0.08],
+            [0.08, 0.02, 0.70, 0.20],
+            [0.20, 0.08, 0.02, 0.70],
+        ]
+    )
+    fixed_selected = fixed >= torch.topk(fixed, 2, -1).values[:, -1:]
+    diverse_selected = diverse >= torch.topk(diverse, 2, -1).values[:, -1:]
+    fixed_loss = _routing_statistics(fixed, fixed_selected)["diversity_loss"]
+    diverse_loss = _routing_statistics(diverse, diverse_selected)["diversity_loss"]
+    assert float(diverse_loss) < float(fixed_loss)
+
+
+def test_three_stage_schedule_freezes_then_refines_electronics(tmp_path: Path) -> None:
+    settings = replace(
+        _small_settings(tmp_path),
+        epochs=12,
+        phase_warmup_epochs=3,
+        late_refine_start_epoch=9,
+        late_refine_electronic_lr_factor=0.1,
+        late_refine_readout_lr_factor=0.2,
+    )
+    settings.validate()
+    assert _training_stage_factors(settings, 2)[0] == "optical_phase_warmup"
+    assert _training_stage_factors(settings, 5)[0] == "joint"
+    name, factors = _training_stage_factors(settings, 10)
+    assert name == "late_refine"
+    assert factors["electronic"] == pytest.approx(0.1)
+    assert factors["readout"] == pytest.approx(0.2)
 
 
 def test_single_target_training_uses_one_dimensional_target_statistics(

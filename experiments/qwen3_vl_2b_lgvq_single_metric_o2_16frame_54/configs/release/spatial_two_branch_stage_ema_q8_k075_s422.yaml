@@ -1,0 +1,18 @@
+base_config: spatial_two_branch_stage_ema_q8_s420.yaml
+output_dir: ../../runs/lgvq_spatial_two_branch_stage_ema_q8_k075_s422
+random_seed: 422
+
+# Physical-bandwidth candidate. 0.75 degrees is below the 17-um sampling
+# Nyquist angle (~0.896 degrees), so this is a real rather than nominal filter.
+optics:
+  theta_max_deg: 0.75
+
+router:
+  serial_visual_token_gain: 3.0
+
+loss:
+  serial_router_diversity_weight: 0.06
+  phase_smoothness_weight: 0.000005
+
+curriculum:
+  serial_router_diversity_weight_final: 0.02

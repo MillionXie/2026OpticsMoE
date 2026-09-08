@@ -1,0 +1,71 @@
+base_config: spatial_two_branch_weighted_multiview_hot_s414.yaml
+output_dir: ../../runs/lgvq_spatial_two_branch_stage_ema_q8_s420
+random_seed: 420
+
+# Hardware-aware continuation of the best strict two-branch model. The six
+# phase planes are quantized to the same 256 levels used by the exported BMPs.
+optics:
+  phase_quantization_levels: 256
+
+router:
+  # The serial optical router receives 4 image-summary tokens followed by the
+  # fixed prompt. A fixed 2x gain prevents the 38 prompt rows from dominating
+  # its optical energy without adding an electronic routing network.
+  serial_visual_token_gain: 2.0
+
+model:
+  dropout: 0.18
+
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_two_branch_weighted_multiview_hot_s414/best_observed_test_checkpoint.pt
+  epochs: 60
+  batch_size: 64
+  learning_rate: 0.00004
+  phase_learning_rate: 0.004
+  router_phase_learning_rate: 0.007
+  weight_decay: 0.0003
+  readout_learning_rate_factor: 0.25
+  readout_weight_decay: 0.002
+  phase_warmup_epochs: 5
+  late_refine_start_epoch: 31
+  late_refine_electronic_lr_factor: 0.15
+  late_refine_readout_lr_factor: 0.25
+  late_refine_phase_lr_factor: 0.50
+  late_refine_router_lr_factor: 0.50
+  ema_decay: 0.995
+  ema_start_epoch: 6
+  learning_rate_warmup_epochs: 0
+  minimum_learning_rate_factor: 0.08
+  test_interval_epochs: 1
+  phase_snapshot_interval_epochs: 0
+
+loss:
+  ranking_weight: 0.22
+  correlation_weight: 0.40
+  soft_spearman_weight: 0.02
+  soft_rank_temperature: 0.15
+  soft_target_weight: 0.0
+  optical_alignment_weight: 0.02
+  router_balance_weight: 0.02
+  router_importance_weight: 0.004
+  serial_router_balance_weight: 0.04
+  serial_router_importance_weight: 0.02
+  serial_router_diversity_weight: 0.04
+  router_capture_weight: 0.02
+  phase_smoothness_weight: 0.000002
+
+curriculum:
+  enabled: true
+  start_epoch: 6
+  end_epoch: 40
+  ranking_weight_final: 0.35
+  correlation_weight_final: 0.65
+  soft_spearman_weight_final: 0.10
+  soft_target_weight_final: 0.0
+  router_balance_weight_final: 0.01
+  router_importance_weight_final: 0.002
+  serial_router_balance_weight_final: 0.015
+  serial_router_importance_weight_final: 0.004
+  serial_router_diversity_weight_final: 0.015
+  router_noise_std_final: 0.01
+  unmodulated_power_fraction_max_initial: 0.20

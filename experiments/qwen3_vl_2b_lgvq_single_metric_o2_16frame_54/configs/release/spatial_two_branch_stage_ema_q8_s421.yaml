@@ -1,0 +1,14 @@
+base_config: spatial_two_branch_stage_ema_q8_s420.yaml
+output_dir: ../../runs/lgvq_spatial_two_branch_stage_ema_q8_s421
+random_seed: 421
+
+# Control candidate: keep the language-router optical input exactly as before,
+# isolating multi-stage/EMA/quantization effects.
+router:
+  serial_visual_token_gain: 1.0
+
+loss:
+  serial_router_diversity_weight: 0.0
+
+curriculum:
+  serial_router_diversity_weight_final: 0.0
