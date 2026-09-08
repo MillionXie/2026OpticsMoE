@@ -867,6 +867,11 @@ class _VisionResidualConvBlock(nn.Module):
         self.expand = nn.Conv2d(width, width * 2, 1)
         self.project = nn.Conv2d(width * 2, width, 1)
         self.raw_scale = nn.Parameter(torch.tensor(-2.0))
+        # A newly appended residual block must be an exact identity at warm
+        # start. Older blocks are restored from the checkpoint by exact name;
+        # only genuinely new blocks keep this zero-output initialization.
+        nn.init.zeros_(self.project.weight)
+        nn.init.zeros_(self.project.bias)
 
     def forward(self, value: torch.Tensor, grid: int) -> torch.Tensor:
         batch, frames, _, width = value.shape
@@ -902,11 +907,21 @@ class VisionElectronicResidualRoute(nn.Module):
             _VisionResidualConvBlock(self.width)
             for _ in range(settings.electronic_route_depth - 1)
         )
+        self.skip_max = float(settings.electronic_skip_max)
+        if settings.electronic_skip_enabled:
+            ratio = settings.electronic_skip_initial / self.skip_max
+            self.raw_skip = nn.Parameter(torch.atanh(torch.tensor(ratio)))
+
+    @property
+    def skip(self) -> torch.Tensor | None:
+        raw = getattr(self, "raw_skip", None)
+        return None if raw is None else self.skip_max * torch.tanh(raw)
 
     def forward(self, value: torch.Tensor) -> torch.Tensor:
         batch, frames, tokens, width = value.shape
         if tokens != self.grid * self.grid or width != self.width:
             raise ValueError("Vision electronic grid contract changed")
+        identity = value
         image = self.norm(value).reshape(
             batch * frames, self.grid, self.grid, width
         ).permute(0, 3, 1, 2)
@@ -916,6 +931,9 @@ class VisionElectronicResidualRoute(nn.Module):
         )
         for block in self.blocks:
             value = block(value, self.grid)
+        skip = self.skip
+        if skip is not None:
+            value = value + skip * identity
         return value
 
 
@@ -929,6 +947,8 @@ class _LanguageResidualConvBlock(nn.Module):
         self.expand = nn.Conv1d(width, width * 2, 1)
         self.project = nn.Conv1d(width * 2, width, 1)
         self.raw_scale = nn.Parameter(torch.tensor(-2.0))
+        nn.init.zeros_(self.project.weight)
+        nn.init.zeros_(self.project.bias)
 
     def forward(self, value: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
         sequence = self.norm(value).masked_fill(~mask.unsqueeze(-1), 0.0)
@@ -955,8 +975,18 @@ class LanguageElectronicResidualRoute(nn.Module):
             _LanguageResidualConvBlock(self.width)
             for _ in range(settings.electronic_route_depth - 1)
         )
+        self.skip_max = float(settings.electronic_skip_max)
+        if settings.electronic_skip_enabled:
+            ratio = settings.electronic_skip_initial / self.skip_max
+            self.raw_skip = nn.Parameter(torch.atanh(torch.tensor(ratio)))
+
+    @property
+    def skip(self) -> torch.Tensor | None:
+        raw = getattr(self, "raw_skip", None)
+        return None if raw is None else self.skip_max * torch.tanh(raw)
 
     def forward(self, value: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+        identity = value
         sequence = self.norm(value).masked_fill(
             ~mask.unsqueeze(-1), 0.0
         ).transpose(1, 2)
@@ -965,6 +995,9 @@ class LanguageElectronicResidualRoute(nn.Module):
         value = value.masked_fill(~mask.unsqueeze(-1), 0.0)
         for block in self.blocks:
             value = block(value, mask)
+        skip = self.skip
+        if skip is not None:
+            value = value + skip * identity
         return value
 
 
@@ -1082,7 +1115,7 @@ class SpatialReadout(nn.Module):
 
 
 class SpatialGridReadout(nn.Module):
-    """Attention-free electronic head that preserves the final 7x7 token layout."""
+    """Attention-free electronic head preserving the configured square token grid."""
 
     def __init__(self, settings: ExperimentSettings) -> None:
         super().__init__()
@@ -1124,7 +1157,7 @@ class SpatialGridReadout(nn.Module):
     ) -> torch.Tensor:
         batch, frames, tokens, width = vision.shape
         if tokens != self.grid * self.grid:
-            raise ValueError("Spatial-grid readout requires the formal 7x7 token grid")
+            raise ValueError("Spatial-grid readout requires the configured square token grid")
         grid = self.token_norm(vision).reshape(
             batch * frames, self.grid, self.grid, width
         ).permute(0, 3, 1, 2)

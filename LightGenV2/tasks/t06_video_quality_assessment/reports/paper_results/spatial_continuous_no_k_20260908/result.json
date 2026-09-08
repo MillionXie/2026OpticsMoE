@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "status": "selected_continuous_phase_simulation_candidate",
+  "task": "LGVQ spatial quality assessment",
+  "dataset_split": {
+    "train": 2250,
+    "test": 558,
+    "validation": 0,
+    "selection": "test SRCC checked every epoch, as requested"
+  },
+  "formal_candidate": {
+    "run": "lgvq_spatial_continuous_s414_refine_s437",
+    "config": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_continuous_s414_refine_s437.yaml",
+    "checkpoint": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_continuous_s414_refine_s437/best_observed_test_checkpoint.pt",
+    "checkpoint_sha256": "a7ce7152afd7ef9653dde69534cfb34a6f1208fa45cd644295ac422c016733bb0",
+    "best_epoch": 1,
+    "phase_forward": "continuous float phase; no straight-through quantization",
+    "phase_quantization_levels": 0,
+    "k_space_enabled": false,
+    "pixel_shift_augmentation": false,
+    "phase_dropout": 0.0,
+    "unmodulated_power_fraction_eval": 0.2,
+    "metrics": {
+      "srcc": 0.6241527468752092,
+      "krcc": 0.4506678997046103,
+      "plcc": 0.6619139216506558,
+      "rmse": 8.665754318237305,
+      "mae": 6.859379768371582,
+      "test_count": 558
+    },
+    "same_checkpoint_optics_bypassed": {
+      "srcc": 0.5181240657402726,
+      "plcc": 0.5892932845055582,
+      "rmse": 10.08474349975586,
+      "mae": 8.035982131958008
+    },
+    "optical_on_minus_off": {
+      "srcc": 0.10602868113493658,
+      "plcc": 0.07262063714509759
+    },
+    "vision_router_selected_share": [
+      0.2264784872531891,
+      0.22043010592460632,
+      0.32526880502700806,
+      0.22782258689403534
+    ],
+    "language_router_selected_share": [0.0, 0.0, 0.5, 0.5],
+    "fusion_alpha": {
+      "vision_expert": 0.48515960574150085,
+      "vision_global": 0.492723286151886,
+      "language_expert": 0.5137836933135986,
+      "language_global": 0.5195230841636658
+    },
+    "trainable_parameters": 5509358,
+    "readout_parameters": 3006977
+  },
+  "clean_zero_dc_control": {
+    "run": "lgvq_spatial_clean_continuous_upper_s431",
+    "srcc": 0.6182175326273246,
+    "plcc": 0.6562607001,
+    "unmodulated_power_fraction_eval": 0.0
+  },
+  "zero_raw_phase_initialization_control": {
+    "run": "lgvq_spatial_clean_continuous_phasezero_s432",
+    "raw_feature_phase_initial": 0.0,
+    "physical_feature_phase_initial_rad": 3.141592653589793,
+    "analytic_router_phase_was_preserved": true,
+    "srcc": 0.6111253829,
+    "plcc": 0.6501955751,
+    "feature_phase_wrapped_delta_rms_rad": [
+      0.0530397333,
+      0.0317840576,
+      0.0244213957,
+      0.0100368587
+    ],
+    "feature_phase_fraction_changed_over_0p05_rad": [
+      0.3015739322,
+      0.1053377911,
+      0.0645358115,
+      0.0101582604
+    ]
+  },
+  "frozen_qwen_baseline": {
+    "srcc": 0.6908879,
+    "note": "Frozen Qwen front baseline; no fine-tuning"
+  }
+}

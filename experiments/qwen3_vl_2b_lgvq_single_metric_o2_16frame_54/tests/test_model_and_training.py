@@ -466,6 +466,62 @@ def test_residual_electronic_route_warm_starts_legacy_stem(
                 assert torch.equal(source.state_dict()[name], destination.state_dict()[name])
 
 
+def test_appended_electronic_residual_block_is_exact_identity(
+    tmp_path: Path,
+) -> None:
+    source_settings = replace(
+        _small_settings(tmp_path),
+        electronic_route_variant="residual_conv",
+        electronic_route_depth=2,
+    )
+    torch.manual_seed(708)
+    source = LGVQSingleMetricOEO16(source_settings).eval()
+    checkpoint = tmp_path / "depth2_source.pt"
+    torch.save({"state_dict": source.state_dict()}, checkpoint)
+    destination_settings = replace(
+        source_settings,
+        electronic_route_depth=3,
+        initialization_checkpoint=checkpoint,
+    )
+    destination = LGVQSingleMetricOEO16(destination_settings).eval()
+    _load_compatible_initialization(destination, destination_settings)
+    inputs = _inputs(frame_count=4)
+    with torch.no_grad():
+        expected = source(*inputs, optical_enabled=False)["prediction"]
+        actual = destination(*inputs, optical_enabled=False)["prediction"]
+    torch.testing.assert_close(actual, expected, rtol=0.0, atol=0.0)
+
+
+def test_zero_start_skip_strengthens_same_electronic_route_without_new_branch(
+    tmp_path: Path,
+) -> None:
+    source_settings = replace(
+        _small_settings(tmp_path),
+        electronic_route_variant="residual_conv",
+        electronic_route_depth=2,
+    )
+    torch.manual_seed(709)
+    source = LGVQSingleMetricOEO16(source_settings).eval()
+    checkpoint = tmp_path / "no_skip_source.pt"
+    torch.save({"state_dict": source.state_dict()}, checkpoint)
+    destination_settings = replace(
+        source_settings,
+        initialization_checkpoint=checkpoint,
+        electronic_skip_enabled=True,
+        electronic_skip_initial=0.0,
+        electronic_skip_max=0.75,
+    )
+    destination = LGVQSingleMetricOEO16(destination_settings).eval()
+    _load_compatible_initialization(destination, destination_settings)
+    inputs = _inputs(frame_count=4)
+    with torch.no_grad():
+        expected = source(*inputs, optical_enabled=False)["prediction"]
+        actual = destination(*inputs, optical_enabled=False)["prediction"]
+    torch.testing.assert_close(actual, expected, rtol=0.0, atol=0.0)
+    assert all(route.skip is not None for route in destination.vision_routes)
+    assert all(route.skip is not None for route in destination.language_routes)
+
+
 def test_feature_phase_reset_starts_at_raw_zero_and_keeps_router_phase(
     tmp_path: Path,
 ) -> None:

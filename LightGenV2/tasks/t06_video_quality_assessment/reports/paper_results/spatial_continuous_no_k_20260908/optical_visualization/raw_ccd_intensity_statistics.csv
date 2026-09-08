@@ -1,0 +1,25 @@
+﻿sample_id,stage,raw_mean_intensity,raw_p99_intensity,raw_max_intensity
+"Tune-A-Video/In a rugby match, players vied for possession of the rugby ball.mp4",parallel_router,0.30595043301582336,6.096622467041016,30.639453887939453
+"Tune-A-Video/In a rugby match, players vied for possession of the rugby ball.mp4",parallel_expert,0.08024293929338455,0.6197924613952637,2.350130558013916
+"Tune-A-Video/In a rugby match, players vied for possession of the rugby ball.mp4",parallel_global,0.0774058997631073,0.6577242612838745,2.0199546813964844
+"Tune-A-Video/In a rugby match, players vied for possession of the rugby ball.mp4",serial_router,0.06611812859773636,1.4849599599838257,19.136816024780273
+"Tune-A-Video/In a rugby match, players vied for possession of the rugby ball.mp4",serial_expert,0.01940140128135681,0.30641287565231323,1.4351685047149658
+"Tune-A-Video/In a rugby match, players vied for possession of the rugby ball.mp4",serial_global,0.015715986490249634,0.27962443232536316,1.6841871738433838
+Hotshot-XL/A group of villagers wash clothes by the stream.mp4,parallel_router,0.3043559789657593,5.990451335906982,27.877410888671875
+Hotshot-XL/A group of villagers wash clothes by the stream.mp4,parallel_expert,0.08253418654203415,0.6363133788108826,2.711517810821533
+Hotshot-XL/A group of villagers wash clothes by the stream.mp4,parallel_global,0.07779237627983093,0.6681132912635803,2.121082067489624
+Hotshot-XL/A group of villagers wash clothes by the stream.mp4,serial_router,0.06611616909503937,1.4848194122314453,19.122821807861328
+Hotshot-XL/A group of villagers wash clothes by the stream.mp4,serial_expert,0.019393686205148697,0.30579447746276855,1.436098337173462
+Hotshot-XL/A group of villagers wash clothes by the stream.mp4,serial_global,0.015714745968580246,0.27975812554359436,1.6827635765075684
+Hotshot-XL/A water skier created splashes on the lake.mp4,parallel_router,0.30449095368385315,6.04669189453125,30.257064819335938
+Hotshot-XL/A water skier created splashes on the lake.mp4,parallel_expert,0.08056198060512543,0.6218555569648743,2.1918423175811768
+Hotshot-XL/A water skier created splashes on the lake.mp4,parallel_global,0.07754833251237869,0.6674590706825256,1.9134775400161743
+Hotshot-XL/A water skier created splashes on the lake.mp4,serial_router,0.06611674278974533,1.4840668439865112,19.129928588867188
+Hotshot-XL/A water skier created splashes on the lake.mp4,serial_expert,0.019297683611512184,0.30238792300224304,1.475372076034546
+Hotshot-XL/A water skier created splashes on the lake.mp4,serial_global,0.015713976696133614,0.2798443138599396,1.6819196939468384
+"Gen-2/A couple walks hand in hand on the beach, listening to the sound of the waves.mp4",parallel_router,0.3036994934082031,5.904574871063232,29.841398239135742
+"Gen-2/A couple walks hand in hand on the beach, listening to the sound of the waves.mp4",parallel_expert,0.08120296150445938,0.6210840344429016,2.3634557723999023
+"Gen-2/A couple walks hand in hand on the beach, listening to the sound of the waves.mp4",parallel_global,0.07816143333911896,0.665923535823822,2.070115566253662
+"Gen-2/A couple walks hand in hand on the beach, listening to the sound of the waves.mp4",serial_router,0.06611452996730804,1.4842182397842407,19.09974479675293
+"Gen-2/A couple walks hand in hand on the beach, listening to the sound of the waves.mp4",serial_expert,0.01939409412443638,0.30585190653800964,1.4362194538116455
+"Gen-2/A couple walks hand in hand on the beach, listening to the sound of the waves.mp4",serial_global,0.015714962035417557,0.27979379892349243,1.6825100183486938

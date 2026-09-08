@@ -1,0 +1,33 @@
+{
+  "schema_version": 2,
+  "input_dir": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/phase_payload_478_hardware_orientation",
+  "output_dir": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/phase_slm_1920x1200",
+  "files": 6,
+  "slm_size_wh": [
+    1920,
+    1200
+  ],
+  "mapping_mode": "physical_pitch_nearest",
+  "scale_factor": null,
+  "logical_pixel_pitch_um": 17.0,
+  "slm_pixel_pitch_um": 8.0,
+  "physical_ratio": 2.125,
+  "requested_center_xy": [
+    980.0,
+    590.0
+  ],
+  "canvas_geometric_center_xy": [
+    960.0,
+    600.0
+  ],
+  "active_center_xy": [
+    980.0,
+    590.0
+  ],
+  "center_offset_xy": [
+    20.0,
+    -10.0
+  ],
+  "coordinate_convention": "x increases right, y increases down, origin is the top-left canvas boundary",
+  "rule": "physical-coordinate nearest raster then zero-pad at configured center"
+}
