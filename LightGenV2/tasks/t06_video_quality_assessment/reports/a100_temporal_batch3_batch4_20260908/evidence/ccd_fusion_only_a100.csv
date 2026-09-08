@@ -1,0 +1,8 @@
+﻿task,label,component_occurrences_per_call,feature_blocks_per_call,cuda_event_median_sum_ms_per_call,synchronized_wall_median_sum_ms_per_call,cuda_event_median_average_ms_per_feature_block,synchronized_wall_median_average_ms_per_feature_block,logical_samples_per_call,cuda_event_median_sum_ms_per_logical_sample,synchronized_wall_median_sum_ms_per_logical_sample
+t01,Caltech101 retrieval,"{'vision_neural_ccd_to_fusion': 2, 'language_neural_ccd_to_fusion': 2}",4,1.9292160272598267,1.9976090000000002,0.48230400681495667,0.49940225000000005,1,1.9292160272598267,1.9976090000000002
+t02,LSP keypoint,{'vision_neural_ccd_to_fusion': 2},2,0.9482240080833435,0.981835,0.47411200404167175,0.4909175,1,0.9482240080833435,0.981835
+t03,SALICON saliency,{'vision_neural_ccd_to_fusion': 2},2,0.9512960016727448,0.986054,0.4756480008363724,0.493027,1,0.9512960016727448,0.986054
+t04,OpenMoji interaction,"{'vision_neural_ccd_to_fusion': 2, 'language_neural_ccd_to_fusion': 2}",4,1.9230720400810242,1.9909700000000001,0.48076801002025604,0.49774250000000003,1,1.9230720400810242,1.9909700000000001
+t06,LGVQ MultiVideo-16x4,"{'frame_neural_ccd_to_fusion': 2, 'video_neural_ccd_to_fusion': 2}",4,1.8923519849777222,1.961071,0.47308799624443054,0.49026775,16,0.11827199906110764,0.1225669375
+t06_spatial,LGVQ spatial single-video4,"{'spatial_vision_neural_ccd_to_fusion': 2, 'spatial_language_neural_ccd_to_fusion': 2}",4,1.892352044582367,1.96085,0.47308801114559174,0.4902125,1,1.892352044582367,1.96085
+t08,ABO image-to-title retrieval,"{'vision_neural_ccd_to_fusion': 2, 'language_neural_ccd_to_fusion': 2}",4,1.9230719804763794,1.992349,0.48076799511909485,0.49808725,1,1.9230719804763794,1.992349

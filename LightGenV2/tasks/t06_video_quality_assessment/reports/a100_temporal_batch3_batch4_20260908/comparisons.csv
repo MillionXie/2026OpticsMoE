@@ -1,0 +1,7 @@
+﻿task_id,task,ours_time_ms,qwen_time_ms,speedup_x,ours_combined_energy_j,qwen_energy_j,energy_reduction_x,qwen_source
+lgvq_temporal,"LGVQ temporal, 16 videos parallel",11.206588,450.8540561593694,40.231161898641176,1.63397687011275,88.84581304275078,54.373972280660325,"formal batch=4, four measured calls for the same 16-video workload"
+lgvq_spatial,"LGVQ spatial, one video with 4 frames",10.949374,74.438,6.798379523797434,1.5777154801436475,6.242,3.95635339740197,audited A100 table
+abo_image_to_text,ABO image-to-title T08,10.026821,43.963,4.38454022466343,1.4459252273778467,3.792,2.622542250595287,audited A100 table
+lsp,LSP keypoint,5.912727,18.016,3.046986610408361,0.8597358566030147,1.452,1.6888908248367556,audited A100 table
+salicon,SALICON saliency,6.177608,19.141,3.0984484609577034,0.9164221678229283,1.551,1.6924514208168797,audited A100 table
+openmoji,OpenMoji interaction,11.562029,49.053,4.242594444279632,1.6746592437979606,4.476,2.672782547599879,audited A100 table

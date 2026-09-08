@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "status": "complete",
+  "mode": "batch_power_sweep",
+  "workload": "LGVQ temporal quality, four distinct 448x448 frames per video",
+  "timing_boundary": "first native Vision Transformer block input to scalar score ready on GPU",
+  "timing_excludes": [
+    "model/processor load",
+    "MP4 open and random-seek decode",
+    "center crop/resize",
+    "processor/tokenizer",
+    "host-to-device copy",
+    "vision patch embedding before block 0"
+  ],
+  "selection_rule": "Select the largest feasible batch at or before the throughput/power plateau; report measured power fraction instead of claiming the 250 W limit was reached.",
+  "results": [
+    {
+      "batch_size_videos": 3,
+      "frames_per_video": 4,
+      "distinct_videos_per_batch": true,
+      "sweep_warmup_forwards": 3,
+      "timed_forwards": 30,
+      "preprocessing_ms_once_not_in_primary_latency": 1174.1879731416702,
+      "model_boundary_batch_cuda_ms": {
+        "mean": 87.51482849121093,
+        "median": 84.43904113769531,
+        "std": 7.236809544618327,
+        "p05": 83.62112083435059,
+        "p95": 103.54104537963865,
+        "min": 83.5051498413086,
+        "max": 114.8037109375
+      },
+      "throughput_videos_per_second": 34.279904922641634,
+      "torch_peak_allocated_mib": 4310.12646484375,
+      "torch_peak_reserved_mib": 4462.0,
+      "telemetry": {
+        "sampling_interval_ms": 50,
+        "idle_samples": 31,
+        "active_samples": 43,
+        "idle_mean_w": 66.71129032258065,
+        "active_mean_w": 225.22069767441863,
+        "active_peak_w": 279.17,
+        "active_mean_gpu_utilization_percent": 80.0,
+        "active_peak_gpu_utilization_percent": 89.0,
+        "active_peak_memory_used_mib": 4995.0,
+        "rated_power_limit_w": 250.0,
+        "active_mean_fraction_of_power_limit": 0.9008827906976745,
+        "active_peak_fraction_of_power_limit": 1.1166800000000001,
+        "measured_active_energy_j_per_batch": 19.710150729647616,
+        "measured_active_energy_j_per_video": 6.570050243215872,
+        "idle_subtracted_energy_j_per_batch": 13.87192359863959,
+        "rated_upper_bound_energy_j_per_batch": 21.878707122802734
+      },
+      "status": "complete"
+    }
+  ],
+  "git_commit": "7d5b05e9b839ff95188d53ca8e06031f2946dd3e",
+  "git_worktree_clean": true,
+  "script_sha256": "19ec2e9500d5712aef1db98cd6866d37f5fd5e91321e724cce781bea9793dd4c",
+  "manifest": "/DATA/DATA1/guest3/2026OpticsMoE_a100_formal/LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/a100_dataset_contract_20260907/lgvq_prompt_group_split.csv",
+  "manifest_sha256": "607c50d20662a47795c23cd2038081b30368ed108ba9be8a1bb8a9d250f8e7fc",
+  "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE_a100_formal/LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/qwen3vl_quality_tokens_r448_dataset_once_a100_20260907/checkpoints/frames4/best_checkpoint.pt",
+  "checkpoint_sha256": "e102adc6a7b33335c8f49ae1cbeea3302a1a10017d282da8d6091a640276d0d2",
+  "model": "/DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-2B-Instruct/snapshots/89644892e4d85e24eaac8bacfd4f463576704203",
+  "gpu": "NVIDIA A100-PCIE-40GB",
+  "physical_gpu_id": "6",
+  "software": {
+    "python": "3.11.15",
+    "torch": "2.6.0+cu124",
+    "cuda": "12.4"
+  }
+}
