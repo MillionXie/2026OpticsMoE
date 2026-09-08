@@ -1,0 +1,219 @@
+{
+  "schema_version": 1,
+  "audit_date": "2026-09-08",
+  "task": "T03",
+  "scope": "Read-only source/data/artifact audit; no new model training or full model evaluation. Existing predictions may be recomputed as explicitly recorded.",
+  "local_head": "79bf0f2695949fc5d0353698cfad417c14282f7b",
+  "local_tree_clean": false,
+  "server_main_head": "c313ff807617a75f410246e08d22d5f03b96443b",
+  "server_main_tree_clean": false,
+  "source_files_sha256": {
+    "LightGenV2/tasks/t03_saliency/__init__.py": "b12e447ef175e0e62ee46a6e1775c1b4907e77ab6e4db4673307c2c2bc27b410",
+    "LightGenV2/tasks/t03_saliency/aligned_baseline.py": "036bbb62f705ec19b0fe52069fd486c211d086afc38b8bf0605581a9bd854b78",
+    "LightGenV2/tasks/t03_saliency/baseline_5090d.py": "a53d20565c257cacfd1d61d7fa83ce489fbcbabb0e86ae5dd419279eec684d7a",
+    "LightGenV2/tasks/t03_saliency/modeling.py": "c5bac6b62da48ff082a242540950a610ded4d6d3e5e74149a7239be7666590e1",
+    "LightGenV2/tasks/t03_saliency/report.py": "f715f31ce02eca027f799a0c940f875440d2e0a03d9a9aba8c7ba76120c04947",
+    "LightGenV2/tasks/t03_saliency/reproduce_baseline.py": "cdddce3377a4b786c34213316e090b44e004f757452f81b82bfafea360a8d75b",
+    "LightGenV2/tasks/t03_saliency/run.py": "8f29448f79bd9f41c4f9b62641ffec867fdae2d6183691a347dab3cfa0a56ad2",
+    "LightGenV2/tasks/t03_saliency/settings.py": "a86a8f9888cc566c678059528183a5672f9281e9e0528e68b3e25d18054592bf",
+    "LightGenV2/tasks/t03_saliency/training.py": "f34e13a2555b196768beab6f2622e8ea21f3e6987b8e4137848690676128d62b",
+    "LightGenV2/tasks/t03_saliency/visualize.py": "c99b269dac3e414e78adadf16118b60ea42ab641bf6adb99287037273c6ea0f1",
+    "LightGenV2/tasks/t03_saliency/configs/common_dc20.yaml": "5649ee51bf9cc53f5c66fa55ff04f1f86bdb14410cc1ad1d978ce020e7c8b0c8",
+    "LightGenV2/tasks/t03_saliency/configs/d2nn_active_expert_matched_dc20.yaml": "b6351c965a463d0f7feb49fedbc64b28975538edcd436b9c9e23e9df34c52e9a",
+    "LightGenV2/tasks/t03_saliency/configs/moe_dc20_cc_continue.yaml": "b43d862a34ddbe435e9565a6c051b0330b8540549f0d01b9b44f7091554c8f76",
+    "LightGenV2/tasks/t03_saliency/configs/moe_dc20_mean_only_cc_continue.yaml": "50982f0f91a612d0a6c6be14e8f5dba76860f063deee61a4ac0139a72a492864",
+    "LightGenV2/tasks/t03_saliency/configs/moe_dc20_mean_only_continue.yaml": "e5a5275de6e6f1c9161be13a0101128069265f01cef73e16c1c9098a207d6116",
+    "LightGenV2/tasks/t03_saliency/configs/moe_dc20_no_shift_continue.yaml": "c6739e121716290e505fde4dfc7bb7b23fbb50b763cd918eded3a35773af4c3a",
+    "LightGenV2/tasks/t03_saliency/configs/moe_optical_router_scale_matched_dc20.yaml": "82be1ec970d592e135c6e55a82c1750b8fed714b808cafebe12afad8b66efe65",
+    "LightGenV2/tasks/t03_saliency/configs/moe_staged_alpha_free.yaml": "77690ea8133e1ffc4b910e21578dbe71601becd364e06733963914c3cfe6dd33",
+    "LightGenV2/tasks/t03_saliency/configs/moe_staged_alpha_ge040.yaml": "fa41a72963bdaee7a49f04a3f596dd37ed3f73c182a5d13b1fca35d0ba82b2db",
+    "LightGenV2/tasks/t03_saliency/configs/qwen_frozen_pending_5090d.yaml": "e607285083f28d767b07ce9d007d6910bc9178381e83e1834567c9a712a4ae82"
+  },
+  "remote_record_inventory": [
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t03_saliency/runs/simulation/qwen_frozen_pending_5090d/run_manifest.json",
+      "sha256_of_record": "704e56ebf499e4570546e6ffa6b4cddcd2f7797eebfaa5ffedb3bd5e8798c696",
+      "bytes": 315,
+      "git_commit": "1328c8456f8cd140d9e3a0ccea63612618adc30d",
+      "seed": 42
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t03_saliency/runs/simulation/qwen_aligned_head_staged_seed42/run_manifest.json",
+      "sha256_of_record": "2e811ebcb1e65ddbf03da296242fb62cb02e2df2554c64d2d60038476a5a8faa",
+      "bytes": 928,
+      "git_commit": "49157bf567c995d766ad62a58c2f1ac0ca745b89",
+      "seed": 42,
+      "selection_biased": true
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t03_saliency/runs/simulation/d2nn_matched_dc20_seed42/selected_checkpoint_test_evaluation.json",
+      "sha256_of_record": "f024c8366c2d48f498b6dfc38ec0ca49d8ab06f14e086906997e7eb7250f7b73",
+      "bytes": 587,
+      "selected_epoch": 60,
+      "selection_biased": true,
+      "test_samples": 5000,
+      "metrics": {
+        "samples": 5000,
+        "kld": 0.12963873579502105,
+        "cc": 0.8345608600616455,
+        "sim": 0.8091944139480591,
+        "nss": 0.9343926630020142,
+        "auc_judd": 0.764269953955406,
+        "mae": 0.08839073679447174
+      }
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t03_saliency/runs/simulation/d2nn_matched_dc20_seed42/initialization_report.json",
+      "sha256_of_record": "801e7948df2746d630f1fa85cfdbb9d7c0b24c5d65fce8d7a55f9bb2f5dcfbe1",
+      "bytes": 384
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t03_saliency/runs/simulation/d2nn_matched_dc20_seed42/run_manifest.json",
+      "sha256_of_record": "319799c019b40c4e7994cc1c1d46fb1392f1ae9f919a4780d94e03109360b633",
+      "bytes": 436,
+      "git_commit": "5fc62c2966d0b9f18fa2a3938b942f9e61190cbd",
+      "seed": 42
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t03_saliency/runs/simulation/moe_staged_alpha_free_seed42/initialization_report.json",
+      "sha256_of_record": "1001e1d35063ca38a8a301b42edc9e3d138489437cb9f1575720261726834024",
+      "bytes": 617
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t03_saliency/runs/simulation/moe_staged_alpha_free_seed42/run_manifest.json",
+      "sha256_of_record": "e219f5bb85477e5d5d641c1f2def7ce58874a5b336b194bcc93675b6f9a3584e",
+      "bytes": 588,
+      "git_commit": "49157bf567c995d766ad62a58c2f1ac0ca745b89",
+      "seed": 42
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t03_saliency/runs/simulation/moe_dc20_mean_only_continue_seed42/selected_checkpoint_test_evaluation.json",
+      "sha256_of_record": "471be1bcefdbac19ec00148c013f95eb9a522a2f02aa7ececb1243ac2441aabf",
+      "bytes": 1223,
+      "selected_epoch": 90,
+      "selection_biased": true,
+      "test_samples": 5000,
+      "metrics": {
+        "samples": 5000,
+        "kld": 0.1215175269126892,
+        "cc": 0.8490116612434387,
+        "sim": 0.8163452845573426,
+        "nss": 0.9556651570320129,
+        "auc_judd": 0.7672987817063355,
+        "mae": 0.0809908413887024
+      }
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t03_saliency/runs/simulation/moe_dc20_mean_only_continue_seed42/initialization_report.json",
+      "sha256_of_record": "58b7537db212713c9c47da1045b2e9254cc4f3bd9990f8199c68344f6ed8fb86",
+      "bytes": 543
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t03_saliency/runs/simulation/moe_dc20_mean_only_continue_seed42/run_manifest.json",
+      "sha256_of_record": "fedfa9def7f702f4260b0b67ea4bb859b7a9ea25b80636fb5334c61256c0d8a0",
+      "bytes": 594,
+      "git_commit": "49e369dde5a1f411a7c1644813ded4d67999aaca",
+      "seed": 42
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t03_saliency/runs/simulation/moe_dc20_no_shift_continue_seed42/initialization_report.json",
+      "sha256_of_record": "ae53d63322651d4e7a19d63a2be03f6e83b36e603cfd416f8a04aff30ae56d57",
+      "bytes": 295
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t03_saliency/runs/simulation/moe_dc20_no_shift_continue_seed42/run_manifest.json",
+      "sha256_of_record": "0ff8aa3bd2957108f54dd56ac34269e181271f0baf06ce04d7e53104d4af59f1",
+      "bytes": 319,
+      "git_commit": "8207fa995c242e15b7ea0c2353b3950ba857cc0f",
+      "seed": 42
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t03_saliency/runs/simulation/moe_staged_alpha_ge040_seed42/initialization_report.json",
+      "sha256_of_record": "260e125a122fb6917ba415a16f20816037ca870d40c172f1bd8c4c54e9c47edf",
+      "bytes": 619
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t03_saliency/runs/simulation/moe_staged_alpha_ge040_seed42/run_manifest.json",
+      "sha256_of_record": "1085341ceb0339a0b292cf2c04c66cf9a06ba30602916e23029a980735f89021",
+      "bytes": 589,
+      "git_commit": "49157bf567c995d766ad62a58c2f1ac0ca745b89",
+      "seed": 42
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t03_saliency/runs/simulation/moe_dc20_cc_continue_seed42/initialization_report.json",
+      "sha256_of_record": "ae53d63322651d4e7a19d63a2be03f6e83b36e603cfd416f8a04aff30ae56d57",
+      "bytes": 295
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t03_saliency/runs/simulation/moe_dc20_cc_continue_seed42/run_manifest.json",
+      "sha256_of_record": "8b0c7df50c7501b871b6b348aabba80adabcadde80c8a8da5d1d0f6801672a33",
+      "bytes": 319,
+      "git_commit": "8207fa995c242e15b7ea0c2353b3950ba857cc0f",
+      "seed": 42
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t03_saliency/runs/simulation/moe_router_scale_dc20_seed42/selected_checkpoint_test_evaluation.json",
+      "sha256_of_record": "98761c5b0e70904891e22c001b7bf2d2127f8701223b67e8deaa94e798c4b7af",
+      "bytes": 1211,
+      "selected_epoch": 60,
+      "selection_biased": true,
+      "test_samples": 5000,
+      "metrics": {
+        "samples": 5000,
+        "kld": 0.1330318801522255,
+        "cc": 0.8290598318099975,
+        "sim": 0.8063427537918091,
+        "nss": 0.9283460097312928,
+        "auc_judd": 0.7631218443386832,
+        "mae": 0.08897069873809814
+      }
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t03_saliency/runs/simulation/moe_router_scale_dc20_seed42/initialization_report.json",
+      "sha256_of_record": "574a4490b5ca8bb7f1df33a0feb3e9897ee199e3c6a4cff17ca05c4de385b6a5",
+      "bytes": 383
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t03_saliency/runs/simulation/moe_router_scale_dc20_seed42/run_manifest.json",
+      "sha256_of_record": "a4cd5489dbaf70c6c6e03f073ec15a0114123d5fbd42e6d108880f5f40df9ee1",
+      "bytes": 319,
+      "git_commit": "a79e2449f35c52e21739b350b9eca8421952439f",
+      "seed": 42
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t03_saliency/runs/simulation/moe_dc20_mean_only_cc_continue_seed42/selected_checkpoint_test_evaluation.json",
+      "sha256_of_record": "c545cbfbe12a455e9f7007b77961dea76d2bd3bc77648a8346b7e9126c7ab33d",
+      "bytes": 1228,
+      "selected_epoch": 90,
+      "selection_biased": true,
+      "test_samples": 5000,
+      "metrics": {
+        "samples": 5000,
+        "kld": 0.12149756375551224,
+        "cc": 0.8493615221977234,
+        "sim": 0.8163866628646851,
+        "nss": 0.9556083410263062,
+        "auc_judd": 0.7672917531739634,
+        "mae": 0.08124472025632858
+      }
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t03_saliency/runs/simulation/moe_dc20_mean_only_cc_continue_seed42/initialization_report.json",
+      "sha256_of_record": "58b7537db212713c9c47da1045b2e9254cc4f3bd9990f8199c68344f6ed8fb86",
+      "bytes": 543
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t03_saliency/runs/simulation/moe_dc20_mean_only_cc_continue_seed42/run_manifest.json",
+      "sha256_of_record": "b138d83219a8e46624928302d38d1f98a5229544fe37dbc55ebfb4098c0831b0",
+      "bytes": 597,
+      "git_commit": "49e369dde5a1f411a7c1644813ded4d67999aaca",
+      "seed": 42
+    }
+  ],
+  "actual_checkpoint_sha256": {
+    "LightGenV2/tasks/t03_saliency/runs/simulation/moe_router_scale_dc20_seed42/best_checkpoint.pt": {
+      "bytes": 5895790,
+      "sha256": "fae78751fb4876c176d57ffc081aae806d30c91d7e0ad741902360483a7430b4"
+    }
+  }
+}

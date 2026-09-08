@@ -1,0 +1,175 @@
+{
+  "schema_version": 1,
+  "audit_date": "2026-09-08",
+  "task": "T04",
+  "scope": "Read-only source/data/artifact audit; no new model training or full model evaluation. Existing predictions may be recomputed as explicitly recorded.",
+  "local_head": "79bf0f2695949fc5d0353698cfad417c14282f7b",
+  "local_tree_clean": false,
+  "server_main_head": "c313ff807617a75f410246e08d22d5f03b96443b",
+  "server_main_tree_clean": false,
+  "source_files_sha256": {
+    "LightGenV2/tasks/t04_semantic_interaction/__init__.py": "2b1dabbd4a0bda8c0204d7e18980043ad2b9a056113bf1cbe45de9e51dc79eb6",
+    "LightGenV2/tasks/t04_semantic_interaction/baseline_5090d.py": "4725327c35cd70e9eb5efd8c64cca50a45c9f997a25e38a5050123e3f21bd3ec",
+    "LightGenV2/tasks/t04_semantic_interaction/baseline_structured_5090d.py": "3817f115f7b9da5783a1f7244f5c63db55aae6aa2122843d11eb8b2396b4bc43",
+    "LightGenV2/tasks/t04_semantic_interaction/checkpoint_audit.py": "e6c2471529903a989a6fefa68d0bfc021bf2d7745bdcdf2bd1ea25257df41af4",
+    "LightGenV2/tasks/t04_semantic_interaction/embedding_data.py": "7dd7c75d9a3173963da57218999cb2472a30c8ce74ed3f2b8aabf685d58bca41",
+    "LightGenV2/tasks/t04_semantic_interaction/embedding_model.py": "b62af408b0d422dd8070b09272dd6b18394b9ada8c920821df9c4222cc571ee9",
+    "LightGenV2/tasks/t04_semantic_interaction/modeling.py": "626a23908c91d061392adf1b960b0559a4cfc73f8e34aed509e4a4fa0e9830b9",
+    "LightGenV2/tasks/t04_semantic_interaction/report.py": "5851a53c45d773a465ca48710ac93cd49e3733000c67ca0d111b39c77af714d3",
+    "LightGenV2/tasks/t04_semantic_interaction/run.py": "260d5db0e36c501dcac7c63c0135c4322ec6f402c741fa50abac65be9267675e",
+    "LightGenV2/tasks/t04_semantic_interaction/settings.py": "7980e08c7ac636332105eb0aeafbf2c24fa034cd686141fe9eeecf229e6a30b7",
+    "LightGenV2/tasks/t04_semantic_interaction/smoke_embedding.py": "a6b778315e7292b1b5d579e70afe33fc5a25419a109003d692fdd92070612a70",
+    "LightGenV2/tasks/t04_semantic_interaction/training.py": "cbaa1d6897f74f92aacf8a144d5d755d66970a21a6c7dedc5c358cc04be35dc3",
+    "LightGenV2/tasks/t04_semantic_interaction/visualize.py": "cb2854ee980d49e0018c006cd347773276d30ead16f270e11217acd02a836196",
+    "LightGenV2/tasks/t04_semantic_interaction/configs/common_dc20.yaml": "9930ce2d8c891c04e9f1f978ec0735a076f325c44ba454636e5f4eb6b0f73e0d",
+    "LightGenV2/tasks/t04_semantic_interaction/configs/d2nn_active_expert_matched_dc20.yaml": "ca4f6bca0ded5c9da8a1cead01fc39939db0cdc528135afd7cdcf1ba74f97720",
+    "LightGenV2/tasks/t04_semantic_interaction/configs/embedding_alpha40.yaml": "163b45a98f13496c586779c3227d4b6c0b5248b9f3143ec1dd46a9d2294ffe58",
+    "LightGenV2/tasks/t04_semantic_interaction/configs/embedding_alpha40_lean.yaml": "5f7baad80bc8bfd53b4041f5a54cf7d73d4623b182a813956d4c326f91a1a0a0",
+    "LightGenV2/tasks/t04_semantic_interaction/configs/embedding_d2nn_alpha40.yaml": "bfeec8615c4a0dcb5ea82992964dd2cf5a30f71c403202473dcab4ad2f455c04",
+    "LightGenV2/tasks/t04_semantic_interaction/configs/moe_optical_router_scale_matched_dc20.yaml": "7da8ba173bb227c704f3df670ce55ca07c256a3d1069a30de71743315a25c53e",
+    "LightGenV2/tasks/t04_semantic_interaction/configs/qwen_frozen_pending_5090d.yaml": "46eb31a5cdeeb012d07b87d703c5b4e42962f6b58b711f22f2baf11be8ee8cb4"
+  },
+  "remote_record_inventory": [
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t04_semantic_interaction/runs/simulation/qwen_frozen_pending_5090d/run_manifest.json",
+      "sha256_of_record": "065a0b5b8655004bb43f7f4d577c8c38f7004fa5f1a5decf49d56f89150c62e2",
+      "bytes": 339,
+      "git_commit": "1328c8456f8cd140d9e3a0ccea63612618adc30d",
+      "seed": 73
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t04_semantic_interaction/runs/simulation/audit_threeway_20260908/moe/selected_checkpoint_test_evaluation.json",
+      "sha256_of_record": "1835bf43b1ce9c5b7c7a298b912f562f9eb801c3e6c381b79b1285c1f9efad1e",
+      "bytes": 3448,
+      "selected_epoch": 20,
+      "selection_biased": true,
+      "test_samples": 1000,
+      "metrics": {
+        "samples": 1000,
+        "cell_accuracy": 0.9967777768373489,
+        "changed_cell_accuracy": 0.98,
+        "foreground_category_accuracy": 0.9894500002264977,
+        "preserved_cell_accuracy": 0.997410085618496,
+        "edit_grid_iou": 0.9349999999999988,
+        "object_f1": 0.9836751803751809,
+        "scene_exact_match": 0.895,
+        "task_accuracy": 1.0
+      }
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t04_semantic_interaction/runs/simulation/audit_threeway_20260908/moe/run_manifest.json",
+      "sha256_of_record": "9bcafe42ac05a69980f7310b0fa48c1ebe1860615154daac27a5a85467908b89",
+      "bytes": 343,
+      "git_commit": "0dd01880b17446d0990a4ae26160e74b315d8c35",
+      "seed": 73
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t04_semantic_interaction/runs/simulation/audit_threeway_20260908/d2nn/selected_checkpoint_test_evaluation.json",
+      "sha256_of_record": "ea8640d155a0700ffba1e079dff2907678ce2f6badfa4307c0865fca0cadec02",
+      "bytes": 2046,
+      "selected_epoch": 25,
+      "selection_biased": true,
+      "test_samples": 1000,
+      "metrics": {
+        "samples": 1000,
+        "cell_accuracy": 0.9989722217917443,
+        "changed_cell_accuracy": 0.989,
+        "foreground_category_accuracy": 0.9944000001549721,
+        "preserved_cell_accuracy": 0.9993579837083817,
+        "edit_grid_iou": 0.9808333333333329,
+        "object_f1": 0.9947482683982686,
+        "scene_exact_match": 0.964,
+        "task_accuracy": 1.0
+      }
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t04_semantic_interaction/runs/simulation/audit_threeway_20260908/d2nn/run_manifest.json",
+      "sha256_of_record": "dbd4b0b31c22f5060b59badfb506899e87aab82e0bce460096686b43e1465070",
+      "bytes": 337,
+      "git_commit": "0dd01880b17446d0990a4ae26160e74b315d8c35",
+      "seed": 73
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t04_semantic_interaction/runs/simulation/moe_router_scale_dc20_seed73/selected_checkpoint_test_evaluation.json",
+      "sha256_of_record": "1835bf43b1ce9c5b7c7a298b912f562f9eb801c3e6c381b79b1285c1f9efad1e",
+      "bytes": 3448,
+      "selected_epoch": 20,
+      "selection_biased": true,
+      "test_samples": 1000,
+      "metrics": {
+        "samples": 1000,
+        "cell_accuracy": 0.9967777768373489,
+        "changed_cell_accuracy": 0.98,
+        "foreground_category_accuracy": 0.9894500002264977,
+        "preserved_cell_accuracy": 0.997410085618496,
+        "edit_grid_iou": 0.9349999999999988,
+        "object_f1": 0.9836751803751809,
+        "scene_exact_match": 0.895,
+        "task_accuracy": 1.0
+      }
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t04_semantic_interaction/runs/simulation/moe_router_scale_dc20_seed73/initialization_report.json",
+      "sha256_of_record": "f1a6f5d048f2815534295823b48fc3b168b716235fc6513dc62d43c3ea162f9f",
+      "bytes": 469
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t04_semantic_interaction/runs/simulation/moe_router_scale_dc20_seed73/run_manifest.json",
+      "sha256_of_record": "2e01bd502c6440a41878465f394b2d94175a167fc9e55b52423227ddb193935e",
+      "bytes": 343,
+      "git_commit": "1328c8456f8cd140d9e3a0ccea63612618adc30d",
+      "seed": 73
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t04_semantic_interaction/runs/simulation/d2nn_matched_dc20_seed73/selected_checkpoint_test_evaluation.json",
+      "sha256_of_record": "38a26af47d94e430e42d71db7abc988cbda214d01c408eab0827d8252a4055f8",
+      "bytes": 2046,
+      "selected_epoch": 25,
+      "selection_biased": true,
+      "test_samples": 1000,
+      "metrics": {
+        "samples": 1000,
+        "cell_accuracy": 0.9989999995827675,
+        "changed_cell_accuracy": 0.9895,
+        "foreground_category_accuracy": 0.9944000001549721,
+        "preserved_cell_accuracy": 0.9993579837083817,
+        "edit_grid_iou": 0.981333333333333,
+        "object_f1": 0.9949482683982687,
+        "scene_exact_match": 0.965,
+        "task_accuracy": 1.0
+      }
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t04_semantic_interaction/runs/simulation/d2nn_matched_dc20_seed73/initialization_report.json",
+      "sha256_of_record": "aa09180c8ff558c88f1f7a3321370f7fbeeb753710f8a1a5b1716c4bb7bb89fe",
+      "bytes": 470
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t04_semantic_interaction/runs/simulation/d2nn_matched_dc20_seed73/run_manifest.json",
+      "sha256_of_record": "1679653c37b49038c4981372ecc22f95d39d2c7faf10f5524e55b3e343477a18",
+      "bytes": 337,
+      "git_commit": "0af54aa24a6c3b09789d4ffb24b6e855d3b496be",
+      "seed": 73
+    }
+  ],
+  "actual_checkpoint_sha256": {
+    "LightGenV2/tasks/t04_semantic_interaction/runs/simulation/moe_router_scale_dc20_seed73/best_checkpoint.pt": {
+      "bytes": 31312476,
+      "sha256": "b3e7a005a7b29e8a52a733d79dcf48f85d2fee2f7cb1edc64db151de1d4e33e4"
+    }
+  },
+  "data_audit": {
+    "counts": [
+      5000,
+      1000
+    ],
+    "train_extra_duplicate_inputs": 2,
+    "cross_split_duplicates": [
+      "test_000265"
+    ],
+    "sha256": {
+      "train.jsonl": "4f7c077223c8d5afc3b364a7e8fdae9c9b8a1bcef5f999833215e0278d1df660",
+      "test.jsonl": "0015459c5e6accaede9107dbf3e39b125448da6094a6545ed26b028533cf15b2"
+    }
+  }
+}

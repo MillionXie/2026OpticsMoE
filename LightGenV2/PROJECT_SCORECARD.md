@@ -60,6 +60,10 @@
 
 ## 当前证据入口
 
+> 2026-09-08补充：上面总表是历史汇总，不代表所有服务器worktree的最新事实。
+> T07独立A100分支已有冻结Qwen结果；T08本轮查到一对跨split重复图像；T06旧正式入口有后端SHA冲突。
+> 本轮审查详情见下方“2026-09-08 初步审查”，历史数值未被静默重写。
+
 - RTX 5090D 跨任务光学 MoE 分段电处理与冻结 Qwen 汇总：
   `tasks/t06_video_quality_assessment/reports/5090d_moe_and_qwen_baselines_20260907/README.md`
 - T06 Temporal-36：
@@ -82,3 +86,60 @@
 - T04 正式对照：`tasks/t04_semantic_interaction/reports/dc20_comparison/RESULTS.md`
 - T08 ABO 图搜文光 Router MoE：
   `tasks/t08_abo_image_text_retrieval/reports/optical_router_moe_20260907/README.md`
+
+## 2026-09-08 初步审查
+
+本轮是源码、服务器数据及历史产物的double check，**没有重新训练或全量推理任何模型，也没有改模型/原始数据**。
+本地起始HEAD为 `458b4ab2c6ba16b00a0742c140f677f28dbaa3f9`，服务器首轮检查主目录为
+`c313ff807617a75f410246e08d22d5f03b96443b`，两者均有未提交修改；正在开发的T04/T06代码没有被覆盖。
+审查读取81份服务器run/报告元数据，重新计算6个主方法best文件SHA；另核验T08全部7200图像的字节SHA、
+T04重复输入和LGVQ清单，从历史预测独立重算T07 Hit/Precision/Recall及T08检索指标。
+每任务文稿附 `EVIDENCE_20260908.json`，区分本轮检查、原报告数值和未验证事项。
+审查期间其他工作仍在提交：证据写入时本地HEAD为 `79bf0f2695949fc5d0353698cfad417c14282f7b`，
+最新T04记录已启动v2三组训练；本轮未把其早期进展认定为最终精度复现，服务器CPU测试仍属于较早源码快照。
+
+| 任务 | 一任务一份架构/操作/参数审查稿 | 主要结论 |
+|---|---|---|
+| T01 | [CHECK_20260908](tasks/t01_object_retrieval/reports/reproduction/CHECK_20260908.md) | 实为10个类别原型排序；MoE仅多命中1/200，Top-3/MRR不占优；warmstart链待补 |
+| T02 | [CHECK_20260908](tasks/t02_keypoint_detection/reports/reproduction/CHECK_20260908.md) | MoE低于D2NN；Qwen为完整Vision+监督Deconv头；计时尚未统一到正式二维坐标解码 |
+| T03 | [CHECK_20260908](tasks/t03_saliency/reports/reproduction/CHECK_20260908.md) | 旧log版、mean_only续训、高alpha新实验应分开；Qwen头/预算不同；public test参与选择 |
+| T04 | [CHECK_20260908](tasks/t04_semantic_interaction/reports/reproduction/CHECK_20260908.md) | v1完整语言TF缓存、真实source_grid、1条跨split重复；v2开发版不能沿用98% |
+| T05 | [CHECK_20260908](tasks/t05_video_classification/reports/reproduction/CHECK_20260908.md) | 未发现正式实现与run；仅提供待冻结的实验合同 |
+| T06 | [CHECK_20260908](tasks/t06_video_quality_assessment/reports/reproduction/CHECK_20260908.md) | 旧入口完整性校验失败；另含14通道电子质量输入；冷/热计时协议冲突；多视频padding仍有光场输入 |
+| T07 | [CHECK_20260908](tasks/t07_abo_image_retrieval/reports/reproduction/CHECK_20260908.md) | 独立A100分支已有480-query冻结baseline，Hit@1=0.952083；归档SHA有65位转录错误 |
+| T08 | [CHECK_20260908](tasks/t08_abo_image_text_retrieval/reports/reproduction/CHECK_20260908.md) | 全100商品/spin跨split共享，且1对图像字节重复；裁剪/维度/监督不同；多次5090D记录需按run区分 |
+
+### 必须先处理的共同问题
+
+1. **评估设计**：目前多个任务的test既用于checkpoint选择，也用于架构/超参取舍。诚实披露不等于消除了选择偏差。
+   历史值保留 `test used for selection`；要报告独立泛化，应另冻结validation与未参与开发的test，或设计新的外部测试。
+   已反复看过的test不能仅改名就变成盲测。多seed应报告所有预先约定运行，不只挑最高seed。
+2. **比较对象**：Qwen有零训练embedding、完整视觉主干+监督头、完整多模态主干+监督头及五质量词读出等多种形态。
+   必须逐任务命名；“冻结主干”不等于“整个系统没有训练”。D2NN只匹配激活专家相位，不匹配总参数/global/router/传播次数。
+3. **光学主张**：光Router包含电子Top-K和读数处理；许多旧CCD链含clip/log1p，且有电子mixer、MLP、读出和手工特征。
+   可以是合理光电系统，但不能描述为全光、CCD后纯线性或全部语义由光提取。alpha是混合系数，需配合去光、固定/打乱路由、
+   独立电子模型等消融；相位有梯度并不能证明相位对任务必要。
+4. **鲁棒性**：T01/T08的DC20训练并不意味着其报告test在20%实测噪声下完成；T06有名义eval未调制强度20%的另一个合同。
+   分别列ideal simulation、noisy simulation、hardware direct、hardware finetuned及重复次数。
+5. **时间/能耗**：根协议warmup50与T06 dataset-once warmup0不一致。光学临界路径组合估算、每场吞吐折算和真实端到端要分列。
+   新视频/未知指令的前端和缓存生成成本需按输入边界纳入；Qwen批处理吞吐也应测试，不能只把batch1时间乘N代表其最佳吞吐。
+6. **功率代码与合同不符**：`common/baseline_measurement.py:power_report` 用active采样算术均值乘平均CUDA时延，
+   未使用采样时间戳逐窗口积分；active标签常在整个forward前设置，而计时从block0开始，边界也不完全相同。
+   默认物理GPU索引0未自动跟随 `CUDA_VISIBLE_DEVICES`；另有A100分支显式修正，不能假定所有历史run均修正。
+   10/50ms查询间隔不等于传感器的独立测量分辨率；NVIDIA文档区分平均与瞬时功率，平均值可覆盖上一秒。
+   应记录实际卡/驱动支持的字段、UUID、传感器语义及完整时间窗，在稳态足够长负载中测量并积分。
+   现有数值可作为原算法的功率/能量代理保留，不能称已完成协议要求的精确逐样本能量实测。
+   参见[NVIDIA官方功率字段](https://docs.nvidia.com/deploy/nvidia-smi/index.html#gpu-power-readings)。
+7. **版本与发布链**：run commit、dirty patch/源码文件清单、完整父config、模型/数据/缓存/初始化/checkpoint SHA、环境和原命令必须绑定。
+   审查commit不是训练commit；当前代码可运行也不证明历史结果出自当前代码。T06应恢复原身份的入口，不能跳过SHA验证。
+
+### 本轮执行检查及限制
+
+服务器`xml`环境，隐藏全部GPU并限制CPU线程，执行T01/T02/T03/T04/T06/T08已有测试：**52 passed、2 failed**，14.53s。
+两失败均为T06旧Temporal36/Spatial4 profile后端SHA冲突；完整测试命令和失败项在T06机器证据中。
+这些检查验证部分结构/合同，不等于任务精度复现，也不覆盖本地尚未同步的T04 embedding-only新实现。
+本地base环境PyTorch用户目录DLL导入出现Windows access violation；未在本轮重装或更改用户环境。
+
+文稿定位为**可追溯审查稿与复现操作草稿**，不是已经完成验证的投稿补充材料。
+建议先恢复T06入口和数据去重/版本身份，再冻结比较范围及独立评估协议；随后受控修订模型、完成重训/固定权重复评，
+最后汇总硬件端到端、原始预测、误差条与论文文字。原始失败/负差距保留，不能为统一叙事而删改。

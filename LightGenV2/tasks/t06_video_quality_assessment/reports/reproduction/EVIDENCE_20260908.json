@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "audit_date": "2026-09-08",
+  "task": "T06",
+  "scope": "Read-only source/data/artifact audit; no new model training or full model evaluation. Existing predictions may be recomputed as explicitly recorded.",
+  "local_head": "79bf0f2695949fc5d0353698cfad417c14282f7b",
+  "local_tree_clean": false,
+  "server_main_head": "c313ff807617a75f410246e08d22d5f03b96443b",
+  "server_main_tree_clean": false,
+  "source_files_sha256": {
+    "LightGenV2/tasks/t06_video_quality_assessment/__init__.py": "1e6115fff47ba794a7f91847108c637c73b6701fba34a8d9f7a47025ef5a2bd8",
+    "LightGenV2/tasks/t06_video_quality_assessment/__main__.py": "71de8d02e47a61ce3b1d8cc784c8ce586e90f2aa38194c43bf4c5ddaba85cb8a",
+    "LightGenV2/tasks/t06_video_quality_assessment/build_lab_package.py": "d8cc9ef8b9e1e721c6268b3cbce9f74bb7e4056aaa43feefef89529e7b669556",
+    "LightGenV2/tasks/t06_video_quality_assessment/hardware.py": "efc1cefd8bbae59655cb3b9ad289b385fa394c522e6b00d85991bfc634726ecf",
+    "LightGenV2/tasks/t06_video_quality_assessment/multivideo.py": "2f0d9a907f955804f916e5a98500a437f76de744c61b6b1345718ce1bf5ba77f",
+    "LightGenV2/tasks/t06_video_quality_assessment/multivideo_audit.py": "cb2e509bd2ac7a17b12c8cada22f240f42fb8b1ce5b1223bf55e179972fce8b4",
+    "LightGenV2/tasks/t06_video_quality_assessment/multivideo_data.py": "29e6de91c808f099e40cffa25c17294877a8a9deebbaf6a3f24578256fa185e2",
+    "LightGenV2/tasks/t06_video_quality_assessment/multivideo_settings.py": "3459abc3f34b6c853d792c8878e7847518fd8afbc690841da2e5bf39251773ac",
+    "LightGenV2/tasks/t06_video_quality_assessment/multivideo_training.py": "2027b45050e2eeb3c0d73fb942ab72268ea1dff583f66849d346cb661ac1198d",
+    "LightGenV2/tasks/t06_video_quality_assessment/plot_quality_token_baseline.py": "84397a8aebb5f40dbf1bda47f4efdf6224a39a6ea277a6f36b0c92c4e235ed59",
+    "LightGenV2/tasks/t06_video_quality_assessment/project.py": "bc78c0f6acd24e2a6d738fc8baf8db1b85887ebb82a5ccc0c8243ccacbac0989",
+    "LightGenV2/tasks/t06_video_quality_assessment/quality_token_common.py": "2da9334f06b5a5a13e726116201c897c96f8cce635fac667474fccabefa86810",
+    "LightGenV2/tasks/t06_video_quality_assessment/quality_token_dataset_once.py": "c1af8521e7aedb9564562caa8c7eab268c31c491d48cc41ca341655dfd7f4728",
+    "LightGenV2/tasks/t06_video_quality_assessment/quality_token_extract.py": "5e86c321b1951c3205d7c5bad0ccaae995c21c27194da4eddc7a24fa66cb8c36",
+    "LightGenV2/tasks/t06_video_quality_assessment/quality_token_resolution.py": "0cbe704b490de07f1a765f44fdb51aa00fdaa225001b8671bcafe94610f55c21",
+    "LightGenV2/tasks/t06_video_quality_assessment/quality_token_train.py": "24a617b38839fa789a40fe47f4747798403d2ebe1a28df10dcac40893b181fc5",
+    "LightGenV2/tasks/t06_video_quality_assessment/run.py": "a8f38c4ded4176cdf73841104fa277b4e4a2de421a118ad38b5e8ec8fb33be00",
+    "LightGenV2/tasks/t06_video_quality_assessment/visualize_multivideo_masks.py": "28c23b7788501180c8b195dcc27c63802084377400bb9dbcd1d8f0a78d8fa287",
+    "LightGenV2/tasks/t06_video_quality_assessment/configs/baselines/qwen3vl_quality_tokens_r448.yaml": "6aed3f7212aed6815e2c94953cf553e481b53c4acc73a42fdf70811b9e746da7",
+    "LightGenV2/tasks/t06_video_quality_assessment/configs/baselines/qwen3vl_spatial_quality_tokens_4f_r448.yaml": "eb112a65c80a199195092fea3cfc56d470f74ed453c9046c5acd8e9aa95fa49c",
+    "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/spatial_single_video4_balanced.yaml": "87bf944d37dc179166705d81486b97cd283ecee0e09f80b7bff0b366484a3fb4",
+    "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/spatial_single_video4_two_branch.yaml": "45037408e88dbd41fe337934828240f77b78028df14e66273d878fc05b1a2bad",
+    "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/spatial_single_video4_two_branch_ema_q8.yaml": "2238ca0128353ef78005a2d88c329a2c9e78074b39c00672839295af04082171",
+    "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal36_balanced.yaml": "f90fb809fafc9734c1efda48c0399560526e598c564d5814684777856de4a468",
+    "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_base.yaml": "3452ec2427bca2ceeb0e5badd824da5d4896562fc258db3c1215bc27b5ee07ef",
+    "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_formal.yaml": "1dfbb14ea16524e817b8f3d32581b1d22c0bb128d2f113893d0bcc4ab67d3155",
+    "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo9x4_base.yaml": "bf196d8b85c2ec4133263614cdaa6ebc55165fef0aed51396cb08d0b23e1ca42",
+    "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo9x4_formal.yaml": "3598de5b646a914004a0b7f7f3e989835a27d7559e2d423afeda55f4c413493c"
+  },
+  "remote_record_inventory": [
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/20260907_193728_spatial_single_video4_two_branch_preflight/run_manifest.json",
+      "sha256_of_record": "00a5b0675e6354ff290b409ac277baf4abc4ed0ddedc62f35e4c7e6bc58172eb",
+      "bytes": 963,
+      "git_commit": "14ae470376a06c66f6b085d1b84766263bca5d2f",
+      "status": "completed"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo9x4_contentroute_d30_s114/training_summary.json",
+      "sha256_of_record": "1439bad4060e1c433112278b5a45c12bb4815893694cce6c5a3c61195f033f3a",
+      "bytes": 6899,
+      "best_epoch": 25,
+      "checkpoint_sha256": "cfda5cd8cbad94d0060f54f4c07cf4314b84677c45944fdff196d945efa32ba0"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo9x4_contentroute_d30_s114/initialization_report.json",
+      "sha256_of_record": "88f5ff0190b92e59cbabdb90159d47127c5bd0de485aeb1387dad5dd99a90cf1",
+      "bytes": 645
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo9x4_contentroute_d30_s114/run_manifest.json",
+      "sha256_of_record": "15bd27493f55d83bd68673b15662c23e9ccce026c8cbc7551c5e8a8439f764cd",
+      "bytes": 760,
+      "git_commit": "f446273d41dc57f08faac1340f401432ef17509c"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/20260907_194258_spatial_single_video4_two_branch_evaluate/initialization_report.json",
+      "sha256_of_record": "d150d308c75115180cbf4c89198daa0e8e6710fff174420a103b7a24d85a83a7",
+      "bytes": 404
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/20260907_194258_spatial_single_video4_two_branch_evaluate/run_manifest.json",
+      "sha256_of_record": "c33c9bf649892c3771d0d1f22911cf17bcd4760ecfb1600912a5dd3f38b4062c",
+      "bytes": 1133,
+      "git_commit": "9e262c79ae0601148369d5ea8ae3f84c85ed4534",
+      "status": "completed"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo16x4_rank_s163/training_summary.json",
+      "sha256_of_record": "cf75a3d39ef431c4553ea5be537421d332a31b646e2c0e886e5f1b981d19b4f1",
+      "bytes": 8858,
+      "best_epoch": 30,
+      "checkpoint_sha256": "5303b574b200e14bf943af21c60a246720be453b9cf8847cd93c0eaaa243a77c"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo16x4_rank_s163/initialization_report.json",
+      "sha256_of_record": "0c538b795564caeca737268bae54ab9101c87cd0d8a9d82bb085cc026f10df8e",
+      "bytes": 1329
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo16x4_rank_s163/run_manifest.json",
+      "sha256_of_record": "9b24ad1ef76fc34b86c8a4d19351b017b5b477d06925815f58468fb68be9fcab",
+      "bytes": 746,
+      "git_commit": "ddc0d71abb79185b506e8db979b38695e2dffa79"
+    }
+  ],
+  "actual_checkpoint_sha256": {
+    "LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo16x4_rank_s163/best_checkpoint.pt": {
+      "bytes": 81776084,
+      "sha256": "5303b574b200e14bf943af21c60a246720be453b9cf8847cd93c0eaaa243a77c"
+    }
+  },
+  "data_audit": {
+    "manifest_sha256": "607c50d20662a47795c23cd2038081b30368ed108ba9be8a1bb8a9d250f8e7fc",
+    "counts": [
+      2250,
+      558
+    ],
+    "sample_id_intersection": 0,
+    "filename_prompt_intersection": 0,
+    "test_videos_with_train_filename_prompt": 0,
+    "meaning": "Filename stems are a prompt proxy, not an independently verified official prompt ID."
+  },
+  "cpu_contract_tests": {
+    "command": "CUDA_VISIBLE_DEVICES=\"\" OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 /home/guest3/miniconda3/envs/xml/bin/python -m pytest LightGenV2/tasks/t01_object_retrieval/tests LightGenV2/tasks/t02_keypoint_detection/tests LightGenV2/tasks/t03_saliency/tests LightGenV2/tasks/t04_semantic_interaction/tests LightGenV2/tasks/t06_video_quality_assessment/tests LightGenV2/tasks/t08_abo_image_text_retrieval/tests -q --disable-warnings --maxfail=3 -p no:cacheprovider",
+    "passed": 52,
+    "failed": 2,
+    "warnings": 13,
+    "seconds": 14.53,
+    "failed_tests": [
+      "Temporal36ProjectContractTest.test_materialized_config_owns_new_run_and_preserves_inputs",
+      "Temporal36ProjectContractTest.test_spatial_single_video4_profile_is_not_multivideo_reuse"
+    ],
+    "error": "T06 verified backend changed or is incomplete: modeling.py, settings.py, training.py, run.py, data.py",
+    "local_environment_test": "Windows base Python failed importing user-site torch DLL; local development T04 v2 was not tested by server test run."
+  }
+}
