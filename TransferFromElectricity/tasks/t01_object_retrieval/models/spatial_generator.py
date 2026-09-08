@@ -73,12 +73,13 @@ class SpatialDecoder(nn.Module):
         self.grid=15 if global_plane else 14
         axis=torch.linspace(-1,1,self.grid);y,x=torch.meshgrid(axis,axis,indexing='ij')
         self.register_buffer('coordinates',torch.stack((x,y))[None])
-        self.input=nn.Sequential(nn.Conv2d(514,64,3,padding=1),nn.GELU(),nn.Conv2d(64,64,3,padding=1),nn.GELU())
+        self.input=nn.Sequential(nn.Conv2d(514,64,3,padding=1),nn.GroupNorm(8,64),nn.GELU(),
+                                 nn.Conv2d(64,64,3,padding=1),nn.GroupNorm(8,64),nn.GELU())
         channels=[64,32,24,16,8]+([8] if global_plane else [])
         blocks=[]
         for before,after in zip(channels,channels[1:]):
-            blocks.extend((nn.Conv2d(before,after*4,3,padding=1),nn.PixelShuffle(2),nn.GELU(),
-                           nn.Conv2d(after,after,3,padding=1),nn.GELU()))
+            blocks.extend((nn.Conv2d(before,after*4,3,padding=1),nn.PixelShuffle(2),nn.GroupNorm(8,after),nn.GELU(),
+                           nn.Conv2d(after,after,3,padding=1),nn.GroupNorm(8,after),nn.GELU()))
         self.upsample=nn.Sequential(*blocks)
         self.head=nn.Conv2d(8,outputs,3,padding=1)
         nn.init.normal_(self.head.weight,std=.02);nn.init.zeros_(self.head.bias)
