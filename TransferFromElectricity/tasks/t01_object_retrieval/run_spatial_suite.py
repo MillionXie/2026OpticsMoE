@@ -33,13 +33,17 @@ def main():
     parser.add_argument('--methods',nargs='+',default=METHODS,choices=METHODS)
     parser.add_argument('--prefix',required=True)
     parser.add_argument('--smoke',action='store_true')
+    parser.add_argument('--wait-for-gpus',action='store_true',help='Wait for the assigned RTX devices to become empty')
     args=parser.parse_args()
     if len(args.gpu_uuids)>len(args.datasets) or len(set(args.gpu_uuids))!=len(args.gpu_uuids):
         raise ValueError('Use distinct GPU UUIDs, no more than the number of datasets')
     devices=inventory();occupied=processes()
     for uuid in args.gpu_uuids:
         validate_device(uuid,devices)
-        if occupied.get(uuid):raise RuntimeError(f'GPU already occupied: {uuid}: {occupied[uuid]}')
+    while any(occupied.get(uuid) for uuid in args.gpu_uuids):
+        if not args.wait_for_gpus:raise RuntimeError(f'GPU already occupied: {occupied}')
+        print('WAIT for assigned RTX GPUs', {uuid:sorted(occupied.get(uuid,set())) for uuid in args.gpu_uuids},flush=True)
+        time.sleep(5);occupied=processes()
     sha=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
     kind='smoke' if args.smoke else 'simulation'
     directory=TASK/'runs'/kind;directory.mkdir(parents=True,exist_ok=True)
@@ -59,7 +63,9 @@ def main():
         observed=processes()
         for uuid in args.gpu_uuids:
             if uuid not in active and pending[uuid] and not failed:
-                if observed.get(uuid):raise RuntimeError(f'GPU became occupied before next run: {uuid}')
+                if observed.get(uuid):
+                    if args.wait_for_gpus:continue
+                    raise RuntimeError(f'GPU became occupied before next run: {uuid}')
                 dataset,method=pending[uuid].pop(0)
                 run_id=f'{args.prefix}_{dataset}_{method}_s42';run=directory/run_id
                 if run.exists():raise FileExistsError(run)
