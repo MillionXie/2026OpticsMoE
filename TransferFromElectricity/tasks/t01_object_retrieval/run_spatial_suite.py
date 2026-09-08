@@ -43,7 +43,7 @@ def main():
     sha=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
     kind='smoke' if args.smoke else 'simulation'
     directory=TASK/'runs'/kind;directory.mkdir(parents=True,exist_ok=True)
-    audit_path=directory/f'{args.prefix}_execution.json'
+    audit_path=directory/f'{args.prefix}_{"_".join(args.datasets)}_execution.json'
     if audit_path.exists():raise FileExistsError(audit_path)
     state={'git_sha':sha,'config_family':'spatial_v4','smoke':args.smoke,'records':[],
            'policy':'One serial queue per physical GPU, process inventory sampled every five seconds','complete':False}
