@@ -1,0 +1,12 @@
+base_config: spatial_two_branch_stage_ema_conservative_s423.yaml
+output_dir: ../../runs/lgvq_spatial_two_branch_stage_ema_routerdiv_s424
+random_seed: 424
+
+router:
+  serial_visual_token_gain: 2.0
+
+loss:
+  serial_router_diversity_weight: 0.02
+
+curriculum:
+  serial_router_diversity_weight_final: 0.006

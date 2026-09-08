@@ -318,6 +318,7 @@ class ExperimentSettings:
     readout_weight_decay: float = 1.0e-4
     phase_warmup_epochs: int = 0
     late_refine_start_epoch: int = 0
+    restore_best_at_stage_transition: bool = False
     late_refine_electronic_lr_factor: float = 1.0
     late_refine_readout_lr_factor: float = 1.0
     late_refine_phase_lr_factor: float = 1.0
@@ -960,6 +961,9 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         phase_warmup_epochs=int(get("training", "phase_warmup_epochs", 0)),
         late_refine_start_epoch=int(
             get("training", "late_refine_start_epoch", 0)
+        ),
+        restore_best_at_stage_transition=bool(
+            get("training", "restore_best_at_stage_transition", False)
         ),
         late_refine_electronic_lr_factor=float(
             get("training", "late_refine_electronic_lr_factor", 1.0)

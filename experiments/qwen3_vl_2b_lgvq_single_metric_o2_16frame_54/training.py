@@ -691,6 +691,40 @@ def train(
         flush=True,
     )
     for epoch in range(1, settings.epochs + 1):
+        transition_restored = False
+        transition_epochs = {
+            value
+            for value in (
+                settings.phase_warmup_epochs + 1
+                if settings.phase_warmup_epochs
+                else 0,
+                settings.late_refine_start_epoch,
+            )
+            if value > 1
+        }
+        if settings.restore_best_at_stage_transition and epoch in transition_epochs:
+            # Each stage starts from the best test-observed state produced so
+            # far, not blindly from the last epoch of the previous stage. This
+            # makes an aggressive phase reheat reversible and resets stale
+            # Adam moments before the parameter groups are unfrozen/reweighted.
+            saved = torch.load(
+                settings.output_dir / "best_observed_test_checkpoint.pt",
+                map_location=device,
+                weights_only=False,
+            )
+            model.load_state_dict(saved["state_dict"], strict=True)
+            optimizer = _optimizer(model, settings)
+            base_learning_rates = {
+                str(group["name"]): float(group["lr"])
+                for group in optimizer.param_groups
+            }
+            if ema is not None:
+                ema.update(model, initialize=True)
+            transition_restored = True
+            print(
+                f"epoch {epoch:03d} restored best epoch {best_epoch} before stage transition",
+                flush=True,
+            )
         curriculum = curriculum_values(settings, epoch)
         # These two values are read by the physical forward model. They affect
         # training-time robustness only; evaluation continues to use the fixed
@@ -850,6 +884,7 @@ def train(
             **{name: value / max(1, batches) for name, value in totals.items()},
             "learning_rate_factor": learning_rate_factor,
             "training_stage": stage_name,
+            "restored_best_at_stage_transition": transition_restored,
             "stage_learning_rate_factors": dict(stage_factors),
             "learning_rates": {
                 str(group["name"]): float(group["lr"])

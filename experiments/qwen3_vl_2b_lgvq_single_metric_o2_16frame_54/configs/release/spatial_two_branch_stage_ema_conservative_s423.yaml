@@ -1,0 +1,36 @@
+base_config: spatial_two_branch_stage_ema_q8_s420.yaml
+output_dir: ../../runs/lgvq_spatial_two_branch_stage_ema_conservative_s423
+random_seed: 423
+
+router:
+  serial_visual_token_gain: 1.0
+
+model:
+  dropout: 0.22
+
+training:
+  epochs: 45
+  learning_rate: 0.00002
+  phase_learning_rate: 0.0004
+  router_phase_learning_rate: 0.001
+  readout_learning_rate_factor: 0.20
+  readout_weight_decay: 0.004
+  phase_warmup_epochs: 3
+  late_refine_start_epoch: 21
+  restore_best_at_stage_transition: true
+  late_refine_electronic_lr_factor: 0.10
+  late_refine_readout_lr_factor: 0.20
+  late_refine_phase_lr_factor: 0.35
+  late_refine_router_lr_factor: 0.35
+  ema_decay: 0.99
+  ema_start_epoch: 4
+  minimum_learning_rate_factor: 0.20
+
+loss:
+  serial_router_diversity_weight: 0.0
+  phase_smoothness_weight: 0.0
+
+curriculum:
+  start_epoch: 4
+  end_epoch: 30
+  serial_router_diversity_weight_final: 0.0

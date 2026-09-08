@@ -1,0 +1,40 @@
+base_config: spatial_two_branch_stage_ema_q8_s420.yaml
+output_dir: ../../runs/lgvq_spatial_two_branch_small_readout_ema_s425
+random_seed: 425
+
+# Capacity-control candidate: the inference graph still has one electronic
+# residual branch and one optical branch, but the final MOS head is halved from
+# width 512 to 256 (about half the readout parameters).
+model:
+  head_width: 256
+  dropout: 0.18
+
+router:
+  serial_visual_token_gain: 1.0
+
+training:
+  epochs: 100
+  learning_rate: 0.00006
+  phase_learning_rate: 0.001
+  router_phase_learning_rate: 0.003
+  readout_learning_rate_factor: 1.0
+  readout_weight_decay: 0.002
+  phase_warmup_epochs: 0
+  late_refine_start_epoch: 61
+  restore_best_at_stage_transition: true
+  late_refine_electronic_lr_factor: 0.15
+  late_refine_readout_lr_factor: 0.25
+  late_refine_phase_lr_factor: 0.40
+  late_refine_router_lr_factor: 0.40
+  ema_decay: 0.995
+  ema_start_epoch: 1
+  minimum_learning_rate_factor: 0.08
+
+loss:
+  serial_router_diversity_weight: 0.0
+  phase_smoothness_weight: 0.0
+
+curriculum:
+  start_epoch: 5
+  end_epoch: 70
+  serial_router_diversity_weight_final: 0.0
