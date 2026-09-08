@@ -1,0 +1,4 @@
+2026-09-08T21:38:46+08:00
+3fab90b363e3d49f02fa68acdc6c363b991097e7
+index, name, uuid, power.limit [W], memory.total [MiB]
+6, NVIDIA A100-PCIE-40GB, GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55, 250.00 W, 40960 MiB

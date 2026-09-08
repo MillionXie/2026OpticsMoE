@@ -33,8 +33,10 @@ heads = read_json(EVIDENCE / "task_heads_a100.json")
 common_power = read_json(EVIDENCE / "optical_moe_electronics_a100.json")
 spatial_power = read_json(EVIDENCE / "optical_moe_spatial_electronics_a100.json")
 openmoji_power = read_json(EVIDENCE / "t04_optical_electronics_power_a100.json")
-batch4 = read_json(EVIDENCE / "formal_batch4" / "report.json")
-batch2 = read_json(EVIDENCE / "formal_batch2" / "report.json")
+legacy_batch4 = read_json(EVIDENCE / "formal_batch4" / "report.json")
+legacy_batch2 = read_json(EVIDENCE / "formal_batch2" / "report.json")
+full_boundary_batch1 = read_json(EVIDENCE / "full_boundary_batch1" / "report.json")
+full_boundary_batch2 = read_json(EVIDENCE / "full_boundary_batch2" / "report.json")
 batch3 = read_json(EVIDENCE / "sweep_batch3" / "result.json")
 batch_sweep = read_json(EVIDENCE / "t06_temporal_batch_sweep_a100.json")
 batch16 = read_json(EVIDENCE / "t06_temporal_batch16_formal_a100.json")
@@ -246,9 +248,14 @@ for task_id, spec in TASKS.items():
 
 qwen_reference = {
     "lgvq_temporal": {
-        "time_ms": float(batch4["same_workload_16_video_model_ms"]),
-        "energy_j": float(batch4["same_workload_16_video_measured_active_energy_j"]),
-        "source": "formal batch=4, four measured calls for the same 16-video workload",
+        "time_ms": float(full_boundary_batch1["same_workload_16_video_model_ms"]),
+        "energy_j": float(
+            full_boundary_batch1["same_workload_16_video_measured_active_energy_j"]
+        ),
+        "source": (
+            "formal full-model boundary, batch=1, sixteen sequential measured calls "
+            "for the same 16-video workload"
+        ),
     },
     "lgvq_spatial": {"time_ms": 74.438, "energy_j": 6.242, "source": "audited A100 table"},
     "abo_image_to_text": {"time_ms": 43.963, "energy_j": 3.792, "source": "audited A100 table"},
@@ -275,18 +282,26 @@ for row in energy_rows:
 
 
 summary = {
-    "schema_version": 1,
+    "schema_version": 2,
     "canonical_contract": {
         "ours_timing": "six/three physical 1.314ms passes + CUDA-event CCD-to-fusion + every required serial bridge + CUDA-event complete task head",
         "wall_diagnostic": "the same serial graph recomputed from synchronized host-wall medians; diagnostic only and never mixed into the CUDA primary table",
         "ours_energy": "80.388W optical rig plus measured A100 board-power proxy over the same CUDA table boundary; parallel residual contributes incremental energy but no latency",
-        "qwen_formal": "performance, latency, and energy must come from the same full-558 formal run; sweep power is occupancy evidence only",
+        "qwen_formal": "performance, latency, and energy must come from the same full-558 formal run and the full GPU-input-to-score boundary; sweep power is occupancy evidence only",
+        "qwen_primary_batch_policy": "batch=1 is the strict non-parallel primary baseline; batch=2 is reported separately as a small-batch efficiency baseline",
         "authoritative_ours_times_ms": {
             row["task_id"]: row["canonical_table_latency_ms"] for row in energy_rows
         },
     },
-    "batch2_formal": batch2,
-    "batch4_formal": batch4,
+    "qwen_full_boundary_formal": {
+        "batch1": full_boundary_batch1,
+        "batch2": full_boundary_batch2,
+    },
+    "legacy_secondary_boundary": {
+        "warning": "historical first-Vision-block boundary only; do not use in the primary table",
+        "batch2": legacy_batch2,
+        "batch4": legacy_batch4,
+    },
     "batch3_sweep": batch3,
     "batch_sweep_reference": batch_sweep,
     "ours_energy_method": {
@@ -323,14 +338,17 @@ with (HERE / "comparisons.csv").open("w", newline="", encoding="utf-8-sig") as h
     writer.writerows(comparison_rows)
 
 formal_batch_rows = []
-for report in (batch2, batch4, batch16):
+for report in (full_boundary_batch1, full_boundary_batch2):
     formal_batch_rows.append(
         {
             "batch_size": report["batch_size_videos"],
             "test_videos": report["test_videos"],
             "srcc": report["performance"]["srcc"],
             "plcc": report["performance"]["plcc"],
-            "mean_ms_per_batch": report["model_boundary_full_batch_cuda_ms"]["mean"],
+            "timing_boundary": report["timing_boundary"],
+            "mean_ms_per_batch": report[
+                "full_gpu_input_to_score_full_batch_cuda_ms"
+            ]["mean"],
             "same_16_video_ms": report["same_workload_16_video_model_ms"],
             "formal_active_mean_w": report["telemetry"]["active_mean_w"],
             "same_16_video_energy_j": report["same_workload_16_video_measured_active_energy_j"],
@@ -348,16 +366,25 @@ with (HERE / "temporal_formal_batch_comparison.csv").open(
     writer.writerows(formal_batch_rows)
 
 print(json.dumps({
-    "batch4": {
-        "performance": batch4["performance"],
-        "mean_ms_per_4_videos": batch4["model_boundary_full_batch_cuda_ms"]["mean"],
-        "active_mean_w": batch4["telemetry"]["active_mean_w"],
-        "active_energy_j_per_4_videos": batch4["telemetry"]["measured_active_energy_j_per_batch"],
+    "batch1_full_boundary": {
+        "performance": full_boundary_batch1["performance"],
+        "mean_ms_per_batch": full_boundary_batch1[
+            "full_gpu_input_to_score_full_batch_cuda_ms"
+        ]["mean"],
+        "active_mean_w": full_boundary_batch1["telemetry"]["active_mean_w"],
+        "same_16_video_energy_j": full_boundary_batch1[
+            "same_workload_16_video_measured_active_energy_j"
+        ],
     },
-    "batch3": {
-        "mean_ms_per_3_videos": batch3["model_boundary_batch_cuda_ms"]["mean"],
-        "active_mean_w": batch3["telemetry"]["active_mean_w"],
-        "power_limit_fraction": batch3["telemetry"]["active_mean_fraction_of_power_limit"],
+    "batch2_full_boundary": {
+        "performance": full_boundary_batch2["performance"],
+        "mean_ms_per_batch": full_boundary_batch2[
+            "full_gpu_input_to_score_full_batch_cuda_ms"
+        ]["mean"],
+        "active_mean_w": full_boundary_batch2["telemetry"]["active_mean_w"],
+        "same_16_video_energy_j": full_boundary_batch2[
+            "same_workload_16_video_measured_active_energy_j"
+        ],
     },
     "ours_energy": [
         {"task": row["task"], "combined_j": row["combined_optical_plus_a100_energy_j"]}
