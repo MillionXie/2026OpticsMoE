@@ -220,6 +220,9 @@ def evaluate_selected_checkpoint(
             "checkpoint": str(checkpoint),
             "selection_biased": True,
             "metrics": metrics,
+            "alpha": [float(model.core.hybrid.block1_optical_fusion.detach()),
+                      float(model.core.hybrid.block2_optical_fusion.detach())],
+            "ccd_normalization": settings.ccd_normalization,
             "router_audit": None if handle is None else {
                 **_selection_report(router_counts),
                 "samples": router_samples,

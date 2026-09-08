@@ -36,8 +36,9 @@ CC 为每张预测概率密度与真值密度的 Pearson，再平均5000张，�
 不是准确率/物理能量贡献百分比。电子残差是无attention的token mixer与通道MLP。
 必须披露一个历史实现细节：`RobustCCDNormalizer` 做了非负检查、除整幅均值、上限12裁剪，
 然后 `log1p(relative_intensity)`。因此当前模型**不是CCD之后只有线性归一化**；
-这里的log不是Qwen或图像查看器加的。本轮受控续训不改这一历史算子，也不把它隐瞒成纯线性读出。
-若要求严格取消CCD后非线性，应另立架构合同并重新训练/复测，不能直接将log系数设0（那会输出全零）。
+这里的log不是Qwen或图像查看器加的。历史配置保留用于复现；本轮正式优化已改用独立的
+`mean_only`合同，仅除整幅均值，无log/gamma/上限裁剪；末端电子读出网络仍有其常规激活。
+不能直接将旧log系数设0（那会输出全零）。新合同有独立checkpoint架构标签，旧权重仅作为显式迁移初始化。
 光路参数：17μm、10cm、4专家Top2，一次router读出、两次特征光传播读出；20%–30%随机相干零级分量。
 已有专家选择占比23.54/26.80/23.38/26.28%，没有全局坍缩。
 比较属于**端到端系统比较**，不是只替换一种模块的严格参数量/训练预算受控消融：主干、解码头、
@@ -83,17 +84,22 @@ python -m LightGenV2.tasks.t03_saliency.reproduce_baseline --model "$MODEL" --re
 python -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --phase evaluate --checkpoint LightGenV2/tasks/t03_saliency/runs/simulation/moe_router_scale_dc20_seed42/best_checkpoint.pt --run-dir LightGenV2/tasks/t03_saliency/runs/simulation/moe_recheck_20260908
 ```
 
-## 本轮优化（不改网络结构，不取消光路由/DC）
+## 本轮优化（不增加网络分支，不取消光路由/DC）
 
 先检验训练而不是增加分支。保留原baseline与原0.8291，使用原best权重续训并重建优化器，
 仅保留best/last；epoch0先复评并纳入best，防止续训退化覆盖好权重。
-候选A：关闭输入/相位/CCD及router的16px位置扰动，保留DC与其他噪声，续训100epoch。
+候选A：CCD改用mean_only；关闭输入/相位/CCD及router的16px位置扰动，保留DC与其他噪声，训练100epoch。
 候选B：在A基础上CC损失权重0.5→1.0。均为每5epoch测public test选best，结果具有选模偏差。
 
 ```bash
-python -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config LightGenV2/tasks/t03_saliency/configs/moe_dc20_no_shift_continue.yaml --phase all
-python -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config LightGenV2/tasks/t03_saliency/configs/moe_dc20_cc_continue.yaml --phase all
+python -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config LightGenV2/tasks/t03_saliency/configs/moe_dc20_mean_only_continue.yaml --phase all
+python -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config LightGenV2/tasks/t03_saliency/configs/moe_dc20_mean_only_cc_continue.yaml --phase all
 ```
 
 训练产物在配置同名run。最终除CC/KLD/SIM/NSS外还需查看router占比、alpha、相位与光场。
 关闭位置扰动的新候选不能宣传为已经验证具有与旧版相同的位置鲁棒性；实测需重新核验。
+早先两份保留log的诊断续训 `moe_dc20_no_shift_continue_seed42` / `moe_dc20_cc_continue_seed42`
+已经人工停止，保留现有日志和best/last作为审计记录，不属于正式候选，也未删除。
+
+并行时先检查GPU空闲情况，设置 `CUDA_DEVICE_ORDER=PCI_BUS_ID` 再指定 `CUDA_VISIBLE_DEVICES`，
+或者直接指定GPU UUID；不要假定默认CUDA序号总与nvidia-smi物理序号一致。
