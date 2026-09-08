@@ -2,6 +2,15 @@
 
 ## 已有实测证据
 
+最终更新：三阶段free/ge040/Qwen三组均已完成100epoch，复评CC分别为
+0.8521266821 / 0.8513403416 / 0.8896847576，best epoch为80 / 95 / 80。
+下文启动核验保留为历史记录，不代表当前进度。
+**学习率勘误**：历史Vision2设置加载器会把training中的前三项LR覆盖为optimization默认值。
+因此上述三阶段运行实际基础LR为电子1e-4、相位1e-4、router5e-5，读出1e-4、头3e-4；
+并非YAML training表面写出的相位3e-3。逐epoch真实LR见history。
+不改写旧结果；旧profile保持原解析行为。修复后的显式新协议见
+[训练方法优化](TRAINING_REFINEMENT.md)。
+
 - 原光电CC：0.8290598。
 - mean_only续训候选：100epoch已结束，选定权重复评CC=0.84901166。
 - CC损失权重加倍候选：epoch99时历史最佳约0.8494；与上一组差异很小，不能由单seed断言稳定更优。
@@ -9,7 +18,7 @@
 - 原Qwen头重新初始化训练30epoch：0.87899109，best epoch30；属于新的单seed训练复现，非多seed统计。
   原始证据：[重训复评JSON](evidence/baseline_retrain_20260908.json)。
 
-这些数值均为同一5000张公开test上的CC，有测试选模偏差。新alpha对照尚无最终成绩。
+这些数值均为同一5000张公开test上的CC，有测试选模偏差。
 
 ## 读出头公平性：适配器不能漏算
 

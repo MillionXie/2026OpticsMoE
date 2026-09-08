@@ -255,6 +255,7 @@ def evaluate_selected_checkpoint(
             "alpha": [float(model.core.hybrid.block1_optical_fusion.detach()),
                       float(model.core.hybrid.block2_optical_fusion.detach())],
             "ccd_normalization": settings.ccd_normalization,
+            "phase_change_from_initialization": phase_change_report(payload, settings),
             "router_audit": None if handle is None else {
                 **_selection_report(router_counts),
                 "samples": router_samples,
@@ -281,3 +282,23 @@ def evaluate_selected_checkpoint(
 
 
 __all__ = ["evaluate_selected_checkpoint", "train"]
+
+
+def phase_change_report(payload: dict, settings: Any) -> dict:
+    """Report real sigmoid-phase motion, not merely raw parameter updates."""
+    source = getattr(settings, "initialization_checkpoint", None)
+    if source is None:
+        return {}
+    previous = torch.load(source, map_location="cpu", weights_only=False)["core"]
+    result = {}
+    for name, value in payload["core"].items():
+        if not any(key in name for key in ("raw_phase", "raw_router_phase")) or name not in previous:
+            continue
+        before, after = previous[name].float(), value.float()
+        radians = 2 * math.pi * (after.sigmoid() - before.sigmoid())
+        circular = torch.atan2(radians.sin(), radians.cos())
+        result[name] = {"elements": value.numel(),
+                        "raw_rms_change": float((after-before).square().mean().sqrt()),
+                        "circular_phase_rms_rad": float(circular.square().mean().sqrt()),
+                        "fraction_above_001_rad": float((circular.abs() > .01).float().mean())}
+    return result

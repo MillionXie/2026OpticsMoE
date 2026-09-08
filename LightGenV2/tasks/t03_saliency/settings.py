@@ -76,7 +76,19 @@ def load_settings(path: str | Path) -> Any:
         raise ValueError("Unknown T03 CCD normalization")
     warmstart = d("training.initialization_checkpoint")
     settings.initialization_checkpoint = _resolve(warmstart, config.parent) if warmstart else None
+    settings.initialization_checkpoint_sha256 = d("training.initialization_checkpoint_sha256")
     settings.reset_fusion_on_warmstart = bool(d("training.reset_fusion_on_warmstart", False))
+    # Legacy Vision2 overwrites training.* rates with optimization.* defaults.
+    # Keep historical profiles reproducible; new profiles explicitly opt in.
+    settings.learning_rate_source = str(d("training.learning_rate_source", "legacy_optimization"))
+    if settings.learning_rate_source not in {"legacy_optimization", "task_training"}:
+        raise ValueError("Unknown learning_rate_source")
+    if settings.learning_rate_source == "task_training":
+        for name in ("student_learning_rate", "phase_learning_rate", "router_learning_rate"):
+            value = d(f"training.{name}")
+            if value is None or not 0 < float(value) < float("inf"):
+                raise ValueError(f"Explicit positive training.{name} required")
+            setattr(settings, name, float(value))
     settings.staged_training = bool(d("training.staged.enabled", False))
     settings.staged_warmup_epochs = int(d("training.staged.warmup_epochs", 10))
     settings.staged_polish_start = int(d("training.staged.polish_start", 71))
@@ -114,11 +126,18 @@ def save_resolved_config(settings: Any) -> None:
     values = yaml.safe_load(path.read_text(encoding="utf-8"))
     values["lightgen"].update(task="t03_saliency", ccd_normalization=settings.ccd_normalization)
     values.setdefault("training", {}).update(
+        learning_rate_source=settings.learning_rate_source,
         initialization_checkpoint=str(settings.initialization_checkpoint) if settings.initialization_checkpoint else None,
+        initialization_checkpoint_sha256=settings.initialization_checkpoint_sha256,
         reset_fusion_on_warmstart=settings.reset_fusion_on_warmstart,
         staged={"enabled": settings.staged_training, "warmup_epochs": settings.staged_warmup_epochs,
                 "polish_start": settings.staged_polish_start, "final_hard_balance": settings.staged_final_hard_balance},
     )
+    values["effective_optimizer_learning_rates"] = {
+        name: getattr(settings, name) for name in (
+            "student_learning_rate", "phase_learning_rate", "router_learning_rate",
+            "dense_readout_learning_rate", "dense_head_learning_rate")
+    }
     path.write_text(yaml.safe_dump(values, allow_unicode=True, sort_keys=False), encoding="utf-8")
 
 

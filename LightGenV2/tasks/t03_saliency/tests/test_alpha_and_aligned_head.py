@@ -7,10 +7,33 @@ import torch
 from LightGenV2.tasks.t03_saliency.aligned_baseline import AlignedReadout
 from LightGenV2.tasks.t03_saliency.settings import load_settings
 from LightGenV2.tasks.t03_saliency.modeling import architecture_label, initialize_student
-from LightGenV2.tasks.t03_saliency.training import staged_epoch
+from LightGenV2.tasks.t03_saliency.training import staged_epoch, phase_change_report
 from experiments.qwen3_vl_embedding_2b_caltech101_balanced_optical_fusion_ablation.modeling import _range_gate, _ScaleMatchedFusionMixin
 
 TASK = Path(__file__).resolve().parents[1]
+
+
+def test_refinement_rates_and_unchanged_architecture():
+    previous = load_settings(TASK / "configs/moe_staged_alpha_ge040.yaml")
+    assert previous.learning_rate_source == "legacy_optimization"
+    assert previous.phase_learning_rate == pytest.approx(1e-4)
+    names = ("control", "reheat", "cc", "weakaug")
+    configs = [load_settings(TASK / f"configs/moe_alpha40_refine_{n}.yaml") for n in names]
+    for s in configs:
+        assert s.learning_rate_source == "task_training"
+        assert s.student_learning_rate == pytest.approx(3e-5)
+        assert s.router_learning_rate == pytest.approx(2e-4)
+        assert not s.reset_fusion_on_warmstart
+        assert s.fusion_alpha_min == .4 and s.top_k == 2
+        assert architecture_label(s) == architecture_label(previous)
+        assert s.language_optical_zero_order_enabled
+        assert s.language_optical_phase_zero_order_intensity_min == .2
+        assert s.language_optical_phase_zero_order_intensity_max == .3
+        assert s.initialization_checkpoint == configs[0].initialization_checkpoint
+        assert s.map_kd_weight == 0
+    assert [s.phase_learning_rate for s in configs] == pytest.approx([1e-4, .003, .003, .003])
+    assert [s.cc_weight for s in configs] == [.5, .5, 1.5, 1.5]
+    assert [s.crop_scale_min for s in configs] == [.90, .90, .90, .98]
 
 
 def test_aligned_head_counts_and_forward():
@@ -18,6 +41,16 @@ def test_aligned_head_counts_and_forward():
     assert head.parameter_audit() == {"adapter": 197184, "decoder": 85412, "total": 282596}
     with torch.no_grad():
         assert head(torch.randn(1, 1024, 14, 14)).shape == (1, 1, 224, 224)
+
+
+def test_phase_movement_report(tmp_path):
+    path = tmp_path / "phase.pt"
+    torch.save({"core": {"phase.raw_phase": torch.zeros(4)}}, path)
+    s = SimpleNamespace(initialization_checkpoint=path)
+    report = phase_change_report({"core": {"phase.raw_phase": torch.zeros(4)}}, s)
+    assert report["phase.raw_phase"]["circular_phase_rms_rad"] == 0
+    report = phase_change_report({"core": {"phase.raw_phase": torch.ones(4)}}, s)
+    assert report["phase.raw_phase"]["fraction_above_001_rad"] == 1
 
 
 def test_alpha_pair_changes_only_interval_and_run_identity():

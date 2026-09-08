@@ -9,8 +9,10 @@
 输出是 `224×224` 连续显著性概率图。主指标为 `CC`（越大越好），并同时报告 KLD、SIM、NSS、AUC-Judd 和 MAE。
 
 2026-09-08新增：[同规格读出头、alpha无下限/≥0.4、三阶段训练对照与命令](reports/reproduction/ALPHA_AND_HEAD_COMPARISON.md)。
-已有mean_only续训100epoch完成，CC=0.8490；CC加权候选后期最佳约0.8494。
-新alpha≥0.4版本仍在训练，成绩单独报告，不能沿用上述低alpha成绩。
+100epoch三阶段训练已完成：无下限CC=0.85212668，alpha≥0.4 CC=0.85134034，
+新同规格读出头冻结Qwen CC=0.88968476；均为5000张public-test选定权重复评。
+后续保持结构不变的四组续训、学习率覆盖问题及完整操作命令见
+[训练方法优化](reports/reproduction/TRAINING_REFINEMENT.md)。
 
 ## 数据协议
 

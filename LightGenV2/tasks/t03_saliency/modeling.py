@@ -145,6 +145,9 @@ def initialize_student(
 ) -> dict[str, Any]:
     warmstart = getattr(settings, "initialization_checkpoint", None)
     if warmstart is not None:
+        expected_sha = getattr(settings, "initialization_checkpoint_sha256", None)
+        if expected_sha and sha256_file(warmstart) != expected_sha:
+            raise RuntimeError("T03 warmstart SHA256 mismatch")
         payload = torch.load(warmstart, map_location="cpu", weights_only=False)
         allowed = {model.checkpoint_architecture}
         if settings.ccd_normalization == "mean_only":
