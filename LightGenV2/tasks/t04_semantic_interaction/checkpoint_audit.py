@@ -76,6 +76,22 @@ def hybrid(args, settings, device):
     loss = (settings.category_loss_weight * losses['category'] + settings.edit_loss_weight * losses['edit']
             + settings.preservation_loss_weight * losses['preservation'] + settings.task_loss_weight * losses['task'])
     loss.backward()
+    result['no_task_gradient_parameters'] = {name: parameter.numel() for name, parameter in model.named_parameters()
+                                             if parameter.requires_grad and parameter.grad is None}
+    # Verify the suspected legacy output adapters affect neither output head.
+    # This tests a functional bypass only; it does not mutate/save the model.
+    handles = [core.output_adapter.register_forward_hook(lambda _m, _i, value: torch.zeros_like(value))
+               for core in (model.language_core, model.vision_core)]
+    try:
+        with torch.inference_mode():
+            bypass = model(batch['source_image'], batch['prompt_hidden'])
+        result['legacy_output_adapter_bypass'] = {
+            key: float((output[key].detach() - bypass[key]).abs().max())
+            for key in ('category_logits', 'edit_logits')}
+        result['legacy_output_adapter_bypass']['probe_samples'] = len(batch['sample_id'])
+    finally:
+        for handle in handles:
+            handle.remove()
     last = torch.load(args.last_checkpoint, map_location='cpu', weights_only=False) if args.last_checkpoint else None
     phases = {}
     for name, parameter in model.named_parameters():
