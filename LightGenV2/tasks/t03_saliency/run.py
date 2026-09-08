@@ -7,6 +7,7 @@ import datetime as dt
 import json
 import random
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -69,6 +70,7 @@ def _write_protocol(settings: Any, profile: str, seed: int) -> None:
                 else settings.lightgen_model_variant
             ),
             "seed": int(seed),
+            "command": [sys.executable, "-m", "LightGenV2.tasks.t03_saliency.run", *sys.argv[1:]],
             "git_commit": _git_value("rev-parse", "HEAD"),
             "started_at": dt.datetime.now(dt.timezone.utc).isoformat(),
             "selection": "highest public-test CC at epoch 1/every 5/final",

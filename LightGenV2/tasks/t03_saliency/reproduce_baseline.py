@@ -96,7 +96,7 @@ def run(args):
         "performance": metrics, "independent_float64_cc": cc64,
         "cc_implementation_difference": abs(float(metrics["cc"]) - cc64),
         "historical_reference_cc": 0.881051770, "difference_from_historical": float(metrics["cc"]) - 0.881051770,
-        "selection_biased": True, "protocol": "official val2014 as public test, selected by test CC; 224px density sigma=19px, not official hidden-test leaderboard",
+        "selection_biased": True, "protocol": "official val2014 as public test, selected by test CC; 224px output density, sigma=19 source-image pixels scaled per axis; not official hidden-test leaderboard",
         "native_vision_blocks": len(loaded.visual.blocks),
         "head_parameters": sum(p.numel() for p in model.head.parameters()),
         "files": manifest, "speed_and_power": "not measured",
