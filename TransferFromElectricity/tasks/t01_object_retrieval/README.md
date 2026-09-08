@@ -21,11 +21,27 @@ Top-3 达到约 66%–95%，CIFAR/Imagenette 的 Top-1 仍未达到 60%。
 [14 组完整结果](reports/control_v3_20260907/完整结果.md)、[总指标 CSV](reports/control_v3_20260907/metrics.csv)、
 [逐类指标 CSV](reports/control_v3_20260907/per_class_metrics.csv)、[对照图](reports/control_v3_20260907/retrieval_and_branch_contribution.png)
 及开发选择、设备与同步审计均归档于同一报告目录。
-下述指标及 0.5 起点描述属于第三轮历史；第四轮详细协议和开发选择保留在文末。
+第四轮详细协议和开发选择保留在文末。
+
+## 2026-09-08 计时与完整专家层
+
+新增计时检查使用 `configs/control_v3/timing_cifar.yaml`：direct、Qwen LoRA、CLIP LoRA 在同一空闲 RTX 4090 上顺序运行，每阶段两轮、每轮 120 batch，保留相同 PK batch=30、初值、精度与损失。只使用验证集，不能并入正式成绩表。CUDA 同步后分别记录阶段设置、训练循环、验证/审计、checkpoint/主日志耗时；计时文件自身写入、模型加载、初始验证和训练后的干预不计入 epoch。每阶段第二轮用于稳态比较，六轮原值全部保留。旧日志的记录间隔与这次精确计时分开报告。
+
+三组已完成，训练源码 `cc00af1b`，全部同一 RTX 4090 UUID，进程采样无其他计算 PID，训练进程已退出。
+在 epoch 2/4/6，训练循环秒数分别为 direct **41.67/57.10/60.13**、Qwen **72.62/87.48/92.86**、CLIP **49.23/66.06/67.97**。
+联合阶段 Qwen/CLIP 比 direct 多用约54.4%/13.0%的时间；本次未发现每轮训练加速，不据六轮短计时判断收敛优势。
+[18 个 epoch 的分项实测](reports/timing_and_masks_20260908/measured_epoch_timing.csv) 与 [旧九组正式 run 的270轮记录](reports/timing_and_masks_20260908/historical_epoch_timing.csv) 分别保留。
+
+计时结果、初始化数值、生成头逐层形状和 global 生成扩展设计见 [计时与 Mask 生成说明](reports/timing_and_masks_20260908/计时与Mask生成说明.md)。
+当前 direct/Qwen/CLIP 使用相同随机物理初相位，实际范围 1.24610–5.03708 rad；不是 direct 从零开始。
+生成组用 `anchor + G(theta) - G(theta_initial)` 保持共同起点；global 仍沿用 warmstart 后直接训练，尚未启用生成 global。
+三数据集正式专家已按真实 2×2 aperture 拼成 Vision/Language 两张 518×518 完整层，保留30像素间隙和20像素保护区；
+见 [Caltech](reports/timing_and_masks_20260908/caltech_assembled_expert_layers.png)、[CIFAR](reports/timing_and_masks_20260908/cifar_assembled_expert_layers.png)、[Imagenette](reports/timing_and_masks_20260908/imagenette_assembled_expert_layers.png)。
+精确相位张量在 `runs/smoke/20260908_v3_assembled_masks/`，切片重建误差为零，不覆盖旧 bank。
 
 ## 第三轮历史摘要
 
-新增计时检查使用 `configs/control_v3/timing_cifar.yaml`：direct、Qwen LoRA、CLIP LoRA 在同一空闲 RTX 4090 上顺序运行，每阶段两轮、每轮 120 batch，保留相同 PK batch=30、初值、精度与损失。只使用验证集，不能并入正式成绩表。CUDA 同步后分别记录阶段设置、训练循环、验证/审计、checkpoint/主日志耗时；计时文件自身写入、模型加载、初始验证和训练后的干预不计入 epoch。每阶段第二轮用于稳态比较，六轮原值全部保留。旧日志的记录间隔与这次精确计时分开报告。
+本节及后续第三轮指标、0.5 起点描述均属于历史；当前第四轮结果和计时以本文开头为准。
 
 当前主线恢复 Caltech 十类；三十类保留为规模诊断。新增 CIFAR-100 与预先固定的十类子集，
 沿用类别原型检索，不能直接当作带 100 类分类头的标准 CIFAR 分类榜单成绩。

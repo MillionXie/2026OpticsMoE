@@ -1,0 +1,92 @@
+[
+  {
+    "run_id": "20260908_v3_timing_cifar_direct_s42",
+    "file": "epoch_timing.json",
+    "sha256": "b0467b8efb065330de2607a336d0a764f8dbd6afb08a1c39ed6e1fad4130b7b3",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v3_timing_cifar_direct_s42/epoch_timing.json"
+  },
+  {
+    "run_id": "20260908_v3_timing_cifar_direct_s42",
+    "file": "protocol.json",
+    "sha256": "b1827e905bae6f62cad88da6676e4818462c1b3cd27860f4f9adb6d4da011bfb",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v3_timing_cifar_direct_s42/protocol.json"
+  },
+  {
+    "run_id": "20260908_v3_timing_cifar_direct_s42",
+    "file": "environment.json",
+    "sha256": "a324a6565f416dd3323805274f491cf869ec54c52f215331374a9107e6ab0dad",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v3_timing_cifar_direct_s42/environment.json"
+  },
+  {
+    "run_id": "20260908_v3_timing_cifar_direct_s42",
+    "file": "final_report.json",
+    "sha256": "04a1641756e009de7d0a48338b0c3ae10841194901daca3be5a1a016c13385d5",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v3_timing_cifar_direct_s42/final_report.json"
+  },
+  {
+    "run_id": "20260908_v3_timing_cifar_direct_s42",
+    "file": "history.json",
+    "sha256": "b9e82218e93670a70546e3c0b0df983f02635357069f04e490efbad6a88c1268",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v3_timing_cifar_direct_s42/history.json"
+  },
+  {
+    "run_id": "20260908_v3_timing_cifar_qwen_lora_s42",
+    "file": "epoch_timing.json",
+    "sha256": "c115170535d0b5b2deee0b2add16f87f5ced150daf7dc9c22034e59943bb74d7",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v3_timing_cifar_qwen_lora_s42/epoch_timing.json"
+  },
+  {
+    "run_id": "20260908_v3_timing_cifar_qwen_lora_s42",
+    "file": "protocol.json",
+    "sha256": "7d163f985fd01d6948fe698ab102a735cde65d9b61af8e555b4ae595b3f91b81",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v3_timing_cifar_qwen_lora_s42/protocol.json"
+  },
+  {
+    "run_id": "20260908_v3_timing_cifar_qwen_lora_s42",
+    "file": "environment.json",
+    "sha256": "597c9671d8721b6adbe76594fa76b5af12870c512ddf186d7e43b976e84145cd",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v3_timing_cifar_qwen_lora_s42/environment.json"
+  },
+  {
+    "run_id": "20260908_v3_timing_cifar_qwen_lora_s42",
+    "file": "final_report.json",
+    "sha256": "520e05b6ba2cd0ac26a2469c75942a8432cdb9c1c60ae0c44b20628db3fb85d7",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v3_timing_cifar_qwen_lora_s42/final_report.json"
+  },
+  {
+    "run_id": "20260908_v3_timing_cifar_qwen_lora_s42",
+    "file": "history.json",
+    "sha256": "d3d6c93f5c8996fd5949d8ef900154907f40cf602039982bbe9525d80d224d92",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v3_timing_cifar_qwen_lora_s42/history.json"
+  },
+  {
+    "run_id": "20260908_v3_timing_cifar_clip_lora_s42",
+    "file": "epoch_timing.json",
+    "sha256": "8e327bf705918dd449c709164a8790b8f707d58d526ad8fc30ddbdd974e7194d",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v3_timing_cifar_clip_lora_s42/epoch_timing.json"
+  },
+  {
+    "run_id": "20260908_v3_timing_cifar_clip_lora_s42",
+    "file": "protocol.json",
+    "sha256": "67033f9159671e060bfe2695c58091d39211d6f1635f921d67b9a4288694ee53",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v3_timing_cifar_clip_lora_s42/protocol.json"
+  },
+  {
+    "run_id": "20260908_v3_timing_cifar_clip_lora_s42",
+    "file": "environment.json",
+    "sha256": "5a734c8b79954e4c3459653b3d963c5ff1500c176abfeb169c79ea38b2702bff",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v3_timing_cifar_clip_lora_s42/environment.json"
+  },
+  {
+    "run_id": "20260908_v3_timing_cifar_clip_lora_s42",
+    "file": "final_report.json",
+    "sha256": "794a881f54a3505f1958a71d329d631cf1cba025a1ebd78ce42d0508786b14cd",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v3_timing_cifar_clip_lora_s42/final_report.json"
+  },
+  {
+    "run_id": "20260908_v3_timing_cifar_clip_lora_s42",
+    "file": "history.json",
+    "sha256": "f082d4c54e7af91b8ad0fb9725644debde2dbf66b850313375d7b071186eebcd",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v3_timing_cifar_clip_lora_s42/history.json"
+  }
+]
