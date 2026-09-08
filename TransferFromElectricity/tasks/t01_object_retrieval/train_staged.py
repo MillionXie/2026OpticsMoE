@@ -198,6 +198,7 @@ def execute(args, cfg, output):
     sampler = PKBatchSampler(training,settings.pk_skus_per_batch,settings.pk_images_per_sku,cfg['seed'],args.steps_per_epoch)
     loader = DataLoader(dataset,batch_sampler=sampler,num_workers=settings.num_workers,collate_fn=collate_grocery)
     history, step_history, start_epoch, updates = [], [], 1, 0
+    epoch_timings = []
     evaluation_samples = validation if cfg.get('validation_only', False) else bundle.test_samples
     best_key = (-1.,-1.)
     started = time.perf_counter()
@@ -226,6 +227,12 @@ def execute(args, cfg, output):
         ema = [x.to(device) for x in payload['ema']]
         history,step_history = payload['history'],payload['step_history']
         start_epoch,updates,best_key = payload['epoch']+1,payload['optimizer_updates'],tuple(payload['best_key'])
+        if cfg.get('epoch_timing', False):
+            import json
+            timing_path = output/'epoch_timing.json'
+            if not timing_path.exists():
+                raise RuntimeError('Timed resume requires the prior epoch timing artifact')
+            epoch_timings = [r for r in json.loads(timing_path.read_text())['epochs'] if r['epoch'] < start_epoch]
         random.setstate(payload['rng_python']); np.random.set_state(payload['rng_numpy'])
         torch.set_rng_state(payload['rng_torch']); torch.cuda.set_rng_state_all(payload['rng_cuda'])
         del payload
@@ -243,6 +250,9 @@ def execute(args, cfg, output):
         if not args.resume:
             write_json(output/'initial_validation.json',metrics(validation))
         for epoch in range(start_epoch,settings.epochs+1):
+            if cfg.get('epoch_timing', False):
+                torch.cuda.synchronize(device)
+                epoch_started = time.perf_counter()
             if cfg.get('paired_epoch_rng',False):
                 # Generator construction must not shift image augmentation or
                 # task dropout random streams relative to the direct control.
@@ -275,6 +285,9 @@ def execute(args, cfg, output):
                 generator.eval()
             counts = {'vision':[0]*4,'language':[0]*4}
             rows = []
+            if cfg.get('epoch_timing', False):
+                torch.cuda.synchronize(device)
+                train_started = time.perf_counter()
             for step,batch in enumerate(loader):
                 inputs = move_inputs(preprocess_images(loaded.processor,batch['images'],settings.instruction),device)
                 validate_token_budgets(inputs,settings)
@@ -342,6 +355,9 @@ def execute(args, cfg, output):
                 rows.append(row); step_history.append(row)
                 if step == 0 or step+1 == len(loader):
                     print(row,flush=True)
+            if cfg.get('epoch_timing', False):
+                torch.cuda.synchronize(device)
+                train_finished = time.perf_counter()
             live_val = metrics(validation)
             ema_val = None
             if cfg.get('evaluate_ema', True):
@@ -365,6 +381,9 @@ def execute(args, cfg, output):
                 'frozen_parameter_max_change':frozen_delta,'stage_end_validation_with_initial_experts':stage_end_validation,
                 'optimizer_updates':updates,'elapsed_seconds':time.perf_counter()-started}
             history.append(record)
+            if cfg.get('epoch_timing', False):
+                torch.cuda.synchronize(device)
+                evaluation_finished = time.perf_counter()
             key = (live_val['top1_retrieval_accuracy'],live_val['mrr'])
             if key > best_key:
                 best_key = key
@@ -373,6 +392,20 @@ def execute(args, cfg, output):
             write_json(output/'history.json',history)
             write_json(output/'steps.json',step_history)
             write_json(output/'status.json',{'status':'running','epoch':epoch,'stage':stage['name'],'epochs':settings.epochs})
+            if cfg.get('epoch_timing', False):
+                torch.cuda.synchronize(device)
+                epoch_finished = time.perf_counter()
+                epoch_timings.append({'epoch':epoch, 'stage':stage['name'], 'steps':len(rows),
+                    'setup_seconds':train_started-epoch_started,
+                    'train_loop_seconds':train_finished-train_started,
+                    'evaluation_and_audit_seconds':evaluation_finished-train_finished,
+                    'checkpoint_and_logs_seconds':epoch_finished-evaluation_finished,
+                    'epoch_wall_seconds':epoch_finished-epoch_started})
+                write_json(output/'epoch_timing.json',{'schema_version':1,'git_sha':current_sha,
+                    'clock':'perf_counter with CUDA synchronization at boundaries',
+                    'excludes':'model loading, initial validation, final interventions/export, timing-file write, final epoch stdout',
+                    'train_loop_includes':'data loading/preprocessing, generator, optics, loss/backward, optimizer, EMA, diagnostics and step stdout',
+                    'epochs':epoch_timings})
             print({'epoch_result':record},flush=True)
         final_ema_test = None
         if cfg.get('evaluate_ema', True):
