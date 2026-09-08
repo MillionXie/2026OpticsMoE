@@ -8,6 +8,9 @@
 
 输出是 `224×224` 连续显著性概率图。主指标为 `CC`（越大越好），并同时报告 KLD、SIM、NSS、AUC-Judd 和 MAE。
 
+2026-09-08新增：[同规格读出头、alpha无下限/≥0.4、三阶段训练对照与命令](reports/reproduction/ALPHA_AND_HEAD_COMPARISON.md)。
+已有mean_only续训最佳约0.8488（未结束），不应继续把0.8291称为唯一最新成绩；新alpha版本成绩单独报告。
+
 ## 数据协议
 
 - train：SALICON 2015r1 官方 train2014，10,000 张。

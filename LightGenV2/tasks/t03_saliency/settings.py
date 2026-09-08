@@ -109,6 +109,17 @@ def load_settings(path: str | Path) -> Any:
 
 def save_resolved_config(settings: Any) -> None:
     save_t02_resolved_config(settings)
+    import yaml
+    path = settings.output_dir / "resolved_config.yaml"
+    values = yaml.safe_load(path.read_text(encoding="utf-8"))
+    values["lightgen"].update(task="t03_saliency", ccd_normalization=settings.ccd_normalization)
+    values.setdefault("training", {}).update(
+        initialization_checkpoint=str(settings.initialization_checkpoint) if settings.initialization_checkpoint else None,
+        reset_fusion_on_warmstart=settings.reset_fusion_on_warmstart,
+        staged={"enabled": settings.staged_training, "warmup_epochs": settings.staged_warmup_epochs,
+                "polish_start": settings.staged_polish_start, "final_hard_balance": settings.staged_final_hard_balance},
+    )
+    path.write_text(yaml.safe_dump(values, allow_unicode=True, sort_keys=False), encoding="utf-8")
 
 
 __all__ = ["load_settings", "save_resolved_config"]
