@@ -1,0 +1,21 @@
+base_config: spatial_trainonly_fixed20_step_phase_s456.yaml
+output_dir: ../../runs/lgvq_spatial_trainonly_fixed20_step2_joint_s461
+random_seed: 461
+
+data:
+  training_view_probabilities: [1.0, 0.0, 0.0]
+
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_trainonly_fixed20_step_phase_s456/best_observed_test_checkpoint.pt
+  epochs: 2
+  batch_size: 64
+  learning_rate: 0.000002
+  phase_learning_rate: 0.00004
+  router_phase_learning_rate: 0.00008
+  readout_learning_rate_factor: 0.35
+  minimum_learning_rate_factor: 0.50
+  phase_warmup_epochs: 0
+  restore_best_at_stage_transition: false
+  ema_decay: 0.0
+  test_interval_steps: 1
+
