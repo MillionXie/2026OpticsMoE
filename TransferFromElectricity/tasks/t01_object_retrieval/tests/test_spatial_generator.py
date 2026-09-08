@@ -8,6 +8,7 @@ from TransferFromElectricity.tasks.t01_object_retrieval.models.spatial_generator
     QVLoRA, SpatialDecoder, SpatialGenerator, select_references, unmerge_tokens)
 from TransferFromElectricity.tasks.t01_object_retrieval.models.injection import GlobalInjection
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.optics.physical import PhaseLayer
+from TransferFromElectricity.tasks.t01_object_retrieval.protocol import zero_optical_phases
 
 
 class SpatialTests(unittest.TestCase):
@@ -77,6 +78,16 @@ class SpatialTests(unittest.TestCase):
         a=select_references(training,42);b=select_references(list(reversed(training)),42)
         self.assertEqual([r.sample_id for r in a],[r.sample_id for r in b])
         self.assertEqual([r.sku_index for r in a],[0,1,2])
+
+    def test_zero_initialization_includes_distinct_router_parameter(self):
+        class Router(nn.Module):
+            def __init__(self):super().__init__();self.raw_router_phase=nn.Parameter(torch.ones(8,8))
+            def phase(self):return 2*torch.pi*self.raw_router_phase.sigmoid()
+        module=nn.ModuleDict({'expert':PhaseLayer(8,init='normal'),'global':PhaseLayer(12,init='normal'),'router':Router()})
+        audit=zero_optical_phases(module)
+        self.assertEqual(len(audit),3)
+        self.assertIn('router.raw_router_phase',audit)
+        self.assertTrue(all(row['raw_max_abs']==0 for row in audit.values()))
 
 
 if __name__=='__main__':unittest.main()

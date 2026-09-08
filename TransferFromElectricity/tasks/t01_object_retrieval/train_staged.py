@@ -23,7 +23,7 @@ from .run import (ROOT, TASK, write_json, sha256, git, cpu_state, grad_norm,
     phase_dc_loss)
 from .models.generator import StaticGenerator, LoRALinear
 from .models.injection import ExpertInjection, GlobalInjection, expert_planes, global_planes
-from .protocol import common_anchor, split_train_validation, stage_at, active_groups, phase_summary, physical_phase
+from .protocol import common_anchor, split_train_validation, stage_at, active_groups, phase_summary, physical_phase, zero_optical_phases
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.settings import _read_config
 
 
@@ -157,14 +157,9 @@ def execute(args, cfg, output):
     zero_phase=cfg.get('phase_initialization')=='zero_raw_all_optical'
     zero_audit={}
     if zero_phase:
-        with torch.no_grad():
-            for modality,surrogate in [('vision',replacement.vision_surrogate),('language',replacement.language_surrogate)]:
-                for name,module in surrogate.named_modules():
-                    if hasattr(module,'raw_phase') and isinstance(module.raw_phase,torch.nn.Parameter):
-                        module.raw_phase.zero_()
-                        zero_audit[f'{modality}.{name}']={'shape':list(module.raw_phase.shape),'raw_max_abs':float(module.raw_phase.abs().max()),
-                                                        'physical_phase_rad':float(physical_phase(module.raw_phase).mean())}
-        if len(zero_audit)<10:raise RuntimeError('Missing optical planes in zero initialization audit')
+        for modality,surrogate in [('vision',replacement.vision_surrogate),('language',replacement.language_surrogate)]:
+            zero_audit.update({f'{modality}.{name}':row for name,row in zero_optical_phases(surrogate).items()})
+        if len(zero_audit)!=12:raise RuntimeError('Expected eight experts, two globals and two optical router phases')
         write_json(output/'zero_initialization.json',zero_audit)
     initial = (torch.zeros(2,4,224,224) if zero_phase else common_anchor(cfg['seed'],dc_power=cfg['initial_expert_dc_power'])).to(device)
     with torch.no_grad():

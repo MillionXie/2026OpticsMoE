@@ -63,6 +63,23 @@ def physical_phase(raw):
 
 
 @torch.no_grad()
+def zero_optical_phases(surrogate):
+    """Router deliberately uses a distinct raw_router_phase parameter name."""
+    audit={}
+    for name,module in surrogate.named_modules():
+        for attribute in ('raw_phase','raw_router_phase'):
+            parameter=getattr(module,attribute,None)
+            if isinstance(parameter,torch.nn.Parameter):
+                parameter.zero_()
+                phase=module.phase()
+                if float((phase-math.pi).abs().max())>1e-6:
+                    raise RuntimeError('Optical zero logits must map to physical pi')
+                audit[f'{name}.{attribute}']={'shape':list(parameter.shape),'raw_max_abs':float(parameter.abs().max()),
+                    'physical_min_rad':float(phase.min()),'physical_max_rad':float(phase.max())}
+    return audit
+
+
+@torch.no_grad()
 def phase_summary(raw, initial):
     phase = physical_phase(raw)
     diff = phase - physical_phase(initial)
