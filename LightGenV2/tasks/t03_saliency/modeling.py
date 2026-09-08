@@ -120,6 +120,15 @@ def _reset_head(model: LightGenVision2SaliencyStudent, seed: int) -> None:
 def initialize_student(
     model: LightGenVision2SaliencyStudent, settings: Any
 ) -> dict[str, Any]:
+    warmstart = getattr(settings, "initialization_checkpoint", None)
+    if warmstart is not None:
+        payload = torch.load(warmstart, map_location="cpu", weights_only=False)
+        if payload.get("architecture") != model.checkpoint_architecture:
+            raise RuntimeError("T03 warmstart architecture mismatch")
+        model.core.load_state_dict(payload["core"], strict=True)
+        model.head.load_state_dict(payload["saliency_head"], strict=True)
+        return {"path": str(warmstart), "sha256": sha256_file(warmstart),
+                "mode": "warmstart_weights_with_new_optimizer", "source_epoch": payload["epoch"]}
     path = settings.common_initialization_checkpoint
     payload = torch.load(path, map_location="cpu", weights_only=False)
     if payload.get("type") != "untrained_lsp_vision2_body_and_pose_head_without_router":

@@ -112,7 +112,7 @@ def _pending_qwen(settings: Any) -> dict[str, Any]:
 
 
 def run(args: argparse.Namespace) -> dict[str, Any]:
-    settings = load_settings(TASK_DIR / "configs" / PROFILES[args.profile])
+    settings = load_settings(Path(args.config) if args.config else TASK_DIR / "configs" / PROFILES[args.profile])
     if args.run_dir:
         settings.output_dir = Path(args.run_dir).expanduser().resolve()
     settings.output_dir.mkdir(parents=True, exist_ok=True)
@@ -158,6 +158,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 def main() -> int:
     parser = argparse.ArgumentParser(description="LightGenV2 T03 SALICON formal comparison")
     parser.add_argument("--profile", choices=sorted(PROFILES), required=True)
+    parser.add_argument("--config", help="Explicit task config; preserves the selected profile's model contract")
     parser.add_argument("--phase", choices=sorted(PHASES), default="all")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--run-dir", default=None)

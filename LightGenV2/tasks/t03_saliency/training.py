@@ -90,6 +90,13 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
     best_epoch = -1
     started = time.perf_counter()
     try:
+        if getattr(settings, "initialization_checkpoint", None) is not None:
+            model.core.set_phase_dropout_active(False)
+            initial_metrics, _ = legacy.evaluate_model(model, test_loader, loaded, settings)
+            best_cc, best_epoch = float(initial_metrics["cc"]), 0
+            _checkpoint(settings.output_dir / "best_checkpoint.pt", model, 0, {}, initial_metrics)
+            _write_json(settings.output_dir / "warmstart_evaluation.json", initial_metrics)
+            print(f"[T03] warmstart CC={best_cc:.6f}", flush=True)
         for epoch in range(1, int(settings.student_epochs) + 1):
             model.core.set_phase_dropout_active(True)
             train_metrics = legacy._train_epoch(
