@@ -49,6 +49,9 @@ CC 为每张预测概率密度与真值密度的 Pearson，再平均5000张，�
 
 需要完整仓库及其 `experiments/` 兼容后端、SALICON原始图像与fixation JSON、完整本地Qwen模型/处理器、
 上述teacher checkpoint。原始数据/模型不提交Git。环境锁定清单由每个run的 `environment.txt` 提供；
+本次验证环境已收录为 [baseline_environment.txt](evidence/baseline_environment.txt)，
+其中PyTorch2.6.0+cu124、transformers4.57.3、NumPy1.26.4。该文件是完整环境审计记录，
+不是要求把无关包也全安装；换显卡需要选择兼容的PyTorch构建，再重新执行性能复评。
 至少需要可用的PyTorch/CUDA、transformers（支持Qwen3VL）、NumPy、SciPy、Pillow、Matplotlib、PyYAML、pytest。
 禁止用未记录的另一套标签缓存；复现脚本在新run中重新生成密度图。
 
