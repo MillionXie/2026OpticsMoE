@@ -69,11 +69,35 @@ def _checkpoint(
             "core": model.core.state_dict(),
             "saliency_head": model.head.state_dict(),
             "train_metrics": train_metrics,
+            "fusion_contract": {"minimum": model.core.hybrid.fusion_alpha_min,
+                                "maximum": model.core.hybrid.fusion_alpha_max},
             "test_metrics": test_metrics,
             "selection_biased": True,
         },
         path,
     )
+
+
+def staged_epoch(optim: Any, settings: Any, epoch: int) -> dict[str, Any]:
+    """Closed-form LR schedule, without recursively compounding multipliers."""
+    warmup = settings.staged_warmup_epochs
+    if epoch <= warmup:
+        stage, factor = "optics_readout_adaptation", 1.0
+    elif epoch < settings.staged_polish_start:
+        stage = "joint"
+        progress = (epoch - warmup - 1) / max(1, settings.staged_polish_start - warmup - 1)
+        factor = 0.2 + 0.8 * (1 + math.cos(math.pi * progress)) / 2
+    else:
+        stage = "polish"
+        progress = (epoch - settings.staged_polish_start) / max(1, settings.student_epochs - settings.staged_polish_start)
+        factor = 0.02 + 0.08 * (1 + math.cos(math.pi * progress)) / 2
+    for group in optim.param_groups:
+        group.setdefault("schedule_base_lr", group["lr"])
+        group["lr"] = group["schedule_base_lr"] * (0.0 if stage == "optics_readout_adaptation" and group["name"] == "electronic" else factor)
+    progress = max(0., min(1., (epoch - warmup) / max(1, settings.staged_polish_start - warmup)))
+    hard = settings.router_hard_load_balance_weight * (1-progress) + settings.staged_final_hard_balance * progress
+    return {"stage": stage, "hard_balance_weight": hard,
+            **{f"lr_{g['name']}": g["lr"] for g in optim.param_groups}}
 
 
 def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
@@ -98,6 +122,10 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
             _write_json(settings.output_dir / "warmstart_evaluation.json", initial_metrics)
             print(f"[T03] warmstart CC={best_cc:.6f}", flush=True)
         for epoch in range(1, int(settings.student_epochs) + 1):
+            stage_report = {}
+            if settings.staged_training:
+                stage_report = staged_epoch(optim, settings, epoch)
+                model._router_hard_weight = stage_report["hard_balance_weight"]
             model.core.set_phase_dropout_active(True)
             train_metrics = legacy._train_epoch(
                 "student", model, train_loader, loaded, settings, optim
@@ -121,7 +149,10 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
                     if test_metrics is not None
                     else {}
                 ),
-                "learning_rate": scheduler.get_last_lr()[0],
+                "learning_rate": optim.param_groups[0]["lr"],
+                **stage_report,
+                "alpha1": float(model.core.hybrid.block1_optical_fusion.detach()),
+                "alpha2": float(model.core.hybrid.block2_optical_fusion.detach()),
             }
             history.append(row)
             _write_csv(settings.output_dir / "metrics" / "training_history.csv", history)
@@ -142,7 +173,8 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
                     train_metrics,
                     test_metrics,
                 )
-            scheduler.step()
+            if not settings.staged_training:
+                scheduler.step()
             suffix = "" if test_metrics is None else f" test_CC={test_metrics['cc']:.4f}"
             print(
                 f"[T03] epoch={epoch:03d}/{settings.student_epochs:03d} "

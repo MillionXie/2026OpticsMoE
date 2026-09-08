@@ -76,6 +76,13 @@ def load_settings(path: str | Path) -> Any:
         raise ValueError("Unknown T03 CCD normalization")
     warmstart = d("training.initialization_checkpoint")
     settings.initialization_checkpoint = _resolve(warmstart, config.parent) if warmstart else None
+    settings.reset_fusion_on_warmstart = bool(d("training.reset_fusion_on_warmstart", False))
+    settings.staged_training = bool(d("training.staged.enabled", False))
+    settings.staged_warmup_epochs = int(d("training.staged.warmup_epochs", 10))
+    settings.staged_polish_start = int(d("training.staged.polish_start", 71))
+    settings.staged_final_hard_balance = float(d("training.staged.final_hard_balance", 0.10))
+    settings.dense_readout_learning_rate = float(d("training.dense_readout_learning_rate", settings.dense_readout_learning_rate))
+    settings.dense_head_learning_rate = float(d("training.dense_head_learning_rate", settings.dense_head_learning_rate))
     settings.gradient_clip_norm = float(d("training.gradient_clip_norm", 1.0))
     settings.test_interval_epochs = int(d("protocol.test_interval_epochs", 5))
     settings.router_hard_load_balance_weight = float(

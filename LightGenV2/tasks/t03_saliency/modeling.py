@@ -34,6 +34,8 @@ def architecture_label(settings: Any) -> str:
         f"lightgen_t03_{settings.lightgen_model_variant}_vision2_17um_10cm_"
         "dc20_scale_matched_top2_v1"
     )
+    if (settings.fusion_alpha_min, settings.fusion_alpha_max) != (0.01, 0.95):
+        label += f"_alpha{settings.fusion_alpha_min:g}_{settings.fusion_alpha_max:g}"
     return label + ("_mean_only" if settings.ccd_normalization == "mean_only" else "")
 
 
@@ -148,13 +150,19 @@ def initialize_student(
         if settings.ccd_normalization == "mean_only":
             # Explicit parameter-compatible transfer, not exact continuation.
             allowed.add(model.checkpoint_architecture.removesuffix("_mean_only"))
+        if settings.reset_fusion_on_warmstart:
+            allowed.add(f"lightgen_t03_{settings.lightgen_model_variant}_vision2_17um_10cm_dc20_scale_matched_top2_v1_mean_only")
         if payload.get("architecture") not in allowed:
             raise RuntimeError("T03 warmstart architecture mismatch")
         model.core.load_state_dict(payload["core"], strict=True)
         model.head.load_state_dict(payload["saliency_head"], strict=True)
+        if settings.reset_fusion_on_warmstart:
+            model.core.hybrid.reset_fusion_logits(settings.fusion_alpha_initial)
         return {"path": str(warmstart), "sha256": sha256_file(warmstart),
                 "mode": "warmstart_weights_with_new_optimizer", "source_epoch": payload["epoch"],
-                "source_architecture": payload["architecture"], "target_architecture": model.checkpoint_architecture}
+                "source_architecture": payload["architecture"], "target_architecture": model.checkpoint_architecture,
+                "fusion_reset": settings.reset_fusion_on_warmstart,
+                "fusion_alpha_initial": settings.fusion_alpha_initial}
     path = settings.common_initialization_checkpoint
     payload = torch.load(path, map_location="cpu", weights_only=False)
     if payload.get("type") != "untrained_lsp_vision2_body_and_pose_head_without_router":
