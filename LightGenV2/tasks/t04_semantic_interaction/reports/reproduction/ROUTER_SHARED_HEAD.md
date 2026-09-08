@@ -1,5 +1,11 @@
 # 语言Router坍缩修复与公平Qwen对照
 
+## Linux baseline 启动前的文件句柄限制
+
+冻结 Qwen 缓存包含每条样本的变长文本张量。多进程 DataLoader 在默认 1024 文件句柄限制下可能报 `Too many open files`。
+在同一个 shell 先执行 `ulimit -n 65536`，再执行 README 的训练命令；这只提高当前进程资源上限，不改变模型、batch、样本或训练协议。
+训练器从 `966f4070` 起跳过权重为零的相位正则，避免纯 Qwen 没有 PhaseLayer 时误报错。失败日志保留，完整冻结特征缓存可复用，不必重新提取。
+
 ## 原因与修复范围
 
 旧 `embedding_alpha40_lean_s73` best第80轮，修改格89.40%、整场景82.10%，语言Router所有1000个样本都选0/1。
