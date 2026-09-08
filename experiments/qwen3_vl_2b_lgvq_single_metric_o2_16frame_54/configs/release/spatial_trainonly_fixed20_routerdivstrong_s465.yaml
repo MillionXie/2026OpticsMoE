@@ -1,0 +1,12 @@
+base_config: spatial_trainonly_fixed20_routerdiv_s464.yaml
+output_dir: ../../runs/lgvq_spatial_trainonly_fixed20_routerdivstrong_s465
+random_seed: 465
+
+training:
+  router_phase_learning_rate: 0.002
+
+loss:
+  serial_router_balance_weight: 0.15
+  serial_router_importance_weight: 0.08
+  serial_router_diversity_weight: 0.08
+
