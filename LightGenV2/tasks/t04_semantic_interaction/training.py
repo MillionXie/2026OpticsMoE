@@ -171,6 +171,14 @@ def build_loaders(settings):
     return legacy.build_loaders(settings)
 
 
+def _phase_regularization(model, settings):
+    # A frozen-Qwen baseline has no phase layer; a zero loss weight must not
+    # invoke the optical-only implementation (which correctly rejects it).
+    if settings.phase_dc_weight == 0:
+        return next(model.parameters()).new_zeros(())
+    return phase_dc_loss(model)
+
+
 @torch.inference_mode()
 def evaluate_with_routes(model, loader, settings, device):
     if not settings.shared_readout_enabled or model.router_backend != 'optical':
@@ -251,7 +259,7 @@ def train(settings: Settings, device: torch.device) -> dict[str, Any]:
                     batch["task"],
                     batch["source_image"],
                 )
-                dc = phase_dc_loss(model)
+                dc = _phase_regularization(model, settings)
                 losses["total"] = (
                     losses["total"]
                     + settings.router_importance_weight * importance

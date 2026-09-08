@@ -40,6 +40,7 @@ def test_exact_same_head_initialization_and_outputs():
 
 
 def test_baseline_forward_no_extra_mixer():
+    from LightGenV2.tasks.t04_semantic_interaction.training import _phase_regularization
     cfg = load_settings(ROOT / 'configs/qwen_shared.yaml')
     model = QwenSharedReadout(cfg)
     out = model(torch.randn(2, 196, 1024), [torch.randn(4, 2048), torch.randn(12, 2048)])
@@ -47,6 +48,10 @@ def test_baseline_forward_no_extra_mixer():
     assert set(model._modules) == {'vision_stem', 'image_adapter', 'text_adapter', 'shared_readout'}
     (out['category_logits'].square().mean() + out['edit_logits'].square().mean()).backward()
     assert model.image_adapter[0].weight.grad is not None
+    assert _phase_regularization(model, cfg).item() == 0.0
+    # A nonzero optical regularizer on a non-optical model remains an error.
+    with pytest.raises(RuntimeError, match='PhaseLayer'):
+        _phase_regularization(model, SimpleNamespace(phase_dc_weight=1.0))
 
 
 def test_instruction_span_is_exact_not_chat_summary():
