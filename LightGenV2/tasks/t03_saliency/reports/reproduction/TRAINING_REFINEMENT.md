@@ -61,7 +61,7 @@ TASK=LightGenV2/tasks/t03_saliency
 mkdir -p "$TASK/runs/simulation/refine_alpha40_20260908"
 CUDA_VISIBLE_DEVICES=0 nohup python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TASK/configs/moe_alpha40_refine_control.yaml" --phase all > "$TASK/runs/simulation/refine_alpha40_20260908/control.log" 2>&1 &
 CUDA_VISIBLE_DEVICES=2 nohup python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TASK/configs/moe_alpha40_refine_reheat.yaml" --phase all > "$TASK/runs/simulation/refine_alpha40_20260908/reheat.log" 2>&1 &
-CUDA_VISIBLE_DEVICES=3 nohup python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TASK/configs/moe_alpha40_refine_cc.yaml" --phase all > "$TASK/runs/simulation/refine_alpha40_20260908/cc.log" 2>&1 &
+CUDA_VISIBLE_DEVICES=5 nohup python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TASK/configs/moe_alpha40_refine_cc.yaml" --phase all > "$TASK/runs/simulation/refine_alpha40_20260908/cc.log" 2>&1 &
 CUDA_VISIBLE_DEVICES=6 nohup python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TASK/configs/moe_alpha40_refine_weakaug.yaml" --phase all > "$TASK/runs/simulation/refine_alpha40_20260908/weakaug.log" 2>&1 &
 ```
 
@@ -77,3 +77,9 @@ SALICON官方train2014 10000训练、val2014 5000作public test；无独立valid
 标签、224输出、源图sigma19、逐图CC平均的口径不变，详见本目录README。
 run_manifest记录命令和Git SHA，environment记录环境，initialization_report记录source SHA。
 不能用仅启动的run更新论文成绩。正式保留候选还需检查专家没有明显坍缩，以及实测鲁棒性。
+
+## 本轮执行记录
+
+实现提交c95e01da；13项T03测试在服务器CPU全部通过。实际启动版本为包含它的
+a9cadb1318dfae294521838807f257a584e2fe00（另一任务T04独立提交），已发布GitHub。
+control/reheat/cc/weakaug分别使用物理GPU0/2/5/6；0和6与其他小显存任务共享，未终止其他进程。
