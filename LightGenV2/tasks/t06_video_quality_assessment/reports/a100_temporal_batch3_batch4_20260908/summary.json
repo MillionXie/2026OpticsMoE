@@ -1,18 +1,17 @@
 {
   "schema_version": 1,
   "canonical_contract": {
-    "ours_timing": "six/three physical 1.314ms passes + strict synchronized CCD-to-fusion + required bridge + complete task head",
-    "ours_energy": "80.388W optical rig plus measured A100 board-power proxy over the same composed wall boundary",
+    "ours_timing": "six/three physical 1.314ms passes + CUDA-event CCD-to-fusion + CUDA-event complete task head; no bridge",
+    "ours_energy": "80.388W optical rig plus measured A100 board-power proxy over the same CUDA table boundary; parallel residual contributes incremental energy but no latency",
     "qwen_formal": "performance, latency, and energy must come from the same full-558 formal run; sweep power is occupancy evidence only",
-    "legacy_ours_times_ms_from_previous_table": {
-      "lgvq_temporal": 10.637,
-      "lgvq_spatial": 10.6,
-      "abo_image_to_text": 9.941,
-      "lsp": 5.861,
-      "salicon": 6.125,
-      "openmoji": 11.236
-    },
-    "legacy_status": "superseded because those rows predate the retained strict full-task-head benchmark"
+    "authoritative_ours_times_ms": {
+      "lgvq_temporal": 10.636511984977723,
+      "lgvq_spatial": 10.599648044582366,
+      "abo_image_to_text": 9.941215980476379,
+      "lsp": 5.860976008083344,
+      "salicon": 6.125168001672745,
+      "openmoji": 11.235552040081025
+    }
   },
   "batch2_formal": {
     "schema_version": 1,
@@ -526,9 +525,9 @@
     }
   },
   "ours_energy_method": {
-    "formula": "E_total = 80.388W*T_wall + P_idle_A100*T_wall + sum((P_component-P_idle)*T_component)",
+    "formula": "E_total = 80.388W*T_cuda_table + P_idle_A100*T_cuda_table + sum((P_component-P_idle)*T_component_cuda)",
     "parallel_residual": "time is covered by the physical pass, but its incremental A100 energy is included",
-    "power_sources": "10ms nvidia-smi component loops on the same A100; strict wall-median component durations",
+    "power_sources": "10ms nvidia-smi component loops on the same A100; CUDA-event median component durations",
     "warning": "composed proxy, not a wired wall-plug measurement"
   },
   "ours_energy": [
@@ -537,41 +536,35 @@
       "task": "LGVQ temporal, 16 videos parallel",
       "physical_passes": 6,
       "physical_ms": 7.884,
-      "serial_electronic_wall_ms": 3.322588,
-      "composed_wall_ms": 11.206588,
+      "serial_electronic_cuda_ms": 2.752511984977722,
+      "canonical_table_latency_ms": 10.636511984977723,
       "optical_rig_power_w": 80.388,
-      "optical_rig_energy_j": 0.900875196144,
+      "optical_rig_energy_j": 0.8550479254483893,
       "a100_idle_power_w": 60.07950920245399,
-      "a100_idle_base_energy_j": 0.6732863068741104,
-      "a100_serial_incremental_energy_j": 0.035266133081164996,
-      "a100_parallel_residual_incremental_energy_j": 0.024549234013474433,
-      "a100_board_energy_proxy_j": 0.7331016739687498,
-      "combined_optical_plus_a100_energy_j": 1.63397687011275,
-      "combined_average_power_w": 145.80502737432212,
-      "combined_rated_upper_energy_j": 3.702522196144,
+      "a100_idle_base_energy_j": 0.6390364196834813,
+      "a100_serial_incremental_energy_j": 0.030024420070646964,
+      "a100_parallel_residual_incremental_energy_j": 0.02244254172725625,
+      "a100_board_energy_proxy_j": 0.6915033814813846,
+      "combined_optical_plus_a100_energy_j": 1.5465513069297738,
+      "combined_average_power_w": 145.40023168441087,
+      "combined_rated_upper_energy_j": 3.51417592169282,
       "serial_components": [
         {
           "name": "frame_ccd_to_fusion",
           "occurrences": 2,
-          "wall_median_ms": 0.506313,
+          "cuda_median_ms": 0.48844799399375916,
           "active_mean_w": 68.80562499999999
         },
         {
           "name": "video_ccd_to_fusion",
           "occurrences": 2,
-          "wall_median_ms": 0.4742225,
+          "cuda_median_ms": 0.45772799849510193,
           "active_mean_w": 68.5171497584541
-        },
-        {
-          "name": "frame_to_video_bridge",
-          "occurrences": 1,
-          "wall_median_ms": 0.482701,
-          "active_mean_w": 69.0971
         },
         {
           "name": "task_head",
           "occurrences": 1,
-          "wall_median_ms": 0.878816,
+          "cuda_median_ms": 0.86016,
           "active_mean_w": 76.09469696969697
         }
       ],
@@ -579,58 +572,52 @@
         {
           "name": "frame_parallel_residual",
           "occurrences": 2,
-          "wall_median_ms": 0.1723475,
+          "cuda_median_ms": 0.15564799308776855,
           "active_mean_w": 109.24319796954315
         },
         {
           "name": "video_parallel_residual",
           "occurrences": 2,
-          "wall_median_ms": 0.27920900000000004,
+          "cuda_median_ms": 0.26214399933815,
           "active_mean_w": 73.6943216080402
         }
       ],
-      "excluded": "router post, next-SLM layout/rebuild, file/image processing"
+      "excluded_from_latency": "parallel residual, required bridge, router post, next-SLM layout/rebuild, file/image processing"
     },
     {
       "task_id": "lgvq_spatial",
       "task": "LGVQ spatial, one video with 4 frames",
       "physical_passes": 6,
       "physical_ms": 7.884,
-      "serial_electronic_wall_ms": 3.0653740000000003,
-      "composed_wall_ms": 10.949374,
+      "serial_electronic_cuda_ms": 2.715648044582367,
+      "canonical_table_latency_ms": 10.599648044582366,
       "optical_rig_power_w": 80.388,
-      "optical_rig_energy_j": 0.8801982771120002,
+      "optical_rig_energy_j": 0.8520845070078873,
       "a100_idle_power_w": 60.729877300613495,
-      "a100_idle_base_energy_j": 0.6649541395385277,
-      "a100_serial_incremental_energy_j": 0.02449624607355166,
-      "a100_parallel_residual_incremental_energy_j": 0.00806681741956793,
-      "a100_board_energy_proxy_j": 0.6975172030316472,
-      "combined_optical_plus_a100_energy_j": 1.5777154801436475,
-      "combined_average_power_w": 144.0918430719096,
-      "combined_rated_upper_energy_j": 3.617541777112,
+      "a100_idle_base_energy_j": 0.6437153251771749,
+      "a100_serial_incremental_energy_j": 0.022519674164424672,
+      "a100_parallel_residual_incremental_energy_j": 0.00734058344240794,
+      "a100_board_energy_proxy_j": 0.6735755827840075,
+      "combined_optical_plus_a100_energy_j": 1.5256600897918948,
+      "combined_average_power_w": 143.93497627231895,
+      "combined_rated_upper_energy_j": 3.501996518153479,
       "serial_components": [
         {
           "name": "spatial_vision_ccd_to_fusion",
           "occurrences": 2,
-          "wall_median_ms": 0.5001675,
+          "cuda_median_ms": 0.4833280146121979,
           "active_mean_w": 70.99371287128713
         },
         {
           "name": "spatial_language_ccd_to_fusion",
           "occurrences": 2,
-          "wall_median_ms": 0.4802575,
+          "cuda_median_ms": 0.4628480076789856,
           "active_mean_w": 67.70783919597989
-        },
-        {
-          "name": "spatial_frame_to_sequence_bridge",
-          "occurrences": 1,
-          "wall_median_ms": 0.263436,
-          "active_mean_w": 65.4948730964467
         },
         {
           "name": "spatial_task_head",
           "occurrences": 1,
-          "wall_median_ms": 0.841088,
+          "cuda_median_ms": 0.823296,
           "active_mean_w": 68.18600985221676
         }
       ],
@@ -638,52 +625,52 @@
         {
           "name": "spatial_vision_parallel_residual",
           "occurrences": 2,
-          "wall_median_ms": 0.1843215,
+          "cuda_median_ms": 0.1658879965543747,
           "active_mean_w": 76.35742424242424
         },
         {
           "name": "spatial_language_parallel_residual",
           "occurrences": 2,
-          "wall_median_ms": 0.2683475,
+          "cuda_median_ms": 0.25088000297546387,
           "active_mean_w": 65.02623115577889
         }
       ],
-      "excluded": "router post, next-SLM layout/rebuild, file/image processing"
+      "excluded_from_latency": "parallel residual, required bridge, router post, next-SLM layout/rebuild, file/image processing"
     },
     {
       "task_id": "abo_image_to_text",
       "task": "ABO image-to-title T08",
       "physical_passes": 6,
       "physical_ms": 7.884,
-      "serial_electronic_wall_ms": 2.142821,
-      "composed_wall_ms": 10.026821,
+      "serial_electronic_cuda_ms": 2.0572159804763794,
+      "canonical_table_latency_ms": 9.941215980476379,
       "optical_rig_power_w": 80.388,
-      "optical_rig_energy_j": 0.8060360865480001,
+      "optical_rig_energy_j": 0.7991544702385351,
       "a100_idle_power_w": 60.07950920245399,
-      "a100_idle_base_energy_j": 0.602406484540859,
-      "a100_serial_incremental_energy_j": 0.020095583229412652,
-      "a100_parallel_residual_incremental_energy_j": 0.017387073059575014,
-      "a100_board_energy_proxy_j": 0.6398891408298466,
-      "combined_optical_plus_a100_energy_j": 1.4459252273778467,
-      "combined_average_power_w": 144.20574849973355,
-      "combined_rated_upper_energy_j": 3.312741336548,
+      "a100_idle_base_energy_j": 0.5972633769826133,
+      "a100_serial_incremental_energy_j": 0.019355730019107686,
+      "a100_parallel_residual_incremental_energy_j": 0.016746325782844462,
+      "a100_board_energy_proxy_j": 0.6333654327845655,
+      "combined_optical_plus_a100_energy_j": 1.4325199030231006,
+      "combined_average_power_w": 144.09906251271838,
+      "combined_rated_upper_energy_j": 3.2844584653576296,
       "serial_components": [
         {
           "name": "vision_ccd_to_fusion",
           "occurrences": 2,
-          "wall_median_ms": 0.505969,
+          "cuda_median_ms": 0.48844799399375916,
           "active_mean_w": 70.41949494949495
         },
         {
           "name": "language_ccd_to_fusion",
           "occurrences": 2,
-          "wall_median_ms": 0.49020549999999996,
+          "cuda_median_ms": 0.47308799624443054,
           "active_mean_w": 69.33346534653465
         },
         {
           "name": "task_head",
           "occurrences": 1,
-          "wall_median_ms": 0.150472,
+          "cuda_median_ms": 0.134144,
           "active_mean_w": 63.79766497461929
         }
       ],
@@ -691,46 +678,46 @@
         {
           "name": "vision_parallel_residual",
           "occurrences": 2,
-          "wall_median_ms": 0.5024645,
+          "cuda_median_ms": 0.4843519926071167,
           "active_mean_w": 69.80366834170854
         },
         {
           "name": "language_parallel_residual",
           "occurrences": 2,
-          "wall_median_ms": 0.4821375,
+          "cuda_median_ms": 0.4638719856739044,
           "active_mean_w": 67.97661691542288
         }
       ],
-      "excluded": "router post, next-SLM layout/rebuild, file/image processing"
+      "excluded_from_latency": "parallel residual, required bridge, router post, next-SLM layout/rebuild, file/image processing"
     },
     {
       "task_id": "lsp",
       "task": "LSP keypoint",
       "physical_passes": 3,
       "physical_ms": 3.942,
-      "serial_electronic_wall_ms": 1.9707270000000001,
-      "composed_wall_ms": 5.912727,
+      "serial_electronic_cuda_ms": 1.9189760080833436,
+      "canonical_table_latency_ms": 5.860976008083344,
       "optical_rig_power_w": 80.388,
-      "optical_rig_energy_j": 0.47531229807600006,
+      "optical_rig_energy_j": 0.47115213933780387,
       "a100_idle_power_w": 60.07950920245399,
-      "a100_idle_base_energy_j": 0.3552337362080982,
-      "a100_serial_incremental_energy_j": 0.019483022832042774,
-      "a100_parallel_residual_incremental_energy_j": 0.009706799486873585,
-      "a100_board_energy_proxy_j": 0.3844235585270146,
-      "combined_optical_plus_a100_energy_j": 0.8597358566030147,
-      "combined_average_power_w": 145.4042874976326,
-      "combined_rated_upper_energy_j": 1.9534940480760001,
+      "a100_idle_base_energy_j": 0.3521245620130053,
+      "a100_serial_incremental_energy_j": 0.018977771955669052,
+      "a100_parallel_residual_incremental_energy_j": 0.00939453867749165,
+      "a100_board_energy_proxy_j": 0.380496872646166,
+      "combined_optical_plus_a100_energy_j": 0.8516490119839699,
+      "combined_average_power_w": 145.3083941666699,
+      "combined_rated_upper_energy_j": 1.9363961413586397,
       "serial_components": [
         {
           "name": "vision_ccd_to_fusion",
           "occurrences": 2,
-          "wall_median_ms": 0.4909175,
+          "cuda_median_ms": 0.47411200404167175,
           "active_mean_w": 69.55737623762376
         },
         {
           "name": "task_head",
           "occurrences": 1,
-          "wall_median_ms": 0.988892,
+          "cuda_median_ms": 0.970752,
           "active_mean_w": 70.37115
         }
       ],
@@ -738,40 +725,40 @@
         {
           "name": "vision_parallel_residual",
           "occurrences": 2,
-          "wall_median_ms": 0.6263575,
+          "cuda_median_ms": 0.6062080264091492,
           "active_mean_w": 67.82811881188118
         }
       ],
-      "excluded": "router post, next-SLM layout/rebuild, file/image processing"
+      "excluded_from_latency": "parallel residual, required bridge, router post, next-SLM layout/rebuild, file/image processing"
     },
     {
       "task_id": "salicon",
       "task": "SALICON saliency",
       "physical_passes": 3,
       "physical_ms": 3.942,
-      "serial_electronic_wall_ms": 2.235608,
-      "composed_wall_ms": 6.177608,
+      "serial_electronic_cuda_ms": 2.183168001672745,
+      "canonical_table_latency_ms": 6.125168001672745,
       "optical_rig_power_w": 80.388,
-      "optical_rig_energy_j": 0.496605551904,
+      "optical_rig_energy_j": 0.49239000531846866,
       "a100_idle_power_w": 60.07950920245399,
-      "a100_idle_base_energy_j": 0.3711476566851534,
-      "a100_serial_incremental_energy_j": 0.03896330882068034,
-      "a100_parallel_residual_incremental_energy_j": 0.009705650413094576,
-      "a100_board_energy_proxy_j": 0.4198166159189283,
-      "combined_optical_plus_a100_energy_j": 0.9164221678229283,
-      "combined_average_power_w": 148.34579465432708,
-      "combined_rated_upper_energy_j": 2.0410075519040003,
+      "a100_idle_base_energy_j": 0.3679970873230744,
+      "a100_serial_incremental_energy_j": 0.03821640646434836,
+      "a100_parallel_residual_incremental_energy_j": 0.009358712291925423,
+      "a100_board_energy_proxy_j": 0.4155722060793482,
+      "combined_optical_plus_a100_energy_j": 0.9079622113978169,
+      "combined_average_power_w": 148.23466248596907,
+      "combined_rated_upper_energy_j": 2.0236820057366547,
       "serial_components": [
         {
           "name": "vision_ccd_to_fusion",
           "occurrences": 2,
-          "wall_median_ms": 0.493027,
+          "cuda_median_ms": 0.4756480008363724,
           "active_mean_w": 69.47865
         },
         {
           "name": "task_head",
           "occurrences": 1,
-          "wall_median_ms": 1.249554,
+          "cuda_median_ms": 1.231872,
           "active_mean_w": 83.84418719211823
         }
       ],
@@ -779,52 +766,46 @@
         {
           "name": "vision_parallel_residual",
           "occurrences": 2,
-          "wall_median_ms": 0.488502,
+          "cuda_median_ms": 0.4710400104522705,
           "active_mean_w": 70.0136040609137
         }
       ],
-      "excluded": "router post, next-SLM layout/rebuild, file/image processing"
+      "excluded_from_latency": "parallel residual, required bridge, router post, next-SLM layout/rebuild, file/image processing"
     },
     {
       "task_id": "openmoji",
       "task": "OpenMoji interaction",
       "physical_passes": 6,
       "physical_ms": 7.884,
-      "serial_electronic_wall_ms": 3.6780290000000004,
-      "composed_wall_ms": 11.562029,
+      "serial_electronic_cuda_ms": 3.351552040081024,
+      "canonical_table_latency_ms": 11.235552040081025,
       "optical_rig_power_w": 80.388,
-      "optical_rig_energy_j": 0.9294483872520001,
+      "optical_rig_energy_j": 0.9032035573980335,
       "a100_idle_power_w": 61.19467213114754,
-      "a100_idle_base_energy_j": 0.7075345738258197,
-      "a100_serial_incremental_energy_j": 0.023379851465158325,
-      "a100_parallel_residual_incremental_energy_j": 0.014296431254982617,
-      "a100_board_energy_proxy_j": 0.7452108565459606,
-      "combined_optical_plus_a100_energy_j": 1.6746592437979606,
-      "combined_average_power_w": 144.84129418789388,
-      "combined_rated_upper_energy_j": 3.8199556372520003,
+      "a100_idle_base_energy_j": 0.6875559233052041,
+      "a100_serial_incremental_energy_j": 0.02147794920153375,
+      "a100_parallel_residual_incremental_energy_j": 0.013768518630162558,
+      "a100_board_energy_proxy_j": 0.7228023911369005,
+      "combined_optical_plus_a100_energy_j": 1.6260059485349339,
+      "combined_average_power_w": 144.71972028916952,
+      "combined_rated_upper_energy_j": 3.7120915674182897,
       "serial_components": [
         {
           "name": "vision_ccd_to_fusion",
           "occurrences": 2,
-          "wall_median_ms": 0.503171,
+          "cuda_median_ms": 0.4864000082015991,
           "active_mean_w": 69.03333333333333
         },
         {
           "name": "language_ccd_to_fusion",
           "occurrences": 2,
-          "wall_median_ms": 0.49231400000000003,
+          "cuda_median_ms": 0.47513601183891296,
           "active_mean_w": 68.9935960591133
-        },
-        {
-          "name": "language_to_vision_bridge",
-          "occurrences": 1,
-          "wall_median_ms": 0.240391,
-          "active_mean_w": 66.55686868686868
         },
         {
           "name": "task_head",
           "occurrences": 1,
-          "wall_median_ms": 1.446668,
+          "cuda_median_ms": 1.42848,
           "active_mean_w": 65.7039408866995
         }
       ],
@@ -832,84 +813,84 @@
         {
           "name": "vision_parallel_residual",
           "occurrences": 2,
-          "wall_median_ms": 0.4933535,
+          "cuda_median_ms": 0.47513601183891296,
           "active_mean_w": 70.0998484848485
         },
         {
           "name": "language_parallel_residual",
           "occurrences": 2,
-          "wall_median_ms": 0.507708,
+          "cuda_median_ms": 0.48895999789237976,
           "active_mean_w": 66.62065656565656
         }
       ],
-      "excluded": "router post, next-SLM layout/rebuild, file/image processing"
+      "excluded_from_latency": "parallel residual, required bridge, router post, next-SLM layout/rebuild, file/image processing"
     }
   ],
   "comparisons": [
     {
       "task_id": "lgvq_temporal",
       "task": "LGVQ temporal, 16 videos parallel",
-      "ours_time_ms": 11.206588,
+      "ours_time_ms": 10.636511984977723,
       "qwen_time_ms": 450.8540561593694,
-      "speedup_x": 40.231161898641176,
-      "ours_combined_energy_j": 1.63397687011275,
+      "speedup_x": 42.387396995944215,
+      "ours_combined_energy_j": 1.5465513069297738,
       "qwen_energy_j": 88.84581304275078,
-      "energy_reduction_x": 54.373972280660325,
+      "energy_reduction_x": 57.447698401372925,
       "qwen_source": "formal batch=4, four measured calls for the same 16-video workload"
     },
     {
       "task_id": "lgvq_spatial",
       "task": "LGVQ spatial, one video with 4 frames",
-      "ours_time_ms": 10.949374,
+      "ours_time_ms": 10.599648044582366,
       "qwen_time_ms": 74.438,
-      "speedup_x": 6.798379523797434,
-      "ours_combined_energy_j": 1.5777154801436475,
+      "speedup_x": 7.02268600682891,
+      "ours_combined_energy_j": 1.5256600897918948,
       "qwen_energy_j": 6.242,
-      "energy_reduction_x": 3.95635339740197,
+      "energy_reduction_x": 4.091343833246257,
       "qwen_source": "audited A100 table"
     },
     {
       "task_id": "abo_image_to_text",
       "task": "ABO image-to-title T08",
-      "ours_time_ms": 10.026821,
+      "ours_time_ms": 9.941215980476379,
       "qwen_time_ms": 43.963,
-      "speedup_x": 4.38454022466343,
-      "ours_combined_energy_j": 1.4459252273778467,
+      "speedup_x": 4.4222960336380615,
+      "ours_combined_energy_j": 1.4325199030231006,
       "qwen_energy_j": 3.792,
-      "energy_reduction_x": 2.622542250595287,
+      "energy_reduction_x": 2.6470836405118,
       "qwen_source": "audited A100 table"
     },
     {
       "task_id": "lsp",
       "task": "LSP keypoint",
-      "ours_time_ms": 5.912727,
+      "ours_time_ms": 5.860976008083344,
       "qwen_time_ms": 18.016,
-      "speedup_x": 3.046986610408361,
-      "ours_combined_energy_j": 0.8597358566030147,
+      "speedup_x": 3.073890760711643,
+      "ours_combined_energy_j": 0.8516490119839699,
       "qwen_energy_j": 1.452,
-      "energy_reduction_x": 1.6888908248367556,
+      "energy_reduction_x": 1.7049277103222074,
       "qwen_source": "audited A100 table"
     },
     {
       "task_id": "salicon",
       "task": "SALICON saliency",
-      "ours_time_ms": 6.177608,
+      "ours_time_ms": 6.125168001672745,
       "qwen_time_ms": 19.141,
-      "speedup_x": 3.0984484609577034,
-      "ours_combined_energy_j": 0.9164221678229283,
+      "speedup_x": 3.124975510022372,
+      "ours_combined_energy_j": 0.9079622113978169,
       "qwen_energy_j": 1.551,
-      "energy_reduction_x": 1.6924514208168797,
+      "energy_reduction_x": 1.7082208714525906,
       "qwen_source": "audited A100 table"
     },
     {
       "task_id": "openmoji",
       "task": "OpenMoji interaction",
-      "ours_time_ms": 11.562029,
+      "ours_time_ms": 11.235552040081025,
       "qwen_time_ms": 49.053,
-      "speedup_x": 4.242594444279632,
-      "ours_combined_energy_j": 1.6746592437979606,
+      "speedup_x": 4.36587359704368,
+      "ours_combined_energy_j": 1.6260059485349339,
       "qwen_energy_j": 4.476,
-      "energy_reduction_x": 2.672782547599879,
+      "energy_reduction_x": 2.752757457027123,
       "qwen_source": "audited A100 table"
     }
   ],

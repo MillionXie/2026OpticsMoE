@@ -54,7 +54,6 @@ TASKS = {
             ("video_neural_ccd_to_fusion", "video_ccd_to_fusion", 2),
         ],
         "serial_extra": [
-            ("LGVQ temporal, 16 videos parallel", "required_frame_to_video_bridge", "frame_to_video_bridge"),
             ("LGVQ temporal, 16 videos parallel", "task_head", "task_head"),
         ],
         "residual": [("frame_parallel_residual", 2), ("video_parallel_residual", 2)],
@@ -69,7 +68,6 @@ TASKS = {
             ("spatial_language_neural_ccd_to_fusion", "spatial_language_ccd_to_fusion", 2),
         ],
         "serial_extra": [
-            ("LGVQ spatial, single video 4 frames", "required_frame_to_sequence_bridge", "spatial_frame_to_sequence_bridge"),
             ("LGVQ spatial, single video 4 frames", "task_head", "spatial_task_head"),
         ],
         "residual": [
@@ -117,7 +115,6 @@ TASKS = {
             ("language_neural_ccd_to_fusion", "language_ccd_to_fusion", 2),
         ],
         "serial_extra": [
-            ("OpenMoji interaction", "required_language_to_vision_bridge", "language_to_vision_bridge"),
             ("OpenMoji interaction", "task_head", "task_head"),
         ],
         "residual": [("vision_parallel_residual", 2), ("language_parallel_residual", 2)],
@@ -152,7 +149,7 @@ for task_id, spec in TASKS.items():
             {
                 "name": power_name,
                 "occurrences": occurrences,
-                "wall_median_ms": float(row["synchronized_wall_ms"]["median"]),
+                "cuda_median_ms": float(row["cuda_event_ms"]["median"]),
                 "active_mean_w": power(source, profile, power_name),
             }
         )
@@ -162,7 +159,7 @@ for task_id, spec in TASKS.items():
             {
                 "name": power_name,
                 "occurrences": 1,
-                "wall_median_ms": float(row["wall_median_ms"]),
+                "cuda_median_ms": float(row["cuda_median_ms"]),
                 "active_mean_w": power(source, profile, power_name),
             }
         )
@@ -173,24 +170,24 @@ for task_id, spec in TASKS.items():
             {
                 "name": name,
                 "occurrences": occurrences,
-                "wall_median_ms": float(row["synchronized_wall_ms"]["median"]),
+                "cuda_median_ms": float(row["cuda_event_ms"]["median"]),
                 "active_mean_w": power(source, profile, name),
             }
         )
-    serial_ms = sum(row["wall_median_ms"] * row["occurrences"] for row in serial)
-    wall_ms = physical_ms + serial_ms
-    optical_j = OPTICAL_POWER_W * wall_ms / 1000.0
-    gpu_idle_j = idle_w * wall_ms / 1000.0
+    serial_ms = sum(row["cuda_median_ms"] * row["occurrences"] for row in serial)
+    canonical_ms = physical_ms + serial_ms
+    optical_j = OPTICAL_POWER_W * canonical_ms / 1000.0
+    gpu_idle_j = idle_w * canonical_ms / 1000.0
     serial_increment_j = sum(
         max(0.0, row["active_mean_w"] - idle_w)
-        * row["wall_median_ms"]
+        * row["cuda_median_ms"]
         * row["occurrences"]
         / 1000.0
         for row in serial
     )
     residual_increment_j = sum(
         max(0.0, row["active_mean_w"] - idle_w)
-        * row["wall_median_ms"]
+        * row["cuda_median_ms"]
         * row["occurrences"]
         / 1000.0
         for row in residual
@@ -203,8 +200,8 @@ for task_id, spec in TASKS.items():
             "task": spec["label"],
             "physical_passes": spec["physical_passes"],
             "physical_ms": physical_ms,
-            "serial_electronic_wall_ms": serial_ms,
-            "composed_wall_ms": wall_ms,
+            "serial_electronic_cuda_ms": serial_ms,
+            "canonical_table_latency_ms": canonical_ms,
             "optical_rig_power_w": OPTICAL_POWER_W,
             "optical_rig_energy_j": optical_j,
             "a100_idle_power_w": idle_w,
@@ -213,12 +210,12 @@ for task_id, spec in TASKS.items():
             "a100_parallel_residual_incremental_energy_j": residual_increment_j,
             "a100_board_energy_proxy_j": gpu_j,
             "combined_optical_plus_a100_energy_j": combined_j,
-            "combined_average_power_w": combined_j / (wall_ms / 1000.0),
+            "combined_average_power_w": combined_j / (canonical_ms / 1000.0),
             "combined_rated_upper_energy_j": optical_j
-            + GPU_RATED_POWER_W * wall_ms / 1000.0,
+            + GPU_RATED_POWER_W * canonical_ms / 1000.0,
             "serial_components": serial,
             "parallel_residual_components": residual,
-            "excluded": "router post, next-SLM layout/rebuild, file/image processing",
+            "excluded_from_latency": "parallel residual, required bridge, router post, next-SLM layout/rebuild, file/image processing",
         }
     )
 
@@ -242,9 +239,9 @@ for row in energy_rows:
         {
             "task_id": row["task_id"],
             "task": row["task"],
-            "ours_time_ms": row["composed_wall_ms"],
+            "ours_time_ms": row["canonical_table_latency_ms"],
             "qwen_time_ms": qwen["time_ms"],
-            "speedup_x": qwen["time_ms"] / row["composed_wall_ms"],
+            "speedup_x": qwen["time_ms"] / row["canonical_table_latency_ms"],
             "ours_combined_energy_j": row["combined_optical_plus_a100_energy_j"],
             "qwen_energy_j": qwen["energy_j"],
             "energy_reduction_x": qwen["energy_j"] / row["combined_optical_plus_a100_energy_j"],
@@ -256,27 +253,21 @@ for row in energy_rows:
 summary = {
     "schema_version": 1,
     "canonical_contract": {
-        "ours_timing": "six/three physical 1.314ms passes + strict synchronized CCD-to-fusion + required bridge + complete task head",
-        "ours_energy": "80.388W optical rig plus measured A100 board-power proxy over the same composed wall boundary",
+        "ours_timing": "six/three physical 1.314ms passes + CUDA-event CCD-to-fusion + CUDA-event complete task head; no bridge",
+        "ours_energy": "80.388W optical rig plus measured A100 board-power proxy over the same CUDA table boundary; parallel residual contributes incremental energy but no latency",
         "qwen_formal": "performance, latency, and energy must come from the same full-558 formal run; sweep power is occupancy evidence only",
-        "legacy_ours_times_ms_from_previous_table": {
-            "lgvq_temporal": 10.637,
-            "lgvq_spatial": 10.600,
-            "abo_image_to_text": 9.941,
-            "lsp": 5.861,
-            "salicon": 6.125,
-            "openmoji": 11.236,
+        "authoritative_ours_times_ms": {
+            row["task_id"]: row["canonical_table_latency_ms"] for row in energy_rows
         },
-        "legacy_status": "superseded because those rows predate the retained strict full-task-head benchmark",
     },
     "batch2_formal": batch2,
     "batch4_formal": batch4,
     "batch3_sweep": batch3,
     "batch_sweep_reference": batch_sweep,
     "ours_energy_method": {
-        "formula": "E_total = 80.388W*T_wall + P_idle_A100*T_wall + sum((P_component-P_idle)*T_component)",
+        "formula": "E_total = 80.388W*T_cuda_table + P_idle_A100*T_cuda_table + sum((P_component-P_idle)*T_component_cuda)",
         "parallel_residual": "time is covered by the physical pass, but its incremental A100 energy is included",
-        "power_sources": "10ms nvidia-smi component loops on the same A100; strict wall-median component durations",
+        "power_sources": "10ms nvidia-smi component loops on the same A100; CUDA-event median component durations",
         "warning": "composed proxy, not a wired wall-plug measurement",
     },
     "ours_energy": energy_rows,
@@ -318,9 +309,9 @@ for report in (batch2, batch4, batch16):
             "same_16_video_ms": report["same_workload_16_video_model_ms"],
             "formal_active_mean_w": report["telemetry"]["active_mean_w"],
             "same_16_video_energy_j": report["same_workload_16_video_measured_active_energy_j"],
-            "ours_canonical_ms": energy_rows[0]["composed_wall_ms"],
+            "ours_canonical_ms": energy_rows[0]["canonical_table_latency_ms"],
             "ours_combined_energy_j": energy_rows[0]["combined_optical_plus_a100_energy_j"],
-            "speedup_x": report["same_workload_16_video_model_ms"] / energy_rows[0]["composed_wall_ms"],
+            "speedup_x": report["same_workload_16_video_model_ms"] / energy_rows[0]["canonical_table_latency_ms"],
             "energy_reduction_x": report["same_workload_16_video_measured_active_energy_j"] / energy_rows[0]["combined_optical_plus_a100_energy_j"],
         }
     )
