@@ -8,6 +8,7 @@ backend:
   lab_guide: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/LAB_SPATIAL4_GUIDE.md
 
 artifacts:
+  canonical_checkpoint: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_single_video4_two_branch_ema_q8/best_checkpoint.pt
   source_checkpoint: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_two_branch_ema_microrefine_s428/best_observed_test_checkpoint.pt
   checkpoint_sha256: 9db97124c7a2105a1e81c721c40d2c1a3e05d07cb3bd8a7252f5001eeab51aa14
   source_hardware_masks: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_two_branch_ema_microrefine_s428/hardware_masks
