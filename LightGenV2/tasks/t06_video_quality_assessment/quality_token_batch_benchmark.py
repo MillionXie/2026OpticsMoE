@@ -284,12 +284,12 @@ def forward_batch(
     scores: torch.Tensor,
     timer: core.BoundaryTimer,
 ) -> tuple[float, list[float], dict[str, Any]]:
-    torch.cuda.synchronize()
-    full_host_started = time.perf_counter()
     full_start_event = torch.cuda.Event(enable_timing=True)
     full_end_event = torch.cuda.Event(enable_timing=True)
-    full_start_event.record()
     timer.reset(expected_calls=1)
+    torch.cuda.synchronize()
+    full_host_started = time.perf_counter()
+    full_start_event.record()
     with torch.autocast("cuda", dtype=torch.bfloat16):
         hidden = model.model(**inputs, return_dict=True, use_cache=False).last_hidden_state
     mask = inputs["attention_mask"].bool()

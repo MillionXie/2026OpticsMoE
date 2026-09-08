@@ -1,5 +1,7 @@
 # A100 时间质量 batch=2/3/4 与统一 Ours 口径（2026-09-08）
 
+> **口径更新：** 本文保留的是上一轮结果。required bridge 经数据依赖审计后应计入正式串行路径；当前权威定义、复算值和 Qwen 全模型边界见 [TIMING_CONTRACT_V2_CN.md](TIMING_CONTRACT_V2_CN.md)。后续引用数字时不要再使用本文的“no bridge”时间。
+
 ## 结论
 
 - 正式 `batch=2` 在 LGVQ 全部 558 条 test 上得到：SRCC `0.766415`、PLCC `0.776848`；平均 `62.259 ms / 2 videos`，等效 16 视频为 `498.068 ms、103.772 J`。
