@@ -2,11 +2,16 @@
 
 输入是 `224×224` OpenMoji 场景和文本指令，指令任务为 `add / replace / move / remove`；输出是 `6×6` 类别网格和编辑网格，再由固定 OpenMoji 合成器得到目标图像。
 
+论文口径、baseline差异和复现命令统一见 [reports/reproduction/README.md](reports/reproduction/README.md)。
+本任务是自行构造的封闭词表网格编辑，不是OpenMoji官方benchmark。当前文本缓存经过完整冻结语言Transformer，
+最终保留合成使用真实`source_grid`，不能描述为纯embedding前端、完全无Transformer的RGB+文本端到端系统。
+2026-09-08审计发现1对train/test完全重复输入；历史数值保留，后续去重必须使用新split/profile。
+
 本目录固定比较三组系统：
 
 1. `main_dc20`：语言、视觉各含光学 Router，均为 4 专家 Top-2；随后各有一张 global phase。融合前做 RMS 同尺度归一化，训练含 20%–30% 相干零级分量与硬/软专家均衡。
 2. `d2nn_dc20`：没有 Router；语言和视觉各使用两层普通 D2NN。四张 `224×224` dense 相位与主方法两个模态实际激活的四张专家相位参数量相等。
-3. `qwen_pending`：冻结 `Qwen3-VL-2B-Instruct` 大模型 baseline。当前只生成 5090D 待测合同，不在共享训练服务器测性能、速度或功耗。
+3. `qwen_pending`：历史待测合同入口，不执行大模型评估。实际冻结Qwen加训练任务头baseline由`baseline_structured_5090d.py`运行；历史结果见下文，复现缺口见复现说明。
 
 主指标为 changed-cell accuracy，并同时报告 foreground category accuracy、edit-grid IoU、object F1、scene exact match 和按四种操作分组的指标。
 
@@ -50,4 +55,4 @@ add 0.224、replace 0.336、move 0.650、remove 0.980。该结果没有 LoRA、�
   视觉 Router 也使用 3/4，选择占比 20.30% / 45.80% / 33.90% / 0%。
 
 因此该结果满足“物理光 Router、Top-2”的结构要求，但不能宣称四专家完全均衡；D2NN 的
-主指标高 1.00 个百分点。机器可读结果和可视化见 `reports/dc20_comparison/`。
+主指标高 0.95 个百分点。机器可读结果和可视化见 `reports/dc20_comparison/`；其Qwen pending行为早期快照，不代表后来的baseline未运行。
