@@ -1,0 +1,16 @@
+base_config: spatial_trainonly_fixed20_micro_s445.yaml
+output_dir: ../../runs/lgvq_spatial_trainonly_fixed20_rank_s446
+random_seed: 446
+
+# Give correlation/ranking more influence relative to Smooth-L1 without adding
+# any inference-time layer or parameter.
+training:
+  ema_decay: 0.95
+
+loss:
+  ranking_weight: 0.50
+  correlation_weight: 1.00
+  soft_spearman_weight: 0.10
+  soft_rank_temperature: 0.12
+  soft_target_weight: 0.0
+  optical_alignment_weight: 0.005

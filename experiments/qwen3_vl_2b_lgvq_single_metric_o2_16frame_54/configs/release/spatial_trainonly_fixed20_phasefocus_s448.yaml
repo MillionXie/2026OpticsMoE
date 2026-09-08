@@ -1,0 +1,20 @@
+base_config: spatial_trainonly_fixed20_micro_s445.yaml
+output_dir: ../../runs/lgvq_spatial_trainonly_fixed20_phasefocus_s448
+random_seed: 448
+
+# Keep the electronic graph unchanged and nearly frozen in parameter space,
+# while assigning more of the optimization budget to the four feature masks.
+training:
+  learning_rate: 0.000001
+  phase_learning_rate: 0.00020
+  router_phase_learning_rate: 0.00010
+  readout_learning_rate_factor: 0.50
+  ema_decay: 0.95
+
+loss:
+  ranking_weight: 0.50
+  correlation_weight: 1.00
+  soft_spearman_weight: 0.10
+  soft_rank_temperature: 0.12
+  soft_target_weight: 0.0
+  optical_alignment_weight: 0.01
