@@ -1,0 +1,43 @@
+# 两参数读出校准诊断
+
+这是独立候选，不改原模型/原指标，不代表已达到CC=0.87。
+在多轮续训未超过0.858120后，检查是否能通过极低容量的输出校准改善泛化。
+
+## 结构边界
+
+原光电网络完整冻结，包括光router Top2、两层光电融合、alpha≥0.4及原读出头。
+最终logits增加`z' = s*z + b*r(x,y)`：
+
+- 仅训练两个标量，`s=exp(log(2)*tanh(a))`在[0.5,2]内，`b=2*tanh(c)`在[-2,2]内。
+- `r`是固定`-(x²+y²)`减空间均值，x/y为像素中心映射到[-1,1]的坐标。
+- 初始化s=1,b=0，严格保留原输出；位置偏置允许为负，不强制中心更亮。
+- 不读取图像内容来生成新分支，没有attention/Transformer/额外特征主干。
+- 这是最终读出增加2个参数，不是新增光学步骤，也不是CCD图像预处理。
+- 不能把此候选和原Qwen头称为参数严格相同：原光电解码头85412，此候选等效85414。
+  若采用为正式模型，要披露此差异，并按需要为baseline提供同类校准对照。
+
+参考[DeepGaze IIE (ICCV2021)](https://openaccess.thecvf.com/content/ICCV2021/papers/Linardos_DeepGaze_IIE_Calibrated_Prediction_in_and_Out-of-Domain_for_State-of-the-Art_Saliency_ICCV_2021_paper.pdf)
+中读出校准和空间先验的动机。本实现使用两标量有界解析形式，不复现其主干、集成、模糊模块或整套训练。
+
+## 训练、选择与评估
+
+1. 从`moe_alpha40_hint_control.yaml`指定的不可变best加载完整原光电网络，SHA校验沿用原入口。
+2. 对全部10000张train在原标准eval模式生成logits，只临时保存在CPU RAM的float32缓存中，
+   和真值合计约4GB；不保存额外大型中间文件。不启用图像/光学随机增强，不更新原网络。
+3. 只拟合a/c：Adam lr=.03，20轮，batch64；损失为`1-CC + .001*((log s)^2+b^2)`。
+   按完整训练集CC保存校准best，不用test选校准epoch。所有拟合ID必须是唯一train ID。
+4. 训练完成后在相同5000张public test，成对计算原模型/校准后结果；不改测试归一化、标签、样本或光学条件。
+   原项目和源权重已使用public test选模，这依然不是从未接触测试集的独立盲测。
+
+```bash
+python -m pytest LightGenV2/tasks/t03_saliency/tests -q
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=3 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -u -m LightGenV2.tasks.t03_saliency.calibration_probe --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_hint_control.yaml --output LightGenV2/tasks/t03_saliency/runs/simulation/moe_alpha40_readout_calibration_seed42 --epochs 20 --batch-size 16
+```
+
+GPU编号为示例，先确认余量；输出目录必须不存在。正式数据/模型依赖与复现入口相同。
+`calibration_report.json`记录两套完整指标；`per_image_cc.csv`保存逐样本配对结果。
+`protocol.json`记录源码commit、命令、源SHA、训练ID SHA和口径，`training_history.json`记录两个标量。
+`best_checkpoint.pt`/`last_checkpoint.pt`仅包含`calibration`、`base`来源及格式标识；
+**不是能直接传给旧run入口的core checkpoint**。复现需要源checkpoint，以及
+`SpatialLogitCalibration`严格加载`payload['calibration']`后应用到原logits再softmax。
+若性能确实改善，仍需完整集成、独立复评并审计光学参数/专家分布，才能作为正式部署候选。
