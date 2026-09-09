@@ -1,0 +1,26 @@
+[
+  {
+    "file": "20260909_unseen_smoke_a_execution.json",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260909_unseen_smoke_a_execution.json",
+    "sha256": "7b03f5281b14ac625c055a634767583322c351749fbce9287219b7eb61c12e26",
+    "bytes": 3305
+  },
+  {
+    "file": "20260909_unseen_formal_a_execution.json",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260909_unseen_formal_a_execution.json",
+    "sha256": "68c62bdb4349f556016ca450e1ebd49923931d14dc3fca7ce2f835b8d8b26408",
+    "bytes": 44425
+  },
+  {
+    "file": "20260909_unseen_formal_b_execution.json",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260909_unseen_formal_b_execution.json",
+    "sha256": "75b1b3419b95a9615025c933e93b49c95bb78aada88ea60b2e22437c7354b269",
+    "bytes": 45266
+  },
+  {
+    "file": "20260909_unseen_formal_a_allocation.json",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260909_unseen_formal_a_allocation.json",
+    "sha256": "43cadf5b321b9e641190c720d9c3a72ae3fd28b38e318acd2c193861b827e8eb",
+    "bytes": 882
+  }
+]

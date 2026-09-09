@@ -155,4 +155,6 @@ python -m TransferFromElectricity.tasks.t01_object_retrieval.run_unseen \
 
 使用本入口前述 `collect_results --require-gpu-audit --checkpoint-hashes` 经SFTP及独立SHA256收集，run路径为 `runs/simulation/20260909_unseen_formal_<a或b>_<direct或qwen_vision_lora>_<5或20>shot_s<101或202或303>`。逐查询预测/混淆矩阵、数据与权重哈希、固定参考、任务梯度、冻结变化和逐轮时间均保留在run；大型源权重与适配best/last不提交Git。
 
-收齐24组后，使用包含汇总入口的报告版本运行 `python -m TransferFromElectricity.tasks.t01_object_retrieval.report_unseen`。报告检查两方法数据/显卡配对、支持集嵌套、所有查询未入训练、源权重一致、导出误差、冻结参数及回传哈希。均值/标准差来自三次支持抽样，不能标成三个源训练seed，也不能将单源任务的条件外推称为经过跨任务元训练。当前过程包括源checkpoint重建、固定末轮评估与部署mask一致性核验；尚未另启全新进程对适配checkpoint重评，不能声称已做该项复现。
+24组已全部完成。实际全部使用GPU5 RTX3090（`GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb`），A原GPU2等待队列在无训练启动时结束，改到B释放的GPU5；完整改配和三份执行审计位于报告目录。使用报告版本 `c80e80c0` 运行 `python -m TransferFromElectricity.tasks.t01_object_retrieval.report_unseen`，已成功核验全部24组、生成120条epoch及60条评估结果。额外运行 `python -m TransferFromElectricity.tasks.t01_object_retrieval.collect_unseen_audits` 收集四份队列/分配审计，交互输入SSH密码，不保存凭证。
+
+阅读 [完整结果](../unseen_v1_20260909/完整结果.md)、[设计与解释](../unseen_v1_20260909/实验设计与解释.md) 和 [源权重/回传证据](../unseen_v1_20260909/evidence_manifest.json)。报告检查两方法数据/显卡配对、支持集嵌套、所有查询未入训练、源权重与第五轮已发布哈希一致、导出误差、冻结参数及回传哈希。均值/标准差来自三次支持抽样，不能标成三个源训练seed，也不能将单源任务的条件外推称为经过跨任务元训练。当前过程包括源checkpoint重建、固定末轮评估与部署mask一致性核验；尚未另启全新进程对适配checkpoint重评，不能声称已做该项复现。

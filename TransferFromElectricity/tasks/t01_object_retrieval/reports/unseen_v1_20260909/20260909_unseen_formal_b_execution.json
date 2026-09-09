@@ -1,0 +1,2176 @@
+{
+  "git_sha": "0d854376cca29e16143ad1eb7762860770e59459",
+  "gpu_uuid": "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+  "device": "NVIDIA GeForce RTX 3090",
+  "records": [
+    {
+      "run_id": "20260909_unseen_formal_b_qwen_vision_lora_5shot_s101",
+      "pid": 1184847,
+      "command": [
+        "/home/guest3/miniconda3/envs/xml/bin/python",
+        "-u",
+        "-m",
+        "TransferFromElectricity.tasks.t01_object_retrieval.run_unseen",
+        "--method",
+        "qwen_vision_lora",
+        "--class-set",
+        "b",
+        "--shots",
+        "5",
+        "--support-seed",
+        "101",
+        "--gpu-uuid",
+        "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+        "--run-dir",
+        "/DATA/DATA1/guest3/worktrees/static_unseen_v1/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260909_unseen_formal_b_qwen_vision_lora_5shot_s101"
+      ],
+      "gpu_uuid": "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+      "started": 1788915901.8189652,
+      "status": "complete",
+      "own_gpu_seen": true,
+      "foreign_pids": [
+        1185036
+      ],
+      "samples": [
+        {
+          "time": 1788915901.9118197,
+          "pids": []
+        },
+        {
+          "time": 1788915906.9974575,
+          "pids": []
+        },
+        {
+          "time": 1788915912.1086135,
+          "pids": [
+            1185036
+          ]
+        },
+        {
+          "time": 1788915917.1964245,
+          "pids": [
+            1184847,
+            1185036
+          ]
+        },
+        {
+          "time": 1788915922.2858706,
+          "pids": [
+            1184847,
+            1185036
+          ]
+        },
+        {
+          "time": 1788915927.400557,
+          "pids": [
+            1184847,
+            1185036
+          ]
+        },
+        {
+          "time": 1788915932.492387,
+          "pids": [
+            1184847,
+            1185036
+          ]
+        },
+        {
+          "time": 1788915937.6049938,
+          "pids": [
+            1184847,
+            1185036
+          ]
+        },
+        {
+          "time": 1788915942.7043755,
+          "pids": [
+            1184847,
+            1185036
+          ]
+        },
+        {
+          "time": 1788915947.8148472,
+          "pids": [
+            1184847,
+            1185036
+          ]
+        },
+        {
+          "time": 1788915952.9062507,
+          "pids": [
+            1184847,
+            1185036
+          ]
+        },
+        {
+          "time": 1788915958.0025134,
+          "pids": [
+            1184847,
+            1185036
+          ]
+        },
+        {
+          "time": 1788915963.1174724,
+          "pids": [
+            1184847,
+            1185036
+          ]
+        },
+        {
+          "time": 1788915968.2392466,
+          "pids": [
+            1184847,
+            1185036
+          ]
+        },
+        {
+          "time": 1788915973.3503907,
+          "pids": [
+            1184847,
+            1185036
+          ]
+        },
+        {
+          "time": 1788915978.4527254,
+          "pids": [
+            1184847,
+            1185036
+          ]
+        },
+        {
+          "time": 1788915983.5260649,
+          "pids": [
+            1184847,
+            1185036
+          ]
+        },
+        {
+          "time": 1788915988.646031,
+          "pids": [
+            1184847,
+            1185036
+          ]
+        },
+        {
+          "time": 1788915993.7509432,
+          "pids": [
+            1184847,
+            1185036
+          ]
+        },
+        {
+          "time": 1788915998.8606443,
+          "pids": [
+            1184847,
+            1185036
+          ]
+        },
+        {
+          "time": 1788916003.95403,
+          "pids": [
+            1184847,
+            1185036
+          ]
+        },
+        {
+          "time": 1788916009.081003,
+          "pids": [
+            1184847,
+            1185036
+          ]
+        },
+        {
+          "time": 1788916014.196836,
+          "pids": [
+            1184847,
+            1185036
+          ]
+        },
+        {
+          "time": 1788916019.315679,
+          "pids": [
+            1184847,
+            1185036
+          ]
+        },
+        {
+          "time": 1788916024.4071088,
+          "pids": [
+            1184847,
+            1185036
+          ]
+        },
+        {
+          "time": 1788916029.519576,
+          "pids": [
+            1184847,
+            1185036
+          ]
+        },
+        {
+          "time": 1788916034.6316462,
+          "pids": [
+            1184847,
+            1185036
+          ]
+        },
+        {
+          "time": 1788916039.7247412,
+          "pids": [
+            1184847,
+            1185036
+          ]
+        },
+        {
+          "time": 1788916044.8406274,
+          "pids": [
+            1184847,
+            1185036
+          ]
+        },
+        {
+          "time": 1788916049.95048,
+          "pids": [
+            1184847,
+            1185036
+          ]
+        },
+        {
+          "time": 1788916055.0611196,
+          "pids": [
+            1184847,
+            1185036
+          ]
+        },
+        {
+          "time": 1788916060.1771622,
+          "pids": [
+            1184847
+          ]
+        },
+        {
+          "time": 1788916065.2663815,
+          "pids": [
+            1184847
+          ]
+        },
+        {
+          "time": 1788916070.3765752,
+          "pids": [
+            1184847
+          ]
+        },
+        {
+          "time": 1788916075.447805,
+          "pids": [
+            1184847
+          ]
+        },
+        {
+          "time": 1788916080.5619571,
+          "pids": [
+            1184847
+          ]
+        },
+        {
+          "time": 1788916085.6758227,
+          "pids": [
+            1184847
+          ]
+        },
+        {
+          "time": 1788916090.7842143,
+          "pids": [
+            1184847
+          ]
+        },
+        {
+          "time": 1788916095.8758144,
+          "pids": [
+            1184847
+          ]
+        },
+        {
+          "time": 1788916100.9859776,
+          "pids": [
+            1184847
+          ]
+        },
+        {
+          "time": 1788916106.0604477,
+          "pids": [
+            1184847
+          ]
+        }
+      ],
+      "finished": 1788916111.0623643,
+      "returncode": 0
+    },
+    {
+      "run_id": "20260909_unseen_formal_b_direct_5shot_s101",
+      "pid": 1188072,
+      "command": [
+        "/home/guest3/miniconda3/envs/xml/bin/python",
+        "-u",
+        "-m",
+        "TransferFromElectricity.tasks.t01_object_retrieval.run_unseen",
+        "--method",
+        "direct",
+        "--class-set",
+        "b",
+        "--shots",
+        "5",
+        "--support-seed",
+        "101",
+        "--gpu-uuid",
+        "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+        "--run-dir",
+        "/DATA/DATA1/guest3/worktrees/static_unseen_v1/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260909_unseen_formal_b_direct_5shot_s101"
+      ],
+      "gpu_uuid": "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+      "started": 1788916111.1750748,
+      "status": "complete",
+      "own_gpu_seen": true,
+      "foreign_pids": [],
+      "samples": [
+        {
+          "time": 1788916111.2872372,
+          "pids": []
+        },
+        {
+          "time": 1788916116.3927016,
+          "pids": []
+        },
+        {
+          "time": 1788916121.5276723,
+          "pids": [
+            1188072
+          ]
+        },
+        {
+          "time": 1788916126.6451292,
+          "pids": [
+            1188072
+          ]
+        },
+        {
+          "time": 1788916131.7660468,
+          "pids": [
+            1188072
+          ]
+        },
+        {
+          "time": 1788916136.8816473,
+          "pids": [
+            1188072
+          ]
+        },
+        {
+          "time": 1788916141.9758022,
+          "pids": [
+            1188072
+          ]
+        },
+        {
+          "time": 1788916147.0893953,
+          "pids": [
+            1188072
+          ]
+        },
+        {
+          "time": 1788916152.18453,
+          "pids": [
+            1188072
+          ]
+        },
+        {
+          "time": 1788916157.2783632,
+          "pids": [
+            1188072
+          ]
+        },
+        {
+          "time": 1788916162.386204,
+          "pids": [
+            1188072
+          ]
+        },
+        {
+          "time": 1788916167.5004473,
+          "pids": [
+            1188072
+          ]
+        },
+        {
+          "time": 1788916172.6146703,
+          "pids": [
+            1188072
+          ]
+        },
+        {
+          "time": 1788916177.7077672,
+          "pids": [
+            1188072
+          ]
+        },
+        {
+          "time": 1788916182.8016183,
+          "pids": [
+            1188072
+          ]
+        },
+        {
+          "time": 1788916187.8975828,
+          "pids": [
+            1188072
+          ]
+        },
+        {
+          "time": 1788916193.0071263,
+          "pids": [
+            1188072
+          ]
+        }
+      ],
+      "finished": 1788916198.0096297,
+      "returncode": 0
+    },
+    {
+      "run_id": "20260909_unseen_formal_b_qwen_vision_lora_20shot_s101",
+      "pid": 1189411,
+      "command": [
+        "/home/guest3/miniconda3/envs/xml/bin/python",
+        "-u",
+        "-m",
+        "TransferFromElectricity.tasks.t01_object_retrieval.run_unseen",
+        "--method",
+        "qwen_vision_lora",
+        "--class-set",
+        "b",
+        "--shots",
+        "20",
+        "--support-seed",
+        "101",
+        "--gpu-uuid",
+        "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+        "--run-dir",
+        "/DATA/DATA1/guest3/worktrees/static_unseen_v1/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260909_unseen_formal_b_qwen_vision_lora_20shot_s101"
+      ],
+      "gpu_uuid": "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+      "started": 1788916198.1254172,
+      "status": "complete",
+      "own_gpu_seen": true,
+      "foreign_pids": [],
+      "samples": [
+        {
+          "time": 1788916198.2350612,
+          "pids": []
+        },
+        {
+          "time": 1788916203.3439538,
+          "pids": []
+        },
+        {
+          "time": 1788916208.437524,
+          "pids": []
+        },
+        {
+          "time": 1788916213.553179,
+          "pids": [
+            1189411
+          ]
+        },
+        {
+          "time": 1788916218.6522393,
+          "pids": [
+            1189411
+          ]
+        },
+        {
+          "time": 1788916223.779679,
+          "pids": [
+            1189411
+          ]
+        },
+        {
+          "time": 1788916228.8929136,
+          "pids": [
+            1189411
+          ]
+        },
+        {
+          "time": 1788916234.0086696,
+          "pids": [
+            1189411
+          ]
+        },
+        {
+          "time": 1788916239.1018884,
+          "pids": [
+            1189411
+          ]
+        },
+        {
+          "time": 1788916244.214159,
+          "pids": [
+            1189411
+          ]
+        },
+        {
+          "time": 1788916249.3083584,
+          "pids": [
+            1189411
+          ]
+        },
+        {
+          "time": 1788916254.422405,
+          "pids": [
+            1189411
+          ]
+        },
+        {
+          "time": 1788916259.5133948,
+          "pids": [
+            1189411
+          ]
+        },
+        {
+          "time": 1788916264.62557,
+          "pids": [
+            1189411
+          ]
+        },
+        {
+          "time": 1788916269.7403216,
+          "pids": [
+            1189411
+          ]
+        },
+        {
+          "time": 1788916274.8513134,
+          "pids": [
+            1189411
+          ]
+        },
+        {
+          "time": 1788916279.966319,
+          "pids": [
+            1189411
+          ]
+        },
+        {
+          "time": 1788916285.0746746,
+          "pids": [
+            1189411
+          ]
+        },
+        {
+          "time": 1788916290.1701162,
+          "pids": [
+            1189411
+          ]
+        },
+        {
+          "time": 1788916295.2617257,
+          "pids": [
+            1189411
+          ]
+        },
+        {
+          "time": 1788916300.3716817,
+          "pids": [
+            1189411
+          ]
+        },
+        {
+          "time": 1788916305.4882338,
+          "pids": [
+            1189411
+          ]
+        },
+        {
+          "time": 1788916310.5870016,
+          "pids": [
+            1189411
+          ]
+        },
+        {
+          "time": 1788916315.6812973,
+          "pids": [
+            1189411
+          ]
+        },
+        {
+          "time": 1788916320.790077,
+          "pids": [
+            1189411
+          ]
+        },
+        {
+          "time": 1788916325.8846579,
+          "pids": [
+            1189411
+          ]
+        },
+        {
+          "time": 1788916330.990937,
+          "pids": [
+            1189411
+          ]
+        },
+        {
+          "time": 1788916336.1081734,
+          "pids": [
+            1189411
+          ]
+        },
+        {
+          "time": 1788916341.2033868,
+          "pids": [
+            1189411
+          ]
+        },
+        {
+          "time": 1788916346.3102345,
+          "pids": [
+            1189411
+          ]
+        },
+        {
+          "time": 1788916351.4082608,
+          "pids": [
+            1189411
+          ]
+        },
+        {
+          "time": 1788916356.5145426,
+          "pids": [
+            1189411
+          ]
+        }
+      ],
+      "finished": 1788916361.5178485,
+      "returncode": 0
+    },
+    {
+      "run_id": "20260909_unseen_formal_b_direct_20shot_s101",
+      "pid": 1191697,
+      "command": [
+        "/home/guest3/miniconda3/envs/xml/bin/python",
+        "-u",
+        "-m",
+        "TransferFromElectricity.tasks.t01_object_retrieval.run_unseen",
+        "--method",
+        "direct",
+        "--class-set",
+        "b",
+        "--shots",
+        "20",
+        "--support-seed",
+        "101",
+        "--gpu-uuid",
+        "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+        "--run-dir",
+        "/DATA/DATA1/guest3/worktrees/static_unseen_v1/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260909_unseen_formal_b_direct_20shot_s101"
+      ],
+      "gpu_uuid": "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+      "started": 1788916361.615071,
+      "status": "complete",
+      "own_gpu_seen": true,
+      "foreign_pids": [],
+      "samples": [
+        {
+          "time": 1788916361.7263117,
+          "pids": []
+        },
+        {
+          "time": 1788916366.838764,
+          "pids": []
+        },
+        {
+          "time": 1788916371.9292047,
+          "pids": [
+            1191697
+          ]
+        },
+        {
+          "time": 1788916377.0271974,
+          "pids": [
+            1191697
+          ]
+        },
+        {
+          "time": 1788916382.1235468,
+          "pids": [
+            1191697
+          ]
+        },
+        {
+          "time": 1788916387.2404394,
+          "pids": [
+            1191697
+          ]
+        },
+        {
+          "time": 1788916392.3366754,
+          "pids": [
+            1191697
+          ]
+        },
+        {
+          "time": 1788916397.4414783,
+          "pids": [
+            1191697
+          ]
+        },
+        {
+          "time": 1788916402.5344896,
+          "pids": [
+            1191697
+          ]
+        },
+        {
+          "time": 1788916407.6305916,
+          "pids": [
+            1191697
+          ]
+        },
+        {
+          "time": 1788916412.743162,
+          "pids": [
+            1191697
+          ]
+        },
+        {
+          "time": 1788916417.8222044,
+          "pids": [
+            1191697
+          ]
+        },
+        {
+          "time": 1788916422.9379919,
+          "pids": [
+            1191697
+          ]
+        },
+        {
+          "time": 1788916428.0688062,
+          "pids": [
+            1191697
+          ]
+        },
+        {
+          "time": 1788916433.1831303,
+          "pids": [
+            1191697
+          ]
+        },
+        {
+          "time": 1788916438.2947252,
+          "pids": [
+            1191697
+          ]
+        },
+        {
+          "time": 1788916443.3923106,
+          "pids": [
+            1191697
+          ]
+        },
+        {
+          "time": 1788916448.4856305,
+          "pids": [
+            1191697
+          ]
+        }
+      ],
+      "finished": 1788916453.4897287,
+      "returncode": 0
+    },
+    {
+      "run_id": "20260909_unseen_formal_b_direct_5shot_s202",
+      "pid": 1193104,
+      "command": [
+        "/home/guest3/miniconda3/envs/xml/bin/python",
+        "-u",
+        "-m",
+        "TransferFromElectricity.tasks.t01_object_retrieval.run_unseen",
+        "--method",
+        "direct",
+        "--class-set",
+        "b",
+        "--shots",
+        "5",
+        "--support-seed",
+        "202",
+        "--gpu-uuid",
+        "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+        "--run-dir",
+        "/DATA/DATA1/guest3/worktrees/static_unseen_v1/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260909_unseen_formal_b_direct_5shot_s202"
+      ],
+      "gpu_uuid": "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+      "started": 1788916453.5793025,
+      "status": "complete",
+      "own_gpu_seen": true,
+      "foreign_pids": [],
+      "samples": [
+        {
+          "time": 1788916453.6947942,
+          "pids": []
+        },
+        {
+          "time": 1788916458.8094132,
+          "pids": []
+        },
+        {
+          "time": 1788916463.9222562,
+          "pids": []
+        },
+        {
+          "time": 1788916469.0355487,
+          "pids": [
+            1193104
+          ]
+        },
+        {
+          "time": 1788916474.1511524,
+          "pids": [
+            1193104
+          ]
+        },
+        {
+          "time": 1788916479.2462654,
+          "pids": [
+            1193104
+          ]
+        },
+        {
+          "time": 1788916484.3438683,
+          "pids": [
+            1193104
+          ]
+        },
+        {
+          "time": 1788916489.4391768,
+          "pids": [
+            1193104
+          ]
+        },
+        {
+          "time": 1788916494.5452228,
+          "pids": [
+            1193104
+          ]
+        },
+        {
+          "time": 1788916499.6597545,
+          "pids": [
+            1193104
+          ]
+        },
+        {
+          "time": 1788916504.7562633,
+          "pids": [
+            1193104
+          ]
+        },
+        {
+          "time": 1788916509.8510704,
+          "pids": [
+            1193104
+          ]
+        },
+        {
+          "time": 1788916514.9717593,
+          "pids": [
+            1193104
+          ]
+        },
+        {
+          "time": 1788916520.071421,
+          "pids": [
+            1193104
+          ]
+        },
+        {
+          "time": 1788916525.1694565,
+          "pids": [
+            1193104
+          ]
+        },
+        {
+          "time": 1788916530.2603652,
+          "pids": [
+            1193104
+          ]
+        },
+        {
+          "time": 1788916535.3755417,
+          "pids": [
+            1193104
+          ]
+        }
+      ],
+      "finished": 1788916540.3807797,
+      "returncode": 0
+    },
+    {
+      "run_id": "20260909_unseen_formal_b_qwen_vision_lora_5shot_s202",
+      "pid": 1194439,
+      "command": [
+        "/home/guest3/miniconda3/envs/xml/bin/python",
+        "-u",
+        "-m",
+        "TransferFromElectricity.tasks.t01_object_retrieval.run_unseen",
+        "--method",
+        "qwen_vision_lora",
+        "--class-set",
+        "b",
+        "--shots",
+        "5",
+        "--support-seed",
+        "202",
+        "--gpu-uuid",
+        "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+        "--run-dir",
+        "/DATA/DATA1/guest3/worktrees/static_unseen_v1/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260909_unseen_formal_b_qwen_vision_lora_5shot_s202"
+      ],
+      "gpu_uuid": "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+      "started": 1788916540.4946253,
+      "status": "complete",
+      "own_gpu_seen": true,
+      "foreign_pids": [],
+      "samples": [
+        {
+          "time": 1788916540.6120434,
+          "pids": []
+        },
+        {
+          "time": 1788916545.720815,
+          "pids": []
+        },
+        {
+          "time": 1788916550.8139808,
+          "pids": []
+        },
+        {
+          "time": 1788916555.9119132,
+          "pids": [
+            1194439
+          ]
+        },
+        {
+          "time": 1788916561.0307577,
+          "pids": [
+            1194439
+          ]
+        },
+        {
+          "time": 1788916566.1211967,
+          "pids": [
+            1194439
+          ]
+        },
+        {
+          "time": 1788916571.218418,
+          "pids": [
+            1194439
+          ]
+        },
+        {
+          "time": 1788916576.3351338,
+          "pids": [
+            1194439
+          ]
+        },
+        {
+          "time": 1788916581.4437678,
+          "pids": [
+            1194439
+          ]
+        },
+        {
+          "time": 1788916586.5384142,
+          "pids": [
+            1194439
+          ]
+        },
+        {
+          "time": 1788916591.6343415,
+          "pids": [
+            1194439
+          ]
+        },
+        {
+          "time": 1788916596.7260346,
+          "pids": [
+            1194439
+          ]
+        },
+        {
+          "time": 1788916601.8281784,
+          "pids": [
+            1194439
+          ]
+        },
+        {
+          "time": 1788916606.9452739,
+          "pids": [
+            1194439
+          ]
+        },
+        {
+          "time": 1788916612.0374017,
+          "pids": [
+            1194439
+          ]
+        },
+        {
+          "time": 1788916617.1636374,
+          "pids": [
+            1194439
+          ]
+        },
+        {
+          "time": 1788916622.3028226,
+          "pids": [
+            1194439
+          ]
+        },
+        {
+          "time": 1788916627.4117959,
+          "pids": [
+            1194439
+          ]
+        },
+        {
+          "time": 1788916632.5035253,
+          "pids": [
+            1194439
+          ]
+        },
+        {
+          "time": 1788916637.6170278,
+          "pids": [
+            1194439
+          ]
+        },
+        {
+          "time": 1788916642.7439275,
+          "pids": [
+            1194439
+          ]
+        },
+        {
+          "time": 1788916647.8609433,
+          "pids": [
+            1194439
+          ]
+        },
+        {
+          "time": 1788916652.9519553,
+          "pids": [
+            1194439
+          ]
+        },
+        {
+          "time": 1788916658.0467458,
+          "pids": [
+            1194439
+          ]
+        },
+        {
+          "time": 1788916663.163687,
+          "pids": [
+            1194439
+          ]
+        },
+        {
+          "time": 1788916668.2553234,
+          "pids": [
+            1194439
+          ]
+        },
+        {
+          "time": 1788916673.3624988,
+          "pids": [
+            1194439
+          ]
+        },
+        {
+          "time": 1788916678.480758,
+          "pids": [
+            1194439
+          ]
+        },
+        {
+          "time": 1788916683.5912719,
+          "pids": [
+            1194439
+          ]
+        },
+        {
+          "time": 1788916688.7063906,
+          "pids": [
+            1194439
+          ]
+        },
+        {
+          "time": 1788916693.8208396,
+          "pids": [
+            1194439
+          ]
+        }
+      ],
+      "finished": 1788916698.8260531,
+      "returncode": 0
+    },
+    {
+      "run_id": "20260909_unseen_formal_b_direct_20shot_s202",
+      "pid": 1196795,
+      "command": [
+        "/home/guest3/miniconda3/envs/xml/bin/python",
+        "-u",
+        "-m",
+        "TransferFromElectricity.tasks.t01_object_retrieval.run_unseen",
+        "--method",
+        "direct",
+        "--class-set",
+        "b",
+        "--shots",
+        "20",
+        "--support-seed",
+        "202",
+        "--gpu-uuid",
+        "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+        "--run-dir",
+        "/DATA/DATA1/guest3/worktrees/static_unseen_v1/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260909_unseen_formal_b_direct_20shot_s202"
+      ],
+      "gpu_uuid": "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+      "started": 1788916698.9290054,
+      "status": "complete",
+      "own_gpu_seen": true,
+      "foreign_pids": [],
+      "samples": [
+        {
+          "time": 1788916699.0428288,
+          "pids": []
+        },
+        {
+          "time": 1788916704.1505005,
+          "pids": []
+        },
+        {
+          "time": 1788916709.2693164,
+          "pids": []
+        },
+        {
+          "time": 1788916714.3792055,
+          "pids": [
+            1196795
+          ]
+        },
+        {
+          "time": 1788916719.460066,
+          "pids": [
+            1196795
+          ]
+        },
+        {
+          "time": 1788916724.572506,
+          "pids": [
+            1196795
+          ]
+        },
+        {
+          "time": 1788916729.6656973,
+          "pids": [
+            1196795
+          ]
+        },
+        {
+          "time": 1788916734.763793,
+          "pids": [
+            1196795
+          ]
+        },
+        {
+          "time": 1788916739.8781202,
+          "pids": [
+            1196795
+          ]
+        },
+        {
+          "time": 1788916744.969034,
+          "pids": [
+            1196795
+          ]
+        },
+        {
+          "time": 1788916750.0840344,
+          "pids": [
+            1196795
+          ]
+        },
+        {
+          "time": 1788916755.2007785,
+          "pids": [
+            1196795
+          ]
+        },
+        {
+          "time": 1788916760.3173492,
+          "pids": [
+            1196795
+          ]
+        },
+        {
+          "time": 1788916765.4363625,
+          "pids": [
+            1196795
+          ]
+        },
+        {
+          "time": 1788916770.5475383,
+          "pids": [
+            1196795
+          ]
+        },
+        {
+          "time": 1788916775.654909,
+          "pids": [
+            1196795
+          ]
+        },
+        {
+          "time": 1788916780.7696795,
+          "pids": [
+            1196795
+          ]
+        },
+        {
+          "time": 1788916785.883491,
+          "pids": [
+            1196795
+          ]
+        }
+      ],
+      "finished": 1788916790.8895268,
+      "returncode": 0
+    },
+    {
+      "run_id": "20260909_unseen_formal_b_qwen_vision_lora_20shot_s202",
+      "pid": 1198212,
+      "command": [
+        "/home/guest3/miniconda3/envs/xml/bin/python",
+        "-u",
+        "-m",
+        "TransferFromElectricity.tasks.t01_object_retrieval.run_unseen",
+        "--method",
+        "qwen_vision_lora",
+        "--class-set",
+        "b",
+        "--shots",
+        "20",
+        "--support-seed",
+        "202",
+        "--gpu-uuid",
+        "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+        "--run-dir",
+        "/DATA/DATA1/guest3/worktrees/static_unseen_v1/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260909_unseen_formal_b_qwen_vision_lora_20shot_s202"
+      ],
+      "gpu_uuid": "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+      "started": 1788916790.984545,
+      "status": "complete",
+      "own_gpu_seen": true,
+      "foreign_pids": [],
+      "samples": [
+        {
+          "time": 1788916791.091805,
+          "pids": []
+        },
+        {
+          "time": 1788916796.2049835,
+          "pids": []
+        },
+        {
+          "time": 1788916801.320316,
+          "pids": []
+        },
+        {
+          "time": 1788916806.4389303,
+          "pids": [
+            1198212
+          ]
+        },
+        {
+          "time": 1788916811.5360177,
+          "pids": [
+            1198212
+          ]
+        },
+        {
+          "time": 1788916816.615533,
+          "pids": [
+            1198212
+          ]
+        },
+        {
+          "time": 1788916821.7339954,
+          "pids": [
+            1198212
+          ]
+        },
+        {
+          "time": 1788916826.852468,
+          "pids": [
+            1198212
+          ]
+        },
+        {
+          "time": 1788916831.966573,
+          "pids": [
+            1198212
+          ]
+        },
+        {
+          "time": 1788916837.0806031,
+          "pids": [
+            1198212
+          ]
+        },
+        {
+          "time": 1788916842.197847,
+          "pids": [
+            1198212
+          ]
+        },
+        {
+          "time": 1788916847.2926595,
+          "pids": [
+            1198212
+          ]
+        },
+        {
+          "time": 1788916852.4080713,
+          "pids": [
+            1198212
+          ]
+        },
+        {
+          "time": 1788916857.5235343,
+          "pids": [
+            1198212
+          ]
+        },
+        {
+          "time": 1788916862.6205213,
+          "pids": [
+            1198212
+          ]
+        },
+        {
+          "time": 1788916867.7399423,
+          "pids": [
+            1198212
+          ]
+        },
+        {
+          "time": 1788916872.8535242,
+          "pids": [
+            1198212
+          ]
+        },
+        {
+          "time": 1788916878.0510452,
+          "pids": [
+            1198212
+          ]
+        },
+        {
+          "time": 1788916883.1800382,
+          "pids": [
+            1198212
+          ]
+        },
+        {
+          "time": 1788916888.2963672,
+          "pids": [
+            1198212
+          ]
+        },
+        {
+          "time": 1788916893.414818,
+          "pids": [
+            1198212
+          ]
+        },
+        {
+          "time": 1788916898.528382,
+          "pids": [
+            1198212
+          ]
+        },
+        {
+          "time": 1788916903.6482813,
+          "pids": [
+            1198212
+          ]
+        },
+        {
+          "time": 1788916908.769419,
+          "pids": [
+            1198212
+          ]
+        },
+        {
+          "time": 1788916913.8843942,
+          "pids": [
+            1198212
+          ]
+        },
+        {
+          "time": 1788916919.0123222,
+          "pids": [
+            1198212
+          ]
+        },
+        {
+          "time": 1788916924.1125948,
+          "pids": [
+            1198212
+          ]
+        },
+        {
+          "time": 1788916929.2343137,
+          "pids": [
+            1198212
+          ]
+        },
+        {
+          "time": 1788916934.3517842,
+          "pids": [
+            1198212
+          ]
+        },
+        {
+          "time": 1788916939.4498575,
+          "pids": [
+            1198212
+          ]
+        },
+        {
+          "time": 1788916944.5481305,
+          "pids": [
+            1198212
+          ]
+        },
+        {
+          "time": 1788916949.669244,
+          "pids": [
+            1198212
+          ]
+        }
+      ],
+      "finished": 1788916954.692642,
+      "returncode": 0
+    },
+    {
+      "run_id": "20260909_unseen_formal_b_qwen_vision_lora_5shot_s303",
+      "pid": 1200502,
+      "command": [
+        "/home/guest3/miniconda3/envs/xml/bin/python",
+        "-u",
+        "-m",
+        "TransferFromElectricity.tasks.t01_object_retrieval.run_unseen",
+        "--method",
+        "qwen_vision_lora",
+        "--class-set",
+        "b",
+        "--shots",
+        "5",
+        "--support-seed",
+        "303",
+        "--gpu-uuid",
+        "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+        "--run-dir",
+        "/DATA/DATA1/guest3/worktrees/static_unseen_v1/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260909_unseen_formal_b_qwen_vision_lora_5shot_s303"
+      ],
+      "gpu_uuid": "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+      "started": 1788916954.814185,
+      "status": "complete",
+      "own_gpu_seen": true,
+      "foreign_pids": [],
+      "samples": [
+        {
+          "time": 1788916954.904014,
+          "pids": []
+        },
+        {
+          "time": 1788916960.0319018,
+          "pids": []
+        },
+        {
+          "time": 1788916965.133013,
+          "pids": []
+        },
+        {
+          "time": 1788916970.2464528,
+          "pids": [
+            1200502
+          ]
+        },
+        {
+          "time": 1788916975.3671522,
+          "pids": [
+            1200502
+          ]
+        },
+        {
+          "time": 1788916980.4648526,
+          "pids": [
+            1200502
+          ]
+        },
+        {
+          "time": 1788916985.5827765,
+          "pids": [
+            1200502
+          ]
+        },
+        {
+          "time": 1788916990.6963916,
+          "pids": [
+            1200502
+          ]
+        },
+        {
+          "time": 1788916995.8168516,
+          "pids": [
+            1200502
+          ]
+        },
+        {
+          "time": 1788917000.9110296,
+          "pids": [
+            1200502
+          ]
+        },
+        {
+          "time": 1788917006.0299447,
+          "pids": [
+            1200502
+          ]
+        },
+        {
+          "time": 1788917011.1385093,
+          "pids": [
+            1200502
+          ]
+        },
+        {
+          "time": 1788917016.2540817,
+          "pids": [
+            1200502
+          ]
+        },
+        {
+          "time": 1788917021.366527,
+          "pids": [
+            1200502
+          ]
+        },
+        {
+          "time": 1788917026.4831808,
+          "pids": [
+            1200502
+          ]
+        },
+        {
+          "time": 1788917031.5715563,
+          "pids": [
+            1200502
+          ]
+        },
+        {
+          "time": 1788917036.6944711,
+          "pids": [
+            1200502
+          ]
+        },
+        {
+          "time": 1788917041.8123572,
+          "pids": [
+            1200502
+          ]
+        },
+        {
+          "time": 1788917046.9336574,
+          "pids": [
+            1200502
+          ]
+        },
+        {
+          "time": 1788917052.0502646,
+          "pids": [
+            1200502
+          ]
+        },
+        {
+          "time": 1788917057.1511703,
+          "pids": [
+            1200502
+          ]
+        },
+        {
+          "time": 1788917062.2458255,
+          "pids": [
+            1200502
+          ]
+        },
+        {
+          "time": 1788917067.3539715,
+          "pids": [
+            1200502
+          ]
+        },
+        {
+          "time": 1788917072.452729,
+          "pids": [
+            1200502
+          ]
+        },
+        {
+          "time": 1788917077.578786,
+          "pids": [
+            1200502
+          ]
+        },
+        {
+          "time": 1788917082.699268,
+          "pids": [
+            1200502
+          ]
+        },
+        {
+          "time": 1788917087.8116782,
+          "pids": [
+            1200502
+          ]
+        },
+        {
+          "time": 1788917092.9276903,
+          "pids": [
+            1200502
+          ]
+        },
+        {
+          "time": 1788917098.0442524,
+          "pids": [
+            1200502
+          ]
+        },
+        {
+          "time": 1788917103.1626408,
+          "pids": [
+            1200502
+          ]
+        },
+        {
+          "time": 1788917108.2834613,
+          "pids": [
+            1200502
+          ]
+        }
+      ],
+      "finished": 1788917113.28987,
+      "returncode": 0
+    },
+    {
+      "run_id": "20260909_unseen_formal_b_direct_5shot_s303",
+      "pid": 1207366,
+      "command": [
+        "/home/guest3/miniconda3/envs/xml/bin/python",
+        "-u",
+        "-m",
+        "TransferFromElectricity.tasks.t01_object_retrieval.run_unseen",
+        "--method",
+        "direct",
+        "--class-set",
+        "b",
+        "--shots",
+        "5",
+        "--support-seed",
+        "303",
+        "--gpu-uuid",
+        "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+        "--run-dir",
+        "/DATA/DATA1/guest3/worktrees/static_unseen_v1/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260909_unseen_formal_b_direct_5shot_s303"
+      ],
+      "gpu_uuid": "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+      "started": 1788917113.4097717,
+      "status": "complete",
+      "own_gpu_seen": true,
+      "foreign_pids": [],
+      "samples": [
+        {
+          "time": 1788917113.5155663,
+          "pids": []
+        },
+        {
+          "time": 1788917118.6333904,
+          "pids": []
+        },
+        {
+          "time": 1788917123.7267075,
+          "pids": []
+        },
+        {
+          "time": 1788917128.8498333,
+          "pids": [
+            1207366
+          ]
+        },
+        {
+          "time": 1788917133.9814513,
+          "pids": [
+            1207366
+          ]
+        },
+        {
+          "time": 1788917139.1153266,
+          "pids": [
+            1207366
+          ]
+        },
+        {
+          "time": 1788917144.2397647,
+          "pids": [
+            1207366
+          ]
+        },
+        {
+          "time": 1788917149.3628855,
+          "pids": [
+            1207366
+          ]
+        },
+        {
+          "time": 1788917154.453384,
+          "pids": [
+            1207366
+          ]
+        },
+        {
+          "time": 1788917159.5681305,
+          "pids": [
+            1207366
+          ]
+        },
+        {
+          "time": 1788917164.6844099,
+          "pids": [
+            1207366
+          ]
+        },
+        {
+          "time": 1788917169.8014028,
+          "pids": [
+            1207366
+          ]
+        },
+        {
+          "time": 1788917174.9011195,
+          "pids": [
+            1207366
+          ]
+        },
+        {
+          "time": 1788917180.017422,
+          "pids": [
+            1207366
+          ]
+        },
+        {
+          "time": 1788917185.1279924,
+          "pids": [
+            1207366
+          ]
+        },
+        {
+          "time": 1788917190.2482576,
+          "pids": [
+            1207366
+          ]
+        },
+        {
+          "time": 1788917195.365769,
+          "pids": [
+            1207366
+          ]
+        },
+        {
+          "time": 1788917200.4816158,
+          "pids": [
+            1207366
+          ]
+        }
+      ],
+      "finished": 1788917205.4876263,
+      "returncode": 0
+    },
+    {
+      "run_id": "20260909_unseen_formal_b_qwen_vision_lora_20shot_s303",
+      "pid": 1208783,
+      "command": [
+        "/home/guest3/miniconda3/envs/xml/bin/python",
+        "-u",
+        "-m",
+        "TransferFromElectricity.tasks.t01_object_retrieval.run_unseen",
+        "--method",
+        "qwen_vision_lora",
+        "--class-set",
+        "b",
+        "--shots",
+        "20",
+        "--support-seed",
+        "303",
+        "--gpu-uuid",
+        "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+        "--run-dir",
+        "/DATA/DATA1/guest3/worktrees/static_unseen_v1/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260909_unseen_formal_b_qwen_vision_lora_20shot_s303"
+      ],
+      "gpu_uuid": "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+      "started": 1788917205.6092248,
+      "status": "complete",
+      "own_gpu_seen": true,
+      "foreign_pids": [],
+      "samples": [
+        {
+          "time": 1788917205.6991997,
+          "pids": []
+        },
+        {
+          "time": 1788917210.8168147,
+          "pids": []
+        },
+        {
+          "time": 1788917215.9164183,
+          "pids": []
+        },
+        {
+          "time": 1788917221.0541656,
+          "pids": [
+            1208783
+          ]
+        },
+        {
+          "time": 1788917226.1724083,
+          "pids": [
+            1208783
+          ]
+        },
+        {
+          "time": 1788917231.275584,
+          "pids": [
+            1208783
+          ]
+        },
+        {
+          "time": 1788917236.3994672,
+          "pids": [
+            1208783
+          ]
+        },
+        {
+          "time": 1788917241.5513103,
+          "pids": [
+            1208783
+          ]
+        },
+        {
+          "time": 1788917246.6455603,
+          "pids": [
+            1208783
+          ]
+        },
+        {
+          "time": 1788917251.74321,
+          "pids": [
+            1208783
+          ]
+        },
+        {
+          "time": 1788917256.8421204,
+          "pids": [
+            1208783
+          ]
+        },
+        {
+          "time": 1788917261.9608672,
+          "pids": [
+            1208783
+          ]
+        },
+        {
+          "time": 1788917267.0744464,
+          "pids": [
+            1208783
+          ]
+        },
+        {
+          "time": 1788917272.1543188,
+          "pids": [
+            1208783
+          ]
+        },
+        {
+          "time": 1788917277.2537732,
+          "pids": [
+            1208783
+          ]
+        },
+        {
+          "time": 1788917282.368921,
+          "pids": [
+            1208783
+          ]
+        },
+        {
+          "time": 1788917287.4930954,
+          "pids": [
+            1208783
+          ]
+        },
+        {
+          "time": 1788917292.6064022,
+          "pids": [
+            1208783
+          ]
+        },
+        {
+          "time": 1788917297.73145,
+          "pids": [
+            1208783
+          ]
+        },
+        {
+          "time": 1788917302.8572974,
+          "pids": [
+            1208783
+          ]
+        },
+        {
+          "time": 1788917307.956898,
+          "pids": [
+            1208783
+          ]
+        },
+        {
+          "time": 1788917313.0534136,
+          "pids": [
+            1208783
+          ]
+        },
+        {
+          "time": 1788917318.17659,
+          "pids": [
+            1208783
+          ]
+        },
+        {
+          "time": 1788917323.2957807,
+          "pids": [
+            1208783
+          ]
+        },
+        {
+          "time": 1788917328.404994,
+          "pids": [
+            1208783
+          ]
+        },
+        {
+          "time": 1788917333.522558,
+          "pids": [
+            1208783
+          ]
+        },
+        {
+          "time": 1788917338.6415854,
+          "pids": [
+            1208783
+          ]
+        },
+        {
+          "time": 1788917343.7621725,
+          "pids": [
+            1208783
+          ]
+        },
+        {
+          "time": 1788917348.8576422,
+          "pids": [
+            1208783
+          ]
+        },
+        {
+          "time": 1788917353.9795098,
+          "pids": [
+            1208783
+          ]
+        },
+        {
+          "time": 1788917359.0942624,
+          "pids": [
+            1208783
+          ]
+        },
+        {
+          "time": 1788917364.2078948,
+          "pids": [
+            1208783
+          ]
+        }
+      ],
+      "finished": 1788917369.214356,
+      "returncode": 0
+    },
+    {
+      "run_id": "20260909_unseen_formal_b_direct_20shot_s303",
+      "pid": 1211052,
+      "command": [
+        "/home/guest3/miniconda3/envs/xml/bin/python",
+        "-u",
+        "-m",
+        "TransferFromElectricity.tasks.t01_object_retrieval.run_unseen",
+        "--method",
+        "direct",
+        "--class-set",
+        "b",
+        "--shots",
+        "20",
+        "--support-seed",
+        "303",
+        "--gpu-uuid",
+        "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+        "--run-dir",
+        "/DATA/DATA1/guest3/worktrees/static_unseen_v1/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260909_unseen_formal_b_direct_20shot_s303"
+      ],
+      "gpu_uuid": "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+      "started": 1788917369.3153737,
+      "status": "complete",
+      "own_gpu_seen": true,
+      "foreign_pids": [],
+      "samples": [
+        {
+          "time": 1788917369.4255874,
+          "pids": []
+        },
+        {
+          "time": 1788917374.536,
+          "pids": []
+        },
+        {
+          "time": 1788917379.6869385,
+          "pids": [
+            1211052
+          ]
+        },
+        {
+          "time": 1788917384.8113415,
+          "pids": [
+            1211052
+          ]
+        },
+        {
+          "time": 1788917389.9310308,
+          "pids": [
+            1211052
+          ]
+        },
+        {
+          "time": 1788917395.0251245,
+          "pids": [
+            1211052
+          ]
+        },
+        {
+          "time": 1788917400.1456418,
+          "pids": [
+            1211052
+          ]
+        },
+        {
+          "time": 1788917405.239872,
+          "pids": [
+            1211052
+          ]
+        },
+        {
+          "time": 1788917410.338883,
+          "pids": [
+            1211052
+          ]
+        },
+        {
+          "time": 1788917415.4337344,
+          "pids": [
+            1211052
+          ]
+        },
+        {
+          "time": 1788917420.5513194,
+          "pids": [
+            1211052
+          ]
+        },
+        {
+          "time": 1788917425.6664448,
+          "pids": [
+            1211052
+          ]
+        },
+        {
+          "time": 1788917430.787959,
+          "pids": [
+            1211052
+          ]
+        },
+        {
+          "time": 1788917435.8673203,
+          "pids": [
+            1211052
+          ]
+        },
+        {
+          "time": 1788917440.985802,
+          "pids": [
+            1211052
+          ]
+        },
+        {
+          "time": 1788917446.110888,
+          "pids": [
+            1211052
+          ]
+        },
+        {
+          "time": 1788917451.228727,
+          "pids": [
+            1211052
+          ]
+        },
+        {
+          "time": 1788917456.3413363,
+          "pids": [
+            1211052
+          ]
+        }
+      ],
+      "finished": 1788917461.3494492,
+      "returncode": 0
+    }
+  ],
+  "complete": true
+}
