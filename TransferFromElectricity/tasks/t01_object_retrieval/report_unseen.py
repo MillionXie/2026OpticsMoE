@@ -24,7 +24,10 @@ def main():
     p.add_argument('--output', default=str(TASK/'reports/unseen_v1_20260909'))
     args = p.parse_args()
     out = Path(args.output); out.mkdir(parents=True,exist_ok=True)
-    metrics = []; timings = []; evidence = []; contracts = {}; source_hashes = {}; training_shas = set()
+    metrics = []; timings = []; evidence = []; contracts = {}; paired_hashes = {}; source_hashes = {}; training_shas = set()
+    prior_evidence = read(TASK/'reports/spatial_v4_20260908/evidence_manifest.json')
+    published_sources = {r['run_id']:r['sha256'] for r in prior_evidence
+                         if r.get('evidence_type')=='remote_checkpoint_sha256' and r['file']=='best_checkpoint.pt'}
     source_classes = {3,13,14,17,28,31,35,81,86,94}
     expected_sets = {'a':{22,25,50,52,60,66,68,72,77,80}, 'b':{5,18,20,21,26,32,34,55,85,91}}
     for task in ('a','b'):
@@ -52,19 +55,25 @@ def main():
             assert report['epochs']==5 and report['steps_per_epoch']==20 and len(history)==5 and not report['smoke']
             assert report['export_max_error'] <= 1e-5 and not report['query_used_for_gradient']
             assert source['git_sha']=='c024b9280433f6e7fe31fc0122a1b8aadf342b38'
+            assert source['sha256']==published_sources[source['run_id']]
             assert source_hashes.setdefault(method,source['sha256']) == source['sha256'] == report['source_checkpoint_sha256']
             assert set(split['source_class_ids'])==source_classes and set(split['novel_class_ids'])==expected_sets[task]
             assert not source_classes & expected_sets[task]
             assert len(split['support'])==10*shots and len(split['query'])==1000
+            assert all(sum(s['sku_index']==i for s in split['support'])==shots for i in range(10))
+            assert all(sum(s['sku_index']==i for s in split['query'])==100 for i in range(10))
             assert all(s['source_split']=='official_train' for s in split['support'])
             assert all(s['source_split']=='official_test' for s in split['query'])
             ids = {s['sample_id'] for s in split['support']}; query_ids = {s['sample_id'] for s in split['query']}
             assert not ids & query_ids
             contract = (sorted(ids), sorted(query_ids), gpu['gpu_uuid'])
             assert contracts.setdefault((task,shots,seed),contract)==contract
+            hashes=read(run/'data_hashes.json')
+            assert paired_hashes.setdefault((task,shots,seed),hashes)==hashes
             if method.startswith('qwen'):
                 refs=read(run/'fixed_references.json')['references']
                 assert len(refs)==10 and {s['sample_id'] for s in refs} <= ids
+                assert all(hashes[s['image_path']]==s['sha256'] for s in refs)
             assert gpu['returncode']==0 and gpu['status']=='complete' and gpu['own_gpu_seen']
             assert 'RTX' in env['device'] and 'A100' not in env['device'] and gpu['gpu_uuid']==env['gpu_uuid']
             assert all(abs(x-.6)<1e-6 for a in report['fusion'].values() for x in a)
@@ -91,7 +100,7 @@ def main():
     for task in ('a','b'):
         for seed in (101,202,303):
             assert set(contracts[(task,5,seed)][0]) <= set(contracts[(task,20,seed)][0])
-    assert len(training_shas)==1
+    assert training_shas=={'0d854376cca29e16143ad1eb7762860770e59459'}
     summary=[]
     for task in ('a','b'):
       for shots in (5,20):
