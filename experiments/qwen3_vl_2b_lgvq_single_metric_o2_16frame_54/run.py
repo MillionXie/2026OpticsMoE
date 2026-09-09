@@ -162,6 +162,8 @@ def _apply_trainable_scope(
             trainable = name.startswith("vision_routes.") and ".blocks.1." in name
         elif scope == "appended_language_only":
             trainable = name.startswith("language_routes.") and ".blocks.1." in name
+        elif scope == "quality_reinjection_only":
+            trainable = name == "raw_electronic_quality_reinjection"
         elif scope == "quality_refiner_only":
             trainable = name.startswith("quality_refiner.")
         elif scope == "quality_refiner_readout":

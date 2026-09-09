@@ -427,6 +427,43 @@ def test_strict_two_branch_allows_quality_only_inside_electronic_route(
     assert not torch.equal(first, second)
 
 
+def test_e2_quality_reinjection_is_exact_zero_start_inside_electronic_route(
+    tmp_path: Path,
+) -> None:
+    source_settings = replace(
+        _small_settings(tmp_path),
+        strict_two_branch=True,
+        quality_branch_enabled=False,
+        quality_feature_cache_path=tmp_path / "quality_cache.pt",
+        quality_input_width=192,
+        qwen_gate_enabled=False,
+        electronic_route_variant="residual_conv",
+        electronic_route_depth=2,
+        electronic_quality_residual_enabled=True,
+        electronic_quality_reinjection_enabled=False,
+        phase_snapshot_interval_epochs=0,
+    )
+    source_settings.validate()
+    torch.manual_seed(715)
+    source = LGVQSingleMetricOEO16(source_settings).eval()
+    checkpoint = tmp_path / "quality_e1_source.pt"
+    torch.save({"state_dict": source.state_dict()}, checkpoint)
+    destination_settings = replace(
+        source_settings,
+        electronic_quality_reinjection_enabled=True,
+        initialization_checkpoint=checkpoint,
+    )
+    destination_settings.validate()
+    destination = LGVQSingleMetricOEO16(destination_settings).eval()
+    _load_compatible_initialization(destination, destination_settings)
+    inputs = _inputs(frame_count=4)
+    with torch.no_grad():
+        expected = source(*inputs, optical_enabled=False)["prediction"]
+        actual = destination(*inputs, optical_enabled=False)["prediction"]
+    torch.testing.assert_close(actual, expected, rtol=0.0, atol=0.0)
+    assert destination.raw_electronic_quality_reinjection.item() == 0.0
+
+
 def test_strict_e1_quality_refiner_is_zero_start_and_has_no_bypass(
     tmp_path: Path,
 ) -> None:

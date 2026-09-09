@@ -2361,6 +2361,12 @@ class LGVQSingleMetricOEO16(nn.Module):
                     torch.tensor(settings.electronic_quality_residual_initial)
                 )
             )
+        if settings.electronic_quality_reinjection_enabled:
+            # Zero is an exact warm start. Unlike a sigmoid gate, tanh permits
+            # the optimizer to learn either a corrective addition or removal.
+            self.raw_electronic_quality_reinjection = nn.Parameter(
+                torch.zeros(())
+            )
         self.parallel_optics = ParallelOpticalFeaturePath(settings)
         self.serial_optics = SerialOpticalFeaturePath(settings)
         self.parallel_router = OpticalRouterParallel16(settings)
@@ -2517,6 +2523,22 @@ class LGVQSingleMetricOEO16(nn.Module):
 
         fields2 = self.parallel_optics.fields(vision)
         electronic2 = self.vision_routes[1](vision)
+        electronic_quality_reinjection = electronic2.new_zeros(())
+        raw_reinjection = getattr(
+            self, "raw_electronic_quality_reinjection", None
+        )
+        if raw_reinjection is not None:
+            electronic_quality_reinjection = (
+                self.settings.electronic_quality_reinjection_max
+                * torch.tanh(raw_reinjection)
+            )
+            # This is a skip connection inside the sole electronic residual
+            # route. The result must still traverse O2 and both language O/E
+            # stages before the single MOS head, so it is not a third branch.
+            electronic2 = (
+                electronic2
+                + electronic_quality_reinjection * electronic_quality
+            )
         if optical_enabled:
             optical2 = self.parallel_optics.global_path(fields2)
             vision = self.fusions[1](electronic2, optical2)
@@ -2624,6 +2646,7 @@ class LGVQSingleMetricOEO16(nn.Module):
             "target_name": self.settings.target_name,
             "quality_gate": quality_gate,
             "electronic_quality_residual_scale": electronic_quality_scale,
+            "electronic_quality_reinjection_scale": electronic_quality_reinjection,
             "qwen_gate": qwen_gate,
             "late_input_correction": input_correction,
             "spatial_readout_image_focus": readout_image_focus,

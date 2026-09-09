@@ -1,0 +1,7 @@
+base_config: spatial_quality_e2_s628.yaml
+output_dir: ../../runs/lgvq_spatial_quality_e2_gentle_s629
+random_seed: 629
+
+training:
+  learning_rate: 0.0025
+  test_interval_steps: 2

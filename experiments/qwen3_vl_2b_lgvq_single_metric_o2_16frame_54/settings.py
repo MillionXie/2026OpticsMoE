@@ -273,6 +273,8 @@ class ExperimentSettings:
     electronic_route_depth: int = 1
     electronic_quality_residual_enabled: bool = False
     electronic_quality_residual_initial: float = 0.70
+    electronic_quality_reinjection_enabled: bool = False
+    electronic_quality_reinjection_max: float = 0.50
     quality_refiner_enabled: bool = False
     quality_refiner_max: float = 0.50
     late_input_correction_enabled: bool = False
@@ -446,6 +448,8 @@ class ExperimentSettings:
         if self.electronic_quality_residual_enabled:
             quality_tag = int(round(self.electronic_quality_residual_initial * 100.0))
             suffixes.append(f"electronicqualityresidual{quality_tag:02d}_v1")
+        if self.electronic_quality_reinjection_enabled:
+            suffixes.append("electronicqualitye2skip_v1")
         if self.quality_refiner_enabled:
             suffixes.append("qualityrefine_v1")
         if self.late_input_correction_enabled:
@@ -578,6 +582,14 @@ class ExperimentSettings:
             raise ValueError(
                 "The electronic quality residual requires a model-width quality cache"
             )
+        if self.electronic_quality_reinjection_enabled and not (
+            self.electronic_quality_residual_enabled
+        ):
+            raise ValueError(
+                "Electronic quality reinjection requires the E1 quality residual"
+            )
+        if self.electronic_quality_reinjection_max <= 0.0:
+            raise ValueError("model.electronic_quality_reinjection_max must be positive")
         if self.vision_cache_view_paths and (
             self.target_name != "spatial" or self.frame_count != 4
         ):
@@ -825,6 +837,7 @@ class ExperimentSettings:
             "appended_electronic_only",
             "appended_vision_only",
             "appended_language_only",
+            "quality_reinjection_only",
             "quality_refiner_only",
             "quality_refiner_readout",
             "late_input_correction_only",
@@ -843,6 +856,7 @@ class ExperimentSettings:
                 "appended_electronic_and_crossframe, "
                 "appended_electronic_only, "
                 "appended_vision_only, appended_language_only, "
+                "quality_reinjection_only, "
                 "quality_refiner_only, quality_refiner_readout, or "
                 "late_input_correction_only, frame_stem_only, or "
                 "frame_stem_and_readout, vgg_correction_only, or "
@@ -1015,6 +1029,12 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         ),
         electronic_quality_residual_initial=float(
             get("model", "electronic_quality_residual_initial", 0.70)
+        ),
+        electronic_quality_reinjection_enabled=bool(
+            get("model", "electronic_quality_reinjection_enabled", False)
+        ),
+        electronic_quality_reinjection_max=float(
+            get("model", "electronic_quality_reinjection_max", 0.50)
         ),
         quality_refiner_enabled=bool(get("model", "quality_refiner_enabled", False)),
         quality_refiner_max=float(get("model", "quality_refiner_max", 0.50)),

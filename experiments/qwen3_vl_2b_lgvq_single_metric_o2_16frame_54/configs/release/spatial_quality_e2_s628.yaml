@@ -1,0 +1,39 @@
+base_config: spatial_calibrated_s620.yaml
+output_dir: ../../runs/lgvq_spatial_quality_e2_s628
+random_seed: 628
+
+# A single zero-start skip retains Conv5 texture evidence inside the existing
+# E route before O2. It cannot reach the MOS head without traversing O2/O3/O4.
+model:
+  electronic_quality_reinjection_enabled: true
+  electronic_quality_reinjection_max: 0.50
+
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_router_temperature_s620/best_alpha_calibrated_checkpoint.pt
+  trainable_scope: quality_reinjection_only
+  epochs: 6
+  batch_size: 64
+  learning_rate: 0.010
+  weight_decay: 0.0
+  phase_warmup_epochs: 0
+  restore_best_at_stage_transition: false
+  ema_decay: 0.0
+  minimum_learning_rate_factor: 0.20
+  test_interval_epochs: 1
+  test_interval_steps: 4
+  phase_snapshot_interval_epochs: 0
+
+loss:
+  ranking_weight: 1.50
+  correlation_weight: 3.00
+  soft_spearman_weight: 0.40
+  soft_target_weight: 0.0
+  soft_target_ranking_weight: 0.0
+  soft_target_correlation_weight: 0.0
+  level_distribution_weight: 0.0
+  optical_alignment_weight: 0.0
+  router_balance_weight: 0.0
+  router_importance_weight: 0.0
+  serial_router_balance_weight: 0.0
+  serial_router_importance_weight: 0.0
+  router_capture_weight: 0.0
