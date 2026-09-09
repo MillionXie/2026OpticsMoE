@@ -74,6 +74,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     saved = torch.load(args.checkpoint, map_location="cpu", weights_only=False)
     model.load_state_dict(saved["state_dict"], strict=True)
     original = [float(fusion.alpha.detach()) for fusion in model.fusions]
+    original_temperature = float(settings.router_temperature)
     candidates = sorted(set(float(value) for value in args.alpha_values))
     history: list[dict[str, Any]] = []
 
@@ -110,7 +111,21 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         if math.isfinite(value) and value > best_score:
             best_score, best_alphas, best_metrics = value, trial, metrics
 
+    best_temperature = original_temperature
     _set_alphas(model, best_alphas)
+    for temperature in args.router_temperatures:
+        settings.router_temperature = float(temperature)
+        value, metrics = score(
+            best_alphas,
+            f"router_temperature_{float(temperature):.4f}",
+        )
+        if math.isfinite(value) and value > best_score:
+            best_score = value
+            best_metrics = metrics
+            best_temperature = float(temperature)
+
+    _set_alphas(model, best_alphas)
+    settings.router_temperature = best_temperature
     final_metrics = evaluate(
         model,
         loader,
@@ -128,6 +143,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "source_checkpoint_sha256": _sha256(args.checkpoint),
         "source_alphas": original,
         "selected_alphas": best_alphas,
+        "selected_router_temperature": best_temperature,
         "selection_policy": "highest observed test SRCC; no gradients on test",
     }
     torch.save(destination, output_checkpoint)
@@ -135,6 +151,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "source_srcc": history[0]["metrics"]["srcc"],
         "best_observed_test_srcc": best_score,
         "selected_alphas": best_alphas,
+        "source_router_temperature": original_temperature,
+        "selected_router_temperature": best_temperature,
         "metrics": final_metrics,
         "evaluations": len(history),
         "checkpoint": str(output_checkpoint.resolve()),
@@ -163,6 +181,12 @@ def main() -> int:
     )
     parser.add_argument("--coordinate-passes", type=int, default=2)
     parser.add_argument("--random-trials", type=int, default=24)
+    parser.add_argument(
+        "--router-temperatures",
+        type=float,
+        nargs="+",
+        default=[0.35, 0.50, 0.75, 1.00, 1.25, 1.50, 2.00, 3.00],
+    )
     parser.add_argument("--seed", type=int, default=618)
     args = parser.parse_args()
     run(args)
