@@ -103,7 +103,7 @@ def capture(args,c):
             out=root/'ccd'/e['id']/args.stage
             frame=bench.capture(bmp,out)
             files={out.name+'.png':sha(out.with_suffix('.png')),
-                   out.name+'.npy':sha(out.with_suffix('.npy'))}
+                   out.name+'.tif':sha(out.with_suffix('.tif'))}
             if args.stage.endswith('_router'):
                 route=routing_from_ccd(frame,contract)
                 validate_router_capture(frame,route,contract)

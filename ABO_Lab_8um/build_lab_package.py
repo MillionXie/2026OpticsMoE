@@ -44,6 +44,13 @@ def main():
         import json
         z.writestr('RELEASE_MANIFEST.json',json.dumps(manifest,indent=2,ensure_ascii=False))
     write(a.output.with_suffix('.sha256.json'),{'zip':a.output.name,'sha256':sha(a.output),'bytes':a.output.stat().st_size,'git_commit':commit})
+    # Small source-only update for a machine that already has these same assets.
+    # Full manifest is verified after extraction: mismatched old assets still fail.
+    with zipfile.ZipFile(a.output.with_name('ABO_source_update.zip'),'w',zipfile.ZIP_DEFLATED) as z:
+        for name,f in sorted(paths.items()):
+            if name.endswith(('.py','.md','.txt','.json','.yaml','.ps1')) and not name.startswith(('models/','assets/')):
+                z.write(f,name)
+        z.writestr('RELEASE_MANIFEST.json',json.dumps(manifest,indent=2,ensure_ascii=False))
     print(a.output,sha(a.output),flush=True)
 
 if __name__=='__main__': main()

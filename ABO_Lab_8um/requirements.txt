@@ -1,4 +1,4 @@
-# Install torch==2.8.0 separately from the CPU index on the 3GB GTX 1060 lab PC.
+# Install torch==2.8.0 + torchvision==0.23.0 from the CPU index on the 3GB lab PC.
 numpy>=1.26,<3
 Pillow>=10,<12
 PyYAML>=6,<7

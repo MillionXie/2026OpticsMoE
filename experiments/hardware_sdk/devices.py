@@ -291,6 +291,7 @@ class HoloeyeSLM(SLMDriver):
         minimum_refresh_hz: float | None = None,
         preload: bool = True,
         wait_until_visible: bool = True,
+        sdk_api_version: int = 5,
     ) -> None:
         self.sdk_path = sdk_path
         self.binary_folder = binary_folder
@@ -298,6 +299,7 @@ class HoloeyeSLM(SLMDriver):
         self.minimum_refresh_hz = minimum_refresh_hz
         self.preload = bool(preload)
         self.wait_until_visible = bool(wait_until_visible)
+        self.sdk_api_version = int(sdk_api_version)
         self._module: Any = None
         self._slm: Any = None
         self._handles: dict[Path, Any] = {}
@@ -338,8 +340,8 @@ class HoloeyeSLM(SLMDriver):
             self._slm = self._module.SLMInstance(binaryFolder=str(binary_folder))
         except Exception as exc:
             raise DeviceError(f"Could not initialize the HOLOEYE native runtime: {exc}") from exc
-        if not self._slm.requiresVersion(5):
-            raise DeviceError("HOLOEYE runtime API version 5 or newer is required")
+        if not self._slm.requiresVersion(self.sdk_api_version):
+            raise DeviceError(f"HOLOEYE runtime must match configured API version {self.sdk_api_version}")
         self._check(self._slm.open(), "open")
         actual = (int(self._slm.width_px), int(self._slm.height_px))
         if self.expected_resolution is not None and actual != self.expected_resolution:
@@ -453,6 +455,7 @@ class HoloeyeSLM(SLMDriver):
             "binary_folder": None if self.binary_folder is None else str(self.binary_folder),
             "preload": self.preload,
             "wait_until_visible": self.wait_until_visible,
+            "sdk_api_version": self.sdk_api_version,
         }
         if self._slm is not None:
             result.update(
@@ -1054,6 +1057,7 @@ def build_slm(config: dict[str, Any], base: Path) -> SLMDriver:
             ),
             preload=bool(config.get("preload", True)),
             wait_until_visible=bool(config.get("wait_until_visible", True)),
+            sdk_api_version=int(config.get("sdk_api_version", 5)),
         )
     if driver in {"meadowlark", "meadowlark_pcie", "blink_pcie"}:
         sdk_path = _resolve_optional(config.get("sdk_path"), base)

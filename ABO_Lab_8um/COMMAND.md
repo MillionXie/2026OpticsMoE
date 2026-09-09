@@ -13,7 +13,7 @@ $py = "$PWD\.venv\Scripts\python.exe"
 
 ```powershell
 & D:\anaconda\python.exe -m venv .venv
-& $py -m pip install torch==2.8.0 --index-url https://download.pytorch.org/whl/cpu
+& $py -m pip install torch==2.8.0 torchvision==0.23.0 --index-url https://download.pytorch.org/whl/cpu
 & $py -m pip install -r requirements.txt
 & $py verify_release.py
 & $py test_lab.py

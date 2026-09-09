@@ -4,7 +4,7 @@
     "binary_folder": "%HEDS_3_2_PYTHON%/win64",
     "expected_resolution_wh": [1920, 1080], "pixel_pitch_um": 8.0,
     "center_xy": [959.5, 539.5], "minimum_refresh_hz": 59,
-    "preload": true, "wait_until_visible": true,
+    "preload": true, "wait_until_visible": true, "sdk_api_version": 3,
     "flip_vertical": false, "flip_horizontal": false,
     "gray_lut_file": null
   },

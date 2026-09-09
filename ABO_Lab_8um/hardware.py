@@ -63,11 +63,15 @@ class Bench:
             self.slm.preload_files([bmp]); self.slm.display_file(bmp)
             time.sleep(self.c['settle_delay_ms']/1000)
         t1=time.perf_counter()
-        self.camera.capture(path.with_suffix('.npy'))
-        raw=np.load(path.with_suffix('.npy'),allow_pickle=False)
+        temporary=path.with_suffix('.capturing.npy')
+        self.camera.capture(temporary)
+        raw=np.load(temporary,allow_pickle=False)
         if raw.ndim!=2: raise ValueError('DVP must output MONO')
-        # Lossless raw TIFF, not auto-enhanced. NPY retained for numerical audit.
-        Image.fromarray(raw).save(path.with_suffix('.tif'))
+        # One lossless raw TIFF, not two 20MP copies per frame. NPY is transport.
+        Image.fromarray(raw).save(path.with_suffix('.tif'),compression='tiff_deflate')
+        with Image.open(path.with_suffix('.tif')) as check:
+            if not np.array_equal(np.asarray(check),raw): raise RuntimeError('Lossless raw TIFF roundtrip failed')
+        temporary.unlink()
         meta={'hardware_identity':hardware_identity(self.c),'raw_shape':list(raw.shape),'raw_dtype':str(raw.dtype),
               'min':float(raw.min()),'max':float(raw.max()),'mean':float(raw.mean()),
               'display_and_settle_ms':(t1-t0)*1000,'capture_ms':(time.perf_counter()-t1)*1000,'devices':self.info}
