@@ -15,7 +15,7 @@ batching:
   optimizer_steps_per_epoch: 48
 abo_image_image:
   refinement_checkpoint: ../runs/simulation/optical_top2_dc20_anchor_20260909/best_checkpoint.pt
-  refinement_checkpoint_sha256: 8efb1bab408ed457ffe0ad5fce3e044bb4a3c400bfc72d69448830c34e991da4e
+  refinement_checkpoint_sha256: 8efb1bab408ed457ffe0ad5fce3e044bb4a3c400bfc72d6944830c34e991da4e
   cross_product_batches: true
   weak_augmentation: true
   cosine_schedule: true
