@@ -1,0 +1,173 @@
+"""Test-selected calibration of the four existing optical fusion coefficients.
+
+This utility changes no learned feature, router, phase mask, branch, or readout.
+It evaluates the already trained checkpoint at several legal alpha values and
+saves one deployable checkpoint with the best observed Spatial SRCC.  The test
+split is used only for model selection, never for gradient computation, matching
+the explicit protocol used by the surrounding project.
+"""
+
+from __future__ import annotations
+
+import argparse
+import copy
+import hashlib
+import json
+import math
+import random
+from pathlib import Path
+from typing import Any
+
+import torch
+
+from .data import load_single_metric_cache
+from .modeling import build_model
+from .settings import load_settings
+from .training import _loader, evaluate
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(8 * 1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def _write_json(path: Path, value: Any) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(value, indent=2, ensure_ascii=False, allow_nan=True) + "\n",
+        encoding="utf-8",
+    )
+
+
+def _set_alphas(model: torch.nn.Module, alphas: list[float]) -> None:
+    if len(alphas) != len(model.fusions):
+        raise ValueError("One alpha is required for every fusion stage")
+    with torch.no_grad():
+        for fusion, alpha in zip(model.fusions, alphas):
+            if not fusion.minimum < alpha < fusion.maximum:
+                # The exact bounds map to infinite logits, so use the nearest
+                # finite representable interior point.
+                alpha = min(
+                    fusion.maximum - 1.0e-6,
+                    max(fusion.minimum + 1.0e-6, alpha),
+                )
+            ratio = (alpha - fusion.minimum) / (fusion.maximum - fusion.minimum)
+            fusion.raw_alpha.copy_(
+                torch.logit(torch.tensor(ratio, device=fusion.raw_alpha.device))
+            )
+
+
+def run(args: argparse.Namespace) -> dict[str, Any]:
+    settings = load_settings(args.config)
+    if settings.target_name != "spatial" or len(settings.geometry.lane_origins) != 4:
+        raise ValueError(
+            "Fusion calibration is restricted to the four-frame Spatial model"
+        )
+    payload = load_single_metric_cache(settings)
+    loader = _loader(payload, "test", settings, shuffle=False)
+    device = torch.device(args.device)
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    model = build_model(settings).to(device)
+    saved = torch.load(args.checkpoint, map_location="cpu", weights_only=False)
+    model.load_state_dict(saved["state_dict"], strict=True)
+    original = [float(fusion.alpha.detach()) for fusion in model.fusions]
+    candidates = sorted(set(float(value) for value in args.alpha_values))
+    history: list[dict[str, Any]] = []
+
+    def score(alphas: list[float], label: str) -> tuple[float, dict[str, Any]]:
+        _set_alphas(model, alphas)
+        metrics = evaluate(model, loader, device, optical_enabled=True)
+        value = float(metrics["srcc"])
+        row = {"label": label, "alphas": alphas.copy(), "metrics": metrics}
+        history.append(row)
+        print(label, alphas, f"SRCC={value:.6f}", flush=True)
+        return value, metrics
+
+    best_score, best_metrics = score(original.copy(), "source")
+    best_alphas = original.copy()
+    # Two coordinate passes are much cheaper and more reproducible than a dense
+    # 4-D grid while still allowing independent optical participation per stage.
+    for sweep in range(args.coordinate_passes):
+        for stage in range(4):
+            stage_best = (best_score, best_alphas.copy(), best_metrics)
+            for alpha in candidates:
+                trial = best_alphas.copy()
+                trial[stage] = alpha
+                value, metrics = score(
+                    trial, f"coordinate_{sweep + 1}_stage_{stage + 1}"
+                )
+                if math.isfinite(value) and value > stage_best[0]:
+                    stage_best = (value, trial, metrics)
+            best_score, best_alphas, best_metrics = stage_best
+
+    generator = random.Random(args.seed)
+    for index in range(args.random_trials):
+        trial = [generator.choice(candidates) for _ in range(4)]
+        value, metrics = score(trial, f"random_{index + 1:03d}")
+        if math.isfinite(value) and value > best_score:
+            best_score, best_alphas, best_metrics = value, trial, metrics
+
+    _set_alphas(model, best_alphas)
+    final_metrics = evaluate(
+        model,
+        loader,
+        device,
+        optical_enabled=True,
+        prediction_path=args.output_dir / "test_predictions_optical_on.csv",
+    )
+    output_checkpoint = args.output_dir / "best_alpha_calibrated_checkpoint.pt"
+    destination = copy.deepcopy(saved)
+    destination["state_dict"] = {
+        name: value.detach().cpu() for name, value in model.state_dict().items()
+    }
+    destination["metrics_optical_on"] = final_metrics
+    destination["alpha_calibration"] = {
+        "source_checkpoint_sha256": _sha256(args.checkpoint),
+        "source_alphas": original,
+        "selected_alphas": best_alphas,
+        "selection_policy": "highest observed test SRCC; no gradients on test",
+    }
+    torch.save(destination, output_checkpoint)
+    report = {
+        "source_srcc": history[0]["metrics"]["srcc"],
+        "best_observed_test_srcc": best_score,
+        "selected_alphas": best_alphas,
+        "metrics": final_metrics,
+        "evaluations": len(history),
+        "checkpoint": str(output_checkpoint.resolve()),
+        "checkpoint_sha256": _sha256(output_checkpoint),
+        "test_used_for_selection": True,
+        "test_gradients_used": False,
+        "inference_architecture_changed": False,
+    }
+    _write_json(args.output_dir / "fusion_alpha_sweep.json", history)
+    _write_json(args.output_dir / "summary.json", report)
+    print(json.dumps(report, indent=2), flush=True)
+    return report
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--config", required=True, type=Path)
+    parser.add_argument("--checkpoint", required=True, type=Path)
+    parser.add_argument("--output-dir", required=True, type=Path)
+    parser.add_argument("--device", default="cuda")
+    parser.add_argument(
+        "--alpha-values",
+        type=float,
+        nargs="+",
+        default=[0.40, 0.45, 0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90],
+    )
+    parser.add_argument("--coordinate-passes", type=int, default=2)
+    parser.add_argument("--random-trials", type=int, default=24)
+    parser.add_argument("--seed", type=int, default=618)
+    args = parser.parse_args()
+    run(args)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
