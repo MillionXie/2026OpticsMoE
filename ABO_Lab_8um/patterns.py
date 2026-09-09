@@ -97,7 +97,8 @@ def calibration(c):
         save(dest/f'P_F{n}.bmp',np.rint(np.mod(phase,2*np.pi)/(2*np.pi)*255).astype(np.uint8))
         manifest['arrays'][str(n)]={'centers_xy':centers,'square_window_px':window}
         if n==4:
-            for label,(fx,fy) in zip(('TL','TR','BL','BR'),centers):
+            labels=orient(np.array([['TL','TR'],['BL','BR']]),p).ravel()
+            for label,(fx,fy) in zip(labels,centers):
                 single=np.zeros_like(phase)
                 region=(np.abs(X-fx)<window/2)&(np.abs(Y-fy)<window/2)
                 single[region]=phase[region]

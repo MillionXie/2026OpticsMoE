@@ -29,8 +29,8 @@ class PhysicalContractTests(unittest.TestCase):
                 [[451.625,91.625],[1467.375,91.625],[451.625,1107.375],[1467.375,1107.375]])
             from PIL import Image
             for name in ('TL','TR','BL','BR'):
-                self.assertEqual(Image.open(d/f'P_F_{name}.bmp').size,(1920,1200))
-            self.assertEqual(Image.open(d/'A_ACTIVE.bmp').size,(1920,1080))
+                with Image.open(d/f'P_F_{name}.bmp') as im: self.assertEqual(im.size,(1920,1200))
+            with Image.open(d/'A_ACTIVE.bmp') as im: self.assertEqual(im.size,(1920,1080))
     def test_outside_panel(self):
         self.c['amplitude_slm']['center_xy']=[100,100]
         with self.assertRaises(ValueError): raster(np.zeros((478,478)),self.c['amplitude_slm'],self.c)
