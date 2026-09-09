@@ -1,0 +1,7 @@
+base_config: spatial_srcc_objective_mid_s653.yaml
+output_dir: ../../runs/lgvq_spatial_srcc_epoch_mid_s656
+random_seed: 656
+
+training:
+  test_interval_steps: 0
+

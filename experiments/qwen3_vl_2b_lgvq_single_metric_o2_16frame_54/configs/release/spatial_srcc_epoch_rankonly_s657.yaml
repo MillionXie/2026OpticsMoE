@@ -1,0 +1,6 @@
+base_config: spatial_srcc_objective_rankonly_s654.yaml
+output_dir: ../../runs/lgvq_spatial_srcc_epoch_rankonly_s657
+random_seed: 657
+
+training:
+  test_interval_steps: 0
