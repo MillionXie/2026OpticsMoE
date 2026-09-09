@@ -149,6 +149,11 @@ def _apply_trainable_scope(
             trainable = name.startswith("readout.residual_")
         elif scope == "crossframe_only":
             trainable = name.startswith("readout.crossframe_")
+        elif scope == "appended_electronic_and_crossframe":
+            trainable = name.startswith("readout.crossframe_") or (
+                name.startswith(("vision_routes.", "language_routes."))
+                and ".blocks.1." in name
+            )
         elif scope == "quality_refiner_only":
             trainable = name.startswith("quality_refiner.")
         elif scope == "quality_refiner_readout":

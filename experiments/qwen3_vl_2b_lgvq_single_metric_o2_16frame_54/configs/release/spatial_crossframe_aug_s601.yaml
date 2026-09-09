@@ -6,4 +6,3 @@ random_seed: 601
 # unshifted four-frame optical graph.
 data:
   training_view_probabilities: [0.80, 0.10, 0.10]
-

@@ -1,0 +1,28 @@
+base_config: spatial_crossframe_rank_s600.yaml
+output_dir: ../../runs/lgvq_spatial_electronic_crossframe_s602
+random_seed: 602
+
+# Append one zero-start ConvNeXt-style residual block inside each of the four
+# existing electronic routes. Together with the zero-start cross-frame readout,
+# this remains exactly equal to s586 before optimization and keeps two branches.
+model:
+  electronic_route_depth: 3
+
+training:
+  trainable_scope: appended_electronic_and_crossframe
+  epochs: 80
+  learning_rate: 0.00020
+  readout_learning_rate_factor: 0.35
+  minimum_learning_rate_factor: 0.05
+  phase_warmup_epochs: 0
+  late_refine_start_epoch: 0
+  restore_best_at_stage_transition: false
+  ema_decay: 0.98
+  test_interval_epochs: 1
+
+loss:
+  ranking_weight: 0.50
+  correlation_weight: 1.50
+  soft_spearman_weight: 0.25
+  soft_rank_temperature: 0.12
+

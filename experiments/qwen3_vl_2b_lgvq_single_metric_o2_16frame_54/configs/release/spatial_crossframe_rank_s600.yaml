@@ -39,4 +39,3 @@ loss:
   serial_router_balance_weight: 0.0
   serial_router_importance_weight: 0.0
   router_capture_weight: 0.0
-

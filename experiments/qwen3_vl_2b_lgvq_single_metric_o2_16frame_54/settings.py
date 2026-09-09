@@ -801,6 +801,7 @@ class ExperimentSettings:
             "readout_only",
             "residual_only",
             "crossframe_only",
+            "appended_electronic_and_crossframe",
             "quality_refiner_only",
             "quality_refiner_readout",
             "late_input_correction_only",
@@ -816,6 +817,7 @@ class ExperimentSettings:
             raise ValueError(
                 "training.trainable_scope must be all, readout_only, residual_only, "
                 "crossframe_only, "
+                "appended_electronic_and_crossframe, "
                 "quality_refiner_only, quality_refiner_readout, or "
                 "late_input_correction_only, frame_stem_only, or "
                 "frame_stem_and_readout, vgg_correction_only, or "

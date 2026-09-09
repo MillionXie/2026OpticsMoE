@@ -1,0 +1,6 @@
+base_config: spatial_electronic_crossframe_s602.yaml
+output_dir: ../../runs/lgvq_spatial_electronic_crossframe_aug_s603
+random_seed: 603
+
+data:
+  training_view_probabilities: [0.90, 0.05, 0.05]
