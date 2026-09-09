@@ -1,0 +1,12 @@
+base_config: optical_top2_dc20.yaml
+
+# Same inference graph, geometry and initialization as the initial candidate.
+# Only train losses differ. Anchors use TRAIN image embeddings only and are
+# discarded at inference; the query still ranks all 120 image centroids.
+training:
+  lambda_kd: 1.0
+abo_image_image:
+  supervised_contrastive_weight: 0.5
+  teacher_kd_weight: 1.0
+  semantic_anchor_weight: 1.0
+output_dir: ../runs/simulation/optical_top2_dc20_anchor_20260909

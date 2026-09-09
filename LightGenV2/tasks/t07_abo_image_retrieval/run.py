@@ -90,6 +90,15 @@ def supcon(embeddings, labels, temperature=0.07):
     return -(log_prob.masked_fill(~positives, 0).sum(1) / positives.sum(1)).mean()
 
 
+def category_anchors(train_vectors, train_labels):
+    """Training-only fixed semantic targets; never used to gate test retrieval."""
+    labels = torch.as_tensor(train_labels, device=train_vectors.device)
+    if set(labels.tolist()) != set(range(10)):
+        raise ValueError("Expected ten training categories")
+    return torch.stack([F.normalize(train_vectors[labels == c].mean(0), dim=0)
+                        for c in range(10)]).detach()
+
+
 def path_from(config, value):
     path = Path(value).expanduser()
     return path.resolve() if path.is_absolute() else (config.parent / path).resolve()
@@ -205,6 +214,7 @@ def train_model(loaded, replacement, readout, settings, raw, train, test, cache)
     optimizer, parameters = _build_optimizer(replacement, readout, settings)
     ema = initialize_parameter_ema(parameters) if settings.ema_decay else None
     targets = F.normalize(cache["square"][:len(train), :settings.embedding_dim].float(), dim=-1)
+    anchors = category_anchors(targets, [s.category_id for s in train]).to(loaded.device)
     phase_initial = {k: [p.detach().cpu().clone() for p in v]
                      for k, v in replacement.phase_parameter_groups().items()}
     router_initial = [p.detach().cpu().clone() for p in replacement.router_parameters()]
@@ -227,6 +237,7 @@ def train_model(loaded, replacement, readout, settings, raw, train, test, cache)
                 z, _ = student_embeddings(loaded.model, replacement, readout, move_inputs(inputs, loaded.device))
                 retrieval = supcon(z, labels, options.get("temperature", .07))
                 kd = (1-F.cosine_similarity(z.float(), targets[batch["dataset_indices"]].to(loaded.device))).mean()
+                anchor_ce = F.cross_entropy(z.float() @ anchors.T / options.get("temperature", .07), labels)
                 router = replacement.router_losses()
                 hard = replacement.router_hard_load_balance_loss()
                 balance = (router["vision_balance"] + router["language_balance"]) / 2
@@ -242,6 +253,7 @@ def train_model(loaded, replacement, readout, settings, raw, train, test, cache)
                 dc = phase_dc_loss(replacement)
                 loss = (options.get("supervised_contrastive_weight", 1.) * retrieval
                         + options.get("teacher_kd_weight", .3) * kd
+                        + options.get("semantic_anchor_weight", 0.) * anchor_ce
                         + settings.lambda_router_balance * balance
                         + settings.lambda_router_importance * importance
                         + settings.lambda_router_hard_load_balance * hard_loss
@@ -253,7 +265,7 @@ def train_model(loaded, replacement, readout, settings, raw, train, test, cache)
             optimizer.step()
             if ema is not None:
                 update_parameter_ema(ema, parameters, settings.ema_decay)
-            for name, value in (("loss", loss), ("supcon", retrieval), ("kd", kd), ("balance", balance), ("hard_balance", hard_loss)):
+            for name, value in (("loss", loss), ("supcon", retrieval), ("kd", kd), ("anchor_ce", anchor_ce), ("balance", balance), ("hard_balance", hard_loss)):
                 totals[name] += float(value.detach())
         row = {"epoch": epoch, "seconds": time.perf_counter()-start,
                **{k: v/len(loader) for k,v in totals.items()},

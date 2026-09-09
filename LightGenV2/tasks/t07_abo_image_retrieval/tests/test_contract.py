@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 import torch
 from LightGenV2.tasks.t07_abo_image_retrieval.retrieval_contract import _ranking_metrics
-from LightGenV2.tasks.t07_abo_image_retrieval.run import supcon, TASK
+from LightGenV2.tasks.t07_abo_image_retrieval.run import supcon, category_anchors, TASK
 from LightGenV2.tasks.t01_object_retrieval.settings import load_settings
 
 
@@ -34,6 +34,14 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(settings.optical_router_input_shift_pixels, 0)
         self.assertFalse(settings.language_optical_k_space_enabled)
         self.assertEqual(settings.fusion_alpha_initial, .1)
+
+    def test_train_only_anchors(self):
+        vectors = torch.eye(10).repeat_interleave(2, 0).requires_grad_(True)
+        anchors = category_anchors(vectors, torch.arange(10).repeat_interleave(2))
+        self.assertTrue(torch.equal(anchors, torch.eye(10)))
+        self.assertFalse(anchors.requires_grad)
+        with self.assertRaises(ValueError):
+            category_anchors(vectors[:4], [0, 0, 1, 1])
 
 
 if __name__ == '__main__':
