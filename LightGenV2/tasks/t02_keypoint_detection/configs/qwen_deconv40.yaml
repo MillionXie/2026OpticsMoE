@@ -1,0 +1,14 @@
+# Parameter-budget baseline. Native Qwen Vision and all head operations stay intact.
+base_config: ../../../../experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/configs/lsp_pose_opt2.yaml
+pose_head:
+  mode: deconv
+  projection_dim: 40
+  decoder_channels: [40, 40]
+batching:
+  teacher_batch_size: 8
+  inference_batch_size: 24
+training:
+  teacher_epochs: 40
+  teacher_learning_rate: 0.001
+  resume_student_checkpoint: null
+output_dir: ../runs/simulation/qwen_deconv40_seed42_20260909
