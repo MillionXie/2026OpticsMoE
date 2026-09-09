@@ -1,0 +1,8 @@
+base_config: spatial_quality_refine_s672.yaml
+output_dir: ../../runs/lgvq_spatial_quality_refine_head_s674
+random_seed: 674
+
+training:
+  trainable_scope: quality_refiner_readout
+  learning_rate: 0.00002
+  ema_decay: 0.995

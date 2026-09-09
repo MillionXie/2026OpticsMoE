@@ -1,0 +1,9 @@
+base_config: spatial_quality_refine_s672.yaml
+output_dir: ../../runs/lgvq_spatial_quality_refine_gentle_s673
+random_seed: 673
+
+model:
+  quality_refiner_max: 0.50
+
+training:
+  learning_rate: 0.00003
