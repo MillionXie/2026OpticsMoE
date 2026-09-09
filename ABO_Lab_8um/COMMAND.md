@@ -192,39 +192,38 @@ CCD方向由上述逻辑四角单应变换处理，不再另加翻转。设置�
 
 ## 4. 新建小样本六阶段会话
 
+仅新建会话时执行；已经存在的pilot02不要重复init，直接接第5节。
+
 ```powershell
-& $py run.py init --session pilot01 --limit 4
+& $py run.py init --session pilot02 --limit 4
 ```
 
 4张测试图 + 完整100标题候选。标题也需3次Language采集，总计324帧；不是只采4×6。正式完整2400图另建会话`--session full01 --limit 0`，总14700帧。不要第一步就采全量，原始CCD会占用大量磁盘。
 
 此DVP全幅一帧未压缩约20MB：全量仅原始帧可达294GB，另有播放BMP等；无损TIFF可减少占用但压缩比不保证。现D盘空间不足以按未压缩上界保存全量，请先小样本、确认ROI后适当设置硬件ROI或准备大容量存储。程序在剩余空间不足2GiB时会停止并保留已有帧。
 
-## 5. 每层先生成输入、手动切相位、再采集
+## 5. 六条命令完成六层（自动生成输入＋采集）
 
-每次capture都会显示相位完整路径和SHA，只有你手动加载后输入y才采。后层依赖前层实测，禁止提前全生成或用仿真替代。
+`stage`自动依次执行prepare和capture。prepare在独立进程中使用CUDA，退出并释放模型后才进入采集，避免模型与显示SDK同时占用显存。
+每层仍会显示相位完整路径和SHA，只有你手动加载对应相位后输入y才采。后层依赖前层实测，禁止提前全生成或用仿真替代。
+下面按当前会话`pilot02`示例；必须替换成你已经init的会话名。已有会话不要再次init。
 
 ```powershell
-& $py run.py prepare --session pilot01 --stage vision_router --device cuda
-& $py run.py capture --session pilot01 --stage vision_router
-
-& $py run.py prepare --session pilot01 --stage vision_expert --device cuda
-& $py run.py capture --session pilot01 --stage vision_expert
-
-& $py run.py prepare --session pilot01 --stage vision_global --device cuda
-& $py run.py capture --session pilot01 --stage vision_global
-
-& $py run.py prepare --session pilot01 --stage language_router --device cuda
-& $py run.py capture --session pilot01 --stage language_router
-
-& $py run.py prepare --session pilot01 --stage language_expert --device cuda
-& $py run.py capture --session pilot01 --stage language_expert
-
-& $py run.py prepare --session pilot01 --stage language_global --device cuda
-& $py run.py capture --session pilot01 --stage language_global
+& $py run.py stage --session pilot02 --stage vision_router --device cuda
+& $py run.py stage --session pilot02 --stage vision_expert --device cuda
+& $py run.py stage --session pilot02 --stage vision_global --device cuda
+& $py run.py stage --session pilot02 --stage language_router --device cuda
+& $py run.py stage --session pilot02 --stage language_expert --device cuda
+& $py run.py stage --session pilot02 --stage language_global --device cuda
 ```
 
-六张相位在`generated/P/01_vision_router.bmp`至`06_language_global.bmp`。振幅每层在`sessions/pilot01/play/<stage>/00000.bmp`等。每个router真实CCD四区域积分→标准化能量→温度2 softmax→Top2→power-L2幅值权重，再拼专家输入。不是Top2强度直接相加。
+六张相位在`generated/P/01_vision_router.bmp`至`06_language_global.bmp`。振幅每层在`sessions/pilot02/play/<stage>/00000.bmp`等。每个router真实CCD四区域积分→标准化能量→温度2 softmax→Top2→power-L2幅值权重，再拼专家输入。不是Top2强度直接相加。
+
+任一步失败，该条stage立即停止，不会在输入生成失败后继续打开设备。再次执行同一条stage会跳过有效采集；整层已完成则直接返回，不加载模型、不打开硬件。
+旧prepare/capture命令仍可单独使用。六条命令减少手动操作，不减少帧数、曝光或SLM等待时间，也不改变网络结果。
+
+若想增加查询图片数，需要另建会话，例如`& $py run.py init --session pilot03_more --limit 20`，再将六条命令里的会话名改成`pilot03_more`。
+`--limit`在初始化时确定样本数；已建pilot02不会因后来给stage添加--limit而扩大。20张查询对应Vision每层20张、Language每层120张。
 
 重复同一capture命令会校验并跳过已完成帧，失败帧不会被标记完成。不要加clear-output、不要删除原始采集。
 
@@ -249,9 +248,9 @@ CCD方向由上述逻辑四角单应变换处理，不再另加翻转。设置�
 ## 6. 电子处理和结果
 
 ```powershell
-& $py run.py evaluate --session pilot01 --device cuda
+& $py run.py evaluate --session pilot02 --device cuda
 ```
 
-结果`sessions/pilot01/results/metrics.json`含R@1/5/10、MRR、逐图预测；`embeddings.npz`可继续分析。任何一层真实CCD缺失都会停止，绝不回退仿真。
+结果`sessions/pilot02/results/metrics.json`含R@1/5/10、MRR、逐图预测；`embeddings.npz`可继续分析。请使用与上述采集相同的会话名。任何一层真实CCD缺失都会停止，绝不回退仿真。
 
-换曝光/ROI/方向/灰度LUT后重新生成BMP并新建会话，如pilot02。不要复用不一致的前层CCD。
+换曝光/ROI/方向/灰度LUT后重新生成BMP并新建会话，如pilot03。不要复用不一致的前层CCD。

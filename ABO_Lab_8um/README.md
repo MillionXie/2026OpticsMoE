@@ -6,6 +6,11 @@
 auto对≤4GB显卡启用CPU冻结词表查表，其余实际模型运算在CUDA；仅改变数据放置，不改变网络和权重。
 每阶段prepare进程独立退出释放模型，每样本/待采边界后释放临时张量，不删除原始权重或前层CCD。
 
+一层一条命令：`python run.py stage --session pilot02 --stage vision_router --device cuda`。
+它依次启动独立的prepare、capture进程，前者退出释放内存后才打开设备；保留手动相位确认，不自动回答y。
+生成失败不采集，已完成整层直接跳过，部分完成时只处理剩余样本。六层完整命令见COMMAND第5节。
+这仅合并操作入口，不改变计算图、采集帧数、曝光、质量检查或结果；最后仍单独evaluate。
+
 快速对齐见COMMAND第2节：`align.py`持续播放且不占用CCD；新增真实MNIST数字方向图、有效口径全白图、
 四个单角菲涅尔。`generated/P_opposite_vertical`仅用于确认相位上下方向，正式输出仍为`generated/P`。
 

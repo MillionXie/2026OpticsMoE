@@ -1,6 +1,8 @@
 """One-machine, six-stage measured-CCD replay. No simulated stage fallback."""
 import argparse
 import csv
+import subprocess
+import sys
 import time
 from pathlib import Path
 import numpy as np
@@ -85,6 +87,30 @@ def prepare(args,c):
     print('Ready:',len(entries),'BMPs. Load phase:',phase)
     from memory import memory_report
     report=memory_report(b); write(out/'compute_memory.json',report); print(report,flush=True)
+
+def stage(args,c):
+    """One command per physical stage; GPU preparation exits before SDK opens."""
+    if args.stage not in STAGES: raise ValueError('A valid --stage is required')
+    root,state=load_session(args.session,c)
+    relevant=[s for s in state['samples'] if not (s['kind']=='title' and args.stage.startswith('vision'))]
+    pending=sum(args.stage not in measured(root,s) for s in relevant)
+    if not pending:
+        print(f'{args.stage}: all {len(relevant)} samples already captured and verified; nothing to do.',flush=True)
+        return
+    _,cfg_path=config(args.config)
+    print(f'{args.stage}: {pending}/{len(relevant)} samples remaining. Preparing inputs on {args.device}.',flush=True)
+    for action in ('prepare','capture'):
+        command=[sys.executable,str(ROOT/'run.py'),action,'--config',str(cfg_path),
+                 '--session',args.session,'--stage',args.stage]
+        if action=='prepare': command+=['--device',args.device]
+        else: print('Preparation process exited; model memory released. Confirm the manual phase before capture.',flush=True)
+        # Inherit the terminal so capture retains its manual phase confirmation.
+        # Never call prepare/capture in-process: model/CUDA memory must be freed.
+        result=subprocess.run(command)
+        if result.returncode:
+            print(f'{action} stopped (exit {result.returncode}); existing CCD files are retained.',flush=True)
+            raise SystemExit(result.returncode)
+
 
 def capture(args,c):
     from hardware import Bench
@@ -177,13 +203,13 @@ def exposure(args,c):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument('action',choices=['init','prepare','capture','evaluate','probe','exposure'])
+    p.add_argument('action',choices=['init','stage','prepare','capture','evaluate','probe','exposure'])
     p.add_argument('--config'); p.add_argument('--session',default='pilot01')
     p.add_argument('--stage',choices=STAGES); p.add_argument('--device',default='auto')
     p.add_argument('--limit',type=int,default=4,help='Test queries only; all 100 candidate titles are always retained. 0=2400.')
     p.add_argument('--bmp',help='Relative to this package; probe otherwise captures camera only')
     a=p.parse_args()
-    if a.action in ('prepare','capture') and a.stage is None: p.error('--stage required')
+    if a.action in ('stage','prepare','capture') and a.stage is None: p.error('--stage required')
     if not 0<=a.limit<=2400: p.error('--limit must be 0..2400')
     c,_=config(a.config); globals()[{'init':'initialize'}.get(a.action,a.action)](a,c)
 
