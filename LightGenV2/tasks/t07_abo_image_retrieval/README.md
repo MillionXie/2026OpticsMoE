@@ -1,7 +1,7 @@
 # T07 商品检索（图搜图）
 
 - 当前数据集：`data/abo_similarity10_data`，来源 `abo_similarity10_data_only.zip`。
-- 2026-09-09：新增光学 Top-2 图搜图训练与冻结 Qwen baseline 重跑入口；结果以 run 中的报告为准，不将历史成绩视为本轮结果。
+- 2026-09-09：冻结 baseline 已重跑完成，原始输入 2048D Hit@1=**95.2083%**；同光学输入 64D=**92.9167%**。光学 Top-2 的前反向/完整评估/保存小检查通过，40 epoch 正式训练已启动，尚无最终成绩。[本轮证据](reports/reproduction/RUN_20260909.md)。
 - 历史冻结 Qwen3-VL-Embedding-2B：Hit@1 **95.2083%**，出处见 `reports/reproduction/BASELINE_METHODS.md`。这不是 T08 图搜文的 73.71%。
 - 操作与复现唯一入口：[reports/reproduction/README.md](reports/reproduction/README.md)。
 
@@ -39,6 +39,11 @@ Qwen 原生冻结 patch embedding/tokenizer/embed_tokens 保留；原生 V/L Tra
 沿用 532nm、10cm、478 原生振幅场、17μm 振幅 SLM、8μm 相位 SLM 的几何。
 参数/精确维度以每个 run 的 `architecture.json` 和 `config.yaml` 为准。
 
+电子部分沿用 T01：Vision 输入 hidden=1024，投影到192后为两组 depthwise Conv2d 残差 MLP；
+Language 输入 hidden=2048，投影到192后为两组 causal depthwise Conv1d 残差 MLP。
+**继承的 CCD 读出确实包含帧均值缩放、clip/log1p、478→224 pooling**，不是仅线性强度，也不是这次额外添加的显示增强。
+后续上硬件必须使用相同网络输入转换；若比较原始仿真/实测 PCC，须另在统一的原始强度域计算，不能把显示增强图冒充原始 CCD。
+
 融合使用光/电 RMS 尺度匹配与 `(1-alpha)E + alpha O`，初始 alpha=0.10，范围 [0.01,0.95]。
 alpha 是融合系数，不直接等于性能贡献百分比。
 加载已审计的 Caltech warmstart 光电参数；重置光 Router 与融合系数，而不是从随机网络训练。
@@ -52,6 +57,7 @@ alpha 是融合系数，不直接等于性能贡献百分比。
 类别标签只进训练损失，推理仍是图搜图；无 title-only 支路。
 每 epoch 60 个 P-K batch（4 类×3 图=12），40 epoch，EMA=0.99。
 仅保存 best/last 两份模型 checkpoint，另有小型检索特征与最终相位 PNG。
+最终自动复评同一个 best 在 `remove_optical` 下的结果（不另训纯电模型），保存相位/Router 参数改变量与 `comparison.png/pdf`。
 
 冻结 baseline 不训练任何参数，重跑原始长宽比预处理及同光学 224×224 中心裁切预处理，
 各报告 2048D 与 64D。全量 2048D 是大模型主 baseline，square 64D 是控制预处理/维度差异的辅助对照。
