@@ -269,6 +269,8 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
             "correlation": 0.0,
             "soft_spearman": 0.0,
             "level_distribution": 0.0,
+            "teacher_ranking": 0.0,
+            "teacher_correlation": 0.0,
         }
         batches = 0
         for vision, language, mask, target, teacher, _source in _batches(
@@ -294,6 +296,16 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
                     prediction_normalized, target, args.soft_rank_temperature
                 )
             distillation = F.smooth_l1_loss(prediction_normalized, teacher)
+            # The frozen Qwen teacher has a useful ordering signal but a much
+            # narrower absolute MOS range than the human labels.  Rank/correlation
+            # distillation transfers that ordering without forcing the optical
+            # student to copy the teacher's biased score scale.
+            teacher_ranking = pairwise_ranking_loss(
+                prediction_normalized, teacher
+            )
+            teacher_correlation = batch_correlation_loss(
+                prediction_normalized, teacher
+            )
             level_distribution = prediction_normalized.new_zeros(())
             if settings.level_distribution_weight > 0.0:
                 level_distribution = weighted_level_distribution_loss(
@@ -308,6 +320,8 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
                 + args.correlation_weight * correlation
                 + args.soft_spearman_weight * soft_spearman
                 + args.soft_target_weight * distillation
+                + args.soft_target_ranking_weight * teacher_ranking
+                + args.soft_target_correlation_weight * teacher_correlation
                 + settings.level_distribution_weight * level_distribution
             )
             loss.backward()
@@ -329,6 +343,8 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
                 ("correlation", correlation),
                 ("soft_spearman", soft_spearman),
                 ("level_distribution", level_distribution),
+                ("teacher_ranking", teacher_ranking),
+                ("teacher_correlation", teacher_correlation),
             ):
                 totals[name] += float(value.detach())
             batches += 1
@@ -466,6 +482,18 @@ def main() -> int:
     parser.add_argument("--ema-decay", type=float, default=0.0)
     parser.add_argument("--soft-targets", type=Path)
     parser.add_argument("--soft-target-weight", type=float, default=0.0)
+    parser.add_argument(
+        "--soft-target-ranking-weight",
+        type=float,
+        default=0.0,
+        help="Training-only pairwise rank distillation from --soft-targets.",
+    )
+    parser.add_argument(
+        "--soft-target-correlation-weight",
+        type=float,
+        default=0.0,
+        help="Training-only batch correlation distillation from --soft-targets.",
+    )
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument(
         "--mos-strata",
