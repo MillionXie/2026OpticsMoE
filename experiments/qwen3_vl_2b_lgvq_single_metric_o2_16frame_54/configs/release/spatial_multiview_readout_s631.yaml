@@ -1,0 +1,42 @@
+base_config: spatial_calibrated_s620.yaml
+output_dir: ../../runs/lgvq_spatial_multiview_readout_s631
+random_seed: 631
+
+# Training-only augmentation: each video is seen through its nominal uniform
+# four-frame sample or one of the two precomputed +/-0.05 temporal offsets.
+# Inference remains the nominal four-frame path and has no extra branch.
+data:
+  training_view_probabilities: [0.70, 0.15, 0.15]
+
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_router_temperature_s620/best_alpha_calibrated_checkpoint.pt
+  trainable_scope: residual_only
+  epochs: 100
+  batch_size: 64
+  learning_rate: 0.000020
+  readout_weight_decay: 0.006
+  phase_warmup_epochs: 0
+  restore_best_at_stage_transition: false
+  ema_decay: 0.98
+  ema_start_epoch: 1
+  minimum_learning_rate_factor: 0.03
+  test_interval_epochs: 1
+  test_interval_steps: 4
+  phase_snapshot_interval_epochs: 0
+
+loss:
+  ranking_weight: 1.50
+  correlation_weight: 3.00
+  soft_spearman_weight: 0.30
+  soft_rank_temperature: 0.10
+  soft_target_weight: 0.0
+  soft_target_ranking_weight: 0.0
+  soft_target_correlation_weight: 0.0
+  level_distribution_weight: 0.20
+  optical_alignment_weight: 0.0
+  router_balance_weight: 0.0
+  router_importance_weight: 0.0
+  serial_router_balance_weight: 0.0
+  serial_router_importance_weight: 0.0
+  router_capture_weight: 0.0
+
