@@ -20,7 +20,7 @@ $py = "$PWD\.venv\Scripts\python.exe"
 & $py simulate.py --device cuda --limit 4 --batch-size 1 --output cuda_smoke
 ```
 
-仿真仍有真实数值精度差异，CPU小样本不是2400张80.583%的复现证据。服务器完整复核见证据目录和README。
+本实验电脑GPU环境已安装并通过小样本验证，无需重新安装。小样本不是2400张80.583%的复现证据；服务器完整复核见证据目录和README。
 
 ### GPU与内存
 
@@ -33,11 +33,16 @@ $py = "$PWD\.venv\Scripts\python.exe"
 
 本机使用CUDA FP32（不是服务器BF16），batch=1。小于等于4GB的显卡自动把最大的冻结词表留在CPU，
 仅查表后把选出的token送GPU；图像前端、光学计算和电子残差/读出仍在CUDA。数值公式和权重未改变。
+词表保留原文件的存储精度，只把查出的行转FP32，不把整张词表展开成FP32，进一步减少系统内存；没有重新量化权重。
 不加载已被光电网络替换的大模型Transformer权重。
 
 “一层结束释放一层”针对**内存/显存**，不是删除硬盘权重：每条prepare命令是独立进程，退出即释放模型；
 每个样本完成或到达待采CCD边界后清理临时张量和CUDA空闲缓存。残差和Language第一阶段状态在被后续使用前不能提前删。
 权重、相位、原始CCD和重放必需的前层采集都保留。各层`play/<stage>/compute_memory.json`记录实际设备与显存峰值。
+
+改配置并重新生成BMP以后，`verify_release.py`全量校验会报告generated文件与出厂版不同。
+这时用`& $py verify_release.py --immutable-only`核验源码/权重/数据；该模式明确跳过配置生成物，
+不会把它们称为已校验，也不会覆盖你的标定。正式采集仍检查会话配置身份和实际播放文件SHA。
 
 ## 1. 唯一配置文件
 

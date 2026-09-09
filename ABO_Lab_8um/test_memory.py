@@ -1,7 +1,7 @@
 import types
 import unittest
 import torch
-from memory import inference_policy,place_inference_model,release_transients
+from memory import inference_policy,place_inference_model,release_transients,cast_fp32
 
 class MemoryTests(unittest.TestCase):
     def test_cpu_policy(self):
@@ -25,5 +25,18 @@ class MemoryTests(unittest.TestCase):
         self.assertEqual(model.last_latent_groups,[]); self.assertIsNone(model._stage1_latent)
         self.assertEqual(model.last_routing,{})
         torch.testing.assert_close(model.weight,original,rtol=0,atol=0)
+    def test_selected_rows_fp32_match_full_fp32_table(self):
+        model=torch.nn.Module(); model.language=torch.nn.Module()
+        model.language.embed_tokens=torch.nn.Embedding(20,8).to(torch.bfloat16)
+        model.head=torch.nn.Linear(8,4).to(torch.bfloat16)
+        ids=torch.tensor([[1,2,5]])
+        expected=model.language.embed_tokens(ids).float().detach().clone()
+        cast_fp32(model,model.language,preserve_cpu_table=True)
+        self.assertEqual(model.language.embed_tokens.weight.dtype,torch.bfloat16)
+        self.assertEqual(model.head.weight.dtype,torch.float32)
+        place_inference_model(model,model.language,torch.device('cpu'),cpu_token_table=True,embedding_output_dtype=torch.float32)
+        actual=model.language.embed_tokens(ids)
+        self.assertEqual(actual.dtype,torch.float32)
+        torch.testing.assert_close(actual,expected,rtol=0,atol=0)
 
 if __name__=='__main__': unittest.main()

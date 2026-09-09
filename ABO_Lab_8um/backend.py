@@ -20,8 +20,9 @@ def create(device='auto',export_native=False):
     from abo_dual.backend import Backend
     checkpoint=ROOT/'assets/best_checkpoint.pt'
     if sha(checkpoint)!=CHECKPOINT_SHA: raise ValueError('Wrong epoch-25 EMA checkpoint')
-    from memory import inference_policy,place_inference_model
+    from memory import inference_policy,place_inference_model,cast_fp32
     dev,low_vram,fp32=inference_policy(device)
+    print('Loading fixed student; execution device:',dev,'CPU token table:',low_vram,flush=True)
     if dev.type=='cpu': torch.set_num_threads(min(4,torch.get_num_threads()))
     settings=m.load_settings(model_config())
     settings.model_id=str(ROOT/'models/Qwen3-VL-Embedding-2B')
@@ -65,8 +66,9 @@ def create(device='auto',export_native=False):
     meta=[n for n,p in model.named_parameters() if p.is_meta]
     if meta: raise RuntimeError('Unmaterialized active parameters: '+str(meta))
     # CPU uses FP32 for compatibility with this older lab CPU; optics stays FP32.
-    if fp32: model.float()
-    place_inference_model(model,replacement.language_model,dev,cpu_token_table=low_vram)
+    if fp32: cast_fp32(model,replacement.language_model,preserve_cpu_table=low_vram)
+    place_inference_model(model,replacement.language_model,dev,cpu_token_table=low_vram,
+                          embedding_output_dtype=torch.float32 if fp32 else None)
     model.eval().requires_grad_(False); readout.to(dev)
     loaded=LoadedBackbone(model,processor,dev,0.0)
     replacement.vision_surrogate.eval(); replacement.language_surrogate.eval()
@@ -80,6 +82,7 @@ def create(device='auto',export_native=False):
     # The original lists are meta-only; teacher mode is deliberately unavailable.
     b.replacement.original_vision=[]; b.replacement.original_language=[]
     gc.collect()
+    print('Student ready:',dev,'FP32' if fp32 else settings.dtype,flush=True)
     return b
 
 def forward(b,sample,measured=None,*,release=False):

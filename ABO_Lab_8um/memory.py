@@ -11,7 +11,15 @@ def inference_policy(requested='auto'):
     fp32=device.type=='cpu' or (device.type=='cuda' and torch.cuda.get_device_capability(device)[0]<8)
     return device,low_vram,fp32
 
-def place_inference_model(model,language_model,device,*,cpu_token_table=False):
+def cast_fp32(model,language_model,*,preserve_cpu_table=False):
+    if not preserve_cpu_table:
+        model.float(); return
+    table=language_model.embed_tokens
+    language_model.embed_tokens=torch.nn.Identity()
+    try: model.float()
+    finally: language_model.embed_tokens=table
+
+def place_inference_model(model,language_model,device,*,cpu_token_table=False,embedding_output_dtype=None):
     if not cpu_token_table:
         model.to(device)
         return
@@ -22,7 +30,9 @@ def place_inference_model(model,language_model,device,*,cpu_token_table=False):
     finally: language_model.embed_tokens=table
     original=table.forward
     def lookup(this,input_ids):
-        return original(input_ids.to('cpu')).to(device)
+        # Casting only selected rows equals expanding the entire table to FP32,
+        # while avoiding a ~600 MiB host-RAM copy. No additional quantization.
+        return original(input_ids.to('cpu')).to(device=device,dtype=embedding_output_dtype)
     table.forward=types.MethodType(lookup,table)
 
 def release_transients(b):
@@ -49,6 +59,8 @@ def memory_report(b):
     report={'device':str(b.device),'precision':'fp32' if not b.settings.amp_enabled else str(b.settings.dtype),
             'cpu_token_embedding_lookup':b.cpu_token_table,'checkpoint_files_deleted':False,
             'gpu_name':None,'peak_allocated_mib':None,'peak_reserved_mib':None}
+    table=b.replacement.language_model.embed_tokens.weight
+    report.update(token_table_storage_dtype=str(table.dtype),token_table_storage_mib=table.numel()*table.element_size()/1024**2)
     if b.device.type=='cuda':
         torch.cuda.synchronize(b.device)
         report.update(gpu_name=torch.cuda.get_device_name(b.device),
