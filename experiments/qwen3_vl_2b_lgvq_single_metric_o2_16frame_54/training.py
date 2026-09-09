@@ -495,6 +495,9 @@ def evaluate(
             vgg_tokens=None
             if "vgg_tokens" not in batch
             else batch["vgg_tokens"].to(device, non_blocking=True),
+            resnet_tokens=None
+            if "resnet_tokens" not in batch
+            else batch["resnet_tokens"].to(device, non_blocking=True),
             optical_enabled=optical_enabled,
         )
         prediction = result["prediction"]
@@ -854,6 +857,9 @@ def train(
                 vgg_tokens=None
                 if "vgg_tokens" not in batch
                 else batch["vgg_tokens"].to(device, non_blocking=True),
+                resnet_tokens=None
+                if "resnet_tokens" not in batch
+                else batch["resnet_tokens"].to(device, non_blocking=True),
                 optical_enabled=True,
             )
             regression = F.smooth_l1_loss(

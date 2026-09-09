@@ -2201,6 +2201,32 @@ class FrozenVGGSpatialCorrection(nn.Module):
         return self.maximum * torch.tanh(correction / self.maximum)
 
 
+class FrozenResNetElectronicCorrection(nn.Module):
+    """Zero-start adapter from frozen ResNet18-L3 tokens into electronic E1.
+
+    The adapted tensor is added only to the existing electronic residual route
+    and must traverse O2 plus both language stages before the single readout.
+    It is therefore not a direct MOS or pre-optical-output bypass.
+    """
+
+    def __init__(self, settings: ExperimentSettings) -> None:
+        super().__init__()
+        self.maximum = float(settings.resnet_electronic_max)
+        hidden = 384
+        self.adapter = nn.Sequential(
+            nn.LayerNorm(256),
+            nn.Linear(256, hidden),
+            nn.GELU(),
+            nn.Linear(hidden, settings.model_width),
+        )
+        nn.init.zeros_(self.adapter[-1].weight)
+        nn.init.zeros_(self.adapter[-1].bias)
+
+    def forward(self, tokens: torch.Tensor) -> torch.Tensor:
+        correction = self.adapter(tokens.float())
+        return self.maximum * torch.tanh(correction / self.maximum)
+
+
 class SpatialLateInputCorrection(nn.Module):
     """Bounded final correction from the declared pre-optical multimodal field.
 
@@ -2382,6 +2408,11 @@ class LGVQSingleMetricOEO16(nn.Module):
             if settings.vgg_feature_cache_path is not None
             else None
         )
+        self.resnet_electronic_correction = (
+            FrozenResNetElectronicCorrection(settings)
+            if settings.resnet_feature_cache_path is not None
+            else None
+        )
         if settings.quality_branch_enabled:
             self.raw_quality_gate = nn.Parameter(
                 torch.logit(torch.tensor(settings.quality_gate_initial))
@@ -2525,6 +2556,7 @@ class LGVQSingleMetricOEO16(nn.Module):
         raw_frames: torch.Tensor | None = None,
         *,
         vgg_tokens: torch.Tensor | None = None,
+        resnet_tokens: torch.Tensor | None = None,
         optical_enabled: bool = True,
     ) -> dict[str, Any]:
         if self.frame_stem is not None:
@@ -2590,6 +2622,14 @@ class LGVQSingleMetricOEO16(nn.Module):
 
         fields1 = self.parallel_optics.fields(vision)
         electronic1 = self.vision_routes[0](vision)
+        resnet_electronic = electronic1.new_zeros(electronic1.shape)
+        if self.resnet_electronic_correction is not None:
+            if resnet_tokens is None:
+                raise ValueError("The ResNet18 electronic residual requires resnet_tokens")
+            if tuple(resnet_tokens.shape[:-1]) != tuple(electronic1.shape[:-1]) or resnet_tokens.shape[-1] != 256:
+                raise ValueError("ResNet18 token contract must be [B,4,196,256]")
+            resnet_electronic = self.resnet_electronic_correction(resnet_tokens)
+            electronic1 = electronic1 + resnet_electronic
         electronic_quality_scale = electronic1.new_zeros(())
         if self.electronic_quality_norm is not None:
             electronic_quality_scale = torch.sigmoid(
@@ -2766,6 +2806,7 @@ class LGVQSingleMetricOEO16(nn.Module):
             "late_input_correction": input_correction,
             "spatial_readout_image_focus": readout_image_focus,
             "vgg_correction_rms": vgg_correction.float().square().mean().sqrt(),
+            "resnet_electronic_rms": resnet_electronic.float().square().mean().sqrt(),
             "routing": routing,
             "optical_enabled": optical_enabled,
             "optical_alignment_loss": torch.stack(alignments).mean()
@@ -2828,6 +2869,10 @@ class LGVQSingleMetricOEO16(nn.Module):
             groups["trainable_quality_frame_stem"] = self.frame_stem
         if self.vgg_correction is not None:
             groups["plain_vgg16_spatial_correction"] = self.vgg_correction
+        if self.resnet_electronic_correction is not None:
+            groups["resnet18_layer3_electronic_residual"] = (
+                self.resnet_electronic_correction
+            )
         if self.late_input_correction is not None:
             groups["late_input_correction"] = self.late_input_correction
         result = {

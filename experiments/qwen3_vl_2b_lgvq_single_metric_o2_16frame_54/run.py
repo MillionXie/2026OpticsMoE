@@ -235,6 +235,8 @@ def _apply_trainable_scope(
                     "frame_merger.",
                 )
             )
+        elif scope == "resnet_electronic_only":
+            trainable = name.startswith("resnet_electronic_correction.")
         elif scope == "serial_router_and_readout":
             # Rebalance the language-stage optical router without perturbing
             # either feature-producing optical path.  The readout remains
@@ -334,6 +336,7 @@ def synthetic_smoke(settings: ExperimentSettings) -> dict[str, Any]:
         raw_frame_cache_path=None,
         frame_stem_checkpoint=None,
         vgg_feature_cache_path=None,
+        resnet_feature_cache_path=None,
         serial_router_input_size=min(24, geometry.serial_expert_size),
         trainable_scope="all",
         batch_size=2,

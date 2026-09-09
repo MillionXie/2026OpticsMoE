@@ -1,0 +1,7 @@
+base_config: spatial_resnet_e1_s690.yaml
+output_dir: ../../runs/lgvq_spatial_resnet_e1_gentle_s691
+random_seed: 691
+
+training:
+  learning_rate: 0.00003
+  ema_decay: 0.995

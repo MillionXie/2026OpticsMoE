@@ -457,6 +457,31 @@ def load_vgg_feature_cache(
     return payload
 
 
+def load_resnet_feature_cache(
+    path: str | Path, *, sample_ids: Sequence[str], frame_count: int, token_grid: int
+) -> dict[str, Any]:
+    """Load the frozen attention-free ResNet18 layer-3 screening cache."""
+
+    source = Path(path).expanduser().resolve()
+    payload = _load_torch(source, mmap=True)
+    contract = "lgvq_frozen_resnet18_layer3_4f_14x14x256_v1"
+    if not isinstance(payload, dict) or payload.get("contract") != contract:
+        raise RuntimeError(f"Unsupported ResNet18 feature cache: {source}")
+    source_ids = list(map(str, payload.get("sample_ids", [])))
+    if len(source_ids) != len(set(source_ids)) or set(source_ids) != set(sample_ids):
+        raise RuntimeError("ResNet18 feature cache IDs differ from the manifest")
+    tokens = payload.get("tokens")
+    expected = (len(sample_ids), frame_count, token_grid * token_grid, 256)
+    if not torch.is_tensor(tokens) or tokens.dtype != torch.float16 or tuple(tokens.shape) != expected:
+        raise ValueError(f"ResNet18 tokens must be float16 {expected}")
+    # The raw-frame cache and formal manifest use different stable orderings;
+    # align by unique sample ID rather than silently joining by position.
+    lookup = {sample_id: index for index, sample_id in enumerate(source_ids)}
+    order = torch.tensor([lookup[str(sample_id)] for sample_id in sample_ids])
+    aligned = tokens.index_select(0, order)
+    return {**payload, "tokens": aligned, "manifest_aligned_by_sample_id": True}
+
+
 def _align_soft_targets(
     path: Path,
     *,
@@ -651,6 +676,18 @@ def load_single_metric_cache(settings: ExperimentSettings) -> dict[str, Any]:
         result["vgg_tokens"] = vgg["tokens"]
         result["vgg_feature_cache_path"] = str(settings.vgg_feature_cache_path)
         result["vgg_feature_cache_sha256"] = file_sha256(settings.vgg_feature_cache_path)
+    if settings.resnet_feature_cache_path is not None:
+        resnet = load_resnet_feature_cache(
+            settings.resnet_feature_cache_path,
+            sample_ids=manifest_ids,
+            frame_count=settings.frame_count,
+            token_grid=settings.token_grid,
+        )
+        result["resnet_tokens"] = resnet["tokens"]
+        result["resnet_feature_cache_path"] = str(settings.resnet_feature_cache_path)
+        result["resnet_feature_cache_sha256"] = file_sha256(
+            settings.resnet_feature_cache_path
+        )
     if settings.training_soft_targets_path is not None:
         soft, present, provenance = _align_soft_targets(
             settings.training_soft_targets_path,
@@ -757,6 +794,8 @@ class LGVQSingleMetricDataset(Dataset[dict[str, Any]]):
             item["raw_frames"] = self.payload["raw_frames"][source]
         if "vgg_tokens" in self.payload:
             item["vgg_tokens"] = self.payload["vgg_tokens"][source].float()
+        if "resnet_tokens" in self.payload:
+            item["resnet_tokens"] = self.payload["resnet_tokens"][source].float()
         return item
 
 
@@ -767,6 +806,7 @@ __all__ = [
     "file_sha256",
     "load_language_cache",
     "load_raw_frame_cache",
+    "load_resnet_feature_cache",
     "load_vgg_feature_cache",
     "load_single_metric_cache",
     "load_vision_cache",

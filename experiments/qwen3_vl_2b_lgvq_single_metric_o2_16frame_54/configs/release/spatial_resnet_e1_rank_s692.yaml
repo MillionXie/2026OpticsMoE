@@ -1,0 +1,12 @@
+base_config: spatial_resnet_e1_s690.yaml
+output_dir: ../../runs/lgvq_spatial_resnet_e1_rank_s692
+random_seed: 692
+
+training:
+  learning_rate: 0.00030
+
+loss:
+  regression_weight: 0.20
+  ranking_weight: 2.00
+  correlation_weight: 4.00
+  soft_spearman_weight: 0.40

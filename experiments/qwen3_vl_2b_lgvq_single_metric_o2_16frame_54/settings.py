@@ -234,6 +234,7 @@ class ExperimentSettings:
     quality_feature_cache_path: Path | None = None
     raw_frame_cache_path: Path | None = None
     vgg_feature_cache_path: Path | None = None
+    resnet_feature_cache_path: Path | None = None
     training_soft_targets_path: Path | None = None
     initialization_checkpoint: Path | None = None
     frame_stem_checkpoint: Path | None = None
@@ -286,6 +287,7 @@ class ExperimentSettings:
     trainable_frame_stem_enabled: bool = False
     vgg_correction_max: float = 0.50
     vgg_correction_mode: str = "local"
+    resnet_electronic_max: float = 0.50
     top_k: int = 2
     router_temperature: float = 1.0
     parallel_router_temperature: float = 1.0
@@ -476,6 +478,9 @@ class ExperimentSettings:
             suffixes.append(
                 f"plainvgg16corr{correction_tag:02d}_{self.vgg_correction_mode}_v1"
             )
+        if self.resnet_feature_cache_path is not None:
+            correction_tag = int(round(self.resnet_electronic_max * 100.0))
+            suffixes.append(f"resnet18l3_e1corr{correction_tag:02d}_v1")
         if self.serial_router_input_size != self.geometry.serial_expert_size:
             suffixes.append(f"sroutercrop{self.serial_router_input_size}_v1")
         if self.serial_router_flatfield_calibration:
@@ -720,6 +725,13 @@ class ExperimentSettings:
                 raise ValueError("model.vgg_correction_max must be positive")
             if self.vgg_correction_mode not in {"local", "context"}:
                 raise ValueError("model.vgg_correction_mode must be local or context")
+        if self.resnet_feature_cache_path is not None:
+            if self.target_name != "spatial" or self.frame_count != 4 or self.token_grid != 14:
+                raise ValueError(
+                    "The ResNet18 electronic residual requires Spatial, four frames, and a 14x14 grid"
+                )
+            if self.resnet_electronic_max <= 0.0:
+                raise ValueError("model.resnet_electronic_max must be positive")
         if not 0 < self.serial_router_input_size <= self.geometry.serial_expert_size:
             raise ValueError(
                 "router.serial_input_size must be within the serial expert field"
@@ -876,6 +888,7 @@ class ExperimentSettings:
             "vgg_correction_only",
             "vgg_correction_and_readout",
             "vgg_correction_and_vision_path",
+            "resnet_electronic_only",
             "serial_router_and_readout",
         }:
             raise ValueError(
@@ -893,6 +906,7 @@ class ExperimentSettings:
                 "late_input_correction_only, frame_stem_only, or "
                 "frame_stem_and_readout, vgg_correction_only, or "
                 "vgg_correction_and_readout, vgg_correction_and_vision_path, or "
+                "resnet_electronic_only, or "
                 "serial_router_and_readout"
             )
         if self.trainable_scope == "late_input_correction_only" and not (
@@ -913,6 +927,12 @@ class ExperimentSettings:
         ):
             raise ValueError(
                 "A vgg_correction training scope requires data.vgg_feature_cache"
+            )
+        if self.trainable_scope == "resnet_electronic_only" and (
+            self.resnet_feature_cache_path is None
+        ):
+            raise ValueError(
+                "resnet_electronic_only requires data.resnet_feature_cache"
             )
         if self.trainable_scope == "residual_only" and self.spatial_readout_mode not in {
             "spatial_grid_residual",
@@ -1028,6 +1048,9 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         ),
         raw_frame_cache_path=_path(get("data", "raw_frame_cache"), config_path),
         vgg_feature_cache_path=_path(get("data", "vgg_feature_cache"), config_path),
+        resnet_feature_cache_path=_path(
+            get("data", "resnet_feature_cache"), config_path
+        ),
         training_soft_targets_path=_path(get("data", "training_soft_targets"), config_path),
         initialization_checkpoint=_path(get("training", "initialization_checkpoint"), config_path),
         frame_stem_checkpoint=_path(
@@ -1120,6 +1143,9 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         ),
         vgg_correction_max=float(get("model", "vgg_correction_max", 0.50)),
         vgg_correction_mode=str(get("model", "vgg_correction_mode", "local")),
+        resnet_electronic_max=float(
+            get("model", "resnet_electronic_max", 0.50)
+        ),
         head_width=int(get("model", "head_width", 256)),
         dropout=float(get("model", "dropout", 0.15)),
         top_k=int(get("router", "top_k", 2)),
@@ -1325,6 +1351,7 @@ def resolved_dict(settings: ExperimentSettings) -> dict[str, Any]:
         "quality_feature_cache_path",
         "raw_frame_cache_path",
         "vgg_feature_cache_path",
+        "resnet_feature_cache_path",
         "training_soft_targets_path",
         "initialization_checkpoint",
         "frame_stem_checkpoint",
