@@ -299,3 +299,9 @@ python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TA
 
 产物`runs/simulation/moe_alpha40_sam_spatialcc_seed42`，只best/last；
 选模仍完整5000 public-test，有选择偏差。它是待检验训练假设，不保证达到0.87。
+
+源码commit `30145efdfa2371b3882cc39aa52e1eba882bfda3`，服务器83项测试通过。
+正式启动前对同一来源的前4张训练图执行一次真实SAM检查：参数有限、仅一次optimizer更新，
+相位RMS变化0.000198863rad；空间相关性教师项约0.112630，旧KL诊断约0.057244。
+二者不是同量纲/同梯度预算，系数相同不意味着教师约束强度完全相同，最终以配对测试判断。
+这不是4张图的模型性能报告，不保存该调试步骤的PT，也不用于测试集选择。
