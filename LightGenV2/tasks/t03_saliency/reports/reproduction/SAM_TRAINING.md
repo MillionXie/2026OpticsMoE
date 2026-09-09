@@ -494,3 +494,39 @@ python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TA
 
 结果目录为`runs/simulation/moe_alpha40_sam_exactfusion_seed42`；原始SAM.05为配对控制。
 此处只记录待验证方案，不能用功能测试替代完整5000张性能复评。
+
+实现commit `486e00784a679f1dce68bb1930c88fdb8d1666c0`，92项测试通过并发布后运行。
+前4张真实训练图与原SAM.05的初始eval输出逐值相同，参数增量0；单次SAM更新后
+相位RMS变化0.00019610970，全部参数有限。记录在`runs/smoke/exactfusion_real4_20260910/smoke.json`，
+只是功能/训练更新检查，不是性能结果。正式训练使用GPU1，复用无活跃进程且tracked-clean的`t03_balance`工作树。
+
+## 强空间CC蒸馏epoch5的独立复评
+
+`moe_alpha40_sam_spatialcc_kd2_seed42`仍在训练。epoch5的best在另一个GPU5/3090独立重载，
+完整5000张float64 CC=**0.8620496019**；主训练GPU2/3090测试为0.8620496600。
+浮点累积器CC=0.8620496045，与独立实现差2.63e-9。
+相对系数.6候选的0.8617294774，2638/5000张改善，均值差+.0003201245，中位数+.0002148732。
+距离目标.87仍差.0079503981，不应把该阶段性候选标记成目标完成或训练完成。
+
+|完整测试指标|空间CC系数.6，epoch5|空间CC系数2，epoch5|
+|---|---:|---:|
+|CC64|0.8617294774|0.8620496019|
+|KLD，低好|0.11473469|0.11424453|
+|SIM，高好|0.82366582|0.82407411|
+|NSS，高好|0.96811395|0.96543063|
+|MAE，低好|0.07696690|0.08014790|
+
+CC/KLD/SIM略改善，而NSS/MAE变差；这是同一公开测试集选模结果，不宣称全面提升或独立泛化。
+复评目录`aligned_recheck_20260910_spatialcc_kd2_candidate`，源码961907d1，
+epoch5实际加载checkpoint SHA256：`87ad4db51e3f58f9a41d6df09092439e5a09e81e93f88a3bfe2d3d008fafb29a`；
+`reproduction.json` SHA256：`dbe91b3d3b45491bb15353807a1bec84667bc590584f9e2b62ebe7f1aecc7883`。
+config SHA256：`78b70a850cff1a10b1e546475fb08dbbaa77dab37229cb4515294a1741b69251`；
+test IDs SHA仍为625dec6b…a3496d0，逐图CC/实际命令/环境在同一复评目录。
+该候选不含group64、wide576或RMS完整反向的新试验；仅教师项权重变化，推理结构不变。
+
+```bash
+TASK=LightGenV2/tasks/t03_saliency
+python -m LightGenV2.tasks.t03_saliency.recheck_aligned --system optical --config "$TASK/configs/moe_alpha40_sam_spatialcc_kd2.yaml" --checkpoint "$TASK/runs/simulation/moe_alpha40_sam_spatialcc_kd2_seed42/best_checkpoint.pt" --run-dir "$TASK/runs/simulation/aligned_recheck_20260910_spatialcc_kd2_candidate" --batch-size 32
+```
+
+源best仍可能被后续训练更新；复现前核对SHA，复评必须使用尚不存在的输出目录，保留原证据。
