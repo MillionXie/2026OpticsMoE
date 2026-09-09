@@ -10,8 +10,11 @@ from experiments.qwen3_vl_2b_synthetic_instruction_four_stage_optical_editing.mo
 class SharedGridReadout(nn.Module):
     contract = 'positionlinear64_width192_film01_coord_dwconv_dilation1_2_grid6_v1'
 
-    def __init__(self, width=192, max_tokens=64):
+    def __init__(self, width=192, max_tokens=64, variant='standard'):
         super().__init__()
+        if variant not in ('standard', 'slim'):
+            raise ValueError(f'Unknown shared readout variant: {variant}')
+        self.variant = variant
         self.position_readout = PositionReadout(max_tokens)
         self.language_pool = nn.Sequential(nn.LayerNorm(width), nn.Linear(width, width), nn.GELU())
         self.post_film = nn.Linear(width, width * 2)
@@ -21,6 +24,12 @@ class SharedGridReadout(nn.Module):
         self.editor = nn.ModuleList([ConditionedResidual2D(width, d) for d in (1, 2)])
         self.decoder = SemanticGridDecoder(width, 6, 16)
         self.task_head = nn.Sequential(nn.LayerNorm(width), nn.Linear(width, 4))
+        if variant == 'slim':
+            # Retain two conditional convolution groups, but no redundant
+            # pre-editor FiLM or third convolution group inside the decoder.
+            del self.post_film
+            self.decoder.pre = nn.Identity()
+            self.contract = 'positionlinear64_width192_coord_two_condconv_directgrid6_slim_v1'
 
     def summarize(self, language_groups):
         return self.language_pool(self.position_readout(language_groups))
@@ -28,8 +37,9 @@ class SharedGridReadout(nn.Module):
     def forward(self, spatial, condition):
         if spatial.shape[1:] != (192, 14, 14) or condition.shape != (len(spatial), 192):
             raise ValueError('Shared head expects [B,192,14,14] and [B,192]')
-        gamma, beta = self.post_film(condition).chunk(2, -1)
-        spatial = spatial * (1 + .1 * torch.tanh(gamma)[:, :, None, None]) + .1 * torch.tanh(beta)[:, :, None, None]
+        if self.variant == 'standard':
+            gamma, beta = self.post_film(condition).chunk(2, -1)
+            spatial = spatial * (1 + .1 * torch.tanh(gamma)[:, :, None, None]) + .1 * torch.tanh(beta)[:, :, None, None]
         axis = torch.linspace(-1., 1., 14, device=spatial.device, dtype=spatial.dtype)
         yy, xx = torch.meshgrid(axis, axis, indexing='ij')
         spatial = spatial + self.coordinate_projection(torch.stack((xx, yy))[None])
@@ -44,7 +54,8 @@ def create_shared_readout(settings):
     # Both methods start with bit-identical readout parameters, independent of backbone RNG usage.
     with torch.random.fork_rng(devices=[]):
         torch.manual_seed(settings.seed + 1000)
-        head = SharedGridReadout(settings.electronic_width, settings.max_language_tokens)
+        head = SharedGridReadout(settings.electronic_width, settings.max_language_tokens,
+                                 settings.shared_readout_variant)
     return head
 
 

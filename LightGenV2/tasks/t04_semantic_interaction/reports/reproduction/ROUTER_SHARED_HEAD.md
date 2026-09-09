@@ -1,5 +1,15 @@
 # 语言Router坍缩修复与公平Qwen对照
 
+## 精简对照（2026-09-09）
+
+新增 `routerfill_slim` / `qwen_slim`。两者都通过同一个 `SharedGridReadout(variant='slim')`：
+删除74,112参数的前置FiLM，以及38,976参数的decoder预处理，381,976降到268,888（29.61%）。
+保留两组条件卷积及内部文本调制，后面直接平均降到6×6再做1×1类别/编辑输出。
+其它训练设置继承各自原profile，包括100epoch、seed73、v2清单、任务损失和周期test选模；
+主方法仍额外要求Router合格。只比较这对新run，不把旧38.2万参数头的baseline混入。
+新架构ID追加 `_slim`，旧checkpoint不能当新架构权重加载。头参数量、输出形状、梯度、
+双方法初始化/同输入输出逐位一致及旧新权重不兼容均有测试。运行命令见任务README顶部。
+
 ## Linux baseline 启动前的文件句柄限制
 
 冻结 Qwen 缓存包含每条样本的变长文本张量。多进程 DataLoader 在默认 1024 文件句柄限制下可能报 `Too many open files`。

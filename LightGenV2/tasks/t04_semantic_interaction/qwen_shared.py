@@ -19,6 +19,8 @@ class QwenSharedReadout(nn.Module):
     def __init__(self, settings):
         super().__init__()
         self.settings = settings
+        if settings.shared_readout_variant != 'standard':
+            self.checkpoint_architecture += '_' + settings.shared_readout_variant
         self.vision_stem = nn.Identity()  # No backbone training; exact frozen forwards cached separately.
         self.image_adapter = nn.Sequential(nn.Linear(1024, 192), nn.LayerNorm(192))
         self.text_adapter = nn.Sequential(nn.Linear(2048, 192), nn.LayerNorm(192))

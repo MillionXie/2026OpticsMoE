@@ -1,5 +1,29 @@
 # T04 语义交互（OpenMoji）
 
+## 2026-09-09：精简共享电子读出头
+
+`routerfill_slim` 与 `qwen_slim` 使用同一个精简头：381,976 → 268,888 参数（减少29.61%）。
+只删去两组条件卷积前的重复FiLM和解码器预处理卷积；保留两组条件卷积、位置线性汇总、
+坐标映射、6×6平均降采样、类别/编辑输出以及训练用四操作辅助头。光路、光Router Top2、
+同尺度融合alpha>0.4和原噪声配置均不变。没有新增TF/attention或其他分支。
+
+两组均从头训练任务网络100epoch，seed73、batch32、相同v2数据和损失/学习率协议，
+不从旧best截取部分权重。Qwen主干完整冻结，复用经过校验的原生特征缓存；双方共享头
+初始权重相同、训练后独立。只保留best/last，光电组结束自动生成同best去光对照及相位图。
+
+```bash
+# 仓库根目录；服务器只运行已推送的源码。此限制用于多进程特征缓存读取。
+ulimit -n 65536
+python -m LightGenV2.tasks.t04_semantic_interaction.run --profile routerfill_slim --phase all --device cuda
+python -m LightGenV2.tasks.t04_semantic_interaction.run --profile qwen_slim --phase all --device cuda
+```
+
+输出分别为 `runs/simulation/routerfill_slim_s73`、`runs/simulation/qwen_slim_s73`，新结果待训练完成。
+旧共享头正式100轮结果：标准光电修改格87.15%、IoU0.8327、F1 0.9339、整场景69.00%；
+强均衡84.85%、0.8993、0.9478、77.00%；冻结Qwen84.20%、0.7312、0.8757、54.20%。
+旧标准光电同best去光降至40.55%（46.60个百分点），不解释为物理贡献百分比。
+当前精简只针对末端读出头，不代表光电网络全部电子参数只有26.9万。
+
 ## 2026-09-08：语言Router铺满孔径 + 公平共享读出头
 
 当前入口为 `routerfill_shared`（两组卷积、光Router）、`routerfill_shared_balance`（同结构、更强均衡正则）和

@@ -23,9 +23,10 @@ def test_router_fill_keeps_power_and_has_gradients():
     assert torch.isfinite(fields.grad).all()
 
 
-def test_exact_same_head_initialization_and_outputs():
-    ours = load_settings(ROOT / 'configs/routerfill_shared.yaml')
-    baseline = load_settings(ROOT / 'configs/qwen_shared.yaml')
+@pytest.mark.parametrize('profiles', [('routerfill_shared', 'qwen_shared'), ('routerfill_slim', 'qwen_slim')])
+def test_exact_same_head_initialization_and_outputs(profiles):
+    ours = load_settings(ROOT / f'configs/{profiles[0]}.yaml')
+    baseline = load_settings(ROOT / f'configs/{profiles[1]}.yaml')
     a, b = create_shared_readout(ours), create_shared_readout(baseline)
     assert head_signature(a) == head_signature(b)
     assert len(a.editor) == len(b.editor) == 2
@@ -39,9 +40,10 @@ def test_exact_same_head_initialization_and_outputs():
     assert ours.epochs == baseline.epochs == 100
 
 
-def test_baseline_forward_no_extra_mixer():
+@pytest.mark.parametrize('profile', ['qwen_shared', 'qwen_slim'])
+def test_baseline_forward_no_extra_mixer(profile):
     from LightGenV2.tasks.t04_semantic_interaction.training import _phase_regularization
-    cfg = load_settings(ROOT / 'configs/qwen_shared.yaml')
+    cfg = load_settings(ROOT / f'configs/{profile}.yaml')
     model = QwenSharedReadout(cfg)
     out = model(torch.randn(2, 196, 1024), [torch.randn(4, 2048), torch.randn(12, 2048)])
     assert out['category_logits'].shape == (2, 17, 6, 6)
@@ -52,6 +54,18 @@ def test_baseline_forward_no_extra_mixer():
     # A nonzero optical regularizer on a non-optical model remains an error.
     with pytest.raises(RuntimeError, match='PhaseLayer'):
         _phase_regularization(model, SimpleNamespace(phase_dc_weight=1.0))
+
+
+def test_slim_contract_and_parameter_budget():
+    from LightGenV2.tasks.t04_semantic_interaction.shared_readout import SharedGridReadout
+    standard, slim = SharedGridReadout(), SharedGridReadout(variant='slim')
+    assert head_signature(standard)['parameters'] == 381976
+    assert head_signature(slim)['parameters'] == 268888
+    assert not hasattr(slim, 'post_film')
+    assert isinstance(slim.decoder.pre, torch.nn.Identity)
+    assert len(slim.editor) == 2
+    with pytest.raises(RuntimeError):
+        slim.load_state_dict(standard.state_dict(), strict=True)
 
 
 def test_instruction_span_is_exact_not_chat_summary():

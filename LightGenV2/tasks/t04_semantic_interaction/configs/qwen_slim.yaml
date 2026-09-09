@@ -1,0 +1,4 @@
+base_config: qwen_shared.yaml
+model:
+  shared_readout_variant: slim
+output_dir: ../runs/simulation/qwen_slim_s73

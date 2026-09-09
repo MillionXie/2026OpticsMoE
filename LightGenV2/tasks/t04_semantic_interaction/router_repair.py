@@ -45,6 +45,8 @@ class RepairedOpticalEditor(EmbeddingOnlyEditor):
         self.shared_readout = create_shared_readout(settings)
         self.readout_signature = head_signature(self.shared_readout)
         self.checkpoint_architecture += '_routerfill_sharedhead_v2'
+        if settings.shared_readout_variant != 'standard':
+            self.checkpoint_architecture += '_' + settings.shared_readout_variant
         self.assert_contract()
 
     def summarize_language(self, latent_groups):
