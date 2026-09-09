@@ -27,6 +27,7 @@ from .retrieval_contract import (
     INSTRUCTION, EXPECTED_ARCHIVE_SHA256, _load_contract, _gallery_centroids,
     _category_prototypes, _evaluate, _inputs, sha256_file,
 )
+from .refinement import WeakAugmentationDataset, CrossProductBatchSampler, lr_multiplier, enhance_graph
 from LightGenV2.tasks.t01_object_retrieval.modeling import (
     load_backbone, build_student, initialize_student,
 )
@@ -220,12 +221,21 @@ def evaluate(loaded, replacement, readout, train, test, settings, output=None):
 
 def train_model(loaded, replacement, readout, settings, raw, train, test, cache):
     options = _nested(raw, "abo_image_image", {})
-    dataset = GroceryRetrievalDataset(convert(train), settings.image_size, augment=False)
-    sampler = PKBatchSampler(convert(train), settings.pk_skus_per_batch, settings.pk_images_per_sku,
-                             settings.random_seed, settings.optimizer_steps_per_epoch)
+    dataset_cls = WeakAugmentationDataset if options.get("weak_augmentation", False) else GroceryRetrievalDataset
+    dataset = dataset_cls(convert(train), settings.image_size, augment=False)
+    if options.get("cross_product_batches", False):
+        sampler = CrossProductBatchSampler(convert(train), settings.optimizer_steps_per_epoch, settings.random_seed)
+    else:
+        sampler = PKBatchSampler(convert(train), settings.pk_skus_per_batch, settings.pk_images_per_sku,
+                                 settings.random_seed, settings.optimizer_steps_per_epoch)
     loader = DataLoader(dataset, batch_sampler=sampler, num_workers=settings.num_workers,
                         collate_fn=collate_grocery, persistent_workers=settings.num_workers > 0)
     optimizer, parameters = _build_optimizer(replacement, readout, settings)
+    base_rates = [g["lr"] for g in optimizer.param_groups]
+    expected = {id(p) for module in (replacement.vision_surrogate, replacement.language_surrogate, readout)
+                for p in module.parameters() if p.requires_grad}
+    if expected != {id(p) for p in parameters}:
+        raise RuntimeError("Optimizer omits trainable optical/electronic parameters")
     ema = initialize_parameter_ema(parameters) if settings.ema_decay else None
     targets = F.normalize(cache["square"][:len(train), :settings.embedding_dim].float(), dim=-1)
     anchors = category_anchors(targets, [s.category_id for s in train]).to(loaded.device)
@@ -234,6 +244,12 @@ def train_model(loaded, replacement, readout, settings, raw, train, test, cache)
     router_initial = [p.detach().cpu().clone() for p in replacement.router_parameters()]
     history, best, best_epoch = [], (-1., -1.), -1
     for epoch in range(1, settings.epochs + 1):
+        schedule = lr_multiplier(epoch, settings.epochs) if options.get("cosine_schedule", False) else 1.
+        for group, base_rate in zip(optimizer.param_groups, base_rates):
+            group["lr"] = base_rate * schedule
+        kd_start = options.get("teacher_kd_weight", .3)
+        progress = (epoch-1) / max(1, settings.epochs-1)
+        kd_weight = kd_start + (options.get("teacher_kd_final", kd_start)-kd_start) * progress
         sampler.set_epoch(epoch)
         loaded.model.eval()
         replacement.set_student_train_mode()
@@ -266,7 +282,7 @@ def train_model(loaded, replacement, readout, settings, raw, train, test, cache)
                 operating = torch.stack(operating_values).mean() if operating_values else z.new_zeros(())
                 dc = phase_dc_loss(replacement)
                 loss = (options.get("supervised_contrastive_weight", 1.) * retrieval
-                        + options.get("teacher_kd_weight", .3) * kd
+                        + kd_weight * kd
                         + options.get("semantic_anchor_weight", 0.) * anchor_ce
                         + settings.lambda_router_balance * balance
                         + settings.lambda_router_importance * importance
@@ -282,6 +298,7 @@ def train_model(loaded, replacement, readout, settings, raw, train, test, cache)
             for name, value in (("loss", loss), ("supcon", retrieval), ("kd", kd), ("anchor_ce", anchor_ce), ("balance", balance), ("hard_balance", hard_loss)):
                 totals[name] += float(value.detach())
         row = {"epoch": epoch, "seconds": time.perf_counter()-start,
+               "lr_multiplier": schedule, "teacher_kd_weight": kd_weight,
                **{k: v/len(loader) for k,v in totals.items()},
                **{k+"_router_counts": json.dumps(v.tolist()) for k,v in counts.items()}}
         save_checkpoint(settings.output_dir / "last_checkpoint.pt", replacement, readout, optimizer,
@@ -374,16 +391,34 @@ def run(args):
                 raise RuntimeError("Teacher cache contract mismatch")
         replacement, readout = build_student(loaded, settings)
         try:
-            architecture = audit_student_graph(replacement)
+            options = _nested(raw, "abo_image_image", {})
             if args.mode == "evaluate":
                 if not args.checkpoint:
                     raise ValueError("--mode evaluate requires --checkpoint")
                 checkpoint = Path(args.checkpoint).resolve()
+                readout = enhance_graph(replacement, readout, options)
                 load_checkpoint(checkpoint, replacement, readout)
                 initialization = {"mode": "fixed_checkpoint", "checkpoint": str(checkpoint),
                                   "sha256": sha256_file(checkpoint)}
             else:
-                initialization = initialize_pinned_student(settings, replacement, readout)
+                warmstart = options.get("refinement_checkpoint")
+                if warmstart:
+                    checkpoint = path_from(config, warmstart)
+                    digest = sha256_file(checkpoint)
+                    if digest != options.get("refinement_checkpoint_sha256"):
+                        raise RuntimeError("Refinement source checkpoint SHA256 mismatch")
+                    load_checkpoint(checkpoint, replacement, readout)
+                    initialization = {"mode": "ABO_best_refinement_fresh_optimizer", "path": str(checkpoint),
+                                      "sha256": digest, "source_was_test_selected": True}
+                else:
+                    initialization = initialize_pinned_student(settings, replacement, readout)
+                readout = enhance_graph(replacement, readout, options)
+            architecture = audit_student_graph(replacement)
+            architecture["readout"] = readout.specification()
+            architecture["enhanced_electronics"] = options.get("enhanced_electronics", False)
+            architecture["residual_kernel_sizes"] = {
+                name: [b.token_mixer_kernel_size for b in getattr(replacement, name+"_surrogate").core.blocks]
+                for name in ("vision", "language")}
             save_resolved_config(settings)
             resolved = yaml.safe_load((output / "config.yaml").read_text(encoding="utf-8"))
             resolved["lightgen"]["task"] = "t07_abo_image_retrieval"

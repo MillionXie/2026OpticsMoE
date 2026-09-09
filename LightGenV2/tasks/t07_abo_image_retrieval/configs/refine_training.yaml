@@ -1,0 +1,27 @@
+base_config: optical_top2_dc20_anchor.yaml
+
+training:
+  epochs: 80
+  learning_rate: 0.0002
+  adapter_learning_rate: 0.0001
+  readout_learning_rate: 0.0005
+  phase_learning_rate: 0.004
+  router_learning_rate: 0.005
+  ema_decay: 0.99
+batching:
+  batch_size: 20
+  pk_skus_per_batch: 10
+  pk_images_per_sku: 2
+  optimizer_steps_per_epoch: 48
+abo_image_image:
+  refinement_checkpoint: ../runs/simulation/optical_top2_dc20_anchor_20260909/best_checkpoint.pt
+  refinement_checkpoint_sha256: 8efb1bab408ed457ffe0ad5fce3e044bb4a3c400bfc72d69448830c34e991da4e
+  cross_product_batches: true
+  weak_augmentation: true
+  cosine_schedule: true
+  teacher_kd_weight: 0.5
+  teacher_kd_final: 0.1
+  semantic_anchor_weight: 1.0
+  supervised_contrastive_weight: 0.5
+  temperature: 0.1
+output_dir: ../runs/simulation/refine_training_20260909

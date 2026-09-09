@@ -45,6 +45,40 @@ baseline 看 `baseline_report.json`，光学看 `history.json`/`status.json`/`fi
 baseline 2048D 原长宽比的历史 Hit@1=95.2083%，本轮是否复现必须以新报告为准。
 训练仅用 train；test 每 5 epoch 参与选模，明确不作为独立泛化估计。
 
+## 继续优化：训练方法 / 电子增强的配对对照
+
+两组都从 `optical_top2_dc20_anchor_20260909/best_checkpoint.pt` 开始（SHA 在配置中强制校验），
+重新初始化优化器。固定旧 baseline、训练/测试名单、全 120 商品检索、64D 输出和光路。
+只保存 best/last；80 epoch，每 5 epoch 完整测试选 best，不使用验证集。
+
+```bash
+# 先同步本次 Git commit；GPU UUID 按空闲显存选择，建议留出至少 10 GB。
+python -m unittest discover -s LightGenV2/tasks/t07_abo_image_retrieval/tests -v
+
+# 训练方法组；原推理结构不变。
+python -u -m LightGenV2.tasks.t07_abo_image_retrieval.run --mode optical \
+  --config LightGenV2/tasks/t07_abo_image_retrieval/configs/refine_training.yaml
+
+# 相同训练方法，再扩大电子残差卷积核 + 非线性读出。
+python -u -m LightGenV2.tasks.t07_abo_image_retrieval.run --mode optical \
+  --config LightGenV2/tasks/t07_abo_image_retrieval/configs/refine_electronics.yaml
+
+# 增强模型重评必须传其对应配置，不能用旧的默认线性头配置。
+python -u -m LightGenV2.tasks.t07_abo_image_retrieval.run --mode evaluate \
+  --config LightGenV2/tasks/t07_abo_image_retrieval/configs/refine_electronics.yaml \
+  --checkpoint LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/refine_electronics_20260909/best_checkpoint.pt \
+  --run-dir LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/refine_electronics_reeval_20260909
+```
+
+训练 batch=20：十类各取两个不同训练商品的一张图，48 step/epoch（随机采样，非保证全覆盖）。
+轻增强先做与测试一致的方形裁剪，再做 0.94–1.0 裁剪和 ±5% 亮度/对比度；不翻转。
+KD 使用同一训练图片的干净视图缓存，明确属于增强一致性目标，不是重新执行教师。
+5 epoch 预热 + 余弦学习率，KD 从 0.5 降至 0.1；监督对比/训练类中心监督保留。
+电子增强仅在原两路残差内扩大卷积核至 9，末端读出增加 512 隐层的 GELU 修正，
+无 attention/Transformer、无教师推理旁路。卷积新增系数、读出修正输出初始化为零，
+初始函数保持旧权重行为（浮点运算误差除外）。真实 kernel、读出参数和活跃图见 architecture.json。
+仍保留光 Router Top-2、同尺度融合、20%–30% 未调制训练分量、既有 CCD 噪声；像素偏移仍为零。
+
 ## 历史审计说明（保留）
 
 [历史 baseline 方法审计](BASELINE_METHODS.md)保留了旧运行的模型、预处理及评估定义。

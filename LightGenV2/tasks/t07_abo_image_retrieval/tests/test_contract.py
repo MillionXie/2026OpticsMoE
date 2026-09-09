@@ -1,12 +1,57 @@
 import unittest
 import numpy as np
 import torch
+from types import SimpleNamespace
+from torch import nn
+import torch.nn.functional as F
+from LightGenV2.tasks.t07_abo_image_retrieval.refinement import (
+    CrossProductBatchSampler, lr_multiplier, inflate_convolution, ResidualRetrievalReadout,
+)
+from experiments.qwen3_vl_embedding_2b_caltech101_electronic_retrieval.modeling import ElectronicRetrievalReadout
 from LightGenV2.tasks.t07_abo_image_retrieval.retrieval_contract import _ranking_metrics
 from LightGenV2.tasks.t07_abo_image_retrieval.run import supcon, category_anchors, TASK
 from LightGenV2.tasks.t01_object_retrieval.settings import load_settings
 
 
 class ContractTests(unittest.TestCase):
+    def test_cross_product_batch(self):
+        samples = [SimpleNamespace(sku_index=c, sku_name=f"{c}-{p}")
+                   for c in range(10) for p in range(3) for _ in range(2)]
+        sampler = CrossProductBatchSampler(samples, 3, 42)
+        batches = list(sampler)
+        self.assertEqual(batches, list(sampler))
+        for batch in batches:
+            self.assertEqual(len(batch), 20)
+            for c in range(10):
+                self.assertEqual(len({samples[i].sku_name for i in batch if samples[i].sku_index == c}), 2)
+
+    def test_schedule(self):
+        self.assertAlmostEqual(lr_multiplier(1, 80), .2)
+        self.assertAlmostEqual(lr_multiplier(5, 80), 1.)
+        self.assertAlmostEqual(lr_multiplier(80, 80), .1)
+
+    def test_readout_identity_gradient_and_reload(self):
+        original = ElectronicRetrievalReadout(384, 64)
+        enhanced = ResidualRetrievalReadout(original)
+        x = torch.randn(4, 384)
+        self.assertTrue(torch.equal(original(x), enhanced(x)))
+        enhanced(x).sum().backward()
+        self.assertGreater(float(enhanced.correction[-1].weight.grad.abs().sum()), 0)
+        restored = ResidualRetrievalReadout(ElectronicRetrievalReadout(384, 64))
+        restored.load_state_dict(enhanced.state_dict(), strict=True)
+        enhanced.eval(); restored.eval()
+        self.assertTrue(torch.equal(enhanced(x), restored(x)))
+
+    def test_kernel_inflation_preserves_spatial_and_causal_outputs(self):
+        spatial = nn.Conv2d(4, 4, 5, groups=4, bias=False)
+        x = torch.randn(2, 4, 12, 12)
+        enlarged = inflate_convolution(spatial, 9, False)
+        torch.testing.assert_close(spatial(F.pad(x, (2, 2, 2, 2))), enlarged(F.pad(x, (4, 4, 4, 4))))
+        causal = nn.Conv1d(4, 4, 5, groups=4, bias=False)
+        x = torch.randn(2, 4, 12)
+        enlarged = inflate_convolution(causal, 9, True)
+        torch.testing.assert_close(causal(F.pad(x, (4, 0))), enlarged(F.pad(x, (8, 0))))
+
     def test_hit_is_not_positive_recall(self):
         relevant = np.zeros((2, 120), dtype=bool)
         relevant[:, :12] = True

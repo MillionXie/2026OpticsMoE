@@ -1,0 +1,7 @@
+base_config: refine_training.yaml
+
+abo_image_image:
+  enhanced_electronics: true
+  residual_kernel_size: 9
+  readout_hidden: 512
+output_dir: ../runs/simulation/refine_electronics_20260909
