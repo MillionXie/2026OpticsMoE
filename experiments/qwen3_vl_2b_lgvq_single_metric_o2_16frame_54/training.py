@@ -909,7 +909,7 @@ def train(
             if settings.phase_smoothness_weight > 0.0:
                 phase_smoothness = _phase_smoothness_loss(model)
             loss = (
-                regression
+                settings.regression_weight * regression
                 + curriculum["ranking_weight"] * ranking
                 + curriculum["correlation_weight"] * correlation
                 + curriculum["soft_spearman_weight"] * soft_spearman

@@ -1,0 +1,18 @@
+base_config: spatial_nodrop_readout_s649.yaml
+output_dir: ../../runs/lgvq_spatial_srcc_objective_s652
+random_seed: 652
+
+# Spatial's paper metric is SRCC, so absolute MOS regression is retained only
+# as a weak anchor while pairwise, Pearson and differentiable rank losses lead.
+training:
+  learning_rate: 0.000001
+  test_interval_steps: 1
+
+loss:
+  regression_weight: 0.05
+  ranking_weight: 2.00
+  correlation_weight: 4.00
+  soft_spearman_weight: 0.60
+  soft_rank_temperature: 0.10
+  level_distribution_weight: 0.0
+

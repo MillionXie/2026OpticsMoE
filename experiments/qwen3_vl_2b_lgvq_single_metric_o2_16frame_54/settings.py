@@ -339,6 +339,7 @@ class ExperimentSettings:
     late_refine_router_lr_factor: float = 1.0
     ema_decay: float = 0.0
     ema_start_epoch: int = 1
+    regression_weight: float = 1.0
     ranking_weight: float = 0.20
     correlation_weight: float = 0.30
     soft_spearman_weight: float = 0.0
@@ -940,11 +941,15 @@ class ExperimentSettings:
                 "model.spatial_readout_moment_refiner_enabled=true"
             )
         if min(
+            self.regression_weight,
+            self.ranking_weight,
+            self.correlation_weight,
+            self.soft_spearman_weight,
             self.soft_target_weight,
             self.soft_target_ranking_weight,
             self.soft_target_correlation_weight,
         ) < 0.0:
-            raise ValueError("All soft-target loss weights must be nonnegative")
+            raise ValueError("All supervised and soft-target loss weights must be nonnegative")
         if self.level_distribution_weight < 0.0:
             raise ValueError("level_distribution_weight must be nonnegative")
         if (
@@ -1195,6 +1200,7 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         ),
         ema_decay=float(get("training", "ema_decay", 0.0)),
         ema_start_epoch=int(get("training", "ema_start_epoch", 1)),
+        regression_weight=float(get("loss", "regression_weight", 1.0)),
         ranking_weight=float(get("loss", "ranking_weight", 0.20)),
         correlation_weight=float(get("loss", "correlation_weight", 0.30)),
         soft_spearman_weight=float(get("loss", "soft_spearman_weight", 0.0)),

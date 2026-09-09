@@ -1,0 +1,10 @@
+base_config: spatial_srcc_objective_s652.yaml
+output_dir: ../../runs/lgvq_spatial_srcc_objective_rankonly_s654
+random_seed: 654
+
+training:
+  learning_rate: 0.000010
+  ema_decay: 0.98
+
+loss:
+  regression_weight: 0.0
