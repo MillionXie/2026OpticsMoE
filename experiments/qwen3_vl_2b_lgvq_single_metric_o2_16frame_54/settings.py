@@ -282,6 +282,8 @@ class ExperimentSettings:
     vgg_correction_mode: str = "local"
     top_k: int = 2
     router_temperature: float = 1.0
+    parallel_router_temperature: float = 1.0
+    serial_router_temperature: float = 1.0
     router_noise_std: float = 0.03
     serial_router_input_size: int = 109
     serial_router_flatfield_calibration: bool = False
@@ -696,6 +698,12 @@ class ExperimentSettings:
             raise ValueError("model.spatial_readout_image_focus_max must lie within [0,1]")
         if self.top_k != 2:
             raise ValueError("The formal router is optical Top-2")
+        if min(
+            self.router_temperature,
+            self.parallel_router_temperature,
+            self.serial_router_temperature,
+        ) <= 0.0:
+            raise ValueError("All router temperatures must be positive")
         for intervals, limit in (
             (self.parallel_router_intervals, self.geometry.lane_size),
             (self.serial_router_intervals, self.geometry.active_size),
@@ -1025,6 +1033,12 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         dropout=float(get("model", "dropout", 0.15)),
         top_k=int(get("router", "top_k", 2)),
         router_temperature=float(get("router", "temperature", 1.0)),
+        parallel_router_temperature=float(
+            get("router", "parallel_temperature", get("router", "temperature", 1.0))
+        ),
+        serial_router_temperature=float(
+            get("router", "serial_temperature", get("router", "temperature", 1.0))
+        ),
         router_noise_std=float(get("router", "noise_std", 0.03)),
         serial_router_input_size=int(
             get("router", "serial_input_size", geometry.serial_expert_size)

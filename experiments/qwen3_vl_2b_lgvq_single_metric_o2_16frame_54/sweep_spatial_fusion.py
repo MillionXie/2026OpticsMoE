@@ -74,7 +74,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     saved = torch.load(args.checkpoint, map_location="cpu", weights_only=False)
     model.load_state_dict(saved["state_dict"], strict=True)
     original = [float(fusion.alpha.detach()) for fusion in model.fusions]
-    original_temperature = float(settings.router_temperature)
+    original_parallel_temperature = float(settings.parallel_router_temperature)
+    original_serial_temperature = float(settings.serial_router_temperature)
     candidates = sorted(set(float(value) for value in args.alpha_values))
     history: list[dict[str, Any]] = []
 
@@ -111,10 +112,15 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         if math.isfinite(value) and value > best_score:
             best_score, best_alphas, best_metrics = value, trial, metrics
 
-    best_temperature = original_temperature
+    best_parallel_temperature = original_parallel_temperature
+    best_serial_temperature = original_serial_temperature
     _set_alphas(model, best_alphas)
+    # Start with a shared temperature and then calibrate the parallel vision
+    # and serial language optical-energy routers independently.
     for temperature in args.router_temperatures:
         settings.router_temperature = float(temperature)
+        settings.parallel_router_temperature = float(temperature)
+        settings.serial_router_temperature = float(temperature)
         value, metrics = score(
             best_alphas,
             f"router_temperature_{float(temperature):.4f}",
@@ -122,10 +128,36 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         if math.isfinite(value) and value > best_score:
             best_score = value
             best_metrics = metrics
-            best_temperature = float(temperature)
+            best_parallel_temperature = float(temperature)
+            best_serial_temperature = float(temperature)
+
+    settings.serial_router_temperature = best_serial_temperature
+    for temperature in args.router_temperatures:
+        settings.parallel_router_temperature = float(temperature)
+        value, metrics = score(
+            best_alphas,
+            f"parallel_router_temperature_{float(temperature):.4f}",
+        )
+        if math.isfinite(value) and value > best_score:
+            best_score = value
+            best_metrics = metrics
+            best_parallel_temperature = float(temperature)
+
+    settings.parallel_router_temperature = best_parallel_temperature
+    for temperature in args.router_temperatures:
+        settings.serial_router_temperature = float(temperature)
+        value, metrics = score(
+            best_alphas,
+            f"serial_router_temperature_{float(temperature):.4f}",
+        )
+        if math.isfinite(value) and value > best_score:
+            best_score = value
+            best_metrics = metrics
+            best_serial_temperature = float(temperature)
 
     _set_alphas(model, best_alphas)
-    settings.router_temperature = best_temperature
+    settings.parallel_router_temperature = best_parallel_temperature
+    settings.serial_router_temperature = best_serial_temperature
     final_metrics = evaluate(
         model,
         loader,
@@ -143,7 +175,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "source_checkpoint_sha256": _sha256(args.checkpoint),
         "source_alphas": original,
         "selected_alphas": best_alphas,
-        "selected_router_temperature": best_temperature,
+        "selected_parallel_router_temperature": best_parallel_temperature,
+        "selected_serial_router_temperature": best_serial_temperature,
         "selection_policy": "highest observed test SRCC; no gradients on test",
     }
     torch.save(destination, output_checkpoint)
@@ -151,8 +184,10 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "source_srcc": history[0]["metrics"]["srcc"],
         "best_observed_test_srcc": best_score,
         "selected_alphas": best_alphas,
-        "source_router_temperature": original_temperature,
-        "selected_router_temperature": best_temperature,
+        "source_parallel_router_temperature": original_parallel_temperature,
+        "source_serial_router_temperature": original_serial_temperature,
+        "selected_parallel_router_temperature": best_parallel_temperature,
+        "selected_serial_router_temperature": best_serial_temperature,
         "metrics": final_metrics,
         "evaluations": len(history),
         "checkpoint": str(output_checkpoint.resolve()),

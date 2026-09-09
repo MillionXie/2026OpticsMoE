@@ -286,7 +286,7 @@ class OpticalRouterParallel16(nn.Module):
         if self.training and self.settings.router_noise_std > 0.0:
             logits = logits + torch.randn_like(logits) * self.settings.router_noise_std
         probabilities = torch.softmax(
-            logits / self.settings.router_temperature, dim=-1
+            logits / self.settings.parallel_router_temperature, dim=-1
         )
         weights, selected, indices = _sparse_top2(probabilities)
         captured = energy.sum(-1) / torch.stack(lane_energy, 1).clamp_min(1.0e-8)
@@ -440,7 +440,7 @@ class OpticalRouterSerial(nn.Module):
         if self.training and self.settings.router_noise_std > 0.0:
             logits = logits + torch.randn_like(logits) * self.settings.router_noise_std
         probabilities = torch.softmax(
-            logits / self.settings.router_temperature, dim=-1
+            logits / self.settings.serial_router_temperature, dim=-1
         )
         weights, selected, indices = _sparse_top2(probabilities)
         captured = raw_energy.sum(-1) / active.sum((-2, -1)).clamp_min(1.0e-8)
