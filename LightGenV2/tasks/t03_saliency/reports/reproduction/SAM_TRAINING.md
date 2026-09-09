@@ -368,3 +368,37 @@ python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TA
 
 产物在`runs/simulation/moe_alpha40_sam_group64_seed42`，只best/last。
 配对对照为原SAM.05，不是同时更换教师损失的spatialcc组；完整5000测试选模偏差仍适用。
+
+2026-09-10实现commit `6fea94fb0be7650277ea14d4ad77ecd7071d8b5a`，服务器86项CPU测试通过后发布GitHub。
+实际前4张训练图的完整前向检查（关闭cuDNN TF32，仅此一致性诊断）logits最大绝对差0；
+新增参数实测34560。恢复默认精度后单次SAM更新相位RMS=0.00019616647，全部参数有限。
+这只是功能/更新冒烟，不是测试性能；记录在`runs/smoke/group64_real4_20260910/smoke.json`。
+正式训练保持原精度，复用已结束且无活跃进程的`t03_sam`工作树，未修改其他训练的工作树。
+
+## 空间相关性蒸馏：阶段性独立复评
+
+`moe_alpha40_sam_spatialcc_seed42`仍在训练，epoch5候选完成全5000张独立复评：
+
+|指标|原SAM.05已完成候选|空间CC蒸馏epoch5候选|
+|---|---:|---:|
+|逐图float64 CC|0.8613320359|0.8617294774|
+|KLD（越低越好）|0.11277319|0.11473469|
+|SIM|0.82407608|0.82366582|
+
+CC平均增益0.0003974414，2889/5000张改善，逐图差值中位数0.0002774605；
+KLD/SIM略差，不能宣称所有指标同时改进。距离CC=.87仍差0.0082705226。
+这是相同公开测试集选模的阶段性结果，不是未接触测试集的泛化证明；后续best变化必须重新绑定SHA。
+独立复评目录`aligned_recheck_20260910_spatialcc_candidate`，源码commit
+`30145efdfa2371b3882cc39aa52e1eba882bfda3`，选中epoch5，实际载入checkpoint SHA256：
+`a1fc626767ced7f36174a96b493233c2dcba600674b12504f37143af928897e9`。
+`reproduction.json` SHA256：`654564cf97d37627f35fec1cfa9a28de3690361dd33bfc4ffe687a6241c6493c`。
+test IDs SHA仍为`625dec6bc15b2d737d39bc252cfa0c354de217fec0266dcda568913f4a3496d0`。
+独立float64与累积器差7.23e-10；完整逐图CC保留于该目录`per_image_cc.csv`。
+训练仍为原384隐藏维度，不含wide576或group64改变；该增益只来自训练损失变化。
+
+```bash
+TASK=LightGenV2/tasks/t03_saliency
+python -m LightGenV2.tasks.t03_saliency.recheck_aligned --system optical --config "$TASK/configs/moe_alpha40_sam_spatialcc.yaml" --checkpoint "$TASK/runs/simulation/moe_alpha40_sam_spatialcc_seed42/best_checkpoint.pt" --run-dir "$TASK/runs/simulation/aligned_recheck_20260910_spatialcc_candidate" --batch-size 32
+```
+
+再次执行须使用尚不存在的复评目录，并确认best是否仍为上述SHA；不能覆盖已有证据。
