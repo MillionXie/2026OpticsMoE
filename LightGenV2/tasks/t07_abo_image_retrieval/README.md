@@ -5,6 +5,23 @@
 - 历史冻结 Qwen3-VL-Embedding-2B：Hit@1 **95.2083%**，出处见 `reports/reproduction/BASELINE_METHODS.md`。这不是 T08 图搜文的 73.71%。
 - 操作与复现唯一入口：[reports/reproduction/README.md](reports/reproduction/README.md)。
 
+## 2026-09-09 后续优化（运行中，未替换正式最佳）
+
+源码 `838ae656`，两组都从上述 65.4167% 的 ABO best 开始，80 epoch，
+保持数据、图库、测试口径、光路、Top-2 与原始冻结 baseline 不变：
+
+- `configs/refine_training.yaml` → `runs/simulation/refine_training_20260909`：
+  每批十类、同类两个不同商品；轻增强；5 epoch 预热及余弦退火；KD 随训练由0.5降至0.1。
+- `configs/refine_electronics.yaml` → `runs/simulation/refine_electronics_20260909`：
+  相同训练，再将原电子残差的 V 卷积核3、L卷积核5扩大至9；保留原通道MLP。
+  末端 `LN(384) → [Linear(384,64) + Linear(384,512)→GELU→Dropout(0.1)→Linear(512,64)] → L2`。
+  读出总计255,360参数（原25,408）；它是最终融合特征上的读出，不是独立输入旁路。
+
+不加 Transformer/attention，不增加捕获次数；初始化时新增卷积系数和读出修正输出均为零。
+训练仍记录专家使用、alpha、相位变化，最后恢复 best 做同权重去光对照；只保留 best/last。
+查看实时进度用对应 `status.json`、`history.json`；只有出现 `final_report.json` 且 status=complete
+才表示包括去光与可视化在内的完整训练结束。运行中数字不要替代正式结果表。
+
 ## 数据与指标
 
 10 类，200 个商品，每个商品 12 个视角。按商品划分 train/val/test = 120/40/40 个商品，即 1440/480/480 张图。
