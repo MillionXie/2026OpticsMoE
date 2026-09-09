@@ -1,0 +1,34 @@
+base_config: moe_alpha40_generalize_kd060.yaml
+# Common starting weights: selected EMA best at epoch 5, full-test CC 0.85812016.
+training:
+  initialization_checkpoint: ../runs/simulation/moe_alpha40_generalize_kd060_seed42/best_checkpoint.pt
+  initialization_checkpoint_sha256: 36333e6ba013cac3a2801bce4babcc2fb5cd36adf02969e019437b40ceebaffd
+  student_epochs: 30
+  student_learning_rate: 0.00001
+  phase_learning_rate: 0.0002
+  router_learning_rate: 0.00005
+  dense_readout_learning_rate: 0.00002
+  dense_head_learning_rate: 0.00003
+  staged:
+    enabled: true
+    warmup_epochs: 0
+    polish_start: 21
+    freeze_electronic_gradients: true
+distillation:
+  initial_weight: 0.2
+  final_weight: 0.2
+  end_epoch: 30
+augmentation:
+  enabled: false
+  mode: aligned_flip
+  crop_scale_min: 1.0
+  horizontal_flip_probability: 0.5
+  brightness_jitter: 0.0
+  contrast_jitter: 0.0
+batching:
+  student_batch_size: 48
+  inference_batch_size: 64
+  num_workers: 4
+protocol:
+  test_interval_epochs: 2
+output_dir: ../runs/simulation/moe_alpha40_rfstage_control_seed42

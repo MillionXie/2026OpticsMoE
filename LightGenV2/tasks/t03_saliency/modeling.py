@@ -36,7 +36,47 @@ def architecture_label(settings: Any) -> str:
     )
     if (settings.fusion_alpha_min, settings.fusion_alpha_max) != (0.01, 0.95):
         label += f"_alpha{settings.fusion_alpha_min:g}_{settings.fusion_alpha_max:g}"
-    return label + ("_mean_only" if settings.ccd_normalization == "mean_only" else "")
+    label += "_mean_only" if settings.ccd_normalization == "mean_only" else ""
+    kernel = getattr(settings, "electronic_spatial_kernel_size", 3)
+    return label + (f"_ek{kernel}" if kernel != 3 else "")
+
+
+def configure_spatial_kernel(hybrid: nn.Module, kernel: int) -> None:
+    """T03-only receptive-field change; no shared backend mutation."""
+    if kernel == 3:
+        return
+    if kernel != 5:
+        raise ValueError("Only the audited 3-to-5 expansion is supported")
+    for block in hybrid.blocks:
+        old = block.token_depthwise
+        if old.kernel_size != (3, 3) or old.groups != old.in_channels or old.bias is not None:
+            raise ValueError("Unexpected spatial mixer; refusing kernel replacement")
+        new = nn.Conv2d(old.in_channels, old.out_channels, kernel, padding=kernel//2,
+                        groups=old.groups, bias=False, device=old.weight.device, dtype=old.weight.dtype)
+        with torch.no_grad():
+            new.weight.zero_()
+            new.weight[:, :, 1:4, 1:4].copy_(old.weight)
+        block.token_depthwise = new
+
+
+def expand_spatial_checkpoint(source: dict, target: dict) -> dict:
+    """Zero-pad only the two named depthwise kernels; reject all other drift."""
+    if source.keys() != target.keys():
+        raise RuntimeError("Kernel transfer cannot add/remove checkpoint keys")
+    expanded = dict(source)
+    expected = {f"hybrid.blocks.{i}.token_depthwise.weight" for i in range(2)}
+    changed = set()
+    for name, value in source.items():
+        shape = target[name].shape
+        if value.shape == shape:
+            continue
+        if name not in expected or value.shape[-2:] != (3, 3) or shape[-2:] != (5, 5) or value.shape[:-2] != shape[:-2]:
+            raise RuntimeError(f"Unexpected warmstart shape mismatch: {name}")
+        expanded[name] = torch.nn.functional.pad(value, (1, 1, 1, 1))
+        changed.add(name)
+    if changed != expected:
+        raise RuntimeError("Expected exactly two 3-to-5 depthwise kernel transfers")
+    return expanded
 
 
 class MeanOnlyCCDNormalizer(nn.Module):
@@ -69,6 +109,7 @@ class LightGenVision2SaliencyStudent(RobustVision2PoseStudent):
         self.core = LightGenDenseVision2Core(
             settings.vision_hidden_size, settings
         ).to(loaded.device)
+        configure_spatial_kernel(self.core.hybrid, getattr(settings, "electronic_spatial_kernel_size", 3))
         self.capture_block = _RobustCaptureBlock(self.core)
         self.student_blocks = nn.ModuleList(
             [self.capture_block]
@@ -150,6 +191,10 @@ def initialize_student(
             raise RuntimeError("T03 warmstart SHA256 mismatch")
         payload = torch.load(warmstart, map_location="cpu", weights_only=False)
         allowed = {model.checkpoint_architecture}
+        expand_kernel = getattr(settings, "expand_kernel_on_warmstart", False)
+        source_ek3 = model.checkpoint_architecture.removesuffix("_ek5")
+        if expand_kernel:
+            allowed.add(source_ek3)
         if settings.ccd_normalization == "mean_only":
             # Explicit parameter-compatible transfer, not exact continuation.
             allowed.add(model.checkpoint_architecture.removesuffix("_mean_only"))
@@ -157,13 +202,16 @@ def initialize_student(
             allowed.add(f"lightgen_t03_{settings.lightgen_model_variant}_vision2_17um_10cm_dc20_scale_matched_top2_v1_mean_only")
         if payload.get("architecture") not in allowed:
             raise RuntimeError("T03 warmstart architecture mismatch")
-        model.core.load_state_dict(payload["core"], strict=True)
+        transfer = expand_kernel and payload.get("architecture") == source_ek3
+        core_state = expand_spatial_checkpoint(payload["core"], model.core.state_dict()) if transfer else payload["core"]
+        model.core.load_state_dict(core_state, strict=True)
         model.head.load_state_dict(payload["saliency_head"], strict=True)
         if settings.reset_fusion_on_warmstart:
             model.core.hybrid.reset_fusion_logits(settings.fusion_alpha_initial)
         return {"path": str(warmstart), "sha256": sha256_file(warmstart),
                 "mode": "warmstart_weights_with_new_optimizer", "source_epoch": payload["epoch"],
                 "source_architecture": payload["architecture"], "target_architecture": model.checkpoint_architecture,
+                "kernel_transfer": "3x3 centered in zero 5x5; initial convolution function preserved" if transfer else "none",
                 "fusion_reset": settings.reset_fusion_on_warmstart,
                 "fusion_alpha_initial": settings.fusion_alpha_initial}
     path = settings.common_initialization_checkpoint
@@ -268,6 +316,8 @@ def architecture_report(model: LightGenVision2SaliencyStudent, settings: Any) ->
             "fusion": "scale-matched convex (1-alpha)E + alpha O",
             "alpha_range": [settings.fusion_alpha_min, settings.fusion_alpha_max],
             "latent_width": settings.electronic_width,
+            "spatial_depthwise_kernel": getattr(settings, "electronic_spatial_kernel_size", 3),
+            "extra_electronic_parameters_vs_kernel3": 2 * settings.electronic_width * (getattr(settings, "electronic_spatial_kernel_size", 3)**2 - 9),
         },
         "router": {
             "backend": "none" if is_d2nn else "optical",

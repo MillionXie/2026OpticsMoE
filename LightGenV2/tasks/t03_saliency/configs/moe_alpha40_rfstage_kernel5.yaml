@@ -1,0 +1,6 @@
+base_config: moe_alpha40_rfstage_control.yaml
+lightgen:
+  electronic_spatial_kernel_size: 5
+training:
+  expand_kernel_on_warmstart: true
+output_dir: ../runs/simulation/moe_alpha40_rfstage_kernel5_seed42

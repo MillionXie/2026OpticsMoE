@@ -150,4 +150,73 @@ CUDA_VISIBLE_DEVICES=3 nohup python -u -m LightGenV2.tasks.t03_saliency.run --pr
 已完成10000张train-only教师缓存，SHA256
 `a45a90fe1dc029961464304373473d1271594128fc7b7f2ac80775f8638dd60e`。
 regularized/aligned/kd020/kd060分别在物理GPU0/1/2/3启动，A100仅用于已经完成的教师缓存生成。
-新一轮尚无最终成绩；0.85468765仍是上一轮已完成候选。
+该轮现已完成：regularized/aligned/kd020/kd060的5000张完整public-test CC分别为
+0.8546876669 / 0.8569809561 / 0.8572896766 / 0.8581201639。
+regularized保留warmstart(epoch0)，其余三个best均在epoch5。
+证据为各run的`selected_checkpoint_test_evaluation.json`，不是预测值。
+
+## 2026-09-09：同步增强、感受野及分阶段微调
+
+共同源：`moe_alpha40_generalize_kd060_seed42/best_checkpoint.pt`，
+SHA256 `36333e6ba013cac3a2801bce4babcc2fb5cd36adf02969e019437b40ceebaffd`。
+该权重本轮CC=0.85812016；最终epoch100测试CC反降至0.84992395，因此本轮是30epoch短周期精调，
+不继续简单延长100epoch。源权重属于EMA选定权重，不恢复旧优化器动量；本轮重新建立EMA。
+
+四组配置/run前缀均为`moe_alpha40_rfstage_`，run后缀为`_seed42`：
+
+| 后缀 | 唯一试验变量（相对于control） |
+|---|---|
+| control | 共同对照：不增强，3×3卷积，前20epoch联合退火、21–30精修 |
+| flip | 50%概率水平翻转，同步变换图像、GT density、fixation、教师logits |
+| kernel5 | 两级电子深度卷积改5×5；旧3×3居中、外圈补0，其余张量严格加载 |
+| staged | epoch1–5冻结electronic组的梯度及更新，6–20联合退火，21–30精修 |
+
+共同优化器：电子LR=1e-5、相位2e-4、Router5e-5、CCD读出2e-5、显著性头3e-5。
+EMA=.995/step；电子/读出/头weight decay=.01，相位/Router为0。
+GT损失保持KL1+CC1.5+SIM.25−NSS.1，train-only教师KL系数全程为.2。
+除flip外关闭增强；本轮不裁剪、不改亮度/对比度、不做测试时增强或多模型集成。
+batch=48，test batch=64，workers=4；每组重新评估warmstart，epoch1及每2epoch完整测试。
+测试集仍为官方val2014的5000张，不设独立验证集，明确属于public-test选模；不宣称盲测。
+只保留best和last，保留源best，不覆盖历史run。
+
+### 增强对齐边界
+
+flip是主进程中的train-only操作，发生于无增强加载之后、Qwen预处理之前。
+以同一sample ID及同一随机翻转标志同步翻转三张目标图；翻转保持GT密度总和。
+教师图是原图教师预测的同步镜像，属于等变性训练约束，**不是宣称Qwen对翻转严格等变**。
+禁止未同步的随机裁剪/亮度扰动与此缓存混用；test loader始终不增强。
+教师仍只需既有约1GB train缓存，推理不引入教师模型。
+
+### 感受野及冻结边界
+
+kernel5保持电子宽度192、MLP192→384→192不变，只将两个depthwise卷积核3→5。
+增加`2×192×(25−9)=6144`参数，无attention/Transformer/新分支，光学mask/ROI不变。
+新权重architecture以`_ek5`结尾；旧源必须显式启用`expand_kernel_on_warmstart`，
+只允许两个指定卷积核中心补零，其他shape/key差异拒绝加载。
+新外圈初始为0但可训练，应检查实际梯度和训练后变化。
+
+staged的electronic组包括公共输入投影、振幅编码、两级电子残差、融合系数及相应norm；
+前5epoch这些参数`requires_grad=False`，不会暗中积累Adam动量。光学相位、Router、CCD读出和
+最终显著性头继续训练，第6epoch重新启用电子组。alpha始终处于原有≥.4范围。
+
+### 操作命令（仓库根目录）
+
+先检查GPU剩余显存/利用率，不停止其他任务。以下GPU编号只是示例，实际以资源检查为准。
+如主工作树有其他任务未提交改动，用GitHub提交建立独立worktree，不覆盖源码；
+该worktree的数据、缓存和T03 runs通过明确symlink指向原仓库。`cache/qwen`需指向实际HF缓存。
+
+```bash
+conda activate xml
+export CUDA_DEVICE_ORDER=PCI_BUS_ID HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4
+TASK=LightGenV2/tasks/t03_saliency
+python -m pytest "$TASK/tests" -q
+# 逐个在各自终端运行，或nohup后台运行；stdout写到对应run/train.log。
+CUDA_VISIBLE_DEVICES=0 python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TASK/configs/moe_alpha40_rfstage_control.yaml" --phase all
+CUDA_VISIBLE_DEVICES=3 python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TASK/configs/moe_alpha40_rfstage_flip.yaml" --phase all
+CUDA_VISIBLE_DEVICES=4 python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TASK/configs/moe_alpha40_rfstage_kernel5.yaml" --phase all
+CUDA_VISIBLE_DEVICES=5 python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TASK/configs/moe_alpha40_rfstage_staged.yaml" --phase all
+```
+
+完成后首先看各run的`selected_checkpoint_test_evaluation.json`、`training_report.json`、
+`metrics/training_history.csv`及`best_visualization/`。报告CC、KLD/SIM/NSS、alpha、专家负载和相位变化，
+不把训练CC当测试结果。本节是实验协议，不是已取得提升的结果声明。

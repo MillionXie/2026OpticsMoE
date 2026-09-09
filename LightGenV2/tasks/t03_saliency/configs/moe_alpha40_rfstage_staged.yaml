@@ -1,0 +1,5 @@
+base_config: moe_alpha40_rfstage_control.yaml
+training:
+  staged:
+    warmup_epochs: 5
+output_dir: ../runs/simulation/moe_alpha40_rfstage_staged_seed42

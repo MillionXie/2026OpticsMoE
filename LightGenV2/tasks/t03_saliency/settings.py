@@ -58,12 +58,21 @@ def load_settings(path: str | Path) -> Any:
         config.parent,
     )
     settings.augmentation_enabled = bool(d("augmentation.enabled", True))
+    settings.augmentation_mode = str(d("augmentation.mode", "legacy"))
+    if settings.augmentation_mode not in {"legacy", "aligned_flip"}:
+        raise ValueError("Unknown T03 augmentation mode")
     settings.crop_scale_min = float(d("augmentation.crop_scale_min", 0.90))
     settings.horizontal_flip_probability = float(
         d("augmentation.horizontal_flip_probability", 0.5)
     )
     settings.brightness_jitter = float(d("augmentation.brightness_jitter", 0.10))
     settings.contrast_jitter = float(d("augmentation.contrast_jitter", 0.10))
+    if not 0 <= settings.horizontal_flip_probability <= 1:
+        raise ValueError("Invalid horizontal flip probability")
+    if settings.augmentation_mode == "aligned_flip" and (
+        settings.crop_scale_min != 1.0 or settings.brightness_jitter != 0.0 or settings.contrast_jitter != 0.0
+    ):
+        raise ValueError("aligned_flip forbids crop/photometric jitter; teacher maps must remain aligned")
     settings.kl_weight = float(d("loss.kl_weight", 1.0))
     settings.cc_weight = float(d("loss.cc_weight", 0.5))
     settings.sim_weight = float(d("loss.sim_weight", 0.25))
@@ -71,19 +80,20 @@ def load_settings(path: str | Path) -> Any:
     settings.map_kd_weight = 0.0
     settings.map_kd_temperature = 1.0
     settings.distillation_initial_weight = float(d("distillation.initial_weight", 0.0))
+    settings.distillation_final_weight = float(d("distillation.final_weight", 0.0))
     settings.distillation_end_epoch = int(d("distillation.end_epoch", 50))
     cache = d("distillation.cache_file")
     settings.distillation_cache = _resolve(cache, config.parent) if cache else None
     settings.distillation_teacher_sha256 = d("distillation.teacher_sha256")
     settings.ema_decay = float(d("training.ema_decay", 0.0))
     settings.phase_weight_decay = float(d("training.phase_weight_decay", settings.weight_decay))
-    if not 0 <= settings.ema_decay < 1 or settings.distillation_initial_weight < 0:
+    if not 0 <= settings.ema_decay < 1 or not 0 <= settings.distillation_final_weight <= settings.distillation_initial_weight:
         raise ValueError("Invalid EMA/KD coefficient")
     if settings.distillation_initial_weight > 0 and (
-        settings.augmentation_enabled or settings.distillation_cache is None
+        (settings.augmentation_enabled and settings.augmentation_mode != "aligned_flip") or settings.distillation_cache is None
         or not settings.distillation_teacher_sha256 or settings.distillation_end_epoch < 2
     ):
-        raise ValueError("KD requires aligned nonaugmented inputs, cache, teacher SHA and valid end epoch")
+        raise ValueError("KD requires aligned inputs (none/aligned_flip), cache, teacher SHA and valid end epoch")
     settings.teacher_checkpoint = None
     settings.ccd_normalization = str(d("lightgen.ccd_normalization", "historical_log1p"))
     if settings.ccd_normalization not in {"historical_log1p", "mean_only"}:
@@ -92,6 +102,12 @@ def load_settings(path: str | Path) -> Any:
     settings.initialization_checkpoint = _resolve(warmstart, config.parent) if warmstart else None
     settings.initialization_checkpoint_sha256 = d("training.initialization_checkpoint_sha256")
     settings.reset_fusion_on_warmstart = bool(d("training.reset_fusion_on_warmstart", False))
+    settings.electronic_spatial_kernel_size = int(d("lightgen.electronic_spatial_kernel_size", 3))
+    settings.expand_kernel_on_warmstart = bool(d("training.expand_kernel_on_warmstart", False))
+    if settings.electronic_spatial_kernel_size not in {3, 5}:
+        raise ValueError("T03 supports audited electronic spatial kernels 3 or 5")
+    if settings.expand_kernel_on_warmstart and settings.electronic_spatial_kernel_size != 5:
+        raise ValueError("Kernel expansion requires target kernel 5")
     # Legacy Vision2 overwrites training.* rates with optimization.* defaults.
     # Keep historical profiles reproducible; new profiles explicitly opt in.
     settings.learning_rate_source = str(d("training.learning_rate_source", "legacy_optimization"))
@@ -107,6 +123,7 @@ def load_settings(path: str | Path) -> Any:
     settings.staged_warmup_epochs = int(d("training.staged.warmup_epochs", 10))
     settings.staged_polish_start = int(d("training.staged.polish_start", 71))
     settings.staged_final_hard_balance = float(d("training.staged.final_hard_balance", 0.10))
+    settings.staged_freeze_electronic_gradients = bool(d("training.staged.freeze_electronic_gradients", False))
     settings.dense_readout_learning_rate = float(d("training.dense_readout_learning_rate", settings.dense_readout_learning_rate))
     settings.dense_head_learning_rate = float(d("training.dense_head_learning_rate", settings.dense_head_learning_rate))
     settings.gradient_clip_norm = float(d("training.gradient_clip_norm", 1.0))
@@ -138,7 +155,11 @@ def save_resolved_config(settings: Any) -> None:
     import yaml
     path = settings.output_dir / "resolved_config.yaml"
     values = yaml.safe_load(path.read_text(encoding="utf-8"))
-    values["lightgen"].update(task="t03_saliency", ccd_normalization=settings.ccd_normalization)
+    values["lightgen"].update(task="t03_saliency", ccd_normalization=settings.ccd_normalization,
+                            electronic_spatial_kernel_size=settings.electronic_spatial_kernel_size)
+    values.setdefault("augmentation", {}).update(enabled=settings.augmentation_enabled, mode=settings.augmentation_mode,
+        crop_scale_min=settings.crop_scale_min, horizontal_flip_probability=settings.horizontal_flip_probability,
+        brightness_jitter=settings.brightness_jitter, contrast_jitter=settings.contrast_jitter)
     values.setdefault("training", {}).update(
         learning_rate_source=settings.learning_rate_source,
         ema_decay=settings.ema_decay,
@@ -146,8 +167,10 @@ def save_resolved_config(settings: Any) -> None:
         initialization_checkpoint=str(settings.initialization_checkpoint) if settings.initialization_checkpoint else None,
         initialization_checkpoint_sha256=settings.initialization_checkpoint_sha256,
         reset_fusion_on_warmstart=settings.reset_fusion_on_warmstart,
+        expand_kernel_on_warmstart=settings.expand_kernel_on_warmstart,
         staged={"enabled": settings.staged_training, "warmup_epochs": settings.staged_warmup_epochs,
-                "polish_start": settings.staged_polish_start, "final_hard_balance": settings.staged_final_hard_balance},
+                "polish_start": settings.staged_polish_start, "final_hard_balance": settings.staged_final_hard_balance,
+                "freeze_electronic_gradients": settings.staged_freeze_electronic_gradients},
     )
     values["effective_optimizer_learning_rates"] = {
         name: getattr(settings, name) for name in (
@@ -155,6 +178,7 @@ def save_resolved_config(settings: Any) -> None:
             "dense_readout_learning_rate", "dense_head_learning_rate")
     }
     values["distillation"] = {"initial_weight": settings.distillation_initial_weight,
+        "final_weight": settings.distillation_final_weight,
         "end_epoch": settings.distillation_end_epoch,
         "cache_file": str(settings.distillation_cache) if settings.distillation_cache else None,
         "teacher_sha256": settings.distillation_teacher_sha256}

@@ -7,6 +7,7 @@ import json
 import math
 import time
 from contextlib import nullcontext
+from copy import copy
 from pathlib import Path
 from typing import Any
 
@@ -21,7 +22,7 @@ from experiments.qwen3_vl_embedding_2b_salicon_vision_optical_saliency.visualiza
 
 from .modeling import build_student, initialize_student, optimizer
 from .visualize import render
-from .training_support import ModelEMA, TrainTeacherMaps, distillation_weight
+from .training_support import ModelEMA, TrainTeacherMaps, AlignedFlipLoader, distillation_weight
 
 
 def _write_json(path: Path, value: Any) -> None:
@@ -102,6 +103,9 @@ def staged_epoch(optim: Any, settings: Any, epoch: int) -> dict[str, Any]:
     for group in optim.param_groups:
         group.setdefault("schedule_base_lr", group["lr"])
         group["lr"] = group["schedule_base_lr"] * (0.0 if stage == "optics_readout_adaptation" and group["name"] == "electronic" else factor)
+        if getattr(settings, "staged_freeze_electronic_gradients", False) and group["name"] == "electronic":
+            for parameter in group["params"]:
+                parameter.requires_grad_(stage != "optics_readout_adaptation")
     progress = max(0., min(1., (epoch - warmup) / max(1, settings.staged_polish_start - warmup)))
     hard = settings.router_hard_load_balance_weight * (1-progress) + settings.staged_final_hard_balance * progress
     return {"stage": stage, "hard_balance_weight": hard,
@@ -112,16 +116,25 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
     model = build_student(loaded, settings)
     initialization = initialize_student(model, settings)
     _write_json(settings.output_dir / "initialization_report.json", initialization)
-    train_loader, test_loader = legacy.build_loaders(bundle, settings, training=True)
+    loader_settings = copy(settings)
+    aligned_flip = settings.augmentation_enabled and settings.augmentation_mode == "aligned_flip"
+    if aligned_flip:
+        loader_settings.augmentation_enabled = False
+    train_loader, test_loader = legacy.build_loaders(bundle, loader_settings, training=True)
     optim = optimizer(model, settings)
     ema = ModelEMA(model, settings.ema_decay) if settings.ema_decay else None
     ema_hook = optim.register_step_post_hook(ema.update) if ema else None
     teacher = TrainTeacherMaps(settings, bundle.train_records) if settings.distillation_initial_weight else None
+    if aligned_flip:
+        train_loader = AlignedFlipLoader(train_loader, settings.horizontal_flip_probability,
+                                        settings.random_seed + 703, teacher)
     if teacher is not None:
         from .modeling import sha256_file
         _write_json(settings.output_dir / "teacher_cache_provenance.json", {
             **teacher.manifest, "cache_sha256": sha256_file(settings.distillation_cache),
-            "teacher_executed_during_student_inference": False})
+            "teacher_executed_during_student_inference": False,
+            "student_train_augmentation": settings.augmentation_mode if settings.augmentation_enabled else "none",
+            "teacher_map_transform": "same horizontal flip as image/density/fixation" if aligned_flip else "none"})
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         optim, T_max=max(1, int(settings.student_epochs))
     )
@@ -144,7 +157,8 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
                 model._router_hard_weight = stage_report["hard_balance_weight"]
             model.core.set_phase_dropout_active(True)
             settings.map_kd_weight = distillation_weight(
-                settings.distillation_initial_weight, settings.distillation_end_epoch, epoch)
+                settings.distillation_initial_weight, settings.distillation_end_epoch, epoch,
+                settings.distillation_final_weight)
             stage_report["kd_weight"] = settings.map_kd_weight
             train_metrics = legacy._train_epoch(
                 "student", model, train_loader, loaded, settings, optim,
@@ -208,7 +222,7 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
         "elapsed_seconds": time.perf_counter() - started,
         "selected_epoch": best_epoch,
         "selected_periodic_test_cc": best_cc,
-        "selection": "maximum public-test CC at epoch 1, every 5 epochs, and final",
+        "selection": f"maximum public-test CC at warmstart, epoch 1, every {settings.test_interval_epochs} epochs, and final",
         "checkpoint_retention": ["best_checkpoint.pt", "last_checkpoint.pt"],
     }
     _write_json(settings.output_dir / "training_report.json", report)

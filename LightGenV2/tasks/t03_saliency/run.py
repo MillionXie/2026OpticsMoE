@@ -73,7 +73,7 @@ def _write_protocol(settings: Any, profile: str, seed: int) -> None:
             "command": [sys.executable, "-m", "LightGenV2.tasks.t03_saliency.run", *sys.argv[1:]],
             "git_commit": _git_value("rev-parse", "HEAD"),
             "started_at": dt.datetime.now(dt.timezone.utc).isoformat(),
-            "selection": "highest public-test CC at epoch 1/every 5/final",
+            "selection": f"highest public-test CC at warmstart/epoch 1/every {settings.test_interval_epochs}/final",
         },
     )
     write_json(
