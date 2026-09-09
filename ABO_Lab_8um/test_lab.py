@@ -1,8 +1,13 @@
 import unittest
+import tempfile
+from pathlib import Path
+from unittest.mock import patch
 import numpy as np
 from common import config,ROOT
 from patterns import raster,amplitude
 from hardware import geometry,canonical
+import patterns
+from common import read
 
 class PhysicalContractTests(unittest.TestCase):
     def setUp(self): self.c,_=config(ROOT/'lab.json')
@@ -16,6 +21,16 @@ class PhysicalContractTests(unittest.TestCase):
         self.assertEqual(set(np.unique(x)),{0,255})
     def test_zero_amplitude(self):
         x,meta=amplitude(np.zeros((478,478)),self.c); self.assertFalse(x.any())
+    def test_fresnel_roi_vertices_and_single_corners(self):
+        with tempfile.TemporaryDirectory() as tmp, patch.object(patterns,'ROOT',Path(tmp)):
+            patterns.calibration(self.c)
+            d=Path(tmp)/'generated/cal'; m=read(d/'geometry.json')
+            np.testing.assert_allclose(m['arrays']['4']['centers_xy'],
+                [[451.625,91.625],[1467.375,91.625],[451.625,1107.375],[1467.375,1107.375]])
+            from PIL import Image
+            for name in ('TL','TR','BL','BR'):
+                self.assertEqual(Image.open(d/f'P_F_{name}.bmp').size,(1920,1200))
+            self.assertEqual(Image.open(d/'A_ACTIVE.bmp').size,(1920,1080))
     def test_outside_panel(self):
         self.c['amplitude_slm']['center_xy']=[100,100]
         with self.assertRaises(ValueError): raster(np.zeros((478,478)),self.c['amplitude_slm'],self.c)

@@ -55,6 +55,15 @@ def calibration(c):
     aw,ah=a['expected_resolution_wh']; pw,ph=p['size_wh']
     save(dest/'A_WHITE.bmp',np.full((ah,aw),255,np.uint8)); save(dest/'A_BLACK.bmp',np.zeros((ah,aw),np.uint8))
     save(dest/'P_ZERO.bmp',np.zeros((ph,pw),np.uint8))
+    save(dest/'A_ACTIVE.bmp',raster(np.full((478,478),255,np.float32),a,c))
+    digit_sources={}
+    for source in sorted((ROOT/'assets/direction_digits').glob('digit_*.png')):
+        with Image.open(source) as im:
+            digit=np.asarray(im.convert('L').resize((478,478),Image.Resampling.BILINEAR))
+        name='A_'+source.stem.upper()+'.bmp'
+        save(dest/name,raster(digit,a,c))
+        digit_sources[name]={'source':str(source.relative_to(ROOT)),'sha256':sha(source),
+                            'purpose':'orientation only; not an MNIST accuracy evaluation'}
     yy,xx=np.indices((478,478))
     for cell in (32,64): save(dest/f'A_CHECK_{cell}.bmp',raster(((xx//cell+yy//cell)%2*255).astype(np.float32),a,c))
     asym=np.zeros((478,478),np.float32); asym[35:180,35:95]=255; asym[120:180,35:240]=255
@@ -67,6 +76,9 @@ def calibration(c):
         save(dest/f'P_GRAT_{name}.bmp',np.rint((axis%24)/24*255).astype(np.uint8))
     cx,cy=p['center_xy']; span=478*c['model_pitch_um']/p['pixel_pitch_um']
     manifest={'effective_width_um':8126,'effective_width_device_px':span,'f_m':.1,'wavelength_nm':532,
+        'amplitude_size_wh':[aw,ah], 'phase_size_wh':[pw,ph],
+        'amplitude_center_xy':a['center_xy'],'phase_center_xy':p['center_xy'],
+        'direction_digits':digit_sources,
         'phase_background':'zero phase, not an opaque aperture','amplitude_for_fresnel':'A_WHITE.bmp',
         'warning':'Fresnel arrays locate logical field boundaries; zero-order background can remain with full-white amplitude. Not diffraction-free synthetic crosses.',
         'arrays':{}}
@@ -84,6 +96,12 @@ def calibration(c):
                 centers.append([fx,fy])
         save(dest/f'P_F{n}.bmp',np.rint(np.mod(phase,2*np.pi)/(2*np.pi)*255).astype(np.uint8))
         manifest['arrays'][str(n)]={'centers_xy':centers,'square_window_px':window}
+        if n==4:
+            for label,(fx,fy) in zip(('TL','TR','BL','BR'),centers):
+                single=np.zeros_like(phase)
+                region=(np.abs(X-fx)<window/2)&(np.abs(Y-fy)<window/2)
+                single[region]=phase[region]
+                save(dest/f'P_F_{label}.bmp',np.rint(np.mod(single,2*np.pi)/(2*np.pi)*255).astype(np.uint8))
     write(dest/'geometry.json',manifest)
     # Fast diagnostic: 32 values, 3 frames each; user chooses valid exposure first.
     for g in np.rint(np.linspace(0,255,32)).astype(int):
@@ -100,6 +118,9 @@ def export(c):
         if reference.is_file(): source=reference
         phase=np.load(source,allow_pickle=False)
         target=out/f'{i:02d}_{stage}.bmp'; save(target,raster(phase,c['phase_slm'],c,phase=True)); hashes[stage]=sha(target)
+        # Explicit comparison only; the selected formal output remains generated/P.
+        alternate=dict(c['phase_slm']); alternate['flip_vertical']=not alternate['flip_vertical']
+        save(ROOT/'generated/P_opposite_vertical'/target.name,raster(phase,alternate,c,phase=True))
     write(out/'manifest.json',{'phase_sha256':hashes,'hardware_identity':hardware_identity(c),
         'quantization':'original checkpoint export: uint8 floor(mod(phi,2pi)/2pi*256); nearest phase sampling',
         'phase_flips':{k:c['phase_slm'][k] for k in ('flip_vertical','flip_horizontal')}})

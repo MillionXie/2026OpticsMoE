@@ -39,6 +39,47 @@ notepad LAB.local.json
 
 ## 2. 生成并核对标定BMP
 
+### 现在对齐：最短操作
+
+文件已生成在 `D:\code\guest\2026OpticsMoE\ABO_Lab_8um\generated\cal`。
+振幅为1920×1080 BMP，相位为1920×1200 BMP；两者按8μm像素设计。
+478×17μm=8.126mm，对应1015.75（栅格约1016）个设备像素，不能把478直接作为显示宽度。
+
+关闭其他占用振幅屏的播放器后，在**实验电脑桌面**运行；此命令不打开CCD，可同时使用CCD软件观察：
+
+```powershell
+& $py align.py --bmp generated/cal/A_CHECK_32.bmp
+# 上一个命令按Enter结束后，再换下一张：
+& $py align.py --bmp generated/cal/A_DIGIT_3.bmp
+# 手动加载相位P_F4.bmp，再持续播放全白振幅：
+& $py align.py --bmp generated/cal/A_WHITE.bmp
+```
+
+`A_ACTIVE.bmp`只照亮1016×1016有效范围，`A_WHITE.bmp`是整屏白；菲涅尔标定使用整屏白。
+`A_DIGIT_0/1/2/3.bmp`来自旧实验的真实MNIST输入，只判断方向，不代表本项目执行了MNIST识别。
+四角单独菲涅尔`P_F_TL/TR/BR/BL.bmp`可逐张确定焦点身份。四焦点共同出现时不能凭画面左右猜逻辑标签。
+相位物理四角中心（x,y）为(451.625,91.625)、(1467.375,91.625)、
+(1467.375,1107.375)、(451.625,1107.375)，间距1015.75像素；不是专家中心。
+
+标定后，在`LAB.local.json`原有以下对象内填CCD**全传感器坐标**，然后将原有`geometry_confirmed`改true。
+不要添加第二份同名字段；`null`必须替换为实际`[x,y]`，不是下面示例值。
+
+```json
+"logical_corners_full_sensor_xy": {
+  "top_left": null,
+  "top_right": null,
+  "bottom_right": null,
+  "bottom_left": null
+},
+"geometry_confirmed": false
+```
+
+相位上下翻转由`phase_slm.flip_vertical`控制。当前仍false，尚未实测确认；若确认应翻转，改true后运行`patterns.py`，
+正式相位始终取`generated/P`。`generated/P_opposite_vertical`提供相反上下方向的对照版，勿混着采集。
+CCD方向由上述逻辑四角单应变换处理，不再另加翻转。设置变化后必须新建会话，不能混用旧CCD。
+
+### 完整标定检查
+
 ```powershell
 & $py patterns.py
 & $py run.py probe
