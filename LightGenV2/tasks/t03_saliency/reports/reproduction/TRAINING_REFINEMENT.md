@@ -229,3 +229,7 @@ kernel5首次启动发现旧电子模块使用显式F.pad，新卷积又内置pa
 真实ElectronicResidualMLPBlock的完整前向/反向，而非孤立Conv2d测试。
 失败日志保留在`moe_alpha40_rfstage_kernel5_seed42/train.log`，修正后的正式run明确为
 `moe_alpha40_rfstage_kernel5_paddingfix_seed42`，不覆盖失败记录；配置文件名不变。
+修复提交`dea0f494`已发布GitHub，服务器22项测试重新通过；kernel5使用独立固定工作树
+`2026OpticsMoE/.worktrees/t03_rfstage_ek5`在GPU4重新启动，并完成5000张warmstart复评，CC仍约0.858120。
+源码留在固定worktree，数据/缓存共享，所有正式run仍写回原仓库T03的runs/simulation。
+旧3×3训练工作树不在运行中切换提交；此处两个worktree的功能差异仅为kernel5补边修复及其测试/说明。
