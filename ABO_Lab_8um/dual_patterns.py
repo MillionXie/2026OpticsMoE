@@ -11,7 +11,7 @@ from common import ROOT,config,write,sha,hardware_identity,setup_imports
 from patterns import raster,save
 
 def logical_pairs():
-    if (ROOT/'runtime/backend').is_dir(): setup_imports()
+    if (ROOT/'runtime/backend/experiments/hardware_sdk/generators/dual_slm_alignment.py').is_file(): setup_imports()
     else: sys.path.insert(0,str(ROOT.parent))
     from experiments.hardware_sdk.generators.dual_slm_alignment import _checker,_registered_checker_grating
     from experiments.hardware_sdk.generators.dual_slm_registration_sweep import large_block_mask,single_axis_masked_grating
