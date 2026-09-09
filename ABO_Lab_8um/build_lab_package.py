@@ -6,7 +6,8 @@ from pathlib import Path
 from common import ROOT,read,write,sha
 
 def main():
-    p=argparse.ArgumentParser(); p.add_argument('--output',type=Path,default=ROOT/'releases/ABO_Holoeye8_DVP.zip'); a=p.parse_args()
+    p=argparse.ArgumentParser(); p.add_argument('--output',type=Path,default=ROOT/'releases/ABO_Holoeye8_DVP.zip')
+    p.add_argument('--source-only',action='store_true'); a=p.parse_args()
     repo=ROOT.parent
     commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=repo,text=True).strip()
     paths={}
@@ -39,11 +40,12 @@ def main():
         'hardware':'Holoeye8um + manual phase8um + DVP legacy','sister_checkpoint_reference':80.58333333333333,
         'not_included':['training dataset','unused frozen Transformer weights','sister-lab LUT and CCD homography','old sessions']}
     a.output.parent.mkdir(parents=True,exist_ok=True)
-    with zipfile.ZipFile(a.output,'w',zipfile.ZIP_DEFLATED,compresslevel=1) as z:
-        for name,f in sorted(paths.items()): z.write(f,name)
-        import json
-        z.writestr('RELEASE_MANIFEST.json',json.dumps(manifest,indent=2,ensure_ascii=False))
-    write(a.output.with_suffix('.sha256.json'),{'zip':a.output.name,'sha256':sha(a.output),'bytes':a.output.stat().st_size,'git_commit':commit})
+    import json
+    if not a.source_only:
+        with zipfile.ZipFile(a.output,'w',zipfile.ZIP_DEFLATED,compresslevel=1) as z:
+            for name,f in sorted(paths.items()): z.write(f,name)
+            z.writestr('RELEASE_MANIFEST.json',json.dumps(manifest,indent=2,ensure_ascii=False))
+        write(a.output.with_suffix('.sha256.json'),{'zip':a.output.name,'sha256':sha(a.output),'bytes':a.output.stat().st_size,'git_commit':commit})
     # Small source-only update for a machine that already has these same assets.
     # Full manifest is verified after extraction: mismatched old assets still fail.
     with zipfile.ZipFile(a.output.with_name('ABO_source_update.zip'),'w',zipfile.ZIP_DEFLATED) as z:
@@ -51,6 +53,7 @@ def main():
             if name.endswith(('.py','.md','.txt','.json','.yaml','.ps1')) and not name.startswith(('models/','assets/')):
                 z.write(f,name)
         z.writestr('RELEASE_MANIFEST.json',json.dumps(manifest,indent=2,ensure_ascii=False))
-    print(a.output,sha(a.output),flush=True)
+    target=a.output.with_name('ABO_source_update.zip') if a.source_only else a.output
+    print(target,sha(target),flush=True)
 
 if __name__=='__main__': main()
