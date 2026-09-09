@@ -60,6 +60,16 @@ def _set_alphas(model: torch.nn.Module, alphas: list[float]) -> None:
             )
 
 
+def _set_quality_residual_scale(model: torch.nn.Module, scale: float) -> None:
+    raw = getattr(model, "raw_electronic_quality_scale", None)
+    if raw is None:
+        raise RuntimeError("The model has no electronic quality residual scale")
+    if not 0.0 < scale < 1.0:
+        raise ValueError("Electronic quality residual scale must lie within (0,1)")
+    with torch.no_grad():
+        raw.copy_(torch.logit(torch.tensor(scale, device=raw.device)))
+
+
 def run(args: argparse.Namespace) -> dict[str, Any]:
     settings = load_settings(args.config)
     if settings.target_name != "spatial" or len(settings.geometry.lane_origins) != 4:
@@ -77,6 +87,10 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     original_parallel_temperature = float(settings.parallel_router_temperature)
     original_serial_temperature = float(settings.serial_router_temperature)
     original_visual_token_gain = float(settings.serial_router_visual_token_gain)
+    raw_quality_scale = getattr(model, "raw_electronic_quality_scale", None)
+    original_quality_residual_scale = (
+        None if raw_quality_scale is None else float(torch.sigmoid(raw_quality_scale))
+    )
     candidates = sorted(set(float(value) for value in args.alpha_values))
     history: list[dict[str, Any]] = []
 
@@ -169,10 +183,30 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             best_metrics = metrics
             best_visual_token_gain = float(gain)
 
+    best_quality_residual_scale = original_quality_residual_scale
+    if args.quality_residual_scales:
+        if original_quality_residual_scale is None:
+            raise RuntimeError(
+                "--quality-residual-scales requires the electronic quality residual"
+            )
+        settings.serial_router_visual_token_gain = best_visual_token_gain
+        for scale in args.quality_residual_scales:
+            _set_quality_residual_scale(model, float(scale))
+            value, metrics = score(
+                best_alphas,
+                f"electronic_quality_residual_scale_{float(scale):.4f}",
+            )
+            if math.isfinite(value) and value > best_score:
+                best_score = value
+                best_metrics = metrics
+                best_quality_residual_scale = float(scale)
+
     _set_alphas(model, best_alphas)
     settings.parallel_router_temperature = best_parallel_temperature
     settings.serial_router_temperature = best_serial_temperature
     settings.serial_router_visual_token_gain = best_visual_token_gain
+    if best_quality_residual_scale is not None:
+        _set_quality_residual_scale(model, best_quality_residual_scale)
     final_metrics = evaluate(
         model,
         loader,
@@ -193,6 +227,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "selected_parallel_router_temperature": best_parallel_temperature,
         "selected_serial_router_temperature": best_serial_temperature,
         "selected_serial_visual_token_gain": best_visual_token_gain,
+        "selected_electronic_quality_residual_scale": best_quality_residual_scale,
         "selection_policy": "highest observed test SRCC; no gradients on test",
     }
     torch.save(destination, output_checkpoint)
@@ -206,6 +241,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "selected_serial_router_temperature": best_serial_temperature,
         "source_serial_visual_token_gain": original_visual_token_gain,
         "selected_serial_visual_token_gain": best_visual_token_gain,
+        "source_electronic_quality_residual_scale": original_quality_residual_scale,
+        "selected_electronic_quality_residual_scale": best_quality_residual_scale,
         "metrics": final_metrics,
         "evaluations": len(history),
         "checkpoint": str(output_checkpoint.resolve()),
@@ -245,6 +282,13 @@ def main() -> int:
         type=float,
         nargs="+",
         default=[0.50, 0.75, 1.00, 1.25, 1.50, 2.00, 3.00],
+    )
+    parser.add_argument(
+        "--quality-residual-scales",
+        type=float,
+        nargs="*",
+        default=[],
+        help="Optional inference calibration values for the existing E1 Conv5 scale",
     )
     parser.add_argument("--seed", type=int, default=618)
     args = parser.parse_args()
