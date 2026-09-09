@@ -260,3 +260,11 @@ python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TA
 
 配对对照为`moe_alpha40_sam005_seed42`，不是早期SAM或不同增强版本。
 仅best/last；结果尚待完整5000测试和最终审计，不替换当前已核验候选。
+
+实现commit：`b3dc44a8437b3f432161fa4cfd247e917ea57abd`，服务器78项测试通过。
+真实前4张训练图的整网迁移检查：默认matmul最高精度、cuDNN TF32开启时，
+logits最大差异约0.00100386；仅为诊断关闭cuDNN TF32后差异1.90735e-6。
+因此功能保持是代数/完整FP32意义，不承诺不同卷积形状下TF32逐位等价。
+正式训练与测试不改变原精度设置，epoch0全5000评估仍须记录实际初始化CC。
+恢复原精度后同4图执行一次SAM，确认仅一次optimizer更新，相位RMS变化约0.000198869rad，
+新增可训练参数实测151296。该小batch的CC不是模型性能；未另存调试checkpoint。

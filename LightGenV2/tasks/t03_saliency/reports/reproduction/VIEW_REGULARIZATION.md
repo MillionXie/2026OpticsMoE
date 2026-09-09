@@ -67,6 +67,15 @@ python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config Ligh
 新run为本任务`runs/simulation/moe_alpha40_viewreg_mix50_seed42`，不得覆盖已有run。
 以全5000张测试与原强KD组对比，目标仍为CC≥0.87。
 
+2026-09-10已完成80轮：best为epoch20 EMA，重载全部5000张CC=0.8579073710，
+末轮CC=0.8573749474；低于p=1配对组0.85953132，因此不采用mix50。
+alpha=0.43289793/0.44133615，专家选择2318/2670/2268/2744次，无未使用专家。
+训练commit `49fb6fd8734f625dc05d258b167d633956875040`；best SHA256：
+`b9ea257921ac34fae5d81b6ee85160509d27a1d6956ff5cb79f8fb93cf7b282e`。
+`selected_checkpoint_test_evaluation.json` SHA256：
+`64ca2f34cffcb41ace9f74733f33ed69d8115e98eee89becb116b57a007e7576`。
+完整数据、权重和可视化保留在原run，不删失败对照或覆盖较好候选。
+
 ## 2026-09-10已完成：强蒸馏组的新最佳权重
 
 `moe_alpha40_viewreg_cffn_kd2_seed42`完成80轮，选择epoch65 EMA，
@@ -100,7 +109,7 @@ public-test参与选模和平台调速，结果有选择偏差，不是未接触
 |viewreg_cffn_kd2_seed42|0.8595313201904297|0.431023 / 0.441234|2327 / 2639 / 2301 / 2733|
 
 三者均无未使用专家；小空间FFN和更强早期KD在本次单seed下各有小幅增益，
-不能称为跨seed显著改善。增强概率及全局混合对照尚未完成；13×13完成结果见下文。
+不能称为跨seed显著改善。增强概率对照完成结果见上文，全局混合尚未完成；13×13结果见下文。
 控制组/普通CFFN的`selected_checkpoint_test_evaluation.json` SHA256分别为
 `dfffbac26f3ef322aee577b92a7777067962a77e1b3cfb3a876c613151cd898b`、
 `82c2e2b5c9a2af1c115c16804f6b744fa321d2b9809d10d8c5bc2721939347da`。
