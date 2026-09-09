@@ -35,6 +35,16 @@ LR：E1e-5，相位2e-4，router/CCD读出/头2e-5，原空间FFN5e-5；保持KD
 是开展半径对照的初步依据，不是最终选定/独立复评结果，不据此宣称达到0.87。
 原始控制/0.05源码commit为`66566410e2f2cae6a1359c98c340b2c7ebdbb692`。
 
+普通续训控制组现已完成50轮，选择epoch1 EMA；重载best完整5000测试
+CC=0.8596219213485717，末轮CC=0.8574401378631592。
+比起点仅提高约0.00009060，后续训练未继续提高。alpha=0.43100822/0.44122910，
+专家选择2337/2629/2298/2736次，无未使用专家。
+全部产物保留在`moe_alpha40_sam_control_seed42`，best SHA256=
+`9b3bfb8ea371e93230ae1a8c32102ca2fe1bbf5acfd21bbe7806facb567a87fc`；
+`selected_checkpoint_test_evaluation.json` SHA256=
+`35a10fe6b631cbe227ac7f527a7026092126e88f4b63100c72c1bf99dd2955cb`。
+SAM各组仍在训练，不把控制组完成误写成整个半径消融已完成。
+
 ## 实现边界
 
 首次计算原完整损失梯度，在electronic、saliency_head、ccd_readout和已有空间FFN组上
