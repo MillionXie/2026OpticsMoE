@@ -43,7 +43,7 @@ A frozen pretrained ResNet18 stem plus `layer1..layer3` now supplies
 maps them to 192 channels and adds them only inside E1. The correction is
 bounded by `1.4`, then must traverse O2, both language optical/electronic
 stages, and the one existing MOS readout. It is not a third prediction branch
-and cannot directly produce a score. The convolutional front is about 2.8M
+and cannot directly produce a score. The convolutional front has 2,782,784
 frozen parameters and contains no attention, Transformer, classifier, or
 ResNet `layer4`.
 
@@ -104,4 +104,3 @@ CUDA_VISIBLE_DEVICES=0 python -m \
 ```
 
 The project test suite passes: 68 tests.
-

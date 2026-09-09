@@ -36,6 +36,7 @@
   "resnet_e1_correction": {
     "location": "inside E1 before optical/electronic fusion stage 1",
     "front": "frozen ResNet18 stem+layer1+layer2+layer3, convolution only",
+    "frozen_front_parameters": 2782784,
     "trainable_adapter_parameters": 173120,
     "maximum": 1.4,
     "attention_or_transformer": false,
