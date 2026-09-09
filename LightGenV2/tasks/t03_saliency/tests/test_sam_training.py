@@ -61,12 +61,14 @@ def test_zero_sam_is_one_normal_update_and_legacy_epoch(monkeypatch):
     assert train_sam_epoch(None,None,None,SimpleNamespace(sam_rho=0),None) is sentinel
 
 
-def test_sam_configuration_only_changes_training_and_preserves_best_source():
+@pytest.mark.parametrize('name,rho', [('sam001', .01), ('sam005', .05), ('sam010', .1)])
+def test_sam_configuration_only_changes_training_and_preserves_best_source(name,rho):
     root=Path(__file__).resolve().parents[1]/'configs'
     a=load_settings(root/'moe_alpha40_sam_control.yaml')
-    b=load_settings(root/'moe_alpha40_sam005.yaml')
+    b=load_settings(root/f'moe_alpha40_{name}.yaml')
     reference=load_settings(root/'moe_alpha40_viewreg_cffn_kd2.yaml')
-    assert a.sam_rho==0 and b.sam_rho==.05
+    assert a.sam_rho==0 and b.sam_rho==rho
+    assert b.output_dir.name==f'moe_alpha40_{name}_seed42'
     assert architecture_label(a)==architecture_label(b)==architecture_label(reference)
     for k in ['initialization_checkpoint_sha256','student_epochs','student_learning_rate',
               'phase_learning_rate','ema_decay','weight_decay','distillation_initial_weight',

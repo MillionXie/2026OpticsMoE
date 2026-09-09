@@ -27,6 +27,13 @@ LR：E1e-5，相位2e-4，router/CCD读出/头2e-5，原空间FFN5e-5；保持KD
 |---|---|
 |moe_alpha40_sam_control.yaml|SAM半径0，直接走原legacy单次训练循环|
 |moe_alpha40_sam005.yaml|电子子空间SAM半径0.05，两次前向/反向后一次AdamW更新|
+|moe_alpha40_sam001.yaml|同一设置，半径0.01|
+|moe_alpha40_sam010.yaml|同一设置，半径0.10|
+
+追加两档半径用于检验敏感性，不修改正在运行的0.05或控制组；四组来源、
+训练预算和推理架构相同。0.05组第1轮全5000测试CC=0.86110220、控制组0.85962192，
+是开展半径对照的初步依据，不是最终选定/独立复评结果，不据此宣称达到0.87。
+原始控制/0.05源码commit为`66566410e2f2cae6a1359c98c340b2c7ebdbb692`。
 
 ## 实现边界
 
@@ -57,10 +64,13 @@ TASK=LightGenV2/tasks/t03_saliency
 python -m pytest "$TASK/tests" -q
 python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TASK/configs/moe_alpha40_sam_control.yaml" --phase all
 python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TASK/configs/moe_alpha40_sam005.yaml" --phase all
+python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TASK/configs/moe_alpha40_sam001.yaml" --phase all
+python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TASK/configs/moe_alpha40_sam010.yaml" --phase all
 ```
 
 产物分别为任务`runs/simulation/moe_alpha40_sam_control_seed42`和
 `runs/simulation/moe_alpha40_sam005_seed42`（后者sam与005之间没有下划线）。
+新增半径对应`moe_alpha40_sam001_seed42`/`moe_alpha40_sam010_seed42`，也不加下划线。
 检查run_manifest的commit/命令、resolved_config中的rho、初始化SHA、完整测试历史、
 `selected_checkpoint_test_evaluation.json`的alpha/专家占比/实际相位更新，及best可视化。
 若best仍是epoch0，必须报告未超过源权重，不能记作新训练成绩。
