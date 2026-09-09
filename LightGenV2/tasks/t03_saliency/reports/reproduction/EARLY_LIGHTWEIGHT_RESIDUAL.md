@@ -94,3 +94,12 @@ CUDA_VISIBLE_DEVICES=6 python -u -m LightGenV2.tasks.t03_saliency.run --profile 
 `runs/simulation`。不覆盖历史run，不移动原数据。
 完成后读取`selected_checkpoint_test_evaluation.json`、`metrics/training_history.csv`、`best_visualization/`，
 报告CC、SIM/NSS、alpha、专家份额和相位变化。本文是协议，不是已取得提升的结果声明。
+
+## 启动核验
+
+代码提交`04204b9c367c0f2af2e3a25000c3a87e1f9de3a4`经31项服务器CPU测试后发布GitHub。
+主工作树有其他任务未提交改动，实际运行于`2026OpticsMoE/.worktrees/t03_early_grn`固定提交；
+输出仍在原仓库T03 runs。实际GPU分配为control=1、flip=2、kernel5=3、grn=6、kernel5_grn=6。
+五组均已完成5000张起点复评，统一alpha=.45后的CC约`0.716815`（组间差异小于1e-6），
+这是低光占比早期权重重新适应强光占比的起点，不能用源权重旧alpha下的0.84880冒充。
+后续仍需超过历史best 0.85812016才算实际改进；此次启动记录不代表已完成100epoch。
