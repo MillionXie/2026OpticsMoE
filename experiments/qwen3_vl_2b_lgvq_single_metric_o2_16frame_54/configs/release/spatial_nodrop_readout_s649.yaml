@@ -1,0 +1,44 @@
+base_config: spatial_calibrated_s620.yaml
+output_dir: ../../runs/lgvq_spatial_nodrop_readout_s649
+random_seed: 649
+
+# Deterministic micro-refinement of the existing post-optical head. Dropout is
+# a training-only property and remains absent during inference either way.
+model:
+  dropout: 0.0
+
+data:
+  training_view_probabilities: [1.0, 0.0, 0.0]
+
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_router_temperature_s620/best_alpha_calibrated_checkpoint.pt
+  trainable_scope: residual_only
+  epochs: 30
+  batch_size: 64
+  learning_rate: 0.000001
+  readout_weight_decay: 0.003
+  phase_warmup_epochs: 0
+  restore_best_at_stage_transition: false
+  ema_decay: 0.90
+  ema_start_epoch: 1
+  minimum_learning_rate_factor: 0.10
+  test_interval_epochs: 1
+  test_interval_steps: 2
+  phase_snapshot_interval_epochs: 0
+
+loss:
+  ranking_weight: 0.50
+  correlation_weight: 1.00
+  soft_spearman_weight: 0.10
+  soft_rank_temperature: 0.10
+  soft_target_weight: 0.0
+  soft_target_ranking_weight: 0.0
+  soft_target_correlation_weight: 0.0
+  level_distribution_weight: 0.10
+  optical_alignment_weight: 0.0
+  router_balance_weight: 0.0
+  router_importance_weight: 0.0
+  serial_router_balance_weight: 0.0
+  serial_router_importance_weight: 0.0
+  router_capture_weight: 0.0
+

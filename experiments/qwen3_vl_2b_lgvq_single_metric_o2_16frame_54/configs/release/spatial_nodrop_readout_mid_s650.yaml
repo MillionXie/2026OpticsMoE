@@ -1,0 +1,7 @@
+base_config: spatial_nodrop_readout_s649.yaml
+output_dir: ../../runs/lgvq_spatial_nodrop_readout_mid_s650
+random_seed: 650
+
+training:
+  learning_rate: 0.000003
+

@@ -1,0 +1,7 @@
+base_config: spatial_nodrop_readout_s649.yaml
+output_dir: ../../runs/lgvq_spatial_nodrop_readout_hot_s651
+random_seed: 651
+
+training:
+  learning_rate: 0.000010
+  ema_decay: 0.98
