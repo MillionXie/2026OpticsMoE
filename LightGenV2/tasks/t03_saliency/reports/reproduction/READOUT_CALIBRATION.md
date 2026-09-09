@@ -50,3 +50,26 @@ GPU编号为示例，先确认余量；输出目录必须不存在。正式数�
 修正后使用`standard_logits`显式禁止外层autocast（保留Qwen前端自身权重dtype），
 与原`legacy.evaluate_model`对齐；新增精度回归测试与源CC漂移门限2e-5。
 新目录带`fp32`指光电body/head标准计算精度，不表示把Qwen前端权重转换成FP32。
+
+## 完成的标准精度诊断
+
+`moe_alpha40_readout_calibration_fp32_seed42`已完成；源码`4723a0d519e23deb58402b7b57f94865be838301`，
+全部10000张train拟合20轮，按train CC选第11轮，然后一次成对评估5000张public test。
+
+| 指标 | 原光电 | 加2参数校准 |
+|---|---:|---:|
+| CC | 0.8581201385 | 0.8586080803 |
+| KLD | 0.1153222898 | 0.1157713949 |
+| SIM | 0.8220984152 | 0.8221044438 |
+| NSS | 0.9655874199 | 0.9666025529 |
+
+最终`s=1.006434083`、`b=0.040369064`。逐图CSV有5000个唯一ID，
+配对平均CC增益0.0004879468，中位数0.0003958941，2999张改善；原参考值通过2e-5漂移检查。
+这些是同批预测的描述统计，不是独立多seed显著性结论。
+CC小幅改善、KLD略变差；该方案不足以达到0.87，因此保留为诊断，不替换正式可部署core checkpoint。
+
+证据位于该run：
+
+- `best_checkpoint.pt` SHA256：`68061c28d34e5609c4efac0cec6d0f7789b9f4d1056a4a794d7c9d7012463e87`
+- `calibration_report.json` SHA256：`dda9015f63cbe5eafa3bee938fbc02f1e2657d907dad353a6b851b975c4688f9`
+- `per_image_cc.csv` SHA256：`d7ec0e9d810ddd02935dc08d102123ef6b2a36440be3f2029838af992daa1dd5`

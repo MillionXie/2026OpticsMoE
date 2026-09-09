@@ -46,6 +46,10 @@ best均保留源权重；相位和新增卷积外圈确实更新。下一轮从a
 同时准备[训练专用特征提示](reports/reproduction/FEATURE_HINTS.md)的受控对照：
 不改变原推理结构，以teacher解码前192通道空间特征监督学生融合latent；训练专用投影不部署。
 
+[两参数读出校准诊断](reports/reproduction/READOUT_CALIBRATION.md)已完成：
+标准精度配对5000张测试，原0.858120→校准0.858608，增益仅0.000488且KLD略变差。
+它是新增2参数的独立诊断，未替换正式部署权重；0.87目标仍未达到。
+
 ## 数据协议
 
 - train：SALICON 2015r1 官方 train2014，10,000 张。
