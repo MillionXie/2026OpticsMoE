@@ -1,0 +1,9 @@
+base_config: spatial_crossframe_rank_s600.yaml
+output_dir: ../../runs/lgvq_spatial_crossframe_aug_s601
+random_seed: 601
+
+# Training-only +/-5% feature-view augmentation. Formal evaluation remains the
+# unshifted four-frame optical graph.
+data:
+  training_view_probabilities: [0.80, 0.10, 0.10]
+

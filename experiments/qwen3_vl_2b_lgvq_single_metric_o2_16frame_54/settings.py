@@ -406,6 +406,9 @@ class ExperimentSettings:
         elif self.spatial_readout_mode == "spatial_weighted_level_residual":
             residual_tag = int(round(self.spatial_residual_max * 1000.0))
             suffixes.append(f"spatialweighted5_rmax{residual_tag:03d}_v1")
+        elif self.spatial_readout_mode == "spatial_crossframe_residual":
+            residual_tag = int(round(self.spatial_residual_max * 1000.0))
+            suffixes.append(f"spatialcrossframe_rmax{residual_tag:03d}_v1")
         elif self.spatial_readout_mode == "spatial_weighted_level_absolute":
             suffixes.append("spatialweighted5absolute_v1")
         elif self.spatial_readout_mode == "spatial_weighted_level_blend":
@@ -511,6 +514,7 @@ class ExperimentSettings:
             "spatial_pyramid_residual",
             "spatial_deep_residual",
             "spatial_weighted_level_residual",
+            "spatial_crossframe_residual",
             "spatial_weighted_level_absolute",
             "spatial_weighted_level_blend",
         }:
@@ -519,6 +523,7 @@ class ExperimentSettings:
                 "spatial_multiscale, spatial_grid_residual, or "
                 "spatial_pyramid_residual, spatial_deep_residual, or "
                 "spatial_weighted_level_residual, or "
+                "spatial_crossframe_residual, or "
                 "spatial_weighted_level_absolute, or "
                 "spatial_weighted_level_blend"
             )
@@ -795,6 +800,7 @@ class ExperimentSettings:
             "all",
             "readout_only",
             "residual_only",
+            "crossframe_only",
             "quality_refiner_only",
             "quality_refiner_readout",
             "late_input_correction_only",
@@ -809,6 +815,7 @@ class ExperimentSettings:
         }:
             raise ValueError(
                 "training.trainable_scope must be all, readout_only, residual_only, "
+                "crossframe_only, "
                 "quality_refiner_only, quality_refiner_readout, or "
                 "late_input_correction_only, frame_stem_only, or "
                 "frame_stem_and_readout, vgg_correction_only, or "
@@ -839,6 +846,7 @@ class ExperimentSettings:
             "spatial_pyramid_residual",
             "spatial_deep_residual",
             "spatial_weighted_level_residual",
+            "spatial_crossframe_residual",
             "spatial_weighted_level_absolute",
             "spatial_weighted_level_blend",
         }:
@@ -854,6 +862,7 @@ class ExperimentSettings:
             and self.spatial_readout_mode
             not in {
                 "spatial_weighted_level_residual",
+                "spatial_crossframe_residual",
                 "spatial_weighted_level_absolute",
                 "spatial_weighted_level_blend",
             }

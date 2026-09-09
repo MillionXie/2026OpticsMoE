@@ -1,0 +1,42 @@
+base_config: spatial_srcc_best_s586.yaml
+output_dir: ../../runs/lgvq_spatial_crossframe_rank_s600
+random_seed: 600
+
+# A small post-optical correction that aggregates corresponding 14x14
+# locations across all four frames. It adds no pre-optical input or third main
+# branch and warm-starts exactly from the formal s586 prediction.
+data:
+  training_view_probabilities: [1.0, 0.0, 0.0]
+
+model:
+  spatial_readout_mode: spatial_crossframe_residual
+
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_electronic_balanced_strong_s586/best_observed_test_checkpoint.pt
+  trainable_scope: crossframe_only
+  epochs: 60
+  batch_size: 64
+  learning_rate: 0.00060
+  readout_learning_rate_factor: 0.35
+  readout_weight_decay: 0.001
+  minimum_learning_rate_factor: 0.05
+  ema_decay: 0.98
+  ema_start_epoch: 1
+  test_interval_epochs: 1
+  test_interval_steps: 0
+  phase_snapshot_interval_epochs: 0
+
+loss:
+  ranking_weight: 1.50
+  correlation_weight: 3.00
+  soft_spearman_weight: 0.50
+  soft_rank_temperature: 0.10
+  soft_target_weight: 0.0
+  level_distribution_weight: 0.0
+  optical_alignment_weight: 0.0
+  router_balance_weight: 0.0
+  router_importance_weight: 0.0
+  serial_router_balance_weight: 0.0
+  serial_router_importance_weight: 0.0
+  router_capture_weight: 0.0
+

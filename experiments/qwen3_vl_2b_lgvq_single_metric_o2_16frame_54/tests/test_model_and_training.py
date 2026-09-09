@@ -671,6 +671,47 @@ def test_weighted_level_readout_is_exact_warm_start_and_trains_levels(
     assert destination.readout.residual_output[-1].weight.grad is not None
 
 
+def test_crossframe_readout_exactly_warm_starts_weighted_predictor(
+    tmp_path: Path,
+) -> None:
+    source_settings = replace(
+        _small_settings(tmp_path),
+        spatial_readout_mode="spatial_weighted_level_residual",
+        spatial_residual_max=0.5,
+        level_distribution_weight=0.2,
+        trainable_scope="residual_only",
+    )
+    source_settings.validate()
+    torch.manual_seed(812)
+    source = LGVQSingleMetricOEO16(source_settings).eval()
+    checkpoint = tmp_path / "crossframe_source.pt"
+    torch.save({"state_dict": source.state_dict()}, checkpoint)
+    settings = replace(
+        source_settings,
+        spatial_readout_mode="spatial_crossframe_residual",
+        initialization_checkpoint=checkpoint,
+        trainable_scope="crossframe_only",
+    )
+    settings.validate()
+    model = LGVQSingleMetricOEO16(settings).eval()
+    _load_compatible_initialization(model, settings)
+    scope = _apply_trainable_scope(model, settings)
+    assert scope["trainable_names"]
+    assert all(
+        name.startswith("readout.crossframe_") for name in scope["trainable_names"]
+    )
+    vision = torch.randn(2, 4, 49, settings.model_width)
+    language = torch.randn(2, 6, settings.model_width)
+    mask = torch.ones(2, 6, dtype=torch.bool)
+    expected = source.readout(vision, language, mask)
+    actual = model.readout(vision, language, mask)
+    torch.testing.assert_close(actual, expected, rtol=0.0, atol=1.0e-7)
+    actual.sum().backward()
+    assert model.readout.crossframe_output[-1].weight.grad is not None
+    assert model.readout.residual_output[-1].weight.grad is None
+    assert "spatialcrossframe" in settings.architecture_label
+
+
 def test_absolute_weighted_levels_use_dilated_post_optical_receptive_field(
     tmp_path: Path,
 ) -> None:

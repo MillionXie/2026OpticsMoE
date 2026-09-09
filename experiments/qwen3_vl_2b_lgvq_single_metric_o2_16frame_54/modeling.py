@@ -1615,6 +1615,116 @@ class SpatialWeightedLevelResidualReadout(SpatialDeepResidualReadout):
         return base_prediction + correction
 
 
+class _CrossFrameSpatialBlock(nn.Module):
+    """A small ConvNeXt-style block without attention or a new input branch."""
+
+    def __init__(self, channels: int) -> None:
+        super().__init__()
+        self.depthwise = nn.Conv2d(
+            channels, channels, 5, padding=2, groups=channels, bias=False
+        )
+        self.norm = nn.GroupNorm(8, channels)
+        self.expand = nn.Conv2d(channels, channels * 2, 1)
+        self.project = nn.Conv2d(channels * 2, channels, 1)
+        self.scale = nn.Parameter(torch.tensor(0.10))
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        residual = self.project(
+            F.gelu(self.expand(self.norm(self.depthwise(value))))
+        )
+        return value + self.scale * residual
+
+
+class SpatialCrossFrameResidualReadout(SpatialWeightedLevelResidualReadout):
+    """Warm-start weighted readout plus a lightweight spatial-video correction.
+
+    Every input has already passed through all four optical/electronic stages.
+    Cross-frame statistics are computed at corresponding 14x14 locations before
+    spatial pooling, retaining persistent blur/noise/texture evidence that is
+    lost when each frame is pooled independently. The final layer starts at
+    exactly zero, so loading the formal weighted checkpoint is functionally
+    identical until this small correction is trained.
+    """
+
+    def __init__(self, settings: ExperimentSettings) -> None:
+        super().__init__(settings)
+        width = settings.model_width
+        channels = 32
+        hidden = min(128, settings.head_width // 2)
+        prompt_width = 64
+        self.crossframe_norm = nn.LayerNorm(width)
+        # Per-location mean/std/max/min plus mean absolute consecutive change.
+        self.crossframe_projection = nn.Conv2d(width * 5, channels, 1)
+        self.crossframe_blocks = nn.Sequential(
+            _CrossFrameSpatialBlock(channels),
+            _CrossFrameSpatialBlock(channels),
+        )
+        pooled_width = channels * 2 * (1 + 4 + 16)
+        self.crossframe_spatial = nn.Sequential(
+            nn.LayerNorm(pooled_width),
+            nn.Linear(pooled_width, hidden),
+            nn.GELU(),
+            nn.Dropout(settings.dropout),
+        )
+        self.crossframe_language = nn.Sequential(
+            nn.LayerNorm(width * 3),
+            nn.Linear(width * 3, prompt_width),
+            nn.GELU(),
+        )
+        self.crossframe_output = nn.Sequential(
+            nn.LayerNorm(hidden + prompt_width + 1),
+            nn.Linear(hidden + prompt_width + 1, hidden),
+            nn.GELU(),
+            nn.Dropout(settings.dropout),
+            nn.Linear(hidden, 1),
+        )
+        nn.init.zeros_(self.crossframe_output[-1].weight)
+        nn.init.zeros_(self.crossframe_output[-1].bias)
+
+    def forward(
+        self, vision: torch.Tensor, language: torch.Tensor, mask: torch.Tensor
+    ) -> torch.Tensor:
+        base_prediction = super().forward(vision, language, mask)
+        batch, frames, tokens, width = vision.shape
+        if tokens != self.grid * self.grid:
+            raise ValueError("Cross-frame readout requires a square token grid")
+        grid = self.crossframe_norm(vision).reshape(
+            batch, frames, self.grid, self.grid, width
+        ).permute(0, 1, 4, 2, 3)
+        consecutive = (
+            (grid[:, 1:] - grid[:, :-1]).abs().mean(1)
+            if frames > 1
+            else torch.zeros_like(grid[:, 0])
+        )
+        summary = torch.cat(
+            (
+                grid.mean(1),
+                grid.float().std(1, unbiased=False).to(grid.dtype),
+                grid.amax(1),
+                grid.amin(1),
+                consecutive,
+            ),
+            1,
+        )
+        feature = F.gelu(self.crossframe_projection(summary))
+        feature = self.crossframe_blocks(feature)
+        pooled = torch.cat(
+            tuple(
+                pool(feature, size).flatten(1)
+                for size in (1, 2, 4)
+                for pool in (F.adaptive_avg_pool2d, F.adaptive_max_pool2d)
+            ),
+            1,
+        )
+        spatial = self.crossframe_spatial(pooled)
+        prompt = self.crossframe_language(_masked_statistics(language, mask))
+        raw = self.crossframe_output(
+            torch.cat((spatial, prompt, base_prediction.unsqueeze(-1)), -1)
+        ).squeeze(-1)
+        correction = self.residual_max * torch.tanh(raw / self.residual_max)
+        return base_prediction + correction
+
+
 class SpatialWeightedLevelAbsoluteReadout(SpatialDeepResidualReadout):
     """Five ordered logits directly predict normalized MOS.
 
@@ -2198,6 +2308,8 @@ class LGVQSingleMetricOEO16(nn.Module):
                 self.readout = SpatialDeepResidualReadout(settings)
             elif settings.spatial_readout_mode == "spatial_weighted_level_residual":
                 self.readout = SpatialWeightedLevelResidualReadout(settings)
+            elif settings.spatial_readout_mode == "spatial_crossframe_residual":
+                self.readout = SpatialCrossFrameResidualReadout(settings)
             elif settings.spatial_readout_mode == "spatial_weighted_level_absolute":
                 self.readout = SpatialWeightedLevelAbsoluteReadout(settings)
             elif settings.spatial_readout_mode == "spatial_weighted_level_blend":
