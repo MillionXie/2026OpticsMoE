@@ -145,3 +145,9 @@ CUDA_VISIBLE_DEVICES=3 nohup python -u -m LightGenV2.tasks.t03_saliency.run --pr
 
 移机时除源checkpoint/数据/冻结前端，还需传训练缓存及manifest才能做蒸馏；普通推理不需要缓存。
 不覆盖已有run。逐epoch日志、配置、Git SHA、缓存SHA、best/last仍在各run内集中保存。
+
+本轮实现提交`18c6d0a01196bf34ab617eda363bd787b8d53768`，17项T03测试通过后发布GitHub并同步服务器。
+已完成10000张train-only教师缓存，SHA256
+`a45a90fe1dc029961464304373473d1271594128fc7b7f2ac80775f8638dd60e`。
+regularized/aligned/kd020/kd060分别在物理GPU0/1/2/3启动，A100仅用于已经完成的教师缓存生成。
+新一轮尚无最终成绩；0.85468765仍是上一轮已完成候选。
