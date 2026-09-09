@@ -2,11 +2,12 @@
 
 ## 当前结论
 
-Spatial 的当前正式归档是 `spatial_single_video4_balanced`：一条视频均匀取 4 帧并排成
-2×2，**没有多视频复用**。它使用两套物理光 Router Top-2、六次光传播和 20% 名义
-未调制分量，在 558 条 test 视频上达到 SRCC 0.6393、KRCC 0.4642、PLCC 0.6743、
-RMSE 8.452、MAE 6.646。入口、checkpoint SHA 和光关闭对照见
-[`reports/paper_results/spatial_single_video4_balanced`](reports/paper_results/spatial_single_video4_balanced/README.md)。
+Spatial 的当前正式归档是 `spatial_single_video4_srcc06665`：一条视频均匀取 4 帧并排成
+2×2，**没有多视频复用**。它保留两套物理光 Router Top-2、六次光传播和固定 20%
+未调制分量，仅在已有电子残差 E1 内增加冻结的轻量卷积前端与 173,120 参数适配器。
+在 558 条 test 视频上达到 SRCC 0.6665、KRCC 0.4833、PLCC 0.6912、RMSE 8.231、
+MAE 6.526；同权重关闭光学后 SRCC 为 0.5847。入口、checkpoint SHA 和完整对照见
+[`reports/paper_results/spatial_single_video4_srcc06665`](reports/paper_results/spatial_single_video4_srcc06665/README.md)。
 
 当前主版本是 `temporal36_balanced`：一个视频均匀取 36 帧，以 6×6 lane 放进同一个
 478×478 有效光场。四专家光学 Top-2 router、六次光传播、20% 名义未调制直流分量、
@@ -91,7 +92,7 @@ python -m LightGenV2.tasks.t06_video_quality_assessment --phase evaluate
 
 ```powershell
 python -m LightGenV2.tasks.t06_video_quality_assessment `
-  --profile spatial_single_video4_balanced `
+  --profile spatial_single_video4_srcc06665 `
   --phase evaluate
 ```
 
