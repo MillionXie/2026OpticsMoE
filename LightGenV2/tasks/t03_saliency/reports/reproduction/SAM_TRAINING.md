@@ -101,6 +101,24 @@ CC差均值0.00180077965，中位数0.00155842016。KLD/SIM/NSS改善，MAE较�
 - 测试ID SHA256：`625dec6bc15b2d737d39bc252cfa0c354de217fec0266dcda568913f4a3496d0`，与原候选/Qwen一致。
 - `per_image_cc.csv`保留全部逐图指标，未新增周期PT；该best路径之后可能更新，须核对SHA。
 
+同一epoch5候选随后通过`run --phase evaluate`的完整5000张结构/路由审计：
+CC=0.8613320469，alpha=0.43073767/0.44109195；四专家选择2334/2640/2318/2708次，
+占比23.34%/26.40%/23.18%/27.08%，有效专家数3.98033，无未使用专家。
+相对本轮初始化，router圆周相位RMS约0.000814 rad，四专家约
+0.01389/0.01372/0.01495/0.01465 rad，全局相位约0.01413 rad，确实训练更新。
+约46%–51%的专家相位像素变化超过0.01rad；这些变化量不代表光对精度的贡献比例。
+审计run为`sam005_candidate_audit_20260910`，评估前后源checkpoint SHA一致；
+验证记录在`audit_source_verified.json`。其中`selected_checkpoint_test_evaluation.json` SHA256：
+`d3445205280869b96aa7f1bcf9b56cf93c925eb73cf04735bc5c640569dd6b9f`。
+环境/配置/源码和命令在run内，样例在`best_visualization/saliency_examples`。
+
+```bash
+TASK=LightGenV2/tasks/t03_saliency
+python -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --phase evaluate --config "$TASK/configs/moe_alpha40_sam005.yaml" --checkpoint "$TASK/runs/simulation/moe_alpha40_sam005_seed42/best_checkpoint.pt" --run-dir "$TASK/runs/simulation/sam005_candidate_audit_20260910"
+```
+
+使用尚不存在的审计目录。正式交付仍须对最终选定SHA复查，不能以epoch5审计代替后续权重审计。
+
 可用`recheck_aligned`对当前best进行完整5000张、独立float64逐图CC复算。
 该工具把一次读取的checkpoint字节同时用于反序列化和SHA256计算，
 不会在评估结束时误将已更新best的SHA写入旧权重的结果。
