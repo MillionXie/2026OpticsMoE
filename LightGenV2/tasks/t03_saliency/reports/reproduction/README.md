@@ -1,5 +1,13 @@
 # SALICON baseline 复现与公平性
 
+当前同规格头的固定权重复评入口：`python -m LightGenV2.tasks.t03_saliency.recheck_aligned --help`。
+支持Qwen/光电，完整5000张public-test、逐图float64独立CC及样本ID清单SHA；不训练、不测速度功耗。
+使用`--system qwen --config LightGenV2/tasks/t03_saliency/configs/moe_staged_alpha_free.yaml`
+或`--system optical --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_adaptive_keepkd.yaml`，
+并显式提供`--checkpoint`和新的`--run-dir`。原同头Qwen权重为
+`runs/simulation/qwen_aligned_head_staged_seed42/best_checkpoint.pt`（路径相对于本任务），
+光电历史最优为`runs/simulation/moe_alpha40_generalize_kd060_seed42/best_checkpoint.pt`。
+
 [平台期受控精修](ADAPTIVE_REFINEMENT.md)：从历史best启动，比较KD约束与GT CC目标，
 含自动降学习率/早停机制；不增加推理结构。
 
