@@ -1,4 +1,4 @@
-"""A100 batch-scaling and formal LGVQ temporal-quality benchmark.
+"""A100 batch-scaling and formal LGVQ quality benchmark.
 
 Each batch contains distinct videos. Video decoding, processor work and H2D
 transfer are measured separately. The primary model-only CUDA boundary starts
@@ -335,7 +335,7 @@ def load_runtime(args: argparse.Namespace) -> tuple[Any, nn.Module, Any, Any, li
     ]
     if len(rows) != 558:
         raise RuntimeError(f"Expected 558 fixed test videos, got {len(rows)}")
-    return processor, model, head, scores, rows, core.render_prompt(processor, "temporal")
+    return processor, model, head, scores, rows, core.render_prompt(processor, args.target)
 
 
 def provenance(args: argparse.Namespace, gpu_name: str) -> dict[str, Any]:
@@ -438,7 +438,7 @@ def run_sweep(args: argparse.Namespace, runtime: tuple[Any, ...], gpu_name: str)
         "schema_version": 2,
         "status": "complete",
         "mode": "batch_power_sweep",
-        "workload": "LGVQ temporal quality, four distinct 448x448 frames per video",
+        "workload": f"LGVQ {args.target} quality, four distinct 448x448 frames per video",
         "timing_boundary": (
             "all input tensors resident on GPU, immediately before the full Qwen forward, "
             "through the complete native vocabulary projection and five-quality-token score"
@@ -559,7 +559,7 @@ def run_formal(args: argparse.Namespace, runtime: tuple[Any, ...], gpu_name: str
                 {
                     "sample_index": start + offset,
                     "sample_id": row["sample_id"],
-                    "target_mos": float(row["temporal"]),
+                    "target_mos": float(row[args.target]),
                     "prediction": prediction,
                     "batch_index": batch_index,
                     "batch_size_videos": len(selected),
@@ -605,8 +605,8 @@ def run_formal(args: argparse.Namespace, runtime: tuple[Any, ...], gpu_name: str
         "status": "complete",
         "mode": "formal_full_test_batched",
         "protocol": "one_process_one_model_load_full_558_test_first_batch_included",
-        "target": "temporal",
-        "prompt": core.PROMPTS["temporal"],
+        "target": args.target,
+        "prompt": core.PROMPTS[args.target],
         "image_size_wh": [args.image_size, args.image_size],
         "frames_per_video": 4,
         "batch_size_videos": batch_size,
@@ -726,6 +726,7 @@ def main() -> int:
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--image-size", type=int, default=448)
+    parser.add_argument("--target", choices=("spatial", "temporal"), default="temporal")
     parser.add_argument("--expected-gpu", default="NVIDIA A100-PCIE-40GB")
     parser.add_argument("--batch-sizes", type=int, nargs="+", default=[1, 2, 4, 8, 16, 24, 32])
     parser.add_argument("--sweep-warmup", type=int, default=3)

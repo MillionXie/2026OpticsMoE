@@ -215,6 +215,9 @@ def main() -> int:
                 "target_mos": float(row[args.target]),
                 "prediction": prediction,
                 "model_internal_cuda_ms": latency,
+                "model_internal_synchronized_wall_ms": float(
+                    timing["vision_first_block_to_score_host_ms"]
+                ),
                 "preprocessing_ms": preprocessing_ms,
                 "sequence_length": int(inputs["input_ids"].shape[1]),
                 "selected_frame_positions": positions,
@@ -235,8 +238,21 @@ def main() -> int:
     targets = np.asarray([record["target_mos"] for record in records], dtype=np.float64)
     predictions = np.asarray([record["prediction"] for record in records], dtype=np.float64)
     latencies = [record["model_internal_cuda_ms"] for record in records]
+    wall_latencies = [
+        record["model_internal_synchronized_wall_ms"] for record in records
+    ]
+    wall_power = power_report(power_samples, wall_latencies, power_limit_w=rated_power_w)
+    wall_power["energy_basis"] = (
+        "board power sampled only while model inference was active; energy uses "
+        "the synchronized-wall first-block-to-task-output mean latency"
+    )
+    event_power = power_report(power_samples, latencies, power_limit_w=rated_power_w)
+    event_power["energy_basis"] = (
+        "secondary audit only; energy uses the CUDA-event "
+        "first-block-to-task-output mean latency"
+    )
     report = {
-        "schema_version": 1,
+        "schema_version": 2,
         "status": "complete",
         "protocol": "one_process_one_model_load_full_test_no_explicit_warmup",
         "scheme": args.scheme,
@@ -263,11 +279,17 @@ def main() -> int:
             "vision patch embedding before Vision block 0",
         ],
         "model_internal_cuda_ms_all_558_first_included": summarize(latencies),
+        "model_internal_synchronized_wall_ms_all_558_first_included": summarize(
+            wall_latencies
+        ),
         "first_measured_video_cuda_ms": latencies[0],
+        "first_measured_video_synchronized_wall_ms": wall_latencies[0],
         "preprocessing_ms": summarize([record["preprocessing_ms"] for record in records]),
         "performance": core.metrics(targets, predictions),
         f"{args.target}_performance": core.metrics(targets, predictions),
-        "power": power_report(power_samples, latencies, power_limit_w=rated_power_w),
+        "primary_clock": "synchronized_wall",
+        "power": wall_power,
+        "power_cuda_event_secondary": event_power,
         "processor_load_seconds": processor_load_seconds,
         "model_load_seconds": model_load_seconds,
         "test_loop_wall_seconds": loop_wall_seconds,
