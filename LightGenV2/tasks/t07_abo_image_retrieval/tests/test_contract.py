@@ -5,7 +5,7 @@ from types import SimpleNamespace
 from torch import nn
 import torch.nn.functional as F
 from LightGenV2.tasks.t07_abo_image_retrieval.refinement import (
-    CrossProductBatchSampler, lr_multiplier, inflate_convolution, ResidualRetrievalReadout,
+    CrossProductBatchSampler, lr_multiplier, inflate_convolution, ResidualRetrievalReadout, TrainProductBank,
 )
 from experiments.qwen3_vl_embedding_2b_caltech101_electronic_retrieval.modeling import ElectronicRetrievalReadout
 from LightGenV2.tasks.t07_abo_image_retrieval.retrieval_contract import _ranking_metrics
@@ -14,6 +14,41 @@ from LightGenV2.tasks.t01_object_retrieval.settings import load_settings
 
 
 class ContractTests(unittest.TestCase):
+    def test_train_gallery_excludes_own_product_and_has_gradients(self):
+        samples = [SimpleNamespace(product_id=p, category_id=p//2, split="train")
+                   for p in range(4) for _ in range(2)]
+        features = torch.eye(2).repeat_interleave(4, dim=0)
+        bank = TrainProductBank(samples, features, "cpu")
+        bank.refresh(features)
+        query = torch.tensor([[1., 0.]], requires_grad=True)
+        loss, relation = bank.losses(query, [0])
+        self.assertLess(float(relation.detach().abs()), 1e-6)
+        self.assertGreater(float(bank.losses(query.flip(1), [0])[0].detach()), float(loss.detach()))
+        # Corrupt all views of query's own product: excluded column must not matter.
+        bank.memory[:2] = torch.tensor([0., 1.])
+        torch.testing.assert_close(loss, bank.losses(query, [0])[0])
+        (loss + relation).backward()
+        self.assertTrue(torch.isfinite(query.grad).all())
+        self.assertFalse(bank.memory.requires_grad)
+        with self.assertRaises(ValueError):
+            bank.update([0, 0], query.detach().repeat(2, 1))
+        samples[0].split = "test"
+        with self.assertRaises(ValueError):
+            TrainProductBank(samples, features, "cpu")
+
+    def test_gallery_profiles_keep_optics_and_no_enhanced_graph(self):
+        from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.settings import _read_config
+        for name in ("refine_gallery.yaml", "refine_gallery_relation.yaml"):
+            path = TASK / "configs" / name
+            settings = load_settings(path)
+            options = _read_config(path)["abo_image_image"]
+            self.assertEqual(settings.top_k, 2)
+            self.assertEqual(settings.router_backend, "optical")
+            self.assertEqual(settings.embedding_dim, 64)
+            self.assertFalse(options.get("enhanced_electronics", False))
+            self.assertEqual(len(options["refinement_checkpoint_sha256"]), 64)
+            self.assertTrue(options["restore_training_phase_dropout"])
+
     def test_cross_product_batch(self):
         samples = [SimpleNamespace(sku_index=c, sku_name=f"{c}-{p}")
                    for c in range(10) for p in range(3) for _ in range(2)]

@@ -61,6 +61,65 @@ def lr_multiplier(epoch, epochs, warmup=5, floor=.1):
     return floor + (1-floor) * .5 * (1+math.cos(math.pi*progress))
 
 
+class TrainProductBank:
+    """Detached train-only memory. No test samples or inference-time branch."""
+    def __init__(self, samples, teacher_vectors, device):
+        if any(s.split != "train" for s in samples):
+            raise ValueError("Gallery memory must contain training samples only")
+        products = sorted({s.product_id for s in samples})
+        lookup = {p: i for i, p in enumerate(products)}
+        self.product_ids = torch.tensor([lookup[s.product_id] for s in samples], device=device)
+        self.labels = torch.tensor([s.category_id for s in samples], device=device)
+        self.product_labels = torch.tensor([
+            next(s.category_id for s in samples if s.product_id == p) for p in products], device=device)
+        if any(len({s.category_id for s in samples if s.product_id == p}) != 1 for p in products):
+            raise ValueError("Product has conflicting training categories")
+        self.counts = torch.bincount(self.product_ids, minlength=len(products)).float()[:, None]
+        if len(teacher_vectors) != len(samples):
+            raise ValueError("Training teacher memory length mismatch")
+        self.teacher = F.normalize(teacher_vectors.detach().float().to(device), dim=-1)
+        self.teacher_centers = self.centers(self.teacher)
+        self.memory = None
+
+    def centers(self, vectors):
+        totals = vectors.new_zeros((len(self.product_labels), vectors.shape[-1]))
+        totals.index_add_(0, self.product_ids, F.normalize(vectors.float(), dim=-1))
+        return F.normalize(totals / self.counts, dim=-1)
+
+    @torch.no_grad()
+    def refresh(self, vectors):
+        if len(vectors) != len(self.product_ids):
+            raise ValueError("Training memory refresh length mismatch")
+        self.memory = F.normalize(vectors.detach().float().to(self.teacher.device), dim=-1).clone()
+
+    @torch.no_grad()
+    def update(self, indices, vectors, momentum=.5):
+        indices = torch.as_tensor(indices, device=self.teacher.device)
+        if len(indices.unique()) != len(indices):
+            raise ValueError("Memory update batch must not repeat an image")
+        new = F.normalize(vectors.detach().float(), dim=-1)
+        self.memory[indices] = F.normalize(momentum*self.memory[indices] + (1-momentum)*new, dim=-1)
+
+    def losses(self, query, indices, temperature=.1, teacher_temperature=.1):
+        if self.memory is None or temperature <= 0 or teacher_temperature <= 0:
+            raise ValueError("Initialize memory and use positive temperatures")
+        indices = torch.as_tensor(indices, device=query.device)
+        valid = torch.arange(len(self.product_labels), device=query.device)[None, :] != self.product_ids[indices, None]
+        positives = self.labels[indices, None].eq(self.product_labels[None, :]) & valid
+        if not bool(positives.any(1).all()):
+            raise ValueError("Every query needs a different positive training product")
+        # Loss is probability mass of any relevant OTHER product, not uniform
+        # matching of all within-class vectors. Gradients flow through queries.
+        logits = F.normalize(query.float(), dim=-1) @ self.centers(self.memory).T / temperature
+        logits = logits.masked_fill(~valid, -1e4)
+        ranking = (logits.logsumexp(1) - logits.masked_fill(~positives, -1e4).logsumexp(1)).mean()
+        with torch.no_grad():
+            teacher_logits = self.teacher[indices] @ self.teacher_centers.T / teacher_temperature
+            distribution = teacher_logits.masked_fill(~valid, -1e4).softmax(1)
+        relational = F.kl_div(logits.log_softmax(1), distribution, reduction="batchmean")
+        return ranking, relational
+
+
 def inflate_convolution(convolution, new_size, causal):
     """Zero-pad learned kernels: initial outputs stay identical (also causal L)."""
     old_size = convolution.kernel_size[0]

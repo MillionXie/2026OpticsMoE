@@ -79,6 +79,35 @@ KD 使用同一训练图片的干净视图缓存，明确属于增强一致性�
 初始函数保持旧权重行为（浮点运算误差除外）。真实 kernel、读出参数和活跃图见 architecture.json。
 仍保留光 Router Top-2、同尺度融合、20%–30% 未调制训练分量、既有 CCD 噪声；像素偏移仍为零。
 
+## 商品图库损失与关系蒸馏（第二轮继续训练）
+
+源模型 `refine_training_20260909/best_checkpoint.pt` 已完成80epoch，Hit@1=69.5833%，
+同权重去光67.0833%，mAP@10=0.67616634。SHA256由两份新配置继承并强制核验。
+对照的电子增强组完成80epoch，best60：Hit@1=67.0833%，去光66.6667%；不采用它作为续训起点。
+
+```bash
+# 每组60 epoch，沿用上述 Python 环境与数据/特征缓存；从仓库根执行。
+python -m LightGenV2.tasks.t07_abo_image_retrieval.run --mode optical \
+  --config LightGenV2/tasks/t07_abo_image_retrieval/configs/refine_gallery.yaml
+python -m LightGenV2.tasks.t07_abo_image_retrieval.run --mode optical \
+  --config LightGenV2/tasks/t07_abo_image_retrieval/configs/refine_gallery_relation.yaml
+```
+
+两组推理图完全相同，保持原V卷积核3、L卷积核5、线性64D读出、六次光传播。
+每5epoch重新编码1440张干净训练图，建立120个训练商品中心；每个训练batch再以0.5动量更新
+访问过的图像特征，中心为逐图L2→按商品平均→L2。训练查询排除自身商品的整个中心，
+故每次是119个有效候选、11个同类正商品；最终测试仍是原120候选、12正商品，不改协议。
+损失为所有正商品概率之和的负对数，加0.1监督对比；固定教师类中心CE移除，
+逐向量KD从0.1退火到0。关系组另加0.5 KL：同一训练查询在完整2048D教师空间中对训练商品
+中心的相似度分布，监督学生64D空间的商品分布；教师/学生温度均0.1，自身商品两边都排除。
+教师只用已有square缓存的train部分，不加载教师Transformer做学生推理。
+所有memory均stop-gradient，查询分支可导；memory不属于部署模型，恢复训练时重建。
+
+训练时显式恢复phase dropout（旧T07训练循环在测试关闭后未重新启用；本次仅对新profile修正），
+全图库刷新和test时关闭。保留20%–30%未调制训练分量、CCD噪声、Router均衡；两组修正一致。
+仅保存best/last和最终报告、图；test每5epoch选best，仍属于test-selected结果。
+训练memory定义另写入每个run的 `training_gallery_contract.json`。
+
 ## 历史审计说明（保留）
 
 [历史 baseline 方法审计](BASELINE_METHODS.md)保留了旧运行的模型、预处理及评估定义。

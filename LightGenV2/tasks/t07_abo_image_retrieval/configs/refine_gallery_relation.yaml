@@ -1,0 +1,4 @@
+base_config: refine_gallery.yaml
+abo_image_image:
+  relational_teacher_weight: 0.5
+output_dir: ../runs/simulation/refine_gallery_relation_20260909

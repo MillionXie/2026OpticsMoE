@@ -27,7 +27,7 @@ from .retrieval_contract import (
     INSTRUCTION, EXPECTED_ARCHIVE_SHA256, _load_contract, _gallery_centroids,
     _category_prototypes, _evaluate, _inputs, sha256_file,
 )
-from .refinement import WeakAugmentationDataset, CrossProductBatchSampler, lr_multiplier, enhance_graph
+from .refinement import WeakAugmentationDataset, CrossProductBatchSampler, lr_multiplier, enhance_graph, TrainProductBank
 from LightGenV2.tasks.t01_object_retrieval.modeling import (
     load_backbone, build_student, initialize_student,
 )
@@ -239,11 +239,26 @@ def train_model(loaded, replacement, readout, settings, raw, train, test, cache)
     ema = initialize_parameter_ema(parameters) if settings.ema_decay else None
     targets = F.normalize(cache["square"][:len(train), :settings.embedding_dim].float(), dim=-1)
     anchors = category_anchors(targets, [s.category_id for s in train]).to(loaded.device)
+    gallery_bank = None
+    if options.get("product_gallery_weight", 0) or options.get("relational_teacher_weight", 0):
+        gallery_bank = TrainProductBank(train, cache["square"][:len(train)], loaded.device)
+        write_json(settings.output_dir / "training_gallery_contract.json", {
+            "training_images": len(train), "training_products": len(gallery_bank.product_labels),
+            "test_samples_used": False, "same_product_excluded": True,
+            "teacher_dimension": gallery_bank.teacher.shape[-1],
+            "refresh_interval_epochs": options.get("gallery_refresh_interval", 5),
+            "update": "detached normalized per-image momentum 0.5; fresh forward every five epochs",
+            "inference": "unchanged; bank discarded; rebuild gallery from best checkpoint"})
     phase_initial = {k: [p.detach().cpu().clone() for p in v]
                      for k, v in replacement.phase_parameter_groups().items()}
     router_initial = [p.detach().cpu().clone() for p in replacement.router_parameters()]
     history, best, best_epoch = [], (-1., -1.), -1
     for epoch in range(1, settings.epochs + 1):
+        if gallery_bank is not None and (epoch-1) % options.get("gallery_refresh_interval", 5) == 0:
+            print(f"[train gallery refresh] epoch={epoch}; train-only clean views", flush=True)
+            replacement.set_phase_dropout_active(False)
+            with torch.no_grad():
+                gallery_bank.refresh(encode_student_samples(loaded, replacement, readout, convert(train), settings))
         schedule = lr_multiplier(epoch, settings.epochs) if options.get("cosine_schedule", False) else 1.
         for group, base_rate in zip(optimizer.param_groups, base_rates):
             group["lr"] = base_rate * schedule
@@ -253,6 +268,8 @@ def train_model(loaded, replacement, readout, settings, raw, train, test, cache)
         sampler.set_epoch(epoch)
         loaded.model.eval()
         replacement.set_student_train_mode()
+        if options.get("restore_training_phase_dropout", False):
+            replacement.set_phase_dropout_active(True)
         readout.train()
         totals = defaultdict(float)
         counts = {name: torch.zeros(settings.num_experts) for name in ("vision", "language")}
@@ -268,6 +285,13 @@ def train_model(loaded, replacement, readout, settings, raw, train, test, cache)
                 retrieval = supcon(z, labels, options.get("temperature", .07))
                 kd = (1-F.cosine_similarity(z.float(), targets[batch["dataset_indices"]].to(loaded.device))).mean()
                 anchor_ce = F.cross_entropy(z.float() @ anchors.T / options.get("temperature", .07), labels)
+                gallery_loss, relation_loss = z.new_zeros(()), z.new_zeros(())
+                if gallery_bank is not None:
+                    # Use FP32 similarities even inside mixed-precision model forward.
+                    with torch.autocast(loaded.device.type, enabled=False):
+                        gallery_loss, relation_loss = gallery_bank.losses(
+                            z, batch["dataset_indices"], options.get("gallery_temperature", .1),
+                            options.get("teacher_relation_temperature", .1))
                 router = replacement.router_losses()
                 hard = replacement.router_hard_load_balance_loss()
                 balance = (router["vision_balance"] + router["language_balance"]) / 2
@@ -284,6 +308,8 @@ def train_model(loaded, replacement, readout, settings, raw, train, test, cache)
                 loss = (options.get("supervised_contrastive_weight", 1.) * retrieval
                         + kd_weight * kd
                         + options.get("semantic_anchor_weight", 0.) * anchor_ce
+                        + options.get("product_gallery_weight", 0.) * gallery_loss
+                        + options.get("relational_teacher_weight", 0.) * relation_loss
                         + settings.lambda_router_balance * balance
                         + settings.lambda_router_importance * importance
                         + settings.lambda_router_hard_load_balance * hard_loss
@@ -293,9 +319,13 @@ def train_model(loaded, replacement, readout, settings, raw, train, test, cache)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(parameters, settings.gradient_clip_norm)
             optimizer.step()
+            if gallery_bank is not None:
+                gallery_bank.update(batch["dataset_indices"], z)
             if ema is not None:
                 update_parameter_ema(ema, parameters, settings.ema_decay)
-            for name, value in (("loss", loss), ("supcon", retrieval), ("kd", kd), ("anchor_ce", anchor_ce), ("balance", balance), ("hard_balance", hard_loss)):
+            for name, value in (("loss", loss), ("supcon", retrieval), ("kd", kd), ("anchor_ce", anchor_ce),
+                                ("gallery_loss", gallery_loss), ("relation_loss", relation_loss),
+                                ("balance", balance), ("hard_balance", hard_loss)):
                 totals[name] += float(value.detach())
         row = {"epoch": epoch, "seconds": time.perf_counter()-start,
                "lr_multiplier": schedule, "teacher_kd_weight": kd_weight,
@@ -414,6 +444,7 @@ def run(args):
                     initialization = initialize_pinned_student(settings, replacement, readout)
                 readout = enhance_graph(replacement, readout, options)
             architecture = audit_student_graph(replacement)
+            architecture["initialization"] = initialization
             architecture["readout"] = readout.specification()
             architecture["enhanced_electronics"] = options.get("enhanced_electronics", False)
             architecture["residual_kernel_sizes"] = {
