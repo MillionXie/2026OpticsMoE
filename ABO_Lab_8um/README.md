@@ -2,6 +2,10 @@
 
 唯一操作入口是 [COMMAND.md](COMMAND.md)。本目录与旧 experiments 工程隔离。
 
+本机GPU运行：GTX1060用PyTorch2.8.0+cu126/torchvision0.23.0+cu126，CUDA FP32、batch=1。
+auto对≤4GB显卡启用CPU冻结词表查表，其余实际模型运算在CUDA；仅改变数据放置，不改变网络和权重。
+每阶段prepare进程独立退出释放模型，每样本/待采边界后释放临时张量，不删除原始权重或前层CCD。
+
 快速对齐见COMMAND第2节：`align.py`持续播放且不占用CCD；新增真实MNIST数字方向图、有效口径全白图、
 四个单角菲涅尔。`generated/P_opposite_vertical`仅用于确认相位上下方向，正式输出仍为`generated/P`。
 

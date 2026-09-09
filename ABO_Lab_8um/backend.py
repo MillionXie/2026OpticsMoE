@@ -9,7 +9,7 @@ from pathlib import Path
 import numpy as np
 from common import ROOT, CHECKPOINT_SHA, setup_imports, model_config, sha, write
 
-def create(device='cpu',export_native=False):
+def create(device='auto',export_native=False):
     setup_imports()
     import torch
     import transformers
@@ -20,12 +20,13 @@ def create(device='cpu',export_native=False):
     from abo_dual.backend import Backend
     checkpoint=ROOT/'assets/best_checkpoint.pt'
     if sha(checkpoint)!=CHECKPOINT_SHA: raise ValueError('Wrong epoch-25 EMA checkpoint')
-    dev=torch.device(device)
+    from memory import inference_policy,place_inference_model
+    dev,low_vram,fp32=inference_policy(device)
     if dev.type=='cpu': torch.set_num_threads(min(4,torch.get_num_threads()))
-    if dev.type=='cuda' and not torch.cuda.is_available(): raise RuntimeError('CUDA unavailable; use --device cpu')
     settings=m.load_settings(model_config())
     settings.model_id=str(ROOT/'models/Qwen3-VL-Embedding-2B')
     settings.local_files_only=True; settings.cache_dir=None
+    if fp32: settings.amp_enabled=False; settings.dtype='float32'
     m.seed_everything(42)
     processor=transformers.AutoProcessor.from_pretrained(settings.model_id,local_files_only=True,
         min_pixels=settings.processor_min_pixels,max_pixels=settings.processor_max_pixels)
@@ -33,7 +34,8 @@ def create(device='cpu',export_native=False):
     with init_empty_weights(include_buffers=False):
         model=transformers.Qwen3VLForConditionalGeneration(cfg)
     model.requires_grad_(False).eval()
-    loaded=LoadedBackbone(model,processor,dev,0.0)
+    # Build/load on CPU first: avoid a CUDA peak during checkpoint construction.
+    loaded=LoadedBackbone(model,processor,torch.device('cpu'),0.0)
     replacement,readout=m.build_student(loaded,settings)
     payload=m.load_checkpoint(checkpoint,replacement,readout)
     metadata=payload.get('metadata',{}); del payload
@@ -63,13 +65,16 @@ def create(device='cpu',export_native=False):
     meta=[n for n,p in model.named_parameters() if p.is_meta]
     if meta: raise RuntimeError('Unmaterialized active parameters: '+str(meta))
     # CPU uses FP32 for compatibility with this older lab CPU; optics stays FP32.
-    if dev.type=='cpu': model.float()
-    model.to(dev).eval().requires_grad_(False)
+    if fp32: model.float()
+    place_inference_model(model,replacement.language_model,dev,cpu_token_table=low_vram)
+    model.eval().requires_grad_(False); readout.to(dev)
+    loaded=LoadedBackbone(model,processor,dev,0.0)
     replacement.vision_surrogate.eval(); replacement.language_surrogate.eval()
     replacement.set_phase_dropout_active(False); readout.eval()
     b=Backend.__new__(Backend)
     b.m=m; b.settings=settings; b.device=dev; b.loaded=loaded
     b.replacement=replacement; b.readout=readout; b.metadata=metadata; b.reference_phases=None
+    b.cpu_token_table=low_vram
     b.branches={k:getattr(replacement,k+'_surrogate').core.optical_branch for k in ('vision','language')}
     b.original={}; b.guarded=False
     # The original lists are meta-only; teacher mode is deliberately unavailable.
@@ -77,7 +82,7 @@ def create(device='cpu',export_native=False):
     gc.collect()
     return b
 
-def forward(b,sample,measured=None):
+def forward(b,sample,measured=None,*,release=False):
     import torch
     b.install(measured or {})
     try:
@@ -86,7 +91,11 @@ def forward(b,sample,measured=None):
             enabled=b.device.type=='cuda' and b.settings.amp_enabled):
             out,_=b.m.student_embeddings(b.loaded.model,b.replacement,b.readout,b.inputs(sample))
         return out.detach().float().cpu().numpy()[0]
-    finally: b.install({})
+    finally:
+        b.install({})
+        if release:
+            from memory import release_transients
+            release_transients(b)
 
 def phases(b):
     from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.optical_artifacts import phase_tensors

@@ -5,8 +5,8 @@ import numpy as np
 from common import ROOT,write,CHECKPOINT_SHA
 
 def main():
-    p=argparse.ArgumentParser(); p.add_argument('--device',default='cuda'); p.add_argument('--limit',type=int,default=4)
-    p.add_argument('--export-native',action='store_true'); p.add_argument('--batch-size',type=int,default=4)
+    p=argparse.ArgumentParser(); p.add_argument('--device',default='auto'); p.add_argument('--limit',type=int,default=4)
+    p.add_argument('--export-native',action='store_true'); p.add_argument('--batch-size',type=int,default=1)
     p.add_argument('--output',type=str,default='compact_smoke'); args=p.parse_args()
     from backend import create,phases,optical_contract
     from run import samples
@@ -35,8 +35,10 @@ def main():
     report={'mode':'compact_software_simulation','metrics':metrics,'test_count':len(images),
         'checkpoint_sha256':CHECKPOINT_SHA,'native_transformer_loaded':False,'device':str(b.device),
         'torch':torch.__version__,'elapsed_seconds':time.perf_counter()-start,'reference_historical_r1':1934/2400,
-        'precision':'CPU FP32 native frontend; CUDA original autocast','no_accuracy_guarantee_for_hardware':True,
+        'no_accuracy_guarantee_for_hardware':True,
         'phase_array_max_error_to_packaged':phase_errors}
+    from memory import memory_report
+    report['compute_memory']=memory_report(b)
     write(out/'metrics.json',report); print(report,flush=True)
 
 if __name__=='__main__': main()

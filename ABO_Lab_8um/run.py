@@ -67,7 +67,7 @@ def prepare(args,c):
         if s['kind']=='title' and stage.startswith('vision'): continue
         m=measured(root,s)
         if stage in m: continue
-        try: forward(b,s,m)
+        try: forward(b,s,m,release=True)
         except NeedCapture as e:
             if e.stage!=stage: raise RuntimeError(f"{s['id']}: needs {e.stage} first; requested {stage}. Finish previous capture.")
             field=e.amplitude
@@ -83,6 +83,8 @@ def prepare(args,c):
     write(out/'manifest.json',{'stage':stage,'phase_file':str(phase.relative_to(ROOT)),
         'phase_sha256':sha(phase),'hardware_identity':hardware_identity(c),'entries':entries})
     print('Ready:',len(entries),'BMPs. Load phase:',phase)
+    from memory import memory_report
+    report=memory_report(b); write(out/'compute_memory.json',report); print(report,flush=True)
 
 def capture(args,c):
     from hardware import Bench
@@ -120,7 +122,7 @@ def evaluate(args,c):
     for s in state['samples']:
         m=measured(root,s); required=STAGES[3:] if s['kind']=='title' else STAGES
         if any(stage not in m for stage in required): raise ValueError(f'{s["id"]} has missing real CCD stages')
-        v=forward(b,s,m)
+        v=forward(b,s,m,release=True)
         if s['kind']=='title': titles.append(v)
         else: images.append(v); labels.append(s['label']); ids.append(s['id'])
     import torch
@@ -130,6 +132,8 @@ def evaluate(args,c):
         'predictions':[dict(sample_id=s,**r) for s,r in zip(ids,rows)]})
     np.savez(root/'results/embeddings.npz',queries=np.stack(images),titles=np.stack(titles),labels=labels)
     print(metrics)
+    from memory import memory_report
+    write(root/'results/compute_memory.json',memory_report(b))
 
 def probe(args,c):
     from hardware import Bench
@@ -163,7 +167,7 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('action',choices=['init','prepare','capture','evaluate','probe','exposure'])
     p.add_argument('--config'); p.add_argument('--session',default='pilot01')
-    p.add_argument('--stage',choices=STAGES); p.add_argument('--device',default='cpu')
+    p.add_argument('--stage',choices=STAGES); p.add_argument('--device',default='auto')
     p.add_argument('--limit',type=int,default=4,help='Test queries only; all 100 candidate titles are always retained. 0=2400.')
     p.add_argument('--bmp',help='Relative to this package; probe otherwise captures camera only')
     a=p.parse_args()

@@ -1,4 +1,5 @@
-# Install torch==2.8.0 + torchvision==0.23.0 from the CPU index on the 3GB lab PC.
+# GTX1060: torch==2.8.0+cu126 + torchvision==0.23.0+cu126 (CUDA 12.6 index).
+# Do not install cu128/cu129 or use BF16 on this Pascal device. See COMMAND.md.
 numpy>=1.26,<3
 Pillow>=10,<12
 PyYAML>=6,<7

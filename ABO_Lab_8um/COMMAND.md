@@ -13,14 +13,31 @@ $py = "$PWD\.venv\Scripts\python.exe"
 
 ```powershell
 & D:\anaconda\python.exe -m venv .venv
-& $py -m pip install torch==2.8.0 torchvision==0.23.0 --index-url https://download.pytorch.org/whl/cpu
+& $py -m pip install torch==2.8.0+cu126 torchvision==0.23.0+cu126 --index-url https://download.pytorch.org/whl/cu126
 & $py -m pip install -r requirements.txt
 & $py verify_release.py
 & $py test_lab.py
-& $py simulate.py --device cpu --limit 4 --batch-size 1 --output local_smoke
+& $py simulate.py --device cuda --limit 4 --batch-size 1 --output cuda_smoke
 ```
 
 仿真仍有真实数值精度差异，CPU小样本不是2400张80.583%的复现证据。服务器完整复核见证据目录和README。
+
+### GPU与内存
+
+本机GTX1060 3GB采用CUDA12.6版PyTorch。`--device cuda`明确要求GPU，不可用时直接报错；
+省略参数则auto检测。旧相机RFL/Python3.6环境保持不动，不需要给相机环境安装torch。
+
+```powershell
+& $py -c "import torch; print(torch.__version__); print(torch.cuda.is_available()); print(torch.cuda.get_device_name(0))"
+```
+
+本机使用CUDA FP32（不是服务器BF16），batch=1。小于等于4GB的显卡自动把最大的冻结词表留在CPU，
+仅查表后把选出的token送GPU；图像前端、光学计算和电子残差/读出仍在CUDA。数值公式和权重未改变。
+不加载已被光电网络替换的大模型Transformer权重。
+
+“一层结束释放一层”针对**内存/显存**，不是删除硬盘权重：每条prepare命令是独立进程，退出即释放模型；
+每个样本完成或到达待采CCD边界后清理临时张量和CUDA空闲缓存。残差和Language第一阶段状态在被后续使用前不能提前删。
+权重、相位、原始CCD和重放必需的前层采集都保留。各层`play/<stage>/compute_memory.json`记录实际设备与显存峰值。
 
 ## 1. 唯一配置文件
 
@@ -165,22 +182,22 @@ CCD方向由上述逻辑四角单应变换处理，不再另加翻转。设置�
 每次capture都会显示相位完整路径和SHA，只有你手动加载后输入y才采。后层依赖前层实测，禁止提前全生成或用仿真替代。
 
 ```powershell
-& $py run.py prepare --session pilot01 --stage vision_router --device cpu
+& $py run.py prepare --session pilot01 --stage vision_router --device cuda
 & $py run.py capture --session pilot01 --stage vision_router
 
-& $py run.py prepare --session pilot01 --stage vision_expert --device cpu
+& $py run.py prepare --session pilot01 --stage vision_expert --device cuda
 & $py run.py capture --session pilot01 --stage vision_expert
 
-& $py run.py prepare --session pilot01 --stage vision_global --device cpu
+& $py run.py prepare --session pilot01 --stage vision_global --device cuda
 & $py run.py capture --session pilot01 --stage vision_global
 
-& $py run.py prepare --session pilot01 --stage language_router --device cpu
+& $py run.py prepare --session pilot01 --stage language_router --device cuda
 & $py run.py capture --session pilot01 --stage language_router
 
-& $py run.py prepare --session pilot01 --stage language_expert --device cpu
+& $py run.py prepare --session pilot01 --stage language_expert --device cuda
 & $py run.py capture --session pilot01 --stage language_expert
 
-& $py run.py prepare --session pilot01 --stage language_global --device cpu
+& $py run.py prepare --session pilot01 --stage language_global --device cuda
 & $py run.py capture --session pilot01 --stage language_global
 ```
 
@@ -191,7 +208,7 @@ CCD方向由上述逻辑四角单应变换处理，不再另加翻转。设置�
 ## 6. 电子处理和结果
 
 ```powershell
-& $py run.py evaluate --session pilot01 --device cpu
+& $py run.py evaluate --session pilot01 --device cuda
 ```
 
 结果`sessions/pilot01/results/metrics.json`含R@1/5/10、MRR、逐图预测；`embeddings.npz`可继续分析。任何一层真实CCD缺失都会停止，绝不回退仿真。
