@@ -244,6 +244,9 @@ def optimizer(
     if router:
         groups.insert(1, {"params": router, "lr": settings.router_learning_rate, "name": "optical_router"})
     groups = [group for group in groups if group["params"]]
+    for group in groups:
+        if group["name"] in {"feature_phase", "optical_router"}:
+            group["weight_decay"] = settings.phase_weight_decay
     flat = [value for group in groups for value in group["params"]]
     expected = {id(value) for value in model.parameters() if value.requires_grad}
     if len(flat) != len({id(value) for value in flat}) or {id(value) for value in flat} != expected:

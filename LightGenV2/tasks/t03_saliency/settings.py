@@ -70,6 +70,20 @@ def load_settings(path: str | Path) -> Any:
     settings.nss_weight = float(d("loss.nss_weight", 0.1))
     settings.map_kd_weight = 0.0
     settings.map_kd_temperature = 1.0
+    settings.distillation_initial_weight = float(d("distillation.initial_weight", 0.0))
+    settings.distillation_end_epoch = int(d("distillation.end_epoch", 50))
+    cache = d("distillation.cache_file")
+    settings.distillation_cache = _resolve(cache, config.parent) if cache else None
+    settings.distillation_teacher_sha256 = d("distillation.teacher_sha256")
+    settings.ema_decay = float(d("training.ema_decay", 0.0))
+    settings.phase_weight_decay = float(d("training.phase_weight_decay", settings.weight_decay))
+    if not 0 <= settings.ema_decay < 1 or settings.distillation_initial_weight < 0:
+        raise ValueError("Invalid EMA/KD coefficient")
+    if settings.distillation_initial_weight > 0 and (
+        settings.augmentation_enabled or settings.distillation_cache is None
+        or not settings.distillation_teacher_sha256 or settings.distillation_end_epoch < 2
+    ):
+        raise ValueError("KD requires aligned nonaugmented inputs, cache, teacher SHA and valid end epoch")
     settings.teacher_checkpoint = None
     settings.ccd_normalization = str(d("lightgen.ccd_normalization", "historical_log1p"))
     if settings.ccd_normalization not in {"historical_log1p", "mean_only"}:
@@ -127,6 +141,8 @@ def save_resolved_config(settings: Any) -> None:
     values["lightgen"].update(task="t03_saliency", ccd_normalization=settings.ccd_normalization)
     values.setdefault("training", {}).update(
         learning_rate_source=settings.learning_rate_source,
+        ema_decay=settings.ema_decay,
+        phase_weight_decay=settings.phase_weight_decay,
         initialization_checkpoint=str(settings.initialization_checkpoint) if settings.initialization_checkpoint else None,
         initialization_checkpoint_sha256=settings.initialization_checkpoint_sha256,
         reset_fusion_on_warmstart=settings.reset_fusion_on_warmstart,
@@ -138,6 +154,10 @@ def save_resolved_config(settings: Any) -> None:
             "student_learning_rate", "phase_learning_rate", "router_learning_rate",
             "dense_readout_learning_rate", "dense_head_learning_rate")
     }
+    values["distillation"] = {"initial_weight": settings.distillation_initial_weight,
+        "end_epoch": settings.distillation_end_epoch,
+        "cache_file": str(settings.distillation_cache) if settings.distillation_cache else None,
+        "teacher_sha256": settings.distillation_teacher_sha256}
     path.write_text(yaml.safe_dump(values, allow_unicode=True, sort_keys=False), encoding="utf-8")
 
 

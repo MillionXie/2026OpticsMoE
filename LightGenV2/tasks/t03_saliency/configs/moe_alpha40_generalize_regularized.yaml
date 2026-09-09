@@ -1,0 +1,18 @@
+base_config: moe_alpha40_refine_weakaug.yaml
+training:
+  initialization_checkpoint: ../runs/simulation/moe_alpha40_refine_weakaug_seed42/best_checkpoint.pt
+  initialization_checkpoint_sha256: de477b8c13c46c50cb9f17eb0b62bc577aaefef5512887e1e17a86d0affb5eea
+  student_epochs: 100
+  ema_decay: 0.995
+  weight_decay: 0.01
+  phase_weight_decay: 0.0
+  phase_learning_rate: 0.0005
+  staged:
+    warmup_epochs: 0
+    polish_start: 61
+augmentation:
+  enabled: true
+  crop_scale_min: 0.95
+  brightness_jitter: 0.05
+  contrast_jitter: 0.05
+output_dir: ../runs/simulation/moe_alpha40_generalize_regularized_seed42

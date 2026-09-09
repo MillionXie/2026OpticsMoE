@@ -1,0 +1,7 @@
+base_config: moe_alpha40_generalize_aligned.yaml
+distillation:
+  initial_weight: 0.2
+  end_epoch: 50
+  cache_file: ../runs/simulation/generalize_alpha40_20260909/teacher_train_logits.pt
+  teacher_sha256: 531c4a330fc05e2c27b037784588716d248a29d1ab8da951d443165dcce552f8
+output_dir: ../runs/simulation/moe_alpha40_generalize_kd020_seed42

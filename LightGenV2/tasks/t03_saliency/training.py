@@ -6,6 +6,7 @@ import csv
 import json
 import math
 import time
+from contextlib import nullcontext
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +21,7 @@ from experiments.qwen3_vl_embedding_2b_salicon_vision_optical_saliency.visualiza
 
 from .modeling import build_student, initialize_student, optimizer
 from .visualize import render
+from .training_support import ModelEMA, TrainTeacherMaps, distillation_weight
 
 
 def _write_json(path: Path, value: Any) -> None:
@@ -59,6 +61,9 @@ def _checkpoint(
     epoch: int,
     train_metrics: dict[str, Any],
     test_metrics: dict[str, Any] | None,
+    weight_kind: str = "live",
+    ema_state: Any = None,
+    test_weight_kind: str | None = None,
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(
@@ -66,6 +71,9 @@ def _checkpoint(
             "schema_version": 1,
             "architecture": model.checkpoint_architecture,
             "epoch": int(epoch),
+            "weight_kind": weight_kind,
+            "test_metrics_weight_kind": test_weight_kind or weight_kind,
+            "ema_state": ema_state,
             "core": model.core.state_dict(),
             "saliency_head": model.head.state_dict(),
             "train_metrics": train_metrics,
@@ -106,6 +114,14 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
     _write_json(settings.output_dir / "initialization_report.json", initialization)
     train_loader, test_loader = legacy.build_loaders(bundle, settings, training=True)
     optim = optimizer(model, settings)
+    ema = ModelEMA(model, settings.ema_decay) if settings.ema_decay else None
+    ema_hook = optim.register_step_post_hook(ema.update) if ema else None
+    teacher = TrainTeacherMaps(settings, bundle.train_records) if settings.distillation_initial_weight else None
+    if teacher is not None:
+        from .modeling import sha256_file
+        _write_json(settings.output_dir / "teacher_cache_provenance.json", {
+            **teacher.manifest, "cache_sha256": sha256_file(settings.distillation_cache),
+            "teacher_executed_during_student_inference": False})
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         optim, T_max=max(1, int(settings.student_epochs))
     )
@@ -127,8 +143,12 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
                 stage_report = staged_epoch(optim, settings, epoch)
                 model._router_hard_weight = stage_report["hard_balance_weight"]
             model.core.set_phase_dropout_active(True)
+            settings.map_kd_weight = distillation_weight(
+                settings.distillation_initial_weight, settings.distillation_end_epoch, epoch)
+            stage_report["kd_weight"] = settings.map_kd_weight
             train_metrics = legacy._train_epoch(
-                "student", model, train_loader, loaded, settings, optim
+                "student", model, train_loader, loaded, settings, optim,
+                teacher_cache=teacher if settings.map_kd_weight > 0 else None,
             )
             model.core.set_phase_dropout_active(False)
             scheduled_test = (
@@ -138,9 +158,13 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
             )
             test_metrics = None
             if scheduled_test:
-                test_metrics, _ = legacy.evaluate_model(
-                    model, test_loader, loaded, settings
-                )
+                with ema.applied() if ema else nullcontext():
+                    test_metrics, _ = legacy.evaluate_model(model, test_loader, loaded, settings)
+                    if float(test_metrics["cc"]) > best_cc:
+                        best_cc, best_epoch = float(test_metrics["cc"]), epoch
+                        _checkpoint(settings.output_dir / "best_checkpoint.pt", model,
+                                    epoch, train_metrics, test_metrics,
+                                    weight_kind="ema" if ema else "live")
             row = {
                 "epoch": epoch,
                 **{f"train_{key}": value for key, value in train_metrics.items()},
@@ -153,6 +177,7 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
                 **stage_report,
                 "alpha1": float(model.core.hybrid.block1_optical_fusion.detach()),
                 "alpha2": float(model.core.hybrid.block2_optical_fusion.detach()),
+                "test_weight_kind": "ema" if ema else "live",
             }
             history.append(row)
             _write_csv(settings.output_dir / "metrics" / "training_history.csv", history)
@@ -162,17 +187,9 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
                 epoch,
                 train_metrics,
                 test_metrics,
+                ema_state=ema.shadow if ema else None,
+                test_weight_kind="ema" if ema else "live",
             )
-            if test_metrics is not None and float(test_metrics["cc"]) > best_cc:
-                best_cc = float(test_metrics["cc"])
-                best_epoch = epoch
-                _checkpoint(
-                    settings.output_dir / "best_checkpoint.pt",
-                    model,
-                    epoch,
-                    train_metrics,
-                    test_metrics,
-                )
             if not settings.staged_training:
                 scheduler.step()
             suffix = "" if test_metrics is None else f" test_CC={test_metrics['cc']:.4f}"
@@ -182,6 +199,8 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
                 flush=True,
             )
     finally:
+        if ema_hook is not None:
+            ema_hook.remove()
         model.core.set_phase_dropout_active(False)
         model.restore_native()
     render(settings.output_dir / "best_checkpoint.pt", settings.output_dir / "best_visualization")
@@ -249,6 +268,7 @@ def evaluate_selected_checkpoint(
             "split": "SALICON official val2014 used as public test/selection",
             "test_samples": len(bundle.validation_records),
             "selected_epoch": int(payload["epoch"]),
+            "weight_kind": payload.get("weight_kind", "live"),
             "checkpoint": str(checkpoint),
             "selection_biased": True,
             "metrics": metrics,
