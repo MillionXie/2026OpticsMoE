@@ -57,3 +57,30 @@ CUDA_VISIBLE_DEVICES=5 python -u -m LightGenV2.tasks.t03_saliency.run --profile 
 命令、环境由run记录。勿将命令覆盖到已有run。正式结论读取
 `selected_checkpoint_test_evaluation.json`并与0.85812016、同规格头Qwen的0.88968476比较。
 本文是训练协议，不是已取得提升的结果声明。
+
+## 2026-09-10：降低硬均衡压力的单变量对照
+
+新增`moe_alpha40_soften_hard_balance.yaml`，对照为`moe_alpha40_hint_control.yaml`。
+同一起点CC=0.85812016、相同50轮/学习率/EMA/KD/无增强训练；不启用feature hint。
+仅将硬Top-2均衡的初始/最终系数从0.50/0.10降为0.05/0.01，仍为正数；
+软均衡0.08、importance 0.02、光学噪声和所有推理结构均不变。
+这不是取消均衡，也不是放宽alpha下限。
+
+动机来自只读训练梯度诊断（源码`b3f88069`，源checkpoint SHA
+`36333e6ba013cac3a2801bce4babcc2fb5cd36adf02969e019437b40ceebaffd`）：
+CPU float32、torch seed42、无增强、训练模式和光学扰动开启，
+以`random.Random(1042).sample(range(10000),32)`固定抽取一个训练batch。
+其光router任务梯度L2=0.00150178690；加权硬均衡梯度L2=0.00785553450，
+约为任务梯度5.23倍，两者cos=-0.01415；软均衡+importance梯度L2=0.00148858965。
+梯度按`autograd.grad`分别求取，各参数组拼接后转float64计算L2和cos；没有optimizer step。
+这只是一批训练数据上的局部诊断，不证明整个数据集都存在梯度冲突，也不代表性能改善。
+
+```bash
+# 使用有足够余量的GPU；目标run目录必须尚不存在。
+python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_soften_hard_balance.yaml --phase all
+```
+
+以完整5000张public-test CC与原控制组比较；仍披露测试选模偏差。
+正式候选必须同时查看`selected_checkpoint_test_evaluation.json`中的专家选择占比、
+有效专家数和未使用专家，不以性能小涨为由接受明显专家坍缩。
+目标CC≥0.87尚未达成；本节是受控试验协议。
