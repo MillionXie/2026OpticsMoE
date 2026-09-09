@@ -125,6 +125,39 @@ def test_level_calibration_isotonic_projection_is_nondecreasing() -> None:
     )
 
 
+def test_large_kernel_readout_refiner_is_exact_zero_start(tmp_path: Path) -> None:
+    source_settings = replace(
+        _small_settings(tmp_path),
+        spatial_readout_mode="spatial_weighted_level_residual",
+        spatial_readout_refiner_enabled=False,
+        phase_snapshot_interval_epochs=0,
+    )
+    source_settings.validate()
+    torch.manual_seed(719)
+    source = LGVQSingleMetricOEO16(source_settings).eval()
+    checkpoint = tmp_path / "readout_source.pt"
+    torch.save({"state_dict": source.state_dict()}, checkpoint)
+    refined_settings = replace(
+        source_settings,
+        spatial_readout_refiner_enabled=True,
+        initialization_checkpoint=checkpoint,
+        trainable_scope="readout_refiner_only",
+    )
+    refined_settings.validate()
+    refined = LGVQSingleMetricOEO16(refined_settings).eval()
+    _load_compatible_initialization(refined, refined_settings)
+    inputs = _inputs(frame_count=4)
+    with torch.no_grad():
+        expected = source(*inputs, optical_enabled=False)["prediction"]
+        actual = refined(*inputs, optical_enabled=False)["prediction"]
+    torch.testing.assert_close(actual, expected, rtol=0.0, atol=0.0)
+    assert not any(
+        token in module.__class__.__name__.lower()
+        for module in refined.readout.modules()
+        for token in ("attention", "transformer", "lstm", "gru")
+    )
+
+
 def test_cached_readout_mos_strata_interleave_score_range() -> None:
     targets = torch.arange(16, dtype=torch.float32)
     payload = {

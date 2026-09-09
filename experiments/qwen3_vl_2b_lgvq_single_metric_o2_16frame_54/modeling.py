@@ -1548,6 +1548,27 @@ class _DilatedResidualConvStack(nn.Module):
         return medium + F.gelu(self.norm3(self.conv3(medium)))
 
 
+class _ReadoutLargeKernelRefiner(nn.Module):
+    """A zero-start 7x7 depthwise refinement inside the existing MOS head."""
+
+    def __init__(self, channels: int) -> None:
+        super().__init__()
+        self.depthwise = nn.Conv2d(
+            channels, channels, 7, padding=3, groups=channels, bias=False
+        )
+        self.norm = nn.GroupNorm(8, channels)
+        self.expand = nn.Conv2d(channels, channels * 2, 1)
+        self.project = nn.Conv2d(channels * 2, channels, 1)
+        nn.init.zeros_(self.project.weight)
+        nn.init.zeros_(self.project.bias)
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        correction = self.project(
+            F.gelu(self.expand(self.norm(self.depthwise(value))))
+        )
+        return value + correction
+
+
 class SpatialDeepResidualReadout(SpatialGridReadout):
     """Higher-capacity convolutional correction after all optical stages.
 
@@ -1595,6 +1616,11 @@ class SpatialDeepResidualReadout(SpatialGridReadout):
                 nn.GroupNorm(8, channels),
                 nn.GELU(),
             )
+        self.large_kernel_refiner = (
+            _ReadoutLargeKernelRefiner(channels)
+            if settings.spatial_readout_refiner_enabled
+            else nn.Identity()
+        )
         pooled_width = channels * 2 * (1 + 4 + 16)
         self.residual_frame = nn.Sequential(
             nn.LayerNorm(pooled_width),
@@ -1624,7 +1650,7 @@ class SpatialDeepResidualReadout(SpatialGridReadout):
         grid = self.token_norm(vision).reshape(
             batch * frames, self.grid, self.grid, width
         ).permute(0, 3, 1, 2)
-        feature = self.residual_conv(grid)
+        feature = self.large_kernel_refiner(self.residual_conv(grid))
         pooled = torch.cat(
             tuple(
                 pool(feature, size).flatten(1)

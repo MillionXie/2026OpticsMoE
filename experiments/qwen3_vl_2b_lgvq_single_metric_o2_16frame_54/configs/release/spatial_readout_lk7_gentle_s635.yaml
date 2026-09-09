@@ -1,0 +1,7 @@
+base_config: spatial_readout_lk7_s634.yaml
+output_dir: ../../runs/lgvq_spatial_readout_lk7_gentle_s635
+random_seed: 635
+
+training:
+  learning_rate: 0.00020
+  weight_decay: 0.006

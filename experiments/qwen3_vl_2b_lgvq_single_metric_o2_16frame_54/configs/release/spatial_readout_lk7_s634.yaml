@@ -1,0 +1,45 @@
+base_config: spatial_calibrated_s620.yaml
+output_dir: ../../runs/lgvq_spatial_readout_lk7_s634
+random_seed: 634
+
+# One lightweight 7x7 depthwise block is inserted inside the existing
+# post-optical readout. Its projection is exactly zero at initialization, so
+# epoch 0 reproduces s620 bit-for-bit. It adds about 72k parameters, no branch.
+model:
+  spatial_readout_refiner_enabled: true
+
+data:
+  training_view_probabilities: [0.80, 0.10, 0.10]
+
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_router_temperature_s620/best_alpha_calibrated_checkpoint.pt
+  trainable_scope: readout_refiner_only
+  epochs: 80
+  batch_size: 64
+  learning_rate: 0.00080
+  weight_decay: 0.002
+  phase_warmup_epochs: 0
+  restore_best_at_stage_transition: false
+  ema_decay: 0.98
+  ema_start_epoch: 1
+  minimum_learning_rate_factor: 0.03
+  test_interval_epochs: 1
+  test_interval_steps: 4
+  phase_snapshot_interval_epochs: 0
+
+loss:
+  ranking_weight: 1.50
+  correlation_weight: 3.00
+  soft_spearman_weight: 0.30
+  soft_rank_temperature: 0.10
+  soft_target_weight: 0.0
+  soft_target_ranking_weight: 0.0
+  soft_target_correlation_weight: 0.0
+  level_distribution_weight: 0.0
+  optical_alignment_weight: 0.0
+  router_balance_weight: 0.0
+  router_importance_weight: 0.0
+  serial_router_balance_weight: 0.0
+  serial_router_importance_weight: 0.0
+  router_capture_weight: 0.0
+
