@@ -883,6 +883,52 @@ class _VisionResidualConvBlock(nn.Module):
         return value + torch.sigmoid(self.raw_scale) * residual
 
 
+class _GlobalResponseNorm2d(nn.Module):
+    """ConvNeXt-V2 style response normalization; no attention or token mixing."""
+
+    def __init__(self, channels: int) -> None:
+        super().__init__()
+        self.gamma = nn.Parameter(torch.zeros(1, channels, 1, 1))
+        self.beta = nn.Parameter(torch.zeros(1, channels, 1, 1))
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        response = torch.linalg.vector_norm(value.float(), dim=(-2, -1), keepdim=True)
+        normalized = response / response.mean(1, keepdim=True).clamp_min(1.0e-6)
+        normalized = normalized.to(value.dtype)
+        return value + self.gamma * (value * normalized) + self.beta
+
+
+class _VisionLargeKernelResidualBlock(nn.Module):
+    """One lightweight 7x7 ConvNeXt-style block inside the electronic route."""
+
+    def __init__(self, width: int) -> None:
+        super().__init__()
+        expanded = width * 4
+        self.norm = nn.LayerNorm(width)
+        self.depthwise = nn.Conv2d(
+            width, width, 7, padding=3, groups=width, bias=False
+        )
+        self.expand = nn.Conv2d(width, expanded, 1)
+        self.grn = _GlobalResponseNorm2d(expanded)
+        self.project = nn.Conv2d(expanded, width, 1)
+        self.raw_scale = nn.Parameter(torch.tensor(-2.0))
+        # Exact identity at checkpoint load. This makes the architecture search
+        # reversible and prevents a random new block from erasing the formal run.
+        nn.init.zeros_(self.project.weight)
+        nn.init.zeros_(self.project.bias)
+
+    def forward(self, value: torch.Tensor, grid: int) -> torch.Tensor:
+        batch, frames, _, width = value.shape
+        image = self.norm(value).reshape(
+            batch * frames, grid, grid, width
+        ).permute(0, 3, 1, 2)
+        residual = self.depthwise(image)
+        residual = self.grn(F.gelu(self.expand(residual)))
+        residual = self.project(residual)
+        residual = residual.permute(0, 2, 3, 1).reshape_as(value)
+        return value + torch.sigmoid(self.raw_scale) * residual
+
+
 class VisionElectronicResidualRoute(nn.Module):
     """One electronic route with a checkpoint-compatible convolutional stem."""
 
@@ -903,10 +949,18 @@ class VisionElectronicResidualRoute(nn.Module):
             bias=False,
         )
         self.pointwise = nn.Conv2d(self.width, self.width, 1)
-        self.blocks = nn.ModuleList(
-            _VisionResidualConvBlock(self.width)
-            for _ in range(settings.electronic_route_depth - 1)
-        )
+        blocks: list[nn.Module] = []
+        for index in range(settings.electronic_route_depth - 1):
+            # Block 0 retains the checkpoint-compatible 5x5 implementation.
+            # Only newly appended blocks use the larger lightweight kernel.
+            block_type = (
+                _VisionLargeKernelResidualBlock
+                if settings.electronic_route_variant == "residual_convnext"
+                and index >= 1
+                else _VisionResidualConvBlock
+            )
+            blocks.append(block_type(self.width))
+        self.blocks = nn.ModuleList(blocks)
         self.skip_max = float(settings.electronic_skip_max)
         if settings.electronic_skip_enabled:
             ratio = settings.electronic_skip_initial / self.skip_max
@@ -958,6 +1012,28 @@ class _LanguageResidualConvBlock(nn.Module):
         return result.masked_fill(~mask.unsqueeze(-1), 0.0)
 
 
+class _LanguageLargeKernelResidualBlock(nn.Module):
+    """Causal 7-tap counterpart of the lightweight vision residual block."""
+
+    def __init__(self, width: int) -> None:
+        super().__init__()
+        expanded = width * 4
+        self.norm = nn.LayerNorm(width)
+        self.depthwise = nn.Conv1d(width, width, 7, groups=width, bias=False)
+        self.expand = nn.Conv1d(width, expanded, 1)
+        self.project = nn.Conv1d(expanded, width, 1)
+        self.raw_scale = nn.Parameter(torch.tensor(-2.0))
+        nn.init.zeros_(self.project.weight)
+        nn.init.zeros_(self.project.bias)
+
+    def forward(self, value: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+        sequence = self.norm(value).masked_fill(~mask.unsqueeze(-1), 0.0)
+        sequence = F.pad(sequence.transpose(1, 2), (6, 0))
+        residual = self.project(F.gelu(self.expand(self.depthwise(sequence))))
+        result = value + torch.sigmoid(self.raw_scale) * residual.transpose(1, 2)
+        return result.masked_fill(~mask.unsqueeze(-1), 0.0)
+
+
 class LanguageElectronicResidualRoute(nn.Module):
     """One causal electronic route with a compatible convolutional stem."""
 
@@ -971,10 +1047,16 @@ class LanguageElectronicResidualRoute(nn.Module):
             self.width, self.width, 5, groups=self.width, bias=False
         )
         self.pointwise = nn.Conv1d(self.width, self.width, 1)
-        self.blocks = nn.ModuleList(
-            _LanguageResidualConvBlock(self.width)
-            for _ in range(settings.electronic_route_depth - 1)
-        )
+        blocks: list[nn.Module] = []
+        for index in range(settings.electronic_route_depth - 1):
+            block_type = (
+                _LanguageLargeKernelResidualBlock
+                if settings.electronic_route_variant == "residual_convnext"
+                and index >= 1
+                else _LanguageResidualConvBlock
+            )
+            blocks.append(block_type(self.width))
+        self.blocks = nn.ModuleList(blocks)
         self.skip_max = float(settings.electronic_skip_max)
         if settings.electronic_skip_enabled:
             ratio = settings.electronic_skip_initial / self.skip_max
@@ -2232,7 +2314,10 @@ class LGVQSingleMetricOEO16(nn.Module):
             nn.LayerNorm(settings.model_width),
             nn.Linear(settings.model_width, settings.model_width * 2),
         )
-        if settings.electronic_route_variant == "residual_conv":
+        if settings.electronic_route_variant in {
+            "residual_conv",
+            "residual_convnext",
+        }:
             self.vision_routes = nn.ModuleList(
                 [
                     VisionElectronicResidualRoute(settings),

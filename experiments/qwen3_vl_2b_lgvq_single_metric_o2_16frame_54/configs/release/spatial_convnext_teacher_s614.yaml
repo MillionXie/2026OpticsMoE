@@ -1,0 +1,31 @@
+base_config: spatial_teacher_rank_joint_s610.yaml
+output_dir: ../../runs/lgvq_spatial_convnext_teacher_s614
+random_seed: 614
+
+# One new identity-start 7x7 depthwise/pointwise/GRN block is appended inside
+# each existing electronic route. There is still exactly one E and one O path.
+model:
+  electronic_route_variant: residual_convnext
+  electronic_route_depth: 3
+
+training:
+  trainable_scope: appended_electronic_only
+  learning_rate: 0.00020
+  phase_learning_rate: 0.00020
+  router_phase_learning_rate: 0.00020
+  minimum_learning_rate_factor: 0.02
+  ema_decay: 0.99
+
+loss:
+  ranking_weight: 1.00
+  correlation_weight: 2.00
+  soft_spearman_weight: 0.30
+  soft_target_ranking_weight: 0.20
+  soft_target_correlation_weight: 0.05
+  level_distribution_weight: 0.0
+  optical_alignment_weight: 0.0
+  router_balance_weight: 0.0
+  router_importance_weight: 0.0
+  serial_router_balance_weight: 0.0
+  serial_router_importance_weight: 0.0
+  router_capture_weight: 0.0

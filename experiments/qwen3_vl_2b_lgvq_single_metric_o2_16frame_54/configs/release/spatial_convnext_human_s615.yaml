@@ -1,0 +1,10 @@
+base_config: spatial_convnext_teacher_s614.yaml
+output_dir: ../../runs/lgvq_spatial_convnext_human_s615
+random_seed: 615
+
+training:
+  learning_rate: 0.00008
+
+loss:
+  soft_target_ranking_weight: 0.0
+  soft_target_correlation_weight: 0.0

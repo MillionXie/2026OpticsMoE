@@ -554,9 +554,14 @@ class ExperimentSettings:
             raise ValueError(
                 "model.quality_adapter_mode must be linear, spatial_conv, or identity"
             )
-        if self.electronic_route_variant not in {"legacy", "residual_conv"}:
+        if self.electronic_route_variant not in {
+            "legacy",
+            "residual_conv",
+            "residual_convnext",
+        }:
             raise ValueError(
-                "model.electronic_route_variant must be legacy or residual_conv"
+                "model.electronic_route_variant must be legacy, residual_conv, "
+                "or residual_convnext"
             )
         if not 1 <= self.electronic_route_depth <= 4:
             raise ValueError("model.electronic_route_depth must be within [1,4]")
@@ -625,7 +630,10 @@ class ExperimentSettings:
                 invalid.append("late_input_correction_enabled")
             if self.qwen_gate_enabled:
                 invalid.append("qwen_gate_enabled")
-            if self.electronic_route_variant != "residual_conv":
+            if self.electronic_route_variant not in {
+                "residual_conv",
+                "residual_convnext",
+            }:
                 invalid.append("electronic_route_variant")
             if invalid:
                 raise ValueError(
@@ -806,6 +814,7 @@ class ExperimentSettings:
             "residual_only",
             "crossframe_only",
             "appended_electronic_and_crossframe",
+            "appended_electronic_only",
             "quality_refiner_only",
             "quality_refiner_readout",
             "late_input_correction_only",
@@ -822,6 +831,7 @@ class ExperimentSettings:
                 "training.trainable_scope must be all, readout_only, residual_only, "
                 "crossframe_only, "
                 "appended_electronic_and_crossframe, "
+                "appended_electronic_only, "
                 "quality_refiner_only, quality_refiner_readout, or "
                 "late_input_correction_only, frame_stem_only, or "
                 "frame_stem_and_readout, vgg_correction_only, or "

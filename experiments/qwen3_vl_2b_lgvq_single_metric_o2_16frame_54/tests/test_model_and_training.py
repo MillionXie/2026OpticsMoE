@@ -532,6 +532,41 @@ def test_appended_electronic_residual_block_is_exact_identity(
     torch.testing.assert_close(actual, expected, rtol=0.0, atol=0.0)
 
 
+def test_appended_large_kernel_electronic_block_is_exact_identity(
+    tmp_path: Path,
+) -> None:
+    source_settings = replace(
+        _small_settings(tmp_path),
+        electronic_route_variant="residual_conv",
+        electronic_route_depth=2,
+    )
+    torch.manual_seed(714)
+    source = LGVQSingleMetricOEO16(source_settings).eval()
+    checkpoint = tmp_path / "depth2_large_kernel_source.pt"
+    torch.save({"state_dict": source.state_dict()}, checkpoint)
+    destination_settings = replace(
+        source_settings,
+        electronic_route_variant="residual_convnext",
+        electronic_route_depth=3,
+        initialization_checkpoint=checkpoint,
+    )
+    destination_settings.validate()
+    destination = LGVQSingleMetricOEO16(destination_settings).eval()
+    _load_compatible_initialization(destination, destination_settings)
+    inputs = _inputs(frame_count=4)
+    with torch.no_grad():
+        expected = source(*inputs, optical_enabled=False)["prediction"]
+        actual = destination(*inputs, optical_enabled=False)["prediction"]
+    torch.testing.assert_close(actual, expected, rtol=0.0, atol=0.0)
+    assert destination.vision_routes[0].blocks[1].depthwise.kernel_size == (7, 7)
+    assert destination.language_routes[0].blocks[1].depthwise.kernel_size == (7,)
+    assert not any(
+        token in module.__class__.__name__.lower()
+        for module in destination.modules()
+        for token in ("attention", "transformer", "lstm", "gru")
+    )
+
+
 def test_zero_start_skip_strengthens_same_electronic_route_without_new_branch(
     tmp_path: Path,
 ) -> None:
