@@ -1,0 +1,42 @@
+base_config: spatial_calibrated_s620.yaml
+output_dir: ../../runs/lgvq_spatial_electronic_rf_vision_s667
+random_seed: 667
+
+# One identity-start 7x7 depthwise/pointwise block inside the existing vision
+# electronic residual route. The optical branch and physical graph are fixed.
+model:
+  electronic_route_variant: residual_convnext
+  electronic_route_depth: 3
+
+data:
+  training_view_probabilities: [1.0, 0.0, 0.0]
+
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_router_temperature_s620/best_alpha_calibrated_checkpoint.pt
+  trainable_scope: appended_vision_only
+  epochs: 100
+  batch_size: 64
+  learning_rate: 0.00010
+  weight_decay: 0.001
+  learning_rate_warmup_epochs: 3
+  minimum_learning_rate_factor: 0.02
+  ema_decay: 0.99
+  ema_start_epoch: 1
+  test_interval_epochs: 1
+  test_interval_steps: 0
+  phase_snapshot_interval_epochs: 0
+
+loss:
+  regression_weight: 0.50
+  ranking_weight: 1.00
+  correlation_weight: 2.00
+  soft_spearman_weight: 0.20
+  soft_rank_temperature: 0.12
+  soft_target_weight: 0.0
+  level_distribution_weight: 0.0
+  optical_alignment_weight: 0.0
+  router_balance_weight: 0.0
+  router_importance_weight: 0.0
+  serial_router_balance_weight: 0.0
+  serial_router_importance_weight: 0.0
+  router_capture_weight: 0.0

@@ -1,0 +1,7 @@
+base_config: spatial_electronic_rf_vision_s667.yaml
+output_dir: ../../runs/lgvq_spatial_electronic_rf_language_s668
+random_seed: 668
+
+training:
+  trainable_scope: appended_language_only
+  learning_rate: 0.00005
