@@ -1,11 +1,11 @@
 import unittest
 import numpy as np
-from common import config
+from common import config,ROOT
 from patterns import raster,amplitude
 from hardware import geometry,canonical
 
 class PhysicalContractTests(unittest.TestCase):
-    def setUp(self): self.c,_=config('lab.json')
+    def setUp(self): self.c,_=config(ROOT/'lab.json')
     def test_width(self):
         a=raster(np.full((478,478),255),self.c['amplitude_slm'],self.c)
         y,x=np.nonzero(a); self.assertEqual((x.max()-x.min()+1,y.max()-y.min()+1),(1016,1016))
