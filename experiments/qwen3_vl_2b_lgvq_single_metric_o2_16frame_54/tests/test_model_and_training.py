@@ -456,7 +456,13 @@ def test_e2_quality_reinjection_is_exact_zero_start_inside_electronic_route(
     destination_settings.validate()
     destination = LGVQSingleMetricOEO16(destination_settings).eval()
     _load_compatible_initialization(destination, destination_settings)
-    inputs = _inputs(frame_count=4)
+    generator = torch.Generator().manual_seed(716)
+    inputs = (
+        torch.randn(2, 4, 49, 1024, generator=generator),
+        torch.randn(2, 4, 49, 192, generator=generator),
+        torch.randn(2, 4, 2048, generator=generator),
+        torch.ones(2, 4, dtype=torch.bool),
+    )
     with torch.no_grad():
         expected = source(*inputs, optical_enabled=False)["prediction"]
         actual = destination(*inputs, optical_enabled=False)["prediction"]
