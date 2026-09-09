@@ -1,0 +1,6 @@
+base_config: spatial_electronic_micro_s687.yaml
+output_dir: ../../runs/lgvq_spatial_electronic_micro_s689
+random_seed: 689
+
+training:
+  learning_rate: 0.000010
