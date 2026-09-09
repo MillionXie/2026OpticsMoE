@@ -323,7 +323,7 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
                     target,
                 )
             loss = (
-                regression
+                args.regression_weight * regression
                 + args.ranking_weight * ranking
                 + args.correlation_weight * correlation
                 + args.soft_spearman_weight * soft_spearman
@@ -483,6 +483,12 @@ def main() -> int:
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--learning-rate", type=float, default=1.0e-4)
     parser.add_argument("--weight-decay", type=float, default=1.0e-3)
+    parser.add_argument(
+        "--regression-weight",
+        type=float,
+        default=1.0,
+        help="Weight for absolute normalized-MOS Smooth-L1 loss.",
+    )
     parser.add_argument("--ranking-weight", type=float, default=0.5)
     parser.add_argument("--correlation-weight", type=float, default=1.0)
     parser.add_argument("--soft-spearman-weight", type=float, default=0.0)
@@ -510,6 +516,8 @@ def main() -> int:
         help="If >1, interleave this many ordered MOS strata in each epoch.",
     )
     args = parser.parse_args()
+    if args.regression_weight < 0.0:
+        parser.error("--regression-weight must be non-negative")
     train(args)
     return 0
 
