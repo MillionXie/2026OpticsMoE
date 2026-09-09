@@ -114,3 +114,25 @@ python -m LightGenV2.tasks.t03_saliency.recheck_aligned --system optical --confi
 
 复查目录必须尚不存在；按实际日期/目的命名，不覆盖旧证据。若训练正同时写checkpoint，
 读取可能失败，应在完整写入后重试，不把损坏/不完整文件当作有效权重。
+
+## 直流分量差异的训练集小样本诊断
+
+2026-09-10，在上述epoch5/SHA=5aa39e30候选上进行只读诊断，未优化参数：
+从`legacy.build_loaders(..., training=False)`的train dataset中用
+`sorted(random.Random(17042).sample(range(10000),128))`取固定128张，batch16，
+无图像增强/外围autocast，使用`independent_cc`逐图float64计算。
+完整模型保持eval、phase dropout关闭；仅在光分支原`_apply_coherent_zero_order`
+方法调用期间临时设该分支training=True，调用后立即恢复。其余CCD噪声/dropout保持关闭。
+这不代表完整噪声鲁棒性评估，只隔离相干未调制项。振幅/相位eta均原样0.2–0.3，
+保留原随机相对相位；每batch三次抽样的torch seed为`17042+batch_index*3+draw_index`。
+
+|条件|对同一GT的平均CC|与无扰动输出的平均CC|
+|---|---:|---:|
+|无光学扰动|0.8754117339|1|
+|仅未调制分量，抽样0|0.8759857500|0.9941213238|
+|仅未调制分量，抽样1|0.8756770201|0.9938578242|
+|仅未调制分量，抽样2|0.8754149858|0.9940261410|
+
+该小样本没有显示单独直流项造成明显性能损失，故暂不依据“训练含直流、测试关闭”
+直接新增clean/noisy双损失，也不减少20%–30%训练未调制约束。
+这不能证明真实硬件无域偏移、全部噪声无影响或其他样本结论相同；不是正式5000测试分数。
