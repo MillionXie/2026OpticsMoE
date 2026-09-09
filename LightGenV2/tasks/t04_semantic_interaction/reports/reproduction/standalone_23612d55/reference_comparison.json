@@ -1,0 +1,11 @@
+{
+  "absolute_errors": {
+    "changed_cell_accuracy": 0.0,
+    "edit_grid_iou": 0.0,
+    "object_f1": 0.0,
+    "scene_exact_match": 0.0
+  },
+  "tolerance": 0.005,
+  "passed": true,
+  "note": "Cross-device precision tolerance; source metrics were selected by periodic test."
+}

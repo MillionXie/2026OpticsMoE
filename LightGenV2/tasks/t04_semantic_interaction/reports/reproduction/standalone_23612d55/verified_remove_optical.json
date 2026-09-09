@@ -1,0 +1,180 @@
+{
+  "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t04_semantic_interaction/runs/smoke/package_verify_23612d55/openmoji_ours_standard_repro_23612d55/weights/best_checkpoint.pt",
+  "retrained": false,
+  "protocol": "remove both optical feature paths; same weights; electronic coefficient restored to one",
+  "normal": {
+    "overall": {
+      "samples": 1000,
+      "cell_accuracy": 0.9878611115217208,
+      "changed_cell_accuracy": 0.8715,
+      "foreground_category_accuracy": 0.9422000014185905,
+      "preserved_cell_accuracy": 0.9927151281237602,
+      "edit_grid_iou": 0.8327333333333331,
+      "object_f1": 0.9339485236985234,
+      "scene_exact_match": 0.69,
+      "task_accuracy": 1.0
+    },
+    "add": {
+      "samples": 250,
+      "cell_accuracy": 0.9720000033378601,
+      "changed_cell_accuracy": 0.728,
+      "foreground_category_accuracy": 0.9308000023365021,
+      "preserved_cell_accuracy": 0.9789714298248291,
+      "edit_grid_iou": 0.5746666666666665,
+      "object_f1": 0.8813167499167505,
+      "scene_exact_match": 0.352,
+      "task_accuracy": 1.0
+    },
+    "replace": {
+      "samples": 250,
+      "cell_accuracy": 0.9992222218513489,
+      "changed_cell_accuracy": 0.98,
+      "foreground_category_accuracy": 0.9886666669845581,
+      "preserved_cell_accuracy": 0.9997714285850525,
+      "edit_grid_iou": 0.994,
+      "object_f1": 0.9886666666666667,
+      "scene_exact_match": 0.972,
+      "task_accuracy": 1.0
+    },
+    "move": {
+      "samples": 250,
+      "cell_accuracy": 0.9802222208976745,
+      "changed_cell_accuracy": 0.778,
+      "foreground_category_accuracy": 0.849333336353302,
+      "preserved_cell_accuracy": 0.9921176540851593,
+      "edit_grid_iou": 0.7642666666666663,
+      "object_f1": 0.8658106782106786,
+      "scene_exact_match": 0.436,
+      "task_accuracy": 1.0
+    },
+    "remove": {
+      "samples": 250,
+      "cell_accuracy": 1.0,
+      "changed_cell_accuracy": 1.0,
+      "foreground_category_accuracy": 1.0,
+      "preserved_cell_accuracy": 1.0,
+      "edit_grid_iou": 0.998,
+      "object_f1": 1.0,
+      "scene_exact_match": 1.0,
+      "task_accuracy": 1.0
+    },
+    "router_audit": {
+      "language": {
+        "selection_share": [
+          0.24449999630451202,
+          0.25,
+          0.25,
+          0.2554999887943268
+        ],
+        "pair_histogram": [
+          0,
+          0,
+          0,
+          239,
+          0,
+          250,
+          0,
+          0,
+          0,
+          0,
+          261,
+          0,
+          250,
+          0,
+          0,
+          0
+        ],
+        "samples": 1000,
+        "largest_pair_fraction": 0.261,
+        "accepted": true
+      },
+      "vision": {
+        "selection_share": [
+          0.25,
+          0.25,
+          0.25,
+          0.25
+        ],
+        "pair_histogram": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          500,
+          0,
+          0,
+          0,
+          0,
+          500,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "samples": 1000,
+        "largest_pair_fraction": 0.5,
+        "accepted": true
+      }
+    }
+  },
+  "remove_optical": {
+    "overall": {
+      "samples": 1000,
+      "cell_accuracy": 0.9794444353580475,
+      "changed_cell_accuracy": 0.4055,
+      "foreground_category_accuracy": 0.7168500047624111,
+      "preserved_cell_accuracy": 0.9993932775855064,
+      "edit_grid_iou": 0.6128333333333335,
+      "object_f1": 0.8017095238095214,
+      "scene_exact_match": 0.272,
+      "task_accuracy": 1.0
+    },
+    "add": {
+      "samples": 250,
+      "cell_accuracy": 0.9721110985279083,
+      "changed_cell_accuracy": 0.008,
+      "foreground_category_accuracy": 0.6930666749477387,
+      "preserved_cell_accuracy": 0.9996571428775788,
+      "edit_grid_iou": 0.028,
+      "object_f1": 0.8113809523809522,
+      "scene_exact_match": 0.008,
+      "task_accuracy": 1.0
+    },
+    "replace": {
+      "samples": 250,
+      "cell_accuracy": 0.9753333218097687,
+      "changed_cell_accuracy": 0.116,
+      "foreground_category_accuracy": 0.569666671037674,
+      "preserved_cell_accuracy": 0.9998857142925263,
+      "edit_grid_iou": 0.992,
+      "object_f1": 0.6518952380952384,
+      "scene_exact_match": 0.116,
+      "task_accuracy": 1.0
+    },
+    "move": {
+      "samples": 250,
+      "cell_accuracy": 0.9714444327354431,
+      "changed_cell_accuracy": 0.502,
+      "foreground_category_accuracy": 0.6233333395719528,
+      "preserved_cell_accuracy": 0.9990588245391846,
+      "edit_grid_iou": 0.48666666666666636,
+      "object_f1": 0.7584952380952388,
+      "scene_exact_match": 0.004,
+      "task_accuracy": 1.0
+    },
+    "remove": {
+      "samples": 250,
+      "cell_accuracy": 0.9988888883590699,
+      "changed_cell_accuracy": 0.996,
+      "foreground_category_accuracy": 0.981333333492279,
+      "preserved_cell_accuracy": 0.9989714286327362,
+      "edit_grid_iou": 0.9446666666666668,
+      "object_f1": 0.9850666666666668,
+      "scene_exact_match": 0.96,
+      "task_accuracy": 1.0
+    }
+  },
+  "changed_accuracy_drop_percentage_points": 46.6
+}
