@@ -1,0 +1,11 @@
+base_config: spatial_readout_lk7_s634.yaml
+output_dir: ../../runs/lgvq_spatial_readout_lk7_hot_s636
+random_seed: 636
+
+data:
+  training_view_probabilities: [0.90, 0.05, 0.05]
+
+training:
+  learning_rate: 0.0020
+  weight_decay: 0.0005
+  ema_decay: 0.95
