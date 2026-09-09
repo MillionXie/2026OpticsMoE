@@ -779,6 +779,8 @@ def train(
                 "correlation",
                 "soft_spearman",
                 "soft_target",
+                "soft_target_ranking",
+                "soft_target_correlation",
                 "level_distribution",
                 "optical_alignment",
                 "router_balance",
@@ -798,6 +800,47 @@ def train(
             language = batch["language_tokens"].to(device, non_blocking=True)
             language_mask = batch["language_mask"].to(device, non_blocking=True)
             target = batch["target"].to(device, non_blocking=True)
+            teacher = (
+                batch["soft_target"].to(device, non_blocking=True)
+                if "soft_target" in batch
+                else None
+            )
+            # Training-only feature Mixup uses the same coefficient and sample
+            # permutation for both frozen-Qwen inputs, the Conv5 electronic
+            # residual input, the human MOS and (when present) teacher score.
+            # The inference graph is untouched. A symmetric coefficient keeps
+            # each synthetic example anchored to a real video.
+            if (
+                settings.feature_mixup_probability > 0.0
+                and vision.shape[0] > 1
+                and bool(
+                    torch.rand((), device=device)
+                    < settings.feature_mixup_probability
+                )
+            ):
+                if "raw_frames" in batch or "vgg_tokens" in batch:
+                    raise RuntimeError(
+                        "Feature Mixup is restricted to the strict cached-input graph"
+                    )
+                concentration = torch.tensor(
+                    settings.feature_mixup_alpha, device=device
+                )
+                coefficient = torch.distributions.Beta(
+                    concentration, concentration
+                ).sample()
+                coefficient = torch.maximum(coefficient, 1.0 - coefficient)
+                permutation = torch.randperm(vision.shape[0], device=device)
+
+                def mix(value: torch.Tensor) -> torch.Tensor:
+                    return coefficient * value + (1.0 - coefficient) * value[
+                        permutation
+                    ]
+
+                vision = mix(vision)
+                quality = mix(quality)
+                target = mix(target)
+                if teacher is not None:
+                    teacher = mix(teacher)
             normalized_target = (target - model.target_mean) / model.target_std
             optimizer.zero_grad(set_to_none=True)
             result = model(
@@ -830,10 +873,20 @@ def train(
                     settings.soft_rank_temperature,
                 )
             soft_target = result["normalized_prediction"].new_zeros(())
-            if "soft_target" in batch:
-                teacher = batch["soft_target"].to(device, non_blocking=True)
+            soft_target_ranking = soft_target.clone()
+            soft_target_correlation = soft_target.clone()
+            if teacher is not None:
                 normalized_teacher = (teacher - model.target_mean) / model.target_std
                 soft_target = F.smooth_l1_loss(
+                    result["normalized_prediction"], normalized_teacher
+                )
+                # Rank/correlation distillation is deliberately separate from
+                # absolute-score distillation: Qwen's MOS range is compressed,
+                # while its ordering generalizes substantially better.
+                soft_target_ranking = pairwise_ranking_loss(
+                    result["normalized_prediction"], normalized_teacher
+                )
+                soft_target_correlation = batch_correlation_loss(
                     result["normalized_prediction"], normalized_teacher
                 )
             level_distribution = result["normalized_prediction"].new_zeros(())
@@ -861,6 +914,9 @@ def train(
                 + curriculum["correlation_weight"] * correlation
                 + curriculum["soft_spearman_weight"] * soft_spearman
                 + curriculum["soft_target_weight"] * soft_target
+                + settings.soft_target_ranking_weight * soft_target_ranking
+                + settings.soft_target_correlation_weight
+                * soft_target_correlation
                 + settings.level_distribution_weight * level_distribution
                 + settings.optical_alignment_weight * result["optical_alignment_loss"]
                 + curriculum["router_balance_weight"] * result["router_balance_loss"]
@@ -903,6 +959,8 @@ def train(
                 "correlation": correlation,
                 "soft_spearman": soft_spearman,
                 "soft_target": soft_target,
+                "soft_target_ranking": soft_target_ranking,
+                "soft_target_correlation": soft_target_correlation,
                 "level_distribution": level_distribution,
                 "optical_alignment": result["optical_alignment_loss"],
                 "router_balance": result["router_balance_loss"],

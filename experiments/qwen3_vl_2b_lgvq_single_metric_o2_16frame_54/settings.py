@@ -344,7 +344,11 @@ class ExperimentSettings:
     phase_smoothness_weight: float = 0.0
     router_capture_weight: float = 0.02
     soft_target_weight: float = 0.0
+    soft_target_ranking_weight: float = 0.0
+    soft_target_correlation_weight: float = 0.0
     level_distribution_weight: float = 0.0
+    feature_mixup_probability: float = 0.0
+    feature_mixup_alpha: float = 0.20
     mos_stratified_batches: bool = False
     mos_strata: int = 8
     learning_rate_warmup_epochs: int = 0
@@ -855,8 +859,12 @@ class ExperimentSettings:
             raise ValueError(
                 "training.trainable_scope=residual_only requires a residual spatial readout"
             )
-        if self.soft_target_weight < 0.0:
-            raise ValueError("soft_target_weight must be nonnegative")
+        if min(
+            self.soft_target_weight,
+            self.soft_target_ranking_weight,
+            self.soft_target_correlation_weight,
+        ) < 0.0:
+            raise ValueError("All soft-target loss weights must be nonnegative")
         if self.level_distribution_weight < 0.0:
             raise ValueError("level_distribution_weight must be nonnegative")
         if (
@@ -884,8 +892,18 @@ class ExperimentSettings:
             raise ValueError("soft_spearman_weight must be nonnegative")
         if self.soft_rank_temperature <= 0.0:
             raise ValueError("soft_rank_temperature must be positive")
-        if self.soft_target_weight > 0.0 and self.training_soft_targets_path is None:
-            raise ValueError("A positive soft_target_weight requires data.training_soft_targets")
+        if not 0.0 <= self.feature_mixup_probability <= 1.0:
+            raise ValueError("training.feature_mixup_probability must lie in [0,1]")
+        if self.feature_mixup_alpha <= 0.0:
+            raise ValueError("training.feature_mixup_alpha must be positive")
+        if (
+            self.soft_target_weight > 0.0
+            or self.soft_target_ranking_weight > 0.0
+            or self.soft_target_correlation_weight > 0.0
+        ) and self.training_soft_targets_path is None:
+            raise ValueError(
+                "A positive soft-target loss weight requires data.training_soft_targets"
+            )
 
 
 def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSettings:
@@ -1094,9 +1112,19 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         ),
         router_capture_weight=float(get("loss", "router_capture_weight", 0.02)),
         soft_target_weight=float(get("loss", "soft_target_weight", 0.0)),
+        soft_target_ranking_weight=float(
+            get("loss", "soft_target_ranking_weight", 0.0)
+        ),
+        soft_target_correlation_weight=float(
+            get("loss", "soft_target_correlation_weight", 0.0)
+        ),
         level_distribution_weight=float(
             get("loss", "level_distribution_weight", 0.0)
         ),
+        feature_mixup_probability=float(
+            get("training", "feature_mixup_probability", 0.0)
+        ),
+        feature_mixup_alpha=float(get("training", "feature_mixup_alpha", 0.20)),
         mos_stratified_batches=bool(
             get("training", "mos_stratified_batches", False)
         ),
