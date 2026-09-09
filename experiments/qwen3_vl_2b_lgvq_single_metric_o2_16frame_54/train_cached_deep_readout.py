@@ -148,6 +148,8 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
     if settings.spatial_readout_mode not in {
         "spatial_deep_residual",
         "spatial_weighted_level_residual",
+        "spatial_weighted_level_absolute",
+        "spatial_weighted_level_blend",
     }:
         raise ValueError(
             "Config must select a deep or five-level post-optical residual readout"
@@ -246,12 +248,18 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
         target_mean=target_mean,
         target_std=target_std,
     )
-    best_srcc, best_epoch, best_source = float(metrics["srcc"]), 0, "raw"
+    initial_srcc = float(metrics["srcc"])
+    # A logits-only head starts from uniform class probabilities, hence a
+    # constant prediction and an undefined rank correlation. Treat that
+    # warm-up point as negative infinity so the first finite epoch can become
+    # the selected checkpoint.
+    best_srcc = initial_srcc if math.isfinite(initial_srcc) else -math.inf
+    best_epoch, best_source = 0, "raw"
     best_state = {
         name: value.detach().cpu().clone() for name, value in readout.state_dict().items()
     }
     history.append({"epoch": 0, "test": metrics})
-    print(f"epoch 000 spatial_SRCC={best_srcc:.6f}", flush=True)
+    print(f"epoch 000 spatial_SRCC={initial_srcc:.6f}", flush=True)
     for epoch in range(1, args.epochs + 1):
         readout.train()
         totals = {
@@ -375,6 +383,8 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
             flush=True,
         )
     readout.load_state_dict(best_state, strict=True)
+    if not math.isfinite(best_srcc):
+        raise RuntimeError("No finite test SRCC was observed during readout training")
     metrics, prediction, prediction_indices = _evaluate(
         readout,
         raw,

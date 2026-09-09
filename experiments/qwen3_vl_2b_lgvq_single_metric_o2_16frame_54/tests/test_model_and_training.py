@@ -9,6 +9,7 @@ import torch
 
 from ..modeling import (
     LGVQSingleMetricOEO16,
+    SpatialGridReadout,
     TrainableQualityFrameStem,
     _phase,
     _phase_modulation,
@@ -668,6 +669,65 @@ def test_weighted_level_readout_is_exact_warm_start_and_trains_levels(
     assert destination.readout.last_level_logits.shape == (2, 5)
     actual.sum().backward()
     assert destination.readout.residual_output[-1].weight.grad is not None
+
+
+def test_absolute_weighted_levels_use_dilated_post_optical_receptive_field(
+    tmp_path: Path,
+) -> None:
+    settings = replace(
+        _small_settings(tmp_path),
+        spatial_readout_mode="spatial_weighted_level_absolute",
+        spatial_residual_receptive_field="dilated15",
+        spatial_level_score_min=-2.5,
+        spatial_level_score_max=2.0,
+        level_distribution_weight=0.2,
+        trainable_scope="residual_only",
+    )
+    settings.validate()
+    model = LGVQSingleMetricOEO16(settings).eval()
+    assert model.readout.residual_conv[0].dilation == (1, 1)
+    assert model.readout.residual_conv[3].dilation == (2, 2)
+    assert model.readout.residual_conv[6].dilation == (4, 4)
+    vision = torch.randn(2, 4, 49, settings.model_width)
+    language = torch.randn(2, 6, settings.model_width)
+    mask = torch.ones(2, 6, dtype=torch.bool)
+    prediction = model.readout(vision, language, mask)
+    # Zero logits form a uniform distribution, so the direct score begins at
+    # the mean anchor without secretly consuming the legacy scalar head.
+    torch.testing.assert_close(
+        prediction,
+        torch.full_like(prediction, -0.25),
+        rtol=0.0,
+        atol=1.0e-7,
+    )
+    prediction.sum().backward()
+    assert model.readout.residual_output[-1].weight.grad is not None
+    assert "spatialweighted5absolute" in settings.architecture_label
+    assert "rfdilated15" in settings.architecture_label
+
+
+def test_weighted_level_blend_combines_scalar_and_absolute_score(tmp_path: Path) -> None:
+    settings = replace(
+        _small_settings(tmp_path),
+        spatial_readout_mode="spatial_weighted_level_blend",
+        spatial_level_score_min=-2.5,
+        spatial_level_score_max=2.0,
+        spatial_level_blend_initial=0.1,
+        level_distribution_weight=0.2,
+        trainable_scope="residual_only",
+    )
+    settings.validate()
+    model = LGVQSingleMetricOEO16(settings).eval()
+    vision = torch.randn(2, 4, 49, settings.model_width)
+    language = torch.randn(2, 6, settings.model_width)
+    mask = torch.ones(2, 6, dtype=torch.bool)
+    base = SpatialGridReadout.forward(model.readout, vision, language, mask)
+    prediction = model.readout(vision, language, mask)
+    expected = base.lerp(torch.full_like(base, -0.25), 0.1)
+    torch.testing.assert_close(prediction, expected, rtol=1.0e-6, atol=1.0e-7)
+    prediction.sum().backward()
+    assert model.readout.residual_blend_logit.grad is not None
+    assert "spatialweighted5blend10" in settings.architecture_label
 
 
 def test_late_input_correction_is_zero_start_bounded_and_scope_is_strict(

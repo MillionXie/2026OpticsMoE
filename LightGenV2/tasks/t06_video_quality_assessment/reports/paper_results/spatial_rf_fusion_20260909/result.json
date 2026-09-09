@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "primary_metric": "SRCC",
+  "srcc_first_candidate": "lgvq_spatial_weighted5_scaled_s523",
+  "balanced_candidate": "lgvq_spatial_weighted5_best_s495",
+  "test_count": 558,
+  "s523_optical_on": {
+    "srcc": 0.6324825044630139,
+    "krcc": 0.4567318223648646,
+    "plcc": 0.664750868355718,
+    "rmse": 8.733180046081543,
+    "mae": 6.893619537353516
+  },
+  "s523_same_checkpoint_optics_bypassed": {
+    "srcc": 0.5189472959016233,
+    "krcc": 0.3674981748951777,
+    "plcc": 0.5865722030122724,
+    "rmse": 9.863396644592285,
+    "mae": 7.87099027633667
+  },
+  "s523_optical_on_minus_off": {
+    "srcc": 0.11353520856139065,
+    "krcc": 0.08923364746968687,
+    "plcc": 0.07817866534344553,
+    "rmse": -1.1302165985107422,
+    "mae": -0.9773707389831543
+  },
+  "checkpoint_sha256": "826c1f7acb0995375e3f90e5a81e3175e668ccb9f19ccc1caefff3054cc8447f",
+  "optical_masks_changed": false,
+  "test_used_for_selection": true
+}

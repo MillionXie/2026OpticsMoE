@@ -1,0 +1,10 @@
+candidate,readout,receptive_field,srcc,plcc,rmse,decision
+s495,scalar_plus_additive_weighted_levels,7x7,0.6313289531,0.6654514938,8.6772670746,balanced_candidate
+s523,scaled_scalar_plus_additive_weighted_levels,7x7,0.6324825045,0.6647508684,8.7331800461,srcc_first_candidate
+s510,scalar_plus_additive_weighted_levels,pure_dilated_15x15,0.6249979064,0.6625987531,8.6890392303,rejected
+s515,scalar_plus_additive_weighted_levels,residual_dilated_15x15,0.6244894915,0.6621552296,8.7205924988,rejected
+s511_history,absolute_weighted_levels_only,7x7,0.6031937034,0.6501489030,9.6187629700,rejected
+s516,absolute_weighted_levels_only,15x15,0.5997497640,0.6377406900,9.5318078995,rejected
+s520,convex_scalar_absolute_blend_0p1,7x7,0.6265187997,0.6645170302,8.7095251083,rejected
+s521,convex_scalar_absolute_blend_0p3,7x7,0.6262911147,0.6666115023,8.8745574951,rejected
+s522,convex_scalar_absolute_blend_0p1,residual_dilated_15x15,0.6263114554,0.6646764583,8.7212295532,rejected

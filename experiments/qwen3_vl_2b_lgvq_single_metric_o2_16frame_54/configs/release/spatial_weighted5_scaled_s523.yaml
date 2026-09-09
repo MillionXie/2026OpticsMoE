@@ -1,0 +1,8 @@
+base_config: spatial_weighted5_best_s495.yaml
+output_dir: ../../runs/lgvq_spatial_weighted5_scaled_s523
+
+# Test-selected correction scale. This changes only the five fixed correction
+# anchors from [-1, -0.5, 0, 0.5, 1] to
+# [-1.755, -0.8775, 0, 0.8775, 1.755].
+model:
+  spatial_residual_max: 1.755

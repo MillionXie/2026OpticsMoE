@@ -255,6 +255,10 @@ class ExperimentSettings:
     detector_projection_size: int = 96
     spatial_readout_mode: str = "statistics"
     spatial_residual_max: float = 0.10
+    spatial_residual_receptive_field: str = "local7"
+    spatial_level_score_min: float = -2.75
+    spatial_level_score_max: float = 2.25
+    spatial_level_blend_initial: float = 0.10
     spatial_readout_image_focus_max: float = 0.0
     strict_two_branch: bool = False
     quality_branch_enabled: bool = True
@@ -402,6 +406,13 @@ class ExperimentSettings:
         elif self.spatial_readout_mode == "spatial_weighted_level_residual":
             residual_tag = int(round(self.spatial_residual_max * 1000.0))
             suffixes.append(f"spatialweighted5_rmax{residual_tag:03d}_v1")
+        elif self.spatial_readout_mode == "spatial_weighted_level_absolute":
+            suffixes.append("spatialweighted5absolute_v1")
+        elif self.spatial_readout_mode == "spatial_weighted_level_blend":
+            blend_tag = int(round(self.spatial_level_blend_initial * 100.0))
+            suffixes.append(f"spatialweighted5blend{blend_tag:02d}_v1")
+        if self.spatial_readout_mode.startswith("spatial_weighted_level"):
+            suffixes.append(f"rf{self.spatial_residual_receptive_field}_v1")
         if self.spatial_readout_image_focus_max > 0.0:
             focus_tag = int(round(self.spatial_readout_image_focus_max * 100.0))
             suffixes.append(f"imagefocus{focus_tag:03d}_v1")
@@ -500,15 +511,36 @@ class ExperimentSettings:
             "spatial_pyramid_residual",
             "spatial_deep_residual",
             "spatial_weighted_level_residual",
+            "spatial_weighted_level_absolute",
+            "spatial_weighted_level_blend",
         }:
             raise ValueError(
                 "model.spatial_readout_mode must be statistics, spatial_grid, "
                 "spatial_multiscale, spatial_grid_residual, or "
                 "spatial_pyramid_residual, spatial_deep_residual, or "
-                "spatial_weighted_level_residual"
+                "spatial_weighted_level_residual, or "
+                "spatial_weighted_level_absolute, or "
+                "spatial_weighted_level_blend"
             )
         if self.spatial_residual_max <= 0.0:
             raise ValueError("model.spatial_residual_max must be positive")
+        if self.spatial_residual_receptive_field not in {
+            "local7",
+            "dilated15",
+            "hybrid15",
+        }:
+            raise ValueError(
+                "model.spatial_residual_receptive_field must be local7, "
+                "dilated15, or hybrid15"
+            )
+        if self.spatial_level_score_min >= self.spatial_level_score_max:
+            raise ValueError(
+                "model.spatial_level_score_min must be below spatial_level_score_max"
+            )
+        if not 0.0 < self.spatial_level_blend_initial < 1.0:
+            raise ValueError(
+                "model.spatial_level_blend_initial must lie strictly within (0,1)"
+            )
         if self.quality_adapter_mode not in {"linear", "spatial_conv", "identity"}:
             raise ValueError(
                 "model.quality_adapter_mode must be linear, spatial_conv, or identity"
@@ -805,6 +837,8 @@ class ExperimentSettings:
             "spatial_pyramid_residual",
             "spatial_deep_residual",
             "spatial_weighted_level_residual",
+            "spatial_weighted_level_absolute",
+            "spatial_weighted_level_blend",
         }:
             raise ValueError(
                 "training.trainable_scope=residual_only requires a residual spatial readout"
@@ -815,7 +849,12 @@ class ExperimentSettings:
             raise ValueError("level_distribution_weight must be nonnegative")
         if (
             self.level_distribution_weight > 0.0
-            and self.spatial_readout_mode != "spatial_weighted_level_residual"
+            and self.spatial_readout_mode
+            not in {
+                "spatial_weighted_level_residual",
+                "spatial_weighted_level_absolute",
+                "spatial_weighted_level_blend",
+            }
         ):
             raise ValueError(
                 "level_distribution_weight requires the five-level weighted readout"
@@ -891,6 +930,18 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         detector_projection_size=int(get("model", "detector_projection_size", 96)),
         spatial_readout_mode=str(get("model", "spatial_readout_mode", "statistics")),
         spatial_residual_max=float(get("model", "spatial_residual_max", 0.10)),
+        spatial_residual_receptive_field=str(
+            get("model", "spatial_residual_receptive_field", "local7")
+        ),
+        spatial_level_score_min=float(
+            get("model", "spatial_level_score_min", -2.75)
+        ),
+        spatial_level_score_max=float(
+            get("model", "spatial_level_score_max", 2.25)
+        ),
+        spatial_level_blend_initial=float(
+            get("model", "spatial_level_blend_initial", 0.10)
+        ),
         spatial_readout_image_focus_max=float(
             get("model", "spatial_readout_image_focus_max", 0.0)
         ),

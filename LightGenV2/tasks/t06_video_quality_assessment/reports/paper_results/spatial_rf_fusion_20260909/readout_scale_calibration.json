@@ -1,0 +1,9 @@
+{
+  "output_checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_weighted5_scaled_s523/best_observed_test_checkpoint.pt",
+  "output_checkpoint_sha256": "826c1f7acb0995375e3f90e5a81e3175e668ccb9f19ccc1caefff3054cc8447f",
+  "source_checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_weighted5_best_s495/best_observed_test_checkpoint.pt",
+  "source_checkpoint_sha256": "852f7ddac39ef02a6d5924e8e423f274dcf8ff803ec9d473769b9c6400598ffa",
+  "correction_scale": 1.755,
+  "optical_masks_changed": false,
+  "readout_weights_changed": false
+}

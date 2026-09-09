@@ -1448,6 +1448,24 @@ class SpatialPyramidResidualReadout(SpatialGridReadout):
         return base_prediction + bounded_correction
 
 
+class _DilatedResidualConvStack(nn.Module):
+    """Local-to-global 15x15 field with explicit local residual retention."""
+
+    def __init__(self, input_width: int, channels: int) -> None:
+        super().__init__()
+        self.conv1 = nn.Conv2d(input_width, channels, 3, padding=1)
+        self.norm1 = nn.GroupNorm(8, channels)
+        self.conv2 = nn.Conv2d(channels, channels, 3, padding=2, dilation=2)
+        self.norm2 = nn.GroupNorm(8, channels)
+        self.conv3 = nn.Conv2d(channels, channels, 3, padding=4, dilation=4)
+        self.norm3 = nn.GroupNorm(8, channels)
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        local = F.gelu(self.norm1(self.conv1(value)))
+        medium = local + F.gelu(self.norm2(self.conv2(local)))
+        return medium + F.gelu(self.norm3(self.conv3(medium)))
+
+
 class SpatialDeepResidualReadout(SpatialGridReadout):
     """Higher-capacity convolutional correction after all optical stages.
 
@@ -1462,17 +1480,39 @@ class SpatialDeepResidualReadout(SpatialGridReadout):
         width, hidden = settings.model_width, settings.head_width
         self.residual_max = float(settings.spatial_residual_max)
         channels = 128
-        self.residual_conv = nn.Sequential(
-            nn.Conv2d(width, channels, 3, padding=1),
-            nn.GroupNorm(8, channels),
-            nn.GELU(),
-            nn.Conv2d(channels, channels, 3, padding=1),
-            nn.GroupNorm(8, channels),
-            nn.GELU(),
-            nn.Conv2d(channels, channels, 3, padding=1),
-            nn.GroupNorm(8, channels),
-            nn.GELU(),
-        )
+        if settings.spatial_residual_receptive_field == "hybrid15":
+            self.residual_conv = _DilatedResidualConvStack(width, channels)
+        else:
+            dilations = (
+                (1, 2, 4)
+                if settings.spatial_residual_receptive_field == "dilated15"
+                else (1, 1, 1)
+            )
+            self.residual_conv = nn.Sequential(
+                nn.Conv2d(
+                    width, channels, 3, padding=dilations[0], dilation=dilations[0]
+                ),
+                nn.GroupNorm(8, channels),
+                nn.GELU(),
+                nn.Conv2d(
+                    channels,
+                    channels,
+                    3,
+                    padding=dilations[1],
+                    dilation=dilations[1],
+                ),
+                nn.GroupNorm(8, channels),
+                nn.GELU(),
+                nn.Conv2d(
+                    channels,
+                    channels,
+                    3,
+                    padding=dilations[2],
+                    dilation=dilations[2],
+                ),
+                nn.GroupNorm(8, channels),
+                nn.GELU(),
+            )
         pooled_width = channels * 2 * (1 + 4 + 16)
         self.residual_frame = nn.Sequential(
             nn.LayerNorm(pooled_width),
@@ -1573,6 +1613,88 @@ class SpatialWeightedLevelResidualReadout(SpatialDeepResidualReadout):
         self.last_level_logits = logits
         self.last_level_base_prediction = base_prediction
         return base_prediction + correction
+
+
+class SpatialWeightedLevelAbsoluteReadout(SpatialDeepResidualReadout):
+    """Five ordered logits directly predict normalized MOS.
+
+    This is the strict logits-only counterpart of
+    :class:`SpatialWeightedLevelResidualReadout`: it uses the same post-optical
+    convolutional features but does not consume or fuse the legacy scalar
+    prediction. The fixed anchors span the training MOS range in normalized
+    coordinates and keep the result continuous and ordered.
+    """
+
+    def __init__(self, settings: ExperimentSettings) -> None:
+        super().__init__(settings)
+        input_width = self.residual_output[-1].in_features
+        self.residual_output[-1] = nn.Linear(input_width, 5)
+        nn.init.zeros_(self.residual_output[-1].weight)
+        nn.init.zeros_(self.residual_output[-1].bias)
+        self.register_buffer(
+            "level_scores",
+            torch.linspace(
+                settings.spatial_level_score_min,
+                settings.spatial_level_score_max,
+                5,
+            ),
+        )
+        self.last_level_logits: torch.Tensor | None = None
+        self.last_level_base_prediction: torch.Tensor | None = None
+
+    def forward(
+        self, vision: torch.Tensor, language: torch.Tensor, mask: torch.Tensor
+    ) -> torch.Tensor:
+        logits = self.residual_output(
+            self._residual_features(vision, language, mask)
+        )
+        probabilities = logits.float().softmax(-1).to(logits.dtype)
+        prediction = probabilities @ self.level_scores.to(probabilities.dtype)
+        self.last_level_logits = logits
+        self.last_level_base_prediction = torch.zeros_like(prediction)
+        return prediction
+
+
+class SpatialWeightedLevelBlendReadout(SpatialDeepResidualReadout):
+    """Convex fusion of the legacy scalar and an absolute five-level score."""
+
+    def __init__(self, settings: ExperimentSettings) -> None:
+        super().__init__(settings)
+        input_width = self.residual_output[-1].in_features
+        self.residual_output[-1] = nn.Linear(input_width, 5)
+        nn.init.zeros_(self.residual_output[-1].weight)
+        nn.init.zeros_(self.residual_output[-1].bias)
+        self.register_buffer(
+            "level_scores",
+            torch.linspace(
+                settings.spatial_level_score_min,
+                settings.spatial_level_score_max,
+                5,
+            ),
+        )
+        initial = float(settings.spatial_level_blend_initial)
+        self.residual_blend_logit = nn.Parameter(
+            torch.tensor(math.log(initial / (1.0 - initial)))
+        )
+        self.last_level_logits: torch.Tensor | None = None
+        self.last_level_base_prediction: torch.Tensor | None = None
+        self.last_level_blend: torch.Tensor | None = None
+
+    def forward(
+        self, vision: torch.Tensor, language: torch.Tensor, mask: torch.Tensor
+    ) -> torch.Tensor:
+        base_prediction = SpatialGridReadout.forward(self, vision, language, mask)
+        logits = self.residual_output(
+            self._residual_features(vision, language, mask)
+        )
+        probabilities = logits.float().softmax(-1).to(logits.dtype)
+        level_prediction = probabilities @ self.level_scores.to(probabilities.dtype)
+        blend = self.residual_blend_logit.sigmoid().to(level_prediction.dtype)
+        prediction = base_prediction.lerp(level_prediction, blend)
+        self.last_level_logits = logits
+        self.last_level_base_prediction = torch.zeros_like(prediction)
+        self.last_level_blend = blend
+        return prediction
 
 
 class QualitySpatialAdapter(nn.Module):
@@ -2076,6 +2198,10 @@ class LGVQSingleMetricOEO16(nn.Module):
                 self.readout = SpatialDeepResidualReadout(settings)
             elif settings.spatial_readout_mode == "spatial_weighted_level_residual":
                 self.readout = SpatialWeightedLevelResidualReadout(settings)
+            elif settings.spatial_readout_mode == "spatial_weighted_level_absolute":
+                self.readout = SpatialWeightedLevelAbsoluteReadout(settings)
+            elif settings.spatial_readout_mode == "spatial_weighted_level_blend":
+                self.readout = SpatialWeightedLevelBlendReadout(settings)
             else:
                 self.readout = SpatialReadout(settings)
         elif settings.target_name == "temporal":
