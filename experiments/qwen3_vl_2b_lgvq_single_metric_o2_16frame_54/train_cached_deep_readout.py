@@ -171,6 +171,13 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
     test_indices = torch.tensor(
         [index for index, row in enumerate(rows) if row["split"] == "test"]
     )
+    train_targets = raw["targets_normalized"].index_select(0, train_indices)
+    train_ranks = torch.argsort(torch.argsort(train_targets)).float()
+    train_ranks = (train_ranks - train_ranks.mean()) / train_ranks.std(
+        unbiased=False
+    ).clamp_min(1.0e-6)
+    raw["rank_targets"] = torch.zeros_like(raw["targets_normalized"])
+    raw["rank_targets"].index_copy_(0, train_indices, train_ranks)
     if args.soft_targets is not None:
         teacher = torch.load(args.soft_targets, map_location="cpu", weights_only=False)
         names = list(map(str, teacher["target_names"]))
@@ -200,6 +207,7 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
         "mask",
         "targets_normalized",
         "teacher_normalized",
+        "rank_targets",
     ):
         raw[name] = raw[name].to(device)
     train_indices = train_indices.to(device)
@@ -296,9 +304,10 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
             "level_distribution": 0.0,
             "teacher_ranking": 0.0,
             "teacher_correlation": 0.0,
+            "rank_regression": 0.0,
         }
         batches = 0
-        for vision, language, mask, target, teacher, _source in _batches(
+        for vision, language, mask, target, teacher, source_indices in _batches(
             raw,
             train_indices,
             batch_size=args.batch_size,
@@ -313,6 +322,10 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
             optimizer.zero_grad(set_to_none=True)
             prediction_normalized = readout(vision, language, mask)
             regression = F.smooth_l1_loss(prediction_normalized, target)
+            rank_regression = F.smooth_l1_loss(
+                prediction_normalized,
+                raw["rank_targets"].index_select(0, source_indices),
+            )
             ranking = pairwise_ranking_loss(
                 prediction_normalized,
                 target,
@@ -347,6 +360,7 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
                 )
             loss = (
                 args.regression_weight * regression
+                + args.rank_regression_weight * rank_regression
                 + args.ranking_weight * ranking
                 + args.correlation_weight * correlation
                 + args.soft_spearman_weight * soft_spearman
@@ -376,6 +390,7 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
                 ("level_distribution", level_distribution),
                 ("teacher_ranking", teacher_ranking),
                 ("teacher_correlation", teacher_correlation),
+                ("rank_regression", rank_regression),
             ):
                 totals[name] += float(value.detach())
             batches += 1
@@ -512,6 +527,12 @@ def main() -> int:
         default=1.0,
         help="Weight for absolute normalized-MOS Smooth-L1 loss.",
     )
+    parser.add_argument(
+        "--rank-regression-weight",
+        type=float,
+        default=0.0,
+        help="Train against standardized within-training-set MOS ranks.",
+    )
     parser.add_argument("--ranking-weight", type=float, default=0.5)
     parser.add_argument(
         "--ranking-minimum-difference",
@@ -550,8 +571,8 @@ def main() -> int:
         help="If >1, interleave this many ordered MOS strata in each epoch.",
     )
     args = parser.parse_args()
-    if args.regression_weight < 0.0:
-        parser.error("--regression-weight must be non-negative")
+    if min(args.regression_weight, args.rank_regression_weight) < 0.0:
+        parser.error("regression weights must be non-negative")
     if args.ranking_minimum_difference < 0.0:
         parser.error("--ranking-minimum-difference must be non-negative")
     train(args)
