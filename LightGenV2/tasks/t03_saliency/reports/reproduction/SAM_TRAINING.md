@@ -59,7 +59,8 @@ python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TA
 python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TASK/configs/moe_alpha40_sam005.yaml" --phase all
 ```
 
-产物分别为任务`runs/simulation/moe_alpha40_sam_<control|005>_seed42`。
+产物分别为任务`runs/simulation/moe_alpha40_sam_control_seed42`和
+`runs/simulation/moe_alpha40_sam005_seed42`（后者sam与005之间没有下划线）。
 检查run_manifest的commit/命令、resolved_config中的rho、初始化SHA、完整测试历史、
 `selected_checkpoint_test_evaluation.json`的alpha/专家占比/实际相位更新，及best可视化。
 若best仍是epoch0，必须报告未超过源权重，不能记作新训练成绩。
