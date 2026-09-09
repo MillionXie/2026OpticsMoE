@@ -1,0 +1,55 @@
+base_config: ../../t01_object_retrieval/configs/common_dc20.yaml
+
+dataset:
+  dataset_root: /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data
+  download: false
+qwen:
+  model_id: /DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-Embedding-2B/snapshots/9f2f7e710d6d810056aa5c0a4f04764fec6bb7bda
+  local_files_only: true
+  instruction: Represent this catalog product image for category-aware visual similarity retrieval.
+router_experiment:
+  source_checkpoint: /DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/runs/caltech101_warmstart5_stage2_joint_sealed_test/ema_best_train_loss_checkpoint.pt
+  optical:
+    input_shift_pixels: 0
+    phase_shift_pixels: 0
+    ccd_shift_pixels: 0
+balanced_fusion:
+  alpha_initial: 0.10
+language_optical:
+  k_space: {enabled: false}
+  perturbation:
+    max_shift_pixels: 0
+    phase_shift_pixels: 0
+    ccd_shift_pixels: 0
+training:
+  teacher_enabled: true
+  epochs: 40
+  readout_learning_rate: 0.0002
+  adapter_learning_rate: 0.00005
+  phase_learning_rate: 0.006
+  router_learning_rate: 0.01
+  ema_decay: 0.99
+  lambda_kd: 0.30
+  lambda_router_hard_load_balance: 0.50
+batching:
+  batch_size: 12
+  pk_skus_per_batch: 4
+  pk_images_per_sku: 3
+  optimizer_steps_per_epoch: 60
+  inference_batch_size: 4
+  teacher_batch_size: 4
+  num_workers: 2
+augmentation:
+  enabled: false
+lightgen:
+  robustness_contract:
+    displacement_pixels: 0
+    k_space_theta_max_deg: null
+    coherent_zero_order_intensity_range: [0.20, 0.30]
+    evaluation: deterministic_ideal_optics
+abo_image_image:
+  teacher_cache: ../runs/simulation/frozen_qwen_20260909/features.pt
+  temperature: 0.07
+  supervised_contrastive_weight: 1.0
+  teacher_kd_weight: 0.30
+output_dir: ../runs/simulation/optical_top2_dc20_20260909
