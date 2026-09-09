@@ -14,8 +14,16 @@ def main():
     start=time.perf_counter(); b=create(args.device,args.export_native)
     out=ROOT/'results'/args.output; out.mkdir(parents=True,exist_ok=True)
     phase_dir=ROOT/'assets/phases'; phase_dir.mkdir(parents=True,exist_ok=True)
-    for stage,arr in phases(b).items(): np.save(phase_dir/(stage+'.npy'),arr,allow_pickle=False)
-    write(phase_dir/'contract.json',optical_contract(b))
+    phase_errors={}
+    for stage,arr in phases(b).items():
+        target=phase_dir/(stage+'.npy')
+        if target.exists():
+            saved=np.load(target,allow_pickle=False)
+            phase_errors[stage]=float(np.max(np.abs(saved-arr)))
+            if saved.shape!=arr.shape or not np.allclose(saved,arr,atol=5e-6,rtol=1e-6):
+                raise ValueError('Packaged phase differs from checkpoint: '+stage)
+        else: np.save(target,arr,allow_pickle=False)
+    if not (phase_dir/'contract.json').exists(): write(phase_dir/'contract.json',optical_contract(b))
     ss=samples(args.limit)
     titles=tuple(b.m.Title(s['label'],str(s['label']),s['text']) for s in ss if s['kind']=='title')
     images=b.m._read_samples(ROOT/'assets/test_dataset/test.csv',ROOT/'assets/test_dataset','test')
@@ -27,7 +35,8 @@ def main():
     report={'mode':'compact_software_simulation','metrics':metrics,'test_count':len(images),
         'checkpoint_sha256':CHECKPOINT_SHA,'native_transformer_loaded':False,'device':str(b.device),
         'torch':torch.__version__,'elapsed_seconds':time.perf_counter()-start,'reference_historical_r1':1934/2400,
-        'precision':'CPU FP32 native frontend; CUDA original autocast','no_accuracy_guarantee_for_hardware':True}
+        'precision':'CPU FP32 native frontend; CUDA original autocast','no_accuracy_guarantee_for_hardware':True,
+        'phase_array_max_error_to_packaged':phase_errors}
     write(out/'metrics.json',report); print(report,flush=True)
 
 if __name__=='__main__': main()

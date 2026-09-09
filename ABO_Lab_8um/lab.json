@@ -23,7 +23,7 @@
     "discard_frames_after_display": 2
   },
   "settle_delay_ms": 200,
-  "capture_input_range": null,
+  "capture_input_range": [0, 255],
   "logical_corners_full_sensor_xy": {
     "top_left": null, "top_right": null, "bottom_right": null, "bottom_left": null
   },

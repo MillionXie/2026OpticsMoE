@@ -11,6 +11,7 @@ from common import ROOT,config,write
 def main():
     p=argparse.ArgumentParser(); p.add_argument('--bmp',default='generated/cal/A_L.bmp'); args=p.parse_args()
     out=ROOT/'results/desktop_probe'; out.mkdir(parents=True,exist_ok=True)
+    write(out/'status.json',{'status':'running','bmp':args.bmp})
     with (out/'run.log').open('w',encoding='utf-8',buffering=1) as log:
         sys.stdout=log; sys.stderr=log
         try:

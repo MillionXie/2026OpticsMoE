@@ -33,6 +33,8 @@ notepad LAB.local.json
 
 必须实测填写：`capture_input_range`（相机真实码值范围，不是本张图最大值）、`logical_corners_full_sensor_xy`四个逻辑角、`geometry_confirmed`。先保持false。相机全幅采集，不要求四个角是4的倍数，也不照搬TUCam的硬件ROI整除约束。
 
+这台DVP已实测为Mono8、5480×3648，初始值域已填[0,255]，不要改成之前TUCam的[0,65535]。若在相机软件中改变像素格式，必须重新核对。
+
 曝光`camera.exposure_us`单位μs，起始3500=3.5ms。`settle_delay_ms`是SLM已经显示后的额外等待，初始200ms。`discard_frames_after_display`丢旧相机帧；`warmup_frames`只在打开相机时执行。Holoeye约60Hz，不是Meadowlark1.4kHz。
 
 ## 2. 生成并核对标定BMP
@@ -78,6 +80,8 @@ notepad LAB.local.json
 ```
 
 4张测试图 + 完整100标题候选。标题也需3次Language采集，总计324帧；不是只采4×6。正式完整2400图另建会话`--session full01 --limit 0`，总14700帧。不要第一步就采全量，原始CCD会占用大量磁盘。
+
+此DVP全幅一帧未压缩约20MB：全量仅原始帧可达294GB，另有播放BMP等；无损TIFF可减少占用但压缩比不保证。现D盘空间不足以按未压缩上界保存全量，请先小样本、确认ROI后适当设置硬件ROI或准备大容量存储。程序在剩余空间不足2GiB时会停止并保留已有帧。
 
 ## 5. 每层先生成输入、手动切相位、再采集
 

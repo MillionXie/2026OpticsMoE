@@ -24,6 +24,9 @@ def main():
             if folder=='models' and f.suffix=='.safetensors' and f.name!='native_student.safetensors': continue
             if folder=='models' and f.name=='ASSET_MANIFEST.json': continue # Full source manifest does not describe compact export.
             add(f,str(rel))
+    # Reference phases are the audited original export, not re-quantized on a new CPU/GPU.
+    for f in (ROOT/'original_optics/reference_phases').glob('*.npy'):
+        add(f,'assets/phases/'+f.name)
     # Include audited current common driver/legacy worker without bringing old data.
     sdk=repo/'experiments/hardware_sdk'
     for f in sdk.rglob('*.py'):
@@ -50,7 +53,7 @@ def main():
     # Full manifest is verified after extraction: mismatched old assets still fail.
     with zipfile.ZipFile(a.output.with_name('ABO_source_update.zip'),'w',zipfile.ZIP_DEFLATED) as z:
         for name,f in sorted(paths.items()):
-            if name.endswith(('.py','.md','.txt','.json','.yaml','.ps1')) and not name.startswith(('models/','assets/')):
+            if name.startswith(('assets/phases/','generated/')) or (name.endswith(('.py','.md','.txt','.json','.yaml','.ps1')) and not name.startswith(('models/','assets/'))):
                 z.write(f,name)
         z.writestr('RELEASE_MANIFEST.json',json.dumps(manifest,indent=2,ensure_ascii=False))
     target=a.output.with_name('ABO_source_update.zip') if a.source_only else a.output

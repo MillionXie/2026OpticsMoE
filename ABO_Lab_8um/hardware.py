@@ -57,6 +57,9 @@ class Bench:
     def __exit__(self,*args): return self.stack.__exit__(*args)
     def capture(self,bmp,path,rectify=True):
         path=__import__('pathlib').Path(path); path.parent.mkdir(parents=True,exist_ok=True)
+        import shutil
+        if shutil.disk_usage(path.parent).free<2*1024**3:
+            raise RuntimeError('Less than 2 GiB disk free; paused without deleting old captures.')
         t0=time.perf_counter()
         if bmp is not None:
             # Preload exactly one; no thousands-of-BMP GPU preload on 3GB card.
