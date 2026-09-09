@@ -1,5 +1,15 @@
 # T07 商品检索（图搜图）
 
+## 当前候选：2026-09-10 相位再加热
+
+`runs/simulation/polish_phase_reheat_20260910/best_checkpoint.pt`（best epoch10）：
+A100训练周期评估Hit@1 **70.0000%（336/480）**；同一SHA权重在RTX4090上两次独立进程复评均为
+**70.2083%（337/480）**、mAP@10 **0.68003894**；同权重去光 **67.2917%**（下降2.9167个百分点）。
+跨GPU有1张查询差异，不把它解释成额外训练增益，也不能称为显著突破；保守主表使用70.00%。
+仍明显落后冻结大模型95.2083%。没有改网络/光路/图库；仅特征相位峰值LR提升10倍，采用低LR电子续训、EMA。
+权重SHA256：`3674981c3499555077c7eadc3072a11e07583675000ec4c012616a96185867f5`。
+完整结果、服务器路径和复评命令见[唯一复现入口](reports/reproduction/README.md#2026-09-10-完成结果与固定权重复评)。
+
 - 当前数据集：`data/abo_similarity10_data`，来源 `abo_similarity10_data_only.zip`。
 - 2026-09-09：两组光学40epoch与冻结baseline均完成。冻结原始输入2048D Hit@1=**95.2083%**，同光学输入64D=**92.9167%**；光学初版**60.8333%**，同结构加强语义训练版**65.4167%**（best25），同best去光**64.5833%**。当前光学性能仍明显落后，不能称为接近baseline。[本轮证据](reports/reproduction/RUN_20260909.md)。
 - 历史冻结 Qwen3-VL-Embedding-2B：Hit@1 **95.2083%**，出处见 `reports/reproduction/BASELINE_METHODS.md`。这不是 T08 图搜文的 73.71%。
@@ -7,7 +17,7 @@
 
 ## 2026-09-09 后续优化（两组80epoch已完成）
 
-当前较好模型为 **refine_training_20260909 / best80**：Hit@1 **69.5833%**、mAP@10 **0.67616634**；
+本轮历史较好模型为 **refine_training_20260909 / best80**：Hit@1 **69.5833%**、mAP@10 **0.67616634**；
 同权重去光 Hit@1 **67.0833%**，下降2.50个百分点。checkpoint SHA256：
 `2d588f40a1aa9f09336745b1e14a61c0cca76874f4c6d4f24a3d6163b978f20c`。
 电子增强组 best60：Hit@1 **67.0833%**、mAP@10 **0.67153315**，同权重去光 **66.6667%**，
@@ -30,7 +40,9 @@ V1/V2/L1/L2 alpha约0.1027/0.1042/0.0882/0.0875。不能把alpha直接解释为�
 查看实时进度用对应 `status.json`、`history.json`；只有出现 `final_report.json` 且 status=complete
 才表示包括去光与可视化在内的完整训练结束。运行中数字不要替代正式结果表。
 
-## 新一轮图库对齐（运行状态以run为准）
+## 图库对齐对照（两组60epoch已完成）
+
+Hit@1分别为68.7500%与68.5417%，未超过上述69.5833%；不作为当前部署候选。
 
 `configs/refine_gallery.yaml` 和 `configs/refine_gallery_relation.yaml`，各60epoch，
 对应 `runs/simulation/refine_gallery_20260909` 和 `refine_gallery_relation_20260909`。

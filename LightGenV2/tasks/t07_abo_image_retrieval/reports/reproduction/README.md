@@ -139,6 +139,58 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.run --mode optical \
   --config LightGenV2/tasks/t07_abo_image_retrieval/configs/polish_smoothing.yaml
 ```
 
+## 2026-09-10 完成结果与固定权重复评
+
+本轮保留原推理结构、480张query、120个训练商品中心、Top-2、同尺度融合、训练直流/CCD噪声。
+单seed，三个预设30epoch对照；每5epoch测试选EMA best，**不是独立无偏测试，也不是多seed统计**。
+
+| 方案 | best epoch | Hit@1 | mAP@10 | 同权重去光Hit@1 |
+| --- | ---: | ---: | ---: | ---: |
+| 旧refine_training | 80 | 69.5833% | 0.67616634 | 67.0833% |
+| polish_low_lr | 10 | 69.5833% | 0.68140021 | 67.0833% |
+| polish_smoothing | 30 | 69.3750% | 0.67446313 | 67.5000% |
+| phase_reheat最终恢复best，A100 | 10 | **70.0000%** | **0.67950967** | **67.0833%** |
+| phase_reheat固定best，RTX4090复评两次一致 | 10 | **70.2083%** | **0.68003894** | **67.2917%** |
+
+phase_reheat的A100训练周期best为70.0000%（336/480）；RTX4090固定权重复评为337/480。
+两次4090逐query CSV完全一致；跨GPU仅query `4959f7d1e5955571` 的Top-1正确性由错变对。
+两设备测试embedding平均余弦0.99979985、元素RMS差0.00250140；评估沿用bfloat16 autocast，
+与微小数值差影响近邻排序相符，但没有进一步隔离到具体算子。保守主表记70.00%，不挑硬件较高结果充当额外训练提升。
+相较旧best仅增加2～3张命中，不能因此宣称统计显著或已经接近95.2083%的冻结baseline。
+
+训练源码：low_lr和phase_reheat为`40544b2b`；smoothing及固定复评为`74da80d0`。
+后者只新增可选训练CE label_smoothing，phase_reheat配置未启用，推理图不变。
+新best SHA256：`3674981c3499555077c7eadc3072a11e07583675000ec4c012616a96185867f5`。
+续训起点为旧best SHA256 `2d588f40a1aa9f09336745b1e14a61c0cca76874f4c6d4f24a3d6163b978f20c`。
+V1/V2/L1/L2 alpha分别约0.10270/0.10415/0.08809/0.08742；这是融合系数，不等于性能贡献。
+同权重去光的A100和4090差值均为2.9167个百分点；不另训纯电网络。
+三组训练及两次独立复评均已complete。最佳相位raw参数相对此轮起点的RMS变化约0.0502～0.1037，
+确实发生更新；这不是包裹相位的弧度距离，也不把训练末轮live权重变化当作best变化。
+best epoch的live训练Top-2选择计数：V=[478,473,488,481]，L=[495,481,489,455]；
+份额均约23.7%～25.8%，本轮训练未见明显单专家集中。这不是EMA best在test上的使用率。
+
+服务器唯一结果根目录：
+`/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/`。
+
+- `polish_phase_reheat_20260910/`：best/last权重，训练history、配置、最终报告和`best_phase_overview.png`、`comparison.png/pdf`。
+- `polish_phase_reheat_reeval_epoch10_20260910/`：首次4090固定复评，`final_report.json`、逐query CSV、检索特征。
+- `polish_phase_reheat_reeval_repeat_20260910/`：第二次独立4090进程复评，相同权重SHA和指标。
+- `polish_low_lr_20260910/`与`polish_smoothing_20260910/`：失败对照，保留审计证据，不替换best。
+
+从仓库根目录运行（output必须使用不存在的新run目录；不需重训/教师特征缓存）：
+
+```bash
+CUDA_VISIBLE_DEVICES=GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd \
+HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
+/home/guest3/miniconda3/envs/xml/bin/python -m LightGenV2.tasks.t07_abo_image_retrieval.run \
+  --mode evaluate \
+  --config LightGenV2/tasks/t07_abo_image_retrieval/configs/polish_phase_reheat.yaml \
+  --checkpoint LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/polish_phase_reheat_20260910/best_checkpoint.pt \
+  --run-dir LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/phase_reheat_fixed_check_new
+```
+
+GPU UUID是本服务器4090；在其他机器需替换为当地空闲GPU。数据与冻结Qwen前端仍需按前文准备。
+
 ## 历史审计说明（保留）
 
 [历史 baseline 方法审计](BASELINE_METHODS.md)保留了旧运行的模型、预处理及评估定义。
