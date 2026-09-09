@@ -30,6 +30,9 @@ best均保留源权重；相位和新增卷积外圈确实更新。下一轮从a
 现从0.85812016进行三组不改结构的受控精修：小步长保留KD、逐步撤KD、撤KD加强GT CC。
 新增可选自动平台调速/早停，仅影响新profile，不修改正在运行的旧试验。
 完整规则、指标口径及命令见[平台期受控精修](reports/reproduction/ADAPTIVE_REFINEMENT.md)。
+三组受控精修均在22轮自动停止，没有超过0.85812016。当前转向现有电子残差内部的
+展开空间深度卷积：新增6912参数，不加分支/attention，不改光路或解码头。
+三组设计及命令见[电子残差空间FFN](reports/reproduction/SPATIAL_FFN_RESIDUAL.md)。
 
 ## 数据协议
 

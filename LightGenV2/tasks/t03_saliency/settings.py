@@ -106,6 +106,20 @@ def load_settings(path: str | Path) -> Any:
     settings.expand_kernel_on_warmstart = bool(d("training.expand_kernel_on_warmstart", False))
     settings.electronic_grn = bool(d("lightgen.electronic_grn", False))
     settings.initialize_grn_on_warmstart = bool(d("training.initialize_grn_on_warmstart", False))
+    settings.electronic_ffn_spatial_dilation = int(d("lightgen.electronic_ffn_spatial_dilation", 0))
+    settings.initialize_ffn_on_warmstart = bool(d("training.initialize_ffn_on_warmstart", False))
+    settings.ffn_spatial_learning_rate = float(d("training.ffn_spatial_learning_rate", 0.0001))
+    if settings.electronic_ffn_spatial_dilation not in (0, 1, 2):
+        raise ValueError("Spatial FFN dilation must be 0(off), 1, or 2")
+    if settings.initialize_ffn_on_warmstart and not settings.electronic_ffn_spatial_dilation:
+        raise ValueError("Spatial FFN transfer requires enabled module")
+    if settings.electronic_ffn_spatial_dilation:
+        if settings.electronic_grn or settings.electronic_spatial_kernel_size != 3:
+            raise ValueError("Isolate spatial FFN from GRN/expanded token kernels")
+        if not settings.initialization_checkpoint or settings.electronic_width != 192 or settings.electronic_expansion != 2:
+            raise ValueError("Spatial FFN requires audited 192->384 warmstarted SALICON")
+        if not 0 < settings.ffn_spatial_learning_rate < float('inf'):
+            raise ValueError("Spatial FFN learning rate must be finite and positive")
     if settings.initialize_grn_on_warmstart and not settings.electronic_grn:
         raise ValueError("GRN identity transfer requires electronic_grn")
     if settings.electronic_spatial_kernel_size not in {3, 5}:
@@ -174,6 +188,7 @@ def save_resolved_config(settings: Any) -> None:
     values = yaml.safe_load(path.read_text(encoding="utf-8"))
     values["lightgen"].update(task="t03_saliency", ccd_normalization=settings.ccd_normalization,
                             electronic_grn=settings.electronic_grn,
+                            electronic_ffn_spatial_dilation=settings.electronic_ffn_spatial_dilation,
                             electronic_spatial_kernel_size=settings.electronic_spatial_kernel_size)
     values.setdefault("augmentation", {}).update(enabled=settings.augmentation_enabled, mode=settings.augmentation_mode,
         crop_scale_min=settings.crop_scale_min, horizontal_flip_probability=settings.horizontal_flip_probability,
@@ -187,6 +202,8 @@ def save_resolved_config(settings: Any) -> None:
         reset_fusion_on_warmstart=settings.reset_fusion_on_warmstart,
         expand_kernel_on_warmstart=settings.expand_kernel_on_warmstart,
         initialize_grn_on_warmstart=settings.initialize_grn_on_warmstart,
+        initialize_ffn_on_warmstart=settings.initialize_ffn_on_warmstart,
+        ffn_spatial_learning_rate=settings.ffn_spatial_learning_rate,
         adaptive_plateau={"enabled": settings.adaptive_plateau_enabled,
                           **settings.adaptive_plateau_options},
         staged={"enabled": settings.staged_training, "warmup_epochs": settings.staged_warmup_epochs,

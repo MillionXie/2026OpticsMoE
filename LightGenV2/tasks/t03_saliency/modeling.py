@@ -28,6 +28,7 @@ from experiments.qwen3_vl_embedding_2b_lsp_pose_optical_router.modeling import (
 )
 from experiments.vision2_hybrid_dense.modeling import SaliencyDensityDecoder
 from .lightweight_residual import configure_grn, initialize_identity_grn
+from .lightweight_residual import configure_spatial_ffn, initialize_identity_spatial_ffn
 
 
 def architecture_label(settings: Any) -> str:
@@ -40,7 +41,9 @@ def architecture_label(settings: Any) -> str:
     label += "_mean_only" if settings.ccd_normalization == "mean_only" else ""
     kernel = getattr(settings, "electronic_spatial_kernel_size", 3)
     label += f"_ek{kernel}" if kernel != 3 else ""
-    return label + ("_grn" if getattr(settings, "electronic_grn", False) else "")
+    label += "_grn" if getattr(settings, "electronic_grn", False) else ""
+    dilation = getattr(settings, "electronic_ffn_spatial_dilation", 0)
+    return label + (f"_cffn_d{dilation}" if dilation else "")
 
 
 def configure_spatial_kernel(hybrid: nn.Module, kernel: int) -> None:
@@ -119,6 +122,8 @@ class LightGenVision2SaliencyStudent(RobustVision2PoseStudent):
         configure_spatial_kernel(self.core.hybrid, getattr(settings, "electronic_spatial_kernel_size", 3))
         if getattr(settings, "electronic_grn", False):
             configure_grn(self.core.hybrid)
+        if getattr(settings, "electronic_ffn_spatial_dilation", 0):
+            configure_spatial_ffn(self.core.hybrid, settings.electronic_ffn_spatial_dilation)
         self.capture_block = _RobustCaptureBlock(self.core)
         self.student_blocks = nn.ModuleList(
             [self.capture_block]
@@ -202,6 +207,9 @@ def initialize_student(
         allowed = {model.checkpoint_architecture}
         expand_kernel = getattr(settings, "expand_kernel_on_warmstart", False)
         initialize_grn = getattr(settings, "initialize_grn_on_warmstart", False)
+        initialize_ffn = getattr(settings, "initialize_ffn_on_warmstart", False)
+        if initialize_ffn:
+            allowed.add(model.checkpoint_architecture.removesuffix(f"_cffn_d{settings.electronic_ffn_spatial_dilation}"))
         without_grn = model.checkpoint_architecture.removesuffix("_grn")
         source_ek3 = without_grn.removesuffix("_ek5")
         if initialize_grn:
@@ -217,6 +225,9 @@ def initialize_student(
             raise RuntimeError("T03 warmstart architecture mismatch")
         target_state = model.core.state_dict()
         core_state, grn_added = payload["core"], False
+        ffn_added = False
+        if initialize_ffn:
+            core_state, ffn_added = initialize_identity_spatial_ffn(core_state, target_state)
         if initialize_grn:
             core_state, grn_added = initialize_identity_grn(core_state, target_state)
         # Fusion-range re-encoding and kernel expansion may occur together.
@@ -231,6 +242,7 @@ def initialize_student(
                 "source_architecture": payload["architecture"], "target_architecture": model.checkpoint_architecture,
                 "kernel_transfer": "3x3 centered in zero 5x5; initial convolution function preserved" if transfer else "none",
                 "identity_grn_added": grn_added,
+                "identity_spatial_ffn_added": ffn_added,
                 "fusion_reset": settings.reset_fusion_on_warmstart,
                 "fusion_alpha_initial": settings.fusion_alpha_initial}
     path = settings.common_initialization_checkpoint
@@ -296,11 +308,14 @@ def optimizer(
         and id(value) not in phase_ids | router_ids | head_ids
     ]
     readout_ids = {id(value) for value in readout}
+    spatial_ffn = [p for n, p in model.core.named_parameters()
+                   if p.requires_grad and ".mlp.1.0.conv." in n]
+    spatial_ids = {id(p) for p in spatial_ffn}
     electronic = [
         value
         for value in model.parameters()
         if value.requires_grad
-        and id(value) not in phase_ids | router_ids | head_ids | readout_ids
+        and id(value) not in phase_ids | router_ids | head_ids | readout_ids | spatial_ids
     ]
     groups = [
         {"params": electronic, "lr": settings.student_learning_rate, "name": "electronic"},
@@ -310,6 +325,9 @@ def optimizer(
     ]
     if router:
         groups.insert(1, {"params": router, "lr": settings.router_learning_rate, "name": "optical_router"})
+    if spatial_ffn:
+        groups.append({"params": spatial_ffn, "lr": settings.ffn_spatial_learning_rate,
+                       "name": "electronic_ffn_spatial", "weight_decay": 0.0})
     groups = [group for group in groups if group["params"]]
     for group in groups:
         if group["name"] in {"feature_phase", "optical_router"}:
@@ -337,6 +355,8 @@ def architecture_report(model: LightGenVision2SaliencyStudent, settings: Any) ->
             "latent_width": settings.electronic_width,
             "spatial_depthwise_kernel": getattr(settings, "electronic_spatial_kernel_size", 3),
             "electronic_grn": getattr(settings, "electronic_grn", False),
+            "ffn_spatial_dilation": getattr(settings, "electronic_ffn_spatial_dilation", 0),
+            "ffn_spatial_parameters": sum(p.numel() for n,p in model.core.named_parameters() if ".mlp.1.0.conv." in n),
             "grn_parameters": sum(p.numel() for n, p in model.core.named_parameters() if ".mlp.2.0." in n),
             "extra_electronic_parameters_vs_kernel3": 2 * settings.electronic_width * (getattr(settings, "electronic_spatial_kernel_size", 3)**2 - 9),
         },

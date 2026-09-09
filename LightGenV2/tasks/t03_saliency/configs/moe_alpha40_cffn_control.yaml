@@ -1,0 +1,20 @@
+base_config: moe_alpha40_adaptive_keepkd.yaml
+# Common fresh optimizer and unchanged .85812016 warmstart/alpha for all variants.
+training:
+  student_epochs: 40
+  student_learning_rate: 0.00001
+  phase_learning_rate: 0.00005
+  router_learning_rate: 0.00001
+  dense_readout_learning_rate: 0.00001
+  dense_head_learning_rate: 0.00002
+  ffn_spatial_learning_rate: 0.0001
+  staged:
+    warmup_epochs: 5
+    polish_start: 31
+    freeze_electronic_gradients: true
+  adaptive_plateau:
+    min_epoch: 12
+    patience: 4
+protocol:
+  test_interval_epochs: 2
+output_dir: ../runs/simulation/moe_alpha40_cffn_control_seed42

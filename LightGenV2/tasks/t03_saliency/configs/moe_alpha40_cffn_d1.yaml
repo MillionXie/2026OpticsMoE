@@ -1,0 +1,6 @@
+base_config: moe_alpha40_cffn_control.yaml
+lightgen:
+  electronic_ffn_spatial_dilation: 1
+training:
+  initialize_ffn_on_warmstart: true
+output_dir: ../runs/simulation/moe_alpha40_cffn_d1_seed42
