@@ -34,6 +34,11 @@ best均保留源权重；相位和新增卷积外圈确实更新。下一轮从a
 展开空间深度卷积：新增6912参数，不加分支/attention，不改光路或解码头。
 三组设计及命令见[电子残差空间FFN](reports/reproduction/SPATIAL_FFN_RESIDUAL.md)。
 
+2026-09-10：空间FFN三组已在34轮早停，均未超越0.85812016，历史best保留。
+现以CC≥0.87为优化目标，从较早的0.85468765来源开展同步弱增强/空间FFN/更强KD三组对照。
+不重置alpha，不改变光路或读出头；训练后期关闭增强精修。完整配置、边界和命令见
+[泛化优化](reports/reproduction/VIEW_REGULARIZATION.md)。目标尚未达成，结果以run完整复评为准。
+
 ## 数据协议
 
 - train：SALICON 2015r1 官方 train2014，10,000 张。

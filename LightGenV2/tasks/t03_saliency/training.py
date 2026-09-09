@@ -22,7 +22,7 @@ from experiments.qwen3_vl_embedding_2b_salicon_vision_optical_saliency.visualiza
 
 from .modeling import build_student, initialize_student, optimizer
 from .visualize import render
-from .training_support import ModelEMA, TrainTeacherMaps, AlignedFlipLoader, distillation_weight
+from .training_support import ModelEMA, TrainTeacherMaps, AlignedFlipLoader, AlignedWeakLoader, distillation_weight
 from .plateau import PlateauController
 
 
@@ -119,7 +119,8 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
     _write_json(settings.output_dir / "initialization_report.json", initialization)
     loader_settings = copy(settings)
     aligned_flip = settings.augmentation_enabled and settings.augmentation_mode == "aligned_flip"
-    if aligned_flip:
+    aligned_weak = settings.augmentation_enabled and settings.augmentation_mode == "aligned_weak"
+    if aligned_flip or aligned_weak:
         loader_settings.augmentation_enabled = False
     train_loader, test_loader = legacy.build_loaders(bundle, loader_settings, training=True)
     optim = optimizer(model, settings)
@@ -129,13 +130,16 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
     if aligned_flip:
         train_loader = AlignedFlipLoader(train_loader, settings.horizontal_flip_probability,
                                         settings.random_seed + 703, teacher)
+    if aligned_weak:
+        train_loader = AlignedWeakLoader(train_loader, settings, teacher)
     if teacher is not None:
         from .modeling import sha256_file
         _write_json(settings.output_dir / "teacher_cache_provenance.json", {
             **teacher.manifest, "cache_sha256": sha256_file(settings.distillation_cache),
             "teacher_executed_during_student_inference": False,
             "student_train_augmentation": settings.augmentation_mode if settings.augmentation_enabled else "none",
-            "teacher_map_transform": "same horizontal flip as image/density/fixation" if aligned_flip else "none"})
+            "teacher_map_transform": ("crop/resize/flip teacher probability density, renormalize, log; approximate view consistency, not online teacher inference"
+                                      if aligned_weak else "same horizontal flip as image/density/fixation" if aligned_flip else "none")})
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         optim, T_max=max(1, int(settings.student_epochs))
     )
@@ -158,8 +162,11 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
             print(f"[T03] warmstart CC={best_cc:.6f}", flush=True)
         for epoch in range(1, int(settings.student_epochs) + 1):
             stage_report = {}
+            if aligned_weak:
+                train_loader.enabled = settings.augmentation_end_epoch == 0 or epoch <= settings.augmentation_end_epoch
+                stage_report["augmentation_active"] = train_loader.enabled
             if settings.staged_training:
-                stage_report = staged_epoch(optim, settings, epoch)
+                stage_report.update(staged_epoch(optim, settings, epoch))
                 model._router_hard_weight = stage_report["hard_balance_weight"]
                 if controller is not None:
                     controller.scale_epoch_rates(optim)

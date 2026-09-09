@@ -1,0 +1,39 @@
+base_config: moe_alpha40_cffn_control.yaml
+# Earlier .85468765 checkpoint: before repeated no-augmentation KD fine-tunes.
+training:
+  initialization_checkpoint: ../runs/simulation/moe_alpha40_refine_weakaug_seed42/best_checkpoint.pt
+  initialization_checkpoint_sha256: de477b8c13c46c50cb9f17eb0b62bc577aaefef5512887e1e17a86d0affb5eea
+  reset_fusion_on_warmstart: false
+  student_epochs: 80
+  student_learning_rate: 0.00003
+  phase_learning_rate: 0.0005
+  router_learning_rate: 0.00005
+  dense_readout_learning_rate: 0.00003
+  dense_head_learning_rate: 0.00005
+  ffn_spatial_learning_rate: 0.0002
+  weight_decay: 0.03
+  phase_weight_decay: 0.0
+  ema_decay: 0.995
+  staged:
+    warmup_epochs: 5
+    polish_start: 61
+    freeze_electronic_gradients: true
+  adaptive_plateau:
+    min_epoch: 30
+    patience: 6
+    max_reductions: 2
+augmentation:
+  enabled: true
+  mode: aligned_weak
+  crop_scale_min: 0.95
+  horizontal_flip_probability: 0.5
+  brightness_jitter: 0.05
+  contrast_jitter: 0.05
+  end_epoch: 60
+distillation:
+  initial_weight: 0.6
+  final_weight: 0.6
+  end_epoch: 60
+protocol:
+  test_interval_epochs: 5
+output_dir: ../runs/simulation/moe_alpha40_viewreg_control_seed42

@@ -59,7 +59,7 @@ def load_settings(path: str | Path) -> Any:
     )
     settings.augmentation_enabled = bool(d("augmentation.enabled", True))
     settings.augmentation_mode = str(d("augmentation.mode", "legacy"))
-    if settings.augmentation_mode not in {"legacy", "aligned_flip"}:
+    if settings.augmentation_mode not in {"legacy", "aligned_flip", "aligned_weak"}:
         raise ValueError("Unknown T03 augmentation mode")
     settings.crop_scale_min = float(d("augmentation.crop_scale_min", 0.90))
     settings.horizontal_flip_probability = float(
@@ -67,6 +67,12 @@ def load_settings(path: str | Path) -> Any:
     )
     settings.brightness_jitter = float(d("augmentation.brightness_jitter", 0.10))
     settings.contrast_jitter = float(d("augmentation.contrast_jitter", 0.10))
+    settings.augmentation_end_epoch = int(d("augmentation.end_epoch", 0))
+    if settings.augmentation_mode == "aligned_weak" and (
+        not 0.8 <= settings.crop_scale_min <= 1 or not 0 <= settings.brightness_jitter <= .15
+        or not 0 <= settings.contrast_jitter <= .15 or settings.augmentation_end_epoch < 0
+    ):
+        raise ValueError("aligned_weak requires bounded crop/jitter and nonnegative end epoch")
     if not 0 <= settings.horizontal_flip_probability <= 1:
         raise ValueError("Invalid horizontal flip probability")
     if settings.augmentation_mode == "aligned_flip" and (
@@ -90,10 +96,10 @@ def load_settings(path: str | Path) -> Any:
     if not 0 <= settings.ema_decay < 1 or not 0 <= settings.distillation_final_weight <= settings.distillation_initial_weight:
         raise ValueError("Invalid EMA/KD coefficient")
     if settings.distillation_initial_weight > 0 and (
-        (settings.augmentation_enabled and settings.augmentation_mode != "aligned_flip") or settings.distillation_cache is None
+        (settings.augmentation_enabled and settings.augmentation_mode not in {"aligned_flip", "aligned_weak"}) or settings.distillation_cache is None
         or not settings.distillation_teacher_sha256 or settings.distillation_end_epoch < 2
     ):
-        raise ValueError("KD requires aligned inputs (none/aligned_flip), cache, teacher SHA and valid end epoch")
+        raise ValueError("KD requires aligned inputs (none/aligned_flip/aligned_weak), cache, teacher SHA and valid end epoch")
     settings.teacher_checkpoint = None
     settings.ccd_normalization = str(d("lightgen.ccd_normalization", "historical_log1p"))
     if settings.ccd_normalization not in {"historical_log1p", "mean_only"}:
@@ -192,7 +198,8 @@ def save_resolved_config(settings: Any) -> None:
                             electronic_spatial_kernel_size=settings.electronic_spatial_kernel_size)
     values.setdefault("augmentation", {}).update(enabled=settings.augmentation_enabled, mode=settings.augmentation_mode,
         crop_scale_min=settings.crop_scale_min, horizontal_flip_probability=settings.horizontal_flip_probability,
-        brightness_jitter=settings.brightness_jitter, contrast_jitter=settings.contrast_jitter)
+        brightness_jitter=settings.brightness_jitter, contrast_jitter=settings.contrast_jitter,
+        end_epoch=settings.augmentation_end_epoch)
     values.setdefault("training", {}).update(
         learning_rate_source=settings.learning_rate_source,
         ema_decay=settings.ema_decay,
