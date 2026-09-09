@@ -84,7 +84,7 @@ Transformer block、VGG、RGB 旁路、相位量化、k 空间滤波、像素扰
   `experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_srcc_best_s586.yaml`
 - SRCC-first checkpoint（服务器）：
   `/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_electronic_balanced_strong_s586/best_observed_test_checkpoint.pt`
-- SHA256：`13ec05a688a308966e446bab36ca6b3e79a31870709b488bf916aaf22026f2cba`
+- SHA256：`13ec05a688a308966e446bab36ca6b3e79a31870709b488bf916aaf2026f2cba`
 - Router-balanced 配置：
   `experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_srcc_best_s581.yaml`
 - Router-balanced checkpoint SHA256：
