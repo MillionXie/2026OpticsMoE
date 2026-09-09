@@ -66,6 +66,7 @@ def _checkpoint(
     weight_kind: str = "live",
     ema_state: Any = None,
     test_weight_kind: str | None = None,
+    training_only_hint: Any = None,
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(
@@ -76,6 +77,7 @@ def _checkpoint(
             "weight_kind": weight_kind,
             "test_metrics_weight_kind": test_weight_kind or weight_kind,
             "ema_state": ema_state,
+            "training_only_hint": training_only_hint,
             "core": model.core.state_dict(),
             "saliency_head": model.head.state_dict(),
             "train_metrics": train_metrics,
@@ -127,6 +129,19 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
     ema = ModelEMA(model, settings.ema_decay) if settings.ema_decay else None
     ema_hook = optim.register_step_post_hook(ema.update) if ema else None
     teacher = TrainTeacherMaps(settings, bundle.train_records) if settings.distillation_initial_weight else None
+    hints = None
+    if settings.feature_hint_initial_weight > 0:
+        from .feature_hints import TrainFeatureHints
+        from .modeling import sha256_file
+        hints = TrainFeatureHints(settings,bundle.train_records).to(loaded.device)
+        optim.add_param_group({'params':list(hints.parameters()),'name':'training_hint',
+                              'lr':settings.feature_hint_learning_rate,'weight_decay':0.0})
+        _write_json(settings.output_dir/'feature_hint_provenance.json',{
+            **hints.manifest,'cache_sha256':sha256_file(settings.feature_hint_cache),
+            'training_projection_parameters':sum(p.numel() for p in hints.parameters()),
+            'inference_parameters_added':0,'student_architecture_unchanged':True,
+            'loss':'mean(1-cosine(project(student fused latent),teacher decoder input)), channels normalized per pixel',
+            'projection_checkpoint':'last_checkpoint.pt:training_only_hint, separate from inference core/head'})
     if aligned_flip:
         train_loader = AlignedFlipLoader(train_loader, settings.horizontal_flip_probability,
                                         settings.random_seed + 703, teacher)
@@ -177,10 +192,18 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
                 settings.distillation_initial_weight, settings.distillation_end_epoch, epoch,
                 settings.distillation_final_weight)
             stage_report["kd_weight"] = settings.map_kd_weight
-            train_metrics = legacy._train_epoch(
-                "student", model, train_loader, loaded, settings, optim,
-                teacher_cache=teacher if settings.map_kd_weight > 0 else None,
-            )
+            if hints is None:
+                train_metrics = legacy._train_epoch(
+                    "student", model, train_loader, loaded, settings, optim,
+                    teacher_cache=teacher if settings.map_kd_weight > 0 else None,
+                )
+            else:
+                from .feature_hints import train_hint_epoch
+                settings.feature_hint_current_weight = distillation_weight(settings.feature_hint_initial_weight,
+                    settings.feature_hint_end_epoch,epoch,settings.feature_hint_final_weight)
+                stage_report['feature_hint_weight'] = settings.feature_hint_current_weight
+                train_metrics = train_hint_epoch(model,train_loader,loaded,settings,optim,
+                    teacher if settings.map_kd_weight > 0 else None,hints)
             model.core.set_phase_dropout_active(False)
             scheduled_test = (
                 epoch == 1
@@ -229,6 +252,7 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
                 test_metrics,
                 ema_state=ema.shadow if ema else None,
                 test_weight_kind="ema" if ema else "live",
+                training_only_hint=hints.state_dict() if hints is not None else None,
             )
             if not settings.staged_training:
                 scheduler.step()

@@ -1,0 +1,18 @@
+base_config: moe_alpha40_adaptive_keepkd.yaml
+# Same .85812016 source, no inference architecture changes.
+training:
+  student_epochs: 50
+  student_learning_rate: 0.00001
+  phase_learning_rate: 0.0002
+  router_learning_rate: 0.00002
+  dense_readout_learning_rate: 0.00002
+  dense_head_learning_rate: 0.00002
+  staged:
+    warmup_epochs: 0
+    polish_start: 41
+  adaptive_plateau:
+    min_epoch: 15
+    patience: 4
+protocol:
+  test_interval_epochs: 5
+output_dir: ../runs/simulation/moe_alpha40_hint_control_seed42

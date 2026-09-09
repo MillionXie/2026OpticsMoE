@@ -39,6 +39,9 @@ best均保留源权重；相位和新增卷积外圈确实更新。下一轮从a
 不重置alpha，不改变光路或读出头；训练后期关闭增强精修。完整配置、边界和命令见
 [泛化优化](reports/reproduction/VIEW_REGULARIZATION.md)。目标尚未达成，结果以run完整复评为准。
 
+同时准备[训练专用特征提示](reports/reproduction/FEATURE_HINTS.md)的受控对照：
+不改变原推理结构，以teacher解码前192通道空间特征监督学生融合latent；训练专用投影不部署。
+
 ## 数据协议
 
 - train：SALICON 2015r1 官方 train2014，10,000 张。

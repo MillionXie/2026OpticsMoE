@@ -91,6 +91,19 @@ def load_settings(path: str | Path) -> Any:
     cache = d("distillation.cache_file")
     settings.distillation_cache = _resolve(cache, config.parent) if cache else None
     settings.distillation_teacher_sha256 = d("distillation.teacher_sha256")
+    settings.feature_hint_initial_weight = float(d("feature_hint.initial_weight",0.0))
+    settings.feature_hint_final_weight = float(d("feature_hint.final_weight",0.0))
+    settings.feature_hint_end_epoch = int(d("feature_hint.end_epoch",30))
+    settings.feature_hint_learning_rate = float(d("feature_hint.learning_rate",0.0002))
+    hint_cache = d("feature_hint.cache_file")
+    settings.feature_hint_cache = _resolve(hint_cache,config.parent) if hint_cache else None
+    if not 0 <= settings.feature_hint_final_weight <= settings.feature_hint_initial_weight < float('inf'):
+        raise ValueError("Invalid feature hint weights")
+    if settings.feature_hint_initial_weight > 0 and (
+        settings.augmentation_enabled or not settings.feature_hint_cache or not settings.distillation_teacher_sha256
+        or settings.feature_hint_end_epoch < 2 or not 0 < settings.feature_hint_learning_rate < float('inf')
+    ):
+        raise ValueError("Feature hints require unaugmented train cache, teacher SHA, and valid schedule")
     settings.ema_decay = float(d("training.ema_decay", 0.0))
     settings.phase_weight_decay = float(d("training.phase_weight_decay", settings.weight_decay))
     if not 0 <= settings.ema_decay < 1 or not 0 <= settings.distillation_final_weight <= settings.distillation_initial_weight:
@@ -227,6 +240,11 @@ def save_resolved_config(settings: Any) -> None:
         "end_epoch": settings.distillation_end_epoch,
         "cache_file": str(settings.distillation_cache) if settings.distillation_cache else None,
         "teacher_sha256": settings.distillation_teacher_sha256}
+    values['feature_hint'] = {'initial_weight':settings.feature_hint_initial_weight,
+        'final_weight':settings.feature_hint_final_weight,'end_epoch':settings.feature_hint_end_epoch,
+        'learning_rate':settings.feature_hint_learning_rate,
+        'cache_file':str(settings.feature_hint_cache) if settings.feature_hint_cache else None,
+        'inference_parameters_added':0,'training_only_projection_parameters':36864 if settings.feature_hint_initial_weight else 0}
     path.write_text(yaml.safe_dump(values, allow_unicode=True, sort_keys=False), encoding="utf-8")
 
 
