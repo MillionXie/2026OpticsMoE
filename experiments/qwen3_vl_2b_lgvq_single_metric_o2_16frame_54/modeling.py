@@ -1864,7 +1864,7 @@ class SpatialDualLevelResidualReadout(SpatialWeightedLevelResidualReadout):
 
     def __init__(self, settings: ExperimentSettings) -> None:
         super().__init__(settings)
-        input_width = self.residual_output[-1].in_features
+        input_width = self.residual_output[1].in_features
         hidden = min(256, settings.head_width)
         self.dual_output = nn.Sequential(
             nn.LayerNorm(input_width),
