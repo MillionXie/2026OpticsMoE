@@ -2,6 +2,32 @@
 
 状态：方案及执行入口。新结果以各 run 的 `final_report.json` 为准，不预填提升。
 
+## 本次实际启动记录
+
+2026-09-09 13:13（北京时间），源码 `e78066a056b5ff1f3d6d75182d07f9dfe8204303`。
+已推送 GitHub 分支 `experiment/lsp-staged-refinement`；实验室独立源码目录：
+`/DATA/DATA1/guest3/lsp_refinement_source_20260909`。
+
+| Run | GPU | 启动 PID | 续训前完整 1000 张 test PCK |
+|---|---|---|---|
+| joint | GPU 1 / RTX 4090 | 1387932 | 0.730500 |
+| staged | GPU 2 / RTX 3090 | 1387933 | 0.730643 |
+| staged_heatmap | GPU 6 / A100 40 GB | 1387934 | 0.730500 |
+
+三个 run 已进入完整 435 batch/epoch 的训练。表中是**续训前基准，不是优化后的结果**。
+同一权重在不同 GPU 的 BF16 数值差异使少数临界点发生变化，因此分别保留起点。
+最终若差距只有几个关节点，应在同一设备重新评估，不能将这种量级的差异当显著提升。
+数据 10,428 train / 1000 test，batch24；未改成小样本训练。
+
+实验输出统一位于：
+`/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t02_keypoint_detection/runs/simulation/refinement_20260909/`。
+父目录有 `launch_manifest.json` 和三份 `.log`；子目录是各 profile。
+原始输入权重未覆盖，其他任务进程未停止。
+
+电子可训练参数的分组核对：主干/适配/融合共 616,423，CCD readout 86,400，
+姿态头 133,425，合计 836,248；此外 feature/global phase 429,188、router phase 50,176。
+这些是当前光学模型的可训练参数，不包含冻结的 Qwen 权重，不能拿它与大模型总参数混比。
+
 ## 已核实的起点与结构
 
 目前可追溯的光学起点为 `moe_router_scale_dc20_no_shift_warmstart0713_seed42`，
