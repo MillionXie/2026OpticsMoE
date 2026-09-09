@@ -77,6 +77,30 @@ python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TA
 
 ## 训练中的候选独立核验
 
+2026-09-10：0.05组epoch5 EMA候选已经完成独立5000张复查（训练仍继续，非最终交付）：
+
+|指标|独立复查值|
+|---|---:|
+|CC（独立NumPy float64）|0.8613320359025128|
+|CC（原指标累积器）|0.8613320404052734|
+|KLD|0.1127731899023056|
+|SIM|0.8240760560035706|
+|NSS|0.9686995490074157|
+|AUC-Judd|0.7701752108567858|
+|MAE|0.07696553013324738|
+
+与同batch32独立复查的来源0.8595312563按sample_id逐图配对，2947/5000张改善；
+CC差均值0.00180077965，中位数0.00155842016。KLD/SIM/NSS改善，MAE较来源0.07595093退步，
+不能称为所有指标均改善或跨seed显著泛化提升；仍按public-test选模，距离0.87尚有差距。
+训练内batch48评估CC=0.8613320866，两种batch的差约5e-8。
+
+- 候选checkpoint SHA256：`5aa39e30c0c04c0411138dd83464067c73ec2d240c2391b1e71a6e74bd6215f0`。
+- 独立复查commit：`e97718b5ee29d32738038eef79679563d5f3508a`，训练commit仍为66566410。
+- `aligned_recheck_20260910_sam005_candidate/reproduction.json` SHA256：
+  `fb31f3ecc6c4aaf5d87b5adfa0581129996949f5efa3e390fdca68048ff959c6`。
+- 测试ID SHA256：`625dec6bc15b2d737d39bc252cfa0c354de217fec0266dcda568913f4a3496d0`，与原候选/Qwen一致。
+- `per_image_cc.csv`保留全部逐图指标，未新增周期PT；该best路径之后可能更新，须核对SHA。
+
 可用`recheck_aligned`对当前best进行完整5000张、独立float64逐图CC复算。
 该工具把一次读取的checkpoint字节同时用于反序列化和SHA256计算，
 不会在评估结束时误将已更新best的SHA写入旧权重的结果。
