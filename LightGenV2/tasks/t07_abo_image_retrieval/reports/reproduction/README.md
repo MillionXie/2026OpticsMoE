@@ -103,10 +103,31 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.run --mode optical \
 教师只用已有square缓存的train部分，不加载教师Transformer做学生推理。
 所有memory均stop-gradient，查询分支可导；memory不属于部署模型，恢复训练时重建。
 
-训练时显式恢复phase dropout（旧T07训练循环在测试关闭后未重新启用；本次仅对新profile修正），
-全图库刷新和test时关闭。保留20%–30%未调制训练分量、CCD噪声、Router均衡；两组修正一致。
+训练时显式恢复phase dropout，全图库刷新和test时关闭。更正此前说明：继承的
+`FourLayerOpticalReplacement.set_student_train_mode()`本来就会恢复phase dropout，
+因此旧训练并没有“测试后不恢复”的缺陷；新profile的显式调用只是重复保障，不改变该行为。
+保留20%–30%未调制训练分量、CCD噪声、Router均衡。
 仅保存best/last和最终报告、图；test每5epoch选best，仍属于test-selected结果。
 训练memory定义另写入每个run的 `training_gallery_contract.json`。
+
+## 2026-09-10：原目标低学习率续训 / 相位再加热
+
+图库两组60epoch均已结束，Hit@1分别68.75%和68.5417%，未替换69.5833%的旧best。
+本轮从 `refine_training_20260909/best_checkpoint.pt` 继续，恢复其原损失：0.5监督对比、
+1.0训练教师类别中心CE、0.1逐向量KD（固定，不再退火）；无全图库loss或关系KL。
+仅30epoch，batch=20，48step/epoch，EMA0.99，5epoch测试一次；best/last两份权重。
+相同seed与增强，同一路径/几何/Top-2，无新网络。对照使用上一轮终点附近的学习率；
+另一组仅将特征相位LR从0.0004提高到0.004，Router与电子LR不变。
+
+```bash
+python -m LightGenV2.tasks.t07_abo_image_retrieval.run --mode optical \
+  --config LightGenV2/tasks/t07_abo_image_retrieval/configs/polish_low_lr.yaml
+python -m LightGenV2.tasks.t07_abo_image_retrieval.run --mode optical \
+  --config LightGenV2/tasks/t07_abo_image_retrieval/configs/polish_phase_reheat.yaml
+```
+
+目标是原480-query Hit@1超过0.70，不改query、图库、标签、指标或评估预处理。
+测试仍参与选模，小幅超过阈值不等于统计显著改进；完成后固定best再复评，报告命中张数和去光结果。
 
 ## 历史审计说明（保留）
 

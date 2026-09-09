@@ -1,0 +1,18 @@
+base_config: refine_training.yaml
+
+# Continue the best original objective near its terminal learning rates.
+# Same architecture, prompt, data, gallery, augmentation and optical robustness.
+training:
+  epochs: 30
+  learning_rate: 0.00002
+  adapter_learning_rate: 0.00001
+  readout_learning_rate: 0.00005
+  phase_learning_rate: 0.0004
+  router_learning_rate: 0.0005
+abo_image_image:
+  refinement_checkpoint: ../runs/simulation/refine_training_20260909/best_checkpoint.pt
+  refinement_checkpoint_sha256: 2d588f40a1aa9f09336745b1e14a61c0cca76874f4c6d4f24a3d6163b978f20c
+  teacher_kd_weight: 0.1
+  teacher_kd_final: 0.1
+  restore_training_phase_dropout: true
+output_dir: ../runs/simulation/polish_low_lr_20260910

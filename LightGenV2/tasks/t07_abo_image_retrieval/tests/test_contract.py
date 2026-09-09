@@ -14,6 +14,18 @@ from LightGenV2.tasks.t01_object_retrieval.settings import load_settings
 
 
 class ContractTests(unittest.TestCase):
+    def test_polish_pair_changes_only_phase_rate(self):
+        from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.settings import _read_config
+        a = _read_config(TASK / "configs/polish_low_lr.yaml")
+        b = _read_config(TASK / "configs/polish_phase_reheat.yaml")
+        self.assertEqual(a["abo_image_image"], b["abo_image_image"])
+        self.assertEqual(a["abo_image_image"]["semantic_anchor_weight"], 1.)
+        self.assertEqual(a["abo_image_image"]["teacher_kd_weight"], .1)
+        self.assertEqual(a["training"]["epochs"], 30)
+        self.assertEqual(b["training"]["phase_learning_rate"], 10*a["training"]["phase_learning_rate"])
+        for key in ("learning_rate", "adapter_learning_rate", "readout_learning_rate", "router_learning_rate"):
+            self.assertEqual(a["training"][key], b["training"][key])
+
     def test_train_gallery_excludes_own_product_and_has_gradients(self):
         samples = [SimpleNamespace(product_id=p, category_id=p//2, split="train")
                    for p in range(4) for _ in range(2)]
