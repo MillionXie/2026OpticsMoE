@@ -1,5 +1,56 @@
 # SALICON 泛化优化：同步弱增强与早期重新适应
 
+## 2026-09-10已完成：强蒸馏组的新最佳权重
+
+`moe_alpha40_viewreg_cffn_kd2_seed42`完成80轮，选择epoch65 EMA，
+重新加载best在全部5000张public-test上得到：
+
+|指标|结果|
+|---|---:|
+|CC|0.8595313201904297|
+|KLD|0.11409103026390076|
+|SIM|0.8229441816329957|
+|NSS|0.9672923250198364|
+|AUC-Judd|0.7698853058936339|
+|MAE|0.07595092777013779|
+
+比此前未加校准的0.85812014提高约0.00141118，距离0.87仍差0.01046868。
+这是更新后epoch65的结果，不是epoch0保留权重；末轮CC=0.85943667。
+alpha=0.43102312/0.44123352；专家选择次数2327/2639/2301/2733，
+占比23.27%/26.39%/23.01%/27.33%，有效专家数3.97723/4，无未使用专家。
+相对初始化，router/四专家/全局相位的圆周相位RMS变化分别约
+0.00881 / (0.08998,0.09132,0.15370,0.15069) / 0.11044 rad。
+相位确实训练更新，但这些数值不等于光学准确率贡献比例。
+
+该分数遵守既定标准eval：图像不增强、随机光学扰动关闭；20%–30%未调制分量仍在训练中保留。
+public-test参与选模和平台调速，结果有选择偏差，不是未接触的独立测试。
+控制组、普通KD的空间FFN组及13×13组尚未全部完成，不据此宣布完整消融胜负。
+
+- 训练源码commit：`966fb80087776a9a22982a82e684fff32d52e71f`。
+- best SHA256：`c88e1a41febc878cf87d6c80d4e27d7ac0c6bddc11d73a29497490d2e841ad73`。
+- resolved_config SHA256：`ec5bade2f177b230e4d3d3e6448ecf26bde884a2b8cc640cce203696a656df54`。
+- selected_checkpoint_test_evaluation.json SHA256：`7aed5b0dc0b493fb6a9b2b120575ffed25a93644304ef40a95f49151b54392dd`。
+- 全部产物位于本任务`runs/simulation/moe_alpha40_viewreg_cffn_kd2_seed42/`；
+  `best_visualization/`包含相位与显著性样例。只保存best/last，不新增周期权重。
+
+复现训练使用本文后面的强KD命令；固定权重额外独立float64复查（不训练）：
+
+```bash
+TASK=LightGenV2/tasks/t03_saliency
+python -m LightGenV2.tasks.t03_saliency.recheck_aligned --system optical --config "$TASK/configs/moe_alpha40_viewreg_cffn_kd2.yaml" --checkpoint "$TASK/runs/simulation/moe_alpha40_viewreg_cffn_kd2_seed42/best_checkpoint.pt" --run-dir "$TASK/runs/simulation/aligned_recheck_20260910_viewreg_kd2" --batch-size 32
+```
+
+使用尚不存在的复查目录，不能覆盖既有证据。上述额外复查也已完成：
+独立float64 CC=0.8595312562517528，与同次累积器CC差3.39e-10；
+batch32与训练后batch48复评仅约6.4e-8差异。5000个ID清单SHA256
+`625dec6bc15b2d737d39bc252cfa0c354de217fec0266dcda568913f4a3496d0`
+与此前同规格头Qwen/光电复查完全一致。
+复查`reproduction.json` SHA256：
+`7f3f27837c96c152620f251d1b3da5409beb4cf064b06d32b6dbc2b08aa9ab89`。
+按sample_id与旧光电`aligned_recheck_20260909_optical/per_image_cc.csv`一一配对，
+2936/5000张改善，CC差均值0.00141112、中位数0.00135197。
+这只是当前单seed、已参与选模测试集上的描述统计，不是多seed显著性结论。
+
 ## 追加的13×13轻量空间上下文对照
 
 `moe_alpha40_viewreg_kernel13.yaml`仅相对`moe_alpha40_viewreg_control.yaml`

@@ -12,6 +12,13 @@
 本页CC及0.87优化目标是理想光学仿真口径，不代表同分数已在漏光实测中验证。
 具体边界见[复现说明](reports/reproduction/README.md)。
 
+当前更新后的最佳光电候选：`moe_alpha40_viewreg_cffn_kd2_seed42`，80轮完成，
+best为epoch65 EMA；重载best完整5000张测试CC=0.85953132，
+alpha=0.431023/0.441234，四专家选择23.27%/26.39%/23.01%/27.33%，无明显坍缩。
+仅在原电子残差内部增加6912个空间DW参数，读出头仍85412参数，光学合同不变。
+源代码、权重SHA、指标及命令见[泛化优化完成结果](reports/reproduction/VIEW_REGULARIZATION.md)。
+仍未达到0.87，也未追平同规格头Qwen的0.88968469；后面的历史结果保留用于复现。
+
 2026-09-08新增：[同规格读出头、alpha无下限/≥0.4、三阶段训练对照与命令](reports/reproduction/ALPHA_AND_HEAD_COMPARISON.md)。
 100epoch三阶段训练已完成：无下限CC=0.85212668，alpha≥0.4 CC=0.85134034，
 新同规格读出头冻结Qwen CC=0.88968476；均为5000张public-test选定权重复评。
