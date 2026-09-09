@@ -1,5 +1,12 @@
 # 语言Router坍缩修复与公平Qwen对照
 
+## 当前主版本选择
+
+用户决定恢复原头：主方法 `routerfill_shared_s73` epoch40（changed0.8715）与
+冻结Qwen `qwen_shared_s73` epoch25（changed0.8420），均381,976参数共享结构读出头。
+slim/slim_norm保留为消融，不删除、不与原头baseline混配，不把slim的0.94移植到原头结果。
+操作命令及真实样本 `test_000008` 的输入/目标说明见任务README顶部。
+
 ## 精简对照（2026-09-09）
 
 补充保留归一化的保守对照 `routerfill_slim_norm` / `qwen_slim_norm`，读出头269,272参数。

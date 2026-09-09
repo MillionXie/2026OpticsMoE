@@ -1,5 +1,26 @@
 # T04 语义交互（OpenMoji）
 
+## 当前采用：恢复原38.2万参数共享读出头
+
+按用户决定，主版本采用 `routerfill_shared` 与 `qwen_shared`（`shared_readout_variant: standard`）。
+直接使用已完成100epoch的原best：光电 `routerfill_shared_s73/best_checkpoint.pt`（epoch40，
+修改格87.15%），冻结Qwen `qwen_shared_s73/best_checkpoint.pt`（epoch25，84.20%）。
+以上目录均在本任务 `runs/simulation/`，无需重复训练或把原头拼接到slim权重上。
+精简版slim/slim_norm仅保留为消融结果，不作为当前主版本，不与原头baseline拼表。
+原头保留两组条件卷积，另有前置FiLM及decoder预处理卷积；不把它描述为整个后端只有两次卷积。
+
+复评现有原头best（仓库根目录，Linux缓存多进程读取先执行 `ulimit -n 65536`）：
+
+```bash
+python -m LightGenV2.tasks.t04_semantic_interaction.run --profile routerfill_shared --phase evaluate --device cuda
+python -m LightGenV2.tasks.t04_semantic_interaction.run --profile qwen_shared --phase evaluate --device cuda
+```
+
+用于解释推理的真实测试样本：`test_000008`，指令 `Place a flower below the bicycle.`。
+源图只有自行车（人类1起始坐标第1行第3列），目标是在第2行第3列新增flower，其余保持；
+`routerfill_shared_s73/test_predictions.jsonl`记录该样本整场景正确。训练标签program/target不输入网络，
+source_grid只在预测编辑掩码输出后用于保留区域合成。
+
 ## 2026-09-09：精简共享电子读出头
 
 保守对照为 `routerfill_slim_norm` / `qwen_slim_norm`：删除相同卷积及前置FiLM，
