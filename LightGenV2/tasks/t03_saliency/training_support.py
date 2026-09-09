@@ -71,6 +71,47 @@ class AlignedFlipLoader:
             yield batch
 
 
+def spatial_correlation_distillation(student_logits, teacher_logits):
+    """Per-image density correlation, inspired by DIST (NeurIPS22), not full DIST.
+
+    No cross-image relation: pixel positions are not classification categories.
+    Uniform teachers contain no spatial preference and contribute zero loss.
+    Unit-mean scaling avoids near-zero norms of 224x224 probability densities.
+    """
+    from experiments.qwen3_vl_embedding_2b_salicon_vision_optical_saliency.objectives import density_from_logits
+    if student_logits.shape != teacher_logits.shape:
+        raise ValueError('Student and teacher saliency map shapes must match')
+    student = density_from_logits(student_logits).flatten(1)
+    teacher = density_from_logits(teacher_logits.detach()).flatten(1)
+    size = student.shape[1]
+    x = (student - student[:,:1]) * size
+    y = (teacher - teacher[:,:1]) * size
+    x = x - x.mean(1,keepdim=True)
+    y = y - y.mean(1,keepdim=True)
+    valid = torch.linalg.vector_norm(y,dim=1) > 1e-6
+    cc = torch.nn.functional.cosine_similarity(x,y,dim=1,eps=1e-6)
+    return ((1-cc.clamp(-1,1))*valid).sum()/valid.sum().clamp_min(1)
+
+
+def task_saliency_loss(logits, target, fixation, settings, *, teacher_logits=None):
+    """Opt-in train-only loss; historical KL path returns the original function."""
+    from experiments.qwen3_vl_embedding_2b_salicon_vision_optical_saliency import objectives
+    mode = getattr(settings,'distillation_loss','kl')
+    if mode == 'kl':
+        return objectives.saliency_loss(logits,target,fixation,settings,teacher_logits=teacher_logits)
+    if mode != 'spatial_cc' or settings.map_kd_temperature != 1:
+        raise ValueError('Only temperature1 spatial_cc or historical KL is supported')
+    base, pieces = objectives.saliency_loss(logits,target,fixation,settings,teacher_logits=None)
+    kd = logits.new_zeros(()) if teacher_logits is None else spatial_correlation_distillation(logits,teacher_logits)
+    reference = logits.new_zeros(())
+    if teacher_logits is not None:
+        with torch.no_grad():
+            reference = objectives.kl_divergence(objectives.density_from_logits(logits),
+                                                objectives.density_from_logits(teacher_logits))
+    pieces.update(map_kd=kd, map_kd_kl_reference=reference)
+    return base + float(settings.map_kd_weight)*kd, pieces
+
+
 class TrainTeacherMaps:
     def __init__(self, settings, records):
         self.aligned_flip = getattr(settings, "augmentation_mode", "legacy") == "aligned_flip" and settings.augmentation_enabled

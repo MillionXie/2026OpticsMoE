@@ -9,6 +9,7 @@ import time
 import numpy as np
 import torch
 from experiments.qwen3_vl_embedding_2b_salicon_vision_optical_saliency import training as legacy
+from .training_support import task_saliency_loss
 
 ELECTRONIC_GROUPS = frozenset({'electronic','saliency_head','ccd_readout',
                              'electronic_ffn_spatial','electronic_global_spatial'})
@@ -84,7 +85,7 @@ def train_sam_epoch(model,loader,loaded,settings,optimizer,teacher_cache=None):
         def closure():
             with legacy._autocast(settings,loaded.device):
                 logits=model(inputs['pixel_values'],inputs['image_grid_thw'])[0]
-                task,pieces=legacy.saliency_loss(logits,density,fixation,settings,teacher_logits=teacher_logits)
+                task,pieces=task_saliency_loss(logits,density,fixation,settings,teacher_logits=teacher_logits)
                 balance,importance=model.router_losses()
                 operating=model.operating_loss() if hasattr(model,'operating_loss') else logits.new_zeros(())
                 dc=legacy.phase_dc_loss(model) if settings.phase_dc_weight>0 else logits.new_zeros(())

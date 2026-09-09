@@ -1,0 +1,5 @@
+base_config: moe_alpha40_sam005.yaml
+# Same source/SAM/GT loss/architecture; relax only teacher distribution matching.
+distillation:
+  loss: spatial_cc
+output_dir: ../runs/simulation/moe_alpha40_sam_spatialcc_seed42

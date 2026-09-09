@@ -99,6 +99,12 @@ def load_settings(path: str | Path) -> Any:
     cache = d("distillation.cache_file")
     settings.distillation_cache = _resolve(cache, config.parent) if cache else None
     settings.distillation_teacher_sha256 = d("distillation.teacher_sha256")
+    settings.distillation_loss = str(d("distillation.loss", "kl"))
+    if settings.distillation_loss not in ('kl','spatial_cc'):
+        raise ValueError('Unknown distillation loss')
+    if settings.distillation_loss == 'spatial_cc' and (
+        not settings.sam_rho or not settings.distillation_initial_weight):
+        raise ValueError('Spatial CC distillation currently requires the task-local SAM training path and active teacher')
     settings.feature_hint_initial_weight = float(d("feature_hint.initial_weight",0.0))
     settings.feature_hint_final_weight = float(d("feature_hint.final_weight",0.0))
     settings.feature_hint_end_epoch = int(d("feature_hint.end_epoch",30))
@@ -284,6 +290,7 @@ def save_resolved_config(settings: Any) -> None:
             "dense_readout_learning_rate", "dense_head_learning_rate")
     }
     values["distillation"] = {"initial_weight": settings.distillation_initial_weight,
+        "loss": settings.distillation_loss,
         "final_weight": settings.distillation_final_weight,
         "end_epoch": settings.distillation_end_epoch,
         "cache_file": str(settings.distillation_cache) if settings.distillation_cache else None,

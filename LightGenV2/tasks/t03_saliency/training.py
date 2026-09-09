@@ -153,6 +153,7 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
         from .modeling import sha256_file
         _write_json(settings.output_dir / "teacher_cache_provenance.json", {
             **teacher.manifest, "cache_sha256": sha256_file(settings.distillation_cache),
+            "distillation_loss": getattr(settings, "distillation_loss", "kl"),
             "teacher_executed_during_student_inference": False,
             "student_train_augmentation": settings.augmentation_mode if settings.augmentation_enabled else "none",
             "teacher_map_transform": ("crop/resize/flip teacher probability density, renormalize, log; approximate view consistency, not online teacher inference"

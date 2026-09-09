@@ -268,3 +268,34 @@ logits最大差异约0.00100386；仅为诊断关闭cuDNN TF32后差异1.90735e-
 正式训练与测试不改变原精度设置，epoch0全5000评估仍须记录实际初始化CC。
 恢复原精度后同4图执行一次SAM，确认仅一次optimizer更新，相位RMS变化约0.000198869rad，
 新增可训练参数实测151296。该小batch的CC不是模型性能；未另存调试checkpoint。
+
+## 只改变教师监督：空间相关性蒸馏
+
+`moe_alpha40_sam_spatialcc.yaml`继承原384隐藏维度的`moe_alpha40_sam005.yaml`，
+同一已完成.859531来源、SHA、50轮、SAM.05、学习率、原图训练和GT损失。
+只把教师项从`KL(teacher_density || student_density)`换为每图
+`1 - Pearson(student_density, teacher_density)`，系数仍固定0.6。
+真实标签KL1、CC1.5、SIM.25、NSS.1及路由/相位正则均保留。
+不继承加宽版，不新增参数、分支、推理教师或后处理；光学合同/alpha不变。
+
+依据：[Huang等，Knowledge Distillation from A Stronger Teacher，NeurIPS2022/DIST](https://arxiv.org/abs/2205.10536)。
+借鉴其用相关性放松教师概率精确匹配的想法；本实现是显著性空间密度上的任务适配，
+不是完整DIST复现，不采用跨样本的intra-class项、不把同一坐标视为跨图语义类别。
+前一轮去均值特征提示比较的是192维中间特征，本轮比较最终224×224概率图，二者不同。
+
+教师仍来自只含10000训练ID的同一缓存，显式detach；温度固定1。
+每张图独立softmax、展平空间、去均值、单位范数后计算相关性，忽略正仿射幅度差异；
+先减首元素再减均值避免常数密度的浮点消减误差。常数教师无空间偏好，跳过该图教师项；
+全部常数时返回可反传的0，学生常数图梯度须有限。GT项不跳过。
+原KL路径逐值保持原实现；新路径只在任务内SAM训练入口启用，配置拒绝不支持的组合。
+训练CSV的`map_kd`在该profile表示空间相关性损失，不再是KL；
+新增`map_kd_kl_reference`仅作无梯度诊断，resolved_config和teacher_cache_provenance注明loss类型。
+
+```bash
+TASK=LightGenV2/tasks/t03_saliency
+python -m pytest "$TASK/tests" -q
+python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TASK/configs/moe_alpha40_sam_spatialcc.yaml" --phase all
+```
+
+产物`runs/simulation/moe_alpha40_sam_spatialcc_seed42`，只best/last；
+选模仍完整5000 public-test，有选择偏差。它是待检验训练假设，不保证达到0.87。
