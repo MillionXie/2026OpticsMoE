@@ -237,6 +237,13 @@ def _apply_trainable_scope(
             )
         elif scope == "resnet_electronic_only":
             trainable = name.startswith("resnet_electronic_correction.")
+        elif scope == "resnet_electronic_and_readout":
+            # Second half of the staged recipe: keep the four optical stages
+            # and their electronic transforms fixed, and let the already
+            # learned E1 correction co-adapt with the sole final MOS head.
+            trainable = name.startswith(
+                ("resnet_electronic_correction.", "readout.")
+            )
         elif scope == "resnet_electronic_path_and_readout":
             trainable = name.startswith(
                 (

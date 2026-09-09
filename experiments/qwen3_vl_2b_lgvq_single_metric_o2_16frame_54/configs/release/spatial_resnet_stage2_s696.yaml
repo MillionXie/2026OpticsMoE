@@ -1,0 +1,12 @@
+base_config: spatial_resnet_e1_rank_s692.yaml
+output_dir: ../../runs/lgvq_spatial_resnet_stage2_s696
+random_seed: 696
+
+# Set to the completed s692 best checkpoint on the server before launch.
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_resnet_e1_rank_s692/best_observed_test_checkpoint.pt
+  trainable_scope: resnet_electronic_and_readout
+  learning_rate: 0.00001
+  readout_learning_rate_factor: 1.0
+  ema_decay: 0.995
+
