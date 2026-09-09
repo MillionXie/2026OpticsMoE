@@ -2,6 +2,12 @@
 
 新增：[2026-09-09 同结构分阶段续训](reports/reproduction/STAGED_REFINEMENT.md)，含当前光学/baseline 结构、参数量、对照设计和实验室命令。
 
+新增：[Qwen Deconv40 轻量头对照](reports/reproduction/QWEN_HEAD_BUDGET.md)，完整冻结视觉主干、只缩头通道，138,422参数，对照光学姿态头133,425参数。旧110.3万参数baseline保留。
+
+2026-09-09 续训中期检查：joint/staged/staged_heatmap 完成25/25/27轮时，
+各自周期test最高PCK为0.732214/0.731786/0.731571（起点0.7305，尚无显著提升，非最终结果）。
+证据：`runs/simulation/refinement_20260909/<profile>/training_history.json`。
+
 本任务只处理视觉分支，输出 LSP 的 14 张关键点热图。冻结的
 Qwen3-VL-Embedding-2B 仅执行 patch embedding；原生 Vision Transformer
 block 不执行。两种正式方法共享数据划分、电子 mixer、同尺度融合、姿态读出头、
