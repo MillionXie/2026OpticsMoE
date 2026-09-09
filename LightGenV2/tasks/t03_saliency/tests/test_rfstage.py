@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 import torch
 from PIL import Image
+from experiments.qwen3_vl_embedding_2b_caltech101_electronic_retrieval.electronic_blocks import ElectronicResidualMLPBlock
 
 from LightGenV2.tasks.t03_saliency.modeling import (
     architecture_label, configure_spatial_kernel, expand_spatial_checkpoint,
@@ -21,17 +22,20 @@ TASK = Path(__file__).resolve().parents[1]
 def test_center_padded_kernel_preserves_function_and_receives_rim_gradients():
     blocks = []
     for _ in range(2):
-        block = torch.nn.Module()
-        block.token_depthwise = torch.nn.Conv2d(192, 192, 3, padding=1, groups=192, bias=False)
+        block = ElectronicResidualMLPBlock(192, 2.0, 0.0, .1,
+            token_mixer_enabled=True, token_mixer_kernel_size=3, token_mixer_type="depthwise_conv2d")
         blocks.append(block)
     hybrid = torch.nn.Module()
     hybrid.blocks = torch.nn.ModuleList(blocks)
-    x = torch.randn(2, 192, 14, 14)
-    before = hybrid.blocks[0].token_depthwise(x).detach()
+    x = torch.randn(2, 196, 192)
+    kwargs = dict(padding_mask=torch.zeros(2, 196, dtype=torch.bool), causal=False,
+                  spatial_shapes=[(1,14,14), (1,14,14)])
+    before = hybrid.blocks[0](x, **kwargs).detach()
     count = sum(p.numel() for p in hybrid.parameters())
     configure_spatial_kernel(hybrid, 5)
     assert sum(p.numel() for p in hybrid.parameters()) - count == 6144
-    after = hybrid.blocks[0].token_depthwise(x)
+    after = hybrid.blocks[0](x, **kwargs)
+    assert after.shape == (2,196,192)
     torch.testing.assert_close(after, before, atol=1e-6, rtol=1e-5)
     after.square().mean().backward()
     assert hybrid.blocks[0].token_depthwise.weight.grad[:, :, 0, :].abs().sum() > 0

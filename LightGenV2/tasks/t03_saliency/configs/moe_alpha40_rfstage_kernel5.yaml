@@ -3,4 +3,6 @@ lightgen:
   electronic_spatial_kernel_size: 5
 training:
   expand_kernel_on_warmstart: true
-output_dir: ../runs/simulation/moe_alpha40_rfstage_kernel5_seed42
+# The first kernel5 startup failed before any training due to explicit padding.
+# Preserve that log; this audited rerun uses a fresh identity.
+output_dir: ../runs/simulation/moe_alpha40_rfstage_kernel5_paddingfix_seed42

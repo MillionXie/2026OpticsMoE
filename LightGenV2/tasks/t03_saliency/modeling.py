@@ -51,12 +51,17 @@ def configure_spatial_kernel(hybrid: nn.Module, kernel: int) -> None:
         old = block.token_depthwise
         if old.kernel_size != (3, 3) or old.groups != old.in_channels or old.bias is not None:
             raise ValueError("Unexpected spatial mixer; refusing kernel replacement")
-        new = nn.Conv2d(old.in_channels, old.out_channels, kernel, padding=kernel//2,
+        # ElectronicResidualMLPBlock pads explicitly using token_mixer_kernel_size.
+        # Do not add convolution padding a second time.
+        if old.padding != (0, 0) or block.token_mixer_type != "depthwise_conv2d":
+            raise ValueError("Expected an explicitly padded 2D electronic mixer")
+        new = nn.Conv2d(old.in_channels, old.out_channels, kernel, padding=0,
                         groups=old.groups, bias=False, device=old.weight.device, dtype=old.weight.dtype)
         with torch.no_grad():
             new.weight.zero_()
             new.weight[:, :, 1:4, 1:4].copy_(old.weight)
         block.token_depthwise = new
+        block.token_mixer_kernel_size = kernel
 
 
 def expand_spatial_checkpoint(source: dict, target: dict) -> dict:

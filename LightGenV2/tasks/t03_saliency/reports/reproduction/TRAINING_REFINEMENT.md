@@ -220,3 +220,12 @@ CUDA_VISIBLE_DEVICES=5 python -u -m LightGenV2.tasks.t03_saliency.run --profile 
 完成后首先看各run的`selected_checkpoint_test_evaluation.json`、`training_report.json`、
 `metrics/training_history.csv`及`best_visualization/`。报告CC、KLD/SIM/NSS、alpha、专家负载和相位变化，
 不把训练CC当测试结果。本节是实验协议，不是已取得提升的结果声明。
+
+实现`21fc0c14`已发布GitHub；服务器CPU回归22项通过。control/flip/staged在物理GPU0/3/5
+启动，工作树固定为`2026OpticsMoE/.worktrees/t03_rfstage`，源仓库其他未提交任务未被修改。
+三组完整warmstart复评均约0.85812008。
+kernel5首次启动发现旧电子模块使用显式F.pad，新卷积又内置padding导致尺寸错误；
+没有完成训练或产生best。已改为更新模块的kernel_size且卷积padding=0，并将测试改为经过
+真实ElectronicResidualMLPBlock的完整前向/反向，而非孤立Conv2d测试。
+失败日志保留在`moe_alpha40_rfstage_kernel5_seed42/train.log`，修正后的正式run明确为
+`moe_alpha40_rfstage_kernel5_paddingfix_seed42`，不覆盖失败记录；配置文件名不变。
