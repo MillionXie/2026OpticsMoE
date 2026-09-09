@@ -219,6 +219,7 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
         "residual_",
         "large_kernel_refiner.",
         "moment_frame.",
+        "crossframe_",
     )
     non_residual_missing = [
         name
