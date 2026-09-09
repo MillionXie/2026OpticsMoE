@@ -36,6 +36,13 @@
     "rmse": -1.085275650024414,
     "mae": -0.9443802833557129
   },
+  "paired_bootstrap_s586_minus_s523": {
+    "resamples": 2000,
+    "seed": 586,
+    "observed_srcc_delta": 0.0011317256320841906,
+    "ci95": [-0.00149653, 0.00410513],
+    "bootstrap_fraction_positive": 0.798
+  },
   "constraints": {
     "major_branches": 2,
     "optical_router": "Top-2",
