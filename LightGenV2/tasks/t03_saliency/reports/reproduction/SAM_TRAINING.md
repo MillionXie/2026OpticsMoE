@@ -133,7 +133,30 @@ python -m LightGenV2.tasks.t03_saliency.recheck_aligned --system optical --confi
 复查目录必须尚不存在；按实际日期/目的命名，不覆盖旧证据。若训练正同时写checkpoint，
 读取可能失败，应在完整写入后重试，不把损坏/不完整文件当作有效权重。
 
-## 直流分量差异的训练集小样本诊断
+## 较早来源加入SAM的配对训练
+
+后期SAM0.05在epoch5到0.86133，epoch10/15为0.86090/0.86077；
+故补充`moe_alpha40_viewreg_sam005.yaml`，检验在较早适应阶段加入是否更有效。
+它继承**已经完成的**`moe_alpha40_viewreg_cffn_kd2.yaml`，只增加rho=.05并改run目录。
+不是继承后期SAM50轮，也不同时改变增强概率、损失或电子结构。
+源仍是较早0.85468765的`refine_weakaug`，SHA=de477b8c…b5eea（完整值在配置继承链）；
+空间FFN恒等初始化、alpha不重置，80轮，前5轮原E冻结，前60轮原同步弱增强，
+KD2→.6，61轮起关闭图像增强精修，其他物理扰动仍保留。
+对应无SAM配对控制的最终CC为0.85953132；后期SAM是另一个来源，不当成严格配对。
+
+SAM同batch两次前向仅重采相同光学噪声/dropout，图像增强在外部loader执行一次，
+teacher从该batch同步变换后的缓存读取一次；没有对第二次前向另取增强图。
+不产生新增推理参数/分支，正式只留best/last。
+
+```bash
+TASK=LightGenV2/tasks/t03_saliency
+python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TASK/configs/moe_alpha40_viewreg_sam005.yaml" --phase all
+```
+
+新产物在`runs/simulation/moe_alpha40_viewreg_sam005_seed42`，在空闲资源上运行，
+不得覆盖或重启现有SAM对照。最终评估仍为完整5000 public-test选模，并披露选择偏差。
+
+## 直流分量差异的训练集小样本诊断（结果）
 
 2026-09-10，在上述epoch5/SHA=5aa39e30候选上进行只读诊断，未优化参数：
 从`legacy.build_loaders(..., training=False)`的train dataset中用

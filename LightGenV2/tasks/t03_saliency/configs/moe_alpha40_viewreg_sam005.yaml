@@ -1,0 +1,5 @@
+base_config: moe_alpha40_viewreg_cffn_kd2.yaml
+# Earlier-source paired trial: only SAM differs from completed strong-KD control.
+training:
+  sam_rho: 0.05
+output_dir: ../runs/simulation/moe_alpha40_viewreg_sam005_seed42

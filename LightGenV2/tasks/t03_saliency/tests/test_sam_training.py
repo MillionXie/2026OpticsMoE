@@ -77,3 +77,20 @@ def test_sam_configuration_only_changes_training_and_preserves_best_source(name,
         assert getattr(a,k)==getattr(b,k)
     assert a.initialization_checkpoint_sha256=='c88e1a41febc878cf87d6c80d4e27d7ac0c6bddc11d73a29497490d2e841ad73'
     assert a.student_epochs==50 and not a.augmentation_enabled
+
+
+def test_early_sam_only_changes_radius_and_output():
+    root=Path(__file__).resolve().parents[1]/'configs'
+    a=load_settings(root/'moe_alpha40_viewreg_cffn_kd2.yaml')
+    b=load_settings(root/'moe_alpha40_viewreg_sam005.yaml')
+    assert a.sam_rho==0 and b.sam_rho==.05
+    assert architecture_label(a)==architecture_label(b)
+    for key in ['initialization_checkpoint_sha256','student_epochs','student_learning_rate',
+                'phase_learning_rate','router_learning_rate','ema_decay','weight_decay',
+                'augmentation_enabled','augmentation_end_epoch','augmentation_apply_probability',
+                'distillation_initial_weight','distillation_final_weight','distillation_end_epoch',
+                'fusion_alpha_min','top_k','router_backend','initialize_ffn_on_warmstart']:
+        assert getattr(a,key)==getattr(b,key)
+    assert b.student_epochs==80 and b.augmentation_enabled
+    assert b.initialization_checkpoint_sha256=='de477b8c13c46c50cb9f17eb0b62bc577aaefef5512887e1e17a86d0affb5eea'
+    assert b.output_dir.name=='moe_alpha40_viewreg_sam005_seed42'
