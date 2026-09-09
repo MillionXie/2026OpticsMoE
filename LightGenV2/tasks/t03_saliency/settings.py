@@ -141,6 +141,21 @@ def load_settings(path: str | Path) -> Any:
     settings.ffn_spatial_learning_rate = float(d("training.ffn_spatial_learning_rate", 0.0001))
     settings.electronic_global_rank = int(d("lightgen.electronic_global_rank", 0))
     settings.initialize_global_on_warmstart = bool(d("training.initialize_global_on_warmstart", False))
+    settings.electronic_ffn_hidden_width = int(d("lightgen.electronic_ffn_hidden_width", 384))
+    settings.widen_ffn_on_warmstart = bool(d("training.widen_ffn_on_warmstart", False))
+    if settings.electronic_ffn_hidden_width not in (384,576):
+        raise ValueError("Only original384 or widened576 FFN hidden width is audited")
+    if settings.widen_ffn_on_warmstart and settings.electronic_ffn_hidden_width != 576:
+        raise ValueError("FFN widening transfer requires target576")
+    if settings.electronic_ffn_hidden_width == 576:
+        if (settings.electronic_ffn_spatial_dilation != 1 or settings.electronic_global_rank
+                or settings.electronic_grn or settings.electronic_spatial_kernel_size != 3
+                or settings.initialize_ffn_on_warmstart or settings.reset_fusion_on_warmstart
+                or settings.initialize_global_on_warmstart or settings.expand_kernel_on_warmstart
+                or settings.initialize_grn_on_warmstart):
+            raise ValueError("Isolate widening to an existing CFFN1; no other architecture/fusion transfer")
+        if not settings.initialization_checkpoint or not settings.initialization_checkpoint_sha256:
+            raise ValueError("Widened FFN requires SHA-pinned warmstart")
     if settings.sam_rho and settings.feature_hint_initial_weight:
         raise ValueError("Isolate SAM from training-only feature hints")
     settings.global_spatial_learning_rate = float(d("training.global_spatial_learning_rate", 0.0002))
@@ -236,6 +251,7 @@ def save_resolved_config(settings: Any) -> None:
                             electronic_grn=settings.electronic_grn,
                             electronic_ffn_spatial_dilation=settings.electronic_ffn_spatial_dilation,
                             electronic_global_rank=settings.electronic_global_rank,
+                            electronic_ffn_hidden_width=settings.electronic_ffn_hidden_width,
                             electronic_spatial_kernel_size=settings.electronic_spatial_kernel_size)
     values.setdefault("augmentation", {}).update(enabled=settings.augmentation_enabled, mode=settings.augmentation_mode,
         crop_scale_min=settings.crop_scale_min, horizontal_flip_probability=settings.horizontal_flip_probability,
@@ -254,6 +270,7 @@ def save_resolved_config(settings: Any) -> None:
         initialize_ffn_on_warmstart=settings.initialize_ffn_on_warmstart,
         ffn_spatial_learning_rate=settings.ffn_spatial_learning_rate,
         initialize_global_on_warmstart=settings.initialize_global_on_warmstart,
+        widen_ffn_on_warmstart=settings.widen_ffn_on_warmstart,
         global_spatial_learning_rate=settings.global_spatial_learning_rate,
         adaptive_plateau={"enabled": settings.adaptive_plateau_enabled,
                           **settings.adaptive_plateau_options},

@@ -230,3 +230,33 @@ python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TA
 
 结果在`runs/simulation/moe_alpha40_viewreg_sam_crop90_seed42`；以完整5000张公共测试选模，
 不得只报偏心/分散子集改善，仍需最终权重、相位、路由、alpha审计。
+
+## 现有电子FFN的受限加宽对照
+
+`moe_alpha40_sam_wide576.yaml`继承后期SAM.05的完整50轮训练，从相同已完成的
+0.85953132/SHA=c88e1a41…e841ad73来源开始，只把两处既有电子CFFN的隐藏维度
+384改为576：`192→576→空间DW3→GELU→192`（dropout位置不变）。
+输入/输出192、两级E/O、光Router Top2、alpha≥.4、所有相位/孔径/传播距离、
+85412参数读出头均不变；无新分支、attention或Transformer。
+
+相对原CFFN合计增加151296参数（两处各75648），其中扩展DW增加3456参数，
+其余为现有输入/输出线性层；每图额外约29578752 MAC，不包含激活。
+这是电子容量增加，不能表述为纯训练技巧或“免费提升”。
+`electronic_expansion=2`保留旧构造初始化，随后任务内显式替换为576；
+有效维度以`lightgen.electronic_ffn_hidden_width=576`及结构报告`ffn_hidden_width`为准。
+
+初始化借鉴[Net2Net/Net2Wider（ICLR2016）](https://arxiv.org/abs/1511.05641)：
+复制前192个隐藏通道及对应DW核，将复制通道的原输出权重按0.4/0.6分配，
+原后192通道不变。两份初始特征相同、输出权重之和等于原权重，因此eval确定性函数
+仅有浮点求和误差；不等分的输出权重让隐藏梯度不同，避免完全对称复制而无法增加有效容量。
+不声称dropout开启时单次随机前向等价，也不声称复现原论文全部算法。
+构造不消耗额外主随机流，不重置alpha；只准八个指定张量形状变化，其他权重严格加载。
+再次加载已加宽权重不能重复复制/覆盖训练结果。架构标识追加`_ffn576`。
+
+```bash
+TASK=LightGenV2/tasks/t03_saliency
+python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TASK/configs/moe_alpha40_sam_wide576.yaml" --phase all
+```
+
+配对对照为`moe_alpha40_sam005_seed42`，不是早期SAM或不同增强版本。
+仅best/last；结果尚待完整5000测试和最终审计，不替换当前已核验候选。

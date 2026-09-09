@@ -9,6 +9,65 @@ import torch
 from torch import nn
 
 
+def widen_ffn_checkpoint(source: dict, target: dict) -> tuple[dict, bool]:
+    """Net2Wider-style 384->576 expansion, restricted to the two existing FFNs.
+
+    Duplicate the first 192 hidden channels, splitting their outgoing weights
+    0.4/0.6. Unequal splits allow different gradients without changing the
+    deterministic initial function. Dropout equivalence is NOT claimed.
+    Reference: Chen et al., Net2Net, ICLR 2016, arXiv:1511.05641.
+    """
+    if source.keys() != target.keys():
+        raise RuntimeError("FFN widening cannot add/remove checkpoint keys")
+    shapes = {}
+    for i in range(2):
+        prefix = f"hybrid.blocks.{i}.mlp."
+        shapes.update({prefix+'0.weight': ((384,192),(576,192)),
+                       prefix+'0.bias': ((384,),(576,)),
+                       prefix+'1.0.conv.weight': ((384,1,3,3),(576,1,3,3)),
+                       prefix+'3.weight': ((192,384),(192,576))})
+    changed = {k for k in source if source[k].shape != target[k].shape}
+    if not changed:
+        if any(tuple(source[k].shape) != pair[1] for k,pair in shapes.items()):
+            raise RuntimeError("Expected already widened 576-channel FFN")
+        return source, False
+    if changed != shapes.keys():
+        raise RuntimeError("Only eight audited FFN tensors may change shape")
+    result = dict(source)
+    for key,(old_shape,new_shape) in shapes.items():
+        value = source[key]
+        if tuple(value.shape) != old_shape or tuple(target[key].shape) != new_shape:
+            raise RuntimeError(f"Unexpected FFN widening shape: {key}")
+        if key.endswith('3.weight'):
+            result[key] = torch.cat((value[:,:192]*.4, value[:,192:], value[:,:192]*.6), dim=1)
+        else:
+            result[key] = torch.cat((value, value[:192]), dim=0)
+    return result, True
+
+
+def configure_wide_ffn(hybrid: nn.Module) -> None:
+    """Enlarge only existing CFFN hidden space; preserve other initialization RNG."""
+    if len(hybrid.blocks) != 2:
+        raise ValueError("FFN widening requires two existing residuals")
+    old = {f'hybrid.{k}':v.detach().clone() for k,v in hybrid.state_dict().items()}
+    for block in hybrid.blocks:
+        first, last = block.mlp[0], block.mlp[3]
+        spatial = block.mlp[1][0]
+        if (first.in_features, first.out_features, last.in_features, last.out_features) != (192,384,384,192):
+            raise ValueError("Only 192->384->192 CFFN widening is audited")
+        if not isinstance(spatial, PackedSpatialDepthwise) or spatial.conv.dilation != (1,1):
+            raise ValueError("Widening requires existing dilation1 CFFN")
+        device, dtype = first.weight.device, first.weight.dtype
+        devices = [device.index] if device.type == 'cuda' else []
+        with torch.random.fork_rng(devices=devices):
+            block.mlp[0] = nn.Linear(192,576,device=device,dtype=dtype)
+            block.mlp[3] = nn.Linear(576,192,device=device,dtype=dtype)
+            block.mlp[1][0] = PackedSpatialDepthwise(576,1).to(device=device,dtype=dtype)
+    target = {f'hybrid.{k}':v for k,v in hybrid.state_dict().items()}
+    expanded, _ = widen_ffn_checkpoint(old, target)
+    hybrid.load_state_dict({k.removeprefix('hybrid.'):v for k,v in expanded.items()}, strict=True)
+
+
 class SpatialTokenLinear(nn.Linear):
     """Static low-rank spatial MLP inside the existing electronic pointwise op.
 

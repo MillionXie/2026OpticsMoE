@@ -1,0 +1,7 @@
+base_config: moe_alpha40_sam005.yaml
+# Same fixed .859531 source and training as late SAM.05; only existing FFN wider.
+lightgen:
+  electronic_ffn_hidden_width: 576
+training:
+  widen_ffn_on_warmstart: true
+output_dir: ../runs/simulation/moe_alpha40_sam_wide576_seed42
