@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
+from contextlib import nullcontext
 
 import torch
 from torch import nn
@@ -50,8 +51,8 @@ def configure_spatial_kernel(hybrid: nn.Module, kernel: int) -> None:
     """T03-only receptive-field change; no shared backend mutation."""
     if kernel == 3:
         return
-    if kernel != 5:
-        raise ValueError("Only the audited 3-to-5 expansion is supported")
+    if kernel not in (5, 13):
+        raise ValueError("Only audited 3-to-5/13 expansions are supported")
     for block in hybrid.blocks:
         old = block.token_depthwise
         if old.kernel_size != (3, 3) or old.groups != old.in_channels or old.bias is not None:
@@ -60,11 +61,16 @@ def configure_spatial_kernel(hybrid: nn.Module, kernel: int) -> None:
         # Do not add convolution padding a second time.
         if old.padding != (0, 0) or block.token_mixer_type != "depthwise_conv2d":
             raise ValueError("Expected an explicitly padded 2D electronic mixer")
-        new = nn.Conv2d(old.in_channels, old.out_channels, kernel, padding=0,
-                        groups=old.groups, bias=False, device=old.weight.device, dtype=old.weight.dtype)
+        # Preserve legacy k5 RNG behavior; k13 is a new paired trial whose
+        # discarded random initialization must not shift subsequent sampling.
+        devices = [old.weight.device.index] if old.weight.is_cuda else []
+        with torch.random.fork_rng(devices=devices) if kernel == 13 else nullcontext():
+            new = nn.Conv2d(old.in_channels, old.out_channels, kernel, padding=0,
+                            groups=old.groups, bias=False, device=old.weight.device, dtype=old.weight.dtype)
         with torch.no_grad():
             new.weight.zero_()
-            new.weight[:, :, 1:4, 1:4].copy_(old.weight)
+            start = (kernel-3)//2
+            new.weight[:, :, start:start+3, start:start+3].copy_(old.weight)
         block.token_depthwise = new
         block.token_mixer_kernel_size = kernel
 
@@ -80,12 +86,13 @@ def expand_spatial_checkpoint(source: dict, target: dict) -> dict:
         shape = target[name].shape
         if value.shape == shape:
             continue
-        if name not in expected or value.shape[-2:] != (3, 3) or shape[-2:] != (5, 5) or value.shape[:-2] != shape[:-2]:
+        if name not in expected or value.shape[-2:] != (3, 3) or shape[-2:] not in ((5, 5),(13,13)) or value.shape[:-2] != shape[:-2]:
             raise RuntimeError(f"Unexpected warmstart shape mismatch: {name}")
-        expanded[name] = torch.nn.functional.pad(value, (1, 1, 1, 1))
+        padding = (shape[-1]-3)//2
+        expanded[name] = torch.nn.functional.pad(value, (padding,)*4)
         changed.add(name)
     if changed != expected:
-        raise RuntimeError("Expected exactly two 3-to-5 depthwise kernel transfers")
+        raise RuntimeError("Expected exactly two audited depthwise kernel transfers")
     return expanded
 
 
@@ -211,7 +218,7 @@ def initialize_student(
         if initialize_ffn:
             allowed.add(model.checkpoint_architecture.removesuffix(f"_cffn_d{settings.electronic_ffn_spatial_dilation}"))
         without_grn = model.checkpoint_architecture.removesuffix("_grn")
-        source_ek3 = without_grn.removesuffix("_ek5")
+        source_ek3 = without_grn.removesuffix(f"_ek{settings.electronic_spatial_kernel_size}")
         if initialize_grn:
             allowed.add(without_grn)
         if expand_kernel:
@@ -240,7 +247,7 @@ def initialize_student(
         return {"path": str(warmstart), "sha256": sha256_file(warmstart),
                 "mode": "warmstart_weights_with_new_optimizer", "source_epoch": payload["epoch"],
                 "source_architecture": payload["architecture"], "target_architecture": model.checkpoint_architecture,
-                "kernel_transfer": "3x3 centered in zero 5x5; initial convolution function preserved" if transfer else "none",
+                "kernel_transfer": f"3x3 centered in zero {settings.electronic_spatial_kernel_size}x{settings.electronic_spatial_kernel_size}; initial convolution function preserved" if transfer else "none",
                 "identity_grn_added": grn_added,
                 "identity_spatial_ffn_added": ffn_added,
                 "fusion_reset": settings.reset_fusion_on_warmstart,

@@ -144,10 +144,10 @@ def load_settings(path: str | Path) -> Any:
             raise ValueError("Spatial FFN learning rate must be finite and positive")
     if settings.initialize_grn_on_warmstart and not settings.electronic_grn:
         raise ValueError("GRN identity transfer requires electronic_grn")
-    if settings.electronic_spatial_kernel_size not in {3, 5}:
-        raise ValueError("T03 supports audited electronic spatial kernels 3 or 5")
-    if settings.expand_kernel_on_warmstart and settings.electronic_spatial_kernel_size != 5:
-        raise ValueError("Kernel expansion requires target kernel 5")
+    if settings.electronic_spatial_kernel_size not in {3, 5, 13}:
+        raise ValueError("T03 supports audited electronic spatial kernels 3, 5, or 13")
+    if settings.expand_kernel_on_warmstart and settings.electronic_spatial_kernel_size not in (5,13):
+        raise ValueError("Kernel expansion requires target kernel 5 or 13")
     # Legacy Vision2 overwrites training.* rates with optimization.* defaults.
     # Keep historical profiles reproducible; new profiles explicitly opt in.
     settings.learning_rate_source = str(d("training.learning_rate_source", "legacy_optimization"))

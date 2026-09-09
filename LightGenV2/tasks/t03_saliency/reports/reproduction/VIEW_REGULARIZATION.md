@@ -1,5 +1,35 @@
 # SALICON 泛化优化：同步弱增强与早期重新适应
 
+## 追加的13×13轻量空间上下文对照
+
+`moe_alpha40_viewreg_kernel13.yaml`仅相对`moe_alpha40_viewreg_control.yaml`
+扩大现有两个192通道depthwise token mixer：3×3→13×13。
+不是新增残差层、特征分支、attention或预训练CNN。解码头保持85412参数，
+不加入两参数校准、GRN或空间FFN。新增参数严格为`2*192*(13²-3²)=61440`，
+在14×14 token网格上新增约1204万MAC/图（只计扩大卷积的差额，不是整机耗时/能耗）。
+光Router Top2、alpha≥0.4、20%–30%训练零级扰动、478 ROI、224专家及光学传播次数均不变。
+
+动机参考[RepLKNet (CVPR2022)](https://arxiv.org/abs/2203.06717)的大核深度卷积设计；
+仅借鉴扩大空间上下文，不引入其完整网络或声称论文证明本任务有效。
+相比之前3→5的小范围扩大，本次核在14×14特征网格上覆盖更大邻域。
+从控制组同一0.85468765较早来源开始；原3×3放在13×13中心，其余零初始化，
+不消耗额外随机数，不重置alpha。训练之前核验原函数保持，随后外圈允许训练。
+
+其余学习率、权重衰减、80轮预算、前5轮冻结电子主体、60轮同步弱增强、
+后20轮无增强精修、KD=.6、EMA及完整测试规则与控制组完全相同。
+这意味着新增核也在前5轮冻结，避免将初始化适应差异混入对比。
+
+```bash
+python -m pytest LightGenV2/tasks/t03_saliency/tests -q
+python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_viewreg_kernel13.yaml --phase all
+```
+
+运行前按实时显存设置CUDA_VISIBLE_DEVICES，不停止他人进程。
+新run：`runs/simulation/moe_alpha40_viewreg_kernel13_seed42`；保留best/last，
+以完整测试、专家占比及参数更新核验决定是否采用。当前未声称达到0.87。
+
+## 原始同步弱增强三组协议
+
 目标是完整5000张public-test平均CC达到0.87；目标不是结果承诺。
 前一轮cffn三组均34轮早停，更新后最高CC为0.857841/0.857759/0.857757，
 均保留epoch0的0.858120源。训练CC约0.881而测试下降，提示该续训方案泛化退步。
