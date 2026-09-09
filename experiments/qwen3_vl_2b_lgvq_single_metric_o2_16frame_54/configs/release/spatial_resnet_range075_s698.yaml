@@ -1,0 +1,9 @@
+base_config: spatial_resnet_e1_rank_s692.yaml
+output_dir: ../../runs/lgvq_spatial_resnet_range075_s698
+random_seed: 698
+
+# Test whether the learned E1 correction was being clipped by the conservative
+# 0.50 bound. It remains inside E1 and still traverses all later optical stages.
+model:
+  resnet_electronic_max: 0.75
+

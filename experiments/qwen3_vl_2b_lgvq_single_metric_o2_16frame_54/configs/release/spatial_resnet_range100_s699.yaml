@@ -1,0 +1,12 @@
+base_config: spatial_resnet_e1_rank_s692.yaml
+output_dir: ../../runs/lgvq_spatial_resnet_range100_s699
+random_seed: 699
+
+model:
+  resnet_electronic_max: 1.00
+
+# This server GPU is shared; a smaller stratified batch avoids evicting other
+# users' processes. The loss and architecture are otherwise identical.
+training:
+  batch_size: 32
+
