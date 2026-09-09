@@ -25,6 +25,10 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(b["training"]["phase_learning_rate"], 10*a["training"]["phase_learning_rate"])
         for key in ("learning_rate", "adapter_learning_rate", "readout_learning_rate", "router_learning_rate"):
             self.assertEqual(a["training"][key], b["training"][key])
+        c = _read_config(TASK / "configs/polish_smoothing.yaml")
+        self.assertEqual(a["training"], c["training"])
+        self.assertEqual(c["abo_image_image"].pop("anchor_label_smoothing"), .1)
+        self.assertEqual(a["abo_image_image"], c["abo_image_image"])
 
     def test_train_gallery_excludes_own_product_and_has_gradients(self):
         samples = [SimpleNamespace(product_id=p, category_id=p//2, split="train")

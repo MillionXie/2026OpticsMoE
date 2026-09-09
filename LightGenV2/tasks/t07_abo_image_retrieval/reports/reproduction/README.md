@@ -129,6 +129,16 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.run --mode optical \
 目标是原480-query Hit@1超过0.70，不改query、图库、标签、指标或评估预处理。
 测试仍参与选模，小幅超过阈值不等于统计显著改进；完成后固定best再复评，报告命中张数和去光结果。
 
+新增第三个有界对照 `polish_smoothing.yaml`，与low_lr仅相差anchor CE的label_smoothing=0.1，
+推理不变。这基于旧best缓存的训练集诊断：1440训练图查询119个其他训练商品中心，
+Hit@1=99.375%（1431/1440），不属于独立测试；未见商品仍为334/480。
+不得把训练图的该诊断指标填入论文测试性能。
+
+```bash
+python -m LightGenV2.tasks.t07_abo_image_retrieval.run --mode optical \
+  --config LightGenV2/tasks/t07_abo_image_retrieval/configs/polish_smoothing.yaml
+```
+
 ## 历史审计说明（保留）
 
 [历史 baseline 方法审计](BASELINE_METHODS.md)保留了旧运行的模型、预处理及评估定义。

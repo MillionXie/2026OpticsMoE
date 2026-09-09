@@ -284,7 +284,8 @@ def train_model(loaded, replacement, readout, settings, raw, train, test, cache)
                 z, _ = student_embeddings(loaded.model, replacement, readout, move_inputs(inputs, loaded.device))
                 retrieval = supcon(z, labels, options.get("temperature", .07))
                 kd = (1-F.cosine_similarity(z.float(), targets[batch["dataset_indices"]].to(loaded.device))).mean()
-                anchor_ce = F.cross_entropy(z.float() @ anchors.T / options.get("temperature", .07), labels)
+                anchor_ce = F.cross_entropy(z.float() @ anchors.T / options.get("temperature", .07), labels,
+                                            label_smoothing=options.get("anchor_label_smoothing", 0.))
                 gallery_loss, relation_loss = z.new_zeros(()), z.new_zeros(())
                 if gallery_bank is not None:
                     # Use FP32 similarities even inside mixed-precision model forward.
