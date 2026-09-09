@@ -1,0 +1,37 @@
+base_config: spatial_calibrated_s620.yaml
+output_dir: ../../runs/lgvq_spatial_crossframe_s661
+random_seed: 661
+
+# Lightweight post-optical 4-frame spatial aggregation. This remains inside
+# the single MOS readout and introduces no raw-frame or pre-optical bypass.
+model:
+  spatial_readout_mode: spatial_crossframe_residual
+
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_router_temperature_s620/best_alpha_calibrated_checkpoint.pt
+  trainable_scope: crossframe_only
+  epochs: 100
+  batch_size: 64
+  learning_rate: 0.00010
+  weight_decay: 0.001
+  minimum_learning_rate_factor: 0.02
+  ema_decay: 0.98
+  ema_start_epoch: 1
+  test_interval_epochs: 1
+  test_interval_steps: 0
+  phase_snapshot_interval_epochs: 0
+
+loss:
+  regression_weight: 0.20
+  ranking_weight: 2.00
+  correlation_weight: 4.00
+  soft_spearman_weight: 0.50
+  soft_rank_temperature: 0.10
+  soft_target_weight: 0.0
+  level_distribution_weight: 0.0
+  optical_alignment_weight: 0.0
+  router_balance_weight: 0.0
+  router_importance_weight: 0.0
+  serial_router_balance_weight: 0.0
+  serial_router_importance_weight: 0.0
+  router_capture_weight: 0.0

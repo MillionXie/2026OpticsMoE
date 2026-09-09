@@ -150,6 +150,7 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
         "spatial_weighted_level_residual",
         "spatial_weighted_level_absolute",
         "spatial_weighted_level_blend",
+        "spatial_crossframe_residual",
     }:
         raise ValueError(
             "Config must select a deep or five-level post-optical residual readout"
@@ -230,10 +231,21 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
             f"Warm-start readout mismatch: missing={non_residual_missing}, "
             f"unexpected={unexpected}"
         )
+    trainable_prefixes = permitted_zero_start_prefixes
+    if args.new_module_only:
+        if settings.spatial_readout_mode == "spatial_crossframe_residual":
+            trainable_prefixes = ("crossframe_",)
+        elif settings.spatial_readout_moment_refiner_enabled:
+            trainable_prefixes = ("moment_frame.",)
+        elif settings.spatial_readout_refiner_enabled:
+            trainable_prefixes = ("large_kernel_refiner.",)
+        else:
+            raise ValueError(
+                "--new-module-only requires a cross-frame, moment, or "
+                "large-kernel readout refinement"
+            )
     for name, parameter in readout.named_parameters():
-        parameter.requires_grad_(
-            name.startswith(permitted_zero_start_prefixes)
-        )
+        parameter.requires_grad_(name.startswith(trainable_prefixes))
     trainable = [parameter for parameter in readout.parameters() if parameter.requires_grad]
     readout.to(device)
     ema_readout = None
@@ -509,6 +521,11 @@ def main() -> int:
         help="Training-only batch correlation distillation from --soft-targets.",
     )
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument(
+        "--new-module-only",
+        action="store_true",
+        help="Train only the zero-start module appended by the selected config.",
+    )
     parser.add_argument(
         "--mos-strata",
         type=int,
