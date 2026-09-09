@@ -9,7 +9,7 @@ def orient(a,c):
     if c.get('flip_horizontal'): a=np.fliplr(a)
     return np.ascontiguousarray(a)
 
-def raster(a,device,c,phase=False):
+def raster(a,device,c,phase=False,nearest=False):
     h,w=a.shape
     if (h,w)!=(478,478): raise ValueError('Expected canonical 478 x 478')
     pitch=device['pixel_pitch_um']; width,height=device.get('size_wh',device.get('expected_resolution_wh'))
@@ -20,9 +20,10 @@ def raster(a,device,c,phase=False):
     xx=(np.arange(width,dtype=np.float64)-cx)*pitch/c['model_pitch_um']+238.5
     yy=(np.arange(height,dtype=np.float64)-cy)*pitch/c['model_pitch_um']+238.5
     validx=(xx>=-.5)&(xx<477.5); validy=(yy>=-.5)&(yy<477.5)
-    if phase:
+    if phase or nearest:
         sampled=a[np.clip(np.floor(yy+.5).astype(int),0,477)[:,None],np.clip(np.floor(xx+.5).astype(int),0,477)[None,:]]
-        out=np.floor(np.mod(sampled,2*np.pi)/(2*np.pi)*256).clip(0,255).astype(np.uint8)
+        out=(np.floor(np.mod(sampled,2*np.pi)/(2*np.pi)*256).clip(0,255).astype(np.uint8)
+             if phase else np.rint(sampled).clip(0,255).astype(np.uint8))
     else:
         # Bilinear amplitude (NOT intensity, NOT wrapped phase); preserve FOV.
         x=np.clip(xx,0,477); y=np.clip(yy,0,477)
@@ -129,3 +130,5 @@ def export(c):
 if __name__=='__main__':
     parser=argparse.ArgumentParser(); parser.add_argument('--config'); args=parser.parse_args()
     cfg,_=config(args.config); calibration(cfg); export(cfg)
+    from dual_patterns import generate
+    generate(cfg)

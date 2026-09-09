@@ -41,6 +41,41 @@ notepad LAB.local.json
 
 ### 现在对齐：最短操作
 
+**双SLM像素配准请用`generated/dual`内的配套图，不要把普通棋盘格与整屏P_GRAT拼在一起。**
+每组固定`A.bmp`（振幅）配同目录`P.bmp`（相位，只有白格对应区域有0/π光栅）。
+`P_V.bmp`是与P相反上下方向的相位备选；只能二选一，不要播放器额外翻转。
+
+| 配套目录 | 图案 |
+|---|---|
+| `generated/dual/01_check64` | 旧版c64棋盘格；可见白格交替横纵光栅 |
+| `generated/dual/02_blocks_x` | 非对称大块，块内X方向光栅 |
+| `generated/dual/03_blocks_y` | 同样大块，块内Y方向光栅 |
+| `generated/dual/04_check16` | 更小的c16棋盘格，作进一步位置核对 |
+
+两屏都是8μm，k=1；图案共用8.126mm物理范围（约1016像素）。c64的设备格宽136像素；
+c16为34像素；光栅周期17个设备像素，二值条纹宽度8/9交替。振幅纯0/255、相位纯0/128，
+标定采用一致最近邻栅格，不影响正式网络BMP原有双线性振幅插值。
+
+先固定一对，调平移；用非对称大块确认方向；比较中心与边缘是否同时重合。
+若中心对齐而边缘持续偏离，检查倍率/旋转，不能靠平移消除。这里不自动扫倍率、不改模型ROI。
+`preview.png`只是配对布局示意，**不是CCD衍射仿真**；实际应观察光栅衍射分布与亮区边界的对应变化，
+不承诺相位条纹会直接按预览灰度成像。
+
+```powershell
+# 已生成；只有改了中心/flip后才需重新生成这组配准图（不改其他标定图）：
+& $py dual_patterns.py
+# 手动加载输出提示的相位P.bmp，程序仅持续播放配套振幅、CCD软件可正常使用：
+& $py align.py --pair generated/dual/01_check64
+# 上一条按Enter结束后再换下一组，切勿同时启动多个播放器：
+& $py align.py --pair generated/dual/02_blocks_x
+& $py align.py --pair generated/dual/03_blocks_y
+# 若确认光路需要与当前相反的上下方向，改选提示的P_V.bmp：
+& $py align.py --pair generated/dual/02_blocks_x --opposite-vertical
+```
+
+确定方向后将`LAB.local.json`的phase_slm.flip_vertical设成对应值（具体值见该组pair.json），
+再重新生成和建立正式会话。程序不替你切相位，也不修改现有曝光/ROI/LUT。
+
 文件已生成在 `D:\code\guest\2026OpticsMoE\ABO_Lab_8um\generated\cal`。
 振幅为1920×1080 BMP，相位为1920×1200 BMP；两者按8μm像素设计。
 478×17μm=8.126mm，对应1015.75（栅格约1016）个设备像素，不能把478直接作为显示宽度。
@@ -48,7 +83,7 @@ notepad LAB.local.json
 关闭其他占用振幅屏的播放器后，在**实验电脑桌面**运行；此命令不打开CCD，可同时使用CCD软件观察：
 
 ```powershell
-& $py align.py --bmp generated/cal/A_CHECK_32.bmp
+& $py align.py --pair generated/dual/01_check64
 # 上一个命令按Enter结束后，再换下一张：
 & $py align.py --bmp generated/cal/A_DIGIT_3.bmp
 # 手动加载相位P_F4.bmp，再持续播放全白振幅：
@@ -91,7 +126,7 @@ CCD方向由上述逻辑四角单应变换处理，不再另加翻转。设置�
 按顺序：
 
 1. 相位手动放`generated\cal\P_ZERO.bmp`。播放非对称L和单角标记，记录新光路的方向；不能只看对称棋盘格猜翻转。
-2. 棋盘格`A_CHECK_32.bmp/A_CHECK_64.bmp`配`P_GRAT_X.bmp/P_GRAT_Y.bmp`，确认两SLM物理范围和横纵光栅方向。
+2. 像素配准用`generated/dual`每个子目录内的`A.bmp+P.bmp`。`P_GRAT_X/Y.bmp`整屏光栅仅保留为独立衍射方向诊断，不是配套棋盘格相位。
 3. 振幅`A_WHITE.bmp`配相位`P_F1.bmp/P_F4.bmp/P_F9.bmp`。四焦点对应ROI四角，九焦点额外检查中点。角坐标按逻辑TL/TR/BR/BL填，不按CCD画面的左右排序。
 4. 确认振幅/相位的相对方向，再设置两者各自的flip标志并重新`patterns.py`。四角单应变换已经负责CCD→模型方向，不能再额外翻一次CCD。
 

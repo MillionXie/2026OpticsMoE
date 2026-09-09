@@ -7,7 +7,9 @@ from common import ROOT,read,write,sha
 
 def main():
     p=argparse.ArgumentParser(); p.add_argument('--output',type=Path,default=ROOT/'releases/ABO_Holoeye8_DVP.zip')
-    p.add_argument('--source-only',action='store_true'); a=p.parse_args()
+    p.add_argument('--source-only',action='store_true')
+    p.add_argument('--alignment-only',action='store_true',help='Patch paired calibration/code only; preserve all formal masks/configs/captures')
+    a=p.parse_args()
     repo=ROOT.parent
     commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=repo,text=True).strip()
     paths={}
@@ -17,6 +19,21 @@ def main():
     tracked=subprocess.check_output(['git','ls-files','ABO_Lab_8um'],cwd=repo,text=True).splitlines()
     for name in tracked:
         pth=Path(name); add(repo/pth,str(pth.relative_to('ABO_Lab_8um')))
+    if a.alignment_only:
+        paths.pop('lab.json',None) # Never replace the user's hardware settings.
+        for f in (ROOT/'generated/dual').rglob('*'):
+            if f.is_file(): add(f,str(f.relative_to(ROOT)))
+        if not (ROOT/'generated/dual/pairs.json').is_file(): raise FileNotFoundError('Run dual_patterns.py first')
+        manifest={'schema':1,'git_commit':commit,'purpose':'paired calibration update; formal masks/configs/captures untouched',
+                  'files':{n:sha(f) for n,f in sorted(paths.items())}}
+        target=a.output.with_name('ABO_alignment_update.zip'); target.parent.mkdir(parents=True,exist_ok=True)
+        import json
+        with zipfile.ZipFile(target,'w',zipfile.ZIP_DEFLATED) as z:
+            for name,f in sorted(paths.items()): z.write(f,name)
+            z.writestr('ALIGNMENT_UPDATE_MANIFEST.json',json.dumps(manifest,indent=2))
+        write(target.with_suffix('.sha256.json'),{'sha256':sha(target),'bytes':target.stat().st_size,'git_commit':commit})
+        print(target,sha(target),flush=True)
+        return
     for folder in ('runtime','assets','models','generated'):
         for f in (ROOT/folder).rglob('*'):
             if not f.is_file() or '__pycache__' in f.parts: continue
