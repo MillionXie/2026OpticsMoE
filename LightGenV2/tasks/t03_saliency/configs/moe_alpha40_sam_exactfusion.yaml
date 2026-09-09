@@ -1,0 +1,5 @@
+base_config: moe_alpha40_sam005.yaml
+# Forward/inference identical. Only RMS normalization backward differs.
+training:
+  exact_fusion_backward: true
+output_dir: ../runs/simulation/moe_alpha40_sam_exactfusion_seed42

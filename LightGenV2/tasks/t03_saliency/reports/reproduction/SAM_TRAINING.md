@@ -450,3 +450,47 @@ TASK=LightGenV2/tasks/t03_saliency
 python -m pytest "$TASK/tests" -q
 python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TASK/configs/moe_alpha40_sam_spatialcc_kd2.yaml" --phase all
 ```
+
+上述kd2配置commit `961907d182a23fc3882a19139cd89b4563fe41f7`通过87项测试并push后在GPU2运行，
+完整warmstart CC=.8595311981；比GPU3配对warmstart的微小数值差异须保留，不伪称逐位相同。
+教师梯度诊断`gradients.json` SHA256：`fe9226e4a6d9cd7bfedb4b1de26b53a97e33f6f1b344ee0d96c7dd0856f0ea3e`。
+
+同一128张、同一初始SHA、8×16 clean-eval条件进一步比较各GT损失分量的梯度，
+源码961907d1，输出复用同一smoke目录`loss_components.json`，没有新增训练或PT。
+电子组KLD/SIM/负NSS与CC项平均余弦=.87256/.86685/.91537；
+特征相位组=.88542/.87709/.95506，6组参数的8个batch均未出现负余弦。
+按当前权重计，负NSS梯度范数约CC项的.09–.108；没有证据支持直接删除NSS。
+这只是固定来源的训练小样本诊断，不证明任意训练阶段都无冲突。
+`loss_components.json` SHA256：`c65bfd5b0caa7c0e3338763fdc932a59485f75c709216304d424572934937c3d`。
+
+## 保持前向不变的RMS完整反向对照
+
+原同尺度融合前向：`En=E/rms(E), On=O/rms(O), M=(1-alpha)En+alpha On, F=rms(E)*M/rms(M)`。
+现有实现将三处RMS统计量detach，因此使用近似梯度；这不破坏前向同尺度约束，
+但与该前向函数的完整导数不同。新增训练选项`training.exact_fusion_backward:true`，
+只恢复RMS统计量的梯度，**同一输入/权重的前向输出与旧实现逐值一致**。
+不是取消归一化、去掉F或改变alpha；四专家光Router Top2、物理传播和CCD处理不变。
+
+动机参考[Understanding and Improving Layer Normalization，NeurIPS2019](https://arxiv.org/abs/1911.07013)：
+论文通过DetachNorm检验归一化统计量导数的作用。这里只借鉴“分离前向与反向影响”的实验方法，
+不加入AdaNorm、LayerNorm模块或论文主干；不能由该论文推断SALICON一定改善。
+当前分支RMS既有前向已经约束尺度，恢复导数不会额外引入可学习的分支增益。
+
+训练时原函数在no_grad下提供原输出/诊断，加上`full-full.detach()`的零值项，仅替换反向。
+eval/no_grad与去光消融仍直接调用原函数，不添加推理运算、状态字典项或参数。
+完整导数实现先对均方值做epsilon²下限再开方，避免零输入sqrt导数导致NaN；
+epsilon拐点采用该稳定分段导数，不主张不可微边界存在唯一导数。
+单测检查前向/状态/RNG一致、随机方向有限差分、padding/零输入、去光和复制对象隔离。
+
+`moe_alpha40_sam_exactfusion.yaml`继承原SAM.05：同一c88e来源、50轮、KL蒸馏.6、原图训练；
+不同时使用spatial_cc、groups64、wide576或global16。只改变上述训练梯度，架构标识/推理合同不变。
+参数增加0，alpha不重置，best/last策略不变，公开测试选模偏差仍适用。
+
+```bash
+TASK=LightGenV2/tasks/t03_saliency
+python -m pytest "$TASK/tests" -q
+python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TASK/configs/moe_alpha40_sam_exactfusion.yaml" --phase all
+```
+
+结果目录为`runs/simulation/moe_alpha40_sam_exactfusion_seed42`；原始SAM.05为配对控制。
+此处只记录待验证方案，不能用功能测试替代完整5000张性能复评。

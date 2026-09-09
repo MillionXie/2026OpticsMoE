@@ -90,6 +90,7 @@ def load_settings(path: str | Path) -> Any:
     settings.nss_weight = float(d("loss.nss_weight", 0.1))
     settings.map_kd_weight = 0.0
     settings.sam_rho = float(d("training.sam_rho", 0.0))
+    settings.exact_fusion_backward = bool(d("training.exact_fusion_backward", False))
     if not 0 <= settings.sam_rho <= .1:
         raise ValueError("training.sam_rho must be in [0,.1]")
     settings.map_kd_temperature = 1.0
@@ -295,6 +296,7 @@ def save_resolved_config(settings: Any) -> None:
         initialize_global_on_warmstart=settings.initialize_global_on_warmstart,
         widen_ffn_on_warmstart=settings.widen_ffn_on_warmstart,
         expand_ffn_groups_on_warmstart=settings.expand_ffn_groups_on_warmstart,
+        exact_fusion_backward=settings.exact_fusion_backward,
         global_spatial_learning_rate=settings.global_spatial_learning_rate,
         adaptive_plateau={"enabled": settings.adaptive_plateau_enabled,
                           **settings.adaptive_plateau_options},

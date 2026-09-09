@@ -33,6 +33,7 @@ from .lightweight_residual import configure_spatial_ffn, initialize_identity_spa
 from .lightweight_residual import configure_global_mixing, initialize_identity_global_mixing
 from .lightweight_residual import configure_wide_ffn, widen_ffn_checkpoint
 from .lightweight_residual import configure_grouped_ffn, expand_ffn_group_checkpoint
+from .fusion_training import enable_exact_fusion_backward
 
 
 def architecture_label(settings: Any) -> str:
@@ -144,6 +145,8 @@ class LightGenVision2SaliencyStudent(RobustVision2PoseStudent):
             configure_wide_ffn(self.core.hybrid)
         if getattr(settings, "electronic_ffn_groups", 0) == 64:
             configure_grouped_ffn(self.core.hybrid)
+        if getattr(settings, "exact_fusion_backward", False):
+            enable_exact_fusion_backward(self.core.hybrid)
         self.capture_block = _RobustCaptureBlock(self.core)
         self.student_blocks = nn.ModuleList(
             [self.capture_block]
