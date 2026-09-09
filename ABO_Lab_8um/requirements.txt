@@ -1,0 +1,10 @@
+# Install torch==2.8.0 separately from the CPU index on the 3GB GTX 1060 lab PC.
+numpy>=1.26,<3
+Pillow>=10,<12
+PyYAML>=6,<7
+transformers==4.57.3
+accelerate>=1.0,<2
+safetensors>=0.5,<1
+matplotlib>=3.8,<4
+opencv-python-headless>=4.9,<5
+scipy>=1.11,<2
