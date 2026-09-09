@@ -1,5 +1,39 @@
 # SALICON 泛化优化：同步弱增强与早期重新适应
 
+## 轻量电子容量对照：16维全局空间混合
+
+`moe_alpha40_viewreg_global16.yaml`继承已完成的强KD配置，不继承mix50；
+同一较早来源、相同80轮/增强概率1/KD2→.6/损失/光学噪声/光路/alpha约束。
+只在两层**已有电子残差**内部扩大空间交流，物理/模型主路径仍只有E和O两支。
+参考[MLP-Mixer](https://arxiv.org/abs/2105.01601)跨位置共享通道的静态MLP思想，
+不加载其预训练权重、完整网络或额外主干，不使用attention、Q/K/V或输入条件权重。
+
+位置在原`token_pointwise`内：原LayerNorm、3×3深度卷积和GELU之后，
+先恢复Qwen块序到真实14×14空间；每通道的196个位置经196→16→196静态空间MLP，
+加回其输入，再执行原192→192 pointwise以及原有门控残差。后续原通道MLP（含已有空间FFN）、
+两级同尺度光电融合和85412参数解码头不变。没有新增第三条特征输入或输出分支。
+
+新增两矩阵/层，无新bias；每层`196*16+16*196=6272`，两层12544参数。
+结合已存在的空间FFN，相对最初3×3电子残差总共新增19456，而非仅12544。
+新增矩阵MAC约2408448/图（不含GELU/重排，非实测速率/功耗）。
+4×4低频二维DCT基初始化下投影，上投影全零，初始函数保持；两矩阵均训练，
+下投影在上投影离开零后获得梯度。基在真实14×14坐标上构造，不把块序当作连续图像。
+初始化不消耗全局随机流，样本独立，固定196 token合同不接受padding/变长序列。
+
+新增矩阵单独AdamW组`electronic_global_spatial`，初始LR=2e-4、weight decay=0，
+随既有阶段/平台调度缩放；前5轮原电子主体冻结，新投影和既有空间FFN可训练。
+只允许审计过的rank16，暂不与GRN/13×13核组合。严格记录`_global_r16`结构后缀，
+迁移只容许对应四个新矩阵；同结构checkpoint复载不重新置零已学矩阵。
+
+```bash
+python -m pytest LightGenV2/tasks/t03_saliency/tests -q
+python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_viewreg_global16.yaml --phase all
+```
+
+产物在本任务`runs/simulation/moe_alpha40_viewreg_global16_seed42`；按实时资源选GPU。
+与强KD组的0.859531作完整测试对比，同时检查alpha、专家选择和实际相位变化。
+这是小容量全局上下文的待验证假设，不声称论文保证SALICON改善或已经达到0.87。
+
 ## 后续单变量：原图与弱增强混合训练
 
 `moe_alpha40_viewreg_mix50.yaml`继承强KD组全部设置，只把
