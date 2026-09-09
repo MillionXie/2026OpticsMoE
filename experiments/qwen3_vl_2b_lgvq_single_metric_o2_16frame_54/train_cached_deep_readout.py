@@ -151,6 +151,7 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
         "spatial_weighted_level_absolute",
         "spatial_weighted_level_blend",
         "spatial_crossframe_residual",
+        "spatial_dual_level_residual",
     }:
         raise ValueError(
             "Config must select a deep or five-level post-optical residual readout"
@@ -220,6 +221,7 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
         "large_kernel_refiner.",
         "moment_frame.",
         "crossframe_",
+        "dual_",
     )
     non_residual_missing = [
         name
@@ -236,6 +238,8 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
     if args.new_module_only:
         if settings.spatial_readout_mode == "spatial_crossframe_residual":
             trainable_prefixes = ("crossframe_",)
+        elif settings.spatial_readout_mode == "spatial_dual_level_residual":
+            trainable_prefixes = ("dual_",)
         elif settings.spatial_readout_moment_refiner_enabled:
             trainable_prefixes = ("moment_frame.",)
         elif settings.spatial_readout_refiner_enabled:

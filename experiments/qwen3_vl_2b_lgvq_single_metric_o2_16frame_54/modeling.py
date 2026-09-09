@@ -1854,6 +1854,47 @@ class SpatialCrossFrameResidualReadout(SpatialWeightedLevelResidualReadout):
         return base_prediction + correction
 
 
+class SpatialDualLevelResidualReadout(SpatialWeightedLevelResidualReadout):
+    """Five-level correction plus a small complementary scalar regressor.
+
+    Both predictions consume exactly the same post-optical tensor inside one
+    readout.  The scalar output is zero initialized, so this is an exact
+    warm-start of the formal five-level model rather than another branch.
+    """
+
+    def __init__(self, settings: ExperimentSettings) -> None:
+        super().__init__(settings)
+        input_width = self.residual_output[-1].in_features
+        hidden = min(256, settings.head_width)
+        self.dual_output = nn.Sequential(
+            nn.LayerNorm(input_width),
+            nn.Linear(input_width, hidden),
+            nn.GELU(),
+            nn.Dropout(settings.dropout),
+            nn.Linear(hidden, 1),
+        )
+        self.dual_gate_logit = nn.Parameter(torch.tensor(-1.38629436))
+        nn.init.zeros_(self.dual_output[-1].weight)
+        nn.init.zeros_(self.dual_output[-1].bias)
+
+    def forward(
+        self, vision: torch.Tensor, language: torch.Tensor, mask: torch.Tensor
+    ) -> torch.Tensor:
+        base_prediction = SpatialGridReadout.forward(self, vision, language, mask)
+        features = self._residual_features(vision, language, mask)
+        logits = self.residual_output(features)
+        probabilities = logits.float().softmax(-1).to(logits.dtype)
+        level_correction = probabilities @ self.level_scores.to(probabilities.dtype)
+        scalar_raw = self.dual_output(features).squeeze(-1)
+        scalar_correction = self.residual_max * torch.tanh(
+            scalar_raw / self.residual_max
+        )
+        scalar_gate = self.dual_gate_logit.sigmoid().to(scalar_correction.dtype)
+        self.last_level_logits = logits
+        self.last_level_base_prediction = base_prediction
+        return base_prediction + level_correction + scalar_gate * scalar_correction
+
+
 class SpatialWeightedLevelAbsoluteReadout(SpatialDeepResidualReadout):
     """Five ordered logits directly predict normalized MOS.
 
@@ -2451,6 +2492,8 @@ class LGVQSingleMetricOEO16(nn.Module):
                 self.readout = SpatialWeightedLevelResidualReadout(settings)
             elif settings.spatial_readout_mode == "spatial_crossframe_residual":
                 self.readout = SpatialCrossFrameResidualReadout(settings)
+            elif settings.spatial_readout_mode == "spatial_dual_level_residual":
+                self.readout = SpatialDualLevelResidualReadout(settings)
             elif settings.spatial_readout_mode == "spatial_weighted_level_absolute":
                 self.readout = SpatialWeightedLevelAbsoluteReadout(settings)
             elif settings.spatial_readout_mode == "spatial_weighted_level_blend":
