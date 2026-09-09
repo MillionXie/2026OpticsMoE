@@ -41,6 +41,19 @@ float16缓存约752640000字节（约718MiB）；一个共享缓存，不复制�
 原legacy epoch继续用于control，hint epoch是任务内等价损失+显式hint；有零hint梯度更新等价测试。
 所有包含训练专用投影的参数都参与梯度裁剪；投影不使用weight decay。
 
+### 基于缓存审计追加的空间去均值对照
+
+固定缓存SHA `39aae6b13452975186266672e51216e72391112df65b23c453de030033826304`，
+10000张教师特征`F[N,192,14,14]`，float32累加：
+`sum_n mean_c(mean_hw(F)^2) / sum_n mean_chw(F^2) = 0.931409527`。
+即93.14%的特征平方能量属于每个样本各通道的空间常量部分。
+这是电子特征的共同分量，**不是物理未调制光的比例**，不改变20%–30%光学DC。
+普通cosine可能主要拟合共同分量，故增加`hint_centered`：
+投影后学生特征和教师特征分别减去各自空间均值，再做同样的逐像素通道cosine。
+仅训练损失变换，实际送给解码头的学生特征不变；其余初始权重、系数、数据、优化器完全相同。
+有共同大偏置/不同局部结构的单测，证明新损失对局部差异敏感、对空间常量偏置不敏感。
+这只是受控训练假设，是否提高完整测试CC仍需实际验证。
+
 ## 可复现命令（仓库根目录）
 
 先Git拉取已测试发布的commit；先查GPU空闲容量，以下GPU编号是示例。
@@ -53,10 +66,11 @@ python -m pytest "$TASK/tests" -q
 CUDA_VISIBLE_DEVICES=6 python -u -m LightGenV2.tasks.t03_saliency.export_teacher_features --config "$TASK/configs/moe_alpha40_hint_cosine.yaml" --checkpoint "$TASK/runs/simulation/qwen_aligned_head_staged_seed42/best_checkpoint.pt" --output "$TASK/runs/simulation/teacher_features_20260910/teacher_train_features.pt" --batch-size 16
 CUDA_VISIBLE_DEVICES=1 python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TASK/configs/moe_alpha40_hint_control.yaml" --phase all
 CUDA_VISIBLE_DEVICES=5 python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TASK/configs/moe_alpha40_hint_cosine.yaml" --phase all
+CUDA_VISIBLE_DEVICES=6 python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TASK/configs/moe_alpha40_hint_centered.yaml" --phase all
 ```
 
 勿重复写同一输出目录；缓存完成且SHA验证后再训练hint。环境沿用xml/Torch2.6.0+cu124/Transformers4.57.3。
-产物固定`runs/simulation/moe_alpha40_hint_<control|cosine>_seed42/`。
+产物固定`runs/simulation/moe_alpha40_hint_<control|cosine|centered>_seed42/`。
 查看feature_hint_provenance、resolved_config、初始化SHA、run_manifest的commit/命令、
 metrics/training_history的hint/lr/CC及selected_checkpoint_test_evaluation。
 本文件为方法与操作协议，不是已达到0.87的成绩声明。

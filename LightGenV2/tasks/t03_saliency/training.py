@@ -141,6 +141,8 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
             'training_projection_parameters':sum(p.numel() for p in hints.parameters()),
             'inference_parameters_added':0,'student_architecture_unchanged':True,
             'loss':'mean(1-cosine(project(student fused latent),teacher decoder input)), channels normalized per pixel',
+            'loss_mode':settings.feature_hint_loss_mode,
+            'training_loss_spatial_mean_removed':settings.feature_hint_loss_mode=='spatial_centered_cosine',
             'projection_checkpoint':'last_checkpoint.pt:training_only_hint, separate from inference core/head'})
     if aligned_flip:
         train_loader = AlignedFlipLoader(train_loader, settings.horizontal_flip_probability,

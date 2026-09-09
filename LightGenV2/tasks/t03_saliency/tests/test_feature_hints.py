@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import pytest
 import torch
 from torch import nn
-from LightGenV2.tasks.t03_saliency.feature_hints import TrainFeatureHints,train_hint_epoch
+from LightGenV2.tasks.t03_saliency.feature_hints import TrainFeatureHints,train_hint_epoch,feature_hint_loss
 from LightGenV2.tasks.t03_saliency.settings import load_settings
 from LightGenV2.tasks.t03_saliency.modeling import architecture_label
 from experiments.qwen3_vl_embedding_2b_salicon_vision_optical_saliency import training as legacy
@@ -72,7 +72,7 @@ def test_zero_hint_epoch_exactly_preserves_legacy_updates(tmp_path,monkeypatch):
 def test_hint_profile_does_not_change_inference_architecture():
     root=Path(__file__).resolve().parents[1]/'configs'
     base=load_settings(root/'moe_alpha40_adaptive_keepkd.yaml')
-    for name in ['control','cosine']:
+    for name in ['control','cosine','centered']:
         s=load_settings(root/f'moe_alpha40_hint_{name}.yaml')
         assert architecture_label(s)==architecture_label(base)
         assert not s.augmentation_enabled and s.top_k==2 and s.router_backend=='optical'
@@ -80,3 +80,17 @@ def test_hint_profile_does_not_change_inference_architecture():
         assert s.language_optical_phase_zero_order_intensity_min==.2
         assert s.language_optical_phase_zero_order_intensity_max==.3
         assert s.initialization_checkpoint_sha256==base.initialization_checkpoint_sha256
+
+
+def test_centered_hint_is_sensitive_to_local_structure_not_common_bias():
+    torch.manual_seed(123)
+    x=torch.randn(2,192,14,14);y=torch.randn_like(x)
+    bias=torch.randn(2,192,1,1)*100
+    raw=feature_hint_loss(x+bias,y+bias,'cosine')
+    centered=feature_hint_loss(x+bias,y+bias,'spatial_centered_cosine')
+    assert raw < .001 and centered > .9
+    torch.testing.assert_close(centered,feature_hint_loss(x,y,'spatial_centered_cosine'),rtol=1e-5,atol=1e-5)
+    x.requires_grad_();feature_hint_loss(x,y,'spatial_centered_cosine').backward()
+    assert torch.isfinite(x.grad).all() and x.grad.abs().sum()>0
+    assert feature_hint_loss(torch.zeros_like(x),torch.zeros_like(y),'spatial_centered_cosine').isfinite()
+    with pytest.raises(ValueError):feature_hint_loss(x,y,'unknown')

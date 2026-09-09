@@ -95,6 +95,9 @@ def load_settings(path: str | Path) -> Any:
     settings.feature_hint_final_weight = float(d("feature_hint.final_weight",0.0))
     settings.feature_hint_end_epoch = int(d("feature_hint.end_epoch",30))
     settings.feature_hint_learning_rate = float(d("feature_hint.learning_rate",0.0002))
+    settings.feature_hint_loss_mode = str(d('feature_hint.loss_mode','cosine'))
+    if settings.feature_hint_loss_mode not in {'cosine','spatial_centered_cosine'}:
+        raise ValueError('Unknown feature hint loss mode')
     hint_cache = d("feature_hint.cache_file")
     settings.feature_hint_cache = _resolve(hint_cache,config.parent) if hint_cache else None
     if not 0 <= settings.feature_hint_final_weight <= settings.feature_hint_initial_weight < float('inf'):
@@ -241,6 +244,7 @@ def save_resolved_config(settings: Any) -> None:
         "cache_file": str(settings.distillation_cache) if settings.distillation_cache else None,
         "teacher_sha256": settings.distillation_teacher_sha256}
     values['feature_hint'] = {'initial_weight':settings.feature_hint_initial_weight,
+        'loss_mode':settings.feature_hint_loss_mode,
         'final_weight':settings.feature_hint_final_weight,'end_epoch':settings.feature_hint_end_epoch,
         'learning_rate':settings.feature_hint_learning_rate,
         'cache_file':str(settings.feature_hint_cache) if settings.feature_hint_cache else None,

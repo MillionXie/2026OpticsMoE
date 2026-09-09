@@ -9,6 +9,18 @@ from torch.nn import functional as F
 from experiments.qwen3_vl_embedding_2b_salicon_vision_optical_saliency import training as legacy
 
 
+def feature_hint_loss(student, target, mode='cosine'):
+    if mode == 'spatial_centered_cosine':
+        # Only the TRAINING objective is centered. Student inference features
+        # remain untouched; this is unrelated to optical zero-order intensity.
+        student = student.float() - student.float().mean((-2,-1),keepdim=True)
+        target = target.float() - target.float().mean((-2,-1),keepdim=True)
+    elif mode != 'cosine':
+        raise ValueError('Unknown feature hint loss mode')
+    return (1 - (F.normalize(student,dim=1,eps=1e-6) *
+                 F.normalize(target,dim=1,eps=1e-6)).sum(1)).mean()
+
+
 class TrainFeatureHints(nn.Module):
     def __init__(self, settings, records):
         super().__init__()
@@ -28,6 +40,7 @@ class TrainFeatureHints(nn.Module):
         if self.values.shape != (len(ids),192,14,14) or not torch.isfinite(self.values).all():
             raise ValueError("Invalid teacher features")
         self.index = {k:i for i,k in enumerate(ids)}
+        self.loss_mode = getattr(settings,'feature_hint_loss_mode','cosine')
         with torch.random.fork_rng(devices=[]):
             self.projection = nn.Conv2d(192,192,1,bias=False)
         with torch.no_grad():
@@ -40,8 +53,7 @@ class TrainFeatureHints(nn.Module):
         student = self.projection(spatial.float())
         # Channel-basis alignment is learned only for the training loss. Per-pixel
         # cosine avoids forcing arbitrary teacher activation magnitudes on optics.
-        return (1 - (F.normalize(student,dim=1,eps=1e-6) *
-                     F.normalize(target,dim=1,eps=1e-6)).sum(1)).mean()
+        return feature_hint_loss(student,target,self.loss_mode)
 
 
 def train_hint_epoch(model, loader, loaded, settings, optimizer, teacher_cache, hints):
