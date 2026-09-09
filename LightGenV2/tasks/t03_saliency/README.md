@@ -8,6 +8,10 @@
 
 输出是 `224×224` 连续显著性概率图。主指标为 `CC`（越大越好），并同时报告 KLD、SIM、NSS、AUC-Judd 和 MAE。
 
+注意：20%–30%未调制分量是训练扰动；现有标准测试在eval模式关闭随机光学扰动。
+本页CC及0.87优化目标是理想光学仿真口径，不代表同分数已在漏光实测中验证。
+具体边界见[复现说明](reports/reproduction/README.md)。
+
 2026-09-08新增：[同规格读出头、alpha无下限/≥0.4、三阶段训练对照与命令](reports/reproduction/ALPHA_AND_HEAD_COMPARISON.md)。
 100epoch三阶段训练已完成：无下限CC=0.85212668，alpha≥0.4 CC=0.85134034，
 新同规格读出头冻结Qwen CC=0.88968476；均为5000张public-test选定权重复评。
