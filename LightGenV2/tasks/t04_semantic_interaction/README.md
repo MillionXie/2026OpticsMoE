@@ -1,5 +1,13 @@
 # T04 语义交互（OpenMoji）
 
+## 对外分享：独立 OURS 原头复现包
+
+打包入口为 `build_lab_package.py`，交付文件存放在本任务 `releases/`；只含 OURS 原头 epoch40 best，
+完整 train/test、词嵌入缓存、冻结视觉前端、相位 PT 和源代码，不需要完整 Qwen，也不含硬件控制。
+说明模板见 [release_template/COMMAND.md](release_template/COMMAND.md)，唯一复现入口为包根目录的
+`python reproduce.py verify / demo / evaluate / train`（四者择一，不是把斜杠一起输入）。
+打包后必须在解压出来的独立目录验证完整性、单例和完整1000test，不得只验证源仓库能运行。
+
 ## 当前采用：恢复原38.2万参数共享读出头
 
 按用户决定，主版本采用 `routerfill_shared` 与 `qwen_shared`（`shared_readout_variant: standard`）。
