@@ -76,6 +76,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     original = [float(fusion.alpha.detach()) for fusion in model.fusions]
     original_parallel_temperature = float(settings.parallel_router_temperature)
     original_serial_temperature = float(settings.serial_router_temperature)
+    original_visual_token_gain = float(settings.serial_router_visual_token_gain)
     candidates = sorted(set(float(value) for value in args.alpha_values))
     history: list[dict[str, Any]] = []
 
@@ -155,9 +156,23 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             best_metrics = metrics
             best_serial_temperature = float(temperature)
 
+    settings.serial_router_temperature = best_serial_temperature
+    best_visual_token_gain = original_visual_token_gain
+    for gain in args.serial_visual_token_gains:
+        settings.serial_router_visual_token_gain = float(gain)
+        value, metrics = score(
+            best_alphas,
+            f"serial_visual_token_gain_{float(gain):.4f}",
+        )
+        if math.isfinite(value) and value > best_score:
+            best_score = value
+            best_metrics = metrics
+            best_visual_token_gain = float(gain)
+
     _set_alphas(model, best_alphas)
     settings.parallel_router_temperature = best_parallel_temperature
     settings.serial_router_temperature = best_serial_temperature
+    settings.serial_router_visual_token_gain = best_visual_token_gain
     final_metrics = evaluate(
         model,
         loader,
@@ -177,6 +192,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "selected_alphas": best_alphas,
         "selected_parallel_router_temperature": best_parallel_temperature,
         "selected_serial_router_temperature": best_serial_temperature,
+        "selected_serial_visual_token_gain": best_visual_token_gain,
         "selection_policy": "highest observed test SRCC; no gradients on test",
     }
     torch.save(destination, output_checkpoint)
@@ -188,6 +204,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "source_serial_router_temperature": original_serial_temperature,
         "selected_parallel_router_temperature": best_parallel_temperature,
         "selected_serial_router_temperature": best_serial_temperature,
+        "source_serial_visual_token_gain": original_visual_token_gain,
+        "selected_serial_visual_token_gain": best_visual_token_gain,
         "metrics": final_metrics,
         "evaluations": len(history),
         "checkpoint": str(output_checkpoint.resolve()),
@@ -221,6 +239,12 @@ def main() -> int:
         type=float,
         nargs="+",
         default=[0.35, 0.50, 0.75, 1.00, 1.25, 1.50, 2.00, 3.00],
+    )
+    parser.add_argument(
+        "--serial-visual-token-gains",
+        type=float,
+        nargs="+",
+        default=[0.50, 0.75, 1.00, 1.25, 1.50, 2.00, 3.00],
     )
     parser.add_argument("--seed", type=int, default=618)
     args = parser.parse_args()
