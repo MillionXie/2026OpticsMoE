@@ -1621,6 +1621,20 @@ class SpatialDeepResidualReadout(SpatialGridReadout):
             if settings.spatial_readout_refiner_enabled
             else nn.Identity()
         )
+        self.moment_frame = None
+        if settings.spatial_readout_moment_refiner_enabled:
+            # Channel-wise spatial contrast and gradient energy are useful IQA
+            # cues. The zero output projection makes this an exact warm start.
+            moment_hidden = min(192, hidden // 2)
+            self.moment_frame = nn.Sequential(
+                nn.LayerNorm(channels * 3),
+                nn.Linear(channels * 3, moment_hidden),
+                nn.GELU(),
+                nn.Dropout(settings.dropout),
+                nn.Linear(moment_hidden, hidden),
+            )
+            nn.init.zeros_(self.moment_frame[-1].weight)
+            nn.init.zeros_(self.moment_frame[-1].bias)
         pooled_width = channels * 2 * (1 + 4 + 16)
         self.residual_frame = nn.Sequential(
             nn.LayerNorm(pooled_width),
@@ -1660,6 +1674,13 @@ class SpatialDeepResidualReadout(SpatialGridReadout):
             1,
         )
         frame = self.residual_frame(pooled).reshape(batch, frames, -1)
+        if self.moment_frame is not None:
+            centered = feature - feature.mean((-2, -1), keepdim=True)
+            contrast = centered.float().square().mean((-2, -1)).sqrt().to(feature.dtype)
+            gradient_x = (feature[..., 1:] - feature[..., :-1]).abs().mean((-2, -1))
+            gradient_y = (feature[..., 1:, :] - feature[..., :-1, :]).abs().mean((-2, -1))
+            moments = torch.cat((contrast, gradient_x, gradient_y), -1)
+            frame = frame + self.moment_frame(moments).reshape(batch, frames, -1)
         difference = (frame[:, 1:] - frame[:, :-1]).abs()
         video = torch.cat(
             (

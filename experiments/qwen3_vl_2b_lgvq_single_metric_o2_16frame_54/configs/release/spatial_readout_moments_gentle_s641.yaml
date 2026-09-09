@@ -1,0 +1,7 @@
+base_config: spatial_readout_moments_s640.yaml
+output_dir: ../../runs/lgvq_spatial_readout_moments_gentle_s641
+random_seed: 641
+
+training:
+  learning_rate: 0.00010
+  weight_decay: 0.008

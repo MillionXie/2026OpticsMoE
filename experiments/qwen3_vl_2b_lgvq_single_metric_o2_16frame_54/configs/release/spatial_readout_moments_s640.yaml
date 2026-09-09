@@ -1,0 +1,44 @@
+base_config: spatial_calibrated_s620.yaml
+output_dir: ../../runs/lgvq_spatial_readout_moments_s640
+random_seed: 640
+
+# Adds only spatial contrast plus horizontal/vertical gradient moments inside
+# the existing post-optical readout. The final projection starts at zero.
+model:
+  spatial_readout_moment_refiner_enabled: true
+
+data:
+  training_view_probabilities: [0.80, 0.10, 0.10]
+
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_router_temperature_s620/best_alpha_calibrated_checkpoint.pt
+  trainable_scope: moment_refiner_only
+  epochs: 100
+  batch_size: 64
+  learning_rate: 0.00050
+  weight_decay: 0.004
+  phase_warmup_epochs: 0
+  restore_best_at_stage_transition: false
+  ema_decay: 0.98
+  ema_start_epoch: 1
+  minimum_learning_rate_factor: 0.02
+  test_interval_epochs: 1
+  test_interval_steps: 4
+  phase_snapshot_interval_epochs: 0
+
+loss:
+  ranking_weight: 1.50
+  correlation_weight: 3.00
+  soft_spearman_weight: 0.30
+  soft_rank_temperature: 0.10
+  soft_target_weight: 0.0
+  soft_target_ranking_weight: 0.0
+  soft_target_correlation_weight: 0.0
+  level_distribution_weight: 0.0
+  optical_alignment_weight: 0.0
+  router_balance_weight: 0.0
+  router_importance_weight: 0.0
+  serial_router_balance_weight: 0.0
+  serial_router_importance_weight: 0.0
+  router_capture_weight: 0.0
+

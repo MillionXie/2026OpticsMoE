@@ -257,6 +257,7 @@ class ExperimentSettings:
     spatial_residual_max: float = 0.10
     spatial_residual_receptive_field: str = "local7"
     spatial_readout_refiner_enabled: bool = False
+    spatial_readout_moment_refiner_enabled: bool = False
     spatial_level_score_min: float = -2.75
     spatial_level_score_max: float = 2.25
     spatial_level_blend_initial: float = 0.10
@@ -427,6 +428,8 @@ class ExperimentSettings:
             suffixes.append(f"rf{self.spatial_residual_receptive_field}_v1")
         if self.spatial_readout_refiner_enabled:
             suffixes.append("readoutlk7refine_v1")
+        if self.spatial_readout_moment_refiner_enabled:
+            suffixes.append("readoutmoments_v1")
         if self.spatial_readout_image_focus_max > 0.0:
             focus_tag = int(round(self.spatial_readout_image_focus_max * 100.0))
             suffixes.append(f"imagefocus{focus_tag:03d}_v1")
@@ -553,6 +556,8 @@ class ExperimentSettings:
             )
         if self.spatial_readout_refiner_enabled and self.target_name != "spatial":
             raise ValueError("The large-kernel readout refiner is only valid for Spatial")
+        if self.spatial_readout_moment_refiner_enabled and self.target_name != "spatial":
+            raise ValueError("The moment readout refiner is only valid for Spatial")
         if self.spatial_level_score_min >= self.spatial_level_score_max:
             raise ValueError(
                 "model.spatial_level_score_min must be below spatial_level_score_max"
@@ -845,6 +850,8 @@ class ExperimentSettings:
             "quality_reinjection_only",
             "readout_refiner_only",
             "readout_refiner_and_residual",
+            "moment_refiner_only",
+            "moment_refiner_and_residual",
             "quality_refiner_only",
             "quality_refiner_readout",
             "late_input_correction_only",
@@ -865,6 +872,7 @@ class ExperimentSettings:
                 "appended_vision_only, appended_language_only, "
                 "quality_reinjection_only, "
                 "readout_refiner_only, readout_refiner_and_residual, "
+                "moment_refiner_only, moment_refiner_and_residual, "
                 "quality_refiner_only, quality_refiner_readout, or "
                 "late_input_correction_only, frame_stem_only, or "
                 "frame_stem_and_readout, vgg_correction_only, or "
@@ -908,6 +916,13 @@ class ExperimentSettings:
             raise ValueError(
                 "A readout_refiner training scope requires "
                 "model.spatial_readout_refiner_enabled=true"
+            )
+        if self.trainable_scope.startswith("moment_refiner") and not (
+            self.spatial_readout_moment_refiner_enabled
+        ):
+            raise ValueError(
+                "A moment_refiner training scope requires "
+                "model.spatial_readout_moment_refiner_enabled=true"
             )
         if min(
             self.soft_target_weight,
@@ -1016,6 +1031,9 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         ),
         spatial_readout_refiner_enabled=bool(
             get("model", "spatial_readout_refiner_enabled", False)
+        ),
+        spatial_readout_moment_refiner_enabled=bool(
+            get("model", "spatial_readout_moment_refiner_enabled", False)
         ),
         spatial_level_score_min=float(
             get("model", "spatial_level_score_min", -2.75)

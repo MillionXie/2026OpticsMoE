@@ -170,6 +170,12 @@ def _apply_trainable_scope(
             trainable = name.startswith("readout.large_kernel_refiner.") or (
                 name.startswith("readout.residual_")
             )
+        elif scope == "moment_refiner_only":
+            trainable = name.startswith("readout.moment_frame.")
+        elif scope == "moment_refiner_and_residual":
+            trainable = name.startswith("readout.moment_frame.") or (
+                name.startswith("readout.residual_")
+            )
         elif scope == "quality_refiner_only":
             trainable = name.startswith("quality_refiner.")
         elif scope == "quality_refiner_readout":
