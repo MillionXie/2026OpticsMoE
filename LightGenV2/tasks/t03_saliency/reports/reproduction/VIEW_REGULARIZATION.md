@@ -1,5 +1,38 @@
 # SALICON 泛化优化：同步弱增强与早期重新适应
 
+## 后续单变量：原图与弱增强混合训练
+
+`moe_alpha40_viewreg_mix50.yaml`继承强KD组全部设置，只把
+`augmentation.apply_probability`从默认1改成0.5。每张训练图独立抽取，约一半走
+原图/原密度/原fixation/原教师logits，其余使用既有同步弱增强。
+这里的“原图”不代表关闭光学噪声：所有训练样本继续按原配置承受20%–30%随机未调制分量。
+不改变推理结构、电子参数量、光路、Top2、alpha或损失；不加在线教师。
+依然从同一较早0.85468765来源开始，不从0.859531 best开始，以隔离增强概率的影响。
+最多80轮，61轮起全用原图精修；只保存best/last，完整测试选模偏差仍适用。
+
+动机：强KD组在关闭图像增强后的61–65轮明显恢复，但继续精修随后趋于平台。
+在源码`966fb800`上做过128张train-only诊断：从有序10000训练图用
+`sorted(random.Random(17042).sample(range(10000),128))`抽样，batch16、torch seed42，
+用强KD配置的`AlignedWeakLoader`（内部seed=42+1703）生成一组增强视图，
+既有教师SHA/原图缓存不变，让冻结同头Qwen实际推理同一组增强图（无外围autocast）。
+独立float64逐图CC：实际教师与变换教师的相似度均值0.96358252；对同一增强GT的CC
+分别0.88439619与0.88765667，实际重新推理平均反而低0.00326047，128张中60张更好。
+因此不直接投入全量重生成教师增强缓存；小样本诊断也不证明哪种蒸馏训练最终更优。
+此次优先检验保留原图监督是否减轻训练/推理输入分布差异，而非把该假设写成已取得提升。
+
+默认p=1不消耗新增概率RNG，保持原增强序列；概率选择用独立seed=42+4703。
+混合分支不修改原始batch；教师按sample_id与该图的实际变换对齐。
+历史CSV增加`augmentation_images`/`augmentation_total_images`，可核验真实增强数量；
+eval不使用该loader。p=0/p=1、混合对齐、计数、默认兼容和配置不变量有单元测试。
+
+```bash
+python -m pytest LightGenV2/tasks/t03_saliency/tests -q
+python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_viewreg_mix50.yaml --phase all
+```
+
+新run为本任务`runs/simulation/moe_alpha40_viewreg_mix50_seed42`，不得覆盖已有run。
+以全5000张测试与原强KD组对比，目标仍为CC≥0.87。
+
 ## 2026-09-10已完成：强蒸馏组的新最佳权重
 
 `moe_alpha40_viewreg_cffn_kd2_seed42`完成80轮，选择epoch65 EMA，

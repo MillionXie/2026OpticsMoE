@@ -140,6 +140,12 @@ class AlignedWeakLoader:
         import random
         self.loader, self.settings, self.teacher = loader, settings, teacher
         self.rng = random.Random(settings.random_seed + 1703)
+        self.apply_probability = getattr(settings, "augmentation_apply_probability", 1.0)
+        if not 0 <= self.apply_probability <= 1:
+            raise ValueError("Invalid weak-augmentation probability")
+        # Separate RNG: the default p=1 consumes exactly the legacy view stream.
+        self.apply_rng = random.Random(settings.random_seed + 4703)
+        self.epoch_images = self.epoch_augmented_images = 0
         self.enabled = True
 
     def __len__(self):
@@ -148,11 +154,13 @@ class AlignedWeakLoader:
     def __iter__(self):
         from PIL import Image, ImageEnhance
         import torch.nn.functional as F
+        self.epoch_images = self.epoch_augmented_images = 0
         for original in self.loader:
             batch = dict(original)
             ids = list(batch["sample_ids"])
             if any(not key.startswith("train/") for key in ids) or len(set(ids)) != len(ids):
                 raise ValueError("AlignedWeakLoader requires unique training identities")
+            self.epoch_images += len(ids)
             raw_teacher = self.teacher.get_raw(ids) if self.teacher is not None else None
             if not self.enabled:
                 if self.teacher is not None:
@@ -164,6 +172,16 @@ class AlignedWeakLoader:
             for i, image in enumerate(batch["images"]):
                 if image.size != (w, h):
                     raise ValueError("Augmentation image/target geometry mismatch")
+                apply = self.apply_probability == 1 or (
+                    self.apply_probability > 0 and self.apply_rng.random() < self.apply_probability)
+                if not apply:
+                    images.append(image)
+                    densities.append(batch["density"][i:i+1])
+                    fixations.append(batch["fixation"][i:i+1])
+                    if raw_teacher is not None:
+                        targets.append(raw_teacher[i:i+1])
+                    continue
+                self.epoch_augmented_images += 1
                 scale = self.rng.uniform(self.settings.crop_scale_min, 1.0)
                 ch, cw = max(1, round(h * scale)), max(1, round(w * scale))
                 left, top = self.rng.randrange(w-cw+1), self.rng.randrange(h-ch+1)

@@ -1,0 +1,5 @@
+base_config: moe_alpha40_viewreg_cffn_kd2.yaml
+# Only change how often image augmentation is applied. Optical noise is unchanged.
+augmentation:
+  apply_probability: 0.5
+output_dir: ../runs/simulation/moe_alpha40_viewreg_mix50_seed42

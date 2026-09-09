@@ -206,6 +206,9 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
                 stage_report['feature_hint_weight'] = settings.feature_hint_current_weight
                 train_metrics = train_hint_epoch(model,train_loader,loaded,settings,optim,
                     teacher if settings.map_kd_weight > 0 else None,hints)
+            if aligned_weak:
+                stage_report["augmentation_images"] = train_loader.epoch_augmented_images
+                stage_report["augmentation_total_images"] = train_loader.epoch_images
             model.core.set_phase_dropout_active(False)
             scheduled_test = (
                 epoch == 1

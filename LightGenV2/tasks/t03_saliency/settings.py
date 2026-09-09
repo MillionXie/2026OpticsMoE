@@ -68,6 +68,11 @@ def load_settings(path: str | Path) -> Any:
     settings.brightness_jitter = float(d("augmentation.brightness_jitter", 0.10))
     settings.contrast_jitter = float(d("augmentation.contrast_jitter", 0.10))
     settings.augmentation_end_epoch = int(d("augmentation.end_epoch", 0))
+    settings.augmentation_apply_probability = float(d("augmentation.apply_probability", 1.0))
+    if not 0 <= settings.augmentation_apply_probability <= 1:
+        raise ValueError("augmentation.apply_probability must be in [0,1]")
+    if settings.augmentation_apply_probability != 1 and settings.augmentation_mode != "aligned_weak":
+        raise ValueError("Partial augmentation is supported only for aligned_weak")
     if settings.augmentation_mode == "aligned_weak" and (
         not 0.8 <= settings.crop_scale_min <= 1 or not 0 <= settings.brightness_jitter <= .15
         or not 0 <= settings.contrast_jitter <= .15 or settings.augmentation_end_epoch < 0
@@ -215,7 +220,7 @@ def save_resolved_config(settings: Any) -> None:
     values.setdefault("augmentation", {}).update(enabled=settings.augmentation_enabled, mode=settings.augmentation_mode,
         crop_scale_min=settings.crop_scale_min, horizontal_flip_probability=settings.horizontal_flip_probability,
         brightness_jitter=settings.brightness_jitter, contrast_jitter=settings.contrast_jitter,
-        end_epoch=settings.augmentation_end_epoch)
+        end_epoch=settings.augmentation_end_epoch, apply_probability=settings.augmentation_apply_probability)
     values.setdefault("training", {}).update(
         learning_rate_source=settings.learning_rate_source,
         ema_decay=settings.ema_decay,
