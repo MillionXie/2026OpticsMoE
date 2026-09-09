@@ -1,0 +1,10 @@
+base_config: spatial_mixup_joint_s612.yaml
+output_dir: ../../runs/lgvq_spatial_mixup_human_s613
+random_seed: 613
+
+training:
+  feature_mixup_probability: 0.20
+
+loss:
+  soft_target_ranking_weight: 0.0
+  soft_target_correlation_weight: 0.0

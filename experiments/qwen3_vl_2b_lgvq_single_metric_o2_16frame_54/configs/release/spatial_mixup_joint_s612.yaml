@@ -1,0 +1,14 @@
+base_config: spatial_teacher_rank_joint_s610.yaml
+output_dir: ../../runs/lgvq_spatial_mixup_joint_s612
+random_seed: 612
+
+training:
+  feature_mixup_probability: 0.35
+  feature_mixup_alpha: 0.20
+  learning_rate: 0.000015
+  phase_learning_rate: 0.000035
+  router_phase_learning_rate: 0.000070
+
+loss:
+  soft_target_ranking_weight: 0.10
+  soft_target_correlation_weight: 0.025

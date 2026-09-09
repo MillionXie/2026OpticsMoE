@@ -1,0 +1,40 @@
+base_config: spatial_srcc_best_s586.yaml
+output_dir: ../../runs/lgvq_spatial_teacher_rank_joint_s610
+random_seed: 610
+
+data:
+  training_view_probabilities: [1.0, 0.0, 0.0]
+
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_electronic_balanced_strong_s586/best_observed_test_checkpoint.pt
+  trainable_scope: all
+  epochs: 100
+  batch_size: 64
+  learning_rate: 0.000010
+  phase_learning_rate: 0.000025
+  router_phase_learning_rate: 0.000050
+  readout_learning_rate_factor: 0.30
+  weight_decay: 0.00020
+  readout_weight_decay: 0.002
+  minimum_learning_rate_factor: 0.05
+  ema_decay: 0.995
+  ema_start_epoch: 1
+  test_interval_epochs: 1
+  test_interval_steps: 0
+  phase_snapshot_interval_epochs: 0
+
+loss:
+  ranking_weight: 0.80
+  correlation_weight: 1.50
+  soft_spearman_weight: 0.20
+  soft_rank_temperature: 0.10
+  soft_target_weight: 0.0
+  soft_target_ranking_weight: 0.20
+  soft_target_correlation_weight: 0.05
+  level_distribution_weight: 0.10
+  optical_alignment_weight: 0.001
+  router_balance_weight: 0.005
+  router_importance_weight: 0.001
+  serial_router_balance_weight: 0.010
+  serial_router_importance_weight: 0.002
+  router_capture_weight: 0.005

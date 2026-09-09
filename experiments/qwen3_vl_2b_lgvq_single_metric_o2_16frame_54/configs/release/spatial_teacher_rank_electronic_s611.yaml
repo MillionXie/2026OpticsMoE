@@ -1,0 +1,21 @@
+base_config: spatial_teacher_rank_joint_s610.yaml
+output_dir: ../../runs/lgvq_spatial_teacher_rank_electronic_s611
+random_seed: 611
+
+training:
+  trainable_scope: electronic_path_only
+  learning_rate: 0.000020
+  readout_learning_rate_factor: 1.0
+  phase_learning_rate: 0.0
+  router_phase_learning_rate: 0.0
+
+loss:
+  soft_target_ranking_weight: 0.40
+  soft_target_correlation_weight: 0.10
+  level_distribution_weight: 0.0
+  optical_alignment_weight: 0.0
+  router_balance_weight: 0.0
+  router_importance_weight: 0.0
+  serial_router_balance_weight: 0.0
+  serial_router_importance_weight: 0.0
+  router_capture_weight: 0.0
