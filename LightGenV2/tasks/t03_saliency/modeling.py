@@ -27,6 +27,7 @@ from experiments.qwen3_vl_embedding_2b_lsp_pose_optical_router.modeling import (
     trainable_parameter_report,
 )
 from experiments.vision2_hybrid_dense.modeling import SaliencyDensityDecoder
+from .lightweight_residual import configure_grn, initialize_identity_grn
 
 
 def architecture_label(settings: Any) -> str:
@@ -38,7 +39,8 @@ def architecture_label(settings: Any) -> str:
         label += f"_alpha{settings.fusion_alpha_min:g}_{settings.fusion_alpha_max:g}"
     label += "_mean_only" if settings.ccd_normalization == "mean_only" else ""
     kernel = getattr(settings, "electronic_spatial_kernel_size", 3)
-    return label + (f"_ek{kernel}" if kernel != 3 else "")
+    label += f"_ek{kernel}" if kernel != 3 else ""
+    return label + ("_grn" if getattr(settings, "electronic_grn", False) else "")
 
 
 def configure_spatial_kernel(hybrid: nn.Module, kernel: int) -> None:
@@ -115,6 +117,8 @@ class LightGenVision2SaliencyStudent(RobustVision2PoseStudent):
             settings.vision_hidden_size, settings
         ).to(loaded.device)
         configure_spatial_kernel(self.core.hybrid, getattr(settings, "electronic_spatial_kernel_size", 3))
+        if getattr(settings, "electronic_grn", False):
+            configure_grn(self.core.hybrid)
         self.capture_block = _RobustCaptureBlock(self.core)
         self.student_blocks = nn.ModuleList(
             [self.capture_block]
@@ -197,7 +201,11 @@ def initialize_student(
         payload = torch.load(warmstart, map_location="cpu", weights_only=False)
         allowed = {model.checkpoint_architecture}
         expand_kernel = getattr(settings, "expand_kernel_on_warmstart", False)
-        source_ek3 = model.checkpoint_architecture.removesuffix("_ek5")
+        initialize_grn = getattr(settings, "initialize_grn_on_warmstart", False)
+        without_grn = model.checkpoint_architecture.removesuffix("_grn")
+        source_ek3 = without_grn.removesuffix("_ek5")
+        if initialize_grn:
+            allowed.add(without_grn)
         if expand_kernel:
             allowed.add(source_ek3)
         if settings.ccd_normalization == "mean_only":
@@ -207,8 +215,13 @@ def initialize_student(
             allowed.add(f"lightgen_t03_{settings.lightgen_model_variant}_vision2_17um_10cm_dc20_scale_matched_top2_v1_mean_only")
         if payload.get("architecture") not in allowed:
             raise RuntimeError("T03 warmstart architecture mismatch")
-        transfer = expand_kernel and payload.get("architecture") == source_ek3
-        core_state = expand_spatial_checkpoint(payload["core"], model.core.state_dict()) if transfer else payload["core"]
+        target_state = model.core.state_dict()
+        core_state, grn_added = payload["core"], False
+        if initialize_grn:
+            core_state, grn_added = initialize_identity_grn(core_state, target_state)
+        # Fusion-range re-encoding and kernel expansion may occur together.
+        transfer = expand_kernel and core_state["hybrid.blocks.0.token_depthwise.weight"].shape[-1] == 3
+        core_state = expand_spatial_checkpoint(core_state, target_state) if transfer else core_state
         model.core.load_state_dict(core_state, strict=True)
         model.head.load_state_dict(payload["saliency_head"], strict=True)
         if settings.reset_fusion_on_warmstart:
@@ -217,6 +230,7 @@ def initialize_student(
                 "mode": "warmstart_weights_with_new_optimizer", "source_epoch": payload["epoch"],
                 "source_architecture": payload["architecture"], "target_architecture": model.checkpoint_architecture,
                 "kernel_transfer": "3x3 centered in zero 5x5; initial convolution function preserved" if transfer else "none",
+                "identity_grn_added": grn_added,
                 "fusion_reset": settings.reset_fusion_on_warmstart,
                 "fusion_alpha_initial": settings.fusion_alpha_initial}
     path = settings.common_initialization_checkpoint
@@ -322,6 +336,8 @@ def architecture_report(model: LightGenVision2SaliencyStudent, settings: Any) ->
             "alpha_range": [settings.fusion_alpha_min, settings.fusion_alpha_max],
             "latent_width": settings.electronic_width,
             "spatial_depthwise_kernel": getattr(settings, "electronic_spatial_kernel_size", 3),
+            "electronic_grn": getattr(settings, "electronic_grn", False),
+            "grn_parameters": sum(p.numel() for n, p in model.core.named_parameters() if ".mlp.2.0." in n),
             "extra_electronic_parameters_vs_kernel3": 2 * settings.electronic_width * (getattr(settings, "electronic_spatial_kernel_size", 3)**2 - 9),
         },
         "router": {

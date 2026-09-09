@@ -104,6 +104,10 @@ def load_settings(path: str | Path) -> Any:
     settings.reset_fusion_on_warmstart = bool(d("training.reset_fusion_on_warmstart", False))
     settings.electronic_spatial_kernel_size = int(d("lightgen.electronic_spatial_kernel_size", 3))
     settings.expand_kernel_on_warmstart = bool(d("training.expand_kernel_on_warmstart", False))
+    settings.electronic_grn = bool(d("lightgen.electronic_grn", False))
+    settings.initialize_grn_on_warmstart = bool(d("training.initialize_grn_on_warmstart", False))
+    if settings.initialize_grn_on_warmstart and not settings.electronic_grn:
+        raise ValueError("GRN identity transfer requires electronic_grn")
     if settings.electronic_spatial_kernel_size not in {3, 5}:
         raise ValueError("T03 supports audited electronic spatial kernels 3 or 5")
     if settings.expand_kernel_on_warmstart and settings.electronic_spatial_kernel_size != 5:
@@ -156,6 +160,7 @@ def save_resolved_config(settings: Any) -> None:
     path = settings.output_dir / "resolved_config.yaml"
     values = yaml.safe_load(path.read_text(encoding="utf-8"))
     values["lightgen"].update(task="t03_saliency", ccd_normalization=settings.ccd_normalization,
+                            electronic_grn=settings.electronic_grn,
                             electronic_spatial_kernel_size=settings.electronic_spatial_kernel_size)
     values.setdefault("augmentation", {}).update(enabled=settings.augmentation_enabled, mode=settings.augmentation_mode,
         crop_scale_min=settings.crop_scale_min, horizontal_flip_probability=settings.horizontal_flip_probability,
@@ -168,6 +173,7 @@ def save_resolved_config(settings: Any) -> None:
         initialization_checkpoint_sha256=settings.initialization_checkpoint_sha256,
         reset_fusion_on_warmstart=settings.reset_fusion_on_warmstart,
         expand_kernel_on_warmstart=settings.expand_kernel_on_warmstart,
+        initialize_grn_on_warmstart=settings.initialize_grn_on_warmstart,
         staged={"enabled": settings.staged_training, "warmup_epochs": settings.staged_warmup_epochs,
                 "polish_start": settings.staged_polish_start, "final_hard_balance": settings.staged_final_hard_balance,
                 "freeze_electronic_gradients": settings.staged_freeze_electronic_gradients},
