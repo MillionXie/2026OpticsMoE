@@ -34,6 +34,8 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(settings.optical_router_input_shift_pixels, 0)
         self.assertFalse(settings.language_optical_k_space_enabled)
         self.assertEqual(settings.fusion_alpha_initial, .1)
+        self.assertFalse(settings.native_pre_attention_enabled)
+        self.assertEqual(settings.student_language_mode, "optical_moe")
 
     def test_train_only_anchors(self):
         vectors = torch.eye(10).repeat_interleave(2, 0).requires_grad_(True)

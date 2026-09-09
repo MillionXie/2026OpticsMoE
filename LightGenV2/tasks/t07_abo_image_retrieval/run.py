@@ -66,6 +66,20 @@ def initialize_pinned_student(settings, replacement, readout):
     return report
 
 
+def audit_student_graph(replacement):
+    replacement.use_student()
+    native_ids = {id(m) for m in (*replacement.original_vision, *replacement.original_language)}
+    native_active = sum(id(m) in native_ids for m in (*replacement.vision_blocks, *replacement.language_layers))
+    if replacement.native_pre_attention_enabled or native_active:
+        raise RuntimeError("T07 student must not execute native Qwen attention/Transformer layers")
+    report = replacement.student_architecture_report()
+    if report["physical_capture_count_with_router"] != 6:
+        raise RuntimeError("T07 requires V/L router+expert+global: six optical captures")
+    report["runtime_native_qwen_blocks_active"] = native_active
+    report["runtime_native_attention_prelude_enabled"] = False
+    return report
+
+
 def convert(samples):
     return tuple(GrocerySample(s.sample_id, s.image_path, s.category_id,
                               s.product_id, s.category_id, s.split, s.split,
@@ -360,6 +374,7 @@ def run(args):
                 raise RuntimeError("Teacher cache contract mismatch")
         replacement, readout = build_student(loaded, settings)
         try:
+            architecture = audit_student_graph(replacement)
             if args.mode == "evaluate":
                 if not args.checkpoint:
                     raise ValueError("--mode evaluate requires --checkpoint")
@@ -375,7 +390,7 @@ def run(args):
             resolved["abo_image_image"] = _nested(raw, "abo_image_image")
             (output / "config.yaml").write_text(yaml.safe_dump(resolved, allow_unicode=True, sort_keys=False), encoding="utf-8")
             write_json(output / "initialization.json", initialization)
-            write_json(output / "architecture.json", replacement.student_architecture_report())
+            write_json(output / "architecture.json", architecture)
             write_json(output / "task_options.json", _nested(raw, "abo_image_image"))
             if args.mode == "evaluate":
                 metrics = evaluate(loaded, replacement, readout, train, test, settings, output)
