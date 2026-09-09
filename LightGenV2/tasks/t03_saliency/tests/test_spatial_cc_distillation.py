@@ -64,6 +64,8 @@ def test_profile_is_loss_only_and_invalid_mode_is_rejected(tmp_path):
               'router_backend','active_size','expert_size','electronic_ffn_hidden_width',
               'language_optical_phase_zero_order_intensity_min','language_optical_phase_zero_order_intensity_max']:
         assert getattr(s,k)==getattr(base,k)
-    path=tmp_path/'bad.yaml'
+    # Loader's existing cache discovery expects a task-depth config location.
+    path=tmp_path/'LightGenV2/tasks/t03_saliency/configs/bad.yaml'
+    path.parent.mkdir(parents=True)
     path.write_text(f'base_config: {(TASK/"configs/moe_alpha40_sam_spatialcc.yaml").as_posix()}\ntraining:\n  sam_rho: 0\n')
     with pytest.raises(ValueError):load_settings(path)
