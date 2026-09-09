@@ -228,6 +228,24 @@ CCD方向由上述逻辑四角单应变换处理，不再另加翻转。设置�
 
 重复同一capture命令会校验并跳过已完成帧，失败帧不会被标记完成。不要加clear-output、不要删除原始采集。
 
+### Router概率差不再中断采集
+
+`ambiguous_top2_margin`已改为**仅告警**：仍按实测四区域积分得到Top-2，不替换专家、概率或权重。
+不需要改配置、降低曝光门槛或新建会话。亮度不足、饱和、无有效能量等原有检查继续保留。
+每张Router的`.quality.json`记录概率差与告警；正式`.record.json`记录所用策略。
+
+若旧版因这个限制中断，但`.tif/.png/.json`已经保存，可以不打开任何硬件，直接核验并恢复：
+
+```powershell
+& $py recover_router.py --session pilot01 --stage language_router --accept-legacy-saved
+& $py run.py capture --session pilot01 --stage language_router
+```
+
+第一条检查会话身份、原始TIFF与校正PNG是否一致及其他质量要求，写入有效采集记录，不修改原始像素；
+第二条跳过所有已完成帧，只采剩余帧。不要重新init/prepare，更不要删除前面三层。
+旧版失败帧没有采集时的相位/振幅哈希，所以`--accept-legacy-saved`代表实验人员明确确认它属于当前准备的阶段；
+恢复记录会注明这个来源限制，不伪称存在旧的采集时哈希。新版已在质量检查前保存`.capture.json`，以后恢复不需该参数。
+
 ## 6. 电子处理和结果
 
 ```powershell

@@ -88,7 +88,8 @@ def prepare(args,c):
 
 def capture(args,c):
     from hardware import Bench
-    setup_imports(); from abo_dual.common import routing_from_ccd,validate_router_capture
+    setup_imports(); from abo_dual.common import routing_from_ccd
+    from router_quality import assess,require_accepted,warn
     root,state=load_session(args.session,c); p=root/'play'/args.stage; mf=read(p/'manifest.json')
     if mf['hardware_identity']!=hardware_identity(c): raise ValueError('Prepared under another hardware configuration')
     phase=ROOT/mf['phase_file']
@@ -106,13 +107,24 @@ def capture(args,c):
             frame=bench.capture(bmp,out)
             files={out.name+'.png':sha(out.with_suffix('.png')),
                    out.name+'.tif':sha(out.with_suffix('.tif'))}
+            quality=None
             if args.stage.endswith('_router'):
+                files[out.name+'.json']=sha(out.with_suffix('.json'))
+                # Capture-time identities survive rejection, enabling recovery
+                # without any new exposure or changing original pixels.
+                pending=out.with_suffix('.capture.json')
+                write(pending,{'stage':args.stage,'sample':e['id'],'files':dict(files),
+                    'phase_sha256':mf['phase_sha256'],'amplitude_sha256':e['sha256'],
+                    'hardware_identity':hardware_identity(c),'capture_mode':'real'})
+                files[pending.name]=sha(pending)
                 route=routing_from_ccd(frame,contract)
-                validate_router_capture(frame,route,contract)
+                quality=assess(frame,route,contract)
+                qp=out.with_suffix('.quality.json'); write(qp,quality)
+                require_accepted(quality); warn(quality); files[qp.name]=sha(qp)
                 rp=out.with_suffix('.route.json'); write(rp,route); files[rp.name]=sha(rp)
             write(out.with_suffix('.record.json'),{'stage':args.stage,'sample':e['id'],'files':files,
                 'phase_sha256':mf['phase_sha256'],'amplitude_sha256':e['sha256'],
-                'hardware_identity':hardware_identity(c),'capture_mode':'real'})
+                'hardware_identity':hardware_identity(c),'capture_mode':'real','router_quality':quality})
             print(f'Captured {args.stage} {i}/{len(mf["entries"])} {e["id"]}',flush=True)
 
 def evaluate(args,c):
