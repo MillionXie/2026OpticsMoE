@@ -34,6 +34,16 @@ python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config Ligh
 与强KD组的0.859531作完整测试对比，同时检查alpha、专家选择和实际相位变化。
 这是小容量全局上下文的待验证假设，不声称论文保证SALICON改善或已经达到0.87。
 
+2026-09-10完成80轮并重载best：epoch65 EMA，完整5000张CC=0.8599163202，
+KLD=0.11390705、SIM=0.82318123、NSS=0.96780655、AUC=0.77000215、MAE=0.07553086。
+相对同训练无全局混合的0.85953132增加0.00038500（单seed，非显著性结论）；
+末轮CC=0.85977407。低于已核验SAM候选0.86133204，不替换该候选。
+alpha=0.43093050/0.44123390，四专家选择2339/2628/2309/2724次，无未使用专家。
+训练commit `8ad9ad7a249886d8ee917dd166ae8d769e1fd1e1`；best SHA256：
+`e066af9c92a8659e4e269737509d8a7d09a45910f6fb19a5faa439cbc009ec84`。
+原run内`selected_checkpoint_test_evaluation.json` SHA256：
+`ccb3677e4c77bae174bbfcee2db85769916dfcc3234188a73d551915f94fa9a3`。
+
 ## 后续单变量：原图与弱增强混合训练
 
 `moe_alpha40_viewreg_mix50.yaml`继承强KD组全部设置，只把
@@ -109,7 +119,7 @@ public-test参与选模和平台调速，结果有选择偏差，不是未接触
 |viewreg_cffn_kd2_seed42|0.8595313201904297|0.431023 / 0.441234|2327 / 2639 / 2301 / 2733|
 
 三者均无未使用专家；小空间FFN和更强早期KD在本次单seed下各有小幅增益，
-不能称为跨seed显著改善。增强概率对照完成结果见上文，全局混合尚未完成；13×13结果见下文。
+不能称为跨seed显著改善。增强概率/全局混合完成结果见上文；13×13结果见下文。
 控制组/普通CFFN的`selected_checkpoint_test_evaluation.json` SHA256分别为
 `dfffbac26f3ef322aee577b92a7777067962a77e1b3cfb3a876c613151cd898b`、
 `82c2e2b5c9a2af1c115c16804f6b744fa321d2b9809d10d8c5bc2721939347da`。
