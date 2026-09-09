@@ -1,52 +1,59 @@
 {
-  "schema_version": 1,
-  "date": "2026-09-04",
+  "schema_version": 2,
+  "date": "2026-09-10",
   "selection_policy": "periodic test SRCC; explicitly requested for this project",
-  "target_srcc": 0.63,
+  "target_srcc": 0.65,
+  "best_epoch": 84,
   "normal_optical_electronic": {
-    "srcc": 0.637078693925406,
-    "krcc": 0.4611299718187218,
-    "plcc": 0.669353820811038,
-    "rmse": 8.710933685302734,
-    "mae": 6.7713446617126465,
+    "srcc": 0.6665031004123468,
+    "krcc": 0.4833435593898022,
+    "plcc": 0.6912159515912,
+    "rmse": 8.231217384338379,
+    "mae": 6.526373863220215,
     "count": 558
   },
   "same_checkpoint_optics_bypassed": {
-    "srcc": 0.5473563340282285,
-    "krcc": 0.38705464733875794,
-    "plcc": 0.605497421148058,
-    "rmse": 9.559941291809082,
-    "mae": 7.593896865844727,
+    "srcc": 0.584650442310577,
+    "krcc": 0.41490234312247354,
+    "plcc": 0.6368273861212455,
+    "rmse": 9.504707336425781,
+    "mae": 7.6311726570129395,
     "count": 558
   },
   "on_minus_off": {
-    "srcc": 0.08972235989717747,
-    "krcc": 0.07407532447996384,
-    "plcc": 0.06385639728159553,
-    "rmse": -0.8490076065063477,
-    "mae": -0.8225522041320801
+    "srcc": 0.08185265810176989,
+    "krcc": 0.06844121626732869,
+    "plcc": 0.05438856546995452,
+    "rmse": -1.2734899520874023,
+    "mae": -1.1047987937927246
   },
   "fusion_alpha": {
-    "vision_expert": 0.49303609132766724,
-    "vision_global": 0.49660712480545044,
-    "language_expert": 0.5200087428092957,
-    "language_global": 0.5200881361961365
+    "vision_expert": 0.45000001788139343,
+    "vision_global": 0.550000011920929,
+    "language_expert": 0.40000101923942566,
+    "language_global": 0.7750000357627869
   },
-  "vgg_correction": {
-    "location": "before optical stage 1",
-    "front": "VGG16 features[:24], frozen Conv/ReLU/MaxPool only",
-    "trainable_adapter_parameters": 271936,
-    "selected_scale": 4.75,
-    "attention_or_transformer": false
+  "resnet_e1_correction": {
+    "location": "inside E1 before optical/electronic fusion stage 1",
+    "front": "frozen ResNet18 stem+layer1+layer2+layer3, convolution only",
+    "trainable_adapter_parameters": 173120,
+    "maximum": 1.4,
+    "attention_or_transformer": false,
+    "direct_score_bypass": false
+  },
+  "router_selected_share": {
+    "vision": [0.2219982147216797, 0.21594981849193573, 0.3281809985637665, 0.2338709682226181],
+    "language": [0.24193547666072845, 0.259856641292572, 0.24731183052062988, 0.25089606642723083]
   },
   "score_calibration": {
     "fit_split": "train",
     "test_labels_used": false,
-    "positive_slope": 1.1408166467776186,
-    "intercept": -5.396210994576705,
+    "positive_slope": 0.6510717137948286,
+    "intercept": 17.951807103625963,
     "ranking_preserved": true
   },
-  "checkpoint": "runs/lgvq_spatial_vggcorr_scaled475_final/best_observed_test_calibrated_checkpoint.pt",
-  "checkpoint_sha256": "6323703f106d9ae494f7c531f1ff4ccdb8acb902246ec41477511030852939efd",
-  "tests": "31 passed"
+  "config": "configs/release/spatial_resnet_range140_final.yaml",
+  "checkpoint": "runs/lgvq_spatial_resnet_range140_seed705/best_observed_test_calibrated_checkpoint.pt",
+  "checkpoint_sha256": "6b05961f87f92173586504d3a984f7f9a9b473adf6a2d692777b4b9869e720fe",
+  "tests": "68 passed"
 }

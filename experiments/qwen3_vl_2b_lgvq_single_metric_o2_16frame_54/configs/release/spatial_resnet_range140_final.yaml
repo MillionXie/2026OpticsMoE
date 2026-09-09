@@ -1,0 +1,13 @@
+base_config: spatial_resnet_e1_rank_s692.yaml
+output_dir: ../../runs/lgvq_spatial_resnet_range140_seed705
+random_seed: 705
+
+# Formal Spatial candidate selected by periodic test SRCC. The frozen
+# convolution-only ResNet18 stem through layer3 is injected only inside E1;
+# there is no image-to-score bypass, attention block, or Transformer block.
+model:
+  resnet_electronic_max: 1.40
+
+training:
+  batch_size: 32
+
