@@ -402,3 +402,15 @@ python -m LightGenV2.tasks.t03_saliency.recheck_aligned --system optical --confi
 ```
 
 再次执行须使用尚不存在的复评目录，并确认best是否仍为上述SHA；不能覆盖已有证据。
+
+同一SHA随后完成`spatialcc_candidate_audit_20260910`的完整5000张结构/路由/相位审计，
+审计前后源文件SHA未变化，epoch5 EMA重载CC=0.8617294619：
+alpha=0.43072805/0.44108027；四专家选择2329/2647/2314/2710次，
+占全部10000个Top2选择槽23.29%/26.47%/23.14%/27.10%，有效专家数3.97938，无未使用专家。
+相对初始化的相位圆周RMS：router 0.00077411 rad；四专家
+0.01377231/0.01356511/0.01481157/0.01445823 rad；global 0.01397147 rad。
+故相位确有更新，不是只更新电子部分。样例在该审计run的`best_visualization/saliency_examples`。
+`selected_checkpoint_test_evaluation.json` SHA256：
+`7d2a8daabc9e6a51de4e739a6e06df606c9229e9087c87b85aa5a79a4f46c5c5`。
+审计命令与上文`sam005_candidate_audit_20260910`相同，但config/checkpoint/run-dir均换成spatialcc对应路径；
+实际完整命令、30145ef源码commit、环境和架构报告保留在审计run。仍为阶段性候选，不是50轮完成报告。
