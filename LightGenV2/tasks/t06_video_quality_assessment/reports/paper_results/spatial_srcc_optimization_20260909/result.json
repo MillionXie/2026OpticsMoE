@@ -46,6 +46,6 @@
     "phase_quantization": false,
     "k_space_filter": false,
     "pixel_perturbation": false,
-    "unmodulated_dc_power": 0.0
+    "unmodulated_dc_power": 0.2
   }
 }
