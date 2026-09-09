@@ -9,16 +9,21 @@
 |---|---:|---:|---|
 | control | 0.85780809（epoch1） | 0.85570458 | epoch0，0.85812011 |
 | cosine | 0.85769613（epoch1） | 0.85596133 | epoch0，0.85812011 |
+| spatial-centered cosine | 0.85772776（epoch1） | 0.85589607 | epoch0，0.85812011 |
 
 两组best的5000张完整复评均为0.85812011，alpha=0.43413550/0.44144565；
 专家选择占比23.56%/26.32%/23.19%/26.93%，有效专家数3.98277/4，无未使用专家。
 这不是新训练得到了同样优良的新权重，而是没有超过源权重，故保留了epoch0。
-普通cosine提示未产生有效提升，不继续重复这一配置；去空间均值版本单独判断，不混为同一结果。
+去空间均值版本`moe_alpha40_hint_centered_seed42`随后也完成50轮，源码
+`b3f88069bdc6864c0d4a3338152fbed6402a3045`；重载best完整测试CC=0.8581201133728027，
+同样保留epoch0，alpha和专家选择次数与上面一致。这一系列三组均无新提升，
+暂不重复普通/去均值cosine提示；不能将保留源权重的分数作为新监督有效的证据。
 
 对应run内`selected_checkpoint_test_evaluation.json` SHA256：
 
 - control：`0eefc5a5e3d86c376757d20862a87b038c481510d4f310e2c9d6b4fe5d4520d7`
 - cosine：`aee4ac592de7d1022b0a2cba9ca671784556a1123c7a3cb122909c2080b17014`
+- spatial-centered cosine：`6ebe21338154cb34bcfda581ef2b858871f1eb57cdcdeaa1f4fe83295366efc8`
 
 ## 方法假设
 
