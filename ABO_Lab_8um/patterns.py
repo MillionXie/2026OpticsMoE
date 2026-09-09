@@ -96,6 +96,8 @@ def export(c):
     out=ROOT/'generated/P'; hashes={}
     for i,stage in enumerate(STAGES,1):
         source=phase_source/(stage+'.npy')
+        reference=ROOT/'original_optics/reference_phases'/(stage+'.npy')
+        if reference.is_file(): source=reference
         phase=np.load(source,allow_pickle=False)
         target=out/f'{i:02d}_{stage}.bmp'; save(target,raster(phase,c['phase_slm'],c,phase=True)); hashes[stage]=sha(target)
     write(out/'manifest.json',{'phase_sha256':hashes,'hardware_identity':hardware_identity(c),
