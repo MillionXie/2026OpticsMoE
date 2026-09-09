@@ -1,0 +1,20 @@
+base_config: spatial_calibrated_electronic_s622.yaml
+output_dir: ../../runs/lgvq_spatial_calibrated_phase_s623
+random_seed: 623
+
+training:
+  trainable_scope: optical_phase_only
+  learning_rate: 0.000001
+  phase_learning_rate: 0.000010
+  router_phase_learning_rate: 0.000020
+  ema_decay: 0.99
+
+loss:
+  ranking_weight: 1.50
+  correlation_weight: 3.00
+  soft_spearman_weight: 0.40
+  router_balance_weight: 0.005
+  router_importance_weight: 0.001
+  serial_router_balance_weight: 0.010
+  serial_router_importance_weight: 0.002
+  router_capture_weight: 0.002
