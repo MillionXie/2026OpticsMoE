@@ -1,0 +1,15 @@
+base_config: ../spatial_v4/cifar.yaml
+novel_class_sets:
+  a: [22, 25, 50, 52, 60, 66, 68, 72, 77, 80]
+  b: [5, 18, 20, 21, 26, 32, 34, 55, 85, 91]
+source_class_ids: [3, 13, 14, 17, 28, 31, 35, 81, 86, 94]
+source_runs:
+  direct: runs/simulation/20260908_v4_formal_cifar_direct_s42
+  qwen_vision_lora: runs/simulation/20260908_v4_formal_cifar_qwen_vision_lora_s42
+support_seeds: [101, 202, 303]
+support_shots: [5, 20]
+adaptation_epochs: 5
+adaptation_steps_per_epoch: 20
+adaptation_policy: expert_only_continuation_from_source_best
+selection: fixed_final_epoch_no_novel_validation_selection
+freeze_electronic: true
