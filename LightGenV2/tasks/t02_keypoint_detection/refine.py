@@ -106,7 +106,8 @@ def run(args):
     model.head.load_state_dict(payload['head'],strict=True)
     opt=optimizer(model,settings)
     ema=base.ModelEMA(model.core,model.head,settings.ema_decay)
-    reference={k:p.detach().float().cpu().clone() for k,p in model.core.named_parameters() if k.endswith('raw_phase')}
+    reference={k:p.detach().float().cpu().clone() for k,p in model.core.named_parameters()
+               if k.endswith(('raw_phase', 'raw_router_phase'))}
     out=settings.output_dir
     def write(name,value):
         (out/name).write_text(json.dumps(value,ensure_ascii=False,indent=2,default=str)+'\n',encoding='utf-8')

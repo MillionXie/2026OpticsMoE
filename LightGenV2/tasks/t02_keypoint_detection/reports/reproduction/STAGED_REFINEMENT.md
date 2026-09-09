@@ -55,8 +55,8 @@ test 明确参与选择，不称作独立封存测试。
 ## 实验室执行
 
 从已提交的独立源码 worktree 根执行。不要在其他同学的脏 worktree 改文件。
-实际资产在原工程；下面的 cache 是默认位置参数，加载器会按既有逻辑寻找已安装的离线快照。
-若没有可用快照，先修正 `--cache-dir`，不要联网换模型。
+实际资产在原工程；下面使用已确认存在的实验室离线 cache。
+迁移机器时先修正 `--cache-dir`，不要联网换模型。
 
 ```bash
 export CUDA_DEVICE_ORDER=PCI_BUS_ID
@@ -68,7 +68,7 @@ TASK=$ROOT/LightGenV2/tasks/t02_keypoint_detection
 CUDA_VISIBLE_DEVICES=1 $PY -m LightGenV2.tasks.t02_keypoint_detection.refine \
   --profile staged \
   --source "$TASK/runs/simulation/moe_router_scale_dc20_no_shift_warmstart0713_seed42/best_checkpoint.pt" \
-  --data-root "$ROOT/data/lsp_pose" --cache-dir "$ROOT/cache/qwen" \
+  --data-root "$ROOT/data/lsp_pose" --cache-dir /DATA/DATA1/guest3/.cache/huggingface/hub \
   --run-dir "$TASK/runs/simulation/refinement_20260909/staged" \
   --batch-size 24 --workers 4
 ```
@@ -76,6 +76,10 @@ CUDA_VISIBLE_DEVICES=1 $PY -m LightGenV2.tasks.t02_keypoint_detection.refine \
 另外两组只改 `--profile joint` / `staged_heatmap`，并使用不同 run-dir。
 `--smoke --batch-size 4 --workers 0` 仅检验 4 train/4 test、1 epoch，不得作为正式性能。
 先运行 `python -m pytest LightGenV2/tasks/t02_keypoint_detection/tests -q`。
+
+2026-09-09 实验室 `xml` 环境已通过 12 项测试和 4 train/4 test 的完整单步 smoke，
+包括 backward、EMA、选模、重载、关光评估。单步 feature/global 物理相位 RMS 变化约
+0.00116–0.00172 rad，确认相位确实被更新；smoke 的准确率没有统计意义。
 
 训练结束先读 `source_anchor_test.json`（核对起点），再读 `final_report.json`。
 中途查看 `training_history.json`，不要把 live-last 当 best。
