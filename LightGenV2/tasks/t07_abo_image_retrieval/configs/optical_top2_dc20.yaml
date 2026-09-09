@@ -4,7 +4,7 @@ dataset:
   dataset_root: /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data
   download: false
 qwen:
-  model_id: /DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-Embedding-2B/snapshots/9f2f7e710d6d810056aa5c0a4f04764fec6bb7bda
+  model_id: /DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-Embedding-2B/snapshots/9f2f7e710d6d81056aa5c0a4f04764fec6bb7bda
   local_files_only: true
   instruction: Represent this catalog product image for category-aware visual similarity retrieval.
 router_experiment:
