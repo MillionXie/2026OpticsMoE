@@ -43,8 +43,10 @@ best均保留源权重；相位和新增卷积外圈确实更新。下一轮从a
 不重置alpha，不改变光路或读出头；训练后期关闭增强精修。完整配置、边界和命令见
 [泛化优化](reports/reproduction/VIEW_REGULARIZATION.md)。目标尚未达成，结果以run完整复评为准。
 
-同时准备[训练专用特征提示](reports/reproduction/FEATURE_HINTS.md)的受控对照：
-不改变原推理结构，以teacher解码前192通道空间特征监督学生融合latent；训练专用投影不部署。
+[训练专用特征提示](reports/reproduction/FEATURE_HINTS.md)的control与普通cosine对照均完成50轮，
+都未超过源权重，完整复评保留epoch0 CC=0.85812011；去空间均值版本另行判断。
+这些对照不改变推理结构，训练专用投影不部署。13×13现有电子空间卷积的单变量对照
+已启动，参数预算、初始功能保持与完整命令见[泛化优化](reports/reproduction/VIEW_REGULARIZATION.md)。
 
 [两参数读出校准诊断](reports/reproduction/READOUT_CALIBRATION.md)已完成：
 标准精度配对5000张测试，原0.858120→校准0.858608，增益仅0.000488且KLD略变差。
