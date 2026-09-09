@@ -9,3 +9,6 @@ data:
   vision_cache_views: []
   quality_feature_cache_views: []
   training_view_probabilities: []
+
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_router_temperature_s620/best_alpha_calibrated_checkpoint.pt
