@@ -84,6 +84,16 @@ def calibration(c):
         'warning':'Fresnel arrays locate logical field boundaries; zero-order background can remain with full-white amplitude. Not diffraction-free synthetic crosses.',
         'arrays':{}}
     for n,grid in [(1,[0.0]),(4,[-.5,.5]),(9,[-.5,0,.5])]:
+        if n==4:
+            # Current four-corner calibration: contiguous tiles, using the
+            # user's 15/20/40 cm BMP gray-ramp convention, not isolated holes.
+            from fresnel import four_array
+            bmp,owner,support,meta=four_array(c)
+            save(dest/'P_F4.bmp',bmp)
+            manifest['arrays']['4']=meta
+            for i,label in enumerate(meta['logical_labels_in_physical_order']):
+                save(dest/f'P_F_{label}.bmp',np.where((owner==i)&support,bmp,0).astype(np.uint8))
+            continue
         phase=np.zeros((ph,pw),float); centers=[]
         window=c['fresnel_single_window_px'] if n==1 else c['fresnel_corner_window_px']
         for vy in grid:
@@ -97,13 +107,6 @@ def calibration(c):
                 centers.append([fx,fy])
         save(dest/f'P_F{n}.bmp',np.rint(np.mod(phase,2*np.pi)/(2*np.pi)*255).astype(np.uint8))
         manifest['arrays'][str(n)]={'centers_xy':centers,'square_window_px':window}
-        if n==4:
-            labels=orient(np.array([['TL','TR'],['BL','BR']]),p).ravel()
-            for label,(fx,fy) in zip(labels,centers):
-                single=np.zeros_like(phase)
-                region=(np.abs(X-fx)<window/2)&(np.abs(Y-fy)<window/2)
-                single[region]=phase[region]
-                save(dest/f'P_F_{label}.bmp',np.rint(np.mod(single,2*np.pi)/(2*np.pi)*255).astype(np.uint8))
     write(dest/'geometry.json',manifest)
     # Fast diagnostic: 32 values, 3 frames each; user chooses valid exposure first.
     for g in np.rint(np.linspace(0,255,32)).astype(int):

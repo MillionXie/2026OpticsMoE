@@ -30,6 +30,12 @@ class PhysicalContractTests(unittest.TestCase):
             from PIL import Image
             for name in ('TL','TR','BL','BR'):
                 with Image.open(d/f'P_F_{name}.bmp') as im: self.assertEqual(im.size,(1920,1200))
+            from fresnel import four_array
+            expected,owner,support,_=four_array(self.c)
+            with Image.open(d/'P_F4.bmp') as im: np.testing.assert_array_equal(np.asarray(im),expected)
+            for i,name in enumerate(('TL','TR','BL','BR')):
+                with Image.open(d/f'P_F_{name}.bmp') as im:
+                    np.testing.assert_array_equal(np.asarray(im),np.where((owner==i)&support,expected,0))
             with Image.open(d/'A_ACTIVE.bmp') as im: self.assertEqual(im.size,(1920,1080))
     def test_outside_panel(self):
         self.c['amplitude_slm']['center_xy']=[100,100]
