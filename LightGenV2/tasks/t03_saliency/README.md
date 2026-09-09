@@ -26,6 +26,10 @@ alpha≥0.4、20%–30%零级分量、两级融合、478有效ROI或光学传播
 best均保留源权重；相位和新增卷积外圈确实更新。下一轮从alpha限制训练之前的较早源开展
 增强、5×5、GRN及组合的五组100epoch对照。
 论文依据、参数预算及命令见[早期轻量电子残差试验](reports/reproduction/EARLY_LIGHTWEIGHT_RESIDUAL.md)。
+上述早期五组已出现持续平台，当前最好均约0.8500–0.8505，未超越历史best。
+现从0.85812016进行三组不改结构的受控精修：小步长保留KD、逐步撤KD、撤KD加强GT CC。
+新增可选自动平台调速/早停，仅影响新profile，不修改正在运行的旧试验。
+完整规则、指标口径及命令见[平台期受控精修](reports/reproduction/ADAPTIVE_REFINEMENT.md)。
 
 ## 数据协议
 

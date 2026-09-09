@@ -132,6 +132,19 @@ def load_settings(path: str | Path) -> Any:
     settings.dense_head_learning_rate = float(d("training.dense_head_learning_rate", settings.dense_head_learning_rate))
     settings.gradient_clip_norm = float(d("training.gradient_clip_norm", 1.0))
     settings.test_interval_epochs = int(d("protocol.test_interval_epochs", 5))
+    settings.adaptive_plateau_enabled = bool(d("training.adaptive_plateau.enabled", False))
+    settings.adaptive_plateau_options = {
+        "patience": int(d("training.adaptive_plateau.patience", 3)),
+        "min_delta": float(d("training.adaptive_plateau.min_delta", 0.0001)),
+        "factor": float(d("training.adaptive_plateau.factor", 0.5)),
+        "max_reductions": int(d("training.adaptive_plateau.max_reductions", 2)),
+        "min_epoch": int(d("training.adaptive_plateau.min_epoch", 6)),
+    }
+    if settings.adaptive_plateau_enabled:
+        from .plateau import PlateauController
+        PlateauController(**settings.adaptive_plateau_options)
+        if not settings.staged_training or settings.test_interval_epochs < 1:
+            raise ValueError("Adaptive plateau requires staged training and periodic tests")
     settings.router_hard_load_balance_weight = float(
         d("loss.router_hard_load_balance_weight", 0.50)
     )
@@ -174,6 +187,8 @@ def save_resolved_config(settings: Any) -> None:
         reset_fusion_on_warmstart=settings.reset_fusion_on_warmstart,
         expand_kernel_on_warmstart=settings.expand_kernel_on_warmstart,
         initialize_grn_on_warmstart=settings.initialize_grn_on_warmstart,
+        adaptive_plateau={"enabled": settings.adaptive_plateau_enabled,
+                          **settings.adaptive_plateau_options},
         staged={"enabled": settings.staged_training, "warmup_epochs": settings.staged_warmup_epochs,
                 "polish_start": settings.staged_polish_start, "final_hard_balance": settings.staged_final_hard_balance,
                 "freeze_electronic_gradients": settings.staged_freeze_electronic_gradients},

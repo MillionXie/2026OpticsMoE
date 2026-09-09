@@ -1,0 +1,4 @@
+base_config: moe_alpha40_adaptive_keepkd.yaml
+distillation:
+  final_weight: 0.0
+output_dir: ../runs/simulation/moe_alpha40_adaptive_releasekd_seed42

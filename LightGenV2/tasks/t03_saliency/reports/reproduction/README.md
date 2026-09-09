@@ -1,5 +1,8 @@
 # SALICON baseline 复现与公平性
 
+[平台期受控精修](ADAPTIVE_REFINEMENT.md)：从历史best启动，比较KD约束与GT CC目标，
+含自动降学习率/早停机制；不增加推理结构。
+
 [早期起点与论文依据的轻量电子残差试验](EARLY_LIGHTWEIGHT_RESIDUAL.md)：包括ConvNeXt/GRN借鉴范围、
 五组对照、权重迁移、参数预算及完整命令；不改变本页baseline的历史含义。
 

@@ -23,6 +23,7 @@ from experiments.qwen3_vl_embedding_2b_salicon_vision_optical_saliency.visualiza
 from .modeling import build_student, initialize_student, optimizer
 from .visualize import render
 from .training_support import ModelEMA, TrainTeacherMaps, AlignedFlipLoader, distillation_weight
+from .plateau import PlateauController
 
 
 def _write_json(path: Path, value: Any) -> None:
@@ -139,6 +140,9 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
         optim, T_max=max(1, int(settings.student_epochs))
     )
     history: list[dict[str, Any]] = []
+    controller = (PlateauController(**settings.adaptive_plateau_options)
+                  if settings.adaptive_plateau_enabled else None)
+    adaptive_events = []
     best_cc = -math.inf
     best_epoch = -1
     started = time.perf_counter()
@@ -147,6 +151,8 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
             model.core.set_phase_dropout_active(False)
             initial_metrics, _ = legacy.evaluate_model(model, test_loader, loaded, settings)
             best_cc, best_epoch = float(initial_metrics["cc"]), 0
+            if controller is not None:
+                controller.observe(0, best_cc)
             _checkpoint(settings.output_dir / "best_checkpoint.pt", model, 0, {}, initial_metrics)
             _write_json(settings.output_dir / "warmstart_evaluation.json", initial_metrics)
             print(f"[T03] warmstart CC={best_cc:.6f}", flush=True)
@@ -155,6 +161,10 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
             if settings.staged_training:
                 stage_report = staged_epoch(optim, settings, epoch)
                 model._router_hard_weight = stage_report["hard_balance_weight"]
+                if controller is not None:
+                    controller.scale_epoch_rates(optim)
+                    stage_report.update({f"lr_{g['name']}": g["lr"] for g in optim.param_groups})
+                    stage_report["adaptive_lr_multiplier"] = controller.multiplier
             model.core.set_phase_dropout_active(True)
             settings.map_kd_weight = distillation_weight(
                 settings.distillation_initial_weight, settings.distillation_end_epoch, epoch,
@@ -179,6 +189,15 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
                         _checkpoint(settings.output_dir / "best_checkpoint.pt", model,
                                     epoch, train_metrics, test_metrics,
                                     weight_kind="ema" if ema else "live")
+                if controller is not None:
+                    action = controller.observe(epoch, float(test_metrics["cc"]))
+                    event = {"epoch": epoch, "test_cc": float(test_metrics["cc"]),
+                             "action": action, "next_lr_multiplier": controller.multiplier,
+                             "bad_tests": controller.bad_tests, "reductions": controller.reductions}
+                    adaptive_events.append(event)
+                    _write_json(settings.output_dir / "metrics" / "adaptive_events.json", adaptive_events)
+                    stage_report["adaptive_action"] = action
+                    print(f"[T03 adaptive] {json.dumps(event)}", flush=True)
             row = {
                 "epoch": epoch,
                 **{f"train_{key}": value for key, value in train_metrics.items()},
@@ -212,6 +231,8 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
                 f"train_loss={train_metrics['loss']:.5f}{suffix} best_CC={best_cc:.4f}",
                 flush=True,
             )
+            if controller is not None and controller.stopped:
+                break
     finally:
         if ema_hook is not None:
             ema_hook.remove()
@@ -224,6 +245,11 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
         "selected_periodic_test_cc": best_cc,
         "selection": f"maximum public-test CC at warmstart, epoch 1, every {settings.test_interval_epochs} epochs, and final",
         "checkpoint_retention": ["best_checkpoint.pt", "last_checkpoint.pt"],
+        "completed_epochs": len(history),
+        "requested_epochs": int(settings.student_epochs),
+        "stop_reason": "public_test_plateau" if controller is not None and controller.stopped else "epoch_budget",
+        "adaptive_public_test_control": controller is not None,
+        "selection_biased": True,
     }
     _write_json(settings.output_dir / "training_report.json", report)
     return report
