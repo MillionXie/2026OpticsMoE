@@ -100,7 +100,7 @@ public-test参与选模和平台调速，结果有选择偏差，不是未接触
 |viewreg_cffn_kd2_seed42|0.8595313201904297|0.431023 / 0.441234|2327 / 2639 / 2301 / 2733|
 
 三者均无未使用专家；小空间FFN和更强早期KD在本次单seed下各有小幅增益，
-不能称为跨seed显著改善。13×13、增强概率及全局混合对照尚未完成。
+不能称为跨seed显著改善。增强概率及全局混合对照尚未完成；13×13完成结果见下文。
 控制组/普通CFFN的`selected_checkpoint_test_evaluation.json` SHA256分别为
 `dfffbac26f3ef322aee577b92a7777067962a77e1b3cfb3a876c613151cd898b`、
 `82c2e2b5c9a2af1c115c16804f6b744fa321d2b9809d10d8c5bc2721939347da`。
@@ -132,6 +132,17 @@ batch32与训练后batch48复评仅约6.4e-8差异。5000个ID清单SHA256
 这只是当前单seed、已参与选模测试集上的描述统计，不是多seed显著性结论。
 
 ## 追加的13×13轻量空间上下文对照
+
+该组现已完成80轮，epoch70 EMA best重载后完整5000张CC=0.8592765054702759。
+alpha=0.43091190/0.44116613；专家选择2327/2642/2290/2741次，无未使用专家。
+较同KD/同训练控制0.85883157提高0.00044493，略高于普通CFFN的0.85921630，
+但低于强KD CFFN的0.85953132与后期SAM候选；增加61440参数尚不足以支持替换当前最佳方案。
+这是单seed对照，不称为显著优势，保留完整负差距。
+源码commit=`10800870208a1ef2348b803795e481a8c6f835c1`；
+best SHA256=`f2cdfb11de1fbf699b5ddf2e4d20dc632ac5bf121ba7d5f95342d3d98c2f492f`；
+`selected_checkpoint_test_evaluation.json` SHA256=
+`9f5c1e88f45e49d26019cb9b0a48cee778c35e5ef9d449eb41592577f047cc61`。
+原始产物仍在`runs/simulation/moe_alpha40_viewreg_kernel13_seed42`，没有删除权重/日志。
 
 `moe_alpha40_viewreg_kernel13.yaml`仅相对`moe_alpha40_viewreg_control.yaml`
 扩大现有两个192通道depthwise token mixer：3×3→13×13。
