@@ -21,6 +21,7 @@ def create(device='cpu',export_native=False):
     checkpoint=ROOT/'assets/best_checkpoint.pt'
     if sha(checkpoint)!=CHECKPOINT_SHA: raise ValueError('Wrong epoch-25 EMA checkpoint')
     dev=torch.device(device)
+    if dev.type=='cpu': torch.set_num_threads(min(4,torch.get_num_threads()))
     if dev.type=='cuda' and not torch.cuda.is_available(): raise RuntimeError('CUDA unavailable; use --device cpu')
     settings=m.load_settings(model_config())
     settings.model_id=str(ROOT/'models/Qwen3-VL-Embedding-2B')

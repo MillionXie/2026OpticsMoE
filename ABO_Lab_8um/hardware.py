@@ -72,6 +72,12 @@ class Bench:
               'min':float(raw.min()),'max':float(raw.max()),'mean':float(raw.mean()),
               'display_and_settle_ms':(t1-t0)*1000,'capture_ms':(time.perf_counter()-t1)*1000,'devices':self.info}
         if rectify:
+            actual=self.camera.device_info().get('device_roi_xywh')
+            if actual is None:
+                actual=self.camera.device_info().get('camera',{}).get('device_roi_xywh')
+            expected=self.c['camera'].get('device_roi_xywh')
+            if actual is not None and expected is None and list(actual[:2])!=[0,0]:
+                raise ValueError(f'Camera retained cropped ROI {actual}; set explicit device_roi_xywh, with four corners in full-sensor coordinates.')
             out=canonical(raw,self.c); Image.fromarray(out).save(path.with_suffix('.png'))
         else: out=raw
         write(path.with_suffix('.json'),meta)
