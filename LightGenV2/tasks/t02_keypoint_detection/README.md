@@ -1,5 +1,7 @@
 # T02 关键点检测（LSP）
 
+新增：[2026-09-09 同结构分阶段续训](reports/reproduction/STAGED_REFINEMENT.md)，含当前光学/baseline 结构、参数量、对照设计和实验室命令。
+
 本任务只处理视觉分支，输出 LSP 的 14 张关键点热图。冻结的
 Qwen3-VL-Embedding-2B 仅执行 patch embedding；原生 Vision Transformer
 block 不执行。两种正式方法共享数据划分、电子 mixer、同尺度融合、姿态读出头、
