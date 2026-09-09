@@ -103,13 +103,24 @@ def stage(args,c):
         command=[sys.executable,str(ROOT/'run.py'),action,'--config',str(cfg_path),
                  '--session',args.session,'--stage',args.stage]
         if action=='prepare': command+=['--device',args.device]
-        else: print('Preparation process exited; model memory released. Confirm the manual phase before capture.',flush=True)
+        else:
+            if getattr(args,'yes',False): command.append('--yes')
+            print('Preparation process exited; model memory released. Starting capture; manual phase is NOT switched automatically.',flush=True)
         # Inherit the terminal so capture retains its manual phase confirmation.
         # Never call prepare/capture in-process: model/CUDA memory must be freed.
         result=subprocess.run(command)
         if result.returncode:
             print(f'{action} stopped (exit {result.returncode}); existing CCD files are retained.',flush=True)
             raise SystemExit(result.returncode)
+
+
+def confirm_manual_phase(skip=False):
+    if skip:
+        print('--yes: skipping the y prompt. The operator must have already loaded the requested phase; the screen was NOT verified.',flush=True)
+        return 'skipped_via_explicit_yes_screen_not_verified'
+    if input('Type y only after checking the phase screen; otherwise Ctrl+C: ').strip().lower()!='y':
+        raise RuntimeError('Phase not confirmed')
+    return 'operator_confirmed_y'
 
 
 def capture(args,c):
@@ -122,7 +133,7 @@ def capture(args,c):
     if sha(phase)!=mf['phase_sha256']: raise ValueError('Phase changed since prepare')
     if not c['geometry_confirmed'] or c['capture_input_range'] is None: raise ValueError('Complete ROI/orientation/range calibration before formal capture')
     print('Load and KEEP this manual phase:',phase,'\nSHA256:',mf['phase_sha256'])
-    if input('Type y only after checking the phase screen; otherwise Ctrl+C: ').strip().lower()!='y': raise RuntimeError('Phase not confirmed')
+    phase_confirmation=confirm_manual_phase(getattr(args,'yes',False))
     contract=read(root/'optical_contract.json'); mapping={s['id']:s for s in state['samples']}
     with Bench(c) as bench:
         for i,e in enumerate(mf['entries'],1):
@@ -141,7 +152,8 @@ def capture(args,c):
                 pending=out.with_suffix('.capture.json')
                 write(pending,{'stage':args.stage,'sample':e['id'],'files':dict(files),
                     'phase_sha256':mf['phase_sha256'],'amplitude_sha256':e['sha256'],
-                    'hardware_identity':hardware_identity(c),'capture_mode':'real'})
+                    'hardware_identity':hardware_identity(c),'capture_mode':'real',
+                    'manual_phase_confirmation':phase_confirmation})
                 files[pending.name]=sha(pending)
                 route=routing_from_ccd(frame,contract)
                 quality=assess(frame,route,contract)
@@ -150,7 +162,8 @@ def capture(args,c):
                 rp=out.with_suffix('.route.json'); write(rp,route); files[rp.name]=sha(rp)
             write(out.with_suffix('.record.json'),{'stage':args.stage,'sample':e['id'],'files':files,
                 'phase_sha256':mf['phase_sha256'],'amplitude_sha256':e['sha256'],
-                'hardware_identity':hardware_identity(c),'capture_mode':'real','router_quality':quality})
+                'hardware_identity':hardware_identity(c),'capture_mode':'real','router_quality':quality,
+                'manual_phase_confirmation':phase_confirmation})
             print(f'Captured {args.stage} {i}/{len(mf["entries"])} {e["id"]}',flush=True)
 
 def evaluate(args,c):
@@ -208,6 +221,7 @@ def main():
     p.add_argument('--stage',choices=STAGES); p.add_argument('--device',default='auto')
     p.add_argument('--limit',type=int,default=4,help='Test queries only; all 100 candidate titles are always retained. 0=2400.')
     p.add_argument('--bmp',help='Relative to this package; probe otherwise captures camera only')
+    p.add_argument('--yes',action='store_true',help='For stage/capture: skip manual phase y prompt; operator must load the correct phase before starting. Does not bypass quality or identity checks.')
     a=p.parse_args()
     if a.action in ('stage','prepare','capture') and a.stage is None: p.error('--stage required')
     if not 0<=a.limit<=2400: p.error('--limit must be 0..2400')

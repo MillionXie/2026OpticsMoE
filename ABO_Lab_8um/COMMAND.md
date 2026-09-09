@@ -205,16 +205,18 @@ CCD方向由上述逻辑四角单应变换处理，不再另加翻转。设置�
 ## 5. 六条命令完成六层（自动生成输入＋采集）
 
 `stage`自动依次执行prepare和capture。prepare在独立进程中使用CUDA，退出并释放模型后才进入采集，避免模型与显示SDK同时占用显存。
-每层仍会显示相位完整路径和SHA，只有你手动加载对应相位后输入y才采。后层依赖前层实测，禁止提前全生成或用仿真替代。
+下面的`--yes`会跳过输入y，生成结束后直接采集。**执行每条命令前必须先手动加载本层相位**；它不会自动切相位，也不绕过文件SHA、会话身份或图像质量检查。
+仍会打印相位路径和SHA，记录中明确标注未询问确认。不要一次粘贴六条后离开，因为每层仍需手动切相位。
+去掉`--yes`即可恢复原来的y确认。后层依赖前层实测，禁止提前全生成或用仿真替代。
 下面按当前会话`pilot02`示例；必须替换成你已经init的会话名。已有会话不要再次init。
 
 ```powershell
-& $py run.py stage --session pilot02 --stage vision_router --device cuda
-& $py run.py stage --session pilot02 --stage vision_expert --device cuda
-& $py run.py stage --session pilot02 --stage vision_global --device cuda
-& $py run.py stage --session pilot02 --stage language_router --device cuda
-& $py run.py stage --session pilot02 --stage language_expert --device cuda
-& $py run.py stage --session pilot02 --stage language_global --device cuda
+& $py run.py stage --session pilot02 --stage vision_router --device cuda --yes
+& $py run.py stage --session pilot02 --stage vision_expert --device cuda --yes
+& $py run.py stage --session pilot02 --stage vision_global --device cuda --yes
+& $py run.py stage --session pilot02 --stage language_router --device cuda --yes
+& $py run.py stage --session pilot02 --stage language_expert --device cuda --yes
+& $py run.py stage --session pilot02 --stage language_global --device cuda --yes
 ```
 
 六张相位在`generated/P/01_vision_router.bmp`至`06_language_global.bmp`。振幅每层在`sessions/pilot02/play/<stage>/00000.bmp`等。每个router真实CCD四区域积分→标准化能量→温度2 softmax→Top2→power-L2幅值权重，再拼专家输入。不是Top2强度直接相加。
@@ -224,6 +226,11 @@ CCD方向由上述逻辑四角单应变换处理，不再另加翻转。设置�
 
 若想增加查询图片数，需要另建会话，例如`& $py run.py init --session pilot03_more --limit 20`，再将六条命令里的会话名改成`pilot03_more`。
 `--limit`在初始化时确定样本数；已建pilot02不会因后来给stage添加--limit而扩大。20张查询对应Vision每层20张、Language每层120张。
+
+采集有效图片总数为`3*N + 3*(N+100) = 6*N+300`：每张查询图片走六层，每个候选标题只走后三层。
+4/20/100/2400张查询分别保存324/420/900/14700张CCD图，不含SDK暖机、丢弃旧帧和失败重试。
+`--yes`只取消确认，不改变这个数量。取消查询数量上限须新建会话时用`--limit 0`，代表2400张测试图、100个候选标题，不包含训练集。
+不是2400×100对图文组合逐对采集，也不是每个专家各拍一张；同一次专家传播的并行输出在一张CCD内。
 
 重复同一capture命令会校验并跳过已完成帧，失败帧不会被标记完成。不要加clear-output、不要删除原始采集。
 

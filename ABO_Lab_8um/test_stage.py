@@ -7,8 +7,8 @@ import run
 
 
 class StageTests(unittest.TestCase):
-    def invoke(self,*,stage='vision_router',completed=(),returncodes=(0,0)):
-        args=SimpleNamespace(stage=stage,session='pilot02',device='cuda',config='custom lab.json')
+    def invoke(self,*,stage='vision_router',completed=(),returncodes=(0,0),yes=False):
+        args=SimpleNamespace(stage=stage,session='pilot02',device='cuda',config='custom lab.json',yes=yes)
         samples=[{'id':'title_000','kind':'title'},{'id':'image_0','kind':'image'},
                  {'id':'image_1','kind':'image'}]
         records=lambda root,s:{stage:{}} if s['id'] in completed else {}
@@ -49,6 +49,20 @@ class StageTests(unittest.TestCase):
     def test_completed_language_skips_hardware(self):
         calls,code=self.invoke(stage='language_router',completed=('image_0','image_1','title_000'))
         self.assertEqual((len(calls),code),(0,0))
+
+    def test_yes_forwarded_only_to_capture(self):
+        calls,code=self.invoke(yes=True)
+        self.assertEqual(code,0)
+        self.assertNotIn('--yes',calls[0].args[0]); self.assertIn('--yes',calls[1].args[0])
+
+    def test_yes_never_reads_stdin(self):
+        with patch('builtins.input',side_effect=AssertionError('Must not prompt')):
+            self.assertEqual(run.confirm_manual_phase(True),'skipped_via_explicit_yes_screen_not_verified')
+
+    def test_default_still_requires_confirmation(self):
+        with patch('builtins.input',return_value='y'): self.assertEqual(run.confirm_manual_phase(),'operator_confirmed_y')
+        with patch('builtins.input',return_value='n'):
+            with self.assertRaises(RuntimeError): run.confirm_manual_phase()
 
 
 if __name__=='__main__': unittest.main()
