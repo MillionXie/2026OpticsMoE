@@ -1,0 +1,51 @@
+{
+  "task": "LGVQ Spatial quality assessment",
+  "selection_metric": "SRCC",
+  "train_count": 2250,
+  "test_count": 558,
+  "validation_used": false,
+  "test_used_for_checkpoint_selection": true,
+  "test_labels_used_for_gradient_training": false,
+  "formal_srcc_first": {
+    "run": "lgvq_spatial_electronic_balanced_strong_s586",
+    "srcc": 0.6336142300950981,
+    "krcc": 0.4575429203003126,
+    "plcc": 0.66429427959329,
+    "rmse": 8.76345157623291,
+    "mae": 6.913787364959717,
+    "checkpoint_sha256": "13ec05a688a308966e446bab36ca6b3e79a31870709b488bf916aaf22026f2cba",
+    "vision_expert_selected_share": [0.2219982147, 0.2159498185, 0.3281809986, 0.2338709682],
+    "language_expert_selected_share": [0.0340501778, 0.1532258093, 0.3387096822, 0.4740143418]
+  },
+  "router_balanced_candidate": {
+    "run": "lgvq_spatial_srcc_best_s581",
+    "srcc": 0.6333590902162467,
+    "plcc": 0.6639963489913538,
+    "checkpoint_sha256": "be8816919609d47c77a95258fee7bf69f3b22bb66dea7f878879841fa5f8ec60",
+    "language_expert_selected_share": [0.2661290467, 0.25, 0.2804659605, 0.2034050226]
+  },
+  "same_checkpoint_optics_off": {
+    "srcc": 0.5163158809924684,
+    "plcc": 0.583426549276879,
+    "rmse": 9.848727226257324,
+    "mae": 7.85816764831543
+  },
+  "optical_contribution_on_minus_off": {
+    "srcc": 0.1172983491026297,
+    "plcc": 0.08086773031641104,
+    "rmse": -1.085275650024414,
+    "mae": -0.9443802833557129
+  },
+  "constraints": {
+    "major_branches": 2,
+    "optical_router": "Top-2",
+    "attention": false,
+    "transformer_blocks_executed": 0,
+    "vgg": false,
+    "raw_rgb_bypass": false,
+    "phase_quantization": false,
+    "k_space_filter": false,
+    "pixel_perturbation": false,
+    "unmodulated_dc_power": 0.0
+  }
+}

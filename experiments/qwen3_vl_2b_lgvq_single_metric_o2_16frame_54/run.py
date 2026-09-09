@@ -159,6 +159,30 @@ def _apply_trainable_scope(
             trainable = name.startswith("frame_stem.")
         elif scope == "frame_stem_and_readout":
             trainable = name.startswith("frame_stem.") or name.startswith("readout.")
+        elif scope == "electronic_path_only":
+            # Micro-refine the already existing electronic path while the
+            # physical masks and final MOS calibration remain fixed.
+            trainable = name.startswith(
+                (
+                    "vision_adapter.",
+                    "visual_input_norm.",
+                    "language_adapter.",
+                    "prompt_to_visual.",
+                    "vision_routes.",
+                    "language_routes.",
+                    "electronic_quality_norm.",
+                    "raw_electronic_quality_scale",
+                    "fusions.",
+                    "frame_merger.",
+                    "frame_position",
+                    "sequence_position",
+                )
+            )
+        elif scope == "optical_phase_only":
+            # Train only the deployable phase masks, including both optical
+            # routers. Optical/electronic projections and the MOS readout are
+            # frozen, so any SRCC change is attributable to physical masks.
+            trainable = "raw_" in name and "phase" in name
         elif scope == "vgg_correction_only":
             trainable = name.startswith("vgg_correction.")
         elif scope == "vgg_correction_and_readout":

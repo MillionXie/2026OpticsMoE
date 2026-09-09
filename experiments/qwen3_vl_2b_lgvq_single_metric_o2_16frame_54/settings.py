@@ -800,6 +800,8 @@ class ExperimentSettings:
             "late_input_correction_only",
             "frame_stem_only",
             "frame_stem_and_readout",
+            "electronic_path_only",
+            "optical_phase_only",
             "vgg_correction_only",
             "vgg_correction_and_readout",
             "vgg_correction_and_vision_path",

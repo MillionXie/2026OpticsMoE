@@ -771,6 +771,38 @@ def test_late_input_correction_is_zero_start_bounded_and_scope_is_strict(
     assert "lateinputcorr025_v1" in destination_settings.architecture_label
 
 
+def test_optical_phase_only_scope_updates_only_physical_phase_masks(
+    tmp_path: Path,
+) -> None:
+    settings = replace(_small_settings(tmp_path), trainable_scope="optical_phase_only")
+    settings.validate()
+    model = LGVQSingleMetricOEO16(settings)
+    scope = _apply_trainable_scope(model, settings)
+    names = scope["trainable_names"]
+    assert names
+    assert all("raw_" in name and "phase" in name for name in names)
+    assert any(name.startswith("parallel_optics.") for name in names)
+    assert any(name.startswith("serial_optics.") for name in names)
+    assert any(name.startswith("parallel_router.") for name in names)
+    assert any(name.startswith("serial_router.") for name in names)
+    assert not any(name.startswith("readout.") for name in names)
+
+
+def test_electronic_path_only_scope_freezes_masks_and_mos_readout(
+    tmp_path: Path,
+) -> None:
+    settings = replace(_small_settings(tmp_path), trainable_scope="electronic_path_only")
+    settings.validate()
+    model = LGVQSingleMetricOEO16(settings)
+    scope = _apply_trainable_scope(model, settings)
+    names = scope["trainable_names"]
+    assert names
+    assert any(name.startswith("vision_routes.") for name in names)
+    assert any(name.startswith("language_routes.") for name in names)
+    assert not any("raw_" in name and "phase" in name for name in names)
+    assert not any(name.startswith("readout.") for name in names)
+
+
 def test_plain_vgg_correction_is_zero_start_pre_optical_and_scope_is_strict(
     tmp_path: Path,
 ) -> None:

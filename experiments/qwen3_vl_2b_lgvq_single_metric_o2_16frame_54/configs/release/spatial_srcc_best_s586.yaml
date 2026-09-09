@@ -1,0 +1,8 @@
+base_config: spatial_weighted5_scaled_s523.yaml
+output_dir: ../../runs/lgvq_spatial_electronic_balanced_strong_s586
+
+# Formal SRCC-first inference contract. The selected checkpoint contains the
+# phase-only micro-refinement followed by one tiny electronic-path step. This
+# flat release config deliberately omits the many rejected search recipes.
+model:
+  spatial_residual_max: 2.0262

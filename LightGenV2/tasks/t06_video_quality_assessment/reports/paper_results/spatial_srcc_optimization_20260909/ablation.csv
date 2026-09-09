@@ -1,0 +1,12 @@
+experiment,change,srcc,plcc,rmse,decision
+s523,previous formal weighted-five-level readout,0.632483,0.664751,8.733180,previous baseline
+quality_map,13x13 compact quality-map readout,0.624739,,,reject
+rf15,dilated or hybrid 15x15 readout,0.624998,,,reject
+logits_only,five-level logits without base scalar,0.603194,,,reject
+anchor_fit,train-only learned nonuniform ordered anchors,0.633120,,,reject
+s557,phase-only micro refinement,0.633127,0.664846,8.745928,intermediate
+s573,second phase-only polish,0.633200,0.664837,8.746715,intermediate
+s581,scalar anchor scale 2.0262 and balanced router,0.633359,0.663996,8.766876,keep balanced candidate
+s584,tiny electronic-path step,0.633548,0.664272,8.763816,intermediate
+s586,tiny electronic-path step plus stronger training-time router balance,0.633614,0.664294,8.763452,formal SRCC-first
+s586_optics_off,same checkpoint with optical path bypassed,0.516316,0.583427,9.848727,optical contribution control

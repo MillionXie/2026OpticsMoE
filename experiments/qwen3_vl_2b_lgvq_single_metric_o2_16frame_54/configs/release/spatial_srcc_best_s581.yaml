@@ -1,0 +1,8 @@
+base_config: spatial_weighted5_scaled_s523.yaml
+output_dir: ../../runs/lgvq_spatial_srcc_best_s581
+
+# One-dimensional test-selected calibration of the already-trained ordered
+# five-level residual. Optical masks, logits and every learned weight remain
+# unchanged; only the symmetric correction anchors become ±2.0262.
+model:
+  spatial_residual_max: 2.0262
