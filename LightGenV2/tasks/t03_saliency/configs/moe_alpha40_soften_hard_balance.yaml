@@ -1,7 +1,7 @@
 base_config: moe_alpha40_hint_control.yaml
 # Isolate hard Top-k balance pressure; no architecture, KD, LR, or noise changes.
 loss:
-  router_hard_load_balance_weight: 0.05
+  router_hard_load_balance_weight: 0.01
 training:
   staged:
     final_hard_balance: 0.01

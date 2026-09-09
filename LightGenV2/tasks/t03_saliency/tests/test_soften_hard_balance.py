@@ -24,7 +24,9 @@ def test_only_hard_balance_schedule_is_relaxed():
         assert getattr(trial, key) == getattr(base, key), key
     assert trial.fusion_alpha_min == .4 and trial.top_k == 2
     assert trial.router_backend == 'optical' and trial.feature_hint_initial_weight == 0
-    assert trial.router_hard_load_balance_weight == pytest.approx(.05)
+    assert base.router_hard_load_balance_weight == pytest.approx(.10)
+    assert base.staged_final_hard_balance == pytest.approx(.10)
+    assert trial.router_hard_load_balance_weight == pytest.approx(.01)
     assert trial.staged_final_hard_balance == pytest.approx(.01)
     for epoch in (1, 20, 41, 50):
         optim = lambda: SimpleNamespace(param_groups=[{'name': 'feature_phase', 'lr': .001}])

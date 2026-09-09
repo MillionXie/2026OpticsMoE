@@ -62,7 +62,7 @@ CUDA_VISIBLE_DEVICES=5 python -u -m LightGenV2.tasks.t03_saliency.run --profile 
 
 新增`moe_alpha40_soften_hard_balance.yaml`，对照为`moe_alpha40_hint_control.yaml`。
 同一起点CC=0.85812016、相同50轮/学习率/EMA/KD/无增强训练；不启用feature hint。
-仅将硬Top-2均衡的初始/最终系数从0.50/0.10降为0.05/0.01，仍为正数；
+仅将硬Top-2均衡的初始/最终系数从0.10/0.10降为0.01/0.01，仍为正数；
 软均衡0.08、importance 0.02、光学噪声和所有推理结构均不变。
 这不是取消均衡，也不是放宽alpha下限。
 
@@ -70,8 +70,11 @@ CUDA_VISIBLE_DEVICES=5 python -u -m LightGenV2.tasks.t03_saliency.run --profile 
 `36333e6ba013cac3a2801bce4babcc2fb5cd36adf02969e019437b40ceebaffd`）：
 CPU float32、torch seed42、无增强、训练模式和光学扰动开启，
 以`random.Random(1042).sample(range(10000),32)`固定抽取一个训练batch。
-其光router任务梯度L2=0.00150178690；加权硬均衡梯度L2=0.00785553450，
-约为任务梯度5.23倍，两者cos=-0.01415；软均衡+importance梯度L2=0.00148858965。
+其光router任务梯度L2=0.00150178690；诊断中显式按0.50求取的硬均衡梯度L2=0.00785553450，
+但**当前profile经继承解析后实际硬均衡系数为0.10，不是公共默认0.50**。
+按损失系数线性换算，实际硬均衡梯度L2=0.00157110690，约为任务梯度1.05倍，
+两者cos=-0.01415；软均衡+importance梯度L2=0.00148858965。
+不得把0.50的敏感性诊断写成当前训练的实际权重或声称实际硬均衡占主导。
 梯度按`autograd.grad`分别求取，各参数组拼接后转float64计算L2和cos；没有optimizer step。
 这只是一批训练数据上的局部诊断，不证明整个数据集都存在梯度冲突，也不代表性能改善。
 
