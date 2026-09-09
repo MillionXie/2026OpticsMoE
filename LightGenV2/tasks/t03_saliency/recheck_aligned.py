@@ -2,6 +2,7 @@
 import argparse
 import csv
 import hashlib
+import io
 import json
 import subprocess
 import sys
@@ -20,6 +21,14 @@ from .settings import load_settings, save_resolved_config
 from .reproduce_baseline import independent_cc
 from .run import _seed
 from .training import _write_json
+
+
+def load_hashed_checkpoint(path):
+    """Bind provenance to exactly the bytes loaded, even if best is updated later."""
+    content = Path(path).read_bytes()
+    digest = hashlib.sha256(content).hexdigest()
+    payload = torch.load(io.BytesIO(content), map_location='cpu', weights_only=False)
+    return payload, digest
 
 
 def main():
@@ -48,7 +57,7 @@ def main():
     loaded = load_vision_backbone(s, torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
     s.resolve_architecture(loaded.model)
     loaded.model.requires_grad_(False).eval()
-    payload = torch.load(args.checkpoint, map_location='cpu', weights_only=False)
+    payload, checkpoint_digest = load_hashed_checkpoint(args.checkpoint)
     aligned = AlignedReadout(s.vision_hidden_size)
     if args.system == 'qwen':
         if payload['architecture'] != 'frozen_qwen24_adapter192_identical_progressive_decoder_v1':
@@ -90,7 +99,8 @@ def main():
     report = {'mode': 'fixed_weight_reevaluation_no_training', 'system': args.system,
               'metrics': metrics, 'independent_float64_cc': cc64,
               'cc_implementation_difference': abs(cc64-metrics['cc']),
-              'checkpoint': str(args.checkpoint.resolve()), 'checkpoint_sha256': sha256_file(args.checkpoint),
+              'checkpoint': str(args.checkpoint.resolve()), 'checkpoint_sha256': checkpoint_digest,
+              'checkpoint_hash_contract': 'SHA256 of the exact in-memory bytes deserialized before evaluation; source path may subsequently change',
               'selected_epoch': payload['epoch'], 'architecture': payload['architecture'],
               'aligned_readout_parameter_audit': aligned.parameter_audit(),
               'config_sha256': sha256_file(args.config),

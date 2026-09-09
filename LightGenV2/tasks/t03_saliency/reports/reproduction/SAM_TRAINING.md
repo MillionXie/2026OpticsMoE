@@ -74,3 +74,19 @@ python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TA
 检查run_manifest的commit/命令、resolved_config中的rho、初始化SHA、完整测试历史、
 `selected_checkpoint_test_evaluation.json`的alpha/专家占比/实际相位更新，及best可视化。
 若best仍是epoch0，必须报告未超过源权重，不能记作新训练成绩。
+
+## 训练中的候选独立核验
+
+可用`recheck_aligned`对当前best进行完整5000张、独立float64逐图CC复算。
+该工具把一次读取的checkpoint字节同时用于反序列化和SHA256计算，
+不会在评估结束时误将已更新best的SHA写入旧权重的结果。
+不会额外复制/保存PT。训练中复查是暂时候选，不代替最终选定best的完整复评；
+若最佳权重随后更新，最终交付必须再验证最终SHA。
+
+```bash
+TASK=LightGenV2/tasks/t03_saliency
+python -m LightGenV2.tasks.t03_saliency.recheck_aligned --system optical --config "$TASK/configs/moe_alpha40_sam005.yaml" --checkpoint "$TASK/runs/simulation/moe_alpha40_sam005_seed42/best_checkpoint.pt" --run-dir "$TASK/runs/simulation/aligned_recheck_20260910_sam005_candidate" --batch-size 32
+```
+
+复查目录必须尚不存在；按实际日期/目的命名，不覆盖旧证据。若训练正同时写checkpoint，
+读取可能失败，应在完整写入后重试，不把损坏/不完整文件当作有效权重。
