@@ -352,14 +352,23 @@ def run(args):
         cache = create_cache(loaded, settings, train, test, root, cache_path)
         report = baseline_report(cache, train, test, output)
     else:
-        if not cache_path.is_file():
-            raise FileNotFoundError("Run --mode baseline first to generate the matching teacher cache")
-        cache = torch.load(cache_path, map_location="cpu", weights_only=False)
-        if cache["identity"] != cache_identity(settings, train+test, root):
-            raise RuntimeError("Teacher cache contract mismatch")
+        if args.mode == "optical":
+            if not cache_path.is_file():
+                raise FileNotFoundError("Run --mode baseline first to generate the matching teacher cache")
+            cache = torch.load(cache_path, map_location="cpu", weights_only=False)
+            if cache["identity"] != cache_identity(settings, train+test, root):
+                raise RuntimeError("Teacher cache contract mismatch")
         replacement, readout = build_student(loaded, settings)
         try:
-            initialization = initialize_pinned_student(settings, replacement, readout)
+            if args.mode == "evaluate":
+                if not args.checkpoint:
+                    raise ValueError("--mode evaluate requires --checkpoint")
+                checkpoint = Path(args.checkpoint).resolve()
+                load_checkpoint(checkpoint, replacement, readout)
+                initialization = {"mode": "fixed_checkpoint", "checkpoint": str(checkpoint),
+                                  "sha256": sha256_file(checkpoint)}
+            else:
+                initialization = initialize_pinned_student(settings, replacement, readout)
             save_resolved_config(settings)
             resolved = yaml.safe_load((output / "config.yaml").read_text(encoding="utf-8"))
             resolved["lightgen"]["task"] = "t07_abo_image_retrieval"
@@ -368,7 +377,20 @@ def run(args):
             write_json(output / "initialization.json", initialization)
             write_json(output / "architecture.json", replacement.student_architecture_report())
             write_json(output / "task_options.json", _nested(raw, "abo_image_image"))
-            report = train_model(loaded, replacement, readout, settings, raw, train, test, cache)
+            if args.mode == "evaluate":
+                metrics = evaluate(loaded, replacement, readout, train, test, settings, output)
+                fusion = replacement.fusion_diagnostics()
+                replacement.set_fusion_ablation("remove_optical")
+                try:
+                    removed = evaluate(loaded, replacement, readout, train, test, settings)
+                finally:
+                    replacement.set_fusion_ablation("none")
+                report = {"status": "complete", "mode": "fixed_checkpoint_reevaluation", "metrics": metrics,
+                          "fusion": fusion, "remove_optical_same_weights": removed, "initialization": initialization,
+                          "optical_removal_hit1_drop_percentage_points": 100*(metrics["hit_at_1"]-removed["hit_at_1"])}
+                write_json(output / "final_report.json", report)
+            else:
+                report = train_model(loaded, replacement, readout, settings, raw, train, test, cache)
         finally:
             replacement.close()
     write_json(output / "status.json", {"state": "complete"})
@@ -377,12 +399,13 @@ def run(args):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--mode", choices=("baseline", "optical"), required=True)
+    parser.add_argument("--mode", choices=("baseline", "optical", "evaluate"), required=True)
     parser.add_argument("--config", default=str(TASK / "configs/optical_top2_dc20.yaml"))
     parser.add_argument("--run-dir")
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--model")
     parser.add_argument("--cache")
+    parser.add_argument("--checkpoint", help="For evaluate mode; no teacher cache or warmstart required")
     parser.add_argument("--epochs", type=int)
     parser.add_argument("--steps", type=int)
     parser.add_argument("--eval-interval", type=int)
