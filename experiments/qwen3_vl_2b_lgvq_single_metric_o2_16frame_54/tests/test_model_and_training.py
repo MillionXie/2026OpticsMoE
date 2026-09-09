@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 import torch
 
+from ..calibrate_spatial_levels import _isotonic
 from ..modeling import (
     LGVQSingleMetricOEO16,
     SpatialGridReadout,
@@ -112,6 +113,16 @@ def test_weighted_level_distribution_prefers_nearby_ordered_level() -> None:
     good = weighted_level_distribution_loss(correct, scores, base, target)
     bad = weighted_level_distribution_loss(reversed_logits, scores, base, target)
     assert float(good) < float(bad)
+
+
+def test_level_calibration_isotonic_projection_is_nondecreasing() -> None:
+    projected = _isotonic(torch.tensor([-1.0, 0.8, 0.2, 1.5, 1.2]))
+    assert projected.shape == (5,)
+    assert bool(torch.all(projected[1:] >= projected[:-1]))
+    torch.testing.assert_close(
+        projected,
+        torch.tensor([-1.0, 0.5, 0.5, 1.35, 1.35]),
+    )
 
 
 def test_cached_readout_mos_strata_interleave_score_range() -> None:
