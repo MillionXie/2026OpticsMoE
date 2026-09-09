@@ -10,6 +10,7 @@ merged back into a complete model checkpoint and can be verified by the normal
 from __future__ import annotations
 
 import argparse
+import copy
 import csv
 import hashlib
 import json
@@ -22,9 +23,14 @@ import torch
 from torch.nn import functional as F
 
 from .metrics import regression_metrics
-from .modeling import SpatialDeepResidualReadout, build_model
+from .modeling import build_model
 from .settings import load_settings, resolved_dict
-from .training import batch_correlation_loss, pairwise_ranking_loss
+from .training import (
+    batch_correlation_loss,
+    pairwise_ranking_loss,
+    soft_spearman_loss,
+    weighted_level_distribution_loss,
+)
 
 
 def _sha256(path: Path) -> str:
@@ -49,14 +55,50 @@ def _batches(
     *,
     batch_size: int,
     generator: torch.Generator | None = None,
+    mos_strata: int = 0,
 ):
     order = indices
     if generator is not None:
-        order = indices[
-            torch.randperm(
-                indices.numel(), generator=generator, device=indices.device
+        if mos_strata > 1:
+            # Spread the whole MOS range across mini-batches so the ranking
+            # losses do not spend most updates on locally narrow score bands.
+            # Every sample is still consumed exactly once in each epoch.
+            sorted_indices = indices[
+                torch.argsort(payload["targets_normalized"].index_select(0, indices))
+            ]
+            strata = [
+                chunk[
+                    torch.randperm(
+                        chunk.numel(), generator=generator, device=indices.device
+                    )
+                ]
+                for chunk in torch.tensor_split(
+                    sorted_indices, min(mos_strata, sorted_indices.numel())
+                )
+                if chunk.numel()
+            ]
+            positions = [0] * len(strata)
+            interleaved: list[torch.Tensor] = []
+            remaining = int(indices.numel())
+            start = int(
+                torch.randint(
+                    len(strata), (), generator=generator, device=indices.device
+                ).item()
             )
-        ]
+            while remaining:
+                for step in range(len(strata)):
+                    stratum = (start + step) % len(strata)
+                    if positions[stratum] < strata[stratum].numel():
+                        interleaved.append(strata[stratum][positions[stratum]])
+                        positions[stratum] += 1
+                        remaining -= 1
+            order = torch.stack(interleaved)
+        else:
+            order = indices[
+                torch.randperm(
+                    indices.numel(), generator=generator, device=indices.device
+                )
+            ]
     for start in range(0, order.numel(), batch_size):
         source = order[start : start + batch_size]
         yield (
@@ -71,7 +113,7 @@ def _batches(
 
 @torch.inference_mode()
 def _evaluate(
-    readout: SpatialDeepResidualReadout,
+    readout: torch.nn.Module,
     payload: dict[str, Any],
     indices_to_evaluate: torch.Tensor,
     *,
@@ -103,8 +145,13 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed_all(args.seed)
     settings = load_settings(args.config)
-    if settings.spatial_readout_mode != "spatial_deep_residual":
-        raise ValueError("Config must select model.spatial_readout_mode=spatial_deep_residual")
+    if settings.spatial_readout_mode not in {
+        "spatial_deep_residual",
+        "spatial_weighted_level_residual",
+    }:
+        raise ValueError(
+            "Config must select a deep or five-level post-optical residual readout"
+        )
     raw = torch.load(args.cache, map_location="cpu", weights_only=False)
     if raw.get("contract") != "post_optical_spatial_raw_readout_inputs_v1":
         raise ValueError("Input is not a post-optical raw readout cache")
@@ -155,7 +202,7 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
     test_indices = test_indices.to(device)
     if device.type == "cuda":
         generator = torch.Generator(device=device).manual_seed(args.seed)
-    readout = SpatialDeepResidualReadout(settings)
+    readout = build_model(settings).readout
     source = torch.load(args.source_checkpoint, map_location="cpu", weights_only=False)
     source_state = source["state_dict"]
     source_readout = {
@@ -166,7 +213,9 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
     result = readout.load_state_dict(source_readout, strict=False)
     unexpected = list(result.unexpected_keys)
     non_residual_missing = [
-        name for name in result.missing_keys if not name.startswith("residual_")
+        name
+        for name in result.missing_keys
+        if not name.startswith("residual_") and name != "level_scores"
     ]
     if unexpected or non_residual_missing:
         raise RuntimeError(
@@ -177,6 +226,9 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
         parameter.requires_grad_(name.startswith("residual_"))
     trainable = [parameter for parameter in readout.parameters() if parameter.requires_grad]
     readout.to(device)
+    ema_readout = None
+    if args.ema_decay > 0.0:
+        ema_readout = copy.deepcopy(readout).requires_grad_(False).eval()
     optimizer = torch.optim.AdamW(
         trainable, lr=args.learning_rate, weight_decay=args.weight_decay
     )
@@ -194,7 +246,7 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
         target_mean=target_mean,
         target_std=target_std,
     )
-    best_srcc, best_epoch = float(metrics["srcc"]), 0
+    best_srcc, best_epoch, best_source = float(metrics["srcc"]), 0, "raw"
     best_state = {
         name: value.detach().cpu().clone() for name, value in readout.state_dict().items()
     }
@@ -202,13 +254,21 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
     print(f"epoch 000 spatial_SRCC={best_srcc:.6f}", flush=True)
     for epoch in range(1, args.epochs + 1):
         readout.train()
-        totals = {"loss": 0.0, "regression": 0.0, "ranking": 0.0, "correlation": 0.0}
+        totals = {
+            "loss": 0.0,
+            "regression": 0.0,
+            "ranking": 0.0,
+            "correlation": 0.0,
+            "soft_spearman": 0.0,
+            "level_distribution": 0.0,
+        }
         batches = 0
         for vision, language, mask, target, teacher, _source in _batches(
             raw,
             train_indices,
             batch_size=args.batch_size,
             generator=generator,
+            mos_strata=args.mos_strata,
         ):
             vision = vision.to(device, non_blocking=True).float()
             language = language.to(device, non_blocking=True).float()
@@ -220,21 +280,47 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
             regression = F.smooth_l1_loss(prediction_normalized, target)
             ranking = pairwise_ranking_loss(prediction_normalized, target)
             correlation = batch_correlation_loss(prediction_normalized, target)
+            soft_spearman = prediction_normalized.new_zeros(())
+            if args.soft_spearman_weight > 0.0:
+                soft_spearman = soft_spearman_loss(
+                    prediction_normalized, target, args.soft_rank_temperature
+                )
             distillation = F.smooth_l1_loss(prediction_normalized, teacher)
+            level_distribution = prediction_normalized.new_zeros(())
+            if settings.level_distribution_weight > 0.0:
+                level_distribution = weighted_level_distribution_loss(
+                    readout.last_level_logits,
+                    readout.level_scores,
+                    readout.last_level_base_prediction,
+                    target,
+                )
             loss = (
                 regression
                 + args.ranking_weight * ranking
                 + args.correlation_weight * correlation
+                + args.soft_spearman_weight * soft_spearman
                 + args.soft_target_weight * distillation
+                + settings.level_distribution_weight * level_distribution
             )
             loss.backward()
             torch.nn.utils.clip_grad_norm_(trainable, 1.0)
             optimizer.step()
+            if ema_readout is not None:
+                with torch.no_grad():
+                    source_state_now = readout.state_dict()
+                    for name, value in ema_readout.state_dict().items():
+                        incoming = source_state_now[name].detach()
+                        if value.is_floating_point():
+                            value.lerp_(incoming, 1.0 - args.ema_decay)
+                        else:
+                            value.copy_(incoming)
             for name, value in (
                 ("loss", loss),
                 ("regression", regression),
                 ("ranking", ranking),
                 ("correlation", correlation),
+                ("soft_spearman", soft_spearman),
+                ("level_distribution", level_distribution),
             ):
                 totals[name] += float(value.detach())
             batches += 1
@@ -248,22 +334,43 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
             target_mean=target_mean,
             target_std=target_std,
         )
+        selected_readout, selected_metrics, selection_source = readout, metrics, "raw"
+        ema_metrics = None
+        if ema_readout is not None:
+            ema_metrics, _, _ = _evaluate(
+                ema_readout,
+                raw,
+                test_indices,
+                batch_size=args.batch_size,
+                device=device,
+                target_mean=target_mean,
+                target_std=target_std,
+            )
+            if float(ema_metrics["srcc"]) > float(metrics["srcc"]):
+                selected_readout, selected_metrics, selection_source = (
+                    ema_readout,
+                    ema_metrics,
+                    "ema",
+                )
         row = {
             "epoch": epoch,
             **{name: value / max(1, batches) for name, value in totals.items()},
             "test": metrics,
+            "test_ema": ema_metrics,
+            "selection_source": selection_source,
         }
         history.append(row)
-        score = float(metrics["srcc"])
+        score = float(selected_metrics["srcc"])
         if math.isfinite(score) and score > best_srcc:
-            best_srcc, best_epoch = score, epoch
+            best_srcc, best_epoch, best_source = score, epoch, selection_source
             best_state = {
                 name: value.detach().cpu().clone()
-                for name, value in readout.state_dict().items()
+                for name, value in selected_readout.state_dict().items()
             }
         _write_json(args.output_dir / "history.json", history)
         print(
             f"epoch {epoch:03d} loss={row['loss']:.6f} spatial_SRCC={score:.6f} "
+            f"source={selection_source} "
             f"best={best_srcc:.6f}",
             flush=True,
         )
@@ -294,6 +401,7 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
             "target_name": "spatial",
             "prompt": settings.prompt,
             "epoch": best_epoch,
+            "selection_source": best_source,
             "state_dict": full_model.state_dict(),
             "metrics_optical_on": metrics,
             "settings": resolved_dict(settings),
@@ -314,6 +422,7 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
             writer.writerow([rows[source_index]["sample_id"], rows[source_index]["target"], value])
     summary = {
         "best_epoch": best_epoch,
+        "best_selection_source": best_source,
         "best_observed_test_srcc": best_srcc,
         "metrics": metrics,
         "checkpoint": str(checkpoint.resolve()),
@@ -342,9 +451,18 @@ def main() -> int:
     parser.add_argument("--weight-decay", type=float, default=1.0e-3)
     parser.add_argument("--ranking-weight", type=float, default=0.5)
     parser.add_argument("--correlation-weight", type=float, default=1.0)
+    parser.add_argument("--soft-spearman-weight", type=float, default=0.0)
+    parser.add_argument("--soft-rank-temperature", type=float, default=0.10)
+    parser.add_argument("--ema-decay", type=float, default=0.0)
     parser.add_argument("--soft-targets", type=Path)
     parser.add_argument("--soft-target-weight", type=float, default=0.0)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument(
+        "--mos-strata",
+        type=int,
+        default=0,
+        help="If >1, interleave this many ordered MOS strata in each epoch.",
+    )
     args = parser.parse_args()
     train(args)
     return 0

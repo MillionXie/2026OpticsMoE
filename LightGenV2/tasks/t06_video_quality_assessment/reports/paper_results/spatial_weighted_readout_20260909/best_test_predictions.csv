@@ -1,0 +1,559 @@
+sample_id,target,prediction
+"Gen-2/A baseball player swung the bat, preparing for a home run.mp4",58.810001373291016,70.48043060302734
+Gen-2/A bowl of hot soup is especially delicious on a cold winter day.mp4,77.0199966430664,68.68821716308594
+Gen-2/A bowl of ramen has delicious pork and seaweed.mp4,75.3499984741211,69.38282775878906
+Gen-2/A bowl of rich French onion soup emanates an enticing aroma.mp4,62.279998779296875,69.10628509521484
+Gen-2/A bowl of spicy Mexican chili is very delicious.mp4,63.83000183105469,64.9995346069336
+Gen-2/A butterfly gracefully dances among the flowers.mp4,70.44999694824219,70.62064361572266
+Gen-2/A cactus thrives in the harsh desert.mp4,77.0199966430664,73.49613189697266
+"Gen-2/A couple walks hand in hand on the beach, listening to the sound of the waves.mp4",62.279998779296875,64.49713134765625
+Gen-2/A cup of hot chocolate is fragrant.mp4,50.790000915527344,59.551902770996094
+Gen-2/A daffodil sways in the spring breeze.mp4,63.88999938964844,67.96742248535156
+Gen-2/A designer creates fashionable clothing designs.mp4,63.470001220703125,69.92649841308594
+Gen-2/A diver is exploring the underwater world under the coral reef.mp4,68.56999969482422,57.2079963684082
+Gen-2/A doctor cares for patients in the hospital.mp4,53.4900016784668,55.70680236816406
+Gen-2/A doctor is carefully examining a patient's body.mp4,62.189998626708984,64.85270690917969
+Gen-2/A family goes to the movies on the weekend.mp4,61.93000030517578,53.68061447143555
+Gen-2/A field of dandelions lines the side of a rural road.mp4,75.48999786376953,66.90641021728516
+Gen-2/A golden field of wheat sways gently in the breeze.mp4,67.31999969482422,72.08828735351562
+Gen-2/A group of villagers wash clothes by the stream.mp4,58.95000076293945,68.52632141113281
+Gen-2/A hippo leisurely floats in the water.mp4,73.69999694824219,60.390743255615234
+Gen-2/A kangaroo jumps across the Australian desert.mp4,63.75,66.17915344238281
+Gen-2/A lotus leaf floats on a serene pond.mp4,72.61000061035156,64.63835144042969
+Gen-2/A milkshake is garnished with fresh strawberries and cream.mp4,61.77000045776367,56.66119384765625
+Gen-2/A painter showcases their art on an outdoor gallery.mp4,73.83999633789062,67.54390716552734
+Gen-2/A peony blooms with snow-white petals.mp4,73.66999816894531,70.22261810302734
+Gen-2/A pet owner walks their dog in the park.mp4,65.20999908447266,70.957763671875
+Gen-2/A photographer captures the neon lights of the city.mp4,70.44999694824219,58.679962158203125
+Gen-2/A piece of French bread is spread with butter.mp4,60.849998474121094,66.46577453613281
+Gen-2/A piece of cheesecake is covered with blueberry sauce.mp4,70.41999816894531,69.58332824707031
+Gen-2/A pizza is topped with Italian sausage and mushrooms.mp4,77.0199966430664,71.07782745361328
+Gen-2/A purple bellflower opens in the sunlight.mp4,75.48999786376953,67.431396484375
+Gen-2/A roasted cod fish is garnished with fresh herbs.mp4,57.5,70.33638000488281
+Gen-2/A roasted salmon is presented on a plate.mp4,75.2699966430664,71.53561401367188
+Gen-2/A salad is sprinkled with nuts and fruits.mp4,63.65999984741211,68.96136474609375
+Gen-2/A sausage is grilled slightly crispy on the barbecue.mp4,68.79000091552734,62.98131561279297
+Gen-2/A skier enjoys the thrill of skiing on a snowy mountain.mp4,62.22999954223633,69.86432647705078
+Gen-2/A slice of French chocolate mousse cake brings sweet delight.mp4,71.94999694824219,69.70472717285156
+Gen-2/A tennis player elegantly slid on the grass court.mp4,62.189998626708984,57.68853759765625
+Gen-2/A tennis player made spectacular plays at the net.mp4,40.47999954223633,60.452308654785156
+Gen-2/A thin pancake is spread with butter and maple syrup.mp4,68.4800033569336,66.63235473632812
+Gen-2/A water skier created splashes on the lake.mp4,67.19999694824219,73.11320495605469
+"Gen-2/A waterfall cascades gracefully, resembling a silver thread.mp4",70.36000061035156,72.02808380126953
+Gen-2/A wheat field sways gracefully in the gentle breeze.mp4,73.73999786376953,69.43219757080078
+Gen-2/A white orchid grows in a potted plant.mp4,53.52000045776367,70.53569793701172
+"Gen-2/A writer sits at a desk, crafting a new novel.mp4",73.33000183105469,70.18988037109375
+Gen-2/An adorable little cat is napping on the windowsill.mp4,68.72000122070312,68.67631530761719
+Gen-2/An ancient church is a landmark in the village.mp4,77.0199966430664,74.43951416015625
+Gen-2/An explorer searches for adventure in the forest.mp4,72.04000091552734,42.308319091796875
+Gen-2/An orchid blooms with deep purple flowers.mp4,71.95999908447266,58.9087028503418
+"Gen-2/Blue skies and fluffy clouds, ever-changing shapes like poetry.mp4",77.0199966430664,53.32735824584961
+Gen-2/Cherry trees in the orchard are filled with red fruit.mp4,57.36000061035156,63.15572738647461
+Gen-2/Children dig sandcastles on the beach.mp4,53.939998626708984,70.1141357421875
+Gen-2/Crocodiles swim leisurely in the lake.mp4,62.0099983215332,57.36347961425781
+Gen-2/Great white sharks swim majestically in the depths of the ocean.mp4,67.01000213623047,73.94741821289062
+"Gen-2/In a rugby match, players vied for possession of the rugby ball.mp4",60.88999938964844,67.67086791992188
+"Gen-2/In front of a farmhouse, there is a swing.mp4",67.19000244140625,72.58560943603516
+Gen-2/Military aircraft are neatly lined up on the military base.mp4,55.77000045776367,57.194252014160156
+Gen-2/Parents pick up students at the bus stop.mp4,63.86000061035156,65.29369354248047
+Gen-2/People sunbathe on the lawn.mp4,51.099998474121094,65.90330505371094
+Gen-2/People taking a leisurely walk admire the lake view.mp4,57.41999816894531,73.25249481201172
+"Gen-2/Plateaus surrounding lakes, embraced by peaceful and harmonious mountains.mp4",77.0199966430664,73.64936065673828
+Gen-2/Purple lavender grows in the field.mp4,71.86000061035156,53.4975471496582
+Gen-2/Sharks dart through the water.mp4,54.27000045776367,69.76084899902344
+Gen-2/Soldiers are setting up tents in the camp.mp4,73.95999908447266,68.18775939941406
+Gen-2/Students and teachers discuss topics in the classroom.mp4,77.0199966430664,66.75891876220703
+Gen-2/Students create exquisite artwork in art class.mp4,71.94999694824219,69.63401794433594
+Gen-2/Students enjoy tasty sandwiches in the cafeteria.mp4,67.31999969482422,65.85736083984375
+"Gen-2/Students enjoy their time on campus, full of youthful energy.mp4",67.12999725341797,70.37767028808594
+"Gen-2/Students line up in the cafeteria, waiting for lunch.mp4",73.83000183105469,47.62611389160156
+Gen-2/Students participate in celebration ceremonies in the school courtyard.mp4,57.029998779296875,63.54844665527344
+Gen-2/Students program in the computer lab.mp4,65.91000366210938,48.84966278076172
+Gen-2/Students savor delicious soups in the cafeteria.mp4,62.31999969482422,64.85273742675781
+Gen-2/Sunflowers stand tall in a field.mp4,58.83000183105469,71.32432556152344
+Gen-2/Sunlight is streaming through the leaves onto the grass.mp4,73.55000305175781,67.0329818725586
+Gen-2/Swallows soar in the air.mp4,63.560001373291016,69.34593200683594
+Gen-2/Teenage skateboarders perform tricks by the pond.mp4,58.869998931884766,73.47640991210938
+"Gen-2/The campus has colorful gardens, full of vitality.mp4",67.06999969482422,63.44818878173828
+Gen-2/The commander is strategizing in front of a map.mp4,58.72999954223633,53.39554977416992
+Gen-2/The crickets chirped merrily in the summer night.mp4,60.470001220703125,63.563507080078125
+Gen-2/The leaves of a purple-leaf plum tree turn deep purple.mp4,55.68000030517578,47.64080810546875
+Gen-2/The lion roars majestically on the grassland.mp4,72.83000183105469,69.43051147460938
+Gen-2/The parrot chirped in the treetops.mp4,70.41999816894531,46.99932861328125
+Gen-2/The roof of a farmhouse is covered in moss.mp4,70.08999633789062,71.36868286132812
+Gen-2/The rural stream serves as the water source for villagers.mp4,75.1500015258789,69.08357238769531
+Gen-2/The school auditorium is decorated with festive decorations.mp4,73.5999984741211,61.858436584472656
+Gen-2/The seahorse swayed slowly on the sea floor.mp4,63.72999954223633,70.09170532226562
+Gen-2/There are boats on the park lake.mp4,75.3499984741211,71.81243133544922
+Gen-2/There's a drum and guitar in the music classroom.mp4,73.88999938964844,71.26231384277344
+"Gen-2/Unique desert landscapes, with dunes sculpted by the wind.mp4",77.0199966430664,70.70409393310547
+Gen-2/Various fruit trees grow in the countryside.mp4,68.81999969482422,68.69329833984375
+Gen-2/Vendors at the market display fresh fruits and vegetables.mp4,58.70000076293945,62.791744232177734
+Gen-2/Visitors get information at the park's visitor center.mp4,60.7599983215332,62.46643829345703
+"Gen-2/Wandering through a forest path, surrounded by emerald greenery.mp4",65.37000274658203,69.99523162841797
+"Gen-2/Willow trees by the river, swaying gently in the calming breeze.mp4",73.5999984741211,69.19325256347656
+"Hotshot-XL/A baseball player swung the bat, preparing for a home run.mp4",37.349998474121094,39.1513557434082
+Hotshot-XL/A bowl of hot soup is especially delicious on a cold winter day.mp4,42.54999923706055,53.00735855102539
+Hotshot-XL/A bowl of ramen has delicious pork and seaweed.mp4,57.58000183105469,58.85458755493164
+Hotshot-XL/A bowl of rich French onion soup emanates an enticing aroma.mp4,47.150001525878906,57.211212158203125
+Hotshot-XL/A bowl of spicy Mexican chili is very delicious.mp4,65.3499984741211,68.03778839111328
+Hotshot-XL/A butterfly gracefully dances among the flowers.mp4,47.27000045776367,59.96645736694336
+Hotshot-XL/A cactus thrives in the harsh desert.mp4,54.13999938964844,52.806396484375
+"Hotshot-XL/A couple walks hand in hand on the beach, listening to the sound of the waves.mp4",47.16999816894531,49.39034652709961
+Hotshot-XL/A cup of hot chocolate is fragrant.mp4,60.16999816894531,52.70075607299805
+Hotshot-XL/A daffodil sways in the spring breeze.mp4,38.779998779296875,57.07038879394531
+Hotshot-XL/A designer creates fashionable clothing designs.mp4,60.36000061035156,50.39909362792969
+Hotshot-XL/A diver is exploring the underwater world under the coral reef.mp4,50.779998779296875,50.854835510253906
+Hotshot-XL/A doctor cares for patients in the hospital.mp4,32.5099983215332,55.42118835449219
+Hotshot-XL/A doctor is carefully examining a patient's body.mp4,45.65999984741211,68.66325378417969
+Hotshot-XL/A family goes to the movies on the weekend.mp4,40.75,43.55471420288086
+Hotshot-XL/A field of dandelions lines the side of a rural road.mp4,52.439998626708984,44.88538360595703
+Hotshot-XL/A golden field of wheat sways gently in the breeze.mp4,47.65999984741211,49.19773864746094
+Hotshot-XL/A group of villagers wash clothes by the stream.mp4,47.400001525878906,49.1727294921875
+Hotshot-XL/A hippo leisurely floats in the water.mp4,50.88999938964844,41.71296310424805
+Hotshot-XL/A kangaroo jumps across the Australian desert.mp4,47.5,49.09290313720703
+Hotshot-XL/A lotus leaf floats on a serene pond.mp4,57.15999984741211,42.93955993652344
+Hotshot-XL/A milkshake is garnished with fresh strawberries and cream.mp4,54.11000061035156,54.155914306640625
+Hotshot-XL/A painter showcases their art on an outdoor gallery.mp4,45.7599983215332,48.3623046875
+Hotshot-XL/A peony blooms with snow-white petals.mp4,55.5099983215332,51.20750045776367
+Hotshot-XL/A pet owner walks their dog in the park.mp4,63.619998931884766,53.344600677490234
+Hotshot-XL/A photographer captures the neon lights of the city.mp4,40.720001220703125,41.66706466674805
+Hotshot-XL/A piece of French bread is spread with butter.mp4,67.01000213623047,51.335838317871094
+Hotshot-XL/A piece of cheesecake is covered with blueberry sauce.mp4,65.41000366210938,54.82704162597656
+Hotshot-XL/A pizza is topped with Italian sausage and mushrooms.mp4,57.47999954223633,66.553466796875
+Hotshot-XL/A purple bellflower opens in the sunlight.mp4,45.970001220703125,55.92576217651367
+Hotshot-XL/A roasted cod fish is garnished with fresh herbs.mp4,62.099998474121094,60.633235931396484
+Hotshot-XL/A roasted salmon is presented on a plate.mp4,65.69999694824219,59.81605529785156
+Hotshot-XL/A salad is sprinkled with nuts and fruits.mp4,50.86000061035156,56.11909484863281
+Hotshot-XL/A sausage is grilled slightly crispy on the barbecue.mp4,65.36000061035156,59.51435089111328
+Hotshot-XL/A skier enjoys the thrill of skiing on a snowy mountain.mp4,49.220001220703125,58.305755615234375
+Hotshot-XL/A slice of French chocolate mousse cake brings sweet delight.mp4,47.5099983215332,48.85358810424805
+Hotshot-XL/A tennis player elegantly slid on the grass court.mp4,29.5,40.58336639404297
+Hotshot-XL/A tennis player made spectacular plays at the net.mp4,38.900001525878906,46.95750427246094
+Hotshot-XL/A thin pancake is spread with butter and maple syrup.mp4,49.15999984741211,49.65005111694336
+Hotshot-XL/A water skier created splashes on the lake.mp4,54.119998931884766,58.309242248535156
+"Hotshot-XL/A waterfall cascades gracefully, resembling a silver thread.mp4",49.31999969482422,52.629940032958984
+Hotshot-XL/A wheat field sways gracefully in the gentle breeze.mp4,62.16999816894531,53.7320556640625
+Hotshot-XL/A white orchid grows in a potted plant.mp4,58.83000183105469,71.72498321533203
+"Hotshot-XL/A writer sits at a desk, crafting a new novel.mp4",50.439998626708984,39.52401351928711
+Hotshot-XL/An adorable little cat is napping on the windowsill.mp4,65.44999694824219,62.42938995361328
+Hotshot-XL/An ancient church is a landmark in the village.mp4,44.15999984741211,45.99189376831055
+Hotshot-XL/An explorer searches for adventure in the forest.mp4,42.65999984741211,47.19612503051758
+Hotshot-XL/An orchid blooms with deep purple flowers.mp4,55.43000030517578,50.6505012512207
+"Hotshot-XL/Blue skies and fluffy clouds, ever-changing shapes like poetry.mp4",63.90999984741211,53.25307846069336
+Hotshot-XL/Cherry trees in the orchard are filled with red fruit.mp4,58.709999084472656,55.45852279663086
+Hotshot-XL/Children dig sandcastles on the beach.mp4,44.380001068115234,49.52513122558594
+Hotshot-XL/Crocodiles swim leisurely in the lake.mp4,60.58000183105469,44.04573440551758
+Hotshot-XL/Great white sharks swim majestically in the depths of the ocean.mp4,58.61000061035156,54.005794525146484
+"Hotshot-XL/In a rugby match, players vied for possession of the rugby ball.mp4",29.3799991607666,46.24494552612305
+"Hotshot-XL/In front of a farmhouse, there is a swing.mp4",57.2400016784668,52.17750930786133
+Hotshot-XL/Military aircraft are neatly lined up on the military base.mp4,47.33000183105469,49.01152801513672
+Hotshot-XL/Parents pick up students at the bus stop.mp4,37.52000045776367,43.256290435791016
+Hotshot-XL/People sunbathe on the lawn.mp4,50.810001373291016,50.32025146484375
+Hotshot-XL/People taking a leisurely walk admire the lake view.mp4,41.04999923706055,50.06169509887695
+"Hotshot-XL/Plateaus surrounding lakes, embraced by peaceful and harmonious mountains.mp4",48.5099983215332,55.417213439941406
+Hotshot-XL/Purple lavender grows in the field.mp4,59.18000030517578,44.770362854003906
+Hotshot-XL/Sharks dart through the water.mp4,59.0,56.74632263183594
+Hotshot-XL/Soldiers are setting up tents in the camp.mp4,51.91999816894531,46.8526725769043
+Hotshot-XL/Students and teachers discuss topics in the classroom.mp4,37.45000076293945,50.93452835083008
+Hotshot-XL/Students create exquisite artwork in art class.mp4,52.119998931884766,43.65641784667969
+Hotshot-XL/Students enjoy tasty sandwiches in the cafeteria.mp4,43.220001220703125,52.967769622802734
+"Hotshot-XL/Students enjoy their time on campus, full of youthful energy.mp4",34.099998474121094,45.202083587646484
+"Hotshot-XL/Students line up in the cafeteria, waiting for lunch.mp4",32.5099983215332,41.642677307128906
+Hotshot-XL/Students participate in celebration ceremonies in the school courtyard.mp4,43.869998931884766,45.73237609863281
+Hotshot-XL/Students program in the computer lab.mp4,34.02000045776367,44.47318649291992
+Hotshot-XL/Students savor delicious soups in the cafeteria.mp4,49.130001068115234,59.736778259277344
+Hotshot-XL/Sunflowers stand tall in a field.mp4,63.720001220703125,46.54875183105469
+Hotshot-XL/Sunlight is streaming through the leaves onto the grass.mp4,60.7400016784668,69.5612564086914
+Hotshot-XL/Swallows soar in the air.mp4,43.93000030517578,55.86011505126953
+Hotshot-XL/Teenage skateboarders perform tricks by the pond.mp4,34.099998474121094,47.26740264892578
+"Hotshot-XL/The campus has colorful gardens, full of vitality.mp4",37.93000030517578,47.08091735839844
+Hotshot-XL/The commander is strategizing in front of a map.mp4,55.59000015258789,46.85726547241211
+Hotshot-XL/The crickets chirped merrily in the summer night.mp4,52.2400016784668,50.15409851074219
+Hotshot-XL/The leaves of a purple-leaf plum tree turn deep purple.mp4,55.7400016784668,45.96284866333008
+Hotshot-XL/The lion roars majestically on the grassland.mp4,54.060001373291016,47.4548454284668
+Hotshot-XL/The parrot chirped in the treetops.mp4,49.27000045776367,53.2222900390625
+Hotshot-XL/The roof of a farmhouse is covered in moss.mp4,65.30999755859375,47.98826599121094
+Hotshot-XL/The rural stream serves as the water source for villagers.mp4,44.20000076293945,43.121971130371094
+Hotshot-XL/The school auditorium is decorated with festive decorations.mp4,48.83000183105469,51.77991485595703
+Hotshot-XL/The seahorse swayed slowly on the sea floor.mp4,52.040000915527344,47.889549255371094
+Hotshot-XL/There are boats on the park lake.mp4,61.90999984741211,46.95384216308594
+Hotshot-XL/There's a drum and guitar in the music classroom.mp4,45.81999969482422,41.92481231689453
+"Hotshot-XL/Unique desert landscapes, with dunes sculpted by the wind.mp4",60.380001068115234,59.15480041503906
+Hotshot-XL/Various fruit trees grow in the countryside.mp4,42.689998626708984,55.72032928466797
+Hotshot-XL/Vendors at the market display fresh fruits and vegetables.mp4,54.290000915527344,50.62776184082031
+Hotshot-XL/Visitors get information at the park's visitor center.mp4,49.90999984741211,47.915863037109375
+"Hotshot-XL/Wandering through a forest path, surrounded by emerald greenery.mp4",39.099998474121094,52.7902946472168
+"Hotshot-XL/Willow trees by the river, swaying gently in the calming breeze.mp4",41.31999969482422,46.52986145019531
+"Text2Video-Zero/A baseball player swung the bat, preparing for a home run.mp4",46.02000045776367,46.6595344543457
+Text2Video-Zero/A bowl of hot soup is especially delicious on a cold winter day.mp4,52.279998779296875,56.098751068115234
+Text2Video-Zero/A bowl of ramen has delicious pork and seaweed.mp4,55.7400016784668,53.476287841796875
+Text2Video-Zero/A bowl of rich French onion soup emanates an enticing aroma.mp4,60.650001525878906,51.897377014160156
+Text2Video-Zero/A bowl of spicy Mexican chili is very delicious.mp4,48.779998779296875,61.479286193847656
+Text2Video-Zero/A butterfly gracefully dances among the flowers.mp4,60.70000076293945,53.17202377319336
+Text2Video-Zero/A cactus thrives in the harsh desert.mp4,62.11000061035156,56.56714630126953
+"Text2Video-Zero/A couple walks hand in hand on the beach, listening to the sound of the waves.mp4",56.88999938964844,56.497039794921875
+Text2Video-Zero/A cup of hot chocolate is fragrant.mp4,55.95000076293945,52.297306060791016
+Text2Video-Zero/A daffodil sways in the spring breeze.mp4,52.310001373291016,51.47760772705078
+Text2Video-Zero/A designer creates fashionable clothing designs.mp4,45.86000061035156,55.941810607910156
+Text2Video-Zero/A diver is exploring the underwater world under the coral reef.mp4,49.29999923706055,55.40998840332031
+Text2Video-Zero/A doctor cares for patients in the hospital.mp4,39.650001525878906,47.89823913574219
+Text2Video-Zero/A doctor is carefully examining a patient's body.mp4,57.27000045776367,48.0579948425293
+Text2Video-Zero/A family goes to the movies on the weekend.mp4,47.470001220703125,44.637916564941406
+Text2Video-Zero/A field of dandelions lines the side of a rural road.mp4,47.5,55.98832702636719
+Text2Video-Zero/A golden field of wheat sways gently in the breeze.mp4,62.189998626708984,57.737762451171875
+Text2Video-Zero/A group of villagers wash clothes by the stream.mp4,60.869998931884766,57.357303619384766
+Text2Video-Zero/A hippo leisurely floats in the water.mp4,47.189998626708984,53.08256530761719
+Text2Video-Zero/A kangaroo jumps across the Australian desert.mp4,50.27000045776367,50.980010986328125
+Text2Video-Zero/A lotus leaf floats on a serene pond.mp4,62.27000045776367,52.51137161254883
+Text2Video-Zero/A milkshake is garnished with fresh strawberries and cream.mp4,53.849998474121094,53.570621490478516
+Text2Video-Zero/A painter showcases their art on an outdoor gallery.mp4,52.029998779296875,58.29408645629883
+Text2Video-Zero/A peony blooms with snow-white petals.mp4,61.70000076293945,56.3209342956543
+Text2Video-Zero/A pet owner walks their dog in the park.mp4,37.7599983215332,47.72112274169922
+Text2Video-Zero/A photographer captures the neon lights of the city.mp4,50.61000061035156,58.401222229003906
+Text2Video-Zero/A piece of French bread is spread with butter.mp4,52.63999938964844,46.310096740722656
+Text2Video-Zero/A piece of cheesecake is covered with blueberry sauce.mp4,44.11000061035156,46.62803268432617
+Text2Video-Zero/A pizza is topped with Italian sausage and mushrooms.mp4,58.93000030517578,59.001502990722656
+Text2Video-Zero/A purple bellflower opens in the sunlight.mp4,42.4900016784668,46.655540466308594
+Text2Video-Zero/A roasted cod fish is garnished with fresh herbs.mp4,57.43000030517578,51.4256706237793
+Text2Video-Zero/A roasted salmon is presented on a plate.mp4,58.900001525878906,54.49159622192383
+Text2Video-Zero/A salad is sprinkled with nuts and fruits.mp4,62.099998474121094,57.118431091308594
+Text2Video-Zero/A sausage is grilled slightly crispy on the barbecue.mp4,57.04999923706055,54.03379821777344
+Text2Video-Zero/A skier enjoys the thrill of skiing on a snowy mountain.mp4,58.869998931884766,51.99134063720703
+Text2Video-Zero/A slice of French chocolate mousse cake brings sweet delight.mp4,63.63999938964844,50.726524353027344
+Text2Video-Zero/A tennis player elegantly slid on the grass court.mp4,39.95000076293945,45.9228630065918
+Text2Video-Zero/A tennis player made spectacular plays at the net.mp4,46.29999923706055,49.185829162597656
+Text2Video-Zero/A thin pancake is spread with butter and maple syrup.mp4,47.310001373291016,55.299583435058594
+Text2Video-Zero/A water skier created splashes on the lake.mp4,45.59000015258789,47.16801834106445
+"Text2Video-Zero/A waterfall cascades gracefully, resembling a silver thread.mp4",57.369998931884766,60.52263641357422
+Text2Video-Zero/A wheat field sways gracefully in the gentle breeze.mp4,58.63999938964844,60.907230377197266
+Text2Video-Zero/A white orchid grows in a potted plant.mp4,39.0,46.25846481323242
+"Text2Video-Zero/A writer sits at a desk, crafting a new novel.mp4",44.029998779296875,55.593910217285156
+Text2Video-Zero/An adorable little cat is napping on the windowsill.mp4,62.25,49.70407485961914
+Text2Video-Zero/An ancient church is a landmark in the village.mp4,59.29999923706055,55.10139465332031
+Text2Video-Zero/An explorer searches for adventure in the forest.mp4,58.459999084472656,52.196800231933594
+Text2Video-Zero/An orchid blooms with deep purple flowers.mp4,50.880001068115234,52.222354888916016
+"Text2Video-Zero/Blue skies and fluffy clouds, ever-changing shapes like poetry.mp4",54.150001525878906,53.57637023925781
+Text2Video-Zero/Cherry trees in the orchard are filled with red fruit.mp4,54.13999938964844,50.38459014892578
+Text2Video-Zero/Children dig sandcastles on the beach.mp4,54.310001373291016,57.97951889038086
+Text2Video-Zero/Crocodiles swim leisurely in the lake.mp4,45.380001068115234,51.75559997558594
+Text2Video-Zero/Great white sharks swim majestically in the depths of the ocean.mp4,46.900001525878906,50.62177276611328
+"Text2Video-Zero/In a rugby match, players vied for possession of the rugby ball.mp4",60.45000076293945,53.338844299316406
+"Text2Video-Zero/In front of a farmhouse, there is a swing.mp4",53.5099983215332,51.94841003417969
+Text2Video-Zero/Military aircraft are neatly lined up on the military base.mp4,38.880001068115234,52.45051956176758
+Text2Video-Zero/Parents pick up students at the bus stop.mp4,37.619998931884766,48.4907112121582
+Text2Video-Zero/People sunbathe on the lawn.mp4,60.20000076293945,50.80999755859375
+Text2Video-Zero/People taking a leisurely walk admire the lake view.mp4,49.0099983215332,48.258079528808594
+"Text2Video-Zero/Plateaus surrounding lakes, embraced by peaceful and harmonious mountains.mp4",61.709999084472656,56.42342758178711
+Text2Video-Zero/Purple lavender grows in the field.mp4,47.4900016784668,48.77001953125
+Text2Video-Zero/Sharks dart through the water.mp4,51.9900016784668,51.68819808959961
+Text2Video-Zero/Soldiers are setting up tents in the camp.mp4,43.81999969482422,56.14750671386719
+Text2Video-Zero/Students and teachers discuss topics in the classroom.mp4,42.369998931884766,48.107666015625
+Text2Video-Zero/Students create exquisite artwork in art class.mp4,57.119998931884766,51.06246566772461
+Text2Video-Zero/Students enjoy tasty sandwiches in the cafeteria.mp4,45.790000915527344,56.45152282714844
+"Text2Video-Zero/Students enjoy their time on campus, full of youthful energy.mp4",50.939998626708984,44.30765914916992
+"Text2Video-Zero/Students line up in the cafeteria, waiting for lunch.mp4",47.45000076293945,42.71721649169922
+Text2Video-Zero/Students participate in celebration ceremonies in the school courtyard.mp4,52.459999084472656,48.30113983154297
+Text2Video-Zero/Students program in the computer lab.mp4,45.18000030517578,53.15974044799805
+Text2Video-Zero/Students savor delicious soups in the cafeteria.mp4,52.310001373291016,56.443519592285156
+Text2Video-Zero/Sunflowers stand tall in a field.mp4,57.25,52.020137786865234
+Text2Video-Zero/Sunlight is streaming through the leaves onto the grass.mp4,65.2300033569336,63.691505432128906
+Text2Video-Zero/Swallows soar in the air.mp4,36.77000045776367,44.25843811035156
+Text2Video-Zero/Teenage skateboarders perform tricks by the pond.mp4,42.4900016784668,45.28954315185547
+"Text2Video-Zero/The campus has colorful gardens, full of vitality.mp4",57.34000015258789,57.24694061279297
+Text2Video-Zero/The commander is strategizing in front of a map.mp4,50.7599983215332,59.401371002197266
+Text2Video-Zero/The crickets chirped merrily in the summer night.mp4,47.380001068115234,55.65085220336914
+Text2Video-Zero/The leaves of a purple-leaf plum tree turn deep purple.mp4,48.75,49.870697021484375
+Text2Video-Zero/The lion roars majestically on the grassland.mp4,45.029998779296875,58.28538131713867
+Text2Video-Zero/The parrot chirped in the treetops.mp4,48.5,50.36031723022461
+Text2Video-Zero/The roof of a farmhouse is covered in moss.mp4,47.36000061035156,55.100860595703125
+Text2Video-Zero/The rural stream serves as the water source for villagers.mp4,57.279998779296875,59.43128204345703
+Text2Video-Zero/The school auditorium is decorated with festive decorations.mp4,43.79999923706055,42.9979362487793
+Text2Video-Zero/The seahorse swayed slowly on the sea floor.mp4,58.83000183105469,54.369110107421875
+Text2Video-Zero/There are boats on the park lake.mp4,45.88999938964844,59.97524642944336
+Text2Video-Zero/There's a drum and guitar in the music classroom.mp4,47.38999938964844,49.545963287353516
+"Text2Video-Zero/Unique desert landscapes, with dunes sculpted by the wind.mp4",54.0099983215332,54.07017517089844
+Text2Video-Zero/Various fruit trees grow in the countryside.mp4,48.869998931884766,55.211265563964844
+Text2Video-Zero/Vendors at the market display fresh fruits and vegetables.mp4,55.720001220703125,49.446632385253906
+Text2Video-Zero/Visitors get information at the park's visitor center.mp4,60.02000045776367,52.527889251708984
+"Text2Video-Zero/Wandering through a forest path, surrounded by emerald greenery.mp4",60.310001373291016,61.0302848815918
+"Text2Video-Zero/Willow trees by the river, swaying gently in the calming breeze.mp4",45.7599983215332,51.573036193847656
+"Tune-A-Video/A baseball player swung the bat, preparing for a home run.mp4",32.2400016784668,30.84071922302246
+Tune-A-Video/A bowl of hot soup is especially delicious on a cold winter day.mp4,52.400001525878906,52.49246597290039
+Tune-A-Video/A bowl of ramen has delicious pork and seaweed.mp4,44.4900016784668,51.50236129760742
+Tune-A-Video/A bowl of rich French onion soup emanates an enticing aroma.mp4,54.119998931884766,51.622493743896484
+Tune-A-Video/A bowl of spicy Mexican chili is very delicious.mp4,52.470001220703125,53.963619232177734
+Tune-A-Video/A butterfly gracefully dances among the flowers.mp4,44.279998779296875,42.377498626708984
+Tune-A-Video/A cactus thrives in the harsh desert.mp4,49.459999084472656,44.94489288330078
+"Tune-A-Video/A couple walks hand in hand on the beach, listening to the sound of the waves.mp4",42.79999923706055,42.071502685546875
+Tune-A-Video/A cup of hot chocolate is fragrant.mp4,53.779998779296875,48.5921745300293
+Tune-A-Video/A daffodil sways in the spring breeze.mp4,34.400001525878906,44.195377349853516
+Tune-A-Video/A designer creates fashionable clothing designs.mp4,35.77000045776367,34.88032531738281
+Tune-A-Video/A diver is exploring the underwater world under the coral reef.mp4,50.959999084472656,46.382606506347656
+Tune-A-Video/A doctor cares for patients in the hospital.mp4,42.630001068115234,39.31924057006836
+Tune-A-Video/A doctor is carefully examining a patient's body.mp4,53.849998474121094,50.70023727416992
+Tune-A-Video/A family goes to the movies on the weekend.mp4,33.90999984741211,43.34955596923828
+Tune-A-Video/A field of dandelions lines the side of a rural road.mp4,19.34000015258789,37.77182388305664
+Tune-A-Video/A golden field of wheat sways gently in the breeze.mp4,31.18000030517578,43.218631744384766
+Tune-A-Video/A group of villagers wash clothes by the stream.mp4,35.84000015258789,30.459941864013672
+Tune-A-Video/A hippo leisurely floats in the water.mp4,57.369998931884766,45.42708206176758
+Tune-A-Video/A kangaroo jumps across the Australian desert.mp4,46.11000061035156,44.454566955566406
+Tune-A-Video/A lotus leaf floats on a serene pond.mp4,44.0,39.33417510986328
+Tune-A-Video/A milkshake is garnished with fresh strawberries and cream.mp4,56.970001220703125,54.05287551879883
+Tune-A-Video/A painter showcases their art on an outdoor gallery.mp4,50.45000076293945,41.63142776489258
+Tune-A-Video/A peony blooms with snow-white petals.mp4,58.90999984741211,50.721988677978516
+Tune-A-Video/A pet owner walks their dog in the park.mp4,52.66999816894531,35.11085510253906
+Tune-A-Video/A photographer captures the neon lights of the city.mp4,26.329999923706055,36.026668548583984
+Tune-A-Video/A piece of French bread is spread with butter.mp4,55.34000015258789,54.22353744506836
+Tune-A-Video/A piece of cheesecake is covered with blueberry sauce.mp4,55.52000045776367,46.45220947265625
+Tune-A-Video/A pizza is topped with Italian sausage and mushrooms.mp4,47.59000015258789,55.91208267211914
+Tune-A-Video/A purple bellflower opens in the sunlight.mp4,53.77000045776367,42.201358795166016
+Tune-A-Video/A roasted cod fish is garnished with fresh herbs.mp4,61.9900016784668,55.65233612060547
+Tune-A-Video/A roasted salmon is presented on a plate.mp4,62.439998626708984,56.55246353149414
+Tune-A-Video/A salad is sprinkled with nuts and fruits.mp4,54.060001373291016,57.61231994628906
+Tune-A-Video/A sausage is grilled slightly crispy on the barbecue.mp4,50.86000061035156,48.694557189941406
+Tune-A-Video/A skier enjoys the thrill of skiing on a snowy mountain.mp4,62.380001068115234,41.52611541748047
+Tune-A-Video/A slice of French chocolate mousse cake brings sweet delight.mp4,57.439998626708984,42.3182258605957
+Tune-A-Video/A tennis player elegantly slid on the grass court.mp4,37.33000183105469,44.09259033203125
+Tune-A-Video/A tennis player made spectacular plays at the net.mp4,40.959999084472656,42.46382141113281
+Tune-A-Video/A thin pancake is spread with butter and maple syrup.mp4,56.869998931884766,50.8724250793457
+Tune-A-Video/A water skier created splashes on the lake.mp4,51.95000076293945,39.67720413208008
+"Tune-A-Video/A waterfall cascades gracefully, resembling a silver thread.mp4",19.549999237060547,48.98939895629883
+Tune-A-Video/A wheat field sways gracefully in the gentle breeze.mp4,52.36000061035156,43.269493103027344
+Tune-A-Video/A white orchid grows in a potted plant.mp4,45.58000183105469,50.301605224609375
+"Tune-A-Video/A writer sits at a desk, crafting a new novel.mp4",37.630001068115234,55.452857971191406
+Tune-A-Video/An adorable little cat is napping on the windowsill.mp4,42.380001068115234,44.991878509521484
+Tune-A-Video/An ancient church is a landmark in the village.mp4,49.20000076293945,38.14409637451172
+Tune-A-Video/An explorer searches for adventure in the forest.mp4,36.09000015258789,32.930641174316406
+Tune-A-Video/An orchid blooms with deep purple flowers.mp4,45.61000061035156,40.07832336425781
+"Tune-A-Video/Blue skies and fluffy clouds, ever-changing shapes like poetry.mp4",31.06999969482422,30.878631591796875
+Tune-A-Video/Cherry trees in the orchard are filled with red fruit.mp4,44.0,45.30752182006836
+Tune-A-Video/Children dig sandcastles on the beach.mp4,34.310001373291016,36.50400161743164
+Tune-A-Video/Crocodiles swim leisurely in the lake.mp4,42.7400016784668,39.373870849609375
+Tune-A-Video/Great white sharks swim majestically in the depths of the ocean.mp4,41.52000045776367,46.390380859375
+"Tune-A-Video/In a rugby match, players vied for possession of the rugby ball.mp4",39.290000915527344,36.877174377441406
+"Tune-A-Video/In front of a farmhouse, there is a swing.mp4",38.9900016784668,43.13678741455078
+Tune-A-Video/Military aircraft are neatly lined up on the military base.mp4,37.529998779296875,44.181373596191406
+Tune-A-Video/Parents pick up students at the bus stop.mp4,32.810001373291016,30.693769454956055
+Tune-A-Video/People sunbathe on the lawn.mp4,22.670000076293945,45.24776840209961
+Tune-A-Video/People taking a leisurely walk admire the lake view.mp4,55.29999923706055,45.504276275634766
+"Tune-A-Video/Plateaus surrounding lakes, embraced by peaceful and harmonious mountains.mp4",55.79999923706055,48.37087631225586
+Tune-A-Video/Purple lavender grows in the field.mp4,45.400001525878906,47.090816497802734
+Tune-A-Video/Sharks dart through the water.mp4,40.43000030517578,42.364036560058594
+Tune-A-Video/Soldiers are setting up tents in the camp.mp4,61.83000183105469,42.897987365722656
+Tune-A-Video/Students and teachers discuss topics in the classroom.mp4,60.290000915527344,43.59313201904297
+Tune-A-Video/Students create exquisite artwork in art class.mp4,37.0099983215332,41.4515380859375
+Tune-A-Video/Students enjoy tasty sandwiches in the cafeteria.mp4,41.38999938964844,46.18207931518555
+"Tune-A-Video/Students enjoy their time on campus, full of youthful energy.mp4",32.52000045776367,39.239540100097656
+"Tune-A-Video/Students line up in the cafeteria, waiting for lunch.mp4",41.02000045776367,43.168540954589844
+Tune-A-Video/Students participate in celebration ceremonies in the school courtyard.mp4,41.29999923706055,37.882293701171875
+Tune-A-Video/Students program in the computer lab.mp4,29.0,38.36993408203125
+Tune-A-Video/Students savor delicious soups in the cafeteria.mp4,42.4900016784668,50.28534698486328
+Tune-A-Video/Sunflowers stand tall in a field.mp4,58.68000030517578,48.43085479736328
+Tune-A-Video/Sunlight is streaming through the leaves onto the grass.mp4,30.829999923706055,36.82087707519531
+Tune-A-Video/Swallows soar in the air.mp4,44.060001373291016,53.301090240478516
+Tune-A-Video/Teenage skateboarders perform tricks by the pond.mp4,44.06999969482422,44.11412048339844
+"Tune-A-Video/The campus has colorful gardens, full of vitality.mp4",24.639999389648438,35.16276550292969
+Tune-A-Video/The commander is strategizing in front of a map.mp4,37.16999816894531,39.632076263427734
+Tune-A-Video/The crickets chirped merrily in the summer night.mp4,32.5099983215332,33.953285217285156
+Tune-A-Video/The leaves of a purple-leaf plum tree turn deep purple.mp4,42.79999923706055,40.876468658447266
+Tune-A-Video/The lion roars majestically on the grassland.mp4,44.06999969482422,46.71037292480469
+Tune-A-Video/The parrot chirped in the treetops.mp4,34.029998779296875,41.67707061767578
+Tune-A-Video/The roof of a farmhouse is covered in moss.mp4,49.189998626708984,36.79726791381836
+Tune-A-Video/The rural stream serves as the water source for villagers.mp4,50.540000915527344,39.83528518676758
+Tune-A-Video/The school auditorium is decorated with festive decorations.mp4,44.529998779296875,43.88296890258789
+Tune-A-Video/The seahorse swayed slowly on the sea floor.mp4,50.72999954223633,41.61744689941406
+Tune-A-Video/There are boats on the park lake.mp4,45.689998626708984,49.01885986328125
+Tune-A-Video/There's a drum and guitar in the music classroom.mp4,32.59000015258789,34.65818786621094
+"Tune-A-Video/Unique desert landscapes, with dunes sculpted by the wind.mp4",50.709999084472656,47.54576873779297
+Tune-A-Video/Various fruit trees grow in the countryside.mp4,33.97999954223633,40.19590377807617
+Tune-A-Video/Vendors at the market display fresh fruits and vegetables.mp4,50.75,40.10444259643555
+Tune-A-Video/Visitors get information at the park's visitor center.mp4,32.58000183105469,36.04754638671875
+"Tune-A-Video/Wandering through a forest path, surrounded by emerald greenery.mp4",29.389999389648438,34.76909255981445
+"Tune-A-Video/Willow trees by the river, swaying gently in the calming breeze.mp4",37.56999969482422,46.34383773803711
+"VideoCrafter/A baseball player swung the bat, preparing for a home run.mp4",42.369998931884766,43.42512512207031
+VideoCrafter/A bowl of hot soup is especially delicious on a cold winter day.mp4,51.810001373291016,42.84452819824219
+VideoCrafter/A bowl of ramen has delicious pork and seaweed.mp4,50.650001525878906,58.0980224609375
+VideoCrafter/A bowl of rich French onion soup emanates an enticing aroma.mp4,37.56999969482422,48.96236801147461
+VideoCrafter/A bowl of spicy Mexican chili is very delicious.mp4,45.869998931884766,48.642425537109375
+VideoCrafter/A butterfly gracefully dances among the flowers.mp4,57.2400016784668,43.56547164916992
+VideoCrafter/A cactus thrives in the harsh desert.mp4,49.22999954223633,49.917396545410156
+"VideoCrafter/A couple walks hand in hand on the beach, listening to the sound of the waves.mp4",43.939998626708984,41.82221984863281
+VideoCrafter/A cup of hot chocolate is fragrant.mp4,44.36000061035156,46.74824523925781
+VideoCrafter/A daffodil sways in the spring breeze.mp4,45.959999084472656,45.9589729309082
+VideoCrafter/A designer creates fashionable clothing designs.mp4,48.93000030517578,40.896060943603516
+VideoCrafter/A diver is exploring the underwater world under the coral reef.mp4,43.97999954223633,48.0937614440918
+VideoCrafter/A doctor cares for patients in the hospital.mp4,47.86000061035156,45.679927825927734
+VideoCrafter/A doctor is carefully examining a patient's body.mp4,37.720001220703125,44.674312591552734
+VideoCrafter/A family goes to the movies on the weekend.mp4,24.100000381469727,39.33188247680664
+VideoCrafter/A field of dandelions lines the side of a rural road.mp4,53.79999923706055,46.06305694580078
+VideoCrafter/A golden field of wheat sways gently in the breeze.mp4,37.97999954223633,54.43069076538086
+VideoCrafter/A group of villagers wash clothes by the stream.mp4,44.52000045776367,38.33439254760742
+VideoCrafter/A hippo leisurely floats in the water.mp4,34.04999923706055,41.59292984008789
+VideoCrafter/A kangaroo jumps across the Australian desert.mp4,32.459999084472656,44.20661926269531
+VideoCrafter/A lotus leaf floats on a serene pond.mp4,50.88999938964844,56.38039779663086
+VideoCrafter/A milkshake is garnished with fresh strawberries and cream.mp4,42.7599983215332,46.18782043457031
+VideoCrafter/A painter showcases their art on an outdoor gallery.mp4,47.4900016784668,40.78609848022461
+VideoCrafter/A peony blooms with snow-white petals.mp4,52.66999816894531,51.20563888549805
+VideoCrafter/A pet owner walks their dog in the park.mp4,42.77000045776367,43.34003448486328
+VideoCrafter/A photographer captures the neon lights of the city.mp4,42.83000183105469,49.33121871948242
+VideoCrafter/A piece of French bread is spread with butter.mp4,49.310001373291016,46.672122955322266
+VideoCrafter/A piece of cheesecake is covered with blueberry sauce.mp4,57.439998626708984,50.60186767578125
+VideoCrafter/A pizza is topped with Italian sausage and mushrooms.mp4,42.38999938964844,43.9648323059082
+VideoCrafter/A purple bellflower opens in the sunlight.mp4,47.790000915527344,35.63568878173828
+VideoCrafter/A roasted cod fish is garnished with fresh herbs.mp4,48.720001220703125,50.17008972167969
+VideoCrafter/A roasted salmon is presented on a plate.mp4,55.7400016784668,51.21450424194336
+VideoCrafter/A salad is sprinkled with nuts and fruits.mp4,56.88999938964844,66.70989990234375
+VideoCrafter/A sausage is grilled slightly crispy on the barbecue.mp4,50.70000076293945,47.53926467895508
+VideoCrafter/A skier enjoys the thrill of skiing on a snowy mountain.mp4,62.08000183105469,40.75369644165039
+VideoCrafter/A slice of French chocolate mousse cake brings sweet delight.mp4,41.77000045776367,40.59870910644531
+VideoCrafter/A tennis player elegantly slid on the grass court.mp4,37.91999816894531,42.50367736816406
+VideoCrafter/A tennis player made spectacular plays at the net.mp4,37.400001525878906,38.325172424316406
+VideoCrafter/A thin pancake is spread with butter and maple syrup.mp4,45.7599983215332,43.526649475097656
+VideoCrafter/A water skier created splashes on the lake.mp4,50.54999923706055,41.11585235595703
+"VideoCrafter/A waterfall cascades gracefully, resembling a silver thread.mp4",60.11000061035156,45.82769012451172
+VideoCrafter/A wheat field sways gracefully in the gentle breeze.mp4,43.65999984741211,56.65800476074219
+VideoCrafter/A white orchid grows in a potted plant.mp4,44.29999923706055,48.918148040771484
+"VideoCrafter/A writer sits at a desk, crafting a new novel.mp4",41.02000045776367,35.999114990234375
+VideoCrafter/An adorable little cat is napping on the windowsill.mp4,37.0,41.39482116699219
+VideoCrafter/An ancient church is a landmark in the village.mp4,37.77000045776367,44.897315979003906
+VideoCrafter/An explorer searches for adventure in the forest.mp4,37.68000030517578,48.0970344543457
+VideoCrafter/An orchid blooms with deep purple flowers.mp4,48.90999984741211,45.556129455566406
+"VideoCrafter/Blue skies and fluffy clouds, ever-changing shapes like poetry.mp4",64.37999725341797,44.38638687133789
+VideoCrafter/Cherry trees in the orchard are filled with red fruit.mp4,42.38999938964844,40.80149841308594
+VideoCrafter/Children dig sandcastles on the beach.mp4,49.02000045776367,45.96736145019531
+VideoCrafter/Crocodiles swim leisurely in the lake.mp4,34.130001068115234,43.18285369873047
+VideoCrafter/Great white sharks swim majestically in the depths of the ocean.mp4,30.770000457763672,45.086265563964844
+"VideoCrafter/In a rugby match, players vied for possession of the rugby ball.mp4",35.54999923706055,38.11077117919922
+"VideoCrafter/In front of a farmhouse, there is a swing.mp4",44.36000061035156,36.20042037963867
+VideoCrafter/Military aircraft are neatly lined up on the military base.mp4,40.61000061035156,37.72679138183594
+VideoCrafter/Parents pick up students at the bus stop.mp4,50.869998931884766,37.991432189941406
+VideoCrafter/People sunbathe on the lawn.mp4,39.310001373291016,42.23023223876953
+VideoCrafter/People taking a leisurely walk admire the lake view.mp4,47.38999938964844,42.14907455444336
+"VideoCrafter/Plateaus surrounding lakes, embraced by peaceful and harmonious mountains.mp4",44.279998779296875,61.61744689941406
+VideoCrafter/Purple lavender grows in the field.mp4,57.16999816894531,35.8157958984375
+VideoCrafter/Sharks dart through the water.mp4,44.310001373291016,43.22889709472656
+VideoCrafter/Soldiers are setting up tents in the camp.mp4,45.91999816894531,45.39204788208008
+VideoCrafter/Students and teachers discuss topics in the classroom.mp4,33.959999084472656,42.778656005859375
+VideoCrafter/Students create exquisite artwork in art class.mp4,46.040000915527344,44.68678665161133
+VideoCrafter/Students enjoy tasty sandwiches in the cafeteria.mp4,42.380001068115234,40.58561706542969
+"VideoCrafter/Students enjoy their time on campus, full of youthful energy.mp4",29.260000228881836,47.14750289916992
+"VideoCrafter/Students line up in the cafeteria, waiting for lunch.mp4",31.469999313354492,40.167205810546875
+VideoCrafter/Students participate in celebration ceremonies in the school courtyard.mp4,34.31999969482422,38.51676940917969
+VideoCrafter/Students program in the computer lab.mp4,32.279998779296875,40.342769622802734
+VideoCrafter/Students savor delicious soups in the cafeteria.mp4,34.04999923706055,39.617610931396484
+VideoCrafter/Sunflowers stand tall in a field.mp4,53.20000076293945,64.13275146484375
+VideoCrafter/Sunlight is streaming through the leaves onto the grass.mp4,48.470001220703125,52.45936584472656
+VideoCrafter/Swallows soar in the air.mp4,52.29999923706055,47.26374435424805
+VideoCrafter/Teenage skateboarders perform tricks by the pond.mp4,31.139999389648438,42.07710266113281
+"VideoCrafter/The campus has colorful gardens, full of vitality.mp4",38.189998626708984,51.79788589477539
+VideoCrafter/The commander is strategizing in front of a map.mp4,44.310001373291016,36.31795120239258
+VideoCrafter/The crickets chirped merrily in the summer night.mp4,57.189998626708984,45.11954879760742
+VideoCrafter/The leaves of a purple-leaf plum tree turn deep purple.mp4,50.81999969482422,46.958290100097656
+VideoCrafter/The lion roars majestically on the grassland.mp4,48.709999084472656,47.96272277832031
+VideoCrafter/The parrot chirped in the treetops.mp4,42.5099983215332,41.12324142456055
+VideoCrafter/The roof of a farmhouse is covered in moss.mp4,41.16999816894531,49.12799072265625
+VideoCrafter/The rural stream serves as the water source for villagers.mp4,40.77000045776367,62.32386016845703
+VideoCrafter/The school auditorium is decorated with festive decorations.mp4,30.93000030517578,43.05970001220703
+VideoCrafter/The seahorse swayed slowly on the sea floor.mp4,43.95000076293945,53.63678741455078
+VideoCrafter/There are boats on the park lake.mp4,37.779998779296875,60.64342498779297
+VideoCrafter/There's a drum and guitar in the music classroom.mp4,37.709999084472656,42.78661346435547
+"VideoCrafter/Unique desert landscapes, with dunes sculpted by the wind.mp4",44.310001373291016,47.946380615234375
+VideoCrafter/Various fruit trees grow in the countryside.mp4,35.970001220703125,45.10973358154297
+VideoCrafter/Vendors at the market display fresh fruits and vegetables.mp4,61.9900016784668,52.57147216796875
+VideoCrafter/Visitors get information at the park's visitor center.mp4,31.049999237060547,42.173988342285156
+"VideoCrafter/Wandering through a forest path, surrounded by emerald greenery.mp4",56.15999984741211,49.62861633300781
+"VideoCrafter/Willow trees by the river, swaying gently in the calming breeze.mp4",54.15999984741211,49.96052169799805
+"video_fusion/A baseball player swung the bat, preparing for a home run.mp4",44.25,47.34596252441406
+video_fusion/A bowl of hot soup is especially delicious on a cold winter day.mp4,54.08000183105469,54.06230926513672
+video_fusion/A bowl of ramen has delicious pork and seaweed.mp4,57.29999923706055,47.538516998291016
+video_fusion/A bowl of rich French onion soup emanates an enticing aroma.mp4,48.970001220703125,51.745792388916016
+video_fusion/A bowl of spicy Mexican chili is very delicious.mp4,55.529998779296875,47.84568405151367
+video_fusion/A butterfly gracefully dances among the flowers.mp4,52.619998931884766,48.836891174316406
+video_fusion/A cactus thrives in the harsh desert.mp4,63.91999816894531,54.21533203125
+"video_fusion/A couple walks hand in hand on the beach, listening to the sound of the waves.mp4",54.7400016784668,48.52012634277344
+video_fusion/A cup of hot chocolate is fragrant.mp4,47.45000076293945,44.72004699707031
+video_fusion/A daffodil sways in the spring breeze.mp4,61.720001220703125,47.06082534790039
+video_fusion/A designer creates fashionable clothing designs.mp4,47.40999984741211,45.72502517700195
+video_fusion/A diver is exploring the underwater world under the coral reef.mp4,60.189998626708984,54.38143539428711
+video_fusion/A doctor cares for patients in the hospital.mp4,66.70999908447266,44.84880065917969
+video_fusion/A doctor is carefully examining a patient's body.mp4,50.63999938964844,50.137149810791016
+video_fusion/A family goes to the movies on the weekend.mp4,39.52000045776367,45.33202362060547
+video_fusion/A field of dandelions lines the side of a rural road.mp4,44.27000045776367,47.45378112792969
+video_fusion/A golden field of wheat sways gently in the breeze.mp4,49.29999923706055,48.68654251098633
+video_fusion/A group of villagers wash clothes by the stream.mp4,48.529998779296875,40.49799346923828
+video_fusion/A hippo leisurely floats in the water.mp4,60.31999969482422,50.96278381347656
+video_fusion/A kangaroo jumps across the Australian desert.mp4,47.77000045776367,45.03810119628906
+video_fusion/A lotus leaf floats on a serene pond.mp4,54.099998474121094,47.57219314575195
+video_fusion/A milkshake is garnished with fresh strawberries and cream.mp4,50.630001068115234,43.95705795288086
+video_fusion/A painter showcases their art on an outdoor gallery.mp4,45.88999938964844,50.69960021972656
+video_fusion/A peony blooms with snow-white petals.mp4,44.310001373291016,44.4695930480957
+video_fusion/A pet owner walks their dog in the park.mp4,54.65999984741211,44.67734146118164
+video_fusion/A photographer captures the neon lights of the city.mp4,25.549999237060547,42.94163131713867
+video_fusion/A piece of French bread is spread with butter.mp4,67.54000091552734,65.5240478515625
+video_fusion/A piece of cheesecake is covered with blueberry sauce.mp4,58.34000015258789,49.61240005493164
+video_fusion/A pizza is topped with Italian sausage and mushrooms.mp4,61.970001220703125,53.011871337890625
+video_fusion/A purple bellflower opens in the sunlight.mp4,56.88999938964844,43.103336334228516
+video_fusion/A roasted cod fish is garnished with fresh herbs.mp4,47.77000045776367,43.157997131347656
+video_fusion/A roasted salmon is presented on a plate.mp4,68.83000183105469,46.24195861816406
+video_fusion/A salad is sprinkled with nuts and fruits.mp4,65.33000183105469,57.72883987426758
+video_fusion/A sausage is grilled slightly crispy on the barbecue.mp4,58.83000183105469,48.38127517700195
+video_fusion/A skier enjoys the thrill of skiing on a snowy mountain.mp4,55.79999923706055,59.87577438354492
+video_fusion/A slice of French chocolate mousse cake brings sweet delight.mp4,70.20999908447266,54.38698959350586
+video_fusion/A tennis player elegantly slid on the grass court.mp4,45.5,42.997947692871094
+video_fusion/A tennis player made spectacular plays at the net.mp4,42.52000045776367,47.58050537109375
+video_fusion/A thin pancake is spread with butter and maple syrup.mp4,53.83000183105469,69.77464294433594
+video_fusion/A water skier created splashes on the lake.mp4,47.22999954223633,45.49722671508789
+"video_fusion/A waterfall cascades gracefully, resembling a silver thread.mp4",39.400001525878906,50.47380447387695
+video_fusion/A wheat field sways gracefully in the gentle breeze.mp4,37.959999084472656,44.78129196166992
+video_fusion/A white orchid grows in a potted plant.mp4,52.380001068115234,52.247642517089844
+"video_fusion/A writer sits at a desk, crafting a new novel.mp4",35.97999954223633,44.72803497314453
+video_fusion/An adorable little cat is napping on the windowsill.mp4,52.56999969482422,58.290428161621094
+video_fusion/An ancient church is a landmark in the village.mp4,57.54999923706055,48.18488311767578
+video_fusion/An explorer searches for adventure in the forest.mp4,50.86000061035156,44.064117431640625
+video_fusion/An orchid blooms with deep purple flowers.mp4,52.58000183105469,43.742698669433594
+"video_fusion/Blue skies and fluffy clouds, ever-changing shapes like poetry.mp4",55.38999938964844,45.08988952636719
+video_fusion/Cherry trees in the orchard are filled with red fruit.mp4,44.29999923706055,48.815643310546875
+video_fusion/Children dig sandcastles on the beach.mp4,55.59000015258789,47.908870697021484
+video_fusion/Crocodiles swim leisurely in the lake.mp4,65.30999755859375,45.14755630493164
+video_fusion/Great white sharks swim majestically in the depths of the ocean.mp4,48.040000915527344,41.24256896972656
+"video_fusion/In a rugby match, players vied for possession of the rugby ball.mp4",49.15999984741211,43.986698150634766
+"video_fusion/In front of a farmhouse, there is a swing.mp4",60.290000915527344,47.191864013671875
+video_fusion/Military aircraft are neatly lined up on the military base.mp4,48.75,52.669742584228516
+video_fusion/Parents pick up students at the bus stop.mp4,47.18000030517578,41.669273376464844
+video_fusion/People sunbathe on the lawn.mp4,39.290000915527344,40.32404708862305
+video_fusion/People taking a leisurely walk admire the lake view.mp4,47.439998626708984,45.45733642578125
+"video_fusion/Plateaus surrounding lakes, embraced by peaceful and harmonious mountains.mp4",45.68000030517578,49.424072265625
+video_fusion/Purple lavender grows in the field.mp4,52.529998779296875,46.825050354003906
+video_fusion/Sharks dart through the water.mp4,39.2400016784668,42.14767074584961
+video_fusion/Soldiers are setting up tents in the camp.mp4,47.290000915527344,44.22052764892578
+video_fusion/Students and teachers discuss topics in the classroom.mp4,39.36000061035156,47.612247467041016
+video_fusion/Students create exquisite artwork in art class.mp4,40.65999984741211,50.714508056640625
+video_fusion/Students enjoy tasty sandwiches in the cafeteria.mp4,37.709999084472656,55.53496170043945
+"video_fusion/Students enjoy their time on campus, full of youthful energy.mp4",42.68000030517578,44.64579772949219
+"video_fusion/Students line up in the cafeteria, waiting for lunch.mp4",55.27000045776367,49.38390350341797
+video_fusion/Students participate in celebration ceremonies in the school courtyard.mp4,47.91999816894531,44.067874908447266
+video_fusion/Students program in the computer lab.mp4,49.20000076293945,43.379547119140625
+video_fusion/Students savor delicious soups in the cafeteria.mp4,42.38999938964844,47.29670333862305
+video_fusion/Sunflowers stand tall in a field.mp4,49.18000030517578,47.25788879394531
+video_fusion/Sunlight is streaming through the leaves onto the grass.mp4,47.31999969482422,50.646820068359375
+video_fusion/Swallows soar in the air.mp4,42.18000030517578,48.603755950927734
+video_fusion/Teenage skateboarders perform tricks by the pond.mp4,42.209999084472656,44.21741485595703
+"video_fusion/The campus has colorful gardens, full of vitality.mp4",47.43000030517578,53.30461883544922
+video_fusion/The commander is strategizing in front of a map.mp4,36.119998931884766,45.63420867919922
+video_fusion/The crickets chirped merrily in the summer night.mp4,39.70000076293945,49.80385971069336
+video_fusion/The leaves of a purple-leaf plum tree turn deep purple.mp4,52.209999084472656,43.473716735839844
+video_fusion/The lion roars majestically on the grassland.mp4,56.9900016784668,54.16337966918945
+video_fusion/The parrot chirped in the treetops.mp4,60.459999084472656,45.288978576660156
+video_fusion/The roof of a farmhouse is covered in moss.mp4,56.81999969482422,73.375
+video_fusion/The rural stream serves as the water source for villagers.mp4,53.130001068115234,42.47854232788086
+video_fusion/The school auditorium is decorated with festive decorations.mp4,47.66999816894531,73.16061401367188
+video_fusion/The seahorse swayed slowly on the sea floor.mp4,42.63999938964844,42.24515151977539
+video_fusion/There are boats on the park lake.mp4,50.58000183105469,46.383209228515625
+video_fusion/There's a drum and guitar in the music classroom.mp4,50.380001068115234,54.54943084716797
+"video_fusion/Unique desert landscapes, with dunes sculpted by the wind.mp4",60.0099983215332,55.044837951660156
+video_fusion/Various fruit trees grow in the countryside.mp4,44.15999984741211,50.46254348754883
+video_fusion/Vendors at the market display fresh fruits and vegetables.mp4,49.0099983215332,41.23182678222656
+video_fusion/Visitors get information at the park's visitor center.mp4,45.619998931884766,45.96360397338867
+"video_fusion/Wandering through a forest path, surrounded by emerald greenery.mp4",45.54999923706055,45.03770065307617
+"video_fusion/Willow trees by the river, swaying gently in the calming breeze.mp4",49.63999938964844,55.83899688720703

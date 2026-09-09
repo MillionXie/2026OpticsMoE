@@ -1,0 +1,72 @@
+{
+  "target": "spatial",
+  "srcc": 0.6313289531130855,
+  "krcc": 0.4562683378303229,
+  "plcc": 0.6654514938279794,
+  "rmse": 8.677267074584961,
+  "mae": 6.8538947105407715,
+  "count": 558,
+  "optical_enabled": true,
+  "fusion_diagnostics": {
+    "vision_expert": {
+      "alpha": 0.48515692353248596,
+      "electronic_rms": 1.8667304084292449,
+      "optical_rms": 0.8433721048430303,
+      "output_to_electronic_rms": 1.0
+    },
+    "vision_global": {
+      "alpha": 0.49272119998931885,
+      "electronic_rms": 0.7348383015629211,
+      "optical_rms": 0.8745439759719329,
+      "output_to_electronic_rms": 1.0
+    },
+    "language_expert": {
+      "alpha": 0.5137821435928345,
+      "electronic_rms": 1.2726959789098378,
+      "optical_rms": 3.509538032675302,
+      "output_to_electronic_rms": 1.0
+    },
+    "language_global": {
+      "alpha": 0.5195266604423523,
+      "electronic_rms": 0.22165342535169322,
+      "optical_rms": 1.6071631493961511,
+      "output_to_electronic_rms": 1.0
+    }
+  },
+  "router_diagnostics": {
+    "vision": {
+      "implementation": "optical_parallel4_energy_top2",
+      "decision_count": 2232,
+      "mean_probability": [
+        0.2488490492105484,
+        0.17713823914527893,
+        0.3586571216583252,
+        0.2153555303812027
+      ],
+      "selected_share": [
+        0.22289426624774933,
+        0.21706989407539368,
+        0.32549282908439636,
+        0.23454301059246063
+      ],
+      "capture_fraction_mean": 0.7162927401963101
+    },
+    "language": {
+      "implementation": "optical_serial_energy_channel_standardized_top2",
+      "decision_count": 558,
+      "mean_probability": [
+        0.229644775390625,
+        0.08966486901044846,
+        0.6036472916603088,
+        0.0770430937409401
+      ],
+      "selected_share": [
+        0.5,
+        0.0,
+        0.5,
+        0.0
+      ],
+      "capture_fraction_mean": 0.9394689717173149
+    }
+  }
+}

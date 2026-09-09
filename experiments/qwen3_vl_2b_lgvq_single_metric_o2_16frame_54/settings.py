@@ -340,6 +340,7 @@ class ExperimentSettings:
     phase_smoothness_weight: float = 0.0
     router_capture_weight: float = 0.02
     soft_target_weight: float = 0.0
+    level_distribution_weight: float = 0.0
     mos_stratified_batches: bool = False
     mos_strata: int = 8
     learning_rate_warmup_epochs: int = 0
@@ -398,6 +399,9 @@ class ExperimentSettings:
         elif self.spatial_readout_mode == "spatial_deep_residual":
             residual_tag = int(round(self.spatial_residual_max * 1000.0))
             suffixes.append(f"spatialdeepresidual_rmax{residual_tag:03d}_v1")
+        elif self.spatial_readout_mode == "spatial_weighted_level_residual":
+            residual_tag = int(round(self.spatial_residual_max * 1000.0))
+            suffixes.append(f"spatialweighted5_rmax{residual_tag:03d}_v1")
         if self.spatial_readout_image_focus_max > 0.0:
             focus_tag = int(round(self.spatial_readout_image_focus_max * 100.0))
             suffixes.append(f"imagefocus{focus_tag:03d}_v1")
@@ -495,11 +499,13 @@ class ExperimentSettings:
             "spatial_grid_residual",
             "spatial_pyramid_residual",
             "spatial_deep_residual",
+            "spatial_weighted_level_residual",
         }:
             raise ValueError(
                 "model.spatial_readout_mode must be statistics, spatial_grid, "
                 "spatial_multiscale, spatial_grid_residual, or "
-                "spatial_pyramid_residual, or spatial_deep_residual"
+                "spatial_pyramid_residual, spatial_deep_residual, or "
+                "spatial_weighted_level_residual"
             )
         if self.spatial_residual_max <= 0.0:
             raise ValueError("model.spatial_residual_max must be positive")
@@ -798,12 +804,22 @@ class ExperimentSettings:
             "spatial_grid_residual",
             "spatial_pyramid_residual",
             "spatial_deep_residual",
+            "spatial_weighted_level_residual",
         }:
             raise ValueError(
                 "training.trainable_scope=residual_only requires a residual spatial readout"
             )
         if self.soft_target_weight < 0.0:
             raise ValueError("soft_target_weight must be nonnegative")
+        if self.level_distribution_weight < 0.0:
+            raise ValueError("level_distribution_weight must be nonnegative")
+        if (
+            self.level_distribution_weight > 0.0
+            and self.spatial_readout_mode != "spatial_weighted_level_residual"
+        ):
+            raise ValueError(
+                "level_distribution_weight requires the five-level weighted readout"
+            )
         if self.serial_router_balance_weight < 0.0:
             raise ValueError("serial_router_balance_weight must be nonnegative")
         if self.serial_router_importance_weight < 0.0:
@@ -1014,6 +1030,9 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         ),
         router_capture_weight=float(get("loss", "router_capture_weight", 0.02)),
         soft_target_weight=float(get("loss", "soft_target_weight", 0.0)),
+        level_distribution_weight=float(
+            get("loss", "level_distribution_weight", 0.0)
+        ),
         mos_stratified_batches=bool(
             get("training", "mos_stratified_batches", False)
         ),

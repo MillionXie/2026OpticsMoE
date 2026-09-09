@@ -258,6 +258,31 @@ def soft_spearman_loss(
     return batch_correlation_loss(soft_ranks, target_ranks)
 
 
+def weighted_level_distribution_loss(
+    logits: torch.Tensor,
+    level_scores: torch.Tensor,
+    base_prediction: torch.Tensor,
+    target: torch.Tensor,
+) -> torch.Tensor:
+    """Supervise five ordered residual levels with a smooth local target.
+
+    The scalar prediction remains the probability-weighted level sum.  A soft
+    two-neighbour-style target avoids the discontinuity of hard MOS bins while
+    preserving the Bad-to-Excellent ordering used by the electronic baseline.
+    """
+
+    scores = level_scores.float().flatten()
+    if logits.ndim != 2 or logits.shape[1] != scores.numel():
+        raise ValueError("Weighted-level logits and score anchors disagree")
+    if scores.numel() < 2 or not bool(torch.all(scores[1:] > scores[:-1])):
+        raise ValueError("Weighted-level score anchors must be strictly ordered")
+    desired = (target.float() - base_prediction.float().detach()).unsqueeze(-1)
+    spacing = (scores[1:] - scores[:-1]).mean().clamp_min(1.0e-6)
+    distance = (desired - scores.unsqueeze(0)) / spacing
+    target_probability = torch.softmax(-2.0 * distance.square(), dim=-1)
+    return -(target_probability * F.log_softmax(logits.float(), dim=-1)).sum(-1).mean()
+
+
 def _optimizer(
     model: nn.Module, settings: ExperimentSettings
 ) -> torch.optim.Optimizer:
@@ -754,6 +779,7 @@ def train(
                 "correlation",
                 "soft_spearman",
                 "soft_target",
+                "level_distribution",
                 "optical_alignment",
                 "router_balance",
                 "router_importance",
@@ -810,6 +836,18 @@ def train(
                 soft_target = F.smooth_l1_loss(
                     result["normalized_prediction"], normalized_teacher
                 )
+            level_distribution = result["normalized_prediction"].new_zeros(())
+            if settings.level_distribution_weight > 0.0:
+                logits = result["quality_level_logits"]
+                level_scores = result["quality_level_scores"]
+                level_base = result["quality_level_base_prediction"]
+                if logits is None or level_scores is None or level_base is None:
+                    raise RuntimeError(
+                        "Five-level loss requested but the readout returned no levels"
+                    )
+                level_distribution = weighted_level_distribution_loss(
+                    logits, level_scores, level_base, normalized_target
+                )
             language_routing = result["routing"]["language"]
             serial_router_balance = language_routing["balance_loss"]
             serial_router_importance = language_routing["importance_loss"]
@@ -823,6 +861,7 @@ def train(
                 + curriculum["correlation_weight"] * correlation
                 + curriculum["soft_spearman_weight"] * soft_spearman
                 + curriculum["soft_target_weight"] * soft_target
+                + settings.level_distribution_weight * level_distribution
                 + settings.optical_alignment_weight * result["optical_alignment_loss"]
                 + curriculum["router_balance_weight"] * result["router_balance_loss"]
                 + curriculum["router_importance_weight"] * result["router_importance_loss"]
@@ -864,6 +903,7 @@ def train(
                 "correlation": correlation,
                 "soft_spearman": soft_spearman,
                 "soft_target": soft_target,
+                "level_distribution": level_distribution,
                 "optical_alignment": result["optical_alignment_loss"],
                 "router_balance": result["router_balance_loss"],
                 "router_importance": result["router_importance_loss"],
@@ -1089,4 +1129,5 @@ __all__ = [
     "pairwise_ranking_loss",
     "soft_spearman_loss",
     "train",
+    "weighted_level_distribution_loss",
 ]

@@ -1495,10 +1495,9 @@ class SpatialDeepResidualReadout(SpatialGridReadout):
         nn.init.zeros_(self.residual_output[-1].weight)
         nn.init.zeros_(self.residual_output[-1].bias)
 
-    def forward(
+    def _residual_features(
         self, vision: torch.Tensor, language: torch.Tensor, mask: torch.Tensor
     ) -> torch.Tensor:
-        base_prediction = super().forward(vision, language, mask)
         batch, frames, tokens, width = vision.shape
         grid = self.token_norm(vision).reshape(
             batch * frames, self.grid, self.grid, width
@@ -1526,8 +1525,53 @@ class SpatialDeepResidualReadout(SpatialGridReadout):
             -1,
         )
         prompt = self.residual_language(_masked_statistics(language, mask))
-        correction = self.residual_output(torch.cat((video, prompt), -1)).squeeze(-1)
+        return torch.cat((video, prompt), -1)
+
+    def forward(
+        self, vision: torch.Tensor, language: torch.Tensor, mask: torch.Tensor
+    ) -> torch.Tensor:
+        base_prediction = super().forward(vision, language, mask)
+        correction = self.residual_output(
+            self._residual_features(vision, language, mask)
+        ).squeeze(-1)
         correction = self.residual_max * torch.tanh(correction / self.residual_max)
+        return base_prediction + correction
+
+
+class SpatialWeightedLevelResidualReadout(SpatialDeepResidualReadout):
+    """One post-optical head using five ordered levels for a bounded correction.
+
+    This mirrors the frozen-Qwen baseline's useful inductive bias: softmax
+    probabilities over Bad/Poor/Fair/Good/Excellent become a continuous score
+    by a weighted sum.  The five scores correct the already trained scalar
+    readout, giving an exact warm start. Every input is after the four optical
+    stages; no raw-frame, pre-optical, attention, or Transformer bypass exists.
+    """
+
+    def __init__(self, settings: ExperimentSettings) -> None:
+        super().__init__(settings)
+        input_width = self.residual_output[-1].in_features
+        self.residual_output[-1] = nn.Linear(input_width, 5)
+        nn.init.zeros_(self.residual_output[-1].weight)
+        nn.init.zeros_(self.residual_output[-1].bias)
+        self.register_buffer(
+            "level_scores",
+            torch.linspace(-self.residual_max, self.residual_max, 5),
+        )
+        self.last_level_logits: torch.Tensor | None = None
+        self.last_level_base_prediction: torch.Tensor | None = None
+
+    def forward(
+        self, vision: torch.Tensor, language: torch.Tensor, mask: torch.Tensor
+    ) -> torch.Tensor:
+        base_prediction = SpatialGridReadout.forward(self, vision, language, mask)
+        logits = self.residual_output(
+            self._residual_features(vision, language, mask)
+        )
+        probabilities = logits.float().softmax(-1).to(logits.dtype)
+        correction = probabilities @ self.level_scores.to(probabilities.dtype)
+        self.last_level_logits = logits
+        self.last_level_base_prediction = base_prediction
         return base_prediction + correction
 
 
@@ -2030,6 +2074,8 @@ class LGVQSingleMetricOEO16(nn.Module):
                 self.readout = SpatialPyramidResidualReadout(settings)
             elif settings.spatial_readout_mode == "spatial_deep_residual":
                 self.readout = SpatialDeepResidualReadout(settings)
+            elif settings.spatial_readout_mode == "spatial_weighted_level_residual":
+                self.readout = SpatialWeightedLevelResidualReadout(settings)
             else:
                 self.readout = SpatialReadout(settings)
         elif settings.target_name == "temporal":
@@ -2214,6 +2260,11 @@ class LGVQSingleMetricOEO16(nn.Module):
             sequence = electronic4
 
         normalized = self.readout(vision, sequence, mask)
+        quality_level_logits = getattr(self.readout, "last_level_logits", None)
+        quality_level_scores = getattr(self.readout, "level_scores", None)
+        quality_level_base_prediction = getattr(
+            self.readout, "last_level_base_prediction", None
+        )
         readout_image_focus = normalized.new_zeros(())
         if hasattr(self.readout, "raw_image_focus"):
             readout_image_focus = (
@@ -2244,6 +2295,9 @@ class LGVQSingleMetricOEO16(nn.Module):
         return {
             "prediction": prediction,
             "normalized_prediction": normalized,
+            "quality_level_logits": quality_level_logits,
+            "quality_level_scores": quality_level_scores,
+            "quality_level_base_prediction": quality_level_base_prediction,
             "target_name": self.settings.target_name,
             "quality_gate": quality_gate,
             "electronic_quality_residual_scale": electronic_quality_scale,

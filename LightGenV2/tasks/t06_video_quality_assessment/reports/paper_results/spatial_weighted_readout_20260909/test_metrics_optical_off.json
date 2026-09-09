@@ -1,0 +1,12 @@
+{
+  "target": "spatial",
+  "srcc": 0.5219693289983373,
+  "krcc": 0.3701117126871769,
+  "plcc": 0.591755518723603,
+  "rmse": 9.943971633911133,
+  "mae": 7.930542469024658,
+  "count": 558,
+  "optical_enabled": false,
+  "fusion_diagnostics": {},
+  "router_diagnostics": {}
+}

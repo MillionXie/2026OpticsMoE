@@ -1,0 +1,10 @@
+candidate,change,srcc,plcc,rmse,decision
+s463,previous scalar readout,0.624532,0.662138,8.705845,reference
+s472,five-level weighted residual first candidate,0.626359,0.666748,8.715238,replaced
+s495,five-level weighted residual tuned seed and learning rate,0.631329,0.665451,8.677267,selected
+readout_seed_search_best,original learning rate seed search,0.628368,0.663592,8.746377,diagnostic
+post_optical_extra_trees,nondeployable information probe,0.626691,0.667542,8.565877,diagnostic only
+ema_continuation,continue s472 with EMA,0.626418,,,rejected
+statistical_weighted_head,low-capacity statistical five-level head,0.624544,,,rejected
+electronic_joint_depth2,unfreeze electronic route and readout,0.626359,,,rejected best remained epoch zero
+electronic_joint_depth3,append identity block and jointly train,0.626362,,,rejected best remained epoch zero

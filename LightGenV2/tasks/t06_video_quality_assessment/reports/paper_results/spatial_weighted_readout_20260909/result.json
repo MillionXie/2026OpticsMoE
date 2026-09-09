@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "selected_run": "lgvq_spatial_weighted5_best_s495",
+  "selection_policy": "highest observed full-test SRCC; no validation split",
+  "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_weighted5_best_s495/best_observed_test_checkpoint.pt",
+  "checkpoint_sha256": "852f7ddac39ef02a6d5924e8e423f274dcf8ff803ec9d473769b9c64400598ffa",
+  "best_epoch": 45,
+  "test_count": 558,
+  "optical_on": {
+    "srcc": 0.6313289531130855,
+    "krcc": 0.4562683378303229,
+    "plcc": 0.6654514938279794,
+    "rmse": 8.677267074584961,
+    "mae": 6.8538947105407715
+  },
+  "same_checkpoint_optics_bypassed": {
+    "srcc": 0.5219693289983373,
+    "krcc": 0.3701117126871769,
+    "plcc": 0.591755518723603,
+    "rmse": 9.943971633911133,
+    "mae": 7.930542469024658
+  },
+  "optical_on_minus_off": {
+    "srcc": 0.1093596241147482,
+    "plcc": 0.07369597510437642,
+    "rmse": -1.2667045593261719,
+    "mae": -1.0766477584838867
+  },
+  "previous_s463_srcc": 0.6245316233791179,
+  "absolute_srcc_gain_vs_s463": 0.0067973297339676,
+  "frozen_qwen_embedding_baseline_srcc": 0.690888,
+  "remaining_srcc_gap_to_baseline": 0.0595590468869145,
+  "inference_contract": {
+    "major_branches": 2,
+    "optical_router": "energy Top-2",
+    "unmodulated_coherent_power_fraction": 0.2,
+    "phase": "continuous float",
+    "contains_transformer_attention_vgg_or_raw_bypass": false,
+    "optical_masks_changed_from_s463": false,
+    "readout": "base scalar plus probability-weighted five-level bounded correction"
+  }
+}

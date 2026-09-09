@@ -16,12 +16,14 @@ from ..modeling import (
 )
 from ..run import _apply_trainable_scope, _load_compatible_initialization
 from ..settings import TARGET_PROMPTS, ExperimentSettings, Geometry
+from ..train_cached_deep_readout import _batches as cached_readout_batches
 from ..training import (
     MosStratifiedBatchSampler,
     _training_stage_factors,
     curriculum_values,
     soft_spearman_loss,
     train,
+    weighted_level_distribution_loss,
 )
 
 
@@ -98,6 +100,42 @@ def test_soft_spearman_loss_tracks_rank_order_and_backpropagates() -> None:
     good.backward()
     assert ordered.grad is not None
     assert bool(torch.isfinite(ordered.grad).all())
+
+
+def test_weighted_level_distribution_prefers_nearby_ordered_level() -> None:
+    scores = torch.linspace(-1.0, 1.0, 5)
+    base = torch.zeros(2)
+    target = torch.tensor([-0.9, 0.9])
+    correct = torch.tensor([[8.0, 2.0, 0.0, -2.0, -8.0], [-8.0, -2.0, 0.0, 2.0, 8.0]])
+    reversed_logits = correct.flip(-1)
+    good = weighted_level_distribution_loss(correct, scores, base, target)
+    bad = weighted_level_distribution_loss(reversed_logits, scores, base, target)
+    assert float(good) < float(bad)
+
+
+def test_cached_readout_mos_strata_interleave_score_range() -> None:
+    targets = torch.arange(16, dtype=torch.float32)
+    payload = {
+        "vision": torch.zeros(16, 1, 1, 1),
+        "language": torch.zeros(16, 1, 1),
+        "mask": torch.ones(16, 1, dtype=torch.bool),
+        "targets_normalized": targets,
+        "teacher_normalized": targets.clone(),
+    }
+    batches = list(
+        cached_readout_batches(
+            payload,
+            torch.arange(16),
+            batch_size=8,
+            generator=torch.Generator().manual_seed(7),
+            mos_strata=4,
+        )
+    )
+    first_targets = batches[0][3]
+    assert first_targets.min() <= 3
+    assert first_targets.max() >= 12
+    visited = torch.cat([batch[-1] for batch in batches]).sort().values
+    assert torch.equal(visited, torch.arange(16))
 
 
 def test_mos_stratified_sampler_uses_each_item_once_and_spans_scores() -> None:
@@ -599,6 +637,37 @@ def test_spatial_grid_image_focus_has_exact_zero_start_and_gradient(
     assert torch.equal(expected, actual)
     actual.sum().backward()
     assert destination.readout.raw_image_focus.grad is not None
+
+
+def test_weighted_level_readout_is_exact_warm_start_and_trains_levels(
+    tmp_path: Path,
+) -> None:
+    source_settings = _small_settings(tmp_path)
+    source_settings.spatial_readout_mode = "spatial_grid"
+    torch.manual_seed(811)
+    source = LGVQSingleMetricOEO16(source_settings).eval()
+    checkpoint = tmp_path / "weighted_source.pt"
+    torch.save({"state_dict": source.state_dict()}, checkpoint)
+    destination_settings = replace(
+        source_settings,
+        spatial_readout_mode="spatial_weighted_level_residual",
+        spatial_residual_max=0.5,
+        level_distribution_weight=0.2,
+        initialization_checkpoint=checkpoint,
+        trainable_scope="residual_only",
+    )
+    destination_settings.validate()
+    destination = LGVQSingleMetricOEO16(destination_settings).eval()
+    _load_compatible_initialization(destination, destination_settings)
+    vision = torch.randn(2, 4, 49, destination_settings.model_width)
+    language = torch.randn(2, 6, destination_settings.model_width)
+    mask = torch.ones(2, 6, dtype=torch.bool)
+    expected = source.readout(vision, language, mask)
+    actual = destination.readout(vision, language, mask)
+    torch.testing.assert_close(actual, expected, rtol=0.0, atol=1.0e-7)
+    assert destination.readout.last_level_logits.shape == (2, 5)
+    actual.sum().backward()
+    assert destination.readout.residual_output[-1].weight.grad is not None
 
 
 def test_late_input_correction_is_zero_start_bounded_and_scope_is_strict(

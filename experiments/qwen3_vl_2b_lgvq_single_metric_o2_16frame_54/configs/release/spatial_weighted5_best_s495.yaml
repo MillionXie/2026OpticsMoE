@@ -1,0 +1,22 @@
+base_config: spatial_trainonly_fixed20_step2_rank_s460.yaml
+output_dir: ../../runs/lgvq_spatial_weighted5_best_s495
+random_seed: 1
+
+# Formal selected readout. The optical masks/router/fusion/electronic routes are
+# inherited bit-for-bit from s463; only the single post-optical five-level
+# probability-weighted MOS correction is new.
+model:
+  spatial_readout_mode: spatial_weighted_level_residual
+  spatial_residual_max: 1.00
+
+training:
+  trainable_scope: residual_only
+  epochs: 80
+  batch_size: 64
+  learning_rate: 0.00013
+  readout_weight_decay: 0.001
+
+loss:
+  ranking_weight: 1.00
+  correlation_weight: 2.00
+  level_distribution_weight: 0.50
