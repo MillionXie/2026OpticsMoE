@@ -336,3 +336,35 @@ python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TA
 源码为b3dc44a8所在工作树，torch seed42、标准eval精度；全部结束后恢复原logit，
 未训练、未保存修改过的PT。不能凭此证明alpha全局最优或推断测试变化；
 但它不支持“直接将alpha压至下限即可改善”的假设，故本轮未新增alpha重置/加速学习率试验。
+
+## 现有空间卷积的受限通道交互对照
+
+`moe_alpha40_sam_group64.yaml`继承原SAM.05，仍从已完成.85953132/SHA=c88e1a41…e841ad73开始，
+相同50轮、KL教师项.6、原图训练和全部学习率，只改变已有CFFN的3×3卷积连接方式：
+384通道逐通道卷积（groups384）→64组卷积，每组6通道。隐藏维度仍384，输入输出仍192；
+前后线性层、GELU、dropout和层数均不变。原token mixer不变，不与wide576/global16组合。
+这是**电子通道分组，不是64个光专家**；物理专家仍4个、光Router仍Top2，主结构仍E/O两支。
+
+参考[ResNeXt，CVPR2017](https://arxiv.org/abs/1611.05431)中的分组卷积算子及连接稀疏性讨论，
+不加载ResNeXt/VGG/Transformer、不引入其分支或额外主干。
+该论文强调cardinality；本试验则从极端depthwise减少分组、增加每组通道交互，
+不是论文实验方向的直接复现，也不以论文结果保证本任务提升。
+
+每处卷积从384×1×3×3=3456参数变为384×6×3×3=20736，两处合计新增**34560参数**，
+额外MAC约6773760/图（196 token），不把该估算当速度实测。
+初始化将旧核放在每个输出通道对应的组内对角位置，其余连接为0，代数功能保持；
+关闭TF32的完整FP32一致性须检查，默认GPU不同卷积算法不承诺逐位一致。
+新增非对角连接通过训练学习；不额外消耗主初始化随机流，不重置alpha/相位。
+严格迁移只允许两张指定卷积权重形状变化；加载已训练groups64权重不重复置零。
+架构后缀`_cffn_g64`，配置字段`electronic_ffn_groups:64`；0表示维持原depthwise。
+原`electronic_ffn_spatial`优化组现在包含41472参数，LR仍5e-5、weight decay仍0；
+不新建优化组，不改变SAM扰动规则。读出头仍85412，光学尺寸/噪声/alpha≥.4不变。
+
+```bash
+TASK=LightGenV2/tasks/t03_saliency
+python -m pytest "$TASK/tests" -q
+python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TASK/configs/moe_alpha40_sam_group64.yaml" --phase all
+```
+
+产物在`runs/simulation/moe_alpha40_sam_group64_seed42`，只best/last。
+配对对照为原SAM.05，不是同时更换教师损失的spatialcc组；完整5000测试选模偏差仍适用。

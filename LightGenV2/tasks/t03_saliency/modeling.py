@@ -32,6 +32,7 @@ from .lightweight_residual import configure_grn, initialize_identity_grn
 from .lightweight_residual import configure_spatial_ffn, initialize_identity_spatial_ffn
 from .lightweight_residual import configure_global_mixing, initialize_identity_global_mixing
 from .lightweight_residual import configure_wide_ffn, widen_ffn_checkpoint
+from .lightweight_residual import configure_grouped_ffn, expand_ffn_group_checkpoint
 
 
 def architecture_label(settings: Any) -> str:
@@ -49,7 +50,8 @@ def architecture_label(settings: Any) -> str:
     label += f"_cffn_d{dilation}" if dilation else ""
     rank = getattr(settings, "electronic_global_rank", 0)
     label += f"_global_r{rank}" if rank else ""
-    return label + ("_ffn576" if getattr(settings, "electronic_ffn_hidden_width", 384) == 576 else "")
+    label += "_ffn576" if getattr(settings, "electronic_ffn_hidden_width", 384) == 576 else ""
+    return label + ("_cffn_g64" if getattr(settings, "electronic_ffn_groups", 0) == 64 else "")
 
 
 def configure_spatial_kernel(hybrid: nn.Module, kernel: int) -> None:
@@ -140,6 +142,8 @@ class LightGenVision2SaliencyStudent(RobustVision2PoseStudent):
             configure_global_mixing(self.core.hybrid, settings.electronic_global_rank)
         if getattr(settings, "electronic_ffn_hidden_width", 384) == 576:
             configure_wide_ffn(self.core.hybrid)
+        if getattr(settings, "electronic_ffn_groups", 0) == 64:
+            configure_grouped_ffn(self.core.hybrid)
         self.capture_block = _RobustCaptureBlock(self.core)
         self.student_blocks = nn.ModuleList(
             [self.capture_block]
@@ -226,7 +230,11 @@ def initialize_student(
         initialize_ffn = getattr(settings, "initialize_ffn_on_warmstart", False)
         initialize_global = getattr(settings, "initialize_global_on_warmstart", False)
         widen_ffn = getattr(settings, "widen_ffn_on_warmstart", False)
+        expand_ffn_groups = getattr(settings, "expand_ffn_groups_on_warmstart", False)
         base_architecture = model.checkpoint_architecture
+        if expand_ffn_groups:
+            base_architecture = base_architecture.removesuffix("_cffn_g64")
+            allowed.add(base_architecture)
         if widen_ffn:
             base_architecture = base_architecture.removesuffix("_ffn576")
             allowed.add(base_architecture)
@@ -253,6 +261,9 @@ def initialize_student(
         ffn_added = False
         global_added = False
         ffn_widened = False
+        ffn_groups_expanded = False
+        if expand_ffn_groups:
+            core_state, ffn_groups_expanded = expand_ffn_group_checkpoint(core_state, target_state)
         if widen_ffn:
             core_state, ffn_widened = widen_ffn_checkpoint(core_state, target_state)
         if initialize_global:
@@ -280,6 +291,7 @@ def initialize_student(
                 "identity_spatial_ffn_added": ffn_added,
                 "identity_global_mixing_added": global_added,
                 "ffn_widened_384_to_576": ffn_widened,
+                "ffn_grouped64_transfer": ffn_groups_expanded,
                 "ffn_widening_outgoing_split": [0.4,0.6] if ffn_widened else None,
                 "fusion_reset": settings.reset_fusion_on_warmstart,
                 "fusion_alpha_initial": settings.fusion_alpha_initial}
@@ -402,6 +414,8 @@ def architecture_report(model: LightGenVision2SaliencyStudent, settings: Any) ->
             "ffn_spatial_dilation": getattr(settings, "electronic_ffn_spatial_dilation", 0),
             "ffn_hidden_width": model.core.hybrid.blocks[0].mlp[0].out_features,
             "ffn_widening_extra_parameters": 151296 if getattr(settings, "electronic_ffn_hidden_width", 384) == 576 else 0,
+            "ffn_conv_groups": model.core.hybrid.blocks[0].mlp[1][0].conv.groups if getattr(settings, "electronic_ffn_spatial_dilation", 0) else None,
+            "ffn_grouping_extra_parameters": 34560 if getattr(settings, "electronic_ffn_groups", 0) == 64 else 0,
             "ffn_spatial_parameters": sum(p.numel() for n,p in model.core.named_parameters() if ".mlp.1.0.conv." in n),
             "global_spatial_rank": getattr(settings, "electronic_global_rank", 0),
             "global_spatial_parameters": sum(p.numel() for n,p in model.core.named_parameters() if '.token_pointwise.spatial_' in n),

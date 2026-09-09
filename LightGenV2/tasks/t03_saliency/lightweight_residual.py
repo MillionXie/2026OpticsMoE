@@ -1,4 +1,4 @@
-"""Task-local GRN adaptation; not a ConvNeXt backbone or attention network.
+"""Task-local lightweight residual alternatives; no extra backbone or attention.
 
 Equation reference: Woo et al., ConvNeXt V2 (CVPR 2023), arXiv:2301.00808.
 Independently expressed for [B,196,C] token grids with FP32 response statistics.
@@ -7,6 +7,56 @@ aggregation is permutation-invariant and must never cross the batch dimension.
 """
 import torch
 from torch import nn
+
+
+def expand_ffn_group_checkpoint(source: dict, target: dict) -> tuple[dict, bool]:
+    """Embed two learned depthwise kernels on grouped-convolution diagonals."""
+    keys = {f'hybrid.blocks.{i}.mlp.1.0.conv.weight' for i in range(2)}
+    if source.keys() != target.keys() or not keys <= source.keys():
+        raise RuntimeError('Grouped FFN transfer requires identical complete keys')
+    changed = {k for k in source if source[k].shape != target[k].shape}
+    if not changed:
+        if any(tuple(source[k].shape) != (384,6,3,3) for k in keys):
+            raise RuntimeError('Expected already grouped64 FFN checkpoint')
+        return source, False
+    if changed != keys:
+        raise RuntimeError('Only the two FFN spatial kernels may change shape')
+    result = dict(source)
+    for key in keys:
+        value = source[key]
+        if tuple(value.shape) != (384,1,3,3) or tuple(target[key].shape) != (384,6,3,3):
+            raise RuntimeError('Only depthwise384 to grouped64 is audited')
+        expanded = value.new_zeros(384,6,3,3)
+        rows = torch.arange(384,device=value.device)
+        expanded[rows,rows % 6] = value[:,0]
+        result[key] = expanded
+    return result, True
+
+
+def configure_grouped_ffn(hybrid: nn.Module) -> None:
+    """Replace existing DW3 by groups64 (6 channels/group), not a new layer.
+
+    Grouped convolution operator reference: ResNeXt, CVPR17, arXiv:1611.05431.
+    No ResNeXt backbone/branches: this task relaxes depthwise sparsity locally.
+    """
+    if len(hybrid.blocks) != 2:
+        raise ValueError('Grouped FFN requires exactly two existing residuals')
+    for block in hybrid.blocks:
+        old = block.mlp[1][0].conv
+        if (old.in_channels,old.out_channels,old.groups) != (384,384,384):
+            raise ValueError('Expected original384 depthwise FFN')
+        if old.kernel_size != (3,3) or old.padding != (1,1) or old.dilation != (1,1) or old.bias is not None:
+            raise ValueError('Expected unbiased dilation1 padded DW3')
+        devices = [old.weight.device.index] if old.weight.is_cuda else []
+        with torch.random.fork_rng(devices=devices):
+            new = nn.Conv2d(384,384,3,padding=1,groups=64,bias=False,
+                            device=old.weight.device,dtype=old.weight.dtype)
+        with torch.no_grad():
+            new.weight.zero_()
+            rows = torch.arange(384,device=old.weight.device)
+            new.weight[rows,rows % 6] = old.weight[:,0]
+        new.train(old.training)
+        block.mlp[1][0].conv = new
 
 
 def widen_ffn_checkpoint(source: dict, target: dict) -> tuple[dict, bool]:

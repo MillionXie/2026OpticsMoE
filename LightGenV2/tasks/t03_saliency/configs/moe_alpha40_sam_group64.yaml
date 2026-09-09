@@ -1,0 +1,7 @@
+base_config: moe_alpha40_sam005.yaml
+# Only existing CFFN DW3 becomes grouped3 (6 channels/group). No new layers.
+lightgen:
+  electronic_ffn_groups: 64
+training:
+  expand_ffn_groups_on_warmstart: true
+output_dir: ../runs/simulation/moe_alpha40_sam_group64_seed42
