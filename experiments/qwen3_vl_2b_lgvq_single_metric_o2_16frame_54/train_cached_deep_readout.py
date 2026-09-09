@@ -214,10 +214,16 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
     }
     result = readout.load_state_dict(source_readout, strict=False)
     unexpected = list(result.unexpected_keys)
+    permitted_zero_start_prefixes = (
+        "residual_",
+        "large_kernel_refiner.",
+        "moment_frame.",
+    )
     non_residual_missing = [
         name
         for name in result.missing_keys
-        if not name.startswith("residual_") and name != "level_scores"
+        if not name.startswith(permitted_zero_start_prefixes)
+        and name != "level_scores"
     ]
     if unexpected or non_residual_missing:
         raise RuntimeError(
@@ -225,7 +231,9 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
             f"unexpected={unexpected}"
         )
     for name, parameter in readout.named_parameters():
-        parameter.requires_grad_(name.startswith("residual_"))
+        parameter.requires_grad_(
+            name.startswith(permitted_zero_start_prefixes)
+        )
     trainable = [parameter for parameter in readout.parameters() if parameter.requires_grad]
     readout.to(device)
     ema_readout = None
