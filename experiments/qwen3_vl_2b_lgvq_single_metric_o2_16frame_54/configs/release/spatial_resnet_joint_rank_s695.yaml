@@ -1,0 +1,12 @@
+base_config: spatial_resnet_joint_s693.yaml
+output_dir: ../../runs/lgvq_spatial_resnet_joint_rank_s695
+random_seed: 695
+
+training:
+  learning_rate: 0.00010
+
+loss:
+  regression_weight: 0.30
+  ranking_weight: 1.50
+  correlation_weight: 3.00
+  soft_spearman_weight: 0.30

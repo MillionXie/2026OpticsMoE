@@ -237,6 +237,16 @@ def _apply_trainable_scope(
             )
         elif scope == "resnet_electronic_only":
             trainable = name.startswith("resnet_electronic_correction.")
+        elif scope == "resnet_electronic_path_and_readout":
+            trainable = name.startswith(
+                (
+                    "resnet_electronic_correction.",
+                    "vision_routes.",
+                    "language_routes.",
+                    "frame_merger.",
+                    "readout.",
+                )
+            )
         elif scope == "serial_router_and_readout":
             # Rebalance the language-stage optical router without perturbing
             # either feature-producing optical path.  The readout remains

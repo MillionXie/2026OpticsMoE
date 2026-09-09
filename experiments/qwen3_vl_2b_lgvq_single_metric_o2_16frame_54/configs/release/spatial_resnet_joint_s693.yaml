@@ -1,0 +1,17 @@
+base_config: spatial_resnet_e1_s690.yaml
+output_dir: ../../runs/lgvq_spatial_resnet_joint_s693
+random_seed: 693
+
+# Stage-2 use of the same E1 residual: optical phases/routers and fusion alphas
+# remain frozen while the existing electronic path and one readout adapt.
+training:
+  trainable_scope: resnet_electronic_path_and_readout
+  learning_rate: 0.00001
+  readout_learning_rate_factor: 1.0
+  ema_decay: 0.995
+
+loss:
+  regression_weight: 1.00
+  ranking_weight: 0.50
+  correlation_weight: 1.00
+  soft_spearman_weight: 0.10

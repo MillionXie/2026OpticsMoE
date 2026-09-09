@@ -889,6 +889,7 @@ class ExperimentSettings:
             "vgg_correction_and_readout",
             "vgg_correction_and_vision_path",
             "resnet_electronic_only",
+            "resnet_electronic_path_and_readout",
             "serial_router_and_readout",
         }:
             raise ValueError(
@@ -907,6 +908,7 @@ class ExperimentSettings:
                 "frame_stem_and_readout, vgg_correction_only, or "
                 "vgg_correction_and_readout, vgg_correction_and_vision_path, or "
                 "resnet_electronic_only, or "
+                "resnet_electronic_path_and_readout, or "
                 "serial_router_and_readout"
             )
         if self.trainable_scope == "late_input_correction_only" and not (
