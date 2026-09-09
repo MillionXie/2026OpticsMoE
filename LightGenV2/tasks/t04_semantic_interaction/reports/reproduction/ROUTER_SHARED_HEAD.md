@@ -2,6 +2,11 @@
 
 ## 精简对照（2026-09-09）
 
+补充保留归一化的保守对照 `routerfill_slim_norm` / `qwen_slim_norm`，读出头269,272参数。
+与slim差别仅为输出映射前保留GroupNorm+GELU（384参数），不恢复额外卷积或前置FiLM。
+这是因为初步slim训练的baseline表现偏低，需要区分卷积冗余与归一化的作用；不得因此隐藏slim结果。
+两种精简头均完整训练100epoch，所有对比必须使用成对的相同头。
+
 新增 `routerfill_slim` / `qwen_slim`。两者都通过同一个 `SharedGridReadout(variant='slim')`：
 删除74,112参数的前置FiLM，以及38,976参数的decoder预处理，381,976降到268,888（29.61%）。
 保留两组条件卷积及内部文本调制，后面直接平均降到6×6再做1×1类别/编辑输出。

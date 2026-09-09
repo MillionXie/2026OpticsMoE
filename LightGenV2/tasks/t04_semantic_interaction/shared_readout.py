@@ -12,7 +12,7 @@ class SharedGridReadout(nn.Module):
 
     def __init__(self, width=192, max_tokens=64, variant='standard'):
         super().__init__()
-        if variant not in ('standard', 'slim'):
+        if variant not in ('standard', 'slim', 'slim_norm'):
             raise ValueError(f'Unknown shared readout variant: {variant}')
         self.variant = variant
         self.position_readout = PositionReadout(max_tokens)
@@ -24,12 +24,15 @@ class SharedGridReadout(nn.Module):
         self.editor = nn.ModuleList([ConditionedResidual2D(width, d) for d in (1, 2)])
         self.decoder = SemanticGridDecoder(width, 6, 16)
         self.task_head = nn.Sequential(nn.LayerNorm(width), nn.Linear(width, 4))
-        if variant == 'slim':
+        if variant in ('slim', 'slim_norm'):
             # Retain two conditional convolution groups, but no redundant
             # pre-editor FiLM or third convolution group inside the decoder.
             del self.post_film
             self.decoder.pre = nn.Identity()
             self.contract = 'positionlinear64_width192_coord_two_condconv_directgrid6_slim_v1'
+            if variant == 'slim_norm':
+                self.decoder.pre = nn.Sequential(nn.GroupNorm(8, width), nn.GELU())
+                self.contract = 'positionlinear64_width192_coord_two_condconv_normgrid6_slim_v1'
 
     def summarize(self, language_groups):
         return self.language_pool(self.position_readout(language_groups))

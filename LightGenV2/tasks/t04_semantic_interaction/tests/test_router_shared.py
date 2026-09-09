@@ -23,7 +23,8 @@ def test_router_fill_keeps_power_and_has_gradients():
     assert torch.isfinite(fields.grad).all()
 
 
-@pytest.mark.parametrize('profiles', [('routerfill_shared', 'qwen_shared'), ('routerfill_slim', 'qwen_slim')])
+@pytest.mark.parametrize('profiles', [('routerfill_shared', 'qwen_shared'), ('routerfill_slim', 'qwen_slim'),
+                                     ('routerfill_slim_norm', 'qwen_slim_norm')])
 def test_exact_same_head_initialization_and_outputs(profiles):
     ours = load_settings(ROOT / f'configs/{profiles[0]}.yaml')
     baseline = load_settings(ROOT / f'configs/{profiles[1]}.yaml')
@@ -40,7 +41,7 @@ def test_exact_same_head_initialization_and_outputs(profiles):
     assert ours.epochs == baseline.epochs == 100
 
 
-@pytest.mark.parametrize('profile', ['qwen_shared', 'qwen_slim'])
+@pytest.mark.parametrize('profile', ['qwen_shared', 'qwen_slim', 'qwen_slim_norm'])
 def test_baseline_forward_no_extra_mixer(profile):
     from LightGenV2.tasks.t04_semantic_interaction.training import _phase_regularization
     cfg = load_settings(ROOT / f'configs/{profile}.yaml')
@@ -64,6 +65,9 @@ def test_slim_contract_and_parameter_budget():
     assert not hasattr(slim, 'post_film')
     assert isinstance(slim.decoder.pre, torch.nn.Identity)
     assert len(slim.editor) == 2
+    norm = SharedGridReadout(variant='slim_norm')
+    assert head_signature(norm)['parameters'] == 269272
+    assert not any(isinstance(m, torch.nn.Conv2d) for m in norm.decoder.pre.modules())
     with pytest.raises(RuntimeError):
         slim.load_state_dict(standard.state_dict(), strict=True)
 

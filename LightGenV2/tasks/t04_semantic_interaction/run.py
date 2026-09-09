@@ -39,6 +39,8 @@ PROFILES = {
     "qwen_shared": "qwen_shared.yaml",
     "routerfill_slim": "routerfill_slim.yaml",
     "qwen_slim": "qwen_slim.yaml",
+    "routerfill_slim_norm": "routerfill_slim_norm.yaml",
+    "qwen_slim_norm": "qwen_slim_norm.yaml",
 }
 PHASES = {"prepare", "train", "evaluate", "all"}
 
