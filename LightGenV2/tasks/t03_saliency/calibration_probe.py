@@ -40,6 +40,14 @@ def require_train_ids(ids):
         raise ValueError('Calibration fitting requires unique training identities only')
 
 
+@torch.no_grad()
+def standard_logits(model, inputs):
+    # Match legacy.evaluate_model: native frontend dtype, FP32 optical body/head,
+    # and NO surrounding AMP. Otherwise the unchanged baseline itself drifts.
+    with torch.autocast(device_type=inputs['pixel_values'].device.type, enabled=False):
+        return model(inputs['pixel_values'], inputs['image_grid_thw'])[0]
+
+
 def run(args):
     from .run import _seed, _git_value
     from .settings import load_settings, save_resolved_config
@@ -73,6 +81,9 @@ def run(args):
     loaded = load_vision_backbone(s, torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
     model = build_student(loaded, s)
     initialization = initialize_student(model, s)
+    source = torch.load(s.initialization_checkpoint, map_location='cpu', weights_only=False)
+    expected_source_cc = float(source['test_metrics']['cc'])
+    del source
     model.requires_grad_(False).eval()
     model.core.set_phase_dropout_active(False)
     save_resolved_config(s)
@@ -85,15 +96,15 @@ def run(args):
         'train_cache': 'float32 CPU RAM only; discarded after probe',
         'selection': 'best training CC for two scalars; one final paired full public-test evaluation',
         'public_test_already_used_by_base_model_and_project': True,
-        'test_optics': 'unchanged standard clean eval mode',
+        'test_optics': 'unchanged standard clean eval mode; no enclosing autocast',
+        'expected_source_cc': expected_source_cc, 'source_cc_tolerance': 2e-5,
         'bounds': {'logit_scale': [.5,2.], 'radial_bias': [-2.,2.]}})
     train_loader, test_loader = legacy.build_loaders(bundle, s, training=False)
     cached_logits, cached_targets, cache_ids = [], [], []
     with torch.no_grad():
         for i, batch in enumerate(train_loader, 1):
             inp = legacy.preprocess_vision(loaded.processor, batch['images'], loaded.device)
-            with legacy._autocast(s, loaded.device):
-                logits, _, _ = model(inp['pixel_values'], inp['image_grid_thw'])
+            logits = standard_logits(model, inp)
             cached_logits.append(logits.float().cpu())
             cached_targets.append(batch['density'].float().cpu())
             cache_ids.extend(batch['sample_ids'])
@@ -143,8 +154,7 @@ def run(args):
     with torch.no_grad():
         for i,batch in enumerate(test_loader,1):
             inp=legacy.preprocess_vision(loaded.processor,batch['images'],loaded.device)
-            with legacy._autocast(s,loaded.device):
-                logits,_,_=model(inp['pixel_values'],inp['image_grid_thw'])
+            logits=standard_logits(model,inp)
             y=batch['density'].to(loaded.device); f=batch['fixation'].to(loaded.device)
             refined=calibration(logits)
             original.update(logits,y,f); corrected.update(refined,y,f)
@@ -161,7 +171,10 @@ def run(args):
             'calibration_parameters':2,'base_model_retrained':False,
             'best_checkpoint_sha256':sha256_file(out/'best_checkpoint.pt'),
             'deployment_status':'diagnostic wrapper; base checkpoint also required; not a replacement core checkpoint'}
+    report['base_matches_source'] = abs(report['base']['cc']-expected_source_cc) <= 2e-5
     write('calibration_report.json',report);print(json.dumps(report),flush=True)
+    if not report['base_matches_source']:
+        raise RuntimeError('Unchanged source CC drifted: reject calibration comparison and audit inference precision')
 
 
 if __name__ == '__main__':

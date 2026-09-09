@@ -31,7 +31,7 @@
 
 ```bash
 python -m pytest LightGenV2/tasks/t03_saliency/tests -q
-CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=3 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -u -m LightGenV2.tasks.t03_saliency.calibration_probe --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_hint_control.yaml --output LightGenV2/tasks/t03_saliency/runs/simulation/moe_alpha40_readout_calibration_seed42 --epochs 20 --batch-size 16
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=3 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -u -m LightGenV2.tasks.t03_saliency.calibration_probe --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_hint_control.yaml --output LightGenV2/tasks/t03_saliency/runs/simulation/moe_alpha40_readout_calibration_fp32_seed42 --epochs 20 --batch-size 16
 ```
 
 GPU编号为示例，先确认余量；输出目录必须不存在。正式数据/模型依赖与复现入口相同。
@@ -41,3 +41,12 @@ GPU编号为示例，先确认余量；输出目录必须不存在。正式数�
 **不是能直接传给旧run入口的core checkpoint**。复现需要源checkpoint，以及
 `SpatialLogitCalibration`严格加载`payload['calibration']`后应用到原logits再softmax。
 若性能确实改善，仍需完整集成、独立复评并审计光学参数/专家分布，才能作为正式部署候选。
+
+## 推理精度审计
+
+首个`moe_alpha40_readout_calibration_seed42`使用源码84d11b5f，误在缓存与测试的整个forward外开启AMP。
+它的原模型CC=0.85823985、校准CC=0.85854394；前者与正式源值0.858120有偏移，
+**该轮不能更新正式成绩**。产物保留为可追溯诊断，不静默覆盖。
+修正后使用`standard_logits`显式禁止外层autocast（保留Qwen前端自身权重dtype），
+与原`legacy.evaluate_model`对齐；新增精度回归测试与源CC漂移门限2e-5。
+新目录带`fp32`指光电body/head标准计算精度，不表示把Qwen前端权重转换成FP32。

@@ -1,6 +1,6 @@
 import pytest
 import torch
-from LightGenV2.tasks.t03_saliency.calibration_probe import SpatialLogitCalibration, require_train_ids
+from LightGenV2.tasks.t03_saliency.calibration_probe import SpatialLogitCalibration, require_train_ids, standard_logits
 
 
 def test_identity_bounds_gradients_and_no_cross_sample_mixing():
@@ -21,3 +21,14 @@ def test_only_training_ids_are_allowed_for_fitting():
     require_train_ids(['train/1','train/2'])
     for ids in ([],['train/1','train/1'],['validation/1'],['test/1']):
         with pytest.raises(ValueError):require_train_ids(ids)
+
+
+def test_probe_preserves_standard_non_autocast_inference():
+    class Model:
+        def __call__(self, x, grid):
+            return x @ x.T, None, None
+    x=torch.randn(4,4)
+    with torch.autocast('cpu',dtype=torch.bfloat16):
+        y=standard_logits(Model(),{'pixel_values':x,'image_grid_thw':None})
+    assert y.dtype==torch.float32
+    torch.testing.assert_close(y,x@x.T,rtol=0,atol=0)
