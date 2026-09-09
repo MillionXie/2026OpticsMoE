@@ -1,6 +1,6 @@
 # 固定专家库实验复现入口
 
-本入口覆盖第五轮 `spatial_v4`；此前文本生成、随机相位初始化和短计时实验仍以各自历史报告及 run 为准，不能混合数值。
+本入口覆盖第五轮 `spatial_v4` 和第六轮 `unseen_v1`（未见类别操作见文末）；此前文本生成、随机相位初始化和短计时实验仍以各自历史报告及 run 为准，不能混合数值。
 
 ## 模型、训练和指标合同
 
@@ -117,3 +117,42 @@ python -m TransferFromElectricity.tasks.t01_object_retrieval.report_spatial_timi
 ```
 
 脚本同时核对正式/短计时的配置、数据哈希、固定参考图、初始化权重和模型结构一致，仅允许阶段长度及validation-only开关不同。结果保留全部30条epoch记录，并固定比较epoch 2/4/6；不采用各组最快一轮，也不将短复测的validation成绩写成正式test结果。
+
+## 第六轮：CIFAR未见类别迁移
+
+训练源码固定 `0d854376cca29e16143ad1eb7762860770e59459`，服务器独立worktree `/DATA/DATA1/guest3/worktrees/static_unseen_v1`；基础环境和冻结Qwen权重与第五轮相同。依赖的学生模型、光路与评估实现已核对相对源训练SHA无变化。共享data和本任务runs的既有路径，不切换其他任务checkout。
+
+源模型仅使用 `20260908_v4_formal_cifar_direct_s42` 和 `20260908_v4_formal_cifar_qwen_vision_lora_s42` 的best，来自源十类训练SHA `c024b928`。它们的选模只看源validation；每个新run的 `source_checkpoint.json` 保存实际完整权重SHA256及源选择轮次。源训练从raw0开始，本轮续训保持源光学相位。两方法各自继承不同的源电子/相位参数，不能宣称跨方法起点相同。
+
+`configs/unseen_v1/cifar.yaml`锁定两组互斥新十类、每类5/20个支持样本、支持seed101/202/303。全部支持图来自官方train，且同时用于gallery及梯度训练；同seed的5-shot是20-shot子集，不再提供额外gallery或validation标签。每任务官方test的1,000张图均作为查询，仅在固定的初始/最终评估时使用。新任务本地标签映射为0–9，原始fine ID及图像身份保留在 `split.json`。所有训练/参考图均不得来自query。
+
+Qwen仅视觉塔，q/v rank8 LoRA及空间decoder更新；直接组仅八张expert raw phase更新。两组router/global/电子/readout/融合系数均冻结；支持参考图固定，每类一张，所有query共用同一专家库。适配固定5轮×20步、PK10×3，不增强、不依据新query选模。`best_checkpoint.pt`在本协议中就是预先固定的末轮，与last权重相同，不表示按test挑选的最好轮次；脚本不提供恢复训练入口，失败重试必须新run ID。
+
+每个run首先用源bank计算新任务检索。Qwen另执行一次仅换支持参考图、保持源offset的无梯度生成诊断；之后将offset设成 `G适配开始(新参考)-源expert`，保证正式适配从源mask继续。诊断需要新类别支持图，不是完全无样本生成；正式适配的起点也不是这一未校准输出。
+
+在独立worktree中核验Git版本与空闲RTX UUID后运行（系统Python不能替代xml环境）：
+
+```bash
+python -m unittest TransferFromElectricity.tasks.t01_object_retrieval.tests.test_unseen_protocol -v
+python -m TransferFromElectricity.tasks.t01_object_retrieval.run_unseen_suite \
+  --gpu-uuid <空闲RTX完整UUID> --class-set a --prefix <唯一smoke前缀> --smoke
+python -m TransferFromElectricity.tasks.t01_object_retrieval.run_unseen_suite \
+  --gpu-uuid <空闲RTX完整UUID> --class-set a --prefix <唯一正式前缀>
+python -m TransferFromElectricity.tasks.t01_object_retrieval.run_unseen_suite \
+  --gpu-uuid <另一张空闲RTX完整UUID> --class-set b --prefix <同一正式前缀>
+```
+
+每个class-set队列依次运行12组；smoke只运行两方法、5-shot/seed101，每组1轮2步，查询也来自官方train且与支持集不重叠。已有前缀为 `20260909_unseen_smoke` / `20260909_unseen_formal`。队列遇到占卡会等待，GPU PID采样每5秒记录实际时间戳，不占用A100。
+
+单run等价命令：
+
+```bash
+python -m TransferFromElectricity.tasks.t01_object_retrieval.run_unseen \
+  --gpu-uuid <空闲RTX完整UUID> --class-set a --method qwen_vision_lora \
+  --shots 5 --support-seed 101 \
+  --run-dir TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/<唯一run_id>
+```
+
+使用本入口前述 `collect_results --require-gpu-audit --checkpoint-hashes` 经SFTP及独立SHA256收集，run路径为 `runs/simulation/20260909_unseen_formal_<a或b>_<direct或qwen_vision_lora>_<5或20>shot_s<101或202或303>`。逐查询预测/混淆矩阵、数据与权重哈希、固定参考、任务梯度、冻结变化和逐轮时间均保留在run；大型源权重与适配best/last不提交Git。
+
+收齐24组后，使用包含汇总入口的报告版本运行 `python -m TransferFromElectricity.tasks.t01_object_retrieval.report_unseen`。报告检查两方法数据/显卡配对、支持集嵌套、所有查询未入训练、源权重一致、导出误差、冻结参数及回传哈希。均值/标准差来自三次支持抽样，不能标成三个源训练seed，也不能将单源任务的条件外推称为经过跨任务元训练。当前过程包括源checkpoint重建、固定末轮评估与部署mask一致性核验；尚未另启全新进程对适配checkpoint重评，不能声称已做该项复现。
