@@ -1,0 +1,8 @@
+base_config: spatial_convnext_human_s615.yaml
+output_dir: ../../runs/lgvq_spatial_convnext_vision_s616
+random_seed: 616
+
+training:
+  trainable_scope: appended_vision_only
+  learning_rate: 0.00015
+

@@ -1,0 +1,8 @@
+base_config: spatial_convnext_human_s615.yaml
+output_dir: ../../runs/lgvq_spatial_convnext_language_s617
+random_seed: 617
+
+training:
+  trainable_scope: appended_language_only
+  learning_rate: 0.00015
+

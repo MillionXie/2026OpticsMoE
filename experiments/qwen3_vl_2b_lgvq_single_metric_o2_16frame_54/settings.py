@@ -815,6 +815,8 @@ class ExperimentSettings:
             "crossframe_only",
             "appended_electronic_and_crossframe",
             "appended_electronic_only",
+            "appended_vision_only",
+            "appended_language_only",
             "quality_refiner_only",
             "quality_refiner_readout",
             "late_input_correction_only",
@@ -832,6 +834,7 @@ class ExperimentSettings:
                 "crossframe_only, "
                 "appended_electronic_and_crossframe, "
                 "appended_electronic_only, "
+                "appended_vision_only, appended_language_only, "
                 "quality_refiner_only, quality_refiner_readout, or "
                 "late_input_correction_only, frame_stem_only, or "
                 "frame_stem_and_readout, vgg_correction_only, or "
