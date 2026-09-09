@@ -309,7 +309,11 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
             optimizer.zero_grad(set_to_none=True)
             prediction_normalized = readout(vision, language, mask)
             regression = F.smooth_l1_loss(prediction_normalized, target)
-            ranking = pairwise_ranking_loss(prediction_normalized, target)
+            ranking = pairwise_ranking_loss(
+                prediction_normalized,
+                target,
+                minimum_difference=args.ranking_minimum_difference,
+            )
             correlation = batch_correlation_loss(prediction_normalized, target)
             soft_spearman = prediction_normalized.new_zeros(())
             if args.soft_spearman_weight > 0.0:
@@ -322,7 +326,9 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
             # distillation transfers that ordering without forcing the optical
             # student to copy the teacher's biased score scale.
             teacher_ranking = pairwise_ranking_loss(
-                prediction_normalized, teacher
+                prediction_normalized,
+                teacher,
+                minimum_difference=args.ranking_minimum_difference,
             )
             teacher_correlation = batch_correlation_loss(
                 prediction_normalized, teacher
@@ -503,6 +509,12 @@ def main() -> int:
         help="Weight for absolute normalized-MOS Smooth-L1 loss.",
     )
     parser.add_argument("--ranking-weight", type=float, default=0.5)
+    parser.add_argument(
+        "--ranking-minimum-difference",
+        type=float,
+        default=0.05,
+        help="Ignore ambiguous MOS pairs closer than this normalized distance.",
+    )
     parser.add_argument("--correlation-weight", type=float, default=1.0)
     parser.add_argument("--soft-spearman-weight", type=float, default=0.0)
     parser.add_argument("--soft-rank-temperature", type=float, default=0.10)
@@ -536,6 +548,8 @@ def main() -> int:
     args = parser.parse_args()
     if args.regression_weight < 0.0:
         parser.error("--regression-weight must be non-negative")
+    if args.ranking_minimum_difference < 0.0:
+        parser.error("--ranking-minimum-difference must be non-negative")
     train(args)
     return 0
 
