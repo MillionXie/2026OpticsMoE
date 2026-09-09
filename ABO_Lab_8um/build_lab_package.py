@@ -9,6 +9,7 @@ def main():
     p=argparse.ArgumentParser(); p.add_argument('--output',type=Path,default=ROOT/'releases/ABO_Holoeye8_DVP.zip')
     p.add_argument('--source-only',action='store_true')
     p.add_argument('--alignment-only',action='store_true',help='Patch paired calibration/code only; preserve all formal masks/configs/captures')
+    p.add_argument('--code-only',action='store_true',help='Patch adapter code only; exclude ALL generated calibration and lab configuration')
     a=p.parse_args()
     repo=ROOT.parent
     commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=repo,text=True).strip()
@@ -19,14 +20,15 @@ def main():
     tracked=subprocess.check_output(['git','ls-files','ABO_Lab_8um'],cwd=repo,text=True).splitlines()
     for name in tracked:
         pth=Path(name); add(repo/pth,str(pth.relative_to('ABO_Lab_8um')))
-    if a.alignment_only:
+    if a.alignment_only or a.code_only:
         paths.pop('lab.json',None) # Never replace the user's hardware settings.
-        for f in (ROOT/'generated/dual').rglob('*'):
-            if f.is_file(): add(f,str(f.relative_to(ROOT)))
-        if not (ROOT/'generated/dual/pairs.json').is_file(): raise FileNotFoundError('Run dual_patterns.py first')
-        manifest={'schema':1,'git_commit':commit,'purpose':'paired calibration update; formal masks/configs/captures untouched',
+        if not a.code_only:
+            for f in (ROOT/'generated/dual').rglob('*'):
+                if f.is_file(): add(f,str(f.relative_to(ROOT)))
+            if not (ROOT/'generated/dual/pairs.json').is_file(): raise FileNotFoundError('Run dual_patterns.py first')
+        manifest={'schema':1,'git_commit':commit,'purpose':('adapter code only; all generated files/configs/captures untouched' if a.code_only else 'paired calibration update; formal masks/configs/captures untouched'),
                   'files':{n:sha(f) for n,f in sorted(paths.items())}}
-        target=a.output.with_name('ABO_alignment_update.zip'); target.parent.mkdir(parents=True,exist_ok=True)
+        target=a.output.with_name('ABO_code_update.zip' if a.code_only else 'ABO_alignment_update.zip'); target.parent.mkdir(parents=True,exist_ok=True)
         import json
         with zipfile.ZipFile(target,'w',zipfile.ZIP_DEFLATED) as z:
             for name,f in sorted(paths.items()): z.write(f,name)
