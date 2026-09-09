@@ -1,0 +1,42 @@
+base_config: spatial_calibrated_s620.yaml
+output_dir: ../../runs/lgvq_spatial_electronic_cross_skip_s646
+random_seed: 646
+
+# Two scalar, zero-start residual gates retain E1 at E2 and E3 at E4. Both
+# remain inside the one electronic route and their outputs still enter the
+# normal RMS-matched optical fusion; there is no extra predictor or input.
+model:
+  electronic_cross_stage_skip_enabled: true
+  electronic_cross_stage_skip_max: 0.50
+
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_router_temperature_s620/best_alpha_calibrated_checkpoint.pt
+  trainable_scope: cross_stage_skip_only
+  epochs: 12
+  batch_size: 64
+  learning_rate: 0.030
+  weight_decay: 0.0
+  phase_warmup_epochs: 0
+  restore_best_at_stage_transition: false
+  ema_decay: 0.0
+  minimum_learning_rate_factor: 0.20
+  test_interval_epochs: 1
+  test_interval_steps: 2
+  phase_snapshot_interval_epochs: 0
+
+loss:
+  ranking_weight: 1.50
+  correlation_weight: 3.00
+  soft_spearman_weight: 0.30
+  soft_rank_temperature: 0.10
+  soft_target_weight: 0.0
+  soft_target_ranking_weight: 0.0
+  soft_target_correlation_weight: 0.0
+  level_distribution_weight: 0.0
+  optical_alignment_weight: 0.0
+  router_balance_weight: 0.0
+  router_importance_weight: 0.0
+  serial_router_balance_weight: 0.0
+  serial_router_importance_weight: 0.0
+  router_capture_weight: 0.0
+

@@ -277,6 +277,8 @@ class ExperimentSettings:
     electronic_quality_residual_initial: float = 0.70
     electronic_quality_reinjection_enabled: bool = False
     electronic_quality_reinjection_max: float = 0.50
+    electronic_cross_stage_skip_enabled: bool = False
+    electronic_cross_stage_skip_max: float = 0.50
     quality_refiner_enabled: bool = False
     quality_refiner_max: float = 0.50
     late_input_correction_enabled: bool = False
@@ -456,6 +458,8 @@ class ExperimentSettings:
             suffixes.append(f"electronicqualityresidual{quality_tag:02d}_v1")
         if self.electronic_quality_reinjection_enabled:
             suffixes.append("electronicqualitye2skip_v1")
+        if self.electronic_cross_stage_skip_enabled:
+            suffixes.append("electroniccrossstageskip_v1")
         if self.quality_refiner_enabled:
             suffixes.append("qualityrefine_v1")
         if self.late_input_correction_enabled:
@@ -600,6 +604,8 @@ class ExperimentSettings:
             )
         if self.electronic_quality_reinjection_max <= 0.0:
             raise ValueError("model.electronic_quality_reinjection_max must be positive")
+        if self.electronic_cross_stage_skip_max <= 0.0:
+            raise ValueError("model.electronic_cross_stage_skip_max must be positive")
         if self.vision_cache_view_paths and (
             self.target_name != "spatial" or self.frame_count != 4
         ):
@@ -848,6 +854,7 @@ class ExperimentSettings:
             "appended_vision_only",
             "appended_language_only",
             "quality_reinjection_only",
+            "cross_stage_skip_only",
             "readout_refiner_only",
             "readout_refiner_and_residual",
             "moment_refiner_only",
@@ -871,6 +878,7 @@ class ExperimentSettings:
                 "appended_electronic_only, "
                 "appended_vision_only, appended_language_only, "
                 "quality_reinjection_only, "
+                "cross_stage_skip_only, "
                 "readout_refiner_only, readout_refiner_and_residual, "
                 "moment_refiner_only, moment_refiner_and_residual, "
                 "quality_refiner_only, quality_refiner_readout, or "
@@ -916,6 +924,13 @@ class ExperimentSettings:
             raise ValueError(
                 "A readout_refiner training scope requires "
                 "model.spatial_readout_refiner_enabled=true"
+            )
+        if self.trainable_scope == "cross_stage_skip_only" and not (
+            self.electronic_cross_stage_skip_enabled
+        ):
+            raise ValueError(
+                "training.trainable_scope=cross_stage_skip_only requires "
+                "model.electronic_cross_stage_skip_enabled=true"
             )
         if self.trainable_scope.startswith("moment_refiner") and not (
             self.spatial_readout_moment_refiner_enabled
@@ -1071,6 +1086,12 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         ),
         electronic_quality_reinjection_max=float(
             get("model", "electronic_quality_reinjection_max", 0.50)
+        ),
+        electronic_cross_stage_skip_enabled=bool(
+            get("model", "electronic_cross_stage_skip_enabled", False)
+        ),
+        electronic_cross_stage_skip_max=float(
+            get("model", "electronic_cross_stage_skip_max", 0.50)
         ),
         quality_refiner_enabled=bool(get("model", "quality_refiner_enabled", False)),
         quality_refiner_max=float(get("model", "quality_refiner_max", 0.50)),

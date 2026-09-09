@@ -185,6 +185,31 @@ def test_moment_readout_refiner_is_exact_zero_start(tmp_path: Path) -> None:
     torch.testing.assert_close(actual, expected, rtol=0.0, atol=0.0)
 
 
+def test_cross_stage_electronic_skips_are_exact_zero_start(tmp_path: Path) -> None:
+    source_settings = replace(_small_settings(tmp_path), phase_snapshot_interval_epochs=0)
+    source_settings.validate()
+    torch.manual_seed(721)
+    source = LGVQSingleMetricOEO16(source_settings).eval()
+    checkpoint = tmp_path / "electronic_skip_source.pt"
+    torch.save({"state_dict": source.state_dict()}, checkpoint)
+    residual_settings = replace(
+        source_settings,
+        electronic_cross_stage_skip_enabled=True,
+        initialization_checkpoint=checkpoint,
+        trainable_scope="cross_stage_skip_only",
+    )
+    residual_settings.validate()
+    residual = LGVQSingleMetricOEO16(residual_settings).eval()
+    _load_compatible_initialization(residual, residual_settings)
+    inputs = _inputs(frame_count=4)
+    with torch.no_grad():
+        expected = source(*inputs, optical_enabled=True)["prediction"]
+        result = residual(*inputs, optical_enabled=True)
+    torch.testing.assert_close(result["prediction"], expected, rtol=0.0, atol=0.0)
+    assert result["vision_cross_stage_skip_scale"].item() == 0.0
+    assert result["language_cross_stage_skip_scale"].item() == 0.0
+
+
 def test_cached_readout_mos_strata_interleave_score_range() -> None:
     targets = torch.arange(16, dtype=torch.float32)
     payload = {

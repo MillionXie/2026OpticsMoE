@@ -1,0 +1,7 @@
+base_config: spatial_electronic_cross_skip_s646.yaml
+output_dir: ../../runs/lgvq_spatial_electronic_cross_skip_gentle_s647
+random_seed: 647
+
+training:
+  learning_rate: 0.005
+  test_interval_steps: 1

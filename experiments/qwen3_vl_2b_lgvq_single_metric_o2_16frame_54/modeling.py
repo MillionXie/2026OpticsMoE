@@ -2414,6 +2414,9 @@ class LGVQSingleMetricOEO16(nn.Module):
             self.raw_electronic_quality_reinjection = nn.Parameter(
                 torch.zeros(())
             )
+        if settings.electronic_cross_stage_skip_enabled:
+            self.raw_vision_cross_stage_skip = nn.Parameter(torch.zeros(()))
+            self.raw_language_cross_stage_skip = nn.Parameter(torch.zeros(()))
         self.parallel_optics = ParallelOpticalFeaturePath(settings)
         self.serial_optics = SerialOpticalFeaturePath(settings)
         self.parallel_router = OpticalRouterParallel16(settings)
@@ -2570,6 +2573,16 @@ class LGVQSingleMetricOEO16(nn.Module):
 
         fields2 = self.parallel_optics.fields(vision)
         electronic2 = self.vision_routes[1](vision)
+        vision_cross_stage_skip = electronic2.new_zeros(())
+        raw_vision_cross_stage_skip = getattr(
+            self, "raw_vision_cross_stage_skip", None
+        )
+        if raw_vision_cross_stage_skip is not None:
+            vision_cross_stage_skip = (
+                self.settings.electronic_cross_stage_skip_max
+                * torch.tanh(raw_vision_cross_stage_skip)
+            )
+            electronic2 = electronic2 + vision_cross_stage_skip * electronic1
         electronic_quality_reinjection = electronic2.new_zeros(())
         raw_reinjection = getattr(
             self, "raw_electronic_quality_reinjection", None
@@ -2644,6 +2657,16 @@ class LGVQSingleMetricOEO16(nn.Module):
 
         fields4 = self.serial_optics.fields(sequence)
         electronic4 = self.language_routes[1](sequence, mask)
+        language_cross_stage_skip = electronic4.new_zeros(())
+        raw_language_cross_stage_skip = getattr(
+            self, "raw_language_cross_stage_skip", None
+        )
+        if raw_language_cross_stage_skip is not None:
+            language_cross_stage_skip = (
+                self.settings.electronic_cross_stage_skip_max
+                * torch.tanh(raw_language_cross_stage_skip)
+            )
+            electronic4 = electronic4 + language_cross_stage_skip * electronic3
         if optical_enabled:
             optical4 = self.serial_optics.global_path(fields4, sequence.shape[1])
             sequence = self.fusions[3](electronic4, optical4, mask)
@@ -2694,6 +2717,8 @@ class LGVQSingleMetricOEO16(nn.Module):
             "quality_gate": quality_gate,
             "electronic_quality_residual_scale": electronic_quality_scale,
             "electronic_quality_reinjection_scale": electronic_quality_reinjection,
+            "vision_cross_stage_skip_scale": vision_cross_stage_skip,
+            "language_cross_stage_skip_scale": language_cross_stage_skip,
             "qwen_gate": qwen_gate,
             "late_input_correction": input_correction,
             "spatial_readout_image_focus": readout_image_focus,
@@ -2769,6 +2794,11 @@ class LGVQSingleMetricOEO16(nn.Module):
         if hasattr(self, "raw_electronic_quality_scale"):
             result["electronic_quality_residual"] += (
                 self.raw_electronic_quality_scale.numel()
+            )
+        if hasattr(self, "raw_vision_cross_stage_skip"):
+            result["electronic_cross_stage_skips"] = (
+                self.raw_vision_cross_stage_skip.numel()
+                + self.raw_language_cross_stage_skip.numel()
             )
         result["total_trainable"] = sum(
             parameter.numel() for parameter in self.parameters() if parameter.requires_grad
