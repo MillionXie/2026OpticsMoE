@@ -414,3 +414,39 @@ alpha=0.43072805/0.44108027；四专家选择2329/2647/2314/2710次，
 `7d2a8daabc9e6a51de4e739a6e06df606c9229e9087c87b85aa5a79a4f46c5c5`。
 审计命令与上文`sam005_candidate_audit_20260910`相同，但config/checkpoint/run-dir均换成spatialcc对应路径；
 实际完整命令、30145ef源码commit、环境和架构报告保留在审计run。仍为阶段性候选，不是50轮完成报告。
+
+## 教师梯度诊断与相关性蒸馏强度配对
+
+2026-09-10，在固定已完成来源c88e1a41…e841ad73（CC=.85953132）上做只读训练集诊断：
+源码30145ef，torch seed42，从原顺序10000张训练集中用
+`sorted(random.Random(17042).sample(range(10000),128))`取128张，8个batch×16。
+无图像增强，模型eval、光学随机扰动关闭，标准FP32前向，无optimizer.step、无新PT。
+teacher仍为同一SHA绑定的train logits缓存。对同一次前向分别求真实标签总损失、
+未加权KL教师项、未加权空间CC教师项对各原优化组参数的梯度；不混入router/物理正则项。
+组内展平参数梯度，比较余弦与梯度范数比；下表是8个batch统计的均值，不是全训练集结论。
+
+|参数组|KL梯度与GT余弦|空间CC梯度与GT余弦|空间CC梯度范数/GT（系数1）|
+|---|---:|---:|---:|
+|原电子残差|0.49456|0.58823|0.50255|
+|光学router|0.74651|0.68398|0.54152|
+|特征相位|0.52627|0.56008|0.43917|
+|CCD读出|0.56695|0.62247|0.49165|
+|显著性读出头|0.33337|0.51446|0.55941|
+|CFFN空间核|0.56345|0.60302|0.46190|
+
+空间CC在router组有1/8个batch余弦为负，其余5组均0/8；不能说完全无冲突。
+当前系数.6对应范数比约.26–.34；系数2对应约.88–1.12。
+该证据支持试一个同量级教师梯度对照，不证明强监督一定提升；训练噪声与SAM扰动下仍可能不同。
+原始batch ID、损失、各组梯度统计在`runs/smoke/kd_gradient_train128_20260910/gradients.json`。
+
+`moe_alpha40_sam_spatialcc_kd2.yaml`只把空间CC教师项固定系数.6改为2，
+来源、50轮、SAM.05、GT损失、无图像增强、全部学习率、光路/alpha≥.4/DC完全不变。
+不是从正在更新的spatialcc best继续，不与groups64/wide576/global16组合，推理参数增加0。
+以原`moe_alpha40_sam_spatialcc_seed42`为配对；真实改善必须通过完整5000公开测试复评，
+如KLD/SIM变差也必须同时报告。只保留best/last。
+
+```bash
+TASK=LightGenV2/tasks/t03_saliency
+python -m pytest "$TASK/tests" -q
+python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TASK/configs/moe_alpha40_sam_spatialcc_kd2.yaml" --phase all
+```

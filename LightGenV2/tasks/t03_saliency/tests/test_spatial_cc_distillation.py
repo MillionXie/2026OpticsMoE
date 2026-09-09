@@ -69,3 +69,18 @@ def test_profile_is_loss_only_and_invalid_mode_is_rejected(tmp_path):
     path.parent.mkdir(parents=True)
     path.write_text(f'base_config: {(TASK/"configs/moe_alpha40_sam_spatialcc.yaml").as_posix()}\ntraining:\n  sam_rho: 0\n')
     with pytest.raises(ValueError):load_settings(path)
+
+
+def test_stronger_spatial_cc_changes_only_teacher_strength():
+    s=load_settings(TASK/'configs/moe_alpha40_sam_spatialcc_kd2.yaml')
+    base=load_settings(TASK/'configs/moe_alpha40_sam_spatialcc.yaml')
+    assert s.distillation_initial_weight==s.distillation_final_weight==2.
+    assert base.distillation_initial_weight==base.distillation_final_weight==.6
+    assert architecture_label(s)==architecture_label(base)
+    for k in ['student_epochs','sam_rho','initialization_checkpoint_sha256','augmentation_enabled',
+              'distillation_end_epoch','distillation_loss','fusion_alpha_min','top_k','router_backend',
+              'active_size','expert_size','electronic_ffn_hidden_width','electronic_ffn_groups',
+              'kl_weight','cc_weight','sim_weight','nss_weight','student_learning_rate',
+              'phase_learning_rate','router_learning_rate','dense_head_learning_rate',
+              'language_optical_phase_zero_order_intensity_min','language_optical_phase_zero_order_intensity_max']:
+        assert getattr(s,k)==getattr(base,k)
