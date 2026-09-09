@@ -5,7 +5,15 @@
 - 历史冻结 Qwen3-VL-Embedding-2B：Hit@1 **95.2083%**，出处见 `reports/reproduction/BASELINE_METHODS.md`。这不是 T08 图搜文的 73.71%。
 - 操作与复现唯一入口：[reports/reproduction/README.md](reports/reproduction/README.md)。
 
-## 2026-09-09 后续优化（运行中，未替换正式最佳）
+## 2026-09-09 后续优化（两组80epoch已完成）
+
+当前较好模型为 **refine_training_20260909 / best80**：Hit@1 **69.5833%**、mAP@10 **0.67616634**；
+同权重去光 Hit@1 **67.0833%**，下降2.50个百分点。checkpoint SHA256：
+`2d588f40a1aa9f09336745b1e14a61c0cca76874f4c6d4f24a3d6163b978f20c`。
+电子增强组 best60：Hit@1 **67.0833%**、mAP@10 **0.67153315**，同权重去光 **66.6667%**，
+SHA256=`85320f46fe0c629c7f37b159683f451a2286381c1eb0ff3e82ed4f74e965ca79`。
+两组都已生成final_report.json与相位/比较图。当前最好相位raw参数相对此轮起点RMS变化约0.14–0.29，
+V1/V2/L1/L2 alpha约0.1027/0.1042/0.0882/0.0875。不能把alpha直接解释为性能贡献。
 
 源码 `838ae656`，两组都从上述 65.4167% 的 ABO best 开始，80 epoch，
 保持数据、图库、测试口径、光路、Top-2 与原始冻结 baseline 不变：
@@ -21,6 +29,15 @@
 训练仍记录专家使用、alpha、相位变化，最后恢复 best 做同权重去光对照；只保留 best/last。
 查看实时进度用对应 `status.json`、`history.json`；只有出现 `final_report.json` 且 status=complete
 才表示包括去光与可视化在内的完整训练结束。运行中数字不要替代正式结果表。
+
+## 新一轮图库对齐（运行状态以run为准）
+
+`configs/refine_gallery.yaml` 和 `configs/refine_gallery_relation.yaml`，各60epoch，
+对应 `runs/simulation/refine_gallery_20260909` 和 `refine_gallery_relation_20260909`。
+都从69.5833%的原结构best继续，不采用较弱的增强电子结构。
+第一组训练时对全训练商品库优化，排除自身商品；第二组只额外加入完整2048D教师的商品相似分布KL。
+图库memory与教师目标只在训练存在，推理仍保持原64D输出、原120商品排序。
+固定教师类别中心CE取消，减轻对特征坐标的限制；具体损失、温度、刷新规则、命令见唯一复现入口。
 
 ## 数据与指标
 
@@ -81,7 +98,7 @@ alpha 是融合系数，不直接等于性能贡献百分比。
 各报告 2048D 与 64D。全量 2048D 是大模型主 baseline，square 64D 是控制预处理/维度差异的辅助对照。
 同一 prompt、划分、图库和指标函数贯穿所有版本。本轮不测速度/功耗。
 
-当前较好候选：`configs/optical_top2_dc20_anchor.yaml`；除训练损失外与初版完全同图。
+第一轮历史候选：`configs/optical_top2_dc20_anchor.yaml`；除训练损失外与初版完全同图。
 它增加训练图像教师特征的类别中心 CE（权重1），KD权重改为1，对比权重0.5；这些中心不进入推理。
 运行为 `runs/simulation/optical_top2_dc20_anchor_20260909`，权重 `best_checkpoint.pt`，图 `comparison.png`/`best_phase_overview.png`。
 best 的 V1/V2/L1/L2 alpha 约为0.1001/0.1010/0.0979/0.0977；去光下降0.83个百分点，不能解释成10%因果贡献。
