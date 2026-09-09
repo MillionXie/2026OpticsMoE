@@ -557,3 +557,14 @@ python -m LightGenV2.tasks.t03_saliency.recheck_aligned --system optical --confi
 ```
 
 源best仍可能被后续训练更新；复现前核对SHA，复评必须使用尚不存在的输出目录，保留原证据。
+
+同一epoch5/SHA=87ad4db5…8fafb29a完成A100上的全5000张路由/相位审计：
+`spatialcc_kd2_candidate_audit_20260910`，源码961907d1，审计前后源SHA相同，重载CC=.8620496356。
+alpha=.43072182/.44106704；四专家选择槽2349/2625/2316/2710，
+占23.49%/26.25%/23.16%/27.10%，有效专家数3.98147，无未使用专家。
+相对初始化的圆周相位RMS：router .00076503 rad；四专家
+.01376873/.01351170/.01444562/.01391805 rad；global .01377472 rad，光学相位确有更新。
+样例在该run的`best_visualization/saliency_examples`；实际命令、环境和架构保留在同一目录。
+`selected_checkpoint_test_evaluation.json` SHA256：
+`8cbd3e76ee107164f7765efc75cc93438bd16f5107ecffe2edb399c07dfdef41`。
+仍为训练中的候选审计，不是训练完成，也不是物理CCD实测或含噪测试性能。
