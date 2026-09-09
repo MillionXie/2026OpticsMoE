@@ -1,0 +1,11 @@
+base_config: spatial_readout_moments_s640.yaml
+output_dir: ../../runs/lgvq_spatial_readout_moments_hot_s642
+random_seed: 642
+
+data:
+  training_view_probabilities: [0.90, 0.05, 0.05]
+
+training:
+  learning_rate: 0.0020
+  weight_decay: 0.001
+  ema_decay: 0.95
