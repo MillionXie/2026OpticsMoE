@@ -89,6 +89,9 @@ def load_settings(path: str | Path) -> Any:
     settings.sim_weight = float(d("loss.sim_weight", 0.25))
     settings.nss_weight = float(d("loss.nss_weight", 0.1))
     settings.map_kd_weight = 0.0
+    settings.sam_rho = float(d("training.sam_rho", 0.0))
+    if not 0 <= settings.sam_rho <= .1:
+        raise ValueError("training.sam_rho must be in [0,.1]")
     settings.map_kd_temperature = 1.0
     settings.distillation_initial_weight = float(d("distillation.initial_weight", 0.0))
     settings.distillation_final_weight = float(d("distillation.final_weight", 0.0))
@@ -138,6 +141,8 @@ def load_settings(path: str | Path) -> Any:
     settings.ffn_spatial_learning_rate = float(d("training.ffn_spatial_learning_rate", 0.0001))
     settings.electronic_global_rank = int(d("lightgen.electronic_global_rank", 0))
     settings.initialize_global_on_warmstart = bool(d("training.initialize_global_on_warmstart", False))
+    if settings.sam_rho and settings.feature_hint_initial_weight:
+        raise ValueError("Isolate SAM from training-only feature hints")
     settings.global_spatial_learning_rate = float(d("training.global_spatial_learning_rate", 0.0002))
     if settings.electronic_global_rank not in (0,16):
         raise ValueError("Global spatial rank must be 0(off) or audited rank16")
@@ -240,6 +245,7 @@ def save_resolved_config(settings: Any) -> None:
         learning_rate_source=settings.learning_rate_source,
         ema_decay=settings.ema_decay,
         phase_weight_decay=settings.phase_weight_decay,
+        sam_rho=settings.sam_rho,
         initialization_checkpoint=str(settings.initialization_checkpoint) if settings.initialization_checkpoint else None,
         initialization_checkpoint_sha256=settings.initialization_checkpoint_sha256,
         reset_fusion_on_warmstart=settings.reset_fusion_on_warmstart,

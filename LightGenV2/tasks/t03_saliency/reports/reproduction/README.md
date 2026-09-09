@@ -1,5 +1,8 @@
 # SALICON baseline 复现与公平性
 
+[SAM训练对照](SAM_TRAINING.md)：不增加推理结构，在电子参数子空间进行训练时扰动，
+有同源普通续训组、随机噪声配对和单次optimizer/EMA更新的实现检查。
+
 当前最佳光电候选的重载完整测试CC=0.85953132（空间FFN＋强蒸馏，epoch65 EMA），
 alpha≥0.4且四专家无明显坍缩；权重SHA、相位更新、完整命令和剩余差距见
 [泛化优化完成结果](VIEW_REGULARIZATION.md)。历史同规格头Qwen为0.88968469，0.87目标仍未达到。

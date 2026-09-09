@@ -1,0 +1,28 @@
+base_config: moe_alpha40_viewreg_cffn_kd2.yaml
+# Fixed completed .859531 best; no new inference architecture or calibration.
+training:
+  initialization_checkpoint: ../runs/simulation/moe_alpha40_viewreg_cffn_kd2_seed42/best_checkpoint.pt
+  initialization_checkpoint_sha256: c88e1a41febc878cf87d6c80d4e27d7ac0c6bddc11d73a29497490d2e841ad73
+  initialize_ffn_on_warmstart: false
+  student_epochs: 50
+  student_learning_rate: 0.00001
+  phase_learning_rate: 0.0002
+  router_learning_rate: 0.00002
+  dense_readout_learning_rate: 0.00002
+  dense_head_learning_rate: 0.00002
+  ffn_spatial_learning_rate: 0.00005
+  weight_decay: 0.01
+  sam_rho: 0.0
+  staged:
+    warmup_epochs: 0
+    polish_start: 41
+  adaptive_plateau:
+    min_epoch: 15
+    patience: 4
+augmentation:
+  enabled: false
+distillation:
+  initial_weight: 0.6
+  final_weight: 0.6
+  end_epoch: 1
+output_dir: ../runs/simulation/moe_alpha40_sam_control_seed42

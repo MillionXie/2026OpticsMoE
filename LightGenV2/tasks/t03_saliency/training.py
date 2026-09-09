@@ -194,7 +194,11 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
                 settings.distillation_initial_weight, settings.distillation_end_epoch, epoch,
                 settings.distillation_final_weight)
             stage_report["kd_weight"] = settings.map_kd_weight
-            if hints is None:
+            if getattr(settings, "sam_rho", 0) > 0:
+                from .sam_training import train_sam_epoch
+                train_metrics = train_sam_epoch(model, train_loader, loaded, settings, optim,
+                                                teacher if settings.map_kd_weight > 0 else None)
+            elif hints is None:
                 train_metrics = legacy._train_epoch(
                     "student", model, train_loader, loaded, settings, optim,
                     teacher_cache=teacher if settings.map_kd_weight > 0 else None,
