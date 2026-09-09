@@ -1,0 +1,11 @@
+base_config: spatial_calibrated_s620.yaml
+output_dir: ../../runs/lgvq_spatial_eval_early4_s670
+random_seed: 670
+
+# Exactly four uniformly spaced frames, shifted 5% earlier as one fixed view.
+data:
+  vision_cache: ../../artifacts/multiview/qwen3vl_front_4f_196x1024_view_m005.pt
+  quality_feature_cache: ../../artifacts/multiview/lgvq_quality_conv5_4f_196x192_view_m005.pt
+  vision_cache_views: []
+  quality_feature_cache_views: []
+  training_view_probabilities: []
