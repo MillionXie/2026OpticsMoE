@@ -1,5 +1,8 @@
 # SALICON baseline 复现与公平性
 
+[2026-09-09同规格头独立复评](ALIGNED_RECHECK_20260909.md)：Qwen CC=0.88968469，光电CC=0.85812014，
+同5000张清单与独立float64逐图CC，参数审计、差距分析和后续建议。
+
 当前同规格头的固定权重复评入口：`python -m LightGenV2.tasks.t03_saliency.recheck_aligned --help`。
 支持Qwen/光电，完整5000张public-test、逐图float64独立CC及样本ID清单SHA；不训练、不测速度功耗。
 使用`--system qwen --config LightGenV2/tasks/t03_saliency/configs/moe_staged_alpha_free.yaml`
