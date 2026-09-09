@@ -1,7 +1,7 @@
 # T07 商品检索（图搜图）
 
 - 当前数据集：`data/abo_similarity10_data`，来源 `abo_similarity10_data_only.zip`。
-- 2026-09-09：冻结 baseline 已重跑完成，原始输入 2048D Hit@1=**95.2083%**；同光学输入 64D=**92.9167%**。光学 Top-2 的前反向/完整评估/保存小检查通过，40 epoch 正式训练已启动，尚无最终成绩。[本轮证据](reports/reproduction/RUN_20260909.md)。
+- 2026-09-09：两组光学40epoch与冻结baseline均完成。冻结原始输入2048D Hit@1=**95.2083%**，同光学输入64D=**92.9167%**；光学初版**60.8333%**，同结构加强语义训练版**65.4167%**（best25），同best去光**64.5833%**。当前光学性能仍明显落后，不能称为接近baseline。[本轮证据](reports/reproduction/RUN_20260909.md)。
 - 历史冻结 Qwen3-VL-Embedding-2B：Hit@1 **95.2083%**，出处见 `reports/reproduction/BASELINE_METHODS.md`。这不是 T08 图搜文的 73.71%。
 - 操作与复现唯一入口：[reports/reproduction/README.md](reports/reproduction/README.md)。
 
@@ -16,6 +16,7 @@
 这是 **同类别相似商品检索，不是同一商品实例识别**。
 报告 Hit@1/5/10、Precision、positive Recall、mAP@10、NDCG@10。
 旧称 R@1 等同 Hit@1，不等同找回全部相关商品的 Recall。
+报告里的旧字段 `category_route_accuracy` 只是额外的10类别中心诊断，不是4专家光 Router，也不用于缩小图库。
 
 ## 当前光电结构
 
@@ -62,3 +63,10 @@ alpha 是融合系数，不直接等于性能贡献百分比。
 冻结 baseline 不训练任何参数，重跑原始长宽比预处理及同光学 224×224 中心裁切预处理，
 各报告 2048D 与 64D。全量 2048D 是大模型主 baseline，square 64D 是控制预处理/维度差异的辅助对照。
 同一 prompt、划分、图库和指标函数贯穿所有版本。本轮不测速度/功耗。
+
+当前较好候选：`configs/optical_top2_dc20_anchor.yaml`；除训练损失外与初版完全同图。
+它增加训练图像教师特征的类别中心 CE（权重1），KD权重改为1，对比权重0.5；这些中心不进入推理。
+运行为 `runs/simulation/optical_top2_dc20_anchor_20260909`，权重 `best_checkpoint.pt`，图 `comparison.png`/`best_phase_overview.png`。
+best 的 V1/V2/L1/L2 alpha 约为0.1001/0.1010/0.0979/0.0977；去光下降0.83个百分点，不能解释成10%因果贡献。
+best epoch的训练选择份额：Vision约25.07/25.00/26.32/23.61%；Language约50.00/17.43/15.90/16.67%。
+这只是该epoch的live训练统计，并非EMA best在test上的专家统计；语言仍有固定首选专家，尚未完全解决集中问题。
