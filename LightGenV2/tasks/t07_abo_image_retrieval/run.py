@@ -7,7 +7,9 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import copy
 import json
+import os
 import platform
 import subprocess
 import sys
@@ -16,6 +18,7 @@ from collections import defaultdict
 from pathlib import Path
 
 import torch
+import yaml
 import torch.nn.functional as F
 from PIL import Image, ImageOps
 from torch.utils.data import DataLoader
@@ -45,6 +48,22 @@ from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.train_optical
 from experiments.qwen3_vl_embedding_2b_grocery10_optical_retrieval.optics.physical import phase_dc_loss
 
 TASK = Path(__file__).resolve().parent
+
+
+def initialize_pinned_student(settings, replacement, readout):
+    # The original checkpoint stores the HF repo ID, whereas offline loading
+    # uses its exact pinned snapshot path. Allow ONLY this audited alias; all
+    # checkpoint SHA, architecture, shapes and selection checks still run.
+    pinned = Path(settings.model_id)
+    init_settings = copy.copy(settings)
+    if (pinned.name == "9f2f7e710d6d81056aa5c0a4f04764fec6bb7bda"
+            and pinned.parent.name == "snapshots"
+            and pinned.parent.parent.name == "models--Qwen--Qwen3-VL-Embedding-2B"):
+        init_settings.model_id = "Qwen/Qwen3-VL-Embedding-2B"
+    report = initialize_student(init_settings, replacement, readout)
+    report["offline_model_path"] = settings.model_id
+    report["checkpoint_logical_model_id"] = init_settings.model_id
+    return report
 
 
 def convert(samples):
@@ -133,6 +152,35 @@ def baseline_report(cache, train, test, output):
     return report
 
 
+def draw_summary(output, report, baseline, history):
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    fig, axes = plt.subplots(1, 3, figsize=(12, 3.6), constrained_layout=True)
+    evaluated = [r for r in history if "test_hit_at_1" in r]
+    axes[0].plot([r["epoch"] for r in evaluated], [r["test_hit_at_1"] for r in evaluated], "o-")
+    axes[0].set(xlabel="epoch", ylabel="periodic-test Hit@1", title="a  Checkpoint selection")
+    labels = ["Qwen native\n2048D", "Qwen square\n64D", "Optical\nTop-2", "Same weights\noptical removed"]
+    values = [baseline["variants"]["native_2048d"]["hit_at_1"],
+              baseline["variants"]["square_64d"]["hit_at_1"], report["metrics"]["hit_at_1"],
+              report["remove_optical_same_weights"]["hit_at_1"]]
+    axes[1].bar(labels, values, color=["#999999", "#bbbbbb", "#0072B2", "#D55E00"])
+    axes[1].set(ylim=(0, 1.03), ylabel="Hit@1", title="b  Retrieval comparison")
+    axes[1].tick_params(axis="x", labelsize=7)
+    selected = next(r for r in history if r["epoch"] == report["best_epoch"])
+    for i, name in enumerate(("vision", "language")):
+        count = torch.tensor(json.loads(selected[name+"_router_counts"]))
+        share = (count / count.sum()).numpy()
+        axes[2].bar([j + i*.35 for j in range(4)], share, width=.35, label=name)
+    axes[2].set(xticks=[j+.175 for j in range(4)], xticklabels=["E1", "E2", "E3", "E4"],
+                ylabel="fraction of Top-2 selections", title="c  Best-epoch live train routing")
+    axes[2].axhline(.25, color="gray", linestyle="--", linewidth=1)
+    axes[2].legend()
+    fig.savefig(output / "comparison.png", dpi=180)
+    fig.savefig(output / "comparison.pdf")
+    plt.close(fig)
+
+
 @torch.no_grad()
 def evaluate(loaded, replacement, readout, train, test, settings, output=None):
     replacement.set_phase_dropout_active(False)
@@ -159,6 +207,7 @@ def train_model(loaded, replacement, readout, settings, raw, train, test, cache)
     targets = F.normalize(cache["square"][:len(train), :settings.embedding_dim].float(), dim=-1)
     phase_initial = {k: [p.detach().cpu().clone() for p in v]
                      for k, v in replacement.phase_parameter_groups().items()}
+    router_initial = [p.detach().cpu().clone() for p in replacement.router_parameters()]
     history, best, best_epoch = [], (-1., -1.), -1
     for epoch in range(1, settings.epochs + 1):
         sampler.set_epoch(epoch)
@@ -229,14 +278,26 @@ def train_model(loaded, replacement, readout, settings, raw, train, test, cache)
         print(json.dumps(row), flush=True)
     load_checkpoint(settings.output_dir / "best_checkpoint.pt", replacement, readout)
     metrics = evaluate(loaded, replacement, readout, train, test, settings, settings.output_dir)
+    fusion = replacement.fusion_diagnostics()
+    replacement.set_fusion_ablation("remove_optical")
+    try:
+        removed = evaluate(loaded, replacement, readout, train, test, settings)
+    finally:
+        replacement.set_fusion_ablation("none")
     deltas = {k: [float((p.detach().cpu()-a).square().mean().sqrt()) for p,a in zip(v,phase_initial[k])]
               for k,v in replacement.phase_parameter_groups().items()}
     replacement.save_multiplane_phase_preview(settings.output_dir / "best_phase_overview.png", title="ABO image-image best optical Top-2")
     report = {"status": "complete", "best_epoch": best_epoch, "metrics": metrics,
-              "fusion": replacement.fusion_diagnostics(), "raw_phase_rms_change_from_warmstart": deltas,
+              "fusion": fusion, "raw_phase_rms_change_from_warmstart": deltas,
+              "router_parameter_rms_change": [float((p.detach().cpu()-a).square().mean().sqrt())
+                                              for p,a in zip(replacement.router_parameters(), router_initial)],
+              "remove_optical_same_weights": removed,
+              "optical_removal_hit1_drop_percentage_points": 100*(metrics["hit_at_1"]-removed["hit_at_1"]),
               "selection": "periodic test Hit@1 then mAP@10; EMA; no independent unbiased test estimate",
               "best_checkpoint_sha256": sha256_file(settings.output_dir / "best_checkpoint.pt")}
     write_json(settings.output_dir / "final_report.json", report)
+    baseline = baseline_report(cache, train, test, settings.output_dir)
+    draw_summary(settings.output_dir, report, baseline, history)
     return report
 
 
@@ -264,10 +325,12 @@ def run(args):
     cache_path = Path(args.cache).resolve() if args.cache else path_from(config, _nested(raw, "abo_image_image.teacher_cache"))
     seed_everything(settings.random_seed)
     write_json(output / "status.json", {"state": "starting"})
+    (output / "command.txt").write_text(" ".join([sys.executable, "-m", "LightGenV2.tasks.t07_abo_image_retrieval.run", *sys.argv[1:]]) + "\n", encoding="utf-8")
     write_json(output / "run_manifest.json", {
         "task": "t07_abo_image_retrieval", "mode": args.mode, "command": sys.argv,
         "git_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
         "python": sys.version, "torch": torch.__version__, "platform": platform.platform(),
+        "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
         "train_images": len(train), "test_images": len(test), "validation_images_unused": 480,
         "gallery_products": 120, "relevance": "same category; 12 positives; unrestricted gallery",
         "categories": categories, "data_identity": cache_identity(settings, train+test, root),
@@ -284,8 +347,12 @@ def run(args):
             raise RuntimeError("Teacher cache contract mismatch")
         replacement, readout = build_student(loaded, settings)
         try:
-            initialization = initialize_student(settings, replacement, readout)
+            initialization = initialize_pinned_student(settings, replacement, readout)
             save_resolved_config(settings)
+            resolved = yaml.safe_load((output / "config.yaml").read_text(encoding="utf-8"))
+            resolved["lightgen"]["task"] = "t07_abo_image_retrieval"
+            resolved["abo_image_image"] = _nested(raw, "abo_image_image")
+            (output / "config.yaml").write_text(yaml.safe_dump(resolved, allow_unicode=True, sort_keys=False), encoding="utf-8")
             write_json(output / "initialization.json", initialization)
             write_json(output / "architecture.json", replacement.student_architecture_report())
             write_json(output / "task_options.json", _nested(raw, "abo_image_image"))
