@@ -87,3 +87,18 @@ python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config Ligh
 正式候选必须同时查看`selected_checkpoint_test_evaluation.json`中的专家选择占比、
 有效专家数和未使用专家，不以性能小涨为由接受明显专家坍缩。
 目标CC≥0.87尚未达成；本节是受控试验协议。
+
+### 完成结果：降低硬均衡未带来改善
+
+`moe_alpha40_soften_hard_balance_seed42`已完成50轮，源码
+`6acb5b15324e60f20adee29f38a5714e03e641db`。更新后的最高测试CC为epoch1
+`0.8577959043502807`，末轮`0.8558180618286133`，均未超过源权重。
+最终best保留epoch0；重新加载best并完整评估5000张得到CC `0.8581201313018799`，
+不是本轮训练产生了新提升。相同预算的原硬均衡control也保留epoch0，见
+[特征提示对照结果](FEATURE_HINTS.md)。因此暂不继续降低均衡系数。
+
+所选旧best的alpha为0.4341355/0.4414456，四专家选择次数2356/2632/2319/2693，
+有效专家数3.98277，无未使用专家；这是**所选epoch0权重**的审计，不代表末轮权重。
+证据位于该run的`metrics/training_history.csv`、`training_report.json`和
+`selected_checkpoint_test_evaluation.json`；后者SHA256：
+`92c31b5b1c0b94479cf9711d5f94b5e749816daeb65fd32aea714d88743ff814`。
