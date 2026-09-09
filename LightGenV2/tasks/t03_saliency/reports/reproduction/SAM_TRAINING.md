@@ -198,3 +198,25 @@ python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TA
 “分散”指GT密度分布，不能直接等同图像的物体数量。各组只用于分析，仍保留原完整平均分，
 不按测试GT修改输入、后处理、样本权重或模型推理。
 其结果更支持先观察现有全局空间混合/位置变化训练对照，不支持靠单一亮度校准缩小全部差距。
+
+## 空间增强幅度的单变量对照
+
+`moe_alpha40_viewreg_sam_crop90.yaml`只相对早期SAM的95%最小裁剪边长改为90%，
+即随机保留90%–100%边长（最低约81%面积），再缩放回224×224。
+不改变推理图像，不以GT质心选择裁剪位置；随机位置仍由训练loader原算法产生。
+图像/GT密度/fixation/teacher概率图仍同步裁剪缩放，密度/teacher重新归一化，
+裁掉全部fixation仍按原规则回退整图。增强不引入测试图片或新教师推理。
+这是近似视图一致性训练假设；裁剪会改变场景上下文，不能保证更强增强一定改善真实注视预测。
+
+其余来源SHA、80轮、SAM=.05、前5轮原E冻结、KD2→.6、61轮关闭图像增强、
+EMA、光学噪声、光Router Top2、alpha≥.4和推理结构全部不变。
+严格对照为`moe_alpha40_viewreg_sam005_seed42`；不要将其与后期SAM的不同来源直接归因比较。
+只保留best/last，使用释放的显卡资源，不抢占/停止他人任务。
+
+```bash
+TASK=LightGenV2/tasks/t03_saliency
+python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TASK/configs/moe_alpha40_viewreg_sam_crop90.yaml" --phase all
+```
+
+结果在`runs/simulation/moe_alpha40_viewreg_sam_crop90_seed42`；以完整5000张公共测试选模，
+不得只报偏心/分散子集改善，仍需最终权重、相位、路由、alpha审计。
