@@ -22,7 +22,7 @@ from experiments.qwen3_vl_embedding_2b_salicon_vision_optical_saliency.visualiza
 
 from .modeling import build_student, initialize_student, optimizer
 from .visualize import render
-from .training_support import ModelEMA, TrainTeacherMaps, AlignedFlipLoader, AlignedWeakLoader, distillation_weight
+from .training_support import ModelEMA, TrainTeacherMaps, AlignedFlipLoader, AlignedWeakLoader, distillation_weight, supervision_for_epoch
 from .plateau import PlateauController
 
 
@@ -195,9 +195,11 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
                 settings.distillation_initial_weight, settings.distillation_end_epoch, epoch,
                 settings.distillation_final_weight)
             stage_report["kd_weight"] = settings.map_kd_weight
+            epoch_settings, supervision_report = supervision_for_epoch(settings, epoch)
+            stage_report.update(supervision_report)
             if getattr(settings, "sam_rho", 0) > 0:
                 from .sam_training import train_sam_epoch
-                train_metrics = train_sam_epoch(model, train_loader, loaded, settings, optim,
+                train_metrics = train_sam_epoch(model, train_loader, loaded, epoch_settings, optim,
                                                 teacher if settings.map_kd_weight > 0 else None)
             elif hints is None:
                 train_metrics = legacy._train_epoch(

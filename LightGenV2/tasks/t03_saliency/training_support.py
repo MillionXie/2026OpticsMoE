@@ -4,6 +4,31 @@ import json
 import torch
 
 
+def supervision_for_epoch(settings, epoch):
+    """Train-only curriculum; never mutate the evaluation/base GT weights.
+
+    Teacher-only means task supervision only: optical/router regularizers stay
+    active. The same training images and cached teacher maps are used throughout.
+    """
+    from copy import copy
+    if epoch < 1:
+        raise ValueError("Supervision epochs are one-based")
+    count = getattr(settings, "teacher_only_epochs", 0)
+    active = count > 0 and epoch <= count
+    current = settings
+    if active:
+        if not 0 < settings.map_kd_weight < float("inf"):
+            raise ValueError("Teacher-only stage requires an active finite KD weight")
+        current = copy(settings)
+        for name in ("kl_weight", "cc_weight", "sim_weight", "nss_weight"):
+            setattr(current, name, 0.0)
+    return current, {
+        "supervision_stage": "teacher_only" if active else "ground_truth_plus_teacher",
+        **{f"effective_{name}": getattr(current, name)
+           for name in ("kl_weight", "cc_weight", "sim_weight", "nss_weight")},
+    }
+
+
 class ModelEMA:
     def __init__(self, model, decay):
         self.modules = {"core": model.core, "head": model.head}

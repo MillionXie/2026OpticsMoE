@@ -97,6 +97,10 @@ def load_settings(path: str | Path) -> Any:
     settings.distillation_initial_weight = float(d("distillation.initial_weight", 0.0))
     settings.distillation_final_weight = float(d("distillation.final_weight", 0.0))
     settings.distillation_end_epoch = int(d("distillation.end_epoch", 50))
+    teacher_only_epochs = d("distillation.teacher_only_epochs", 0)
+    if isinstance(teacher_only_epochs, bool) or not isinstance(teacher_only_epochs, int):
+        raise ValueError("teacher_only_epochs must be an integer")
+    settings.teacher_only_epochs = teacher_only_epochs
     cache = d("distillation.cache_file")
     settings.distillation_cache = _resolve(cache, config.parent) if cache else None
     settings.distillation_teacher_sha256 = d("distillation.teacher_sha256")
@@ -262,6 +266,16 @@ def load_settings(path: str | Path) -> Any:
     if settings.lightgen_model_variant == "optical_router_scale_matched_moe":
         if settings.router_hard_load_balance_weight <= 0:
             raise ValueError("T03 optical Router requires a positive hard-load loss")
+    if not 0 <= settings.teacher_only_epochs < settings.student_epochs:
+        raise ValueError("Teacher-only curriculum must leave at least one GT epoch")
+    if settings.teacher_only_epochs and (
+        not settings.sam_rho or settings.feature_hint_initial_weight
+        or settings.distillation_loss != "spatial_cc"
+        or not 0 < settings.distillation_final_weight <= settings.distillation_initial_weight < float('inf')
+        or settings.adaptive_plateau_enabled
+        or not any(getattr(settings, n) > 0 for n in ('kl_weight','cc_weight','sim_weight','nss_weight'))
+    ):
+        raise ValueError("Teacher-only curriculum requires SAM spatial-CC KD, positive teacher/GT, no hints or early stop")
     return settings
 
 
@@ -321,6 +335,7 @@ def save_resolved_config(settings: Any) -> None:
             "dense_readout_learning_rate", "dense_head_learning_rate")
     }
     values["distillation"] = {"initial_weight": settings.distillation_initial_weight,
+        "teacher_only_epochs": settings.teacher_only_epochs,
         "loss": settings.distillation_loss,
         "final_weight": settings.distillation_final_weight,
         "end_epoch": settings.distillation_end_epoch,
