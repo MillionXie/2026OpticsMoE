@@ -4,6 +4,19 @@ import json
 import torch
 
 
+def use_spawn_workers(loader):
+    """Configure an unstarted T03 loader without inheriting parent CUDA state.
+
+    Preserve dataset, sampler/generator, batching and persistent-worker policy.
+    This is not a guarantee of cleanup after an arbitrary external signal.
+    """
+    if loader.num_workers:
+        if getattr(loader, '_iterator', None) is not None:
+            raise RuntimeError('Configure spawn before starting the data loader')
+        loader.multiprocessing_context = 'spawn'
+    return loader
+
+
 def supervision_for_epoch(settings, epoch):
     """Train-only curriculum; never mutate the evaluation/base GT weights.
 

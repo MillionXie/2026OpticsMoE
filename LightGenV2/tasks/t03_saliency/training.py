@@ -24,6 +24,7 @@ from .modeling import build_student, initialize_student, optimizer
 from .visualize import render
 from .training_support import ModelEMA, TrainTeacherMaps, AlignedFlipLoader, AlignedWeakLoader, distillation_weight, supervision_for_epoch
 from .plateau import PlateauController
+from .training_support import use_spawn_workers
 
 
 def _write_json(path: Path, value: Any) -> None:
@@ -125,6 +126,8 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
     if aligned_flip or aligned_weak:
         loader_settings.augmentation_enabled = False
     train_loader, test_loader = legacy.build_loaders(bundle, loader_settings, training=True)
+    use_spawn_workers(train_loader)
+    use_spawn_workers(test_loader)
     optim = optimizer(model, settings)
     ema = ModelEMA(model, settings.ema_decay) if settings.ema_decay else None
     ema_hook = optim.register_step_post_hook(ema.update) if ema else None
@@ -327,6 +330,7 @@ def evaluate_selected_checkpoint(
     model.core.load_state_dict(payload["core"], strict=True)
     model.head.load_state_dict(payload["saliency_head"], strict=True)
     _, loader = legacy.build_loaders(bundle, settings, training=False)
+    use_spawn_workers(loader)
     router_counts = torch.zeros(4, dtype=torch.long)
     router_energy_sum = torch.zeros(4, dtype=torch.float64)
     router_probability_sum = torch.zeros(4, dtype=torch.float64)

@@ -7,6 +7,30 @@ from LightGenV2.tasks.t03_saliency.settings import load_settings
 from LightGenV2.tasks.t03_saliency.modeling import architecture_label
 
 
+def test_standard_loader_spawn_preserves_samples_and_releases_workers():
+    from LightGenV2.tasks.t03_saliency.training_support import use_spawn_workers
+    dataset = torch.utils.data.TensorDataset(torch.arange(8))
+    loader = torch.utils.data.DataLoader(dataset, batch_size=3, num_workers=1,
+                                        persistent_workers=True)
+    assert use_spawn_workers(loader) is loader
+    assert loader.multiprocessing_context.get_start_method() == 'spawn'
+    workers = []
+    try:
+        actual = torch.cat([batch[0] for batch in loader])
+        workers = list(loader._iterator._workers)
+        assert torch.equal(actual, torch.arange(8))
+        with pytest.raises(RuntimeError, match='before starting'):
+            use_spawn_workers(loader)
+    finally:
+        if loader._iterator is not None:
+            loader._iterator._shutdown_workers()
+        for worker in workers:
+            worker.join(timeout=10)
+    assert workers and all(not worker.is_alive() for worker in workers)
+    single = torch.utils.data.DataLoader(dataset, num_workers=0)
+    assert use_spawn_workers(single) is single and single.multiprocessing_context is None
+
+
 def test_resolved_config_replaces_inherited_pose_selection_text(tmp_path, monkeypatch):
     import yaml
     from LightGenV2.tasks.t03_saliency import settings as module
