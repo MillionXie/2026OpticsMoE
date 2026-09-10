@@ -27,7 +27,7 @@ from experiments.qwen3_vl_embedding_2b_lsp_pose_optical_router.modeling import (
     sha256_file,
     trainable_parameter_report,
 )
-from experiments.vision2_hybrid_dense.modeling import SaliencyDensityDecoder
+from experiments.vision2_hybrid_dense.modeling import SaliencyDensityDecoder, restore_qwen_block_major_spatial
 from .lightweight_residual import configure_grn, initialize_identity_grn
 from .lightweight_residual import configure_spatial_ffn, initialize_identity_spatial_ffn
 from .lightweight_residual import configure_global_mixing, initialize_identity_global_mixing
@@ -163,6 +163,24 @@ class LightGenVision2SaliencyStudent(RobustVision2PoseStudent):
         self.head.requires_grad_(True)
         self._router_soft_weight = float(settings.router_balance_weight)
         self._router_hard_weight = float(settings.router_hard_load_balance_weight)
+
+    def forward(self, pixel_values: torch.Tensor, image_grid_thw: torch.Tensor
+                ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor | None]:
+        if self.core.hybrid.fusion_ablation_mode != 'remove_optical':
+            return super().forward(pixel_values, image_grid_thw)
+        # T03-only inference ablation. A bypass has no CCD measurement; neither
+        # require a preceding optical forward nor return its stale detector map.
+        self.core.optical_branch.core.current_detector_readout = None
+        if not self._active:
+            self.activate()
+        self.capture_block.set_grid(image_grid_thw)
+        dtype = next(self.visual.patch_embed.parameters()).dtype
+        self.visual(pixel_values.to(dtype), grid_thw=image_grid_thw)
+        groups = self.core.last_latent_groups
+        if len(groups) != len(image_grid_thw):
+            raise RuntimeError('Ablated Vision2 core did not retain one group per image')
+        spatial = restore_qwen_block_major_spatial(torch.cat(groups, dim=0), image_grid_thw)
+        return self.head(spatial), spatial, None
 
     def router_losses(self) -> tuple[torch.Tensor, torch.Tensor]:
         soft, importance = self.core.router_losses()

@@ -22,7 +22,7 @@ TASK=LightGenV2/tasks/t03_saliency
 CONFIG="$TASK/configs/moe_alpha40_sam_spatialcc_kd2.yaml"
 CHECKPOINT="$TASK/runs/simulation/moe_alpha40_sam_spatialcc_kd2_seed42/best_checkpoint.pt"
 python -m LightGenV2.tasks.t03_saliency.recheck_aligned --system optical --config "$CONFIG" --checkpoint "$CHECKPOINT" --run-dir "$TASK/runs/simulation/aligned_recheck_20260910_kd2_ablation_normal" --batch-size 32 --ablation none
-python -m LightGenV2.tasks.t03_saliency.recheck_aligned --system optical --config "$CONFIG" --checkpoint "$CHECKPOINT" --run-dir "$TASK/runs/simulation/aligned_recheck_20260910_kd2_ablation_remove" --batch-size 32 --ablation remove_optical
+python -m LightGenV2.tasks.t03_saliency.recheck_aligned --system optical --config "$CONFIG" --checkpoint "$CHECKPOINT" --run-dir "$TASK/runs/simulation/aligned_recheck_20260910_kd2_remove_no_ccd" --batch-size 32 --ablation remove_optical
 ```
 
 报告的`checkpoint_sha256`绑定实际读入的字节。示例候选应为：
@@ -35,3 +35,15 @@ python -m LightGenV2.tasks.t03_saliency.recheck_aligned --system optical --confi
 不测速度/功耗，不将旁路结果填入普通D2NN baseline。
 
 正式数值待入口完整复评写入；临时终端诊断不替代含逐图指标和SHA的正式产物。
+
+## 首次独立旁路发现的接口问题
+
+初版入口0c185bae在全新进程运行去光时，被继承的LSP `forward` 拒绝：
+`Vision global CCD readout is unavailable`。正常预测`head(spatial)`不消费该CCD返回值，
+但旧接口仍要求它存在；先正常再去光的同进程诊断会残留旧CCD缓存，不能据此宣称独立旁路验证通过。
+失败目录`aligned_recheck_20260910_kd2_ablation_remove`保留，不包含成功的reproduction.json，不能作结果引用。
+
+修复限定于T03的去光forward：主动清空旧CCD诊断值，保持电子latent/读出计算，第三返回值明确为None。
+不伪造全零CCD，不执行一次“隐藏的正常光学预热”；正常模式直接调用原父类forward，不改正常推理。
+新增测试覆盖全新进程等价的无CCD状态、旧NaN缓存、变化batch大小和正常路径直接委托。
+去光模式的调用方必须接受“没有CCD诊断图”；它不是硬件CCD为空的容错开关。
