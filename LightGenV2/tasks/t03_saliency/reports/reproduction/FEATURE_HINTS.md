@@ -43,6 +43,12 @@ CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 TRANSFORMER
 这两张的CC不是测试成绩，换头后的初始训练样本CC较差是已知风险，不隐藏或用旧头成绩替代。
 没有保存这次短检查的临时PT，部署参数/键名未增加。
 
+正式启动：GitHub已发布源码`2a3b9a57796156bb66fd83daeb1c766b1d8a98df`，
+独立worktree `.worktrees/t03_kernel13`（历史工作树名，不表示本模型使用13×13卷积），
+GPU0、PID1294991、run `moe_alpha40_feature_pretrain_seed42`。启动前GPU0无计算进程；
+旧region和router对照已分别停止并释放GPU0/1，本助手现只使用一张卡。
+正式预算60轮，训练状态看run的console.log/history；不能把启动记录当作已完成结果。
+
 ## 已完成对照结果
 
 2026-09-10，`moe_alpha40_hint_control_seed42`与`moe_alpha40_hint_cosine_seed42`
