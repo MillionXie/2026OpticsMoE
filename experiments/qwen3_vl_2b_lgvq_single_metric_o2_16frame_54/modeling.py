@@ -1867,6 +1867,7 @@ class SpatialPrunedGridCompactResidualReadout(SpatialGridReadout):
         self.output[1] = nn.Linear(hidden * 4, pruned_width)
         self.output[-1] = nn.Linear(pruned_width, 1)
         self.residual_max = float(settings.spatial_residual_max)
+        self.residual_scale = float(settings.spatial_compact_residual_scale)
         channels, frame_width = 64, 128
         self.compact_projection = nn.Conv2d(width, channels, 1)
         self.compact_local = nn.Conv2d(
@@ -1923,7 +1924,7 @@ class SpatialPrunedGridCompactResidualReadout(SpatialGridReadout):
         prompt = self.language(_masked_statistics(language, mask))
         correction = self.compact_output(torch.cat((video, prompt), -1)).squeeze(-1)
         correction = self.residual_max * torch.tanh(correction / self.residual_max)
-        return base_prediction + correction
+        return base_prediction + self.residual_scale * correction
 
 
 class _CrossFrameSpatialBlock(nn.Module):

@@ -169,6 +169,14 @@ def test_pruned_grid_compact_residual_is_zero_start_and_smaller(
     mask = torch.ones(2, 8, dtype=torch.bool)
     assert readout(vision, language, mask).shape == (2,)
 
+    scaled_settings = replace(compact_settings, spatial_compact_residual_scale=0.4)
+    scaled = SpatialPrunedGridCompactResidualReadout(scaled_settings).eval()
+    scaled.load_state_dict(readout.state_dict(), strict=True)
+    assert sum(parameter.numel() for parameter in scaled.parameters()) == sum(
+        parameter.numel() for parameter in readout.parameters()
+    )
+    assert scaled_settings.architecture_label != compact_settings.architecture_label
+
 
 def test_level_calibration_isotonic_projection_is_nondecreasing() -> None:
     projected = _isotonic(torch.tensor([-1.0, 0.8, 0.2, 1.5, 1.2]))

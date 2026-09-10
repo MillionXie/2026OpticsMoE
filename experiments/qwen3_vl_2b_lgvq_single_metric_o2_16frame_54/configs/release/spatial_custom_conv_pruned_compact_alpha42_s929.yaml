@@ -1,0 +1,21 @@
+base_config: spatial_custom_conv_pruned_compact_readout_s919.yaml
+output_dir: ../../runs/lgvq_spatial_custom_conv_pruned_compact_alpha42_s929
+random_seed: 929
+
+# The optical share is structurally bounded away from 0.40.  Since RmsConvexFusion
+# maps an unconstrained scalar through a sigmoid into [alpha_min, alpha_max], every
+# stage remains strictly above 0.42 for every optimizer update and checkpoint.
+# alpha_initial is only used for a fresh model; a warm-start checkpoint restores
+# raw_alpha and is then reinterpreted inside this safer interval.
+fusion:
+  alpha_min: 0.42
+  alpha_initial: 0.54
+  alpha_max: 0.90
+
+# This experiment changes no module widths and introduces no new parameters.
+# Readout retraining is performed from the selected compact checkpoint using
+# MOS-stratified batches, rank/correlation objectives and EMA selection.
+training:
+  trainable_scope: readout_only
+  initialization_checkpoint: null
+
