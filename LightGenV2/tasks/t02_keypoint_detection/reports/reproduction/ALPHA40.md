@@ -1,5 +1,12 @@
 # LSP 两级 alpha≥0.4、PCK≥0.73 目标续训
 
+2026-09-10 20:53北京时间已在实验室GPU2 RTX3090启动，PID1542218；
+源码commit `60c3775e4fbf4e4d336de22a4532f84d8405bda7`（16项测试和GPU smoke通过）。
+worktree：`/DATA/DATA1/guest3/lsp_alpha40_source_20260910`。
+随机global消融等待进程PID1542221，run为`global_noise_alpha40_20260910`，
+等待训练最终报告和GPU空闲，不在等待阶段占GPU；最多等待12小时。
+原alpha50训练保留作对照，不修改其已运行的配置。
+
 新profile `alpha40`，不覆盖alpha50或旧低alpha结果。0.73为达标条件，不是已取得的结果。
 最终报告同时检查1000张test的PCK和两处alpha，smoke结果不算达标。
 
