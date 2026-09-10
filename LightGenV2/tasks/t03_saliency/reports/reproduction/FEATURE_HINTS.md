@@ -156,6 +156,25 @@ run目录使用各profile名加`_seed42`，完整命令由run_manifest记录。
 启动前两卡无计算进程，旧父PID均不存在；此时本助手仅这两组，不操作其他卡上的任务。
 不把不同来源/训练阶段的两组包装成单变量公平消融，也不声明已经达到.88。
 
+### 稳定路由组第5轮实际权重检查（仍在训练）
+
+源码`b5b4dd26`，`moe_alpha40_feature_pretrain_stable_router_seed42`第5轮EMA周期测试
+CC=.8230674638748169（完整5000张），高于原固定头组同阶段.8140745836257934，
+但低于正式best .86204960，不能作为达到目标或最终胜出的证据。
+检查时best文件实际字节SHA256为
+`8cd43cfa53e3d8b9777d5a377f16d27cd1a4c99c8e28334b3eacc365254c200f`；
+后续best会被覆盖，未另存周期PT。
+
+CPU、OMP/MKL各2线程，原训练manifest前64张、无增强、batch4、eval关闭随机扰动；
+以`load_hashed_checkpoint`载入同一字节的core/head，router forward hook统计selected_mask。
+选择次数`[29,35,34,30]`、6种Top2组合；alpha=.4437673986/.4598472714。
+这是小样本训练诊断，不替代最终完整测试集路由审计。
+与87ad来源逐参数比较，两级输入适配器8个参数及router相位最大绝对差均为0；
+头与531c教师decoder最大绝对差也为0，实际冻结生效。
+四专家raw相位参数差的RMS依次.08621831/.09695660/.14600658/.12792611，
+全局相位.09849585，证明其余光学权重确实更新；这些是raw参数，不是弧度或BMP灰度。
+诊断未训练、未占用第三张GPU、未修改运行中模型或保存额外checkpoint。
+
 ## 已完成对照结果
 
 2026-09-10，`moe_alpha40_hint_control_seed42`与`moe_alpha40_hint_cosine_seed42`
