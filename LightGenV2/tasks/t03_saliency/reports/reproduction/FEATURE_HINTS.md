@@ -1,6 +1,22 @@
 # 训练时空间特征监督（不增加推理网络）
 
-## 第一层真实任务深监督（待验证备选，不改变推理）
+## 第一层真实任务深监督（已启动，收益待验证；不改变推理）
+
+源码`23b2cd4639f639790de1db3ed4d9531d599764e4`已通过服务器CPU完整205项测试
+（46.42秒、13条既有依赖警告）并同步GitHub。真实CPU短更新检查通过后，
+在工作树`.worktrees/t03_sam_early`、GPU0/PID2048201启动40轮，run见本节末尾。
+启动前确认GPU0无计算进程；GPU3原MGD50自有进程已全部退出，随后出现其他任务2042085，
+因此没有再占GPU3、也没有停止它。当前本任务仅GPU0新组与GPU1 MGD25两张卡。
+
+真实CPU检查使用原train前两张000000000009/000000000089，seed42、OMP/MKL各2线程，
+原87ad初始化与原teacher map缓存；不保存临时PT。eval模式比较原前向与捕获前向，
+最终logits最大差=0；单独辅助GT损失=.74242717、辅助CC=.65242589，
+四专家相位参数梯度范数之和=.02164679；全局相位和最终头均无辅助梯度。
+再开启训练光扰动执行一次真实SAM联合更新（不是模拟完成3轮预热）：
+总loss=1.12440515，主CC=.78394687，辅助loss=.75382435/CC=.64817590，SAM增量=.54835975。
+四专家和全局相位raw最大更新均约2e-4；这是主任务+辅助的总更新，不是弧度或单独辅助贡献。
+core/head键集合不变，原24个Transformer调用0，patch_embed仍冻结，残留捕获hook数0。
+两张图的训练数值不能替代正式5000张测试性能。
 
 配置`moe_alpha40_first_stage_gt.yaml`。依据[Deeply-Supervised Nets，AISTATS2015](https://proceedings.mlr.press/v38/lee15a.html)
 对中间表示增加训练目标的思路；本任务适配，不声称复现该论文分类结果，也不声称梯度消失已被证明。
@@ -26,7 +42,7 @@ MGD恢复误差下降但完整测试未改善，因此另检查能否让第一�
 
 ```bash
 # 先通过CPU回归和真实数据短更新检查，发布源码，再在两卡预算内替换已停止的试验。
-CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=3 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_first_stage_gt.yaml --phase all
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_first_stage_gt.yaml --phase all
 ```
 
 输出为`runs/simulation/moe_alpha40_first_stage_gt_seed42`，检查`first_stage_supervision_provenance.json`、
@@ -68,7 +84,19 @@ CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=1 HF_HUB_OFFLINE=1 TRANSFORMER
 测试口径仍为固定5000张public-test，按起点/1/5轮周期/末轮选best，有选模偏差；
 只保存best/last。比较时以相同epoch预算为准，不能比较一组训练损失与另一组测试CC。
 
-## 当前候选：掩蔽特征恢复（MGD-inspired，已启动，收益待验证）
+## 50%掩蔽特征恢复（MGD-inspired，已提前停止，未获得收益）
+
+第15轮完整测试CC=.8616588478088378，比第10轮略回升，但仍低于初始化；
+因至此没有超过原best，将资源换给任务深监督。保留第16轮last，**不是完成40轮，也不是
+声称测试持续单调下降或已收敛**。停止前后严格读取best/last并确认SHA一致：
+
+- best epoch0：`bf93ba1f31b00b5dc3fe33b70f81cfd6459ddd583eedfa76f7d016c5ac1cf529`。
+- last epoch16：`59704a25651a16656fa209c454c09fb7da4be5acc913b219281493af642d56f9`。
+
+核对UID1011、完整配置命令、cwd和PGID后，仅终止自有
+1851792/1857240/1857248/1857496/1859565/1859820；随后ps确认全部消失，GPU计算列表不再包含这些PID。
+GPU3后续出现的2042085不是本组残留，不触碰。run、缓存、best/last均未删除。
+25%对照第5轮CC=.861739259147644，未提高；保留到下一次完整测试再判断。
 
 联合阶段检查：50%组第10轮完整5000张测试CC=.8615770603179932，继续低于初始化；
 25%组首轮CC=.8620111406326294，仍在辅助detach预热，不能据首轮判断其联合训练优劣。
