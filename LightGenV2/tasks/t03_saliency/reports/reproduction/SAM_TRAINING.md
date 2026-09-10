@@ -861,3 +861,53 @@ A100、batch16、原图、eval关闭随机光学扰动、无外层AMP；同一�
 这不能证明共享网络参数上的所有更新均有益，也不能排除其他样本或训练阶段的冲突；
 这里只读小样本诊断，不新增性能成绩、不做无偏泛化声明、不保存checkpoint。
 因此暂不加入按教师/学生CC高低的硬门控，防止删去仍同向的监督；继续现有早期空间CC对照。
+
+## 两组收尾：较强裁剪与RMS完整反向
+
+2026-09-10，两个原定作业均完成且训练进程已终止，根目录均仅best/last两份PT。
+以下为训练结束后重载best的完整5000张结果，未另做float64独立复评，不混称已独立核验。
+
+|run（均前缀moe_alpha40_、后缀_seed42）|完成轮数/best EMA|CC|KLD|SIM|NSS|AUC-Judd|MAE|
+|---|---|---|---|---|---|---|---|
+|viewreg_sam_crop90|80/80|.8600213612|.1135510163|.8232143601|.9668219419|.7699175572|.0779729537|
+|sam_exactfusion|50/5|.8615319420|.1127091609|.8241561455|.9689989939|.7702336757|.0767968273|
+
+较强裁剪仅指边长比例下限.90（面积约.81），不改光学ROI。相同预算的.95弱裁剪控制为.86025104，
+本次未改善；虽关闭增强后有明显回升，也不能把回升归因完全锁定在某一个因素或宣称跨seed显著。
+该run源码3d5b520a，best epoch80 SHA：`f823f586189dcefe3035a0c31ad8ee433e4a991e2e187c5b01d5a0c75df4e1d2`；
+`training_report.json`：`7bcba874d215b6079dda43e63a8dcd54a9e40d480b4fdca05be948460a8c54d3`；
+`selected_checkpoint_test_evaluation.json`：`d9454439c53357a0c2870a0aab80bf6339aac3bc31145df83ac68ddea29d0269`。
+alpha=.42783123/.43927994，四专家计数2324/2654/2310/2712；无未使用专家。
+
+RMS完整反向源码486e0078，不增加推理参数。相对同源SAM.05/KL控制.86133209仅高约.000200，
+低于空间CC/KD2完成候选.86204960；不能将不同蒸馏损失的两组差归因于RMS导数。
+best SHA：`259784552c9e45435d438c18c8492256d2092560cb264def17ad9ba66716cc84`；
+`training_report.json`：`29a9080fb776efe0ca955ed336c7e3881d163636b558170b2e3ffe56c7bc5b3d`；
+`selected_checkpoint_test_evaluation.json`：`7413ce75d11af85d6754d6af1e299b1faf8f324ccb66237fadf49eefcf702d49`。
+alpha=.43075329/.44109207，专家计数2324/2659/2300/2717；相位均有非零更新。
+两个试验的完整命令、对照条件见前文；都不替换当前完成候选，保留证据而不删除run。
+
+## global16候选独立复评：极小差异，不作为稳定增益
+
+`moe_alpha40_sam_spatialcc_kd2_global16_seed42`仍在训练，epoch5 best SHA：
+`e3d2e666dc666f57d581a9afd4cfecaed4603c7df513ced21fe5af5dee05f75d`。
+在源码0f3c33d1、A100、batch32、ablation=none下，独立重载全部5000张：
+float64 CC=**.8621131325**，与指标累积器差1.57e-9；训练记录.8621131796得到核实。
+KLD=.1142900304、SIM=.8240813910、NSS=.9656057463、AUC=.7699995452、MAE=.0798730541。
+报告目录`aligned_recheck_20260910_spatialcc_kd2_global16_candidate`，
+`reproduction.json` SHA256：`67700d9d708b7450f67bfe4618e37bad1ca86f47eb25925a3b3be7105a54b3d2`。
+测试ID SHA仍625dec6b…a3496d0；实际反序列化字节SHA被记录，活动源best后续可能变化。
+
+和无global的`aligned_recheck_20260910_spatialcc_kd2_candidate`按相同5000个唯一ID配对：
+均值差+.0000635306、中位差+.0001109618，2678/5000张改善。
+按排序ID差值，用`default_rng(17042)`有放回抽5000项，重复2000次，均值95%分位区间为
+[-.0000982241, +.0001913464]。这是固定权重的描述性重采样，不含训练seed方差，也未校正公开测试选模，
+不是无偏显著性检验。没有充分证据支持为这一微小差异采用新增12544参数的全局算子；
+暂保留无global的完成权重，等待该50轮试验收尾。两者距离.87仍有明显差距。
+
+```bash
+TASK=LightGenV2/tasks/t03_saliency
+python -m LightGenV2.tasks.t03_saliency.recheck_aligned --system optical --config "$TASK/configs/moe_alpha40_sam_spatialcc_kd2_global16.yaml" --checkpoint "$TASK/runs/simulation/moe_alpha40_sam_spatialcc_kd2_global16_seed42/best_checkpoint.pt" --run-dir "$TASK/runs/simulation/aligned_recheck_20260910_spatialcc_kd2_global16_candidate" --batch-size 32
+```
+
+复现前校验上述权重SHA，并换用尚不存在的run-dir，不能覆盖原报告；正常测试没有TTA或额外后处理。
