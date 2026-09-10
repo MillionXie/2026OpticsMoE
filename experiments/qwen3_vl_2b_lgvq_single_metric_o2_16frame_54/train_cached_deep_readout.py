@@ -152,6 +152,7 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
         "spatial_weighted_level_blend",
         "spatial_crossframe_residual",
         "spatial_dual_level_residual",
+        "spatial_compact_weighted",
     }:
         raise ValueError(
             "Config must select a deep or five-level post-optical residual readout"
@@ -165,6 +166,17 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
     target_std = torch.as_tensor(raw["target_std"]).float().reshape(())
     raw["targets_normalized"] = (targets - target_mean) / target_std
     raw["teacher_normalized"] = raw["targets_normalized"].clone()
+    if args.cache_teacher:
+        if "normalized_prediction" not in raw:
+            raise ValueError("The post-optical cache has no teacher prediction")
+        expected_sha = str(raw.get("source_checkpoint_sha256", ""))
+        actual_sha = _sha256(args.source_checkpoint)
+        if expected_sha != actual_sha:
+            raise ValueError(
+                "Cached teacher prediction does not belong to --source-checkpoint: "
+                f"cache={expected_sha}, checkpoint={actual_sha}"
+            )
+        raw["teacher_normalized"] = raw["normalized_prediction"].float().clone()
     train_indices = torch.tensor(
         [index for index, row in enumerate(rows) if row["split"] == "train"]
     )
@@ -222,8 +234,11 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
         for name, value in source_state.items()
         if name.startswith("readout.")
     }
-    result = readout.load_state_dict(source_readout, strict=False)
-    unexpected = list(result.unexpected_keys)
+    compact_from_scratch = settings.spatial_readout_mode == "spatial_compact_weighted"
+    result = None if compact_from_scratch else readout.load_state_dict(
+        source_readout, strict=False
+    )
+    unexpected = [] if result is None else list(result.unexpected_keys)
     permitted_zero_start_prefixes = (
         "residual_",
         "large_kernel_refiner.",
@@ -233,7 +248,7 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
     )
     non_residual_missing = [
         name
-        for name in result.missing_keys
+        for name in (() if result is None else result.missing_keys)
         if not name.startswith(permitted_zero_start_prefixes)
         and name != "level_scores"
     ]
@@ -242,7 +257,7 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
             f"Warm-start readout mismatch: missing={non_residual_missing}, "
             f"unexpected={unexpected}"
         )
-    trainable_prefixes = permitted_zero_start_prefixes
+    trainable_prefixes = ("",) if compact_from_scratch else permitted_zero_start_prefixes
     if args.new_module_only:
         if settings.spatial_readout_mode == "spatial_crossframe_residual":
             trainable_prefixes = ("crossframe_",)
@@ -545,6 +560,14 @@ def main() -> int:
     parser.add_argument("--soft-rank-temperature", type=float, default=0.10)
     parser.add_argument("--ema-decay", type=float, default=0.0)
     parser.add_argument("--soft-targets", type=Path)
+    parser.add_argument(
+        "--cache-teacher",
+        action="store_true",
+        help=(
+            "Distill the exact source model prediction stored in the matched "
+            "post-optical cache. The cache/checkpoint SHA256 must agree."
+        ),
+    )
     parser.add_argument("--soft-target-weight", type=float, default=0.0)
     parser.add_argument(
         "--soft-target-ranking-weight",

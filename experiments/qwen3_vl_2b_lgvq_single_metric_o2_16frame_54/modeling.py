@@ -1744,6 +1744,112 @@ class SpatialWeightedLevelResidualReadout(SpatialDeepResidualReadout):
         return base_prediction + correction
 
 
+class SpatialCompactWeightedReadout(nn.Module):
+    """Compact five-level MOS head operating only after all optical stages.
+
+    The former deep readout expanded every frame to a 5,376-value pyramid and
+    then used two wide fully-connected mappings.  This replacement keeps a
+    small spatial convolutional field, pools only to 1x1 and 2x2, and retains
+    mean/std/extrema/change summaries over the four frames.  It contains only
+    project-owned convolution, pooling and fully-connected operations: no
+    attention, Transformer, recurrent unit, or named pretrained backbone.
+    """
+
+    def __init__(self, settings: ExperimentSettings) -> None:
+        super().__init__()
+        width = settings.model_width
+        channels = settings.spatial_compact_channels
+        frame_width = settings.spatial_compact_frame_width
+        language_width = settings.spatial_compact_language_width
+        head_width = settings.spatial_compact_head_width
+        self.grid = settings.token_grid
+        self.token_norm = nn.LayerNorm(width)
+        self.spatial_projection = nn.Conv2d(width, channels, 1)
+        self.spatial_local = nn.Conv2d(
+            channels, channels, 5, padding=2, groups=channels, bias=False
+        )
+        self.spatial_context = nn.Conv2d(
+            channels,
+            channels,
+            3,
+            padding=2,
+            dilation=2,
+            groups=channels,
+            bias=False,
+        )
+        pooled_width = channels * 2 * (1 + 4)
+        self.frame = nn.Sequential(
+            nn.LayerNorm(pooled_width),
+            nn.Linear(pooled_width, frame_width),
+            nn.GELU(),
+            nn.Dropout(settings.dropout),
+        )
+        self.language = nn.Sequential(
+            nn.LayerNorm(width * 3),
+            nn.Linear(width * 3, language_width),
+            nn.GELU(),
+        )
+        joint_width = frame_width * 6 + language_width
+        self.output = nn.Sequential(
+            nn.LayerNorm(joint_width),
+            nn.Linear(joint_width, head_width),
+            nn.GELU(),
+            nn.Dropout(settings.dropout),
+            nn.Linear(head_width, 5),
+        )
+        self.register_buffer(
+            "level_scores",
+            torch.linspace(
+                settings.spatial_level_score_min,
+                settings.spatial_level_score_max,
+                5,
+            ),
+        )
+        self.last_level_logits: torch.Tensor | None = None
+        self.last_level_base_prediction: torch.Tensor | None = None
+
+    def forward(
+        self, vision: torch.Tensor, language: torch.Tensor, mask: torch.Tensor
+    ) -> torch.Tensor:
+        batch, frames, tokens, width = vision.shape
+        if tokens != self.grid * self.grid:
+            raise ValueError("Compact Spatial readout requires a square token grid")
+        grid = self.token_norm(vision).reshape(
+            batch * frames, self.grid, self.grid, width
+        ).permute(0, 3, 1, 2)
+        feature = F.gelu(self.spatial_projection(grid))
+        feature = feature + F.gelu(self.spatial_local(feature))
+        feature = feature + F.gelu(self.spatial_context(feature))
+        pooled = torch.cat(
+            tuple(
+                pool(feature, size).flatten(1)
+                for size in (1, 2)
+                for pool in (F.adaptive_avg_pool2d, F.adaptive_max_pool2d)
+            ),
+            1,
+        )
+        frame = self.frame(pooled).reshape(batch, frames, -1)
+        difference = (frame[:, 1:] - frame[:, :-1]).abs()
+        video = torch.cat(
+            (
+                frame.mean(1),
+                frame.float().std(1, unbiased=False).to(frame.dtype),
+                frame.amax(1),
+                frame.amin(1),
+                difference.mean(1),
+                difference.amax(1),
+            ),
+            -1,
+        )
+        prompt = self.language(_masked_statistics(language, mask))
+        logits = self.output(torch.cat((video, prompt), -1))
+        probabilities = logits.float().softmax(-1).to(logits.dtype)
+        prediction = probabilities @ self.level_scores.to(probabilities.dtype)
+        self.last_level_logits = logits
+        self.last_level_base_prediction = torch.zeros_like(prediction)
+        return prediction
+
+
 class _CrossFrameSpatialBlock(nn.Module):
     """A small ConvNeXt-style block without attention or a new input branch."""
 
@@ -2726,6 +2832,8 @@ class LGVQSingleMetricOEO16(nn.Module):
                 self.readout = SpatialWeightedLevelAbsoluteReadout(settings)
             elif settings.spatial_readout_mode == "spatial_weighted_level_blend":
                 self.readout = SpatialWeightedLevelBlendReadout(settings)
+            elif settings.spatial_readout_mode == "spatial_compact_weighted":
+                self.readout = SpatialCompactWeightedReadout(settings)
             else:
                 self.readout = SpatialReadout(settings)
         elif settings.target_name == "temporal":

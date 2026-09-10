@@ -264,6 +264,10 @@ class ExperimentSettings:
     spatial_level_score_max: float = 2.25
     spatial_level_blend_initial: float = 0.10
     spatial_readout_image_focus_max: float = 0.0
+    spatial_compact_channels: int = 80
+    spatial_compact_frame_width: int = 256
+    spatial_compact_language_width: int = 128
+    spatial_compact_head_width: int = 384
     strict_two_branch: bool = False
     quality_branch_enabled: bool = True
     quality_adapter_mode: str = "linear"
@@ -440,6 +444,14 @@ class ExperimentSettings:
         elif self.spatial_readout_mode == "spatial_weighted_level_blend":
             blend_tag = int(round(self.spatial_level_blend_initial * 100.0))
             suffixes.append(f"spatialweighted5blend{blend_tag:02d}_v1")
+        elif self.spatial_readout_mode == "spatial_compact_weighted":
+            suffixes.append(
+                "spatialcompactweighted_"
+                f"c{self.spatial_compact_channels}_"
+                f"f{self.spatial_compact_frame_width}_"
+                f"l{self.spatial_compact_language_width}_"
+                f"h{self.spatial_compact_head_width}_v1"
+            )
         if self.spatial_readout_mode.startswith("spatial_weighted_level"):
             suffixes.append(f"rf{self.spatial_residual_receptive_field}_v1")
         if self.spatial_readout_refiner_enabled:
@@ -564,6 +576,7 @@ class ExperimentSettings:
             "spatial_dual_level_residual",
             "spatial_weighted_level_absolute",
             "spatial_weighted_level_blend",
+            "spatial_compact_weighted",
         }:
             raise ValueError(
                 "model.spatial_readout_mode must be statistics, spatial_grid, "
@@ -573,8 +586,19 @@ class ExperimentSettings:
                 "spatial_crossframe_residual, or "
                 "spatial_dual_level_residual, or "
                 "spatial_weighted_level_absolute, or "
-                "spatial_weighted_level_blend"
+                "spatial_weighted_level_blend, or "
+                "spatial_compact_weighted"
             )
+        for name, value in (
+            ("spatial_compact_channels", self.spatial_compact_channels),
+            ("spatial_compact_frame_width", self.spatial_compact_frame_width),
+            ("spatial_compact_language_width", self.spatial_compact_language_width),
+            ("spatial_compact_head_width", self.spatial_compact_head_width),
+        ):
+            if value <= 0:
+                raise ValueError(f"model.{name} must be positive")
+        if self.spatial_compact_channels % 8:
+            raise ValueError("model.spatial_compact_channels must be divisible by 8")
         if self.spatial_residual_max <= 0.0:
             raise ValueError("model.spatial_residual_max must be positive")
         if self.spatial_residual_receptive_field not in {
@@ -1204,6 +1228,18 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         ),
         spatial_readout_image_focus_max=float(
             get("model", "spatial_readout_image_focus_max", 0.0)
+        ),
+        spatial_compact_channels=int(
+            get("model", "spatial_compact_channels", 80)
+        ),
+        spatial_compact_frame_width=int(
+            get("model", "spatial_compact_frame_width", 256)
+        ),
+        spatial_compact_language_width=int(
+            get("model", "spatial_compact_language_width", 128)
+        ),
+        spatial_compact_head_width=int(
+            get("model", "spatial_compact_head_width", 384)
         ),
         strict_two_branch=bool(get("model", "strict_two_branch", False)),
         quality_branch_enabled=bool(get("model", "quality_branch_enabled", True)),

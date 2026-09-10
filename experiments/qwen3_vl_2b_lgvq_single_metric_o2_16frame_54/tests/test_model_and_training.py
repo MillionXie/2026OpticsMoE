@@ -12,6 +12,7 @@ from ..modeling import (
     CustomConvE1Correction,
     LGVQSingleMetricOEO16,
     SpatialGridReadout,
+    SpatialCompactWeightedReadout,
     TrainableQualityFrameStem,
     _phase,
     _phase_modulation,
@@ -114,6 +115,35 @@ def test_weighted_level_distribution_prefers_nearby_ordered_level() -> None:
     good = weighted_level_distribution_loss(correct, scores, base, target)
     bad = weighted_level_distribution_loss(reversed_logits, scores, base, target)
     assert float(good) < float(bad)
+
+
+def test_compact_spatial_readout_is_small_attention_free_and_trainable(
+    tmp_path: Path,
+) -> None:
+    settings = replace(
+        _small_settings(tmp_path),
+        spatial_readout_mode="spatial_compact_weighted",
+        token_grid=14,
+        spatial_compact_channels=32,
+        spatial_compact_frame_width=48,
+        spatial_compact_language_width=24,
+        spatial_compact_head_width=64,
+    )
+    settings.validate()
+    readout = SpatialCompactWeightedReadout(settings)
+    vision = torch.randn(2, 4, 196, settings.model_width, requires_grad=True)
+    language = torch.randn(2, 8, settings.model_width)
+    mask = torch.ones(2, 8, dtype=torch.bool)
+    prediction = readout(vision, language, mask)
+    assert prediction.shape == (2,)
+    prediction.sum().backward()
+    assert vision.grad is not None
+    assert sum(parameter.numel() for parameter in readout.parameters()) < 300_000
+    assert not any(
+        token in module.__class__.__name__.lower()
+        for module in readout.modules()
+        for token in ("attention", "transformer", "lstm", "gru")
+    )
 
 
 def test_level_calibration_isotonic_projection_is_nondecreasing() -> None:
