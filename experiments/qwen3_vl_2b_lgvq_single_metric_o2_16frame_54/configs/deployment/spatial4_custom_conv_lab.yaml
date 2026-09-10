@@ -12,7 +12,6 @@ data:
   quality_feature_cache: ../../deployment/data/lgvq_quality_conv5_4f_196x192.pt
   quality_feature_cache_views: []
   raw_frame_cache: ../../deployment/data/lgvq_four_frames_center100_224_uint8.pt
-  training_soft_targets: ../../deployment/data/training_only_teacher_predictions.pt
   training_view_probabilities: [1.0]
 
 training:

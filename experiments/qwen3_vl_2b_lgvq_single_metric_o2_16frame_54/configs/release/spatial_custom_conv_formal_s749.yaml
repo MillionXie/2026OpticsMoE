@@ -12,6 +12,7 @@ data:
   language_cache: ../../artifacts/qwen3vl_front_spatial_prompt_2048.pt
   quality_feature_cache: ../../artifacts/lgvq_quality_conv5_4f_196x192.pt
   raw_frame_cache: ../../artifacts/lgvq_four_frames_center100_224_uint8.pt
+  training_soft_targets: null
   vision_cache_views: []
   quality_feature_cache_views: []
   training_view_probabilities: [1.0]

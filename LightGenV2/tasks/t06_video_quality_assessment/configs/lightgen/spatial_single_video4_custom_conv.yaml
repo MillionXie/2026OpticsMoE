@@ -5,7 +5,7 @@ status: current_spatial_formal_candidate
 backend:
   package: experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54
   config: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_custom_conv_formal_s749.yaml
-  config_sha256: 23be881985fb981a3b62288f18fb3330f6993e2c3f786f7cbb1c9079e2542471
+  config_sha256: 7451fb9cff433338008d86c476c94adbf304db493d5713143b53bbcd698afd24
   lab_guide: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/LAB_SPATIAL4_CUSTOM_CONV_GUIDE.md
   source_sha256:
     modeling.py: b13a4db11be22b714768a5417ce23effa7d4822c4541b3fb894c2ab6ebfb5f27
