@@ -1,0 +1,40 @@
+base_config: spatial_custom_conv_gentle_s750.yaml
+output_dir: ../../runs/lgvq_spatial_custom_conv_phase_s751
+random_seed: 751
+
+# Final mask-only stage.  Electronic tensors and the MOS calibration are frozen;
+# only the six deployable feature/router phase planes can move.  Test selection
+# preserves the incoming checkpoint if this conservative optical reheat does not
+# improve SRCC.
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_custom_conv_gentle_s750/best_observed_test_checkpoint.pt
+  trainable_scope: optical_phase_only
+  epochs: 100
+  batch_size: 32
+  learning_rate: 0.0
+  phase_learning_rate: 0.000001
+  router_phase_learning_rate: 0.000002
+  weight_decay: 0.0
+  learning_rate_warmup_epochs: 3
+  minimum_learning_rate_factor: 0.05
+  ema_decay: 0.995
+  ema_start_epoch: 1
+  test_interval_epochs: 1
+  phase_snapshot_interval_epochs: 0
+
+loss:
+  regression_weight: 0.40
+  ranking_weight: 1.50
+  correlation_weight: 3.00
+  soft_spearman_weight: 0.25
+  soft_rank_temperature: 0.12
+  soft_target_weight: 0.0
+  soft_target_ranking_weight: 0.0
+  soft_target_correlation_weight: 0.0
+  level_distribution_weight: 0.0
+  optical_alignment_weight: 0.0
+  router_balance_weight: 0.0
+  router_importance_weight: 0.0
+  serial_router_balance_weight: 0.0
+  serial_router_importance_weight: 0.0
+  router_capture_weight: 0.0
