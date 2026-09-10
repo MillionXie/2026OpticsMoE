@@ -51,5 +51,4 @@ ResNet→MobileNet 的 E1 特征蒸馏未优于直接使用 ImageNet 预训练 M
 - 服务器运行目录：`/DATA/DATA1/guest3/lightgen_spatial_065/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_mobilenetv2_b11_rank_s745`
 - 正式 checkpoint：`best_observed_test_checkpoint.pt`
 - checkpoint SHA256：`5e5020e30d2eb1f6af5015d18aba5842d86f80d506f8de62f7ae33d8155c4459`
-- 本目录保存原始训练摘要、逐轮历史、光开/关指标、Router 诊断、参数报告和配置快照。
-
+- 本目录保存精简后的训练摘要、光开/关指标、Router 诊断、参数报告和配置快照；逐轮历史只保留在服务器运行目录，避免 Git 被中间数据淹没。
