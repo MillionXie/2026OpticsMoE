@@ -1,5 +1,11 @@
 # LSP：两级光学 alpha 不低于 0.5（2026-09-10）
 
+实际启动：2026-09-10 20:20（北京时间），实验室GPU3 RTX4090，PID1392178。
+源码commit `121ed769b414d122fab0da65f3e70d35fc38d34e`，独立工作树
+`/DATA/DATA1/guest3/lsp_alpha50_source_20260910`。14项测试及4 train/4 test闭环验证通过。
+正式run为 `runs/simulation/alpha50_staged_seed42_20260910`，旁边`.log`与`.launch.json`记录日志和启动信息。
+此处记录的是训练已启动，最终性能以run报告为准。
+
 本轮从已交付的 `refinement_20260909/staged_heatmap/best_checkpoint.pt`（epoch50，
 PCK0.7347857143，SHA256 `495b9c2c4e3df15d3715f1ce8f2faea7cb9156275b31103ec684f4e96a328518`）
 续训，不覆盖旧模型。原模型alpha为0.133557/0.072869，去光PCK0.7330。
