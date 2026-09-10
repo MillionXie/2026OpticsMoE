@@ -1850,6 +1850,82 @@ class SpatialCompactWeightedReadout(nn.Module):
         return prediction
 
 
+class SpatialPrunedGridCompactResidualReadout(SpatialGridReadout):
+    """Structured-pruned grid head plus a small post-optical correction.
+
+    The established grid branch is retained, but its 1,024-neuron terminal
+    hidden layer is reduced to ``spatial_compact_head_width`` neurons.  The
+    training utility initializes those neurons from the most influential
+    source units.  A zero-start convolutional correction then recovers detail
+    using only tensors that have already traversed the four optical stages.
+    """
+
+    def __init__(self, settings: ExperimentSettings) -> None:
+        super().__init__(settings)
+        width, hidden = settings.model_width, settings.head_width
+        pruned_width = settings.spatial_compact_head_width
+        self.output[1] = nn.Linear(hidden * 4, pruned_width)
+        self.output[-1] = nn.Linear(pruned_width, 1)
+        self.residual_max = float(settings.spatial_residual_max)
+        channels, frame_width = 64, 128
+        self.compact_projection = nn.Conv2d(width, channels, 1)
+        self.compact_local = nn.Conv2d(
+            channels, channels, 5, padding=2, groups=channels, bias=False
+        )
+        pooled_width = channels * 2 * (1 + 4)
+        self.compact_frame = nn.Sequential(
+            nn.LayerNorm(pooled_width),
+            nn.Linear(pooled_width, frame_width),
+            nn.GELU(),
+            nn.Dropout(settings.dropout),
+        )
+        self.compact_output = nn.Sequential(
+            nn.LayerNorm(frame_width * 6 + hidden),
+            nn.Linear(frame_width * 6 + hidden, 256),
+            nn.GELU(),
+            nn.Dropout(settings.dropout),
+            nn.Linear(256, 1),
+        )
+        nn.init.zeros_(self.compact_output[-1].weight)
+        nn.init.zeros_(self.compact_output[-1].bias)
+
+    def forward(
+        self, vision: torch.Tensor, language: torch.Tensor, mask: torch.Tensor
+    ) -> torch.Tensor:
+        base_prediction = SpatialGridReadout.forward(self, vision, language, mask)
+        batch, frames, tokens, width = vision.shape
+        grid = self.token_norm(vision).reshape(
+            batch * frames, self.grid, self.grid, width
+        ).permute(0, 3, 1, 2)
+        feature = F.gelu(self.compact_projection(grid))
+        feature = feature + F.gelu(self.compact_local(feature))
+        pooled = torch.cat(
+            tuple(
+                pool(feature, size).flatten(1)
+                for size in (1, 2)
+                for pool in (F.adaptive_avg_pool2d, F.adaptive_max_pool2d)
+            ),
+            1,
+        )
+        frame = self.compact_frame(pooled).reshape(batch, frames, -1)
+        difference = (frame[:, 1:] - frame[:, :-1]).abs()
+        video = torch.cat(
+            (
+                frame.mean(1),
+                frame.float().std(1, unbiased=False).to(frame.dtype),
+                frame.amax(1),
+                frame.amin(1),
+                difference.mean(1),
+                difference.amax(1),
+            ),
+            -1,
+        )
+        prompt = self.language(_masked_statistics(language, mask))
+        correction = self.compact_output(torch.cat((video, prompt), -1)).squeeze(-1)
+        correction = self.residual_max * torch.tanh(correction / self.residual_max)
+        return base_prediction + correction
+
+
 class _CrossFrameSpatialBlock(nn.Module):
     """A small ConvNeXt-style block without attention or a new input branch."""
 
@@ -2834,6 +2910,8 @@ class LGVQSingleMetricOEO16(nn.Module):
                 self.readout = SpatialWeightedLevelBlendReadout(settings)
             elif settings.spatial_readout_mode == "spatial_compact_weighted":
                 self.readout = SpatialCompactWeightedReadout(settings)
+            elif settings.spatial_readout_mode == "spatial_pruned_grid_compact_residual":
+                self.readout = SpatialPrunedGridCompactResidualReadout(settings)
             else:
                 self.readout = SpatialReadout(settings)
         elif settings.target_name == "temporal":

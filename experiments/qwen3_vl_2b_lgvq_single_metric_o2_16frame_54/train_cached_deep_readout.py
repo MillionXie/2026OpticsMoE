@@ -153,6 +153,7 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
         "spatial_crossframe_residual",
         "spatial_dual_level_residual",
         "spatial_compact_weighted",
+        "spatial_pruned_grid_compact_residual",
     }:
         raise ValueError(
             "Config must select a deep or five-level post-optical residual readout"
@@ -235,9 +236,34 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
         if name.startswith("readout.")
     }
     compact_from_scratch = settings.spatial_readout_mode == "spatial_compact_weighted"
-    result = None if compact_from_scratch else readout.load_state_dict(
-        source_readout, strict=False
+    pruned_compact = (
+        settings.spatial_readout_mode == "spatial_pruned_grid_compact_residual"
     )
+    if pruned_compact:
+        destination_readout = readout.state_dict()
+        compatible_readout = {
+            name: value
+            for name, value in source_readout.items()
+            if name in destination_readout
+            and tuple(value.shape) == tuple(destination_readout[name].shape)
+        }
+        readout.load_state_dict(compatible_readout, strict=False)
+        source_hidden_weight = source_readout["output.1.weight"]
+        source_hidden_bias = source_readout["output.1.bias"]
+        source_final_weight = source_readout["output.4.weight"]
+        source_final_bias = source_readout["output.4.bias"]
+        influence = source_final_weight[0].abs() * source_hidden_weight.norm(dim=1)
+        keep = influence.argsort(descending=True)[: readout.output[1].out_features]
+        with torch.no_grad():
+            readout.output[1].weight.copy_(source_hidden_weight.index_select(0, keep))
+            readout.output[1].bias.copy_(source_hidden_bias.index_select(0, keep))
+            readout.output[4].weight.copy_(source_final_weight.index_select(1, keep))
+            readout.output[4].bias.copy_(source_final_bias)
+        result = None
+    else:
+        result = None if compact_from_scratch else readout.load_state_dict(
+            source_readout, strict=False
+        )
     unexpected = [] if result is None else list(result.unexpected_keys)
     permitted_zero_start_prefixes = (
         "residual_",
@@ -257,7 +283,11 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
             f"Warm-start readout mismatch: missing={non_residual_missing}, "
             f"unexpected={unexpected}"
         )
-    trainable_prefixes = ("",) if compact_from_scratch else permitted_zero_start_prefixes
+    trainable_prefixes = (
+        ("",)
+        if compact_from_scratch or pruned_compact
+        else permitted_zero_start_prefixes
+    )
     if args.new_module_only:
         if settings.spatial_readout_mode == "spatial_crossframe_residual":
             trainable_prefixes = ("crossframe_",)
