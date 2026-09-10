@@ -1,0 +1,18 @@
+base_config: spatial_tiny_rgb_e1_s710.yaml
+output_dir: ../../runs/lgvq_spatial_tiny_rgb_joint_s713
+random_seed: 713
+
+# After the tiny RGB front has been shown to preserve the warm start, allow it
+# to co-adapt with the one existing MOS readout.  Optical masks, routers,
+# fusion gates and all O/E feature routes remain bit-identical to s643.
+model:
+  tiny_rgb_electronic_adapter_max: 0.90
+
+training:
+  trainable_scope: tiny_rgb_adapter_and_readout
+  batch_size: 32
+  learning_rate: 0.00010
+  readout_learning_rate_factor: 0.35
+  weight_decay: 0.002
+  readout_weight_decay: 0.004
+  ema_decay: 0.995

@@ -254,16 +254,16 @@ def _apply_trainable_scope(
                     "readout.",
                 )
             )
-        elif scope == "tiny_quality_adapter_only":
-            trainable = name.startswith("tiny_quality_electronic_adapter.")
-        elif scope == "tiny_quality_adapter_and_readout":
+        elif scope == "tiny_rgb_adapter_only":
+            trainable = name.startswith("tiny_rgb_electronic_adapter.")
+        elif scope == "tiny_rgb_adapter_and_readout":
             trainable = name.startswith(
-                ("tiny_quality_electronic_adapter.", "readout.")
+                ("tiny_rgb_electronic_adapter.", "readout.")
             )
-        elif scope == "tiny_quality_adapter_path_and_readout":
+        elif scope == "tiny_rgb_adapter_path_and_readout":
             trainable = name.startswith(
                 (
-                    "tiny_quality_electronic_adapter.",
+                    "tiny_rgb_electronic_adapter.",
                     "vision_routes.",
                     "language_routes.",
                     "frame_merger.",

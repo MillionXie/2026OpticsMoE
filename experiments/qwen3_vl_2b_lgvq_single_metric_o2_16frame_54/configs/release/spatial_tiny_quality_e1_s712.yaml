@@ -1,9 +1,0 @@
-base_config: spatial_tiny_quality_e1_s710.yaml
-output_dir: ../../runs/lgvq_spatial_tiny_quality_e1_s712
-random_seed: 712
-
-model:
-  tiny_quality_electronic_adapter_max: 1.40
-
-training:
-  batch_size: 32

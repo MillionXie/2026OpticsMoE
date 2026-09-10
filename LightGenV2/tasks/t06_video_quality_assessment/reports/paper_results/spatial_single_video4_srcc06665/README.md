@@ -1,4 +1,8 @@
-# Spatial single-video 4-frame formal result
+# Spatial single-video 4-frame rejected upper bound
+
+> **Rejected after architecture audit:** this checkpoint contains a frozen
+> pretrained ResNet18 front.  It is preserved only as a capacity upper bound;
+> it is not the formal LightGenV2 Spatial result and must not be deployed.
 
 The selected strict two-branch Spatial candidate reaches SRCC **0.666503** on
 all 558 test videos. The same checkpoint with every optical stage bypassed
@@ -12,4 +16,3 @@ The optical masks and optical Top-2 routers remain active and unchanged.
 The authoritative architecture, metrics, SHA256 values, and reproduction
 command are in
 [`SPATIAL_OPTIMIZATION_RESULT.md`](../../../../../../experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/SPATIAL_OPTIMIZATION_RESULT.md).
-

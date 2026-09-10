@@ -1,6 +1,6 @@
 schema_version: 1
 name: spatial_single_video4_srcc06665
-status: current_spatial_srcc_candidate
+status: rejected_noncompliant_pretrained_resnet_front
 
 backend:
   package: experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54
@@ -50,4 +50,3 @@ architecture_contract:
   wavelength_nm: 532.0
   logical_pixel_pitch_um: 17.0
   propagation_distance_m: 0.10
-

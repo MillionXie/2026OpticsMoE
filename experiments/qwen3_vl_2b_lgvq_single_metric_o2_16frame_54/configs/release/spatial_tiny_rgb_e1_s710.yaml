@@ -1,21 +1,22 @@
 base_config: spatial_readout_moments_s640.yaml
-output_dir: ../../runs/lgvq_spatial_tiny_quality_e1_s710
+output_dir: ../../runs/lgvq_spatial_tiny_rgb_e1_s710
 random_seed: 710
 
 # Compliant replacement for the rejected pretrained ResNet18 front.  The
-# existing small target-trained Conv5 cache is kept, but this new E1 adapter is
+# existing small target-trained Conv5 cache is kept, but this new RGB front is
 # randomly initialized, depthwise-separable, and has no independent MOS head.
 data:
   resnet_feature_cache: null
+  raw_frame_cache: ../../artifacts/lgvq_four_frames_center100_224_uint8.pt
   training_view_probabilities: [1.0, 0.0, 0.0]
 
 model:
-  tiny_quality_electronic_adapter_enabled: true
-  tiny_quality_electronic_adapter_max: 0.50
+  tiny_rgb_electronic_adapter_enabled: true
+  tiny_rgb_electronic_adapter_max: 0.50
 
 training:
   initialization_checkpoint: ../../runs/lgvq_spatial_moments_calibrated_s643/best_alpha_calibrated_checkpoint.pt
-  trainable_scope: tiny_quality_adapter_only
+  trainable_scope: tiny_rgb_adapter_only
   epochs: 100
   batch_size: 64
   learning_rate: 0.00030

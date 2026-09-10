@@ -2,6 +2,8 @@
   "schema_version": 1,
   "date": "2026-09-10",
   "profile": "spatial_single_video4_srcc06665",
+  "status": "rejected_noncompliant_pretrained_resnet_front",
+  "formal_result": false,
   "metric": "SRCC",
   "test_count": 558,
   "optical_on": {

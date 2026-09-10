@@ -1,0 +1,13 @@
+base_config: spatial_tiny_rgb_joint_s713.yaml
+output_dir: ../../runs/lgvq_spatial_tiny_rgb_path_s714
+random_seed: 714
+
+# Broader but still two-branch electronic refinement.  The optical masks,
+# optical routers and fusion alphas remain frozen; no new scoring branch is
+# introduced.
+training:
+  trainable_scope: tiny_rgb_adapter_path_and_readout
+  learning_rate: 0.00004
+  readout_learning_rate_factor: 0.50
+  weight_decay: 0.004
+  ema_decay: 0.997

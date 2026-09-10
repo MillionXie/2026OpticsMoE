@@ -1,13 +1,18 @@
 # T06 视频质量评价
 
+> 2026-09-10 架构审计：`spatial_single_video4_srcc06665` 含冻结预训练
+> ResNet18 前端，现已降级为“非合规性能上界”，不能作为正式方案引用或部署。
+> 当前最后一个无 ResNet 合规结果为 s643（SRCC 0.636592）；新的自研微型卷积
+> 替代正在复测。
+
 ## 当前结论
 
-Spatial 的当前正式归档是 `spatial_single_video4_srcc06665`：一条视频均匀取 4 帧并排成
-2×2，**没有多视频复用**。它保留两套物理光 Router Top-2、六次光传播和固定 20%
-未调制分量，仅在已有电子残差 E1 内增加冻结的轻量卷积前端与 173,120 参数适配器。
-在 558 条 test 视频上达到 SRCC 0.6665、KRCC 0.4833、PLCC 0.6912、RMSE 8.231、
-MAE 6.526；同权重关闭光学后 SRCC 为 0.5847。入口、checkpoint SHA 和完整对照见
-[`reports/paper_results/spatial_single_video4_srcc06665`](reports/paper_results/spatial_single_video4_srcc06665/README.md)。
+Spatial 仍是一条视频均匀取 4 帧并排成 2×2，**没有多视频复用**。旧归档
+`spatial_single_video4_srcc06665` 在 558 条 test 视频上得到 SRCC 0.6665，但它
+使用了冻结预训练 ResNet18，已被架构审计否决，只能作为容量上界。其证据保留在
+[`reports/paper_results/spatial_single_video4_srcc06665`](reports/paper_results/spatial_single_video4_srcc06665/README.md)，
+不得当作正式结果。当前合规基线为 s643（SRCC 0.636592），保留物理光 Router
+Top-2、四个光电融合阶段和固定 20% 未调制分量；新的微型卷积替代完成后再更新正式入口。
 
 当前主版本是 `temporal36_balanced`：一个视频均匀取 36 帧，以 6×6 lane 放进同一个
 478×478 有效光场。四专家光学 Top-2 router、六次光传播、20% 名义未调制直流分量、
@@ -92,7 +97,7 @@ python -m LightGenV2.tasks.t06_video_quality_assessment --phase evaluate
 
 ```powershell
 python -m LightGenV2.tasks.t06_video_quality_assessment `
-  --profile spatial_single_video4_srcc06665 `
+  --profile <NEW_COMPLIANT_SPATIAL_PROFILE_AFTER_RETEST> `
   --phase evaluate
 ```
 

@@ -2,9 +2,16 @@
 
 Date: 2026-09-10
 
-## Selected result
+> **Architecture audit update:** this 0.666503 result is retained only as a
+> non-compliant capacity upper bound.  It uses a frozen pretrained ResNet18
+> front, which the final student architecture does not permit.  Do not cite or
+> deploy it as the formal LightGenV2 result.  The last compliant checkpoint
+> before the lightweight replacement finishes is the no-ResNet s643 model at
+> SRCC 0.636592.
 
-The formal candidate exceeds the requested SRCC 0.65 target. The table uses a
+## Rejected upper-bound result
+
+The rejected candidate exceeds the requested SRCC 0.65 target. The table uses a
 positive affine score calibration fitted on the 2,250 training videos. That
 calibration improves score units (RMSE/MAE) but preserves every rank and hence
 does not change SRCC or KRCC.
