@@ -9,7 +9,7 @@ from pathlib import Path
 import numpy as np
 from common import ROOT, CHECKPOINT_SHA, setup_imports, model_config, sha, write
 
-def create(device='auto',export_native=False):
+def create(device='auto',export_native=False,force_fp32=False):
     setup_imports()
     import torch
     import transformers
@@ -22,6 +22,7 @@ def create(device='auto',export_native=False):
     if sha(checkpoint)!=CHECKPOINT_SHA: raise ValueError('Wrong epoch-25 EMA checkpoint')
     from memory import inference_policy,place_inference_model,cast_fp32
     dev,low_vram,fp32=inference_policy(device)
+    if force_fp32: fp32=True
     print('Loading fixed student; execution device:',dev,'CPU token table:',low_vram,flush=True)
     if dev.type=='cpu': torch.set_num_threads(min(4,torch.get_num_threads()))
     settings=m.load_settings(model_config())

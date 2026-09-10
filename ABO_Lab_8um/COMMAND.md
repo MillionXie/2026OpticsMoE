@@ -204,6 +204,37 @@ CCD方向由上述逻辑四角单应变换处理，不再另加翻转。设置�
 
 ## 5. 六条命令完成六层（自动生成输入＋采集）
 
+### 可选：最后一层交给服务器准备
+
+`offload.py`专用于`language_global`。前五层必须全部完成；实验电脑导出实测计算输入，
+服务器用相同固定权重、FP32（禁用TF32）生成原生振幅BMP，再由实验电脑核验安装。
+不转移全幅TIFF，不改像素、路由、光路或相位；只核验本次实际消费的PNG/route JSON及其有效记录。
+原始TIFF留在原会话，采集时SHA仍保留；本次导出不重新遍历所有大TIFF。
+新安装代码须先从Git版本化交付包取得，不能直接用旧run.py在Linux上套Windows会话路径。
+
+```powershell
+# 实验电脑，仅打包数据，不操作硬件；archive必须是尚不存在的新文件
+& $py offload.py export --session pilot02 --archive transfers/pilot02_lg_input.zip
+```
+
+把输入ZIP传到已拥有本工程、同版本模型/前端的服务器后：
+
+```bash
+# 在服务器ABO_Lab_8um目录；只用一张预先检查空闲的GPU
+CUDA_VISIBLE_DEVICES=4 python offload.py compute --archive transfers/pilot02_lg_input.zip --out transfers/pilot02_lg_compute --device cuda
+```
+
+把生成的`transfers/pilot02_lg_compute/language_global_inputs.zip`传回实验电脑后：
+
+```powershell
+& $py offload.py install --session pilot02 --archive transfers/language_global_inputs.zip
+# 手动加载 generated/P/06_language_global.bmp 后，只采集，不再运行stage/prepare
+& $py run.py capture --session pilot02 --stage language_global --yes
+```
+
+安装拒绝覆盖已有`play/language_global`或该层CCD；会逐一核对会话、上游实际计算输入、相位SHA、
+2500样本顺序、BMP SHA及面板尺寸。`--limit`只供服务器诊断，部分输出禁止安装为完整阶段。
+
 `stage`自动依次执行prepare和capture。prepare在独立进程中使用CUDA，退出并释放模型后才进入采集，避免模型与显示SDK同时占用显存。
 下面的`--yes`会跳过输入y，生成结束后直接采集。**执行每条命令前必须先手动加载本层相位**；它不会自动切相位，也不绕过文件SHA、会话身份或图像质量检查。
 仍会打印相位路径和SHA，记录中明确标注未询问确认。不要一次粘贴六条后离开，因为每层仍需手动切相位。
