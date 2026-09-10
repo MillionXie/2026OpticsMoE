@@ -708,3 +708,10 @@ python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TA
 
 正式run只保留best/last，结果以完整5000公开测试为准，选模偏差照常披露。
 此节是待验证方案，不代表达到.87或已经可替换实验室候选；前端仍完全冻结。
+
+配置/合同测试源码`066ed0c46874e3611bb062f76503e6e925b7bbc8`通过93项测试并push后，
+在A100/GPU6启动。复用已无活跃进程且tracked-clean的`t03_sam_radius`工作树，
+不更新或重启其他仍在训练的工作树。
+启动前同源码的4张真实训练图短检查：初始logits最大差0，参数增量12544；
+单次SAM更新后的相位RMS变化0.00018743190 rad，两张global up各3136个元素均已非零，
+所有参数有限。该临时内存检查未保存PT，不是性能测量，也不替代完整warmstart/测试复评。
