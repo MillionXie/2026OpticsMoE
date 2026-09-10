@@ -288,6 +288,24 @@ HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
 
 GPU UUID是本服务器4090；在其他机器需替换为当地空闲GPU。数据与冻结Qwen前端仍需按前文准备。
 
+## 2026-09-11：严格高alpha最新证据与独立审阅版
+
+`high_alpha_retrieval_20260910/artifacts`：30epoch完成，source `e59fc45fbec17938e76f4bfd527e5540003bb255`；
+epoch15 EMA，Hit@1=68.9583%，mAP@10=0.675709，同权重去光64.5833%，去光下降4.375个百分点。
+alpha约0.430–0.440，约束区间[0.4001,0.8]；没有选择旧低alpha保底。仍为train120/val40不用/test40商品、
+480query×120训练商品中心、test-selected，数据清单与冻结baseline一致。
+best SHA256=`814893fb430a73ce529acd7a1a80e264d7ed0253a37658df936cc40e34d6265b`；
+manifest SHA256=`2949a4035150a9f8718f2a6cace164c17394613d24fb9d0234c553bee8d77c97`。
+
+独立整理版在根 `LightGenPublic/tasks/t07_abo_image_retrieval/`，只用紧凑冻结前端，不加载完整Qwen；
+源码29e16bed完成隔离全量复评：1440train+480test的64维特征与原代码逐位一致、最大绝对差0。
+Python3.11.15、torch2.6.0+cu124、单卡4090。此为固定权重数值复现，不是从头重训保证。
+另执行一epoch一步的真实联合续训冒烟并验证12片相位更新；训练/复评/冒烟进程均已退出，GPU释放。
+
+完整命令/模型/资产要求见独立版 `COMMAND.md`、`README.md`、`docs/VERIFICATION.md`；
+组会分析见 `docs/GROUP_MEETING.md`。原始细粒度审计在本任务 `runs/simulation/meeting_audit_latest_20260911/artifacts`，
+独立复评在审阅任务 `runs/fixed_equivalence_20260911`。新的代码ZIP是仿真/续训内部审阅包，不是硬件SDK包。
+
 ## 历史审计说明（保留）
 
 [历史 baseline 方法审计](BASELINE_METHODS.md)保留了旧运行的模型、预处理及评估定义。

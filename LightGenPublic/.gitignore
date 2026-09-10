@@ -5,3 +5,6 @@
 **/releases/
 **/*.pt
 **/*.zip
+**/docs/figures/03_error_examples.png
+**/docs/figures/04_actual_input_crop.png
+**/docs/figures/phase_masks.png

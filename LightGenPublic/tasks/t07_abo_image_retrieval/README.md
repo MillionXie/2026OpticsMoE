@@ -71,3 +71,21 @@ manifest 中类别、商品标题不作为模型输入。输入模板/分辨率�
 默认续训30epoch×64step，训练batch40（10类×4商品各取一视图），`--batch-size` 只控制评估编码批量。前25epoch联合训练，后5只调读出；EMA0.99，每5epoch比较 live/EMA 的 test Hit@1（同分比较mAP@10），选best；不设独立验证集。明确属于 **test-selected** 结果，不是独立无偏最终测试。
 
 续训是加载 best 后重新建立优化器，不是恢复 Adam/RNG 的中断续跑，不保证重训逐位一致；训练仍保存 `best.pt`、`last.pt`，没有每5epoch多份权重。原始优化试验继续在 LightGenV2，不在审阅目录堆 run。
+
+## 如何正确读取一片mask
+
+`best.pt` 是包含 `metadata` 与 `state_dict` 的字典，不能把整份checkpoint当一张相位图；也不能把raw参数直接当弧度。
+
+```python
+import torch
+checkpoint = torch.load('assets/best.pt', map_location='cpu', weights_only=True)
+raw = checkpoint['state_dict']['vision.optics.experts.0']
+phase_radians = 2 * torch.pi * raw.float().sigmoid()  # [224,224], rad
+print(phase_radians.shape, phase_radians.min(), phase_radians.max())
+```
+
+V/L专家键名分别为 `vision.optics.experts.0`～`.3`、`language.optics.experts.0`～`.3`；router键为`<modality>.optics.router.raw_router_phase`（224²）；global键为`<modality>.optics.global_phase`（478²）。这些是模拟相位，不是经LUT/像素尺寸变换后的可直接播放BMP。本包只含选中best，不含每5epoch演变快照。
+
+![最佳相位概览，单位0至2pi](docs/figures/phase_masks.png)
+
+相位预览随本地/内部ZIP提供，不以图像代替真实参数。模型从已有训练权重续训；若新建模块raw初始化为0，对应实际相位π，不能把当前已训练权重说成仍为零初始化。

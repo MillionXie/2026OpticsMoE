@@ -1,0 +1,14 @@
+{
+  "pooled_intensity_retained": {
+    "vision_expert": 92.1555857360363,
+    "vision_global": 92.24626734852791,
+    "language_expert": 57.23444019444287,
+    "language_global": 57.236125466879464
+  },
+  "decoded_squared_norm_retained": {
+    "vision_expert": 87.4396000802517,
+    "vision_global": 87.37078443169594,
+    "language_expert": 35.23944556713104,
+    "language_global": 35.08757330477238
+  }
+}

@@ -30,6 +30,29 @@ def build(args):
         shutil.copytree(root / name, args.output / name, ignore=shutil.ignore_patterns('__pycache__', '*.pyc'))
     for name in ('README.md', 'COMMAND.md', 'pyproject.toml'):
         shutil.copy2(root / name, args.output / name)
+    if args.audit:
+        reference = args.output / 'reference' / 'data_audit'
+        reference.mkdir(parents=True)
+        for name in ('audit.json', 'per_category.csv', 'test_products.csv', 'example_selection.json', 'crop_example_selection.json'):
+            shutil.copy2(args.audit / name, reference / name)
+        for name in ('03_error_examples.png', '04_actual_input_crop.png'):
+            shutil.copy2(args.audit / name, args.output / 'docs/figures' / name)
+    if args.verification:
+        reference = args.output / 'reference' / 'fixed_equivalence'
+        reference.mkdir(parents=True)
+        for name in ('final_report.json', 'execution.json', 'equivalence.json', 'ccd_readout_audit.csv'):
+            shutil.copy2(args.verification / name, reference / name)
+        shutil.copy2(args.verification / 'phase_masks.png', args.output / 'docs/figures/phase_masks.png')
+    if args.training:
+        reference = args.output / 'reference' / 'training'
+        reference.mkdir(parents=True)
+        for name in ('final_report.json', 'history.json', 'execution.json'):
+            shutil.copy2(args.training / name, reference / name)
+    if args.smoke:
+        reference = args.output / 'reference' / 'continuation_smoke'
+        reference.mkdir(parents=True)
+        for name in ('final_report.json', 'execution.json', 'history.json', 'selected.json', 'parameter_updates.json'):
+            shutil.copy2(args.smoke / name, reference / name)
     shutil.copy2(root.parents[1] / 'AGENTS.md', args.output / 'AGENTS.md')
     assets = args.output / 'assets'
     assets.mkdir()
@@ -55,4 +78,8 @@ if __name__ == '__main__':
     parser.add_argument('--checkpoint', type=Path, required=True)
     parser.add_argument('--processor', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--audit', type=Path, help='Optional derived dataset analysis, not raw dataset')
+    parser.add_argument('--verification', type=Path, help='Optional independent fixed-weight verification artifacts')
+    parser.add_argument('--training', type=Path, help='Optional original completed training reports, not checkpoints')
+    parser.add_argument('--smoke', type=Path, help='Optional independent continuation smoke reports, not checkpoints')
     build(parser.parse_args())
