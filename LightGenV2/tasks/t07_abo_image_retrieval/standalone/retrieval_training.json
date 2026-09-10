@@ -1,0 +1,33 @@
+{
+  "adapt": {
+    "epochs": 30,
+    "steps": 64,
+    "electronic_lr": 0.000015,
+    "adapter_lr": 0.000005,
+    "optical_electronic_lr": 0.00005,
+    "readout_lr": 0.00008,
+    "phase_lr": 0.0015,
+    "router_lr": 0.0002,
+    "alpha_lr": 0.0002,
+    "supcon_weight": 0.1,
+    "optical_auxiliary_weight": 0.05,
+    "optical_warmup_epochs": 0,
+    "proxy_ce_weight": 0.2,
+    "gallery_nll_weight": 1.0,
+    "gallery_margin_weight": 1.0,
+    "readout_polish_epochs": 5
+  },
+  "augmentation": {
+    "minimum_crop_side_fraction": 0.97,
+    "horizontal_flip_probability": 0.15,
+    "rotation_degrees": 1.0,
+    "brightness_min": 0.95,
+    "brightness_max": 1.05,
+    "contrast_min": 0.95,
+    "contrast_max": 1.05,
+    "blur_probability": 0.0,
+    "blur_radius": 0.3
+  },
+  "selection": "High-alpha start and live/EMA test-selected candidates; no low-alpha fallback",
+  "training_gallery": "120 TRAIN product centers, refreshed every epoch from current live model; exclude query own product; other same-category products positive; detached, not saved or used as an extra inference head"
+}

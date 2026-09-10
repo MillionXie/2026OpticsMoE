@@ -75,10 +75,17 @@ def checkpoint(model,head,epoch,stage,score):
 def run_stage(args,stage,output,initial_checkpoint=None):
     if output.exists():raise FileExistsError(output)
     output.mkdir(parents=True)
-    high=getattr(args,'profile','original')=='high_alpha'
+    rank=getattr(args,'profile','original')=='high_alpha_retrieval'
+    high=getattr(args,'profile','original') in ('high_alpha','high_alpha_retrieval')
     if high:
         from .high_alpha import convert_payload,group_kind,optical_heads,optical_classification_loss,augment,phase_change,phase_shuffle,restore_phase
     cfg_all=json.loads(Path(__file__).with_name('high_alpha.json' if high else 'broad_transfer.json').read_text())
+    if rank:
+        from .retrieval_training import product_bank,gallery_loss,readout_polish
+        overlay=json.loads(Path(__file__).with_name('retrieval_training.json').read_text())
+        for key,value in overlay.items():
+            if isinstance(value,dict):cfg_all[key].update(value)
+            else:cfg_all[key]=value
     cfg=cfg_all[stage].copy()
     cfg['epochs']=getattr(args,stage+'_epochs') or cfg['epochs'];cfg['steps']=args.steps or cfg['steps']
     device=torch.device(args.device)
@@ -97,6 +104,8 @@ def run_stage(args,stage,output,initial_checkpoint=None):
         labels=torch.tensor([s.category_id for s in samples],device=device)
         origin=args.assets/'best.pt';start=initial_checkpoint or origin
         payload=torch.load(start,map_location='cpu',weights_only=True)
+        if rank and payload['metadata'].get('fusion_alpha_min',0)<=.4:
+            raise ValueError('Retrieval continuation must start from a strictly high-alpha checkpoint')
         if high:payload=convert_payload(payload,cfg_all)
         model=OpticalRetrieval(payload['metadata']);model.load_state_dict(payload['state_dict'],strict=True);del payload
         model.to(device)
@@ -145,13 +154,17 @@ def run_stage(args,stage,output,initial_checkpoint=None):
             del features
             write_json(output/'history.json',history);print(json.dumps(history),flush=True)
         for epoch in range(1,cfg['epochs']+1):
+            if rank:
+                bank,bank_labels,product_ids=product_bank(encode(model,processor,target_train,device,args.batch_size).to(device),target_train)
             model.train();head.train();rng=random.Random(42+epoch)
             progress=(epoch-1)/max(1,cfg['epochs']-1)
             scale=min(1.,epoch/2)*(.1+.9*.5*(1+math.cos(math.pi*progress)))
             warm=high and epoch<=cfg['optical_warmup_epochs']
+            polish=rank and readout_polish(epoch,cfg['epochs'],cfg)
             for g in optimizer.param_groups:
-                g['lr']=0. if warm and g['kind'] in ('electronic','adapter') else g['initial_lr']*scale
-            totals=dict(loss=0.,ce=0.,supcon=0.,correct=0.,optical_auxiliary=0.);seen=set();clean_batches=0
+                frozen=(warm and g['kind'] in ('electronic','adapter')) or (polish and g['kind'] not in ('readout','auxiliary'))
+                g['lr']=0. if frozen else g['initial_lr']*scale
+            totals=dict(loss=0.,ce=0.,supcon=0.,correct=0.,optical_auxiliary=0.,gallery_nll=0.,gallery_margin=0.,train_gallery_hit1=0.);seen=set();clean_batches=0
             counts={m:torch.zeros(4,device=device) for m in ('vision','language')}
             for step in range(cfg['steps']):
                 indices=sampled_indices(groups,cfg['classes_per_batch'],cfg['products_per_class'],rng);seen.update(indices)
@@ -174,13 +187,16 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                     z=model(inputs(processor,images,device));logits=head(z)
                     ce=F.cross_entropy(logits,labels[indices],label_smoothing=.05)
                     con=supcon(z,labels[indices])
-                    loss=ce+cfg['supcon_weight']*con+cfg_all['regularization_weight']*regularization(model)
+                    loss=cfg.get('proxy_ce_weight',1.)*ce+cfg['supcon_weight']*con+cfg_all['regularization_weight']*regularization(model)
                     optical_aux=optical_classification_loss(model,head.optical,labels[indices]) if high else z.new_zeros(())
                     if high:loss=loss+cfg['optical_auxiliary_weight']*optical_aux
+                    if rank:
+                        gallery_nll,gallery_margin,gallery_hit=gallery_loss(z,labels[indices],product_ids[indices],bank,bank_labels)
+                        loss=loss+cfg['gallery_nll_weight']*gallery_nll+cfg['gallery_margin_weight']*gallery_margin
                 if not torch.isfinite(loss):raise RuntimeError('Nonfinite loss')
                 loss.backward()
                 for n,p in trainables:
-                    if (not high and parameter_kind(n)=='alpha') or (warm and group_kind(n) in ('electronic','adapter')):p.grad=None
+                    if (not high and parameter_kind(n)=='alpha') or (warm and group_kind(n) in ('electronic','adapter')) or (polish and group_kind(n)!='readout'):p.grad=None
                 torch.nn.utils.clip_grad_norm_([p for _,p in trainables]+list(head.parameters()),1.)
                 optimizer.step()
                 with torch.no_grad():
@@ -190,10 +206,12 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                 totals['loss']+=float(loss.detach());totals['ce']+=float(ce.detach());totals['supcon']+=float(con.detach())
                 totals['correct']+=float(logits.argmax(-1).eq(labels[indices]).float().mean())
                 totals['optical_auxiliary']+=float(optical_aux.detach())
+                if rank:
+                    totals['gallery_nll']+=float(gallery_nll.detach());totals['gallery_margin']+=float(gallery_margin.detach());totals['train_gallery_hit1']+=float(gallery_hit)
                 for m in counts:counts[m]+=getattr(model,m).optics.router.last['selected_mask'].detach().sum(0)
             if high and not all(.4<a<=.8 for values in model.audit()['alpha'].values() for a in values):
                 raise RuntimeError('Strict high-alpha contract violated')
-            row=dict(epoch=epoch,stage=stage,optical_warmup=warm,losses={k:v/cfg['steps'] for k,v in totals.items()},
+            row=dict(epoch=epoch,stage=stage,optical_warmup=warm,readout_polish=polish,losses={k:v/cfg['steps'] for k,v in totals.items()},
                      unique_images=len(seen),clean_batches=clean_batches,alpha=model.audit()['alpha'],
                      router_selected_fraction={m:(c/(cfg['steps']*cfg['classes_per_batch']*cfg['products_per_class'])).cpu().tolist() for m,c in counts.items()})
             torch.save(checkpoint(model,head,epoch,stage,-row['losses']['loss']),output/'last.pt')
@@ -203,20 +221,28 @@ def run_stage(args,stage,output,initial_checkpoint=None):
             if stage=='pretrain':
                 score=(-row['losses']['loss'],0.)
                 if score>best_score:
-                    best_score=score;torch.save(checkpoint(model,head,epoch,stage,score),output/'best.pt')
+                    best_score=score;torch.save(dict(checkpoint(model,head,epoch,stage,score),selection_variant='ema'),output/'best.pt')
             elif epoch%cfg_all['test_every']==0 or epoch==cfg['epochs']:
                 metrics=evaluate(model,processor,target_train,target_test,device,args.batch_size);row['test']=metrics
                 score=(metrics['hit_at_1'],metrics['map_at_10'])
                 if score>best_score:
-                    best_score=score;torch.save(checkpoint(model,head,epoch,stage,score),output/'best.pt')
+                    best_score=score;torch.save(dict(checkpoint(model,head,epoch,stage,score),selection_variant='ema'),output/'best.pt')
+                if rank:
+                    with torch.no_grad():
+                        for n,p in trainables:p.copy_(live[n])
+                    raw_metrics=evaluate(model,processor,target_train,target_test,device,args.batch_size);row['test_live']=raw_metrics
+                    raw_score=(raw_metrics['hit_at_1'],raw_metrics['map_at_10'])
+                    if raw_score>best_score:
+                        best_score=raw_score;torch.save(dict(checkpoint(model,head,epoch,stage,raw_score),selection_variant='live'),output/'best.pt')
             with torch.no_grad():
                 for n,p in trainables:p.copy_(live[n])
             del live
             write_json(output/'parameter_updates.json',{n:float((p.detach().cpu()-initial[n]).square().mean().sqrt()) for n,p in trainables})
             history.append(row);write_json(output/'history.json',history);print(json.dumps(row),flush=True)
         payload=torch.load(output/'best.pt',map_location=device,weights_only=True)
-        model.load_state_dict(payload['state_dict']);selected_epoch=payload['epoch'];del payload
+        model.load_state_dict(payload['state_dict']);selected_epoch=payload['epoch'];selected_variant=payload.get('selection_variant','initial_or_ema');del payload
         report=dict(status='complete',stage=stage,selected_epoch=selected_epoch,model_audit=model.audit(),
+                    selected_variant=selected_variant,
                     auxiliary_head_at_inference=False,test_selected=stage=='adapt',
                     selection_note='best EMA snapshot indexed by live training loss' if stage=='pretrain' else 'target test Hit@1 then mAP; accepted best included')
         if high:report['selection_note']='Only alpha>=0.4 candidates, including converted initial checkpoint; low-alpha 70.21% is NOT a fallback'
@@ -251,14 +277,14 @@ def run_stage(args,stage,output,initial_checkpoint=None):
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--mode',choices=['pretrain','adapt','chain'],default='chain')
-    p.add_argument('--profile',choices=['original','high_alpha'],default='original')
+    p.add_argument('--profile',choices=['original','high_alpha','high_alpha_retrieval'],default='original')
     p.add_argument('--assets',type=Path,required=True);p.add_argument('--target',type=Path,required=True)
     p.add_argument('--abo',type=Path);p.add_argument('--pool',type=Path);p.add_argument('--output',type=Path,required=True)
     p.add_argument('--checkpoint',type=Path);p.add_argument('--device',default='cuda',choices=['cuda','cpu'])
     p.add_argument('--pretrain-epochs',type=int);p.add_argument('--adapt-epochs',type=int);p.add_argument('--steps',type=int)
     p.add_argument('--batch-size',type=int,default=4)
     args=p.parse_args();verify_assets(args.assets)
-    if args.profile=='high_alpha' and args.mode!='adapt':p.error('high_alpha currently supports target adapt only')
+    if args.profile.startswith('high_alpha') and args.mode!='adapt':p.error('high_alpha currently supports target adapt only')
     if args.mode in ('pretrain','chain') and (args.abo is None or args.pool is None):p.error('--abo and --pool required')
     if args.mode=='adapt' and args.checkpoint is None:p.error('--checkpoint required for transfer adaptation')
     if any(x is not None and x<1 for x in (args.pretrain_epochs,args.adapt_epochs,args.steps,args.batch_size)):p.error('Positive counts required')

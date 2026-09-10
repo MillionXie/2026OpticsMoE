@@ -133,3 +133,27 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.broad_transfer \
 `execution.json`记录源码/配置/初始权重/数据哈希；`history.json`包含alpha和专家选择比例；
 `parameter_updates.json`记录参数变化；`final_report.json`包含正常/去光/相位打乱/轻噪声和圆周相位变化。
 所有训练结束或失败后检查执行日志中的PID已退出，及`nvidia-smi`中该PID已释放。
+
+## 8. 从67.92%高alpha权重继续：跨商品图库检索目标
+
+仍在仓库根目录执行，先检查GPU；默认只使用一张。以下示例选择GPU1，确认余量后使用。
+不需要大ABO预训练池或完整Qwen，不改变正式测试图库。
+
+```bash
+CUDA_VISIBLE_DEVICES=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
+OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 \
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.broad_transfer \
+  --mode adapt --profile high_alpha_retrieval \
+  --assets LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/standalone_assets_20260910 \
+  --checkpoint LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/high_alpha_aug_20260910/artifacts/best.pt \
+  --target /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --output LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/high_alpha_retrieval_20260910/artifacts \
+  --adapt-epochs 30 --batch-size 4
+```
+
+训练batch40、64steps/epoch，每轮额外刷新仅训练商品的图库；评估batch4。
+代码拒绝低alpha源checkpoint；不重置已训练的高alpha。前25轮联合、末5轮仅读出头。
+每5轮分别保存live/EMA的测试指标，只有选中的最好权重写best.pt（不额外保存EMA文件）。
+高alpha的67.92%起点保留在候选中，若续训没有提高必须如实说明，不能将保底成绩说成新提升。
+快速检查使用独立`runs/smoke/`目录、`--adapt-epochs 1 --steps 2`，会覆盖图库构建、反传和两种选模。
+输出指标/去光/相位打乱/噪声/相位变化文件与第7节一致；保留全部旧结果，不覆写旧ZIP。

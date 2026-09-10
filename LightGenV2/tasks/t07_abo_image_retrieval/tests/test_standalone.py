@@ -13,6 +13,34 @@ from standalone.curriculum import stage_settings, parameter_kind, relation_loss
 
 
 class StandaloneTests(unittest.TestCase):
+    def test_training_gallery_excludes_own_product_and_is_detached(self):
+        import types
+        from standalone.retrieval_training import product_bank,gallery_loss
+        samples=[types.SimpleNamespace(product_id=f'p{i//2}',category_id=i//4,split='train') for i in range(8)]
+        features=torch.tensor([[1.,0.],[1.,0.],[.9,.1],[1.,0.],[0.,1.],[0.,1.],[.1,.9],[0.,1.]],requires_grad=True)
+        bank,labels,ids=product_bank(features,samples)
+        self.assertFalse(bank.requires_grad);self.assertEqual(bank.shape,(4,2))
+        query=torch.tensor([[.9,.1]],requires_grad=True)
+        nll,margin,hit=gallery_loss(query,torch.tensor([0]),ids[:1],bank,labels)
+        altered=bank.clone();altered[0]=torch.tensor([-1.,0.])
+        nll2,margin2,_=gallery_loss(query,torch.tensor([0]),ids[:1],altered,labels)
+        torch.testing.assert_close(nll,nll2);torch.testing.assert_close(margin,margin2)
+        (nll+margin).backward();self.assertTrue(torch.isfinite(query.grad).all());self.assertIsNone(features.grad)
+        self.assertEqual(float(hit),1.)
+        samples[0].split='test'
+        with self.assertRaises(ValueError):product_bank(features,samples)
+
+    def test_retrieval_loss_prefers_positive_and_polish_schedule(self):
+        from standalone.retrieval_training import gallery_loss,readout_polish
+        bank=torch.tensor([[1.,0.],[.9,.1],[0.,1.],[.1,.9]])
+        labels=torch.tensor([0,0,1,1]);own=torch.tensor([0]);target=torch.tensor([0])
+        good=gallery_loss(torch.tensor([[1.,0.]]),target,own,bank,labels)
+        bad=gallery_loss(torch.tensor([[0.,1.]]),target,own,bank,labels)
+        self.assertLess(float(good[0]+good[1]),float(bad[0]+bad[1]))
+        cfg={'readout_polish_epochs':5}
+        self.assertFalse(readout_polish(25,30,cfg));self.assertTrue(readout_polish(26,30,cfg))
+        self.assertFalse(readout_polish(1,1,cfg))
+
     def test_legacy_fusion_is_unchanged_and_high_alpha_bounded(self):
         e,o=torch.randn(2,7,192),torch.randn(2,7,192);raw=torch.tensor(-2.)
         re,ro=rms(e).detach(),rms(o).detach();a=.01+.94*raw.sigmoid()

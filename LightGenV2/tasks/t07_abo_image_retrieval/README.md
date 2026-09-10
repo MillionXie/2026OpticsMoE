@@ -95,3 +95,20 @@ V/L融合前光特征另加训练用分类监督，其辅助头不进入推理�
 推理仍为原六次光捕获、Top2、无TF/attention；Vision外层输入跳连仍在，alpha不是全网能量/性能贡献比例。
 固定ROI、正常精度相位、k滤波/像素位移关闭，CCD解码仍含已有log1p等非线性（未新增）。
 命令见COMMAND第7节；超过75%是优化目标，不是已测成绩。旧ZIP不会自动被替换。
+
+该60epoch试验已完成（source `3eb20ae2`）：best为55轮，Hit@1 **67.9167%**，同权重去光64.1667%
+（下降3.75个百分点），相位像素打乱52.7083%，单种轻量CCD噪声67.0833%。alpha约0.432～0.441。
+证据：`runs/simulation/high_alpha_aug_20260910/artifacts/final_report.json`，不是低alpha的70.21%版本。
+
+### 高alpha检索对齐续训
+
+`--profile high_alpha_retrieval` 仅从严格高alpha的best续训，推理图/参数量/几何完全不变。
+训练图库由1440张**训练图**生成120个商品中心，每epoch刷新；每个query排除其自身商品的全部视图，
+同类别其他商品作为正候选，其他类别为负候选。损失为多正例检索NLL+最难负商品margin，
+降低辅助分类CE/光特征分类权重；保留轻量跨商品监督对比、Router均衡及原高alpha噪声。
+训练图库是无梯度的缓存，不加入推理、不使用test/val图，不按真实测试标签筛候选。
+先25epoch光电联合调整，最后5epoch仅训练已有读出头（光学与电子残差冻结）；减轻裁剪/旋转等增强。
+每5epoch分别评估live和EMA，按同一test指标选best；保留高alpha起点，明确test-selected。
+仅best.pt/last.pt；训练日志另记排除自身商品后的训练图库Hit@1，以区别辅助分类正确率。
+参数覆盖集中在`standalone/retrieval_training.json`，基础合同继承`high_alpha.json`。见COMMAND第8节。
+这是针对训练目标与实际检索不一致的尝试；不声称已解决所有语义表征差距，未达到75%前不作为正式提升。
