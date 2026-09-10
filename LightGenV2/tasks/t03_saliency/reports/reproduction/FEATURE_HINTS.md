@@ -34,6 +34,15 @@ CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 TRANSFORMER
 
 同样按公开test选best，存在选模偏差；不能把多个训练变化合并后的结果当作单变量因果结论。
 
+实现源码`89b6a5ed`：服务器xml环境CPU测试189项通过（42.18秒、13条既有依赖警告）。
+真实训练图`train/000000000009`、`train/000000000089`短检查通过：完整10000张缓存身份/SHA
+检查后，分别执行冻结头普通一步和解冻头SAM一步（不是完成15轮预训练）。
+两步loss均有限，head参数绝对变化分别0/5.12397346；router原始参数累计RMS变化3.6511e-5，
+四专家约4.999e-4至5.119e-4，全局相位5.13185e-4。光学参数确实更新；这是未映射的raw参数，
+不可把它写成弧度或BMP灰度变化。注册在24个原生Transformer block上的hook调用次数为0。
+这两张的CC不是测试成绩，换头后的初始训练样本CC较差是已知风险，不隐藏或用旧头成绩替代。
+没有保存这次短检查的临时PT，部署参数/键名未增加。
+
 ## 已完成对照结果
 
 2026-09-10，`moe_alpha40_hint_control_seed42`与`moe_alpha40_hint_cosine_seed42`
