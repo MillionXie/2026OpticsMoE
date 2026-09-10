@@ -1,0 +1,18 @@
+base_config: spatial_custom_conv_formal_s749.yaml
+output_dir: ../../runs/lgvq_spatial_custom_conv_compact_readout_1m_s907
+random_seed: 907
+
+# The optical router, six masks, four O/E fusion stages, custom Conv E1 front,
+# 20% unmodulated component and Qwen-front caches are inherited unchanged.
+# Only the final post-optical MOS readout is replaced.
+model:
+  spatial_readout_mode: spatial_compact_weighted
+  spatial_compact_channels: 80
+  spatial_compact_frame_width: 256
+  spatial_compact_language_width: 128
+  spatial_compact_head_width: 384
+  spatial_level_score_min: -2.75
+  spatial_level_score_max: 2.25
+
+loss:
+  level_distribution_weight: 0.0
