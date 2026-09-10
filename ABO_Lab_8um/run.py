@@ -39,8 +39,8 @@ def measured(root,s):
         record=p/(stage+'.record.json')
         if not record.exists(): continue
         meta=read(record)
-        for key,value in meta['files'].items():
-            if sha(p/key)!=value: raise ValueError(f'CCD file changed: {p/key}')
+        from raw_cleanup import validate_record_files
+        validate_record_files(root, p, record, meta)
         result[stage]=read(p/(stage+'.route.json')) if stage.endswith('_router') else np.asarray(Image.open(p/(stage+'.png'))).copy()
     return result
 
