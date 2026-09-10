@@ -121,6 +121,16 @@ def staged_epoch(optim: Any, settings: Any, epoch: int) -> dict[str, Any]:
 def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
     model = build_student(loaded, settings)
     initialization = initialize_student(model, settings)
+    feature_targets = None
+    if getattr(settings, 'feature_pretraining', {}).get('enabled', False):
+        from .feature_pretraining import FixedFeatureTargets, initialize_teacher_decoder
+        feature_targets = FixedFeatureTargets(settings, bundle.train_records)
+        initialization.update(initialize_teacher_decoder(model, settings))
+        _write_json(settings.output_dir/'feature_pretraining_provenance.json', {
+            **feature_targets.provenance, **settings.feature_pretraining,
+            'initial_evaluation_uses_replaced_teacher_decoder': True,
+            'ground_truth_retained_in_both_stages': True,
+        })
     _write_json(settings.output_dir / "initialization_report.json", initialization)
     loader_settings = copy(settings)
     aligned_flip = settings.augmentation_enabled and settings.augmentation_mode == "aligned_flip"
@@ -221,7 +231,13 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
             stage_report["kd_weight"] = settings.map_kd_weight
             epoch_settings, supervision_report = supervision_for_epoch(settings, epoch)
             stage_report.update(supervision_report)
-            if extra_stream is not None:
+            if feature_targets is not None:
+                from .feature_pretraining import prepare_epoch, train_epoch as train_feature_epoch
+                epoch_settings, feature_report = prepare_epoch(model, optim, epoch_settings, epoch)
+                stage_report.update(feature_report)
+                train_metrics = train_feature_epoch(model, train_loader, loaded, epoch_settings, optim,
+                    teacher, feature_targets, feature_report['feature_weight'])
+            elif extra_stream is not None:
                 from .semisupervised import train_semisupervised_epoch
                 train_metrics = train_semisupervised_epoch(model,train_loader,loaded,epoch_settings,optim,
                                                             teacher,extra_stream,semantic=semantic)

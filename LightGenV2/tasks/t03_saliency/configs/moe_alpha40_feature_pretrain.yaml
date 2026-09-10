@@ -1,0 +1,28 @@
+base_config: moe_alpha40_extra_control.yaml
+# Same deployed architecture as 87ad. Train-only fixed-basis feature pretraining.
+# Teacher decoder replaces the existing SAME-SIZE head, not an added branch.
+training:
+  student_epochs: 60
+  student_learning_rate: 0.0003
+  phase_learning_rate: 0.0005
+  router_learning_rate: 0.00005
+  dense_readout_learning_rate: 0.0003
+  dense_head_learning_rate: 0.0003
+  ffn_spatial_learning_rate: 0.001
+  staged:
+    polish_start: 51
+distillation:
+  end_epoch: 60
+feature_pretraining:
+  enabled: true
+  cache_file: ../runs/simulation/teacher_features_20260910/teacher_train_features.pt
+  cache_sha256: 39aae6b13452975186266672e51216e72391112df65b23c453de030033826304
+  head_checkpoint: ../runs/simulation/qwen_aligned_head_staged_seed42/best_checkpoint.pt
+  head_checkpoint_sha256: 531c4a330fc05e2c27b037784588716d248a29d1ab8da951d443165dcce552f8
+  frozen_head_epochs: 15
+  fade_end_epoch: 40
+  initial_weight: 2.0
+  joint_weight: 0.2
+  mean_weight: 0.05
+  joint_lr_multiplier: 0.2
+output_dir: ../runs/simulation/moe_alpha40_feature_pretrain_seed42

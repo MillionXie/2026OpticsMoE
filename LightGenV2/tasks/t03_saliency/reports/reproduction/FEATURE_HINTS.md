@@ -1,5 +1,39 @@
 # 训练时空间特征监督（不增加推理网络）
 
+## 新试验：固定教师基底预训练（待验证，不替换正式best）
+
+配置 `configs/moe_alpha40_feature_pretrain.yaml` 与旧的弱cosine提示不同：
+不增加训练投影，直接学习教师decoder输入的192通道空间特征。
+学生core从已核验的87ad来源初始化，现有85412参数头改为同规格教师decoder权重；
+不复制教师adapter或24层Transformer到学生推理图，参数量/光路/alpha下限均不变。
+因此本试验的epoch0是**换头后的性能**，不是原87ad的.86205；原正式best完整保留。
+
+- epoch1–15：固定这个教师decoder，训练原有光电core；AdamW普通单步，无SAM。
+- epoch16–60：解冻同一个头，电子子空间SAM rho=.05，联合优化。
+- 两阶段都保留GT损失与空间CC教师图蒸馏2.0，不使用额外COCO图或类别/框标签。
+- 特征项为 `MSE(((S-mean_hw(S))-(T-mean_hw(T)))/sigma_T)` 加
+  `.05*MSE((mean_hw(S)-mean_hw(T))/rms_mean_T)`；每通道尺度只从10000训练样本统计，
+  下限.05。它只用于训练损失，不改变推理特征或CCD归一化，也不代表物理DC去除。
+- 总特征权重前15轮2.0，第16轮降至.2、第40轮线性降至0，之后仅原任务损失。
+- 前15轮LR：E/CCD各3e-4，feature相位5e-4，router5e-5，已有空间FFN1e-3；头冻结。
+  第16轮解冻头（基础3e-4），所有基础LR乘.2，随后余弦衰减到该阶段起点的5%。
+  原硬路由均衡退火保留；特征阶段的LR覆盖原joint/polish率，以history的lr列为准。
+- EMA=.995在换头之后初始化；optimizer在冻结之前包含头参数，第二阶段确实能够解冻更新。
+  前端仍冻结、Top2、同尺度融合alpha≥.4、478/224/17µm/10cm、训练DC20–30%保持。
+  测试关闭随机扰动，不宣称硬件效果。
+
+特征缓存沿用下文SHA39aa、教师头SHA531c（完整SHA在配置）；解析前校验实际文件字节。
+缓存只用于训练、身份顺序严格一致；尺度写入`feature_pretraining_provenance.json`。
+无新增模型状态字段或周期PT，仍只保存best/last；换头来源写入initialization报告。
+新profile的60轮预算不是已完成结果，收益与否以完整5000张公开测试为准。
+
+```bash
+# 在已发布源码的仓库根目录执行；GPU0仅为示例，先检查空闲及两卡总预算。
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_feature_pretrain.yaml --phase all
+```
+
+同样按公开test选best，存在选模偏差；不能把多个训练变化合并后的结果当作单变量因果结论。
+
 ## 已完成对照结果
 
 2026-09-10，`moe_alpha40_hint_control_seed42`与`moe_alpha40_hint_cosine_seed42`

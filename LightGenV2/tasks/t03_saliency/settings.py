@@ -332,6 +332,8 @@ def load_settings(path: str | Path) -> Any:
                 'initialize_grn_on_warmstart','expand_kernel_on_warmstart','widen_ffn_on_warmstart',
                 'expand_ffn_groups_on_warmstart','reset_fusion_on_warmstart')):
             raise ValueError('Do not combine router coordinate transfer with other warmstart transformations')
+    from .feature_pretraining import configure as configure_feature_pretraining
+    configure_feature_pretraining(settings, d('feature_pretraining', {}), config.parent)
     return settings
 
 
@@ -342,6 +344,7 @@ def save_resolved_config(settings: Any) -> None:
     values = yaml.safe_load(path.read_text(encoding="utf-8"))
     values.setdefault('training',{}).update(router_phase_coordinates=settings.router_phase_coordinates,
         convert_router_phase_on_warmstart=settings.convert_router_phase_on_warmstart)
+    values['feature_pretraining'] = settings.feature_pretraining
     # The shared T02 serializer writes pose-specific PCK/NME prose. T03's
     # actual trainer compares test_metrics['cc'] strictly; describe that here.
     values.setdefault("protocol", {}).update(
