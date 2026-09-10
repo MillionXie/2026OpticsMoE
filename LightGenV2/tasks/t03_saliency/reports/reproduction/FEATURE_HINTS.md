@@ -1,6 +1,6 @@
 # 训练时空间特征监督（不增加推理网络）
 
-## 遮挡比例单变量对照（配置待启动）
+## 遮挡比例单变量对照（已启动，收益待验证）
 
 50% MGD第4轮已进入联合阶段：10000训练样本、恢复MSE=.83566117、辅助权重=.90689655，
 `masked_generator_warmup=False`；第5轮完整5000张测试CC=.8617495716094971，
@@ -12,7 +12,21 @@
 仍从原87ad core/head重新开始，同40轮、前三轮辅助detach、GT+mapKD2、SAM.05、EMA、
 恢复器331776训练参数及所有学习率不变，推理新增参数0；不从50%组中途权重继续。
 对应测试检查完整继承后的配置仅有概率与输出路径两项差异，防止无意改变训练预算或网络。
-等待GPU1旧组退出并核验显存后才可启动，与GPU3合计最多两卡。
+源码`882754980e5eaa6f6d87cfcd995f1992bdcd129e`通过服务器CPU完整202项测试
+（44.61秒、13条既有依赖警告）并已推送GitHub。GPU1旧组退出、显存核验无计算进程后，
+在工作树`.worktrees/t03_balance`以GPU1/PID1931819正式启动；与GPU3合计两卡。
+这只是启动记录，不代表完成40轮或已获得性能收益。
+
+旧稳定路由预训练组于第48轮之后提前停止，非完成60轮；其35/40/45轮完整测试CC为
+.84324351/.84427755/.84481828。后期仍有微小增加，不声称已收敛；由于明显低于原87ad，
+将卡让给单变量对照。停止前后均确认best/last可加载且字节一致：
+
+- best epoch45 SHA256 `a749cc9629b9945e6afd761d179106aec7055b19cceb3e18011de6889872deba`。
+- last epoch48 SHA256 `8828ceaa099aefaa6b01864c91e3c82a56f4808f24d301c42dde075469a22b34`。
+
+按UID1011、完整配置命令、cwd、PGID确认后，只停止自有进程组
+1483592/1489516/1489532/1489723/1492228/1492420；`ps`确认均消失，GPU1计算进程为空。
+其run和权重没有删除，其他AI的GPU0/4/5/6进程未触碰。
 
 ```bash
 CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=1 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_masked_kd_p25.yaml --phase all
