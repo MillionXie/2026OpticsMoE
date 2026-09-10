@@ -46,7 +46,7 @@ CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 TRANSFORMER
 正式启动：GitHub已发布源码`2a3b9a57796156bb66fd83daeb1c766b1d8a98df`，
 独立worktree `.worktrees/t03_kernel13`（历史工作树名，不表示本模型使用13×13卷积），
 GPU0、PID1294991、run `moe_alpha40_feature_pretrain_seed42`。启动前GPU0无计算进程；
-旧region和router对照已分别停止并释放GPU0/1，本助手现只使用一张卡。
+旧region和router对照已分别停止并释放GPU0/1，启动该组时本助手只使用一张卡。
 正式预算60轮，训练状态看run的console.log/history；不能把启动记录当作已完成结果。
 
 ### 预训练早期检查与单变量强度对照
@@ -82,6 +82,13 @@ last之后正常被覆盖。诊断不是可单独交付的永久epoch4权重，�
 # GPU1必须先确认可用；加上control，最多两张卡，不再启动第三组。
 CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=1 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_feature_pretrain_strong.yaml --phase all
 ```
+
+强度对照源码`3b82a8af03c057e3b204c4bc363f3a7abd3de2f5`，完整T03 CPU测试190项通过
+（39.75秒、13条既有警告），新增测试逐项确认除initial_weight外的有效训练配置一致。
+GitHub推送核实后，从独立`.worktrees/t03_sam_early`在GPU1启动PID1366554；启动前该卡无计算进程。
+control仍为GPU0/PID1294991；只用两张卡，其他卡上的他人/其他任务进程不操作。
+run目录分别为`moe_alpha40_feature_pretrain_seed42`和`moe_alpha40_feature_pretrain_strong_seed42`。
+此处是启动与测试记录，不是60轮完成或超过.88的报告。
 
 ## 已完成对照结果
 

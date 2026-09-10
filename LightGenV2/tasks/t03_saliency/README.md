@@ -21,7 +21,10 @@ best仍为第0轮来源权重。已释放GPU1，不得写成完成40轮；普通
 前15轮冻结头，后45轮联合SAM；GT监督始终保留。189项CPU测试通过，真实数据检查与
 启动状态见[特征预训练说明](reports/reproduction/FEATURE_HINTS.md)。
 现以GitHub已发布`2a3b9a57`在GPU0启动`moe_alpha40_feature_pretrain_seed42`，PID1294991，
-预算60轮，没有新性能结论；本助手现只用这一张GPU。
+预算60轮，首轮/第5轮公开测试CC=.76459259/.81407458，尚未超过原正式best。
+CPU梯度诊断后增加单变量feature权重2→10对照，190项测试通过；GitHub源码`3b82a8af`，
+GPU1、PID1366554、run `moe_alpha40_feature_pretrain_strong_seed42`，同样60轮预算。
+两组训练不增加推理参数，本助手仅用GPU0/1；过程记录见上述特征预训练说明。
 完整干净训练集诊断：正式best/末轮EMA CC=.87477060/.87684899，后期训练略升、测试略降。
 rank64对照因第10/15/20轮持续回落已停止，保留第5轮best .86223520和第22轮last，
 不是完成50轮；该小幅提高未经独立复评，不替换较小的正式候选。父子PID及GPU1已释放。
