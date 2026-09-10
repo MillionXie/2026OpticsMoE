@@ -28,6 +28,9 @@ best第5轮CC=.78055949，诊断仍只选一对专家；两组都不是完成60�
 新增推理参数0；193项CPU测试通过，完整合同、权重SHA与命令见上述特征预训练说明。
 当前已启动（源码`b5b4dd26`）：GPU0/PID1483586运行45轮`moe_alpha40_feature_joint_router_low_lr_seed42`；
 GPU1/PID1483592运行60轮`moe_alpha40_feature_pretrain_stable_router_seed42`。未取得新的完成结果。
+后备训练方案`moe_alpha40_relational_kd.yaml`保留87ad原core和读出头，仅蒸馏14×14位置间的特征关系；
+不添加投影/attention/推理参数，不换头。尚未启动GPU训练，必须等待两卡预算内有空位。
+其方法依据、缓存合同、CPU梯度诊断与命令同样见[特征监督说明](reports/reproduction/FEATURE_HINTS.md)。
 完整干净训练集诊断：正式best/末轮EMA CC=.87477060/.87684899，后期训练略升、测试略降。
 rank64对照因第10/15/20轮持续回落已停止，保留第5轮best .86223520和第22轮last，
 不是完成50轮；该小幅提高未经独立复评，不替换较小的正式候选。父子PID及GPU1已释放。

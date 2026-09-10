@@ -27,6 +27,11 @@ def test_basis_invariance_spatial_sensitivity_and_detached_teacher():
     loss.backward()
     assert x.grad.abs().sum() > 0 and torch.isfinite(x.grad).all()
     assert target.grad is None
+    reference=pairwise_loss(x,target.flip(-1))
+    with torch.autocast('cpu',dtype=torch.bfloat16):
+        under_amp=pairwise_loss(x,target.flip(-1))
+    assert under_amp.dtype==torch.float32
+    torch.testing.assert_close(under_amp,reference,rtol=0,atol=0)
     assert pairwise_loss(torch.zeros_like(x), torch.zeros_like(x)) == 0
     with pytest.raises(ValueError): pairwise_loss(x, target[:1])
 

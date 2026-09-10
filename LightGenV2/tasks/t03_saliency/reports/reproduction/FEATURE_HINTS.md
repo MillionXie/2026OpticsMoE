@@ -1,5 +1,51 @@
 # 训练时空间特征监督（不增加推理网络）
 
+## 后备候选：空间位置关系蒸馏（尚未启动GPU训练）
+
+`configs/moe_alpha40_relational_kd.yaml`从原正式87ad的core **和原读出头**共同初始化，
+不换教师头、不添加投影。参考[Liu等，CVPR2019](https://openaccess.thecvf.com/content_CVPR_2019/html/Liu_Structured_Knowledge_Distillation_for_Semantic_Segmentation_CVPR_2019_paper.html)
+的密集预测pair-wise蒸馏思想；不是整篇方法复现，不引入其GAN、骨干或分割标注。
+这里只在训练损失内比较位置关系，不执行attention，也不把相似度矩阵乘回特征。
+
+对学生与教师各自的`F[B,192,14,14]`：沿196个位置减去每通道空间均值，再对每位置的192维
+向量做L2归一化；计算196×196余弦相似矩阵，排除对角线后求两矩阵的均方误差。
+比较的是同图不同位置之间的关系；允许师生通道基底不同，对通道正交变换、正整体尺度、
+每通道空间常量偏置不敏感。不使用跨图标签/测试图或逐图最优对齐。
+空间去均值仅在训练损失内进行，CCD数据、推理特征、20%–30%训练DC均不变。
+
+来源/数据/GT+空间CC map KD2/SAM.05/EMA/40轮LR预算全部继承`moe_alpha40_extra_control.yaml`；
+唯一新增训练项权重1→.1，在30轮线性衰减，后10轮保持.1。缓存仍为39aa、教师为531c，
+严格检查字节SHA、10k有序train ID、网格和预处理合同。没有额外图像/标注，也无新增训练参数。
+函数和模型状态不变，因此起点仍应为87ad的.86205，而不是固定教师头预训练的负CC。
+公开test5000张按起点/首轮/每5轮/末轮选best，仍有测试选模偏差；仅best/last。
+这是后备方法，不宣称有性能收益；最多两张GPU，不与当前两组同时开启第三个任务。
+
+2026-09-10的CPU梯度动机检查（未训练/未保存PT）：87ad标准eval、前8张有序train、2个batch×4，
+教师39aa缓存；关系MSE=.10044791/.12872997，教师非对角关系平方均值=.06267693/.07898695。
+分别求`GT+2*spatial_CC_KD`与权重1的关系损失梯度，不包含路由/物理正则：
+
+|组|任务梯度范数（两batch）|关系梯度范数（两batch）|余弦（两batch）|
+|---|---|---|---|
+|E|2.09865 / 2.68988|.083797 / .137495|-.00702 / .09118|
+|光router|.00112562 / .00040071|.00046950 / .00036677|.90004 / .90403|
+|专家/全局相位|.01108066 / .00925450|.00092997 / .00124478|.03954 / .01114|
+|CCD读出|2.22861 / 2.43479|.084287 / .158401|.02113 / .01381|
+
+关系损失到原读出头的梯度为0，因其输入是头前的融合特征；任务损失仍训练该头。
+这仅证明梯度可达和该小样本上的尺度，不能推断全训练方向一致或泛化必然提高。
+配置取权重1，避免一开始把关系梯度放大数倍冲击路由；不修改正在运行的固定头训练。
+
+```bash
+# 待当前任务结束并核查GPU0空闲后再执行；不能重复写同名run。
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_relational_kd.yaml --phase all
+```
+
+检查run内`relational_distillation_provenance.json`、`metrics/training_history.csv`中的
+`relational_weight/train_relational_loss`、原初始化SHA和最终完整测试/路由审计。
+实现`d2224927`通过197项T03 CPU回归（44.46秒、13条既有依赖警告）：包含通道正交/偏置不变性、
+空间错位敏感、教师无梯度、缓存SHA/身份校验、SAM双前向单次更新、零关系权重与原SAM逐参数完全一致。
+测试不代表完整数据性能；尚未发起该候选的GPU训练。
+
 ## 新试验：固定教师基底预训练（待验证，不替换正式best）
 
 配置 `configs/moe_alpha40_feature_pretrain.yaml` 与旧的弱cosine提示不同：

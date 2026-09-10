@@ -42,10 +42,13 @@ def configure(settings, raw, directory):
 def spatial_relations(value):
     if value.ndim != 4 or value.shape[-2] * value.shape[-1] < 2:
         raise ValueError('Relations require a spatial BCHW feature map with at least two positions')
-    value = value.float().flatten(2)
-    value = value - value.mean(-1, keepdim=True)
-    value = F.normalize(value, dim=1, eps=1e-6)
-    return value.transpose(1, 2) @ value
+    # An outer CUDA AMP context would otherwise downcast the Gram matmul even
+    # after .float(); keep this small training loss explicitly float32.
+    with torch.autocast(device_type=value.device.type, enabled=False):
+        value = value.float().flatten(2)
+        value = value - value.mean(-1, keepdim=True)
+        value = F.normalize(value, dim=1, eps=1e-6)
+        return value.transpose(1, 2) @ value
 
 
 def pairwise_loss(student, target):
