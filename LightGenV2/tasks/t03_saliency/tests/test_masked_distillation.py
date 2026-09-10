@@ -104,3 +104,22 @@ def test_sam_mask_replay_aux_update_and_checkpoint_separation(tmp_path, monkeypa
     last=torch.load(tmp_path/'last.pt',weights_only=False); best=torch.load(tmp_path/'best.pt',weights_only=False)
     assert 'training_only_mgd' in last and 'training_only_mgd' not in best
     assert not any('generator' in k for k in best['core'])
+
+
+def test_p25_is_config_only_matched_ablation():
+    from experiments.qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval.settings import _read_config
+    root = Path(__file__).resolve().parents[1]/'configs'
+    original = _read_config(root/'moe_alpha40_masked_kd.yaml')
+    candidate = _read_config(root/'moe_alpha40_masked_kd_p25.yaml')
+    assert candidate['masked_distillation']['mask_probability'] == .25
+    assert candidate['output_dir'] != original['output_dir']
+    candidate['masked_distillation']['mask_probability'] = .5
+    candidate['output_dir'] = original['output_dir']
+    assert candidate == original
+    a = load_settings(root/'moe_alpha40_masked_kd.yaml')
+    b = load_settings(root/'moe_alpha40_masked_kd_p25.yaml')
+    assert b.masked_distillation['mask_probability'] == .25
+    assert architecture_label(a) == architecture_label(b)
+    for key in a.masked_distillation:
+        if key != 'mask_probability':
+            assert a.masked_distillation[key] == b.masked_distillation[key]

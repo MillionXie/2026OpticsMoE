@@ -1,0 +1,6 @@
+base_config: moe_alpha40_masked_kd.yaml
+# Matched training-only recovery ablation: mask 25% instead of 50% of sites.
+# Same original 87ad initialization, generator warmup, loss, LR and 40 epochs.
+masked_distillation:
+  mask_probability: 0.25
+output_dir: ../runs/simulation/moe_alpha40_masked_kd_p25_seed42

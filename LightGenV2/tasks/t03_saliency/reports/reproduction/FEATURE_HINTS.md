@@ -1,5 +1,26 @@
 # 训练时空间特征监督（不增加推理网络）
 
+## 遮挡比例单变量对照（配置待启动）
+
+50% MGD第4轮已进入联合阶段：10000训练样本、恢复MSE=.83566117、辅助权重=.90689655，
+`masked_generator_warmup=False`；第5轮完整5000张测试CC=.8617495716094971，
+仍低于初始化，不能把恢复损失下降写成显著性性能提升。
+
+新增`moe_alpha40_masked_kd_p25.yaml`，继承原MGD，仅将空间遮挡概率.5改为.25，
+使用独立run `moe_alpha40_masked_kd_p25_seed42`。假设是14×14低分辨率特征上遮挡过强可能
+增加恢复难度；这是待检验假设，不是论文推荐值或已证明的性能瓶颈。
+仍从原87ad core/head重新开始，同40轮、前三轮辅助detach、GT+mapKD2、SAM.05、EMA、
+恢复器331776训练参数及所有学习率不变，推理新增参数0；不从50%组中途权重继续。
+对应测试检查完整继承后的配置仅有概率与输出路径两项差异，防止无意改变训练预算或网络。
+等待GPU1旧组退出并核验显存后才可启动，与GPU3合计最多两卡。
+
+```bash
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=1 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_masked_kd_p25.yaml --phase all
+```
+
+测试口径仍为固定5000张public-test，按起点/1/5轮周期/末轮选best，有选模偏差；
+只保存best/last。比较时以相同epoch预算为准，不能比较一组训练损失与另一组测试CC。
+
 ## 当前候选：掩蔽特征恢复（MGD-inspired，已启动，收益待验证）
 
 2026-09-10正式启动：GitHub已发布源码`f5b29fc9db304daffbfa3df1d34f8975098d1c5f`，
