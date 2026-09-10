@@ -542,3 +542,8 @@ CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 TRANSFORMER
 ```
 
 输出`runs/simulation/moe_alpha40_extra_regions_seed42`，只保留best/last；最高public-test选模仍有选择偏差。
+
+已在GitHub确认源码`a05ce1bcac9ecf4614b45f4df65a0f7e3dd342e5`后启动：
+GPU0、PID1033718，cwd为`.worktrees/t03_sam`；启动前GPU0无进程，GPU1仅rank64对照PID917101。
+PID只作为启动记录，是否仍运行以服务器实时检查为准，不因启动成功宣称训练完成或性能改善。
+rank64对照第10轮CC=.86197010，best仍第5轮.86223520；先保留完成的较小模型正式结果。
