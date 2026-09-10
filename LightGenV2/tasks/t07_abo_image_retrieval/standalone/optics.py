@@ -10,6 +10,20 @@ from torch.nn import functional as F
 
 CANVAS, ACTIVE, EXPERT, BORDER, GAP = 518, 478, 224, 20, 30
 APERTURES = [(y, x) for y in (20, 274) for x in (20, 274)]
+DEFAULT_NOISE = dict(router_bypass=.05,phase_bypass=.08,router_logit_std=.1,
+                     dc_min=.2,dc_max=.3,gain_min=.4,gain_max=2.5,
+                     ccd_mean=.03,ccd_std=.03,ccd_low=-.03,ccd_high=.12)
+
+
+def noise_settings(config):
+    result=DEFAULT_NOISE.copy()
+    if config is not None:
+        if set(config)-set(result):raise ValueError('Unknown optical noise settings')
+        result.update(config)
+    if not 0<=result['dc_min']<=result['dc_max']<1:raise ValueError('Invalid DC intensity fractions')
+    if not 0<result['gain_min']<=result['gain_max']:raise ValueError('Invalid camera gain range')
+    if result['ccd_std']<=0 or result['ccd_low']>=result['ccd_high']:raise ValueError('Invalid truncated CCD noise')
+    return result
 
 
 class Propagation(nn.Module):
@@ -46,7 +60,7 @@ def truncated_noise(reference, mean=.03, std=.03, low=-.03, high=.12):
 
 
 class Router(nn.Module):
-    def __init__(self):
+    def __init__(self, noise_config=None):
         super().__init__()
         self.raw_router_phase = nn.Parameter(torch.zeros(EXPERT, EXPERT))
         self.propagator = Propagation()
@@ -56,13 +70,14 @@ class Router(nn.Module):
         self.register_buffer('detectors', masks, persistent=False)
         self.last = {}
         self.measured_ccd = None
+        self.noise_config = noise_settings(noise_config)
 
     def forward(self, amplitude):
         field = F.pad(amplitude.float(), (147, 147, 147, 147))
         modulation = phase_modulation(self.raw_router_phase).unsqueeze(0).expand(len(field), -1, -1)
         if self.training:
             # Router bypass is sampled separately for every sample.
-            modulation = block_bypass(modulation, .05, batch=len(field))
+            modulation = block_bypass(modulation, self.noise_config['router_bypass'], batch=len(field))
         plane = torch.ones_like(field, dtype=torch.complex64)
         plane[:, 147:371, 147:371] = modulation
         intensity = (self.propagator(field.to(torch.complex64) * plane).abs().square().float()
@@ -73,7 +88,7 @@ class Router(nn.Module):
         centered = energy - energy.mean(-1, keepdim=True)
         logits = centered / centered.square().mean(-1, keepdim=True).add(1e-8).sqrt()
         if self.training:
-            logits = logits + torch.randn_like(logits)*.1
+            logits = logits + torch.randn_like(logits)*self.noise_config['router_logit_std']
         probabilities = torch.softmax(logits / 2.0, dim=-1)
         indices = torch.topk(probabilities, 2, dim=-1).indices
         selected = torch.zeros_like(probabilities, dtype=torch.bool).scatter(1, indices, True)
@@ -94,11 +109,13 @@ class Router(nn.Module):
 
 
 class OpticalPath(nn.Module):
-    def __init__(self, input_rms=0.25):
+    def __init__(self, input_rms=0.25, noise_config=None):
         super().__init__()
         self.input_adapter = nn.Linear(192, 224)
         self.input_norm = nn.LayerNorm(224)
-        self.router = Router()
+        self.noise_config = noise_settings(noise_config)
+        self.eval_ccd_noise = False
+        self.router = Router(noise_config)
         self.experts = nn.ParameterList([nn.Parameter(torch.zeros(224, 224)) for _ in range(4)])
         self.global_phase = nn.Parameter(torch.zeros(478, 478))
         self.expert_output = nn.Linear(224, 192)
@@ -135,14 +152,14 @@ class OpticalPath(nn.Module):
         if final:
             modulation = phase_modulation(self.global_phase)
             if self.training:
-                modulation = block_bypass(modulation, .08)
+                modulation = block_bypass(modulation, self.noise_config['phase_bypass'])
             plane[:, 20:498, 20:498] = modulation
             support[:, 20:498, 20:498] = True
         else:
             for raw, (y, x) in zip(self.experts, APERTURES):
                 modulation = phase_modulation(raw)
                 if self.training:
-                    modulation = block_bypass(modulation, .08)
+                    modulation = block_bypass(modulation, self.noise_config['phase_bypass'])
                 plane[:, y:y+224, x:x+224] = modulation
                 support[:, y:y+224, x:x+224] = True
         if name in self.measured:
@@ -151,8 +168,8 @@ class OpticalPath(nn.Module):
             if self.training:
                 # Fractions are intensity fractions; mix fields with square roots.
                 shape = (len(field), 1, 1)
-                amp_eta = field.real.new_empty(shape).uniform_(.2, .3)
-                phase_eta = field.real.new_empty(shape).uniform_(.2, .3)
+                amp_eta = field.real.new_empty(shape).uniform_(self.noise_config['dc_min'], self.noise_config['dc_max'])
+                phase_eta = field.real.new_empty(shape).uniform_(self.noise_config['dc_min'], self.noise_config['dc_max'])
                 incident = torch.zeros_like(field)
                 incident[:, 20:498, 20:498] = self.input_rms * torch.exp(1j*field.real.new_empty(shape).uniform_(-math.pi, math.pi))
                 field = (1-amp_eta).sqrt()*field + amp_eta.sqrt()*incident
@@ -163,10 +180,11 @@ class OpticalPath(nn.Module):
             raise ValueError('Measured CCD must be [B,478,478]')
         self.last_ccd[name] = intensity.detach()
         self.operating_losses.append(intensity.mean((-2, -1)).clamp_min(1e-8).log())
-        if self.training and name not in self.measured:
+        if (self.training or self.eval_ccd_noise) and name not in self.measured:
             reference = intensity.mean((-2, -1), keepdim=True).detach()
-            gain = intensity.new_empty(len(field), 1, 1).uniform_(.4, 2.5)
-            intensity = (gain*intensity + truncated_noise(intensity)*reference).clamp_min(0)
+            cfg=self.noise_config
+            gain = intensity.new_empty(len(field), 1, 1).uniform_(cfg['gain_min'], cfg['gain_max'])
+            intensity = (gain*intensity + truncated_noise(intensity,cfg['ccd_mean'],cfg['ccd_std'],cfg['ccd_low'],cfg['ccd_high'])*reference).clamp_min(0)
         return intensity
 
     def decode(self, intensity, length, dtype, final):

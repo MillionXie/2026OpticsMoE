@@ -77,3 +77,21 @@ batch40、跨商品正样本、关系蒸馏递减、EMA、四个alpha固定为�
 代码/参数及完整命令见COMMAND第6节；目标75%，尚未获得新性能结论。
 预训练池已审核并选出128类型、6144商品、12288图；正式run为`runs/simulation/broad_transfer_20260910/`，
 阶段结果分别在`artifacts/pretrain`和`artifacts/adapt`。详细数据排除/训练身份见复现入口；原正式包不覆盖。
+
+该轮已完成：预训练后目标Hit@1为62.0833%，微调新epoch最高67.50%（10/15轮），末轮67.2917%；
+最终选择epoch -1，即原70.2083%保底，不代表预训练带来了提升。
+
+### 严格高alpha候选（尚非正式70.21%权重）
+
+`standalone.broad_transfer --mode adapt --profile high_alpha` 使用原最好相位/电子参数热启动，
+四个融合系数改为`0.4001+0.3999*sigmoid(raw)`，初始0.45；浮点饱和也不会低于或等于0.4。
+只在高alpha候选中选优，绝不拿旧低alpha成绩当本版本结果。计划60epoch×64steps，训练batch40。
+前5epoch冻结主要电子残差与输入/输出adapter，训练相位、Router、光学编解码、融合系数及读出；
+随后联合训练，分组学习率+余弦衰减+EMA。相位峰值LR0.004，Router0.0005，无教师loss。
+轻量裁剪、翻转、小角度旋转、亮度/对比度、低概率轻模糊；25% batch加入轻量CCD噪声及20%～30%DC。
+V/L融合前光特征另加训练用分类监督，其辅助头不进入推理、不替代最终检索。
+每5epoch全量test选EMA best（明确test-selected），仅best.pt/last.pt。
+最终输出同权重去光、相位像素打乱、单种轻量CCD噪声测试、相位更新量和Router分布。
+推理仍为原六次光捕获、Top2、无TF/attention；Vision外层输入跳连仍在，alpha不是全网能量/性能贡献比例。
+固定ROI、正常精度相位、k滤波/像素位移关闭，CCD解码仍含已有log1p等非线性（未新增）。
+命令见COMMAND第7节；超过75%是优化目标，不是已测成绩。旧ZIP不会自动被替换。

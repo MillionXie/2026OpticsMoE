@@ -6,13 +6,39 @@ import torch
 
 TASK=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(TASK))
-from standalone.model import Residual, Modality, fuse
+from standalone.model import Residual, Modality, fuse, alpha_value, rms
 from standalone.optics import Router, OpticalPath
 from standalone.data import _ranking_metrics
 from standalone.curriculum import stage_settings, parameter_kind, relation_loss
 
 
 class StandaloneTests(unittest.TestCase):
+    def test_legacy_fusion_is_unchanged_and_high_alpha_bounded(self):
+        e,o=torch.randn(2,7,192),torch.randn(2,7,192);raw=torch.tensor(-2.)
+        re,ro=rms(e).detach(),rms(o).detach();a=.01+.94*raw.sigmoid()
+        mixture=(1-a)*e/re+a*o/ro
+        # Exact same parenthesization as the original implementation.
+        mixture=(1-a)*(e/re)+a*(o/ro)
+        self.assertTrue(torch.equal(fuse(e,o,raw),re*mixture/rms(mixture).detach()))
+        values=alpha_value(torch.tensor([-100.,0.,100.]),(.4,.8))
+        self.assertTrue(bool(((values>=.4)&(values<=.8)).all()))
+
+    def test_high_alpha_upgrade_and_auxiliary_gradients(self):
+        import json,types
+        from standalone.high_alpha import convert_payload,optical_heads,optical_classification_loss
+        cfg=json.loads((TASK/'standalone/high_alpha.json').read_text())
+        name='vision.block1_optical_fusion_logit'
+        p=convert_payload({'metadata':{},'state_dict':{name:torch.tensor(-3.)}},cfg)
+        bounds=(cfg['fusion_alpha_min'],cfg['fusion_alpha_max'])
+        self.assertAlmostEqual(float(alpha_value(p['state_dict'][name],bounds)),.45,places=6)
+        self.assertGreater(float(alpha_value(torch.tensor(-1000.),bounds)),.4)
+        p['state_dict'][name]=torch.tensor(0.)
+        self.assertEqual(float(convert_payload(p,cfg)['state_dict'][name]),0.)
+        v,l=[torch.randn(4,7,192,requires_grad=True) for _ in range(2)]
+        m=types.SimpleNamespace(vision=types.SimpleNamespace(last_optical=v),language=types.SimpleNamespace(last_optical=l))
+        optical_classification_loss(m,optical_heads(10),torch.arange(4)).backward()
+        self.assertGreater(float(v.grad.abs().sum()),0);self.assertGreater(float(l.grad.abs().sum()),0)
+
     def test_broad_batch_and_training_only_head(self):
         import random
         from standalone.broad_transfer import CategoryProxies,sampled_indices

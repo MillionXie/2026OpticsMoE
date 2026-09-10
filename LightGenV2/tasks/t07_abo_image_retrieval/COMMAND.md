@@ -108,3 +108,28 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.broad_transfer \
 预训练以训练loss选择EMA快照（并非外部验证最优）；目标微调按现有test口径选best，并包含原70.21%保底。
 每阶段只留best.pt/last.pt；目标最后全量正常/去光复评输出final_report、逐图CSV和相位预览。
 75%是优化目标，不是本命令已取得的结果；原ZIP/best不会被覆盖。
+
+## 7. 严格alpha>0.4，分阶段训练与增强
+
+从仓库根目录执行；先检查`nvidia-smi`，仅选一张有足够余量的卡，不停止其他人的进程。
+下面显式指定训练用GPU UUID；示例UUID需按实际检查结果设置。
+
+```bash
+export CUDA_VISIBLE_DEVICES=GPU-afc19890-6209-ee4d-622d-e619da5bd5b2
+export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.broad_transfer \
+  --mode adapt --profile high_alpha \
+  --assets LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/standalone_assets_20260910 \
+  --checkpoint LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/standalone_assets_20260910/best.pt \
+  --target /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --output LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/high_alpha_aug_20260910/artifacts \
+  --adapt-epochs 60 --batch-size 4
+```
+
+`--batch-size 4`是评估batch，训练batch由`high_alpha.json`定义为40。
+冒烟检查请用独立`runs/smoke/`输出，并追加`--adapt-epochs 6 --steps 1`，覆盖冻结和联合两个阶段。
+已有输出目录会报错，不能覆盖旧结果。源权重低alpha只用于热启动，转换后alpha初始0.45。
+前5epoch优先光学学习，后续联合；EMA每5epoch测试选优，测试集参与选模必须如实披露。
+`execution.json`记录源码/配置/初始权重/数据哈希；`history.json`包含alpha和专家选择比例；
+`parameter_updates.json`记录参数变化；`final_report.json`包含正常/去光/相位打乱/轻噪声和圆周相位变化。
+所有训练结束或失败后检查执行日志中的PID已退出，及`nvidia-smi`中该PID已释放。

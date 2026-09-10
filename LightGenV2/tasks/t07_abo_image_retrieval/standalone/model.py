@@ -46,18 +46,23 @@ def rms(x):
     return (x.square().sum((1,2))[:,None,None] / (x.shape[1]*x.shape[2])).sqrt().clamp_min(1e-6)
 
 
-def fuse(e, o, raw_alpha):
+def alpha_value(raw, bounds=(.01,.95)):
+    return bounds[0]+(bounds[1]-bounds[0])*raw.sigmoid()
+
+
+def fuse(e, o, raw_alpha, bounds=(.01,.95)):
     e32, o32 = e.float(), o.float()
     re, ro = rms(e32).detach(), rms(o32).detach()
-    alpha = .01 + .94*torch.sigmoid(raw_alpha)
+    alpha = alpha_value(raw_alpha,bounds)
     mixture = (1-alpha)*(e32/re) + alpha*(o32/ro)
     return (re*mixture/rms(mixture).detach()).to(e.dtype)
 
 
 class Modality(nn.Module):
-    def __init__(self, vision, input_rms):
+    def __init__(self, vision, input_rms, alpha_bounds=(.01,.95), noise_config=None):
         super().__init__()
         self.vision = vision
+        self.alpha_bounds = alpha_bounds
         hidden = 1024 if vision else 2048
         self.input_adapter = nn.Linear(hidden,192)
         self.input_norm = nn.LayerNorm(192)
@@ -68,9 +73,10 @@ class Modality(nn.Module):
             self.residual_logit = nn.Parameter(torch.zeros(()))
         self.block1_optical_fusion_logit = nn.Parameter(torch.zeros(()))
         self.block2_optical_fusion_logit = nn.Parameter(torch.zeros(()))
-        self.optics = OpticalPath(input_rms)
+        self.optics = OpticalPath(input_rms,noise_config)
         self.remove_optical = False
         self.last_latent = None
+        self.last_optical = None
 
     def forward(self, inputs):
         latent = self.input_norm(self.input_adapter(inputs.float()))
@@ -80,9 +86,10 @@ class Modality(nn.Module):
             weights = None
         else:
             o1, weights = self.optics.expert(latent)
-            f1 = fuse(e1,o1,self.block1_optical_fusion_logit)
+            f1 = fuse(e1,o1,self.block1_optical_fusion_logit,self.alpha_bounds)
         e2 = self.blocks[1](f1)
-        f2 = e2 if self.remove_optical else fuse(e2,self.optics.global_stage(f1,weights),self.block2_optical_fusion_logit)
+        self.last_optical = None if self.remove_optical else self.optics.global_stage(f1,weights)
+        f2 = e2 if self.remove_optical else fuse(e2,self.last_optical,self.block2_optical_fusion_logit,self.alpha_bounds)
         output = self.output_norm(f2)
         self.last_latent = output
         if self.vision:
@@ -105,9 +112,11 @@ class OpticalRetrieval(nn.Module):
     def __init__(self, metadata):
         super().__init__()
         self.metadata = metadata
+        bounds=(float(metadata.get('fusion_alpha_min',.01)),float(metadata.get('fusion_alpha_max',.95)))
+        if not 0<=bounds[0]<bounds[1]<=1:raise ValueError('Invalid alpha bounds')
         self.frontend = Frontend(metadata['token_count']).to(torch.bfloat16)
-        self.vision = Modality(True, metadata['input_rms'])
-        self.language = Modality(False, metadata['input_rms'])
+        self.vision = Modality(True, metadata['input_rms'],bounds,metadata.get('optical_training_noise'))
+        self.language = Modality(False, metadata['input_rms'],bounds,metadata.get('optical_training_noise'))
         self.readout = RetrievalHead()
 
     def train(self, mode=True):
@@ -144,5 +153,6 @@ class OpticalRetrieval(nn.Module):
                 'attention_modules':0,'capture_count':6,'top_k':2,
                 'frozen_parameters':sum(p.numel() for p in self.parameters() if not p.requires_grad),
                 'trainable_parameters':sum(p.numel() for p in self.parameters() if p.requires_grad),
-                'alpha':{m:[float(.01+.94*getattr(getattr(self,m),f'block{i}_optical_fusion_logit').sigmoid()) for i in (1,2)] for m in ('vision','language')},
+                'alpha_bounds':list(self.vision.alpha_bounds),
+                'alpha':{m:[float(alpha_value(getattr(getattr(self,m),f'block{i}_optical_fusion_logit'),getattr(self,m).alpha_bounds)) for i in (1,2)] for m in ('vision','language')},
                 'ccd_postprocessing':'mean -> clip12 -> log1p -> avgpool224 -> rowLN -> ReLU -> Linear192'}
