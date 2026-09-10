@@ -1,0 +1,22 @@
+base_config: spatial_tiny_rgb_e1_s710.yaml
+output_dir: ../../runs/lgvq_spatial_tiny_rgb_distilled_s720
+random_seed: 720
+
+# The initialization is produced by distill_resnet_e1_to_tiny_rgb.py.  ResNet
+# is absent from this inference graph; it was used only as an offline teacher.
+data:
+  resnet_feature_cache: null
+
+model:
+  tiny_rgb_electronic_adapter_max: 1.40
+
+training:
+  initialization_checkpoint: ../../artifacts/distillation/s720/distilled_student_initialization.pt
+  trainable_scope: tiny_rgb_adapter_only
+  epochs: 60
+  batch_size: 32
+  learning_rate: 0.00002
+  weight_decay: 0.001
+  ema_decay: 0.997
+  test_interval_epochs: 1
+  test_interval_steps: 0
