@@ -2,7 +2,7 @@
 
 状态（2026-09-10）：**19999张教师目标已导出并通过实际缓存读取器校验；尚无额外图像训练的CC结果**。
 原两组60轮已结束；后期来源的40轮对照已提前停止并释放GPU，详见文末停止记录。
-较早来源的80轮配对方案准备中，最多两张卡。
+较早来源的80轮配对已启动，最多两张卡；尚无新完成结果。
 
 ## 为什么检查这条路线
 
@@ -199,7 +199,7 @@ loss=1.01628029，alpha=.43072152/.44106743；router raw RMS更新约1.29e-5，
 当前只是启动记录，不代表已完成或提升。后续看`metrics/training_history.csv`、
 `training_report.json`和重载best的完整5000图评估；有实质提升再独立float64复评。
 
-## 较早权重的额外图像对照（准备中，未启动）
+## 较早权重的额外图像对照（已启动，未完成）
 
 后期87ad来源的额外组第1/5轮CC为.86218145/.86201662，同轮普通控制为
 .86204380/.86179060：有减轻下降的迹象，但尚无持续提升；两组仍运行，不是最终结果。
@@ -227,7 +227,7 @@ CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=1 HF_HUB_OFFLINE=1 TRANSFORMER
 CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_extra_early_coco20k.yaml --phase all
 ```
 
-本节为待验证/排队方案，不代表已启动80轮，不得占用第三张卡。只保留best/last，正式结论仍需完整测试复评。
+本节列出配对方案，实际验证/启动信息见下文；不得占用第三张卡。只保留best/last，正式结论仍需完整测试复评。
 
 ### 较早来源验证
 
@@ -269,3 +269,21 @@ loss=1.03229702，两个现有CFFN卷积RMS更新均约1.999e-4；alpha=.4344775
 提醒CUDA运行时不支持fork方式启动CUDA子进程，并提示fork后台线程风险；本次资源残留是现场观测，
 不把文档泛化为所有DataLoader都一定泄漏。新增测试验证实际spawn取样及正常close后的worker退出。
 即使使用spawn，异常终止后仍须核查自有CPU子进程与显存，不能承诺所有信号下自动清理。
+
+### 修复验证及较早来源正式启动
+
+代码`7f555ab27cbc2a33b3516e983722312d1bf10fd9`的全套139项T03 CPU测试通过
+（27.88秒，13项既有警告），已push GitHub。另在真实GPU0上下文已经建立的情况下，
+用实际19999图清单/教师缓存和workers2取样：启动方式为spawn，子进程324707/324851的
+`/proc/<pid>/fd`中均无`/dev/nvidia*`句柄，按ID取回的教师张量可正确传至GPU。
+调用close后两个worker均退出，诊断主进程退出后GPU0恢复12MiB，才启动正式额外组。
+这是资源/读取检查，不是新增性能结果；未修改任何checkpoint。
+
+两组均使用同一7f555ab2源码，命令见本节上方：
+
+- GPU1，PID324077：`moe_alpha40_extra_early_control_seed42`，worktree `.worktrees/t03_sam`。
+- GPU0，PID351016：`moe_alpha40_extra_early_coco20k_seed42`，worktree `.worktrees/t03_sam_early`。
+
+均为80轮预算、源de477、原完整10000/5000划分，分别只用GT＋原教师，以及再加独立额外池。
+两者均未完成；不能将初始化/训练CC写为新正式成绩。其他GPU空闲也不扩容。
+此前后期两组的best/last及原正式87ad候选均保留，不覆盖旧run，不恢复每5epoch保存PT。
