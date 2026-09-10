@@ -354,3 +354,48 @@ GPU0仍仅运行早期额外组PID351016。不得在这两个active worktree中c
 
 - best：`5619ea9cca8faee0a4c5bff162f907313ccbef27423ce1ae245db722e93dd0a8`
 - last：`e49ead099367e4ac2819d12f53782f6eff07bd5f6ad5a9d6c0074b8223de43b0`
+
+## 训练期语义监督备选：数据已准备，辅助训练尚未实现/启动
+
+反复仅改变损失/噪声尚未达到.88，因此准备利用同一19999额外图像的COCO物体类别，
+给现有光电特征增加训练期语义目标。拟采用可移除的轻量辅助分类头，不改变部署推理结构；
+这只是后续方案，不是已经获得提升的模型，也不是当前两组run使用的监督。
+[Saliency Prediction with External Knowledge](https://arxiv.org/abs/2007.13839)
+提供语义知识与显著性相关的动机，但其图注意力推理不符合本项目限制，**不移植、不声称复现**。
+
+官方标注来源见[COCO下载页源码](https://github.com/cocodataset/cocodataset.github.io/blob/master/dataset/download.htm)，
+下载URL为`http://images.cocodataset.org/annotations/annotations_trainval2017.zip`。
+原始图像未重下、未移动；标注文件不进入Git，保留在
+`cache/qwen3_vl_embedding_2b_salicon_lightgen/coco_annotations2017/`：
+
+- ZIP 252907541字节，完整ZIP CRC校验通过；MD5与服务端ETag一致：
+  `f4bbac642086de4f52a3fdda2de5fa2c`。
+- ZIP SHA256：`113a836d90195ee1f884e704da6304dfaaecff1f023f49b6ca93c4aaae470268`。
+- 仅提取`annotations/instances_train2017.json`，469785474字节，SHA256：
+  `610fce4944abdeb15354cc765333805529359d12d88f2f711393ca586901d01d`。
+
+准备脚本`prepare_semantic_targets.py`只使用既有排除清单内的ID，重新验证SALICON两划分
+身份/排除关系、输入SHA、类别及标注引用，不生成SALICON密度图或fixation。
+原COCO类别ID不连续，输出按原ID升序附类别表，消费者不能使用`category_id-1`作下标。
+crowd对象也算类别存在；已知图像但没有实例标注保留空列表，不把缺失image记录当全负。
+输出拒绝覆盖已有文件。图像本身仍由既有严格图像读取器在训练时核验内容SHA。
+
+```bash
+python -m LightGenV2.tasks.t03_saliency.prepare_semantic_targets \
+  --annotation-file cache/qwen3_vl_embedding_2b_salicon_lightgen/coco_annotations2017/instances_train2017.json \
+  --annotation-sha256 610fce4944abdeb15354cc765333805529359d12d88f2f711393ca586901d01d \
+  --image-manifest cache/qwen3_vl_embedding_2b_salicon_lightgen/coco20k_pretrain_20260910/image_manifest.json \
+  --manifest-sha256 d0600cf3a4eb8e1bd0d6dc415a237c2c5fe6ce88ca3a77385d26243d44874182 \
+  --salicon-root data/SALICON \
+  --output cache/qwen3_vl_embedding_2b_salicon_lightgen/coco20k_pretrain_20260910/semantic_targets.json
+```
+
+代码`4ad882de334a24c1704a6856c3720e0bd6faef20`已同步GitHub：本地新增6项测试通过，
+服务器147项完整T03 CPU测试通过（32.53秒，13项既有警告）。实际CPU准备完成，
+输出19999条、80类、1984761字节，205图无已标注实例；输出SHA256：
+`b5220d7c3876a2403bcdaaa2d37afe36b0b344c46f57c7f4ed399e432df99a74`。
+准备进程正常退出，未占GPU，未改动任何在训配置或checkpoint。
+
+**公平性区别**：如果使用这份数据，不再只是无标签图像＋教师伪标签，而是增加了人工
+物体类别监督。它只能作为额外监督的独立试验报告，不能冒充与原SALICON baseline
+完全相同的训练标签预算；推理期仍不得引入检测器、原生Transformer或attention。
