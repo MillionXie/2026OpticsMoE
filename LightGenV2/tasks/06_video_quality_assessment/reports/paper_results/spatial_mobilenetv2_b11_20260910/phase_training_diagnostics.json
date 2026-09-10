@@ -1,0 +1,48 @@
+{
+  "planes": {
+    "parallel_optics.raw_expert_phase": {
+      "parameters": 190096,
+      "phase_rad_std_initial": 0.738129734992981,
+      "phase_rad_std_final": 0.738129734992981,
+      "wrapped_delta_rad_rms": 0.0,
+      "fraction_changed_over_0p05_rad": 0.0
+    },
+    "parallel_optics.raw_global_phase": {
+      "parameters": 228484,
+      "phase_rad_std_initial": 0.4724755883216858,
+      "phase_rad_std_final": 0.4724755883216858,
+      "wrapped_delta_rad_rms": 0.0,
+      "fraction_changed_over_0p05_rad": 0.0
+    },
+    "serial_optics.raw_expert_phase": {
+      "parameters": 47524,
+      "phase_rad_std_initial": 0.4566820561885834,
+      "phase_rad_std_final": 0.4566820561885834,
+      "wrapped_delta_rad_rms": 0.0,
+      "fraction_changed_over_0p05_rad": 0.0
+    },
+    "serial_optics.raw_global_phase": {
+      "parameters": 228484,
+      "phase_rad_std_initial": 0.39003002643585205,
+      "phase_rad_std_final": 0.39003002643585205,
+      "wrapped_delta_rad_rms": 0.0,
+      "fraction_changed_over_0p05_rad": 0.0
+    },
+    "parallel_router.raw_router_phase": {
+      "parameters": 47524,
+      "phase_rad_std_initial": 2.2317795753479004,
+      "phase_rad_std_final": 2.2317795753479004,
+      "wrapped_delta_rad_rms": 0.0,
+      "fraction_changed_over_0p05_rad": 0.0
+    },
+    "serial_router.raw_router_phase": {
+      "parameters": 11881,
+      "phase_rad_std_initial": 2.174838066101074,
+      "phase_rad_std_final": 2.174838066101074,
+      "wrapped_delta_rad_rms": 0.0,
+      "fraction_changed_over_0p05_rad": 0.0
+    }
+  },
+  "plane_count": 6,
+  "mean_wrapped_delta_rad_rms": 0.0
+}

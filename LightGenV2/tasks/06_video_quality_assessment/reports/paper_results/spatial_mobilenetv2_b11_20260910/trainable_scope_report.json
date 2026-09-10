@@ -1,0 +1,15 @@
+{
+  "scope": "mobilenet_electronic_only",
+  "trainable_tensors": 6,
+  "trainable_parameters": 55872,
+  "frozen_tensors": 158,
+  "frozen_parameters": 12533427,
+  "trainable_names": [
+    "mobilenet_electronic_correction.adapter.0.weight",
+    "mobilenet_electronic_correction.adapter.0.bias",
+    "mobilenet_electronic_correction.adapter.1.weight",
+    "mobilenet_electronic_correction.adapter.1.bias",
+    "mobilenet_electronic_correction.adapter.3.weight",
+    "mobilenet_electronic_correction.adapter.3.bias"
+  ]
+}

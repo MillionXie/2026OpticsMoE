@@ -3,8 +3,8 @@ output_dir: ../../runs/lgvq_spatial_mobilenetv2_b11_rank_s745
 random_seed: 745
 
 # Slightly larger rung in the same lightweight family. Keeping block 11 gives
-# 305,984 frozen MobileNet parameters and a 55,680-parameter E1 adapter:
-# 361,664 added electronic parameters in total, still no classifier/attention.
+# 305,984 frozen MobileNet parameters and a 55,872-parameter E1 adapter:
+# 361,856 added electronic parameters in total, still no classifier/attention.
 data:
   mobilenet_feature_cache: ../../artifacts/lgvq_mobilenetv2_b11_4f_196x96.pt
 

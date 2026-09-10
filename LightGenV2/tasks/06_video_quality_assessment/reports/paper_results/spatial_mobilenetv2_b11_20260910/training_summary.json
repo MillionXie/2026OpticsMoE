@@ -1,0 +1,189 @@
+{
+  "target": "spatial",
+  "prompt": "Please evaluate the spatial quality of this video and rate it using one of the following five levels: Excellent, Good, Fair, Poor, or Bad.",
+  "best_epoch": 78,
+  "best_optimizer_step": 5538,
+  "best_observed_test_srcc": 0.6651594488757643,
+  "best_selection_source": "ema",
+  "checkpoint": "/DATA/DATA1/guest3/lightgen_spatial_065/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_mobilenetv2_b11_rank_s745/best_observed_test_checkpoint.pt",
+  "validation_used": false,
+  "test_used_for_selection": true,
+  "periodic_test_interval": 1,
+  "periodic_test_interval_optimizer_steps": 0,
+  "mos_stratified_batches": true,
+  "mos_strata": 8,
+  "curriculum": {
+    "enabled": false,
+    "start_epoch": 4,
+    "end_epoch": 35,
+    "final": {
+      "progress": 0.0,
+      "ranking_weight": 2.0,
+      "correlation_weight": 4.0,
+      "soft_spearman_weight": 0.4,
+      "soft_target_weight": 0.0,
+      "router_balance_weight": 0.0,
+      "router_importance_weight": 0.0,
+      "serial_router_balance_weight": 0.0,
+      "serial_router_importance_weight": 0.0,
+      "serial_router_diversity_weight": 0.0,
+      "router_noise_std": 0.0,
+      "unmodulated_power_fraction_max": 0.2
+    }
+  },
+  "same_checkpoint_optical_ablation": {
+    "target": "spatial",
+    "checkpoint": "/DATA/DATA1/guest3/lightgen_spatial_065/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_mobilenetv2_b11_rank_s745/best_observed_test_checkpoint.pt",
+    "checkpoint_sha256": "5e5020e30d2eb1f6af5015d18aba5842d86f80d506f8de62f7ae33d8155c4459",
+    "checkpoint_epoch": 78,
+    "normal_optical_electronic": {
+      "target": "spatial",
+      "srcc": 0.6651594488757643,
+      "krcc": 0.4836991663519943,
+      "plcc": 0.6924907707079117,
+      "rmse": 9.018912315368652,
+      "mae": 7.076648712158203,
+      "count": 558,
+      "optical_enabled": true,
+      "fusion_diagnostics": {
+        "vision_expert": {
+          "alpha": 0.45000001788139343,
+          "electronic_rms": 1.8930712891308636,
+          "optical_rms": 0.8477964995155197,
+          "output_to_electronic_rms": 1.0
+        },
+        "vision_global": {
+          "alpha": 0.550000011920929,
+          "electronic_rms": 0.5209091970142925,
+          "optical_rms": 0.8745581099636666,
+          "output_to_electronic_rms": 1.0
+        },
+        "language_expert": {
+          "alpha": 0.40000101923942566,
+          "electronic_rms": 1.2747817560763341,
+          "optical_rms": 3.488128952655314,
+          "output_to_electronic_rms": 1.0
+        },
+        "language_global": {
+          "alpha": 0.7750000357627869,
+          "electronic_rms": 0.22163490566515154,
+          "optical_rms": 1.6071313504249818,
+          "output_to_electronic_rms": 1.0
+        }
+      },
+      "router_diagnostics": {
+        "vision": {
+          "implementation": "optical_parallel4_energy_top2",
+          "decision_count": 2232,
+          "mean_probability": [
+            0.23915840685367584,
+            0.20822595059871674,
+            0.3133797347545624,
+            0.23923587799072266
+          ],
+          "selected_share": [
+            0.2219982147216797,
+            0.21594981849193573,
+            0.3281809985637665,
+            0.2338709682226181
+          ],
+          "capture_fraction_mean": 0.7163223382819938
+        },
+        "language": {
+          "implementation": "optical_serial_energy_channel_standardized_top2",
+          "decision_count": 558,
+          "mean_probability": [
+            0.24770784378051758,
+            0.23951953649520874,
+            0.23890502750873566,
+            0.27386757731437683
+          ],
+          "selected_share": [
+            0.23924730718135834,
+            0.23118279874324799,
+            0.24641576409339905,
+            0.28315412998199463
+          ],
+          "capture_fraction_mean": 0.9407640084570881
+        }
+      }
+    },
+    "same_checkpoint_optics_bypassed": {
+      "target": "spatial",
+      "srcc": 0.5618376287492265,
+      "krcc": 0.3974959239363508,
+      "plcc": 0.6187142451555124,
+      "rmse": 10.162996292114258,
+      "mae": 8.145463943481445,
+      "count": 558,
+      "optical_enabled": false,
+      "fusion_diagnostics": {},
+      "router_diagnostics": {}
+    },
+    "on_minus_off": {
+      "srcc": 0.10332182012653779,
+      "krcc": 0.08620324241564348,
+      "plcc": 0.07377652555239922,
+      "rmse": -1.1440839767456055,
+      "mae": -1.0688152313232422
+    },
+    "separately_trained_electronic_baseline": false
+  },
+  "phase_training_diagnostics": {
+    "planes": {
+      "parallel_optics.raw_expert_phase": {
+        "parameters": 190096,
+        "phase_rad_std_initial": 0.738129734992981,
+        "phase_rad_std_final": 0.738129734992981,
+        "wrapped_delta_rad_rms": 0.0,
+        "fraction_changed_over_0p05_rad": 0.0
+      },
+      "parallel_optics.raw_global_phase": {
+        "parameters": 228484,
+        "phase_rad_std_initial": 0.4724755883216858,
+        "phase_rad_std_final": 0.4724755883216858,
+        "wrapped_delta_rad_rms": 0.0,
+        "fraction_changed_over_0p05_rad": 0.0
+      },
+      "serial_optics.raw_expert_phase": {
+        "parameters": 47524,
+        "phase_rad_std_initial": 0.4566820561885834,
+        "phase_rad_std_final": 0.4566820561885834,
+        "wrapped_delta_rad_rms": 0.0,
+        "fraction_changed_over_0p05_rad": 0.0
+      },
+      "serial_optics.raw_global_phase": {
+        "parameters": 228484,
+        "phase_rad_std_initial": 0.39003002643585205,
+        "phase_rad_std_final": 0.39003002643585205,
+        "wrapped_delta_rad_rms": 0.0,
+        "fraction_changed_over_0p05_rad": 0.0
+      },
+      "parallel_router.raw_router_phase": {
+        "parameters": 47524,
+        "phase_rad_std_initial": 2.2317795753479004,
+        "phase_rad_std_final": 2.2317795753479004,
+        "wrapped_delta_rad_rms": 0.0,
+        "fraction_changed_over_0p05_rad": 0.0
+      },
+      "serial_router.raw_router_phase": {
+        "parameters": 11881,
+        "phase_rad_std_initial": 2.174838066101074,
+        "phase_rad_std_final": 2.174838066101074,
+        "wrapped_delta_rad_rms": 0.0,
+        "fraction_changed_over_0p05_rad": 0.0
+      }
+    },
+    "plane_count": 6,
+    "mean_wrapped_delta_rad_rms": 0.0
+  },
+  "multi_stage_training": {
+    "phase_warmup_epochs": 0,
+    "late_refine_start_epoch": 0
+  },
+  "ema": {
+    "enabled": true,
+    "decay": 0.99,
+    "start_epoch": 1
+  }
+}

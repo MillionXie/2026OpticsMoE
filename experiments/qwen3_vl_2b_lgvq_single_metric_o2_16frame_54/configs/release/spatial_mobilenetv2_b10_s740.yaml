@@ -4,7 +4,7 @@ random_seed: 740
 
 # Formal-size pretrained lightweight candidate. MobileNetV2 features[0:11]
 # contributes 239,360 frozen convolution parameters; its E1-only adapter has
-# 49,536 trainable parameters. Total added electronic front: 288,896.
+# 49,664 trainable parameters. Total added electronic front: 289,024.
 data:
   mobilenet_feature_cache: ../../artifacts/lgvq_mobilenetv2_b10_4f_196x64.pt
   resnet_feature_cache: null

@@ -3031,7 +3031,14 @@ class LGVQSingleMetricOEO16(nn.Module):
                 self.resnet_electronic_correction
             )
         if self.mobilenet_electronic_correction is not None:
-            groups["mobilenetv2_b10_electronic_residual"] = (
+            block_name = {
+                64: "mobilenetv2_b10_electronic_residual",
+                96: "mobilenetv2_b11_electronic_residual",
+            }.get(
+                self.settings.mobilenet_feature_width,
+                "mobilenetv2_electronic_residual",
+            )
+            groups[block_name] = (
                 self.mobilenet_electronic_correction
             )
         if self.tiny_rgb_electronic_adapter is not None:

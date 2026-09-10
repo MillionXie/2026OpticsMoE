@@ -2,7 +2,7 @@
 
 The ResNet teacher is needed only for this offline initialization step.  The
 emitted student contains the truncated frozen MobileNetV2 front contract and
-its 49,536-parameter E1 adapter, but no ResNet tensors or inference module.
+its 49,664-parameter E1 adapter, but no ResNet tensors or inference module.
 """
 
 from __future__ import annotations

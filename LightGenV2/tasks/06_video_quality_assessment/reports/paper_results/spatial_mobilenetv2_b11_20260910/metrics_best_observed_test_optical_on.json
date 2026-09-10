@@ -1,0 +1,72 @@
+{
+  "target": "spatial",
+  "srcc": 0.6651594488757643,
+  "krcc": 0.4836991663519943,
+  "plcc": 0.6924907707079117,
+  "rmse": 9.018912315368652,
+  "mae": 7.076648712158203,
+  "count": 558,
+  "optical_enabled": true,
+  "fusion_diagnostics": {
+    "vision_expert": {
+      "alpha": 0.45000001788139343,
+      "electronic_rms": 1.8930712891308636,
+      "optical_rms": 0.8477964995155197,
+      "output_to_electronic_rms": 1.0
+    },
+    "vision_global": {
+      "alpha": 0.550000011920929,
+      "electronic_rms": 0.5209091970142925,
+      "optical_rms": 0.8745581099636666,
+      "output_to_electronic_rms": 1.0
+    },
+    "language_expert": {
+      "alpha": 0.40000101923942566,
+      "electronic_rms": 1.2747817560763341,
+      "optical_rms": 3.488128952655314,
+      "output_to_electronic_rms": 1.0
+    },
+    "language_global": {
+      "alpha": 0.7750000357627869,
+      "electronic_rms": 0.22163490566515154,
+      "optical_rms": 1.6071313504249818,
+      "output_to_electronic_rms": 1.0
+    }
+  },
+  "router_diagnostics": {
+    "vision": {
+      "implementation": "optical_parallel4_energy_top2",
+      "decision_count": 2232,
+      "mean_probability": [
+        0.23915840685367584,
+        0.20822595059871674,
+        0.3133797347545624,
+        0.23923587799072266
+      ],
+      "selected_share": [
+        0.2219982147216797,
+        0.21594981849193573,
+        0.3281809985637665,
+        0.2338709682226181
+      ],
+      "capture_fraction_mean": 0.7163223382819938
+    },
+    "language": {
+      "implementation": "optical_serial_energy_channel_standardized_top2",
+      "decision_count": 558,
+      "mean_probability": [
+        0.24770784378051758,
+        0.23951953649520874,
+        0.23890502750873566,
+        0.27386757731437683
+      ],
+      "selected_share": [
+        0.23924730718135834,
+        0.23118279874324799,
+        0.24641576409339905,
+        0.28315412998199463
+      ],
+      "capture_fraction_mean": 0.9407640084570881
+    }
+  }
+}

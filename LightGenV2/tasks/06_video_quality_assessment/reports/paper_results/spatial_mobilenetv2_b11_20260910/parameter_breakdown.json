@@ -1,0 +1,14 @@
+{
+  "qwen_boundary_adapters": 671232,
+  "electronic_routes": 766468,
+  "optical_feature_paths": 910999,
+  "optical_routers": 59405,
+  "fusion": 4,
+  "multimodal_bridge": 74688,
+  "position_parameters": 19200,
+  "single_metric_readout": 10031046,
+  "electronic_quality_residual": 385,
+  "mobilenetv2_b10_electronic_residual": 55872,
+  "total_trainable": 55872,
+  "total_frozen_in_student": 12533427
+}

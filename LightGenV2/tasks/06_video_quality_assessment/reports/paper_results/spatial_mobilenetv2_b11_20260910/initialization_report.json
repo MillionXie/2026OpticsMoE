@@ -1,0 +1,10 @@
+{
+  "used": true,
+  "path": "/DATA/DATA1/guest3/lightgen_spatial_065/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_moments_calibrated_s643/best_alpha_calibrated_checkpoint.pt",
+  "loaded_tensors": 164,
+  "loaded_parameters": 12533443,
+  "missing_tensors": 6,
+  "unexpected_tensors": [],
+  "skipped_by_policy": [],
+  "policy": "exact-name and exact-shape only; no silent resizing"
+}

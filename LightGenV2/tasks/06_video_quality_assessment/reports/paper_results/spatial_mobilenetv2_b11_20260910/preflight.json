@@ -1,0 +1,223 @@
+{
+  "status": "ready",
+  "architecture": "qwenfront_spatial_o2_4f196_vexpert109_alpha40_no_attention_v1_spatialweighted5_rmax2026_v1_rflocal7_v1_readoutmoments_v1_qwenonly_v1_strict2branch_v1_residual_conv2_v1_electronicqualityresidual85_v1_mobilenetv2b11_e1corr140_v1_srouterstandardize_v1",
+  "target": "spatial",
+  "output": "one continuous MOS scalar",
+  "prompt": "Please evaluate the spatial quality of this video and rate it using one of the following five levels: Excellent, Good, Fair, Poor, or Bad.",
+  "separate_spatial_temporal_models": true,
+  "validation_used": false,
+  "test_selection_interval_epochs": 1,
+  "test_selection_interval_optimizer_steps": 0,
+  "qwen_front": {
+    "checkpoint_family": "Qwen3-VL-2B-Instruct",
+    "official_processor": true,
+    "vision": "frozen patch_embed + official interpolated position embedding",
+    "vision_blocks_executed": 0,
+    "vision_merger_executed": false,
+    "text": "chat template + tokenizer + frozen embed_tokens",
+    "language_blocks_executed": 0,
+    "lm_head_executed": false,
+    "cached_before_student_training": true
+  },
+  "student": {
+    "attention_modules": 0,
+    "transformer_blocks": 0,
+    "frame_count": 4,
+    "qwen_vision_token_shape_per_video": [
+      4,
+      196,
+      1024
+    ],
+    "quality_side_shape_per_video": [
+      4,
+      196,
+      192
+    ],
+    "quality_input_role": "precomputed Conv5 representation contained only inside the single electronic residual route",
+    "quality_feature_source_channels": [
+      "R",
+      "G",
+      "B",
+      "luminance",
+      "sobel_x",
+      "sobel_y",
+      "gradient_magnitude",
+      "absolute_laplacian",
+      "local_std_5x5",
+      "saturation",
+      "previous_frame_luminance_abs_difference",
+      "x_coordinate",
+      "y_coordinate",
+      "time_coordinate"
+    ],
+    "quality_feature_preprocessor": "frozen offline Conv5 cache; it does not produce an independent prediction and is injected only into E1",
+    "internal_width": 192
+  },
+  "geometry": {
+    "canvas": 518,
+    "active": 478,
+    "parallel_frame_grid": [
+      2,
+      2
+    ],
+    "parallel_lane_size": 232,
+    "parallel_lane_pitch": 246,
+    "parallel_lane_origins_active_yx": [
+      [
+        0,
+        0
+      ],
+      [
+        0,
+        246
+      ],
+      [
+        246,
+        0
+      ],
+      [
+        246,
+        246
+      ]
+    ],
+    "parallel_expert_grid_per_frame": [
+      2,
+      2
+    ],
+    "parallel_expert_size": 109,
+    "parallel_expert_pitch": 123,
+    "serial_expert_size": 109,
+    "serial_expert_pitch": 123,
+    "serial_router_input_size": 109
+  },
+  "router": {
+    "implementation": "optical region-energy router",
+    "top_k": 2,
+    "parallel_decisions_per_video": 4,
+    "serial_decisions_per_video": 1,
+    "parallel_detector_intervals": [
+      [
+        79,
+        108
+      ],
+      [
+        124,
+        153
+      ]
+    ],
+    "serial_detector_intervals": [
+      [
+        164,
+        223
+      ],
+      [
+        255,
+        314
+      ]
+    ],
+    "serial_detector_flatfield_calibration": false,
+    "serial_detector_channel_standardization": true,
+    "serial_zero_order_handling": "full serial feature field"
+  },
+  "fusion": {
+    "equation": "F=rE*((1-alpha)*E/rE + alpha*O/rO)/rms(mixture)",
+    "independent_alpha_per_stage": true,
+    "alpha_range": [
+      0.4,
+      0.9
+    ],
+    "alpha_initial": 0.52,
+    "same_checkpoint_optical_bypass_only": true
+  },
+  "unmodulated_leakage": {
+    "model": "coherent field mixture",
+    "nominal_power_train_range": [
+      0.2,
+      0.2
+    ],
+    "nominal_power_evaluation": 0.2
+  },
+  "phase_snapshots": {
+    "interval_epochs": 0,
+    "format": "optical_phase_evolution_snapshot_v1"
+  },
+  "optimization": {
+    "mos_stratified_batches": true,
+    "mos_strata": 8,
+    "learning_rate_warmup_epochs": 3,
+    "minimum_learning_rate_factor": 0.02,
+    "curriculum_enabled": false,
+    "curriculum_epoch_range": [
+      4,
+      35
+    ],
+    "curriculum_changes_inference_graph": false,
+    "phase_learning_rate": 8e-05,
+    "router_phase_learning_rate": 0.00016
+  },
+  "manifest_counts": {
+    "train": 2250,
+    "validation": 0,
+    "test": 558
+  },
+  "cache": {
+    "target_name": "spatial",
+    "vision_shape": [
+      2808,
+      4,
+      196,
+      1024
+    ],
+    "vision_dtype": "torch.float16",
+    "temporal_sampling_view_count": 3,
+    "frame_sampling_offsets": [
+      0.0,
+      -0.05,
+      0.05
+    ],
+    "language_shape": [
+      1,
+      38,
+      2048
+    ],
+    "quality_shape": [
+      2808,
+      4,
+      196,
+      192
+    ],
+    "raw_frame_shape": null,
+    "vgg_shape": null,
+    "mobilenet_shape": [
+      2808,
+      4,
+      196,
+      96
+    ],
+    "language_dtype": "torch.float16",
+    "input_ids_shape": [
+      1,
+      38
+    ],
+    "split_counts": {
+      "train": 2250,
+      "validation": 0,
+      "test": 558
+    },
+    "target_shape": [
+      2808
+    ],
+    "one_scalar_target": true,
+    "qwen_checkpoint_identity_sha256": "b10a303d44e37d86c00e0cb1a58a8c08eed646fee8cc7a5e44c5aefdfa3d2f86",
+    "qwen_vision_front_sha256": "deabea640693823bb89eb6b7376fbd33f3d91b60d1a50c3d03a87c943907957f",
+    "qwen_language_embedding_sha256": "5961b85f03c2e7c6ba933771bbf37f7c4421d2cd7ad13a4f3a2f60ae5a8b7b23",
+    "qwen_front_pair_sha256": "6a336271d478a6e3571d5590c7753da8bd0852ac56587b997c711dc95cb63223"
+  },
+  "training_soft_targets": {
+    "path": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/lgvq_four_stage_optical_electronic_109_no_attention_vqa/artifacts/training_only_teacher_predictions.pt",
+    "exists": true,
+    "training_only": true
+  },
+  "cuda_available": true,
+  "cuda_device": "NVIDIA A100-PCIE-40GB"
+}

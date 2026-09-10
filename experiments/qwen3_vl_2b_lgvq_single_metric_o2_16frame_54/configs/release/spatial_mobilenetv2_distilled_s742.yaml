@@ -3,7 +3,7 @@ output_dir: ../../runs/lgvq_spatial_mobilenetv2_distilled_s742
 random_seed: 742
 
 # The full initialization contains the ResNet-teacher E1 correction distilled
-# into the 49,536-parameter MobileNet adapter. ResNet is absent at inference.
+# into the 49,664-parameter MobileNet adapter. ResNet is absent at inference.
 training:
   initialization_checkpoint: ../../artifacts/distillation/s742/distilled_student_initialization.pt
   trainable_scope: mobilenet_electronic_only

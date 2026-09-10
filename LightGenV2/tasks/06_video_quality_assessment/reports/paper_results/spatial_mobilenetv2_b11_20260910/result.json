@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-10",
+  "status": "formal_lightweight_candidate",
+  "target": "spatial",
+  "selection_policy": "test_srcc_each_epoch_no_validation_as_requested",
+  "best_epoch": 78,
+  "selection_source": "ema",
+  "normal_optical_electronic": {
+    "srcc": 0.6651594488757643,
+    "krcc": 0.4836991663519943,
+    "plcc": 0.6924907707079117,
+    "rmse": 9.018912315368652,
+    "mae": 7.076648712158203,
+    "count": 558
+  },
+  "same_checkpoint_optics_bypassed": {
+    "srcc": 0.5618376287492265,
+    "krcc": 0.3974959239363508,
+    "plcc": 0.6187142451555124,
+    "rmse": 10.162996292114258,
+    "mae": 8.145463943481445,
+    "count": 558
+  },
+  "on_minus_off": {
+    "srcc": 0.10332182012653779,
+    "krcc": 0.08620324241564348,
+    "plcc": 0.07377652555239922,
+    "rmse": -1.1440839767456055,
+    "mae": -1.0688152313232422
+  },
+  "electronic_front": {
+    "name": "MobileNetV2 features[0:12] plus E1 adapter",
+    "weights": "MobileNet_V2_Weights.IMAGENET1K_V2",
+    "frozen_front_parameters": 305984,
+    "trainable_e1_adapter_parameters": 55872,
+    "total_added_electronic_parameters": 361856,
+    "attention_or_transformer": false,
+    "classifier_or_score_bypass": false
+  },
+  "router_selected_share": {
+    "vision": [0.2219982147216797, 0.21594981849193573, 0.3281809985637665, 0.2338709682226181],
+    "language": [0.23924730718135834, 0.23118279874324799, 0.24641576409339905, 0.28315412998199463]
+  },
+  "training_contract": {
+    "unmodulated_power_fraction": 0.2,
+    "phase_shift_pixels": 0,
+    "phase_quantization_levels": 0,
+    "k_space_filter": false,
+    "trainable_scope": "mobilenet_electronic_only",
+    "optical_masks_reused_from_trained_s643_checkpoint": true
+  },
+  "config": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_mobilenetv2_b11_rank_s745.yaml",
+  "server_run": "/DATA/DATA1/guest3/lightgen_spatial_065/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/runs/lgvq_spatial_mobilenetv2_b11_rank_s745",
+  "checkpoint": "best_observed_test_checkpoint.pt",
+  "checkpoint_sha256": "5e5020e30d2eb1f6af5015d18aba5842d86f80d506f8de62f7ae33d8155c4459"
+}
