@@ -657,3 +657,28 @@ for name, expected in sources.items():
 model.restore_native()
 PY
 ```
+
+## SAM半径0.10的完成权重独立复核
+
+`moe_alpha40_sam010_seed42`已完成50轮，best为epoch1 EMA，SHA为
+`fa8fa65b00c786c0dc2f23a2dd032643de10f8f93484ca5372f7ba60abfabed4`。
+2026-09-10使用源码961907d1、A100、batch32对全部5000张独立重载，
+float64 CC=**0.8613582183**，与累积器差1.80e-10；原最终重载值0.8613582358得到核实。
+KLD=.1130358380、SIM=.8240352064、NSS=.9677864185、AUC=.7700704916、MAE=.0772304476。
+目录`aligned_recheck_20260910_sam010_completed`；`reproduction.json` SHA256：
+`725a224a70d21bb504f8fd4eebd59815e0d5bb0d51447f37626f896c97b3244e`。
+数据ID SHA仍为625dec6b…a3496d0，完整命令/环境/逐图CC在该目录。
+
+与SAM.05已独立核验的相同5000个ID配对：2477张改善，平均差+.0000261824，
+中位差−.0000386759。对ID排序后的差值，用NumPy `default_rng(17042)`有放回抽5000张、
+重复2000次的均值2.5%/97.5%分位数为[−.0001614617, +.0002305905]。
+这是固定权重、该数据集上的描述性重采样，不包含训练seed方差，也不校正公开测试选模偏差；
+不能包装成无偏显著性检验或等效性证明。没有支持继续扩大SAM半径的明确证据，
+不因此替换原候选；全任务最佳已核验训练候选仍为KD2的.86204960，目标.87未达到。
+
+```bash
+TASK=LightGenV2/tasks/t03_saliency
+python -m LightGenV2.tasks.t03_saliency.recheck_aligned --system optical --config "$TASK/configs/moe_alpha40_sam010.yaml" --checkpoint "$TASK/runs/simulation/moe_alpha40_sam010_seed42/best_checkpoint.pt" --run-dir "$TASK/runs/simulation/aligned_recheck_20260910_sam010_completed" --batch-size 32
+```
+
+复现前核对权重SHA；复评目录必须尚不存在，不能覆盖原证据。
