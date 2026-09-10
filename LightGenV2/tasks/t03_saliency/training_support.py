@@ -180,7 +180,7 @@ class TrainTeacherMaps:
         return self.values[[self.index[k] for k in sample_ids]].float()
 
     def get(self, sample_ids, device):
-        if self.aligned_weak:
+        if self.aligned_weak or getattr(self, 'fixed_crop', False):
             if self.batch_augmented_logits is None or list(sample_ids) != self.batch_augmented_logits[0]:
                 raise ValueError("Missing or mismatched weak-augmentation teacher identity")
             return self.batch_augmented_logits[1].to(device)

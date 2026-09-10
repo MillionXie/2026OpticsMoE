@@ -1,0 +1,9 @@
+base_config: moe_alpha40_extra_control.yaml
+# Same original 87ad inference network. Only training views and matching KD targets.
+fixed_crop_distillation:
+  mode: actual
+  cache: ../runs/simulation/fixed_crop_teacher_20260910/teacher_crop.pt
+  cache_sha256: f4a694479bf8b2e4182c4352f3c02761b8e4d37b7542c769ee4e3ddd056eedb9
+  apply_probability: 0.5
+  end_epoch: 25
+output_dir: ../runs/simulation/moe_alpha40_fixed_crop_actual_seed42

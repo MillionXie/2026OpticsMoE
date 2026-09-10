@@ -74,6 +74,33 @@ CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=1 HF_HUB_OFFLINE=1 TRANSFORMER
 数据加载器使用spawn避免继承CUDA上下文，导出完核查自身PID/显存释放。
 当前没有配置或训练逻辑自动使用此缓存；导出验证后再建立“变换原教师/实际裁剪教师”受控对照。
 
+### 固定裁剪受控训练（显式新配置，待回归与启动）
+
+`moe_alpha40_fixed_crop_actual.yaml`与`moe_alpha40_fixed_crop_proxy.yaml`均继承原87ad来源的
+40轮GT+spatial-CC KD2/SAM.05控制；只改变训练视图和相应教师目标，不改模型、初始化权重、
+学习率、融合alpha、光路、Top2、DC20–30%或推理参数。固定使用上面的BICUBIC裁剪，
+前25轮以独立seed=42+6703逐图p=.5选择，26–40轮原图精修；不叠加翻转/色彩/随机裁剪。
+两组相同seed、图片、GT、变换和训练预算，只在增强图上分别使用实际教师缓存或变换原教师概率。
+原图均使用原教师缓存；proxy不是在线Qwen推理。测试始终用原图、原协议完整5000张。
+辅助头/其他特征蒸馏/额外数据均关闭，不把裁剪组叠加到正在运行的深监督组。
+
+`fixed_crop_training.py`逐样本校验增强前后像素SHA；缓存绑定实际加载字节SHA、教师/注释/ID合同。
+GT density同box裁剪后bilinear并归一化；fixation用nearest。若裁剪丢光注视点，则该图全部回退
+原图/原GT/原教师（两个组一致），不造假注视点。history记录实际增强/总图/回退计数，
+`fixed_crop_provenance.json`记录完整合同；当前batch教师供SAM两次前向复用，之后清除以拒绝旧目标。
+原配置未显式启用`fixed_crop_distillation`时不改变原训练行为。
+
+```bash
+python -m pytest LightGenV2/tasks/t03_saliency/tests -q
+# 两个组分开运行；先检查空闲卡，并计入同一助手最多两卡的总预算。
+python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_fixed_crop_actual.yaml --phase all
+python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_fixed_crop_proxy.yaml --phase all
+```
+
+产物分别进入`runs/simulation/moe_alpha40_fixed_crop_actual_seed42`和
+`runs/simulation/moe_alpha40_fixed_crop_proxy_seed42`，只保存best/last。公开测试参与选模，
+不能称为独立未接触测试。实际教师小样本诊断略好不等于学生训练必然提升；目标仍未达到。
+
 ## 轻量电子容量对照：16维全局空间混合
 
 `moe_alpha40_viewreg_global16.yaml`继承已完成的强KD配置，不继承mix50；

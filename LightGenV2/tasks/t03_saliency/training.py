@@ -144,6 +144,7 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
     loader_settings = copy(settings)
     aligned_flip = settings.augmentation_enabled and settings.augmentation_mode == "aligned_flip"
     aligned_weak = settings.augmentation_enabled and settings.augmentation_mode == "aligned_weak"
+    fixed_crop = bool(getattr(settings, 'fixed_crop_distillation', {}))
     if aligned_flip or aligned_weak:
         loader_settings.augmentation_enabled = False
     train_loader, test_loader = legacy.build_loaders(bundle, loader_settings, training=True)
@@ -192,14 +193,19 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
                                         settings.random_seed + 703, teacher)
     if aligned_weak:
         train_loader = AlignedWeakLoader(train_loader, settings, teacher)
+    if fixed_crop:
+        from .fixed_crop_training import FixedCropTargets, FixedCropLoader
+        crop_targets = FixedCropTargets(settings, bundle.train_records)
+        train_loader = FixedCropLoader(train_loader, settings, teacher, crop_targets)
+        _write_json(settings.output_dir/'fixed_crop_provenance.json', crop_targets.provenance)
     if teacher is not None:
         from .modeling import sha256_file
         _write_json(settings.output_dir / "teacher_cache_provenance.json", {
             **teacher.manifest, "cache_sha256": sha256_file(settings.distillation_cache),
             "distillation_loss": getattr(settings, "distillation_loss", "kl"),
             "teacher_executed_during_student_inference": False,
-            "student_train_augmentation": settings.augmentation_mode if settings.augmentation_enabled else "none",
-            "teacher_map_transform": ("crop/resize/flip teacher probability density, renormalize, log; approximate view consistency, not online teacher inference"
+            "student_train_augmentation": "fixed_crop" if fixed_crop else settings.augmentation_mode if settings.augmentation_enabled else "none",
+            "teacher_map_transform": (crop_targets.provenance['teacher_target_used'] if fixed_crop else "crop/resize/flip teacher probability density, renormalize, log; approximate view consistency, not online teacher inference"
                                       if aligned_weak else "same horizontal flip as image/density/fixation" if aligned_flip else "none")})
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         optim, T_max=max(1, int(settings.student_epochs))
@@ -245,6 +251,10 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
             if aligned_weak:
                 train_loader.enabled = settings.augmentation_end_epoch == 0 or epoch <= settings.augmentation_end_epoch
                 stage_report["augmentation_active"] = train_loader.enabled
+            if fixed_crop:
+                train_loader.enabled = epoch <= settings.fixed_crop_distillation['end_epoch']
+                stage_report['augmentation_active'] = train_loader.enabled
+                stage_report['fixed_crop_teacher_mode'] = settings.fixed_crop_distillation['mode']
             if settings.staged_training:
                 stage_report.update(staged_epoch(optim, settings, epoch))
                 model._router_hard_weight = stage_report["hard_balance_weight"]
@@ -311,9 +321,11 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
                 stage_report['feature_hint_weight'] = settings.feature_hint_current_weight
                 train_metrics = train_hint_epoch(model,train_loader,loaded,settings,optim,
                     teacher if settings.map_kd_weight > 0 else None,hints)
-            if aligned_weak:
+            if aligned_weak or fixed_crop:
                 stage_report["augmentation_images"] = train_loader.epoch_augmented_images
                 stage_report["augmentation_total_images"] = train_loader.epoch_images
+                if fixed_crop:
+                    stage_report['augmentation_empty_fixation_fallbacks'] = train_loader.epoch_fallback_images
             model.core.set_phase_dropout_active(False)
             scheduled_test = (
                 epoch == 1

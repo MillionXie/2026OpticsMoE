@@ -340,6 +340,8 @@ def load_settings(path: str | Path) -> Any:
     configure_masked(settings, d('masked_distillation', {}), config.parent)
     from .first_stage_supervision import configure as configure_first_stage
     configure_first_stage(settings, d('first_stage_supervision', {}))
+    from .fixed_crop_training import configure as configure_fixed_crop
+    configure_fixed_crop(settings, d('fixed_crop_distillation', {}), config.parent)
     return settings
 
 
@@ -354,6 +356,7 @@ def save_resolved_config(settings: Any) -> None:
     values['relational_distillation'] = settings.relational_distillation
     values['masked_distillation'] = settings.masked_distillation
     values['first_stage_supervision'] = settings.first_stage_supervision
+    values['fixed_crop_distillation'] = settings.fixed_crop_distillation
     # The shared T02 serializer writes pose-specific PCK/NME prose. T03's
     # actual trainer compares test_metrics['cc'] strictly; describe that here.
     values.setdefault("protocol", {}).update(
