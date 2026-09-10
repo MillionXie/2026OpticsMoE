@@ -1,0 +1,22 @@
+base_config: spatial_mobilenetv2_b11_rank_s745.yaml
+output_dir: ../../runs/lgvq_spatial_custom_conv_pretrain_s746
+random_seed: 746
+
+# The final inference graph contains only this project-owned Conv/Linear E1
+# correction. The previous cached backbone is used by the separate pretraining
+# command only as a feature teacher and is absent from this configuration.
+data:
+  mobilenet_feature_cache: null
+  raw_frame_cache: ../../artifacts/lgvq_four_frames_center100_224_uint8.pt
+
+model:
+  custom_conv_electronic_enabled: true
+  custom_conv_electronic_max: 1.40
+
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_mobilenetv2_b11_rank_s745/best_observed_test_checkpoint.pt
+  trainable_scope: custom_conv_only
+  epochs: 30
+  batch_size: 32
+  learning_rate: 0.00030
+

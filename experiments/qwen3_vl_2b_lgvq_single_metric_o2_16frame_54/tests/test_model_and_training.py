@@ -9,6 +9,7 @@ import torch
 
 from ..calibrate_spatial_levels import _isotonic
 from ..modeling import (
+    CustomConvE1Correction,
     LGVQSingleMetricOEO16,
     SpatialGridReadout,
     TrainableQualityFrameStem,
@@ -1233,3 +1234,36 @@ def test_training_can_select_a_within_epoch_optimizer_step(tmp_path: Path) -> No
     assert history[1]["within_epoch_test_evaluations"][0]["optimizer_step"] == 1
     assert summary["periodic_test_interval_optimizer_steps"] == 1
     assert summary["best_optimizer_step"] in (0, 1, 2)
+
+
+def test_custom_conv_e1_is_bounded_zero_start_and_316k(tmp_path: Path) -> None:
+    settings = replace(
+        _small_settings(tmp_path),
+        token_grid=14,
+        raw_frame_cache_path=tmp_path / "raw_frames.pt",
+        custom_conv_electronic_enabled=True,
+        custom_conv_electronic_max=1.4,
+    )
+    module = CustomConvE1Correction(settings)
+    assert sum(parameter.numel() for parameter in module.parameters()) == 316_568
+    frames = torch.randint(0, 256, (1, 4, 3, 224, 224), dtype=torch.uint8)
+    output = module(frames)
+    assert tuple(output.shape) == (1, 4, 196, settings.model_width)
+    assert torch.count_nonzero(output) == 0
+
+
+def test_custom_conv_scope_does_not_train_other_paths(tmp_path: Path) -> None:
+    settings = replace(
+        _small_settings(tmp_path),
+        token_grid=14,
+        raw_frame_cache_path=tmp_path / "raw_frames.pt",
+        custom_conv_electronic_enabled=True,
+        trainable_scope="custom_conv_only",
+    )
+    model = LGVQSingleMetricOEO16(settings)
+    report = _apply_trainable_scope(model, settings)
+    assert report["trainable_parameters"] == 316_568
+    assert all(
+        name.startswith("custom_conv_electronic_correction.")
+        for name in report["trainable_names"]
+    )

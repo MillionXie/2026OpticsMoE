@@ -279,6 +279,8 @@ class ExperimentSettings:
     electronic_quality_residual_initial: float = 0.70
     tiny_rgb_electronic_adapter_enabled: bool = False
     tiny_rgb_electronic_adapter_max: float = 0.50
+    custom_conv_electronic_enabled: bool = False
+    custom_conv_electronic_max: float = 1.40
     electronic_quality_reinjection_enabled: bool = False
     electronic_quality_reinjection_max: float = 0.50
     electronic_cross_stage_skip_enabled: bool = False
@@ -634,6 +636,22 @@ class ExperimentSettings:
                 raise ValueError("The tiny RGB E1 adapter requires data.raw_frame_cache")
             if self.tiny_rgb_electronic_adapter_max <= 0.0:
                 raise ValueError("model.tiny_rgb_electronic_adapter_max must be positive")
+        if self.custom_conv_electronic_enabled:
+            if (
+                self.target_name != "spatial"
+                or self.frame_count != 4
+                or self.token_grid != 14
+            ):
+                raise ValueError(
+                    "The custom Conv E1 correction requires Spatial, four frames, "
+                    "and a 14x14 grid"
+                )
+            if self.raw_frame_cache_path is None:
+                raise ValueError(
+                    "The custom Conv E1 correction requires data.raw_frame_cache"
+                )
+            if self.custom_conv_electronic_max <= 0.0:
+                raise ValueError("model.custom_conv_electronic_max must be positive")
         if self.electronic_quality_reinjection_enabled and not (
             self.electronic_quality_residual_enabled
         ):
@@ -943,6 +961,9 @@ class ExperimentSettings:
             "tiny_rgb_adapter_only",
             "tiny_rgb_adapter_and_readout",
             "tiny_rgb_adapter_path_and_readout",
+            "custom_conv_only",
+            "custom_conv_and_readout",
+            "custom_conv_joint",
             "serial_router_and_readout",
         }:
             raise ValueError(
@@ -967,6 +988,7 @@ class ExperimentSettings:
                 "mobilenet_electronic_path_and_readout, or "
                 "tiny_rgb_adapter_only, tiny_rgb_adapter_and_readout, or "
                 "tiny_rgb_adapter_path_and_readout, or "
+                "custom_conv_only, custom_conv_and_readout, custom_conv_joint, or "
                 "serial_router_and_readout"
             )
         if self.trainable_scope == "late_input_correction_only" and not (
@@ -1007,6 +1029,13 @@ class ExperimentSettings:
             raise ValueError(
                 "A tiny_rgb_adapter training scope requires "
                 "model.tiny_rgb_electronic_adapter_enabled=true"
+            )
+        if self.trainable_scope.startswith("custom_conv") and not (
+            self.custom_conv_electronic_enabled
+        ):
+            raise ValueError(
+                "A custom_conv training scope requires "
+                "model.custom_conv_electronic_enabled=true"
             )
         if self.trainable_scope == "residual_only" and self.spatial_readout_mode not in {
             "spatial_grid_residual",
@@ -1200,6 +1229,12 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         ),
         tiny_rgb_electronic_adapter_max=float(
             get("model", "tiny_rgb_electronic_adapter_max", 0.50)
+        ),
+        custom_conv_electronic_enabled=bool(
+            get("model", "custom_conv_electronic_enabled", False)
+        ),
+        custom_conv_electronic_max=float(
+            get("model", "custom_conv_electronic_max", 1.40)
         ),
         electronic_quality_reinjection_enabled=bool(
             get("model", "electronic_quality_reinjection_enabled", False)

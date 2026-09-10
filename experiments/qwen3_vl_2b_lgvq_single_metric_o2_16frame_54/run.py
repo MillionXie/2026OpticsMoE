@@ -282,6 +282,36 @@ def _apply_trainable_scope(
                     "readout.",
                 )
             )
+        elif scope == "custom_conv_only":
+            trainable = name.startswith("custom_conv_electronic_correction.")
+        elif scope == "custom_conv_and_readout":
+            trainable = name.startswith(
+                ("custom_conv_electronic_correction.", "readout.")
+            )
+        elif scope == "custom_conv_joint":
+            # Jointly adapt the project-owned convolutional E1 correction and
+            # the complete O/E/O predictor. Frozen Qwen front tensors are
+            # inputs, not transformer blocks inside this trainable graph.
+            trainable = name.startswith(
+                (
+                    "custom_conv_electronic_correction.",
+                    "vision_adapter.",
+                    "visual_input_norm.",
+                    "language_adapter.",
+                    "prompt_to_visual.",
+                    "vision_routes.",
+                    "language_routes.",
+                    "parallel_optics.",
+                    "serial_optics.",
+                    "parallel_router.",
+                    "serial_router.",
+                    "fusions.",
+                    "frame_merger.",
+                    "frame_position",
+                    "sequence_position",
+                    "readout.",
+                )
+            )
         elif scope == "tiny_rgb_adapter_only":
             trainable = name.startswith("tiny_rgb_electronic_adapter.")
         elif scope == "tiny_rgb_adapter_and_readout":

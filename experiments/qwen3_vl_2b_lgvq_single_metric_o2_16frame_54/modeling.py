@@ -2289,6 +2289,68 @@ class FrozenMobileNetElectronicCorrection(nn.Module):
         return self.maximum * torch.tanh(correction / self.maximum)
 
 
+class CustomConvE1Correction(nn.Module):
+    """Project-owned RGB convolutional correction inside electronic E1.
+
+    This is intentionally written from elementary Conv2d, GroupNorm, GELU and
+    Linear layers.  It has no imported backbone, classifier, attention,
+    pooling-to-score path, or route around the four optical/electronic stages.
+    Four stride-2 convolutions map each 224x224 frame to the model's 14x14
+    token grid; one local residual pair increases spatial context before a
+    per-token projection produces the bounded E1 correction.
+    """
+
+    def __init__(self, settings: ExperimentSettings) -> None:
+        super().__init__()
+        self.grid = settings.token_grid
+        self.maximum = float(settings.custom_conv_electronic_max)
+        self.downsample = nn.Sequential(
+            nn.Conv2d(3, 24, 3, stride=2, padding=1, bias=False),
+            nn.GroupNorm(6, 24),
+            nn.GELU(),
+            nn.Conv2d(24, 48, 3, stride=2, padding=1, bias=False),
+            nn.GroupNorm(8, 48),
+            nn.GELU(),
+            nn.Conv2d(48, 64, 3, stride=2, padding=1, bias=False),
+            nn.GroupNorm(8, 64),
+            nn.GELU(),
+            nn.Conv2d(64, 96, 3, stride=2, padding=1, bias=False),
+            nn.GroupNorm(12, 96),
+            nn.GELU(),
+        )
+        self.local_residual = nn.Sequential(
+            nn.Conv2d(96, 96, 3, padding=1, bias=False),
+            nn.GroupNorm(12, 96),
+            nn.GELU(),
+            nn.Conv2d(96, 96, 3, padding=1, bias=False),
+            nn.GroupNorm(12, 96),
+        )
+        self.token_projection = nn.Sequential(
+            nn.LayerNorm(96),
+            nn.Linear(96, settings.model_width),
+            nn.GELU(),
+            nn.Linear(settings.model_width, settings.model_width),
+        )
+        nn.init.zeros_(self.token_projection[-1].weight)
+        nn.init.zeros_(self.token_projection[-1].bias)
+
+    def forward(self, frames: torch.Tensor) -> torch.Tensor:
+        if frames.ndim != 5 or tuple(frames.shape[1:3]) != (4, 3):
+            raise ValueError("Custom Conv E1 correction requires [B,4,3,H,W]")
+        batch, frame_count = frames.shape[:2]
+        value = frames.float().div(127.5).sub(1.0).flatten(0, 1)
+        value = self.downsample(value)
+        value = F.gelu(value + self.local_residual(value))
+        if tuple(value.shape[-2:]) != (self.grid, self.grid):
+            raise ValueError("Custom Conv E1 correction expects 224x224 input frames")
+        tokens = value.flatten(2).transpose(1, 2)
+        correction = self.token_projection(tokens)
+        correction = self.maximum * torch.tanh(correction / self.maximum)
+        return correction.reshape(
+            batch, frame_count, self.grid * self.grid, -1
+        )
+
+
 class TinyRgbE1Adapter(nn.Module):
     """Tiny, zero-start RGB front contained inside the E1 residual route.
 
@@ -2538,6 +2600,11 @@ class LGVQSingleMetricOEO16(nn.Module):
             if settings.mobilenet_feature_cache_path is not None
             else None
         )
+        self.custom_conv_electronic_correction = (
+            CustomConvE1Correction(settings)
+            if settings.custom_conv_electronic_enabled
+            else None
+        )
         self.tiny_rgb_electronic_adapter = (
             TinyRgbE1Adapter(settings)
             if settings.tiny_rgb_electronic_adapter_enabled
@@ -2785,6 +2852,14 @@ class LGVQSingleMetricOEO16(nn.Module):
                 mobilenet_tokens
             )
             electronic1 = electronic1 + mobilenet_electronic
+        custom_conv_electronic = electronic1.new_zeros(electronic1.shape)
+        if self.custom_conv_electronic_correction is not None:
+            if raw_frames is None:
+                raise ValueError("The custom Conv E1 correction requires raw_frames")
+            custom_conv_electronic = self.custom_conv_electronic_correction(
+                raw_frames
+            )
+            electronic1 = electronic1 + custom_conv_electronic
         electronic_quality_scale = electronic1.new_zeros(())
         if self.electronic_quality_norm is not None:
             electronic_quality_scale = torch.sigmoid(
@@ -2963,6 +3038,7 @@ class LGVQSingleMetricOEO16(nn.Module):
             "vgg_correction_rms": vgg_correction.float().square().mean().sqrt(),
             "resnet_electronic_rms": resnet_electronic.float().square().mean().sqrt(),
             "mobilenet_electronic_rms": mobilenet_electronic.float().square().mean().sqrt(),
+            "custom_conv_electronic_rms": custom_conv_electronic.float().square().mean().sqrt(),
             "tiny_rgb_electronic_rms": tiny_rgb_electronic.float().square().mean().sqrt(),
             "routing": routing,
             "optical_enabled": optical_enabled,
@@ -3041,6 +3117,10 @@ class LGVQSingleMetricOEO16(nn.Module):
             groups[block_name] = (
                 self.mobilenet_electronic_correction
             )
+        if self.custom_conv_electronic_correction is not None:
+            groups["custom_conv_e1_correction"] = (
+                self.custom_conv_electronic_correction
+            )
         if self.tiny_rgb_electronic_adapter is not None:
             groups["tiny_rgb_e1_adapter"] = self.tiny_rgb_electronic_adapter
         if self.late_input_correction is not None:
@@ -3071,4 +3151,4 @@ def build_model(settings: ExperimentSettings) -> LGVQSingleMetricOEO16:
     return LGVQSingleMetricOEO16(settings)
 
 
-__all__ = ["LGVQSingleMetricOEO16", "build_model"]
+__all__ = ["CustomConvE1Correction", "LGVQSingleMetricOEO16", "build_model"]

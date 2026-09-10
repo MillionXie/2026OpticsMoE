@@ -1,0 +1,22 @@
+base_config: spatial_custom_conv_pretrain_s746.yaml
+output_dir: ../../runs/lgvq_spatial_custom_conv_joint_s747
+random_seed: 747
+
+# The pretraining script writes a full compatible warm-start containing the
+# custom Conv E1 parameters plus the proven optical/electronic predictor.
+training:
+  initialization_checkpoint: ../../artifacts/lgvq_custom_conv_e1_pretrained_s746.pt
+  trainable_scope: custom_conv_joint
+  epochs: 100
+  batch_size: 16
+  learning_rate: 0.00005
+  phase_learning_rate: 0.00001
+  router_phase_learning_rate: 0.00002
+  readout_learning_rate_factor: 0.50
+  learning_rate_warmup_epochs: 3
+  minimum_learning_rate_factor: 0.02
+  ema_decay: 0.995
+  ema_start_epoch: 1
+  test_interval_epochs: 1
+  phase_snapshot_interval_epochs: 0
+
