@@ -1,0 +1,22 @@
+base_config: spatial_mobilenetv2_b10_s740.yaml
+output_dir: ../../runs/lgvq_spatial_mobilenetv2_b10_rank_s741
+random_seed: 741
+
+# Fair comparison with the successful ResNet teacher: identical optimizer,
+# batch size, E1 correction bound, and SRCC-first human-MOS loss recipe.
+training:
+  epochs: 100
+  batch_size: 32
+  learning_rate: 0.00030
+  weight_decay: 0.001
+  learning_rate_warmup_epochs: 3
+  minimum_learning_rate_factor: 0.02
+  ema_decay: 0.99
+  ema_start_epoch: 1
+
+loss:
+  regression_weight: 0.20
+  ranking_weight: 2.00
+  correlation_weight: 4.00
+  soft_spearman_weight: 0.40
+  soft_rank_temperature: 0.12

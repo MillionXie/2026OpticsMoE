@@ -1,0 +1,14 @@
+base_config: spatial_mobilenetv2_b10_rank_s741.yaml
+output_dir: ../../runs/lgvq_spatial_mobilenetv2_distilled_s742
+random_seed: 742
+
+# The full initialization contains the ResNet-teacher E1 correction distilled
+# into the 49,536-parameter MobileNet adapter. ResNet is absent at inference.
+training:
+  initialization_checkpoint: ../../artifacts/distillation/s742/distilled_student_initialization.pt
+  trainable_scope: mobilenet_electronic_only
+  epochs: 80
+  batch_size: 32
+  learning_rate: 0.00010
+  weight_decay: 0.001
+  ema_decay: 0.995
