@@ -254,6 +254,22 @@ def _apply_trainable_scope(
                     "readout.",
                 )
             )
+        elif scope == "tiny_quality_adapter_only":
+            trainable = name.startswith("tiny_quality_electronic_adapter.")
+        elif scope == "tiny_quality_adapter_and_readout":
+            trainable = name.startswith(
+                ("tiny_quality_electronic_adapter.", "readout.")
+            )
+        elif scope == "tiny_quality_adapter_path_and_readout":
+            trainable = name.startswith(
+                (
+                    "tiny_quality_electronic_adapter.",
+                    "vision_routes.",
+                    "language_routes.",
+                    "frame_merger.",
+                    "readout.",
+                )
+            )
         elif scope == "serial_router_and_readout":
             # Rebalance the language-stage optical router without perturbing
             # either feature-producing optical path.  The readout remains

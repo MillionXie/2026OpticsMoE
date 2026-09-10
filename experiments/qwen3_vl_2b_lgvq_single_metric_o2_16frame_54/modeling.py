@@ -2227,6 +2227,52 @@ class FrozenResNetElectronicCorrection(nn.Module):
         return self.maximum * torch.tanh(correction / self.maximum)
 
 
+class TinyQualityE1Adapter(nn.Module):
+    """Tiny, zero-start adapter for the existing low-level quality input.
+
+    This module has no pretrained weights and no score output.  A pointwise
+    bottleneck followed by two depthwise spatial scales extracts local quality
+    evidence; the result is injected only into the existing E1 residual before
+    the first optical/electronic fusion.
+    """
+
+    def __init__(self, settings: ExperimentSettings) -> None:
+        super().__init__()
+        self.grid = settings.token_grid
+        self.input_width = settings.quality_input_width
+        self.maximum = float(settings.tiny_quality_electronic_adapter_max)
+        hidden = 32
+        self.input_norm = nn.LayerNorm(self.input_width)
+        self.reduce = nn.Conv2d(self.input_width, hidden, 1, bias=False)
+        self.local5 = nn.Conv2d(
+            hidden, hidden, 5, padding=2, groups=hidden, bias=False
+        )
+        self.context3 = nn.Conv2d(
+            hidden, hidden, 3, padding=2, dilation=2, groups=hidden, bias=False
+        )
+        self.project = nn.Conv2d(hidden * 2, settings.model_width, 1)
+        nn.init.zeros_(self.project.weight)
+        nn.init.zeros_(self.project.bias)
+
+    def forward(self, tokens: torch.Tensor) -> torch.Tensor:
+        batch, frames, token_count, channels = tokens.shape
+        if token_count != self.grid * self.grid or channels != self.input_width:
+            raise ValueError(
+                "Tiny quality E1 adapter input grid or width changed"
+            )
+        grid = self.input_norm(tokens.float()).reshape(
+            batch * frames, self.grid, self.grid, channels
+        ).permute(0, 3, 1, 2)
+        base = F.gelu(self.reduce(grid))
+        correction = self.project(
+            torch.cat((F.gelu(self.local5(base)), F.gelu(self.context3(base))), 1)
+        )
+        correction = self.maximum * torch.tanh(correction / self.maximum)
+        return correction.permute(0, 2, 3, 1).reshape(
+            batch, frames, token_count, -1
+        )
+
+
 class SpatialLateInputCorrection(nn.Module):
     """Bounded final correction from the declared pre-optical multimodal field.
 
@@ -2413,6 +2459,11 @@ class LGVQSingleMetricOEO16(nn.Module):
             if settings.resnet_feature_cache_path is not None
             else None
         )
+        self.tiny_quality_electronic_adapter = (
+            TinyQualityE1Adapter(settings)
+            if settings.tiny_quality_electronic_adapter_enabled
+            else None
+        )
         if settings.quality_branch_enabled:
             self.raw_quality_gate = nn.Parameter(
                 torch.logit(torch.tensor(settings.quality_gate_initial))
@@ -2569,6 +2620,7 @@ class LGVQSingleMetricOEO16(nn.Module):
         quality_is_used = (
             self.settings.quality_branch_enabled
             or self.settings.electronic_quality_residual_enabled
+            or self.settings.tiny_quality_electronic_adapter_enabled
         )
         if quality_is_used and tuple(
             vision_tokens.shape[:-1]
@@ -2622,6 +2674,12 @@ class LGVQSingleMetricOEO16(nn.Module):
 
         fields1 = self.parallel_optics.fields(vision)
         electronic1 = self.vision_routes[0](vision)
+        tiny_quality_electronic = electronic1.new_zeros(electronic1.shape)
+        if self.tiny_quality_electronic_adapter is not None:
+            tiny_quality_electronic = self.tiny_quality_electronic_adapter(
+                quality_tokens
+            )
+            electronic1 = electronic1 + tiny_quality_electronic
         resnet_electronic = electronic1.new_zeros(electronic1.shape)
         if self.resnet_electronic_correction is not None:
             if resnet_tokens is None:
@@ -2807,6 +2865,7 @@ class LGVQSingleMetricOEO16(nn.Module):
             "spatial_readout_image_focus": readout_image_focus,
             "vgg_correction_rms": vgg_correction.float().square().mean().sqrt(),
             "resnet_electronic_rms": resnet_electronic.float().square().mean().sqrt(),
+            "tiny_quality_electronic_rms": tiny_quality_electronic.float().square().mean().sqrt(),
             "routing": routing,
             "optical_enabled": optical_enabled,
             "optical_alignment_loss": torch.stack(alignments).mean()
@@ -2873,6 +2932,8 @@ class LGVQSingleMetricOEO16(nn.Module):
             groups["resnet18_layer3_electronic_residual"] = (
                 self.resnet_electronic_correction
             )
+        if self.tiny_quality_electronic_adapter is not None:
+            groups["tiny_quality_e1_adapter"] = self.tiny_quality_electronic_adapter
         if self.late_input_correction is not None:
             groups["late_input_correction"] = self.late_input_correction
         result = {
