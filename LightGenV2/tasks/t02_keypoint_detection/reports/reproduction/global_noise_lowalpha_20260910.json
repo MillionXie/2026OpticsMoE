@@ -1,0 +1,365 @@
+{
+  "baseline": {
+    "loss": 0.02736006486415863,
+    "heatmap_loss": 0.0018340258644893765,
+    "coordinate_loss": 0.2552603861093521,
+    "pck_at_0.2_torso": 0.7347857142857143,
+    "pckh_at_0.5_head": 0.8524285714285714,
+    "mean_pixel_error": 15.070780328190885,
+    "normalized_mean_error_torso": 0.22975477455895602,
+    "evaluated_joints": 14000,
+    "pck_evaluated_joints": 14000,
+    "pckh_evaluated_joints": 14000,
+    "per_joint_pck_at_0.2_torso": {
+      "right_ankle": 0.704,
+      "right_knee": 0.735,
+      "right_hip": 0.743,
+      "left_hip": 0.74,
+      "left_knee": 0.745,
+      "left_ankle": 0.722,
+      "right_wrist": 0.606,
+      "right_elbow": 0.682,
+      "right_shoulder": 0.793,
+      "left_shoulder": 0.76,
+      "left_elbow": 0.659,
+      "left_wrist": 0.579,
+      "neck": 0.888,
+      "head_top": 0.931
+    },
+    "per_joint_counts": {
+      "right_ankle": 1000,
+      "right_knee": 1000,
+      "right_hip": 1000,
+      "left_hip": 1000,
+      "left_knee": 1000,
+      "left_ankle": 1000,
+      "right_wrist": 1000,
+      "right_elbow": 1000,
+      "right_shoulder": 1000,
+      "left_shoulder": 1000,
+      "left_elbow": 1000,
+      "left_wrist": 1000,
+      "neck": 1000,
+      "head_top": 1000
+    },
+    "normalization": {
+      "PCK": "mean distance of the two shoulder-to-opposite-hip torso diagonals",
+      "PCKh": "2 * distance(neck, head_top)"
+    },
+    "samples": 1000,
+    "phase": "trained_global",
+    "epoch": 50,
+    "model": "student"
+  },
+  "noise_runs": [
+    {
+      "seed": 42,
+      "phase_sha256": "021a2929083d13aa08520bf5b904f44950e2e0d7ea6b12ff1065206b720c10f5",
+      "metrics": {
+        "loss": 0.027360120847821235,
+        "heatmap_loss": 0.001834038347005844,
+        "coordinate_loss": 0.2552608188390732,
+        "pck_at_0.2_torso": 0.7345,
+        "pckh_at_0.5_head": 0.8520714285714286,
+        "mean_pixel_error": 15.0817893128737,
+        "normalized_mean_error_torso": 0.22999625038602017,
+        "evaluated_joints": 14000,
+        "pck_evaluated_joints": 14000,
+        "pckh_evaluated_joints": 14000,
+        "per_joint_pck_at_0.2_torso": {
+          "right_ankle": 0.706,
+          "right_knee": 0.734,
+          "right_hip": 0.747,
+          "left_hip": 0.74,
+          "left_knee": 0.745,
+          "left_ankle": 0.719,
+          "right_wrist": 0.61,
+          "right_elbow": 0.681,
+          "right_shoulder": 0.792,
+          "left_shoulder": 0.756,
+          "left_elbow": 0.657,
+          "left_wrist": 0.574,
+          "neck": 0.889,
+          "head_top": 0.933
+        },
+        "per_joint_counts": {
+          "right_ankle": 1000,
+          "right_knee": 1000,
+          "right_hip": 1000,
+          "left_hip": 1000,
+          "left_knee": 1000,
+          "left_ankle": 1000,
+          "right_wrist": 1000,
+          "right_elbow": 1000,
+          "right_shoulder": 1000,
+          "left_shoulder": 1000,
+          "left_elbow": 1000,
+          "left_wrist": 1000,
+          "neck": 1000,
+          "head_top": 1000
+        },
+        "normalization": {
+          "PCK": "mean distance of the two shoulder-to-opposite-hip torso diagonals",
+          "PCKh": "2 * distance(neck, head_top)"
+        },
+        "samples": 1000,
+        "phase": "global_uniform_seed42",
+        "epoch": 50,
+        "model": "student"
+      }
+    },
+    {
+      "seed": 43,
+      "phase_sha256": "0de0a35f10b25101a4947af656c60135d19434570549a2bb23af7a3b5df79d27",
+      "metrics": {
+        "loss": 0.02736101447045803,
+        "heatmap_loss": 0.001834841231815517,
+        "coordinate_loss": 0.25526172828674315,
+        "pck_at_0.2_torso": 0.7342857142857143,
+        "pckh_at_0.5_head": 0.8515,
+        "mean_pixel_error": 15.117004339760037,
+        "normalized_mean_error_torso": 0.23050039051073298,
+        "evaluated_joints": 14000,
+        "pck_evaluated_joints": 14000,
+        "pckh_evaluated_joints": 14000,
+        "per_joint_pck_at_0.2_torso": {
+          "right_ankle": 0.707,
+          "right_knee": 0.736,
+          "right_hip": 0.749,
+          "left_hip": 0.74,
+          "left_knee": 0.746,
+          "left_ankle": 0.719,
+          "right_wrist": 0.609,
+          "right_elbow": 0.68,
+          "right_shoulder": 0.789,
+          "left_shoulder": 0.756,
+          "left_elbow": 0.656,
+          "left_wrist": 0.572,
+          "neck": 0.889,
+          "head_top": 0.932
+        },
+        "per_joint_counts": {
+          "right_ankle": 1000,
+          "right_knee": 1000,
+          "right_hip": 1000,
+          "left_hip": 1000,
+          "left_knee": 1000,
+          "left_ankle": 1000,
+          "right_wrist": 1000,
+          "right_elbow": 1000,
+          "right_shoulder": 1000,
+          "left_shoulder": 1000,
+          "left_elbow": 1000,
+          "left_wrist": 1000,
+          "neck": 1000,
+          "head_top": 1000
+        },
+        "normalization": {
+          "PCK": "mean distance of the two shoulder-to-opposite-hip torso diagonals",
+          "PCKh": "2 * distance(neck, head_top)"
+        },
+        "samples": 1000,
+        "phase": "global_uniform_seed43",
+        "epoch": 50,
+        "model": "student"
+      }
+    },
+    {
+      "seed": 44,
+      "phase_sha256": "6fdce4e1ff3ce7a5580d6553417a64393173f211cecc7bf4a8bb5f95f86aeb14",
+      "metrics": {
+        "loss": 0.027360544055700303,
+        "heatmap_loss": 0.0018344769831746817,
+        "coordinate_loss": 0.2552606666088104,
+        "pck_at_0.2_torso": 0.7334285714285714,
+        "pckh_at_0.5_head": 0.8515,
+        "mean_pixel_error": 15.147000757184545,
+        "normalized_mean_error_torso": 0.23092796217381306,
+        "evaluated_joints": 14000,
+        "pck_evaluated_joints": 14000,
+        "pckh_evaluated_joints": 14000,
+        "per_joint_pck_at_0.2_torso": {
+          "right_ankle": 0.705,
+          "right_knee": 0.734,
+          "right_hip": 0.747,
+          "left_hip": 0.739,
+          "left_knee": 0.744,
+          "left_ankle": 0.716,
+          "right_wrist": 0.606,
+          "right_elbow": 0.679,
+          "right_shoulder": 0.791,
+          "left_shoulder": 0.756,
+          "left_elbow": 0.657,
+          "left_wrist": 0.572,
+          "neck": 0.89,
+          "head_top": 0.932
+        },
+        "per_joint_counts": {
+          "right_ankle": 1000,
+          "right_knee": 1000,
+          "right_hip": 1000,
+          "left_hip": 1000,
+          "left_knee": 1000,
+          "left_ankle": 1000,
+          "right_wrist": 1000,
+          "right_elbow": 1000,
+          "right_shoulder": 1000,
+          "left_shoulder": 1000,
+          "left_elbow": 1000,
+          "left_wrist": 1000,
+          "neck": 1000,
+          "head_top": 1000
+        },
+        "normalization": {
+          "PCK": "mean distance of the two shoulder-to-opposite-hip torso diagonals",
+          "PCKh": "2 * distance(neck, head_top)"
+        },
+        "samples": 1000,
+        "phase": "global_uniform_seed44",
+        "epoch": 50,
+        "model": "student"
+      }
+    },
+    {
+      "seed": 45,
+      "phase_sha256": "3b9e3386e617a74b09b36f1c6f80af3ef974303e8b601189388c36936a00cb99",
+      "metrics": {
+        "loss": 0.027361366391181946,
+        "heatmap_loss": 0.001835154096595943,
+        "coordinate_loss": 0.25526211810112,
+        "pck_at_0.2_torso": 0.7342857142857143,
+        "pckh_at_0.5_head": 0.8516428571428571,
+        "mean_pixel_error": 15.117918619518967,
+        "normalized_mean_error_torso": 0.2305081968801899,
+        "evaluated_joints": 14000,
+        "pck_evaluated_joints": 14000,
+        "pckh_evaluated_joints": 14000,
+        "per_joint_pck_at_0.2_torso": {
+          "right_ankle": 0.707,
+          "right_knee": 0.734,
+          "right_hip": 0.745,
+          "left_hip": 0.742,
+          "left_knee": 0.744,
+          "left_ankle": 0.721,
+          "right_wrist": 0.61,
+          "right_elbow": 0.681,
+          "right_shoulder": 0.79,
+          "left_shoulder": 0.755,
+          "left_elbow": 0.654,
+          "left_wrist": 0.574,
+          "neck": 0.89,
+          "head_top": 0.933
+        },
+        "per_joint_counts": {
+          "right_ankle": 1000,
+          "right_knee": 1000,
+          "right_hip": 1000,
+          "left_hip": 1000,
+          "left_knee": 1000,
+          "left_ankle": 1000,
+          "right_wrist": 1000,
+          "right_elbow": 1000,
+          "right_shoulder": 1000,
+          "left_shoulder": 1000,
+          "left_elbow": 1000,
+          "left_wrist": 1000,
+          "neck": 1000,
+          "head_top": 1000
+        },
+        "normalization": {
+          "PCK": "mean distance of the two shoulder-to-opposite-hip torso diagonals",
+          "PCKh": "2 * distance(neck, head_top)"
+        },
+        "samples": 1000,
+        "phase": "global_uniform_seed45",
+        "epoch": 50,
+        "model": "student"
+      }
+    },
+    {
+      "seed": 46,
+      "phase_sha256": "37ed2099051f149e6e6e26562f6b4228570c5506de6c0c54638e441273a427aa",
+      "metrics": {
+        "loss": 0.027360658884048462,
+        "heatmap_loss": 0.001834578494541347,
+        "coordinate_loss": 0.2552608015537262,
+        "pck_at_0.2_torso": 0.7343571428571428,
+        "pckh_at_0.5_head": 0.8517857142857143,
+        "mean_pixel_error": 15.109371293030812,
+        "normalized_mean_error_torso": 0.23041307483597168,
+        "evaluated_joints": 14000,
+        "pck_evaluated_joints": 14000,
+        "pckh_evaluated_joints": 14000,
+        "per_joint_pck_at_0.2_torso": {
+          "right_ankle": 0.706,
+          "right_knee": 0.735,
+          "right_hip": 0.748,
+          "left_hip": 0.742,
+          "left_knee": 0.746,
+          "left_ankle": 0.716,
+          "right_wrist": 0.608,
+          "right_elbow": 0.682,
+          "right_shoulder": 0.789,
+          "left_shoulder": 0.755,
+          "left_elbow": 0.657,
+          "left_wrist": 0.573,
+          "neck": 0.89,
+          "head_top": 0.934
+        },
+        "per_joint_counts": {
+          "right_ankle": 1000,
+          "right_knee": 1000,
+          "right_hip": 1000,
+          "left_hip": 1000,
+          "left_knee": 1000,
+          "left_ankle": 1000,
+          "right_wrist": 1000,
+          "right_elbow": 1000,
+          "right_shoulder": 1000,
+          "left_shoulder": 1000,
+          "left_elbow": 1000,
+          "left_wrist": 1000,
+          "neck": 1000,
+          "head_top": 1000
+        },
+        "normalization": {
+          "PCK": "mean distance of the two shoulder-to-opposite-hip torso diagonals",
+          "PCKh": "2 * distance(neck, head_top)"
+        },
+        "samples": 1000,
+        "phase": "global_uniform_seed46",
+        "epoch": 50,
+        "model": "student"
+      }
+    }
+  ],
+  "noise_summary": {
+    "pck_at_0.2_torso": {
+      "mean": 0.7341714285714286,
+      "std_population": 0.00037958086444533353,
+      "min": 0.7334285714285714,
+      "max": 0.7345
+    },
+    "pckh_at_0.5_head": {
+      "mean": 0.8517000000000001,
+      "std_population": 0.0002138089935299308,
+      "min": 0.8515,
+      "max": 0.8520714285714286
+    },
+    "normalized_mean_error_torso": {
+      "mean": 0.23046917495734554,
+      "std_population": 0.000296576366223344,
+      "min": 0.22999625038602017,
+      "max": 0.23092796217381306
+    }
+  },
+  "pck_drop_percentage_points": 0.061428571428567835,
+  "fusion": {
+    "block1_optical_fusion": 0.1335572898387909,
+    "block2_optical_fusion": 0.07286912947893143
+  },
+  "source_checkpoint_sha256": "495b9c2c4e3df15d3715f1ce8f2faea7cb9156275b31103ec684f4e96a328518",
+  "only_global_phase_changed": true,
+  "all_state_restored_exactly": true,
+  "retraining": false
+}

@@ -1,5 +1,7 @@
 # t02_keypoint_detection 复现说明入口
 
+[最后global相位替换为固定噪声](GLOBAL_NOISE.md)：干预范围、5个seed、低/高alpha的独立评估与命令。
+
 [两级alpha≥0.5硬约束续训](ALPHA50.md)：初始化、分阶段训练、迁移评估合同及命令。
 
 [Qwen 轻量读出头预算对照](QWEN_HEAD_BUDGET.md)：完整冻结视觉主干，头由110.3万缩为13.84万参数，保留原baseline。

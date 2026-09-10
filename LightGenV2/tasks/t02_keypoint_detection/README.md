@@ -1,5 +1,7 @@
 # T02 关键点检测（LSP）
 
+新增：[global随机相位消融](reports/reproduction/GLOBAL_NOISE.md)：冻结模型，仅替换最后478×478 global相位，5个seed×完整1000张test；低alpha先测，高alpha最终best训练结束后再测。
+
 2026-09-10：[两级alpha≥0.5硬约束续训](reports/reproduction/ALPHA50.md)，profile `alpha50`，
 两级初始化0.55；保留73.48%的低alpha版本作对照，不覆盖旧PT。新旧checkpoint架构标识隔离。
 
