@@ -1,4 +1,4 @@
-"""Build the current Temporal-36 hardware-control and fine-tuning ZIP."""
+"""Build a self-contained T06 hardware-control and fine-tuning ZIP."""
 
 from __future__ import annotations
 
@@ -29,10 +29,14 @@ def main() -> int:
             f"Canonical checkpoint is not present on this machine: {checkpoint}\n"
             "Use --checkpoint or run this command on the source training server."
         )
+    safe_profile = "".join(
+        character if character.isalnum() or character in "-_" else "_"
+        for character in args.profile
+    )
     output = (
         TASK_DIR
         / "releases"
-        / f"{datetime.now().strftime('%Y%m%d')}_temporal36_balanced_full_lab.zip"
+        / f"{datetime.now().strftime('%Y%m%d')}_{safe_profile}_full_lab.zip"
         if args.output is None
         else Path(args.output).expanduser().resolve()
     )

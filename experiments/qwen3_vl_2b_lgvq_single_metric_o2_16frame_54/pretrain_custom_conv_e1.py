@@ -21,7 +21,7 @@ from torch.utils.data import DataLoader, Dataset
 
 from .data import read_manifest
 from .modeling import CustomConvE1Correction, build_model
-from .settings import load_settings
+from .settings import load_settings, resolved_dict
 
 
 def _sha256(path: Path) -> str:
@@ -244,8 +244,15 @@ def run(
     output = output.expanduser().resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
     payload = {
+        "schema_version": 1,
+        "architecture": student_settings.architecture_label,
+        "target_name": student_settings.target_name,
+        "prompt": student_settings.prompt,
         "state_dict": full_student.state_dict(),
         "epoch": 0,
+        "settings": resolved_dict(student_settings),
+        "selection_policy": "highest held-out feature PCC during E1 distillation",
+        "teacher_or_qwen_loaded_during_student_inference": False,
         "pretraining": {
             "best_epoch": best_epoch,
             "teacher_used_during_training_only": True,
