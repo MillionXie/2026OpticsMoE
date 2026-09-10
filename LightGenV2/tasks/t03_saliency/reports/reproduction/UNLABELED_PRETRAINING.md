@@ -53,3 +53,20 @@ python -m LightGenV2.tasks.t03_saliency.prepare_unlabeled_pool \
 后续教师预测、光电预训练和真值微调应分别有身份清单；只在空出当前两张卡之一后执行。
 预训练仅使用上述排除后的额外图像；正式微调仍只使用10000张SALICON train，5000张public-test
 仅按既有已披露的公开测试选模口径评估。完成标准独立复评之前不得更新正式成绩。
+
+## CPU准备已完成
+
+代码 `051a9da53a7580d6d8fc823e8d8af95faa8152cd`：本地准备器3项测试通过，服务器T03全套
+115项通过（26.20秒，既有matplotlib弃用警告13项），先push GitHub再运行实际数据准备。
+2026-09-10 13:21 CST完成；20,000张ID候选又发现1张内容重复（COCO ID410810），
+仅从候选清单排除，**没有删除原图**。最终19999张，现有原图3247811485字节。
+
+正式清单就是上方命令的 `image_manifest.json`：
+
+- manifest SHA256：`d0600cf3a4eb8e1bd0d6dc415a237c2c5fe6ce88ca3a77385d26243d44874182`
+- 最终19999个ID SHA256：`1ab59f56a3304dca39829e5b14e59c35a218128d303baf480dc15de1a987d60a`
+- 排除用train ID SHA256：`15e2eca8377f91111cfc35148306c6c11ba7ac99e6fcdc1359eee3b1170f2f96`
+- 排除用test ID SHA256：`643e536bcfb4ba21c77f1be6a13fdf374b1e43499223044117a6ad63e61dce80`
+
+全部采用本页带末尾换行的数值ID口径。CPU准备进程正常退出，未使用第三张GPU。
+这证明图像池与当前训练/测试ID、文件字节的隔离，不证明预训练已执行或提升性能。
