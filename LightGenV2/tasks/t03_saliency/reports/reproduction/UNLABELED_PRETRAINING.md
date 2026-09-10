@@ -197,3 +197,33 @@ loss=1.01628029，alpha=.43072152/.44106743；router raw RMS更新约1.29e-5，
 正式两组均batch32、评估batch48、workers2，40轮，源SHA87ad，推理参数不变。
 当前只是启动记录，不代表已完成或提升。后续看`metrics/training_history.csv`、
 `training_report.json`和重载best的完整5000图评估；有实质提升再独立float64复评。
+
+## 较早权重的额外图像对照（准备中，未启动）
+
+后期87ad来源的额外组第1/5轮CC为.86218145/.86201662，同轮普通控制为
+.86204380/.86179060：有减轻下降的迹象，但尚无持续提升；两组仍运行，不是最终结果。
+若后期来源持续平台，下一对照使用已有较早的`moe_alpha40_refine_weakaug_seed42`，
+best SHA已重新核验为`de477b8c13c46c50cb9f17eb0b62bc577aaefef5512887e1e17a86d0affb5eea`。
+这是此前反复精修之前、历史CC约.85468765的来源，不是随机初始化，也不是从其optimizer精确续训。
+
+- `moe_alpha40_extra_early_control.yaml`：80轮、无额外图像。
+- `moe_alpha40_extra_early_coco20k.yaml`：同样80轮，额外图像空间CC监督系数.6。
+
+两组相同来源、初始化函数、GT损失、SAM .05、EMA .995、batch32、测试batch48、seed42；
+教师监督2恒定，关闭在线增强，始终保留GT。E/phase/router/CCD/head/CFFN学习率为
+3e-5/5e-4/5e-5/3e-5/5e-5/2e-4；1–60轮联合训练，61–80轮小步精修，不新增电子模块。
+这些学习率沿用此前已验证的较早来源训练量级，不是在运行中的任务上偷偷修改。
+源权重早于当前CFFN，因此只对当前网络已有的6912个空间DW参数作恒等初始化；
+**相对当前部署候选不增加任何推理参数**。原光相位、alpha和解码头严格加载，不重置。
+需要真实网络验证源模型与初始化后模型在eval下输出一致，并检查新增恒等参数能更新。
+
+这是同一较早来源内部的配对对照，不能只与后期40轮比较就把差异归因于数据；
+额外组仍多用19999张图和约两倍学生训练前向计算，公平性披露不变。
+
+```bash
+# 仅在原作业结束或明确记录停止、核查显存释放后，由空出的两张卡顺序启动。
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=1 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_extra_early_control.yaml --phase all
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_extra_early_coco20k.yaml --phase all
+```
+
+本节为待验证/排队方案，不代表已启动80轮，不得占用第三张卡。只保留best/last，正式结论仍需完整测试复评。
