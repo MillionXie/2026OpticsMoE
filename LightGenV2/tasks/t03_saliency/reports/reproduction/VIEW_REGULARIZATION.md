@@ -74,7 +74,15 @@ CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=1 HF_HUB_OFFLINE=1 TRANSFORMER
 数据加载器使用spawn避免继承CUDA上下文，导出完核查自身PID/显存释放。
 原有配置不会自动使用此缓存；仅下面显式启用的新配置用于受控对照。
 
-### 固定裁剪受控训练（显式新配置，待回归与启动）
+### 固定裁剪受控训练（actual已启动，proxy等待资源名额）
+
+2026-09-10：源码`1caec282f68444499796a073f473740418b8ce77`通过完整214项CPU测试
+（47.80秒、13条既有依赖警告），包含实际SAM循环两次前向/一次更新/当前教师目标清理检查。
+成功推送GitHub后，确认GPU3无计算进程、目标run不存在，使用该固定commit从
+`.worktrees/t03_balance`启动actual组PID/PGID2199357；GPU0深监督PID2048201保持运行，
+同时共两张卡。此时启动日志处于数据/权重加载阶段，不是已有新测试结果；proxy尚未启动。
+启动环境：`CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=3 HF_HUB_OFFLINE=1
+TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4`，完整命令见下方。
 
 `moe_alpha40_fixed_crop_actual.yaml`与`moe_alpha40_fixed_crop_proxy.yaml`均继承原87ad来源的
 40轮GT+spatial-CC KD2/SAM.05控制；只改变训练视图和相应教师目标，不改模型、初始化权重、
