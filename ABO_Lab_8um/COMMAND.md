@@ -292,6 +292,25 @@ CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=4 python offload.py compute --
 & $py run.py evaluate --session pilot02 --device cuda
 ```
 
+若实验电脑评估太慢，且此前已用 `offload.py` 导出前五层，可只补传最后一层到服务器：
+
+```powershell
+# 实验电脑：检查前五层记录不变，打包全部最后一层实测 PNG；不访问硬件、不删除 TIFF
+& $py evaluate_offload.py export --session pilot02 --base-report transfers/pilot02_lg_input.report.json --archive transfers/pilot02_eval_delta.zip
+```
+
+将增量 ZIP 传到已有相同模型和前五层快照的服务器，再执行：
+
+```bash
+# 请先检查空闲 GPU，并用 CUDA_VISIBLE_DEVICES=GPU-实际UUID 指定一张卡
+python evaluate_offload.py evaluate --base-archive transfers/pilot02_lg_input.zip --base-dir transfers/pilot02_lg_compute/snapshot --archive transfers/pilot02_eval_delta.zip --out transfers/pilot02_server_eval --device cuda
+```
+
+输出 `transfers/pilot02_server_eval/evaluation_results.zip`，包含指标、逐图预测、embedding 和校验/版本报告。
+仅使用六层真实 CCD：前五层复用 SHA 核验过的不可变快照，最后一层核验 PNG 与采集记录；不重新读取原始 TIFF。
+按原模型 FP32 计算，禁用 TF32、不训练、不补仿真。回传结果放到会话 `results/server_fp32/`，避免覆盖本地结果。
+所有目标 ZIP/计算目录应为新路径；重复运行请换名字，不要删除已有实测数据。
+
 结果`sessions/pilot02/results/metrics.json`含R@1/5/10、MRR、逐图预测；`embeddings.npz`可继续分析。请使用与上述采集相同的会话名。任何一层真实CCD缺失都会停止，绝不回退仿真。
 
 换曝光/ROI/方向/灰度LUT后重新生成BMP并新建会话，如pilot03。不要复用不一致的前层CCD。
