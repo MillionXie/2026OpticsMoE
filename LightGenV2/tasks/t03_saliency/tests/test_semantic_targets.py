@@ -3,7 +3,7 @@ import json
 
 import pytest
 
-from LightGenV2.tasks.t03_saliency.prepare_semantic_targets import prepare, semantic_records
+from LightGenV2.tasks.t03_saliency.prepare_semantic_targets import prepare, semantic_records, add_spatial_boxes
 from LightGenV2.tasks.t03_saliency.prepare_unlabeled_pool import file_sha, ids_sha
 
 
@@ -60,3 +60,51 @@ def test_preparer_checks_hashes_excludes_salicon_and_refuses_overwrite(tmp_path)
     p['images'][0]['image_id']=100;manifest.write_text(json.dumps(p))
     with pytest.raises(ValueError,match='overlaps SALICON'):
         prepare(ann,file_sha(ann),manifest,file_sha(manifest),tmp_path/'SALICON',tmp_path/'rejected.json')
+
+
+def spatial_fixture():
+    a,p=fixture()
+    for image in a['images']:image.update(width=100,height=50)
+    a['annotations'][0]['bbox']=[-10,5,40,20]
+    a['annotations'][1]['bbox']=[20,20,0,10]
+    # Outside selected pool: it must not contribute any regions.
+    a['annotations'][2]['bbox']=[0,0,100,50]
+    return a,p
+
+
+def test_regions_are_clipped_normalized_ordered_and_do_not_leak_unselected_images():
+    a,p=spatial_fixture();result=add_spatial_boxes(a,semantic_records(a,p))
+    assert result['spatial_box_count']==1 and result['spatial_boxes_clipped']==1
+    assert result['spatial_boxes_skipped_nonpositive_or_outside']==1
+    assert result['records'][0]['boxes_xyxy_unit']==[
+        {'annotation_id':1,'category_id':3,'xyxy':[0.,.1,.3,.5]}]
+    assert result['records'][1]['boxes_xyxy_unit']==[]
+    assert result['records'][0]['source_size_wh']==[100,50]
+    assert result['additional_human_box_supervision']
+
+
+@pytest.mark.parametrize('bad',[None,[0,1,2],[0,0,float('nan'),1],[0,0,float('inf'),1]])
+def test_invalid_boxes_rejected(bad):
+    a,p=spatial_fixture();a['annotations'][0]['bbox']=bad
+    with pytest.raises(ValueError,match='bbox'):add_spatial_boxes(a,semantic_records(a,p))
+
+
+def test_image_annotation_geometry_checked_before_writing_regions(tmp_path):
+    from PIL import Image
+    a,p=spatial_fixture();root=tmp_path/'coco';root.mkdir();p['coco_root']=str(root)
+    for item in p['images']:
+        item['image_file']=f"{item['image_id']:012d}.jpg"
+        Image.new('RGB',(100,50)).save(root/item['image_file'])
+    for split,folder,image_id in [('train','train',100),('test','val',200)]:
+        d=tmp_path/'SALICON/images'/folder;d.mkdir(parents=True)
+        (d/f'{image_id:012d}.jpg').write_bytes(b'exclusion fixture')
+        p[f'salicon_{split}_count']=1;p[f'salicon_{split}_ids_sha256']=ids_sha([image_id])
+    ann=tmp_path/'ann.json';manifest=tmp_path/'pool.json'
+    ann.write_text(json.dumps(a));manifest.write_text(json.dumps(p))
+    def run(out):return prepare(ann,file_sha(ann),manifest,file_sha(manifest),tmp_path/'SALICON',out,include_boxes=True)
+    out=tmp_path/'regions.json';report=run(out)
+    assert report['spatial_box_count']==1
+    assert json.loads(out.read_text())['purpose']=='training_only_auxiliary_object_regions_not_saliency_ground_truth'
+    Image.new('RGB',(99,50)).save(root/p['images'][0]['image_file'])
+    with pytest.raises(ValueError,match='dimensions mismatch'):run(tmp_path/'bad.json')
+    assert not (tmp_path/'bad.json').exists()
