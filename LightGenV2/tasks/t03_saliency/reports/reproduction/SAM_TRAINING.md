@@ -921,3 +921,44 @@ python -m LightGenV2.tasks.t03_saliency.recheck_aligned --system optical --confi
 早期空间CC/SAM最后落盘epoch11，全局rank16组合epoch42；两者没有training_report.json，
 各自best/last文件仍在。前文“仍在训练”描述为暂停前状态，不能据此自动重启。
 等待用户明确恢复指示；目标.87未达到，不以暂停、停止或阶段性成绩冒充完成。
+# 2026-09-10：完整干净训练集拟合诊断
+
+这项检查不训练、不选新权重、不改推理网络；对已完成50轮KD2实验的best和last，
+统一使用EMA权重、eval模式、无增强/随机光学扰动，复评全部10000张train2014。
+不能把这些训练集数值填入论文测试性能列，也不能把训练日志中含SAM/噪声的CC直接与它比较。
+
+| 权重 | 干净训练集CC（独立float64） | 已记录完整public-test CC | 说明 |
+|---|---:|---:|---|
+| best，epoch5 EMA | .8747706024 | .8620496019 | 既有独立测试复评 |
+| last，epoch50 EMA shadow | .8768489866 | .8611217465 | 测试列是该末轮周期测试，未在本诊断重跑test |
+
+训练拟合提高约.00208而测试下降约.00093，存在后期过拟合迹象；但训练集本身仍未达.88，
+不能仅解释为“训练集已拟合很好，只需继续增强正则”，也不能仅凭这两点证明容量是唯一瓶颈。
+另以既有FP16教师训练logits缓存、同10000个ID和密度图计算CC64=.8950629235，
+仅作缓存拟合参考，不是新一次Qwen前向或新baseline测试成绩。缓存SHA仍为
+`a45a90fe1dc029961464304373473d1271594128fc7b7f2ac80775f8638dd60e`，来源教师531c4a33。
+计算逐图softmax(logits)与prepared density的Pearson再取均值，不将图像混在一起算CC。
+
+复评入口新增`--split train`（默认仍为test），要求完整样本数、唯一ID；训练诊断不随机打乱/增强。
+`--use-ema-state`显式读取last内的`ema_state.core/head`，缺失时报错，不回退live。
+best本身已存EMA core/head，因此不加此开关。两个文件的SHA对应整个源checkpoint的实际加载字节，
+不是另存一个EMA PT；没有新增周期权重。报告中的`aligned_readout_parameter_audit`仍是
+Qwen同规格头的参考预算，不能当成光电网络总参数量。
+
+```bash
+TASK=LightGenV2/tasks/t03_saliency
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=1 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -m LightGenV2.tasks.t03_saliency.recheck_aligned --system optical --config "$TASK/configs/moe_alpha40_sam_spatialcc_kd2.yaml" --checkpoint "$TASK/runs/simulation/moe_alpha40_sam_spatialcc_kd2_seed42/best_checkpoint.pt" --run-dir "$TASK/runs/simulation/fit_diagnostic_20260910_spatialcc_kd2_train" --batch-size 32 --split train
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=1 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -m LightGenV2.tasks.t03_saliency.recheck_aligned --system optical --config "$TASK/configs/moe_alpha40_sam_spatialcc_kd2.yaml" --checkpoint "$TASK/runs/simulation/moe_alpha40_sam_spatialcc_kd2_seed42/last_checkpoint.pt" --run-dir "$TASK/runs/simulation/fit_diagnostic_20260910_spatialcc_kd2_last_ema_train" --batch-size 32 --split train --use-ema-state
+```
+
+命令拒绝覆盖已有run；重跑应使用新的明确命名诊断目录。每个目录含`reproduction.json`、
+10000行`per_image_cc.csv`、配置与数据清单。全部ID以train/开头、无重复，CSV重算均值与报告相符。
+best检查源码172b1919（160项CPU测试）；last检查源码fe327893（165项CPU测试），均先同步GitHub。
+GPU1两项诊断串行，均正常退出且显存释放；未超过包括GPU0在训任务在内的两卡预算。
+
+- best源SHA：`87ad4db51e3f58f9a41d6df09092439e5a09e81e93f88a3bfe2d3d008fafb29a`。
+- last源SHA：`1cb22a0f5122ff2248c72c8f463a35e36d6396647acaa220d196aa2705033d7d`。
+- best复评报告SHA：`1da42668e9252e1818ee7f9b2e97da4fe5d817f1b18c40321def8f4b9ca28f75`。
+- last复评报告SHA：`882184f8d34c40263285272e459144093f9b14e02d5cf74bd064a5f235345dce`。
+- best逐图CSV SHA：`e5ddd6a4bb48c6cbf9a02674d808b171d4b02280f11c0a47d8460961cec379d7`。
+- last逐图CSV SHA：`6e312684e0784d27d5c413dddbb4f365adb9007738edec4047c5bacaff7b829b`。
