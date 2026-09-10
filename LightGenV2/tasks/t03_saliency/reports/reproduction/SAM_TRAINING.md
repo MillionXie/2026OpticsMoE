@@ -836,3 +836,10 @@ python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TA
 正式输出`runs/simulation/moe_alpha40_viewreg_sam_spatialcc_seed42`，仍只best/last。
 完整5000张公开测试参与选模，必须披露偏差。本节是待验证方案，不是性能承诺；
 0.87目标尚未达到，当前完成best仍为前述不新增参数的后期空间CC/KD2。
+
+源码`ed7aa18e3b3f081770a6b9e16e0d08a92f774298`通过101项CPU回归并push后，在GPU3/4090启动，
+复用已无活动进程的`t03_sam`工作树；训练PID2633439，不改变其他活动作业。
+实际初始化报告确认de477b8c…b5eea、仅加入identity CFFN、未重置融合alpha，
+完整5000张warmstart CC=.8546877293，与同源控制一致（GPU微小浮点差异）。
+训练环境torch2.6.0+cu124、Python3.11、HF离线，命令/源码/环境保存在run；尚无完成成绩。
+旧保存器残留的PCK元数据文字勘误见复现README，实际T03按CC选模；本次运行不为说明字段重启。

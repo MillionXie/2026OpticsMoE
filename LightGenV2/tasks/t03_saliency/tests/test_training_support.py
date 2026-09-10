@@ -7,6 +7,26 @@ from LightGenV2.tasks.t03_saliency.settings import load_settings
 from LightGenV2.tasks.t03_saliency.modeling import architecture_label
 
 
+def test_resolved_config_replaces_inherited_pose_selection_text(tmp_path, monkeypatch):
+    import yaml
+    from LightGenV2.tasks.t03_saliency import settings as module
+    s=load_settings(Path(__file__).resolve().parents[1]/'configs/moe_alpha40_viewreg_sam_spatialcc.yaml')
+    s.output_dir=tmp_path
+    def inherited_writer(settings):
+        (settings.output_dir/'resolved_config.yaml').write_text(yaml.safe_dump({
+            'lightgen':{},'protocol':{'checkpoint_selection':'max PCK@0.2; then torso NME',
+                                     'initialization_seed':42}}),encoding='utf-8')
+    monkeypatch.setattr(module,'save_t02_resolved_config',inherited_writer)
+    before=(s.student_epochs,s.test_interval_epochs,s.initialization_checkpoint_sha256)
+    module.save_resolved_config(s)
+    data=yaml.safe_load((tmp_path/'resolved_config.yaml').read_text(encoding='utf-8'))
+    assert data['protocol']['primary_metric']=='CC'
+    assert data['protocol']['checkpoint_selection']=='maximum public-test CC; ties retain the earlier selected epoch'
+    assert data['protocol']['initialization_seed']==42
+    assert data['protocol']['test_used_for_checkpoint_selection'] is True
+    assert before==(s.student_epochs,s.test_interval_epochs,s.initialization_checkpoint_sha256)
+
+
 def test_ema_step_hook_and_restoration():
     model = SimpleNamespace(core=torch.nn.Linear(1, 1, bias=False), head=torch.nn.Linear(1, 1, bias=False))
     model.core.weight.data.zero_()

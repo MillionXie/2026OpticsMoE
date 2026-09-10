@@ -270,6 +270,17 @@ def save_resolved_config(settings: Any) -> None:
     import yaml
     path = settings.output_dir / "resolved_config.yaml"
     values = yaml.safe_load(path.read_text(encoding="utf-8"))
+    # The shared T02 serializer writes pose-specific PCK/NME prose. T03's
+    # actual trainer compares test_metrics['cc'] strictly; describe that here.
+    values.setdefault("protocol", {}).update(
+        checkpoint_selection="maximum public-test CC; ties retain the earlier selected epoch",
+        primary_metric="CC",
+        test_interval_epochs=settings.test_interval_epochs,
+        test_at_epoch_one=True,
+        test_at_final_epoch=True,
+        test_evaluated_during_training=True,
+        test_used_for_checkpoint_selection=True,
+    )
     values["lightgen"].update(task="t03_saliency", ccd_normalization=settings.ccd_normalization,
                             electronic_grn=settings.electronic_grn,
                             electronic_ffn_spatial_dilation=settings.electronic_ffn_spatial_dilation,

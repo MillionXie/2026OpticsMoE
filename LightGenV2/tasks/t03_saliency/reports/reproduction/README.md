@@ -49,6 +49,11 @@
 
 ## 口径（先读）
 
+配置文字勘误（2026-09-10）：早期源码至ed7aa18e的`resolved_config.yaml`可能因复用T02保存器，
+在`protocol.checkpoint_selection`残留PCK/NME描述。T03实际`training.py`严格比较`test_metrics['cc']`，
+`run_manifest.json`和`training_report.json`也记录CC；并未按PCK选模。后续保存器修正该元数据，
+不改变训练/前向/选模实现，不重写历史run或重启活动作业。复现旧run时结合本勘误与执行源码核对。
+
 表中 0.8810 是 **冻结 Qwen3-VL-Embedding-2B 视觉主干 + 有监督训练的显著性解码头**，
 不是零样本 Qwen，也不是 SALICON 官方隐藏测试榜单成绩。输入没有文本，语言 Transformer 不执行。
 原 checkpoint 为历史 `salicon_vision_optical_saliency/checkpoints/teacher_best.pt`，SHA256：
