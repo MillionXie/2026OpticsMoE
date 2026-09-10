@@ -37,6 +37,29 @@ CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=1 HF_HUB_OFFLINE=1 TRANSFORMER
 
 ## 当前候选：掩蔽特征恢复（MGD-inspired，已启动，收益待验证）
 
+联合阶段检查：50%组第10轮完整5000张测试CC=.8615770603179932，继续低于初始化；
+25%组首轮CC=.8620111406326294，仍在辅助detach预热，不能据首轮判断其联合训练优劣。
+
+为排查路由集中，在源码88275498上做只读CPU配对诊断，未占第三张GPU、未写额外PT或缓存：
+原train2014有序清单前128张、batch4、无增强、eval关闭随机光学扰动，原224密度输出，
+逐图float64 Pearson后平均。样本ID每行一个含末尾LF的SHA为
+`de031dc4f1e5b139e39db68e3c229fa68e1a521b4fadff342f5f982fb26c5ff0`。
+`prepare_salicon(persist=False)`及`legacy.build_loaders(training=False)`的train数据集，
+依次严格加载原87ad best、50%组第8轮last的live和同一文件内EMA；同一前端/模型/样本，
+router hook累计`selected_mask`，每图选择两个专家。
+第8轮last在内存一次性读取并锁定SHA
+`7921e9be716f3e7d8d2149bb2d85d599488c318e76f0a5c87acc0b6ebeb3f096`，之后随训练正常覆盖。
+
+|权重视图|训练128张CC（不是测试指标）|四专家选择次数|alpha1 / alpha2|
+|---|---:|---|---|
+|原87ad best EMA|.8767484167|58 / 69 / 65 / 64|.43072182 / .44106704|
+|MGD50 epoch8 live|.8774311262|58 / 69 / 63 / 66|.43016338 / .44078127|
+|同一epoch8 EMA|.8776083652|58 / 69 / 62 / 67|.43020433 / .44080293|
+
+三者均出现全部六种Top2组合；这一小样本未显示坍缩，不据此增加均衡惩罚。
+局部训练拟合略升、完整测试未升，不能把恢复MSE下降当作泛化提升，也不把128张诊断当成
+完整训练集或最终路由审计。暂保留25%配对试验观察进入联合阶段后的完整测试。
+
 2026-09-10正式启动：GitHub已发布源码`f5b29fc9db304daffbfa3df1d34f8975098d1c5f`，
 工作树`.worktrees/t03_kernel13`，GPU3/PID1851792，预算40轮，输出
 `runs/simulation/moe_alpha40_masked_kd_seed42`。此工作树名称沿用历史，不代表模型改成13×13卷积。
