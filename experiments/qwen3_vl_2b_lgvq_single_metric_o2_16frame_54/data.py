@@ -590,7 +590,6 @@ def load_single_metric_cache(settings: ExperimentSettings) -> dict[str, Any]:
             view_path,
             frame_count=settings.frame_count,
             token_grid=settings.token_grid,
-            width=settings.mobilenet_feature_width,
         )
         view_identity = _validate_cache_front_identity(view, language)
         if view_identity["pair"] != front_identity["pair"]:
@@ -725,6 +724,7 @@ def load_single_metric_cache(settings: ExperimentSettings) -> dict[str, Any]:
             sample_ids=manifest_ids,
             frame_count=settings.frame_count,
             token_grid=settings.token_grid,
+            width=settings.mobilenet_feature_width,
         )
         result["mobilenet_tokens"] = mobilenet["tokens"]
         result["mobilenet_feature_cache_path"] = str(
