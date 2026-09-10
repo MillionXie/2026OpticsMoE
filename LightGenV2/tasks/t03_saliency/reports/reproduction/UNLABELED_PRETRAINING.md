@@ -485,3 +485,60 @@ alpha=.43423650/.44139594，约束未破坏；正式完成候选仍不替换。
 仍没有改善证据。语义BCE=.38927541，alpha=.43325114/.44079884；训练路由均衡损失
 与对照接近（1.131735 vs 1.131136），但这不是完整测试专家计数审计，不据此宣称绝对均衡。
 保留当前配置继续观察，不以训练辅助BCE下降替代主任务收益。
+
+### 整图语义辅助停止与弱位置监督试验（2026-09-10）
+
+上述整图语义辅助第10轮CC=.8602547029，未超过同起点对照，因此停止PID756423。
+CPU重载best/last成功：best为第5轮.8606774702，last为第11轮（该轮不安排测试），
+**不是完成80轮**。best/last SHA256分别为：
+
+- `3d4cda5bd7a7313d2e0b658ec15f2755af49368e684cbf9b6ae4e93fd3cb20bb`
+- `7481859547b1485cf2ccff4763faaa6db6905d1f9147cca23c9fafe202b9fac8`
+
+停止后核查并清理自有残留进程761696、763953、935948、936115；全部父子PID消失，
+GPU0无计算进程。没有删除checkpoint或数据。整图类别BCE下降不代表显著性泛化提升。
+
+新试验假设是：只教“有什么”未必能教“在哪里”。这不是已证实的瓶颈。
+保持同一早期来源、原GT/KD/SAM/EMA/光路/alpha/Top2，只把训练专用语义目标换成
+COCO物体框的粗空间覆盖。它使用额外**人工框监督**，必须单列训练标签预算，不能声称
+是纯无标签蒸馏或同标签预算baseline的公平提升；物体框也不等于显著性或注视点真值。
+
+位置数据由`prepare_semantic_targets.py --include-boxes`生成，准备源码`df1f8fc2`：
+同一19999图像身份，135183个框，0个越界裁剪/无效跳过，205张无标注实例；
+全部原图尺寸与COCO尺寸匹配。文件18231832字节（约17.4MiB），SHA256：
+`df80c85b3739bbff551fc27195a5bebe5d20e2cdd9c119d106ca13968d92ae6f`。
+原始标注和图像清单SHA仍为本文件前文610f/d060，SALICON train/test重叠均0。
+
+```bash
+CUDA_VISIBLE_DEVICES='' python -m LightGenV2.tasks.t03_saliency.prepare_semantic_targets --include-boxes --annotation-file cache/qwen3_vl_embedding_2b_salicon_lightgen/coco_annotations2017/instances_train2017.json --annotation-sha256 610fce4944abdeb15354cc765333805529359d12d88f2f711393ca586901d01d --image-manifest cache/qwen3_vl_embedding_2b_salicon_lightgen/coco20k_pretrain_20260910/image_manifest.json --manifest-sha256 d0600cf3a4eb8e1bd0d6dc415a237c2c5fe6ce88ca3a77385d26243d44874182 --salicon-root data/SALICON --output cache/qwen3_vl_embedding_2b_salicon_lightgen/coco20k_pretrain_20260910/semantic_regions.json
+```
+
+文件已存在时不要重复生成；准备工具拒绝覆盖。训练检查其SHA，而不是依赖文件名。
+
+训练实现`6bd576cb`，配置`configs/moe_alpha40_extra_regions.yaml`：
+
+- 原图直接缩到224×224（无裁剪、无EXIF旋转），框以原图宽高归一化，crowd保留。
+- 将框映射到14×14网格，单元标签是框覆盖面积比例。同类多框取最大覆盖率，不累加；
+  这不是精确多框并集，也不是分割。小框保留分数覆盖，不因没命中单元中心直接丢弃。
+- 最后融合特征`[B,196,192]`恢复Qwen的2×2块优先排列为真实空间排列；
+  每个位置非仿射LN、同一个Linear(192,80)，与80类局部覆盖率计算BCE。
+- prior与正样本权重按全额外池的空间覆盖质量计算；保留紧凑框，按批构建标签，
+  不常驻约1.25GB的全量空间标签表。权重规则仍sqrt(negative/positive)截[1,10]。
+- `.5*空间BCE`替代`.5*整图类别BCE`，其余目标不变；15440训练专用参数不进学生core/head，
+  推理没有新支路/attention/参数。权重仍在根字段`training_only_semantic`，live而非EMA。
+
+完整T03测试182项通过（34.35秒，13项既有警告），包含空间坐标、软覆盖、小框、
+batch隔离、类别/身份/SHA/目标模式校验、梯度、RNG中性、部署参数不变检查。
+测试通过不等于新性能结果。启动命令（先核查GPU空闲及总占用不超过两张）：
+
+真实额外池前2张图CPU检查：135183框的prior构建约4.02秒；BCE=.17734723，
+仅反向该辅助项时，输入适配梯度范数.00292613、router相位4.60696e-7、被选专家1/3
+分别1.32151e-5/6.98045e-6、global相位1.00392e-5；专家0/2该批未激活，梯度0。
+这确认辅助项没有断图，不代表所有专家每批都更新。辅助头梯度范数.25373167；
+无优化器更新的两次学生eval输出最大差0。该检查没有保存checkpoint，也不是测试集结果。
+
+```bash
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_extra_regions.yaml --phase all
+```
+
+输出`runs/simulation/moe_alpha40_extra_regions_seed42`，只保留best/last；最高public-test选模仍有选择偏差。
