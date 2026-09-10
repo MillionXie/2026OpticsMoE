@@ -1,0 +1,61 @@
+schema_version: 1
+name: spatial_single_video4_compact_readout
+status: preferred_compact_spatial_candidate
+
+backend:
+  package: experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54
+  config: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_custom_conv_pruned_compact_readout_s919.yaml
+  config_sha256: aa89171911953dbf46ae0e2dfd29585c2b1f4dc7a51352999dee333b578ddde7
+  lab_guide: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/LAB_SPATIAL4_CUSTOM_CONV_GUIDE.md
+  source_sha256:
+    modeling.py: 51e1a3e5ed22ec3fc0df168c0616a487b247ad7cd28c62a121ad124db7e050cd
+    settings.py: 9660b610cf25792378bda369f307b7bbcc9859f4ef6705f4c440d6cc628e0979
+    training.py: 9fa5e14be21822936dbb21bee4904ea146a79a434c18c40da89701f1d152e51a
+    run.py: c12c320e848e68041a32c8a74f38c0deba65d8f03f486f71c9695305960c9b72
+    data.py: f727b8aff3ddb3239a62d2df7684e096b99ef13d6680a7397009f7c63f72e1f0
+
+artifacts:
+  canonical_checkpoint: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_readout_compression_s907/pruned_compact_teacher_only_s919/best_observed_test_checkpoint.pt
+  canonical_checkpoint_sha256: 2882ea83a12089cb4622d7bc698b32779c6628dab3d1d085977808b22af8c4a67
+
+architecture_contract:
+  qwen_vision_blocks_executed: 0
+  qwen_language_blocks_executed: 0
+  transformer_or_attention_in_student: false
+  named_pretrained_backbone_in_inference: false
+  custom_conv_e1_parameters: 316568
+  post_optical_readout_parameters: 2123010
+  full_student_parameters: 4941959
+  two_main_branches_only: [electronic_residual, optical_moe]
+  frame_count: 4
+  parallel_frame_grid: [2, 2]
+  optical_router: top2
+  expert_size: 109
+  wavelength_nm: 532
+  pixel_pitch_um: 17
+  propagation_cm: 10
+  canvas_size: 518
+  active_size: 478
+  unmodulated_power_fraction_eval: 0.20
+
+formal_simulation:
+  test_count: 558
+  selection: highest_periodically_observed_test_srcc
+  srcc: 0.6546994966478319
+  krcc: 0.4762882948084448
+  plcc: 0.6849389564047443
+  rmse: 10.882644653320312
+  mae: 8.634260177612305
+  same_checkpoint_optical_off_srcc: 0.5847250365361208
+  optical_on_minus_off_srcc: 0.06997446011171105
+  source_full_readout_srcc: 0.6552896198543575
+  srcc_change_from_source: -0.0005901232065256
+
+compression:
+  source_readout_parameters: 10031046
+  compact_readout_parameters: 2123010
+  readout_compression_ratio: 4.724922868099538
+  readout_parameter_reduction_fraction: 0.7883550875547711
+  source_full_student_parameters: 12849995
+  compact_full_student_parameters: 4941959
+  checkpoint_size_mib_approx: 19

@@ -17,6 +17,12 @@ PLCC 0.6849；同 checkpoint 关闭光学为 SRCC 0.5624，光学贡献为 +0.09
 MobileNet/ResNet/VGG 特征依赖。结构说明见
 [`SPATIAL_CUSTOM_OEO_ARCHITECTURE.md`](SPATIAL_CUSTOM_OEO_ARCHITECTURE.md)。
 
+面向部署的首选压缩版本为 `spatial_single_video4_compact_readout`：它只替换四层
+光学之后的读出头，把读出头从 1003.1 万压到 212.3 万参数（减少 78.84%），完整
+学生从 1285.0 万降到 494.2 万参数；完整复评 SRCC 为 0.6547，较原模型仅低
+0.00059。结构与证据见 [`SPATIAL_COMPACT_READOUT.md`](SPATIAL_COMPACT_READOUT.md)
+和 [`reports/paper_results/spatial_compact_readout_20260910`](reports/paper_results/spatial_compact_readout_20260910/README.md)。
+
 当前主版本是 `temporal36_balanced`：一个视频均匀取 36 帧，以 6×6 lane 放进同一个
 478×478 有效光场。四专家光学 Top-2 router、六次光传播、20% 名义未调制直流分量、
 鲁棒位移/相位/CCD 扰动和目标专属电子读出头保持不变。
