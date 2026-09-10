@@ -4,7 +4,9 @@
 当前目标CC≥0.88，尚未达到。联合续训与15轮教师预热均已完成60轮，重载best分别.86209653/.86204969，
 没有实质突破；配置和结果见[教师预热对照](reports/reproduction/TEACHER_CURRICULUM.md)。
 下一轮保持推理参数不变、每步保留GT监督，加入排除SALICON重叠后的19999张额外图像教师目标；
-缓存已导出并完成真实GPU短更新检查，40轮SALICON-only对照与额外组均已启动；尚无新完成结果。
+缓存已导出并完成真实GPU短更新检查；后期来源的40轮对照因持续下降已提前停止，
+分别保留第24/10轮last，不得写成完成40轮。额外组best仅.86218145（第1轮），未形成持续改善。
+现准备同架构较早来源的80轮配对训练，尚未启动；不增加推理参数。
 协议与额外数据公平性边界见[额外图像辅助训练](reports/reproduction/UNLABELED_PRETRAINING.md)。
 此前暂停时全部T03训练已停止，7张GPU均0%利用率、仅10–25 MiB占用。
 `viewreg_sam_spatialcc`最后完整日志为epoch11，`sam_spatialcc_kd2_global16`为epoch42，

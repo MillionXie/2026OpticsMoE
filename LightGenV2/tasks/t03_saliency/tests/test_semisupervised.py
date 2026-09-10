@@ -1,4 +1,5 @@
 from contextlib import nullcontext
+import os
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -9,6 +10,32 @@ from LightGenV2.tasks.t03_saliency import semisupervised as semi
 from LightGenV2.tasks.t03_saliency.settings import load_settings
 
 TASK = Path(__file__).resolve().parents[1]
+
+
+class SpawnProbeDataset(torch.utils.data.Dataset):
+    def __len__(self): return 4
+    def __getitem__(self,index):
+        return {'image':index,'sample_id':str(os.getpid())}
+
+
+def test_extra_loader_spawns_and_releases_its_workers(monkeypatch):
+    monkeypatch.setattr(semi,'AuditedUnlabeledImages',lambda *_:SpawnProbeDataset())
+    monkeypatch.setattr(semi,'UnlabeledTeacherMaps',lambda *_:None)
+    s=SimpleNamespace(unlabeled_image_manifest=None,unlabeled_image_manifest_sha256=None,
+        data_root=None,unlabeled_cache=None,unlabeled_cache_sha256=None,
+        distillation_teacher_sha256=None,student_batch_size=2,random_seed=42,num_workers=1)
+    stream=semi.build_unlabeled_stream(s)
+    workers=[]
+    try:
+        assert stream.loader.multiprocessing_context.get_start_method()=='spawn'
+        batch=stream.next_batch()
+        workers=list(stream.iterator._workers)
+        assert all(int(pid)!=os.getpid() for pid in batch['sample_ids'])
+    finally:
+        stream.close()
+        for worker in workers:
+            worker.join(timeout=10)
+    assert all(not worker.is_alive() for worker in workers)
 
 
 def test_mixed_objective_preserves_gt_gradient_and_averages_regularizers():

@@ -50,7 +50,11 @@ def build_unlabeled_stream(settings):
     loader = DataLoader(dataset, batch_size=settings.student_batch_size, shuffle=True,
                         generator=torch.Generator().manual_seed(settings.random_seed + 149),
                         num_workers=settings.num_workers, collate_fn=collate_unlabeled,
-                        drop_last=False)
+                        drop_last=False,
+                        # This iterator is created after the student is on CUDA.
+                        # Forked workers inherit driver descriptors and can retain
+                        # GPU resources if the training parent is terminated.
+                        **({'multiprocessing_context':'spawn'} if settings.num_workers else {}))
     return CyclingUnlabeledBatches(loader, teacher)
 
 
