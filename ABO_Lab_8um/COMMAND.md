@@ -221,7 +221,7 @@ CCD方向由上述逻辑四角单应变换处理，不再另加翻转。设置�
 
 ```bash
 # 在服务器ABO_Lab_8um目录；只用一张预先检查空闲的GPU
-CUDA_VISIBLE_DEVICES=4 python offload.py compute --archive transfers/pilot02_lg_input.zip --out transfers/pilot02_lg_compute --device cuda
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=4 python offload.py compute --archive transfers/pilot02_lg_input.zip --out transfers/pilot02_lg_compute --device cuda
 ```
 
 把生成的`transfers/pilot02_lg_compute/language_global_inputs.zip`传回实验电脑后：
@@ -234,6 +234,9 @@ CUDA_VISIBLE_DEVICES=4 python offload.py compute --archive transfers/pilot02_lg_
 
 安装拒绝覆盖已有`play/language_global`或该层CCD；会逐一核对会话、上游实际计算输入、相位SHA、
 2500样本顺序、BMP SHA及面板尺寸。`--limit`只供服务器诊断，部分输出禁止安装为完整阶段。
+服务器默认CUDA编号可能与nvidia-smi编号不同；优先用GPU UUID指定，或显式设置上面的PCI_BUS_ID排序。
+首次跨设备迁移应抽取标题和图像分别比较BMP；FP32跨CUDA代际不承诺严格逐像素相同，
+不得静默切成AMP。计算/传输数据统一放`transfers/`，不入Git。
 
 `stage`自动依次执行prepare和capture。prepare在独立进程中使用CUDA，退出并释放模型后才进入采集，避免模型与显示SDK同时占用显存。
 下面的`--yes`会跳过输入y，生成结束后直接采集。**执行每条命令前必须先手动加载本层相位**；它不会自动切相位，也不绕过文件SHA、会话身份或图像质量检查。
