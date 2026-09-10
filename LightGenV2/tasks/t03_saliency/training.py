@@ -68,6 +68,7 @@ def _checkpoint(
     ema_state: Any = None,
     test_weight_kind: str | None = None,
     training_only_hint: Any = None,
+    training_only_semantic: Any = None,
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(
@@ -79,6 +80,7 @@ def _checkpoint(
             "test_metrics_weight_kind": test_weight_kind or weight_kind,
             "ema_state": ema_state,
             "training_only_hint": training_only_hint,
+            "training_only_semantic": training_only_semantic,
             "core": model.core.state_dict(),
             "saliency_head": model.head.state_dict(),
             "train_metrics": train_metrics,
@@ -172,6 +174,7 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
     best_epoch = -1
     started = time.perf_counter()
     extra_stream = None
+    semantic = None
     try:
         if getattr(settings, 'unlabeled_weight', 0) > 0:
             from .semisupervised import build_unlabeled_stream
@@ -183,13 +186,20 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
                 'ground_truth_supervision_retained': True,
                 'inference_parameters_added': 0,
             })
+            if getattr(settings,'semantic_weight',0):
+                from .semantic_auxiliary import SemanticAuxiliary
+                semantic = SemanticAuxiliary(settings,extra_stream.loader.dataset).to(loaded.device)
+                optim.add_param_group({'params':list(semantic.parameters()),'name':'training_semantic',
+                                      'lr':settings.semantic_learning_rate,'weight_decay':.01})
+                _write_json(settings.output_dir/'semantic_auxiliary_provenance.json',semantic.provenance)
         if getattr(settings, "initialization_checkpoint", None) is not None:
             model.core.set_phase_dropout_active(False)
             initial_metrics, _ = legacy.evaluate_model(model, test_loader, loaded, settings)
             best_cc, best_epoch = float(initial_metrics["cc"]), 0
             if controller is not None:
                 controller.observe(0, best_cc)
-            _checkpoint(settings.output_dir / "best_checkpoint.pt", model, 0, {}, initial_metrics)
+            _checkpoint(settings.output_dir / "best_checkpoint.pt", model, 0, {}, initial_metrics,
+                        training_only_semantic=semantic.state_dict() if semantic is not None else None)
             _write_json(settings.output_dir / "warmstart_evaluation.json", initial_metrics)
             print(f"[T03] warmstart CC={best_cc:.6f}", flush=True)
         for epoch in range(1, int(settings.student_epochs) + 1):
@@ -214,8 +224,10 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
             if extra_stream is not None:
                 from .semisupervised import train_semisupervised_epoch
                 train_metrics = train_semisupervised_epoch(model,train_loader,loaded,epoch_settings,optim,
-                                                            teacher,extra_stream)
+                                                            teacher,extra_stream,semantic=semantic)
                 stage_report['unlabeled_weight'] = settings.unlabeled_weight
+                if semantic is not None:
+                    stage_report['semantic_weight'] = settings.semantic_weight
             elif getattr(settings, "sam_rho", 0) > 0:
                 from .sam_training import train_sam_epoch
                 train_metrics = train_sam_epoch(model, train_loader, loaded, epoch_settings, optim,
@@ -249,7 +261,8 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
                         best_cc, best_epoch = float(test_metrics["cc"]), epoch
                         _checkpoint(settings.output_dir / "best_checkpoint.pt", model,
                                     epoch, train_metrics, test_metrics,
-                                    weight_kind="ema" if ema else "live")
+                                    weight_kind="ema" if ema else "live",
+                                    training_only_semantic=semantic.state_dict() if semantic is not None else None)
                 if controller is not None:
                     action = controller.observe(epoch, float(test_metrics["cc"]))
                     event = {"epoch": epoch, "test_cc": float(test_metrics["cc"]),
@@ -284,6 +297,7 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
                 ema_state=ema.shadow if ema else None,
                 test_weight_kind="ema" if ema else "live",
                 training_only_hint=hints.state_dict() if hints is not None else None,
+                training_only_semantic=semantic.state_dict() if semantic is not None else None,
             )
             if not settings.staged_training:
                 scheduler.step()

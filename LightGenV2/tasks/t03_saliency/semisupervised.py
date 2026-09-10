@@ -65,12 +65,16 @@ def mixed_objective(supervised_task, extra_kd, labeled_regularizer, extra_regula
     return supervised_task + weight * extra_kd + .5 * (labeled_regularizer + extra_regularizer) + phase_dc
 
 
-def train_semisupervised_epoch(model, loader, loaded, settings, optimizer, teacher_cache, extra_stream):
+def train_semisupervised_epoch(model, loader, loaded, settings, optimizer, teacher_cache, extra_stream, semantic=None):
     if settings.sam_rho <= 0 or settings.teacher_only_epochs or settings.augmentation_enabled:
         raise ValueError('Extra-image trial requires SAM, uninterrupted GT and unaugmented inputs')
     if any(isinstance(m,torch.nn.modules.batchnorm._BatchNorm) for m in model.modules()):
         raise RuntimeError('SAM with BatchNorm buffers is not supported')
     model.train()
+    if (semantic is None) != (getattr(settings,'semantic_weight',0) == 0):
+        raise ValueError('Semantic module and configured weight disagree')
+    if semantic is not None:
+        semantic.train()
     totals = defaultdict(float)
     count_labeled = count_extra = 0
     started = time.perf_counter()
@@ -101,10 +105,15 @@ def train_semisupervised_epoch(model, loader, loaded, settings, optimizer, teach
                 dc = legacy.phase_dc_loss(model) if settings.phase_dc_weight>0 else logits.new_zeros(())
                 loss = mixed_objective(task,extra_kd,regularizer,extra_regularizer,
                                        settings.phase_dc_weight*dc,settings.unlabeled_weight)
+                semantic_loss = logits.new_zeros(())
+                if semantic is not None:
+                    semantic_loss = semantic(model.core.last_latent_groups,extra['sample_ids'])
+                    loss = loss + settings.semantic_weight * semantic_loss
             return loss, dict(pieces, loss=loss, router_balance=balance, router_importance=importance,
                               phase_dc=dc, ccd_operating_point=operating, unlabeled_map_kd=extra_kd,
                               unlabeled_router_balance=ubalance, unlabeled_router_importance=uimportance,
-                              unlabeled_ccd_operating_point=uoperating)
+                              unlabeled_ccd_operating_point=uoperating,
+                              **({'unlabeled_semantic_bce':semantic_loss} if semantic is not None else {}))
         values, increase = sam_step(optimizer,closure,settings.sam_rho,loaded.device,settings.gradient_clip_norm)
         values['sam_loss_increase'] = increase
         count_labeled += n

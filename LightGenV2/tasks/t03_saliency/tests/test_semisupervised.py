@@ -68,6 +68,7 @@ class Toy(torch.nn.Module):
 
     def forward(self,pixels,grid):
         self.last = pixels*self.e + self.phase
+        self.core = SimpleNamespace(last_latent_groups=[x.flatten().unsqueeze(-1) for x in self.last])
         self.calls.append(pixels.detach().clone())
         return self.last,None,None
 
@@ -86,7 +87,8 @@ class Teacher:
         return torch.tensor([.1,.3,.7,.2],device=device).reshape(1,1,2,2).repeat(len(ids),1,1,1)
 
 
-def test_real_sam_epoch_uses_four_forwards_one_data_draw_and_one_update(monkeypatch):
+@pytest.mark.parametrize('with_semantic',[False,True])
+def test_real_sam_epoch_uses_four_forwards_one_data_draw_and_one_update(monkeypatch,with_semantic):
     monkeypatch.setattr(semi.legacy,'_autocast',lambda *_:nullcontext())
     monkeypatch.setattr(semi.legacy,'preprocess_vision',
                         lambda processor,images,device:{'pixel_values':torch.stack(images).to(device),'image_grid_thw':None})
@@ -109,7 +111,17 @@ def test_real_sam_epoch_uses_four_forwards_one_data_draw_and_one_update(monkeypa
              'sample_ids':['unlabeled/coco2017/1']}
     ut,lt=Teacher(),Teacher()
     stream=semi.CyclingUnlabeledBatches([extra],ut)
-    metrics=semi.train_semisupervised_epoch(model,[labeled],SimpleNamespace(device=torch.device('cpu'),processor=None),s,optim,lt,stream)
+    class Auxiliary(torch.nn.Module):
+        def __init__(self):
+            super().__init__();self.weight=torch.nn.Parameter(torch.tensor(.3));self.ids=[]
+        def forward(self,groups,ids):
+            self.ids.append(list(ids))
+            return torch.stack([g.mean() for g in groups]).square().mean()*self.weight.square()
+    aux=Auxiliary() if with_semantic else None
+    s.semantic_weight=.5 if with_semantic else 0.
+    if aux is not None:
+        optim.add_param_group({'params':list(aux.parameters()),'name':'training_semantic','lr':.01})
+    metrics=semi.train_semisupervised_epoch(model,[labeled],SimpleNamespace(device=torch.device('cpu'),processor=None),s,optim,lt,stream,semantic=aux)
     hook.remove()
     assert len(updates)==1 and len(model.calls)==4
     assert len(ut.calls)==1 and len(lt.calls)==1 and stream.restarts==0
@@ -120,6 +132,12 @@ def test_real_sam_epoch_uses_four_forwards_one_data_draw_and_one_update(monkeypa
     assert torch.isfinite(model.phase).all() and torch.isfinite(model.e).all()
     assert metrics['samples']==1 and metrics['unlabeled_samples']==1
     assert 'unlabeled_map_kd' in metrics and 'unlabeled_nss' not in metrics
+    if aux is not None:
+        assert aux.ids==[extra['sample_ids'],extra['sample_ids']]
+        assert float(aux.weight)!=pytest.approx(.3)
+        assert metrics['unlabeled_semantic_bce']>0
+    else:
+        assert 'unlabeled_semantic_bce' not in metrics
 
 
 def config(tmp_path,override=''):

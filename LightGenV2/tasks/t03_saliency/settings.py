@@ -102,6 +102,11 @@ def load_settings(path: str | Path) -> Any:
         raise ValueError("teacher_only_epochs must be an integer")
     settings.teacher_only_epochs = teacher_only_epochs
     settings.unlabeled_weight = float(d('unlabeled_distillation.weight', 0.0))
+    settings.semantic_weight = float(d('semantic_auxiliary.weight', 0.0))
+    settings.semantic_learning_rate = float(d('semantic_auxiliary.learning_rate', .001))
+    semantic_path = d('semantic_auxiliary.targets_file')
+    settings.semantic_targets = _resolve(semantic_path,config.parent) if semantic_path else None
+    settings.semantic_targets_sha256 = d('semantic_auxiliary.targets_sha256')
     settings.unlabeled_image_manifest = d('unlabeled_distillation.image_manifest')
     settings.unlabeled_image_manifest_sha256 = d('unlabeled_distillation.image_manifest_sha256')
     settings.unlabeled_cache = d('unlabeled_distillation.cache_file')
@@ -298,6 +303,16 @@ def load_settings(path: str | Path) -> Any:
             value = getattr(settings,name)
             if not isinstance(value,str) or len(value) != 64 or any(c not in '0123456789abcdef' for c in value):
                 raise ValueError('Extra-image manifest/cache must be SHA256-pinned')
+    if not 0 <= settings.semantic_weight <= 2:
+        raise ValueError('Semantic auxiliary weight must be in [0,2]')
+    if settings.semantic_weight:
+        if settings.unlabeled_weight <= 0 or not settings.semantic_targets:
+            raise ValueError('Semantic auxiliary requires the audited extra-image stream')
+        value = settings.semantic_targets_sha256
+        if not isinstance(value,str) or len(value) != 64 or any(c not in '0123456789abcdef' for c in value):
+            raise ValueError('Semantic targets must be SHA256-pinned')
+        if not 0 < settings.semantic_learning_rate <= .01 or settings.electronic_width != 192:
+            raise ValueError('Invalid semantic auxiliary learning rate/feature width')
     return settings
 
 
@@ -377,6 +392,14 @@ def save_resolved_config(settings: Any) -> None:
         'cache_sha256': settings.unlabeled_cache_sha256,
         'inference_parameters_added': 0,
         'ground_truth_supervision_retained': True,
+    }
+    values['semantic_auxiliary'] = {
+        'weight': settings.semantic_weight, 'learning_rate': settings.semantic_learning_rate,
+        'targets_file': str(settings.semantic_targets) if settings.semantic_targets else None,
+        'targets_sha256': settings.semantic_targets_sha256,
+        'training_only_parameters': 15440 if settings.semantic_weight else 0,
+        'inference_parameters_added': 0,
+        'additional_human_semantic_supervision': bool(settings.semantic_weight),
     }
     path.write_text(yaml.safe_dump(values, allow_unicode=True, sort_keys=False), encoding="utf-8")
 
