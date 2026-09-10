@@ -8,8 +8,8 @@ backend:
   config_sha256: bcbe33eb994890e8bd75ee132031132f0554ee82d38bbb2e52f3409b6d54aa31
   lab_guide: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/LAB_TEMPORAL36_BALANCED_GUIDE.md
   source_sha256:
-    modeling.py: b13a4db11be22b714768a5417ce23effa7d4822c4541b3fb894c2ab6ebfb5f27
-    settings.py: 5b74a7feec3dfc949b681a4e2d9aad01b7c73cc20d40458dae08fa9b0c9f6305
+    modeling.py: 51e1a3e5ed22ec3fc0df168c0616a487b247ad7cd28c62a121ad124db7e050cd
+    settings.py: 9660b610cf25792378bda369f307b7bbcc9859f4ef6705f4c440d6cc628e0979
     training.py: 9fa5e14be21822936dbb21bee4904ea146a79a434c18c40da89701f1d152e51a
     run.py: c12c320e848e68041a32c8a74f38c0deba65d8f03f486f71c9695305960c9b72
     data.py: f727b8aff3ddb3239a62d2df7684e096b99ef13d6680a7397009f7c63f72e1f0
