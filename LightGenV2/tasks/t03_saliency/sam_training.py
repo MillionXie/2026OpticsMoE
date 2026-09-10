@@ -70,10 +70,10 @@ def sam_step(optimizer, closure, rho, device, clip_norm=0.):
     return values, increase
 
 
-def train_sam_epoch(model,loader,loaded,settings,optimizer,teacher_cache=None,relation_targets=None):
+def train_sam_epoch(model,loader,loaded,settings,optimizer,teacher_cache=None,relation_targets=None,masked_targets=None):
     if settings.sam_rho == 0:
-        if relation_targets is not None:
-            raise ValueError('Relational distillation requires the audited SAM path')
+        if relation_targets is not None or masked_targets is not None:
+            raise ValueError('Auxiliary distillation requires the audited SAM path')
         return legacy._train_epoch('student',model,loader,loaded,settings,optimizer,
                                    teacher_cache=teacher_cache)
     if any(isinstance(m,torch.nn.modules.batchnorm._BatchNorm) for m in model.modules()):
@@ -98,9 +98,15 @@ def train_sam_epoch(model,loader,loaded,settings,optimizer,teacher_cache=None,re
                 if relation_targets is not None and settings.relational_current_weight > 0:
                     relation = relation_targets.loss(outputs[1], batch['sample_ids'])
                     total = total + settings.relational_current_weight * relation
+                masked = logits.new_zeros(())
+                if masked_targets is not None and settings.masked_current_weight > 0:
+                    masked = masked_targets.loss(outputs[1], batch['sample_ids'],
+                        detach_student=settings.masked_generator_warmup)
+                    total = total + settings.masked_current_weight * masked
             return total,dict(pieces,loss=total,router_balance=balance,router_importance=importance,
                               phase_dc=dc,ccd_operating_point=operating,
-                              **({'relational_loss':relation} if relation_targets is not None else {}))
+                              **({'relational_loss':relation} if relation_targets is not None else {}),
+                              **({'masked_loss':masked} if masked_targets is not None else {}))
         values,increase=sam_step(optimizer,closure,settings.sam_rho,loaded.device,settings.gradient_clip_norm)
         count=len(batch['sample_ids']);totals['samples']+=count
         values['sam_loss_increase']=increase

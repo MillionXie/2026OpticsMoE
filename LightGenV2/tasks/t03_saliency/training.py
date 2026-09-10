@@ -69,6 +69,7 @@ def _checkpoint(
     test_weight_kind: str | None = None,
     training_only_hint: Any = None,
     training_only_semantic: Any = None,
+    training_only_mgd: Any = None,
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(
@@ -81,6 +82,7 @@ def _checkpoint(
             "ema_state": ema_state,
             "training_only_hint": training_only_hint,
             "training_only_semantic": training_only_semantic,
+            **({"training_only_mgd": training_only_mgd} if training_only_mgd is not None else {}),
             "core": model.core.state_dict(),
             "saliency_head": model.head.state_dict(),
             "train_metrics": train_metrics,
@@ -146,6 +148,13 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
     use_spawn_workers(train_loader)
     use_spawn_workers(test_loader)
     optim = optimizer(model, settings)
+    masked_targets = None
+    if getattr(settings, 'masked_distillation', {}):
+        from .masked_distillation import MaskedTeacherRecovery
+        masked_targets = MaskedTeacherRecovery(settings, bundle.train_records).to(loaded.device)
+        optim.add_param_group({'params': list(masked_targets.parameters()), 'name': 'training_mgd',
+                              'lr': settings.masked_distillation['learning_rate'], 'weight_decay': 0.0})
+        _write_json(settings.output_dir/'masked_distillation_provenance.json', masked_targets.provenance)
     if feature_targets is not None:
         from .feature_pretraining import configure_router_path_optimizer
         _write_json(settings.output_dir/'feature_router_path_provenance.json',
@@ -262,6 +271,14 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
                         options['initial_weight'], options['end_epoch'], epoch, options['final_weight'])
                     stage_report['relational_weight'] = epoch_settings.relational_current_weight
                     relation_kwargs['relation_targets'] = relation_targets
+                if masked_targets is not None:
+                    options = settings.masked_distillation
+                    epoch_settings.masked_current_weight = distillation_weight(
+                        options['initial_weight'], options['end_epoch'], epoch, options['final_weight'])
+                    epoch_settings.masked_generator_warmup = epoch <= options['generator_warmup_epochs']
+                    stage_report.update(masked_weight=epoch_settings.masked_current_weight,
+                                        masked_generator_warmup=epoch_settings.masked_generator_warmup)
+                    relation_kwargs['masked_targets'] = masked_targets
                 train_metrics = train_sam_epoch(model, train_loader, loaded, epoch_settings, optim,
                                                 teacher if settings.map_kd_weight > 0 else None, **relation_kwargs)
             elif hints is None:
@@ -330,6 +347,7 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
                 test_weight_kind="ema" if ema else "live",
                 training_only_hint=hints.state_dict() if hints is not None else None,
                 training_only_semantic=semantic.state_dict() if semantic is not None else None,
+                **({'training_only_mgd': masked_targets.state_dict()} if masked_targets is not None else {}),
             )
             if not settings.staged_training:
                 scheduler.step()

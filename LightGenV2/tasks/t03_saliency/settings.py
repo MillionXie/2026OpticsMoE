@@ -336,6 +336,8 @@ def load_settings(path: str | Path) -> Any:
     configure_feature_pretraining(settings, d('feature_pretraining', {}), config.parent)
     from .relational_distillation import configure as configure_relational
     configure_relational(settings, d('relational_distillation', {}), config.parent)
+    from .masked_distillation import configure as configure_masked
+    configure_masked(settings, d('masked_distillation', {}), config.parent)
     return settings
 
 
@@ -348,6 +350,7 @@ def save_resolved_config(settings: Any) -> None:
         convert_router_phase_on_warmstart=settings.convert_router_phase_on_warmstart)
     values['feature_pretraining'] = settings.feature_pretraining
     values['relational_distillation'] = settings.relational_distillation
+    values['masked_distillation'] = settings.masked_distillation
     # The shared T02 serializer writes pose-specific PCK/NME prose. T03's
     # actual trainer compares test_metrics['cc'] strictly; describe that here.
     values.setdefault("protocol", {}).update(
