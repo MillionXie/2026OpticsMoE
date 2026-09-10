@@ -1,3 +1,39 @@
+# T07 复现说明入口
+
+## 当前独立版本（2026-09-10）
+
+日常命令已移至任务根目录 [COMMAND.md](../../COMMAND.md)。`run.py`默认只运行standalone；
+下方历史训练命令明确改为`legacy_run`，仅维护者审计时使用，不能发给接收人当日常入口。
+
+独立代码只使用PyTorch、processor/tokenizer等安装库；不导入其他任务或experiments。
+Qwen参数由safetensors CPU按键读取，仅保留patch/position/merger与固定prompt的词表行。
+不创建AutoModel/Qwen3VLModel，不加载TF/attention/LM-head，不读取原checkpoint优化器。
+首次迁移前端+best+processor+仅训练教师目标共85,580,305字节；原始checkpointSHA保持可追溯。
+
+从仓库根目录执行一次性CPU导出（普通接收人已有assets，不执行）：
+
+```bash
+CUDA_VISIBLE_DEVICES='' HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.export \
+  --qwen /DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-Embedding-2B/snapshots/9f2f7e710d6d81056aa5c0a4f04764fec6bb7bda \
+  --checkpoint LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/polish_phase_reheat_20260910/best_checkpoint.pt \
+  --teacher-cache LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/frozen_qwen_20260909/features.pt \
+  --output LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/standalone_assets_20260910
+```
+
+首轮全量独立评估run=`standalone_verify_20260910`，源commit=`b768403f`：
+4090 Hit@1=70.2083%、mAP@10=0.68001116、同权重去光67.2917%；
+原4090为70.2083%/0.68003894。测试embedding平均余弦0.99999756，RMS差0.00027684，
+并非逐位一致；不篡改原参考特征，不把微小排序差隐藏为“完全相同”。
+最终验收与打包证据继续记录在本节，之后的历史段落保持历史含义。
+
+独立微调保留当前训练目标和鲁棒措施，但改成显式模型后随机数消费顺序可能改变；
+因此只主张固定权重性能复现与可训练性，不承诺重新训练逐epoch等同历史。
+首次独立CPU测试5项通过，原合同加独立测试共16项通过。
+GPU默认1张、上限2张；全量评估/微调验收串行执行，完成后检查对应PID退出。
+
+---
+
 # t07_abo_image_retrieval 复现说明入口
 
 ## 2026-09-09 新一轮图搜图（六次光传播）
@@ -12,28 +48,28 @@ Qwen 与 warmstart 的服务器绝对路径在 `configs/optical_top2_dc20.yaml`�
 python -m unittest discover -s LightGenV2/tasks/t07_abo_image_retrieval/tests -v
 
 # 1. 重跑冻结大模型，自动输出 native/square × 2048/64D 四组结果及教师缓存。
-CUDA_VISIBLE_DEVICES=1 python -u -m LightGenV2.tasks.t07_abo_image_retrieval.run \
+CUDA_VISIBLE_DEVICES=1 python -u -m LightGenV2.tasks.t07_abo_image_retrieval.legacy_run \
   --mode baseline \
   --run-dir LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/frozen_qwen_20260909
 
 # 2. 首次先做一轮小检查（评估仍覆盖完整图库/测试集）。
-CUDA_VISIBLE_DEVICES=1 python -u -m LightGenV2.tasks.t07_abo_image_retrieval.run \
+CUDA_VISIBLE_DEVICES=1 python -u -m LightGenV2.tasks.t07_abo_image_retrieval.legacy_run \
   --mode optical --epochs 1 --steps 2 --eval-interval 1 \
   --run-dir LightGenV2/tasks/t07_abo_image_retrieval/runs/smoke/optical_top2_dc20_20260909
 
 # 3. 正式训练；不能复用已有 checkpoint 的 run-dir。
-CUDA_VISIBLE_DEVICES=1 python -u -m LightGenV2.tasks.t07_abo_image_retrieval.run \
+CUDA_VISIBLE_DEVICES=1 python -u -m LightGenV2.tasks.t07_abo_image_retrieval.legacy_run \
   --mode optical --epochs 40 \
   --run-dir LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/optical_top2_dc20_20260909
 
 # 4. 可选的同结构训练对照：只加强训练集语义中心/KD监督，不新增推理头。
-CUDA_VISIBLE_DEVICES=4 python -u -m LightGenV2.tasks.t07_abo_image_retrieval.run \
+CUDA_VISIBLE_DEVICES=4 python -u -m LightGenV2.tasks.t07_abo_image_retrieval.legacy_run \
   --mode optical --epochs 40 \
   --config LightGenV2/tasks/t07_abo_image_retrieval/configs/optical_top2_dc20_anchor.yaml \
   --run-dir LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/optical_top2_dc20_anchor_20260909
 
 # 5. 固定 best 重评，不重新训练，不需要教师特征缓存。
-CUDA_VISIBLE_DEVICES=1 python -u -m LightGenV2.tasks.t07_abo_image_retrieval.run \
+CUDA_VISIBLE_DEVICES=1 python -u -m LightGenV2.tasks.t07_abo_image_retrieval.legacy_run \
   --mode evaluate \
   --checkpoint LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/optical_top2_dc20_20260909/best_checkpoint.pt \
   --run-dir LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/optical_top2_dc20_reeval_20260909
@@ -56,15 +92,15 @@ baseline 2048D 原长宽比的历史 Hit@1=95.2083%，本轮是否复现必须�
 python -m unittest discover -s LightGenV2/tasks/t07_abo_image_retrieval/tests -v
 
 # 训练方法组；原推理结构不变。
-python -u -m LightGenV2.tasks.t07_abo_image_retrieval.run --mode optical \
+python -u -m LightGenV2.tasks.t07_abo_image_retrieval.legacy_run --mode optical \
   --config LightGenV2/tasks/t07_abo_image_retrieval/configs/refine_training.yaml
 
 # 相同训练方法，再扩大电子残差卷积核 + 非线性读出。
-python -u -m LightGenV2.tasks.t07_abo_image_retrieval.run --mode optical \
+python -u -m LightGenV2.tasks.t07_abo_image_retrieval.legacy_run --mode optical \
   --config LightGenV2/tasks/t07_abo_image_retrieval/configs/refine_electronics.yaml
 
 # 增强模型重评必须传其对应配置，不能用旧的默认线性头配置。
-python -u -m LightGenV2.tasks.t07_abo_image_retrieval.run --mode evaluate \
+python -u -m LightGenV2.tasks.t07_abo_image_retrieval.legacy_run --mode evaluate \
   --config LightGenV2/tasks/t07_abo_image_retrieval/configs/refine_electronics.yaml \
   --checkpoint LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/refine_electronics_20260909/best_checkpoint.pt \
   --run-dir LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/refine_electronics_reeval_20260909
@@ -87,9 +123,9 @@ KD 使用同一训练图片的干净视图缓存，明确属于增强一致性�
 
 ```bash
 # 每组60 epoch，沿用上述 Python 环境与数据/特征缓存；从仓库根执行。
-python -m LightGenV2.tasks.t07_abo_image_retrieval.run --mode optical \
+python -m LightGenV2.tasks.t07_abo_image_retrieval.legacy_run --mode optical \
   --config LightGenV2/tasks/t07_abo_image_retrieval/configs/refine_gallery.yaml
-python -m LightGenV2.tasks.t07_abo_image_retrieval.run --mode optical \
+python -m LightGenV2.tasks.t07_abo_image_retrieval.legacy_run --mode optical \
   --config LightGenV2/tasks/t07_abo_image_retrieval/configs/refine_gallery_relation.yaml
 ```
 
@@ -120,9 +156,9 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.run --mode optical \
 另一组仅将特征相位LR从0.0004提高到0.004，Router与电子LR不变。
 
 ```bash
-python -m LightGenV2.tasks.t07_abo_image_retrieval.run --mode optical \
+python -m LightGenV2.tasks.t07_abo_image_retrieval.legacy_run --mode optical \
   --config LightGenV2/tasks/t07_abo_image_retrieval/configs/polish_low_lr.yaml
-python -m LightGenV2.tasks.t07_abo_image_retrieval.run --mode optical \
+python -m LightGenV2.tasks.t07_abo_image_retrieval.legacy_run --mode optical \
   --config LightGenV2/tasks/t07_abo_image_retrieval/configs/polish_phase_reheat.yaml
 ```
 
@@ -135,7 +171,7 @@ Hit@1=99.375%（1431/1440），不属于独立测试；未见商品仍为334/480
 不得把训练图的该诊断指标填入论文测试性能。
 
 ```bash
-python -m LightGenV2.tasks.t07_abo_image_retrieval.run --mode optical \
+python -m LightGenV2.tasks.t07_abo_image_retrieval.legacy_run --mode optical \
   --config LightGenV2/tasks/t07_abo_image_retrieval/configs/polish_smoothing.yaml
 ```
 
@@ -182,7 +218,7 @@ best epoch的live训练Top-2选择计数：V=[478,473,488,481]，L=[495,481,489,
 ```bash
 CUDA_VISIBLE_DEVICES=GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd \
 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
-/home/guest3/miniconda3/envs/xml/bin/python -m LightGenV2.tasks.t07_abo_image_retrieval.run \
+/home/guest3/miniconda3/envs/xml/bin/python -m LightGenV2.tasks.t07_abo_image_retrieval.legacy_run \
   --mode evaluate \
   --config LightGenV2/tasks/t07_abo_image_retrieval/configs/polish_phase_reheat.yaml \
   --checkpoint LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/polish_phase_reheat_20260910/best_checkpoint.pt \

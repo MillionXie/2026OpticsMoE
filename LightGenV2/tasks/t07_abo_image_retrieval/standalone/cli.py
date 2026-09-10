@@ -36,7 +36,7 @@ def encode(model, processor, samples, device, batch_size):
 def evaluate(model, processor, train, test, device, batch_size, output=None):
     vtrain = encode(model,processor,train,device,batch_size)
     vtest = encode(model,processor,test,device,batch_size)
-    gallery,metadata = _gallery_centroids(train,vtrain)
+    gallery,metadata = _gallery_centroids(train,F.normalize(vtrain.float(),dim=-1))
     metrics,rows,categories = _evaluate(vtest,test,gallery,metadata,_category_prototypes(gallery,metadata))
     if output:
         write_csv(output/'retrieval_predictions.csv',rows)
@@ -65,7 +65,7 @@ def regularization(model):
             phase = 2*torch.pi*raw.sigmoid()
             dc.append(phase.cos().mean().square()+phase.sin().mean().square())
         operating.append(F.smooth_l1_loss(optics.operating_losses[-1],torch.full_like(optics.operating_losses[-1],np.log(.25))))
-    return .08*sum(balances)+.02*sum(importances)+.5*sum(hard)+.005*torch.stack(dc).mean()+.02*torch.stack(operating).mean()
+    return .08*torch.stack(balances).mean()+.02*torch.stack(importances).mean()+.5*torch.stack(hard).mean()+.005*torch.stack(dc).mean()+.02*torch.stack(operating).mean()
 
 
 def finetune(model, processor, train, test, device, args, output):
@@ -89,7 +89,7 @@ def finetune(model, processor, train, test, device, args, output):
         if 'optics.experts.' in n or n.endswith('optics.global_phase'):rate=.004
         elif 'raw_router_phase' in n:rate=.0005
         elif n.startswith('readout.'):rate=.00005
-        elif 'adapter.' in n:rate=.00001
+        elif any(n.startswith(m+'.'+a+'.') for m in ('vision','language') for a in ('input_adapter','input_norm','output_adapter')):rate=.00001
         optgroups.append({'params':[p],'lr':rate,'initial_lr':rate})
     optimizer = torch.optim.AdamW(optgroups,weight_decay=0)
     ema = {n:p.detach().clone() for n,p in parameters}
@@ -127,7 +127,9 @@ def finetune(model, processor, train, test, device, args, output):
                 for n,p in parameters:ema[n].mul_(.99).add_(p,alpha=.01)
             total+=float(loss.detach())
         torch.save({'metadata':model.metadata,'state_dict':model.state_dict(),'epoch':epoch},output/'last.pt')
-        row={'epoch':epoch,'loss':total/args.steps}
+        row={'epoch':epoch,'loss':total/args.steps,'router_counts':{
+            m:getattr(model,m).optics.router.last['selected_mask'].detach().sum(0).cpu().tolist()
+            for m in ('vision','language')},'router_count_scope':'last live training batch only'}
         if epoch%5==0 or epoch==args.epochs:
             live={n:p.detach().clone() for n,p in parameters}
             with torch.no_grad():
@@ -174,6 +176,14 @@ def main():
     args=parser.parse_args()
     manifest=verify_assets(args.assets)
     if args.command=='verify':
+        release_root=Path(__file__).resolve().parent.parent
+        if (release_root/'MANIFEST.json').is_file():
+            release=json.loads((release_root/'MANIFEST.json').read_text(encoding='utf-8'))
+            for name,record in release['files'].items():
+                file=(release_root/name).resolve()
+                if not file.is_relative_to(release_root) or not file.is_file() or sha256(file)!=record['sha256']:
+                    raise RuntimeError(f'Package file changed: {name}')
+            print(f"Full package verified: {len(release['files'])} files, source {release['source_commit']}")
         print(json.dumps(manifest,indent=2));return
     if args.data is None or args.output is None:parser.error('--data and --output required')
     if min(args.batch_size,args.epochs,args.steps)<1:parser.error('Positive batch size/epochs/steps required')
@@ -183,6 +193,7 @@ def main():
     device=torch.device('cuda' if args.device=='auto' and torch.cuda.is_available() else ('cpu' if args.device=='auto' else args.device))
     # This program never starts child GPU processes, DDP or DataParallel.
     model=None
+    if device.type=='cuda':torch.cuda.reset_peak_memory_stats(device)
     try:
         payload=torch.load(args.assets/'best.pt',map_location='cpu',weights_only=True)
         model=OpticalRetrieval(payload['metadata']);model.load_state_dict(payload['state_dict'],strict=True)
@@ -204,6 +215,9 @@ def main():
         report=dict(status='complete',metrics=metrics,remove_optical_same_weights=removed,
                     optical_removal_hit1_drop_percentage_points=100*(metrics['hit_at_1']-removed['hit_at_1']),
                     audit=model.audit(),test_selected=True)
+        if device.type=='cuda':
+            report['gpu_memory_mib']={'peak_allocated':torch.cuda.max_memory_allocated(device)/2**20,
+                                      'peak_reserved':torch.cuda.max_memory_reserved(device)/2**20}
         if args.reference:
             old=torch.load(args.reference,map_location='cpu',weights_only=True)
             new=torch.load(args.output/'retrieval_features.pt',map_location='cpu',weights_only=True)

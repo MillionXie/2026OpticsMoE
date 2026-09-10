@@ -136,6 +136,10 @@ class OpticalRetrieval(nn.Module):
         return self.readout(self.language(embeddings))
 
     def audit(self):
+        forbidden = [name for name,module in self.named_modules()
+                     if any(term in type(module).__name__.lower() for term in ('attention','transformer','qwen3vlmodel'))]
+        if forbidden:
+            raise RuntimeError(f'Forbidden large-model modules: {forbidden}')
         return {'architecture':'t07_standalone_six_capture_v1', 'native_transformer_modules':0,
                 'attention_modules':0,'capture_count':6,'top_k':2,
                 'frozen_parameters':sum(p.numel() for p in self.parameters() if not p.requires_grad),

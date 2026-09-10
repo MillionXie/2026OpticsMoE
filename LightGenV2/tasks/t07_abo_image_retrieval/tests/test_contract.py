@@ -9,7 +9,7 @@ from LightGenV2.tasks.t07_abo_image_retrieval.refinement import (
 )
 from experiments.qwen3_vl_embedding_2b_caltech101_electronic_retrieval.modeling import ElectronicRetrievalReadout
 from LightGenV2.tasks.t07_abo_image_retrieval.retrieval_contract import _ranking_metrics
-from LightGenV2.tasks.t07_abo_image_retrieval.run import supcon, category_anchors, TASK
+from LightGenV2.tasks.t07_abo_image_retrieval.legacy_run import supcon, category_anchors, TASK
 from LightGenV2.tasks.t01_object_retrieval.settings import load_settings
 
 
