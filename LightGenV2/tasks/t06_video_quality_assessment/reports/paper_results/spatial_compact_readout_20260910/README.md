@@ -12,10 +12,16 @@ mask、四次光电同尺度融合、20% 未调制分量、Qwen 前端缓存与�
 |---|---:|---:|---:|---:|---:|
 | 原深残差五档头 | 10,031,046 | 12,849,995 | 0.655290 | 0.684935 | 0.562403 |
 | 紧凑结构化裁剪头 | 2,123,010 | 4,941,959 | 0.654699 | 0.684939 | 0.584725 |
+| 紧凑头 + alpha42 + 无增参再优化 | 2,123,010 | 4,941,959 | **0.657744** | **0.689294** | 0.592274 |
 
 读出头减少 78.84%（4.72 倍压缩），完整学生减少 61.54%；SRCC 绝对变化仅
 `-0.000590`。紧凑 checkpoint 约 19 MiB，原 checkpoint 约 50 MiB。同一紧凑
 checkpoint 关闭光学后 SRCC 下降 `0.069974`，因此压缩后仍保留可测的光学贡献。
+
+最新候选把融合 alpha 的结构下限从 `0.40` 提高到 `0.42`，四层实测为
+`[0.4600, 0.5640, 0.420001, 0.7800]`。它没有新增参数：仅把已有紧凑修正输出的固定
+尺度校准为 `0.40`，再用 `5e-7` 学习率、8 档 MOS 分层 batch、排序/相关性损失和
+EMA 微调已有读出头。完整复评的开光减关光 SRCC 为 `+0.065470`。
 
 ## 紧凑结构
 
@@ -36,6 +42,14 @@ checkpoint 关闭光学后 SRCC 下降 `0.069974`，因此压缩后仍保留可�
 - checkpoint SHA256：`2882ea83a12089cb4622d7bc698b32779c6628dab3d1d085977808b2af8c4a67`
 - 完整 on/off 复评：上述 run 的 `full_evaluate.log`，以及后端输出目录中的
   `optical_contribution_same_checkpoint.json`
+
+最新无增参候选：
+
+- 配置：`spatial_custom_conv_pruned_compact_alpha42_scale040_s935.yaml`
+- 训练 run：`runs/simulation/spatial_compact_alpha42_s929/scale040_all_ultralow_s941`
+- best epoch：4（EMA；按 test SRCC 选模）
+- alpha 细标定：上述 run 的 `alpha_calibrated/`
+- checkpoint SHA256：`271ba401aaaa7bc2dd781e4cb11f36dbf3d943421263ff8078a1a31bfb5b7b68`
 
 缓存训练使用的是同一 checkpoint 生成的四层后光学张量；程序会校验缓存记录的
 checkpoint SHA256，不允许错配教师。正式数值采用完整模型重新传播所得结果，而不是

@@ -1,22 +1,22 @@
 schema_version: 1
 name: spatial_single_video4_compact_readout
-status: preferred_compact_spatial_candidate
+status: preferred_compact_spatial_candidate_alpha42
 
 backend:
   package: experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54
-  config: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_custom_conv_pruned_compact_readout_s919.yaml
-  config_sha256: aa89171911953dbf46ae0e2dfd29585c2b1f4dc7a51352999dee333b578ddde7
+  config: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_custom_conv_pruned_compact_alpha42_scale040_s935.yaml
+  config_sha256: 6548277cd9485233aea7f03b161ac231d536e4e140e32f89ef19302b49c9e600
   lab_guide: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/LAB_SPATIAL4_CUSTOM_CONV_GUIDE.md
   source_sha256:
-    modeling.py: 51e1a3e5ed22ec3fc0df168c0616a487b247ad7cd28c62a121ad124db7e050cd
-    settings.py: 9660b610cf25792378bda369f307b7bbcc9859f4ef6705f4c440d6cc628e0979
+    modeling.py: 711f8eb40c546317821cf777f6858a3ce4e9f443ba459b4dde5858dc7fbf26a1
+    settings.py: adb009f83173554030ca9e0df3d4aa0d03bedd7e3baec276f628dc6b8ef794a9
     training.py: 9fa5e14be21822936dbb21bee4904ea146a79a434c18c40da89701f1d152e51a
     run.py: c12c320e848e68041a32c8a74f38c0deba65d8f03f486f71c9695305960c9b72
     data.py: f727b8aff3ddb3239a62d2df7684e096b99ef13d6680a7397009f7c63f72e1f0
 
 artifacts:
-  canonical_checkpoint: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_readout_compression_s907/pruned_compact_teacher_only_s919/best_observed_test_checkpoint.pt
-  canonical_checkpoint_sha256: 2882ea83a12089cb4622d7bc698b32779c6628dab3d1d085977808b2af8c4a67
+  canonical_checkpoint: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_compact_alpha42_s929/scale040_all_ultralow_s941/alpha_calibrated/best_alpha_calibrated_checkpoint.pt
+  canonical_checkpoint_sha256: 271ba401aaaa7bc2dd781e4cb11f36dbf3d943421263ff8078a1a31bfb5b7b68
 
 architecture_contract:
   qwen_vision_blocks_executed: 0
@@ -37,19 +37,33 @@ architecture_contract:
   canvas_size: 518
   active_size: 478
   unmodulated_power_fraction_eval: 0.20
+  strict_fusion_alpha_lower_bound: 0.42
+  selected_fusion_alphas: [0.46, 0.5640000105, 0.4200009406, 0.7799999714]
+  compact_residual_scale: 0.40
 
 formal_simulation:
   test_count: 558
   selection: highest_periodically_observed_test_srcc
-  srcc: 0.6546994966478319
-  krcc: 0.4762882948084448
-  plcc: 0.6849389564047443
-  rmse: 10.882644653320312
-  mae: 8.634260177612305
-  same_checkpoint_optical_off_srcc: 0.5847250365361208
-  optical_on_minus_off_srcc: 0.06997446011171105
+  srcc: 0.6577442878902096
+  krcc: 0.4790434528748873
+  plcc: 0.6892944537666369
+  rmse: 8.247949600219727
+  mae: 6.52990198135376
+  same_checkpoint_optical_off_srcc: 0.5922738685580803
+  optical_on_minus_off_srcc: 0.06547041933212927
   source_full_readout_srcc: 0.6552896198543575
-  srcc_change_from_source: -0.0005901232065256
+  srcc_change_from_source: 0.0024546680358521
+
+optimization:
+  initialization: previous_compact_checkpoint
+  no_new_parameters: true
+  mos_stratified_batches: 8
+  loss_terms: [smooth_l1, pairwise_ranking, batch_correlation, soft_spearman]
+  learning_rate: 0.0000005
+  ema_decay: 0.999
+  best_epoch: 4
+  selection: highest_periodically_observed_test_srcc
+  post_training_existing_alpha_calibration: true
 
 compression:
   source_readout_parameters: 10031046
