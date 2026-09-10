@@ -1,0 +1,8 @@
+base_config: moe_alpha40_extra_semantic.yaml
+# Same early source, inference architecture, GT/KD/SAM/EMA and extra image pool.
+# Additional human box supervision only during training; not fixation labels.
+semantic_auxiliary:
+  mode: box_coverage
+  targets_file: ../../../../cache/qwen3_vl_embedding_2b_salicon_lightgen/coco20k_pretrain_20260910/semantic_regions.json
+  targets_sha256: df80c85b3739bbff551fc27195a5bebe5d20e2cdd9c119d106ca13968d92ae6f
+output_dir: ../runs/simulation/moe_alpha40_extra_regions_seed42

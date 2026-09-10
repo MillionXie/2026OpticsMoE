@@ -103,6 +103,7 @@ def load_settings(path: str | Path) -> Any:
     settings.teacher_only_epochs = teacher_only_epochs
     settings.unlabeled_weight = float(d('unlabeled_distillation.weight', 0.0))
     settings.semantic_weight = float(d('semantic_auxiliary.weight', 0.0))
+    settings.semantic_mode = str(d('semantic_auxiliary.mode', 'image_presence'))
     settings.semantic_learning_rate = float(d('semantic_auxiliary.learning_rate', .001))
     semantic_path = d('semantic_auxiliary.targets_file')
     settings.semantic_targets = _resolve(semantic_path,config.parent) if semantic_path else None
@@ -305,6 +306,8 @@ def load_settings(path: str | Path) -> Any:
                 raise ValueError('Extra-image manifest/cache must be SHA256-pinned')
     if not 0 <= settings.semantic_weight <= 2:
         raise ValueError('Semantic auxiliary weight must be in [0,2]')
+    if settings.semantic_mode not in ('image_presence','box_coverage'):
+        raise ValueError('Unsupported semantic auxiliary mode')
     if settings.semantic_weight:
         if settings.unlabeled_weight <= 0 or not settings.semantic_targets:
             raise ValueError('Semantic auxiliary requires the audited extra-image stream')
@@ -394,12 +397,14 @@ def save_resolved_config(settings: Any) -> None:
         'ground_truth_supervision_retained': True,
     }
     values['semantic_auxiliary'] = {
+        'mode': settings.semantic_mode,
         'weight': settings.semantic_weight, 'learning_rate': settings.semantic_learning_rate,
         'targets_file': str(settings.semantic_targets) if settings.semantic_targets else None,
         'targets_sha256': settings.semantic_targets_sha256,
         'training_only_parameters': 15440 if settings.semantic_weight else 0,
         'inference_parameters_added': 0,
         'additional_human_semantic_supervision': bool(settings.semantic_weight),
+        'additional_human_box_supervision': bool(settings.semantic_weight and settings.semantic_mode=='box_coverage'),
     }
     path.write_text(yaml.safe_dump(values, allow_unicode=True, sort_keys=False), encoding="utf-8")
 
