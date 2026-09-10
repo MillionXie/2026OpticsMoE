@@ -118,6 +118,26 @@ def render(
                     item["quality_tokens"].unsqueeze(0).to(device),
                     item["language_tokens"].unsqueeze(0).to(device),
                     item["language_mask"].unsqueeze(0).to(device),
+                    raw_frames=(
+                        None
+                        if "raw_frames" not in item
+                        else item["raw_frames"].unsqueeze(0).to(device)
+                    ),
+                    vgg_tokens=(
+                        None
+                        if "vgg_tokens" not in item
+                        else item["vgg_tokens"].unsqueeze(0).to(device)
+                    ),
+                    resnet_tokens=(
+                        None
+                        if "resnet_tokens" not in item
+                        else item["resnet_tokens"].unsqueeze(0).to(device)
+                    ),
+                    mobilenet_tokens=(
+                        None
+                        if "mobilenet_tokens" not in item
+                        else item["mobilenet_tokens"].unsqueeze(0).to(device)
+                    ),
                     optical_enabled=True,
                 )
             fields = {

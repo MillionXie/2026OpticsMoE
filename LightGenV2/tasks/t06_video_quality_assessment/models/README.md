@@ -16,3 +16,9 @@ LightGenV2 已提供唯一运行入口并接管新的 runs、报告和 releases�
 6×6 lane 并行，四个 37×37 光专家，光学 Top-2 router；视频级串行部分保留四个
 109×109 专家。学生网络不含 Attention 或 Transformer block，最后由目标专属电子
 读出头输出单个连续 Temporal MOS。
+
+Spatial-4 当前自研卷积 profile 为 `spatial_single_video4_custom_conv`。额外 E1 模块
+直接用 Conv3x3、GroupNorm、GELU 和 Linear 编写，共 316,568 参数；它从原始四帧产生
+14x14x192 校正量，只加进第一层电子残差，不能直接输出 MOS。训练期曾用旧轻量前端做
+特征蒸馏，但正式 checkpoint 与实验室 ZIP 均不含该教师。精确边界与张量形状见
+[`../SPATIAL_CUSTOM_OEO_ARCHITECTURE.md`](../SPATIAL_CUSTOM_OEO_ARCHITECTURE.md)。

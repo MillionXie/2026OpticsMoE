@@ -1,0 +1,26 @@
+base_config: ../release/spatial_custom_conv_pretrain_s746.yaml
+
+# Self-contained paths inside the formal Spatial-4 custom-Conv laboratory ZIP.
+output_dir: ../../lab_runs/spatial4_custom_conv
+
+data:
+  dataset_root: null
+  manifest: ../../deployment/data/lgvq_train2250_test558.csv
+  vision_cache: ../../deployment/data/qwen3vl_front_4f_196x1024_quality14.pt
+  vision_cache_views: []
+  language_cache: ../../deployment/data/qwen3vl_front_spatial_prompt_2048.pt
+  quality_feature_cache: ../../deployment/data/lgvq_quality_conv5_4f_196x192.pt
+  quality_feature_cache_views: []
+  raw_frame_cache: ../../deployment/data/lgvq_four_frames_center100_224_uint8.pt
+  mobilenet_feature_cache: null
+  resnet_feature_cache: null
+  vgg_feature_cache: null
+  training_soft_targets: ../../deployment/data/training_only_teacher_predictions.pt
+  training_view_probabilities: [1.0]
+
+training:
+  initialization_checkpoint: null
+
+initialization:
+  qwen_model_path: null
+  reset_serial_router_phase: false
