@@ -289,7 +289,9 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
         else permitted_zero_start_prefixes
     )
     if args.new_module_only:
-        if settings.spatial_readout_mode == "spatial_crossframe_residual":
+        if settings.spatial_readout_mode == "spatial_pruned_grid_compact_residual":
+            trainable_prefixes = ("compact_",)
+        elif settings.spatial_readout_mode == "spatial_crossframe_residual":
             trainable_prefixes = ("crossframe_",)
         elif settings.spatial_readout_mode == "spatial_dual_level_residual":
             trainable_prefixes = ("dual_",)
