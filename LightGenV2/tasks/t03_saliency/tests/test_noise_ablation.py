@@ -34,6 +34,8 @@ def test_dc_only_profile_preserves_leakage_geometry_budget_and_inference():
     assert trial.language_optical_gain_min == trial.language_optical_gain_max == 1
     for key in ('mean','std','min','max'):
         assert getattr(trial,f'language_optical_ccd_noise_{key}_fraction') == 0
-    for key in ('input','phase','ccd'):
+    assert trial.language_optical_max_shift_pixels == 0
+    for key in ('phase','ccd'):
         assert getattr(trial,f'language_optical_{key}_shift_pixels') == 0
+    for key in ('input','phase','ccd'):
         assert getattr(trial,f'optical_router_{key}_shift_pixels') == 0
