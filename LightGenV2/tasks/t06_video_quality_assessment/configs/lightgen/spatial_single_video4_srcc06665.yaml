@@ -8,8 +8,8 @@ backend:
   config_sha256: a6bfb71b51397cf34c8737ed2bffa3410992ef32640715e68c7d20ae8bcffdee
   lab_guide: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/LAB_SPATIAL4_GUIDE.md
   source_sha256:
-    modeling.py: 51e1a3e5ed22ec3fc0df168c0616a487b247ad7cd28c62a121ad124db7e050cd
-    settings.py: 9660b610cf25792378bda369f307b7bbcc9859f4ef6705f4c440d6cc628e0979
+    modeling.py: 711f8eb40c546317821cf777f6858a3ce4e9f443ba459b4dde5858dc7fbf26a1
+    settings.py: adb009f83173554030ca9e0df3d4aa0d03bedd7e3baec276f628dc6b8ef794a9
     training.py: 9fa5e14be21822936dbb21bee4904ea146a79a434c18c40da89701f1d152e51a
     run.py: c12c320e848e68041a32c8a74f38c0deba65d8f03f486f71c9695305960c9b72
     data.py: f727b8aff3ddb3239a62d2df7684e096b99ef13d6680a7397009f7c63f72e1f0
