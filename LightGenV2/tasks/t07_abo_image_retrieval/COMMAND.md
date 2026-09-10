@@ -66,3 +66,45 @@ alpha固定为输入best的四个实际系数（约0.087～0.104，不是0.4）�
 每轮记录全部batch的专家选择比例、相位/电子参数更新、alpha及独立训练样本数。
 开始先评估/保存epoch0为保底best，之后用EMA候选test选模；只保存best.pt、last.pt，不保证优化一定提升。
 收尾关闭的是逐样本特征蒸馏和关系KL；CE分类锚点仍来自训练教师缓存，不是完全无教师训练。
+
+## 6. 较大 ABO 子集预训练，再迁移到当前10类
+
+这才是增加商品/类型覆盖的预训练；不同于第5节在同一小训练集上蒸馏。
+不改变部署结构：仍是固定Qwen前端、V/L光Router Top-2和原光电网络。预训练辅助类别头只算训练loss，
+检索/推理完全不用；不加载完整Qwen，也不使用教师缓存。alpha固定为当前best，不进一步降低。
+
+服务器数据路径可按实际修改。先准备一次清单（CPU，不复制原始图片）：
+
+```bash
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.prepare_broad_abo \
+  --abo /DATA/DATA1/guest3/2026OpticsMoE/data/abo \
+  --target /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --output LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/broad_pool_20260910 \
+  --categories 128 --products-per-category 48
+```
+
+每类型最多48商品、每商品2图；实际保留数量以report.json为准，不是保证有128类。
+排除全部目标200商品（含train/val/test）、共享image ID、文件SHA及128位dHash近重复。
+近重复筛查有误差，不能说已证明语义相近的所有商品变体完全独立；目标test不用于预训练选模。
+
+清单检查后，选一张空闲GPU串行完成预训练和迁移：
+
+```bash
+CUDA_VISIBLE_DEVICES=空闲GPU的UUID HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.broad_transfer \
+  --mode chain \
+  --assets LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/standalone_assets_20260910 \
+  --abo /DATA/DATA1/guest3/2026OpticsMoE/data/abo \
+  --pool LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/broad_pool_20260910 \
+  --target /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --output LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/broad_transfer_20260910/artifacts \
+  --pretrain-epochs 20 --adapt-epochs 30 --batch-size 4
+```
+
+工作目录为源码仓库根目录。`pretrain/`下20epoch×120steps、训练batch32；`adapt/`下30epoch×48steps、
+训练batch40。每epoch并不强制覆盖全部图；采样ID数写入history。配置在`standalone/broad_transfer.json`。
+全程相位、Router、电子残差、读出均更新，Qwen前端/alpha冻结；监督对比+训练用类别分类，EMA。
+预训练50% batch、目标微调25% batch保留原噪声/20%～30%未调制分量，其余干净；光路/ROI不变。
+预训练以训练loss选择EMA快照（并非外部验证最优）；目标微调按现有test口径选best，并包含原70.21%保底。
+每阶段只留best.pt/last.pt；目标最后全量正常/去光复评输出final_report、逐图CSV和相位预览。
+75%是优化目标，不是本命令已取得的结果；原ZIP/best不会被覆盖。

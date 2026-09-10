@@ -13,6 +13,18 @@ from standalone.curriculum import stage_settings, parameter_kind, relation_loss
 
 
 class StandaloneTests(unittest.TestCase):
+    def test_broad_batch_and_training_only_head(self):
+        import random
+        from standalone.broad_transfer import CategoryProxies,sampled_indices
+        groups={c:{f'p{c}_{p}':[c*100+p] for p in range(6)} for c in range(12)}
+        batch=sampled_indices(groups,8,4,random.Random(42))
+        self.assertEqual(len(batch),32);self.assertEqual(len(set(batch)),32)
+        from collections import Counter
+        self.assertEqual(set(Counter(i//100 for i in batch).values()),{4})
+        head=CategoryProxies(128);z=torch.randn(32,64,requires_grad=True)
+        head(z).square().mean().backward()
+        self.assertEqual(head(z).shape,(32,128));self.assertTrue(torch.isfinite(z.grad).all())
+
     def test_pretraining_duplicate_screen_and_path(self):
         import numpy as np
         from standalone.prepare_broad_abo import near_duplicate,safe_image

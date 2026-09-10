@@ -1,0 +1,240 @@
+"""Broader ABO pretraining -> target adaptation, unchanged standalone inference graph.
+
+The normalized category proxy head is training-only. No full Qwen/teacher forward.
+One GPU, phases and electronics trained together, alpha and Qwen frontend frozen.
+"""
+import argparse
+import csv
+import json
+import math
+import os
+import random
+import sys
+from collections import defaultdict
+from pathlib import Path
+import numpy as np
+import torch
+from torch import nn
+from torch.nn import functional as F
+from PIL import Image,ImageEnhance
+from .data import Sample,_load_contract
+from .model import OpticalRetrieval
+from .io import inputs,picture,sha256,verify_assets,write_json,source_commit
+from .cli import autocast,encode,evaluate,supcon,regularization,preview
+from .curriculum import parameter_kind
+from .prepare_broad_abo import safe_image
+
+
+class CategoryProxies(nn.Module):
+    """Training labels only; never used to restrict retrieval candidates."""
+    def __init__(self, classes, dimension=64):
+        super().__init__()
+        self.weight=nn.Parameter(torch.randn(classes,dimension)*.02)
+
+    def forward(self,features):
+        return 16*F.normalize(features.float(),dim=-1)@F.normalize(self.weight,dim=-1).T
+
+
+def load_pool(pool,abo,target):
+    report=json.loads((pool/'report.json').read_text())
+    if report['manifest_sha256']!=sha256(pool/'manifest.csv'):raise ValueError('Pool manifest changed')
+    if report['target_manifest_sha256']!=sha256(target/'data/abo_similarity10_manifest.csv'):raise ValueError('Target exclusion identity changed')
+    protected,_=_load_contract(target);blocked={s.product_id for s in protected}
+    samples=[]
+    for row in csv.DictReader((pool/'manifest.csv').open(encoding='utf-8')):
+        path=safe_image(abo,row['image_path'])
+        if row['product_id'] in blocked or sha256(path)!=row['image_sha256']:raise ValueError('Pretraining input overlap or changed image')
+        samples.append(Sample(row['sample_id'],row['product_id'],int(row['category_id']),row['category'],'pretrain',path))
+    if len(samples)!=report['selected_images']:raise ValueError('Pretraining sample count changed')
+    if len({s.sample_id for s in samples})!=len(samples):raise ValueError('Duplicate pretraining sample')
+    return samples,report
+
+
+def make_groups(samples):
+    groups=defaultdict(lambda:defaultdict(list))
+    for i,s in enumerate(samples):groups[s.category_id][s.product_id].append(i)
+    if sorted(groups)!=list(range(len(groups))):raise ValueError('Labels must be consecutive')
+    return dict(groups)
+
+
+def sampled_indices(groups,classes_per_batch,products_per_class,rng):
+    result=[]
+    for category in rng.sample(list(groups),classes_per_batch):
+        products=groups[category]
+        for product in rng.sample(list(products),products_per_class):result.append(rng.choice(products[product]))
+    rng.shuffle(result)
+    return result
+
+
+def checkpoint(model,head,epoch,stage,score):
+    return dict(metadata=model.metadata,state_dict=model.state_dict(),epoch=epoch,stage=stage,selection_score=score,
+                auxiliary_training_head=head.state_dict(),auxiliary_head_not_used_at_inference=True)
+
+
+def run_stage(args,stage,output,initial_checkpoint=None):
+    if output.exists():raise FileExistsError(output)
+    output.mkdir(parents=True)
+    cfg_all=json.loads(Path(__file__).with_name('broad_transfer.json').read_text())
+    cfg=cfg_all[stage].copy()
+    cfg['epochs']=getattr(args,stage+'_epochs') or cfg['epochs'];cfg['steps']=args.steps or cfg['steps']
+    device=torch.device(args.device)
+    if device.type=='cuda':torch.cuda.reset_peak_memory_stats(device)
+    random.seed(42);np.random.seed(42);torch.manual_seed(42);torch.set_num_threads(4)
+    model=None
+    try:
+        target,_=_load_contract(args.target)
+        target_train=[s for s in target if s.split=='train'];target_test=[s for s in target if s.split=='test']
+        if stage=='pretrain':
+            samples,pool_report=load_pool(args.pool,args.abo,args.target)
+        else:samples=target_train;pool_report=None
+        groups=make_groups(samples)
+        if len(groups)<cfg['classes_per_batch'] or min(len(g) for g in groups.values())<cfg['products_per_class']:
+            raise ValueError('Not enough distinct products/classes for sampling')
+        labels=torch.tensor([s.category_id for s in samples],device=device)
+        origin=args.assets/'best.pt';start=initial_checkpoint or origin
+        payload=torch.load(start,map_location='cpu',weights_only=True)
+        model=OpticalRetrieval(payload['metadata']);model.load_state_dict(payload['state_dict'],strict=True);del payload
+        model.to(device)
+        from transformers import AutoProcessor
+        processor=AutoProcessor.from_pretrained(str(args.assets/'processor'),local_files_only=True)
+        head=CategoryProxies(len(groups)).to(device)
+        trainables=[(n,p) for n,p in model.named_parameters() if p.requires_grad]
+        initial={n:p.detach().cpu().clone() for n,p in trainables}
+        optgroups=[]
+        for name,p in trainables:
+            kind=parameter_kind(name);rate=0. if kind=='alpha' else cfg[kind+'_lr']
+            optgroups.append(dict(params=[p],lr=rate,initial_lr=rate,kind=kind))
+        optgroups.append(dict(params=list(head.parameters()),lr=cfg['auxiliary_lr'],initial_lr=cfg['auxiliary_lr'],kind='auxiliary'))
+        optimizer=torch.optim.AdamW(optgroups,weight_decay=0)
+        ema={n:p.detach().clone() for n,p in trainables}
+        execution=dict(source_commit=source_commit(),command=sys.argv,pid=os.getpid(),python=sys.version,torch=torch.__version__,
+            cuda_visible_devices=os.environ.get('CUDA_VISIBLE_DEVICES'),device=str(device),
+            gpu=torch.cuda.get_device_name(device) if device.type=='cuda' else None,
+            initial_checkpoint_sha256=sha256(start),accepted_checkpoint_sha256=sha256(origin),
+            target_manifest_sha256=sha256(args.target/'data/abo_similarity10_manifest.csv'),
+            pool_manifest_sha256=sha256(args.pool/'manifest.csv') if args.pool else None,
+            stage=stage,config=cfg,common_config=cfg_all,model_audit=model.audit())
+        write_json(output/'execution.json',execution)
+        best_score=(-float('inf'),-float('inf'));history=[]
+        if stage=='adapt':
+            # Accepted original best is the fallback, not a weaker transferred epoch0.
+            transferred={k:v.detach().cpu().clone() for k,v in model.state_dict().items()}
+            old=torch.load(origin,map_location='cpu',weights_only=True)
+            model.load_state_dict(old['state_dict']);del old
+            base=evaluate(model,processor,target_train,target_test,device,args.batch_size)
+            best_score=(base['hit_at_1'],base['map_at_10'])
+            torch.save(checkpoint(model,head,-1,stage,best_score),output/'best.pt')
+            history.append(dict(epoch=-1,kind='accepted_fallback',test=base))
+            model.load_state_dict(transferred);del transferred
+            current=evaluate(model,processor,target_train,target_test,device,args.batch_size)
+            score=(current['hit_at_1'],current['map_at_10'])
+            if score>best_score:
+                best_score=score;torch.save(checkpoint(model,head,0,stage,score),output/'best.pt')
+            history.append(dict(epoch=0,kind='after_external_pretrain',test=current))
+            with torch.no_grad():
+                features=F.normalize(encode(model,processor,target_train,device,args.batch_size).float(),dim=-1).to(device)
+                head.weight.copy_(torch.stack([F.normalize(features[labels==c].mean(0),dim=0) for c in range(len(groups))]))
+            del features
+            write_json(output/'history.json',history);print(json.dumps(history),flush=True)
+        for epoch in range(1,cfg['epochs']+1):
+            model.train();head.train();rng=random.Random(42+epoch)
+            progress=(epoch-1)/max(1,cfg['epochs']-1)
+            scale=min(1.,epoch/2)*(.1+.9*.5*(1+math.cos(math.pi*progress)))
+            for g in optimizer.param_groups:g['lr']=g['initial_lr']*scale
+            totals=dict(loss=0.,ce=0.,supcon=0.,correct=0.);seen=set();clean_batches=0
+            counts={m:torch.zeros(4,device=device) for m in ('vision','language')}
+            for step in range(cfg['steps']):
+                indices=sampled_indices(groups,cfg['classes_per_batch'],cfg['products_per_class'],rng);seen.update(indices)
+                # Pretrain half noisy; target adaptation one-quarter noisy.
+                clean=step%cfg['clean_every']!=0
+                clean_batches+=int(clean)
+                for mode in (model.vision,model.language):mode.optics.train(not clean)
+                images=[]
+                for i in indices:
+                    im=picture(samples[i].image_path)
+                    if rng.random()<.5:
+                        side=round(224*rng.uniform(.90 if stage=='pretrain' else .96,1.));left,top=[rng.randint(0,224-side) for _ in range(2)]
+                        im=im.crop((left,top,left+side,top+side)).resize((224,224),Image.Resampling.BICUBIC)
+                    if stage=='pretrain':im=ImageEnhance.Brightness(im).enhance(rng.uniform(.9,1.1))
+                    images.append(im)
+                optimizer.zero_grad(set_to_none=True)
+                with autocast(device):
+                    z=model(inputs(processor,images,device));logits=head(z)
+                    ce=F.cross_entropy(logits,labels[indices],label_smoothing=.05)
+                    con=supcon(z,labels[indices])
+                    loss=ce+cfg['supcon_weight']*con+cfg_all['regularization_weight']*regularization(model)
+                if not torch.isfinite(loss):raise RuntimeError('Nonfinite loss')
+                loss.backward()
+                for n,p in trainables:
+                    if parameter_kind(n)=='alpha':p.grad=None
+                torch.nn.utils.clip_grad_norm_([p for _,p in trainables]+list(head.parameters()),1.)
+                optimizer.step()
+                with torch.no_grad():
+                    for n,p in trainables:
+                        if p.grad is None:ema[n].copy_(p)
+                        else:ema[n].mul_(cfg_all['ema']).add_(p,alpha=1-cfg_all['ema'])
+                totals['loss']+=float(loss.detach());totals['ce']+=float(ce.detach());totals['supcon']+=float(con.detach())
+                totals['correct']+=float(logits.argmax(-1).eq(labels[indices]).float().mean())
+                for m in counts:counts[m]+=getattr(model,m).optics.router.last['selected_mask'].detach().sum(0)
+            row=dict(epoch=epoch,stage=stage,losses={k:v/cfg['steps'] for k,v in totals.items()},
+                     unique_images=len(seen),clean_batches=clean_batches,alpha=model.audit()['alpha'],
+                     router_selected_fraction={m:(c/(cfg['steps']*cfg['classes_per_batch']*cfg['products_per_class'])).cpu().tolist() for m,c in counts.items()})
+            torch.save(checkpoint(model,head,epoch,stage,-row['losses']['loss']),output/'last.pt')
+            live={n:p.detach().clone() for n,p in trainables}
+            with torch.no_grad():
+                for n,p in trainables:p.copy_(ema[n])
+            if stage=='pretrain':
+                score=(-row['losses']['loss'],0.)
+                if score>best_score:
+                    best_score=score;torch.save(checkpoint(model,head,epoch,stage,score),output/'best.pt')
+            elif epoch%cfg_all['test_every']==0 or epoch==cfg['epochs']:
+                metrics=evaluate(model,processor,target_train,target_test,device,args.batch_size);row['test']=metrics
+                score=(metrics['hit_at_1'],metrics['map_at_10'])
+                if score>best_score:
+                    best_score=score;torch.save(checkpoint(model,head,epoch,stage,score),output/'best.pt')
+            with torch.no_grad():
+                for n,p in trainables:p.copy_(live[n])
+            del live
+            write_json(output/'parameter_updates.json',{n:float((p.detach().cpu()-initial[n]).square().mean().sqrt()) for n,p in trainables})
+            history.append(row);write_json(output/'history.json',history);print(json.dumps(row),flush=True)
+        payload=torch.load(output/'best.pt',map_location=device,weights_only=True)
+        model.load_state_dict(payload['state_dict']);selected_epoch=payload['epoch'];del payload
+        report=dict(status='complete',stage=stage,selected_epoch=selected_epoch,model_audit=model.audit(),
+                    auxiliary_head_at_inference=False,test_selected=stage=='adapt',
+                    selection_note='best EMA snapshot indexed by live training loss' if stage=='pretrain' else 'target test Hit@1 then mAP; accepted best included')
+        if stage=='adapt':
+            report['metrics']=evaluate(model,processor,target_train,target_test,device,args.batch_size,output)
+            model.set_remove_optical(True)
+            report['remove_optical_same_weights']=evaluate(model,processor,target_train,target_test,device,args.batch_size)
+            model.set_remove_optical(False)
+            report['optical_removal_hit1_drop_percentage_points']=100*(report['metrics']['hit_at_1']-report['remove_optical_same_weights']['hit_at_1'])
+        if device.type=='cuda':report['gpu_memory_mib']=dict(peak_allocated=torch.cuda.max_memory_allocated(device)/2**20,peak_reserved=torch.cuda.max_memory_reserved(device)/2**20)
+        preview(model,output);write_json(output/'final_report.json',report);print(json.dumps(report),flush=True)
+        return output/'best.pt'
+    except BaseException as exc:
+        write_json(output/'failure.json',dict(error=str(exc),type=type(exc).__name__));raise
+    finally:
+        if model is not None:del model
+        if device.type=='cuda':torch.cuda.empty_cache()
+
+
+def main():
+    p=argparse.ArgumentParser(description=__doc__)
+    p.add_argument('--mode',choices=['pretrain','adapt','chain'],default='chain')
+    p.add_argument('--assets',type=Path,required=True);p.add_argument('--target',type=Path,required=True)
+    p.add_argument('--abo',type=Path);p.add_argument('--pool',type=Path);p.add_argument('--output',type=Path,required=True)
+    p.add_argument('--checkpoint',type=Path);p.add_argument('--device',default='cuda',choices=['cuda','cpu'])
+    p.add_argument('--pretrain-epochs',type=int);p.add_argument('--adapt-epochs',type=int);p.add_argument('--steps',type=int)
+    p.add_argument('--batch-size',type=int,default=4)
+    args=p.parse_args();verify_assets(args.assets)
+    if args.mode in ('pretrain','chain') and (args.abo is None or args.pool is None):p.error('--abo and --pool required')
+    if args.mode=='adapt' and args.checkpoint is None:p.error('--checkpoint required for transfer adaptation')
+    if any(x is not None and x<1 for x in (args.pretrain_epochs,args.adapt_epochs,args.steps,args.batch_size)):p.error('Positive counts required')
+    if args.output.exists():raise FileExistsError(args.output)
+    if args.mode=='chain':
+        pretrained=run_stage(args,'pretrain',args.output/'pretrain',args.checkpoint)
+        run_stage(args,'adapt',args.output/'adapt',pretrained)
+    else:run_stage(args,args.mode,args.output,args.checkpoint)
+
+
+if __name__=='__main__':main()
