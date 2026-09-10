@@ -96,3 +96,12 @@ FP16溢出才发布完整缓存；已有PT/partial/JSON时拒绝覆盖。失败p
 `ground_truth_available=false`。每个ID显式命名为`unlabeled/coco2017/xxxxxxxxxxxx`。
 读取器验证缓存SHA、教师来源、清单、ID顺序、形状/dtype和数值，再按ID取值；
 不能把它直接塞入旧的SALICON train缓存入口。尚需独立的无标签预训练流程，不能用伪fixation冒充眼动标签。
+
+### 导出/读取入口的验证状态
+
+源码 `61b1de32cb6184db33d5792014508fae3eb6cf9e`：服务器CPU全套T03测试128项通过
+（26.59秒，13项既有matplotlib弃用警告），已确认该commit在GitHub分支历史中。
+真实图像清单的19999张全部逐项核对字节SHA、解码、RGB及224×224预处理与ID顺序，
+117.57秒完成，CPU检查进程正常退出。预定教师权重也已实查SHA：
+`531c4a330fc05e2c27b037784588716d248a29d1ab8da951d443165dcce552f8`。
+这些不是GPU教师前向验证：**完整教师导出仍待执行，尚无该额外图像缓存或预训练结果**。
