@@ -1,0 +1,21 @@
+{
+  "name": "teacher_curriculum",
+  "purpose": "Train-only teacher warm-up, joint optical training, teacher-free polish; identical inference graph",
+  "products_per_class": 4,
+  "warmup_fraction": 0.1333333333,
+  "polish_fraction": 0.1333333333,
+  "electronic_lr": 0.00015,
+  "adapter_lr": 0.00005,
+  "readout_lr": 0.0003,
+  "phase_lr": 0.004,
+  "router_lr": 0.0005,
+  "warmup_teacher_weight": 0.75,
+  "warmup_relation_weight": 0.2,
+  "joint_teacher_weight": 0.25,
+  "joint_relation_weight": 0.1,
+  "supcon_weight": 0.5,
+  "label_smoothing": 0.05,
+  "ema": 0.99,
+  "freeze_alpha_at_initial_best": true,
+  "test_every_epochs": 5
+}

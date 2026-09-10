@@ -35,6 +35,7 @@ def main():
         from standalone.io import verify_assets
     verify_assets(args.assets)
     files={f'standalone/{f.name}':f for f in sorted((TASK/'standalone').glob('*.py'))}
+    files.update({f'standalone/{f.name}':f for f in sorted((TASK/'standalone').glob('*.json'))})
     for name in ['run.py','README.md','COMMAND.md','ACCEPTANCE.md','requirements.txt']:files[name]=TASK/name
     for root,label in [(args.assets,'assets'),(args.data,'data')]:
         for f in sorted(root.rglob('*')):

@@ -9,9 +9,26 @@ sys.path.insert(0,str(TASK))
 from standalone.model import Residual, Modality, fuse
 from standalone.optics import Router, OpticalPath
 from standalone.data import _ranking_metrics
+from standalone.curriculum import stage_settings, parameter_kind, relation_loss
 
 
 class StandaloneTests(unittest.TestCase):
+    def test_curriculum_stages_and_groups(self):
+        import json
+        cfg=json.loads((TASK/'standalone/curriculum.json').read_text())
+        self.assertEqual(stage_settings(1,30,cfg)['phase_scale'],0.)
+        self.assertEqual(stage_settings(5,30,cfg)['name'],'joint')
+        self.assertEqual(stage_settings(30,30,cfg)['teacher'],0.)
+        self.assertEqual(parameter_kind('vision.block1_optical_fusion_logit'),'alpha')
+        self.assertEqual(parameter_kind('language.optics.experts.0'),'phase')
+        self.assertEqual(parameter_kind('vision.optics.router.raw_router_phase'),'router')
+
+    def test_relation_teacher_detached(self):
+        x=torch.randn(10,64,requires_grad=True);t=torch.randn(10,64,requires_grad=True)
+        loss=relation_loss(x,t);loss.backward()
+        self.assertIsNotNone(x.grad);self.assertIsNone(t.grad)
+        self.assertTrue(torch.isfinite(loss))
+
     def test_no_external_repository_imports(self):
         for path in (TASK/'standalone').glob('*.py'):
             for node in ast.walk(ast.parse(path.read_text(encoding='utf-8'))):

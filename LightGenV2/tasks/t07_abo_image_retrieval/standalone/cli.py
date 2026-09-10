@@ -11,7 +11,7 @@ import numpy as np
 import torch
 from torch.nn import functional as F
 from .data import _load_contract, _gallery_centroids, _category_prototypes, _evaluate
-from .io import inputs, picture, verify_assets, write_json, write_csv, sha256
+from .io import inputs, picture, verify_assets, write_json, write_csv, sha256, source_commit
 from .model import OpticalRetrieval
 
 
@@ -172,6 +172,7 @@ def main():
     parser.add_argument('--batch-size',type=int,default=4)
     parser.add_argument('--epochs',type=int,default=30)
     parser.add_argument('--steps',type=int,default=48)
+    parser.add_argument('--profile',choices=['original','teacher_curriculum'],default='original')
     parser.add_argument('--reference',type=Path,help='Old retrieval_features.pt; read-only comparison')
     args=parser.parse_args()
     manifest=verify_assets(args.assets)
@@ -204,10 +205,15 @@ def main():
         samples,_=_load_contract(args.data)
         train=[s for s in samples if s.split=='train'];test=[s for s in samples if s.split=='test']
         write_json(args.output/'execution.json',dict(command=sys.argv,pid=os.getpid(),python=sys.version,torch=torch.__version__,
+                   source_commit=source_commit(),profile=args.profile,
                    cuda_visible_devices=os.environ.get('CUDA_VISIBLE_DEVICES'),device=str(device),
                    gpu=torch.cuda.get_device_name(device) if device.type=='cuda' else None,
                    assets_manifest_sha256=sha256(args.assets/'manifest.json'),audit=model.audit()))
-        if args.command=='finetune':finetune(model,processor,train,test,device,args,args.output)
+        if args.command=='finetune':
+            if args.profile=='teacher_curriculum':
+                from .curriculum import train as curriculum_train
+                curriculum_train(model,processor,train,test,device,args,args.output)
+            else:finetune(model,processor,train,test,device,args,args.output)
         metrics=evaluate(model,processor,train,test,device,args.batch_size,args.output)
         model.set_remove_optical(True)
         removed=evaluate(model,processor,train,test,device,args.batch_size)

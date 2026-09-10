@@ -7,6 +7,15 @@ from PIL import Image, ImageOps
 from .data import INSTRUCTION
 
 
+def source_commit():
+    import subprocess
+    root=Path(__file__).resolve().parent.parent
+    if (root/'MANIFEST.json').is_file():
+        return json.loads((root/'MANIFEST.json').read_text(encoding='utf-8'))['source_commit']
+    try:return subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,stderr=subprocess.DEVNULL,text=True).strip()
+    except (OSError,subprocess.CalledProcessError):return 'unavailable'
+
+
 def sha256(path):
     h = hashlib.sha256()
     with Path(path).open('rb') as f:
