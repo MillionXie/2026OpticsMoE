@@ -1,4 +1,4 @@
-"""Fixed-weight, full-test recheck of aligned Qwen or optical SALICON (no training)."""
+"""Fixed-weight full-split recheck; train split is a fit diagnostic, not test performance."""
 import argparse
 import csv
 import hashlib
@@ -21,6 +21,7 @@ from .settings import load_settings, save_resolved_config
 from .reproduce_baseline import independent_cc
 from .run import _seed
 from .training import _write_json
+from .training_support import use_spawn_workers
 
 
 def load_hashed_checkpoint(path):
@@ -42,6 +43,20 @@ def apply_inference_ablation(model, system, mode):
     model.core.hybrid.set_fusion_ablation(mode)
 
 
+def recheck_loader(bundle, settings, split):
+    if split not in {'train', 'test'}:
+        raise ValueError('Unknown recheck split')
+    records = bundle.train_records if split == 'train' else bundle.validation_records
+    expected = 10000 if split == 'train' else 5000
+    if len(records) != expected:
+        raise RuntimeError(f'Require all {expected} {split} records')
+    loaders = legacy.build_loaders(bundle, settings, training=False)
+    loader = loaders[0 if split == 'train' else 1]
+    # Iteration begins after CUDA model creation. Do not inherit its context.
+    use_spawn_workers(loader)
+    return loader, expected
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--system', choices=['qwen', 'optical'], required=True)
@@ -49,6 +64,8 @@ def main():
     parser.add_argument('--checkpoint', type=Path, required=True)
     parser.add_argument('--run-dir', type=Path, required=True)
     parser.add_argument('--batch-size', type=int, default=32)
+    parser.add_argument('--split', choices=['train', 'test'], default='test',
+                        help='train: clean full-training-set fit diagnostic, never a test result')
     parser.add_argument('--ablation', choices=['none', 'remove_optical'], default='none',
                         help='Same optical checkpoint, no retraining; remove_optical bypasses router and both optical branches')
     args = parser.parse_args()
@@ -66,9 +83,7 @@ def main():
     s.output_dir.mkdir(parents=True)
     save_resolved_config(s)
     bundle = prepare_salicon(s, persist=True)
-    if len(bundle.validation_records) != 5000:
-        raise RuntimeError('Require all 5000 public-test records')
-    _, loader = legacy.build_loaders(bundle, s, training=False)
+    loader, expected = recheck_loader(bundle, s, args.split)
     loaded = load_vision_backbone(s, torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
     s.resolve_architecture(loaded.model)
     loaded.model.requires_grad_(False).eval()
@@ -99,14 +114,14 @@ def main():
                 cc = independent_cc(density_from_logits(logits).cpu().numpy(), target.cpu().numpy())
                 rows.extend({'sample_id': sid, 'cc_float64': float(v)} for sid, v in zip(batch['sample_ids'], cc))
                 if len(rows) % 512 < args.batch_size:
-                    print(f"[{args.system} recheck] {len(rows)}/5000 CC64={np.mean([r['cc_float64'] for r in rows]):.7f}", flush=True)
+                    print(f"[{args.system} {args.split} recheck] {len(rows)}/{expected} CC64={np.mean([r['cc_float64'] for r in rows]):.7f}", flush=True)
     finally:
         if args.system == 'qwen':
             model.close()
         else:
             model.restore_native()
-    if len(rows) != 5000 or len({r['sample_id'] for r in rows}) != 5000:
-        raise RuntimeError('Invalid test identities/count')
+    if len(rows) != expected or len({r['sample_id'] for r in rows}) != expected:
+        raise RuntimeError(f'Invalid {args.split} identities/count')
     with (s.output_dir/'per_image_cc.csv').open('w', newline='') as f:
         writer = csv.DictWriter(f, fieldnames=['sample_id','cc_float64'])
         writer.writeheader(); writer.writerows(rows)
@@ -123,11 +138,14 @@ def main():
               'selected_epoch': payload['epoch'], 'architecture': payload['architecture'],
               'aligned_readout_parameter_audit': aligned.parameter_audit(),
               'config_sha256': sha256_file(args.config),
-              'test_ids_sha256': hashlib.sha256('\n'.join(r['sample_id'] for r in rows).encode()).hexdigest(),
+              f'{args.split}_ids_sha256': hashlib.sha256('\n'.join(r['sample_id'] for r in rows).encode()).hexdigest(),
               'git_commit': subprocess.check_output(['git','rev-parse','HEAD'], text=True).strip(),
               'command': [sys.executable,'-m',__spec__.name,*sys.argv[1:]],
               'torch': torch.__version__, 'gpu': torch.cuda.get_device_name() if torch.cuda.is_available() else 'CPU',
-              'selection_biased': True, 'split': 'official val2014 as public test; no independent validation',
+              'selection_biased': True,
+              'split': ('official val2014 as public test; no independent validation' if args.split == 'test'
+                        else 'official train2014; full training-set fit diagnostic, not test performance'),
+              'training_set_diagnostic': args.split == 'train',
               'speed_and_power': 'not measured'}
     _write_json(s.output_dir/'reproduction.json', report)
     print(json.dumps(report, indent=2), flush=True)
