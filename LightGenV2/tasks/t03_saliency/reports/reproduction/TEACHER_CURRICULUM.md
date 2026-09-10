@@ -69,3 +69,31 @@ CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=1 HF_HUB_OFFLINE=1 TRANSFORMER
 后续清理前必须同时核对命令、启动时间与路径，不能因PID复用误杀其他作业。
 各run的 `console.log`、`run_manifest.json` 和 `metrics/training_history.csv` 为实时进展证据。
 此记录仅确认启动，不代表完成60轮或取得新性能。
+
+## 完成结果（2026-09-10 15:15 CST核查）
+
+两组均完成60/60轮，`stop_reason=epoch_budget`，没有提前中断；重载best完整5000张结果：
+
+| 方案 | best epoch | 重载best CC | 最后epoch CC | best alpha |
+|---|---:|---:|---:|---|
+| 联合续训 | 1 EMA | .8620965302 | .8591156996 | .43061742 / .44101283 |
+| 教师预热15轮 | 0（保留来源） | .8620496944 | .8590113702 | .43072182 / .44106704 |
+
+联合组仅比来源提高约.000047，尚无独立float64配对复评，**不据此替换已独立核验的87ad候选**。
+预热组训练结束没有超过初始化；其best相位变化为0是因为选中epoch0，不是训练未更新相位。
+联合组四专家选择2351/2622/2299/2728，有效专家3.9794，没有明显坍缩。
+两组后期CC下降，不继续沿同数据高学习率预热路线扩大预算；转向保留GT的额外图像辅助训练。
+两进程已终止，GPU0/1恢复12/25MiB；PID3559541/3560835当时为无CUDA资源的defunct条目，
+并不表示还在训练，不进行GPU reset或杀其他任务。
+
+SHA256（依次为best / training_report / selected_checkpoint_test_evaluation）：
+
+- 联合：`35ee4b4a88cd3526450a1776db365acc7997380b1c937e30477ff7b4f3d77f22`
+  / `dfc462ac0b244ab06ec2f0c7c32ccb70ac11612fc3d9c999f13648936f284f59`
+  / `51ab9aef2c28652a04ac257d0d0b65011a749f9f11533e57d4c0f5a99c5c79e8`。
+- 预热：`695a6b21e3876a71a9fe53cb805ae285986e9838e624f180628ae8b08bab48ab`
+  / `97548f880151f36b7b8519567c5268d60366d063724e664cce58def233d3cda5`
+  / `9be5a2e1fd09048394954ebcb940c80743e9ee6f8110e2230d62d06758cbe2b8`。
+
+预热best是重新保存的checkpoint容器，文件SHA与来源不同；不能据容器SHA判断张量发生更新。
+公开测试选模偏差仍存在，目标.88仍未达到。

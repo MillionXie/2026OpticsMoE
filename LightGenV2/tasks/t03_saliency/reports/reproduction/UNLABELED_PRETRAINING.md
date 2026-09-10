@@ -1,7 +1,7 @@
 # 额外无标签图像：预训练数据准备
 
-状态：只准备、审计图像池，**尚未生成教师预测、尚未训练、没有新CC结果**。
-当前两张GPU仍用于教师预热/联合续训对照，不能因本方案占用第三张卡。
+状态（2026-09-10）：**19999张教师目标已导出并通过实际缓存读取器校验；尚无额外图像训练的CC结果**。
+原两组60轮已结束并释放GPU；40轮SALICON-only对照已启动，额外组完成短更新验证后使用另一张卡。
 
 ## 为什么检查这条路线
 
@@ -152,3 +152,25 @@ SAM实际optimizer step=1，loss有限（1.10317647）；结构标签保持原cf
 alpha=0.43072152/0.44106743。router raw参数RMS更新约1.23e-5，四专家约1.83e-4–1.97e-4，
 global约1.92e-4。这里是raw参数量，不是弧度；其中包含DC正则梯度，不能据此断言一批数据激活了全部专家。
 这证明真实网络上的混合更新可运行；正式额外池教师缓存导出和GPU短验证仍待执行。
+
+## 正式额外缓存已完成
+
+代码 `2659f0e01922486a2842c18b6d0a2ac7bc610949`，按上方完整命令在GPU0导出，
+全部19999张成功，导出PID9801正常退出，GPU0显存恢复12MiB。
+`teacher_logits.pt`实际2007761116字节（约2.01GB），SHA256：
+`232e02d243a3d58b8d5cc48557da8f566f77a81e7020968a8a84c0c85d7c305c`。
+配套`teacher_logits.json`保存教师SHA、图像清单SHA、预处理和源代码身份。
+随后独立CPU读取器重新计算缓存SHA、检查19999个ID顺序/排除集合、全部FP16有限值及形状，
+首末样本按ID取回形状为`[2,1,224,224]`。没有使用测试图像生成这份训练缓存。
+
+正式额外组配置为`moe_alpha40_extra_coco20k.yaml`，继承40轮控制配置，
+仅增加`unlabeled_distillation.weight=.6`及上述锁定缓存；两者推理架构完全相同。
+GPU1的控制组PID17303，代码2659f0e0；其数据仍只有10000张SALICON train。
+下列是两组复现命令，额外组须先完成真实缓存短更新检查后启动；运行目录必须尚未被另一作业使用。
+
+```bash
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=1 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_extra_control.yaml --phase all
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_extra_coco20k.yaml --phase all
+```
+
+只用现有两张卡；缓存导出结束才能交接GPU0，不额外占卡。目标.88仍未达到。

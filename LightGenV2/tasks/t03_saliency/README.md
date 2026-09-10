@@ -1,8 +1,11 @@
 # T03 显著性分析（SALICON）
 
 **2026-09-10用户已确认GPU恢复并授权续训；同一助手最多两张GPU，结束后核查PID/显存释放。**
-当前目标CC≥0.88，尚未达到。本轮只比较同预算联合续训与15轮教师监督预热，
-不增加推理参数；配置和命令见[教师预热对照](reports/reproduction/TEACHER_CURRICULUM.md)。
+当前目标CC≥0.88，尚未达到。联合续训与15轮教师预热均已完成60轮，重载best分别.86209653/.86204969，
+没有实质突破；配置和结果见[教师预热对照](reports/reproduction/TEACHER_CURRICULUM.md)。
+下一轮保持推理参数不变、每步保留GT监督，加入排除SALICON重叠后的19999张额外图像教师目标；
+缓存已导出，40轮SALICON-only对照已启动，额外组待真实缓存短更新检查后启动。
+协议与额外数据公平性边界见[额外图像辅助训练](reports/reproduction/UNLABELED_PRETRAINING.md)。
 此前暂停时全部T03训练已停止，7张GPU均0%利用率、仅10–25 MiB占用。
 `viewreg_sam_spatialcc`最后完整日志为epoch11，`sam_spatialcc_kd2_global16`为epoch42，
 两者best/last均保留，但没有完成报告，不得写成已完成80/50轮。其他已完成结果不变。
