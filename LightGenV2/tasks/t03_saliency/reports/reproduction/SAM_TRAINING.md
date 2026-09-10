@@ -568,3 +568,92 @@ alpha=.43072182/.44106704；四专家选择槽2349/2625/2316/2710，
 `selected_checkpoint_test_evaluation.json` SHA256：
 `8cbd3e76ee107164f7765efc75cc93438bd16f5107ecffe2edb399c07dfdef41`。
 仍为训练中的候选审计，不是训练完成，也不是物理CCD实测或含噪测试性能。
+
+## 固定训练子集诊断：泛化改善不等于训练拟合增强
+
+2026-09-10，在源码961907d1上只读比较上述来源和KD2 epoch5：
+固定`random.Random(17042)`从完整10000张训练清单抽取1024个索引，排序后评估。
+没有优化器、参数更新、增强或随机光学扰动；标准前向，无外层autocast。
+GPU为A100，torch2.6.0+cu124，batch32，worker2；每图Pearson用独立float64实现。
+教师来自已有FP16训练logits缓存，转FP32 softmax后计算，不是重新运行教师主干。
+
+|权重|训练子集CC|同子集学生/教师图PCC|教师更好的张数|完整5000公开测试CC64（先前独立复评）|
+|---|---:|---:|---:|---:|
+|来源c88e，epoch65|0.8768723655|0.8936876070|640/1024|0.8595312563|
+|空间CC KD2 87ad，epoch5|0.8734264593|0.8974106955|662/1024|0.8620496019|
+|缓存教师531c|0.8954796603|—|—|0.8896846851（完整教师重跑）|
+
+子集训练CC降低.00344591，而完整测试提高.00251835，并且学生/教师图相关性提高。
+支持“当前改进包含正则化作用、并非更强训练拟合”，不证明纯粹由某个机制造成。
+训练子集与完整测试是不同样本，不能把二者差值当成精确泛化误差估计。
+教师本身已用公开测试选模；缓存量化、单seed和子集采样边界也必须保留。
+这不是新的性能候选，也不能据此保证放开前端或扩大电子网络一定改善。
+因此不继续盲目加强裁剪或提高蒸馏系数；现有训练先按原定后期策略完成。
+
+抽样ID SHA256：`84714f6ffcae089494d98efafba205dc49984d1fcf5bbb8744e3e0a227fca863`。
+实际加载来源SHA：`c88e1a41febc878cf87d6c80d4e27d7ac0c6bddc11d73a29497490d2e841ad73`；
+实际加载候选SHA：`87ad4db51e3f58f9a41d6df09092439e5a09e81e93f88a3bfe2d3d008fafb29a`。
+教师源SHA、训练清单和标注SHA见上文缓存协议；本诊断没有创建额外checkpoint或修改原run。
+结果由终端JSON输出记录于本节。重现时在该源码的干净工作树、已有数据/缓存下运行以下只读命令；
+开始前确认best仍为上述SHA（活动训练可能更新best），否则不是同一候选。
+
+```bash
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=6 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -u - <<'PY'
+import hashlib, random
+from pathlib import Path
+from dataclasses import replace
+import numpy as np
+import torch
+from LightGenV2.tasks.t03_saliency.settings import load_settings
+from LightGenV2.tasks.t03_saliency.modeling import load_vision_backbone, build_student
+from LightGenV2.tasks.t03_saliency.recheck_aligned import load_hashed_checkpoint
+from LightGenV2.tasks.t03_saliency.reproduce_baseline import independent_cc
+from LightGenV2.tasks.t03_saliency.training_support import TrainTeacherMaps
+from LightGenV2.tasks.t03_saliency.run import _seed
+from experiments.qwen3_vl_embedding_2b_salicon_vision_optical_saliency import training as legacy
+from experiments.qwen3_vl_embedding_2b_salicon_vision_optical_saliency.datasets import prepare_salicon
+from experiments.qwen3_vl_embedding_2b_salicon_vision_optical_saliency.objectives import density_from_logits
+_seed(42)
+p = Path('LightGenV2/tasks/t03_saliency')
+s = load_settings(p/'configs/moe_alpha40_sam_spatialcc_kd2.yaml')
+s.local_files_only = True; s.download = False; s.augmentation_enabled = False
+s.inference_batch_size = 32; s.num_workers = 2
+bundle = prepare_salicon(s, persist=False)
+assert len(bundle.train_records) == 10000
+teacher = TrainTeacherMaps(s, bundle.train_records)
+indices = sorted(random.Random(17042).sample(range(10000), 1024))
+records = tuple(bundle.train_records[i] for i in indices)
+ids = [r.sample_id for r in records]
+print('ids_sha256', hashlib.sha256('\n'.join(ids).encode()).hexdigest())
+loader, _ = legacy.build_loaders(replace(bundle, train_records=records), s, training=False)
+loaded = load_vision_backbone(s, torch.device('cuda'))
+model = build_student(loaded, s)
+model.eval(); model.core.set_phase_dropout_active(False)
+sources = {
+ 'viewreg_cffn_kd2': 'c88e1a41febc878cf87d6c80d4e27d7ac0c6bddc11d73a29497490d2e841ad73',
+ 'sam_spatialcc_kd2': '87ad4db51e3f58f9a41d6df09092439e5a09e81e93f88a3bfe2d3d008fafb29a',
+}
+for name, expected in sources.items():
+ payload, digest = load_hashed_checkpoint(p/'runs/simulation'/f'moe_alpha40_{name}_seed42/best_checkpoint.pt')
+ assert digest == expected, 'Source changed; do not label this as the documented candidate'
+ model.core.load_state_dict(payload['core'], strict=True)
+ model.head.load_state_dict(payload['saliency_head'], strict=True)
+ scores = []; teachers = []; alignments = []; seen = []
+ with torch.inference_mode():
+  for batch in loader:
+   inp = legacy.preprocess_vision(loaded.processor, batch['images'], loaded.device)
+   logits = model(inp['pixel_values'], inp['image_grid_thw'])[0]
+   predicted = density_from_logits(logits).cpu().numpy()
+   target = batch['density'].numpy()
+   td = density_from_logits(teacher.get_raw(batch['sample_ids'])).numpy()
+   scores.extend(independent_cc(predicted, target).tolist())
+   teachers.extend(independent_cc(td, target).tolist())
+   alignments.extend(independent_cc(predicted, td).tolist())
+   seen.extend(batch['sample_ids'])
+ assert seen == ids
+ print(name, digest, 'CC', np.mean(scores), 'teacher_CC', np.mean(teachers),
+       'student_teacher_PCC', np.mean(alignments),
+       'teacher_better', np.sum(np.array(teachers) > scores))
+model.restore_native()
+PY
+```
