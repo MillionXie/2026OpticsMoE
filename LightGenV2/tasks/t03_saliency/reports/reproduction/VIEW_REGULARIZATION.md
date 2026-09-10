@@ -1,5 +1,43 @@
 # SALICON 泛化优化：同步弱增强与早期重新适应
 
+## 教师实际增强视图与变换缓存的差异（训练集诊断，非测试成绩）
+
+2026-09-10，源码23b2cd46，在空闲GPU1运行短诊断2075227；GPU0深监督训练不动，
+同时最多两卡。诊断正常退出后ps确认PID消失，GPU1无计算进程，无新PT/图片/大缓存写入。
+使用完整SHA为531c4a330fc05e2c27b037784588716d248a29d1ab8da951d443165dcce552f8的
+同规格头Qwen教师，严格加载；eval、torch.inference_mode、无额外autocast，seed42，batch8，
+OMP/MKL各2线程。原生Qwen只用于这次教师训练目标诊断，不进入光电学生推理。
+
+数据为原有序train2014前128图；ID每行一个且有末尾LF的SHA：
+`de031dc4f1e5b139e39db68e3c229fa68e1a521b4fadff342f5f982fb26c5ff0`。
+`prepare_salicon(persist=False)`和`legacy.build_loaders(training=False)`的train数据集，
+用同一教师在线计算三种输入，不混用已缓存半精度教师输出：
+
+1. 原224×224 RGB；GT保持原密度。
+2. PIL水平翻转；GT与原教师密度同样flip(-1)。
+3. 固定中心裁剪box=(6,6,218,218)，212×212，PIL **BICUBIC** 放回224×224。
+   GT及原教师概率图调用现有`warp_density`：相同裁剪、bilinear align_corners=False、
+   非负且重新归一化质量。对logits先softmax，绝不直接裁剪/插值logits。
+
+全部指标为每图float64 Pearson后平均。实际预测指T(view(image))，代理目标指view(T(image))。
+
+|视图|实际教师与GT CC|代理目标与GT CC|实际教师与代理目标 CC|实际教师对GT更好的图比例|
+|---|---:|---:|---:|---:|
+|原图|.8971170493|—|—|—|
+|水平翻转|.8934158048|.8971170493|.9584813527|43.75%|
+|中心裁剪|.8926862247|.8898123972|.9699255816|56.25%|
+
+历史`AlignedWeakLoader`的RGB插值为BILINEAR，而本次固定诊断为BICUBIC；本表不是其
+逐位复现，也不能将差异全归因于缓存方式。它证明在这里实际增强教师与变换原教师不相同，
+并给出值得进一步做受控对照的裁剪方向：同一图/同一裁剪与RGB插值/同一GT/同一预算，
+只比较实际增强教师目标和变换缓存目标。翻转在本小样本没有显示GT质量优势，不一并叠加。
+
+方法动机参考[Knowledge Distillation: A Good Teacher Is Patient and Consistent，CVPR2022](https://openaccess.thecvf.com/content/CVPR2022/html/Beyer_Knowledge_Distillation_A_Good_Teacher_Is_Patient_and_Consistent_CVPR_2022_paper.html)，
+其强调匹配教师/学生视图；这不是该论文分类实验复现，更不意味着本任务必然提高到.88。
+下一步若实施，应先生成仅10k train ID的固定裁剪教师缓存，存储完整裁剪/像素预处理/教师SHA合同，
+学生使用同一输入变换，保持原光路/Top2/alpha/冻结前端/推理参数不变；不要用测试图生成训练目标。
+当前仅完成上述诊断，尚未导出这个缓存或启动裁剪对照，亦未将它合并进正在运行的深监督组。
+
 ## 轻量电子容量对照：16维全局空间混合
 
 `moe_alpha40_viewreg_global16.yaml`继承已完成的强KD配置，不继承mix50；
