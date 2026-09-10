@@ -424,20 +424,26 @@ __all__ = ["evaluate_selected_checkpoint", "train"]
 
 
 def phase_change_report(payload: dict, settings: Any) -> dict:
-    """Report real sigmoid-phase motion, not merely raw parameter updates."""
+    """Compare physical phases even when their parameter coordinates changed."""
+    from .router_phase import checkpoint_phase, RADIANS_SUFFIX
     source = getattr(settings, "initialization_checkpoint", None)
     if source is None:
         return {}
-    previous = torch.load(source, map_location="cpu", weights_only=False)["core"]
+    old_payload = torch.load(source, map_location="cpu", weights_only=False)
+    previous = old_payload['core']
     result = {}
     for name, value in payload["core"].items():
         if not any(key in name for key in ("raw_phase", "raw_router_phase")) or name not in previous:
             continue
         before, after = previous[name].float(), value.float()
-        radians = 2 * math.pi * (after.sigmoid() - before.sigmoid())
+        radians = (checkpoint_phase(name,after,payload.get('architecture'))
+                   - checkpoint_phase(name,before,old_payload.get('architecture')))
+        comparable = ('raw_router_phase' not in name or
+            str(payload.get('architecture')).endswith(RADIANS_SUFFIX)==str(old_payload.get('architecture')).endswith(RADIANS_SUFFIX))
         circular = torch.atan2(radians.sin(), radians.cos())
         result[name] = {"elements": value.numel(),
-                        "raw_rms_change": float((after-before).square().mean().sqrt()),
+                        "raw_rms_change": float((after-before).square().mean().sqrt()) if comparable else None,
+                        "raw_coordinates_comparable": comparable,
                         "circular_phase_rms_rad": float(circular.square().mean().sqrt()),
                         "fraction_above_001_rad": float((circular.abs() > .01).float().mean())}
     return result

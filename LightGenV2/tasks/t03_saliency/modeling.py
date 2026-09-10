@@ -34,6 +34,7 @@ from .lightweight_residual import configure_global_mixing, initialize_identity_g
 from .lightweight_residual import configure_wide_ffn, widen_ffn_checkpoint
 from .lightweight_residual import configure_grouped_ffn, expand_ffn_group_checkpoint
 from .fusion_training import enable_exact_fusion_backward
+from .router_phase import RadiansOpticalRouter, RADIANS_SUFFIX, convert_router_checkpoint
 
 
 def architecture_label(settings: Any) -> str:
@@ -52,7 +53,8 @@ def architecture_label(settings: Any) -> str:
     rank = getattr(settings, "electronic_global_rank", 0)
     label += f"_global_r{rank}" if rank else ""
     label += "_ffn576" if getattr(settings, "electronic_ffn_hidden_width", 384) == 576 else ""
-    return label + ("_cffn_g64" if getattr(settings, "electronic_ffn_groups", 0) == 64 else "")
+    label += "_cffn_g64" if getattr(settings, "electronic_ffn_groups", 0) == 64 else ""
+    return label + (RADIANS_SUFFIX if getattr(settings,'router_phase_coordinates','sigmoid')=='radians' else '')
 
 
 def configure_spatial_kernel(hybrid: nn.Module, kernel: int) -> None:
@@ -214,7 +216,9 @@ def build_student(loaded: Any, settings: Any) -> LightGenVision2SaliencyStudent:
         ).to(loaded.device)
     else:
         optical_core = model.core.optical_branch.core
-        optical_core.router = OpticalDetectorTopKRouter(
+        router_class = (RadiansOpticalRouter if getattr(settings,'router_phase_coordinates','sigmoid')=='radians'
+                        else OpticalDetectorTopKRouter)
+        optical_core.router = router_class(
             optical_core.geometry, settings
         ).to(loaded.device)
     model.router_backend = "none" if is_d2nn else "optical"
@@ -246,6 +250,9 @@ def initialize_student(
             raise RuntimeError("T03 warmstart SHA256 mismatch")
         payload = torch.load(warmstart, map_location="cpu", weights_only=False)
         allowed = {model.checkpoint_architecture}
+        convert_router = getattr(settings,'convert_router_phase_on_warmstart',False)
+        if convert_router:
+            allowed.add(model.checkpoint_architecture.removesuffix(RADIANS_SUFFIX))
         expand_kernel = getattr(settings, "expand_kernel_on_warmstart", False)
         initialize_grn = getattr(settings, "initialize_grn_on_warmstart", False)
         initialize_ffn = getattr(settings, "initialize_ffn_on_warmstart", False)
@@ -283,6 +290,10 @@ def initialize_student(
         global_added = False
         ffn_widened = False
         ffn_groups_expanded = False
+        router_converted = False
+        if convert_router:
+            core_state,router_converted = convert_router_checkpoint(
+                core_state,target_state,payload['architecture'],model.checkpoint_architecture)
         if expand_ffn_groups:
             core_state, ffn_groups_expanded = expand_ffn_group_checkpoint(core_state, target_state)
         if widen_ffn:
@@ -313,6 +324,7 @@ def initialize_student(
                 "identity_global_mixing_added": global_added,
                 "ffn_widened_384_to_576": ffn_widened,
                 "ffn_grouped64_transfer": ffn_groups_expanded,
+                "router_phase_sigmoid_to_radians": router_converted,
                 "ffn_widening_outgoing_split": [0.4,0.6] if ffn_widened else None,
                 "fusion_reset": settings.reset_fusion_on_warmstart,
                 "fusion_alpha_initial": settings.fusion_alpha_initial}
@@ -446,6 +458,7 @@ def architecture_report(model: LightGenVision2SaliencyStudent, settings: Any) ->
         "router": {
             "backend": "none" if is_d2nn else "optical",
             "top_k": None if is_d2nn else 2,
+            "phase_coordinates": getattr(settings,'router_phase_coordinates','sigmoid'),
         },
         "optics": {
             "feature_captures": 2,

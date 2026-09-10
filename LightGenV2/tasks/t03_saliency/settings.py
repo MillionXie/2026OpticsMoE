@@ -26,6 +26,8 @@ def load_settings(path: str | Path) -> Any:
     settings = load_t02_settings(config)
     raw = _read_config(config)
     d = lambda key, default=None: _nested(raw, key, default)
+    settings.router_phase_coordinates = str(d('training.router_phase_coordinates','sigmoid'))
+    settings.convert_router_phase_on_warmstart = bool(d('training.convert_router_phase_on_warmstart',False))
 
     # The shared server keeps Hugging Face snapshots beside the repository,
     # while portable configs point at a repository-local cache.  Resolve the
@@ -316,6 +318,20 @@ def load_settings(path: str | Path) -> Any:
             raise ValueError('Semantic targets must be SHA256-pinned')
         if not 0 < settings.semantic_learning_rate <= .01 or settings.electronic_width != 192:
             raise ValueError('Invalid semantic auxiliary learning rate/feature width')
+    if settings.router_phase_coordinates not in ('sigmoid','radians'):
+        raise ValueError('Unsupported router phase coordinates')
+    if settings.router_phase_coordinates=='radians':
+        if settings.lightgen_model_variant!='optical_router_scale_matched_moe' or settings.phase_parameterization!='sigmoid':
+            raise ValueError('Router radians trial requires optical MoE and unchanged sigmoid feature phases')
+        if settings.phase_weight_decay!=0:
+            raise ValueError('Direct periodic phase requires zero phase weight decay')
+    if settings.convert_router_phase_on_warmstart:
+        if settings.router_phase_coordinates!='radians' or not settings.initialization_checkpoint:
+            raise ValueError('Router conversion requires radians warmstart')
+        if any(getattr(settings,k,False) for k in ('initialize_ffn_on_warmstart','initialize_global_on_warmstart',
+                'initialize_grn_on_warmstart','expand_kernel_on_warmstart','widen_ffn_on_warmstart',
+                'expand_ffn_groups_on_warmstart','reset_fusion_on_warmstart')):
+            raise ValueError('Do not combine router coordinate transfer with other warmstart transformations')
     return settings
 
 
@@ -324,6 +340,8 @@ def save_resolved_config(settings: Any) -> None:
     import yaml
     path = settings.output_dir / "resolved_config.yaml"
     values = yaml.safe_load(path.read_text(encoding="utf-8"))
+    values.setdefault('training',{}).update(router_phase_coordinates=settings.router_phase_coordinates,
+        convert_router_phase_on_warmstart=settings.convert_router_phase_on_warmstart)
     # The shared T02 serializer writes pose-specific PCK/NME prose. T03's
     # actual trainer compares test_metrics['cc'] strictly; describe that here.
     values.setdefault("protocol", {}).update(

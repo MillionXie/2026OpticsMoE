@@ -1,0 +1,8 @@
+base_config: moe_alpha40_extra_control.yaml
+# Same completed 87ad source and 40-epoch/no-extra-image control protocol.
+# Only router optimization coordinates change; no extra parameters/captures.
+# No sigmoid on this router's stored raw_router_phase: its unit is now radians.
+training:
+  router_phase_coordinates: radians
+  convert_router_phase_on_warmstart: true
+output_dir: ../runs/simulation/moe_alpha40_router_radians_seed42
