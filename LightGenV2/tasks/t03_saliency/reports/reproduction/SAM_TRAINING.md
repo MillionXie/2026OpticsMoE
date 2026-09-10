@@ -1005,3 +1005,50 @@ CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=1 HF_HUB_OFFLINE=1 TRANSFORMER
 
 输出`runs/simulation/moe_alpha40_sam_spatialcc_kd2_global64_seed42/`，只保留best/last；
 不改动另一张GPU0上的语义试验。当前没有新完成成绩，正式已核验最佳仍为.86204960。
+
+## Router直接弧度参数化：不增加网络参数的训练对照
+
+动机来自弱位置监督首轮相位检查（见UNLABELED_PRETRAINING）：router一半参数位于
+sigmoid低梯度区域。这不是已证实的性能瓶颈，因此单独对照，不同时增大读出头、
+加数据或更改光路。实现源码`f97c7a7d3206748f066d091622ee4230fac0fe1f`。
+
+原来`phi=2*pi*sigmoid(raw_router_phase)`；新版本保存的同名参数**直接是弧度phi**，
+传播仍为原来的`exp(i*phi)`，不改变入射振幅、478 ROI、224专家、17µm、10cm、Top2、
+两级同尺度融合、alpha≥.4或20%–30%训练未调制分量。没有新增参数/分支/attention，
+冻结Qwen前端和85412参数读出头不变。新方案训练总参数量与无global原学生完全相同。
+
+采用已完成87ad（CC=.86204960）来源，配置`moe_alpha40_router_radians.yaml`继承
+`moe_alpha40_extra_control.yaml`：40轮预算、SALICON-only、SAM rho=.05、KD2、EMA .995，
+router学习率2e-5、feature相位2e-4，全部其它学习率/GT/测试/选模规则不变。
+同数值学习率在不同坐标下不代表同物理步长；**改变优化坐标及其梯度条件正是本试验变量**。
+先前相同来源控制试验提前停止，不能把它写成完成40轮；对照时比较相同轮数并披露状态。
+
+### 权重和导出合同
+
+- 新`architecture`末尾为`_router_radians`，旧签名的router参数仍是logit。
+- 只允许显式`training.convert_router_phase_on_warmstart: true`将完全相同结构的旧权重
+  转成`2*pi*sigmoid(old_raw)`；所有其它张量和alpha不变，不允许混合其它结构转换。
+  初始化报告记录`router_phase_sigmoid_to_radians`。读已转换权重不会二次sigmoid。
+- 不在训练中把参数硬截断/取模，EMA也保留连续坐标；光学前向的复指数本身具有2pi周期。
+  相位weight decay必须0，避免对等价周期坐标施加不同收缩。
+- 模型的`router.phase()`/`active_phase()`给出实际弧度；硬件沿用
+  `encode_active_phase`，即`floor(mod(phi,2*pi)/(2*pi)*256)`。负相位或超过2pi均可正确编码。
+- `visualize.py`与`phase_change_report`按源/目标各自architecture解释router；特征相位仍sigmoid。
+  跨参数化时raw RMS不可比较，报告为null，比较实际圆周相位差。禁止旧脚本对新router
+  再套一次sigmoid；如别的AI自写分析，请调用`router_phase.checkpoint_phase`或加载实际模型。
+- 本次只验证既有相位编码/active_phase接口，没有制作新实验室ZIP或宣称完成硬件实测。
+
+完整186项T03 CPU测试通过（35.54秒、13项既有警告），覆盖初始探测器场、Top2概率/选择、
+active_phase和8-bit编码完全相等；梯度满足旧梯度=新梯度×sigmoid雅可比；
+覆盖端点跨越、严格checkpoint迁移/重载、实际相位变化报告与单变量profile。
+真实两张SALICON训练图使用源87ad检查：转换前后eval输出最大差0、active_phase的8-bit编码
+完全相同。一次真实GT+KD+SAM/优化器/EMA更新loss=.38035563，router弧度RMS更新1.83137e-5，
+四专家raw RMS约1.94e-4–1.99e-4、global 1.94105e-4。短测CC=.898791仅为这两张训练图，
+**不是测试成绩、更不是达到.88目标**；未保存周期PT。
+
+```bash
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=1 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_router_radians.yaml --phase all
+```
+
+输出`runs/simulation/moe_alpha40_router_radians_seed42`，仅best/last。启动前先确认旧GPU1任务
+及其子进程已释放，禁止占第三张GPU；公共测试选模偏差仍须披露，目标尚未达成。
