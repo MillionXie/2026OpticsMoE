@@ -32,8 +32,16 @@ def test_dc_only_profile_preserves_leakage_geometry_budget_and_inference():
     assert trial.language_optical_phase_dropout_p == 0
     assert trial.optical_router_phase_dropout_p == 0 and trial.router_noise_std == 0
     assert trial.language_optical_gain_min == trial.language_optical_gain_max == 1
-    for key in ('mean','std','min','max'):
+    for key in ('mean','std'):
         assert getattr(trial,f'language_optical_ccd_noise_{key}_fraction') == 0
+    from experiments.qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust.optical_blocks import _sample_truncated_normal_like
+    import torch
+    sampled = _sample_truncated_normal_like(torch.ones(2,8,8),
+        mean=trial.language_optical_ccd_noise_mean_fraction,
+        std=trial.language_optical_ccd_noise_std_fraction,
+        minimum=trial.language_optical_ccd_noise_min_fraction,
+        maximum=trial.language_optical_ccd_noise_max_fraction)
+    assert torch.count_nonzero(sampled) == 0
     assert trial.language_optical_max_shift_pixels == 0
     for key in ('phase','ccd'):
         assert getattr(trial,f'language_optical_{key}_shift_pixels') == 0

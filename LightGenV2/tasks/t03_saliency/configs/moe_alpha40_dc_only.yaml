@@ -15,8 +15,9 @@ robust_vision:
       distribution: truncated_biased_gaussian
       mean_fraction: 0.0
       std_fraction: 0.0
-      min_fraction: 0.0
-      max_fraction: 0.0
+      # The sampler requires strict bounds even at zero variance.
+      min_fraction: -0.03
+      max_fraction: 0.12
 router_experiment:
   train_logit_noise_std: 0.0
   optical:
