@@ -1,0 +1,12 @@
+base_config: moe_optical_router_scale_matched_dc20_no_shift_warmstart.yaml
+
+# Both blocks, train AND inference. No layers/channels/parameters added.
+balanced_fusion:
+  alpha_min: 0.40
+  alpha_max: 0.95
+  alpha_initial: 0.42
+
+loss:
+  coordinate_weight: 0.0
+
+output_dir: ../runs/simulation/alpha40_staged_seed42_20260910

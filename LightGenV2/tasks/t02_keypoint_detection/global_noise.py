@@ -136,7 +136,7 @@ def run(args):
 
 if __name__ == '__main__':
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--profile',choices=['main_dc20_no_shift_warmstart','alpha50'],required=True)
+    p.add_argument('--profile',choices=['main_dc20_no_shift_warmstart','alpha50','alpha40'],required=True)
     p.add_argument('--checkpoint',type=Path,required=True)
     p.add_argument('--data-root',type=Path,required=True)
     p.add_argument('--cache-dir',type=Path,required=True)

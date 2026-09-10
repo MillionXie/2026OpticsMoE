@@ -22,3 +22,6 @@
 5. 速度/能耗的硬件、计时边界、功率积分口径；未测的不得填估计值冒充实测。
 
 原始日志及逐样本结果留在本任务runs，文档只引用。参考 [SALICON复现说明](../../../t03_saliency/reports/reproduction/README.md)。
+# 新增：alpha≥0.4
+
+见[ALPHA40.md](ALPHA40.md)：电子结构/参数量不变，PCK≥0.73为待验证目标。
