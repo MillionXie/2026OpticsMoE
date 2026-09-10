@@ -1,0 +1,9 @@
+base_config: moe_alpha40_feature_pretrain.yaml
+# Independent restart from original balanced source, not a collapsed checkpoint.
+# Freeze the COMPLETE optical routing input path and router in feature pretrain.
+# At epoch16 unfreeze input at 1e-6 (=5e-6 base * .2); router at original1e-5.
+# No copied router-input branch, no new inference parameters or geometry changes.
+feature_pretraining:
+  freeze_router_path: true
+  router_input_learning_rate: 0.000005
+output_dir: ../runs/simulation/moe_alpha40_feature_pretrain_stable_router_seed42

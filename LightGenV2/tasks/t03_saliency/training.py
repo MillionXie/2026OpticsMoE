@@ -141,6 +141,10 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
     use_spawn_workers(train_loader)
     use_spawn_workers(test_loader)
     optim = optimizer(model, settings)
+    if feature_targets is not None:
+        from .feature_pretraining import configure_router_path_optimizer
+        _write_json(settings.output_dir/'feature_router_path_provenance.json',
+                    configure_router_path_optimizer(model, optim, settings))
     ema = ModelEMA(model, settings.ema_decay) if settings.ema_decay else None
     ema_hook = optim.register_step_post_hook(ema.update) if ema else None
     teacher = TrainTeacherMaps(settings, bundle.train_records) if settings.distillation_initial_weight else None

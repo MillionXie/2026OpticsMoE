@@ -26,6 +26,14 @@ def configure(settings, raw, directory):
     required = {'enabled', 'cache_file', 'cache_sha256', 'head_checkpoint',
                 'head_checkpoint_sha256', 'frozen_head_epochs', 'fade_end_epoch',
                 'initial_weight', 'joint_weight', 'mean_weight', 'joint_lr_multiplier'}
+    stable_router = options.get('freeze_router_path', False)
+    if type(stable_router) is not bool:
+        raise ValueError('freeze_router_path must be boolean')
+    if stable_router:
+        required |= {'freeze_router_path', 'router_input_learning_rate'}
+        rate = options.get('router_input_learning_rate', 0.)
+        if not isinstance(rate, (int,float)) or not 0 < rate <= 1e-5:
+            raise ValueError('Router input adaptation must use a bounded small rate')
     if set(options) != required:
         raise ValueError('Feature pretraining requires the exact audited option set')
     for key in ('cache_file', 'head_checkpoint'):
@@ -38,7 +46,7 @@ def configure(settings, raw, directory):
     for key in ('frozen_head_epochs', 'fade_end_epoch'):
         if type(options[key]) is not int:
             raise ValueError('Feature stage boundaries must be integers')
-    if not 1 <= options['frozen_head_epochs'] < options['fade_end_epoch'] <= settings.student_epochs:
+    if not 0 <= options['frozen_head_epochs'] < options['fade_end_epoch'] <= settings.student_epochs:
         raise ValueError('Invalid feature pretraining stage boundaries')
     for key in ('initial_weight', 'joint_weight', 'mean_weight', 'joint_lr_multiplier'):
         if not isinstance(options[key], (int, float)) or not 0 < options[key] < float('inf'):
@@ -126,10 +134,53 @@ def initialize_teacher_decoder(model, settings):
             'inference_parameters_added': 0}
 
 
+def configure_router_path_optimizer(model, optimizer, settings):
+    """Separate existing router-input adapters; no new model parameters.
+
+    Both the Qwen-width->192 adapter and the shared optical 192->224 amplitude
+    encoder feed the optical router. Freezing only the first is insufficient.
+    The same encoder also feeds expert/global optics; it is not duplicated.
+    This group is intentionally NOT in SAM's perturbation subspace, to avoid
+    transiently distorting routing inputs; it still learns on the second pass.
+    """
+    options = settings.feature_pretraining
+    if not options.get('freeze_router_path', False):
+        return {'router_path_frozen_during_pretraining': False}
+    hybrid = model.core.hybrid
+    modules = (hybrid.input_adapter, hybrid.input_norm,
+               hybrid.optical_branch.core.input_adapter, hybrid.optical_branch.core.input_norm)
+    params = [p for module in modules for p in module.parameters()]
+    ids = {id(p) for p in params}
+    electronic = [group for group in optimizer.param_groups if group['name']=='electronic']
+    if (len(electronic)!=1 or len(ids)!=len(params) or len(params)!=8
+            or not ids <= {id(p) for p in electronic[0]['params']}
+            or not any(group['name']=='optical_router' for group in optimizer.param_groups)):
+        raise ValueError('Expected two existing Linear+LayerNorm input adapters and optical router')
+    before = {id(p) for group in optimizer.param_groups for p in group['params']}
+    electronic[0]['params'] = [p for p in electronic[0]['params'] if id(p) not in ids]
+    optimizer.add_param_group({'params': params, 'name': 'router_input',
+                               'lr': options['router_input_learning_rate']})
+    after = [id(p) for group in optimizer.param_groups for p in group['params']]
+    if set(after)!=before or len(after)!=len(set(after)):
+        raise RuntimeError('Router path optimizer split lost or duplicated parameters')
+    return {'router_path_frozen_during_pretraining': True,
+            'router_input_parameter_count': sum(p.numel() for p in params),
+            'router_input_parameter_names': [name for name,p in model.core.named_parameters() if id(p) in ids],
+            'router_input_sam_perturbation': False,
+            'inference_parameters_added': 0}
+
+
 def prepare_epoch(model, optimizer, settings, epoch):
     options = settings.feature_pretraining
     frozen = epoch <= options['frozen_head_epochs']
     model.head.requires_grad_(not frozen)
+    frozen_groups = {'saliency_head'}
+    if options.get('freeze_router_path', False):
+        frozen_groups |= {'router_input', 'optical_router'}
+        for group in optimizer.param_groups:
+            if group['name'] in {'router_input','optical_router'}:
+                for parameter in group['params']:
+                    parameter.requires_grad_(not frozen)
     current = copy(settings)
     current.sam_rho = 0.0 if frozen else settings.sam_rho
     progress = max(0., (epoch-options['frozen_head_epochs']-1)
@@ -137,11 +188,12 @@ def prepare_epoch(model, optimizer, settings, epoch):
     multiplier = 1.0 if frozen else options['joint_lr_multiplier']*(.05+.95*(1+math.cos(math.pi*progress))/2)
     for group in optimizer.param_groups:
         group.setdefault('schedule_base_lr', group['lr'])
-        group['lr'] = group['schedule_base_lr'] * (0.0 if frozen and group['name']=='saliency_head' else multiplier)
+        group['lr'] = group['schedule_base_lr'] * (0.0 if frozen and group['name'] in frozen_groups else multiplier)
     weight = options['initial_weight'] if frozen else options['joint_weight']*max(
         0., 1-(epoch-options['frozen_head_epochs']-1)/max(1,options['fade_end_epoch']-options['frozen_head_epochs']-1))
     report = {'feature_stage': 'fixed_teacher_decoder' if frozen else 'joint_task_finetune',
               'feature_weight': weight, 'effective_sam_rho': current.sam_rho,
+              'router_path_frozen': frozen and options.get('freeze_router_path', False),
               'head_frozen': frozen, **{f"lr_{g['name']}":g['lr'] for g in optimizer.param_groups}}
     return current, report
 

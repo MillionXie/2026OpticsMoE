@@ -1,0 +1,19 @@
+base_config: moe_alpha40_feature_pretrain_stable_router.yaml
+# Staged fine-tuning from the stopped control's recovered/balanced epoch15 EMA.
+# New optimizer/EMA and shuffled sequence, NOT an exact interrupted-run resume.
+# The source head is still the identical fixed teacher decoder.
+training:
+  initialization_checkpoint: ../runs/simulation/moe_alpha40_feature_pretrain_seed42/best_checkpoint.pt
+  initialization_checkpoint_sha256: b2d8e0d9d903efa1de66664e02af07fd9ff9310e53c1f4db71889b0b99508fba
+  student_epochs: 45
+  staged:
+    polish_start: 36
+loss:
+  # Continuation of original .5 -> .1 balance schedule after its first15/51.
+  router_hard_load_balance_weight: 0.38235294117647056
+distillation:
+  end_epoch: 45
+feature_pretraining:
+  frozen_head_epochs: 0
+  fade_end_epoch: 25
+output_dir: ../runs/simulation/moe_alpha40_feature_joint_router_low_lr_seed42

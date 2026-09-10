@@ -8,7 +8,8 @@ import pytest
 import torch
 from torch import nn
 from LightGenV2.tasks.t03_saliency.feature_pretraining import (
-    configure, FixedFeatureTargets, initialize_teacher_decoder, prepare_epoch, train_epoch)
+    configure, FixedFeatureTargets, initialize_teacher_decoder, prepare_epoch, train_epoch,
+    configure_router_path_optimizer)
 from LightGenV2.tasks.t03_saliency.settings import load_settings
 from LightGenV2.tasks.t03_saliency.modeling import architecture_label
 from LightGenV2.tasks.t03_saliency.training_support import ModelEMA
@@ -136,3 +137,74 @@ def test_strong_pretraining_is_only_an_initial_feature_weight_change():
     assert {key for key in a.feature_pretraining if a.feature_pretraining[key]!=b.feature_pretraining[key]}=={'initial_weight'}
     assert a.feature_pretraining['initial_weight']==2. and b.feature_pretraining['initial_weight']==10.
     assert architecture_label(a)==architecture_label(b)
+
+
+def test_stable_router_freezes_both_input_adapters_and_phase_then_unfreezes():
+    s=load_settings(Path(__file__).resolve().parents[1]/'configs/moe_alpha40_feature_pretrain_stable_router.yaml')
+    model=nn.Module();model.core=nn.Module();model.core.hybrid=nn.Module();h=model.core.hybrid
+    h.input_adapter=nn.Linear(4,4);h.input_norm=nn.LayerNorm(4)
+    h.optical_branch=nn.Module();h.optical_branch.core=nn.Module();o=h.optical_branch.core
+    o.input_adapter=nn.Linear(4,4);o.input_norm=nn.LayerNorm(4);o.router=nn.Linear(4,4)
+    model.core.other=nn.Parameter(torch.ones(3));model.head=nn.Linear(4,1)
+    frozen_inputs=[p for m in [h.input_adapter,h.input_norm,o.input_adapter,o.input_norm] for p in m.parameters()]
+    optim=torch.optim.AdamW([
+        {'name':'electronic','params':[model.core.other]+frozen_inputs,'lr':.0003},
+        {'name':'optical_router','params':list(o.router.parameters()),'lr':.00005},
+        {'name':'saliency_head','params':list(model.head.parameters()),'lr':.0003}])
+    keys=set(model.state_dict());before=deepcopy(model.state_dict())
+    report=configure_router_path_optimizer(model,optim,s)
+    assert report['router_input_parameter_count']==56
+    assert report['router_input_sam_perturbation'] is False
+    assert len(report['router_input_parameter_names'])==8
+    from LightGenV2.tasks.t03_saliency.sam_training import ELECTRONIC_GROUPS
+    assert 'router_input' not in ELECTRONIC_GROUPS
+    x=torch.randn(8,4)
+    def routing():return o.router(o.input_norm(o.input_adapter(h.input_norm(h.input_adapter(x)))))
+    source=routing().detach().clone()
+    current,stage=prepare_epoch(model,optim,s,1)
+    assert stage['router_path_frozen']
+    for group in optim.param_groups:
+        for p in group['params']:
+            if p.requires_grad:p.grad=torch.ones_like(p)
+    optim.step();optim.zero_grad(set_to_none=True)
+    assert not torch.equal(model.core.other,before['core.other'])
+    torch.testing.assert_close(routing(),source,rtol=0,atol=0)
+    for k,v in model.state_dict().items():
+        if k!='core.other':assert torch.equal(v,before[k])
+    _,stage=prepare_epoch(model,optim,s,16)
+    assert not stage['router_path_frozen']
+    group=next(g for g in optim.param_groups if g['name']=='router_input')
+    assert group['lr']==pytest.approx(1e-6) and all(p.requires_grad for p in frozen_inputs)
+    for group in optim.param_groups:
+        for p in group['params']:p.grad=torch.ones_like(p)
+    optim.step()
+    assert all(not torch.equal(v,before[k]) for k,v in model.state_dict().items())
+    assert set(model.state_dict())==keys
+
+
+def test_stable_router_preserves_inference_and_warmstart_source():
+    root=Path(__file__).resolve().parents[1]/'configs'
+    a=load_settings(root/'moe_alpha40_feature_pretrain.yaml')
+    b=load_settings(root/'moe_alpha40_feature_pretrain_stable_router.yaml')
+    assert architecture_label(a)==architecture_label(b)
+    assert a.initialization_checkpoint_sha256==b.initialization_checkpoint_sha256
+    assert {key for key in vars(a) if getattr(a,key)!=getattr(b,key)} <= {'config','config_path','output_dir','feature_pretraining'}
+    assert b.feature_pretraining['freeze_router_path']
+    options=deepcopy(b.feature_pretraining);options['router_input_learning_rate']=.001
+    with pytest.raises(ValueError):configure(b,options,root)
+
+
+def test_joint_only_profile_starts_unfrozen_without_repeating_pretraining():
+    root=Path(__file__).resolve().parents[1]/'configs'
+    s=load_settings(root/'moe_alpha40_feature_joint_router_low_lr.yaml')
+    assert s.student_epochs==45 and s.feature_pretraining['frozen_head_epochs']==0
+    assert s.initialization_checkpoint_sha256=='b2d8e0d9d903efa1de66664e02af07fd9ff9310e53c1f4db71889b0b99508fba'
+    model=Toy();optim=torch.optim.AdamW([
+        {'name':'electronic','params':list(model.core.parameters())+[model.latent],'lr':.0003},
+        {'name':'saliency_head','params':list(model.head.parameters()),'lr':.0003}])
+    current,stage=prepare_epoch(model,optim,s,1)
+    assert not stage['head_frozen'] and not stage['router_path_frozen']
+    assert current.sam_rho==.05 and stage['feature_weight']==.2
+    assert stage['lr_electronic']==pytest.approx(.00006)
+    _,stage=prepare_epoch(model,optim,s,25)
+    assert stage['feature_weight']==0
