@@ -55,13 +55,14 @@ CUDA_VISIBLE_DEVICES=空闲GPU的UUID python run.py evaluate --assets assets --d
 需最新 Git 代码（旧 ZIP 未包含此新增 profile）：
 
 ```powershell
-python run.py finetune --profile teacher_curriculum --assets assets --data data --device cuda --epochs 30 --steps 48 --batch-size 8 --output runs/simulation/teacher_curriculum_01
+python run.py finetune --profile teacher_curriculum --assets assets --data data --device cuda --epochs 30 --steps 48 --batch-size 4 --output runs/simulation/teacher_curriculum_01
 ```
 
-训练 batch=40（10类×4个不同商品）；`--batch-size 8`仍然只控制评估。默认30epoch包含4epoch预热、
+训练 batch=40（10类×4个不同商品）；`--batch-size 4`仍然只控制评估。默认30epoch包含4epoch预热、
 22epoch光电联合、4epoch无蒸馏收尾。前端始终冻结，不添加TF/attention，不加载大模型。
 仅使用原训练集教师缓存，并非新增外部数据集预训练。配置在`standalone/curriculum.json`。
 alpha固定为输入best的四个实际系数（约0.087～0.104，不是0.4）；预热只更新电子，随后相位也更新。
 联合阶段75%的batch保留原未调制/CCD噪声；收尾25%，其余为干净仿真。推理图和原评估口径不变。
 每轮记录全部batch的专家选择比例、相位/电子参数更新、alpha及独立训练样本数。
 开始先评估/保存epoch0为保底best，之后用EMA候选test选模；只保存best.pt、last.pt，不保证优化一定提升。
+收尾关闭的是逐样本特征蒸馏和关系KL；CE分类锚点仍来自训练教师缓存，不是完全无教师训练。

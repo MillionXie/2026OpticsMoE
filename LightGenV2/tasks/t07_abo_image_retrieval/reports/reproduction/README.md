@@ -1,5 +1,33 @@
 # T07 复现说明入口
 
+## 训练优化：teacher_curriculum（独立版，不改变推理结构）
+
+源commit `6d568dfc`；18项本地测试通过，`runs/smoke/curriculum_20260910`完成三阶段小检查。
+固定alpha的raw参数更新严格为0；V/L router raw相位RMS更新0.000325/0.000237，
+全局相位0.003370/0.002285，确认冻结和重新加热均生效。短检查不是新性能结论。
+
+正式run：`runs/simulation/teacher_curriculum_20260910/`；日志`console.log`，结果在`artifacts/`。
+初始PID 3697546，GPU UUID `GPU-1b963983-7909-af6e-0528-f0f0661ab549`；单卡。
+不要重用非空输出目录、不要覆盖现有70.2083%交付best。动态进度以history/final_report为准，
+没有final_report时不能把计划中的30epoch写成已完成。
+
+在服务器源码工作树根目录（需先fetch并checkout该commit）执行：
+
+```bash
+CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 \
+/home/guest3/miniconda3/envs/xml/bin/python -u -m LightGenV2.tasks.t07_abo_image_retrieval.run finetune \
+  --profile teacher_curriculum \
+  --assets LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/standalone_assets_20260910 \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --output LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/teacher_curriculum_20260910/artifacts \
+  --device cuda --epochs 30 --steps 48 --batch-size 4
+```
+
+开始best与数据身份继承下方独立验收；实际SHA、训练配置、源码环境记录于artifacts。
+只用1440张训练图及对应教师缓存；test仅按既有用户口径选模（test-selected，不无偏）。
+alpha保持原best四个数值，不通过继续降alpha换指标；40样本跨商品batch。
+收尾停用特征/关系蒸馏，但分类CE的中心仍取自训练教师缓存。
+
 ## 当前独立版本（2026-09-10）
 
 日常命令已移至任务根目录 [COMMAND.md](../../COMMAND.md)。`run.py`默认只运行standalone；
