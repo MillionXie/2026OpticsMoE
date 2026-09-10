@@ -100,7 +100,7 @@ class Toy(nn.Module):
 def test_sam_relations_execute_twice_update_once_and_keep_state_keys(tmp_path,monkeypatch):
     s,records,_=cache_setup(tmp_path)
     for k,v in dict(sam_rho=.05,gradient_clip_norm=1.,relational_current_weight=1.,
-        kl_weight=1.,cc_weight=.5,sim_weight=.25,nss_weight=.1,map_kd_weight=0.,distillation_loss='spatial_cc',
+        kl_weight=1.,cc_weight=.5,sim_weight=.25,nss_weight=.1,map_kd_weight=0.,map_kd_temperature=1.,distillation_loss='spatial_cc',
         router_balance_weight=0.,router_importance_weight=0.,phase_dc_weight=0.,log_interval_batches=100).items():
         setattr(s,k,v)
     targets=RelationalTargets(s,records)
@@ -123,3 +123,15 @@ def test_sam_relations_execute_twice_update_once_and_keep_state_keys(tmp_path,mo
     assert set(model.state_dict())==keys
     assert any(not torch.equal(v,model.state_dict()[k]) for k,v in before.items())
     assert all(torch.isfinite(v).all() for v in model.state_dict().values())
+    # Weight zero must be exactly the existing SAM update, not an alternative
+    # supervised objective or a cache lookup that affects inference/RNG.
+    s.relational_current_weight=0.
+    a,b=deepcopy(model),deepcopy(model)
+    def optim(m):
+        return torch.optim.AdamW([{'params':m.core.parameters(),'name':'electronic'},
+                                 {'params':m.head.parameters(),'name':'saliency_head'}],lr=.001)
+    loaded=SimpleNamespace(device=torch.device('cpu'),processor=None)
+    train_sam_epoch(a,[batch],loaded,s,optim(a))
+    train_sam_epoch(b,[batch],loaded,s,optim(b),relation_targets=targets)
+    assert len(calls)==2
+    for k,v in a.state_dict().items():torch.testing.assert_close(v,b.state_dict()[k],rtol=0,atol=0)

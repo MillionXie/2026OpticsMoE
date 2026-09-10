@@ -5,8 +5,6 @@ centered 14x14 fused features, not their GAN, segmentation labels or backbone.
 The Gram matrix is a LOSS target, never attention or a feature-mixing layer.
 """
 import math
-from pathlib import Path
-
 import torch
 from torch.nn import functional as F
 from .feature_pretraining import _read_pinned
