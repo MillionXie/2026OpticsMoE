@@ -149,6 +149,13 @@ CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=1 HF_HUB_OFFLINE=1 TRANSFORMER
 联合入口首步直接执行SAM，参数变化正常；来源第15轮头与教师decoder逐值相等，
 初始化没有破坏已有头。所有loss有限；这不是训练或测试集性能复评，不保存短检查PT。
 
+正式启动源码`b5b4dd26fcb942fbfbb7c95c620e22dfe1fcead1`，193项CPU测试再次通过（40.40秒）。
+GitHub发布确认后，GPU0/PID1483586在`.worktrees/t03_kernel13`运行45轮joint-low-lr；
+GPU1/PID1483592在`.worktrees/t03_sam_early`运行60轮stable-router-pretrain。
+run目录使用各profile名加`_seed42`，完整命令由run_manifest记录。
+启动前两卡无计算进程，旧父PID均不存在；此时本助手仅这两组，不操作其他卡上的任务。
+不把不同来源/训练阶段的两组包装成单变量公平消融，也不声明已经达到.88。
+
 ## 已完成对照结果
 
 2026-09-10，`moe_alpha40_hint_control_seed42`与`moe_alpha40_hint_cosine_seed42`
