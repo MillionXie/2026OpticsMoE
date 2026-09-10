@@ -11,7 +11,7 @@ from pathlib import Path
 import numpy as np
 import torch
 from torch.nn import functional as F
-from PIL import Image
+from PIL import Image, ImageOps
 from ..standalone.data import INSTRUCTION, _load_contract, _gallery_centroids, _category_prototypes, _evaluate
 from ..standalone.io import sha256, write_json, write_csv, source_commit
 from ..standalone.retrieval_training import product_bank, gallery_loss
@@ -156,9 +156,25 @@ def run(args):
     for s,r in zip(test,rows['optical']):view_groups[manifest[s.sample_id]['azimuth']].append(bool(r['top1_relevant']))
     write_csv(args.output/'view_groups.csv',[dict(manifest_azimuth=k,query_count=len(v),hit1=float(np.mean(v))) for k,v in sorted(view_groups.items())])
     brands={split:{manifest[s.sample_id]['brand'] for s in samples if s.split==split} for split in ('train','val','test')}
+    ordered_ranges = {}
+    for category in range(10):
+        ids = {split: sorted({s.product_id for s in samples if s.category_id == category and s.split == split}) for split in ('train','val','test')}
+        ordered_ranges[names[category]] = dict(train_max_before_val_min=max(ids['train']) < min(ids['val']),
+                                              val_max_before_test_min=max(ids['val']) < min(ids['test']))
+    flagged = [s for s in test if s.product_id == 'B075Z8THYY']
+    label_review = dict(product_id='B075Z8THYY', category='bed',
+                        issue='Image and product title indicate a dresser, not a bed; confirm whether labels mean object type or furniture collection. Do not relabel automatically.',
+                        manifest_entries=[manifest[s.sample_id] for s in flagged[:1]],
+                        official_metrics_unchanged=True)
+    for name in ('optical', 'native_2048d', 'square_64d'):
+        r = {row['sample_id']: row for row in rows[name]}
+        count = sum(r[s.sample_id]['top1_relevant'] for s in flagged)
+        label_review[name] = dict(flagged_correct=count, flagged_queries=len(flagged),
+                                 exclusion_counterfactual_not_official=(sum(x['top1_relevant'] for x in rows[name])-count)/(len(test)-len(flagged)))
     report=dict(status='complete',source_commit=source_commit(),cpu_only=True,
         identity=dict(manifest_sha256=sha256(args.data/'data/abo_similarity10_manifest.csv'),optical_features_sha256=sha256(args.optical/'retrieval_features.pt'),baseline_features_sha256=sha256(args.baseline/'features.pt'),optical_run=str(args.optical),baseline_run=str(args.baseline)),
         metrics=metrics,bootstrap=bootstrap(test,rows),image_audit=images,
+        id_range_order=ordered_ranges, label_review=label_review,
         product_errors=dict(all_views_wrong=sum(p['correct_views']==0 for p in products),all_views_correct=sum(p['correct_views']==12 for p in products),test_products=len(products)),
         brands=dict(train_count=len(brands['train']),test_count=len(brands['test']),test_only=sorted(brands['test']-brands['train'])),
         notes=['40 test products, 12 correlated views each; not 480 independent products.',
@@ -167,6 +183,21 @@ def run(args):
                'No train, val or test inputs modified; no image enhancement or test fitting.'])
     write_json(args.output/'audit.json',report)
     figures(args.output,[names[i] for i in range(10)],categories,products,confusion,picked,lookup)
+    import matplotlib.pyplot as plt
+    ranked=sorted([r for r in image_rows if r['split']=='test'],key=lambda r:(-r['nonwhite_outside_center_square'],r['sample_id']))
+    selected=[];seen=set()
+    for row in ranked:
+        if row['product_id'] in seen:continue
+        selected.append(row);seen.add(row['product_id'])
+        if len(selected)==4:break
+    fig,axes=plt.subplots(4,2,figsize=(7,10),layout='constrained')
+    for i,row in enumerate(selected):
+        with Image.open(lookup[row['sample_id']].image_path) as image:rgb=image.convert('RGB')
+        for j,image in enumerate((rgb,ImageOps.fit(rgb,(224,224),method=Image.Resampling.BICUBIC,centering=(.5,.5)))):
+            axes[i,j].imshow(image);axes[i,j].axis('off')
+            axes[i,j].set_title(f"{row['product_id']} | {'Original' if j==0 else 'Actual 224 input'}",fontsize=10)
+    fig.savefig(args.output/'04_actual_input_crop.png');plt.close(fig)
+    write_json(args.output/'crop_example_selection.json',dict(rule='Four test products with largest nonwhite center-crop loss; deliberate stress cases, not random examples.',samples=selected))
     print(json.dumps(report,ensure_ascii=False,indent=2))
 
 
