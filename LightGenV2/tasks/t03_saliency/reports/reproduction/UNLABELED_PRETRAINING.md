@@ -70,3 +70,29 @@ python -m LightGenV2.tasks.t03_saliency.prepare_unlabeled_pool \
 
 全部采用本页带末尾换行的数值ID口径。CPU准备进程正常退出，未使用第三张GPU。
 这证明图像池与当前训练/测试ID、文件字节的隔离，不证明预训练已执行或提升性能。
+
+## 教师目标导出（待空出GPU后执行）
+
+`export_unlabeled_teacher`与`unlabeled_data`是额外图像专用入口，**不修改**原
+`TrainTeacherMaps`只能读取有序SALICON train身份的限制。再次核对完整排除集合的ID哈希，
+对每张选中图片将同一份字节先做SHA检查再解码，RGB转224×224 BICUBIC，与原无增强预处理一致。
+导出时运行已完成的冻结Qwen24＋同规格头教师；这不属于学生推理结构。
+原始RGB、人工真值、原SALICON缓存均不改写。
+
+```bash
+# 仅在本助手已有训练空出一张卡后运行；GPU0只是预定编号，需先查实时占用。
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -u -m LightGenV2.tasks.t03_saliency.export_unlabeled_teacher \
+  --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam_spatialcc_kd2.yaml \
+  --checkpoint LightGenV2/tasks/t03_saliency/runs/simulation/qwen_aligned_head_staged_seed42/best_checkpoint.pt \
+  --image-manifest /DATA/DATA1/guest3/2026OpticsMoE/cache/qwen3_vl_embedding_2b_salicon_lightgen/coco20k_pretrain_20260910/image_manifest.json \
+  --image-manifest-sha256 d0600cf3a4eb8e1bd0d6dc415a237c2c5fe6ce88ca3a77385d26243d44874182 \
+  --batch-size 16 \
+  --output /DATA/DATA1/guest3/2026OpticsMoE/cache/qwen3_vl_embedding_2b_salicon_lightgen/coco20k_pretrain_20260910/teacher_logits.pt
+```
+
+目标缓存约2.01GB（19999×1×224×224个FP16 logits，另有小型身份元数据）。无logits非有限值或
+FP16溢出才发布完整缓存；已有PT/partial/JSON时拒绝覆盖。失败partial保留供检查，不当作完整数据使用。
+完成后JSON记录缓存SHA、教师SHA、图像清单SHA、源码版本、预处理、图像数量和
+`ground_truth_available=false`。每个ID显式命名为`unlabeled/coco2017/xxxxxxxxxxxx`。
+读取器验证缓存SHA、教师来源、清单、ID顺序、形状/dtype和数值，再按ID取值；
+不能把它直接塞入旧的SALICON train缓存入口。尚需独立的无标签预训练流程，不能用伪fixation冒充眼动标签。
