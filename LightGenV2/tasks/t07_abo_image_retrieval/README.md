@@ -75,3 +75,5 @@ batch40、跨商品正样本、关系蒸馏递减、EMA、四个alpha固定为�
 下一方案是`standalone.broad_transfer`：从较大原始ABO中限量选商品类型，在与目标商品/图片做去重的
 预训练池上联合训练相位与电子，再迁移当前10类。训练辅助类别头不进入推理，alpha固定、无完整Qwen/教师。
 代码/参数及完整命令见COMMAND第6节；目标75%，尚未获得新性能结论。
+预训练池已审核并选出128类型、6144商品、12288图；正式run为`runs/simulation/broad_transfer_20260910/`，
+阶段结果分别在`artifacts/pretrain`和`artifacts/adapt`。详细数据排除/训练身份见复现入口；原正式包不覆盖。

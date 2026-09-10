@@ -1,8 +1,39 @@
 # T07 复现说明入口
 
+## 较大数据预训练 → 10类迁移（2026-09-10）
+
+数据准备commit `21ada451`，训练commit `fcdbb2e8`。不改变独立模型推理结构，固定原alpha，
+训练光学相位/Router/电子残差/读出；Qwen前端冻结，无完整Qwen教师。
+新增64维归一化类别代理头仅用于训练分类loss，检索评价不调用它；同类别跨商品监督对比。
+
+预训练池位于`runs/simulation/broad_pool_20260910/`，原图仍在根data/abo，不复制/移动。
+原始145615商品、576种metadata product_type中，均衡选128类型×48商品×2图：**6144商品、12288图**。
+不是1000类，也不是全ABO。清单SHA256：`2c891c4b50c8c8a98fad603a56ccb9a03024061386d236b6a1aa04afe9999c3a8`。
+目标manifest SHA256：`2949a4035150a9f8718f2a6cace164c17394613d24fb9d0234c553bee8d77c97`。
+排除全部200个目标商品（含train/val/test），共享image ID检查，再用文件SHA与128bit dHash筛查。
+商品和image ID交集均0；55个候选商品触发目标精确/近重复筛查；另有1123次池内重复图片跳过。
+近重复是启发式，不保证所有语义相近商品变体均已排除。商品类型标签来自元数据，存在粗细粒度混杂。
+
+20项本地测试通过；`runs/smoke/broad_chain_20260910/`完成预训练、迁移、正常/去光完整流程检查。
+短检查预训练V/L router raw相位RMS更新0.000131/0.000078，全局相位0.001398/0.001386；alpha更新严格0。
+不把两步训练的结果当作性能优化结论。
+
+正式串行run：`runs/simulation/broad_transfer_20260910/`，日志`console.log`。
+`artifacts/pretrain/`：20epoch×120steps，batch32；`artifacts/adapt/`：30epoch×48steps，batch40。
+采样不保证每epoch覆盖所有图，history记录unique_images。精确配置/命令/环境/权重SHA在各阶段execution.json。
+GPU UUID `GPU-1b963983-7909-af6e-0528-f0f0661ab549`，启动PID4093748；只有这一张GPU。
+运行时状态以history/final_report为准；尚无目标微调final_report时，不得声称达到了75%。
+
+完整重建/运行命令见任务[COMMAND.md第6节](../../COMMAND.md)。源代码从GitHub checkout该训练commit后执行，
+默认只保存各阶段best.pt/last.pt。预训练选择按训练loss对应的EMA快照，无目标test参与；
+迁移仍按用户既定test-selected口径，每5epoch测试，并以原70.2083% best作保底。
+75%对应同口径480张query至少360张Hit@1正确；达到后还需检查去光差值与相位、专家分布，不能只看辅助分类头。
+
 ## 训练优化：teacher_curriculum（独立版，不改变推理结构）
 
 源commit `6d568dfc`；18项本地测试通过，`runs/smoke/curriculum_20260910`完成三阶段小检查。
+已完成30epoch，训练候选最高70.00%（epoch3），末轮67.9167%，最终恢复accepted epoch0的70.2083%。
+没有获得提升，PID3697546已退出，不占GPU。以下启动信息仅保留作历史证据。
 固定alpha的raw参数更新严格为0；V/L router raw相位RMS更新0.000325/0.000237，
 全局相位0.003370/0.002285，确认冻结和重新加热均生效。短检查不是新性能结论。
 
