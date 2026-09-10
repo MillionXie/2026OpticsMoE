@@ -31,6 +31,17 @@ def load_hashed_checkpoint(path):
     return payload, digest
 
 
+def apply_inference_ablation(model, system, mode):
+    """Runtime-only bypass; never modify a checkpoint or retrain an E-only model."""
+    if system not in {'qwen', 'optical'} or mode not in {'none', 'remove_optical'}:
+        raise ValueError('Unsupported recheck system/ablation')
+    if system == 'qwen':
+        if mode != 'none':
+            raise ValueError('Frozen Qwen has no optical branch to remove')
+        return
+    model.core.hybrid.set_fusion_ablation(mode)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--system', choices=['qwen', 'optical'], required=True)
@@ -38,7 +49,11 @@ def main():
     parser.add_argument('--checkpoint', type=Path, required=True)
     parser.add_argument('--run-dir', type=Path, required=True)
     parser.add_argument('--batch-size', type=int, default=32)
+    parser.add_argument('--ablation', choices=['none', 'remove_optical'], default='none',
+                        help='Same optical checkpoint, no retraining; remove_optical bypasses router and both optical branches')
     args = parser.parse_args()
+    if args.system == 'qwen' and args.ablation != 'none':
+        parser.error('Qwen has no optical branch; use --ablation none')
     s = load_settings(args.config)
     s.output_dir = args.run_dir.resolve()
     if s.output_dir.exists():
@@ -71,6 +86,7 @@ def main():
         model.core.load_state_dict(payload['core'], strict=True)
         model.head.load_state_dict(payload['saliency_head'], strict=True)
         model.core.set_phase_dropout_active(False)
+    apply_inference_ablation(model, args.system, args.ablation)
     model.eval()
     accumulator, rows = SaliencyAccumulator(), []
     try:
@@ -97,6 +113,9 @@ def main():
     metrics = accumulator.compute()
     cc64 = float(np.mean([r['cc_float64'] for r in rows]))
     report = {'mode': 'fixed_weight_reevaluation_no_training', 'system': args.system,
+              'ablation': args.ablation,
+              'ablation_contract': ('bypass optical router/expert/global propagation; each fusion returns its existing E output at coefficient 1; all learned weights unchanged'
+                                    if args.ablation == 'remove_optical' else 'normal inference; no branch removed'),
               'metrics': metrics, 'independent_float64_cc': cc64,
               'cc_implementation_difference': abs(cc64-metrics['cc']),
               'checkpoint': str(args.checkpoint.resolve()), 'checkpoint_sha256': checkpoint_digest,
