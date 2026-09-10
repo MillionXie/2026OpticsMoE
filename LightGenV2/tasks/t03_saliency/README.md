@@ -14,6 +14,10 @@ best仍为第0轮来源权重。已释放GPU1，不得写成完成40轮；普通
 GPU0改为训练期语义辅助试验：同一额外图像池增加COCO人工类别标签、15440参数可移除辅助头，
 部署结构不变；源码3651f6bc经155项测试及真实图像短更新检查后启动。须单独披露额外监督，
 不能当作与baseline相同标签预算的提升；目前尚无新完成结果。
+完整干净训练集诊断：正式best/末轮EMA CC=.87477060/.87684899，后期训练略升、测试略降。
+GPU1新增已有全局空间混合rank16→64的受限对照，总计50176个额外电子参数，不加分支/attention，
+不扩大读出头；168项测试、初始函数保持和真实相位更新检查通过后启动50轮预算。
+配置、参数/计算量及公平比较边界见[SAM诊断与rank64试验](reports/reproduction/SAM_TRAINING.md)。
 协议与额外数据公平性边界见[额外图像辅助训练](reports/reproduction/UNLABELED_PRETRAINING.md)。
 此前暂停时全部T03训练已停止，7张GPU均0%利用率、仅10–25 MiB占用。
 `viewreg_sam_spatialcc`最后完整日志为epoch11，`sam_spatialcc_kd2_global16`为epoch42，

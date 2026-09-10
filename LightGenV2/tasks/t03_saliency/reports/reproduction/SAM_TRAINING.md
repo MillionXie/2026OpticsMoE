@@ -962,3 +962,46 @@ GPU1两项诊断串行，均正常退出且显存释放；未超过包括GPU0在
 - last复评报告SHA：`882184f8d34c40263285272e459144093f9b14e02d5cf74bd064a5f235345dce`。
 - best逐图CSV SHA：`e5ddd6a4bb48c6cbf9a02674d808b171d4b02280f11c0a47d8460961cec379d7`。
 - last逐图CSV SHA：`6e312684e0784d27d5c413dddbb4f365adb9007738edec4047c5bacaff7b829b`。
+
+## 拟合诊断后的受限rank64空间混合对照
+
+上述干净训练集结果提示不能只增加正则。因此新增`moe_alpha40_sam_spatialcc_kd2_global64.yaml`，
+直接继承已有global16试验，**仅把rank16改为64、另设run目录**。它不是当前正式模型的替换。
+借鉴[MLP-Mixer](https://arxiv.org/abs/2105.01601)的跨位置MLP混合思路，不引入其完整骨干，
+也不引入attention、Q/K/V、第三主分支或原生Qwen Transformer推理。
+
+每个现有电子残差内、原token_pointwise之前：按Qwen的2×2块序还原14×14空间网格，
+对每个通道独立做`196 -> rank -> GELU -> 196`，残差加回输入，再执行原pointwise。
+矩阵跨通道共享、跨样本不混合。rank64用8×8低频DCT初始化下投影，上投影为0，
+因此初始推理保持原函数。为降低高频DCT舍入误差，rank64先用float64构造再转模型dtype；
+旧rank16仍保持原float32构造，未改变历史初始化。
+
+| 项目 | 正式无global | 历史rank16 | 新rank64 |
+|---|---:|---:|---:|
+| 全局空间混合参数 | 0 | 12544 | 50176 |
+| 该混合的额外MAC/图 | 0 | 2408448 | 9633792 |
+| 显著性读出头参数 | 85412 | 85412 | 85412 |
+
+真实模型可训练参数（core＋head，不含冻结前端）从1274511变为1324687，增加50176、约3.9%。
+光学相位/ROI/传播次数、光router Top2、alpha≥.4、同尺度融合、DC20–30%及零像素偏移保持原合同。
+电子计算量有增加，**不能直接套用历史版本速度/能耗**；本次不测5090D时耗/功耗。
+
+与global16及完成的无global KD2对照同源c88e、同50轮预算、相同SAM.05、KD2、GT、EMA及学习率。
+不是从当前87ad最佳权重出发，也没有加入正在另一张卡测试的COCO类别辅助标签。
+global16历史run停止在42轮，比较时须明确实际完成预算，不能宣称它完成50轮。
+来源SHA：`c88e1a41febc878cf87d6c80d4e27d7ac0c6bddc11d73a29497490d2e841ad73`。
+
+源码`57febc24fa75204e421ab0ab3735608fe4d673a1`通过168项T03 CPU测试（32.03秒，13项既有警告）。
+真实两张训练图验证：新旧初始eval输出最大差0，原生24层Transformer钩子调用0次；
+一次SAM/优化器/EMA更新loss=.45979077，两个上投影RMS变化约4.99e-5、下投影约3.35e-5/2.36e-5，
+光router相位约1.29e-5、四专家约1.86e-4–1.91e-4、global相位约1.84e-4。
+短测只证明实现与更新有效，不是测试成绩，未保存checkpoint。
+
+代码先同步GitHub，再从`.worktrees/t03_kernel13`启动新run，GPU1、启动PID917101：
+
+```bash
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=1 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam_spatialcc_kd2_global64.yaml --phase all
+```
+
+输出`runs/simulation/moe_alpha40_sam_spatialcc_kd2_global64_seed42/`，只保留best/last；
+不改动另一张GPU0上的语义试验。当前没有新完成成绩，正式已核验最佳仍为.86204960。
