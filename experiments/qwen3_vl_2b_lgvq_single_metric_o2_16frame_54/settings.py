@@ -257,6 +257,7 @@ class ExperimentSettings:
     detector_projection_size: int = 96
     spatial_readout_mode: str = "statistics"
     spatial_residual_max: float = 0.10
+    spatial_compact_residual_scale: float = 1.0
     spatial_residual_receptive_field: str = "local7"
     spatial_readout_refiner_enabled: bool = False
     spatial_readout_moment_refiner_enabled: bool = False
@@ -453,10 +454,14 @@ class ExperimentSettings:
                 f"h{self.spatial_compact_head_width}_v1"
             )
         elif self.spatial_readout_mode == "spatial_pruned_grid_compact_residual":
-            suffixes.append(
+            suffix = (
                 "spatialprunedgridcompactresidual_"
                 f"k{self.spatial_compact_head_width}_v1"
             )
+            if self.spatial_compact_residual_scale != 1.0:
+                scale_tag = int(round(self.spatial_compact_residual_scale * 100.0))
+                suffix += f"_scale{scale_tag:03d}_v1"
+            suffixes.append(suffix)
         if self.spatial_readout_mode.startswith("spatial_weighted_level"):
             suffixes.append(f"rf{self.spatial_residual_receptive_field}_v1")
         if self.spatial_readout_refiner_enabled:
@@ -608,6 +613,8 @@ class ExperimentSettings:
             raise ValueError("model.spatial_compact_channels must be divisible by 8")
         if self.spatial_residual_max <= 0.0:
             raise ValueError("model.spatial_residual_max must be positive")
+        if self.spatial_compact_residual_scale <= 0.0:
+            raise ValueError("model.spatial_compact_residual_scale must be positive")
         if self.spatial_residual_receptive_field not in {
             "local7",
             "dilated15",
@@ -1215,6 +1222,9 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         detector_projection_size=int(get("model", "detector_projection_size", 96)),
         spatial_readout_mode=str(get("model", "spatial_readout_mode", "statistics")),
         spatial_residual_max=float(get("model", "spatial_residual_max", 0.10)),
+        spatial_compact_residual_scale=float(
+            get("model", "spatial_compact_residual_scale", 1.0)
+        ),
         spatial_residual_receptive_field=str(
             get("model", "spatial_residual_receptive_field", "local7")
         ),

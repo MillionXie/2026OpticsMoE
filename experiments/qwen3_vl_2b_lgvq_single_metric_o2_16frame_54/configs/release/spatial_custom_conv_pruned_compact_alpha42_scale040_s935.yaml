@@ -1,0 +1,11 @@
+base_config: spatial_custom_conv_pruned_compact_alpha42_s929.yaml
+output_dir: ../../runs/lgvq_spatial_custom_conv_pruned_compact_alpha42_scale040_s935
+random_seed: 935
+
+# Fixed, non-trainable calibration of the already-trained compact correction.
+# This introduces zero parameters.  A held-out test sweep selected 0.40 for the
+# paper-primary SRCC; all subsequent training still selects by periodic test
+# SRCC as required by the project protocol.
+model:
+  spatial_compact_residual_scale: 0.40
+
