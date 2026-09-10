@@ -3,15 +3,15 @@
 [SAM训练对照](SAM_TRAINING.md)：不增加推理结构，在电子参数子空间进行训练时扰动，
 有同源普通续训组、随机噪声配对和单次optimizer/EMA更新的实现检查。
 
-当前完成并独立核验的较高CC光电候选：SAM+空间CC蒸馏.6完成50轮、best epoch5 EMA，
-重载完整5000测试CC=0.86172946，独立float64 CC=0.86172948；最终best字节与独立复查一致。
-相比SAM.05的0.86133204，CC略高、KLD/SIM略差；alpha≥0.4且四专家无明显坍缩。
+当前完成并独立核验的最高CC光电候选：SAM+空间CC蒸馏系数2完成50轮、best epoch5 EMA，
+重载完整5000测试CC=0.86204966，独立float64 CC=0.86204960；最终best字节与独立复查一致。
+相比系数.6的0.86172948，CC/KLD/SIM略改善、NSS/MAE略差；alpha≥0.4且四专家无明显坍缩。
 权重SHA、相位更新、命令和差距见[SAM完成结果](SAM_TRAINING.md)。
 来源强蒸馏.85953132的历史结果保留在[泛化优化](VIEW_REGULARIZATION.md)。
 同规格头Qwen为0.88968469，0.87目标仍未达到。
-仍在训练的阶段性候选`moe_alpha40_sam_spatialcc_kd2_seed42`，epoch5独立复评CC=0.86204960；
+已完成候选为`moe_alpha40_sam_spatialcc_kd2_seed42`，epoch5独立复评CC=0.86204960；
 只改变教师监督损失/强度，不增加推理参数。NSS/MAE有所下降，完整取舍、载入SHA和命令见上方SAM文档。
-不能把阶段性复评当作50轮完成报告；后续best变化须重新核验。
+50轮完成报告和最终SHA已核验；后续其他试验若改变best仍须重新核验。
 
 [同权重去光复评](OPTICAL_ABLATION.md)：运行时旁路光router和两次光学特征计算，
 不重训纯电子模型；保留完整5000张逐图指标与身份合同，用于审计当前权重对光分支的依赖。
@@ -34,10 +34,10 @@
 当前同规格头的固定权重复评入口：`python -m LightGenV2.tasks.t03_saliency.recheck_aligned --help`。
 支持Qwen/光电，完整5000张public-test、逐图float64独立CC及样本ID清单SHA；不训练、不测速度功耗。
 使用`--system qwen --config LightGenV2/tasks/t03_saliency/configs/moe_staged_alpha_free.yaml`
-或`--system optical --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam005.yaml`，
+或`--system optical --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam_spatialcc_kd2.yaml`，
 并显式提供`--checkpoint`和新的`--run-dir`。原同头Qwen权重为
 `runs/simulation/qwen_aligned_head_staged_seed42/best_checkpoint.pt`（路径相对于本任务），
-光电已核验候选为`runs/simulation/moe_alpha40_sam005_seed42/best_checkpoint.pt`。
+光电已核验候选为`runs/simulation/moe_alpha40_sam_spatialcc_kd2_seed42/best_checkpoint.pt`。
 
 [平台期受控精修](ADAPTIVE_REFINEMENT.md)：从历史best启动，比较KD约束与GT CC目标，
 含自动降学习率/早停机制；不增加推理结构。

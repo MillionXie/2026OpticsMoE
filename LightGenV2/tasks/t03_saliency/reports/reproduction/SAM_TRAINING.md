@@ -726,7 +726,7 @@ python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TA
 `training_report.json` SHA256：`fd1a01e416db4cd75c764229f397363092c9980fe859587f0e74fcaad0b7f73e`；
 `selected_checkpoint_test_evaluation.json` SHA256：`7d2a8daabc9e6a51de4e739a6e06df606c9229e9087c87b85aa5a79a4f46c5c5`。
 训练源码仍为30145ef，最终报告不改变先前逐图改善及KLD/SIM取舍结论。
-这是当前较高CC的已完成、已独立核验候选；KD2的.86204960仍在训练，.87目标没有达到。
+这是较高CC的已完成、已独立核验对照；KD2随后完成，收尾见文末，.87目标没有达到。
 
 ## 576维电子CFFN加宽对照完成：不采用
 
@@ -739,3 +739,48 @@ best SHA256：`debcab2b8568b9eac88927a0ba3476f7e8b128d760088f1a04901a218ef8db73`
 `training_report.json`：`0258e3ba06d2f8724bed497055caa56262c8fa1ffd55451961f618d173633a88`；
 `selected_checkpoint_test_evaluation.json`：`b444b66a86c67c80e4cef4389e9c4685f35ad3885b1101e3b0a817b33b1ee167`。
 保留原run及best/last，不删除中间证据、不替换原384维候选。
+
+## 较早阶段SAM完成：有收益，但未超过后期精修
+
+`moe_alpha40_viewreg_sam005_seed42`已完成80/80轮，源码67454db1，未重启或改变预算。
+best为epoch75 EMA，完整5000张最终重载CC=.8602510413；第80轮为.8601740419。
+这比同一较早来源、相同增强/蒸馏阶段的非SAM控制`.85953132`约高.000720，
+但低于后期空间CC KD2精修的独立CC=.86204960；不能将不同来源的差直接解释为SAM启动时间的因果效应。
+这是单seed、公开测试选模的标准最终重载，未另做NumPy float64复核，不宣称无偏泛化结论。
+KLD=.1133814178、SIM=.8233874903、NSS=.9670447325、AUC=.7699143971、MAE=.0781757564。
+alpha=.42788461/.43927202，四专家选择2336/2646/2297/2721（23.36%/26.46%/22.97%/27.21%），
+有效专家数3.978，无未使用专家。相对初始化的圆周相位RMS：router=.0100613 rad，
+四专家=.0973789/.1003972/.1603473/.1563913 rad，全局相位=.1303844 rad。
+相位有实际更新、路由未明显坍缩，但该证据不能排除其他表达能力或优化瓶颈。
+训练后期61轮起关闭图像增强，训练光学扰动继续保留；标准eval仍关闭随机光学扰动。
+
+best SHA256：`ed5e1cce1412c3a2e6270a47d800ea85396c1c213fc2bfb04b3f1c452f973354`；
+`training_report.json`：`480cca7d273becea3f6543350acac0632ebf79c596fb3939b33dfaf89eddbd8d`；
+`selected_checkpoint_test_evaluation.json`：`2e1f198864d8bb93264dd17552c6fe3914872c62a1a6e0ce7b7d4f414b11fb96`。
+路径及完整训练命令见本文件“较早来源加入SAM的配对训练”；正式权重仅best/last，保留该结果作为对照。
+
+## 空间CC系数2最终完成：当前最佳已核验候选
+
+`moe_alpha40_sam_spatialcc_kd2_seed42`完成50/50轮，源码961907d1，进程2540050正常退出。
+最终best仍为epoch5 EMA，SHA `87ad4db51e3f58f9a41d6df09092439e5a09e81e93f88a3bfe2d3d008fafb29a`，
+与前述独立float64复评、完整相位/路由审计及去光配对试验完全一致，无需把阶段性候选冒充完成结果。
+最终全5000重载CC=.8620496600，独立CC=.8620496019；第50轮CC=.8611217465，不是best。
+最终报告KLD=.1142445008、SIM=.8240741602、NSS=.9654307341、AUC=.7699777850、MAE=.0801479521。
+alpha=.4307218194/.4410670400，专家计数2349/2625/2316/2710，与先前审计一致。
+`training_report.json` SHA256：`f283f170c4a920e6419174019c1585bf29ac8c0b7cc527f170edf481da0d6caa`；
+`selected_checkpoint_test_evaluation.json`：`be7bf973da31d5021db8fe584a83a32b2b54dae213bf5914c359cdee0b489678`。
+stop_reason=epoch_budget，正式根目录仅best/last；独立复评SHA、命令、5000个ID及指标取舍见前文。
+现在将该完成权重作为当前最高已核验CC候选；距离.87还差.00795040，仍不代表目标达成或实测CCD结果。
+全局rank16组合仍是另外在训的试验，不混入这个权重或结果。
+
+## groups64空间卷积完成：不采用
+
+`moe_alpha40_sam_group64_seed42`完成50/50轮，源码6fea94fb，best epoch5 EMA，
+最终完整5000张重载CC=.8613588051。相对原groups384/SAM.05的.8613320866仅高.00002672，
+却新增34560参数，没有足够收益支持采用；不把单seed极小差当作可靠改进。
+尚未另做float64独立复查。KLD=.1127691746、SIM=.8240855747、NSS=.9687701208、
+AUC=.7701766212、MAE=.0769239346；alpha=.43073791/.44109234，专家计数2329/2645/2314/2712。
+best SHA256：`b25a2d6d81483c9ec80f01bb163b1fd3db638fb2caeef1b8e3d29d22d11103f4`；
+`training_report.json`：`d5d1a819ede8f269f20cf6ec8420c798eb7aee8e84fac7d94b85d31d6a87b1a8`；
+`selected_checkpoint_test_evaluation.json`：`9cdfccd59fa75295a63410538965c3428f14ddf194211c940eb88ebc6e551d56`。
+保留完整复现证据和best/last，不替换当前原384维、depthwise的空间CC KD2候选。
