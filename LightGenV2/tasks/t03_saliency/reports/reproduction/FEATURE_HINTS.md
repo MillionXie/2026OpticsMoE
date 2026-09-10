@@ -1,6 +1,12 @@
 # 训练时空间特征监督（不增加推理网络）
 
-## 后备候选：掩蔽特征恢复（MGD-inspired，尚未正式训练）
+## 当前候选：掩蔽特征恢复（MGD-inspired，已启动，收益待验证）
+
+2026-09-10正式启动：GitHub已发布源码`f5b29fc9db304daffbfa3df1d34f8975098d1c5f`，
+工作树`.worktrees/t03_kernel13`，GPU3/PID1851792，预算40轮，输出
+`runs/simulation/moe_alpha40_masked_kd_seed42`。此工作树名称沿用历史，不代表模型改成13×13卷积。
+启动前确认GPU3没有计算进程，GPU0关系组已退出；与GPU1稳定路由组并行，总计两张GPU。
+GPU0现有ABO作业未触碰。本行记录启动，不是完成或提高性能，结果以run的完整测试为准。
 
 配置`moe_alpha40_masked_kd.yaml`。参考[Masked Generative Distillation，ECCV2022](https://www.ecva.net/papers/eccv_2022/papers_ECCV/html/140_ECCV_2022_paper.php)：
 遮挡学生特征并训练恢复教师特征。这里是SALICON适配，不是论文原实验复现，也不移植其学生骨干。
@@ -26,7 +32,7 @@
 
 ```bash
 # 仅为复现命令：先检查两卡预算、GPU空闲与同名run不存在，勿重复启动。
-CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_masked_kd.yaml --phase all
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=3 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_masked_kd.yaml --phase all
 ```
 
 查看`masked_distillation_provenance.json`、resolved_config、run_manifest，及history的
