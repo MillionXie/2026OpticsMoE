@@ -49,6 +49,40 @@ GPU0、PID1294991、run `moe_alpha40_feature_pretrain_seed42`。启动前GPU0无
 旧region和router对照已分别停止并释放GPU0/1，本助手现只使用一张卡。
 正式预算60轮，训练状态看run的console.log/history；不能把启动记录当作已完成结果。
 
+### 预训练早期检查与单变量强度对照
+
+control首轮/第5轮完整5000张周期测试CC=.7645925910949707/.8140745836257934。
+每轮10000训练图，训练特征损失1.47035365→.91055371，空间MSE1.27865902→.88073992，
+均值MSE3.83389253→.59627589；不仅总loss变化，固定教师头下的任务表现也在恢复。
+第5轮live alpha=.43756527/.44824940（不是EMA权重的alpha报告）。仍低于旧正式best，
+不能据此声称新预训练有效，需继续联合阶段并完整复评。
+
+另做CPU只读梯度诊断：载入当时第4轮**live** last字节，SHA256
+`7911a489f98914439746fa491076e8443aa6c6b9c59132d3c2f81e1c3db936f2`；不保存额外阶段PT，
+last之后正常被覆盖。诊断不是可单独交付的永久epoch4权重，也不是最终性能证据。
+取manifest中前16个train ID，4×4batch，RGB224无增强、eval关闭随机光学扰动，头冻结。
+对同一前向分别求`GT+2*spatial_CC_KD`和`2*feature_loss`的梯度，不混入物理/路由正则，
+不调用optimizer.step、不改变在GPU0训练的进程。以下为4个batch的均值（不是全数据结论）：
+
+|参数组|任务梯度范数|特征梯度范数|两梯度余弦|
+|---|---:|---:|---:|
+|E|4.53742|.414823|.01406|
+|光router|.000249324|.000041979|-.11652|
+|专家/全局相位|.0109315|.00454925|.02648|
+|CCD电子读出|2.07930|.147333|.05976|
+|已有空间FFN|.245248|.0277544|.01000|
+
+特征监督确实传入光学相位；当前权重2下，E的特征/任务范数约.0914，相位约.4162。
+未观察到E/相位平均梯度强烈反向，但也并非同向；16张clean输入不足以证明全训练中的关系。
+据此增加`moe_alpha40_feature_pretrain_strong.yaml`单变量对照：前15轮feature权重2→10，
+其他数据、来源、头、LR、种子、60轮预算、第16轮后联合策略完全一致。它测试更强特征监督，
+并不预设有益；若持续无改善则停止并释放其GPU。仍不增加电子参数或分支。
+
+```bash
+# GPU1必须先确认可用；加上control，最多两张卡，不再启动第三组。
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=1 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_feature_pretrain_strong.yaml --phase all
+```
+
 ## 已完成对照结果
 
 2026-09-10，`moe_alpha40_hint_control_seed42`与`moe_alpha40_hint_cosine_seed42`

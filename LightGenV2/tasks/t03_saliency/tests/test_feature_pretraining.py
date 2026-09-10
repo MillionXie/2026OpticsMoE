@@ -125,3 +125,14 @@ def test_profile_architecture_and_invalid_options():
     with pytest.raises(ValueError):configure(s,options,root)
     options=deepcopy(s.feature_pretraining);options['frozen_head_epochs']=True
     with pytest.raises(ValueError):configure(s,options,root)
+
+
+def test_strong_pretraining_is_only_an_initial_feature_weight_change():
+    root=Path(__file__).resolve().parents[1]/'configs'
+    a=load_settings(root/'moe_alpha40_feature_pretrain.yaml')
+    b=load_settings(root/'moe_alpha40_feature_pretrain_strong.yaml')
+    allowed={'config','config_path','output_dir','feature_pretraining'}
+    assert {key for key in vars(a) if getattr(a,key)!=getattr(b,key)} <= allowed
+    assert {key for key in a.feature_pretraining if a.feature_pretraining[key]!=b.feature_pretraining[key]}=={'initial_weight'}
+    assert a.feature_pretraining['initial_weight']==2. and b.feature_pretraining['initial_weight']==10.
+    assert architecture_label(a)==architecture_label(b)
