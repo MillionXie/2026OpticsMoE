@@ -108,13 +108,31 @@ def _project_code(
     else:
         _add_tree(selected, root, f"{PROJECT}/configs/release")
         _add_tree(selected, root, f"{PROJECT}/configs/deployment")
-    _add_tree(selected, root, f"{PROJECT}/tests", {"__pycache__"})
+    if runtime_only:
+        for name in (
+            "__init__.py",
+            "test_hardware_contract.py",
+            "test_hardware_mask_export.py",
+            "test_phase_snapshots.py",
+        ):
+            path = base / "tests" / name
+            if path.is_file():
+                selected[path.relative_to(root).as_posix()] = path
+    else:
+        _add_tree(selected, root, f"{PROJECT}/tests", {"__pycache__"})
     for relative in ("experiments/__init__.py",):
         selected[relative] = root / relative
 
 
-def _hardware_code(selected: dict[str, Path], root: Path) -> None:
-    _add_tree(selected, root, "experiments/hardware_sdk", {"__pycache__", "artifacts"})
+def _hardware_code(
+    selected: dict[str, Path], root: Path, *, current_bench_only: bool
+) -> None:
+    excluded = {"__pycache__", "artifacts"}
+    if current_bench_only:
+        # The current bench is Meadowlark PCIe + manual 8 um phase SLM + TUCam.
+        # Do not ship historical display-SLM or legacy camera SDK trees.
+        excluded.update({"amplitude_holoeye", "legacy"})
+    _add_tree(selected, root, "experiments/hardware_sdk", excluded)
     _add_tree(
         selected,
         root,
@@ -207,20 +225,24 @@ def build_lab(root: Path, config: Path, checkpoint: Path, output: Path, guide: P
         config=config,
         runtime_only=custom_runtime,
     )
-    _hardware_code(selected, root)
+    _hardware_code(selected, root, current_bench_only=custom_runtime)
     _data_files(settings, selected)
     selected[f"{PROJECT}/deployment/checkpoints/best_observed_test_checkpoint.pt"] = checkpoint
-    for name in (
-        "TEMPORAL9_COMPACT_STUDY.md",
-        "temporal9_compact_result.json",
-        "SPATIAL_OPTIMIZATION_RESULT.md",
-        "spatial_optimization_result.json",
-        "SPATIAL_BALANCED_FORMAL_RESULT.md",
-        "spatial_balanced_formal_result.json",
-        "LAB_TEMPORAL9_GUIDE.md",
-        "LAB_SPATIAL4_GUIDE.md",
-        "LAB_SPATIAL4_CUSTOM_CONV_GUIDE.md",
-    ):
+    document_names = (
+        ("LAB_SPATIAL4_CUSTOM_CONV_GUIDE.md",)
+        if custom_runtime
+        else (
+            "TEMPORAL9_COMPACT_STUDY.md",
+            "temporal9_compact_result.json",
+            "SPATIAL_OPTIMIZATION_RESULT.md",
+            "spatial_optimization_result.json",
+            "SPATIAL_BALANCED_FORMAL_RESULT.md",
+            "spatial_balanced_formal_result.json",
+            "LAB_TEMPORAL9_GUIDE.md",
+            "LAB_SPATIAL4_GUIDE.md",
+        )
+    )
+    for name in document_names:
         path = root / PROJECT / name
         if path.is_file():
             selected[path.relative_to(root).as_posix()] = path
