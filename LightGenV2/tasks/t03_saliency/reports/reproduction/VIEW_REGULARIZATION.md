@@ -36,7 +36,32 @@ OMP/MKL各2线程。原生Qwen只用于这次教师训练目标诊断，不进�
 其强调匹配教师/学生视图；这不是该论文分类实验复现，更不意味着本任务必然提高到.88。
 下一步若实施，应先生成仅10k train ID的固定裁剪教师缓存，存储完整裁剪/像素预处理/教师SHA合同，
 学生使用同一输入变换，保持原光路/Top2/alpha/冻结前端/推理参数不变；不要用测试图生成训练目标。
-当前仅完成上述诊断，尚未导出这个缓存或启动裁剪对照，亦未将它合并进正在运行的深监督组。
+裁剪对照尚未启动，亦未将它合并进正在运行的深监督组；固定视图缓存导出实现见下节。
+
+### 实际固定裁剪教师缓存（实现待验证与导出）
+
+模块`fixed_crop_teacher.py`只导出教师在实际裁剪RGB上的logits，不改变student/trainer默认行为。
+严格固定原224RGB→(6,6,218,218)→BICUBIC224，无翻转/色彩扰动；保持与上面诊断一致，
+不要把它称为旧BILINEAR随机增强的逐位复现。只接受完整10000条train ID；不能用val/test补足。
+核验531c教师权重的实际加载字节SHA、同规格头架构、训练注释SHA及有序ID摘要。
+
+每个样本额外存原224RGB和裁剪后224RGB的SHA；训练消费时必须逐项检查，不能仅凭文件名
+认定图像一致。`crop_image`拒绝非RGB/非224输入，`check_pixels`拒绝错误插值或错图。
+缓存tensor为FP16 `[10000,1,224,224]`，约0.94GiB，不另存增强PNG、原视频或新的模型权重。
+数值检查包括真实tensor尺寸/dtype/非有限值；manifest记录视图、软件版本、源码/config/教师/
+注释/ID SHA及完整命令。JSON旁文件记录最终缓存SHA。现有缓存不会覆盖。
+
+```bash
+# 从仓库根目录执行；先检查GPU空闲并计入本助手最多两卡预算。
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=1 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 python -u -m LightGenV2.tasks.t03_saliency.fixed_crop_teacher --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_extra_control.yaml --checkpoint LightGenV2/tasks/t03_saliency/runs/simulation/qwen_aligned_head_staged_seed42/best_checkpoint.pt --output LightGenV2/tasks/t03_saliency/runs/simulation/fixed_crop_teacher_20260910/teacher_crop.pt --batch-size 16 --device cuda
+```
+
+输出必须位于T03的runs/simulation内，已有pt/json/partial一律拒绝。
+先独占创建partial，完成后用同文件系统原子硬链接发布pt（已存在目标会失败），
+再只移除本次临时名称；中断的partial保留，禁止当有效缓存或未经确认删除。
+本导出器面向Linux训练服务器的同文件系统硬链接，不为实验室Windows增加运行依赖。
+数据加载器使用spawn避免继承CUDA上下文，导出完核查自身PID/显存释放。
+当前没有配置或训练逻辑自动使用此缓存；导出验证后再建立“变换原教师/实际裁剪教师”受控对照。
 
 ## 轻量电子容量对照：16维全局空间混合
 
