@@ -1,0 +1,10 @@
+base_config: moe_alpha40_extra_control.yaml
+# Keep 87ad core AND head; spatial relationships, not a forced teacher basis.
+# Training-only objective. No projector, attention, new branch or inference state.
+relational_distillation:
+  cache_file: ../runs/simulation/teacher_features_20260910/teacher_train_features.pt
+  cache_sha256: 39aae6b13452975186266672e51216e72391112df65b23c453de030033826304
+  initial_weight: 1.0
+  final_weight: 0.1
+  end_epoch: 30
+output_dir: ../runs/simulation/moe_alpha40_relational_kd_seed42

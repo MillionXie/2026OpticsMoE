@@ -334,6 +334,8 @@ def load_settings(path: str | Path) -> Any:
             raise ValueError('Do not combine router coordinate transfer with other warmstart transformations')
     from .feature_pretraining import configure as configure_feature_pretraining
     configure_feature_pretraining(settings, d('feature_pretraining', {}), config.parent)
+    from .relational_distillation import configure as configure_relational
+    configure_relational(settings, d('relational_distillation', {}), config.parent)
     return settings
 
 
@@ -345,6 +347,7 @@ def save_resolved_config(settings: Any) -> None:
     values.setdefault('training',{}).update(router_phase_coordinates=settings.router_phase_coordinates,
         convert_router_phase_on_warmstart=settings.convert_router_phase_on_warmstart)
     values['feature_pretraining'] = settings.feature_pretraining
+    values['relational_distillation'] = settings.relational_distillation
     # The shared T02 serializer writes pose-specific PCK/NME prose. T03's
     # actual trainer compares test_metrics['cc'] strictly; describe that here.
     values.setdefault("protocol", {}).update(

@@ -122,6 +122,11 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
     model = build_student(loaded, settings)
     initialization = initialize_student(model, settings)
     feature_targets = None
+    relation_targets = None
+    if getattr(settings, 'relational_distillation', {}):
+        from .relational_distillation import RelationalTargets
+        relation_targets = RelationalTargets(settings, bundle.train_records)
+        _write_json(settings.output_dir/'relational_distillation_provenance.json', relation_targets.provenance)
     if getattr(settings, 'feature_pretraining', {}).get('enabled', False):
         from .feature_pretraining import FixedFeatureTargets, initialize_teacher_decoder
         feature_targets = FixedFeatureTargets(settings, bundle.train_records)
@@ -250,8 +255,15 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
                     stage_report['semantic_weight'] = settings.semantic_weight
             elif getattr(settings, "sam_rho", 0) > 0:
                 from .sam_training import train_sam_epoch
+                relation_kwargs = {}
+                if relation_targets is not None:
+                    options = settings.relational_distillation
+                    epoch_settings.relational_current_weight = distillation_weight(
+                        options['initial_weight'], options['end_epoch'], epoch, options['final_weight'])
+                    stage_report['relational_weight'] = epoch_settings.relational_current_weight
+                    relation_kwargs['relation_targets'] = relation_targets
                 train_metrics = train_sam_epoch(model, train_loader, loaded, epoch_settings, optim,
-                                                teacher if settings.map_kd_weight > 0 else None)
+                                                teacher if settings.map_kd_weight > 0 else None, **relation_kwargs)
             elif hints is None:
                 train_metrics = legacy._train_epoch(
                     "student", model, train_loader, loaded, settings, optim,
