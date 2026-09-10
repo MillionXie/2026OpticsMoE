@@ -13,6 +13,7 @@ from ..modeling import (
     LGVQSingleMetricOEO16,
     SpatialGridReadout,
     SpatialCompactWeightedReadout,
+    SpatialPrunedGridCompactResidualReadout,
     TrainableQualityFrameStem,
     _phase,
     _phase_modulation,
@@ -144,6 +145,29 @@ def test_compact_spatial_readout_is_small_attention_free_and_trainable(
         for module in readout.modules()
         for token in ("attention", "transformer", "lstm", "gru")
     )
+
+
+def test_pruned_grid_compact_residual_is_zero_start_and_smaller(
+    tmp_path: Path,
+) -> None:
+    source_settings = replace(
+        _small_settings(tmp_path),
+        spatial_readout_mode="spatial_grid",
+        token_grid=14,
+    )
+    compact_settings = replace(
+        source_settings,
+        spatial_readout_mode="spatial_pruned_grid_compact_residual",
+        spatial_compact_head_width=8,
+    )
+    compact_settings.validate()
+    readout = SpatialPrunedGridCompactResidualReadout(compact_settings).eval()
+    assert torch.count_nonzero(readout.compact_output[-1].weight) == 0
+    assert sum(parameter.numel() for parameter in readout.parameters()) < 1_000_000
+    vision = torch.randn(2, 4, 196, compact_settings.model_width)
+    language = torch.randn(2, 8, compact_settings.model_width)
+    mask = torch.ones(2, 8, dtype=torch.bool)
+    assert readout(vision, language, mask).shape == (2,)
 
 
 def test_level_calibration_isotonic_projection_is_nondecreasing() -> None:

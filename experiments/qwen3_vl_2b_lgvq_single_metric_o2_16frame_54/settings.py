@@ -452,6 +452,11 @@ class ExperimentSettings:
                 f"l{self.spatial_compact_language_width}_"
                 f"h{self.spatial_compact_head_width}_v1"
             )
+        elif self.spatial_readout_mode == "spatial_pruned_grid_compact_residual":
+            suffixes.append(
+                "spatialprunedgridcompactresidual_"
+                f"k{self.spatial_compact_head_width}_v1"
+            )
         if self.spatial_readout_mode.startswith("spatial_weighted_level"):
             suffixes.append(f"rf{self.spatial_residual_receptive_field}_v1")
         if self.spatial_readout_refiner_enabled:
@@ -577,6 +582,7 @@ class ExperimentSettings:
             "spatial_weighted_level_absolute",
             "spatial_weighted_level_blend",
             "spatial_compact_weighted",
+            "spatial_pruned_grid_compact_residual",
         }:
             raise ValueError(
                 "model.spatial_readout_mode must be statistics, spatial_grid, "
@@ -587,7 +593,8 @@ class ExperimentSettings:
                 "spatial_dual_level_residual, or "
                 "spatial_weighted_level_absolute, or "
                 "spatial_weighted_level_blend, or "
-                "spatial_compact_weighted"
+                "spatial_compact_weighted, or "
+                "spatial_pruned_grid_compact_residual"
             )
         for name, value in (
             ("spatial_compact_channels", self.spatial_compact_channels),
