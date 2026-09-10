@@ -16,7 +16,7 @@ backend:
 
 artifacts:
   canonical_checkpoint: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_readout_compression_s907/pruned_compact_teacher_only_s919/best_observed_test_checkpoint.pt
-  canonical_checkpoint_sha256: 2882ea83a12089cb4622d7bc698b32779c6628dab3d1d085977808b22af8c4a67
+  canonical_checkpoint_sha256: 2882ea83a12089cb4622d7bc698b32779c6628dab3d1d085977808b2af8c4a67
 
 architecture_contract:
   qwen_vision_blocks_executed: 0

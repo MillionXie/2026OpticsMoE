@@ -33,7 +33,7 @@ checkpoint 关闭光学后 SRCC 下降 `0.069974`，因此压缩后仍保留可�
 - 实现 commit：`caad1d27`
 - 训练 run：`runs/simulation/spatial_readout_compression_s907/pruned_compact_teacher_only_s919`
 - best epoch：54（按 test SRCC 选模；无验证集）
-- checkpoint SHA256：`2882ea83a12089cb4622d7bc698b32779c6628dab3d1d085977808b22af8c4a67`
+- checkpoint SHA256：`2882ea83a12089cb4622d7bc698b32779c6628dab3d1d085977808b2af8c4a67`
 - 完整 on/off 复评：上述 run 的 `full_evaluate.log`，以及后端输出目录中的
   `optical_contribution_same_checkpoint.json`
 
