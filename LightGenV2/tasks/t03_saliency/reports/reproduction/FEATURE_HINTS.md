@@ -1,6 +1,30 @@
 # 训练时空间特征监督（不增加推理网络）
 
-## 后备候选：空间位置关系蒸馏（尚未启动GPU训练）
+## 当前候选：空间位置关系蒸馏（已启动，收益待验证）
+
+2026-09-10启动审计：源码`aa0dc20283b789c836e9b727108eb3f41eddaced`已发布到GitHub，
+独立工作树`.worktrees/t03_balance`，GPU0/PID1691668，预算40轮。
+run为`runs/simulation/moe_alpha40_relational_kd_seed42`；run_manifest记录相同源码，
+完整5000张初始化CC=.862049694442749，教师特征缓存SHA与本页39aa合同一致。
+缓存provenance的git_commit是缓存生成时源码，不是当前训练源码；当前源码以run_manifest为准。
+光学Top2/alpha≥.4/训练DC/原推理结构不变，不能把初始化成绩写成新增训练收益。
+
+GPU0原45轮联合组停止于第19轮，best第15轮CC=.8386751629829406，保留：
+
+- best SHA `a62f776b72b75936f71a167202abecb63f9d8d6f9c9e12f32f001d26ea331de3`。
+- last SHA `2845f8fafeb3d9c03f4e3448324a1e5d4e42540a3ca479cbc1079a73a7f4440f`。
+
+停止后两个PT均可读取；仅清理经UID/命令/cwd/进程组核实的自有父子PID
+1483586/1489512/1489530/1489722/1491964/1492229。确认GPU0无计算进程、仅12MiB后再启动新组。
+没有删除权重或数据。停止原因是有限两卡下的试验优先级，不是证明该组不可能再提高。
+GPU1/PID1483592稳定路由组仍运行：第20/25轮CC=.8374878645896912/.8400173555374145。
+其第27轮已正常完成，仍低于原正式best；不要把未完成的60轮预算写成结果。
+
+补充只读CPU路由诊断（原训练清单前64张、batch4、eval关闭随机扰动，非全测试审计）：
+旧联合组best15四专家选择次数32/32/35/29，共4种专家对，alpha=.44356108/.47995389；
+稳定组当时best20（SHA `6dfdba4f7620c54548ca6ac83c0db3acf28925d69401d510d6de3e13e967c89e`）
+次数29/35/34/30，共6种专家对，alpha=.48469734/.51723713。未见这64张上的明显坍缩，
+不能把性能差距直接归因于路由坍缩。best20之后正常被best25覆盖，未另存阶段PT。
 
 `configs/moe_alpha40_relational_kd.yaml`从原正式87ad的core **和原读出头**共同初始化，
 不换教师头、不添加投影。参考[Liu等，CVPR2019](https://openaccess.thecvf.com/content_CVPR_2019/html/Liu_Structured_Knowledge_Distillation_for_Semantic_Segmentation_CVPR_2019_paper.html)
@@ -18,7 +42,7 @@
 严格检查字节SHA、10k有序train ID、网格和预处理合同。没有额外图像/标注，也无新增训练参数。
 函数和模型状态不变，因此起点仍应为87ad的.86205，而不是固定教师头预训练的负CC。
 公开test5000张按起点/首轮/每5轮/末轮选best，仍有测试选模偏差；仅best/last。
-这是后备方法，不宣称有性能收益；最多两张GPU，不与当前两组同时开启第三个任务。
+这是待验证方法，不宣称有性能收益；与稳定路由组合计两张GPU，不开启第三个任务。
 
 2026-09-10的CPU梯度动机检查（未训练/未保存PT）：87ad标准eval、前8张有序train、2个batch×4，
 教师39aa缓存；关系MSE=.10044791/.12872997，教师非对角关系平方均值=.06267693/.07898695。
@@ -36,7 +60,7 @@
 配置取权重1，避免一开始把关系梯度放大数倍冲击路由；不修改正在运行的固定头训练。
 
 ```bash
-# 待当前任务结束并核查GPU0空闲后再执行；不能重复写同名run。
+# 复现命令：现已有同名任务运行，不要重复执行；须先核查空闲GPU及输出目录。
 CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_relational_kd.yaml --phase all
 ```
 
@@ -44,7 +68,7 @@ CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 TRANSFORMER
 `relational_weight/train_relational_loss`、原初始化SHA和最终完整测试/路由审计。
 实现`d2224927`通过197项T03 CPU回归（44.46秒、13条既有依赖警告）：包含通道正交/偏置不变性、
 空间错位敏感、教师无梯度、缓存SHA/身份校验、SAM双前向单次更新、零关系权重与原SAM逐参数完全一致。
-测试不代表完整数据性能；尚未发起该候选的GPU训练。
+测试不代表完整数据性能；GPU启动状态见本节开头，结果须以完整测试为准。
 补充精度保护后的`b434b543`同样197项通过（45.63秒），显式关闭关系矩阵乘法的外层AMP，
 仅该训练损失使用float32，不改实际模型推理精度。
 真实train前2张、CPU、种子42、保留训练光学扰动、一次SAM更新：loss=1.05701140，
