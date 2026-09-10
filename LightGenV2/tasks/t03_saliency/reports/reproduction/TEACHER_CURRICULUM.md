@@ -56,3 +56,16 @@ CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=1 HF_HUB_OFFLINE=1 TRANSFORMER
 完成/失败后检查进程退出及对应显存释放；不kill未知PID、不执行GPU reset。
 中断run不自动续写。最终结果以training_report及重载best完整复评为准，候选还需独立float64
 复评、alpha/路由均衡/相位变化审计；保留原best及历史对照。
+
+## 已核验启动记录
+
+源码 `a032aefc4035de159c8845a9170d4bc5bb0d708e`，服务器xml环境112项T03测试通过
+（24.56秒，13项既有matplotlib弃用警告），测试与正式运行前已push GitHub。
+0/1号4090各自完成CUDA矩阵运算与有限值检查，测试进程退出后显存回到12/25MiB。
+正式两组均batch32、评估batch48、workers2，初始化SHA与上文一致，教师缓存存在。
+服务器worktree为 `/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_sam`，
+产物通过既有runs链接保存在仓库主目录的T03 `runs/simulation/`。
+联合续训PID3559541（GPU0），教师预热PID3560835（GPU1）；PID仅为当次运行身份，
+后续清理前必须同时核对命令、启动时间与路径，不能因PID复用误杀其他作业。
+各run的 `console.log`、`run_manifest.json` 和 `metrics/training_history.csv` 为实时进展证据。
+此记录仅确认启动，不代表完成60轮或取得新性能。
