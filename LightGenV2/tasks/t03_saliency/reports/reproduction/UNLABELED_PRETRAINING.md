@@ -355,11 +355,11 @@ GPU0仍仅运行早期额外组PID351016。不得在这两个active worktree中c
 - best：`5619ea9cca8faee0a4c5bff162f907313ccbef27423ce1ae245db722e93dd0a8`
 - last：`e49ead099367e4ac2819d12f53782f6eff07bd5f6ad5a9d6c0074b8223de43b0`
 
-## 训练期语义监督备选：数据已准备，辅助训练尚未实现/启动
+## 训练期语义监督备选：独立试验已启动，尚无完成结果
 
 反复仅改变损失/噪声尚未达到.88，因此准备利用同一19999额外图像的COCO物体类别，
-给现有光电特征增加训练期语义目标。拟采用可移除的轻量辅助分类头，不改变部署推理结构；
-这只是后续方案，不是已经获得提升的模型，也不是当前两组run使用的监督。
+给现有光电特征增加训练期语义目标。采用可移除的轻量辅助分类头，不改变部署推理结构；
+这不是已经获得提升的模型，也不是此前额外图像组或噪声组使用的监督。
 [Saliency Prediction with External Knowledge](https://arxiv.org/abs/2007.13839)
 提供语义知识与显著性相关的动机，但其图注意力推理不符合本项目限制，**不移植、不声称复现**。
 
@@ -399,3 +399,68 @@ python -m LightGenV2.tasks.t03_saliency.prepare_semantic_targets \
 **公平性区别**：如果使用这份数据，不再只是无标签图像＋教师伪标签，而是增加了人工
 物体类别监督。它只能作为额外监督的独立试验报告，不能冒充与原SALICON baseline
 完全相同的训练标签预算；推理期仍不得引入检测器、原生Transformer或attention。
+
+### 语义辅助训练实现与检查
+
+源码`3651f6bc4d6078a230f3124d4dcd2d0055529cb3`已测试并同步GitHub。
+`moe_alpha40_extra_semantic.yaml`继承早期额外图像组：同de477来源、80轮上限、
+GT/教师损失、SAM、EMA、学习率、光路、DC20–30%、Top2与alpha≥.4；唯一新增训练监督为：
+
+```text
+额外图像的最终融合特征 [196,192]
+  -> 空间均值 [192] -> 无参数LayerNorm -> Linear(192,80)
+  -> 多标签BCE，加入原训练损失的权重为0.5
+```
+
+类别正样本权重为`sqrt(负样本数/正样本数)`并截在[1,10]；初始bias来自类别频率。
+辅助头15440参数、学习率.001，与学生分开注册到优化器，不属于学生的core/head。
+它不执行SAM的电子残差扰动，但在SAM第二遍反向后正常更新；两遍使用同一批图像及标签。
+分类标签严格匹配经过排除审计的额外图像身份。SALICON每步仍有原真值监督，
+没有把类别标签伪装成显著性真值，也不使用测试图像的类别标签。
+
+推理/周期测试不调用辅助头。best/last中新增根字段`training_only_semantic`，只含
+`head.weight/head.bias`；读取部署权重仍只加载原`core`和`saliency_head`。
+best的学生是EMA权重，辅助头保存对应时刻的live状态（不是EMA），不得混为同一种权重。
+标签表、正样本权重不复制进checkpoint，通过固定SHA数据及provenance重建。
+本入口是warmstart后新建优化器，不声称支持逐位恢复优化器的断点续训。
+
+验证：完整155项T03 CPU测试通过（32.62秒，13项既有警告）；真实2张SALICON＋2张
+额外图像完成一次SAM更新，loss=.91413814、语义BCE=.61224592。辅助头创建前后
+学生eval输出最大差0、state_dict键集合相同；一次优化器/EMA更新，辅助头权重
+RMS变化.00099290，router相位约3.26279e-5，四专家约.000481–.000493，global约.00048348。
+这是实现检查，不是测试集性能；短测没有保存checkpoint。
+
+新run为`moe_alpha40_extra_semantic_seed42`，从`.worktrees/t03_sam`上述源码启动，
+GPU0、PID756423（PID仅记录启动时状态），输出仍在任务`runs/simulation/`。
+启动前旧额外组已停止并确认GPU0释放；GPU1当时仅有噪声对照，未使用第三张GPU。
+
+```bash
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_extra_semantic.yaml --phase all
+```
+
+### 早期额外图像组停止记录
+
+第5/10/15/20轮完整5000张CC为.86071849/.86034058/.86025953/.85993174，
+持续下降，故在第22轮进行中停止自有PID351016，last完整保存到21轮，**不是完成80轮**。
+检查并终止其残留加载/资源跟踪进程358099、358211、714737、714902；
+随后父进程及全部已记录子进程均消失，GPU0无计算进程。没有终止他人任务。
+CPU重载best/last成功，未删除数据或权重：
+
+- best，第5轮，CC=.8607184862136841：`58ba7e1fb79dd0b143357498a41b2497999f125d4b45d4cbeb285807992fa083`。
+- last，第21轮（该轮不安排测试）：`b42a93a4bf2754e3d3f4e879c0363a8e5e361a749c0aac2b461cf17a90bdaa25`。
+
+已核验完成的正式候选仍为87ad、CC=.86204960；没有用此次新试验替换它。
+
+### DC-only组停止记录
+
+第5/10/15/20轮完整5000张CC为.86075922/.85997855/.85992699/.85967294，
+始终低于初始化，因此在第21轮进行中停止自有PID563100，last保留20轮，**不是完成40轮**。
+best仍为第0轮CC=.8620496944，不构成新训练提升。CPU重载best/last成功，SHA分别为：
+
+- best：`695a6b21e3876a71a9fe53cb805ae285986e9838e624f180628ae8b08bab48ab`。
+- last：`f5337a58ae52a81df6fe4e147df1e63287a89e9db219fe551d7cac92f224ff14`。
+
+GPU1显存已释放；仍存活的本任务spawn worker570180及资源跟踪进程568032，
+核查cwd/归属后另行终止。spawn避免继承CUDA资源，不保证SIGTERM父进程后所有CPU子进程自动退出。
+停止后仅GPU0的语义辅助试验继续运行，不能为了占满两卡再重复无收益试验。
+新试验初始化完整5000张CC=.85468773，与早期来源配对一致；尚无训练后测试结果。
