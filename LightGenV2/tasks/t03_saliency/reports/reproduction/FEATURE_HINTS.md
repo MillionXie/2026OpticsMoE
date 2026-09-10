@@ -101,3 +101,48 @@ CUDA_VISIBLE_DEVICES=6 python -u -m LightGenV2.tasks.t03_saliency.run --profile 
 查看feature_hint_provenance、resolved_config、初始化SHA、run_manifest的commit/命令、
 metrics/training_history的hint/lr/CC及selected_checkpoint_test_evaluation。
 本文件为方法与操作协议，不是已达到0.87的成绩声明。
+
+## 仅训练集的线性读出头迁移诊断（2026-09-10，不采用）
+
+动机：排查能否只将教师解码知识折入**现有**token_projection，而不增大电子网络。
+这是一次性CPU诊断，不是新的完整训练/论文测试结果，不把小样本分数写入总表。
+没有使用公开测试图片，也没有覆盖或保存新checkpoint；没有占用第三张GPU。
+
+固定学生为87ad（配置`moe_alpha40_extra_control.yaml`），教师为531c，教师缓存39aae6b1，
+完整SHA见本页及SAM_TRAINING。代码环境为xml/Torch2.6.0+cu124、当前源码dabb9983，
+显式CPU、OMP/MKL各2线程。使用原训练记录按image_id排序的前256张、无增强，batch=4，
+前128张拟合映射，后128张仅检查映射。两组都曾参与原学生/教师训练；后128张**不是模型的
+独立验证集**，只是线性拟合未用的训练样本，不改变正式10k/5k划分。
+256个有序sample_id按每行一个、末尾换行的SHA：
+`93fbb898de9b00ca0a1bd03e2f520198f5980687b586b0d673d01c4c2bb1e37b`。
+
+复算步骤与定义：
+
+1. 用`prepare_salicon(...,persist=False)`、`legacy.build_loaders(...,training=False)`的train数据集
+   `Subset(range(256))`，提取学生第二融合后的真实`[N,192,14,14]`空间特征F及原密度图。
+   读取教师缓存相同ID对应的T，检查全10000个有序ID一致及上述缓存/权重SHA。
+2. `X=student.head.token_norm(F.permute(0,2,3,1))`，
+   `Y=teacher.decoder.token_projection(teacher.decoder.token_norm(T.permute(0,2,3,1)))`。
+   每张196位置，X为192维、Y为128维；浮点64累加，不改变通道/空间顺序。
+3. 仅以前128图的25088个位置拟合。中心化后
+   `A=Xc.T@Xc/n; B=Xc.T@Yc/n; scale=trace(A)/192`，
+   `W=solve(A+lambda*scale*I,B); bias=mean(Y)-mean(X)@W`。
+4. 在内存深拷贝教师decoder，保留学生token_norm，token_projection替换为W转置及bias。
+   其余decoder参数来自教师，总量仍85412；原学生core及存盘权重均不修改。
+   对全部256图输出做原空间softmax，用`independent_cc`逐图float64 Pearson，再分别平均。
+5. 空间R²仅检查后128图的投影目标：预测和Y分别减去各自每图的196位置均值，
+   `R2=1-mean((pred_centered-Y_centered)^2)/mean(Y_centered^2)`；它不是显著性CC。
+
+|相对ridge lambda|前128图CC|后128图CC|后128图教师投影空间R²|
+|---|---:|---:|---:|
+|原学生解码头|.87674842|.87137958|—|
+|.0001|.62470466|.60183839|.14719877|
+|.001|.62436859|.60174785|.14757751|
+|.01|.62197662|.60109018|.14667721|
+|.1|.61665557|.60008925|.12978821|
+|1|.61614250|.60444415|.09248648|
+
+结论只限于这个简单线性迁移：不适合直接替换现有读出头，因此未启动GPU训练或改变正式模型。
+它不证明所有特征预训练无效、现有特征完全缺少语义或更大的网络必不可少。
+若继续这条方向，应先设计显式的特征级预训练及完整数据验证，不能拿坏的线性移植直接交付。
+诊断进程1175074已正常结束，未保留临时特征张量或额外模型权重。
