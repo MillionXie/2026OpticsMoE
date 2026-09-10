@@ -1,0 +1,24 @@
+base_config: moe_alpha40.yaml
+
+# Preserve trained alpha logits, all optics, losses, noise and inference topology.
+refinement:
+  source_relative: runs/simulation/alpha40_staged_seed42_20260910/best_checkpoint.pt
+  source_sha256: 655805a0a5f1d10661aca9207387060cc89020423c938903c6e85c61601a1cf4
+  epochs: 40
+  joint_epochs: 30
+  final_lr_fraction: 0.2
+  router_noise_initial_fraction: 0.6666666666666666
+  joint_rates:
+    electronic: 0.000003
+    router: 0.00003
+    feature_phase: 0.0003
+    ccd_readout: 0.00002
+    pose_head: 0.00003
+  readout_rates:
+    electronic: 0.0
+    router: 0.0
+    feature_phase: 0.0
+    ccd_readout: 0.000005
+    pose_head: 0.00001
+
+output_dir: ../runs/simulation/alpha40_polish_seed42_20260910

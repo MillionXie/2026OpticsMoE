@@ -1,7 +1,9 @@
 # T02 关键点检测（LSP）
 
 2026-09-10：[alpha≥0.4、目标PCK≥0.73续训](reports/reproduction/ALPHA40.md)，profile `alpha40`。
-电子结构及总预算836248参数不变，启动时强制核验；目标尚待实测，不覆盖旧alpha50。
+电子结构及总预算836248参数不变，启动时强制核验。60轮完成，best PCK=0.72693，
+alpha=0.41823/0.41820，去光PCK=0.70479；未达0.73。新增`alpha40_polish`
+从这个best续训40轮，小步联合后固定光学精修，不重置alpha或扩大电子结构。
 
 新增：[global随机相位消融](reports/reproduction/GLOBAL_NOISE.md)：冻结模型，仅替换最后478×478 global相位，5个seed×完整1000张test；低alpha先测，高alpha最终best训练结束后再测。
 

@@ -28,6 +28,7 @@ from .visualize import render
 
 TASK_DIR = Path(__file__).resolve().parent
 PROFILES = {
+    "alpha40_polish": "moe_alpha40_polish.yaml",
     "alpha40": "moe_alpha40.yaml",
     "alpha50": "moe_alpha50.yaml",
     "main_dc20": "moe_optical_router_scale_matched_dc20.yaml",

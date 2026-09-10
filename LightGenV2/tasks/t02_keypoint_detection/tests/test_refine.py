@@ -5,13 +5,13 @@ import pytest
 import torch
 
 from LightGenV2.tasks.t02_keypoint_detection.refine import (
-    PROFILES, RATES, apply_stage, phase_delta, stage_spec,
+    PROFILES, RATES, apply_stage, phase_delta, stage_spec, profile_epochs, polish_config,
 )
 
 
 def test_schedule_complete_and_stage_boundaries():
     for profile in PROFILES:
-        for epoch in range(1, 61):
+        for epoch in range(1, profile_epochs(profile)+1):
             name, rates = stage_spec(profile, epoch)
             assert name and set(rates) == set(RATES)
             assert all(value >= 0 for value in rates.values())
@@ -89,3 +89,21 @@ def test_high_alpha_contract_reset_and_bounds(profile,lower,initial):
     assert stage_spec('alpha40',1)[1]['feature_phase'] == 0
     assert stage_spec('alpha40',4)[1]['feature_phase'] > 0
     assert stage_spec('alpha40',4)[1]['electronic'] > 0
+
+
+def test_polish_keeps_architecture_and_smaller_steps():
+    from pathlib import Path
+    from LightGenV2.tasks.t02_keypoint_detection.settings import load_settings
+    from LightGenV2.tasks.t02_keypoint_detection.modeling import architecture_label
+    configs = Path(__file__).resolve().parents[1]/'configs'
+    original = load_settings(configs/'moe_alpha40.yaml')
+    polish = load_settings(configs/'moe_alpha40_polish.yaml')
+    assert architecture_label(original) == architecture_label(polish)
+    assert polish.fusion_alpha_min == .4 and polish.coordinate_loss_weight == 0
+    assert profile_epochs('alpha40_polish') == 40
+    for k,lr in stage_spec('alpha40_polish',1)[1].items():
+        assert 0 < lr < stage_spec('alpha40',4)[1][k]
+    assert stage_spec('alpha40_polish',30)[1]['feature_phase'] > 0
+    assert stage_spec('alpha40_polish',31)[1]['feature_phase'] == 0
+    assert len(polish_config()['source_sha256']) == 64
+    with pytest.raises(ValueError): stage_spec('alpha40_polish',41)
