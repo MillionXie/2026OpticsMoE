@@ -3,6 +3,7 @@ import argparse
 import hashlib
 import json
 import subprocess
+import shutil
 import zipfile
 from pathlib import Path
 
@@ -21,9 +22,12 @@ def main():
     parser.add_argument('--assets',type=Path,required=True)
     parser.add_argument('--data',type=Path,required=True)
     parser.add_argument('--reference',type=Path,required=True)
-    parser.add_argument('--output',type=Path,required=True)
+    parser.add_argument('--output',type=Path,help='Final ZIP; cannot overwrite')
+    parser.add_argument('--stage',type=Path,help='Optional clean directory for isolated acceptance before ZIP')
     args=parser.parse_args()
-    if args.output.exists():raise FileExistsError(args.output)
+    if args.output is None and args.stage is None:parser.error('Provide --output and/or --stage')
+    if args.output is not None and args.output.exists():raise FileExistsError(args.output)
+    if args.stage is not None and args.stage.exists():raise FileExistsError(args.stage)
     if not (args.data/'data/abo_similarity10_manifest.csv').is_file():raise FileNotFoundError('Wrong data root')
     if __package__:
         from .standalone.io import verify_assets
@@ -45,6 +49,13 @@ def main():
     manifest={'source_commit':commit,'hardware_sdk_included':False,
               'description':'Standalone simulation + all-optical/electronic fine-tuning, fixed prompt, no full Qwen.',
               'files':{k:{'sha256':digest(v),'bytes':v.stat().st_size} for k,v in files.items()}}
+    if args.stage is not None:
+        args.stage.mkdir(parents=True)
+        for name,path in files.items():
+            target=args.stage/name;target.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(path,target)
+        (args.stage/'MANIFEST.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2),encoding='utf-8')
+        print(json.dumps({'stage':str(args.stage),'source_commit':commit,'files':len(files)},indent=2))
+    if args.output is None:return
     args.output.parent.mkdir(parents=True,exist_ok=True)
     with zipfile.ZipFile(args.output,'x',compression=zipfile.ZIP_DEFLATED,compresslevel=3) as archive:
         for name,path in files.items():archive.write(path,name)
