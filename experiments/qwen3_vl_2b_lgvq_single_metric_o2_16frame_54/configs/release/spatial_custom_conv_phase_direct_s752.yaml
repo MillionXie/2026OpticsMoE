@@ -1,0 +1,39 @@
+base_config: spatial_custom_conv_pretrain_s746.yaml
+output_dir: ../../runs/lgvq_spatial_custom_conv_phase_direct_s752
+random_seed: 752
+
+# Independent comparison with s750: preserve the long-distilled electronic
+# front and update only deployable feature/router phase planes. This isolates
+# whether optical masks can recover quality without changing electronics.
+training:
+  initialization_checkpoint: ../../artifacts/lgvq_custom_conv_e1_pretrained_long_s749.pt
+  trainable_scope: optical_phase_only
+  epochs: 100
+  batch_size: 32
+  learning_rate: 0.0
+  phase_learning_rate: 0.000001
+  router_phase_learning_rate: 0.000002
+  weight_decay: 0.0
+  learning_rate_warmup_epochs: 3
+  minimum_learning_rate_factor: 0.05
+  ema_decay: 0.995
+  ema_start_epoch: 1
+  test_interval_epochs: 1
+  phase_snapshot_interval_epochs: 0
+
+loss:
+  regression_weight: 0.40
+  ranking_weight: 1.50
+  correlation_weight: 3.00
+  soft_spearman_weight: 0.25
+  soft_rank_temperature: 0.12
+  soft_target_weight: 0.0
+  soft_target_ranking_weight: 0.0
+  soft_target_correlation_weight: 0.0
+  level_distribution_weight: 0.0
+  optical_alignment_weight: 0.0
+  router_balance_weight: 0.0
+  router_importance_weight: 0.0
+  serial_router_balance_weight: 0.0
+  serial_router_importance_weight: 0.0
+  router_capture_weight: 0.0
