@@ -525,7 +525,12 @@ class ExperimentSettings:
             192,
         ):
             raise ValueError("Formal widths are locked to Vision 1024, Language 2048, model 192")
-        expected_quality_width = 192 if self.quality_feature_cache_path is not None else 14
+        expected_quality_width = (
+            192
+            if self.quality_feature_cache_path is not None
+            or self.trainable_frame_stem_enabled
+            else 14
+        )
         if self.quality_input_width != expected_quality_width:
             raise ValueError(
                 "quality_input_width must be 14 for the fixed bank or 192 when "
@@ -603,7 +608,10 @@ class ExperimentSettings:
                 "model.electronic_quality_residual_initial must be within (0,1)"
             )
         if self.electronic_quality_residual_enabled and (
-            self.quality_feature_cache_path is None
+            (
+                self.quality_feature_cache_path is None
+                and not self.trainable_frame_stem_enabled
+            )
             or self.quality_input_width != self.model_width
         ):
             raise ValueError(
@@ -676,7 +684,10 @@ class ExperimentSettings:
                 and not self.electronic_quality_residual_enabled
             ):
                 invalid.append("quality_refiner_enabled")
-            if self.trainable_frame_stem_enabled:
+            if (
+                self.trainable_frame_stem_enabled
+                and not self.electronic_quality_residual_enabled
+            ):
                 invalid.append("trainable_frame_stem_enabled")
             if self.late_input_correction_enabled:
                 invalid.append("late_input_correction_enabled")
