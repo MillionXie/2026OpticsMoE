@@ -1,7 +1,7 @@
 # 额外无标签图像：预训练数据准备
 
 状态（2026-09-10）：**19999张教师目标已导出并通过实际缓存读取器校验；尚无额外图像训练的CC结果**。
-原两组60轮已结束并释放GPU；40轮SALICON-only对照已启动，额外组完成短更新验证后使用另一张卡。
+原两组60轮已结束并释放GPU；40轮SALICON-only对照与额外组均已启动，最多两张卡。
 
 ## 为什么检查这条路线
 
@@ -174,3 +174,26 @@ CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 TRANSFORMER
 ```
 
 只用现有两张卡；缓存导出结束才能交接GPU0，不额外占卡。目标.88仍未达到。
+
+### GPU短更新与正式启动（2026-09-10）
+
+源码`9c40515ea1b36ed0f5c855774f11a168f65331cf`：T03全套137项CPU测试通过
+（32.68秒，13项既有警告），已确认GitHub分支包含该commit。新增配置测试初次因工作树cache为
+符号链接而比较未resolve路径失败；已只修正测试路径比较，未改训练逻辑或放松实际数据校验。
+
+使用该正式配置、原87ad初始化、真实额外缓存，在GPU0做一次完整SAM更新：
+固定seed42、workers0、诊断batch2，SALICON train前2条为GT批，额外批来自正式独立shuffle池；
+其余损失/光学扰动保持正式设置，map KD=2、extra KD=.6。挂钩检查optimizer更新1次、学生前向4次、
+24个原生Vision Transformer模块的调用次数为0，并执行EMA更新。
+loss=1.01628029，alpha=.43072152/.44106743；router raw RMS更新约1.29e-5，
+专家约1.79e-4～1.98e-4，global约1.92e-4。所有指标/更新有限；raw RMS不是弧度，
+包含DC正则梯度，不能用它宣称一批激活了全部专家。没有保存checkpoint，没有改变原始best。
+诊断PID53989正常退出，GPU0回到12MiB后才启动正式额外组。
+
+- GPU0额外组PID63224：`moe_alpha40_extra_coco20k_seed42`，代码9c40515e。
+- GPU1控制组PID17303：`moe_alpha40_extra_control_seed42`，代码2659f0e0。
+
+两源码版本的T03差异仅新额外profile、测试和文档，训练实现相同；各run保存实际commit。
+正式两组均batch32、评估batch48、workers2，40轮，源SHA87ad，推理参数不变。
+当前只是启动记录，不代表已完成或提升。后续看`metrics/training_history.csv`、
+`training_report.json`和重载best的完整5000图评估；有实质提升再独立float64复评。
