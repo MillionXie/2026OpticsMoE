@@ -1,0 +1,11 @@
+base_config: spatial_custom_conv_phase_direct_s752.yaml
+output_dir: ../../runs/lgvq_spatial_custom_conv_phase_direct_s753
+random_seed: 753
+
+# Ten-times faster mask-only comparison.  The unchanged epoch-0 checkpoint is
+# still a candidate, so stronger phase motion cannot overwrite a better model.
+training:
+  initialization_checkpoint: ../../artifacts/lgvq_custom_conv_e1_pretrained_long_s749.pt
+  epochs: 100
+  phase_learning_rate: 0.00001
+  router_phase_learning_rate: 0.00002
