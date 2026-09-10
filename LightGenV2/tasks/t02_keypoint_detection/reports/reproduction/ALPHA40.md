@@ -22,6 +22,14 @@
 run-dir改为`$TASK/runs/simulation/alpha40_polish_seed42_20260910`。
 配置/完整学习率日程见`configs/moe_alpha40_polish.yaml`及run_manifest。
 
+2026-09-10 22:58北京时间正式启动于GPU2 RTX3090，PID2091458，源码
+`d7829addb389185276e6cc7476e036383aad26a7`（17项测试及真实GPU小样本训练通过）。
+干净worktree为`/DATA/DATA1/guest3/lsp_alpha40_polish_source_20260910`。
+PID2091459在不占GPU的情况下等待完成报告，再用同一张GPU执行5种随机global评估，
+输出`runs/simulation/global_noise_alpha40_polish_20260910`。
+评估使用`--profile alpha40`，因为polish没有改变alpha40的推理配置或架构合同。
+不得把当前启动记录当作已达0.73的结果。
+
 后文是首轮alpha40的启动记录与命令，不代表该轮尚未完成。
 
 2026-09-10 20:53北京时间已在实验室GPU2 RTX3090启动，PID1542218；
