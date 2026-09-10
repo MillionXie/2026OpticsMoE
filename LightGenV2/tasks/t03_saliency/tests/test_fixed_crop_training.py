@@ -93,11 +93,13 @@ def test_mixed_views_match_in_both_arms_and_reject_wrong_pixels(tmp_path):
 
 def test_target_bytes_and_annotation_contract(tmp_path,monkeypatch):
     from LightGenV2.tasks.t03_saliency import recheck_aligned,modeling
+    from experiments.qwen3_vl_embedding_2b_salicon_vision_optical_saliency import datasets
     s,t,c,b=setup(tmp_path)
     payload=deepcopy(c.payload)
     payload['manifest']['checkpoint_sha256']=s.distillation_teacher_sha256
     monkeypatch.setattr(recheck_aligned,'load_hashed_checkpoint',lambda p:(payload,s.fixed_crop_distillation['cache_sha256']))
     monkeypatch.setattr(modeling,'sha256_file',lambda p:'b'*64)
+    monkeypatch.setattr(datasets,'_annotation_path',lambda *a:tmp_path/'annotations.json')
     records=[SimpleNamespace(sample_id=sid) for sid in b['sample_ids']]
     targets=FixedCropTargets(s,records)
     assert targets.index==t.index and targets.provenance['inference_parameters_added']==0
@@ -127,3 +129,30 @@ def test_configs_no_inference_change_and_reject_uncontrolled_combinations(tmp_pa
     for key,value in [('augmentation_enabled',True),('first_stage_supervision',{'enabled':True}),('fusion_alpha_min',.1)]:
         s=deepcopy(a);setattr(s,key,value)
         with pytest.raises(ValueError):configure(s,s.fixed_crop_distillation,ROOT)
+
+
+def test_real_sam_loop_reuses_current_crop_target_and_clears_it(tmp_path,monkeypatch):
+    from contextlib import nullcontext
+    from LightGenV2.tasks.t03_saliency.tests.test_first_stage_supervision import Toy
+    from LightGenV2.tasks.t03_saliency.sam_training import train_sam_epoch
+    from experiments.qwen3_vl_embedding_2b_salicon_vision_optical_saliency import training as legacy
+    s,t,c,b=setup(tmp_path)
+    s.map_kd_weight=2.
+    s.phase_dc_weight=s.router_balance_weight=s.router_importance_weight=s.ccd_operating_point_weight=0.
+    model=Toy();opt=torch.optim.AdamW([{'params':model.core.parameters(),'name':'electronic'},
+        {'params':model.head.parameters(),'name':'saliency_head'}],lr=.0001)
+    pixels=torch.randn(2,196,192);grid=torch.tensor([[1,14,14],[1,14,14]])
+    monkeypatch.setattr(legacy,'_autocast',lambda *a:nullcontext())
+    monkeypatch.setattr(legacy,'preprocess_vision',lambda *a:dict(pixel_values=pixels,image_grid_thw=grid))
+    seen=[];get=t.get
+    def record(ids,device):
+        value=get(ids,device);seen.append(value.clone());return value
+    t.get=record
+    steps=[];hook=opt.register_step_post_hook(lambda *args:steps.append(1))
+    result=train_sam_epoch(model,FixedCropLoader([b],s,t,c),
+        SimpleNamespace(device=torch.device('cpu'),processor=None),s,opt,t)
+    hook.remove()
+    assert model.calls==2 and len(steps)==1 and result['samples']==2 and result['map_kd']>0
+    # The trainer may load the target once before its two SAM forwards.
+    assert seen and all(torch.equal(x,c.payload['logits'].float()) for x in seen)
+    assert t.batch_augmented_logits is None
