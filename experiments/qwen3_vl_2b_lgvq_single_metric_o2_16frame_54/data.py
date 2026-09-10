@@ -482,6 +482,29 @@ def load_resnet_feature_cache(
     return {**payload, "tokens": aligned, "manifest_aligned_by_sample_id": True}
 
 
+def load_mobilenet_feature_cache(
+    path: str | Path, *, sample_ids: Sequence[str], frame_count: int, token_grid: int
+) -> dict[str, Any]:
+    """Load pretrained MobileNetV2 blocks 0..10 at the 14x14x64 boundary."""
+
+    source = Path(path).expanduser().resolve()
+    payload = _load_torch(source, mmap=True)
+    contract = "lgvq_frozen_mobilenetv2_b10_4f_14x14x64_v1"
+    if not isinstance(payload, dict) or payload.get("contract") != contract:
+        raise RuntimeError(f"Unsupported MobileNetV2 feature cache: {source}")
+    source_ids = list(map(str, payload.get("sample_ids", [])))
+    if len(source_ids) != len(set(source_ids)) or set(source_ids) != set(sample_ids):
+        raise RuntimeError("MobileNetV2 feature cache IDs differ from the manifest")
+    tokens = payload.get("tokens")
+    expected = (len(sample_ids), frame_count, token_grid * token_grid, 64)
+    if not torch.is_tensor(tokens) or tokens.dtype != torch.float16 or tuple(tokens.shape) != expected:
+        raise ValueError(f"MobileNetV2 tokens must be float16 {expected}")
+    lookup = {sample_id: index for index, sample_id in enumerate(source_ids)}
+    order = torch.tensor([lookup[str(sample_id)] for sample_id in sample_ids])
+    aligned = tokens.index_select(0, order)
+    return {**payload, "tokens": aligned, "manifest_aligned_by_sample_id": True}
+
+
 def _align_soft_targets(
     path: Path,
     *,
@@ -688,6 +711,20 @@ def load_single_metric_cache(settings: ExperimentSettings) -> dict[str, Any]:
         result["resnet_feature_cache_sha256"] = file_sha256(
             settings.resnet_feature_cache_path
         )
+    if settings.mobilenet_feature_cache_path is not None:
+        mobilenet = load_mobilenet_feature_cache(
+            settings.mobilenet_feature_cache_path,
+            sample_ids=manifest_ids,
+            frame_count=settings.frame_count,
+            token_grid=settings.token_grid,
+        )
+        result["mobilenet_tokens"] = mobilenet["tokens"]
+        result["mobilenet_feature_cache_path"] = str(
+            settings.mobilenet_feature_cache_path
+        )
+        result["mobilenet_feature_cache_sha256"] = file_sha256(
+            settings.mobilenet_feature_cache_path
+        )
     if settings.training_soft_targets_path is not None:
         soft, present, provenance = _align_soft_targets(
             settings.training_soft_targets_path,
@@ -718,6 +755,9 @@ def cache_report(payload: Mapping[str, Any]) -> dict[str, Any]:
         "vgg_shape": None
         if "vgg_tokens" not in payload
         else list(payload["vgg_tokens"].shape),
+        "mobilenet_shape": None
+        if "mobilenet_tokens" not in payload
+        else list(payload["mobilenet_tokens"].shape),
         "language_dtype": str(payload["language_tokens"].dtype),
         "input_ids_shape": list(payload["input_ids"].shape),
         "split_counts": {
@@ -796,6 +836,8 @@ class LGVQSingleMetricDataset(Dataset[dict[str, Any]]):
             item["vgg_tokens"] = self.payload["vgg_tokens"][source].float()
         if "resnet_tokens" in self.payload:
             item["resnet_tokens"] = self.payload["resnet_tokens"][source].float()
+        if "mobilenet_tokens" in self.payload:
+            item["mobilenet_tokens"] = self.payload["mobilenet_tokens"][source].float()
         return item
 
 
@@ -807,6 +849,7 @@ __all__ = [
     "load_language_cache",
     "load_raw_frame_cache",
     "load_resnet_feature_cache",
+    "load_mobilenet_feature_cache",
     "load_vgg_feature_cache",
     "load_single_metric_cache",
     "load_vision_cache",

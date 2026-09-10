@@ -498,6 +498,9 @@ def evaluate(
             resnet_tokens=None
             if "resnet_tokens" not in batch
             else batch["resnet_tokens"].to(device, non_blocking=True),
+            mobilenet_tokens=None
+            if "mobilenet_tokens" not in batch
+            else batch["mobilenet_tokens"].to(device, non_blocking=True),
             optical_enabled=optical_enabled,
         )
         prediction = result["prediction"]
@@ -860,6 +863,9 @@ def train(
                 resnet_tokens=None
                 if "resnet_tokens" not in batch
                 else batch["resnet_tokens"].to(device, non_blocking=True),
+                mobilenet_tokens=None
+                if "mobilenet_tokens" not in batch
+                else batch["mobilenet_tokens"].to(device, non_blocking=True),
                 optical_enabled=True,
             )
             regression = F.smooth_l1_loss(

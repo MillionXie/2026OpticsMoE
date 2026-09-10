@@ -235,6 +235,7 @@ class ExperimentSettings:
     raw_frame_cache_path: Path | None = None
     vgg_feature_cache_path: Path | None = None
     resnet_feature_cache_path: Path | None = None
+    mobilenet_feature_cache_path: Path | None = None
     training_soft_targets_path: Path | None = None
     initialization_checkpoint: Path | None = None
     frame_stem_checkpoint: Path | None = None
@@ -291,6 +292,7 @@ class ExperimentSettings:
     vgg_correction_max: float = 0.50
     vgg_correction_mode: str = "local"
     resnet_electronic_max: float = 0.50
+    mobilenet_electronic_max: float = 0.50
     top_k: int = 2
     router_temperature: float = 1.0
     parallel_router_temperature: float = 1.0
@@ -484,6 +486,9 @@ class ExperimentSettings:
         if self.resnet_feature_cache_path is not None:
             correction_tag = int(round(self.resnet_electronic_max * 100.0))
             suffixes.append(f"resnet18l3_e1corr{correction_tag:02d}_v1")
+        if self.mobilenet_feature_cache_path is not None:
+            correction_tag = int(round(self.mobilenet_electronic_max * 100.0))
+            suffixes.append(f"mobilenetv2b10_e1corr{correction_tag:02d}_v1")
         if self.serial_router_input_size != self.geometry.serial_expert_size:
             suffixes.append(f"sroutercrop{self.serial_router_input_size}_v1")
         if self.serial_router_flatfield_calibration:
@@ -761,6 +766,14 @@ class ExperimentSettings:
                 )
             if self.resnet_electronic_max <= 0.0:
                 raise ValueError("model.resnet_electronic_max must be positive")
+        if self.mobilenet_feature_cache_path is not None:
+            if self.target_name != "spatial" or self.frame_count != 4 or self.token_grid != 14:
+                raise ValueError(
+                    "The MobileNetV2 electronic residual requires Spatial, four frames, "
+                    "and a 14x14 grid"
+                )
+            if self.mobilenet_electronic_max <= 0.0:
+                raise ValueError("model.mobilenet_electronic_max must be positive")
         if not 0 < self.serial_router_input_size <= self.geometry.serial_expert_size:
             raise ValueError(
                 "router.serial_input_size must be within the serial expert field"
@@ -920,6 +933,9 @@ class ExperimentSettings:
             "resnet_electronic_only",
             "resnet_electronic_and_readout",
             "resnet_electronic_path_and_readout",
+            "mobilenet_electronic_only",
+            "mobilenet_electronic_and_readout",
+            "mobilenet_electronic_path_and_readout",
             "tiny_rgb_adapter_only",
             "tiny_rgb_adapter_and_readout",
             "tiny_rgb_adapter_path_and_readout",
@@ -943,6 +959,8 @@ class ExperimentSettings:
                 "resnet_electronic_only, or "
                 "resnet_electronic_and_readout, or "
                 "resnet_electronic_path_and_readout, or "
+                "mobilenet_electronic_only, mobilenet_electronic_and_readout, or "
+                "mobilenet_electronic_path_and_readout, or "
                 "tiny_rgb_adapter_only, tiny_rgb_adapter_and_readout, or "
                 "tiny_rgb_adapter_path_and_readout, or "
                 "serial_router_and_readout"
@@ -971,6 +989,13 @@ class ExperimentSettings:
         ):
             raise ValueError(
                 "resnet_electronic_only requires data.resnet_feature_cache"
+            )
+        if self.trainable_scope.startswith("mobilenet_electronic") and (
+            self.mobilenet_feature_cache_path is None
+        ):
+            raise ValueError(
+                "A mobilenet_electronic training scope requires "
+                "data.mobilenet_feature_cache"
             )
         if self.trainable_scope.startswith("tiny_rgb_adapter") and not (
             self.tiny_rgb_electronic_adapter_enabled
@@ -1096,6 +1121,9 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         resnet_feature_cache_path=_path(
             get("data", "resnet_feature_cache"), config_path
         ),
+        mobilenet_feature_cache_path=_path(
+            get("data", "mobilenet_feature_cache"), config_path
+        ),
         training_soft_targets_path=_path(get("data", "training_soft_targets"), config_path),
         initialization_checkpoint=_path(get("training", "initialization_checkpoint"), config_path),
         frame_stem_checkpoint=_path(
@@ -1199,6 +1227,9 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         vgg_correction_mode=str(get("model", "vgg_correction_mode", "local")),
         resnet_electronic_max=float(
             get("model", "resnet_electronic_max", 0.50)
+        ),
+        mobilenet_electronic_max=float(
+            get("model", "mobilenet_electronic_max", 0.50)
         ),
         head_width=int(get("model", "head_width", 256)),
         dropout=float(get("model", "dropout", 0.15)),
@@ -1406,6 +1437,7 @@ def resolved_dict(settings: ExperimentSettings) -> dict[str, Any]:
         "raw_frame_cache_path",
         "vgg_feature_cache_path",
         "resnet_feature_cache_path",
+        "mobilenet_feature_cache_path",
         "training_soft_targets_path",
         "initialization_checkpoint",
         "frame_stem_checkpoint",

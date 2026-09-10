@@ -266,6 +266,22 @@ def _apply_trainable_scope(
                     "readout.",
                 )
             )
+        elif scope == "mobilenet_electronic_only":
+            trainable = name.startswith("mobilenet_electronic_correction.")
+        elif scope == "mobilenet_electronic_and_readout":
+            trainable = name.startswith(
+                ("mobilenet_electronic_correction.", "readout.")
+            )
+        elif scope == "mobilenet_electronic_path_and_readout":
+            trainable = name.startswith(
+                (
+                    "mobilenet_electronic_correction.",
+                    "vision_routes.",
+                    "language_routes.",
+                    "frame_merger.",
+                    "readout.",
+                )
+            )
         elif scope == "tiny_rgb_adapter_only":
             trainable = name.startswith("tiny_rgb_electronic_adapter.")
         elif scope == "tiny_rgb_adapter_and_readout":
@@ -382,6 +398,7 @@ def synthetic_smoke(settings: ExperimentSettings) -> dict[str, Any]:
         frame_stem_checkpoint=None,
         vgg_feature_cache_path=None,
         resnet_feature_cache_path=None,
+        mobilenet_feature_cache_path=None,
         serial_router_input_size=min(24, geometry.serial_expert_size),
         trainable_scope="all",
         batch_size=2,

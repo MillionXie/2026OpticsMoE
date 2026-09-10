@@ -195,6 +195,8 @@ def run_preflight(
         cache_paths["quality"] = settings.quality_feature_cache_path
     if settings.resnet_feature_cache_path is not None:
         cache_paths["resnet18_layer3"] = settings.resnet_feature_cache_path
+    if settings.mobilenet_feature_cache_path is not None:
+        cache_paths["mobilenetv2_block10"] = settings.mobilenet_feature_cache_path
     missing = [name for name, path in cache_paths.items() if path is None or not path.is_file()]
     if missing and require_cache and not settings.synthetic:
         report["status"] = "blocked"

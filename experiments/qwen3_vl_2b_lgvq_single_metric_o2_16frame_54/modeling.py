@@ -2263,6 +2263,32 @@ class FrozenResNetElectronicCorrection(nn.Module):
         return self.maximum * torch.tanh(correction / self.maximum)
 
 
+class FrozenMobileNetElectronicCorrection(nn.Module):
+    """Small E1 adapter for pretrained MobileNetV2 blocks 0..10.
+
+    The frozen convolutional front has 239,360 parameters and ends at a
+    14x14x64 tensor.  This 49,536-parameter adapter keeps the complete added
+    electronic front below 0.30 M parameters.  It has no classifier, score
+    head, attention, or path around the optical stages.
+    """
+
+    def __init__(self, settings: ExperimentSettings) -> None:
+        super().__init__()
+        self.maximum = float(settings.mobilenet_electronic_max)
+        self.adapter = nn.Sequential(
+            nn.LayerNorm(64),
+            nn.Linear(64, settings.model_width),
+            nn.GELU(),
+            nn.Linear(settings.model_width, settings.model_width),
+        )
+        nn.init.zeros_(self.adapter[-1].weight)
+        nn.init.zeros_(self.adapter[-1].bias)
+
+    def forward(self, tokens: torch.Tensor) -> torch.Tensor:
+        correction = self.adapter(tokens.float())
+        return self.maximum * torch.tanh(correction / self.maximum)
+
+
 class TinyRgbE1Adapter(nn.Module):
     """Tiny, zero-start RGB front contained inside the E1 residual route.
 
@@ -2507,6 +2533,11 @@ class LGVQSingleMetricOEO16(nn.Module):
             if settings.resnet_feature_cache_path is not None
             else None
         )
+        self.mobilenet_electronic_correction = (
+            FrozenMobileNetElectronicCorrection(settings)
+            if settings.mobilenet_feature_cache_path is not None
+            else None
+        )
         self.tiny_rgb_electronic_adapter = (
             TinyRgbE1Adapter(settings)
             if settings.tiny_rgb_electronic_adapter_enabled
@@ -2656,6 +2687,7 @@ class LGVQSingleMetricOEO16(nn.Module):
         *,
         vgg_tokens: torch.Tensor | None = None,
         resnet_tokens: torch.Tensor | None = None,
+        mobilenet_tokens: torch.Tensor | None = None,
         optical_enabled: bool = True,
     ) -> dict[str, Any]:
         if self.frame_stem is not None:
@@ -2735,6 +2767,23 @@ class LGVQSingleMetricOEO16(nn.Module):
                 raise ValueError("ResNet18 token contract must be [B,4,196,256]")
             resnet_electronic = self.resnet_electronic_correction(resnet_tokens)
             electronic1 = electronic1 + resnet_electronic
+        mobilenet_electronic = electronic1.new_zeros(electronic1.shape)
+        if self.mobilenet_electronic_correction is not None:
+            if mobilenet_tokens is None:
+                raise ValueError(
+                    "The MobileNetV2 electronic residual requires mobilenet_tokens"
+                )
+            if (
+                tuple(mobilenet_tokens.shape[:-1]) != tuple(electronic1.shape[:-1])
+                or mobilenet_tokens.shape[-1] != 64
+            ):
+                raise ValueError(
+                    "MobileNetV2 token contract must be [B,4,196,64]"
+                )
+            mobilenet_electronic = self.mobilenet_electronic_correction(
+                mobilenet_tokens
+            )
+            electronic1 = electronic1 + mobilenet_electronic
         electronic_quality_scale = electronic1.new_zeros(())
         if self.electronic_quality_norm is not None:
             electronic_quality_scale = torch.sigmoid(
@@ -2912,6 +2961,7 @@ class LGVQSingleMetricOEO16(nn.Module):
             "spatial_readout_image_focus": readout_image_focus,
             "vgg_correction_rms": vgg_correction.float().square().mean().sqrt(),
             "resnet_electronic_rms": resnet_electronic.float().square().mean().sqrt(),
+            "mobilenet_electronic_rms": mobilenet_electronic.float().square().mean().sqrt(),
             "tiny_rgb_electronic_rms": tiny_rgb_electronic.float().square().mean().sqrt(),
             "routing": routing,
             "optical_enabled": optical_enabled,
@@ -2978,6 +3028,10 @@ class LGVQSingleMetricOEO16(nn.Module):
         if self.resnet_electronic_correction is not None:
             groups["resnet18_layer3_electronic_residual"] = (
                 self.resnet_electronic_correction
+            )
+        if self.mobilenet_electronic_correction is not None:
+            groups["mobilenetv2_b10_electronic_residual"] = (
+                self.mobilenet_electronic_correction
             )
         if self.tiny_rgb_electronic_adapter is not None:
             groups["tiny_rgb_e1_adapter"] = self.tiny_rgb_electronic_adapter
