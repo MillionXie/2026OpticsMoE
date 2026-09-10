@@ -11,6 +11,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
+import yaml
+
 from .export_hardware_masks import export_hardware_masks
 from .settings import load_settings
 
@@ -43,12 +45,69 @@ def _add_tree(selected: dict[str, Path], root: Path, relative: str, excluded: se
         selected[path.relative_to(root).as_posix()] = path
 
 
-def _project_code(selected: dict[str, Path], root: Path) -> None:
+_LAB_RUNTIME_FILES = {
+    "__init__.py",
+    "__main__.py",
+    "data.py",
+    "export_hardware_masks.py",
+    "hardware_bridge.py",
+    "hardware_contract.py",
+    "metrics.py",
+    "modeling.py",
+    "phase_snapshots.py",
+    "plot_results.py",
+    "preflight.py",
+    "run.py",
+    "settings.py",
+    "training.py",
+    "VERIFY_BUNDLE.py",
+}
+
+
+def _add_config_chain(selected: dict[str, Path], root: Path, config: Path) -> None:
+    """Copy only the selected config and its explicit base chain."""
+
+    current = config.resolve()
+    seen: set[Path] = set()
+    while current not in seen:
+        seen.add(current)
+        try:
+            relative = current.relative_to(root)
+        except ValueError as error:
+            raise ValueError(f"Config is outside repository root: {current}") from error
+        selected[relative.as_posix()] = current
+        raw = yaml.safe_load(current.read_text(encoding="utf-8")) or {}
+        base = raw.get("base_config")
+        if base is None:
+            return
+        base_path = Path(str(base)).expanduser()
+        current = (
+            base_path.resolve()
+            if base_path.is_absolute()
+            else (current.parent / base_path).resolve()
+        )
+    raise ValueError(f"Cyclic config chain while packaging {config}")
+
+
+def _project_code(
+    selected: dict[str, Path],
+    root: Path,
+    *,
+    config: Path,
+    runtime_only: bool,
+) -> None:
     base = root / PROJECT
     for path in base.glob("*.py"):
-        selected[path.relative_to(root).as_posix()] = path
-    _add_tree(selected, root, f"{PROJECT}/configs/release")
-    _add_tree(selected, root, f"{PROJECT}/configs/deployment")
+        if not runtime_only or path.name in _LAB_RUNTIME_FILES:
+            selected[path.relative_to(root).as_posix()] = path
+    if runtime_only:
+        _add_config_chain(selected, root, config)
+        deployment = base / "configs/deployment/spatial4_custom_conv_lab.yaml"
+        if deployment.is_file():
+            _add_config_chain(selected, root, deployment)
+    else:
+        _add_tree(selected, root, f"{PROJECT}/configs/release")
+        _add_tree(selected, root, f"{PROJECT}/configs/deployment")
     _add_tree(selected, root, f"{PROJECT}/tests", {"__pycache__"})
     for relative in ("experiments/__init__.py",):
         selected[relative] = root / relative
@@ -136,7 +195,18 @@ def build_lab(root: Path, config: Path, checkpoint: Path, output: Path, guide: P
     settings = load_settings(config)
     checkpoint = checkpoint.resolve()
     selected: dict[str, Path] = {}
-    _project_code(selected, root)
+    custom_runtime = bool(
+        settings.custom_conv_electronic_enabled
+        and settings.vgg_feature_cache_path is None
+        and settings.resnet_feature_cache_path is None
+        and settings.mobilenet_feature_cache_path is None
+    )
+    _project_code(
+        selected,
+        root,
+        config=config,
+        runtime_only=custom_runtime,
+    )
     _hardware_code(selected, root)
     _data_files(settings, selected)
     selected[f"{PROJECT}/deployment/checkpoints/best_observed_test_checkpoint.pt"] = checkpoint
@@ -149,10 +219,27 @@ def build_lab(root: Path, config: Path, checkpoint: Path, output: Path, guide: P
         "spatial_balanced_formal_result.json",
         "LAB_TEMPORAL9_GUIDE.md",
         "LAB_SPATIAL4_GUIDE.md",
+        "LAB_SPATIAL4_CUSTOM_CONV_GUIDE.md",
     ):
         path = root / PROJECT / name
         if path.is_file():
             selected[path.relative_to(root).as_posix()] = path
+    if custom_runtime:
+        architecture = (
+            root
+            / "LightGenV2/tasks/t06_video_quality_assessment/"
+            "SPATIAL_CUSTOM_OEO_ARCHITECTURE.md"
+        )
+        result_root = (
+            root
+            / "LightGenV2/tasks/t06_video_quality_assessment/reports/"
+            "paper_results/spatial_custom_conv_s749_20260910"
+        )
+        if architecture.is_file():
+            selected["documentation/SPATIAL_CUSTOM_OEO_ARCHITECTURE.md"] = architecture
+        for path in result_root.glob("*"):
+            if path.is_file():
+                selected[f"documentation/formal_result/{path.name}"] = path
     study_document = root / PROJECT / "TEMPORAL_16_36_SPEED_QUALITY_STUDY.md"
     if settings.target_name == "temporal" and study_document.is_file():
         selected[study_document.relative_to(root).as_posix()] = study_document
@@ -201,7 +288,7 @@ def build_lab(root: Path, config: Path, checkpoint: Path, output: Path, guide: P
 def build_evolution(root: Path, config: Path, checkpoint: Path, snapshots: Path, output: Path) -> dict:
     settings = load_settings(config)
     selected: dict[str, Path] = {}
-    _project_code(selected, root)
+    _project_code(selected, root, config=config, runtime_only=False)
     selected["best_observed_test_checkpoint.pt"] = checkpoint
     for path in snapshots.rglob("*"):
         if path.is_file() and path.suffix.lower() in {

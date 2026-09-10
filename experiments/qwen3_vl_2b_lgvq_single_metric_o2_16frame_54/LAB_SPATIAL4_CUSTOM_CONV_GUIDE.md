@@ -6,7 +6,7 @@
 
 模型使用 4 帧 2x2 并行、109x109 光学专家、光学 Top-2 Router、532 nm、17 um、
 10 cm 和 478x478 有效光场。电子 E1 中的额外图像模块由本项目直接用 Conv、GroupNorm、
-GELU 和 Linear 编写，共 316,568 个参数；包内没有运行时 MobileNet/ResNet/VGG 特征依赖。
+GELU 和 Linear 编写，共 316,568 个参数；包内不依赖任何第三方图像骨干或其特征缓存。
 训练、评估和硬件微调不会加载完整 Qwen，Vision/Language Transformer block 执行数均为 0。
 
 ## 0. 解压、校验与变量

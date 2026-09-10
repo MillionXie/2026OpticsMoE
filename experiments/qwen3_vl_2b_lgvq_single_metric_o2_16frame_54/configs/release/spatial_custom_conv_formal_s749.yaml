@@ -1,0 +1,111 @@
+base_config: spatial.yaml
+output_dir: ../../runs/lgvq_spatial_custom_conv_formal_s749
+device: cuda
+random_seed: 749
+
+# Formal four-frame Spatial model.  This file deliberately starts from the
+# generic optical configuration instead of inheriting historical electronic
+# backbone experiments.  Runtime inputs are the frozen Qwen-front caches,
+# project-owned quality cache, raw RGB frames and the fixed Spatial prompt.
+data:
+  vision_cache: ../../artifacts/qwen3vl_front_4f_196x1024_quality14.pt
+  language_cache: ../../artifacts/qwen3vl_front_spatial_prompt_2048.pt
+  quality_feature_cache: ../../artifacts/lgvq_quality_conv5_4f_196x192.pt
+  raw_frame_cache: ../../artifacts/lgvq_four_frames_center100_224_uint8.pt
+  vision_cache_views: []
+  quality_feature_cache_views: []
+  training_view_probabilities: [1.0]
+
+# Full Qwen weights are not part of cached student training or inference.
+initialization:
+  qwen_model_path: null
+
+model:
+  token_grid: 14
+  detector_projection_size: 196
+  head_width: 512
+  spatial_readout_mode: spatial_weighted_level_residual
+  spatial_residual_max: 2.0262
+  spatial_readout_moment_refiner_enabled: true
+
+  strict_two_branch: true
+  quality_branch_enabled: false
+  quality_input_width: 192
+  quality_adapter_mode: identity
+  quality_gate_initial: 0.95
+  qwen_gate_enabled: false
+  quality_refiner_enabled: false
+  trainable_frame_stem_enabled: false
+  late_input_correction_enabled: false
+
+  electronic_route_variant: residual_conv
+  electronic_route_depth: 2
+  electronic_quality_residual_enabled: true
+  electronic_quality_residual_initial: 0.85
+
+  custom_conv_electronic_enabled: true
+  custom_conv_electronic_max: 1.40
+
+router:
+  temperature: 1.20
+  noise_std: 0.0
+  serial_channel_standardization: true
+  parallel_temperature: 2.0
+  serial_temperature: 2.0
+
+optics:
+  k_space_enabled: false
+  phase_quantization_levels: 0
+  unmodulated_power_fraction_min: 0.20
+  unmodulated_power_fraction_max: 0.20
+  unmodulated_power_fraction_eval: 0.20
+
+robustness:
+  input_shift_pixels: 0
+  phase_shift_pixels: 0
+  ccd_shift_pixels: 0
+  phase_dropout_p: 0.0
+
+fusion:
+  alpha_min: 0.40
+  alpha_initial: 0.52
+  alpha_max: 0.90
+
+# These values document the successful custom-front pretraining recipe.
+# Formal evaluation always receives the selected checkpoint explicitly.
+training:
+  initialization_checkpoint: null
+  trainable_scope: custom_conv_only
+  epochs: 200
+  batch_size: 32
+  learning_rate: 0.00030
+  phase_learning_rate: 0.00008
+  router_phase_learning_rate: 0.00016
+  weight_decay: 0.001
+  mos_stratified_batches: true
+  mos_strata: 8
+  learning_rate_warmup_epochs: 3
+  minimum_learning_rate_factor: 0.02
+  ema_decay: 0.99
+  ema_start_epoch: 1
+  test_interval_epochs: 1
+  test_interval_steps: 0
+  phase_snapshot_interval_epochs: 0
+
+loss:
+  regression_weight: 0.20
+  ranking_weight: 2.00
+  correlation_weight: 4.00
+  soft_spearman_weight: 0.40
+  soft_rank_temperature: 0.12
+  soft_target_weight: 0.0
+  optical_alignment_weight: 0.0
+  router_balance_weight: 0.0
+  router_importance_weight: 0.0
+  router_capture_weight: 0.0
+  serial_router_balance_weight: 0.0
+  serial_router_importance_weight: 0.0
+  phase_smoothness_weight: 0.0
+
+curriculum:
+  enabled: false

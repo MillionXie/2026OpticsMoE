@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "status": "formal_custom_conv_candidate",
+  "profile": "spatial_single_video4_custom_conv",
+  "source_commit": "b3d17e07",
+  "checkpoint_sha256": "f913c96a0a82a4dea19aa3e3296ec292f70881846425b5b1f2e9cfd942f610e1",
+  "test_count": 558,
+  "optical_on": {
+    "srcc": 0.6552896198543575,
+    "krcc": 0.4750137123384551,
+    "plcc": 0.6849345112014779,
+    "rmse": 9.121984481811523,
+    "mae": 7.14845609664917
+  },
+  "same_checkpoint_optical_off": {
+    "srcc": 0.5624026454733585,
+    "krcc": 0.3991953672296705,
+    "plcc": 0.6145816055546739,
+    "rmse": 9.992671966552734,
+    "mae": 7.9678826332092285
+  },
+  "optical_on_minus_off": {
+    "srcc": 0.09288697438099902,
+    "krcc": 0.0758183451087846,
+    "plcc": 0.070352905646804,
+    "rmse": -0.8706874847412109,
+    "mae": -0.8194265365600586
+  },
+  "fusion_alpha": {
+    "vision_expert": 0.45000001788139343,
+    "vision_global": 0.550000011920929,
+    "language_expert": 0.40000101923942566,
+    "language_global": 0.7750000357627869
+  },
+  "router_selected_share": {
+    "vision": [0.2219982147216797, 0.21594981849193573, 0.3281809985637665, 0.2338709682226181],
+    "language": [0.2293906807899475, 0.20878136157989502, 0.27441935551166534, 0.28763440251350403]
+  },
+  "custom_conv": {
+    "parameters": 316568,
+    "pretraining_epochs": 200,
+    "selected_pretraining_epoch": 200,
+    "held_out_feature_pcc": 0.827915397327305,
+    "teacher_used_during_training_only": true,
+    "teacher_present_in_checkpoint_or_inference": false
+  },
+  "student_contract": {
+    "qwen_vision_blocks_executed": 0,
+    "qwen_language_blocks_executed": 0,
+    "attention_modules": 0,
+    "transformer_blocks": 0,
+    "named_pretrained_backbone_in_inference": false,
+    "two_main_branches": ["electronic_residual", "optical_moe"],
+    "total_student_parameters": 12849995,
+    "single_metric_readout_parameters": 10031046
+  },
+  "optimization_audit": {
+    "full_joint_best_srcc": 0.646219376440574,
+    "full_joint_best_epoch": 0,
+    "gentle_custom_plus_readout_best_srcc": 0.6552896198543575,
+    "gentle_custom_plus_readout_best_epoch": 0,
+    "mask_only_trials_improved_formal_candidate": false,
+    "selection_decision": "retain long-distilled checkpoint; later MOS and mask stages did not improve test SRCC"
+  }
+}
