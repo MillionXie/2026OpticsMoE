@@ -784,3 +784,28 @@ best SHA256：`b25a2d6d81483c9ec80f01bb163b1fd3db638fb2caeef1b8e3d29d22d11103f4`
 `training_report.json`：`d5d1a819ede8f269f20cf6ec8420c798eb7aee8e84fac7d94b85d31d6a87b1a8`；
 `selected_checkpoint_test_evaluation.json`：`9cdfccd59fa75295a63410538965c3428f14ddf194211c940eb88ebc6e551d56`。
 保留完整复现证据和best/last，不替换当前原384维、depthwise的空间CC KD2候选。
+
+## rank16全局算子只读诊断：确有作用，尚无扩容依据
+
+2026-09-10在源码e5e1ded1上检查在训global16版本的epoch5 EMA，实际加载SHA256：
+`e3d2e666dc666f57d581a9afd4cfecaed4603c7df513ced21fe5af5dee05f75d`。
+它的训练周期完整测试CC=.8621131796，尚未独立float64复评或完成50轮，不替换前述完成候选。
+两层`spatial_up`分别为196×16；以float64做SVD，平方奇异值累计90%需要12/9个方向，
+stable rank（平方Frobenius范数/最大奇异值平方）为4.0110/1.7678。
+这只是权重谱描述，算子中有GELU，不能把该数值当作实际特征秩或直接判断容量已满/未满。
+
+随后在A100、batch16、eval、无增强/随机光学扰动/外层AMP下，只读评估128张训练图。
+抽样方法沿用本文件train1024诊断，但数量改128：`sorted(random.Random(17042).sample(range(10000),128))`，
+对应ID SHA256为`a658dcec4a561ae342b0968d56fbe5eb9ddbe493dd4ef4e051c4361e9e623695`。
+加载上述global16配置及同SHA权重，依次在同一batch运行原模型与将两张`spatial_up`临时置零的模型；
+后者仅旁路新增全局混合，**不旁路光路或原电子残差**。每批先恢复原up，结束恢复原值，不保存PT。
+按既有`independent_cc(density_from_logits(logits), density)`计算逐图CC：
+原模型train128 CC=.8732422430，旁路新增算子=.8729466976，差+.0002955454，81/128张改善。
+在正常前向的两处`token_pointwise`输入hook上，按该类相同真实14×14坐标计算
+`U = spatial_up(GELU(spatial_down(X)))`，每样本统计`RMS(U)/RMS(X)`再平均：
+两层均值=.04359135/.11069392，中位数=.04320111/.10995670。
+均值的计算在channel和196空间维上，分母下限1e-12；不是相位、光强或alpha。
+
+诊断证明新增算子有非零特征修正，但不能据此断言扩容一定无效或一定有效；
+128张训练图不是完整测试分数，也不能证明泛化提升。现有完整测试增益很小，
+因此先完成原预算，不据此扩大rank或增加其他电子结构。原run和权重未修改。
