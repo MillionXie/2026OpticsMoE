@@ -843,3 +843,21 @@ python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TA
 完整5000张warmstart CC=.8546877293，与同源控制一致（GPU微小浮点差异）。
 训练环境torch2.6.0+cu124、Python3.11、HF离线，命令/源码/环境保存在run；尚无完成成绩。
 旧保存器残留的PCK元数据文字勘误见复现README，实际T03按CC选模；本次运行不为说明字段重启。
+
+## 逐图教师/真值梯度诊断：不按教师分数简单关闭蒸馏
+
+2026-09-10源码0f3c33d1，固定完成权重SHA=87ad4db5…08fafb29a，使用前述train128清单
+（ID SHA=a658dcec4a561ae342b0968d56fbe5eb9ddbe493dd4ef4e051c4361e9e623695）。
+A100、batch16、原图、eval关闭随机光学扰动、无外层AMP；同一已验证train-only教师缓存。
+模型前向置于`no_grad`，随后仅使输出logits重新`requires_grad`，不反传或更新模型权重。
+分别以`objectives.saliency_loss(z,target,fixation,s,teacher_logits=None)`和
+`spatial_correlation_distillation(z,teacher_logits)`计算损失，对z调用`torch.autograd.grad`；
+按样本flatten后求两梯度余弦（eps=1e-20），不是参数梯度，也不是CC分数本身。
+真值损失仍KL1+CC1.5+SIM.25−NSS.1，教师项乘正系数2不改变余弦符号。
+
+128张余弦均值=.44119645、中位=.46426605；仅3/128为负，最小−.09350635。
+按独立float64 CC，教师优于学生78/128；这78张梯度全部同向，平均余弦=.55475171。
+其余50张中仅3张反向，平均余弦仍=.26405025，说明“教师当前CC更低”不等于其梯度有害。
+这不能证明共享网络参数上的所有更新均有益，也不能排除其他样本或训练阶段的冲突；
+这里只读小样本诊断，不新增性能成绩、不做无偏泛化声明、不保存checkpoint。
+因此暂不加入按教师/学生CC高低的硬门控，防止删去仍同向的监督；继续现有早期空间CC对照。
