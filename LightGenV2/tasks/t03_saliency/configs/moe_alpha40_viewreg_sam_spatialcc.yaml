@@ -1,0 +1,6 @@
+base_config: moe_alpha40_viewreg_sam005.yaml
+# Earlier-source paired trial: only teacher loss differs from the completed
+# 80-epoch SAM/KL control. Keep KD 2 -> .6, weak augmentation and all optics.
+distillation:
+  loss: spatial_cc
+output_dir: ../runs/simulation/moe_alpha40_viewreg_sam_spatialcc_seed42

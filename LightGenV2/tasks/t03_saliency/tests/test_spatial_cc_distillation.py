@@ -84,3 +84,39 @@ def test_stronger_spatial_cc_changes_only_teacher_strength():
               'phase_learning_rate','router_learning_rate','dense_head_learning_rate',
               'language_optical_phase_zero_order_intensity_min','language_optical_phase_zero_order_intensity_max']:
         assert getattr(s,k)==getattr(base,k)
+
+
+def test_earlier_spatial_cc_keeps_completed_early_sam_protocol():
+    s=load_settings(TASK/'configs/moe_alpha40_viewreg_sam_spatialcc.yaml')
+    base=load_settings(TASK/'configs/moe_alpha40_viewreg_sam005.yaml')
+    assert s.distillation_loss=='spatial_cc' and base.distillation_loss=='kl'
+    assert architecture_label(s)==architecture_label(base)
+    assert s.student_epochs==80 and s.sam_rho==.05
+    assert s.distillation_initial_weight==2. and s.distillation_final_weight==.6
+    assert s.distillation_end_epoch==60 and s.augmentation_enabled
+    for k in ['initialization_checkpoint_sha256','augmentation_mode','crop_scale_min',
+              'augmentation_end_epoch','augmentation_apply_probability','horizontal_flip_probability',
+              'brightness_jitter','contrast_jitter',
+              'fusion_alpha_min','top_k','router_backend','active_size','expert_size',
+              'electronic_ffn_hidden_width','electronic_ffn_groups','electronic_global_rank',
+              'kl_weight','cc_weight','sim_weight','nss_weight','student_learning_rate',
+              'phase_learning_rate','router_learning_rate','dense_head_learning_rate',
+              'language_optical_phase_zero_order_intensity_min',
+              'language_optical_phase_zero_order_intensity_max']:
+        assert getattr(s,k)==getattr(base,k)
+
+
+def test_spatial_cc_teacher_stays_aligned_when_weak_views_end(tmp_path):
+    from LightGenV2.tasks.t03_saliency.tests.test_aligned_weak import fixture
+    from LightGenV2.tasks.t03_saliency.training_support import AlignedWeakLoader
+    s,teacher,batch=fixture(tmp_path)
+    loader=AlignedWeakLoader([batch],s,teacher)
+    for enabled in (True,False):
+        loader.enabled=enabled
+        out=next(iter(loader))
+        logits=out['density'].clamp_min(1e-12).log().detach().requires_grad_()
+        target=teacher.get(out['sample_ids'],'cpu')
+        loss=spatial_correlation_distillation(logits,target)
+        assert abs(loss.item())<1e-6
+        loss.backward()
+        assert torch.isfinite(logits.grad).all()

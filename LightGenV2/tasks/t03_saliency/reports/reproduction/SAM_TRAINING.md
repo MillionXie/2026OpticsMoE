@@ -809,3 +809,30 @@ stable rank（平方Frobenius范数/最大奇异值平方）为4.0110/1.7678。
 诊断证明新增算子有非零特征修正，但不能据此断言扩容一定无效或一定有效；
 128张训练图不是完整测试分数，也不能证明泛化提升。现有完整测试增益很小，
 因此先完成原预算，不据此扩大rank或增加其他电子结构。原run和权重未修改。
+
+## 较早阶段空间CC蒸馏：只改训练损失的配对试验
+
+已完成早期SAM/KL控制best=.86025104，后期空间CC/KD2候选=.86204960；
+此前未检验在较早适应阶段就采用空间CC监督。本次只检验这一时点下的蒸馏损失差异，
+不据跨来源分数推断效果。配置`moe_alpha40_viewreg_sam_spatialcc.yaml`继承已完成
+`moe_alpha40_viewreg_sam005.yaml`，仅`distillation.loss: spatial_cc`不同。
+对应控制是早期SAM/KL，不是后期固定KD2，也不是新增global16版本。
+
+来源仍为`refine_weakaug`的de477b8c…b5eea（完整SHA在继承配置）；80轮、SAM.05、
+教师权重2→.6至epoch60、原GT损失、EMA.995、前5轮旧E冻结、61轮起关闭图像增强，
+以及全部优化器分组/学习率/平台控制均保持早期SAM协议。只有原CFFN/384维，
+无global16、加宽、groups64或RMS反向改动；不解冻Qwen前端、不增加推理参数。
+光router Top2、alpha≥.4、478 ROI/224专家、两级融合及训练DC20–30%不变。
+相同训练视图对RGB、GT密度、fixation和缓存教师密度同步变换；教师密度重新归一化后
+取log送入已有空间CC损失，不对logits直接裁剪插值。缓存教师对增强的等变性仍是近似假设，
+不能将其描述为在线重新运行Qwen。标准完整测试不增强、不加随机光学噪声。
+
+```bash
+TASK=LightGenV2/tasks/t03_saliency
+python -m pytest "$TASK/tests" -q
+python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TASK/configs/moe_alpha40_viewreg_sam_spatialcc.yaml" --phase all
+```
+
+正式输出`runs/simulation/moe_alpha40_viewreg_sam_spatialcc_seed42`，仍只best/last。
+完整5000张公开测试参与选模，必须披露偏差。本节是待验证方案，不是性能承诺；
+0.87目标尚未达到，当前完成best仍为前述不新增参数的后期空间CC/KD2。
