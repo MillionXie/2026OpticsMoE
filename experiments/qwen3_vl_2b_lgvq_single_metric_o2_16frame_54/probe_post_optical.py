@@ -149,6 +149,18 @@ def extract(
                     batch["quality_tokens"].to(target_device, non_blocking=True),
                     batch["language_tokens"].to(target_device, non_blocking=True),
                     batch["language_mask"].to(target_device, non_blocking=True),
+                    None
+                    if "raw_frames" not in batch
+                    else batch["raw_frames"].to(target_device, non_blocking=True),
+                    vgg_tokens=None
+                    if "vgg_tokens" not in batch
+                    else batch["vgg_tokens"].to(target_device, non_blocking=True),
+                    resnet_tokens=None
+                    if "resnet_tokens" not in batch
+                    else batch["resnet_tokens"].to(target_device, non_blocking=True),
+                    mobilenet_tokens=None
+                    if "mobilenet_tokens" not in batch
+                    else batch["mobilenet_tokens"].to(target_device, non_blocking=True),
                     optical_enabled=True,
                 )
                 feature = _summarize(

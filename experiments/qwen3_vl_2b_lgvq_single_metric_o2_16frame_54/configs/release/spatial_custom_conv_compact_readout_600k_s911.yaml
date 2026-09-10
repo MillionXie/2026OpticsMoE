@@ -1,0 +1,16 @@
+base_config: spatial_custom_conv_formal_s749.yaml
+output_dir: ../../runs/lgvq_spatial_custom_conv_compact_readout_600k_s911
+random_seed: 911
+
+# Smaller Pareto candidate. As above, this changes only the final readout.
+model:
+  spatial_readout_mode: spatial_compact_weighted
+  spatial_compact_channels: 64
+  spatial_compact_frame_width: 192
+  spatial_compact_language_width: 96
+  spatial_compact_head_width: 320
+  spatial_level_score_min: -2.75
+  spatial_level_score_max: 2.25
+
+loss:
+  level_distribution_weight: 0.0
