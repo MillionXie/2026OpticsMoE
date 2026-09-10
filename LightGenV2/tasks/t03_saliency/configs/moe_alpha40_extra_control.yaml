@@ -1,0 +1,18 @@
+base_config: moe_alpha40_sam_spatialcc_kd2.yaml
+# Control for extra-image regularization. Keep the completed verified source;
+# do not initialize from a tiny, not-yet-independently-verified live improvement.
+training:
+  initialization_checkpoint: ../runs/simulation/moe_alpha40_sam_spatialcc_kd2_seed42/best_checkpoint.pt
+  initialization_checkpoint_sha256: 87ad4db51e3f58f9a41d6df09092439e5a09e81e93f88a3bfe2d3d008fafb29a
+  student_epochs: 40
+  staged:
+    warmup_epochs: 0
+    polish_start: 31
+  adaptive_plateau:
+    enabled: false
+distillation:
+  end_epoch: 40
+  teacher_only_epochs: 0
+unlabeled_distillation:
+  weight: 0.0
+output_dir: ../runs/simulation/moe_alpha40_extra_control_seed42

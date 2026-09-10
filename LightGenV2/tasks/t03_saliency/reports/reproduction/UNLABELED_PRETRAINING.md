@@ -105,3 +105,35 @@ FP16溢出才发布完整缓存；已有PT/partial/JSON时拒绝覆盖。失败p
 117.57秒完成，CPU检查进程正常退出。预定教师权重也已实查SHA：
 `531c4a330fc05e2c27b037784588716d248a29d1ab8da951d443165dcce552f8`。
 这些不是GPU教师前向验证：**完整教师导出仍待执行，尚无该额外图像缓存或预训练结果**。
+
+## 下一轮：保留真值的额外图像辅助训练（待缓存完成）
+
+现有同集教师预热对照在恢复GT前出现明显测试下降，恢复GT后尚未超越原best。
+因此额外图像路线不再设计成长期关掉GT：每个优化步骤始终有一批SALICON train真值图像，
+另取一批排除重叠后的COCO图片，只用缓存教师输出监督。没有人为生成的fixation或NSS真值。
+
+记原监督任务损失为 `S=GT_KL+1.5*(1-GT_CC)+.25*(1-GT_SIM)-.1*GT_NSS+2*KD_labeled`，
+额外图像空间CC损失为 `U`，各批次的router均衡/importance/CCD工作点正则为`R_l/R_u`：
+
+`L = S + lambda*U + (R_l+R_u)/2 + phase_DC_regularizer`。
+
+GT系数不随额外batch大小缩小。额外图像系数计划从0.6开始；不是把两种标签拼成一份伪真值。
+每次SAM第一/第二次计算都使用相同两批图，共四次学生前向、一次optimizer/EMA更新。
+路由损失必须在对应前向后立即保存，不能让额外批次覆盖先前路由状态。
+相位、router以及原电子参数均继续训练，没有新增推理/训练模块参数。训练计算量增大，
+不能把它与普通两次前向SAM称为相同训练FLOPs；正式推理仍是原单图光电架构。
+
+额外loader独立seed，循环游标跨监督epoch保留，不在每个epoch重复只抽前半池；
+完整走完池后才重新shuffle，保留末尾不足batch的图像。日志分别记录监督样本数、
+额外样本数与loader重启次数。GT CC/NSS只对有真值的SALICON计算，
+额外池只报告教师空间损失，不冒充测试成绩。
+
+`moe_alpha40_extra_control.yaml`固定40轮、从完成best SHA87ad出发、原精修学习率
+（E1e-5、phase2e-4、router2e-5、head2e-5、CFFN5e-5）、31轮起小步精修。
+对照`unlabeled_distillation.weight=0`精确走旧SAM入口，不改变旧profile。
+额外组需在缓存真实导出后写入image manifest及cache的SHA、weight=.6和独立output_dir；
+**当前不提供缺失缓存SHA的可运行正式配置，不得跳过校验强行运行**。
+新分支已实现为`semisupervised.py`，由原`run.py`按显式配置调用；现阶段不代表已训练或验证有提升。
+
+两个新试验只能在现有两卡作业结束、核查释放后排队启动。需先用真实图像和教师缓存做
+短更新验证，再跑完整40轮与5000张public-test选模。若有改善仍需独立复评和光学审计。

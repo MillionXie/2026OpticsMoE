@@ -101,6 +101,14 @@ def load_settings(path: str | Path) -> Any:
     if isinstance(teacher_only_epochs, bool) or not isinstance(teacher_only_epochs, int):
         raise ValueError("teacher_only_epochs must be an integer")
     settings.teacher_only_epochs = teacher_only_epochs
+    settings.unlabeled_weight = float(d('unlabeled_distillation.weight', 0.0))
+    settings.unlabeled_image_manifest = d('unlabeled_distillation.image_manifest')
+    settings.unlabeled_image_manifest_sha256 = d('unlabeled_distillation.image_manifest_sha256')
+    settings.unlabeled_cache = d('unlabeled_distillation.cache_file')
+    settings.unlabeled_cache_sha256 = d('unlabeled_distillation.cache_sha256')
+    for name in ('unlabeled_image_manifest','unlabeled_cache'):
+        value = getattr(settings,name)
+        setattr(settings,name,_resolve(value,config.parent) if value else None)
     cache = d("distillation.cache_file")
     settings.distillation_cache = _resolve(cache, config.parent) if cache else None
     settings.distillation_teacher_sha256 = d("distillation.teacher_sha256")
@@ -276,6 +284,20 @@ def load_settings(path: str | Path) -> Any:
         or not any(getattr(settings, n) > 0 for n in ('kl_weight','cc_weight','sim_weight','nss_weight'))
     ):
         raise ValueError("Teacher-only curriculum requires SAM spatial-CC KD, positive teacher/GT, no hints or early stop")
+    if not 0 <= settings.unlabeled_weight <= 2:
+        raise ValueError('Unlabeled distillation weight must be in [0,2]')
+    if settings.unlabeled_weight:
+        if (not settings.sam_rho or settings.teacher_only_epochs or settings.feature_hint_initial_weight
+                or settings.augmentation_enabled or settings.distillation_initial_weight <= 0
+                or settings.lightgen_model_variant != 'optical_router_scale_matched_moe'
+                or settings.fusion_alpha_min < .4 or settings.kl_weight <= 0 or settings.cc_weight <= 0):
+            raise ValueError('Extra-image trial requires GT KL/CC, SAM, existing optical model and alpha>=.4; no hints/augmentation/teacher-only stage')
+        if not settings.unlabeled_image_manifest or not settings.unlabeled_cache:
+            raise ValueError('Extra-image trial requires image manifest and teacher cache')
+        for name in ('unlabeled_image_manifest_sha256','unlabeled_cache_sha256'):
+            value = getattr(settings,name)
+            if not isinstance(value,str) or len(value) != 64 or any(c not in '0123456789abcdef' for c in value):
+                raise ValueError('Extra-image manifest/cache must be SHA256-pinned')
     return settings
 
 
@@ -347,6 +369,15 @@ def save_resolved_config(settings: Any) -> None:
         'learning_rate':settings.feature_hint_learning_rate,
         'cache_file':str(settings.feature_hint_cache) if settings.feature_hint_cache else None,
         'inference_parameters_added':0,'training_only_projection_parameters':36864 if settings.feature_hint_initial_weight else 0}
+    values['unlabeled_distillation'] = {
+        'weight': settings.unlabeled_weight,
+        'image_manifest': str(settings.unlabeled_image_manifest) if settings.unlabeled_image_manifest else None,
+        'image_manifest_sha256': settings.unlabeled_image_manifest_sha256,
+        'cache_file': str(settings.unlabeled_cache) if settings.unlabeled_cache else None,
+        'cache_sha256': settings.unlabeled_cache_sha256,
+        'inference_parameters_added': 0,
+        'ground_truth_supervision_retained': True,
+    }
     path.write_text(yaml.safe_dump(values, allow_unicode=True, sort_keys=False), encoding="utf-8")
 
 

@@ -168,7 +168,18 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
     best_cc = -math.inf
     best_epoch = -1
     started = time.perf_counter()
+    extra_stream = None
     try:
+        if getattr(settings, 'unlabeled_weight', 0) > 0:
+            from .semisupervised import build_unlabeled_stream
+            extra_stream = build_unlabeled_stream(settings)
+            _write_json(settings.output_dir/'unlabeled_teacher_provenance.json', {
+                **extra_stream.teacher.manifest,
+                'cache_sha256': settings.unlabeled_cache_sha256,
+                'unlabeled_weight': settings.unlabeled_weight,
+                'ground_truth_supervision_retained': True,
+                'inference_parameters_added': 0,
+            })
         if getattr(settings, "initialization_checkpoint", None) is not None:
             model.core.set_phase_dropout_active(False)
             initial_metrics, _ = legacy.evaluate_model(model, test_loader, loaded, settings)
@@ -197,7 +208,12 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
             stage_report["kd_weight"] = settings.map_kd_weight
             epoch_settings, supervision_report = supervision_for_epoch(settings, epoch)
             stage_report.update(supervision_report)
-            if getattr(settings, "sam_rho", 0) > 0:
+            if extra_stream is not None:
+                from .semisupervised import train_semisupervised_epoch
+                train_metrics = train_semisupervised_epoch(model,train_loader,loaded,epoch_settings,optim,
+                                                            teacher,extra_stream)
+                stage_report['unlabeled_weight'] = settings.unlabeled_weight
+            elif getattr(settings, "sam_rho", 0) > 0:
                 from .sam_training import train_sam_epoch
                 train_metrics = train_sam_epoch(model, train_loader, loaded, epoch_settings, optim,
                                                 teacher if settings.map_kd_weight > 0 else None)
@@ -277,6 +293,8 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
             if controller is not None and controller.stopped:
                 break
     finally:
+        if extra_stream is not None:
+            extra_stream.close()
         if ema_hook is not None:
             ema_hook.remove()
         model.core.set_phase_dropout_active(False)
