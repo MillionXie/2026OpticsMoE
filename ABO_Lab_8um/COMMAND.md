@@ -288,6 +288,10 @@ CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=4 python offload.py compute --
 
 ## 6. 电子处理和结果
 
+附加的随机子集分析可用 `sample_evaluation.py --source <已有结果目录> --output <新分析目录> --size 2000 --seed 42`。
+只按固定种子不放回抽查询，保留全部候选标题；同时保存完整测试指标、子集指标、名单和向量。
+不得按目标准确率挑样本或反复换种子筛结果；子集须明确标注，不能替代完整测试结果。该命令不操作或删除 CCD。
+
 若经实验人员同意删除原始 TIFF，必须保留会话 `raw_tiff_cleanup.jsonl` 删除审计和原始采集记录。
 读取器只允许跳过与审计、原记录 SHA 完全匹配的已删除 TIFF；PNG、route JSON 等仍校验 SHA。
 不能自行批量删除而不留审计。删除原始 TIFF 后仍可基于已校正 PNG 推理，但不能重新标定 ROI、方向或恢复原始动态范围。
