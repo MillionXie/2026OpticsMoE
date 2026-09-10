@@ -20,7 +20,9 @@ from .settings import load_settings, save_resolved_config
 from .training import _bind
 
 TASK = Path(__file__).resolve().parent
-PROFILES = ('joint', 'staged', 'staged_heatmap')
+PROFILES = ('joint', 'staged', 'staged_heatmap', 'alpha50')
+HIGH_SOURCE_REL = TASK/'runs/simulation/refinement_20260909/staged_heatmap/best_checkpoint.pt'
+HIGH_SOURCE_SHA = '495b9c2c4e3df15d3715f1ce8f2faea7cb9156275b31103ec684f4e96a328518'
 SOURCE_REL = TASK / 'runs/simulation/moe_router_scale_dc20_no_shift_warmstart0713_seed42/best_checkpoint.pt'
 SOURCE_SHA = 'fc1c6be4196593d7f27d83097c5bfd53b6e0511e84726fd55d712af0a4cd7741'
 RATES = {'electronic': 2e-5, 'router': 3e-4, 'feature_phase': 3e-3,
@@ -30,6 +32,16 @@ RATES = {'electronic': 2e-5, 'router': 3e-4, 'feature_phase': 3e-3,
 def stage_spec(profile: str, epoch: int) -> tuple[str, dict[str, float]]:
     if profile not in PROFILES or not 1 <= epoch <= 60:
         raise ValueError('Unknown profile or epoch outside 1..60')
+    if profile == 'alpha50':
+        if epoch <= 10:
+            return 'high_alpha_optics_adaptation', {'electronic': 0., 'router': 1e-3,
+                'feature_phase': 6e-3, 'ccd_readout': 1e-4, 'pose_head': 2e-4}
+        if epoch <= 50:
+            scale = .2 + .8*.5*(1+math.cos(math.pi*(epoch-11)/39))
+            rates = {'electronic': 1e-5, 'router': 3e-4, 'feature_phase': 3e-3,
+                     'ccd_readout': 1e-4, 'pose_head': 1e-4}
+            return 'high_alpha_joint', {k:v*scale for k,v in rates.items()}
+        return 'high_alpha_fixed_optics_polish', {k:(2e-5 if k in ('pose_head','ccd_readout') else 0.) for k in RATES}
     if profile == 'joint':
         scale = .1 + .9 * .5 * (1 + math.cos(math.pi * (epoch-1)/59))
         return 'joint_control', {k: v*scale for k,v in RATES.items()}
@@ -69,14 +81,28 @@ def phase_delta(model, reference):
     return values
 
 
+def checked_fusion(model, settings):
+    values = {s:float(getattr(model.core.hybrid,s).detach())
+              for s in ('block1_optical_fusion','block2_optical_fusion')}
+    if not all(math.isfinite(v) and settings.fusion_alpha_min <= v <= settings.fusion_alpha_max+1e-7
+               for v in values.values()):
+        raise RuntimeError(f'Fusion violates configured range: {values}')
+    return values
+
+
 def run(args):
     _bind()
     config = TASK/'configs/moe_optical_router_scale_matched_dc20_no_shift_warmstart.yaml'
-    settings = load_settings(config)
-    if sha256_file(args.source) != SOURCE_SHA:
-        raise RuntimeError('Source checkpoint differs from pinned 0.7305 candidate')
+    source_settings = load_settings(config)
+    high_alpha = args.profile == 'alpha50'
+    settings = load_settings(TASK/'configs/moe_alpha50.yaml') if high_alpha else source_settings
+    source_sha = HIGH_SOURCE_SHA if high_alpha else SOURCE_SHA
+    if args.source is None:
+        args.source = HIGH_SOURCE_REL if high_alpha else SOURCE_REL
+    if sha256_file(args.source) != source_sha:
+        raise RuntimeError('Source checkpoint differs from the profile-pinned candidate')
     payload = torch.load(args.source,map_location='cpu',weights_only=False)
-    if payload.get('checkpoint_architecture') != architecture_label(settings) or payload.get('router_contract_sha256') != settings.router_contract_sha256:
+    if payload.get('checkpoint_architecture') != architecture_label(source_settings) or payload.get('router_contract_sha256') != settings.router_contract_sha256:
         raise RuntimeError('Source architecture or optical router contract mismatch')
     if payload.get('weight_variant') != 'ema': raise RuntimeError('Source must be EMA')
     settings.output_dir=args.run_dir.resolve()
@@ -104,6 +130,9 @@ def run(args):
     model=build_student(loaded,settings)
     model.core.load_state_dict(payload['core'],strict=True)
     model.head.load_state_dict(payload['head'],strict=True)
+    if high_alpha:
+        model.core.hybrid.reset_fusion_logits(settings.fusion_alpha_initial)
+    initial_fusion = checked_fusion(model,settings)
     opt=optimizer(model,settings)
     ema=base.ModelEMA(model.core,model.head,settings.ema_decay)
     reference={k:p.detach().float().cpu().clone() for k,p in model.core.named_parameters()
@@ -111,11 +140,13 @@ def run(args):
     out=settings.output_dir
     def write(name,value):
         (out/name).write_text(json.dumps(value,ensure_ascii=False,indent=2,default=str)+'\n',encoding='utf-8')
-    manifest={'source':str(args.source.resolve()),'source_sha256':SOURCE_SHA,'source_epoch':payload['epoch'],
+    manifest={'source':str(args.source.resolve()),'source_sha256':source_sha,'source_epoch':payload['epoch'],
               'git_commit':subprocess.check_output(['git','rev-parse','HEAD'],cwd=TASK,text=True).strip(),
-              'args':vars(args),'architecture_unchanged':True,'new_layers':0,
+              'args':vars(args),'architecture_unchanged':not high_alpha,'topology_unchanged':True,'new_layers':0,
+              'fusion_contract':{'min':settings.fusion_alpha_min,'max':settings.fusion_alpha_max,
+                                 'initial_actual':initial_fusion,'reset_from_source':high_alpha},
               'train_samples':len(bundle.train),'test_samples':len(bundle.test),
-              'test_selected':True,'coordinate_loss_train_weight':0. if args.profile=='staged_heatmap' else settings.coordinate_loss_weight,
+              'test_selected':True,'coordinate_loss_train_weight':0. if args.profile in ('staged_heatmap','alpha50') else settings.coordinate_loss_weight,
               'schedule':[{'epoch':e,'stage':stage_spec(args.profile,e)[0],'lr':stage_spec(args.profile,e)[1]} for e in range(1,61)],
               'torch':torch.__version__,'gpu':torch.cuda.get_device_name(device) if device.type=='cuda' else 'cpu'}
     write('run_manifest.json',manifest)
@@ -123,11 +154,12 @@ def run(args):
     train_loader=base._loader(bundle.train,settings,training=True)
     test_loader=base._loader(bundle.test,settings,training=False)
     eval_settings=copy.copy(settings)
-    if args.profile=='staged_heatmap': settings.coordinate_loss_weight=0.
+    if args.profile in ('staged_heatmap','alpha50'): settings.coordinate_loss_weight=0.
     save_resolved_config(settings)
     def evaluate(epoch,phase):
         return base.evaluate_model(model,'student',test_loader,loaded.processor,device,eval_settings,phase=phase,epoch=epoch,save_outputs=False,tta=False)[0]
     def save(path,epoch,train,test,variant='ema',selected=True):
+        checked_fusion(model,settings)
         base._save_checkpoint(path,model,settings,epoch=epoch,train_metrics=train,periodic_test_metrics=test,
                               initialization_report=manifest,weight_variant=variant,selected_by_periodic_test=selected)
     history=[]; best_epoch=0; last_test={}
@@ -135,19 +167,19 @@ def run(args):
     try:
         anchor=evaluate(0,'source_anchor_test')
         write('source_anchor_test.json',anchor)
-        print('SOURCE_ANCHOR',json.dumps(anchor),flush=True)
+        print('SOURCE_ANCHOR',json.dumps(anchor),'FUSION',initial_fusion,flush=True)
         best_key=base._selection_key(anchor,0)
         save(out/'best_checkpoint.pt',0,{},anchor)
         total=1 if args.smoke else 60
         for epoch in range(1,total+1):
             started=time.perf_counter()
             name,rates=stage_spec(args.profile,epoch)
-            if args.smoke: name,rates=stage_spec('joint',1)
+            if args.smoke and not high_alpha: name,rates=stage_spec('joint',1)
             group_report=apply_stage(opt,rates)
             model.core.router.set_noise_std(settings.router_noise_std*(1-epoch/60))
             train=base._train_epoch(model,'student',train_loader,loaded.processor,device,opt,settings,epoch,ema=ema)
             row={'epoch':epoch,'stage':name,'optimizer_groups':group_report,'train':train,
-                 'live_phase_delta':phase_delta(model,reference)}
+                 'live_phase_delta':phase_delta(model,reference),'live_fusion':checked_fusion(model,settings)}
             if epoch==1 or epoch%5==0 or epoch==total:
                 with ema.applied():
                     last_test=evaluate(epoch,'refinement_periodic_test')
@@ -157,7 +189,7 @@ def run(args):
                         save(out/'best_checkpoint.pt',epoch,train,last_test)
                     row['test']=last_test
                     row['ema_phase_delta']=phase_delta(model,reference)
-                    row['fusion']={s:float(getattr(model.core.hybrid,s).detach()) for s in ('block1_optical_fusion','block2_optical_fusion')}
+                    row['fusion']=checked_fusion(model,settings)
             save(out/'last_checkpoint.pt',epoch,train,last_test,'live_last',False)
             row['seconds']=time.perf_counter()-started
             row['best_epoch']=best_epoch
@@ -170,6 +202,7 @@ def run(args):
         off=evaluate(best_epoch,'selected_best_optical_off_counterfactual')
         model.core.hybrid.set_fusion_ablation('none')
         write('final_report.json',{'best_epoch':best_epoch,'source_test':anchor,'test':normal,'optical_off':off,
+                                  'fusion':checked_fusion(model,settings),'fusion_contract':manifest['fusion_contract'],
                                   'phase_change':phase_delta(model,reference),'checkpoint_sha256':sha256_file(out/'best_checkpoint.pt'),
                                   'optical_off_is_retraining':False,'smoke_only':args.smoke})
     finally:
@@ -179,7 +212,7 @@ def run(args):
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--profile',choices=PROFILES,required=True)
-    p.add_argument('--source',type=Path,default=SOURCE_REL)
+    p.add_argument('--source',type=Path,default=None)
     p.add_argument('--data-root',type=Path,required=True)
     p.add_argument('--cache-dir',type=Path,required=True)
     p.add_argument('--run-dir',type=Path,required=True)

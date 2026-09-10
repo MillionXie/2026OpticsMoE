@@ -1,5 +1,7 @@
 # t02_keypoint_detection 复现说明入口
 
+[两级alpha≥0.5硬约束续训](ALPHA50.md)：初始化、分阶段训练、迁移评估合同及命令。
+
 [Qwen 轻量读出头预算对照](QWEN_HEAD_BUDGET.md)：完整冻结视觉主干，头由110.3万缩为13.84万参数，保留原baseline。
 
 [同结构分阶段续训与架构对比](STAGED_REFINEMENT.md)：从核实的 0.7305 权重继续训练，单列训练策略与电子结构改动。

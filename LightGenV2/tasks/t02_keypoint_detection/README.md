@@ -1,5 +1,8 @@
 # T02 关键点检测（LSP）
 
+2026-09-10：[两级alpha≥0.5硬约束续训](reports/reproduction/ALPHA50.md)，profile `alpha50`，
+两级初始化0.55；保留73.48%的低alpha版本作对照，不覆盖旧PT。新旧checkpoint架构标识隔离。
+
 新增：[2026-09-09 同结构分阶段续训](reports/reproduction/STAGED_REFINEMENT.md)，含当前光学/baseline 结构、参数量、对照设计和实验室命令。
 
 新增：[Qwen Deconv40 轻量头对照](reports/reproduction/QWEN_HEAD_BUDGET.md)，完整冻结视觉主干、只缩头通道，138,422参数，对照光学姿态头133,425参数。旧110.3万参数baseline保留。

@@ -54,3 +54,34 @@ def test_phase_delta_tracks_physical_phase():
     result = phase_delta(model, reference)['raw_phase']
     assert result['raw_rms_change'] == 1
     assert result['physical_phase_rms_change_rad'] == pytest.approx(2*math.pi*(torch.sigmoid(torch.tensor(1.)).item()-.5))
+
+
+def test_alpha50_contract_reset_and_bounds():
+    from pathlib import Path
+    from LightGenV2.tasks.t02_keypoint_detection.settings import load_settings
+    from LightGenV2.tasks.t02_keypoint_detection.modeling import architecture_label
+    from LightGenV2.tasks.t02_keypoint_detection.refine import checked_fusion
+    from experiments.qwen3_vl_embedding_2b_caltech101_balanced_optical_fusion_ablation.modeling import _ScaleMatchedFusionMixin
+    configs = Path(__file__).resolve().parents[1]/'configs'
+    high = load_settings(configs/'moe_alpha50.yaml')
+    old = load_settings(configs/'moe_optical_router_scale_matched_dc20_no_shift_warmstart.yaml')
+    assert architecture_label(high) != architecture_label(old)
+    assert high.fusion_alpha_min == .5 and high.coordinate_loss_weight == 0
+
+    class Fusion(_ScaleMatchedFusionMixin, torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.block1_optical_fusion_logit = torch.nn.Parameter(torch.tensor(-1.88825))
+            self.block2_optical_fusion_logit = torch.nn.Parameter(torch.tensor(-2.6356))
+            self._configure_balanced_fusion(high)
+    fusion = Fusion()
+    model = SimpleNamespace(core=SimpleNamespace(hybrid=fusion))
+    fusion.reset_fusion_logits(.55)
+    assert list(checked_fusion(model,high).values()) == pytest.approx([.55,.55])
+    for raw in (-1e6,-10.,0.,10.,1e6):
+        with torch.no_grad():
+            for p in fusion.parameters(): p.fill_(raw)
+        assert all(.5 <= v <= .950001 for v in checked_fusion(model,high).values())
+    assert stage_spec('alpha50',1)[1]['electronic'] == 0
+    assert stage_spec('alpha50',1)[1]['feature_phase'] > 0
+    assert stage_spec('alpha50',11)[1]['electronic'] > 0
