@@ -13,6 +13,14 @@ from standalone.curriculum import stage_settings, parameter_kind, relation_loss
 
 
 class StandaloneTests(unittest.TestCase):
+    def test_pretraining_duplicate_screen_and_path(self):
+        import numpy as np
+        from standalone.prepare_broad_abo import near_duplicate,safe_image
+        protected=np.zeros((2,16),dtype=np.uint8)
+        self.assertTrue(near_duplicate(np.zeros(16,dtype=np.uint8),protected))
+        self.assertFalse(near_duplicate(np.full(16,255,dtype=np.uint8),protected))
+        with self.assertRaises(ValueError):safe_image(TASK,'../../outside.jpg')
+
     def test_curriculum_stages_and_groups(self):
         import json
         cfg=json.loads((TASK/'standalone/curriculum.json').read_text())

@@ -1,0 +1,37 @@
+{
+  "pretrain": {
+    "classes_per_batch": 8,
+    "products_per_class": 4,
+    "epochs": 20,
+    "steps": 120,
+    "electronic_lr": 0.0001,
+    "adapter_lr": 0.00004,
+    "readout_lr": 0.00015,
+    "phase_lr": 0.002,
+    "router_lr": 0.0003,
+    "auxiliary_lr": 0.001,
+    "clean_every": 2,
+    "supcon_weight": 0.3
+  },
+  "adapt": {
+    "classes_per_batch": 10,
+    "products_per_class": 4,
+    "epochs": 30,
+    "steps": 48,
+    "electronic_lr": 0.00003,
+    "adapter_lr": 0.00001,
+    "readout_lr": 0.00005,
+    "phase_lr": 0.001,
+    "router_lr": 0.0002,
+    "auxiliary_lr": 0.0005,
+    "clean_every": 4,
+    "supcon_weight": 0.3
+  },
+  "ema": 0.99,
+  "test_every": 5,
+  "regularization_weight": 0.5,
+  "alpha_policy": "fixed to accepted best; no optical share reduction",
+  "auxiliary_head": "train-only normalized 64D category proxies; discarded for retrieval",
+  "teacher": "none; no full Qwen weights or forward",
+  "selection": "pretraining best by training loss; transfer best by existing target test protocol including accepted epoch-1 fallback"
+}
