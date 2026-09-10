@@ -9,6 +9,30 @@ run为`runs/simulation/moe_alpha40_relational_kd_seed42`；run_manifest记录相
 缓存provenance的git_commit是缓存生成时源码，不是当前训练源码；当前源码以run_manifest为准。
 光学Top2/alpha≥.4/训练DC/原推理结构不变，不能把初始化成绩写成新增训练收益。
 
+首轮/第5轮完整5000张周期测试CC分别为.8620986590385437/.861839587020874；
+关系损失从首轮.0934575465降到第5轮.0890814260，权重由1降到.8758620690。
+训练关系有所拟合，但测试没有持续改善，不宣称提升。第5轮live alpha=.43038639/.44082767。
+保留首轮best；先观察第10轮完整测试，若连续回落再调整资源，不能凭训练loss降低宣布有效。
+另一张GPU的稳定路由组第30轮测试CC=.8419568468093872，仍低于原正式best。
+
+相位可训练性检查：CPU按原87ad与当时第4轮**live last**比较（不是EMA best），
+该次last字节SHA为`a6fa7f26591d9c9c2ea06379d8445536eaf6175d7ccea9dca40bece5b4424e3f`。
+core/head的键集合不变。使用`router_phase.checkpoint_phase`按各自architecture转物理相位，
+`angle(exp(i*(new-old)))`计算圆周相位差，再调用硬件的`reconstruct_slm.encode_active_phase`
+编码为8-bit；比较`min(abs(new_gray-old_gray),256-abs(new_gray-old_gray))`。
+
+|相位|相位差RMS（弧度）|8-bit灰度变化像素比例|平均圆周灰度差|
+|---|---:|---:|---:|
+|router|.00064617|.014270|.014270|
+|expert0|.01326506|.415557|.430026|
+|expert1|.01350038|.416653|.433474|
+|expert2|.01537959|.466837|.497309|
+|expert3|.01566220|.470006|.504564|
+|global|.01584421|.456982|.496214|
+
+这是权重/编码诊断，不是硬件显示测试或性能提升；未保存BMP或额外周期PT，last之后正常覆盖。
+表中已经转换成物理弧度，不是raw参数差；不能混用两种数值。
+
 GPU0原45轮联合组停止于第19轮，best第15轮CC=.8386751629829406，保留：
 
 - best SHA `a62f776b72b75936f71a167202abecb63f9d8d6f9c9e12f32f001d26ea331de3`。
