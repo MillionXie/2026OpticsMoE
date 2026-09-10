@@ -293,6 +293,7 @@ class ExperimentSettings:
     vgg_correction_mode: str = "local"
     resnet_electronic_max: float = 0.50
     mobilenet_electronic_max: float = 0.50
+    mobilenet_feature_width: int = 64
     top_k: int = 2
     router_temperature: float = 1.0
     parallel_router_temperature: float = 1.0
@@ -488,7 +489,8 @@ class ExperimentSettings:
             suffixes.append(f"resnet18l3_e1corr{correction_tag:02d}_v1")
         if self.mobilenet_feature_cache_path is not None:
             correction_tag = int(round(self.mobilenet_electronic_max * 100.0))
-            suffixes.append(f"mobilenetv2b10_e1corr{correction_tag:02d}_v1")
+            block = 10 if self.mobilenet_feature_width == 64 else 11
+            suffixes.append(f"mobilenetv2b{block}_e1corr{correction_tag:02d}_v1")
         if self.serial_router_input_size != self.geometry.serial_expert_size:
             suffixes.append(f"sroutercrop{self.serial_router_input_size}_v1")
         if self.serial_router_flatfield_calibration:
@@ -774,6 +776,8 @@ class ExperimentSettings:
                 )
             if self.mobilenet_electronic_max <= 0.0:
                 raise ValueError("model.mobilenet_electronic_max must be positive")
+            if self.mobilenet_feature_width not in {64, 96}:
+                raise ValueError("model.mobilenet_feature_width must be 64 or 96")
         if not 0 < self.serial_router_input_size <= self.geometry.serial_expert_size:
             raise ValueError(
                 "router.serial_input_size must be within the serial expert field"
@@ -1230,6 +1234,9 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         ),
         mobilenet_electronic_max=float(
             get("model", "mobilenet_electronic_max", 0.50)
+        ),
+        mobilenet_feature_width=int(
+            get("model", "mobilenet_feature_width", 64)
         ),
         head_width=int(get("model", "head_width", 256)),
         dropout=float(get("model", "dropout", 0.15)),

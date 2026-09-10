@@ -2264,20 +2264,20 @@ class FrozenResNetElectronicCorrection(nn.Module):
 
 
 class FrozenMobileNetElectronicCorrection(nn.Module):
-    """Small E1 adapter for pretrained MobileNetV2 blocks 0..10.
+    """Small E1 adapter for a truncated pretrained MobileNetV2 front.
 
-    The frozen convolutional front has 239,360 parameters and ends at a
-    14x14x64 tensor.  This 49,536-parameter adapter keeps the complete added
-    electronic front below 0.30 M parameters.  It has no classifier, score
-    head, attention, or path around the optical stages.
+    Width 64 corresponds to blocks 0..10 (0.289 M total); width 96 corresponds
+    to blocks 0..11 (0.362 M total). It has no classifier, score head,
+    attention, or path around the optical stages.
     """
 
     def __init__(self, settings: ExperimentSettings) -> None:
         super().__init__()
         self.maximum = float(settings.mobilenet_electronic_max)
+        self.input_width = settings.mobilenet_feature_width
         self.adapter = nn.Sequential(
-            nn.LayerNorm(64),
-            nn.Linear(64, settings.model_width),
+            nn.LayerNorm(self.input_width),
+            nn.Linear(self.input_width, settings.model_width),
             nn.GELU(),
             nn.Linear(settings.model_width, settings.model_width),
         )
@@ -2775,10 +2775,11 @@ class LGVQSingleMetricOEO16(nn.Module):
                 )
             if (
                 tuple(mobilenet_tokens.shape[:-1]) != tuple(electronic1.shape[:-1])
-                or mobilenet_tokens.shape[-1] != 64
+                or mobilenet_tokens.shape[-1]
+                != self.settings.mobilenet_feature_width
             ):
                 raise ValueError(
-                    "MobileNetV2 token contract must be [B,4,196,64]"
+                    "MobileNetV2 token width differs from the configured boundary"
                 )
             mobilenet_electronic = self.mobilenet_electronic_correction(
                 mobilenet_tokens

@@ -483,20 +483,27 @@ def load_resnet_feature_cache(
 
 
 def load_mobilenet_feature_cache(
-    path: str | Path, *, sample_ids: Sequence[str], frame_count: int, token_grid: int
+    path: str | Path, *, sample_ids: Sequence[str], frame_count: int,
+    token_grid: int, width: int = 64
 ) -> dict[str, Any]:
-    """Load pretrained MobileNetV2 blocks 0..10 at the 14x14x64 boundary."""
+    """Load a declared pretrained MobileNetV2 14x14 feature boundary."""
 
     source = Path(path).expanduser().resolve()
     payload = _load_torch(source, mmap=True)
-    contract = "lgvq_frozen_mobilenetv2_b10_4f_14x14x64_v1"
+    contracts = {
+        64: "lgvq_frozen_mobilenetv2_b10_4f_14x14x64_v1",
+        96: "lgvq_frozen_mobilenetv2_b11_4f_14x14x96_v1",
+    }
+    if width not in contracts:
+        raise ValueError("MobileNetV2 cache width must be 64 or 96")
+    contract = contracts[width]
     if not isinstance(payload, dict) or payload.get("contract") != contract:
         raise RuntimeError(f"Unsupported MobileNetV2 feature cache: {source}")
     source_ids = list(map(str, payload.get("sample_ids", [])))
     if len(source_ids) != len(set(source_ids)) or set(source_ids) != set(sample_ids):
         raise RuntimeError("MobileNetV2 feature cache IDs differ from the manifest")
     tokens = payload.get("tokens")
-    expected = (len(sample_ids), frame_count, token_grid * token_grid, 64)
+    expected = (len(sample_ids), frame_count, token_grid * token_grid, width)
     if not torch.is_tensor(tokens) or tokens.dtype != torch.float16 or tuple(tokens.shape) != expected:
         raise ValueError(f"MobileNetV2 tokens must be float16 {expected}")
     lookup = {sample_id: index for index, sample_id in enumerate(source_ids)}
@@ -583,6 +590,7 @@ def load_single_metric_cache(settings: ExperimentSettings) -> dict[str, Any]:
             view_path,
             frame_count=settings.frame_count,
             token_grid=settings.token_grid,
+            width=settings.mobilenet_feature_width,
         )
         view_identity = _validate_cache_front_identity(view, language)
         if view_identity["pair"] != front_identity["pair"]:

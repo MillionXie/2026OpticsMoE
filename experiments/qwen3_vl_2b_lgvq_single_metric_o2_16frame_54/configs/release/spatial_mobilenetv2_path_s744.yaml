@@ -1,0 +1,17 @@
+base_config: spatial_mobilenetv2_b10_rank_s741.yaml
+output_dir: ../../runs/lgvq_spatial_mobilenetv2_path_s744
+random_seed: 744
+
+# Broader but parameter-neutral stage two: tune the already present electronic
+# transforms and sole readout together with the compact E1 adapter. No new
+# inference branch or parameter-bearing front is added; all optics stay active.
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_mobilenetv2_b10_rank_s741/best_observed_test_checkpoint.pt
+  trainable_scope: mobilenet_electronic_path_and_readout
+  epochs: 60
+  batch_size: 32
+  learning_rate: 0.00001
+  weight_decay: 0.001
+  learning_rate_warmup_epochs: 2
+  ema_decay: 0.999
+  ema_start_epoch: 1

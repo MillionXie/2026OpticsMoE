@@ -97,6 +97,7 @@ def distill(
         sample_ids=sample_ids,
         frame_count=student_settings.frame_count,
         token_grid=student_settings.token_grid,
+        width=student_settings.mobilenet_feature_width,
     )["tokens"]
     resnet = load_resnet_feature_cache(
         teacher_settings.resnet_feature_cache_path,
@@ -206,9 +207,15 @@ def distill(
         "teacher_checkpoint_sha256": _sha256(teacher_checkpoint),
         "teacher_resnet_used_only_during_distillation": True,
         "student_inference_contains_resnet": False,
-        "frozen_mobilenet_front_parameters": 239_360,
+        "frozen_mobilenet_front_parameters": {
+            64: 239_360,
+            96: 305_984,
+        }[student_settings.mobilenet_feature_width],
         "student_adapter_parameters": sum(p.numel() for p in student.parameters()),
-        "total_added_electronic_parameters": 239_360 + sum(
+        "total_added_electronic_parameters": {
+            64: 239_360,
+            96: 305_984,
+        }[student_settings.mobilenet_feature_width] + sum(
             p.numel() for p in student.parameters()
         ),
         "best_epoch": best_epoch,
