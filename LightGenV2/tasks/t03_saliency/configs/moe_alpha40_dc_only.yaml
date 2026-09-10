@@ -1,0 +1,24 @@
+base_config: moe_alpha40_extra_control.yaml
+# Training-noise-group ablation against extra_control, not a new architecture.
+# Preserve 20%-30% coherent amplitude/phase leakage and all balancing losses.
+# Disable supplementary random phase bypass, detector corruption and score noise.
+# Start from the independently verified 87ad checkpoint; no extra images.
+robust_vision:
+  phase:
+    dropout_p: 0.0
+  perturbation:
+    gain_min: 1.0
+    gain_max: 1.0
+    offset_fraction: 0.0
+    read_noise_fraction: 0.0
+    ccd_noise:
+      distribution: truncated_biased_gaussian
+      mean_fraction: 0.0
+      std_fraction: 0.0
+      min_fraction: 0.0
+      max_fraction: 0.0
+router_experiment:
+  train_logit_noise_std: 0.0
+  optical:
+    phase_dropout_p: 0.0
+output_dir: ../runs/simulation/moe_alpha40_dc_only_seed42
