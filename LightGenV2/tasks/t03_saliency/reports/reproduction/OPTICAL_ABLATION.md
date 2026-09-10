@@ -34,7 +34,7 @@ python -m LightGenV2.tasks.t03_saliency.recheck_aligned --system optical --confi
 相对下降不是“光学参数/功耗/信息贡献占比”，也不能由消融断言光学硬件优于重新训练的纯电子网络。
 不测速度/功耗，不将旁路结果填入普通D2NN baseline。
 
-正式数值待入口完整复评写入；临时终端诊断不替代含逐图指标和SHA的正式产物。
+正式数值与产物见下文；临时终端诊断不替代含逐图指标和SHA的正式产物。
 
 ## 首次独立旁路发现的接口问题
 
@@ -47,3 +47,38 @@ python -m LightGenV2.tasks.t03_saliency.recheck_aligned --system optical --confi
 不伪造全零CCD，不执行一次“隐藏的正常光学预热”；正常模式直接调用原父类forward，不改正常推理。
 新增测试覆盖全新进程等价的无CCD状态、旧NaN缓存、变化batch大小和正常路径直接委托。
 去光模式的调用方必须接受“没有CCD诊断图”；它不是硬件CCD为空的容错开关。
+
+## 完整5000张的正式结果
+
+2026-09-10，A100、torch2.6.0+cu124、batch32，每种模式独立进程加载同一epoch5 EMA权重。
+正常复评源码`0c185bae53a3ac65d75702593cbe7a3d708d02d9`；
+修复后去光源码`e5e1ded1437235adb14e86ae929c91fa62efb0b4`，99项测试通过并push后执行。
+两者正常路径保持原父类forward，修改仅处理旁路时不存在的CCD诊断返回值。
+正常结果与更早的独立复评差约2.3e-8，不是新的训练改进。
+
+|指标|正常光电|同权重去光，无重训|
+|---|---:|---:|
+|独立float64 CC|0.8620495784|0.8411720440|
+|KLD，低好|0.11424452|0.13784606|
+|SIM|0.82407412|0.80784451|
+|NSS|0.96543062|0.93996568|
+|AUC-Judd|0.76997777|0.76576228|
+|MAE，低好|0.08014799|0.08443406|
+
+按sample_id配对，正常模型在3717/5000张上CC更高；去光CC绝对下降.0208775344，
+相对正常CC下降2.42184846%。这些数字支持该权重依赖光分支，但不能分解出独立、可相加的光电贡献。
+因同时移除了光router/专家/全局计算，不能把全部差异归给某一张mask或某一层。
+这也不是单独训练纯电子模型后的性能，不能替代普通D2NN或Qwen baseline。
+目标.87仍按正常光电模型衡量，尚未达到。
+
+两份报告加载的checkpoint SHA均为87ad4db5…8fafb29a（完整值见上），
+test IDs SHA均为`625dec6bc15b2d737d39bc252cfa0c354de217fec0266dcda568913f4a3496d0`。
+各自的`per_image_cc.csv`含5000个唯一且完全相同的ID，无按结果挑图。
+
+- 正常目录：`aligned_recheck_20260910_kd2_ablation_normal`；`reproduction.json` SHA256：
+  `c518af8c9d5cddbe9b0efe6a5f74fbeb4f0e5667f6ab2a0b59d23445e431d124`。
+- 去光目录：`aligned_recheck_20260910_kd2_remove_no_ccd`；`reproduction.json` SHA256：
+  `370acc6c89e4c024edc432cc1c334a4cd0f8d7647504b0ad32ecfe5ad27ec3f5`。
+
+两目录均在本任务`runs/simulation/`下，保存实际命令、配置、源码及环境；
+未删除先前失败目录，未更改正式训练best/last。公开测试选模偏差与标准clean-eval边界仍适用。

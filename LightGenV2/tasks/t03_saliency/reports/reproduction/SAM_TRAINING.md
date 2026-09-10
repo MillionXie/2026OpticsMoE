@@ -727,3 +727,15 @@ python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TA
 `selected_checkpoint_test_evaluation.json` SHA256：`7d2a8daabc9e6a51de4e739a6e06df606c9229e9087c87b85aa5a79a4f46c5c5`。
 训练源码仍为30145ef，最终报告不改变先前逐图改善及KLD/SIM取舍结论。
 这是当前较高CC的已完成、已独立核验候选；KD2的.86204960仍在训练，.87目标没有达到。
+
+## 576维电子CFFN加宽对照完成：不采用
+
+`moe_alpha40_sam_wide576_seed42`完成50轮，进程2516910已退出；源代码b3dc44a8。
+best为epoch5 EMA，全5000张最终重载CC=.8611629393，第50轮CC=.8601916033。
+相比原384维SAM.05的.8613320866，没有改善CC，却增加151296参数，故不采用该加宽结构。
+这组是训练结束的标准完整重载，未单独跑NumPy float64复核，不宣称跨seed显著优劣。
+KLD=.1128821728、SIM=.8239618841、NSS=.9685376445、AUC=.7701449018、MAE=.0770464810。
+best SHA256：`debcab2b8568b9eac88927a0ba3476f7e8b128d760088f1a04901a218ef8db73`；
+`training_report.json`：`0258e3ba06d2f8724bed497055caa56262c8fa1ffd55451961f618d173633a88`；
+`selected_checkpoint_test_evaluation.json`：`b444b66a86c67c80e4cef4389e9c4685f35ad3885b1101e3b0a817b33b1ee167`。
+保留原run及best/last，不删除中间证据、不替换原384维候选。
