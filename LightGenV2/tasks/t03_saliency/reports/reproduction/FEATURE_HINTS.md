@@ -1,6 +1,57 @@
 # 训练时空间特征监督（不增加推理网络）
 
-## 当前候选：空间位置关系蒸馏（已启动，收益待验证）
+## 后备候选：掩蔽特征恢复（MGD-inspired，尚未正式训练）
+
+配置`moe_alpha40_masked_kd.yaml`。参考[Masked Generative Distillation，ECCV2022](https://www.ecva.net/papers/eccv_2022/papers_ECCV/html/140_ECCV_2022_paper.php)：
+遮挡学生特征并训练恢复教师特征。这里是SALICON适配，不是论文原实验复现，也不移植其学生骨干。
+使用原87ad core和原85412参数头，不换头、不解冻Qwen前端，不增加光传播次数或推理层。
+没有新增GAN、attention、Transformer或部署分支。
+
+- 原学生第二融合特征`[B,192,14,14]`仍直接交给原显著性头。
+- **仅辅助训练损失**：每图每通道减空间均值并除空间RMS（下限.05），独立随机遮挡50%的
+  空间位置（同位置各通道共享mask），再经`Conv3x3 192→96 / ReLU / Conv3x3 96→192`恢复器。
+- 恢复器无bias/BN/attention，共331776个**训练专用**参数；对完整网格而不只是遮挡位置求MSE。
+  教师同样做空间去均值/RMS，只改变损失目标，不改变CCD归一化或部署输入。
+- 目标来自同一39aa特征缓存、531c教师，严格核对SHA、10k有序train ID、192×14×14网格和预处理；
+  无额外数据、标注或测试图。不能让占93%能量的教师空间常量直接主导重建损失。
+- epoch1–3：仅对恢复器的学生输入detach，先让恢复器学习；**原GT+mapKD仍训练原光电全部可训练参数**。
+  epoch4起恢复器损失也反传进原学生；整个过程中不冻结/替换显著性头。
+- 辅助权重1→.1到epoch30，之后保持.1；恢复器基础LR3e-4，随原staged schedule缩放。
+  原SAM.05、map空间CC蒸馏2、GT、EMA、40轮预算及各原参数组LR沿用extra_control。
+- SAM的两个前向复用相同随机mask；恢复器不参与SAM扰动，但第二次反向后更新一次。
+  原core/head EMA仍只更新一次。恢复器初始化不消耗学生全局RNG；训练mask会消耗随机数，
+  因此不声称与无mask对照后续每次光学随机噪声逐位相同。
+- 恢复器只保存于`last_checkpoint.pt:training_only_mgd`；best/core/head不包含它，推理不需要教师缓存。
+  仍只best/last两份PT，不另存恢复器或周期相位PT。重载模型+新optimizer不是精确恢复全部训练状态。
+
+```bash
+# 仅为复现命令：先检查两卡预算、GPU空闲与同名run不存在，勿重复启动。
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_masked_kd.yaml --phase all
+```
+
+查看`masked_distillation_provenance.json`、resolved_config、run_manifest，及history的
+`train_masked_loss/masked_weight/masked_generator_warmup`。标准224输出、完整5000张public-test按
+起点/首轮/每5轮/末轮选best，存在测试选模偏差。此处只记录设计，不能把它写成已提高CC。
+
+MGD实现源码`8f87f374`已通过完整201项T03 CPU测试（47.10秒，13条既有依赖警告）：
+覆盖缓存SHA/有序身份、恢复器RNG初始化隔离、warmup detach、联合梯度、AMP下FP32损失、
+SAM双前向mask一致/单次优化与EMA、以及last保留恢复器而best不含恢复器。
+另在服务器CPU用前2张真实训练图（seed42、保留训练光扰动）连续执行一次warmup配置更新和一次
+联合配置更新，不是完成3轮warmup：总loss=1.99441111/1.95039678，恢复损失=1.02077709/1.01827192。
+core/head键集合不变，原24层Transformer hook调用0，patch_embed仍冻结。
+两次总损失更新累计router raw最大变化约4.0e-5，四专家/全局raw最大变化约4.0e-4；
+这不分离辅助损失与GT各自的相位贡献，也不是弧度或测试CC。未保存此诊断PT或额外缓存。
+
+## 空间位置关系蒸馏（已停止，未取得持续收益）
+
+最终状态：第10轮完整测试CC=.8614723621368409，低于首轮与第5轮；在第12轮之后停止，
+不是完成40轮。保留并在停止后确认可读取的权重：best第1轮SHA
+`4b6615613ad58155b7c432f658b4e2034fd2f9b629badd888f52ac125a9525f7`，last第12轮SHA
+`02642c9d4ccbc49a43cc20bf5618f35772775bcd6883a442376c433bb54ceee1`。
+best .86209866只是周期测试的极小变化，不替换独立核验的87ad正式候选，也不宣称稳定增益。
+经UID/完整命令/cwd/进程组核验，仅终止自有1691668/1697474/1697475/1697650/1699720/1699885，
+随后这些PID全部退出、GPU0不再有本任务计算进程。GPU0的ABO任务1731704未触碰。
+另组稳定路由第40轮完整测试CC=.8442775473594666，继续原60轮预算。
 
 2026-09-10启动审计：源码`aa0dc20283b789c836e9b727108eb3f41eddaced`已发布到GitHub，
 独立工作树`.worktrees/t03_balance`，GPU0/PID1691668，预算40轮。
