@@ -86,3 +86,43 @@ def test_global_rejects_unrelated_keys_and_profile_contract():
                 'distillation_final_weight','augmentation_apply_probability','augmentation_end_epoch',
                 'language_optical_phase_zero_order_intensity_min','language_optical_phase_zero_order_intensity_max']:
         assert getattr(s,key)==getattr(base,key)
+
+
+def test_sam_cckd_global16_is_paired_and_preserves_existing_cffn(tmp_path):
+    from LightGenV2.tasks.t03_saliency.sam_training import ELECTRONIC_GROUPS
+    base=load_settings(TASK/'configs/moe_alpha40_sam_spatialcc_kd2.yaml')
+    s=load_settings(TASK/'configs/moe_alpha40_sam_spatialcc_kd2_global16.yaml')
+    assert architecture_label(s)==architecture_label(base)+'_global_r16'
+    assert s.sam_rho==.05 and s.distillation_loss=='spatial_cc'
+    assert s.distillation_initial_weight==s.distillation_final_weight==2.
+    for key in ['initialization_checkpoint_sha256','student_epochs','student_learning_rate',
+                'phase_learning_rate','router_learning_rate','ffn_spatial_learning_rate',
+                'ema_decay','weight_decay','fusion_alpha_min','top_k','router_backend',
+                'active_size','expert_size','pixel_pitch_um','augmentation_enabled',
+                'reset_fusion_on_warmstart','initialize_ffn_on_warmstart',
+                'electronic_ffn_hidden_width','electronic_ffn_groups','exact_fusion_backward',
+                'language_optical_phase_zero_order_intensity_min',
+                'language_optical_phase_zero_order_intensity_max']:
+        assert getattr(s,key)==getattr(base,key)
+    assert s.student_epochs==50 and not s.augmentation_enabled
+    assert s.global_spatial_learning_rate==.00005
+    assert 'electronic_global_spatial' in ELECTRONIC_GROUPS
+    source=torch.nn.Module();source.hybrid=TinyFusion(base)
+    configure_spatial_ffn(source.hybrid,1)
+    head=torch.nn.Linear(192,1)
+    checkpoint=tmp_path/'cffn_source.pt'
+    torch.save({'architecture':architecture_label(base),'epoch':65,
+                'core':source.state_dict(),'saliency_head':head.state_dict()},checkpoint)
+    target=torch.nn.Module();target.hybrid=TinyFusion(s)
+    configure_spatial_ffn(target.hybrid,1);configure_global_mixing(target.hybrid,16)
+    s.initialization_checkpoint=checkpoint;s.initialization_checkpoint_sha256=None
+    model=SimpleNamespace(core=target,head=torch.nn.Linear(192,1),checkpoint_architecture=architecture_label(s))
+    report=initialize_student(model,s)
+    assert report['identity_global_mixing_added'] and not report['identity_spatial_ffn_added']
+    assert not report['fusion_reset']
+    assert sum(p.numel() for p in target.parameters())-sum(p.numel() for p in source.parameters())==12544
+    x=torch.randn(2,196,192)
+    kw=dict(padding_mask=torch.zeros(2,196,dtype=torch.bool),causal=False,spatial_shapes=[(1,14,14)]*2)
+    source.eval();target.eval()
+    for i in range(2):
+        torch.testing.assert_close(target.hybrid.blocks[i](x,**kw),source.hybrid.blocks[i](x,**kw),atol=0,rtol=0)

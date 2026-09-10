@@ -1,0 +1,9 @@
+base_config: moe_alpha40_sam_spatialcc_kd2.yaml
+# Paired context-capacity trial using the existing audited rank16 operator.
+# Same completed c88e source and training; zero-up initialization preserves it.
+lightgen:
+  electronic_global_rank: 16
+training:
+  initialize_global_on_warmstart: true
+  global_spatial_learning_rate: 0.00005
+output_dir: ../runs/simulation/moe_alpha40_sam_spatialcc_kd2_global16_seed42

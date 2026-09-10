@@ -683,3 +683,28 @@ python -m LightGenV2.tasks.t03_saliency.recheck_aligned --system optical --confi
 ```
 
 复现前核对权重SHA；复评目录必须尚不存在，不能覆盖原证据。
+
+## 强空间CC蒸馏与已有rank16空间混合的配对试验
+
+前述早期`viewreg_global16`比同预算无global控制提高约.000385，未超过后来的SAM方案。
+新增配置`moe_alpha40_sam_spatialcc_kd2_global16.yaml`只检验已有rank16算子在当前较强训练下的效果，
+不是扩大rank、增加E/O主分支或解冻Qwen。对应控制为`moe_alpha40_sam_spatialcc_kd2.yaml`。
+两者同一完成来源c88e、50轮、SAM.05、空间CC KD2、原图训练、原GT损失、EMA及其他组学习率。
+新增全局投影组LR=5e-5、weight decay=0，与SAM电子扰动组共同参与训练；
+因此参数化和该组的梯度预算不同，不能称“推理完全相同的纯训练技巧”。
+
+沿用已审计的`SpatialTokenLinear`：在两个现有E的pointwise内部，
+真实14×14空间上逐通道196→16→196，初始down为4×4 DCT基、up为0，之后均可学习。
+不是attention或新增完整MLP-Mixer主干；两层合计增加12544参数、约240.8万MAC/图。
+没有跨样本混合。现有CFFN/384隐藏维度、85412参数读出头、478 ROI、224专家、
+光router Top2、两级同尺度融合、alpha≥.4和训练20%–30%未调制分量都不变。
+来源CFFN严格加载，只允许新增四个投影张量；零up初始保持原函数，不重置alpha。
+
+```bash
+TASK=LightGenV2/tasks/t03_saliency
+python -m pytest "$TASK/tests" -q
+python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TASK/configs/moe_alpha40_sam_spatialcc_kd2_global16.yaml" --phase all
+```
+
+正式run只保留best/last，结果以完整5000公开测试为准，选模偏差照常披露。
+此节是待验证方案，不代表达到.87或已经可替换实验室候选；前端仍完全冻结。
