@@ -15,17 +15,18 @@ from .test_spatial_ffn import pack
 TASK=Path(__file__).resolve().parents[1]
 
 
-def test_global_identity_coordinates_gradients_and_batch_isolation():
+@pytest.mark.parametrize('rank',[16,64])
+def test_global_identity_coordinates_gradients_and_batch_isolation(rank):
     old=torch.nn.Linear(3,3)
     state=torch.random.get_rng_state().clone()
-    m=SpatialTokenLinear(old)
+    m=SpatialTokenLinear(old,rank)
     assert torch.equal(state,torch.random.get_rng_state())
     assert m.weight is old.weight and m.bias is old.bias
     grid=torch.randn(2,3,14,14)
     x=pack(grid)
     torch.testing.assert_close(m(x),old(x),atol=0,rtol=0)
-    assert sum(p.numel() for p in m.parameters())-sum(p.numel() for p in old.parameters())==6272
-    torch.testing.assert_close(m.spatial_down@m.spatial_down.T,torch.eye(16),atol=1e-6,rtol=1e-6)
+    assert sum(p.numel() for p in m.parameters())-sum(p.numel() for p in old.parameters())==2*196*rank
+    torch.testing.assert_close(m.spatial_down@m.spatial_down.T,torch.eye(rank),atol=1e-6,rtol=1e-6)
     m(x).square().mean().backward()
     assert m.spatial_up.grad.abs().sum()>0
     with torch.no_grad():m.spatial_up.normal_(std=.01)
@@ -88,11 +89,12 @@ def test_global_rejects_unrelated_keys_and_profile_contract():
         assert getattr(s,key)==getattr(base,key)
 
 
-def test_sam_cckd_global16_is_paired_and_preserves_existing_cffn(tmp_path):
+@pytest.mark.parametrize('rank',[16,64])
+def test_sam_cckd_global_is_paired_and_preserves_existing_cffn(tmp_path,rank):
     from LightGenV2.tasks.t03_saliency.sam_training import ELECTRONIC_GROUPS
     base=load_settings(TASK/'configs/moe_alpha40_sam_spatialcc_kd2.yaml')
-    s=load_settings(TASK/'configs/moe_alpha40_sam_spatialcc_kd2_global16.yaml')
-    assert architecture_label(s)==architecture_label(base)+'_global_r16'
+    s=load_settings(TASK/f'configs/moe_alpha40_sam_spatialcc_kd2_global{rank}.yaml')
+    assert architecture_label(s)==architecture_label(base)+f'_global_r{rank}'
     assert s.sam_rho==.05 and s.distillation_loss=='spatial_cc'
     assert s.distillation_initial_weight==s.distillation_final_weight==2.
     for key in ['initialization_checkpoint_sha256','student_epochs','student_learning_rate',
@@ -114,15 +116,31 @@ def test_sam_cckd_global16_is_paired_and_preserves_existing_cffn(tmp_path):
     torch.save({'architecture':architecture_label(base),'epoch':65,
                 'core':source.state_dict(),'saliency_head':head.state_dict()},checkpoint)
     target=torch.nn.Module();target.hybrid=TinyFusion(s)
-    configure_spatial_ffn(target.hybrid,1);configure_global_mixing(target.hybrid,16)
+    configure_spatial_ffn(target.hybrid,1);configure_global_mixing(target.hybrid,rank)
     s.initialization_checkpoint=checkpoint;s.initialization_checkpoint_sha256=None
     model=SimpleNamespace(core=target,head=torch.nn.Linear(192,1),checkpoint_architecture=architecture_label(s))
     report=initialize_student(model,s)
     assert report['identity_global_mixing_added'] and not report['identity_spatial_ffn_added']
     assert not report['fusion_reset']
-    assert sum(p.numel() for p in target.parameters())-sum(p.numel() for p in source.parameters())==12544
+    assert sum(p.numel() for p in target.parameters())-sum(p.numel() for p in source.parameters())==4*196*rank
     x=torch.randn(2,196,192)
     kw=dict(padding_mask=torch.zeros(2,196,dtype=torch.bool),causal=False,spatial_shapes=[(1,14,14)]*2)
     source.eval();target.eval()
     for i in range(2):
         torch.testing.assert_close(target.hybrid.blocks[i](x,**kw),source.hybrid.blocks[i](x,**kw),atol=0,rtol=0)
+
+
+def test_global64_differs_from_published_global16_only_in_rank_and_output():
+    a=load_settings(TASK/'configs/moe_alpha40_sam_spatialcc_kd2_global16.yaml')
+    b=load_settings(TASK/'configs/moe_alpha40_sam_spatialcc_kd2_global64.yaml')
+    for key in ('initialization_checkpoint_sha256','global_spatial_learning_rate',
+                'student_epochs','staged_warmup_epochs','staged_polish_start',
+                'sam_rho','ema_decay','fusion_alpha_min','top_k','active_size','expert_size',
+                'kl_weight','cc_weight','sim_weight','nss_weight','semantic_weight','unlabeled_weight',
+                'language_optical_phase_zero_order_intensity_min','language_optical_phase_zero_order_intensity_max'):
+        assert getattr(a,key)==getattr(b,key),key
+    assert b.electronic_global_rank==64 and a.electronic_global_rank==16
+    assert b.fusion_alpha_min==.4 and b.router_backend=='optical' and b.top_k==2
+    assert b.semantic_weight==b.unlabeled_weight==0
+    assert b.language_optical_phase_zero_order_intensity_min==.2
+    assert b.language_optical_phase_zero_order_intensity_max==.3

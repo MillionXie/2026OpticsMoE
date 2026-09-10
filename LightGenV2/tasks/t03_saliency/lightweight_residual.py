@@ -126,22 +126,24 @@ class SpatialTokenLinear(nn.Linear):
     The zero up-projection preserves the exact initial pointwise function.
     """
     def __init__(self, original: nn.Linear, rank: int = 16):
-        if rank != 16 or type(original) is not nn.Linear:
-            raise ValueError("Expected original Linear and audited spatial rank16")
+        if rank not in (16,64) or type(original) is not nn.Linear:
+            raise ValueError("Expected original Linear and audited spatial rank16/64")
         device, dtype = original.weight.device, original.weight.dtype
         devices = [device.index] if device.type == "cuda" else []
         with torch.random.fork_rng(devices=devices):
             super().__init__(original.in_features, original.out_features,
                              bias=original.bias is not None, device=device, dtype=dtype)
         self.weight, self.bias = original.weight, original.bias
-        # Deterministic 4x4 low-frequency 2D DCT basis on the true 14x14 grid.
+        # Deterministic 4x4 or 8x8 low-frequency 2D DCT basis on the 14x14 grid.
+        # Rank16 construction and RNG behavior remain unchanged.
+        side = 4 if rank == 16 else 8
         pos = torch.arange(14, device=device, dtype=torch.float32) + .5
-        freq = torch.arange(4, device=device, dtype=torch.float32)[:, None]
+        freq = torch.arange(side, device=device, dtype=torch.float32)[:, None]
         basis = torch.cos(torch.pi * freq * pos / 14)
         basis = basis / basis.square().sum(-1, keepdim=True).sqrt()
-        down = torch.einsum('ay,bx->abyx', basis, basis).reshape(16, 196)
+        down = torch.einsum('ay,bx->abyx', basis, basis).reshape(rank, 196)
         self.spatial_down = nn.Parameter(down.to(dtype))
-        self.spatial_up = nn.Parameter(torch.zeros(196, 16, device=device, dtype=dtype))
+        self.spatial_up = nn.Parameter(torch.zeros(196, rank, device=device, dtype=dtype))
 
     def forward(self, tokens: torch.Tensor) -> torch.Tensor:
         if tokens.ndim != 3 or tokens.shape[1:] != (196, self.in_features):
@@ -170,8 +172,11 @@ def initialize_identity_global_mixing(source: dict, target: dict) -> tuple[dict,
         return source, False
     if missing != expected or source.keys() - target.keys():
         raise RuntimeError("Global transfer only allows four spatial projection tensors")
+    rank = target['hybrid.blocks.0.token_pointwise.spatial_down'].shape[0]
+    if rank not in (16,64):
+        raise RuntimeError("Invalid global projection rank")
     for key in expected:
-        shape = (196,16) if key.endswith('up') else (16,196)
+        shape = (196,rank) if key.endswith('up') else (rank,196)
         if target[key].shape != shape or not torch.isfinite(target[key]).all():
             raise RuntimeError("Invalid global projection initialization")
         if key.endswith('up') and torch.count_nonzero(target[key]).item():

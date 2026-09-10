@@ -1,0 +1,8 @@
+base_config: moe_alpha40_sam_spatialcc_kd2_global16.yaml
+# Rank-only comparison: same source, SAM/KD/GT/EMA/LR schedule and 50 epochs.
+# Two existing electronic residuals each mix spatial coordinates at rank64.
+# Total new parameters vs no-global source: 2*2*196*64 = 50176.
+# No extra main branch, attention, optical geometry change or larger readout.
+lightgen:
+  electronic_global_rank: 64
+output_dir: ../runs/simulation/moe_alpha40_sam_spatialcc_kd2_global64_seed42

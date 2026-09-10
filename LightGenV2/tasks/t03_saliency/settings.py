@@ -199,8 +199,8 @@ def load_settings(path: str | Path) -> Any:
     if settings.sam_rho and settings.feature_hint_initial_weight:
         raise ValueError("Isolate SAM from training-only feature hints")
     settings.global_spatial_learning_rate = float(d("training.global_spatial_learning_rate", 0.0002))
-    if settings.electronic_global_rank not in (0,16):
-        raise ValueError("Global spatial rank must be 0(off) or audited rank16")
+    if settings.electronic_global_rank not in (0,16,64):
+        raise ValueError("Global spatial rank must be 0(off) or audited rank16/64")
     if settings.initialize_global_on_warmstart and not settings.electronic_global_rank:
         raise ValueError("Global transfer requires enabled module")
     if settings.electronic_global_rank:
