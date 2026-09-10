@@ -57,6 +57,15 @@ def recheck_loader(bundle, settings, split):
     return loader, expected
 
 
+def optical_checkpoint_states(payload, use_ema_state=False):
+    if use_ema_state:
+        ema = payload.get('ema_state')
+        if not isinstance(ema, dict) or set(ema) != {'core', 'head'}:
+            raise ValueError('Requested EMA state is absent or malformed; refusing live fallback')
+        return ema['core'], ema['head'], 'ema'
+    return payload['core'], payload['saliency_head'], payload.get('weight_kind', 'live')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--system', choices=['qwen', 'optical'], required=True)
@@ -66,11 +75,15 @@ def main():
     parser.add_argument('--batch-size', type=int, default=32)
     parser.add_argument('--split', choices=['train', 'test'], default='test',
                         help='train: clean full-training-set fit diagnostic, never a test result')
+    parser.add_argument('--use-ema-state', action='store_true',
+                        help='Optical last checkpoint only: evaluate its stored EMA shadow instead of live core/head')
     parser.add_argument('--ablation', choices=['none', 'remove_optical'], default='none',
                         help='Same optical checkpoint, no retraining; remove_optical bypasses router and both optical branches')
     args = parser.parse_args()
     if args.system == 'qwen' and args.ablation != 'none':
         parser.error('Qwen has no optical branch; use --ablation none')
+    if args.system == 'qwen' and args.use_ema_state:
+        parser.error('EMA shadow selection is supported only for optical checkpoints')
     s = load_settings(args.config)
     s.output_dir = args.run_dir.resolve()
     if s.output_dir.exists():
@@ -89,6 +102,7 @@ def main():
     loaded.model.requires_grad_(False).eval()
     payload, checkpoint_digest = load_hashed_checkpoint(args.checkpoint)
     aligned = AlignedReadout(s.vision_hidden_size)
+    evaluated_weight_kind = payload.get('weight_kind', 'live')
     if args.system == 'qwen':
         if payload['architecture'] != 'frozen_qwen24_adapter192_identical_progressive_decoder_v1':
             raise ValueError('Expected aligned-head Qwen checkpoint, not legacy head')
@@ -98,8 +112,9 @@ def main():
         if payload['architecture'] != architecture_label(s):
             raise ValueError('Optical checkpoint/config architecture mismatch')
         model = build_student(loaded, s)
-        model.core.load_state_dict(payload['core'], strict=True)
-        model.head.load_state_dict(payload['saliency_head'], strict=True)
+        core_state, head_state, evaluated_weight_kind = optical_checkpoint_states(payload, args.use_ema_state)
+        model.core.load_state_dict(core_state, strict=True)
+        model.head.load_state_dict(head_state, strict=True)
         model.core.set_phase_dropout_active(False)
     apply_inference_ablation(model, args.system, args.ablation)
     model.eval()
@@ -134,6 +149,8 @@ def main():
               'metrics': metrics, 'independent_float64_cc': cc64,
               'cc_implementation_difference': abs(cc64-metrics['cc']),
               'checkpoint': str(args.checkpoint.resolve()), 'checkpoint_sha256': checkpoint_digest,
+              'checkpoint_weight_view': 'ema_state' if args.use_ema_state else 'saved_core_head',
+              'evaluated_weight_kind': evaluated_weight_kind,
               'checkpoint_hash_contract': 'SHA256 of the exact in-memory bytes deserialized before evaluation; source path may subsequently change',
               'selected_epoch': payload['epoch'], 'architecture': payload['architecture'],
               'aligned_readout_parameter_audit': aligned.parameter_audit(),

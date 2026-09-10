@@ -27,3 +27,20 @@ def test_recheck_rejects_incomplete_or_ambiguous_split(split,train,test):
     bundle=SimpleNamespace(train_records=range(train),validation_records=range(test))
     with pytest.raises((ValueError,RuntimeError)):
         recheck.recheck_loader(bundle,None,split)
+
+
+def test_optical_checkpoint_view_is_explicit_and_never_mutates_payload():
+    p={'core':{'value':1},'saliency_head':{'value':2},'weight_kind':'live',
+       'ema_state':{'core':{'value':3},'head':{'value':4}}}
+    assert recheck.optical_checkpoint_states(p)==(p['core'],p['saliency_head'],'live')
+    assert recheck.optical_checkpoint_states(p,True)==(p['ema_state']['core'],p['ema_state']['head'],'ema')
+    assert p['core']=={'value':1} and p['saliency_head']=={'value':2}
+    p['weight_kind']='ema'
+    assert recheck.optical_checkpoint_states(p)[2]=='ema'
+
+
+@pytest.mark.parametrize('ema',[None,{}, {'core':{}}, {'core':{},'head':{},'extra':{}}])
+def test_missing_ema_never_silently_evaluates_live_weights(ema):
+    p={'core':{},'saliency_head':{},'ema_state':ema}
+    with pytest.raises(ValueError,match='refusing live fallback'):
+        recheck.optical_checkpoint_states(p,True)
