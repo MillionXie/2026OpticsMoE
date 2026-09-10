@@ -4,6 +4,7 @@ No inference parameters, no optical geometry/noise change. The second backward
 still trains ALL enabled parameters, including optical phases and router.
 """
 from collections import defaultdict
+from contextlib import nullcontext
 import random
 import time
 import numpy as np
@@ -70,9 +71,9 @@ def sam_step(optimizer, closure, rho, device, clip_norm=0.):
     return values, increase
 
 
-def train_sam_epoch(model,loader,loaded,settings,optimizer,teacher_cache=None,relation_targets=None,masked_targets=None):
+def train_sam_epoch(model,loader,loaded,settings,optimizer,teacher_cache=None,relation_targets=None,masked_targets=None,first_stage=None):
     if settings.sam_rho == 0:
-        if relation_targets is not None or masked_targets is not None:
+        if relation_targets is not None or masked_targets is not None or first_stage is not None:
             raise ValueError('Auxiliary distillation requires the audited SAM path')
         return legacy._train_epoch('student',model,loader,loaded,settings,optimizer,
                                    teacher_cache=teacher_cache)
@@ -86,7 +87,9 @@ def train_sam_epoch(model,loader,loaded,settings,optimizer,teacher_cache=None,re
         teacher_logits=teacher_cache.get(batch['sample_ids'],loaded.device) if teacher_cache is not None else None
         def closure():
             with legacy._autocast(settings,loaded.device):
-                outputs=model(inputs['pixel_values'],inputs['image_grid_thw'])
+                active_first = first_stage is not None and settings.first_stage_current_weight > 0
+                with (first_stage.capture(model) if active_first else nullcontext([])) as captured:
+                    outputs=model(inputs['pixel_values'],inputs['image_grid_thw'])
                 logits=outputs[0]
                 task,pieces=task_saliency_loss(logits,density,fixation,settings,teacher_logits=teacher_logits)
                 balance,importance=model.router_losses()
@@ -103,10 +106,16 @@ def train_sam_epoch(model,loader,loaded,settings,optimizer,teacher_cache=None,re
                     masked = masked_targets.loss(outputs[1], batch['sample_ids'],
                         detach_student=settings.masked_generator_warmup)
                     total = total + settings.masked_current_weight * masked
+                first_loss, first_cc = logits.new_zeros(()), logits.new_zeros(())
+                if active_first:
+                    first_loss, first_cc = first_stage.loss(captured, inputs['image_grid_thw'],
+                        density, fixation, settings, detach_student=settings.first_stage_head_warmup)
+                    total = total + settings.first_stage_current_weight * first_loss
             return total,dict(pieces,loss=total,router_balance=balance,router_importance=importance,
                               phase_dc=dc,ccd_operating_point=operating,
                               **({'relational_loss':relation} if relation_targets is not None else {}),
-                              **({'masked_loss':masked} if masked_targets is not None else {}))
+                              **({'masked_loss':masked} if masked_targets is not None else {}),
+                              **({'first_stage_loss':first_loss, 'first_stage_cc':first_cc} if first_stage is not None else {}))
         values,increase=sam_step(optimizer,closure,settings.sam_rho,loaded.device,settings.gradient_clip_norm)
         count=len(batch['sample_ids']);totals['samples']+=count
         values['sam_loss_increase']=increase

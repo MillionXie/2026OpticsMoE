@@ -1,5 +1,38 @@
 # 训练时空间特征监督（不增加推理网络）
 
+## 第一层真实任务深监督（待验证备选，不改变推理）
+
+配置`moe_alpha40_first_stage_gt.yaml`。依据[Deeply-Supervised Nets，AISTATS2015](https://proceedings.mlr.press/v38/lee15a.html)
+对中间表示增加训练目标的思路；本任务适配，不声称复现该论文分类结果，也不声称梯度消失已被证明。
+MGD恢复误差下降但完整测试未改善，因此另检查能否让第一层表示直接学习真实显著性目标，
+而非继续拟合教师中可能与当前任务无关的全部特征。未取得结果前不替换87ad正式候选。
+
+- 唯一捕获点是现有`hybrid.blocks[1]`的输入，即第一层同尺度E/O融合结果；**不是纯光强图**。
+  捕获当前前向的`[B,196,192]`，用现有Qwen block-major恢复函数变回`[B,192,14,14]`。
+  不重新传播光场，不改变输入、融合、相位、ROI、Top2或最终输出。
+- 训练辅助头是原85412参数显著性头的独立副本，从同一87ad头初始化，不共享参数、不消耗随机数。
+  用原224真值密度/注视图和相同GT KL/CC/SIM/NSS配比，无辅助教师目标、额外数据或标注。
+  主输出仍使用GT+map空间CC KD2，教师缓存与原控制一致，前端保持冻结。
+- 从原87ad core/head开始，40轮；前三轮仅辅助输入detach，让辅助头适配第一层，
+  主任务仍训练全部原可训练参数。第4轮起辅助梯度进入第一层及其上游；它不会直接进入
+  第二层相位/电子运算或最终头。主任务梯度始终更新这些后续参数。
+- 辅助系数.2线性退至第25轮0，此后关闭捕获/辅助前向，最后15轮只优化原主任务。
+  辅助基础LR=1e-4，随原staged schedule；原SAM.05/EMA.995/各原学习率保持。
+  辅助头不受SAM扰动，但参与第二次反向后的单次AdamW和整体梯度裁剪；EMA仍仅core/head。
+- Hook只在单次训练前向内存在，异常时也移除，拒绝缺失/重复捕获或错误网格。
+  附加参数仅保存在`last_checkpoint.pt:training_only_first_stage`，best/core/head不包含它。
+  **部署新增参数0、额外推理分支0、额外光传播0**，没有增加attention/Transformer或大电子网络。
+  系数归零后的辅助loss/CC日志0表示未计算，不是辅助头性能为0。
+
+```bash
+# 先通过CPU回归和真实数据短更新检查，发布源码，再在两卡预算内替换已停止的试验。
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=3 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_first_stage_gt.yaml --phase all
+```
+
+输出为`runs/simulation/moe_alpha40_first_stage_gt_seed42`，检查`first_stage_supervision_provenance.json`、
+源码/初始化/数据SHA、history中的first_stage_weight/head_warmup/loss/cc。仍固定10k训练、5k完整
+public-test，按起点/首轮/每5轮/末轮选择best，存在选模偏差。只best/last，不保留周期PT。
+
 ## 遮挡比例单变量对照（已启动，收益待验证）
 
 50% MGD第4轮已进入联合阶段：10000训练样本、恢复MSE=.83566117、辅助权重=.90689655，

@@ -70,6 +70,7 @@ def _checkpoint(
     training_only_hint: Any = None,
     training_only_semantic: Any = None,
     training_only_mgd: Any = None,
+    training_only_first_stage: Any = None,
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(
@@ -83,6 +84,7 @@ def _checkpoint(
             "training_only_hint": training_only_hint,
             "training_only_semantic": training_only_semantic,
             **({"training_only_mgd": training_only_mgd} if training_only_mgd is not None else {}),
+            **({"training_only_first_stage": training_only_first_stage} if training_only_first_stage is not None else {}),
             "core": model.core.state_dict(),
             "saliency_head": model.head.state_dict(),
             "train_metrics": train_metrics,
@@ -149,6 +151,14 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
     use_spawn_workers(test_loader)
     optim = optimizer(model, settings)
     masked_targets = None
+    first_stage = None
+    if getattr(settings, 'first_stage_supervision', {}):
+        from .first_stage_supervision import FirstStageSupervisor
+        first_stage = FirstStageSupervisor(model).to(loaded.device)
+        optim.add_param_group({'params': list(first_stage.parameters()), 'name': 'training_first_stage',
+                              'lr': settings.first_stage_supervision['learning_rate'], 'weight_decay': 0.0})
+        _write_json(settings.output_dir/'first_stage_supervision_provenance.json',
+                    dict(first_stage.provenance, **settings.first_stage_supervision))
     if getattr(settings, 'masked_distillation', {}):
         from .masked_distillation import MaskedTeacherRecovery
         masked_targets = MaskedTeacherRecovery(settings, bundle.train_records).to(loaded.device)
@@ -279,6 +289,14 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
                     stage_report.update(masked_weight=epoch_settings.masked_current_weight,
                                         masked_generator_warmup=epoch_settings.masked_generator_warmup)
                     relation_kwargs['masked_targets'] = masked_targets
+                if first_stage is not None:
+                    options = settings.first_stage_supervision
+                    epoch_settings.first_stage_current_weight = distillation_weight(
+                        options['initial_weight'], options['end_epoch'], epoch, options['final_weight'])
+                    epoch_settings.first_stage_head_warmup = epoch <= options['head_warmup_epochs']
+                    stage_report.update(first_stage_weight=epoch_settings.first_stage_current_weight,
+                                        first_stage_head_warmup=epoch_settings.first_stage_head_warmup)
+                    relation_kwargs['first_stage'] = first_stage
                 train_metrics = train_sam_epoch(model, train_loader, loaded, epoch_settings, optim,
                                                 teacher if settings.map_kd_weight > 0 else None, **relation_kwargs)
             elif hints is None:
@@ -348,6 +366,7 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
                 training_only_hint=hints.state_dict() if hints is not None else None,
                 training_only_semantic=semantic.state_dict() if semantic is not None else None,
                 **({'training_only_mgd': masked_targets.state_dict()} if masked_targets is not None else {}),
+                **({'training_only_first_stage': first_stage.state_dict()} if first_stage is not None else {}),
             )
             if not settings.staged_training:
                 scheduler.step()
