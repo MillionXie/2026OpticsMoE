@@ -403,9 +403,9 @@ python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TA
 这只是功能/更新冒烟，不是测试性能；记录在`runs/smoke/group64_real4_20260910/smoke.json`。
 正式训练保持原精度，复用已结束且无活跃进程的`t03_sam`工作树，未修改其他训练的工作树。
 
-## 空间相关性蒸馏：阶段性独立复评
+## 空间相关性蒸馏：独立复评及50轮完成确认
 
-`moe_alpha40_sam_spatialcc_seed42`仍在训练，epoch5候选完成全5000张独立复评：
+`moe_alpha40_sam_spatialcc_seed42`的epoch5候选先完成全5000张独立复评，随后50轮训练已完成：
 
 |指标|原SAM.05已完成候选|空间CC蒸馏epoch5候选|
 |---|---:|---:|
@@ -415,7 +415,7 @@ python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TA
 
 CC平均增益0.0003974414，2889/5000张改善，逐图差值中位数0.0002774605；
 KLD/SIM略差，不能宣称所有指标同时改进。距离CC=.87仍差0.0082705226。
-这是相同公开测试集选模的阶段性结果，不是未接触测试集的泛化证明；后续best变化必须重新绑定SHA。
+这是相同公开测试集选模的结果，不是未接触测试集的泛化证明；最终50轮best已确认同SHA，另起续训后仍须重新绑定SHA。
 独立复评目录`aligned_recheck_20260910_spatialcc_candidate`，源码commit
 `30145efdfa2371b3882cc39aa52e1eba882bfda3`，选中epoch5，实际载入checkpoint SHA256：
 `a1fc626767ced7f36174a96b493233c2dcba600674b12504f37143af928897e9`。
@@ -715,3 +715,15 @@ python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config "$TA
 启动前同源码的4张真实训练图短检查：初始logits最大差0，参数增量12544；
 单次SAM更新后的相位RMS变化0.00018743190 rad，两张global up各3136个元素均已非零，
 所有参数有限。该临时内存检查未保存PT，不是性能测量，也不替代完整warmstart/测试复评。
+
+## 空间CC系数.6的最终训练收尾
+
+`moe_alpha40_sam_spatialcc_seed42`完成50/50轮，进程2523257已退出，无异常重启。
+最终best仍为epoch5 EMA，SHA `a1fc626767ced7f36174a96b493233c2dcba600674b12504f37143af928897e9`，
+与前述独立复评及相位/路由审计字节一致；最终全5000重载CC=.8617294619，
+独立float64仍为.8617294774。第50轮测试=.8607004927，不可当成best。
+正式根目录只有best/last两份PT，训练报告确认stop_reason=epoch_budget，completed_epochs=50。
+`training_report.json` SHA256：`fd1a01e416db4cd75c764229f397363092c9980fe859587f0e74fcaad0b7f73e`；
+`selected_checkpoint_test_evaluation.json` SHA256：`7d2a8daabc9e6a51de4e739a6e06df606c9229e9087c87b85aa5a79a4f46c5c5`。
+训练源码仍为30145ef，最终报告不改变先前逐图改善及KLD/SIM取舍结论。
+这是当前较高CC的已完成、已独立核验候选；KD2的.86204960仍在训练，.87目标没有达到。

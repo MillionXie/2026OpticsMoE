@@ -3,9 +3,10 @@
 [SAM训练对照](SAM_TRAINING.md)：不增加推理结构，在电子参数子空间进行训练时扰动，
 有同源普通续训组、随机噪声配对和单次optimizer/EMA更新的实现检查。
 
-当前完成并独立核验的光电候选：SAM.05完成50轮、best epoch5 EMA，
-重载完整5000测试CC=0.86133209，独立float64 CC=0.86133204；最终best字节与独立复查一致。
-alpha≥0.4且四专家无明显坍缩；权重SHA、相位更新、命令和差距见[SAM完成结果](SAM_TRAINING.md)。
+当前完成并独立核验的较高CC光电候选：SAM+空间CC蒸馏.6完成50轮、best epoch5 EMA，
+重载完整5000测试CC=0.86172946，独立float64 CC=0.86172948；最终best字节与独立复查一致。
+相比SAM.05的0.86133204，CC略高、KLD/SIM略差；alpha≥0.4且四专家无明显坍缩。
+权重SHA、相位更新、命令和差距见[SAM完成结果](SAM_TRAINING.md)。
 来源强蒸馏.85953132的历史结果保留在[泛化优化](VIEW_REGULARIZATION.md)。
 同规格头Qwen为0.88968469，0.87目标仍未达到。
 仍在训练的阶段性候选`moe_alpha40_sam_spatialcc_kd2_seed42`，epoch5独立复评CC=0.86204960；
