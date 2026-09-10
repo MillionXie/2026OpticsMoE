@@ -90,6 +90,65 @@ control仍为GPU0/PID1294991；只用两张卡，其他卡上的他人/其他任
 run目录分别为`moe_alpha40_feature_pretrain_seed42`和`moe_alpha40_feature_pretrain_strong_seed42`。
 此处是启动与测试记录，不是60轮完成或超过.88的报告。
 
+### 路由审计后的调整：固定完整输入路径，再小步联合微调
+
+重要负面结果：control第10轮best（EMA，CC=.82740550，SHA256
+`5da290707edb47e0006d7bdbc797ad05d8f9e36163de3346af14645dd069a64c`）在前256张
+clean训练诊断图上选择计数为`[0,256,0,256]`，仅1种Top2组合，有效专家数2。
+alpha=.44330633/.46157691，满足下限，但路由集中。相对87ad起点的圆周相位RMS：
+router .02733965rad，专家0/1/2/3为.13480623/.13321689/.20036843/.17970687rad，
+全局.14553317rad；这是实际相位变化，不是BMP字节变化，也不意味着性能更好。
+
+后续检查必须区分阶段：control第15轮best CC=.8335291910171508，前64张训练图
+计数`[32,32,35,29]`、4种Top2组合，已恢复分散，**不能说control始终坍缩**。
+相同64张图的87ad来源为`[29,35,34,30]`、6种组合。
+strong第5轮best CC=.7805594863891602，对应计数`[0,64,0,64]`、1种组合。
+这些是clean训练子集的路由诊断，不是完整测试集专家分布；不包含随机硬件扰动。
+
+control已停止并保留第15轮，strong停止并保留第9轮，不是两组完成60轮。
+control best/last SHA256分别：
+`b2d8e0d9d903efa1de66664e02af07fd9ff9310e53c1f4db71889b0b99508fba` /
+`42ccec2b991d35037f92a3c21ddd70abc541e9052eed38227c9c91de11de1616`。
+strong best第5轮/last第9轮SHA256分别：
+`f8cde610ee3d70c4fd036a1f37840896cc3541bbe3507e95d4687f3b7a993d45` /
+`689da6a8f245728dccb9fd76ef278e982f27417e84e38833a1bd2421f8b23ac2`。
+均已停止后成功CPU重载，父1294991/1366554及各5个子进程退出；权重和数据不删除。
+control值得继续联合训练；strong只是提前结束的早期负面证据，不证明完整60轮必定失败。
+
+实现`feature_pretraining.freeze_router_path`：前15轮固定完整路由前路径的两组Linear+LN，
+即`hybrid.input_adapter/input_norm`和`hybrid.optical_branch.core.input_adapter/input_norm`，
+以及光router自身参数。第二组是共享的SLM振幅编码器，也用于其他光阶段，**不复制新分支**。
+只冻结第一组不能保证光router输入稳定。Qwen patch/位置前端本来就冻结；所有冻结仅是训练策略。
+专家/全局相位、原电子残差、CCD读出继续学习，头仍按既定策略前15轮冻结。
+第16轮解冻全部，路由前输入参数单独用基础LR5e-6×联合倍率.2=1e-6；router为1e-5。
+这组输入参数不加入SAM的瞬态扰动子空间，但仍用第二次反传梯度更新；其他旧profile不变。
+保留光router Top2、alpha≥.4、同尺度融合、478/224/17µm/10cm与DC20–30%，新增推理参数0。
+
+两条有区别的优化路径（不是共同起点单变量消融）：
+
+1. `moe_alpha40_feature_pretrain_stable_router.yaml`：从87ad重做15轮稳定路由预训练＋45轮联合，预算60。
+2. `moe_alpha40_feature_joint_router_low_lr.yaml`：从control第15轮best EMA进入45轮联合微调，
+   不重复固定头阶段；`frozen_head_epochs: 0`，头立即可训练，输入映射立即以1e-6小步学习。
+   特征权重从.2在本run第25轮降到0，LR及硬负载均衡计划与原第16–60轮对齐，
+   但重建optimizer/EMA及数据顺序，**不是精确断点恢复**。来源头仍是同一个固定教师头。
+
+```bash
+# 已测试源码发布后，在仓库根目录执行，先检查GPU0/1及两卡总预算。
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_feature_joint_router_low_lr.yaml --phase all
+CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=1 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_feature_pretrain_stable_router.yaml --phase all
+```
+
+源码`e4c17ac8`通过193项CPU测试（41.75秒、13条既有依赖警告）；测试包含两级输入/相位
+冻结期间不被AdamW权重衰减改变、解冻后恢复更新、完整参数分组无遗漏/重复、零预热联合入口。
+收益待实际训练验证，不把只满足路由稳定条件当作达到CC=.88。
+
+真实图像CPU短检查也通过：使用前两张train图，原生24个Transformer hook调用数均为0。
+分离出来的两级输入映射共240864参数（从原E组移动，不是新增）；稳定方案冻结期间
+这些参数及router参数绝对变化为0，更新前后clean路由概率逐值差为0。
+第16轮解冻短步后参数发生变化，路由概率最大差约.000228，证明没有忘记解冻。
+联合入口首步直接执行SAM，参数变化正常；来源第15轮头与教师decoder逐值相等，
+初始化没有破坏已有头。所有loss有限；这不是训练或测试集性能复评，不保存短检查PT。
+
 ## 已完成对照结果
 
 2026-09-10，`moe_alpha40_hint_control_seed42`与`moe_alpha40_hint_cosine_seed42`

@@ -163,7 +163,8 @@ def configure_router_path_optimizer(model, optimizer, settings):
     after = [id(p) for group in optimizer.param_groups for p in group['params']]
     if set(after)!=before or len(after)!=len(set(after)):
         raise RuntimeError('Router path optimizer split lost or duplicated parameters')
-    return {'router_path_frozen_during_pretraining': True,
+    return {'router_path_frozen_during_pretraining': options['frozen_head_epochs'] > 0,
+            'router_path_pretraining_freeze_epochs': options['frozen_head_epochs'],
             'router_input_parameter_count': sum(p.numel() for p in params),
             'router_input_parameter_names': [name for name,p in model.core.named_parameters() if id(p) in ids],
             'router_input_sam_perturbation': False,
