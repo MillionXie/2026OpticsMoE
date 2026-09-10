@@ -122,7 +122,7 @@ def test_published_extra_profile_matches_control_and_pins_real_cache():
     assert control.student_epochs==extra.student_epochs==40
     assert control.initialization_checkpoint_sha256==extra.initialization_checkpoint_sha256
     assert extra.unlabeled_weight==.6 and control.unlabeled_weight==0
-    assert extra.unlabeled_image_manifest == TASK.parents[2]/'cache/qwen3_vl_embedding_2b_salicon_lightgen/coco20k_pretrain_20260910/image_manifest.json'
+    assert extra.unlabeled_image_manifest == (TASK.parents[2]/'cache/qwen3_vl_embedding_2b_salicon_lightgen/coco20k_pretrain_20260910/image_manifest.json').resolve()
     assert extra.unlabeled_cache_sha256=='232e02d243a3d58b8d5cc48557da8f566f77a81e7020968a8a84c0c85d7c305c'
     assert extra.fusion_alpha_min==.4 and extra.top_k==2 and extra.router_backend=='optical'
 
