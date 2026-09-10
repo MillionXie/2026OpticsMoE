@@ -1,0 +1,21 @@
+base_config: spatial_conv5_distilled_s721.yaml
+output_dir: ../../runs/lgvq_spatial_compact_conv_r8_s730
+random_seed: 730
+
+# First rung of progressive ResNet removal.  The target-trained Conv5 is kept,
+# followed by eight zero-start, depthwise-separable 14x14 refiners.  The
+# inference graph contains no pretrained CNN, ResNet, attention, or Transformer.
+initialization:
+  frame_stem_checkpoint: ../../artifacts/lgvq_conv5_source_checkpoint.pt
+
+model:
+  frame_stem_refiner_depth: 8
+
+training:
+  initialization_checkpoint: ../../artifacts/distillation/s730/distilled_student_initialization.pt
+  trainable_scope: frame_stem_only
+  epochs: 50
+  batch_size: 16
+  learning_rate: 0.000003
+  weight_decay: 0.001
+  ema_decay: 0.999

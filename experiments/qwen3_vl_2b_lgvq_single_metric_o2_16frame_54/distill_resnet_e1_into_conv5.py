@@ -216,8 +216,19 @@ def distill(
         teacher_state["raw_electronic_quality_scale"].float()
     ).to(device)
     source_payload = _load(student_settings.frame_stem_checkpoint)
-    stem = TrainableQualityFrameStem()
-    stem.load_state_dict(_prefixed(_state(source_payload), "frame_stem."), strict=True)
+    stem = TrainableQualityFrameStem(student_settings.frame_stem_refiner_depth)
+    source_result = stem.load_state_dict(
+        _prefixed(_state(source_payload), "frame_stem."), strict=False
+    )
+    unexpected = list(source_result.unexpected_keys)
+    non_refiner_missing = [
+        name for name in source_result.missing_keys if not name.startswith("refiners.")
+    ]
+    if unexpected or non_refiner_missing:
+        raise RuntimeError(
+            "Base Conv5 checkpoint is incompatible with the compact student: "
+            f"missing={non_refiner_missing}, unexpected={unexpected}"
+        )
     stem.to(device)
     optimizer = torch.optim.AdamW(
         stem.parameters(), lr=learning_rate, weight_decay=weight_decay
@@ -324,6 +335,7 @@ def distill(
         "teacher_resnet_used_only_during_distillation": True,
         "student_inference_contains_resnet": False,
         "student_conv5_parameters": sum(p.numel() for p in stem.parameters()),
+        "student_refiner_depth": student_settings.frame_stem_refiner_depth,
         "best_epoch": best_epoch,
         "train_feature_metrics": train_metrics,
         "test_feature_metrics": test_metrics,

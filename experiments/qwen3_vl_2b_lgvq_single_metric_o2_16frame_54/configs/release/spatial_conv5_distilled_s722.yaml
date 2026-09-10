@@ -1,0 +1,12 @@
+base_config: spatial_conv5_distilled_s721.yaml
+output_dir: ../../runs/lgvq_spatial_conv5_distilled_s722
+random_seed: 722
+
+# Same 339k student as s721, rerun after fixing initialization priority so the
+# distilled full-checkpoint stem is not overwritten by its base Conv5 source.
+training:
+  epochs: 40
+  batch_size: 16
+  learning_rate: 0.000003
+  weight_decay: 0.001
+  ema_decay: 0.999

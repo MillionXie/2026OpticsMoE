@@ -2012,10 +2012,41 @@ class QualitySpatialAdapter(nn.Module):
         )
 
 
+class CompactFrameStemRefiner(nn.Module):
+    """Cheap 14x14 spatial correction used for progressive compression.
+
+    The unit is a pair of depthwise convolutions followed by pointwise mixing.
+    Its last projection starts at zero, so inserting any number of units leaves
+    the established Conv5 output bit-identical before distillation.  It is not
+    a predictor and has no path around the four optical/electronic stages.
+    """
+
+    def __init__(self, width: int = 192, hidden: int = 256) -> None:
+        super().__init__()
+        self.norm = nn.GroupNorm(24, width)
+        self.depthwise3 = nn.Conv2d(
+            width, width, 3, padding=1, groups=width, bias=False
+        )
+        self.depthwise5 = nn.Conv2d(
+            width, width, 5, padding=2, groups=width, bias=False
+        )
+        self.mix = nn.Conv2d(width * 2, hidden, 1)
+        self.project = nn.Conv2d(hidden, width, 1)
+        nn.init.zeros_(self.project.weight)
+        nn.init.zeros_(self.project.bias)
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        normalized = self.norm(value)
+        context = torch.cat(
+            (self.depthwise3(normalized), self.depthwise5(normalized)), dim=1
+        )
+        return value + self.project(F.gelu(self.mix(context)))
+
+
 class TrainableQualityFrameStem(nn.Module):
     """Five plain convolutions mapping four RGB frames to 14x14x192 tokens."""
 
-    def __init__(self) -> None:
+    def __init__(self, refiner_depth: int = 0) -> None:
         super().__init__()
         self.conv1 = nn.Conv2d(14, 48, 3, stride=2, padding=1)
         self.norm1 = nn.GroupNorm(8, 48)
@@ -2027,6 +2058,9 @@ class TrainableQualityFrameStem(nn.Module):
         self.norm4 = nn.GroupNorm(12, 96)
         self.conv5 = nn.Conv2d(96, 192, 3, stride=2, padding=1)
         self.norm5 = nn.GroupNorm(24, 192)
+        self.refiners = nn.ModuleList(
+            [CompactFrameStemRefiner() for _ in range(refiner_depth)]
+        )
         sobel_x = torch.tensor(
             ((-1.0, 0.0, 1.0), (-2.0, 0.0, 2.0), (-1.0, 0.0, 1.0))
         ) / 4.0
@@ -2108,6 +2142,8 @@ class TrainableQualityFrameStem(nn.Module):
         value = F.gelu(self.norm3(self.conv3(value)))
         value = F.gelu(self.norm4(self.conv4(value)))
         value = F.gelu(self.norm5(self.conv5(value)))
+        for refiner in self.refiners:
+            value = refiner(value)
         return value.flatten(2).transpose(1, 2).reshape(
             batch, frame_count, -1, value.shape[1]
         )
@@ -2457,7 +2493,7 @@ class LGVQSingleMetricOEO16(nn.Module):
             else nn.Identity()
         )
         self.frame_stem = (
-            TrainableQualityFrameStem()
+            TrainableQualityFrameStem(settings.frame_stem_refiner_depth)
             if settings.trainable_frame_stem_enabled
             else None
         )

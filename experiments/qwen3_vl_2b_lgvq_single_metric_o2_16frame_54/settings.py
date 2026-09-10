@@ -287,6 +287,7 @@ class ExperimentSettings:
     late_input_correction_enabled: bool = False
     late_input_correction_max: float = 0.50
     trainable_frame_stem_enabled: bool = False
+    frame_stem_refiner_depth: int = 0
     vgg_correction_max: float = 0.50
     vgg_correction_mode: str = "local"
     resnet_electronic_max: float = 0.50
@@ -474,7 +475,7 @@ class ExperimentSettings:
             correction_tag = int(round(self.late_input_correction_max * 100.0))
             suffixes.append(f"lateinputcorr{correction_tag:03d}_v1")
         if self.trainable_frame_stem_enabled:
-            suffixes.append("trainableconv5_v1")
+            suffixes.append(f"trainableconv5r{self.frame_stem_refiner_depth}_v1")
         if self.vgg_feature_cache_path is not None:
             correction_tag = int(round(self.vgg_correction_max * 100.0))
             suffixes.append(
@@ -728,6 +729,12 @@ class ExperimentSettings:
             raise ValueError("model.late_input_correction_max must be positive")
         if self.late_input_correction_enabled and self.target_name != "spatial":
             raise ValueError("The late input correction is only valid for Spatial")
+        if not 0 <= self.frame_stem_refiner_depth <= 8:
+            raise ValueError("model.frame_stem_refiner_depth must be within [0,8]")
+        if self.frame_stem_refiner_depth and not self.trainable_frame_stem_enabled:
+            raise ValueError(
+                "model.frame_stem_refiner_depth requires trainable_frame_stem_enabled=true"
+            )
         if self.trainable_frame_stem_enabled:
             if self.target_name != "spatial" or self.frame_count != 4 or self.token_grid != 14:
                 raise ValueError(
@@ -1184,6 +1191,9 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         ),
         trainable_frame_stem_enabled=bool(
             get("model", "trainable_frame_stem_enabled", False)
+        ),
+        frame_stem_refiner_depth=int(
+            get("model", "frame_stem_refiner_depth", 0)
         ),
         vgg_correction_max=float(get("model", "vgg_correction_max", 0.50)),
         vgg_correction_mode=str(get("model", "vgg_correction_mode", "local")),

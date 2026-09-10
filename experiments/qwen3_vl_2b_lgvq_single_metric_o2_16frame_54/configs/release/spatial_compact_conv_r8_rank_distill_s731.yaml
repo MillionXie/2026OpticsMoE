@@ -1,0 +1,27 @@
+base_config: spatial_compact_conv_r8_s730.yaml
+output_dir: ../../runs/lgvq_spatial_compact_conv_r8_rank_distill_s731
+random_seed: 731
+
+# Stage two: preserve the rejected teacher's ordering on the training split
+# while retaining direct supervision from human MOS.  No test prediction is
+# present in this cache and the full teacher is absent during student inference.
+data:
+  training_soft_targets: ../../artifacts/distillation/resnet_teacher_train_spatial_predictions.pt
+
+training:
+  initialization_checkpoint: ../../artifacts/distillation/s730/distilled_student_initialization.pt
+  trainable_scope: frame_stem_only
+  epochs: 60
+  batch_size: 32
+  learning_rate: 0.00003
+  weight_decay: 0.001
+  ema_decay: 0.997
+
+loss:
+  regression_weight: 0.10
+  ranking_weight: 1.00
+  correlation_weight: 2.00
+  soft_spearman_weight: 0.20
+  soft_target_weight: 0.50
+  soft_target_ranking_weight: 1.50
+  soft_target_correlation_weight: 1.00

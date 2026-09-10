@@ -117,13 +117,25 @@ def _load_frame_stem_initialization(
     }
     if not stem_state:
         raise RuntimeError("Frame-stem checkpoint contains no frame_stem tensors")
-    model.frame_stem.load_state_dict(stem_state, strict=True)
+    result = model.frame_stem.load_state_dict(stem_state, strict=False)
+    non_refiner_missing = [
+        name for name in result.missing_keys if not name.startswith("refiners.")
+    ]
+    if result.unexpected_keys or non_refiner_missing:
+        raise RuntimeError(
+            "Frame-stem checkpoint is incompatible: "
+            f"missing={non_refiner_missing}, unexpected={list(result.unexpected_keys)}"
+        )
     return {
         "used": True,
         "path": str(path),
         "loaded_tensors": len(stem_state),
         "loaded_parameters": sum(value.numel() for value in stem_state.values()),
-        "policy": "exact conv5 stem restore; no resizing",
+        "initialized_refiner_tensors": len(result.missing_keys),
+        "policy": (
+            "exact base Conv5 restore; absent zero-start compact refiners keep "
+            "their constructor initialization; no resizing"
+        ),
     }
 
 
@@ -472,13 +484,17 @@ def main() -> int:
 
     payload = load_single_metric_cache(settings)
     model = build_model(settings)
-    initialization = _load_compatible_initialization(model, settings)
-    _json(settings.output_dir / "initialization_report.json", initialization)
+    # The stand-alone stem checkpoint is the fallback/base initializer.  Load
+    # it first so a later full student checkpoint can deliberately replace the
+    # stem with its distilled weights.  The previous order silently restored
+    # the old Conv5 after loading a distilled full checkpoint.
     stem_initialization = _load_frame_stem_initialization(model, settings)
     _json(
         settings.output_dir / "frame_stem_initialization_report.json",
         stem_initialization,
     )
+    initialization = _load_compatible_initialization(model, settings)
+    _json(settings.output_dir / "initialization_report.json", initialization)
     training_scope = _apply_trainable_scope(model, settings)
     _json(settings.output_dir / "trainable_scope_report.json", training_scope)
     _json(settings.output_dir / "parameter_breakdown.json", model.parameter_breakdown())
