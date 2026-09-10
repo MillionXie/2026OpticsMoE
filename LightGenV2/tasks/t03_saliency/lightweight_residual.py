@@ -137,8 +137,10 @@ class SpatialTokenLinear(nn.Linear):
         # Deterministic 4x4 or 8x8 low-frequency 2D DCT basis on the 14x14 grid.
         # Rank16 construction and RNG behavior remain unchanged.
         side = 4 if rank == 16 else 8
-        pos = torch.arange(14, device=device, dtype=torch.float32) + .5
-        freq = torch.arange(side, device=device, dtype=torch.float32)[:, None]
+        # Higher frequencies need a more accurate initial orthogonal basis.
+        basis_dtype = torch.float32 if rank == 16 else torch.float64
+        pos = torch.arange(14, device=device, dtype=basis_dtype) + .5
+        freq = torch.arange(side, device=device, dtype=basis_dtype)[:, None]
         basis = torch.cos(torch.pi * freq * pos / 14)
         basis = basis / basis.square().sum(-1, keepdim=True).sqrt()
         down = torch.einsum('ay,bx->abyx', basis, basis).reshape(rank, 196)
