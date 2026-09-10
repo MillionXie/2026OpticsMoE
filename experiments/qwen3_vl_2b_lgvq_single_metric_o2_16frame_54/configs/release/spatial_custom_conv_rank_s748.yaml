@@ -1,0 +1,40 @@
+base_config: spatial_custom_conv_pretrain_s746.yaml
+output_dir: ../../runs/lgvq_spatial_custom_conv_rank_s748
+random_seed: 748
+
+# Conservative second stage after feature distillation.  Only the project-owned
+# Conv/Linear E1 correction and the existing single MOS readout are updated;
+# all optical masks, optical routers and the remaining electronic residual path
+# stay at the proven checkpoint values.  This prevents an initially imperfect
+# replacement front from disturbing all four optical/electronic stages at once.
+training:
+  initialization_checkpoint: ../../artifacts/lgvq_custom_conv_e1_pretrained_s746.pt
+  trainable_scope: custom_conv_and_readout
+  epochs: 100
+  batch_size: 32
+  learning_rate: 0.00015
+  weight_decay: 0.001
+  learning_rate_warmup_epochs: 3
+  minimum_learning_rate_factor: 0.02
+  readout_learning_rate_factor: 0.50
+  ema_decay: 0.99
+  ema_start_epoch: 1
+  test_interval_epochs: 1
+  phase_snapshot_interval_epochs: 0
+
+loss:
+  regression_weight: 0.20
+  ranking_weight: 2.00
+  correlation_weight: 4.00
+  soft_spearman_weight: 0.40
+  soft_rank_temperature: 0.12
+  soft_target_weight: 0.0
+  soft_target_ranking_weight: 0.0
+  soft_target_correlation_weight: 0.0
+  level_distribution_weight: 0.0
+  optical_alignment_weight: 0.0
+  router_balance_weight: 0.0
+  router_importance_weight: 0.0
+  serial_router_balance_weight: 0.0
+  serial_router_importance_weight: 0.0
+  router_capture_weight: 0.0
