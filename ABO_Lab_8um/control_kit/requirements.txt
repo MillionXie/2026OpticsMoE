@@ -1,0 +1,3 @@
+# Main controller only. No torch, CUDA toolkit or Qwen required.
+numpy==1.26.4
+Pillow==10.4.0

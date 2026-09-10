@@ -2,6 +2,11 @@
 
 唯一操作入口是 [COMMAND.md](COMMAND.md)。本目录与旧 experiments 工程隔离。
 
+只需转交设备控制代码（Holoeye振幅+DVP相机、不含模型）时，见
+[control_kit/README.md](control_kit/README.md)。该独立包附双Python环境说明、原始采集API、
+命令行测试、底层驱动实机哈希和厂商DVP二进制；不包含Holoeye商业安装器或授权。
+用`python ABO_Lab_8um/control_kit/build_lab_package.py`生成带Git commit和SHA256的ZIP，输出在`releases/`。
+
 本机GPU运行：GTX1060用PyTorch2.8.0+cu126/torchvision0.23.0+cu126，CUDA FP32、batch=1。
 auto对≤4GB显卡启用CPU冻结词表查表，其余实际模型运算在CUDA；仅改变数据放置，不改变网络和权重。
 每阶段prepare进程独立退出释放模型，每样本/待采边界后释放临时张量，不删除原始权重或前层CCD。

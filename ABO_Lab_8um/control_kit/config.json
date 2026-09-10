@@ -1,0 +1,30 @@
+{
+  "amplitude_slm": {
+    "driver": "holoeye",
+    "sdk_path": "C:/Program Files/HOLOEYE Photonics/SLM Display SDK (Python) v3.2.2/python",
+    "binary_folder": "C:/Program Files/HOLOEYE Photonics/SLM Display SDK (Python) v3.2.2/win64",
+    "expected_resolution_wh": [1920, 1080],
+    "minimum_refresh_hz": 59,
+    "sdk_api_version": 5,
+    "preload": true,
+    "wait_until_visible": true
+  },
+  "camera": {
+    "driver": "dvp_subprocess",
+    "sdk_path": "vendor/dvp_py36_x64",
+    "python_executable": "%DVP_PYTHON%",
+    "camera_index": 0,
+    "timeout_ms": 10000,
+    "auto_exposure": false,
+    "exposure_us": 1000.0,
+    "analog_gain": 1.0,
+    "anti_flicker_hz": 0,
+    "device_roi_xywh": null,
+    "saved_frame_size_wh": null,
+    "saved_frame_resize_mode": "none",
+    "saved_frame_bit_depth": null,
+    "warmup_frames": 3,
+    "discard_frames_after_display": 2
+  },
+  "settle_delay_ms": 200
+}
