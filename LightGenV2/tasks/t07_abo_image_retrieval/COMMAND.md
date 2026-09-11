@@ -626,3 +626,31 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 ```
 
 对照属于教师偏好的训练数据子集，不证明被筛出图标签错了；不得把它们从论文测试协议删除。
+
+## 23. 逐图特征蒸馏（不改学生推理）
+
+完整cap250池，教师前64维归一化，原1440训练图拟合正交坐标变换；矩阵仅用于教师目标。
+不改学生初始化/前端/相位布局。每图余弦损失0.5，教师类别错误时关闭该图教师损失；关系KL关闭。
+不做数据筛选、不叠加7×7卷积；仍从固定77.50%原3×3模型开始。等待GPU1卷积对照结束。
+
+```bash
+T07=LightGenV2/tasks/t07_abo_image_retrieval
+FEATURE_SMOKE=$T07/runs/smoke/domain_aligned_feature_20260912_gpu1
+FEATURE_BEST=$T07/runs/simulation/verify_strong_ep4_20260912_gpu1/best.pt
+FEATURE_CACHE=$T07/runs/smoke/domain_distillation_20260912/build_teacher_cache/artifacts/cache.pt
+POOL=$T07/runs/simulation/domain_pool250_20260912
+T07_GPU=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu "$T07_GPU" --assets "$ASSETS" --checkpoint "$FEATURE_BEST" --target "$TARGET" \
+  --abo "$ABO" --pool "$POOL" --teacher-cache "$FEATURE_CACHE" \
+  --profiles domain_distill_aligned_feature --epochs 1 --steps 1 --output "$FEATURE_SMOKE" \
+  --after-queue "$T07/runs/simulation/domain_context7_20260912_gpu1/status.json"
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu "$T07_GPU" --assets "$ASSETS" --checkpoint "$FEATURE_BEST" --target "$TARGET" \
+  --abo "$ABO" --pool "$POOL" --teacher-cache "$FEATURE_CACHE" \
+  --profiles domain_distill_aligned_feature --epochs 16 --steps 128 \
+  --output "$T07/runs/simulation/domain_aligned_feature_20260912_gpu1" \
+  --after-queue "$FEATURE_SMOKE/status.json"
+```
+
+alignment PT仅用于复核训练目标，可查看rotation、fit_sample_ids和源SHA；实验室推理只用模型best及原前端。

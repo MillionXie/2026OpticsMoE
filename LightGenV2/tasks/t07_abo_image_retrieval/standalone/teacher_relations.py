@@ -16,6 +16,36 @@ from .io import sha256, write_json, source_commit
 
 
 @torch.no_grad()
+def fit_feature_alignment(teacher, student):
+    """Rotate TRAIN teacher coordinates into the existing student basis.
+
+    Does not alter student weights or inference. Caller supplies only aligned
+    original training rows, never test rows. CPU float64 SVD avoids autocast.
+    """
+    if teacher.shape != student.shape or teacher.ndim != 2 or len(teacher) < teacher.shape[1]:
+        raise ValueError('Alignment requires matched training matrices with enough rows')
+    if not torch.isfinite(teacher).all() or not torch.isfinite(student).all():
+        raise ValueError('Nonfinite alignment feature')
+    a = F.normalize(teacher.detach().cpu().double(), dim=-1)
+    b = F.normalize(student.detach().cpu().double(), dim=-1)
+    u, _, vh = torch.linalg.svd(a.T @ b, full_matrices=False)
+    return (u @ vh).float().to(teacher.device)
+
+
+def aligned_feature_loss(query, targets, own, labels, teacher_query, teacher_bank, bank_labels):
+    """Cosine supervision gated by full teacher's leave-own-product correctness."""
+    if query.shape != targets.shape:
+        raise ValueError('Aligned teacher/student feature dimensions differ')
+    with torch.no_grad():
+        scores = F.normalize(teacher_query.detach().float(), dim=-1) @ F.normalize(teacher_bank.detach().float(), dim=-1).T
+        scores[torch.arange(len(query), device=query.device), own] = -torch.inf
+        correct = bank_labels[scores.argmax(1)].eq(labels)
+    per_image = 1-F.cosine_similarity(query.float(), targets.detach().float(), dim=-1)
+    loss = (per_image*correct).sum()/correct.sum().clamp_min(1)
+    return loss, correct.float().mean().detach()
+
+
+@torch.no_grad()
 def select_agreeing_external(samples, vectors, target_count):
     """Training-only curriculum, NOT label correction or deletion of source data.
 

@@ -6,7 +6,35 @@ import torch
 from LightGenV2.tasks.t07_abo_image_retrieval.standalone.data import Sample
 from LightGenV2.tasks.t07_abo_image_retrieval.standalone.io import sha256
 from LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization import overlay_config,restore_auxiliary_head
-from LightGenV2.tasks.t07_abo_image_retrieval.standalone.teacher_relations import load_teacher_cache,gallery_relation_loss,select_agreeing_external
+from LightGenV2.tasks.t07_abo_image_retrieval.standalone.teacher_relations import load_teacher_cache,gallery_relation_loss,select_agreeing_external,fit_feature_alignment,aligned_feature_loss
+
+
+def test_training_feature_alignment_is_orthogonal_and_does_not_change_student():
+    torch.manual_seed(71)
+    teacher=torch.randn(32,8,dtype=torch.double,requires_grad=True)
+    q=torch.linalg.qr(torch.randn(8,8,dtype=torch.double)).Q
+    student=(teacher.detach()@q).requires_grad_();before=student.detach().clone()
+    rotation=fit_feature_alignment(teacher,student)
+    torch.testing.assert_close(rotation,q.float(),atol=1e-6,rtol=1e-6)
+    torch.testing.assert_close(rotation.T@rotation,torch.eye(8),atol=1e-6,rtol=1e-6)
+    assert torch.equal(student,before) and not rotation.requires_grad
+    with pytest.raises(ValueError):fit_feature_alignment(teacher[:2],student[:2])
+    with pytest.raises(ValueError):fit_feature_alignment(teacher,student[:,:4])
+    cfg=overlay_config({},'domain_distill_aligned_feature')
+    assert cfg['relation_teacher_weight']==0 and cfg['teacher_feature_weight']==.5
+    assert not cfg.get('teacher_agreement_external_only',False)
+
+
+def test_aligned_feature_loss_gates_teacher_and_detaches_targets():
+    query=torch.tensor([[.8,.2]],requires_grad=True);target=torch.tensor([[1.,0.]],requires_grad=True)
+    bank=torch.tensor([[1.,0.],[.99,.1],[0.,1.],[.1,.99]],requires_grad=True)
+    bank_labels=torch.tensor([0,0,1,1]);own=torch.tensor([0]);labels=torch.tensor([0])
+    loss,correct=aligned_feature_loss(query,target,own,labels,torch.tensor([[1.,0.]]),bank,bank_labels)
+    assert loss>0 and correct==1
+    loss.backward();assert torch.isfinite(query.grad).all() and query.grad.abs().sum()>0
+    assert target.grad is None and bank.grad is None
+    wrong,_=aligned_feature_loss(query,target,own,labels,torch.tensor([[0.,1.]]),bank,bank_labels)
+    assert wrong==0
 
 
 def test_external_selection_preserves_originals_and_excludes_self():

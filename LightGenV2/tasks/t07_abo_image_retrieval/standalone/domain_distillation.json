@@ -11,6 +11,12 @@
     "domain_distill_light": {"relation_teacher_weight": 0.10},
     "domain_distill_strong": {"relation_teacher_weight": 0.30},
     "domain_distill_stronger": {"relation_teacher_weight": 0.60},
+    "domain_distill_aligned_feature": {
+      "relation_teacher_weight": 0.0,
+      "teacher_feature_weight": 0.5,
+      "teacher_feature_warmup_epochs": 3,
+      "protocol": "Continue fixed77.5% best, original inference and full cap250 training pool. Align frozen teacher prefix64 to student coordinates using original1440 training features only (orthogonal Procrustes), without changing student weights. Per-image cosine teacher loss0.5 warmed over3 epochs, gated by full teacher leave-own-product category correctness. No relation KL, no extra inference layers or teacher, no optical changes. Original480-query/120-gallery fixed."
+    },
     "domain_distill_teacher_agreement": {
       "relation_teacher_weight": 0.30,
       "teacher_agreement_external_only": true,

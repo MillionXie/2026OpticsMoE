@@ -113,8 +113,10 @@ def run_stage(args,stage,output,initial_checkpoint=None):
             if expected_cap is not None and pool_report.get('settings',{}).get('products_per_category')!=expected_cap:
                 raise ValueError('Selected pool does not match this refinement profile product cap')
             samples,target_count=combine_training(target,external)
-        teacher_vectors=None;teacher_audit=None
-        if cfg_all.get('relation_teacher_weight',0):
+        teacher_vectors=None;teacher_audit=None;feature_targets=None;feature_alignment_audit=None
+        if cfg_all.get('teacher_feature_weight',0) and stage!='adapt':
+            raise ValueError('Aligned teacher features require original-training adaptation')
+        if cfg_all.get('relation_teacher_weight',0) or cfg_all.get('teacher_feature_weight',0):
             from .teacher_relations import load_teacher_cache,gallery_relation_loss
             if not domain or getattr(args,'teacher_cache',None) is None:raise ValueError('Relation KD requires domain training and --teacher-cache')
             teacher_vectors,teacher_audit=load_teacher_cache(args.teacher_cache,samples,args.target,args.pool,device)
@@ -207,7 +209,21 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                 initial_labels=torch.tensor([s.category_id for s in target_train],device=device)
                 proxy_initialization=initialize_category_proxies(head,features,initial_labels,
                     cfg_all.get('preserve_restored_category_proxies',False))
+                if cfg_all.get('teacher_feature_weight',0):
+                    from .teacher_relations import fit_feature_alignment,aligned_feature_loss
+                    teacher64=F.normalize(teacher_vectors[:,:features.shape[1]].float(),dim=-1)
+                    rotation=fit_feature_alignment(teacher64[:target_count],features)
+                    feature_targets=F.normalize(teacher64@rotation,dim=-1).detach()
+                    alignment_file=output/'teacher_feature_alignment.pt'
+                    torch.save(dict(rotation=rotation.cpu(),fit_sample_ids=[s.sample_id for s in target_train],
+                        source_checkpoint_sha256=execution['initial_checkpoint_sha256'],
+                        teacher_cache_sha256=teacher_audit['cache_sha256'],teacher_prefix_dimensions=features.shape[1],
+                        teacher_only=True),alignment_file)
+                    feature_alignment_audit=dict(fit_scope='original train only',fit_images=target_count,
+                        prefix_dimensions=features.shape[1],fit_mean_cosine=float((feature_targets[:target_count]*features).sum(1).mean()),
+                        artifact_sha256=sha256(alignment_file),student_weights_rotated=False,at_inference=False)
             execution['category_proxy_initialization']=proxy_initialization
+            execution['teacher_feature_alignment']=feature_alignment_audit
             write_json(output/'execution.json',execution)
             del features
             write_json(output/'history.json',history);print(json.dumps(history),flush=True)
@@ -238,7 +254,8 @@ def run_stage(args,stage,output,initial_checkpoint=None):
             for g in optimizer.param_groups:
                 frozen=(warm and g['kind'] in ('electronic','adapter')) or (polish and g['kind'] not in ('readout','auxiliary'))
                 g['lr']=0. if frozen else g['initial_lr']*scale
-            totals=dict(loss=0.,ce=0.,supcon=0.,correct=0.,optical_auxiliary=0.,gallery_nll=0.,gallery_margin=0.,train_gallery_hit1=0.,sam_loss_gap=0.,view_consistency=0.,relation_kd=0.,teacher_correct_fraction=0.,teacher_confidence=0.);seen=set();paired_seen=set();clean_batches=0
+            totals=dict(loss=0.,ce=0.,supcon=0.,correct=0.,optical_auxiliary=0.,gallery_nll=0.,gallery_margin=0.,train_gallery_hit1=0.,sam_loss_gap=0.,view_consistency=0.,relation_kd=0.,teacher_correct_fraction=0.,teacher_confidence=0.,aligned_feature_kd=0.,feature_teacher_correct_fraction=0.);seen=set();paired_seen=set();clean_batches=0
+            feature_weight=cfg_all.get('teacher_feature_weight',0.)*min(1.,epoch/max(1,cfg_all.get('teacher_feature_warmup_epochs',3)))
             view_weight=cfg_all.get('view_consistency_weight',0.)*min(1.,epoch/max(1,cfg_all.get('view_consistency_warmup_epochs',1)))
             teacher_weight=cfg_all.get('relation_teacher_weight',0.)*min(1.,epoch/max(1,cfg_all.get('relation_teacher_warmup_epochs',1)))
             pair_rng=random.Random(19042+epoch)
@@ -286,12 +303,17 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                                 class_balance=cfg_all.get('gallery_class_balance',False))
                             loss=loss+cfg['gallery_nll_weight']*nll+cfg['gallery_margin_weight']*margin
                             result.update(gallery_nll=nll.detach(),gallery_margin=margin.detach(),train_gallery_hit1=hit.detach())
-                        if teacher_vectors is not None:
+                        if teacher_vectors is not None and teacher_weight:
                             kd,kd_audit=gallery_relation_loss(z,product_ids[indices],labels[indices],bank,bank_labels,
                                 teacher_vectors[indices],teacher_bank,cfg_all['relation_teacher_temperature'],
                                 cfg_all.get('relation_teacher_target_temperature'))
                             loss=loss+teacher_weight*kd
                             result.update(relation_kd=kd.detach(),**kd_audit)
+                        if feature_targets is not None:
+                            kd,correct_fraction=aligned_feature_loss(z,feature_targets[indices],product_ids[indices],labels[indices],
+                                teacher_vectors[indices],teacher_bank,bank_labels)
+                            loss=loss+feature_weight*kd
+                            result.update(aligned_feature_kd=kd.detach(),feature_teacher_correct_fraction=correct_fraction)
                     # Preserve primary-view router statistics before alternate-view forward.
                     result['selected']={m:getattr(model,m).optics.router.last['selected_mask'].detach().sum(0) for m in counts}
                     if paired_batch is not None:
@@ -318,7 +340,7 @@ def run_stage(args,stage,output,initial_checkpoint=None):
             if high and not all(.4<a<=.8 for values in model.audit()['alpha'].values() for a in values):
                 raise RuntimeError('Strict high-alpha contract violated')
             row=dict(epoch=epoch,stage=stage,optical_warmup=warm,readout_polish=polish,losses={k:v/epoch_steps for k,v in totals.items()},
-                     unique_images=len(seen),paired_unique_images=len(paired_seen),view_consistency_weight=view_weight,relation_teacher_weight=teacher_weight,
+                     unique_images=len(seen),paired_unique_images=len(paired_seen),view_consistency_weight=view_weight,relation_teacher_weight=teacher_weight,teacher_feature_weight=feature_weight,
                      clean_batches=clean_batches,alpha=model.audit()['alpha'],sam_rho=rho,sam_rho_target=cfg_all.get('sam_rho',0.),
                      router_selected_fraction={m:(c/(epoch_steps*cfg['classes_per_batch']*cfg['products_per_class'])).cpu().tolist() for m,c in counts.items()})
             if domain:
@@ -360,6 +382,7 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                     auxiliary_head_at_inference=False,test_selected=stage=='adapt',
                     selection_note='best EMA snapshot indexed by live training loss' if stage=='pretrain' else 'target test Hit@1 then mAP; accepted best included')
         report.update(training_only_teacher=teacher_audit,teacher_at_inference=False,training_selection=selection_audit,
+                      teacher_feature_alignment=feature_alignment_audit,
                       protected_optics_source_sha256=execution['protected_optics_source_sha256'])
         if high:report['selection_note']='Only alpha>=0.4 candidates, including converted initial checkpoint; low-alpha 70.21% is NOT a fallback'
         if general:report['selection_note']='Initial/live/EMA within this run input/readout contract only; explicit initial checkpoint is the fallback. Selected epoch -1 is not a new training improvement.'
