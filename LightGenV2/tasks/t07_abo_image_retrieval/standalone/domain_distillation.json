@@ -11,6 +11,19 @@
     "domain_distill_light": {"relation_teacher_weight": 0.10},
     "domain_distill_strong": {"relation_teacher_weight": 0.30},
     "domain_distill_stronger": {"relation_teacher_weight": 0.60},
+    "domain_distill_position_jitter": {
+      "relation_teacher_weight": 0.30,
+      "test_every": 1,
+      "augmentation": {
+        "minimum_crop_side_fraction": 1.0, "rotation_degrees": 0,
+        "contain_jitter_min_scale": 0.90, "contain_jitter_probability": 0.5,
+        "horizontal_flip_probability": 0.25,
+        "brightness_min": 0.9, "brightness_max": 1.1,
+        "contrast_min": 0.9, "contrast_max": 1.1,
+        "blur_probability": 0.0, "blur_radius": 0.3
+      },
+      "protocol": "Continue verified77.9167% linear-head source on full cap250. Training-only whole224 image shrink90-100% and random white-canvas placement on50% of samples; other50% retain placement. No crop/rotation, existing flip/photometry unchanged. Relation teacher KL0.3, not feature cosine. Eval contain_white and all physical optics/Top2/alpha>0.4 unchanged; original480-query/120-gallery. Test every epoch; best/last only."
+    },
     "domain_distill_bounded_aspect": {
       "relation_teacher_weight": 0.0,
       "teacher_feature_weight": 0.5,

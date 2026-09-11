@@ -44,11 +44,16 @@ def augment(image,rng,cfg):
         minimum=cfg['contain_jitter_min_scale']
         if not 0<minimum<=1 or cfg['minimum_crop_side_fraction']!=1 or cfg['rotation_degrees']!=0:
             raise ValueError('Full-object augmentation requires no crop or rotation')
-        size=round(224*rng.uniform(minimum,1.))
-        resized=image.resize((size,size),Image.Resampling.BICUBIC)
-        canvas=Image.new('RGB',(224,224),(255,255,255))
-        canvas.paste(resized,(rng.randint(0,224-size),rng.randint(0,224-size)))
-        image=canvas
+        probability=cfg.get('contain_jitter_probability',1.)
+        if not math.isfinite(probability) or not 0<=probability<=1:
+            raise ValueError('Invalid full-object jitter probability')
+        # No additional RNG draw for old profiles, preserving their trajectories.
+        if 'contain_jitter_probability' not in cfg or rng.random()<probability:
+            size=round(224*rng.uniform(minimum,1.))
+            resized=image.resize((size,size),Image.Resampling.BICUBIC)
+            canvas=Image.new('RGB',(224,224),(255,255,255))
+            canvas.paste(resized,(rng.randint(0,224-size),rng.randint(0,224-size)))
+            image=canvas
     side=round(224*rng.uniform(cfg['minimum_crop_side_fraction'],1.))
     left,top=[rng.randint(0,224-side) for _ in range(2)]
     image=image.crop((left,top,left+side,top+side)).resize((224,224),Image.Resampling.BICUBIC)

@@ -776,3 +776,25 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 `execution.json`保存起点SHA、教师缓存身份和训练内部留出商品；`train_readout_features.pt`只含训练图特征。
 `final_report.json`记录四个系数的训练留出余弦、选定系数、原测试及去光指标。只输出一份拟合完成的
 `best.pt`（没有迭代epoch/周期权重）；test不参与本次系数选择。若要采用，仍须按第20节固定SHA独立复评。
+
+## 28. 训练位置增强，测试输入和光路不变
+
+本组使用原77.9167%权重，不使用第27节退步的ridge模型，也不使用小MLP。
+50%训练图完整缩至90%～100%后随机白边放置，50%不改变位置；关系KL蒸馏0.3。
+正式16轮，每轮评估，best/last；无新推理结构、无物体裁切。队列依赖已完成的GPU2读出检查。
+
+```bash
+T07=LightGenV2/tasks/t07_abo_image_retrieval
+ASSETS=$T07/runs/simulation/standalone_assets_20260910
+TARGET=/DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data
+ABO=/DATA/DATA1/guest3/2026OpticsMoE/data/abo
+BEST=$T07/runs/smoke/domain_aligned_feature_20260912_gpu1/domain_distill_aligned_feature/artifacts/best.pt
+CACHE=$T07/runs/smoke/domain_distillation_20260912/build_teacher_cache/artifacts/cache.pt
+POOL=$T07/runs/simulation/domain_pool250_20260912
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b --assets "$ASSETS" --checkpoint "$BEST" \
+  --target "$TARGET" --abo "$ABO" --pool "$POOL" --teacher-cache "$CACHE" \
+  --profiles domain_distill_position_jitter --epochs 16 --steps 128 \
+  --output "$T07/runs/simulation/domain_position_jitter_20260912_gpu2" \
+  --after-queue "$T07/runs/simulation/domain_readout_ridge_20260912_gpu2/status.json"
+```
