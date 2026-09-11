@@ -22,7 +22,7 @@ from .settings import load_settings, save_resolved_config
 from .training import _bind
 
 TASK = Path(__file__).resolve().parent
-PROFILES = ('joint', 'staged', 'staged_heatmap', 'alpha50', 'alpha40', 'alpha40_polish')
+PROFILES = ('joint', 'staged', 'staged_heatmap', 'alpha50', 'alpha40', 'alpha40_polish', 'alpha40_distill')
 HIGH_SOURCE_REL = TASK/'runs/simulation/refinement_20260909/staged_heatmap/best_checkpoint.pt'
 HIGH_SOURCE_SHA = '495b9c2c4e3df15d3715f1ce8f2faea7cb9156275b31103ec684f4e96a328518'
 SOURCE_REL = TASK / 'runs/simulation/moe_router_scale_dc20_no_shift_warmstart0713_seed42/best_checkpoint.pt'
@@ -31,20 +31,20 @@ RATES = {'electronic': 2e-5, 'router': 3e-4, 'feature_phase': 3e-3,
          'ccd_readout': 5e-5, 'pose_head': 1e-4}
 
 
-@lru_cache(maxsize=1)
-def polish_config():
-    return yaml.safe_load((TASK/'configs/moe_alpha40_polish.yaml').read_text(encoding='utf-8'))['refinement']
+@lru_cache(maxsize=2)
+def polish_config(profile='alpha40_polish'):
+    return yaml.safe_load((TASK/f'configs/moe_{profile}.yaml').read_text(encoding='utf-8'))['refinement']
 
 
 def profile_epochs(profile):
-    return int(polish_config()['epochs']) if profile == 'alpha40_polish' else 60
+    return int(polish_config(profile)['epochs']) if profile in ('alpha40_polish','alpha40_distill') else 60
 
 
 def stage_spec(profile: str, epoch: int) -> tuple[str, dict[str, float]]:
     if profile not in PROFILES or not 1 <= epoch <= profile_epochs(profile):
         raise ValueError('Unknown profile or epoch outside configured range')
-    if profile == 'alpha40_polish':
-        spec = polish_config()
+    if profile in ('alpha40_polish','alpha40_distill'):
+        spec = polish_config(profile)
         boundary = int(spec['joint_epochs'])
         if epoch <= boundary:
             floor = float(spec['final_lr_fraction'])
@@ -122,15 +122,17 @@ def run(args):
     _bind()
     config = TASK/'configs/moe_optical_router_scale_matched_dc20_no_shift_warmstart.yaml'
     source_settings = load_settings(config)
-    polish = args.profile == 'alpha40_polish'
-    high_alpha = args.profile in ('alpha50', 'alpha40', 'alpha40_polish')
+    distillation = args.profile == 'alpha40_distill'
+    polish = args.profile in ('alpha40_polish','alpha40_distill')
+    high_alpha = args.profile.startswith('alpha')
     reset_alpha = high_alpha and not polish
     settings = load_settings(TASK/f'configs/moe_{args.profile}.yaml') if high_alpha else source_settings
     if polish:
         source_settings = load_settings(TASK/'configs/moe_alpha40.yaml')
-    source_sha = polish_config()['source_sha256'] if polish else (HIGH_SOURCE_SHA if high_alpha else SOURCE_SHA)
+    spec = polish_config(args.profile) if polish else {}
+    source_sha = spec['source_sha256'] if polish else (HIGH_SOURCE_SHA if high_alpha else SOURCE_SHA)
     if args.source is None:
-        args.source = TASK/polish_config()['source_relative'] if polish else (HIGH_SOURCE_REL if high_alpha else SOURCE_REL)
+        args.source = TASK/spec['source_relative'] if polish else (HIGH_SOURCE_REL if high_alpha else SOURCE_REL)
     if sha256_file(args.source) != source_sha:
         raise RuntimeError('Source checkpoint differs from the profile-pinned candidate')
     payload = torch.load(args.source,map_location='cpu',weights_only=False)
@@ -159,6 +161,12 @@ def run(args):
         bundle=dataclasses.replace(bundle,train=bundle.train[:4],test=bundle.test[:4])
     device=torch.device(args.device)
     loaded=load_vision_backbone(settings,device)
+    teacher_cache=None;teacher_report=None
+    if distillation:
+        from .distillation import build_train_cache
+        teacher_path = args.teacher if args.teacher is not None else HIGH_SOURCE_REL
+        teacher_cache,teacher_report=build_train_cache(loaded,bundle,settings,teacher_path,spec['teacher_sha256'])
+        _seed(args.seed)  # Teacher construction/export must not alter the student's random initialization.
     model=build_student(loaded,settings)
     model.core.load_state_dict(payload['core'],strict=True)
     model.head.load_state_dict(payload['head'],strict=True)
@@ -180,10 +188,14 @@ def run(args):
     out=settings.output_dir
     def write(name,value):
         (out/name).write_text(json.dumps(value,ensure_ascii=False,indent=2,default=str)+'\n',encoding='utf-8')
+    if distillation:
+        from .distillation import audit_distillation_gradient
+        write('distillation_gradient_audit.json',audit_distillation_gradient(model,bundle,loaded,settings,teacher_cache,opt))
     manifest={'source':str(args.source.resolve()),'source_sha256':source_sha,'source_epoch':payload['epoch'],
               'git_commit':subprocess.check_output(['git','rev-parse','HEAD'],cwd=TASK,text=True).strip(),
               'args':vars(args),'architecture_unchanged':not reset_alpha,'topology_unchanged':True,'new_layers':0,
               'parameter_budget':parameter_budget,
+              'teacher':teacher_report,
               'fusion_contract':{'min':settings.fusion_alpha_min,'max':settings.fusion_alpha_max,
                                  'initial_actual':initial_fusion,'reset_from_source':reset_alpha},
               'train_samples':len(bundle.train),'test_samples':len(bundle.test),
@@ -219,10 +231,14 @@ def run(args):
             if args.smoke and not high_alpha: name,rates=stage_spec('joint',1)
             group_report=apply_stage(opt,rates)
             # Continue the source epoch-20 exploration level, not the original warm-start level.
-            noise_scale = float(polish_config()['router_noise_initial_fraction']) if polish else 1.
+            noise_scale = float(spec['router_noise_initial_fraction']) if polish else 1.
             model.core.router.set_noise_std(settings.router_noise_std*noise_scale*(1-epoch/settings.student_epochs))
-            train=base._train_epoch(model,'student',train_loader,loaded.processor,device,opt,settings,epoch,ema=ema)
+            if distillation:
+                fraction=(epoch-1)/max(settings.student_epochs-1,1)
+                settings.teacher_distill_weight=float(spec['teacher_weight_initial'])*(1-fraction)+float(spec['teacher_weight_final'])*fraction
+            train=base._train_epoch(model,'student',train_loader,loaded.processor,device,opt,settings,epoch,ema=ema,teacher_cache=teacher_cache)
             row={'epoch':epoch,'stage':name,'optimizer_groups':group_report,'train':train,
+                 'teacher_distill_weight':settings.teacher_distill_weight,
                  'live_phase_delta':phase_delta(model,reference),'live_fusion':checked_fusion(model,settings)}
             if epoch==1 or epoch%5==0 or epoch==total:
                 with ema.applied():
@@ -259,6 +275,7 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--profile',choices=PROFILES,required=True)
     p.add_argument('--source',type=Path,default=None)
+    p.add_argument('--teacher',type=Path,default=None,help='Pinned low-alpha teacher, only used by alpha40_distill')
     p.add_argument('--data-root',type=Path,required=True)
     p.add_argument('--cache-dir',type=Path,required=True)
     p.add_argument('--run-dir',type=Path,required=True)

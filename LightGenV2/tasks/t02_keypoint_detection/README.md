@@ -1,5 +1,9 @@
 # T02 关键点检测（LSP）
 
+2026-09-11：40轮`alpha40_polish`已完成，best PCK=0.72793、alpha=0.41815/0.41812，
+仍未达0.73。新增[训练期热图蒸馏](reports/reproduction/HEATMAP_DISTILLATION.md)，
+只用冻结旧低alpha模型的训练集热图，学生电子结构及部署参数不变。
+
 2026-09-10：[alpha≥0.4、目标PCK≥0.73续训](reports/reproduction/ALPHA40.md)，profile `alpha40`。
 电子结构及总预算836248参数不变，启动时强制核验。60轮完成，best PCK=0.72693，
 alpha=0.41823/0.41820，去光PCK=0.70479；未达0.73。新增`alpha40_polish`

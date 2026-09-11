@@ -1,0 +1,27 @@
+base_config: moe_alpha40.yaml
+
+# Deployment is exactly alpha40. Teacher heatmaps are training-only.
+refinement:
+  source_relative: runs/simulation/alpha40_polish_seed42_20260910/best_checkpoint.pt
+  source_sha256: 6519891703432d049d8c0efdbe89a522912d06f607c3d46cfc8c49234dbc8c23
+  teacher_sha256: 495b9c2c4e3df15d3715f1ce8f2faea7cb9156275b31103ec684f4e96a328518
+  teacher_weight_initial: 1.0
+  teacher_weight_final: 0.2
+  epochs: 40
+  joint_epochs: 30
+  final_lr_fraction: 0.2
+  router_noise_initial_fraction: 0.5833333333333334
+  joint_rates:
+    electronic: 0.000003
+    router: 0.00003
+    feature_phase: 0.0003
+    ccd_readout: 0.00002
+    pose_head: 0.00003
+  readout_rates:
+    electronic: 0.0
+    router: 0.0
+    feature_phase: 0.0
+    ccd_readout: 0.000005
+    pose_head: 0.00001
+
+output_dir: ../runs/simulation/alpha40_distill_seed42_20260911

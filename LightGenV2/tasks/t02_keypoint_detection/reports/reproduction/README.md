@@ -1,5 +1,7 @@
 # t02_keypoint_detection 复现说明入口
 
+[alpha≥0.4热图蒸馏](HEATMAP_DISTILLATION.md)：0.72793来源、训练专用教师缓存、梯度检查、完整命令。
+
 [最后global相位替换为固定噪声](GLOBAL_NOISE.md)：干预范围、5个seed、低/高alpha的独立评估与命令。
 
 [两级alpha≥0.5硬约束续训](ALPHA50.md)：初始化、分阶段训练、迁移评估合同及命令。
