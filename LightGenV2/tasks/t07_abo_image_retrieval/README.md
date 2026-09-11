@@ -131,6 +131,18 @@ best第4轮live，Hit@1=75.8333%、mAP@10=0.7108571、去光59.375%、相位打�
 best SHA256=`4fef8e0f4b839016a1701a6f14fb73c1b691930189d7070011f5f91a2666d8e1`；
 子进程2236343退出并确认释放，0.3组子进程2284756接续，同样从75.2083%独立开始。
 
+### 训练图库类别数量校正（只改loss）
+
+`domain_refine_balanced`从76.25%best续训，仍用cap250池与1:1采样，不使用teacher或7×7电子变体。
+CPU清单审计：训练图库chair/rug/sofa/wall art/light fixture/stool/pillow各262商品，bed198、mirror101、vase45；
+固定测试图库各类仍12商品。旧gallery NLL累加同类商品的exp(similarity/T)，会包含训练图库数量先验。
+例如所有相似度相等且剔除自身商品时，chair NLL=2.1212而vase=3.9015，不能把这差异全部当作视觉难度。
+新loss先按每个query剔除自身商品，再将各类exp-score和除以该类有效商品数，
+因此上述均匀相似度例子各类都是log(10)。原始余弦排名、margin损失、Top1记录和测试推理完全不改。
+这只是可检验的目标尺度修正，不证明类别不均就是全部泛化差距；不删除商品、不缩小测试图库。
+旧profile默认关闭、逐值兼容；单测检查候选复制不变性、剔除自身后的计数和有限梯度。
+精确开关`execution.common_config.gallery_class_balance=true`，命令见COMMAND第19节。
+
 ## 共同起点75.2083%及已完成的续训对照（历史记录）
 
 三组目标相关扩充已完成40轮，CUDA子进程均退出。混合训练best为第15轮live，

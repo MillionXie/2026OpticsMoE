@@ -17,6 +17,11 @@
     "domain_refine_control": {"expected_pool_products_per_category": 100},
     "domain_refine_wide": {"expected_pool_products_per_category": 250},
     "domain_refine_views": {"expected_pool_products_per_category": 250, "view_consistency_weight": 0.15},
+    "domain_refine_balanced": {
+      "expected_pool_products_per_category": 250,
+      "gallery_class_balance": true,
+      "protocol": "Continue verified76.25% best; cap250 pool and1:1 sampling. Only training gallery NLL divides each class exp-score sum by its valid product count after own-product exclusion. Raw-score margin/hit and original480-query/120-gallery inference unchanged. No teacher, no extra inference parameters, same physical optics/Top2/alpha>0.4."
+    },
     "domain_refine_context7": {
       "expected_pool_products_per_category": 250,
       "electronic_context_kernels": {"vision": 7, "language": 5},

@@ -517,3 +517,31 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 
 检查轮自动125步以覆盖训练商品。正式仍从同一76.25%起点，不从检查last继续；
 source commit、metadata、alpha及去光结果必须一起报告，不能把电子修改隐藏成纯训练技巧。
+
+## 19. 训练图库类别数量归一化（不改变推理）
+
+当前cap250训练图库不同类45～262商品，测试图库各类12商品；此组只消除gallery NLL的数量先验。
+仍用76.25%原3×3模型起点、cap250池、每类2原+2外部、24×128步；无教师，不与7×7组合。
+原始余弦排名和top-negative margin不变，不能在测试阶段按标签筛图库。
+等待GPU2教师温度组成功完成再运行，任何依赖失败都停止，不抢别人的卡。
+
+```bash
+BALANCED_BEST=$T07/runs/simulation/domain_refine_wide_20260912_gpu2/domain_refine_wide/artifacts/best.pt
+BALANCED_SMOKE=$T07/runs/smoke/domain_balanced_20260912_gpu2
+POOL=$T07/runs/simulation/domain_pool250_20260912
+T07_GPU=GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu "$T07_GPU" --assets "$ASSETS" --checkpoint "$BALANCED_BEST" --target "$TARGET" \
+  --abo "$ABO" --pool "$POOL" --profiles domain_refine_balanced \
+  --epochs 1 --steps 1 --output "$BALANCED_SMOKE" \
+  --after-queue "$T07/runs/simulation/domain_sharpteacher_20260912_gpu2/status.json"
+
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu "$T07_GPU" --assets "$ASSETS" --checkpoint "$BALANCED_BEST" --target "$TARGET" \
+  --abo "$ABO" --pool "$POOL" --profiles domain_refine_balanced \
+  --epochs 24 --steps 128 --output "$T07/runs/simulation/domain_balanced_20260912_gpu2" \
+  --after-queue "$BALANCED_SMOKE/status.json"
+```
+
+检查轮自动125步；正式组独立从同一best开始。新增`gallery_class_balance=true`仅影响训练loss，
+未打开此选项的所有旧组保持原行为；部署不需要本损失函数或训练图库扩充数据。

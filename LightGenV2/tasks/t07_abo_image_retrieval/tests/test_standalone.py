@@ -13,6 +13,39 @@ from standalone.curriculum import stage_settings, parameter_kind, relation_loss
 
 
 class StandaloneTests(unittest.TestCase):
+    def test_gallery_balance_is_invariant_to_negative_class_replication(self):
+        from standalone.retrieval_training import gallery_loss
+        bank=torch.tensor([[1.,0.],[.9,.1],[0.,1.],[.2,.8]])
+        labels=torch.tensor([0,0,1,1]);query=torch.tensor([[.8,.2]],requires_grad=True)
+        own=torch.tensor([0]);target=torch.tensor([0])
+        replicated=bank[[0,1,2,3,2,3,2,3]];replicated_labels=labels[[0,1,2,3,2,3,2,3]]
+        a=gallery_loss(query,target,own,bank,labels,class_balance=True)
+        b=gallery_loss(query,target,own,replicated,replicated_labels,class_balance=True)
+        for left,right in zip(a,b):torch.testing.assert_close(left,right)
+        legacy=gallery_loss(query,target,own,bank,labels)
+        explicit=gallery_loss(query,target,own,bank,labels,class_balance=False)
+        self.assertTrue(all(torch.equal(x,y) for x,y in zip(legacy,explicit)))
+        self.assertGreater(float(gallery_loss(query,target,own,replicated,replicated_labels)[0]),float(legacy[0]))
+        # Normalizing counts is only in NLL; raw-score margin and hit stay identical.
+        self.assertTrue(torch.equal(a[1],legacy[1]));self.assertTrue(torch.equal(a[2],legacy[2]))
+        (a[0]+a[1]).backward();self.assertTrue(torch.isfinite(query.grad).all())
+
+    def test_gallery_balance_uses_post_exclusion_counts(self):
+        from standalone.retrieval_training import gallery_loss
+        # Equal scores and two present categories => exactly log(2), despite
+        # own exclusion leaving one positive and two negatives.
+        query=torch.tensor([[1.,0.]],requires_grad=True);bank=query.detach().repeat(4,1)
+        labels=torch.tensor([0,0,1,1])
+        loss=gallery_loss(query,torch.tensor([0]),torch.tensor([0]),bank,labels,class_balance=True)[0]
+        torch.testing.assert_close(loss,torch.tensor(2.).log())
+        changed=bank.clone();changed[0]=torch.tensor([-999.,999.])
+        torch.testing.assert_close(loss,gallery_loss(query,torch.tensor([0]),torch.tensor([0]),changed,labels,class_balance=True)[0])
+        from standalone.generalization import overlay_config
+        wide=overlay_config({'adapt':{},'augmentation':{}},'domain_refine_wide')
+        balanced=overlay_config({'adapt':{},'augmentation':{}},'domain_refine_balanced')
+        self.assertTrue(balanced.pop('gallery_class_balance'))
+        wide.pop('protocol');balanced.pop('protocol');self.assertEqual(wide,balanced)
+
     def test_training_gallery_excludes_own_product_and_is_detached(self):
         import types
         from standalone.retrieval_training import product_bank,gallery_loss

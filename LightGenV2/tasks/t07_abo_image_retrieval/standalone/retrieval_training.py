@@ -19,7 +19,7 @@ def product_bank(features, samples):
     return torch.stack(centers),torch.tensor(labels,device=features.device),ids
 
 
-def gallery_loss(query, labels, own_product, bank, bank_labels, temperature=.10, margin=.08):
+def gallery_loss(query, labels, own_product, bank, bank_labels, temperature=.10, margin=.08, class_balance=False):
     """Multi-positive retrieval NLL and top-negative margin, excluding own product.
 
     All other same-category products are relevant, never just the same SKU.
@@ -33,6 +33,14 @@ def gallery_loss(query, labels, own_product, bank, bank_labels, temperature=.10,
     if not bool((positive.any(1)&negative.any(1)).all()):
         raise ValueError('Every query needs another positive product and a negative product')
     logits=score/temperature
+    if class_balance:
+        # Expanded TRAIN gallery has unequal products/class; evaluation has 12
+        # each. Average exp-scores within classes instead of rewarding density.
+        # Count after excluding the own product, and avoid autocast count rounding.
+        columns=bank_labels[None].expand(len(query),-1)
+        counts=torch.zeros(len(query),int(bank_labels.max())+1,device=query.device,dtype=torch.long)
+        counts.scatter_add_(1,columns,valid.long())
+        logits=logits-counts.gather(1,columns).clamp_min(1).float().log()
     nll=(logits.masked_fill(~valid,-torch.inf).logsumexp(1)
          -logits.masked_fill(~positive,-torch.inf).logsumexp(1)).mean()
     best_positive=score.masked_fill(~positive,-torch.inf).amax(1)
