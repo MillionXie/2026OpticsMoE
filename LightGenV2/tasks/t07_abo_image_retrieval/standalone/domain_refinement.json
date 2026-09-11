@@ -1,0 +1,21 @@
+{
+  "common": {
+    "adapt": {
+      "epochs": 24, "steps": 128,
+      "electronic_lr": 0.000015, "adapter_lr": 0.000005,
+      "optical_electronic_lr": 0.00004, "readout_lr": 0.00004,
+      "phase_lr": 0.001, "router_lr": 0.0002, "alpha_lr": 0.0001,
+      "optical_warmup_epochs": 0, "readout_polish_epochs": 0
+    },
+    "domain_mode": "mixed",
+    "test_every": 4,
+    "view_consistency_weight": 0.0,
+    "view_consistency_warmup_epochs": 3,
+    "protocol": "Continue the 75.2083% high-alpha best. Same ten categories, original 120-product evaluation gallery and 480 test queries. No test/val training, no teacher. Control uses the 922-product pool; wide/views use the separately audited cap250 pool. Same 24x128 primary steps; views adds one training-only alternate-view forward, so training FLOPs differ. Same single-image inference and optical geometry."
+  },
+  "profiles": {
+    "domain_refine_control": {"expected_pool_products_per_category": 100},
+    "domain_refine_wide": {"expected_pool_products_per_category": 250},
+    "domain_refine_views": {"expected_pool_products_per_category": 250, "view_consistency_weight": 0.15}
+  }
+}

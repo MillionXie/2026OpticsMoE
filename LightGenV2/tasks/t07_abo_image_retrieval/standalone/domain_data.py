@@ -4,6 +4,26 @@ from collections import defaultdict
 from dataclasses import replace
 
 
+def paired_view_indices(samples, groups, indices, rng):
+    """Different image of the SAME training product; never a same-class substitute."""
+    paired=[]
+    for i in indices:
+        sample=samples[i]
+        candidates=[j for j in groups[sample.category_id][sample.product_id]
+                    if samples[j].image_path != sample.image_path]
+        if not candidates:raise ValueError(f'No independent view for product {sample.product_id}')
+        paired.append(rng.choice(candidates))
+    return paired
+
+
+def view_consistency_loss(first, second):
+    """Symmetric cosine alignment; both views receive gradients, no inference head."""
+    import torch.nn.functional as F
+    if first.shape!=second.shape or first.ndim!=2:
+        raise ValueError('Paired feature shapes must match [batch, dimension]')
+    return (1-F.cosine_similarity(first.float(),second.float(),dim=-1)).mean()
+
+
 def combine_training(target, external):
     train=[s for s in target if s.split=='train']
     blocked={s.product_id for s in target}

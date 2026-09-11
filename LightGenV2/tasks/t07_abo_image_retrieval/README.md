@@ -1,5 +1,35 @@
 # T07 ABO 商品图搜图：独立光电工程
 
+## 当前最好及下一轮（2026-09-12）
+
+三组目标相关扩充已完成40轮，CUDA子进程均退出。混合训练best为第15轮live，
+**Hit@1=75.2083%（361/480），mAP@10=0.71290385，去光60.2083%（下降15个百分点）**。
+光Router Top2、四个alpha为0.43703/0.43953/0.42904/0.42813，没有靠降低光融合系数取得此成绩。
+专家/全局相位相对69.79%起点的圆周RMS变化约0.073～0.113 rad；Router约0.0034～0.0069 rad。
+干净原训练商品检索99.7222%，过拟合仍在；40轮live测试73.9583%，用best而不是last。
+同预算原数据对照70.4167%，先外部适配再混合72.5%。均为单seed、test-selected，不是独立无偏估计。
+
+最佳权重：`runs/simulation/domain_mixed_20260911/domain_mixed/artifacts/best.pt`，SHA256
+`0e523f3a08631e0d248032c58534761758841e23702e155df8f2d3f4cd472f85`。
+代码`09835251`，该目录包含逐类/逐样本指标、学习曲线和相位图；本次不覆盖旧交付包。
+
+下一轮从上述75.2083%固定起点比较三组，配置为`standalone/domain_refinement.json`，命令见COMMAND第13节：
+
+- `domain_refine_control`：922外部商品池继续混合训练，作为重新启动优化器的对照。
+- `domain_refine_wide`：每类最多250商品的新池，实际2058商品/4116图，类别不足250的不强行补齐。
+- `domain_refine_views`：与wide相同池/预算，再对同一商品的两张不同图计算归一化检索向量的cosine一致性loss；
+  权重前三轮从0.05升至0.15，两个视角都回传，不使用教师，也不把同类不同商品冒充同一商品。
+
+每组24轮、每轮128个主batch（40图，原/外部1:1），每4轮同口径测试live/EMA，保留best/last。
+views额外做一次训练前向/反向，训练FLOPs不是严格等预算；**推理仍单张图片、同一模型、六次光传播**，
+无额外视角、TTA、网络分支、attention或完整Qwen。光学几何、DC/噪声、alpha>0.4保持不变。
+新池`runs/simulation/domain_pool250_20260912`，SHA256
+`5348ffec1ba51a547ee1be81341e1c4bbbf1b970b9aeec47e557ddd7888f8488`；所有原200商品仍被排除。
+不修改原120/40/40划分、480测试query、120商品评估图库、类别或标签；只是扩大梯度训练数据。
+冻结Qwen已在`frozen_qwen_20260912`从1920张train/test图重新前向核验（原尺寸与square分别处理），
+主baseline仍95.2083%，0训练参数、无微调，source09835251，GPU0 RTX4090且已释放。
+新池包含全部旧922商品；新优化分数以各run实际final_report为准。
+
 ## 2026-09-11 目标相关数据扩充试验
 
 新增 `domain_target_control / domain_mixed / domain_curriculum`，源码和命令见 COMMAND 第12节。

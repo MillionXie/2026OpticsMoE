@@ -282,3 +282,61 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 `execution.json`、`history.json`、`learning_curves.csv/png`、`final_report.json`。
 `history.data_coverage`区分真实商品覆盖和重复视角，初始保底成绩不是新增收益。
 每个阶段按原固定test评估live与EMA；按test选best，存在选择偏倚。
+
+## 13. 75.21%起点：扩大池 / 同商品跨视角一致性（2026-09-12）
+
+这部分在Linux源码仓库根目录执行；不是旧ZIP入口。原评估协议不变，不合并validation。
+使用已推送的本轮源码，先激活服务器xml环境。原数据和资源不移动。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+TARGET=/DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data
+ABO=/DATA/DATA1/guest3/2026OpticsMoE/data/abo
+ASSETS=$T07/runs/simulation/standalone_assets_20260910
+BEST=$T07/runs/simulation/domain_mixed_20260911/domain_mixed/artifacts/best.pt
+POOL=$T07/runs/simulation/domain_pool250_20260912
+
+# CPU准备只执行一次；服务器此池已生成，直接跳过。旧池/旧run不得覆盖。
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.prepare_broad_abo \
+  --target "$TARGET" --abo "$ABO" --output "$POOL" --target-types-only \
+  --categories 10 --products-per-category 250 --minimum-products 4 --views 2
+
+nvidia-smi --query-gpu=index,uuid,memory.used,utilization.gpu --format=csv
+T07_GPU=GPU_REPLACE_WITH_CONFIRMED_IDLE_UUID
+# 先验证双视角前向/反向；覆盖全池会自动增加steps，不是只有一步。
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu "$T07_GPU" --assets "$ASSETS" --checkpoint "$BEST" --target "$TARGET" \
+  --abo "$ABO" --pool "$POOL" --profiles domain_refine_views --epochs 1 --steps 1 \
+  --output "$T07/runs/smoke/domain_refinement_20260912"
+
+# 短检查成功/释放GPU后，正式同视角一致性组：
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu "$T07_GPU" --assets "$ASSETS" --checkpoint "$BEST" --target "$TARGET" \
+  --abo "$ABO" --pool "$POOL" --profiles domain_refine_views --epochs 24 --steps 128 \
+  --output "$T07/runs/simulation/domain_refine_views_20260912"
+```
+
+另外两组保持同一个BEST和24×128主batch预算：
+
+| profile与run名 | `--pool` |
+| --- | --- |
+| `domain_refine_control` / `domain_refine_control_20260912` | `$T07/runs/simulation/domain_pool_20260911`（旧922商品池） |
+| `domain_refine_wide` / `domain_refine_wide_20260912` | `$T07/runs/simulation/domain_pool250_20260912`（2058商品池） |
+
+仅在不同且经检查空闲的GPU上并行，最多三张；否则在一张卡串行。进程结束会检查CUDA PID释放。
+views比wide每主batch多一次同商品另一张图的前向/反向，因此训练FLOPs并不相等；推理成本完全相同。
+`history.json`新增`view_consistency_weight`、`losses.view_consistency`、`paired_unique_images`，
+`unique_images`仍只数主视角，路由计数也是主视角，避免双视角被算成Top4。
+对照保留75.21%起点；epoch=-1表示未提升。每4轮按test选live/EMA，只保留best/last。
+
+冻结完整Qwen的独立参照（本次已执行，不要覆盖同名run或把此入口当作学生训练）：
+
+```bash
+CUDA_VISIBLE_DEVICES="$T07_GPU" HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
+python -u -m LightGenV2.tasks.t07_abo_image_retrieval.legacy_run --mode baseline \
+  --run-dir "$T07/runs/simulation/frozen_qwen_20260912" \
+  --cache "$T07/runs/simulation/frozen_qwen_20260912/features.pt"
+```
+
+该baseline模块是历史全模型评估入口，依赖仓库旧后端；独立学生仍只用standalone，不调用它。
+若日后改变测试名单、图库、类别或预处理，另建baseline run/cache重新推理，不复用这个成绩。

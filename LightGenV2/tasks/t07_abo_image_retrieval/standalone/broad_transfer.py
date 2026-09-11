@@ -26,7 +26,7 @@ from .curriculum import parameter_kind
 from .prepare_broad_abo import safe_image
 from .generalization import PROFILES, overlay_config, apply_contract, backward_with_sam, parameter_decay
 from .learning_curves import write_learning_curves
-from .domain_data import combine_training, epoch_batches
+from .domain_data import combine_training, epoch_batches, paired_view_indices, view_consistency_loss
 
 
 class CategoryProxies(nn.Module):
@@ -109,6 +109,9 @@ def run_stage(args,stage,output,initial_checkpoint=None):
         if domain:
             external,pool_report=load_pool(args.pool,args.abo,args.target)
             if not pool_report.get('target_types_only'):raise ValueError('Domain training requires a target-mapped pool')
+            expected_cap=cfg_all.get('expected_pool_products_per_category')
+            if expected_cap is not None and pool_report.get('settings',{}).get('products_per_category')!=expected_cap:
+                raise ValueError('Selected pool does not match this refinement profile product cap')
             samples,target_count=combine_training(target,external)
         groups=make_groups(samples)
         if len(groups)<cfg['classes_per_batch'] or min(len(g) for g in groups.values())<cfg['products_per_class']:
@@ -202,7 +205,9 @@ def run_stage(args,stage,output,initial_checkpoint=None):
             for g in optimizer.param_groups:
                 frozen=(warm and g['kind'] in ('electronic','adapter')) or (polish and g['kind'] not in ('readout','auxiliary'))
                 g['lr']=0. if frozen else g['initial_lr']*scale
-            totals=dict(loss=0.,ce=0.,supcon=0.,correct=0.,optical_auxiliary=0.,gallery_nll=0.,gallery_margin=0.,train_gallery_hit1=0.,sam_loss_gap=0.);seen=set();clean_batches=0
+            totals=dict(loss=0.,ce=0.,supcon=0.,correct=0.,optical_auxiliary=0.,gallery_nll=0.,gallery_margin=0.,train_gallery_hit1=0.,sam_loss_gap=0.,view_consistency=0.);seen=set();paired_seen=set();clean_batches=0
+            view_weight=cfg_all.get('view_consistency_weight',0.)*min(1.,epoch/max(1,cfg_all.get('view_consistency_warmup_epochs',1)))
+            pair_rng=random.Random(19042+epoch)
             counts={m:torch.zeros(4,device=device) for m in ('vision','language')}
             for step in range(epoch_steps):
                 indices=batches[step] if batches is not None else sampled_indices(groups,cfg['classes_per_batch'],cfg['products_per_class'],rng)
@@ -226,6 +231,13 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                     if stage=='pretrain':im=ImageEnhance.Brightness(im).enhance(rng.uniform(.9,1.1))
                     images.append(im)
                 batch=inputs(processor,images,device)
+                paired_batch=None
+                if view_weight:
+                    pair_ids=paired_view_indices(samples,groups,indices,pair_rng)
+                    paired_seen.update(pair_ids)
+                    pair_images=[augment(picture(samples[i].image_path,model.metadata.get('input_preprocessing','center_crop')),
+                                         pair_rng,cfg_all['augmentation']) for i in pair_ids]
+                    paired_batch=inputs(processor,pair_images,device)
                 def objective():
                     with autocast(device):
                         z=model(batch);logits=head(z)
@@ -239,8 +251,14 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                             nll,margin,hit=gallery_loss(z,labels[indices],product_ids[indices],bank,bank_labels)
                             loss=loss+cfg['gallery_nll_weight']*nll+cfg['gallery_margin_weight']*margin
                             result.update(gallery_nll=nll.detach(),gallery_margin=margin.detach(),train_gallery_hit1=hit.detach())
-                    result['loss']=loss
+                    # Preserve primary-view router statistics before alternate-view forward.
                     result['selected']={m:getattr(model,m).optics.router.last['selected_mask'].detach().sum(0) for m in counts}
+                    if paired_batch is not None:
+                        with autocast(device):paired_features=model(paired_batch)
+                        alignment=view_consistency_loss(z,paired_features)
+                        loss=loss+view_weight*alignment
+                        result['view_consistency']=alignment.detach()
+                    result['loss']=loss
                     return result
                 rho=cfg_all.get('sam_rho',0.)*min(1.,epoch/cfg_all.get('sam_warmup_epochs',1))
                 result,sam_diagnostics=backward_with_sam(objective,optimizer,rho)
@@ -259,7 +277,8 @@ def run_stage(args,stage,output,initial_checkpoint=None):
             if high and not all(.4<a<=.8 for values in model.audit()['alpha'].values() for a in values):
                 raise RuntimeError('Strict high-alpha contract violated')
             row=dict(epoch=epoch,stage=stage,optical_warmup=warm,readout_polish=polish,losses={k:v/epoch_steps for k,v in totals.items()},
-                     unique_images=len(seen),clean_batches=clean_batches,alpha=model.audit()['alpha'],sam_rho=rho,sam_rho_target=cfg_all.get('sam_rho',0.),
+                     unique_images=len(seen),paired_unique_images=len(paired_seen),view_consistency_weight=view_weight,
+                     clean_batches=clean_batches,alpha=model.audit()['alpha'],sam_rho=rho,sam_rho_target=cfg_all.get('sam_rho',0.),
                      router_selected_fraction={m:(c/(epoch_steps*cfg['classes_per_batch']*cfg['products_per_class'])).cpu().tolist() for m,c in counts.items()})
             if domain:
                 row['data_coverage']=dict(domain_phase=domain_phase,steps=epoch_steps,
@@ -299,7 +318,7 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                     auxiliary_head_at_inference=False,test_selected=stage=='adapt',
                     selection_note='best EMA snapshot indexed by live training loss' if stage=='pretrain' else 'target test Hit@1 then mAP; accepted best included')
         if high:report['selection_note']='Only alpha>=0.4 candidates, including converted initial checkpoint; low-alpha 70.21% is NOT a fallback'
-        if general:report['selection_note']='Initial/live/EMA within the new input/readout contract only; old 68.96% is a separate reference, not a fallback'
+        if general:report['selection_note']='Initial/live/EMA within this run input/readout contract only; explicit initial checkpoint is the fallback. Selected epoch -1 is not a new training improvement.'
         if stage=='adapt':
             report['metrics']=evaluate(model,processor,target_train,target_test,device,args.batch_size,output,include_train_metrics=track_clean)
             model.set_remove_optical(True)
