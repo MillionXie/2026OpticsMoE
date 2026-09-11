@@ -114,6 +114,8 @@ class Camera:
         self.check(bool(self.card),'open capture card (close Viewer if busy)')
         self.handle=self.dll.scap_create_by_camera(self.card,self.config.get('camera_index',0))
         self.check(bool(self.handle),'connect camera')
+        for key,node in [('expected_model','DeviceModelName'),('expected_pixel_format','PixelFormat')]:
+            if self.config.get(key) and self.get(node)!=self.config[key]:raise SDKError('Unexpected '+node+': '+self.get(node))
         return self
 
     def error(self):

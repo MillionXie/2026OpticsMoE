@@ -9,21 +9,11 @@ import numpy as np
 from PIL import Image,ImageDraw
 from common import ROOT,config,write,sha,hardware_identity,setup_imports
 from patterns import raster,save
+from phase_encoding import encode_gray,generated_root,mode
 
 def logical_pairs():
-    if (ROOT/'runtime/backend/experiments/hardware_sdk/generators/dual_slm_alignment.py').is_file(): setup_imports()
-    else: sys.path.insert(0,str(ROOT.parent))
-    from experiments.hardware_sdk.generators.dual_slm_alignment import _checker,_registered_checker_grating
-    from experiments.hardware_sdk.generators.dual_slm_registration_sweep import large_block_mask,single_axis_masked_grating
-    pairs=[]
-    for name,cell in [('01_check64',64),('04_check16',16)]:
-        a=_checker(478,cell)
-        p=_registered_checker_grating(478,cell,8,a,orientation_mode='visible_checker_cells')
-        pairs.append((name,a,p,cell,'alternating x/y in visible white cells'))
-    a,_=large_block_mask(478,48)
-    for name,axis in [('02_blocks_x','x'),('03_blocks_y','y')]:
-        pairs.append((name,a,single_axis_masked_grating(a,8,axis),48,axis))
-    return sorted(pairs,key=lambda item:item[0])
+    from registration import logical_pairs as portable_pairs
+    return portable_pairs()
 
 def preview(path,a,p):
     # Geometry illustration only: phase stripes are NOT simulated intensity.
@@ -35,20 +25,20 @@ def preview(path,a,p):
     canvas.save(path)
 
 def generate(c,output=None):
-    dest=ROOT/'generated/dual' if output is None else output
+    dest=generated_root(ROOT,c)/'dual' if output is None else output
     if c['amplitude_slm']['pixel_pitch_um']!=8 or c['phase_slm']['pixel_pitch_um']!=8:
         raise ValueError('This paired registration suite is specifically 8 um / 8 um.')
     rows=[]
     for name,a,p,cell,axis in logical_pairs():
         folder=dest/name; folder.mkdir(parents=True,exist_ok=True)
         ac=raster(a,c['amplitude_slm'],c,nearest=True)
-        pc=raster(p,c['phase_slm'],c,nearest=True)
+        pc=encode_gray(raster(p,c['phase_slm'],c,nearest=True),c)
         opposite=dict(c['phase_slm']); opposite['flip_vertical']=not opposite['flip_vertical']
-        pv=raster(p,opposite,c,nearest=True)
+        pv=encode_gray(raster(p,opposite,c,nearest=True),c)
         save(folder/'A.bmp',ac); save(folder/'P.bmp',pc); save(folder/'P_V.bmp',pv)
         preview(folder/'preview.png',a,p)
         row={'folder':name,'amplitude':'A.bmp','phase':'P.bmp','opposite_vertical_phase':'P_V.bmp',
-             'phase_flip_vertical':bool(c['phase_slm']['flip_vertical']),
+             'phase_gray_encoding':mode(c),'phase_flip_vertical':bool(c['phase_slm']['flip_vertical']),
              'opposite_phase_flip_vertical':bool(opposite['flip_vertical']),
              'phase_flip_horizontal':bool(c['phase_slm']['flip_horizontal']),
              'amplitude_flip_vertical':bool(c['amplitude_slm']['flip_vertical']),

@@ -7,12 +7,19 @@
     "timeout_ms": 3000,
     "exposure_us": 1000.0,
     "gain": null,
-    "frame_rate_hz": null
+    "frame_rate_hz": 100,
+    "expected_model": "SHS-202-M",
+    "expected_pixel_format": "Mono8"
   },
   "amplitude_slm": {
     "driver": "holoeye", "expected_resolution_wh": [1920, 1080],
     "pixel_pitch_um": 8.0, "center_xy": [959.5, 539.5],
-    "connected": false
+    "connected": false,
+    "sdk_path": "%HEDS_3_2_PYTHON_MODULES%",
+    "binary_folder": "%HEDS_3_2_PYTHON%/win64",
+    "preload": true, "wait_until_visible": true, "sdk_api_version": 5,
+    "flip_vertical": false, "flip_horizontal": false,
+    "gray_lut_file": null
   },
   "phase_slm": {
     "driver": "manual", "size_wh": [1920, 1200], "pixel_pitch_um": 8.0,
@@ -21,6 +28,14 @@
   },
   "settle_delay_ms": 200,
   "model_pitch_um": 17.0,
+  "model_active_pixels": 478,
+  "fresnel_corner_window_px": 176,
+  "fresnel_single_window_px": 640,
+  "capture_input_range": [0, 255],
+  "geometry_confirmed": false,
+  "logical_corners_full_sensor_xy": {
+    "top_left": null, "top_right": null, "bottom_right": null, "bottom_left": null
+  },
   "distance_m": 0.1,
   "wavelength_nm": 532.0,
   "abo_source_project": "../ABO_Lab_8um"

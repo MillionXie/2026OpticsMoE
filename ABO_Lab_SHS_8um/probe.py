@@ -31,7 +31,7 @@ def main():
             tree=ET.fromstring(raw);nodes=[];values={}
             for el in tree.iter():
                 tag=el.tag.rsplit('}',1)[-1];name=el.attrib.get('Name','')
-                if tag in ('Integer','IntSwissKnife','Float','String','Boolean','Enumeration','Command','Category'):
+                if tag in ('Integer','IntSwissKnife','Float','String','StringReg','Boolean','Enumeration','Command','Category'):
                     nodes.append({'name':name,'kind':tag})
                     if re.search('DeviceModel|DeviceVendor|DeviceSerial|Firmware|Exposure|Gain|FrameRate|Trigger|Acquisition|^Width$|^Height$|Offset|PixelFormat|ScanType',name) and tag not in ('Command','Category'):
                         try:

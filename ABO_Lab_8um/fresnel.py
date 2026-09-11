@@ -9,6 +9,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 from common import ROOT, config, write, sha
+from phase_encoding import encode_gray,generated_root,mode
 
 
 def encode(turns):
@@ -119,9 +120,10 @@ def preview(path, bmp, meta):
 
 
 def generate(c, destination=None, source_config=None):
-    dest=Path(destination) if destination else ROOT/'generated/cal/Phase_BMP'
+    dest=Path(destination) if destination else generated_root(ROOT,c)/'cal/Phase_BMP'
     dest.mkdir(parents=True,exist_ok=True)
     bmp,owner,support,meta=four_array(c)
+    bmp=encode_gray(bmp,c);meta['phase_gray_encoding']=mode(c)
     target=dest/'P_F4_10cm.bmp'; Image.fromarray(bmp).save(target)
     aw,ah=c['amplitude_slm']['expected_resolution_wh']
     Image.fromarray(np.full((ah,aw),255,np.uint8)).save(dest/'A_WHITE.bmp')

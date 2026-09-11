@@ -1,6 +1,7 @@
 """Hold one native-size amplitude BMP; leave the CCD free for its own GUI."""
 import argparse
 from common import ROOT,config,setup_imports,sha
+from phase_encoding import generated_root
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
@@ -11,7 +12,7 @@ def main():
     a=p.parse_args(); c,_=config(); setup_imports()
     if a.opposite_vertical and a.bmp: p.error('--opposite-vertical requires a pair, not --bmp')
     if not a.bmp:
-        pair=ROOT/(a.pair or 'generated/dual/01_check64')
+        pair=ROOT/a.pair if a.pair else generated_root(ROOT,c)/'dual/01_check64'
         phase=pair/('P_V.bmp' if a.opposite_vertical else 'P.bmp')
         if not phase.is_file(): raise FileNotFoundError(phase)
         print('MANUALLY LOAD matched phase:',phase.resolve(),flush=True)
@@ -26,7 +27,7 @@ def main():
         try:
             input('BMP held at native size. Use CCD software to align. Press Enter to end: ')
         finally:
-            black=ROOT/'generated/cal/A_BLACK.bmp'
+            black=generated_root(ROOT,c)/'cal/A_BLACK.bmp'
             slm.preload_files([black]); slm.display_file(black)
 
 if __name__=='__main__': main()

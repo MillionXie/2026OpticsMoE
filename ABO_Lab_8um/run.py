@@ -8,6 +8,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 from common import ROOT,STAGES,config,setup_imports,session_path,sha,read,write,hardware_identity,CHECKPOINT_SHA
+from phase_encoding import generated_root
 
 def samples(limit):
     setup_imports()
@@ -81,7 +82,7 @@ def prepare(args,c):
             entries.append({'id':s['id'],'bmp':name,'sha256':sha(out/name),'encoding':encoding})
         else: raise RuntimeError('Optical guard was bypassed; capture required')
         if len(entries)%20==0: print('Prepared',stage,len(entries),flush=True)
-    phase=ROOT/'generated/P'/f'{STAGES.index(stage)+1:02d}_{stage}.bmp'
+    phase=generated_root(ROOT,c)/'P'/f'{STAGES.index(stage)+1:02d}_{stage}.bmp'
     write(out/'manifest.json',{'stage':stage,'phase_file':str(phase.relative_to(ROOT)),
         'phase_sha256':sha(phase),'hardware_identity':hardware_identity(c),'entries':entries})
     print('Ready:',len(entries),'BMPs. Load phase:',phase)
@@ -142,8 +143,8 @@ def capture(args,c):
             if sha(bmp)!=e['sha256']: raise ValueError('Amplitude BMP changed')
             out=root/'ccd'/e['id']/args.stage
             frame=bench.capture(bmp,out)
-            files={out.name+'.png':sha(out.with_suffix('.png')),
-                   out.name+'.tif':sha(out.with_suffix('.tif'))}
+            raw=out.with_suffix(getattr(bench,'raw_suffix','.tif'))
+            files={out.name+'.png':sha(out.with_suffix('.png')),raw.name:sha(raw)}
             quality=None
             if args.stage.endswith('_router'):
                 files[out.name+'.json']=sha(out.with_suffix('.json'))
@@ -196,11 +197,11 @@ def probe(args,c):
 def exposure(args,c):
     from hardware import Bench,canonical
     out=ROOT/'results/exposure'/time.strftime('%Y%m%d_%H%M%S'); out.mkdir(parents=True)
-    print('Keep generated/cal/P_ZERO.bmp on phase SLM. 32 gray values x 3 frames.')
+    print('Keep',generated_root(ROOT,c)/'cal/P_ZERO.bmp','on phase SLM. 32 gray values x 3 frames.')
     if input('Ready? y: ').strip().lower()!='y': return
     rows=[]
     with Bench(c) as bench:
-        for bmp in sorted((ROOT/'generated/cal/gray').glob('*.bmp')):
+        for bmp in sorted((generated_root(ROOT,c)/'cal/gray').glob('*.bmp')):
             for rep in range(3):
                 raw=bench.capture(bmp,out/f'{bmp.stem}_{rep}',rectify=False)
                 region=canonical(raw,c)[111:367,111:367] if c['geometry_confirmed'] else raw[raw.shape[0]//2-128:raw.shape[0]//2+128,raw.shape[1]//2-128:raw.shape[1]//2+128]

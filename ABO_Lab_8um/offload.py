@@ -46,7 +46,8 @@ def export_snapshot(name, target):
     def add(z, path, name):
         name=normalized(name); data=Path(path).read_bytes()
         inventory[name]=file_hash(data); z.writestr(name,data)
-    phase=ROOT/'generated/P/06_language_global.bmp'
+    from phase_encoding import generated_root
+    phase=generated_root(ROOT,c)/'P/06_language_global.bmp'
     with zipfile.ZipFile(target,'x',zipfile.ZIP_DEFLATED,compresslevel=1) as z:
         add(z,r/'session.json','session.json'); add(z,r/'optical_contract.json','optical_contract.json')
         add(z,phase,'phase.bmp')
@@ -133,7 +134,9 @@ def compute(archive, dest, device, limit=0):
             entries.append({'id':sid,'bmp':name,'sha256':sha(play/name),'encoding':encoding})
         else: raise RuntimeError('Target was not guarded')
         if (i+1)%25==0:print('REMOTE_PREPARED',i+1,'/',len(selected),'elapsed_s',round(time.perf_counter()-start,1),flush=True)
-    write(play/'manifest.json',{'stage':STAGE,'phase_file':'generated/P/06_language_global.bmp',
+    from phase_encoding import generated_root
+    phase_rel=str((generated_root(ROOT,c)/'P/06_language_global.bmp').relative_to(ROOT))
+    write(play/'manifest.json',{'stage':STAGE,'phase_file':phase_rel,
         'phase_sha256':mf['phase_sha256'],'hardware_identity':mf['hardware_identity'],'entries':entries})
     import subprocess
     report={'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),

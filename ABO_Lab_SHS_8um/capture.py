@@ -30,6 +30,7 @@ def main():
     p.add_argument('--frames',type=int,default=3)
     p.add_argument('--exposures-us',type=float,nargs='+',help='Omit to use config exposure_us')
     p.add_argument('--fps',type=int,help='Set frame rate BEFORE exposure; restored afterwards')
+    p.add_argument('--gain',choices=['Gain_X1','Gain_X2','Gain_X4','Gain_X8'])
     p.add_argument('--test-pattern',choices=['Normal','VStrip','HStrip','Black','White'])
     p.add_argument('--no-png',action='store_true',help='Benchmark only; no PNG encoding/disk writes in frame loop')
     a=p.parse_args();c=json.loads(Path(a.config).read_text(encoding='utf-8-sig'))['camera']
@@ -50,7 +51,8 @@ def main():
             return camera.set(name,value)
         try:
             if fps is not None:change('AcquisitionFrameRate',fps)
-            if c.get('gain') is not None:change('Gain',c['gain'])
+            gain=a.gain if a.gain is not None else c.get('gain')
+            if gain is not None:change('Gain',gain)
             if a.test_pattern is not None:change('TestPattern',a.test_pattern)
             elif before.get('TestPattern',{}).get('value')!='Normal':
                 raise RuntimeError('Camera has a synthetic test pattern active; use --test-pattern Normal for real scene')

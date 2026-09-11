@@ -7,3 +7,8 @@ releases/
 transfers/
 __pycache__/
 LAB.local.json
+compat_abo/
+assets/
+vendor_driver.py
+runtime/
+models/

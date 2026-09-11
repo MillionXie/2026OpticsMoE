@@ -1,0 +1,9 @@
+# Camera-only DOES NOT require these; use the existing GPU ABO environment
+# for model preparation. CUDA torch must be installed for the actual GPU.
+-r requirements.txt
+opencv-python==4.10.0.84
+PyYAML>=6,<7
+matplotlib>=3.8,<4
+# torch / transformers / accelerate / safetensors:
+# use the original ABO environment-lock / tested inference package versions,
+# not arbitrary latest versions. Run import_abo.py before model operations.
