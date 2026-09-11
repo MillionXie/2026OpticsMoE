@@ -3,7 +3,7 @@ import argparse,json,time
 from pathlib import Path
 import numpy as np
 from sdk import Camera
-from capture import snapshot,save_json
+from capture import snapshot,save_json,restore_settings
 
 
 def main():
@@ -30,10 +30,7 @@ def main():
                 median_grab_ms=float(np.median([r['copy_wait_decode_ms'] for r in rows])),frames=rows,
                 scope='Host CEasyCapS + ctypes + raw copy + decode. NO SLM, PNG encoding, inference, or hardware trigger. Not end-to-end optical latency.')
         finally:
-            camera.stop();errors=[]
-            for name in ('ExposureTime','AcquisitionFrameRate'):
-                try:camera.set(name,before[name]['value'])
-                except Exception as ex:errors.append(str(ex))
+            errors=restore_settings(camera,before,['ExposureTime','AcquisitionFrameRate'])
             report['restore_errors']=errors;report['restored']=not errors;report['after']=snapshot(camera)
             save_json(a.out/'benchmark.json',report)
     print({k:v for k,v in report.items() if k not in ('frames','before','after','settings')})

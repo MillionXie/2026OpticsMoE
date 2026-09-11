@@ -2,6 +2,8 @@
 
 先读 [COMMAND.md](COMMAND.md)。本工程先调通相机 SDK，保留 ABO 六阶段的模型/几何约定，**不改变光路**。
 
+实測证据和吞吐边界见 [BRINGUP_RESULTS.md](BRINGUP_RESULTS.md)；2250 fps 的 Python 直取短测有跳帧，不宣称已实现满速无丢帧。
+
 ## 当前已经验证与尚未验证
 
 2026-09-12 在师弟电脑实测：SHS-202-M，Magewell Flex I/O Quad CXP-12 Enhanced，Windows x64，CEasyCapS + GenTL 1.1.4.22。

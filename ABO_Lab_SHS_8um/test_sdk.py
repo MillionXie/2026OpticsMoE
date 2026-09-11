@@ -24,5 +24,16 @@ class ABITests(unittest.TestCase):
         with self.assertRaises(SDKError):decode_mono(b'xx',3,2,0x01080001)
         with self.assertRaises(SDKError):decode_mono(b'x'*6,2,2,0x010c0047)
 
+    def test_safe_exposure_restoration_order(self):
+        from capture import restore_settings
+        class Fake:
+            def __init__(self):self.values={'ExposureTime':'100','AcquisitionFrameRate':'2250'};self.calls=[]
+            def get(self,name):return self.values[name]
+            def stop(self):pass
+            def set(self,name,value):self.calls.append((name,str(value)));self.values[name]=str(value)
+        camera=Fake();before={'ExposureTime':{'value':'444.2'},'AcquisitionFrameRate':{'value':'2250'}}
+        self.assertEqual(restore_settings(camera,before,list(before)),[])
+        self.assertEqual(camera.calls,[('AcquisitionFrameRate','100'),('ExposureTime','444.2'),('AcquisitionFrameRate','2250')])
+
 
 if __name__=='__main__':unittest.main()

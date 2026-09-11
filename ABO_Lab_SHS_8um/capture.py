@@ -24,6 +24,35 @@ def save_json(path,data):
     temp=path.with_suffix('.tmp');temp.write_text(json.dumps(data,indent=2,ensure_ascii=False),encoding='utf-8');temp.replace(path)
 
 
+def restore_settings(camera,before,changed):
+    """Restore exposure away from the high-fps upper-bound firmware edge case."""
+    errors=[]
+    camera.stop()
+    def apply(name,value):
+        if camera.get(name)!=str(value):camera.set(name,value)
+    try:
+        if {'ExposureTime','AcquisitionFrameRate'} & set(changed):
+            old_fps=float(before['AcquisitionFrameRate']['value'])
+            # At 2250 fps firmware rejects setting the reported 444.2 us maximum.
+            # Lower fps temporarily, restore exposure, THEN restore old fps.
+            safe_fps=int(min(old_fps,float(camera.get('AcquisitionFrameRate')),100))
+            apply('AcquisitionFrameRate',safe_fps)
+            apply('ExposureTime',before['ExposureTime']['value'])
+            apply('AcquisitionFrameRate',before['AcquisitionFrameRate']['value'])
+    except Exception as ex:errors.append('exposure/frame-rate restoration: '+str(ex))
+    for name in reversed(changed):
+        if name in ('ExposureTime','AcquisitionFrameRate'):continue
+        try:apply(name,before[name]['value'])
+        except Exception as ex:errors.append(name+': '+str(ex))
+    # Verify all original changed values, including ones whose setter succeeded.
+    for name in changed:
+        try:
+            old=before[name]['value'];actual=camera.get(name)
+            if actual!=old:errors.append(f'{name}: expected {old}, actual {actual}')
+        except Exception as ex:errors.append(str(ex))
+    return errors
+
+
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--config',default='config.json');p.add_argument('--out',required=True,type=Path)
@@ -80,12 +109,7 @@ def main():
                 camera.stop();save_json(path,report)
             report['complete']=True
         finally:
-            camera.stop()
-            errors=[]
-            # Reverse order puts old exposure back before increasing frame rate.
-            for name in reversed(changed):
-                try:camera.set(name,before[name]['value'])
-                except Exception as ex:errors.append(f'{name}: {ex}')
+            errors=restore_settings(camera,before,changed)
             report['restore_errors']=errors;report['after']=snapshot(camera)
             report['restored']=not errors
             save_json(path,report)

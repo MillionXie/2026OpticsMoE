@@ -8,7 +8,7 @@ import time
 from PIL import Image
 import numpy as np
 from sdk import Camera
-from capture import snapshot,save_json
+from capture import snapshot,save_json,restore_settings
 
 ROOT=Path(__file__).resolve().parent
 
@@ -38,8 +38,8 @@ class Controller:
             self.camera.start();return self
         except BaseException:self.stack.close();raise
     def restore(self):
-        self.camera.stop()
-        for name in ('Gain','ExposureTime','AcquisitionFrameRate'):self.camera.set(name,self.before[name]['value'])
+        errors=restore_settings(self.camera,self.before,['Gain','ExposureTime','AcquisitionFrameRate'])
+        if errors:raise RuntimeError('Camera restore failed: '+str(errors))
     def __exit__(self,*args):return self.stack.__exit__(*args)
     def capture(self,bmp):
         path=Path(bmp).resolve()

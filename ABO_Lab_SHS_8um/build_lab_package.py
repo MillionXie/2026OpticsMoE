@@ -8,7 +8,9 @@ import zipfile
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--out',type=Path,required=True);a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--out',type=Path,required=True)
+    p.add_argument('--code-only',action='store_true',help='Small source patch for an already installed full package')
+    a=p.parse_args()
     root=Path(__file__).resolve().parent;repo=root.parent
     commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=repo,text=True).strip()
     files=subprocess.check_output(['git','ls-tree','-r','--name-only',commit,'--',root.name],cwd=repo,text=True).splitlines()
@@ -28,12 +30,13 @@ def main():
             add('compat_abo/'+name,subprocess.check_output(['git','show',commit+':ABO_Lab_8um/'+name],cwd=repo))
         add('vendor_driver.py',subprocess.check_output(['git','show',commit+':experiments/hardware_sdk/devices.py'],cwd=repo))
         # Model phase/digit assets stay out of Git but are explicitly hash-pinned.
-        for folder in ('phases','direction_digits'):
+        for folder in (() if a.code_only else ('phases','direction_digits')):
             for path in sorted((root/'assets'/folder).glob('*')):
                 if path.is_file():add('assets/'+folder+'/'+path.name,path.read_bytes())
-        for folder in ('generated/phase_inverted','vendor/manuals'):
+        for folder in (() if a.code_only else ('generated/phase_inverted','vendor/manuals')):
             for path in sorted((root/folder).rglob('*')):
                 if path.is_file():add(path.relative_to(root).as_posix(),path.read_bytes())
+        manifest['code_only_patch']=a.code_only
         z.writestr('CODE_MANIFEST.json',json.dumps(manifest,indent=2))
     h=hashlib.sha256(a.out.read_bytes()).hexdigest()
     print(a.out.resolve(),h,flush=True)
