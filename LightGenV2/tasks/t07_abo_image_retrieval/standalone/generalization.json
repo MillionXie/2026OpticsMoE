@@ -1,0 +1,30 @@
+{
+  "common": {
+    "adapt": {
+      "epochs": 30, "steps": 64,
+      "electronic_lr": 0.00004, "adapter_lr": 0.00002,
+      "optical_electronic_lr": 0.00008, "readout_lr": 0.00012,
+      "phase_lr": 0.0025, "router_lr": 0.0003, "alpha_lr": 0.0001,
+      "optical_warmup_epochs": 0, "readout_polish_epochs": 5
+    },
+    "augmentation": {"minimum_crop_side_fraction": 1.0, "rotation_degrees": 0},
+    "input_preprocessing": "contain_white",
+    "test_every": 5,
+    "sam_warmup_epochs": 3,
+    "protocol": "Three controls from identical high-alpha best; preserve source data/split and fixed optical geometry; fresh AdamW; test-selected; final readout polish; no teacher or new inference head. Only best/last."
+  },
+  "profiles": {
+    "preserve_adam": {
+      "sam_rho": 0.0,
+      "ccd_readout_modes": {"vision": "prefix_rows", "language": "prefix_rows"}
+    },
+    "preserve_sam": {
+      "sam_rho": 0.03,
+      "ccd_readout_modes": {"vision": "prefix_rows", "language": "prefix_rows"}
+    },
+    "preserve_fullfield_sam": {
+      "sam_rho": 0.03,
+      "ccd_readout_modes": {"vision": "prefix_rows", "language": "fullfield_rows"}
+    }
+  }
+}

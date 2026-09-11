@@ -117,6 +117,16 @@ class OpticalRetrieval(nn.Module):
         self.frontend = Frontend(metadata['token_count']).to(torch.bfloat16)
         self.vision = Modality(True, metadata['input_rms'],bounds,metadata.get('optical_training_noise'))
         self.language = Modality(False, metadata['input_rms'],bounds,metadata.get('optical_training_noise'))
+        if metadata.get('input_preprocessing','center_crop') not in ('center_crop','contain_white'):
+            raise ValueError('Unknown image preprocessing contract')
+        modes = metadata.get('ccd_readout_modes',{})
+        if set(modes) - {'vision','language'}:
+            raise ValueError('Unknown modality in CCD readout contract')
+        for name in ('vision','language'):
+            mode = modes.get(name,'prefix_rows')
+            if mode not in ('prefix_rows','fullfield_rows'):
+                raise ValueError('Unknown CCD readout contract')
+            getattr(self,name).optics.readout_mode = mode
         self.readout = RetrievalHead()
 
     def train(self, mode=True):
@@ -154,5 +164,7 @@ class OpticalRetrieval(nn.Module):
                 'frozen_parameters':sum(p.numel() for p in self.parameters() if not p.requires_grad),
                 'trainable_parameters':sum(p.numel() for p in self.parameters() if p.requires_grad),
                 'alpha_bounds':list(self.vision.alpha_bounds),
+                'input_preprocessing':self.metadata.get('input_preprocessing','center_crop'),
+                'ccd_readout_modes':{m:getattr(self,m).optics.readout_mode for m in ('vision','language')},
                 'alpha':{m:[float(alpha_value(getattr(getattr(self,m),f'block{i}_optical_fusion_logit'),getattr(self,m).alpha_bounds)) for i in (1,2)] for m in ('vision','language')},
                 'ccd_postprocessing':'mean -> clip12 -> log1p -> avgpool224 -> rowLN -> ReLU -> Linear192'}

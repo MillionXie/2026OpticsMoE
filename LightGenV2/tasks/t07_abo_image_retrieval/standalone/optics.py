@@ -190,7 +190,11 @@ class OpticalPath(nn.Module):
     def decode(self, intensity, length, dtype, final):
         value = intensity.float().clamp_min(0)
         relative = (value/value.mean((-2, -1), keepdim=True).clamp_min(1e-6)).clamp_max(12)
-        pooled = F.adaptive_avg_pool2d(torch.log1p(relative)[:, None], (224, 224))[:, 0]
+        mode = getattr(self, 'readout_mode', 'prefix_rows')
+        if mode not in ('prefix_rows', 'fullfield_rows'):
+            raise ValueError('Unknown CCD readout mode')
+        rows = length if mode == 'fullfield_rows' else 224
+        pooled = F.adaptive_avg_pool2d(torch.log1p(relative)[:, None], (rows, 224))[:, 0]
         readout = F.relu(F.layer_norm(pooled, (224,), eps=1e-5))
         packed = torch.cat([row[:length] for row in readout], dim=0)
         output = self.global_output if final else self.expert_output

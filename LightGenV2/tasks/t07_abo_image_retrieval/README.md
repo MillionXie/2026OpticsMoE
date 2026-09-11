@@ -120,3 +120,23 @@ V/L融合前光特征另加训练用分类监督，其辅助头不进入推理�
 组会数据分析及老师审阅用独立代码位于仓库根 `LightGenPublic/tasks/t07_abo_image_retrieval/`。
 该目录是独立仿真/续训审阅快照，不覆盖本目录的优化代码或旧实验室包。清理没有删除历史run/数据；
 数据审计脚本为本任务 `analysis/audit_for_meeting.py`，只读CPU分析，保持原始测试口径。
+
+### 完整输入 / SAM / 全场语言读出（2026-09-11）
+
+在本目录继续优化，**不覆盖已交付LightGenPublic审阅包**。三组都从同一68.9583%高alpha权重开始：
+`preserve_adam`：等比缩放、白色补边到224²，关闭裁剪和旋转增强，AdamW适配；
+`preserve_sam`：同上加SAM，rho=0.03、前三轮线性热身；
+`preserve_fullfield_sam`：在SAM基础上把L端expert/global CCD从“pool224后截前77行”改为整场pool到77×224。
+V端读出不改，输入图像/光学ROI/专家大小/17um/10cm均不改，无新增网络参数、TF、attention或教师。
+相位/Router/电子一起更新，alpha仍严格>0.4，原噪声、20%～30%未调制分量和专家均衡保留。
+
+SAM是Sharpness-Aware Minimization，不是Segment Anything：两次反传共用同批图与相同随机噪声/dropout，
+先暂时扰动活动参数，再精确恢复原值，用第二次梯度做AdamW更新；异常时也恢复，冻结参数不扰动。
+参考[原论文](https://arxiv.org/abs/2010.01412)。这增加训练计算，不增加推理网络；不保证涨分。
+
+三组使用相同的30epoch×64steps、batch40与适配学习率，末5轮仅读出，EMA/live每5轮按test选优。
+第一组相较旧68.96%同时包含输入修改和新适配训练，不能把差值全归给裁切；SAM两组对照的配置更严格匹配。
+新输入/读出模式写入checkpoint metadata，图库构建、训练、评估统一读取；旧权重默认仍为原中心裁切/前行读出。
+选择只在各自新合同内进行，不能拿旧68.96%不同预处理的结果充作保底。仅best/last。
+`generalization_queue` 单卡串行、每组一个独立进程，失败停止；状态/指标汇总到queue的status.json，完整命令见COMMAND第9节。
+本节是实验计划/实现合同，未完成测试前不声称已超过0.7。新权重必须用本版T07加载，不直接放入旧审阅ZIP。

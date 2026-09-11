@@ -35,11 +35,18 @@ def write_csv(path, rows):
         writer.writerows(rows)
 
 
-def picture(path):
+def picture(path, mode='center_crop'):
     # Exact original optical preprocessing: do NOT introduce EXIF transpose here.
     with Image.open(path) as source:
         image = source.convert('RGB')
-    return ImageOps.fit(image,(224,224),method=Image.Resampling.BICUBIC,centering=(.5,.5))
+    if mode == 'center_crop':
+        return ImageOps.fit(image,(224,224),method=Image.Resampling.BICUBIC,centering=(.5,.5))
+    if mode == 'contain_white':
+        resized = ImageOps.contain(image, (224,224), method=Image.Resampling.BICUBIC)
+        canvas = Image.new('RGB', (224,224), (255,255,255))
+        canvas.paste(resized, ((224-resized.width)//2, (224-resized.height)//2))
+        return canvas
+    raise ValueError(f'Unknown input preprocessing: {mode}')
 
 
 def template(processor, image):

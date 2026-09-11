@@ -157,3 +157,28 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.broad_transfer \
 高alpha的67.92%起点保留在候选中，若续训没有提高必须如实说明，不能将保底成绩说成新提升。
 快速检查使用独立`runs/smoke/`目录、`--adapt-epochs 1 --steps 2`，会覆盖图库构建、反传和两种选模。
 输出指标/去光/相位打乱/噪声/相位变化文件与第7节一致；保留全部旧结果，不覆写旧ZIP。
+
+## 9. 完整商品输入 + SAM + 全场语言CCD读出：单卡串行
+
+从仓库根执行，先检查GPU。以下GPU1 UUID是当前服务器已检查的卡，其他服务器必须替换。
+源权重固定为68.9583%高alpha版本，不需要完整Qwen或原ABO大预训练池。
+
+```bash
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d \
+  --assets /DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/standalone_assets_20260910 \
+  --checkpoint /DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/high_alpha_retrieval_20260910/artifacts/best.pt \
+  --target /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --output /DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/generalization_20260911 \
+  --epochs 30 --steps 64
+```
+
+按 `preserve_adam → preserve_sam → preserve_fullfield_sam` 顺序执行，参数在 `standalone/generalization.json`，
+继承`high_alpha.json`和`retrieval_training.json`。学习率、增强、采样、数据、源权重都匹配，SAM增量rho0.03。
+每组30轮，SAM同step需两次反传，**不是等GPU时间对照**。状态统一看output下status.json；各组console.log、
+artifacts/history.json、final_report.json保留完整数值，失败队列停止，不会一直启动失败任务。
+
+快速实跑检查使用另一个 `runs/smoke/generalization_20260911` 输出，并加：
+`--profiles preserve_fullfield_sam --epochs 1 --steps 2`。
+此检查会全量编码/评估，但只更新两步；不把冒烟的准确率当最终优化成绩。
+每组进程结束才启动下一组；若卡被其他人占用，队列停止并记录原因，不杀别人的进程。

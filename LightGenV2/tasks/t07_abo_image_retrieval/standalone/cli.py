@@ -24,7 +24,7 @@ def encode(model, processor, samples, device, batch_size):
     model.eval()
     output = []
     for start in range(0,len(samples),batch_size):
-        batch = inputs(processor,[picture(s.image_path) for s in samples[start:start+batch_size]],device)
+        batch = inputs(processor,[picture(s.image_path, model.metadata.get('input_preprocessing','center_crop')) for s in samples[start:start+batch_size]],device)
         with autocast(device):
             output.append(model(batch).detach().cpu())
         if (start//batch_size+1)%60==0:
@@ -108,7 +108,7 @@ def finetune(model, processor, train, test, device, args, output):
             rng.shuffle(chosen)
             images=[]
             for i in chosen:
-                image=picture(train[i].image_path);side=round(224*random.uniform(.94,1.))
+                image=picture(train[i].image_path,model.metadata.get('input_preprocessing','center_crop'));side=round(224*random.uniform(.94,1.))
                 left,top=[random.randint(0,224-side) for _ in range(2)]
                 image=image.crop((left,top,left+side,top+side)).resize((224,224),Image.Resampling.BICUBIC)
                 image=ImageEnhance.Brightness(image).enhance(random.uniform(.95,1.05))
