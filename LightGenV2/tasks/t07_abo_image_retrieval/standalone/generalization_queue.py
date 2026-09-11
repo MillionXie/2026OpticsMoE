@@ -45,7 +45,7 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--epochs', type=int, default=30)
     parser.add_argument('--steps', type=int, default=64)
-    parser.add_argument('--profiles', nargs='+', choices=['preserve_adam','preserve_sam','preserve_fullfield_sam','preserve_fullfield_both_sam','regularized_control','regularized_phase05','domain_mixed','domain_curriculum','domain_target_control','domain_refine_control','domain_refine_wide','domain_refine_views','domain_refine_pool500_mix13','domain_refine_context7','domain_refine_balanced','build_teacher_cache','domain_distill_light','domain_distill_strong','domain_distill_stronger','domain_distill_resumeaux','domain_distill_resumeaux_full','domain_distill_sharpteacher','domain_distill_teacher_agreement','domain_distill_aligned_feature','domain_distill_feature_mlp','domain_distill_teacher_first','domain_distill_bounded_aspect'],
+    parser.add_argument('--profiles', nargs='+', choices=['preserve_adam','preserve_sam','preserve_fullfield_sam','preserve_fullfield_both_sam','regularized_control','regularized_phase05','domain_mixed','domain_curriculum','domain_target_control','domain_refine_control','domain_refine_wide','domain_refine_views','domain_refine_pool500_mix13','domain_refine_context7','domain_refine_balanced','build_teacher_cache','domain_distill_light','domain_distill_strong','domain_distill_stronger','domain_distill_resumeaux','domain_distill_resumeaux_full','domain_distill_sharpteacher','domain_distill_teacher_agreement','domain_distill_aligned_feature','domain_distill_feature_mlp','domain_distill_teacher_first','domain_distill_bounded_aspect','domain_distill_readout_ridge'],
                         default=['preserve_sam','preserve_adam','preserve_fullfield_sam'])
     parser.add_argument('--after-queue', type=Path, help='Existing status.json; wait without a CUDA context until this queue completes')
     args = parser.parse_args()
@@ -92,6 +92,11 @@ def main():
                     '--output',str(run/'artifacts')]
             elif profile.startswith('domain_distill_'):
                 command+=['--teacher-cache',str(args.teacher_cache)]
+            if profile=='domain_distill_readout_ridge':
+                command=[sys.executable,'-u','-m','LightGenV2.tasks.t07_abo_image_retrieval.standalone.readout_distill',
+                    '--assets',str(args.assets),'--checkpoint',str(args.checkpoint),'--target',str(args.target),
+                    '--abo',str(args.abo),'--pool',str(args.pool),'--teacher-cache',str(args.teacher_cache),
+                    '--batch-size','4','--output',str(run/'artifacts')]
             env=dict(os.environ,CUDA_VISIBLE_DEVICES=args.gpu,HF_HUB_OFFLINE='1',TRANSFORMERS_OFFLINE='1',OMP_NUM_THREADS='4',MKL_NUM_THREADS='4')
             with (run/'console.log').open('w',encoding='utf-8') as log:
                 child=subprocess.Popen(command,stdout=log,stderr=subprocess.STDOUT,env=env)
