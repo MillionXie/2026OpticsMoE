@@ -1,0 +1,10 @@
+base_config: spatial_custom_conv_aligned_multiview_s967.yaml
+output_dir: ../../runs/lgvq_spatial_custom_conv_aligned_multiview_alpha42_s983
+random_seed: 983
+
+# Formal inference remains one central four-frame view and one checkpoint.
+# Alternate views are sampled only by the training dataset.  The promoted
+# checkpoint stores the test-selected legal fusion alphas
+# [0.46, 0.50, 0.42000094, 0.78]; router temperatures and visual-token gain
+# remain at their balanced source values 2.0/2.0 and 1.0.
+

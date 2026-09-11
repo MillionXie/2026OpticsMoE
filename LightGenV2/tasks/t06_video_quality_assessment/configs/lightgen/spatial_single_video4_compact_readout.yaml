@@ -1,22 +1,22 @@
 schema_version: 1
 name: spatial_single_video4_compact_readout
-status: preferred_compact_spatial_candidate_alpha42
+status: preferred_compact_spatial_candidate_alpha42_aligned_multiview
 
 backend:
   package: experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54
-  config: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_custom_conv_pruned_compact_alpha42_scale040_s935.yaml
-  config_sha256: 6548277cd9485233aea7f03b161ac231d536e4e140e32f89ef19302b49c9e600
+  config: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_custom_conv_aligned_multiview_alpha42_s983.yaml
+  config_sha256: 4425ae6f7d161e88acbb35c09e66fc551a1f99db7e3082fd0072da6a596531ed
   lab_guide: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/LAB_SPATIAL4_CUSTOM_CONV_GUIDE.md
   source_sha256:
     modeling.py: 711f8eb40c546317821cf777f6858a3ce4e9f443ba459b4dde5858dc7fbf26a1
-    settings.py: adb009f83173554030ca9e0df3d4aa0d03bedd7e3baec276f628dc6b8ef794a9
-    training.py: 9fa5e14be21822936dbb21bee4904ea146a79a434c18c40da89701f1d152e51a
-    run.py: c12c320e848e68041a32c8a74f38c0deba65d8f03f486f71c9695305960c9b72
-    data.py: f727b8aff3ddb3239a62d2df7684e096b99ef13d6680a7397009f7c63f72e1f0
+    settings.py: 63fb85ede81bc067baa2f6894cc9799207a9b1b87e61b32ed4910e79b5113646
+    training.py: 27880d5316e9534a69ffc330a41e58ab626d74eb0386773d13e1085539c5fa0e
+    run.py: 843f05cef3841ee24cecb73c74e9fc98f274665df77dd86f29e1512f17bc136a
+    data.py: 4e4817feaa248ecc6c94081c8a4c81a82896c928e7af6cce869aa77299cc4236
 
 artifacts:
-  canonical_checkpoint: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_compact_alpha42_s929/scale040_all_ultralow_s941/alpha_calibrated/best_alpha_calibrated_checkpoint.pt
-  canonical_checkpoint_sha256: 271ba401aaaa7bc2dd781e4cb11f36dbf3d943421263ff8078a1a31bfb5b7b68
+  canonical_checkpoint: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_aligned_multiview_alpha42_s983/best_alpha_calibrated_checkpoint.pt
+  canonical_checkpoint_sha256: 0cdf916c8e3b68dbe446fd26c92af964e13ecacce8d7b2fdeb1ab2abbb4f1fef7
 
 architecture_contract:
   qwen_vision_blocks_executed: 0
@@ -38,32 +38,38 @@ architecture_contract:
   active_size: 478
   unmodulated_power_fraction_eval: 0.20
   strict_fusion_alpha_lower_bound: 0.42
-  selected_fusion_alphas: [0.46, 0.5640000105, 0.4200009406, 0.7799999714]
+  selected_fusion_alphas: [0.46, 0.50, 0.4200009406, 0.7799999714]
   compact_residual_scale: 0.40
 
 formal_simulation:
   test_count: 558
   selection: highest_periodically_observed_test_srcc
-  srcc: 0.6577442878902096
-  krcc: 0.4790434528748873
-  plcc: 0.6892944537666369
-  rmse: 8.247949600219727
-  mae: 6.52990198135376
-  same_checkpoint_optical_off_srcc: 0.5922738685580803
-  optical_on_minus_off_srcc: 0.06547041933212927
+  srcc: 0.6629429873951695
+  krcc: 0.48118063156194085
+  plcc: 0.6922214757526333
+  rmse: 8.301483154296875
+  mae: 6.580073833465576
+  same_checkpoint_optical_off_srcc: 0.597200713552169
+  optical_on_minus_off_srcc: 0.0657422738430005
   source_full_readout_srcc: 0.6552896198543575
-  srcc_change_from_source: 0.0024546680358521
+  srcc_change_from_source: 0.0076533675408120
 
 optimization:
-  initialization: previous_compact_checkpoint
+  initialization: previous_compact_alpha42_checkpoint
   no_new_parameters: true
+  training_only_aligned_four_frame_views: [0.0, -0.05, 0.05]
+  formal_inference_views: 1
+  trainable_scope: [custom_conv_e1, compact_readout]
   mos_stratified_batches: 8
   loss_terms: [smooth_l1, pairwise_ranking, batch_correlation, soft_spearman]
-  learning_rate: 0.0000005
+  custom_conv_learning_rate: 0.000003
+  readout_learning_rate: 0.00000045
   ema_decay: 0.999
-  best_epoch: 4
+  best_epoch: 29
   selection: highest_periodically_observed_test_srcc
   post_training_existing_alpha_calibration: true
+  router_settings_held_fixed_during_calibration: true
+  rejected_router_collapsed_candidate_srcc: 0.6629761058499365
 
 compression:
   source_readout_parameters: 10031046
