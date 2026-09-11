@@ -117,6 +117,11 @@ def run_stage(args,stage,output,initial_checkpoint=None):
         if len(groups)<cfg['classes_per_batch'] or min(len(g) for g in groups.values())<cfg['products_per_class']:
             raise ValueError('Not enough distinct products/classes for sampling')
         labels=torch.tensor([s.category_id for s in samples],device=device)
+        teacher_vectors=None;teacher_audit=None
+        if cfg_all.get('relation_teacher_weight',0):
+            from .teacher_relations import load_teacher_cache,gallery_relation_loss
+            if not domain or getattr(args,'teacher_cache',None) is None:raise ValueError('Relation KD requires domain training and --teacher-cache')
+            teacher_vectors,teacher_audit=load_teacher_cache(args.teacher_cache,samples,args.target,args.pool,device)
         origin=args.assets/'best.pt';start=initial_checkpoint or origin
         payload=torch.load(start,map_location='cpu',weights_only=True)
         if rank and payload['metadata'].get('fusion_alpha_min',0)<=.4:
@@ -156,6 +161,8 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                 external_images=len(samples)-target_count,train_products=len({s.product_id for s in samples}),
                 gallery_products=len({s.product_id for s in target_train}),test_products=len({s.product_id for s in target_test}),
                 eval_protocol='Original gallery and test unchanged; expanded products never enter eval gallery')
+        execution['training_only_teacher']=teacher_audit
+        execution['protected_optics_source_sha256']=sha256(Path(__file__).with_name('optics.py'))
         write_json(output/'execution.json',execution)
         best_score=(-float('inf'),-float('inf'));history=[]
         if stage=='adapt':
@@ -197,6 +204,10 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                     active_ids=product_ids
                     product_ids=torch.full((len(samples),),-1,device=device,dtype=torch.long)
                     product_ids[torch.tensor(active_indices,device=device)]=active_ids
+                if teacher_vectors is not None:
+                    teacher_bank,teacher_labels,teacher_ids=product_bank(teacher_vectors[active_indices],active_samples)
+                    if not torch.equal(teacher_labels,bank_labels) or not torch.equal(teacher_ids,active_ids):
+                        raise ValueError('Teacher/student product bank alignment changed')
             model.train();head.train()
             progress=(epoch-1)/max(1,cfg['epochs']-1)
             scale=min(1.,epoch/2)*(.1+.9*.5*(1+math.cos(math.pi*progress)))
@@ -205,8 +216,9 @@ def run_stage(args,stage,output,initial_checkpoint=None):
             for g in optimizer.param_groups:
                 frozen=(warm and g['kind'] in ('electronic','adapter')) or (polish and g['kind'] not in ('readout','auxiliary'))
                 g['lr']=0. if frozen else g['initial_lr']*scale
-            totals=dict(loss=0.,ce=0.,supcon=0.,correct=0.,optical_auxiliary=0.,gallery_nll=0.,gallery_margin=0.,train_gallery_hit1=0.,sam_loss_gap=0.,view_consistency=0.);seen=set();paired_seen=set();clean_batches=0
+            totals=dict(loss=0.,ce=0.,supcon=0.,correct=0.,optical_auxiliary=0.,gallery_nll=0.,gallery_margin=0.,train_gallery_hit1=0.,sam_loss_gap=0.,view_consistency=0.,relation_kd=0.,teacher_correct_fraction=0.,teacher_confidence=0.);seen=set();paired_seen=set();clean_batches=0
             view_weight=cfg_all.get('view_consistency_weight',0.)*min(1.,epoch/max(1,cfg_all.get('view_consistency_warmup_epochs',1)))
+            teacher_weight=cfg_all.get('relation_teacher_weight',0.)*min(1.,epoch/max(1,cfg_all.get('relation_teacher_warmup_epochs',1)))
             pair_rng=random.Random(19042+epoch)
             counts={m:torch.zeros(4,device=device) for m in ('vision','language')}
             for step in range(epoch_steps):
@@ -251,6 +263,11 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                             nll,margin,hit=gallery_loss(z,labels[indices],product_ids[indices],bank,bank_labels)
                             loss=loss+cfg['gallery_nll_weight']*nll+cfg['gallery_margin_weight']*margin
                             result.update(gallery_nll=nll.detach(),gallery_margin=margin.detach(),train_gallery_hit1=hit.detach())
+                        if teacher_vectors is not None:
+                            kd,kd_audit=gallery_relation_loss(z,product_ids[indices],labels[indices],bank,bank_labels,
+                                teacher_vectors[indices],teacher_bank,cfg_all['relation_teacher_temperature'])
+                            loss=loss+teacher_weight*kd
+                            result.update(relation_kd=kd.detach(),**kd_audit)
                     # Preserve primary-view router statistics before alternate-view forward.
                     result['selected']={m:getattr(model,m).optics.router.last['selected_mask'].detach().sum(0) for m in counts}
                     if paired_batch is not None:
@@ -277,7 +294,7 @@ def run_stage(args,stage,output,initial_checkpoint=None):
             if high and not all(.4<a<=.8 for values in model.audit()['alpha'].values() for a in values):
                 raise RuntimeError('Strict high-alpha contract violated')
             row=dict(epoch=epoch,stage=stage,optical_warmup=warm,readout_polish=polish,losses={k:v/epoch_steps for k,v in totals.items()},
-                     unique_images=len(seen),paired_unique_images=len(paired_seen),view_consistency_weight=view_weight,
+                     unique_images=len(seen),paired_unique_images=len(paired_seen),view_consistency_weight=view_weight,relation_teacher_weight=teacher_weight,
                      clean_batches=clean_batches,alpha=model.audit()['alpha'],sam_rho=rho,sam_rho_target=cfg_all.get('sam_rho',0.),
                      router_selected_fraction={m:(c/(epoch_steps*cfg['classes_per_batch']*cfg['products_per_class'])).cpu().tolist() for m,c in counts.items()})
             if domain:
@@ -317,6 +334,8 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                     selected_variant=selected_variant,
                     auxiliary_head_at_inference=False,test_selected=stage=='adapt',
                     selection_note='best EMA snapshot indexed by live training loss' if stage=='pretrain' else 'target test Hit@1 then mAP; accepted best included')
+        report.update(training_only_teacher=teacher_audit,teacher_at_inference=False,
+                      protected_optics_source_sha256=execution['protected_optics_source_sha256'])
         if high:report['selection_note']='Only alpha>=0.4 candidates, including converted initial checkpoint; low-alpha 70.21% is NOT a fallback'
         if general:report['selection_note']='Initial/live/EMA within this run input/readout contract only; explicit initial checkpoint is the fallback. Selected epoch -1 is not a new training improvement.'
         if stage=='adapt':
@@ -354,6 +373,7 @@ def main():
     p.add_argument('--assets',type=Path,required=True);p.add_argument('--target',type=Path,required=True)
     p.add_argument('--abo',type=Path);p.add_argument('--pool',type=Path);p.add_argument('--output',type=Path,required=True)
     p.add_argument('--checkpoint',type=Path);p.add_argument('--device',default='cuda',choices=['cuda','cpu'])
+    p.add_argument('--teacher-cache',type=Path,help='Training-only frozen teacher vectors; not loaded for other profiles or inference')
     p.add_argument('--pretrain-epochs',type=int);p.add_argument('--adapt-epochs',type=int);p.add_argument('--steps',type=int)
     p.add_argument('--batch-size',type=int,default=4)
     args=p.parse_args();verify_assets(args.assets)

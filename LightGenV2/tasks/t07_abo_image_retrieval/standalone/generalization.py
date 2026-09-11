@@ -12,10 +12,19 @@ import torch
 
 PROFILES = ('preserve_adam', 'preserve_sam', 'preserve_fullfield_sam', 'preserve_fullfield_both_sam',
             'regularized_control', 'regularized_phase05', 'domain_mixed', 'domain_curriculum', 'domain_target_control',
-            'domain_refine_control', 'domain_refine_wide', 'domain_refine_views')
+            'domain_refine_control', 'domain_refine_wide', 'domain_refine_views',
+            'domain_distill_light', 'domain_distill_strong')
 
 
 def overlay_config(config, profile):
+    if profile.startswith('domain_distill_'):
+        config=overlay_config(config,'domain_refine_wide')
+        overlay=json.loads(Path(__file__).with_name('domain_distillation.json').read_text(encoding='utf-8'))
+        for key,value in overlay['common'].items():
+            if isinstance(value,dict) and isinstance(config.get(key),dict):config[key].update(value)
+            else:config[key]=value
+        config.update(overlay['profiles'][profile])
+        return config
     if profile.startswith('domain_refine_'):
         config=overlay_config(config,'domain_mixed')
         overlay=json.loads(Path(__file__).with_name('domain_refinement.json').read_text(encoding='utf-8'))

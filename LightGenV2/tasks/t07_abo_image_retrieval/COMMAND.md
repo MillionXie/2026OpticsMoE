@@ -340,3 +340,39 @@ python -u -m LightGenV2.tasks.t07_abo_image_retrieval.legacy_run --mode baseline
 
 该baseline模块是历史全模型评估入口，依赖仓库旧后端；独立学生仍只用standalone，不调用它。
 若日后改变测试名单、图库、类别或预处理，另建baseline run/cache重新推理，不复用这个成绩。
+
+## 14. 训练期语义关系蒸馏（目标81%，光路不改）
+
+使用最新Git源码，先执行第13节变量定义（POOL为250池，BEST为已完成75.21%权重）。
+缓存构建是唯一加载完整Qwen的进程；学生训练、推理仅用standalone。
+必须等已有同卡队列完成，等待进程不创建CUDA上下文。以下为本次GPU1的有界串行方案：
+
+```bash
+T07_GPU=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d
+QWEN=/DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-Embedding-2B/snapshots/9f2f7e710d6d81056aa5c0a4f04764fec6bb7bda
+KD_SMOKE=$T07/runs/smoke/domain_distillation_20260912
+
+# 先全量生成仅训练缓存，再检查一轮学生蒸馏；两者串行、不同子进程。
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu "$T07_GPU" --assets "$ASSETS" --checkpoint "$BEST" --target "$TARGET" \
+  --abo "$ABO" --pool "$POOL" --teacher-model "$QWEN" \
+  --profiles build_teacher_cache domain_distill_light --epochs 1 --steps 1 \
+  --output "$KD_SMOKE" \
+  --after-queue "$T07/runs/simulation/domain_refine_control_20260912/status.json"
+
+# 上述完成后，用相同起点分别跑轻/较强蒸馏，绝不以第一组last继续第二组。
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu "$T07_GPU" --assets "$ASSETS" --checkpoint "$BEST" --target "$TARGET" \
+  --abo "$ABO" --pool "$POOL" \
+  --teacher-cache "$KD_SMOKE/build_teacher_cache/artifacts/cache.pt" \
+  --profiles domain_distill_light domain_distill_strong --epochs 24 --steps 128 \
+  --output "$T07/runs/simulation/domain_distillation_20260912" \
+  --after-queue "$KD_SMOKE/status.json"
+```
+
+监督进程不导入torch，子进程退出后检查nvidia-smi中该PID已消失，再进入下一项。
+没有空闲卡时安全停止，不自动挤占别人的训练。后台运行时使用nohup并将console.log放在run父目录。
+仅保留各组best/last；缓存保存一次，由两个蒸馏组共用。缓存约22MiB张量，加身份信息；以实际报告为准。
+`history.losses`增加relation_kd、teacher_correct_fraction、teacher_confidence，
+`execution.training_only_teacher`记录缓存SHA/图像身份。最终推理不需要teacher缓存或2B权重。
+最少389/480个命中才达标；当前各组尚未完成，不保证蒸馏一定提高性能。

@@ -40,16 +40,23 @@ def main():
     parser.add_argument('--target', type=Path, required=True)
     parser.add_argument('--abo', type=Path)
     parser.add_argument('--pool', type=Path)
+    parser.add_argument('--teacher-cache', type=Path, help='Existing or dependency-produced train-only cache')
+    parser.add_argument('--teacher-model', type=Path, help='Pinned local Qwen snapshot, only for build_teacher_cache')
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--epochs', type=int, default=30)
     parser.add_argument('--steps', type=int, default=64)
-    parser.add_argument('--profiles', nargs='+', choices=['preserve_adam','preserve_sam','preserve_fullfield_sam','preserve_fullfield_both_sam','regularized_control','regularized_phase05','domain_mixed','domain_curriculum','domain_target_control','domain_refine_control','domain_refine_wide','domain_refine_views'],
+    parser.add_argument('--profiles', nargs='+', choices=['preserve_adam','preserve_sam','preserve_fullfield_sam','preserve_fullfield_both_sam','regularized_control','regularized_phase05','domain_mixed','domain_curriculum','domain_target_control','domain_refine_control','domain_refine_wide','domain_refine_views','build_teacher_cache','domain_distill_light','domain_distill_strong'],
                         default=['preserve_sam','preserve_adam','preserve_fullfield_sam'])
     parser.add_argument('--after-queue', type=Path, help='Existing status.json; wait without a CUDA context until this queue completes')
     args = parser.parse_args()
     if min(args.epochs,args.steps)<1:parser.error('Positive epochs and steps required')
     if len(set(args.profiles))!=len(args.profiles):parser.error('Duplicate profiles')
     if any(p.startswith('domain_') for p in args.profiles) and (args.abo is None or args.pool is None):parser.error('Domain profiles require --abo and --pool')
+    if 'build_teacher_cache' in args.profiles:
+        if args.teacher_model is None or args.abo is None or args.pool is None:parser.error('Teacher builder requires --teacher-model, --abo and --pool')
+        if args.profiles[0]!='build_teacher_cache':parser.error('Teacher cache build must precede training')
+    if any(p.startswith('domain_distill_') for p in args.profiles) and args.teacher_cache is None and 'build_teacher_cache' not in args.profiles:
+        parser.error('Distillation requires --teacher-cache or a preceding build_teacher_cache job')
     if args.after_queue is not None and not args.after_queue.is_file():parser.error('--after-queue must be an existing status.json')
     args.output.mkdir(parents=True, exist_ok=False)
     status = dict(status='running',pid=os.getpid(),gpu=args.gpu,planned=args.profiles,completed=[],
@@ -79,6 +86,12 @@ def main():
                      '--target',str(args.target),'--output',str(run/'artifacts'),'--adapt-epochs',str(args.epochs),
                      '--steps',str(args.steps),'--batch-size','4']
             if profile.startswith('domain_'):command+=['--abo',str(args.abo),'--pool',str(args.pool)]
+            if profile=='build_teacher_cache':
+                command=[sys.executable,'-u','-m','LightGenV2.tasks.t07_abo_image_retrieval.standalone.teacher_relations',
+                    '--target',str(args.target),'--abo',str(args.abo),'--pool',str(args.pool),'--model',str(args.teacher_model),
+                    '--output',str(run/'artifacts')]
+            elif profile.startswith('domain_distill_'):
+                command+=['--teacher-cache',str(args.teacher_cache)]
             env=dict(os.environ,CUDA_VISIBLE_DEVICES=args.gpu,HF_HUB_OFFLINE='1',TRANSFORMERS_OFFLINE='1',OMP_NUM_THREADS='4',MKL_NUM_THREADS='4')
             with (run/'console.log').open('w',encoding='utf-8') as log:
                 child=subprocess.Popen(command,stdout=log,stderr=subprocess.STDOUT,env=env)
@@ -88,9 +101,14 @@ def main():
                 if child.returncode:
                     raise RuntimeError(f'{profile} failed with exit code {child.returncode}; inspect {run}/console.log')
             report=json.loads((run/'artifacts/final_report.json').read_text(encoding='utf-8'))
-            status['completed'].append(dict(profile=profile,hit1=report['metrics']['hit_at_1'],
-                removed_hit1=report['remove_optical_same_weights']['hit_at_1'],epoch=report['selected_epoch'],
-                alpha=report['model_audit']['alpha']))
+            if profile=='build_teacher_cache':
+                args.teacher_cache=run/'artifacts/cache.pt'
+                status['completed'].append(dict(profile=profile,cache=str(args.teacher_cache),cache_sha256=report['cache_sha256'],
+                    training_images=report['training_images'],teacher_trainable_parameters=report['teacher_trainable_parameters']))
+            else:
+                status['completed'].append(dict(profile=profile,hit1=report['metrics']['hit_at_1'],
+                    removed_hit1=report['remove_optical_same_weights']['hit_at_1'],epoch=report['selected_epoch'],
+                    alpha=report['model_audit']['alpha']))
             released_pid=child.pid
             live_gpu_processes=subprocess.check_output(['nvidia-smi','--query-compute-apps=pid,gpu_uuid,used_memory','--format=csv,noheader'],text=True)
             if any(line.split(',')[0].strip()==str(released_pid) for line in live_gpu_processes.splitlines()):

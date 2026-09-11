@@ -1,0 +1,14 @@
+{
+  "common": {
+    "adapt": {"epochs": 24, "steps": 128},
+    "view_consistency_weight": 0.0,
+    "relation_teacher_weight": 0.10,
+    "relation_teacher_warmup_epochs": 3,
+    "relation_teacher_temperature": 0.10,
+    "protocol": "Training-only confidence-gated frozen Qwen2048 relations over training product centroids. Teacher never enters student inference. Reject target/pool/order mismatch; val/test images excluded from teacher cache. Same optical contract, input head and 64D readout."
+  },
+  "profiles": {
+    "domain_distill_light": {"relation_teacher_weight": 0.10},
+    "domain_distill_strong": {"relation_teacher_weight": 0.30}
+  }
+}
