@@ -796,6 +796,8 @@ def train(
                 "serial_router_diversity",
                 "router_capture",
                 "phase_smoothness",
+                "paired_view_supervision",
+                "paired_view_consistency",
             )
         }
         batches = 0
@@ -920,6 +922,45 @@ def train(
             phase_smoothness = result["normalized_prediction"].new_zeros(())
             if settings.phase_smoothness_weight > 0.0:
                 phase_smoothness = _phase_smoothness_loss(model)
+            paired_view_supervision = result["normalized_prediction"].new_zeros(())
+            paired_view_consistency = paired_view_supervision.clone()
+            if "paired_vision_tokens" in batch:
+                paired_result = model(
+                    batch["paired_vision_tokens"].to(device, non_blocking=True),
+                    batch["paired_quality_tokens"].to(device, non_blocking=True),
+                    language,
+                    language_mask,
+                    batch.get("paired_raw_frames", None).to(device, non_blocking=True)
+                    if "paired_raw_frames" in batch
+                    else None,
+                    optical_enabled=True,
+                )
+                paired_prediction = paired_result["normalized_prediction"]
+                paired_regression = F.smooth_l1_loss(
+                    paired_prediction, normalized_target
+                )
+                paired_ranking = pairwise_ranking_loss(
+                    paired_prediction, normalized_target
+                )
+                paired_correlation = batch_correlation_loss(
+                    paired_prediction, normalized_target
+                )
+                paired_soft_spearman = paired_prediction.new_zeros(())
+                if curriculum["soft_spearman_weight"] > 0.0:
+                    paired_soft_spearman = soft_spearman_loss(
+                        paired_prediction,
+                        normalized_target,
+                        settings.soft_rank_temperature,
+                    )
+                paired_view_supervision = (
+                    settings.regression_weight * paired_regression
+                    + curriculum["ranking_weight"] * paired_ranking
+                    + curriculum["correlation_weight"] * paired_correlation
+                    + curriculum["soft_spearman_weight"] * paired_soft_spearman
+                )
+                paired_view_consistency = F.smooth_l1_loss(
+                    paired_prediction, result["normalized_prediction"]
+                )
             loss = (
                 settings.regression_weight * regression
                 + curriculum["ranking_weight"] * ranking
@@ -938,6 +979,10 @@ def train(
                 + curriculum["serial_router_diversity_weight"] * serial_router_diversity
                 + settings.router_capture_weight * result["router_capture_loss"]
                 + settings.phase_smoothness_weight * phase_smoothness
+                + settings.paired_view_supervision_weight
+                * paired_view_supervision
+                + settings.paired_view_consistency_weight
+                * paired_view_consistency
             )
             if not bool(torch.isfinite(loss)):
                 raise RuntimeError("Non-finite training loss")
@@ -982,6 +1027,8 @@ def train(
                 "serial_router_diversity": serial_router_diversity,
                 "router_capture": result["router_capture_loss"],
                 "phase_smoothness": phase_smoothness,
+                "paired_view_supervision": paired_view_supervision,
+                "paired_view_consistency": paired_view_consistency,
             }
             for name, value in values.items():
                 totals[name] += float(value.detach())

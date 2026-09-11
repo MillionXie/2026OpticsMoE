@@ -643,6 +643,10 @@ def load_single_metric_cache(settings: ExperimentSettings) -> dict[str, Any]:
         "vision_cache_view_paths": [str(path) for path in vision_view_paths],
         "frame_sampling_offsets": frame_sampling_offsets,
         "training_view_probabilities": settings.training_view_probabilities,
+        "paired_training_views": bool(
+            settings.paired_view_supervision_weight > 0.0
+            or settings.paired_view_consistency_weight > 0.0
+        ),
         "language_cache_path": str(settings.language_cache_path),
         "qwen_front_identity": front_identity,
     }
@@ -871,6 +875,23 @@ class LGVQSingleMetricDataset(Dataset[dict[str, Any]]):
                 )
             raw_view_index = view_index if len(raw_views) > 1 else 0
             item["raw_frames"] = raw_views[raw_view_index][source]
+        if (
+            self.split == "train"
+            and bool(self.payload.get("paired_training_views", False))
+        ):
+            if len(vision_views) < 2:
+                raise RuntimeError("Paired-view training requires multiple views")
+            candidates = [value for value in range(len(vision_views)) if value != view_index]
+            paired_index = candidates[int(torch.randint(len(candidates), ()).item())]
+            item["paired_vision_tokens"] = vision_views[paired_index][source].float()
+            item["paired_quality_tokens"] = quality_views[paired_index][source].float()
+            item["paired_sampling_view_index"] = paired_index
+            if "raw_frames" in self.payload:
+                raw_views = self.payload.get(
+                    "raw_frame_views", (self.payload["raw_frames"],)
+                )
+                raw_index = paired_index if len(raw_views) > 1 else 0
+                item["paired_raw_frames"] = raw_views[raw_index][source]
         if "vgg_tokens" in self.payload:
             item["vgg_tokens"] = self.payload["vgg_tokens"][source].float()
         if "resnet_tokens" in self.payload:

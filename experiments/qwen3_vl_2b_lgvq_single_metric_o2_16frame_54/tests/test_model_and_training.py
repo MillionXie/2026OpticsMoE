@@ -1365,3 +1365,38 @@ def test_sampling_view_selects_matching_raw_frames(monkeypatch) -> None:
     assert torch.count_nonzero(item["vision_tokens"] == 1) == 4
     assert torch.count_nonzero(item["quality_tokens"] == 1) == 4
     assert torch.count_nonzero(item["raw_frames"] == 1) == item["raw_frames"].numel()
+
+
+def test_paired_sampling_view_is_distinct_and_atomically_aligned(monkeypatch) -> None:
+    views = tuple(torch.full((2, 4, 1, 1), value) for value in range(3))
+    raw_views = tuple(
+        torch.full((2, 4, 3, 8, 8), value, dtype=torch.uint8)
+        for value in range(3)
+    )
+    payload = {
+        "vision_tokens": views[0],
+        "quality_tokens": views[0],
+        "vision_token_views": views,
+        "quality_token_views": views,
+        "raw_frames": raw_views[0],
+        "raw_frame_views": raw_views,
+        "language_tokens": torch.zeros(1, 1, 1),
+        "language_mask": torch.ones(1, 1, dtype=torch.bool),
+        "input_ids": torch.zeros(1, 1, dtype=torch.long),
+        "targets": torch.zeros(2),
+        "sample_ids": ["a", "b"],
+        "video_paths": ["a.mp4", "b.mp4"],
+        "splits": ["train", "test"],
+        "target_name": "spatial",
+        "training_view_probabilities": (1.0, 0.0, 0.0),
+        "paired_training_views": True,
+    }
+    monkeypatch.setattr(torch, "randint", lambda *args, **kwargs: torch.tensor(1))
+    item = LGVQSingleMetricDataset(payload, "train")[0]
+    assert item["sampling_view_index"] == 0
+    assert item["paired_sampling_view_index"] == 2
+    assert bool(torch.all(item["paired_vision_tokens"] == 2))
+    assert bool(torch.all(item["paired_quality_tokens"] == 2))
+    assert bool(torch.all(item["paired_raw_frames"] == 2))
+    test_item = LGVQSingleMetricDataset(payload, "test")[0]
+    assert "paired_vision_tokens" not in test_item
