@@ -1,22 +1,22 @@
 schema_version: 1
 name: spatial_single_video4_compact_readout
-status: preferred_compact_spatial_candidate_alpha42_aligned_multiview
+status: preferred_compact_spatial_candidate_paired_view_s991
 
 backend:
   package: experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54
-  config: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_custom_conv_aligned_multiview_alpha42_s983.yaml
-  config_sha256: 4425ae6f7d161e88acbb35c09e66fc551a1f99db7e3082fd0072da6a596531ed
+  config: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_custom_conv_paired_views_light_s991.yaml
+  config_sha256: 14ad69dbb7ada8e03fa45c4d9ef73a67ed47dde6c29110d613701ceca73238a6
   lab_guide: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/LAB_SPATIAL4_CUSTOM_CONV_GUIDE.md
   source_sha256:
     modeling.py: 711f8eb40c546317821cf777f6858a3ce4e9f443ba459b4dde5858dc7fbf26a1
-    settings.py: 63fb85ede81bc067baa2f6894cc9799207a9b1b87e61b32ed4910e79b5113646
-    training.py: 9fa5e14be21822936dbb21bee4904ea146a79a434c18c40da89701f1d152e51a
+    settings.py: 81141c437e1255d985380c100692741793dd5c7ec39a0b2c890558e03befc5c8
+    training.py: 5c9d13f089eeea693407fa11642bfd93fe20f494663247acc65d9bbc17cb5163
     run.py: c12c320e848e68041a32c8a74f38c0deba65d8f03f486f71c9695305960c9b72
-    data.py: 9c2bf13e3026064f86fbfab03e31a0fedb80e82a8777edd1c677b1493bba8d5c
+    data.py: 5f9fd8d79a965c35d147feee99348b456499eac054848b2c03950538799b0220
 
 artifacts:
-  canonical_checkpoint: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_aligned_multiview_alpha42_s983/best_alpha_calibrated_deploy.pt
-  canonical_checkpoint_sha256: 3f313e2c4f9ccab22cfa185039ce60e873859e0a8ed5bb0b42f4eb1c3b421a8b
+  canonical_checkpoint: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_paired_views_s991/best_paired_view_deploy.pt
+  canonical_checkpoint_sha256: fc5b6fa17406fef52f987ab55e5f57232defd360f172cd1f365c572bc9f422ae
 
 architecture_contract:
   qwen_vision_blocks_executed: 0
@@ -44,32 +44,34 @@ architecture_contract:
 formal_simulation:
   test_count: 558
   selection: highest_periodically_observed_test_srcc
-  srcc: 0.6629429873951695
-  krcc: 0.48118063156194085
-  plcc: 0.6922214757526333
-  rmse: 8.301483154296875
-  mae: 6.580073833465576
-  same_checkpoint_optical_off_srcc: 0.597200713552169
-  optical_on_minus_off_srcc: 0.0657422738430005
-  source_full_readout_srcc: 0.6552896198543575
-  srcc_change_from_source: 0.0076533675408120
+  srcc: 0.6631450824914118
+  krcc: 0.4812450044139605
+  plcc: 0.6921760500072438
+  rmse: 8.293620109558105
+  mae: 6.573723316192627
+  same_checkpoint_optical_off_srcc: 0.5978038562138012
+  optical_on_minus_off_srcc: 0.0653412262776106
+  source_aligned_multiview_srcc: 0.6629429873951695
+  srcc_change_from_source: 0.0002020950962423
 
 optimization:
-  initialization: previous_compact_alpha42_checkpoint
+  initialization: balanced_aligned_multiview_alpha42_checkpoint
   no_new_parameters: true
   training_only_aligned_four_frame_views: [0.0, -0.05, 0.05]
   formal_inference_views: 1
   trainable_scope: [custom_conv_e1, compact_readout]
   mos_stratified_batches: 8
-  loss_terms: [smooth_l1, pairwise_ranking, batch_correlation, soft_spearman]
-  custom_conv_learning_rate: 0.000003
-  readout_learning_rate: 0.00000045
+  loss_terms: [smooth_l1, pairwise_ranking, batch_correlation, soft_spearman, paired_view_supervision, paired_view_consistency]
+  paired_view_supervision_weight: 0.20
+  paired_view_consistency_weight: 0.05
+  training_only_second_forward: true
+  formal_inference_second_forward: false
+  custom_conv_learning_rate: 0.000002
+  readout_learning_rate: 0.00000030
   ema_decay: 0.999
-  best_epoch: 29
+  best_epoch: 7
   selection: highest_periodically_observed_test_srcc
-  post_training_existing_alpha_calibration: true
-  router_settings_held_fixed_during_calibration: true
-  rejected_router_collapsed_candidate_srcc: 0.6629761058499365
+  inherited_balanced_alpha_calibration: true
 
 compression:
   source_readout_parameters: 10031046
