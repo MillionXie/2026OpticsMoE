@@ -24,7 +24,7 @@ from .io import inputs,picture,sha256,verify_assets,write_json,source_commit
 from .cli import autocast,encode,evaluate,supcon,regularization,preview
 from .curriculum import parameter_kind
 from .prepare_broad_abo import safe_image
-from .generalization import PROFILES, overlay_config, apply_contract, backward_with_sam, parameter_decay
+from .generalization import PROFILES, overlay_config, apply_contract, backward_with_sam, parameter_decay, restore_auxiliary_head
 from .learning_curves import write_learning_curves
 from .domain_data import combine_training, epoch_batches, paired_view_indices, view_consistency_loss
 
@@ -128,12 +128,16 @@ def run_stage(args,stage,output,initial_checkpoint=None):
             raise ValueError('Retrieval continuation must start from a strictly high-alpha checkpoint')
         if high:payload=convert_payload(payload,cfg_all)
         if general:payload=apply_contract(payload,cfg_all)
+        auxiliary_payload={k:payload.get(k) for k in ('auxiliary_training_head','auxiliary_head_not_used_at_inference','selection_variant')} if cfg_all.get('restore_auxiliary_source_sha256') else None
         model=OpticalRetrieval(payload['metadata']);model.load_state_dict(payload['state_dict'],strict=True);del payload
         model.to(device)
         from transformers import AutoProcessor
         processor=AutoProcessor.from_pretrained(str(args.assets/'processor'),local_files_only=True)
         head=CategoryProxies(len(groups)).to(device)
         if high:head.optical=optical_heads(len(groups)).to(device)
+        if auxiliary_payload is not None:
+            restore_auxiliary_head(head,auxiliary_payload,sha256(start),cfg_all['restore_auxiliary_source_sha256'])
+        del auxiliary_payload
         trainables=[(n,p) for n,p in model.named_parameters() if p.requires_grad]
         initial={n:p.detach().cpu().clone() for n,p in trainables}
         optgroups=[]
@@ -155,7 +159,8 @@ def run_stage(args,stage,output,initial_checkpoint=None):
             initial_checkpoint_sha256=sha256(start),accepted_checkpoint_sha256=sha256(start if general else origin),
             target_manifest_sha256=sha256(args.target/'data/abo_similarity10_manifest.csv'),
             pool_manifest_sha256=sha256(args.pool/'manifest.csv') if args.pool else None,
-            stage=stage,profile=getattr(args,'profile','original'),config=cfg,common_config=cfg_all,model_audit=model.audit())
+            stage=stage,profile=getattr(args,'profile','original'),config=cfg,common_config=cfg_all,model_audit=model.audit(),
+            auxiliary_initialization='restored_pinned_live_checkpoint' if cfg_all.get('restore_auxiliary_source_sha256') else 'fresh_random')
         if domain:
             execution['data_expansion']=dict(pool_report=pool_report,original_train_images=target_count,
                 external_images=len(samples)-target_count,train_products=len({s.product_id for s in samples}),

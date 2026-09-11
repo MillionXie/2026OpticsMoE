@@ -5,7 +5,7 @@ import pytest
 import torch
 from LightGenV2.tasks.t07_abo_image_retrieval.standalone.data import Sample
 from LightGenV2.tasks.t07_abo_image_retrieval.standalone.io import sha256
-from LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization import overlay_config
+from LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization import overlay_config,restore_auxiliary_head
 from LightGenV2.tasks.t07_abo_image_retrieval.standalone.teacher_relations import load_teacher_cache,gallery_relation_loss
 
 
@@ -67,3 +67,19 @@ def test_distillation_profiles_change_training_only():
     assert c['relation_teacher_weight']==.6
     c['relation_teacher_weight']=.1
     assert c==a
+
+
+def test_auxiliary_restore_is_pinned_strict_and_training_only():
+    head=torch.nn.Linear(3,2)
+    state={k:torch.ones_like(v) for k,v in head.state_dict().items()}
+    payload=dict(selection_variant='live',auxiliary_head_not_used_at_inference=True,auxiliary_training_head=state)
+    before=copy.deepcopy(head.state_dict())
+    with pytest.raises(ValueError):restore_auxiliary_head(head,payload,'wrong','expected')
+    assert all(torch.equal(v,before[k]) for k,v in head.state_dict().items())
+    with pytest.raises(ValueError):restore_auxiliary_head(head,dict(payload,selection_variant='ema'),'expected','expected')
+    with pytest.raises(ValueError):restore_auxiliary_head(head,dict(payload,auxiliary_head_not_used_at_inference=False),'expected','expected')
+    with pytest.raises(ValueError):restore_auxiliary_head(head,dict(payload,auxiliary_training_head={'weight':torch.ones(2,3)}),'expected','expected')
+    restore_auxiliary_head(head,payload,'expected','expected')
+    assert all(torch.equal(v,state[k]) for k,v in head.state_dict().items())
+    a=overlay_config({},'domain_distill_strong');b=overlay_config({},'domain_distill_resumeaux')
+    assert len(b.pop('restore_auxiliary_source_sha256'))==64 and a==b

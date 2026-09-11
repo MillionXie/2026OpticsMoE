@@ -13,7 +13,27 @@ import torch
 PROFILES = ('preserve_adam', 'preserve_sam', 'preserve_fullfield_sam', 'preserve_fullfield_both_sam',
             'regularized_control', 'regularized_phase05', 'domain_mixed', 'domain_curriculum', 'domain_target_control',
             'domain_refine_control', 'domain_refine_wide', 'domain_refine_views',
-            'domain_distill_light', 'domain_distill_strong', 'domain_distill_stronger')
+            'domain_distill_light', 'domain_distill_strong', 'domain_distill_stronger', 'domain_distill_resumeaux')
+
+
+def restore_auxiliary_head(head, payload, actual_sha256, expected_sha256):
+    """Restore training-only heads from one audited same-label live checkpoint.
+
+    EMA student snapshots can contain a live auxiliary head from another step,
+    so this control deliberately accepts only the pinned live starting point.
+    No optimizer state is resumed and no head is attached to student inference.
+    """
+    if not expected_sha256 or actual_sha256 != expected_sha256:
+        raise ValueError('Auxiliary continuation requires the pinned same-label checkpoint')
+    if payload.get('selection_variant') != 'live' or payload.get('auxiliary_head_not_used_at_inference') is not True:
+        raise ValueError('Auxiliary continuation requires a live training-only head')
+    state=payload.get('auxiliary_training_head')
+    expected=head.state_dict()
+    if not isinstance(state,dict) or state.keys()!=expected.keys():
+        raise ValueError('Auxiliary head keys changed')
+    if any(state[k].shape!=expected[k].shape or not torch.isfinite(state[k]).all() for k in expected):
+        raise ValueError('Auxiliary head shapes or values invalid')
+    head.load_state_dict(state,strict=True)
 
 
 def overlay_config(config, profile):

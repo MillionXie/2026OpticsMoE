@@ -391,3 +391,32 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
   --profiles domain_distill_stronger --epochs 24 --steps 128 \
   --output "$T07/runs/simulation/domain_distillation_stronger_20260912_gpu2"
 ```
+
+## 15. 续训时恢复训练辅助头（不是新推理网络）
+
+沿用第13、14节变量。BEST必须是75.2083% live起点，不能替换成EMA best；程序核对固定SHA。
+与0.3 strong相比只恢复其已保存的训练辅助头，其他配置和学生初始参数相同，优化器仍全新。
+先等GPU4现有任务成功结束，再检查恢复/前向/反向/最终复评；不占用第四张卡。
+
+```bash
+T07_GPU=GPU-1b963983-7909-af6e-0528-f0f0661ab549
+AUX_SMOKE=$T07/runs/smoke/domain_resumeaux_20260912_gpu4
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu "$T07_GPU" --assets "$ASSETS" --checkpoint "$BEST" --target "$TARGET" \
+  --abo "$ABO" --pool "$POOL" \
+  --teacher-cache "$KD_SMOKE/build_teacher_cache/artifacts/cache.pt" \
+  --profiles domain_distill_resumeaux --epochs 1 --steps 1 --output "$AUX_SMOKE" \
+  --after-queue "$T07/runs/simulation/domain_refine_views_20260912/status.json"
+
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu "$T07_GPU" --assets "$ASSETS" --checkpoint "$BEST" --target "$TARGET" \
+  --abo "$ABO" --pool "$POOL" \
+  --teacher-cache "$KD_SMOKE/build_teacher_cache/artifacts/cache.pt" \
+  --profiles domain_distill_resumeaux --epochs 24 --steps 128 \
+  --output "$T07/runs/simulation/domain_resumeaux_20260912_gpu4" \
+  --after-queue "$AUX_SMOKE/status.json"
+```
+
+恢复只涉及checkpoint中的`auxiliary_training_head`，不新增模型层，部署不需要该辅助头。
+`execution.auxiliary_initialization`应为`restored_pinned_live_checkpoint`；旧对照为`fresh_random`。
+原1轮检查不能当作正式训练提升，正式组依然从BEST独立开始。
