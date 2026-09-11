@@ -1,0 +1,11 @@
+base_config: spatial_custom_conv_paired_opposite_flip100_s1193.yaml
+output_dir: ../../runs/lgvq_spatial_custom_conv_paired_opposite_flip_dropout18_s1201
+random_seed: 1201
+
+# Combine the two independently useful training-only regularizers.  Dropout is
+# disabled at evaluation, and opposite reflection reuses the paired forward.
+model:
+  dropout: 0.18
+
+training:
+  epochs: 50
