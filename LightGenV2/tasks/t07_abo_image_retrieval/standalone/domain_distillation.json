@@ -11,6 +11,16 @@
     "domain_distill_light": {"relation_teacher_weight": 0.10},
     "domain_distill_strong": {"relation_teacher_weight": 0.30},
     "domain_distill_stronger": {"relation_teacher_weight": 0.60},
+    "domain_distill_teacher_first": {
+      "relation_teacher_weight": 0.0,
+      "teacher_feature_weight": 2.0,
+      "teacher_feature_warmup_epochs": 1,
+      "supervised_warmup_epochs": 4,
+      "supervised_recovery_epochs": 4,
+      "supervised_warmup_scale": 0.2,
+      "test_every": 1,
+      "protocol": "Continue verified77.9167% linear-head best on full cap250 pool. Training-only aligned teacher cosine weight2, correctness gate retained. First4 epochs multiply final proxy CE, SupCon and gallery NLL/margin by0.2; recover0.4/0.6/0.8/1 overepochs5-8. Optical auxiliary and physical regularizers retain their weights. Test live/EMA each epoch, best/last only, explicit test-selected. No new inference layers or optical changes; original480-query/120-gallery, Top2, alpha>0.4. Combined curriculum optimization, not an isolated loss-weight ablation."
+    },
     "domain_distill_feature_mlp": {
       "relation_teacher_weight": 0.0,
       "teacher_feature_weight": 0.5,

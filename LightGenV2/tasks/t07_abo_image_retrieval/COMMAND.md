@@ -1,6 +1,10 @@
 # T07 独立工程：日常操作顺序
 
-以下从本任务文件夹或解压后的工程根目录执行。**不需要2026OpticsMoE、T01、experiments、完整Qwen权重或网络访问。**
+**先选目的，不要把所有章节顺序执行。**第1–4节是旧独立交付包操作；当前最佳固定权重复评用第20节。
+第5节以后保留历史优化对照；最新服务器训练候选为第23–25节，各自独立，不需要重跑前面的所有实验。
+带`LightGenV2.tasks...`的服务器命令必须从2026OpticsMoE仓库根目录执行，并使用指定Git版本与训练资产。
+
+第1–4节从本任务文件夹或解压后的工程根目录执行。**旧独立包运行不需要2026OpticsMoE、T01、experiments、完整Qwen权重或网络访问。**
 当前支持固定ABO检索指令、一张224×224商品图；不是任意prompt的大模型服务。
 
 ## 1. 环境与文件
@@ -686,3 +690,34 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 ```
 
 勿把这个串联读出MLP与光学编码/CCD后处理混淆；相位大小、SLM布局、传播距离和六次捕获均未改。
+
+## 25. 教师优先、逐步恢复GT的训练课程
+
+从已核验77.9167%线性头权重出发。教师特征系数2；最终GT损失前4轮乘0.2，5–8轮恢复到1。
+光学辅助分类/物理正则保持原系数，所有原GT标签保留。无新增推理模块、无新光路。
+每轮live/EMA测试选best；属于test-selected，不是独立无偏测试。检查后正式16轮独立重启同一起点。
+
+```bash
+T07=LightGenV2/tasks/t07_abo_image_retrieval
+ASSETS=$T07/runs/simulation/standalone_assets_20260910
+TARGET=/DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data
+ABO=/DATA/DATA1/guest3/2026OpticsMoE/data/abo
+TEACHER_FIRST_BEST=$T07/runs/smoke/domain_aligned_feature_20260912_gpu1/domain_distill_aligned_feature/artifacts/best.pt
+TEACHER_FIRST_CACHE=$T07/runs/smoke/domain_distillation_20260912/build_teacher_cache/artifacts/cache.pt
+TEACHER_FIRST_SMOKE=$T07/runs/smoke/domain_teacher_first_20260912_gpu4
+POOL=$T07/runs/simulation/domain_pool250_20260912
+T07_GPU=GPU-1b963983-7909-af6e-0528-f0f0661ab549
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu "$T07_GPU" --assets "$ASSETS" --checkpoint "$TEACHER_FIRST_BEST" --target "$TARGET" \
+  --abo "$ABO" --pool "$POOL" --teacher-cache "$TEACHER_FIRST_CACHE" \
+  --profiles domain_distill_teacher_first --epochs 1 --steps 1 --output "$TEACHER_FIRST_SMOKE" \
+  --after-queue "$T07/runs/simulation/domain_teacher_agreement_20260912_gpu4/status.json"
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu "$T07_GPU" --assets "$ASSETS" --checkpoint "$TEACHER_FIRST_BEST" --target "$TARGET" \
+  --abo "$ABO" --pool "$POOL" --teacher-cache "$TEACHER_FIRST_CACHE" \
+  --profiles domain_distill_teacher_first --epochs 16 --steps 128 \
+  --output "$T07/runs/simulation/domain_teacher_first_20260912_gpu4" \
+  --after-queue "$TEACHER_FIRST_SMOKE/status.json"
+```
+
+history记录实际`supervised_loss_scale`与`teacher_feature_weight`，不只记录原始loss值。

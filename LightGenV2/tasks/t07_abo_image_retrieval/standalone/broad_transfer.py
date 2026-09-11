@@ -24,7 +24,7 @@ from .io import inputs,picture,sha256,verify_assets,write_json,source_commit
 from .cli import autocast,encode,evaluate,supcon,regularization,preview
 from .curriculum import parameter_kind
 from .prepare_broad_abo import safe_image
-from .generalization import PROFILES, overlay_config, apply_contract, backward_with_sam, parameter_decay, restore_auxiliary_head, initialize_category_proxies
+from .generalization import PROFILES, overlay_config, apply_contract, backward_with_sam, parameter_decay, restore_auxiliary_head, initialize_category_proxies, supervised_loss_scale
 from .learning_curves import write_learning_curves
 from .domain_data import combine_training, epoch_batches, paired_view_indices, view_consistency_loss
 
@@ -256,6 +256,7 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                 g['lr']=0. if frozen else g['initial_lr']*scale
             totals=dict(loss=0.,ce=0.,supcon=0.,correct=0.,optical_auxiliary=0.,gallery_nll=0.,gallery_margin=0.,train_gallery_hit1=0.,sam_loss_gap=0.,view_consistency=0.,relation_kd=0.,teacher_correct_fraction=0.,teacher_confidence=0.,aligned_feature_kd=0.,feature_teacher_correct_fraction=0.);seen=set();paired_seen=set();clean_batches=0
             feature_weight=cfg_all.get('teacher_feature_weight',0.)*min(1.,epoch/max(1,cfg_all.get('teacher_feature_warmup_epochs',3)))
+            gt_scale=supervised_loss_scale(epoch,cfg_all)
             view_weight=cfg_all.get('view_consistency_weight',0.)*min(1.,epoch/max(1,cfg_all.get('view_consistency_warmup_epochs',1)))
             teacher_weight=cfg_all.get('relation_teacher_weight',0.)*min(1.,epoch/max(1,cfg_all.get('relation_teacher_warmup_epochs',1)))
             pair_rng=random.Random(19042+epoch)
@@ -294,14 +295,14 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                         z=model(batch);logits=head(z)
                         ce=F.cross_entropy(logits,labels[indices],label_smoothing=.05)
                         con=supcon(z,labels[indices])
-                        loss=cfg.get('proxy_ce_weight',1.)*ce+cfg['supcon_weight']*con+cfg_all['regularization_weight']*regularization(model)
+                        loss=(gt_scale*cfg.get('proxy_ce_weight',1.))*ce+(gt_scale*cfg['supcon_weight'])*con+cfg_all['regularization_weight']*regularization(model)
                         optical_aux=optical_classification_loss(model,head.optical,labels[indices]) if high else z.new_zeros(())
                         if high:loss=loss+cfg['optical_auxiliary_weight']*optical_aux
                         result=dict(ce=ce.detach(),supcon=con.detach(),correct=logits.argmax(-1).eq(labels[indices]).float().mean().detach(),optical_auxiliary=optical_aux.detach())
                         if rank:
                             nll,margin,hit=gallery_loss(z,labels[indices],product_ids[indices],bank,bank_labels,
                                 class_balance=cfg_all.get('gallery_class_balance',False))
-                            loss=loss+cfg['gallery_nll_weight']*nll+cfg['gallery_margin_weight']*margin
+                            loss=loss+(gt_scale*cfg['gallery_nll_weight'])*nll+(gt_scale*cfg['gallery_margin_weight'])*margin
                             result.update(gallery_nll=nll.detach(),gallery_margin=margin.detach(),train_gallery_hit1=hit.detach())
                         if teacher_vectors is not None and teacher_weight:
                             kd,kd_audit=gallery_relation_loss(z,product_ids[indices],labels[indices],bank,bank_labels,
@@ -340,7 +341,7 @@ def run_stage(args,stage,output,initial_checkpoint=None):
             if high and not all(.4<a<=.8 for values in model.audit()['alpha'].values() for a in values):
                 raise RuntimeError('Strict high-alpha contract violated')
             row=dict(epoch=epoch,stage=stage,optical_warmup=warm,readout_polish=polish,losses={k:v/epoch_steps for k,v in totals.items()},
-                     unique_images=len(seen),paired_unique_images=len(paired_seen),view_consistency_weight=view_weight,relation_teacher_weight=teacher_weight,teacher_feature_weight=feature_weight,
+                     unique_images=len(seen),paired_unique_images=len(paired_seen),view_consistency_weight=view_weight,relation_teacher_weight=teacher_weight,teacher_feature_weight=feature_weight,supervised_loss_scale=gt_scale,
                      clean_batches=clean_batches,alpha=model.audit()['alpha'],sam_rho=rho,sam_rho_target=cfg_all.get('sam_rho',0.),
                      router_selected_fraction={m:(c/(epoch_steps*cfg['classes_per_batch']*cfg['products_per_class'])).cpu().tolist() for m,c in counts.items()})
             if domain:

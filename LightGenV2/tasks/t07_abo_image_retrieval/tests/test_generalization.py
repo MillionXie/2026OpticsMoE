@@ -12,6 +12,20 @@ from LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue im
 
 
 class GeneralizationTests(unittest.TestCase):
+    def test_teacher_first_curriculum_restores_supervision_and_old_defaults(self):
+        from LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization import supervised_loss_scale
+        for epoch in range(1,20):self.assertEqual(supervised_loss_scale(epoch,{}),1.)
+        cfg=overlay_config({'adapt':{},'augmentation':{}},'domain_distill_teacher_first')
+        expected=[.2,.2,.2,.2,.4,.6,.8,1.,1.]
+        for epoch,value in enumerate(expected,1):self.assertAlmostEqual(supervised_loss_scale(epoch,cfg),value)
+        self.assertEqual(cfg['teacher_feature_weight'],2.)
+        self.assertEqual(cfg['test_every'],1)
+        self.assertNotIn('retrieval_head',cfg)
+        self.assertNotIn('electronic_context_kernels',cfg)
+        for patch in ({'supervised_warmup_epochs':-1},{'supervised_recovery_epochs':1.5},
+                      {'supervised_warmup_scale':0},{'supervised_warmup_scale':float('nan')}):
+            with self.assertRaises(ValueError):supervised_loss_scale(1,patch)
+
     def test_electronic_kernel_expansion_preserves_function_and_optics(self):
         from LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization import expand_electronic_context
         from LightGenV2.tasks.t07_abo_image_retrieval.standalone.model import Residual

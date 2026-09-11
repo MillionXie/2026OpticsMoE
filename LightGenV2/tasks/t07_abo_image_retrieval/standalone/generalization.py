@@ -13,7 +13,24 @@ import torch
 PROFILES = ('preserve_adam', 'preserve_sam', 'preserve_fullfield_sam', 'preserve_fullfield_both_sam',
             'regularized_control', 'regularized_phase05', 'domain_mixed', 'domain_curriculum', 'domain_target_control',
             'domain_refine_control', 'domain_refine_wide', 'domain_refine_views', 'domain_refine_pool500_mix13', 'domain_refine_context7', 'domain_refine_balanced',
-            'domain_distill_light', 'domain_distill_strong', 'domain_distill_stronger', 'domain_distill_resumeaux', 'domain_distill_resumeaux_full', 'domain_distill_sharpteacher', 'domain_distill_teacher_agreement', 'domain_distill_aligned_feature', 'domain_distill_feature_mlp')
+            'domain_distill_light', 'domain_distill_strong', 'domain_distill_stronger', 'domain_distill_resumeaux', 'domain_distill_resumeaux_full', 'domain_distill_sharpteacher', 'domain_distill_teacher_agreement', 'domain_distill_aligned_feature', 'domain_distill_feature_mlp', 'domain_distill_teacher_first')
+
+
+def supervised_loss_scale(epoch, config):
+    """Optional teacher-first curriculum for final GT losses, never inference.
+
+    Original profiles return exactly1. Optical auxiliary/physical regularizers
+    remain outside this scale; GT is reduced, never removed or relabelled.
+    """
+    warm=config.get('supervised_warmup_epochs',0)
+    recovery=config.get('supervised_recovery_epochs',0)
+    floor=config.get('supervised_warmup_scale',1.)
+    if type(epoch) is not int or epoch<1 or any(type(n) is not int or n<0 for n in (warm,recovery)):
+        raise ValueError('Invalid supervised curriculum epoch schedule')
+    if not math.isfinite(floor) or not 0<floor<=1:
+        raise ValueError('Supervised curriculum scale must be in (0,1]')
+    if epoch<=warm:return float(floor)
+    return float(floor+(1-floor)*min(1.,(epoch-warm)/recovery)) if recovery else 1.
 
 
 def initialize_category_proxies(head, features, labels, preserve_restored=False):
