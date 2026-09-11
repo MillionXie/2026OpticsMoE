@@ -116,7 +116,8 @@ class Camera:
         if not 0<size.value<16*1024*1024:raise SDKError('Invalid XML size')
         buf=C.create_string_buffer(size.value)
         self.check(self.dll.scap_get_xml(self.handle,level,buf,C.byref(size)),'read XML')
-        return bytes(buf[:size.value]).rstrip(b'\0')
+        # ZIP end-of-central-directory ends in NUL bytes: never rstrip it.
+        return bytes(buf[:size.value])
 
     def close(self):
         if self.streaming:

@@ -26,6 +26,7 @@ def main():
                 continue
             if raw.startswith(b'PK'):
                 with zipfile.ZipFile(io.BytesIO(raw)) as z:raw=z.read(next(n for n in z.namelist() if n.lower().endswith('.xml')))
+            raw=raw.rstrip(b'\0')
             (out/(label+'.xml')).write_bytes(raw)
             tree=ET.fromstring(raw);nodes=[];values={}
             for el in tree.iter():
