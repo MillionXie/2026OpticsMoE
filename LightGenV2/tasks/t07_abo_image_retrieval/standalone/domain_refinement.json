@@ -17,6 +17,11 @@
     "domain_refine_control": {"expected_pool_products_per_category": 100},
     "domain_refine_wide": {"expected_pool_products_per_category": 250},
     "domain_refine_views": {"expected_pool_products_per_category": 250, "view_consistency_weight": 0.15},
+    "domain_refine_context7": {
+      "expected_pool_products_per_category": 250,
+      "electronic_context_kernels": {"vision": 7, "language": 5},
+      "protocol": "Continue verified76.25% best on cap250 pool, same training as wide. Only existing two V electronic depthwise kernels enlarge3x3 to7x7 (15360 parameters); centered zero initialization preserves source function. No new branch, attention, Transformer or teacher; language, readout, physical optics, Top2 and alpha>0.4 unchanged. Original480-query/120-gallery evaluation."
+    },
     "domain_refine_pool500_mix13": {
       "expected_pool_products_per_category": 500,
       "domain_target_products_per_class": 1,

@@ -489,3 +489,31 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 检查轮同样自动扩展到167步，保证商品覆盖；正式训练不从检查last继续。
 `history.data_coverage.mixed_target_products_per_class=1`；旧对照仍为2，默认随机采样序列保持不变。
 模型/光路/ROI/光Router Top2/alpha边界都没有因本实验修改，最终评估仍480 query与120商品图库。
+
+## 18. 扩大现有电子卷积感受野（不改光路）
+
+沿用第13节的ASSETS/TARGET/ABO，POOL仍cap250，不是cap500。
+只改两个Vision depthwise卷积3×3→7×7；层数、分支数、Language、读出头、相位/光学布局不变。
+自动将旧卷积居中零填充；新增15,360参数，不能只复制新模型源码却丢掉checkpoint metadata。
+本组排在GPU1现有蒸馏队列后面，检查成功再正式运行；不是占第四张GPU。
+
+```bash
+CONTEXT_BEST=$T07/runs/simulation/domain_refine_wide_20260912_gpu2/domain_refine_wide/artifacts/best.pt
+CONTEXT_SMOKE=$T07/runs/smoke/domain_context7_20260912_gpu1
+POOL=$T07/runs/simulation/domain_pool250_20260912
+T07_GPU=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu "$T07_GPU" --assets "$ASSETS" --checkpoint "$CONTEXT_BEST" --target "$TARGET" \
+  --abo "$ABO" --pool "$POOL" --profiles domain_refine_context7 \
+  --epochs 1 --steps 1 --output "$CONTEXT_SMOKE" \
+  --after-queue "$T07/runs/simulation/domain_distillation_20260912/status.json"
+
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu "$T07_GPU" --assets "$ASSETS" --checkpoint "$CONTEXT_BEST" --target "$TARGET" \
+  --abo "$ABO" --pool "$POOL" --profiles domain_refine_context7 \
+  --epochs 24 --steps 128 --output "$T07/runs/simulation/domain_context7_20260912_gpu1" \
+  --after-queue "$CONTEXT_SMOKE/status.json"
+```
+
+检查轮自动125步以覆盖训练商品。正式仍从同一76.25%起点，不从检查last继续；
+source commit、metadata、alpha及去光结果必须一起报告，不能把电子修改隐藏成纯训练技巧。

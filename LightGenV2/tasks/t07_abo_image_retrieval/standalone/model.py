@@ -11,12 +11,15 @@ from .optics import OpticalPath
 
 
 class Residual(nn.Module):
-    def __init__(self, vision):
+    def __init__(self, vision, kernel_size=None):
         super().__init__()
         self.vision = vision
+        self.kernel_size=(3 if vision else 5) if kernel_size is None else kernel_size
+        if type(self.kernel_size) is not int or self.kernel_size not in (3,5,7):
+            raise ValueError('Electronic residual kernel must be 3, 5 or 7')
         self.token_norm = nn.LayerNorm(192)
-        self.token_depthwise = (nn.Conv2d(192,192,3,groups=192,bias=False) if vision
-                                else nn.Conv1d(192,192,5,groups=192,bias=False))
+        self.token_depthwise = (nn.Conv2d(192,192,self.kernel_size,groups=192,bias=False) if vision
+                                else nn.Conv1d(192,192,self.kernel_size,groups=192,bias=False))
         self.token_pointwise = nn.Linear(192,192)
         self.token_dropout = nn.Dropout(.1)
         self.token_residual_logit = nn.Parameter(torch.zeros(()))
@@ -31,11 +34,12 @@ class Residual(nn.Module):
             outputs = []
             for row in n:
                 grid = row.view(1,7,7,2,2,192).permute(0,5,1,3,2,4).reshape(1,192,14,14)
-                grid = self.token_depthwise(F.pad(grid,(1,1,1,1)))
+                pad=self.kernel_size//2
+                grid = self.token_depthwise(F.pad(grid,(pad,pad,pad,pad)))
                 outputs.append(grid.view(1,192,7,2,7,2).permute(0,2,4,3,5,1).reshape(196,192))
             update = torch.stack(outputs)
         else:
-            update = self.token_depthwise(F.pad(n.transpose(1,2),(4,0))).transpose(1,2)
+            update = self.token_depthwise(F.pad(n.transpose(1,2),(self.kernel_size-1,0))).transpose(1,2)
         update = self.token_dropout(self.token_pointwise(F.gelu(update)))
         x = x + self.token_residual_logit.sigmoid()*update
         return x + self.residual_logit.sigmoid()*self.mlp(self.norm(x))
@@ -59,14 +63,14 @@ def fuse(e, o, raw_alpha, bounds=(.01,.95)):
 
 
 class Modality(nn.Module):
-    def __init__(self, vision, input_rms, alpha_bounds=(.01,.95), noise_config=None):
+    def __init__(self, vision, input_rms, alpha_bounds=(.01,.95), noise_config=None, kernel_size=None):
         super().__init__()
         self.vision = vision
         self.alpha_bounds = alpha_bounds
         hidden = 1024 if vision else 2048
         self.input_adapter = nn.Linear(hidden,192)
         self.input_norm = nn.LayerNorm(192)
-        self.blocks = nn.ModuleList([Residual(vision),Residual(vision)])
+        self.blocks = nn.ModuleList([Residual(vision,kernel_size),Residual(vision,kernel_size)])
         self.output_norm = nn.LayerNorm(192)
         if vision:
             self.output_adapter = nn.Linear(192,1024)
@@ -115,8 +119,10 @@ class OpticalRetrieval(nn.Module):
         bounds=(float(metadata.get('fusion_alpha_min',.01)),float(metadata.get('fusion_alpha_max',.95)))
         if not 0<=bounds[0]<bounds[1]<=1:raise ValueError('Invalid alpha bounds')
         self.frontend = Frontend(metadata['token_count']).to(torch.bfloat16)
-        self.vision = Modality(True, metadata['input_rms'],bounds,metadata.get('optical_training_noise'))
-        self.language = Modality(False, metadata['input_rms'],bounds,metadata.get('optical_training_noise'))
+        kernels=metadata.get('electronic_context_kernels',{})
+        if set(kernels)-{'vision','language'}:raise ValueError('Unknown electronic kernel modality')
+        self.vision = Modality(True, metadata['input_rms'],bounds,metadata.get('optical_training_noise'),kernels.get('vision'))
+        self.language = Modality(False, metadata['input_rms'],bounds,metadata.get('optical_training_noise'),kernels.get('language'))
         if metadata.get('input_preprocessing','center_crop') not in ('center_crop','contain_white'):
             raise ValueError('Unknown image preprocessing contract')
         modes = metadata.get('ccd_readout_modes',{})
@@ -160,7 +166,9 @@ class OpticalRetrieval(nn.Module):
                      if any(term in type(module).__name__.lower() for term in ('attention','transformer','qwen3vlmodel'))]
         if forbidden:
             raise RuntimeError(f'Forbidden large-model modules: {forbidden}')
-        return {'architecture':'t07_standalone_six_capture_v1', 'native_transformer_modules':0,
+        kernels={m:getattr(self,m).blocks[0].kernel_size for m in ('vision','language')}
+        architecture='t07_standalone_six_capture_v1' if kernels=={'vision':3,'language':5} else 't07_standalone_six_capture_electronic_context'
+        return {'architecture':architecture, 'native_transformer_modules':0,
                 'attention_modules':0,'capture_count':6,'top_k':2,
                 'frozen_parameters':sum(p.numel() for p in self.parameters() if not p.requires_grad),
                 'trainable_parameters':sum(p.numel() for p in self.parameters() if p.requires_grad),
@@ -168,5 +176,6 @@ class OpticalRetrieval(nn.Module):
                 'input_preprocessing':self.metadata.get('input_preprocessing','center_crop'),
                 'ccd_readout_modes':{m:getattr(self,m).optics.readout_mode for m in ('vision','language')},
                 'training_phase_dropout':self.metadata.get('phase_dropout',{}),
+                'electronic_context_kernels':kernels,
                 'alpha':{m:[float(alpha_value(getattr(getattr(self,m),f'block{i}_optical_fusion_logit'),getattr(self,m).alpha_bounds)) for i in (1,2)] for m in ('vision','language')},
                 'ccd_postprocessing':'mean -> clip12 -> log1p -> adaptive_avg_pool (see ccd_readout_modes) -> rowLN -> ReLU -> Linear192'}

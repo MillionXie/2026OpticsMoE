@@ -12,6 +12,47 @@ from LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue im
 
 
 class GeneralizationTests(unittest.TestCase):
+    def test_electronic_kernel_expansion_preserves_function_and_optics(self):
+        from LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization import expand_electronic_context
+        from LightGenV2.tasks.t07_abo_image_retrieval.standalone.model import Residual
+        state={};nets={}
+        for name,vision in [('vision',True),('language',False)]:
+            nets[name]=Residual(vision).double().eval()
+            for index in (0,1):
+                state.update({f'{name}.blocks.{index}.{k}':v.clone() for k,v in nets[name].state_dict().items()})
+        state['vision.optics.global_phase']=torch.randn(478,478)
+        payload={'metadata':{},'state_dict':state}
+        expanded=expand_electronic_context(payload,{'vision':7,'language':7})
+        self.assertNotIn('electronic_context_kernels',payload['metadata'])
+        for name,v in state.items():
+            if 'token_depthwise.weight' not in name:
+                self.assertIs(v,expanded['state_dict'][name])
+        for name,vision in [('vision',True),('language',False)]:
+            net=Residual(vision,7).double().eval()
+            prefix=f'{name}.blocks.0.'
+            net.load_state_dict({k[len(prefix):]:v for k,v in expanded['state_dict'].items() if k.startswith(prefix)})
+            x=torch.randn(2,196 if vision else 77,192,dtype=torch.float64)
+            torch.testing.assert_close(net(x),nets[name](x),rtol=1e-12,atol=1e-12)
+            net(x).square().mean().backward()
+            grad=net.token_depthwise.weight.grad
+            self.assertGreater(float(grad[...,0].abs().sum()),0.)
+        # Reapplying a metadata contract must not transform already trained weights.
+        same=expand_electronic_context(expanded,{'vision':7,'language':7})
+        self.assertTrue(all(same['state_dict'][k] is v for k,v in expanded['state_dict'].items()))
+        for kernels in ({'vision':3,'language':5},{'vision':8,'language':7},{'vision':7}):
+            with self.assertRaises(ValueError):expand_electronic_context(expanded,kernels)
+
+    def test_context7_only_adds_small_existing_electronic_kernels(self):
+        from LightGenV2.tasks.t07_abo_image_retrieval.standalone.model import Residual
+        old=Residual(True);new=Residual(True,7)
+        self.assertEqual(2*(sum(p.numel() for p in new.parameters())-sum(p.numel() for p in old.parameters())),15360)
+        self.assertEqual(set(dict(old.named_modules())),set(dict(new.named_modules())))
+        wide=overlay_config({'adapt':{},'augmentation':{}},'domain_refine_wide')
+        context=overlay_config({'adapt':{},'augmentation':{}},'domain_refine_context7')
+        self.assertEqual(context.pop('electronic_context_kernels'),{'vision':7,'language':5})
+        wide.pop('protocol');context.pop('protocol')
+        self.assertEqual(wide,context)
+
     def test_restored_proxies_survive_epoch_zero_initialization(self):
         from LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization import initialize_category_proxies
         from torch.nn import functional as F

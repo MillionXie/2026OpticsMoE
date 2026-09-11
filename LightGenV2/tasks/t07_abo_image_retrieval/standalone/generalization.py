@@ -12,7 +12,7 @@ import torch
 
 PROFILES = ('preserve_adam', 'preserve_sam', 'preserve_fullfield_sam', 'preserve_fullfield_both_sam',
             'regularized_control', 'regularized_phase05', 'domain_mixed', 'domain_curriculum', 'domain_target_control',
-            'domain_refine_control', 'domain_refine_wide', 'domain_refine_views', 'domain_refine_pool500_mix13',
+            'domain_refine_control', 'domain_refine_wide', 'domain_refine_views', 'domain_refine_pool500_mix13', 'domain_refine_context7',
             'domain_distill_light', 'domain_distill_strong', 'domain_distill_stronger', 'domain_distill_resumeaux', 'domain_distill_resumeaux_full', 'domain_distill_sharpteacher')
 
 
@@ -87,7 +87,37 @@ def apply_contract(payload, config):
     metadata.update(input_preprocessing=config['input_preprocessing'],
                     ccd_readout_modes=config['ccd_readout_modes'])
     if 'phase_dropout' in config:metadata['phase_dropout']=config['phase_dropout']
-    return dict(payload, metadata=metadata)
+    result=dict(payload, metadata=metadata)
+    if 'electronic_context_kernels' in config:
+        result=expand_electronic_context(result,config['electronic_context_kernels'])
+    return result
+
+
+def expand_electronic_context(payload, kernels):
+    """Zero-pad existing depthwise kernels, preserving the starting function.
+
+    Vision is centered; causal language kernels align at their RIGHT edge.
+    All optical tensors and other weights are retained unchanged, not copied,
+    regenerated, interpolated or reinitialized. Conversion never shrinks kernels.
+    """
+    if set(kernels)!={'vision','language'}:raise ValueError('Specify both electronic kernel sizes')
+    from torch.nn import functional as F
+    metadata=dict(payload['metadata']);state=dict(payload['state_dict'])
+    previous=metadata.get('electronic_context_kernels',{'vision':3,'language':5})
+    for mode in ('vision','language'):
+        old=previous[mode];new=kernels[mode]
+        if type(new) is not int or new not in (3,5,7) or new<old:
+            raise ValueError('Only nonshrinking 3/5/7 electronic kernels supported')
+        for index in (0,1):
+            name=f'{mode}.blocks.{index}.token_depthwise.weight'
+            weight=state[name]
+            shape=(192,1,old,old) if mode=='vision' else (192,1,old)
+            if tuple(weight.shape)!=shape:raise ValueError('Source electronic kernel metadata mismatch')
+            if new!=old:
+                pad=(new-old)//2
+                state[name]=F.pad(weight,(pad,pad,pad,pad) if mode=='vision' else (new-old,0))
+    metadata['electronic_context_kernels']=dict(kernels)
+    return dict(payload,metadata=metadata,state_dict=state)
 
 
 def parameter_decay(name, parameter, kind, strength):
