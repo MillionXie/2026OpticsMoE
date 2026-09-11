@@ -102,10 +102,14 @@ class Modality(nn.Module):
 
 
 class RetrievalHead(nn.Module):
-    def __init__(self):
+    def __init__(self, kind='linear64'):
         super().__init__()
+        if kind not in ('linear64','relu128'):
+            raise ValueError('Unknown retrieval head contract')
+        self.kind=kind
         self.norm = nn.LayerNorm(384)
-        self.projection = nn.Linear(384,64)
+        self.projection = (nn.Linear(384,64) if kind=='linear64' else
+                           nn.Sequential(nn.Linear(384,128),nn.ReLU(),nn.Linear(128,64)))
 
     def forward(self, latent):
         pooled = torch.stack([torch.cat((row.mean(0),row.amax(0))) for row in latent])
@@ -134,7 +138,7 @@ class OpticalRetrieval(nn.Module):
                 raise ValueError('Unknown CCD readout contract')
             getattr(self,name).optics.readout_mode = mode
             getattr(self,name).optics.configure_phase_dropout(metadata.get('phase_dropout',{}))
-        self.readout = RetrievalHead()
+        self.readout = RetrievalHead(metadata.get('retrieval_head','linear64'))
 
     def train(self, mode=True):
         super().train(mode)
@@ -168,6 +172,7 @@ class OpticalRetrieval(nn.Module):
             raise RuntimeError(f'Forbidden large-model modules: {forbidden}')
         kernels={m:getattr(self,m).blocks[0].kernel_size for m in ('vision','language')}
         architecture='t07_standalone_six_capture_v1' if kernels=={'vision':3,'language':5} else 't07_standalone_six_capture_electronic_context'
+        if self.readout.kind!='linear64':architecture+='_'+self.readout.kind
         return {'architecture':architecture, 'native_transformer_modules':0,
                 'attention_modules':0,'capture_count':6,'top_k':2,
                 'frozen_parameters':sum(p.numel() for p in self.parameters() if not p.requires_grad),
@@ -177,5 +182,6 @@ class OpticalRetrieval(nn.Module):
                 'ccd_readout_modes':{m:getattr(self,m).optics.readout_mode for m in ('vision','language')},
                 'training_phase_dropout':self.metadata.get('phase_dropout',{}),
                 'electronic_context_kernels':kernels,
+                'retrieval_head':self.readout.kind,
                 'alpha':{m:[float(alpha_value(getattr(getattr(self,m),f'block{i}_optical_fusion_logit'),getattr(self,m).alpha_bounds)) for i in (1,2)] for m in ('vision','language')},
                 'ccd_postprocessing':'mean -> clip12 -> log1p -> adaptive_avg_pool (see ccd_readout_modes) -> rowLN -> ReLU -> Linear192'}

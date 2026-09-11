@@ -13,7 +13,7 @@ import torch
 PROFILES = ('preserve_adam', 'preserve_sam', 'preserve_fullfield_sam', 'preserve_fullfield_both_sam',
             'regularized_control', 'regularized_phase05', 'domain_mixed', 'domain_curriculum', 'domain_target_control',
             'domain_refine_control', 'domain_refine_wide', 'domain_refine_views', 'domain_refine_pool500_mix13', 'domain_refine_context7', 'domain_refine_balanced',
-            'domain_distill_light', 'domain_distill_strong', 'domain_distill_stronger', 'domain_distill_resumeaux', 'domain_distill_resumeaux_full', 'domain_distill_sharpteacher', 'domain_distill_teacher_agreement', 'domain_distill_aligned_feature')
+            'domain_distill_light', 'domain_distill_strong', 'domain_distill_stronger', 'domain_distill_resumeaux', 'domain_distill_resumeaux_full', 'domain_distill_sharpteacher', 'domain_distill_teacher_agreement', 'domain_distill_aligned_feature', 'domain_distill_feature_mlp')
 
 
 def initialize_category_proxies(head, features, labels, preserve_restored=False):
@@ -90,7 +90,34 @@ def apply_contract(payload, config):
     result=dict(payload, metadata=metadata)
     if 'electronic_context_kernels' in config:
         result=expand_electronic_context(result,config['electronic_context_kernels'])
+    if 'retrieval_head' in config:
+        result=expand_retrieval_head(result,config['retrieval_head'])
     return result
+
+
+def expand_retrieval_head(payload, kind):
+    """Replace final linear readout with one serial MLP, preserving its function.
+
+    ReLU(t)-ReLU(-t)=t: initialize hidden as [W;-W],[b;-b] and
+    output as [I,-I],0. No optical/frontend/electronic residual tensors change.
+    Already-converted checkpoints are retained, never reinitialized on reload.
+    """
+    previous=payload['metadata'].get('retrieval_head','linear64')
+    if kind not in ('linear64','relu128') or previous not in ('linear64','relu128'):
+        raise ValueError('Unknown retrieval head contract')
+    if previous==kind:return payload
+    if previous!='linear64' or kind!='relu128':
+        raise ValueError('Only linear64 to relu128 readout expansion supported')
+    state=dict(payload['state_dict'])
+    w=state.pop('readout.projection.weight');b=state.pop('readout.projection.bias')
+    if w.shape!=(64,384) or b.shape!=(64,) or not torch.isfinite(w).all() or not torch.isfinite(b).all():
+        raise ValueError('Invalid source linear readout')
+    eye=torch.eye(64,dtype=w.dtype,device=w.device)
+    state.update({'readout.projection.0.weight':torch.cat((w,-w)),
+                  'readout.projection.0.bias':torch.cat((b,-b)),
+                  'readout.projection.2.weight':torch.cat((eye,-eye),dim=1),
+                  'readout.projection.2.bias':torch.zeros_like(b)})
+    return dict(payload,metadata=dict(payload['metadata'],retrieval_head=kind),state_dict=state)
 
 
 def expand_electronic_context(payload, kernels):

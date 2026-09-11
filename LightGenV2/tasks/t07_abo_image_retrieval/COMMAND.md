@@ -654,3 +654,35 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 ```
 
 alignment PT仅用于复核训练目标，可查看rotation、fit_sample_ids和源SHA；实验室推理只用模型best及原前端。
+
+## 24. 逐图特征蒸馏 + 小型串联电子读出
+
+仅最终头由LN384/Linear64改为LN384/Linear128/ReLU/Linear64；增加32,896参数，无新增分支。
+签名成对初始化保持旧函数；metadata的retrieval_head=relu128保证重载时不会误用线性头。
+其他配置与第23节相同，不改光学。先检查，再从同一77.50%源权重独立训练16轮。
+以下在仓库根目录、含该profile的Git提交运行；本次使用GPU2，等待原均衡loss对照结束，最多三张GPU。
+
+```bash
+T07=LightGenV2/tasks/t07_abo_image_retrieval
+ASSETS=$T07/runs/simulation/standalone_assets_20260910
+TARGET=/DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data
+ABO=/DATA/DATA1/guest3/2026OpticsMoE/data/abo
+MLP_BEST=$T07/runs/simulation/verify_strong_ep4_20260912_gpu1/best.pt
+MLP_CACHE=$T07/runs/smoke/domain_distillation_20260912/build_teacher_cache/artifacts/cache.pt
+POOL=$T07/runs/simulation/domain_pool250_20260912
+MLP_SMOKE=$T07/runs/smoke/domain_feature_mlp_20260912_gpu2
+T07_GPU=GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu "$T07_GPU" --assets "$ASSETS" --checkpoint "$MLP_BEST" --target "$TARGET" \
+  --abo "$ABO" --pool "$POOL" --teacher-cache "$MLP_CACHE" \
+  --profiles domain_distill_feature_mlp --epochs 1 --steps 1 --output "$MLP_SMOKE" \
+  --after-queue "$T07/runs/simulation/domain_balanced_20260912_gpu2/status.json"
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu "$T07_GPU" --assets "$ASSETS" --checkpoint "$MLP_BEST" --target "$TARGET" \
+  --abo "$ABO" --pool "$POOL" --teacher-cache "$MLP_CACHE" \
+  --profiles domain_distill_feature_mlp --epochs 16 --steps 128 \
+  --output "$T07/runs/simulation/domain_feature_mlp_20260912_gpu2" \
+  --after-queue "$MLP_SMOKE/status.json"
+```
+
+勿把这个串联读出MLP与光学编码/CCD后处理混淆；相位大小、SLM布局、传播距离和六次捕获均未改。

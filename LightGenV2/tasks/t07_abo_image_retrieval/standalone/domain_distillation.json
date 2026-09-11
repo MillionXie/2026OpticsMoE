@@ -11,6 +11,13 @@
     "domain_distill_light": {"relation_teacher_weight": 0.10},
     "domain_distill_strong": {"relation_teacher_weight": 0.30},
     "domain_distill_stronger": {"relation_teacher_weight": 0.60},
+    "domain_distill_feature_mlp": {
+      "relation_teacher_weight": 0.0,
+      "teacher_feature_weight": 0.5,
+      "teacher_feature_warmup_epochs": 3,
+      "retrieval_head": "relu128",
+      "protocol": "Same aligned-feature training as domain_distill_aligned_feature, fixed77.5% source and full cap250 pool. Only final LN384/Linear64 becomes LN384/Linear128/ReLU/Linear64, initialized by signed pairs to preserve source outputs. Adds32896 parameters, one serial head not a new branch. Default V3/L5 residuals, all optical geometry/Top2/alpha>0.4 unchanged. No inference teacher/TF/attention; original480-query/120-gallery."
+    },
     "domain_distill_aligned_feature": {
       "relation_teacher_weight": 0.0,
       "teacher_feature_weight": 0.5,
