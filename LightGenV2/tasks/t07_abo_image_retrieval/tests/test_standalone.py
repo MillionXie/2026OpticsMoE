@@ -13,6 +13,23 @@ from standalone.curriculum import stage_settings, parameter_kind, relation_loss
 
 
 class StandaloneTests(unittest.TestCase):
+    def test_explicit_evaluation_checkpoint_is_pinned_and_assets_untouched(self):
+        import tempfile
+        from standalone.io import evaluation_checkpoint,sha256
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);assets=root/'assets';assets.mkdir()
+            original=assets/'best.pt';original.write_bytes(b'old packaged weight')
+            candidate=root/'candidate.pt';candidate.write_bytes(b'new candidate')
+            before=sha256(original)
+            path,digest=evaluation_checkpoint(assets)
+            self.assertEqual(path,original.resolve());self.assertEqual(digest,before)
+            path,digest=evaluation_checkpoint(assets,candidate,sha256(candidate).upper())
+            self.assertEqual(path,candidate.resolve());self.assertEqual(digest,sha256(candidate))
+            self.assertEqual(sha256(original),before)
+            for invalid in (None,'short','z'*64,'0'*64):
+                with self.assertRaises(ValueError):evaluation_checkpoint(assets,candidate,invalid)
+            with self.assertRaises(ValueError):evaluation_checkpoint(assets,None,before)
+
     def test_gallery_balance_is_invariant_to_negative_class_replication(self):
         from standalone.retrieval_training import gallery_loss
         bank=torch.tensor([[1.,0.],[.9,.1],[0.,1.],[.2,.8]])

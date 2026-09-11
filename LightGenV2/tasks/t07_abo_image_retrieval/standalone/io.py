@@ -24,6 +24,19 @@ def sha256(path):
     return h.hexdigest()
 
 
+def evaluation_checkpoint(assets, checkpoint=None, expected_sha256=None):
+    """Select a pinned external best without modifying the packaged assets."""
+    if checkpoint is None:
+        if expected_sha256 is not None:raise ValueError('Checkpoint SHA requires --checkpoint')
+        path=Path(assets)/'best.pt'
+        return path.resolve(),sha256(path)
+    if not isinstance(expected_sha256,str) or len(expected_sha256)!=64 or any(c not in '0123456789abcdefABCDEF' for c in expected_sha256):
+        raise ValueError('Explicit checkpoint requires its 64-character SHA256')
+    path=Path(checkpoint).resolve();actual=sha256(path)
+    if actual!=expected_sha256.lower():raise ValueError('Explicit checkpoint SHA256 mismatch')
+    return path,actual
+
+
 def write_json(path, data):
     Path(path).write_text(json.dumps(data,ensure_ascii=False,indent=2),encoding='utf-8')
 

@@ -11,7 +11,7 @@ import numpy as np
 import torch
 from torch.nn import functional as F
 from .data import _load_contract, _gallery_centroids, _category_prototypes, _evaluate
-from .io import inputs, picture, verify_assets, write_json, write_csv, sha256, source_commit
+from .io import inputs, picture, verify_assets, write_json, write_csv, sha256, source_commit, evaluation_checkpoint
 from .model import OpticalRetrieval
 
 
@@ -177,7 +177,11 @@ def main():
     parser.add_argument('--steps',type=int,default=48)
     parser.add_argument('--profile',choices=['original','teacher_curriculum'],default='original')
     parser.add_argument('--reference',type=Path,help='Old retrieval_features.pt; read-only comparison')
+    parser.add_argument('--checkpoint',type=Path,help='Evaluate this explicit best; assets/processor and assets manifest stay untouched')
+    parser.add_argument('--expected-checkpoint-sha256',help='Required with --checkpoint; refuse a stale or concurrently changed best')
     args=parser.parse_args()
+    if (args.checkpoint is not None or args.expected_checkpoint_sha256 is not None) and args.command!='evaluate':
+        parser.error('Explicit checkpoint selection is only supported for evaluate')
     manifest=verify_assets(args.assets)
     if args.command=='verify':
         release_root=Path(__file__).resolve().parent.parent
@@ -191,6 +195,8 @@ def main():
         print(json.dumps(manifest,indent=2));return
     if args.data is None or args.output is None:parser.error('--data and --output required')
     if min(args.batch_size,args.epochs,args.steps)<1:parser.error('Positive batch size/epochs/steps required')
+    try:checkpoint_file,checkpoint_sha=evaluation_checkpoint(args.assets,args.checkpoint,args.expected_checkpoint_sha256)
+    except (OSError,ValueError) as exc:parser.error(str(exc))
     if args.output.exists() and any(args.output.iterdir()):raise FileExistsError('Choose an empty output directory')
     args.output.mkdir(parents=True,exist_ok=True)
     random.seed(42);np.random.seed(42);torch.manual_seed(42);torch.set_num_threads(4)
@@ -199,7 +205,8 @@ def main():
     model=None
     if device.type=='cuda':torch.cuda.reset_peak_memory_stats(device)
     try:
-        payload=torch.load(args.assets/'best.pt',map_location='cpu',weights_only=True)
+        payload=torch.load(checkpoint_file,map_location='cpu',weights_only=True)
+        if sha256(checkpoint_file)!=checkpoint_sha:raise RuntimeError('Checkpoint changed during loading; choose a stable best')
         model=OpticalRetrieval(payload['metadata']);model.load_state_dict(payload['state_dict'],strict=True)
         del payload
         model.to(device)
@@ -211,19 +218,23 @@ def main():
                    source_commit=source_commit(),profile=args.profile,
                    cuda_visible_devices=os.environ.get('CUDA_VISIBLE_DEVICES'),device=str(device),
                    gpu=torch.cuda.get_device_name(device) if device.type=='cuda' else None,
-                   assets_manifest_sha256=sha256(args.assets/'manifest.json'),audit=model.audit()))
+                   assets_manifest_sha256=sha256(args.assets/'manifest.json'),audit=model.audit(),
+                   checkpoint_file=str(checkpoint_file),initial_checkpoint_sha256=checkpoint_sha,
+                   target_manifest_sha256=sha256(args.data/'data/abo_similarity10_manifest.csv')))
         if args.command=='finetune':
             if args.profile=='teacher_curriculum':
                 from .curriculum import train as curriculum_train
                 curriculum_train(model,processor,train,test,device,args,args.output)
             else:finetune(model,processor,train,test,device,args,args.output)
-        metrics=evaluate(model,processor,train,test,device,args.batch_size,args.output)
+        metrics=evaluate(model,processor,train,test,device,args.batch_size,args.output,
+                         include_train_metrics=args.command=='evaluate')
         model.set_remove_optical(True)
         removed=evaluate(model,processor,train,test,device,args.batch_size)
         model.set_remove_optical(False)
         report=dict(status='complete',metrics=metrics,remove_optical_same_weights=removed,
                     optical_removal_hit1_drop_percentage_points=100*(metrics['hit_at_1']-removed['hit_at_1']),
                     audit=model.audit(),test_selected=True)
+        if args.command=='evaluate':report['evaluated_checkpoint_sha256']=checkpoint_sha
         if device.type=='cuda':
             report['gpu_memory_mib']={'peak_allocated':torch.cuda.max_memory_allocated(device)/2**20,
                                       'peak_reserved':torch.cuda.max_memory_reserved(device)/2**20}

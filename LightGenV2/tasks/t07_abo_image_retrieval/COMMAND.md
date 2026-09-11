@@ -545,3 +545,27 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 
 检查轮自动125步；正式组独立从同一best开始。新增`gallery_class_balance=true`仅影响训练loss，
 未打开此选项的所有旧组保持原行为；部署不需要本损失函数或训练图库扩充数据。
+
+## 20. 明确指定最新权重的独立复评（不改assets）
+
+默认`evaluate --assets ...`仍读assets/best.pt；要评训练目录中的新best，必须同时传checkpoint及其SHA。
+这两个新参数仅用于evaluate，不会覆盖assets、修改模型或启动训练。读取前后再次核对SHA，
+运行中的best若刚好被更新会拒绝评估；先确认新的epoch/SHA，再另建结果目录，不绕过校验。
+下面明确复评0.3蒸馏第4轮live候选，不是旧assets权重。GPU1须先确认资源允许，不终止别人的进程。
+
+```bash
+T07=LightGenV2/tasks/t07_abo_image_retrieval
+T07_GPU=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d
+nvidia-smi -i "$T07_GPU" --query-gpu=memory.used,memory.free,utilization.gpu --format=csv
+CUDA_VISIBLE_DEVICES="$T07_GPU" HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.cli evaluate \
+  --assets "$T07/runs/simulation/standalone_assets_20260910" \
+  --checkpoint "$T07/runs/simulation/domain_distillation_20260912/domain_distill_strong/artifacts/best.pt" \
+  --expected-checkpoint-sha256 e5c0eaab4c84766b1ee231dd144271e97737604c0dcd675d9e2f4957c6932658d \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --device cuda --batch-size 4 --output "$T07/runs/simulation/verify_strong_ep4_20260912_gpu1"
+```
+
+复评重新从原图生成120商品图库、查询全部480测试图，再同权重去光；输出逐图预测/特征、
+相位图、clean train排除自身商品指标、execution/final_report。最终报告记录实际评估权重SHA。
+在无GPU机器可用`--device cpu`，但速度/数值可能与CUDA bfloat16不同，不能冒充同硬件逐位复现。
