@@ -27,6 +27,10 @@
 检查/正式队列监督PID为2371142/2371391，分别位于`runs/smoke/domain_aligned_feature_20260912_gpu1`
 和`runs/simulation/domain_aligned_feature_20260912_gpu1`，串行等待GPU1的context7组结束。
 这只是启动记录；当前等待不占CUDA，尚无新训练成绩。实际状态须查各run的status.json及存活进程。
+逐样本诊断（固定77.50%候选与`frozen_qwen_20260912/native_64d_predictions.csv`按sample_id对齐）：
+学生108个错误中，27个Top10仍有同类、81个Top10没有同类；教师64维在这些学生错误上分别纠正22和63个，
+共85个。这提示不仅是首位排序的小误差，值得检验训练期特征迁移；不是可直接相加的学生提升或融合结果。
+测试预测只用于错误分析，未加入训练缓存、筛选或损失；外部训练样本选择仍只依据训练图教师结果。
 
 下一数据对照`domain_distill_teacher_agreement`：从固定77.50%best续训16轮，仍用cap250与0.3关系蒸馏。
 先验证完整5556图教师缓存，再在CPU float32对每个训练图查找最近的其他训练商品；
