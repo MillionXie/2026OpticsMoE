@@ -1,7 +1,7 @@
 # T07 独立工程：日常操作顺序
 
 **先选目的，不要把所有章节顺序执行。**第1–4节是旧独立交付包操作；当前最佳固定权重复评用第20节。
-第5节以后保留历史优化对照；最新服务器训练候选为第23–25节，各自独立，不需要重跑前面的所有实验。
+第5节以后保留历史优化对照；最新服务器训练候选为第23–26节，各自独立，不需要重跑前面的所有实验。
 带`LightGenV2.tasks...`的服务器命令必须从2026OpticsMoE仓库根目录执行，并使用指定Git版本与训练资产。
 
 第1–4节从本任务文件夹或解压后的工程根目录执行。**旧独立包运行不需要2026OpticsMoE、T01、experiments、完整Qwen权重或网络访问。**
@@ -721,3 +721,34 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 ```
 
 history记录实际`supervised_loss_scale`与`teacher_feature_weight`，不只记录原始loss值。
+
+## 26. 狭长输入的有限展宽对照
+
+`contain_min_half`仅将原图长宽比超过2:1的输入适度非等比缩放至2:1，再白色补边到224²；不裁切。
+其余图与原contain_white相同。原图文件/标签/图库不变，光路/相位布局/固定token数不变。
+新输入合同必须重新评起点；不能复用原预处理分数。与第23节同样教师loss0.5，但每轮测试。
+
+```bash
+T07=LightGenV2/tasks/t07_abo_image_retrieval
+ASSETS=$T07/runs/simulation/standalone_assets_20260910
+TARGET=/DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data
+ABO=/DATA/DATA1/guest3/2026OpticsMoE/data/abo
+ASPECT_BEST=$T07/runs/smoke/domain_aligned_feature_20260912_gpu1/domain_distill_aligned_feature/artifacts/best.pt
+ASPECT_CACHE=$T07/runs/smoke/domain_distillation_20260912/build_teacher_cache/artifacts/cache.pt
+ASPECT_SMOKE=$T07/runs/smoke/domain_bounded_aspect_20260912_gpu1
+POOL=$T07/runs/simulation/domain_pool250_20260912
+T07_GPU=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu "$T07_GPU" --assets "$ASSETS" --checkpoint "$ASPECT_BEST" --target "$TARGET" \
+  --abo "$ABO" --pool "$POOL" --teacher-cache "$ASPECT_CACHE" \
+  --profiles domain_distill_bounded_aspect --epochs 1 --steps 1 --output "$ASPECT_SMOKE" \
+  --after-queue "$T07/runs/simulation/domain_aligned_feature_20260912_gpu1/status.json"
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu "$T07_GPU" --assets "$ASSETS" --checkpoint "$ASPECT_BEST" --target "$TARGET" \
+  --abo "$ABO" --pool "$POOL" --teacher-cache "$ASPECT_CACHE" \
+  --profiles domain_distill_bounded_aspect --epochs 16 --steps 128 \
+  --output "$T07/runs/simulation/domain_bounded_aspect_20260912_gpu1" \
+  --after-queue "$ASPECT_SMOKE/status.json"
+```
+
+这不是校正CCD的透视变换，也不改变SLM尺寸；若采用该模型，实验输入生成必须遵循其metadata预处理。

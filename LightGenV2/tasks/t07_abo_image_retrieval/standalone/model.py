@@ -127,7 +127,7 @@ class OpticalRetrieval(nn.Module):
         if set(kernels)-{'vision','language'}:raise ValueError('Unknown electronic kernel modality')
         self.vision = Modality(True, metadata['input_rms'],bounds,metadata.get('optical_training_noise'),kernels.get('vision'))
         self.language = Modality(False, metadata['input_rms'],bounds,metadata.get('optical_training_noise'),kernels.get('language'))
-        if metadata.get('input_preprocessing','center_crop') not in ('center_crop','contain_white'):
+        if metadata.get('input_preprocessing','center_crop') not in ('center_crop','contain_white','contain_min_half'):
             raise ValueError('Unknown image preprocessing contract')
         modes = metadata.get('ccd_readout_modes',{})
         if set(modes) - {'vision','language'}:

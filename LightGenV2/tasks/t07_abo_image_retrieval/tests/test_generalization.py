@@ -12,6 +12,31 @@ from LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue im
 
 
 class GeneralizationTests(unittest.TestCase):
+    def test_bounded_aspect_keeps_extreme_image_ends_and_normal_input_exact(self):
+        with tempfile.TemporaryDirectory() as directory:
+            p=Path(directory)/'input.png'
+            a=np.zeros((400,40,3),dtype=np.uint8);a[:60]=[255,0,0];a[-60:]=[0,0,255]
+            Image.fromarray(a).save(p)
+            old=np.asarray(picture(p,'contain_white'));new=np.asarray(picture(p,'contain_min_half'))
+            self.assertEqual(new.shape,(224,224,3))
+            self.assertTrue(np.all(old[:,80]==255));self.assertTrue(np.any(new[:,80]!=255))
+            for color in ([255,0,0],[0,0,255]):self.assertTrue(np.any(np.all(new==color,axis=-1)))
+            self.assertTrue(np.all(new[:,:56]==255));self.assertTrue(np.all(new[:,168:]==255))
+            Image.fromarray(a.transpose(1,0,2)).save(p)
+            horizontal=np.asarray(picture(p,'contain_min_half'))
+            self.assertTrue(np.all(horizontal[:56]==255));self.assertTrue(np.all(horizontal[168:]==255))
+            for shape in ((300,200),(200,300),(224,224),(400,200)):
+                Image.fromarray(np.random.default_rng(42).integers(0,255,(*shape,3),dtype=np.uint8)).save(p)
+                self.assertTrue(np.array_equal(np.asarray(picture(p,'contain_white')),np.asarray(picture(p,'contain_min_half'))))
+
+    def test_bounded_aspect_changes_only_input_and_test_frequency(self):
+        base=overlay_config({'adapt':{},'augmentation':{}},'domain_distill_aligned_feature')
+        new=overlay_config({'adapt':{},'augmentation':{}},'domain_distill_bounded_aspect')
+        self.assertEqual(new['input_preprocessing'],'contain_min_half');self.assertEqual(new['test_every'],1)
+        for cfg in (base,new):
+            for key in ('input_preprocessing','test_every','protocol'):cfg.pop(key)
+        self.assertEqual(base,new)
+
     def test_teacher_first_curriculum_restores_supervision_and_old_defaults(self):
         from LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization import supervised_loss_scale
         for epoch in range(1,20):self.assertEqual(supervised_loss_scale(epoch,{}),1.)

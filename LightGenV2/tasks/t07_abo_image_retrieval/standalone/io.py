@@ -54,8 +54,14 @@ def picture(path, mode='center_crop'):
         image = source.convert('RGB')
     if mode == 'center_crop':
         return ImageOps.fit(image,(224,224),method=Image.Resampling.BICUBIC,centering=(.5,.5))
-    if mode == 'contain_white':
-        resized = ImageOps.contain(image, (224,224), method=Image.Resampling.BICUBIC)
+    if mode in ('contain_white','contain_min_half'):
+        # Optional input-only control: retain ALL pixels, but bound extreme
+        # aspect ratio to2:1. This is anisotropic resizing, not optical geometry.
+        if mode=='contain_min_half' and 2*min(image.size)<max(image.size):
+            size=(112,224) if image.height>image.width else (224,112)
+            resized=image.resize(size,Image.Resampling.BICUBIC)
+        else:
+            resized = ImageOps.contain(image, (224,224), method=Image.Resampling.BICUBIC)
         canvas = Image.new('RGB', (224,224), (255,255,255))
         canvas.paste(resized, ((224-resized.width)//2, (224-resized.height)//2))
         return canvas

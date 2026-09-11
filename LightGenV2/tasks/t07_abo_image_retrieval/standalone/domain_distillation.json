@@ -11,6 +11,14 @@
     "domain_distill_light": {"relation_teacher_weight": 0.10},
     "domain_distill_strong": {"relation_teacher_weight": 0.30},
     "domain_distill_stronger": {"relation_teacher_weight": 0.60},
+    "domain_distill_bounded_aspect": {
+      "relation_teacher_weight": 0.0,
+      "teacher_feature_weight": 0.5,
+      "teacher_feature_warmup_epochs": 3,
+      "input_preprocessing": "contain_min_half",
+      "test_every": 1,
+      "protocol": "Continue verified77.9167% linear-head weight with changed INPUT contract: keep whole RGB image, bound aspect ratio to2:1 only for extreme images, white-pad224. Ordinary images identical to contain_white. This anisotropic resizing is explicit, not a crop or optical change. Full cap250, aligned teacher0.5, no teacher-first GT schedule or extra head. Original480-query/120-gallery and all optical geometry/Top2/alpha>0.4 unchanged. Re-evaluate initial within new input contract; never inherit old-input score."
+    },
     "domain_distill_teacher_first": {
       "relation_teacher_weight": 0.0,
       "teacher_feature_weight": 2.0,
