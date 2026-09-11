@@ -307,7 +307,7 @@ T07_GPU=GPU_REPLACE_WITH_CONFIRMED_IDLE_UUID
 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
   --gpu "$T07_GPU" --assets "$ASSETS" --checkpoint "$BEST" --target "$TARGET" \
   --abo "$ABO" --pool "$POOL" --profiles domain_refine_views --epochs 1 --steps 1 \
-  --output "$T07/runs/smoke/domain_refinement_20260912"
+  --output "$T07/runs/smoke/domain_refinement_20260912_gpu4"
 
 # 短检查成功/释放GPU后，正式同视角一致性组：
 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
@@ -321,7 +321,7 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 | profile与run名 | `--pool` |
 | --- | --- |
 | `domain_refine_control` / `domain_refine_control_20260912` | `$T07/runs/simulation/domain_pool_20260911`（旧922商品池） |
-| `domain_refine_wide` / `domain_refine_wide_20260912` | `$T07/runs/simulation/domain_pool250_20260912`（2058商品池） |
+| `domain_refine_wide` / `domain_refine_wide_20260912_gpu2` | `$T07/runs/simulation/domain_pool250_20260912`（2058商品池） |
 
 仅在不同且经检查空闲的GPU上并行，最多三张；否则在一张卡串行。进程结束会检查CUDA PID释放。
 views比wide每主batch多一次同商品另一张图的前向/反向，因此训练FLOPs并不相等；推理成本完全相同。

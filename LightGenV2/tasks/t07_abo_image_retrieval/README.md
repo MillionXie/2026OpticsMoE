@@ -30,6 +30,20 @@ views额外做一次训练前向/反向，训练FLOPs不是严格等预算；**�
 主baseline仍95.2083%，0训练参数、无微调，source09835251，GPU0 RTX4090且已释放。
 新池包含全部旧922商品；新优化分数以各run实际final_report为准。
 
+本轮训练代码`ac737d41`，GitHub分支`experiment/t07-domain-refinement-20260912`，本地/服务器55项测试通过。
+正式队列位置均在`runs/simulation/`（下表是启动身份，不是完成声明）：
+
+| 方案 | Run ID | GPU | 监督PID |
+| --- | --- | --- | --- |
+| 旧池续训对照 | `domain_refine_control_20260912` | 1 / RTX4090 | 2184972 |
+| 扩大商品池 | `domain_refine_wide_20260912_gpu2` | 2 / RTX3090 | 2185586 |
+| 扩大池+跨视角约束 | `domain_refine_views_20260912` | 4 / RTX4090 | 2186098 |
+
+views等待`runs/smoke/domain_refinement_20260912_gpu4`成功后自动启动，等待不占CUDA。
+原不带gpu后缀的wide队列及原smoke因0/3号卡被他人占用，被准入检查拒绝，**没有启动训练子进程**；
+这些小型status仅留作资源审计，找成绩用上表。不同GPU不比较训练耗时，所有结果记录实际硬件。
+每组最终报告正常/去光/打乱相位/轻微CCD噪声；结束或失败释放自己的GPU进程，不终止他人任务。
+
 ## 2026-09-11 目标相关数据扩充试验
 
 新增 `domain_target_control / domain_mixed / domain_curriculum`，源码和命令见 COMMAND 第12节。
