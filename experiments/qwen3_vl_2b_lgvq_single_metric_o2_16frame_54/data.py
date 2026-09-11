@@ -647,6 +647,12 @@ def load_single_metric_cache(settings: ExperimentSettings) -> dict[str, Any]:
             settings.paired_view_supervision_weight > 0.0
             or settings.paired_view_consistency_weight > 0.0
         ),
+        "training_horizontal_flip_probability": (
+            settings.training_horizontal_flip_probability
+        ),
+        "training_temporal_reverse_probability": (
+            settings.training_temporal_reverse_probability
+        ),
         "language_cache_path": str(settings.language_cache_path),
         "qwen_front_identity": front_identity,
     }
@@ -829,6 +835,41 @@ class LGVQSingleMetricDataset(Dataset[dict[str, Any]]):
     def __len__(self) -> int:
         return len(self.indices)
 
+    @staticmethod
+    def _flip_token_grid(value: torch.Tensor) -> torch.Tensor:
+        if value.ndim != 3:
+            raise RuntimeError("A video token tensor must be [frames,tokens,width]")
+        frames, tokens, width = value.shape
+        grid = int(tokens**0.5)
+        if grid * grid != tokens:
+            raise RuntimeError("Horizontal flip requires a square token grid")
+        return value.reshape(frames, grid, grid, width).flip(2).reshape_as(value)
+
+    @classmethod
+    def _augment_video_tuple(
+        cls,
+        item: dict[str, Any],
+        *,
+        horizontal_flip: bool,
+        temporal_reverse: bool,
+    ) -> None:
+        for prefix in ("", "paired_"):
+            vision_key = f"{prefix}vision_tokens"
+            quality_key = f"{prefix}quality_tokens"
+            raw_key = f"{prefix}raw_frames"
+            if vision_key not in item:
+                continue
+            if horizontal_flip:
+                item[vision_key] = cls._flip_token_grid(item[vision_key])
+                item[quality_key] = cls._flip_token_grid(item[quality_key])
+                if raw_key in item:
+                    item[raw_key] = item[raw_key].flip(-1)
+            if temporal_reverse:
+                item[vision_key] = item[vision_key].flip(0)
+                item[quality_key] = item[quality_key].flip(0)
+                if raw_key in item:
+                    item[raw_key] = item[raw_key].flip(0)
+
     def __getitem__(self, index: int) -> dict[str, Any]:
         source = self.indices[index]
         vision_views = self.payload.get(
@@ -898,6 +939,25 @@ class LGVQSingleMetricDataset(Dataset[dict[str, Any]]):
             item["resnet_tokens"] = self.payload["resnet_tokens"][source].float()
         if "mobilenet_tokens" in self.payload:
             item["mobilenet_tokens"] = self.payload["mobilenet_tokens"][source].float()
+        if self.split == "train":
+            horizontal_flip = bool(
+                torch.rand(())
+                < float(
+                    self.payload.get("training_horizontal_flip_probability", 0.0)
+                )
+            )
+            temporal_reverse = bool(
+                torch.rand(())
+                < float(
+                    self.payload.get("training_temporal_reverse_probability", 0.0)
+                )
+            )
+            if horizontal_flip or temporal_reverse:
+                self._augment_video_tuple(
+                    item,
+                    horizontal_flip=horizontal_flip,
+                    temporal_reverse=temporal_reverse,
+                )
         return item
 
 

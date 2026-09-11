@@ -1400,3 +1400,29 @@ def test_paired_sampling_view_is_distinct_and_atomically_aligned(monkeypatch) ->
     assert bool(torch.all(item["paired_raw_frames"] == 2))
     test_item = LGVQSingleMetricDataset(payload, "test")[0]
     assert "paired_vision_tokens" not in test_item
+
+
+def test_training_augmentation_keeps_all_video_inputs_aligned(monkeypatch) -> None:
+    grid = torch.arange(8, dtype=torch.float32).reshape(1, 4, 2).repeat(4, 1, 1)
+    raw = torch.arange(4 * 3 * 2 * 2, dtype=torch.uint8).reshape(4, 3, 2, 2)
+    payload = {
+        "vision_tokens": grid.unsqueeze(0),
+        "quality_tokens": grid.unsqueeze(0),
+        "raw_frames": raw.unsqueeze(0),
+        "language_tokens": torch.zeros(1, 1, 1),
+        "language_mask": torch.ones(1, 1, dtype=torch.bool),
+        "input_ids": torch.zeros(1, 1, dtype=torch.long),
+        "targets": torch.zeros(1),
+        "sample_ids": ["a"],
+        "video_paths": ["a.mp4"],
+        "splits": ["train"],
+        "target_name": "spatial",
+        "training_horizontal_flip_probability": 1.0,
+        "training_temporal_reverse_probability": 1.0,
+    }
+    item = LGVQSingleMetricDataset(payload, "train")[0]
+    expected_tokens = grid.reshape(4, 2, 2, 2).flip(2).reshape_as(grid).flip(0)
+    expected_raw = raw.flip(-1).flip(0)
+    assert torch.equal(item["vision_tokens"], expected_tokens)
+    assert torch.equal(item["quality_tokens"], expected_tokens)
+    assert torch.equal(item["raw_frames"], expected_raw)
