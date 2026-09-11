@@ -182,3 +182,25 @@ artifacts/history.json、final_report.json保留完整数值，失败队列停�
 `--profiles preserve_fullfield_sam --epochs 1 --steps 2`。
 此检查会全量编码/评估，但只更新两步；不把冒烟的准确率当最终优化成绩。
 每组进程结束才启动下一组；若卡被其他人占用，队列停止并记录原因，不杀别人的进程。
+
+## 10. V/L都保留完整CCD：接在现有队列之后
+
+以下是额外单组，不修改第9节已运行的三组；源权重仍是原68.9583%版本，不接上一组训出的best。
+从包含本profile的仓库根运行；`--after-queue` 必须指向已存在的第9节status.json。
+等待期间仅CPU轮询；前队列失败则本组也停止，前队列完成且GPU空闲才开始，不会抢占他人GPU。
+不需要等待时可省略 `--after-queue`，但不得同时重复启动同一组。
+
+```bash
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d \
+  --assets /DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/standalone_assets_20260910 \
+  --checkpoint /DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/high_alpha_retrieval_20260910/artifacts/best.pt \
+  --target /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --output /DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/generalization_fullfield_both_20260911 \
+  --profiles preserve_fullfield_both_sam --epochs 30 --steps 64 \
+  --after-queue /DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/generalization_20260911/status.json
+```
+
+输出仍为status.json及profile下console.log/artifacts，只有best/last；测试、相位和去光分析同第9节。
+新配置V全场pool196×224、L全场pool77×224，完整强度图参与汇聚，输出仍为196×192和77×192。
+35项CPU测试覆盖旧模式不变、V/L完整场读出、SAM恢复及排队依赖；真实训练成绩仍待完成。

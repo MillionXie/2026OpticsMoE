@@ -10,7 +10,7 @@ import json
 import math
 import torch
 
-PROFILES = ('preserve_adam', 'preserve_sam', 'preserve_fullfield_sam')
+PROFILES = ('preserve_adam', 'preserve_sam', 'preserve_fullfield_sam', 'preserve_fullfield_both_sam')
 
 
 def overlay_config(config, profile):

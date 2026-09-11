@@ -1,4 +1,4 @@
-"""Run three bounded controls serially on one explicitly chosen GPU.
+"""Run bounded controls serially on one explicitly chosen GPU.
 
 No torch import in this supervisor: each child owns and releases its CUDA
 context. Stop on failure; never kill another user's process or overwrite a run.
@@ -13,6 +13,25 @@ import sys
 import time
 
 
+def dependency_state(path, expected_gpu):
+    """Read-only dependency check. A partial heartbeat write is retried.
+
+    A stale running dependency never starts a competing GPU job. No PID is
+    killed or treated as sufficient evidence that its entire queue completed.
+    """
+    try:
+        status = json.loads(path.read_text(encoding='utf-8'))
+    except json.JSONDecodeError:
+        return 'waiting_for_dependency'
+    if status.get('gpu') != expected_gpu:
+        raise RuntimeError('Dependency queue GPU does not match the selected GPU')
+    if status.get('status') == 'complete':
+        return 'ready'
+    if status.get('status') in ('running', 'waiting_for_dependency'):
+        return 'waiting_for_dependency'
+    raise RuntimeError(f'Dependency did not complete successfully: {status.get("status")}')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--gpu', required=True, help='An explicitly inspected idle GPU UUID')
@@ -22,11 +41,13 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--epochs', type=int, default=30)
     parser.add_argument('--steps', type=int, default=64)
-    parser.add_argument('--profiles', nargs='+', choices=['preserve_adam','preserve_sam','preserve_fullfield_sam'],
+    parser.add_argument('--profiles', nargs='+', choices=['preserve_adam','preserve_sam','preserve_fullfield_sam','preserve_fullfield_both_sam'],
                         default=['preserve_sam','preserve_adam','preserve_fullfield_sam'])
+    parser.add_argument('--after-queue', type=Path, help='Existing status.json; wait without a CUDA context until this queue completes')
     args = parser.parse_args()
     if min(args.epochs,args.steps)<1:parser.error('Positive epochs and steps required')
     if len(set(args.profiles))!=len(args.profiles):parser.error('Duplicate profiles')
+    if args.after_queue is not None and not args.after_queue.is_file():parser.error('--after-queue must be an existing status.json')
     args.output.mkdir(parents=True, exist_ok=False)
     status = dict(status='running',pid=os.getpid(),gpu=args.gpu,planned=args.profiles,completed=[],
                   started_unix=time.time(),source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip())
@@ -37,6 +58,11 @@ def main():
         raise KeyboardInterrupt
     signal.signal(signal.SIGTERM,interrupt)
     try:
+        if args.after_queue is not None:
+            status['dependency_status_file']=str(args.after_queue.resolve())
+            while dependency_state(args.after_queue,args.gpu) != 'ready':
+                status.update(status='waiting_for_dependency',heartbeat_unix=time.time());save();time.sleep(30)
+            status.update(status='running',dependency_complete=True);save()
         for profile in args.profiles:
             # Other users may claim a formerly idle GPU while the queue waits.
             state=subprocess.check_output(['nvidia-smi','-i',args.gpu,'--query-gpu=memory.used,utilization.gpu','--format=csv,noheader,nounits'],text=True)

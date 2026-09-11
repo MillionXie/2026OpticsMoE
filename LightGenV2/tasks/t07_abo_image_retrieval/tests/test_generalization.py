@@ -8,6 +8,7 @@ import torch
 from LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization import backward_with_sam, overlay_config
 from LightGenV2.tasks.t07_abo_image_retrieval.standalone.io import picture
 from LightGenV2.tasks.t07_abo_image_retrieval.standalone.optics import OpticalPath
+from LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue import dependency_state
 
 
 class GeneralizationTests(unittest.TestCase):
@@ -89,6 +90,36 @@ class GeneralizationTests(unittest.TestCase):
         self.assertEqual(configs[1]['adapt'],configs[2]['adapt'])
         self.assertEqual(configs[0]['sam_rho'],0)
         self.assertEqual(configs[1]['sam_rho'],configs[2]['sam_rho'])
+
+    def test_both_fullfield_changes_only_vision_vs_language_only_control(self):
+        language=overlay_config({'adapt':{},'augmentation':{}},'preserve_fullfield_sam')
+        both=overlay_config({'adapt':{},'augmentation':{}},'preserve_fullfield_both_sam')
+        self.assertEqual(both['ccd_readout_modes'],{'vision':'fullfield_rows','language':'fullfield_rows'})
+        language['ccd_readout_modes']['vision']='fullfield_rows'
+        self.assertEqual(language,both)
+
+    def test_fullfield_vision_uses_bottom_without_more_parameters(self):
+        optics=OpticalPath()
+        names={n:tuple(p.shape) for n,p in optics.named_parameters()}
+        raw=torch.zeros(1,478,478);raw[:,450:,170:310]=10
+        optics.readout_mode='prefix_rows';old=optics.decode(raw,196,torch.float32,False)
+        optics.readout_mode='fullfield_rows';new=optics.decode(raw,196,torch.float32,False)
+        self.assertEqual(new.shape,(1,196,192))
+        self.assertFalse(torch.allclose(old,new))
+        self.assertEqual(names,{n:tuple(p.shape) for n,p in optics.named_parameters()})
+
+    def test_dependency_waits_and_fails_closed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/'status.json'
+            for state,expected in [('running','waiting_for_dependency'),('complete','ready')]:
+                path.write_text(json.dumps({'status':state,'gpu':'test-gpu'}))
+                self.assertEqual(dependency_state(path,'test-gpu'),expected)
+            path.write_text('{')
+            self.assertEqual(dependency_state(path,'test-gpu'),'waiting_for_dependency')
+            path.write_text(json.dumps({'status':'failed_or_interrupted','gpu':'test-gpu'}))
+            with self.assertRaises(RuntimeError):dependency_state(path,'test-gpu')
+            path.write_text(json.dumps({'status':'complete','gpu':'someone-else'}))
+            with self.assertRaises(RuntimeError):dependency_state(path,'test-gpu')
 
 
 if __name__ == '__main__':

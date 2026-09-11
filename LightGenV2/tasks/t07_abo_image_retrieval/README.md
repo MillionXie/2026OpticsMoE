@@ -36,6 +36,11 @@ ABO similarity10：10类200商品、每商品12视角；train/val/test按商品1
 每个query有12个正候选，报告Hit@1（旧称R@1）、mAP等，不混用positive Recall。
 先逐视角L2归一化，再按商品均值/L2；不按真实类别预筛选候选。
 
+“新商品泛化”指目标数据train/test商品ID互斥、类别相同（不是未见类别，也不保证Qwen预训练从未见过该商品）。
+测试商品不参与梯度训练，但test定期参与选checkpoint，所以不能称为从未查看的独立测试。
+当前是**类别相关的图搜图**：同类别不同商品算相关，不是必须找回同款SKU。标题不进入输入、候选向量或排序；
+仅用于人工核查manifest类别。例如B075Z8THYY的dresser标题与bed标签需确认类别定义，未改标签/删除样本。
+
 训练包括监督对比、训练教师向量/类别中心、Router均衡、相位DC与工作点约束；
 训练中20%～30%相干未调制分量、截断偏置高斯CCD噪声、相位旁路；位移=0、k空间约束关闭。
 评估是确定性理想仿真，**不是实际光路或固定20%零级光测试**。
@@ -145,3 +150,14 @@ SAM是Sharpness-Aware Minimization，不是Segment Anything：两次反传共用
 本地和服务器32项测试通过，`runs/smoke/generalization_20260911` 的两步CUDA训练及完整复评已结束，
 12片相位均有非零更新；这不是正式性能结果。未完成正式测试前不声称已超过0.7。
 新权重必须用本版T07加载，不直接放入旧审阅ZIP。
+
+### V/L同时完整CCD读出对照
+
+`preserve_fullfield_both_sam` 在上一组仅L全场的配置上，**只把V也改为全场读出**。
+V：整幅478²强度经原强度处理后pool到196×224 → 原rowLN/ReLU/Linear → 196×192；
+L：整幅478²同样pool到77×224 → 原读出 → 77×192。不再丢弃pool后的底部行，
+但平均池化/归一化本身仍有信息损失，不宣称保留全部光能或所有细节。
+expert/global共四处CCD读出统一生效，光Router四探测区读出不变；参数量、相位几何、alpha下限不变。
+与仅L全场组同源权重、SAM、完整商品输入、学习率、采样与选模，便于隔离V端修正的作用。
+命令见COMMAND第10节，结果为`runs/simulation/generalization_fullfield_both_20260911`。
+此补充组等待原generalization队列成功结束后在同一GPU运行；等待不创建CUDA上下文，不改正在训练的源码。

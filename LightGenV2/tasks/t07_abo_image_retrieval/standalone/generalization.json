@@ -11,7 +11,7 @@
     "input_preprocessing": "contain_white",
     "test_every": 5,
     "sam_warmup_epochs": 3,
-    "protocol": "Three controls from identical high-alpha best; preserve source data/split and fixed optical geometry; fresh AdamW; test-selected; final readout polish; no teacher or new inference head. Only best/last."
+    "protocol": "Matched controls from identical high-alpha best; preserve source data/split and fixed optical geometry; fresh AdamW; test-selected; final readout polish; no teacher or new inference head. Only best/last."
   },
   "profiles": {
     "preserve_adam": {
@@ -25,6 +25,10 @@
     "preserve_fullfield_sam": {
       "sam_rho": 0.03,
       "ccd_readout_modes": {"vision": "prefix_rows", "language": "fullfield_rows"}
+    },
+    "preserve_fullfield_both_sam": {
+      "sam_rho": 0.03,
+      "ccd_readout_modes": {"vision": "fullfield_rows", "language": "fullfield_rows"}
     }
   }
 }
