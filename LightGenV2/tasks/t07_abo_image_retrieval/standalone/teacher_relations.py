@@ -5,6 +5,7 @@ Loader/loss use tensors only; no teacher model or new projection in student trai
 """
 import argparse
 import json
+import math
 from pathlib import Path
 import sys
 import torch
@@ -34,17 +35,19 @@ def load_teacher_cache(path, samples, target, pool, device):
     return F.normalize(vectors,dim=-1).to(device),audit
 
 
-def gallery_relation_loss(query, own, labels, bank, bank_labels, teacher_query, teacher_bank, temperature=.10):
+def gallery_relation_loss(query, own, labels, bank, bank_labels, teacher_query, teacher_bank, temperature=.10, teacher_temperature=None):
     """Match distributions over other TRAIN products, only when teacher top1 is correct.
 
     Bases/dimensions may differ (student64, teacher2048); compare similarities,
     not coordinate vectors. Never train on test predictions or restrict test gallery.
     """
-    if temperature<=0:raise ValueError('Positive distillation temperature required')
+    teacher_temperature=temperature if teacher_temperature is None else teacher_temperature
+    if not all(math.isfinite(t) and t>0 for t in (temperature,teacher_temperature)):
+        raise ValueError('Positive finite distillation temperatures required')
     if len(bank)!=len(teacher_bank) or len(query)!=len(teacher_query):raise ValueError('Unaligned relation banks')
     student=F.normalize(query.float(),dim=-1)@F.normalize(bank.detach().float(),dim=-1).T/temperature
     with torch.no_grad():
-        teacher=F.normalize(teacher_query.detach().float(),dim=-1)@F.normalize(teacher_bank.detach().float(),dim=-1).T/temperature
+        teacher=F.normalize(teacher_query.detach().float(),dim=-1)@F.normalize(teacher_bank.detach().float(),dim=-1).T/teacher_temperature
         valid=torch.arange(len(bank),device=query.device)[None]!=own[:,None]
         target=teacher.masked_fill(~valid,-1e4).softmax(-1)
         correct=bank_labels[target.argmax(-1)].eq(labels)

@@ -13,7 +13,7 @@ import torch
 PROFILES = ('preserve_adam', 'preserve_sam', 'preserve_fullfield_sam', 'preserve_fullfield_both_sam',
             'regularized_control', 'regularized_phase05', 'domain_mixed', 'domain_curriculum', 'domain_target_control',
             'domain_refine_control', 'domain_refine_wide', 'domain_refine_views',
-            'domain_distill_light', 'domain_distill_strong', 'domain_distill_stronger', 'domain_distill_resumeaux')
+            'domain_distill_light', 'domain_distill_strong', 'domain_distill_stronger', 'domain_distill_resumeaux', 'domain_distill_sharpteacher')
 
 
 def restore_auxiliary_head(head, payload, actual_sha256, expected_sha256):

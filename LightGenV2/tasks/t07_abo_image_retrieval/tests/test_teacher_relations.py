@@ -83,3 +83,19 @@ def test_auxiliary_restore_is_pinned_strict_and_training_only():
     assert all(torch.equal(v,state[k]) for k,v in head.state_dict().items())
     a=overlay_config({},'domain_distill_strong');b=overlay_config({},'domain_distill_resumeaux')
     assert len(b.pop('restore_auxiliary_source_sha256'))==64 and a==b
+
+
+def test_teacher_temperature_is_separate_and_default_unchanged():
+    bank=torch.tensor([[1.,0.],[.7,.71414284],[.5,.8660254],[.4,.9165151]])
+    labels=torch.tensor([0,0,1,1]);q=torch.tensor([[.8,.2]],requires_grad=True)
+    own=torch.tensor([0]);label=torch.tensor([0]);teacher=torch.tensor([[1.,0.]])
+    a,weak=gallery_relation_loss(q,own,label,bank,labels,teacher,bank)
+    b,_=gallery_relation_loss(q,own,label,bank,labels,teacher,bank,.1,.1)
+    torch.testing.assert_close(a,b,rtol=0,atol=0)
+    c,strong=gallery_relation_loss(q,own,label,bank,labels,teacher,bank,.1,.03)
+    assert strong['teacher_confidence']>weak['teacher_confidence']
+    c.backward();assert torch.isfinite(q.grad).all()
+    for t in (0.,-1.,float('nan')):
+        with pytest.raises(ValueError):gallery_relation_loss(q,own,label,bank,labels,teacher,bank,.1,t)
+    x=overlay_config({},'domain_distill_strong');y=overlay_config({},'domain_distill_sharpteacher')
+    assert y.pop('relation_teacher_target_temperature')==.03 and x==y

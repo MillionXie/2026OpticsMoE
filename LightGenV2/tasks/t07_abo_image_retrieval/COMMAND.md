@@ -420,3 +420,31 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 恢复只涉及checkpoint中的`auxiliary_training_head`，不新增模型层，部署不需要该辅助头。
 `execution.auxiliary_initialization`应为`restored_pinned_live_checkpoint`；旧对照为`fresh_random`。
 原1轮检查不能当作正式训练提升，正式组依然从BEST独立开始。
+
+## 16. 教师监督温度校准（训练统计给出0.03）
+
+沿用第13、14节变量。同一75.2083%起点、5556图缓存、原测试协议。
+与0.3 strong只差教师概率温度0.03；学生损失温度仍0.1，光Router推理温度不变。
+等待GPU2的0.6对照结束，先做1轮检查，再独立做24轮，不增加同时使用的显卡数量。
+
+```bash
+T07_GPU=GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b
+SHARP_SMOKE=$T07/runs/smoke/domain_sharpteacher_20260912_gpu2
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu "$T07_GPU" --assets "$ASSETS" --checkpoint "$BEST" --target "$TARGET" \
+  --abo "$ABO" --pool "$POOL" \
+  --teacher-cache "$KD_SMOKE/build_teacher_cache/artifacts/cache.pt" \
+  --profiles domain_distill_sharpteacher --epochs 1 --steps 1 --output "$SHARP_SMOKE" \
+  --after-queue "$T07/runs/simulation/domain_distillation_stronger_20260912_gpu2/status.json"
+
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu "$T07_GPU" --assets "$ASSETS" --checkpoint "$BEST" --target "$TARGET" \
+  --abo "$ABO" --pool "$POOL" \
+  --teacher-cache "$KD_SMOKE/build_teacher_cache/artifacts/cache.pt" \
+  --profiles domain_distill_sharpteacher --epochs 24 --steps 128 \
+  --output "$T07/runs/simulation/domain_sharpteacher_20260912_gpu2" \
+  --after-queue "$SHARP_SMOKE/status.json"
+```
+
+配置审计：`execution.common_config.relation_teacher_target_temperature=0.03`，
+`relation_teacher_temperature=0.1`。未设置target_temperature的旧对照保持原有数值行为。

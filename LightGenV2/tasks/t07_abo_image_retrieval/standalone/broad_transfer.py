@@ -270,7 +270,8 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                             result.update(gallery_nll=nll.detach(),gallery_margin=margin.detach(),train_gallery_hit1=hit.detach())
                         if teacher_vectors is not None:
                             kd,kd_audit=gallery_relation_loss(z,product_ids[indices],labels[indices],bank,bank_labels,
-                                teacher_vectors[indices],teacher_bank,cfg_all['relation_teacher_temperature'])
+                                teacher_vectors[indices],teacher_bank,cfg_all['relation_teacher_temperature'],
+                                cfg_all.get('relation_teacher_target_temperature'))
                             loss=loss+teacher_weight*kd
                             result.update(relation_kd=kd.detach(),**kd_audit)
                     # Preserve primary-view router statistics before alternate-view forward.

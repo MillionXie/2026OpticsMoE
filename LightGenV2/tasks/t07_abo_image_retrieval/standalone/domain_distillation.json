@@ -11,6 +11,10 @@
     "domain_distill_light": {"relation_teacher_weight": 0.10},
     "domain_distill_strong": {"relation_teacher_weight": 0.30},
     "domain_distill_stronger": {"relation_teacher_weight": 0.60},
+    "domain_distill_sharpteacher": {
+      "relation_teacher_weight": 0.30,
+      "relation_teacher_target_temperature": 0.03
+    },
     "domain_distill_resumeaux": {
       "relation_teacher_weight": 0.30,
       "restore_auxiliary_source_sha256": "0e523f3a08631e0d248032c58534761758841e23702e155df8f2d3f4cd472f85"
