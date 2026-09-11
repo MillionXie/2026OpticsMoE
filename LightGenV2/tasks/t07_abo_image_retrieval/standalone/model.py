@@ -167,4 +167,4 @@ class OpticalRetrieval(nn.Module):
                 'input_preprocessing':self.metadata.get('input_preprocessing','center_crop'),
                 'ccd_readout_modes':{m:getattr(self,m).optics.readout_mode for m in ('vision','language')},
                 'alpha':{m:[float(alpha_value(getattr(getattr(self,m),f'block{i}_optical_fusion_logit'),getattr(self,m).alpha_bounds)) for i in (1,2)] for m in ('vision','language')},
-                'ccd_postprocessing':'mean -> clip12 -> log1p -> avgpool224 -> rowLN -> ReLU -> Linear192'}
+                'ccd_postprocessing':'mean -> clip12 -> log1p -> adaptive_avg_pool (see ccd_readout_modes) -> rowLN -> ReLU -> Linear192'}

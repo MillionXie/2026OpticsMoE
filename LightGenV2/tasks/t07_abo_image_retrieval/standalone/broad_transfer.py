@@ -130,7 +130,7 @@ def run_stage(args,stage,output,initial_checkpoint=None):
         execution=dict(source_commit=source_commit(),command=sys.argv,pid=os.getpid(),python=sys.version,torch=torch.__version__,
             cuda_visible_devices=os.environ.get('CUDA_VISIBLE_DEVICES'),device=str(device),
             gpu=torch.cuda.get_device_name(device) if device.type=='cuda' else None,
-            initial_checkpoint_sha256=sha256(start),accepted_checkpoint_sha256=sha256(origin),
+            initial_checkpoint_sha256=sha256(start),accepted_checkpoint_sha256=sha256(start if general else origin),
             target_manifest_sha256=sha256(args.target/'data/abo_similarity10_manifest.csv'),
             pool_manifest_sha256=sha256(args.pool/'manifest.csv') if args.pool else None,
             stage=stage,profile=getattr(args,'profile','original'),config=cfg,common_config=cfg_all,model_audit=model.audit())
@@ -222,7 +222,7 @@ def run_stage(args,stage,output,initial_checkpoint=None):
             if high and not all(.4<a<=.8 for values in model.audit()['alpha'].values() for a in values):
                 raise RuntimeError('Strict high-alpha contract violated')
             row=dict(epoch=epoch,stage=stage,optical_warmup=warm,readout_polish=polish,losses={k:v/cfg['steps'] for k,v in totals.items()},
-                     unique_images=len(seen),clean_batches=clean_batches,alpha=model.audit()['alpha'],sam_rho=cfg_all.get('sam_rho',0.),
+                     unique_images=len(seen),clean_batches=clean_batches,alpha=model.audit()['alpha'],sam_rho=rho,sam_rho_target=cfg_all.get('sam_rho',0.),
                      router_selected_fraction={m:(c/(cfg['steps']*cfg['classes_per_batch']*cfg['products_per_class'])).cpu().tolist() for m,c in counts.items()})
             torch.save(checkpoint(model,head,epoch,stage,-row['losses']['loss']),output/'last.pt')
             live={n:p.detach().clone() for n,p in trainables}
