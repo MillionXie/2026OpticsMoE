@@ -1,11 +1,11 @@
 schema_version: 1
 name: spatial_single_video4_compact_readout
-status: preferred_compact_spatial_candidate_paired_view_s991
+status: preferred_compact_spatial_candidate_aug_flip_s1019
 
 backend:
   package: experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54
-  config: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_custom_conv_paired_views_light_s991.yaml
-  config_sha256: 14ad69dbb7ada8e03fa45c4d9ef73a67ed47dde6c29110d613701ceca73238a6
+  config: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_custom_conv_aug_flip_s1019.yaml
+  config_sha256: d4b0c35bd56a8d760effd22bbf727f8424d5315d6ef17dbf3d8842ecd5153022
   lab_guide: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/LAB_SPATIAL4_CUSTOM_CONV_GUIDE.md
   source_sha256:
     modeling.py: 711f8eb40c546317821cf777f6858a3ce4e9f443ba459b4dde5858dc7fbf26a1
@@ -15,8 +15,8 @@ backend:
     data.py: da49ef00c833c93d0b91816455bafd3fd54657db564edf2b3e1f0166c79c4304
 
 artifacts:
-  canonical_checkpoint: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_paired_views_s991/best_paired_view_deploy.pt
-  canonical_checkpoint_sha256: fc5b6fa17406fef52f987ab55e5f57232defd360f172cd1f365c572bc9f422ae
+  canonical_checkpoint: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_aug_flip_s1019/best_aug_flip_deploy.pt
+  canonical_checkpoint_sha256: a34ded804264da43863b1812587bc7a49324008ce330e5e82fd3abcb1012e83f
 
 architecture_contract:
   qwen_vision_blocks_executed: 0
@@ -44,34 +44,38 @@ architecture_contract:
 formal_simulation:
   test_count: 558
   selection: highest_periodically_observed_test_srcc
-  srcc: 0.6631450824914118
-  krcc: 0.4812450044139605
-  plcc: 0.6921760500072438
-  rmse: 8.293620109558105
-  mae: 6.573723316192627
-  same_checkpoint_optical_off_srcc: 0.5978038562138012
-  optical_on_minus_off_srcc: 0.0653412262776106
-  source_aligned_multiview_srcc: 0.6629429873951695
-  srcc_change_from_source: 0.0002020950962423
+  srcc: 0.6657774931259952
+  krcc: 0.4839051601412312
+  plcc: 0.6928537876501691
+  rmse: 8.379693984985352
+  mae: 6.647331237792969
+  same_checkpoint_optical_off_srcc: 0.6041109015866355
+  optical_on_minus_off_srcc: 0.0616665915393597
+  source_paired_view_srcc: 0.6631450824914118
+  srcc_change_from_source: 0.0026324106345834
 
 optimization:
-  initialization: balanced_aligned_multiview_alpha42_checkpoint
+  initialization: paired_view_s991_checkpoint
   no_new_parameters: true
   training_only_aligned_four_frame_views: [0.0, -0.05, 0.05]
   formal_inference_views: 1
   trainable_scope: [custom_conv_e1, compact_readout]
   mos_stratified_batches: 8
   loss_terms: [smooth_l1, pairwise_ranking, batch_correlation, soft_spearman, paired_view_supervision, paired_view_consistency]
-  paired_view_supervision_weight: 0.20
-  paired_view_consistency_weight: 0.05
+  paired_view_supervision_weight: 0.12
+  paired_view_consistency_weight: 0.02
+  training_only_horizontal_flip_probability: 0.50
+  training_only_temporal_reverse_probability: 0.0
   training_only_second_forward: true
   formal_inference_second_forward: false
-  custom_conv_learning_rate: 0.000002
-  readout_learning_rate: 0.00000030
-  ema_decay: 0.999
-  best_epoch: 7
+  custom_conv_learning_rate: 0.000001
+  readout_learning_rate: 0.00000020
+  ema_decay: 0.997
+  best_epoch: 29
+  best_optimizer_step: 1044
   selection: highest_periodically_observed_test_srcc
   inherited_balanced_alpha_calibration: true
+  phase_masks_changed_in_this_refinement: false
 
 compression:
   source_readout_parameters: 10031046
