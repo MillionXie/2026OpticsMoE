@@ -394,6 +394,12 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 
 ## 15. 续训时恢复训练辅助头（不是新推理网络）
 
+**口径更正**：本节旧`domain_distill_resumeaux`加载后还会把类别proxy初始化为原训练类别均值，
+所以它实际仅保持光学辅助分类头的恢复。新`domain_distill_resumeaux_full`才保留全部辅助参数；
+需要复现完整恢复时将下面profile改成该名称，且必须另选未使用的output目录、记录新源码commit。
+不要在运行中的worktree修改源码，也不要覆盖旧run。新版本execution额外记录
+`category_proxy_initialization=preserved_checkpoint`（旧组为`target_training_class_means`）。
+
 沿用第13、14节变量。BEST必须是75.2083% live起点，不能替换成EMA best；程序核对固定SHA。
 与0.3 strong相比只恢复其已保存的训练辅助头，其他配置和学生初始参数相同，优化器仍全新。
 先等GPU4现有任务成功结束，再检查恢复/前向/反向/最终复评；不占用第四张卡。

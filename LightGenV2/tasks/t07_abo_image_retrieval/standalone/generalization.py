@@ -13,7 +13,23 @@ import torch
 PROFILES = ('preserve_adam', 'preserve_sam', 'preserve_fullfield_sam', 'preserve_fullfield_both_sam',
             'regularized_control', 'regularized_phase05', 'domain_mixed', 'domain_curriculum', 'domain_target_control',
             'domain_refine_control', 'domain_refine_wide', 'domain_refine_views', 'domain_refine_pool500_mix13',
-            'domain_distill_light', 'domain_distill_strong', 'domain_distill_stronger', 'domain_distill_resumeaux', 'domain_distill_sharpteacher')
+            'domain_distill_light', 'domain_distill_strong', 'domain_distill_stronger', 'domain_distill_resumeaux', 'domain_distill_resumeaux_full', 'domain_distill_sharpteacher')
+
+
+def initialize_category_proxies(head, features, labels, preserve_restored=False):
+    """Do not overwrite restored training proxies during epoch-zero preparation.
+
+    The legacy resumeaux control restored optical auxiliary heads but then reset
+    category proxies to target class means. Keep that control reproducible;
+    resumeaux_full explicitly preserves ALL restored training-only parameters.
+    """
+    if preserve_restored:
+        return 'preserved_checkpoint'
+    from torch.nn import functional as F
+    with torch.no_grad():
+        head.weight.copy_(torch.stack([F.normalize(features[labels==c].mean(0),dim=0)
+                                      for c in range(len(head.weight))]))
+    return 'target_training_class_means'
 
 
 def restore_auxiliary_head(head, payload, actual_sha256, expected_sha256):

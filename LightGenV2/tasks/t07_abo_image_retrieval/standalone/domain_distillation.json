@@ -18,6 +18,11 @@
     "domain_distill_resumeaux": {
       "relation_teacher_weight": 0.30,
       "restore_auxiliary_source_sha256": "0e523f3a08631e0d248032c58534761758841e23702e155df8f2d3f4cd472f85"
+    },
+    "domain_distill_resumeaux_full": {
+      "relation_teacher_weight": 0.30,
+      "restore_auxiliary_source_sha256": "0e523f3a08631e0d248032c58534761758841e23702e155df8f2d3f4cd472f85",
+      "preserve_restored_category_proxies": true
     }
   }
 }

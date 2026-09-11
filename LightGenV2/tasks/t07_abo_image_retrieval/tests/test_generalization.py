@@ -12,6 +12,27 @@ from LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue im
 
 
 class GeneralizationTests(unittest.TestCase):
+    def test_restored_proxies_survive_epoch_zero_initialization(self):
+        from LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization import initialize_category_proxies
+        from torch.nn import functional as F
+        head=torch.nn.Linear(3,2,bias=False)
+        before=head.weight.detach().clone()
+        features=F.normalize(torch.tensor([[1.,2.,3.],[3.,2.,1.],[2.,1.,3.],[3.,1.,2.]]),dim=-1)
+        labels=torch.tensor([0,0,1,1])
+        result=initialize_category_proxies(head,features,labels,True)
+        self.assertEqual(result,'preserved_checkpoint')
+        self.assertTrue(torch.equal(head.weight,before))
+        result=initialize_category_proxies(head,features,labels)
+        expected=torch.stack([F.normalize(features[labels==c].mean(0),dim=0) for c in range(2)])
+        self.assertEqual(result,'target_training_class_means')
+        self.assertTrue(torch.equal(head.weight,expected))
+
+    def test_full_auxiliary_restore_only_changes_proxy_initialization(self):
+        old=overlay_config({'adapt':{},'augmentation':{}},'domain_distill_resumeaux')
+        full=overlay_config({'adapt':{},'augmentation':{}},'domain_distill_resumeaux_full')
+        self.assertTrue(full.pop('preserve_restored_category_proxies'))
+        self.assertEqual(old,full)
+
     def test_sam_restores_parameters_and_uses_second_gradient(self):
         p = torch.nn.Parameter(torch.tensor([3., 4.]))
         opt = torch.optim.SGD([p], lr=.1)

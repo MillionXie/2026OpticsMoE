@@ -24,7 +24,7 @@ from .io import inputs,picture,sha256,verify_assets,write_json,source_commit
 from .cli import autocast,encode,evaluate,supcon,regularization,preview
 from .curriculum import parameter_kind
 from .prepare_broad_abo import safe_image
-from .generalization import PROFILES, overlay_config, apply_contract, backward_with_sam, parameter_decay, restore_auxiliary_head
+from .generalization import PROFILES, overlay_config, apply_contract, backward_with_sam, parameter_decay, restore_auxiliary_head, initialize_category_proxies
 from .learning_curves import write_learning_curves
 from .domain_data import combine_training, epoch_batches, paired_view_indices, view_consistency_loss
 
@@ -137,6 +137,8 @@ def run_stage(args,stage,output,initial_checkpoint=None):
         if high:head.optical=optical_heads(len(groups)).to(device)
         if auxiliary_payload is not None:
             restore_auxiliary_head(head,auxiliary_payload,sha256(start),cfg_all['restore_auxiliary_source_sha256'])
+        if cfg_all.get('preserve_restored_category_proxies',False) and auxiliary_payload is None:
+            raise ValueError('Preserving category proxies requires a verified restored auxiliary head')
         del auxiliary_payload
         trainables=[(n,p) for n,p in model.named_parameters() if p.requires_grad]
         initial={n:p.detach().cpu().clone() for n,p in trainables}
@@ -191,7 +193,10 @@ def run_stage(args,stage,output,initial_checkpoint=None):
             with torch.no_grad():
                 features=F.normalize(encode(model,processor,target_train,device,args.batch_size).float(),dim=-1).to(device)
                 initial_labels=torch.tensor([s.category_id for s in target_train],device=device)
-                head.weight.copy_(torch.stack([F.normalize(features[initial_labels==c].mean(0),dim=0) for c in range(len(groups))]))
+                proxy_initialization=initialize_category_proxies(head,features,initial_labels,
+                    cfg_all.get('preserve_restored_category_proxies',False))
+            execution['category_proxy_initialization']=proxy_initialization
+            write_json(output/'execution.json',execution)
             del features
             write_json(output/'history.json',history);print(json.dumps(history),flush=True)
         for epoch in range(1,cfg['epochs']+1):
