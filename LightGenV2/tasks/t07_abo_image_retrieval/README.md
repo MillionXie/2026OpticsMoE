@@ -1,13 +1,16 @@
 # T07 ABO 商品图搜图：独立光电工程
 
-> **找当前最佳看这里**：已完整复评76.25%（366/480），去光60.625%；目标≥389/480，尚未达成。
-> 权重：`runs/simulation/domain_refine_wide_20260912_gpu2/domain_refine_wide/artifacts/best.pt`。
-> 该目录的`phase_masks.png`、`learning_curves.png`和`final_report.json`对应同一最佳。
+> **找当前最佳看这里**：独立固定权重复评77.50%（372/480），去光59.375%；目标≥389/480，尚未达成。
+> 已固定保存权重：`runs/simulation/verify_strong_ep4_20260912_gpu1/best.pt`，不随训练覆盖。
+> 该目录的`phase_masks.png`和`final_report.json`对应同一权重；训练曲线在下方来源run。
 > 复现/指标口径看[复现入口](reports/reproduction/README.md)，执行命令看[COMMAND](COMMAND.md)。
 > 下文75.21%等较旧数值是训练起点或历史对照，不是当前最佳；新排队方案没有成绩前不替代此指针。
 
-> **新中间候选：77.50%（372/480）**，0.3蒸馏第4轮live，训练仍在进行，最终去光/完整复评待完成。
-> 位于`runs/simulation/domain_distillation_20260912/domain_distill_strong/artifacts`；不要把它与上方已完成复评混报。
+> 来源：`runs/simulation/domain_distillation_20260912/domain_distill_strong/artifacts`，0.3蒸馏第4轮live。
+> 训练仍在进行，但该候选已用独立进程在RTX4090、batch4上复核正常/去光及480-query/120-gallery。
+> mAP@10=0.7266903；去光下降18.125个百分点；干净原训练99.8611%，仍有明显泛化差距。
+> 训练源码`6ab405fe`，复评源码`5f3c704a`；权重SHA=`e5c0eaab4c84766b1ee231dd14271e97737604c0dcd675d9e2f4957c6932658d`。
+> 该权重相位打乱/噪声复评尚待训练结束；此前76.25%完整结果作为历史对照保留。
 
 ## 持续目标与不可变约束（2026-09-12）
 
