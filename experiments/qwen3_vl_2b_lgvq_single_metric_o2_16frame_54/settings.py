@@ -374,6 +374,8 @@ class ExperimentSettings:
     level_distribution_weight: float = 0.0
     feature_mixup_probability: float = 0.0
     feature_mixup_alpha: float = 0.20
+    paired_view_supervision_weight: float = 0.0
+    paired_view_consistency_weight: float = 0.0
     mos_stratified_batches: bool = False
     mos_strata: int = 8
     learning_rate_warmup_epochs: int = 0
@@ -1174,6 +1176,23 @@ class ExperimentSettings:
             raise ValueError("training.feature_mixup_probability must lie in [0,1]")
         if self.feature_mixup_alpha <= 0.0:
             raise ValueError("training.feature_mixup_alpha must be positive")
+        if min(
+            self.paired_view_supervision_weight,
+            self.paired_view_consistency_weight,
+        ) < 0.0:
+            raise ValueError("Paired-view loss weights must be nonnegative")
+        if (
+            self.paired_view_supervision_weight > 0.0
+            or self.paired_view_consistency_weight > 0.0
+        ):
+            if not self.vision_cache_view_paths:
+                raise ValueError(
+                    "Paired-view training requires at least two aligned temporal views"
+                )
+            if self.feature_mixup_probability > 0.0:
+                raise ValueError(
+                    "Paired-view training and feature Mixup cannot be enabled together"
+                )
         if (
             self.soft_target_weight > 0.0
             or self.soft_target_ranking_weight > 0.0
@@ -1476,6 +1495,12 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
             get("training", "feature_mixup_probability", 0.0)
         ),
         feature_mixup_alpha=float(get("training", "feature_mixup_alpha", 0.20)),
+        paired_view_supervision_weight=float(
+            get("loss", "paired_view_supervision_weight", 0.0)
+        ),
+        paired_view_consistency_weight=float(
+            get("loss", "paired_view_consistency_weight", 0.0)
+        ),
         mos_stratified_batches=bool(
             get("training", "mos_stratified_batches", False)
         ),

@@ -1,0 +1,15 @@
+base_config: spatial_custom_conv_aligned_multiview_s967.yaml
+output_dir: ../../runs/lgvq_spatial_custom_conv_paired_views_medium_s997
+random_seed: 997
+
+# Stronger paired-view objective than s991, still training-only and parameter
+# free at deployment.
+training:
+  initialization_checkpoint: ../../../../LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_aligned_multiview_alpha42_s983/best_alpha_calibrated_deploy.pt
+  epochs: 60
+  learning_rate: 0.000002
+  readout_learning_rate_factor: 0.15
+
+loss:
+  paired_view_supervision_weight: 0.35
+  paired_view_consistency_weight: 0.10
