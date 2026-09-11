@@ -94,3 +94,25 @@ def test_refinement_config_changes_only_controlled_factors():
     assert views['view_consistency_weight']==.15
     views['view_consistency_weight']=0.
     assert views==wide
+
+
+def test_mixed_quota_preserves_coverage_and_default_sequence():
+    target,external=fixture_samples();samples,n=combine_training(target,external)
+    old=epoch_batches(samples,n,'mixed',1,10,1,random.Random(42))
+    explicit=epoch_batches(samples,n,'mixed',1,10,1,random.Random(42),2)
+    assert old==explicit
+    phase,batches,active=epoch_batches(samples,n,'mixed',1,10,1,random.Random(42),1)
+    assert phase=='mixed' and len(batches)==4
+    visited={samples[i].product_id for b in batches for i in b}
+    assert visited=={samples[i].product_id for i in active}
+    for batch in batches:
+        assert len({samples[i].product_id for i in batch})==8
+        assert sum(i<n for i in batch)==2
+        for c in (0,1):
+            assert sum(i<n and samples[i].category_id==c for i in batch)==1
+            assert sum(i>=n and samples[i].category_id==c for i in batch)==3
+    for q in (0,4,1.5,True):
+        with pytest.raises(ValueError):epoch_batches(samples,n,'mixed',1,10,1,random.Random(42),q)
+    cfg=overlay_config({},'domain_refine_pool500_mix13')
+    assert cfg['domain_target_products_per_class']==1 and cfg['expected_pool_products_per_category']==500
+    assert not cfg.get('relation_teacher_weight',0) and cfg['view_consistency_weight']==0

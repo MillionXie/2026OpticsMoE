@@ -199,7 +199,7 @@ def run_stage(args,stage,output,initial_checkpoint=None):
             batches=None;domain_phase=None
             if domain:
                 domain_phase,batches,active_indices=epoch_batches(samples,target_count,domain,epoch,
-                    cfg_all['domain_pretrain_epochs'],cfg['steps'],rng)
+                    cfg_all['domain_pretrain_epochs'],cfg['steps'],rng,cfg_all.get('domain_target_products_per_class',2))
                 active_samples=[samples[i] for i in active_indices]
                 epoch_steps=len(batches)
             else:active_samples=target_train;epoch_steps=cfg['steps']
@@ -305,6 +305,7 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                      router_selected_fraction={m:(c/(epoch_steps*cfg['classes_per_batch']*cfg['products_per_class'])).cpu().tolist() for m,c in counts.items()})
             if domain:
                 row['data_coverage']=dict(domain_phase=domain_phase,steps=epoch_steps,
+                    mixed_target_products_per_class=cfg_all.get('domain_target_products_per_class',2),
                     unique_products=len({samples[i].product_id for i in seen}),
                     active_products=len({s.product_id for s in active_samples}),
                     target_images_seen=sum(i<target_count for i in seen),external_images_seen=sum(i>=target_count for i in seen))

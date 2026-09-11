@@ -38,18 +38,20 @@ def combine_training(target, external):
     return result,len(train)
 
 
-def epoch_batches(samples,target_count,mode,epoch,pretrain_epochs,minimum_steps,rng):
+def epoch_batches(samples,target_count,mode,epoch,pretrain_epochs,minimum_steps,rng,target_products_per_class=2):
     """Cycle products without replacement within each category/domain, vary views.
 
-    40 images/batch: 4 products/category; mixed mode uses 2 original + 2 external.
+    40 images/batch: 4 products/category; mixed mode defaults to 2 original + 2 external.
     Every active external product is visited at least once per epoch. Original
     products are oversampled deliberately, with measured exposure logged by trainer.
     """
+    if type(target_products_per_class) is not int or not 1<=target_products_per_class<=3:
+        raise ValueError('Mixed batches require 1, 2 or 3 original products per category')
     phase='external' if mode=='curriculum' and epoch<=pretrain_epochs else ('target' if mode=='target_control' else 'mixed')
     domains=defaultdict(lambda:defaultdict(list))
     for i,s in enumerate(samples):domains[(s.category_id,'target' if i<target_count else 'external')][s.product_id].append(i)
     categories=sorted({s.category_id for s in samples})
-    quotas={'target':4} if phase=='target' else {'external':4} if phase=='external' else {'target':2,'external':2}
+    quotas={'target':4} if phase=='target' else {'external':4} if phase=='external' else {'target':target_products_per_class,'external':4-target_products_per_class}
     if any(len(domains[(c,d)])<q for c in categories for d,q in quotas.items()):raise ValueError('Not enough distinct products for domain-balanced batches')
     steps=max(minimum_steps,max(math.ceil(len(domains[(c,d)])/q) for c in categories for d,q in quotas.items()))
     queues={}

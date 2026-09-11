@@ -16,6 +16,11 @@
   "profiles": {
     "domain_refine_control": {"expected_pool_products_per_category": 100},
     "domain_refine_wide": {"expected_pool_products_per_category": 250},
-    "domain_refine_views": {"expected_pool_products_per_category": 250, "view_consistency_weight": 0.15}
+    "domain_refine_views": {"expected_pool_products_per_category": 250, "view_consistency_weight": 0.15},
+    "domain_refine_pool500_mix13": {
+      "expected_pool_products_per_category": 500,
+      "domain_target_products_per_class": 1,
+      "protocol": "Continue verified 76.25% best; cap500 pool, original/external products 1:3 in each category. Combined data+sampling intervention, not an isolated causal ablation. 24 epochs, minimum167 steps to visit every external product; no teacher. Original480 query/120 product gallery, optical geometry, Top2 and alpha>0.4 unchanged."
+    }
   }
 }

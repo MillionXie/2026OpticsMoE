@@ -448,3 +448,38 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 
 配置审计：`execution.common_config.relation_teacher_target_temperature=0.03`，
 `relation_teacher_temperature=0.1`。未设置target_temperature的旧对照保持原有数值行为。
+
+## 17. cap500训练池＋降低原商品重复比例（无教师）
+
+沿用第13节变量。以下池已在服务器生成，不需重复生成，原始图片仍在data/abo。
+池含3390商品/6780图；原任务120训练商品/1440图不删，原val/test不参与训练。
+此组从已验证76.25%best继续，不能误用其他组BEST变量；每类采1原＋3外部商品，仍40图/batch。
+167步/轮、24轮：较128步对照训练预算增加，不将数据和采样变化混称为单因素消融。
+
+```bash
+POOL500=$T07/runs/simulation/domain_pool500_20260912
+DATA_BEST=$T07/runs/simulation/domain_refine_wide_20260912_gpu2/domain_refine_wide/artifacts/best.pt
+DATA_SMOKE=$T07/runs/smoke/domain_pool500_mix13_20260912_gpu4
+T07_GPU=GPU-1b963983-7909-af6e-0528-f0f0661ab549
+
+# 只有另一台机器尚无此池时才执行；已有目录会拒绝覆盖。
+# python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.prepare_broad_abo \
+#   --target "$TARGET" --abo "$ABO" --output "$POOL500" --target-types-only \
+#   --categories 10 --products-per-category 500 --minimum-products 4 --views 2
+
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu "$T07_GPU" --assets "$ASSETS" --checkpoint "$DATA_BEST" --target "$TARGET" \
+  --abo "$ABO" --pool "$POOL500" --profiles domain_refine_pool500_mix13 \
+  --epochs 1 --steps 1 --output "$DATA_SMOKE" \
+  --after-queue "$T07/runs/simulation/domain_resumeaux_20260912_gpu4/status.json"
+
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu "$T07_GPU" --assets "$ASSETS" --checkpoint "$DATA_BEST" --target "$TARGET" \
+  --abo "$ABO" --pool "$POOL500" --profiles domain_refine_pool500_mix13 \
+  --epochs 24 --steps 167 --output "$T07/runs/simulation/domain_pool500_mix13_20260912_gpu4" \
+  --after-queue "$DATA_SMOKE/status.json"
+```
+
+检查轮同样自动扩展到167步，保证商品覆盖；正式训练不从检查last继续。
+`history.data_coverage.mixed_target_products_per_class=1`；旧对照仍为2，默认随机采样序列保持不变。
+模型/光路/ROI/光Router Top2/alpha边界都没有因本实验修改，最终评估仍480 query与120商品图库。
