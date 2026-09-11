@@ -27,6 +27,7 @@ from ..training import (
     MosStratifiedBatchSampler,
     _training_stage_factors,
     curriculum_values,
+    listwise_ranking_loss,
     soft_spearman_loss,
     train,
     weighted_level_distribution_loss,
@@ -103,6 +104,18 @@ def test_soft_spearman_loss_tracks_rank_order_and_backpropagates() -> None:
     bad = soft_spearman_loss(reversed_prediction, target, temperature=0.05)
     assert float(good) < 0.02
     assert float(bad) > 1.9
+    good.backward()
+    assert ordered.grad is not None
+    assert bool(torch.isfinite(ordered.grad).all())
+
+
+def test_listwise_ranking_loss_prefers_correct_order_and_backpropagates() -> None:
+    target = torch.tensor([-1.0, -0.2, 0.4, 1.2])
+    ordered = target.clone().requires_grad_(True)
+    reversed_prediction = target.flip(0)
+    good = listwise_ranking_loss(ordered, target, temperature=0.25)
+    bad = listwise_ranking_loss(reversed_prediction, target, temperature=0.25)
+    assert float(good) < float(bad)
     good.backward()
     assert ordered.grad is not None
     assert bool(torch.isfinite(ordered.grad).all())

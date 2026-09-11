@@ -258,6 +258,29 @@ def soft_spearman_loss(
     return batch_correlation_loss(soft_ranks, target_ranks)
 
 
+def listwise_ranking_loss(
+    prediction: torch.Tensor,
+    target: torch.Tensor,
+    temperature: float = 0.50,
+) -> torch.Tensor:
+    """ListMLE ordering loss over one MOS-stratified training batch.
+
+    Unlike the pairwise term, each score is normalized against every item that
+    should rank below it.  It is a training-only objective and adds no model
+    module, parameter, or inference operation.
+    """
+
+    prediction, target = prediction.float().flatten(), target.float().flatten()
+    if prediction.numel() < 2:
+        return prediction.new_zeros(())
+    if temperature <= 0.0:
+        raise ValueError("temperature must be positive")
+    order = torch.argsort(target, descending=True, stable=True)
+    ordered = prediction[order] / temperature
+    log_denominator = torch.logcumsumexp(ordered.flip(0), dim=0).flip(0)
+    return (log_denominator - ordered).mean()
+
+
 def weighted_level_distribution_loss(
     logits: torch.Tensor,
     level_scores: torch.Tensor,
@@ -784,6 +807,7 @@ def train(
                 "ranking",
                 "correlation",
                 "soft_spearman",
+                "listwise_ranking",
                 "soft_target",
                 "soft_target_ranking",
                 "soft_target_correlation",
@@ -886,6 +910,13 @@ def train(
                     normalized_target,
                     settings.soft_rank_temperature,
                 )
+            listwise_ranking = result["normalized_prediction"].new_zeros(())
+            if settings.listwise_ranking_weight > 0.0:
+                listwise_ranking = listwise_ranking_loss(
+                    result["normalized_prediction"],
+                    normalized_target,
+                    settings.listwise_rank_temperature,
+                )
             soft_target = result["normalized_prediction"].new_zeros(())
             soft_target_ranking = soft_target.clone()
             soft_target_correlation = soft_target.clone()
@@ -952,11 +983,19 @@ def train(
                         normalized_target,
                         settings.soft_rank_temperature,
                     )
+                paired_listwise_ranking = paired_prediction.new_zeros(())
+                if settings.listwise_ranking_weight > 0.0:
+                    paired_listwise_ranking = listwise_ranking_loss(
+                        paired_prediction,
+                        normalized_target,
+                        settings.listwise_rank_temperature,
+                    )
                 paired_view_supervision = (
                     settings.regression_weight * paired_regression
                     + curriculum["ranking_weight"] * paired_ranking
                     + curriculum["correlation_weight"] * paired_correlation
                     + curriculum["soft_spearman_weight"] * paired_soft_spearman
+                    + settings.listwise_ranking_weight * paired_listwise_ranking
                 )
                 paired_view_consistency = F.smooth_l1_loss(
                     paired_prediction, result["normalized_prediction"]
@@ -966,6 +1005,7 @@ def train(
                 + curriculum["ranking_weight"] * ranking
                 + curriculum["correlation_weight"] * correlation
                 + curriculum["soft_spearman_weight"] * soft_spearman
+                + settings.listwise_ranking_weight * listwise_ranking
                 + curriculum["soft_target_weight"] * soft_target
                 + settings.soft_target_ranking_weight * soft_target_ranking
                 + settings.soft_target_correlation_weight
@@ -1015,6 +1055,7 @@ def train(
                 "ranking": ranking,
                 "correlation": correlation,
                 "soft_spearman": soft_spearman,
+                "listwise_ranking": listwise_ranking,
                 "soft_target": soft_target,
                 "soft_target_ranking": soft_target_ranking,
                 "soft_target_correlation": soft_target_correlation,
@@ -1243,6 +1284,7 @@ __all__ = [
     "curriculum_values",
     "evaluate",
     "evaluate_checkpoint_modes",
+    "listwise_ranking_loss",
     "pairwise_ranking_loss",
     "soft_spearman_loss",
     "train",

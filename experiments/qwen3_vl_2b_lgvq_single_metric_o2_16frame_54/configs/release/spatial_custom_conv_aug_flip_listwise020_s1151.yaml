@@ -1,0 +1,18 @@
+base_config: spatial_custom_conv_aug_flip_s1019.yaml
+output_dir: ../../runs/lgvq_spatial_custom_conv_aug_flip_listwise020_s1151
+random_seed: 1151
+
+# Stronger ListMLE ablation; still parameter-neutral and single-pass at test.
+training:
+  initialization_checkpoint: ../../../../LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_paired_views_s991/best_paired_view_deploy.pt
+  epochs: 45
+  batch_size: 64
+  learning_rate: 0.000001
+  readout_learning_rate_factor: 0.20
+  ema_decay: 0.99
+  test_interval_steps: 12
+  horizontal_flip_probability: 0.50
+
+loss:
+  listwise_ranking_weight: 0.20
+  listwise_rank_temperature: 0.50

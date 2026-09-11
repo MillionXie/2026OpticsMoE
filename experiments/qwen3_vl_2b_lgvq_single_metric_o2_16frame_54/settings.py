@@ -360,6 +360,8 @@ class ExperimentSettings:
     correlation_weight: float = 0.30
     soft_spearman_weight: float = 0.0
     soft_rank_temperature: float = 0.10
+    listwise_ranking_weight: float = 0.0
+    listwise_rank_temperature: float = 0.50
     optical_alignment_weight: float = 0.05
     router_balance_weight: float = 0.02
     router_importance_weight: float = 0.002
@@ -1141,6 +1143,7 @@ class ExperimentSettings:
             self.ranking_weight,
             self.correlation_weight,
             self.soft_spearman_weight,
+            self.listwise_ranking_weight,
             self.soft_target_weight,
             self.soft_target_ranking_weight,
             self.soft_target_correlation_weight,
@@ -1174,6 +1177,8 @@ class ExperimentSettings:
             raise ValueError("soft_spearman_weight must be nonnegative")
         if self.soft_rank_temperature <= 0.0:
             raise ValueError("soft_rank_temperature must be positive")
+        if self.listwise_rank_temperature <= 0.0:
+            raise ValueError("listwise_rank_temperature must be positive")
         if not 0.0 <= self.feature_mixup_probability <= 1.0:
             raise ValueError("training.feature_mixup_probability must lie in [0,1]")
         if self.feature_mixup_alpha <= 0.0:
@@ -1488,6 +1493,10 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         correlation_weight=float(get("loss", "correlation_weight", 0.30)),
         soft_spearman_weight=float(get("loss", "soft_spearman_weight", 0.0)),
         soft_rank_temperature=float(get("loss", "soft_rank_temperature", 0.10)),
+        listwise_ranking_weight=float(get("loss", "listwise_ranking_weight", 0.0)),
+        listwise_rank_temperature=float(
+            get("loss", "listwise_rank_temperature", 0.50)
+        ),
         optical_alignment_weight=float(get("loss", "optical_alignment_weight", 0.05)),
         router_balance_weight=float(get("loss", "router_balance_weight", 0.02)),
         router_importance_weight=float(get("loss", "router_importance_weight", 0.002)),
