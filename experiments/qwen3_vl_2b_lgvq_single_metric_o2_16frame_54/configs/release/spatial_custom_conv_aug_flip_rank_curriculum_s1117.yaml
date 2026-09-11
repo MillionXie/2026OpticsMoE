@@ -1,0 +1,31 @@
+base_config: spatial_custom_conv_aug_flip_s1019.yaml
+output_dir: ../../runs/lgvq_spatial_custom_conv_aug_flip_rank_curriculum_s1117
+random_seed: 1117
+
+# Training-only SRCC-oriented refinement.  The inference graph and parameter
+# count are identical to s1019.  The curriculum gradually trades a little
+# batch-Pearson pressure for ordering losses after the predictor has stabilized.
+training:
+  initialization_checkpoint: ../../../../LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_paired_views_s991/best_paired_view_deploy.pt
+  epochs: 40
+  learning_rate: 0.000001
+  readout_learning_rate_factor: 0.20
+  ema_decay: 0.99
+  test_interval_steps: 12
+  horizontal_flip_probability: 0.50
+
+curriculum:
+  enabled: true
+  start_epoch: 8
+  end_epoch: 32
+  ranking_weight_final: 2.75
+  correlation_weight_final: 3.25
+  soft_spearman_weight_final: 0.70
+  soft_target_weight_final: 0.0
+  router_balance_weight_final: 0.0
+  router_importance_weight_final: 0.0
+  serial_router_balance_weight_final: 0.0
+  serial_router_importance_weight_final: 0.0
+  serial_router_diversity_weight_final: 0.0
+  router_noise_std_final: 0.0
+  unmodulated_power_fraction_max_initial: 0.20
