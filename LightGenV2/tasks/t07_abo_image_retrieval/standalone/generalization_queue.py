@@ -23,7 +23,7 @@ def main():
     parser.add_argument('--epochs', type=int, default=30)
     parser.add_argument('--steps', type=int, default=64)
     parser.add_argument('--profiles', nargs='+', choices=['preserve_adam','preserve_sam','preserve_fullfield_sam'],
-                        default=['preserve_adam','preserve_sam','preserve_fullfield_sam'])
+                        default=['preserve_sam','preserve_adam','preserve_fullfield_sam'])
     args = parser.parse_args()
     if min(args.epochs,args.steps)<1:parser.error('Positive epochs and steps required')
     if len(set(args.profiles))!=len(args.profiles):parser.error('Duplicate profiles')

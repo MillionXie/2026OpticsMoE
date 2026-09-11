@@ -173,7 +173,7 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
   --epochs 30 --steps 64
 ```
 
-按 `preserve_adam → preserve_sam → preserve_fullfield_sam` 顺序执行，参数在 `standalone/generalization.json`，
+按 `preserve_sam → preserve_adam → preserve_fullfield_sam` 顺序执行，优先检查SAM是否有效；参数在 `standalone/generalization.json`，
 继承`high_alpha.json`和`retrieval_training.json`。学习率、增强、采样、数据、源权重都匹配，SAM增量rho0.03。
 每组30轮，SAM同step需两次反传，**不是等GPU时间对照**。状态统一看output下status.json；各组console.log、
 artifacts/history.json、final_report.json保留完整数值，失败队列停止，不会一直启动失败任务。
