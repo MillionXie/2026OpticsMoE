@@ -379,6 +379,7 @@ class ExperimentSettings:
     paired_view_supervision_weight: float = 0.0
     paired_view_consistency_weight: float = 0.0
     training_horizontal_flip_probability: float = 0.0
+    paired_opposite_horizontal_flip_probability: float = 0.0
     training_temporal_reverse_probability: float = 0.0
     mos_stratified_batches: bool = False
     mos_strata: int = 8
@@ -1202,12 +1203,17 @@ class ExperimentSettings:
                 )
         for name, probability in (
             ("training_horizontal_flip_probability", self.training_horizontal_flip_probability),
+            (
+                "paired_opposite_horizontal_flip_probability",
+                self.paired_opposite_horizontal_flip_probability,
+            ),
             ("training_temporal_reverse_probability", self.training_temporal_reverse_probability),
         ):
             if not 0.0 <= probability <= 1.0:
                 raise ValueError(f"training.{name} must lie in [0,1]")
         if (
             self.training_horizontal_flip_probability > 0.0
+            or self.paired_opposite_horizontal_flip_probability > 0.0
             or self.training_temporal_reverse_probability > 0.0
         ) and any(
             path is not None
@@ -1535,6 +1541,9 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         ),
         training_horizontal_flip_probability=float(
             get("training", "horizontal_flip_probability", 0.0)
+        ),
+        paired_opposite_horizontal_flip_probability=float(
+            get("training", "paired_opposite_horizontal_flip_probability", 0.0)
         ),
         training_temporal_reverse_probability=float(
             get("training", "temporal_reverse_probability", 0.0)

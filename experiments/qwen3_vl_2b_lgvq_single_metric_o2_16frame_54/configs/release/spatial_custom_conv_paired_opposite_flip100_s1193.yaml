@@ -1,0 +1,9 @@
+base_config: spatial_custom_conv_aug_flip_rank_curriculum_s1117.yaml
+output_dir: ../../runs/lgvq_spatial_custom_conv_paired_opposite_flip100_s1193
+random_seed: 1193
+
+# Every paired temporal view uses the opposite reflection to the primary view.
+# The formal single-view inference graph remains unchanged.
+training:
+  epochs: 45
+  paired_opposite_horizontal_flip_probability: 1.0

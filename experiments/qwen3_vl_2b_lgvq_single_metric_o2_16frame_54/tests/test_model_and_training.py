@@ -1439,3 +1439,34 @@ def test_training_augmentation_keeps_all_video_inputs_aligned(monkeypatch) -> No
     assert torch.equal(item["vision_tokens"], expected_tokens)
     assert torch.equal(item["quality_tokens"], expected_tokens)
     assert torch.equal(item["raw_frames"], expected_raw)
+
+
+def test_paired_opposite_flip_changes_only_the_paired_view(monkeypatch) -> None:
+    grid = torch.arange(8, dtype=torch.float32).reshape(1, 4, 2).repeat(4, 1, 1)
+    raw = torch.arange(4 * 3 * 2 * 2, dtype=torch.uint8).reshape(4, 3, 2, 2)
+    payload = {
+        "vision_tokens": grid.unsqueeze(0),
+        "quality_tokens": grid.unsqueeze(0),
+        "vision_token_views": (grid.unsqueeze(0), (grid + 20).unsqueeze(0)),
+        "quality_token_views": (grid.unsqueeze(0), (grid + 20).unsqueeze(0)),
+        "raw_frames": raw.unsqueeze(0),
+        "raw_frame_views": (raw.unsqueeze(0), (raw + 20).unsqueeze(0)),
+        "language_tokens": torch.zeros(1, 1, 1),
+        "language_mask": torch.ones(1, 1, dtype=torch.bool),
+        "input_ids": torch.zeros(1, 1, dtype=torch.long),
+        "targets": torch.zeros(1),
+        "sample_ids": ["a"],
+        "video_paths": ["a.mp4"],
+        "splits": ["train"],
+        "target_name": "spatial",
+        "training_view_probabilities": (1.0, 0.0),
+        "paired_training_views": True,
+        "paired_opposite_horizontal_flip_probability": 1.0,
+    }
+    monkeypatch.setattr(torch, "randint", lambda *args, **kwargs: torch.tensor(0))
+    item = LGVQSingleMetricDataset(payload, "train")[0]
+    assert torch.equal(item["vision_tokens"], grid)
+    expected = (grid + 20).reshape(4, 2, 2, 2).flip(2).reshape_as(grid)
+    assert torch.equal(item["paired_vision_tokens"], expected)
+    assert torch.equal(item["paired_quality_tokens"], expected)
+    assert torch.equal(item["paired_raw_frames"], (raw + 20).flip(-1))

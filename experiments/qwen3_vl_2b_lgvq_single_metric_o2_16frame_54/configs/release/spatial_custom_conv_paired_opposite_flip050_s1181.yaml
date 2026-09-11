@@ -1,0 +1,10 @@
+base_config: spatial_custom_conv_aug_flip_rank_curriculum_s1117.yaml
+output_dir: ../../runs/lgvq_spatial_custom_conv_paired_opposite_flip050_s1181
+random_seed: 1181
+
+# Reuse the existing paired temporal forward pass to supervise reflection
+# invariance explicitly; no extra training or inference forward is introduced.
+training:
+  epochs: 45
+  paired_opposite_horizontal_flip_probability: 0.50
+

@@ -650,6 +650,9 @@ def load_single_metric_cache(settings: ExperimentSettings) -> dict[str, Any]:
         "training_horizontal_flip_probability": (
             settings.training_horizontal_flip_probability
         ),
+        "paired_opposite_horizontal_flip_probability": (
+            settings.paired_opposite_horizontal_flip_probability
+        ),
         "training_temporal_reverse_probability": (
             settings.training_temporal_reverse_probability
         ),
@@ -852,8 +855,9 @@ class LGVQSingleMetricDataset(Dataset[dict[str, Any]]):
         *,
         horizontal_flip: bool,
         temporal_reverse: bool,
+        prefixes: tuple[str, ...] = ("", "paired_"),
     ) -> None:
-        for prefix in ("", "paired_"):
+        for prefix in prefixes:
             vision_key = f"{prefix}vision_tokens"
             quality_key = f"{prefix}quality_tokens"
             raw_key = f"{prefix}raw_frames"
@@ -957,6 +961,26 @@ class LGVQSingleMetricDataset(Dataset[dict[str, Any]]):
                     item,
                     horizontal_flip=horizontal_flip,
                     temporal_reverse=temporal_reverse,
+                )
+            if (
+                "paired_vision_tokens" in item
+                and bool(
+                    torch.rand(())
+                    < float(
+                        self.payload.get(
+                            "paired_opposite_horizontal_flip_probability", 0.0
+                        )
+                    )
+                )
+            ):
+                # Make the paired temporal view the opposite left-right
+                # orientation.  Existing paired supervision/consistency then
+                # teaches reflection invariance without another forward pass.
+                self._augment_video_tuple(
+                    item,
+                    horizontal_flip=True,
+                    temporal_reverse=False,
+                    prefixes=("paired_",),
                 )
         return item
 
