@@ -204,3 +204,47 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 输出仍为status.json及profile下console.log/artifacts，只有best/last；测试、相位和去光分析同第9节。
 新配置V全场pool196×224、L全场pool77×224，完整强度图参与汇聚，输出仍为196×192和77×192。
 35项CPU测试覆盖旧模式不变、V/L完整场读出、SAM恢复及排队依赖；真实训练成绩仍待完成。
+
+## 11. 训练准确率曲线、完整物体增强与相位dropout
+
+从仓库根执行。下面变量只缩短路径，不移动数据。当前GPU预算为一张，必须先检查占用；不要重复启动。
+先做1epoch/2steps检查，正式队列等检查成功后再启动；若还有第10节任务在跑，检查先等它完成。
+
+```bash
+T07_RUNS=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval/runs
+T07_DATA=/DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d \
+  --assets "$T07_RUNS/simulation/standalone_assets_20260910" \
+  --checkpoint "$T07_RUNS/simulation/generalization_20260911/preserve_adam/artifacts/best.pt" \
+  --target "$T07_DATA" --output "$T07_RUNS/smoke/antioverfit_20260911" \
+  --profiles regularized_phase05 --epochs 1 --steps 2 \
+  --after-queue "$T07_RUNS/simulation/generalization_fullfield_both_20260911/status.json"
+
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d \
+  --assets "$T07_RUNS/simulation/standalone_assets_20260910" \
+  --checkpoint "$T07_RUNS/simulation/generalization_20260911/preserve_adam/artifacts/best.pt" \
+  --target "$T07_DATA" --output "$T07_RUNS/simulation/antioverfit_20260911" \
+  --profiles regularized_phase05 regularized_control --epochs 30 --steps 64 \
+  --after-queue "$T07_RUNS/smoke/antioverfit_20260911/status.json"
+```
+
+两组都从69.7917%起点独立训练；配置`standalone/regularization.json`。SAM本次不启用，
+两组只相差额外相位dropout。已有的光噪声与均衡保留，不改ROI、alpha>0.4、六次光计算或推理头。
+实时看各队列`status.json`和各组`artifacts/learning_curves.png`、CSV、history；曲线只连接已测epoch，
+不会把未测干净训练集准确率补成98%之类的估计。
+
+旧结果补算（纯CPU，校验原始manifest、sample顺序与最终test性能，不修改旧run）：
+
+```bash
+CUDA_VISIBLE_DEVICES='' python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.learning_curves \
+  --data "$T07_DATA" --output "$T07_RUNS/simulation/overfitting_audit_20260911" \
+  --artifacts "$T07_RUNS/simulation/high_alpha_retrieval_20260910/artifacts" \
+  "$T07_RUNS/simulation/generalization_20260911/preserve_adam/artifacts" \
+  "$T07_RUNS/simulation/generalization_20260911/preserve_sam/artifacts" \
+  "$T07_RUNS/simulation/generalization_20260911/preserve_fullfield_sam/artifacts"
+```
+
+`clean_best_train_test.json`记录最终best的干净训练/测试准确率与权重/特征SHA。
+旧过程只有batch日志和best/last，不能恢复中间每个epoch的完整干净准确率；图中明确标注这一限制。

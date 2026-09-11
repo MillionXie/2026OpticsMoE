@@ -43,11 +43,20 @@ def phase_modulation(raw):
     return torch.exp(1j * (2 * math.pi * torch.sigmoid(raw))).to(torch.complex64)
 
 
-def block_bypass(modulation, probability, *, batch=1):
+def block_bypass(modulation, probability, *, batch=1, block_size=8):
     size = modulation.shape[-1]
-    keep = torch.rand(batch, math.ceil(size / 8), math.ceil(size / 8), device=modulation.device) >= probability
-    keep = keep.repeat_interleave(8, -2).repeat_interleave(8, -1)[..., :size, :size].to(torch.complex64)
+    keep = torch.rand(batch, math.ceil(size / block_size), math.ceil(size / block_size), device=modulation.device) >= probability
+    keep = keep.repeat_interleave(block_size, -2).repeat_interleave(block_size, -1)[..., :size, :size].to(torch.complex64)
     return keep * modulation + (1 - keep)
+
+
+def phase_dropout(modulation, probability, training, batch, block_size=8):
+    # Phase-only dropout: bypass phase, NOT zero field or inverted-dropout gain.
+    if not 0 <= probability <= 1 or block_size < 1:
+        raise ValueError('Invalid phase dropout settings')
+    if not training or probability == 0:
+        return modulation
+    return block_bypass(modulation, probability, batch=batch, block_size=block_size)
 
 
 def truncated_noise(reference, mean=.03, std=.03, low=-.03, high=.12):
@@ -71,11 +80,16 @@ class Router(nn.Module):
         self.last = {}
         self.measured_ccd = None
         self.noise_config = noise_settings(noise_config)
+        self.noise_enabled = True
+        self.phase_dropout_probability = 0.
+        self.phase_dropout_block_size = 8
 
     def forward(self, amplitude):
         field = F.pad(amplitude.float(), (147, 147, 147, 147))
         modulation = phase_modulation(self.raw_router_phase).unsqueeze(0).expand(len(field), -1, -1)
-        if self.training:
+        modulation = phase_dropout(modulation, self.phase_dropout_probability,
+                                   self.training and self.measured_ccd is None, len(field), self.phase_dropout_block_size)
+        if self.training and self.noise_enabled:
             # Router bypass is sampled separately for every sample.
             modulation = block_bypass(modulation, self.noise_config['router_bypass'], batch=len(field))
         plane = torch.ones_like(field, dtype=torch.complex64)
@@ -87,7 +101,7 @@ class Router(nn.Module):
         energy = torch.einsum('bhw,ehw->be', intensity, self.detectors)
         centered = energy - energy.mean(-1, keepdim=True)
         logits = centered / centered.square().mean(-1, keepdim=True).add(1e-8).sqrt()
-        if self.training:
+        if self.training and self.noise_enabled:
             logits = logits + torch.randn_like(logits)*self.noise_config['router_logit_std']
         probabilities = torch.softmax(logits / 2.0, dim=-1)
         indices = torch.topk(probabilities, 2, dim=-1).indices
@@ -114,6 +128,9 @@ class OpticalPath(nn.Module):
         self.input_adapter = nn.Linear(192, 224)
         self.input_norm = nn.LayerNorm(224)
         self.noise_config = noise_settings(noise_config)
+        self.noise_enabled = True
+        self.phase_dropout_probability = 0.
+        self.phase_dropout_block_size = 8
         self.eval_ccd_noise = False
         self.router = Router(noise_config)
         self.experts = nn.ParameterList([nn.Parameter(torch.zeros(224, 224)) for _ in range(4)])
@@ -129,6 +146,20 @@ class OpticalPath(nn.Module):
         for y, x in APERTURES:
             indices.append((torch.arange(y, y+224)[:, None]*518+torch.arange(x, x+224)[None]).reshape(-1))
         self.register_buffer('indices', torch.stack(indices).reshape(-1), persistent=False)
+
+    def configure_phase_dropout(self, config):
+        cfg = dict(expert_global_probability=0., router_probability=0., block_size=8)
+        if set(config) - set(cfg):raise ValueError('Unknown phase dropout settings')
+        cfg.update(config)
+        if not all(0 <= cfg[k] < 1 for k in ('expert_global_probability','router_probability')):
+            raise ValueError('Phase dropout probabilities must be in [0,1)')
+        if not isinstance(cfg['block_size'],int) or cfg['block_size']<1:raise ValueError('Invalid dropout block size')
+        self.phase_dropout_probability = cfg['expert_global_probability']
+        self.router.phase_dropout_probability = cfg['router_probability']
+        self.phase_dropout_block_size = self.router.phase_dropout_block_size = cfg['block_size']
+
+    def set_training_noise(self, enabled):
+        self.noise_enabled = self.router.noise_enabled = bool(enabled)
 
     def encode(self, latent):
         b, length, _ = latent.shape
@@ -151,21 +182,25 @@ class OpticalPath(nn.Module):
         support = torch.zeros_like(field.real, dtype=torch.bool)
         if final:
             modulation = phase_modulation(self.global_phase)
-            if self.training:
+            modulation = phase_dropout(modulation, self.phase_dropout_probability,
+                                       self.training and name not in self.measured, len(field), self.phase_dropout_block_size)
+            if self.training and self.noise_enabled:
                 modulation = block_bypass(modulation, self.noise_config['phase_bypass'])
             plane[:, 20:498, 20:498] = modulation
             support[:, 20:498, 20:498] = True
         else:
             for raw, (y, x) in zip(self.experts, APERTURES):
                 modulation = phase_modulation(raw)
-                if self.training:
+                modulation = phase_dropout(modulation, self.phase_dropout_probability,
+                                           self.training and name not in self.measured, len(field), self.phase_dropout_block_size)
+                if self.training and self.noise_enabled:
                     modulation = block_bypass(modulation, self.noise_config['phase_bypass'])
                 plane[:, y:y+224, x:x+224] = modulation
                 support[:, y:y+224, x:x+224] = True
         if name in self.measured:
             intensity = self.measured[name].to(field.device).float()
         else:
-            if self.training:
+            if self.training and self.noise_enabled:
                 # Fractions are intensity fractions; mix fields with square roots.
                 shape = (len(field), 1, 1)
                 amp_eta = field.real.new_empty(shape).uniform_(self.noise_config['dc_min'], self.noise_config['dc_max'])
@@ -180,7 +215,7 @@ class OpticalPath(nn.Module):
             raise ValueError('Measured CCD must be [B,478,478]')
         self.last_ccd[name] = intensity.detach()
         self.operating_losses.append(intensity.mean((-2, -1)).clamp_min(1e-8).log())
-        if (self.training or self.eval_ccd_noise) and name not in self.measured:
+        if ((self.training and self.noise_enabled) or self.eval_ccd_noise) and name not in self.measured:
             reference = intensity.mean((-2, -1), keepdim=True).detach()
             cfg=self.noise_config
             gain = intensity.new_empty(len(field), 1, 1).uniform_(cfg['gain_min'], cfg['gain_max'])

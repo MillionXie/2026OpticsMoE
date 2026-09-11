@@ -24,7 +24,8 @@ from .io import inputs,picture,sha256,verify_assets,write_json,source_commit
 from .cli import autocast,encode,evaluate,supcon,regularization,preview
 from .curriculum import parameter_kind
 from .prepare_broad_abo import safe_image
-from .generalization import PROFILES, overlay_config, apply_contract, backward_with_sam
+from .generalization import PROFILES, overlay_config, apply_contract, backward_with_sam, parameter_decay
+from .learning_curves import write_learning_curves
 
 
 class CategoryProxies(nn.Module):
@@ -89,6 +90,7 @@ def run_stage(args,stage,output,initial_checkpoint=None):
             if isinstance(value,dict):cfg_all[key].update(value)
             else:cfg_all[key]=value
     if general:cfg_all=overlay_config(cfg_all,args.profile)
+    track_clean=cfg_all.get('track_clean_train',False)
     cfg=cfg_all[stage].copy()
     cfg['epochs']=getattr(args,stage+'_epochs') or cfg['epochs'];cfg['steps']=args.steps or cfg['steps']
     device=torch.device(args.device)
@@ -123,8 +125,13 @@ def run_stage(args,stage,output,initial_checkpoint=None):
         for name,p in trainables:
             kind=group_kind(name) if high else parameter_kind(name)
             rate=cfg[kind+'_lr'] if high or kind!='alpha' else 0.
-            optgroups.append(dict(params=[p],lr=rate,initial_lr=rate,kind=kind))
-        optgroups.append(dict(params=list(head.parameters()),lr=cfg['auxiliary_lr'],initial_lr=cfg['auxiliary_lr'],kind='auxiliary'))
+            optgroups.append(dict(params=[p],lr=rate,initial_lr=rate,kind=kind,
+                                  weight_decay=parameter_decay(name,p,kind,cfg_all.get('electronic_weight_decay',0.))))
+        if cfg_all.get('electronic_weight_decay',0.):
+            for name,p in head.named_parameters():
+                optgroups.append(dict(params=[p],lr=cfg['auxiliary_lr'],initial_lr=cfg['auxiliary_lr'],kind='auxiliary',
+                                      weight_decay=parameter_decay(name,p,'auxiliary',cfg_all['electronic_weight_decay'])))
+        else:optgroups.append(dict(params=list(head.parameters()),lr=cfg['auxiliary_lr'],initial_lr=cfg['auxiliary_lr'],kind='auxiliary'))
         optimizer=torch.optim.AdamW(optgroups,weight_decay=0)
         ema={n:p.detach().clone() for n,p in trainables}
         execution=dict(source_commit=source_commit(),command=sys.argv,pid=os.getpid(),python=sys.version,torch=torch.__version__,
@@ -144,12 +151,12 @@ def run_stage(args,stage,output,initial_checkpoint=None):
             if high:old=convert_payload(old,cfg_all)
             if general:old=apply_contract(old,cfg_all)
             model.load_state_dict(old['state_dict']);del old
-            base=evaluate(model,processor,target_train,target_test,device,args.batch_size)
+            base=evaluate(model,processor,target_train,target_test,device,args.batch_size,include_train_metrics=track_clean)
             best_score=(base['hit_at_1'],base['map_at_10'])
             torch.save(checkpoint(model,head,-1,stage,best_score),output/'best.pt')
             history.append(dict(epoch=-1,kind='converted_high_alpha_start' if high else 'accepted_fallback',test=base))
             model.load_state_dict(transferred);del transferred
-            current=evaluate(model,processor,target_train,target_test,device,args.batch_size)
+            current=evaluate(model,processor,target_train,target_test,device,args.batch_size,include_train_metrics=track_clean)
             score=(current['hit_at_1'],current['map_at_10'])
             if score>best_score:
                 best_score=score;torch.save(checkpoint(model,head,0,stage,score),output/'best.pt')
@@ -177,7 +184,11 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                 # Pretrain half noisy; target adaptation one-quarter noisy.
                 clean=step%cfg['clean_every']!=0
                 clean_batches+=int(clean)
-                for mode in (model.vision,model.language):mode.optics.train(not clean)
+                for mode in (model.vision,model.language):
+                    if cfg_all.get('independent_phase_dropout',False):
+                        mode.optics.train(True)
+                        mode.optics.set_training_noise(not clean)
+                    else:mode.optics.train(not clean)
                 images=[]
                 for i in indices:
                     im=picture(samples[i].image_path,model.metadata.get('input_preprocessing','center_crop'))
@@ -233,14 +244,14 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                 if score>best_score:
                     best_score=score;torch.save(dict(checkpoint(model,head,epoch,stage,score),selection_variant='ema'),output/'best.pt')
             elif epoch%cfg_all['test_every']==0 or epoch==cfg['epochs']:
-                metrics=evaluate(model,processor,target_train,target_test,device,args.batch_size);row['test']=metrics
+                metrics=evaluate(model,processor,target_train,target_test,device,args.batch_size,include_train_metrics=track_clean);row['test']=metrics
                 score=(metrics['hit_at_1'],metrics['map_at_10'])
                 if score>best_score:
                     best_score=score;torch.save(dict(checkpoint(model,head,epoch,stage,score),selection_variant='ema'),output/'best.pt')
                 if rank:
                     with torch.no_grad():
                         for n,p in trainables:p.copy_(live[n])
-                    raw_metrics=evaluate(model,processor,target_train,target_test,device,args.batch_size);row['test_live']=raw_metrics
+                    raw_metrics=evaluate(model,processor,target_train,target_test,device,args.batch_size,include_train_metrics=track_clean);row['test_live']=raw_metrics
                     raw_score=(raw_metrics['hit_at_1'],raw_metrics['map_at_10'])
                     if raw_score>best_score:
                         best_score=raw_score;torch.save(dict(checkpoint(model,head,epoch,stage,raw_score),selection_variant='live'),output/'best.pt')
@@ -249,6 +260,7 @@ def run_stage(args,stage,output,initial_checkpoint=None):
             del live
             write_json(output/'parameter_updates.json',{n:float((p.detach().cpu()-initial[n]).square().mean().sqrt()) for n,p in trainables})
             history.append(row);write_json(output/'history.json',history);print(json.dumps(row),flush=True)
+            if track_clean:write_learning_curves(history,output)
         payload=torch.load(output/'best.pt',map_location=device,weights_only=True)
         model.load_state_dict(payload['state_dict']);selected_epoch=payload['epoch'];selected_variant=payload.get('selection_variant','initial_or_ema');del payload
         report=dict(status='complete',stage=stage,selected_epoch=selected_epoch,model_audit=model.audit(),
@@ -258,7 +270,7 @@ def run_stage(args,stage,output,initial_checkpoint=None):
         if high:report['selection_note']='Only alpha>=0.4 candidates, including converted initial checkpoint; low-alpha 70.21% is NOT a fallback'
         if general:report['selection_note']='Initial/live/EMA within the new input/readout contract only; old 68.96% is a separate reference, not a fallback'
         if stage=='adapt':
-            report['metrics']=evaluate(model,processor,target_train,target_test,device,args.batch_size,output)
+            report['metrics']=evaluate(model,processor,target_train,target_test,device,args.batch_size,output,include_train_metrics=track_clean)
             model.set_remove_optical(True)
             report['remove_optical_same_weights']=evaluate(model,processor,target_train,target_test,device,args.batch_size)
             model.set_remove_optical(False)

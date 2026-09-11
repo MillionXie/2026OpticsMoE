@@ -10,11 +10,13 @@ import json
 import math
 import torch
 
-PROFILES = ('preserve_adam', 'preserve_sam', 'preserve_fullfield_sam', 'preserve_fullfield_both_sam')
+PROFILES = ('preserve_adam', 'preserve_sam', 'preserve_fullfield_sam', 'preserve_fullfield_both_sam',
+            'regularized_control', 'regularized_phase05')
 
 
 def overlay_config(config, profile):
-    overlay = json.loads(Path(__file__).with_name('generalization.json').read_text(encoding='utf-8'))
+    filename = 'regularization.json' if profile.startswith('regularized_') else 'generalization.json'
+    overlay = json.loads(Path(__file__).with_name(filename).read_text(encoding='utf-8'))
     for key, value in overlay['common'].items():
         if isinstance(value, dict) and isinstance(config.get(key), dict):
             config[key].update(value)
@@ -30,7 +32,13 @@ def apply_contract(payload, config):
         raise ValueError('Generalization controls require alpha>0.4 source weights')
     metadata.update(input_preprocessing=config['input_preprocessing'],
                     ccd_readout_modes=config['ccd_readout_modes'])
+    if 'phase_dropout' in config:metadata['phase_dropout']=config['phase_dropout']
     return dict(payload, metadata=metadata)
+
+
+def parameter_decay(name, parameter, kind, strength):
+    # Never pull raw phase logits towards zero (pi), alpha, biases or LN scales.
+    return strength if kind not in ('phase','router','alpha') and parameter.ndim>=2 and name.endswith('weight') else 0.
 
 
 def backward_with_sam(closure, optimizer, rho=0.):

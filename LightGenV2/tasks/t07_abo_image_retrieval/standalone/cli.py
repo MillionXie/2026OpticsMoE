@@ -33,11 +33,14 @@ def encode(model, processor, samples, device, batch_size):
 
 
 @torch.no_grad()
-def evaluate(model, processor, train, test, device, batch_size, output=None):
+def evaluate(model, processor, train, test, device, batch_size, output=None, include_train_metrics=False):
     vtrain = encode(model,processor,train,device,batch_size)
     vtest = encode(model,processor,test,device,batch_size)
     gallery,metadata = _gallery_centroids(train,F.normalize(vtrain.float(),dim=-1))
     metrics,rows,categories = _evaluate(vtest,test,gallery,metadata,_category_prototypes(gallery,metadata))
+    if include_train_metrics:
+        from .learning_curves import clean_train_metrics
+        metrics['train_clean_leave_product_out']=clean_train_metrics(vtrain,train)
     if output:
         write_csv(output/'retrieval_predictions.csv',rows)
         write_csv(output/'per_category_metrics.csv',categories)

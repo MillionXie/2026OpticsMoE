@@ -127,6 +127,7 @@ class OpticalRetrieval(nn.Module):
             if mode not in ('prefix_rows','fullfield_rows'):
                 raise ValueError('Unknown CCD readout contract')
             getattr(self,name).optics.readout_mode = mode
+            getattr(self,name).optics.configure_phase_dropout(metadata.get('phase_dropout',{}))
         self.readout = RetrievalHead()
 
     def train(self, mode=True):
@@ -166,5 +167,6 @@ class OpticalRetrieval(nn.Module):
                 'alpha_bounds':list(self.vision.alpha_bounds),
                 'input_preprocessing':self.metadata.get('input_preprocessing','center_crop'),
                 'ccd_readout_modes':{m:getattr(self,m).optics.readout_mode for m in ('vision','language')},
+                'training_phase_dropout':self.metadata.get('phase_dropout',{}),
                 'alpha':{m:[float(alpha_value(getattr(getattr(self,m),f'block{i}_optical_fusion_logit'),getattr(self,m).alpha_bounds)) for i in (1,2)] for m in ('vision','language')},
                 'ccd_postprocessing':'mean -> clip12 -> log1p -> adaptive_avg_pool (see ccd_readout_modes) -> rowLN -> ReLU -> Linear192'}

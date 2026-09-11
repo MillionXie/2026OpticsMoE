@@ -161,3 +161,29 @@ expert/global共四处CCD读出统一生效，光Router四探测区读出不变�
 与仅L全场组同源权重、SAM、完整商品输入、学习率、采样与选模，便于隔离V端修正的作用。
 命令见COMMAND第10节，结果为`runs/simulation/generalization_fullfield_both_20260911`。
 此补充组等待原generalization队列成功结束后在同一GPU运行；等待不创建CUDA上下文，不改正在训练的源码。
+
+### 当前完成成绩与防过拟合续训
+
+2026-09-11：完整输入AdamW组 `generalization_20260911/preserve_adam/artifacts` 已完成30轮，
+source c1f4b471，epoch25 live，Hit@1=69.7917%（335/480）、mAP@10=0.68241708；去光57.2917%，
+相位打乱47.2917%，轻微CCD噪声69.3750%。alpha=0.4286～0.4399；较旧约束版只多4张命中，不声称显著提升。
+best SHA256=`c8509b44fbc0f7bcd6e1f0507376b6964bf483fca8205308407b790a295a100f`。
+同轮SAM和仅L全场SAM均为68.9583%，未改善Hit@1。以上均为test-selected、同数据标签协议；旧版本不覆盖。
+
+新对照 `regularized_control` / `regularized_phase05` 都从此69.7917%完整输入权重出发：
+等比例缩放到原224画布的85%～100%后随机放置，保留整个物体、不裁切、不旋转；水平翻转25%、
+亮度/对比度0.85～1.15、色彩0.9～1.1、15%概率轻微模糊(radius0.4)。仅训练增强，测试仍确定性完整输入。
+电子二维以上weight使用AdamW weight_decay=0.01；相位raw、Router相位、alpha、bias和归一化参数不做衰减。
+第一组不加新相位dropout，第二组每个训练batch增加expert/global 5%、Router 2%的8×8分块相位旁路，
+逐样本独立。被选区域调制改为exp(i*0)=1，保持单位幅度，无1/(1-p)增益；推理/图库/干净评估关闭。
+这不是移除专家，也不改Top2。已有25% batch的20%～30%DC与旧旁路/CCD噪声另行保留，二者明确分开。
+此处phase dropout是物理相位旁路正则化，不等同于标准神经元dropout，也不是已经验证有效的结论。
+参考[Dropout](https://jmlr.org/papers/v15/srivastava14a.html)、[AdamW](https://arxiv.org/abs/1711.05101)。
+
+**准确率记录口径**：每epoch记录带增强/噪声的batch检索Hit@1和辅助分类accuracy；每5epoch以及最终best，
+对同一live/EMA权重记录关闭增强/dropout/训练噪声的完整1440训练query与480测试query。
+训练query排除自身整个商品（119候选、11正例），测试仍120候选、12正例；均按同类为相关，不用训练分类accuracy替代检索。
+`history.json`内`test`/`test_live`各自包含`train_clean_leave_product_out`；`learning_curves.csv/png/pdf`
+明确分别呈现干净检索、同权重train-test差距、随机训练批次指标。旧epoch没有对应权重时不虚构干净准确率，
+仅使用已保存最佳模型的检索特征补算该best，结果放`runs/simulation/overfitting_audit_20260911`。
+新训练只保留best/last，30epoch×64steps，batch40，单GPU串行，操作见COMMAND第11节。
