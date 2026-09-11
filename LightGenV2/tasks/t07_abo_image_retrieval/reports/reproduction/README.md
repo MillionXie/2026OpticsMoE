@@ -306,6 +306,27 @@ Python3.11.15、torch2.6.0+cu124、单卡4090。此为固定权重数值复现�
 组会分析见 `docs/GROUP_MEETING.md`。原始细粒度审计在本任务 `runs/simulation/meeting_audit_latest_20260911/artifacts`，
 独立复评在审阅任务 `runs/fixed_equivalence_20260911`。新的代码ZIP是仿真/续训内部审阅包，不是硬件SDK包。
 
+## 2026-09-11：SAM与输入裁剪修正（运行中，非最终结果）
+
+唯一结果目录为本任务 `runs/simulation/generalization_20260911/`，源码
+`c1f4b4716ee001e962ef0d33816f854ff6c81d52` 已同步GitHub，完整启动命令见 [COMMAND第9节](../../COMMAND.md)。
+单卡4090、Python3.11.15/torch2.6.0+cu124，原始数据、split、480-query/120训练商品中心及上节源best的SHA256不变。
+按 `preserve_sam → preserve_adam → preserve_fullfield_sam` 串行，每组独立从同一68.9583%高alpha权重开始，
+不是前一组接下一组。各30epoch×64steps，batch40，评估batch4，每5轮比较live/EMA测试Hit@1再mAP，
+仅保存best/last；test-selected且单seed，不是独立测试估计。前25轮联合训练，末5轮仅读出。
+
+三组输入都从中心裁切改为等比完整缩放、白色补边224²，训练/图库/测试一致；禁止裁剪和旋转增强。
+SAM组rho前三轮0.01/0.02/0.03，两次前向重放同一随机噪声/dropout，参数精确恢复后按第二次梯度更新。
+第三组另外将L端CCD全场汇聚为77×224，而非pool224²后截前77行；V端、光路、参数数量均不改。
+不新增TF、attention或教师。alpha>0.4、原有光学噪声/未调制分量/路由均衡保留。
+第一组与旧成绩还同时存在适配学习率/训练变化，不能把提升全部归因于裁剪；SAM对照之间配置匹配，
+但同step计算约两倍，不是等GPU时间。更改后的输入/读出写入checkpoint，旧合同成绩不能作为新合同保底。
+
+本地/服务器32项测试通过。`runs/smoke/generalization_20260911`（源码fc11abdd）完整通过两步SAM及最终
+正常/去光/相位打乱/噪声复评，12片相位更新非零，损失有限；结束后PID3295086/3295089退出、GPU恢复空闲。
+后续源码仅修正审计字段与队列顺序，不改变数值计算。正式队列PID3329183、第一组PID3329218为启动记录；
+当前活动进程/完成指标以队列status.json为准。正式提升待实测，不把冒烟结果填入性能表。
+
 ## 历史审计说明（保留）
 
 [历史 baseline 方法审计](BASELINE_METHODS.md)保留了旧运行的模型、预处理及评估定义。

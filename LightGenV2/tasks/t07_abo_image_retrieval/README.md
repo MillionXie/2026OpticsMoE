@@ -139,4 +139,9 @@ SAM是Sharpness-Aware Minimization，不是Segment Anything：两次反传共用
 新输入/读出模式写入checkpoint metadata，图库构建、训练、评估统一读取；旧权重默认仍为原中心裁切/前行读出。
 选择只在各自新合同内进行，不能拿旧68.96%不同预处理的结果充作保底。仅best/last。
 `generalization_queue` 单卡串行、每组一个独立进程，失败停止；状态/指标汇总到queue的status.json，完整命令见COMMAND第9节。
-本节是实验计划/实现合同，未完成测试前不声称已超过0.7。新权重必须用本版T07加载，不直接放入旧审阅ZIP。
+本轮已启动，源码 `c1f4b471`；结果统一在 `runs/simulation/generalization_20260911/`，
+实时状态看该目录的 `status.json`。顺序为SAM、AdamW对照、SAM+全场读出；启动时队列PID3329183，
+第一组PID3329218，只使用GPU1（UUID见COMMAND）。不能仅凭历史PID判断仍在运行，应检查状态/进程。
+本地和服务器32项测试通过，`runs/smoke/generalization_20260911` 的两步CUDA训练及完整复评已结束，
+12片相位均有非零更新；这不是正式性能结果。未完成正式测试前不声称已超过0.7。
+新权重必须用本版T07加载，不直接放入旧审阅ZIP。
