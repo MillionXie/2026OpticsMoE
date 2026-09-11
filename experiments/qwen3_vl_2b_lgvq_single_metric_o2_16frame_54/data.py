@@ -696,6 +696,29 @@ def load_single_metric_cache(settings: ExperimentSettings) -> dict[str, Any]:
         result["raw_frames"] = raw_frames["frames"]
         result["raw_frame_cache_path"] = str(settings.raw_frame_cache_path)
         result["raw_frame_cache_sha256"] = file_sha256(settings.raw_frame_cache_path)
+        raw_frame_views = [raw_frames["frames"]]
+        for view_path in settings.raw_frame_cache_view_paths:
+            raw_view = load_raw_frame_cache(
+                view_path,
+                sample_ids=manifest_ids,
+                frame_count=settings.frame_count,
+            )
+            expected_offset = frame_sampling_offsets[len(raw_frame_views)]
+            actual_offset = float(raw_view.get("frame_sampling_offset", 0.0))
+            if actual_offset != expected_offset:
+                raise RuntimeError(
+                    "A raw-frame view does not match its Vision sampling offset: "
+                    f"expected {expected_offset}, got {actual_offset}"
+                )
+            raw_frame_views.append(raw_view["frames"])
+        if len(raw_frame_views) not in {1, len(vision_views)}:
+            raise RuntimeError(
+                "Vision and raw-frame temporal-sampling view counts differ"
+            )
+        result["raw_frame_views"] = tuple(raw_frame_views)
+        result["raw_frame_cache_view_paths"] = [
+            str(path) for path in settings.raw_frame_cache_view_paths
+        ]
     if settings.vgg_feature_cache_path is not None:
         vgg = load_vgg_feature_cache(
             settings.vgg_feature_cache_path,
@@ -839,7 +862,15 @@ class LGVQSingleMetricDataset(Dataset[dict[str, Any]]):
         if "soft_target_present" in self.payload and bool(self.payload["soft_target_present"][source]):
             item["soft_target"] = self.payload["soft_targets"][source].float()
         if "raw_frames" in self.payload:
-            item["raw_frames"] = self.payload["raw_frames"][source]
+            raw_views = self.payload.get(
+                "raw_frame_views", (self.payload["raw_frames"],)
+            )
+            if len(raw_views) not in {1, len(vision_views)}:
+                raise RuntimeError(
+                    "Vision and raw-frame sampling-view counts differ"
+                )
+            raw_view_index = view_index if len(raw_views) > 1 else 0
+            item["raw_frames"] = raw_views[raw_view_index][source]
         if "vgg_tokens" in self.payload:
             item["vgg_tokens"] = self.payload["vgg_tokens"][source].float()
         if "resnet_tokens" in self.payload:

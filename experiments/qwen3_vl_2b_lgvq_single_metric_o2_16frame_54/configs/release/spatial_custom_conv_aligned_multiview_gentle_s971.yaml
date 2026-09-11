@@ -1,0 +1,10 @@
+base_config: spatial_custom_conv_aligned_multiview_s967.yaml
+output_dir: ../../runs/lgvq_spatial_custom_conv_aligned_multiview_gentle_s971
+random_seed: 971
+
+# A gentler independent optimization trajectory.  This has the same inference
+# graph and parameter count as s967; only the training learning rates differ.
+training:
+  learning_rate: 0.000001
+  readout_learning_rate_factor: 0.50
+
