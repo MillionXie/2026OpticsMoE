@@ -1,0 +1,18 @@
+base_config: spatial_custom_conv_aligned_multiview_s967.yaml
+output_dir: ../../runs/lgvq_spatial_custom_conv_aug_flip025_refine_s1027
+random_seed: 1027
+
+# Conservative continuation of the successful flip run. The lower flip rate
+# keeps most batches on the laboratory orientation while retaining invariance.
+training:
+  initialization_checkpoint: ../../../../LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_aug_flip_s1019/best_aug_flip_deploy.pt
+  epochs: 20
+  learning_rate: 0.0000004
+  readout_learning_rate_factor: 0.20
+  ema_decay: 0.997
+  test_interval_steps: 12
+  horizontal_flip_probability: 0.25
+
+loss:
+  paired_view_supervision_weight: 0.08
+  paired_view_consistency_weight: 0.01

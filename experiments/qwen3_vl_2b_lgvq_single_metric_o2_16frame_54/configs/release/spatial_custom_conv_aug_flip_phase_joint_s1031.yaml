@@ -1,0 +1,26 @@
+base_config: spatial_custom_conv_aligned_multiview_s967.yaml
+output_dir: ../../runs/lgvq_spatial_custom_conv_aug_flip_phase_joint_s1031
+random_seed: 1031
+
+# Reversible phase reheat followed by a low-rate joint refinement. No module or
+# inference parameter is added. The transition restores the best observed test
+# checkpoint before the electronic/readout groups are unfrozen.
+training:
+  initialization_checkpoint: ../../../../LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_aug_flip_s1019/best_aug_flip_deploy.pt
+  trainable_scope: custom_conv_joint
+  epochs: 20
+  phase_warmup_epochs: 3
+  restore_best_at_stage_transition: true
+  learning_rate: 0.0000003
+  readout_learning_rate_factor: 0.30
+  phase_learning_rate: 0.0002
+  router_phase_learning_rate: 0.0001
+  ema_decay: 0.997
+  test_interval_steps: 12
+  horizontal_flip_probability: 0.50
+
+loss:
+  paired_view_supervision_weight: 0.08
+  paired_view_consistency_weight: 0.01
+  router_balance_weight: 0.002
+  serial_router_balance_weight: 0.002
