@@ -1,5 +1,24 @@
 # LSP alpha≥0.4：冻结低alpha教师热图蒸馏
 
+## 2026-09-11 启动记录
+
+实现提交：`8de890f316e3c58d50eff2e3a900a676c2d6ad68`，已推送
+`experiment/lsp-staged-refinement`。服务器任务测试 **20 passed**；4张训练/4张测试
+GPU smoke 完整通过（这些小样本分数不能作为正式性能）。蒸馏梯度检查中，
+feature_phase L2=`3.8282397e-5`、router L2=`4.0194443e-5`，有限且非零。
+电子参数仍为836248，初始化alpha=0.41814655/0.41812393。
+
+北京时间2026-09-11 08:26启动40轮正式任务，PID `3379191`，使用一张RTX3090
+（GPU2，UUID `GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b`）。
+干净源码目录：`/DATA/DATA1/guest3/lsp_distill_source_20260911`。
+结果根目录：`/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t02_keypoint_detection/runs/simulation/`。
+训练目录：`alpha40_distill_seed42_20260911`；同名`.log`和`.launch.json`记录日志及完整命令。
+等待完成的global随机相位评估PID `3379193`，目录
+`global_noise_alpha40_distill_20260911`，只在训练结束后使用同一GPU。
+去光测试由训练入口自动执行；随机global评估使用5个固定种子，均不重训。
+
+此记录仅表示任务启动，不表示已达到0.73。当前已完成的合规最佳仍为下述0.72792857。
+
 ## 起点和约束
 
 上一轮40轮小步精修完成，best epoch5的1000张test PCK=0.72792857，
