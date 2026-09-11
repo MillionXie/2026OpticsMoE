@@ -9,10 +9,10 @@ backend:
   lab_guide: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/LAB_SPATIAL4_GUIDE.md
   source_sha256:
     modeling.py: 711f8eb40c546317821cf777f6858a3ce4e9f443ba459b4dde5858dc7fbf26a1
-    settings.py: adb009f83173554030ca9e0df3d4aa0d03bedd7e3baec276f628dc6b8ef794a9
+    settings.py: 63fb85ede81bc067baa2f6894cc9799207a9b1b87e61b32ed4910e79b5113646
     training.py: 9fa5e14be21822936dbb21bee4904ea146a79a434c18c40da89701f1d152e51a
     run.py: c12c320e848e68041a32c8a74f38c0deba65d8f03f486f71c9695305960c9b72
-    data.py: f727b8aff3ddb3239a62d2df7684e096b99ef13d6680a7397009f7c63f72e1f0
+    data.py: 9c2bf13e3026064f86fbfab03e31a0fedb80e82a8777edd1c677b1493bba8d5c
     hardware_bridge.py: 9b36ab6f202014be200d2d27cd0730a0651b7aa5429147c8ffcc12ceb165219b
     export_hardware_masks.py: 049a74dbab71c84325edf9979602a303d120b9e5b1f6a3b8aa946ed8cc072ff9
 
