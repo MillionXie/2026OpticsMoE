@@ -6,7 +6,10 @@
 三组从同一高alpha 69.7917% best续训，40epoch、每轮至少64个40图batch；不是从头预训练。
 新增池只按原十类精确product_type映射，排除原200商品、共享图片ID、文件SHA及近重复；
 候选需本地图片可用。此为元数据筛查，不冒充人工验证全部标签；原标签/图片不修改。
-目标是每类最多100个额外商品、每商品2图，稀少类不强行补齐，最终数量以pool report为准。
+实际新增922商品、1844图：前八类各100商品，home mirror 89、vase 33，每商品2图。
+池位于`runs/simulation/domain_pool_20260911/`；manifest SHA256为
+`b27487006630e95ef375e702a6f828ccd897b6b2dbea1f8250244f5da88efac8c`。
+与目标商品/image ID交集均0；6个候选商品因目标图像精确/近重复被排除。
 原120训练商品、40未用val商品、40测试商品划分不变，**评估图库固定原120商品**。
 混合每类2原商品+2新增商品；curriculum前10epoch每类4新增商品，后30epoch混合；
 target_control只用原商品。每轮循环覆盖所有活跃域的商品，记录实际商品/图片覆盖。
@@ -18,10 +21,27 @@ target_control只用原商品。每轮循环覆盖所有活跃域的商品，记
 用户本次明确允许最多三张GPU：可各组一张，结束/失败退出子进程，记录CUDA进程释放检查。
 原69.79%及已交付包不覆盖，新结果需完整正常/去光复评后再决定采用。
 
+服务器已提交三组40epoch任务（源码`09835251`），run均位于本任务`runs/simulation/`：
+
+| Run ID | 训练数据安排 | GPU索引 | 启动监督进程PID |
+| --- | --- | --- | --- |
+| `domain_target_control_20260911` | 原120训练商品，40轮 | 1 | 1535413 |
+| `domain_mixed_20260911` | 原120+新增922商品，混合40轮 | 3 | 1535414 |
+| `domain_curriculum_20260911` | 新增922商品10轮，混合30轮 | 0 | 1535415 |
+
+以上是启动记录，不是完成声明。以各run的`status.json`、`<profile>/artifacts/history.json`和
+`final_report.json`为准；curriculum队列须等`runs/smoke/domain_20260911/status.json`完成后启动，
+等待时不占GPU。每个队列结束会记录`gpu_context_released`；不要用PID历史记录判断当前占卡。
+学习曲线、相位图、best/last与最终去光评估都留在对应artifacts，不新增散落的结果目录。
+
 当前入口为 `python run.py`，只使用本文件夹的 `standalone/`，**不导入T01或旧experiments，也不加载完整Qwen模型**。
 日常步骤看 [COMMAND.md](COMMAND.md)；维护、导出与历史数值证据看 [复现入口](reports/reproduction/README.md)（源码仓库内）。
 
 ## 给老师检查的结构
+
+以下结构说明原70.2083%独立交付版本。当前数据扩充试验使用同一计算图，但输入已改为
+保全物体的`contain_white`，融合alpha硬范围为[0.4001,0.8]，起点实际约0.429～0.440；
+不能把下方旧包的低alpha与当前试验混为一谈。试验还关闭教师loss，辅助类别代理只用于训练。
 
 - 固定图片224×224 + 固定英文检索指令（见standalone/data.py）；无类别/商品标题输入。
 - 冻结Qwen patch Conv3d、视觉位置表、主merger，以及固定prompt用到的token embedding行。
