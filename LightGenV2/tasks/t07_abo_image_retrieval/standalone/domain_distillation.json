@@ -11,6 +11,11 @@
     "domain_distill_light": {"relation_teacher_weight": 0.10},
     "domain_distill_strong": {"relation_teacher_weight": 0.30},
     "domain_distill_stronger": {"relation_teacher_weight": 0.60},
+    "domain_distill_teacher_agreement": {
+      "relation_teacher_weight": 0.30,
+      "teacher_agreement_external_only": true,
+      "protocol": "Continue fixed77.5% live best for16 epochs. All1440 original train images remain. External training images require frozen train-only Qwen nearest-other-product category agreement; selection once before filtering, manifest recorded, no labels/files changed. Teacher cache validated against full cap250 pool before subsetting. Same optical path, Top2, alpha>0.4, no new inference network; original480-query/120-gallery unchanged."
+    },
     "domain_distill_sharpteacher": {
       "relation_teacher_weight": 0.30,
       "relation_teacher_target_temperature": 0.03

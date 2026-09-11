@@ -6,7 +6,25 @@ import torch
 from LightGenV2.tasks.t07_abo_image_retrieval.standalone.data import Sample
 from LightGenV2.tasks.t07_abo_image_retrieval.standalone.io import sha256
 from LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization import overlay_config,restore_auxiliary_head
-from LightGenV2.tasks.t07_abo_image_retrieval.standalone.teacher_relations import load_teacher_cache,gallery_relation_loss
+from LightGenV2.tasks.t07_abo_image_retrieval.standalone.teacher_relations import load_teacher_cache,gallery_relation_loss,select_agreeing_external
+
+
+def test_external_selection_preserves_originals_and_excludes_self():
+    labels=[0,1,0,0,0,1,1,1]
+    samples=[Sample(f's{i}',f'p{i}',c,str(c),'train',Path(f'{i}.png')) for i,c in enumerate(labels)]
+    vectors=torch.tensor([[-1.,0.],[0.,1.],[1.,0.],[1.,.01],[0.,1.1],[0.,.99],[0.,1.],[1.01,0.]],requires_grad=True)
+    selected,v,rows=select_agreeing_external(samples,vectors,2)
+    assert selected[:2]==samples[:2]  # Original wrong teacher prediction still retained.
+    assert rows[0]['teacher_category_id'] != rows[0]['category_id']
+    assert rows[0]['kept'] and not rows[4]['kept'] and not rows[7]['kept']
+    assert all(r['kept']==(r['original_train'] or r['teacher_category_id']==r['category_id']) for r in rows)
+    indices=[i for i,r in enumerate(rows) if r['kept']]
+    torch.testing.assert_close(v,vectors.detach()[indices])
+    assert not v.requires_grad and len(rows)==len(samples)
+    with pytest.raises(ValueError):select_agreeing_external([replace(samples[0],split='test')]+samples[1:],vectors,2)
+    with pytest.raises(ValueError):select_agreeing_external(samples,vectors,0)
+    cfg=overlay_config({},'domain_distill_teacher_agreement')
+    assert cfg['teacher_agreement_external_only'] and cfg['relation_teacher_weight']==.3
 
 
 def test_relation_uses_teacher_affinities_not_coordinate_matching():

@@ -113,15 +113,26 @@ def run_stage(args,stage,output,initial_checkpoint=None):
             if expected_cap is not None and pool_report.get('settings',{}).get('products_per_category')!=expected_cap:
                 raise ValueError('Selected pool does not match this refinement profile product cap')
             samples,target_count=combine_training(target,external)
-        groups=make_groups(samples)
-        if len(groups)<cfg['classes_per_batch'] or min(len(g) for g in groups.values())<cfg['products_per_class']:
-            raise ValueError('Not enough distinct products/classes for sampling')
-        labels=torch.tensor([s.category_id for s in samples],device=device)
         teacher_vectors=None;teacher_audit=None
         if cfg_all.get('relation_teacher_weight',0):
             from .teacher_relations import load_teacher_cache,gallery_relation_loss
             if not domain or getattr(args,'teacher_cache',None) is None:raise ValueError('Relation KD requires domain training and --teacher-cache')
             teacher_vectors,teacher_audit=load_teacher_cache(args.teacher_cache,samples,args.target,args.pool,device)
+        selection_audit=None
+        if cfg_all.get('teacher_agreement_external_only',False):
+            if teacher_vectors is None or not domain:
+                raise ValueError('External selection requires a validated training-only teacher cache')
+            from .teacher_relations import select_agreeing_external
+            from .io import write_csv
+            samples,teacher_vectors,selection_rows=select_agreeing_external(samples,teacher_vectors,target_count)
+            write_csv(output/'training_selection.csv',selection_rows)
+            selection_audit=dict(policy='keep all original train; external teacher nearest-other-product agrees',
+                before_images=len(selection_rows),after_images=len(samples),original_train_retained=target_count,
+                selection_sha256=sha256(output/'training_selection.csv'),labels_modified=False,source_files_deleted=False)
+        groups=make_groups(samples)
+        if len(groups)<cfg['classes_per_batch'] or min(len(g) for g in groups.values())<cfg['products_per_class']:
+            raise ValueError('Not enough distinct products/classes for sampling')
+        labels=torch.tensor([s.category_id for s in samples],device=device)
         origin=args.assets/'best.pt';start=initial_checkpoint or origin
         payload=torch.load(start,map_location='cpu',weights_only=True)
         if rank and payload['metadata'].get('fusion_alpha_min',0)<=.4:
@@ -169,6 +180,7 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                 gallery_products=len({s.product_id for s in target_train}),test_products=len({s.product_id for s in target_test}),
                 eval_protocol='Original gallery and test unchanged; expanded products never enter eval gallery')
         execution['training_only_teacher']=teacher_audit
+        execution['training_selection']=selection_audit
         execution['protected_optics_source_sha256']=sha256(Path(__file__).with_name('optics.py'))
         write_json(output/'execution.json',execution)
         best_score=(-float('inf'),-float('inf'));history=[]
@@ -347,7 +359,7 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                     selected_variant=selected_variant,
                     auxiliary_head_at_inference=False,test_selected=stage=='adapt',
                     selection_note='best EMA snapshot indexed by live training loss' if stage=='pretrain' else 'target test Hit@1 then mAP; accepted best included')
-        report.update(training_only_teacher=teacher_audit,teacher_at_inference=False,
+        report.update(training_only_teacher=teacher_audit,teacher_at_inference=False,training_selection=selection_audit,
                       protected_optics_source_sha256=execution['protected_optics_source_sha256'])
         if high:report['selection_note']='Only alpha>=0.4 candidates, including converted initial checkpoint; low-alpha 70.21% is NOT a fallback'
         if general:report['selection_note']='Initial/live/EMA within this run input/readout contract only; explicit initial checkpoint is the fallback. Selected epoch -1 is not a new training improvement.'

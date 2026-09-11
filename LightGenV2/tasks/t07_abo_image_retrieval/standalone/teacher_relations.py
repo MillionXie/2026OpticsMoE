@@ -15,6 +15,43 @@ from .domain_data import combine_training
 from .io import sha256, write_json, source_commit
 
 
+@torch.no_grad()
+def select_agreeing_external(samples, vectors, target_count):
+    """Training-only curriculum, NOT label correction or deletion of source data.
+
+    Keep every original training image. For external images, require the frozen
+    teacher's nearest OTHER training product to have the supplied category.
+    Fit this selection once against the original full train bank, before filtering.
+    """
+    from .retrieval_training import product_bank
+    if not 0 < target_count < len(samples) or len(vectors) != len(samples):
+        raise ValueError('Expected aligned original + external training samples')
+    if any(s.split != 'train' for s in samples):
+        raise ValueError('Teacher selection accepts training samples only')
+    # Fix the selector to CPU float32, independent of training GPU/autocast.
+    teacher_cpu = vectors.detach().float().cpu()
+    bank, bank_labels, own = product_bank(teacher_cpu, samples)
+    query = F.normalize(teacher_cpu, dim=-1)
+    predictions = []
+    for start in range(0, len(samples), 256):
+        scores = query[start:start+256] @ bank.T
+        scores[torch.arange(len(scores), device=scores.device), own[start:start+256]] = -torch.inf
+        predictions.extend(bank_labels[scores.argmax(1)].cpu().tolist())
+    kept, rows = [], []
+    for i, (s, prediction) in enumerate(zip(samples, predictions)):
+        keep = i < target_count or prediction == s.category_id
+        if keep: kept.append(i)
+        rows.append(dict(sample_id=s.sample_id, product_id=s.product_id,
+                         category_id=s.category_id, teacher_category_id=prediction,
+                         original_train=i < target_count, kept=keep))
+    selected = [samples[i] for i in kept]
+    # Do not accidentally turn this into removing difficult task categories.
+    external_categories = {s.category_id for s in samples[target_count:]}
+    if {s.category_id for s in selected[target_count:]} != external_categories:
+        raise ValueError('Teacher selection removed an entire external category')
+    return selected, vectors[torch.tensor(kept, device=vectors.device)], rows
+
+
 def load_teacher_cache(path, samples, target, pool, device):
     cache=torch.load(path,map_location='cpu',weights_only=True)
     if cache.get('schema')!=1 or cache.get('frozen_teacher') is not True:

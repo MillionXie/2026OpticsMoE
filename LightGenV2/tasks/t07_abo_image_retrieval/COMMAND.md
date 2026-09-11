@@ -598,3 +598,31 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.cli evaluate \
 ```
 
 以evaluation/final_report与逐图预测判断，不以两个父模型命中的并集或平均分宣称提升。
+
+## 22. 新增训练图的教师一致性对照
+
+仅筛选额外训练图，原1440训练图全保留；不改原数据文件、测试集或图库。
+教师缓存先按完整cap250池校验，之后子集化；不需要重新加载Qwen，也不新增推理层。
+一轮检查通过后，正式16轮独立从同一个77.50%best开始，不从检查last继续。
+
+```bash
+T07=LightGenV2/tasks/t07_abo_image_retrieval
+AGREE_SMOKE=$T07/runs/smoke/domain_teacher_agreement_20260912_gpu4
+AGREE_BEST=$T07/runs/simulation/verify_strong_ep4_20260912_gpu1/best.pt
+AGREE_CACHE=$T07/runs/smoke/domain_distillation_20260912/build_teacher_cache/artifacts/cache.pt
+POOL=$T07/runs/simulation/domain_pool250_20260912
+T07_GPU=GPU-1b963983-7909-af6e-0528-f0f0661ab549
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu "$T07_GPU" --assets "$ASSETS" --checkpoint "$AGREE_BEST" --target "$TARGET" \
+  --abo "$ABO" --pool "$POOL" --teacher-cache "$AGREE_CACHE" \
+  --profiles domain_distill_teacher_agreement --epochs 1 --steps 1 --output "$AGREE_SMOKE" \
+  --after-queue "$T07/runs/simulation/domain_pool500_mix13_20260912_gpu4/status.json"
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu "$T07_GPU" --assets "$ASSETS" --checkpoint "$AGREE_BEST" --target "$TARGET" \
+  --abo "$ABO" --pool "$POOL" --teacher-cache "$AGREE_CACHE" \
+  --profiles domain_distill_teacher_agreement --epochs 16 --steps 128 \
+  --output "$T07/runs/simulation/domain_teacher_agreement_20260912_gpu4" \
+  --after-queue "$AGREE_SMOKE/status.json"
+```
+
+对照属于教师偏好的训练数据子集，不证明被筛出图标签错了；不得把它们从论文测试协议删除。
