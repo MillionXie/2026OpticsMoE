@@ -376,3 +376,18 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 `history.losses`增加relation_kd、teacher_correct_fraction、teacher_confidence，
 `execution.training_only_teacher`记录缓存SHA/图像身份。最终推理不需要teacher缓存或2B权重。
 最少389/480个命中才达标；当前各组尚未完成，不保证蒸馏一定提高性能。
+
+补充0.6强度对照：确认上面的KD_SMOKE已`complete`、缓存SHA与README一致，
+且本人的任务少于三张卡，才可以在第三张空闲卡启动。它没有新的推理层；仅KL系数不同。
+下面GPU2是本次已释放的卡，执行前必须再次查nvidia-smi，不得终止别人的进程腾卡。
+
+```bash
+nvidia-smi -i 2 --query-gpu=index,uuid,memory.used,utilization.gpu --format=csv
+T07_GPU=GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu "$T07_GPU" --assets "$ASSETS" --checkpoint "$BEST" --target "$TARGET" \
+  --abo "$ABO" --pool "$POOL" \
+  --teacher-cache "$KD_SMOKE/build_teacher_cache/artifacts/cache.pt" \
+  --profiles domain_distill_stronger --epochs 24 --steps 128 \
+  --output "$T07/runs/simulation/domain_distillation_stronger_20260912_gpu2"
+```

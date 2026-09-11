@@ -63,3 +63,7 @@ def test_distillation_profiles_change_training_only():
     b['relation_teacher_weight']=.1
     assert a==b and a['expected_pool_products_per_category']==250
     assert a['view_consistency_weight']==0.
+    c=overlay_config({},'domain_distill_stronger')
+    assert c['relation_teacher_weight']==.6
+    c['relation_teacher_weight']=.1
+    assert c==a

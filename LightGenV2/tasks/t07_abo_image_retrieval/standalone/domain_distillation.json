@@ -9,6 +9,7 @@
   },
   "profiles": {
     "domain_distill_light": {"relation_teacher_weight": 0.10},
-    "domain_distill_strong": {"relation_teacher_weight": 0.30}
+    "domain_distill_strong": {"relation_teacher_weight": 0.30},
+    "domain_distill_stronger": {"relation_teacher_weight": 0.60}
   }
 }
