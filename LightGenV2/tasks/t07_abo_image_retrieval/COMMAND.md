@@ -561,7 +561,7 @@ CUDA_VISIBLE_DEVICES="$T07_GPU" HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.cli evaluate \
   --assets "$T07/runs/simulation/standalone_assets_20260910" \
   --checkpoint "$T07/runs/simulation/domain_distillation_20260912/domain_distill_strong/artifacts/best.pt" \
-  --expected-checkpoint-sha256 e5c0eaab4c84766b1ee231dd144271e97737604c0dcd675d9e2f4957c6932658d \
+  --expected-checkpoint-sha256 e5c0eaab4c84766b1ee231dd14271e97737604c0dcd675d9e2f4957c6932658d \
   --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
   --device cuda --batch-size 4 --output "$T07/runs/simulation/verify_strong_ep4_20260912_gpu1"
 ```

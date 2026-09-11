@@ -13,6 +13,12 @@ from standalone.curriculum import stage_settings, parameter_kind, relation_loss
 
 
 class StandaloneTests(unittest.TestCase):
+    def test_documented_checkpoint_hashes_have_exact_length(self):
+        import re
+        hashes=re.findall(r'--expected-checkpoint-sha256\s+([0-9a-fA-F]+)',(TASK/'COMMAND.md').read_text(encoding='utf-8'))
+        self.assertTrue(hashes)
+        self.assertTrue(all(len(digest)==64 for digest in hashes))
+
     def test_explicit_evaluation_checkpoint_is_pinned_and_assets_untouched(self):
         import tempfile
         from standalone.io import evaluation_checkpoint,sha256
