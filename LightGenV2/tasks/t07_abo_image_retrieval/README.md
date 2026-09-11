@@ -1,5 +1,23 @@
 # T07 ABO 商品图搜图：独立光电工程
 
+## 2026-09-11 目标相关数据扩充试验
+
+新增 `domain_target_control / domain_mixed / domain_curriculum`，源码和命令见 COMMAND 第12节。
+三组从同一高alpha 69.7917% best续训，40epoch、每轮至少64个40图batch；不是从头预训练。
+新增池只按原十类精确product_type映射，排除原200商品、共享图片ID、文件SHA及近重复；
+候选需本地图片可用。此为元数据筛查，不冒充人工验证全部标签；原标签/图片不修改。
+目标是每类最多100个额外商品、每商品2图，稀少类不强行补齐，最终数量以pool report为准。
+原120训练商品、40未用val商品、40测试商品划分不变，**评估图库固定原120商品**。
+混合每类2原商品+2新增商品；curriculum前10epoch每类4新增商品，后30epoch混合；
+target_control只用原商品。每轮循环覆盖所有活跃域的商品，记录实际商品/图片覆盖。
+图库排序训练使用该阶段活跃训练商品中心，推理始终只用原图库；不把外部商品放进test gallery。
+三组前端、网络、损失、噪声/增强、光Router Top2、alpha>0.4保持一致，只改变训练数据和顺序。
+无新教师、无TF/attention、无新电子分支；弱亮度/对比度增强，不裁掉物体。
+保留20%–30% DC等原训练噪声（四分之一batch），本轮不增加独立相位dropout。
+新run只留best/last，初始权重可作为best保底，报告epoch=-1不算新训练提升。
+用户本次明确允许最多三张GPU：可各组一张，结束/失败退出子进程，记录CUDA进程释放检查。
+原69.79%及已交付包不覆盖，新结果需完整正常/去光复评后再决定采用。
+
 当前入口为 `python run.py`，只使用本文件夹的 `standalone/`，**不导入T01或旧experiments，也不加载完整Qwen模型**。
 日常步骤看 [COMMAND.md](COMMAND.md)；维护、导出与历史数值证据看 [复现入口](reports/reproduction/README.md)（源码仓库内）。
 

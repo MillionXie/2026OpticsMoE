@@ -38,15 +38,18 @@ def main():
     parser.add_argument('--assets', type=Path, required=True)
     parser.add_argument('--checkpoint', type=Path, required=True)
     parser.add_argument('--target', type=Path, required=True)
+    parser.add_argument('--abo', type=Path)
+    parser.add_argument('--pool', type=Path)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--epochs', type=int, default=30)
     parser.add_argument('--steps', type=int, default=64)
-    parser.add_argument('--profiles', nargs='+', choices=['preserve_adam','preserve_sam','preserve_fullfield_sam','preserve_fullfield_both_sam','regularized_control','regularized_phase05'],
+    parser.add_argument('--profiles', nargs='+', choices=['preserve_adam','preserve_sam','preserve_fullfield_sam','preserve_fullfield_both_sam','regularized_control','regularized_phase05','domain_mixed','domain_curriculum','domain_target_control'],
                         default=['preserve_sam','preserve_adam','preserve_fullfield_sam'])
     parser.add_argument('--after-queue', type=Path, help='Existing status.json; wait without a CUDA context until this queue completes')
     args = parser.parse_args()
     if min(args.epochs,args.steps)<1:parser.error('Positive epochs and steps required')
     if len(set(args.profiles))!=len(args.profiles):parser.error('Duplicate profiles')
+    if any(p.startswith('domain_') for p in args.profiles) and (args.abo is None or args.pool is None):parser.error('Domain profiles require --abo and --pool')
     if args.after_queue is not None and not args.after_queue.is_file():parser.error('--after-queue must be an existing status.json')
     args.output.mkdir(parents=True, exist_ok=False)
     status = dict(status='running',pid=os.getpid(),gpu=args.gpu,planned=args.profiles,completed=[],
@@ -75,6 +78,7 @@ def main():
                      '--mode','adapt','--profile',profile,'--assets',str(args.assets),'--checkpoint',str(args.checkpoint),
                      '--target',str(args.target),'--output',str(run/'artifacts'),'--adapt-epochs',str(args.epochs),
                      '--steps',str(args.steps),'--batch-size','4']
+            if profile.startswith('domain_'):command+=['--abo',str(args.abo),'--pool',str(args.pool)]
             env=dict(os.environ,CUDA_VISIBLE_DEVICES=args.gpu,HF_HUB_OFFLINE='1',TRANSFORMERS_OFFLINE='1',OMP_NUM_THREADS='4',MKL_NUM_THREADS='4')
             with (run/'console.log').open('w',encoding='utf-8') as log:
                 child=subprocess.Popen(command,stdout=log,stderr=subprocess.STDOUT,env=env)
@@ -87,6 +91,11 @@ def main():
             status['completed'].append(dict(profile=profile,hit1=report['metrics']['hit_at_1'],
                 removed_hit1=report['remove_optical_same_weights']['hit_at_1'],epoch=report['selected_epoch'],
                 alpha=report['model_audit']['alpha']))
+            released_pid=child.pid
+            live_gpu_processes=subprocess.check_output(['nvidia-smi','--query-compute-apps=pid,gpu_uuid,used_memory','--format=csv,noheader'],text=True)
+            if any(line.split(',')[0].strip()==str(released_pid) for line in live_gpu_processes.splitlines()):
+                raise RuntimeError(f'Exited child {released_pid} is still listed by nvidia-smi; do not start another job')
+            status['completed'][-1].update(child_pid=released_pid,gpu_context_released=True)
             child=None
             status.update(active_profile=None,child_pid=None);save()
         status.update(status='complete',finished_unix=time.time())

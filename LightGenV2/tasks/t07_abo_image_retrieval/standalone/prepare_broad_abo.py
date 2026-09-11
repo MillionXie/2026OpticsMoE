@@ -34,7 +34,9 @@ def safe_image(root,relative):
 
 def prepare(args):
     if args.output.exists():raise FileExistsError(args.output)
-    target_samples,_=_load_contract(args.target)
+    target_samples,target_names=_load_contract(args.target)
+    target_types={name.upper().replace(' ','_'):(cid,name) for cid,name in target_names.items()}
+    targeted=getattr(args,'target_types_only',False)
     target_rows=list(csv.DictReader((args.target/'data/abo_similarity10_manifest.csv').open(encoding='utf-8')))
     blocked_products={r['product_id'] for r in target_rows};blocked_ids={r['image_id'] for r in target_rows}
     protected=np.stack([image_signature(s.image_path) for s in target_samples])
@@ -61,10 +63,11 @@ def prepare(args):
     # Cap common classes so phone cases cannot dominate; generic buckets are ambiguous labels.
     generic={'UNKNOWN','HOME','GROCERY','KITCHEN','OFFICE_PRODUCTS','SPORTING_GOODS','HEALTH_PERSONAL_CARE','HOME_FURNITURE_AND_DECOR'}
     categories=sorted((c for c,g in groups.items() if len(g)>=args.minimum_products and c not in generic),key=lambda c:(-len(groups[c]),c))
+    if targeted:categories=sorted(target_types,key=lambda c:target_types[c][0])
     rng=random.Random(42);rows=[];seen_hashes=set();seen_ids=set();counts={}
     for category in categories:
         if len(counts)>=args.categories:break
-        candidates=groups[category][:];rng.shuffle(candidates);selected=[];product_count=0
+        candidates=groups.get(category,[])[:];rng.shuffle(candidates);selected=[];product_count=0
         for pid,ids in candidates:
             chosen=[];reject_product=False
             for iid in ids:
@@ -86,15 +89,20 @@ def prepare(args):
             product_count+=1
             if product_count>=args.products_per_category:break
         if product_count>=args.minimum_products:
-            cid=len(counts);counts[category]=product_count
-            for row in selected:row.update(category_id=cid,sample_id=row['product_id']+'__'+row['image_id'])
+            cid=target_types[category][0] if targeted else len(counts);counts[category]=product_count
+            for row in selected:
+                row.update(category_id=cid,sample_id=row['product_id']+'__'+row['image_id'])
+                if targeted:row.update(product_type=category,category=target_types[category][1])
             rows.extend(selected)
             print(json.dumps({'category':category,'products':product_count,'classes':len(counts),'images':len(rows)}),flush=True)
-    if len(counts)<20:raise RuntimeError(f'Only {len(counts)} usable types; inspect coverage before training')
+    if targeted and set(counts)!=set(target_types):raise RuntimeError(f'Incomplete target type coverage: {counts}')
+    if not targeted and len(counts)<20:raise RuntimeError(f'Only {len(counts)} usable types; inspect coverage before training')
     args.output.mkdir(parents=True)
     write_csv(args.output/'manifest.csv',rows)
     write_json(args.output/'report.json',dict(source_commit=source_commit(),seed=42,
-        purpose='External-to-target ABO subset pretraining, not the target 10-class train images',
+        purpose='Target-related external ABO listing pool' if targeted else 'External-to-target ABO subset pretraining, not the target 10-class train images',
+        target_types_only=targeted,category_mapping=target_names if targeted else None,
+        semantic_review='Exact metadata product_type mapping only; not a manually verified relabeling. Target labels unchanged.',
         abo_root=str(args.abo.resolve()),target_root=str(args.target.resolve()),
         target_manifest_sha256=sha256(args.target/'data/abo_similarity10_manifest.csv'),
         manifest_sha256=sha256(args.output/'manifest.csv'),image_metadata_sha256=sha256(image_meta),
@@ -118,6 +126,7 @@ def main():
     p.add_argument('--categories',type=int,default=128);p.add_argument('--products-per-category',type=int,default=48)
     p.add_argument('--minimum-products',type=int,default=20);p.add_argument('--views',type=int,default=2)
     p.add_argument('--hamming-threshold',type=int,default=4)
+    p.add_argument('--target-types-only',action='store_true',help='Keep original ten category IDs/names; fail if any type is missing')
     a=p.parse_args()
     if a.views<2 or a.minimum_products<4 or a.products_per_category<a.minimum_products:raise ValueError('Invalid sampling limits')
     prepare(a)

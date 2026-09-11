@@ -365,3 +365,14 @@ SAM和仅L全场SAM都是68.9583333%，尚无额外Hit@1收益；不能把新的
 5. 速度/能耗的硬件、计时边界、功率积分口径；未测的不得填估计值冒充实测。
 
 原始日志及逐样本结果留在本任务runs，文档只引用。参考 [SALICON复现说明](../../../t03_saliency/reports/reproduction/README.md)。
+# 目标相关扩充协议（2026-09-11）
+
+当前新增试验入口为COMMAND第12节及`standalone/domain_expansion.json`，三组共享同一配置，仅数据域顺序不同。
+初始best来自`generalization_20260911/preserve_adam/artifacts/best.pt`，SHA256
+`c8509b44fbc0f7bcd6e1f0507376b6964bf483fca8205308407b790a295a100f`，固定测试69.7917%。
+旧target manifest SHA256为`2949a4035150a9f8718f2a6cace164c17394613d24fb9d0234c553bee8d77c97`。
+pool实际SHA和候选排除统计写在pool/report.json，每组execution.json复制池合同、源码commit、命令和环境。
+原spin视图与新增listing图片属于不同数据域，不宣称新增图片也是12视角spin数据。
+不合并原val、不改类别、不删除难例、不增加评估候选；原baseline与现有包保留。
+预训练顺序候选实际是高alpha已训练模型先做10轮外域适配，再30轮混合；对照为40轮直接混合及40轮原数据。
+三组周期评估同一原图库/测试集，best包含起点。所有新指标须等真实训练报告，不能用起点69.79%冒充提升。

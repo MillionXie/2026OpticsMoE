@@ -11,11 +11,11 @@ import math
 import torch
 
 PROFILES = ('preserve_adam', 'preserve_sam', 'preserve_fullfield_sam', 'preserve_fullfield_both_sam',
-            'regularized_control', 'regularized_phase05')
+            'regularized_control', 'regularized_phase05', 'domain_mixed', 'domain_curriculum', 'domain_target_control')
 
 
 def overlay_config(config, profile):
-    filename = 'regularization.json' if profile.startswith('regularized_') else 'generalization.json'
+    filename = 'domain_expansion.json' if profile.startswith('domain_') else 'regularization.json' if profile.startswith('regularized_') else 'generalization.json'
     overlay = json.loads(Path(__file__).with_name(filename).read_text(encoding='utf-8'))
     for key, value in overlay['common'].items():
         if isinstance(value, dict) and isinstance(config.get(key), dict):

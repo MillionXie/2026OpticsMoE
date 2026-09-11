@@ -26,6 +26,7 @@ from .curriculum import parameter_kind
 from .prepare_broad_abo import safe_image
 from .generalization import PROFILES, overlay_config, apply_contract, backward_with_sam, parameter_decay
 from .learning_curves import write_learning_curves
+from .domain_data import combine_training, epoch_batches
 
 
 class CategoryProxies(nn.Module):
@@ -103,6 +104,12 @@ def run_stage(args,stage,output,initial_checkpoint=None):
         if stage=='pretrain':
             samples,pool_report=load_pool(args.pool,args.abo,args.target)
         else:samples=target_train;pool_report=None
+        domain=cfg_all.get('domain_mode')
+        target_count=len(target_train)
+        if domain:
+            external,pool_report=load_pool(args.pool,args.abo,args.target)
+            if not pool_report.get('target_types_only'):raise ValueError('Domain training requires a target-mapped pool')
+            samples,target_count=combine_training(target,external)
         groups=make_groups(samples)
         if len(groups)<cfg['classes_per_batch'] or min(len(g) for g in groups.values())<cfg['products_per_class']:
             raise ValueError('Not enough distinct products/classes for sampling')
@@ -141,6 +148,11 @@ def run_stage(args,stage,output,initial_checkpoint=None):
             target_manifest_sha256=sha256(args.target/'data/abo_similarity10_manifest.csv'),
             pool_manifest_sha256=sha256(args.pool/'manifest.csv') if args.pool else None,
             stage=stage,profile=getattr(args,'profile','original'),config=cfg,common_config=cfg_all,model_audit=model.audit())
+        if domain:
+            execution['data_expansion']=dict(pool_report=pool_report,original_train_images=target_count,
+                external_images=len(samples)-target_count,train_products=len({s.product_id for s in samples}),
+                gallery_products=len({s.product_id for s in target_train}),test_products=len({s.product_id for s in target_test}),
+                eval_protocol='Original gallery and test unchanged; expanded products never enter eval gallery')
         write_json(output/'execution.json',execution)
         best_score=(-float('inf'),-float('inf'));history=[]
         if stage=='adapt':
@@ -163,13 +175,26 @@ def run_stage(args,stage,output,initial_checkpoint=None):
             history.append(dict(epoch=0,kind='high_alpha_initial' if high else 'after_external_pretrain',test=current))
             with torch.no_grad():
                 features=F.normalize(encode(model,processor,target_train,device,args.batch_size).float(),dim=-1).to(device)
-                head.weight.copy_(torch.stack([F.normalize(features[labels==c].mean(0),dim=0) for c in range(len(groups))]))
+                initial_labels=torch.tensor([s.category_id for s in target_train],device=device)
+                head.weight.copy_(torch.stack([F.normalize(features[initial_labels==c].mean(0),dim=0) for c in range(len(groups))]))
             del features
             write_json(output/'history.json',history);print(json.dumps(history),flush=True)
         for epoch in range(1,cfg['epochs']+1):
+            rng=random.Random(42+epoch)
+            batches=None;domain_phase=None
+            if domain:
+                domain_phase,batches,active_indices=epoch_batches(samples,target_count,domain,epoch,
+                    cfg_all['domain_pretrain_epochs'],cfg['steps'],rng)
+                active_samples=[samples[i] for i in active_indices]
+                epoch_steps=len(batches)
+            else:active_samples=target_train;epoch_steps=cfg['steps']
             if rank:
-                bank,bank_labels,product_ids=product_bank(encode(model,processor,target_train,device,args.batch_size).to(device),target_train)
-            model.train();head.train();rng=random.Random(42+epoch)
+                bank,bank_labels,product_ids=product_bank(encode(model,processor,active_samples,device,args.batch_size).to(device),active_samples)
+                if domain:
+                    active_ids=product_ids
+                    product_ids=torch.full((len(samples),),-1,device=device,dtype=torch.long)
+                    product_ids[torch.tensor(active_indices,device=device)]=active_ids
+            model.train();head.train()
             progress=(epoch-1)/max(1,cfg['epochs']-1)
             scale=min(1.,epoch/2)*(.1+.9*.5*(1+math.cos(math.pi*progress)))
             warm=high and epoch<=cfg['optical_warmup_epochs']
@@ -179,8 +204,9 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                 g['lr']=0. if frozen else g['initial_lr']*scale
             totals=dict(loss=0.,ce=0.,supcon=0.,correct=0.,optical_auxiliary=0.,gallery_nll=0.,gallery_margin=0.,train_gallery_hit1=0.,sam_loss_gap=0.);seen=set();clean_batches=0
             counts={m:torch.zeros(4,device=device) for m in ('vision','language')}
-            for step in range(cfg['steps']):
-                indices=sampled_indices(groups,cfg['classes_per_batch'],cfg['products_per_class'],rng);seen.update(indices)
+            for step in range(epoch_steps):
+                indices=batches[step] if batches is not None else sampled_indices(groups,cfg['classes_per_batch'],cfg['products_per_class'],rng)
+                seen.update(indices)
                 # Pretrain half noisy; target adaptation one-quarter noisy.
                 clean=step%cfg['clean_every']!=0
                 clean_batches+=int(clean)
@@ -232,9 +258,14 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                 for m in counts:counts[m]+=result['selected'][m]
             if high and not all(.4<a<=.8 for values in model.audit()['alpha'].values() for a in values):
                 raise RuntimeError('Strict high-alpha contract violated')
-            row=dict(epoch=epoch,stage=stage,optical_warmup=warm,readout_polish=polish,losses={k:v/cfg['steps'] for k,v in totals.items()},
+            row=dict(epoch=epoch,stage=stage,optical_warmup=warm,readout_polish=polish,losses={k:v/epoch_steps for k,v in totals.items()},
                      unique_images=len(seen),clean_batches=clean_batches,alpha=model.audit()['alpha'],sam_rho=rho,sam_rho_target=cfg_all.get('sam_rho',0.),
-                     router_selected_fraction={m:(c/(cfg['steps']*cfg['classes_per_batch']*cfg['products_per_class'])).cpu().tolist() for m,c in counts.items()})
+                     router_selected_fraction={m:(c/(epoch_steps*cfg['classes_per_batch']*cfg['products_per_class'])).cpu().tolist() for m,c in counts.items()})
+            if domain:
+                row['data_coverage']=dict(domain_phase=domain_phase,steps=epoch_steps,
+                    unique_products=len({samples[i].product_id for i in seen}),
+                    active_products=len({s.product_id for s in active_samples}),
+                    target_images_seen=sum(i<target_count for i in seen),external_images_seen=sum(i>=target_count for i in seen))
             torch.save(checkpoint(model,head,epoch,stage,-row['losses']['loss']),output/'last.pt')
             live={n:p.detach().clone() for n,p in trainables}
             with torch.no_grad():
@@ -309,6 +340,7 @@ def main():
     args=p.parse_args();verify_assets(args.assets)
     if (args.profile.startswith('high_alpha') or args.profile in PROFILES) and args.mode!='adapt':p.error('High-alpha/generalization profiles support target adapt only')
     if args.mode in ('pretrain','chain') and (args.abo is None or args.pool is None):p.error('--abo and --pool required')
+    if args.profile.startswith('domain_') and (args.abo is None or args.pool is None):p.error('Domain expansion requires --abo and --pool')
     if args.mode=='adapt' and args.checkpoint is None:p.error('--checkpoint required for transfer adaptation')
     if any(x is not None and x<1 for x in (args.pretrain_epochs,args.adapt_epochs,args.steps,args.batch_size)):p.error('Positive counts required')
     if args.output.exists():raise FileExistsError(args.output)

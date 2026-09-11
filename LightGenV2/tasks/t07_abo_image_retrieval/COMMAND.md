@@ -248,3 +248,37 @@ CUDA_VISIBLE_DEVICES='' python -m LightGenV2.tasks.t07_abo_image_retrieval.stand
 
 `clean_best_train_test.json`记录最终best的干净训练/测试准确率与权重/特征SHA。
 旧过程只有batch日志和best/last，不能恢复中间每个epoch的完整干净准确率；图中明确标注这一限制。
+# 12. 目标相关商品扩充（实验室 Linux 服务器）
+
+本节为独立新协议，不改变原始split或测试图库。先同步已推送的源码，再在仓库根目录执行。
+本次授权最多3张卡，以下每个队列仅占一张；UUID必须通过nvidia-smi确认空闲后填写。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+TARGET=/DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data
+ABO=/DATA/DATA1/guest3/2026OpticsMoE/data/abo
+POOL=$T07/runs/simulation/domain_pool_20260911
+ASSETS=$T07/runs/simulation/standalone_assets_20260910
+BEST=$T07/runs/simulation/generalization_20260911/preserve_adam/artifacts/best.pt
+
+# CPU准备：不要覆盖已有POOL；失败时先检查报错/类别覆盖，不降低测试排除要求。
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.prepare_broad_abo \
+  --target "$TARGET" --abo "$ABO" --output "$POOL" \
+  --target-types-only --categories 10 --products-per-category 100 --minimum-products 4 --views 2
+
+nvidia-smi --query-gpu=index,uuid,memory.used,utilization.gpu --format=csv
+# 用确认空闲的GPU UUID替换这一行。没有填写前不要执行后面的队列。
+T07_GPU=GPU_REPLACE_WITH_IDLE_UUID
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu "$T07_GPU" --assets "$ASSETS" --checkpoint "$BEST" --target "$TARGET" \
+  --abo "$ABO" --pool "$POOL" --output "$T07/runs/simulation/domain_mixed_20260911" \
+  --profiles domain_mixed --epochs 40 --steps 64
+```
+
+另外两组将profile和输出名同时换为`domain_curriculum`、`domain_target_control`；相同40轮预算。
+队列不导入torch，子进程退出释放CUDA；SIGTERM/中断只终止自己的子进程，失败不自动重开。
+初次运行先在`runs/smoke/`使用`--epochs 1 --steps 1`验证；为覆盖数据，自动steps仍可能大于1。
+查看每组`status.json`、`<profile>/console.log`及`<profile>/artifacts/`中的
+`execution.json`、`history.json`、`learning_curves.csv/png`、`final_report.json`。
+`history.data_coverage`区分真实商品覆盖和重复视角，初始保底成绩不是新增收益。
+每个阶段按原固定test评估live与EMA；按test选best，存在选择偏倚。

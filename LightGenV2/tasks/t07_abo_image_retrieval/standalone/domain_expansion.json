@@ -1,0 +1,29 @@
+{
+  "common": {
+    "adapt": {
+      "epochs": 40, "steps": 64, "electronic_lr": 0.00003, "adapter_lr": 0.00001,
+      "optical_electronic_lr": 0.00008, "readout_lr": 0.00008,
+      "phase_lr": 0.002, "router_lr": 0.00025, "alpha_lr": 0.0001,
+      "optical_warmup_epochs": 0, "readout_polish_epochs": 0
+    },
+    "augmentation": {
+      "minimum_crop_side_fraction": 1.0, "rotation_degrees": 0,
+      "horizontal_flip_probability": 0.25, "brightness_min": 0.9, "brightness_max": 1.1,
+      "contrast_min": 0.9, "contrast_max": 1.1, "blur_probability": 0.0, "blur_radius": 0.3
+    },
+    "input_preprocessing": "contain_white",
+    "ccd_readout_modes": {"vision": "prefix_rows", "language": "prefix_rows"},
+    "electronic_weight_decay": 0.005,
+    "track_clean_train": true,
+    "independent_phase_dropout": true,
+    "phase_dropout": {"expert_global_probability": 0.0, "router_probability": 0.0, "block_size": 8},
+    "test_every": 5, "sam_rho": 0.0,
+    "domain_pretrain_epochs": 10,
+    "protocol": "Same high-alpha source and 40 epochs. Fixed original 40 test products and 120 gallery products. External listing images train only. No val/test identities in pool. Pure external first 10 epochs only in curriculum, then 1:1 target/external mix. No teacher or inference change."
+  },
+  "profiles": {
+    "domain_mixed": {"domain_mode": "mixed"},
+    "domain_curriculum": {"domain_mode": "curriculum"},
+    "domain_target_control": {"domain_mode": "target_control"}
+  }
+}
