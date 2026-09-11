@@ -15,8 +15,8 @@ backend:
     data.py: 9c2bf13e3026064f86fbfab03e31a0fedb80e82a8777edd1c677b1493bba8d5c
 
 artifacts:
-  canonical_checkpoint: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_aligned_multiview_alpha42_s983/best_alpha_calibrated_checkpoint.pt
-  canonical_checkpoint_sha256: 0cdf916c8e3b68dbe446fd26c92af964e13ecacce8d7b2fdeb1ab2abbb4f1fef7
+  canonical_checkpoint: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_aligned_multiview_alpha42_s983/best_alpha_calibrated_deploy.pt
+  canonical_checkpoint_sha256: 3f313e2c4f9ccab22cfa185039ce60e873859e0a8ed5bb0b42f4eb1c3b421a8b
 
 architecture_contract:
   qwen_vision_blocks_executed: 0

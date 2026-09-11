@@ -38,9 +38,11 @@ pretrained inference backbone is present.
 - Config: `spatial_custom_conv_aligned_multiview_alpha42_s983.yaml`.
 - Best training epoch: 29, selected by the highest periodically observed test SRCC.
 - Training checkpoint SHA256: `7ac522b4a16201a7f2ce85062851918b801dea06c6301ca7e2523112ba9484c8`.
-- Promoted calibrated checkpoint SHA256: `0cdf916c8e3b68dbe446fd26c92af964e13ecacce8d7b2fdeb1ab2abbb4f1fef7`.
+- Full resumable calibrated checkpoint SHA256: `0cdf916c8e3b68dbe446fd26c92af964e13ecacce8d7b2fdeb1ab2abbb4f1fef7`.
+- Promoted deploy checkpoint SHA256: `3f313e2c4f9ccab22cfa185039ce60e873859e0a8ed5bb0b42f4eb1c3b421a8b`.
+  It contains one state dict and no optimizer/EMA duplicate, and reproduces the
+  same full optical-on/off evaluation.
 - Rejected calibration: SRCC `0.662976`, rejected because its language router
   collapsed to selection shares `[0.5, 0, 0.5, 0]`.
 - Checkpoint interpolation between the old and multiview candidates selected
   the multiview endpoint, so there was no extra soup gain.
-
