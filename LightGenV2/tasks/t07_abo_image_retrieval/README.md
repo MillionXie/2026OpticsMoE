@@ -187,3 +187,20 @@ best SHA256=`c8509b44fbc0f7bcd6e1f0507376b6964bf483fca8205308407b790a295a100f`�
 明确分别呈现干净检索、同权重train-test差距、随机训练批次指标。旧epoch没有对应权重时不虚构干净准确率，
 仅使用已保存最佳模型的检索特征补算该best，结果放`runs/simulation/overfitting_audit_20260911`。
 新训练只保留best/last，30epoch×64steps，batch40，单GPU串行，操作见COMMAND第11节。
+
+补算已完成（不是训练batch准确率），固定各自best、eval模式、排除自身商品：
+
+| 版本 | 干净训练Hit@1 | 测试Hit@1 | 差距（百分点） |
+| --- | ---: | ---: | ---: |
+| 原高alpha | 99.8611% | 68.9583% | 30.9028 |
+| 完整输入AdamW | 99.9306% | 69.7917% | 30.1389 |
+| 完整输入SAM | 99.7222% | 68.9583% | 30.7639 |
+| 仅L全场SAM | 99.5139% | 68.9583% | 30.5556 |
+
+证据在`runs/simulation/overfitting_audit_20260911/summary.json`，源13c4b2bc；所有缓存重算测试值与原报告一致。
+summary SHA256=`1985dde0b501fbfdff00814d6a1502516fe54736f56de963ecc89d22b68268d7`。
+本地已下载相同目录的CSV/PNG/PDF/JSON并核对摘要及最佳候选图SHA。没有新增历史epoch权重。
+防过拟合新队列源码13c4b2bc、本地/服务器43项测试通过；
+`runs/smoke/antioverfit_20260911`（启动PID3838308）等待V/L全场组结束，
+正式`runs/simulation/antioverfit_20260911`（启动PID3840530）等待该真实训练检查成功后依次运行phase05/control。
+等待进程不占GPU；当前进度以status.json为准。正式新分数未产生，不能把排队说成已训练成功。
