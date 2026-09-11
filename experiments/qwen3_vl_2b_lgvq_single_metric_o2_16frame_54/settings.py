@@ -230,6 +230,7 @@ class ExperimentSettings:
     language_cache_path: Path | None
     vision_cache_view_paths: tuple[Path, ...] = ()
     quality_feature_cache_view_paths: tuple[Path, ...] = ()
+    raw_frame_cache_view_paths: tuple[Path, ...] = ()
     training_view_probabilities: tuple[float, ...] = ()
     quality_feature_cache_path: Path | None = None
     raw_frame_cache_path: Path | None = None
@@ -732,6 +733,28 @@ class ExperimentSettings:
             raise ValueError(
                 "Conv5 quality-feature views require the electronic quality residual"
             )
+        if self.raw_frame_cache_view_paths:
+            if self.raw_frame_cache_path is None:
+                raise ValueError(
+                    "Raw-frame sampling views require data.raw_frame_cache"
+                )
+            if len(self.raw_frame_cache_view_paths) != len(
+                self.vision_cache_view_paths
+            ):
+                raise ValueError(
+                    "Every additional Vision sampling view requires its matching "
+                    "raw-frame view"
+                )
+        if (
+            (self.custom_conv_electronic_enabled or self.tiny_rgb_electronic_adapter_enabled)
+            and self.vision_cache_view_paths
+            and len(self.raw_frame_cache_view_paths)
+            != len(self.vision_cache_view_paths)
+        ):
+            raise ValueError(
+                "A raw-RGB electronic correction requires one aligned raw-frame "
+                "cache for every additional Vision sampling view"
+            )
         if self.strict_two_branch:
             invalid = []
             if self.quality_branch_enabled:
@@ -1180,6 +1203,9 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         quality_feature_cache_view_paths=_paths(
             get("data", "quality_feature_cache_views"), config_path
         ),
+        raw_frame_cache_view_paths=_paths(
+            get("data", "raw_frame_cache_views"), config_path
+        ),
         training_view_probabilities=tuple(
             float(value)
             for value in (get("data", "training_view_probabilities", ()) or ())
@@ -1542,6 +1568,7 @@ def resolved_dict(settings: ExperimentSettings) -> dict[str, Any]:
     for key in (
         "vision_cache_view_paths",
         "quality_feature_cache_view_paths",
+        "raw_frame_cache_view_paths",
     ):
         result[key] = [str(path) for path in result[key]]
     result.update(

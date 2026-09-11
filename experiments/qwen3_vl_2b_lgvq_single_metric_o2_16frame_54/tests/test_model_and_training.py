@@ -8,6 +8,7 @@ import pytest
 import torch
 
 from ..calibrate_spatial_levels import _isotonic
+from ..data import LGVQSingleMetricDataset
 from ..modeling import (
     CustomConvE1Correction,
     LGVQSingleMetricOEO16,
@@ -1329,3 +1330,38 @@ def test_custom_conv_scope_does_not_train_other_paths(tmp_path: Path) -> None:
         name.startswith("custom_conv_electronic_correction.")
         for name in report["trainable_names"]
     )
+
+
+def test_sampling_view_selects_matching_raw_frames(monkeypatch) -> None:
+    payload = {
+        "vision_tokens": torch.zeros(2, 4, 1, 1),
+        "quality_tokens": torch.zeros(2, 4, 1, 1),
+        "vision_token_views": (
+            torch.zeros(2, 4, 1, 1),
+            torch.ones(2, 4, 1, 1),
+        ),
+        "quality_token_views": (
+            torch.zeros(2, 4, 1, 1),
+            torch.ones(2, 4, 1, 1),
+        ),
+        "raw_frames": torch.zeros(2, 4, 3, 224, 224, dtype=torch.uint8),
+        "raw_frame_views": (
+            torch.zeros(2, 4, 3, 224, 224, dtype=torch.uint8),
+            torch.ones(2, 4, 3, 224, 224, dtype=torch.uint8),
+        ),
+        "language_tokens": torch.zeros(1, 1, 1),
+        "language_mask": torch.ones(1, 1, dtype=torch.bool),
+        "input_ids": torch.zeros(1, 1, dtype=torch.long),
+        "targets": torch.zeros(2),
+        "sample_ids": ["a", "b"],
+        "video_paths": ["a.mp4", "b.mp4"],
+        "splits": ["train", "test"],
+        "target_name": "spatial",
+        "training_view_probabilities": (0.0, 1.0),
+    }
+    dataset = LGVQSingleMetricDataset(payload, "train")
+    item = dataset[0]
+    assert item["sampling_view_index"] == 1
+    assert torch.count_nonzero(item["vision_tokens"] == 1) == 4
+    assert torch.count_nonzero(item["quality_tokens"] == 1) == 4
+    assert torch.count_nonzero(item["raw_frames"] == 1) == item["raw_frames"].numel()
