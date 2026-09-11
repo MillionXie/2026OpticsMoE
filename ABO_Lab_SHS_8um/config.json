@@ -1,0 +1,27 @@
+{
+  "camera": {
+    "sdk_root": "E:/高速相机/Magewell FlexIO",
+    "card_index": 0,
+    "camera_index": 0,
+    "buffer_count": 4,
+    "timeout_ms": 3000,
+    "exposure_us": 1000.0,
+    "gain": null,
+    "frame_rate_hz": null
+  },
+  "amplitude_slm": {
+    "driver": "holoeye", "expected_resolution_wh": [1920, 1080],
+    "pixel_pitch_um": 8.0, "center_xy": [959.5, 539.5],
+    "connected": false
+  },
+  "phase_slm": {
+    "driver": "manual", "size_wh": [1920, 1200], "pixel_pitch_um": 8.0,
+    "center_xy": [959.5, 599.5], "gray_encoding": "inverted_255_minus_g",
+    "flip_vertical": false, "flip_horizontal": false
+  },
+  "settle_delay_ms": 200,
+  "model_pitch_um": 17.0,
+  "distance_m": 0.1,
+  "wavelength_nm": 532.0,
+  "abo_source_project": "../ABO_Lab_8um"
+}
