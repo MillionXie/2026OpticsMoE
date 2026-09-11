@@ -1,0 +1,7 @@
+base_config: spatial_custom_conv_paired_opposite_flip_dropout18_s1201.yaml
+output_dir: ../../runs/lgvq_spatial_custom_conv_paired_opposite_flip_dropout18_s1213
+random_seed: 1213
+
+# Independent replication of the best parameter-neutral regularization recipe.
+training:
+  epochs: 50
