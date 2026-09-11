@@ -1,10 +1,15 @@
 # T07 ABO 商品图搜图：独立光电工程
 
-> **找当前最佳看这里**：独立固定权重复评77.50%（372/480），去光59.375%；目标≥389/480，尚未达成。
-> 已固定保存权重：`runs/simulation/verify_strong_ep4_20260912_gpu1/best.pt`，不随训练覆盖。
-> 该目录的`phase_masks.png`和`final_report.json`对应同一权重；训练曲线在下方来源run。
+> **找当前最佳看这里**：独立固定权重复评77.9167%（374/480），去光59.375%；目标≥389/480，还差15个命中。
+> 已完成的一轮逐图蒸馏权重：`runs/smoke/domain_aligned_feature_20260912_gpu1/domain_distill_aligned_feature/artifacts/best.pt`。
+> 独立复评及相位图：`runs/simulation/verify_feature_ep1_20260912_gpu1/`；该目录不复制权重，读取上面的固定best。
 > 复现/指标口径看[复现入口](reports/reproduction/README.md)，执行命令看[COMMAND](COMMAND.md)。
-> 下文75.21%等较旧数值是训练起点或历史对照，不是当前最佳；新排队方案没有成绩前不替代此指针。
+> mAP@10=0.73580225；去光下降18.5417个百分点；干净原训练99.8611%。仍是原线性读出，不是新MLP。
+> 权重SHA=`4fafe41ec23fcf0cb917f275ddab3be5c1686705c549ca1f58d68aa3c4829d3e`，训练c26f13ec，独立复评3cc59c6d。
+> RTX4090/batch4；复评PID2401496已退出且CUDA释放。只比前版多2个查询，不宣称统计显著或已解决过拟合。
+> 下文77.50%及更旧数值是固定训练起点或历史对照；三个新训练对照仍从77.50%独立开始以保持可比。
+
+### 上一最佳77.50%（保留历史证据）
 
 > 来源：`runs/simulation/domain_distillation_20260912/domain_distill_strong/artifacts`，0.3蒸馏第4轮live。
 > 24轮训练已完成，该候选也已用独立进程在RTX4090、batch4上复核正常/去光及480-query/120-gallery。
@@ -24,6 +29,9 @@
 不更改任何光学/前端/残差张量，教师只在训练中使用；无TF/attention，原测试图库与alpha>0.4不变。
 本地78测试通过，包括函数保持、非读出张量身份不变、有限梯度、配置单因素差异及旧线性默认兼容。
 命令见第24节；检查后才正式训练，未有成绩前不替代当前最佳。
+源码3cc59c6d，服务器亦通过78测试；真实4图完整CPU前向初始化最大差异2.38e-7，
+非读出权重逐值一致，总可训练参数2,815,381。检查已在GPU2启动，子PID2403537；
+正式16轮监督PID2400777等待检查完成，同卡串行，不额外占第四张GPU。
 
 另一训练对照`domain_distill_aligned_feature`使用更直接的逐图特征蒸馏：取冻结教师前64维并L2归一化，
 只用原1440训练图拟合正交矩阵，将教师坐标转到当前学生坐标；**不旋转或改动学生初始化权重**。
@@ -200,6 +208,11 @@ best SHA256=`4fef8e0f4b839016a1701a6f14fb73c1b691930189d7070011f5f91a2666d8e1`�
 子进程2236343退出并确认释放，0.3组子进程2284756接续，同样从75.2083%独立开始。
 
 ### 训练图库类别数量校正（只改loss）
+
+该对照已完成24轮：末轮EMA73.125%、live72.9167%，未超过起点；最终epoch=-1，
+正常76.25%/去光60.625%是原权重的保底结果，不计作提升，也不采用该loss改动。
+证据为`runs/simulation/domain_balanced_20260912_gpu2/domain_refine_balanced/artifacts/final_report.json`。
+子进程2358255已退出，GPU上下文释放；同卡接续小型读出头训练检查。
 
 `domain_refine_balanced`从76.25%best续训，仍用cap250池与1:1采样，不使用teacher或7×7电子变体。
 CPU清单审计：训练图库chair/rug/sofa/wall art/light fixture/stool/pillow各262商品，bed198、mirror101、vase45；

@@ -551,7 +551,7 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 默认`evaluate --assets ...`仍读assets/best.pt；要评训练目录中的新best，必须同时传checkpoint及其SHA。
 这两个新参数仅用于evaluate，不会覆盖assets、修改模型或启动训练。读取前后再次核对SHA，
 运行中的best若刚好被更新会拒绝评估；先确认新的epoch/SHA，再另建结果目录，不绕过校验。
-下面明确复评已固定保存的0.3蒸馏第4轮live候选，不是旧assets权重，也不受训练覆盖best影响。
+下面明确复评已结束的一轮逐图特征蒸馏live候选（77.9167%），不是旧assets权重。
 GPU1须先确认资源允许，不终止别人的进程；输出目录须尚不存在。
 
 ```bash
@@ -561,10 +561,10 @@ nvidia-smi -i "$T07_GPU" --query-gpu=memory.used,memory.free,utilization.gpu --f
 CUDA_VISIBLE_DEVICES="$T07_GPU" HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.cli evaluate \
   --assets "$T07/runs/simulation/standalone_assets_20260910" \
-  --checkpoint "$T07/runs/simulation/verify_strong_ep4_20260912_gpu1/best.pt" \
-  --expected-checkpoint-sha256 e5c0eaab4c84766b1ee231dd14271e97737604c0dcd675d9e2f4957c6932658d \
+  --checkpoint "$T07/runs/smoke/domain_aligned_feature_20260912_gpu1/domain_distill_aligned_feature/artifacts/best.pt" \
+  --expected-checkpoint-sha256 4fafe41ec23fcf0cb917f275ddab3be5c1686705c549ca1f58d68aa3c4829d3e \
   --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
-  --device cuda --batch-size 4 --output "$T07/runs/simulation/recheck_strong_ep4_20260912_gpu1"
+  --device cuda --batch-size 4 --output "$T07/runs/simulation/recheck_feature_ep1_20260912_gpu1"
 ```
 
 复评重新从原图生成120商品图库、查询全部480测试图，再同权重去光；输出逐图预测/特征、
