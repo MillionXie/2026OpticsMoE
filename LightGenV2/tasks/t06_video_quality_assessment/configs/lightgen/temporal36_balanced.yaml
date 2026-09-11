@@ -9,10 +9,10 @@ backend:
   lab_guide: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/LAB_TEMPORAL36_BALANCED_GUIDE.md
   source_sha256:
     modeling.py: 711f8eb40c546317821cf777f6858a3ce4e9f443ba459b4dde5858dc7fbf26a1
-    settings.py: 81141c437e1255d985380c100692741793dd5c7ec39a0b2c890558e03befc5c8
+    settings.py: 773bf43b51abef7c0e1591b1561c99cfc9b78ad51ebe4ba115c686f91b957072
     training.py: 5c9d13f089eeea693407fa11642bfd93fe20f494663247acc65d9bbc17cb5163
     run.py: c12c320e848e68041a32c8a74f38c0deba65d8f03f486f71c9695305960c9b72
-    data.py: 5f9fd8d79a965c35d147feee99348b456499eac054848b2c03950538799b0220
+    data.py: da49ef00c833c93d0b91816455bafd3fd54657db564edf2b3e1f0166c79c4304
     hardware_bridge.py: 9b36ab6f202014be200d2d27cd0730a0651b7aa5429147c8ffcc12ceb165219b
     export_hardware_masks.py: 049a74dbab71c84325edf9979602a303d120b9e5b1f6a3b8aa946ed8cc072ff9
 
