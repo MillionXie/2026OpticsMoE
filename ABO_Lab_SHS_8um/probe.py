@@ -18,7 +18,12 @@ def main():
     report={'operation':'read-only discovery; no capture or setters','levels':{}}
     with Camera(config['camera']) as camera:
         for level,label in [(0,'interface'),(1,'device'),(2,'camera'),(3,'stream')]:
-            raw=camera.xml(level)
+            try:raw=camera.xml(level)
+            except SDKError as ex:
+                # SDK 1.1.4.22 source falls through to default for interface XML.
+                # Do not confuse its stale last-error with an occupied camera.
+                report['levels'][label]={'xml_error':str(ex)}
+                continue
             if raw.startswith(b'PK'):
                 with zipfile.ZipFile(io.BytesIO(raw)) as z:raw=z.read(next(n for n in z.namelist() if n.lower().endswith('.xml')))
             (out/(label+'.xml')).write_bytes(raw)
