@@ -570,3 +570,31 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.cli evaluate \
 复评重新从原图生成120商品图库、查询全部480测试图，再同权重去光；输出逐图预测/特征、
 相位图、clean train排除自身商品指标、execution/final_report。最终报告记录实际评估权重SHA。
 在无GPU机器可用`--device cpu`，但速度/数值可能与CUDA bfloat16不同，不能冒充同硬件逐位复现。
+
+## 21. 单模型权重平均对照（CPU生成，再独立复评）
+
+两份模型必须来自相同初始化且合同一致；本组固定各50%，不搜索测试样本专属权重。
+平均相位raw以及电子参数，冻结前端不变。最终推理一次，六次光捕获，不是双模型投票。
+输出路径必须不存在；父checkpoint不覆盖，构建报告不会继承父模型准确率。
+
+```bash
+T07=LightGenV2/tasks/t07_abo_image_retrieval
+AVG=$T07/runs/simulation/weight_average_strong_wide_20260912
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.weight_average \
+  --left "$T07/runs/simulation/verify_strong_ep4_20260912_gpu1/best.pt" \
+  --left-sha256 e5c0eaab4c84766b1ee231dd14271e97737604c0dcd675d9e2f4957c6932658d \
+  --right "$T07/runs/simulation/domain_refine_wide_20260912_gpu2/domain_refine_wide/artifacts/best.pt" \
+  --right-sha256 6f23466a1570a024e5bcf8408ae70a01065399e28e818af5a394dff15bfa850a \
+  --right-weight .5 --output "$AVG"
+
+# 仅在确认该GPU资源允许时运行；SHA直接读取构建报告，不手工转录。
+AVG_SHA=$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["checkpoint_sha256"])' "$AVG/average_report.json")
+CUDA_VISIBLE_DEVICES=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.cli evaluate \
+  --assets "$T07/runs/simulation/standalone_assets_20260910" \
+  --checkpoint "$AVG/best.pt" --expected-checkpoint-sha256 "$AVG_SHA" \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --device cuda --batch-size 4 --output "$AVG/evaluation"
+```
+
+以evaluation/final_report与逐图预测判断，不以两个父模型命中的并集或平均分宣称提升。
