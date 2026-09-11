@@ -1,0 +1,11 @@
+base_config: spatial_custom_conv_aug_flip_rank_curriculum_s1117.yaml
+output_dir: ../../runs/lgvq_spatial_custom_conv_aug_flip_rank_dropout06_s1163
+random_seed: 1163
+
+# Training regularization ablation only; Dropout is inactive at inference.
+model:
+  dropout: 0.06
+
+training:
+  epochs: 45
+
