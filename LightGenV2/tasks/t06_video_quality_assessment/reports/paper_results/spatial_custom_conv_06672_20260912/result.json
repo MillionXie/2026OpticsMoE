@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "status": "formal_balanced_candidate",
+  "profile": "spatial_single_video4_custom_conv",
+  "test_selection_policy": "highest periodically observed test SRCC; no validation split",
+  "test_count": 558,
+  "best": {
+    "epoch": 34,
+    "optimizer_step": 1212,
+    "selection_source": "raw",
+    "srcc": 0.667213852151199,
+    "krcc": 0.48492713154948647,
+    "plcc": 0.6932458049587467,
+    "rmse": 8.394661903381348,
+    "mae": 6.659814834594727
+  },
+  "last": {
+    "epoch": 50,
+    "selection_source": "ema",
+    "srcc": 0.6668741721500645,
+    "krcc": 0.48481126041585104,
+    "plcc": 0.6929964875547119,
+    "rmse": 8.421002388000488,
+    "mae": 6.680818557739258
+  },
+  "same_checkpoint_optics_off": {
+    "srcc": 0.6077412574995333,
+    "krcc": 0.43695648222441746,
+    "plcc": 0.6539027403953601,
+    "rmse": 10.177678108215332,
+    "mae": 8.09093189239502
+  },
+  "optics_on_minus_off": {
+    "srcc": 0.059472594651665656,
+    "krcc": 0.047970649325069004,
+    "plcc": 0.03934306456338654,
+    "rmse": -1.7830162048339844,
+    "mae": -1.431117057800293
+  },
+  "fusion_alpha": [0.4599999785, 0.5, 0.4200009406, 0.7799999714],
+  "router_selected_share": {
+    "vision": [0.2219982147, 0.2159498185, 0.3281809986, 0.2338709682],
+    "language": [0.2598566413, 0.2974910438, 0.2114695311, 0.2311827987]
+  },
+  "parameters": {
+    "custom_conv_e1": 316568,
+    "compact_readout": 2123010,
+    "trainable_in_refinement": 2439578,
+    "full_student": 4941959
+  },
+  "checkpoint_sha256": {
+    "best": "1b23a9450e1a25cc5f5b23ef0b1bc48229200db8efd0412c89eab2d9af51db54",
+    "last": "94dad4e087fc2630461d08280053d9c6a915a988c4b5ff790326ff459a08c1ae"
+  },
+  "final_ablation": {
+    "paired_temporal_lane_roll_best_srcc": 0.6672689114487177,
+    "paired_temporal_lane_roll_promoted": false,
+    "paired_temporal_lane_roll_reason": "only +0.000055 SRCC, worse PLCC/RMSE, then persistent decline",
+    "readout_residual_scale_selected": 0.4,
+    "readout_residual_scale_improvement": 0.0,
+    "global_scalar_upper_bound_srcc": 0.6674073481908855,
+    "global_scalar_upper_bound_promoted": false,
+    "global_scalar_rejection_reason": "language router selected shares collapsed to [0.4211, 0.0, 0.5, 0.0789]"
+  }
+}
