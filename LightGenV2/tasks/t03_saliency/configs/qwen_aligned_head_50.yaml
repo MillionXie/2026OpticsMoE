@@ -1,0 +1,18 @@
+base_config: moe_staged_alpha_free.yaml
+# Fresh same-specification head, frozen pretrained Qwen. This is NOT Qwen
+# backbone fine-tuning and does not resume the previous 100-epoch head.
+training:
+  initialization_checkpoint: null
+  reset_fusion_on_warmstart: false
+  learning_rate_source: task_training
+  student_epochs: 50
+  student_learning_rate: 0.0001
+  phase_learning_rate: 0.0001
+  router_learning_rate: 0.00005
+  dense_head_learning_rate: 0.0003
+  staged:
+    warmup_epochs: 5
+    polish_start: 36
+augmentation:
+  enabled: false
+output_dir: ../runs/simulation/qwen_aligned_head_50_seed42
