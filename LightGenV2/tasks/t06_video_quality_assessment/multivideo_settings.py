@@ -218,6 +218,10 @@ class MultiVideoSettings:
     ccd_shift_pixels: int = 4
     phase_dropout_p: float = 0.05
     phase_dropout_cell_size: int = 4
+    # Formal simulations optimize continuous phase.  A non-zero value is
+    # reserved for an explicit deployment ablation and is never implied by
+    # the SLM's eventual 8-bit BMP export.
+    phase_quantization_levels: int = 0
     phase_init_std: float = 0.25
     ccd_relative_clip: float = 8.0
     ccd_log_compression: float = 1.0
@@ -315,6 +319,8 @@ class MultiVideoSettings:
             raise ValueError("Training counts must be positive")
         if self.phase_snapshot_interval_epochs < 0:
             raise ValueError("phase_snapshot_interval_epochs cannot be negative")
+        if self.phase_quantization_levels != 0:
+            raise ValueError("Formal multivideo training uses continuous phase")
         if self.num_workers < 0:
             raise ValueError("num_workers cannot be negative")
         if self.router_diversity_weight < 0:
