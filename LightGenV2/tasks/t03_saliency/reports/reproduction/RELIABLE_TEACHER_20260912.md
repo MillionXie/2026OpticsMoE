@@ -35,3 +35,17 @@ python -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --phase all \
 命令入口以 `run --help` 核验后执行；运行PID、完整source SHA和启动命令保存在run记录。
 epoch1/每5轮/最终完整测试5000张，检查训练/测试分化、可靠性均值、教师较差样本比例、
 alpha、相位更新、专家分布、非有限数及显存释放。只保存best/last，目标0.87不代表已经达到。
+
+## 启动检查
+
+代码 `d8653fa6057f96b52d53259999343ff2117c1526`，225项CPU测试通过（42.58秒，13条既有警告），
+推送 `experiment/salicon-reliable-teacher-20260912` 后启动。
+真实train前4图进行前后向检查：总任务损失.446589，可靠性权重均值.82234，
+所有梯度有限，光router/四位专家/全局相位的梯度均非零；本次检查没有optimizer更新或权重写入。
+85412参数头不变，初始alpha .431023/.441234。
+
+正式PID/PGID414381，GPU1 `GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d`；
+工作树 `.worktrees/t03_baseline50_20260912`，结果落到主工程T03的
+`runs/simulation/moe_alpha40_reliable_teacher50_20260912_seed42`。
+与GPU0的50轮Qwen同头重训同时运行，总共两卡，不触碰GPU4/6的其他用户任务。
+启动不等于已经获得新的CC成绩。
