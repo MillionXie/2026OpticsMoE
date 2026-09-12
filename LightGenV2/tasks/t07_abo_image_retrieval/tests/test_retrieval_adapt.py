@@ -1,7 +1,8 @@
 import random
 import pytest
 import torch
-from LightGenV2.tasks.t07_abo_image_retrieval.standalone.grocery_transfer import training_pairs, retrieval_loss, phase_delta
+from LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt import training_pairs, retrieval_loss, phase_delta, fitting_groups
+from LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_screen import coil_records, validate_rows
 
 
 def groups():
@@ -43,3 +44,34 @@ def test_phase_report_includes_router_experts_global_and_is_circular():
             yield 'vision.optics.global_phase', torch.nn.Parameter(torch.tensor(0.))
     initial = {n: torch.tensor(torch.pi + 2 * torch.pi) for n, _ in Tiny().named_parameters()}
     assert all(v < 1e-6 for v in phase_delta(Tiny(), initial).values())
+
+
+def test_coil_fitting_never_reads_heldout_gallery_or_objects():
+    g = validate_rows(coil_records())
+    fit = fitting_groups(dict(protocol='heldout40_objects_four_gallery_views_eight_queries_v1'), g)
+    assert len(fit['train']) == 4080 and len(fit['gallery']) == 240
+    ids = {r['sample_id'] for r in fit['train'] + fit['gallery']}
+    assert ids == {r['sample_id'] for r in g['train']}
+    assert not ids & {r['sample_id'] for r in g['gallery'] + g['query']}
+    assert not {r['sample_id'] for r in fit['train']} & {r['sample_id'] for r in fit['gallery']}
+    assert all(r['source_split'] == 'train' for r in fit['gallery'])
+    for seed in range(3):
+        pair, label = training_pairs(fit, random.Random(seed), 8)
+        assert label[:8].tolist() == label[8:].tolist()
+        assert all(r['sample_id'] in ids for r in pair)
+    g['train'][0]['product_id'] = g['query'][0]['product_id']
+    with pytest.raises(ValueError, match='leaked'):
+        fitting_groups(dict(protocol='heldout40_objects_four_gallery_views_eight_queries_v1'), g)
+
+
+def test_multi_reference_loss_uses_all_positives_not_only_first():
+    z = torch.zeros(4, 64)
+    z[0, 0] = z[2, 0] = 1
+    z[1, 1] = z[3, 1] = 1
+    labels = torch.tensor([0, 1, 0, 1])
+    bank = torch.zeros(4, 64)
+    bank[0, 2] = bank[1, 0] = bank[2, 3] = bank[3, 1] = 1
+    loss, hit = retrieval_loss(z, labels, bank, 2, torch.tensor([0, 0, 1, 1]))
+    assert hit == 1 and loss < .01
+    with pytest.raises(ValueError, match='without'):
+        retrieval_loss(z, labels, bank, 2, torch.tensor([0, 0, 0, 0]))

@@ -1723,7 +1723,7 @@ T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
 export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4
 nvidia-smi
 CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 \
-/home/guest3/miniconda3/envs/xml/bin/python -u -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.grocery_transfer \
+/home/guest3/miniconda3/envs/xml/bin/python -u -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
   --data /DATA/DATA1/guest3/2026OpticsMoE/data/GroceryStoreDataset/dataset \
   --manifest "$T07/runs/simulation/grocery81_protocol_20260913/protocol.json" \
   --assets "$T07/runs/simulation/standalone_assets_20260910" \
@@ -1740,3 +1740,34 @@ CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 \
 只保留best/last；其中last含优化器/EMA供审计，当前入口是fresh continuation，不宣称自动精确断点恢复。
 公开标准图库参与训练拟合；测试自然照片只用于定期选模，没有在训练批中使用。干净训练检索与测试检索使用相同81图图库。
 Qwen64基准71.9517%来自`grocery81_qwen64_20260913`，不是ABO的94.375%；当前还没有宣称适配达标。
+
+已运行的Grocery bc110024版本入口名为`grocery_transfer`。当前同一训练引擎整理为`retrieval_adapt`，不保留重复实现；
+逐提交复现原run应checkout bc110024并使用execution.json中的原命令，不能用新源码冒充原提交。
+
+## 62. COIL训练物体适配（40测试物体不参与拟合）
+
+沿用第59节固定协议。60个TRAIN物体各0/90/180/270度形成240张训练参考图，其余4080张作训练query。
+训练目标为同物体多正例NLL+SupCon；测试仍为40个其他物体、320查询/160图库，最小角距30度。
+不使用TEST图库训练。原光路/Top2/α>0.4/64维输出不变，无新增推理头或TF/attention。
+每5轮TEST选live/EMA最佳，明确test-selected；训练图库240、测试160，角度分布也不同，train/test差值不全是过拟合。
+
+```bash
+cd /DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_screen_20260913
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4
+nvidia-smi
+# 确认GPU4空闲、上组自己的PID退出后执行；不占用他人的卡。
+CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 \
+/home/guest3/miniconda3/envs/xml/bin/python -u -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/coil100_source \
+  --manifest "$T07/runs/simulation/coil100_protocol_20260913/protocol.json" \
+  --assets "$T07/runs/simulation/standalone_assets_20260910" \
+  --checkpoint "$T07/runs/simulation/readout_subspace_20260912/best.pt" \
+  --expected-checkpoint-sha256 50a8607eec392c00cf3675533490cb8ef953245af6f5d9cfbc9d616bf7d22701 \
+  --output "$T07/runs/simulation/coil100_adapt_20260913" \
+  --epochs 20 --steps 100 --eval-every 5 --classes-per-batch 8 --batch-size 4
+```
+
+首次CUDA检查把epochs/steps改1/2、output改为`$T07/runs/smoke/coil100_adapt_20260913`，不当正式成绩。
+`fitting_manifest.json`记录训练query/参考图身份与SHA；COIL参考图source_split必须为train。
+只存best/last，最终正常/同权重去光、路由和相位变化。Qwen64同协议基准99.375%。

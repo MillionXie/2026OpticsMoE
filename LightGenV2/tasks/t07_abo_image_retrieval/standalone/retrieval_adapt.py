@@ -1,7 +1,8 @@
-"""Bounded Grocery81 adaptation of the unchanged six-capture optical student.
+"""Bounded locked-protocol adaptation of the unchanged six-capture student.
 
-Natural TRAIN images and the 81 public iconic references are fitting inputs.
-Official TEST images only enter periodic retrieval evaluation/checkpoint selection.
+Grocery: natural TRAIN images + public iconic references; shared fine classes.
+COIL: only the60 TRAIN objects, separate query/reference views; heldout40 untouched.
+TEST images only enter periodic retrieval evaluation/checkpoint selection.
 No teacher, classifier, extra inference branch or full Qwen model is loaded.
 """
 import argparse
@@ -21,35 +22,71 @@ from torch.nn import functional as F
 from .cli import autocast, regularization, supcon, preview
 from .io import inputs, picture, verify_assets, evaluation_checkpoint, sha256, source_commit, write_json, write_csv
 from .model import OpticalRetrieval
-from .retrieval_screen import load_screen, rank_instances, OPTICS_SHA256
+from .retrieval_screen import load_screen, rank_instances, OPTICS_SHA256, GALLERY_ANGLES
+
+
+def fitting_groups(protocol, groups):
+    if protocol['protocol'] == 'grocery81_official_test_to_iconic_v1':
+        return dict(train=groups['train'], gallery=groups['gallery'],
+            note='Natural TRAIN -> same81 public iconic images; shared fine classes, NOT unseen SKU')
+    if protocol['protocol'] != 'heldout40_objects_four_gallery_views_eight_queries_v1':
+        raise ValueError('Unknown adaptation protocol')
+    train_ids = {r['product_id'] for r in groups['train']}
+    test_ids = {r['product_id'] for r in groups['gallery'] + groups['query']}
+    if train_ids & test_ids or any(r['split'] != 'train' for r in groups['train']):
+        raise ValueError('COIL heldout identity leaked into fitting')
+    # Fitting references come ONLY from the original TRAIN pool. Do not use the
+    # heldout test gallery even though it is public at retrieval evaluation.
+    references = [dict(r, split='gallery', source_split='train') for r in groups['train']
+                  if r['angle'] in GALLERY_ANGLES]
+    natural = [r for r in groups['train'] if r['angle'] not in GALLERY_ANGLES]
+    if len(train_ids) != 60 or len(references) != 240 or len(natural) != 4080:
+        raise ValueError('COIL fitting must contain60 TRAIN objects,4 refs+68 queries each')
+    return dict(train=natural, gallery=references,
+        note='60 TRAIN identities:4080 nonreference views ->240 reference views; no self retrieval. TEST:40 other identities,320->160')
 
 
 def training_pairs(groups, rng, classes_per_batch):
-    """One independent natural TRAIN image and its iconic reference per class."""
+    """One TRAIN query and one reference per identity/relevance class."""
     natural = {}
     for row in groups['train']:
         if row['split'] != 'train':
             raise ValueError('Non-TRAIN natural image in fitting pool')
         natural.setdefault(row['product_id'], []).append(row)
-    iconic = {r['product_id']: r for r in groups['gallery']}
-    if any(r['split'] != 'gallery' for r in iconic.values()) or len(iconic) != len(groups['gallery']):
-        raise ValueError('Require exactly one iconic reference per fine class')
+    iconic = {}
+    for r in groups['gallery']:
+        if r['split'] != 'gallery':
+            raise ValueError('Non-reference row in reference pool')
+        iconic.setdefault(r['product_id'], []).append(r)
+    if len({r['sample_id'] for r in groups['gallery']}) != len(groups['gallery']):
+        raise ValueError('Duplicate reference image')
     if set(natural) != set(iconic) or not 2 <= classes_per_batch <= len(iconic):
         raise ValueError('Invalid class pool or batch size')
     labels = {key: i for i, key in enumerate(sorted(iconic))}
     selected = rng.sample(sorted(natural), classes_per_batch)
-    rows = [rng.choice(natural[k]) for k in selected] + [iconic[k] for k in selected]
+    rows = [rng.choice(natural[k]) for k in selected] + [iconic[k][0] if len(iconic[k]) == 1 else rng.choice(iconic[k]) for k in selected]
     return rows, torch.tensor([labels[r['product_id']] for r in rows])
 
 
-def retrieval_loss(z, labels, bank, natural_count):
-    """All81 negatives for natural queries; live two-domain SupCon for both ends."""
+def retrieval_loss(z, labels, bank, natural_count, bank_labels=None):
+    """Whole fitting-gallery NLL; multiple references of an object are positives."""
     z = F.normalize(z.float(), dim=-1)
     if len(z) != 2 * natural_count or len(labels) != len(z):
         raise ValueError('Expected paired natural/iconic batch')
     logits = z[:natural_count] @ F.normalize(bank.detach().float(), dim=-1).T / .1
-    ce = F.cross_entropy(logits, labels[:natural_count])
-    return ce + .5 * supcon(z, labels), (logits.argmax(1) == labels[:natural_count]).float().mean()
+    if bank_labels is None:
+        bank_labels = torch.arange(len(bank), device=z.device)
+    bank_labels = bank_labels.to(z.device)
+    if len(bank_labels) != len(bank):
+        raise ValueError('Bank identity length mismatch')
+    if torch.equal(bank_labels, torch.arange(len(bank), device=z.device)):
+        ce = F.cross_entropy(logits, labels[:natural_count])
+    else:
+        positive = labels[:natural_count, None].eq(bank_labels[None])
+        if not positive.any(1).all():
+            raise ValueError('Query without fitting-gallery positive')
+        ce = (logits.logsumexp(1) - logits.masked_fill(~positive, -torch.inf).logsumexp(1)).mean()
+    return ce + .5 * supcon(z, labels), (bank_labels[logits.argmax(1)] == labels[:natural_count]).float().mean()
 
 
 @torch.no_grad()
@@ -76,19 +113,20 @@ def encode_rows(model, processor, rows, root, device, batch_size, routing=False)
 
 
 @torch.no_grad()
-def assessment(model, processor, groups, args, device, output=None):
+def assessment(model, processor, groups, args, device, output=None, fit=None):
     gallery = sorted(groups['gallery'], key=lambda r: r['product_id'])
     rows = gallery + groups['query']
     z, router = encode_rows(model, processor, rows, args.data, device, args.batch_size, routing=True)
     test, predictions = rank_instances(z, rows)
-    train_z, _ = encode_rows(model, processor, groups['train'], args.data, device, args.batch_size)
-    train_rows = gallery + [dict(r, split='query') for r in groups['train']]
-    train, _ = rank_instances(torch.cat([z[:len(gallery)], train_z]), train_rows)
+    fit = fit or dict(train=groups['train'], gallery=gallery, note='Natural TRAIN -> same81 iconic images')
+    train_rows = sorted(fit['gallery'], key=lambda r: r['product_id']) + [dict(r, split='query') for r in fit['train']]
+    train_z, _ = encode_rows(model, processor, train_rows, args.data, device, args.batch_size)
+    train, _ = rank_instances(train_z, train_rows)
     if output:
         write_csv(output / 'predictions.csv', predictions)
         torch.save(dict(manifest_sha256=sha256(args.manifest), ids=[r['sample_id'] for r in rows], vectors=z), output / 'features.pt')
     return dict(test=test, train_clean=train, router=router,
-        train_metric='Natural TRAIN -> same81 iconic images; not training batch/classifier accuracy')
+        train_metric=fit['note'] + '; not training batch/classifier accuracy')
 
 
 def phase_snapshot(model):
@@ -108,9 +146,8 @@ def run(args):
     if args.output.exists():
         raise FileExistsError(args.output)
     protocol, groups = load_screen(args.manifest, args.data)
-    if protocol['protocol'] != 'grocery81_official_test_to_iconic_v1':
-        raise ValueError('This adaptation is specifically natural-to-iconic Grocery81')
-    training_pairs(groups, random.Random(42), args.classes_per_batch)
+    fit = fitting_groups(protocol, groups)
+    training_pairs(fit, random.Random(42), args.classes_per_batch)
     verify_assets(args.assets)
     path, digest = evaluation_checkpoint(args.assets, args.checkpoint, args.expected_checkpoint_sha256)
     payload = torch.load(path, map_location='cpu', weights_only=True)
@@ -138,12 +175,14 @@ def run(args):
         cuda_visible_devices=os.environ.get('CUDA_VISIBLE_DEVICES'),
         gpu=torch.cuda.get_device_name() if device.type == 'cuda' else None,
         protocol=protocol['protocol'], fitted_on_this_dataset=True,
-        fitting_roles=['2640 official natural TRAIN images', '81 public iconic reference images'],
+        fitting_roles=fit['note'],
         selection='Periodic full TEST Hit@1 then mAP@10; initial/live/EMA candidates. TEST selected, not unbiased',
         teacher=False, extra_inference_parameters=0,
         noise='Original metadata noise on25% training batches; no pixel shift/k filter/8bit STE; clean evaluation',
         augmentation='Whole-object contain_white; brightness/contrast .9..1.1; no crop/rotation/flip',
-        loss='natural->detached all81 gallery CE(temp .1) + .5 live natural/iconic SupCon + existing optical regularization')
+        loss='query->detached entire FITTING gallery multi-positive NLL(temp .1) + .5 live query/reference SupCon + existing optical regularization')
+    write_json(args.output / 'fitting_manifest.json', dict(parent_manifest_sha256=identity['manifest_sha256'],
+        note=fit['note'], train=fit['train'], references=fit['gallery']))
     write_json(args.output / 'execution.json', identity)
     status = dict(status='running', pid=os.getpid(), source_commit=identity['source_commit'])
     write_json(args.output / 'status.json', status)
@@ -164,7 +203,7 @@ def run(args):
             optgroups.append(dict(params=[p], lr=rate, initial_lr=rate, weight_decay=decay))
         optimizer = torch.optim.AdamW(optgroups)
         ema = {n: p.detach().clone() for n, p in params}
-        base = assessment(model, processor, groups, args, device)
+        base = assessment(model, processor, groups, args, device, fit=fit)
         best = (base['test']['hit_at_1'], base['test']['map_at_10'])
         def save_best(epoch, kind, metrics):
             torch.save(dict(metadata=model.metadata, state_dict=model.state_dict(), epoch=epoch,
@@ -174,7 +213,9 @@ def run(args):
         history.append(dict(epoch=0, initial=base))
         write_json(args.output / 'history.json', history)
         print(json.dumps(history[-1]), flush=True)
-        gallery = sorted(groups['gallery'], key=lambda r: r['product_id'])
+        gallery = sorted(fit['gallery'], key=lambda r: r['product_id'])
+        label_map = {k: i for i, k in enumerate(sorted({r['product_id'] for r in gallery}))}
+        bank_labels = torch.tensor([label_map[r['product_id']] for r in gallery], device=device)
         for epoch in range(1, args.epochs + 1):
             bank, _ = encode_rows(model, processor, gallery, args.data, device, args.batch_size)
             bank = bank.to(device)
@@ -188,7 +229,7 @@ def run(args):
                 noisy = rng.random() < .25
                 for m in (model.vision, model.language):
                     m.optics.set_training_noise(noisy)
-                rows, labels = training_pairs(groups, rng, args.classes_per_batch)
+                rows, labels = training_pairs(fit, rng, args.classes_per_batch)
                 images = []
                 for r in rows:
                     im = picture(args.data / r['image_path'], model.metadata['input_preprocessing'])
@@ -197,7 +238,7 @@ def run(args):
                 optimizer.zero_grad(set_to_none=True)
                 with autocast(device):
                     z = model(inputs(processor, images, device))
-                    data_loss, hit = retrieval_loss(z, labels.to(device), bank, args.classes_per_batch)
+                    data_loss, hit = retrieval_loss(z, labels.to(device), bank, args.classes_per_batch, bank_labels)
                     loss = data_loss + regularization(model)
                 if not torch.isfinite(loss):
                     raise RuntimeError('Nonfinite training loss')
@@ -220,7 +261,7 @@ def run(args):
                         with torch.no_grad():
                             for n, p in params:
                                 p.copy_(ema[n])
-                    metrics = assessment(model, processor, groups, args, device)
+                    metrics = assessment(model, processor, groups, args, device, fit=fit)
                     row[kind] = metrics
                     score = (metrics['test']['hit_at_1'], metrics['test']['map_at_10'])
                     if score > best:
@@ -238,9 +279,9 @@ def run(args):
             print(json.dumps(row), flush=True)
         selected = torch.load(args.output / 'best.pt', map_location='cpu', weights_only=True)
         model.load_state_dict(selected['state_dict'], strict=True)
-        normal = assessment(model, processor, groups, args, device, args.output)
+        normal = assessment(model, processor, groups, args, device, args.output, fit=fit)
         model.set_remove_optical(True)
-        removed = assessment(model, processor, groups, args, device)
+        removed = assessment(model, processor, groups, args, device, fit=fit)
         model.set_remove_optical(False)
         preview(model, args.output)
         write_json(args.output / 'phase_update_best.json', phase_delta(model, initial))
