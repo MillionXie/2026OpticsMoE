@@ -28,3 +28,15 @@ frame_semantics:
     This checkpoint evaluates one video with 36 uniformly sampled frames. It must
     not be described as 4-9 videos processed together. Multi-video packing is a
     future architecture and requires new aggregation, routing, training and tests.
+
+parameter_audit_20260912:
+  full_student_parameters: 6702231
+  electronic_parameters: 5834145
+  optical_parameters: 868085
+  electronic_routes: 161280
+  quality_input_adapter: 2908
+  post_optical_readout: 4898689
+  note: >-
+    These are inference-graph parameters reconstructed from the canonical
+    checkpoint settings. Frozen Qwen front-end weights are not inside the
+    student checkpoint; their cached boundary features are inputs.

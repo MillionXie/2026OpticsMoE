@@ -11,7 +11,19 @@
   "verified_student_graph": {
     "frame_router_shape": [2, 36, 4],
     "sequence_router_shape": [2, 4],
-    "trainable_parameters": 5914746,
+    "trainable_parameters": 6702231,
+    "parameter_count_correction_20260912": "Canonical checkpoint has trainable_scope=all; 5914746 was a stale pre-final count.",
+    "parameter_breakdown": {
+      "qwen_boundary_adapters": 671232,
+      "electronic_routes": 161280,
+      "optical_feature_paths": 806920,
+      "optical_routers": 61165,
+      "fusion": 4,
+      "multimodal_bridge": 74688,
+      "position_parameters": 25344,
+      "single_metric_readout": 4898689,
+      "quality_input_adapter": 2908
+    },
     "attention_or_transformer_modules": [],
     "all_required_optical_gradients_present": true
   },

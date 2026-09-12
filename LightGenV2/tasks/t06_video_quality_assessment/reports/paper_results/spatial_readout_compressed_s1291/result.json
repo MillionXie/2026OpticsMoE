@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "status": "formal_compressed_candidate",
+  "profile": "spatial_single_video4_custom_conv_compressed",
+  "checkpoint_sha256": "5abc57a69a1025ec30660fb6d710fb7133316a1c2bad00792a901a49868d6e56",
+  "test_count": 558,
+  "best_epoch": 18,
+  "metrics_optical_on": {
+    "srcc": 0.6660718352787389,
+    "krcc": 0.48415465732525026,
+    "plcc": 0.6786870645170371,
+    "rmse": 8.451359748840332,
+    "mae": 6.72096586227417
+  },
+  "same_checkpoint_optical_off": {
+    "srcc": 0.6143329696321634,
+    "krcc": 0.4427114151949773,
+    "plcc": 0.6522148301935283,
+    "rmse": 9.785122871398926,
+    "mae": 7.800233364105225
+  },
+  "parameters": {
+    "qwen_boundary_adapters": 671232,
+    "electronic_routes": 766468,
+    "optical_feature_paths": 910999,
+    "optical_routers": 59405,
+    "fusion": 4,
+    "multimodal_bridge": 74688,
+    "position_parameters": 19200,
+    "single_metric_readout": 1565570,
+    "electronic_quality_residual": 385,
+    "custom_conv_e1_correction": 316568,
+    "full_student": 4384519
+  },
+  "compression": {
+    "source_readout_parameters": 2123010,
+    "selected_readout_parameters": 1565570,
+    "removed_parameters": 557440,
+    "removed_fraction": 0.2625701244921127,
+    "source_srcc": 0.667213852151199,
+    "selected_srcc": 0.6660718352787389,
+    "srcc_delta": -0.0011420168724601
+  }
+}
