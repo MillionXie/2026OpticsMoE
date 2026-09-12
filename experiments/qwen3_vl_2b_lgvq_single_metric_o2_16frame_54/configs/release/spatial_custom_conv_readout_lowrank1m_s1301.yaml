@@ -1,0 +1,15 @@
+# Approximately one-million-parameter post-optical Spatial readout target.
+# Only existing dense maps are factorized/narrowed; the optical masks, optical
+# Top-2 routers, alpha fusion, Conv-E1 residual and four-stage graph are copied
+# from the audited s1201 source checkpoint.
+base_config: spatial_custom_conv_paired_opposite_flip_dropout18_s1201.yaml
+output_dir: ../../runs/lgvq_spatial_custom_conv_readout_lowrank1m_s1301
+random_seed: 1301
+
+model:
+  spatial_readout_mode: spatial_low_rank_pruned_grid_compact_residual
+  spatial_compact_head_width: 128
+  spatial_low_rank_frame_rank: 192
+  spatial_low_rank_language_rank: 128
+  spatial_low_rank_compact_frame_rank: 64
+  spatial_low_rank_compact_head_rank: 96
