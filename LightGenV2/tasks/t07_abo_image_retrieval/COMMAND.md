@@ -1276,3 +1276,28 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 
 只有第42节完成并确认GPU1空闲后才能接续；不要修改正在训练的源worktree，不覆盖原权重/输出。
 使用包含该新profile的已发布源码；正常与去光评估仍固定480查询/120图库，best/last之外不存周期PT。
+
+## 46. 前4轮只更新相位，再恢复联合训练（候选，不重复启动已有run）
+
+从固定79.375%起点开始。前4轮只更新专家/global/router相位，alpha、所有电子参数及训练辅助头均冻结，
+但保留到相位的梯度路径；第5轮恢复联合训练，学习率沿用原余弦时钟。
+不改变任何光学传播、ROI、输入/输出合同或网络结构。仍是原480查询/120训练商品图库、原教师和cap250二视角池。
+不要与第45节相位平移混用；这是原始79.375%相位初始化的单独训练顺序对照。
+先核对GPU4空闲；最多3张卡，不能挤占其他人的任务。正式执行前源码必须测试并push GitHub。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu GPU-1b963983-7909-af6e-0528-f0f0661ab549 \
+  --assets "$T07/runs/simulation/standalone_assets_20260910" \
+  --checkpoint "$T07/runs/simulation/verify_joint_ep8_20260912_gpu1/best.pt" \
+  --target /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --abo /DATA/DATA1/guest3/2026OpticsMoE/data/abo \
+  --pool "$T07/runs/simulation/domain_pool250_20260912" \
+  --teacher-cache "$T07/runs/smoke/domain_distillation_20260912/build_teacher_cache/artifacts/cache.pt" \
+  --teacher-alignment "$T07/runs/simulation/domain_teacher_first_20260912_gpu4/domain_distill_teacher_first/artifacts/teacher_feature_alignment.pt" \
+  --profiles domain_distill_joint_phasefirst --epochs 16 --steps 128 --seed 42 \
+  --output "$T07/runs/simulation/domain_joint_phasefirst_20260912_gpu4"
+```
+
+只保存best/last；history中的`phase_only_warmup`记录阶段。正式采用前要独立复核新高与同权重去光结果。
