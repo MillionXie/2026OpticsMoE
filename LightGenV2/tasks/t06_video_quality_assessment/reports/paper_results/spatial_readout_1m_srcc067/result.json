@@ -18,6 +18,30 @@
     "mae": 7.5660929679870605
   },
   "optical_on_minus_off_srcc": 0.05510586250206673,
+  "same_checkpoint_random_last_language_global_phase": {
+    "definition": "Only serial_optics.raw_global_phase is replaced by an independent Uniform[0,2pi) physical phase; all other state tensors are unchanged.",
+    "fixed_seeds": [1346, 1347, 1348, 1349, 1350],
+    "primary_seed_predeclared_not_selected": 1346,
+    "primary_seed_metrics": {
+      "srcc": 0.6709703966289755,
+      "krcc": 0.48854488583299277,
+      "plcc": 0.688433318969906,
+      "rmse": 8.244114875793457,
+      "mae": 6.587302207946777
+    },
+    "five_seed_summary": {
+      "srcc_mean": 0.6709737671828704,
+      "srcc_std_population": 0.000024761342012757795,
+      "srcc_range": [0.6709320289509295, 0.671000890472103],
+      "plcc_mean": 0.6883925846891767,
+      "rmse_mean": 8.244109535217286,
+      "mae_mean": 6.587445449829102
+    },
+    "learned_minus_random_mean_srcc": 0.000034133765059118915,
+    "primary_seed_prediction_pcc_vs_learned": 0.999999382520444,
+    "primary_seed_prediction_delta_rmse": 0.01780555349700919,
+    "interpretation": "The random phase changes the Language-global CCD field, but the current final score is almost insensitive to that isolated final plane. The optical-on gain therefore cannot be attributed to this last phase mask alone."
+  },
   "improvement_over_s1327_srcc": 0.0026231611962358,
   "architecture": {
     "frames": 4,

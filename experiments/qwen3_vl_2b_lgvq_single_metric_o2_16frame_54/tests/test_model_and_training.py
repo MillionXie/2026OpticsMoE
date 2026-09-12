@@ -9,6 +9,7 @@ import torch
 
 from ..calibrate_spatial_levels import _isotonic
 from ..data import LGVQSingleMetricDataset
+from ..evaluate_last_phase_ablation import uniform_physical_phase_raw
 from ..modeling import (
     CustomConvE1Correction,
     LGVQSingleMetricOEO16,
@@ -191,6 +192,18 @@ def test_pruned_grid_compact_residual_is_zero_start_and_smaller(
         parameter.numel() for parameter in readout.parameters()
     )
     assert scaled_settings.architecture_label != compact_settings.architecture_label
+
+
+def test_random_phase_control_is_reproducible_and_uniform_in_physical_phase() -> None:
+    first = uniform_physical_phase_raw((256, 256), seed=41, dtype=torch.float32)
+    second = uniform_physical_phase_raw((256, 256), seed=41, dtype=torch.float32)
+    different = uniform_physical_phase_raw((256, 256), seed=42, dtype=torch.float32)
+    phase_fraction = torch.sigmoid(first)
+
+    assert torch.equal(first, second)
+    assert not torch.equal(first, different)
+    assert abs(float(phase_fraction.mean()) - 0.5) < 0.01
+    assert abs(float(phase_fraction.std(unbiased=False)) - 1.0 / (12.0**0.5)) < 0.01
 
 
 def test_low_rank_pruned_readout_keeps_contract_and_reduces_parameters(

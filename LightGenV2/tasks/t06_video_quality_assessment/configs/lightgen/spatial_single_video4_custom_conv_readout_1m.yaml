@@ -55,3 +55,13 @@ formal_simulation:
   optical_on_minus_off_srcc: 0.05510586250206673
   fusion_alpha: [0.48, 0.47, 0.60, 0.60]
   electronic_residual_block_gates: [0.02, 0.30, 0.06, 0.005]
+
+ablation_same_checkpoint:
+  all_optics_bypassed_srcc: 0.6159020384458628
+  optical_on_minus_bypassed_srcc: 0.05510586250206673
+  random_last_phase_parameter: serial_optics.raw_global_phase
+  random_last_phase_fixed_seeds: [1346, 1347, 1348, 1349, 1350]
+  random_last_phase_srcc_mean: 0.6709737671828704
+  random_last_phase_srcc_range: [0.6709320289509295, 0.671000890472103]
+  learned_minus_random_last_phase_srcc: 0.000034133765059118915
+  interpretation: full optics helps, but the isolated final Language-global phase is weakly used by the current score head
