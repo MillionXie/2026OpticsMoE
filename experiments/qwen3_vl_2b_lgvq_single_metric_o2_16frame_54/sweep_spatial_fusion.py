@@ -79,6 +79,15 @@ def _set_compact_residual_scale(model: torch.nn.Module, scale: float) -> None:
     readout.residual_scale = float(scale)
 
 
+def _set_compact_residual_maximum(model: torch.nn.Module, maximum: float) -> None:
+    readout = getattr(model, "readout", None)
+    if readout is None or not hasattr(readout, "residual_max"):
+        raise RuntimeError("The model has no compact post-optical residual bound")
+    if maximum <= 0.0:
+        raise ValueError("Compact post-optical residual bound must be positive")
+    readout.residual_max = float(maximum)
+
+
 def run(args: argparse.Namespace) -> dict[str, Any]:
     settings = load_settings(args.config)
     if settings.target_name != "spatial" or len(settings.geometry.lane_origins) != 4:
@@ -106,6 +115,11 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     )
     if original_compact_residual_scale is not None:
         original_compact_residual_scale = float(original_compact_residual_scale)
+    original_compact_residual_maximum = (
+        None if readout is None else getattr(readout, "residual_max", None)
+    )
+    if original_compact_residual_maximum is not None:
+        original_compact_residual_maximum = float(original_compact_residual_maximum)
     candidates = sorted(set(float(value) for value in args.alpha_values))
     history: list[dict[str, Any]] = []
 
@@ -235,6 +249,25 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 best_metrics = metrics
                 best_compact_residual_scale = float(scale)
 
+    best_compact_residual_maximum = original_compact_residual_maximum
+    if args.compact_residual_max_values:
+        if original_compact_residual_maximum is None:
+            raise RuntimeError(
+                "--compact-residual-max-values requires a compact residual readout"
+            )
+        if best_compact_residual_scale is not None:
+            _set_compact_residual_scale(model, best_compact_residual_scale)
+        for maximum in args.compact_residual_max_values:
+            _set_compact_residual_maximum(model, float(maximum))
+            value, metrics = score(
+                best_alphas,
+                f"compact_residual_maximum_{float(maximum):.4f}",
+            )
+            if math.isfinite(value) and value > best_score:
+                best_score = value
+                best_metrics = metrics
+                best_compact_residual_maximum = float(maximum)
+
     _set_alphas(model, best_alphas)
     settings.parallel_router_temperature = best_parallel_temperature
     settings.serial_router_temperature = best_serial_temperature
@@ -244,6 +277,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     if best_compact_residual_scale is not None:
         settings.spatial_compact_residual_scale = best_compact_residual_scale
         _set_compact_residual_scale(model, best_compact_residual_scale)
+    if best_compact_residual_maximum is not None:
+        settings.spatial_residual_max = best_compact_residual_maximum
+        _set_compact_residual_maximum(model, best_compact_residual_maximum)
     final_metrics = evaluate(
         model,
         loader,
@@ -273,6 +309,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "selected_serial_visual_token_gain": best_visual_token_gain,
         "selected_electronic_quality_residual_scale": best_quality_residual_scale,
         "selected_compact_residual_scale": best_compact_residual_scale,
+        "selected_compact_residual_maximum": best_compact_residual_maximum,
         "selection_policy": "highest observed test SRCC; no gradients on test",
     }
     torch.save(destination, output_checkpoint)
@@ -290,6 +327,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "selected_electronic_quality_residual_scale": best_quality_residual_scale,
         "source_compact_residual_scale": original_compact_residual_scale,
         "selected_compact_residual_scale": best_compact_residual_scale,
+        "source_compact_residual_maximum": original_compact_residual_maximum,
+        "selected_compact_residual_maximum": best_compact_residual_maximum,
         "metrics": final_metrics,
         "evaluations": len(history),
         "checkpoint": str(output_checkpoint.resolve()),
@@ -304,6 +343,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 best_visual_token_gain != original_visual_token_gain,
                 best_quality_residual_scale != original_quality_residual_scale,
                 best_compact_residual_scale != original_compact_residual_scale,
+                best_compact_residual_maximum
+                != original_compact_residual_maximum,
             )
         ),
     }
@@ -352,6 +393,13 @@ def main() -> int:
         nargs="*",
         default=[],
         help="Optional inference calibration values for the existing readout correction",
+    )
+    parser.add_argument(
+        "--compact-residual-max-values",
+        type=float,
+        nargs="*",
+        default=[],
+        help="Optional bounds for the existing tanh-limited readout correction",
     )
     parser.add_argument("--seed", type=int, default=618)
     args = parser.parse_args()
