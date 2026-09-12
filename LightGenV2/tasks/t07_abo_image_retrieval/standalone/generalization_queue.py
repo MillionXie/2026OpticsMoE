@@ -11,6 +11,7 @@ import signal
 import subprocess
 import sys
 import time
+from .randomness import training_seed
 
 # Keep the supervisor torch-free: profile names only, no model module import.
 PINNED_TEACHER_PROFILES = ('domain_distill_teacher_continue', 'domain_distill_teacher_continue_sam', 'domain_distill_teacher_continue_softgt', 'domain_distill_teacher_continue_fp32gallery', 'domain_distill_joint_curriculum', 'domain_distill_vision_patch')
@@ -52,12 +53,15 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--epochs', type=int, default=30)
     parser.add_argument('--steps', type=int, default=64)
+    parser.add_argument('--seed',type=training_seed,default=42,help='Student training seed; builders and fixed evaluation seeds unchanged')
     parser.add_argument('--profiles', nargs='+', choices=['preserve_adam','preserve_sam','preserve_fullfield_sam','preserve_fullfield_both_sam','regularized_control','regularized_phase05','domain_mixed','domain_curriculum','domain_target_control','domain_refine_control','domain_refine_wide','domain_refine_views','domain_refine_pool500_mix13','domain_refine_context7','domain_refine_balanced','build_teacher_cache','build_vision_teacher_cache','domain_distill_light','domain_distill_strong','domain_distill_stronger','domain_distill_resumeaux','domain_distill_resumeaux_full','domain_distill_sharpteacher','domain_distill_teacher_agreement','domain_distill_aligned_feature','domain_distill_feature_mlp','domain_distill_teacher_first','domain_distill_bounded_aspect','domain_distill_readout_ridge','domain_distill_position_jitter','domain_distill_refit250','domain_distill_refit500','domain_distill_readout256',*PINNED_TEACHER_PROFILES],
                         default=['preserve_sam','preserve_adam','preserve_fullfield_sam'])
     parser.add_argument('--after-queue', type=Path, help='Existing status.json; wait without a CUDA context until this queue completes')
     args = parser.parse_args()
     if min(args.epochs,args.steps)<1:parser.error('Positive epochs and steps required')
     if len(set(args.profiles))!=len(args.profiles):parser.error('Duplicate profiles')
+    if args.seed!=42 and ('domain_distill_readout_ridge' in args.profiles or all(p.startswith('build_') for p in args.profiles)):
+        parser.error('Nondefault seed applies to student gradient training, not a cache-only or ridge job')
     if (args.reuse_teacher_cache is None)!=(args.reuse_teacher_cache_sha256 is None):parser.error('Supply reuse cache and SHA together')
     if args.reuse_teacher_cache is not None and 'build_teacher_cache' not in args.profiles:parser.error('Cache reuse requires build_teacher_cache')
     if any(p in PINNED_TEACHER_PROFILES for p in args.profiles) != (args.teacher_alignment is not None):
@@ -78,6 +82,7 @@ def main():
     if args.after_queue is not None and not args.after_queue.is_file():parser.error('--after-queue must be an existing status.json')
     args.output.mkdir(parents=True, exist_ok=False)
     status = dict(status='running',pid=os.getpid(),gpu=args.gpu,planned=args.profiles,completed=[],
+                  training_seed=args.seed,
                   started_unix=time.time(),source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip())
     child = None
     def save():
@@ -102,7 +107,7 @@ def main():
             command=[sys.executable,'-u','-m','LightGenV2.tasks.t07_abo_image_retrieval.standalone.broad_transfer',
                      '--mode','adapt','--profile',profile,'--assets',str(args.assets),'--checkpoint',str(args.checkpoint),
                      '--target',str(args.target),'--output',str(run/'artifacts'),'--adapt-epochs',str(args.epochs),
-                     '--steps',str(args.steps),'--batch-size','4']
+                     '--steps',str(args.steps),'--batch-size','4','--seed',str(args.seed)]
             if profile.startswith('domain_'):command+=['--abo',str(args.abo),'--pool',str(args.pool)]
             if profile=='build_teacher_cache':
                 command=[sys.executable,'-u','-m','LightGenV2.tasks.t07_abo_image_retrieval.standalone.teacher_relations',

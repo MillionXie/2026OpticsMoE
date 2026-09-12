@@ -1046,3 +1046,28 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 队列自动向学生传递完整视觉cache。单独续训时需`--vision-teacher-cache`指向完整cache.pt，4图smoke缓存会被拒绝。
 训练日志`vision_patch_supervision`在128步中应有32次更新；第3轮后全步平均权重0.2（实际每次辅助更新0.8）。
 教师仅生成缓存时加载，不出现在学生训练/推理模块。最终只保留best/last，同权重正常/去光及原协议指标均要报告。
+
+## 38. 已有效教师优先配方的一次训练随机种子对照
+
+仅改变训练随机流为123；默认42保持旧实现。仍从原77.9167%开始，与原teacher_first的seed42结果比较，
+不是从78.75%继续。模型/光路/Top2/alpha约束不变，原480-query/120-gallery不变；不是重分train/test。
+种子也影响新建训练辅助头，但不改变加载的学生起始权重。仅一个额外seed，不做三次重复或集成推理。
+先确认GPU4当前refit250的status.json存在；队列会等待它结束并核验GPU空闲，再启动，不杀其他任务。
+
+```bash
+ROOT=/DATA/DATA1/guest3/2026OpticsMoE
+T07=$ROOT/LightGenV2/tasks/t07_abo_image_retrieval
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu GPU-1b963983-7909-af6e-0528-f0f0661ab549 \
+  --assets "$T07/runs/simulation/standalone_assets_20260910" \
+  --checkpoint "$T07/runs/smoke/domain_aligned_feature_20260912_gpu1/domain_distill_aligned_feature/artifacts/best.pt" \
+  --target "$ROOT/data/abo_similarity10_data" --abo "$ROOT/data/abo" \
+  --pool "$T07/runs/simulation/domain_pool250_20260912" \
+  --teacher-cache "$T07/runs/smoke/domain_distillation_20260912/build_teacher_cache/artifacts/cache.pt" \
+  --profiles domain_distill_teacher_first --epochs 16 --steps 128 --seed 123 \
+  --output "$T07/runs/simulation/domain_teacher_first_seed123_20260912_gpu4" \
+  --after-queue "$T07/runs/simulation/domain_refit250_20260912_gpu4/status.json"
+```
+
+只保留best/last；完整训练随机种子记录在execution.json和final_report.json。固定评估扰动种子不改。
+各轮test选模和跨seed选择均属于test-selected，不得将挑出的最佳seed称为均值或无偏泛化结果。

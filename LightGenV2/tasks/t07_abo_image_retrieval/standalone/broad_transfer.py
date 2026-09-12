@@ -28,6 +28,7 @@ from .generalization import PROFILES, overlay_config, apply_contract, backward_w
 from .generalization import learning_rate_multiplier, PINNED_TEACHER_PROFILES
 from .learning_curves import write_learning_curves
 from .domain_data import combine_training, epoch_batches, paired_view_indices, view_consistency_loss
+from .randomness import training_seed, epoch_random_streams
 
 
 class CategoryProxies(nn.Module):
@@ -77,6 +78,7 @@ def checkpoint(model,head,epoch,stage,score):
 
 
 def run_stage(args,stage,output,initial_checkpoint=None):
+    seed=training_seed(getattr(args,'seed',42))
     if output.exists():raise FileExistsError(output)
     output.mkdir(parents=True)
     general=getattr(args,'profile','original') in PROFILES
@@ -98,7 +100,7 @@ def run_stage(args,stage,output,initial_checkpoint=None):
     cfg['epochs']=getattr(args,stage+'_epochs') or cfg['epochs'];cfg['steps']=args.steps or cfg['steps']
     device=torch.device(args.device)
     if device.type=='cuda':torch.cuda.reset_peak_memory_stats(device)
-    random.seed(42);np.random.seed(42);torch.manual_seed(42);torch.set_num_threads(4)
+    random.seed(seed);np.random.seed(seed);torch.manual_seed(seed);torch.set_num_threads(4)
     model=None
     try:
         target,_=_load_contract(args.target)
@@ -179,6 +181,7 @@ def run_stage(args,stage,output,initial_checkpoint=None):
         optimizer=torch.optim.AdamW(optgroups,weight_decay=0)
         ema={n:p.detach().clone() for n,p in trainables}
         execution=dict(source_commit=source_commit(),command=sys.argv,pid=os.getpid(),python=sys.version,torch=torch.__version__,
+            training_seed=seed,seed_scope='training RNG only; fixed dataset, teacher cache, eval shuffle42/noise123 unchanged; not cross-device bitwise determinism',
             cuda_visible_devices=os.environ.get('CUDA_VISIBLE_DEVICES'),device=str(device),
             gpu=torch.cuda.get_device_name(device) if device.type=='cuda' else None,
             initial_checkpoint_sha256=sha256(start),accepted_checkpoint_sha256=sha256(start if general else origin),
@@ -256,7 +259,7 @@ def run_stage(args,stage,output,initial_checkpoint=None):
             del features
             write_json(output/'history.json',history);print(json.dumps(history),flush=True)
         for epoch in range(1,cfg['epochs']+1):
-            rng=random.Random(42+epoch)
+            rng,pair_rng=epoch_random_streams(seed,epoch)
             batches=None;domain_phase=None
             if domain:
                 domain_phase,batches,active_indices=epoch_batches(samples,target_count,domain,epoch,
@@ -289,7 +292,6 @@ def run_stage(args,stage,output,initial_checkpoint=None):
             gt_scale=supervised_loss_scale(epoch,cfg_all)
             view_weight=cfg_all.get('view_consistency_weight',0.)*min(1.,epoch/max(1,cfg_all.get('view_consistency_warmup_epochs',1)))
             teacher_weight=cfg_all.get('relation_teacher_weight',0.)*min(1.,epoch/max(1,cfg_all.get('relation_teacher_warmup_epochs',1)))
-            pair_rng=random.Random(19042+epoch)
             counts={m:torch.zeros(4,device=device) for m in ('vision','language')}
             for step in range(epoch_steps):
                 indices=batches[step] if batches is not None else sampled_indices(groups,cfg['classes_per_batch'],cfg['products_per_class'],rng)
@@ -428,6 +430,7 @@ def run_stage(args,stage,output,initial_checkpoint=None):
         payload=torch.load(output/'best.pt',map_location=device,weights_only=True)
         model.load_state_dict(payload['state_dict']);selected_epoch=payload['epoch'];selected_variant=payload.get('selection_variant','initial_or_ema');del payload
         report=dict(status='complete',stage=stage,selected_epoch=selected_epoch,model_audit=model.audit(),
+                    training_seed=seed,
                     selected_variant=selected_variant,
                     auxiliary_head_at_inference=False,test_selected=stage=='adapt',
                     selection_note='best EMA snapshot indexed by live training loss' if stage=='pretrain' else 'target test Hit@1 then mAP; accepted best included')
@@ -477,6 +480,7 @@ def main():
     p.add_argument('--vision-teacher-cache',type=Path,help='Complete train-only clean visual-token cache, only for vision_patch profile')
     p.add_argument('--pretrain-epochs',type=int);p.add_argument('--adapt-epochs',type=int);p.add_argument('--steps',type=int)
     p.add_argument('--batch-size',type=int,default=4)
+    p.add_argument('--seed',type=training_seed,default=42,help='Training RNG only; no data split or evaluation seed change')
     args=p.parse_args();verify_assets(args.assets)
     if (args.profile=='domain_distill_vision_patch')!=(args.vision_teacher_cache is not None):
         p.error('--vision-teacher-cache is required only for domain_distill_vision_patch')
