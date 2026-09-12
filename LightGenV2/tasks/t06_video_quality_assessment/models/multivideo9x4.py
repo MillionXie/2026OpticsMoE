@@ -34,6 +34,23 @@ from experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54.modeling import (
 from ..multivideo_settings import MultiVideoSettings
 
 
+class PrunedTemporalReadout(TemporalReadout):
+    """Structured compression of the existing post-optical Temporal head.
+
+    The frame convolutions, temporal statistics, prompt statistics and output
+    semantics are unchanged.  Only the 1,024-neuron hidden layer after the
+    four optical/electronic stages is narrowed.  Consequently this cannot form
+    a new raw-frame or pre-optical bypass.
+    """
+
+    def __init__(self, settings: MultiVideoSettings) -> None:
+        super().__init__(settings)
+        input_width = settings.head_width * 8
+        hidden_width = settings.temporal_readout_hidden_width
+        self.output[1] = nn.Linear(input_width, hidden_width)
+        self.output[4] = nn.Linear(hidden_width, 1)
+
+
 def _slotwise_routing_statistics(
     probabilities: torch.Tensor, selected: torch.Tensor
 ) -> dict[str, torch.Tensor]:
@@ -691,7 +708,11 @@ class MultiVideo9x4OpticalVQA(nn.Module):
         )
         nn.init.normal_(self.frame_position, std=0.02)
         nn.init.normal_(self.sequence_position, std=0.02)
-        self.readout = TemporalReadout(settings)
+        self.readout = (
+            TemporalReadout(settings)
+            if settings.temporal_readout_mode == "dense"
+            else PrunedTemporalReadout(settings)
+        )
         self.register_buffer("target_mean", torch.tensor(0.0))
         self.register_buffer("target_std", torch.tensor(1.0))
 
@@ -913,4 +934,4 @@ def build_model(settings: MultiVideoSettings) -> MultiVideo9x4OpticalVQA:
     return model
 
 
-__all__ = ["MultiVideo9x4OpticalVQA", "build_model"]
+__all__ = ["MultiVideo9x4OpticalVQA", "PrunedTemporalReadout", "build_model"]
