@@ -33,7 +33,9 @@ def main():
     report={'scope':'Raw device-raster orientation/phase modulation diagnostic; not a phase LUT calibration',
             'patterns':'128px amplitude patches; 32px phase sawtooth; no spatial flip; inverse explicitly named',
             'complete':False,'rows':[]}
-    with PhaseHDMI(link['phase_sdk'],link['phase_lut'],link.get('phase_settle_s',1)) as phase:
+    # Diagnostic only: preserve returned failures and inspect real camera output.
+    # The six-stage coordinator still requires successful SDK acknowledgements.
+    with PhaseHDMI(link['phase_sdk'],link['phase_lut'],link.get('phase_settle_s',1),strict_write_ack=False) as phase:
       try:
         with Remote(link) as remote:
             remote_dir='results/phase_joint_'+time.strftime('%Y%m%d_%H%M%S')
