@@ -23,7 +23,7 @@ def compare(a,b):
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--config',default='LAB.local.json');p.add_argument('--out',required=True,type=Path)
-    p.add_argument('--mode',choices=['scout','gray','timing'],default='scout')
+    p.add_argument('--mode',choices=['scout','gray','checker','timing'],default='scout')
     p.add_argument('--exposures-us',nargs='+',type=float,default=[50,200,1000])
     p.add_argument('--full-field',action='store_true',help='Gray sweep only: illuminate entire amplitude panel')
     p.add_argument('--wait-ms',type=float,default=200,help='Scout/gray diagnostic wait, not a recommended formal value')
@@ -45,6 +45,11 @@ def main():
             a=np.zeros((1080,1920),np.uint8);a[32:1048,452:1468]=gray
             if args.full_field:a[:]=gray
             name=f'gray{gray:03d}';paths[name]=patterns/(name+'.bmp');Image.fromarray(a).save(paths[name])
+    if args.mode=='checker':
+        source=Path(__file__).resolve().parent/'generated/phase_inverted/cal/A_CHECK_64.bmp'
+        a=np.asarray(Image.open(source).convert('L'))
+        for name,field in (('checker',a),('checker_inverse',255-a)):
+            paths[name]=patterns/(name+'.bmp');Image.fromarray(field).save(paths[name])
     report={'config':c,'mode':args.mode,'phase':'operator-loaded uniform black, not changed by software',
             'full_field':args.full_field,
             'frames':[],'complete':False,'camera_restored':False,'postprocessing':'raw Mono8; none'}
@@ -61,12 +66,13 @@ def main():
             print(label,name,'mean',meta['mean'],'p99',meta['p99'],'sat',meta['saturation_fraction'],flush=True)
             return frame,meta
         try:
-            if args.mode in ('scout','gray'):
+            if args.mode in ('scout','gray','checker'):
                 for exposure in args.exposures_us:
                     hw.camera.stop();hw.camera.set('ExposureTime',exposure);hw.camera.start()
                     hw.camera_settings=snapshot(hw.camera)
                     c['settle_delay_ms']=args.wait_ms
                     names=paths if args.mode=='scout' else [n for n in paths if n.startswith('gray')]
+                    if args.mode=='checker':names=['checker','checker_inverse','checker']
                     for name in names:grab(name,f'e{exposure:g}')
             else:
                 refs={};c['settle_delay_ms']=400
