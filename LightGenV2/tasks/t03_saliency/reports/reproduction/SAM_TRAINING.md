@@ -1218,3 +1218,15 @@ python -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --phase all --co
 GPU UUID `GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd`，固定cwd `.worktrees/t03_balance`；运行中不得checkout。
 仅与GPU5的pyramid组并行，总计两卡。产物`runs/simulation/moe_alpha40_sam_batch8_20260913_seed42`，
 完整启动命令见`launch_record.json`，当前为20轮预算的在跑试验，不是已完成或新最佳。
+
+首轮完整5000测试CC=.8623960327148438，较正式.86204960仅高约.000346，尚非实质突破。
+epoch1 EMA SHA `e4930c1264442d7056fd0451385cf8fb301e83dd580200e15c6b7a7fe934725c`；
+`epoch1_state_audit.json`确认同规格85412参数头、479364光参数、alpha=.43068655/.44104562。
+相对87ad的物理相位RMS变化：router .00011862 rad，四专家/global约.00146至.00156 rad，非完全冻结。
+状态审计不替代完整运行图和硬件可用性检查。
+
+粗尺度组父子进程和GPU5均释放后，于UTC2026-09-12 19:15:44启动固定权重独立复评PID/PGID572007，
+与GPU3训练并行，总共两卡。使用同一batch48、完整5000身份，逐图float64 CC；没有训练或后处理。
+run子目录`candidate_recheck`、日志`candidate_recheck_console.log`，命令和预启动SHA在
+`candidate_recheck_launch.json`。读取PT字节后绑定SHA，不因之后best被训练刷新而失去溯源。
+本段只记录启动，最终结果以`candidate_recheck/reproduction.json`为准，未达到.87。
