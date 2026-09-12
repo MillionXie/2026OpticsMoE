@@ -28,6 +28,8 @@ SAM仍只扰动既有电子参数。SAM的两次反向各含上述两次噪声�
 不把权重扰动效果和另一组随机噪声混淆。原相位梯度照常更新，前端冻结。
 这比原SAM增加约一倍前向训练工作与部分激活显存，**不是相同计算预算对照**；
 独立样本仍10000，没有额外标签。推理仍一个正常模型、单次预测，无额外参数或传播阶段。
+若有收益，只能先归因于“双随机视图平均监督+一致性”的组合；未经等计算的双视图无KL对照，
+不能宣称全部增益独立来自KL项。
 
 配置`moe_alpha40_noise_consistency_20260913.yaml`继承extra_control，固定87ad初始化，
 batch32、原学习率、EMA.995、SAM.05，20轮预算，第16轮进入低LR精修。
@@ -43,3 +45,22 @@ python -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --phase all --co
 先CPU回归与真实输入更新检查、GitHub同步，再用一张空闲GPU启动。
 训练记录`train_noise_consistency_kl`；只best/last，持续回落时保存实际轮数并停止。
 既有GSAM失败组不恢复；不叠加GSAM、ASAM、其他辅助头或数据增强。
+
+## 测试与真实更新审计
+
+源码`6089d5c74b7eb488b6d91384b208b51ebfda86cd`通过270项CPU回归（43.89秒，13条既有警告）。
+双向KL公式、双边梯度、0权重单前向、SAM随机对重放、异常权重/RNG恢复与配置合同均有测试。
+`runs/smoke/noise_consistency_20260913/report.json`记录真实8图CPU单步：
+3933184前端参数冻结且逐值不变；原生Transformer调用0；四次forward、一次optimizer更新；
+八次专家/全局零级混合调用均确认DC20–30%处于开启状态，没有临时clean替代。
+六张相位有限非零梯度/更新，alpha .43072152/.44106668；读出头85412。
+一致性KL .00238734；该8图训练CC .89576793不是正式测试成绩。
+源码push确认后才允许启动；实际PID、GPU与运行状态后续在本节记录。
+
+已从服务器Git remote成功push源码至`experiment/salicon-noise-consistency-20260913`，
+不是直接复制源码到运行目录。UTC2026-09-12 22:01:31启动PID/PGID689744，
+GPU1 UUID `GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d`；启动前25MiB、0%利用率且无计算进程。
+固定工作树`.worktrees/t03_balance`在运行中不得checkout；仅此一个训练任务，不占第二张卡。
+配置SHA `394c179921ee0c2cecb419780e39e000e4b390de39ae2d5c62091cdb34c0044cf`。
+run `runs/simulation/moe_alpha40_noise_consistency_20260913_seed42`内`launch_record.json`
+包含命令、源码、配置身份与20轮预算。当前为已启动，不表示已有新测试性能或目标完成。
