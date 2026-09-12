@@ -2,7 +2,7 @@
 # post-optical readout 950,145 parameters while leaving the six optical fields,
 # optical Top-2 routers, fusion and [B,16] output contract unchanged.
 base_config: temporal_multivideo16x4_formal.yaml
-output_dir: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo16x4_readout_rank48_s180
+output_dir: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo16x4_readout_rank48_kd_s180
 random_seed: 180
 
 model:

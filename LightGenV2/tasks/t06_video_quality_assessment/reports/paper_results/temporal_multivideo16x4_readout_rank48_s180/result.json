@@ -1,0 +1,37 @@
+{
+  "version_contract": "16 independent videos x 4 frames; six shared optical propagations; [B,16] output",
+  "test_videos": 558,
+  "physical_fields": 35,
+  "source_srcc": 0.804372636109386,
+  "compressed_metrics": {
+    "srcc": 0.8030190924263927,
+    "krcc": 0.5956912288198143,
+    "plcc": 0.8179822833947336,
+    "rmse": 7.9980292320251465,
+    "mae": 5.9704718589782715
+  },
+  "parameters": {
+    "source_total": 6804011,
+    "compressed_total": 2855467,
+    "source_readout": 4898689,
+    "compressed_readout": 950145,
+    "readout_reduction_percent": 80.6040963204645,
+    "total_reduction_percent": 58.03259283384463
+  },
+  "improvement_over_rank64_srcc": 0.00007804788293019893,
+  "srcc_absolute_change_from_dense": -0.0013535436829933412,
+  "compression": "rank-48 truncated SVD followed by strong source-readout distillation",
+  "compression_training": {
+    "best_epoch": 4,
+    "best_selection_source": "ema",
+    "learning_rate": 0.000005,
+    "regression_weight": 0.25,
+    "ranking_weight": 1.0,
+    "correlation_weight": 1.5,
+    "teacher_weight": 1.5,
+    "ema_decay": 0.999
+  },
+  "optical_masks_routers_fusions_and_geometry_inherited": true,
+  "checkpoint": "LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo16x4_readout_rank48_kd_s180/best_checkpoint.pt",
+  "checkpoint_sha256": "87a294d1dfd12107061ba00432f7205302d858c20352b86b6d7b91d44bde96bc5"
+}
