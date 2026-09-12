@@ -45,11 +45,17 @@ class PhaseHDMI:
             if not self.info['SLMFound'] or not self.info['COMFound']:raise RuntimeError('Phase display/USB controller not found')
             if self.dll.Load_lut(str(self.lut).encode('mbcs'))<=0:raise RuntimeError('Phase LUT load failed')
             self.info.update(lut_sha256=sha(self.lut),lut=str(self.lut),lut_scope='linear voltage; NOT verified linear phase')
+            print('Phase SDK connected: '+json.dumps(self.info),flush=True)
             return self
         except BaseException:self.close();raise
     def show(self,path,expected_sha=None):
-        a=np.ascontiguousarray(load_native(path,expected_sha));t=time.perf_counter()
-        if self.dll.Write_image(a.ctypes.data_as(C.POINTER(C.c_ubyte)),1)<=0:raise RuntimeError('Write_image failed')
+        a=np.ascontiguousarray(load_native(path,expected_sha))
+        # Match the vendor's RGBA example. Replicate gray exactly; alpha opaque.
+        rgba=np.empty((*a.shape,4),np.uint8);rgba[:,:,:3]=a[:,:,None];rgba[:,:,3]=255
+        t=time.perf_counter()
+        result=int(self.dll.Write_image(rgba.ctypes.data_as(C.POINTER(C.c_ubyte)),0))
+        print(f'Phase Write_image returned {result}: {path}',flush=True)
+        if result<=0:raise RuntimeError('Write_image failed')
         written=time.perf_counter();time.sleep(self.settle_s)
         self.current={'phase_file':str(Path(path).resolve()),'phase_sha256':sha(path),
             'write_call_ms':(written-t)*1000,'settle_s':self.settle_s,'sdk_ack_only':True,
