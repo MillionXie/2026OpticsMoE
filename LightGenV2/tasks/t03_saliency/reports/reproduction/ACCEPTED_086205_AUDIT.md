@@ -1,5 +1,25 @@
 # 暂定 CC 0.86205：结构、参数与性能来源核查
 
+## 2026-09-13：可执行的权重结构检查
+
+`audit_checkpoint.py` 只用CPU，将候选与上述正式87ad参考权重逐项核对：完整core/head张量名、
+形状和dtype、非有限值、同规格85412参数头、alpha>=.4、479364光学参数与六张相位尺寸。
+如提供Qwen checkpoint，还会直接比对其decoder张量规格。记录被实际读取字节的SHA256。
+
+```bash
+CUDA_VISIBLE_DEVICES='' python -m LightGenV2.tasks.t03_saliency.audit_checkpoint \
+  --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_reliable_teacher50.yaml \
+  --checkpoint LightGenV2/tasks/t03_saliency/runs/simulation/moe_alpha40_reliable_teacher50_20260912_seed42/best_checkpoint.pt \
+  --reference LightGenV2/tasks/t03_saliency/runs/simulation/moe_alpha40_sam_spatialcc_kd2_seed42/best_checkpoint.pt \
+  --qwen-checkpoint LightGenV2/tasks/t03_saliency/runs/simulation/qwen_aligned_head_50_20260912_seed42/best_checkpoint.pt \
+  --output LightGenV2/tasks/t03_saliency/runs/simulation/moe_alpha40_reliable_teacher50_20260912_seed42/final_state_audit.json
+```
+
+最后打包前、训练结束后运行这条命令。已有输出时拒绝覆盖；如需中途检查，用另一个明确epoch的输出文件名。
+这是**张量/配置结构检查，不是完整合规或准确率验收**。相同state形状不证明计算图相同，
+仍需要下面的源码/前向hook核查、完整5000张独立复评与硬件测试；不把输出中的state_checks_passed
+解释成CC达到0.87或实际光路已验证。以下原始审计历史保留。
+
 ## 状态与权重身份
 
 2026-09-10用户要求暂停优化、先核查结构。没有达到原0.88目标；不再自动启动后续训练。
