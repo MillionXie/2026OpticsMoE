@@ -45,12 +45,14 @@ class Controller:
         if errors:raise RuntimeError('Camera restore failed: '+str(errors))
     def __exit__(self,*args):return self.stack.__exit__(*args)
     def capture(self,bmp):
+        begin=time.perf_counter()
         path=Path(bmp).resolve()
         with Image.open(path) as im:
             if im.format!='BMP' or im.mode!='L' or list(im.size)!=self.c['amplitude_slm']['expected_resolution_wh']:
                 raise ValueError('Expected native-size 1920x1080 grayscale BMP')
         t0=time.perf_counter()
-        self.slm.preload_files([path]);self.slm.display_file(path)
+        self.slm.preload_files([path]);loaded=time.perf_counter()
+        self.slm.display_file(path)
         visible=time.perf_counter()
         # Sleeping lets the camera/card queue accumulate old optical frames.
         # Fixed-count fresh() alone was experimentally shown to return the
@@ -58,11 +60,16 @@ class Controller:
         drained=0
         while time.perf_counter()-visible<self.c['settle_delay_ms']/1000:
             self.camera.grab();drained+=1
+        settled=time.perf_counter()
         frame,meta=self.camera.fresh()
+        end=time.perf_counter()
         meta.update(amplitude_file=str(path),settle_delay_ms=self.c['settle_delay_ms'],
                     settle_method='continuous_drain_then_buffer_count_plus_2',settle_drained_frames=drained,
+                    bmp_validate_ms=(t0-begin)*1000,slm_preload_ms=(loaded-t0)*1000,
+                    slm_show_to_visible_ms=(visible-loaded)*1000,settle_actual_ms=(settled-visible)*1000,
+                    final_fresh_ms=(end-settled)*1000,capture_total_ms=(end-begin)*1000,
                     display_visible_ms=(visible-t0)*1000,
-                    visible_to_capture_ms=(time.perf_counter()-visible)*1000,
+                    visible_to_capture_ms=(end-visible)*1000,
                     camera=self.camera_settings,startup_warmup=self.camera.startup_warmup,
                     phase_control='manual, unchanged')
         return frame,meta

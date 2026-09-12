@@ -247,6 +247,24 @@ class Camera:
         for _ in range(int(self.config.get('buffer_count',4))+2):self.grab()
         return self.grab()
 
+    def receive_buffer_only(self):
+        """Benchmark DMA-buffer delivery only. No pixel copy/validation/inference.
+
+        Uses vendor cached buffer info. A successful benchmark here does NOT
+        prove Python can process/save all images at this rate.
+        """
+        if not self.streaming:raise SDKError('Call start before receive')
+        hbuf=C.c_void_p();base=C.c_void_p();size=C.c_size_t();t=time.perf_counter()
+        self.check(self.dll.scap_get_buf(self.handle,int(self.config.get('timeout_ms',3000)),C.byref(hbuf),C.byref(base),C.byref(size)),'get DMA buffer')
+        try:
+            info=BufferInfo()
+            self.check(self.dll.scap_get_buf_info(self.handle,hbuf,C.byref(info),1),'cached buffer metadata')
+            if not base.value or size.value<=0 or info.p_base!=base.value:raise SDKError('Invalid DMA buffer')
+            return {'frame_id':int(info.frame_id),'timestamp_ticks':int(info.timestamp),
+                    'filled_bytes_unverified':size.value,'width':info.width,'height':info.height,
+                    'receive_release_excluded_ms':(time.perf_counter()-t)*1000}
+        finally:self.check(self.dll.scap_back_buffer(self.handle,hbuf),'return DMA buffer')
+
     def close(self):
         if self.streaming:
             self.dll.scap_stop(self.handle);self.streaming=False
