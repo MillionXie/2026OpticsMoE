@@ -10,7 +10,7 @@ import json
 import math
 import torch
 
-PINNED_TEACHER_PROFILES = ('domain_distill_teacher_continue', 'domain_distill_teacher_continue_sam', 'domain_distill_teacher_continue_softgt', 'domain_distill_teacher_continue_fp32gallery', 'domain_distill_joint_curriculum', 'domain_distill_vision_patch', 'domain_distill_joint_restart', 'domain_distill_joint_restart_softgt', 'domain_distill_joint_merger', 'domain_distill_joint_categorykd', 'domain_distill_joint_routerorigin', 'domain_distill_joint_phasefirst', 'domain_distill_joint_feature8', 'domain_distill_joint_routerradian')
+PINNED_TEACHER_PROFILES = ('domain_distill_teacher_continue', 'domain_distill_teacher_continue_sam', 'domain_distill_teacher_continue_softgt', 'domain_distill_teacher_continue_fp32gallery', 'domain_distill_joint_curriculum', 'domain_distill_vision_patch', 'domain_distill_joint_restart', 'domain_distill_joint_restart_softgt', 'domain_distill_joint_merger', 'domain_distill_joint_categorykd', 'domain_distill_joint_routerorigin', 'domain_distill_joint_phasefirst', 'domain_distill_joint_feature8', 'domain_distill_joint_routerradian', 'domain_distill_joint_mlp768')
 REFIT_TEACHER_PROFILES = ('domain_distill_refit250', 'domain_distill_refit500')
 
 PROFILES = ('preserve_adam', 'preserve_sam', 'preserve_fullfield_sam', 'preserve_fullfield_both_sam',
@@ -108,7 +108,7 @@ def overlay_config(config, profile):
         overlay=json.loads(Path(__file__).with_name('domain_distillation.json').read_text(encoding='utf-8'))
         config.update(overlay['profiles'][profile])
         return config
-    if profile in ('domain_distill_joint_restart', 'domain_distill_joint_restart_softgt', 'domain_distill_joint_merger', 'domain_distill_joint_categorykd', 'domain_distill_joint_routerorigin', 'domain_distill_joint_phasefirst', 'domain_distill_joint_feature8', 'domain_distill_joint_routerradian'):
+    if profile in ('domain_distill_joint_restart', 'domain_distill_joint_restart_softgt', 'domain_distill_joint_merger', 'domain_distill_joint_categorykd', 'domain_distill_joint_routerorigin', 'domain_distill_joint_phasefirst', 'domain_distill_joint_feature8', 'domain_distill_joint_routerradian', 'domain_distill_joint_mlp768'):
         parent='domain_distill_joint_curriculum' if profile=='domain_distill_joint_restart' else 'domain_distill_joint_restart'
         config=overlay_config(config,parent)
         overlay=json.loads(Path(__file__).with_name('domain_distillation.json').read_text(encoding='utf-8'))
@@ -176,11 +176,37 @@ def apply_contract(payload, config):
     result=dict(payload, metadata=metadata)
     if 'electronic_context_kernels' in config:
         result=expand_electronic_context(result,config['electronic_context_kernels'])
+    if 'electronic_mlp_width' in config:
+        result=expand_electronic_mlp(result,config['electronic_mlp_width'])
     if 'retrieval_head' in config:
         result=expand_retrieval_head(result,config['retrieval_head'])
     if 'router_initial_phase_offset_turns' in config:
         result=shift_router_phase_origin(result,config['router_initial_phase_offset_turns'])
     return result
+
+
+def expand_electronic_mlp(payload, width):
+    """Widen existing MLPs, no new layer/branch or optical dimension change.
+
+    Duplicate first-layer neurons and halve/duplicate their output weights.
+    Eval function is preserved algebraically; finite precision is rechecked.
+    Independent training dropout breaks duplicate symmetry (not identical RNG).
+    """
+    previous=payload['metadata'].get('electronic_mlp_width',384)
+    if type(width) is not int or width not in (384,768) or previous not in (384,768) or width<previous:
+        raise ValueError('Only nonshrinking electronic MLP widths 384/768 supported')
+    if previous==width:return payload
+    state=dict(payload['state_dict'])
+    for mode in ('vision','language'):
+        for index in (0,1):
+            prefix=f'{mode}.blocks.{index}.mlp.'
+            w,b,v=(state[prefix+k] for k in ('0.weight','0.bias','3.weight'))
+            if w.shape!=(384,192) or b.shape!=(384,) or v.shape!=(192,384) or not all(torch.isfinite(x).all() for x in (w,b,v)):
+                raise ValueError('Invalid source electronic MLP tensors')
+            state[prefix+'0.weight']=torch.cat((w,w),dim=0)
+            state[prefix+'0.bias']=torch.cat((b,b),dim=0)
+            state[prefix+'3.weight']=torch.cat((v/2,v/2),dim=1)
+    return dict(payload,metadata=dict(payload['metadata'],electronic_mlp_width=width),state_dict=state)
 
 
 def shift_router_phase_origin(payload, turns):
