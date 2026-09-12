@@ -90,3 +90,10 @@ test IDs SHA `625dec6bc15b2d737d39bc252cfa0c354de217fec0266dcda568913f4a3496d0`�
 复评PID632783与同组子进程全部退出，GPU3释放。
 这是微小改进，未达到.87；无独立盲测，也尚未重做该权重的完整去光/路由审计，
 不能挪用e493或87ad的去光数字。
+
+随后同权重去光也完成：完整5000图独立CC **.8422947020969439**，相对正常.8624925081777596
+绝对下降.020197806080815672、相对下降2.341794996%。不重训电子模型，旁路router和两个光分支，
+融合返回原E（系数1），不伪造CCD。checkpoint与test IDs SHA均与正常复评相同。
+`candidate_remove_optical/reproduction.json`和`candidate_ablation_summary.json`保存完整证据。
+PID647248及同组子进程已全部退出、GPU3释放，之后才启动完整router/alpha与首16图可视化审计PID648863。
+此处相对性能变化不是光分支的严格因果贡献比例，也不等于融合alpha。
