@@ -130,6 +130,26 @@ $stamp = Get-Date -Format 'yyyyMMdd_HHmmss'
 & $py joint_diagnostic.py --mode timing --timing-exposure-us 150 --delays-ms 200 --repeats 10 --out "results\repeat_$stamp"
 ```
 
+### 时序分项记录（不运行ABO识别网络）
+
+最新数字测试：20/20匹配正确，平均284.963 ms/张。详细口径/理论来源见 [TIMING_REPORT.md](TIMING_REPORT.md)。先关闭相机GUI及Holoeye播放器，在登录桌面的PowerShell中运行；手动保持相位全黑，不需要加载训练相位。
+
+```powershell
+$stamp=Get-Date -Format yyyyMMdd_HHmmss
+& $py digit_timing.py --config LAB.local.json --out "results\digit_timing_$stamp"
+```
+
+脚本使用当前配置（本次150 μs、100 fps、200 ms），先采4张400 ms独立参考，再循环20张；计时循环不保存PNG，不执行GPU推理或ROI校正。短测之后才保存诊断图。它不代表MNIST识别准确率。
+
+只测试相机时，不操作SLM，每条独立运行、不要并行占用相机；每轮先在同模式预热2秒以排除积压帧：
+
+```powershell
+& $py benchmark.py --config LAB.local.json --fps 2250 --exposure-us 150 --frames 1000 --mode copy --out "results\camera_copy_$stamp"
+& $py benchmark.py --config LAB.local.json --fps 2250 --exposure-us 150 --frames 1000 --mode buffer --out "results\camera_buffer_$stamp"
+```
+
+`copy`复制全幅原始像素并检查；`buffer`仅取还缓冲用于吞吐诊断，不能当正式图像捕获/推理。输出目录必须新建，测试结束恢复相机参数。重新生成本次图表：`& $gpu timing_figures.py`（需本次原始results文件，不控制设备）。
+
 ## 6. 四点标定填哪里
 
 CCD 硬件保持全幅；把四个逻辑角的**新 SHS 全传感器坐标**填入 `LAB.local.json` 的 `logical_corners_full_sensor_xy`。这些坐标不要求 4 的倍数。相位 ROI 中心：
