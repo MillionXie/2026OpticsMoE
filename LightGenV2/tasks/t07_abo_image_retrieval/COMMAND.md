@@ -1595,8 +1595,9 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 
 初始、最终均重新编码原480测试和120商品图库，记录干净训练性能与同权重去光；只留best/last。
 
-## 57. 仅降低原商品重复采样（运行中，不重复启动）
+## 57. 仅降低原商品重复采样（已完成、未采用；历史复现命令）
 
+16轮完成，selected_epoch=-1：正常79.375%/去光62.9167%为初始权重回退，不是训练提升；监督494597/学生494600及CUDA均已释放。
 源码888d08d6已同步GitHub，两端247项测试、实际5556训练图SHA/配额/产品覆盖检查通过；监督494597/学生494600在GPU0 RTX4090运行。
 执行审计确认原光学、参数量、前端冻结、Top2/alpha及原prefix CCD读出不变，未叠加其它对照。
 初始化完整复评79.375%，与起点一致；后续训练成绩仍待实际产生。
@@ -1622,8 +1623,10 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 
 只存best/last；有新高也先独立正常/同权重去光复核，不能用训练提升或类别路由指标替代原Hit@1。
 
-## 58. 轻量适配已有patch输入卷积（运行中，不重复启动）
+## 58. 轻量适配已有patch输入卷积（用户转向新数据集，已停止）
 
+完成第8轮后用户确认换数据集，向已核实监督517418发SIGTERM，监督回收学生517421；ps及nvidia确认释放。
+保留best/last及原日志，状态failed_or_interrupted，不是16轮完成。以下为历史命令，当前不要启动。
 源码b69785ab已同步GitHub，两端256项测试通过；真实4图CPU初始化/梯度/patch单步更新检查通过。
 监督517418/学生517421已在GPU1 RTX4090启动；启动时GPU0/1/2三组，第56节完成后GPU2已释放，不自动补满资源。
 执行审计确认patch基础LR7.5e-7、原光学源码SHA/Top2/alpha、4356373训练参数和27578368冻结参数。
@@ -1651,3 +1654,37 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 ```
 
 初始成绩重新完整复评；只存best/last，新高须独立正常/去光复核。报告须注明patch已训练，不能称整个Qwen输入头冻结。
+
+## 59. 替代数据集配对初筛：COIL-100（与ABO成绩分开）
+
+先读`reports/reproduction/DATASET_SCREENING.md`；60训练物体身份与40测试物体分开，图库160图、查询320图，角距至少30度。
+这是**自定义受控实例检索**，不是官方SOP或原ABO类别检索，也不等于真实电商效果。初筛不训练，两者均64维；光电沿用原权重/光路。
+从仓库根运行。原始官方zip为130688843字节，SHA由prepare命令验证；不把图片或zip提交Git/实验室发布包。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+COIL=/DATA/DATA1/guest3/2026OpticsMoE/data/coil100_source
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_screen prepare-coil \
+  --archive "$COIL/coil-100.zip" --data "$COIL" \
+  --output "$T07/runs/simulation/coil100_protocol_20260913"
+
+# 先nvidia-smi确认GPU0为空闲；两条命令串行复用一张卡，不在占用卡上启动。
+CUDA_VISIBLE_DEVICES=GPU-afc19890-6209-ee4d-622d-e619da5bd5b2 \
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_screen optical \
+  --data "$COIL" --manifest "$T07/runs/simulation/coil100_protocol_20260913/protocol.json" \
+  --assets "$T07/runs/simulation/standalone_assets_20260910" \
+  --checkpoint "$T07/runs/simulation/readout_subspace_20260912/best.pt" \
+  --expected-checkpoint-sha256 50a8607eec392c00cf3675533490cb8ef953245af6f5d9cfbc9d616bf7d22701 \
+  --output "$T07/runs/simulation/coil100_optical_transfer_20260913" --batch-size 4
+
+# 完成后再次检查上一个PID已释放CUDA；Qwen独立进程，不混入光电模型。
+CUDA_VISIBLE_DEVICES=GPU-afc19890-6209-ee4d-622d-e619da5bd5b2 \
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_screen qwen64 \
+  --data "$COIL" --manifest "$T07/runs/simulation/coil100_protocol_20260913/protocol.json" \
+  --model /DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-Embedding-2B/snapshots/9f2f7e710d6d81056aa5c0a4f04764fec6bb7bda \
+  --output "$T07/runs/simulation/coil100_qwen64_20260913" --batch-size 4
+```
+
+每组输出`final_report.json`、逐图预测和64维特征。比较前必须确认两份报告的manifest SHA相同、都为320-query/160-gallery、同物体相关性。
+差距用`100*(Qwen64 Hit@1 - Optical Hit@1)`，单位百分点；去光用同权重直接移除，不另训练。
+只在新结果支持时开展训练池适配；当前不得把“下载成功”“脚本通过”写成达到10/4个百分点目标。
