@@ -1,0 +1,39 @@
+{
+  "scope": "Manual GUI grating versus manual GUI uniform black; local phase SDK NOT used in either capture",
+  "settings": {
+    "exposure_us": 150,
+    "gain": "Gain_X4",
+    "frame_rate_hz": 100,
+    "settle_delay_ms": 200
+  },
+  "roi_xyxy": [
+    760,
+    470,
+    1000,
+    710
+  ],
+  "centroid_method": "Gaussian sigma=2; threshold 25% peak above median; localization only, raw files unchanged",
+  "images": [
+    {
+      "path": "results\\manual_phase_gx_20260912_01\\raw.png",
+      "sha256": "9642641e65f76665fe0783bda4ed787b4c4bb4ccc420c3305253b15428ece36a",
+      "centroid_xy": [
+        879.2397538831748,
+        584.9316045451412
+      ],
+      "max": 135
+    },
+    {
+      "path": "results\\manual_phase_flat_20260912_01\\raw.png",
+      "sha256": "66c32c8cd23a706fe88f2d722fedf555b30c63f11c9e111b513c5121f5e167ce",
+      "centroid_xy": [
+        879.202557333067,
+        584.9551207364234
+      ],
+      "max": 120
+    }
+  ],
+  "centroid_distance_px": 0.04400675621240479,
+  "fixed_roi_pcc": 0.9976238571561529,
+  "conclusion": "No clear grating deflection observed. Does not isolate SDK failure, prove zero phase response, or diagnose device damage. Requires display/beam/polarization/phase-LUT checks."
+}
