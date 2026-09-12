@@ -1,5 +1,43 @@
 # 2026-09-12 联合部署记录
 
+## 最新结论：旧帧问题已定位并修复
+
+下方“未看到调制”保留作历史失败记录，**不再代表当前状态**。
+操作者手动保持棋盘格时，camera-only SDK 在444.2 μs拍到正确棋盘格；因此相机与光路可用。
+随后 native/direct显示与预加载句柄显示，在持续取流时均能产生黑/白/棋盘格对应响应。
+对照 `results/handle_probe_20260912`：显示白屏后sleep200 ms并丢6帧，仍读到均值3.956的旧黑屏；
+持续读取后才得到均值约18.6的白屏。旧 `fresh()` 固定帧数并不能保证当前曝光图像。
+
+修复 `slm_camera.Controller.capture`：Visible后在整个settle窗口持续取帧并归还缓存，
+再额外丢6帧，记录 `settle_method` 与 `settle_drained_frames`。
+不改SLM LUT、不改相位、不对CCD做增强。`results/checker_drain_20260912` 已确认棋盘/反相/棋盘切换。
+
+曝光短测 `results/exposure_fixed_20260912`：100/150/200 μs各三张。
+150 μs最大164～172、饱和比例0；200 μs一张出现约0.000241%饱和像素。
+选择150 μs作为当前均匀相位联调起点，正式聚焦相位仍需复查，不能保证所有图案都不饱和。
+
+`results/timing_fixed_20260912`，150 μs、100 fps：
+
+|额外等待|正确匹配次数|说明|
+|---|---:|---|
+|0 ms|1/4|错帧|
+|20 ms|3/4|错帧|
+|50 ms|2/4|错帧|
+|100 ms|3/4|错帧|
+|200 ms|4/4|追加重复验证|
+|400 ms|4/4|本轮没有必要增加到此值|
+
+`results/timing_repeat_20260912`：200 ms追加20次左右交替，**20/20正确**，
+最低同输入 PCC=0.997965456137085，无饱和；Visible至返回图像平均275.77 ms。
+这一时长不含BMP加载/显示提交、PNG写盘或模型推理。未经硬触发，不作长期零错帧承诺。
+最大原强度NMAE=0.15059，存在亮度/细节波动；PCC高只证明形状匹配，不能据此声称绝对光强稳定。
+
+本机 `LAB.local.json` 更新为 exposure_us=150、frame_rate_hz=100、settle_delay_ms=200，
+保留原gain=null（本轮回读Gain_X4）、未标定四角与 geometry_confirmed=false。
+正式PNG最简保存设置不变。操作在COMMAND.md，测试结束释放相机/SDK，不占用GUI。
+
+---
+
 机器目录：`E:\code\guest\2026OpticsMoE\ABO_Lab_SHS_8um`。
 只测试振幅 SDK 与 SHS 相机；相位由操作者保持全黑，无自动相位切换。
 
