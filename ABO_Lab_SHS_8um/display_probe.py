@@ -35,19 +35,31 @@ def renderer_windows():
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--out',required=True,type=Path)
+    p.add_argument('--method',choices=['native','handle','file'],default='native')
     p.add_argument('--config',default='LAB.local.json');a=p.parse_args()
     a.out.mkdir(parents=True,exist_ok=False)
     c=json.loads(Path(a.config).read_text(encoding='utf-8-sig'))
     c['camera']['exposure_us']=100;c['camera']['frame_rate_hz']=100
-    report={'complete':False,'frames':[],'method':'native blanks and direct file, continuous drain 3s per pattern'}
+    report={'complete':False,'frames':[],'method':a.method,'hold_s':3}
     with Controller(c) as hw:
         report['devices']=hw.info;slm=hw.slm._slm
         report['renderer_windows']=renderer_windows()
         checker=Path(__file__).resolve().parent/'generated/phase_inverted/cal/A_CHECK_64.bmp'
-        for label in ('black','white','checker'):
-            result=slm.showDataFromFile(str(checker)) if label=='checker' else slm.showBlankscreen(0 if label=='black' else 255)
-            hw.slm._check(result,'direct '+label)
+        files={'checker':checker}
+        for name,g in (('black',0),('white',255)):
+            files[name]=a.out/(name+'.bmp');Image.fromarray(np.full((1080,1920),g,np.uint8)).save(files[name])
+        for index,label in enumerate(('black','white','checker','black')):
+            if a.method=='handle':
+                hw.slm.preload_files([files[label]]);hw.slm.display_file(files[label])
+            else:
+                result=slm.showDataFromFile(str(files[label])) if a.method=='file' or label=='checker' else slm.showBlankscreen(0 if label=='black' else 255)
+                hw.slm._check(result,'direct '+label)
             started=time.perf_counter();next_record=0;count=0
+            if a.method!='native':
+                time.sleep(.2);early,early_meta=hw.camera.fresh()
+                Image.fromarray(early).save(a.out/(f'{index}_{label}_early.png'))
+                report.setdefault('early',[]).append(dict(pattern=label,elapsed_s=time.perf_counter()-started,
+                    mean=float(early.mean()),frame_id=early_meta['frame_id']))
             while time.perf_counter()-started<3:
                 frame,meta=hw.camera.grab();count+=1
                 elapsed=time.perf_counter()-started
@@ -55,7 +67,7 @@ def main():
                     report['frames'].append(dict(pattern=label,elapsed_s=elapsed,frame_id=meta['frame_id'],
                         mean=float(frame.mean()),p99=float(np.percentile(frame,99)),max=int(frame.max())))
                     next_record+=.25
-            Image.fromarray(frame).save(a.out/(label+'.png'))
+            Image.fromarray(frame).save(a.out/(f'{index}_{label}.png'))
             print(label,'last mean',float(frame.mean()),'drained frames',count,flush=True)
             save_json(a.out/'report.json',report)
         report['renderer_windows_after']=renderer_windows()
