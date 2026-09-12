@@ -1327,12 +1327,13 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
   --output "$T07/runs/simulation/domain_joint_feature8_20260912_gpu2"
 ```
 
-## 48. Router按物理相位弧度做Adam更新（待验证/排队，不占第四张卡）
+## 48. Router按物理相位弧度做Adam更新（已排队，不占第四张卡）
 
 训练前向、光路、ROI、Top2、alpha及保存格式不变；仅两个Router采用弧度坐标Adam及角度EMA。
 只在backward和optimizer.step之间临时转换，不能在该上下文内前向或保存。
 不叠加第45节初始化平移、第46节相位优先或第47节强教师。固定原79.375%权重，初始评估需重算。
 先完成测试并同步GitHub、真实输入梯度检查，再按下列命令接续第45节；依赖未完成时不分配CUDA。
+已用a28a8438启动监督3357893等待依赖；两端187项测试及真实4图CPU一步检查通过，不要重复排队。
 
 ```bash
 T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
