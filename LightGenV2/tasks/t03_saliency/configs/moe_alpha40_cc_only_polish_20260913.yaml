@@ -12,6 +12,9 @@ training:
   staged:
     polish_start: 16
 distillation:
+  # Use the ordinary loss path when no teacher is active. Spatial-CC KD's
+  # guard intentionally requires an active teacher; do not weaken that guard.
+  loss: kl
   initial_weight: 0.0
   final_weight: 0.0
   end_epoch: 20
