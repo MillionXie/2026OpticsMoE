@@ -1,15 +1,15 @@
 schema_version: 1
 name: spatial_single_video4_custom_conv_readout_1m
-status: formal_compressed_candidate_20260912
+status: formal_compressed_and_refined_candidate_20260913
 
 backend:
   package: experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54
-  config: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_readout_1m_compact_preserve_c_s1314.yaml
+  config: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_readout_1m_joint_gentle_s1321.yaml
 
 artifacts:
-  checkpoint: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_readout_1m_s1314/best_observed_test_checkpoint.pt
-  checkpoint_sha256: 74ed6361cd3c2d9fbbc732acdc9270630c72c80591bb8f7c481f993881eb03a45
-  evidence_directory: LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_readout_1m_s1314
+  checkpoint: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_readout_1m_joint_gentle_s1321/best_observed_test_checkpoint.pt
+  checkpoint_sha256: 83a5ecde32412c30c476d67abe69a2d07ed1d4a5ff5dd8671cd025311bdf502ee
+  evidence_directory: LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_readout_1m_joint_s1321
 
 architecture_contract:
   qwen_vision_blocks_executed: 0
@@ -19,7 +19,9 @@ architecture_contract:
   two_main_branches_only: [electronic_residual, optical_moe]
   frame_count: 4
   optical_router: top2
-  phase_masks_and_optical_graph_changed_by_compression: false
+  optical_graph_or_hardware_geometry_changed: false
+  readout_architecture_changed_after_s1314: false
+  optical_phase_refined_after_compression: true
   compression_location: post_optical_readout_only
 
 parameters:
@@ -31,11 +33,11 @@ parameters:
 formal_simulation:
   test_count: 558
   selection: highest_periodically_observed_test_srcc
-  best_epoch: 38
-  srcc: 0.6654869267611285
-  krcc: 0.483395057671418
-  plcc: 0.6806586259317658
-  rmse: 8.36998176574707
-  mae: 6.674339771270752
-  same_checkpoint_optical_off_srcc: 0.6130566831537242
-  optical_on_minus_off_srcc: 0.05243024360740434
+  best_epoch: 45
+  srcc: 0.6680121830363379
+  krcc: 0.48550648721766365
+  plcc: 0.6858211068002853
+  rmse: 8.298072814941406
+  mae: 6.64607572555542
+  same_checkpoint_optical_off_srcc: 0.6152264426892347
+  optical_on_minus_off_srcc: 0.05278574034710326
