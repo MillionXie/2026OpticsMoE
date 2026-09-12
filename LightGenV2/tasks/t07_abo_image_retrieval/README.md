@@ -57,13 +57,19 @@
 
 ## 持续目标与不可变约束（2026-09-12）
 
-待测试提交`domain_distill_joint_patch`：只在原学生训练参数之外，放开**已有**Qwen patch Conv3d的weight/bias。
+运行中`domain_distill_joint_patch`：只在原学生训练参数之外，放开**已有**Qwen patch Conv3d的weight/bias。
 不是加入新卷积或Qwen Transformer；输入仍224图→196×1024，6次光采集、光路/ROI/Top2/α>0.4、原prefix读出全不变。
 1573888个原冻结参数改为可训练，总参数量不变：训练4356373、冻结27578368。位置编码、文本embedding、merger仍冻结。
 patch保存FP32主权重，计算保持原BF16卷积/位置接口；旧冻结分支保持原计算路径，必须实测初始化一致性及后续参数确实更新。
 patch基础学习率为电子LR的0.05，即7.5e-7，跟随原余弦；其余joint_restart损失/2:2采样/原辅助头/教师坐标/16×128seed42不变。
 从未校准79.375%起点单独对照，不与mix13、全幅读出、教师梯度投影或merger适配叠加。baseline仍为原冻结Qwen，明确说明学生输入头参与训练。
 这改变训练范围和该卷积的主权重存储精度，不宣称整个前端仍冻结；操作见第58节，先测试和CPU实图检查再启动。
+源码b69785ab已同步GitHub，两端256项测试通过；真实4类TRAIN图CPU检查初始化输出max差=0，12相位及两个patch参数梯度均有限且非零。
+仅给patch做一次7.5e-7 AdamW诊断步后，只有这两个参数改变；其中77263个weight值在BF16计算精度下也改变，bias主权重改变但BF16值未变。
+该诊断使用描述子虚拟loss、无权重衰减，不冒充正式训练步或性能；未写checkpoint、未读TEST图、未创建CUDA。
+证据在`verify_joint_ep8_20260912_gpu1/evaluation/diagnostics/patch_cpu_probe.json`。
+监督517418/学生517421已在空闲GPU1 RTX4090启动，连同GPU0/2合计三张；执行审计确认patch基础LR7.5e-7、原光学源码SHA6490c6ee…及其余合同不变。
+GPU完整初始化复评79.375%，与未校准源权重一致；不能把这个初始化成绩当作输入头微调的提升。
 
 源码历史衔接：本地共享分支rebase后，`8fb1f876`与已发布`0cd1d7f0`全仓文件树相同但历史不同。
 已在独立整合分支用普通merge形成`faabdc40`，确认合并没有任何文件内容差异，并快进本地与GitHub；未强推。
