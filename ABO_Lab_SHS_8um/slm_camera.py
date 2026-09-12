@@ -35,7 +35,10 @@ class Controller:
             if self.camera.get('TestPattern')!='Normal' or self.camera.get('SyncMode')!='InternalSync':
                 raise RuntimeError('Require real-image Normal + InternalSync for validated continuous fallback')
             if self.camera.get('OffsetX')!='0' or self.camera.get('OffsetY')!='0':raise RuntimeError('Current profile requires full-sensor ROI; reset offsets in Viewer first')
-            self.camera.start();return self
+            self.camera.start()
+            self.camera_settings=snapshot(self.camera)
+            self.info={'amplitude':self.slm.device_info(),'camera':self.camera_settings}
+            return self
         except BaseException:self.stack.close();raise
     def restore(self):
         errors=restore_settings(self.camera,self.before,['Gain','ExposureTime','AcquisitionFrameRate'])
@@ -46,11 +49,15 @@ class Controller:
         with Image.open(path) as im:
             if im.format!='BMP' or im.mode!='L' or list(im.size)!=self.c['amplitude_slm']['expected_resolution_wh']:
                 raise ValueError('Expected native-size 1920x1080 grayscale BMP')
+        t0=time.perf_counter()
         self.slm.preload_files([path]);self.slm.display_file(path)
+        visible=time.perf_counter()
         time.sleep(self.c['settle_delay_ms']/1000)
         frame,meta=self.camera.fresh()
         meta.update(amplitude_file=str(path),settle_delay_ms=self.c['settle_delay_ms'],
-                    camera=snapshot(self.camera),startup_warmup=self.camera.startup_warmup,
+                    display_visible_ms=(visible-t0)*1000,
+                    visible_to_capture_ms=(time.perf_counter()-visible)*1000,
+                    camera=self.camera_settings,startup_warmup=self.camera.startup_warmup,
                     phase_control='manual, unchanged')
         return frame,meta
 
