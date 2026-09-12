@@ -27,7 +27,11 @@ def main():
     p.add_argument('--exposures-us',nargs='+',type=float,default=[50,200,1000])
     p.add_argument('--full-field',action='store_true',help='Gray sweep only: illuminate entire amplitude panel')
     p.add_argument('--wait-ms',type=float,default=200,help='Scout/gray diagnostic wait, not a recommended formal value')
+    p.add_argument('--timing-exposure-us',type=float,help='Timing scan only: override camera exposure for this run')
     args=p.parse_args();c=json.loads(Path(args.config).read_text(encoding='utf-8-sig'))
+    if args.timing_exposure_us is not None:
+        if args.mode!='timing':raise ValueError('timing-exposure-us requires timing mode')
+        c['camera']['exposure_us']=args.timing_exposure_us
     if len(args.exposures_us)>5:raise ValueError('At most 5 scout exposures')
     if not 0<=args.wait_ms<=1000:raise ValueError('Diagnostic wait must be 0..1000 ms')
     if args.full_field and args.mode!='gray':raise ValueError('Full field is only for gray sweep')
