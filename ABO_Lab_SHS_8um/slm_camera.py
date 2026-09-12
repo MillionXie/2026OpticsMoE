@@ -52,9 +52,15 @@ class Controller:
         t0=time.perf_counter()
         self.slm.preload_files([path]);self.slm.display_file(path)
         visible=time.perf_counter()
-        time.sleep(self.c['settle_delay_ms']/1000)
+        # Sleeping lets the camera/card queue accumulate old optical frames.
+        # Fixed-count fresh() alone was experimentally shown to return the
+        # previous pattern. Drain continuously throughout the settling window.
+        drained=0
+        while time.perf_counter()-visible<self.c['settle_delay_ms']/1000:
+            self.camera.grab();drained+=1
         frame,meta=self.camera.fresh()
         meta.update(amplitude_file=str(path),settle_delay_ms=self.c['settle_delay_ms'],
+                    settle_method='continuous_drain_then_buffer_count_plus_2',settle_drained_frames=drained,
                     display_visible_ms=(visible-t0)*1000,
                     visible_to_capture_ms=(time.perf_counter()-visible)*1000,
                     camera=self.camera_settings,startup_warmup=self.camera.startup_warmup,
