@@ -1382,3 +1382,27 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
   --output "$T07/runs/simulation/domain_joint_mlp768_20260912_gpu4" \
   --after-queue "$T07/runs/simulation/domain_joint_phasefirst_20260912_gpu4/status.json"
 ```
+
+## 50. 原结构联合续训的seed123对照（已排队，不重复启动）
+
+只改变第40节joint_restart的训练seed，保持原384宽MLP、原raw Router优化器、固定79.375%起点及原协议。
+监督3488475使用已发布源码abb36acd，等待第47节结束后接续GPU2；等待不占CUDA，不启动第四张卡。
+不能叠加第49节扩宽或第48节弧度坐标；评估不拼接不同seed预测，不改图库/标签，仅best/last。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b \
+  --assets "$T07/runs/simulation/standalone_assets_20260910" \
+  --checkpoint "$T07/runs/simulation/verify_joint_ep8_20260912_gpu1/best.pt" \
+  --target /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --abo /DATA/DATA1/guest3/2026OpticsMoE/data/abo \
+  --pool "$T07/runs/simulation/domain_pool250_20260912" \
+  --teacher-cache "$T07/runs/smoke/domain_distillation_20260912/build_teacher_cache/artifacts/cache.pt" \
+  --teacher-alignment "$T07/runs/simulation/domain_teacher_first_20260912_gpu4/domain_distill_teacher_first/artifacts/teacher_feature_alignment.pt" \
+  --profiles domain_distill_joint_restart --epochs 16 --steps 128 --seed 123 \
+  --output "$T07/runs/simulation/domain_joint_seed123_20260912_gpu2" \
+  --after-queue "$T07/runs/simulation/domain_joint_feature8_20260912_gpu2/status.json"
+```
+
+新高需在4090独立复核正常及同权重去光；保留跨run/test选模偏差说明，不把不同seed的最佳值当作均值。
