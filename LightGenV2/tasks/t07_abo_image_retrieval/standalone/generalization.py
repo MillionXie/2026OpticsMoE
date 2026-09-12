@@ -10,10 +10,12 @@ import json
 import math
 import torch
 
+PINNED_TEACHER_PROFILES = ('domain_distill_teacher_continue', 'domain_distill_teacher_continue_sam')
+
 PROFILES = ('preserve_adam', 'preserve_sam', 'preserve_fullfield_sam', 'preserve_fullfield_both_sam',
             'regularized_control', 'regularized_phase05', 'domain_mixed', 'domain_curriculum', 'domain_target_control',
             'domain_refine_control', 'domain_refine_wide', 'domain_refine_views', 'domain_refine_pool500_mix13', 'domain_refine_context7', 'domain_refine_balanced',
-            'domain_distill_light', 'domain_distill_strong', 'domain_distill_stronger', 'domain_distill_resumeaux', 'domain_distill_resumeaux_full', 'domain_distill_sharpteacher', 'domain_distill_teacher_agreement', 'domain_distill_aligned_feature', 'domain_distill_feature_mlp', 'domain_distill_teacher_first', 'domain_distill_bounded_aspect', 'domain_distill_position_jitter', 'domain_distill_teacher_continue')
+            'domain_distill_light', 'domain_distill_strong', 'domain_distill_stronger', 'domain_distill_resumeaux', 'domain_distill_resumeaux_full', 'domain_distill_sharpteacher', 'domain_distill_teacher_agreement', 'domain_distill_aligned_feature', 'domain_distill_feature_mlp', 'domain_distill_teacher_first', 'domain_distill_bounded_aspect', 'domain_distill_position_jitter', *PINNED_TEACHER_PROFILES)
 
 
 def learning_rate_multiplier(config):
@@ -77,6 +79,11 @@ def restore_auxiliary_head(head, payload, actual_sha256, expected_sha256):
 
 
 def overlay_config(config, profile):
+    if profile == 'domain_distill_teacher_continue_sam':
+        config=overlay_config(config,'domain_distill_teacher_continue')
+        overlay=json.loads(Path(__file__).with_name('domain_distillation.json').read_text(encoding='utf-8'))
+        config.update(overlay['profiles'][profile])
+        return config
     if profile.startswith('domain_distill_'):
         config=overlay_config(config,'domain_refine_wide')
         overlay=json.loads(Path(__file__).with_name('domain_distillation.json').read_text(encoding='utf-8'))

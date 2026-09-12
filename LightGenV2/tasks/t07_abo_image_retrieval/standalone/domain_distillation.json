@@ -11,6 +11,11 @@
     "domain_distill_light": {"relation_teacher_weight": 0.10},
     "domain_distill_strong": {"relation_teacher_weight": 0.30},
     "domain_distill_stronger": {"relation_teacher_weight": 0.60},
+    "domain_distill_teacher_continue_sam": {
+      "sam_rho": 0.02,
+      "sam_warmup_epochs": 3,
+      "protocol": "Matched teacher_continue control: same pinned78.75% live source, all restored training auxiliaries, fixed training-only teacher alignment, full cap250, quarter learning rates and12x128 updates. Only use two-pass SAM with global L2 rho0.02 warmed over3 epochs, then AdamW; replay stochastic optical noise, restore perturbed weights before the base step. Same inference/optics/Top2/alpha>0.4 and original480-query/120-gallery; approximately twice forward/backward work, not a compute-matched control."
+    },
     "domain_distill_teacher_continue": {
       "relation_teacher_weight": 0.0,
       "teacher_feature_weight": 2.0,

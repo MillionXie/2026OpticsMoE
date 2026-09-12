@@ -50,3 +50,15 @@ def test_continuation_profile_and_old_defaults():
     assert cfg.get('retrieval_head','linear64')=='linear64'
     assert [supervised_loss_scale(i,cfg) for i in range(1,13)]==[1.]*12
     assert learning_rate_multiplier(overlay_config({},'domain_distill_teacher_first'))==1.
+
+
+def test_sam_continuation_changes_only_training_update():
+    from LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization import PROFILES, PINNED_TEACHER_PROFILES
+    from LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue import PINNED_TEACHER_PROFILES as queued
+    assert queued==PINNED_TEACHER_PROFILES
+    assert all(p in PROFILES for p in PINNED_TEACHER_PROFILES)
+    plain=overlay_config({},'domain_distill_teacher_continue')
+    sam=overlay_config({},'domain_distill_teacher_continue_sam')
+    assert sam['sam_rho']==.02 and sam['sam_warmup_epochs']==3
+    ignored={'sam_rho','sam_warmup_epochs','protocol'}
+    assert {k:v for k,v in plain.items() if k not in ignored}=={k:v for k,v in sam.items() if k not in ignored}

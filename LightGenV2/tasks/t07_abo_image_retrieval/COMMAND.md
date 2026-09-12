@@ -825,3 +825,30 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 `execution.json`记录辅助头恢复、category proxy保留和教师矩阵来源；每轮记录实际监督系数与正常test。
 训练结束再重载best完成正常/去光复评，不是每轮都测去光。
 该组没有新增网络层或改变光学传播。未超过当前best时不替换正式候选。
+
+## 30. 同起点SAM续训对照（不增加推理网络）
+
+与第29节保持相同起点/教师矩阵/12轮128步/学习率，只更换为SAM+AdamW训练更新。
+SAM半径0.02、3轮热身，共用全体活跃参数L2范数；两次前向复用相同随机噪声。
+约增加一倍前后向成本，因此这是等更新次数，不是等算力对照。仅best/last，不生成周期PT。
+在仓库根目录、已激活xml环境执行；不要在已有输出目录重复运行，也不要同时启动第29节的第二份任务。
+
+```bash
+T07=LightGenV2/tasks/t07_abo_image_retrieval
+ASSETS=$T07/runs/simulation/standalone_assets_20260910
+TARGET=/DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data
+ABO=/DATA/DATA1/guest3/2026OpticsMoE/data/abo
+BEST=$T07/runs/simulation/verify_teacher_first_ep11_20260912_gpu4/best.pt
+CACHE=$T07/runs/smoke/domain_distillation_20260912/build_teacher_cache/artifacts/cache.pt
+POOL=$T07/runs/simulation/domain_pool250_20260912
+ALIGNMENT=$T07/runs/simulation/domain_teacher_first_20260912_gpu4/domain_distill_teacher_first/artifacts/teacher_feature_alignment.pt
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d --assets "$ASSETS" --checkpoint "$BEST" \
+  --target "$TARGET" --abo "$ABO" --pool "$POOL" --teacher-cache "$CACHE" --teacher-alignment "$ALIGNMENT" \
+  --profiles domain_distill_teacher_continue_sam --epochs 12 --steps 128 \
+  --output "$T07/runs/simulation/domain_teacher_continue_sam_20260912_gpu1" \
+  --after-queue "$T07/runs/simulation/domain_bounded_aspect_20260912_gpu1/status.json"
+```
+
+等待阶段不占CUDA，前序退出后再次检查GPU空闲；被别人使用时停止队列，不抢占。
+`history.json`中的`sam_rho`和`sam_loss_gap`确认实际执行；正式结论仍需固定best独立复评。

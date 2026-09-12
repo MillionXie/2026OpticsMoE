@@ -25,7 +25,7 @@ from .cli import autocast,encode,evaluate,supcon,regularization,preview
 from .curriculum import parameter_kind
 from .prepare_broad_abo import safe_image
 from .generalization import PROFILES, overlay_config, apply_contract, backward_with_sam, parameter_decay, restore_auxiliary_head, initialize_category_proxies, supervised_loss_scale
-from .generalization import learning_rate_multiplier
+from .generalization import learning_rate_multiplier, PINNED_TEACHER_PROFILES
 from .learning_curves import write_learning_curves
 from .domain_data import combine_training, epoch_batches, paired_view_indices, view_consistency_loss
 
@@ -446,8 +446,8 @@ def main():
     p.add_argument('--pretrain-epochs',type=int);p.add_argument('--adapt-epochs',type=int);p.add_argument('--steps',type=int)
     p.add_argument('--batch-size',type=int,default=4)
     args=p.parse_args();verify_assets(args.assets)
-    if (args.profile=='domain_distill_teacher_continue') != (args.teacher_alignment is not None):
-        p.error('--teacher-alignment is required only for domain_distill_teacher_continue')
+    if (args.profile in PINNED_TEACHER_PROFILES) != (args.teacher_alignment is not None):
+        p.error('--teacher-alignment is required only for pinned teacher continuation profiles')
     if (args.profile.startswith('high_alpha') or args.profile in PROFILES) and args.mode!='adapt':p.error('High-alpha/generalization profiles support target adapt only')
     if args.mode in ('pretrain','chain') and (args.abo is None or args.pool is None):p.error('--abo and --pool required')
     if args.profile.startswith('domain_') and (args.abo is None or args.pool is None):p.error('Domain expansion requires --abo and --pool')
