@@ -1,0 +1,36 @@
+{
+  "version_contract": "one video x 4 frames; optical Top-2; 967458-parameter readout frozen during this refinement",
+  "test_videos": 558,
+  "best_epoch": 3,
+  "selection_source": "ema",
+  "metrics": {
+    "srcc": 0.6683847397516937,
+    "krcc": 0.4859055989001857,
+    "plcc": 0.6859145561817983,
+    "rmse": 8.294395446777344,
+    "mae": 6.644906044006348
+  },
+  "same_checkpoint_optical_off_srcc": 0.6152264426892347,
+  "optical_on_minus_off_srcc": 0.053158297062459,
+  "parameters": {
+    "full_student": 3786407,
+    "post_optical_readout": 967458,
+    "trainable_in_mask_only_stage": 753993
+  },
+  "improvement_over_s1321_srcc": 0.00037255671535581027,
+  "improvement_over_compressed_s1314_srcc": 0.002897812990565188,
+  "mask_only_refinement": true,
+  "mean_wrapped_phase_delta_rms_rad": 0.00009465706837848605,
+  "fusion_alpha": {
+    "vision_expert": 0.45999598503112793,
+    "vision_global": 0.5000057220458984,
+    "language_expert": 0.42000094056129456,
+    "language_global": 0.779981791973114
+  },
+  "router_selected_share": {
+    "vision": [0.21796594560146332, 0.21191756427288055, 0.323924720287323, 0.24619175493717194],
+    "language": [0.24014337360858917, 0.30913978815078735, 0.19534049928188324, 0.25537633895874023]
+  },
+  "checkpoint": "LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_readout_1m_phase_refine_s1327/best_observed_test_checkpoint.pt",
+  "checkpoint_sha256": "3e38908573290d44c5c68734d2bd73b43a223806bd92e85e14a49b186349d71b"
+}
