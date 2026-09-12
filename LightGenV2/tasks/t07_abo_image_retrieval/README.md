@@ -68,6 +68,8 @@ CCD强度归一化、clip12/log1p、行LN/ReLU/Linear192不变，所有权重张
 检查只用训练图，不用TEST；输出相对旧prefix余弦0.63–0.84，明确不是等价初始化，不预报新成绩。
 证据`verify_joint_ep8_20260912_gpu1/evaluation/diagnostics/languagefull_cpu_probe.json`；原光学源码SHA6490c6ee…不变。
 监督487163/学生487166已在空闲GPU2 RTX3090启动；执行审计确认6 captures、Top2、α下限0.4001、2782485训练参数、无TF/attention。
+完整初始化复评仅57.7083%（277/480），干净TRAIN留商品外79.0972%；改变池化导致旧权重明显失配，不能当作已优化版本。
+仍按预定16轮检查能否适配恢复；正式79.5833%权重和原prefix读出不被覆盖，不因这一初始下降就断言全幅池化必然更差。
 
 教师梯度冲突候选`domain_distill_joint_teacherproject`：只改训练反向，不改光路/推理网络。
 参考[Yu等，Gradient Surgery，NeurIPS2020](https://arxiv.org/abs/2001.06782)，但这里是**单向教师投影**，不是完整对称随机PCGrad。
