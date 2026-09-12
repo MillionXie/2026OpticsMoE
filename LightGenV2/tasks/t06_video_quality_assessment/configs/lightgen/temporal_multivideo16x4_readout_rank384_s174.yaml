@@ -1,0 +1,8 @@
+# Low-rank compression of only the largest final post-optical matrix.
+base_config: temporal_multivideo16x4_formal.yaml
+output_dir: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo16x4_readout_rank384_s174
+random_seed: 174
+
+model:
+  temporal_readout_mode: low_rank
+  temporal_readout_rank: 384

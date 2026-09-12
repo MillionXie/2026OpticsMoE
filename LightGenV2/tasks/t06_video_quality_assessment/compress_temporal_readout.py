@@ -291,6 +291,37 @@ def _initialize_pruned_readout(
     source_hidden_bias = source_readout["output.1.bias"].float()
     source_final_weight = source_readout["output.4.weight"].float()
     source_final_bias = source_readout["output.4.bias"].float()
+    if hasattr(readout.output[1], "reduce"):
+        factor = readout.output[1]
+        rank = int(factor.reduce.out_features)
+        decomposition_device = torch.device(
+            "cuda" if torch.cuda.is_available() else "cpu"
+        )
+        left, singular, right = torch.linalg.svd(
+            source_hidden_weight.to(decomposition_device), full_matrices=False
+        )
+        root = singular[:rank].sqrt()
+        factor.reduce.weight.copy_(
+            (root[:, None] * right[:rank]).to(
+                device=factor.reduce.weight.device,
+                dtype=factor.reduce.weight.dtype,
+            )
+        )
+        factor.expand.weight.copy_(
+            (left[:, :rank] * root[None, :]).to(
+                device=factor.expand.weight.device,
+                dtype=factor.expand.weight.dtype,
+            )
+        )
+        factor.expand.bias.copy_(source_hidden_bias.to(factor.expand.bias.dtype))
+        readout.output[4].weight.copy_(source_final_weight)
+        readout.output[4].bias.copy_(source_final_bias)
+        return {
+            "policy": "truncated SVD of the trained 4096-to-1024 matrix",
+            "source_matrix_shape": list(source_hidden_weight.shape),
+            "retained_rank": rank,
+            "retained_fraction_of_max_rank": float(rank / source_hidden_weight.shape[0]),
+        }
     hidden_width = readout.output[1].out_features
     influence = source_final_weight[0].abs() * source_hidden_weight.norm(dim=1)
     keep = influence.argsort(descending=True)[:hidden_width]
@@ -330,8 +361,8 @@ def train(
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
     settings = load_settings(config)
-    if settings.temporal_readout_mode != "pruned":
-        raise ValueError("Compression config must select the pruned Temporal readout")
+    if settings.temporal_readout_mode not in {"pruned", "low_rank"}:
+        raise ValueError("Compression config must select a compressed Temporal readout")
     cache = torch.load(cache_path, map_location="cpu", weights_only=False)
     if cache.get("contract") != "post_optical_temporal_multivideo16x4_readout_inputs_v1":
         raise ValueError("Input is not the audited 16x4 post-optical readout cache")
@@ -600,4 +631,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

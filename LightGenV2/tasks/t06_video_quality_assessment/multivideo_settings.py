@@ -205,6 +205,7 @@ class MultiVideoSettings:
     head_width: int = 512
     temporal_readout_mode: str = "dense"
     temporal_readout_hidden_width: int = 1024
+    temporal_readout_rank: int = 512
     dropout: float = 0.10
     quality_gate_initial: float = 0.25
     electronic_skip_enabled: bool = False
@@ -276,6 +277,8 @@ class MultiVideoSettings:
         )
         if self.temporal_readout_mode == "pruned":
             label += f"_readout_h{self.temporal_readout_hidden_width}"
+        elif self.temporal_readout_mode == "low_rank":
+            label += f"_readout_r{self.temporal_readout_rank}"
         return label
 
     # Compatibility attributes consumed by the audited frozen-cache loader.
@@ -299,8 +302,8 @@ class MultiVideoSettings:
             raise ValueError("Formal semantics must be 9x4 or 16x4")
         if self.top_k != 2:
             raise ValueError("The formal optical router is Top-2")
-        if self.temporal_readout_mode not in {"dense", "pruned"}:
-            raise ValueError("temporal_readout_mode must be dense or pruned")
+        if self.temporal_readout_mode not in {"dense", "pruned", "low_rank"}:
+            raise ValueError("temporal_readout_mode must be dense, pruned, or low_rank")
         if self.temporal_readout_hidden_width <= 0:
             raise ValueError("temporal_readout_hidden_width must be positive")
         if (
@@ -310,6 +313,8 @@ class MultiVideoSettings:
             raise ValueError(
                 "dense Temporal readout hidden width must equal 2*head_width"
             )
+        if not 0 < self.temporal_readout_rank <= self.head_width * 2:
+            raise ValueError("temporal_readout_rank exceeds the dense hidden width")
         if self.frame_count >= self.geometry.video_field_size:
             raise ValueError("The video field cannot hold the frame summary tokens")
         if not 0 <= self.alpha_min < self.alpha_initial < self.alpha_max < 1:
