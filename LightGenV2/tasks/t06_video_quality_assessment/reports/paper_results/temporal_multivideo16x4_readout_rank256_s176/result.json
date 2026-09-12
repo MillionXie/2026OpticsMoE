@@ -1,0 +1,21 @@
+{
+  "version_contract": "16 videos x 4 frames; not the legacy 36-frame experiment",
+  "test_videos": 558,
+  "physical_fields": 35,
+  "source_srcc": 0.804372636109386,
+  "compressed_metrics": {
+    "srcc": 0.8033027930273977,
+    "krcc": 0.5959101500950655,
+    "plcc": 0.8170912042568246,
+    "rmse": 8.00182819366455,
+    "mae": 5.989315032958984
+  },
+  "parameters": {
+    "source_total": 6804011,
+    "compressed_total": 3920427,
+    "source_readout": 4898689,
+    "compressed_readout": 2015105
+  },
+  "checkpoint": "LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo16x4_readout_rank256_s176/best_checkpoint.pt",
+  "checkpoint_sha256": "f9a31dc6a475c20d338f76227dd7e7879877b1fcfc40767fa61490daa98f2282"
+}

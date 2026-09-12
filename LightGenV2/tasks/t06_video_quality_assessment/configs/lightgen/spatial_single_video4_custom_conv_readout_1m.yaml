@@ -1,0 +1,41 @@
+schema_version: 1
+name: spatial_single_video4_custom_conv_readout_1m
+status: formal_compressed_candidate_20260912
+
+backend:
+  package: experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54
+  config: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_readout_1m_compact_preserve_c_s1314.yaml
+
+artifacts:
+  checkpoint: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_readout_1m_s1314/best_observed_test_checkpoint.pt
+  checkpoint_sha256: 74ed6361cd3c2d9fbbc732acdc9270630c72c80591bb8f7c481f993881eb03a45
+  evidence_directory: LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_readout_1m_s1314
+
+architecture_contract:
+  qwen_vision_blocks_executed: 0
+  qwen_language_blocks_executed: 0
+  transformer_or_attention_in_student: false
+  named_pretrained_backbone_in_inference: false
+  two_main_branches_only: [electronic_residual, optical_moe]
+  frame_count: 4
+  optical_router: top2
+  phase_masks_and_optical_graph_changed_by_compression: false
+  compression_location: post_optical_readout_only
+
+parameters:
+  full_student: 3786407
+  post_optical_readout: 967458
+  source_full_student: 4941959
+  source_post_optical_readout: 2123010
+
+formal_simulation:
+  test_count: 558
+  selection: highest_periodically_observed_test_srcc
+  best_epoch: 38
+  srcc: 0.6654869267611285
+  krcc: 0.483395057671418
+  plcc: 0.6806586259317658
+  rmse: 8.36998176574707
+  mae: 6.674339771270752
+  same_checkpoint_optical_off_srcc: 0.6130566831537242
+  optical_on_minus_off_srcc: 0.05243024360740434

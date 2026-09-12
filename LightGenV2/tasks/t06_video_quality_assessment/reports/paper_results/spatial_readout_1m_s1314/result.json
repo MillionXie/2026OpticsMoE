@@ -1,0 +1,21 @@
+{
+  "test_videos": 558,
+  "source_srcc": 0.667213852151199,
+  "compressed_metrics": {
+    "srcc": 0.6654869267611285,
+    "krcc": 0.483395057671418,
+    "plcc": 0.6806586259317658,
+    "rmse": 8.36998176574707,
+    "mae": 6.674339771270752
+  },
+  "same_checkpoint_optical_off_srcc": 0.6130566831537242,
+  "optical_on_minus_off_srcc": 0.05243024360740434,
+  "parameters": {
+    "source_total": 4941959,
+    "compressed_total": 3786407,
+    "source_readout": 2123010,
+    "compressed_readout": 967458
+  },
+  "checkpoint": "LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_readout_1m_s1314/best_observed_test_checkpoint.pt",
+  "checkpoint_sha256": "74ed6361cd3c2d9fbbc732acdc9270630c72c80591bb8f7c481f993881eb03a45"
+}
