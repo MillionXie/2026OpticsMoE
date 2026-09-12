@@ -380,6 +380,21 @@ def load_settings(path: str | Path) -> Any:
         or settings.fusion_alpha_min < .4 or settings.top_k != 2
     ):
         raise ValueError('Pyramid CC requires isolated SAM GT+CC-KD training with fixed optical contract')
+    settings.gsam_coefficient = float(d('training.gsam_coefficient', 0.))
+    if not 0 <= settings.gsam_coefficient <= .2:
+        raise ValueError('GSAM coefficient must be finite and in [0,.2]')
+    if settings.gsam_coefficient and (
+        settings.sam_rho <= 0 or settings.asam or settings.pyramid_cc
+        or settings.distillation_loss != 'spatial_cc' or settings.teacher_only_epochs
+        or settings.augmentation_enabled or settings.fixed_crop_distillation
+        or settings.hard_example_cc or settings.teacher_reliability
+        or settings.first_stage_supervision or settings.masked_distillation or settings.relational_distillation
+        or settings.feature_pretraining or settings.feature_hint_initial_weight
+        or settings.unlabeled_weight or settings.semantic_weight
+        or settings.fusion_alpha_min < .4 or settings.top_k != 2
+        or settings.router_backend != 'optical'
+    ):
+        raise ValueError('GSAM requires isolated optical SAM GT+CC-KD training')
     return settings
 
 
@@ -427,6 +442,7 @@ def save_resolved_config(settings: Any) -> None:
         phase_weight_decay=settings.phase_weight_decay,
         sam_rho=settings.sam_rho,
         asam=settings.asam,
+        gsam_coefficient=settings.gsam_coefficient,
         initialization_checkpoint=str(settings.initialization_checkpoint) if settings.initialization_checkpoint else None,
         initialization_checkpoint_sha256=settings.initialization_checkpoint_sha256,
         reset_fusion_on_warmstart=settings.reset_fusion_on_warmstart,

@@ -73,3 +73,20 @@ run为`runs/simulation/moe_alpha40_sam_batch8_crosssample_20260913_seed42`，
 alpha=.43068659/.44104557，同规格Qwen decoder核对通过，85412头参数、479364光参数、
 六张相位尺寸和原光路合同未变。router物理相位较87ad的RMS变化7.95e-5 rad，
 其余约.001463至.001561 rad；这不是完全未训练，但状态检查不能代替完整独立测试。
+
+## 停止与独立复评（2026-09-13）
+
+第5/10轮CC分别.86188473/.86173971，低于首轮；UTC2026-09-12 20:17停止PID601787
+及全部五个子进程，GPU3释放。实际last第10轮，不是完成20轮。
+best仍为上述036bc8ca权重；last SHA
+`4cfa2ac828452e7bdb3e81f8eeea0091faf8e2c4e4509684ebdd4d19aea2eaed`。
+两者CPU重载core/head有限值通过，证据`stopped_checkpoint_integrity.json`。
+
+固定best、同5000张、batch48独立float64 CC **.8624925081777596**，
+legacy CC .8624925288200378；差2.06e-8。KLD .1141688072、SIM .8243188085、
+NSS .9647891521、AUC .7700042558、peak-normalized map MAE .0816669730。
+`candidate_recheck/reproduction.json`、逐图CSV及log保存原始证据；源码2dc9fd5f。
+test IDs SHA `625dec6bc15b2d737d39bc252cfa0c354de217fec0266dcda568913f4a3496d0`。
+复评PID632783与同组子进程全部退出，GPU3释放。
+这是微小改进，未达到.87；无独立盲测，也尚未重做该权重的完整去光/路由审计，
+不能挪用e493或87ad的去光数字。

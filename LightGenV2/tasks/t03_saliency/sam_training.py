@@ -27,7 +27,8 @@ def _restore_rng(state,device):
     random.setstate(state[2]);np.random.set_state(state[3])
 
 
-def sam_step(optimizer, closure, rho, device, clip_norm=0., *, asam=None, weight_parameter_ids=None):
+def sam_step(optimizer, closure, rho, device, clip_norm=0., *, asam=None, weight_parameter_ids=None,
+             gsam_coefficient=0.):
     """One AdamW update; restore exact weights/RNG even if second pass raises.
 
     closure returns a scalar loss and detached-or-live metric dictionary.
@@ -35,6 +36,8 @@ def sam_step(optimizer, closure, rho, device, clip_norm=0., *, asam=None, weight
     after the step equals a single ordinary forward/backward, not two draws.
     """
     if not 0 <= rho <= .1:raise ValueError('Audited SAM radius must be in [0,.1]')
+    if not 0 <= gsam_coefficient <= .2 or (gsam_coefficient and (not rho or asam)):
+        raise ValueError('GSAM requires ordinary SAM and coefficient in [0,.2]')
     if asam:
         if (set(asam) != {'rho', 'eta'} or not .05 <= asam['rho'] <= .5
                 or not .001 <= asam['eta'] <= .1 or weight_parameter_ids is None or rho <= 0):
@@ -64,6 +67,7 @@ def sam_step(optimizer, closure, rho, device, clip_norm=0., *, asam=None, weight
             norm=torch.linalg.vector_norm(torch.stack([p.grad.float().norm() for p in selected]))
         if not torch.isfinite(norm):raise RuntimeError('Nonfinite SAM gradient norm')
         backups=[p.detach().clone() for p in selected]
+        original_gradients = [p.grad.detach().clone() for p in selected] if gsam_coefficient else None
         try:
             with torch.no_grad():
                 if scales is None:
@@ -75,6 +79,27 @@ def sam_step(optimizer, closure, rho, device, clip_norm=0., *, asam=None, weight
             second,_=closure()
             if not torch.isfinite(second):raise RuntimeError('Nonfinite second SAM loss')
             second.backward()
+            if original_gradients is not None:
+                # GSAM-inspired correction ONLY in the existing electronic SAM
+                # subspace. Optical gradients keep their ordinary second pass.
+                # This is an AdamW/subspace adaptation, not a full paper replica.
+                with torch.no_grad():
+                    if any(p.grad is None for p in selected):
+                        raise RuntimeError('GSAM electronic gradient support changed between passes')
+                    new_norm2 = sum(p.grad.double().square().sum() for p in selected)
+                    dot = sum((g.double()*p.grad.double()).sum()
+                              for g,p in zip(original_gradients,selected))
+                    if not torch.isfinite(new_norm2) or not torch.isfinite(dot):
+                        raise RuntimeError('Nonfinite GSAM gradient geometry')
+                    correction_norm2 = new_norm2.new_zeros(())
+                    if new_norm2 > 1e-24:
+                        projection = dot/new_norm2
+                        for g,p in zip(original_gradients,selected):
+                            perpendicular = g - projection.to(p.grad)*p.grad
+                            correction_norm2 += perpendicular.double().square().sum()
+                            p.grad.add_(perpendicular, alpha=-gsam_coefficient)
+                    values['gsam_relative_correction'] = (
+                        gsam_coefficient*(correction_norm2/new_norm2.clamp_min(1e-24)).sqrt()).detach()
             increase=second.detach()-first.detach()
         finally:
             with torch.no_grad():
@@ -135,7 +160,8 @@ def train_sam_epoch(model,loader,loaded,settings,optimizer,teacher_cache=None,re
                               **({'masked_loss':masked} if masked_targets is not None else {}),
                               **({'first_stage_loss':first_loss, 'first_stage_cc':first_cc} if first_stage is not None else {}))
         values,increase=sam_step(optimizer,closure,settings.sam_rho,loaded.device,settings.gradient_clip_norm,
-                                 asam=asam,weight_parameter_ids=weight_ids)
+                                 asam=asam,weight_parameter_ids=weight_ids,
+                                 gsam_coefficient=getattr(settings,'gsam_coefficient',0.))
         count=len(batch['sample_ids']);totals['samples']+=count
         values['sam_loss_increase']=increase
         for key,value in values.items():totals[key]+=float(value)*count
