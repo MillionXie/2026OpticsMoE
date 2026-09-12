@@ -57,13 +57,17 @@
 
 ## 持续目标与不可变约束（2026-09-12）
 
-新增待测`domain_distill_joint_languagefull`：仅将language两次CCD电子解码从“全幅汇聚224×224后取前77行”
+新增运行中`domain_distill_joint_languagefull`：仅将language两次CCD电子解码从“全幅汇聚224×224后取前77行”
 改成“全幅直接汇聚77×224”；Vision保持前196行。复用已有`fullfield_rows`，不修改`optics.py`。
 CCD强度归一化、clip12/log1p、行LN/ReLU/Linear192不变，所有权重张量形状和光学传播/ROI/Top2/α>0.4不变。
 这**确实改变了推理时的电子读出合同**，不是只改训练；全幅汇聚仍可能损失高频细节，不保证更好。
 从未校准79.375%源权重恢复原辅助头/教师坐标，初始化输出不再等价，必须重测初始成绩，不能继承79.375%。
 与joint_restart相同的16×128/seed42/教师2+KL0.3/GT课程/原数据，不叠加SAM、梯度投影或白边增强。
-旧低性能来源的fullfield实验不是这组的配对对照；命令见第56节，先测试、同步源码和CPU实图检查再提交。
+旧低性能来源的fullfield实验不是这组的配对对照；命令见第56节。
+源码24858b7b已同步GitHub，两端245项测试通过；真实4类TRAIN图CPU检查12份相位梯度均有限且非零，全部权重比特不变。
+检查只用训练图，不用TEST；输出相对旧prefix余弦0.63–0.84，明确不是等价初始化，不预报新成绩。
+证据`verify_joint_ep8_20260912_gpu1/evaluation/diagnostics/languagefull_cpu_probe.json`；原光学源码SHA6490c6ee…不变。
+监督487163/学生487166已在空闲GPU2 RTX3090启动；执行审计确认6 captures、Top2、α下限0.4001、2782485训练参数、无TF/attention。
 
 教师梯度冲突候选`domain_distill_joint_teacherproject`：只改训练反向，不改光路/推理网络。
 参考[Yu等，Gradient Surgery，NeurIPS2020](https://arxiv.org/abs/2001.06782)，但这里是**单向教师投影**，不是完整对称随机PCGrad。
@@ -93,7 +97,8 @@ CCD强度归一化、clip12/log1p、行LN/ReLU/Linear192不变，所有权重张
 源码1dab4190已同步GitHub，两端228项测试通过；实际224图审计364/1440符合裁框规则，全部阈值非白像素保留。
 四张不同训练类别图增强后12份相位梯度均有限且非零，CPU检查未创建CUDA或更改checkpoint；
 证据在原未校准起点的`evaluation/diagnostics/whitezoom_cpu_probe.json`，含全1440训练ID/裁框及实际梯度。
-监督437698已提交到检查为空闲的GPU5 RTX3090，与GPU2感受野组并行；本助手只用两张卡，不重复启动。
+监督437698/学生437702在GPU5 RTX3090完成16轮并退出，CUDA已释放；第16轮EMA77.7083%、live78.3333%。
+最终selected_epoch=-1，正常79.375%、同权重去光62.9167%，回退到起点，无新高，不采用白边增强候选。
 
 读出校准候选（独立复评已完成，见页首）：仅用原1440训练图的64维单位描述子与TRAIN类别，求10个类别均值，
 用其中心化均值的9维子空间投影P构造`T=P+0.5*(I-P)`；**推理描述子不减均值**，所有64方向仍保留。
