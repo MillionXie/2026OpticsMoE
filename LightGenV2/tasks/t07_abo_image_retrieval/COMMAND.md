@@ -1279,7 +1279,7 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 只有第42节完成并确认GPU1空闲后才能接续；不要修改正在训练的源worktree，不覆盖原权重/输出。
 使用包含该新profile的已发布源码；正常与去光评估仍固定480查询/120图库，best/last之外不存周期PT。
 
-## 46. 前4轮只更新相位，再恢复联合训练（运行中，不重复启动）
+## 46. 前4轮只更新相位，再恢复联合训练（完成无新高，仅供复现）
 
 从固定79.375%起点开始。前4轮只更新专家/global/router相位，alpha、所有电子参数及训练辅助头均冻结，
 但保留到相位的梯度路径；第5轮恢复联合训练，学习率沿用原余弦时钟。
@@ -1288,6 +1288,8 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 先核对GPU4空闲；最多3张卡，不能挤占其他人的任务。正式执行前源码必须测试并push GitHub。
 已用d1b5c6cf启动，监督3227016/学生3227019；两端180项测试通过，完整初始评估79.375%。
 首轮权重已核验：12份相位更新，所有非相位及辅助头逐值不变；证据见该run的`artifacts/phase_only_freeze_verification.json`。
+16轮完成，selected_epoch=-1，正常79.375%、去光62.9167%，仍选择初始权重，不采用本组。
+监督3227016/学生3227019退出且释放CUDA，第49节已接续GPU4；不要重启本run。
 
 ```bash
 T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
@@ -1356,12 +1358,14 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 
 部署不需要新的训练优化器：checkpoint仍是FP32 raw-sigmoid相位。仅保留best/last，新高独立复核正常/去光。
 
-## 49. 仅扩宽现有电子残差MLP（待验证/排队，不额外占GPU）
+## 49. 仅扩宽现有电子残差MLP（运行中，不重复启动）
 
 现有四个192→384→192 MLP改为192→768→192，新增591360电子参数，无新增层/分支或光学尺寸。
 复制隐藏单元并平分输出权重作保函数初始化，但必须重算完整初始评估，不能继承79.375%。
 训练dropout/RNG会变化；不叠加第46—48节。固定原数据、教师、初始权重与Top2/alpha>0.4，正常及去光都要报告。
 先测试、同步GitHub并检查真实输入，再接续GPU4的第46节；不占第四张卡，不重复启动已有run。
+源码abb36acd，两端191项测试及真实4图CPU检查通过；监督3444725/学生3456323已接续GPU4。
+完整初始重算Hit@1=79.375%，尚无训练后新高；正式最佳不变。
 
 ```bash
 T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
