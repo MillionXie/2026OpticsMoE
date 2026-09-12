@@ -124,6 +124,11 @@ class OpticalRetrieval(nn.Module):
         bounds=(float(metadata.get('fusion_alpha_min',.01)),float(metadata.get('fusion_alpha_max',.95)))
         if not 0<=bounds[0]<bounds[1]<=1:raise ValueError('Invalid alpha bounds')
         self.frontend = Frontend(metadata['token_count']).to(torch.bfloat16)
+        frontend_training=metadata.get('frontend_training','frozen')
+        if frontend_training not in ('frozen','merger_fc2'):
+            raise ValueError('Unknown compact frontend training contract')
+        if frontend_training=='merger_fc2':
+            self.frontend.merger_fc2.float().requires_grad_(True)
         kernels=metadata.get('electronic_context_kernels',{})
         if set(kernels)-{'vision','language'}:raise ValueError('Unknown electronic kernel modality')
         self.vision = Modality(True, metadata['input_rms'],bounds,metadata.get('optical_training_noise'),kernels.get('vision'))
@@ -178,6 +183,8 @@ class OpticalRetrieval(nn.Module):
                 'attention_modules':0,'capture_count':6,'top_k':2,
                 'frozen_parameters':sum(p.numel() for p in self.parameters() if not p.requires_grad),
                 'trainable_parameters':sum(p.numel() for p in self.parameters() if p.requires_grad),
+                'frontend_training':self.metadata.get('frontend_training','frozen'),
+                'frontend_trainable_parameters':sum(p.numel() for p in self.frontend.parameters() if p.requires_grad),
                 'alpha_bounds':list(self.vision.alpha_bounds),
                 'input_preprocessing':self.metadata.get('input_preprocessing','center_crop'),
                 'ccd_readout_modes':{m:getattr(self,m).optics.readout_mode for m in ('vision','language')},

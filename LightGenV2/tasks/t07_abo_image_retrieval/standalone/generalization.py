@@ -10,7 +10,7 @@ import json
 import math
 import torch
 
-PINNED_TEACHER_PROFILES = ('domain_distill_teacher_continue', 'domain_distill_teacher_continue_sam', 'domain_distill_teacher_continue_softgt', 'domain_distill_teacher_continue_fp32gallery', 'domain_distill_joint_curriculum', 'domain_distill_vision_patch', 'domain_distill_joint_restart', 'domain_distill_joint_restart_softgt')
+PINNED_TEACHER_PROFILES = ('domain_distill_teacher_continue', 'domain_distill_teacher_continue_sam', 'domain_distill_teacher_continue_softgt', 'domain_distill_teacher_continue_fp32gallery', 'domain_distill_joint_curriculum', 'domain_distill_vision_patch', 'domain_distill_joint_restart', 'domain_distill_joint_restart_softgt', 'domain_distill_joint_merger')
 REFIT_TEACHER_PROFILES = ('domain_distill_refit250', 'domain_distill_refit500')
 
 PROFILES = ('preserve_adam', 'preserve_sam', 'preserve_fullfield_sam', 'preserve_fullfield_both_sam',
@@ -41,6 +41,13 @@ def supervised_loss_scale(epoch, config):
         raise ValueError('Supervised curriculum scale must be in (0,1]')
     if epoch<=warm:return float(floor)
     return float(floor+(1-floor)*min(1.,(epoch-warm)/recovery)) if recovery else 1.
+
+
+def merger_learning_rate_multiplier(config):
+    value=config.get('merger_learning_rate_multiplier',1.)
+    if isinstance(value,bool) or not isinstance(value,(int,float)) or not math.isfinite(value) or not 0<value<=1:
+        raise ValueError('Existing merger learning-rate multiplier must be in (0,1]')
+    return float(value)
 
 
 def initialize_category_proxies(head, features, labels, preserve_restored=False):
@@ -87,7 +94,7 @@ def overlay_config(config, profile):
         overlay=json.loads(Path(__file__).with_name('domain_distillation.json').read_text(encoding='utf-8'))
         config.update(overlay['profiles'][profile])
         return config
-    if profile in ('domain_distill_joint_restart', 'domain_distill_joint_restart_softgt'):
+    if profile in ('domain_distill_joint_restart', 'domain_distill_joint_restart_softgt', 'domain_distill_joint_merger'):
         parent='domain_distill_joint_curriculum' if profile=='domain_distill_joint_restart' else 'domain_distill_joint_restart'
         config=overlay_config(config,parent)
         overlay=json.loads(Path(__file__).with_name('domain_distillation.json').read_text(encoding='utf-8'))
@@ -146,6 +153,11 @@ def apply_contract(payload, config):
         raise ValueError('Generalization controls require alpha>0.4 source weights')
     metadata.update(input_preprocessing=config['input_preprocessing'],
                     ccd_readout_modes=config['ccd_readout_modes'])
+    if 'frontend_training' in config:
+        if config['frontend_training'] not in ('frozen','merger_fc2'):
+            raise ValueError('Unknown compact frontend training contract')
+        merger_learning_rate_multiplier(config)
+        metadata['frontend_training']=config['frontend_training']
     if 'phase_dropout' in config:metadata['phase_dropout']=config['phase_dropout']
     result=dict(payload, metadata=metadata)
     if 'electronic_context_kernels' in config:
