@@ -56,3 +56,14 @@ UTC2026-09-12 20:42:35启动PID/PGID646567，GPU1 UUID
 仅20轮预算，不等于已完成；第1/5/10轮检查完整public-test，持续回落时停止并保留best/last。
 旧console前缀沿用`[student SAM]`；配置中的`gsam_coefficient=.1`与训练指标
 `gsam_relative_correction`记录实际启用修正，不能仅凭console前缀判断是否使用GSAM。
+
+## 停止结果（覆盖上文已启动状态）
+
+第1/5/10轮完整测试CC为.86204466/.86178270/.86158503，均未超过初始化.86204960。
+对应训练CC .874021/.874213/.875022，未出现测试收益。GSAM修正确实执行，平均相对范数约.0266。
+UTC2026-09-12 21:06:43停止PID646567与全部五个子进程，GPU1释放；不是完成20轮。
+保留best第0轮、last第10轮，两者CPU重载core/head有限值通过。
+best SHA `bf93ba1f31b00b5dc3fe33b70f81cfd6459ddd583eedfa76f7d016c5ac1cf529`，
+last SHA `edef1cb9317a22dd59ea6f6bd7a53f407171b2c3b7a6f5adedb26c3ccb2e01cd`。
+证据`manual_stop_report.json`、`stopped_checkpoint_integrity.json`与`metrics/training_history.csv`。
+该训练适配不采用，未解冻Qwen、未改变推理结构；.87目标仍未达到。

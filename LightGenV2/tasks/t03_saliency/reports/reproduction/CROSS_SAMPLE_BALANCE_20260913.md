@@ -97,3 +97,11 @@ test IDs SHA `625dec6bc15b2d737d39bc252cfa0c354de217fec0266dcda568913f4a3496d0`�
 `candidate_remove_optical/reproduction.json`和`candidate_ablation_summary.json`保存完整证据。
 PID647248及同组子进程已全部退出、GPU3释放，之后才启动完整router/alpha与首16图可视化审计PID648863。
 此处相对性能变化不是光分支的严格因果贡献比例，也不等于融合alpha。
+
+完整5000图router/alpha审计及首16张固定顺序样例也已完成，PID648863退出、无残留同组进程。
+alpha .4306865931/.4410455823；Top2计数2346/2629/2312/2713（共10000次选择），
+使用率23.46%/26.29%/23.12%/27.13%，有效专家数3.980722/4，无未使用专家。
+`candidate_selected_evaluation/selected_checkpoint_test_evaluation.json`记录相位相对87ad变化，
+`best_visualization/best_phase_overview.png`及16组`saliency_examples`用于可视化，
+是圆周相位残差图与归一化展示，不是SLM灰度BMP，也不从展示截图计算指标。
+该报告SHA再次确认036bc8ca未变化；指标与独立重评对应同一权重。
