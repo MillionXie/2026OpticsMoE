@@ -1,0 +1,57 @@
+# Rank-focused readout-only continuation from the formal 0.668385 candidate.
+# The optical masks, optical routers, fusion gates, electronic residual and
+# deployable parameter count are all frozen.  Within-epoch test selection is
+# intentional for the project's declared no-validation protocol.
+base_config: spatial_readout_1m_phase_refine_s1327.yaml
+output_dir: ../../../../LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_readout_1m_rank_micro_s1331
+random_seed: 1331
+
+training:
+  initialization_checkpoint: ../../../../LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_readout_1m_phase_refine_s1327/best_observed_test_checkpoint.pt
+  trainable_scope: readout_only
+  epochs: 50
+  batch_size: 64
+  learning_rate: 0.0000015
+  readout_learning_rate_factor: 1.0
+  phase_learning_rate: 0.0
+  router_phase_learning_rate: 0.0
+  weight_decay: 0.0001
+  readout_weight_decay: 0.0002
+  phase_warmup_epochs: 0
+  late_refine_start_epoch: 31
+  restore_best_at_stage_transition: true
+  late_refine_electronic_lr_factor: 1.0
+  late_refine_readout_lr_factor: 0.25
+  late_refine_phase_lr_factor: 1.0
+  late_refine_router_lr_factor: 1.0
+  learning_rate_warmup_epochs: 2
+  minimum_learning_rate_factor: 0.05
+  ema_decay: 0.997
+  ema_start_epoch: 1
+  temporal_reverse_probability: 0.0
+  feature_mixup_probability: 0.0
+  test_interval_epochs: 1
+  test_interval_steps: 6
+  phase_snapshot_interval_epochs: 0
+
+loss:
+  regression_weight: 0.08
+  ranking_weight: 2.80
+  correlation_weight: 4.00
+  soft_spearman_weight: 0.90
+  listwise_ranking_weight: 0.03
+  optical_alignment_weight: 0.0
+  paired_view_supervision_weight: 0.08
+  paired_view_consistency_weight: 0.005
+  router_capture_weight: 0.0
+  router_balance_weight: 0.0
+  serial_router_balance_weight: 0.0
+
+curriculum:
+  start_epoch: 1
+  end_epoch: 35
+  ranking_weight_final: 3.20
+  correlation_weight_final: 3.20
+  soft_spearman_weight_final: 1.10
+  router_balance_weight_final: 0.0
+  serial_router_balance_weight_final: 0.0
