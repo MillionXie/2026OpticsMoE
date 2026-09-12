@@ -22,6 +22,8 @@
 
 证据见 `reports/phase_manual_20260912/comparison.json` 与同目录 `comparison.png`（共同0～255显示范围，不做逐图拉伸）。原图保留在本地与师弟电脑 `results/manual_phase_gx_20260912_01`、`results/manual_phase_flat_20260912_01`。两次桌面作业均正常完成并释放相机，独立result.json终态回执已实测通过。
 
+更强图案的补测入口：`python generate_phase_response_patterns.py --out generated/phase_response_<唯一编号>`。输出1920×1200原生8 μm面板的4/8px周期光栅及反向码、标称532 nm/10 cm全孔径透镜及反向码、纯黑。当前本地输出为 `generated/phase_response_strong_20260913`，先测试 `P_gx_p8.bmp`。这些是定性诊断码，不是已标定相位：linearVoltage非线性、透镜外区欠采样均需注意。GUI原尺寸加载，不自动翻转，也不要对inverse文件再次反灰度；不要替换正式训练mask。
+
 本地Python需要numpy、Pillow、paramiko；测试环境 `C:\ProgramData\anaconda3\python.exe`。相位使用原厂Blink 1920 HDMI SDK，不是高速PCIe SDK，不改VCom或pre/post ramp。
 
 ```powershell
