@@ -1071,3 +1071,43 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 
 只保留best/last；完整训练随机种子记录在execution.json和final_report.json。固定评估扰动种子不改。
 各轮test选模和跨seed选择均属于test-selected，不得将挑出的最佳seed称为均值或无偏泛化结果。
+
+## 39. 扩充商品每个4视角的训练数据对照
+
+仍保留原train/test和120商品图库；只改变外部训练池。新池要求4张不同字节图片，
+因可用性/去重条件而改变部分外部商品，不能称作严格同商品纯视角消融。已生成时跳过第一条，不能覆盖旧目录。
+在已同步源码根目录执行（f695014b或后续）；数据路径继续指向原服务器目录，不移动数据。
+
+```bash
+ROOT=/DATA/DATA1/guest3/2026OpticsMoE
+T07=$ROOT/LightGenV2/tasks/t07_abo_image_retrieval
+POOL4=$T07/runs/simulation/domain_pool250_views4_20260912
+CUDA_VISIBLE_DEVICES='' python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.prepare_broad_abo \
+  --abo "$ROOT/data/abo" --target "$ROOT/data/abo_similarity10_data" --target-types-only \
+  --categories 10 --products-per-category 250 --minimum-products 20 --views 4 --hamming-threshold 4 \
+  --output "$POOL4"
+```
+
+已准备结果：1986外部商品/7944图，与原训练合计2106商品/9384图；清单SHA及类别计数见任务README。
+教师缓存严格按ID+图片SHA复用旧缓存；只有新增训练图进行完整Qwen前向，教师进程退出后才开始学生训练。
+学生沿用teacher_first、seed42、16轮×128步，从同一77.9167%起点开始；不是从79.375%续训，不混入其他改动。
+
+```bash
+ROOT=/DATA/DATA1/guest3/2026OpticsMoE
+T07=$ROOT/LightGenV2/tasks/t07_abo_image_retrieval
+QWEN=/DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-Embedding-2B/snapshots/9f2f7e710d6d81056aa5c0a4f04764fec6bb7bda
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d \
+  --assets "$T07/runs/simulation/standalone_assets_20260910" \
+  --checkpoint "$T07/runs/smoke/domain_aligned_feature_20260912_gpu1/domain_distill_aligned_feature/artifacts/best.pt" \
+  --target "$ROOT/data/abo_similarity10_data" --abo "$ROOT/data/abo" \
+  --pool "$T07/runs/simulation/domain_pool250_views4_20260912" --teacher-model "$QWEN" \
+  --reuse-teacher-cache "$T07/runs/smoke/domain_distillation_20260912/build_teacher_cache/artifacts/cache.pt" \
+  --reuse-teacher-cache-sha256 aa5a5a952c0a96836b4b035d7905ca600f9082dc0bd26b5396cdab4cea36f2db \
+  --profiles build_teacher_cache domain_distill_teacher_first --epochs 16 --steps 128 --seed 42 \
+  --output "$T07/runs/simulation/domain_teacher_first_views4_20260912_gpu1" \
+  --after-queue "$T07/runs/simulation/domain_joint_curriculum_20260912_gpu1/status.json"
+```
+
+GPU1原队列完成且资源允许才接续；等待不占CUDA。只保存best/last与训练日志，最后正常/去光重评原协议。
+扩充图不进入测试图库，原冻结Qwen baseline的95.2083%仍是同一测试协议，不能另换更容易的测试分数比较。
