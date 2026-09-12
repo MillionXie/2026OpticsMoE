@@ -20,8 +20,9 @@ def load_native(path,expected_sha=None):
         return np.asarray(im).copy()
 
 class PhaseHDMI:
-    def __init__(self,sdk,lut,settle_s=1.0):
+    def __init__(self,sdk,lut,settle_s=1.0,strict_write_ack=True):
         self.sdk=Path(sdk).resolve();self.lut=Path(lut).resolve();self.settle_s=float(settle_s)
+        self.strict_write_ack=strict_write_ack
         if not .5<=self.settle_s<=10:raise ValueError('Phase settle must be 0.5..10 seconds')
         self.dll=None;self.created=False;self.dir=None
     def __enter__(self):
@@ -55,10 +56,11 @@ class PhaseHDMI:
         t=time.perf_counter()
         result=int(self.dll.Write_image(rgba.ctypes.data_as(C.POINTER(C.c_ubyte)),0))
         print(f'Phase Write_image returned {result}: {path}',flush=True)
-        if result<=0:raise RuntimeError('Write_image failed')
+        if result<=0 and self.strict_write_ack:raise RuntimeError('Write_image failed')
         written=time.perf_counter();time.sleep(self.settle_s)
         self.current={'phase_file':str(Path(path).resolve()),'phase_sha256':sha(path),
             'write_call_ms':(written-t)*1000,'settle_s':self.settle_s,'sdk_ack_only':True,
+            'write_return':result,'write_ack_success':result>0,'strict_write_ack':self.strict_write_ack,
             'no_extra_flip_or_inversion':True,'panel':self.info}
         return self.current
     def close(self):
