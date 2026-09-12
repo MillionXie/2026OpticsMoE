@@ -14,7 +14,9 @@ batch32为.87478750，固定batch复评可复现该微小数值差异，完整�
 真实四图单步检查确认六张相位均更新，随后以GPU1/PID476516启动50轮预算的ASAM，
 详见[SAM/ASAM训练记录](reports/reproduction/SAM_TRAINING.md)。原正式best仍保留不动。
 较小归一化半径.1的配对经236项CPU测试并推送fbe09b5c后，以GPU3/PID484872启动；
-本任务当前仅用GPU1/3。所有baseline复评已结束并释放其进程；未停止其他人的任务。
+半径.5组因第5/10轮连续回落已停止，保留best第1轮与last第10轮；不是完成50轮。
+本任务当前仅保留GPU3/PID484872的小半径.1组，第5轮CC=.86130864，尚未超过正式候选。
+所有baseline复评已结束并释放其进程；未停止其他人的任务。
 具体说明见[50轮baseline](reports/reproduction/BASELINE50_20260912.md)与
 [可靠教师训练](reports/reproduction/RELIABLE_TEACHER_20260912.md)。
 不改Merger、推理结构、光路、Top2、alpha下限或直流扰动。同一助手最多两张GPU。
