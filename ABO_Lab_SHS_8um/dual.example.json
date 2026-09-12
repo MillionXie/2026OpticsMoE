@@ -1,0 +1,10 @@
+{
+  "host": "1.tcp.vip.cpolar.top",
+  "port": 12705,
+  "username": "PS",
+  "project": "E:/code/guest/2026OpticsMoE/ABO_Lab_SHS_8um",
+  "phase_sdk": "C:/Users/Xml12/OneDrive/2026OpticsMoE/ABO_Lab_SHS_8um/vendor/phase_hdmi",
+  "phase_lut": "C:/Users/Xml12/OneDrive/2026OpticsMoE/ABO_Lab_SHS_8um/vendor/phase_hdmi/19x12_8bit_linearVoltage.lut",
+  "phase_settle_s": 1.0,
+  "orientation_and_phase_response_verified": false
+}

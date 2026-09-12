@@ -15,8 +15,14 @@ def stats(values):
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--config',default='LAB.local.json')
-    p.add_argument('--out',required=True,type=Path);a=p.parse_args()
+    p.add_argument('--out',required=True,type=Path)
+    p.add_argument('--wait-ms',type=float,help='This diagnostic only; does not edit LAB.local.json')
+    p.add_argument('--repeats',type=int,default=5);a=p.parse_args()
     c=json.loads(Path(a.config).read_text(encoding='utf-8-sig'))
+    if not 1<=a.repeats<=10:raise ValueError('1..10 repeats only')
+    if a.wait_ms is not None:
+        if not 0<=a.wait_ms<=1000:raise ValueError('0..1000 ms only')
+        c['settle_delay_ms']=a.wait_ms
     a.out.mkdir(parents=True,exist_ok=False)
     paths={d:ROOT/f'generated/phase_inverted/cal/A_DIGIT_{d}.bmp' for d in range(4)}
     for path in paths.values():
@@ -29,7 +35,7 @@ def main():
         report['devices']=hw.info;configured=c['settle_delay_ms'];c['settle_delay_ms']=400
         for d in range(4):refs[d]=hw.capture(paths[d])[0]
         c['settle_delay_ms']=configured
-        sequence=[0,1,2,3]*5
+        sequence=[0,1,2,3]*a.repeats
         started=time.perf_counter()
         for d in sequence:
             frame,meta=hw.capture(paths[d]);frames.append(frame);rows.append(dict(digit=d,**meta))
