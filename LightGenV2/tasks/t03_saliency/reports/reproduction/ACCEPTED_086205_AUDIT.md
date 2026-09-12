@@ -20,8 +20,10 @@ best SHA e4930c1264442d7056fd0451385cf8fb301e83dd580200e15c6b7a7fe934725c；
 `best_phase_overview.png`显示相对圆周均值的相位，不是SLM可加载BMP；router棋盘纹和
 后两专家底部较强相位结构可见，但不能仅靠外观判断路由坍缩，须结合上述完整路由分布。
 `saliency_examples/sample_000.png`等为固定测试顺序前16图，并非挑高CC图。
-这些图的GT/prediction**各除以自己的最大值，仅供显示**；图中Absolute error也基于显示值，
-不是报告中的原始概率图MAE，不得从截图计算正式指标。正式指标使用独立复评CSV/JSON。
+这些图的GT/prediction**各除以自己的最大值显示**；图中Absolute error也基于这两个峰值归一化图。
+已核对`SaliencyAccumulator.update`：项目报告的MAE同样是逐图峰值归一化后的平均绝对误差，
+不是sum=1概率图的原始MAE；CC/KLD/SIM仍分别按其原有概率图指标实现计算。
+不要从带色标、缩放压缩后的截图重算正式指标；使用独立复评CSV/JSON及指标源码。
 已人工查看相位总览及首个样例，不能将这两张图片检查扩大为完整硬件部署验收。
 
 ## 本地交付证据镜像（2026-09-13）

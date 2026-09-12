@@ -108,3 +108,5 @@ batch48、固定权重独立进程，无重训练；标准eval关闭随机光扰
 完整专家分布审计位于`candidate_selected_evaluation/selected_checkpoint_test_evaluation.json`：
 2343/2629/2313/2715次、份额23.43/26.29/23.13/27.15%，有效专家数3.98050，无闲置专家。
 源码fa4647d7；复评PID/PGID604876、606813及各自子进程均已退出，GPU1释放。
+表中MAE沿用本项目原实现：prediction/GT各按自身最大值归一化后求逐像素绝对误差，
+不是sum=1密度直接相减的MAE。两种模式同口径，不改历史指标定义。
