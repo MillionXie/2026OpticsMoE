@@ -1,0 +1,8 @@
+base_config: moe_alpha40_sam_spatialcc_kd2.yaml
+# Same earlier source, GT/KD2, epochs and inference as the completed SAM control.
+# ASAM's rho is measured in normalized parameter coordinates, not plain L2.
+training:
+  asam:
+    rho: 0.5
+    eta: 0.01
+output_dir: ../runs/simulation/moe_alpha40_asam050_20260913_seed42

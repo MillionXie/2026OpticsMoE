@@ -27,7 +27,7 @@ def _restore_rng(state,device):
     random.setstate(state[2]);np.random.set_state(state[3])
 
 
-def sam_step(optimizer, closure, rho, device, clip_norm=0.):
+def sam_step(optimizer, closure, rho, device, clip_norm=0., *, asam=None, weight_parameter_ids=None):
     """One AdamW update; restore exact weights/RNG even if second pass raises.
 
     closure returns a scalar loss and detached-or-live metric dictionary.
@@ -35,6 +35,11 @@ def sam_step(optimizer, closure, rho, device, clip_norm=0.):
     after the step equals a single ordinary forward/backward, not two draws.
     """
     if not 0 <= rho <= .1:raise ValueError('Audited SAM radius must be in [0,.1]')
+    if asam:
+        if (set(asam) != {'rho', 'eta'} or not .05 <= asam['rho'] <= .5
+                or not .001 <= asam['eta'] <= .1 or weight_parameter_ids is None or rho <= 0):
+            raise ValueError('Invalid ASAM radius/stability or missing weight identity')
+        rho = asam['rho']  # Normalized-coordinate radius, NOT ordinary SAM L2 radius.
     params=[p for g in optimizer.param_groups for p in g['params'] if p.requires_grad]
     optimizer.zero_grad(set_to_none=True)
     before=_rng(device)
@@ -48,12 +53,23 @@ def sam_step(optimizer, closure, rho, device, clip_norm=0.):
         selected=[p for g in optimizer.param_groups if g.get('name') in ELECTRONIC_GROUPS
                   for p in g['params'] if p.requires_grad and p.grad is not None]
         if not selected:raise RuntimeError('SAM has no active electronic parameters')
-        norm=torch.linalg.vector_norm(torch.stack([p.grad.float().norm() for p in selected]))
+        scales = None
+        if asam:
+            # Element-wise ASAM, p=2, without bias normalization. Name/identity
+            # comes from the model, not tensor rank (LayerNorm weights are 1D).
+            scales = [p.detach().abs()+asam['eta'] if id(p) in weight_parameter_ids
+                      else torch.ones_like(p) for p in selected]
+            norm=torch.linalg.vector_norm(torch.stack([(p.grad*s).float().norm() for p,s in zip(selected,scales)]))
+        else:
+            norm=torch.linalg.vector_norm(torch.stack([p.grad.float().norm() for p in selected]))
         if not torch.isfinite(norm):raise RuntimeError('Nonfinite SAM gradient norm')
         backups=[p.detach().clone() for p in selected]
         try:
             with torch.no_grad():
-                for p in selected:p.add_(p.grad * (rho/norm.clamp_min(1e-12)))
+                if scales is None:
+                    for p in selected:p.add_(p.grad * (rho/norm.clamp_min(1e-12)))
+                else:
+                    for p,s in zip(selected,scales):p.add_(p.grad*s.square()*(rho/norm.clamp_min(1e-12)))
             optimizer.zero_grad(set_to_none=True)
             _restore_rng(before,device)
             second,_=closure()
@@ -80,6 +96,8 @@ def train_sam_epoch(model,loader,loaded,settings,optimizer,teacher_cache=None,re
     if any(isinstance(m,torch.nn.modules.batchnorm._BatchNorm) for m in model.modules()):
         raise RuntimeError('SAM double-pass BatchNorm buffer handling is not supported')
     model.train();totals=defaultdict(float);started=time.perf_counter()
+    asam = getattr(settings, 'asam', {})
+    weight_ids = {id(p) for name,p in model.named_parameters() if name.endswith('.weight')} if asam else None
     for batch_index,batch in enumerate(loader,start=1):
         density=batch['density'].to(loaded.device,non_blocking=True)
         fixation=batch['fixation'].to(loaded.device,non_blocking=True)
@@ -116,12 +134,13 @@ def train_sam_epoch(model,loader,loaded,settings,optimizer,teacher_cache=None,re
                               **({'relational_loss':relation} if relation_targets is not None else {}),
                               **({'masked_loss':masked} if masked_targets is not None else {}),
                               **({'first_stage_loss':first_loss, 'first_stage_cc':first_cc} if first_stage is not None else {}))
-        values,increase=sam_step(optimizer,closure,settings.sam_rho,loaded.device,settings.gradient_clip_norm)
+        values,increase=sam_step(optimizer,closure,settings.sam_rho,loaded.device,settings.gradient_clip_norm,
+                                 asam=asam,weight_parameter_ids=weight_ids)
         count=len(batch['sample_ids']);totals['samples']+=count
         values['sam_loss_increase']=increase
         for key,value in values.items():totals[key]+=float(value)*count
         if batch_index%settings.log_interval_batches==0 or batch_index==len(loader):
-            print(f"[student SAM] batch={batch_index}/{len(loader)} loss={totals['loss']/totals['samples']:.5f} "
+            print(f"[student {'ASAM' if asam else 'SAM'}] batch={batch_index}/{len(loader)} loss={totals['loss']/totals['samples']:.5f} "
                   f"CC={totals['cc']/totals['samples']:.5f} sharpness={totals['sam_loss_increase']/totals['samples']:.6f}",flush=True)
     count=totals.pop('samples')
     return {k:v/count for k,v in totals.items()}|{'samples':int(count),'epoch_time_sec':time.perf_counter()-started}

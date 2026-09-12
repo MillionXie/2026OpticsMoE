@@ -346,6 +346,21 @@ def load_settings(path: str | Path) -> Any:
     configure_hard_cc(settings, d('hard_example_cc', {}))
     from .teacher_reliability import configure as configure_teacher_reliability
     configure_teacher_reliability(settings, d('teacher_reliability', {}))
+    settings.asam = dict(d('training.asam', {}) or {})
+    if settings.asam:
+        import math
+        if (set(settings.asam) != {'rho', 'eta'}
+                or any(type(v) not in (int, float) or not math.isfinite(v) for v in settings.asam.values())
+                or not .05 <= settings.asam['rho'] <= .5 or not .001 <= settings.asam['eta'] <= .1):
+            raise ValueError('ASAM requires bounded finite rho and eta')
+        if (settings.sam_rho <= 0 or settings.distillation_loss != 'spatial_cc'
+                or settings.teacher_only_epochs or settings.augmentation_enabled
+                or settings.fixed_crop_distillation or settings.hard_example_cc or settings.teacher_reliability
+                or settings.first_stage_supervision or settings.masked_distillation or settings.relational_distillation
+                or settings.feature_pretraining or settings.feature_hint_initial_weight
+                or settings.unlabeled_weight or settings.semantic_weight
+                or settings.fusion_alpha_min < .4 or settings.top_k != 2):
+            raise ValueError('ASAM trial requires isolated GT+CC-KD optical training')
     return settings
 
 
@@ -390,6 +405,7 @@ def save_resolved_config(settings: Any) -> None:
         ema_decay=settings.ema_decay,
         phase_weight_decay=settings.phase_weight_decay,
         sam_rho=settings.sam_rho,
+        asam=settings.asam,
         initialization_checkpoint=str(settings.initialization_checkpoint) if settings.initialization_checkpoint else None,
         initialization_checkpoint_sha256=settings.initialization_checkpoint_sha256,
         reset_fusion_on_warmstart=settings.reset_fusion_on_warmstart,

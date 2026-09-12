@@ -109,3 +109,57 @@ def test_sam_crop90_preserves_model_and_training_contract():
                 'fusion_alpha_min','top_k','router_backend','initialize_ffn_on_warmstart']:
         assert getattr(a,key)==getattr(b,key)
     assert b.output_dir.name=='moe_alpha40_viewreg_sam_crop90_seed42'
+
+
+def test_asam_elementwise_formula_without_bias_normalization_and_single_update():
+    weight=torch.nn.Parameter(torch.tensor([1.,2.],dtype=torch.float64))
+    bias=torch.nn.Parameter(torch.tensor(.5,dtype=torch.float64))
+    phase=torch.nn.Parameter(torch.tensor(2.,dtype=torch.float64))
+    opt=torch.optim.SGD([{'params':[weight,bias],'name':'electronic'},
+                         {'params':[phase],'name':'feature_phase'}],lr=.1)
+    seen=[];steps=[]
+    opt.register_step_post_hook(lambda *args:steps.append(1))
+    def closure():
+        seen.append((weight.detach().clone(),bias.item(),phase.item()))
+        value=weight.sum()+bias+phase
+        return value,{'loss':value}
+    sam_step(opt,closure,.05,torch.device('cpu'),asam={'rho':.5,'eta':.01},weight_parameter_ids={id(weight)})
+    scale=torch.tensor([1.01,2.01],dtype=torch.float64)
+    norm=(scale.square().sum()+1).sqrt()
+    torch.testing.assert_close(seen[1][0],seen[0][0]+.5*scale.square()/norm,rtol=1e-6,atol=1e-7)
+    assert seen[1][1]==pytest.approx(.5+.5/norm.item()) and seen[1][2]==2.
+    torch.testing.assert_close(weight,torch.tensor([.9,1.9],dtype=torch.float64))
+    assert bias.item()==pytest.approx(.4) and phase.item()==pytest.approx(1.9) and len(steps)==1
+
+
+def test_asam_failure_restores_exact_weights_and_rng():
+    torch.manual_seed(123)
+    weight=torch.nn.Parameter(torch.tensor([.1,.2]))
+    before=weight.detach().clone();draws=[];states=[]
+    opt=torch.optim.SGD([{'params':[weight],'name':'electronic'}],lr=.1)
+    def closure():
+        noise=torch.rand_like(weight);draws.append(noise);states.append(torch.get_rng_state())
+        if len(draws)==2:raise RuntimeError('ASAM deliberate failure')
+        value=(weight*noise).sum()
+        return value,{'loss':value}
+    with pytest.raises(RuntimeError,match='deliberate'):
+        sam_step(opt,closure,.05,torch.device('cpu'),asam={'rho':.5,'eta':.01},weight_parameter_ids={id(weight)})
+    assert torch.equal(weight,before) and torch.equal(draws[0],draws[1])
+    assert torch.equal(torch.get_rng_state(),states[0]) and not opt.state
+
+
+def test_asam_profile_preserves_model_and_serializes_training_only(tmp_path):
+    from LightGenV2.tasks.t03_saliency.settings import save_resolved_config
+    import yaml
+    root=Path(__file__).resolve().parents[1]/'configs'
+    base=load_settings(root/'moe_alpha40_sam_spatialcc_kd2.yaml')
+    trial=load_settings(root/'moe_alpha40_asam050.yaml')
+    assert not base.asam and trial.asam=={'rho':.5,'eta':.01}
+    assert architecture_label(base)==architecture_label(trial)
+    for k in ['initialization_checkpoint_sha256','student_epochs','student_learning_rate',
+              'phase_learning_rate','ema_decay','weight_decay','distillation_initial_weight',
+              'distillation_final_weight','fusion_alpha_min','top_k','router_backend',
+              'language_optical_phase_zero_order_intensity_min','language_optical_phase_zero_order_intensity_max']:
+        assert getattr(base,k)==getattr(trial,k)
+    trial.output_dir=tmp_path;save_resolved_config(trial)
+    assert yaml.safe_load((tmp_path/'resolved_config.yaml').read_text())['training']['asam']==trial.asam

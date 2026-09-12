@@ -1110,3 +1110,25 @@ best SHA256 `dfcd1263dafa5a39b07db4cf0472d2e231c39f9cbedb1a67c2fb46ed6892d393`�
 last第15轮SHA256 `c45d20a02bda7bef053050804751b400491881c7b0b2578a5d96ee1746c951fe`。
 停止后两个PT均CPU重载通过；父1132984及5个子进程确认退出，GPU1恢复25MiB、无本任务进程。
 不删除该对照，不替换正式小参数sigmoid版本；后续特征预训练仍从正式87ad出发。
+
+## ASAM训练备选（2026-09-13，未取得新性能结论）
+
+依据：[ASAM, ICML2021](https://proceedings.mlr.press/v139/kwon21b.html)，采用其p=2逐元素尺度扰动思想。
+对电子weight参数取 `T=abs(weight)+0.01`，bias及其他标量取1，扰动为
+`epsilon=rho*T^2*gradient / norm(T*gradient)`，rho=.5。这里的rho不是普通SAM的欧氏半径，
+不能把.5与旧SAM的.05直接说成“同样扰动扩大十倍”。
+只在原电子子空间构造扰动，光学参数不参与临时扰动，但第二次反向仍训练所有原启用参数。
+这是对光电模型的训练适配，不宣称原论文已验证SALICON、光学结构或0.87目标。
+
+保持原AdamW、EMA和一次optimizer更新，SAM两次forward共用随机实现，并在异常时恢复权重及RNG。
+不加入BatchNorm、推理网络、额外数据或测试后处理；GT与原CC-KD2不变，不叠加可靠教师或hard-CC。
+`moe_alpha40_asam050.yaml`沿用完成SAM/KD2对照的c88e较早来源、50轮日程、全部组学习率。
+配置中历史sam_rho=.05仅保留入口兼容；启用training.asam后实际扰动使用asam.rho=.5。
+
+```bash
+python -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --phase all \
+  --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_asam050.yaml
+```
+
+测试/真实数据检查通过且GitHub已同步后，才可在已释放的自有GPU上运行，不得超过两卡。
+所有运行结论以run记录和完整复评为准；准备备选不等于启动或达标。

@@ -20,6 +20,17 @@ CUDA_VISIBLE_DEVICES='' python -m LightGenV2.tasks.t03_saliency.audit_checkpoint
 仍需要下面的源码/前向hook核查、完整5000张独立复评与硬件测试；不把输出中的state_checks_passed
 解释成CC达到0.87或实际光路已验证。以下原始审计历史保留。
 
+检查器源码4f96c36e通过232项CPU测试，已推送GitHub。首次真实中途检查为可靠教师试验epoch5 EMA：
+checkpoint SHA `37303905f441e907a385f0e716ad126c705db02ef04ce81f3aa6e7a4ddfd3018`，
+alpha .430724/.441071，core/head规格与87ad一致，头与本轮Qwen实际权重的decoder规格一致。
+该报告在候选run的 `state_audit_midrun_20260913.json`，只是当时读取的权重快照，不替代最终检查。
+
+同日CPU只读alpha诊断：固定seed20260913随机抽取64张train图，未用test、未保存修改后的模型。
+原alpha约.43072/.44107时CC=.886806，固定两级.41为.887164，仅首级.4001为.887198；
+两级.5降为.879261。这里的CC是64张训练子集诊断，不是新测试性能，不据此手动修改正式alpha。
+样本ID顺序SHA256 `bd82ee468ebc1c6dea6550143e3be03df3481955afbcc20b1d0ff2068700ee67`。
+该小样本结果不支持“仅调alpha即可带来约.008提升”，也不证明全量最优alpha已找到。
+
 ## 状态与权重身份
 
 2026-09-10用户要求暂停优化、先核查结构。没有达到原0.88目标；不再自动启动后续训练。
