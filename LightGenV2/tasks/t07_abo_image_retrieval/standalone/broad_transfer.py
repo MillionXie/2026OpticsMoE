@@ -25,7 +25,7 @@ from .cli import autocast,encode,evaluate,supcon,regularization,preview
 from .curriculum import parameter_kind
 from .prepare_broad_abo import safe_image
 from .generalization import PROFILES, overlay_config, apply_contract, backward_with_sam, parameter_decay, restore_auxiliary_head, initialize_category_proxies, supervised_loss_scale
-from .generalization import learning_rate_multiplier, PINNED_TEACHER_PROFILES
+from .generalization import learning_rate_multiplier, PINNED_TEACHER_PROFILES, phase_only_group_frozen
 from .learning_curves import write_learning_curves
 from .domain_data import combine_training, epoch_batches, paired_view_indices, view_consistency_loss
 from .randomness import training_seed, epoch_random_streams
@@ -95,6 +95,7 @@ def run_stage(args,stage,output,initial_checkpoint=None):
             else:cfg_all[key]=value
     if general:cfg_all=overlay_config(cfg_all,args.profile)
     lr_multiplier=learning_rate_multiplier(cfg_all)
+    phase_only_group_frozen(cfg_all,1,'phase')  # Validate before loading a model.
     track_clean=cfg_all.get('track_clean_train',False)
     cfg=cfg_all[stage].copy()
     cfg['epochs']=getattr(args,stage+'_epochs') or cfg['epochs'];cfg['steps']=args.steps or cfg['steps']
@@ -298,7 +299,7 @@ def run_stage(args,stage,output,initial_checkpoint=None):
             warm=high and epoch<=cfg['optical_warmup_epochs']
             polish=rank and readout_polish(epoch,cfg['epochs'],cfg)
             for g in optimizer.param_groups:
-                frozen=(warm and g['kind'] in ('electronic','adapter')) or (polish and g['kind'] not in ('readout','auxiliary'))
+                frozen=(warm and g['kind'] in ('electronic','adapter')) or (polish and g['kind'] not in ('readout','auxiliary')) or phase_only_group_frozen(cfg_all,epoch,g['kind'])
                 g['lr']=0. if frozen else g['initial_lr']*scale
             totals=dict(loss=0.,ce=0.,supcon=0.,correct=0.,optical_auxiliary=0.,gallery_nll=0.,gallery_margin=0.,train_gallery_hit1=0.,sam_loss_gap=0.,view_consistency=0.,relation_kd=0.,teacher_correct_fraction=0.,teacher_confidence=0.,aligned_feature_kd=0.,feature_teacher_correct_fraction=0.);seen=set();paired_seen=set();clean_batches=0
             vision_updates=0;vision_weight_sum=0.
@@ -389,6 +390,9 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                 result,sam_diagnostics=backward_with_sam(objective,optimizer,rho)
                 for n,p in trainables:
                     if (not high and parameter_kind(n)=='alpha') or (warm and group_kind(n) in ('electronic','adapter')) or (polish and group_kind(n)!='readout'):p.grad=None
+                for g in optimizer.param_groups:
+                    if phase_only_group_frozen(cfg_all,epoch,g['kind']):
+                        for p in g['params']:p.grad=None
                 torch.nn.utils.clip_grad_norm_([p for _,p in trainables]+list(head.parameters()),1.)
                 optimizer.step()
                 with torch.no_grad():
@@ -401,7 +405,7 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                 for m in counts:counts[m]+=result['selected'][m]
             if high and not all(.4<a<=.8 for values in model.audit()['alpha'].values() for a in values):
                 raise RuntimeError('Strict high-alpha contract violated')
-            row=dict(epoch=epoch,stage=stage,optical_warmup=warm,readout_polish=polish,losses={k:v/epoch_steps for k,v in totals.items()},
+            row=dict(epoch=epoch,stage=stage,optical_warmup=warm,phase_only_warmup=phase_only_group_frozen(cfg_all,epoch,'electronic'),readout_polish=polish,losses={k:v/epoch_steps for k,v in totals.items()},
                      unique_images=len(seen),paired_unique_images=len(paired_seen),view_consistency_weight=view_weight,relation_teacher_weight=teacher_weight,teacher_feature_weight=feature_weight,supervised_loss_scale=gt_scale,
                      clean_batches=clean_batches,alpha=model.audit()['alpha'],sam_rho=rho,sam_rho_target=cfg_all.get('sam_rho',0.),
                      router_selected_fraction={m:(c/(epoch_steps*cfg['classes_per_batch']*cfg['products_per_class'])).cpu().tolist() for m,c in counts.items()})

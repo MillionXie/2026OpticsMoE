@@ -10,7 +10,7 @@ import json
 import math
 import torch
 
-PINNED_TEACHER_PROFILES = ('domain_distill_teacher_continue', 'domain_distill_teacher_continue_sam', 'domain_distill_teacher_continue_softgt', 'domain_distill_teacher_continue_fp32gallery', 'domain_distill_joint_curriculum', 'domain_distill_vision_patch', 'domain_distill_joint_restart', 'domain_distill_joint_restart_softgt', 'domain_distill_joint_merger', 'domain_distill_joint_categorykd', 'domain_distill_joint_routerorigin')
+PINNED_TEACHER_PROFILES = ('domain_distill_teacher_continue', 'domain_distill_teacher_continue_sam', 'domain_distill_teacher_continue_softgt', 'domain_distill_teacher_continue_fp32gallery', 'domain_distill_joint_curriculum', 'domain_distill_vision_patch', 'domain_distill_joint_restart', 'domain_distill_joint_restart_softgt', 'domain_distill_joint_merger', 'domain_distill_joint_categorykd', 'domain_distill_joint_routerorigin', 'domain_distill_joint_phasefirst')
 REFIT_TEACHER_PROFILES = ('domain_distill_refit250', 'domain_distill_refit500')
 
 PROFILES = ('preserve_adam', 'preserve_sam', 'preserve_fullfield_sam', 'preserve_fullfield_both_sam',
@@ -24,6 +24,20 @@ def learning_rate_multiplier(config):
     if not math.isfinite(value) or not 0<value<=1:
         raise ValueError('Continuation learning-rate multiplier must be in (0,1]')
     return float(value)
+
+
+def phase_only_group_frozen(config, epoch, kind):
+    """Training-only warmup: update mask/router phases, freeze EVERYTHING else.
+
+    Unlike legacy optical_warmup (which permits readout/auxiliary updates), this
+    freezes alpha, optical electronic readout, all adapters and training heads.
+    Keep their gradient paths to phases; clear parameter grads before AdamW so
+    neither momentum nor decoupled weight decay changes frozen parameters.
+    """
+    count=config.get('phase_only_warmup_epochs',0)
+    if type(count) is not int or count<0 or type(epoch) is not int or epoch<1:
+        raise ValueError('Phase-only warmup requires nonnegative integer count and positive epoch')
+    return epoch<=count and kind not in ('phase','router')
 
 
 def supervised_loss_scale(epoch, config):
@@ -94,7 +108,7 @@ def overlay_config(config, profile):
         overlay=json.loads(Path(__file__).with_name('domain_distillation.json').read_text(encoding='utf-8'))
         config.update(overlay['profiles'][profile])
         return config
-    if profile in ('domain_distill_joint_restart', 'domain_distill_joint_restart_softgt', 'domain_distill_joint_merger', 'domain_distill_joint_categorykd', 'domain_distill_joint_routerorigin'):
+    if profile in ('domain_distill_joint_restart', 'domain_distill_joint_restart_softgt', 'domain_distill_joint_merger', 'domain_distill_joint_categorykd', 'domain_distill_joint_routerorigin', 'domain_distill_joint_phasefirst'):
         parent='domain_distill_joint_curriculum' if profile=='domain_distill_joint_restart' else 'domain_distill_joint_restart'
         config=overlay_config(config,parent)
         overlay=json.loads(Path(__file__).with_name('domain_distillation.json').read_text(encoding='utf-8'))
