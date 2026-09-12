@@ -1,0 +1,7 @@
+base_config: moe_alpha40_cc_fullgrid_20260913.yaml
+# Average the same additional GT coefficient over two pooled density grids.
+loss:
+  pyramid_cc:
+    weight: 1.5
+    sizes: [56, 14]
+output_dir: ../runs/simulation/moe_alpha40_cc_pyramid_20260913_seed42

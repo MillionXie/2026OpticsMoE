@@ -90,6 +90,8 @@ def load_settings(path: str | Path) -> Any:
     settings.cc_weight = float(d("loss.cc_weight", 0.5))
     settings.sim_weight = float(d("loss.sim_weight", 0.25))
     settings.nss_weight = float(d("loss.nss_weight", 0.1))
+    from .pyramid_supervision import validate as validate_pyramid_cc
+    settings.pyramid_cc = validate_pyramid_cc(d('loss.pyramid_cc', {}), settings.image_size)
     settings.map_kd_weight = 0.0
     settings.sam_rho = float(d("training.sam_rho", 0.0))
     settings.exact_fusion_backward = bool(d("training.exact_fusion_backward", False))
@@ -361,6 +363,14 @@ def load_settings(path: str | Path) -> Any:
                 or settings.unlabeled_weight or settings.semantic_weight
                 or settings.fusion_alpha_min < .4 or settings.top_k != 2):
             raise ValueError('ASAM trial requires isolated GT+CC-KD optical training')
+    if settings.pyramid_cc and (
+        settings.distillation_loss != 'spatial_cc' or not settings.sam_rho
+        or settings.teacher_only_epochs or settings.augmentation_enabled or settings.asam
+        or settings.feature_hint_initial_weight or settings.unlabeled_weight or settings.semantic_weight
+        or settings.hard_example_cc or settings.teacher_reliability
+        or settings.fusion_alpha_min < .4 or settings.top_k != 2
+    ):
+        raise ValueError('Pyramid CC requires isolated SAM GT+CC-KD training with fixed optical contract')
     return settings
 
 
@@ -378,6 +388,7 @@ def save_resolved_config(settings: Any) -> None:
     values['fixed_crop_distillation'] = settings.fixed_crop_distillation
     values['hard_example_cc'] = settings.hard_example_cc
     values['teacher_reliability'] = settings.teacher_reliability
+    values.setdefault('loss', {})['pyramid_cc'] = settings.pyramid_cc
     # The shared T02 serializer writes pose-specific PCK/NME prose. T03's
     # actual trainer compares test_metrics['cc'] strictly; describe that here.
     values.setdefault("protocol", {}).update(

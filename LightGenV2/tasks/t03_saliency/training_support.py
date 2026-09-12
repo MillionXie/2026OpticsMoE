@@ -153,6 +153,13 @@ def task_saliency_loss(logits, target, fixation, settings, *, teacher_logits=Non
                                                 objectives.density_from_logits(teacher_logits))
     pieces.update(map_kd=kd, map_kd_kl_reference=reference)
     total = base + float(settings.map_kd_weight)*kd
+    pyramid = getattr(settings, 'pyramid_cc', {})
+    if pyramid:
+        from .pyramid_supervision import loss as pyramid_loss
+        extra, diagnostics = pyramid_loss(logits, target, pyramid['sizes'])
+        total = total + pyramid['weight'] * extra
+        pieces.update(diagnostics)
+        pieces['pyramid_cc_loss'] = extra.detach()
     options = getattr(settings, 'hard_example_cc', {})
     if options:
         from .hard_example_cc import loss as hard_cc_loss
