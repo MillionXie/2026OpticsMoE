@@ -45,6 +45,17 @@
 
 ## 持续目标与不可变约束（2026-09-12）
 
+训练优化器候选`domain_distill_joint_routerradian`：只将两个Router的Adam坐标由raw改成物理相位弧度。
+前向仍用原`2π*sigmoid(raw)`；反传后按链式法则将raw梯度除以`2π*s*(1-s)`，临时在弧度坐标执行
+原全局norm=1裁剪及Adam更新，然后按2π取模、逆sigmoid恢复原格式，才继续EMA/前向/保存。
+Router LR的0.0002现在是弧度坐标步长，不能称为与原raw LR有相同物理效果；Adam动量也属于弧度坐标。
+Router使用最短角差EMA，避免跨0/2π时raw平均变成π；专家/global及所有电子参数/EMA不变。
+没有初始化平移、相位重采样、新层或推理参数，`model.py/optics.py`不变，部署仍读普通raw checkpoint。
+仅训练脚本导入`phase_optimization.py`；禁止同时用SAM或第45节相位平移，不恢复旧优化器状态。
+异常恢复raw并终止该run，不在临时弧度状态执行前向或保存；边界截断误差小于约8e-7 rad。
+同79.375%起点、cap250二视角、教师余弦2/KL0.3、GT课程及16×128seed42；不叠加46/47节。
+这是改善饱和raw参数可训练性的候选，不等于已证明Router是性能瓶颈，尚无性能提升结论。命令第48节。
+
 损失强度候选`domain_distill_joint_feature8`：从固定79.375%起点，仅将已有逐图64维教师余弦权重2提高至8。
 教师坐标/正确性门控、关系KL0.3、GT课程、数据、基础LR和16×128seed42保持原joint_restart设置。
 原全局梯度裁剪norm=1也保留，因此不把该变化简单描述成“相位步长扩大4倍”。

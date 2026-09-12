@@ -29,6 +29,7 @@ from .generalization import learning_rate_multiplier, PINNED_TEACHER_PROFILES, p
 from .learning_curves import write_learning_curves
 from .domain_data import combine_training, epoch_batches, paired_view_indices, view_consistency_loss
 from .randomness import training_seed, epoch_random_streams
+from .phase_optimization import router_coordinates,router_radian_step,circular_router_ema
 
 
 class CategoryProxies(nn.Module):
@@ -96,6 +97,7 @@ def run_stage(args,stage,output,initial_checkpoint=None):
     if general:cfg_all=overlay_config(cfg_all,args.profile)
     lr_multiplier=learning_rate_multiplier(cfg_all)
     phase_only_group_frozen(cfg_all,1,'phase')  # Validate before loading a model.
+    radian_router=router_coordinates(cfg_all)=='radians'
     track_clean=cfg_all.get('track_clean_train',False)
     cfg=cfg_all[stage].copy()
     cfg['epochs']=getattr(args,stage+'_epochs') or cfg['epochs'];cfg['steps']=args.steps or cfg['steps']
@@ -393,11 +395,13 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                 for g in optimizer.param_groups:
                     if phase_only_group_frozen(cfg_all,epoch,g['kind']):
                         for p in g['params']:p.grad=None
-                torch.nn.utils.clip_grad_norm_([p for _,p in trainables]+list(head.parameters()),1.)
-                optimizer.step()
+                with router_radian_step(optimizer,radian_router):
+                    torch.nn.utils.clip_grad_norm_([p for _,p in trainables]+list(head.parameters()),1.)
+                    optimizer.step()
                 with torch.no_grad():
                     for n,p in trainables:
                         if p.grad is None:ema[n].copy_(p)
+                        elif radian_router and group_kind(n)=='router':circular_router_ema(ema[n],p,cfg_all['ema'])
                         else:ema[n].mul_(cfg_all['ema']).add_(p,alpha=1-cfg_all['ema'])
                 for key in totals:
                     if key=='sam_loss_gap':totals[key]+=sam_diagnostics['loss_gap']
