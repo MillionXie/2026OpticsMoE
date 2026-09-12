@@ -1,44 +1,38 @@
 # Spatial 紧凑读出头结构
 
-该头位于四次光电融合全部完成之后，不是 Qwen，也不位于光学分支之前：
+当前正式候选是 `spatial_readout_1m_srcc067`。读出头位于四次光电融合全部完成
+之后，不是 Qwen，也不绕过光学阶段：
 
 ```text
-Qwen 前端缓存 + 自研 Conv E1 + 固定 prompt
-  → 光 Router / Vision expert / Vision global
-  → 光 Router / Language expert / Language global
+冻结 Qwen 图像/文本前端缓存 + 自写 Conv E1 + Spatial prompt
+  → Vision expert O/E 融合 → Vision global O/E 融合
+  → Language expert O/E 融合 → Language global O/E 融合
   → 后光学 Vision [B,4,196,192] + Language [B,S,192]
-  → 紧凑读出头
-  → 一个连续 Spatial MOS
+  → 同一个紧凑读出头 → 一个连续 Spatial MOS
 ```
 
-紧凑读出头内部包含两部分。基础网格路径保留已经训练的 `LayerNorm → depthwise
-3×3 Conv → 1×1 Conv → 3×3 avg/max pooling`，以及逐帧和 prompt 投影。其末端
-全连接层从 `2048→1024→1` 裁剪为 `2048→384→1`。补偿路径只读取相同的后光学
-张量，使用 64 通道自写卷积和固定池化，再对四帧的 mean/std/max/min/相邻差分做
-汇总，输出一个有界标量并加到基础预测。
+读出头总计 **967,458** 个参数，完整学生网络 **3,786,407** 个参数。它只有一个
+基础预测和一个读取相同后光学张量的有界修正，不是新的输入分支。
 
-总参数为 2,123,010，其中补偿路径约 42.8 万。没有 Attention、Transformer、循环
-网络或外部命名 backbone。光学 mask 与 Router 不变。四次融合使用同一 RMS 尺度
-后再做凸组合，配置层把 alpha 的硬下限设为 `0.42`；最终四层 alpha 为
-`[0.4600, 0.5640, 0.420001, 0.7800]`，因此任何一层都不会降到 0.4 或以下。
+基础路径先做 `LayerNorm → depthwise 3×3 Conv → 1×1 Conv(192→64)`，每帧在
+`3×3` 上做 avg/max pooling。逐帧投影、语言统计投影以及末端预测层都用两层普通
+Linear 的低秩分解代替原大矩阵，秩依次为 `160/64/96/144`；末端宽度裁成 144。
 
-紧凑修正支路没有新增门控参数。它原本的输出乘以固定系数 `0.40` 后再加入基础
-预测，以防修正量破坏样本排序；这是常量校准，不改变参数量。随后只对现有读出头
-做极低学习率（`5e-7`）微调：MOS 分层 batch、Smooth-L1、成对排序、batch 相关性、
-soft-Spearman 与 EMA，按周期性 test SRCC 选择第 4 epoch。完整四层复评得到
-SRCC `0.657744`、PLCC `0.689294`；同一 checkpoint 关光为 `0.592274`。
+修正路径使用 `1×1 Conv(192→64) + depthwise 5×5 Conv`，在 `1×1/2×2` 上做
+avg/max pooling，再汇总四帧的 mean/std/max/min 和相邻帧绝对差。输出经
+`2.2*tanh(x/2.2)` 限幅后乘固定 `0.40`，再加到基础预测。这里没有 Attention、
+Transformer、循环网络或命名预训练 backbone。
 
-配置入口：
+最终四层同 RMS 尺度融合 alpha 为 `[0.48, 0.47, 0.60, 0.60]`。测试集 558 条
+视频的独立进程复评为 SRCC `0.671008`；同一 checkpoint 关闭光学后为
+`0.615902`。正式入口：
 
 ```text
-LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/
-spatial_single_video4_compact_readout.yaml
+LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/spatial_single_video4_custom_conv_readout_1m.yaml
 ```
-
-复评命令（服务器已有 canonical checkpoint 时）：
 
 ```powershell
 python -m LightGenV2.tasks.t06_video_quality_assessment `
-  --profile spatial_single_video4_compact_readout `
+  --profile spatial_single_video4_custom_conv_readout_1m `
   --phase evaluate
 ```
