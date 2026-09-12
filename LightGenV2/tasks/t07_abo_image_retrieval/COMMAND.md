@@ -994,3 +994,26 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 
 测试仍480查询/120商品图库，live/EMA周期test选best，最终同权重去光，best/last而非周期PT。
 启动和排队不是涨分证据；看该run的history/final_report后，再决定是否固定新高做独立复评。
+
+## 36. 逐位置视觉教师缓存接口检查（尚未接入训练）
+
+仅离线教师使用Qwen视觉Transformer，学生推理结构完全不变。本命令只在CPU生成4张训练图的smoke缓存；
+不会抢占第四张GPU。它标为不完整，正式训练加载器会拒绝，不能冒充全量训练缓存。
+真实全量缓存约1.04GiB；待该方案确定接入后，在预算内空闲GPU去掉`--max-images`再生成，不要现在额外抢卡。
+
+```bash
+ROOT=/DATA/DATA1/guest3/2026OpticsMoE
+T07=$ROOT/LightGenV2/tasks/t07_abo_image_retrieval
+QWEN=/DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-Embedding-2B/snapshots/9f2f7e710d6d81056aa5c0a4f04764fec6bb7bda
+CUDA_VISIBLE_DEVICES='' HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.vision_teacher \
+  --target "$ROOT/data/abo_similarity10_data" --abo "$ROOT/data/abo" \
+  --pool "$T07/runs/simulation/domain_pool250_20260912" \
+  --assets "$T07/runs/simulation/standalone_assets_20260910" --model "$QWEN" \
+  --device cpu --batch-size 4 --max-images 4 \
+  --output "$T07/runs/smoke/vision_teacher_cpu_probe_20260912"
+```
+
+输出`cache.pt`和`final_report.json`；已经存在的输出目录会拒绝覆盖。
+输入必须是与学生一致的干净完整图，不能将位置教师直接用于随机裁剪/翻转后的图。
+缓存只含训练图片的49×2048 FP16单位向量，不含教师网络、语言decoder或测试图片；不进入部署模型。
