@@ -1,0 +1,11 @@
+# Search D: exchange base-frame rank for more retained scalar-output units.
+base_config: spatial_custom_conv_readout_lowrank1550k_s1291.yaml
+output_dir: ../../runs/lgvq_spatial_readout_1m_compact_preserve_d_s1315
+random_seed: 1315
+
+model:
+  spatial_compact_head_width: 160
+  spatial_low_rank_frame_rank: 144
+  spatial_low_rank_language_rank: 64
+  spatial_low_rank_compact_frame_rank: 96
+  spatial_low_rank_compact_head_rank: 144
