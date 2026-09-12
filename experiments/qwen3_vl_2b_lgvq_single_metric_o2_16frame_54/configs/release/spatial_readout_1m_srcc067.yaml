@@ -9,11 +9,11 @@ random_seed: 1342
 router:
   parallel_temperature: 2.0
   serial_temperature: 2.0
-  serial_visual_token_gain: 1.20
+  serial_visual_token_gain: 1.10
 
 model:
   spatial_compact_residual_scale: 0.40
-  spatial_residual_max: 2.0262
+  spatial_residual_max: 2.20
 
 training:
   initialization_checkpoint: ../../../../LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_readout_1m_srcc067/best_checkpoint.pt
