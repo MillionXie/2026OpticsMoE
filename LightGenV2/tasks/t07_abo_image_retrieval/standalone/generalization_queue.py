@@ -20,6 +20,7 @@ PINNED_TEACHER_PROFILES = ('domain_distill_teacher_continue', 'domain_distill_te
 PINNED_TEACHER_PROFILES += ('domain_distill_joint_routerradian_fast',)
 PINNED_TEACHER_PROFILES += ('domain_distill_joint_vision13',)
 PINNED_TEACHER_PROFILES += ('domain_distill_joint_whitezoom',)
+PINNED_TEACHER_PROFILES += ('domain_distill_joint_teacherproject',)
 
 
 def dependency_state(path, expected_gpu):

@@ -30,6 +30,7 @@ from .learning_curves import write_learning_curves
 from .domain_data import combine_training, epoch_batches, paired_view_indices, view_consistency_loss
 from .randomness import training_seed, epoch_random_streams
 from .phase_optimization import router_coordinates,router_radian_step,circular_router_ema,router_learning_rate_multiplier
+from .teacher_projection import projection_enabled,backward_primary_teacher
 
 
 class CategoryProxies(nn.Module):
@@ -311,6 +312,9 @@ def run_stage(args,stage,output,initial_checkpoint=None):
             totals=dict(loss=0.,ce=0.,supcon=0.,correct=0.,optical_auxiliary=0.,gallery_nll=0.,gallery_margin=0.,train_gallery_hit1=0.,sam_loss_gap=0.,view_consistency=0.,relation_kd=0.,teacher_correct_fraction=0.,teacher_confidence=0.,aligned_feature_kd=0.,feature_teacher_correct_fraction=0.);seen=set();paired_seen=set();clean_batches=0
             vision_updates=0;vision_weight_sum=0.
             if vision_targets is not None:totals['vision_patch_kd']=0.
+            project_teacher=projection_enabled(cfg_all)
+            if project_teacher:
+                totals.update(teacher_conflict_fraction=0.,teacher_shared_cosine_before=0.,teacher_shared_cosine_after=0.)
             feature_weight=cfg_all.get('teacher_feature_weight',0.)*min(1.,epoch/max(1,cfg_all.get('teacher_feature_warmup_epochs',3)))
             gt_scale=supervised_loss_scale(epoch,cfg_all)
             view_weight=cfg_all.get('view_consistency_weight',0.)*min(1.,epoch/max(1,cfg_all.get('view_consistency_warmup_epochs',1)))
@@ -368,17 +372,23 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                                 full_precision=cfg_all.get('gallery_loss_full_precision',False))
                             loss=loss+(gt_scale*cfg['gallery_nll_weight'])*nll+(gt_scale*cfg['gallery_margin_weight'])*margin
                             result.update(gallery_nll=nll.detach(),gallery_margin=margin.detach(),train_gallery_hit1=hit.detach())
+                        if project_teacher:primary_loss=loss;teacher_losses=[]
                         if teacher_vectors is not None and teacher_weight:
                             kd,kd_audit=gallery_relation_loss(z,product_ids[indices],labels[indices],bank,bank_labels,
                                 teacher_vectors[indices],teacher_bank,cfg_all['relation_teacher_temperature'],
                                 cfg_all.get('relation_teacher_target_temperature'),level=cfg_all.get('teacher_relation_level','product'))
                             loss=loss+teacher_weight*kd
+                            if project_teacher:teacher_losses.append(teacher_weight*kd)
                             result.update(relation_kd=kd.detach(),**kd_audit)
                         if feature_targets is not None:
                             kd,correct_fraction=aligned_feature_loss(z,feature_targets[indices],product_ids[indices],labels[indices],
                                 teacher_vectors[indices],teacher_bank,bank_labels)
                             loss=loss+feature_weight*kd
+                            if project_teacher:teacher_losses.append(feature_weight*kd)
                             result.update(aligned_feature_kd=kd.detach(),feature_teacher_correct_fraction=correct_fraction)
+                        if project_teacher:
+                            if not teacher_losses:raise RuntimeError('Teacher projection needs a teacher objective')
+                            result.update(primary_loss=primary_loss,teacher_loss=sum(teacher_losses))
                     # Preserve primary-view router statistics before alternate-view forward.
                     result['selected']={m:getattr(model,m).optics.router.last['selected_mask'].detach().sum(0) for m in counts}
                     if vision_batch is not None:
@@ -394,7 +404,8 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                     result['loss']=loss
                     return result
                 rho=cfg_all.get('sam_rho',0.)*min(1.,epoch/cfg_all.get('sam_warmup_epochs',1))
-                result,sam_diagnostics=backward_with_sam(objective,optimizer,rho)
+                result,sam_diagnostics=(backward_primary_teacher(objective,optimizer) if project_teacher
+                                        else backward_with_sam(objective,optimizer,rho))
                 for n,p in trainables:
                     if (not high and parameter_kind(n)=='alpha') or (warm and group_kind(n) in ('electronic','adapter')) or (polish and group_kind(n)!='readout'):p.grad=None
                 for g in optimizer.param_groups:
@@ -410,6 +421,7 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                         else:ema[n].mul_(cfg_all['ema']).add_(p,alpha=1-cfg_all['ema'])
                 for key in totals:
                     if key=='sam_loss_gap':totals[key]+=sam_diagnostics['loss_gap']
+                    elif key in sam_diagnostics:totals[key]+=sam_diagnostics[key]
                     elif key in result:totals[key]+=float(result[key].detach())
                 for m in counts:counts[m]+=result['selected'][m]
             if high and not all(.4<a<=.8 for values in model.audit()['alpha'].values() for a in values):
