@@ -41,3 +41,24 @@ python -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --phase all --co
 不声称独立盲测泛化。只保留best/last。当前为待测试/启动配置，不表示已有性能。
 启动前先通过CPU回归及真实输入更新审计，push GitHub后才运行正式训练。
 同一助手合计不超过两张GPU，任何已结束父子进程需检查释放。
+
+## 验证与启动
+
+源码`2dc9fd5f3c2c502a9b1f068f0d80cd0ece9da4f1`通过252项CPU测试（45.52秒、13条既有警告），
+已push至GitHub `experiment/salicon-crosssample-20260913`。
+真实8图CPU单步SAM：冻结前端3933184参数逐值未变、无梯度；native Transformer调用0；
+eval切换估计器标志预测逐值相同；读出头85412参数。六张相位都有有限非零梯度及更新，
+router原始参数RMS更新3.1325e-6，其余约4.6474e-5至4.7835e-5；alpha .43072176/.44106695。
+审计`runs/smoke/crosssample_20260913/report.json`中的8图训练CC不是测试性能。
+
+原batch8第5/10轮下降后已在UTC2026-09-12 19:41停止PID/PGID561115及全部五个子进程，
+GPU3已释放；保留best第1轮SHA e4930c12…34725c、last第11轮
+SHA `224db722d59d7a4d046348701ca0195702a7513e703bc26c217e4d9c49399611`，CPU重载检查有限值。
+不是完成20轮。原run的`manual_stop_report.json`及`stopped_checkpoint_integrity.json`记录具体身份。
+
+本配对于UTC2026-09-12 19:42:21启动PID/PGID601787，固定worktree
+`.worktrees/t03_baseline50_20260912`（运行中禁止checkout），GPU3 UUID
+`GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd`，当前总计一张自有卡。
+run为`runs/simulation/moe_alpha40_sam_batch8_crosssample_20260913_seed42`，
+完整命令、配置SHA与来源在`launch_record.json`，日志`console.log`。
+此处为已启动、待完整测试状态，不是目标达成或新最佳。
