@@ -5,6 +5,23 @@ import numpy as np
 
 
 class ABITests(unittest.TestCase):
+    def test_startup_warmup_once_even_for_dark_scene(self):
+        from sdk import Camera
+        from unittest.mock import patch,Mock
+        camera=Camera({'startup_warmup_s':0.1})
+        camera.grab=Mock(return_value=(np.zeros((2,2)),{}))
+        with patch('sdk.time.perf_counter',side_effect=[0,0,0.05,0.1,0.1]):
+            camera._warmup_first_stream()
+        self.assertEqual(camera.grab.call_count,2)
+        self.assertEqual(camera.startup_warmup['discarded_frames'],2)
+        camera._warmup_first_stream()
+        self.assertEqual(camera.grab.call_count,2)
+
+    def test_startup_warmup_bounds(self):
+        from sdk import Camera
+        for value in (-1,11,float('nan')):
+            with self.assertRaises(ValueError):Camera({'startup_warmup_s':value})
+
     def test_packed_node_abi(self):
         self.assertEqual(ctypes.sizeof(IntegerInfo),32)
         self.assertEqual(ctypes.sizeof(FloatInfo),32)

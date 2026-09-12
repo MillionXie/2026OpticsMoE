@@ -50,7 +50,8 @@ class Controller:
         time.sleep(self.c['settle_delay_ms']/1000)
         frame,meta=self.camera.fresh()
         meta.update(amplitude_file=str(path),settle_delay_ms=self.c['settle_delay_ms'],
-                    camera=snapshot(self.camera),phase_control='manual, unchanged')
+                    camera=snapshot(self.camera),startup_warmup=self.camera.startup_warmup,
+                    phase_control='manual, unchanged')
         return frame,meta
 
 

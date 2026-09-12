@@ -57,12 +57,16 @@ class Camera:
         self.config=config
         self.dll=None; self.card=None; self.handle=None
         self.initialized=False; self.streaming=False; self.dll_dirs=[]
+        self._warmup_done=False; self.startup_warmup=None
+        self.startup_warmup_s=float(config.get('startup_warmup_s',2.0))
+        if not 0<=self.startup_warmup_s<=10:raise ValueError('startup_warmup_s must be 0..10 seconds')
 
     def _bind(self, name, ret, *args):
         fn=getattr(self.dll,name);fn.restype=ret;fn.argtypes=list(args)
         return fn
 
     def open(self):
+        self._warmup_done=False; self.startup_warmup=None
         if os.name!='nt' or C.sizeof(C.c_void_p)!=8: raise RuntimeError('Requires Windows x64 Python')
         root=Path(self.config['sdk_root']).resolve()
         dllpath=root/'demo/base_dll/bin/CEasyCapS.dll'
@@ -172,6 +176,25 @@ class Camera:
         self.streaming=True
         self.stream=C.c_void_p()
         self.check(self.dll.scap_get_port(self.handle,3,C.byref(self.stream)),'stream handle')
+        try:self._warmup_first_stream()
+        except BaseException:
+            self.stop()
+            raise
+
+    def _warmup_first_stream(self):
+        """SHS/CXP startup may deliver complete all-zero buffers for ~1 s.
+
+        Drain by elapsed time once per camera open, not by image brightness:
+        legitimate dark frames must not cause retries or exposure adjustment.
+        This is NOT the per-SLM-pattern settling delay.
+        """
+        if self._warmup_done:return
+        started=time.perf_counter();count=0
+        while time.perf_counter()-started<self.startup_warmup_s:
+            self.grab();count+=1
+        self.startup_warmup=dict(requested_s=self.startup_warmup_s,
+            elapsed_s=time.perf_counter()-started,discarded_frames=count)
+        self._warmup_done=True
 
     def stop(self):
         if self.streaming:

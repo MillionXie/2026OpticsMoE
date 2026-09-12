@@ -50,7 +50,11 @@ $stamp = Get-Date -Format 'yyyyMMdd_HHmmss'
 
 以上命令结束都会恢复运行前的相机曝光/增益/帧率/测试图设置，结果中检查 `complete=true` 与 `restored=true`。如恢复失败，读取 `restore_errors`，不要继续盲采。
 
-文件 `e00_f0000.png` 为原始强度，没有增强。暗房现在全暗是预期；白天请在不直射激光的情况下，对固定室内物体复测曝光响应。只读回参数不代表曝光线性已认证。
+首次开流默认预热 2 秒并持续丢弃帧（`camera.startup_warmup_s`），防止启动阶段全零
+缓存被保存为真实图。`capture.json` 的 `startup_warmup` 记录耗时和丢弃帧数。
+这是每次打开相机的一次性等待，不是 SLM 每换图都等 2 秒。不要为了省时直接关闭。
+
+文件 `e00_f0000.png` 为原始强度，没有增强。全暗可能是暗场，也可能是启动异常，不能只凭回读成功判断。白天测试已观察到曝光响应，但自然光变化、无暗帧扣除，不能当作正式线性标定。
 
 日常改变设置：编辑 `config.json` 的 `camera.exposure_us`、`frame_rate_hz`、`gain`；默认 Mono8 原样保留。特别注意 2250 fps **不能曝光 3500 μs**。
 

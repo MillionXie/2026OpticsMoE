@@ -88,6 +88,7 @@ def main():
             for ei,exposure in enumerate(exposures):
                 if exposure is not None:change('ExposureTime',exposure)
                 settings=snapshot(camera);camera.start()
+                report['startup_warmup']=camera.startup_warmup
                 for _ in range(c.get('buffer_count',4)+2):camera.grab()
                 last_id=None;start=time.perf_counter()
                 for i in range(a.frames):

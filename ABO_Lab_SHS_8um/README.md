@@ -4,6 +4,12 @@
 
 实測证据和吞吐边界见 [BRINGUP_RESULTS.md](BRINGUP_RESULTS.md)；2250 fps 的 Python 直取短测有跳帧，不宣称已实现满速无丢帧。
 
+白天复测发现首次开流短时间内可能返回“完整但全零”的图。新增
+`camera.startup_warmup_s=2.0`：每次打开相机后，第一次开流持续取帧并丢弃 2 秒，
+再进入正常采集；同一连接后续换图不重复这 2 秒。它不根据亮度自动重试，
+不改变曝光，也不等于每张 SLM 的 settle delay。诊断记录保留在
+`results/daylight_20260912_084824`，初始全零数据不能当作曝光/增益标定结果。
+
 ## 当前已经验证与尚未验证
 
 2026-09-12 在师弟电脑实测：SHS-202-M，Magewell Flex I/O Quad CXP-12 Enhanced，Windows x64，CEasyCapS + GenTL 1.1.4.22。
