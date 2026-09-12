@@ -31,6 +31,7 @@ class PhaseHDMI:
         # SDK requires per-monitor DPI awareness for unscaled native addressing.
         C.windll.shcore.SetProcessDpiAwareness(2)
         self.dir=os.add_dll_directory(str(self.sdk))
+        self.wrapper_sha=sha(self.sdk/'Blink_C_wrapper.dll')
         self.dll=C.CDLL(str(self.sdk/'Blink_C_wrapper.dll'))
         for name in ['Create_SDK','Delete_SDK']:
             fn=getattr(self.dll,name);fn.argtypes=[];fn.restype=None
@@ -45,7 +46,7 @@ class PhaseHDMI:
                 raise RuntimeError('Unexpected phase panel: '+str(self.info))
             if not self.info['SLMFound'] or not self.info['COMFound']:raise RuntimeError('Phase display/USB controller not found')
             if self.dll.Load_lut(str(self.lut).encode('mbcs'))<=0:raise RuntimeError('Phase LUT load failed')
-            self.info.update(lut_sha256=sha(self.lut),lut=str(self.lut),lut_scope='linear voltage; NOT verified linear phase')
+            self.info.update(lut_sha256=sha(self.lut),lut=str(self.lut),lut_scope='linear voltage; NOT verified linear phase',wrapper_sha256=self.wrapper_sha)
             print('Phase SDK connected: '+json.dumps(self.info),flush=True)
             return self
         except BaseException:self.close();raise
@@ -56,11 +57,17 @@ class PhaseHDMI:
         t=time.perf_counter()
         result=int(self.dll.Write_image(rgba.ctypes.data_as(C.POINTER(C.c_ubyte)),0))
         print(f'Phase Write_image returned {result}: {path}',flush=True)
-        if result<=0 and self.strict_write_ack:raise RuntimeError('Write_image failed')
+        # This exact vendor wrapper initializes a local return byte to zero,
+        # calls void HdmiDisplay::LoadImg and returns the unchanged byte.
+        # Header says bool success, but this build cannot acknowledge success.
+        # RVA 0x2690..0x283a; never extend this exception to unknown DLL builds.
+        known_zero=self.wrapper_sha=='0d3cc283165bb62ed60a4c8b1c1a256af9441e6342654511fd1f80dbe46ce225' and result==0
+        if result<=0 and not known_zero and self.strict_write_ack:raise RuntimeError('Write_image failed')
         written=time.perf_counter();time.sleep(self.settle_s)
         self.current={'phase_file':str(Path(path).resolve()),'phase_sha256':sha(path),
             'write_call_ms':(written-t)*1000,'settle_s':self.settle_s,'sdk_ack_only':True,
             'write_return':result,'write_ack_success':result>0,'strict_write_ack':self.strict_write_ack,
+            'known_vendor_constant_zero_return':known_zero,'optical_display_verified_by_this_call':False,
             'no_extra_flip_or_inversion':True,'panel':self.info}
         return self.current
     def close(self):

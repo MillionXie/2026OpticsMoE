@@ -1,0 +1,61 @@
+{
+  "formal_delay_ms": 200,
+  "decision": "User requested conservative 200 ms; shorter passes are not proof of reliability",
+  "source_sha256": "92a11340502a037695ed69d567732df79f80636cbc9303e5638d25cbed2e7aca",
+  "left_right_scan": [
+    {
+      "delay_ms": 100,
+      "n": 10,
+      "correct": 9,
+      "minimum_same_pcc": -0.12158709157116451
+    },
+    {
+      "delay_ms": 120,
+      "n": 10,
+      "correct": 10,
+      "minimum_same_pcc": 0.9978657458986184
+    },
+    {
+      "delay_ms": 140,
+      "n": 10,
+      "correct": 10,
+      "minimum_same_pcc": 0.9976652728596385
+    },
+    {
+      "delay_ms": 160,
+      "n": 10,
+      "correct": 9,
+      "minimum_same_pcc": -0.12166657209325134
+    },
+    {
+      "delay_ms": 180,
+      "n": 10,
+      "correct": 10,
+      "minimum_same_pcc": 0.9975694488547183
+    },
+    {
+      "delay_ms": 200,
+      "n": 10,
+      "correct": 10,
+      "minimum_same_pcc": 0.997298714299053
+    }
+  ],
+  "digit_retests": [
+    {
+      "delay_ms": 120,
+      "source_sha256": "6c68346cfb9a85b2853f70a32e4291d71007e7d2157efe626b189cbc111795a7",
+      "correct_count": 20,
+      "measured_frames": 20,
+      "minimum_same_pcc": 0.9839886426925659,
+      "raw_ready_cycles_per_s": 4.877777171580874
+    },
+    {
+      "delay_ms": 180,
+      "source_sha256": "d1df75a2a51980739d59956a699323716de8a07374364bf618c50a0254468a30",
+      "correct_count": 20,
+      "measured_frames": 20,
+      "minimum_same_pcc": 0.9828952550888062,
+      "raw_ready_cycles_per_s": 3.717623449728036
+    }
+  ]
+}

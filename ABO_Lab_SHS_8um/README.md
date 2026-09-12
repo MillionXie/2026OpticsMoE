@@ -3,6 +3,7 @@
 先读 [COMMAND.md](COMMAND.md)。本工程保留 ABO 六阶段的模型/几何约定，**不改变光路**。
 最新联合测试与 RTX4060 推理证据见 [JOINT_RESULTS.md](JOINT_RESULTS.md)。
 给老师的周期分解、数字切换复测、相机独立吞吐和两种SLM理论边界见 [TIMING_REPORT.md](TIMING_REPORT.md)。不要混用100 fps、200 ms等待、Visible和完整任务推理时间。
+本地HDMI相位与远端振幅/相机的单命令入口见 [DUAL_CONTROL.md](DUAL_CONTROL.md)，尚需完成联合方向/相位响应验收，不能当成已验证的六层实测结果。
 
 实測证据和吞吐边界见 [BRINGUP_RESULTS.md](BRINGUP_RESULTS.md)；2250 fps 的 Python 直取短测有跳帧，不宣称已实现满速无丢帧。
 
@@ -48,6 +49,8 @@ SDK 根目录在 `config.json` 的 `camera.sdk_root`。必须同时保留 `demo/
 
 ## 相位 LUT 方向与文件约定
 
+**新接入本地HDMI相位的验收注意：**下面反灰度是旧实验约定，不是本次已经证明的标定结论。用户指定 `19x12_8bit_linearVoltage`，它不保证线性相位；相位上下翻转、反灰度是否正确仍在联合诊断中，见DUAL_CONTROL.md。不得用“SDK加载成功”替代光学响应验收。
+
 本实验室 `phase_slm.gray_encoding=inverted_255_minus_g`，最终 BMP 每个像素 `g_out=255-g`。先做原有相位量化和空间方向处理，最后才反灰度。零相位背景也为 255；这不等于遮光，也不是把训练相位乘 -1。
 
 师姐正常 LUT 选择 `normal`。垂直/水平翻转独立配置，不因本次 LUT 反向自动改变。振幅、CCD 均不反灰度。旧工程原始文件和会话不覆盖；新文件统一放 `generated/phase_inverted`。切换 LUT 配置后使用**新 session**。
@@ -72,6 +75,6 @@ SDK 根目录在 `config.json` 的 `camera.sdk_root`。必须同时保留 `demo/
 
 - 本机配置只改忽略入 Git 的 `LAB.local.json`；通用模板是 `config.json`。实测结果 `results/`；ABO 会话 `sessions/`；生成 BMP `generated/`；原厂资料 `vendor/`；发布包 `releases/`。
 - 提交代码并推 GitHub，再以带 commit + 每文件 SHA256 的包部署，不能只改远端一份代码。
-- 不自动启动/关闭别人的 Viewer；不要修改未连接的 SLM；相位始终手动加载。
+- 不自动启动/关闭别人的 Viewer；不要修改未连接的 SLM。原 `run.py stage`仍由人工加载相位；新增 `dual_run.py`仅在联合标定验收后自动控制用户指定的本地HDMI相位SLM。
 - 新相机标定/方向/LUT/曝光策略变动后新建 session，不重写旧 record 或图片。
 - LSP 等新任务另建工程，复用相机接口；不要在本工程强塞另一套模型。
