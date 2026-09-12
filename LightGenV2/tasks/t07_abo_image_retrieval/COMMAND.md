@@ -1191,11 +1191,12 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 须使用包含该profile的新commit，旧35055dc7尚无此功能；以execution记录实际源码SHA。
 等待/空闲检查不抢GPU，输出目录必须不存在；只保留best/last，不生成周期相位PT。
 
-## 43. 只解冻现有V→L merger最后一个线性层（准备对照）
+## 43. 只解冻现有V→L merger最后一个线性层（运行中，不要重复启动）
 
-在第40节结束后检查GPU4，使用包含`domain_distill_joint_merger`的新commit；旧35055dc7没有该profile。
+第40节已完成并释放GPU4，已用f8a927e7接续；监督2938984/学生2938990。旧35055dc7没有该profile。
 恢复同一79.375%和训练辅助头；只将原`frontend.merger_fc2`的8,390,656个参数加入优化器，
 学习率为原电子学习率的0.05倍。其它前端冻结，原推理层数/参数总量/光路不变；可训练参数增加须披露。
+原电子基础LR=1.5e-5，merger基础LR=7.5e-7，再按同一热身/余弦调度；本地/服务器166项测试已通过。
 用FP32主权重避免小更新被BF16舍入吞掉，输出仍BF16；检查初始与固定79.375%是否一致。
 不加teacher centering，不加入新分支/TF/attention；仍16×128、原cap250二视角、原480/120评估。
 教师仅训练，结束后报告正常/同权重去光；任何新高均独立复核，不能只看训练正确率。
