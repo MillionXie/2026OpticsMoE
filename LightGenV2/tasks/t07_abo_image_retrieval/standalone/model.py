@@ -18,8 +18,9 @@ class Residual(nn.Module):
             raise ValueError('Electronic residual MLP width must be 384 or 768')
         self.mlp_width=mlp_width
         self.kernel_size=(3 if vision else 5) if kernel_size is None else kernel_size
-        if type(self.kernel_size) is not int or self.kernel_size not in (3,5,7):
-            raise ValueError('Electronic residual kernel must be 3, 5 or 7')
+        allowed=(3,5,7,13) if vision else (3,5,7)
+        if type(self.kernel_size) is not int or self.kernel_size not in allowed:
+            raise ValueError('Electronic residual kernel must be V3/5/7/13 or L3/5/7')
         self.token_norm = nn.LayerNorm(192)
         self.token_depthwise = (nn.Conv2d(192,192,self.kernel_size,groups=192,bias=False) if vision
                                 else nn.Conv1d(192,192,self.kernel_size,groups=192,bias=False))
