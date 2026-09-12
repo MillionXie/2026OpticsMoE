@@ -3,6 +3,7 @@ from dataclasses import replace
 from pathlib import Path
 import pytest
 import torch
+from torch.nn import functional as F
 from LightGenV2.tasks.t07_abo_image_retrieval.standalone.data import Sample
 from LightGenV2.tasks.t07_abo_image_retrieval.standalone.io import sha256
 from LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization import overlay_config,restore_auxiliary_head
@@ -23,6 +24,32 @@ def test_training_feature_alignment_is_orthogonal_and_does_not_change_student():
     cfg=overlay_config({},'domain_distill_aligned_feature')
     assert cfg['relation_teacher_weight']==0 and cfg['teacher_feature_weight']==.5
     assert not cfg.get('teacher_agreement_external_only',False)
+
+
+def test_partial_teacher_center_uses_only_original_train_rows():
+    from LightGenV2.tasks.t07_abo_image_retrieval.standalone.teacher_relations import center_teacher_prefix
+    torch.manual_seed(61)
+    a=F.normalize(torch.randn(32,8),dim=-1).requires_grad_();before=a.detach().clone()
+    transformed,mean=center_teacher_prefix(a,16,.5)
+    torch.testing.assert_close(mean,a[:16].detach().mean(0))
+    torch.testing.assert_close(transformed,F.normalize(a.detach()-.5*mean,dim=-1))
+    assert not transformed.requires_grad and not mean.requires_grad and torch.equal(a,before)
+    changed=a.detach().clone();changed[16:]=F.normalize(torch.randn(16,8),dim=-1)
+    other,other_mean=center_teacher_prefix(changed,16,.5)
+    torch.testing.assert_close(mean,other_mean,atol=0,rtol=0)
+    torch.testing.assert_close(transformed[:16],other[:16],atol=0,rtol=0)
+    raw,_=center_teacher_prefix(a,16,0.)
+    assert torch.equal(raw,a.detach())
+
+
+def test_teacher_center_rejects_invalid_or_degenerate_targets():
+    from LightGenV2.tasks.t07_abo_image_retrieval.standalone.teacher_relations import center_teacher_prefix
+    a=F.normalize(torch.ones(4,8),dim=-1)
+    for count,fraction in [(0,.5),(5,.5),(True,.5),(2,-.1),(2,1.1),(2,float('nan')),(2,True)]:
+        with pytest.raises(ValueError):center_teacher_prefix(a,count,fraction)
+    with pytest.raises(ValueError):center_teacher_prefix(a,2,1.)
+    with pytest.raises(ValueError):center_teacher_prefix(a*2,2,.5)
+    with pytest.raises(ValueError):center_teacher_prefix(a*float('nan'),2,.5)
 
 
 def test_aligned_feature_loss_gates_teacher_and_detaches_targets():

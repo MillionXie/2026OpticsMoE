@@ -21,6 +21,8 @@ def load_feature_alignment(path, expected_sha256, sample_ids, teacher_cache_sha2
     if not expected_sha256 or sha256(path) != expected_sha256:
         raise ValueError('Teacher alignment file SHA mismatch')
     payload = torch.load(path, map_location='cpu', weights_only=True)
+    if payload.get('teacher_center_fraction',0) != 0 or 'teacher_center' in payload:
+        raise ValueError('Centered teacher targets cannot be reused as a raw teacher basis')
     if (payload.get('teacher_only') is not True or
         payload.get('fit_sample_ids') != sample_ids or
         payload.get('teacher_cache_sha256') != teacher_cache_sha256 or
@@ -37,6 +39,29 @@ def load_feature_alignment(path, expected_sha256, sample_ids, teacher_cache_sha2
     if sha256(path) != expected_sha256:
         raise ValueError('Teacher alignment changed while loading')
     return dict(payload, rotation=rotation)
+
+
+@torch.no_grad()
+def center_teacher_prefix(prefix, original_train_count, fraction):
+    """Remove a fixed fraction of the ORIGINAL TRAIN mean from unit teacher rows.
+
+    All rows must be from the separately validated train-only cache. The first
+    original_train_count rows are the original training split, not external,
+    validation or test rows. Nothing is fitted to or stored in the student.
+    """
+    if (prefix.ndim!=2 or type(original_train_count) is not int or
+        not 1<=original_train_count<=len(prefix) or isinstance(fraction,bool) or
+        not math.isfinite(fraction) or not 0<=fraction<=1):
+        raise ValueError('Invalid training teacher centering configuration')
+    values=prefix.detach().float()
+    if not torch.isfinite(values).all() or not torch.allclose(values.norm(dim=-1),torch.ones(len(values),device=values.device),atol=1e-5,rtol=1e-5):
+        raise ValueError('Teacher centering requires finite unit prefix rows')
+    center=values[:original_train_count].mean(0)
+    if fraction==0:return values,center
+    shifted=values-float(fraction)*center
+    if bool((shifted.norm(dim=-1)<1e-6).any()):
+        raise ValueError('Teacher centering produced a degenerate target')
+    return F.normalize(shifted,dim=-1),center
 
 
 @torch.no_grad()
