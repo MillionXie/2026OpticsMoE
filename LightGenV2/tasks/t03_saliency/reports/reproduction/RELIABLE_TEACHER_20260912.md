@@ -61,3 +61,14 @@ alpha、相位更新、专家分布、非有限数及显存释放。只保存bes
 中途CPU核查`state_audit_midrun_20260913.json`确认：head85412参数、core/head键和形状不变、
 六张相位合计479364参数且已发生更新、alpha .430724/.441071、权重有限。
 这份状态审计不能单独证明运行图合规或泛化性能提高；后者以真实forward与完整评估为准。
+
+## 后续梯度冲突诊断（不新增训练方法）
+
+在正式87ad权重、训练模式下，抽取32张train图、四个batch8，分别对真实标签主损失
+（含既有router正则）与固定train-only CC-KD2求完整可训练参数梯度，没有optimizer更新。
+原始身份及结果：`runs/smoke/teacher_gradient_conflict_20260913/report.json`，seed20260913。
+四批梯度余弦为+.56985/+.64170/+.27502/+.33016，没有负向冲突。
+这不是全训练集统计，也不排除个别样本冲突；但不支持现在贸然增加PCGrad式投影训练。
+因此仅作诊断，未加入投影代码、额外分支或启动相应试验。
+参考机制：[Gradient Surgery for Multi-Task Learning, NeurIPS2020](https://papers.neurips.cc/paper_files/paper/2020/file/3fe78a8acf5fda99de95303940a2420c-Paper.pdf)。
+其负梯度内积触发投影是多任务方法，不是已验证的SALICON光学优化结论。
