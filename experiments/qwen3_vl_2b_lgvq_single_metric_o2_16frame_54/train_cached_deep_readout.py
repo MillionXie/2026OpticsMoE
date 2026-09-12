@@ -49,6 +49,26 @@ def _write_json(path: Path, value: Any) -> None:
     )
 
 
+@torch.no_grad()
+def _initialize_low_rank_linear(
+    module: torch.nn.Module,
+    source_weight: torch.Tensor,
+    source_bias: torch.Tensor,
+) -> None:
+    """Initialize ``expand(reduce(x))`` from a dense matrix's truncated SVD."""
+
+    reduce = getattr(module, "reduce")
+    expand = getattr(module, "expand")
+    rank = int(reduce.out_features)
+    left, singular, right = torch.linalg.svd(
+        source_weight.float(), full_matrices=False
+    )
+    root = singular[:rank].sqrt()
+    reduce.weight.copy_((root[:, None] * right[:rank]).to(reduce.weight.dtype))
+    expand.weight.copy_((left[:, :rank] * root[None, :]).to(expand.weight.dtype))
+    expand.bias.copy_(source_bias.to(expand.bias.dtype))
+
+
 def _batches(
     payload: dict[str, Any],
     indices: torch.Tensor,
@@ -154,6 +174,7 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
         "spatial_dual_level_residual",
         "spatial_compact_weighted",
         "spatial_pruned_grid_compact_residual",
+        "spatial_low_rank_pruned_grid_compact_residual",
     }:
         raise ValueError(
             "Config must select a deep or five-level post-optical residual readout"
@@ -236,9 +257,14 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
         if name.startswith("readout.")
     }
     compact_from_scratch = settings.spatial_readout_mode == "spatial_compact_weighted"
-    pruned_compact = (
-        settings.spatial_readout_mode == "spatial_pruned_grid_compact_residual"
+    low_rank_pruned = (
+        settings.spatial_readout_mode
+        == "spatial_low_rank_pruned_grid_compact_residual"
     )
+    pruned_compact = settings.spatial_readout_mode in {
+        "spatial_pruned_grid_compact_residual",
+        "spatial_low_rank_pruned_grid_compact_residual",
+    }
     if pruned_compact:
         destination_readout = readout.state_dict()
         compatible_readout = {
@@ -259,6 +285,18 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
             readout.output[1].bias.copy_(source_hidden_bias.index_select(0, keep))
             readout.output[4].weight.copy_(source_final_weight.index_select(1, keep))
             readout.output[4].bias.copy_(source_final_bias)
+            if low_rank_pruned:
+                for name, module in (
+                    ("frame.1", readout.frame[1]),
+                    ("language.1", readout.language[1]),
+                    ("compact_frame.1", readout.compact_frame[1]),
+                    ("compact_output.1", readout.compact_output[1]),
+                ):
+                    _initialize_low_rank_linear(
+                        module,
+                        source_readout[f"{name}.weight"],
+                        source_readout[f"{name}.bias"],
+                    )
         result = None
     else:
         result = None if compact_from_scratch else readout.load_state_dict(

@@ -1,0 +1,8 @@
+base_config: spatial_custom_conv_paired_opposite_flip_dropout18_s1201.yaml
+output_dir: ../../runs/lgvq_spatial_custom_conv_readout192_s1243
+random_seed: 1243
+
+# Second structured-pruning rung; all upstream tensors and physical parameters
+# are bit-identical to the 384-wide source checkpoint.
+model:
+  spatial_compact_head_width: 192

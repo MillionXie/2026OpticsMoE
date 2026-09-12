@@ -1927,6 +1927,64 @@ class SpatialPrunedGridCompactResidualReadout(SpatialGridReadout):
         return base_prediction + self.residual_scale * correction
 
 
+class _LowRankLinear(nn.Module):
+    """A plain two-linear factorization used only to compress a dense readout.
+
+    This is not a new feature branch: ``expand(reduce(x))`` replaces one dense
+    matrix at the same point in the post-optical readout.  The compression
+    utility initializes both factors from the truncated SVD of the trained
+    dense matrix.
+    """
+
+    def __init__(self, input_width: int, output_width: int, rank: int) -> None:
+        super().__init__()
+        if not 0 < rank <= min(input_width, output_width):
+            raise ValueError(
+                f"Low-rank width must be in [1, {min(input_width, output_width)}]"
+            )
+        self.reduce = nn.Linear(input_width, rank, bias=False)
+        self.expand = nn.Linear(rank, output_width, bias=True)
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        return self.expand(self.reduce(value))
+
+
+class SpatialLowRankPrunedGridCompactResidualReadout(
+    SpatialPrunedGridCompactResidualReadout
+):
+    """The deployed grid readout with its four largest matrices factorized.
+
+    Input tensors, optical layers, router, fusion, pooling, nonlinearities and
+    output semantics are unchanged.  Only four post-optical dense maps are
+    represented by two smaller ordinary linear layers each.
+    """
+
+    def __init__(self, settings: ExperimentSettings) -> None:
+        super().__init__(settings)
+        width, hidden = settings.model_width, settings.head_width
+        spatial_width, compact_frame_width = 64, 128
+        self.frame[1] = _LowRankLinear(
+            spatial_width * 3 * 3 * 2,
+            hidden,
+            settings.spatial_low_rank_frame_rank,
+        )
+        self.language[1] = _LowRankLinear(
+            width * 3,
+            hidden,
+            settings.spatial_low_rank_language_rank,
+        )
+        self.compact_frame[1] = _LowRankLinear(
+            64 * 2 * (1 + 4),
+            compact_frame_width,
+            settings.spatial_low_rank_compact_frame_rank,
+        )
+        self.compact_output[1] = _LowRankLinear(
+            compact_frame_width * 6 + hidden,
+            256,
+            settings.spatial_low_rank_compact_head_rank,
+        )
+
+
 class _CrossFrameSpatialBlock(nn.Module):
     """A small ConvNeXt-style block without attention or a new input branch."""
 
@@ -2913,6 +2971,11 @@ class LGVQSingleMetricOEO16(nn.Module):
                 self.readout = SpatialCompactWeightedReadout(settings)
             elif settings.spatial_readout_mode == "spatial_pruned_grid_compact_residual":
                 self.readout = SpatialPrunedGridCompactResidualReadout(settings)
+            elif (
+                settings.spatial_readout_mode
+                == "spatial_low_rank_pruned_grid_compact_residual"
+            ):
+                self.readout = SpatialLowRankPrunedGridCompactResidualReadout(settings)
             else:
                 self.readout = SpatialReadout(settings)
         elif settings.target_name == "temporal":

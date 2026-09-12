@@ -270,6 +270,10 @@ class ExperimentSettings:
     spatial_compact_frame_width: int = 256
     spatial_compact_language_width: int = 128
     spatial_compact_head_width: int = 384
+    spatial_low_rank_frame_rank: int = 192
+    spatial_low_rank_language_rank: int = 128
+    spatial_low_rank_compact_frame_rank: int = 64
+    spatial_low_rank_compact_head_rank: int = 96
     strict_two_branch: bool = False
     quality_branch_enabled: bool = True
     quality_adapter_mode: str = "linear"
@@ -470,6 +474,15 @@ class ExperimentSettings:
                 scale_tag = int(round(self.spatial_compact_residual_scale * 100.0))
                 suffix += f"_scale{scale_tag:03d}_v1"
             suffixes.append(suffix)
+        elif self.spatial_readout_mode == "spatial_low_rank_pruned_grid_compact_residual":
+            suffixes.append(
+                "spatiallowrankprunedgridcompactresidual_"
+                f"k{self.spatial_compact_head_width}_"
+                f"r{self.spatial_low_rank_frame_rank}-"
+                f"{self.spatial_low_rank_language_rank}-"
+                f"{self.spatial_low_rank_compact_frame_rank}-"
+                f"{self.spatial_low_rank_compact_head_rank}_v1"
+            )
         if self.spatial_readout_mode.startswith("spatial_weighted_level"):
             suffixes.append(f"rf{self.spatial_residual_receptive_field}_v1")
         if self.spatial_readout_refiner_enabled:
@@ -596,6 +609,7 @@ class ExperimentSettings:
             "spatial_weighted_level_blend",
             "spatial_compact_weighted",
             "spatial_pruned_grid_compact_residual",
+            "spatial_low_rank_pruned_grid_compact_residual",
         }:
             raise ValueError(
                 "model.spatial_readout_mode must be statistics, spatial_grid, "
@@ -607,13 +621,24 @@ class ExperimentSettings:
                 "spatial_weighted_level_absolute, or "
                 "spatial_weighted_level_blend, or "
                 "spatial_compact_weighted, or "
-                "spatial_pruned_grid_compact_residual"
+                "spatial_pruned_grid_compact_residual, or "
+                "spatial_low_rank_pruned_grid_compact_residual"
             )
         for name, value in (
             ("spatial_compact_channels", self.spatial_compact_channels),
             ("spatial_compact_frame_width", self.spatial_compact_frame_width),
             ("spatial_compact_language_width", self.spatial_compact_language_width),
             ("spatial_compact_head_width", self.spatial_compact_head_width),
+            ("spatial_low_rank_frame_rank", self.spatial_low_rank_frame_rank),
+            ("spatial_low_rank_language_rank", self.spatial_low_rank_language_rank),
+            (
+                "spatial_low_rank_compact_frame_rank",
+                self.spatial_low_rank_compact_frame_rank,
+            ),
+            (
+                "spatial_low_rank_compact_head_rank",
+                self.spatial_low_rank_compact_head_rank,
+            ),
         ):
             if value <= 0:
                 raise ValueError(f"model.{name} must be positive")
@@ -1336,6 +1361,18 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         ),
         spatial_compact_head_width=int(
             get("model", "spatial_compact_head_width", 384)
+        ),
+        spatial_low_rank_frame_rank=int(
+            get("model", "spatial_low_rank_frame_rank", 192)
+        ),
+        spatial_low_rank_language_rank=int(
+            get("model", "spatial_low_rank_language_rank", 128)
+        ),
+        spatial_low_rank_compact_frame_rank=int(
+            get("model", "spatial_low_rank_compact_frame_rank", 64)
+        ),
+        spatial_low_rank_compact_head_rank=int(
+            get("model", "spatial_low_rank_compact_head_rank", 96)
         ),
         strict_two_branch=bool(get("model", "strict_two_branch", False)),
         quality_branch_enabled=bool(get("model", "quality_branch_enabled", True)),

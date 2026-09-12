@@ -14,6 +14,7 @@ from ..modeling import (
     LGVQSingleMetricOEO16,
     SpatialGridReadout,
     SpatialCompactWeightedReadout,
+    SpatialLowRankPrunedGridCompactResidualReadout,
     SpatialPrunedGridCompactResidualReadout,
     TrainableQualityFrameStem,
     _phase,
@@ -190,6 +191,36 @@ def test_pruned_grid_compact_residual_is_zero_start_and_smaller(
         parameter.numel() for parameter in readout.parameters()
     )
     assert scaled_settings.architecture_label != compact_settings.architecture_label
+
+
+def test_low_rank_pruned_readout_keeps_contract_and_reduces_parameters(
+    tmp_path: Path,
+) -> None:
+    dense_settings = replace(
+        _small_settings(tmp_path),
+        spatial_readout_mode="spatial_pruned_grid_compact_residual",
+        token_grid=14,
+        spatial_compact_head_width=8,
+    )
+    low_rank_settings = replace(
+        dense_settings,
+        spatial_readout_mode="spatial_low_rank_pruned_grid_compact_residual",
+        spatial_low_rank_frame_rank=8,
+        spatial_low_rank_language_rank=8,
+        spatial_low_rank_compact_frame_rank=8,
+        spatial_low_rank_compact_head_rank=8,
+    )
+    low_rank_settings.validate()
+    dense = SpatialPrunedGridCompactResidualReadout(dense_settings)
+    readout = SpatialLowRankPrunedGridCompactResidualReadout(low_rank_settings)
+    assert sum(p.numel() for p in readout.parameters()) < sum(
+        p.numel() for p in dense.parameters()
+    )
+    vision = torch.randn(2, 4, 196, low_rank_settings.model_width)
+    language = torch.randn(2, 8, low_rank_settings.model_width)
+    mask = torch.ones(2, 8, dtype=torch.bool)
+    assert readout(vision, language, mask).shape == (2,)
+    assert low_rank_settings.architecture_label != dense_settings.architecture_label
 
 
 def test_level_calibration_isotonic_projection_is_nondecreasing() -> None:

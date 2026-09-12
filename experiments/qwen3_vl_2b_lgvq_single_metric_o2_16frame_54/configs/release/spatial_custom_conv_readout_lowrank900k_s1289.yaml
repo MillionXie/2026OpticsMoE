@@ -1,0 +1,12 @@
+base_config: spatial_custom_conv_paired_opposite_flip_dropout18_s1201.yaml
+output_dir: ../../runs/lgvq_spatial_custom_conv_readout_lowrank900k_s1289
+random_seed: 1289
+
+# More aggressive second rung of the same matrix-factorization study.
+model:
+  spatial_readout_mode: spatial_low_rank_pruned_grid_compact_residual
+  spatial_compact_head_width: 192
+  spatial_low_rank_frame_rank: 128
+  spatial_low_rank_language_rank: 96
+  spatial_low_rank_compact_frame_rank: 48
+  spatial_low_rank_compact_head_rank: 64
