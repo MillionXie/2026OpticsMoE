@@ -1,5 +1,11 @@
 # 操作顺序（师弟 Windows 高速相机电脑）
 
+MNIST v2 已训练相位的独立反灰度导出：在工程根运行
+`python export_mnist_phase.py`，读取 `assets/mnist_v2_original` 中原 BMP/清单，
+写入新的 `generated/phase_inverted/mnist_v2`。只做 `255-g`，保留原中心(980,590)
+及原有空间方向，输出1920×1200。该目录存在时拒绝覆盖；无需连接设备。
+配套说明见输出目录README，不要与ABO的输入和探测ROI混用。
+
 目前只接相机：只做第 1～3 步。不要运行 SLM 或 ABO 采集命令。
 
 ## 1. 进入新工程
