@@ -141,6 +141,11 @@ def task_saliency_loss(logits, target, fixation, settings, *, teacher_logits=Non
         raise ValueError('Only temperature1 spatial_cc or historical KL is supported')
     base, pieces = objectives.saliency_loss(logits,target,fixation,settings,teacher_logits=None)
     kd = logits.new_zeros(()) if teacher_logits is None else spatial_correlation_distillation(logits,teacher_logits)
+    reliability = getattr(settings, 'teacher_reliability', {})
+    if reliability and teacher_logits is not None:
+        from .teacher_reliability import loss as reliable_teacher_loss
+        kd, diagnostics = reliable_teacher_loss(logits, teacher_logits, target, reliability)
+        pieces.update(diagnostics)
     reference = logits.new_zeros(())
     if teacher_logits is not None:
         with torch.no_grad():
