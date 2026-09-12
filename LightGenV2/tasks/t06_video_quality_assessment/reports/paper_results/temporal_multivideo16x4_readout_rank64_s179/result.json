@@ -1,0 +1,27 @@
+{
+  "version_contract": "16 independent videos x 4 frames; six shared optical propagations; [B,16] output",
+  "test_videos": 558,
+  "physical_fields": 35,
+  "source_srcc": 0.804372636109386,
+  "compressed_metrics": {
+    "srcc": 0.8029410445434625,
+    "krcc": 0.5951889976589436,
+    "plcc": 0.8178577784776073,
+    "rmse": 8.001568794250488,
+    "mae": 5.974549293518066
+  },
+  "parameters": {
+    "source_total": 6804011,
+    "compressed_total": 2937387,
+    "source_readout": 4898689,
+    "compressed_readout": 1032065,
+    "readout_reduction_percent": 78.93181216443827,
+    "total_reduction_percent": 56.82859713189764
+  },
+  "srcc_absolute_change": -0.00143159156592354,
+  "srcc_relative_change_percent": -0.17797616448613987,
+  "compression": "truncated SVD rank 64 of only the trained post-optical 4096-to-1024 matrix",
+  "optical_masks_routers_fusions_and_geometry_inherited": true,
+  "checkpoint": "LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo16x4_readout_rank64_s179/best_checkpoint.pt",
+  "checkpoint_sha256": "cec44ecfa304b443834a351e4d765e6838275cb581a1a71df252df8acf0befef"
+}

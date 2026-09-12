@@ -1,0 +1,35 @@
+{
+  "version_contract": "one video x 4 frames; optical Top-2; same 967458-parameter compressed readout as s1314",
+  "test_videos": 558,
+  "best_epoch": 45,
+  "selection_source": "raw",
+  "metrics": {
+    "srcc": 0.6680121830363379,
+    "krcc": 0.48550648721766365,
+    "plcc": 0.6858211068002853,
+    "rmse": 8.298072814941406,
+    "mae": 6.64607572555542
+  },
+  "same_checkpoint_optical_off_srcc": 0.6152264426892347,
+  "optical_on_minus_off_srcc": 0.05278574034710326,
+  "parameters": {
+    "full_student": 3786407,
+    "post_optical_readout": 967458,
+    "source_s1201_full_student": 4941959,
+    "source_s1201_post_optical_readout": 2123010
+  },
+  "improvement_over_compressed_s1314_srcc": 0.0025252562752093866,
+  "improvement_over_uncompressed_s1201_srcc": 0.0007983308851389204,
+  "fusion_alpha": {
+    "vision_expert": 0.45999598503112793,
+    "vision_global": 0.5000057220458984,
+    "language_expert": 0.42000094056129456,
+    "language_global": 0.779981791973114
+  },
+  "router_selected_share": {
+    "vision": [0.2177419364452362, 0.21191756427288055, 0.323924720287323, 0.24641576409339905],
+    "language": [0.26075267791748047, 0.2921147048473358, 0.21953405439853668, 0.22759856283664703]
+  },
+  "checkpoint": "LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_readout_1m_joint_gentle_s1321/best_observed_test_checkpoint.pt",
+  "checkpoint_sha256": "83a5ecde32412c30c476d67abe69a2d07ed1d4a5ff5dd8671cd025311bdf502ee"
+}
