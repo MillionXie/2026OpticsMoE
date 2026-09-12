@@ -196,6 +196,8 @@ class MultiVideoSettings:
     model_width: int = 192
     detector_projection_size: int = 96
     head_width: int = 512
+    temporal_readout_mode: str = "dense"
+    temporal_readout_hidden_width: int = 1024
     dropout: float = 0.10
     quality_gate_initial: float = 0.25
     electronic_skip_enabled: bool = False
@@ -256,11 +258,14 @@ class MultiVideoSettings:
 
     @property
     def architecture_label(self) -> str:
-        return (
+        label = (
             "lightgenv2_t06_temporal_multivideo"
             f"{self.videos_per_field}x{self.frame_count}_visualrouter_"
             "o6_top2_no_attention_v3"
         )
+        if self.temporal_readout_mode == "pruned":
+            label += f"_readout_h{self.temporal_readout_hidden_width}"
+        return label
 
     # Compatibility attributes consumed by the audited frozen-cache loader.
     @property
@@ -283,6 +288,17 @@ class MultiVideoSettings:
             raise ValueError("Formal semantics must be 9x4 or 16x4")
         if self.top_k != 2:
             raise ValueError("The formal optical router is Top-2")
+        if self.temporal_readout_mode not in {"dense", "pruned"}:
+            raise ValueError("temporal_readout_mode must be dense or pruned")
+        if self.temporal_readout_hidden_width <= 0:
+            raise ValueError("temporal_readout_hidden_width must be positive")
+        if (
+            self.temporal_readout_mode == "dense"
+            and self.temporal_readout_hidden_width != self.head_width * 2
+        ):
+            raise ValueError(
+                "dense Temporal readout hidden width must equal 2*head_width"
+            )
         if self.frame_count >= self.geometry.video_field_size:
             raise ValueError("The video field cannot hold the frame summary tokens")
         if not 0 <= self.alpha_min < self.alpha_initial < self.alpha_max < 1:

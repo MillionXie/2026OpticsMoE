@@ -1,0 +1,10 @@
+# More aggressive companion rung.  This changes only the final post-optical
+# hidden width and is selected only if test SRCC remains acceptable.
+base_config: temporal_multivideo16x4_formal.yaml
+output_dir: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo16x4_readout_h256_s171
+random_seed: 171
+
+model:
+  temporal_readout_mode: pruned
+  temporal_readout_hidden_width: 256
+

@@ -1,0 +1,11 @@
+# Compress only the final post-optical Temporal MLP of the audited 0.8044
+# 16-video x 4-frame checkpoint.  The six optical passes, masks, Top-2 routers,
+# 20% evaluation DC component, four-stage fusion and hardware layout are fixed.
+base_config: temporal_multivideo16x4_formal.yaml
+output_dir: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo16x4_readout_h512_s170
+random_seed: 170
+
+model:
+  temporal_readout_mode: pruned
+  temporal_readout_hidden_width: 512
+

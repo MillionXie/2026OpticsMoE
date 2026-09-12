@@ -57,6 +57,18 @@ class MultiVideoSettingsTest(unittest.TestCase):
         self.assertEqual(settings.phase_snapshot_interval_epochs, 0)
         self.assertIn("16x4", settings.architecture_label)
 
+    def test_pruned_temporal_readout_is_explicitly_versioned(self) -> None:
+        path = (
+            Path(__file__).parents[1]
+            / "configs"
+            / "lightgen"
+            / "temporal_multivideo16x4_readout_h512_s170.yaml"
+        )
+        settings = load_settings(path)
+        self.assertEqual(settings.temporal_readout_mode, "pruned")
+        self.assertEqual(settings.temporal_readout_hidden_width, 512)
+        self.assertIn("readout_h512", settings.architecture_label)
+
 
 if __name__ == "__main__":
     unittest.main()
