@@ -1435,3 +1435,37 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 ```
 
 只存best/last，新高需独立正常/去光复评；大步长导致性能下降也必须保留记录，不覆盖原最佳。
+
+## 52. 将TRAIN类别子空间校准折叠进现有读出（待独立复评）
+
+仅改原线性读出的weight/bias，其他张量包括所有相位不变；不是新增推理层或类别候选筛选。
+0.5保留率已经通过TEST缓存探索选择，需披露该偏差。缓存382/480不能作为实际BF16前向成绩。
+拟合只占CPU，源码先测试并同步GitHub；输出目录存在时禁止覆盖。旧辅助头不继承，不直接套用旧的恢复辅助头训练profile。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.readout_calibration \
+  --checkpoint "$T07/runs/simulation/verify_joint_ep8_20260912_gpu1/best.pt" \
+  --expected-checkpoint-sha256 7c7bc601b1048be13316a9e4863780fa5d49cf2f66b3bf3e3d68ced2d8f172f4 \
+  --features "$T07/runs/simulation/verify_joint_ep8_20260912_gpu1/evaluation/retrieval_features.pt" \
+  --expected-features-sha256 9ca01f0ee51c85bbffe7fd804ce173bdb31af3aa39a82f6c9816b4f84bfffb5d \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --retention 0.5 --output "$T07/runs/simulation/readout_subspace_20260912"
+```
+
+拟合报告状态为`fitted_not_evaluated`，不代表完整训练/评估成功。
+**先等GPU4训练结束且确认空闲，再执行下面完整复评；仍最多3张卡。**此时不能与第49节并发占同一张卡。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+T07_CALIBRATION_SHA=$(python -c "import json; print(json.load(open('$T07/runs/simulation/readout_subspace_20260912/calibration_report.json'))['checkpoint_sha256'])")
+CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 \
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.cli evaluate \
+  --assets "$T07/runs/simulation/standalone_assets_20260910" \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --checkpoint "$T07/runs/simulation/readout_subspace_20260912/best.pt" \
+  --expected-checkpoint-sha256 "$T07_CALIBRATION_SHA" \
+  --device cuda --batch-size 4 --output "$T07/runs/simulation/readout_subspace_20260912/evaluation"
+```
+
+复评原480-query/120-gallery及同权重去光，禁止先覆盖原最佳或将缓存分数填进正式表格。
