@@ -5,11 +5,14 @@
 两组best均回到初始化，GPU队列已正常退出。有限难样本CC两组已完成30轮并释放进程：
 best为第1轮.86214758/.86220323，后期测试回落，未有实质突破。
 同头Qwen50轮重训已完成，最佳第45轮，重载后完整5000张CC=0.87483830；
-该轮冻结Qwen、只随机初始化并训练适配器/头，不是解冻主干。独立float64复评另行记录。
+该轮冻结Qwen、只随机初始化并训练适配器/头，不是解冻主干。原测试batch96独立float64 CC=.87483828；
+batch32为.87478750，固定batch复评可复现该微小数值差异，完整记录见下方baseline说明。
 历史100轮baseline的0.88968469保留，不用本次较低成绩替换历史最佳。
 可靠教师光模型因第10/15轮持续回落已停止，保留第5轮best .86194520和第16轮last；
 不是完成50轮。PID414381及其子进程已退出，GPU1释放，权重不删除。
 下一组ASAM只调整训练，不新增推理参数；源码6cbc27c5已通过235项CPU测试并推送GitHub。
+真实四图单步检查确认六张相位均更新，随后以GPU1/PID476516启动50轮预算的ASAM，
+详见[SAM/ASAM训练记录](reports/reproduction/SAM_TRAINING.md)。原正式best仍保留不动。
 具体说明见[50轮baseline](reports/reproduction/BASELINE50_20260912.md)与
 [可靠教师训练](reports/reproduction/RELIABLE_TEACHER_20260912.md)。
 不改Merger、推理结构、光路、Top2、alpha下限或直流扰动。同一助手最多两张GPU。

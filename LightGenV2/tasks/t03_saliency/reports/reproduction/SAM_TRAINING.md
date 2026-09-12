@@ -1132,3 +1132,26 @@ python -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --phase all \
 
 测试/真实数据检查通过且GitHub已同步后，才可在已释放的自有GPU上运行，不得超过两卡。
 所有运行结论以run记录和完整复评为准；准备备选不等于启动或达标。
+
+### ASAM已启动及真实更新检查
+
+源码`6cbc27c5da512f8f110dd046bf58b8fb5f737d84`，235项CPU测试通过，已推送GitHub。
+真实四张train图、CPU单步检查保存在`runs/smoke/asam050_preflight_20260913/report.json`。
+任务损失.44322118、第二次扰动损失增加.62421393，所有六张相位都有有限非零梯度和真实更新：
+router原始参数RMS变化1.2368e-5，四专家约1.94e-4至1.98e-4，全局1.9559e-4。
+这是raw参数单步差异，不是最终物理相位改善、全数据性能或硬件可用性证据。
+
+检查直接绑定`model.core`参数对象，不能用首次forward前后的整模型参数全路径做交集：
+激活光电替换时相同core对象也挂入visual.blocks，遍历前缀会变化，冻结原生块会退出遍历。
+这不是相位冻结；验证实际参与ASAM的45个电子weight张量身份前后一致。
+冒烟测试不保存新checkpoint，不改变正式来源权重。
+
+确认上组PID414381及子进程退出、GPU1无任务后，启动PID/PGID476516，
+GPU UUID `GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d`，50轮预算，来源c88e不变。
+固定工作树`.worktrees/t03_balance`不能在运行中checkout，
+正式产物位于T03 `runs/simulation/moe_alpha40_asam050_20260913_seed42`，含console和launch记录。
+目前启动不代表已达到.87；如后期持续退化会停止并保留best/last，不冒称完成50轮。
+
+半径配对备选`moe_alpha40_asam010.yaml`仅将ASAM归一化半径.5改为.1，eta仍.01，
+来源、50轮日程、数据、损失、全部推理参数保持一致。不是此前普通SAM rho=.1的重复命名。
+待baseline复评结束、确认空闲GPU且配置测试/GitHub同步完成后运行，总并行仍不超过两卡。

@@ -148,13 +148,14 @@ def test_asam_failure_restores_exact_weights_and_rng():
     assert torch.equal(torch.get_rng_state(),states[0]) and not opt.state
 
 
-def test_asam_profile_preserves_model_and_serializes_training_only(tmp_path):
+@pytest.mark.parametrize('suffix,rho', [('050', .5), ('010', .1)])
+def test_asam_profile_preserves_model_and_serializes_training_only(tmp_path, suffix, rho):
     from LightGenV2.tasks.t03_saliency.settings import save_resolved_config
     import yaml
     root=Path(__file__).resolve().parents[1]/'configs'
     base=load_settings(root/'moe_alpha40_sam_spatialcc_kd2.yaml')
-    trial=load_settings(root/'moe_alpha40_asam050.yaml')
-    assert not base.asam and trial.asam=={'rho':.5,'eta':.01}
+    trial=load_settings(root/f'moe_alpha40_asam{suffix}.yaml')
+    assert not base.asam and trial.asam=={'rho':rho,'eta':.01}
     assert architecture_label(base)==architecture_label(trial)
     for k in ['initialization_checkpoint_sha256','student_epochs','student_learning_rate',
               'phase_learning_rate','ema_decay','weight_decay','distillation_initial_weight',
