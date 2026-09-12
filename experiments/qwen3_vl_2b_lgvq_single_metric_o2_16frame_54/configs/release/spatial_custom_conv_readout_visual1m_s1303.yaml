@@ -1,0 +1,14 @@
+# Reallocate the same approximately one-million readout budget toward the
+# primary 14x14 post-optical frame map.  The compact correction remains but is
+# deliberately small; no branch, input source, or inference operation is added.
+base_config: spatial_custom_conv_paired_opposite_flip_dropout18_s1201.yaml
+output_dir: ../../runs/lgvq_spatial_custom_conv_readout_visual1m_s1303
+random_seed: 1303
+
+model:
+  spatial_readout_mode: spatial_low_rank_pruned_grid_compact_residual
+  spatial_compact_head_width: 128
+  spatial_low_rank_frame_rank: 256
+  spatial_low_rank_language_rank: 160
+  spatial_low_rank_compact_frame_rank: 32
+  spatial_low_rank_compact_head_rank: 32
