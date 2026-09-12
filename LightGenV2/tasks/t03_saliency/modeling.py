@@ -165,6 +165,7 @@ class LightGenVision2SaliencyStudent(RobustVision2PoseStudent):
         self.head.requires_grad_(True)
         self._router_soft_weight = float(settings.router_balance_weight)
         self._router_hard_weight = float(settings.router_hard_load_balance_weight)
+        self._router_balance_estimator = getattr(settings, 'router_balance_estimator', 'batch')
 
     def forward(self, pixel_values: torch.Tensor, image_grid_thw: torch.Tensor
                 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor | None]:
@@ -192,6 +193,14 @@ class LightGenVision2SaliencyStudent(RobustVision2PoseStudent):
         # soft term while adding the hard Top-k load term at the independently
         # configured coefficient.
         hard = self.router_hard_load_balance_loss()
+        if self.training and self._router_balance_estimator == 'cross_sample':
+            from .cross_sample_balance import terms
+            corrected = terms(self.core.last_routing)
+            # Delta corrections preserve any optical capture-efficiency term
+            # already included in the shared router's balance loss.
+            soft = soft + corrected['soft_delta']
+            importance = importance + corrected['importance_delta']
+            hard = corrected['hard']
         return soft + (self._router_hard_weight / self._router_soft_weight) * hard, importance
 
     def router_hard_load_balance_loss(self) -> torch.Tensor:

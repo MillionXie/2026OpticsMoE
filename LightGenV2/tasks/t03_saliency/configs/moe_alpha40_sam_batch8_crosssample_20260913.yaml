@@ -1,0 +1,6 @@
+base_config: moe_alpha40_sam_batch8_20260913.yaml
+# Paired with batch8: only the population-balance estimator changes.
+# No inference changes; keep capture loss, all coefficients, LR, EMA and source.
+loss:
+  router_balance_estimator: cross_sample
+output_dir: ../runs/simulation/moe_alpha40_sam_batch8_crosssample_20260913_seed42

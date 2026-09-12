@@ -268,6 +268,15 @@ def load_settings(path: str | Path) -> Any:
     settings.router_hard_load_balance_weight = float(
         d("loss.router_hard_load_balance_weight", 0.50)
     )
+    settings.router_balance_estimator = d('loss.router_balance_estimator', 'batch')
+    if settings.router_balance_estimator not in {'batch', 'cross_sample'}:
+        raise ValueError('Unknown router balance estimator')
+    if settings.router_balance_estimator == 'cross_sample' and (
+        settings.student_batch_size < 2 or settings.router_balance_weight <= 0
+        or settings.lightgen_model_variant != 'optical_router_scale_matched_moe'
+        or not settings.sam_rho or settings.fusion_alpha_min < .4
+    ):
+        raise ValueError('Cross-sample probe requires SAM optical Top2 alpha>=.4 and batch>=2')
     settings.segmentation_projection_dim = int(d("saliency_head.projection_dim", 128))
     settings.segmentation_channels = tuple(
         int(value) for value in d("saliency_head.decoder_channels", [96, 64, 32, 16])
@@ -389,6 +398,7 @@ def save_resolved_config(settings: Any) -> None:
     values['hard_example_cc'] = settings.hard_example_cc
     values['teacher_reliability'] = settings.teacher_reliability
     values.setdefault('loss', {})['pyramid_cc'] = settings.pyramid_cc
+    values['loss']['router_balance_estimator'] = settings.router_balance_estimator
     # The shared T02 serializer writes pose-specific PCK/NME prose. T03's
     # actual trainer compares test_metrics['cc'] strictly; describe that here.
     values.setdefault("protocol", {}).update(
