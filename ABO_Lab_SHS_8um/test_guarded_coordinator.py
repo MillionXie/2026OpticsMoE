@@ -1,7 +1,7 @@
 """Six-stage SOFTWARE simulation of scheduling only; no simulated CCD enters real workflow."""
 import tempfile,unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import patch,Mock
 from guarded_workflow import execute,write,read,STAGES
 from phase_fingerprint import digest
 from phase_hdmi import sha
@@ -18,6 +18,7 @@ class Remote:
     def exists(self,p):return p in self.records
     def read(self,p):return self.records[p]
     def ps(self,*args):pass
+    def putjson(self,p,obj):self.records[p]=obj
     def download(self,p,dest):dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(self.files[p])
     def job(self,s):
         self.jobs.append(s);action=s['action'];session=s.get('session','s')
@@ -69,5 +70,18 @@ class CoordinatorTests(unittest.TestCase):
             with patch('guarded_workflow.PhaseOwner',Owner),patch('guarded_workflow.Guard',Guard),patch.object(Guard,'fail_pre',True):
                 with self.assertRaises(RuntimeError):execute(remote,c,link,out,'s',4,bank)
             self.assertFalse(any(j['action'] in ('capture_batch','evaluate') for j in remote.jobs))
+    def test_old_unguarded_session_cannot_skip_verification(self):
+        with tempfile.TemporaryDirectory() as d:
+            out=Path(d);remote,c,link,bank=self.fixture(out)
+            remote.records['sessions/s/session.json']={'test_queries':4};remote.records['sessions/s/ccd']={}
+            remote.sftp=Mock();remote.sftp.listdir.return_value=['image_old']
+            with self.assertRaisesRegex(ValueError,'unguarded CCDs'):execute(remote,c,link,out,'s',4,bank)
+            self.assertFalse(remote.jobs)
+    def test_remote_bank_binding_cannot_change(self):
+        with tempfile.TemporaryDirectory() as d:
+            out=Path(d);remote,c,link,bank=self.fixture(out)
+            remote.records['sessions/s/session.json']={'test_queries':4};remote.records['sessions/s/guard_identity.json']={'bank_id':'other'}
+            with self.assertRaisesRegex(ValueError,'another reference'):execute(remote,c,link,out,'s',4,bank)
+            self.assertFalse(remote.jobs)
 
 if __name__=='__main__':unittest.main()

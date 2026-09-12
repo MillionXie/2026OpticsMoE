@@ -178,7 +178,20 @@ def execute(remote,c,link,out,session,limit,bank_path):
     else:
         state=remote.read('sessions/'+session+'/session.json')
         if state['test_queries']!=(limit or 2400):raise ValueError('Existing session has different query count')
+        if state.get('hardware_config') is not None and digest(state['hardware_config'])!=digest(c):raise ValueError('Existing session uses a different hardware config')
     probe=CaptureProbe(remote,out,bank['probe_remote']);journal=out/'journal.json'
+    identity_rel=f'sessions/{session}/guard_identity.json'
+    identity={'schema':1,'bank_id':bank['bank_id'],'hardware_config_sha256':digest(c),'protocol':'phase_guard_v1'}
+    if remote.exists(identity_rel):
+        if remote.read(identity_rel)!=identity:raise ValueError('Remote session is bound to another reference bank/protocol')
+        batches=f'sessions/{session}/phase_batches'
+        if not journal.exists() and remote.exists(batches) and remote.sftp.listdir(remote.root+'/'+batches):
+            raise ValueError('Local journal missing for an existing guarded session; restore it or use a NEW session')
+    else:
+        ccd=f'sessions/{session}/ccd'
+        if remote.exists(ccd) and remote.sftp.listdir(remote.root+'/'+ccd):
+            raise ValueError('Existing unguarded CCDs cannot be reused as verified data; use a NEW session')
+        remote.putjson(identity_rel,identity)
     audit=read(journal) if journal.exists() else {'schema':1,'session':session,'bank_id':bank['bank_id'],'batches':[]}
     if audit['bank_id']!=bank['bank_id']:raise ValueError('Session bound to a different reference bank')
     # An interruption after acquisition but before verification must never make

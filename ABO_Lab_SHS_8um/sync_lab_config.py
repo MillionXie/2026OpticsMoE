@@ -16,6 +16,7 @@ def main():
             if a.file.exists() or side.exists():raise FileExistsError('Use a new --file; do not overwrite local edits')
             write(a.file,current);write(side,{'source_sha256':digest(current),'host':remote.c['host'],'project':remote.root});print(a.file);return
         source=read(side)
+        if (ROOT/'results/phase_sdk_owner.lock').exists():raise RuntimeError('Local phase SDK owner active; stop it before pushing hardware config')
         if source['source_sha256']!=digest(current) or source['host']!=remote.c['host'] or source['project']!=remote.root:raise ValueError('Remote config changed since pull; fetch to a new file and reconcile')
         c=read(a.file)
         if [c['model_active_pixels'],c['model_pitch_um'],c['distance_m'],c['wavelength_nm']]!=[478,17,.1,532]:raise ValueError('Fixed model physical geometry must not change')
