@@ -1,0 +1,9 @@
+# Conservative compression rung used when preserving the 0.8044 Temporal
+# baseline matters more than maximizing the parameter reduction.
+base_config: temporal_multivideo16x4_formal.yaml
+output_dir: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo16x4_readout_h640_s172
+random_seed: 172
+
+model:
+  temporal_readout_mode: pruned
+  temporal_readout_hidden_width: 640
