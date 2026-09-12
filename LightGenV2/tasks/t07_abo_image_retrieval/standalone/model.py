@@ -11,9 +11,12 @@ from .optics import OpticalPath
 
 
 class Residual(nn.Module):
-    def __init__(self, vision, kernel_size=None):
+    def __init__(self, vision, kernel_size=None, mlp_width=384):
         super().__init__()
         self.vision = vision
+        if type(mlp_width) is not int or mlp_width not in (384,768):
+            raise ValueError('Electronic residual MLP width must be 384 or 768')
+        self.mlp_width=mlp_width
         self.kernel_size=(3 if vision else 5) if kernel_size is None else kernel_size
         if type(self.kernel_size) is not int or self.kernel_size not in (3,5,7):
             raise ValueError('Electronic residual kernel must be 3, 5 or 7')
@@ -25,7 +28,7 @@ class Residual(nn.Module):
         self.token_residual_logit = nn.Parameter(torch.zeros(()))
         self.residual_logit = nn.Parameter(torch.zeros(()))
         self.norm = nn.LayerNorm(192)
-        self.mlp = nn.Sequential(nn.Linear(192,384),nn.GELU(),nn.Dropout(.1),nn.Linear(384,192),nn.Dropout(.1))
+        self.mlp = nn.Sequential(nn.Linear(192,mlp_width),nn.GELU(),nn.Dropout(.1),nn.Linear(mlp_width,192),nn.Dropout(.1))
 
     def forward(self, x):
         n = self.token_norm(x)
@@ -63,14 +66,14 @@ def fuse(e, o, raw_alpha, bounds=(.01,.95)):
 
 
 class Modality(nn.Module):
-    def __init__(self, vision, input_rms, alpha_bounds=(.01,.95), noise_config=None, kernel_size=None):
+    def __init__(self, vision, input_rms, alpha_bounds=(.01,.95), noise_config=None, kernel_size=None, mlp_width=384):
         super().__init__()
         self.vision = vision
         self.alpha_bounds = alpha_bounds
         hidden = 1024 if vision else 2048
         self.input_adapter = nn.Linear(hidden,192)
         self.input_norm = nn.LayerNorm(192)
-        self.blocks = nn.ModuleList([Residual(vision,kernel_size),Residual(vision,kernel_size)])
+        self.blocks = nn.ModuleList([Residual(vision,kernel_size,mlp_width),Residual(vision,kernel_size,mlp_width)])
         self.output_norm = nn.LayerNorm(192)
         if vision:
             self.output_adapter = nn.Linear(192,1024)
@@ -131,8 +134,9 @@ class OpticalRetrieval(nn.Module):
             self.frontend.merger_fc2.float().requires_grad_(True)
         kernels=metadata.get('electronic_context_kernels',{})
         if set(kernels)-{'vision','language'}:raise ValueError('Unknown electronic kernel modality')
-        self.vision = Modality(True, metadata['input_rms'],bounds,metadata.get('optical_training_noise'),kernels.get('vision'))
-        self.language = Modality(False, metadata['input_rms'],bounds,metadata.get('optical_training_noise'),kernels.get('language'))
+        mlp_width=metadata.get('electronic_mlp_width',384)
+        self.vision = Modality(True, metadata['input_rms'],bounds,metadata.get('optical_training_noise'),kernels.get('vision'),mlp_width)
+        self.language = Modality(False, metadata['input_rms'],bounds,metadata.get('optical_training_noise'),kernels.get('language'),mlp_width)
         if metadata.get('input_preprocessing','center_crop') not in ('center_crop','contain_white','contain_min_half'):
             raise ValueError('Unknown image preprocessing contract')
         modes = metadata.get('ccd_readout_modes',{})
@@ -179,6 +183,7 @@ class OpticalRetrieval(nn.Module):
         kernels={m:getattr(self,m).blocks[0].kernel_size for m in ('vision','language')}
         architecture='t07_standalone_six_capture_v1' if kernels=={'vision':3,'language':5} else 't07_standalone_six_capture_electronic_context'
         if self.readout.kind!='linear64':architecture+='_'+self.readout.kind
+        if self.vision.blocks[0].mlp_width!=384:architecture+='_mlp'+str(self.vision.blocks[0].mlp_width)
         return {'architecture':architecture, 'native_transformer_modules':0,
                 'attention_modules':0,'capture_count':6,'top_k':2,
                 'frozen_parameters':sum(p.numel() for p in self.parameters() if not p.requires_grad),
@@ -190,6 +195,7 @@ class OpticalRetrieval(nn.Module):
                 'ccd_readout_modes':{m:getattr(self,m).optics.readout_mode for m in ('vision','language')},
                 'training_phase_dropout':self.metadata.get('phase_dropout',{}),
                 'electronic_context_kernels':kernels,
+                'electronic_mlp_width':self.vision.blocks[0].mlp_width,
                 'retrieval_head':self.readout.kind,
                 'descriptor_dimension':self.readout.output_dimension,
                 'alpha':{m:[float(alpha_value(getattr(getattr(self,m),f'block{i}_optical_fusion_logit'),getattr(self,m).alpha_bounds)) for i in (1,2)] for m in ('vision','language')},

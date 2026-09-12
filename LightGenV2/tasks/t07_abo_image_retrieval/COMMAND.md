@@ -1355,3 +1355,26 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 ```
 
 部署不需要新的训练优化器：checkpoint仍是FP32 raw-sigmoid相位。仅保留best/last，新高独立复核正常/去光。
+
+## 49. 仅扩宽现有电子残差MLP（待验证/排队，不额外占GPU）
+
+现有四个192→384→192 MLP改为192→768→192，新增591360电子参数，无新增层/分支或光学尺寸。
+复制隐藏单元并平分输出权重作保函数初始化，但必须重算完整初始评估，不能继承79.375%。
+训练dropout/RNG会变化；不叠加第46—48节。固定原数据、教师、初始权重与Top2/alpha>0.4，正常及去光都要报告。
+先测试、同步GitHub并检查真实输入，再接续GPU4的第46节；不占第四张卡，不重复启动已有run。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu GPU-1b963983-7909-af6e-0528-f0f0661ab549 \
+  --assets "$T07/runs/simulation/standalone_assets_20260910" \
+  --checkpoint "$T07/runs/simulation/verify_joint_ep8_20260912_gpu1/best.pt" \
+  --target /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --abo /DATA/DATA1/guest3/2026OpticsMoE/data/abo \
+  --pool "$T07/runs/simulation/domain_pool250_20260912" \
+  --teacher-cache "$T07/runs/smoke/domain_distillation_20260912/build_teacher_cache/artifacts/cache.pt" \
+  --teacher-alignment "$T07/runs/simulation/domain_teacher_first_20260912_gpu4/domain_distill_teacher_first/artifacts/teacher_feature_alignment.pt" \
+  --profiles domain_distill_joint_mlp768 --epochs 16 --steps 128 --seed 42 \
+  --output "$T07/runs/simulation/domain_joint_mlp768_20260912_gpu4" \
+  --after-queue "$T07/runs/simulation/domain_joint_phasefirst_20260912_gpu4/status.json"
+```
