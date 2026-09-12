@@ -132,6 +132,8 @@ $stamp = Get-Date -Format 'yyyyMMdd_HHmmss'
 
 ### 时序分项记录（不运行ABO识别网络）
 
+本地相位自动切换的六层单命令入口与前置标定要求见 [DUAL_CONTROL.md](DUAL_CONTROL.md)；尚未验收前不要直接替代下面的手动相位流程。
+
 最新数字测试：20/20匹配正确，平均284.963 ms/张。详细口径/理论来源见 [TIMING_REPORT.md](TIMING_REPORT.md)。先关闭相机GUI及Holoeye播放器，在登录桌面的PowerShell中运行；手动保持相位全黑，不需要加载训练相位。
 
 ```powershell

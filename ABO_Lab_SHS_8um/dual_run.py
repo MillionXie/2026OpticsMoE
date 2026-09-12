@@ -58,12 +58,15 @@ Start-ScheduledTask -TaskName '{name}'
         try:
             while True:
                 self.heartbeat(rel)
-                if self.exists(rel+'.status.json'):
-                    status=self.read(rel+'.status.json')
+                if self.exists(rel+'.result.json') or self.exists(rel+'.status.json'):
+                    terminal=self.exists(rel+'.result.json')
+                    status=self.read(rel+('.result.json' if terminal else '.status.json'))
                     if status['state'] in ('done','failed'):
                         self.active=None
                         if status['state']!='done':raise RuntimeError(f'Job failed: {status}; inspect {rel}.log')
                         return status
+                elif time.monotonic()-started>60:
+                    raise TimeoutError('Desktop worker did not start in 60s; check logged-in desktop and task status')
                 if time.monotonic()-started>86400:raise TimeoutError('Job exceeded 24h')
                 if time.monotonic()-last_print>30:
                     print(spec['action'],spec.get('stage',''),f'{time.monotonic()-started:.0f}s',flush=True);last_print=time.monotonic()

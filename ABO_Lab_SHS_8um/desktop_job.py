@@ -8,13 +8,20 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parent
 
 def write(p,d):
-    tmp=p.with_suffix('.tmp');tmp.write_text(json.dumps(d,indent=2),encoding='utf-8');os.replace(tmp,p)
+    tmp=p.with_suffix('.tmp');tmp.write_text(json.dumps(d,indent=2),encoding='utf-8')
+    for attempt in range(30):
+        try:os.replace(tmp,p);return
+        except PermissionError:
+            if attempt==29:raise
+            time.sleep(.1)
 
 def command(spec):
     action=spec['action']
     if action=='probe':
         bmp=(ROOT/spec['bmp']).resolve()
         if not bmp.is_relative_to(ROOT):raise ValueError('BMP path escape')
+        out=(ROOT/spec['out']).resolve()
+        if not out.is_relative_to(ROOT/'results'):raise ValueError('Diagnostic output must be under results')
         return [sys.executable,str(ROOT/'slm_camera.py'),'--config','LAB.local.json','--bmp',str(bmp),'--out',spec['out']]
     if action not in ('init','prepare','capture','evaluate'):raise ValueError('Action not allowed')
     if not re.fullmatch('[A-Za-z0-9_-]{1,80}',spec['session']):raise ValueError('Invalid session')
@@ -39,9 +46,10 @@ def main():
     job=a.job.resolve()
     if not job.is_relative_to(ROOT/'results/dual_jobs'):raise ValueError('Job outside controlled directory')
     spec=json.loads(job.read_text(encoding='utf-8'));status=job.with_suffix('.status.json')
-    lock=ROOT/'results/dual_jobs/ACTIVE.lock';fd=os.open(lock,os.O_CREAT|os.O_EXCL|os.O_WRONLY)
-    os.close(fd);child=None
+    result_file=job.with_suffix('.result.json')
+    lock=ROOT/'results/dual_jobs/ACTIVE.lock';owned_lock=False;child=None
     try:
+        fd=os.open(lock,os.O_CREAT|os.O_EXCL|os.O_WRONLY);os.close(fd);owned_lock=True
         cmd=command(spec);write(status,{'state':'running','command':cmd,'pid':os.getpid()})
         with job.with_suffix('.log').open('x',encoding='utf-8') as log:
             child=subprocess.Popen(cmd,cwd=ROOT,stdout=log,stderr=subprocess.STDOUT)
@@ -51,12 +59,13 @@ def main():
                     subprocess.run(['taskkill','/PID',str(child.pid),'/T','/F'],capture_output=True)
                     child.wait(timeout=10);raise RuntimeError('Coordinator lease expired/cancelled; owned child tree stopped')
                 time.sleep(.25)
-        write(status,{'state':'done' if child.returncode==0 else 'failed','exit_code':child.returncode,
+        write(result_file,{'state':'done' if child.returncode==0 else 'failed','exit_code':child.returncode,
                       'phase_receipt':spec.get('phase_receipt'),'sdk_ack_is_not_optical_verification':True})
     except BaseException as e:
         if child and child.poll() is None:
             subprocess.run(['taskkill','/PID',str(child.pid),'/T','/F'],capture_output=True)
-        write(status,{'state':'failed','error':str(e)});raise
-    finally:lock.unlink(missing_ok=True)
+        write(result_file,{'state':'failed','error':str(e)});raise
+    finally:
+        if owned_lock:lock.unlink(missing_ok=True)
 
 if __name__=='__main__':main()
