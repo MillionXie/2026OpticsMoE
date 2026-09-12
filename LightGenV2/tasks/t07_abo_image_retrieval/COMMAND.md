@@ -1409,3 +1409,28 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 ```
 
 新高需在4090独立复核正常及同权重去光；保留跨run/test选模偏差说明，不把不同seed的最佳值当作均值。
+
+## 51. 仅提高Router弧度优化步长（待服务器验证/排队）
+
+相对第48节仅提高两个Router的初始学习率0.0002→0.002；不是提高专家/global或电子学习率。
+仍用原79.375%起点、384宽MLP、原教师坐标和16×128seed42；无推理/光路变化，不叠加第49节。
+先同步已测试源码并做真实输入检查，再排到第48节之后；等待不占CUDA，不重复启动同名run。
+完整初始分数要重新计算，实际学习率见`execution.json/optimizer_initial_rates_by_kind`。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d \
+  --assets "$T07/runs/simulation/standalone_assets_20260910" \
+  --checkpoint "$T07/runs/simulation/verify_joint_ep8_20260912_gpu1/best.pt" \
+  --target /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --abo /DATA/DATA1/guest3/2026OpticsMoE/data/abo \
+  --pool "$T07/runs/simulation/domain_pool250_20260912" \
+  --teacher-cache "$T07/runs/smoke/domain_distillation_20260912/build_teacher_cache/artifacts/cache.pt" \
+  --teacher-alignment "$T07/runs/simulation/domain_teacher_first_20260912_gpu4/domain_distill_teacher_first/artifacts/teacher_feature_alignment.pt" \
+  --profiles domain_distill_joint_routerradian_fast --epochs 16 --steps 128 --seed 42 \
+  --output "$T07/runs/simulation/domain_joint_routerradian_fast_20260912_gpu1" \
+  --after-queue "$T07/runs/simulation/domain_joint_routerradian_20260912_gpu1/status.json"
+```
+
+只存best/last，新高需独立正常/去光复评；大步长导致性能下降也必须保留记录，不覆盖原最佳。

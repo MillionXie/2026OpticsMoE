@@ -29,7 +29,7 @@ from .generalization import learning_rate_multiplier, PINNED_TEACHER_PROFILES, p
 from .learning_curves import write_learning_curves
 from .domain_data import combine_training, epoch_batches, paired_view_indices, view_consistency_loss
 from .randomness import training_seed, epoch_random_streams
-from .phase_optimization import router_coordinates,router_radian_step,circular_router_ema
+from .phase_optimization import router_coordinates,router_radian_step,circular_router_ema,router_learning_rate_multiplier
 
 
 class CategoryProxies(nn.Module):
@@ -98,6 +98,7 @@ def run_stage(args,stage,output,initial_checkpoint=None):
     lr_multiplier=learning_rate_multiplier(cfg_all)
     phase_only_group_frozen(cfg_all,1,'phase')  # Validate before loading a model.
     radian_router=router_coordinates(cfg_all)=='radians'
+    router_lr_scale=router_learning_rate_multiplier(cfg_all)
     track_clean=cfg_all.get('track_clean_train',False)
     cfg=cfg_all[stage].copy()
     cfg['epochs']=getattr(args,stage+'_epochs') or cfg['epochs'];cfg['steps']=args.steps or cfg['steps']
@@ -174,6 +175,7 @@ def run_stage(args,stage,output,initial_checkpoint=None):
         for name,p in trainables:
             kind=group_kind(name) if high else parameter_kind(name)
             rate=(cfg[kind+'_lr'] if high or kind!='alpha' else 0.)*lr_multiplier
+            if kind=='router':rate*=router_lr_scale
             if name.startswith('frontend.merger_fc2.'):
                 from .generalization import merger_learning_rate_multiplier
                 rate*=merger_learning_rate_multiplier(cfg_all)
@@ -201,6 +203,9 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                 gallery_products=len({s.product_id for s in target_train}),test_products=len({s.product_id for s in target_test}),
                 eval_protocol='Original gallery and test unchanged; expanded products never enter eval gallery')
         execution['training_only_teacher']=teacher_audit
+        execution['optimizer_initial_rates_by_kind']={
+            kind:sorted({g['initial_lr'] for g in optimizer.param_groups if g['kind']==kind})
+            for kind in sorted({g['kind'] for g in optimizer.param_groups})}
         execution['training_only_vision_teacher']=vision_audit
         execution['training_selection']=selection_audit
         execution['protected_optics_source_sha256']=sha256(Path(__file__).with_name('optics.py'))

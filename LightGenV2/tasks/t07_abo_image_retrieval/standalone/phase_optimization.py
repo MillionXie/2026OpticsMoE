@@ -19,6 +19,20 @@ def router_coordinates(config):
     return mode
 
 
+def router_learning_rate_multiplier(config):
+    """Scale only Router Adam rates, never expert/global or electronic rates.
+
+    Nondefault values belong to the explicitly audited radian-coordinate
+    experiment. This is not a change to physical phase encoding at inference.
+    """
+    value=config.get('router_learning_rate_multiplier',1.)
+    if isinstance(value,bool) or not isinstance(value,(int,float)) or not math.isfinite(value) or not 0<value<=100:
+        raise ValueError('Router learning-rate multiplier must be finite in (0,100]')
+    if value!=1 and router_coordinates(config)!='radians':
+        raise ValueError('Nondefault Router LR multiplier requires radian coordinates')
+    return float(value)
+
+
 def phase_to_raw(theta):
     # Finite raw parameters at the periodic branch cut; <8e-7 rad clipping.
     return torch.remainder(theta/(2*math.pi),1.).clamp(1e-7,1-1e-7).logit()

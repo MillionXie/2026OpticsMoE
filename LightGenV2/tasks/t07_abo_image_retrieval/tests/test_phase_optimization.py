@@ -2,7 +2,7 @@ import math
 import pytest
 import torch
 from LightGenV2.tasks.t07_abo_image_retrieval.standalone.phase_optimization import (
-    router_coordinates,router_radian_step,phase_to_raw,circular_router_ema)
+    router_coordinates,router_radian_step,phase_to_raw,circular_router_ema,router_learning_rate_multiplier)
 
 
 def test_radian_adam_matches_direct_phase_optimization_including_wrap():
@@ -74,3 +74,24 @@ def test_preflight_failure_does_not_mutate_previous_router():
     with pytest.raises(ValueError):
         with router_radian_step(opt,True):pass
     assert torch.equal(good,before)
+
+
+@pytest.mark.parametrize('value',[True,False,0,-1,101,float('inf'),float('nan'),'10'])
+def test_router_lr_multiplier_rejects_invalid_values(value):
+    with pytest.raises(ValueError):
+        router_learning_rate_multiplier({'router_optimizer_coordinates':'radians','router_learning_rate_multiplier':value})
+
+
+def test_router_fast_profile_is_only_a_training_lr_change():
+    from LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization import overlay_config, PINNED_TEACHER_PROFILES
+    from LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue import PINNED_TEACHER_PROFILES as queued
+    name='domain_distill_joint_routerradian_fast'
+    assert name in PINNED_TEACHER_PROFILES and name in queued
+    base=overlay_config({},'domain_distill_joint_routerradian')
+    cfg=overlay_config({},name)
+    assert router_learning_rate_multiplier({})==1.
+    assert router_learning_rate_multiplier(cfg)==10.
+    assert cfg.pop('router_learning_rate_multiplier')==10.
+    for c in (base,cfg):c.pop('protocol')
+    assert base==cfg
+    with pytest.raises(ValueError):router_learning_rate_multiplier({'router_learning_rate_multiplier':10.})
