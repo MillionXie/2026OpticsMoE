@@ -1111,3 +1111,29 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 
 GPU1原队列完成且资源允许才接续；等待不占CUDA。只保存best/last与训练日志，最后正常/去光重评原协议。
 扩充图不进入测试图库，原冻结Qwen baseline的95.2083%仍是同一测试协议，不能另换更容易的测试分数比较。
+
+## 40. 从已核验79.375%继续联合课程（不增加推理结构）
+
+这是第二次16×128 warm restart：恢复当前最佳模型和训练辅助头，复用原教师坐标，
+重新创建AdamW/余弦学习率调度及GT课程。仍使用旧cap250二视角池，不叠加第39节数据变化。
+源码f695014b，seed42；等待GPU4的seed123对照结束，检查空闲才启动，不抢占其他用户。
+新增训练预算不保证提升；480-query/120-gallery、六次光捕获和全部光学几何不变。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu GPU-1b963983-7909-af6e-0528-f0f0661ab549 \
+  --assets "$T07/runs/simulation/standalone_assets_20260910" \
+  --checkpoint "$T07/runs/simulation/verify_joint_ep8_20260912_gpu1/best.pt" \
+  --target /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --abo /DATA/DATA1/guest3/2026OpticsMoE/data/abo \
+  --pool "$T07/runs/simulation/domain_pool250_20260912" \
+  --teacher-cache "$T07/runs/smoke/domain_distillation_20260912/build_teacher_cache/artifacts/cache.pt" \
+  --teacher-alignment "$T07/runs/simulation/domain_teacher_first_20260912_gpu4/domain_distill_teacher_first/artifacts/teacher_feature_alignment.pt" \
+  --profiles domain_distill_joint_curriculum --epochs 16 --steps 128 --seed 42 \
+  --output "$T07/runs/simulation/domain_joint_restart_20260912_gpu4" \
+  --after-queue "$T07/runs/simulation/domain_teacher_first_seed123_20260912_gpu4/status.json"
+```
+
+起点SHA=`7c7bc601b1048be13316a9e4863780fa5d49cf2f66b3bf3e3d68ced2d8f172f4`。
+该run已排队时不要再次执行；查看其status.json及子目录history/final_report。
