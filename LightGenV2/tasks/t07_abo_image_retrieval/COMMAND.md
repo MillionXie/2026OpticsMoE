@@ -1326,3 +1326,28 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
   --profiles domain_distill_joint_feature8 --epochs 16 --steps 128 --seed 42 \
   --output "$T07/runs/simulation/domain_joint_feature8_20260912_gpu2"
 ```
+
+## 48. Router按物理相位弧度做Adam更新（待验证/排队，不占第四张卡）
+
+训练前向、光路、ROI、Top2、alpha及保存格式不变；仅两个Router采用弧度坐标Adam及角度EMA。
+只在backward和optimizer.step之间临时转换，不能在该上下文内前向或保存。
+不叠加第45节初始化平移、第46节相位优先或第47节强教师。固定原79.375%权重，初始评估需重算。
+先完成测试并同步GitHub、真实输入梯度检查，再按下列命令接续第45节；依赖未完成时不分配CUDA。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d \
+  --assets "$T07/runs/simulation/standalone_assets_20260910" \
+  --checkpoint "$T07/runs/simulation/verify_joint_ep8_20260912_gpu1/best.pt" \
+  --target /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --abo /DATA/DATA1/guest3/2026OpticsMoE/data/abo \
+  --pool "$T07/runs/simulation/domain_pool250_20260912" \
+  --teacher-cache "$T07/runs/smoke/domain_distillation_20260912/build_teacher_cache/artifacts/cache.pt" \
+  --teacher-alignment "$T07/runs/simulation/domain_teacher_first_20260912_gpu4/domain_distill_teacher_first/artifacts/teacher_feature_alignment.pt" \
+  --profiles domain_distill_joint_routerradian --epochs 16 --steps 128 --seed 42 \
+  --output "$T07/runs/simulation/domain_joint_routerradian_20260912_gpu1" \
+  --after-queue "$T07/runs/simulation/domain_joint_routerorigin_20260912_gpu1/status.json"
+```
+
+部署不需要新的训练优化器：checkpoint仍是FP32 raw-sigmoid相位。仅保留best/last，新高独立复核正常/去光。
