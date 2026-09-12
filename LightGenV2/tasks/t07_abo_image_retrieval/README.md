@@ -57,11 +57,17 @@
 
 ## 持续目标与不可变约束（2026-09-12）
 
-待测试提交`domain_distill_joint_mix13`：仅将每类每batch的原商品/外部商品配额2:2改成1:3，仍10类×4商品=40图。
+运行中`domain_distill_joint_mix13`：仅将每类每batch的原商品/外部商品配额2:2改成1:3，仍10类×4商品=40图。
 固定79.375%未校准起点、原prefix读出、cap250二视角池及joint_restart原损失/学习率/16×128/seed42；不叠加其它新候选。
 每轮原商品抽样2560→1280次，外部2560→3840次；120原商品和2058外部商品仍全部循环访问，但不声称一轮覆盖每幅原训练图。
 全1440原训练图继续参加干净训练评估，原480测试/120商品图库不变；仅训练采样变化，不需重跑未改的冻结Qwen baseline。
 目的在于减少对少量原商品的反复记忆，是否提升待实测。旧cap500/no-teacher mix13不是这一组配对对照；操作见第57节。
+源码888d08d6已同步GitHub，两端247项测试通过；实际5556图训练池检查每类配额、全部2178商品覆盖及原始图SHA通过。
+固定epoch1采样流：原不同图片1208→876，外部不同图片2209→2741；抽样次数与不同图片数分开记录。
+证据`verify_joint_ep8_20260912_gpu1/evaluation/diagnostics/mix13_actual_pool_probe.json`，无GPU/TEST图读取或权重修改。
+监督494597/学生494600已在检查为空闲的GPU0 RTX4090启动；当时另外两组在GPU2/4，合计三张。
+执行审计确认原prefix读出、2782485训练参数、前端冻结、6 captures/Top2/α下限0.4001及光学源码SHA6490c6ee…均未变。
+初始化完整480-query/120-gallery复评79.375%，与未校准起点一致；训练结果尚待完成，不据此宣称采样有收益。
 
 只读CPU诊断`verify_joint_ep8_20260912_gpu1/evaluation/diagnostics/within_subspace_probe.json`：
 TRAIN图/商品类内协方差各用0.1/0.5收缩估计，再构造9D判别方向投影并保留其它方向0.5；四组缓存最高79.375%，不采用。
@@ -80,6 +86,8 @@ CCD强度归一化、clip12/log1p、行LN/ReLU/Linear192不变，所有权重张
 监督487163/学生487166已在空闲GPU2 RTX3090启动；执行审计确认6 captures、Top2、α下限0.4001、2782485训练参数、无TF/attention。
 完整初始化复评仅57.7083%（277/480），干净TRAIN留商品外79.0972%；改变池化导致旧权重明显失配，不能当作已优化版本。
 仍按预定16轮检查能否适配恢复；正式79.5833%权重和原prefix读出不被覆盖，不因这一初始下降就断言全幅池化必然更差。
+第4轮`last.pt`只读核验：12份相位均有实际圆周更新，expert/global RMS约0.0417–0.0475 rad，V/L router约0.00392/0.00239 rad。
+冻结前端逐张量比特不变；证据在该run的`artifacts/phase_training_update_check.json`，记录当时last SHA，无额外PT快照；不把更新幅度当性能贡献。
 
 教师梯度冲突候选`domain_distill_joint_teacherproject`：只改训练反向，不改光路/推理网络。
 参考[Yu等，Gradient Surgery，NeurIPS2020](https://arxiv.org/abs/2001.06782)，但这里是**单向教师投影**，不是完整对称随机PCGrad。
