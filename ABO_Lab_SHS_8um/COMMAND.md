@@ -7,9 +7,9 @@ MNIST v2 已训练相位的独立反灰度导出：在工程根运行
 配套说明见输出目录README，不要与ABO的输入和探测ROI混用。
 
 2026-09-12 联调状态见 [JOINT_RESULTS.md](JOINT_RESULTS.md)。GPU 模型准备已通过；
-SLM SDK 可以显示，操作者已确认 PLUTO 是输入振幅；但包括全屏五档灰度测试，
-CCD 仍未观察到明确调制。**先现场检查光束经过该面板及振幅调制光路；暂不正式采集。**
-不能把以下完整流程误认为已完成光学验证。
+联合控制已验证，旧帧问题已修复。当前 `LAB.local.json` 使用150 μs曝光、100 fps、
+200 ms持续取帧等待；20次交替输入全部对应正确。**新CCD四角还未标定，不能开始六阶段正式采集。**
+这一结果不等于已经复现 ABO 实测准确率。
 
 ## 1. 进入新工程
 
@@ -104,23 +104,31 @@ $stamp = Get-Date -Format 'yyyyMMdd_HHmmss'
 & $py slm_camera.py --config LAB.local.json --bmp generated\phase_inverted\dual\01_check64\A.bmp --out "results\paired_$stamp"
 ```
 
-相位不会自动切换。程序顺序：振幅 Visible → `settle_delay_ms` → 丢弃 6 帧 → 取新帧 → raw.png。初始等待 200 ms 是保守值，需连接光路后做切换测试才能缩短。相机本身的速率不是 Holoeye 60 Hz 的播放速率。
+相位不会自动切换。程序顺序：振幅 Visible → 等待期间**持续取帧丢弃** → 额外丢弃6帧 → 取新帧 → raw.png。
+不能只 sleep 后丢6帧，这一旧方法已被实测证伪。200 ms下 Visible 至取图约276 ms，不含BMP加载及磁盘保存。
+相机本身的速率不是 Holoeye 60 Hz 的播放速率。测试结束 SDK 会关闭显示窗口，不能假定退出后仍保持测试图。
 
 确认 CCD 确实随输入变化后，先在全黑相位下做短测：
 
 ```powershell
-& $py joint_diagnostic.py --mode gray --exposures-us 1000 3500 --out "results\gray_$stamp"
+& $py joint_diagnostic.py --mode checker --exposures-us 100 150 200 --out "results\exposure_$stamp"
 ```
 
-这只采 10 帧。选不饱和、响应明确的曝光填入 `LAB.local.json` 后再测时序：
+这只采 9 帧。已测150 μs无饱和，200 μs有少量饱和；当前无需再用旧3500 μs诊断值。
+换光强/相位后重新检查，再测时序：
 
 ```powershell
-& $py joint_diagnostic.py --mode timing --out "results\timing_$stamp"
+& $py joint_diagnostic.py --mode timing --timing-exposure-us 150 --out "results\timing_$stamp"
 ```
 
 先采 4 张独立参考检查左右图能否区分，再采 24 张交替图；参考差异不足会中止，
 防止静止错误画面也得到高 PCC。最长等待参考不等于物理真值，不能只看其自身误差为零。
-正式等待仍需结合同/异输入匹配与重复稳定性判读；当前尚无推荐值。
+当前短测0/20/50/100 ms有错帧，200/400 ms本轮正确；200 ms追加20次交替全部正确。
+这不是长期零错帧保证。复核当前推荐值：
+
+```powershell
+& $py joint_diagnostic.py --mode timing --timing-exposure-us 150 --delays-ms 200 --repeats 10 --out "results\repeat_$stamp"
+```
 
 ## 6. 四点标定填哪里
 
