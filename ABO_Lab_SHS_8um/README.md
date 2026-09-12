@@ -1,6 +1,7 @@
 # ABO + SHS 高速相机 / 8 μm SLM
 
-先读 [COMMAND.md](COMMAND.md)。本工程先调通相机 SDK，保留 ABO 六阶段的模型/几何约定，**不改变光路**。
+先读 [COMMAND.md](COMMAND.md)。本工程保留 ABO 六阶段的模型/几何约定，**不改变光路**。
+最新联合测试与 RTX4060 推理证据见 [JOINT_RESULTS.md](JOINT_RESULTS.md)。
 
 实測证据和吞吐边界见 [BRINGUP_RESULTS.md](BRINGUP_RESULTS.md)；2250 fps 的 Python 直取短测有跳帧，不宣称已实现满速无丢帧。
 
@@ -18,7 +19,7 @@
 - 1920×1080 Mono8；曝光 100/500/1000/3500 μs，每档 3 帧，设置回读一致，完整帧检查通过，PNG 保存逐像素一致。
 - 数字 Black/White/VStrip 各 2 帧，分别为全 0、全 255、0～224 条纹；结束恢复 Normal。
 - 真实场景为夜间未开灯房间，均值约 3.4～3.65/255。**尚不能据此认证曝光线性、光学信噪比或像素响应均匀性。**
-- 当前未连接 SLM，没有完成光路对齐、SLM 联动和 ABO 真实六阶段评估。代码接口/标定文件已准备，不能将其称为已完成光路验证。
+- 后续联合测试已成功调用 Holoeye SDK，但 CCD 五档灰度响应几乎不变；已暂停换图，等待核实面板对应及光束。没有完成光路对齐、时序验证和 ABO 真实六阶段评估。
 
 ## 为什么选择这套 SDK
 
@@ -56,13 +57,19 @@ SDK 根目录在 `config.json` 的 `camera.sdk_root`。必须同时保留 `demo/
 
 `run.py` 复用随包 `compat_abo` 的六阶段准备/评估逻辑，仅替换硬件入口、phase 文件路径与 raw PNG 存储。六个阶段依然是 vision_router/expert/global、language_router/expert/global。保留固定 80.583% 历史参考 checkpoint 的 SHA，不承诺新光路得到相同准确率。
 
-本次小包包含六层相位 NPY/BMP和标定图，**不重复下载大模型、完整训练/测试数据、旧会话**。要运行 ABO 电子准备/评估，需 `import_abo.py` 从完整旧工程导入 runtime、models、指定 checkpoint 和 test_dataset，并使用原来兼容的 GPU Python 环境。相机 SDK 不用 CUDA，也没有因此安装 CPU 版 PyTorch。`run.py` 目前只做静态/兼容接口检查；未在新电脑上执行完整模型推理。
+源码小包与大资源包分开。师弟电脑现已导入原始 checkpoint、2400 查询数据和固定前端参数，
+记录在 `INFERENCE_ASSET_MANIFEST.json`；参数原字节复制，不包含未使用的 Transformer 层。
+新 `.venv_gpu` 已通过 RTX4060 图像/文本仿真特征前向与四张 router BMP 准备测试。
+这不是完整测试集准确率，也不是硬件六阶段验证。相机独立 `.venv` 不需要 torch。
 
-`ccd/*.raw.png` 保留传感器原始整数像素；`ccd/*.png` 是单次 homography 到 478×478，并按固定 [0,255] 存储，无逐图归一化/log/gamma。实际相机四角必须重新标定，不能复用旧 DVP ROI。四点标签代表逻辑光场方向。
+正式默认仅保存 `ccd/*.png`：单次 homography 到 478×478，固定 [0,255]，无逐图归一化/log/gamma。
+只有 `save_raw_frames=true` 才额外保存全幅 `*.raw.png`。兼容记录中的 raw 文件引用在最简模式
+指向同一张 canonical PNG，不意味着保留了原图；元数据 `raw_frame_saved=false` 明确区分。
+实际相机四角必须重新标定，不能复用旧 DVP ROI。四点标签代表逻辑光场方向。
 
 ## 文件管理与后续 AI
 
-- 只改 `config.json`；实测结果 `results/`；ABO 会话 `sessions/`；生成 BMP `generated/`；原厂资料 `vendor/`；发布包 `releases/`。
+- 本机配置只改忽略入 Git 的 `LAB.local.json`；通用模板是 `config.json`。实测结果 `results/`；ABO 会话 `sessions/`；生成 BMP `generated/`；原厂资料 `vendor/`；发布包 `releases/`。
 - 提交代码并推 GitHub，再以带 commit + 每文件 SHA256 的包部署，不能只改远端一份代码。
 - 不自动启动/关闭别人的 Viewer；不要修改未连接的 SLM；相位始终手动加载。
 - 新相机标定/方向/LUT/曝光策略变动后新建 session，不重写旧 record 或图片。

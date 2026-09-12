@@ -6,7 +6,10 @@ MNIST v2 已训练相位的独立反灰度导出：在工程根运行
 及原有空间方向，输出1920×1200。该目录存在时拒绝覆盖；无需连接设备。
 配套说明见输出目录README，不要与ABO的输入和探测ROI混用。
 
-目前只接相机：只做第 1～3 步。不要运行 SLM 或 ABO 采集命令。
+2026-09-12 联调状态见 [JOINT_RESULTS.md](JOINT_RESULTS.md)。GPU 模型准备已通过；
+SLM SDK 可以显示，但 CCD 尚未观察到五档灰度对应的变化。**先确认唯一的 PLUTO
+确实是输入振幅面板、光束经过该面板；暂不继续 SLM 换图或正式采集。**
+不能把以下完整流程误认为已完成光学验证。
 
 ## 1. 进入新工程
 
@@ -15,6 +18,7 @@ MNIST v2 已训练相位的独立反灰度导出：在工程根运行
 ```powershell
 Set-Location E:\code\guest\2026OpticsMoE\ABO_Lab_SHS_8um
 $py = Join-Path (Get-Location) '.venv\Scripts\python.exe'
+$gpu = Join-Path (Get-Location) '.venv_gpu\Scripts\python.exe'
 $stamp = Get-Date -Format 'yyyyMMdd_HHmmss'
 ```
 
@@ -62,14 +66,16 @@ $stamp = Get-Date -Format 'yyyyMMdd_HHmmss'
 
 文件 `e00_f0000.png` 为原始强度，没有增强。全暗可能是暗场，也可能是启动异常，不能只凭回读成功判断。白天测试已观察到曝光响应，但自然光变化、无暗帧扣除，不能当作正式线性标定。
 
-日常改变设置：编辑 `config.json` 的 `camera.exposure_us`、`frame_rate_hz`、`gain`；默认 Mono8 原样保留。特别注意 2250 fps **不能曝光 3500 μs**。
+联合控制/ABO 只编辑 `LAB.local.json`，它不会被代码升级覆盖。
+独立 `capture.py` 默认读 `config.json`；如需使用同一套设置，显式加
+`--config LAB.local.json`。默认 Mono8 原样保留。特别注意 2250 fps **不能曝光 3500 μs**。
 
 也可临时在 capture 命令后加 `--gain Gain_X1`（还支持 X2/X4/X8）；设置回读和恢复均写入 capture.json。
 
 ## 4. 离线生成标定 + 六层 ABO 相位（不连接设备）
 
 ```powershell
-& $py calibrate.py --phases
+& $py calibrate.py --config LAB.local.json --phases
 ```
 
 文件都在 `generated\phase_inverted`：
@@ -90,17 +96,35 @@ $stamp = Get-Date -Format 'yyyyMMdd_HHmmss'
 
 ## 5. 后续接入振幅 SLM：先单张联调
 
-先安装相匹配的 Holoeye SDK、确认 1920×1080/8 μm 面板；编辑 `amplitude_slm.sdk_path` 与 `binary_folder` 为实际 SDK 路径，然后才设 `connected=true`。确认相位面板手动加载正确的 P.bmp。
+本机 SDK 路径已填写在 `LAB.local.json`，先确认 1920×1080/8 μm 面板是振幅面板。
+下面命令必须在**该电脑已经登录的桌面 PowerShell**运行，不能直接在无桌面 SSH 会话中显示 SLM。
+确认相位面板手动加载正确的 P.bmp。
 
 ```powershell
-& $py slm_camera.py --bmp generated\phase_inverted\dual\01_check64\A.bmp --out "results\paired_$stamp"
+& $py slm_camera.py --config LAB.local.json --bmp generated\phase_inverted\dual\01_check64\A.bmp --out "results\paired_$stamp"
 ```
 
 相位不会自动切换。程序顺序：振幅 Visible → `settle_delay_ms` → 丢弃 6 帧 → 取新帧 → raw.png。初始等待 200 ms 是保守值，需连接光路后做切换测试才能缩短。相机本身的速率不是 Holoeye 60 Hz 的播放速率。
 
+确认 CCD 确实随输入变化后，先在全黑相位下做短测：
+
+```powershell
+& $py joint_diagnostic.py --mode gray --exposures-us 1000 3500 --out "results\gray_$stamp"
+```
+
+这只采 10 帧。选不饱和、响应明确的曝光填入 `LAB.local.json` 后再测时序：
+
+```powershell
+& $py joint_diagnostic.py --mode timing --out "results\timing_$stamp"
+```
+
+先采 4 张独立参考检查左右图能否区分，再采 24 张交替图；参考差异不足会中止，
+防止静止错误画面也得到高 PCC。最长等待参考不等于物理真值，不能只看其自身误差为零。
+正式等待仍需结合同/异输入匹配与重复稳定性判读；当前尚无推荐值。
+
 ## 6. 四点标定填哪里
 
-CCD 硬件保持全幅；把四个逻辑角的**新 SHS 全传感器坐标**填入 `config.json` 的 `logical_corners_full_sensor_xy`。这些坐标不要求 4 的倍数。相位 ROI 中心：
+CCD 硬件保持全幅；把四个逻辑角的**新 SHS 全传感器坐标**填入 `LAB.local.json` 的 `logical_corners_full_sensor_xy`。这些坐标不要求 4 的倍数。相位 ROI 中心：
 
 ```text
 TL=(451.625,91.625)     TR=(1467.375,91.625)
@@ -111,15 +135,26 @@ BL=(451.625,1107.375)   BR=(1467.375,1107.375)
 
 ## 7. 正式 ABO：等接入光路、导入模型后再做
 
-这次相机小包不含大模型/完整数据。把完整旧 `ABO_Lab_8um` 放在同级，再执行：
+师弟电脑现已导入固定 checkpoint、原始 2400 查询数据及模型前端参数，
+不再需要复制旧工程。`INFERENCE_ASSET_MANIFEST.json` 记录逐文件 SHA。
+GPU 环境 torch 2.8.0+cu126 / transformers 4.57.3 已通过模型测试。
+换机部署的已测试依赖及 CUDA 安装顺序见 `requirements-gpu-tested.txt`。
+相机 `.venv` 不含 torch 是有意分离，不是安装了 CPU 版 torch。
+如换一台电脑且尚未导入资源，才使用旧工程导入方式：
 
 ```powershell
 & $py import_abo.py --source ..\ABO_Lab_8um
 ```
 
-只复制模型、runtime、checkpoint、原始 test_dataset；不复制旧 CCD/旧设备参数。准备/评估要用旧 ABO 已验证的 GPU Python 环境（torch/transformers 版本应保持一致）；**当前相机 `.venv` 尚未安装模型运行依赖**。`requirements-abo.txt` 给出额外依赖边界，不能用它宣称模型环境已经装好。
+只复制模型、runtime、checkpoint、原始 test_dataset；不复制旧 CCD/旧设备参数。
+本机可先做不占用光路的检查，输出 4 张 router 振幅 BMP：
 
-在该 GPU 环境激活后（下面 `python` 指 GPU 环境），先 4 查询小样本，新建 session：
+```powershell
+& $gpu model_check.py --out "results\cuda_check_$stamp"
+```
+
+四角标定、曝光/时序验证完成后，在登录桌面设置 `python` 为该 GPU 环境
+（或将下面每个 `python` 换成 `& $gpu`），先 4 查询小样本，新建 session：
 
 ```powershell
 python run.py init --session shs_pilot01 --limit 4
@@ -139,4 +174,8 @@ python run.py evaluate --session shs_pilot01 --device cuda
 
 语言阶段是 100 候选标题+4图像=104 张；不是重复采集。六层共 324 次曝光。全量 2400 查询共 14700 次。跳过确认用显式 `--yes`，但仍必须手动加载相位；首次联调建议保留确认。
 
-本次没有实测第 5～7 步，因为 SLM 不在此电脑。请勿复用旧 session 名称/record，勿把兼容接口写好等同于完整 ABO 已验证。
+默认 `save_raw_frames=false`：正式采集每张只留 canonical 478×478 PNG 和必要 JSON/记录，
+不另存全幅 raw PNG/TIFF；PNG 压缩级别 1，不做逐图拉伸、log/gamma。
+诊断短测仍保留少量全幅 PNG 供定位问题。需要排查原图才显式改为 true。
+目前只验证 GPU 模型和第一阶段准备，**未完成新光路六阶段实测准确率**。
+勿复用旧 session 名称/record。改曝光或几何后重新建 session，不能混用旧 CCD。

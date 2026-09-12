@@ -14,6 +14,18 @@ import numpy as np
 ROOT=Path(__file__).resolve().parent
 
 
+def save_capture(raw,meta,path,c,canonical,write,identity,rectify=True):
+    """Keep one canonical PNG by default; full-sensor diagnostics are opt-in."""
+    out=Path(path);out.parent.mkdir(parents=True,exist_ok=True)
+    keep_raw=c.get('save_raw_frames',False) or not rectify
+    if keep_raw:Image.fromarray(raw).save(out.with_suffix('.raw.png'),compress_level=1)
+    meta.update(hardware_identity=identity,raw_frame_saved=keep_raw)
+    frame=canonical(raw,c) if rectify else raw
+    if rectify:Image.fromarray(frame).save(out.with_suffix('.png'),compress_level=1)
+    write(out.with_suffix('.json'),meta)
+    return frame
+
+
 def main():
     compat=ROOT/'compat_abo'
     if not compat.exists():compat=ROOT.parent/'ABO_Lab_8um'
@@ -35,17 +47,8 @@ def main():
         def capture(self,bmp,path,rectify=True):
             if bmp is None:raise ValueError('Camera-only capture: use capture.py')
             raw,meta=super().capture(bmp)
-            out=Path(path);out.parent.mkdir(parents=True,exist_ok=True)
-            keep_raw=self.c.get('save_raw_frames',False) or not rectify
-            if keep_raw:
-                rawpath=out.with_suffix('.raw.png');Image.fromarray(raw).save(rawpath,compress_level=1)
-            meta['hardware_identity']=common.hardware_identity(self.c)
-            meta['raw_frame_saved']=keep_raw
-            common.write(out.with_suffix('.json'),meta)
-            if not rectify:return raw
-            frame=hardware.canonical(raw,self.c)
-            Image.fromarray(frame).save(out.with_suffix('.png'),compress_level=1)
-            return frame
+            return save_capture(raw,meta,path,self.c,hardware.canonical,common.write,
+                                common.hardware_identity(self.c),rectify)
     hardware.Bench=Bench
     spec=importlib.util.spec_from_file_location('abo_shs_task',compat/'run.py');task=importlib.util.module_from_spec(spec);spec.loader.exec_module(task)
     # Its ROOT/run.py subprocess entry resolves to THIS adapter, never legacy DVP.
