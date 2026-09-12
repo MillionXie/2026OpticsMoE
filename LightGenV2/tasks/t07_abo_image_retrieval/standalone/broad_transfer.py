@@ -171,6 +171,9 @@ def run_stage(args,stage,output,initial_checkpoint=None):
         for name,p in trainables:
             kind=group_kind(name) if high else parameter_kind(name)
             rate=(cfg[kind+'_lr'] if high or kind!='alpha' else 0.)*lr_multiplier
+            if name.startswith('frontend.merger_fc2.'):
+                from .generalization import merger_learning_rate_multiplier
+                rate*=merger_learning_rate_multiplier(cfg_all)
             optgroups.append(dict(params=[p],lr=rate,initial_lr=rate,kind=kind,
                                   weight_decay=parameter_decay(name,p,kind,cfg_all.get('electronic_weight_decay',0.))))
         if cfg_all.get('electronic_weight_decay',0.):

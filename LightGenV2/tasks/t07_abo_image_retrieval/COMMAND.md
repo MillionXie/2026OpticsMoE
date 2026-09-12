@@ -1165,9 +1165,10 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 
 等待不占CUDA，依赖失败则不启动；不重用已有输出目录。只保存best/last，无周期PT。
 
-## 42. 训练教师目标去除一半公共分量（准备配置，尚未正式运行）
+## 42. 训练教师目标去除一半公共分量（运行中，不要重复启动）
 
-先等第39～41节当前三组结果再决定是否执行。本方法不修改光学直流/相位/CCD后处理，
+第39节已完成并释放GPU1，本组已用0ad91cf8接续，监督2901717/学生2901720；初始79.375%。
+第40～41节继续收尾，没有超出3卡预算。本方法不修改光学直流/相位/CCD后处理，
 只改变训练教师前64维目标；均值仅来自原1440训练行，外部图用同一均值，重新拟合teacher-only坐标。
 与第40节保持同一起点/数据/损失权重/学习率/GT课程。不传旧`--teacher-alignment`；新均值与坐标不参与推理。
 CPU梯度诊断不是性能验收；正式结果仍须正常/去光及固定权重复评原480-query/120-gallery。
@@ -1189,3 +1190,30 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 
 须使用包含该profile的新commit，旧35055dc7尚无此功能；以execution记录实际源码SHA。
 等待/空闲检查不抢GPU，输出目录必须不存在；只保留best/last，不生成周期相位PT。
+
+## 43. 只解冻现有V→L merger最后一个线性层（准备对照）
+
+在第40节结束后检查GPU4，使用包含`domain_distill_joint_merger`的新commit；旧35055dc7没有该profile。
+恢复同一79.375%和训练辅助头；只将原`frontend.merger_fc2`的8,390,656个参数加入优化器，
+学习率为原电子学习率的0.05倍。其它前端冻结，原推理层数/参数总量/光路不变；可训练参数增加须披露。
+用FP32主权重避免小更新被BF16舍入吞掉，输出仍BF16；检查初始与固定79.375%是否一致。
+不加teacher centering，不加入新分支/TF/attention；仍16×128、原cap250二视角、原480/120评估。
+教师仅训练，结束后报告正常/同权重去光；任何新高均独立复核，不能只看训练正确率。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu GPU-1b963983-7909-af6e-0528-f0f0661ab549 \
+  --assets "$T07/runs/simulation/standalone_assets_20260910" \
+  --checkpoint "$T07/runs/simulation/verify_joint_ep8_20260912_gpu1/best.pt" \
+  --target /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --abo /DATA/DATA1/guest3/2026OpticsMoE/data/abo \
+  --pool "$T07/runs/simulation/domain_pool250_20260912" \
+  --teacher-cache "$T07/runs/smoke/domain_distillation_20260912/build_teacher_cache/artifacts/cache.pt" \
+  --teacher-alignment "$T07/runs/simulation/domain_teacher_first_20260912_gpu4/domain_distill_teacher_first/artifacts/teacher_feature_alignment.pt" \
+  --profiles domain_distill_joint_merger --epochs 16 --steps 128 --seed 42 \
+  --output "$T07/runs/simulation/domain_joint_merger_20260912_gpu4" \
+  --after-queue "$T07/runs/simulation/domain_joint_best_restart_20260912_gpu4/status.json"
+```
+
+等待阶段不占CUDA；依赖失败或GPU被其他人使用则停止，不抢占或杀其它任务。只保存best/last。

@@ -42,7 +42,11 @@ class Frontend(nn.Module):
 
     def merge(self, vision):
         x = self.merger_norm(vision.reshape(-1,1024)).view(-1,4096)
-        return self.merger_fc2(self.gelu(self.merger_fc1(x)))
+        x = self.gelu(self.merger_fc1(x))
+        # Optional adaptation keeps this EXISTING linear layer's master weights
+        # in FP32. Preserve the original BF16 interface to image-token insertion;
+        # default frozen profiles take the exact original dtype/computation path.
+        return self.merger_fc2(x.to(self.merger_fc2.weight.dtype)).to(x.dtype)
 
     def embed(self, ids):
         index = torch.searchsorted(self.token_ids, ids)
