@@ -44,7 +44,8 @@ def audit_payload(candidate, reference, settings, qwen=None):
         'lightgen_model_variant': 'optical_router_scale_matched_moe',
         'router_backend': 'optical', 'top_k': 2, 'active_size': 478,
         'expert_size': 224, 'electronic_width': 192, 'ccd_normalization': 'mean_only',
-        'electronic_ffn_hidden_width': 384, 'electronic_ffn_groups': 384,
+        # Config 0 means the unmodified depthwise path (384 runtime groups).
+        'electronic_ffn_hidden_width': 384, 'electronic_ffn_groups': 0,
         'electronic_ffn_spatial_dilation': 1, 'electronic_spatial_kernel_size': 3,
         'electronic_grn': False, 'electronic_global_rank': 0,
         'router_phase_coordinates': 'sigmoid', 'phase_parameterization': 'sigmoid',
@@ -100,6 +101,7 @@ def audit_payload(candidate, reference, settings, qwen=None):
     return {
         'state_checks_passed': True, 'architecture': label, 'alpha': alphas,
         'decoder_parameters': sum(p.numel() for p in expected_head.parameters()),
+        'effective_ffn_groups': 384,
         'same_qwen_decoder_specification': same_qwen_head,
         'optical_parameters_including_router': sum(core[k].numel() for k in PHASE_SHAPES),
         'phase_rms_change_rad_vs_reference': phase_change,
