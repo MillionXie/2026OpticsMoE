@@ -188,6 +188,11 @@ class MultiVideoSettings:
     quality_feature_cache_view_paths: tuple[Path, ...] = ()
     raw_frame_cache_view_paths: tuple[Path, ...] = ()
     training_view_probabilities: tuple[float, ...] = ()
+    paired_view_supervision_weight: float = 0.0
+    paired_view_consistency_weight: float = 0.0
+    training_horizontal_flip_probability: float = 0.0
+    paired_opposite_horizontal_flip_probability: float = 0.0
+    training_temporal_reverse_probability: float = 0.0
     geometry: MultiVideoGeometry = field(default_factory=MultiVideoGeometry)
     target_name: str = "temporal"
     prompt: str = TEMPORAL_PROMPT
