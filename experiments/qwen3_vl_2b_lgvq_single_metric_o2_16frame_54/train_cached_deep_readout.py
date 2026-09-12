@@ -69,6 +69,23 @@ def _initialize_low_rank_linear(
     expand.bias.copy_(source_bias.to(expand.bias.dtype))
 
 
+def _dense_linear_from_state(
+    state: dict[str, torch.Tensor], prefix: str
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Recover one logical dense map from dense or factorized checkpoint keys."""
+
+    weight_name, bias_name = f"{prefix}.weight", f"{prefix}.bias"
+    if weight_name in state:
+        return state[weight_name], state[bias_name]
+    reduce_name = f"{prefix}.reduce.weight"
+    expand_name = f"{prefix}.expand.weight"
+    expand_bias_name = f"{prefix}.expand.bias"
+    if all(name in state for name in (reduce_name, expand_name, expand_bias_name)):
+        weight = state[expand_name].float() @ state[reduce_name].float()
+        return weight, state[expand_bias_name]
+    raise KeyError(f"Checkpoint has no dense or factorized linear map for {prefix}")
+
+
 def _batches(
     payload: dict[str, Any],
     indices: torch.Tensor,
@@ -292,10 +309,13 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
                     ("compact_frame.1", readout.compact_frame[1]),
                     ("compact_output.1", readout.compact_output[1]),
                 ):
+                    source_weight, source_bias = _dense_linear_from_state(
+                        source_readout, name
+                    )
                     _initialize_low_rank_linear(
                         module,
-                        source_readout[f"{name}.weight"],
-                        source_readout[f"{name}.bias"],
+                        source_weight,
+                        source_bias,
                     )
         result = None
     else:
