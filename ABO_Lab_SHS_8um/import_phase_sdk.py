@@ -6,7 +6,7 @@ def main():
     p=argparse.ArgumentParser();p.add_argument('--source',type=Path,required=True);a=p.parse_args()
     out=Path(__file__).resolve().parent/'vendor/phase_hdmi';out.mkdir(parents=True,exist_ok=True)
     files=['SDK/Blink_C_wrapper.dll','SDK/HdmiDisplay.dll','SDK/ImageGen.dll','SDK/sfml-graphics-2.dll',
-           'SDK/sfml-system-2.dll','SDK/sfml-window-2.dll','SDK/vcruntime140.dll',
+           'SDK/sfml-system-2.dll','SDK/sfml-window-2.dll','SDK/vcruntime140.dll','SDK/python38.dll',
            'SDK/Blink_C_wrapper.h','SDK/BlinkSdkExample.py','1920 HDMI User Manual.pdf',
            'LUT Files/19x12_8bit_linearVoltage.lut']
     manifest={}
