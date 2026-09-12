@@ -6,5 +6,18 @@
   "phase_sdk": "C:/Users/Xml12/OneDrive/2026OpticsMoE/ABO_Lab_SHS_8um/vendor/phase_hdmi",
   "phase_lut": "C:/Users/Xml12/OneDrive/2026OpticsMoE/ABO_Lab_SHS_8um/vendor/phase_hdmi/19x12_8bit_linearVoltage.lut",
   "phase_settle_s": 1.0,
+  "phase_startup_cycles": 30,
+  "phase_retry_cycles": 4,
+  "phase_max_attempts": 3,
+  "capture_batch_size": 32,
+  "phase_reference_bank": null,
+  "phase_thresholds": {
+    "minimum_pcc": 0.97,
+    "minimum_margin": 0.01,
+    "maximum_mean_ratio_error": 0.20,
+    "minimum_std": 2.0,
+    "minimum_p99": 16.0,
+    "maximum_saturation_fraction": 0.01
+  },
   "orientation_and_phase_response_verified": false
 }

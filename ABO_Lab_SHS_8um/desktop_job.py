@@ -17,6 +17,13 @@ def write(p,d):
 
 def command(spec):
     action=spec['action']
+    if action=='calibrate':
+        return [sys.executable,str(ROOT/'calibrate.py'),'--config','LAB.local.json','--phases']
+    if action in ('capture_batch','quarantine_batch','accept_batch'):
+        if not re.fullmatch('[A-Za-z0-9_-]{1,80}',spec['session']) or not re.fullmatch('[0-9a-f]{32}',spec['batch_id']):raise ValueError('Invalid guarded batch identity')
+        job=(ROOT/spec['_job_path']).resolve()
+        if not job.is_relative_to(ROOT/'results/dual_jobs'):raise ValueError('Guard job path escape')
+        return [sys.executable,str(ROOT/'guarded_batch.py'),'--spec',str(job)]
     if action=='probe':
         bmp=(ROOT/spec['bmp']).resolve()
         if not bmp.is_relative_to(ROOT):raise ValueError('BMP path escape')
@@ -50,6 +57,7 @@ def main():
     lock=ROOT/'results/dual_jobs/ACTIVE.lock';owned_lock=False;child=None
     try:
         fd=os.open(lock,os.O_CREAT|os.O_EXCL|os.O_WRONLY);os.close(fd);owned_lock=True
+        spec['_job_path']=str(job.relative_to(ROOT))
         cmd=command(spec);write(status,{'state':'running','command':cmd,'pid':os.getpid()})
         with job.with_suffix('.log').open('x',encoding='utf-8') as log:
             child=subprocess.Popen(cmd,cwd=ROOT,stdout=log,stderr=subprocess.STDOUT)

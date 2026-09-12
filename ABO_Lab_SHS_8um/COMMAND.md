@@ -1,5 +1,7 @@
 # 操作顺序（师弟 Windows 高速相机电脑）
 
+**自动六层的新入口：[START_HERE.md](START_HERE.md)。** 已接入相机参考验证、失败有限重试、批前后复查、隔离与续跑；下面保留单设备和旧手动命令供诊断。首次必须先确认SHS四角/方向并建立参考库，不要直接跳过标定。
+
 MNIST v2 已训练相位的独立反灰度导出：在工程根运行
 `python export_mnist_phase.py`，读取 `assets/mnist_v2_original` 中原 BMP/清单，
 写入新的 `generated/phase_inverted/mnist_v2`。只做 `255-g`，保留原中心(980,590)

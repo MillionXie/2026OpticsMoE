@@ -54,8 +54,9 @@ $xml=@"
 Register-ScheduledTask -TaskName '{name}' -Xml $xml | Out-Null
 Start-ScheduledTask -TaskName '{name}'
 '''
-        self.ps(script);started=time.monotonic();last_print=0
+        started=time.monotonic();last_print=0
         try:
+            self.ps(script)
             while True:
                 self.heartbeat(rel)
                 if self.exists(rel+'.result.json') or self.exists(rel+'.status.json'):
@@ -91,33 +92,8 @@ Start-ScheduledTask -TaskName '{name}'
         self.cancel();self.sftp.close();self.ssh.close()
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--link-config',type=Path,default=ROOT/'dual.local.json')
-    p.add_argument('--session',required=True);p.add_argument('--limit',type=int,default=4);a=p.parse_args()
-    import re
-    if not re.fullmatch('[A-Za-z0-9_-]{1,80}',a.session):raise ValueError('Invalid session')
-    link=json.loads(a.link_config.read_text(encoding='utf-8-sig'))
-    if not link.get('orientation_and_phase_response_verified'):
-        raise RuntimeError('Complete joint orientation/phase response calibration before automatic six-stage inference')
-    # Remote context exits BEFORE the phase context: it stops remote capture on failure.
-    with PhaseHDMI(link['phase_sdk'],link['phase_lut'],link.get('phase_settle_s',1)) as phase:
-      with Remote(link) as remote:
-        c=remote.read('LAB.local.json')
-        if not c.get('geometry_confirmed'):raise RuntimeError('SHS ROI not calibrated; do not reuse DVP coordinates')
-        if c['phase_slm'].get('lut_sha256')!=phase.info['lut_sha256']:
-            raise RuntimeError('Pin phase LUT SHA256 in remote phase_slm config; use a new session')
-        if not remote.exists('sessions/'+a.session+'/session.json'):
-            remote.job({'action':'init','session':a.session,'limit':a.limit})
-        audit=[];local=ROOT/'results/dual_runs'/a.session;local.mkdir(parents=True,exist_ok=True)
-        for stage in STAGES:
-            remote.job({'action':'prepare','session':a.session,'stage':stage})
-            mf=remote.read(f'sessions/{a.session}/play/{stage}/manifest.json')
-            if not mf['entries']:continue
-            bmp=local/(stage+'.bmp');remote.download(mf['phase_file'].replace('\\','/'),bmp)
-            receipt=phase.show(bmp,mf['phase_sha256'])
-            result=remote.job({'action':'capture','session':a.session,'stage':stage,'phase_receipt':receipt})
-            audit.append({'stage':stage,**result});(local/'phase_receipts.json').write_text(json.dumps(audit,indent=2),encoding='utf-8')
-        remote.job({'action':'evaluate','session':a.session})
-        remote.download(f'sessions/{a.session}/results/metrics.json',local/'metrics.json')
-        print((local/'metrics.json').read_text(encoding='utf-8'),flush=True)
+    # Keep the original CLI name, but never fall back to unchecked stage loads.
+    from guarded_workflow import main as guarded_main
+    return guarded_main(default_action='run')
 
 if __name__=='__main__':main()

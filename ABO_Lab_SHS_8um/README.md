@@ -1,6 +1,7 @@
 # ABO + SHS 高速相机 / 8 μm SLM
 
-先读 [COMMAND.md](COMMAND.md)。本工程保留 ABO 六阶段的模型/几何约定，**不改变光路**。
+自动六层流程先读 [START_HERE.md](START_HERE.md)：本地SDK换相位，师弟电脑振幅/SHS/GPU；相机参考验证、有限重试和失败批次隔离。首次仍需人工确认方向、四角ROI和六层参考图，不能把代码就绪当成实测验收通过。
+旧单设备/手动流程见 [COMMAND.md](COMMAND.md)。本工程保留 ABO 六阶段的模型/几何约定，**不改变光路**。
 最新联合测试与 RTX4060 推理证据见 [JOINT_RESULTS.md](JOINT_RESULTS.md)。
 给老师的周期分解、数字切换复测、相机独立吞吐和两种SLM理论边界见 [TIMING_REPORT.md](TIMING_REPORT.md)。不要混用100 fps、200 ms等待、Visible和完整任务推理时间。
 本地HDMI相位与远端振幅/相机的单命令入口见 [DUAL_CONTROL.md](DUAL_CONTROL.md)，尚需完成联合方向/相位响应验收，不能当成已验证的六层实测结果。
