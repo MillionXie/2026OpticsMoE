@@ -98,6 +98,61 @@ def test_relation_uses_teacher_affinities_not_coordinate_matching():
     torch.testing.assert_close(c,a)
 
 
+def test_category_kd_removes_within_category_product_order_only():
+    bank=F.normalize(torch.tensor([[1.,0.],[.6,.8],[0.,1.],[-.2,.98],[.9,.1]]),dim=-1)
+    labels=torch.tensor([0,0,1,1,0]);own=torch.tensor([4]);label=torch.tensor([0])
+    query=torch.tensor([[1.,0.]],requires_grad=True)
+    teacher_bank=bank[[1,0,2,3,4]].clone().requires_grad_(True)
+    teacher_query=query.detach().clone().requires_grad_(True)
+    product,pa=gallery_relation_loss(query,own,label,bank,labels,teacher_query,teacher_bank)
+    category,ca=gallery_relation_loss(query,own,label,bank,labels,teacher_query,teacher_bank,level='category')
+    assert product>0.1 and category.abs()<1e-6
+    for key in pa:torch.testing.assert_close(pa[key],ca[key],atol=0,rtol=0)
+    category.backward()
+    assert torch.isfinite(query.grad).all()
+    assert teacher_query.grad is None and teacher_bank.grad is None
+    explicit,_=gallery_relation_loss(query,own,label,bank,labels,teacher_query,teacher_bank,level='product')
+    assert torch.equal(product,explicit)
+    with pytest.raises(ValueError):gallery_relation_loss(query,own,label,bank,labels,teacher_query,teacher_bank,level='test_labels')
+
+
+def test_category_kd_retain_cross_category_gradient_gate_and_self_exclusion():
+    bank=torch.tensor([[1.,0.],[.99,.1],[0.,1.],[.1,.99]],requires_grad=True)
+    labels=torch.tensor([0,0,1,1]);own=torch.tensor([0]);target_label=torch.tensor([0])
+    teacher=torch.tensor([[1.,0.]],requires_grad=True);q=torch.tensor([[.2,.8]],requires_grad=True)
+    args=(q,own,target_label,bank,labels,teacher,bank)
+    loss,audit=gallery_relation_loss(*args,level='category')
+    assert loss>0 and audit['teacher_correct_fraction']==1
+    loss.backward();assert q.grad.abs().sum()>0 and torch.isfinite(q.grad).all()
+    assert teacher.grad is None and bank.grad is None
+    changed=bank.detach().clone();changed[0]=torch.tensor([-3.,7.])
+    actual,_=gallery_relation_loss(q,own,target_label,changed,labels,teacher,changed,level='category')
+    torch.testing.assert_close(actual,loss,atol=0,rtol=0)
+    wrong,audit=gallery_relation_loss(q,own,target_label,bank,labels,torch.tensor([[0.,1.]]),bank,level='category')
+    assert wrong==0 and audit['teacher_correct_fraction']==0
+
+
+def test_category_kd_profile_has_no_inference_or_other_recipe_changes():
+    base=overlay_config({},'domain_distill_joint_restart')
+    new=overlay_config({},'domain_distill_joint_categorykd')
+    assert new.pop('teacher_relation_level')=='category'
+    for cfg in (base,new):cfg.pop('protocol')
+    assert base==new and 'frontend_training' not in new
+
+
+def test_category_marginals_are_stable_under_bf16_autocast():
+    torch.manual_seed(81)
+    q=F.normalize(torch.randn(8,16),dim=-1).requires_grad_()
+    bank=F.normalize(torch.randn(30,16),dim=-1)
+    labels=torch.arange(30)//3;own=torch.arange(8)
+    teacher_query=q.detach().clone()
+    # Teacher and student are identical: normalized category KL must be zero.
+    with torch.autocast('cpu',dtype=torch.bfloat16):
+        value,_=gallery_relation_loss(q,own,labels[:8],bank,labels,teacher_query,bank,level='category')
+    assert value.dtype==torch.float32 and value.abs()<1e-6
+    value.backward();assert torch.isfinite(q.grad).all()
+
+
 def test_wrong_teacher_is_gated_and_self_product_excluded():
     bank=torch.tensor([[1.,0.],[.99,.1],[0.,1.],[.1,.99]])
     labels=torch.tensor([0,0,1,1]);q=torch.tensor([[.8,.2]],requires_grad=True)

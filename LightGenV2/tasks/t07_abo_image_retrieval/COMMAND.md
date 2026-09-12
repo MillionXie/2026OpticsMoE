@@ -1218,3 +1218,29 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 ```
 
 等待阶段不占CUDA；依赖失败或GPU被其他人使用则停止，不抢占或杀其它任务。只保存best/last。
+
+## 44. 按类别边际概率蒸馏，不强制同类内部商品排序（准备对照）
+
+先完成训练集梯度诊断并确认资源，再决定是否运行。此配方从第40节79.375%起点出发，
+将训练商品关系KL改成类别概率之和上的KL，聚合softmax/logsumexp使用FP32。
+仍保留原商品Top1门控和置信度、排除自身商品、教师特征余弦2及GT课程；前端保持冻结。
+无推理分类/类别筛选、无TF/attention或新光层，原数据/480-query/120-gallery不变。
+不叠加42节去均值或43节merger解冻。只保留best/last，任何提升都要独立复核正常/去光。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b \
+  --assets "$T07/runs/simulation/standalone_assets_20260910" \
+  --checkpoint "$T07/runs/simulation/verify_joint_ep8_20260912_gpu1/best.pt" \
+  --target /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --abo /DATA/DATA1/guest3/2026OpticsMoE/data/abo \
+  --pool "$T07/runs/simulation/domain_pool250_20260912" \
+  --teacher-cache "$T07/runs/smoke/domain_distillation_20260912/build_teacher_cache/artifacts/cache.pt" \
+  --teacher-alignment "$T07/runs/simulation/domain_teacher_first_20260912_gpu4/domain_distill_teacher_first/artifacts/teacher_feature_alignment.pt" \
+  --profiles domain_distill_joint_categorykd --epochs 16 --steps 128 --seed 42 \
+  --output "$T07/runs/simulation/domain_joint_categorykd_20260912_gpu2" \
+  --after-queue "$T07/runs/simulation/domain_joint_softgt_20260912_gpu2/status.json"
+```
+
+GPU2为空才开始，不挤占他人任务；3090上出现新高需4090固定权重复核。准备命令不等于已启动训练。
