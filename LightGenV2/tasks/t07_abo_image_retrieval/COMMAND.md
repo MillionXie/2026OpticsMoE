@@ -1536,3 +1536,27 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 ```
 
 不叠加第53节，初始和最终评估仍从原测试/图库图像重新编码；只存best/last，新高单独4090正常/去光复核。
+
+## 55. 训练时仅投影冲突的教师梯度（新候选，先验证再启动）
+
+原数据/光学/推理不变；既有损失分成primary与teacher，只投影教师在共享活动参数上与primary冲突的分量。
+这不是完整PCGrad；GT-only辅助头不投影，不叠加SAM/额外视图/弧度优化，日志见README说明。
+先测试并同步GitHub，再做真实训练图/缓存教师的CPU反向检查；确认GPU4空闲才启动。
+本助手已有GPU2、GPU5，该组最多使总占用达到授权的三张卡；绝不终止其他人的任务。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu GPU-1b963983-7909-af6e-0528-f0f0661ab549 \
+  --assets "$T07/runs/simulation/standalone_assets_20260910" \
+  --checkpoint "$T07/runs/simulation/verify_joint_ep8_20260912_gpu1/best.pt" \
+  --target /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --abo /DATA/DATA1/guest3/2026OpticsMoE/data/abo \
+  --pool "$T07/runs/simulation/domain_pool250_20260912" \
+  --teacher-cache "$T07/runs/smoke/domain_distillation_20260912/build_teacher_cache/artifacts/cache.pt" \
+  --teacher-alignment "$T07/runs/simulation/domain_teacher_first_20260912_gpu4/domain_distill_teacher_first/artifacts/teacher_feature_alignment.pt" \
+  --profiles domain_distill_joint_teacherproject --epochs 16 --steps 128 --seed 42 \
+  --output "$T07/runs/simulation/domain_joint_teacherproject_20260913_gpu4"
+```
+
+初始完整复评必做；参数量/alpha/光路SHA须核验，最终报告正常和同权重去光；只保留best/last。
