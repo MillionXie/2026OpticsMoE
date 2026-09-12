@@ -1,5 +1,25 @@
 # 暂定 CC 0.86205：结构、参数与性能来源核查
 
+## 本地交付证据镜像（2026-09-13）
+
+以下两套已结束的run已从服务器同步到本地同名的`LightGenV2/tasks/t03_saliency/runs/simulation/`：
+
+|run|已核验文件数（不含传输清单自身）|数据字节数|
+|---|---:|---:|
+|`moe_alpha40_sam_spatialcc_kd2_seed42`|36|40097461|
+|`qwen_aligned_head_50_20260912_seed42`|23|19966812|
+
+本地仓库根为`C:/Users/Xml12/OneDrive/2026OpticsMoE`。先核对传输清单本身SHA256，
+再逐一核对全部59个文件的大小/SHA及无多余文件，均通过；两份best仍是上述87ad与baseline689d权重。
+每套的`transfer_manifest_20260913.json`记录源路径和逐文件哈希，其自身SHA依次为：
+
+- 光模型：`6568dbeb7e5c77a835c7dadbb6395d1c61366fd0dd6aa0789054c747871946bd`
+- baseline：`d1b72ff81e679a7d964405f2954086c591a7ad3d03b039cb75de81d2f66b23d0`
+
+这只是约60MB的权重/配置/日志/可视化/复评证据镜像，不包含原始SALICON数据或完整Qwen前端资产，
+也不是实验室硬件就绪ZIP，不说明.87已达标。数据仍由Git忽略，源码只通过Git同步。
+光模型`best_visualization/best_phase_overview.png`是相对相位可视化，不能作为SLM BMP直接加载。
+
 ## 2026-09-13：可执行的权重结构检查
 
 `audit_checkpoint.py` 只用CPU，将候选与上述正式87ad参考权重逐项核对：完整core/head张量名、

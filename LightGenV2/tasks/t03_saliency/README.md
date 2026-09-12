@@ -17,6 +17,8 @@ batch32为.87478750，固定batch复评可复现该微小数值差异，完整�
 半径.5组因第5/10轮连续回落已停止，保留best第1轮与last第10轮；不是完成50轮。
 本任务当前仅保留GPU3/PID484872的小半径.1组，第5轮CC=.86130864，尚未超过正式候选。
 所有baseline复评已结束并释放其进程；未停止其他人的任务。
+已将正式87ad候选和本次50轮baseline的59个文件同步到本地同名runs目录并逐项验证SHA；
+它们是交付证据镜像，不是硬件就绪ZIP，也不是新的.87结果。位置和清单见下方候选核查文档。
 具体说明见[50轮baseline](reports/reproduction/BASELINE50_20260912.md)与
 [可靠教师训练](reports/reproduction/RELIABLE_TEACHER_20260912.md)。
 不改Merger、推理结构、光路、Top2、alpha下限或直流扰动。同一助手最多两张GPU。
