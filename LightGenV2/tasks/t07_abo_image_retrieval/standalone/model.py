@@ -129,10 +129,12 @@ class OpticalRetrieval(nn.Module):
         if not 0<=bounds[0]<bounds[1]<=1:raise ValueError('Invalid alpha bounds')
         self.frontend = Frontend(metadata['token_count']).to(torch.bfloat16)
         frontend_training=metadata.get('frontend_training','frozen')
-        if frontend_training not in ('frozen','merger_fc2'):
+        if frontend_training not in ('frozen','merger_fc2','patch'):
             raise ValueError('Unknown compact frontend training contract')
         if frontend_training=='merger_fc2':
             self.frontend.merger_fc2.float().requires_grad_(True)
+        if frontend_training=='patch':
+            self.frontend.patch.float().requires_grad_(True)
         kernels=metadata.get('electronic_context_kernels',{})
         if set(kernels)-{'vision','language'}:raise ValueError('Unknown electronic kernel modality')
         mlp_width=metadata.get('electronic_mlp_width',384)

@@ -1619,3 +1619,27 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 ```
 
 只存best/last；有新高也先独立正常/同权重去光复核，不能用训练提升或类别路由指标替代原Hit@1。
+
+## 58. 轻量适配已有patch输入卷积（待测试提交）
+
+只解冻已有patch Conv3d的两个参数，不增加推理层/分支。其它前端冻结；相位正常参与原训练，光学源码/ROI/Top2/alpha不变。
+1573888参数从冻结转为训练；总参数量不变。FP32主权重、原BF16计算接口，patch基础LR7.5e-7。
+原未校准79.375%起点和joint_restart原2:2采样/损失，单独对照，不叠加第55–57节。
+先通过测试并发布源码，检查真实训练图的初始化输出与梯度，再核验GPU1空闲启动；不超过三张属于本任务的卡。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d \
+  --assets "$T07/runs/simulation/standalone_assets_20260910" \
+  --checkpoint "$T07/runs/simulation/verify_joint_ep8_20260912_gpu1/best.pt" \
+  --target /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --abo /DATA/DATA1/guest3/2026OpticsMoE/data/abo \
+  --pool "$T07/runs/simulation/domain_pool250_20260912" \
+  --teacher-cache "$T07/runs/smoke/domain_distillation_20260912/build_teacher_cache/artifacts/cache.pt" \
+  --teacher-alignment "$T07/runs/simulation/domain_teacher_first_20260912_gpu4/domain_distill_teacher_first/artifacts/teacher_feature_alignment.pt" \
+  --profiles domain_distill_joint_patch --epochs 16 --steps 128 --seed 42 \
+  --output "$T07/runs/simulation/domain_joint_patch_20260913_gpu1"
+```
+
+初始成绩重新完整复评；只存best/last，新高须独立正常/去光复核。报告须注明patch已训练，不能称整个Qwen输入头冻结。

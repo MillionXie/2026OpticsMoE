@@ -17,6 +17,7 @@ PINNED_TEACHER_PROFILES += ('domain_distill_joint_whitezoom',)
 PINNED_TEACHER_PROFILES += ('domain_distill_joint_teacherproject',)
 PINNED_TEACHER_PROFILES += ('domain_distill_joint_languagefull',)
 PINNED_TEACHER_PROFILES += ('domain_distill_joint_mix13',)
+PINNED_TEACHER_PROFILES += ('domain_distill_joint_patch',)
 REFIT_TEACHER_PROFILES = ('domain_distill_refit250', 'domain_distill_refit500')
 
 PROFILES = ('preserve_adam', 'preserve_sam', 'preserve_fullfield_sam', 'preserve_fullfield_both_sam',
@@ -70,6 +71,13 @@ def merger_learning_rate_multiplier(config):
     return float(value)
 
 
+def patch_learning_rate_multiplier(config):
+    value=config.get('patch_learning_rate_multiplier',1.)
+    if isinstance(value,bool) or not isinstance(value,(int,float)) or not math.isfinite(value) or not 0<value<=1:
+        raise ValueError('Existing patch learning-rate multiplier must be in (0,1]')
+    return float(value)
+
+
 def initialize_category_proxies(head, features, labels, preserve_restored=False):
     """Do not overwrite restored training proxies during epoch-zero preparation.
 
@@ -107,6 +115,11 @@ def restore_auxiliary_head(head, payload, actual_sha256, expected_sha256):
 
 
 def overlay_config(config, profile):
+    if profile=='domain_distill_joint_patch':
+        config=overlay_config(config,'domain_distill_joint_restart')
+        overlay=json.loads(Path(__file__).with_name('domain_distillation.json').read_text(encoding='utf-8'))
+        config.update(overlay['profiles'][profile])
+        return config
     if profile=='domain_distill_joint_mix13':
         config=overlay_config(config,'domain_distill_joint_restart')
         overlay=json.loads(Path(__file__).with_name('domain_distillation.json').read_text(encoding='utf-8'))
@@ -205,9 +218,10 @@ def apply_contract(payload, config):
     metadata.update(input_preprocessing=config['input_preprocessing'],
                     ccd_readout_modes=config['ccd_readout_modes'])
     if 'frontend_training' in config:
-        if config['frontend_training'] not in ('frozen','merger_fc2'):
+        if config['frontend_training'] not in ('frozen','merger_fc2','patch'):
             raise ValueError('Unknown compact frontend training contract')
         merger_learning_rate_multiplier(config)
+        patch_learning_rate_multiplier(config)
         metadata['frontend_training']=config['frontend_training']
     if 'phase_dropout' in config:metadata['phase_dropout']=config['phase_dropout']
     result=dict(payload, metadata=metadata)

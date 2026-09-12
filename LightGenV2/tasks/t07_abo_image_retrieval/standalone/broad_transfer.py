@@ -2,7 +2,9 @@
 
 The normalized category proxy head is training-only. No full Qwen/teacher forward.
 One GPU; original profile freezes alpha, high_alpha enforces a strict >0.4 floor.
-Qwen frontend is frozen in both profiles. Extra optical heads are training-only.
+Original/high_alpha profiles freeze the frontend; explicit domain controls may
+adapt an existing frontend submodule, recorded in model.audit(). Extra optical
+heads are training-only.
 """
 import argparse
 import csv
@@ -180,6 +182,9 @@ def run_stage(args,stage,output,initial_checkpoint=None):
             if name.startswith('frontend.merger_fc2.'):
                 from .generalization import merger_learning_rate_multiplier
                 rate*=merger_learning_rate_multiplier(cfg_all)
+            if name.startswith('frontend.patch.'):
+                from .generalization import patch_learning_rate_multiplier
+                rate*=patch_learning_rate_multiplier(cfg_all)
             optgroups.append(dict(params=[p],lr=rate,initial_lr=rate,kind=kind,
                                   weight_decay=parameter_decay(name,p,kind,cfg_all.get('electronic_weight_decay',0.))))
         if cfg_all.get('electronic_weight_decay',0.):

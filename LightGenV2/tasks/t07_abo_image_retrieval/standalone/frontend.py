@@ -1,7 +1,8 @@
-"""Frozen Qwen patch/position/merger and compact token embeddings, no TF classes.
+"""Compact Qwen patch/position/merger and token embeddings, no TF classes.
 
 Fixed 224x224 image and audited fixed prompt only. Changing the prompt requires
 re-exporting its embedding rows, rather than silently mapping unknown tokens.
+Frozen by default; explicit controls can train existing patch or merger_fc2.
 """
 import torch
 from torch import nn
@@ -31,7 +32,14 @@ class Frontend(nn.Module):
         self.requires_grad_(False)
 
     def patches(self, pixels, batch):
-        x = self.patch(pixels.view(-1,3,2,16,16).to(self.patch.weight.dtype)).view(-1,1024)
+        if self.patch.weight.dtype != self.position.weight.dtype:
+            # Optional FP32 patch master weights; retain the EXISTING BF16
+            # convolution/interface, including on CPU. No new inference layer.
+            dtype=self.position.weight.dtype
+            x = torch.nn.functional.conv3d(pixels.view(-1,3,2,16,16).to(dtype),
+                self.patch.weight.to(dtype),self.patch.bias.to(dtype),stride=self.patch.stride).view(-1,1024)
+        else:
+            x = self.patch(pixels.view(-1,3,2,16,16).to(self.patch.weight.dtype)).view(-1,1024)
         ids = self.position_ids.repeat(1, batch)
         weights = self.position_weights.to(self.position.weight.dtype).repeat(1, batch)
         p = self.position(ids)*weights[:, :, None]
