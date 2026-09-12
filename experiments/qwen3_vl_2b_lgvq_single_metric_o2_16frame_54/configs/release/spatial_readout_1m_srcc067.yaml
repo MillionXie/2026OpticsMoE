@@ -1,0 +1,21 @@
+# Formal 967,458-parameter Spatial readout candidate.  It preserves the four
+# optical stages, optical Top-2 routers, 109x109 experts and the alpha>=0.42
+# same-RMS fusion contract.  Only already-present scalar gates are calibrated;
+# no inference module or parameter is added.
+base_config: spatial_readout_1m_phase_refine_s1327.yaml
+output_dir: ../../../../LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_readout_1m_srcc067
+random_seed: 1342
+
+router:
+  parallel_temperature: 2.0
+  serial_temperature: 2.0
+  serial_visual_token_gain: 1.20
+
+model:
+  spatial_compact_residual_scale: 0.40
+  spatial_residual_max: 2.0262
+
+training:
+  initialization_checkpoint: ../../../../LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_readout_1m_srcc067/best_checkpoint.pt
+  epochs: 1
+  phase_snapshot_interval_epochs: 0
