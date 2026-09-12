@@ -1,0 +1,18 @@
+base_config: moe_alpha40_extra_control.yaml
+# Metric-focused short polish. The image-supervision objective is only GT CC;
+# existing optical/router regularizers remain, so total loss is not only CC.
+# Same fixed 87ad source and batch32/LRs as extra_control; no architecture edits.
+loss:
+  kl_weight: 0.0
+  cc_weight: 1.5
+  sim_weight: 0.0
+  nss_weight: 0.0
+training:
+  student_epochs: 20
+  staged:
+    polish_start: 16
+distillation:
+  initial_weight: 0.0
+  final_weight: 0.0
+  end_epoch: 20
+output_dir: ../runs/simulation/moe_alpha40_cc_only_polish_20260913_seed42

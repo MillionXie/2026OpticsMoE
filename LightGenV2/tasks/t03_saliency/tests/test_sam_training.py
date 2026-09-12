@@ -183,3 +183,32 @@ def test_small_batch_sam_keeps_frontend_and_physics_with_image_scaled_updates():
               'language_optical_phase_zero_order_intensity_max']:
         assert getattr(a,k) == getattr(b,k)
     assert not b.pyramid_cc and not b.asam and not b.augmentation_enabled
+
+
+def test_cc_only_polish_keeps_model_regularizers_and_evaluation():
+    from LightGenV2.tasks.t03_saliency.training_support import task_saliency_loss
+    from experiments.qwen3_vl_embedding_2b_salicon_vision_optical_saliency.objectives import (
+        density_from_logits, normalize_density, correlation_coefficient,
+    )
+    root=Path(__file__).resolve().parents[1]/'configs'
+    a=load_settings(root/'moe_alpha40_extra_control.yaml')
+    b=load_settings(root/'moe_alpha40_cc_only_polish_20260913.yaml')
+    assert architecture_label(a)==architecture_label(b)
+    assert b.student_epochs==20 and b.staged_polish_start==16
+    assert b.distillation_initial_weight==b.distillation_final_weight==0
+    assert b.kl_weight==b.sim_weight==b.nss_weight==0 and b.cc_weight==1.5
+    for key in ['initialization_checkpoint_sha256','student_batch_size','inference_batch_size',
+                'student_learning_rate','phase_learning_rate','router_learning_rate','ema_decay',
+                'sam_rho','router_balance_estimator','router_balance_weight','router_importance_weight',
+                'router_hard_load_balance_weight','phase_dc_weight','ccd_operating_point_weight',
+                'fusion_alpha_min','top_k','language_optical_phase_zero_order_intensity_min',
+                'language_optical_phase_zero_order_intensity_max']:
+        assert getattr(a,key)==getattr(b,key)
+    b.map_kd_weight=0.
+    logits=torch.randn(3,1,8,8,requires_grad=True)
+    gt=torch.rand_like(logits)+.1
+    value,_=task_saliency_loss(logits,gt,torch.ones_like(gt),b,teacher_logits=None)
+    expected=1.5*(1-correlation_coefficient(density_from_logits(logits),normalize_density(gt)))
+    torch.testing.assert_close(value,expected)
+    value.backward()
+    assert torch.isfinite(logits.grad).all() and logits.grad.abs().sum()>0
