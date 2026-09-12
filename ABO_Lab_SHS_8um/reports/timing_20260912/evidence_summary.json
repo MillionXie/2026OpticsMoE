@@ -1,0 +1,154 @@
+{
+  "digit_test": {
+    "source_commit": "94c8db65f239a1831639a404c2e18814707e24a9",
+    "report_relative_path": "results/digit_timing_20260912/report.json",
+    "report_sha256": "3c1555429a0434d7012cb95efae548c588fe04bdad85d783897dbd5f968b8c00",
+    "correct": 20,
+    "n": 20,
+    "minimum_pcc": 0.9863322973251343,
+    "cycles_per_s": 3.509036215658217,
+    "timing_ms": {
+      "bmp_validate_ms": {
+        "mean": 0.6828799999311741,
+        "min": 0.4794999986188486,
+        "max": 1.2019999994663522,
+        "p50": 0.6441000004997477,
+        "p95": 1.18062500087035
+      },
+      "slm_preload_ms": {
+        "mean": 8.759360000203742,
+        "min": 3.0471999998553656,
+        "max": 18.37569999952393,
+        "p50": 8.23004999983823,
+        "p95": 15.900190000957084
+      },
+      "slm_show_to_visible_ms": {
+        "mean": 0.8415649997914443,
+        "min": 0.5891000000701752,
+        "max": 1.2989999995625112,
+        "p50": 0.8132999992085388,
+        "p95": 1.0658699990926837
+      },
+      "settle_actual_ms": {
+        "mean": 204.80909500001871,
+        "min": 200.00599999912083,
+        "max": 210.68010000089998,
+        "p50": 204.70455000031507,
+        "p95": 209.7092000005432
+      },
+      "final_fresh_ms": {
+        "mean": 69.870020000144,
+        "min": 69.02480000098876,
+        "max": 70.65780000084487,
+        "p50": 70.01000000127533,
+        "p95": 70.40947000041342
+      },
+      "capture_total_ms": {
+        "mean": 284.96292000008907,
+        "min": 279.429700000037,
+        "max": 290.5471000012767,
+        "p50": 284.8864500010677,
+        "p95": 290.35215999956563
+      },
+      "diagnostic_full_png_save_ms": {
+        "mean": 33.1889549999687,
+        "min": 32.19429999990098,
+        "max": 34.47699999924225,
+        "p50": 33.14974999921105,
+        "p95": 34.246909999455966
+      }
+    }
+  },
+  "camera_benchmarks": [
+    {
+      "path": "results/camera_steady2250_buffer_1_20260912/benchmark.json",
+      "sha256": "43321a2b48b2c30b1ee005d728e2131c8b54fe2f165a0b722eaa4e0c033b86cb",
+      "complete": true,
+      "restored": true,
+      "mode": "buffer",
+      "received_frames": 1000,
+      "elapsed_s": 0.44443219999993744,
+      "host_received_fps": 2250.0619892081195,
+      "skipped_sensor_frame_ids": 0,
+      "same_mode_warmup": {
+        "seconds": 2.000248599999395,
+        "received_frames": 4756
+      }
+    },
+    {
+      "path": "results/camera_steady2250_buffer_2_20260912/benchmark.json",
+      "sha256": "7e6edb342b01b35480a88e1676a5107e64f46993bf5a4c5a1d10c5adc2755443",
+      "complete": true,
+      "restored": true,
+      "mode": "buffer",
+      "received_frames": 1000,
+      "elapsed_s": 0.44433180000123684,
+      "host_received_fps": 2250.570407063407,
+      "skipped_sensor_frame_ids": 0,
+      "same_mode_warmup": {
+        "seconds": 2.00034290000076,
+        "received_frames": 4756
+      }
+    },
+    {
+      "path": "results/camera_steady2250_buffer_3_20260912/benchmark.json",
+      "sha256": "de5e2369165f809e2e8f76403cd1da42b41f932ba87130a949cec0a9a133c9ac",
+      "complete": true,
+      "restored": true,
+      "mode": "buffer",
+      "received_frames": 1000,
+      "elapsed_s": 0.44397489999937534,
+      "host_received_fps": 2252.3795827228228,
+      "skipped_sensor_frame_ids": 0,
+      "same_mode_warmup": {
+        "seconds": 2.0007401999992,
+        "received_frames": 4757
+      }
+    },
+    {
+      "path": "results/camera_steady2250_copy_1_20260912/benchmark.json",
+      "sha256": "d9b59bd12923d82d8f96d258d4d3fe87ec5c8c5fb6c4b39329521b81c62724a2",
+      "complete": true,
+      "restored": true,
+      "mode": "copy",
+      "received_frames": 1000,
+      "elapsed_s": 1.409272200000487,
+      "host_received_fps": 709.586125377095,
+      "skipped_sensor_frame_ids": 2170,
+      "same_mode_warmup": {
+        "seconds": 2.001122600000599,
+        "received_frames": 1401
+      }
+    },
+    {
+      "path": "results/camera_steady2250_copy_2_20260912/benchmark.json",
+      "sha256": "90f5cf504b9890189e11afb3fcd457e83fb927cb4de62eb38e5da8df809c8060",
+      "complete": true,
+      "restored": true,
+      "mode": "copy",
+      "received_frames": 1000,
+      "elapsed_s": 2.023325100000875,
+      "host_received_fps": 494.2359485381601,
+      "skipped_sensor_frame_ids": 3549,
+      "same_mode_warmup": {
+        "seconds": 2.00049559999934,
+        "received_frames": 845
+      }
+    },
+    {
+      "path": "results/camera_steady2250_copy_3_20260912/benchmark.json",
+      "sha256": "cdced872ce6f45d125dd50bd02f52cef0e93667991753afffbb91502073c413b",
+      "complete": true,
+      "restored": true,
+      "mode": "copy",
+      "received_frames": 1000,
+      "elapsed_s": 1.2951757999999245,
+      "host_received_fps": 772.0959579387279,
+      "skipped_sensor_frame_ids": 1912,
+      "same_mode_warmup": {
+        "seconds": 2.0005033999987063,
+        "received_frames": 1213
+      }
+    }
+  ]
+}

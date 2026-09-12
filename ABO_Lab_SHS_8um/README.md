@@ -2,6 +2,7 @@
 
 先读 [COMMAND.md](COMMAND.md)。本工程保留 ABO 六阶段的模型/几何约定，**不改变光路**。
 最新联合测试与 RTX4060 推理证据见 [JOINT_RESULTS.md](JOINT_RESULTS.md)。
+给老师的周期分解、数字切换复测、相机独立吞吐和两种SLM理论边界见 [TIMING_REPORT.md](TIMING_REPORT.md)。不要混用100 fps、200 ms等待、Visible和完整任务推理时间。
 
 实測证据和吞吐边界见 [BRINGUP_RESULTS.md](BRINGUP_RESULTS.md)；2250 fps 的 Python 直取短测有跳帧，不宣称已实现满速无丢帧。
 
