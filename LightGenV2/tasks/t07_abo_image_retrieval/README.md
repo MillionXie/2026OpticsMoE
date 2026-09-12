@@ -59,6 +59,8 @@ Router使用最短角差EMA，避免跨0/2π时raw平均变成π；专家/global
 V/L相位圆周RMS更新约0.0001866/0.0001170 rad，只变两个Router，更新后前向有限，磁盘原权重不变且未占CUDA。
 该检查使用描述子smoke损失，不是完整训练或性能测试；证据为固定最佳`evaluation/diagnostics/router_radian_cpu_step.json`。
 队列监督3357893已启动，等待GPU1的routerorigin结束；等待阶段没有学生子进程或CUDA上下文，不占第四张卡。
+依赖routerorigin已完成并释放旧进程/CUDA，监督3357893已接续学生3378938；execution确认a28a8438和radians坐标。
+完整原480-query/120-gallery初始评估仍79.375%，尚未有新高；该方法没有修改初始相位来获得成绩。
 
 损失强度候选`domain_distill_joint_feature8`：从固定79.375%起点，仅将已有逐图64维教师余弦权重2提高至8。
 教师坐标/正确性门控、关系KL0.3、GT课程、数据、基础LR和16×128seed42保持原joint_restart设置。
@@ -91,7 +93,7 @@ GPU1/2的既有对照保持原source worktree；本次未启动第四张GPU。
 结果在该run的`final_report.json`，SHA=`1f85428174b4d7112fcacf9190412fff5975d58c9234718af6f3811cc9a2bdea`；
 保持原480-query/120-gallery、原权重和数据，不增加TTA/重排或从多个精度结果拼接预测。
 
-初始化对照`domain_distill_joint_routerorigin`（运行中，未有完成结果）：当前79.375%权重的V/L router，
+初始化对照`domain_distill_joint_routerorigin`（16轮已完成，无新高、不采用）：当前79.375%权重的V/L router，
 在有输入的196×224、77×224区域内均有50%像素的sigmoid值<0.01或>0.99；专家/global没有这种边界饱和。
 尝试将整幅router相位统一加π/2后按2π取模，再逆sigmoid存回原FP32 raw参数。
 四分之一圈是固定初始化选择，不按测试查询逐图调节。实际权重计算中，饱和比例可降至V0.2528%、L1.2639%。
@@ -110,6 +112,8 @@ GPU1/2的既有对照保持原source worktree；本次未启动第四张GPU。
 完整GPU初始原协议重新计算仍79.375%，计划16×128/seed42；不直接抄用旧成绩，不覆盖原最佳。
 训练参数变化统计以平移后的初始化为起点，不把固定π/2偏置计入“学到的相位变化”。
 命令第45节。饱和诊断不等于已证明它限制了测试性能，也不承诺含漏光/8-bit量化的硬件等价。
+最终selected_epoch=-1，正常79.375%、去光62.9167%，选中平移后的初始权重而不是训练产生的新高。
+正式最佳仍保持原未平移checkpoint。监督3144821/学生3144831退出，GPU1已释放并接续第48节弧度坐标训练。
 
 训练对照`domain_distill_joint_categorykd`（16轮完成，没有新高、不采用）：原指标以同类别商品为相关，
 因此尝试只蒸馏教师/学生在10类上的概率质量，而不是要求同类内部也保持教师的商品排序。

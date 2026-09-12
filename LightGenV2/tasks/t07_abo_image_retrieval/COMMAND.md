@@ -1249,10 +1249,11 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 
 GPU2为空才开始，不挤占他人任务；3090上出现新高需4090固定权重复核。已存在该run时不要重复执行。
 
-## 45. Router整幅相位平移π/2的初始化对照（运行中，不要重复启动）
+## 45. Router整幅相位平移π/2的初始化对照（完成无新高，仅供复现）
 
 仅给V/L两个router的整幅224×224相位加π/2取模，存成原格式raw sigmoid参数。
 已用2421826f启动，监督3144821/学生3144831；两端174项测试及真实4图CPU检查通过，完整GPU初始复评仍79.375%。
+16轮完成，选择平移后初始权重（epoch=-1），正常79.375%、去光62.9167%；不采用，正式最佳仍未平移。旧进程/CUDA已释放。
 目的是减少约一半像素处于sigmoid边界的情况；不是改传播、ROI、相位编码或增加网络。
 理想CCD有全局相位不变性，但含未调制/bypass光时不等价；保留现有训练噪声，并明确这项初始化差异。
 必须重新计算完整原协议初始分数，不能因为理论近似不变就抄用79.375%。
@@ -1327,13 +1328,15 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
   --output "$T07/runs/simulation/domain_joint_feature8_20260912_gpu2"
 ```
 
-## 48. Router按物理相位弧度做Adam更新（已排队，不占第四张卡）
+## 48. Router按物理相位弧度做Adam更新（运行中，不重复启动）
 
 训练前向、光路、ROI、Top2、alpha及保存格式不变；仅两个Router采用弧度坐标Adam及角度EMA。
 只在backward和optimizer.step之间临时转换，不能在该上下文内前向或保存。
 不叠加第45节初始化平移、第46节相位优先或第47节强教师。固定原79.375%权重，初始评估需重算。
 先完成测试并同步GitHub、真实输入梯度检查，再按下列命令接续第45节；依赖未完成时不分配CUDA。
 已用a28a8438启动监督3357893等待依赖；两端187项测试及真实4图CPU一步检查通过，不要重复排队。
+第45节已正常完成并释放GPU1，当前学生3378938已接续，execution确认radians配置；不占第四张卡。
+完整初始原协议评估79.375%；等待训练后成绩，不把该初始值报成训练提升。
 
 ```bash
 T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
