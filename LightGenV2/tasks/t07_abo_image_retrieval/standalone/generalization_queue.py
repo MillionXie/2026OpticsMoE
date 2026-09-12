@@ -17,6 +17,9 @@ from .randomness import training_seed
 PINNED_TEACHER_PROFILES = ('domain_distill_teacher_continue', 'domain_distill_teacher_continue_sam', 'domain_distill_teacher_continue_softgt', 'domain_distill_teacher_continue_fp32gallery', 'domain_distill_joint_curriculum', 'domain_distill_vision_patch', 'domain_distill_joint_restart', 'domain_distill_joint_restart_softgt', 'domain_distill_joint_merger', 'domain_distill_joint_categorykd', 'domain_distill_joint_routerorigin', 'domain_distill_joint_phasefirst', 'domain_distill_joint_feature8', 'domain_distill_joint_routerradian', 'domain_distill_joint_mlp768')
 
 
+PINNED_TEACHER_PROFILES += ('domain_distill_joint_routerradian_fast',)
+
+
 def dependency_state(path, expected_gpu):
     """Read-only dependency check. A partial heartbeat write is retried.
 
