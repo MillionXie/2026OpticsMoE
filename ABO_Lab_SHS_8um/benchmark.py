@@ -20,6 +20,15 @@ def main():
             camera.set('AcquisitionFrameRate',a.fps);camera.set('ExposureTime',a.exposure_us)
             report['settings']=snapshot(camera);camera.start()
             for _ in range(8):camera.grab()
+            # Switching from validated/copy warmup to buffer-only can drain a
+            # backlog faster than the sensor generates NEW frames. Warm up in
+            # the SAME mode before timing; never call a backlog burst sensor fps.
+            warm_started=time.perf_counter();warm_frames=0
+            while time.perf_counter()-warm_started<2.0:
+                if a.mode=='copy':camera.grab()
+                else:camera.receive_buffer_only()
+                warm_frames+=1
+            report['same_mode_warmup']={'seconds':time.perf_counter()-warm_started,'received_frames':warm_frames}
             rows=[];t=time.perf_counter()
             for _ in range(a.frames):
                 if a.mode=='copy':frame,meta=camera.grab()
