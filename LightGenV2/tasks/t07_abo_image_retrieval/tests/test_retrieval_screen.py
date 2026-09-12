@@ -1,7 +1,7 @@
 from collections import Counter
 import pytest
 import torch
-from LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_screen import coil_records, validate_rows, rank_instances
+from LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_screen import coil_records, validate_rows, rank_instances, grocery_records
 
 
 def test_coil_fixed_complete_split_and_angular_gap():
@@ -47,3 +47,29 @@ def test_invalid_vectors_fail(bad):
     elif bad == 'nan': z[0, 0] = float('nan')
     else: z = z[:, :32]
     with pytest.raises(ValueError): rank_instances(z, rows)
+
+
+def test_category_protocol_does_not_claim_unseen_products():
+    rows = [dict(sample_id=s, product_id='fine_class:0', split=s, image_path=s+'.jpg') for s in ['train','query','gallery']]
+    with pytest.raises(ValueError): validate_rows(rows)
+    assert len(validate_rows(rows, disjoint_products=False)['query']) == 1
+    rows[1]['image_path'] = rows[0]['image_path']
+    with pytest.raises(ValueError, match='Duplicate image path'): validate_rows(rows, disjoint_products=False)
+
+
+def test_grocery_keeps_all_official_rows_without_subset_selection(tmp_path, monkeypatch):
+    import csv
+    from LightGenV2.tasks.t07_abo_image_retrieval.standalone import retrieval_screen as module
+    with (tmp_path/'classes.csv').open('w', newline='', encoding='utf-8') as f:
+        writer=csv.writer(f)
+        writer.writerow(['Class ID (int)','Coarse Class ID (int)','Iconic Image Path (str)'])
+        writer.writerows((i,i//2,f'/iconic/{i}.jpg') for i in range(81))
+    for split,count in [('train',2640),('test',2485),('val',296)]:
+        with (tmp_path/f'{split}.txt').open('w',newline='',encoding='utf-8') as f:
+            csv.writer(f).writerows((f'{split}/{i}.jpg',i%81,(i%81)//2) for i in range(count))
+    monkeypatch.setattr(module,'sha256',lambda p:str(p))
+    rows=grocery_records(tmp_path)
+    assert Counter(r['split'] for r in rows)==dict(train=2640,query=2485,gallery=81,unused_validation=296)
+    assert {r['fine_class_id'] for r in rows if r['split']=='gallery'}==set(range(81))
+    monkeypatch.setattr(module,'sha256',lambda p:'same-bytes')
+    with pytest.raises(ValueError,match='Exact image duplication'): grocery_records(tmp_path)

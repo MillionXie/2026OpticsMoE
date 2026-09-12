@@ -4,6 +4,7 @@ The optical path imports only the existing compact student. Full Qwen is loaded
 only by the separate qwen64 command, never by the optical command.
 """
 import argparse
+import csv
 import hashlib
 import json
 import os
@@ -38,7 +39,7 @@ def coil_records():
     return rows
 
 
-def validate_rows(rows):
+def validate_rows(rows, *, disjoint_products=True):
     if not rows or len({r['sample_id'] for r in rows}) != len(rows):
         raise ValueError('Empty or duplicate sample identities')
     groups = {split: [r for r in rows if r['split'] == split] for split in ('train', 'gallery', 'query')}
@@ -47,8 +48,10 @@ def validate_rows(rows):
     train = {r['product_id'] for r in groups['train']}
     gallery = {r['product_id'] for r in groups['gallery']}
     query = {r['product_id'] for r in groups['query']}
-    if train & (gallery | query) or not query <= gallery:
+    if (disjoint_products and train & (gallery | query)) or not query <= gallery:
         raise ValueError('Training/test product leakage or missing positives')
+    if len({r['image_path'] for r in rows}) != len(rows):
+        raise ValueError('Duplicate image path across protocol rows')
     return groups
 
 
@@ -94,7 +97,10 @@ def load_screen(manifest, root):
     data = json.loads(manifest.read_text(encoding='utf-8'))
     if data.get('schema') != 1:
         raise ValueError('Unknown screen schema')
-    groups = validate_rows(data['rows'])
+    if data.get('protocol') not in ('heldout40_objects_four_gallery_views_eight_queries_v1',
+                                    'grocery81_official_test_to_iconic_v1'):
+        raise ValueError('Unknown predeclared retrieval protocol')
+    groups = validate_rows(data['rows'], disjoint_products=data['protocol'] != 'grocery81_official_test_to_iconic_v1')
     # No target images are used for fitting. Check every declared image identity.
     root = root.resolve()
     for row in data['rows']:
@@ -102,6 +108,69 @@ def load_screen(manifest, root):
         if not path.is_relative_to(root) or sha256(path) != row['image_sha256']:
             raise ValueError('Image path or SHA changed')
     return data, groups
+
+
+def grocery_records(root):
+    """Official images/splits, 81 iconic gallery images, fine-class relevance.
+
+    Here product_id is a RELEVANCE LABEL, not a physical item identifier. The
+    official split does not establish unseen physical-product generalization.
+    """
+    root = root.resolve()
+    rows = []
+    with (root / 'classes.csv').open(encoding='utf-8', newline='') as f:
+        classes = list(csv.DictReader(f))
+    labels = {int(r['Class ID (int)']) for r in classes}
+    if labels != set(range(81)) or len(classes) != 81:
+        raise ValueError('Require all 81 official fine classes')
+    for c in classes:
+        label = int(c['Class ID (int)'])
+        rows.append(dict(sample_id=f'iconic:{label}', product_id=f'fine_class:{label}',
+            split='gallery', image_path=c['Iconic Image Path (str)'].lstrip('/'),
+            fine_class_id=label, coarse_class_id=int(c['Coarse Class ID (int)'])))
+    for name, split in [('train', 'train'), ('test', 'query'), ('val', 'unused_validation')]:
+        with (root / f'{name}.txt').open(encoding='utf-8', newline='') as f:
+            for row in csv.reader(f, skipinitialspace=True):
+                if len(row) != 3:
+                    raise ValueError('Invalid official split row')
+                path, fine, coarse = row
+                fine, coarse = int(fine), int(coarse)
+                if fine not in labels:
+                    raise ValueError('Unknown fine class')
+                rows.append(dict(sample_id=path, product_id=f'fine_class:{fine}', split=split,
+                    image_path=path, fine_class_id=fine, coarse_class_id=coarse))
+    groups = validate_rows(rows, disjoint_products=False)
+    if len(groups['train']) != 2640 or len(groups['query']) != 2485:
+        raise ValueError('Official train/test counts changed')
+    for row in rows:
+        path = (root / row['image_path']).resolve()
+        if not path.is_relative_to(root):
+            raise ValueError('Dataset path escapes root')
+        row['image_sha256'] = sha256(path)
+    # No identical bytes may occur across training, query and gallery roles.
+    role_hashes = {s: {r['image_sha256'] for r in g} for s, g in groups.items()}
+    for a, b in [('train', 'query'), ('train', 'gallery'), ('query', 'gallery')]:
+        if role_hashes[a] & role_hashes[b]:
+            raise ValueError(f'Exact image duplication across {a}/{b}; audit, do not silently filter')
+    return rows
+
+
+def prepare_grocery(root, output):
+    if output.exists():
+        raise FileExistsError(output)
+    rows = grocery_records(root)
+    output.mkdir(parents=True)
+    write_json(output / 'protocol.json', dict(schema=1, dataset='GroceryStoreDataset',
+        protocol='grocery81_official_test_to_iconic_v1',
+        source_url='https://github.com/marcusklasson/GroceryStoreDataset',
+        source_files_sha256={n: sha256(root / n) for n in ('classes.csv', 'train.txt', 'test.txt', 'val.txt')},
+        purpose='Natural grocery photo to fine-class iconic image retrieval; NOT unseen SKU or physical-object retrieval',
+        train_images=2640, query_images=2485, gallery_images=81,
+        unused_validation_images=sum(r['split'] == 'unused_validation' for r in rows),
+        relevance='same official fine class (81); entire iconic gallery, no coarse-class filtering',
+        training_test_classes_overlap=True, physical_product_disjointness='Not provided by official metadata',
+        validation=False, selection='All official test images/classes retained, no initial-screen fitting',
+        source_commit=source_commit(), rows=rows))
 
 
 def rank_instances(vectors, rows):
@@ -173,7 +242,7 @@ def evaluate(args):
             if audit['alpha_bounds'][0] <= .4 or audit['descriptor_dimension'] != 64:
                 raise ValueError('Require original high-alpha 64D architecture')
             identity.update(checkpoint_sha256=digest, model_audit=audit, protected_optics_sha256=OPTICS_SHA256,
-                            checkpoint_origin='ABO trained and ABO-test-selected; no COIL fitting or selection')
+                            checkpoint_origin='ABO trained and ABO-test-selected; no current-screen fitting or selection')
             processor = AutoProcessor.from_pretrained(str(args.assets / 'processor'), local_files_only=True)
         else:
             # Baseline only: the student command never imports/loads full Qwen.
@@ -241,7 +310,7 @@ def evaluate(args):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('mode', choices=['prepare-coil', 'optical', 'qwen64'])
+    p.add_argument('mode', choices=['prepare-coil', 'prepare-grocery', 'optical', 'qwen64'])
     p.add_argument('--data', type=Path, required=True)
     p.add_argument('--output', type=Path, required=True)
     p.add_argument('--archive', type=Path)
@@ -254,7 +323,9 @@ def main():
     p.add_argument('--device', choices=['cuda', 'cpu'], default='cuda')
     args = p.parse_args()
     args.started = time.time()
-    if args.mode == 'prepare-coil':
+    if args.mode == 'prepare-grocery':
+        prepare_grocery(args.data, args.output)
+    elif args.mode == 'prepare-coil':
         if args.archive is None:
             p.error('prepare-coil requires --archive')
         prepare_coil(args.archive, args.data, args.output)

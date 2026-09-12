@@ -1688,3 +1688,25 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_screen q
 每组输出`final_report.json`、逐图预测和64维特征。比较前必须确认两份报告的manifest SHA相同、都为320-query/160-gallery、同物体相关性。
 差距用`100*(Qwen64 Hit@1 - Optical Hit@1)`，单位百分点；去光用同权重直接移除，不另训练。
 只在新结果支持时开展训练池适配；当前不得把“下载成功”“脚本通过”写成达到10/4个百分点目标。
+
+## 60. Grocery81自然图搜标准图初筛（不改变COIL或ABO协议）
+
+使用服务器已有官方划分文件，全部2640训练图预留、2485测试查询、81标准图图库；val不用。
+这是**细类别检索，不是未见SKU检索**。不使用文本描述、不按粗类别过滤图库、不合并类别。
+仍用第59节的冻结Qwen64与原光电权重，先不训练。初筛源码需先测试并同步GitHub。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+GROCERY=/DATA/DATA1/guest3/2026OpticsMoE/data/GroceryStoreDataset/dataset
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_screen prepare-grocery \
+  --data "$GROCERY" --output "$T07/runs/simulation/grocery81_protocol_20260913"
+```
+
+随后分别执行第59节的`optical`/`qwen64`命令，只替换：
+
+- `--data`为`$GROCERY`；
+- `--manifest`为`$T07/runs/simulation/grocery81_protocol_20260913/protocol.json`；
+- `--output`分别为`$T07/runs/simulation/grocery81_optical_transfer_20260913`和`$T07/runs/simulation/grocery81_qwen64_20260913`。
+
+每次启动前重新检查指定GPU为空闲；COIL当时用GPU0不代表该卡现在仍空闲。运行完检查自己的PID和CUDA已释放，不杀其他任务。
+数据文件变动/缺图/重复SHA会报错，先调查，不强行放宽校验生成漂亮结果。预留训练不代表已经训练完成。
