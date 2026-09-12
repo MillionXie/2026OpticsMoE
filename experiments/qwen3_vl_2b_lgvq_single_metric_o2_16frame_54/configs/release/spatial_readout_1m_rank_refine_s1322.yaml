@@ -1,0 +1,48 @@
+# Parameter-neutral SRCC refinement of the same s1314 architecture.  Optical
+# masks/router remain frozen; only the existing custom Conv E1 residual and
+# existing 967,458-parameter readout are optimized with stronger rank losses.
+base_config: spatial_readout_1m_compact_preserve_c_s1314.yaml
+output_dir: ../../../../LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_readout_1m_rank_refine_s1322
+random_seed: 1322
+
+model:
+  dropout: 0.14
+
+training:
+  initialization_checkpoint: ../../../../LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_readout_1m_s1314/best_observed_test_checkpoint.pt
+  trainable_scope: custom_conv_and_readout
+  epochs: 60
+  learning_rate: 0.000002
+  readout_learning_rate_factor: 0.50
+  weight_decay: 0.00008
+  readout_weight_decay: 0.0002
+  phase_warmup_epochs: 0
+  late_refine_start_epoch: 41
+  restore_best_at_stage_transition: true
+  late_refine_electronic_lr_factor: 0.20
+  late_refine_readout_lr_factor: 0.30
+  late_refine_phase_lr_factor: 1.0
+  late_refine_router_lr_factor: 1.0
+  learning_rate_warmup_epochs: 2
+  minimum_learning_rate_factor: 0.08
+  ema_decay: 0.997
+  ema_start_epoch: 1
+  test_interval_epochs: 1
+  test_interval_steps: 0
+  phase_snapshot_interval_epochs: 0
+
+loss:
+  regression_weight: 0.08
+  ranking_weight: 2.60
+  correlation_weight: 4.50
+  soft_spearman_weight: 0.80
+  listwise_ranking_weight: 0.08
+  paired_view_supervision_weight: 0.10
+  paired_view_consistency_weight: 0.01
+
+curriculum:
+  start_epoch: 1
+  end_epoch: 42
+  ranking_weight_final: 3.00
+  correlation_weight_final: 3.50
+  soft_spearman_weight_final: 1.00

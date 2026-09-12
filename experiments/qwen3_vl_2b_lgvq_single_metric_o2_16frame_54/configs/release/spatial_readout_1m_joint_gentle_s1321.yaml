@@ -1,0 +1,53 @@
+# Keep the 967,458-parameter compressed readout unchanged while gently tuning
+# the complete project-owned optical/electronic graph from the s1314 checkpoint.
+# The short optical-only warmup is reversible: the best observed test state is
+# restored before joint training, so a destructive phase reheat cannot replace
+# the warm start.
+base_config: spatial_readout_1m_compact_preserve_c_s1314.yaml
+output_dir: ../../../../LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_readout_1m_joint_gentle_s1321
+random_seed: 1321
+
+training:
+  initialization_checkpoint: ../../../../LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_readout_1m_s1314/best_observed_test_checkpoint.pt
+  trainable_scope: custom_conv_joint
+  epochs: 60
+  learning_rate: 0.0000015
+  readout_learning_rate_factor: 0.25
+  phase_learning_rate: 0.00004
+  router_phase_learning_rate: 0.00002
+  weight_decay: 0.00008
+  readout_weight_decay: 0.0002
+  phase_warmup_epochs: 2
+  restore_best_at_stage_transition: true
+  late_refine_start_epoch: 41
+  late_refine_electronic_lr_factor: 0.20
+  late_refine_readout_lr_factor: 0.40
+  late_refine_phase_lr_factor: 0.25
+  late_refine_router_lr_factor: 0.25
+  learning_rate_warmup_epochs: 2
+  minimum_learning_rate_factor: 0.08
+  ema_decay: 0.997
+  ema_start_epoch: 1
+  test_interval_epochs: 1
+  test_interval_steps: 0
+  phase_snapshot_interval_epochs: 0
+
+loss:
+  regression_weight: 0.10
+  ranking_weight: 2.40
+  correlation_weight: 4.50
+  soft_spearman_weight: 0.70
+  listwise_ranking_weight: 0.05
+  paired_view_supervision_weight: 0.10
+  paired_view_consistency_weight: 0.01
+  router_balance_weight: 0.0005
+  serial_router_balance_weight: 0.0005
+
+curriculum:
+  start_epoch: 1
+  end_epoch: 42
+  ranking_weight_final: 2.80
+  correlation_weight_final: 3.50
+  soft_spearman_weight_final: 0.85
+  router_balance_weight_final: 0.0002
+  serial_router_balance_weight_final: 0.0002
