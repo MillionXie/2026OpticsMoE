@@ -24,6 +24,15 @@ GT前4轮0.2，第5～8轮恢复至1，基础学习率而非1/4；第8轮已为�
 独立复评evaluation的6份结果（不含best.pt）已同步到本地同路径；六文件名→内容SHA字典按键排序、
 紧凑JSON编码后的SHA为`e860337d3bc096590046b9a20ba7cab21076eb805b2cafbd541abf895aacfeac`，两端一致。
 
+只读错误分布诊断（已有特征，CPU，无训练/重排/测试拟合）：
+`evaluation/diagnostics/error_concentration.json`，使用35055dc7的`analysis.audit_for_meeting.score_features`，
+原480/120重新计分得到同样79.375%，冻结Qwen native2048=95.2083%、native64=94.375%。
+40个测试商品中21个12视角全对、3个12视角全错；99个错误中51个来自错误最多的5个商品。
+99个学生错误里Qwen2048答对79个。错误最集中的商品包括chair、light fixture、wall art；
+其中B071PDYXRQ双方均0/12，B071S5RK7P学生0/12而Qwen12/12，不能笼统归因于光或标签。
+报告保存两份特征及原manifest SHA、全部40商品与分类别计数。它是test-selected模型的描述性诊断，
+不把480相关视角当作480独立商品，不据此删除/改标/单独拟合测试商品；下一步仍检验训练数据覆盖和蒸馏。
+
 ## 上一最佳：独立复评78.75%（历史证据）
 
 378/480命中，原120商品图库/同类相关；还差11个命中。固定副本
