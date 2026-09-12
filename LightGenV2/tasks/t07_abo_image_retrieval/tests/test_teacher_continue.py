@@ -30,6 +30,7 @@ def test_reuse_exact_training_basis(tmp_path):
     ('fit_sample_ids',['test-0']),('teacher_cache_sha256','c'*64),
     ('source_checkpoint_sha256','c'*64),('teacher_prefix_dimensions',64),
     ('teacher_only',False),('rotation',torch.ones(8,8)),('rotation',torch.full((8,8),float('nan'))),
+    ('teacher_center_fraction',.5),('teacher_center',torch.ones(8)),
 ])
 def test_alignment_identity_and_orthogonality_checked(tmp_path,key,value):
     a=alignment();a[key]=value;path=tmp_path/'alignment.pt';torch.save(a,path)
@@ -90,6 +91,18 @@ def test_joint_restart_pins_new_best_without_relaxing_old_contract():
     for cfg in (old,new):
         cfg.pop('restore_auxiliary_source_sha256');cfg.pop('protocol')
     assert old==new
+
+
+def test_centerhalf_only_changes_teacher_targets_and_refits_basis():
+    from LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization import PROFILES,PINNED_TEACHER_PROFILES
+    name='domain_distill_joint_centerhalf'
+    assert name in PROFILES and name not in PINNED_TEACHER_PROFILES
+    base=overlay_config({},'domain_distill_joint_restart');new=overlay_config({},name)
+    assert new.pop('teacher_feature_center_fraction')==.5
+    for key in ('teacher_alignment_sha256','teacher_alignment_origin_checkpoint_sha256'):
+        assert key not in new;base.pop(key)
+    for cfg in (base,new):cfg.pop('protocol')
+    assert base==new
 
 
 def test_joint_restart_softgt_only_changes_planned_supervision_schedule():

@@ -224,10 +224,15 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                 proxy_initialization=initialize_category_proxies(head,features,initial_labels,
                     cfg_all.get('preserve_restored_category_proxies',False))
                 if cfg_all.get('teacher_feature_weight',0):
-                    from .teacher_relations import fit_feature_alignment,aligned_feature_loss,load_feature_alignment
+                    from .teacher_relations import fit_feature_alignment,aligned_feature_loss,load_feature_alignment,center_teacher_prefix
                     teacher64=F.normalize(teacher_vectors[:,:features.shape[1]].float(),dim=-1)
                     alignment_file=output/'teacher_feature_alignment.pt'
                     reused=bool(cfg_all.get('teacher_alignment_sha256'))
+                    center_fraction=cfg_all.get('teacher_feature_center_fraction',0.)
+                    teacher_center=None
+                    if center_fraction:
+                        if reused:raise ValueError('Centered teacher targets require a freshly fitted basis')
+                        teacher64,teacher_center=center_teacher_prefix(teacher64,target_count,center_fraction)
                     if reused:
                         if getattr(args,'teacher_alignment',None) is None:
                             raise ValueError('Continuation requires --teacher-alignment')
@@ -241,11 +246,18 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                             source_checkpoint_sha256=execution['initial_checkpoint_sha256'],
                             teacher_cache_sha256=teacher_audit['cache_sha256'],teacher_prefix_dimensions=features.shape[1],
                             teacher_only=True)
+                        if teacher_center is not None:
+                            alignment.update(teacher_center=teacher_center.cpu(),teacher_center_fraction=center_fraction,
+                                teacher_center_fit_scope='original train only')
                     feature_targets=F.normalize(teacher64@rotation,dim=-1).detach()
                     torch.save(alignment,alignment_file)
                     feature_alignment_audit=dict(fit_scope='original train only',fit_images=target_count,
                         prefix_dimensions=features.shape[1],
                         artifact_sha256=sha256(alignment_file),student_weights_rotated=False,at_inference=False)
+                    if teacher_center is not None:
+                        feature_alignment_audit.update(teacher_center_fraction=center_fraction,
+                            teacher_center_norm=float(teacher_center.norm()),teacher_center_fit_images=target_count,
+                            teacher_center_at_inference=False)
                     current_cosine=float((feature_targets[:target_count]*features).sum(1).mean())
                     if reused:
                         feature_alignment_audit.update(alignment_reused=True,

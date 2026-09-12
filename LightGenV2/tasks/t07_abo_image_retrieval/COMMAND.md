@@ -1164,3 +1164,28 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 ```
 
 等待不占CUDA，依赖失败则不启动；不重用已有输出目录。只保存best/last，无周期PT。
+
+## 42. 训练教师目标去除一半公共分量（准备配置，尚未正式运行）
+
+先等第39～41节当前三组结果再决定是否执行。本方法不修改光学直流/相位/CCD后处理，
+只改变训练教师前64维目标；均值仅来自原1440训练行，外部图用同一均值，重新拟合teacher-only坐标。
+与第40节保持同一起点/数据/损失权重/学习率/GT课程。不传旧`--teacher-alignment`；新均值与坐标不参与推理。
+CPU梯度诊断不是性能验收；正式结果仍须正常/去光及固定权重复评原480-query/120-gallery。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d \
+  --assets "$T07/runs/simulation/standalone_assets_20260910" \
+  --checkpoint "$T07/runs/simulation/verify_joint_ep8_20260912_gpu1/best.pt" \
+  --target /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --abo /DATA/DATA1/guest3/2026OpticsMoE/data/abo \
+  --pool "$T07/runs/simulation/domain_pool250_20260912" \
+  --teacher-cache "$T07/runs/smoke/domain_distillation_20260912/build_teacher_cache/artifacts/cache.pt" \
+  --profiles domain_distill_joint_centerhalf --epochs 16 --steps 128 --seed 42 \
+  --output "$T07/runs/simulation/domain_joint_centerhalf_20260912_gpu1" \
+  --after-queue "$T07/runs/simulation/domain_teacher_first_views4_20260912_gpu1/status.json"
+```
+
+须使用包含该profile的新commit，旧35055dc7尚无此功能；以execution记录实际源码SHA。
+等待/空闲检查不抢GPU，输出目录必须不存在；只保留best/last，不生成周期相位PT。
