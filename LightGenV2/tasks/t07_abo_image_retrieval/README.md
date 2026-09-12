@@ -57,6 +57,14 @@
 
 ## 持续目标与不可变约束（2026-09-12）
 
+新增待测`domain_distill_joint_languagefull`：仅将language两次CCD电子解码从“全幅汇聚224×224后取前77行”
+改成“全幅直接汇聚77×224”；Vision保持前196行。复用已有`fullfield_rows`，不修改`optics.py`。
+CCD强度归一化、clip12/log1p、行LN/ReLU/Linear192不变，所有权重张量形状和光学传播/ROI/Top2/α>0.4不变。
+这**确实改变了推理时的电子读出合同**，不是只改训练；全幅汇聚仍可能损失高频细节，不保证更好。
+从未校准79.375%源权重恢复原辅助头/教师坐标，初始化输出不再等价，必须重测初始成绩，不能继承79.375%。
+与joint_restart相同的16×128/seed42/教师2+KL0.3/GT课程/原数据，不叠加SAM、梯度投影或白边增强。
+旧低性能来源的fullfield实验不是这组的配对对照；命令见第56节，先测试、同步源码和CPU实图检查再提交。
+
 教师梯度冲突候选`domain_distill_joint_teacherproject`：只改训练反向，不改光路/推理网络。
 参考[Yu等，Gradient Surgery，NeurIPS2020](https://arxiv.org/abs/2001.06782)，但这里是**单向教师投影**，不是完整对称随机PCGrad。
 `gP`来自当前加权GT损失+光学辅助+物理正则，`gT`来自原加权教师余弦2+关系KL0.3；
