@@ -1,0 +1,12 @@
+# One-million readout search A: preserve the learned compact correction, which
+# contributes most of the trained s1291 prediction variance.
+base_config: spatial_custom_conv_readout_lowrank1550k_s1291.yaml
+output_dir: ../../runs/lgvq_spatial_readout_1m_compact_preserve_a_s1312
+random_seed: 1312
+
+model:
+  spatial_compact_head_width: 128
+  spatial_low_rank_frame_rank: 192
+  spatial_low_rank_language_rank: 96
+  spatial_low_rank_compact_frame_rank: 80
+  spatial_low_rank_compact_head_rank: 128
