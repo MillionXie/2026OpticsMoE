@@ -344,6 +344,8 @@ def load_settings(path: str | Path) -> Any:
     configure_fixed_crop(settings, d('fixed_crop_distillation', {}), config.parent)
     from .hard_example_cc import configure as configure_hard_cc
     configure_hard_cc(settings, d('hard_example_cc', {}))
+    from .teacher_reliability import configure as configure_teacher_reliability
+    configure_teacher_reliability(settings, d('teacher_reliability', {}))
     return settings
 
 
@@ -360,6 +362,7 @@ def save_resolved_config(settings: Any) -> None:
     values['first_stage_supervision'] = settings.first_stage_supervision
     values['fixed_crop_distillation'] = settings.fixed_crop_distillation
     values['hard_example_cc'] = settings.hard_example_cc
+    values['teacher_reliability'] = settings.teacher_reliability
     # The shared T02 serializer writes pose-specific PCK/NME prose. T03's
     # actual trainer compares test_metrics['cc'] strictly; describe that here.
     values.setdefault("protocol", {}).update(
