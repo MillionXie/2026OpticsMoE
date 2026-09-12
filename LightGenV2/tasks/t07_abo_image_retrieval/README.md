@@ -57,6 +57,16 @@
 
 ## 持续目标与不可变约束（2026-09-12）
 
+待测试提交`domain_distill_joint_mix13`：仅将每类每batch的原商品/外部商品配额2:2改成1:3，仍10类×4商品=40图。
+固定79.375%未校准起点、原prefix读出、cap250二视角池及joint_restart原损失/学习率/16×128/seed42；不叠加其它新候选。
+每轮原商品抽样2560→1280次，外部2560→3840次；120原商品和2058外部商品仍全部循环访问，但不声称一轮覆盖每幅原训练图。
+全1440原训练图继续参加干净训练评估，原480测试/120商品图库不变；仅训练采样变化，不需重跑未改的冻结Qwen baseline。
+目的在于减少对少量原商品的反复记忆，是否提升待实测。旧cap500/no-teacher mix13不是这一组配对对照；操作见第57节。
+
+只读CPU诊断`verify_joint_ep8_20260912_gpu1/evaluation/diagnostics/within_subspace_probe.json`：
+TRAIN图/商品类内协方差各用0.1/0.5收缩估计，再构造9D判别方向投影并保留其它方向0.5；四组缓存最高79.375%，不采用。
+未改权重/光路，无GPU；矩阵只用TRAIN拟合，但候选比较使用TEST，不能声称独立测试或把缓存结果当实际前向复评。
+
 新增运行中`domain_distill_joint_languagefull`：仅将language两次CCD电子解码从“全幅汇聚224×224后取前77行”
 改成“全幅直接汇聚77×224”；Vision保持前196行。复用已有`fullfield_rows`，不修改`optics.py`。
 CCD强度归一化、clip12/log1p、行LN/ReLU/Linear192不变，所有权重张量形状和光学传播/ROI/Top2/α>0.4不变。

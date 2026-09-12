@@ -16,6 +16,7 @@ PINNED_TEACHER_PROFILES += ('domain_distill_joint_vision13',)
 PINNED_TEACHER_PROFILES += ('domain_distill_joint_whitezoom',)
 PINNED_TEACHER_PROFILES += ('domain_distill_joint_teacherproject',)
 PINNED_TEACHER_PROFILES += ('domain_distill_joint_languagefull',)
+PINNED_TEACHER_PROFILES += ('domain_distill_joint_mix13',)
 REFIT_TEACHER_PROFILES = ('domain_distill_refit250', 'domain_distill_refit500')
 
 PROFILES = ('preserve_adam', 'preserve_sam', 'preserve_fullfield_sam', 'preserve_fullfield_both_sam',
@@ -106,6 +107,11 @@ def restore_auxiliary_head(head, payload, actual_sha256, expected_sha256):
 
 
 def overlay_config(config, profile):
+    if profile=='domain_distill_joint_mix13':
+        config=overlay_config(config,'domain_distill_joint_restart')
+        overlay=json.loads(Path(__file__).with_name('domain_distillation.json').read_text(encoding='utf-8'))
+        config.update(overlay['profiles'][profile])
+        return config
     if profile=='domain_distill_joint_languagefull':
         config=overlay_config(config,'domain_distill_joint_restart')
         overlay=json.loads(Path(__file__).with_name('domain_distillation.json').read_text(encoding='utf-8'))
