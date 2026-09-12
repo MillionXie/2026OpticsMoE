@@ -9,6 +9,7 @@ import random
 import time
 import numpy as np
 import torch
+import torch.nn.functional as F
 from experiments.qwen3_vl_embedding_2b_salicon_vision_optical_saliency import training as legacy
 from .training_support import task_saliency_loss
 
@@ -25,6 +26,36 @@ def _restore_rng(state,device):
     torch.set_rng_state(state[0])
     if state[1] is not None:torch.cuda.set_rng_state(state[1],device)
     random.setstate(state[2]);np.random.set_state(state[3])
+
+
+def symmetric_density_kl(first_logits, second_logits):
+    """R-Drop-inspired consistency on spatial distributions, not mean pixels.
+
+    Both views retain optical training corruption; no clean-view substitution.
+    No stop-gradient: both stochastic predictions receive consistency gradients.
+    """
+    if first_logits.shape != second_logits.shape or first_logits.ndim != 4 or first_logits.shape[1] != 1:
+        raise ValueError('Noise consistency requires matching [B,1,H,W] saliency logits')
+    dtype = torch.float64 if first_logits.dtype == torch.float64 else torch.float32
+    a = F.log_softmax(first_logits.to(dtype).flatten(1), dim=1)
+    b = F.log_softmax(second_logits.to(dtype).flatten(1), dim=1)
+    return .5*((a.exp()-b.exp())*(a-b)).sum(1).mean()
+
+
+def noise_consistent_closure(single_view, weight):
+    """Average two supervised noisy views and add symmetric KL, or legacy one view."""
+    if not 0 <= weight <= 5:
+        raise ValueError('Noise consistency weight must be finite and in [0,5]')
+    first, pieces, logits = single_view()
+    if not weight:
+        return first, pieces
+    second, other, second_logits = single_view()
+    if pieces.keys() != other.keys():
+        raise RuntimeError('Noisy views returned different metric contracts')
+    consistency = symmetric_density_kl(logits, second_logits)
+    total = (first+second)/2 + weight*consistency
+    return total, {**{k:(pieces[k]+other[k])/2 for k in pieces},
+                   'loss':total, 'noise_consistency_kl':consistency}
 
 
 def sam_step(optimizer, closure, rho, device, clip_norm=0., *, asam=None, weight_parameter_ids=None,
@@ -128,7 +159,7 @@ def train_sam_epoch(model,loader,loaded,settings,optimizer,teacher_cache=None,re
         fixation=batch['fixation'].to(loaded.device,non_blocking=True)
         inputs=legacy.preprocess_vision(loaded.processor,batch['images'],loaded.device)
         teacher_logits=teacher_cache.get(batch['sample_ids'],loaded.device) if teacher_cache is not None else None
-        def closure():
+        def single_view():
             with legacy._autocast(settings,loaded.device):
                 active_first = first_stage is not None and settings.first_stage_current_weight > 0
                 with (first_stage.capture(model) if active_first else nullcontext([])) as captured:
@@ -158,7 +189,9 @@ def train_sam_epoch(model,loader,loaded,settings,optimizer,teacher_cache=None,re
                               phase_dc=dc,ccd_operating_point=operating,
                               **({'relational_loss':relation} if relation_targets is not None else {}),
                               **({'masked_loss':masked} if masked_targets is not None else {}),
-                              **({'first_stage_loss':first_loss, 'first_stage_cc':first_cc} if first_stage is not None else {}))
+                              **({'first_stage_loss':first_loss, 'first_stage_cc':first_cc} if first_stage is not None else {})),logits
+        def closure():
+            return noise_consistent_closure(single_view,getattr(settings,'noise_consistency_weight',0.))
         values,increase=sam_step(optimizer,closure,settings.sam_rho,loaded.device,settings.gradient_clip_norm,
                                  asam=asam,weight_parameter_ids=weight_ids,
                                  gsam_coefficient=getattr(settings,'gsam_coefficient',0.))
