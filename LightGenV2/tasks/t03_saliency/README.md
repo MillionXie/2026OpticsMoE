@@ -19,9 +19,11 @@ batch32为.87478750，固定batch复评可复现该微小数值差异，完整�
 保留第5轮best .86130864和第15轮last，CPU重载及有限值检查通过，不是完成50轮。
 本轮ASAM配对未改善正式候选。全部自有训练/复评及子进程已退出，当前不占GPU；未停止他人任务。
 用户现已确认baseline冻结Qwen主干，光模型前端也不解冻；本次50轮baseline符合确认口径。
-当前已启动[全分辨率/粗尺度CC监督配对](reports/reproduction/PYRAMID_CC_20260913.md)：
-GPU3/PID529390与GPU5/PID529392，各30轮预算，源码b21b59c6。
-247项CPU测试及真实四图SAM更新审计通过；不加推理参数、不改测试或硬件合同，目标尚未达到。
+当前[全分辨率/粗尺度CC监督配对](reports/reproduction/PYRAMID_CC_20260913.md)中，
+fullgrid因连续退步已停止，保留best第1轮.86214232和last第16轮，CPU重载通过、GPU3释放；
+pyramid在GPU5/PID529392，第15轮.86164053，略回升但未超过起点，观察第20轮。
+下一组小batch8 SAM已通过248项CPU测试，以源码fa4647d7在GPU3/PID561115启动20轮预算；
+仅改训练批次/学习率/EMA，不加推理参数、不改测试或硬件合同。目标仍未达到。
 已将正式87ad候选和本次50轮baseline的59个文件同步到本地同名runs目录并逐项验证SHA；
 它们是交付证据镜像，不是硬件就绪ZIP，也不是新的.87结果。位置和清单见下方候选核查文档。
 具体说明见[50轮baseline](reports/reproduction/BASELINE50_20260912.md)与

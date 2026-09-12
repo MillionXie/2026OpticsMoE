@@ -1211,3 +1211,10 @@ python -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --phase all --co
 ```
 
 只在原有任务停止且自有GPU显存释放后启动，默认单卡，不超两卡总预算；此处为备选配置，不表示已有提升。
+
+小batch8配置已通过248项CPU测试（46.63秒，13条既有警告），源码
+`fa4647d792829d43892bae25a4d2bd0a993e5432`已推送GitHub `experiment/salicon-batch8-20260913`。
+确认fullgrid父子进程及GPU3分配全部退出后，于UTC2026-09-12 19:02:05启动PID/PGID561115，
+GPU UUID `GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd`，固定cwd `.worktrees/t03_balance`；运行中不得checkout。
+仅与GPU5的pyramid组并行，总计两卡。产物`runs/simulation/moe_alpha40_sam_batch8_20260913_seed42`，
+完整启动命令见`launch_record.json`，当前为20轮预算的在跑试验，不是已完成或新最佳。
