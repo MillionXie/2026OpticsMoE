@@ -1,6 +1,17 @@
 # T07 ABO 商品图搜图：独立光电工程
 
-> **找当前最佳看这里**：独立固定权重复评77.9167%（374/480），去光59.375%；目标≥389/480，还差15个命中。
+> **找当前最佳看这里**：独立固定权重复评78.75%（378/480），去光61.4583%；目标≥389/480，还差11个命中。
+> 固定权重：`runs/simulation/verify_teacher_first_ep11_20260912_gpu4/best.pt`。
+> 逐样本预测、相位图和复评报告在该目录的`evaluation/`；训练来源为teacher_first第11轮live。
+> mAP@10=0.76131812；去光下降17.2917个百分点；干净原训练100%。仍是原线性读出与原光路，没有TF/attention。
+> SHA=`67a9c71d321720e5735afc9dc5214dbeeee017b6e4135912f92ed8fdabe3f3df`，训练9e9da3d8，独立复评9c6ff5c4。
+> RTX4090/batch4，复评PID2449797已退出且释放CUDA。α V=[0.4372112,0.4398755]，L=[0.4291850,0.4280129]。
+> 相比前版仅多4个查询，不宣称显著性；单seed、周期test选模。完整16轮课程仍在继续，不把第11轮候选说成训练已结束。
+> 复现与指标口径见[复现入口](reports/reproduction/README.md)，固定权重复评见[COMMAND第20节](COMMAND.md)。
+
+### 上一最佳77.9167%（保留历史证据）
+
+> 独立固定权重复评77.9167%（374/480），去光59.375%；当时距目标还差15个命中。
 > 已完成的一轮逐图蒸馏权重：`runs/smoke/domain_aligned_feature_20260912_gpu1/domain_distill_aligned_feature/artifacts/best.pt`。
 > 独立复评及相位图：`runs/simulation/verify_feature_ep1_20260912_gpu1/`；该目录不复制权重，读取上面的固定best。
 > 复现/指标口径看[复现入口](reports/reproduction/README.md)，执行命令看[COMMAND](COMMAND.md)。
