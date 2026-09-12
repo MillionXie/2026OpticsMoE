@@ -1308,12 +1308,14 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 
 只保存best/last；history中的`phase_only_warmup`记录阶段。正式采用前要独立复核新高与同权重去光结果。
 
-## 47. 更强的逐图特征蒸馏（运行中；不要重复启动）
+## 47. 更强的逐图特征蒸馏（完成无新高，仅供复现）
 
 从第40节固定79.375%权重开始，只把教师64维余弦损失权重2改成8，其余同joint_restart。
 没有新增推理网络或改变光路，也不叠加第45/46节。先确认GPU2空闲，不挤占他人任务；最多3张GPU。
 源码必须通过测试并同步GitHub。新高必须独立4090复评正常/去光，不能把蒸馏强度当作光贡献占比。
 已用18c4e400启动，监督3308242/学生3308245；两端181项测试通过，完整初始评估79.375%，只改变教师余弦权重。
+16轮完成，selected_epoch=-1，正常79.375%、去光62.9167%，未改善；原进程及CUDA已释放，不采用本组。
+第50节已排队接续GPU2，不要重复运行本目录。
 
 ```bash
 T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
@@ -1383,10 +1385,11 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
   --after-queue "$T07/runs/simulation/domain_joint_phasefirst_20260912_gpu4/status.json"
 ```
 
-## 50. 原结构联合续训的seed123对照（已排队，不重复启动）
+## 50. 原结构联合续训的seed123对照（运行中，不重复启动）
 
 只改变第40节joint_restart的训练seed，保持原384宽MLP、原raw Router优化器、固定79.375%起点及原协议。
-监督3488475使用已发布源码abb36acd，等待第47节结束后接续GPU2；等待不占CUDA，不启动第四张卡。
+监督3488475使用已发布源码abb36acd，第47节完成并释放GPU2后已接续学生3517887，不启动第四张卡。
+seed123及GPU2 CUDA上下文已核验，完整初始分数需重新计算。
 不能叠加第49节扩宽或第48节弧度坐标；评估不拼接不同seed预测，不改图库/标签，仅best/last。
 
 ```bash
